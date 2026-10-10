@@ -172,6 +172,14 @@ public:
 
 	/**
 	 * @brief
+	 *  Run an action by its identifier, as its shortcut would.
+	 * @param[in] iId The action identifier.
+	 * @return False if no action has this identifier.
+	 */
+	auto run(const std::string& iId) const -> bool;
+
+	/**
+	 * @brief
 	 *  Get all registered actions (for the settings UI).
 	 * @return The actions.
 	 */

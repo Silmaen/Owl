@@ -391,6 +391,34 @@ public:
 
 	/**
 	 * @brief
+	 *  Render the snap-step preset popup (triggered from the viewport snap button).
+	 *
+	 * Shows fraction / multiple presets when a `Tilemap` exists in the active scene, or raw
+	 * world-unit presets otherwise. Selecting an entry updates `m_settings.snapMultiplier`
+	 * (tilemap path) or `m_settings.snapStep` (raw path).
+	 */
+	void renderSnapStepPopup();
+
+	/**
+	 * @brief
+	 *  Run an editor action by its identifier ("scene.play"), as its shortcut would.
+	 * @param[in] iId The action identifier.
+	 * @return False if no action has this identifier.
+	 */
+	auto runAction(const std::string& iId) const -> bool { return m_actionRegistry.run(iId); }
+
+	/**
+	 * @brief
+	 *  Shortcut of an editor action, for tooltips.
+	 * @param[in] iId The action identifier.
+	 * @return The shortcut ("Ctrl+S"), empty when unbound.
+	 */
+	[[nodiscard]] auto getActionShortcut(const std::string& iId) const -> std::string {
+		return m_actionRegistry.getShortcutString(iId);
+	}
+
+	/**
+	 * @brief
 	 *  Consume a pending step-frame request from the active document.
 	 * @return True on success, false otherwise.
 	 */
@@ -520,17 +548,6 @@ private:
 	 *  Render the dirty-close confirmation modal for `m_pendingCloseDocId`.
 	 */
 	void renderCloseDocumentModal();
-
-
-	/**
-	 * @brief
-	 *  Render the snap-step preset popup (triggered from the ribbon Scene > Gizmo > Step button).
-	 *
-	 * Shows fraction / multiple presets when a `Tilemap` exists in the active scene, or raw
-	 * world-unit presets otherwise. Selecting an entry updates `m_settings.snapMultiplier`
-	 * (tilemap path) or `m_settings.snapStep` (raw path).
-	 */
-	void renderSnapStepPopup();
 
 
 	/**

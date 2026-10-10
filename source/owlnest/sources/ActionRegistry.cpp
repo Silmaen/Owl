@@ -301,6 +301,17 @@ auto ActionRegistry::dispatchImGuiChords() -> size_t {
 	return count;
 }
 
+auto ActionRegistry::run(const std::string& iId) const -> bool {
+	for (const auto& action: m_actions) {
+		if (action.id == iId) {
+			action.callback();
+			return true;
+		}
+	}
+	OWL_WARN("ActionRegistry: no action named '{}'.", iId)
+	return false;
+}
+
 auto ActionRegistry::getShortcutString(const std::string& iId) const -> std::string {
 	for (const auto& action: m_actions) {
 		if (action.id == iId)

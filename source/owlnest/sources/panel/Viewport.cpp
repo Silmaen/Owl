@@ -20,6 +20,10 @@
 #include <scene/component/VoxelWorld.h>
 
 #include <gui/IconBank.h>
+#include <gui/IconFont.h>
+#include <gui/UiLayer.h>
+#include <gui/widgets/IconButton.h>
+#include <gui/widgets/Tooltip.h>
 #include <owlgui.h>
 #include <scene/SceneSerializer.h>
 #include <scene/TilemapAsset.h>
@@ -330,7 +334,7 @@ void Viewport::renderCameraGizmo() const {
 															{{0.f, 0.f, 1.f}, IM_COL32(90, 140, 235, 255)}}};
 	constexpr std::array<const char*, 3> labels{"X", "Y", "Z"};
 	constexpr float radius = 28.f;
-	const ImVec2 center{m_upper.x() - radius - 12.f, m_lower.y() + radius + 12.f};
+	const ImVec2 center{m_upper.x() - radius - 12.f, m_upper.y() - radius - 12.f};
 	auto* drawList = ImGui::GetWindowDrawList();
 	drawList->AddCircleFilled(center, radius + 4.f, IM_COL32(20, 20, 24, 120));
 	for (size_t i = 0; i < axes.size(); ++i) {
@@ -548,17 +552,39 @@ void Viewport::renderOverlay() const {
 }
 
 namespace {
-auto overlayToggle(const char* iIconName, const char* iTooltip, const bool iIsActive) -> bool {
-	ImGui::PushID(iIconName);
-	if (iIsActive)
-		ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
-	const bool clicked = owl::gui::IconBank::instance().iconButton(iIconName, "", math::vec2{20.f, 20.f});
-	if (iIsActive)
-		ImGui::PopStyleColor();
-	if (ImGui::IsItemHovered())
-		ImGui::SetTooltip("%s", iTooltip);
-	ImGui::PopID();
-	return clicked;
+
+// Translucent pill holding one cluster of viewport controls, anchored at a corner of the viewport.
+auto beginOverlay(const std::string& iId, const ImVec2& iPos, const ImVec2& iPivot) -> bool {
+	const auto& theme = gui::UiLayer::getTheme();
+	ImGui::SetNextWindowPos(iPos, ImGuiCond_Always, iPivot);
+	constexpr ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
+									   ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse |
+									   ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoFocusOnAppearing |
+									   ImGuiWindowFlags_NoNav | ImGuiWindowFlags_AlwaysAutoResize |
+									   ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoDocking;
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{3.f, 3.f});
+	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{2.f, 2.f});
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 7.f);
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 1.f);
+	ImGui::PushStyleColor(ImGuiCol_WindowBg, gui::vec(gui::Theme::withAlpha(theme.surface1, 0.9f)));
+	ImGui::PushStyleColor(ImGuiCol_Border, gui::vec(gui::Theme::withAlpha(theme.line, 0.8f)));
+	return ImGui::Begin(iId.c_str(), nullptr, flags);
+}
+
+void endOverlay() {
+	ImGui::End();
+	ImGui::PopStyleColor(2);
+	ImGui::PopStyleVar(4);
+}
+
+void overlaySeparator() {
+	ImGui::SameLine();
+	const auto pos = ImGui::GetCursorScreenPos();
+	const float height = ImGui::GetFrameHeight();
+	ImGui::GetWindowDrawList()->AddLine({pos.x + 2.f, pos.y + 4.f}, {pos.x + 2.f, pos.y + height - 4.f},
+										ImGui::GetColorU32(gui::vec(gui::UiLayer::getTheme().line)));
+	ImGui::Dummy({5.f, height});
+	ImGui::SameLine();
 }
 
 }// namespace
@@ -566,45 +592,144 @@ auto overlayToggle(const char* iIconName, const char* iTooltip, const bool iIsAc
 void Viewport::renderOverlayToolbar() {
 	if (mp_document == nullptr || m_parent == nullptr)
 		return;
-	if (mp_document->state() != SceneDocument::State::Edit)
-		return;
+	using gui::widgets::iconButton;
+	const auto& theme = gui::UiLayer::getTheme();
+	const auto state = mp_document->state();
+	const bool editing = state == SceneDocument::State::Edit;
+	const auto id = static_cast<uint64_t>(mp_document->id());
+	const float margin = 8.f;
+	auto& settings = m_parent->getSettings();
+	const auto shortcut = [this](const char* iAction) -> std::string { return m_parent->getActionShortcut(iAction); };
 
-	const ImVec2 overlayPos{m_lower.x() + 8.f, m_lower.y() + 8.f};
-	ImGui::SetNextWindowPos(overlayPos, ImGuiCond_Always);
-	ImGui::SetNextWindowBgAlpha(0.55f);
-	constexpr ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
-									   ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse |
-									   ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoFocusOnAppearing |
-									   ImGuiWindowFlags_NoNav | ImGuiWindowFlags_AlwaysAutoResize |
-									   ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoDocking;
-	const std::string overlayId = std::format("##viewport_overlay_{:x}", static_cast<uint64_t>(mp_document->id()));
-	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{4.f, 4.f});
-	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{2.f, 2.f});
-	if (ImGui::Begin(overlayId.c_str(), nullptr, flags)) {
-		// Show toggles (currently: Cameras).
-		auto& settings = m_parent->getSettings();
-		if (overlayToggle("comp_camera", "Show camera markers", settings.showCameraGizmos))
-			settings.showCameraGizmos = !settings.showCameraGizmos;
+	if (!editing)
+		ImGui::GetWindowDrawList()->AddRect({m_lower.x() + 1.f, m_lower.y() + 1.f},
+											{m_upper.x() - 1.f, m_upper.y() - 1.f},
+											ImGui::GetColorU32(gui::vec(theme.play)), 0.f, ImDrawFlags_None, 2.f);
 
-		ImGui::SameLine();
-		ImGui::TextDisabled("|");
-		ImGui::SameLine();
-
-		// Gizmo selector (Translate / Rotate / Scale).
-		const auto setOrToggle = [this](const gui::Guizmo::Type iType) -> void {
-			setGuizmoType(getGuizmoType() == iType ? gui::Guizmo::Type::None : iType);
-		};
-		if (overlayToggle("ctrl_translation", "Translate gizmo", m_gizmoType == gui::Guizmo::Type::Translation))
-			setOrToggle(gui::Guizmo::Type::Translation);
-		ImGui::SameLine();
-		if (overlayToggle("ctrl_rotation", "Rotate gizmo", m_gizmoType == gui::Guizmo::Type::Rotation))
-			setOrToggle(gui::Guizmo::Type::Rotation);
-		ImGui::SameLine();
-		if (overlayToggle("ctrl_scale", "Scale gizmo", m_gizmoType == gui::Guizmo::Type::Scale))
-			setOrToggle(gui::Guizmo::Type::Scale);
+	// Tools: gizmo mode and snap.
+	if (editing) {
+		if (beginOverlay(std::format("##vpTools{:x}", id), {m_lower.x() + margin, m_lower.y() + margin}, {0.f, 0.f})) {
+			struct Tool {
+				gui::Guizmo::Type type;
+				const char* glyph;
+				const char* name;
+				const char* action;
+				const char* description;
+			};
+			constexpr std::array tools{Tool{gui::Guizmo::Type::None, gui::icon::mousePointer2, "Select", "guizmo.none",
+											"Click an entity to select it; no gizmo."},
+									   Tool{gui::Guizmo::Type::Translation, gui::icon::move, "Move", "guizmo.translate",
+											"Drag an axis to move the selection. Hold Ctrl to snap."},
+									   Tool{gui::Guizmo::Type::Rotation, gui::icon::rotate3d, "Rotate", "guizmo.rotate",
+											"Drag a ring to rotate the selection."},
+									   Tool{gui::Guizmo::Type::Scale, gui::icon::scale3d, "Scale", "guizmo.scale",
+											"Drag an axis to scale the selection."}};
+			for (const auto& tool: tools) {
+				const auto key = shortcut(tool.action);
+				if (iconButton(tool.name, {.glyph = tool.glyph,
+										   .tooltip = tool.name,
+										   .shortcut = key.c_str(),
+										   .description = tool.description,
+										   .selected = m_gizmoType == tool.type}))
+					setGuizmoType(tool.type);
+				ImGui::SameLine();
+			}
+			overlaySeparator();
+			if (iconButton("snap", {.glyph = gui::icon::magnet,
+									.tooltip = "Snap to grid",
+									.description = "Moves snap to the grid step; Ctrl snaps while dragging anyway.",
+									.selected = settings.snapEnabled}))
+				settings.snapEnabled = !settings.snapEnabled;
+			ImGui::SameLine();
+			if (iconButton("snapStep",
+						   {.glyph = gui::icon::chevronDown,
+							.tooltip = "Snap step",
+							.description = "Presets from the tilemap cell when there is one, else world units."}))
+				ImGui::OpenPopup("##snapStep");
+			if (ImGui::BeginPopup("##snapStep")) {
+				m_parent->renderSnapStepPopup();
+				ImGui::EndPopup();
+			}
+		}
+		endOverlay();
 	}
-	ImGui::End();
-	ImGui::PopStyleVar(2);
+
+	// Playback, centred.
+	if (beginOverlay(std::format("##vpPlay{:x}", id), {(m_lower.x() + m_upper.x()) * 0.5f, m_lower.y() + margin},
+					 {0.5f, 0.f})) {
+		const bool playing = state == SceneDocument::State::Play;
+		const bool paused = state == SceneDocument::State::Pause;
+		const auto playKey = shortcut("scene.play");
+		if (iconButton("play",
+					   {.glyph = gui::icon::play,
+						.tooltip = paused ? "Resume" : "Play",
+						.shortcut = playKey.c_str(),
+						.description = "Run the scene in the viewport; changes made while playing are reverted.",
+						.selected = playing,
+						.disabled = playing}))
+			std::ignore = m_parent->runAction("scene.play");
+		ImGui::SameLine();
+		const auto pauseKey = shortcut("scene.pause");
+		if (iconButton("pause", {.glyph = gui::icon::pause,
+								 .tooltip = "Pause",
+								 .shortcut = pauseKey.c_str(),
+								 .selected = paused,
+								 .disabled = !playing}))
+			std::ignore = m_parent->runAction("scene.pause");
+		ImGui::SameLine();
+		const auto stepKey = shortcut("scene.step");
+		if (iconButton("step", {.glyph = gui::icon::skipForward,
+								.tooltip = "Step one frame",
+								.shortcut = stepKey.c_str(),
+								.disabled = !paused}))
+			std::ignore = m_parent->runAction("scene.step");
+		ImGui::SameLine();
+		const auto stopKey = shortcut("scene.stop");
+		if (iconButton("stop", {.glyph = gui::icon::square,
+								.tooltip = "Stop",
+								.shortcut = stopKey.c_str(),
+								.description = "Leave the play mode and restore the scene.",
+								.disabled = editing}))
+			std::ignore = m_parent->runAction("scene.stop");
+	}
+	endOverlay();
+
+	// Display toggles, top-right.
+	if (editing) {
+		if (beginOverlay(std::format("##vpView{:x}", id), {m_upper.x() - margin, m_lower.y() + margin}, {1.f, 0.f})) {
+			if (iconButton("cameras",
+						   {.glyph = gui::icon::video,
+							.tooltip = "Camera markers",
+							.description = "Show the cameras of the scene: icon, forward arrow and field of view.",
+							.selected = settings.showCameraGizmos}))
+				settings.showCameraGizmos = !settings.showCameraGizmos;
+			ImGui::SameLine();
+			if (iconButton("stats", {.glyph = gui::icon::gauge,
+									 .tooltip = "Frame stats",
+									 .description = "Show the Stats panel: frame time, renderer and GPU counters.",
+									 .selected = settings.showStats}))
+				settings.showStats = !settings.showStats;
+		}
+		endOverlay();
+	}
+
+	// Frame time chip, bottom-left.
+	if (beginOverlay(std::format("##vpFps{:x}", id), {m_lower.x() + margin, m_upper.y() - margin}, {0.f, 1.f})) {
+		const auto stats = renderer::Renderer2D::getStats();
+		const float fps = ImGui::GetIO().Framerate;
+		gui::UiLayer::pushTextStyle(gui::TextStyle::Value);
+		const auto text =
+				std::format("{:.0f} fps  {:.2f} ms  {} draws", fps, fps > 0.f ? 1000.f / fps : 0.f, stats.drawCalls);
+		ImGui::AlignTextToFramePadding();
+		ImGui::TextColored(gui::vec(theme.textMuted), " %s ", text.c_str());
+		gui::UiLayer::popTextStyle();
+		if (ImGui::IsItemClicked()) {
+			settings.showStats = true;
+			ImGui::SetWindowFocus("Stats");
+		}
+		gui::widgets::itemTooltip("Frame stats", nullptr, "Click to open the Stats panel.");
+	}
+	endOverlay();
 }
 
 void Viewport::setGuizmoType(const gui::Guizmo::Type& iType) { m_gizmoType = iType; }

@@ -92,3 +92,16 @@ TEST_F(ActionRegistryChordTest, IgnoresSuspendedRegistryAndPlainKeys) {
 	frame(false, true, ImGuiKey_W);
 	EXPECT_EQ(m_plainRuns, 0);
 }
+
+TEST(ActionRegistryRun, RunsActionsByIdentifier) {
+	core::Log::init(core::Log::Level::Off);
+	ActionRegistry registry;
+	int runs = 0;
+	registry.registerAction("scene.play", "Play", {input::key::F5, Modifiers::None}, [&runs]() -> void { ++runs; });
+	EXPECT_TRUE(registry.run("scene.play"));
+	EXPECT_EQ(runs, 1);
+	EXPECT_FALSE(registry.run("scene.unknown"));
+	EXPECT_EQ(runs, 1);
+	EXPECT_EQ(registry.getShortcutString("scene.play"), "F5");
+	core::Log::invalidate();
+}

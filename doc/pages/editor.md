@@ -81,7 +81,7 @@ Every button has a tooltip with its shortcut; a greyed button is not applicable 
 - **View** — Layout (Hierarchy Left, Reset Layout), Panels (Frame Stats, Help), Appearance (Owl Dark, Owl Light),
   Settings (Editor, Engine).
 - **Document tab** — the last tab, in the accent colour, follows the active document and is selected when its type
-  changes: **Scene** (Document, Playback, Gizmo, Scene), **Text**, **Graph**, **Animation**, **Tilemap** or
+  changes: **Scene** (Document, Scene; playback and gizmo tools sit on the viewport), **Text**, **Graph**, **Animation**, **Tilemap** or
   **Tileset**.
 
 The right end of the tab row holds the quick access buttons (Save, Undo, Redo) and the collapse toggle:
@@ -213,13 +213,23 @@ off-screen `Framebuffer` with two colour attachments:
 | 0          | Surface (RGBA8) | Visible colour output       |
 | 1          | RedInteger      | Entity ID for mouse picking |
 
+**Overlays.** Controls float over the scene in translucent pills, so the view stays visible:
+
+- top-left (Edit mode): Select / Move / Rotate / Scale, then Snap and the snap step presets;
+- top-centre: Play (or Resume), Pause, Step and Stop, with their shortcuts in the tooltips;
+- top-right (Edit mode): camera markers and frame stats toggles;
+- bottom-left: frame rate, frame time and draw calls (a click opens the Stats panel);
+- bottom-right: the axis gizmo of the editor camera.
+
+While the scene plays or is paused, a frame in the play colour outlines the viewport and the status bar turns blue.
+
 **Editor camera.** In Edit mode the viewport uses a `CameraEditor` (orbit
 camera) controlled by mouse drag and scroll. The camera updates only when the
 viewport is hovered, preventing accidental movement while interacting with other
 panels.
 
 **Gizmos.** When an entity is selected, ImGuizmo renders a manipulator gizmo in
-the viewport. The gizmo type is controlled by the toolbar buttons or keyboard
+the viewport. The gizmo type is controlled by the overlay buttons or keyboard
 shortcuts (Q/W/E/R/T):
 
 | Type        | Key | Description                         |
