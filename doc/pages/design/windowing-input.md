@@ -132,7 +132,8 @@ fixed it upstream.
   `wp_viewporter` when `GLFW_SCALE_FRAMEBUFFER` is on (its default). Owl turns that hint off because the swapchain,
   the viewports and ImGui are sized from the window size: the buffer stays at 1× and the compositor upscales it
   (correct size, slightly soft at 125 % or 150 %). Turning it on needs framebuffer-size resize events, ImGui's
-  `DisplayFramebufferScale` and picking in framebuffer pixels: engine work, not a GLFW gap.
+  `DisplayFramebufferScale` and picking in framebuffer pixels: engine work, not a GLFW gap, done with the Phase E
+  text scale / DPI item.
 - **Vsync on hidden surfaces.** GLFW 3.5.1 no longer blocks: under Wayland it drives the swap interval itself, waiting
   for the frame callback with a 20 ms timeout. Owl still paces OpenGL itself: on the headless weston of the smoke
   test, interval 1 gives irregular frames (median 13.3 ms, p95 20.8 ms, the timeout firing every other frame) where
