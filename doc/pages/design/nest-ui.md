@@ -32,14 +32,18 @@ filling their whole tile.
   field, empty state, badge, chip and toasts in `gui/widgets/`; the inspector headers and vectors use it.
 - **Ribbon** — ![Done][done]: File screen, Home / View / document tabs, quick access, collapse, one large button
   per group.
-- **Panels** — ![Done][done]: label-left inspector, Hierarchy search / add / icons, Content Browser breadcrumb /
-  search / views / thumbnails, Log chips, empty states, node canvas fixed and themed.
 - **Viewport overlays** — ![Done][done]: tools, playback, display toggles, frame-time chip and axis gizmo float over
   the view; play-colour frame while playing.
+- **Panels** — ![Done][done]: label-left inspector, Hierarchy search / add / icons, Content Browser breadcrumb /
+  search / views / thumbnails, Log chips, empty states, node canvas fixed and themed.
 - **Assistance** — ![Done][done]: command palette on `Ctrl+K` (actions and entities), inline notices for an
   incomplete component, toasts on save, `F1` contextual help.
+- **Polish** — ![Done][done]: the conventions of these steps written down in the [style guide](nest-style-guide.md).
 
 ## Interaction basics
+
+Status after the revamp pull request: DPI scaling and tooltips on the ribbon, the viewport overlays and the icon
+buttons are done; context menus, drag & drop and an adjustable text scale remain.
 
 - Tooltips on every button, field and icon (extends the `fieldTooltip()` helper of v0.1.1 to the whole editor)
 - Context menus on every selectable object: hierarchy entries, Content Browser items, viewport selection, tabs,
@@ -50,6 +54,9 @@ filling their whole tile.
 - Session restore and autosave live in [Foundations](foundations.md), phase D (before the revamp)
 
 ## Visual overhaul
+
+Status after the revamp pull request: theme, icon set and [style guide](nest-style-guide.md) are done; thumbnails
+cover images only, the background rendering of prefabs, scenes, tilesets, meshes and sounds remains.
 
 - Asset thumbnails in the Content Browser and asset fields (textures, prefabs, scenes, tilesets, meshes, sounds),
   rendered in the background and cached

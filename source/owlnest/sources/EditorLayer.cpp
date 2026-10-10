@@ -658,6 +658,9 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 		createProject(*request);
 	//=============================================================
 	m_sceneHierarchy.onImGuiRender();
+	// The last window to appear takes the focus, which picks the tab shown in its group.
+	m_logPanel.onImGuiRender();
+	renderStats(iTimeStep);
 	m_contentBrowser.onImGuiRender();
 	m_parameters.onImGuiRender();
 	m_projectSettings.onImGuiRender();
@@ -672,9 +675,6 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 	if (m_sceneSettings.consumeDirtyFlag()) {
 		syncActiveDocumentPanels();
 	}
-	m_logPanel.onImGuiRender();
-	// After the Content Browser and the Log: the first window submitted to a dock group is its shown tab.
-	renderStats(iTimeStep);
 	m_settingsPanel.onImGuiRender(m_settings, m_actionRegistry);
 	m_helpPanel.onImGuiRender(iTimeStep);
 	m_voxelPalette.onImGuiRender(m_voxelBrush);

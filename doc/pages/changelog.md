@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Owl Nest panels: the inspector puts every label on the left of its field; the Hierarchy gets an Add button, a name search and component icons; the Content Browser gets root chips, a breadcrumb, search, grid / list views, image thumbnails filling their tile and a colour per asset family; the Log filters become chips; empty panels say what to do.
 - `OwlNest --project <dir>` opens a project at start-up.
 - Owl Nest command palette (`Ctrl+K`): a fuzzy search over every editor action, with its shortcut, and over the entities of the active scene to select one.
+- Owl Nest style guide ([design page](design/nest-style-guide.md)): colour tokens, text roles, spacing, icons, the widget to use for each need and the interaction rules.
 - `gui::widgets::notice`: an inline warning in the inspector, shown for an animated sprite without a sprite sheet and a Lua script without a path.
 - Owl Nest inspector: component headers and vector fields use the kit (⋮ menu, reset buttons), and saving a document shows a toast.
 - Owl Nest UI font Inter (Regular, SemiBold) in `engine_assets/fonts/inter/`, text roles `gui::TextStyle` (`UiLayer::pushTextStyle`) and scaling to the primary monitor content scale (`UiLayer::getDpiScale`).

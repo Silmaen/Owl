@@ -19,6 +19,7 @@ OWL_DIAG_POP
 #include <algorithm>
 #include <array>
 #include <cstdint>
+#include <initializer_list>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -50,6 +51,19 @@ auto isInDockSpace(const ImGuiID iDockId, const ImGuiID iDockSpaceId) -> bool {
 		return false;
 	auto* node = ImGui::DockBuilderGetNode(iDockId);
 	return node != nullptr && ImGui::DockNodeGetRootNode(node)->ID == iDockSpaceId;
+}
+
+// DockBuilderDockWindow forgets the tab order; tabs appearing on the same frame are sorted by it.
+void dockInOrder(const std::initializer_list<const char*> iNames, const ImGuiID iNodeId) {
+	short order = 0;
+	for (const auto* name: iNames) {
+		ImGui::DockBuilderDockWindow(name, iNodeId);
+		if (auto* window = ImGui::FindWindowByName(name); window != nullptr)
+			window->DockOrder = order;
+		else if (auto* settings = ImGui::FindWindowSettingsByID(ImHashStr(name)); settings != nullptr)
+			settings->DockOrder = order;
+		++order;
+	}
 }
 
 }// namespace
@@ -91,9 +105,11 @@ void DockLayout::build(const uint32_t iDockSpaceId, const LayoutPreset iPreset,
 	for (const auto* name: {panelWindow::properties, panelWindow::tilePalette, panelWindow::voxelPalette,
 							panelWindow::sceneSettings, panelWindow::help})
 		ImGui::DockBuilderDockWindow(name, properties);
-	for (const auto* name: {panelWindow::contentBrowser, panelWindow::log, panelWindow::stats})
-		ImGui::DockBuilderDockWindow(name, bottom);
+	dockInOrder({panelWindow::contentBrowser, panelWindow::log, panelWindow::stats}, bottom);
 	for (const auto& name: iDocumentWindows) ImGui::DockBuilderDockWindow(name.c_str(), center);
+	// A new tab bar shows its node's saved tab, else the last tab added: the Stats panel.
+	if (auto* bottomNode = ImGui::DockBuilderGetNode(bottom); bottomNode != nullptr)
+		bottomNode->SelectedTabId = ImHashStr("#TAB", 0, ImHashStr(panelWindow::contentBrowser));
 	ImGui::DockBuilderFinish(iDockSpaceId);
 }
 

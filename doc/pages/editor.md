@@ -9,7 +9,8 @@ project management workflow, and playback controls.
 
 Owl Nest is the primary development tool for the Owl engine. It provides a fully
 dockable panel interface built on ImGui and ImGuizmo, allowing developers to compose
-scenes, inspect entities, browse project assets, and test gameplay in real time.
+scenes, inspect entities, browse project assets, and test gameplay in real time. Its colours, fonts, icons and
+widgets follow the [Owl Nest style guide](design/nest-style-guide.md).
 
 The editor ships as two executables:
 

@@ -194,3 +194,19 @@ TEST_F(DockLayoutTest, UpToDateSplitLayoutIsKept) {
 	frame({panelWindow::hierarchy});
 	EXPECT_FALSE(m_rebuilt);
 }
+
+TEST_F(DockLayoutTest, BottomGroupShowsTheContentBrowser) {
+	// Submitted in the reverse order: the tab order and the shown tab must not depend on it.
+	const std::vector<std::string> panels{panelWindow::stats, panelWindow::log, panelWindow::contentBrowser};
+	frame(panels);
+	frame(panels);
+	const auto* bottom = nodeOf(panelWindow::contentBrowser);
+	ASSERT_NE(bottom, nullptr);
+	ASSERT_NE(bottom->TabBar, nullptr);
+	const auto* content = ImGui::FindWindowByName(panelWindow::contentBrowser);
+	ASSERT_NE(content, nullptr);
+	EXPECT_EQ(bottom->TabBar->SelectedTabId, content->TabId);
+	ASSERT_EQ(bottom->TabBar->Tabs.Size, 3);
+	EXPECT_EQ(bottom->TabBar->Tabs[0].Window, content);
+	EXPECT_EQ(bottom->TabBar->Tabs[2].Window, ImGui::FindWindowByName(panelWindow::stats));
+}
