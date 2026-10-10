@@ -9,6 +9,7 @@
 #pragma once
 
 #include "renderer/gpu/Shader.h"
+#include "renderer/utils/shaderFileUtils.h"
 
 #include <cstdint>
 #include <filesystem>
@@ -259,7 +260,7 @@ private:
 	 * @return The SPIR-V of every stage, or nothing when the compilation failed (logged).
 	 */
 	[[nodiscard]] auto compileOrGetOpenGlBinaries(const std::string& iSlangSource) const
-			-> std::optional<std::unordered_map<ShaderType, std::vector<uint32_t>>>;
+			-> std::optional<renderer::utils::LoadedSpirv>;
 
 	/**
 	 * @brief
@@ -268,6 +269,17 @@ private:
 	 * @return The program id, or 0 when a stage fails to compile or the program fails to link (logged).
 	 */
 	[[nodiscard]] auto createProgram(const std::unordered_map<ShaderType, std::vector<uint32_t>>& iSpirv) const
+			-> uint32_t;
+
+	/**
+	 * @brief
+	 *  Create the program, compiling the Slang source again once when the driver (or the GLSL translation) refuses
+	 *  stored SPIR-V.
+	 * @param[in] iSlangSource The Slang shader source code.
+	 * @param[in,out] ioSpirv SPIR-V to use; replaced by the new compilation when it was needed.
+	 * @return The program id, or 0 when no SPIR-V makes a program (logged).
+	 */
+	[[nodiscard]] auto buildProgram(const std::string& iSlangSource, renderer::utils::LoadedSpirv& ioSpirv) const
 			-> uint32_t;
 
 	/// SPIR-V binaries (one entry per shader stage) compiled for the OpenGL backend.

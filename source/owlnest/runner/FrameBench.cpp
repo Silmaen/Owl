@@ -101,6 +101,7 @@ auto makeSeries() -> std::vector<Series> {
 	return {
 			{"cpu_total_ms", [](const S& iS) -> std::optional<double> { return iS.cpuTotalMs; }},
 			{"cpu_begin_frame_ms", [](const S& iS) -> std::optional<double> { return iS.app.beginFrameMs; }},
+			{"cpu_pace_wait_ms", [](const S& iS) -> std::optional<double> { return iS.paceWaitMs; }},
 			{"cpu_scene_update_ms",
 			 [](const S& iS) -> std::optional<double> {
 				 return std::max(0.0, iS.scene.totalMs - iS.scene.scriptsMs - iS.scene.physicsMs - iS.scene.renderMs);
@@ -287,6 +288,7 @@ void FrameBench::onFrameStart() {
 		sample.queueWaitIdles = counters.queueWaitIdles - m_counters.queueWaitIdles;
 		sample.deviceWaitIdles = counters.deviceWaitIdles - m_counters.deviceWaitIdles;
 		sample.fenceWaits = counters.fenceWaits - m_counters.fenceWaits;
+		sample.paceWaitMs = counters.paceWaitMs - m_counters.paceWaitMs;
 		m_current.reset();
 	}
 	m_frameStart = now;

@@ -156,10 +156,10 @@ void Shader::compile(const std::string& iSlangSource) {
 
 	const auto start = std::chrono::steady_clock::now();
 
-	renderer::utils::createCacheDirectoryIfNeeded(getRenderer(), "opengl");
-	if (auto binaries = compileOrGetOpenGlBinaries(iSlangSource); binaries.has_value())
-		m_openGlSpirv = std::move(*binaries);
-	m_programId = createProgram(m_openGlSpirv);
+	if (auto binaries = compileOrGetOpenGlBinaries(iSlangSource); binaries.has_value()) {
+		m_programId = buildProgram(iSlangSource, *binaries);
+		m_openGlSpirv = std::move(binaries->stages);
+	}
 	OWL_CORE_ASSERT(m_programId != 0, std::format("Failed to create shader {}", getName()))
 
 	const auto timer = std::chrono::steady_clock::now() - start;
@@ -174,54 +174,37 @@ auto Shader::recompile(const std::string& iSlangSource) -> bool {
 	auto binaries = compileOrGetOpenGlBinaries(iSlangSource);
 	if (!binaries.has_value())
 		return false;
-	const uint32_t program = createProgram(*binaries);
+	const uint32_t program = buildProgram(iSlangSource, *binaries);
 	if (program == 0)
 		return false;
 	glDeleteProgram(m_programId);
 	m_programId = program;
-	m_openGlSpirv = std::move(*binaries);
+	m_openGlSpirv = std::move(binaries->stages);
 	return true;
 }
 
+auto Shader::buildProgram(const std::string& iSlangSource, renderer::utils::LoadedSpirv& ioSpirv) const -> uint32_t {
+	if (const uint32_t program = createProgram(ioSpirv.stages); program != 0)
+		return program;
+	auto again =
+			renderer::utils::recompileSpirv(iSlangSource, getName(), getRenderer(), /*iForVulkan=*/false,
+											ioSpirv.origin, "the OpenGL driver or the GLSL translation refused it");
+	if (!again.has_value())
+		return 0;
+	ioSpirv = std::move(*again);
+	return createProgram(ioSpirv.stages);
+}
+
 auto Shader::compileOrGetOpenGlBinaries(const std::string& iSlangSource) const
-		-> std::optional<std::unordered_map<ShaderType, std::vector<uint32_t>>> {
+		-> std::optional<renderer::utils::LoadedSpirv> {
 	OWL_PROFILE_FUNCTION()
 
-	std::unordered_map<ShaderType, std::vector<uint32_t>> shaderData;
-	const auto cacheKey =
-			renderer::utils::getShaderCacheKey(iSlangSource, getRenderer() + "/" + getName(), /*iForVulkan=*/false);
-	bool allCached = true;
-	for (const auto stage: {ShaderType::Vertex, ShaderType::Fragment}) {
-		const auto cachedPath = renderer::utils::getShaderCachedPath(getName(), getRenderer(), "opengl", stage);
-		if (!renderer::utils::isShaderCacheValid(cachedPath, cacheKey)) {
-			allCached = false;
-			break;
-		}
-	}
-
-	if (allCached) {
-		for (const auto stage: {ShaderType::Vertex, ShaderType::Fragment}) {
-			const auto cachedPath = renderer::utils::getShaderCachedPath(getName(), getRenderer(), "opengl", stage);
-
-			OWL_CORE_INFO("Using cached OpenGL Shader {}-{}.", getName(), magic_enum::enum_name(stage))
-			shaderData[stage] = renderer::utils::readCachedShader(cachedPath);
-		}
-	} else {
-		OWL_CORE_TRACE("Compiling Slang shader '{}' for OpenGL...", getName())
-		auto compiled = renderer::utils::compileSlangToSpirv(iSlangSource, getName(), false);
-		if (!compiled.success) {
-			OWL_CORE_ERROR("Slang compilation failed for shader '{}'.", getName())
-			return std::nullopt;
-		}
-		shaderData = std::move(compiled.spirvData);
-		for (auto&& [stage, data]: shaderData) {
-			const auto cachedPath = renderer::utils::getShaderCachedPath(getName(), getRenderer(), "opengl", stage);
-			if (!renderer::utils::writeCachedShader(cachedPath, data))
-				OWL_CORE_WARN("Failed to write the compiled shader.")
-			renderer::utils::writeShaderHash(cachedPath, cacheKey);
-		}
-	}
-	for (auto&& [stage, data]: shaderData)
+	auto shaderData =
+			renderer::utils::loadOrCompileSpirv(iSlangSource, getName(), getRenderer(),
+												/*iForVulkan=*/false, {ShaderType::Vertex, ShaderType::Fragment});
+	if (!shaderData.has_value())
+		return std::nullopt;
+	for (auto&& [stage, data]: shaderData->stages)
 		renderer::utils::shaderReflect(getName(), getRenderer(), "opengl", stage, data);
 	return shaderData;
 }

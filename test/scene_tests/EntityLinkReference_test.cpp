@@ -9,7 +9,9 @@
 #include "testHelper.h"
 
 #include <core/Log.h>
+#include <core/YamlNode.h>
 #include <scene/Entity.h>
+#include <scene/EntityLinkMigration.h>
 #include <scene/PrefabSerializer.h>
 #include <scene/Scene.h>
 #include <scene/SceneSerializer.h>
@@ -78,6 +80,24 @@ TEST_F(EntityLinkReferenceTest, VersionOneLinksGetTheUuidOfTheirTarget) {
 	EXPECT_NE(text.find(std::format("FormatVersion: {}", SceneSerializer::format().currentVersion())),
 			  std::string::npos);
 	EXPECT_EQ(SceneSerializer::format().currentVersion(), 2u);
+}
+
+TEST_F(EntityLinkReferenceTest, OnlyNameOnlyLinksNeedTheMigration) {
+	const auto canRead = [](const std::string& iYaml, const core::DocumentFormat& iFormat) -> bool {
+		const core::YamlDocument document{iYaml};
+		return canReadWithoutMigration(document.getRoot(), iFormat);
+	};
+	const auto& format = SceneSerializer::format();
+	EXPECT_TRUE(canRead("Scene: a\nFormatVersion: 2\n", format));
+	EXPECT_FALSE(canRead("Scene: a\nFormatVersion: 1\n", format));
+	EXPECT_FALSE(canRead("Scene: a\nFormatVersion: 3\n", format));
+	EXPECT_FALSE(canRead("Scene: a\nFormatVersion: x\n", format));
+	EXPECT_TRUE(canRead("Scene: a\nEntities:\n  - Entity: 1\n    Tag:\n      tag: A\n", format));
+	EXPECT_TRUE(canRead("Scene: a\nEntities:\n  - Entity: 1\n    EntityLink:\n      linkedEntityId: 4\n"
+						"      linkedEntityName: B\n",
+						format));
+	EXPECT_FALSE(canRead("Scene: a\nEntities:\n  - Entity: 1\n    EntityLink:\n      linkedEntityName: B\n", format));
+	EXPECT_TRUE(canRead("Prefab: p\nEntities:\n  - 5\n", PrefabSerializer::format()));
 }
 
 TEST_F(EntityLinkReferenceTest, SavingBindsNameOnlyLinks) {

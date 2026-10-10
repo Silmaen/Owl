@@ -21,6 +21,7 @@
 #include <algorithm>
 #include <array>
 #include <bit>
+#include <chrono>
 
 namespace owl::renderer::gpu::vulkan::internal {
 
@@ -449,6 +450,9 @@ void VulkanHandler::clear() {
 		endBatch();
 		beginBatch();
 	}
+	// Nothing drawn yet in a pass that cleared on load: a second clear would cost a full-screen pass (Intel).
+	if (m_passCleared && m_passClearColor == m_clearColor)
+		return;
 	std::array<VkClearAttachment, 2> attachments{};
 	uint32_t count = 0;
 	attachments[count++] = {.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
@@ -475,6 +479,7 @@ void VulkanHandler::drawData(const uint32_t iVertexCount, const bool iIndexed, c
 		beginBatch();
 	if (!inBatch)
 		return;
+	m_passCleared = false;
 	auto* const cmd = m_frames[m_frameSlot].commandBuffer;
 	if (iIndexed)
 		vkCmdDrawIndexed(cmd, iVertexCount, iInstanceCount, 0, 0, 0);
@@ -675,13 +680,18 @@ auto VulkanHandler::startFrame() -> bool {
 		return true;
 	const auto& core = VulkanCore::get();
 	auto& frame = m_frames[m_frameSlot];
+	const auto waitStart = std::chrono::steady_clock::now();
 	vkWaitForFences(core.getLogicalDevice(), 1, &frame.fence, VK_TRUE, UINT64_MAX);
+	auto waited = std::chrono::steady_clock::now() - waitStart;
 	m_completedSerial = std::max(m_completedSerial, frame.serial);
 	runReleases();
 	m_ring.beginFrame(m_frameSlot);
 	frame.serial = ++m_frameSerial;
 	FrameProfiler::get().onBeginFrame();
+	const auto acquireStart = std::chrono::steady_clock::now();
 	acquireImage();
+	waited += std::chrono::steady_clock::now() - acquireStart;
+	FrameProfiler::get().addPaceWait(std::chrono::duration<double, std::milli>(waited).count());
 	if (m_state != State::Running || !beginCommandBuffer())
 		return false;
 	inFrame = true;
@@ -791,6 +801,7 @@ void VulkanHandler::nextSubpass(bool internal) {
 		OWL_CORE_WARN("Vulkan next subpass called outside of batch.")
 		return;
 	}
+	m_passCleared = false;
 	if (internal) {
 		vkCmdNextSubpass(m_frames[m_frameSlot].commandBuffer, VK_SUBPASS_CONTENTS_INLINE);
 	} else {
@@ -799,6 +810,9 @@ void VulkanHandler::nextSubpass(bool internal) {
 }
 
 void VulkanHandler::beginBatch() {
+	// A batch draws in the main subpass: an open pass left in the overlay subpass is closed first.
+	if (inBatch && m_currentFramebuffer->getCurrentSubpass() != 0)
+		endBatch();
 	if (inBatch || m_state != State::Running)
 		return;
 	if (!m_recording && !startFrame())
@@ -811,6 +825,9 @@ void VulkanHandler::beginBatch() {
 	auto& clearValues = m_currentFramebuffer->getClearValues();
 	if (m_currentFramebuffer->isMainTarget() && !clearValues.empty())
 		clearValues[0].color = {.float32 = {m_clearColor.r(), m_clearColor.g(), m_clearColor.b(), m_clearColor.a()}};
+	// The first pass of the frame on the swapchain clears it through its load operations.
+	m_passCleared = m_currentFramebuffer->isMainTarget() && m_currentFramebuffer->isFirstPassOf(m_frameSerial);
+	m_passClearColor = m_clearColor;
 	const VkRenderPassBeginInfo renderPassInfo{
 			.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
 			.pNext = nullptr,
@@ -885,6 +902,7 @@ void VulkanHandler::bindPipeline(const int32_t iId, const gpu::PipelineState& iS
 	auto* const cmd = getCurrentCommandBuffer();
 	if (cmd == nullptr)
 		return;
+	m_passCleared = false;
 	vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeLines[iId].pipeLine);
 	vkCmdSetDepthTestEnable(cmd, iState.depthTest ? VK_TRUE : VK_FALSE);
 	vkCmdSetDepthWriteEnable(cmd, iState.depthTest && iState.depthWrite ? VK_TRUE : VK_FALSE);
@@ -905,13 +923,13 @@ void VulkanHandler::setResize() {
 }
 
 void VulkanHandler::bindFramebuffer(Framebuffer* iFrameBuffer) {
-	if (inBatch)
+	if (inBatch && iFrameBuffer != m_currentFramebuffer)
 		endBatch();
 	m_currentFramebuffer = iFrameBuffer;
 }
 
 void VulkanHandler::unbindFramebuffer() {
-	if (inBatch)
+	if (inBatch && !isMainFramebuffer())
 		endBatch();
 	m_currentFramebuffer = m_swapChain.get();
 }

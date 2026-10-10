@@ -67,6 +67,8 @@ struct OWL_API RenderCounters {
 	uint64_t deviceWaitIdles{0};
 	/// Blocking fence waits besides the frame pacing: one-shot submissions and mid-frame read-backs (Vulkan only).
 	uint64_t fenceWaits{0};
+	/// CPU time blocked by the frame pacing, in milliseconds: frame fence and `vkAcquireNextImageKHR` (Vulkan only).
+	double paceWaitMs{0.0};
 };
 
 /**

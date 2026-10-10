@@ -315,3 +315,47 @@ TEST_F(LuaSandbox, instanceDisabledOnMemoryQuota) {
 	inst.onUpdate(0.016f);
 	EXPECT_TRUE(inst.isDisabled());
 }
+
+TEST_F(LuaSandbox, hostPointerAndDeltaTimeReachCoroutines) {
+	int host = 0;
+	LuaEngine::setHostPointer(engine.getState(), &host);
+	registerBindings(engine.getState());
+	engine.setDeltaTime(0.25);
+	ASSERT_TRUE(run("co = coroutine.create(function() end)\n"
+					"function read() d = time.delta() coroutine.wrap(function() d2 = time.delta() end)() end\n"));
+	EXPECT_TRUE(engine.callFunction("read"));
+	EXPECT_FLOAT_EQ(engine.getGlobalFloat("d").value_or(0.f), 0.25f);
+	EXPECT_FLOAT_EQ(engine.getGlobalFloat("d2").value_or(0.f), 0.25f);
+	lua_State* state = engine.getState();
+	lua_getglobal(state, "co");
+	lua_State* coroutine = lua_tothread(state, -1);
+	ASSERT_NE(coroutine, nullptr);
+	EXPECT_EQ(LuaEngine::getHostPointer(coroutine), &host);
+	lua_pop(state, 1);
+}
+
+TEST_F(LuaSandbox, callbackRedefinedAfterACallIsTheOneCalled) {
+	ASSERT_TRUE(run("function f() n = 1 end"));
+	EXPECT_TRUE(engine.callFunction("f"));
+	ASSERT_TRUE(run("function f() n = 2 end"));
+	EXPECT_TRUE(engine.callFunction("f"));
+	EXPECT_EQ(engine.getGlobalInt("n"), 2);
+	ASSERT_TRUE(run("f = nil"));
+	EXPECT_FALSE(engine.callFunction("f"));
+	EXPECT_EQ(engine.getLastStatus(), LuaStatus::Missing);
+}
+
+TEST_F(LuaSandbox, manyCallbackNamesStayDistinct) {
+	ASSERT_TRUE(run("calls = 0\nfor i = 1, 40 do _G['f' .. i] = function() calls = calls + i end end"));
+	for (int i = 1; i <= 40; ++i) EXPECT_TRUE(engine.callFunction(std::format("f{}", i)));
+	EXPECT_EQ(engine.getGlobalInt("calls"), 820);
+}
+
+TEST_F(LuaSandbox, wrapRejectsANonFunction) {
+	ASSERT_TRUE(run("ok = not pcall(coroutine.wrap, 42)\n"
+					"local g = coroutine.wrap(function() end)\n"
+					"g()\n"
+					"dead = not pcall(g)\n"));
+	EXPECT_TRUE(flag("ok"));
+	EXPECT_TRUE(flag("dead"));
+}

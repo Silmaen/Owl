@@ -156,7 +156,7 @@ auto SaveManager::load(const uint32_t iSlot, const shared<Scene>& iScene) -> Loa
 		// Load GameState.
 		if (root["GameState"]) {
 			const core::Serializer gsNode;
-			gsNode.getImpl()->node = root;
+			gsNode.getImpl()->document = root;
 			iScene->getGameState().deserialize(gsNode);
 		}
 

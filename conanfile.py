@@ -66,6 +66,8 @@ class OwlEngineConan(ConanFile):
         # plutovg (lunasvg's) drops dllimport only with PLUTOVG_BUILD_STATIC, which its recipe does not export.
         "plutovg/*:shared": True,
         "glfw/*:shared": True,
+        # SSE2 solver by default: virtualised agents and older CPUs have no AVX2 (opt in with -o "box2d/*:avx2=True").
+        "box2d/*:avx2": False,
         "openal-soft/*:shared": True,
         "libsndfile/*:shared": True,
         "libsndfile/*:programs": False,
@@ -94,6 +96,7 @@ class OwlEngineConan(ConanFile):
         "!engine_assets/help/*",
         "source/CMakeLists.txt",
         "source/owl/*",
+        "source/tools/*",
     )
 
     def set_version(self):
@@ -120,11 +123,12 @@ class OwlEngineConan(ConanFile):
         self.requires("tinygltf/2.9.7")
         self.requires("tinyobjloader/2.0.0-rc13")
         self.requires("ufbx/0.23.1")
+        self.requires("rapidyaml/0.15.2")
         self.requires("yaml-cpp/0.9.0")
         self.requires("zstd/1.5.7")
         if self.options.render:
             self.requires("glad/2.0.8")
-            self.requires("glfw/3.4")
+            self.requires("glfw/3.5.1")
             self.requires("lunasvg/3.5.0")
             self.requires("slang/2026.19")
             self.requires("spirv-cross/1.4.357.0")
@@ -148,6 +152,10 @@ class OwlEngineConan(ConanFile):
         if self.options.nest:
             self.requires("imgui-color-text-edit/cci.20260417")
             self.requires("md4c/0.5.2")
+        # Transitive versions newer than the ones their ConanCenter recipes pin.
+        self.requires("brotli/1.2.0", override=True)
+        self.requires("flac/1.5.0", override=True)
+        self.requires("plutovg/1.3.3", override=True)
 
     def build_requirements(self):
         if self.options.testing:
@@ -167,6 +175,8 @@ class OwlEngineConan(ConanFile):
         tc.cache_variables["OWL_USE_CCACHE"] = False
         for module in ("render", "physics", "audio", "script", "gui"):
             tc.cache_variables[f"OWL_MODULE_{module.upper()}"] = bool(self.options.get_safe(module))
+        if self.options.physics:
+            tc.cache_variables["OWL_PHYSICS_AVX2"] = bool(self.dependencies["box2d"].options.get_safe("avx2"))
         tc.generate()
 
     def build(self):

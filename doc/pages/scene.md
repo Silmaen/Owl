@@ -187,10 +187,10 @@ Serialized directly as the entity key in YAML (`Entity: <uuid>`).
 | `transform` | `math::Transform` | `Transform` | Local position, rotation, and scale |
 
 Stores the **local** transform relative to the parent. World transform is computed
-on demand via `Scene::getWorldTransform(entity)`; within a single update tick the
-result is memoised in a per-pass cache (`m_worldTransformCache`, armed after the
-mutating phases) so the same matrix isn't re-walked for every sprite / circle /
-sound / physics read.
+on demand via `Scene::getWorldTransform(entity)`, through a persistent per-entity world
+cache (see [Transform Hierarchy](#transform-hierarchy)): an entity whose local transform and ancestors did not
+change is not recomposed, and within an update tick the matrices checked by
+`prepareWorldTransforms()` are reused without walking the chain again.
 
 #### Visibility
 
@@ -522,18 +522,23 @@ Root entities (`parentId == 0`) have local = world (no overhead). There is no de
 limit: `getWorldTransform()` walks the whole chain, and a chain longer than the number
 of entities (a loop in corrupted data) is reported and falls back to the local transform.
 
-Once per frame, `Scene::prepareWorldTransforms()` composes every world matrix in a
-single pre-order pass (parents before children, each matrix computed once). The result
-(`getWorldMatrices()`, indexed by `getWorldIndex()`) feeds the per-pass cache and is
-uploaded by `Renderer2D` as its `sceneWorlds[]` buffer; the GPU never recomposes the
-hierarchy.
+World matrices live in a dense per-entity cache that survives frames. It needs no write hook:
+an entry is reused while the local transform it was composed from, its parent and the parent's
+world are unchanged, which the walk up the chain checks with a few compares per level; a changed
+entry is recomposed (no matrix decomposition) and its descendants follow. Writing
+`Transform` directly, reparenting or destroying an entity is therefore always seen.
+
+Once per frame, `Scene::prepareWorldTransforms()` checks every entity once (parents before
+children, only changed matrices recomposed) and computes the inherited visibility in the same
+pass. The result (`getWorldMatrices()`, indexed by `getWorldIndex()`) is uploaded by `Renderer2D`
+as its `sceneWorlds[]` buffer; the GPU never recomposes the hierarchy.
 
 ### Visibility Inheritance
 
 If any ancestor is hidden, the entity is effectively hidden.
 `Scene::isEffectivelyVisible()` walks the parent chain to check, at any depth. During an
-update tick the result is memoised per (entity, mode) in `m_visibilityCache` for the
-entity and every ancestor visited, so a deep chain costs one walk in total, not one per
+update tick it reads the visibility that `prepareWorldTransforms()` computed for both modes
+when the tick armed its caches, so a deep chain costs one walk in total, not one per
 entity. Outside the
 tick (tests, inspector inspection) the cache is bypassed, so callers always
 see fresh `Visibility` state.
@@ -662,11 +667,16 @@ A `core::DocumentFormat` is a name plus an ordered list of `core::MigrationStep`
 `migrations.size() + 1` and adding a migration is what bumps the version. To change a format:
 
 1. Write a step `auto migrateV1toV2(const core::Serializer& ioDocument) -> bool` in the format's
-   `.cpp`. It edits the YAML root in place (`ioDocument.getImpl()->node`), logs and returns false
+   `.cpp`. It edits the YAML root in place (`ioDocument.getImpl()->document`), logs and returns false
    when it cannot convert, and never touches `FormatVersion`.
 2. Append it to the format's migration array (`g_sceneMigrations` in `SceneSerializer.cpp`, ...).
 3. Change the writer to the new layout; it stamps the new version through `emitFormatVersion`.
 4. Keep an old-version file as a test fixture and check it loads through the migration.
+
+Scenes, prefabs and entity snapshots are read with rapidyaml (`core::YamlNode`, the reading rules of yaml-cpp):
+a document at the current version, or a format 1 one without a name-only `EntityLink`, is read directly; any other
+goes through the yaml-cpp migration chain (`upgradeDocumentText`) first. A new scene or prefab step must update that
+shortcut (`canReadWithoutMigration`). Components read their value from `getImpl()->node`; writing stays on yaml-cpp.
 
 ### Atomic writes
 
@@ -717,10 +727,10 @@ values across the multiple component-group scans of a render frame:
 
 | Cache                            | Key                            | Gated by                       | Cleared at      |
 |----------------------------------|--------------------------------|--------------------------------|-----------------|
-| `m_visibilityCache`              | `(entity, editorMode)`         | `m_inUpdatePass`               | After mutators  |
+| Visibility in `m_worldNodes`     | entity index, both modes       | `m_inUpdatePass`               | After mutators  |
 | `m_layerContentCacheFirst`       | layer name                     | `m_inUpdatePass`               | After mutators  |
 | `m_layerContentCacheNotFirst`    | layer name                     | `m_inUpdatePass`               | After mutators  |
-| `m_worldTransformCache`          | entity                         | `m_worldTransformCacheActive`  | After mutators  |
+| World matrices in `m_worldNodes` | entity index                   | checked per read, trusted while `m_worldTransformCacheActive` | Never (recomposed on change) |
 | `m_tilemapAssetsDirty` flag      | scene-wide                     | (own gate)                     | After resolve   |
 
 In `onUpdateRuntime` every cache is armed only once the mutating phases are done —

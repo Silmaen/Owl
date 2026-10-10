@@ -16,18 +16,24 @@
 #include "core/Serializer.h"
 #include "core/SerializerImpl.h"
 #include "platform/AtomicFile.h"
+#include "scene/ComponentRegistry.h"
 #include "scene/Entity.h"
 #include "scene/component/Hierarchy.h"
 #include "scene/component/PrefabLink.h"
 #include "scene/component/componentsSerialization.h"
 
+#include <cstddef>
 #include <cstdint>
 #include <exception>
 #include <format>
 #include <fstream>
 #include <functional>
+#include <iterator>
 #include <queue>
 #include <ranges>
+#include <string>
+#include <unordered_map>
+#include <vector>
 
 namespace owl::scene {
 
@@ -37,15 +43,26 @@ namespace {
 constexpr std::array<core::MigrationStep, 1> g_prefabMigrations{&bindEntityLinksByName};
 constexpr core::DocumentFormat g_prefabFormat{.name = "Prefab", .migrations = g_prefabMigrations};
 
-auto loadPrefabDocument(const std::filesystem::path& iFilepath) -> std::optional<YAML::Node> {
-	auto root = YAML::LoadFile(iFilepath.string());
-	if (!root.IsMap() || !root["Prefab"]) {
+auto readText(const std::filesystem::path& iFilepath) -> std::string {
+	std::ifstream file(iFilepath, std::ios::binary);
+	if (!file.is_open())
+		throw core::YamlError(std::format("Prefab: Cannot open '{}'.", iFilepath.string()));
+	return {std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
+}
+
+// Throws core::YamlError when the file cannot be read or parsed.
+auto loadPrefabDocument(const std::filesystem::path& iFilepath) -> shared<const core::YamlDocument> {
+	auto text = readText(iFilepath);
+	auto document = mkShared<const core::YamlDocument>(text, iFilepath.string());
+	if (const auto root = document->getRoot(); !root.isMap() || !root["Prefab"]) {
 		OWL_CORE_ERROR("Prefab: '{}' is not a prefab file (missing 'Prefab' key).", iFilepath.string())
-		return std::nullopt;
+		return nullptr;
 	}
-	if (!upgradeYamlDocument(g_prefabFormat, root, iFilepath.string()))
-		return std::nullopt;
-	return root;
+	if (canReadWithoutMigration(document->getRoot(), g_prefabFormat))
+		return document;
+	if (!upgradeDocumentText(g_prefabFormat, text, iFilepath.string()))
+		return nullptr;
+	return mkShared<const core::YamlDocument>(text, iFilepath.string());
 }
 
 void serializeEntity(const core::Serializer& iOut, const Entity& iEntity) {
@@ -68,27 +85,53 @@ auto collectSubtreeBFS(const Entity& iRoot, const Scene& iScene) -> std::vector<
 	return result;
 }
 
-void deserializeEntity(const shared<Scene>& ioScene, const core::Serializer& iNode) {
-	const auto uuid = iNode.getImpl()->node["Entity"].as<uint64_t>();
+void deserializeEntity(const shared<Scene>& ioScene, const core::YamlNode& iNode, const core::Serializer& iScratch) {
+	const auto uuid = iNode["Entity"].as<uint64_t>();
 	std::string name;
-	if (auto tagComponent = iNode.getImpl()->node["Tag"]; tagComponent)
+	if (const auto tagComponent = iNode["Tag"]; tagComponent)
 		name = tagComponent["tag"].as<std::string>();
-
-	const core::Serializer sNode;
 	Entity entity = ioScene->createEntityWithUUID(core::UUID{uuid}, name);
-	if (sNode.getImpl()->node.reset(iNode.getImpl()->node["Transform"]); sNode.getImpl()->node) {
-		auto& comp = entity.getComponent<component::Transform>();
-		comp.deserialize(sNode);
+	component::deserializeComponents(entity, iNode, iScratch, true);
+}
+
+// Loads the entities of a prefab into a new scene, with their canonical UUIDs.
+auto loadEntities(const core::YamlNode& iEntities) -> shared<Scene> {
+	auto scene = mkShared<Scene>();
+	const core::Serializer scratch;
+	for (const auto entityNode: iEntities) deserializeEntity(scene, entityNode, scratch);
+	scene->rebuildHierarchyChildren();
+	return scene;
+}
+
+void copyOptionalComponents(Entity& ioDst, const Entity& iSrc) {
+	for (const auto& desc: ComponentRegistry::getAll()) {
+		if (!desc.optional || !desc.has(iSrc))
+			continue;
+		if (desc.copiable) {
+			desc.copy(ioDst, iSrc);
+			continue;
+		}
+		// A component that refuses copies still goes through its serialization, as when the prefab is loaded.
+		const core::Serializer sOut;
+		sOut.getImpl()->emitter << YAML::BeginMap;
+		desc.serialize(iSrc, sOut);
+		sOut.getImpl()->emitter << YAML::EndMap;
+		const core::YamlDocument document{sOut.getImpl()->emitter.c_str()};
+		const core::Serializer sIn;
+		sIn.getImpl()->node = document.getRoot()[desc.key];
+		desc.deserialize(ioDst, sIn);
 	}
-	if (sNode.getImpl()->node.reset(iNode.getImpl()->node["Visibility"]); sNode.getImpl()->node) {
-		auto& comp = entity.getComponent<component::Visibility>();
-		comp.deserialize(sNode);
+}
+
+void linkInstanceChildren(const std::vector<Entity>& iInstance) {
+	std::unordered_map<core::UUID, Entity> byUuid;
+	byUuid.reserve(iInstance.size());
+	for (const auto& entity: iInstance) byUuid.emplace(entity.getUUID(), entity);
+	for (const auto& entity: iInstance) {
+		const auto parentId = entity.getComponent<component::Hierarchy>().parentId;
+		if (const auto parent = byUuid.find(parentId); parent != byUuid.end())
+			parent->second.getComponent<component::Hierarchy>().childrenIds.push_back(entity.getUUID());
 	}
-	if (sNode.getImpl()->node.reset(iNode.getImpl()->node["Hierarchy"]); sNode.getImpl()->node) {
-		auto& comp = entity.getComponent<component::Hierarchy>();
-		comp.deserialize(sNode);
-	}
-	component::deserializeOptionalComponents(entity, iNode);
 }
 
 }// namespace
@@ -129,25 +172,16 @@ auto PrefabSerializer::instantiate(const std::filesystem::path& iFilepath, const
 			OWL_CORE_ERROR("Prefab: Unable to instantiate '{}'.", iFilepath.string())
 			return {};
 		}
-		const core::Serializer sData;
-		sData.getImpl()->node.reset(*document);
-		const uint32_t version = sData.getImpl()->node["Version"] ? sData.getImpl()->node["Version"].as<uint32_t>() : 1;
-
-		const auto entitiesNode = sData.getImpl()->node["Entities"];
+		const auto root = document->getRoot();
+		const uint32_t version = root["Version"] ? root["Version"].as<uint32_t>() : 1;
+		const auto entitiesNode = root["Entities"];
 		if (!entitiesNode) {
 			OWL_CORE_ERROR("Prefab {} has no entities.", iFilepath.string())
 			return {};
 		}
 
 		// Phase 1: Load all entities into a temporary scene with their canonical UUIDs.
-		auto tempScene = mkShared<Scene>();
-		for (auto entityNode: entitiesNode) {
-			const core::Serializer sEntity;
-			sEntity.getImpl()->node.reset(entityNode);
-
-			deserializeEntity(tempScene, sEntity);
-		}
-		tempScene->rebuildHierarchyChildren();
+		const auto tempScene = loadEntities(entitiesNode);
 
 		// Phase 2: Collect canonical entities in BFS order.
 		const auto tempEntities = tempScene->getAllEntities();
@@ -167,19 +201,20 @@ auto PrefabSerializer::instantiate(const std::filesystem::path& iFilepath, const
 
 		std::unordered_map<uint64_t, uint64_t> uuidRemap;
 		std::vector<component::PrefabLink::UuidMapEntry> uuidMapping;
+		std::vector<Entity> instanceEntities;
+		instanceEntities.reserve(orderedEntities.size());
 		for (const auto& srcEntity: orderedEntities) {
 			const auto canonicalUuid = static_cast<uint64_t>(srcEntity.getUUID());
 			const auto newEntity = ioScene->createEntity(srcEntity.getName());
 			const auto instanceUuid = static_cast<uint64_t>(newEntity.getUUID());
 			uuidRemap[canonicalUuid] = instanceUuid;
 			uuidMapping.push_back({.instanceUuid = instanceUuid, .canonicalUuid = canonicalUuid});
+			instanceEntities.push_back(newEntity);
 		}
 		// Phase 4: Copy components from temp entities to new entities and remap hierarchy UUIDs.
-		for (const auto& srcEntity: orderedEntities) {
-			const auto canonicalUuid = static_cast<uint64_t>(srcEntity.getUUID());
-			auto dstEntity = ioScene->findEntityByUUID(core::UUID{uuidRemap[canonicalUuid]});
-			if (!dstEntity)
-				continue;
+		for (size_t index = 0; index < orderedEntities.size(); ++index) {
+			const auto& srcEntity = orderedEntities[index];
+			auto dstEntity = instanceEntities[index];
 			// Copy transform.
 			dstEntity.getComponent<component::Transform>().transform =
 					srcEntity.getComponent<component::Transform>().transform;
@@ -193,24 +228,17 @@ auto PrefabSerializer::instantiate(const std::filesystem::path& iFilepath, const
 				if (const auto it = uuidRemap.find(static_cast<uint64_t>(srcHier.parentId)); it != uuidRemap.end())
 					dstHier.parentId = core::UUID{it->second};
 			}
-			const auto entityYaml = SceneSerializer::serializeEntityToString(srcEntity);
-			const core::Serializer sEntity;
-			sEntity.getImpl()->node.reset(YAML::Load(entityYaml));
-
-			component::deserializeOptionalComponents(dstEntity, sEntity);
+			copyOptionalComponents(dstEntity, srcEntity);
 		}
 
-		// Phase 5: Rebuild hierarchy in the target scene, relink the links between members of the instance.
-		ioScene->rebuildHierarchyChildren();
+		// Phase 5: Link the instance children (the instance root stays a scene root), relink the links between members.
+		linkInstanceChildren(instanceEntities);
 		std::unordered_map<core::UUID, core::UUID> linkRemap;
-		std::vector<Entity> instanceEntities;
-		for (const auto& [canonical, instance]: uuidRemap) {
+		for (const auto& [canonical, instance]: uuidRemap)
 			linkRemap.emplace(core::UUID{canonical}, core::UUID{instance});
-			instanceEntities.push_back(ioScene->findEntityByUUID(core::UUID{instance}));
-		}
 		Scene::remapEntityLinks(instanceEntities, linkRemap);
 		// Phase 6: Add PrefabLink to the root entity.
-		auto instanceRoot = ioScene->findEntityByUUID(core::UUID{uuidRemap[static_cast<uint64_t>(tempRoot.getUUID())]});
+		auto instanceRoot = instanceEntities.front();
 		if (instanceRoot) {
 			auto& prefabLink = instanceRoot.addComponent<component::PrefabLink>();
 			prefabLink.prefabAssetPath =
@@ -232,7 +260,7 @@ auto PrefabSerializer::readInfo(const std::filesystem::path& iFilepath) -> std::
 			OWL_CORE_WARN("Prefab: Cannot read info from '{}'.", iFilepath.string())
 			return std::nullopt;
 		}
-		const auto& data = *document;
+		const auto data = document->getRoot();
 		PrefabInfo info;
 		info.name = data["Prefab"].as<std::string>();
 		info.version = data["Version"] ? data["Version"].as<uint32_t>() : 1;
@@ -261,22 +289,14 @@ auto loadPrefabToTempScene(const std::filesystem::path& iFilepath) -> std::optio
 			OWL_CORE_WARN("Prefab: Cannot load '{}'.", iFilepath.string())
 			return std::nullopt;
 		}
-		const core::Serializer sData;
-		sData.getImpl()->node.reset(*document);
-		const uint32_t version = sData.getImpl()->node["Version"] ? sData.getImpl()->node["Version"].as<uint32_t>() : 1;
-		const auto entitiesNode = sData.getImpl()->node["Entities"];
+		const auto root = document->getRoot();
+		const uint32_t version = root["Version"] ? root["Version"].as<uint32_t>() : 1;
+		const auto entitiesNode = root["Entities"];
 		if (!entitiesNode) {
 			OWL_CORE_WARN("Prefab: '{}' has no 'Entities' section.", iFilepath.string())
 			return std::nullopt;
 		}
-		auto tempScene = mkShared<Scene>();
-		for (auto entityNode: entitiesNode) {
-			const core::Serializer sEntity;
-			sEntity.getImpl()->node.reset(entityNode);
-			deserializeEntity(tempScene, sEntity);
-		}
-		tempScene->rebuildHierarchyChildren();
-		return LoadedPrefab{.scene = std::move(tempScene), .version = version};
+		return LoadedPrefab{.scene = loadEntities(entitiesNode), .version = version};
 	} catch (const std::exception& e) {
 		OWL_CORE_ERROR("Prefab: failed to load '{}': {}.", iFilepath.string(), e.what())
 		return std::nullopt;

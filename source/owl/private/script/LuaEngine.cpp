@@ -12,16 +12,21 @@
 
 #include "core/external/lua.h"
 
+#include <algorithm>
 #include <atomic>
 #include <condition_variable>
+#include <cstddef>
 #include <cstdlib>
 #include <exception>
 #include <format>
+#include <functional>
 #include <mutex>
 #include <stop_token>
 #include <string>
 #include <string_view>
 #include <thread>
+#include <utility>
+#include <vector>
 
 #ifdef OWL_PLATFORM_LINUX
 #include <csignal>
@@ -39,7 +44,11 @@ struct LuaEngine::Quota {
 	bool timeExceeded = false;
 	LuaStatus lastStatus = LuaStatus::Ok;
 	std::string warning;
-	std::string errorContext;
+	std::function<std::string()> errorContext;
+	void* hostPointer = nullptr;
+	double deltaTime = 0.0;
+	// Registry references of the interned names of the functions the host calls, to skip hashing them per call.
+	std::vector<std::pair<std::string, int>> nameRefs;
 };
 
 auto fixHint(const LuaStatus iStatus) -> std::string_view {
@@ -65,6 +74,12 @@ auto fixHint(const LuaStatus iStatus) -> std::string_view {
 namespace {
 
 constexpr uint32_t g_WatchdogTickMs = 10;
+// Enough for the lifecycle callbacks and a few event callbacks or properties.
+constexpr size_t g_MaxCachedNames = 16;
+
+auto errorContextOf(const LuaEngine::Quota& iQuota) -> std::string {
+	return iQuota.errorContext ? std::format(" of {}", iQuota.errorContext()) : std::string{};
+}
 
 auto quotaOf(lua_State* iState) -> LuaEngine::Quota* {
 	void* userData = nullptr;
@@ -296,16 +311,30 @@ auto sandboxResume(lua_State* iState) -> int {
 	return lua_gettop(iState);
 }
 
-constexpr const char* g_WrapSource = "local create, resume, pack, unpack, err = coroutine.create, coroutine.resume, "
-									 "table.pack, table.unpack, error\n"
-									 "coroutine.wrap = function(f)\n"
-									 "  local co = create(f)\n"
-									 "  return function(...)\n"
-									 "    local r = pack(resume(co, ...))\n"
-									 "    if not r[1] then err(r[2], 0) end\n"
-									 "    return unpack(r, 2, r.n)\n"
-									 "  end\n"
-									 "end\n";
+// Upvalues: the sandboxed coroutine.resume and the coroutine.
+auto wrappedResume(lua_State* iState) -> int {
+	const int argCount = lua_gettop(iState);
+	lua_pushvalue(iState, lua_upvalueindex(1));
+	lua_pushvalue(iState, lua_upvalueindex(2));
+	lua_rotate(iState, 1, 2);
+	lua_call(iState, argCount + 1, LUA_MULTRET);
+	if (lua_toboolean(iState, 1) == 0) {
+		lua_settop(iState, 2);
+		return lua_error(iState);
+	}
+	return lua_gettop(iState) - 1;
+}
+
+// coroutine.wrap on top of the sandboxed coroutine.resume (upvalue), so that the time budget follows the coroutine.
+auto sandboxWrap(lua_State* iState) -> int {
+	luaL_checktype(iState, 1, LUA_TFUNCTION);
+	lua_pushvalue(iState, lua_upvalueindex(1));
+	lua_State* coroutine = lua_newthread(iState);
+	lua_pushvalue(iState, 1);
+	lua_xmove(iState, coroutine, 1);
+	lua_pushcclosure(iState, wrappedResume, 2);
+	return 1;
+}
 
 auto panicHandler(lua_State* iState) -> int {
 	const char* message = lua_tostring(iState, -1);
@@ -339,25 +368,8 @@ auto messageHandler(lua_State* iState) -> int {
 }
 
 auto guardedBinding(lua_State* iState) -> int {
-	auto* quota = quotaOf(iState);
-	const bool enforced = quota->enforced;
-	quota->enforced = false;
-	const auto function = lua_tocfunction(iState, lua_upvalueindex(1));
-	bool failed = false;
-	int results = 0;
-	try {
-		results = function(iState);
-	} catch (const std::exception& exception) {
-		lua_pushfstring(iState, "C++ exception: %s", exception.what());
-		failed = true;
-	} catch (...) {
-		lua_pushliteral(iState, "unknown C++ exception");
-		failed = true;
-	}
-	quota->enforced = enforced;
-	return failed ? lua_error(iState) : results;
+	return LuaEngine::callGuarded(iState, lua_tocfunction(iState, lua_upvalueindex(1)));
 }
-
 // Every place where a script can catch an error restores the memory enforcement a binding lifted.
 auto restoringCatcher(lua_State* iState) -> int {
 	auto* quota = quotaOf(iState);
@@ -445,13 +457,10 @@ void openSandboxedLibraries(lua_State* iState) {
 	lua_getfield(iState, -1, LUA_COLIBNAME);
 	wrapBaseFunction(iState, "resume", sandboxResume);
 	wrapBaseFunction(iState, "close", restoringCatcher);
+	lua_getfield(iState, -1, "resume");
+	lua_pushcclosure(iState, sandboxWrap, 1);
+	lua_setfield(iState, -2, "wrap");
 	lua_pop(iState, 2);
-	if (luaL_loadbufferx(iState, g_WrapSource, std::char_traits<char>::length(g_WrapSource), "=sandbox", "t") !=
-				LUA_OK ||
-		lua_pcall(iState, 0, 0, 0) != LUA_OK) {
-		OWL_CORE_ERROR("LuaEngine: Failed to install coroutine.wrap: {}.", lua_tostring(iState, -1))
-		lua_pop(iState, 1);
-	}
 
 	// Lock the string metatable: the script cannot reach it through getmetatable("").
 	lua_pushliteral(iState, "");
@@ -517,10 +526,42 @@ void LuaEngine::registerGuardedTable(lua_State* iState, const char* iTableName, 
 	lua_pop(iState, 1);
 }
 
-auto LuaEngine::protectedCall(const int iArgCount, const std::string& iWhat) const -> bool {
-	const int base = lua_gettop(mp_state) - iArgCount;
-	lua_pushcfunction(mp_state, messageHandler);
-	lua_insert(mp_state, base);
+auto LuaEngine::callGuarded(lua_State* iState, int (*iFunction)(lua_State*)) -> int {
+	auto* quota = quotaOf(iState);
+	const bool enforced = quota->enforced;
+	quota->enforced = false;
+	bool failed = false;
+	int results = 0;
+	try {
+		results = iFunction(iState);
+	} catch (const std::exception& exception) {
+		lua_pushfstring(iState, "C++ exception: %s", exception.what());
+		failed = true;
+	} catch (...) {
+		lua_pushliteral(iState, "unknown C++ exception");
+		failed = true;
+	}
+	quota->enforced = enforced;
+	return failed ? lua_error(iState) : results;
+}
+
+void LuaEngine::registerTable(lua_State* iState, const char* iTableName, const luaL_Reg* iFunctions, const int iCount) {
+	lua_pushglobaltable(iState);
+	lua_createtable(iState, 0, iCount);
+	luaL_setfuncs(iState, iFunctions, 0);
+	lua_setfield(iState, -2, iTableName);
+	lua_pop(iState, 1);
+}
+
+void LuaEngine::setHostPointer(lua_State* iState, void* iPointer) { quotaOf(iState)->hostPointer = iPointer; }
+
+auto LuaEngine::getHostPointer(lua_State* iState) -> void* { return quotaOf(iState)->hostPointer; }
+
+void LuaEngine::setDeltaTime(const double iDeltaTime) const { mp_quota->deltaTime = iDeltaTime; }
+
+auto LuaEngine::getDeltaTime(lua_State* iState) -> double { return quotaOf(iState)->deltaTime; }
+
+auto LuaEngine::protectedCall(const int iHandler, const int iArgCount, const std::string_view iWhat) const -> bool {
 	mp_quota->memoryExceeded = false;
 	mp_quota->timeExceeded = false;
 	if (lua_gethook(mp_state) != nullptr)
@@ -535,13 +576,13 @@ auto LuaEngine::protectedCall(const int iArgCount, const std::string& iWhat) con
 	slot.sequence.store(slot.sequence.load(std::memory_order_relaxed) + 1, std::memory_order_release);
 	const bool outerEnforced = mp_quota->enforced;
 	mp_quota->enforced = true;
-	const int result = lua_pcall(mp_state, iArgCount, 0, base);
+	const int result = lua_pcall(mp_state, iArgCount, 0, iHandler);
 	mp_quota->enforced = outerEnforced;
 	slot.state.store(outerState, std::memory_order_relaxed);
 	slot.running.store(outerRunning, std::memory_order_relaxed);
 	slot.budgetMs.store(outerBudget, std::memory_order_relaxed);
 	if (result == LUA_OK) {
-		lua_pop(mp_state, 1);
+		lua_settop(mp_state, iHandler - 1);
 		mp_quota->lastStatus = LuaStatus::Ok;
 		return true;
 	}
@@ -552,26 +593,28 @@ auto LuaEngine::protectedCall(const int iArgCount, const std::string& iWhat) con
 	else
 		mp_quota->lastStatus = LuaStatus::RuntimeError;
 	const char* message = lua_tostring(mp_state, -1);
-	OWL_CORE_ERROR("LuaEngine: Error in {}{}: {}. Fix: {}.", iWhat, mp_quota->errorContext,
+	OWL_CORE_ERROR("LuaEngine: Error in {}{}: {}. Fix: {}.", iWhat, errorContextOf(*mp_quota),
 				   message != nullptr ? message : "(no message)", fixHint(mp_quota->lastStatus))
-	lua_pop(mp_state, 2);
+	lua_settop(mp_state, iHandler - 1);
 	return false;
 }
 
-void LuaEngine::setErrorContext(const std::string& iContext) const {
-	mp_quota->errorContext = iContext.empty() ? std::string{} : std::format(" of {}", iContext);
+void LuaEngine::setErrorContext(const std::function<std::string()>& iContext) const {
+	mp_quota->errorContext = iContext;
 }
 
 auto LuaEngine::runLoadedChunk(const int iLoadResult, const std::string& iName) const -> bool {
 	if (iLoadResult != LUA_OK) {
 		mp_quota->lastStatus = iLoadResult == LUA_ERRMEM ? LuaStatus::MemoryQuota : LuaStatus::LoadError;
 		const char* message = lua_tostring(mp_state, -1);
-		OWL_CORE_ERROR("LuaEngine: Error loading '{}'{}: {}. Fix: {}.", iName, mp_quota->errorContext,
+		OWL_CORE_ERROR("LuaEngine: Error loading '{}'{}: {}. Fix: {}.", iName, errorContextOf(*mp_quota),
 					   message != nullptr ? message : "(no message)", fixHint(mp_quota->lastStatus))
 		lua_pop(mp_state, 1);
 		return false;
 	}
-	return protectedCall(0, std::format("chunk '{}'", iName));
+	lua_pushcfunction(mp_state, messageHandler);
+	lua_insert(mp_state, -2);
+	return protectedCall(lua_gettop(mp_state) - 1, 0, std::format("chunk '{}'", iName));
 }
 
 auto LuaEngine::loadScript(const std::filesystem::path& iPath) const -> bool {
@@ -603,26 +646,42 @@ auto LuaEngine::loadBuffer(const std::vector<uint8_t>& iData, const std::string&
 
 void LuaEngine::pushRawGlobal(const std::string& iName) const {
 	lua_pushglobaltable(mp_state);
-	lua_pushlstring(mp_state, iName.data(), iName.size());
+	pushName(iName);
 	lua_rawget(mp_state, -2);
-	lua_remove(mp_state, -2);
+	lua_replace(mp_state, -2);
 }
 
 void LuaEngine::popRawGlobal(const std::string& iName) const {
 	lua_pushglobaltable(mp_state);
-	lua_pushlstring(mp_state, iName.data(), iName.size());
+	pushName(iName);
 	lua_rotate(mp_state, -3, -1);
 	lua_rawset(mp_state, -3);
 	lua_pop(mp_state, 1);
 }
 
-auto LuaEngine::pushGlobalFunction(const std::string& iName) const -> bool {
-	pushRawGlobal(iName);
-	if (lua_isfunction(mp_state, -1) != 0)
-		return true;
-	lua_pop(mp_state, 1);
+void LuaEngine::pushName(const std::string_view iName) const {
+	auto& refs = mp_quota->nameRefs;
+	if (const auto cached = std::ranges::find(refs, iName, &std::pair<std::string, int>::first); cached != refs.end()) {
+		lua_rawgeti(mp_state, LUA_REGISTRYINDEX, cached->second);
+		return;
+	}
+	lua_pushlstring(mp_state, iName.data(), iName.size());
+	if (refs.size() < g_MaxCachedNames) {
+		lua_pushvalue(mp_state, -1);
+		refs.emplace_back(iName, luaL_ref(mp_state, LUA_REGISTRYINDEX));
+	}
+}
+
+auto LuaEngine::pushGlobalFunction(const std::string_view iName) const -> int {
+	lua_pushcfunction(mp_state, messageHandler);
+	const int handler = lua_gettop(mp_state);
+	lua_pushglobaltable(mp_state);
+	pushName(iName);
+	if (lua_rawget(mp_state, -2) == LUA_TFUNCTION)
+		return handler;
+	lua_settop(mp_state, handler - 1);
 	mp_quota->lastStatus = LuaStatus::Missing;
-	return false;
+	return 0;
 }
 
 auto LuaEngine::hasFunction(const std::string& iName) const -> bool {
@@ -634,30 +693,37 @@ auto LuaEngine::hasFunction(const std::string& iName) const -> bool {
 	return isFunc;
 }
 
-auto LuaEngine::callFunction(const std::string& iName) const -> bool {
+auto LuaEngine::callFunction(const std::string_view iName) const -> bool {
 	OWL_PROFILE_FUNCTION()
 
-	if (mp_state == nullptr || !pushGlobalFunction(iName))
+	if (mp_state == nullptr)
 		return false;
-	return protectedCall(0, iName);
+	const int handler = pushGlobalFunction(iName);
+	return handler != 0 && protectedCall(handler, 0, iName);
 }
 
-auto LuaEngine::callFunction(const std::string& iName, const float iArg) const -> bool {
+auto LuaEngine::callFunction(const std::string_view iName, const float iArg) const -> bool {
 	OWL_PROFILE_FUNCTION()
 
-	if (mp_state == nullptr || !pushGlobalFunction(iName))
+	if (mp_state == nullptr)
+		return false;
+	const int handler = pushGlobalFunction(iName);
+	if (handler == 0)
 		return false;
 	lua_pushnumber(mp_state, static_cast<lua_Number>(iArg));
-	return protectedCall(1, iName);
+	return protectedCall(handler, 1, iName);
 }
 
-auto LuaEngine::callFunction(const std::string& iName, const uint64_t iArg) const -> bool {
+auto LuaEngine::callFunction(const std::string_view iName, const uint64_t iArg) const -> bool {
 	OWL_PROFILE_FUNCTION()
 
-	if (mp_state == nullptr || !pushGlobalFunction(iName))
+	if (mp_state == nullptr)
+		return false;
+	const int handler = pushGlobalFunction(iName);
+	if (handler == 0)
 		return false;
 	lua_pushinteger(mp_state, static_cast<lua_Integer>(iArg));
-	return protectedCall(1, iName);
+	return protectedCall(handler, 1, iName);
 }
 
 // ---- Global variable getters ----

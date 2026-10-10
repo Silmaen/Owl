@@ -508,7 +508,7 @@ message. Scrolling up manually disables auto-scroll until re-enabled.
 
 ```
 SceneSerializer: Cannot load scene 'scenes/level.owl': entity #1 (id 42) 'Broken' at line 5 is malformed
-(yaml-cpp: error at line 7, column 30: bad conversion). Fix: fix or remove the reported entity in the file, then
+(YAML: Bad conversion at line 7.). Fix: fix or remove the reported entity in the file, then
 reload the scene.
 LuaEngine: Error in on_update of script 'scripts/hero.lua' on entity 'Hero' (77): [string "scripts/hero.lua"]:2:
 boom. Fix: fix the script at the first line of the traceback; the callback runs again on its next call.

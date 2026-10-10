@@ -9,6 +9,7 @@
 #include "testHelper.h"
 
 #include <cmath>
+#include <cstddef>
 #include <math/Transform.h>
 #include <math/matrixCreation.h>
 
@@ -107,5 +108,21 @@ TEST(Transform, moreInits) {
 	{
 		Transform transform{vec3{10, 12, 13}, vec3{0.2f, 0.3f, 0.4f}};
 		EXPECT_TRUE(vecNear(transform.scale(), {1, 1, 1}));
+	}
+}
+
+TEST(Transform, matrixMatchesComposedProduct) {
+	// The closed form must equal translate * rotateZ * rotateY * rotateX * scale, null angles included.
+	for (const vec3& rotation:
+		 {vec3{0.f, 0.f, 0.f}, vec3{0.f, 0.f, 0.7f}, vec3{0.3f, -1.2f, 2.5f}, vec3{-0.f, 0.4f, 0.f}}) {
+		const Transform transform{vec3{1.f, -2.f, 3.f}, rotation, vec3{2.f, 0.5f, -1.5f}};
+		const mat4 expected = translate(identity<float, 4>(), transform.translation()) *
+							  rotate(identity<float, 4>(), rotation[2], {0, 0, 1}) *
+							  rotate(identity<float, 4>(), rotation[1], {0, 1, 0}) *
+							  rotate(identity<float, 4>(), rotation[0], {1, 0, 0}) *
+							  scale(identity<float, 4>(), transform.scale());
+		const mat4 actual = transform();
+		for (size_t row = 0; row < 4; ++row)
+			for (size_t col = 0; col < 4; ++col) EXPECT_NEAR(actual(row, col), expected(row, col), 1e-5f);
 	}
 }

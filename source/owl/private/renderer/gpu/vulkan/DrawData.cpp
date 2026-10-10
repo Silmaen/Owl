@@ -60,11 +60,14 @@ void DrawData::initInstanced(const BufferLayout& iVertexLayout, const BufferLayo
 	buildPipeline(nullptr);
 }
 
+// NOLINTNEXTLINE(misc-no-recursion): one retry at most, after the rejected SPIR-V is compiled again.
 void DrawData::buildPipeline(VkDescriptorSetLayout iSetLayout) {
 	if (!mp_shader)
 		return;
 	auto& vkh = internal::VulkanHandler::get();
 	std::vector<VkPipelineShaderStageCreateInfo> shaderStages = mp_shader->getStagesInfo();
+	if (shaderStages.empty())
+		return;
 
 	std::vector<VkVertexInputBindingDescription> bindings;
 	std::vector<VkVertexInputAttributeDescription> attributes;
@@ -98,6 +101,13 @@ void DrawData::buildPipeline(VkDescriptorSetLayout iSetLayout) {
 	const auto& vkc = internal::VulkanCore::get();
 	for (const auto& stage: shaderStages) vkDestroyShaderModule(vkc.getLogicalDevice(), stage.module, nullptr);
 	if (m_pipelineId < 0) {
+		// Stored SPIR-V the driver refuses at pipeline creation: compile it again once, and retry.
+		if (vkh.getState() == internal::VulkanHandler::State::ErrorCreatingPipeline &&
+			mp_shader->recoverRejectedSpirv("vkCreateGraphicsPipelines failed")) {
+			vkh.setState(internal::VulkanHandler::State::Running);
+			buildPipeline(iSetLayout);
+			return;
+		}
 		OWL_CORE_WARN("Vulkan shader: Failed to register pipeline {}.", mp_shader->getName())
 		return;
 	}

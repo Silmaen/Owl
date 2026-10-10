@@ -227,9 +227,10 @@ reorganised, made discoverable and consistent. See [Owl Nest UI](nest-ui.md).
   14.3 → 0.35 ms (PR-24: D-08, P-09, B-15)
 - ![Planned][planned] Renderer2D per-frame transients, 2D sort order, UTF-8 text (PR-30: B-09, B-10, D-18)
 - ![Planned][planned] Persistent, chunked and culled tilemap (PR-31: B-13)
-- ![Planned][planned] Faster scene loading (YAML path optimised or replaced, prefab instantiation without a YAML
-  round-trip per entity)
-- ![Planned][planned] Shaders precompiled at pack time, so the runner never compiles Slang at startup
+- ![Done][done] Faster scene loading: rapidyaml reads scenes, prefabs and snapshots, prefab instantiation copies
+  through the component registry (10 000 entities: 1.21 s → 73 ms)
+- ![Done][done] Shaders precompiled at build time (both CPack components, embedded in a game pack), so the runner
+  and the editor never compile Slang at startup
 
 ## Performance targets
 
@@ -237,14 +238,15 @@ Measured on the `bench/` harness, Null backend unless stated (source: `doc/audit
 
 | Indicator                               | Measured today                                   | v0.3.0 target                         |
 |-----------------------------------------|--------------------------------------------------|---------------------------------------|
-| CPU frame, 10 000 sprites (`flat10000`) | 2.52 ms                                          | < 0.5 ms                              |
-| Renderer2D cost per quad                | 10.5 ns (`worldIndex`), 86 ns (transient)        | < 10 ns on every path                 |
+| CPU frame, 10 000 sprites (`flat10000`) | 0.33 ms (0.46 ms `forest10000`)                  | < 0.5 ms                              |
+| Renderer2D cost per quad                | 9.4 ns (`worldIndex`), 14-24 ns (transient)      | < 10 ns on every path                 |
 | GPU queue drains per frame (Vulkan)     | 2 to 4 in the runner, ≥ 10 in the editor         | 0                                     |
-| Runner frame, Vulkan vs OpenGL (NVIDIA) | 0.6–2.0 ms vs 0.35–0.76 ms CPU (frame bench)     | Vulkan ≤ OpenGL                       |
-| Scene load per entity                   | 134 µs (10 000 entities: 1.34 s)                 | < 10 µs                               |
-| Box2D step, 5 000 bodies in contact     | 4.88 ms (single thread)                          | < 1.5 ms (multi-thread, fixed step)   |
+| Runner frame, Vulkan vs OpenGL (NVIDIA) | 0.47–0.52 vs 0.33–0.36 ms, present-bound         | Vulkan ≤ OpenGL                       |
+| Scene load per entity                   | 7.3 µs (10 000 entities: 73 ms), prefab 4-6 µs   | < 10 µs                               |
+| Box2D step, 5 000 bodies in contact     | 1.68 ms SSE2, 1.44 ms AVX2 (8 workers)           | < 1.5 ms (multi-thread, fixed step)   |
 | Voxel meshing                           | on workers, streaming frame peak 0.35 ms (PR-24) | off the main thread, per-frame budget |
-| Cold start (real runner, GPU backend)   | ~400 ms to first frame on lavapipe / llvmpipe    | measured, then shaders precompiled    |
+| Cold start (real runner, GPU backend)   | 280-420 ms to first frame, no Slang compilation  | measured, then shaders precompiled    |
+| Lua: create / memory / empty update     | 28 µs / 9.0 KB / 44 ns                           | ≤ audit: 30.5 µs / 8.97 KB / 43.5 ns  |
 
 ## Exit criteria
 

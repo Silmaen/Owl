@@ -785,3 +785,352 @@ les deux campagnes). « Vidages » = `vkQueueWaitIdle` + `vkDeviceWaitIdle`, « 
 Vulkan rejoint OpenGL sur les scènes 2D et voxel ; le GPU Intel passe de 0,79 à 1,06 ms de travail par frame 2D à 0,35 à
 0,51 ms (plus de transitions ni de clears one-shot). Reste le raycast : ses deux lectures CPU par frame
 (`StorageBuffer::getData`, nombre de touches et z-buffer) vident la frame en cours une fois (B-01, à supprimer).
+
+## 9. Chantier des cibles de perf (2026-10-09)
+
+Branche `Feature/PerformanceTargets` : une sous-section par étape, chacune mesurée avant / après le même jour.
+
+### 9.1 État initial du jour
+
+Protocole : celui du §2 (`owl_bench`, `taskset -c 6`, 15 échantillons, médiane) et du §8.1 (frame bench,
+`taskset -c 2-7`, 1 000 frames après 120 de chauffe), avec **3 répétitions** par configuration et la médiane des 3
+médianes. Build `linux-clang-release-bench` (clang 22.1.2) de la branche au 2026-10-09 (`599ec352`, code de `main`),
+load average 3,3 à 7,3. Physique multi-thread sur `taskset -c 0-15`. Session de bureau verrouillée pendant le frame
+bench (présentation `immediate` sans compositeur, sans effet attendu sur le CPU). Données, non versionnées :
+`output/bench-initial/`, `output/frame-bench-initial/`.
+
+| Indicateur                                        | Audit                    | Aujourd'hui                        |
+|---------------------------------------------------|--------------------------|------------------------------------|
+| Frame CPU, 10 000 sprites (`editor_update`)       | 2,52 ms                  | 2,60 ms                            |
+| Coût par quad Renderer2D, `worldIndex` / transit. | 10,5 / 86 ns             | 10,4 / 86,1 ns                     |
+| Vidages de file par frame Vulkan, runner          | 2 à 4                    | 0 (1 soumission, 2 en raycast)     |
+| Frame runner Vulkan / OpenGL, NVIDIA (5 scènes)   | 0,61-2,04 / 0,35-0,76 ms | 0,48-0,79 / 0,33-0,59 ms           |
+| Frame runner Vulkan / OpenGL, Intel (5 scènes)    | 0,74-3,54 / 0,19-1,01 ms | 0,40-1,62 / 0,23-0,90 ms           |
+| Chargement de scène par entité (10 000 entités)   | 134 µs                   | 122 µs                             |
+| Pas Box2D, 5 000 corps au contact                 | 4,88 ms (1 thread)       | 5,03 ms (1 thread), 1,64 ms (8)    |
+| Maillage voxel, pic de frame en streaming         | 0,35 ms (PR-24)          | non remesuré                       |
+| Démarrage, application factice Null               | 226 ms                   | 236 ms                             |
+| Démarrage runner GPU, jusqu'à la première frame   | ~400 ms (lavapipe)       | 415-632 ms (NVIDIA / Intel, Slang) |
+| Lua, `create_instance/empty_script`               | 30,5 µs                  | 47,5 µs                            |
+| Lua, mémoire par instance                         | 8 965 o                  | 13 457 o                           |
+| Lua, `on_update/empty/1_instance`                 | 43,5 ns                  | 67,3 ns                            |
+| Lua, `get_set_position`, 1 000 instances          | 261 ns                   | 376 ns                             |
+
+Le socle Vulkan (§8.5) a tenu ses promesses ; restent hors cible la frame à 10 000 sprites, le chargement de scène et
+la physique mono-thread, et Lua a régressé de 45 à 55 % depuis l'audit.
+
+### 9.2 Régression Lua
+
+Cause, par callgrind (`--toggle-collect` sur `ScriptInstance::onUpdate`, puis sur la création) : le durcissement du
+bac à sable et le registre typé, pas Lua (5.5.0 avant comme après). Par état, chacun des 70 bindings était une closure
+C (`guardedBinding` + la fonction en upvalue) : 70 allocations de 64 o, soit les 4,5 Kio de l'écart mémoire ;
+`coroutine.wrap` était un chunk Lua compilé à chaque état (16 % des instructions de la création). Par appel, le nom du
+callback et la clé `owl_dt` étaient hachés et internés à chaque frame, et chaque binding relisait la scène liée par
+`lua_getfield(REGISTRY, "owl_scene")` ; `lua_insert` du gestionnaire d'erreur et `lua_remove` du global coûtaient deux
+rotations de pile.
+
+Correction : bindings en fonctions C légères `guarded<fn>` (aucune allocation), `coroutine.wrap` en C sur le
+`coroutine.resume` du bac à sable, scène liée et delta stockés dans le `Quota` de l'état, noms des callbacks
+internés une fois (référence de registre, 16 noms au plus), gestionnaire d'erreur poussé avant la fonction,
+contexte d'erreur formaté seulement en cas d'erreur. Aucune fonctionnalité retirée (quotas, chien de garde,
+traceback, bac à sable).
+
+`taskset -c 6`, avant (`599ec352`) / après alternés, médiane de 3 passes, load average 6,8 à 7,5 :
+
+| Cas (par instance)                      | Audit   | Avant    | Après   |
+|-----------------------------------------|---------|----------|---------|
+| `create_instance/empty_script`          | 30,5 µs | 48,3 µs  | 28,1 µs |
+| `memory/bytes_per_instance`             | 8 965 o | 13 452 o | 9 020 o |
+| `on_update/empty/1_instance`            | 43,5 ns | 65,4 ns  | 43,8 ns |
+| `on_update/empty/1000_instances`        | 84,3 ns | 164 ns   | 80,1 ns |
+| `on_update/get_set_position/1_instance` | 133 ns  | 188 ns   | 140 ns  |
+| `on_update/get_set_position/1000_inst.` | 261 ns  | 365 ns   | 258 ns  |
+| `on_update/arith_100/1000_instances`    | 597 ns  | 657 ns   | 615 ns  |
+
+Lua revient au niveau de l'audit sur la création et l'appel vide ; restent 55 o par instance (+0,6 %, le `Quota` élargi
+de la scène, du delta et du cache des noms) et 3 à 5 % sur `get_set_position` et `arith_100`, à la limite du bruit entre
+campagnes (load average 7 contre 11 à l'audit).
+
+### 9.3 Vulkan contre OpenGL au frame bench
+
+Cause, par chronos temporaires dans `VulkanHandler::startFrame` puis `INTEL_MEASURE=draw` (temps GPU par événement,
+pilotes anv et iris) : le `cpu_begin_frame_ms` Vulkan n'est pas du travail du moteur mais l'attente du rythme de
+présentation. Sur NVIDIA (PRIME vers l'écran Intel, Wayland, `immediate`), `vkAcquireNextImageKHR` bloque 0,35 ms ;
+avec 4 à 6 images au lieu de 3, l'attente passe sur la fence de frame (la soumission attend le sémaphore de l'image),
+et `vkcube --present_mode 0` en 1280 × 720 tourne à 0,48 ms par frame : c'est le plancher du chemin de présentation,
+OpenGL l'atteint plus vite (EGL bloque 0,23 ms dans le swap, compté dans `cpu_present_ms`). Sur Intel la frame
+attend le GPU : 338 µs de travail par frame `main_menu` en Vulkan contre 218 µs en OpenGL, dont 39 µs pour un
+`vkCmdClearAttachments` redondant juste après la passe qui efface au chargement, et la profondeur et l'attachement
+d'identifiant que la cible principale Vulkan porte (le framebuffer par défaut OpenGL n'en a pas). Le raycast lisait
+deux SSBO par frame (`StorageBuffer::getData`), soit une soumission et une attente de fence en Vulkan et un
+`glGetBufferSubData` bloquant en OpenGL.
+
+Corrections : le raycast parcourt le DDA sur le CPU pour les profondeurs de colonne et les statistiques (le même
+`cpuWalkColumn` que le backend Null, sans émission) au lieu de relire la passe GPU ; les lots successifs sur un même
+framebuffer partagent une passe de rendu (4 à 2 passes par frame 2D) ; `RenderCommand::clear` ne réefface plus une
+passe qui vient d'effacer au chargement ; le frame bench rapporte `cpu_pace_wait_ms` (fence de frame + acquisition
+d'image, Vulkan). Images de référence inchangées (`ctest -L render`), validation sans message sur NVIDIA et lavapipe.
+
+Avant (`5ee02064`) / après alternés, 3 répétitions, médiane des médianes, ms par frame, load average 7 à 12 ;
+« travail » = `cpu_total` moins l'attente de présentation (`cpu_pace_wait_ms` en Vulkan, `cpu_present_ms` en OpenGL) :
+
+| Scène              | GPU    | Vulkan avant | Vulkan après | OpenGL avant | OpenGL après | Travail Vulkan / OpenGL après |
+|--------------------|--------|--------------|--------------|--------------|--------------|-------------------------------|
+| `main_menu`        | NVIDIA | 0,478        | 0,475        | 0,329        | 0,329        | 0,140 / 0,100                 |
+| `main_menu`        | Intel  | 0,390        | 0,350        | 0,231        | 0,232        | 0,116 / 0,086                 |
+| `world_map`        | NVIDIA | 0,504        | 0,496        | 0,341        | 0,341        | 0,143 / 0,086                 |
+| `world_map`        | Intel  | 0,562        | 0,519        | 0,373        | 0,370        | 0,158 / 0,117                 |
+| `platformer_house` | NVIDIA | 0,495        | 0,494        | 0,336        | 0,336        | 0,162 / 0,104                 |
+| `platformer_house` | Intel  | 0,505        | 0,466        | 0,247        | 0,247        | 0,184 / 0,099                 |
+| `raycast_demo`     | NVIDIA | 0,796        | 0,519        | 0,584        | 0,359        | 0,358 / 0,321                 |
+| `raycast_demo`     | Intel  | 1,465        | 0,418        | 0,941        | 0,623        | 0,370 / 0,342                 |
+| `voxel_terrain`    | NVIDIA | 0,484        | 0,483        | 0,330        | 0,331        | 0,119 / 0,171                 |
+| `voxel_terrain`    | Intel  | 0,368        | 0,351        | 0,329        | 0,359        | 0,193 / 0,081                 |
+
+Raycast : 2 → 1 soumission, 1 → 0 attente de fence, frame divisée par 1,5 à 3,5 sur les deux backends ; GPU Intel des
+scènes 2D 0,36-0,52 → 0,32-0,48 ms. Le raycast Vulkan passe sous OpenGL sur Intel (0,42 contre 0,62 ms) ; ailleurs la
+frame Vulkan reste au plancher de présentation du pilote (NVIDIA) ou au GPU (Intel), et le travail CPU Vulkan reste
+0,03 à 0,11 ms au-dessus d'OpenGL (sauf `voxel_terrain` NVIDIA). « Vulkan ≤ OpenGL » n'est donc pas atteignable au
+temps mur sous Wayland sans toucher à la présentation ; à trancher : mesurer la cible sur le travail (hors attente de
+présentation), ou alléger la cible principale Vulkan (profondeur et identifiant seulement quand un calque les utilise).
+
+### 9.4 Box2D, 5 000 corps au contact
+
+Pistes : Box2D 3.2 n'existe pas (ni sur ConanCenter ni en amont, dernière étiquette `v3.1.1`) ; la recette
+ConanCenter 3.1.1 n'a pas d'option AVX2, d'où une recette locale (`conan/recipes/box2d`, la même plus `avx2`).
+Décomposition par `b2World_GetProfile` et chronos temporaires dans `PhysicCommand::frame`, sur les 60 pas mesurés
+de `step_settled_mt8` : 1,36 ms de `b2World_Step` (paires 0,29, narrow phase 0,33, solveur 0,74 dont contraintes
+0,48) et 0,10 ms de copie des poses vers l'ECS, en série. La pile « tassée » ne l'est pas : après 600 pas les
+colonnes de 25 caisses se sont effondrées (vitesse max 25 m/s, 5 000 corps éveillés), d'où des paires nouvelles et
+une île coupée à chaque pas.
+
+Corrections : Box2D en AVX2 sur x86_64 (`OWL_PHYSICS_AVX2`, option `box2d/*:avx2`, sans objet sur arm64), avec
+un contrôle du CPU à `PhysicCommand::init` (sans AVX2 : erreur au journal et monde non créé, au lieu d'une
+instruction illégale) ; deux threads de plus que `workerCount` dans l'exécuteur, car la reconstruction d'arbre et la
+coupe d'île tournent à côté des tâches du solveur, qui s'attendent ; copie des poses (`captureCurrent`,
+`writeTransforms`) répartie sur l'exécuteur au-delà de 1 024 corps, les enfants d'une hiérarchie restant en série.
+Essais abandonnés : dernière plage exécutée sur le thread appelant (−0,03 ms à 8 workers, +0,1 à 0,15 ms à 2 et 4),
+plages entrelacées (4 par worker, +0,05 ms), pool maison à attente active (aucun gain). `PhysicMultiThread` et
+`PhysicFixedStep` restent déterministes (3 passes identiques).
+
+Avant (`a9758729`, SSE2) / après alternés, 3 répétitions, médiane des médianes, `taskset -c 0-15`, load average
+5,6 à 5,8 :
+
+| Banc (5 000 corps)     | Avant   | Après   |
+|------------------------|---------|---------|
+| `step_settled`         | 5,01 ms | 4,46 ms |
+| `step_settled_mt2`     | 3,59 ms | 3,28 ms |
+| `step_settled_mt4`     | 2,40 ms | 2,00 ms |
+| `step_settled_mt8`     | 1,68 ms | 1,44 ms |
+| `step_falling_mt8`     | 528 µs  | 450 µs  |
+
+La cible (< 1,5 ms en multi-thread) est tenue à 8 workers (1,44 ms) ; le nombre automatique de workers reste
+plafonné à 4 (2,0 ms), le relever est à trancher par le mainteneur.
+
+### 9.5 Frame à 10 000 sprites et Renderer2D
+
+Cause, par callgrind sur `onUpdateEditor` et `runQuads` : `prepareWorldTransforms` refaisait chaque frame trois
+`unordered_map` (indice de slot, `Transform` décomposé, visibilité), une décomposition `Transform(mat4)` par entité et un
+`Transform::operator()` générique (trois `rotate` avec normalisation d'axe et quatre produits de mat4, 74 ns). Hors
+frame, `getWorldTransform` recomposait toute la chaîne, d'où le O(profondeur²) des chaînes de 1 000. Côté Renderer2D,
+tout le surcoût transitoire était dans `Transform::operator()` ; le chemin texturé appelait en plus un `operator==`
+virtuel (`dynamic_cast`) par slot.
+
+Corrections : cache dense des matrices monde par entité (indexé par `entt::to_entity`, persistant entre frames), sans
+crochet d'écriture : une entrée reste valide tant que son `Transform` local, son parent (handle versionné et UUID) et le
+tampon de version du parent sont inchangés, vérifiés en remontant la chaîne (quelques comparaisons par niveau, sans
+limite de profondeur ni récursion, boucles détectées) ; une entrée recomposée prend un nouveau tampon, ses descendants
+suivent. Pendant `prepareWorldTransforms` et la fin de tick armée, une entrée vérifiée dans la passe est reprise telle
+quelle (O(1)). Une racine rend son `Transform` local exact, un enfant une décomposition mise en cache par tampon. La
+visibilité héritée des deux modes est calculée dans la même passe (plus de cache de visibilité séparé). Pools EnTT
+récupérés une fois par appel. `Transform::operator()` en forme fermée T·Rz·Ry·Rx·S, sin / cos sautés pour un angle nul ;
+Renderer2D : chemin `worldIndex` sans appel, recherche du slot de texture par pointeur avant la comparaison du backend.
+Images de référence inchangées (`ctest`, `render` compris), tests de hiérarchie, scénarios et `linux-clang-minimal` verts.
+
+`taskset -c 6`, avant (`44fe5125`) / après alternés, 3 répétitions, médiane des médianes, load average 3,3 à 5,3 :
+
+| Banc                                        | Avant    | Après    |
+|---------------------------------------------|----------|----------|
+| `frame/editor_update/flat10000`             | 2,60 ms  | 0,330 ms |
+| `frame/editor_update/forest10000`           | 3,15 ms  | 0,462 ms |
+| `frame/editor_update/chain1000`             | 312 µs   | 38,7 µs  |
+| `frame/runtime_update/logic_flat10000`      | 1,97 ms  | 0,140 ms |
+| `frame/runtime_update/render_flat10000`     | 2,61 ms  | 0,334 ms |
+| `scene/prepare_world_transforms/flat10000`  | 1,68 ms  | 139 µs   |
+| `scene/prepare_world_transforms/forest10000`| 2,06 ms  | 272 µs   |
+| `scene/world_transform/forest10000_all`     | 2,34 ms  | 352 µs   |
+| `scene/world_transform/chain1000_all`       | 54,4 ms  | 5,57 ms  |
+| `scene/set_parent/chain1000_build`          | 54,8 ms  | 5,71 ms  |
+| `renderer2d/transform_to_matrix` (par quad) | 74,3 ns  | 4,2 ns   |
+| `renderer2d/quads_world_index/10000`        | 10,8 ns  | 9,4 ns   |
+| `renderer2d/quads_color/10000`              | 86,4 ns  | 16,8 ns  |
+| `renderer2d/quads_16_textures/10000`        | 94,4 ns  | 24,2 ns  |
+| `renderer2d/circles/10000`                  | 84,6 ns  | 13,8 ns  |
+
+La frame à 10 000 sprites tient sa cible (0,33 ms, 0,46 ms en forêt) ; le Renderer2D ne la tient que sur le chemin
+`worldIndex` (tous les sprites de scène). Reste, à trancher : le chemin transitoire paie l'écriture d'une mat4 de 64 o
+par quad (sous 10 ns il faudrait passer le TRS au shader), le chemin texturé deux opérations atomiques de `shared_ptr`
+chez l'appelant (8 ns, `Quad2DData::texture` possédant ; une référence non possédante changerait l'API publique), et les
+chaînes restent O(profondeur) par lecture hors frame (11 ns par niveau, contre 107) faute de crochet d'écriture sur
+`Transform`.
+
+### 9.6 Démarrage à froid et compilation Slang
+
+Régression de Slang (§3.9 : `compile_cold` 74 → 165 ms, `voxel_vulkan` 21,7 → 35,3 ms) : la bibliothèque, pas Owl.
+L'audit tournait sur Slang 2026.1 (Vulkan SDK via DepManager), la branche sur 2026.19 (recette Conan). Même binaire
+`owl_bench`, mêmes shaders du jour, seule `libslang-compiler` remplacée par celle de 2026.1 : `compile_cold` 93,6 ms,
+`quad_vulkan` 16,5 ms, `voxel_vulkan` 20,1 ms, `all_engine_shaders_vulkan` (12) 176 ms, contre 172 / 21,1 / 35,0 /
+270 ms avec 2026.19 ; les changements de shaders (types de blocs, `PipelineState`) n'y sont pour rien. Callgrind par
+compilation de `voxel` : 261 contre 162 M instructions, dont l'édition de liens IR (`cloneInst` 161 contre 46 M,
+`specializeModule` 48 contre 10 M) et la vérification sémantique (+65 %). Ni une session Slang partagée entre
+compilations (gain nul) ni `-O0` (−7 %, code produit différent) ne compensent : non corrigé côté Owl, revenir à
+2026.1 serait une décision de dépendance. Effet de bord corrigé : 2026.19 écrit `warning[E41012]`, que le filtre ne
+reconnaissait plus.
+
+Démarrage : Slang sort du chemin de démarrage. `OwlShaderBake` compile au build les 12 shaders du moteur pour Vulkan et
+OpenGL (42 étages, 0,7 s) dans `bin/assets/shaders/<renderer>/spirv/<api>/`, installés dans les composants Engine et
+Nest et embarqués dans un `.owlpack` (l'`AssetScanner` prend tout `shaders/`). `loadOrCompileSpirv` lit ce SPIR-V,
+puis le cache, et ne compile qu'à défaut de clé correspondant à la source (shader modifié, hot reload, shader de jeu).
+Les compute shaders, recompilés à chaque démarrage faute de cache (création de la session globale comprise), y
+passent aussi. Le GLSL du repli OpenGL reste traduit par spirv-cross au chargement : pas de Slang, et les deux pilotes
+mesurés ingèrent le SPIR-V.
+
+Frame bench `platformer_house`, `taskset -c 2-7`, 300 frames (le démarrage n'en dépend pas), 3 répétitions, médiane ;
+avant (`69514ab0`) puis après, à cinq minutes d'intervalle, load average 1,6 à 6,3. « Froid » : `bin/cache/shader`
+vidé avant le lancement. Millisecondes `engine_ready` / `first_frame` :
+
+| Configuration   | Avant, froid | Avant, chaud | Après, froid | Après, chaud |
+|-----------------|--------------|--------------|--------------|--------------|
+| Vulkan / NVIDIA | 833 / 860    | 544 / 571    | 410 / 438    | 379 / 406    |
+| OpenGL / NVIDIA | 633 / 667    | 458 / 489    | 270 / 302    | 277 / 308    |
+| Vulkan / Intel  | 598 / 629    | 412 / 444    | 232 / 269    | 232 / 266    |
+| OpenGL / Intel  | 624 / 653    | 429 / 456    | 260 / 288    | 252 / 281    |
+
+Paquet : `cpack -G TGZ` du build release, archives extraites hors du dépôt ; le runner du composant Nest lit les 42
+fichiers de son `assets/` (`Using precompiled … from <paquet>/assets`), Vulkan et OpenGL, cache vide ou chaud (265 à
+302 ms jusqu'à `engine_ready` sur Intel), et le scénario `platformer_walk.owltest` passe ; un jeu exporté par
+`OwlNest --export` extrait les 42 fichiers de son pack. Aucune ligne Slang dans ces journaux. Validation Vulkan
+(`--validation`, NVIDIA et Intel, `platformer_house`, `raycast_demo`, `voxel_terrain`) sans message, `ctest` (render
+compris) vert.
+
+Le démarrage tombe de 630-860 à 270-440 ms jusqu'à la première frame à froid et ne dépend plus du cache ; ce qui
+reste sur NVIDIA Vulkan (~170 ms de plus qu'Intel) n'est pas décomposé ici (pilote, création des pipelines sans
+`VkPipelineCache` : à mesurer).
+
+### 9.7 Chargement de scène, prefabs et instantanés
+
+Cause, par callgrind (`--toggle-collect` sur `applyParsed`, puis `parseBuffer` et `PrefabSerializer::instantiate`) :
+hors parsing, l'essentiel restait dans yaml-cpp. Les composants lisaient leur nœud par l'`operator[]` non constant,
+qui crée un nœud par clé absente et fusionne les `memory_holder` (75 % de `applyParsed`) ; chaque composant présent
+construisait un `core::Serializer` (un `YAML::Emitter`) ; les 40 descripteurs optionnels cherchaient chacun leur clé
+dans l'entité. Le parsing seul coûtait 50 µs par entité de 300 o (scanner à expressions régulières, un nœud alloué
+par valeur). L'instanciation de prefab réécrivait chaque entité en YAML pour la relire et reconstruisait la
+hiérarchie de toute la scène cible (76 % du coût dans une scène de 10 000 entités). Les scènes du sample, sans
+`FormatVersion`, passaient toutes par la migration 1 → 2 (85 % du chargement) : yaml-cpp, migration, réécriture.
+
+Corrections : rapidyaml 0.15.2 (ConanCenter, privé au moteur, statique) lit les scènes, prefabs et instantanés ;
+yaml-cpp écrit toujours, le format ne change pas. `core::YamlNode` est une vue en lecture seule qui reprend les
+règles de yaml-cpp (clé absente fausse, valeur vide ou `~` nulle et lue `null` en chaîne, booléens `yes` / `On` /
+`TRUE`, entiers décimaux ou `0x`, `.inf` / `.nan`, indexer un scalaire lève une erreur), si bien que les
+`deserialize` des composants n'ont changé que de type ; `YamlDocument` possède l'arbre. Les clés d'une entité sont
+lues une fois puis servies aux descripteurs dans l'ordre du registre, avec un seul `Serializer` réutilisé. Un
+document à la version courante, ou de format 1 sans `EntityLink` nommé sans identifiant, est lu tel quel ; les autres
+passent par `upgradeDocumentText` (yaml-cpp) puis sont relus. `applyEntityFromString` compare les composants par
+structure (`isSameAs`), plus par texte réémis. Le prefab copie ses composants par le registre (la sérialisation ne
+sert qu'à un composant de jeu non copiable) et ne lie que les enfants de l'instance. `EnabledRenderers` et
+`EnabledRenderersConfig::fromYaml` lisent aussi par rapidyaml.
+
+`taskset -c 6`, avant (`de59b4ba`) / après alternés, 3 répétitions, médiane des médianes, par entité sauf
+`sample/load` (par scène), load average 3,1 à 7,6 :
+
+| Banc                                         | Avant   | Après      |
+|----------------------------------------------|---------|------------|
+| `serialize/scene_from_string/10000`          | 121 µs  | 7,31 µs    |
+| `serialize/scene_from_string/1000`           | 116 µs  | 2,76 µs    |
+| `serialize/scene_parse_only/10000`           | 49,5 µs | 5,92 µs    |
+| `serialize/scene_parse_only/1000`            | 48,1 µs | 1,6-3,8 µs |
+| `serialize/entity_from_string/scene1`        | 107 µs  | 2,91 µs    |
+| `serialize/entity_from_string/scene10000`    | 143 µs  | 14,3 µs    |
+| `serialize/scene_to_string/10000` (écriture) | 22,9 µs | 22,9 µs    |
+| `prefab/instantiate/10_entities/scene0`      | 242 µs  | 4,91 µs    |
+| `prefab/instantiate/10_entities/scene10000`  | 373 µs  | 5,80 µs    |
+| `prefab/instantiate/100_entities/scene10000` | 252 µs  | 3,88 µs    |
+| `sample/load/main_menu`                      | 2,75 ms | 90 µs      |
+| `sample/load/platformer_house`               | 6,24 ms | 198 µs     |
+| `sample/load/raycast_demo`                   | 14,8 ms | 408 µs     |
+| `sample/load/world_map`                      | 2,25 ms | 75 µs      |
+| `sample/load/voxel_terrain`                  | 563 µs  | 26 µs      |
+
+Scénarios (`OwlRunner --scenario`, `taskset -c 2-7`, temps mur du processus, médiane de 3) : 162-178 ms contre
+177-181 ms, `world_map_walk` 83 contre 87 ms ; le démarrage domine. `parse_only/1000` est bimodal selon que l'arbre
+retombe sur des pages déjà servies ; à 10 000 entités, l'arbre (~27 Mo) est remappé et refauté à chaque chargement :
+avec `GLIBC_TUNABLES=glibc.malloc.mmap_threshold=…` (aucun `munmap`), `scene_from_string/10000` tombe à 3,7 µs et le
+parsing à 2,3 µs. `entity_from_string/scene10000` garde le parcours de la scène qui retrouve les enfants de l'entité
+recréée (`linkIntoHierarchy`, réduit à la seule réserve `Hierarchy`).
+
+La cible (< 10 µs par entité à 10 000 entités) est tenue en YAML : 7,3 µs, dont 5,9 µs de parsing et 1,4 µs de
+création d'entités et de composants. Un format binaire cuit dans les `.owlpack` (non fait) ne gagnerait que le
+parsing : ~1,5 à 2 µs par entité, soit ×4, au prix d'un second format à versionner et à migrer à côté du YAML que
+l'éditeur garde ; à trancher par le mainteneur, sans urgence au vu de la cible.
+
+### 9.8 Shaders recompilés au besoin, démarrage Vulkan sur NVIDIA
+
+**Politique des shaders.** Le SPIR-V stocké (cache du répertoire de travail, puis sortie d'`OwlShaderBake`) passe par
+`checkSpirv` avant tout pilote : en-tête, instructions qui remplissent le fichier, `OpFunctionEnd` en dernier (une coupe
+entre deux instructions), `OpMemoryModel` et un point d'entrée de l'étage attendu. Un fichier absent, illisible,
+tronqué, d'une autre clé (source ou version de Slang) ou d'un autre étage est recompilé depuis la source Slang et mis
+en cache ; un refus du pilote (Vulkan `vkCreateShaderModule`, `vkCreateGraphicsPipelines`, `vkCreateComputePipelines` ;
+OpenGL compilation, édition de liens ou échec de spirv-cross pour le repli GLSL) déclenche une recompilation unique
+(`recompileSpirv`), jamais pour un SPIR-V qui sort du compilateur. Le cache est lu avant la sortie précompilée, pour
+qu'un précompilé refusé ne le soit qu'une fois ; une entrée de cache refusée est effacée. Le journal donne le fichier,
+la raison et la recompilation (`stored SPIR-V rejected, …/line.vert.spv: truncated: the instruction at word 297
+needs 4 words, 2 left` puis `recompiled, the cache now holds the new SPIR-V`). Essai sur les quatre configurations
+(`platformer_house`, cache vide puis chaud, et repli GLSL `OWL_OPENGL_SHADERS=glsl` sur les deux pilotes OpenGL) avec,
+dans `bin/assets`, `quad` aux étages permutés, `circle.frag` aléatoire, `line.vert` tronqué, `text` absent et
+`raycast_dda.comp` remplacé par un fragment : tout est recompilé, rendu et relu du cache au lancement suivant, sans
+plantage. Avant le contrôle d'étage, les permutations atteignaient le pilote : NVIDIA (Vulkan et OpenGL) et Mesa
+(OpenGL, pipeline graphique Vulkan) les refusent proprement et la recompilation prend le relais, mais ANV meurt en
+SIGFPE dans le `vkCreateComputePipelines` suivant le refus d'un module invalide (comportement indéfini, d'où le
+contrôle en amont). Tests : `ShaderFileUtils.{Corrupt,Truncated,Absent}CachedSpirvIsRecompiled`,
+`CachedSpirvOf{AnotherKey,AnotherStage}IsRecompiled`, `CorruptPrecompiledSpirvIsRecompiled`,
+`RecompileSpirvReplacesRefusedStoredOutput`, `CheckSpirvRejectsMalformedModules`.
+
+**Démarrage Vulkan NVIDIA.** Chronos ciblés (non commités), `platformer_house`, cache chaud, médiane de 3, ms :
+
+| Étape                                              | NVIDIA | Intel | Écart |
+|----------------------------------------------------|--------|-------|-------|
+| Fenêtre GLFW (chargement de l'ICD compris)         | 167    | 132   | +35   |
+| `vkCreateInstance`                                 | 8,1    | 1,7   | +6    |
+| Choix du périphérique physique                     | 7,8    | 10,3  | −3    |
+| `vkCreateDevice`                                   | 89     | 9,1   | +80   |
+| Swapchain                                          | 43     | 8,7   | +34   |
+| Shaders et pipelines (`initShaders`)               | 30     | 26    | +4    |
+| dont `vkCreate{Graphics,Compute}Pipelines` (7 + 1) | 1,0    | 0,8   | 0     |
+| Police, scène, prêt → première frame               | 78     | 88    | −10   |
+| Première frame                                     | 438    | 279   | +159  |
+
+Les ~160 ms sont dans le pilote : création du périphérique, swapchain en PRIME offload, chargement de l'ICD. Les
+pipelines coûtent 1 ms, parce que les pilotes ont leur propre cache disque (`~/.cache/nvidia`, cache Mesa). Prototype
+de `VkPipelineCache` persistant (`bin/cache/pipeline`, non commité) : avec les caches pilote, pipelines 0,9 → 0,8 ms
+une fois le fichier rempli, et 0,9 → 10 ms au premier lancement sur NVIDIA (un cache applicatif vide court-circuite
+celui du pilote) ; sans eux (`__GL_SHADER_DISK_CACHE=0`, `MESA_SHADER_CACHE_DISABLE=true`), 96 → 0,9 ms sur NVIDIA et
+55 → 0,2 ms sur Intel, cas qu'un poste réel ne rencontre qu'après une purge du cache pilote. Piste explorée, tant pis :
+rien n'est ajouté. Le premier lancement après une veille du GPU NVIDIA (D3cold) ajoute ~2 s à la fenêtre ; c'est
+l'origine des valeurs aberrantes ci-dessous, écartées par la médiane.
+
+`startup_ms` (`engine_ready` / `first_frame`), `taskset -c 2-7`, 300 frames, avant (`2cd5202e`) et après alternés,
+3 répétitions (5 pour OpenGL, relancé sous moins de charge), médiane, load average 5 à 11 ; « froid » : `bin/cache/shader`
+vidé :
+
+| Configuration   | Avant, froid | Avant, chaud | Après, froid | Après, chaud |
+|-----------------|--------------|--------------|--------------|--------------|
+| Vulkan / NVIDIA | 423 / 444¹   | 397 / 425    | 394 / 414    | 399 / 420    |
+| OpenGL / NVIDIA | 331 / 363    | 305 / 336    | 324 / 353    | 314 / 342    |
+| Vulkan / Intel  | 253 / 284    | 250 / 280    | 252 / 279    | 252 / 282    |
+| OpenGL / Intel  | 292 / 321    | 297 / 322    | 278 / 302    | 279 / 305    |
+
+¹ seule mesure sur trois sans réveil du GPU (2 355 / 2 376 ms pour les deux autres).
+
+Validation Vulkan (`--validation`, NVIDIA et Intel, `platformer_house`, `raycast_demo`, `voxel_terrain`, cache vide et
+chaud) sans message, `ctest` (render compris) vert. La recompilation au besoin ne coûte rien au démarrage nominal, et
+l'écart NVIDIA restant relève du pilote, pas des pipelines.

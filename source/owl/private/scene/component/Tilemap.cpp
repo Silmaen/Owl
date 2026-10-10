@@ -71,7 +71,7 @@ void emitInline(YAML::Emitter& iEmitter, const scene::TilemapAsset& iAsset) {
 	iEmitter << YAML::EndSeq;
 }
 
-auto readInline(const YAML::Node& iNode) -> shared<scene::TilemapAsset> {
+auto readInline(const core::YamlNode& iNode) -> shared<scene::TilemapAsset> {
 	auto asset = mkShared<scene::TilemapAsset>();
 	if (iNode["tilesetPath"])
 		asset->tilesetPath = iNode["tilesetPath"].as<std::string>();
@@ -81,15 +81,15 @@ auto readInline(const YAML::Node& iNode) -> shared<scene::TilemapAsset> {
 		asset->height = std::max(1u, iNode["height"].as<uint32_t>());
 	if (iNode["cellSize"])
 		asset->cellSize = iNode["cellSize"].as<float>();
-	if (const auto layerNodes = iNode["layers"]; layerNodes && layerNodes.IsSequence()) {
+	if (const auto layerNodes = iNode["layers"]; layerNodes && layerNodes.isSequence()) {
 		const size_t expected = static_cast<size_t>(asset->width) * asset->height;
-		for (const auto& layerNode: layerNodes) {
+		for (const auto layerNode: layerNodes) {
 			TilemapLayer layer;
 			if (layerNode["name"])
 				layer.name = layerNode["name"].as<std::string>();
 			if (layerNode["visible"])
 				layer.visible = layerNode["visible"].as<bool>();
-			if (const auto px = layerNode["parallax"]; px && px.IsSequence() && px.size() >= 2)
+			if (const auto px = layerNode["parallax"]; px && px.isSequence() && px.size() >= 2)
 				layer.parallax = math::vec2{px[0].as<float>(), px[1].as<float>()};
 			if (layerNode["tiles"])
 				layer.tiles = decodeTiles(layerNode["tiles"].as<std::string>(), expected);
@@ -126,7 +126,7 @@ void Tilemap::deserialize(const core::Serializer& iNode) {
 		// `asset` is left null on purpose: scene loading resolves it via `Scene::loadAssetReferences`.
 		return;
 	}
-	if (const auto inlineNode = root["inline"]; inlineNode && inlineNode.IsMap()) {
+	if (const auto inlineNode = root["inline"]; inlineNode && inlineNode.isMap()) {
 		asset = readInline(inlineNode);
 	} else if (root["width"] || root["layers"]) {
 		asset = readInline(root);

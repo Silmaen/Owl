@@ -39,28 +39,11 @@ auto loadSlangSource(const std::string& iShaderName, const std::string& iRendere
 	ss << in.rdbuf();
 	return ss.str();
 }
-}// namespace
-
-ComputeShader::ComputeShader(const std::string& iShaderName, const std::string& iRenderer)
-	: m_name{iShaderName + "@" + iRenderer} {
-	const std::string source = loadSlangSource(iShaderName, iRenderer);
-	if (source.empty())
-		return;
-	const auto compiled = renderer::utils::compileSlangToSpirv(source, iShaderName, /*iForVulkan=*/false);
-	if (!compiled.success) {
-		OWL_CORE_ERROR("OpenGL compute shader: Slang compilation failed for '{}'.", m_name)
-		return;
-	}
-	const auto it = compiled.spirvData.find(ShaderType::Compute);
-	if (it == compiled.spirvData.end() || it->second.empty()) {
-		OWL_CORE_ERROR("OpenGL compute shader: no `computeMain` entry point in '{}'.", m_name)
-		return;
-	}
-	const auto& spirv = it->second;
-
-	const GLuint shaderId = createShaderObject(ShaderType::Compute, spirv, m_name);
+// Build and link a compute program from SPIR-V; 0 when the stage or the link fails (logged).
+auto linkProgram(const std::vector<uint32_t>& iSpirv, const std::string& iName) -> GLuint {
+	const GLuint shaderId = createShaderObject(ShaderType::Compute, iSpirv, iName);
 	if (shaderId == 0)
-		return;
+		return 0;
 	const GLuint program = glCreateProgram();
 	glAttachShader(program, shaderId);
 	glLinkProgram(program);
@@ -72,15 +55,43 @@ ComputeShader::ComputeShader(const std::string& iShaderName, const std::string& 
 		if (logLen > 0) {
 			std::vector<GLchar> log(static_cast<size_t>(logLen));
 			glGetProgramInfoLog(program, logLen, &logLen, log.data());
-			OWL_CORE_ERROR("OpenGL compute shader: link failed for '{}': {}.", m_name, log.data())
+			OWL_CORE_ERROR("OpenGL compute shader: link failed for '{}': {}.", iName, log.data())
 		}
 		glDeleteShader(shaderId);
 		glDeleteProgram(program);
-		return;
+		return 0;
 	}
 	glDetachShader(program, shaderId);
 	glDeleteShader(shaderId);
-	m_programId = program;
+	return program;
+}
+}// namespace
+
+ComputeShader::ComputeShader(const std::string& iShaderName, const std::string& iRenderer)
+	: m_name{iShaderName + "@" + iRenderer} {
+	const std::string source = loadSlangSource(iShaderName, iRenderer);
+	if (source.empty())
+		return;
+	const auto compiled = renderer::utils::loadOrCompileSpirv(source, iShaderName, iRenderer, /*iForVulkan=*/false,
+															  {ShaderType::Compute});
+	if (!compiled.has_value()) {
+		OWL_CORE_ERROR("OpenGL compute shader: Slang compilation failed for '{}'.", m_name)
+		return;
+	}
+	const auto it = compiled->stages.find(ShaderType::Compute);
+	if (it == compiled->stages.end() || it->second.empty()) {
+		OWL_CORE_ERROR("OpenGL compute shader: no `computeMain` entry point in '{}'.", m_name)
+		return;
+	}
+	m_programId = linkProgram(it->second, m_name);
+	if (m_programId != 0)
+		return;
+	// Stored SPIR-V the driver (or the GLSL translation) refuses: compile it again once, and retry.
+	if (const auto again =
+				renderer::utils::recompileSpirv(source, iShaderName, iRenderer, /*iForVulkan=*/false, compiled->origin,
+												"the OpenGL driver or the GLSL translation refused it");
+		again.has_value() && again->stages.contains(ShaderType::Compute))
+		m_programId = linkProgram(again->stages.at(ShaderType::Compute), m_name);
 }
 
 ComputeShader::~ComputeShader() {

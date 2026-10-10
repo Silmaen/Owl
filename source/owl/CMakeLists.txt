@@ -125,6 +125,8 @@ owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE zstd REQUIRED MODULE_T
 owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE Taskflow REQUIRED MODULE_TARGET "Taskflow::Taskflow")
 # yaml-cpp: the public headers carry YAML as text (renderer/RenderStack.h), never yaml-cpp types (audit G-07)
 owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE yaml-cpp REQUIRED)
+# rapidyaml: read side of scenes, prefabs and entity snapshots (core/YamlNode.h); writing stays on yaml-cpp
+owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE ryml REQUIRED MODULE_TARGET "ryml::ryml")
 # Tracy client (OWL_PROFILER=tracy): private, the OWL_PROFILE_* macros of the public headers never include it
 if (${PROJECT_PREFIX}_PROFILER_BACKEND STREQUAL "tracy")
     owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE Tracy CONFIG REQUIRED MODULE_TARGET "Tracy::TracyClient")
@@ -143,6 +145,9 @@ endif ()
 # physics
 if (${PROJECT_PREFIX}_MODULE_PHYSICS)
     owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE box2d REQUIRED)
+    if (${PROJECT_PREFIX}_PHYSICS_AVX2 AND CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64")
+        target_compile_definitions(${ENGINE_NAME}Private INTERFACE OWL_PHYSICS_AVX2)
+    endif ()
 endif ()
 
 # audio

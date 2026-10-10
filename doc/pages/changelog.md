@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `OwlShaderBake` build tool (render module): compiles every `engine_assets/shaders/*/slang/*.slang` for Vulkan and OpenGL during the build, in the layout of `renderer::utils::getPrecompiledShaderPath`.
+- Frame bench `cpu_pace_wait_ms`: CPU time a Vulkan frame waits on its fence and swapchain image, to tell engine work from presentation pacing.
 - Optional engine modules: `OWL_MODULE_RENDER`, `OWL_MODULE_PHYSICS`, `OWL_MODULE_AUDIO`, `OWL_MODULE_SCRIPT` and `OWL_MODULE_GUI` (Conan options `render`, `physics`, `audio`, `script`, `gui`) leave out a module and its third parties while its public API stays, backed by the Null backend or a no-op; `OWL_WITH_<MODULE>` and `find_package(OwlEngine COMPONENTS Physics)` tell a game what is built in.
 - `linux-clang-minimal` preset (every optional module off: 23 Conan packages instead of 47), for local checks.
 - `OWL_REQUIRE_MODULE(<MODULE>)` (`testHelper.h`) skips a test whose module is not built.
@@ -65,6 +67,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Scenes, prefabs and entity snapshots are read with rapidyaml (`core::YamlNode`, yaml-cpp still writes, files unchanged): a 10 000-entity scene loads in 7.3 µs per entity instead of 121, an undo snapshot in 2.9 µs instead of 107.
+- Prefab instantiation copies the components through the registry and links only the instance's children: 4-6 µs per entity instead of 240-370.
+- A format 1 scene or prefab without a name-only `EntityLink` is read as is, without the yaml-cpp migration pass: the sample scenes load 22 to 36 times faster.
 - Lighter pull-request CI: five checks (Code Style, Linux Clang, Windows Clang, Sanitizer Address, Clang-Tidy) gate `PR Ready`; GCC and Include Check run on `main`, the Thread and UB sanitizers and the Static Analyzer nightly, and the *Clang Minimal Modules* job is removed.
 - `find_package(OwlEngine)` exposes EnTT as its only public dependency: yaml-cpp left the public headers (render-stack `defaultConfig`, `overrides` and `RenderLayer::applyConfig` carry YAML text), and imgui comes with the optional `Owl::Gui` target (`COMPONENTS Gui`, `<owlgui.h>`), `<owl.h>` no longer including `gui/utils.h`; `test_package` checks both targets.
 - The help bundle is generated in `<build>/help/` instead of `engine_assets/help/`, installed as `assets/help/` by both CPack components; `HelpPanel` falls back to its build tree.
@@ -86,6 +91,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Tests: the per-binary ctest timeout drops from 1 h to 10 min (`OWL_TEST_TIMEOUT`, 1 h on the emulated arm64), so a hung binary no longer stalls a build for hours.
 - CI: the emulated arm64 nightly builds Clang only, on a `linux-emulated` preset without coverage, benchmarks or image tests, so it fits its time limit.
 - EnTT 4.0.0 (C++20), Taskflow 4.1.0, OpenAL Soft 1.25.2, msdfgen 1.13, msdf-atlas-gen 1.4 and tinyobjloader rc13, through local Conan recipes until ConanCenter publishes them.
+- Third-party dependencies at their latest versions: glfw 3.5.1 (local recipe, its Wayland seat patch now upstream), freetype 2.14.3 and tinyxml2 11.0.0 (msdfgen recipe), libalsa 1.2.16.1 (OpenAL Soft recipe), brotli 1.2.0, flac 1.5.0 and plutovg 1.3.3 (overrides), CMake 4.4.4 build tool, wayland-protocols 1.49 (file dialogs).
 - CI on teamcity-github-bridge 1.11.0: PR Ready keeps a fixed check name (`checkName`), pull requests get labels by changed paths and are assigned to their author.
 - TeamCity: Include Check and PR Ready move to the root beside Code Style (GitHub checks `Include Check` and `PR Ready`).
 - CI: Windows builds compute the coverage on `main` only, no longer on pull requests.
@@ -142,6 +148,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Nightly sanitizers: TSan ignores the GLib / Pango races of the GTK stack GLFW loads (`test/tsan.supp`), and the static analyzer no longer reports a false leak in `SystemSchedule_test.cpp`.
+- `conan create` exports `source/tools`, which the engine build needs since `OwlShaderBake`.
+- Runner and editor start without compiling Slang: the build compiles the engine shaders to SPIR-V (`OwlShaderBake`, into `bin/assets`, installed in both CPack components and embedded in a game pack), compute shaders included, and `renderer::utils::loadOrCompileSpirv` uses them before the cache when their key matches the source; first frame 630-860 → 270-440 ms with an empty cache, 440-570 → 270-410 ms with a warm one.
+- Slang warning 41012 is filtered again: Slang 2026.19 prints it as `warning[E41012]`.
+- Precompiled or cached SPIR-V that is absent, truncated, garbled, of another stage or key, or refused by the driver (Vulkan module or pipeline, OpenGL compilation, GLSL translation) is compiled again from the Slang source and cached, with a log naming the file and the reason, instead of failing the shader or reaching the driver.
+- 10 000-sprite CPU frame under its v0.3.0 target: world matrices in a persistent dense per-entity cache, checked by compare and recomposed only on change (no per-frame maps, no matrix decomposition), inherited visibility computed in the same pass: `editor_update/flat10000` 2.60 → 0.33 ms, 1 000-deep chains 10× cheaper to query and build.
+- `math::Transform::operator()` builds the TRS matrix in closed form and skips the trigonometry of null angles (74 → 4.2 ns), Renderer2D finds a texture slot by pointer before the backend compare: transient quads 86 → 17 ns, scene-world quads 10.8 → 9.4 ns.
+- Faster Box2D: two spare solver threads for the tree rebuild and island split and poses copied to the entities in parallel, plus an opt-in AVX2 build on x86_64 (`OWL_PHYSICS_AVX2`, off by default since CPUs without AVX2 then run without physics): 5 000 bodies in contact step in 1.44 ms on 8 workers with AVX2 instead of 1.68 ms.
+- Raycast: the CPU walks the DDA itself for the column depths and stats instead of reading the GPU pass back twice per frame, so the frame no longer drains mid-way (Vulkan: one submission, no fence wait; `raycast_demo` 1.5 to 3.5 times faster on both backends).
+- Vulkan: successive batches on one framebuffer share a render pass, and `RenderCommand::clear` no longer clears again a pass that just cleared on load (Intel: 40 µs less GPU per 2D frame).
+- Lua back under its audit cost: the bindings are light C functions instead of one closure each, the bound scene and `time.delta()` live on the C++ side of the state, `coroutine.wrap` is no longer a Lua chunk compiled per state and the callback names are interned once: creating an instance is 40 % faster and a third smaller, an empty callback a third cheaper.
 - Sanitizers: `SceneComponent.name` compares the component names as strings, not pointers, and LeakSanitizer ignores the GTK caches libdecor leaves in the Wayland smoke test (`test/lsan.supp`).
 - `main` builds again: the conflict marker left in `VulkanHandler.h` is resolved and the `MemoryAllocator` singleton lives in its source file, so hidden visibility no longer duplicates it (`-Wunique-object-duplication`); `linux-clang-minimal` builds and passes again (Null shader reload without Slang, hot-reload tests skipped without the render or script module).
 - `core_task` scheduler tests no longer fail on a loaded machine: they wait for the worker (condition and 30 s deadline) instead of sleeping 5 ms.

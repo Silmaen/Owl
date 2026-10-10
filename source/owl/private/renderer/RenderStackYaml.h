@@ -7,6 +7,7 @@
  */
 #pragma once
 
+#include "core/YamlNode.h"
 #include "core/external/yaml.h"
 #include "renderer/RenderStack.h"
 
@@ -67,6 +68,6 @@ namespace owl::renderer {
  * @param[in] iNode The sequence node.
  * @return The parsed config.
  */
-[[nodiscard]] auto enabledFromYaml(const YAML::Node& iNode) -> EnabledRenderersConfig;
+[[nodiscard]] auto enabledFromYaml(const core::YamlNode& iNode) -> EnabledRenderersConfig;
 
 }// namespace owl::renderer

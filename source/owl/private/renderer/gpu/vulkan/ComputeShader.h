@@ -14,6 +14,7 @@
 #include <vulkan/vulkan.h>
 
 #include <cstdint>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -86,6 +87,14 @@ private:
 	 * @param[in] iBindings Set of SSBO binding slots used by the shader.
 	 */
 	void buildDescriptorSetLayout(const std::vector<uint32_t>& iBindings);
+
+	/**
+	 * @brief
+	 *  Create the shader module and the compute pipeline on `m_layout`.
+	 * @param[in] iSpirv SPIR-V of the `computeMain` entry point.
+	 * @return What failed, or nothing when `m_pipeline` is ready.
+	 */
+	auto createPipeline(const std::vector<uint32_t>& iSpirv) -> std::optional<std::string>;
 
 	/// SSBO binding slots declared by the compute shader (from reflection).
 	std::vector<uint32_t> m_bindings;

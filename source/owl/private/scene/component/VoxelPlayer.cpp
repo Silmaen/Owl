@@ -52,7 +52,7 @@ void VoxelPlayer::deserialize(const core::Serializer& iNode) {
 		flySpeed = node["FlySpeed"].as<float>();
 	if (node["SuperSpeedMultiplier"])
 		superSpeedMultiplier = node["SuperSpeedMultiplier"].as<float>();
-	if (const auto he = node["HalfExtents"]; he && he.IsSequence() && he.size() >= 3)
+	if (const auto he = node["HalfExtents"]; he && he.isSequence() && he.size() >= 3)
 		halfExtents = math::vec3{he[0].as<float>(), he[1].as<float>(), he[2].as<float>()};
 	if (node["Reach"])
 		reach = node["Reach"].as<float>();

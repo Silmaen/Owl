@@ -30,5 +30,5 @@ CXX={{ ns.bin }}g++.exe
 
 # One version per build tool, the highest the recipes resolve (they each ask their own range).
 [replace_tool_requires]
-cmake/*: cmake/4.4.3
+cmake/*: cmake/4.4.4
 pkgconf/*: pkgconf/2.5.1

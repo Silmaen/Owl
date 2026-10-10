@@ -203,6 +203,16 @@ Shaders are written in **Slang** (`.slang` files), a single-source shading langu
 3. **Reflection**: `shaderReflect()` uses spirv-cross to extract uniform buffers and sampled images from the SPIR-V
    bytecode
 4. **Caching**: SPIR-V binaries are cached as `.spv` files with hash-based validation
+5. **Precompiled**: the build runs the shader bake tool (`source/tools/shader_bake/main.cpp`), which writes the
+   SPIR-V of every engine shader, for both APIs, to `bin/assets/shaders/<renderer>/spirv/<api>/`
+   (`getPrecompiledShaderPath`); both CPack components install it and a game pack embeds it. `loadOrCompileSpirv` reads
+   the cache, then this output, and compiles with Slang only when neither matches the cache key of the current source
+   (an edited shader, a game shader, hot reload, another Slang version)
+6. **Recovery**: stored SPIR-V is checked before a driver sees it (`checkSpirv`: header, instructions that fill the
+   file, `OpFunctionEnd` last, an entry point of the expected stage); an absent, truncated, garbled or misplaced file,
+   or one the driver still refuses (Vulkan module or pipeline creation, OpenGL compilation, spirv-cross translation of
+   the GLSL fallback: `recompileSpirv`), is compiled again from the Slang source and the result goes to the cache,
+   which is read first at the next start. The log names the file, the reason and the recompilation
 
 See [Renderer > Shader System](renderer.md) for the shader class API.
 
@@ -236,8 +246,8 @@ For root entities (`parentId == 0`), local equals world (zero overhead).
 ### Visibility Inheritance
 
 If any ancestor is hidden (editor or game mode), the entity is effectively hidden.
-`Scene::isEffectivelyVisible()` walks the parent chain to check; results are memoised per pass in `m_visibilityCache` so
-sibling entities sharing the same root chain only pay the walk once per tick.
+`Scene::isEffectivelyVisible()` walks the parent chain to check; during a tick it reads the visibility computed once
+per entity by `prepareWorldTransforms()`, so sibling entities sharing the same root chain only pay the walk once.
 
 ### Hierarchy Operations
 

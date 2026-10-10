@@ -39,9 +39,9 @@ auto readVersionNode(const YAML::Node& iRoot) -> expected<uint32_t, FormatError>
 auto runStep(const MigrationStep iStep, YAML::Node& ioRoot) -> bool {
 	try {
 		const Serializer document;
-		document.getImpl()->node.reset(ioRoot);
+		document.getImpl()->document.reset(ioRoot);
 		const bool done = iStep(document);
-		ioRoot.reset(document.getImpl()->node);
+		ioRoot.reset(document.getImpl()->document);
 		return done;
 	} catch (const std::exception& iEx) {
 		OWL_CORE_ERROR("FormatVersion: Migration step threw: {}.", iEx.what())
@@ -71,7 +71,7 @@ void emitFormatVersion(YAML::Emitter& ioEmitter, const DocumentFormat& iFormat) 
 }
 
 auto readFormatVersion(const Serializer& iDocument) -> expected<uint32_t, FormatError> {
-	return readVersionNode(iDocument.getImpl()->node);
+	return readVersionNode(iDocument.getImpl()->document);
 }
 
 auto upgradeYamlDocument(const DocumentFormat& iFormat, YAML::Node& ioRoot, const std::string_view iSourceName)
@@ -105,7 +105,7 @@ auto upgradeYamlDocument(const DocumentFormat& iFormat, YAML::Node& ioRoot, cons
 
 auto upgradeDocument(const DocumentFormat& iFormat, const Serializer& ioDocument, const std::string_view iSourceName)
 		-> expected<uint32_t, FormatError> {
-	return upgradeYamlDocument(iFormat, ioDocument.getImpl()->node, iSourceName);
+	return upgradeYamlDocument(iFormat, ioDocument.getImpl()->document, iSourceName);
 }
 
 auto upgradeDocumentText(const DocumentFormat& iFormat, std::string& ioYaml, const std::string_view iSourceName)

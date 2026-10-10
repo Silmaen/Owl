@@ -8,8 +8,11 @@
 
 #pragma once
 
+#include "core/YamlNode.h"
 #include "core/external/yaml.h"
 #include "math/vectors.h"
+
+#include <cstddef>
 
 /// @cond
 namespace YAML {
@@ -112,3 +115,31 @@ struct convert<owl::math::vec4> {
 
 }// namespace YAML
 /// @endcond
+
+namespace owl::core {
+
+/**
+ * @brief
+ *  Vectors: a sequence of exactly `N` numbers.
+ * @tparam T Stored scalar type.
+ * @tparam N Dimension.
+ */
+template<typename T, std::size_t N>
+struct YamlRead<math::Vector<T, N>> {
+	/**
+	 * @brief
+	 *  Decode a node.
+	 * @param[in] iNode The node, expected to be an `N`-element sequence.
+	 * @param[out] oValue The vector.
+	 * @return True on success.
+	 */
+	static auto decode(const YamlNode& iNode, math::Vector<T, N>& oValue) -> bool {
+		if (!iNode.isSequence() || iNode.size() != N)
+			return false;
+		std::size_t index = 0;
+		for (const auto element: iNode) oValue[index++] = element.template as<T>();
+		return true;
+	}
+};
+
+}// namespace owl::core

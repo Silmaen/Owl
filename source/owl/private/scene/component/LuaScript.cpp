@@ -52,8 +52,8 @@ void LuaScript::deserialize(const core::Serializer& iNode) {
 	if (iNode.getImpl()->node["scriptPath"])
 		scriptPath = iNode.getImpl()->node["scriptPath"].as<std::string>();
 	properties.clear();
-	if (const auto propsNode = iNode.getImpl()->node["properties"]; propsNode && propsNode.IsSequence()) {
-		for (const auto& propNode: propsNode) {
+	if (const auto propsNode = iNode.getImpl()->node["properties"]; propsNode && propsNode.isSequence()) {
+		for (const auto propNode: propsNode) {
 			script::ScriptProperty prop;
 			if (propNode["name"])
 				prop.name = propNode["name"].as<std::string>();

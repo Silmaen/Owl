@@ -19,6 +19,7 @@
 
 #include <entt/entt.hpp>
 
+#include <array>
 #include <cstdint>
 #include <filesystem>
 #include <optional>
@@ -368,8 +369,8 @@ public:
 	 *
 	 * Walks every entity carrying both `Transform` and `Hierarchy` in pre-order (parents before children, no depth
 	 * limit), composing `world = parentWorld * local` once per entity. The matrices are stored in the array returned
-	 * by `getWorldMatrices()` (slot = `getWorldIndex(entity)`), mirrored into `m_worldTransformCache` for the CPU
-	 * consumers, and passed to `renderer::Renderer2D::setSceneWorlds()`, which uploads them as its `sceneWorlds[]`
+	 * by `getWorldMatrices()` (slot = `getWorldIndex(entity)`), kept in the persistent per-entity world cache for
+	 * the CPU consumers (an unchanged entity is not recomposed), and passed to `renderer::Renderer2D::setSceneWorlds()`, which uploads them as its `sceneWorlds[]`
 	 * storage buffer. The GPU never recomposes the hierarchy.
 	 */
 	void prepareWorldTransforms() const;
@@ -737,19 +738,10 @@ private:
 	bool m_tilemapAssetsDirty = true;
 	/**
 	 * @brief
-	 *  Per-update-pass cache for `isEffectivelyVisible`. Key packs the entity
-	 *  id with a "is editor mode" bit; the bool value is the effective
-	 *  visibility (current entity + all ancestors). Only consulted when
-	 *  `m_inUpdatePass` is true — outside an update tick (tests, inspector
-	 *  inspection helpers, …) the cache is bypassed so callers always see
-	 *  fresh `Visibility` state. Cleared whenever the cache is armed.
-	 */
-	mutable std::unordered_map<uint64_t, bool> m_visibilityCache;
-	/**
-	 * @brief
 	 *  True during the read-only tail of `onUpdateRuntime` (armed once scripts,
 	 *  physics, entity links and trigger callbacks have run) and during
-	 *  `onUpdateEditor` — gates `m_visibilityCache` and `m_layerContentCache*`
+	 *  `onUpdateEditor`, right before `prepareWorldTransforms()` — gates the effective visibility computed by that
+	 *  call and `m_layerContentCache*`
 	 *  so they only serve callers that can guarantee Visibility / RendererTag
 	 *  flags don't mutate mid-pass.
 	 */
@@ -762,7 +754,7 @@ private:
 	 * @brief
 	 *  Per-pass cache for `layerHasContent(name, iIsFirst=true)`. Populated
 	 *  lazily by the render-stack walk, dropped at the start of every update
-	 *  tick along with `m_visibilityCache`. Avoids the 7-view scan being
+	 *  tick. Avoids the 7-view scan being
 	 *  repeated for every render frame of a stable scene.
 	 */
 	mutable std::unordered_map<std::string, bool> m_layerContentCacheFirst;
@@ -770,33 +762,59 @@ private:
 	mutable std::unordered_map<std::string, bool> m_layerContentCacheNotFirst;
 	/**
 	 * @brief
-	 *  Per-pass cache for `getWorldTransform`. The same entity transform is
-	 *  recomputed up to ~30× per frame across sprites + circles + text +
-	 *  tilemaps + raycast sprites + dynamic walls + doors + physics sync +
-	 *  sound listener / source paths; caching kills the duplicates. Gated
-	 *  by `m_worldTransformCacheActive` (a narrower window than
-	 *  `m_inUpdatePass`) — only valid after the mutating phases (scripts /
-	 *  physics / entity links / triggers) have finished, where transforms are stable.
+	 *  Cached world matrix of one entity, indexed by entity index in `m_worldNodes`.
+	 *
+	 * The cache needs no write hook: an entry stays valid while the local transform it was composed from, its parent
+	 * and the parent's `stamp` are unchanged, which a walk up the chain checks with a few compares per level. A
+	 * recomposed entry takes a new `stamp`, so its descendants see the change and recompose in turn.
 	 */
-	mutable std::unordered_map<entt::entity, math::Transform> m_worldTransformCache;
+	struct WorldNode {
+		/// Entity owning the entry (its version tells a recycled index apart).
+		entt::entity handle = entt::null;
+		/// Parent entity the world matrix was composed with (`entt::null` for a root).
+		entt::entity parent = entt::null;
+		/// UUID of `parent`, checked against the `Hierarchy` before trusting `parent`.
+		core::UUID parentId{0};
+		/// Unique number of the current `world` value (0 = never composed).
+		uint64_t stamp = 0;
+		/// Parent's `stamp` when `world` was composed.
+		uint64_t parentStamp = 0;
+		/// `stamp` that `worldTransform` was decomposed from (0 = none).
+		uint64_t decomposedStamp = 0;
+		/// World pass in which the entry was last checked (trusted without re-check during that pass).
+		uint32_t checkedPass = 0;
+		/// World pass of the `prepareWorldTransforms()` call that gave the entry `slot`.
+		uint32_t slotPass = 0;
+		/// Slot in `m_worldMatrices` given by the last `prepareWorldTransforms()` call.
+		uint32_t slot = 0;
+		/// World pass of the `prepareWorldTransforms()` call that computed `visible`.
+		uint32_t visibilityPass = 0;
+		/// Effective visibility (entity and all its ancestors) in game (0) and editor (1) mode.
+		std::array<bool, 2> visible{true, true};
+		/// Local transform `world` was composed from.
+		math::Transform local;
+		/// World matrix.
+		math::mat4 world;
+		/// Decomposition of `world`, built on demand for the CPU consumers of `getWorldTransform`.
+		math::Transform worldTransform;
+	};
+	/// World matrix cache, indexed by `entt::to_entity(handle)`; survives frames.
+	mutable std::vector<WorldNode> m_worldNodes;
+	/// Last stamp given to a composed `WorldNode`.
+	mutable uint64_t m_worldStamp = 0;
+	/// Current world pass; bumped by every `prepareWorldTransforms()` call.
+	mutable uint32_t m_worldPass = 1;
+	/// True while `prepareWorldTransforms()` runs: entries checked in the current pass are trusted and get a slot.
+	mutable bool m_preparingWorlds = false;
 	/**
 	 * @brief
-	 *  True only during the read-only tail of a tick (sound + render), arming
-	 *  `m_worldTransformCache`. Scripts and physics can mutate transforms
-	 *  freely while this is false — the cache would otherwise hand back stale
-	 *  values to the post-mutation reads.
+	 *  True only during the read-only tail of a tick (sound + render): the world nodes checked by the last
+	 *  `prepareWorldTransforms()` are trusted without walking their chain again. Scripts and physics can mutate
+	 *  transforms freely while this is false, every read re-checks the chain.
 	 */
 	mutable bool m_worldTransformCacheActive = false;
 	/// World matrices of the last `prepareWorldTransforms()` call, indexed by world slot (parents before children).
 	mutable std::vector<math::mat4> m_worldMatrices;
-	/**
-	 * @brief
-	 *  Per-frame entity → slot index in `m_worldMatrices` (and the renderer's
-	 *  `sceneWorlds[]` SSBO) populated by `prepareWorldTransforms()`. Refilled
-	 *  on every prepare call alongside `m_worldTransformCache`; lookup via
-	 *  `getWorldIndex()`.
-	 */
-	mutable std::unordered_map<entt::entity, uint32_t> m_entityToWorldIndex;
 	/**
 	 * @brief
 	 *  Hook run when a component is added to an entity.
@@ -947,6 +965,27 @@ private:
 	 * @param[in] iTimeStep The frame duration (advances the screen transition).
 	 */
 	void renderRuntimeFrame(const core::Timestep& iTimeStep);
+
+	/**
+	 * @brief
+	 *  Bring the cached world matrix of an entity and of its ancestors up to date.
+	 *
+	 * Walks up to the root (or to an entry already checked in the current pass), then back down, recomposing only
+	 * the entries whose local transform, parent or parent's world changed. No depth limit, no recursion.
+	 * @param[in] iEntity The entity (must carry `Transform` and `Hierarchy`).
+	 * @param[in] iForbiddenAncestor UUID that must not appear among the ancestors (`0` for none).
+	 * @return The entity's node, or nullptr when the chain loops or contains `iForbiddenAncestor`.
+	 */
+	[[nodiscard]] auto resolveWorldNode(entt::entity iEntity, core::UUID iForbiddenAncestor) const -> WorldNode*;
+
+	/**
+	 * @brief
+	 *  Parent entity of an entity, through the world cache when it still matches the hierarchy.
+	 * @param[in] iEntity The entity.
+	 * @param[in] iParentId The parent UUID read from the entity's `Hierarchy` (non-zero).
+	 * @return The parent entity carrying `Transform` and `Hierarchy`, or `entt::null` when it does not exist.
+	 */
+	[[nodiscard]] auto parentOf(entt::entity iEntity, core::UUID iParentId) const -> entt::entity;
 
 	/**
 	 * @brief

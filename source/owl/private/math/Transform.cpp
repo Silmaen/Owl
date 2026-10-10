@@ -9,8 +9,10 @@
 
 #include "math/Transform.h"
 
+#include <bit>
 #include <cmath>
 #include <cstdint>
+#include <utility>
 
 namespace owl::math {
 
@@ -92,10 +94,34 @@ Transform::Transform(const mat4& iTransform) {
 OWL_DIAG_POP
 
 auto Transform::operator()() const -> mat4 {
-	return translate(identity<float, 4>(), m_translation) * rotate(identity<float, 4>(), m_rotation[2], {0, 0, 1}) *
-		   rotate(identity<float, 4>(), m_rotation[1], {0, 1, 0}) *
-		   rotate(identity<float, 4>(), m_rotation[0], {1, 0, 0}) * math::scale(identity<float, 4>(), m_scale);
+	// Closed form of translate * rotateZ * rotateY * rotateX * scale; a null angle skips its sin / cos (2D case).
+	const auto sinCos = [](const float iAngle) -> std::pair<float, float> {
+		// Bit test for +0 / -0: cheaper than a float compare chain and free of -Wfloat-equal.
+		if ((std::bit_cast<uint32_t>(iAngle) << 1u) == 0u)
+			return {g_zero, g_one};
+		return {std::sin(iAngle), std::cos(iAngle)};
+	};
+	const auto [sx, cx] = sinCos(m_rotation[0]);
+	const auto [sy, cy] = sinCos(m_rotation[1]);
+	const auto [sz, cz] = sinCos(m_rotation[2]);
+	mat4 result;
+	result(0, 0) = cz * cy * m_scale[0];
+	result(1, 0) = sz * cy * m_scale[0];
+	result(2, 0) = -sy * m_scale[0];
+	result(3, 0) = g_zero;
+	result(0, 1) = (cz * sy * sx - sz * cx) * m_scale[1];
+	result(1, 1) = (sz * sy * sx + cz * cx) * m_scale[1];
+	result(2, 1) = cy * sx * m_scale[1];
+	result(3, 1) = g_zero;
+	result(0, 2) = (cz * sy * cx + sz * sx) * m_scale[2];
+	result(1, 2) = (sz * sy * cx - cz * sx) * m_scale[2];
+	result(2, 2) = cy * cx * m_scale[2];
+	result(3, 2) = g_zero;
+	result(0, 3) = m_translation[0];
+	result(1, 3) = m_translation[1];
+	result(2, 3) = m_translation[2];
+	result(3, 3) = g_one;
+	return result;
 }
-
 
 }// namespace owl::math

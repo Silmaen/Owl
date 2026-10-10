@@ -22,8 +22,9 @@ get confirmation. A passing headless (Null backend) test is evidence the path wo
   UBOs, bind textures (`RenderCommand::bindTextures`) and SSBOs, and draw under the renderer's `ScopedActive`. On
   OpenGL (global binding points, UBO 0 and units 0..n shared) `opengl::BindingTable` re-applies the block's UBOs and
   textures when another block drew in between; a bind made outside any block is not tracked.
-- **Vulkan: one command buffer per frame, two frames in flight.** A batch is a render pass in it, not a
-  submission; the frame is submitted once at `endFrame`. Never wait on a queue or the device in a frame:
+- **Vulkan: one command buffer per frame, two frames in flight.** Batches share a render pass in it (kept
+  open across batches on one framebuffer, closed by a framebuffer change, a transfer, a compute dispatch or the frame
+  end), never a submission; the frame is submitted once at `endFrame`. Never wait on a queue or the device in a frame:
   a CPU read-back goes through `VulkanHandler::flushFrame` / `submitNow` (counted as `fence_wait`).
 - **Vulkan: nothing the GPU may still read is written or destroyed in place.** CPU data reaches the GPU
   through the frame ring (UBO, streamed SSBO, staging) or a copy recorded in the frame; destruction goes

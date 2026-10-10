@@ -43,6 +43,12 @@
 namespace owl::script {
 
 namespace {
+// A light C function per binding: unlike a closure over the binding, it allocates nothing in each Lua state.
+template<LuaFunction Function>
+auto guarded(lua_State* iState) -> int {
+	return LuaEngine::callGuarded(iState, Function);
+}
+
 auto contextOf(lua_State* iState) -> app::EngineContext* {
 	const auto* boundScene = getBoundScene(iState);
 	return boundScene != nullptr ? boundScene->getEngineContext() : nullptr;
@@ -370,12 +376,7 @@ auto luaSceneQuit([[maybe_unused]] lua_State* iState) -> int {
 }
 
 auto luaTimeDelta(lua_State* iState) -> int {
-	// Delta time is stored in registry key "owl_dt".
-	lua_getfield(iState, LUA_REGISTRYINDEX, "owl_dt");
-	if (lua_isnumber(iState, -1) == 0) {
-		lua_pop(iState, 1);
-		lua_pushnumber(iState, 0);
-	}
+	lua_pushnumber(iState, static_cast<lua_Number>(LuaEngine::getDeltaTime(iState)));
 	return 1;
 }
 
@@ -907,175 +908,175 @@ auto declareBindings() -> std::vector<LuaBinding> {
 	const LuaValue entityId{.name = "entity_id", .type = Entity};
 	// clang-format off
 	return {
-		{.table = "transform", .name = "get_position", .function = luaTransformGetPosition,
+		{.table = "transform", .name = "get_position", .function = guarded<luaTransformGetPosition>,
 		 .description = "Local position of the entity (zeros when it has no transform).",
 		 .params = {entityId}, .returns = {{"x", Number}, {"y", Number}, {"z", Number}}},
-		{.table = "transform", .name = "set_position", .function = luaTransformSetPosition,
+		{.table = "transform", .name = "set_position", .function = guarded<luaTransformSetPosition>,
 		 .description = "Set the local position.",
 		 .params = {entityId, {"x", Number}, {"y", Number}, {"z", Number}}},
-		{.table = "transform", .name = "get_rotation", .function = luaTransformGetRotation,
+		{.table = "transform", .name = "get_rotation", .function = guarded<luaTransformGetRotation>,
 		 .description = "Local rotation, in radians.",
 		 .params = {entityId}, .returns = {{"rx", Number}, {"ry", Number}, {"rz", Number}}},
-		{.table = "transform", .name = "set_rotation", .function = luaTransformSetRotation,
+		{.table = "transform", .name = "set_rotation", .function = guarded<luaTransformSetRotation>,
 		 .description = "Set the local rotation, in radians.",
 		 .params = {entityId, {"rx", Number}, {"ry", Number}, {"rz", Number}}},
-		{.table = "transform", .name = "get_scale", .function = luaTransformGetScale,
+		{.table = "transform", .name = "get_scale", .function = guarded<luaTransformGetScale>,
 		 .description = "Local scale.",
 		 .params = {entityId}, .returns = {{"sx", Number}, {"sy", Number}, {"sz", Number}}},
-		{.table = "transform", .name = "set_scale", .function = luaTransformSetScale,
+		{.table = "transform", .name = "set_scale", .function = guarded<luaTransformSetScale>,
 		 .description = "Set the local scale.",
 		 .params = {entityId, {"sx", Number}, {"sy", Number}, {"sz", Number}}},
-		{.table = "physics", .name = "impulse", .function = luaPhysicsImpulse,
+		{.table = "physics", .name = "impulse", .function = guarded<luaPhysicsImpulse>,
 		 .description = "Apply a linear impulse to the body.",
 		 .params = {entityId, {"fx", Number}, {"fy", Number}}},
-		{.table = "physics", .name = "get_velocity", .function = luaPhysicsGetVelocity,
+		{.table = "physics", .name = "get_velocity", .function = guarded<luaPhysicsGetVelocity>,
 		 .description = "Linear velocity of the body (zeros without a body).",
 		 .params = {entityId}, .returns = {{"vx", Number}, {"vy", Number}}},
-		{.table = "physics", .name = "set_velocity", .function = luaPhysicsSetVelocity,
+		{.table = "physics", .name = "set_velocity", .function = guarded<luaPhysicsSetVelocity>,
 		 .description = "Set the linear velocity of the body.",
 		 .params = {entityId, {"vx", Number}, {"vy", Number}}},
-		{.table = "physics", .name = "set_transform", .function = luaPhysicsSetTransform,
+		{.table = "physics", .name = "set_transform", .function = guarded<luaPhysicsSetTransform>,
 		 .description = "Move the body to a world position and rotation (radians).",
 		 .params = {entityId, {"x", Number}, {"y", Number}, {"rotation", Number}}},
-		{.table = "physics", .name = "set_gravity_scale", .function = luaPhysicsSetGravityScale,
+		{.table = "physics", .name = "set_gravity_scale", .function = guarded<luaPhysicsSetGravityScale>,
 		 .description = "Scale the world gravity for this body (0 = none).",
 		 .params = {entityId, {"scale", Number}}},
-		{.table = "input", .name = "is_key_pressed", .function = luaInputIsKeyPressed,
+		{.table = "input", .name = "is_key_pressed", .function = guarded<luaInputIsKeyPressed>,
 		 .description = "Whether a key is held (GLFW key code: 65 = A, 87 = W, 32 = Space).",
 		 .params = {{"keycode", Integer}}, .returns = {{"pressed", Boolean}}},
-		{.table = "input", .name = "is_mouse_button_pressed", .function = luaInputIsMouseButtonPressed,
+		{.table = "input", .name = "is_mouse_button_pressed", .function = guarded<luaInputIsMouseButtonPressed>,
 		 .description = "Whether a mouse button is held (0 = left, 1 = right, 2 = middle).",
 		 .params = {{"button", Integer}}, .returns = {{"pressed", Boolean}}},
-		{.table = "input", .name = "get_mouse_x", .function = luaInputGetMouseX,
+		{.table = "input", .name = "get_mouse_x", .function = guarded<luaInputGetMouseX>,
 		 .description = "Mouse X position in the window, in pixels.", .returns = {{"x", Number}}},
-		{.table = "input", .name = "get_mouse_y", .function = luaInputGetMouseY,
+		{.table = "input", .name = "get_mouse_y", .function = guarded<luaInputGetMouseY>,
 		 .description = "Mouse Y position in the window, in pixels.", .returns = {{"y", Number}}},
-		{.table = "sound", .name = "play", .function = luaSoundPlay,
+		{.table = "sound", .name = "play", .function = guarded<luaSoundPlay>,
 		 .description = "Play a sound asset (loaded on first use); an invalid handle when sound is off or missing.",
 		 .params = {{"asset_path", String}}, .returns = {{"handle", Integer}}},
-		{.table = "sound", .name = "stop", .function = luaSoundStop,
+		{.table = "sound", .name = "stop", .function = guarded<luaSoundStop>,
 		 .description = "Stop a playing sound.", .params = {{"handle", Integer}}},
-		{.table = "sound", .name = "pause", .function = luaSoundPause,
+		{.table = "sound", .name = "pause", .function = guarded<luaSoundPause>,
 		 .description = "Pause a playing sound.", .params = {{"handle", Integer}}},
-		{.table = "sound", .name = "resume", .function = luaSoundResume,
+		{.table = "sound", .name = "resume", .function = guarded<luaSoundResume>,
 		 .description = "Resume a paused sound.", .params = {{"handle", Integer}}},
-		{.table = "sound", .name = "set_volume", .function = luaSoundSetVolume,
+		{.table = "sound", .name = "set_volume", .function = guarded<luaSoundSetVolume>,
 		 .description = "Set the volume of a sound (0.0 to 2.0).",
 		 .params = {{"handle", Integer}, {"volume", Number}}},
-		{.table = "scene", .name = "find_entity", .function = luaSceneFindEntity,
+		{.table = "scene", .name = "find_entity", .function = guarded<luaSceneFindEntity>,
 		 .description = "First entity with this tag (0 when none); scans every entity, cache the result.",
 		 .params = {{"name", String}}, .returns = {{"entity_id", Entity}}},
-		{.table = "scene", .name = "create_entity", .function = luaSceneCreateEntity,
+		{.table = "scene", .name = "create_entity", .function = guarded<luaSceneCreateEntity>,
 		 .description = "Create an empty entity.",
 		 .params = {{"name", String}}, .returns = {{"entity_id", Entity}}},
-		{.table = "scene", .name = "destroy_entity", .function = luaSceneDestroyEntity,
+		{.table = "scene", .name = "destroy_entity", .function = guarded<luaSceneDestroyEntity>,
 		 .description = "Destroy an entity and its children at the end of the frame.", .params = {entityId}},
-		{.table = "scene", .name = "load_scene", .function = luaSceneLoadScene,
+		{.table = "scene", .name = "load_scene", .function = guarded<luaSceneLoadScene>,
 		 .description = "Load another level after this frame, keeping the game state (no transition).",
 		 .params = {{"level", String}}},
-		{.table = "scene", .name = "transition_to", .function = luaSceneTransitionTo,
+		{.table = "scene", .name = "transition_to", .function = guarded<luaSceneTransitionTo>,
 		 .description = "Load a level behind a screen transition (kind as in `ui.transition_play`, `fade` by default).",
 		 .params = {{"scene_path", String}, {"kind", String, true}, {"duration", Number, true}}},
-		{.table = "scene", .name = "quit", .function = luaSceneQuit,
+		{.table = "scene", .name = "quit", .function = guarded<luaSceneQuit>,
 		 .description = "Quit the game (stop Play in the editor) after this frame."},
-		{.table = "time", .name = "delta", .function = luaTimeDelta,
+		{.table = "time", .name = "delta", .function = guarded<luaTimeDelta>,
 		 .description = "Duration of the current frame, in seconds.", .returns = {{"seconds", Number}}},
-		{.table = "log", .name = "trace", .function = luaLogTrace,
+		{.table = "log", .name = "trace", .function = guarded<luaLogTrace>,
 		 .description = "Log a message at trace level.", .params = {{"message", String}}},
-		{.table = "log", .name = "info", .function = luaLogInfo,
+		{.table = "log", .name = "info", .function = guarded<luaLogInfo>,
 		 .description = "Log a message at info level.", .params = {{"message", String}}},
-		{.table = "log", .name = "warn", .function = luaLogWarn,
+		{.table = "log", .name = "warn", .function = guarded<luaLogWarn>,
 		 .description = "Log a message at warning level.", .params = {{"message", String}}},
-		{.table = "log", .name = "error", .function = luaLogError,
+		{.table = "log", .name = "error", .function = guarded<luaLogError>,
 		 .description = "Log a message at error level.", .params = {{"message", String}}},
-		{.table = "entity", .name = "has_component", .function = luaEntityHasComponent,
+		{.table = "entity", .name = "has_component", .function = guarded<luaEntityHasComponent>,
 		 .description = "Whether the entity has a component: `Transform`, `PhysicBody`, `SpriteRenderer`, `Camera`, "
 						"`Text`, `SoundSource`, `Canvas` or a `Ui*` component.",
 		 .params = {entityId, {"component", String}}, .returns = {{"has", Boolean}}},
-		{.table = "entity", .name = "get_name", .function = luaEntityGetName,
+		{.table = "entity", .name = "get_name", .function = guarded<luaEntityGetName>,
 		 .description = "Tag of the entity (empty when unknown).", .params = {entityId}, .returns = {{"name", String}}},
-		{.table = "ui", .name = "set_text", .function = luaUiSetText,
+		{.table = "ui", .name = "set_text", .function = guarded<luaUiSetText>,
 		 .description = "Set the text of a `UiText`.", .params = {entityId, {"text", String}}},
-		{.table = "ui", .name = "get_text", .function = luaUiGetText,
+		{.table = "ui", .name = "get_text", .function = guarded<luaUiGetText>,
 		 .description = "Text of a `UiText`.", .params = {entityId}, .returns = {{"text", String}}},
-		{.table = "ui", .name = "set_visible", .function = luaUiSetVisible,
+		{.table = "ui", .name = "set_visible", .function = guarded<luaUiSetVisible>,
 		 .description = "Show or hide the entity in the game.", .params = {entityId, {"visible", Boolean}}},
-		{.table = "ui", .name = "set_progress", .function = luaUiSetProgress,
+		{.table = "ui", .name = "set_progress", .function = guarded<luaUiSetProgress>,
 		 .description = "Set the value of a `UiProgressBar` (0 to 1).", .params = {entityId, {"value", Number}}},
-		{.table = "ui", .name = "get_slider_value", .function = luaUiGetSliderValue,
+		{.table = "ui", .name = "get_slider_value", .function = guarded<luaUiGetSliderValue>,
 		 .description = "Value of a `UiSlider`.", .params = {entityId}, .returns = {{"value", Number}}},
-		{.table = "ui", .name = "set_slider_value", .function = luaUiSetSliderValue,
+		{.table = "ui", .name = "set_slider_value", .function = guarded<luaUiSetSliderValue>,
 		 .description = "Set the value of a `UiSlider`.", .params = {entityId, {"value", Number}}},
-		{.table = "ui", .name = "set_button_enabled", .function = luaUiSetButtonEnabled,
+		{.table = "ui", .name = "set_button_enabled", .function = guarded<luaUiSetButtonEnabled>,
 		 .description = "Enable or disable a `UiButton`.", .params = {entityId, {"enabled", Boolean}}},
-		{.table = "ui", .name = "transition_fade_in", .function = luaUiTransitionFadeIn,
+		{.table = "ui", .name = "transition_fade_in", .function = guarded<luaUiTransitionFadeIn>,
 		 .description = "Start a fade-in screen transition.", .params = {{"duration", Number}}},
-		{.table = "ui", .name = "transition_fade_out", .function = luaUiTransitionFadeOut,
+		{.table = "ui", .name = "transition_fade_out", .function = guarded<luaUiTransitionFadeOut>,
 		 .description = "Start a fade-out screen transition.", .params = {{"duration", Number}}},
-		{.table = "ui", .name = "transition_play", .function = luaUiTransitionPlay,
+		{.table = "ui", .name = "transition_play", .function = guarded<luaUiTransitionPlay>,
 		 .description = "Start a screen transition of a kind (see Transition kinds), opaque black by default.",
 		 .params = {{"kind", String}, {"duration", Number}, {"r", Number, true}, {"g", Number, true},
 					{"b", Number, true}, {"a", Number, true}}},
-		{.table = "ui", .name = "is_transition_active", .function = luaUiIsTransitionActive,
+		{.table = "ui", .name = "is_transition_active", .function = guarded<luaUiIsTransitionActive>,
 		 .description = "Whether a screen transition is running.", .returns = {{"active", Boolean}}},
-		{.table = "gamestate", .name = "set", .function = luaGamestateSet,
+		{.table = "gamestate", .name = "set", .function = guarded<luaGamestateSet>,
 		 .description = "Store a value (integer, number, string or boolean) kept across levels and in saves.",
 		 .params = {{"key", String}, {"value", Any}}},
-		{.table = "gamestate", .name = "get", .function = luaGamestateGet,
+		{.table = "gamestate", .name = "get", .function = guarded<luaGamestateGet>,
 		 .description = "Stored value, or `default` (nil when absent) when the key is missing.",
 		 .params = {{"key", String}, {"default", Any, true}}, .returns = {{"value", Any}}},
-		{.table = "gamestate", .name = "remove", .function = luaGamestateRemove,
+		{.table = "gamestate", .name = "remove", .function = guarded<luaGamestateRemove>,
 		 .description = "Remove a key.", .params = {{"key", String}}},
-		{.table = "gamestate", .name = "clear", .function = luaGamestateClear,
+		{.table = "gamestate", .name = "clear", .function = guarded<luaGamestateClear>,
 		 .description = "Remove every key."},
-		{.table = "save", .name = "save_game", .function = luaSaveSaveGame,
+		{.table = "save", .name = "save_game", .function = guarded<luaSaveSaveGame>,
 		 .description = "Save the level and the game state to a slot after this frame.", .params = {{"slot", Integer}}},
-		{.table = "save", .name = "load_game", .function = luaSaveLoadGame,
+		{.table = "save", .name = "load_game", .function = guarded<luaSaveLoadGame>,
 		 .description = "Load a slot after this frame; the level keeps running when the slot does not load.",
 		 .params = {{"slot", Integer}}},
-		{.table = "save", .name = "has_save", .function = luaSaveHasSave,
+		{.table = "save", .name = "has_save", .function = guarded<luaSaveHasSave>,
 		 .description = "Whether a slot holds a save.", .params = {{"slot", Integer}}, .returns = {{"exists", Boolean}}},
-		{.table = "save", .name = "delete_save", .function = luaSaveDeleteSave,
+		{.table = "save", .name = "delete_save", .function = guarded<luaSaveDeleteSave>,
 		 .description = "Delete the save of a slot.", .params = {{"slot", Integer}}},
-		{.table = "save", .name = "list_saves", .function = luaSaveListSaves,
+		{.table = "save", .name = "list_saves", .function = guarded<luaSaveListSaves>,
 		 .description = "Every save, as a list of `{slot, timestamp, scene}`.", .returns = {{"saves", Table}}},
-		{.table = "settings", .name = "get", .function = luaSettingsGet,
+		{.table = "settings", .name = "get", .function = guarded<luaSettingsGet>,
 		 .description = "Setting value: user override, else game default, else `default` (nil when absent).",
 		 .params = {{"key", String}, {"default", Any, true}}, .returns = {{"value", Any}}},
-		{.table = "settings", .name = "set", .function = luaSettingsSet,
+		{.table = "settings", .name = "set", .function = guarded<luaSettingsSet>,
 		 .description = "Set a user override (integer, number, string or boolean).",
 		 .params = {{"key", String}, {"value", Any}}},
-		{.table = "settings", .name = "save", .function = luaSettingsSave,
+		{.table = "settings", .name = "save", .function = guarded<luaSettingsSave>,
 		 .description = "Write the user overrides to `settings.yml`.", .returns = {{"ok", Boolean}}},
-		{.table = "settings", .name = "load", .function = luaSettingsLoad,
+		{.table = "settings", .name = "load", .function = guarded<luaSettingsLoad>,
 		 .description = "Reload the user overrides from `settings.yml`."},
-		{.table = "settings", .name = "reset", .function = luaSettingsReset,
+		{.table = "settings", .name = "reset", .function = guarded<luaSettingsReset>,
 		 .description = "Remove a user override (back to the game default).", .params = {{"key", String}}},
-		{.table = "settings", .name = "reset_all", .function = luaSettingsResetAll,
+		{.table = "settings", .name = "reset_all", .function = guarded<luaSettingsResetAll>,
 		 .description = "Remove every user override."},
-		{.table = "settings", .name = "apply", .function = luaSettingsApply,
+		{.table = "settings", .name = "apply", .function = guarded<luaSettingsApply>,
 		 .description = "Apply the built-in keys to the window and the sound."},
-		{.table = "trigger", .name = "start_timer", .function = luaTriggerStartTimer,
+		{.table = "trigger", .name = "start_timer", .function = guarded<luaTriggerStartTimer>,
 		 .description = "Start or restart a Timer trigger.", .params = {entityId}},
-		{.table = "trigger", .name = "stop_timer", .function = luaTriggerStopTimer,
+		{.table = "trigger", .name = "stop_timer", .function = guarded<luaTriggerStopTimer>,
 		 .description = "Stop a Timer trigger.", .params = {entityId}},
-		{.table = "trigger", .name = "reset_timer", .function = luaTriggerResetTimer,
+		{.table = "trigger", .name = "reset_timer", .function = guarded<luaTriggerResetTimer>,
 		 .description = "Reset the elapsed time of a Timer trigger to 0.", .params = {entityId}},
-		{.table = "door", .name = "activate", .function = luaDoorActivate,
+		{.table = "door", .name = "activate", .function = guarded<luaDoorActivate>,
 		 .description = "Open a closed raycast door.", .params = {entityId}},
-		{.table = "door", .name = "close", .function = luaDoorClose,
+		{.table = "door", .name = "close", .function = guarded<luaDoorClose>,
 		 .description = "Close an open or opening raycast door.", .params = {entityId}},
-		{.table = "door", .name = "is_open", .function = luaDoorIsOpen,
+		{.table = "door", .name = "is_open", .function = guarded<luaDoorIsOpen>,
 		 .description = "Whether the raycast door is fully open.", .params = {entityId}, .returns = {{"open", Boolean}}},
-		{.table = "door", .name = "get_state", .function = luaDoorGetState,
+		{.table = "door", .name = "get_state", .function = guarded<luaDoorGetState>,
 		 .description = "State of the raycast door: `idle`, `opening`, `open` or `closing`.",
 		 .params = {entityId}, .returns = {{"state", String}}},
-		{.table = "pushwall", .name = "activate", .function = luaPushwallActivate,
+		{.table = "pushwall", .name = "activate", .function = guarded<luaPushwallActivate>,
 		 .description = "Start pushing an idle raycast push-wall.", .params = {entityId}},
-		{.table = "pushwall", .name = "has_moved", .function = luaPushwallHasMoved,
+		{.table = "pushwall", .name = "has_moved", .function = guarded<luaPushwallHasMoved>,
 		 .description = "Whether the push-wall reached its final position.",
 		 .params = {entityId}, .returns = {{"moved", Boolean}}},
-		{.table = "pushwall", .name = "get_state", .function = luaPushwallGetState,
+		{.table = "pushwall", .name = "get_state", .function = guarded<luaPushwallGetState>,
 		 .description = "State of the push-wall: `idle`, `moving` or `final`.",
 		 .params = {entityId}, .returns = {{"state", String}}},
 	};
@@ -1195,16 +1196,10 @@ auto generateLuaReference() -> std::string {
 	return page;
 }
 
-void setBoundScene(lua_State* iState, scene::Scene* iScene) {
-	lua_pushlightuserdata(iState, iScene);
-	lua_setfield(iState, LUA_REGISTRYINDEX, "owl_scene");
-}
+void setBoundScene(lua_State* iState, scene::Scene* iScene) { LuaEngine::setHostPointer(iState, iScene); }
 
 auto getBoundScene(lua_State* iState) -> scene::Scene* {
-	lua_getfield(iState, LUA_REGISTRYINDEX, "owl_scene");
-	auto* const boundScene = static_cast<scene::Scene*>(lua_touserdata(iState, -1));
-	lua_pop(iState, 1);
-	return boundScene;
+	return static_cast<scene::Scene*>(LuaEngine::getHostPointer(iState));
 }
 
 void registerBindings(lua_State* iState) {
@@ -1232,7 +1227,8 @@ void registerBindings(lua_State* iState) {
 		return tables;
 	}();
 	for (const auto& registration: s_registrations)
-		LuaEngine::registerGuardedTable(iState, registration.table.c_str(), registration.functions.data());
+		LuaEngine::registerTable(iState, registration.table.c_str(), registration.functions.data(),
+								 static_cast<int>(registration.functions.size() - 1));
 }
 
 }// namespace owl::script

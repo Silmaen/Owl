@@ -106,6 +106,8 @@ struct FrameSample {
 	uint64_t deviceWaitIdles{0};
 	/// Blocking fence waits of the frame besides the frame pacing (one-shot submissions, read-backs).
 	uint64_t fenceWaits{0};
+	/// CPU time of the frame blocked by the frame pacing (Vulkan frame fence and image acquisition).
+	double paceWaitMs{0.0};
 	/// GPU timing of the frame, when read back.
 	std::optional<renderer::gpu::GpuFrameTiming> gpu;
 };

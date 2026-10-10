@@ -6,3 +6,11 @@ race:libLLVM.so
 race:libgallium
 # The Khronos validation layer takes its own rwlocks in both orders on one thread.
 deadlock:libVkLayer_khronos_validation.so
+# GLFW's init loads GTK (libdecor's GTK plugin), whose Pango / fontconfig worker thread shares GLib queues with the main
+# thread through code TSan does not see.
+race:libglib-2.0.so
+race:libgobject-2.0.so
+race:libpango
+race:libfontconfig.so
+race:libgtk-3.so
+race:libgdk-3.so

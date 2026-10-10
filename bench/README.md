@@ -112,9 +112,11 @@ capture cannot be read back or written.
 Per frame it records the wall time between two frame starts and its phases (`beginFrame`, scene update, scripts,
 physics, render preparation, GUI, submission, present), the draw calls, the queue submissions, the
 `vkQueueWaitIdle` / `vkDeviceWaitIdle` calls, the blocking fence waits besides the frame pacing (`fence_wait`: one-shot
-uploads, mid-frame read-backs), and the GPU time from timestamp queries: `vkCmdWriteTimestamp` around
-every Vulkan command buffer (`gpu_busy_ms` is their sum, `gpu_span_ms` first to last timestamp), `glQueryCounter`
-(`GL_TIMESTAMP`) at `beginFrame` / `endFrame` on OpenGL. The text summary gives count, median, p95, p99,
+uploads, mid-frame read-backs), the CPU time the frame pacing itself blocks (`cpu_pace_wait_ms`, Vulkan: frame fence
+and `vkAcquireNextImageKHR`, inside `cpu_begin_frame_ms`; OpenGL blocks in the swap, inside `cpu_present_ms`), and
+the GPU time from timestamp queries: `vkCmdWriteTimestamp` around every Vulkan command buffer (`gpu_busy_ms` is their
+sum, `gpu_span_ms` first to last timestamp), `glQueryCounter` (`GL_TIMESTAMP`) at `beginFrame` / `endFrame` on
+OpenGL. The text summary gives count, median, p95, p99,
 interquartile range and maximum of every series.
 
 It also measures the cold start of the real runner (`startup_ms` in the report, `start-up:` line in the summary):
