@@ -43,8 +43,11 @@ same PR (see `ongoing-quality.md`, *Editor Coverage*).
 - SVG sources in `assets_sources/icons/<category>/` (`toolbar`, `browser`, `visibility`, `triggers`,
   `components`, `panels`, `actions`; `templates` is not rendered). **Never modify an SVG
   programmatically.**
-- `IconBank::build()` substitutes `#ffffff` → theme text colour and `#ff00ff` → theme accent, rasterizes
-  with lunasvg into a 64 px mipmapped atlas; `IconBank::rebuild(colors)` on theme change.
+- `IconBank::build()` substitutes `#ffffff` / `white` → theme text colour and `#ff00ff` → theme accent, rasterizes
+  with lunasvg at 16 / 24 / 32 px × DPI and the 64 px cell; draw with `getIcon(name, size)` at a whole-pixel position.
+  `IconBank::rebuild(colors)` (through `utils::applyTheme`) on theme change.
+- Action glyphs: Lucide font, `gui::icon::*` (`gui/IconFont.h`) inside labels; add a name there from the
+  `lucide-static` `info.json` when one is missing.
 - Scene trigger overlays (512×512 PNG) are pre-rasterized by
   `poetry run python source/owlnest/assets/icons/generate_icons.py`.
 - New icon: add the SVG in the right category, register it in `utils::buildIconBank()` (`EditorResources.cpp`).

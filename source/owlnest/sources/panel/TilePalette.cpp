@@ -134,7 +134,7 @@ void TilePalette::onImGuiRender(scene::TilemapAsset* iTarget) {
 
 	// --- Eraser button ---------------------------------------------------------------------
 	auto& iconBank = gui::IconBank::instance();
-	const auto eraserIcon = iconBank.getIcon("eraser");
+	const auto eraserIcon = iconBank.getIcon("eraser", 32.f);
 	const ImU32 eraserHighlight = highlightFor(g_TileBrushEraser, m_primaryBrush, m_secondaryBrush);
 	if (eraserHighlight != 0) {
 		ImGui::PushStyleColor(ImGuiCol_Border, eraserHighlight);

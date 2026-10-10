@@ -8,6 +8,7 @@
 
 #include "StatusBar.h"
 
+#include <gui/IconFont.h>
 #include <gui/UiLayer.h>
 
 #include <imgui.h>
@@ -124,14 +125,14 @@ void StatusBar::onImGuiRender(const StatusInfo& iInfo) {
 
 	const auto errors = getUnseenErrors(iInfo.errorCount);
 	const auto warnings = getUnseenWarnings(iInfo.warningCount);
-	counter("##statusErrors", plural(errors, "error"),
+	counter("##statusErrors", std::format("{} {}", gui::icon::circleX, plural(errors, "error")),
 			errors > 0 ? toU32(theme.error) : ImGui::GetColorU32(ImGuiCol_TextDisabled));
-	counter("##statusWarnings", plural(warnings, "warning"),
+	counter("##statusWarnings", std::format("{} {}", gui::icon::triangleAlert, plural(warnings, "warning")),
 			warnings > 0 ? toU32(theme.warning) : ImGui::GetColorU32(ImGuiCol_TextDisabled));
 	if (!iInfo.backend.empty())
 		label(iInfo.backend);
 	if (iInfo.secondsSinceAutosave.has_value())
-		label("Autosaved " + formatElapsed(*iInfo.secondsSinceAutosave));
+		label(std::format("{} Autosaved {}", gui::icon::save, formatElapsed(*iInfo.secondsSinceAutosave)));
 
 	ImGui::SetCursorScreenPos(origin);
 	ImGui::Dummy({width, height});

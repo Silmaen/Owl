@@ -378,7 +378,7 @@ void SceneHierarchy::drawEntityNode(const scene::Entity& iEntity) {
 		ImGui::PushID("editorVis");
 		const auto* const edIconName = editorVisible ? "eye_open" : "eye_closed";
 		const auto edTint = editorVisible ? fullTint : dimTint;
-		if (const auto iconInfo = iconBank.getIcon(edIconName)) {
+		if (const auto iconInfo = iconBank.getIcon(edIconName, btnSizeVec.y())) {
 			if (ImGui::ImageButton("##edVis", static_cast<ImTextureID>(iconInfo->textureId), gui::vec(btnSizeVec),
 
 								   gui::vec(iconInfo->uv0), gui::vec(iconInfo->uv1), gui::vec(transparent),
@@ -400,7 +400,7 @@ void SceneHierarchy::drawEntityNode(const scene::Entity& iEntity) {
 		ImGui::PushID("gameVis");
 		const auto* const gameIconName = gameVisible ? "camera_on" : "camera_off";
 		const auto gameTint = gameVisible ? fullTint : dimTint;
-		if (const auto iconInfo = iconBank.getIcon(gameIconName)) {
+		if (const auto iconInfo = iconBank.getIcon(gameIconName, btnSizeVec.y())) {
 			if (ImGui::ImageButton("##gameVis", static_cast<ImTextureID>(iconInfo->textureId), gui::vec(btnSizeVec),
 
 								   gui::vec(iconInfo->uv0), gui::vec(iconInfo->uv1), gui::vec(transparent),
@@ -650,7 +650,7 @@ void drawComponent(scene::Entity& ioEntity, SceneUndoManager* iUndoManager, cons
 
 		// Draw icon over the padding space in the tree node header
 		if (iconId) {
-			if (const auto iconInfo = gui::IconBank::instance().getIcon(iconId)) {
+			if (const auto iconInfo = gui::IconBank::instance().getIcon(iconId, 16.f)) {
 				constexpr float iconSz = 16.0f;
 				const auto itemMin = ImGui::GetItemRectMin();
 				const float iconY = itemMin.y + (lineHeight - iconSz) * 0.5f;
@@ -785,7 +785,7 @@ void SceneHierarchy::drawComponents(const scene::Entity& iEntity) {
 	{
 		const auto& iconBank = gui::IconBank::instance();
 		bool clicked = false;
-		if (const auto iconInfo = iconBank.getIcon("add_component")) {
+		if (const auto iconInfo = iconBank.getIcon("add_component", 16.f)) {
 			constexpr float iconSz = 16.0f;
 			const float buttonWidth = ImGui::CalcTextSize("Add Component").x + iconSz +
 									  ImGui::GetStyle().ItemSpacing.x + ImGui::GetStyle().FramePadding.x * 2;

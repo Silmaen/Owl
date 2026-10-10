@@ -162,11 +162,31 @@ auto resolveAssetFile(const std::filesystem::path& iRelative) -> std::filesystem
 	return {};
 }
 
+// Private-use area: the text fonts' own glyphs there would shadow the Lucide icons merged after them.
+constexpr ImWchar g_privateUseExcluded[] = {0xE000, 0xF8FF, 0};
+
 auto loadFont(const char* iRelative, const float iSize) -> ImFont* {
 	const auto path = resolveAssetFile(iRelative);
 	if (path.empty())
 		return nullptr;
-	return ImGui::GetIO().Fonts->AddFontFromFileTTF(path.string().c_str(), iSize);
+	ImFontConfig config;
+	config.GlyphExcludeRanges = g_privateUseExcluded;
+	return ImGui::GetIO().Fonts->AddFontFromFileTTF(path.string().c_str(), iSize, &config);
+}
+
+// Merge the Lucide glyphs (`gui::icon`) into the font loaded last.
+void mergeIconFont(const float iSize) {
+	const auto path = resolveAssetFile("fonts/lucide/lucide.ttf");
+	if (path.empty()) {
+		OWL_CORE_WARN("UiLayer: could not load lucide.ttf from engine_assets/fonts/lucide/, icons render as boxes.")
+		return;
+	}
+	ImFontConfig config;
+	config.MergeMode = true;
+	config.PixelSnapH = true;
+	// Lucide draws on a 24-unit grid centred on the em box; this sits it on the text's optical centre.
+	config.GlyphOffset = {0.f, iSize * 0.12f};
+	ImGui::GetIO().Fonts->AddFontFromFileTTF(path.string().c_str(), iSize, &config);
 }
 }// namespace
 
@@ -262,7 +282,11 @@ void UiLayer::onAttach() {
 			OWL_CORE_ERROR("UiLayer: could not load Inter-Regular.ttf from engine_assets/fonts/inter/, using Roboto.")
 			g_bodyFont = loadFont("fonts/roboto/Roboto-Regular.ttf", uiSize);
 		}
+		if (g_bodyFont != nullptr)
+			mergeIconFont(uiSize);
 		g_strongFont = loadFont("fonts/inter/Inter-SemiBold.ttf", uiSize);
+		if (g_strongFont != nullptr)
+			mergeIconFont(uiSize);
 		g_monoFont = loadFont("fonts/jetbrainsmono/JetBrainsMono-Regular.ttf", g_codeFontSize);
 		if (g_monoFont == nullptr)
 			OWL_CORE_ERROR("UiLayer: could not load JetBrainsMono-Regular.ttf — code editor will fall back to UI font.")

@@ -15,6 +15,7 @@
 
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG("-Wreserved-identifier")
+#include <cmath>
 #include <imgui.h>
 OWL_DIAG_POP
 
@@ -48,11 +49,11 @@ void drawButtonBackground(const Ribbon::Button& iButton) {
 }
 
 void drawButtonIcon(const std::string& iIconName, const ImVec2& iCenter, const float iSize) {
-	const auto info = IconBank::instance().getIcon(iIconName);
+	const auto info = IconBank::instance().getIcon(iIconName, iSize);
 	if (!info.has_value())
 		return;
-	const ImVec2 iconMin{iCenter.x - iSize * 0.5f, iCenter.y - iSize * 0.5f};
-	const ImVec2 iconMax{iCenter.x + iSize * 0.5f, iCenter.y + iSize * 0.5f};
+	const ImVec2 iconMin{std::floor(iCenter.x - iSize * 0.5f), std::floor(iCenter.y - iSize * 0.5f)};
+	const ImVec2 iconMax{iconMin.x + iSize, iconMin.y + iSize};
 	ImGui::GetWindowDrawList()->AddImage(static_cast<ImTextureID>(info->textureId), iconMin, iconMax, vec(info->uv0),
 										 vec(info->uv1));
 }

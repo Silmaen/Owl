@@ -91,6 +91,23 @@ public:
 
 	/**
 	 * @brief
+	 *  Look up an icon rasterized for a display size: the smallest tier at least as large, so the icon is drawn
+	 *  at its own resolution instead of a scaled-down 64 px bitmap.
+	 * @param[in] iName The icon name.
+	 * @param[in] iDisplaySize Size the icon is drawn at, in ImGui units.
+	 * @return The icon info, or nullopt if not found.
+	 */
+	[[nodiscard]] auto getIcon(const std::string& iName, float iDisplaySize) const -> std::optional<IconInfo>;
+
+	/**
+	 * @brief
+	 *  Pixel sizes the icons are rasterized at, smallest first.
+	 * @return The tier sizes.
+	 */
+	[[nodiscard]] auto getTierSizes() const -> std::vector<uint32_t>;
+
+	/**
+	 * @brief
 	 *  Check if an icon exists in the bank.
 	 * @param[in] iName The icon name.
 	 * @return True if the icon is in the bank.
@@ -102,7 +119,7 @@ public:
 	 *  Get the atlas texture.
 	 * @return The atlas texture.
 	 */
-	[[nodiscard]] auto getAtlasTexture() const -> const shared<renderer::gpu::Texture2D>& { return m_atlas; }
+	[[nodiscard]] auto getAtlasTexture() const -> const shared<renderer::gpu::Texture2D>&;
 
 	/**
 	 * @brief
@@ -144,10 +161,39 @@ public:
 			-> bool;
 
 private:
-	/// The atlas texture.
-	shared<renderer::gpu::Texture2D> m_atlas;
-	/// Mapping from icon name to UV coordinates {uv0, uv1}.
-	std::unordered_map<std::string, std::pair<math::vec2, math::vec2>> m_uvMap;
+	/**
+	 * @brief
+	 *  Every icon rasterized at one pixel size, packed in one atlas.
+	 */
+	struct Tier {
+		/// Pixel size of a cell.
+		uint32_t size = 0;
+		/// The atlas texture.
+		shared<renderer::gpu::Texture2D> atlas;
+		/// Mapping from icon name to UV coordinates {uv0, uv1}.
+		std::unordered_map<std::string, std::pair<math::vec2, math::vec2>> uvMap;
+	};
+
+	/**
+	 * @brief
+	 *  Rasterize every icon at one size.
+	 * @param[in] iSize Pixel size of a cell.
+	 * @param[in] iColors Theme colours for SVG rendering.
+	 * @return The tier.
+	 */
+	[[nodiscard]] auto buildTier(uint32_t iSize, const IconThemeColors& iColors) const -> Tier;
+
+	/**
+	 * @brief
+	 *  Icon info of a name in a tier.
+	 * @param[in] iTier The tier.
+	 * @param[in] iName The icon name.
+	 * @return The icon info, or nullopt if absent.
+	 */
+	[[nodiscard]] static auto lookup(const Tier& iTier, const std::string& iName) -> std::optional<IconInfo>;
+
+	/// Tiers, smallest first; the last one is rasterized at the cell size given to `build`.
+	std::vector<Tier> m_tiers;
 	/// Stored icon list for rebuild.
 	std::vector<std::pair<std::string, std::filesystem::path>> m_iconList;
 	/// Stored cell size for rebuild.

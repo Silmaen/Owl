@@ -78,7 +78,7 @@ void pushTilemapEdit(scene::TilemapAsset& ioAsset, TilemapUndoManager& ioUndo, c
 
 auto iconButton(const char* iIcon, const char* iTooltip, const float iSize = 20.f) -> bool {
 	auto& iconBank = gui::IconBank::instance();
-	const auto info = iconBank.getIcon(iIcon);
+	const auto info = iconBank.getIcon(iIcon, iSize);
 	bool clicked = false;
 	if (info.has_value()) {
 		clicked = ImGui::ImageButton(iIcon, static_cast<ImTextureID>(info->textureId), ImVec2{iSize, iSize},

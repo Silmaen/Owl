@@ -9,10 +9,13 @@
 #include "owlpch.h"
 
 #include "gui/IconBank.h"
+
+#include "gui/UiLayer.h"
 #include "gui/utils.h"
 
 #include "core/external/lunasvg.h"
 
+#include <algorithm>
 #include <cctype>
 #include <cmath>
 #include <cstdint>
@@ -92,6 +95,8 @@ auto loadSvgFile(const std::filesystem::path& iPath, const uint32_t iTargetSize,
 		return {};
 	// Apply theme colour substitution in memory (never modifies the file).
 	replaceColorInPlace(svgContent, "#ffffff", colorToHex(iColors.primary));
+	// Hand-drawn sources also write the primary colour as the `white` keyword.
+	replaceColorInPlace(svgContent, "\"white\"", std::format("\"{}\"", colorToHex(iColors.primary)));
 	replaceColorInPlace(svgContent, "#ff00ff", colorToHex(iColors.secondary));
 	// Rasterize via lunasvg.
 	const auto doc = lunasvg::Document::loadFromData(svgContent);
@@ -185,88 +190,85 @@ void bilinearUpscale(std::span<const uint8_t> iSrc, const math::vec2ui iSrcSize,
 void IconBank::build(const std::vector<std::pair<std::string, std::filesystem::path>>& iIcons, const uint32_t iCellSize,
 					 const IconThemeColors& iColors) {
 	clear();
-
-	// Store for rebuild.
 	m_iconList = iIcons;
 	m_cellSize = iCellSize;
 	if (iIcons.empty())
 		return;
-	// Determine grid dimensions
-	const auto iconCount = static_cast<uint32_t>(iIcons.size());
+	std::vector<uint32_t> sizes;
+	for (const float base: {16.f, 24.f, 32.f})
+		sizes.push_back(static_cast<uint32_t>(std::lround(base * UiLayer::getDpiScale())));
+	sizes.push_back(iCellSize);
+	std::ranges::sort(sizes);
+	const auto [first, last] = std::ranges::unique(sizes);
+	sizes.erase(first, last);
+	for (const auto size: sizes) m_tiers.push_back(buildTier(size, iColors));
+}
+
+auto IconBank::buildTier(const uint32_t iSize, const IconThemeColors& iColors) const -> Tier {
+	Tier tier;
+	tier.size = iSize;
+	const auto iconCount = static_cast<uint32_t>(m_iconList.size());
 	const auto cols = static_cast<uint32_t>(std::ceil(std::sqrt(static_cast<double>(iconCount))));
 	const uint32_t rows = (iconCount + cols - 1) / cols;
-	const math::vec2ui cellSize{iCellSize, iCellSize};
-	const math::vec2ui atlasSize{cols * iCellSize, rows * iCellSize};
-	// Allocate atlas buffer (RGBA, zero-initialized for transparency)
+	const math::vec2ui cellSize{iSize, iSize};
+	const math::vec2ui atlasSize{cols * iSize, rows * iSize};
 	std::vector<uint8_t> atlasData(static_cast<size_t>(atlasSize.x()) * atlasSize.y() * 4, 0);
-	// Load and pack each icon
+
 	uint32_t index = 0;
-	for (const auto& [name, filePath]: iIcons) {
+	for (const auto& [name, filePath]: m_iconList) {
 		if (!std::filesystem::exists(filePath)) {
-			OWL_CORE_WARN("IconBank: icon file not found: {}.", filePath.string())
+			if (iSize == m_cellSize)
+				OWL_CORE_WARN("IconBank: icon file not found: {}.", filePath.string())
 			++index;
 			continue;
 		}
-
 		std::vector<uint8_t> pixels;
-		const bool isSvg = filePath.extension() == ".svg";
-		if (isSvg) {
-			// Load SVG: rasterize at exact cell size with theme colours.
-			pixels = loadSvgFile(filePath, iCellSize, iColors);
+		if (filePath.extension() == ".svg") {
+			pixels = loadSvgFile(filePath, iSize, iColors);
 		} else {
-			// Load raster image (PNG/JPG) via stb_image.
 			math::vec2ui srcSize{};
 			pixels = loadImageFile(filePath, srcSize);
-			// Resize to cell size if needed.
 			if (!pixels.empty() && srcSize != cellSize) {
 				std::vector<uint8_t> resized(static_cast<size_t>(cellSize.x()) * cellSize.y() * 4);
-				if (srcSize.x() > cellSize.x() || srcSize.y() > cellSize.y()) {
+				if (srcSize.x() > cellSize.x() || srcSize.y() > cellSize.y())
 					boxFilterDownscale(pixels, srcSize, resized, cellSize);
-				} else {
+				else
 					bilinearUpscale(pixels, srcSize, resized, cellSize);
-				}
 				pixels = std::move(resized);
 			}
 		}
-
 		if (pixels.empty()) {
-			OWL_CORE_WARN("IconBank: failed to load icon: {}.", filePath.string())
+			if (iSize == m_cellSize)
+				OWL_CORE_WARN("IconBank: failed to load icon: {}.", filePath.string())
 			++index;
 			continue;
 		}
-
-		// Blit into atlas
-		const math::vec2ui cell{index % cols, index / cols};
-		const math::vec2ui cellOrigin{cell.x() * cellSize.x(), cell.y() * cellSize.y()};
+		const math::vec2ui cellOrigin{(index % cols) * cellSize.x(), (index / cols) * cellSize.y()};
 		for (uint32_t y = 0; y < cellSize.y(); ++y) {
-			const auto atlasY = cellOrigin.y() + y;
-			const auto dstOffset = (static_cast<size_t>(atlasY) * atlasSize.x() + cellOrigin.x()) * 4;
+			const auto dstOffset = (static_cast<size_t>(cellOrigin.y() + y) * atlasSize.x() + cellOrigin.x()) * 4;
 			const auto srcOffset = static_cast<size_t>(y) * cellSize.x() * 4;
-			const auto rowBytes = static_cast<size_t>(cellSize.x()) * 4;
-
-			std::copy_n(pixels.cbegin() + static_cast<ptrdiff_t>(srcOffset), rowBytes,
+			std::copy_n(pixels.cbegin() + static_cast<ptrdiff_t>(srcOffset), static_cast<size_t>(cellSize.x()) * 4,
 						atlasData.begin() + static_cast<ptrdiff_t>(dstOffset));
 		}
-
-		// Compute UV coordinates
 		const math::vec2 atlasF{static_cast<float>(atlasSize.x()), static_cast<float>(atlasSize.y())};
 		const math::vec2 uvMin{static_cast<float>(cellOrigin.x()) / atlasF.x(),
 							   static_cast<float>(cellOrigin.y()) / atlasF.y()};
 		const math::vec2 uvMax{static_cast<float>(cellOrigin.x() + cellSize.x()) / atlasF.x(),
 							   static_cast<float>(cellOrigin.y() + cellSize.y()) / atlasF.y()};
-		// Store UVs — Y-flip for engine convention (top-down image data, bottom-up OpenGL)
-		m_uvMap[name] = {{uvMin.x(), uvMax.y()}, {uvMax.x(), uvMin.y()}};
+		// Y-flip for the engine convention (top-down image data, bottom-up OpenGL).
+		tier.uvMap[name] = {{uvMin.x(), uvMax.y()}, {uvMax.x(), uvMin.y()}};
 		++index;
 	}
-	// Create atlas texture
+
 	renderer::gpu::Texture::Specification spec;
 	spec.size = atlasSize;
 	spec.format = renderer::gpu::ImageFormat::Rgba8;
-	spec.generateMips = true;
-	m_atlas = renderer::gpu::Texture2D::create(spec);
-	if (m_atlas != nullptr) {
-		m_atlas->setData(atlasData.data(), static_cast<uint32_t>(atlasData.size()));
-	}
+	// Only the largest tier is ever drawn scaled down; the others are drawn at their own size.
+	spec.generateMips = iSize == m_cellSize;
+	tier.atlas = renderer::gpu::Texture2D::create(spec);
+	if (tier.atlas != nullptr)
+		tier.atlas->setData(atlasData.data(), static_cast<uint32_t>(atlasData.size()));
+	return tier;
 }
 
 void IconBank::rebuild(const IconThemeColors& iColors) {
@@ -275,26 +277,52 @@ void IconBank::rebuild(const IconThemeColors& iColors) {
 	build(m_iconList, m_cellSize, iColors);
 }
 
-auto IconBank::getIcon(const std::string& iName) const -> std::optional<IconInfo> {
-	const auto it = m_uvMap.find(iName);
-	if (it == m_uvMap.end())
+auto IconBank::lookup(const Tier& iTier, const std::string& iName) -> std::optional<IconInfo> {
+	const auto it = iTier.uvMap.find(iName);
+	if (it == iTier.uvMap.end() || iTier.atlas == nullptr)
 		return std::nullopt;
-	if (m_atlas == nullptr)
-		return std::nullopt;
-
-	const auto texId = m_atlas->getRendererId();
+	const auto texId = iTier.atlas->getRendererId();
 	if (texId == 0)
 		return std::nullopt;
-
 	return IconInfo{.textureId = texId, .uv0 = it->second.first, .uv1 = it->second.second};
 }
 
-auto IconBank::hasIcon(const std::string& iName) const -> bool { return m_uvMap.contains(iName); }
-
-void IconBank::clear() {
-	m_atlas.reset();
-	m_uvMap.clear();
+auto IconBank::getIcon(const std::string& iName) const -> std::optional<IconInfo> {
+	if (m_tiers.empty())
+		return std::nullopt;
+	return lookup(m_tiers.back(), iName);
 }
+
+auto IconBank::getIcon(const std::string& iName, const float iDisplaySize) const -> std::optional<IconInfo> {
+	if (m_tiers.empty())
+		return std::nullopt;
+	const float framebufferScale =
+			ImGui::GetCurrentContext() != nullptr ? ImGui::GetIO().DisplayFramebufferScale.x : 1.f;
+	const float pixels = iDisplaySize * std::max(framebufferScale, 1.f);
+	for (const auto& tier: m_tiers) {
+		if (static_cast<float>(tier.size) + 0.5f >= pixels)
+			return lookup(tier, iName);
+	}
+	return lookup(m_tiers.back(), iName);
+}
+
+auto IconBank::getTierSizes() const -> std::vector<uint32_t> {
+	std::vector<uint32_t> sizes;
+	sizes.reserve(m_tiers.size());
+	for (const auto& tier: m_tiers) sizes.push_back(tier.size);
+	return sizes;
+}
+
+auto IconBank::getAtlasTexture() const -> const shared<renderer::gpu::Texture2D>& {
+	static const shared<renderer::gpu::Texture2D> s_none;
+	return m_tiers.empty() ? s_none : m_tiers.back().atlas;
+}
+
+auto IconBank::hasIcon(const std::string& iName) const -> bool {
+	return !m_tiers.empty() && m_tiers.back().uvMap.contains(iName);
+}
+
+void IconBank::clear() { m_tiers.clear(); }
 
 auto IconBank::instance() -> IconBank& {
 	static IconBank s_instance;
@@ -303,8 +331,8 @@ auto IconBank::instance() -> IconBank& {
 
 auto IconBank::menuItem(const std::string& iIconName, const char* iLabel, const char* iShortcut,
 						const bool iEnabled) const -> bool {
-	if (const auto info = getIcon(iIconName); info.has_value()) {
-		constexpr float iconSize = 16.0f;
+	const float iconSize = ImGui::GetFontSize();
+	if (const auto info = getIcon(iIconName, iconSize); info.has_value()) {
 		if (!iEnabled) {
 			ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().DisabledAlpha);
 		}
@@ -318,11 +346,11 @@ auto IconBank::menuItem(const std::string& iIconName, const char* iLabel, const 
 }
 
 auto IconBank::iconButton(const std::string& iIconName, const char* iLabel, const math::vec2& iSize) const -> bool {
-	const auto info = getIcon(iIconName);
+	const float iconSize = ImGui::GetFontSize();
+	const auto info = getIcon(iIconName, iconSize);
 	if (!info.has_value())
 		return ImGui::Button(iLabel, vec(iSize));
 
-	const float iconSize = ImGui::GetFontSize();
 	const float spacing = ImGui::GetStyle().ItemInnerSpacing.x;
 	const ImVec2 labelSize = ImGui::CalcTextSize(iLabel, nullptr, true);
 	const ImVec2 framePad = ImGui::GetStyle().FramePadding;
@@ -340,8 +368,9 @@ auto IconBank::iconButton(const std::string& iIconName, const char* iLabel, cons
 	auto* drawList = ImGui::GetWindowDrawList();
 
 	const float contentW = iconSize + spacing + labelSize.x;
-	const float startX = btnMin.x + ((btnMax.x - btnMin.x) - contentW) * 0.5f;
-	const float centerY = (btnMin.y + btnMax.y) * 0.5f;
+	// Whole pixels: an icon drawn at its tier size off the pixel grid would blur.
+	const float startX = std::floor(btnMin.x + ((btnMax.x - btnMin.x) - contentW) * 0.5f);
+	const float centerY = std::floor((btnMin.y + btnMax.y) * 0.5f);
 
 	const ImVec2 iconMin{startX, centerY - iconSize * 0.5f};
 	const ImVec2 iconMax{startX + iconSize, centerY + iconSize * 0.5f};

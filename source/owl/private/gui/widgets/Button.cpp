@@ -13,6 +13,8 @@
 #include "renderer/Renderer.h"
 #include "renderer/gpu/Texture.h"
 
+#include <algorithm>
+
 
 namespace owl::gui::widgets {
 
@@ -28,7 +30,8 @@ void Button::onRenderBase() const {
 	// Try IconBank first, then fall back to texture library
 	bool rendered = false;
 	if (!m_data.icon.empty()) {
-		if (const auto iconInfo = IconBank::instance().getIcon(m_data.icon); iconInfo.has_value()) {
+		if (const auto iconInfo = IconBank::instance().getIcon(m_data.icon, std::min(m_data.size.x(), m_data.size.y()));
+			iconInfo.has_value()) {
 			action = ImGui::ImageButton(m_data.id.c_str(), static_cast<ImTextureID>(iconInfo->textureId),
 										vec(m_data.size), vec(iconInfo->uv0), vec(iconInfo->uv1));
 			rendered = true;

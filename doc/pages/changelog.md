@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Owl Nest default layout, built on the first launch instead of floating panels: documents in the centre, Hierarchy and Properties on the right, Content Browser, Log and Stats below; presets Default and Hierarchy Left (`Alt+1`, `Alt+2`) and **Reset Layout** in **File > Views**.
 - Owl Nest status bar: simulation mode, active document and entity count, last autosave, graphics backend, and the unseen warnings and errors (click to open the Log).
 - `UiLayer::setBottomBarCallback`, `setDockLayoutCallback` and `getDockSpaceId`; `LogBuffer::getWarningCount`.
+- Lucide icon font merged into the UI fonts, its glyphs as UTF-8 string constants in `gui/IconFont.h`; the status bar shows them.
+- `IconBank` rasterizes each icon at 16, 24 and 32 px times the monitor scale besides the 64 px cell, `getIcon(name, size)` picks the tier of the drawn size, so small icons are sharp instead of scaled down.
 - Owl Nest UI font Inter (Regular, SemiBold) in `engine_assets/fonts/inter/`, text roles `gui::TextStyle` (`UiLayer::pushTextStyle`) and scaling to the primary monitor content scale (`UiLayer::getDpiScale`).
 - Owl Nest Stats panel: Vulkan submits, queue / device drains, fence waits and pace wait per frame, with their maximum over the last 2 s.
 - `OwlShaderBake` build tool (render module): compiles every `engine_assets/shaders/*/slang/*.slang` for Vulkan and OpenGL during the build, in the layout of `renderer::utils::getPrecompiledShaderPath`.
@@ -161,6 +163,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Editor icons drawn with the `white` keyword (components, panels...) follow the theme text colour, so they no longer stay white in Owl Light.
 - Owl Nest Ctrl and Alt shortcuts work while a panel (hierarchy, properties, content browser...) has the keyboard focus, not only with the viewport focused.
 - Box2D runs on `workerCount` threads again, without the two spare threads that slowed the 2-worker step of a settled 5 000-body pile by 60 % on the nightly benchmark agent.
 - Gameplay no longer slows down at high frame rates: `Timestep::getSeconds` keeps sub-millisecond frames (a 3.3 ms frame counted 3 ms, a 0.5 ms one 0), and `owl.physics_poses` gives scripts the simulated body poses so a `physics.set_transform` of the read pose no longer rewinds the body.

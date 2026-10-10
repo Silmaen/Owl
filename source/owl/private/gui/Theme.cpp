@@ -69,17 +69,17 @@ auto makeOwlLight() -> Theme {
 	theme.lineSoft = {0.867f, 0.878f, 0.898f, 1.f};
 	theme.text = {0.114f, 0.125f, 0.145f, 1.f};
 	theme.textMuted = {0.333f, 0.361f, 0.4f, 1.f};
-	theme.textDisabled = {0.565f, 0.592f, 0.631f, 1.f};
+	theme.textDisabled = {0.569f, 0.592f, 0.631f, 1.f};
 	theme.accent = {0.788f, 0.51f, 0.102f, 1.f};
 	theme.onAccent = {0.102f, 0.071f, 0.02f, 1.f};
-	theme.play = {0.122f, 0.435f, 0.898f, 1.f};
+	theme.play = {0.122f, 0.439f, 0.898f, 1.f};
 	theme.success = {0.18f, 0.604f, 0.388f, 1.f};
 	theme.warning = {0.816f, 0.416f, 0.11f, 1.f};
 	theme.error = {0.812f, 0.231f, 0.2f, 1.f};
 	theme.info = {0.184f, 0.498f, 0.839f, 1.f};
 	theme.axisX = {0.816f, 0.267f, 0.235f, 1.f};
 	theme.axisY = {0.247f, 0.604f, 0.275f, 1.f};
-	theme.axisZ = {0.184f, 0.435f, 0.839f, 1.f};
+	theme.axisZ = {0.184f, 0.439f, 0.839f, 1.f};
 	return theme;
 }
 
