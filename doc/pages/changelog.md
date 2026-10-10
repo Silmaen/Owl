@@ -158,6 +158,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Owl Nest Ctrl and Alt shortcuts work while a panel (hierarchy, properties, content browser...) has the keyboard focus, not only with the viewport focused.
 - Box2D runs on `workerCount` threads again, without the two spare threads that slowed the 2-worker step of a settled 5 000-body pile by 60 % on the nightly benchmark agent.
 - Gameplay no longer slows down at high frame rates: `Timestep::getSeconds` keeps sub-millisecond frames (a 3.3 ms frame counted 3 ms, a 0.5 ms one 0), and `owl.physics_poses` gives scripts the simulated body poses so a `physics.set_transform` of the read pose no longer rewinds the body.
 - `DependencyReport` sees every package of the graph (flac, libalsa: resolved through `owl-local` whatever the cache holds), finds the update a `cci.*` snapshot hid (plutovg 1.3.3) and checks the local recipes' sources upstream (glfw, wayland-protocols); run on the tree before the dependency round, it lists the nine updates made.

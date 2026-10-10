@@ -605,6 +605,8 @@ void EditorLayer::onEvent(event::Event& ioEvent) {
 void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 	OWL_PROFILE_FUNCTION()
 
+	std::ignore = m_actionRegistry.dispatchImGuiChords();
+
 	if (!m_deferredCloseIds.empty()) {
 		auto ids = std::move(m_deferredCloseIds);
 		m_deferredCloseIds.clear();

@@ -228,8 +228,77 @@ auto ActionRegistry::dispatch(const event::KeyPressedEvent& iEvent) -> bool {
 		OWL_TRACE("ActionRegistry: shortcut '{}' suppressed by ImGui keyboard capture.", bestMatch->id)
 		return false;
 	}
+	m_runByEvent.insert(bestMatch->id);
 	bestMatch->callback();
 	return true;
+}
+
+auto ActionRegistry::toImGuiChord(const Shortcut& iShortcut) -> int {
+	const auto code = iShortcut.key;
+	ImGuiKey key = ImGuiKey_None;
+	if (code >= input::key::A && code <= input::key::Z)
+		key = static_cast<ImGuiKey>(ImGuiKey_A + (code - input::key::A));
+	else if (code >= input::key::D0 && code <= input::key::D9)
+		key = static_cast<ImGuiKey>(ImGuiKey_0 + (code - input::key::D0));
+	else if (code >= input::key::F1 && code <= input::key::F12)
+		key = static_cast<ImGuiKey>(ImGuiKey_F1 + (code - input::key::F1));
+	else {
+		static const std::unordered_map<input::KeyCode, ImGuiKey> others = {
+				{input::key::Space, ImGuiKey_Space},
+				{input::key::Escape, ImGuiKey_Escape},
+				{input::key::Enter, ImGuiKey_Enter},
+				{input::key::Tab, ImGuiKey_Tab},
+				{input::key::Backspace, ImGuiKey_Backspace},
+				{input::key::Insert, ImGuiKey_Insert},
+				{input::key::Delete, ImGuiKey_Delete},
+				{input::key::Right, ImGuiKey_RightArrow},
+				{input::key::Left, ImGuiKey_LeftArrow},
+				{input::key::Down, ImGuiKey_DownArrow},
+				{input::key::Up, ImGuiKey_UpArrow},
+				{input::key::PageUp, ImGuiKey_PageUp},
+				{input::key::PageDown, ImGuiKey_PageDown},
+				{input::key::Home, ImGuiKey_Home},
+				{input::key::End, ImGuiKey_End},
+				{input::key::Minus, ImGuiKey_Minus},
+				{input::key::Equal, ImGuiKey_Equal},
+				{input::key::Comma, ImGuiKey_Comma},
+				{input::key::Period, ImGuiKey_Period},
+				{input::key::Slash, ImGuiKey_Slash},
+				{input::key::Semicolon, ImGuiKey_Semicolon},
+				{input::key::Apostrophe, ImGuiKey_Apostrophe}};
+		if (const auto it = others.find(code); it != others.end())
+			key = it->second;
+	}
+	if (key == ImGuiKey_None)
+		return 0;
+	int chord = key;
+	if (hasFlag(iShortcut.modifiers, Modifiers::Ctrl))
+		chord |= ImGuiMod_Ctrl;
+	if (hasFlag(iShortcut.modifiers, Modifiers::Shift))
+		chord |= ImGuiMod_Shift;
+	if (hasFlag(iShortcut.modifiers, Modifiers::Alt))
+		chord |= ImGuiMod_Alt;
+	return chord;
+}
+
+auto ActionRegistry::dispatchImGuiChords() -> size_t {
+	auto runByEvent = std::move(m_runByEvent);
+	m_runByEvent.clear();
+	if (m_suspended || ImGui::GetIO().WantTextInput)
+		return 0;
+	size_t count = 0;
+	for (const auto& action: m_actions) {
+		const auto& shortcut = action.currentShortcut;
+		if (shortcut.isEmpty() ||
+			(!hasFlag(shortcut.modifiers, Modifiers::Ctrl) && !hasFlag(shortcut.modifiers, Modifiers::Alt)))
+			continue;
+		const int chord = toImGuiChord(shortcut);
+		if (chord == 0 || !ImGui::IsKeyChordPressed(chord) || runByEvent.contains(action.id))
+			continue;
+		action.callback();
+		++count;
+	}
+	return count;
 }
 
 auto ActionRegistry::getShortcutString(const std::string& iId) const -> std::string {
