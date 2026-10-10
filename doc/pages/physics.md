@@ -207,9 +207,11 @@ the engine), owned by each multi-threaded world and destroyed with it.
 - **Dedicated executor.** The pool does not share the `core::task::Scheduler` threads: within a step, Box2D's
   solver tasks spin-wait on each other, so they must all run at once, and a long Scheduler job holding a worker
   would stall the step.
-- **Spare threads.** The executor has two threads more than `workerCount`: Box2D runs the tree rebuild and an
-  island split beside its solver stage tasks, which wait on each other, so a side task holding one of their
-  threads would delay the stage. The last range of a split task runs on the thread calling `b2World_Step`.
+- **No spare threads.** The executor has exactly `workerCount` threads. The tree rebuild and island split that
+  Box2D runs beside its solver stage tasks do not need threads of their own: the worker 0 stage task claims every
+  block left, so a stage task queued behind them does not stall the stage. Two spare threads slowed the 2-worker
+  step by up to 60 % on a virtualised agent. The pose copies to the entities (`parallelFor`) run their last range
+  on the calling thread.
 - **Reproducibility.** Each task is split into at most `workerCount` ranges, and Box2D receives the range index
   as its worker index. A given worker count therefore gives the same result on every run; different counts
   differ slightly (Box2D merges per-worker state, such as the island-split candidate, in an order that depends

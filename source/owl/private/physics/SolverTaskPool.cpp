@@ -16,15 +16,8 @@
 
 namespace owl::physics {
 
-namespace {
-
-// Threads beyond `workerCount`: the tree rebuild and an island split run beside the solver stage tasks.
-constexpr uint32_t g_sideTaskThreads = 2;
-
-}// namespace
-
 SolverTaskPool::SolverTaskPool(const uint32_t iWorkerCount)
-	: m_workerCount{std::max(iWorkerCount, 2U)}, mp_executor{mkUniq<tf::Executor>(m_workerCount + g_sideTaskThreads)} {}
+	: m_workerCount{std::max(iWorkerCount, 2U)}, mp_executor{mkUniq<tf::Executor>(m_workerCount)} {}
 
 SolverTaskPool::~SolverTaskPool() = default;
 

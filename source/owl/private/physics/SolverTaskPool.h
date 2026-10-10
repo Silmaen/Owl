@@ -32,9 +32,11 @@ namespace owl::physics {
  * step, Box2D's solver tasks spin-wait on each other, so all of them must run at once, and a long
  * Scheduler job holding a worker would stall the physics step until it ends.
  *
- * The executor has two threads more than `workerCount`: Box2D runs the tree rebuild and an island
- * split beside its `workerCount` solver stage tasks, which wait on each other, so a side task holding
- * one of their threads would delay the whole stage.
+ * The executor has exactly `workerCount` threads. Box2D also runs the tree rebuild and an island split
+ * beside its solver stage tasks; a stage task queued behind them does not stall the stage, since the
+ * stage task of worker 0, enqueued first, claims every block left unclaimed. Two spare threads for these
+ * side tasks gained at most 3 % on bare metal and slowed the 2-worker step by up to 60 % on a virtualised
+ * 8-core agent.
  *
  * Each `enqueueTask` call is split into at most `workerCount` ranges of at least `minRange` items,
  * each run by one executor worker. The worker index handed to Box2D is the range index, not the
@@ -58,7 +60,7 @@ public:
 	/**
 	 * @brief
 	 *  Start the worker threads.
-	 * @param[in] iWorkerCount Box2D worker count, at least 2 (the executor starts two threads more).
+	 * @param[in] iWorkerCount Number of worker threads, at least 2.
 	 */
 	explicit SolverTaskPool(uint32_t iWorkerCount);
 
