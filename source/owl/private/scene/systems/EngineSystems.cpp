@@ -103,6 +103,7 @@ void registerEngineSystems(SystemSchedule& ioSchedule) {
 	const auto add = [&ioSchedule](const char* iName, const SystemPhase iPhase, SystemFunction&& iUpdate) -> void {
 		std::ignore = ioSchedule.add({.name = iName, .phase = iPhase, .update = std::move(iUpdate)});
 	};
+	add("owl.physics_poses", SystemPhase::Scripts, &restorePhysicsPoses);
 	add("owl.scripts", SystemPhase::Scripts, &updateScripts);
 	add("owl.fly_cameras", SystemPhase::PrePhysics, &updateFlyCameras);
 	add("owl.voxel_players", SystemPhase::PrePhysics, &updateVoxelPlayers);
@@ -116,6 +117,11 @@ void registerEngineSystems(SystemSchedule& ioSchedule) {
 	add("owl.sound", SystemPhase::Late, &updateSound);
 	add("owl.sprite_animation", SystemPhase::Late, &updateAnimatedSprites);
 	add("owl.game_over", SystemPhase::Ended, &renderGameOver);
+}
+
+void restorePhysicsPoses(Scene& ioScene, [[maybe_unused]] const SystemContext& iContext) {
+	if (physics::PhysicCommand::getInterpolationAlpha(ioScene) < 1.f)
+		physics::PhysicCommand::syncSimulatedTransforms(ioScene);
 }
 
 void updateScripts(Scene& ioScene, const SystemContext& iContext) {

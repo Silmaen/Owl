@@ -172,8 +172,9 @@ when Play starts.
 - **Interpolation.** With `interpolate` on, `Transform` shows the pose between the last two steps, by the
   fraction of a step left in the accumulator (`PhysicCommand::getInterpolationAlpha(scene)`): motion is smooth at
   any frame rate, at the cost of up to one step of display latency. Box2D stays the authority: velocities, impulses
-  and `getVelocity` act on the simulated state. `setTransform` (teleport) snaps both poses, so a teleport is never
-  blended. `SaveManager::save` calls `PhysicCommand::syncSimulatedTransforms(scene)` first, so a save stores the
+  and `getVelocity` act on the simulated state. `setTransform` (teleport) moves both poses by the same offset, so a
+  teleport is never blended across. Before the scripts, the `owl.physics_poses` system writes the simulated poses back
+  into the transforms: gameplay code reads the simulation and only the drawing sees the blend. `SaveManager::save` calls `PhysicCommand::syncSimulatedTransforms(scene)` first, so a save stores the
   simulated positions that match its velocity snapshots.
 - **Per-frame input.** Scripts and `Player::parseInputs` still run once per frame: an impulse applied in
   `on_update` lands before the frame's first step.

@@ -74,12 +74,10 @@ public:
 
 	/**
 	 * @brief
-	 *  Get the seconds elapsed since last update.
+	 *  Get the seconds elapsed since last update, at the clock resolution (no millisecond rounding).
 	 * @return Seconds elapsed.
 	 */
-	[[nodiscard]] auto getSeconds() const -> float {
-		return static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(m_delta).count()) / g_Millis;
-	}
+	[[nodiscard]] auto getSeconds() const -> float { return std::chrono::duration<float>(m_delta).count(); }
 
 	/**
 	 * @brief
@@ -87,7 +85,7 @@ public:
 	 * @return Milliseconds elapsed.
 	 */
 	[[nodiscard]] auto getMilliseconds() const -> float {
-		return static_cast<float>(std::chrono::duration_cast<std::chrono::microseconds>(m_delta).count()) / g_Millis;
+		return std::chrono::duration<float, std::milli>(m_delta).count();
 	}
 
 	/**

@@ -79,9 +79,9 @@ TEST(SystemSchedule, RejectsInvalidEdits) {
 
 TEST(SystemSchedule, NewScenesCopyTheEngineSystems) {
 	const auto engine = SystemSchedule::makeEngineDefault();
-	for (const char* name:
-		 {"owl.scripts", "owl.fly_cameras", "owl.voxel_players", "owl.raycast_walls", "owl.player_input", "owl.physics",
-		  "owl.entity_links", "owl.triggers", "owl.sound", "owl.sprite_animation", "owl.game_over"})
+	for (const char* name: {"owl.physics_poses", "owl.scripts", "owl.fly_cameras", "owl.voxel_players",
+							"owl.raycast_walls", "owl.player_input", "owl.physics", "owl.entity_links", "owl.triggers",
+							"owl.sound", "owl.sprite_animation", "owl.game_over"})
 		EXPECT_TRUE(engine.has(name)) << name;
 	EXPECT_EQ(engine.getNames(SystemPhase::Physics), std::vector<std::string>{"owl.physics"});
 	const Scene scene;

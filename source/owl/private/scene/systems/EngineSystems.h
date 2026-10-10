@@ -26,6 +26,17 @@ void registerEngineSystems(SystemSchedule& ioSchedule);
 
 /**
  * @brief
+ *  Put the physics bodies' simulated poses back into their transforms before gameplay (`owl.physics_poses`).
+ *
+ * The transforms hold the interpolated (rendered) poses after the physics phase: a script reading one and writing it
+ * back to the body would rewind the body by the interpolation lag on every frame.
+ * @param[in,out] ioScene The scene.
+ * @param[in] iContext The frame context.
+ */
+void restorePhysicsPoses(Scene& ioScene, const SystemContext& iContext);
+
+/**
+ * @brief
  *  Run `NativeScript` and `LuaScript` updates of the visible entities (`owl.scripts`).
  * @param[in,out] ioScene The scene.
  * @param[in] iContext The frame context.

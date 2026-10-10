@@ -141,8 +141,10 @@ public:
 	void snapBody(const uint64_t iBodyId) {
 		if (const auto it = syncedIndex.find(iBodyId); it != syncedIndex.end()) {
 			auto& tracked = synced[it->second];
-			tracked.current = b2Body_GetTransform(tracked.body);
-			tracked.previous = tracked.current;
+			const b2Transform moved = b2Body_GetTransform(tracked.body);
+			// Carry the previous pose along with the teleport so the blend between steps goes on without a hitch.
+			tracked.previous = b2MulTransforms(moved, b2InvMulTransforms(tracked.current, tracked.previous));
+			tracked.current = moved;
 		}
 	}
 

@@ -113,7 +113,7 @@ in insertion order. Once the game is won or lost (`Victory` / `Death`), only the
 
 | Phase         | Engine systems                                                                  | Contract                                  |
 |---------------|---------------------------------------------------------------------------------|-------------------------------------------|
-| `Scripts`     | `owl.scripts` (native and Lua `on_update`)                                      | May move, create or destroy entities      |
+| `Scripts`     | `owl.physics_poses` (simulated body poses), `owl.scripts` (native, Lua)         | May move, create or destroy entities      |
 | `PrePhysics`  | `owl.fly_cameras`, `owl.voxel_players`, `owl.raycast_walls`, `owl.player_input` | Gameplay controllers before the step      |
 | `Physics`     | `owl.physics` (fixed-step Box2D, then `on_collision`)                           | Owns the physics step                     |
 | `PostPhysics` | `owl.entity_links`, `owl.triggers`                                              | Last phase allowed to change the world    |
