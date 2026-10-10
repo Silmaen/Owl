@@ -57,19 +57,42 @@ def package_copy_of(binary: Path, name: str) -> Path | None:
     return None
 
 
-def list_missing_so(binary: Path, has_missing: bool, roots: list[str]):
+def ldd_command(binary: Path, sysroot: str) -> tuple[list[str], dict[str, str] | None]:
+    """
+    Build the command listing the shared objects a binary loads.
+
+    :param binary: The binary file to inspect.
+    :param sysroot: The target's sysroot when cross compiling, else empty.
+    :return: The command and its environment (None: inherited).
+    """
+    if not sysroot:
+        return ["ldd", str(binary)], None
+    # The host ldd cannot load a foreign binary: the target's loader lists it, run by qemu-user (binfmt_misc),
+    # which looks for the absolute paths in the sysroot first.
+    from os import environ
+
+    loaders = sorted(Path(sysroot, "lib").glob("ld-linux-*.so.*"))
+    if not loaders:
+        print(f"Error: no dynamic loader in the sysroot {sysroot}", file=stderr)
+        exit(1)
+    return [str(loaders[0]), "--list", str(binary)], {**environ, "QEMU_LD_PREFIX": sysroot}
+
+
+def list_missing_so(binary: Path, has_missing: bool, roots: list[str], sysroot: str = ""):
     """
     List missing and external shared object dependencies for a given binary.
 
     :param binary: The binary file to inspect.
     :param has_missing: Whether to check for missing dependencies.
     :param roots: Package cache roots whose libraries must be copied.
+    :param sysroot: The target's sysroot when cross compiling, else empty.
     :return: A tuple containing a list of missing shared objects and a list of external shared objects.
     """
     from subprocess import run, STDOUT, PIPE
 
     try:
-        out = run(f"ldd {binary}", shell=True, stdout=PIPE, stderr=STDOUT)
+        command, env = ldd_command(binary, sysroot)
+        out = run(command, stdout=PIPE, stderr=STDOUT, env=env)
         if out.returncode != 0:
             print(
                 f"Error while searching dependencies: {out.returncode}\n{out.stdout.decode()}",
@@ -162,6 +185,12 @@ def main():
         default="",
         help="Semicolon-separated package cache roots whose libraries are copied (Conan)",
     )
+    parser.add_argument(
+        "--sysroot",
+        type=str,
+        default="",
+        help="Sysroot of the target when cross compiling (its loader lists the libraries, under qemu-user)",
+    )
     args = parser.parse_args()
     roots = [r for r in args.roots.split(";") if r]
 
@@ -175,7 +204,7 @@ def main():
     if lib_list in ["", None]:
         has_missing = False
 
-    missing, extern = list_missing_so(binary_file, has_missing, roots)
+    missing, extern = list_missing_so(binary_file, has_missing, roots, args.sysroot)
     not_found = []
     if len(missing) > 0:
         available_so = list_available_so(lib_list)
@@ -184,7 +213,7 @@ def main():
     go_on = True
     while go_on:
         go_on = False
-        missing, extern = list_missing_so(binary_file, has_missing, roots)
+        missing, extern = list_missing_so(binary_file, has_missing, roots, args.sysroot)
         if len(missing) + len(extern) == 0:
             break
         for miss in missing:
@@ -220,7 +249,7 @@ def main():
                     file=stderr,
                 )
                 exit(1)
-    missing, extern = list_missing_so(binary_file, has_missing, roots)
+    missing, extern = list_missing_so(binary_file, has_missing, roots, args.sysroot)
     if len(missing) + len(extern) == 0:
         exit(0)
     else:

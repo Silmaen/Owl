@@ -3,9 +3,14 @@ function(target_import_so_files TARGET)
         get_target_property(TARGET_TYPE ${TARGET} TYPE)
         if (${TARGET_TYPE} STREQUAL "EXECUTABLE" OR ${TARGET_TYPE} STREQUAL "SHARED_LIBRARY")
             message(STATUS "Target: ${TARGET} of type ${TARGET_TYPE}: copy additional shared libs.")
+            set(_owl_import_sysroot)
+            if (CMAKE_CROSSCOMPILING AND CMAKE_SYSROOT)
+                set(_owl_import_sysroot "--sysroot=${CMAKE_SYSROOT}")
+            endif ()
             add_custom_command(TARGET ${TARGET} POST_BUILD
                     COMMAND ${Python3_EXECUTABLE} -u ${PROJECT_SOURCE_DIR}/cmake/importSharedLibs.py
                     "$<TARGET_FILE:${TARGET}>" \"${CMAKE_PREFIX_PATH}\" \"${${PROJECT_PREFIX}_SHARED_LIB_ROOTS}\"
+                    ${_owl_import_sysroot}
                     COMMENT "Copy the needed shared libraries"
                     USES_TERMINAL
             )

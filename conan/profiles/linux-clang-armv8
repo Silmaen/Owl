@@ -1,0 +1,15 @@
+{# Linux arm64 cross compiled on x86_64, Clang + lld + libstdc++ (host profile of the linux-cross-arm64 preset; the
+   build profile is linux-clang). cmake/Conan.cmake adds the sysroot (tools.build:sysroot, pkg-config paths). #}
+include(linux-clang)
+
+[settings]
+arch=armv8
+
+[conf]
+tools.build:cflags=["--target=aarch64-linux-gnu"]
+tools.build:cxxflags=["--target=aarch64-linux-gnu"]
+tools.build:exelinkflags=["--target=aarch64-linux-gnu", "-fuse-ld=lld"]
+tools.build:sharedlinkflags=["--target=aarch64-linux-gnu", "-fuse-ld=lld"]
+tools.gnu:host_triplet=aarch64-linux-gnu
+# The build image's dpkg knows the x86_64 packages only: the arm64 -dev packages come with the sysroot.
+tools.system.package_manager:mode=report
