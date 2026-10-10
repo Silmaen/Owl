@@ -28,6 +28,8 @@ filling their whole tile.
   Owl Light, Inter with text roles, DPI scaling of the style and the fonts.
 - **Icons** — ![Done][done]: Lucide font for action glyphs, icons rasterized at the size they are drawn, asset-kind
   and component SVGs redrawn in duotone (components carry one piece in the theme accent).
+- **Widget kit** — ![Done][done]: property grid, vector field, section header, icon button, rich tooltip, search
+  field, empty state, badge, chip and toasts in `gui/widgets/`; the inspector headers and vectors use it.
 
 ## Interaction basics
 

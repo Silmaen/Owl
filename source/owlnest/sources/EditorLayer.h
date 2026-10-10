@@ -36,6 +36,8 @@
 #include "panel/StatusBar.h"
 #include "panel/VoxelPalette.h"
 
+#include <gui/widgets/Toast.h>
+
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
@@ -671,6 +673,8 @@ private:
 	DockLayout m_dockLayout;
 	/// One-line bar under the docked panels.
 	panel::StatusBar m_statusBar;
+	/// Short notifications in the bottom-right corner (saves, exports, failures).
+	gui::widgets::ToastQueue m_toasts;
 	/// When the last autosave wrote something; empty before the first one.
 	std::optional<std::chrono::steady_clock::time_point> m_lastAutosave;
 	/// Per-frame Vulkan counter deltas and their 2 s maxima, for the Stats panel.

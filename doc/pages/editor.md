@@ -318,7 +318,9 @@ the hierarchy tree.
 ### Properties
 
 The Properties panel shows all components attached to the currently selected entity.
-Each component has a collapsible header with a dedicated editor widget:
+Each component has a collapsible header (its icon, its name and a **⋮** menu: revert to the prefab, remove) and a
+dedicated editor widget. Vector fields (position, rotation, scale, sizes, directions) sit in a label / value grid,
+each component marked by a thin axis colour, with a reset button that appears when the value leaves its default.
 
 - **Transform** -- Position, rotation, and scale drag-float fields (local space)
 - **Sprite Renderer** -- Colour picker, texture picker (drag from Content Browser)

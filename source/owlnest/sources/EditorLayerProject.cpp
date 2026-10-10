@@ -475,15 +475,26 @@ void EditorLayer::saveActiveDocument() {
 	if (auto* codeDoc = dynamic_cast<CodeEditorDocument*>(active); codeDoc != nullptr) {
 		if (codeDoc->filePath().empty())
 			return;
-		if (codeDoc->save())
+		if (codeDoc->save()) {
 			OWL_INFO("Code editor: saved '{}'.", codeDoc->filePath().string())
-		else
+			m_toasts.push(gui::widgets::ToastKind::Success, std::format("Saved {}", codeDoc->title()));
+		} else {
 			OWL_ERROR("Code editor: FAILED to save '{}'.", codeDoc->filePath().string())
+			m_toasts.push(gui::widgets::ToastKind::Error, std::format("Could not save {}", codeDoc->title()),
+						  "See the Log for the reason.");
+		}
 		return;
 	}
 	if (const auto* sceneDoc = dynamic_cast<SceneDocument*>(active); sceneDoc != nullptr) {
-		if (!sceneDoc->filePath().empty())
-			saveCurrentScene();
+		if (sceneDoc->filePath().empty())
+			return;
+		saveCurrentScene();
+		if (sceneDoc->isDirty())
+			m_toasts.push(gui::widgets::ToastKind::Error, std::format("Could not save {}", sceneDoc->title()),
+						  "See the Log for the reason.");
+		else
+			m_toasts.push(gui::widgets::ToastKind::Success, std::format("Saved {}", sceneDoc->title()),
+						  sceneDoc->filePath().filename().string());
 	}
 }
 

@@ -522,6 +522,7 @@ void EditorLayer::onUpdate(const core::Timestep& iTimeStep) {
 	gui::FontPreviewCache::get().pumpPending();
 
 	m_recovery.setInterval(static_cast<float>(m_settings.autosaveIntervalSeconds));
+	m_toasts.update(iTimeStep.getSeconds());
 	if (m_recovery.onUpdate(iTimeStep.getSeconds()) && m_recovery.autosave(m_documents) > 0)
 		m_lastAutosave = std::chrono::steady_clock::now();
 
@@ -700,6 +701,7 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 	renderWelcomeScreen();
 
 	m_packager.onRender();
+	m_toasts.onImGuiRender();
 }
 
 void EditorLayer::renderWelcomeScreen() {

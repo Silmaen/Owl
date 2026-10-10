@@ -18,6 +18,7 @@
 
 #include <gui/IconBank.h>
 #include <gui/utils.h>
+#include <gui/widgets/SectionHeader.h>
 #include <imgui_internal.h>
 #include <imgui_stdlib.h>
 #include <platform/FileDialog.h>
@@ -117,12 +118,10 @@ void revertComponentToPrefab(const scene::Entity& iEntity, const std::string& iC
 	iUndoManager->push(std::move(cmd));
 }
 
-void drawOverrideMarker() {
-	const auto itemMin = ImGui::GetItemRectMin();
-	const auto itemMax = ImGui::GetItemRectMax();
-	ImGui::GetWindowDrawList()->AddRectFilled(itemMin, {itemMin.x + 3.0f, itemMax.y},
-											  ImGui::GetColorU32(ImGuiCol_CheckMark));
-	if (ImGui::IsItemHovered())
+void drawOverrideMarker(const gui::widgets::SectionHeaderResult& iHeader) {
+	ImGui::GetWindowDrawList()->AddRectFilled(gui::vec(iHeader.min), {iHeader.min.x() + 3.0f, iHeader.max.y()},
+											  ImGui::GetColorU32(gui::vec(gui::UiLayer::getTheme().accent)));
+	if (iHeader.hovered)
 		ImGui::SetTooltip("Overrides the prefab: kept by Update from Prefab");
 }
 
@@ -625,49 +624,20 @@ void addComponentPop(scene::Entity& ioEntity, const commands::CommandTarget& iCo
 template<isNamedComponent T>
 void drawComponent(scene::Entity& ioEntity, SceneUndoManager* iUndoManager, const commands::CommandTarget& iCommands,
 				   InspectorEditTracker& ioInspector) {
-	constexpr ImGuiTreeNodeFlags treeNodeFlags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed |
-												 ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_AllowOverlap |
-												 ImGuiTreeNodeFlags_FramePadding;
 	if (ioEntity.hasComponent<T>()) {
 		ImGui::PushID(T::name());
 		auto& component = ioEntity.getComponent<T>();
-		const ImVec2 contentRegionAvailable = ImGui::GetContentRegionAvail();
-		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2{4, 4});
-		const float lineHeight = ImGui::GetFontSize() + GImGui->Style.FramePadding.y * 2.0f;
-		ImGui::Separator();
-
-		// Build label with icon spacing
-		const auto* iconId = componentIconName(T::name());
-		const std::string label = iconId ? std::format("     {}", T::name()) : std::string(T::name());
-		const bool open = ImGui::TreeNodeEx(label.c_str(), treeNodeFlags);
+		const auto header = gui::widgets::sectionHeader(T::name(), componentIconName(T::name()));
+		const bool open = header.open;
 		const bool overridden = isComponentOverridden(ioEntity, T::key());
 		if (overridden)
-			drawOverrideMarker();
+			drawOverrideMarker(header);
 
 		// Track which component header is currently hovered so F1 can open the matching help page.
-		if (ImGui::IsItemHovered())
+		if (header.hovered)
 			g_lastHoveredComponentName = T::name();
-
-		// Draw icon over the padding space in the tree node header
-		if (iconId) {
-			if (const auto iconInfo = gui::IconBank::instance().getIcon(iconId, 16.f)) {
-				constexpr float iconSz = 16.0f;
-				const auto itemMin = ImGui::GetItemRectMin();
-				const float iconY = itemMin.y + (lineHeight - iconSz) * 0.5f;
-				const float iconX = itemMin.x + ImGui::GetTreeNodeToLabelSpacing() + 2.0f;
-				ImGui::GetWindowDrawList()->AddImage(iconInfo->textureId, {iconX, iconY},
-													 {iconX + iconSz, iconY + iconSz}, gui::vec(iconInfo->uv0),
-													 gui::vec(iconInfo->uv1));
-			}
-		}
-
-		ImGui::PopStyleVar();
-		ImGui::SameLine(contentRegionAvailable.x - lineHeight * 0.5f);
-		if (ImGui::Button("+", ImVec2{lineHeight, lineHeight})) {
+		if (header.menuClicked)
 			ImGui::OpenPopup("ComponentSettings");
-		}
-		if (ImGui::IsItemHovered())
-			ImGui::SetTooltip("Component Settings");
 		bool removeComponent = false;
 		bool revertComponent = false;
 		if (ImGui::BeginPopup("ComponentSettings")) {
@@ -681,7 +651,7 @@ void drawComponent(scene::Entity& ioEntity, SceneUndoManager* iUndoManager, cons
 			ioInspector.beginComponent(ioEntity, T::key());
 			gui::component::renderProps(component);
 			ioInspector.endComponent(ioEntity, T::key(), T::name(), iUndoManager);
-			ImGui::TreePop();
+			gui::widgets::endSection();
 		}
 		if (revertComponent)
 			revertComponentToPrefab(ioEntity, T::key(), T::name(), iUndoManager);

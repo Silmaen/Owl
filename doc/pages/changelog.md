@@ -16,6 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `UiLayer::setBottomBarCallback`, `setDockLayoutCallback` and `getDockSpaceId`; `LogBuffer::getWarningCount`.
 - Lucide icon font merged into the UI fonts, its glyphs as UTF-8 string constants in `gui/IconFont.h`; the status bar shows them.
 - `IconBank` rasterizes each icon at 16, 24 and 32 px times the monitor scale besides the 64 px cell, `getIcon(name, size)` picks the tier of the drawn size, so small icons are sharp instead of scaled down.
+- GUI widget kit (`gui/widgets/`): `beginProperties` / `propertyFloat` / `propertyVec3` / `propertyBool` label-value grid with reset to default, `vectorField` with axis marks, `sectionHeader` with a menu button, `iconButton`, `richTooltip` with shortcut, `searchField` and `matchesFilter`, `emptyState`, `badge` and `chip`, and `ToastQueue` notifications.
+- Owl Nest inspector: component headers and vector fields use the kit (⋮ menu, reset buttons), and saving a document shows a toast.
 - Owl Nest UI font Inter (Regular, SemiBold) in `engine_assets/fonts/inter/`, text roles `gui::TextStyle` (`UiLayer::pushTextStyle`) and scaling to the primary monitor content scale (`UiLayer::getDpiScale`).
 - Owl Nest Stats panel: Vulkan submits, queue / device drains, fence waits and pace wait per frame, with their maximum over the last 2 s.
 - `OwlShaderBake` build tool (render module): compiles every `engine_assets/shaders/*/slang/*.slang` for Vulkan and OpenGL during the build, in the layout of `renderer::utils::getPrecompiledShaderPath`.

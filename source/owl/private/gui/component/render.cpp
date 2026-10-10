@@ -15,6 +15,7 @@
 #include "gui/utils.h"
 #include "gui/widgets/AssetField.h"
 #include "gui/widgets/CurveEditor.h"
+#include "gui/widgets/PropertyGrid.h"
 
 #include "input/KeyCodes.h"
 #include "renderer/Renderer.h"
@@ -40,69 +41,11 @@ void fieldTooltip(const char* iText) {
 		ImGui::SetTooltip("%s", iText);
 }
 
-void drawVec3Control(const std::string& iLabel, math::vec3& iValues, const float iResetValue = 0.0f,
-					 const float iColumnWidth = 100.0f) {
-	const ImGuiIO& io = ImGui::GetIO();
-	auto* const boldFont = io.Fonts->Fonts[0];
-	ImGui::PushID(iLabel.c_str());
-
-	ImGui::Columns(2);
-	ImGui::SetColumnWidth(0, iColumnWidth);
-	ImGui::Text("%s", iLabel.c_str());
-	ImGui::NextColumn();
-
-	ImGui::PushMultiItemsWidths(3, ImGui::CalcItemWidth());
-	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{0, 0});
-
-	const float lineHeight = ImGui::GetFontSize() + GImGui->Style.FramePadding.y * 2.0f;
-	const ImVec2 buttonSize = {lineHeight + 3.0f, lineHeight};
-
-	ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{0.8f, 0.1f, 0.15f, 1.0f});
-	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{0.9f, 0.2f, 0.2f, 1.0f});
-	ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{0.8f, 0.1f, 0.15f, 1.0f});
-	ImGui::PushFont(boldFont);
-	if (ImGui::Button("X", buttonSize))
-		iValues.x() = iResetValue;
-	ImGui::PopFont();
-	ImGui::PopStyleColor(3);
-
-	ImGui::SameLine();
-	ImGui::DragFloat("##X", &iValues.x(), 0.1f, 0.0f, 0.0f, "%.2f");
-	ImGui::PopItemWidth();
-	ImGui::SameLine();
-
-	ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{0.2f, 0.7f, 0.2f, 1.0f});
-	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{0.3f, 0.8f, 0.3f, 1.0f});
-	ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{0.2f, 0.7f, 0.2f, 1.0f});
-	ImGui::PushFont(boldFont);
-	if (ImGui::Button("Y", buttonSize))
-		iValues.y() = iResetValue;
-	ImGui::PopFont();
-	ImGui::PopStyleColor(3);
-
-	ImGui::SameLine();
-	ImGui::DragFloat("##Y", &iValues.y(), 0.1f, 0.0f, 0.0f, "%.2f");
-	ImGui::PopItemWidth();
-	ImGui::SameLine();
-
-	ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{0.1f, 0.25f, 0.8f, 1.0f});
-	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{0.2f, 0.35f, 0.9f, 1.0f});
-	ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{0.1f, 0.25f, 0.8f, 1.0f});
-	ImGui::PushFont(boldFont);
-	if (ImGui::Button("Z", buttonSize))
-		iValues.z() = iResetValue;
-	ImGui::PopFont();
-	ImGui::PopStyleColor(3);
-
-	ImGui::SameLine();
-	ImGui::DragFloat("##Z", &iValues.z(), 0.1f, 0.0f, 0.0f, "%.2f");
-	ImGui::PopItemWidth();
-
-	ImGui::PopStyleVar();
-
-	ImGui::Columns(1);
-
-	ImGui::PopID();
+void drawVec3Control(const std::string& iLabel, math::vec3& iValues, const float iResetValue = 0.0f) {
+	if (!widgets::beginProperties(std::format("##vec3_{}", iLabel).c_str()))
+		return;
+	std::ignore = widgets::propertyVec3(iLabel.c_str(), iValues, {iResetValue, iResetValue, iResetValue});
+	widgets::endProperties();
 }
 
 auto tilePickField(const char* iLabel, const shared<scene::Tileset>& iTileset, uint32_t& ioTileIndex) -> bool {
