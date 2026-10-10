@@ -15,6 +15,7 @@
 #include "gui/component/render.h"
 #include "gui/utils.h"
 #include "gui/widgets/AssetField.h"
+#include "gui/widgets/Badge.h"
 #include "gui/widgets/CurveEditor.h"
 #include "gui/widgets/IconButton.h"
 #include "gui/widgets/PropertyGrid.h"
@@ -305,6 +306,8 @@ void renderProps(SpriteRenderer& ioComponent) {
 void renderProps(AnimatedSpriteRenderer& ioComponent) {
 	prop::ColorEdit4("Color", ioComponent.color.data());
 	widgets::textureField("Spritesheet", ioComponent.texture);
+	if (ioComponent.texture == nullptr)
+		widgets::notice("No sprite sheet: the entity draws a plain coloured quad. Drop a texture on the field.");
 
 	const int maxFrame = static_cast<int>(std::max(ioComponent.columns * ioComponent.rows, 1u) - 1);
 	int cols = static_cast<int>(ioComponent.columns);
@@ -635,6 +638,8 @@ void renderProps(SoundListener& ioComponent) {
 
 void renderProps(LuaScript& ioComponent) {
 	prop::InputText("Script Path", &ioComponent.scriptPath);
+	if (ioComponent.scriptPath.empty())
+		widgets::notice("No script: drop a .lua file from the Content Browser on the field.");
 	if (std::filesystem::path dropped; widgets::assetDropTarget(widgets::AssetKind::LuaScript, dropped)) {
 		ioComponent.scriptPath = dropped.string();
 		ioComponent.properties = script::ScriptEngine::extractProperties(ioComponent.scriptPath);

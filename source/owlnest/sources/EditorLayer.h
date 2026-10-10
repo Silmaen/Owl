@@ -23,6 +23,7 @@
 #include "document/SceneDocument.h"
 #include "panel/AsyncProgressModal.h"
 #include "panel/Backstage.h"
+#include "panel/CommandPalette.h"
 #include "panel/ContentBrowser.h"
 #include "panel/GpuCounterMonitor.h"
 #include "panel/HelpPanel.h"
@@ -531,6 +532,12 @@ private:
 
 	/**
 	 * @brief
+	 *  Draw the command palette when open, listing the editor actions and the entities of the active scene.
+	 */
+	void renderCommandPalette();
+
+	/**
+	 * @brief
 	 *  Switch the panel arrangement and rebuild the dock tree on the next frame.
 	 * @param[in] iPreset The arrangement.
 	 */
@@ -695,6 +702,8 @@ private:
 	panel::StatusBar m_statusBar;
 	/// Short notifications in the bottom-right corner (saves, exports, failures).
 	gui::widgets::ToastQueue m_toasts;
+	/// Ctrl+K search over the actions and the entities.
+	panel::CommandPalette m_commandPalette;
 	/// When the last autosave wrote something; empty before the first one.
 	std::optional<std::chrono::steady_clock::time_point> m_lastAutosave;
 	/// Per-frame Vulkan counter deltas and their 2 s maxima, for the Stats panel.

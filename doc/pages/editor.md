@@ -1092,6 +1092,23 @@ gizmo manipulation is in progress.
 | Stop        | F7               | `scene.stop`  |
 | Step Frame  | F8               | `scene.step`  |
 
+### View
+
+| Action                       | Default Shortcut | Action ID                  |
+|------------------------------|------------------|----------------------------|
+| Command Palette              | Ctrl+K           | `view.commandPalette`      |
+| Layout: Default              | Alt+1            | `view.layoutDefault`       |
+| Layout: Hierarchy Left       | Alt+2            | `view.layoutHierarchyLeft` |
+| Collapse / Expand the Ribbon | Ctrl+F1          | `view.toggleRibbon`        |
+| Help                         | F1               | `help.context`             |
+
+### Command palette
+
+`Ctrl+K` opens a search box at the top of the editor listing every action of the registry, with its category and
+its shortcut, followed by the entities of the active scene. Type a few letters in order (`svdoc` finds *Save
+Document*), move with the arrows, run with `Enter`, close with `Escape` or a click elsewhere. Choosing an entity
+selects it. Matches at the start of a word and runs of contiguous letters rank first (`CommandPalette::score`).
+
 ### Rebinding
 
 All shortcuts can be rebound through the **Editor Settings** panel (Settings >

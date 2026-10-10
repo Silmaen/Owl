@@ -21,6 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Owl Nest viewport overlays: gizmo tools and snap (top-left), Play / Pause / Step / Stop (top-centre), camera markers and stats toggles (top-right), a frame-time chip (bottom-left), the axis gizmo (bottom-right) and a play-colour frame while the scene runs; the ribbon drops its Playback and Gizmo groups; `ActionRegistry::run`.
 - Owl Nest panels: the inspector puts every label on the left of its field; the Hierarchy gets an Add button, a name search and component icons; the Content Browser gets root chips, a breadcrumb, search, grid / list views, image thumbnails filling their tile and a colour per asset family; the Log filters become chips; empty panels say what to do.
 - `OwlNest --project <dir>` opens a project at start-up.
+- Owl Nest command palette (`Ctrl+K`): a fuzzy search over every editor action, with its shortcut, and over the entities of the active scene to select one.
+- `gui::widgets::notice`: an inline warning in the inspector, shown for an animated sprite without a sprite sheet and a Lua script without a path.
 - Owl Nest inspector: component headers and vector fields use the kit (⋮ menu, reset buttons), and saving a document shows a toast.
 - Owl Nest UI font Inter (Regular, SemiBold) in `engine_assets/fonts/inter/`, text roles `gui::TextStyle` (`UiLayer::pushTextStyle`) and scaling to the primary monitor content scale (`UiLayer::getDpiScale`).
 - Owl Nest Stats panel: Vulkan submits, queue / device drains, fence waits and pace wait per frame, with their maximum over the last 2 s.

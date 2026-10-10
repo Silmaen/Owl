@@ -36,6 +36,8 @@ filling their whole tile.
   search / views / thumbnails, Log chips, empty states, node canvas fixed and themed.
 - **Viewport overlays** — ![Done][done]: tools, playback, display toggles, frame-time chip and axis gizmo float over
   the view; play-colour frame while playing.
+- **Assistance** — ![Done][done]: command palette on `Ctrl+K` (actions and entities), inline notices for an
+  incomplete component, toasts on save, `F1` contextual help.
 
 ## Interaction basics
 

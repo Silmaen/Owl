@@ -10,11 +10,13 @@
 
 #include "gui/widgets/Badge.h"
 
+#include "gui/IconFont.h"
 #include "gui/UiLayer.h"
 #include "gui/utils.h"
 
 #include <imgui.h>
 
+#include <algorithm>
 #include <cmath>
 #include <cstring>
 
@@ -41,6 +43,22 @@ auto kindColor(const BadgeKind iKind) -> math::vec4 {
 	return theme.textMuted;
 }
 
+auto kindGlyph(const BadgeKind iKind) -> const char* {
+	switch (iKind) {
+		case BadgeKind::Error:
+			return icon::circleX;
+		case BadgeKind::Warning:
+			return icon::triangleAlert;
+		case BadgeKind::Success:
+			return icon::check;
+		case BadgeKind::Neutral:
+		case BadgeKind::Accent:
+		case BadgeKind::Info:
+			return icon::info;
+	}
+	return icon::info;
+}
+
 }// namespace
 
 void badge(const char* iText, const BadgeKind iKind) {
@@ -59,6 +77,26 @@ void badge(const char* iText, const BadgeKind iKind) {
 	draw->AddText({pos.x + padding.x, pos.y + offsetY + padding.y}, ImGui::GetColorU32(vec(color)), iText);
 	ImGui::Dummy({size.x, ImGui::GetFrameHeight()});
 	UiLayer::popTextStyle();
+}
+
+void notice(const char* iText, const BadgeKind iKind) {
+	const auto color = kindColor(iKind);
+	const ImVec2 padding{8.f, 6.f};
+	const float width = ImGui::GetContentRegionAvail().x;
+	const char* glyph = kindGlyph(iKind);
+	const float glyphWidth = ImGui::CalcTextSize(glyph).x + ImGui::GetStyle().ItemInnerSpacing.x;
+	const float wrap = std::max(1.f, width - 2.f * padding.x - glyphWidth);
+	const ImVec2 textSize = ImGui::CalcTextSize(iText, nullptr, false, wrap);
+	const ImVec2 pos = ImGui::GetCursorScreenPos();
+	const ImVec2 max{pos.x + width, pos.y + textSize.y + 2.f * padding.y};
+	auto* draw = ImGui::GetWindowDrawList();
+	const float rounding = ImGui::GetStyle().FrameRounding;
+	draw->AddRectFilled(pos, max, ImGui::GetColorU32(vec(Theme::withAlpha(color, 0.12f))), rounding);
+	draw->AddRect(pos, max, ImGui::GetColorU32(vec(Theme::withAlpha(color, 0.35f))), rounding);
+	draw->AddText({pos.x + padding.x, pos.y + padding.y}, ImGui::GetColorU32(vec(color)), glyph);
+	draw->AddText(nullptr, 0.f, {pos.x + padding.x + glyphWidth, pos.y + padding.y},
+				  ImGui::GetColorU32(vec(UiLayer::getTheme().text)), iText, nullptr, wrap);
+	ImGui::Dummy({width, max.y - pos.y});
 }
 
 auto chip(const char* iLabel, const bool iSelected) -> bool {

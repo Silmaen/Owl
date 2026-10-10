@@ -323,30 +323,30 @@ void EditorLayer::onAttach() {
 										if (getState() == State::Edit)
 											onDuplicateEntity();
 									});
-	m_actionRegistry.registerAction("guizmo.none", "Guizmo: None", {input::key::Q, Modifiers::None}, [this]() -> void {
+	m_actionRegistry.registerAction("guizmo.none", "Gizmo: None", {input::key::Q, Modifiers::None}, [this]() -> void {
 		if (auto* vp = activeViewport(); vp != nullptr && getState() == State::Edit &&
 										 (vp->isFocused() || vp->isHovered()) && !gui::Guizmo::isUsing())
 			vp->setGuizmoType(gui::Guizmo::Type::None);
 	});
 	m_actionRegistry.registerAction(
-			"guizmo.translate", "Guizmo: Translate", {input::key::W, Modifiers::None}, [this]() -> void {
+			"guizmo.translate", "Gizmo: Translate", {input::key::W, Modifiers::None}, [this]() -> void {
 				if (auto* vp = activeViewport(); vp != nullptr && getState() == State::Edit &&
 												 (vp->isFocused() || vp->isHovered()) && !gui::Guizmo::isUsing())
 					vp->setGuizmoType(gui::Guizmo::Type::Translation);
 			});
 	m_actionRegistry.registerAction(
-			"guizmo.rotate", "Guizmo: Rotate", {input::key::E, Modifiers::None}, [this]() -> void {
+			"guizmo.rotate", "Gizmo: Rotate", {input::key::E, Modifiers::None}, [this]() -> void {
 				if (auto* vp = activeViewport(); vp != nullptr && getState() == State::Edit &&
 												 (vp->isFocused() || vp->isHovered()) && !gui::Guizmo::isUsing())
 					vp->setGuizmoType(gui::Guizmo::Type::Rotation);
 			});
 	m_actionRegistry.registerAction(
-			"guizmo.scale", "Guizmo: Scale", {input::key::R, Modifiers::None}, [this]() -> void {
+			"guizmo.scale", "Gizmo: Scale", {input::key::R, Modifiers::None}, [this]() -> void {
 				if (auto* vp = activeViewport(); vp != nullptr && getState() == State::Edit &&
 												 (vp->isFocused() || vp->isHovered()) && !gui::Guizmo::isUsing())
 					vp->setGuizmoType(gui::Guizmo::Type::Scale);
 			});
-	m_actionRegistry.registerAction("guizmo.all", "Guizmo: All", {input::key::T, Modifiers::None}, [this]() -> void {
+	m_actionRegistry.registerAction("guizmo.all", "Gizmo: All", {input::key::T, Modifiers::None}, [this]() -> void {
 		if (auto* vp = activeViewport(); vp != nullptr && getState() == State::Edit &&
 										 (vp->isFocused() || vp->isHovered()) && !gui::Guizmo::isUsing())
 			vp->setGuizmoType(gui::Guizmo::Type::All);
@@ -435,6 +435,8 @@ void EditorLayer::onAttach() {
 									[this]() -> void { m_ribbonBuilder.toggleCollapsed(); });
 	m_actionRegistry.registerAction("view.resetLayout", "Reset Layout", {},
 									[this]() -> void { applyLayoutPreset(m_dockLayout.getPreset()); });
+	m_actionRegistry.registerAction("view.commandPalette", "Command Palette", {input::key::K, Modifiers::Ctrl},
+									[this]() -> void { m_commandPalette.open(); });
 	// clang-format on
 
 	// Apply saved keybinding overrides
@@ -681,7 +683,33 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 	renderBackstage();
 
 	m_packager.onRender();
+	renderCommandPalette();
 	m_toasts.onImGuiRender();
+}
+
+void EditorLayer::renderCommandPalette() {
+	if (!m_commandPalette.isOpen())
+		return;
+	std::vector<panel::PaletteItem> items;
+	for (const auto& action: m_actionRegistry.getActions()) {
+		if (action.id == "view.commandPalette")
+			continue;
+		items.push_back({.category = panel::CommandPalette::categoryOf(action.id),
+						 .label = action.displayName,
+						 .shortcut = m_actionRegistry.getShortcutString(action.id),
+						 .run = [this, id = action.id]() -> void { std::ignore = m_actionRegistry.run(id); }});
+	}
+	if (const auto& scene = getActiveScene(); scene != nullptr) {
+		for (const auto& entity: scene->getAllEntities()) {
+			if (!entity.hasComponent<scene::component::Tag>())
+				continue;
+			items.push_back({.category = "Select",
+							 .label = entity.getComponent<scene::component::Tag>().tag,
+							 .shortcut = {},
+							 .run = [this, entity]() -> void { setSelectedEntity(entity); }});
+		}
+	}
+	m_commandPalette.onImGuiRender(items);
 }
 
 void EditorLayer::renderBackstage() {

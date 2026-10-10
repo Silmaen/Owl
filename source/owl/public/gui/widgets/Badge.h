@@ -44,4 +44,13 @@ OWL_API void badge(const char* iText, BadgeKind iKind = BadgeKind::Neutral);
  */
 OWL_API auto chip(const char* iLabel, bool iSelected) -> bool;
 
+/**
+ * @brief
+ *  Inline message across the available width: a tinted rounded box with the icon of its kind and a wrapped text,
+ *  to flag a property that needs attention (a sprite sheet not set, a script path missing).
+ * @param[in] iText The message.
+ * @param[in] iKind Its meaning; `Warning` by default.
+ */
+OWL_API void notice(const char* iText, BadgeKind iKind = BadgeKind::Warning);
+
 }// namespace owl::gui::widgets

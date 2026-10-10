@@ -135,6 +135,9 @@ TEST_F(WidgetKitTest, EveryWidgetDrawsWithoutInput) {
 			EXPECT_FALSE(searchField("search", search, "Search entities"));
 			badge("12");
 			badge("2", BadgeKind::Warning);
+			notice("No sprite sheet set.");
+			notice("Saved.", BadgeKind::Success);
+			notice("Broken.", BadgeKind::Error);
 			EXPECT_FALSE(chip("Textures##chip", true));
 			const auto header = sectionHeader("Transform", nullptr);
 			EXPECT_FALSE(header.menuClicked);
