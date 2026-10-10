@@ -178,7 +178,7 @@ rest of A and B, then D, then C, then E.
 - ![Planned][planned] Phase E — interaction basics: tooltips, context menus, drag & drop, text scale / DPI
 - ![Planned][planned] Phase E — visual overhaul: theme, icon set, thumbnails, style guide
 - ![In Progress][progress] Phase E — editor camera controls overhaul (presets, view-cube, sensitivity)
-- ![Planned][planned] Performance targets met: frame, Renderer2D, Vulkan drains, scene load, Box2D, voxel, start-up
+- ![In Progress][progress] Performance targets met or accepted ([targets](design/foundations.md#performance-targets)); editor Vulkan queue drains to measure
 
 ## v0.2.1 -- 2026-06-27
 
