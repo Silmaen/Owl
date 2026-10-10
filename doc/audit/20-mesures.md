@@ -1146,3 +1146,11 @@ l'écart NVIDIA restant relève du pilote, pas des pipelines.
 
 Les autres cibles sont tenues ; seule reste à mesurer la cible « 0 vidage par frame » dans l'éditeur (le runner est à
 0 depuis le §8.5). Le tableau des cibles de `doc/pages/design/foundations.md` porte ces statuts.
+
+### 9.10 Vidages GPU dans l'éditeur (2026-10-10)
+
+Mesure manuelle du mainteneur dans le panneau *Stats* (Vulkan, NVIDIA, Wayland, `sample_project`), valeurs « frame /
+max 2 s » : au repos, en jeu (voxel, ~1 200 fps), au survol, au gizmo et dans le content browser, 1 soumission,
+`queueWaitIdle` = `deviceWaitIdle` = 0 et aucune attente de fence ; un clic de sélection fait 1 attente de fence (lecture
+du picking), un chargement de scène jusqu'à 7, puis retour à 0. `paceWaitMs` en jeu : 0,2 ms par frame, 3,17 ms au pire
+sur 2 s. Cible « 0 vidage par frame » tenue dans l'éditeur comme dans le runner (contre ≥ 10 à l'audit).

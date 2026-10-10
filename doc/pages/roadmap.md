@@ -178,7 +178,7 @@ rest of A and B, then D, then C, then E.
 - ![Planned][planned] Phase E — interaction basics: tooltips, context menus, drag & drop, text scale / DPI (`GLFW_SCALE_FRAMEBUFFER`)
 - ![Planned][planned] Phase E — visual overhaul: theme, icon set, thumbnails, style guide
 - ![In Progress][progress] Phase E — editor camera controls overhaul (presets, view-cube, sensitivity)
-- ![In Progress][progress] Performance targets met or accepted ([targets](design/foundations.md#performance-targets)); editor Vulkan queue drains to measure
+- ![Done][done] Performance targets met or accepted ([targets](design/foundations.md#performance-targets))
 
 ## v0.2.1 -- 2026-06-27
 
