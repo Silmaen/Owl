@@ -4,8 +4,10 @@ race:libvulkan_lvp.so
 race:libLLVM.so
 # llvmpipe (Mesa's gallium) on the Wayland / EGL path of the Wayland smoke test: same uninstrumented threads.
 race:libgallium
-# The Khronos validation layer takes its own rwlocks in both orders on one thread.
+# The Khronos validation layer takes its own rwlocks in both orders on one thread, and frees them while its own
+# queue-submit worker thread still releases them.
 deadlock:libVkLayer_khronos_validation.so
+race:libVkLayer_khronos_validation.so
 # GLFW's init loads GTK (libdecor's GTK plugin), whose Pango / fontconfig worker thread shares GLib queues with the main
 # thread through code TSan does not see.
 race:libglib-2.0.so
@@ -14,3 +16,7 @@ race:libpango
 race:libfontconfig.so
 race:libgtk-3.so
 race:libgdk-3.so
+# GTK loads its icons through gdk-pixbuf's glycin loader, whose worker threads hand buffers back to GIO on the main
+# thread through code TSan does not see.
+race:libglycin-2.so
+race:libgio-2.0.so
