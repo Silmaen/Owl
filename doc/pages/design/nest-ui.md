@@ -30,6 +30,8 @@ filling their whole tile.
   and component SVGs redrawn in duotone (components carry one piece in the theme accent).
 - **Widget kit** — ![Done][done]: property grid, vector field, section header, icon button, rich tooltip, search
   field, empty state, badge, chip and toasts in `gui/widgets/`; the inspector headers and vectors use it.
+- **Ribbon** — ![Done][done]: File screen, Home / View / document tabs, quick access, collapse, one large button
+  per group.
 
 ## Interaction basics
 

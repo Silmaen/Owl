@@ -1,0 +1,106 @@
+/**
+ * @file Backstage_test.cpp
+ * @author Silmaen
+ * @date 11/10/2026
+ * Copyright (c) 2026 All rights reserved.
+ * All modification must get authorization from the author.
+ */
+
+#include "panel/Backstage.h"
+#include "testHelper.h"
+
+#include <core/Log.h>
+#include <gui/UiLayer.h>
+
+#include <imgui.h>
+
+#include <gtest/gtest.h>
+
+#include <filesystem>
+#include <string>
+
+using namespace owl;
+using namespace owl::nest::panel;
+
+namespace {
+
+/**
+ * @brief
+ *  Headless frames of the File screen, counting the actions it runs.
+ */
+class BackstageTest : public ::testing::Test {
+protected:
+	void SetUp() override {
+		core::Log::init(core::Log::Level::Off);
+		m_layer.disableApp();
+		m_layer.onAttach();
+		ImGui::GetIO().IniFilename = nullptr;
+		m_context.recentProjects = {"/games/demo", "/games/other"};
+		const auto count = [this]() -> void { ++m_actions; };
+		m_context.newProject = count;
+		m_context.openProject = count;
+		m_context.openRecent = [this](const std::filesystem::path& iPath) -> void {
+			++m_actions;
+			m_opened = iPath;
+		};
+		m_context.forgetRecent = [this](const std::filesystem::path&) -> void { ++m_actions; };
+		m_context.saveProject = count;
+		m_context.saveProjectAs = count;
+		m_context.packGame = count;
+		m_context.editorSettings = count;
+		m_context.projectSettings = count;
+		m_context.engineSettings = count;
+		m_context.help = [this](const std::string&) -> void { ++m_actions; };
+		m_context.closeProject = count;
+		m_context.exit = count;
+	}
+
+	void TearDown() override {
+		m_layer.onDetach();
+		core::Log::invalidate();
+	}
+
+	void frame() {
+		m_layer.begin();
+		m_backstage.onImGuiRender(m_context);
+		m_layer.end();
+	}
+
+	gui::UiLayer m_layer;
+	Backstage m_backstage;
+	BackstageContext m_context;
+	int m_actions = 0;
+	std::filesystem::path m_opened;
+};
+
+}// namespace
+
+TEST_F(BackstageTest, ClosedScreenDrawsNothing) {
+	EXPECT_FALSE(m_backstage.isOpen());
+	frame();
+	EXPECT_EQ(m_actions, 0);
+}
+
+TEST_F(BackstageTest, OpenScreenRunsNothingWithoutInput) {
+	m_backstage.open();
+	for (int i = 0; i < 6; ++i) frame();
+	EXPECT_EQ(m_actions, 0);
+	EXPECT_TRUE(m_backstage.isOpen());
+	m_context.projectName = "Demo";
+	m_context.projectDirectory = "/games/demo";
+	for (int i = 0; i < 3; ++i) frame();
+	EXPECT_EQ(m_actions, 0);
+	m_backstage.close();
+	EXPECT_FALSE(m_backstage.isOpen());
+}
+
+TEST_F(BackstageTest, EscapeClosesTheScreen) {
+	m_backstage.open();
+	frame();
+	ImGui::GetIO().AddKeyEvent(ImGuiKey_Escape, true);
+	frame();
+	ImGui::GetIO().AddKeyEvent(ImGuiKey_Escape, false);
+	frame();
+	EXPECT_FALSE(m_backstage.isOpen());
+	EXPECT_EQ(m_actions, 0);
+}

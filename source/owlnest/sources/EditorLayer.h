@@ -22,6 +22,7 @@
 #include "document/DocumentManager.h"
 #include "document/SceneDocument.h"
 #include "panel/AsyncProgressModal.h"
+#include "panel/Backstage.h"
 #include "panel/ContentBrowser.h"
 #include "panel/GpuCounterMonitor.h"
 #include "panel/HelpPanel.h"
@@ -489,9 +490,9 @@ private:
 
 	/**
 	 * @brief
-	 *  Render the welcome screen shown when no project is loaded.
+	 *  Draw the File screen when it is open.
 	 */
-	void renderWelcomeScreen();
+	void renderBackstage();
 
 	/**
 	 * @brief
@@ -520,11 +521,6 @@ private:
 	 */
 	void renderCloseDocumentModal();
 
-	/**
-	 * @brief
-	 *  Render the recent-projects popup (triggered from the ribbon File > Recent button).
-	 */
-	void renderRecentProjectsPopup();
 
 	/**
 	 * @brief
@@ -633,14 +629,12 @@ private:
 	RibbonBuilder m_ribbonBuilder{*this};
 	/// 2D camera controller wired to the active viewport for pan/zoom.
 	renderer::CameraOrthoController m_cameraController;
-	/// Whether the welcome screen should be shown (hidden when user closes it).
-	bool m_showWelcomeScreen = true;
+	/// The File screen (projects, packaging, settings, help); shown at start-up without a project.
+	panel::Backstage m_backstage;
 	/// Pending document id to close (awaits dirty-confirmation modal). 0 when idle.
 	core::UUID m_pendingCloseDocId{0};
 	/// True when the close-confirmation modal should open on the next frame.
 	bool m_openCloseDocModal = false;
-	/// Set by the ribbon's "Recent" button; drives `renderRecentProjectsPopup`.
-	bool m_openRecentProjectsPopup = false;
 	/**
 	 * Documents that must actually be closed at the start of the next frame.  Deferring the
 	 * destruction avoids a use-after-free on the Viewport's Vulkan colour-attachment: during the

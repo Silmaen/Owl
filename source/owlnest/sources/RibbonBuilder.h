@@ -67,6 +67,12 @@ public:
 	 */
 	void onRender() { m_ribbon.onRender(); }
 
+	/**
+	 * @brief
+	 *  Collapse the ribbon to its tab row, or expand it back.
+	 */
+	void toggleCollapsed() { m_ribbon.setCollapsed(!m_ribbon.isCollapsed()); }
+
 private:
 	/**
 	 * @brief

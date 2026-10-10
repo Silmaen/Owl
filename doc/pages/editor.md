@@ -68,40 +68,27 @@ after an editor update changes it (`layoutVersion`).
 
 ## Ribbon Menu
 
-The menu bar is a Microsoft Office-style **ribbon** rendered between the OS
-window title and the dockspace. Top-level tabs hold grouped buttons in two
-sizes:
+The menu is an Office-style **ribbon** between the window title and the dockspace: tabs hold groups of buttons,
+one **large** button (icon above the label) at most per group and columns of three **small** ones (icon then label).
+Every button has a tooltip with its shortcut; a greyed button is not applicable right now.
 
-- **Large** — 32 px icon with the label below (primary actions).
-- **Small** — 16 px icon with the label to the right; three small buttons stack
-  vertically to fit in the space of one large button + caption.
+- **File** — the amber button on the left opens the **File screen**, which covers the editor: new / open project,
+  save, save as, package the game, editor / project / engine settings, help, close project and exit, with the open
+  project and the recent ones on the right. It opens by itself at start-up when no project is open. `Escape` or
+  **Back to the editor** closes it.
+- **Home** — Edit (Undo, Redo, Duplicate), Create (New scene / animation / tilemap / tileset), Project (Scene Flow,
+  project Settings, Pack Game).
+- **View** — Layout (Hierarchy Left, Reset Layout), Panels (Frame Stats, Help), Appearance (Owl Dark, Owl Light),
+  Settings (Editor, Engine).
+- **Document tab** — the last tab, in the accent colour, follows the active document and is selected when its type
+  changes: **Scene** (Document, Playback, Gizmo, Scene), **Text**, **Graph**, **Animation**, **Tilemap** or
+  **Tileset**.
 
-The **File** tab is highlighted (title rendered in the theme accent colour via
-`Ribbon::setTabHighlighted`) so it reads as the primary entry point. The
-contextual last tab switches between **Scene** and **Text** based on the active
-document type.
+The right end of the tab row holds the quick access buttons (Save, Undo, Redo) and the collapse toggle:
+**Ctrl+F1**, or a click on the selected tab, keeps only the tab row.
 
-| Tab   | Group    | Contents                                                           |
-|-------|----------|--------------------------------------------------------------------|
-| File  | Project  | New / Open (large), Save / Save As / Close (small)                 |
-| File  | Recent   | Recent (large — opens a popup listing the recent projects)         |
-| File  | Package  | Pack Game (large)                                                  |
-| File  | Session  | Exit (large)                                                       |
-| Edit  | History  | Undo / Redo (large)                                                |
-| Edit  | Settings | Engine / Editor / Project (small)                                  |
-| Scene | File     | New / Open (large), Save / Save As / Import (small), Close (large) |
-| Scene | Playback | Play / Stop (large), Pause / Step (small)                          |
-| Scene | Gizmo    | Translate / Rotate / Scale (large, toggle), Snap + Step (small)    |
-| Scene | Package  | Pack Scene (large)                                                 |
-| Text  | File     | Save / Close (large)                                               |
-
-Every button is backed by an `ActionRegistry` callback so keyboard shortcuts
-stay in sync. Grayed buttons (`isEnabled` returns false) indicate the action is
-not currently applicable.
-
-The widget lives in `gui::widgets::Ribbon`
-(`source/owl/public/gui/widgets/Ribbon.h`) and is plugged into the dockspace
-via `UiLayer::setTopBarCallback`.
+The widget is `gui::widgets::Ribbon` (`source/owl/public/gui/widgets/Ribbon.h`), filled by `RibbonBuilder` and
+plugged into the dockspace through `UiLayer::setTopBarCallback`.
 
 ## Fonts
 

@@ -208,28 +208,6 @@ void EditorLayer::requestCloseActiveDocument() {
 		requestCloseDocument(doc->id());
 }
 
-void EditorLayer::renderRecentProjectsPopup() {
-	if (m_openRecentProjectsPopup) {
-		ImGui::OpenPopup("##RecentProjectsPopup");
-		m_openRecentProjectsPopup = false;
-	}
-	if (ImGui::BeginPopup("##RecentProjectsPopup")) {
-		if (m_settings.recentProjects.empty()) {
-			ImGui::TextDisabled("No recent projects");
-		} else {
-			for (const auto& recent: m_settings.recentProjects) {
-				const auto label = std::filesystem::path(recent).filename().string();
-				const auto display = label.empty() ? recent : label;
-				if (ImGui::MenuItem(display.c_str(), recent.c_str())) {
-					ImGui::CloseCurrentPopup();
-					openProject(std::filesystem::path{recent});
-				}
-			}
-		}
-		ImGui::EndPopup();
-	}
-}
-
 void EditorLayer::renderSnapStepPopup() {
 	const auto* doc = activeSceneDocument();
 	const auto& scene = doc != nullptr ? doc->getActiveScene() : shared<scene::Scene>{};
@@ -453,6 +431,8 @@ void EditorLayer::onAttach() {
 									[this]() -> void { applyLayoutPreset(LayoutPreset::Default); });
 	m_actionRegistry.registerAction("view.layoutHierarchyLeft", "Layout: Hierarchy Left", {input::key::D2, Modifiers::Alt},
 									[this]() -> void { applyLayoutPreset(LayoutPreset::HierarchyLeft); });
+	m_actionRegistry.registerAction("view.toggleRibbon", "Collapse / Expand the Ribbon", {input::key::F1, Modifiers::Ctrl},
+									[this]() -> void { m_ribbonBuilder.toggleCollapsed(); });
 	m_actionRegistry.registerAction("view.resetLayout", "Reset Layout", {},
 									[this]() -> void { applyLayoutPreset(m_dockLayout.getPreset()); });
 	// clang-format on
@@ -462,11 +442,7 @@ void EditorLayer::onAttach() {
 
 	m_ribbonBuilder.build();
 	if (auto ui = app::Application::get().getImGuiLayer(); ui != nullptr) {
-		ui->setTopBarCallback([this]() -> void {
-			m_ribbonBuilder.onRender();
-
-			renderRecentProjectsPopup();
-		});
+		ui->setTopBarCallback([this]() -> void { m_ribbonBuilder.onRender(); });
 		ui->setBottomBarCallback([this]() -> void { renderStatusBar(); });
 		ui->setDockLayoutCallback([this](const uint32_t iDockSpaceId) -> void {
 			std::ignore = m_dockLayout.onDockSpace(iDockSpaceId, m_settings.layoutVersion);
@@ -486,6 +462,8 @@ void EditorLayer::onAttach() {
 			[this](const std::filesystem::path& iPath) -> void { openTilesetFile(iPath); });
 
 	newScene();
+	if (!m_project.isLoaded())
+		m_backstage.open();
 }
 
 void EditorLayer::onDetach() {
@@ -698,77 +676,40 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 	m_voxelPalette.onImGuiRender(m_voxelBrush);
 	m_asyncProgress.onImGuiRender();
 
-	renderWelcomeScreen();
+	renderBackstage();
 
 	m_packager.onRender();
 	m_toasts.onImGuiRender();
 }
 
-void EditorLayer::renderWelcomeScreen() {
-	if (m_project.isLoaded() || !m_showWelcomeScreen)
+void EditorLayer::renderBackstage() {
+	if (!m_backstage.isOpen())
 		return;
-
-	const auto* viewport = ImGui::GetMainViewport();
-	ImGui::SetNextWindowPos(viewport->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-	ImGui::SetNextWindowSize(ImVec2(520, 400), ImGuiCond_Appearing);
-
-	constexpr ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoDocking;
-	bool open = true;
-	if (ImGui::Begin("Welcome to Owl Nest", &open, flags)) {
-		gui::UiLayer::pushTextStyle(gui::TextStyle::Title);
-		ImGui::TextColored(gui::vec(gui::UiLayer::getTheme().accent), "Welcome to Owl Nest");
-		gui::UiLayer::popTextStyle();
-		ImGui::TextWrapped("Get started by creating a new project or opening an existing one.");
-		ImGui::Spacing();
-		ImGui::Separator();
-		ImGui::Spacing();
-
-		const auto& iconBank = gui::IconBank::instance();
-		if (iconBank.iconButton("project", "New Project...", {ImGui::GetFontSize() * 8.f, 0}))
-			newProject();
-		ImGui::SameLine();
-		if (iconBank.iconButton("open", "Open Project...", {ImGui::GetFontSize() * 8.f, 0}))
-			openProject();
-		ImGui::SameLine();
-		if (iconBank.iconButton("info", "Getting Started", {ImGui::GetFontSize() * 8.f, 0}))
-			m_helpPanel.open("getting_started");
-
-		ImGui::Spacing();
-		ImGui::Separator();
-		ImGui::Text("Recent Projects");
-		ImGui::Spacing();
-
-		if (m_settings.recentProjects.empty()) {
-			ImGui::TextDisabled("No recent projects.");
-		} else {
-			std::filesystem::path toOpen;
-			std::filesystem::path toRemove;
-			ImGui::BeginChild("##recents", ImVec2(0, 200), ImGuiChildFlags_Borders);
-			for (const auto& recent: m_settings.recentProjects) {
-				const std::filesystem::path path(recent);
-				const auto name = path.filename().string();
-				ImGui::PushID(recent.c_str());
-				if (ImGui::Selectable(name.c_str(), false, ImGuiSelectableFlags_AllowDoubleClick)) {
-					if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
-						toOpen = path;
-				}
-				if (ImGui::IsItemHovered())
-					ImGui::SetTooltip("%s", recent.c_str());
-				ImGui::SameLine(ImGui::GetContentRegionAvail().x - 20);
-				if (ImGui::SmallButton("x"))
-					toRemove = path;
-				ImGui::PopID();
-			}
-			ImGui::EndChild();
-			if (!toOpen.empty())
-				openProject(toOpen);
-			if (!toRemove.empty())
-				m_settings.removeRecentProject(toRemove);
-		}
-	}
-	ImGui::End();
-	if (!open)
-		m_showWelcomeScreen = false;
+	const panel::BackstageContext context{
+			.projectName = m_project.isLoaded() ? m_project.name : std::string{},
+			.projectDirectory = m_project.projectDirectory,
+			.recentProjects = m_settings.recentProjects,
+			.newProject = [this]() -> void { newProject(); },
+			.openProject = [this]() -> void { openProject(); },
+			.openRecent = [this](const std::filesystem::path& iPath) -> void { openProject(iPath); },
+			.forgetRecent = [this](const std::filesystem::path& iPath) -> void {
+				m_settings.removeRecentProject(iPath);
+			},
+			.saveProject = [this]() -> void { saveProject(); },
+			.saveProjectAs = [this]() -> void { saveProjectAs(); },
+			.packGame = [this]() -> void { packGame(); },
+			.editorSettings = [this]() -> void { m_settingsPanel.open(); },
+			.projectSettings = [this]() -> void { m_projectSettings.open(m_project); },
+			.engineSettings = [this]() -> void { m_parameters.open(); },
+			.help = [this](const std::string& iPage) -> void {
+				if (iPage.empty())
+					m_helpPanel.open();
+				else
+					m_helpPanel.open(iPage);
+			},
+			.closeProject = [this]() -> void { closeProject(); },
+			.exit = []() -> void { app::Application::get().close(); }};
+	m_backstage.onImGuiRender(context);
 }
 
 void EditorLayer::applyLayoutPreset(const LayoutPreset iPreset) {
