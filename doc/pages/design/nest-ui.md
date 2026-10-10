@@ -26,6 +26,8 @@ filling their whole tile.
   Default and Hierarchy Left, Reset Layout, a status bar, document-bound panels shown only with their document.
 - **Design tokens and typography** — ![Done][done]: `gui::Theme` tokens and their ImGui mapping, Owl Dark and
   Owl Light, Inter with text roles, DPI scaling of the style and the fonts.
+- **Icons** — ![Done][done]: Lucide font for action glyphs, icons rasterized at the size they are drawn, asset-kind
+  and component SVGs redrawn in duotone (components carry one piece in the theme accent).
 
 ## Interaction basics
 

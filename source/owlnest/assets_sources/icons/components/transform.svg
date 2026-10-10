@@ -1,8 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <path d="M 210,280 L 390,280" stroke="white" stroke-width="32" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M 350,245 L 395,280 L 350,315" stroke="white" stroke-width="32" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M 210,280 L 210,100" stroke="white" stroke-width="32" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M 175,140 L 210,95 L 245,140" stroke="white" stroke-width="32" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-  <rect x="192" y="262" width="36" height="36" stroke="white" stroke-width="32" fill="none"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M12 3v6.5M12 14.5V21M3 12h6.5M14.5 12H21M9.5 5.5L12 3l2.5 2.5M9.5 18.5L12 21l2.5-2.5M5.5 9.5L3 12l2.5 2.5M18.5 9.5L21 12l-2.5 2.5"/>
+  <circle cx="12" cy="12" r="2.2" fill="#ff00ff" stroke="#ff00ff"/>
 </svg>

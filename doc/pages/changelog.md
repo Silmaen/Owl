@@ -76,6 +76,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Linux arm64 CI cross compiled on x64 (`linux-cross-arm64`: Clang, lld, an arm64 sysroot), only the tests under qemu-user; the fully emulated build runs once a week.
+- Owl Nest asset-kind (28) and component (25) icons redrawn on one 24-unit grid with a duotone fill: a fixed colour per asset family, the theme text colour plus one accent piece for components.
 - `gui::Theme` is now a set of semantic tokens (surfaces, text levels, one accent, play, status and axis colours) from which `UiLayer::setTheme` derives every ImGui colour, with distinct hover and press states; presets Owl Dark and Owl Light (`UiLayer::getTheme`).
 - Owl Nest shows the Tile Palette only with the active tilemap document and the Voxel Palette only when the scene holds a `VoxelWorld`.
 - Wayland start-up skips libdecor and the GTK stack it loads when the compositor draws the decorations itself (KWin, wlroots, COSMIC): 30 ms less on KDE Plasma 6.

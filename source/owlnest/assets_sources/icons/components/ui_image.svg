@@ -1,11 +1,5 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <!-- Outer UI widget frame -->
-  <rect x="80" y="100" width="352" height="312" rx="24" stroke="white" stroke-width="32" fill="none"/>
-  <!-- Filled amber inner tile (the "image payload") -->
-  <rect x="130" y="150" width="252" height="212" rx="12" fill="#ff00ff" stroke="none"/>
-  <!-- Corner cut (matches sprite aesthetic but filled) -->
-  <circle cx="190" cy="210" r="18" fill="white"/>
-  <path d="M 140,340 L 220,270 L 290,310 L 360,250 L 372,290 L 372,355 L 140,355 Z"
-        fill="white" stroke="none"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+  <rect x="3" y="5" width="18" height="14" rx="2" fill="#ffffff" fill-opacity=".18"/>
+  <path d="M6 16l3.5-3.5 3 3 2-2 3.5 3.5"/>
+  <circle cx="15" cy="9" r="1.4" fill="#ff00ff" stroke="#ff00ff"/>
 </svg>

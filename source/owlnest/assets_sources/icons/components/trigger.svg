@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <polygon points="280,80 170,260 250,260 190,440 340,220 260,220" stroke="white" stroke-width="32" fill="none" stroke-linejoin="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M13.5 2.5L5 13.5h6.2l-1.2 8 8.5-11h-6.2z" fill="#ff00ff" fill-opacity=".85"/>
 </svg>

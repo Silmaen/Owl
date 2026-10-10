@@ -1,6 +1,6 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <polygon points="256,72 416,164 416,348 256,440 96,348 96,164" fill="none" stroke="white" stroke-width="32" stroke-linejoin="round"/>
-  <polyline points="96,164 256,256 416,164" fill="none" stroke="white" stroke-width="32" stroke-linejoin="round"/>
-  <line x1="256" y1="256" x2="256" y2="440" stroke="white" stroke-width="32" stroke-linejoin="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/>
+  <path d="M4 7.5L12 12l8-4.5L12 3z" fill="#ff00ff" fill-opacity=".7"/>
+  <path d="M12 12v9M8 9.75v9M16 9.75v9" stroke-opacity=".5"/>
+  <path d="M8 5.25l8 4.5M16 5.25l-8 4.5" stroke="#ff00ff" stroke-opacity=".9"/>
 </svg>
