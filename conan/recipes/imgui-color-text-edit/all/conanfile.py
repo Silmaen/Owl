@@ -3,7 +3,7 @@ import os
 from conan import ConanFile
 from conan.tools.build import check_min_cppstd
 from conan.tools.cmake import CMake, CMakeDeps, CMakeToolchain, cmake_layout
-from conan.tools.files import copy, get, save
+from conan.tools.files import copy, get, replace_in_file, save
 
 required_conan_version = ">=2.0"
 
@@ -53,6 +53,9 @@ class ImGuiColorTextEditConan(ConanFile):
     def source(self):
         get(self, **self.conan_data["sources"][self.version], strip_root=True)
         save(self, os.path.join(self.source_folder, "CMakeLists.txt"), _CMAKELISTS)
+        # Upstream exports the classes with IMGUI_API: with a shared imgui that is dllimport inside this static library.
+        for header, cls in (("TextEditor.h", "TextEditor"), ("TextDiff.h", "TextDiff")):
+            replace_in_file(self, os.path.join(self.source_folder, header), f"class IMGUI_API {cls} {{", f"class {cls} {{")
 
     def generate(self):
         CMakeToolchain(self).generate()
