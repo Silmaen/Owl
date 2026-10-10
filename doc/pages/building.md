@@ -122,14 +122,17 @@ cmake --build output/build/<preset>
 | `linux-sanitizer-undefined-behavior` | UndefinedBehaviorSanitizer   |
 | `linux-include-check`                | Strict-libc++ include check  |
 | `linux-clang-minimal`                | Every optional module off    |
+| `linux-cross-arm64`                  | arm64 cross build (Debug)    |
+| `linux-emulated`                     | arm64 build under QEMU       |
 
 #### Packaging
 
 `cpack` works in any build tree and writes one archive per component: `OwlEngine-<version>-<hash>-<platform>` (the
 SDK: `lib/`, `include/`, `assets/`, `lib/cmake/OwlEngine/`) and, when the editor is built, `OwlNest-…` (Owl Nest, the
 runner, their shared libraries and assets in `bin/<platform>_<arch>/`). The CI packages the release tree it has just
-tested (`linux-clang-release`, `windows-clang-release`), so the archive holds the tested binaries; `package-linux`
-(the same build without the tests) packages arm64, which has no tested release tree.
+tested (`linux-clang-release`, `windows-clang-release`), so the archive holds the tested binaries;
+`package-linux-cross-arm64` (the arm64 cross build without the tests) packages arm64, which has no tested release
+tree.
 
 ```bash
 docker/run.sh cmake --build output/build/linux-clang-release
@@ -139,6 +142,43 @@ cd output/build/linux-clang-release && ../../../docker/run.sh cpack
 The binaries decide at run time where their assets are: `assets/` next to the working directory first, then, in a
 development tree, `engine_assets/` and the application's assets found above it. No build switch tells a package from
 a development build.
+
+### arm64 cross compilation
+
+`linux-cross-arm64` (and `package-linux-cross-arm64`) build for Linux arm64 on an x86_64 machine, with the toolchain
+file `cmake/toolchains/linux-aarch64-clang.cmake`: Clang `--target=aarch64-linux-gnu`, lld and an arm64 sysroot.
+Only the binaries the build runs (`OwlShaderBake`) and the tests go through `qemu-aarch64`, started by the kernel's
+`binfmt_misc`.
+
+- **Sysroot**: an arm64 root filesystem with the same `-dev` packages as the build image (libstdc++, Vulkan, GL, X11,
+  Wayland, GTK 3, ALSA, PulseAudio), its absolute symlinks made relative. `OWL_SYSROOT` (cache or environment
+  variable, default `/opt/sysroot/aarch64-linux-gnu`) points at it.
+- **Emulation**: a `binfmt_misc` entry for aarch64 with the `F` flag (`/proc/sys/fs/binfmt_misc/qemu-aarch64`,
+  package `qemu-user-binfmt`), so it works inside a container that has no QEMU. The tests run with
+  `QEMU_LD_PREFIX=<sysroot>`, also for the `OwlRunner` they start.
+- **Conan**: the host profile is `conan/profiles/linux-clang-armv8` (`arch=armv8`, target flags, system packages
+  reported rather than checked against the image's dpkg), the build profile stays `linux-clang`; `cmake/Conan.cmake`
+  adds the sysroot and its pkg-config paths. The binaries keep the package ids of a native arm64 build.
+- **Package names**: `OWL_ARCH_STR` comes from `CMAKE_SYSTEM_PROCESSOR` and the glibc tag from the sysroot, so the
+  archives are tagged `linux-glibc_<version>-arm64`.
+
+A sysroot from the arm64 build image, then the cross build in the x64 one:
+
+```bash
+sysroot=$PWD/output/sysroot-arm64
+mkdir -p "$sysroot"
+container=$(docker create --platform linux/arm64 registry.argawaen.net/builder/builder-ubuntu2604:latest true)
+docker export "$container" | tar -x -C "$sysroot" --anchored --exclude='dev/*' --exclude='proc/*' --exclude='sys/*'
+docker rm "$container"
+find "$sysroot" -type l -lname '/*' -exec sh -c \
+    'ln -sfn "$(realpath -m --relative-to="$(dirname "$1")" "$2$(readlink "$1")")" "$1"' _ {} "$sysroot" \;
+docker/run.sh cmake --preset linux-cross-arm64 -DOWL_SYSROOT="$sysroot"
+docker/run.sh cmake --build output/build/linux-cross-arm64
+docker/run.sh ctest --test-dir output/build/linux-cross-arm64 --output-on-failure -j8
+```
+
+A sysroot outside the repository is mounted with `OWL_DOCKER_MOUNTS`. `linux-emulated` keeps the former build, the
+whole toolchain under QEMU in the arm64 image (CI: once a week).
 
 ## Running Tests
 
@@ -277,7 +317,9 @@ See [Windowing and input](design/windowing-input.md) for the details and the GLF
 | `OWL_TEST_SHUFFLE`                         | OFF     | Run every test binary with `--gtest_shuffle`                                     |
 | `OWL_RENDER_TESTS`                         | ON      | Image tests (`test/render_tests`, label `render`)                                |
 | `OWL_TEST_TIMEOUT`                         | 600     | Per test binary CTest timeout, in seconds                                        |
-| `OWL_CONAN_PROFILE`                        | (auto)  | Conan profile, default `conan/profiles/<os>-<compiler>`                          |
+| `OWL_CONAN_PROFILE`                        | (auto)  | Conan host profile, default `conan/profiles/<os>-<compiler>[-<arch>]`            |
+| `OWL_CONAN_BUILD_PROFILE`                  | (auto)  | Conan build profile, default `conan/profiles/<os>-<compiler>`                    |
+| `OWL_SYSROOT`                              | (auto)  | arm64 sysroot of the cross toolchain, default `/opt/sysroot/aarch64-linux-gnu`   |
 | `OWL_CONAN_HOME`                           | (empty) | `CONAN_HOME` for the install (empty: Conan's default)                            |
 | `OWL_CONAN_BUILD`                          | missing | Value of `conan install --build`                                                 |
 | `OWL_FUZZING`                              | OFF     | libFuzzer targets in `fuzz/` (Clang-only)                                        |

@@ -47,9 +47,9 @@ set(${PROJECT_PREFIX}_PLATFORM_VER_STR "${CMAKE_SYSTEM_VERSION}")
 #
 # -- host
 pretty_architecture_str(${CMAKE_HOST_SYSTEM_PROCESSOR} ${PROJECT_PREFIX}_HOST_ARCH_STR)
-# -- target
+# -- target (CMAKE_SYSTEM_PROCESSOR: the toolchain's when cross compiling, else the build machine's)
 if (NOT ${PROJECT_PREFIX}_ARCH_STR)
-    set(${PROJECT_PREFIX}_ARCH_STR ${${PROJECT_PREFIX}_HOST_ARCH_STR})
+    pretty_architecture_str(${CMAKE_SYSTEM_PROCESSOR} ${PROJECT_PREFIX}_ARCH_STR)
 endif ()
 if (${PROJECT_PREFIX}_ARCH_STR STREQUAL "x64")
     set(${PROJECT_PREFIX}_PLATFORM_X64 ON)

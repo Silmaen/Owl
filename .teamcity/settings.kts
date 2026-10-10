@@ -15,7 +15,7 @@ Everything else is split to mirror that hierarchy:
     quality/IncludeCheck.kt every file compiled alone, in parallel with Code Style
     quality/PrReady.kt      the composite check required on `main`
     build/Linux.kt          Build Linux x64
-    build/LinuxArm64.kt     Build Linux arm64 (emulated, main only)
+    build/LinuxArm64.kt     Build Linux arm64 (cross compiled, main only; emulated weekly)
     build/Windows.kt        Build Windows x64
     quality/Sanitizers.kt   the four sanitizers
     quality/Analysis.kt     clang-tidy and the static analyzer

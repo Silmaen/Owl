@@ -1,5 +1,6 @@
 import jetbrains.buildServer.configs.kotlin.*
 import jetbrains.buildServer.configs.kotlin.buildSteps.script
+import jetbrains.buildServer.configs.kotlin.triggers.ScheduleTrigger
 import jetbrains.buildServer.configs.kotlin.triggers.schedule
 
 /*
@@ -18,7 +19,7 @@ import jetbrains.buildServer.configs.kotlin.triggers.schedule
  * @param onPullRequest Run on pull requests at all; off for the `main`-only ones.
  * @param pathFilter Skip pull requests touching only these paths; empty runs on all.
  * @param nightly Build `main` once a night (when it changed) instead of on every push: for
- *        the emulated arm64 configurations, which would hold the Linux agents for hours.
+ *        the configurations that would hold the agents too long on every push.
  * @param gates What must be green first.
  * @param extra Configuration-specific settings.
  */
@@ -59,6 +60,27 @@ fun BuildType.nightlyOnMain() {
             id = "nightly"
             schedulingPolicy = daily {
                 hour = 2
+            }
+            branchFilter = """
+                +:main
+                +:refs/heads/main
+            """.trimIndent()
+            withPendingChangesOnly = true
+        }
+    }
+}
+
+/**
+ * Builds `main` once a week (Sunday night), when it changed, instead of on every push.
+ */
+fun BuildType.weeklyOnMain() {
+    disableSettings("vcsTrigger")
+    triggers {
+        schedule {
+            id = "weekly"
+            schedulingPolicy = weekly {
+                dayOfWeek = ScheduleTrigger.DAY.Sunday
+                hour = 3
             }
             branchFilter = """
                 +:main
@@ -122,7 +144,7 @@ fun analysisBuild(idValue: String, buildName: String, tool: String, gates: List<
  * they are published once a night from `main` (when it changed), because each one publishes to
  * the site; a manual run packages on demand. It waits for the configuration that built and tested
  * the same platform: an archive built from code whose tests fail has no business existing.
- * Built and published here: the platforms without a tested release tree (arm64, emulated).
+ * Built and published here: the platforms without a tested release tree (arm64, cross compiled).
  *
  * @param idValue The configuration id.
  * @param buildName The configuration name.

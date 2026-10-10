@@ -14,6 +14,11 @@ set(${PROJECT_PREFIX}_TEST_ENVIRONMENT
         "LSAN_OPTIONS=suppressions=${CMAKE_CURRENT_SOURCE_DIR}/lsan.supp"
         "UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1"
         "TSAN_OPTIONS=halt_on_error=1:second_deadlock_stack=1:suppressions=${CMAKE_CURRENT_SOURCE_DIR}/tsan.supp")
+# Cross compiled: binfmt_misc runs the tests (and the OwlRunner they start) under qemu-user, which loads the target's
+# libraries from the sysroot.
+if (CMAKE_CROSSCOMPILING AND CMAKE_SYSROOT)
+    list(APPEND ${PROJECT_PREFIX}_TEST_ENVIRONMENT "QEMU_LD_PREFIX=${CMAKE_SYSROOT}")
+endif ()
 
 add_custom_target(All_Tests)
 # googletest
