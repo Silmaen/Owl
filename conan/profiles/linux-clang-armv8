@@ -1,6 +1,6 @@
 {# Linux arm64 cross compiled on x86_64, Clang + lld + libstdc++ (host profile of the linux-cross-arm64 preset; the
    build profile is linux-clang). cmake/Conan.cmake adds the sysroot (tools.build:sysroot, pkg-config paths). #}
-include(linux-clang)
+include(./linux-clang)
 
 [settings]
 arch=armv8
