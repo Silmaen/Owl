@@ -22,6 +22,7 @@
 #include <gui/utils.h>
 #include <physics/PhysicCommand.h>
 #include <platform/AtomicFile.h>
+#include <renderer/gpu/RenderCommand.h>
 #include <scene/component/components.h>
 #include <sound/SoundCommand.h>
 #include <sound/SoundSystem.h>
@@ -755,8 +756,10 @@ void EditorLayer::renderWelcomeScreen() {
 }
 
 void EditorLayer::renderStats(const core::Timestep& iTimeStep) {
-	if (!m_settings.showStats)
+	if (!m_settings.showStats) {
+		m_gpuCounters.reset();
 		return;
+	}
 	ImGui::Begin("Stats");
 	ImGui::Text("%s", std::format("FPS: {:.2f}", iTimeStep.getFps()).c_str());
 	ImGui::Separator();
@@ -800,7 +803,30 @@ void EditorLayer::renderStats(const core::Timestep& iTimeStep) {
 	const auto vpSize = activeViewportSize();
 	ImGui::Text("Viewport size: %u x %u", vpSize.x(), vpSize.y());
 	ImGui::Text("Aspect ratio: %f", static_cast<double>(vpSize.ratio()));
+	renderGpuCounters();
 	ImGui::End();
+}
+
+void EditorLayer::renderGpuCounters() {
+	ImGui::Separator();
+	if (renderer::gpu::RenderCommand::getApi() != renderer::gpu::RenderAPI::Type::Vulkan) {
+		m_gpuCounters.reset();
+		ImGui::TextDisabled("GPU queue counters: Vulkan only.");
+		return;
+	}
+	m_gpuCounters.update(renderer::gpu::RenderCommand::getRenderCounters(), panel::GpuCounterMonitor::clock::now());
+	const auto& last = m_gpuCounters.getLast();
+	const auto peak = m_gpuCounters.getWindowMax();
+	ImGui::TextUnformatted("Vulkan (per frame / max 2 s):");
+	ImGui::Text("Submits: %llu / %llu", static_cast<unsigned long long>(last.submits),
+				static_cast<unsigned long long>(peak.submits));
+	ImGui::Text("Queue wait idles: %llu / %llu", static_cast<unsigned long long>(last.queueWaitIdles),
+				static_cast<unsigned long long>(peak.queueWaitIdles));
+	ImGui::Text("Device wait idles: %llu / %llu", static_cast<unsigned long long>(last.deviceWaitIdles),
+				static_cast<unsigned long long>(peak.deviceWaitIdles));
+	ImGui::Text("Fence waits: %llu / %llu", static_cast<unsigned long long>(last.fenceWaits),
+				static_cast<unsigned long long>(peak.fenceWaits));
+	ImGui::Text("Pace wait: %.2f / %.2f ms", last.paceWaitMs, peak.paceWaitMs);
 }
 
 

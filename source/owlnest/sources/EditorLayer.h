@@ -22,6 +22,7 @@
 #include "document/SceneDocument.h"
 #include "panel/AsyncProgressModal.h"
 #include "panel/ContentBrowser.h"
+#include "panel/GpuCounterMonitor.h"
 #include "panel/HelpPanel.h"
 #include "panel/LogPanel.h"
 #include "panel/NewProjectDialog.h"
@@ -474,6 +475,12 @@ private:
 	 */
 	void renderStats(const core::Timestep& iTimeStep);
 
+	/**
+	 * @brief
+	 *  Draw the Vulkan queue counters of the Stats panel (greyed out on another backend).
+	 */
+	void renderGpuCounters();
+
 
 	/**
 	 * @brief
@@ -637,6 +644,8 @@ private:
 	/// Deallocation counter from the previous frame, for the memory profiler readout.
 	size_t m_lastDeallocCalls = 0;
 #endif
+	/// Per-frame Vulkan counter deltas and their 2 s maxima, for the Stats panel.
+	panel::GpuCounterMonitor m_gpuCounters;
 	/// Open documents (scenes for now; later also Lua scripts, node graphs...).
 	DocumentManager m_documents;
 	/// Id of the hot reload listener registered at attach.

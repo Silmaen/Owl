@@ -534,6 +534,13 @@ Displayed metrics:
 | Quad count           | `Renderer2D::Statistics::quadCount`     |
 | Vertex / index count | Derived from quad count                 |
 | Viewport size        | Current framebuffer dimensions          |
+| Vulkan submits       | `RenderCounters::submits`, per frame    |
+| Vulkan queue drains  | `queueWaitIdles` / `deviceWaitIdles`    |
+| Vulkan fence waits   | `RenderCounters::fenceWaits`, per frame |
+| Vulkan pace wait     | `RenderCounters::paceWaitMs`, per frame |
+
+The Vulkan rows show each counter of `RenderCommand::getRenderCounters()` as the delta of the last frame and
+the maximum over the last 2 s, so a one-off queue drain stays readable; they are greyed out on another backend.
 
 ### Settings
 
