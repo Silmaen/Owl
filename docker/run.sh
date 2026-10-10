@@ -5,7 +5,7 @@
 #   --gui       expose the GPU, X11/Wayland display and PulseAudio (run OwlNest, Vulkan/OpenGL tests).
 #   --gpu=      on a hybrid laptop, pin Vulkan, EGL and GLX to one GPU (nvidia = PRIME render offload); implies --gui.
 #   --platform= windowing platform of the engine (sets OWL_WINDOW_PLATFORM); implies --gui.
-#   --perf      allow perf / gdb / valgrind (ptrace + perf events).
+#   --perf      allow perf / gdb / valgrind / TSan (ptrace + perf events, no seccomp/AppArmor confinement).
 #
 # Examples:
 #   docker/run.sh cmake --preset linux-clang-release -S .
@@ -110,7 +110,7 @@ if [[ ${gui} -eq 1 ]]; then
 fi
 
 if [[ ${perf} -eq 1 ]]; then
-	args+=(--cap-add SYS_PTRACE --cap-add PERFMON --cap-add SYS_ADMIN --security-opt seccomp=unconfined)
+	args+=(--cap-add SYS_PTRACE --cap-add PERFMON --cap-add SYS_ADMIN --security-opt seccomp=unconfined --security-opt apparmor=unconfined)
 fi
 
 exec docker "${args[@]}" "${image}" "$@"
