@@ -105,14 +105,17 @@ via `UiLayer::setTopBarCallback`.
 
 ## Fonts
 
-The editor uses two ImGui fonts, both shipped as loose TTFs under
-`engine_assets/fonts/` and loaded at runtime via `AddFontFromFileTTF`:
+The editor uses two font families, shipped as loose TTFs under `engine_assets/fonts/` (SIL Open Font License):
 
-- **Roboto** (Regular / Bold / Italic) in `engine_assets/fonts/roboto/` — default
-  UI font at `EditorSettings::uiFontSize` (default 18 px, range 14–24).
-- **JetBrains Mono** Regular in `engine_assets/fonts/jetbrainsmono/` — dedicated
-  monospace font for the Code Document tabs, rasterised at
-  `EditorSettings::codeEditorFontSize` (default 17 px, range 8–48).
+- **Inter** (Regular, SemiBold) in `engine_assets/fonts/inter/` — the UI font at `EditorSettings::uiFontSize`
+  (default 16 px, range 14–24).
+- **JetBrains Mono** Regular in `engine_assets/fonts/jetbrainsmono/` — code documents at
+  `EditorSettings::codeEditorFontSize` (default 17 px, range 8–48), and numbers aligned in columns.
+
+Text roles (`gui::TextStyle`) pick a font and a size relative to the UI size: `Body`, `Strong`, `Title` (1.15×),
+`Section` (0.96×), `Label` (0.92×), `Caption` (0.8×), `Value` (mono, 0.92×) and `Code`, pushed with
+`UiLayer::pushTextStyle` / `popTextStyle`. The style sizes and the fonts follow the content scale of the primary
+monitor (`UiLayer::getDpiScale`; under Wayland the framebuffer scale already covers it).
 
 Both sizes are applied when the atlas is built in `UiLayer::onAttach`, so
 changing them from the Editor Settings panel takes effect on the **next startup**.
@@ -556,10 +559,13 @@ It contains three sections:
 **General.** Toggles like the Show Stats Panel checkbox, font sizes, and the autosave interval
 (see [Autosave and crash recovery](#autosave-and-crash-recovery)).
 
-**Theme selection.** A dropdown listing built-in theme presets (e.g. "Dark"). Changing
-the theme calls `UiLayer::setTheme()` and triggers `IconBank::rebuild()` to re-rasterize
-all SVG icons with the new theme colours. The primary colour follows the theme text colour;
-the secondary accent is a fixed amber/gold (`#ffc726`) matching the Owl Nest brand.
+**Theme selection.** **Owl Dark** (default) or **Owl Light**. A theme is a small set of tokens (`gui::Theme`:
+five surfaces from the ground to the pressed state, the input well, lines, three text levels, one amber accent,
+the play-mode blue, success / warning / error / info and the three axis colours); `UiLayer::setTheme` derives every
+ImGui colour and state from them, so a hovered or pressed control is always one step brighter. Changing the theme
+also re-tints the SVG icons (`IconBank::rebuild`): `#ffffff` becomes the text colour, `#ff00ff` the accent.
+Settings saved with a retired preset (Dark, Dark Blue, Nord, Solarized, Custom) open in Owl Dark, Light in
+Owl Light.
 
 **Icon buttons.** Dialog and panel buttons use `IconBank::iconButton(name, label, size)`
 to render an icon-prefixed button that falls back to a plain button when the icon is

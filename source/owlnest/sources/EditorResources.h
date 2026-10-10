@@ -8,7 +8,16 @@
 
 #pragma once
 
+#include <gui/Theme.h>
+
 namespace owl::nest::utils {
+
+/**
+ * @brief
+ *  Apply a theme to the editor: ImGui style, then the icon bank re-tinted with its text and accent colours.
+ * @param[in] iTheme The theme.
+ */
+void applyTheme(const gui::Theme& iTheme);
 
 /**
  * @brief

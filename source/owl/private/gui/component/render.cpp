@@ -10,6 +10,7 @@
 
 #include "app/Application.h"
 #include "gui/FontPreviewCache.h"
+#include "gui/UiLayer.h"
 #include "gui/component/render.h"
 #include "gui/utils.h"
 #include "gui/widgets/AssetField.h"
@@ -794,7 +795,7 @@ void renderProps(RendererTag& ioComponent) {
 		const bool known = std::ranges::any_of(
 				layers, [&](const auto& l) -> bool { return l->getName() == ioComponent.rendererName; });
 		if (!known) {
-			ImGui::TextColored(ImVec4(1.0f, 0.45f, 0.10f, 1.0f), "Unknown layer — entity will be skipped.");
+			ImGui::TextColored(vec(UiLayer::getTheme().warning), "Unknown layer — entity will be skipped.");
 		}
 	}
 }

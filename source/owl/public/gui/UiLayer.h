@@ -23,6 +23,21 @@ struct ImFont;
  *  Namespace for gui.
  */
 namespace owl::gui {
+
+/**
+ * @brief
+ *  Typographic roles of the editor text, each a font and a size relative to the UI font size.
+ */
+enum struct TextStyle : uint8_t {
+	Body,///< Running text and values (Inter, 1x).
+	Strong,///< Emphasis at body size (Inter SemiBold, 1x).
+	Title,///< Panel or dialogue title (Inter SemiBold, 1.15x).
+	Section,///< Section and component header (Inter SemiBold, 0.96x).
+	Label,///< Property label (Inter, 0.92x).
+	Caption,///< Small print, group captions (Inter SemiBold, 0.8x).
+	Value,///< Numbers aligned in columns (JetBrains Mono, 0.92x).
+	Code,///< Code editor text (JetBrains Mono at the code font size).
+};
 /**
  * @brief
  *  Class ImGuiLayer.
@@ -109,6 +124,33 @@ public:
 	 * @param[in] iTheme The theme to apply.
 	 */
 	static void setTheme(const Theme& iTheme = Theme());
+
+	/**
+	 * @brief
+	 *  The theme applied last.
+	 * @return The current theme.
+	 */
+	[[nodiscard]] static auto getTheme() -> const Theme&;
+
+	/**
+	 * @brief
+	 *  Push the font and size of a typographic role; pair with `popTextStyle`.
+	 * @param[in] iStyle The role.
+	 */
+	static void pushTextStyle(TextStyle iStyle);
+
+	/**
+	 * @brief
+	 *  Pop the role pushed by `pushTextStyle`.
+	 */
+	static void popTextStyle();
+
+	/**
+	 * @brief
+	 *  Content scale of the primary monitor applied to the style sizes and fonts.
+	 * @return The scale, 1 on a standard-density screen and under Wayland (the framebuffer scale covers it there).
+	 */
+	[[nodiscard]] static auto getDpiScale() -> float;
 
 	/**
 	 * @brief
@@ -223,7 +265,7 @@ private:
 	std::function<void()> m_bottomBarCallback;
 	/// Optional callback run before `DockSpace()` to (re)build the dock tree.
 	std::function<void(uint32_t)> m_dockLayoutCallback;
-	/// Dedicated code-editor font (Roboto at `codeFontSize()`). Set in `onAttach`.
+	/// Dedicated code-editor font (JetBrains Mono at `codeFontSize()`). Set in `onAttach`.
 	ImFont* mp_codeFont = nullptr;
 
 	/**

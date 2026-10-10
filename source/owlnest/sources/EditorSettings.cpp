@@ -91,8 +91,13 @@ void EditorSettings::loadFromFile(const std::filesystem::path& iFile) {
 	if (auto config = data["EditorSettings"]; config) {
 		if (config["showStats"])
 			showStats = config["showStats"].as<bool>();
-		if (config["themePreset"])
-			themePreset = config["themePreset"].as<std::string>();
+		if (config["themePreset"]) {
+			const auto preset = gui::Theme::presetFromName(config["themePreset"].as<std::string>());
+			for (const auto& [candidate, name]: gui::Theme::getPresetNames()) {
+				if (candidate == preset)
+					themePreset = name;
+			}
+		}
 		if (config["codeEditorFontSize"])
 			codeEditorFontSize = std::clamp(config["codeEditorFontSize"].as<int>(), 8, 48);
 		if (config["uiFontSize"])

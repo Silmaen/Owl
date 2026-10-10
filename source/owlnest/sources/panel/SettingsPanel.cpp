@@ -8,6 +8,8 @@
 
 #include "SettingsPanel.h"
 
+#include "../EditorResources.h"
+
 #include <gui/IconBank.h>
 
 #include <algorithm>
@@ -94,31 +96,12 @@ void SettingsPanel::renderThemeSection(EditorSettings& ioSettings) {
 
 	const auto presets = gui::Theme::getPresetNames();
 	// Build preview string
-	std::string preview = ioSettings.themePreset;
-	if (preview.empty())
-		preview = "Dark";
-
-	if (ImGui::BeginCombo("##ThemeCombo", preview.c_str())) {
+	if (ImGui::BeginCombo("##ThemeCombo", ioSettings.themePreset.c_str())) {
 		for (const auto& [preset, name]: presets) {
 			const bool selected = ioSettings.themePreset == name;
 			if (ImGui::Selectable(name.c_str(), selected)) {
 				ioSettings.themePreset = name;
-				gui::UiLayer::setTheme(gui::Theme::fromPreset(preset));
-			}
-			if (selected)
-				ImGui::SetItemDefaultFocus();
-		}
-		ImGui::Separator();
-		{
-			const bool selected = ioSettings.themePreset == "Custom";
-			if (ImGui::Selectable("Custom (theme.yml)", selected)) {
-				ioSettings.themePreset = "Custom";
-				if (const auto themePath = app::Application::get().getWorkingDirectory() / "theme.yml";
-					exists(themePath)) {
-					gui::Theme theme;
-					theme.loadFromFile(themePath);
-					gui::UiLayer::setTheme(theme);
-				}
+				utils::applyTheme(gui::Theme::fromPreset(preset));
 			}
 			if (selected)
 				ImGui::SetItemDefaultFocus();

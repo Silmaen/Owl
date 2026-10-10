@@ -8,6 +8,8 @@
 
 #include "StatusBar.h"
 
+#include <gui/UiLayer.h>
+
 #include <imgui.h>
 
 #include <algorithm>
@@ -22,27 +24,25 @@ namespace {
 
 // Middle dot separator, UTF-8.
 constexpr auto g_separator = " \xC2\xB7 ";
-// Background while the scene plays: a dark shade of the play blue, so the mode reads at a glance.
-constexpr ImU32 g_playBackground = IM_COL32(20, 38, 69, 255);
-constexpr ImU32 g_playPill = IM_COL32(61, 139, 255, 255);
-constexpr ImU32 g_pausePill = IM_COL32(239, 138, 60, 255);
-constexpr ImU32 g_warningText = IM_COL32(239, 138, 60, 255);
-constexpr ImU32 g_errorText = IM_COL32(229, 83, 75, 255);
+auto toU32(const math::vec4& iColor) -> ImU32 {
+	return ImGui::GetColorU32(ImVec4{iColor.x(), iColor.y(), iColor.z(), iColor.w()});
+}
 
 auto plural(const uint64_t iCount, const char* iWord) -> std::string {
 	return std::format("{} {}{}", iCount, iWord, iCount == 1 ? "" : "s");
 }
 
 auto getPillColor(const StatusInfo::Mode iMode) -> ImU32 {
+	const auto& theme = gui::UiLayer::getTheme();
 	switch (iMode) {
 		case StatusInfo::Mode::Edit:
-			return ImGui::GetColorU32(ImGuiCol_Button);
+			return toU32(theme.surface4);
 		case StatusInfo::Mode::Play:
-			return g_playPill;
+			return toU32(theme.play);
 		case StatusInfo::Mode::Pause:
-			return g_pausePill;
+			return toU32(theme.warning);
 	}
-	return ImGui::GetColorU32(ImGuiCol_Button);
+	return toU32(theme.surface4);
 }
 
 }// namespace
@@ -79,11 +79,12 @@ void StatusBar::onImGuiRender(const StatusInfo& iInfo) {
 	const float textHeight = ImGui::GetTextLineHeight();
 	const float textY = origin.y + (height - textHeight) * 0.5f;
 	auto* draw = ImGui::GetWindowDrawList();
+	const auto& theme = gui::UiLayer::getTheme();
 
 	const bool simulating = iInfo.mode != StatusInfo::Mode::Edit;
 	draw->AddRectFilled(origin, {origin.x + width, origin.y + height},
-						simulating ? g_playBackground : ImGui::GetColorU32(ImGuiCol_TitleBg));
-	draw->AddLine(origin, {origin.x + width, origin.y}, ImGui::GetColorU32(ImGuiCol_Border));
+						simulating ? toU32(gui::Theme::mix(theme.surface0, theme.play, 0.22f)) : toU32(theme.surface0));
+	draw->AddLine(origin, {origin.x + width, origin.y}, toU32(theme.lineSoft));
 
 	float x = origin.x + spacing;
 	const auto mode = getModeLabel(iInfo.mode);
@@ -124,9 +125,9 @@ void StatusBar::onImGuiRender(const StatusInfo& iInfo) {
 	const auto errors = getUnseenErrors(iInfo.errorCount);
 	const auto warnings = getUnseenWarnings(iInfo.warningCount);
 	counter("##statusErrors", plural(errors, "error"),
-			errors > 0 ? g_errorText : ImGui::GetColorU32(ImGuiCol_TextDisabled));
+			errors > 0 ? toU32(theme.error) : ImGui::GetColorU32(ImGuiCol_TextDisabled));
 	counter("##statusWarnings", plural(warnings, "warning"),
-			warnings > 0 ? g_warningText : ImGui::GetColorU32(ImGuiCol_TextDisabled));
+			warnings > 0 ? toU32(theme.warning) : ImGui::GetColorU32(ImGuiCol_TextDisabled));
 	if (!iInfo.backend.empty())
 		label(iInfo.backend);
 	if (iInfo.secondsSinceAutosave.has_value())

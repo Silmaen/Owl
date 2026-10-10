@@ -9,105 +9,178 @@
 #include "testHelper.h"
 
 #include <gui/Theme.h>
+#include <gui/UiLayer.h>
 
+#include <imgui.h>
+
+#include <algorithm>
+#include <cmath>
 #include <filesystem>
+#include <tuple>
 
+using namespace owl;
 using namespace owl::gui;
 using namespace owl::core;
 
+namespace {
+
+// Relative luminance (WCAG 2) of a colour.
+auto luminance(const math::vec4& iColor) -> float {
+	const auto channel = [](const float iValue) -> float {
+		return iValue <= 0.03928f ? iValue / 12.92f : std::pow((iValue + 0.055f) / 1.055f, 2.4f);
+	};
+	return 0.2126f * channel(iColor.x()) + 0.7152f * channel(iColor.y()) + 0.0722f * channel(iColor.z());
+}
+
+// Contrast ratio (WCAG 2) between two colours.
+auto contrast(const math::vec4& iFirst, const math::vec4& iSecond) -> float {
+	const float first = luminance(iFirst);
+	const float second = luminance(iSecond);
+	return (std::max(first, second) + 0.05f) / (std::min(first, second) + 0.05f);
+}
+
+auto sameColor(const ImVec4& iFirst, const ImVec4& iSecond) -> bool {
+	constexpr float tolerance = 1e-4f;
+	return std::abs(iFirst.x - iSecond.x) < tolerance && std::abs(iFirst.y - iSecond.y) < tolerance &&
+		   std::abs(iFirst.z - iSecond.z) < tolerance && std::abs(iFirst.w - iSecond.w) < tolerance;
+}
+
+}// namespace
+
 TEST(Theme, PresetNames) {
 	const auto names = Theme::getPresetNames();
-	EXPECT_EQ(names.size(), 5u);
-	bool hasDark = false;
-	bool hasLight = false;
-	for (const auto& [preset, name]: names) {
-		if (name == "Dark")
-			hasDark = true;
-		if (name == "Light")
-			hasLight = true;
+	ASSERT_EQ(names.size(), 2u);
+	EXPECT_EQ(names[0].first, ThemePreset::OwlDark);
+	EXPECT_EQ(names[0].second, "Owl Dark");
+	EXPECT_EQ(names[1].first, ThemePreset::OwlLight);
+	EXPECT_EQ(names[1].second, "Owl Light");
+}
+
+TEST(Theme, PresetFromNameMapsRetiredNames) {
+	EXPECT_EQ(Theme::presetFromName("Owl Dark"), ThemePreset::OwlDark);
+	EXPECT_EQ(Theme::presetFromName("Owl Light"), ThemePreset::OwlLight);
+	EXPECT_EQ(Theme::presetFromName("Light"), ThemePreset::OwlLight);
+	for (const auto* retired: {"Dark", "Dark Blue", "Nord", "Solarized Dark", "Custom", ""})
+		EXPECT_EQ(Theme::presetFromName(retired), ThemePreset::OwlDark) << retired;
+}
+
+TEST(Theme, OwlDarkIsTheDefault) {
+	constexpr Theme defaults;
+	const auto dark = Theme::fromPreset(ThemePreset::OwlDark);
+	EXPECT_EQ(dark.surface1, defaults.surface1);
+	EXPECT_EQ(dark.accent, defaults.accent);
+	EXPECT_NEAR(dark.frameRounding, defaults.frameRounding, 0.001f);
+}
+
+TEST(Theme, SurfacesStepTowardsThePressedState) {
+	for (const auto& [preset, name]: Theme::getPresetNames()) {
+		const auto theme = Theme::fromPreset(preset);
+		const bool dark = luminance(theme.surface1) < luminance(theme.text);
+		const auto steps = {theme.surface1, theme.surface2, theme.surface3, theme.surface4};
+		float previous = luminance(theme.surface0);
+		if (!dark)
+			previous = luminance(theme.surface1) + 1.f;
+		for (const auto& surface: steps) {
+			const float current = luminance(surface);
+			if (dark)
+				EXPECT_GT(current, previous) << name;
+			else
+				EXPECT_LT(current, previous) << name;
+			previous = current;
+		}
 	}
-	EXPECT_TRUE(hasDark);
-	EXPECT_TRUE(hasLight);
 }
 
-TEST(Theme, FromPresetDark) {
-	const auto theme = Theme::fromPreset(ThemePreset::Dark);
-	constexpr Theme defaultTheme;
-	EXPECT_NEAR(theme.windowRounding, defaultTheme.windowRounding, 0.001f);
-	EXPECT_NEAR(theme.frameRounding, defaultTheme.frameRounding, 0.001f);
-	EXPECT_NEAR(theme.controlsRounding, defaultTheme.controlsRounding, 0.001f);
+TEST(Theme, TextIsReadableOnEverySurface) {
+	for (const auto& [preset, name]: Theme::getPresetNames()) {
+		const auto theme = Theme::fromPreset(preset);
+		for (const auto& surface: {theme.surface0, theme.surface1, theme.surface2, theme.well})
+			EXPECT_GE(contrast(theme.text, surface), 7.f) << name;
+		EXPECT_GE(contrast(theme.textMuted, theme.surface1), 4.5f) << name;
+		EXPECT_GE(contrast(theme.onAccent, theme.accent), 4.5f) << name;
+	}
 }
 
-TEST(Theme, FromPresetCustomFallsToDark) {
-	const auto custom = Theme::fromPreset(ThemePreset::Custom);
-	const auto dark = Theme::fromPreset(ThemePreset::Dark);
-	EXPECT_NEAR(custom.windowRounding, dark.windowRounding, 0.001f);
-	EXPECT_NEAR(custom.frameRounding, dark.frameRounding, 0.001f);
-}
-
-TEST(Theme, FromPresetLight) {
-	const auto theme = Theme::fromPreset(ThemePreset::Light);
-	// Light theme has different background than dark.
-	const auto dark = Theme::fromPreset(ThemePreset::Dark);
-	// At minimum one colour should differ.
-	const bool differs = theme.windowBackground != dark.windowBackground || theme.text != dark.text;
-	EXPECT_TRUE(differs);
-}
-
-TEST(Theme, FromPresetDarkBlue) {
-	const auto theme = Theme::fromPreset(ThemePreset::DarkBlue);
-	EXPECT_TRUE(theme.windowRounding > 0.f);
-}
-
-TEST(Theme, FromPresetNord) {
-	const auto theme = Theme::fromPreset(ThemePreset::Nord);
-	EXPECT_TRUE(theme.windowRounding > 0.f);
-}
-
-TEST(Theme, FromPresetSolarized) {
-	const auto theme = Theme::fromPreset(ThemePreset::Solarized);
-	EXPECT_TRUE(theme.windowRounding > 0.f);
-}
-
-TEST(Theme, SaveLoadRoundtrip) {
-	Log::init(Log::Level::Off);
-	const auto original = Theme::fromPreset(ThemePreset::Nord);
-	const std::filesystem::path filePath("theme_roundtrip_test.yml");
-	original.saveToFile(filePath);
-
-	Theme loaded;
-	loaded.loadFromFile(filePath);
-
-	EXPECT_NEAR(loaded.windowRounding, original.windowRounding, 0.001f);
-	EXPECT_NEAR(loaded.frameRounding, original.frameRounding, 0.001f);
-	EXPECT_NEAR(loaded.frameBorderSize, original.frameBorderSize, 0.001f);
-	EXPECT_NEAR(loaded.indentSpacing, original.indentSpacing, 0.001f);
-	EXPECT_NEAR(loaded.tabRounding, original.tabRounding, 0.001f);
-	EXPECT_NEAR(loaded.tabOverline, original.tabOverline, 0.001f);
-	EXPECT_NEAR(loaded.tabBorder, original.tabBorder, 0.001f);
-	EXPECT_NEAR(loaded.controlsRounding, original.controlsRounding, 0.001f);
-
-	// Check a few colours.
-	EXPECT_NEAR(loaded.text.x(), original.text.x(), 0.001f);
-	EXPECT_NEAR(loaded.windowBackground.x(), original.windowBackground.x(), 0.001f);
-	EXPECT_NEAR(loaded.button.x(), original.button.x(), 0.001f);
-
-	remove(filePath);
-	Log::invalidate();
+TEST(Theme, MixAndAlphaHelpers) {
+	constexpr math::vec4 black{0.f, 0.f, 0.f, 1.f};
+	constexpr math::vec4 white{1.f, 1.f, 1.f, 1.f};
+	EXPECT_EQ(Theme::mix(black, white, 0.5f), (math::vec4{0.5f, 0.5f, 0.5f, 1.f}));
+	EXPECT_EQ(Theme::withAlpha(white, 0.25f), (math::vec4{1.f, 1.f, 1.f, 0.25f}));
+	constexpr Theme theme;
+	EXPECT_NEAR(theme.getSelection().w(), 0.18f, 0.001f);
 }
 
 TEST(Theme, SaveLoadAllPresets) {
 	Log::init(Log::Level::Off);
-	const std::filesystem::path filePath("theme_allpreset_test.yml");
-	const auto presets = {ThemePreset::Dark, ThemePreset::Light, ThemePreset::DarkBlue, ThemePreset::Nord,
-						  ThemePreset::Solarized};
-	for (const auto preset: presets) {
+	const auto dir = std::filesystem::temp_directory_path() / "owl_theme_presets_test";
+	std::filesystem::create_directories(dir);
+	for (const auto& [preset, name]: Theme::getPresetNames()) {
 		const auto original = Theme::fromPreset(preset);
-		original.saveToFile(filePath);
+		const auto file = dir / "theme.yml";
+		original.saveToFile(file);
 		Theme loaded;
-		loaded.loadFromFile(filePath);
-		EXPECT_NEAR(loaded.controlsRounding, original.controlsRounding, 0.001f);
+		loaded.accent = {0.f, 0.f, 0.f, 0.f};
+		loaded.loadFromFile(file);
+		EXPECT_EQ(loaded.surface0, original.surface0) << name;
+		EXPECT_EQ(loaded.accent, original.accent) << name;
+		EXPECT_EQ(loaded.axisZ, original.axisZ) << name;
+		EXPECT_NEAR(loaded.tabRounding, original.tabRounding, 0.001f) << name;
 	}
-	remove(filePath);
+	std::filesystem::remove_all(dir);
+	Log::invalidate();
+}
+
+TEST(Theme, AppliedStatesAreDistinct) {
+	Log::init(Log::Level::Off);
+	UiLayer layer;
+	layer.disableApp();
+	layer.onAttach();
+	ImGui::GetIO().IniFilename = nullptr;
+	for (const auto& [preset, name]: Theme::getPresetNames()) {
+		const auto theme = Theme::fromPreset(preset);
+		UiLayer::setTheme(theme);
+		EXPECT_EQ(UiLayer::getTheme().accent, theme.accent) << name;
+		const auto& colors = ImGui::GetStyle().Colors;
+		for (const auto& [rest, hovered, active]:
+			 {std::tuple{ImGuiCol_FrameBg, ImGuiCol_FrameBgHovered, ImGuiCol_FrameBgActive},
+			  std::tuple{ImGuiCol_Button, ImGuiCol_ButtonHovered, ImGuiCol_ButtonActive},
+			  std::tuple{ImGuiCol_Header, ImGuiCol_HeaderHovered, ImGuiCol_HeaderActive}}) {
+			EXPECT_FALSE(sameColor(colors[rest], colors[hovered])) << name;
+			EXPECT_FALSE(sameColor(colors[hovered], colors[active])) << name;
+		}
+		EXPECT_TRUE(sameColor(colors[ImGuiCol_TabSelectedOverline],
+							  ImVec4{theme.accent.x(), theme.accent.y(), theme.accent.z(), theme.accent.w()}))
+				<< name;
+	}
+	UiLayer::setTheme();
+	layer.onDetach();
+	Log::invalidate();
+}
+
+TEST(Theme, TextStylesPushAndPop) {
+	Log::init(Log::Level::Off);
+	UiLayer layer;
+	layer.disableApp();
+	layer.onAttach();
+	ImGui::GetIO().IniFilename = nullptr;
+	layer.begin();
+	ImGui::Begin("Typography");
+	const float base = ImGui::GetFontSize();
+	UiLayer::pushTextStyle(TextStyle::Title);
+	EXPECT_GT(ImGui::GetFontSize(), base);
+	UiLayer::popTextStyle();
+	UiLayer::pushTextStyle(TextStyle::Caption);
+	EXPECT_LT(ImGui::GetFontSize(), base);
+	UiLayer::popTextStyle();
+	for (const auto style: {TextStyle::Body, TextStyle::Strong, TextStyle::Section, TextStyle::Label, TextStyle::Value,
+							TextStyle::Code}) {
+		UiLayer::pushTextStyle(style);
+		ImGui::TextUnformatted("Sample");
+		UiLayer::popTextStyle();
+	}
+	EXPECT_FLOAT_EQ(ImGui::GetFontSize(), base);
+	ImGui::End();
+	layer.end();
+	layer.onDetach();
 	Log::invalidate();
 }

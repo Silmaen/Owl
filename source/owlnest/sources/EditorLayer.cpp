@@ -309,15 +309,7 @@ void EditorLayer::onAttach() {
 
 	if (const auto f = app::Application::get().getWorkingDirectory() / "OwlNest_settings.yml"; exists(f))
 		m_settings.loadFromFile(f);
-	// Apply theme from saved settings
-	if (m_settings.themePreset != "Custom") {
-		for (const auto& [preset, name]: gui::Theme::getPresetNames()) {
-			if (name == m_settings.themePreset) {
-				gui::UiLayer::setTheme(gui::Theme::fromPreset(preset));
-				break;
-			}
-		}
-	}
+	utils::applyTheme(gui::Theme::fromPreset(gui::Theme::presetFromName(m_settings.themePreset)));
 
 	m_dockLayout.setPreset(DockLayout::presetFromName(m_settings.layoutPreset));
 
@@ -721,7 +713,9 @@ void EditorLayer::renderWelcomeScreen() {
 	constexpr ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoDocking;
 	bool open = true;
 	if (ImGui::Begin("Welcome to Owl Nest", &open, flags)) {
-		ImGui::TextColored(ImVec4(1.0f, 0.85f, 0.2f, 1.0f), "Welcome to Owl Nest");
+		gui::UiLayer::pushTextStyle(gui::TextStyle::Title);
+		ImGui::TextColored(gui::vec(gui::UiLayer::getTheme().accent), "Welcome to Owl Nest");
+		gui::UiLayer::popTextStyle();
 		ImGui::TextWrapped("Get started by creating a new project or opening an existing one.");
 		ImGui::Spacing();
 		ImGui::Separator();

@@ -24,6 +24,8 @@ filling their whole tile.
 
 - **Shell and layout** — ![Done][done]: default dock layout built on the first launch (`DockLayout`), presets
   Default and Hierarchy Left, Reset Layout, a status bar, document-bound panels shown only with their document.
+- **Design tokens and typography** — ![Done][done]: `gui::Theme` tokens and their ImGui mapping, Owl Dark and
+  Owl Light, Inter with text roles, DPI scaling of the style and the fonts.
 
 ## Interaction basics
 

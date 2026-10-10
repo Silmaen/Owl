@@ -63,8 +63,8 @@ struct EditorSettings {
 
 	/// Whether the stats panel is visible.
 	bool showStats = true;
-	/// Current theme preset name (empty or "Custom" means use theme.yml).
-	std::string themePreset = "Dark";
+	/// Theme preset name (`gui::Theme::getPresetNames`); retired names are mapped on load.
+	std::string themePreset = "Owl Dark";
 	/// Font size (pixels) used inside the code editor tabs.
 	int codeEditorFontSize = 17;
 	/**
@@ -72,7 +72,7 @@ struct EditorSettings {
 	 * `UiLayer::onAttach`).  Default 18 — the previous default was 20 but 18 leaves more room
 	 * for docked panels on dense layouts.
 	 */
-	int uiFontSize = 18;
+	int uiFontSize = 16;
 	/// Whether translation gizmos snap to a grid in Edit mode.
 	bool snapEnabled = false;
 	/// Grid step (world units) used when no tilemap is available or `snapAutoFromTilemap` is off.

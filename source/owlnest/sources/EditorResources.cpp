@@ -9,6 +9,7 @@
 #include "EditorResources.h"
 
 #include <gui/IconBank.h>
+#include <gui/UiLayer.h>
 #include <owl.h>
 #include <sound/SoundSystem.h>
 
@@ -162,13 +163,13 @@ void buildIconBank() {
 	// Remove entries with empty paths
 	std::erase_if(icons, [](const auto& iEntry) -> auto { return iEntry.second.empty(); });
 
-	const auto& style = ImGui::GetStyle();
-	const gui::IconThemeColors themeColors{
-			.primary = {style.Colors[ImGuiCol_Text].x, style.Colors[ImGuiCol_Text].y, style.Colors[ImGuiCol_Text].z,
-						style.Colors[ImGuiCol_Text].w},
-			.secondary = {1.0f, 0.78f, 0.15f, 1.0f},
-	};
-	iconBank.build(icons, 64, themeColors);
+	const auto& theme = gui::UiLayer::getTheme();
+	iconBank.build(icons, 64, {.primary = theme.text, .secondary = theme.accent});
+}
+
+void applyTheme(const gui::Theme& iTheme) {
+	gui::UiLayer::setTheme(iTheme);
+	gui::IconBank::instance().rebuild({.primary = iTheme.text, .secondary = iTheme.accent});
 }
 
 void loadTriggerTextures() {

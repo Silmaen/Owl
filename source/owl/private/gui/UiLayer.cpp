@@ -36,6 +36,118 @@ float g_uiFontSize = 20.f;
 float g_codeFontSize = 13.f;
 // ID of the main dockspace, refreshed each docked frame.
 uint32_t g_dockSpaceId = 0;
+// Theme applied last; the panels read their tokens from it.
+Theme g_theme;
+// Content scale of the primary monitor, applied to the style sizes and the fonts.
+float g_dpiScale = 1.f;
+// Fonts of the typographic roles, loaded in `onAttach` (null before, or headless).
+ImFont* g_bodyFont = nullptr;
+ImFont* g_strongFont = nullptr;
+ImFont* g_monoFont = nullptr;
+
+auto toImGui(const math::vec4& iColor) -> ImVec4 { return {iColor.x(), iColor.y(), iColor.z(), iColor.w()}; }
+
+void applyColors(const Theme& iTheme, ImGuiStyle& ioStyle) {
+	using T = Theme;
+	auto& colors = ioStyle.Colors;
+	const auto set = [&colors](const ImGuiCol iSlot, const math::vec4& iColor) -> void {
+		colors[iSlot] = toImGui(iColor);
+	};
+	const auto clear = T::withAlpha(iTheme.surface0, 0.f);
+	set(ImGuiCol_Text, iTheme.text);
+	set(ImGuiCol_TextDisabled, iTheme.textDisabled);
+	set(ImGuiCol_WindowBg, iTheme.surface1);
+	set(ImGuiCol_ChildBg, clear);
+	set(ImGuiCol_PopupBg, iTheme.surface2);
+	set(ImGuiCol_Border, iTheme.line);
+	set(ImGuiCol_BorderShadow, clear);
+	set(ImGuiCol_FrameBg, iTheme.well);
+	set(ImGuiCol_FrameBgHovered, T::mix(iTheme.well, iTheme.surface3, 0.6f));
+	set(ImGuiCol_FrameBgActive, T::mix(iTheme.well, iTheme.surface4, 0.7f));
+	set(ImGuiCol_TitleBg, iTheme.surface0);
+	set(ImGuiCol_TitleBgActive, iTheme.surface0);
+	set(ImGuiCol_TitleBgCollapsed, iTheme.surface0);
+	set(ImGuiCol_MenuBarBg, iTheme.surface2);
+	set(ImGuiCol_ScrollbarBg, clear);
+	set(ImGuiCol_ScrollbarGrab, iTheme.surface3);
+	set(ImGuiCol_ScrollbarGrabHovered, iTheme.surface4);
+	set(ImGuiCol_ScrollbarGrabActive, iTheme.textDisabled);
+	set(ImGuiCol_CheckMark, iTheme.onAccent);
+	set(ImGuiCol_CheckboxSelectedBg, iTheme.accent);
+	set(ImGuiCol_SliderGrab, T::withAlpha(iTheme.accent, 0.85f));
+	set(ImGuiCol_SliderGrabActive, iTheme.accent);
+	set(ImGuiCol_Button, iTheme.surface3);
+	set(ImGuiCol_ButtonHovered, iTheme.surface4);
+	set(ImGuiCol_ButtonActive, T::mix(iTheme.surface4, iTheme.accent, 0.25f));
+	set(ImGuiCol_Header, iTheme.getSelection());
+	set(ImGuiCol_HeaderHovered, iTheme.surface3);
+	set(ImGuiCol_HeaderActive, T::withAlpha(iTheme.accent, 0.3f));
+	set(ImGuiCol_Separator, iTheme.lineSoft);
+	set(ImGuiCol_SeparatorHovered, T::withAlpha(iTheme.accent, 0.6f));
+	set(ImGuiCol_SeparatorActive, iTheme.accent);
+	set(ImGuiCol_ResizeGrip, T::withAlpha(iTheme.textDisabled, 0.2f));
+	set(ImGuiCol_ResizeGripHovered, T::withAlpha(iTheme.accent, 0.6f));
+	set(ImGuiCol_ResizeGripActive, iTheme.accent);
+	set(ImGuiCol_InputTextCursor, iTheme.text);
+	set(ImGuiCol_Tab, iTheme.surface0);
+	set(ImGuiCol_TabHovered, iTheme.surface3);
+	set(ImGuiCol_TabSelected, iTheme.surface1);
+	set(ImGuiCol_TabSelectedOverline, iTheme.accent);
+	set(ImGuiCol_TabDimmed, iTheme.surface0);
+	set(ImGuiCol_TabDimmedSelected, iTheme.surface1);
+	set(ImGuiCol_TabDimmedSelectedOverline, clear);
+	set(ImGuiCol_DockingPreview, T::withAlpha(iTheme.accent, 0.45f));
+	set(ImGuiCol_DockingEmptyBg, iTheme.surface0);
+	set(ImGuiCol_PlotLines, iTheme.textMuted);
+	set(ImGuiCol_PlotLinesHovered, iTheme.accent);
+	set(ImGuiCol_PlotHistogram, iTheme.accent);
+	set(ImGuiCol_PlotHistogramHovered, iTheme.text);
+	set(ImGuiCol_TableHeaderBg, iTheme.surface2);
+	set(ImGuiCol_TableBorderStrong, iTheme.line);
+	set(ImGuiCol_TableBorderLight, iTheme.lineSoft);
+	set(ImGuiCol_TableRowBg, clear);
+	set(ImGuiCol_TableRowBgAlt, T::withAlpha(iTheme.text, 0.025f));
+	set(ImGuiCol_TextLink, iTheme.info);
+	set(ImGuiCol_TextSelectedBg, T::withAlpha(iTheme.accent, 0.35f));
+	set(ImGuiCol_TreeLines, iTheme.lineSoft);
+	set(ImGuiCol_DragDropTarget, iTheme.accent);
+	set(ImGuiCol_DragDropTargetBg, T::withAlpha(iTheme.accent, 0.12f));
+	set(ImGuiCol_UnsavedMarker, iTheme.textMuted);
+	set(ImGuiCol_NavCursor, iTheme.accent);
+	set(ImGuiCol_NavWindowingHighlight, T::withAlpha(iTheme.accent, 0.7f));
+	set(ImGuiCol_NavWindowingDimBg, T::withAlpha(iTheme.surface0, 0.5f));
+	set(ImGuiCol_ModalWindowDimBg, T::withAlpha(iTheme.surface0, 0.6f));
+}
+
+void applyMetrics(const Theme& iTheme, ImGuiStyle& ioStyle) {
+	// Every spacing sits on the 4 px grid of the style guide.
+	ioStyle.WindowPadding = {8.f, 8.f};
+	ioStyle.FramePadding = {7.f, 4.f};
+	ioStyle.CellPadding = {6.f, 3.f};
+	ioStyle.ItemSpacing = {8.f, 5.f};
+	ioStyle.ItemInnerSpacing = {5.f, 4.f};
+	ioStyle.IndentSpacing = iTheme.indentSpacing;
+	ioStyle.ScrollbarSize = 11.f;
+	ioStyle.GrabMinSize = 10.f;
+	ioStyle.WindowBorderSize = 0.f;
+	ioStyle.ChildBorderSize = 1.f;
+	ioStyle.PopupBorderSize = 1.f;
+	ioStyle.FrameBorderSize = 0.f;
+	ioStyle.TabBorderSize = 0.f;
+	ioStyle.TabBarBorderSize = 0.f;
+	ioStyle.TabBarOverlineSize = 2.f;
+	ioStyle.WindowRounding = iTheme.windowRounding;
+	ioStyle.ChildRounding = iTheme.windowRounding;
+	ioStyle.PopupRounding = iTheme.windowRounding;
+	ioStyle.FrameRounding = iTheme.frameRounding;
+	ioStyle.GrabRounding = iTheme.frameRounding;
+	ioStyle.ScrollbarRounding = 6.f;
+	ioStyle.TabRounding = iTheme.tabRounding;
+	ioStyle.DockingSeparatorSize = 3.f;
+	ioStyle.SeparatorTextBorderSize = 1.f;
+	ioStyle.WindowTitleAlign = {0.f, 0.5f};
+}
+
 std::vector<shared<renderer::gpu::Texture>> g_deferredTextureReleases;
 
 auto resolveAssetFile(const std::filesystem::path& iRelative) -> std::filesystem::path {
@@ -49,6 +161,13 @@ auto resolveAssetFile(const std::filesystem::path& iRelative) -> std::filesystem
 	}
 	return {};
 }
+
+auto loadFont(const char* iRelative, const float iSize) -> ImFont* {
+	const auto path = resolveAssetFile(iRelative);
+	if (path.empty())
+		return nullptr;
+	return ImGui::GetIO().Fonts->AddFontFromFileTTF(path.string().c_str(), iSize);
+}
 }// namespace
 
 void UiLayer::setUiFontSize(const float iSize) { g_uiFontSize = std::clamp(iSize, 12.f, 32.f); }
@@ -58,6 +177,43 @@ void UiLayer::setCodeFontSize(const float iSize) { g_codeFontSize = std::clamp(i
 auto UiLayer::codeFontSize() -> float { return g_codeFontSize; }
 
 auto UiLayer::getDockSpaceId() -> uint32_t { return g_dockSpaceId; }
+
+auto UiLayer::getTheme() -> const Theme& { return g_theme; }
+
+auto UiLayer::getDpiScale() -> float { return g_dpiScale; }
+
+void UiLayer::pushTextStyle(const TextStyle iStyle) {
+	const float base = ImGui::GetStyle().FontSizeBase;
+	switch (iStyle) {
+		case TextStyle::Body:
+			ImGui::PushFont(g_bodyFont, base);
+			return;
+		case TextStyle::Strong:
+			ImGui::PushFont(g_strongFont, base);
+			return;
+		case TextStyle::Title:
+			ImGui::PushFont(g_strongFont, base * 1.15f);
+			return;
+		case TextStyle::Section:
+			ImGui::PushFont(g_strongFont, base * 0.96f);
+			return;
+		case TextStyle::Label:
+			ImGui::PushFont(g_bodyFont, base * 0.92f);
+			return;
+		case TextStyle::Caption:
+			ImGui::PushFont(g_strongFont, base * 0.8f);
+			return;
+		case TextStyle::Value:
+			ImGui::PushFont(g_monoFont != nullptr ? g_monoFont : g_bodyFont, base * 0.92f);
+			return;
+		case TextStyle::Code:
+			ImGui::PushFont(g_monoFont != nullptr ? g_monoFont : g_bodyFont, g_codeFontSize);
+			return;
+	}
+	ImGui::PushFont(g_bodyFont, base);
+}
+
+void UiLayer::popTextStyle() { ImGui::PopFont(); }
 
 UiLayer::UiLayer() : Layer("ImGuiLayer") {}
 
@@ -94,28 +250,31 @@ void UiLayer::onAttach() {
 	io.ConfigViewportsNoDecoration = true;
 	io.ConfigViewportsNoAutoMerge = false;
 
-	const ImFontConfig fontConfig;
 	const float uiSize = g_uiFontSize;
-	ImFont* robotoFont = nullptr;
+	if (m_withApp && app::Application::get().getWindow().getType() == window::Type::Glfw)
+		g_dpiScale = ImGui_ImplGlfw_GetContentScaleForMonitor(glfwGetPrimaryMonitor());
+	g_bodyFont = nullptr;
+	g_strongFont = nullptr;
+	g_monoFont = nullptr;
 	if (m_withApp) {
-		if (const auto p = resolveAssetFile("fonts/roboto/Roboto-Regular.ttf"); !p.empty())
-			robotoFont = io.Fonts->AddFontFromFileTTF(p.string().c_str(), uiSize, &fontConfig);
-		if (robotoFont == nullptr) {
-			OWL_CORE_ERROR("UiLayer: could not load Roboto-Regular.ttf from engine_assets/fonts/roboto/.")
-			robotoFont = io.Fonts->AddFontDefault();
+		g_bodyFont = loadFont("fonts/inter/Inter-Regular.ttf", uiSize);
+		if (g_bodyFont == nullptr) {
+			OWL_CORE_ERROR("UiLayer: could not load Inter-Regular.ttf from engine_assets/fonts/inter/, using Roboto.")
+			g_bodyFont = loadFont("fonts/roboto/Roboto-Regular.ttf", uiSize);
 		}
-		if (const auto p = resolveAssetFile("fonts/roboto/Roboto-Bold.ttf"); !p.empty())
-			io.Fonts->AddFontFromFileTTF(p.string().c_str(), uiSize, &fontConfig);
-		if (const auto p = resolveAssetFile("fonts/roboto/Roboto-Italic.ttf"); !p.empty())
-			io.Fonts->AddFontFromFileTTF(p.string().c_str(), uiSize, &fontConfig);
-		if (const auto p = resolveAssetFile("fonts/jetbrainsmono/JetBrainsMono-Regular.ttf"); !p.empty())
-			mp_codeFont = io.Fonts->AddFontFromFileTTF(p.string().c_str(), g_codeFontSize, &fontConfig);
-		else
+		g_strongFont = loadFont("fonts/inter/Inter-SemiBold.ttf", uiSize);
+		g_monoFont = loadFont("fonts/jetbrainsmono/JetBrainsMono-Regular.ttf", g_codeFontSize);
+		if (g_monoFont == nullptr)
 			OWL_CORE_ERROR("UiLayer: could not load JetBrainsMono-Regular.ttf — code editor will fall back to UI font.")
-	} else {
-		robotoFont = io.Fonts->AddFontDefault();
 	}
-	io.FontDefault = robotoFont;
+	if (g_bodyFont == nullptr)
+		g_bodyFont = io.Fonts->AddFontDefault();
+	if (g_strongFont == nullptr)
+		g_strongFont = g_bodyFont;
+	mp_codeFont = g_monoFont;
+	io.FontDefault = g_bodyFont;
+	io.ConfigDpiScaleFonts = true;
+	io.ConfigDpiScaleViewports = true;
 
 	setTheme();
 
@@ -242,75 +401,16 @@ void UiLayer::end() const {
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG16("-Wunsafe-buffer-usage")
 void UiLayer::setTheme(const Theme& iTheme) {
-	// Setup Dear ImGui style
-	ImGui::StyleColorsDark();
-
-	auto& colors = ImGui::GetStyle().Colors;
-	colors[ImGuiCol_Text] = vec(iTheme.text);
-	colors[ImGuiCol_WindowBg] = vec(iTheme.windowBackground);
-	colors[ImGuiCol_ChildBg] = vec(iTheme.childBackground);
-	colors[ImGuiCol_PopupBg] = vec(iTheme.backgroundPopup);
-	colors[ImGuiCol_Border] = vec(iTheme.border);
-	colors[ImGuiCol_FrameBg] = vec(iTheme.frameBackground);
-	colors[ImGuiCol_FrameBgHovered] = vec(iTheme.frameBackgroundHovered);
-	colors[ImGuiCol_FrameBgActive] = vec(iTheme.frameBackgroundActive);
-	// Title 10 11 12
-	colors[ImGuiCol_TitleBg] = vec(iTheme.titleBar);
-	colors[ImGuiCol_TitleBgActive] = vec(iTheme.titleBarActive);
-	colors[ImGuiCol_TitleBgCollapsed] = vec(iTheme.titleBarCollapsed);
-	// Menubar 13
-	colors[ImGuiCol_MenuBarBg] = vec(iTheme.menubarBackground);
-	// Scrollbar 14 15 16 17
-	colors[ImGuiCol_ScrollbarBg] = vec(iTheme.scrollbarBackground);
-	colors[ImGuiCol_ScrollbarGrab] = vec(iTheme.scrollbarGrab);
-	colors[ImGuiCol_ScrollbarGrabHovered] = vec(iTheme.scrollbarGrabHovered);
-	colors[ImGuiCol_ScrollbarGrabActive] = vec(iTheme.scrollbarGrabActive);
-	// Checkbox 18
-	colors[ImGuiCol_CheckMark] = vec(iTheme.checkMark);
-	// Slider 19 20
-	colors[ImGuiCol_SliderGrab] = vec(iTheme.sliderGrab);
-	colors[ImGuiCol_SliderGrabActive] = vec(iTheme.sliderGrabActive);
-	// Buttons 21 22 23
-	colors[ImGuiCol_Button] = vec(iTheme.button);
-	colors[ImGuiCol_ButtonHovered] = vec(iTheme.buttonHovered);
-	colors[ImGuiCol_ButtonActive] = vec(iTheme.buttonActive);
-	// Headers 24 25 26
-	colors[ImGuiCol_Header] = vec(iTheme.groupHeader);
-	colors[ImGuiCol_HeaderHovered] = vec(iTheme.groupHeaderHovered);
-	colors[ImGuiCol_HeaderActive] = vec(iTheme.groupHeaderActive);
-	// Separator 27 28 29
-	colors[ImGuiCol_Separator] = vec(iTheme.separator);
-	colors[ImGuiCol_SeparatorActive] = vec(iTheme.separatorActive);
-	colors[ImGuiCol_SeparatorHovered] = vec(iTheme.separatorHovered);
-	// Resize Grip 30 31 32
-	colors[ImGuiCol_ResizeGrip] = vec(iTheme.resizeGrip);
-	colors[ImGuiCol_ResizeGripHovered] = vec(iTheme.resizeGripHovered);
-	colors[ImGuiCol_ResizeGripActive] = vec(iTheme.resizeGripActive);
-	// Tabs 33 34 35 36 37 38 39
-	colors[ImGuiCol_TabHovered] = vec(iTheme.tabHovered);
-	colors[ImGuiCol_Tab] = vec(iTheme.tab);
-	colors[ImGuiCol_TabSelected] = vec(iTheme.tabSelected);
-	colors[ImGuiCol_TabSelectedOverline] = vec(iTheme.tabSelectedOverline);
-	colors[ImGuiCol_TabDimmed] = vec(iTheme.tabDimmed);
-	colors[ImGuiCol_TabDimmedSelected] = vec(iTheme.tabDimmedSelected);
-	colors[ImGuiCol_TabDimmedSelectedOverline] = vec(iTheme.tabDimmedSelectedOverline);
-	// Docking 40 41
-	colors[ImGuiCol_DockingPreview] = vec(iTheme.dockingPreview);
-	colors[ImGuiCol_DockingEmptyBg] = vec(iTheme.dockingEmptyBackground);
-	colors[ImGuiCol_TableHeaderBg] = vec(iTheme.groupHeader);
-	// colours[ImGuiCol_TableBorderStrong] = vec.(iTheme.Text);
-	colors[ImGuiCol_TableBorderLight] = vec(iTheme.border);
+	g_theme = iTheme;
 	auto& style = ImGui::GetStyle();
-	// rounding
-	style.WindowRounding = iTheme.windowRounding;
-	style.FrameRounding = iTheme.frameRounding;
-	style.FrameBorderSize = iTheme.frameBorderSize;
-	style.TabRounding = iTheme.tabRounding;
-	style.TabBarOverlineSize = iTheme.tabOverline;
-	style.TabBorderSize = iTheme.tabBorder;
-	style.GrabRounding = iTheme.controlsRounding;
-	style.ScrollbarRounding = iTheme.controlsRounding;
-	style.IndentSpacing = iTheme.indentSpacing;
+	// Start from a fresh style so the DPI scaling below never compounds over repeated calls.
+	const float fontSize = g_uiFontSize;
+	style = ImGuiStyle();
+	applyColors(iTheme, style);
+	applyMetrics(iTheme, style);
+	style.ScaleAllSizes(g_dpiScale);
+	style.FontSizeBase = fontSize;
+	style.FontScaleDpi = g_dpiScale;
 	style.WindowMenuButtonPosition = ImGuiDir_Right;
 	style.ColorButtonPosition = ImGuiDir_Left;
 	if ((ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable) != 0) {

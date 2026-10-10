@@ -9,6 +9,8 @@
 #include "panel/AsyncProgressModal.h"
 
 #include <gui/IconBank.h>
+#include <gui/UiLayer.h>
+#include <gui/utils.h>
 
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG("-Wreserved-identifier")
@@ -48,7 +50,7 @@ void AsyncProgressModal::onImGuiRender() {
 		if (m_state->hasError.load()) {
 			// Error state: show error in red + Close button.
 			const auto errorMsg = m_state->getError();
-			ImGui::TextColored(ImVec4(1.0f, 0.3f, 0.3f, 1.0f), "Error:");
+			ImGui::TextColored(gui::vec(gui::UiLayer::getTheme().error), "Error:");
 			ImGui::TextWrapped("%s", errorMsg.c_str());
 			ImGui::Spacing();
 			if (iconBank.iconButton("close", "Close", {ImGui::GetFontSize() * 7.f, 0})) {

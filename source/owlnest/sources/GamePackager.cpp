@@ -11,6 +11,8 @@
 #include <data/assets/pack/GameExporter.h>
 #include <data/assets/pack/PackWriter.h>
 #include <gui/IconBank.h>
+#include <gui/UiLayer.h>
+#include <gui/utils.h>
 
 #include <imgui.h>
 #include <imgui_stdlib.h>
@@ -111,7 +113,9 @@ void GamePackager::renderWizardModal() {
 
 	if (ImGui::BeginPopupModal("Packaging Wizard", nullptr,
 							   ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove)) {
-		ImGui::TextColored(ImVec4(1.0f, 0.85f, 0.2f, 1.0f), "Pack Game");
+		gui::UiLayer::pushTextStyle(gui::TextStyle::Title);
+		ImGui::TextColored(gui::vec(gui::UiLayer::getTheme().accent), "Pack Game");
+		gui::UiLayer::popTextStyle();
 		ImGui::TextWrapped("Project: %s  (version: %s)", mp_project->name.c_str(),
 						   mp_project->version.empty() ? "-" : mp_project->version.c_str());
 		ImGui::Spacing();
@@ -217,7 +221,8 @@ void GamePackager::renderValidationModal() {
 
 	if (ImGui::BeginPopupModal("Packaging Validation", nullptr,
 							   ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove)) {
-		ImGui::TextColored(ImVec4(1.0f, 0.6f, 0.3f, 1.0f), "%zu issue(s) found before packaging:", m_warnings.size());
+		ImGui::TextColored(gui::vec(gui::UiLayer::getTheme().warning),
+						   "%zu issue(s) found before packaging:", m_warnings.size());
 		ImGui::Separator();
 		ImGui::BeginChild("##packWarnings", ImVec2(0, 200), ImGuiChildFlags_Borders);
 		for (const auto& warning: m_warnings) ImGui::BulletText("%s", warning.c_str());
