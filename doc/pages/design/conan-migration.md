@@ -275,9 +275,9 @@ Phase 0, before anything else of v0.3.0:
 
 - EnTT 4.0.0 and Taskflow 4.1.0 are in, through local recipes until ConanCenter has them
 - The lagging direct versions (G-08) are in too, through local recipes: OpenAL Soft 1.25.2, msdfgen 1.13,
-  msdf-atlas-gen 1.4, tinyobjloader rc13. The `DependencyReport` CI action (`conan graph outdated` against
-  ConanCenter, `cci.*` and date false positives dropped) lists what lags on every `main` build of Build Linux x64 /
-  Clang, without failing it; the transitive versions follow their recipes
+  msdf-atlas-gen 1.4, tinyobjloader rc13. The `DependencyReport` CI action lists what lags on every `main` build of
+  Build Linux x64 / Clang, without failing it: every package of the graph on ConanCenter, transitive ones included,
+  and the local recipes' sources upstream
 
 Later:
 
