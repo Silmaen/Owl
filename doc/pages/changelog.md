@@ -32,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Owl Nest engine parameters, Project Settings and Scene Settings in property grids under sections with a Lucide icon, like the inspector; the Editor Settings tabs and every panel tab get an icon.
 - `gui::widgets::propertyInt`, `propertyText`, `menuItem` (glyph column, shortcut, destructive entries in red) and `menuHeader`; `sectionHeader` also takes a `gui::icon` glyph.
 - Owl Nest ribbon icons drawn as duotone SVGs (`icons/ribbon/`), the accent on one part only like the component icons; the Help panel opens among the documents instead of the right column.
+- Owl Nest viewport: 2D orthographic / 3D perspective view (`CameraEditor::setProjection`), Frame selection (`F`, `CameraEditor::frame`), a Show menu (grid of the snap step, camera markers, trigger icons), Local / World gizmo axes (`Guizmo::Space`), the snap step shown in the toolbar and a Playing banner.
 - Owl Nest Log level chips show their message count and the Log tab its warnings and errors; the search and a labelled Clear button sit on the right.
 - Owl Nest Content Browser family chips with counts, an extension badge on the tiles, and context menus with a title, Lucide icons and Delete in red, like the Hierarchy menus.
 - `gui::widgets::notice`: an inline warning in the inspector, shown for an animated sprite without a sprite sheet and a Lua script without a path.

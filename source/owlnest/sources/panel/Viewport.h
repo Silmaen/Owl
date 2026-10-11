@@ -164,12 +164,49 @@ public:
 	 */
 	void setOpen(const bool iOpen) { m_pOpen = iOpen; }
 
+	/**
+	 * @brief
+	 *  Centre the editor camera on the selected entity and back off until it fills the view.
+	 */
+	void frameSelection();
+
+	/**
+	 * @brief
+	 *  Switch the editor camera between the 2D orthographic and the perspective view.
+	 * @param[in] iProjection The projection.
+	 */
+	void setViewProjection(renderer::CameraEditor::Projection iProjection) {
+		m_editorCamera.setProjection(iProjection);
+	}
+
+	/**
+	 * @brief
+	 *  Projection of the editor camera.
+	 * @return The projection.
+	 */
+	[[nodiscard]] auto getViewProjection() const -> renderer::CameraEditor::Projection {
+		return m_editorCamera.getProjectionMode();
+	}
+
 private:
 	/**
 	 * @brief
 	 *  Render gizmo.
 	 */
 	void renderGizmo();
+
+	/**
+	 * @brief
+	 *  Draw the grid of the snap step on the XY plane around the camera reference point, with the two axes.
+	 * @param[in] iStep Step between two lines, in world units.
+	 */
+	void renderGrid(float iStep) const;
+
+	/**
+	 * @brief
+	 *  Render the right overlay pill: view projection, Show menu, frame selection and stats.
+	 */
+	void renderViewOverlay();
 
 	/**
 	 * @brief

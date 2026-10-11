@@ -83,6 +83,12 @@ struct EditorSettings {
 	bool snapAutoFromTilemap = true;
 	/// Whether the in-viewport camera markers (icon + forward arrow + FOV cone) are drawn in Edit mode.
 	bool showCameraGizmos = true;
+	/// Whether the viewport draws a grid of the snap step on the XY plane in Edit mode.
+	bool showGrid = true;
+	/// Whether the trigger type icons are drawn over the triggers in Edit mode.
+	bool showTriggerIcons = true;
+	/// Whether the gizmo moves along the world axes instead of the axes of the selection.
+	bool gizmoWorldSpace = false;
 	/// Seconds between two autosaves of the modified documents (crash recovery); 0 disables the autosave.
 	int autosaveIntervalSeconds = 60;
 	/// Panel arrangement (`DockLayout::getPresetName`).

@@ -13,6 +13,9 @@
 #include "renderer/gpu/RenderAPI.h"
 #include "renderer/gpu/RenderCommand.h"
 
+#include <algorithm>
+#include <cmath>
+
 namespace owl::renderer {
 
 Camera::~Camera() = default;
@@ -80,7 +83,14 @@ auto CameraEditor::getOrientation() const -> math::quat {
 
 void CameraEditor::updateProjection() {
 	m_aspectRatio = m_viewportSize.ratio();
-	m_projection = math::perspective(math::radians(m_fov), m_aspectRatio, m_nearClip, m_farClip);
+	if (m_projectionMode == Projection::Orthographic) {
+		// Same framing as the perspective view at the reference point.
+		const float halfHeight = m_distance * std::tan(math::radians(m_fov) * 0.5f);
+		const float halfWidth = halfHeight * m_aspectRatio;
+		m_projection = math::ortho(-halfWidth, halfWidth, -halfHeight, halfHeight, m_nearClip, m_farClip);
+	} else {
+		m_projection = math::perspective(math::radians(m_fov), m_aspectRatio, m_nearClip, m_farClip);
+	}
 	if (gpu::RenderCommand::getApi() == gpu::RenderAPI::Type::Vulkan) {
 		auto biasMatrix = math::identity<float, 4>();
 		biasMatrix(2, 2) = 0.5f;
@@ -105,7 +115,29 @@ auto CameraEditor::onMouseScroll(const event::MouseScrolledEvent& iEvent) -> boo
 	const float delta = iEvent.getYOff() * 0.1f;
 	mouseZoom(delta);
 	updateView();
+	if (m_projectionMode == Projection::Orthographic)
+		updateProjection();
 	return false;
+}
+
+void CameraEditor::setProjection(const Projection iProjection) {
+	m_projectionMode = iProjection;
+	if (iProjection == Projection::Orthographic) {
+		m_pitch = 0.f;
+		m_yaw = 0.f;
+	}
+	updateView();
+	updateProjection();
+}
+
+void CameraEditor::frame(const math::vec3& iCenter, const float iRadius) {
+	m_focalPoint = iCenter;
+	// Back off until the sphere fits the smaller side of the view, with a margin.
+	const float halfFov = math::radians(m_fov) * 0.5f;
+	const float fit = std::min(1.f, m_aspectRatio);
+	m_distance = std::max(1.f, std::max(iRadius, 0.01f) * 1.25f / (std::tan(halfFov) * fit));
+	updateView();
+	updateProjection();
 }
 
 void CameraEditor::mousePan(const math::vec2& iDelta) {
@@ -115,12 +147,16 @@ void CameraEditor::mousePan(const math::vec2& iDelta) {
 }
 
 void CameraEditor::mouseRotate(const math::vec2& iDelta) {
+	if (m_projectionMode == Projection::Orthographic)
+		return;
 	const float yawSign = getUpDirection().y() < 0 ? -1.0f : 1.0f;
 	m_yaw += yawSign * iDelta.x() * rotationSpeed();
 	m_pitch += iDelta.y() * rotationSpeed();
 }
 
 void CameraEditor::rotateInPlace(const math::vec2& iDelta) {
+	if (m_projectionMode == Projection::Orthographic)
+		return;
 	// Keep the eye fixed: rotate, then move the focal point so `position = focal - forward * distance` is unchanged.
 	const math::vec3 eye = m_position;
 	const float yawSign = getUpDirection().y() < 0 ? -1.0f : 1.0f;

@@ -35,11 +35,21 @@ public:
 
 	/**
 	 * @brief
+	 *  Axes the guizmo moves along.
+	 */
+	enum struct Space : uint8_t {
+		Local,///< The axes of the object, rotated with it.
+		World,///< The world axes.
+	};
+
+	/**
+	 * @brief
 	 *  Initialize the guizmo drawing.
 	 * @param iPosition Position in the scene.
 	 * @param iSize Size of the guizmo.
+	 * @param iOrthographic Whether the camera projection is orthographic.
 	 */
-	static void initialize(const math::vec2& iPosition, const math::vec2& iSize);
+	static void initialize(const math::vec2& iPosition, const math::vec2& iSize, bool iOrthographic = false);
 
 	/**
 	 * @brief
@@ -71,9 +81,10 @@ public:
 	 * @param iType The type of guizmo.
 	 * @param ioTransform The object transformation.
 	 * @param iSnap The value of the snap.
+	 * @param iSpace The axes to move along.
 	 */
 	static void manipulate(const math::mat4& iCameraView, const math::mat4& iCameraProjection, const Type& iType,
-						   math::mat4& ioTransform, const float& iSnap = 0.0f);
+						   math::mat4& ioTransform, const float& iSnap = 0.0f, Space iSpace = Space::Local);
 };
 
 }// namespace owl::gui

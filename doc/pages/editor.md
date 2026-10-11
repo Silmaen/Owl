@@ -216,9 +216,12 @@ off-screen `Framebuffer` with two colour attachments:
 
 **Overlays.** Controls float over the scene in translucent pills, so the view stays visible:
 
-- top-left (Edit mode): Select / Move / Rotate / Scale, then Snap and the snap step presets;
-- top-centre: Play (or Resume), Pause, Step and Stop, with their shortcuts in the tooltips;
-- top-right (Edit mode): camera markers and frame stats toggles;
+- top-left (Edit mode): Select / Move / Rotate / Scale, the Local / World axes of the gizmo, then Snap and the
+  current snap step (a click opens its presets);
+- top-centre: Play (or Resume), Pause, Step and Stop, with their shortcuts in the tooltips; while the scene plays,
+  a banner under them recalls that the changes are reverted on Stop;
+- top-right (Edit mode): the view (**2D** orthographic front view or **3D** perspective), **Show** (grid, camera
+  markers, trigger icons), **Frame selection** (`F`) and the frame stats toggle;
 - bottom-left: frame rate, frame time and draw calls (a click opens the Stats panel);
 - bottom-right: the axis gizmo of the editor camera.
 
@@ -227,7 +230,10 @@ While the scene plays or is paused, a frame in the play colour outlines the view
 **Editor camera.** In Edit mode the viewport uses a `CameraEditor` (orbit
 camera) controlled by mouse drag and scroll. The camera updates only when the
 viewport is hovered, preventing accidental movement while interacting with other
-panels.
+panels. Its 2D view (`CameraEditor::Projection::Orthographic`) faces the XY plane, keeps the framing of the 3D
+view at the reference point and ignores rotations; the wheel zooms both. `CameraEditor::frame` centres the view on
+the selection. The grid follows the snap step (doubled while the lines would be too dense), the X and Y axes in
+their colours.
 
 **Gizmos.** When an entity is selected, ImGuizmo renders a manipulator gizmo in
 the viewport. The gizmo type is controlled by the overlay buttons or keyboard
@@ -277,7 +283,7 @@ is selected in the Scene Hierarchy and Properties panels.
 
 - Physics collider wireframes (box and circle shapes)
 - Camera frustum visualization for non-primary cameras
-- Trigger zone icons (victory, death, target, teleport, timer, interaction, lua callback)
+- Trigger zone icons (victory, death, target, teleport, timer, interaction, lua callback), hidden from **Show**
 
 ### Scene Hierarchy
 
@@ -1118,6 +1124,8 @@ gizmo manipulation is in progress.
 | Layout: Hierarchy Left       | Alt+2            | `view.layoutHierarchyLeft` |
 | Collapse / Expand the Ribbon | Ctrl+F1          | `view.toggleRibbon`        |
 | Help                         | F1               | `help.context`             |
+| Frame Selection              | F                | `view.frameSelection`      |
+| Toggle 2D / 3D View          |                  | `view.toggleProjection`    |
 
 ### Command palette
 

@@ -25,6 +25,7 @@
 #include <gui/IconFont.h>
 #include <gui/UiLayer.h>
 #include <gui/widgets/IconButton.h>
+#include <gui/widgets/Menu.h>
 #include <gui/widgets/Tooltip.h>
 #include <owlgui.h>
 #include <scene/SceneSerializer.h>
@@ -374,10 +375,16 @@ void Viewport::renderOverlay() const {
 			renderer::Renderer2D::drawQuad({.transform = worldTransform, .color = math::vec4{0.95f, 0.55f, 0.f, 0.2f}});
 		}
 
+		if (m_parent != nullptr && m_parent->getSettings().showGrid)
+			renderGrid(resolveTranslationSnapStep(m_parent->getSettings(), findFirstTilemapInfo(activeScene.get())));
+
 		// Draw trigger type icons
 		auto& textureLibrary = renderer::Renderer::getTextureLibrary();
+		const bool showTriggers = m_parent == nullptr || m_parent->getSettings().showTriggerIcons;
 		for (const auto view = activeScene->registry.view<scene::component::Trigger, scene::component::Transform>();
 			 const auto entity: view) {
+			if (!showTriggers)
+				break;
 			auto [trigger, tc] = view.get<scene::component::Trigger, scene::component::Transform>(entity);
 			std::string iconName;
 			switch (trigger.trigger.type) {
@@ -591,6 +598,49 @@ void overlaySeparator() {
 
 }// namespace
 
+void Viewport::renderGrid(const float iStep) const {
+	if (iStep <= 0.f)
+		return;
+	const auto& focal = m_editorCamera.getFocalPoint();
+	// Half of the visible height at the reference point, times a margin for the sides and the tilt.
+	const float extent = std::max(1.f, m_editorCamera.getDistance()) * 1.6f;
+	float step = iStep;
+	constexpr float maxLines = 120.f;
+	while (extent * 2.f / step > maxLines) step *= 2.f;
+	const float minX = std::floor((focal.x() - extent) / step) * step;
+	const float minY = std::floor((focal.y() - extent) / step) * step;
+	const float maxX = focal.x() + extent;
+	const float maxY = focal.y() + extent;
+	const auto& theme = gui::UiLayer::getTheme();
+	const math::vec4 lineColor = gui::Theme::withAlpha(theme.text, 0.07f);
+	for (float x = minX; x <= maxX; x += step) {
+		const bool axis = std::abs(x) < step * 0.5f;
+		renderer::Renderer2D::drawLine({.point1 = {x, minY, 0.f},
+										.point2 = {x, maxY, 0.f},
+										.color = axis ? gui::Theme::withAlpha(theme.axisY, 0.45f) : lineColor});
+	}
+	for (float y = minY; y <= maxY; y += step) {
+		const bool axis = std::abs(y) < step * 0.5f;
+		renderer::Renderer2D::drawLine({.point1 = {minX, y, 0.f},
+										.point2 = {maxX, y, 0.f},
+										.color = axis ? gui::Theme::withAlpha(theme.axisX, 0.45f) : lineColor});
+	}
+}
+
+void Viewport::frameSelection() {
+	if (mp_document == nullptr || m_parent == nullptr)
+		return;
+	const auto& activeScene = mp_document->getActiveScene();
+	const scene::Entity selected = m_parent->getSelectedEntity();
+	if (!activeScene || !selected)
+		return;
+	const math::Transform world = activeScene->getWorldTransform(selected);
+	// A unit quad scaled by the transform: half its diagonal encloses it.
+	const float radius =
+			0.5f * std::sqrt(world.scale().x() * world.scale().x() + world.scale().y() * world.scale().y());
+	m_editorCamera.frame(world.translation(), radius);
+}
+
 void Viewport::renderOverlayToolbar() {
 	if (mp_document == nullptr || m_parent == nullptr)
 		return;
@@ -637,16 +687,26 @@ void Viewport::renderOverlayToolbar() {
 				ImGui::SameLine();
 			}
 			overlaySeparator();
+			if (iconButton("space", {.glyph = settings.gizmoWorldSpace ? gui::icon::globe : gui::icon::box,
+									 .tooltip = settings.gizmoWorldSpace ? "World axes" : "Local axes",
+									 .description = "Move along the world axes, or along the axes of the selection."}))
+				settings.gizmoWorldSpace = !settings.gizmoWorldSpace;
+			ImGui::SameLine();
 			if (iconButton("snap", {.glyph = gui::icon::magnet,
 									.tooltip = "Snap to grid",
 									.description = "Moves snap to the grid step; Ctrl snaps while dragging anyway.",
 									.selected = settings.snapEnabled}))
 				settings.snapEnabled = !settings.snapEnabled;
 			ImGui::SameLine();
-			if (iconButton("snapStep",
-						   {.glyph = gui::icon::chevronDown,
-							.tooltip = "Snap step",
-							.description = "Presets from the tilemap cell when there is one, else world units."}))
+			const auto& scene = mp_document->getActiveScene();
+			const float step =
+					resolveTranslationSnapStep(settings, findFirstTilemapInfo(scene ? scene.get() : nullptr));
+			const auto stepText = std::format("{:g}", step);
+			if (gui::widgets::button(
+						"snapStep",
+						{.label = stepText.c_str(),
+						 .tooltip = "Snap step",
+						 .description = "Presets from the tilemap cell when there is one, else world units."}))
 				ImGui::OpenPopup("##snapStep");
 			if (ImGui::BeginPopup("##snapStep")) {
 				m_parent->renderSnapStepPopup();
@@ -696,24 +756,26 @@ void Viewport::renderOverlayToolbar() {
 	}
 	endOverlay();
 
-	// Display toggles, top-right.
-	if (editing) {
-		if (beginOverlay(std::format("##vpView{:x}", id), {m_upper.x() - margin, m_lower.y() + margin}, {1.f, 0.f})) {
-			if (iconButton("cameras",
-						   {.glyph = gui::icon::video,
-							.tooltip = "Camera markers",
-							.description = "Show the cameras of the scene: icon, forward arrow and field of view.",
-							.selected = settings.showCameraGizmos}))
-				settings.showCameraGizmos = !settings.showCameraGizmos;
-			ImGui::SameLine();
-			if (iconButton("stats", {.glyph = gui::icon::gauge,
-									 .tooltip = "Frame stats",
-									 .description = "Show the Stats panel: frame time, renderer and GPU counters.",
-									 .selected = settings.showStats}))
-				settings.showStats = !settings.showStats;
-		}
-		endOverlay();
+	// View options, top-right.
+	if (editing)
+		renderViewOverlay();
+	else if (beginOverlay(
+					 std::format("##vpPlaying{:x}", id),
+					 {(m_lower.x() + m_upper.x()) * 0.5f, m_lower.y() + margin * 2.f + ImGui::GetFrameHeight() + 6.f},
+					 {0.5f, 0.f})) {
+		ImGui::AlignTextToFramePadding();
+		ImGui::TextColored(gui::vec(theme.play), " %s ", gui::icon::play);
+		ImGui::SameLine();
+		gui::UiLayer::pushTextStyle(gui::TextStyle::Label);
+		ImGui::AlignTextToFramePadding();
+		ImGui::TextUnformatted(state == SceneDocument::State::Pause ? "Paused" : "Playing");
+		ImGui::SameLine();
+		ImGui::AlignTextToFramePadding();
+		ImGui::TextColored(gui::vec(theme.textMuted), "%s", "— changes are reverted on Stop ");
+		gui::UiLayer::popTextStyle();
 	}
+	if (!editing)
+		endOverlay();
 
 	// Frame time chip, bottom-left.
 	if (beginOverlay(std::format("##vpFps{:x}", id), {m_lower.x() + margin, m_upper.y() - margin}, {0.f, 1.f})) {
@@ -730,6 +792,61 @@ void Viewport::renderOverlayToolbar() {
 			ImGui::SetWindowFocus(panelWindow::stats);
 		}
 		gui::widgets::itemTooltip("Frame stats", nullptr, "Click to open the Stats panel.");
+	}
+	endOverlay();
+}
+
+void Viewport::renderViewOverlay() {
+	using gui::widgets::iconButton;
+	using Projection = renderer::CameraEditor::Projection;
+	const auto id = static_cast<uint64_t>(mp_document->id());
+	constexpr float margin = 8.f;
+	auto& settings = m_parent->getSettings();
+	if (beginOverlay(std::format("##vpView{:x}", id), {m_upper.x() - margin, m_lower.y() + margin}, {1.f, 0.f})) {
+		const bool ortho = getViewProjection() == Projection::Orthographic;
+		if (gui::widgets::button("projection", {.glyph = ortho ? gui::icon::square : gui::icon::cuboid,
+												.label = ortho ? "2D" : "3D",
+												.tooltip = "View",
+												.description = "2D: orthographic front view of the scene plane. 3D: "
+															   "perspective, orbit with Ctrl + drag."}))
+			ImGui::OpenPopup("##projection");
+		if (ImGui::BeginPopup("##projection")) {
+			if (gui::widgets::menuItem({.glyph = ortho ? gui::icon::check : nullptr, .label = "2D Orthographic"}))
+				setViewProjection(Projection::Orthographic);
+			if (gui::widgets::menuItem({.glyph = ortho ? nullptr : gui::icon::check, .label = "3D Perspective"}))
+				setViewProjection(Projection::Perspective);
+			ImGui::EndPopup();
+		}
+		ImGui::SameLine();
+		if (iconButton("show", {.glyph = gui::icon::eye,
+								.tooltip = "Show",
+								.description = "Grid, camera markers and trigger icons drawn over the scene."}))
+			ImGui::OpenPopup("##show");
+		if (ImGui::BeginPopup("##show")) {
+			const auto option = [](const char* iLabel, bool& ioFlag) -> void {
+				if (gui::widgets::menuItem({.glyph = ioFlag ? gui::icon::check : nullptr, .label = iLabel}))
+					ioFlag = !ioFlag;
+			};
+			gui::widgets::menuHeader("Show");
+			option("Grid", settings.showGrid);
+			option("Camera markers", settings.showCameraGizmos);
+			option("Trigger icons", settings.showTriggerIcons);
+			ImGui::EndPopup();
+		}
+		ImGui::SameLine();
+		const auto frameKey = m_parent->getActionShortcut("view.frameSelection");
+		if (iconButton("frame", {.glyph = gui::icon::focus,
+								 .tooltip = "Frame selection",
+								 .shortcut = frameKey.c_str(),
+								 .description = "Centre the view on the selected entity.",
+								 .disabled = !m_parent->getSelectedEntity()}))
+			frameSelection();
+		ImGui::SameLine();
+		if (iconButton("stats", {.glyph = gui::icon::gauge,
+								 .tooltip = "Frame stats",
+								 .description = "Show the Stats panel: frame time, renderer and GPU counters.",
+								 .selected = settings.showStats}))
+			settings.showStats = !settings.showStats;
 	}
 	endOverlay();
 }
@@ -752,7 +869,8 @@ void Viewport::renderGizmo() {
 
 	if (const scene::Entity selectedEntity = m_parent->getSelectedEntity();
 		selectedEntity && m_gizmoType != gui::Guizmo::Type::None) {
-		gui::Guizmo::initialize(m_lower, m_upper - m_lower);
+		gui::Guizmo::initialize(m_lower, m_upper - m_lower,
+								m_editorCamera.getProjectionMode() == renderer::CameraEditor::Projection::Orthographic);
 
 		math::mat4 cameraProjection = m_editorCamera.getProjection();
 		if (renderer::gpu::RenderCommand::getApi() == renderer::gpu::RenderAPI::Type::Vulkan)
@@ -773,7 +891,9 @@ void Viewport::renderGizmo() {
 			snapValue = resolveTranslationSnapStep(m_parent->getSettings(), tilemapInfo);
 		}
 
-		gui::Guizmo::manipulate(cameraView, cameraProjection, m_gizmoType, transform, snap ? snapValue : 0.f);
+		gui::Guizmo::manipulate(cameraView, cameraProjection, m_gizmoType, transform, snap ? snapValue : 0.f,
+								m_parent->getSettings().gizmoWorldSpace ? gui::Guizmo::Space::World
+																		: gui::Guizmo::Space::Local);
 
 		const bool isUsing = gui::Guizmo::isUsing();
 

@@ -112,6 +112,12 @@ void EditorSettings::loadFromFile(const std::filesystem::path& iFile) {
 			snapAutoFromTilemap = config["snapAutoFromTilemap"].as<bool>();
 		if (config["showCameraGizmos"])
 			showCameraGizmos = config["showCameraGizmos"].as<bool>();
+		if (config["showGrid"])
+			showGrid = config["showGrid"].as<bool>();
+		if (config["showTriggerIcons"])
+			showTriggerIcons = config["showTriggerIcons"].as<bool>();
+		if (config["gizmoWorldSpace"])
+			gizmoWorldSpace = config["gizmoWorldSpace"].as<bool>();
 		if (config["autosaveIntervalSeconds"])
 			autosaveIntervalSeconds = std::clamp(config["autosaveIntervalSeconds"].as<int>(), 0, 3600);
 		if (config["layoutPreset"])
@@ -150,6 +156,9 @@ void EditorSettings::saveToFile(const std::filesystem::path& iFile) const {
 	out << YAML::Key << "snapMultiplier" << YAML::Value << snapMultiplier;
 	out << YAML::Key << "snapAutoFromTilemap" << YAML::Value << snapAutoFromTilemap;
 	out << YAML::Key << "showCameraGizmos" << YAML::Value << showCameraGizmos;
+	out << YAML::Key << "showGrid" << YAML::Value << showGrid;
+	out << YAML::Key << "showTriggerIcons" << YAML::Value << showTriggerIcons;
+	out << YAML::Key << "gizmoWorldSpace" << YAML::Value << gizmoWorldSpace;
 	out << YAML::Key << "autosaveIntervalSeconds" << YAML::Value << autosaveIntervalSeconds;
 	out << YAML::Key << "layoutPreset" << YAML::Value << layoutPreset;
 	out << YAML::Key << "layoutVersion" << YAML::Value << layoutVersion;

@@ -352,6 +352,19 @@ void EditorLayer::onAttach() {
 										 (vp->isFocused() || vp->isHovered()) && !gui::Guizmo::isUsing())
 			vp->setGuizmoType(gui::Guizmo::Type::All);
 	});
+	m_actionRegistry.registerAction(
+			"view.frameSelection", "Frame Selection", {input::key::F, Modifiers::None}, [this]() -> void {
+				if (auto* vp = activeViewport(); vp != nullptr && getState() == State::Edit &&
+												 (vp->isFocused() || vp->isHovered()))
+					vp->frameSelection();
+			});
+	m_actionRegistry.registerAction("view.toggleProjection", "Toggle 2D / 3D View", {}, [this]() -> void {
+		if (auto* vp = activeViewport(); vp != nullptr) {
+			using Projection = renderer::CameraEditor::Projection;
+			vp->setViewProjection(vp->getViewProjection() == Projection::Orthographic ? Projection::Perspective
+																					  : Projection::Orthographic);
+		}
+	});
 	// Playback actions
 	m_actionRegistry.registerAction("scene.play", "Play/Resume", {input::key::F5, Modifiers::None}, [this]() -> void {
 		if (getState() == State::Edit)

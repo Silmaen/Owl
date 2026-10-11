@@ -8,6 +8,7 @@
 
 #include "testHelper.h"
 
+#include <gui/Guizmo.h>
 #include <gui/IconFont.h>
 #include <gui/UiLayer.h>
 #include <gui/widgets/Badge.h>
@@ -22,6 +23,7 @@
 #include <gui/widgets/Toggle.h>
 #include <gui/widgets/Tooltip.h>
 #include <gui/widgets/TreeRow.h>
+#include <math/matrixCreation.h>
 
 #include <imgui.h>
 
@@ -256,6 +258,19 @@ TEST_F(WidgetKitTest, MenuItemsReportClicksUnlessDisabled) {
 	click(body);
 	EXPECT_EQ(clicks, 1);
 	EXPECT_EQ(disabledClicks, 0);
+}
+
+TEST_F(WidgetKitTest, OrthographicWorldGizmoLeavesAnIdleTransform) {
+	auto transform = math::identity<float, 4>();
+	const auto view = math::identity<float, 4>();
+	const auto projection = math::ortho(-4.f, 4.f, -3.f, 3.f, 0.1f, 100.f);
+	frame([&]() -> void {
+		gui::Guizmo::initialize({0.f, 0.f}, {400.f, 300.f}, true);
+		gui::Guizmo::manipulate(view, projection, gui::Guizmo::Type::Translation, transform, 0.5f,
+								gui::Guizmo::Space::World);
+	});
+	EXPECT_FALSE(gui::Guizmo::isUsing());
+	EXPECT_EQ(transform, view);
 }
 
 TEST_F(WidgetKitTest, DisabledIconButtonIgnoresClicks) {
