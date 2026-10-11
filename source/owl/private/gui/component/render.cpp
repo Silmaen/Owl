@@ -1143,7 +1143,7 @@ void renderProps(VoxelWorld& ioComponent) {
 	const size_t blockCount = ioComponent.registry.count() > 0 ? ioComponent.registry.count() - 1 : 0;
 	ImGui::Text("Blocks: %zu", blockCount);
 	ImGui::Text("Chunks: %zu", ioComponent.world.chunkCount());
-	if (assetPathRow("Tileset", ioComponent.tilesetPath, "drop a .owltileset",
+	if (assetPathRow("Tileset", ioComponent.tilesetPath.generic_string(), "drop a .owltileset",
 					 "Edit the atlas of the blocks in the Tileset Editor; face indices are its tile indices.",
 					 ioComponent.tileset ? ioComponent.tileset->texture : nullptr)) {
 		ioComponent.tilesetPath.clear();
