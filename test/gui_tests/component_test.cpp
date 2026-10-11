@@ -12,6 +12,8 @@
 #include <gui/component/render.h>
 #include <scene/component/components.h>
 
+#include <filesystem>
+
 using namespace owl::core;
 using namespace owl::gui;
 using namespace owl::gui::component;
@@ -53,4 +55,15 @@ TEST(Component, render) {
 	layer.onDetach();
 	Log::invalidate();
 	EXPECT_TRUE(true);
+}
+
+TEST(Component, OpenAssetGoesToTheHandler) {
+	EXPECT_FALSE(owl::gui::component::openAsset("tilemaps/level.owltilemap"));
+	std::filesystem::path opened;
+	owl::gui::component::setOpenAssetHandler([&opened](const std::filesystem::path& iPath) -> void { opened = iPath; });
+	EXPECT_FALSE(owl::gui::component::openAsset({}));
+	EXPECT_TRUE(owl::gui::component::openAsset("tilemaps/level.owltilemap"));
+	EXPECT_EQ(opened, std::filesystem::path{"tilemaps/level.owltilemap"});
+	owl::gui::component::setOpenAssetHandler({});
+	EXPECT_FALSE(owl::gui::component::openAsset("scripts/hero.lua"));
 }

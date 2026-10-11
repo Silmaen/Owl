@@ -68,6 +68,7 @@ void EditorLayer::newScene() {
 	}
 	target->newScene(activeViewportSize());
 	m_documents.setActive(target);
+	target->requestFocus();
 	syncActiveDocumentPanels();
 }
 
@@ -144,6 +145,7 @@ void EditorLayer::openScene(const std::filesystem::path& iScenePath) {
 					}
 					target->applyLoadedScene(newScene, scenePath, activeViewportSize());
 					m_documents.setActive(target);
+					target->requestFocus();
 					syncActiveDocumentPanels();
 				} else {
 					state->setError(std::format("Cannot open scene '{}': {}. Fix: {}.", scenePath.string(),

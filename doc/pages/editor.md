@@ -63,7 +63,11 @@ Two presets are available from **File > Views** and the shortcuts: **Default** (
 back in the place of the current preset. The preset is saved in `OwlNest_settings.yml` (`layoutPreset`).
 
 Panels tied to a document only show with it: the Tile Palette with the active tilemap, the Voxel Palette when the
-scene holds a `VoxelWorld`.
+active document is a scene holding a `VoxelWorld`, in Edit mode. Both palettes, like the tilemap and tileset editors'
+panels, use the inspector layout: collapsible sections, property grids, swatches of the tiles or blocks
+(`gui::widgets::imageTile`) with their name in the tooltip. Document tabs carry the glyph of their type, and a
+document opened from the Content Browser, by a drop or by an inspector **Open** button comes to the front. Asset
+fields of the inspector (tilemap, tileset, script) show their path with **Open** (in its editor) and **Clear**.
 
 All panels can still be rearranged, resized and tabbed together freely; the arrangement persists in
 `OwlNest_imgui.ini`. The default layout is built on the first launch, when the saved one has no split, and once

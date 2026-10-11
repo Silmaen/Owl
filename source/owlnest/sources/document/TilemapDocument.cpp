@@ -10,10 +10,16 @@
 
 #include "EditorLayer.h"
 
-#include <gui/IconBank.h>
+#include <gui/IconFont.h>
 #include <gui/UiLayer.h>
+#include <gui/component/render.h>
 #include <gui/utils.h>
 #include <gui/widgets/AssetField.h>
+#include <gui/widgets/Badge.h>
+#include <gui/widgets/EmptyState.h>
+#include <gui/widgets/IconButton.h>
+#include <gui/widgets/PropertyGrid.h>
+#include <gui/widgets/SectionHeader.h>
 #include <imgui_stdlib.h>
 #include <scene/Tileset.h>
 
@@ -24,6 +30,7 @@ OWL_DIAG_DISABLE_CLANG("-Wreserved-identifier")
 OWL_DIAG_POP
 
 #include <algorithm>
+#include <array>
 #include <cstddef>
 #include <format>
 #include <tuple>
@@ -74,36 +81,6 @@ void pushTilemapEdit(scene::TilemapAsset& ioAsset, TilemapUndoManager& ioUndo, c
 		auto cmd = mkUniq<ModifyTilemapAssetCommand>(before, after, iDescription);
 		ioUndo.push(std::move(cmd));
 	}
-}
-
-auto iconButton(const char* iIcon, const char* iTooltip, const float iSize = 20.f) -> bool {
-	auto& iconBank = gui::IconBank::instance();
-	const auto info = iconBank.getIcon(iIcon, iSize);
-	bool clicked = false;
-	if (info.has_value()) {
-		clicked = ImGui::ImageButton(iIcon, static_cast<ImTextureID>(info->textureId), ImVec2{iSize, iSize},
-									 gui::vec(info->uv0), gui::vec(info->uv1));
-	} else {
-		clicked = ImGui::SmallButton(iIcon);
-	}
-	if (ImGui::IsItemHovered() && iTooltip != nullptr) {
-		ImGui::BeginTooltip();
-		ImGui::PushTextWrapPos(ImGui::GetFontSize() * 24.f);
-		ImGui::SetWindowFontScale(0.85f);
-		ImGui::TextUnformatted(iTooltip);
-		ImGui::SetWindowFontScale(1.f);
-		ImGui::PopTextWrapPos();
-		ImGui::EndTooltip();
-	}
-	return clicked;
-}
-
-void helpText(const char* iText) {
-	ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
-	ImGui::SetWindowFontScale(0.85f);
-	ImGui::TextWrapped("%s", iText);
-	ImGui::SetWindowFontScale(1.f);
-	ImGui::PopStyleColor();
 }
 
 }// namespace
@@ -186,7 +163,7 @@ auto TilemapDocument::loadFromFile(const std::filesystem::path& iPath) -> bool {
 void TilemapDocument::onImGuiRender() {
 	const auto display =
 			(mp_editorLayer != nullptr) ? mp_editorLayer->getDocumentManager().displayTitleFor(this) : title();
-	const auto winTitle = std::format("{}##tilemap_{:x}", display, static_cast<uint64_t>(id()));
+	const auto winTitle = documentWindowTitle(DocumentType::Tilemap, display, static_cast<uint64_t>(id()));
 
 	ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse;
 	if (isDirty())
@@ -223,22 +200,26 @@ void TilemapDocument::onImGuiRender() {
 }
 
 void TilemapDocument::renderHierarchyPanel() {
-
-	// --- Tileset slot — drop target for `.owltileset` -------------------------------------
-	const std::string tsLabel =
-			m_asset.tilesetPath.empty() ? "<drop a .owltileset>" : m_asset.tilesetPath.generic_string();
-	ImGui::TextUnformatted("Tileset");
-	ImGui::SameLine();
-	// Stable button id (`##tilesetSlot`) so the drop target survives label changes.
-	const std::string tsButtonId = std::format("{}##tilesetSlot", tsLabel);
-	if (ImGui::Button(tsButtonId.c_str(), ImVec2(-1.f, 0.f))) {
-		pushTilemapEdit(m_asset, m_undoManager, "Clear tileset", [this]() -> void {
-			if (m_asset.tileset)
-				gui::UiLayer::deferTextureRelease(m_asset.tileset->texture);
-			m_asset.tilesetPath.clear();
-			m_asset.tileset.reset();
-		});
+	if (gui::widgets::sectionHeader("Grid", gui::icon::grid3x3, false).open) {
+		renderGridSection();
+		gui::widgets::endSection();
 	}
+	if (gui::widgets::sectionHeader("Layers", gui::icon::layers, false).open) {
+		renderLayerSection();
+		gui::widgets::endSection();
+	}
+}
+
+void TilemapDocument::renderGridSection() {
+	if (!gui::widgets::beginProperties("##tilemapGrid"))
+		return;
+	// Tileset: its path (a drop target), then Open in the Tileset Editor and Clear.
+	gui::widgets::propertyLabel("Tileset", "Drop a .owltileset from the Content Browser.");
+	const float side = ImGui::GetFrameHeight();
+	const float spacing = ImGui::GetStyle().ItemSpacing.x;
+	std::string shown = m_asset.tilesetPath.generic_string();
+	ImGui::SetNextItemWidth(std::max(side, ImGui::GetContentRegionAvail().x - (side + spacing) * 2.f));
+	ImGui::InputTextWithHint("##tileset", "drop a .owltileset", &shown, ImGuiInputTextFlags_ReadOnly);
 	if (ImGui::BeginDragDropTarget()) {
 		if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM")) {
 			const auto* data = static_cast<const char*>(payload->Data);
@@ -256,41 +237,36 @@ void TilemapDocument::renderHierarchyPanel() {
 		}
 		ImGui::EndDragDropTarget();
 	}
-	if (ImGui::IsItemHovered())
-		ImGui::SetTooltip("Drop a .owltileset asset here, or click to clear.");
-	// "Open in Tileset Editor" — only when the tileset path is set and the parent editor is wired.
-	if (!m_asset.tilesetPath.empty() && mp_editorLayer != nullptr) {
-		if (iconButton("owltileset_icon", "Open the referenced .owltileset in its own editor")) {
-			std::filesystem::path resolved;
-			if (app::Application::instanced()) {
-				for (const auto& [title, assetsPath]: app::Application::get().getAssetDirectories()) {
-					if (const auto candidate = assetsPath / m_asset.tilesetPath; exists(candidate)) {
-						resolved = candidate;
-						break;
-					}
-				}
-			}
-			if (!resolved.empty())
-				mp_editorLayer->requestDeferredOpen(resolved);
-			else
-				OWL_CORE_WARN("Could not resolve tileset path '{}' against any asset directory.",
-							  m_asset.tilesetPath.string())
-		}
-		ImGui::SameLine();
-		ImGui::TextDisabled("Open in Tileset Editor");
-	}
+	ImGui::SameLine();
+	if (gui::widgets::iconButton("##openTileset", {.glyph = gui::icon::externalLink,
+												   .tooltip = "Open",
+												   .description = "Edit the tileset in the Tileset Editor.",
+												   .disabled = m_asset.tilesetPath.empty()}))
+		std::ignore = gui::component::openAsset(m_asset.tilesetPath);
+	ImGui::SameLine();
+	if (gui::widgets::iconButton("##clearTileset",
+								 {.glyph = gui::icon::x, .tooltip = "Clear", .disabled = m_asset.tilesetPath.empty()}))
+		pushTilemapEdit(m_asset, m_undoManager, "Clear tileset", [this]() -> void {
+			if (m_asset.tileset)
+				gui::UiLayer::deferTextureRelease(m_asset.tileset->texture);
+			m_asset.tilesetPath.clear();
+			m_asset.tileset.reset();
+		});
+	std::ignore = gui::widgets::propertyReset(false);
 
-	// --- Grid dimensions -------------------------------------------------------------------
+	// Size: previewed live while dragging, one undo step when the drag ends.
 	int width = static_cast<int>(m_asset.width);
 	int height = static_cast<int>(m_asset.height);
-	const bool widthChanged = ImGui::DragInt("Width", &width, 1.f, 1, 1024);
+	gui::widgets::propertyLabel("Width", "Columns of cells; the content is kept when the grid grows or shrinks.");
+	const bool widthChanged = ImGui::DragInt("##width", &width, 1.f, 1, 1024, "%d cells");
 	const bool widthCommitted = ImGui::IsItemDeactivatedAfterEdit();
-	const bool heightChanged = ImGui::DragInt("Height", &height, 1.f, 1, 1024);
+	std::ignore = gui::widgets::propertyReset(false);
+	gui::widgets::propertyLabel("Height", "Rows of cells.");
+	const bool heightChanged = ImGui::DragInt("##height", &height, 1.f, 1, 1024, "%d cells");
 	const bool heightCommitted = ImGui::IsItemDeactivatedAfterEdit();
-	if (widthChanged || heightChanged) {
-		// Live preview during the drag; defer the undo command to the deactivation frame.
+	std::ignore = gui::widgets::propertyReset(false);
+	if (widthChanged || heightChanged)
 		m_asset.resize(static_cast<uint32_t>(std::max(1, width)), static_cast<uint32_t>(std::max(1, height)));
-	}
 	if (widthCommitted || heightCommitted) {
 		const auto after = snapshotAsset(m_asset);
 		if (after != m_savedSnapshot) {
@@ -299,64 +275,57 @@ void TilemapDocument::renderHierarchyPanel() {
 			m_savedSnapshot = after;// keep dirty tracking consistent — saved snapshot still drives `isDirty`
 		}
 	}
+	if (gui::widgets::propertyFloat("Cell Size", m_asset.cellSize, 1.f, 0.05f, "%.3f",
+									"Side of a cell in world units."))
+		m_asset.cellSize = std::max(0.0001f, m_asset.cellSize);
+	gui::widgets::endProperties();
+}
 
-	float cellSize = m_asset.cellSize;
-	if (ImGui::DragFloat("Cell Size", &cellSize, 0.05f, 0.01f, 100.f, "%.3f"))
-		m_asset.cellSize = std::max(0.0001f, cellSize);
-
-	// --- Layer manager --------------------------------------------------------------------
-	ImGui::Separator();
-	ImGui::Text("Layers (%zu)", m_asset.layers.size());
-	ImGui::SameLine();
-	if (iconButton("add_component", "Add a new layer")) {
+void TilemapDocument::renderLayerSection() {
+	if (gui::widgets::button("addLayer", {.glyph = gui::icon::plus, .label = "Add Layer"}))
 		pushTilemapEdit(m_asset, m_undoManager, "Add layer",
 						[this]() -> void { m_asset.addLayer(std::format("layer{}", m_asset.layers.size())); });
-	}
-
 	int eraseIndex = -1;
 	int moveUpIndex = -1;
 	int moveDownIndex = -1;
+	const float side = ImGui::GetFrameHeight();
+	const float spacing = ImGui::GetStyle().ItemSpacing.x;
 	for (size_t i = 0; i < m_asset.layers.size(); ++i) {
 		auto& layer = m_asset.layers[i];
 		ImGui::PushID(static_cast<int>(i));
-		ImGui::Separator();
-
-		const float buttonStride = 14.f + ImGui::GetStyle().FramePadding.x * 2.f + ImGui::GetStyle().ItemSpacing.x;
-		const float buttonsReserved = buttonStride * 4.f + ImGui::GetStyle().ItemSpacing.x * 2.f;
 		const bool isActive = (m_palette.getSelectedLayer() == static_cast<uint32_t>(i));
-		if (ImGui::RadioButton("##active", isActive))
+		if (gui::widgets::iconButton("##active", {.glyph = isActive ? gui::icon::paintbrush : gui::icon::circle,
+												  .tooltip = "Paint on this layer",
+												  .selected = isActive}))
 			m_palette.setSelectedLayer(static_cast<uint32_t>(i));
-		if (ImGui::IsItemHovered())
-			ImGui::SetTooltip("Active painting layer");
-
 		ImGui::SameLine();
-		ImGui::SetNextItemWidth(-buttonsReserved);
-		if (ImGui::InputText("##name", &layer.name, ImGuiInputTextFlags_EnterReturnsTrue))
+		ImGui::SetNextItemWidth(std::max(side, ImGui::GetContentRegionAvail().x - (side + spacing) * 4.f));
+		if (ImGui::InputTextWithHint("##name", "Layer name", &layer.name, ImGuiInputTextFlags_EnterReturnsTrue))
 			pushTilemapEdit(m_asset, m_undoManager, "Rename layer", []() -> void {});
-
 		ImGui::SameLine();
-		const auto* eyeIcon = layer.visible ? "eye_open" : "eye_closed";
-		if (iconButton(eyeIcon, layer.visible ? "Hide layer" : "Show layer")) {
+		if (gui::widgets::iconButton("##visible", {.glyph = layer.visible ? gui::icon::eye : gui::icon::eyeOff,
+												   .tooltip = layer.visible ? "Hide the layer" : "Show the layer"}))
 			pushTilemapEdit(m_asset, m_undoManager, "Toggle layer visibility",
 							[&layer]() -> void { layer.visible = !layer.visible; });
-		}
 		ImGui::SameLine();
-		if (iconButton("move_up", "Move layer up")) {
-			if (i > 0)
-				moveUpIndex = static_cast<int>(i);
-		}
+		if (gui::widgets::iconButton("##up", {.glyph = gui::icon::chevronUp, .tooltip = "Move up", .disabled = i == 0}))
+			moveUpIndex = static_cast<int>(i);
 		ImGui::SameLine();
-		if (iconButton("move_down", "Move layer down")) {
-			if (i + 1 < m_asset.layers.size())
-				moveDownIndex = static_cast<int>(i);
-		}
+		if (gui::widgets::iconButton("##down", {.glyph = gui::icon::chevronDown,
+												.tooltip = "Move down",
+												.disabled = i + 1 >= m_asset.layers.size()}))
+			moveDownIndex = static_cast<int>(i);
 		ImGui::SameLine();
-		if (iconButton("delete", "Delete layer"))
+		if (gui::widgets::iconButton("##delete", {.glyph = gui::icon::trash2, .tooltip = "Delete the layer"}))
 			eraseIndex = static_cast<int>(i);
-
-		float parallax[2] = {layer.parallax.x(), layer.parallax.y()};
-		if (ImGui::DragFloat2("Parallax", parallax, 0.01f, 0.f, 4.f, "%.2f"))
-			layer.parallax = math::vec2{parallax[0], parallax[1]};
+		if (gui::widgets::beginProperties("##layerProps")) {
+			gui::widgets::propertyLabel("Parallax", "Scroll factor of the layer against the camera, per axis.");
+			std::array parallax{layer.parallax.x(), layer.parallax.y()};
+			if (gui::widgets::vectorField("##parallax", parallax, 0.01f))
+				layer.parallax = math::vec2{std::clamp(parallax[0], 0.f, 4.f), std::clamp(parallax[1], 0.f, 4.f)};
+			std::ignore = gui::widgets::propertyReset(false);
+			gui::widgets::endProperties();
+		}
 		ImGui::PopID();
 	}
 	if (eraseIndex >= 0) {
@@ -380,46 +349,49 @@ void TilemapDocument::renderHierarchyPanel() {
 }
 
 void TilemapDocument::renderPropertiesPanel() {
-	ImGui::TextDisabled("Selected Cell");
 	if (m_inspectedCellX < 0 || m_inspectedCellY < 0) {
-		helpText("Click a cell on the canvas to inspect its coordinates and content.");
+		std::ignore = gui::widgets::emptyState(gui::icon::mousePointerClick, "No cell selected",
+											   "Click a cell on the canvas to inspect it.");
 		return;
 	}
 	const auto layerIdx = m_palette.getSelectedLayer();
 	if (layerIdx >= m_asset.layers.size()) {
-		helpText("No active layer — add one in the Scene Hierarchy panel.");
+		std::ignore = gui::widgets::emptyState(gui::icon::layers, "No layer", "Add a layer in the Layers section.");
 		return;
 	}
 	const auto cellX = static_cast<uint32_t>(m_inspectedCellX);
 	const auto cellY = static_cast<uint32_t>(m_inspectedCellY);
 	const int32_t tileAtCell = m_asset.getTile(layerIdx, cellX, cellY);
-
-	ImGui::Text("Position: %d, %d", m_inspectedCellX, m_inspectedCellY);
-	ImGui::Text("Layer: #%u %s", layerIdx, m_asset.layers[layerIdx].name.c_str());
-	ImGui::Separator();
-
-	if (tileAtCell < 0) {
-		ImGui::TextUnformatted("Tile: <empty>");
-		ImGui::TextColored({0.6f, 0.9f, 0.6f, 1.f}, "Passable: yes");
-	} else {
-		std::string tileLabel = std::format("Tile: #{}", tileAtCell);
+	const auto& theme = gui::UiLayer::getTheme();
+	if (!gui::widgets::sectionHeader("Cell", gui::icon::squareDashed, false).open)
+		return;
+	if (gui::widgets::beginProperties("##cell")) {
+		const auto textRow = [](const char* iLabel, const std::string& iValue, const math::vec4& iColor) -> void {
+			gui::widgets::propertyLabel(iLabel);
+			ImGui::AlignTextToFramePadding();
+			ImGui::TextColored(gui::vec(iColor), "%s", iValue.c_str());
+			std::ignore = gui::widgets::propertyReset(false);
+		};
+		textRow("Position", std::format("{}, {}", m_inspectedCellX, m_inspectedCellY), theme.text);
+		textRow("Layer", std::format("#{} {}", layerIdx, m_asset.layers[layerIdx].name), theme.text);
 		bool passable = true;
-		if (m_asset.tileset && static_cast<uint32_t>(tileAtCell) < m_asset.tileset->tileCount()) {
-			const auto& meta = m_asset.tileset->tiles[static_cast<size_t>(tileAtCell)];
-			if (!meta.name.empty())
-				tileLabel = std::format("Tile: #{} ({})", tileAtCell, meta.name);
-			passable = !meta.collidable;
+		std::string tileLabel = "Empty";
+		if (tileAtCell >= 0) {
+			tileLabel = std::format("#{}", tileAtCell);
+			if (m_asset.tileset && static_cast<uint32_t>(tileAtCell) < m_asset.tileset->tileCount()) {
+				const auto& meta = m_asset.tileset->tiles[static_cast<size_t>(tileAtCell)];
+				if (!meta.name.empty())
+					tileLabel = std::format("#{} {}", tileAtCell, meta.name);
+				passable = !meta.collidable;
+			}
 		}
-		ImGui::TextUnformatted(tileLabel.c_str());
-		if (passable)
-			ImGui::TextColored({0.6f, 0.9f, 0.6f, 1.f}, "Passable: yes");
-		else
-			ImGui::TextColored({1.f, 0.5f, 0.5f, 1.f}, "Passable: no (solid)");
+		textRow("Tile", tileLabel, tileAtCell >= 0 ? theme.text : theme.textDisabled);
+		textRow("Passable", passable ? "Yes" : "No (solid)", passable ? theme.success : theme.error);
+		gui::widgets::endProperties();
 	}
-
-	ImGui::Spacing();
-	helpText("Tile-type metadata (name, collidable, …) lives on the .owltileset. Open the tileset editor (button next "
-			 "to the Tileset slot in this panel) to edit it.");
+	gui::widgets::notice("The name and the collision of a tile belong to the tileset: open it from the Grid section.",
+						 gui::widgets::BadgeKind::Info);
+	gui::widgets::endSection();
 }
 
 void TilemapDocument::renderCanvas() {

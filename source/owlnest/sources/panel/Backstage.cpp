@@ -8,6 +8,7 @@
 
 #include "Backstage.h"
 
+#include <gui/IconBank.h>
 #include <gui/IconFont.h>
 #include <gui/UiLayer.h>
 #include <gui/utils.h>
@@ -30,7 +31,7 @@ namespace {
 auto toU32(const math::vec4& iColor) -> ImU32 { return ImGui::GetColorU32(gui::vec(iColor)); }
 
 // Navigation entry: glyph and label on a full-width row; returns true on click.
-auto navItem(const char* iGlyph, const char* iLabel, const bool iEnabled = true, const char* iShortcut = nullptr)
+auto navItem(const char* iIcon, const char* iLabel, const bool iEnabled = true, const char* iShortcut = nullptr)
 		-> bool {
 	const auto& theme = gui::UiLayer::getTheme();
 	const float height = ImGui::GetFrameHeight() + 6.f;
@@ -44,7 +45,13 @@ auto navItem(const char* iGlyph, const char* iLabel, const bool iEnabled = true,
 	const auto color = iEnabled ? theme.text : theme.textDisabled;
 	const float textY = std::floor(min.y + (height - ImGui::GetTextLineHeight()) * 0.5f);
 	const float pad = ImGui::GetStyle().FramePadding.x + 2.f;
-	draw->AddText({min.x + pad, textY}, toU32(iEnabled ? theme.textMuted : theme.textDisabled), iGlyph);
+	const float iconSize = ImGui::GetFontSize();
+	if (const auto icon = gui::IconBank::instance().getIcon(iIcon, iconSize); icon.has_value()) {
+		const ImVec2 iconMin{std::floor(min.x + pad), std::floor(min.y + (height - iconSize) * 0.5f)};
+		// The style alpha greys the icon of a disabled entry.
+		draw->AddImage(static_cast<ImTextureID>(icon->textureId), iconMin, {iconMin.x + iconSize, iconMin.y + iconSize},
+					   gui::vec(icon->uv0), gui::vec(icon->uv1), ImGui::GetColorU32(IM_COL32_WHITE));
+	}
 	draw->AddText({min.x + pad + ImGui::GetFontSize() * 1.6f, textY}, toU32(color), iLabel);
 	if (iShortcut != nullptr) {
 		const auto size = ImGui::CalcTextSize(iShortcut);
@@ -55,7 +62,7 @@ auto navItem(const char* iGlyph, const char* iLabel, const bool iEnabled = true,
 }
 
 // Large card with a glyph, a title and a line of description; returns true on click.
-auto card(const char* iGlyph, const char* iTitle, const char* iDescription, const float iWidth) -> bool {
+auto card(const char* iIcon, const char* iTitle, const char* iDescription, const float iWidth) -> bool {
 	const auto& theme = gui::UiLayer::getTheme();
 	const float height = ImGui::GetFontSize() * 4.2f;
 	const bool clicked = ImGui::InvisibleButton(iTitle, {iWidth, height});
@@ -67,10 +74,12 @@ auto card(const char* iGlyph, const char* iTitle, const char* iDescription, cons
 	draw->AddRect(min, max, toU32(hovered ? gui::Theme::withAlpha(theme.accent, 0.6f) : theme.line),
 				  theme.windowRounding * 1.5f);
 	const float pad = ImGui::GetFontSize();
-	ImGui::PushFont(nullptr, ImGui::GetStyle().FontSizeBase * 1.4f);
-	draw->AddText({min.x + pad, min.y + pad}, toU32(theme.accent), iGlyph);
-	const float glyphWidth = ImGui::GetFontSize() * 1.3f;
-	ImGui::PopFont();
+	const float iconSize = std::round(ImGui::GetFontSize() * 1.5f);
+	if (const auto icon = gui::IconBank::instance().getIcon(iIcon, iconSize); icon.has_value())
+		draw->AddImage(static_cast<ImTextureID>(icon->textureId), {std::floor(min.x + pad), std::floor(min.y + pad)},
+					   {std::floor(min.x + pad) + iconSize, std::floor(min.y + pad) + iconSize}, gui::vec(icon->uv0),
+					   gui::vec(icon->uv1));
+	const float glyphWidth = iconSize;
 	gui::UiLayer::pushTextStyle(gui::TextStyle::Strong);
 	draw->AddText({min.x + pad + glyphWidth + pad * 0.5f, min.y + pad}, toU32(theme.text), iTitle);
 	gui::UiLayer::popTextStyle();
@@ -126,38 +135,38 @@ void Backstage::onImGuiRender(const BackstageContext& iContext) {
 	{
 		gui::UiLayer::pushTextStyle(gui::TextStyle::Strong);
 		ImGui::PushStyleColor(ImGuiCol_Text, gui::vec(theme.accent));
-		if (navItem(gui::icon::arrowLeft, "Back to the editor"))
+		if (navItem("ribbon_back", "Back to the editor"))
 			m_open = false;
 		ImGui::PopStyleColor();
 		gui::UiLayer::popTextStyle();
 		ImGui::Spacing();
-		if (navItem(gui::icon::folderPlus, "New project"))
+		if (navItem("ribbon_folder_new", "New project"))
 			run(iContext.newProject);
-		if (navItem(gui::icon::folderOpen, "Open project"))
+		if (navItem("ribbon_open", "Open project"))
 			run(iContext.openProject);
 		ImGui::Separator();
-		if (navItem(gui::icon::save, "Save project", hasProject))
+		if (navItem("ribbon_save", "Save project", hasProject))
 			run(iContext.saveProject);
-		if (navItem(gui::icon::saveAll, "Save project as...", hasProject))
+		if (navItem("ribbon_save", "Save project as...", hasProject))
 			run(iContext.saveProjectAs);
-		if (navItem(gui::icon::packageCheck, "Package the game", hasProject))
+		if (navItem("ribbon_pack", "Package the game", hasProject))
 			run(iContext.packGame);
 		ImGui::Separator();
-		if (navItem(gui::icon::settings, "Editor settings"))
+		if (navItem("ribbon_settings", "Editor settings"))
 			run(iContext.editorSettings);
-		if (navItem(gui::icon::slidersHorizontal, "Project settings", hasProject))
+		if (navItem("ribbon_tune", "Project settings", hasProject))
 			run(iContext.projectSettings);
-		if (navItem(gui::icon::settings2, "Engine parameters"))
+		if (navItem("ribbon_stats", "Engine parameters"))
 			run(iContext.engineSettings);
-		if (navItem(gui::icon::bookOpen, "Help", true, "F1")) {
+		if (navItem("ribbon_help", "Help", true, "F1")) {
 			if (iContext.help)
 				iContext.help({});
 			act = true;
 		}
 		ImGui::Separator();
-		if (navItem(gui::icon::x, "Close project", hasProject))
+		if (navItem("ribbon_close", "Close project", hasProject))
 			run(iContext.closeProject);
-		if (navItem(gui::icon::logOut, "Exit"))
+		if (navItem("ribbon_exit", "Exit"))
 			run(iContext.exit);
 	}
 	ImGui::EndChild();
@@ -186,13 +195,13 @@ void Backstage::onImGuiRender(const BackstageContext& iContext) {
 		const float maxWidth = std::min(ImGui::GetContentRegionAvail().x, ImGui::GetFontSize() * 54.f);
 		const float spacing = ImGui::GetStyle().ItemSpacing.x * 1.5f;
 		const float cardWidth = std::floor((maxWidth - 2.f * spacing) / 3.f);
-		if (card(gui::icon::folderPlus, "New project", "From a template: 2D, raycast, voxel or empty.", cardWidth))
+		if (card("ribbon_folder_new", "New project", "From a template: 2D, raycast, voxel or empty.", cardWidth))
 			run(iContext.newProject);
 		ImGui::SameLine(0.f, spacing);
-		if (card(gui::icon::folderOpen, "Open project", "Pick an owl_project.yml or its folder.", cardWidth))
+		if (card("ribbon_open", "Open project", "Pick an owl_project.yml or its folder.", cardWidth))
 			run(iContext.openProject);
 		ImGui::SameLine(0.f, spacing);
-		if (card(gui::icon::bookOpen, "Getting started", "A short tour of the editor and its panels.", cardWidth)) {
+		if (card("ribbon_book", "Getting started", "A short tour of the editor and its panels.", cardWidth)) {
 			if (iContext.help)
 				iContext.help("getting_started");
 			act = true;

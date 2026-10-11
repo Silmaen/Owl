@@ -124,6 +124,20 @@ public:
 	void setInspectedTile(int32_t iTile) { m_inspectedTile = iTile; }
 
 private:
+	/**
+	 * @brief
+	 *  Brush section: the painted layer, the brushes of both mouse buttons and the eraser.
+	 * @param[in] iAsset The tilemap being painted.
+	 */
+	void renderBrushSection(const scene::TilemapAsset& iAsset);
+
+	/**
+	 * @brief
+	 *  Tiles section: one swatch per tile of the tileset, outlined by the brushes that use it.
+	 * @param[in] iAsset The tilemap being painted.
+	 */
+	void renderTileSection(const scene::TilemapAsset& iAsset);
+
 	/// Index of the active layer to paint into (0 = first / back).
 	uint32_t m_selectedLayer = 0;
 	/// Primary brush (left mouse on the canvas).

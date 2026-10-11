@@ -77,6 +77,10 @@ void buildIconBank() {
 		{"ribbon_pause",    resolve("icons/ribbon/pause")},
 		{"ribbon_stop",     resolve("icons/ribbon/stop")},
 		{"ribbon_previous", resolve("icons/ribbon/previous")},
+		{"ribbon_back",     resolve("icons/ribbon/back")},
+		{"ribbon_folder_new", resolve("icons/ribbon/folder_new")},
+		{"ribbon_exit",     resolve("icons/ribbon/exit")},
+		{"ribbon_book",     resolve("icons/ribbon/book")},
 		{"ribbon_next",     resolve("icons/ribbon/next")},
 		// Visibility icons
 		{"camera_on",         resolve("icons/visibility/camera_on")},

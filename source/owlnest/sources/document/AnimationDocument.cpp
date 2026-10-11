@@ -76,7 +76,7 @@ void AnimationDocument::onEvent([[maybe_unused]] event::Event& ioEvent) {
 }
 
 void AnimationDocument::onImGuiRender() {
-	const auto winTitle = std::format("{}##animation_{:x}", title(), static_cast<uint64_t>(id()));
+	const auto winTitle = documentWindowTitle(DocumentType::Animation, title(), static_cast<uint64_t>(id()));
 
 	ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse;
 	if (isDirty())

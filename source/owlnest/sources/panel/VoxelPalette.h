@@ -9,6 +9,7 @@
 #pragma once
 
 #include <owlgui.h>
+#include <scene/component/VoxelWorld.h>
 
 #include "../VoxelBrush.h"
 
@@ -60,10 +61,11 @@ public:
 	/**
 	 * @brief
 	 *  Render the panel and update the shared brush state; nothing is shown (and the brush is off) while the
-	 *  scene has no `VoxelWorld`.
+	 *  scene has no `VoxelWorld` or is not the edited one.
 	 * @param[in,out] ioBrush The shared voxel-brush state the viewport consumes.
+	 * @param[in] iShown Whether the scene is the active document, in Edit mode.
 	 */
-	void onImGuiRender(VoxelBrush& ioBrush);
+	void onImGuiRender(VoxelBrush& ioBrush, bool iShown);
 
 private:
 	/**
@@ -79,6 +81,28 @@ private:
 	 * @param[in] iName The structure file name (without extension).
 	 */
 	void saveStructure(const std::string& iName) const;
+
+	/**
+	 * @brief
+	 *  Brush section: active switch, orientation and state byte.
+	 * @param[in,out] ioBrush The brush.
+	 */
+	static void renderBrushSection(VoxelBrush& ioBrush);
+
+	/**
+	 * @brief
+	 *  Blocks section: the eraser, then one square per block of the registry.
+	 * @param[in,out] ioBrush The brush.
+	 * @param[in] iWorld The voxel world whose registry and tileset are shown.
+	 */
+	static void renderBlockSection(VoxelBrush& ioBrush, const scene::component::VoxelWorld& iWorld);
+
+	/**
+	 * @brief
+	 *  Structures section: save the world as a structure, pick one to stamp.
+	 * @param[in,out] ioBrush The brush.
+	 */
+	void renderStructureSection(VoxelBrush& ioBrush);
 
 	/// Active scene (shared with the owning document; may be null).
 	shared<scene::Scene> m_scene;

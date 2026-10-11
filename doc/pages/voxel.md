@@ -313,16 +313,16 @@ frequency, octaves, amplitude, sea level, cave threshold, biomes, block ids, …
 
 Voxel worlds are authored directly in the editor, not just at runtime:
 
-- **Voxel Palette** panel — pick a paint block from the active world's registry (each shown with its top-face atlas
-  thumbnail), the eraser, or a saved structure. An **Orientation** dropdown and a **State** slider set the metadata
-  applied to painted blocks.
-  Tick **Brush active** to engage the tool: while in Edit mode the editor camera raycasts the block under the cursor
+- **Voxel Palette** panel (shown while the scene is the active document, in Edit mode) — pick a paint block from the
+  active world's registry (a swatch of its top face, its name in the tooltip), the eraser, or a saved structure. An
+  **Orientation** dropdown and a **State** field set the metadata applied to painted blocks.
+  Switch **Active** on to engage the tool: while in Edit mode the editor camera raycasts the block under the cursor
   (the impacted face is wireframe-highlighted), **left-click places** the paint block (with the chosen orientation /
   state) against that face and **right-click erases** the targeted block. Every edit is undoable —
   `commands::VoxelEditCommand` records a per-block `{before, after}` id + metadata delta and coalesces a continuous
   stroke into a single history entry, dirtying neighbour chunks at borders so the mesh rebuilds correctly.
 - **Structures** — `data::voxel::VoxelStructure` is a finite block grid saved as a `.owlvoxstruct` file (YAML: a
-  `Size` triple plus run-length-encoded `Blocks`). "Save" in the palette captures the current world's non-air
+  `Size` triple plus run-length-encoded `Blocks`). **Save World as Structure** in the palette captures the current world's non-air
   bounding box; selecting a saved structure makes a left-click **stamp** it (its min corner at the targeted empty
   cell), also undoable. Stamping is additive — air cells in the structure never erase the world.
 The editor sets the targeted-block highlight through `Scene::setEditorVoxelHighlight`; in Play the same highlight is

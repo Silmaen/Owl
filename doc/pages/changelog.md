@@ -34,6 +34,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Owl Nest ribbon icons drawn as duotone SVGs (`icons/ribbon/`), the accent on one part only like the component icons; the Help panel opens among the documents instead of the right column.
 - Owl Nest viewport: 2D orthographic / 3D perspective view (`CameraEditor::setProjection`), Frame selection (`F`, `CameraEditor::frame`), a Show menu (grid of the snap step, camera markers, trigger icons), Local / World gizmo axes (`Guizmo::Space`), the snap step shown in the toolbar and a Playing banner.
 - Owl Nest Content Browser previews of scenes and prefabs (rendered off-screen, `AssetThumbnails`) and of sounds (`sound::readWaveform`); the status bar shows the graphics device, the previews still to make and a notification bell (`ToastQueue::getHistory`).
+- Owl Nest Voxel Palette, Tile Palette and the tilemap and tileset editor panels in the inspector layout (sections, property grids, tile swatches `gui::widgets::imageTile`); the File screen uses the duotone icons of the ribbon; document tabs carry the glyph of their type (`documentWindowTitle`).
+- Owl Nest inspector: the tilemap, tileset and script fields get **Open** (in their editor, `gui::component::setOpenAssetHandler`) and **Clear** buttons, and the properties of a Lua script are read again when its file changes, without a Refresh button.
 - Owl Nest Log level chips show their message count and the Log tab its warnings and errors; the search and a labelled Clear button sit on the right.
 - Owl Nest Content Browser family chips with counts, an extension badge on the tiles, and context menus with a title, Lucide icons and Delete in red, like the Hierarchy menus.
 - `gui::widgets::notice`: an inline warning in the inspector, shown for an animated sprite without a sprite sheet and a Lua script without a path.
@@ -186,6 +188,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- OpenAL: a sound no longer fails with `alGenSources: Out of Memory` when many play at once (finished sources are reclaimed, then the oldest one-shot is cut) nor on an error left by an earlier call.
+- Owl Nest: the Translation, Rotation and Scale reset buttons no longer share one ImGui ID; the Voxel Palette hides while its scene plays or another document is active; a dropped file opens from the root the Content Browser shows, and a newly opened document comes to the front of its dock.
 - Owl Nest: pressing `Shift` twice opens the command palette (the Shift modifier key reported with it cancelled the tap), the main window no longer shows a scroll bar, and the ribbon drop-down carets are chevrons.
 - `docker/run.sh --gui` lends the host cursor themes, so Owl Nest shows the desktop cursor instead of Adwaita.
 - Owl Nest node canvas (Scene Flow): the GraphEditor minimap no longer covers the canvas with white triangles, node titles stay readable when zoomed out, and the canvas follows the theme.

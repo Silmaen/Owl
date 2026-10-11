@@ -12,6 +12,9 @@
 #include "core/external/openal.h"
 #include <debug/Profiler.h>
 
+#include <algorithm>
+#include <optional>
+
 namespace owl::sound::openal {
 
 namespace internal {
@@ -108,9 +111,17 @@ auto SoundAPI::play(const shared<SoundData>& iData, const PlayParams& iParams) -
 	}
 	const auto bufferId = static_cast<uint32_t>(iData->getSystemId());
 	uint32_t source = 0;
+	// Drop an error left by an earlier call, so it is not read as the one of alGenSources.
+	alGetError();
 	alGenSources(1, &source);
-	if (const ALenum err = alGetError(); err != AL_NO_ERROR) {
-		OWL_CORE_ERROR("SoundAPI(OpenAL)::play: alGenSources error: {}.", alGetString(err))
+	ALenum err = alGetError();
+	if (err == AL_OUT_OF_MEMORY && reclaimSource()) {
+		alGenSources(1, &source);
+		err = alGetError();
+	}
+	if (err != AL_NO_ERROR) {
+		OWL_CORE_ERROR("SoundAPI(OpenAL)::play: alGenSources error: {} ({} sources playing).", alGetString(err),
+					   m_handleToSource.size())
 		return invalidSoundHandle;
 	}
 
@@ -212,20 +223,38 @@ auto SoundAPI::isPlaying(const SoundHandle iHandle) const -> bool {
 void SoundAPI::frame(const core::Timestep&) {
 	OWL_PROFILE_FUNCTION()
 
-	std::vector<SoundHandle> toRemove;
-	for (const auto& [handle, source]: m_handleToSource) {
-		ALint state = 0;
-		alGetSourcei(source, AL_SOURCE_STATE, &state);
-		if (state == AL_STOPPED)
-			toRemove.push_back(handle);
-	}
-	for (const auto handle: toRemove) {
-		if (const auto it = m_handleToSource.find(handle); it != m_handleToSource.end()) {
-			alDeleteSources(1, &it->second);
-			m_handleToSource.erase(it);
-		}
-	}
+	releaseStoppedSources();
 }
 
+void SoundAPI::releaseStoppedSources() {
+	std::erase_if(m_handleToSource, [](const auto& iEntry) -> bool {
+		ALint state = 0;
+		alGetSourcei(iEntry.second, AL_SOURCE_STATE, &state);
+		if (state != AL_STOPPED)
+			return false;
+		alDeleteSources(1, &iEntry.second);
+		return true;
+	});
+}
+
+auto SoundAPI::reclaimSource() -> bool {
+	const size_t before = m_handleToSource.size();
+	releaseStoppedSources();
+	if (m_handleToSource.size() < before)
+		return true;
+	// Every source plays: cut the oldest one-shot sound, the least missed.
+	std::optional<SoundHandle> oldest;
+	for (const auto& [handle, source]: m_handleToSource) {
+		ALint looping = AL_FALSE;
+		alGetSourcei(source, AL_LOOPING, &looping);
+		if (looping == AL_FALSE && (!oldest.has_value() || handle < *oldest))
+			oldest = handle;
+	}
+	if (!oldest.has_value())
+		return false;
+	OWL_CORE_WARN("SoundAPI(OpenAL)::play: No source left, the oldest sound is cut.")
+	stop(*oldest);
+	return true;
+}
 
 }// namespace owl::sound::openal

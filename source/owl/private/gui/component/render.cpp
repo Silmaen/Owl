@@ -27,19 +27,27 @@
 #include "renderer/Renderer.h"
 #include "scene/TilemapAsset.h"
 #include "scene/Tileset.h"
+#include "script/ScriptEngine.h"
 #include "sound/SoundCommand.h"
 #include "sound/SoundSystem.h"
 
 #include <imgui_internal.h>
 #include <imgui_stdlib.h>
 
+#include <algorithm>
 #include <array>
 #include <cfloat>
 #include <cmath>
 #include <cstdint>
 #include <cstring>
+#include <filesystem>
 #include <format>
+#include <functional>
 #include <span>
+#include <string>
+#include <system_error>
+#include <unordered_map>
+#include <utility>
 
 using namespace owl::scene;
 using namespace owl::scene::component;
@@ -129,6 +137,77 @@ auto Combo(const char* iLabel, Args&&... iArgs) -> bool {
 
 
 namespace {
+
+auto openAssetHandler() -> std::function<void(const std::filesystem::path&)>& {
+	static std::function<void(const std::filesystem::path&)> handler;
+	return handler;
+}
+
+// Path field of an asset: the path (read only, or a hint), then Open in its editor and Clear.
+auto assetPathRow(const char* iLabel, const std::string& iPath, const char* iHint, const char* iOpenTip) -> bool {
+	bool cleared = false;
+	std::ignore = prop::row(iLabel, [&](const char* iId) -> bool {
+		const float side = ImGui::GetFrameHeight();
+		const float spacing = ImGui::GetStyle().ItemSpacing.x;
+		std::string shown = iPath;
+		ImGui::SetNextItemWidth(std::max(side, ImGui::GetContentRegionAvail().x - (side + spacing) * 2.f));
+		ImGui::InputTextWithHint(iId, iHint, &shown, ImGuiInputTextFlags_ReadOnly);
+		ImGui::SameLine();
+		ImGui::PushID(iId);
+		if (widgets::iconButton("##open", {.glyph = icon::externalLink,
+										   .tooltip = "Open",
+										   .description = iOpenTip,
+										   .disabled = iPath.empty() || !openAssetHandler()}))
+			std::ignore = component::openAsset(iPath);
+		ImGui::SameLine();
+		cleared = widgets::iconButton("##clear", {.glyph = icon::x, .tooltip = "Clear", .disabled = iPath.empty()});
+		ImGui::PopID();
+		return cleared;
+	});
+	return cleared;
+}
+
+// Read the properties a script declares again when its path or its file changes, keeping the values already set.
+void syncScriptProperties(LuaScript& ioComponent) {
+	struct Scan {
+		std::string path;
+		std::filesystem::file_time_type time;
+		double checkedAt = -1.0;
+	};
+	static std::unordered_map<const LuaScript*, Scan> scans;
+	if (ioComponent.scriptPath.empty())
+		return;
+	auto& scan = scans[&ioComponent];
+	const double now = ImGui::GetTime();
+	if (scan.path == ioComponent.scriptPath && now - scan.checkedAt < 1.0)
+		return;
+	scan.checkedAt = now;
+	std::filesystem::path resolved{ioComponent.scriptPath};
+	if (app::Application::instanced()) {
+		for (const auto& [title, assetsPath]: app::Application::get().getAssetDirectories()) {
+			if (const auto candidate = assetsPath / ioComponent.scriptPath; exists(candidate)) {
+				resolved = candidate;
+				break;
+			}
+		}
+	}
+	std::error_code error;
+	const auto time = std::filesystem::last_write_time(resolved, error);
+	if (error || (scan.path == ioComponent.scriptPath && scan.time == time))
+		return;
+	scan.path = ioComponent.scriptPath;
+	scan.time = time;
+	auto fresh = script::ScriptEngine::extractProperties(ioComponent.scriptPath);
+	for (auto& property: fresh) {
+		const auto old = std::ranges::find_if(ioComponent.properties, [&property](const auto& iOld) -> bool {
+			return iOld.name == property.name && iOld.type == property.type;
+		});
+		if (old != ioComponent.properties.end())
+			property.value = old->value;
+	}
+	ioComponent.properties = std::move(fresh);
+}
+
 void fieldTooltip(const char* iText) {
 	if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay))
 		ImGui::SetTooltip("%s", iText);
@@ -148,7 +227,11 @@ void drawVec3Control(const std::string& iLabel, math::vec3& iValues, const float
 		if (!modified)
 			return changed;
 		ImGui::SameLine();
-		if (widgets::iconButton("##reset", {.glyph = icon::rotateCcw, .tooltip = "Reset to default"})) {
+		// One reset per row: its ID must carry the row, or Translation, Rotation and Scale would share it.
+		ImGui::PushID(iId);
+		const bool reset = widgets::iconButton("##reset", {.glyph = icon::rotateCcw, .tooltip = "Reset to default"});
+		ImGui::PopID();
+		if (reset) {
 			iValues = {iResetValue, iResetValue, iResetValue};
 			return true;
 		}
@@ -641,19 +724,16 @@ void renderProps(SoundListener& ioComponent) {
 }
 
 void renderProps(LuaScript& ioComponent) {
-	prop::InputText("Script Path", &ioComponent.scriptPath);
+	if (assetPathRow("Script", ioComponent.scriptPath, "drop a .lua file", "Open the script in the code editor.")) {
+		ioComponent.scriptPath.clear();
+		ioComponent.properties.clear();
+	}
 	if (ioComponent.scriptPath.empty())
 		widgets::notice("No script: drop a .lua file from the Content Browser on the field.");
-	if (std::filesystem::path dropped; widgets::assetDropTarget(widgets::AssetKind::LuaScript, dropped)) {
+	if (std::filesystem::path dropped; widgets::assetDropTarget(widgets::AssetKind::LuaScript, dropped))
 		ioComponent.scriptPath = dropped.string();
-		ioComponent.properties = script::ScriptEngine::extractProperties(ioComponent.scriptPath);
-	}
-	if (ImGui::Button("Refresh Properties") && !ioComponent.scriptPath.empty()) {
-		ioComponent.properties = script::ScriptEngine::extractProperties(ioComponent.scriptPath);
-	}
-	if (!ioComponent.properties.empty()) {
-		ImGui::Separator();
-		ImGui::Text("Properties:");
+	syncScriptProperties(ioComponent);
+	if (!ioComponent.properties.empty() && widgets::subHeader("Properties", true)) {
 		for (size_t idx = 0; idx < ioComponent.properties.size(); ++idx) {
 			auto& prop = ioComponent.properties[idx];
 			// Index-based PushID prevents collisions if two properties share a name.
@@ -857,16 +937,11 @@ void renderProps(RendererTag& ioComponent) {
 
 void renderProps(Tilemap& ioComponent) {
 	// --- Tilemap asset slot (path drop target) --------------------------------------------
-	const std::string label =
-			ioComponent.tilemapPath.empty() ? "<drop a .owltilemap>" : ioComponent.tilemapPath.generic_string();
-	ImGui::TextUnformatted("Tilemap");
-	ImGui::SameLine();
-	if (ImGui::Button(label.c_str(), ImVec2(-1.f, 0.f))) {
+	if (assetPathRow("Tilemap", ioComponent.tilemapPath.generic_string(), "drop a .owltilemap",
+					 "Edit the tilemap in the Tilemap Editor.")) {
 		ioComponent.tilemapPath.clear();
 		ioComponent.asset.reset();
 	}
-	fieldTooltip("Drop a .owltilemap asset here, or click to clear. Tilemap data is authored in the dedicated Tilemap "
-				 "Editor (double-click the asset in the Content Browser).");
 	if (std::filesystem::path dropped; widgets::assetDropTarget(widgets::AssetKind::Tilemap, dropped)) {
 		ioComponent.tilemapPath = dropped;
 		ioComponent.asset.reset();// force lazy reload at next scene resolve
@@ -946,15 +1021,12 @@ auto interactionKeyCombo(const char* iLabel, input::KeyCode& ioKey) -> bool {
 
 void renderProps(RaycastDoor& ioComponent) {
 	// --- Tileset asset slot ---------------------------------------------------------------
-	const std::string tilesetLabel = ioComponent.tilesetPath.empty() ? "<drop a .owltileset>" : ioComponent.tilesetPath;
-	ImGui::TextUnformatted("Tileset");
-	ImGui::SameLine();
-	if (ImGui::Button(tilesetLabel.c_str(), ImVec2(-1.f, 0.f))) {
+	if (assetPathRow(
+				"Tileset", ioComponent.tilesetPath, "drop a .owltileset",
+				"Edit the atlas in the Tileset Editor; use the tileset of the world tilemap to share its texture.")) {
 		ioComponent.tilesetPath.clear();
 		ioComponent.tileset.reset();
 	}
-	fieldTooltip("Drop a .owltileset asset here, or click to clear. Point this at the same tileset "
-				 "the world tilemap uses to share the atlas texture — no double-load.");
 	if (std::filesystem::path dropped; widgets::assetDropTarget(widgets::AssetKind::Tileset, dropped)) {
 		ioComponent.tilesetPath = dropped.generic_string();
 		ioComponent.tileset.reset();// force lazy reload at next scene resolve
@@ -1013,15 +1085,12 @@ void renderProps(RaycastDoor& ioComponent) {
 }
 
 void renderProps(RaycastPushWall& ioComponent) {
-	const std::string tilesetLabel = ioComponent.tilesetPath.empty() ? "<drop a .owltileset>" : ioComponent.tilesetPath;
-	ImGui::TextUnformatted("Tileset");
-	ImGui::SameLine();
-	if (ImGui::Button(tilesetLabel.c_str(), ImVec2(-1.f, 0.f))) {
+	if (assetPathRow(
+				"Tileset", ioComponent.tilesetPath, "drop a .owltileset",
+				"Edit the atlas in the Tileset Editor; use the tileset of the world tilemap to share its texture.")) {
 		ioComponent.tilesetPath.clear();
 		ioComponent.tileset.reset();
 	}
-	fieldTooltip("Drop a .owltileset asset here, or click to clear. Point this at the same tileset "
-				 "the world tilemap uses to share the atlas texture — no double-load.");
 	if (std::filesystem::path dropped; widgets::assetDropTarget(widgets::AssetKind::Tileset, dropped)) {
 		ioComponent.tilesetPath = dropped.generic_string();
 		ioComponent.tileset.reset();
@@ -1061,16 +1130,11 @@ void renderProps(VoxelWorld& ioComponent) {
 	const size_t blockCount = ioComponent.registry.count() > 0 ? ioComponent.registry.count() - 1 : 0;
 	ImGui::Text("Blocks: %zu", blockCount);
 	ImGui::Text("Chunks: %zu", ioComponent.world.chunkCount());
-	const std::string tilesetLabel =
-			ioComponent.tilesetPath.empty() ? "<drop a .owltileset>" : ioComponent.tilesetPath.generic_string();
-	ImGui::TextUnformatted("Tileset");
-	ImGui::SameLine();
-	if (ImGui::Button(tilesetLabel.c_str(), ImVec2(-1.f, 0.f))) {
+	if (assetPathRow("Tileset", ioComponent.tilesetPath, "drop a .owltileset",
+					 "Edit the atlas of the blocks in the Tileset Editor; face indices are its tile indices.")) {
 		ioComponent.tilesetPath.clear();
 		ioComponent.tileset.reset();
 	}
-	fieldTooltip("Drop a .owltileset asset here, or click to clear. Block face indices are tile indices into "
-				 "this atlas; the renderer maps each face to its tile's UV sub-rect.");
 	if (std::filesystem::path dropped; widgets::assetDropTarget(widgets::AssetKind::Tileset, dropped)) {
 		ioComponent.tilesetPath = dropped.generic_string();
 		ioComponent.tileset.reset();// force lazy reload at next scene resolve
@@ -1167,6 +1231,17 @@ void renderProps(FlyCamera& ioComponent) {
 	fieldTooltip("Translation speed in world units per second (WASD move, Space/E up, Left-Shift/Q down).");
 	prop::DragFloat("Look Speed", &ioComponent.lookSpeed, 0.05f, 0.05f, 10.f, "%.2f");
 	fieldTooltip("Rotation speed in radians per second for the arrow-key look controls.");
+}
+
+void setOpenAssetHandler(std::function<void(const std::filesystem::path&)> iHandler) {
+	openAssetHandler() = std::move(iHandler);
+}
+
+auto openAsset(const std::filesystem::path& iPath) -> bool {
+	if (iPath.empty() || !openAssetHandler())
+		return false;
+	openAssetHandler()(iPath);
+	return true;
 }
 
 }// namespace owl::gui::component

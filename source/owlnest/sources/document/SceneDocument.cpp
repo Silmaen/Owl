@@ -29,6 +29,7 @@
 
 namespace owl::nest {
 
+
 SceneDocument::SceneDocument() = default;
 
 auto SceneDocument::title() const -> std::string {

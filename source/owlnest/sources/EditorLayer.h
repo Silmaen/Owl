@@ -488,6 +488,13 @@ public:
 
 	/**
 	 * @brief
+	 *  Open an asset named by an inspector field (relative to an asset folder) in its editor.
+	 * @param[in] iPath The path stored in the component.
+	 */
+	void openAssetFromInspector(const std::filesystem::path& iPath);
+
+	/**
+	 * @brief
 	 *  Route a Content Browser file drop to `openScene` / `openCodeFile` / prefab instantiation.
 	 */
 	void handleContentBrowserDrop(const std::filesystem::path& iRelativePath);

@@ -158,9 +158,18 @@ void StatusBar::onImGuiRender(const StatusInfo& iInfo) {
 	}
 	if (!iInfo.backend.empty())
 		label(iInfo.device.empty() ? iInfo.backend : std::format("{}{}{}", iInfo.backend, g_separator, iInfo.device));
-	if (iInfo.previews.has_value())
-		label(std::format("{} Generating previews {}/{}", gui::icon::image, iInfo.previews->first,
-						  iInfo.previews->second));
+	if (iInfo.previews.has_value() && iInfo.previews->second > 0) {
+		// A bar filled with the ready share, after its caption.
+		const float barWidth = ImGui::GetFontSize() * 6.f;
+		const float barHeight = std::max(4.f, std::round(textHeight * 0.35f));
+		right -= barWidth + spacing;
+		const float barY = std::floor(origin.y + (height - barHeight) * 0.5f);
+		const float ratio = static_cast<float>(iInfo.previews->first) / static_cast<float>(iInfo.previews->second);
+		draw->AddRectFilled({right, barY}, {right + barWidth, barY + barHeight}, toU32(theme.surface3), barHeight);
+		draw->AddRectFilled({right, barY}, {right + std::max(barHeight, barWidth * ratio), barY + barHeight},
+							toU32(theme.accent), barHeight);
+		label(std::format("{} Previews {}/{}", gui::icon::image, iInfo.previews->first, iInfo.previews->second));
+	}
 	if (iInfo.secondsSinceAutosave.has_value())
 		label(std::format("{} Autosaved {}", gui::icon::save, formatElapsed(*iInfo.secondsSinceAutosave)));
 

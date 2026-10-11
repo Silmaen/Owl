@@ -69,6 +69,13 @@ public:
 
 	/**
 	 * @brief
+	 *  Asset root shown, the base of the paths the browser drags.
+	 * @return The root folder.
+	 */
+	[[nodiscard]] auto getRootPath() const -> const std::filesystem::path& { return m_currentRootPath; }
+
+	/**
+	 * @brief
 	 *  Detach the content browser from the editor.
 	 */
 	void detach();

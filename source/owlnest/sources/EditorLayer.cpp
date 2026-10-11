@@ -21,6 +21,7 @@
 #include <gui/FontPreviewCache.h>
 #include <gui/IconBank.h>
 #include <gui/IconFont.h>
+#include <gui/component/render.h>
 #include <gui/utils.h>
 #include <physics/PhysicCommand.h>
 #include <platform/AtomicFile.h>
@@ -167,19 +168,37 @@ void EditorLayer::handleContentBrowserDrop(const std::filesystem::path& iRelativ
 		OWL_CORE_WARN("Could not load {}: unsupported file type.", relString)
 		return;
 	}
-	if (kind == AssetKind::Prefab) {
-		for (const auto& [title, assetsPath]: app::Application::get().getAssetDirectories()) {
-			if (const auto full = assetsPath / iRelativePath; exists(full)) {
-				instantiatePrefab(full, relString);
-				break;
-			}
-		}
+	// The path is relative to the root the browser shows: another asset folder may hold a file of the same name.
+	std::filesystem::path full;
+	if (const auto inBrowsed = m_contentBrowser.getRootPath() / iRelativePath; exists(inBrowsed))
+		full = inBrowsed;
+	for (const auto& [title, assetsPath]: app::Application::get().getAssetDirectories()) {
+		if (!full.empty())
+			break;
+		if (const auto candidate = assetsPath / iRelativePath; exists(candidate))
+			full = candidate;
+	}
+	if (full.empty()) {
+		OWL_CORE_WARN("Could not resolve dropped file: {}.", relString)
 		return;
 	}
-	if (const auto full = renderer::Renderer::getTextureLibrary().find(relString); full.has_value())
-		openAssetFile(full.value());
-	else if (kind == AssetKind::Code)
-		OWL_CORE_WARN("Could not resolve dropped file: {}.", relString)
+	if (kind == AssetKind::Prefab)
+		instantiatePrefab(full, relString);
+	else
+		requestDeferredOpen(full);
+}
+
+void EditorLayer::openAssetFromInspector(const std::filesystem::path& iPath) {
+	for (const auto& [title, assetsPath]: app::Application::get().getAssetDirectories()) {
+		if (const auto candidate = assetsPath / iPath; exists(candidate)) {
+			requestDeferredOpen(candidate);
+			return;
+		}
+	}
+	if (exists(iPath))
+		requestDeferredOpen(iPath);
+	else
+		OWL_WARN("EditorLayer: Cannot open {}, it is in no asset folder.", iPath.string())
 }
 
 void EditorLayer::closeDocument(const core::UUID iId) {
@@ -466,6 +485,8 @@ void EditorLayer::onAttach() {
 	}
 
 	m_contentBrowser.attach();
+	gui::component::setOpenAssetHandler(
+			[this](const std::filesystem::path& iPath) -> void { openAssetFromInspector(iPath); });
 	m_contentBrowser.setSceneOpenCallback([this](const std::filesystem::path& iPath) -> void { openScene(iPath); });
 	m_contentBrowser.setCodeOpenCallback([this](const std::filesystem::path& iPath) -> void { openCodeFile(iPath); });
 	m_contentBrowser.setNodeGraphOpenCallback(
@@ -510,6 +531,7 @@ void EditorLayer::onDetach() {
 
 	// Free the static IconBank's atlas while the device is still valid, else it outlives vkDestroyDevice and leaks.
 	gui::IconBank::instance().clear();
+	gui::component::setOpenAssetHandler({});
 }
 
 void EditorLayer::onUpdate(const core::Timestep& iTimeStep) {
@@ -694,7 +716,12 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 	}
 	m_settingsPanel.onImGuiRender(m_settings, m_actionRegistry);
 	m_helpPanel.onImGuiRender(iTimeStep);
-	m_voxelPalette.onImGuiRender(m_voxelBrush);
+	{
+		// The palette paints the edited scene only: not while it plays, nor behind another document.
+		const auto* sceneDoc = activeSceneDocument();
+		m_voxelPalette.onImGuiRender(m_voxelBrush, sceneDoc != nullptr && sceneDoc == m_documents.getActive() &&
+														   sceneDoc->state() == SceneDocument::State::Edit);
+	}
 	m_asyncProgress.onImGuiRender();
 
 	renderBackstage();

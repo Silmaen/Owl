@@ -67,7 +67,7 @@ void NodeGraphDocument::onEvent([[maybe_unused]] event::Event& ioEvent) {
 }
 
 void NodeGraphDocument::onImGuiRender() {
-	const auto winTitle = std::format("{}##nodegraph_{:x}", title(), static_cast<uint64_t>(id()));
+	const auto winTitle = documentWindowTitle(DocumentType::NodeGraph, title(), static_cast<uint64_t>(id()));
 
 	ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse;
 	if (isDirty())

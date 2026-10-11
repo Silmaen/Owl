@@ -59,8 +59,7 @@ auto makeWindowTitle(const SceneDocument& iDoc, const EditorLayer* iParent) -> s
 		base = iParent->getDocumentManager().displayTitleFor(&iDoc);
 	if (base.empty())
 		base = iDoc.title();
-	return std::format("{}##scene_{:x}", base.empty() ? std::string{"Untitled"} : base,
-					   static_cast<uint64_t>(iDoc.id()));
+	return documentWindowTitle(DocumentType::Scene, base, static_cast<uint64_t>(iDoc.id()));
 }
 
 struct TilemapSnapInfo {
@@ -120,7 +119,7 @@ Viewport::~Viewport() = default;
 void Viewport::setDocument(SceneDocument* iDocument) {
 	mp_document = iDocument;
 	if (iDocument != nullptr) {
-		// Stable ImGui id (after ##) so ImGui preserves dock state across renames.
+		// Stable ImGui id (after ###) so ImGui preserves dock state across renames.
 		m_name = makeWindowTitle(*iDocument, m_parent);
 	} else {
 		m_name = "SceneView";
