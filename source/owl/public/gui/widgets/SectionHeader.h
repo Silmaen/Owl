@@ -35,7 +35,8 @@ struct SectionHeaderResult {
  *  Collapsible header of an inspector section or component: chevron, icon, title in the section style, and a menu
  *  button at the right end. Neutral surface colour, so headers never read as a selection.
  * @param[in] iTitle Title, also used as the ImGui identifier of the section.
- * @param[in] iIconName IconBank icon drawn before the title, or null.
+ * @param[in] iIconName IconBank icon, or `gui::icon` glyph (drawn in the accent colour), shown before the title, or
+ *  null.
  * @param[in] iWithMenu Whether to draw the menu button.
  * @param[in] iDefaultOpen Expanded the first time it is shown.
  * @return The open state and the clicks of this frame.

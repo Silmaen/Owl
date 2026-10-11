@@ -450,7 +450,9 @@ void UiLayer::initializeDocking() const {
 	static constexpr bool optFullScreenPersistent = true;
 	constexpr bool optFullScreen = optFullScreenPersistent;
 	static constexpr ImGuiDockNodeFlags dockSpaceFlags = ImGuiDockNodeFlags_None;
-	ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoDocking;
+	// The host window holds the top bar, the dock space and the bottom bar: it never scrolls.
+	ImGuiWindowFlags windowFlags =
+			ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
 	if (optFullScreen) {
 		const ImGuiViewport* viewport = ImGui::GetMainViewport();
 		ImGui::SetNextWindowPos(viewport->Pos);
@@ -481,7 +483,8 @@ void UiLayer::initializeDocking() const {
 		g_dockSpaceId = dockSpaceId;
 		if (m_dockLayoutCallback)
 			m_dockLayoutCallback(dockSpaceId);
-		const float bottomBarHeight = m_bottomBarCallback ? ImGui::GetFrameHeightWithSpacing() : 0.0f;
+		const float bottomBarHeight =
+				m_bottomBarCallback ? ImGui::GetFrameHeightWithSpacing() + ImGui::GetStyle().ItemSpacing.y : 0.0f;
 		ImGui::DockSpace(dockSpaceId, ImVec2(0.0f, -bottomBarHeight), dockSpaceFlags);
 	} else {
 		OWL_CORE_WARN("Docking is not enabled.")

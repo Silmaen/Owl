@@ -13,6 +13,7 @@
 #include <gui/utils.h>
 #include <gui/widgets/AssetField.h>
 #include <gui/widgets/CurveEditor.h>
+#include <gui/widgets/SectionHeader.h>
 #include <gui/widgets/Toggle.h>
 
 OWL_DIAG_PUSH
@@ -202,9 +203,8 @@ void AnimationDocument::renderProperties() {
 	ImGui::Spacing();
 	ImGui::Text("Current Frame: %u", m_currentFrame);
 
-	if (ImGui::CollapsingHeader("Speed Curve")) {
+	if (gui::widgets::subHeader("Speed Curve"))
 		gui::widgets::curveEditor("##animSpeedCurve", m_clip.speedCurve);
-	}
 }
 
 void AnimationDocument::renderPreview() {

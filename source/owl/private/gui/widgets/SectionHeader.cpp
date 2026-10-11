@@ -38,6 +38,9 @@ struct OpenSection {
 
 thread_local std::vector<OpenSection> g_openSections;
 
+// Lucide code points sit in the private use area, whose UTF-8 encoding starts with this byte or above.
+constexpr unsigned char g_glyphLeadByte = 0xee;
+
 }// namespace
 
 auto sectionHeader(const char* iTitle, const char* iIconName, const bool iWithMenu, const bool iDefaultOpen)
@@ -81,7 +84,12 @@ auto sectionHeader(const char* iTitle, const char* iIconName, const bool iWithMe
 	}
 	float x = std::floor(min.x + ImGui::GetTreeNodeToLabelSpacing());
 	const float iconSize = ImGui::GetFontSize();
-	if (iIconName != nullptr) {
+	if (iIconName != nullptr && static_cast<unsigned char>(iIconName[0]) >= g_glyphLeadByte) {
+		const ImVec2 glyphSize = ImGui::CalcTextSize(iIconName);
+		draw->AddText({x, std::floor(min.y + (height - glyphSize.y) * 0.5f)}, ImGui::GetColorU32(vec(theme.accent)),
+					  iIconName);
+		x += iconSize + ImGui::GetStyle().ItemInnerSpacing.x;
+	} else if (iIconName != nullptr) {
 		if (const auto icon = IconBank::instance().getIcon(iIconName, iconSize); icon.has_value()) {
 			const float y = std::floor(min.y + (height - iconSize) * 0.5f);
 			draw->AddImage(static_cast<ImTextureID>(icon->textureId), {x, y}, {x + iconSize, y + iconSize},

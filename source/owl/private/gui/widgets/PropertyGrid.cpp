@@ -18,11 +18,15 @@
 #include "gui/widgets/Tooltip.h"
 
 #include <imgui.h>
+#include <imgui_stdlib.h>
 
+#include <algorithm>
 #include <array>
 #include <cfloat>
 #include <cmath>
 #include <span>
+#include <string>
+#include <tuple>
 
 namespace owl::gui::widgets {
 
@@ -147,6 +151,25 @@ auto propertyBool(const char* iLabel, bool& ioValue, const bool iDefault, const 
 		ioValue = iDefault;
 		changed = true;
 	}
+	return changed;
+}
+
+auto propertyInt(const char* iLabel, int& ioValue, const int iDefault, const int iMin, const int iMax,
+				 const char* iFormat, const char* iTooltip) -> bool {
+	propertyLabel(iLabel, iTooltip);
+	bool changed = ImGui::DragInt("##value", &ioValue, 1.f, iMin, iMax, iFormat, ImGuiSliderFlags_AlwaysClamp);
+	ioValue = std::clamp(ioValue, iMin, iMax);
+	if (propertyReset(ioValue != iDefault)) {
+		ioValue = iDefault;
+		changed = true;
+	}
+	return changed;
+}
+
+auto propertyText(const char* iLabel, std::string& ioValue, const char* iHint, const char* iTooltip) -> bool {
+	propertyLabel(iLabel, iTooltip);
+	const bool changed = ImGui::InputTextWithHint("##value", iHint != nullptr ? iHint : "", &ioValue);
+	std::ignore = propertyReset(false);
 	return changed;
 }
 

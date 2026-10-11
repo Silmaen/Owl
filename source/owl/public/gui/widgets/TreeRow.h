@@ -57,9 +57,9 @@ struct TreeRowResult {
 
 /**
  * @brief
- *  A 24-unit row of a tree (Hierarchy, folders): a thin chevron, an icon, the label and a muted count; hover one
- *  surface step lighter, selection in the faint accent with a bar on the left. The row is the last ImGui item, so
- *  drag and drop and context menus attach to it as to a tree node.
+ *  A row of a tree (Hierarchy, folders) in the label text size: a thin chevron, an icon, the label and a muted
+ *  count; hover one surface step lighter, selection in the faint accent with a bar on the left. The row is the last
+ *  ImGui item, so drag and drop and context menus attach to it as to a tree node.
  * @param[in] iId Unique ImGui identifier of the row.
  * @param[in] iSpec What to show.
  * @return The open state and the clicks of this frame.

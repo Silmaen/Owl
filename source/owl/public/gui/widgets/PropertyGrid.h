@@ -12,6 +12,7 @@
 #include "math/vectors.h"
 
 #include <span>
+#include <string>
 
 namespace owl::gui::widgets {
 
@@ -97,5 +98,32 @@ OWL_API auto propertyVec3(const char* iLabel, math::vec3& ioValue, const math::v
  * @return True if the value changed.
  */
 OWL_API auto propertyBool(const char* iLabel, bool& ioValue, bool iDefault, const char* iTooltip = nullptr) -> bool;
+
+/**
+ * @brief
+ *  Property row holding a draggable integer kept in a range, with reset to its default.
+ * @param[in] iLabel The label.
+ * @param[in,out] ioValue The value.
+ * @param[in] iDefault The value the reset button restores.
+ * @param[in] iMin Smallest value.
+ * @param[in] iMax Largest value.
+ * @param[in] iFormat Number format.
+ * @param[in] iTooltip Help shown on the label, or null.
+ * @return True if the value changed.
+ */
+OWL_API auto propertyInt(const char* iLabel, int& ioValue, int iDefault, int iMin, int iMax, const char* iFormat = "%d",
+						 const char* iTooltip = nullptr) -> bool;
+
+/**
+ * @brief
+ *  Property row holding a single-line text field.
+ * @param[in] iLabel The label.
+ * @param[in,out] ioValue The text.
+ * @param[in] iHint Text shown while the field is empty, or null.
+ * @param[in] iTooltip Help shown on the label, or null.
+ * @return True if the text changed.
+ */
+OWL_API auto propertyText(const char* iLabel, std::string& ioValue, const char* iHint = nullptr,
+						  const char* iTooltip = nullptr) -> bool;
 
 }// namespace owl::gui::widgets

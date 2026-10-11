@@ -31,6 +31,7 @@ auto orDefault(const math::vec4& iColor, const math::vec4& iFallback) -> math::v
 
 auto treeRow(const char* iId, const TreeRowSpec& iSpec) -> TreeRowResult {
 	const auto& theme = UiLayer::getTheme();
+	UiLayer::pushTextStyle(TextStyle::Label);
 	const float fontSize = ImGui::GetFontSize();
 	const float height = std::round(fontSize * 1.7f);
 	const float x0 = ImGui::GetCursorScreenPos().x;
@@ -96,6 +97,7 @@ auto treeRow(const char* iId, const TreeRowSpec& iSpec) -> TreeRowResult {
 		draw->AddText({x, captionY}, ImGui::GetColorU32(vec(theme.textDisabled)), iSpec.trailing);
 		UiLayer::popTextStyle();
 	}
+	UiLayer::popTextStyle();
 	return result;
 }
 

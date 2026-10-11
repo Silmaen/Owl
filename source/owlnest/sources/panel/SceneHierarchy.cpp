@@ -478,8 +478,9 @@ void SceneHierarchy::drawEntityNode(const scene::Entity& iEntity) {
 		ImGui::EndDragDropTarget();
 	}
 
-	// Visibility switches on the right: shown on hover, or kept while something is hidden.
-	if (row.hovered || !editorVisible || !gameVisible) {
+	// Visibility switches on the right of every row.
+	{
+		gui::UiLayer::pushTextStyle(gui::TextStyle::Label);
 		const ImVec2 cursor = ImGui::GetCursorScreenPos();
 		const float side = row.max.y() - row.min.y();
 		const auto toggleButton = [&](const char* iId, const char* iGlyph, bool& ioFlag, const char* iTip,
@@ -503,6 +504,7 @@ void SceneHierarchy::drawEntityNode(const scene::Entity& iEntity) {
 		toggleButton("##gameVis", gameVisible ? gui::icon::video : gui::icon::videoOff, gameVisible,
 					 "Visible in the game", right - side);
 		ImGui::SetCursorScreenPos(cursor);
+		gui::UiLayer::popTextStyle();
 	}
 
 	drawEntityContextMenu(iEntity, hasChildren, parentId);

@@ -9,6 +9,11 @@
 #include "panel/CommandPalette.h"
 #include "testHelper.h"
 
+#include <core/Log.h>
+#include <gui/UiLayer.h>
+
+#include <imgui.h>
+
 #include <gtest/gtest.h>
 
 #include <cstddef>
@@ -90,6 +95,28 @@ TEST(CommandPalette, OpensOnADoubleShift) {
 	palette.onOtherInput();
 	EXPECT_FALSE(palette.onShiftPressed(2.1));
 	EXPECT_TRUE(palette.onShiftPressed(2.3));
+}
+
+TEST(CommandPalette, PollOpensOnTwoShiftTapsWithTheirModifier) {
+	owl::core::Log::init(owl::core::Log::Level::Off);
+	owl::gui::UiLayer layer;
+	layer.disableApp();
+	layer.onAttach();
+	ImGui::GetIO().IniFilename = nullptr;
+	CommandPalette palette;
+	// The GLFW backend sends the modifier along with the key, as here.
+	for (int tap = 0; tap < 2; ++tap) {
+		for (const bool down: {true, false}) {
+			ImGui::GetIO().AddKeyEvent(ImGuiMod_Shift, down);
+			ImGui::GetIO().AddKeyEvent(ImGuiKey_LeftShift, down);
+			layer.begin();
+			palette.pollDoubleShift();
+			layer.end();
+		}
+	}
+	EXPECT_TRUE(palette.isOpen());
+	layer.onDetach();
+	owl::core::Log::invalidate();
 }
 
 TEST(CommandPalette, ReportsEachOpeningOnce) {

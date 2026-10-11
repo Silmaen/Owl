@@ -11,6 +11,8 @@
 #include <app/Application.h>
 #include <core/Log.h>
 #include <core/Macros.h>
+#include <gui/IconFont.h>
+#include <gui/widgets/TreeRow.h>
 
 #include <yaml-cpp/yaml.h>
 
@@ -221,21 +223,24 @@ void HelpPanel::onImGuiRender(const core::Timestep& iTimeStep) {
 				continue;
 			if (page.category != currentCategory) {
 				if (!currentCategory.empty() && categoryOpen)
-
-					ImGui::TreePop();
+					gui::widgets::endTreeRow();
 				currentCategory = page.category;
-				categoryOpen = ImGui::TreeNodeEx(currentCategory.c_str(), ImGuiTreeNodeFlags_DefaultOpen);
+				categoryOpen = gui::widgets::treeRow(currentCategory.c_str(), {.label = currentCategory.c_str(),
+																			   .glyph = gui::icon::bookOpen,
+																			   .hasChildren = true,
+																			   .defaultOpen = true})
+									   .open;
 			}
 			if (!categoryOpen)
 				continue;
-			const bool selected = page.id == m_currentPageId;
-			if (ImGui::Selectable(page.title.c_str(), selected))
-
+			if (gui::widgets::treeRow(
+						page.id.c_str(),
+						{.label = page.title.c_str(), .glyph = gui::icon::file, .selected = page.id == m_currentPageId})
+						.clicked)
 				navigateTo(page.id);
 		}
 		if (categoryOpen)
-
-			ImGui::TreePop();
+			gui::widgets::endTreeRow();
 	}
 
 	ImGui::EndChild();

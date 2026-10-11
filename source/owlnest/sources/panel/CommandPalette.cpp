@@ -159,7 +159,8 @@ void CommandPalette::pollDoubleShift() {
 	bool other = ImGui::IsAnyMouseDown();
 	for (int key = ImGuiKey_NamedKey_BEGIN; key < ImGuiKey_NamedKey_END && !other; ++key) {
 		const auto named = static_cast<ImGuiKey>(key);
-		if (named == ImGuiKey_LeftShift || named == ImGuiKey_RightShift || named == ImGuiMod_Shift)
+		// The backend also reports Shift as the modifier key: it must not cancel the tap.
+		if (named == ImGuiKey_LeftShift || named == ImGuiKey_RightShift || named == ImGuiKey_ReservedForModShift)
 			continue;
 		other = ImGui::IsKeyPressed(named, false);
 	}

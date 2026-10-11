@@ -98,13 +98,7 @@ void drawButtonIcon(const std::string& iIconName, const ImVec2& iCenter, const f
 										 vec(info->uv1));
 }
 
-void drawCaret(const ImVec2& iCenter, const float iSize) {
-	const ImU32 col = toU32(UiLayer::getTheme().textMuted);
-	const float h = iSize * 0.5f;
-	ImGui::GetWindowDrawList()->AddTriangleFilled({iCenter.x - h, iCenter.y - h * 0.6f},
-												  {iCenter.x + h, iCenter.y - h * 0.6f},
-												  {iCenter.x, iCenter.y + h * 0.6f}, col);
-}
+void drawCaret(const ImVec2& iCenter, const float iSize) { drawButtonIcon(icon::chevronDown, iCenter, iSize * 1.4f); }
 
 void showTooltip(const Ribbon::Button& iButton) {
 	if (iButton.tooltip.empty() && iButton.shortcut.empty())
@@ -139,7 +133,7 @@ auto renderLargeButton(const Ribbon::Button& iButton) -> bool {
 	drawButtonBackground(iButton);
 	const float iconSize = scaled(g_largeIconSize);
 	drawButtonIcon(iButton.iconName, {rectMin.x + width * 0.5f, rectMin.y + scaled(g_largeInnerPadY) + iconSize * 0.5f},
-				   iconSize, UiLayer::getTheme().text);
+				   iconSize, UiLayer::getTheme().accent);
 	const ImVec2 textPos{std::floor(rectMin.x + (width - labelSize.x) * 0.5f),
 						 rectMax.y - labelSize.y - scaled(g_largeInnerPadY)};
 	ImGui::GetWindowDrawList()->AddText(textPos, ImGui::GetColorU32(ImGuiCol_Text), iButton.label.c_str());
@@ -165,7 +159,7 @@ auto renderSmallButton(const Ribbon::Button& iButton, const float iColumnWidth, 
 	const float cy = (rectMin.y + rectMax.y) * 0.5f;
 	const float iconSize = scaled(g_smallIconSize);
 	const float pad = scaled(g_smallLabelPadX);
-	drawButtonIcon(iButton.iconName, {rectMin.x + pad + iconSize * 0.5f, cy}, iconSize);
+	drawButtonIcon(iButton.iconName, {rectMin.x + pad + iconSize * 0.5f, cy}, iconSize, UiLayer::getTheme().accent);
 	const auto labelSize = ImGui::CalcTextSize(iButton.label.c_str());
 	const ImVec2 textPos{rectMin.x + pad + iconSize + pad, std::floor(cy - labelSize.y * 0.5f)};
 	ImGui::GetWindowDrawList()->AddText(textPos, ImGui::GetColorU32(ImGuiCol_Text), iButton.label.c_str());

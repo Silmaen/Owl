@@ -271,7 +271,8 @@ docker/run.sh --platform=x11 --gpu=nvidia output/build/linux-clang-release/bin/O
 
 - `docker/run.sh --gui` mounts the Wayland socket, the X11 socket and `/dev/dri`; `--gpu=intel|nvidia` pins Vulkan,
   EGL and GLX to one GPU of a hybrid laptop (`nvidia` turns PRIME render offload on), `--platform=` sets
-  `OWL_WINDOW_PLATFORM`.
+  `OWL_WINDOW_PLATFORM`. It also lends the host cursor themes (read-only) with `XCURSOR_THEME` / `XCURSOR_SIZE`, so
+  the window shows the desktop cursor.
 - Under Wayland the editor keeps detached panels inside its main window (GLFW cannot position windows); use X11 for
   native detached windows.
 - Under Wayland the icon comes from a hidden desktop entry written to `~/.local/share/applications/<app_id>.desktop`

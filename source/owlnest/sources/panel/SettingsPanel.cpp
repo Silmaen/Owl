@@ -11,6 +11,7 @@
 #include "../EditorResources.h"
 
 #include <gui/IconBank.h>
+#include <gui/IconFont.h>
 #include <gui/widgets/Combo.h>
 #include <gui/widgets/PropertyGrid.h>
 
@@ -45,19 +46,19 @@ void SettingsPanel::onImGuiRender(EditorSettings& ioSettings, ActionRegistry& io
 		return;
 	}
 	if (ImGui::BeginTabBar("##settingsTabs")) {
-		if (ImGui::BeginTabItem("General")) {
+		if (ImGui::BeginTabItem(std::format("{}  General###general", gui::icon::settings2).c_str())) {
 			renderGeneralSection(ioSettings);
 			ImGui::EndTabItem();
 		}
-		if (ImGui::BeginTabItem("Gizmo Snap")) {
+		if (ImGui::BeginTabItem(std::format("{}  Gizmo Snap###snap", gui::icon::magnet).c_str())) {
 			renderSnapSection(ioSettings);
 			ImGui::EndTabItem();
 		}
-		if (ImGui::BeginTabItem("Appearance")) {
+		if (ImGui::BeginTabItem(std::format("{}  Appearance###appearance", gui::icon::paintbrush).c_str())) {
 			renderThemeSection(ioSettings);
 			ImGui::EndTabItem();
 		}
-		if (ImGui::BeginTabItem("Shortcuts")) {
+		if (ImGui::BeginTabItem(std::format("{}  Shortcuts###shortcuts", gui::icon::keyboard).c_str())) {
 			renderKeybindingsSection(ioSettings, ioRegistry);
 			ImGui::EndTabItem();
 		}

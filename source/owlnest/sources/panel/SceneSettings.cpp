@@ -10,8 +10,13 @@
 
 #include "../commands/SceneSettingsCommands.h"
 
+#include <gui/IconFont.h>
 #include <gui/widgets/Combo.h>
+#include <gui/widgets/IconButton.h>
+#include <gui/widgets/PropertyGrid.h>
+#include <gui/widgets/SectionHeader.h>
 #include <gui/widgets/Toggle.h>
+#include <gui/widgets/Tooltip.h>
 
 #include <imgui.h>
 
@@ -19,6 +24,9 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <string>
+#include <tuple>
+#include <utility>
 #include <vector>
 
 namespace owl::nest::panel {
@@ -66,13 +74,17 @@ auto SceneSettings::renderLayerOverridesEditor(const std::string& iTypeKey, YAML
 	bool changed = false;
 	if (!ioOverrides || !ioOverrides.IsMap())
 		ioOverrides = YAML::Node{YAML::NodeType::Map};
-
+	if (iTypeKey != "Renderer2D" && iTypeKey != "RendererRaycast") {
+		ImGui::TextDisabled("No editable override for the type '%s'.", iTypeKey.c_str());
+		return false;
+	}
+	if (!gui::widgets::beginProperties("##overrides"))
+		return false;
 	if (iTypeKey == "Renderer2D") {
 		const std::string space =
 				ioOverrides["Space"] ? ioOverrides["Space"].as<std::string>("World") : std::string{"World"};
-		const char* preview = space.c_str();
-		ImGui::SetNextItemWidth(160.f);
-		if (gui::widgets::beginCombo("Space", preview)) {
+		gui::widgets::propertyLabel("Space", "World draws with the scene camera, Screen in viewport pixels.");
+		if (gui::widgets::beginCombo("##space", space.c_str())) {
 			for (const auto* candidate: {"World", "Screen"}) {
 				const bool selected = (space == candidate);
 				if (ImGui::Selectable(candidate, selected) && !selected) {
@@ -84,42 +96,38 @@ auto SceneSettings::renderLayerOverridesEditor(const std::string& iTypeKey, YAML
 			}
 			ImGui::EndCombo();
 		}
-	} else if (iTypeKey == "RendererRaycast") {
+		std::ignore = gui::widgets::propertyReset(false);
+	} else {
 		float fov = ioOverrides["Fov"] ? ioOverrides["Fov"].as<float>(75.f) : 75.f;
-		ImGui::SetNextItemWidth(160.f);
-		if (ImGui::DragFloat("Fov", &fov, 0.5f, 30.f, 120.f, "%.1f deg")) {
-			ioOverrides["Fov"] = fov;
+		if (gui::widgets::propertyFloat("Field of View", fov, 75.f, 0.5f, "%.1f deg")) {
+			ioOverrides["Fov"] = std::clamp(fov, 30.f, 120.f);
 			changed = true;
 		}
 		float maxDist = ioOverrides["MaxDistance"] ? ioOverrides["MaxDistance"].as<float>(32.f) : 32.f;
-		ImGui::SetNextItemWidth(160.f);
-		if (ImGui::DragFloat("MaxDistance", &maxDist, 0.5f, 1.f, 256.f, "%.1f cells")) {
-			ioOverrides["MaxDistance"] = maxDist;
+		if (gui::widgets::propertyFloat("Max Distance", maxDist, 32.f, 0.5f, "%.1f cells")) {
+			ioOverrides["MaxDistance"] = std::clamp(maxDist, 1.f, 256.f);
 			changed = true;
 		}
 		int numRays = ioOverrides["NumRays"] ? ioOverrides["NumRays"].as<int>(0) : 0;
-		ImGui::SetNextItemWidth(160.f);
-		if (ImGui::DragInt("NumRays", &numRays, 1.f, 0, 4096, "%d (0 = viewport width)")) {
+		if (gui::widgets::propertyInt("Rays", numRays, 0, 0, 4096, numRays == 0 ? "viewport width" : "%d",
+									  "Rays cast per frame; 0 casts one per viewport column.")) {
 			ioOverrides["NumRays"] = numRays;
 			changed = true;
 		}
-		math::vec4 ceiling = readColor(ioOverrides, "CeilingColor", {0.18f, 0.20f, 0.30f, 1.f});
-		std::array<float, 4> ceilingArr{ceiling.r(), ceiling.g(), ceiling.b(), ceiling.a()};
-		ImGui::SetNextItemWidth(220.f);
-		if (ImGui::ColorEdit4("CeilingColor", ceilingArr.data())) {
-			writeColor(ioOverrides, "CeilingColor", {ceilingArr[0], ceilingArr[1], ceilingArr[2], ceilingArr[3]});
-			changed = true;
+		for (const auto& [key, label, fallback]:
+			 {std::tuple{"CeilingColor", "Ceiling", math::vec4{0.18f, 0.20f, 0.30f, 1.f}},
+			  std::tuple{"FloorColor", "Floor", math::vec4{0.20f, 0.16f, 0.12f, 1.f}}}) {
+			const math::vec4 color = readColor(ioOverrides, key, fallback);
+			std::array<float, 4> values{color.r(), color.g(), color.b(), color.a()};
+			gui::widgets::propertyLabel(label);
+			if (ImGui::ColorEdit4("##color", values.data())) {
+				writeColor(ioOverrides, key, {values[0], values[1], values[2], values[3]});
+				changed = true;
+			}
+			std::ignore = gui::widgets::propertyReset(false);
 		}
-		math::vec4 floor = readColor(ioOverrides, "FloorColor", {0.20f, 0.16f, 0.12f, 1.f});
-		std::array<float, 4> floorArr{floor.r(), floor.g(), floor.b(), floor.a()};
-		ImGui::SetNextItemWidth(220.f);
-		if (ImGui::ColorEdit4("FloorColor", floorArr.data())) {
-			writeColor(ioOverrides, "FloorColor", {floorArr[0], floorArr[1], floorArr[2], floorArr[3]});
-			changed = true;
-		}
-	} else {
-		ImGui::TextDisabled("(no editable overrides for type '%s')", iTypeKey.c_str());
 	}
+	gui::widgets::endProperties();
 	return changed;
 }
 
@@ -137,39 +145,39 @@ auto SceneSettings::renderRendererStackSection() -> bool {
 		auto& entry = sceneCfg.entries[static_cast<size_t>(i)];
 		const auto* projectEntry = projectCfg.find(entry.name);
 		ImGui::PushID(i);
-		ImGui::AlignTextToFramePadding();
-		ImGui::Text("%s", entry.name.c_str());
-		ImGui::SameLine();
-		ImGui::TextDisabled("[%s]", projectEntry != nullptr ? projectEntry->typeKey.c_str() : "?");
-		ImGui::SameLine();
 		bool enabled = entry.enabled;
-		if (gui::widgets::checkbox("Enabled", &enabled)) {
+		if (gui::widgets::toggle("##enabled", &enabled)) {
 			entry.enabled = enabled;
 			changed = true;
 		}
+		gui::widgets::itemTooltip("Enabled", nullptr, "Draw this layer in the scene.");
 		ImGui::SameLine();
-		ImGui::BeginDisabled(i == 0);
-		if (ImGui::ArrowButton("##up", ImGuiDir_Up))
+		ImGui::AlignTextToFramePadding();
+		ImGui::TextUnformatted(entry.name.c_str());
+		ImGui::SameLine();
+		ImGui::TextDisabled("%s", projectEntry != nullptr ? projectEntry->typeKey.c_str() : "?");
+		const float side = ImGui::GetFrameHeight();
+		const float spacing = ImGui::GetStyle().ItemSpacing.x;
+		ImGui::SameLine(std::max(ImGui::GetCursorPosX(), ImGui::GetContentRegionMax().x - side * 3.f - spacing * 2.f));
+		if (gui::widgets::iconButton("##up", {.glyph = gui::icon::chevronUp, .tooltip = "Move up", .disabled = i == 0}))
 			moveUp = i;
-		ImGui::EndDisabled();
 		ImGui::SameLine();
-		ImGui::BeginDisabled(i + 1 == static_cast<int>(sceneCfg.entries.size()));
-		if (ImGui::ArrowButton("##down", ImGuiDir_Down))
+		if (gui::widgets::iconButton("##down", {.glyph = gui::icon::chevronDown,
+												.tooltip = "Move down",
+												.disabled = i + 1 == static_cast<int>(sceneCfg.entries.size())}))
 			moveDown = i;
-		ImGui::EndDisabled();
 		ImGui::SameLine();
-		if (ImGui::SmallButton("Detach"))
+		if (gui::widgets::iconButton("##detach", {.glyph = gui::icon::unlink,
+												  .tooltip = "Detach",
+												  .description = "Remove the scene override: the layer follows the "
+																 "project again."}))
 			detachAt = i;
-		if (projectEntry != nullptr) {
-			ImGui::Indent();
-			if (ImGui::CollapsingHeader("Overrides")) {
-				auto overrides = entry.overrides.empty() ? YAML::Node{} : YAML::Load(entry.overrides);
-				if (renderLayerOverridesEditor(projectEntry->typeKey, overrides)) {
-					entry.overrides = YAML::Dump(overrides);
-					changed = true;
-				}
+		if (projectEntry != nullptr && gui::widgets::subHeader("Overrides")) {
+			auto overrides = entry.overrides.empty() ? YAML::Node{} : YAML::Load(entry.overrides);
+			if (renderLayerOverridesEditor(projectEntry->typeKey, overrides)) {
+				entry.overrides = YAML::Dump(overrides);
+				changed = true;
 			}
-			ImGui::Unindent();
 		}
 		ImGui::PopID();
 	}
@@ -204,12 +212,12 @@ auto SceneSettings::renderAddLayerSection() -> bool {
 	if (missing.empty())
 		return false;
 
-	ImGui::Separator();
-	ImGui::TextDisabled("Add scene-level override for:");
+	ImGui::Spacing();
+	ImGui::TextDisabled("Add a scene override for:");
 	bool added = false;
 	for (const auto* entry: missing) {
 		ImGui::PushID(entry->name.c_str());
-		if (ImGui::SmallButton("+")) {
+		if (gui::widgets::iconButton("##add", {.glyph = gui::icon::plus, .tooltip = "Add a scene override"})) {
 			renderer::EnabledRenderersConfig::Entry newEntry;
 			newEntry.name = entry->name;
 			newEntry.enabled = true;
@@ -217,49 +225,48 @@ auto SceneSettings::renderAddLayerSection() -> bool {
 			added = true;
 		}
 		ImGui::SameLine();
-		ImGui::Text("%s", entry->name.c_str());
+		ImGui::AlignTextToFramePadding();
+		ImGui::TextUnformatted(entry->name.c_str());
 		ImGui::SameLine();
-		ImGui::TextDisabled("[%s]", entry->typeKey.c_str());
+		ImGui::TextDisabled("%s", entry->typeKey.c_str());
 		ImGui::PopID();
 	}
 	return added;
 }
 
 void SceneSettings::renderPhysicsSection() const {
-	if (!ImGui::CollapsingHeader("Physics", ImGuiTreeNodeFlags_DefaultOpen))
+	if (!gui::widgets::sectionHeader("Physics", gui::icon::gauge, false).open)
 		return;
+	const scene::PhysicsSettings defaults;
 	const scene::PhysicsSettings before = m_scene->getPhysicsSettings();
 	scene::PhysicsSettings edited = before;
-	ImGui::SetNextItemWidth(160.f);
-	ImGui::DragFloat("Tick rate", &edited.tickRate, 1.f, scene::PhysicsSettings::minTickRate,
-					 scene::PhysicsSettings::maxTickRate, "%.0f Hz");
-	if (ImGui::IsItemHovered())
-		ImGui::SetTooltip("Fixed physics steps per second, whatever the frame rate.");
-	auto maxSteps = static_cast<int>(edited.maxStepsPerFrame);
-	ImGui::SetNextItemWidth(160.f);
-	if (ImGui::DragInt("Max steps per frame", &maxSteps, 0.2f, 1,
-					   static_cast<int>(scene::PhysicsSettings::maxStepsLimit)))
-		edited.maxStepsPerFrame = static_cast<uint32_t>(std::max(maxSteps, 1));
-	if (ImGui::IsItemHovered())
-		ImGui::SetTooltip("Time beyond this many steps in one frame is dropped: the game slows down instead of "
-						  "stalling.");
-	auto subSteps = static_cast<int>(edited.solverSubSteps);
-	ImGui::SetNextItemWidth(160.f);
-	if (ImGui::DragInt("Solver sub-steps", &subSteps, 0.1f, 1,
-					   static_cast<int>(scene::PhysicsSettings::maxSolverSubSteps)))
-		edited.solverSubSteps = static_cast<uint32_t>(std::max(subSteps, 1));
-	auto workers = static_cast<int>(edited.workerCount);
-	ImGui::SetNextItemWidth(160.f);
-	if (ImGui::DragInt("Solver threads", &workers, 0.1f, 0, static_cast<int>(scene::PhysicsSettings::maxWorkerCount),
-					   workers == 0 ? "auto" : "%d"))
-		edited.workerCount = static_cast<uint32_t>(std::max(workers, 0));
-	if (ImGui::IsItemHovered())
-		ImGui::SetTooltip("Threads of the Box2D solver: 0 picks a count from the hardware, 1 is single-threaded.");
-	gui::widgets::checkbox("Interpolate transforms", &edited.interpolate);
-	if (ImGui::IsItemHovered())
-		ImGui::SetTooltip("Blend the drawn positions between the last two physics steps (smooth motion, one step "
-						  "of latency).");
+	if (gui::widgets::beginProperties("##physics")) {
+		std::ignore = gui::widgets::propertyFloat("Tick Rate", edited.tickRate, defaults.tickRate, 1.f, "%.0f Hz",
+												  "Fixed physics steps per second, whatever the frame rate.");
+		auto maxSteps = static_cast<int>(edited.maxStepsPerFrame);
+		if (gui::widgets::propertyInt("Max Steps per Frame", maxSteps, static_cast<int>(defaults.maxStepsPerFrame), 1,
+									  static_cast<int>(scene::PhysicsSettings::maxStepsLimit), "%d",
+									  "Time beyond this many steps in one frame is dropped: the game slows down "
+									  "instead of stalling."))
+			edited.maxStepsPerFrame = static_cast<uint32_t>(maxSteps);
+		auto subSteps = static_cast<int>(edited.solverSubSteps);
+		if (gui::widgets::propertyInt("Solver Sub-steps", subSteps, static_cast<int>(defaults.solverSubSteps), 1,
+									  static_cast<int>(scene::PhysicsSettings::maxSolverSubSteps)))
+			edited.solverSubSteps = static_cast<uint32_t>(subSteps);
+		auto workers = static_cast<int>(edited.workerCount);
+		if (gui::widgets::propertyInt("Solver Threads", workers, static_cast<int>(defaults.workerCount), 0,
+									  static_cast<int>(scene::PhysicsSettings::maxWorkerCount),
+									  workers == 0 ? "auto" : "%d",
+									  "Threads of the Box2D solver: 0 picks a count from the hardware, 1 is "
+									  "single-threaded."))
+			edited.workerCount = static_cast<uint32_t>(workers);
+		std::ignore = gui::widgets::propertyBool("Interpolate", edited.interpolate, defaults.interpolate,
+												 "Blend the drawn positions between the last two physics steps "
+												 "(smooth motion, one step of latency).");
+		gui::widgets::endProperties();
+	}
 	ImGui::TextDisabled("Applied when Play starts.");
+	gui::widgets::endSection();
 	edited = edited.clamped();
 	if (edited == before)
 		return;
@@ -302,17 +309,19 @@ void SceneSettings::onImGuiRender() {
 	ImGui::Separator();
 
 	renderPhysicsSection();
-	ImGui::Separator();
 
+	if (!gui::widgets::sectionHeader("Renderer Stack", gui::icon::layers, false).open) {
+		ImGui::End();
+		return;
+	}
 	if (mp_project->rendererStack.isEmpty()) {
 		ImGui::TextWrapped("The active project declares no renderer stack — only an "
 						   "implicit `Renderer2D` is active. Edit the project settings to "
 						   "compose a stack first.");
+		gui::widgets::endSection();
 		ImGui::End();
 		return;
 	}
-
-	ImGui::Text("Renderer Stack");
 	ImGui::TextDisabled("Layers listed here are emitted in this order; project layers "
 						"omitted from the list still run after, in project order.");
 	ImGui::Spacing();
@@ -320,6 +329,7 @@ void SceneSettings::onImGuiRender() {
 	bool changed = renderRendererStackSection();
 	if (renderAddLayerSection())
 		changed = true;
+	gui::widgets::endSection();
 
 	if (changed) {
 		const auto afterYaml = serializeConfig(m_scene->getEnabledRenderers());

@@ -163,6 +163,8 @@ TEST_F(WidgetKitTest, EveryWidgetDrawsWithoutInput) {
 			notice("Saved.", BadgeKind::Success);
 			notice("Broken.", BadgeKind::Error);
 			EXPECT_FALSE(chip("Textures##chip", true));
+			if (sectionHeader("Physics", icon::gauge, false).open)
+				endSection();
 			const auto header = sectionHeader("Transform", nullptr);
 			EXPECT_FALSE(header.menuClicked);
 			EXPECT_GT(header.max.y(), header.min.y());
@@ -218,6 +220,24 @@ TEST_F(WidgetKitTest, ResetButtonRestoresTheDefault) {
 	frame(body);
 	click(body);
 	EXPECT_FLOAT_EQ(value, 1.f);
+}
+
+TEST_F(WidgetKitTest, IntegerAndTextRowsKeepTheirValues) {
+	int value = 900;
+	std::string name = "Owl";
+	const auto body = [&]() -> void {
+		if (beginProperties("props")) {
+			EXPECT_FALSE(propertyText("Name", name, "Project name"));
+			std::ignore = propertyInt("Count", value, 3, 0, 10);
+			record();
+			endProperties();
+		}
+	};
+	frame(body);
+	EXPECT_EQ(value, 10);
+	EXPECT_EQ(name, "Owl");
+	click(body);
+	EXPECT_EQ(value, 3);
 }
 
 TEST_F(WidgetKitTest, DisabledIconButtonIgnoresClicks) {

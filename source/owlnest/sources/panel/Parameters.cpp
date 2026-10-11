@@ -9,18 +9,38 @@
 #include "Parameters.h"
 
 #include <gui/IconBank.h>
+#include <gui/IconFont.h>
 #include <gui/widgets/Combo.h>
-#include <gui/widgets/Toggle.h>
+#include <gui/widgets/PropertyGrid.h>
+#include <gui/widgets/SectionHeader.h>
 #include <magic_enum/magic_enum.hpp>
 
 #include <cstdint>
 #include <string>
+#include <tuple>
 
 namespace owl::nest::panel {
 
 namespace {
 constexpr auto g_popupName = "Parameters";
 constexpr auto g_restartPopupName = "Restart Required";
+
+template<typename Type>
+void renderBackendCombo(const char* iId, Type& ioValue, const Type iHidden) {
+	if (!gui::widgets::beginCombo(iId, std::string(magic_enum::enum_name(ioValue)).c_str()))
+		return;
+	for (const auto& type: magic_enum::enum_values<Type>()) {
+		if (type == iHidden)
+			continue;
+		const bool isSelected = ioValue == type;
+		if (ImGui::Selectable(std::string(magic_enum::enum_name(type)).c_str(), isSelected))
+			ioValue = type;
+		if (isSelected)
+			ImGui::SetItemDefaultFocus();
+	}
+	ImGui::EndCombo();
+}
+
 }// namespace
 
 void Parameters::open() {
@@ -49,76 +69,54 @@ auto Parameters::apply() -> bool {
 	return m_localParams.renderer != m_originalRenderer || m_localParams.sound != m_originalSound;
 }
 
-void Parameters::onImGuiRender() {// NOLINT(readability-function-cognitive-complexity)
+void Parameters::onImGuiRender() {
 	if (m_pendingOpen) {
 		ImGui::OpenPopup(g_popupName);
 		m_pendingOpen = false;
 	}
 
-	ImGui::SetNextWindowSize({400, 0}, ImGuiCond_FirstUseEver);
 	if (ImGui::BeginPopupModal(g_popupName, nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
-		// --- Window Section ---
-		if (ImGui::CollapsingHeader("Window", ImGuiTreeNodeFlags_DefaultOpen)) {
-			auto width = static_cast<int>(m_localParams.width);
-			auto height = static_cast<int>(m_localParams.height);
-			if (ImGui::InputInt("Width", &width)) {
-				if (width > 0)
+		// The grids stretch: this sets the width of the dialog.
+		ImGui::Dummy({ImGui::GetFontSize() * 28.f, 0.f});
+		const auto params = m_localParams;
+		if (gui::widgets::sectionHeader("Window", gui::icon::appWindow, false).open) {
+			if (gui::widgets::beginProperties("##window")) {
+				auto width = static_cast<int>(m_localParams.width);
+				auto height = static_cast<int>(m_localParams.height);
+				if (gui::widgets::propertyInt("Width", width, static_cast<int>(params.width), 1, 16384, "%d px"))
 					m_localParams.width = static_cast<uint32_t>(width);
-			}
-			if (ImGui::InputInt("Height", &height)) {
-				if (height > 0)
+				if (gui::widgets::propertyInt("Height", height, static_cast<int>(params.height), 1, 16384, "%d px"))
 					m_localParams.height = static_cast<uint32_t>(height);
+				gui::widgets::endProperties();
 			}
+			gui::widgets::endSection();
 		}
-
-		// --- Renderer Section ---
-		if (ImGui::CollapsingHeader("Renderer", ImGuiTreeNodeFlags_DefaultOpen)) {
-			if (gui::widgets::beginCombo("##Renderer",
-										 std::string(magic_enum::enum_name(m_localParams.renderer)).c_str())) {
-				for (const auto& type: magic_enum::enum_values<renderer::gpu::RenderAPI::Type>()) {
-					if (type == renderer::gpu::RenderAPI::Type::Null)
-						continue;
-					const bool isSelected = m_localParams.renderer == type;
-					if (ImGui::Selectable(std::string(magic_enum::enum_name(type)).c_str(), isSelected))
-						m_localParams.renderer = type;
-					if (isSelected)
-
-						ImGui::SetItemDefaultFocus();
-				}
-
-				ImGui::EndCombo();
+		if (gui::widgets::sectionHeader("Backends", gui::icon::cuboid, false).open) {
+			if (gui::widgets::beginProperties("##backends")) {
+				gui::widgets::propertyLabel("Renderer", "Graphics backend; takes effect after a restart.");
+				renderBackendCombo("##Renderer", m_localParams.renderer, renderer::gpu::RenderAPI::Type::Null);
+				std::ignore = gui::widgets::propertyReset(false);
+				gui::widgets::propertyLabel("Sound", "Audio backend; takes effect after a restart.");
+				renderBackendCombo("##Sound", m_localParams.sound, sound::SoundAPI::Type::Null);
+				std::ignore = gui::widgets::propertyReset(false);
+				gui::widgets::endProperties();
 			}
+			gui::widgets::endSection();
 		}
-
-		// --- Sound Section ---
-		if (ImGui::CollapsingHeader("Sound", ImGuiTreeNodeFlags_DefaultOpen)) {
-			if (gui::widgets::beginCombo("##Sound", std::string(magic_enum::enum_name(m_localParams.sound)).c_str())) {
-				for (const auto& type: magic_enum::enum_values<sound::SoundAPI::Type>()) {
-					if (type == sound::SoundAPI::Type::Null)
-						continue;
-					const bool isSelected = m_localParams.sound == type;
-					if (ImGui::Selectable(std::string(magic_enum::enum_name(type)).c_str(), isSelected))
-						m_localParams.sound = type;
-					if (isSelected)
-
-						ImGui::SetItemDefaultFocus();
-				}
-
-				ImGui::EndCombo();
-			}
-		}
-
-		// --- Debug Section ---
-		if (ImGui::CollapsingHeader("Debug", ImGuiTreeNodeFlags_DefaultOpen)) {
-			gui::widgets::checkbox("Use Debugging", &m_localParams.useDebugging);
-			gui::widgets::checkbox("Hot Reload", &m_localParams.hotReload);
-			if (ImGui::IsItemHovered())
-				ImGui::SetTooltip("Reload textures, shaders, scenes, tilesets and scripts when their file changes.");
-			auto freq = static_cast<int>(m_localParams.frameLogFrequency);
-			if (ImGui::InputInt("Frame Log Frequency", &freq)) {
-				if (freq >= 0)
+		if (gui::widgets::sectionHeader("Debug", gui::icon::terminal, false).open) {
+			if (gui::widgets::beginProperties("##debug")) {
+				std::ignore = gui::widgets::propertyBool("Use Debugging", m_localParams.useDebugging,
+														 params.useDebugging, "Enable the graphics debug layers.");
+				std::ignore = gui::widgets::propertyBool(
+						"Hot Reload", m_localParams.hotReload, params.hotReload,
+						"Reload textures, shaders, scenes, tilesets and scripts when their file changes.");
+				auto freq = static_cast<int>(m_localParams.frameLogFrequency);
+				if (gui::widgets::propertyInt("Frame Log Frequency", freq, static_cast<int>(params.frameLogFrequency),
+											  0, 100000, "%d", "Frames between two frame-sampled log lines."))
 					m_localParams.frameLogFrequency = static_cast<uint64_t>(freq);
+				gui::widgets::endProperties();
 			}
+			gui::widgets::endSection();
 		}
 
 		ImGui::Separator();
