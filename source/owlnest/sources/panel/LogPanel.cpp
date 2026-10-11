@@ -11,6 +11,8 @@
 #include <debug/LogSink.h>
 #include <gui/IconBank.h>
 #include <gui/IconFont.h>
+#include <gui/UiLayer.h>
+#include <gui/utils.h>
 #include <gui/widgets/Badge.h>
 #include <gui/widgets/IconButton.h>
 
@@ -25,24 +27,25 @@
 namespace owl::nest::panel {
 
 namespace {
-auto getLevelColor(const core::Log::Level iLevel) -> ImVec4 {
+auto getLevelColor(const core::Log::Level iLevel) -> math::vec4 {
+	const auto& theme = gui::UiLayer::getTheme();
 	switch (iLevel) {
 		case core::Log::Level::Trace:
-			return {0.6f, 0.6f, 0.6f, 1.0f};
+			return theme.textDisabled;
 		case core::Log::Level::Debug:
-			return {0.4f, 0.7f, 1.0f, 1.0f};
+			return theme.info;
 		case core::Log::Level::Info:
-			return {0.3f, 0.9f, 0.3f, 1.0f};
+			return theme.success;
 		case core::Log::Level::Warning:
-			return {1.0f, 0.9f, 0.3f, 1.0f};
+			return theme.warning;
 		case core::Log::Level::Error:
-			return {1.0f, 0.3f, 0.3f, 1.0f};
+			return theme.error;
 		case core::Log::Level::Critical:
-			return {0.8f, 0.1f, 0.1f, 1.0f};
+			return gui::Theme::mix(theme.error, theme.text, 0.3f);
 		case core::Log::Level::Off:
-			return {0.5f, 0.5f, 0.5f, 1.0f};
+			return theme.textMuted;
 	}
-	return {1.0f, 1.0f, 1.0f, 1.0f};
+	return theme.text;
 }
 
 auto getLevelLabel(const core::Log::Level iLevel) -> const char* {
@@ -148,12 +151,17 @@ void LogPanel::onImGuiRender() {
 			ioFlag = !ioFlag;
 		ImGui::SameLine();
 	};
-	chipToggle("Trace", m_showTrace);
-	chipToggle("Debug", m_showDebug);
-	chipToggle("Info", m_showInfo);
-	chipToggle("Warning", m_showWarning);
-	chipToggle("Error", m_showError);
-	chipToggle("Critical", m_showCritical);
+	const auto levelChip = [](const char* iLabel, bool& ioFlag, const core::Log::Level iLevel) -> void {
+		if (gui::widgets::chip(iLabel, ioFlag, getLevelColor(iLevel)))
+			ioFlag = !ioFlag;
+		ImGui::SameLine();
+	};
+	levelChip("Trace", m_showTrace, core::Log::Level::Trace);
+	levelChip("Debug", m_showDebug, core::Log::Level::Debug);
+	levelChip("Info", m_showInfo, core::Log::Level::Info);
+	levelChip("Warning", m_showWarning, core::Log::Level::Warning);
+	levelChip("Error", m_showError, core::Log::Level::Error);
+	levelChip("Critical", m_showCritical, core::Log::Level::Critical);
 	ImGui::Dummy({ImGui::GetFontSize() * 0.5f, 0.f});
 	ImGui::SameLine();
 	chipToggle("Engine##logger", m_showCore);
@@ -210,7 +218,7 @@ void LogPanel::onImGuiRender() {
 		// Text search filter
 		if (!searchFilter.empty() && message.find(searchFilter) == std::string::npos)
 			continue;
-		const ImVec4 levelColor = getLevelColor(level);
+		const ImVec4 levelColor = gui::vec(getLevelColor(level));
 		// Timestamp in grey
 		const auto f_timestamp = formatTimestamp(timestamp);
 

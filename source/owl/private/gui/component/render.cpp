@@ -19,6 +19,8 @@
 #include "gui/widgets/CurveEditor.h"
 #include "gui/widgets/IconButton.h"
 #include "gui/widgets/PropertyGrid.h"
+#include "gui/widgets/SectionHeader.h"
+#include "gui/widgets/Toggle.h"
 
 #include "input/KeyCodes.h"
 #include "renderer/Renderer.h"
@@ -97,7 +99,7 @@ auto ColorEdit3(const char* iLabel, Args&&... iArgs) -> bool {
 
 template<typename... Args>
 auto Checkbox(const char* iLabel, Args&&... iArgs) -> bool {
-	return row(iLabel, [&](const char* iId) -> bool { return ImGui::Checkbox(iId, std::forward<Args>(iArgs)...); });
+	return row(iLabel, [&](const char* iId) -> bool { return widgets::toggle(iId, std::forward<Args>(iArgs)...); });
 }
 
 template<typename... Args>
@@ -289,7 +291,7 @@ void renderProps(SpriteRenderer& ioComponent) {
 	} else {
 		prop::DragFloat2("Tiling Factor", &ioComponent.tilingFactor.x(), 0.1f, 0.0f, 100.0f);
 	}
-	if (ImGui::CollapsingHeader("Raycast (billboard)")) {
+	if (widgets::subHeader("Raycast (billboard)")) {
 		fieldTooltip("Optional overrides used only when the entity is rendered through a "
 					 "RendererRaycast layer. Leave at defaults to inherit from Transform.");
 		prop::DragFloat2("Size", &ioComponent.raycastSize.x(), 0.05f, 0.0f, 16.0f, "%.2f");
@@ -326,12 +328,12 @@ void renderProps(AnimatedSpriteRenderer& ioComponent) {
 	prop::DragFloat("Frame Duration", &ioComponent.frameDuration, 0.01f, 0.001f, 10.0f, "%.3f s");
 	prop::Checkbox("Loop", &ioComponent.loop);
 	ImGui::Text("Current Frame: %u", ioComponent.m_currentFrame);
-	if (ImGui::CollapsingHeader("Speed Curve")) {
+	if (widgets::subHeader("Speed Curve")) {
 		fieldTooltip("Optional speed remap. Empty = constant playback speed; non-empty multiplies dt by "
 					 "curve.evaluate(progress).");
 		widgets::curveEditor("##speedCurve", ioComponent.speedCurve);
 	}
-	if (ImGui::CollapsingHeader("Raycast (billboard)")) {
+	if (widgets::subHeader("Raycast (billboard)")) {
 		fieldTooltip("Optional overrides used only when the entity is rendered through a "
 					 "RendererRaycast layer. Leave at defaults to inherit from Transform.");
 		prop::DragFloat2("Size", &ioComponent.raycastSize.x(), 0.05f, 0.0f, 16.0f, "%.2f");

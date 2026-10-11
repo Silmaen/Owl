@@ -18,6 +18,8 @@
 
 #include <imgui.h>
 
+#include <algorithm>
+#include <cctype>
 #include <cmath>
 #include <format>
 #include <string>
@@ -81,5 +83,34 @@ auto sectionHeader(const char* iTitle, const char* iIconName, const bool iWithMe
 }
 
 void endSection() { ImGui::TreePop(); }
+
+auto subHeader(const char* iTitle, const bool iDefaultOpen) -> bool {
+	const auto& theme = UiLayer::getTheme();
+	auto* storage = ImGui::GetStateStorage();
+	const ImGuiID id = ImGui::GetID(iTitle);
+	bool open = storage->GetBool(id, iDefaultOpen);
+	UiLayer::pushTextStyle(TextStyle::Caption);
+	std::string caption = iTitle;
+	std::ranges::transform(caption, caption.begin(), [](const char iChar) -> char {
+		return static_cast<char>(std::toupper(static_cast<unsigned char>(iChar)));
+	});
+	const float height = ImGui::GetTextLineHeight() + 8.f;
+	ImGui::PushID(iTitle);
+	if (ImGui::InvisibleButton("##sub", {ImGui::GetContentRegionAvail().x, height})) {
+		open = !open;
+		storage->SetBool(id, open);
+	}
+	const bool hovered = ImGui::IsItemHovered();
+	ImGui::PopID();
+	const ImVec2 min = ImGui::GetItemRectMin();
+	const auto color = ImGui::GetColorU32(vec(hovered ? theme.text : theme.textDisabled));
+	auto* draw = ImGui::GetWindowDrawList();
+	const char* chevron = open ? icon::chevronDown : icon::chevronRight;
+	const float textY = std::floor(min.y + 5.f);
+	draw->AddText({min.x, textY}, color, chevron);
+	draw->AddText({min.x + ImGui::CalcTextSize(chevron).x + 4.f, textY}, color, caption.c_str());
+	UiLayer::popTextStyle();
+	return open;
+}
 
 }// namespace owl::gui::widgets

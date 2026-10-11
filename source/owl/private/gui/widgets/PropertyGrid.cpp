@@ -14,6 +14,7 @@
 #include "gui/UiLayer.h"
 #include "gui/utils.h"
 #include "gui/widgets/IconButton.h"
+#include "gui/widgets/Toggle.h"
 #include "gui/widgets/Tooltip.h"
 
 #include <imgui.h>
@@ -141,7 +142,7 @@ auto propertyVec3(const char* iLabel, math::vec3& ioValue, const math::vec3& iDe
 
 auto propertyBool(const char* iLabel, bool& ioValue, const bool iDefault, const char* iTooltip) -> bool {
 	propertyLabel(iLabel, iTooltip);
-	bool changed = ImGui::Checkbox("##value", &ioValue);
+	bool changed = toggle("##value", &ioValue);
 	if (propertyReset(ioValue != iDefault)) {
 		ioValue = iDefault;
 		changed = true;

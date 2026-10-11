@@ -99,29 +99,47 @@ void notice(const char* iText, const BadgeKind iKind) {
 	ImGui::Dummy({width, max.y - pos.y});
 }
 
-auto chip(const char* iLabel, const bool iSelected) -> bool {
+namespace {
+
+auto drawChip(const char* iLabel, const bool iSelected, const math::vec4* iColor) -> bool {
 	const auto& theme = UiLayer::getTheme();
 	const ImVec2 textSize = ImGui::CalcTextSize(iLabel, nullptr, true);
+	const float dot = iColor != nullptr ? std::round(ImGui::GetFontSize() * 0.4f) : 0.f;
+	const float dotSpace = iColor != nullptr ? dot + ImGui::GetStyle().ItemInnerSpacing.x : 0.f;
 	const ImVec2 padding{10.f, ImGui::GetStyle().FramePadding.y};
-	const ImVec2 size{textSize.x + 2.f * padding.x, ImGui::GetFrameHeight()};
+	const ImVec2 size{textSize.x + dotSpace + 2.f * padding.x, ImGui::GetFrameHeight()};
 	const bool clicked = ImGui::InvisibleButton(iLabel, size);
 	const bool hovered = ImGui::IsItemHovered();
 	const ImVec2 min = ImGui::GetItemRectMin();
+	const ImVec2 max{min.x + size.x, min.y + size.y};
+	const auto tint = iColor != nullptr ? *iColor : theme.accent;
 	auto* draw = ImGui::GetWindowDrawList();
 	auto background = hovered ? theme.surface3 : theme.surface2;
 	if (iSelected)
-		background = theme.getSelection();
-	draw->AddRectFilled(min, {min.x + size.x, min.y + size.y}, ImGui::GetColorU32(vec(background)), size.y * 0.5f);
+		background = Theme::withAlpha(tint, hovered ? 0.24f : 0.16f);
+	draw->AddRectFilled(min, max, ImGui::GetColorU32(vec(background)), size.y * 0.5f);
 	if (iSelected)
-		draw->AddRect(min, {min.x + size.x, min.y + size.y},
-					  ImGui::GetColorU32(vec(Theme::withAlpha(theme.accent, 0.55f))), size.y * 0.5f);
+		draw->AddRect(min, max, ImGui::GetColorU32(vec(Theme::withAlpha(tint, 0.55f))), size.y * 0.5f);
 	auto color = hovered ? theme.text : theme.textMuted;
 	if (iSelected)
-		color = theme.accent;
+		color = iColor != nullptr ? theme.text : theme.accent;
+	float x = min.x + padding.x;
+	if (iColor != nullptr) {
+		draw->AddCircleFilled({x + dot * 0.5f, min.y + size.y * 0.5f}, dot * 0.5f,
+							  ImGui::GetColorU32(vec(iSelected ? tint : Theme::withAlpha(tint, 0.45f))));
+		x += dotSpace;
+	}
 	const char* end = std::strstr(iLabel, "##");
-	draw->AddText({min.x + padding.x, min.y + (size.y - textSize.y) * 0.5f}, ImGui::GetColorU32(vec(color)), iLabel,
-				  end);
+	draw->AddText({x, min.y + (size.y - textSize.y) * 0.5f}, ImGui::GetColorU32(vec(color)), iLabel, end);
 	return clicked;
+}
+
+}// namespace
+
+auto chip(const char* iLabel, const bool iSelected) -> bool { return drawChip(iLabel, iSelected, nullptr); }
+
+auto chip(const char* iLabel, const bool iSelected, const math::vec4& iColor) -> bool {
+	return drawChip(iLabel, iSelected, &iColor);
 }
 
 }// namespace owl::gui::widgets

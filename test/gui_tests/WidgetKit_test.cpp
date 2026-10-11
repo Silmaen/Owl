@@ -17,6 +17,7 @@
 #include <gui/widgets/SearchField.h>
 #include <gui/widgets/SectionHeader.h>
 #include <gui/widgets/Toast.h>
+#include <gui/widgets/Toggle.h>
 #include <gui/widgets/Tooltip.h>
 
 #include <imgui.h>
@@ -136,6 +137,11 @@ TEST_F(WidgetKitTest, EveryWidgetDrawsWithoutInput) {
 			badge("12");
 			badge("2", BadgeKind::Warning);
 			notice("No sprite sheet set.");
+			EXPECT_FALSE(toggle("##toggle", &flag));
+			EXPECT_FALSE(checkbox("Loop##cbx", &flag));
+			EXPECT_FALSE(chip("Error##level", true, {0.9f, 0.3f, 0.3f, 1.f}));
+			if (subHeader("Raycast (billboard)"))
+				ImGui::TextUnformatted("body");
 			notice("Saved.", BadgeKind::Success);
 			notice("Broken.", BadgeKind::Error);
 			EXPECT_FALSE(chip("Textures##chip", true));
@@ -206,4 +212,24 @@ TEST_F(WidgetKitTest, DisabledIconButtonIgnoresClicks) {
 	frame(body);
 	click(body);
 	EXPECT_EQ(clicks, 0);
+}
+
+TEST_F(WidgetKitTest, ToggleAndCheckboxFlipOnClick) {
+	bool on = false;
+	const auto toggleBody = [&]() -> void {
+		std::ignore = toggle("##switch", &on);
+		record();
+	};
+	frame(toggleBody);
+	click(toggleBody);
+	EXPECT_TRUE(on);
+
+	bool checked = true;
+	const auto checkboxBody = [&]() -> void {
+		std::ignore = checkbox("Loop", &checked);
+		record();
+	};
+	frame(checkboxBody);
+	click(checkboxBody);
+	EXPECT_FALSE(checked);
 }

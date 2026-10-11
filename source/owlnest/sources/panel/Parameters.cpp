@@ -9,6 +9,7 @@
 #include "Parameters.h"
 
 #include <gui/IconBank.h>
+#include <gui/widgets/Toggle.h>
 #include <magic_enum/magic_enum.hpp>
 
 #include <cstdint>
@@ -107,8 +108,8 @@ void Parameters::onImGuiRender() {// NOLINT(readability-function-cognitive-compl
 
 		// --- Debug Section ---
 		if (ImGui::CollapsingHeader("Debug", ImGuiTreeNodeFlags_DefaultOpen)) {
-			ImGui::Checkbox("Use Debugging", &m_localParams.useDebugging);
-			ImGui::Checkbox("Hot Reload", &m_localParams.hotReload);
+			gui::widgets::checkbox("Use Debugging", &m_localParams.useDebugging);
+			gui::widgets::checkbox("Hot Reload", &m_localParams.hotReload);
 			if (ImGui::IsItemHovered())
 				ImGui::SetTooltip("Reload textures, shaders, scenes, tilesets and scripts when their file changes.");
 			auto freq = static_cast<int>(m_localParams.frameLogFrequency);

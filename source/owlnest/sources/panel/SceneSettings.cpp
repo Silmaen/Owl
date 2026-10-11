@@ -10,6 +10,8 @@
 
 #include "../commands/SceneSettingsCommands.h"
 
+#include <gui/widgets/Toggle.h>
+
 #include <imgui.h>
 
 #include <algorithm>
@@ -140,7 +142,7 @@ auto SceneSettings::renderRendererStackSection() -> bool {
 		ImGui::TextDisabled("[%s]", projectEntry != nullptr ? projectEntry->typeKey.c_str() : "?");
 		ImGui::SameLine();
 		bool enabled = entry.enabled;
-		if (ImGui::Checkbox("Enabled", &enabled)) {
+		if (gui::widgets::checkbox("Enabled", &enabled)) {
 			entry.enabled = enabled;
 			changed = true;
 		}
@@ -252,7 +254,7 @@ void SceneSettings::renderPhysicsSection() const {
 		edited.workerCount = static_cast<uint32_t>(std::max(workers, 0));
 	if (ImGui::IsItemHovered())
 		ImGui::SetTooltip("Threads of the Box2D solver: 0 picks a count from the hardware, 1 is single-threaded.");
-	ImGui::Checkbox("Interpolate transforms", &edited.interpolate);
+	gui::widgets::checkbox("Interpolate transforms", &edited.interpolate);
 	if (ImGui::IsItemHovered())
 		ImGui::SetTooltip("Blend the drawn positions between the last two physics steps (smooth motion, one step "
 						  "of latency).");

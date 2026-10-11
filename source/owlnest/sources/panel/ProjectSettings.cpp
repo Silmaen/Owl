@@ -9,6 +9,7 @@
 #include "ProjectSettings.h"
 
 #include <gui/IconBank.h>
+#include <gui/widgets/Toggle.h>
 #include <imgui_stdlib.h>
 #include <renderer/RenderLayerFactory.h>
 
@@ -179,8 +180,8 @@ void ProjectSettings::onImGuiRender() {
 			m_localProject.window.width = static_cast<uint32_t>(widthI);
 		if (ImGui::DragInt("Height", &heightI, 1.0f, 240, 4320))
 			m_localProject.window.height = static_cast<uint32_t>(heightI);
-		ImGui::Checkbox("Fullscreen", &m_localProject.window.fullscreen);
-		ImGui::Checkbox("Resizable", &m_localProject.window.resizable);
+		gui::widgets::checkbox("Fullscreen", &m_localProject.window.fullscreen);
+		gui::widgets::checkbox("Resizable", &m_localProject.window.resizable);
 
 		ImGui::Separator();
 

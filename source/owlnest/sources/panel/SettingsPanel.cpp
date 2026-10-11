@@ -11,93 +11,105 @@
 #include "../EditorResources.h"
 
 #include <gui/IconBank.h>
+#include <gui/widgets/PropertyGrid.h>
 
 #include <algorithm>
 #include <format>
+#include <tuple>
 
 namespace owl::nest::panel {
+
+namespace {
+
+auto settingInt(const char* iLabel, int& ioValue, const int iMin, const int iMax, const int iDefault,
+				const char* iFormat, const char* iTooltip) -> bool {
+	gui::widgets::propertyLabel(iLabel, iTooltip);
+	bool changed = ImGui::SliderInt("##value", &ioValue, iMin, iMax, iFormat);
+	ioValue = std::clamp(ioValue, iMin, iMax);
+	if (gui::widgets::propertyReset(ioValue != iDefault)) {
+		ioValue = iDefault;
+		changed = true;
+	}
+	return changed;
+}
+
+}// namespace
 
 void SettingsPanel::onImGuiRender(EditorSettings& ioSettings, ActionRegistry& ioRegistry) {
 	if (!m_visible)
 		return;
-	ImGui::Begin("Editor Settings", &m_visible);
-	renderGeneralSection(ioSettings);
-	ImGui::Separator();
-	renderThemeSection(ioSettings);
-	ImGui::Separator();
-	renderKeybindingsSection(ioSettings, ioRegistry);
+	ImGui::SetNextWindowSize({ImGui::GetFontSize() * 34.f, ImGui::GetFontSize() * 26.f}, ImGuiCond_FirstUseEver);
+	if (!ImGui::Begin("Editor Settings", &m_visible)) {
+		ImGui::End();
+		return;
+	}
+	if (ImGui::BeginTabBar("##settingsTabs")) {
+		if (ImGui::BeginTabItem("General")) {
+			renderGeneralSection(ioSettings);
+			ImGui::EndTabItem();
+		}
+		if (ImGui::BeginTabItem("Gizmo Snap")) {
+			renderSnapSection(ioSettings);
+			ImGui::EndTabItem();
+		}
+		if (ImGui::BeginTabItem("Appearance")) {
+			renderThemeSection(ioSettings);
+			ImGui::EndTabItem();
+		}
+		if (ImGui::BeginTabItem("Shortcuts")) {
+			renderKeybindingsSection(ioSettings, ioRegistry);
+			ImGui::EndTabItem();
+		}
+		ImGui::EndTabBar();
+	}
 	ImGui::End();
 }
 
 void SettingsPanel::renderGeneralSection(EditorSettings& ioSettings) {
-	if (!ImGui::CollapsingHeader("General", ImGuiTreeNodeFlags_DefaultOpen))
+	const EditorSettings defaults;
+	if (!gui::widgets::beginProperties("##general"))
 		return;
-	ImGui::Checkbox("Show Stats Panel", &ioSettings.showStats);
+	std::ignore = gui::widgets::propertyBool("Stats Panel", ioSettings.showStats, defaults.showStats,
+											 "Show the frame statistics panel.");
+	std::ignore = settingInt("UI Font Size", ioSettings.uiFontSize, 14, 24, defaults.uiFontSize, "%d px",
+							 "Pixel size of the main UI font. Takes effect on the next startup.");
+	std::ignore =
+			settingInt("Code Font Size", ioSettings.codeEditorFontSize, 8, 32, defaults.codeEditorFontSize, "%d px",
+					   "Pixel size used inside the code and text editor tabs. Takes effect on the next "
+					   "startup.");
+	std::ignore = settingInt("Autosave Every", ioSettings.autosaveIntervalSeconds, 0, 600,
+							 defaults.autosaveIntervalSeconds, "%d s",
+							 "Modified documents are copied aside at this interval and offered back after a crash. 0 "
+							 "disables the autosave.");
+	gui::widgets::endProperties();
+}
 
-	ImGui::Spacing();
-	ImGui::TextUnformatted("Code editor font size");
-	ImGui::SameLine();
-	if (ImGui::SliderInt("##codeEditorFontSize", &ioSettings.codeEditorFontSize, 8, 32, "%d px"))
-		ioSettings.codeEditorFontSize = std::clamp(ioSettings.codeEditorFontSize, 8, 48);
-	if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay))
-		ImGui::SetTooltip(
-				"Pixel size used inside the code/text editor tabs. Takes effect on the next startup. Default is 13.");
-
-	ImGui::Spacing();
-	ImGui::TextUnformatted("UI font size");
-	ImGui::SameLine();
-	if (ImGui::SliderInt("##uiFontSize", &ioSettings.uiFontSize, 14, 24, "%d px"))
-		ioSettings.uiFontSize = std::clamp(ioSettings.uiFontSize, 14, 24);
-	if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay))
-		ImGui::SetTooltip("Pixel size of the main UI font. Takes effect on the next startup.");
-
-	ImGui::Spacing();
-	ImGui::TextUnformatted("Autosave every");
-	ImGui::SameLine();
-	if (ImGui::SliderInt("##autosaveInterval", &ioSettings.autosaveIntervalSeconds, 0, 600, "%d s"))
-		ioSettings.autosaveIntervalSeconds = std::clamp(ioSettings.autosaveIntervalSeconds, 0, 3600);
-	if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay))
-		ImGui::SetTooltip("Modified documents are copied aside at this interval and offered back after a crash. "
-						  "0 disables the autosave.");
-
-	ImGui::Spacing();
-	ImGui::SeparatorText("Gizmo Snap");
-	ImGui::Checkbox("Enable snap to grid", &ioSettings.snapEnabled);
-	if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay))
-		ImGui::SetTooltip(
-				"Snap translation gizmos to a regular grid in Edit mode. Holding Ctrl during a drag also forces snap.");
-
-	ImGui::Checkbox("Auto step from tilemap cell", &ioSettings.snapAutoFromTilemap);
-	if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay))
-		ImGui::SetTooltip("When enabled and a Tilemap exists in the scene, the snap step is taken from the tilemap's "
-						  "cellSize × multiplier, with a half-cell offset so entities align with cell centers. Falls "
-						  "back to the manual step otherwise.");
-
-	ImGui::TextUnformatted("Snap step (world units)");
-	ImGui::SameLine();
-	if (ImGui::DragFloat("##snapStep", &ioSettings.snapStep, 0.05f, 0.01f, 100.f, "%.3f"))
+void SettingsPanel::renderSnapSection(EditorSettings& ioSettings) {
+	const EditorSettings defaults;
+	if (!gui::widgets::beginProperties("##snap"))
+		return;
+	std::ignore = gui::widgets::propertyBool(
+			"Snap to Grid", ioSettings.snapEnabled, defaults.snapEnabled,
+			"Snap translation gizmos to a regular grid in Edit mode. Holding Ctrl during a drag also forces snap.");
+	std::ignore = gui::widgets::propertyBool(
+			"Step from Tilemap", ioSettings.snapAutoFromTilemap, defaults.snapAutoFromTilemap,
+			"When a Tilemap exists in the scene, the snap step is its cell size times the multiplier, with a half-cell "
+			"offset so entities align with cell centres; otherwise the manual step is used.");
+	if (gui::widgets::propertyFloat("Snap Step", ioSettings.snapStep, defaults.snapStep, 0.05f, "%.3f",
+									"Manual snap step, in world units, used without a tilemap."))
 		ioSettings.snapStep = std::max(0.0001f, ioSettings.snapStep);
-	if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay))
-		ImGui::SetTooltip(
-				"Manual snap step used when 'Auto step from tilemap' is off, or when the active scene has no Tilemap.");
-
-	ImGui::TextUnformatted("Tilemap step multiplier (× cell size)");
-	ImGui::SameLine();
-	if (ImGui::DragFloat("##snapMultiplier", &ioSettings.snapMultiplier, 0.05f, 0.0001f, 100.f, "%.3f"))
+	if (gui::widgets::propertyFloat("Cell Multiplier", ioSettings.snapMultiplier, defaults.snapMultiplier, 0.05f,
+									"%.3f", "Multiplier of the tilemap cell size (0.5 = half-cell snap)."))
 		ioSettings.snapMultiplier = std::max(0.0001f, ioSettings.snapMultiplier);
-	if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay))
-		ImGui::SetTooltip("Multiplier applied to the tilemap's cellSize when 'Auto step from tilemap' is on (e.g. 0.5 "
-						  "= half-cell snap).");
+	gui::widgets::endProperties();
 }
 
 void SettingsPanel::renderThemeSection(EditorSettings& ioSettings) {
-	if (!ImGui::CollapsingHeader("Theme", ImGuiTreeNodeFlags_DefaultOpen))
+	if (!gui::widgets::beginProperties("##appearance"))
 		return;
-
-	const auto presets = gui::Theme::getPresetNames();
-	// Build preview string
+	gui::widgets::propertyLabel("Theme", "Colours of the editor; applied at once.");
 	if (ImGui::BeginCombo("##ThemeCombo", ioSettings.themePreset.c_str())) {
-		for (const auto& [preset, name]: presets) {
+		for (const auto& [preset, name]: gui::Theme::getPresetNames()) {
 			const bool selected = ioSettings.themePreset == name;
 			if (ImGui::Selectable(name.c_str(), selected)) {
 				ioSettings.themePreset = name;
@@ -108,12 +120,11 @@ void SettingsPanel::renderThemeSection(EditorSettings& ioSettings) {
 		}
 		ImGui::EndCombo();
 	}
+	std::ignore = gui::widgets::propertyReset(false);
+	gui::widgets::endProperties();
 }
 
 void SettingsPanel::renderKeybindingsSection(EditorSettings& ioSettings, ActionRegistry& ioRegistry) {
-	if (!ImGui::CollapsingHeader("Keybindings", ImGuiTreeNodeFlags_DefaultOpen))
-		return;
-
 	if (gui::IconBank::instance().iconButton("undo", "Reset All to Defaults")) {
 		ioRegistry.resetToDefaults();
 		ioSettings.keybindingOverrides.clear();

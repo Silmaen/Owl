@@ -22,6 +22,7 @@ OWL_DIAG_DISABLE_CLANG("-Wreserved-identifier")
 OWL_DIAG_POP
 
 #include <algorithm>
+#include <cfloat>
 #include <cmath>
 #include <string>
 #include <utility>
@@ -43,13 +44,19 @@ constexpr float g_caretSize = 7.0f;
 constexpr float g_caretPadX = 4.0f;
 constexpr float g_groupInnerPadX = 6.0f;
 constexpr float g_groupContentHeight = 66.0f;
-constexpr float g_groupLabelGap = 2.0f;
+constexpr float g_groupLabelGap = 4.0f;
 constexpr float g_groupFooterPadding = 5.0f;
+// Line height of the group captions, drawn in the caption style.
+constexpr float g_captionHeight = 13.0f;
 constexpr float g_tabPadX = 14.0f;
 // Exactly three small buttons stack in the height of one large button.
 constexpr size_t g_maxSmallStack = 3;
 
-auto scaled(const float iValue) -> float { return std::round(iValue * ImGui::GetFontSize() / 16.f); }
+// Scaled with the body font, not the current one: the ribbon draws its labels a step smaller.
+auto scaled(const float iValue) -> float {
+	const auto& style = ImGui::GetStyle();
+	return std::round(iValue * style.FontSizeBase * style.FontScaleMain * style.FontScaleDpi / 16.f);
+}
 
 auto toU32(const math::vec4& iColor) -> ImU32 { return ImGui::GetColorU32(vec(iColor)); }
 
@@ -60,14 +67,28 @@ void drawButtonBackground(const Ribbon::Button& iButton) {
 	const bool checked = iButton.isChecked && iButton.isChecked();
 	if (!hovered && !active && !checked)
 		return;
-	math::vec4 color = theme.getSelection();
-	if (hovered)
+	math::vec4 color = theme.surface4;
+	if (hovered && !checked)
 		color = active ? theme.surface4 : theme.surface3;
 	ImGui::GetWindowDrawList()->AddRectFilled(ImGui::GetItemRectMin(), ImGui::GetItemRectMax(), toU32(color),
 											  theme.frameRounding);
 }
 
-void drawButtonIcon(const std::string& iIconName, const ImVec2& iCenter, const float iSize) {
+// Lucide glyphs sit in the private-use area: their UTF-8 encoding starts with 0xEE or 0xEF.
+auto isGlyph(const std::string& iIconName) -> bool {
+	return !iIconName.empty() && static_cast<unsigned char>(iIconName.front()) >= 0xEE;
+}
+
+void drawButtonIcon(const std::string& iIconName, const ImVec2& iCenter, const float iSize,
+					const math::vec4& iColor = UiLayer::getTheme().textMuted) {
+	if (isGlyph(iIconName)) {
+		ImFont* font = ImGui::GetFont();
+		const ImVec2 size = font->CalcTextSizeA(iSize, FLT_MAX, 0.f, iIconName.c_str());
+		ImGui::GetWindowDrawList()->AddText(
+				font, iSize, {std::floor(iCenter.x - size.x * 0.5f), std::floor(iCenter.y - size.y * 0.5f)},
+				toU32(iColor), iIconName.c_str());
+		return;
+	}
 	const auto info = IconBank::instance().getIcon(iIconName, iSize);
 	if (!info.has_value())
 		return;
@@ -118,7 +139,7 @@ auto renderLargeButton(const Ribbon::Button& iButton) -> bool {
 	drawButtonBackground(iButton);
 	const float iconSize = scaled(g_largeIconSize);
 	drawButtonIcon(iButton.iconName, {rectMin.x + width * 0.5f, rectMin.y + scaled(g_largeInnerPadY) + iconSize * 0.5f},
-				   iconSize);
+				   iconSize, UiLayer::getTheme().text);
 	const ImVec2 textPos{std::floor(rectMin.x + (width - labelSize.x) * 0.5f),
 						 rectMax.y - labelSize.y - scaled(g_largeInnerPadY)};
 	ImGui::GetWindowDrawList()->AddText(textPos, ImGui::GetColorU32(ImGuiCol_Text), iButton.label.c_str());
@@ -174,12 +195,15 @@ void renderGroup(const Ribbon::Group& iGroup) {
 	const float contentHeight = scaled(g_groupContentHeight);
 	ImGui::BeginGroup();
 	std::vector<const Ribbon::Button*> pendingSmalls;
-	const auto flushSmalls = [&pendingSmalls, contentHeight]() -> void {
+	bool emitted = false;
+	const auto flushSmalls = [&pendingSmalls, &emitted, contentHeight]() -> void {
 		if (pendingSmalls.empty())
 			return;
 		const float colWidth = measureSmallColumnWidth(pendingSmalls);
 		const float rowHeight = contentHeight / static_cast<float>(g_maxSmallStack);
-		ImGui::SameLine();
+		if (emitted)
+			ImGui::SameLine();
+		emitted = true;
 		ImGui::BeginGroup();
 		for (const auto* btn: pendingSmalls) {
 			if (renderSmallButton(*btn, colWidth, rowHeight))
@@ -188,22 +212,19 @@ void renderGroup(const Ribbon::Group& iGroup) {
 		ImGui::EndGroup();
 		pendingSmalls.clear();
 	};
-	bool isFirst = true;
 	for (const auto& btn: iGroup.buttons) {
 		if (btn.size == Ribbon::ButtonSize::Large) {
 			flushSmalls();
-			if (!isFirst)
+			if (emitted)
 				ImGui::SameLine();
+			emitted = true;
 			if (renderLargeButton(btn))
 				btn.onClick();
 		} else {
 			if (pendingSmalls.size() >= g_maxSmallStack)
 				flushSmalls();
-			if (pendingSmalls.empty() && !isFirst)
-				ImGui::SameLine();
 			pendingSmalls.push_back(&btn);
 		}
-		isFirst = false;
 	}
 	flushSmalls();
 	ImGui::EndGroup();
@@ -219,14 +240,16 @@ void renderGroup(const Ribbon::Group& iGroup) {
 
 void renderTabContent(const Ribbon::Tab& iTab) {
 	const float totalHeight =
-			scaled(g_groupContentHeight) + g_groupLabelGap + ImGui::GetFontSize() + g_groupFooterPadding;
+			scaled(g_groupContentHeight) + g_groupLabelGap + scaled(g_captionHeight) + g_groupFooterPadding;
+	UiLayer::pushTextStyle(TextStyle::Label);
 	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{scaled(g_groupInnerPadX), 2.f});
 	const auto startCursor = ImGui::GetCursorScreenPos();
 	auto* drawList = ImGui::GetWindowDrawList();
 	const ImU32 separatorColor = toU32(UiLayer::getTheme().line);
 	for (size_t gi = 0; gi < iTab.groups.size(); ++gi) {
-		if (gi > 0)
+		if (gi > 0) {
 			ImGui::SameLine(0.f, scaled(g_groupInnerPadX) * 2.f);
+		}
 		ImGui::BeginGroup();
 		renderGroup(iTab.groups[gi]);
 		ImGui::EndGroup();
@@ -237,6 +260,7 @@ void renderTabContent(const Ribbon::Tab& iTab) {
 	}
 	ImGui::Dummy(ImVec2{1, totalHeight});
 	ImGui::PopStyleVar();
+	UiLayer::popTextStyle();
 }
 
 // Icon-only button of the tab row; returns true on click.
@@ -306,7 +330,8 @@ auto Ribbon::getHeight() const -> float {
 	const float tabRow = ImGui::GetFrameHeight() + 4.f;
 	if (m_collapsed)
 		return tabRow;
-	return tabRow + scaled(g_groupContentHeight) + g_groupLabelGap + ImGui::GetFontSize() + g_groupFooterPadding + 8.f;
+	return tabRow + scaled(g_groupContentHeight) + g_groupLabelGap + scaled(g_captionHeight) + g_groupFooterPadding +
+		   8.f;
 }
 
 void Ribbon::renderTabRow() {

@@ -8,6 +8,8 @@
 
 #include "VoxelPalette.h"
 
+#include <gui/widgets/Toggle.h>
+
 #include <data/voxel/VoxelStructure.h>
 
 #include <imgui.h>
@@ -71,7 +73,7 @@ void VoxelPalette::onImGuiRender(VoxelBrush& ioBrush) {
 		return;
 	}
 
-	ImGui::Checkbox("Brush active", &ioBrush.active);
+	gui::widgets::checkbox("Brush active", &ioBrush.active);
 	ImGui::SameLine();
 	ImGui::TextDisabled("(?)");
 	if (ImGui::IsItemHovered())

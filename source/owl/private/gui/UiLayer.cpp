@@ -74,14 +74,14 @@ void applyColors(const Theme& iTheme, ImGuiStyle& ioStyle) {
 	set(ImGuiCol_ScrollbarGrabActive, iTheme.textDisabled);
 	set(ImGuiCol_CheckMark, iTheme.onAccent);
 	set(ImGuiCol_CheckboxSelectedBg, iTheme.accent);
-	set(ImGuiCol_SliderGrab, T::withAlpha(iTheme.accent, 0.85f));
-	set(ImGuiCol_SliderGrabActive, iTheme.accent);
+	set(ImGuiCol_SliderGrab, T::mix(iTheme.surface4, iTheme.text, 0.3f));
+	set(ImGuiCol_SliderGrabActive, iTheme.textMuted);
 	set(ImGuiCol_Button, iTheme.surface3);
 	set(ImGuiCol_ButtonHovered, iTheme.surface4);
 	set(ImGuiCol_ButtonActive, T::mix(iTheme.surface4, iTheme.accent, 0.25f));
-	set(ImGuiCol_Header, iTheme.getSelection());
-	set(ImGuiCol_HeaderHovered, iTheme.surface3);
-	set(ImGuiCol_HeaderActive, T::withAlpha(iTheme.accent, 0.3f));
+	set(ImGuiCol_Header, iTheme.surface3);
+	set(ImGuiCol_HeaderHovered, iTheme.surface4);
+	set(ImGuiCol_HeaderActive, T::mix(iTheme.surface4, iTheme.text, 0.08f));
 	set(ImGuiCol_Separator, iTheme.lineSoft);
 	set(ImGuiCol_SeparatorHovered, T::withAlpha(iTheme.accent, 0.6f));
 	set(ImGuiCol_SeparatorActive, iTheme.accent);
@@ -215,13 +215,13 @@ void UiLayer::pushTextStyle(const TextStyle iStyle) {
 			ImGui::PushFont(g_strongFont, base * 1.15f);
 			return;
 		case TextStyle::Section:
-			ImGui::PushFont(g_strongFont, base * 0.96f);
+			ImGui::PushFont(g_strongFont, base * 0.9f);
 			return;
 		case TextStyle::Label:
-			ImGui::PushFont(g_bodyFont, base * 0.92f);
+			ImGui::PushFont(g_bodyFont, base * 0.875f);
 			return;
 		case TextStyle::Caption:
-			ImGui::PushFont(g_strongFont, base * 0.8f);
+			ImGui::PushFont(g_strongFont, base * 0.75f);
 			return;
 		case TextStyle::Value:
 			ImGui::PushFont(g_monoFont != nullptr ? g_monoFont : g_bodyFont, base * 0.92f);

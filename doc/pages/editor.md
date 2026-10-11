@@ -266,7 +266,7 @@ The snap step is resolved every frame:
 - otherwise the manual `snapStep` value (in world units) is used.
 
 All four knobs (`snapEnabled`, `snapStep`, `snapMultiplier`,
-`snapAutoFromTilemap`) live under `Editor Settings > General > Gizmo Snap`.
+`snapAutoFromTilemap`) live in the **Gizmo Snap** tab of the Editor Settings.
 Rotation snap remains fixed at 45° and Scale snap at 0.5.
 
 **Entity picking.** Clicking in the viewport reads the RedInteger attachment at the
@@ -515,8 +515,7 @@ boom. Fix: fix the script at the first line of the traceback; the callback runs 
 ### Stats
 
 The Stats panel, a tab of the bottom strip, displays real-time performance
-information. It can be toggled via the **Show Stats Panel** checkbox in
-**Edit > Editor Settings** (General section).
+information. It can be toggled via the **Stats Panel** switch in the **General** tab of the Editor Settings.
 
 Displayed metrics:
 
@@ -542,13 +541,17 @@ the maximum over the last 2 s, so a one-off queue drain stays readable; they are
 
 ### Settings
 
-The Settings panel is a dockable window opened via **Edit > Editor Settings**.
-It contains three sections:
+The Settings panel is a dockable window opened via **View > Settings > Editor**, with one tab per topic; each row
+has its label on the left and a reset button once it differs from the default:
 
-**General.** Toggles like the Show Stats Panel checkbox, font sizes, and the autosave interval
+**General.** The Stats Panel switch, the UI and code font sizes, and the autosave interval
 (see [Autosave and crash recovery](#autosave-and-crash-recovery)).
 
-**Theme selection.** **Owl Dark** (default) or **Owl Light**. A theme is a small set of tokens (`gui::Theme`:
+**Gizmo Snap.** Snap to grid, step from the tilemap, manual step and cell multiplier.
+
+**Shortcuts.** The keyboard shortcuts, see [Rebinding](#rebinding).
+
+**Appearance.** **Owl Dark** (default) or **Owl Light**. A theme is a small set of tokens (`gui::Theme`:
 five surfaces from the ground to the pressed state, the input well, lines, three text levels, one amber accent,
 the play-mode blue, success / warning / error / info and the three axis colours); `UiLayer::setTheme` derives every
 ImGui colour and state from them, so a hovered or pressed control is always one step brighter. Changing the theme

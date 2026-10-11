@@ -49,4 +49,14 @@ OWL_API auto sectionHeader(const char* iTitle, const char* iIconName = nullptr, 
  */
 OWL_API void endSection();
 
+/**
+ * @brief
+ *  Collapsible sub-section inside a section: a chevron and a small muted capitalised caption, without background, so
+ *  a nested block reads as a part of its component and not as another component.
+ * @param[in] iTitle Caption, also the ImGui identifier.
+ * @param[in] iDefaultOpen Expanded the first time it is shown.
+ * @return True when expanded; unlike `sectionHeader`, nothing has to be closed.
+ */
+OWL_API auto subHeader(const char* iTitle, bool iDefaultOpen = false) -> bool;
+
 }// namespace owl::gui::widgets

@@ -7,8 +7,10 @@ that produced them is in [Nest UI](nest-ui.md); the editor itself is described i
 
 ## Principles
 
-- **Quiet surfaces, one accent.** Panels are neutral greys; Owl amber marks what is selected, active or primary.
-  Blue is kept for Play mode, red / green / blue for the X / Y / Z axes, and the status colours for status only.
+- **Quiet surfaces, one accent.** Panels are neutral greys; Owl amber marks the selected entity, the active tool, a
+  switch that is on and the primary action. Headers, combo lists, slider grabs and the toggled ribbon buttons stay
+  grey. Blue is kept for Play mode, red / green / blue for the X / Y / Z axes, and the status colours for status
+  only (the Log level chips take the colour of their level).
 - **Labels on the left, values on the right.** Every property is one row of the property grid.
 - **An icon never stands alone.** An icon button has a tooltip naming the action and its shortcut.
 - **An empty panel says what to do.** No blank area: an `emptyState` with an icon, a title and a hint.
@@ -44,16 +46,16 @@ derives every ImGui colour from the tokens. Owl Dark values:
 Inter for the interface, JetBrains Mono for numbers in columns and code. Pick a role with `UiLayer::pushTextStyle`,
 never a raw font size:
 
-| Role (`gui::TextStyle`) | Font, size            | Use                                         |
-|-------------------------|-----------------------|---------------------------------------------|
-| `Body`                  | Inter, 1×             | Running text, values.                       |
-| `Strong`                | Inter SemiBold, 1×    | Emphasis inside body text.                  |
-| `Title`                 | Inter SemiBold, 1.15× | Panel and dialogue titles.                  |
-| `Section`               | Inter SemiBold, 0.96× | Component and section headers.              |
-| `Label`                 | Inter, 0.92×          | Property labels.                            |
-| `Caption`               | Inter SemiBold, 0.8×  | Ribbon group captions, badges, small print. |
-| `Value`                 | JetBrains Mono, 0.92× | Numbers aligned in columns (stats).         |
-| `Code`                  | JetBrains Mono        | The code editor.                            |
+| Role (`gui::TextStyle`) | Font, size            | Use                                        |
+|-------------------------|-----------------------|--------------------------------------------|
+| `Body`                  | Inter, 1×             | Running text, values.                      |
+| `Strong`                | Inter SemiBold, 1×    | Emphasis inside body text.                 |
+| `Title`                 | Inter SemiBold, 1.15× | Panel and dialogue titles.                 |
+| `Section`               | Inter SemiBold, 0.9×  | Component and section headers.             |
+| `Label`                 | Inter, 0.875×         | Inspector rows, ribbon labels.             |
+| `Caption`               | Inter SemiBold, 0.75× | Ribbon group captions, sub-section titles. |
+| `Value`                 | JetBrains Mono, 0.92× | Numbers aligned in columns (stats).        |
+| `Code`                  | JetBrains Mono        | The code editor.                           |
 
 Write property labels in Title Case, as the inspector does ("Fixed Aspect Ratio"), button labels as a verb ("Add
 Component"), and end a hint, a tooltip or a notice with a period.
@@ -69,7 +71,8 @@ Component"), and end a hint, a tooltip or a notice with a period.
 
 ## Icons
 
-- **Action glyphs** come from the Lucide font, `gui::icon::*` (`gui/IconFont.h`), inside labels or icon buttons.
+- **Action glyphs** come from the Lucide font, `gui::icon::*` (`gui/IconFont.h`), inside labels, icon buttons and the
+  ribbon (a `Ribbon::Button` takes a glyph as its `iconName`).
   Add a missing name from the `lucide-static` `info.json`; never draw an action as an SVG.
 - **Asset kinds and components** are hand-drawn SVGs in `source/owlnest/assets_sources/icons/`, on a 24-unit grid
   with a 1.5 stroke and a duotone fill. Asset kinds carry the fixed colour of their family (scene amber, prefab
@@ -90,6 +93,8 @@ Build panels from the kit in `gui/widgets/` before writing raw ImGui:
 | Help on hover                        | `richTooltip`, `itemTooltip`                                                                         |
 | A filter field                       | `searchField`, `matchesFilter`                                                                       |
 | Nothing to show                      | `emptyState`                                                                                         |
+| An on / off property / option        | `toggle` (inspector rows) / `checkbox` (a label after a small box)                                   |
+| A nested block inside a component    | `subHeader`                                                                                          |
 | A count or a state / a filter toggle | `badge` / `chip`                                                                                     |
 | A property that needs attention      | `notice`                                                                                             |
 | A short confirmation or failure      | `ToastQueue::push`                                                                                   |

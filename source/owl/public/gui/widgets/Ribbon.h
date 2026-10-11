@@ -49,7 +49,7 @@ public:
 	 *  A single ribbon button.
 	 */
 	struct Button {
-		/// Name of the icon to look up in the `IconBank`.
+		/// A Lucide glyph (`gui::icon::*`, drawn in the text colour), or the name of an icon of the `IconBank`.
 		std::string iconName;
 		/// Short text displayed below (large) or to the right (small) of the icon.
 		std::string label;

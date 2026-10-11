@@ -13,6 +13,7 @@
 #include <gui/IconBank.h>
 #include <gui/UiLayer.h>
 #include <gui/utils.h>
+#include <gui/widgets/Toggle.h>
 
 #include <imgui.h>
 #include <imgui_stdlib.h>
@@ -150,10 +151,10 @@ void GamePackager::renderWizardModal() {
 		ImGui::Spacing();
 		ImGui::Separator();
 		ImGui::Text("Options");
-		ImGui::Checkbox("Compress pack (zstd)", &m_compress);
+		gui::widgets::checkbox("Compress pack (zstd)", &m_compress);
 		if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay))
 			ImGui::SetTooltip("Compress asset blobs with zstd. Smaller output at the cost of a slower pack.");
-		ImGui::Checkbox("Obfuscate TOC (XOR)", &m_obfuscate);
+		gui::widgets::checkbox("Obfuscate TOC (XOR)", &m_obfuscate);
 		if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay))
 			ImGui::SetTooltip("XOR-obfuscate the table of contents to deter casual pack inspection.");
 

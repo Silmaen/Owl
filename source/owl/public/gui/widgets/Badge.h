@@ -9,6 +9,7 @@
 #pragma once
 
 #include "core/Core.h"
+#include "math/vectors.h"
 
 #include <cstdint>
 
@@ -43,6 +44,17 @@ OWL_API void badge(const char* iText, BadgeKind iKind = BadgeKind::Neutral);
  * @return True on click.
  */
 OWL_API auto chip(const char* iLabel, bool iSelected) -> bool;
+
+/**
+ * @brief
+ *  Toggleable filter chip in a colour of its own (a log level...): the colour tints the chip while selected and marks
+ *  it with a dot while not.
+ * @param[in] iLabel The label, also the ImGui identifier.
+ * @param[in] iSelected Whether the chip is on.
+ * @param[in] iColor The colour of what the chip filters.
+ * @return True on click.
+ */
+OWL_API auto chip(const char* iLabel, bool iSelected, const math::vec4& iColor) -> bool;
 
 /**
  * @brief

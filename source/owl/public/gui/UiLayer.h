@@ -32,9 +32,9 @@ enum struct TextStyle : uint8_t {
 	Body,///< Running text and values (Inter, 1x).
 	Strong,///< Emphasis at body size (Inter SemiBold, 1x).
 	Title,///< Panel or dialogue title (Inter SemiBold, 1.15x).
-	Section,///< Section and component header (Inter SemiBold, 0.96x).
-	Label,///< Property label (Inter, 0.92x).
-	Caption,///< Small print, group captions (Inter SemiBold, 0.8x).
+	Section,///< Section and component header (Inter SemiBold, 0.9x).
+	Label,///< Property labels and values of the inspector, ribbon labels (Inter, 0.875x).
+	Caption,///< Small print, group captions, sub-section titles (Inter SemiBold, 0.75x).
 	Value,///< Numbers aligned in columns (JetBrains Mono, 0.92x).
 	Code,///< Code editor text (JetBrains Mono at the code font size).
 };

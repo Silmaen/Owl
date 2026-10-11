@@ -13,6 +13,7 @@
 #include <gui/IconBank.h>
 #include <gui/utils.h>
 #include <gui/widgets/AssetField.h>
+#include <gui/widgets/Toggle.h>
 #include <imgui_stdlib.h>
 #include <renderer/Renderer.h>
 #include <renderer/gpu/Texture.h>
@@ -268,7 +269,7 @@ void TilesetDocument::renderPropertiesPanel() {
 	ImGui::Separator();
 
 	bool collidable = meta.collidable;
-	if (ImGui::Checkbox("Collidable", &collidable))
+	if (gui::widgets::checkbox("Collidable", &collidable))
 		meta.collidable = collidable;
 	if (ImGui::IsItemHovered())
 		ImGui::SetTooltip("Solid tiles produce a static collider in the physics world.");
@@ -294,7 +295,7 @@ void TilesetDocument::renderPropertiesPanel() {
 						  "Ignored by the legacy 2D rendering path.");
 
 	bool transparent = meta.transparent;
-	if (ImGui::Checkbox("Transparent (raycast)", &transparent))
+	if (gui::widgets::checkbox("Transparent (raycast)", &transparent))
 		meta.transparent = transparent;
 	if (ImGui::IsItemHovered())
 		ImGui::SetTooltip("When enabled, the raycast DDA does not stop at this tile — it records the hit and keeps "

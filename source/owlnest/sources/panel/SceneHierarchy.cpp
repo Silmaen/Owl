@@ -18,6 +18,7 @@
 
 #include <gui/IconBank.h>
 #include <gui/IconFont.h>
+#include <gui/UiLayer.h>
 #include <gui/utils.h>
 #include <gui/widgets/EmptyState.h>
 #include <gui/widgets/IconButton.h>
@@ -223,9 +224,12 @@ void SceneHierarchy::renderHierarchy() {
 	}
 
 	if (m_context) {
+		// Rows are the only lists where the selection takes the accent; headers and combos stay grey.
+		ImGui::PushStyleColor(ImGuiCol_Header, gui::vec(gui::UiLayer::getTheme().getSelection()));
 		renderHierarchyToolbar();
 		if (!m_searchFilter.empty()) {
 			renderSearchResults();
+			ImGui::PopStyleColor();
 			ImGui::End();
 			return;
 		}
@@ -255,6 +259,7 @@ void SceneHierarchy::renderHierarchy() {
 			renderRootEntities();
 			ImGui::TreePop();
 		}
+		ImGui::PopStyleColor();
 	}
 	ImGui::End();
 }
@@ -648,9 +653,11 @@ void SceneHierarchy::renderProperties() {
 		mp_activeDocument->renderPropertiesPanel();
 	} else {
 		m_inspector.beginFrame(m_selection, m_context.get(), mp_undoManager);
-		if (m_selection)
+		if (m_selection) {
+			gui::UiLayer::pushTextStyle(gui::TextStyle::Label);
 			drawComponents(m_selection);
-		else if (m_context)
+			gui::UiLayer::popTextStyle();
+		} else if (m_context)
 			std::ignore = gui::widgets::emptyState(gui::icon::mousePointer2, "No entity selected",
 												   "Click an entity in the viewport or in the Hierarchy to edit its "
 												   "components here.");
