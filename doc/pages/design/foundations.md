@@ -220,13 +220,13 @@ reorganised, made discoverable and consistent. See [Owl Nest UI](nest-ui.md).
 
 ## Performance work
 
-- ![Planned][planned] Dense per-frame transforms, direct TRS composition (PR-21: P-02, P-06, C-09)
+- ![Done][done] Dense per-frame transforms, direct TRS composition (PR-21: P-02, P-06, C-09)
 - ![Done][done] Fixed-step physics, multi-threaded Box2D solver on Taskflow (PR-22: D-05, P-12, D-14)
 - ![Done][done] Inspector serializes only the edited component, only on edit (PR-23: E-04)
 - ![Done][done] Voxel meshing on workers with a per-frame budget, neighbours invalidated; streaming frame peak
   14.3 → 0.35 ms (PR-24: D-08, P-09, B-15)
-- ![Planned][planned] Renderer2D per-frame transients, 2D sort order, UTF-8 text (PR-30: B-09, B-10, D-18)
-- ![Planned][planned] Persistent, chunked and culled tilemap (PR-31: B-13)
+- ![Planned][planned] Renderer2D per-frame transients, 2D sort order, UTF-8 text (PR-30: B-09, B-10, D-18) — carried over after v0.3.0
+- ![Planned][planned] Persistent, chunked and culled tilemap (PR-31: B-13) — carried over after v0.3.0
 - ![Done][done] Faster scene loading: rapidyaml reads scenes, prefabs and snapshots, prefab instantiation copies
   through the component registry (10 000 entities: 1.21 s → 73 ms)
 - ![Done][done] Shaders precompiled at build time (both CPack components, embedded in a game pack), so the runner

@@ -58,7 +58,7 @@ The default arrangement uses ImGui docking:
   Content Browser previews still to make, and a bell holding the last 30 notifications (the toasts), with the count
   of unread ones
 
-Two presets are available from **File > Views** and the shortcuts: **Default** (`Alt+1`) and **Hierarchy Left**
+Two presets are available from **View > Layout** and the shortcuts: **Default** (`Alt+1`) and **Hierarchy Left**
 (`Alt+2`), which moves the Scene Hierarchy to its own column left of the documents. **Reset Layout** puts every panel
 back in the place of the current preset. The preset is saved in `OwlNest_settings.yml` (`layoutPreset`).
 
@@ -202,7 +202,7 @@ Key types live in `source/owlnest/sources/document/`: `Document` (interface),
 
 ### Scene Flow view
 
-Opens from **File → Views → Scene Flow** in the ribbon. Presents every `.owl`
+Opens from **Home > Project > Scene Flow** in the ribbon. Presents every `.owl`
 scene in the current project as a node on a canvas, with Teleport triggers
 drawn as output pins wired to the destination scene's entry pin. Scenes
 unreachable from `Project::firstScene` are drawn with a red title (via BFS).
@@ -289,7 +289,7 @@ shortcuts (Q/W/E/R/T):
 | Scale       | R   | Scale the entity along axes         |
 | All         | T   | Combined translate + rotate + scale |
 
-**Snap to grid.** The **Snap** toggle in the Gizmo ribbon group enables a
+**Snap to grid.** The **Snap** toggle of the viewport toolbar enables a
 grid-aligned mode for translation gizmos. When enabled, dragging a translation
 handle clamps the result to multiples of the configured snap step. Holding
 `Ctrl` during a drag also forces snap on the same step (works whether the
@@ -694,7 +694,7 @@ by the Runner at startup.
 ### Scene Settings
 
 The Scene Settings panel is a dockable window opened via the ribbon
-(**Edit > Settings > Scene**). It edits the active scene's *global* settings —
+(**Scene > Scene > Settings**). It edits the active scene's *global* settings —
 the `EnabledRenderers` and `Physics` blocks in the `.owl` file — without requiring the user
 to hand-edit YAML.
 
@@ -809,45 +809,46 @@ The `Project` class (`source/owlnest/sources/Project.h`) holds three fields: `na
 
 ### Workflow Operations
 
-The ribbon tabs hold the workflow commands: **File** (project), **Edit** (history and settings) and **Scene**
-(active scene, disabled if no project is loaded).
+The workflow commands live in the **File** screen (project), the **Home** tab (edit, create, project) and the
+**Scene** tab (active scene, shown while a scene document is active).
 
-**File** — project operations:
+**File screen** — project operations:
 
-| Operation     | Ribbon button              | Description                                         |
-|---------------|----------------------------|-----------------------------------------------------|
-| New Project   | File > Project > New       | Name, folder and template of a new project (below)  |
-| Open Project  | File > Project > Open      | Select a directory containing `owl_project.yml`     |
-| Save Project  | File > Project > Save      | Write current project settings to YAML              |
-| Close Project | File > Project > Close     | Unload the project and clear the asset browser      |
-| Open Recent   | File > Recent > Recent     | Drop-down of recently opened projects (up to 10)    |
-| New object    | File > Object > New        | New scene, animation, tilemap or tileset            |
-| Pack Game     | File > Package > Pack Game | Scan and pack all project assets (async, see below) |
+| Operation        | Entry                     | Description                                            |
+|------------------|---------------------------|--------------------------------------------------------|
+| New Project      | New project               | Name, folder and template of a new project (below)     |
+| Open Project     | Open project              | Select a directory containing `owl_project.yml`        |
+| Save Project     | Save project, as...       | Write the project settings to YAML                     |
+| Package the game | Package the game          | Scan and pack all project assets (async, see below)    |
+| Settings         | Editor / Project / Engine | Editor settings, project metadata, engine parameters   |
+| Close Project    | Close project             | Unload the project and clear the asset browser         |
+| Recent projects  | Right column              | The recently opened projects (up to 10), click to open |
 
-**Edit** — history and settings:
+**Home** — edit, create and project:
 
-| Operation        | Ribbon button             | Description                                     |
-|------------------|---------------------------|-------------------------------------------------|
-| Undo             | Edit > History > Undo     | Reverse the most recent editing action (Ctrl+Z) |
-| Redo             | Edit > History > Redo     | Re-apply an undone action (Ctrl+Y)              |
-| Engine Settings  | Edit > Settings > Engine  | Engine parameters dialog                        |
-| Editor Settings  | Edit > Settings > Editor  | Theme, stats toggle, keybindings                |
-| Project Settings | Edit > Settings > Project | Edit the active project's metadata              |
+| Operation        | Ribbon button             | Description                                             |
+|------------------|---------------------------|---------------------------------------------------------|
+| Undo / Redo      | Home > Edit               | Reverse or re-apply an editing action (Ctrl+Z / Ctrl+Y) |
+| Duplicate        | Home > Edit > Duplicate   | Duplicate the selected entity                           |
+| New object       | Home > Create > New       | New scene, animation, tilemap or tileset                |
+| Scene Flow       | Home > Project            | Open the scene flow graph of the project                |
+| Project Settings | Home > Project > Settings | Edit the active project's metadata                      |
+| Pack Game        | Home > Project            | Same as Package the game                                |
 
 **Scene** — active scene operations:
 
-| Operation     | Ribbon button                | Description                                             |
-|---------------|------------------------------|---------------------------------------------------------|
-| New Scene     | Scene > File > New           | Clear the viewport and start a fresh scene              |
-| Open Scene    | Scene > File > Open          | Load a `.owl` file (async read + deserialize)           |
-| Save Scene    | Scene > File > Save          | Save to the current path (async write)                  |
-| Save Scene as | Scene > File > Save As       | Save to a new path                                      |
-| Import Scene  | Scene > File > Import        | Copy an external `.owl` file into the project           |
-| Pack Scene    | Scene > Package > Pack Scene | Pack the current scene's assets into `.owlpack` (async) |
+| Operation      | Ribbon button              | Description                                             |
+|----------------|----------------------------|---------------------------------------------------------|
+| New Scene      | Scene > Document > New     | Start a fresh scene                                     |
+| Open Scene     | Scene > Document > Open    | Load a `.owl` file (async read + deserialize)           |
+| Save Scene     | Scene > Document > Save    | Save to the current path (async write)                  |
+| Save Scene as  | Scene > Document > Save As | Save to a new path                                      |
+| Import Scene   | Scene > Document > Import  | Copy an external `.owl` file into the project           |
+| Scene Settings | Scene > Scene > Settings   | Enabled renderers and physics of the scene              |
+| Pack Scene     | Scene > Scene > Pack Scene | Pack the current scene's assets into `.owlpack` (async) |
 
-**Welcome screen.** When the editor starts without a loaded project, a Welcome window is
-shown with **New Project**, **Open Project**, and a list of recent projects (double-click
-to open, `x` to remove). Once closed with its `×` button, it stays closed for the session.
+**File screen at start-up.** When the editor starts without a loaded project, the File screen opens with **New
+project**, **Open project**, **Getting started** and the recent projects.
 
 **Async operations.** Pack Game, Pack Scene, Open Scene, and Save Scene all run off the
 main thread via a progress modal (`AsyncProgressModal`). Pack Game additionally runs a
@@ -901,7 +902,7 @@ installed, the project starts empty (an `owl_project.yml` and a `scenes/` folder
 Closing a project or quitting the editor records its session in `OwlNest_settings.yml`: the files of the open tabs
 (relative to the project), the active tab and the entity selected in the active scene. Opening the project again
 reopens them instead of `firstScene`; a file that no longer exists is skipped with a warning. Only the projects of
-the recent list keep a session. The dock layout is shared by all projects (`imgui.ini`).
+the recent list keep a session. The dock layout is shared by all projects (`OwlNest_imgui.ini`).
 
 ### Autosave and crash recovery
 
@@ -1072,7 +1073,7 @@ at configure time:
 |-------------------------------------|--------------------------------------------------|
 | Default landing page (`Owl` README) | **File → Help** ribbon button                    |
 | Contextual help                     | `F1` (`help.context` action)                     |
-| Getting Started guide               | **Getting Started** button on the Welcome screen |
+| Getting Started guide               | **Getting started** card of the File screen      |
 
 `F1` reads the component header most recently hovered in the SceneHierarchy
 inspector (`SceneHierarchy::lastHoveredComponentName`) and routes to the page

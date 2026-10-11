@@ -494,9 +494,8 @@ To drive either object from a Lua script instead of the built-in key, set the co
 ## Known limitations of the current code
 
 - **Tilemap world transform is ignored** — the cast assumes the tilemap is centred at world origin (matching the 2D
-  path's default). Translating / rotating / scaling the `Tilemap` entity does not move the wall world. A TODO is in
-  `RendererRaycast::drawTilemapWalls` to invert
-  `iTilemapWorldTransform` and project the camera into tilemap-local space before the cast.
+  path's default). Translating / rotating / scaling the `Tilemap` entity does not move the wall world.
+  The fix is to invert the tilemap world transform and project the camera into tilemap-local space before the cast.
 - **Single-layer tilemap** — only the first non-empty `TilemapLayer` of the component is read. Multi-layer tilemaps
   don't stack walls.
 - **No collision integration** — the raycast walls don't generate Box2D fixtures, so a `PhysicBody` player will walk

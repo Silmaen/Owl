@@ -124,23 +124,6 @@ Font::Font(const std::filesystem::path& iPath, const bool iIsDefault) : m_defaul
 	}
 	m_atlasTexture = createAndCacheAtlas<uint8_t, float, 3, msdf_atlas::msdfGenerator>(
 			"Test", static_cast<float>(emSize), m_data->glyphs, m_data->fontGeometry, size);
-#if 0
-	msdfgen::Shape shape;
-	if (msdfgen::loadGlyph(shape, font, 'C'))
-	{
-		shape.normalize();
-
-		//                      max. angle
-		msdfgen::edgeColoringSimple(shape, 3.0);
-		//           image width, height
-		msdfgen::Bitmap<float, 3> msdf(32, 32);
-
-		//                     range, scale, translation
-		msdfgen::generateMSDF(msdf, shape, 4.0, 1.0, msdfgen::Vector2(4.0, 4.0));
-
-		msdfgen::savePng(msdf, "output.png");
-	}
-#endif
 
 	destroyFont(font);
 

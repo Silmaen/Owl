@@ -10,9 +10,9 @@ Owl is the engine that mixes rendering styles (2D, raycast, voxel, isometric, 3D
 | 0.8.0   | Expected 2027-10-15 | Planned     | Gameplay systems: AI, 3D physics, audio, narrative                       |
 | 0.7.0   | Expected 2027-08-15 | Planned     | Content & visual scripting: asset cook, animation, PCG graphs            |
 | 0.6.0   | Expected 2027-06-15 | Planned     | 3D core: meshes, PBR, shadows, render graph                              |
-| 0.5.0   | Expected 2027-04-15 | Planned     | 2D complete: lighting, HUD, 2D physics, Owl Nest visual overhaul         |
-| 0.4.0   | Expected 2027-02-28 | Planned     | Isometric renderer, MCP server in Owl Nest, gamepad                      |
-| 0.3.0   | Expected 2027-01-15 | In progress | Foundations: bugs, safety nets, Owl RHI, Conan, iteration tooling        |
+| 0.5.0   | Expected 2027-04-15 | Planned     | 2D complete: lighting, text, 2D physics                                  |
+| 0.4.0   | Expected 2027-02-28 | Planned     | Isometric renderer, MCP server in Owl Nest, gamepad, HUD editor          |
+| 0.3.0   | Released 2026-10-11 | Released    | Foundations: bugs, safety nets, Owl RHI, Conan, ergonomic Owl Nest       |
 | 0.2.1   | Released 2026-06-27 | Released    | Voxel engine                                                             |
 | 0.2.0   | Released 2026-06-02 | Released    | Renderer stack, raycasting, tilemaps, scene transitions                  |
 | 0.1.1   | Released 2026-04-30 | Released    | Multi-document editor, code / node-graph / animation editors             |

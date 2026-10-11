@@ -7,11 +7,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] — 0.3.0 (in development)
+## [Unreleased]
+
+## [0.3.0] - 2026-10-11
 
 ### Added
 
-- Owl Nest default layout, built on the first launch instead of floating panels: documents in the centre, Hierarchy and Properties on the right, Content Browser, Log and Stats below; presets Default and Hierarchy Left (`Alt+1`, `Alt+2`) and **Reset Layout** in **File > Views**.
+- Owl Nest default layout, built on the first launch instead of floating panels: documents in the centre, Hierarchy and Properties on the right, Content Browser, Log and Stats below; presets Default and Hierarchy Left (`Alt+1`, `Alt+2`) and **Reset Layout** in **View > Layout**.
 - Owl Nest status bar: simulation mode, active document and entity count, last autosave, graphics backend, and the unseen warnings and errors (click to open the Log).
 - `UiLayer::setBottomBarCallback`, `setDockLayoutCallback` and `getDockSpaceId`; `LogBuffer::getWarningCount`.
 - Lucide icon font merged into the UI fonts, its glyphs as UTF-8 string constants in `gui/IconFont.h`; the status bar shows them.
@@ -77,14 +79,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Benchmarks in CI: `owl_bench` compiled on every pull request (`linux-clang-debug`), run nightly on `main` by the `Bench` action against `bench/baseline/linux-bench.json`; a median slower by more than 15 % twice fails the build.
 - Optional Conan binary cache (`OWL_CONAN_CACHE_URL`, remote `owl-cache`): read before ConanCenter, filled by every CI build with the binaries of Owl's graph it built, even when the install fails midway, skipped with a warning when unreachable.
 - `PR Ready` composite TeamCity configuration: red when any ready-PR configuration is red, the single check to require on `main`.
-- Conan profiles for Windows MinGW (`windows-clang`, `windows-gcc`), DLLs deployed next to the binaries, provider selectable through `OWL_DEPENDENCY_PROVIDER` (environment and TeamCity parameter).
+- Conan profiles for Windows MinGW (`windows-clang`, `windows-gcc`), DLLs deployed next to the binaries.
 - `Clang Static Analyzer` CI configuration (`ClangTidy -- --tool=analyzer`); both analyses close the TeamCity chain and are the checks to require on `main`.
 - `docker/run.sh` runs any build, test or CI command in the Docker build image (`--gui`, `--perf`).
 - Versioned file formats: scenes, prefabs, saves, tilesets, tilemaps, animation clips, voxel structures, node graphs, settings and `owl_project.yml` carry a `FormatVersion`; files without it load as version 1, newer files are refused with a clear error, older ones go through a registered migration chain (`core::DocumentFormat`).
 - `platform::writeFileAtomic` (temporary file, `fsync`, atomic rename) now writes all those files: a crash or a full disk keeps the previous file instead of truncating it.
 - `bench/` engine benchmark harness (scene, serialization, Renderer2D, voxel, Lua, physics, Slang), built with `-DOWL_BENCHMARK=ON`.
 - `ClangTidy` CI action: on a pull request, analyses only the touched `.cpp` files plus every `.cpp` whose include closure (`ninja -t deps`) holds a touched header; elsewhere, everything.
-- `-DOWL_DEPENDENCY_PROVIDER=conan` builds `linux-clang-release` with Conan 2 and ConanCenter (`conanfile.py`, six local recipes in `conan/recipes/`), without the DepManager server.
+- Conan 2 builds every preset from ConanCenter and the local recipes of `conan/recipes/` (`conanfile.py`, `conan.lock`).
 - Every Linux preset builds on Conan, pinned by `conan.lock`, and `conan create .` packages OwlEngine, checked by `test_package/` (`find_package(OwlEngine)`).
 - `-DOWL_PROFILER=tracy` puts Tracy (ConanCenter, on demand) behind the `OWL_PROFILE_*` macros: CPU zones, frame marks, named Taskflow workers, OpenGL and Vulkan GPU zones, tracked allocations ([Profiling](profiling.md)).
 - `-DOWL_LOG_LEVEL=<level>` compiles out the log macros below a level.
@@ -100,6 +102,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `scene::SystemSchedule`: the runtime frame is a list of named systems in fixed phases (`SystemPhase`) that a game adds, replaces or removes, for every scene (`getDefault()`) or one (`Scene::getSystems()`).
 - `scene::ComponentRegistry`: a game registers its own components, which scenes and prefabs then save and load, duplication and the Play copy keep, and the editor adds, removes and inspects (`component.add`, inspector body), replacing the closed component lists for these uses.
 - CodeStyle `doc-identifiers` sub-check: a symbol, a file or an `OWL_*` option cited between backticks in `doc/pages` must exist in the repository, so a rename can no longer leave a page describing code that is gone.
+- First Python tests of the CI tooling (`ci/tests/`, pytest) cover masking, publication and the secret scan.
 
 ### Changed
 
@@ -112,9 +115,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Prefab instantiation copies the components through the registry and links only the instance's children: 4-6 µs per entity instead of 240-370.
 - A format 1 scene or prefab without a name-only `EntityLink` is read as is, without the yaml-cpp migration pass: the sample scenes load 22 to 36 times faster.
 - Lighter pull-request CI: five checks (Code Style, Linux Clang, Windows Clang, Sanitizer Address, Clang-Tidy) gate `PR Ready`; GCC and Include Check run on `main`, the Thread and UB sanitizers and the Static Analyzer nightly, and the *Clang Minimal Modules* job is removed.
-- `find_package(OwlEngine)` exposes EnTT as its only public dependency: yaml-cpp left the public headers (render-stack `defaultConfig`, `overrides` and `RenderLayer::applyConfig` carry YAML text), and imgui comes with the optional `Owl::Gui` target (`COMPONENTS Gui`, `<owlgui.h>`), `<owl.h>` no longer including `gui/utils.h`; `test_package` checks both targets.
+- `find_package(OwlEngine)` exposes EnTT as its only public dependency: yaml-cpp left the public headers (render-stack `defaultConfig`, `overrides` and `RenderLayer::applyConfig` carry YAML text), and imgui comes with the optional `Owl::Gui` target (`COMPONENTS Gui`, `<owlgui.h>`), `<owl.h>` no longer including `gui/utils.h`; `test_package` checks both targets, no public header names a yaml-cpp type (`AssetScanner` keeps its scene walk private) and CodeStyle (`public-deps`) rejects a public include of a third-party header the package does not provide.
 - The help bundle is generated in `<build>/help/` instead of `engine_assets/help/`, installed as `assets/help/` by both CPack components; `HelpPanel` falls back to its build tree.
-- No public header names a yaml-cpp type any more (`AssetScanner` keeps its scene walk private), and CodeStyle (`public-deps`) rejects a public include of a third-party header the package does not provide.
 - `libOwlEngine.so` exports only the `OWL_API` symbols (hidden visibility, `--exclude-libs,ALL`): 3 763 dynamic symbols instead of 17 841, none from the statically linked yaml-cpp, spdlog, Lua, msdfgen, zstd or libpng, so a game linking its own copy no longer risks interposition.
 - A configure needs neither the network nor Doxygen: `poetry sync` runs only when `poetry.lock` changed, help badges come from their cache (`OWL_HELP_FETCH_BADGES=ON`, set by the packaged presets, downloads), the `documentation` target exists when Doxygen is found (`OWL_ENABLE_DOCUMENTATION=ON` requires it) and its `Doxyfile` is generated in the build tree with absolute paths and the venv's Python.
 - Owl RHI named and documented (*Owl RHI* in the renderer page): Vulkan reference, OpenGL frozen fallback, Null recording the state of each draw for tests, and the list of classes a further backend implements.
@@ -128,17 +130,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Owl Nest `EditorLayer` split: `GamePackager` (wizard, validation, export), `RibbonBuilder`, editor resources and project / asset opening (`EditorLayerProject.cpp`, one `classifyAsset` table instead of three extension chains); `EditorLayer.cpp` drops from 2 668 to under 1 000 lines.
 - `scene::LevelTransition`: the editor Play mode and the runner share the level lookup (pack, then asset folders), the level load and the arrival placement of teleports and saved-game loads; Play in the editor now also finds levels in an open pack.
 - Packages without a rebuild: `cpack` writes the `OwlEngine` and `OwlNest` archives (CPack components) from the release tree the Clang builds test on `main`, the nightly x64 package jobs only publish them, and assets are located at run time (`OWL_DEVELOPMENT`, `OWL_PACKAGE_ENGINE`, `OWL_PACKAGING` and the `package-engine-*` / `package-app-nest-*` presets removed, `package-linux` for arm64).
-- Engine modules are layered (`core` up to `gui`) and the public headers follow it, checked by the CodeStyle `module-deps` sub-check: the 10-module include cycle is gone. `PhysicsSettings` and `PhysicsSnapshot` moved to `scene` (aliases kept in `physics`), `MeshLoader` to `data::geometry` (alias kept in `data`), and `GameExporterSettings::rendererStack` became `rendererStackYaml`; `input::Input::init()` without argument picks GLFW.
+- Engine modules are layered (`core` up to `gui`) and the public headers follow it, checked by the CodeStyle `module-deps` sub-check: the 10-module include cycle is gone; `PhysicsSettings` and `PhysicsSnapshot` moved to `scene` (aliases kept in `physics`), `MeshLoader` to `data::geometry` (alias kept in `data`), and `GameExporterSettings::rendererStack` became `rendererStackYaml`; `input::Input::init()` without argument picks GLFW.
 - Tests: the per-binary ctest timeout drops from 1 h to 10 min (`OWL_TEST_TIMEOUT`, 1 h on the emulated arm64), so a hung binary no longer stalls a build for hours.
 - CI: the emulated arm64 nightly builds Clang only, on a `linux-emulated` preset without coverage, benchmarks or image tests, so it fits its time limit.
 - EnTT 4.0.0 (C++20), Taskflow 4.1.0, OpenAL Soft 1.25.2, msdfgen 1.13, msdf-atlas-gen 1.4 and tinyobjloader rc13, through local Conan recipes until ConanCenter publishes them.
 - Third-party dependencies at their latest versions: glfw 3.5.1 (local recipe, its Wayland seat patch now upstream), freetype 2.14.3 and tinyxml2 11.0.0 (msdfgen recipe), libalsa 1.2.16.1 (OpenAL Soft recipe), brotli 1.2.0, flac 1.5.0 and plutovg 1.3.3 (overrides), CMake 4.4.4 build tool, wayland-protocols 1.49 (file dialogs).
 - Owl Nest code editor on imgui-color-text-edit 1.92.9 (its `DocPos` cursor API; the status line still shows the visual column), with headless tests of editing, search, undo and save.
 - Performance targets get a status: Vulkan ≤ OpenGL (PRIME present floor), Box2D (1.68 ms SSE2 by default) and the Renderer2D quads off `worldIndex` (14-24 ns) accepted as measured, the shader cache read before the precompiled SPIR-V validated.
-- CI on teamcity-github-bridge 1.11.0: PR Ready keeps a fixed check name (`checkName`), pull requests get labels by changed paths and are assigned to their author.
+- CI on teamcity-github-bridge 1.11.0: findings pinned to the PR diff as Check Run annotations, doc-only PRs skip the C++ matrix, a `[skip ci]` phrase, `main` left to the VCS trigger, a fixed PR Ready check name (`checkName`), pull requests labelled by changed paths and assigned to their author.
 - TeamCity: Include Check and PR Ready move to the root beside Code Style (GitHub checks `Include Check` and `PR Ready`).
 - CI: Windows builds compute the coverage on `main` only, no longer on pull requests.
-- CI on Conan everywhere (the TeamCity `OWL_DEPENDENCY_PROVIDER` default) and on a single Ubuntu 26.04 image (`builder-ubuntu2604`: GCC 15, Clang 22) for every Linux preset and `docker/run.sh`.
+- CI on Conan everywhere and on a single Ubuntu 26.04 image (`builder-ubuntu2604`: GCC 15, Clang 22) for every Linux preset and `docker/run.sh`.
 - CI: release build and tests on `main` only; arm64 builds and every package nightly (they held the agents for hours and packages publish to the site).
 - CI in two levels: Code Style and Include Check in parallel, then every build, sanitizer and analysis after Code Style only.
 - CI: `Experiment/*` pull requests run the fast subset only; secrets reach `ci_action.py` through `env.*` parameters; the CI flow is documented case by case (`main`, draft, ready, experiment, doc-only).
@@ -155,7 +157,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Roadmap rethought toward 1.0.0: v0.3.0 Foundations, renumbered releases, three reading levels (`ROADMAP.md`, `doc/pages/roadmap.md`, `doc/pages/design/`).
 - Changelog split the same way: one line per release in `CHANGELOG.md`, details in `doc/pages/changelog.md`.
 - clang-tidy decoupled from the compiler: `CMAKE_CXX_CLANG_TIDY` unset, the analysis is a `ClangTidy` step on `Build/Quality/Clang-Tidy` driven by `compile_commands.json`.
-- teamcity-github-bridge 1.10.0 wiring: findings pinned to the PR diff as Check Run annotations, doc-only PRs skip the C++ matrix, `[skip ci]` phrase, `main` left to the VCS trigger.
 - `Scene::getWorldsBuffer()` replaced by `Scene::getWorldMatrices()`, `Renderer2D::setSceneWorldsBuffer()` by `Renderer2D::setSceneWorlds()`; `renderer::utils::WorldTransformPass` removed.
 - Physics runs at a fixed step (60 Hz by default, per-scene `Physics:` settings edited in *Scene Settings*) with an accumulator, a bound on steps per frame and interpolated transforms; the result no longer depends on the frame rate and `on_collision` still fires once per pair and frame.
 - Performance: the Box2D solver runs multi-threaded on a dedicated Taskflow executor (`workerCount`, automatic above 2 000 dynamic bodies), 5 000 stacked boxes going from 5.1 to 3.2 ms per step with 4 workers.
@@ -167,6 +168,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `app::EngineContext`, owned by `Application` and reached from each scene, holds the screen transition, the game settings and the voxel mesh cache instead of static storage: `ScreenTransition` and `SettingsManager` are instances, `RendererVoxel` takes a `VoxelMeshCache`, and an isolated test creates its own context.
 - Documentation faithful to the code: renderer namespaces and vertex layout, editor ribbon paths, TeamCity DSL names, built-in settings, a Docker Quick Start, one contributor guide (`doc/pages/contributing.md`) and a security policy limited to the latest minor release.
 - Doxygen really checks the public API: `EXTRACT_ALL` no longer hides the undocumented elements, so the `documentation` target fails on any of them, and the ~650 that were missing (members, enum values, parameters) are documented.
+- 10 000-sprite CPU frame under its v0.3.0 target: world matrices in a persistent dense per-entity cache, checked by compare and recomposed only on change (no per-frame maps, no matrix decomposition), inherited visibility computed in the same pass: `editor_update/flat10000` 2.60 → 0.33 ms, 1 000-deep chains 10× cheaper to query and build.
+- `math::Transform::operator()` builds the TRS matrix in closed form and skips the trigonometry of null angles (74 → 4.2 ns), Renderer2D finds a texture slot by pointer before the backend compare: transient quads 86 → 17 ns, scene-world quads 10.8 → 9.4 ns.
+- Faster Box2D: poses copied to the entities in parallel, plus an opt-in AVX2 build on x86_64 (`OWL_PHYSICS_AVX2`, off by default since CPUs without AVX2 then run without physics): 5 000 bodies in contact step in 1.44 ms on 8 workers with AVX2 instead of 1.68 ms.
+- Raycast: the CPU walks the DDA itself for the column depths and stats instead of reading the GPU pass back twice per frame, so the frame no longer drains mid-way (Vulkan: one submission, no fence wait; `raycast_demo` 1.5 to 3.5 times faster on both backends).
+- Lua back under its audit cost: the bindings are light C functions instead of one closure each, the bound scene and `time.delta()` live on the C++ side of the state, `coroutine.wrap` is no longer a Lua chunk compiled per state and the callback names are interned once: creating an instance is 40 % faster and a third smaller, an empty callback a third cheaper.
+- Vulkan: successive batches on one framebuffer share a render pass, and `RenderCommand::clear` no longer clears again a pass that just cleared on load (Intel: 40 µs less GPU per 2D frame).
 
 ### Deprecated
 
@@ -183,7 +190,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Unused `tinyxml2`, `zeus` and `debugbreak` dependencies (`OWL_DEBUG_BREAK()` in `core/Assert.h` replaces `debug_break()`).
 - LeakSanitizer preset, option and TeamCity job: on Linux ASan already reports leaks.
 - `parallelForEach` / `parallelForIndex` (`core/task/ParallelUtils.h`), which nothing called, and the `Scheduler::getImpl()` accessor that only they used.
-- The Lua state `ScriptEngine` kept with bindings that no script ran in (each `ScriptInstance` owns its own), with `ScriptEngine::loadScript` / `loadScriptFromBuffer` that only fed it.
 - The generic `core::IFactory` / `FactoryProduct` / `ProductAllocator`, whose only user was the mesh extra data: `data::extradata::ExtraDataRegistry` (`ExtraDataPid`, `getExtraDataPid<T>()`) replaces it, and `ExtraDataContainer` copies now clone the values instead of default-constructing them.
 - `RenderAPI` / `RenderCommand` `drawLine`, `drawLineInstanced`, `setDepthTest`, `setDepthMask`, `beginTextureLoad` and `endTextureLoad`, replaced by `PipelineState` and `bindTextures`.
 - `ScriptEngine::init`, `shutdown`, `isInitialized` and `getActiveScene`, and `PhysicCommand::releaseScene`: no global points to an active scene any more.
@@ -208,17 +214,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Runner and editor start without compiling Slang: the build compiles the engine shaders to SPIR-V (`OwlShaderBake`, into `bin/assets`, installed in both CPack components and embedded in a game pack), compute shaders included, and `renderer::utils::loadOrCompileSpirv` uses them before the cache when their key matches the source; first frame 630-860 → 270-440 ms with an empty cache, 440-570 → 270-410 ms with a warm one.
 - Slang warning 41012 is filtered again: Slang 2026.19 prints it as `warning[E41012]`.
 - Precompiled or cached SPIR-V that is absent, truncated, garbled, of another stage or key, or refused by the driver (Vulkan module or pipeline, OpenGL compilation, GLSL translation) is compiled again from the Slang source and cached, with a log naming the file and the reason, instead of failing the shader or reaching the driver.
-- 10 000-sprite CPU frame under its v0.3.0 target: world matrices in a persistent dense per-entity cache, checked by compare and recomposed only on change (no per-frame maps, no matrix decomposition), inherited visibility computed in the same pass: `editor_update/flat10000` 2.60 → 0.33 ms, 1 000-deep chains 10× cheaper to query and build.
-- `math::Transform::operator()` builds the TRS matrix in closed form and skips the trigonometry of null angles (74 → 4.2 ns), Renderer2D finds a texture slot by pointer before the backend compare: transient quads 86 → 17 ns, scene-world quads 10.8 → 9.4 ns.
-- Faster Box2D: poses copied to the entities in parallel, plus an opt-in AVX2 build on x86_64 (`OWL_PHYSICS_AVX2`, off by default since CPUs without AVX2 then run without physics): 5 000 bodies in contact step in 1.44 ms on 8 workers with AVX2 instead of 1.68 ms.
-- Raycast: the CPU walks the DDA itself for the column depths and stats instead of reading the GPU pass back twice per frame, so the frame no longer drains mid-way (Vulkan: one submission, no fence wait; `raycast_demo` 1.5 to 3.5 times faster on both backends).
-- Vulkan: successive batches on one framebuffer share a render pass, and `RenderCommand::clear` no longer clears again a pass that just cleared on load (Intel: 40 µs less GPU per 2D frame).
-- Lua back under its audit cost: the bindings are light C functions instead of one closure each, the bound scene and `time.delta()` live on the C++ side of the state, `coroutine.wrap` is no longer a Lua chunk compiled per state and the callback names are interned once: creating an instance is 40 % faster and a third smaller, an empty callback a third cheaper.
 - Sanitizers: `SceneComponent.name` compares the component names as strings, not pointers, and LeakSanitizer ignores the GTK caches libdecor leaves in the Wayland smoke test (`test/lsan.supp`).
 - `main` builds again: the conflict marker left in `VulkanHandler.h` is resolved and the `MemoryAllocator` singleton lives in its source file, so hidden visibility no longer duplicates it (`-Wunique-object-duplication`); `linux-clang-minimal` builds and passes again (Null shader reload without Slang, hot-reload tests skipped without the render or script module).
 - `core_task` scheduler tests no longer fail on a loaded machine: they wait for the worker (condition and 30 s deadline) instead of sleeping 5 ms.
 - The raycast layer no longer leaves the depth test on for the layers drawn after it (a HUD layer then drew depth-tested).
-- OpenGL on the SPIR-V path (NVIDIA): the HUD, text and every Renderer2D draw without an entity reappear; the `quad`, `circle` and `text` shaders gave the scene and transient world buffers one block type, which the driver bound to a single buffer. A test checks every shipped shader keeps one block type per storage buffer.
+- OpenGL on the SPIR-V path (NVIDIA): the HUD, text and every Renderer2D draw without an entity reappear; the `quad`, `circle` and `text` shaders gave the scene and transient world buffers one block type, which the driver bound to a single buffer, and a test checks every shipped shader keeps one block type per storage buffer.
 - Documentation promising what the engine does not do: `scene.load_scene`, `scene.transition_to`, `scene.quit`, `door.*` and `pushwall.*` are now documented, while Box2D joints and per-category volumes are described as not available yet.
 - The scene templates of `engine_assets/templates/` (main menu, pause menu, game over) use the current `UiRect` / `UiText` / `UiButton` / `UiPanel` keys and lose the dropped `editorVisible`: their UI was silently ignored at load.
 - `Matrix::norm()` is the Frobenius norm: it summed `a_ij * a_ji` (wrong for any non-symmetric matrix) and read out of range on a non-square one.
@@ -254,8 +254,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `run_command` reads stdout and stderr concurrently: on Windows it read them one after the other, so the Conan install showed nothing and hung once its stderr pipe filled.
 - Conan package builds run their Python generators with the interpreter that runs Conan (glad needs jinja2, missing from MSYS2's Python), and `owl-local` is registered again only when missing, no longer wiping its recipe cache at every configure.
 - `libmp3lame` local recipe: MinGW Clang builds it with autotools (ConanCenter's recipe ran `nmake`, taking it for clang-cl).
-- Conan profiles force one version per build tool (`cmake/4.4.3`, `pkgconf/2.5.1` through `[replace_tool_requires]`, `CMAKE_POLICY_VERSION_MINIMUM=3.5` for old upstream projects), instead of one per recipe range.
-- Windows test binaries copy the gtest DLLs only when gtest is shared (DepManager); Conan links it statically.
+- Conan profiles force one version per build tool (`cmake/4.4.4`, `pkgconf/2.5.1` through `[replace_tool_requires]`, `CMAKE_POLICY_VERSION_MINIMUM=3.5` for old upstream projects), instead of one per recipe range.
+- Windows test binaries no longer copy gtest DLLs: Conan links gtest statically.
 - `Log` names its file sink with `SPDLOG_FILENAME_T`, so Windows builds against spdlog with or without wide filenames (Conan's has none).
 - `windows-gcc` Conan profile pins MinGW's `gcc.exe` by full path: in the MSYS2 bash of autotools builds a bare `gcc` was MSYS's POSIX compiler (mpg123 failed); ImGuizmo and plutovg are shared, and the imgui backends and imgui_stdlib compiled into the engine drop their API macro, as a shared imgui declares them dllimport on Windows.
 - CI: Doxygen moves to Linux x64 Clang, which builds the release on every run for it (release tests stay on `main`); Windows x64 Clang drops its artifact-size gate, wrong whenever a run skips the release.
@@ -268,7 +268,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Client log macros with arguments (`OWL_INFO("… {}", x)`) went to the engine logger instead of `APP`.
 - `OWL_ENABLE_PROFILING` never enabled the Chrome profiler (the header tested another macro).
 - Installed OwlEngine package: headers under `include/` again, no `-Werror -Weverything` imposed on consumers, preset install prefix honoured.
-- `PhysicCommand` no longer keeps a dangling `Scene*` once its scene is destroyed (`~Scene` releases the world through `PhysicCommand::releaseScene`), and the core, physics and renderer tests no longer depend on their order.
+- `PhysicCommand` no longer keeps a dangling `Scene*` once its scene is destroyed (each scene owns its physics world), and the core, physics and renderer tests no longer depend on their order.
 - Memory tracker with `OWL_ENABLE_STACKTRACE`: an `AllocationInfo` built outside the tracker no longer deadlocks on cpptrace's mutex.
 - OpenGL under Wayland no longer freezes after the first frame when the window is not shown: vsync is paced by the engine instead of blocking in `eglSwapBuffers`.
 - Wayland framebuffer kept at the window size (`GLFW_SCALE_FRAMEBUFFER` off), so HiDPI outputs no longer get a swapchain / viewport mismatch.
@@ -312,12 +312,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
-- CI secrets never reach argv or the log: publication and DepManager passwords come from `OWL_DEPLOY_PASSWORD` / `OWL_REMOTE_PASSWORD`, exported by the TeamCity step only, and `--password` / `--remote_passwd` are refused.
+- CI secrets never reach argv or the log: the publication password comes from `OWL_DEPLOY_PASSWORD`, exported by the TeamCity step only, and `--password` / `--remote_passwd` are refused.
 - `ci.utils.secrets` masks every registered secret in every CI log record and the value of any sensitive flag in a logged command (`run_command`).
 - Publication no longer downloads and runs the server's `api.py`: the upload client lives in `ci/utils/publish.py`, runs in process and requires HTTPS.
 - `CodeStyle` gains a `secrets` sub-check that fails on a tracked `.env` or a committed key, token or URL password.
 - CMake configure no longer prints `.env` values, only their keys.
-- First Python tests of the CI tooling (`ci/tests/`, pytest) cover masking, publication and the secret scan.
 - `.owlpack` reader hardened against forged packs: no write outside the extraction directory (`..`, absolute paths, symbolic links), sizes bounded by the file before any allocation, typed errors instead of escaping exceptions; `OWL_FUZZING` builds a libFuzzer target on `PackReader`.
 - Lua sandbox hardened: chunks load as text only (bytecode refused, also through `load`), `string.dump` removed, `setmetatable` refuses `__gc`, `collectgarbage` restricted, string metatable locked.
 - Lua quotas per `ScriptInstance` (`ScriptQuotas`): 64 MiB memory ceiling through a custom allocator and a 250 ms time budget per call through a watchdog thread; a script exceeding one is disabled instead of freezing or exhausting the game.

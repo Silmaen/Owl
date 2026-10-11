@@ -11,8 +11,8 @@ and accessible from the **Help** ribbon button or by pressing `F1`.
 ## First Run
 
 1. Launch **Owl Nest**.
-2. From the welcome screen, click **New Project** to create an empty project, or
-   **Open Project** to point at an existing folder containing an `owl_project.yml`.
+2. The **File** screen opens: click **New project** to create a project from a template, or
+   **Open project** to point at an existing folder containing an `owl_project.yml`.
 3. The editor opens with the scene viewport, content browser, hierarchy and inspector
    docked around a central area. All panels are detachable — drag the title bar to
    tear them out into a floating window.
@@ -39,7 +39,7 @@ desktop windows, which GLFW cannot place under Wayland). See [Building](building
 
 ## Shipping Your Game
 
-**File > Package > Pack Game** exports the open project to a folder you can copy anywhere: the game executable, its
+**Home > Project > Pack Game** (or **Package the game** in the File screen) exports the open project to a folder you can copy anywhere: the game executable, its
 shared libraries, one `.owlpack` holding every asset, `runner.yml` and a `launch.sh` on Linux. Start the game
 with `launch.sh` (Linux) or the `.exe` (Windows). Fix the validation warnings before shipping: a reference listed
 there is missing from the pack. Details in [editor.md](editor.md) and [Game export](design/game-export.md).

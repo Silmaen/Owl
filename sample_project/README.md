@@ -6,10 +6,10 @@ living showcase — it must be updated whenever new features are added to the en
 ## How to Open
 
 1. Launch **Owl Nest**
-2. **File > Open Project** and select `sample_project/owl_project.yml`
+2. **Open project** in the File screen and select `sample_project/owl_project.yml`
 3. The Main Menu scene loads automatically
 
-## How to Play (v0.2.0 flow)
+## How to Play
 
 The sample game has been rebuilt around the new tilemap system:
 

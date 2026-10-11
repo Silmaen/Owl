@@ -79,7 +79,7 @@ What a game plugs in without patching the engine, and what the architecture work
 
 | Extension point       | Today                                                                                                                                                                                      | Coming                                                |
 |-----------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------|
-| Renderer-stack layers | `renderer::RenderLayerFactory::registerType()`: a layer type by name, created from the stack                                                                                               | Owl RHI pipeline objects and explicit bindings (B-07) |
+| Renderer-stack layers | `renderer::RenderLayerFactory::registerType()`: a layer type by name, created from the stack                                                                                               | —                                                     |
 | Application layers    | `app::Application::pushLayer()` / `pushOverlay()`: per-frame update, events, ImGui render                                                                                                  | —                                                     |
 | Extra data            | `data::extradata::ExtraDataRegistry`: typed extra data per mesh vertex, face or mesh                                                                                                       | —                                                     |
 | Components            | `scene::ComponentRegistry::registerComponent<T>()`: saved, loaded, copied, added and inspected in the editor like an engine component (see [Game components](scene.md#component-registry)) | —                                                     |
@@ -162,7 +162,7 @@ OwlProject:
 
 When a project is opened, its directory is added as a high-priority asset directory, making its contents visible in the
 content browser. The editor window title reflects the active project name. Scenes can be imported into the project via
-the **Scene > File > Import**
+the **Scene > Document > Import**
 ribbon button.
 
 ### Async Packaging Flow
