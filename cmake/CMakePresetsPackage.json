@@ -24,6 +24,20 @@
           "publish_doc": false
         }
       }
+    },
+    {
+      "name": "package-linux-cross-arm64",
+      "inherits": [
+        "package-linux"
+      ],
+      "toolchainFile": "${sourceDir}/cmake/toolchains/linux-aarch64-clang.cmake",
+      "vendor": {
+        "silmaen": {
+          "docker_image": "builder-cross-arm64-ubuntu2604",
+          "package": true,
+          "publish_doc": false
+        }
+      }
     }
   ]
 }

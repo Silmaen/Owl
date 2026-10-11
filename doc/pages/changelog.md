@@ -69,6 +69,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Linux arm64 CI cross compiled on x64 (`linux-cross-arm64`: Clang, lld, an arm64 sysroot), only the tests under qemu-user; the fully emulated build runs once a week.
 - Wayland start-up skips libdecor and the GTK stack it loads when the compositor draws the decorations itself (KWin, wlroots, COSMIC): 30 ms less on KDE Plasma 6.
 - Scenes, prefabs and entity snapshots are read with rapidyaml (`core::YamlNode`, yaml-cpp still writes, files unchanged): a 10 000-entity scene loads in 7.3 µs per entity instead of 121, an undo snapshot in 2.9 µs instead of 107.
 - Prefab instantiation copies the components through the registry and links only the instance's children: 4-6 µs per entity instead of 240-370.

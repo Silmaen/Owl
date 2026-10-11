@@ -21,7 +21,7 @@ The CI surface covers:
 
 | Area               | Coverage                                                                                    |
 |--------------------|---------------------------------------------------------------------------------------------|
-| Build / Test       | Linux x64 and Windows x64 — Clang + GCC each; Linux ARM64 (Docker-emulated) — Clang only    |
+| Build / Test       | Linux x64 and Windows x64 — Clang + GCC each; Linux ARM64 (cross compiled) — Clang only     |
 | Engine modules     | Linux x64 Clang with every optional module off (`linux-clang-minimal`)                      |
 | Quality            | clang-tidy, 3 blocking sanitizers (Address + Leak, Thread, UB), Code Style aggregator       |
 | Packaging          | Engine + Owl Nest archives of the tested release tree, per platform — only on `main`        |
@@ -158,10 +158,12 @@ flowchart LR
 ```
 
 - **Yellow**: also run on draft pull requests (fast feedback subset).
-- **Blue**: nightly on `main` only: arm64 is emulated and slow, packages publish to the site, the Thread and UB
-  sanitizers and the Static Analyzer are not pull-request checks.
-- arm64 builds the `linux-emulated` preset: Debug without coverage, benchmarks or image tests
-  (`OWL_RENDER_TESTS=OFF`), since QEMU makes them hours long and lavapipe's output depends on the CPU.
+- **Blue**: `main` only: arm64 on every push, nightly for the packages (they publish to the site), the Thread and
+  UB sanitizers and the Static Analyzer, which are not pull-request checks.
+- arm64 cross compiles the `linux-cross-arm64` preset on an x64 agent (Clang, lld, the image's arm64 sysroot) and
+  runs only the tests under qemu-user: Debug without coverage, benchmarks or image tests (`OWL_RENDER_TESTS=OFF`,
+  lavapipe's output depends on the CPU). The former fully emulated `linux-emulated` build stays as
+  *Clang (emulated)*, once a week, during the transition.
 - **Grey**: every `main` push, never on a pull request (GCC parity, Include Check).
 - Uncoloured: run on every ready pull request and on `main` (Clang-Tidy).
 
@@ -193,7 +195,8 @@ says which presets exist, where they run and in which order.
 | Build Linux x64 / Clang (Doxygen)          | ✅           | —                | ✅        | ✅        | ✅                 | ✅           | ❌           |
 | Build Windows x64 / Clang                  | ✅           | —                | ✅        | ✅        | ✅                 | ⏭           | ❌           |
 | Build Linux x64 / GCC, Windows x64 / GCC   | ✅           | —                | ❌        | ❌        | ❌                 | ❌           | ❌           |
-| Build Linux arm64 / Clang, GCC (emulated)  | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
+| Build Linux arm64 / Clang (cross compiled) | ✅           | —                | ❌        | ❌        | ❌                 | ❌           | ❌           |
+| Build Linux arm64 / Clang (emulated)       | ❌           | weekly           | ❌        | ❌        | ❌                 | ❌           | ❌           |
 | Benchmarks (`linux-bench`)                 | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
 | Fuzzing (`linux-fuzz`)                     | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
 | Sanitizer Address (+ LSan)                 | ✅           | —                | ✅        | ✅        | ✅                 | ⏭           | ❌           |
@@ -218,16 +221,16 @@ GitHub, always run a configuration.
 - **`Experiment/*` pull requests** run the fast subset only (the draft one): the full-matrix configurations carry
   `prTriggerBranchesOverride = EXCLUDE_EXPERIMENT`. Their required checks are therefore *Skipped*: an experiment is not
   meant to be merged as such; move the work to a `Feature/*` branch to get the full verdict.
-- **`main` push**: every configuration but arm64 and the packages, through the templates' VCS trigger; the release
+- **`main` push**: every configuration but the emulated arm64 one and the packages, through the templates' VCS trigger; the release
   build and its tests (the `release_preset` steps) run only there, a pull request gets its verdict from the debug
   build in half the time.
-- **Nightly** (02:00, `main`, only when it changed): the emulated arm64 builds (50 to 90 minutes each) and every
-  package, which publishes to the site.
+- **Nightly** (02:00, `main`, only when it changed): every package, which publishes to the site. **Weekly**
+  (Sunday 03:00): the emulated arm64 build (1 to 2 hours).
 - **Packages without a rebuild**: on `main`, the Clang builds package their tested release tree (`Package Release`,
   release preset flagged `package` in its `vendor.silmaen` block, both archives kept as artifacts). The x64 package
   configurations (`publishBuild()`) build nothing: they take those archives and the documentation from the build of
-  the same chain and publish them. arm64 has no tested release tree and still builds `package-linux`
-  (`packageBuild()`).
+  the same chain and publish them. arm64 has no tested release tree and cross compiles
+  `package-linux-cross-arm64` (`packageBuild()`).
 
 ## Triggering
 

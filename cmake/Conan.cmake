@@ -5,7 +5,9 @@
 # CMAKE_PREFIX_PATH. Conan itself comes from the Poetry environment (dev group).
 #
 set(${PROJECT_PREFIX}_CONAN_PROFILE "" CACHE STRING
-        "Conan profile for host and build (default: conan/profiles/<os>-<compiler>)")
+        "Conan host profile (default: conan/profiles/<os>-<compiler>, <os>-<compiler>-<arch> when cross compiling)")
+set(${PROJECT_PREFIX}_CONAN_BUILD_PROFILE "" CACHE STRING
+        "Conan build profile, for the tools run during the build (default: conan/profiles/<os>-<compiler>)")
 set(${PROJECT_PREFIX}_CONAN_HOME "" CACHE PATH "CONAN_HOME used for the install (empty: Conan's default)")
 set(${PROJECT_PREFIX}_CONAN_BUILD "missing" CACHE STRING "Value of conan install --build")
 set(${PROJECT_PREFIX}_CONAN_CACHE_URL "" CACHE STRING
@@ -24,11 +26,25 @@ if (${PROJECT_PREFIX}_CONAN_INSTALL)
             set(_owl_conan_compiler gcc)
         endif ()
         string(TOLOWER "${CMAKE_SYSTEM_NAME}" _owl_conan_os)
-        set(${PROJECT_PREFIX}_CONAN_PROFILE "${CMAKE_SOURCE_DIR}/conan/profiles/${_owl_conan_os}-${_owl_conan_compiler}")
+        set(_owl_conan_native "${CMAKE_SOURCE_DIR}/conan/profiles/${_owl_conan_os}-${_owl_conan_compiler}")
+        # Cross compiling: the host profile of the target architecture (Conan's name), the build one is native.
+        if (CMAKE_CROSSCOMPILING AND CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64|arm64|ARM64")
+            set(${PROJECT_PREFIX}_CONAN_PROFILE "${_owl_conan_native}-armv8")
+        else ()
+            set(${PROJECT_PREFIX}_CONAN_PROFILE "${_owl_conan_native}")
+        endif ()
+        if (NOT ${PROJECT_PREFIX}_CONAN_BUILD_PROFILE)
+            set(${PROJECT_PREFIX}_CONAN_BUILD_PROFILE "${_owl_conan_native}")
+        endif ()
     endif ()
-    if (NOT EXISTS "${${PROJECT_PREFIX}_CONAN_PROFILE}")
-        message(FATAL_ERROR "Conan profile '${${PROJECT_PREFIX}_CONAN_PROFILE}' not found.")
+    if (NOT ${PROJECT_PREFIX}_CONAN_BUILD_PROFILE)
+        set(${PROJECT_PREFIX}_CONAN_BUILD_PROFILE "${${PROJECT_PREFIX}_CONAN_PROFILE}")
     endif ()
+    foreach (_owl_conan_profile IN ITEMS "${${PROJECT_PREFIX}_CONAN_PROFILE}" "${${PROJECT_PREFIX}_CONAN_BUILD_PROFILE}")
+        if (NOT EXISTS "${_owl_conan_profile}")
+            message(FATAL_ERROR "Conan profile '${_owl_conan_profile}' not found.")
+        endif ()
+    endforeach ()
 
     # Release third parties in a Debug build (CMAKE_MAP_IMPORTED_CONFIG_DEBUG maps them).
     if (${PROJECT_PREFIX}_USE_RELEASE_THIRD_PARTY OR NOT CMAKE_BUILD_TYPE)
@@ -79,7 +95,17 @@ if (${PROJECT_PREFIX}_CONAN_INSTALL)
 
     set(_owl_conan_env)
     if (${PROJECT_PREFIX}_CONAN_HOME)
-        set(_owl_conan_env ${CMAKE_COMMAND} -E env "CONAN_HOME=${${PROJECT_PREFIX}_CONAN_HOME}")
+        list(APPEND _owl_conan_env "CONAN_HOME=${${PROJECT_PREFIX}_CONAN_HOME}")
+    endif ()
+    # Cross compiling against a sysroot, pkg-config reads the target's .pc files there: for the recipes built here and
+    # for the system packages (gtk, xorg...), whose package_info() calls pkg-config outside any build environment.
+    if (CMAKE_CROSSCOMPILING AND CMAKE_SYSROOT)
+        set(_owl_conan_pc "${CMAKE_SYSROOT}/usr/lib/${CMAKE_LIBRARY_ARCHITECTURE}/pkgconfig")
+        list(APPEND _owl_conan_env "PKG_CONFIG_SYSROOT_DIR=${CMAKE_SYSROOT}"
+                "PKG_CONFIG_LIBDIR=${_owl_conan_pc}:${CMAKE_SYSROOT}/usr/lib/pkgconfig:${CMAKE_SYSROOT}/usr/share/pkgconfig")
+    endif ()
+    if (_owl_conan_env)
+        list(PREPEND _owl_conan_env ${CMAKE_COMMAND} -E env)
     endif ()
     set(_owl_conan ${_owl_conan_env} ${Poetry_PREFIX} conan)
     set(_owl_conan_output "${CMAKE_BINARY_DIR}/conan")
@@ -92,6 +118,9 @@ if (${PROJECT_PREFIX}_CONAN_INSTALL)
         message(FATAL_ERROR "Conan is not available through Poetry ('poetry sync --no-root' installs it).")
     endif ()
     message(STATUS "${_owl_conan_version}, profile ${${PROJECT_PREFIX}_CONAN_PROFILE}")
+    if (NOT ${PROJECT_PREFIX}_CONAN_BUILD_PROFILE STREQUAL ${PROJECT_PREFIX}_CONAN_PROFILE)
+        message(STATUS "Conan build profile ${${PROJECT_PREFIX}_CONAN_BUILD_PROFILE}")
+    endif ()
 
     # Recipes missing from ConanCenter (conan/recipes/), served as a local-recipes-index remote. It comes first, so a
     # local recipe wins over a ConanCenter one of the same name and version (msdf-atlas-gen).
@@ -220,6 +249,15 @@ if (${PROJECT_PREFIX}_CONAN_INSTALL)
     file(MAKE_DIRECTORY "${_owl_conan_output}")
     set(_owl_conan_host_profile "${_owl_conan_output}/owl-host.profile")
     file(TO_CMAKE_PATH "${${PROJECT_PREFIX}_CONAN_PROFILE}" _owl_conan_base_profile)
+    # Cross compiling, the recipes' CMake takes its programs (ninja...) from the build machine, not the sysroot, and
+    # the Conan cache is a find root ahead of the sysroot: a dependency the sysroot also has (FLAC...) comes from Conan.
+    set(_owl_conan_extra_vars "")
+    if (CMAKE_CROSSCOMPILING)
+        set(_owl_conan_extra_vars ", 'CMAKE_FIND_ROOT_PATH_MODE_PROGRAM': 'NEVER'")
+        if (_owl_conan_home)
+            string(APPEND _owl_conan_extra_vars ", 'CMAKE_FIND_ROOT_PATH': '${_owl_conan_home}/p'")
+        endif ()
+    endif ()
     file(WRITE "${_owl_conan_host_profile}"
             "include(${_owl_conan_base_profile})\n\n"
             "[settings]\nbuild_type=${${PROJECT_PREFIX}_CONAN_BUILD_TYPE}\n\n"
@@ -235,7 +273,11 @@ if (${PROJECT_PREFIX}_CONAN_INSTALL)
             "{% set owl_python = os.sys.executable | replace(os.sep, '/') %}\n"
             "[conf]\n"
             "tools.cmake.cmaketoolchain:extra_variables={'Python_EXECUTABLE': '{{ owl_python }}', "
-            "'Python3_EXECUTABLE': '{{ owl_python }}'}\n")
+            "'Python3_EXECUTABLE': '{{ owl_python }}'${_owl_conan_extra_vars}}\n")
+    # Cross compiling, the host packages build against the sysroot.
+    if (CMAKE_CROSSCOMPILING AND CMAKE_SYSROOT)
+        file(APPEND "${_owl_conan_host_profile}" "tools.build:sysroot=${CMAKE_SYSROOT}\n")
+    endif ()
     file(REMOVE "${_owl_conan_output}/conan_toolchain.cmake")
 
     # The graph, resolved before the install, names the binaries this build may push to the binary cache.
@@ -243,7 +285,7 @@ if (${PROJECT_PREFIX}_CONAN_INSTALL)
     if (_owl_conan_cache AND ${PROJECT_PREFIX}_CONAN_CACHE_UPLOAD)
         execute_process(COMMAND ${_owl_conan} graph info "${CMAKE_SOURCE_DIR}"
                 --profile:host "${_owl_conan_host_profile}"
-                --profile:build "${${PROJECT_PREFIX}_CONAN_PROFILE}"
+                --profile:build "${${PROJECT_PREFIX}_CONAN_BUILD_PROFILE}"
                 --build=${${PROJECT_PREFIX}_CONAN_BUILD}
                 ${_owl_conan_lock}
                 --format=json
@@ -262,7 +304,7 @@ if (${PROJECT_PREFIX}_CONAN_INSTALL)
     execute_process(COMMAND ${_owl_conan} install "${CMAKE_SOURCE_DIR}"
             --output-folder "${_owl_conan_output}"
             --profile:host "${_owl_conan_host_profile}"
-            --profile:build "${${PROJECT_PREFIX}_CONAN_PROFILE}"
+            --profile:build "${${PROJECT_PREFIX}_CONAN_BUILD_PROFILE}"
             --build=${${PROJECT_PREFIX}_CONAN_BUILD}
             ${_owl_conan_update}
             ${_owl_conan_lock}
@@ -299,6 +341,14 @@ if (${PROJECT_PREFIX}_CONAN_INSTALL)
 
     list(PREPEND CMAKE_PREFIX_PATH "${_owl_conan_output}")
     list(PREPEND CMAKE_MODULE_PATH "${_owl_conan_output}")
+    # Cross compiling, CMake searches every prefix under the sysroot before the prefixes themselves: the Conan folders
+    # become find roots ahead of it, so a package the sysroot also has (FLAC...) still comes from Conan.
+    if (CMAKE_CROSSCOMPILING)
+        list(PREPEND CMAKE_FIND_ROOT_PATH "${_owl_conan_output}")
+        if (_owl_conan_home)
+            list(PREPEND CMAKE_FIND_ROOT_PATH "${_owl_conan_home}/p")
+        endif ()
+    endif ()
     set(CMAKE_FIND_PACKAGE_PREFER_CONFIG ON)
 else ()
     set(${PROJECT_PREFIX}_CONAN_BUILD_TYPE ${CMAKE_BUILD_TYPE})
@@ -309,12 +359,22 @@ else ()
     message(STATUS "Conan install skipped: the dependencies come from conan_toolchain.cmake.")
 endif ()
 
-execute_process(COMMAND getconf GNU_LIBC_VERSION
-        OUTPUT_VARIABLE _owl_glibc
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-        ERROR_QUIET)
-if (_owl_glibc MATCHES "glibc ([0-9]+\\.[0-9]+)")
-    set(${PROJECT_PREFIX}_GLIBC_STR "glibc_${CMAKE_MATCH_1}")
+# The glibc the binaries link against: the sysroot's when cross compiling, the build machine's otherwise.
+if (CMAKE_CROSSCOMPILING AND CMAKE_SYSROOT)
+    if (EXISTS "${CMAKE_SYSROOT}/usr/include/features.h")
+        file(STRINGS "${CMAKE_SYSROOT}/usr/include/features.h" _owl_glibc REGEX "#define[ \t]+__GLIBC(_MINOR)?__[ \t]")
+        if (_owl_glibc MATCHES "__GLIBC__[ \t]+([0-9]+).*__GLIBC_MINOR__[ \t]+([0-9]+)")
+            set(${PROJECT_PREFIX}_GLIBC_STR "glibc_${CMAKE_MATCH_1}.${CMAKE_MATCH_2}")
+        endif ()
+    endif ()
+else ()
+    execute_process(COMMAND getconf GNU_LIBC_VERSION
+            OUTPUT_VARIABLE _owl_glibc
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+            ERROR_QUIET)
+    if (_owl_glibc MATCHES "glibc ([0-9]+\\.[0-9]+)")
+        set(${PROJECT_PREFIX}_GLIBC_STR "glibc_${CMAKE_MATCH_1}")
+    endif ()
 endif ()
 
 # Packages whose CMake name or target differs from the module name used in the CMakeLists.
@@ -326,6 +386,10 @@ set(${PROJECT_PREFIX}_CONAN_INCLUDE_SUBDIR_lunasvg lunasvg)
 
 unset(_owl_conan_compiler)
 unset(_owl_conan_os)
+unset(_owl_conan_native)
+unset(_owl_conan_profile)
+unset(_owl_conan_pc)
+unset(_owl_conan_extra_vars)
 unset(_owl_conan_shared)
 unset(_owl_conan_testing)
 unset(_owl_conan_nest)

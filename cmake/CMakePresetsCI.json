@@ -107,6 +107,23 @@
       }
     },
     {
+      "name": "linux-cross-arm64",
+      "inherits": "linux-clang-debug",
+      "toolchainFile": "${sourceDir}/cmake/toolchains/linux-aarch64-clang.cmake",
+      "cacheVariables": {
+        "OWL_ENABLE_COVERAGE": "OFF",
+        "OWL_ENABLE_DOCUMENTATION": "OFF",
+        "OWL_BENCHMARK": "OFF",
+        "OWL_RENDER_TESTS": "OFF"
+      },
+      "vendor": {
+        "silmaen": {
+          "docker_image": "builder-cross-arm64-ubuntu2604",
+          "release_preset": ""
+        }
+      }
+    },
+    {
       "name": "linux-bench",
       "inherits": "linux-clang-release",
       "cacheVariables": {
