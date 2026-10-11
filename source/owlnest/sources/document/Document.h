@@ -16,6 +16,7 @@
 #include <filesystem>
 #include <optional>
 #include <string>
+#include <string_view>
 
 namespace owl::nest {
 
@@ -33,6 +34,17 @@ enum struct DocumentType : uint8_t {
 	Tilemap,///< A `.owltilemap` reusable tilemap level (grid + layers + tileset reference).
 	Tileset,///< A `.owltileset` atlas asset (texture + grid + per-tile metadata).
 };
+
+/**
+ * @brief
+ *  Title of the window of a document: the glyph of its type and its name, then an ID that stays when the name changes
+ *  (Save As, a dirty mark), so the tab keeps its dock.
+ * @param[in] iType The type of the document.
+ * @param[in] iName The name shown in the tab.
+ * @param[in] iId Unique number of the document.
+ * @return The string to give to `ImGui::Begin`.
+ */
+[[nodiscard]] auto documentWindowTitle(DocumentType iType, std::string_view iName, uint64_t iId) -> std::string;
 
 /**
  * @brief
@@ -248,7 +260,7 @@ public:
 	 * `consumeFocusRequest()` returns true. The flag defaults to true on construction so a
 	 * freshly-opened document automatically becomes the visible tab in its dock.
 	 */
-	void requestFocus() { m_focusRequested = true; }
+	void requestFocus() { m_focusFrames = focusFrames; }
 
 	/**
 	 * @brief
@@ -257,16 +269,20 @@ public:
 	 * @return True when the document should focus its window this frame.
 	 */
 	[[nodiscard]] auto consumeFocusRequest() -> bool {
-		const bool req = m_focusRequested;
-		m_focusRequested = false;
-		return req;
+		if (m_focusFrames == 0)
+			return false;
+		--m_focusFrames;
+		return true;
 	}
+
+	/// Frames a focus request lasts: a tab docked on its first frame can be left behind the previously selected one.
+	static constexpr uint8_t focusFrames = 3;
 
 private:
 	/// Stable identifier used by the UI (tab id, ImGui window suffix).
 	core::UUID m_id;
 	/// True when the next render should pull keyboard / tab focus to this document's window.
-	bool m_focusRequested = true;
+	uint8_t m_focusFrames = focusFrames;
 };
 
 }// namespace owl::nest

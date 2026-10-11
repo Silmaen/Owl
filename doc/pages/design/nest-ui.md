@@ -14,7 +14,37 @@ All of it lands in v0.3.0 as phase E of [Foundations](foundations.md): an ergono
 maintainer, with no new feature. It opens with a review of the main workflows (pain points listed, target layout
 agreed), then the three parts below.
 
+## Plan agreed on 10/10/2026
+
+One pull request, iterated locally: shell and layout, design tokens and typography, icons, widget kit, ribbon,
+viewport overlays, panels, assistance, then polish. Decisions: Owl amber as the only accent (blue kept for Play
+mode), Lucide for action glyphs and hand-redrawn duotone SVGs for asset kinds and components, only Owl Dark and Owl
+Light themes, command palette (double `Shift`), panels on the right by default with an optional left column, thumbnails
+filling their whole tile.
+
+- **Shell and layout** — ![Done][done]: default dock layout built on the first launch (`DockLayout`), presets
+  Default and Hierarchy Left, Reset Layout, a status bar, document-bound panels shown only with their document.
+- **Design tokens and typography** — ![Done][done]: `gui::Theme` tokens and their ImGui mapping, Owl Dark and
+  Owl Light, Inter with text roles, DPI scaling of the style and the fonts.
+- **Icons** — ![Done][done]: Lucide font for action glyphs, icons rasterized at the size they are drawn, asset-kind
+  and component SVGs redrawn in duotone (components carry one piece in the theme accent).
+- **Widget kit** — ![Done][done]: property grid, vector field, section header, icon button, rich tooltip, search
+  field, empty state, badge, chip and toasts in `gui/widgets/`; the inspector headers and vectors use it.
+- **Ribbon** — ![Done][done]: File screen, Home / View / document tabs, quick access, collapse, one large button
+  per group.
+- **Viewport overlays** — ![Done][done]: tools, playback, display toggles, frame-time chip and axis gizmo float over
+  the view; play-colour frame while playing.
+- **Panels** — ![Done][done]: label-left inspector, Hierarchy search / add / icons, Content Browser breadcrumb /
+  search / views / thumbnails, Log chips, empty states, node canvas fixed and themed.
+- **Assistance** — ![Done][done]: command palette on a double `Shift` and in the ribbon search box (actions, entities, assets), inline notices for an
+  incomplete component, toasts on save, `F1` contextual help.
+- **Polish** — ![Done][done]: the conventions of these steps written down in the [style guide](nest-style-guide.md).
+
 ## Interaction basics
+
+Status after the revamp pull request: done — tooltips everywhere, context menus on the Hierarchy, the Content
+Browser, the viewport, the document tabs and the node graphs, one drag preview (`dragPreview`) and drop highlight,
+DPI scaling and a text scale applied at once (`UiLayer::setTextScale`, 75 to 150 %).
 
 - Tooltips on every button, field and icon (extends the `fieldTooltip()` helper of v0.1.1 to the whole editor)
 - Context menus on every selectable object: hierarchy entries, Content Browser items, viewport selection, tabs,
@@ -25,6 +55,10 @@ agreed), then the three parts below.
 - Session restore and autosave live in [Foundations](foundations.md), phase D (before the revamp)
 
 ## Visual overhaul
+
+Status after the revamp pull request: done — theme, icon set (duotone ribbon and File screen icons included),
+[style guide](nest-style-guide.md), previews of images, tilesets, scenes, prefabs, meshes and sounds in the Content
+Browser (`AssetThumbnails`), atlas swatches in the asset fields of the inspector.
 
 - Asset thumbnails in the Content Browser and asset fields (textures, prefabs, scenes, tilesets, meshes, sounds),
   rendered in the background and cached

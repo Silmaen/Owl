@@ -58,14 +58,21 @@ private:
 
 	/**
 	 * @brief
-	 *  Render general section.
+	 *  General tab: stats panel, font sizes, autosave.
 	 * @param[in,out] ioSettings Editor settings being modified.
 	 */
 	static void renderGeneralSection(EditorSettings& ioSettings);
 
 	/**
 	 * @brief
-	 *  Render theme section.
+	 *  Gizmo snap tab.
+	 * @param[in,out] ioSettings Editor settings being modified.
+	 */
+	static void renderSnapSection(EditorSettings& ioSettings);
+
+	/**
+	 * @brief
+	 *  Appearance tab: the theme.
 	 * @param[in,out] ioSettings Editor settings being modified.
 	 */
 	static void renderThemeSection(EditorSettings& ioSettings);

@@ -8,9 +8,19 @@
 
 #include "LogPanel.h"
 
+#include "../DockLayout.h"
+
 #include <debug/LogSink.h>
 #include <gui/IconBank.h>
+#include <gui/IconFont.h>
+#include <gui/UiLayer.h>
+#include <gui/utils.h>
+#include <gui/widgets/Badge.h>
+#include <gui/widgets/IconButton.h>
+#include <magic_enum/magic_enum.hpp>
 
+#include <algorithm>
+#include <array>
 #include <chrono>
 #include <cstddef>
 #include <ctime>
@@ -21,24 +31,25 @@
 namespace owl::nest::panel {
 
 namespace {
-auto getLevelColor(const core::Log::Level iLevel) -> ImVec4 {
+auto getLevelColor(const core::Log::Level iLevel) -> math::vec4 {
+	const auto& theme = gui::UiLayer::getTheme();
 	switch (iLevel) {
 		case core::Log::Level::Trace:
-			return {0.6f, 0.6f, 0.6f, 1.0f};
+			return theme.textDisabled;
 		case core::Log::Level::Debug:
-			return {0.4f, 0.7f, 1.0f, 1.0f};
+			return theme.info;
 		case core::Log::Level::Info:
-			return {0.3f, 0.9f, 0.3f, 1.0f};
+			return theme.success;
 		case core::Log::Level::Warning:
-			return {1.0f, 0.9f, 0.3f, 1.0f};
+			return theme.warning;
 		case core::Log::Level::Error:
-			return {1.0f, 0.3f, 0.3f, 1.0f};
+			return theme.error;
 		case core::Log::Level::Critical:
-			return {0.8f, 0.1f, 0.1f, 1.0f};
+			return gui::Theme::mix(theme.error, theme.text, 0.3f);
 		case core::Log::Level::Off:
-			return {0.5f, 0.5f, 0.5f, 1.0f};
+			return theme.textMuted;
 	}
-	return {1.0f, 1.0f, 1.0f, 1.0f};
+	return theme.text;
 }
 
 auto getLevelLabel(const core::Log::Level iLevel) -> const char* {
@@ -127,66 +138,56 @@ auto formatTimestamp(const std::chrono::system_clock::time_point& iTime) -> std:
 }// namespace
 
 void LogPanel::onImGuiRender() {
-	ImGui::Begin("Log");
+	const auto entries = core::Log::getLogBuffer().getEntries();
+	std::array<size_t, magic_enum::enum_count<core::Log::Level>()> counts{};
+	for (const auto& entry: entries) ++counts[magic_enum::enum_index(entry.level).value_or(0)];
+	const auto countOf = [&counts](const core::Log::Level iLevel) -> size_t {
+		return counts[magic_enum::enum_index(iLevel).value_or(0)];
+	};
+	const size_t problems =
+			countOf(core::Log::Level::Warning) + countOf(core::Log::Level::Error) + countOf(core::Log::Level::Critical);
+	const std::string label = problems > 0 ? std::format("Log  {}", problems) : std::string{"Log"};
+	ImGui::Begin(panelWindow::title(gui::icon::scrollText, label, panelWindow::log).c_str());
 
-	// Toolbar: Clear, Auto-scroll, level filters, logger filters, search
-	if (gui::IconBank::instance().iconButton("delete", "Clear"))
-
+	// Toolbar: follow, level and logger filter chips, then search and clear on the right.
+	if (gui::widgets::iconButton("follow", {.glyph = gui::icon::arrowDown,
+											.tooltip = "Follow new messages",
+											.description = "Keep the view scrolled to the latest message.",
+											.selected = m_autoScroll}))
+		m_autoScroll = !m_autoScroll;
+	ImGui::SameLine();
+	const auto chipToggle = [](const char* iLabel, bool& ioFlag) -> void {
+		if (gui::widgets::chip(iLabel, ioFlag))
+			ioFlag = !ioFlag;
+		ImGui::SameLine();
+	};
+	const auto levelChip = [&countOf](const char* iLabel, bool& ioFlag, const core::Log::Level iLevel) -> void {
+		if (gui::widgets::chip(std::format("{}  {}###{}", iLabel, countOf(iLevel), iLabel).c_str(), ioFlag,
+							   getLevelColor(iLevel)))
+			ioFlag = !ioFlag;
+		ImGui::SameLine();
+	};
+	levelChip("Trace", m_showTrace, core::Log::Level::Trace);
+	levelChip("Debug", m_showDebug, core::Log::Level::Debug);
+	levelChip("Info", m_showInfo, core::Log::Level::Info);
+	levelChip("Warning", m_showWarning, core::Log::Level::Warning);
+	levelChip("Error", m_showError, core::Log::Level::Error);
+	levelChip("Critical", m_showCritical, core::Log::Level::Critical);
+	ImGui::Dummy({ImGui::GetFontSize() * 0.5f, 0.f});
+	ImGui::SameLine();
+	chipToggle("Engine##logger", m_showCore);
+	chipToggle("Game##logger", m_showApp);
+	const float clearWidth = ImGui::CalcTextSize("Clear").x + ImGui::GetFontSize() * 2.f +
+							 ImGui::GetStyle().FramePadding.x * 2.f + ImGui::GetStyle().ItemSpacing.x;
+	const float searchWidth =
+			std::max(ImGui::GetFontSize() * 8.f,
+					 std::min(ImGui::GetFontSize() * 18.f, ImGui::GetContentRegionAvail().x - clearWidth));
+	ImGui::SameLine(std::max(ImGui::GetCursorPosX(), ImGui::GetContentRegionMax().x - clearWidth - searchWidth));
+	ImGui::SetNextItemWidth(searchWidth);
+	ImGui::InputTextWithHint("##Search", "Filter messages", m_searchBuffer.data(), m_searchBuffer.size());
+	ImGui::SameLine();
+	if (gui::widgets::button("clear", {.glyph = gui::icon::eraser, .label = "Clear", .tooltip = "Clear the log"}))
 		core::Log::getLogBuffer().clear();
-
-	ImGui::SameLine();
-
-	ImGui::Checkbox("Auto-scroll", &m_autoScroll);
-
-	ImGui::SameLine();
-
-	ImGui::Text("|");
-
-	ImGui::SameLine();
-
-	ImGui::Checkbox("Trace", &m_showTrace);
-
-	ImGui::SameLine();
-
-	ImGui::Checkbox("Debug", &m_showDebug);
-
-	ImGui::SameLine();
-
-	ImGui::Checkbox("Info", &m_showInfo);
-
-	ImGui::SameLine();
-
-	ImGui::Checkbox("Warn", &m_showWarning);
-
-	ImGui::SameLine();
-
-	ImGui::Checkbox("Error", &m_showError);
-
-	ImGui::SameLine();
-
-	ImGui::Checkbox("Critical", &m_showCritical);
-
-	ImGui::SameLine();
-
-	ImGui::Text("|");
-
-	ImGui::SameLine();
-
-	ImGui::Checkbox("OWL", &m_showCore);
-
-	ImGui::SameLine();
-
-	ImGui::Checkbox("APP", &m_showApp);
-
-	ImGui::SameLine();
-
-	ImGui::Text("|");
-
-	ImGui::SameLine();
-
-	ImGui::SetNextItemWidth(150.0f);
-
-	ImGui::InputText("##Search", m_searchBuffer.data(), m_searchBuffer.size());
 
 	ImGui::Separator();
 
@@ -194,8 +195,6 @@ void LogPanel::onImGuiRender() {
 	ImGui::SetWindowFontScale(g_fontScale);
 
 	ImGui::BeginChild("LogScrollRegion", ImVec2(0, 0), ImGuiChildFlags_None, ImGuiWindowFlags_HorizontalScrollbar);
-
-	const auto entries = core::Log::getLogBuffer().getEntries();
 
 	const std::string_view searchFilter(m_searchBuffer.data());
 
@@ -237,7 +236,7 @@ void LogPanel::onImGuiRender() {
 		// Text search filter
 		if (!searchFilter.empty() && message.find(searchFilter) == std::string::npos)
 			continue;
-		const ImVec4 levelColor = getLevelColor(level);
+		const ImVec4 levelColor = gui::vec(getLevelColor(level));
 		// Timestamp in grey
 		const auto f_timestamp = formatTimestamp(timestamp);
 

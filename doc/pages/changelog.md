@@ -11,6 +11,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Owl Nest default layout, built on the first launch instead of floating panels: documents in the centre, Hierarchy and Properties on the right, Content Browser, Log and Stats below; presets Default and Hierarchy Left (`Alt+1`, `Alt+2`) and **Reset Layout** in **File > Views**.
+- Owl Nest status bar: simulation mode, active document and entity count, last autosave, graphics backend, and the unseen warnings and errors (click to open the Log).
+- `UiLayer::setBottomBarCallback`, `setDockLayoutCallback` and `getDockSpaceId`; `LogBuffer::getWarningCount`.
+- Lucide icon font merged into the UI fonts, its glyphs as UTF-8 string constants in `gui/IconFont.h`; the status bar shows them.
+- `IconBank` rasterizes each icon at 16, 24 and 32 px times the monitor scale besides the 64 px cell, `getIcon(name, size)` picks the tier of the drawn size, so small icons are sharp instead of scaled down.
+- GUI widget kit (`gui/widgets/`): `beginProperties` / `propertyFloat` / `propertyVec3` / `propertyBool` label-value grid with reset to default, `vectorField` with axis marks, `sectionHeader` with a menu button, `iconButton`, `richTooltip` with shortcut, `searchField` and `matchesFilter`, `emptyState`, `badge` and `chip`, and `ToastQueue` notifications.
+- Owl Nest ribbon reorganised: File button opening a full File screen (projects, packaging, settings, help, exit; it replaces the welcome window), Home and View tabs, the active document's tab in the accent colour, quick access Save / Undo / Redo, collapse with `Ctrl+F1`; `Ribbon::setBackstage`, `addQuickAccess`, `setCollapsed`, `selectTab` and button shortcuts.
+- Owl Nest ribbon draws Lucide glyphs like the File screen, its labels a step smaller, and a toggled button in grey; the inspector draws its rows and headers a step smaller; headers, combo lists and slider grabs are grey too, the accent being kept for the selected entity and switches.
+- Owl Nest viewport overlays: gizmo tools and snap (top-left), Play / Pause / Step / Stop (top-centre), camera markers and stats toggles (top-right), a frame-time chip (bottom-left), the axis gizmo (bottom-right) and a play-colour frame while the scene runs; the ribbon drops its Playback and Gizmo groups; `ActionRegistry::run`.
+- Owl Nest panels: the inspector puts every label on the left of its field; the Hierarchy gets an Add button, a name search and component icons; the Content Browser gets root chips, a breadcrumb, search, grid / list views, image thumbnails filling their tile and a colour per asset family; the Log filters become chips; empty panels say what to do.
+- `OwlNest --project <dir>` opens a project at start-up.
+- Owl Nest command palette, opened by pressing `Shift` twice or from the search box of the ribbon tab row: a fuzzy search over every editor action, with its shortcut, the entities of the active scene and the asset files.
+- Owl Nest Content Browser folder tree on the left (asset roots and their folders, unfolded down to the folder shown), replacing the root chips.
+- Owl Nest Hierarchy rows in the mockup style: thin chevrons, component glyphs coloured by kind, child counts, visibility switches on every row, an accent bar on the selection; the inspector header shows the entity glyph, its name, an **Add** button and its id.
+- `gui::widgets::treeRow`, `button`, `beginCombo` / `combo` (a thin chevron instead of the filled arrow) and `Ribbon::setSearchBox`; component headers draw a chevron and frame their section as a card.
+- Owl Nest style guide ([design page](design/nest-style-guide.md)): colour tokens, text roles, spacing, icons, the widget to use for each need and the interaction rules.
+- `gui::widgets::toggle` (left / right switch, used for the inspector booleans), `checkbox` (a box the size of a capital letter, replacing `ImGui::Checkbox` in Owl Nest), `subHeader` (grey caption of a nested block) and a coloured `chip` (Log level filters).
+- Owl Nest Editor Settings in tabs (General, Gizmo Snap, Appearance, Shortcuts) built on the property grid.
+- Owl Nest engine parameters, Project Settings and Scene Settings in property grids under sections with a Lucide icon, like the inspector; the Editor Settings tabs and every panel tab get an icon.
+- `gui::widgets::propertyInt`, `propertyText`, `menuItem` (glyph column, shortcut, destructive entries in red) and `menuHeader`; `sectionHeader` also takes a `gui::icon` glyph.
+- Owl Nest ribbon icons drawn as duotone SVGs (`icons/ribbon/`), the accent on one part only like the component icons; the Help panel opens among the documents instead of the right column.
+- Owl Nest viewport: 2D orthographic / 3D perspective view (`CameraEditor::setProjection`), Frame selection (`F`, `CameraEditor::frame`), a Show menu (grid of the snap step, camera markers, trigger icons), Local / World gizmo axes (`Guizmo::Space`), the snap step shown in the toolbar and a Playing banner.
+- Owl Nest Content Browser previews of scenes and prefabs (rendered off-screen, `AssetThumbnails`) and of sounds (`sound::readWaveform`); the status bar shows the graphics device, the previews still to make and a notification bell (`ToastQueue::getHistory`).
+- Owl Nest Voxel Palette, Tile Palette and the tilemap and tileset editor panels in the inspector layout (sections, property grids, tile swatches `gui::widgets::imageTile`); the File screen uses the duotone icons of the ribbon; document tabs carry the glyph of their type (`documentWindowTitle`).
+- Owl Nest inspector: the tilemap, tileset and script fields get **Open** (in their editor, `gui::component::setOpenAssetHandler`) and **Clear** buttons, and the properties of a Lua script are read again when its file changes, without a Refresh button.
+- Owl Nest text size applied at once from the Editor Settings or `Ctrl+=` / `Ctrl+-` / `Ctrl+0` (`UiLayer::setTextScale`, 75 to 150 %).
+- Owl Nest context menus on the viewport (entity or view options), the document tabs (save, close, close others, reveal, copy path) and the node graphs; a common drag preview (`gui::widgets::dragPreview`).
+- Owl Nest Content Browser previews of tilesets (atlas) and 3D models (isometric shaded faces, `AssetThumbnails::projectMesh`); atlas swatches in the tileset and tilemap fields of the inspector; dialog buttons drawn with `gui::widgets::button` (`ButtonSpec::width`).
+- Owl Nest Log level chips show their message count and the Log tab its warnings and errors; the search and a labelled Clear button sit on the right.
+- Owl Nest Content Browser family chips with counts, an extension badge on the tiles, and context menus with a title, Lucide icons and Delete in red, like the Hierarchy menus.
+- `gui::widgets::notice`: an inline warning in the inspector, shown for an animated sprite without a sprite sheet and a Lua script without a path.
+- Owl Nest inspector: component headers and vector fields use the kit (⋮ menu, reset buttons), and saving a document shows a toast.
+- Owl Nest UI font Inter (Regular, SemiBold) in `engine_assets/fonts/inter/`, text roles `gui::TextStyle` (`UiLayer::pushTextStyle`) and scaling to the primary monitor content scale (`UiLayer::getDpiScale`).
 - Owl Nest Stats panel: Vulkan submits, queue / device drains, fence waits and pace wait per frame, with their maximum over the last 2 s.
 - `OwlShaderBake` build tool (render module): compiles every `engine_assets/shaders/*/slang/*.slang` for Vulkan and OpenGL during the build, in the layout of `renderer::utils::getPrecompiledShaderPath`.
 - Frame bench `cpu_pace_wait_ms`: CPU time a Vulkan frame waits on its fence and swapchain image, to tell engine work from presentation pacing.
@@ -70,6 +103,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Linux arm64 CI cross compiled on x64 (`linux-cross-arm64`: Clang, lld, an arm64 sysroot), only the tests under qemu-user; the fully emulated build runs once a week.
+- Owl Nest asset-kind (28) and component (25) icons redrawn on one 24-unit grid with a duotone fill: a fixed colour per asset family, the theme text colour plus one accent piece for components.
+- `gui::Theme` is now a set of semantic tokens (surfaces, text levels, one accent, play, status and axis colours) from which `UiLayer::setTheme` derives every ImGui colour, with distinct hover and press states; presets Owl Dark and Owl Light (`UiLayer::getTheme`).
+- Owl Nest shows the Tile Palette only with the active tilemap document and the Voxel Palette only when the scene holds a `VoxelWorld`.
 - Wayland start-up skips libdecor and the GTK stack it loads when the compositor draws the decorations itself (KWin, wlroots, COSMIC): 30 ms less on KDE Plasma 6.
 - Scenes, prefabs and entity snapshots are read with rapidyaml (`core::YamlNode`, yaml-cpp still writes, files unchanged): a 10 000-entity scene loads in 7.3 µs per entity instead of 121, an undo snapshot in 2.9 µs instead of 107.
 - Prefab instantiation copies the components through the registry and links only the instance's children: 4-6 µs per entity instead of 240-370.
@@ -138,6 +174,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+- Theme presets Dark, Dark Blue, Nord, Solarized and the editor `theme.yml`; the `imgui.ini` copied over `OwlNest_imgui.ini` at every build (the default layout is built by the editor now).
 - Dead CMake: the no-op `FORCE_RELEASE` flag (`THIRD_PARTY_RELEASE`), the unused `print_target_properties` and `dump_cmake_variables`, the orphan `cmake/Python.cmake`.
 - `ScriptEngine::loadScript` / `loadScriptFromBuffer` and the shared Lua state behind them, which no script ever ran in (each `ScriptInstance` has its own).
 - 97 dead `NOLINT` check names (checks `.clang-tidy` does not enable), and the CodeStyle `nolint` sub-check that keeps them out.
@@ -154,6 +191,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- OpenAL: a sound no longer fails with `alGenSources: Out of Memory` when many play at once (finished sources are reclaimed, then the oldest one-shot is cut) nor on an error left by an earlier call.
+- Owl Nest: the Translation, Rotation and Scale reset buttons no longer share one ImGui ID; the Voxel Palette hides while its scene plays or another document is active; a dropped file opens from the root the Content Browser shows, and a newly opened document comes to the front of its dock.
+- Owl Nest: pressing `Shift` twice opens the command palette (the Shift modifier key reported with it cancelled the tap), the main window no longer shows a scroll bar, and the ribbon drop-down carets are chevrons.
+- `docker/run.sh --gui` lends the host cursor themes, so Owl Nest shows the desktop cursor instead of Adwaita.
+- Owl Nest node canvas (Scene Flow): the GraphEditor minimap no longer covers the canvas with white triangles, node titles stay readable when zoomed out, and the canvas follows the theme.
+- Editor icons drawn with the `white` keyword (components, panels...) follow the theme text colour, so they no longer stay white in Owl Light.
+- Owl Nest Ctrl and Alt shortcuts work while a panel (hierarchy, properties, content browser...) has the keyboard focus, not only with the viewport focused.
 - Box2D runs on `workerCount` threads again, without the two spare threads that slowed the 2-worker step of a settled 5 000-body pile by 60 % on the nightly benchmark agent.
 - Gameplay no longer slows down at high frame rates: `Timestep::getSeconds` keeps sub-millisecond frames (a 3.3 ms frame counted 3 ms, a 0.5 ms one 0), and `owl.physics_poses` gives scripts the simulated body poses so a `physics.set_transform` of the read pose no longer rewinds the body.
 - `DependencyReport` sees every package of the graph (flac, libalsa: resolved through `owl-local` whatever the cache holds), finds the update a `cci.*` snapshot hid (plutovg 1.3.3) and checks the local recipes' sources upstream (glfw, wayland-protocols); run on the tree before the dependency round, it lists the nine updates made.

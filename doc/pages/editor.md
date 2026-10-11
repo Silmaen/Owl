@@ -9,7 +9,8 @@ project management workflow, and playback controls.
 
 Owl Nest is the primary development tool for the Owl engine. It provides a fully
 dockable panel interface built on ImGui and ImGuizmo, allowing developers to compose
-scenes, inspect entities, browse project assets, and test gameplay in real time.
+scenes, inspect entities, browse project assets, and test gameplay in real time. Its colours, fonts, icons and
+widgets follow the [Owl Nest style guide](design/nest-style-guide.md).
 
 The editor ships as two executables:
 
@@ -44,69 +45,72 @@ stateDiagram-v2
 
 ![Editor Panels](../images/editor_panels.svg)
 
-The default arrangement uses ImGui docking to organize the workspace into four
-major zones:
+The default arrangement uses ImGui docking:
 
-- **Left column** -- Scene Hierarchy (top) and Properties (bottom), stacked
-  vertically
-- **Centre** -- Viewport, the main rendering area with an overlaid toolbar
-  and optional Stats window
-- **Bottom strip** -- Content Browser and Log as tabbed panels spanning the
-  centre and right regions
-- **Right / floating** -- Additional panels (Settings, Parameters, Project
-  Settings) appear as dockable windows or modal dialogs
+- **Centre** -- the open documents (scenes, scripts, graphs, tilemaps...) as tabs, the viewport with its overlaid
+  toolbar; the Help pages open there too, or float
+- **Right column** -- Scene Hierarchy (top) and Properties (bottom); Tile Palette, Voxel Palette and Scene Settings
+  join Properties as tabs
+- **Bottom strip** -- Content Browser, Log and Stats as tabs under the documents
+- **Status bar** -- one line under everything: the simulation mode (`EDIT`, `PLAYING`, `PAUSED`, the bar turns blue
+  while the scene runs), the active document and its entity count, the last autosave, the graphics backend, and the
+  warnings and errors logged since you last looked (clicking a counter opens the Log), the graphics device, the
+  Content Browser previews still to make, and a bell holding the last 30 notifications (the toasts), with the count
+  of unread ones
 
-All panels can be rearranged, resized, and tabbed together freely through
-the ImGui docking system. The layout is initialized by `EditorLayer::onAttach()`
-and persists via the ImGui `imgui.ini` file.
+Two presets are available from **File > Views** and the shortcuts: **Default** (`Alt+1`) and **Hierarchy Left**
+(`Alt+2`), which moves the Scene Hierarchy to its own column left of the documents. **Reset Layout** puts every panel
+back in the place of the current preset. The preset is saved in `OwlNest_settings.yml` (`layoutPreset`).
+
+Panels tied to a document only show with it: the Tile Palette with the active tilemap, the Voxel Palette when the
+active document is a scene holding a `VoxelWorld`, in Edit mode. Both palettes, like the tilemap and tileset editors'
+panels, use the inspector layout: collapsible sections, property grids, swatches of the tiles or blocks
+(`gui::widgets::imageTile`) with their name in the tooltip. Document tabs carry the glyph of their type, and a
+document opened from the Content Browser, by a drop or by an inspector **Open** button comes to the front. Asset
+fields of the inspector (tilemap, tileset, script) show a swatch of their atlas when they have one, their path,
+**Open** (in its editor) and **Clear**.
+
+All panels can still be rearranged, resized and tabbed together freely; the arrangement persists in
+`OwlNest_imgui.ini`. The default layout is built on the first launch, when the saved one has no split, and once
+after an editor update changes it (`layoutVersion`).
 
 ## Ribbon Menu
 
-The menu bar is a Microsoft Office-style **ribbon** rendered between the OS
-window title and the dockspace. Top-level tabs hold grouped buttons in two
-sizes:
+The menu is an Office-style **ribbon** between the window title and the dockspace: tabs hold groups of buttons,
+one **large** button (icon above the label) at most per group and columns of three **small** ones (icon then label).
+Every button has a tooltip with its shortcut; a greyed button is not applicable right now.
 
-- **Large** — 32 px icon with the label below (primary actions).
-- **Small** — 16 px icon with the label to the right; three small buttons stack
-  vertically to fit in the space of one large button + caption.
+- **File** — the amber button on the left opens the **File screen**, which covers the editor: new / open project,
+  save, save as, package the game, editor / project / engine settings, help, close project and exit, with the open
+  project and the recent ones on the right. It opens by itself at start-up when no project is open. `Escape` or
+  **Back to the editor** closes it.
+- **Home** — Edit (Undo, Redo, Duplicate), Create (New scene / animation / tilemap / tileset), Project (Scene Flow,
+  project Settings, Pack Game).
+- **View** — Layout (Hierarchy Left, Reset Layout), Panels (Frame Stats, Help), Appearance (Owl Dark, Owl Light),
+  Settings (Editor, Engine).
+- **Document tab** — the last tab, in the accent colour, follows the active document and is selected when its type
+  changes: **Scene** (Document, Scene; playback and gizmo tools sit on the viewport), **Text**, **Graph**, **Animation**, **Tilemap** or
+  **Tileset**.
 
-The **File** tab is highlighted (title rendered in the theme accent colour via
-`Ribbon::setTabHighlighted`) so it reads as the primary entry point. The
-contextual last tab switches between **Scene** and **Text** based on the active
-document type.
+The right end of the tab row holds the quick access buttons (Save, Undo, Redo) and the collapse toggle:
+**Ctrl+F1**, or a click on the selected tab, keeps only the tab row.
 
-| Tab   | Group    | Contents                                                           |
-|-------|----------|--------------------------------------------------------------------|
-| File  | Project  | New / Open (large), Save / Save As / Close (small)                 |
-| File  | Recent   | Recent (large — opens a popup listing the recent projects)         |
-| File  | Package  | Pack Game (large)                                                  |
-| File  | Session  | Exit (large)                                                       |
-| Edit  | History  | Undo / Redo (large)                                                |
-| Edit  | Settings | Engine / Editor / Project (small)                                  |
-| Scene | File     | New / Open (large), Save / Save As / Import (small), Close (large) |
-| Scene | Playback | Play / Stop (large), Pause / Step (small)                          |
-| Scene | Gizmo    | Translate / Rotate / Scale (large, toggle), Snap + Step (small)    |
-| Scene | Package  | Pack Scene (large)                                                 |
-| Text  | File     | Save / Close (large)                                               |
-
-Every button is backed by an `ActionRegistry` callback so keyboard shortcuts
-stay in sync. Grayed buttons (`isEnabled` returns false) indicate the action is
-not currently applicable.
-
-The widget lives in `gui::widgets::Ribbon`
-(`source/owl/public/gui/widgets/Ribbon.h`) and is plugged into the dockspace
-via `UiLayer::setTopBarCallback`.
+The widget is `gui::widgets::Ribbon` (`source/owl/public/gui/widgets/Ribbon.h`), filled by `RibbonBuilder` and
+plugged into the dockspace through `UiLayer::setTopBarCallback`.
 
 ## Fonts
 
-The editor uses two ImGui fonts, both shipped as loose TTFs under
-`engine_assets/fonts/` and loaded at runtime via `AddFontFromFileTTF`:
+The editor uses two font families, shipped as loose TTFs under `engine_assets/fonts/` (SIL Open Font License):
 
-- **Roboto** (Regular / Bold / Italic) in `engine_assets/fonts/roboto/` — default
-  UI font at `EditorSettings::uiFontSize` (default 18 px, range 14–24).
-- **JetBrains Mono** Regular in `engine_assets/fonts/jetbrainsmono/` — dedicated
-  monospace font for the Code Document tabs, rasterised at
-  `EditorSettings::codeEditorFontSize` (default 17 px, range 8–48).
+- **Inter** (Regular, SemiBold) in `engine_assets/fonts/inter/` — the UI font at `EditorSettings::uiFontSize`
+  (default 16 px, range 14–24).
+- **JetBrains Mono** Regular in `engine_assets/fonts/jetbrainsmono/` — code documents at
+  `EditorSettings::codeEditorFontSize` (default 17 px, range 8–48), and numbers aligned in columns.
+
+Text roles (`gui::TextStyle`) pick a font and a size relative to the UI size: `Body`, `Strong`, `Title` (1.15×),
+`Section` (0.96×), `Label` (0.92×), `Caption` (0.8×), `Value` (mono, 0.92×) and `Code`, pushed with
+`UiLayer::pushTextStyle` / `popTextStyle`. The style sizes and the fonts follow the content scale of the primary
+monitor (`UiLayer::getDpiScale`; under Wayland the framebuffer scale already covers it).
 
 Both sizes are applied when the atlas is built in `UiLayer::onAttach`, so
 changing them from the Editor Settings panel takes effect on the **next startup**.
@@ -217,13 +221,35 @@ off-screen `Framebuffer` with two colour attachments:
 | 0          | Surface (RGBA8) | Visible colour output       |
 | 1          | RedInteger      | Entity ID for mouse picking |
 
+**Overlays.** Controls float over the scene in translucent pills, so the view stays visible:
+
+- top-left (Edit mode): Select / Move / Rotate / Scale, the Local / World axes of the gizmo, then Snap and the
+  current snap step (a click opens its presets);
+- top-centre: Play (or Resume), Pause, Step and Stop, with their shortcuts in the tooltips; while the scene plays,
+  a banner under them recalls that the changes are reverted on Stop;
+- top-right (Edit mode): the view (**2D** orthographic front view or **3D** perspective), **Show** (grid, camera
+  markers, trigger icons), **Frame selection** (`F`) and the frame stats toggle;
+- bottom-left: frame rate, frame time and draw calls (a click opens the Stats panel);
+- bottom-right: the axis gizmo of the editor camera.
+
+While the scene plays or is paused, a frame in the play colour outlines the viewport and the status bar turns blue.
+
 **Editor camera.** In Edit mode the viewport uses a `CameraEditor` (orbit
 camera) controlled by mouse drag and scroll. The camera updates only when the
 viewport is hovered, preventing accidental movement while interacting with other
-panels.
+panels. Its 2D view (`CameraEditor::Projection::Orthographic`) faces the XY plane, keeps the framing of the 3D
+view at the reference point and ignores rotations; the wheel zooms both. `CameraEditor::frame` centres the view on
+the selection. The grid follows the snap step (doubled while the lines would be too dense), the X and Y axes in
+their colours.
+
+**Context menus.** A right click that does not drag opens a menu on the entity under the cursor (Frame, Duplicate,
+Hide in the Editor, Delete) or, on the empty scene, the view options (2D / 3D, grid). A right click on a document tab
+offers Save, Close, Close Others, Reveal in Content Browser and Copy Path; on a node graph it deletes the node under
+the cursor or fits the view to the graph. Every menu has a title, Lucide icons, the shortcuts and its destructive
+entries in red (`gui::widgets::menuHeader`, `menuItem`).
 
 **Gizmos.** When an entity is selected, ImGuizmo renders a manipulator gizmo in
-the viewport. The gizmo type is controlled by the toolbar buttons or keyboard
+the viewport. The gizmo type is controlled by the overlay buttons or keyboard
 shortcuts (Q/W/E/R/T):
 
 | Type        | Key | Description                         |
@@ -259,7 +285,7 @@ The snap step is resolved every frame:
 - otherwise the manual `snapStep` value (in world units) is used.
 
 All four knobs (`snapEnabled`, `snapStep`, `snapMultiplier`,
-`snapAutoFromTilemap`) live under `Editor Settings > General > Gizmo Snap`.
+`snapAutoFromTilemap`) live in the **Gizmo Snap** tab of the Editor Settings.
 Rotation snap remains fixed at 45° and Scale snap at 0.5.
 
 **Entity picking.** Clicking in the viewport reads the RedInteger attachment at the
@@ -270,7 +296,7 @@ is selected in the Scene Hierarchy and Properties panels.
 
 - Physics collider wireframes (box and circle shapes)
 - Camera frustum visualization for non-primary cameras
-- Trigger zone icons (victory, death, target, teleport, timer, interaction, lua callback)
+- Trigger zone icons (victory, death, target, teleport, timer, interaction, lua callback), hidden from **Show**
 
 ### Scene Hierarchy
 
@@ -278,8 +304,17 @@ The Scene Hierarchy panel displays all entities in the active scene as a tree vi
 Entities with children (via the `Hierarchy` component) expand to show nested items.
 Root entities have `parentId == 0` and appear at the top level.
 
+**Toolbar.** The **Add** button creates an empty entity or a child of the selection; the search field filters the
+entities by name (every word, case-insensitive) and shows the matches as a flat list.
+
+**Rows.** A thin chevron folds the children, the glyph of the main component comes in the colour of its kind
+(camera blue, sprite pink, text violet, UI teal, world gold...), and a parent shows its child count. The eye and
+camera switches (visible in the editor, in the game) show when the row is hovered, and stay while the entity is
+hidden. Prefab instances are drawn in the info colour, entities hidden in the editor greyed out; the selection has
+an accent bar on its left.
+
 **Selection.** Clicking an entity selects it. The selection is shared with the
-Properties panel and the viewport gizmo.
+Properties panel and the viewport gizmo; with nothing selected, Properties says how to select one.
 
 **Drag-drop reparenting.** Drag an entity node onto another entity to make it a
 child. The engine calls `Scene::setParent()` which checks for circular references
@@ -309,7 +344,9 @@ the hierarchy tree.
 ### Properties
 
 The Properties panel shows all components attached to the currently selected entity.
-Each component has a collapsible header with a dedicated editor widget:
+Each component has a collapsible header (its icon, its name and a **⋮** menu: revert to the prefab, remove) and a
+dedicated editor widget. Vector fields (position, rotation, scale, sizes, directions) sit in a label / value grid,
+each component marked by a thin axis colour, with a reset button that appears when the value leaves its default.
 
 - **Transform** -- Position, rotation, and scale drag-float fields (local space)
 - **Sprite Renderer** -- Colour picker, texture picker (drag from Content Browser)
@@ -449,31 +486,27 @@ The schema mirrors the corresponding fields of `AnimatedSpriteRenderer` 1:1, so 
 The Content Browser provides a file grid view of the project's asset directory. It
 supports navigation, file operations, and drag-drop integration with other panels.
 
-**Navigation toolbar.** A breadcrumb-style path bar at the top with a back button.
-The browser roots at the project's asset directory and prevents navigation above it.
+**Folder tree.** The left column lists the asset roots (project, application, engine) and their folders; a click
+opens a folder, the chevrons fold them, and the tree unfolds down to the folder shown. Drag its right edge to resize
+it.
 
-**File type icons.** Files are displayed with type-specific icons loaded from the
-icon bank. Each icon shares the same file-frame template, carries an extension ribbon
-label (e.g. `WAV`, `CPP`) and a central type glyph:
+**Toolbar.** The parent folder button, a clickable breadcrumb from the root (named after it) to the current folder, a
+search field filtering the folder by name, the grid / list toggle and the thumbnail size. The browser never goes
+above the selected root. Below, one chip per family present in the folder (`All 14`, `Texture 11`...) shows that
+family alone; the chips hide when the folder holds a single family.
 
-| Category  | Extensions                              | Central glyph            |
-|-----------|-----------------------------------------|--------------------------|
-| Scene     | `.owl`                                  | Isometric scene floor    |
-| Prefab    | `.owlprefab`                            | Puzzle-piece "P" badge   |
-| Animation | `.owlanim`                              | Filmstrip with play head |
-| Image     | `.png`, `.jpg`, `.svg`                  | Frame with sun + peaks   |
-| Font      | `.ttf`                                  | "Aa" sample              |
-| Config    | `.yml`, `.json`                         | Gear / curly braces      |
-| Shader    | `.glsl`                                 | GPU chip with pins       |
-| Script    | `.lua`                                  | Crescent moon + star     |
-| Sound     | `.wav`, `.mp3`, `.ogg`, `.flac`         | Speaker with waves       |
-| Mesh      | `.obj`, `.gltf`, `.glb`, `.fbx`         | Isometric cube wireframe |
-| Source    | `.py`, `.cpp`/`.cxx`, `.h`/`.hpp`, `.c` | Language-specific glyph  |
-| Doc       | `.md`                                   | Markdown mark + arrow    |
-| Fallback  | plain text                              | Text lines               |
-
-Folders use a distinct folder icon. The secondary accent (amber `#ffc726`) highlights
-glyph details; the primary colour follows the active ImGui theme text colour.
+**Tiles.** Images (`.png`, `.jpg`) show their own thumbnail, filling the tile and cropped to its square; tilesets
+show their atlas; scenes are rendered through their primary camera, prefabs framed whole by an orthographic camera;
+3D models (`.obj`, `.fbx`, `.gltf`, `.glb`) show their faces in an isometric view, shaded and sorted back to front
+(`AssetThumbnails::projectMesh`, at most 6000 triangles); sounds show their waveform (`sound::readWaveform`).
+`AssetThumbnails` reads a few images, sounds and tilesets per frame (a mesh takes the frame) and renders one scene or
+prefab at a time, for 0.75 s so its textures finish loading, into a pool of 48 framebuffers it reuses; the status bar
+shows the previews still to make with a progress bar. A preview is made again when its file changes. Other files show
+the duotone icon of their kind, centred. A bar under the tile carries the colour of the family (scene, prefab,
+texture, tileset, tilemap, sound, script, code, shader, font, animation, node graph, 3D model, data, folder), the kind
+is written in capitals under the name, and a badge in the corner gives a short extension. An empty folder, or a search
+with no match, says so and how to go on. A dragged tile, like a dragged entity, follows the cursor as its glyph, its
+name and its kind (`gui::widgets::dragPreview`); drop targets light up in the accent.
 
 **Interactions:**
 
@@ -485,7 +518,7 @@ glyph details; the primary colour follows the active ImGui theme text colour.
 | Drag texture to Properties    | Assign the texture to a Sprite Renderer field |
 | Drag sound to Properties      | Assign the sound to a Sound Source field      |
 | Right-click background        | Context menu: New Folder, Import File/Folder  |
-| Right-click file/folder       | Context menu: Rename, Delete                  |
+| Right-click file/folder       | Context menu: Open, Rename, Delete            |
 | OS file drop                  | Copy dropped files into the current directory |
 
 ### Log Panel
@@ -493,10 +526,11 @@ glyph details; the primary colour follows the active ImGui theme text colour.
 The Log panel displays a scrolling view of engine and application log messages. It
 supports filtering by log level and logger source.
 
-**Level filters.** Toggle buttons for each severity level: Trace, Debug, Info,
-Warning, Error, Critical. Disabled levels are hidden from the output.
+**Level filters.** One chip per severity level, with its message count: Trace, Debug, Info, Warning, Error,
+Critical. A level whose chip is off is hidden from the output. The tab title adds the count of warnings and errors.
+The search field and the **Clear** button sit on the right of the toolbar.
 
-**Logger filters.** Separate toggles for Core (engine) and App (application) loggers.
+**Logger filters.** Two more chips: Engine (the `OWL` logger) and Game (the `APP` logger).
 
 **Text search.** A search field filters visible messages by substring match.
 
@@ -516,9 +550,8 @@ boom. Fix: fix the script at the first line of the traceback; the callback runs 
 
 ### Stats
 
-The Stats panel is a small overlay window that displays real-time performance
-information. It can be toggled via the **Show Stats Panel** checkbox in
-**Edit > Editor Settings** (General section).
+The Stats panel, a tab of the bottom strip, displays real-time performance
+information. It can be toggled via the **Stats Panel** switch in the **General** tab of the Editor Settings.
 
 Displayed metrics:
 
@@ -544,16 +577,26 @@ the maximum over the last 2 s, so a one-off queue drain stays readable; they are
 
 ### Settings
 
-The Settings panel is a dockable window opened via **Edit > Editor Settings**.
-It contains three sections:
+The Settings panel is a dockable window opened via **View > Settings > Editor**, with one tab per topic, each tab
+with its icon; each row has its label on the left and a reset button once it differs from the default. The engine
+parameters dialog (Window, Backends, Debug), Project Settings and Scene Settings use the same grids under
+collapsible sections with an icon:
 
-**General.** Toggles like the Show Stats Panel checkbox, font sizes, and the autosave interval
+**General.** The Stats Panel switch, the text size (75 to 150 %, applied at once, `UiLayer::setTextScale`; also
+`Ctrl+=`, `Ctrl+-` and `Ctrl+0`), the UI and code font sizes (next startup), and the autosave interval
 (see [Autosave and crash recovery](#autosave-and-crash-recovery)).
 
-**Theme selection.** A dropdown listing built-in theme presets (e.g. "Dark"). Changing
-the theme calls `UiLayer::setTheme()` and triggers `IconBank::rebuild()` to re-rasterize
-all SVG icons with the new theme colours. The primary colour follows the theme text colour;
-the secondary accent is a fixed amber/gold (`#ffc726`) matching the Owl Nest brand.
+**Gizmo Snap.** Snap to grid, step from the tilemap, manual step and cell multiplier.
+
+**Shortcuts.** The keyboard shortcuts, see [Rebinding](#rebinding).
+
+**Appearance.** **Owl Dark** (default) or **Owl Light**. A theme is a small set of tokens (`gui::Theme`:
+five surfaces from the ground to the pressed state, the input well, lines, three text levels, one amber accent,
+the play-mode blue, success / warning / error / info and the three axis colours); `UiLayer::setTheme` derives every
+ImGui colour and state from them, so a hovered or pressed control is always one step brighter. Changing the theme
+also re-tints the SVG icons (`IconBank::rebuild`): `#ffffff` becomes the text colour, `#ff00ff` the accent.
+Settings saved with a retired preset (Dark, Dark Blue, Nord, Solarized, Custom) open in Owl Dark, Light in
+Owl Light.
 
 **Icon buttons.** Dialog and panel buttons use `IconBank::iconButton(name, label, size)`
 to render an icon-prefixed button that falls back to a plain button when the icon is
@@ -589,7 +632,7 @@ on disk, at the start of the next frame:
   recognised (the file holds what the editor would write) and reload nothing.
 - **Cost**: a background thread compares modification times every 500 ms and the frame reads one atomic flag; the
   frame bench measures it with `OwlRunner --frame-bench <scene> --hot-reload`.
-- **Turn it off**: *Debug > Hot Reload* in the *Parameters* dialog (`hotReload` in `config.yml`), `OwlRunner
+- **Turn it off**: the *Hot Reload* switch of the *Debug* section of the *Parameters* dialog (`hotReload` in `config.yml`), `OwlRunner
   --no-hot-reload`. A packaged game never watches: the hot reload stays off whenever an asset pack is open.
 - Not reloaded: colliders built when the play started (a tilemap's collision flags apply at the next play), new
   bindings in a shader (restart), C++ game code (a v0.7.0 evaluation).
@@ -597,7 +640,8 @@ on disk, at the start of the next frame:
 ### Project Settings
 
 The Project Settings dialog is opened via **Project > Project Settings**. It edits the
-active project's configuration:
+active project's configuration in three sections (General, Window, Renderer Stack) laid out as property grids, like
+the inspector:
 
 | Field        | Description                                             |
 |--------------|---------------------------------------------------------|
@@ -632,19 +676,19 @@ The renderer-stack section mirrors `renderer::EnabledRenderersConfig`:
 
 | Control                                  | Effect                                                                                               |
 |------------------------------------------|------------------------------------------------------------------------------------------------------|
-| Layer row (per scene-listed entry)       | Drag-handle text identifying the layer + bracketed type (`[Renderer2D]`, `[RendererRaycast]`).       |
-| `Enabled` checkbox                       | Toggle the scene-level enable flag. Disabled layers are skipped without affecting the order.         |
-| Up / Down arrows                         | Reorder the scene listing. Listed layers run in this order; unlisted layers append in project order. |
-| `Detach` button                          | Remove the scene-level entry — the layer reverts to the project's default config.                    |
-| `Overrides` collapsible                  | Per-layer-type override editor for known keys (see below).                                           |
+| Layer row (per scene-listed entry)       | The layer name and its type (`Renderer2D`, `RendererRaycast`).                                       |
+| Enabled switch                           | Toggle the scene-level enable flag. Disabled layers are skipped without affecting the order.         |
+| Up / Down chevrons                       | Reorder the scene listing. Listed layers run in this order; unlisted layers append in project order. |
+| Detach button                            | Remove the scene-level entry — the layer reverts to the project's default config.                    |
+| `Overrides` sub-section                  | Per-layer-type override editor for known keys (see below).                                           |
 | Add layer slot (`+` next to a name)      | Add a project layer absent from the scene listing — equivalent to declaring a new override.          |
 
 The `Overrides` collapsible exposes typed widgets per layer type:
 
 - **`Renderer2D`** — `Space` combo (`World` for sprite layers, `Screen` for
   HUD / pixel-overlay layers immune to camera rotation).
-- **`RendererRaycast`** — `Fov`, `MaxDistance`, `NumRays` numeric drags;
-  `CeilingColor` / `FloorColor` colour pickers.
+- **`RendererRaycast`** — Field of View, Max Distance and Rays numeric drags (keys `Fov`, `MaxDistance`,
+  `NumRays`); Ceiling / Floor colour pickers (`CeilingColor` / `FloorColor`).
 
 Every change pushes a `ModifyEnabledRenderersCommand` onto the active scene's
 undo manager and rebuilds the live `RenderStack` so the visual effect is
@@ -793,7 +837,8 @@ turned into `_`):
 | `<GameName>.zip` (Windows) | Archive of the game folder, next to it                             |
 | icon                       | The project icon, at its project-relative path                     |
 
-The same export runs without a window from the command line, which CI uses:
+`OwlNest --project <project dir or owl_project.yml>` opens a project at start-up, its last session included, instead
+of showing the File screen. The same export runs without a window from the command line, which CI uses:
 
 ```bash
 OwlNest --export <project dir or owl_project.yml> <output dir>
@@ -1090,6 +1135,30 @@ gizmo manipulation is in progress.
 | Pause       | F6               | `scene.pause` |
 | Stop        | F7               | `scene.stop`  |
 | Step Frame  | F8               | `scene.step`  |
+
+### View
+
+| Action                       | Default Shortcut | Action ID                  |
+|------------------------------|------------------|----------------------------|
+| Command Palette              | Shift, Shift     | `view.commandPalette`      |
+| Layout: Default              | Alt+1            | `view.layoutDefault`       |
+| Layout: Hierarchy Left       | Alt+2            | `view.layoutHierarchyLeft` |
+| Collapse / Expand the Ribbon | Ctrl+F1          | `view.toggleRibbon`        |
+| Help                         | F1               | `help.context`             |
+| Frame Selection              | F                | `view.frameSelection`      |
+| Toggle 2D / 3D View          |                  | `view.toggleProjection`    |
+| Text Size: Larger            | Ctrl+=           | `view.textLarger`          |
+| Text Size: Smaller           | Ctrl+-           | `view.textSmaller`         |
+| Text Size: Reset             | Ctrl+0           | `view.textReset`           |
+
+### Command palette
+
+Pressing `Shift` twice (within 0.4 s, outside a text field), or a click on the search box in the middle of the
+ribbon tab row, opens a search box at the top of the editor listing every action of the registry, with its category
+and its shortcut, then the entities of the active scene and the files of the asset folders. Type a few letters in
+order (`svdoc` finds *Save Document*), move with the arrows, run with `Enter`, close with `Escape` or a click
+elsewhere. Choosing an entity selects it, choosing an asset opens it. The action `view.commandPalette` has no key of
+its own and can be given one in the Shortcuts tab. Matches at the start of a word and runs of contiguous letters rank first (`CommandPalette::score`).
 
 ### Rebinding
 

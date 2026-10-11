@@ -1,8 +1,5 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <!-- Monitor/screen shape -->
-  <rect x="80" y="80" width="352" height="260" rx="20" stroke="white" stroke-width="32" fill="none"/>
-  <!-- Stand -->
-  <line x1="256" y1="340" x2="256" y2="410" stroke="white" stroke-width="32" stroke-linecap="round"/>
-  <line x1="170" y1="410" x2="342" y2="410" stroke="white" stroke-width="32" stroke-linecap="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+  <rect x="3" y="4" width="18" height="13" rx="2" fill="#ffffff" fill-opacity=".18"/>
+  <path d="M9 21h6M12 17v4"/>
+  <path d="M6.5 7.5h4M6.5 13.5h3M14 13.5h3.5" stroke="#ff00ff"/>
 </svg>

@@ -54,8 +54,10 @@ flowchart LR
 
 1. Create a `.lua` file in your project's asset directory (e.g. `scripts/player.lua`)
 2. In Owl Nest, select an entity and click **Add Component > Lua Script**
-3. Set the **Script Path** field to the relative path (e.g. `scripts/player.lua`)
-4. Click **Refresh Properties** to detect exposed properties from the script
+3. Drop the script from the Content Browser on the **Script** field (it stores the relative path, e.g.
+   `scripts/player.lua`); **Open** shows it in the code editor
+4. The exposed properties appear under **Properties**; they are read again when the file changes, values already set
+   are kept
 5. Edit property values in the inspector — they are saved with the scene
 
 The resulting scene YAML looks like:

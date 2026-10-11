@@ -12,6 +12,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -21,90 +22,105 @@ namespace owl::gui {
  *  Available built-in theme presets.
  */
 enum struct ThemePreset : uint8_t {
-	Custom,///< Custom theme loaded from file.
-	Dark,///< Default dark theme.
-	Light,///< Light theme.
-	DarkBlue,///< Dark blue theme.
-	Nord,///< Nord colour palette theme.
-	Solarized,///< Solarized dark theme.
+	OwlDark,///< Default dark theme, Owl amber accent.
+	OwlLight,///< Light theme, darker amber accent.
 };
 
 /**
  * @brief
- *  Definition of the GUI theme.
+ *  GUI theme as a small set of semantic tokens; `UiLayer::setTheme` derives every ImGui colour and state from them.
+ *
+ * Surfaces go from the application ground (`surface0`) to the pressed state (`surface4`): every hover and press is
+ * one step up. A single accent marks selection, focus and the main action; `play` is kept for the play mode so it
+ * never reads as a selection. The defaults are Owl Dark.
  */
 struct OWL_API Theme {
-	math::vec4 text{0.753f, 0.753f, 0.753f, 1.0};///< Colour of the text.
-	math::vec4 windowBackground{0.1f, 0.105f, 0.11f, 1.0f};///< Colour of the window background.
-	math::vec4 childBackground{0.141f, 0.141f, 0.141f, 1.0f};///< Colour of the child background.
-	math::vec4 backgroundPopup{0.196f, 0.196f, 0.196f, 1.0f};///< Colour of the background popup.
-	math::vec4 border{0.102f, 0.102f, 0.102f, 1.0f};///< Colour of the border.
+	/// Application ground: gutters between docked panels, inactive tabs, title bars.
+	math::vec4 surface0{0.067f, 0.071f, 0.082f, 1.f};
+	/// Panel body.
+	math::vec4 surface1{0.098f, 0.106f, 0.122f, 1.f};
+	/// Headers, toolbars, ribbon and popups.
+	math::vec4 surface2{0.125f, 0.137f, 0.157f, 1.f};
+	/// Hovered controls.
+	math::vec4 surface3{0.161f, 0.176f, 0.2f, 1.f};
+	/// Pressed controls.
+	math::vec4 surface4{0.2f, 0.22f, 0.251f, 1.f};
+	/// Background of input fields.
+	math::vec4 well{0.051f, 0.055f, 0.067f, 1.f};
+	/// Borders.
+	math::vec4 line{0.165f, 0.18f, 0.208f, 1.f};
+	/// Separators inside a panel.
+	math::vec4 lineSoft{0.122f, 0.133f, 0.153f, 1.f};
+	/// Main text.
+	math::vec4 text{0.855f, 0.867f, 0.886f, 1.f};
+	/// Secondary text: labels, captions.
+	math::vec4 textMuted{0.604f, 0.631f, 0.671f, 1.f};
+	/// Disabled text and placeholders.
+	math::vec4 textDisabled{0.373f, 0.4f, 0.439f, 1.f};
+	/// Selection, focus and main action.
+	math::vec4 accent{0.918f, 0.647f, 0.235f, 1.f};
+	/// Text drawn on the accent.
+	math::vec4 onAccent{0.102f, 0.071f, 0.02f, 1.f};
+	/// Play mode.
+	math::vec4 play{0.239f, 0.545f, 1.f, 1.f};
+	/// Success.
+	math::vec4 success{0.298f, 0.718f, 0.51f, 1.f};
+	/// Warning.
+	math::vec4 warning{0.937f, 0.541f, 0.235f, 1.f};
+	/// Error.
+	math::vec4 error{0.898f, 0.325f, 0.294f, 1.f};
+	/// Information and links.
+	math::vec4 info{0.353f, 0.635f, 0.941f, 1.f};
+	/// X axis.
+	math::vec4 axisX{0.898f, 0.325f, 0.294f, 1.f};
+	/// Y axis.
+	math::vec4 axisY{0.365f, 0.733f, 0.388f, 1.f};
+	/// Z axis.
+	math::vec4 axisZ{0.298f, 0.553f, 0.941f, 1.f};
 
-	math::vec4 frameBackground{0.0588f, 0.0588f, 0.0588f, 1.0};///< Colour of the frame background.
-	math::vec4 frameBackgroundHovered{0.0588f, 0.0588f, 0.0588f, 1.0};///< Colour of the frame background hovered.
-	math::vec4 frameBackgroundActive{0.0588f, 0.0588f, 0.0588f, 1.0};///< Colour of the frame background active.
-
-	math::vec4 titleBar{0.0824f, 0.0824f, 0.0824f, 1.0f};///< Colour of the title bar.
-	math::vec4 titleBarActive{0.0824f, 0.0824f, 0.0824f, 1.0f};///< Colour of the title bar active.
-	math::vec4 titleBarCollapsed{0.15f, 0.1505f, 0.151f, 1.0f};///< Colour of the title bar collapsed.
-
-	math::vec4 menubarBackground{0.0f, 0.0f, 0.0f, 0.0f};///< Colour of the menubar background.
-
-	math::vec4 scrollbarBackground{0.02f, 0.02f, 0.02f, 0.53f};///< Colour of the scrollbar background.
-	math::vec4 scrollbarGrab{0.31f, 0.31f, 0.31f, 1.0f};///< Colour of the scrollbar grab.
-	math::vec4 scrollbarGrabHovered{0.41f, 0.41f, 0.41f, 1.0f};///< Colour of the scrollbar grab hovered.
-	math::vec4 scrollbarGrabActive{0.51f, 0.51f, 0.51f, 1.0f};///< Colour of the scrollbar grab active.
-
-	math::vec4 checkMark{0.753f, 0.753f, 0.753f, 1.0};///< Colour of the check mark.
-
-	math::vec4 sliderGrab{0.51f, 0.51f, 0.51f, 0.7f};///< Colour of the slider grab.
-	math::vec4 sliderGrabActive{0.66f, 0.66f, 0.66f, 1.0f};///< Colour of the slider grab active.
-
-	math::vec4 button{0.22f, 0.22f, 0.22f, 0.784f};///< Colour of the button.
-	math::vec4 buttonHovered{0.275f, 0.275f, 0.275f, 1.0f};///< Colour of the button hovered.
-	math::vec4 buttonActive{0.22f, 0.22f, 0.22f, 0.588f};///< Colour of the button active.
-
-	math::vec4 groupHeader{0.184f, 0.184f, 0.184f, 1.0f};///< Colour of the group header.
-	math::vec4 groupHeaderHovered{0.184f, 0.184f, 0.184f, 1.0f};///< Colour of the group header hovered.
-	math::vec4 groupHeaderActive{0.184f, 0.184f, 0.184f, 1.0f};///< Colour of the group header active.
-
-	math::vec4 separator{0.102f, 0.102f, 0.102f, 1.0f};///< Colour of the separator.
-	math::vec4 separatorActive{0.153f, 0.725f, 0.949f, 1.0f};///< Colour of the separator active.
-	math::vec4 separatorHovered{0.153f, 0.725f, 0.949f, 0.588f};///< Colour of the separator hovered.
-
-	math::vec4 resizeGrip{0.91f, 0.91f, 0.91f, 0.25f};///< Colour of the resize grip.
-	math::vec4 resizeGripHovered{0.81f, 0.81f, 0.81f, 0.67f};///< Colour of the resize grip hovered.
-	math::vec4 resizeGripActive{0.46f, 0.46f, 0.46f, 0.95f};///< Colour of the resize grip active.
-
-	math::vec4 tabHovered{0.149f, 0.157f, 0.076f, 1.0f};///< Colour of the tab hovered.
-	math::vec4 tab{0.0824f, 0.0824f, 0.0824f, 1.0f};///< Colour of the tab.
-	math::vec4 tabSelected{0.051f, 0.051f, 0.051f, 1.0f};///< Colour of the tab selected.
-	math::vec4 tabSelectedOverline{0.898f, 0.706f, 0.051f, 1.0f};///< Colour of the tab selected overline.
-	math::vec4 tabDimmed{0.0824f, 0.0824f, 0.0824f, 1.0f};///< Colour of the tab dimmed.
-	math::vec4 tabDimmedSelected{0.072f, 0.072f, 0.072f, 1.0f};///< Colour of the tab dimmed selected.
-	math::vec4 tabDimmedSelectedOverline{0.339f, 0.321f, 0.210f, 1.0f};///< Colour of the tab dimmed selected overline.
-
-	math::vec4 dockingPreview{0.898f, 0.706f, 0.051f, 0.67f};///< Colour of the docking preview.
-	math::vec4 dockingEmptyBackground{0.2f, 0.2f, 0.2f, 1.f};///< Colour of the docking empty background.
-
-	math::vec4 highlight{0.153f, 0.725f, 0.949f, 1.0f};///< Colour of the highlight.
-
-	math::vec4 propertyField{0.0588f, 0.0588f, 0.0588f, 1.0};///< Colour of the property field.
-
-	float windowRounding{3.f};///< Style window rounding, in pixels.
-	float frameRounding{2.f};///< Style frame rounding, in pixels.
-	float frameBorderSize{1.0f};///< Style frame border size, in pixels.
-	float indentSpacing{11.f};///< Style indent spacing, in pixels.
-
-	float tabRounding{2.f};///< Style tab rounding, in pixels.
-	float tabOverline{1.f};///< Style tab overline, in pixels.
-	float tabBorder{1.f};///< Style tab border, in pixels.
-
-	float controlsRounding{3.f};///< Style controls rounding, in pixels.
+	/// Rounding of windows, popups and child regions, in pixels.
+	float windowRounding{5.f};
+	/// Rounding of frames (fields, buttons), in pixels.
+	float frameRounding{3.f};
+	/// Rounding of tabs, in pixels.
+	float tabRounding{4.f};
+	/// Indentation of tree levels, in pixels.
+	float indentSpacing{14.f};
 
 	/**
 	 * @brief
-	 *  Load from a yaml config file.
+	 *  A colour with another opacity.
+	 * @param[in] iColor The colour.
+	 * @param[in] iAlpha The opacity.
+	 * @return The colour with `iAlpha` as alpha.
+	 */
+	[[nodiscard]] static constexpr auto withAlpha(const math::vec4& iColor, const float iAlpha) -> math::vec4 {
+		return {iColor.x(), iColor.y(), iColor.z(), iAlpha};
+	}
+
+	/**
+	 * @brief
+	 *  Linear mix of two colours.
+	 * @param[in] iFrom The colour at 0.
+	 * @param[in] iTo The colour at 1.
+	 * @param[in] iRatio The share of `iTo`.
+	 * @return The mixed colour.
+	 */
+	[[nodiscard]] static constexpr auto mix(const math::vec4& iFrom, const math::vec4& iTo, const float iRatio)
+			-> math::vec4 {
+		return iFrom + (iTo - iFrom) * iRatio;
+	}
+
+	/**
+	 * @brief
+	 *  Background of a selected row or item: the accent, faint.
+	 * @return The selection colour.
+	 */
+	[[nodiscard]] constexpr auto getSelection() const -> math::vec4 { return withAlpha(accent, 0.18f); }
+
+	/**
+	 * @brief
+	 *  Load from a yaml config file; missing keys keep their current value.
 	 * @param[in] iFile The file to load.
 	 */
 	void loadFromFile(const std::filesystem::path& iFile);
@@ -126,10 +142,18 @@ struct OWL_API Theme {
 
 	/**
 	 * @brief
-	 *  Get the list of available preset names.
-	 * @return Vector of preset name strings.
+	 *  Get the list of available presets and their names.
+	 * @return The presets, Owl Dark first.
 	 */
 	static auto getPresetNames() -> std::vector<std::pair<ThemePreset, std::string>>;
+
+	/**
+	 * @brief
+	 *  Preset from its name, as stored in the editor settings.
+	 * @param[in] iName The name; names of retired presets ("Dark", "Nord"...) fall back to their closest preset.
+	 * @return The preset, Owl Dark for an unknown name.
+	 */
+	static auto presetFromName(std::string_view iName) -> ThemePreset;
 };
 
 }// namespace owl::gui

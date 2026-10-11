@@ -11,8 +11,17 @@
 #include "EditorLayer.h"
 
 #include <gui/IconBank.h>
+#include <gui/IconFont.h>
+#include <gui/UiLayer.h>
 #include <gui/utils.h>
 #include <gui/widgets/AssetField.h>
+#include <gui/widgets/Combo.h>
+#include <gui/widgets/EmptyState.h>
+#include <gui/widgets/IconButton.h>
+#include <gui/widgets/ImageTile.h>
+#include <gui/widgets/PropertyGrid.h>
+#include <gui/widgets/SectionHeader.h>
+#include <gui/widgets/Tooltip.h>
 #include <imgui_stdlib.h>
 #include <renderer/Renderer.h>
 #include <renderer/gpu/Texture.h>
@@ -155,7 +164,7 @@ auto TilesetDocument::loadFromFile(const std::filesystem::path& iPath) -> bool {
 void TilesetDocument::onImGuiRender() {
 	const auto display =
 			(mp_editorLayer != nullptr) ? mp_editorLayer->getDocumentManager().displayTitleFor(this) : title();
-	const auto winTitle = std::format("{}##tileset_{:x}", display, static_cast<uint64_t>(id()));
+	const auto winTitle = documentWindowTitle(DocumentType::Tileset, display, static_cast<uint64_t>(id()));
 
 	ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse;
 	if (isDirty())
@@ -169,6 +178,8 @@ void TilesetDocument::onImGuiRender() {
 	if (wantFocus)
 		ImGui::SetNextWindowFocus();
 	const bool open = ImGui::Begin(winTitle.c_str(), &m_pOpen, flags);
+	if (mp_editorLayer != nullptr)
+		mp_editorLayer->renderDocumentTabMenu(*this);
 	if (wantFocus) {
 		ImGui::SetWindowFocus();
 		if (mp_editorLayer != nullptr)
@@ -186,56 +197,57 @@ void TilesetDocument::onImGuiRender() {
 	ImGui::End();
 }
 
-namespace {
-void helpText(const char* iText) {
-	ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
-	ImGui::SetWindowFontScale(0.85f);
-	ImGui::TextWrapped("%s", iText);
-	ImGui::SetWindowFontScale(1.f);
-	ImGui::PopStyleColor();
-}
-}// namespace
-
 void TilesetDocument::renderHierarchyPanel() {
-
-	// --- Texture slot ----------------------------------------------------------------------
-	ImGui::TextUnformatted("Texture");
+	if (!gui::widgets::sectionHeader("Atlas", gui::icon::image, false).open)
+		return;
 	const auto textureBefore = snapshotTileset(m_tileset);
 	if (gui::widgets::textureField("##texture", m_tileset.texture, ImVec2{96.f, 96.f})) {
 		if (m_tileset.texture)
 			m_tileset.texture->setFilterMode(m_tileset.filterMode);
 	}
+	gui::widgets::itemTooltip("Texture", nullptr, "Drop a texture from the Content Browser.");
 	if (const auto textureAfter = snapshotTileset(m_tileset); textureAfter != textureBefore) {
 		auto cmd = mkUniq<ModifyTilesetCommand>(textureBefore, textureAfter, "Set texture");
 		m_undoManager.push(std::move(cmd));
 	}
+	if (!gui::widgets::beginProperties("##atlas")) {
+		gui::widgets::endSection();
+		return;
+	}
+	// A count with the buttons that add or remove a column or a row.
+	const auto countRow = [this](const char* iLabel, const uint32_t iCount, const char* iWhat, auto&& iAdd,
+								 auto&& iRemove) -> void {
+		gui::widgets::propertyLabel(iLabel);
+		ImGui::AlignTextToFramePadding();
+		ImGui::Text("%u", iCount);
+		ImGui::SameLine();
+		const auto add = std::format("Add a {}", iWhat);
+		const auto remove = std::format("Remove a {}", iWhat);
+		if (gui::widgets::iconButton("##add", {.glyph = gui::icon::plus, .tooltip = add.c_str()}))
+			pushTilesetEdit(m_tileset, m_undoManager, add, iAdd);
+		ImGui::SameLine();
+		if (gui::widgets::iconButton("##remove",
+									 {.glyph = gui::icon::minus, .tooltip = remove.c_str(), .disabled = iCount <= 1}))
+			pushTilesetEdit(m_tileset, m_undoManager, remove, iRemove);
+		std::ignore = gui::widgets::propertyReset(false);
+	};
+	countRow(
+			"Columns", m_tileset.columns, "column", [this]() -> void { m_tileset.addColumn(); },
+			[this]() -> void { m_tileset.removeColumn(); });
+	countRow(
+			"Rows", m_tileset.rows, "row", [this]() -> void { m_tileset.addRow(); },
+			[this]() -> void { m_tileset.removeRow(); });
+	auto tileWidth = static_cast<int>(m_tileset.tileWidth);
+	auto tileHeight = static_cast<int>(m_tileset.tileHeight);
+	if (gui::widgets::propertyInt("Tile Width", tileWidth, tileWidth, 1, 1024, "%d px"))
+		m_tileset.tileWidth = static_cast<uint32_t>(tileWidth);
+	if (gui::widgets::propertyInt("Tile Height", tileHeight, tileHeight, 1, 1024, "%d px"))
+		m_tileset.tileHeight = static_cast<uint32_t>(tileHeight);
 
-	ImGui::Text("Columns: %u", m_tileset.columns);
-	ImGui::SameLine();
-	if (ImGui::SmallButton("+##addCol"))
-		pushTilesetEdit(m_tileset, m_undoManager, "Add column", [this]() -> void { m_tileset.addColumn(); });
-	ImGui::SameLine();
-	if (ImGui::SmallButton("-##removeCol"))
-		pushTilesetEdit(m_tileset, m_undoManager, "Remove column", [this]() -> void { m_tileset.removeColumn(); });
-	ImGui::Text("Rows: %u", m_tileset.rows);
-	ImGui::SameLine();
-	if (ImGui::SmallButton("+##addRow"))
-		pushTilesetEdit(m_tileset, m_undoManager, "Add row", [this]() -> void { m_tileset.addRow(); });
-	ImGui::SameLine();
-	if (ImGui::SmallButton("-##removeRow"))
-		pushTilesetEdit(m_tileset, m_undoManager, "Remove row", [this]() -> void { m_tileset.removeRow(); });
-
-	int tileWidth = static_cast<int>(m_tileset.tileWidth);
-	int tileHeight = static_cast<int>(m_tileset.tileHeight);
-	if (ImGui::DragInt("Tile Width", &tileWidth, 1.f, 1, 1024))
-		m_tileset.tileWidth = static_cast<uint32_t>(std::max(1, tileWidth));
-	if (ImGui::DragInt("Tile Height", &tileHeight, 1.f, 1, 1024))
-		m_tileset.tileHeight = static_cast<uint32_t>(std::max(1, tileHeight));
-
-	// --- Filter mode -----------------------------------------------------------------------
 	const auto& current = m_tileset.filterMode;
 	const char* currentLabel = (current == renderer::gpu::FilterMode::Nearest) ? "Nearest" : "Linear";
-	if (ImGui::BeginCombo("Filter", currentLabel)) {
+	gui::widgets::propertyLabel("Filter", "Nearest keeps the pixels sharp, Linear smooths them.");
+	if (gui::widgets::beginCombo("##filter", currentLabel)) {
 		if (ImGui::Selectable("Linear", current == renderer::gpu::FilterMode::Linear))
 			pushTilesetEdit(m_tileset, m_undoManager, "Set filter to Linear", [this]() -> void {
 				m_tileset.filterMode = renderer::gpu::FilterMode::Linear;
@@ -250,60 +262,63 @@ void TilesetDocument::renderHierarchyPanel() {
 			});
 		ImGui::EndCombo();
 	}
+	std::ignore = gui::widgets::propertyReset(false);
+	gui::widgets::endProperties();
+	gui::widgets::endSection();
 }
 
 void TilesetDocument::renderPropertiesPanel() {
-	ImGui::TextDisabled("Tile Metadata");
 	if (m_inspectedTile < 0) {
-		helpText("Click a tile in the atlas to inspect / edit its metadata.");
+		std::ignore = gui::widgets::emptyState(gui::icon::grid3x3, "No tile selected",
+											   "Click a tile in the atlas to edit its metadata.");
 		return;
 	}
 	if (static_cast<uint32_t>(m_inspectedTile) >= m_tileset.tileCount()) {
-		ImGui::TextDisabled("Selected tile is out of range for the current tileset.");
+		std::ignore = gui::widgets::emptyState(gui::icon::triangleAlert, "Tile out of range",
+											   "The selected tile is past the end of the tileset.");
 		return;
 	}
 	auto& meta = m_tileset.tiles[static_cast<size_t>(m_inspectedTile)];
-
-	ImGui::Text("Tile #%d", m_inspectedTile);
-	ImGui::Separator();
-
-	bool collidable = meta.collidable;
-	if (ImGui::Checkbox("Collidable", &collidable))
-		meta.collidable = collidable;
-	if (ImGui::IsItemHovered())
-		ImGui::SetTooltip("Solid tiles produce a static collider in the physics world.");
-
-	std::string name = meta.name;
-	ImGui::TextUnformatted("Name");
-	ImGui::SameLine();
-	if (ImGui::InputText("##tile_name", &name))
-		meta.name = std::move(name);
-	if (ImGui::IsItemHovered())
-		ImGui::SetTooltip("Optional designer-friendly name shown in the tile palette tooltip.");
-
-	ImGui::Spacing();
-	ImGui::Separator();
-	ImGui::TextDisabled("Raycast");
-	float wallHeight = meta.wallHeight;
-	if (ImGui::DragFloat("Wall height", &wallHeight, 0.05f, 0.f, 8.f, "%.2f"))
-		meta.wallHeight = std::clamp(wallHeight, 0.f, 8.f);
-	if (ImGui::IsItemHovered())
-		ImGui::SetTooltip("Vertical scale of the wall in cell units when rendered by the raycast renderer. "
-						  "1.0 is a standard ceiling-to-floor wall; larger values poke into the sky (towers), "
-						  "smaller values keep the wall planted on the floor (low half-walls). Bottom-anchored. "
-						  "Ignored by the legacy 2D rendering path.");
-
-	bool transparent = meta.transparent;
-	if (ImGui::Checkbox("Transparent (raycast)", &transparent))
-		meta.transparent = transparent;
-	if (ImGui::IsItemHovered())
-		ImGui::SetTooltip("When enabled, the raycast DDA does not stop at this tile — it records the hit and keeps "
-						  "stepping (up to 8 transparent layers per ray). The collected hits are drawn back-to-front "
-						  "so alpha-blended textures composite correctly. Combine with a PNG alpha channel or chroma "
-						  "key for see-through pixels.");
-
-	helpText("Transparency is alpha-channel only — author the tile texture with proper PNG alpha (RGBA) and toggle "
-			 "the Transparent flag above. Chroma keying is intentionally not supported.");
+	// Header: the tile itself and its number.
+	{
+		const auto uvs = m_tileset.getTileUv(static_cast<uint32_t>(m_inspectedTile));
+		const bool loaded = m_tileset.texture && m_tileset.texture->isLoaded();
+		std::ignore =
+				gui::widgets::imageTile("##inspected", {.textureId = loaded ? m_tileset.texture->getRendererId() : 0,
+														.uv0 = uvs[3],
+														.uv1 = uvs[1],
+														.size = ImGui::GetFrameHeight() * 1.6f});
+		ImGui::SameLine();
+		gui::UiLayer::pushTextStyle(gui::TextStyle::Strong);
+		ImGui::AlignTextToFramePadding();
+		ImGui::Text("Tile #%d", m_inspectedTile);
+		gui::UiLayer::popTextStyle();
+	}
+	if (gui::widgets::sectionHeader("Tile", gui::icon::tag, false).open) {
+		if (gui::widgets::beginProperties("##tileMeta")) {
+			std::ignore = gui::widgets::propertyText("Name", meta.name, "grass",
+													 "Optional name shown in the Tile Palette tooltip.");
+			std::ignore = gui::widgets::propertyBool("Collidable", meta.collidable, false,
+													 "Solid tiles produce a static collider in the physics world.");
+			gui::widgets::endProperties();
+		}
+		gui::widgets::endSection();
+	}
+	if (gui::widgets::sectionHeader("Raycast", gui::icon::scan, false).open) {
+		if (gui::widgets::beginProperties("##tileRaycast")) {
+			if (gui::widgets::propertyFloat(
+						"Wall Height", meta.wallHeight, 1.f, 0.05f, "%.2f",
+						"Height of the wall in cells for the raycast renderer: 1 is floor to ceiling, more pokes into "
+						"the sky (towers), less keeps a low wall on the floor. Ignored by the 2D renderer."))
+				meta.wallHeight = std::clamp(meta.wallHeight, 0.f, 8.f);
+			std::ignore = gui::widgets::propertyBool(
+					"Transparent", meta.transparent, false,
+					"The raycast keeps stepping through this tile (up to 8 layers per ray) and draws the hits back to "
+					"front: author the texture with a PNG alpha channel; chroma keying is not supported.");
+			gui::widgets::endProperties();
+		}
+		gui::widgets::endSection();
+	}
 }
 
 void TilesetDocument::renderCanvas() {

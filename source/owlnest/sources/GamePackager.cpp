@@ -11,6 +11,11 @@
 #include <data/assets/pack/GameExporter.h>
 #include <data/assets/pack/PackWriter.h>
 #include <gui/IconBank.h>
+#include <gui/IconFont.h>
+#include <gui/UiLayer.h>
+#include <gui/utils.h>
+#include <gui/widgets/IconButton.h>
+#include <gui/widgets/Toggle.h>
 
 #include <imgui.h>
 #include <imgui_stdlib.h>
@@ -111,7 +116,9 @@ void GamePackager::renderWizardModal() {
 
 	if (ImGui::BeginPopupModal("Packaging Wizard", nullptr,
 							   ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove)) {
-		ImGui::TextColored(ImVec4(1.0f, 0.85f, 0.2f, 1.0f), "Pack Game");
+		gui::UiLayer::pushTextStyle(gui::TextStyle::Title);
+		ImGui::TextColored(gui::vec(gui::UiLayer::getTheme().accent), "Pack Game");
+		gui::UiLayer::popTextStyle();
 		ImGui::TextWrapped("Project: %s  (version: %s)", mp_project->name.c_str(),
 						   mp_project->version.empty() ? "-" : mp_project->version.c_str());
 		ImGui::Spacing();
@@ -136,7 +143,7 @@ void GamePackager::renderWizardModal() {
 		if (ImGui::InputText("##dest", &destStr))
 			m_destDir = std::filesystem::path(destStr);
 		ImGui::SameLine();
-		if (gui::IconBank::instance().iconButton("open", "Browse...##packDest")) {
+		if (gui::widgets::button("Browse...##packDest", {.glyph = gui::icon::folderOpen, .label = "Browse..."})) {
 			const auto picked = platform::FileDialog::pickFolder();
 			if (!picked.empty())
 				m_destDir = picked;
@@ -146,19 +153,21 @@ void GamePackager::renderWizardModal() {
 		ImGui::Spacing();
 		ImGui::Separator();
 		ImGui::Text("Options");
-		ImGui::Checkbox("Compress pack (zstd)", &m_compress);
+		gui::widgets::checkbox("Compress pack (zstd)", &m_compress);
 		if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay))
 			ImGui::SetTooltip("Compress asset blobs with zstd. Smaller output at the cost of a slower pack.");
-		ImGui::Checkbox("Obfuscate TOC (XOR)", &m_obfuscate);
+		gui::widgets::checkbox("Obfuscate TOC (XOR)", &m_obfuscate);
 		if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay))
 			ImGui::SetTooltip("XOR-obfuscate the table of contents to deter casual pack inspection.");
 
 		ImGui::Spacing();
 		ImGui::Separator();
 		const bool canStart = !m_destDir.empty();
-		const auto& iconBank = gui::IconBank::instance();
 		ImGui::BeginDisabled(!canStart);
-		if (iconBank.iconButton("pack", "Start Packaging", {ImGui::GetFontSize() * 10.f, 0})) {
+		if (gui::widgets::button("Start Packaging", {.glyph = gui::icon::packageCheck,
+													 .label = "Start Packaging",
+													 .primary = true,
+													 .width = ImGui::GetFontSize() * 10.f})) {
 			m_showWizard = false;
 			ImGui::CloseCurrentPopup();
 			launchValidation();
@@ -167,7 +176,8 @@ void GamePackager::renderWizardModal() {
 		if (!canStart && ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay))
 			ImGui::SetTooltip("Choose an output folder to enable packaging.");
 		ImGui::SameLine();
-		if (iconBank.iconButton("close", "Cancel##packWiz", {ImGui::GetFontSize() * 7.f, 0})) {
+		if (gui::widgets::button("Cancel##packWiz",
+								 {.glyph = gui::icon::x, .label = "Cancel", .width = ImGui::GetFontSize() * 7.f})) {
 			m_showWizard = false;
 			m_destDir.clear();
 			ImGui::CloseCurrentPopup();
@@ -217,21 +227,24 @@ void GamePackager::renderValidationModal() {
 
 	if (ImGui::BeginPopupModal("Packaging Validation", nullptr,
 							   ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove)) {
-		ImGui::TextColored(ImVec4(1.0f, 0.6f, 0.3f, 1.0f), "%zu issue(s) found before packaging:", m_warnings.size());
+		ImGui::TextColored(gui::vec(gui::UiLayer::getTheme().warning),
+						   "%zu issue(s) found before packaging:", m_warnings.size());
 		ImGui::Separator();
 		ImGui::BeginChild("##packWarnings", ImVec2(0, 200), ImGuiChildFlags_Borders);
 		for (const auto& warning: m_warnings) ImGui::BulletText("%s", warning.c_str());
 		ImGui::EndChild();
 		ImGui::TextDisabled("The game may be missing assets or not playable. Proceed anyway?");
 		ImGui::Spacing();
-		const auto& iconBank = gui::IconBank::instance();
-		if (iconBank.iconButton("pack", "Proceed anyway", {ImGui::GetFontSize() * 10.f, 0})) {
+		if (gui::widgets::button("Proceed anyway", {.glyph = gui::icon::packageCheck,
+													.label = "Proceed anyway",
+													.width = ImGui::GetFontSize() * 10.f})) {
 			m_showValidation = false;
 			ImGui::CloseCurrentPopup();
 			startPacking();
 		}
 		ImGui::SameLine();
-		if (iconBank.iconButton("close", "Cancel", {ImGui::GetFontSize() * 7.f, 0})) {
+		if (gui::widgets::button("Cancel",
+								 {.glyph = gui::icon::x, .label = "Cancel", .width = ImGui::GetFontSize() * 7.f})) {
 			m_showValidation = false;
 			m_warnings.clear();
 			m_destDir.clear();

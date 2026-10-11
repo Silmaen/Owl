@@ -12,6 +12,8 @@
 #include <renderer/CameraEditor.h>
 #include <window/Window.h>
 
+#include <cmath>
+
 using namespace owl::renderer;
 using namespace owl::renderer::gpu;
 
@@ -92,4 +94,44 @@ TEST(CameraEditor, Frames) {
 	EXPECT_LT(cam.getDistance(), 10.f);
 
 	owl::input::Input::invalidate();
+}
+
+TEST(CameraEditor, OrthographicFacesThePlaneAndKeepsItsFraming) {
+	CameraEditor cam(45, 1.5f, 0.1f, 100);
+	EXPECT_EQ(cam.getProjectionMode(), CameraEditor::Projection::Perspective);
+	EXPECT_NEAR(cam.getProjection()(3, 3), 0.f, 1e-6f);
+	owl::input::Input::init(owl::window::Type::Null);
+	owl::core::Timestep ts;
+	cam.setProjection(CameraEditor::Projection::Orthographic);
+	EXPECT_EQ(cam.getProjectionMode(), CameraEditor::Projection::Orthographic);
+	EXPECT_NEAR(cam.getProjection()(3, 3), 1.f, 1e-6f);
+	// An orbit drag does not rotate an orthographic view.
+	owl::input::Input::injectKey(owl::input::key::LeftControl);
+	owl::input::Input::injectMouseButton(owl::input::mouse::ButtonLeft);
+	owl::input::Input::injectMousePos({0.f, 0.f});
+	ts.update();
+	cam.onUpdate(ts);
+	owl::input::Input::injectMousePos({40.f, 20.f});
+	ts.update();
+	cam.onUpdate(ts);
+	EXPECT_FLOAT_EQ(cam.getYaw(), 0.f);
+	EXPECT_FLOAT_EQ(cam.getPitch(), 0.f);
+	// Zooming narrows the visible height.
+	const float before = cam.getProjection()(1, 1);
+	owl::event::MouseScrolledEvent scroll(0.f, 4.f);
+	cam.onEvent(scroll);
+	EXPECT_GT(std::abs(cam.getProjection()(1, 1)), std::abs(before));
+	owl::input::Input::invalidate();
+}
+
+TEST(CameraEditor, FrameCentresAndFitsTheSphere) {
+	CameraEditor cam(45, 1.5f, 0.1f, 100);
+	cam.frame({4.f, -2.f, 0.f}, 3.f);
+	EXPECT_FLOAT_EQ(cam.getFocalPoint().x(), 4.f);
+	EXPECT_FLOAT_EQ(cam.getFocalPoint().y(), -2.f);
+	EXPECT_GT(cam.getDistance(), 3.f);
+	const float far = cam.getDistance();
+	cam.frame({0.f, 0.f, 0.f}, 0.f);
+	EXPECT_LT(cam.getDistance(), far);
+	EXPECT_GE(cam.getDistance(), 1.f);
 }

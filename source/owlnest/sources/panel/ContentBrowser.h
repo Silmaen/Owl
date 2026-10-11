@@ -8,12 +8,16 @@
 
 #pragma once
 
+#include "AssetThumbnails.h"
+
 #include <owlgui.h>
 
 #include <atomic>
+#include <cstddef>
 #include <filesystem>
 #include <functional>
 #include <string>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -49,6 +53,33 @@ public:
 	 *  The render command.
 	 */
 	void onImGuiRender();
+
+	/**
+	 * @brief
+	 *  Render the pending scene or prefab preview; call once per frame before the viewports.
+	 */
+	void onUpdate() { m_previews.onUpdate(); }
+
+	/**
+	 * @brief
+	 *  Previews of the folder shown that are ready, and to make in all.
+	 * @return Ready and total counts.
+	 */
+	[[nodiscard]] auto getPreviewProgress() const -> std::pair<size_t, size_t> { return m_previews.getProgress(); }
+
+	/**
+	 * @brief
+	 *  Show the folder of a file, the file selected, from the asset root that holds it.
+	 * @param[in] iPath The file, absolute.
+	 */
+	void reveal(const std::filesystem::path& iPath);
+
+	/**
+	 * @brief
+	 *  Asset root shown, the base of the paths the browser drags.
+	 * @return The root folder.
+	 */
+	[[nodiscard]] auto getRootPath() const -> const std::filesystem::path& { return m_currentRootPath; }
 
 	/**
 	 * @brief
@@ -149,6 +180,27 @@ private:
 	std::atomic<bool> m_scanInProgress = false;
 	/// Request a rescan of the current directory on the next frame.
 	bool m_rescanRequested = false;
+	/// Text typed in the search field; filters the current folder by name.
+	std::string m_searchFilter;
+	/// Asset family shown alone (`Texture`, `Scene`...), empty for every file.
+	std::string m_kindFilter;
+	/// Show a list of rows instead of a grid of tiles.
+	bool m_listView = false;
+	/// Side of a grid tile, in pixels (the thumbnail size).
+	float m_tileSize = 88.f;
+	/// Previews of the files: images, rendered scenes and prefabs, sound waveforms.
+	AssetThumbnails m_previews;
+	/// Sub-folders of the folders shown in the tree, by path; cleared after each scan.
+	std::unordered_map<std::string, std::vector<std::filesystem::path>> m_folderCache;
+	/// Folder the tree last expanded its ancestors for.
+	std::filesystem::path m_treeSyncedPath;
+
+	/**
+	 * @brief
+	 *  Open a file with the editor matching its type, or enter a folder.
+	 * @param[in] iEntry The folder or file.
+	 */
+	void openEntry(const std::filesystem::directory_entry& iEntry);
 
 	/**
 	 * @brief
@@ -158,9 +210,40 @@ private:
 
 	/**
 	 * @brief
+	 *  Render the folder tree on the left: every asset root and its sub-folders.
+	 */
+	void renderFolderTree();
+
+	/**
+	 * @brief
+	 *  Render one folder of the tree and, when expanded, its sub-folders.
+	 * @param[in] iPath The folder.
+	 * @param[in] iRoot The asset root it belongs to.
+	 * @param[in] iLabel Name shown.
+	 * @param[in] iIsRoot Whether it is an asset root.
+	 */
+	void renderFolderRow(const std::filesystem::path& iPath, const std::filesystem::path& iRoot,
+						 const std::string& iLabel, bool iIsRoot);
+
+	/**
+	 * @brief
+	 *  Sub-folders of a folder, read once and cached until the next scan.
+	 * @param[in] iPath The folder.
+	 * @return The sub-folders, sorted, hidden ones left out.
+	 */
+	auto getSubFolders(const std::filesystem::path& iPath) -> const std::vector<std::filesystem::path>&;
+
+	/**
+	 * @brief
 	 *  Render the navigation/top toolbar.
 	 */
 	void renderTopBand();
+
+	/**
+	 * @brief
+	 *  Render the family filter chips of the current folder, each with its count; hidden with a single family.
+	 */
+	void renderKindChips();
 
 	/**
 	 * @brief

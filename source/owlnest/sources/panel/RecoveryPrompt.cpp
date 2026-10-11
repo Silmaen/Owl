@@ -9,6 +9,8 @@
 #include "RecoveryPrompt.h"
 
 #include <gui/IconBank.h>
+#include <gui/IconFont.h>
+#include <gui/widgets/IconButton.h>
 #include <imgui.h>
 
 #include <string>
@@ -41,11 +43,14 @@ auto RecoveryPrompt::onImGuiRender() -> Choice {
 			ImGui::BulletText("%s  (%s, %s)", entry.title.c_str(), path.c_str(), entry.savedAt.c_str());
 		}
 		ImGui::Spacing();
-		const auto& iconBank = gui::IconBank::instance();
-		if (iconBank.iconButton("open", "Recover", {ImGui::GetFontSize() * 7.f, 0}))
+		if (gui::widgets::button("Recover", {.glyph = gui::icon::folderOpen,
+											 .label = "Recover",
+											 .primary = true,
+											 .width = ImGui::GetFontSize() * 7.f}))
 			choice = Choice::Recover;
 		ImGui::SameLine();
-		if (iconBank.iconButton("delete", "Discard", {ImGui::GetFontSize() * 7.f, 0}))
+		if (gui::widgets::button("Discard",
+								 {.glyph = gui::icon::trash2, .label = "Discard", .width = ImGui::GetFontSize() * 7.f}))
 			choice = Choice::Discard;
 		if (choice != Choice::None) {
 			m_open = false;

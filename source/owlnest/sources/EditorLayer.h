@@ -11,6 +11,7 @@
 #include <owlgui.h>
 
 #include "ActionRegistry.h"
+#include "DockLayout.h"
 #include "EditorSettings.h"
 #include "GamePackager.h"
 #include "Project.h"
@@ -21,6 +22,8 @@
 #include "document/DocumentManager.h"
 #include "document/SceneDocument.h"
 #include "panel/AsyncProgressModal.h"
+#include "panel/Backstage.h"
+#include "panel/CommandPalette.h"
 #include "panel/ContentBrowser.h"
 #include "panel/GpuCounterMonitor.h"
 #include "panel/HelpPanel.h"
@@ -32,13 +35,18 @@
 #include "panel/SceneHierarchy.h"
 #include "panel/SceneSettings.h"
 #include "panel/SettingsPanel.h"
+#include "panel/StatusBar.h"
 #include "panel/VoxelPalette.h"
 
+#include <gui/widgets/Toast.h>
+
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
 #include <optional>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace owl::nest {
@@ -295,6 +303,14 @@ public:
 
 	/**
 	 * @brief
+	 *  Context menu of a document tab: save, close, close the others, reveal the file in the Content Browser, copy its
+	 *  path. Call right after the `ImGui::Begin` of the document window, whose tab is then the last item.
+	 * @param[in,out] ioDocument The document of the tab.
+	 */
+	void renderDocumentTabMenu(Document& ioDocument);
+
+	/**
+	 * @brief
 	 *  New project.
 	 */
 	void newProject();
@@ -385,6 +401,41 @@ public:
 
 	/**
 	 * @brief
+	 *  Project to open when the layer is attached (`OwlNest --project <dir>`), instead of showing the File screen.
+	 * @param[in] iProject Project folder or `owl_project.yml`.
+	 */
+	void setStartupProject(const std::filesystem::path& iProject) { m_startupProject = iProject; }
+
+	/**
+	 * @brief
+	 *  Render the snap-step preset popup (triggered from the viewport snap button).
+	 *
+	 * Shows fraction / multiple presets when a `Tilemap` exists in the active scene, or raw
+	 * world-unit presets otherwise. Selecting an entry updates `m_settings.snapMultiplier`
+	 * (tilemap path) or `m_settings.snapStep` (raw path).
+	 */
+	void renderSnapStepPopup();
+
+	/**
+	 * @brief
+	 *  Run an editor action by its identifier ("scene.play"), as its shortcut would.
+	 * @param[in] iId The action identifier.
+	 * @return False if no action has this identifier.
+	 */
+	auto runAction(const std::string& iId) const -> bool { return m_actionRegistry.run(iId); }
+
+	/**
+	 * @brief
+	 *  Shortcut of an editor action, for tooltips.
+	 * @param[in] iId The action identifier.
+	 * @return The shortcut ("Ctrl+S"), empty when unbound.
+	 */
+	[[nodiscard]] auto getActionShortcut(const std::string& iId) const -> std::string {
+		return m_actionRegistry.getShortcutString(iId);
+	}
+
+	/**
+	 * @brief
 	 *  Consume a pending step-frame request from the active document.
 	 * @return True on success, false otherwise.
 	 */
@@ -445,6 +496,19 @@ public:
 
 	/**
 	 * @brief
+	 *  Open an asset named by an inspector field (relative to an asset folder) in its editor.
+	 * @param[in] iPath The path stored in the component.
+	 */
+	void openAssetFromInspector(const std::filesystem::path& iPath);
+
+	/**
+	 * @brief
+	 *  Register the actions that make the text larger, smaller or back to its size (Ctrl+=, Ctrl+-, Ctrl+0).
+	 */
+	void registerTextScaleActions();
+
+	/**
+	 * @brief
 	 *  Route a Content Browser file drop to `openScene` / `openCodeFile` / prefab instantiation.
 	 */
 	void handleContentBrowserDrop(const std::filesystem::path& iRelativePath);
@@ -484,9 +548,35 @@ private:
 
 	/**
 	 * @brief
-	 *  Render the welcome screen shown when no project is loaded.
+	 *  Draw the File screen when it is open.
 	 */
-	void renderWelcomeScreen();
+	void renderBackstage();
+
+	/**
+	 * @brief
+	 *  Draw the command palette when open, listing the editor actions and the entities of the active scene.
+	 */
+	void renderCommandPalette();
+
+	/**
+	 * @brief
+	 *  Switch the panel arrangement and rebuild the dock tree on the next frame.
+	 * @param[in] iPreset The arrangement.
+	 */
+	void applyLayoutPreset(LayoutPreset iPreset);
+
+	/**
+	 * @brief
+	 *  Gather the state shown by the status bar.
+	 * @return The status bar state.
+	 */
+	[[nodiscard]] auto buildStatusInfo() const -> panel::StatusInfo;
+
+	/**
+	 * @brief
+	 *  Draw the status bar and route its requests (open the Log).
+	 */
+	void renderStatusBar();
 
 
 	/**
@@ -494,22 +584,6 @@ private:
 	 *  Render the dirty-close confirmation modal for `m_pendingCloseDocId`.
 	 */
 	void renderCloseDocumentModal();
-
-	/**
-	 * @brief
-	 *  Render the recent-projects popup (triggered from the ribbon File > Recent button).
-	 */
-	void renderRecentProjectsPopup();
-
-	/**
-	 * @brief
-	 *  Render the snap-step preset popup (triggered from the ribbon Scene > Gizmo > Step button).
-	 *
-	 * Shows fraction / multiple presets when a `Tilemap` exists in the active scene, or raw
-	 * world-unit presets otherwise. Selecting an entry updates `m_settings.snapMultiplier`
-	 * (tilemap path) or `m_settings.snapStep` (raw path).
-	 */
-	void renderSnapStepPopup();
 
 
 	/**
@@ -608,14 +682,14 @@ private:
 	RibbonBuilder m_ribbonBuilder{*this};
 	/// 2D camera controller wired to the active viewport for pan/zoom.
 	renderer::CameraOrthoController m_cameraController;
-	/// Whether the welcome screen should be shown (hidden when user closes it).
-	bool m_showWelcomeScreen = true;
+	/// The File screen (projects, packaging, settings, help); shown at start-up without a project.
+	panel::Backstage m_backstage;
+	/// Project opened at attach time; empty to show the File screen instead.
+	std::filesystem::path m_startupProject;
 	/// Pending document id to close (awaits dirty-confirmation modal). 0 when idle.
 	core::UUID m_pendingCloseDocId{0};
 	/// True when the close-confirmation modal should open on the next frame.
 	bool m_openCloseDocModal = false;
-	/// Set by the ribbon's "Recent" button; drives `renderRecentProjectsPopup`.
-	bool m_openRecentProjectsPopup = false;
 	/**
 	 * Documents that must actually be closed at the start of the next frame.  Deferring the
 	 * destruction avoids a use-after-free on the Viewport's Vulkan colour-attachment: during the
@@ -644,6 +718,18 @@ private:
 	/// Deallocation counter from the previous frame, for the memory profiler readout.
 	size_t m_lastDeallocCalls = 0;
 #endif
+	/// Default dock tree, presets and the decision to rebuild it.
+	DockLayout m_dockLayout;
+	/// One-line bar under the docked panels.
+	panel::StatusBar m_statusBar;
+	/// Short notifications in the bottom-right corner (saves, exports, failures).
+	gui::widgets::ToastQueue m_toasts;
+	/// Search over the actions, the entities and the assets, opened by pressing Shift twice.
+	panel::CommandPalette m_commandPalette;
+	/// Asset files listed by the palette, with their name relative to their asset folder; refreshed on each opening.
+	std::vector<std::pair<std::filesystem::path, std::string>> m_paletteAssets;
+	/// When the last autosave wrote something; empty before the first one.
+	std::optional<std::chrono::steady_clock::time_point> m_lastAutosave;
 	/// Per-frame Vulkan counter deltas and their 2 s maxima, for the Stats panel.
 	panel::GpuCounterMonitor m_gpuCounters;
 	/// Open documents (scenes for now; later also Lua scripts, node graphs...).

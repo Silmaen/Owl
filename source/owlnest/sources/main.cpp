@@ -47,6 +47,16 @@ auto parseExportCommand(const int iArgc, char** iArgv) -> std::optional<ExportCo
 	return std::nullopt;
 }
 
+// Project to open at start-up: `OwlNest --project <project dir or owl_project.yml>`.
+auto parseProjectArgument(const int iArgc, char** iArgv) -> std::optional<std::filesystem::path> {
+	const std::span args(iArgv, static_cast<size_t>(iArgc));
+	for (size_t i = 1; i + 1 < args.size(); ++i) {
+		if (std::string_view(args[i]) == "--project")
+			return std::filesystem::absolute(args[i + 1]);
+	}
+	return std::nullopt;
+}
+
 auto executableDirectory(char** iArgv) -> std::filesystem::path {
 	std::error_code ec;
 	if (const auto self = std::filesystem::canonical("/proc/self/exe", ec); !ec)
@@ -62,8 +72,12 @@ class OwlNest final : public app::Application {
 public:
 	OwlNest() = delete;
 	explicit OwlNest(const app::AppParams& iParam) : Application(iParam) {
-		if (getState() == State::Running)
-			pushLayer(mkShared<nest::EditorLayer>());
+		if (getState() != State::Running)
+			return;
+		auto editor = mkShared<nest::EditorLayer>();
+		if (const auto project = parseProjectArgument(iParam.argCount, iParam.args); project.has_value())
+			editor->setStartupProject(*project);
+		pushLayer(editor);
 	}
 };
 

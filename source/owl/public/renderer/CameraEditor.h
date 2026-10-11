@@ -13,6 +13,7 @@
 #include "event/Event.h"
 #include "event/MouseEvent.h"
 
+#include <cstdint>
 #include <utility>
 
 namespace owl::renderer {
@@ -65,6 +66,45 @@ public:
 	 * @param[in] iFarClip Far clip distance.
 	 */
 	CameraEditor(float iFov, float iAspectRatio, float iNearClip, float iFarClip);
+
+	/**
+	 * @brief
+	 *  How the editor camera projects the scene.
+	 */
+	enum struct Projection : uint8_t {
+		Perspective,///< Perspective with the field of view, orbit and free look allowed.
+		Orthographic,///< Orthographic front view of the XY plane: no rotation, the distance sets the visible height.
+	};
+
+	/**
+	 * @brief
+	 *  Change the projection; the orthographic one faces the XY plane and frames what the perspective one showed at
+	 *  the reference point.
+	 * @param[in] iProjection The projection.
+	 */
+	void setProjection(Projection iProjection);
+
+	/**
+	 * @brief
+	 *  Current projection.
+	 * @return The projection.
+	 */
+	[[nodiscard]] auto getProjectionMode() const -> Projection { return m_projectionMode; }
+
+	/**
+	 * @brief
+	 *  Move the reference point onto a sphere and back off until it fills the view.
+	 * @param[in] iCenter Centre of what to show.
+	 * @param[in] iRadius Radius of what to show, in world units.
+	 */
+	void frame(const math::vec3& iCenter, float iRadius);
+
+	/**
+	 * @brief
+	 *  Reference point the camera orbits and pans around.
+	 * @return The reference point.
+	 */
+	[[nodiscard]] auto getFocalPoint() const -> const math::vec3& { return m_focalPoint; }
 
 	/**
 	 * @brief
@@ -241,6 +281,8 @@ private:
 	 */
 	[[nodiscard]] auto zoomSpeed() const -> float;
 
+	/// Projection mode.
+	Projection m_projectionMode = Projection::Perspective;
 	/// Field of View.
 	float m_fov = 45.0f;
 	/// Aspect ratio.

@@ -9,6 +9,11 @@
 #include "ProjectSettings.h"
 
 #include <gui/IconBank.h>
+#include <gui/IconFont.h>
+#include <gui/widgets/Combo.h>
+#include <gui/widgets/IconButton.h>
+#include <gui/widgets/PropertyGrid.h>
+#include <gui/widgets/SectionHeader.h>
 #include <imgui_stdlib.h>
 #include <renderer/RenderLayerFactory.h>
 
@@ -17,6 +22,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <format>
+#include <tuple>
 #include <utility>
 
 namespace owl::nest::panel {
@@ -37,7 +43,7 @@ auto drawRendererStackEditor(renderer::RendererStackConfig& ioStack) -> void {
 		ImGui::PushID(i);
 		ImGui::SetNextItemWidth(140.f);
 		const char* typePreview = e.typeKey.empty() ? "(none)" : e.typeKey.c_str();
-		if (ImGui::BeginCombo("##type", typePreview)) {
+		if (gui::widgets::beginCombo("##type", typePreview)) {
 			for (const auto& t: availableTypes) {
 				const bool selected = (e.typeKey == t);
 				if (ImGui::Selectable(t.c_str(), selected))
@@ -48,20 +54,20 @@ auto drawRendererStackEditor(renderer::RendererStackConfig& ioStack) -> void {
 			ImGui::EndCombo();
 		}
 		ImGui::SameLine();
-		ImGui::SetNextItemWidth(160.f);
-		ImGui::InputText("##name", &e.name);
+		const float side = ImGui::GetFrameHeight();
+		const float spacing = ImGui::GetStyle().ItemSpacing.x;
+		ImGui::SetNextItemWidth(std::max(side, ImGui::GetContentRegionAvail().x - (side + spacing) * 3.f));
+		ImGui::InputTextWithHint("##name", "Layer name", &e.name);
 		ImGui::SameLine();
-		ImGui::BeginDisabled(i == 0);
-		if (ImGui::ArrowButton("##up", ImGuiDir_Up))
+		if (gui::widgets::iconButton("##up", {.glyph = gui::icon::chevronUp, .tooltip = "Move up", .disabled = i == 0}))
 			moveUp = i;
-		ImGui::EndDisabled();
 		ImGui::SameLine();
-		ImGui::BeginDisabled(i + 1 == static_cast<int>(entries.size()));
-		if (ImGui::ArrowButton("##down", ImGuiDir_Down))
+		if (gui::widgets::iconButton("##down", {.glyph = gui::icon::chevronDown,
+												.tooltip = "Move down",
+												.disabled = i + 1 == static_cast<int>(entries.size())}))
 			moveDown = i;
-		ImGui::EndDisabled();
 		ImGui::SameLine();
-		if (ImGui::SmallButton("X"))
+		if (gui::widgets::iconButton("##remove", {.glyph = gui::icon::trash2, .tooltip = "Remove the layer"}))
 			removeAt = i;
 		ImGui::PopID();
 	}
@@ -77,7 +83,7 @@ auto drawRendererStackEditor(renderer::RendererStackConfig& ioStack) -> void {
 	if (removeAt >= 0)
 		entries.erase(entries.begin() + removeAt);
 
-	if (ImGui::SmallButton("+ Add Layer")) {
+	if (gui::widgets::button("##addLayer", {.glyph = gui::icon::plus, .label = "Add Layer"})) {
 		renderer::RendererStackEntry entry;
 		entry.typeKey = availableTypes.empty() ? std::string{"Renderer2D"} : availableTypes.front();
 		// Generate a default unique name layer_N.
@@ -88,7 +94,8 @@ auto drawRendererStackEditor(renderer::RendererStackConfig& ioStack) -> void {
 		entries.push_back(std::move(entry));
 	}
 	ImGui::SameLine();
-	ImGui::TextDisabled("(empty → fallback to single Renderer2D)");
+	ImGui::AlignTextToFramePadding();
+	ImGui::TextDisabled("An empty stack draws with a single Renderer2D.");
 }
 }// namespace
 
@@ -136,60 +143,68 @@ void ProjectSettings::onImGuiRender() {
 		ImGui::OpenPopup(g_popupName);
 		m_pendingOpen = false;
 	}
-	ImGui::SetNextWindowSize({450, 0}, ImGuiCond_FirstUseEver);
 	if (ImGui::BeginPopupModal(g_popupName, nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
-		ImGui::Text("Directory: %s", m_localProject.projectDirectory.string().c_str());
-		ImGui::Separator();
-
-		ImGui::InputText("Name", &m_nameBuffer);
-
-		// First scene dropdown
-		const char* preview = m_selectedSceneIndex >= 0
-									  ? m_availableScenes[static_cast<size_t>(m_selectedSceneIndex)].c_str()
-									  : "(none)";
-		if (ImGui::BeginCombo("First Scene", preview)) {
-			if (ImGui::Selectable("(none)", m_selectedSceneIndex < 0))
-				m_selectedSceneIndex = -1;
-			for (int i = 0; i < static_cast<int>(m_availableScenes.size()); ++i) {
-				const bool isSelected = m_selectedSceneIndex == i;
-				if (ImGui::Selectable(m_availableScenes[static_cast<size_t>(i)].c_str(), isSelected))
-					m_selectedSceneIndex = i;
-				if (isSelected)
-					ImGui::SetItemDefaultFocus();
+		// The grids stretch: this sets the width of the dialog.
+		ImGui::Dummy({ImGui::GetFontSize() * 32.f, 0.f});
+		ImGui::TextDisabled("%s", m_localProject.projectDirectory.string().c_str());
+		if (gui::widgets::sectionHeader("General", gui::icon::package, false).open) {
+			if (gui::widgets::beginProperties("##general")) {
+				std::ignore = gui::widgets::propertyText("Name", m_nameBuffer, "Project name");
+				gui::widgets::propertyLabel("First Scene", "Scene the game opens on.");
+				const char* preview = m_selectedSceneIndex >= 0
+											  ? m_availableScenes[static_cast<size_t>(m_selectedSceneIndex)].c_str()
+											  : "(none)";
+				if (gui::widgets::beginCombo("##firstScene", preview)) {
+					if (ImGui::Selectable("(none)", m_selectedSceneIndex < 0))
+						m_selectedSceneIndex = -1;
+					for (int i = 0; i < static_cast<int>(m_availableScenes.size()); ++i) {
+						const bool isSelected = m_selectedSceneIndex == i;
+						if (ImGui::Selectable(m_availableScenes[static_cast<size_t>(i)].c_str(), isSelected))
+							m_selectedSceneIndex = i;
+						if (isSelected)
+							ImGui::SetItemDefaultFocus();
+					}
+					ImGui::EndCombo();
+				}
+				std::ignore = gui::widgets::propertyReset(false);
+				std::ignore = gui::widgets::propertyText("Version", m_versionBuffer, "1.0.0");
+				std::ignore = gui::widgets::propertyText("Author", m_authorBuffer);
+				std::ignore = gui::widgets::propertyText("Description", m_descriptionBuffer);
+				std::ignore = gui::widgets::propertyText("Icon", m_iconBuffer, "icon.png",
+														 "Image of the game window, relative to the project.");
+				gui::widgets::endProperties();
 			}
-			ImGui::EndCombo();
+			gui::widgets::endSection();
 		}
+		if (gui::widgets::sectionHeader("Window", gui::icon::appWindow, false).open) {
+			if (gui::widgets::beginProperties("##window")) {
+				const Project::WindowSettings defaults;
+				auto widthI = static_cast<int>(m_localProject.window.width);
+				auto heightI = static_cast<int>(m_localProject.window.height);
+				if (gui::widgets::propertyInt("Width", widthI, static_cast<int>(defaults.width), 320, 7680, "%d px"))
+					m_localProject.window.width = static_cast<uint32_t>(widthI);
+				if (gui::widgets::propertyInt("Height", heightI, static_cast<int>(defaults.height), 240, 4320, "%d px"))
+					m_localProject.window.height = static_cast<uint32_t>(heightI);
+				std::ignore =
+						gui::widgets::propertyBool("Fullscreen", m_localProject.window.fullscreen, defaults.fullscreen);
+				std::ignore =
+						gui::widgets::propertyBool("Resizable", m_localProject.window.resizable, defaults.resizable);
+				gui::widgets::endProperties();
+			}
+			gui::widgets::endSection();
+		}
+		if (gui::widgets::sectionHeader("Renderer Stack", gui::icon::layers, false).open) {
+			drawRendererStackEditor(m_localProject.rendererStack);
+			gui::widgets::endSection();
+		}
+		ImGui::Spacing();
 
-		ImGui::Separator();
-		ImGui::Text("Metadata");
-		ImGui::InputText("Version", &m_versionBuffer);
-		ImGui::InputText("Author", &m_authorBuffer);
-		ImGui::InputText("Description", &m_descriptionBuffer);
-		ImGui::InputText("Icon", &m_iconBuffer);
-
-		ImGui::Separator();
-		ImGui::Text("Renderer Stack");
-		drawRendererStackEditor(m_localProject.rendererStack);
-
-		ImGui::Separator();
-		ImGui::Text("Window");
-		auto widthI = static_cast<int>(m_localProject.window.width);
-		auto heightI = static_cast<int>(m_localProject.window.height);
-		if (ImGui::DragInt("Width", &widthI, 1.0f, 320, 7680))
-			m_localProject.window.width = static_cast<uint32_t>(widthI);
-		if (ImGui::DragInt("Height", &heightI, 1.0f, 240, 4320))
-			m_localProject.window.height = static_cast<uint32_t>(heightI);
-		ImGui::Checkbox("Fullscreen", &m_localProject.window.fullscreen);
-		ImGui::Checkbox("Resizable", &m_localProject.window.resizable);
-
-		ImGui::Separator();
-
-		const auto& iconBank = gui::IconBank::instance();
 		const float buttonWidth = ImGui::CalcTextSize("Cancel").x + ImGui::GetFontSize() +
 								  ImGui::GetStyle().ItemInnerSpacing.x + ImGui::GetStyle().FramePadding.x * 2.0f;
 		const float totalWidth = buttonWidth * 2.0f + ImGui::GetStyle().ItemSpacing.x;
 		ImGui::SetCursorPosX((ImGui::GetWindowSize().x - totalWidth) * 0.5f);
-		if (iconBank.iconButton("save", "OK##projSettings", {buttonWidth, 0})) {
+		if (gui::widgets::button("OK##projSettings",
+								 {.glyph = gui::icon::check, .label = "OK", .primary = true, .width = buttonWidth})) {
 			m_localProject.name = m_nameBuffer;
 			m_localProject.firstScene =
 					m_selectedSceneIndex >= 0 ? m_availableScenes[static_cast<size_t>(m_selectedSceneIndex)] : "";
@@ -201,7 +216,7 @@ void ProjectSettings::onImGuiRender() {
 			ImGui::CloseCurrentPopup();
 		}
 		ImGui::SameLine();
-		if (iconBank.iconButton("close", "Cancel", {buttonWidth, 0})) {
+		if (gui::widgets::button("Cancel", {.glyph = gui::icon::x, .label = "Cancel", .width = buttonWidth})) {
 			ImGui::CloseCurrentPopup();
 		}
 

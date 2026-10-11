@@ -18,6 +18,8 @@ namespace owl::debug {
 void LogBuffer::push(LogEntry iEntry) {
 	if (iEntry.level == core::Log::Level::Error || iEntry.level == core::Log::Level::Critical)
 		++m_errorCount;
+	else if (iEntry.level == core::Log::Level::Warning)
+		++m_warningCount;
 	const std::lock_guard<std::mutex> lock(m_mutex);
 	m_entries.emplace_back(std::move(iEntry));
 	while (m_entries.size() > maxEntries) m_entries.pop_front();

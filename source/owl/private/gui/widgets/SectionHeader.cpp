@@ -1,0 +1,164 @@
+/**
+ * @file SectionHeader.cpp
+ * @author Silmaen
+ * @date 11/10/2026
+ * Copyright (c) 2026 All rights reserved.
+ * All modification must get authorization from the author.
+ */
+
+#include "owlpch.h"
+
+#include "gui/widgets/SectionHeader.h"
+
+#include "gui/IconBank.h"
+#include "gui/IconFont.h"
+#include "gui/UiLayer.h"
+#include "gui/utils.h"
+#include "gui/widgets/Tooltip.h"
+
+#include <imgui.h>
+
+#include <algorithm>
+#include <cctype>
+#include <cmath>
+#include <format>
+#include <string>
+#include <vector>
+
+namespace owl::gui::widgets {
+
+namespace {
+
+// Rectangle of the headers whose section is open, to draw the frame of the card when it ends.
+struct OpenSection {
+	ImDrawList* draw = nullptr;
+	ImVec2 min;
+	float maxX = 0.f;
+};
+
+thread_local std::vector<OpenSection> g_openSections;
+
+// Lucide code points sit in the private use area, whose UTF-8 encoding starts with this byte or above.
+constexpr unsigned char g_glyphLeadByte = 0xee;
+
+}// namespace
+
+auto sectionHeader(const char* iTitle, const char* iIconName, const bool iWithMenu, const bool iDefaultOpen)
+		-> SectionHeaderResult {
+	const auto& theme = UiLayer::getTheme();
+	ImGui::PushStyleColor(ImGuiCol_Header, vec(theme.surface2));
+	ImGui::PushStyleColor(ImGuiCol_HeaderHovered, vec(theme.surface3));
+	ImGui::PushStyleColor(ImGuiCol_HeaderActive, vec(theme.surface4));
+	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding,
+						{ImGui::GetStyle().FramePadding.x, ImGui::GetStyle().FramePadding.y + 1.f});
+	ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_SpanAvailWidth |
+							   ImGuiTreeNodeFlags_AllowOverlap | ImGuiTreeNodeFlags_FramePadding;
+	if (iDefaultOpen)
+		flags |= ImGuiTreeNodeFlags_DefaultOpen;
+	SectionHeaderResult result;
+	ImGui::Dummy({0.f, 2.f});
+	// The node's own filled arrow stays invisible: a thin chevron is drawn instead.
+	ImGui::PushStyleColor(ImGuiCol_Text, {0.f, 0.f, 0.f, 0.f});
+	result.open = ImGui::TreeNodeEx(std::format("##section_{}", iTitle).c_str(), flags);
+	ImGui::PopStyleColor();
+	result.hovered = ImGui::IsItemHovered();
+	ImGui::PopStyleVar();
+	ImGui::PopStyleColor(3);
+
+	const ImVec2 min = ImGui::GetItemRectMin();
+	const ImVec2 max = ImGui::GetItemRectMax();
+	result.min = {min.x, min.y};
+	result.max = {max.x, max.y};
+	const float height = max.y - min.y;
+	auto* draw = ImGui::GetWindowDrawList();
+	if (result.open)
+		g_openSections.push_back({.draw = draw, .min = min, .maxX = max.x});
+	{
+		const char* chevron = result.open ? icon::chevronDown : icon::chevronRight;
+		ImGui::PushFont(nullptr, ImGui::GetFontSize() * 0.85f);
+		const ImVec2 size = ImGui::CalcTextSize(chevron);
+		draw->AddText(
+				{std::floor(min.x + ImGui::GetStyle().FramePadding.x), std::floor(min.y + (height - size.y) * 0.5f)},
+				ImGui::GetColorU32(vec(result.hovered ? theme.text : theme.textMuted)), chevron);
+		ImGui::PopFont();
+	}
+	float x = std::floor(min.x + ImGui::GetTreeNodeToLabelSpacing());
+	const float iconSize = ImGui::GetFontSize();
+	if (iIconName != nullptr && static_cast<unsigned char>(iIconName[0]) >= g_glyphLeadByte) {
+		const ImVec2 glyphSize = ImGui::CalcTextSize(iIconName);
+		draw->AddText({x, std::floor(min.y + (height - glyphSize.y) * 0.5f)}, ImGui::GetColorU32(vec(theme.accent)),
+					  iIconName);
+		x += iconSize + ImGui::GetStyle().ItemInnerSpacing.x;
+	} else if (iIconName != nullptr) {
+		if (const auto icon = IconBank::instance().getIcon(iIconName, iconSize); icon.has_value()) {
+			const float y = std::floor(min.y + (height - iconSize) * 0.5f);
+			draw->AddImage(static_cast<ImTextureID>(icon->textureId), {x, y}, {x + iconSize, y + iconSize},
+						   vec(icon->uv0), vec(icon->uv1));
+		}
+		x += iconSize + ImGui::GetStyle().ItemInnerSpacing.x;
+	}
+	UiLayer::pushTextStyle(TextStyle::Section);
+	const ImVec2 titleSize = ImGui::CalcTextSize(iTitle);
+	draw->AddText({x, std::floor(min.y + (height - titleSize.y) * 0.5f)}, ImGui::GetColorU32(vec(theme.text)), iTitle);
+	UiLayer::popTextStyle();
+
+	if (iWithMenu) {
+		ImGui::SetCursorScreenPos({max.x - height, min.y});
+		ImGui::PushID(iTitle);
+		result.menuClicked = ImGui::InvisibleButton("##sectionMenu", {height, height});
+		if (ImGui::IsItemHovered())
+			draw->AddRectFilled(ImGui::GetItemRectMin(), ImGui::GetItemRectMax(),
+								ImGui::GetColorU32(vec(theme.surface4)), theme.frameRounding);
+		const ImVec2 glyphSize = ImGui::CalcTextSize(icon::ellipsisVertical);
+		draw->AddText({std::floor(max.x - height + (height - glyphSize.x) * 0.5f),
+					   std::floor(min.y + (height - glyphSize.y) * 0.5f)},
+					  ImGui::GetColorU32(vec(theme.textMuted)), icon::ellipsisVertical);
+		itemTooltip("Options", nullptr, "Reset, copy, paste or remove this section.");
+		ImGui::PopID();
+	}
+	return result;
+}
+
+void endSection() {
+	ImGui::TreePop();
+	if (g_openSections.empty())
+		return;
+	const auto section = g_openSections.back();
+	g_openSections.pop_back();
+	const float bottom = ImGui::GetCursorScreenPos().y + 2.f;
+	const auto& theme = UiLayer::getTheme();
+	section.draw->AddRect(section.min, {section.maxX, bottom}, ImGui::GetColorU32(vec(theme.line)),
+						  theme.frameRounding);
+	ImGui::Dummy({0.f, 4.f});
+}
+
+auto subHeader(const char* iTitle, const bool iDefaultOpen) -> bool {
+	const auto& theme = UiLayer::getTheme();
+	auto* storage = ImGui::GetStateStorage();
+	const ImGuiID id = ImGui::GetID(iTitle);
+	bool open = storage->GetBool(id, iDefaultOpen);
+	UiLayer::pushTextStyle(TextStyle::Caption);
+	std::string caption = iTitle;
+	std::ranges::transform(caption, caption.begin(), [](const char iChar) -> char {
+		return static_cast<char>(std::toupper(static_cast<unsigned char>(iChar)));
+	});
+	const float height = ImGui::GetTextLineHeight() + 8.f;
+	ImGui::PushID(iTitle);
+	if (ImGui::InvisibleButton("##sub", {ImGui::GetContentRegionAvail().x, height})) {
+		open = !open;
+		storage->SetBool(id, open);
+	}
+	const bool hovered = ImGui::IsItemHovered();
+	ImGui::PopID();
+	const ImVec2 min = ImGui::GetItemRectMin();
+	const auto color = ImGui::GetColorU32(vec(hovered ? theme.text : theme.textDisabled));
+	auto* draw = ImGui::GetWindowDrawList();
+	const char* chevron = open ? icon::chevronDown : icon::chevronRight;
+	const float textY = std::floor(min.y + 5.f);
+	draw->AddText({min.x, textY}, color, chevron);
+	draw->AddText({min.x + ImGui::CalcTextSize(chevron).x + 4.f, textY}, color, caption.c_str());
+	UiLayer::popTextStyle();
+	return open;
+}
+
+}// namespace owl::gui::widgets

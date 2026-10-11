@@ -23,6 +23,21 @@ struct ImFont;
  *  Namespace for gui.
  */
 namespace owl::gui {
+
+/**
+ * @brief
+ *  Typographic roles of the editor text, each a font and a size relative to the UI font size.
+ */
+enum struct TextStyle : uint8_t {
+	Body,///< Running text and values (Inter, 1x).
+	Strong,///< Emphasis at body size (Inter SemiBold, 1x).
+	Title,///< Panel or dialogue title (Inter SemiBold, 1.15x).
+	Section,///< Section and component header (Inter SemiBold, 0.9x).
+	Label,///< Property labels and values of the inspector, ribbon labels (Inter, 0.875x).
+	Caption,///< Small print, group captions, sub-section titles (Inter SemiBold, 0.75x).
+	Value,///< Numbers aligned in columns (JetBrains Mono, 0.92x).
+	Code,///< Code editor text (JetBrains Mono at the code font size).
+};
 /**
  * @brief
  *  Class ImGuiLayer.
@@ -112,6 +127,52 @@ public:
 
 	/**
 	 * @brief
+	 *  The theme applied last.
+	 * @return The current theme.
+	 */
+	[[nodiscard]] static auto getTheme() -> const Theme&;
+
+	/**
+	 * @brief
+	 *  Push the font and size of a typographic role; pair with `popTextStyle`.
+	 * @param[in] iStyle The role.
+	 */
+	static void pushTextStyle(TextStyle iStyle);
+
+	/**
+	 * @brief
+	 *  Pop the role pushed by `pushTextStyle`.
+	 */
+	static void popTextStyle();
+
+	/**
+	 * @brief
+	 *  Scale every text of the interface at once (and the sizes derived from the font), applied at once.
+	 * @param[in] iScale The scale, clamped to [`minTextScale`, `maxTextScale`]; 1 keeps the font size.
+	 */
+	static void setTextScale(float iScale);
+
+	/**
+	 * @brief
+	 *  Scale given to every text by `setTextScale`.
+	 * @return The scale.
+	 */
+	[[nodiscard]] static auto getTextScale() -> float;
+
+	/// Smallest text scale.
+	static constexpr float minTextScale = 0.75f;
+	/// Largest text scale.
+	static constexpr float maxTextScale = 1.5f;
+
+	/**
+	 * @brief
+	 *  Content scale of the primary monitor applied to the style sizes and fonts.
+	 * @return The scale, 1 on a standard-density screen and under Wayland (the framebuffer scale covers it there).
+	 */
+	[[nodiscard]] static auto getDpiScale() -> float;
+
+	/**
+	 * @brief
 	 *  Enable docking of windows.
 	 */
 	void enableDocking() { m_dockingEnable = true; }
@@ -145,6 +206,33 @@ public:
 	 * @param[in] iCallback The callback, or an empty function.
 	 */
 	void setTopBarCallback(std::function<void()> iCallback) { m_topBarCallback = std::move(iCallback); }
+
+	/**
+	 * @brief
+	 *  Register a callback rendered at the bottom of the main dockspace window, below the docked panels.
+	 *
+	 * The dockspace shrinks by one frame height (with spacing) to leave room for it. Intended for a status bar.
+	 * Pass an empty function to disable.
+	 * @param[in] iCallback The callback, or an empty function.
+	 */
+	void setBottomBarCallback(std::function<void()> iCallback) { m_bottomBarCallback = std::move(iCallback); }
+
+	/**
+	 * @brief
+	 *  Register a callback run each frame just before `ImGui::DockSpace`, with the dockspace ID.
+	 *
+	 * The only point in the frame where the dock tree can be rebuilt with the `DockBuilder` API.
+	 * Pass an empty function to disable.
+	 * @param[in] iCallback The callback, or an empty function.
+	 */
+	void setDockLayoutCallback(std::function<void(uint32_t)> iCallback) { m_dockLayoutCallback = std::move(iCallback); }
+
+	/**
+	 * @brief
+	 *  ID of the main dockspace, as submitted on the last frame.
+	 * @return The dockspace ID, 0 before the first docked frame.
+	 */
+	[[nodiscard]] static auto getDockSpaceId() -> uint32_t;
 
 	/**
 	 * @brief
@@ -192,7 +280,11 @@ private:
 	std::string m_iniFilePath;
 	/// Optional top-bar rendered between the dockspace window `Begin` and `DockSpace()`.
 	std::function<void()> m_topBarCallback;
-	/// Dedicated code-editor font (Roboto at `codeFontSize()`). Set in `onAttach`.
+	/// Optional bottom bar rendered after `DockSpace()`, below the docked panels.
+	std::function<void()> m_bottomBarCallback;
+	/// Optional callback run before `DockSpace()` to (re)build the dock tree.
+	std::function<void(uint32_t)> m_dockLayoutCallback;
+	/// Dedicated code-editor font (JetBrains Mono at `codeFontSize()`). Set in `onAttach`.
 	ImFont* mp_codeFont = nullptr;
 
 	/**

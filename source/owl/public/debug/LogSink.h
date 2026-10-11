@@ -70,6 +70,13 @@ public:
 	 */
 	[[nodiscard]] auto getErrorCount() const -> uint64_t { return m_errorCount.load(); }
 
+	/**
+	 * @brief
+	 *  Get the number of Warning entries pushed since startup.
+	 * @return The warning count, unaffected by eviction and by clear().
+	 */
+	[[nodiscard]] auto getWarningCount() const -> uint64_t { return m_warningCount.load(); }
+
 private:
 	/// Guards `m_entries` against concurrent log writes from worker threads.
 	mutable std::mutex m_mutex;
@@ -77,6 +84,8 @@ private:
 	std::deque<LogEntry> m_entries;
 	/// Cumulative count of Error and Critical entries.
 	std::atomic<uint64_t> m_errorCount{0};
+	/// Cumulative count of Warning entries.
+	std::atomic<uint64_t> m_warningCount{0};
 };
 
 }// namespace owl::debug

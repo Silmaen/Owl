@@ -10,10 +10,12 @@
 
 #include <owlgui.h>
 
+#include <cstddef>
 #include <cstdint>
 #include <functional>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 namespace owl::nest {
@@ -143,11 +145,38 @@ public:
 
 	/**
 	 * @brief
+	 *  Run the actions whose Ctrl or Alt chord ImGui saw pressed this frame, unless a text field is being edited.
+	 *
+	 * Called once per ImGui frame. The UI layer swallows key events while an ImGui window has the keyboard focus
+	 * (any panel, or the menu layer `Alt` toggles), so chords would only work with the viewport focused; this reads
+	 * them from ImGui instead. An action already run by `dispatch` for the same press is not run twice.
+	 * @return The number of actions run.
+	 */
+	auto dispatchImGuiChords() -> size_t;
+
+	/**
+	 * @brief
+	 *  ImGui chord of a shortcut.
+	 * @param[in] iShortcut The shortcut.
+	 * @return The key and modifier flags as an `ImGuiKeyChord`, 0 when the key has no ImGui equivalent.
+	 */
+	[[nodiscard]] static auto toImGuiChord(const Shortcut& iShortcut) -> int;
+
+	/**
+	 * @brief
 	 *  Get the display shortcut string for a given action ID.
 	 * @param[in] iId The action identifier.
 	 * @return The shortcut display string, or empty if not found/unbound.
 	 */
 	[[nodiscard]] auto getShortcutString(const std::string& iId) const -> std::string;
+
+	/**
+	 * @brief
+	 *  Run an action by its identifier, as its shortcut would.
+	 * @param[in] iId The action identifier.
+	 * @return False if no action has this identifier.
+	 */
+	auto run(const std::string& iId) const -> bool;
 
 	/**
 	 * @brief
@@ -211,6 +240,8 @@ private:
 	std::vector<ActionEntry> m_actions;
 	/// Whether dispatch is suspended.
 	bool m_suspended = false;
+	/// Actions run by `dispatch` since the last `dispatchImGuiChords`, so the same press is not run twice.
+	std::unordered_set<std::string> m_runByEvent;
 };
 
 }// namespace owl::nest

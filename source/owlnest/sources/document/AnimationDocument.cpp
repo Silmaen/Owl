@@ -13,6 +13,8 @@
 #include <gui/utils.h>
 #include <gui/widgets/AssetField.h>
 #include <gui/widgets/CurveEditor.h>
+#include <gui/widgets/SectionHeader.h>
+#include <gui/widgets/Toggle.h>
 
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG("-Wreserved-identifier")
@@ -74,7 +76,7 @@ void AnimationDocument::onEvent([[maybe_unused]] event::Event& ioEvent) {
 }
 
 void AnimationDocument::onImGuiRender() {
-	const auto winTitle = std::format("{}##animation_{:x}", title(), static_cast<uint64_t>(id()));
+	const auto winTitle = documentWindowTitle(DocumentType::Animation, title(), static_cast<uint64_t>(id()));
 
 	ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse;
 	if (isDirty())
@@ -88,6 +90,8 @@ void AnimationDocument::onImGuiRender() {
 	if (wantFocus)
 		ImGui::SetNextWindowFocus();
 	const bool open = ImGui::Begin(winTitle.c_str(), &m_pOpen, flags);
+	if (mp_editorLayer != nullptr)
+		mp_editorLayer->renderDocumentTabMenu(*this);
 	if (wantFocus)
 		ImGui::SetWindowFocus();
 	if (open) {
@@ -196,14 +200,13 @@ void AnimationDocument::renderProperties() {
 	if (ImGui::DragInt("Last Frame", &last, 1, static_cast<int>(m_clip.firstFrame), maxFrame))
 		m_clip.lastFrame = static_cast<uint32_t>(std::clamp(last, static_cast<int>(m_clip.firstFrame), maxFrame));
 	ImGui::DragFloat("Frame Duration", &m_clip.frameDuration, 0.01f, 0.001f, 10.f, "%.3f s");
-	ImGui::Checkbox("Loop", &m_clip.loop);
+	gui::widgets::checkbox("Loop", &m_clip.loop);
 
 	ImGui::Spacing();
 	ImGui::Text("Current Frame: %u", m_currentFrame);
 
-	if (ImGui::CollapsingHeader("Speed Curve")) {
+	if (gui::widgets::subHeader("Speed Curve"))
 		gui::widgets::curveEditor("##animSpeedCurve", m_clip.speedCurve);
-	}
 }
 
 void AnimationDocument::renderPreview() {

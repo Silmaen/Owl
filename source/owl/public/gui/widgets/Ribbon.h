@@ -49,12 +49,14 @@ public:
 	 *  A single ribbon button.
 	 */
 	struct Button {
-		/// Name of the icon to look up in the `IconBank`.
+		/// A Lucide glyph (`gui::icon::*`, drawn in the text colour), or the name of an icon of the `IconBank`.
 		std::string iconName;
 		/// Short text displayed below (large) or to the right (small) of the icon.
 		std::string label;
-		/// Tooltip shown on hover. Typically, includes the keyboard shortcut.
+		/// Tooltip shown on hover: one sentence about the action.
 		std::string tooltip;
+		/// Keyboard shortcut shown in the tooltip ("Ctrl+S"), empty for none.
+		std::string shortcut{};// NOLINT(readability-redundant-member-init) lets call sites omit it (see popupContents)
 		/// Returns true when the button should accept clicks.
 		std::function<bool()> isEnabled{[]() -> bool { return true; }};
 		/// Returns true when the button is in a toggled-on state (highlighted).
@@ -179,14 +181,107 @@ public:
 
 	/**
 	 * @brief
-	 *  Total pixel height reserved for the ribbon (tabs + group area + labels).
-	 * @return The reserved height in pixels.
+	 *  Show a filled accent button before the tabs (the File menu of the editor).
+	 * @param[in] iLabel The button label; empty removes the button.
+	 * @param[in] iOnClick Invoked on click.
 	 */
-	[[nodiscard]] static auto height() -> float;
+	void setBackstage(std::string iLabel, std::function<void()> iOnClick);
+
+	/**
+	 * @brief
+	 *  Add an icon-only button at the right end of the tab row, always visible (Save, Undo, Redo).
+	 * @param[in] iButton The button; its label is only used in the tooltip.
+	 */
+	void addQuickAccess(Button iButton);
+
+	/**
+	 * @brief
+	 *  Show a search box in the middle of the tab row; clicking it calls back (opens the command palette).
+	 * @param[in] iHint Text shown in the box.
+	 * @param[in] iShortcut Shortcut shown at its right end.
+	 * @param[in] iOnClick Invoked on click.
+	 */
+	void setSearchBox(std::string iHint, std::string iShortcut, std::function<void()> iOnClick);
+
+	/**
+	 * @brief
+	 *  Show only the tab row (collapsed) or the tab row and the groups.
+	 * @param[in] iCollapsed True to collapse.
+	 */
+	void setCollapsed(const bool iCollapsed) { m_collapsed = iCollapsed; }
+
+	/**
+	 * @brief
+	 *  Whether only the tab row is shown.
+	 * @return True when collapsed.
+	 */
+	[[nodiscard]] auto isCollapsed() const -> bool { return m_collapsed; }
+
+	/**
+	 * @brief
+	 *  Select a tab by its label, if it exists.
+	 * @param[in] iLabel The tab label.
+	 */
+	void selectTab(const std::string& iLabel);
+
+	/**
+	 * @brief
+	 *  Label of the selected tab.
+	 * @return The label, empty without tabs.
+	 */
+	[[nodiscard]] auto getSelectedTab() const -> std::string;
+
+	/**
+	 * @brief
+	 *  Number of tabs.
+	 * @return The tab count.
+	 */
+	[[nodiscard]] auto getTabCount() const -> size_t { return m_tabs.size(); }
+
+	/**
+	 * @brief
+	 *  Label of a tab.
+	 * @param[in] iTabIndex The tab index.
+	 * @return The label, empty for an invalid index.
+	 */
+	[[nodiscard]] auto getTabLabel(const size_t iTabIndex) const -> std::string {
+		return iTabIndex < m_tabs.size() ? m_tabs[iTabIndex].label : std::string{};
+	}
+
+	/**
+	 * @brief
+	 *  Pixel height the ribbon takes with the current font and collapsed state.
+	 * @return The height in pixels.
+	 */
+	[[nodiscard]] auto getHeight() const -> float;
 
 private:
 	/// Top-level tabs displayed by the ribbon, in render order.
 	std::vector<Tab> m_tabs;
+	/// Index of the selected tab.
+	size_t m_selected = 0;
+	/// Label of the selected tab, kept across rebuilds.
+	std::string m_selectedLabel;
+	/// Label of the backstage button; empty for none.
+	std::string m_backstageLabel;
+	/// Invoked when the backstage button is clicked.
+	std::function<void()> m_onBackstage;
+	/// Icon-only buttons at the right end of the tab row.
+	std::vector<Button> m_quickAccess;
+	/// Text of the search box; empty for none.
+	std::string m_searchHint;
+	/// Shortcut shown in the search box.
+	std::string m_searchShortcut;
+	/// Invoked when the search box is clicked.
+	std::function<void()> m_onSearch;
+	/// Only the tab row is shown.
+	bool m_collapsed = false;
+
+	/**
+	 * @brief
+	 *  Draw the tab row: backstage button, tabs, quick access and collapse toggle.
+	 */
+	void renderTabRow();
 };
 
 }// namespace owl::gui::widgets

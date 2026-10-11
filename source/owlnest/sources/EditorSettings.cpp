@@ -91,12 +91,19 @@ void EditorSettings::loadFromFile(const std::filesystem::path& iFile) {
 	if (auto config = data["EditorSettings"]; config) {
 		if (config["showStats"])
 			showStats = config["showStats"].as<bool>();
-		if (config["themePreset"])
-			themePreset = config["themePreset"].as<std::string>();
+		if (config["themePreset"]) {
+			const auto preset = gui::Theme::presetFromName(config["themePreset"].as<std::string>());
+			for (const auto& [candidate, name]: gui::Theme::getPresetNames()) {
+				if (candidate == preset)
+					themePreset = name;
+			}
+		}
 		if (config["codeEditorFontSize"])
 			codeEditorFontSize = std::clamp(config["codeEditorFontSize"].as<int>(), 8, 48);
 		if (config["uiFontSize"])
 			uiFontSize = std::clamp(config["uiFontSize"].as<int>(), 14, 24);
+		if (config["textScalePercent"])
+			textScalePercent = std::clamp(config["textScalePercent"].as<int>(), 75, 150);
 		if (config["snapEnabled"])
 			snapEnabled = config["snapEnabled"].as<bool>();
 		if (config["snapStep"])
@@ -107,8 +114,18 @@ void EditorSettings::loadFromFile(const std::filesystem::path& iFile) {
 			snapAutoFromTilemap = config["snapAutoFromTilemap"].as<bool>();
 		if (config["showCameraGizmos"])
 			showCameraGizmos = config["showCameraGizmos"].as<bool>();
+		if (config["showGrid"])
+			showGrid = config["showGrid"].as<bool>();
+		if (config["showTriggerIcons"])
+			showTriggerIcons = config["showTriggerIcons"].as<bool>();
+		if (config["gizmoWorldSpace"])
+			gizmoWorldSpace = config["gizmoWorldSpace"].as<bool>();
 		if (config["autosaveIntervalSeconds"])
 			autosaveIntervalSeconds = std::clamp(config["autosaveIntervalSeconds"].as<int>(), 0, 3600);
+		if (config["layoutPreset"])
+			layoutPreset = config["layoutPreset"].as<std::string>();
+		if (config["layoutVersion"])
+			layoutVersion = config["layoutVersion"].as<int>();
 		if (const auto bindings = config["keybindings"]; bindings && bindings.IsMap()) {
 			keybindingOverrides.clear();
 			for (const auto& pair: bindings)
@@ -136,12 +153,18 @@ void EditorSettings::saveToFile(const std::filesystem::path& iFile) const {
 	out << YAML::Key << "themePreset" << YAML::Value << themePreset;
 	out << YAML::Key << "codeEditorFontSize" << YAML::Value << codeEditorFontSize;
 	out << YAML::Key << "uiFontSize" << YAML::Value << uiFontSize;
+	out << YAML::Key << "textScalePercent" << YAML::Value << textScalePercent;
 	out << YAML::Key << "snapEnabled" << YAML::Value << snapEnabled;
 	out << YAML::Key << "snapStep" << YAML::Value << snapStep;
 	out << YAML::Key << "snapMultiplier" << YAML::Value << snapMultiplier;
 	out << YAML::Key << "snapAutoFromTilemap" << YAML::Value << snapAutoFromTilemap;
 	out << YAML::Key << "showCameraGizmos" << YAML::Value << showCameraGizmos;
+	out << YAML::Key << "showGrid" << YAML::Value << showGrid;
+	out << YAML::Key << "showTriggerIcons" << YAML::Value << showTriggerIcons;
+	out << YAML::Key << "gizmoWorldSpace" << YAML::Value << gizmoWorldSpace;
 	out << YAML::Key << "autosaveIntervalSeconds" << YAML::Value << autosaveIntervalSeconds;
+	out << YAML::Key << "layoutPreset" << YAML::Value << layoutPreset;
+	out << YAML::Key << "layoutVersion" << YAML::Value << layoutVersion;
 	if (!keybindingOverrides.empty()) {
 		out << YAML::Key << "keybindings" << YAML::Value << YAML::BeginMap;
 		for (const auto& [id, shortcut]: keybindingOverrides) out << YAML::Key << id << YAML::Value << shortcut;

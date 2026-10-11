@@ -9,6 +9,7 @@
 #include "EditorResources.h"
 
 #include <gui/IconBank.h>
+#include <gui/UiLayer.h>
 #include <owl.h>
 #include <sound/SoundSystem.h>
 
@@ -53,6 +54,34 @@ void buildIconBank() {
 		{"PauseButton",       resolve("icons/toolbar/pause")},
 		{"StopButton",        resolve("icons/toolbar/stop")},
 		{"StepButton",        resolve("icons/toolbar/step")},
+		// Ribbon icons (duotone: the accent marks the meaningful part)
+		{"ribbon_save",     resolve("icons/ribbon/save")},
+		{"ribbon_open",     resolve("icons/ribbon/open")},
+		{"ribbon_new",      resolve("icons/ribbon/new")},
+		{"ribbon_undo",     resolve("icons/ribbon/undo")},
+		{"ribbon_redo",     resolve("icons/ribbon/redo")},
+		{"ribbon_copy",     resolve("icons/ribbon/copy")},
+		{"ribbon_flow",     resolve("icons/ribbon/flow")},
+		{"ribbon_settings", resolve("icons/ribbon/settings")},
+		{"ribbon_pack",     resolve("icons/ribbon/pack")},
+		{"ribbon_panels",   resolve("icons/ribbon/panels")},
+		{"ribbon_layout",   resolve("icons/ribbon/layout")},
+		{"ribbon_stats",    resolve("icons/ribbon/stats")},
+		{"ribbon_help",     resolve("icons/ribbon/help")},
+		{"ribbon_tune",     resolve("icons/ribbon/tune")},
+		{"ribbon_import",   resolve("icons/ribbon/import")},
+		{"ribbon_close",    resolve("icons/ribbon/close")},
+		{"ribbon_cameras",  resolve("icons/ribbon/cameras")},
+		{"ribbon_visibility",resolve("icons/ribbon/visibility")},
+		{"ribbon_play",     resolve("icons/ribbon/play")},
+		{"ribbon_pause",    resolve("icons/ribbon/pause")},
+		{"ribbon_stop",     resolve("icons/ribbon/stop")},
+		{"ribbon_previous", resolve("icons/ribbon/previous")},
+		{"ribbon_back",     resolve("icons/ribbon/back")},
+		{"ribbon_folder_new", resolve("icons/ribbon/folder_new")},
+		{"ribbon_exit",     resolve("icons/ribbon/exit")},
+		{"ribbon_book",     resolve("icons/ribbon/book")},
+		{"ribbon_next",     resolve("icons/ribbon/next")},
 		// Visibility icons
 		{"camera_on",         resolve("icons/visibility/camera_on")},
 		{"camera_off",        resolve("icons/visibility/camera_off")},
@@ -162,13 +191,13 @@ void buildIconBank() {
 	// Remove entries with empty paths
 	std::erase_if(icons, [](const auto& iEntry) -> auto { return iEntry.second.empty(); });
 
-	const auto& style = ImGui::GetStyle();
-	const gui::IconThemeColors themeColors{
-			.primary = {style.Colors[ImGuiCol_Text].x, style.Colors[ImGuiCol_Text].y, style.Colors[ImGuiCol_Text].z,
-						style.Colors[ImGuiCol_Text].w},
-			.secondary = {1.0f, 0.78f, 0.15f, 1.0f},
-	};
-	iconBank.build(icons, 64, themeColors);
+	const auto& theme = gui::UiLayer::getTheme();
+	iconBank.build(icons, 64, {.primary = theme.text, .secondary = theme.accent});
+}
+
+void applyTheme(const gui::Theme& iTheme) {
+	gui::UiLayer::setTheme(iTheme);
+	gui::IconBank::instance().rebuild({.primary = iTheme.text, .secondary = iTheme.accent});
 }
 
 void loadTriggerTextures() {

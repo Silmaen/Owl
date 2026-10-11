@@ -305,6 +305,18 @@ private:
 
 	/**
 	 * @brief
+	 *  Grid section of the hierarchy panel: the tileset, the size and the cell size.
+	 */
+	void renderGridSection();
+
+	/**
+	 * @brief
+	 *  Layers section of the hierarchy panel: one row per layer (paint target, name, visibility, order, delete).
+	 */
+	void renderLayerSection();
+
+	/**
+	 * @brief
 	 *  Accept a Content-Browser drop on the invisible button covering the canvas — defers
 	 *  the open to the next frame to avoid mid-render document-stack mutation.
 	 */

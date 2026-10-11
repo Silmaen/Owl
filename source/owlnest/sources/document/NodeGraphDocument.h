@@ -235,6 +235,16 @@ protected:
 	bool m_pOpen = true;
 
 private:
+	/**
+	 * @brief
+	 *  Context menu of the canvas: delete the node under the cursor, or fit the view to the graph.
+	 */
+	void renderContextMenu();
+
+	/// Node under the cursor at the last right click, empty on the background.
+	std::optional<core::UUID> m_contextNode;
+	/// Open the context menu on the next frame.
+	bool m_openContextMenu = false;
 	/// Unused placeholder to satisfy the Document::undoManager() contract.
 	SceneUndoManager m_emptySceneUndo;
 };

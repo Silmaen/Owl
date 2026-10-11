@@ -111,12 +111,11 @@ post-processing — with full 3D editing ([details](design/3d-core.md)).
 
 ## v0.5.0 -- Expected 2027-04-15
 
-**Goal:** Complete the 2D experience — lighting, HUD, text, full 2D physics ([details](design/2d-complete.md)).
+**Goal:** Complete the 2D experience — lighting, text, full 2D physics ([details](design/2d-complete.md)).
 
 - ![Planned][planned] 2D lighting (point / spot lights, normal-mapped sprites, 2D shadows)
 - ![Planned][planned] Full 2D physics: callbacks, queries, joints, 3D-ready API ([Physics](design/physics-api.md))
 - ![Planned][planned] Aspect-correct text with alignment and fit modes
-- ![Planned][planned] Dedicated HUD layer and HUD editor mode
 - ![Planned][planned] Tileset editor: compose the atlas from source images
 - ![Planned][planned] First procedural brick for tilemaps ([PCG graphs](design/pcg-graphs.md))
 - ![Planned][planned] "Look through scene camera" mode
@@ -126,12 +125,14 @@ post-processing — with full 3D editing ([details](design/3d-core.md)).
 
 ## v0.4.0 -- Expected 2027-02-28
 
-**Goal:** A third non-2D mode — a Transport Tycoon-style isometric renderer — plus a local MCP server in Owl Nest and
-basic gamepad support.
+**Goal:** A third non-2D mode — a Transport Tycoon-style isometric renderer — plus a local MCP server in Owl Nest,
+basic gamepad support and a reworked HUD system with its editor.
 
 - ![Planned][planned] `RendererIsometric` layer, heightmap tiles, editor support ([details](design/isometric.md))
 - ![Planned][planned] MCP server built into Owl Nest, on the editor command API ([MCP server](design/mcp-server.md))
 - ![Planned][planned] Input actions and basic gamepad support ([Input](design/windowing-input.md))
+- ![Planned][planned] HUD system overhaul: dedicated HUD layer and a HUD editor in Owl Nest ([details](design/2d-complete.md))
+- ![To evaluate][evaluate] Node-based editing of other assets (scripts first), with the visual scripting of v0.7.0
 
 ## v0.3.0 -- Expected 2027-01-15
 
@@ -174,9 +175,9 @@ rest of A and B, then D, then C, then E.
 - ![Done][done] Phase C — editor command API: named, undoable commands for the editor, the runner and the tests
 - ![Done][done] Phase C — typed Lua binding registry, generated [Lua API reference](lua-api.md)
 - ![Done][done] Phase C — SDL3 evaluation: Owl stays on GLFW (SDL3 rejected, gamepads included), OpenAL kept
-- ![Planned][planned] Phase E — Owl Nest ergonomics revamp, designed together, no new feature ([Nest UI](design/nest-ui.md))
-- ![Planned][planned] Phase E — interaction basics: tooltips, context menus, drag & drop, text scale / DPI (`GLFW_SCALE_FRAMEBUFFER`)
-- ![Planned][planned] Phase E — visual overhaul: theme, icon set, thumbnails, style guide
+- ![In Progress][progress] Phase E — Owl Nest ergonomics revamp, designed together, no new feature ([Nest UI](design/nest-ui.md))
+- ![Done][done] Phase E — interaction basics: tooltips, context menus, drag & drop, text scale / DPI (`GLFW_SCALE_FRAMEBUFFER`)
+- ![Done][done] Phase E — visual overhaul: theme, icon set, thumbnails, style guide ([style guide](design/nest-style-guide.md))
 - ![In Progress][progress] Phase E — editor camera controls overhaul (presets, view-cube, sensitivity)
 - ![Done][done] Performance targets met or accepted ([targets](design/foundations.md#performance-targets))
 

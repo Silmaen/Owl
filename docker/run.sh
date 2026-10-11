@@ -85,6 +85,20 @@ if [[ ${gui} -eq 1 ]]; then
 		-v "/run/user/${uid}:/run/user/${uid}"
 		-e PULSE_SERVER="unix:/run/user/${uid}/pulse/native")
 	[[ -n "${WAYLAND_DISPLAY:-}" ]] && args+=(-e WAYLAND_DISPLAY="${WAYLAND_DISPLAY}")
+	# The image only ships Adwaita: lend the host cursor themes so the window keeps the desktop cursor.
+	cursor_theme="${XCURSOR_THEME:-$(gsettings get org.gnome.desktop.interface cursor-theme 2>/dev/null | tr -d "'")}"
+	cursor_size="${XCURSOR_SIZE:-$(gsettings get org.gnome.desktop.interface cursor-size 2>/dev/null)}"
+	cursor_path=""
+	icon_index=0
+	for icons in /usr/share/icons "${HOME}/.local/share/icons" "${HOME}/.icons"; do
+		[[ -d "${icons}" ]] || continue
+		args+=(-v "${icons}:/run/host-icons/${icon_index}:ro")
+		cursor_path+="${cursor_path:+:}/run/host-icons/${icon_index}"
+		icon_index=$((icon_index + 1))
+	done
+	[[ -n "${cursor_path}" ]] && args+=(-e XCURSOR_PATH="${cursor_path}")
+	[[ -n "${cursor_theme}" ]] && args+=(-e XCURSOR_THEME="${cursor_theme}")
+	[[ -n "${cursor_size}" ]] && args+=(-e XCURSOR_SIZE="${cursor_size}")
 	[[ -n "${XAUTHORITY:-}" && -f "${XAUTHORITY}" ]] && args+=(-e XAUTHORITY=/tmp/.xauth -v "${XAUTHORITY}:/tmp/.xauth:ro")
 	[[ -e /dev/snd ]] && args+=(--device /dev/snd)
 	docker info --format '{{json .Runtimes}}' 2>/dev/null | grep -q nvidia && args+=(--gpus all

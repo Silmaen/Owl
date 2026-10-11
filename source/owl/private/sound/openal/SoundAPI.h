@@ -107,6 +107,20 @@ public:
 	void frame(const core::Timestep& iTs) override;
 
 private:
+	/**
+	 * @brief
+	 *  Delete the sources that finished playing.
+	 */
+	void releaseStoppedSources();
+
+	/**
+	 * @brief
+	 *  Make room for a new source when the device has none left: drop the finished ones, else stop the oldest sound
+	 *  that does not loop.
+	 * @return True when a source was freed.
+	 */
+	auto reclaimSource() -> bool;
+
 	/// Mapping from SoundHandle to OpenAL source ID.
 	std::unordered_map<SoundHandle, uint32_t> m_handleToSource;
 	/// Next handle counter.

@@ -8,6 +8,8 @@
 
 #include "Viewport.h"
 
+#include "../DockLayout.h"
+
 #include "EditorLayer.h"
 #include "document/DocumentManager.h"
 #include "document/SceneDocument.h"
@@ -20,12 +22,18 @@
 #include <scene/component/VoxelWorld.h>
 
 #include <gui/IconBank.h>
+#include <gui/IconFont.h>
+#include <gui/UiLayer.h>
+#include <gui/widgets/IconButton.h>
+#include <gui/widgets/Menu.h>
+#include <gui/widgets/Tooltip.h>
 #include <owlgui.h>
 #include <scene/SceneSerializer.h>
 #include <scene/TilemapAsset.h>
 #include <scene/component/RaycastDoor.h>
 #include <scene/component/RaycastPushWall.h>
 #include <scene/component/Tilemap.h>
+#include <scene/component/Visibility.h>
 
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG("-Wreserved-identifier")
@@ -52,8 +60,7 @@ auto makeWindowTitle(const SceneDocument& iDoc, const EditorLayer* iParent) -> s
 		base = iParent->getDocumentManager().displayTitleFor(&iDoc);
 	if (base.empty())
 		base = iDoc.title();
-	return std::format("{}##scene_{:x}", base.empty() ? std::string{"Untitled"} : base,
-					   static_cast<uint64_t>(iDoc.id()));
+	return documentWindowTitle(DocumentType::Scene, base, static_cast<uint64_t>(iDoc.id()));
 }
 
 struct TilemapSnapInfo {
@@ -113,7 +120,7 @@ Viewport::~Viewport() = default;
 void Viewport::setDocument(SceneDocument* iDocument) {
 	mp_document = iDocument;
 	if (iDocument != nullptr) {
-		// Stable ImGui id (after ##) so ImGui preserves dock state across renames.
+		// Stable ImGui id (after ###) so ImGui preserves dock state across renames.
 		m_name = makeWindowTitle(*iDocument, m_parent);
 	} else {
 		m_name = "SceneView";
@@ -139,6 +146,8 @@ void Viewport::onRender() {
 
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{0, 0});
 	const bool visible = ImGui::Begin(m_name.c_str(), &m_pOpen, flags);
+	if (m_parent != nullptr)
+		m_parent->renderDocumentTabMenu(*mp_document);
 	m_focused = ImGui::IsWindowFocused();
 	m_hovered = ImGui::IsWindowHovered();
 	app::Application::get().getImGuiLayer()->blockEvents(!m_focused && !m_hovered);
@@ -318,6 +327,57 @@ void Viewport::onRenderInternal() {
 	renderGizmo();
 	renderOverlayToolbar();
 	renderCameraGizmo();
+	renderContextMenu();
+}
+
+void Viewport::renderContextMenu() {
+	if (mp_document == nullptr || m_parent == nullptr || mp_document->state() != SceneDocument::State::Edit)
+		return;
+	// A right click that did not drag (the camera pans with Ctrl or Alt + right drag; the voxel brush erases).
+	const auto& io = ImGui::GetIO();
+	constexpr float clickTravel = 4.f;
+	const bool click = io.MouseDragMaxDistanceSqr[ImGuiMouseButton_Right] < clickTravel * clickTravel;
+	if (m_hovered && click && ImGui::IsMouseReleased(ImGuiMouseButton_Right) && !io.KeyCtrl && !io.KeyAlt &&
+		!m_parent->getVoxelBrush().active && !gui::Guizmo::isOver()) {
+		m_parent->setSelectedEntity(m_hoveredEntity);
+		ImGui::OpenPopup("##viewportMenu");
+	}
+	if (!ImGui::BeginPopup("##viewportMenu"))
+		return;
+	if (const scene::Entity selected = m_parent->getSelectedEntity(); selected) {
+		gui::widgets::menuHeader(selected.getName().c_str(), "Entity");
+		const auto frameKey = m_parent->getActionShortcut("view.frameSelection");
+		if (gui::widgets::menuItem({.glyph = gui::icon::focus, .label = "Frame", .shortcut = frameKey.c_str()}))
+			frameSelection();
+		const auto duplicateKey = m_parent->getActionShortcut("entity.duplicate");
+		if (gui::widgets::menuItem({.glyph = gui::icon::copy, .label = "Duplicate", .shortcut = duplicateKey.c_str()}))
+			std::ignore = m_parent->runAction("entity.duplicate");
+		if (selected.hasComponent<scene::component::Visibility>()) {
+			auto& visibility = selected.getComponent<scene::component::Visibility>();
+			if (gui::widgets::menuItem(
+						{.glyph = visibility.editorVisible ? gui::icon::eyeOff : gui::icon::eye,
+						 .label = visibility.editorVisible ? "Hide in the Editor" : "Show in the Editor"}))
+				visibility.editorVisible = !visibility.editorVisible;
+		}
+		ImGui::Separator();
+		const auto deleteKey = m_parent->getActionShortcut("entity.delete");
+		if (gui::widgets::menuItem(
+					{.glyph = gui::icon::trash2, .label = "Delete", .shortcut = deleteKey.c_str(), .danger = true}))
+			std::ignore = m_parent->runAction("entity.delete");
+	} else {
+		using Projection = renderer::CameraEditor::Projection;
+		gui::widgets::menuHeader(mp_document->title().c_str(), "Scene");
+		const bool ortho = getViewProjection() == Projection::Orthographic;
+		if (gui::widgets::menuItem({.glyph = ortho ? gui::icon::check : nullptr, .label = "2D Orthographic"}))
+			setViewProjection(Projection::Orthographic);
+		if (gui::widgets::menuItem({.glyph = ortho ? nullptr : gui::icon::check, .label = "3D Perspective"}))
+			setViewProjection(Projection::Perspective);
+		ImGui::Separator();
+		auto& settings = m_parent->getSettings();
+		if (gui::widgets::menuItem({.glyph = settings.showGrid ? gui::icon::check : nullptr, .label = "Grid"}))
+			settings.showGrid = !settings.showGrid;
+	}
+	ImGui::EndPopup();
 }
 
 void Viewport::renderCameraGizmo() const {
@@ -330,7 +390,7 @@ void Viewport::renderCameraGizmo() const {
 															{{0.f, 0.f, 1.f}, IM_COL32(90, 140, 235, 255)}}};
 	constexpr std::array<const char*, 3> labels{"X", "Y", "Z"};
 	constexpr float radius = 28.f;
-	const ImVec2 center{m_upper.x() - radius - 12.f, m_lower.y() + radius + 12.f};
+	const ImVec2 center{m_upper.x() - radius - 12.f, m_upper.y() - radius - 12.f};
 	auto* drawList = ImGui::GetWindowDrawList();
 	drawList->AddCircleFilled(center, radius + 4.f, IM_COL32(20, 20, 24, 120));
 	for (size_t i = 0; i < axes.size(); ++i) {
@@ -368,10 +428,16 @@ void Viewport::renderOverlay() const {
 			renderer::Renderer2D::drawQuad({.transform = worldTransform, .color = math::vec4{0.95f, 0.55f, 0.f, 0.2f}});
 		}
 
+		if (m_parent != nullptr && m_parent->getSettings().showGrid)
+			renderGrid(resolveTranslationSnapStep(m_parent->getSettings(), findFirstTilemapInfo(activeScene.get())));
+
 		// Draw trigger type icons
 		auto& textureLibrary = renderer::Renderer::getTextureLibrary();
+		const bool showTriggers = m_parent == nullptr || m_parent->getSettings().showTriggerIcons;
 		for (const auto view = activeScene->registry.view<scene::component::Trigger, scene::component::Transform>();
 			 const auto entity: view) {
+			if (!showTriggers)
+				break;
 			auto [trigger, tc] = view.get<scene::component::Trigger, scene::component::Transform>(entity);
 			std::string iconName;
 			switch (trigger.trigger.type) {
@@ -548,63 +614,298 @@ void Viewport::renderOverlay() const {
 }
 
 namespace {
-auto overlayToggle(const char* iIconName, const char* iTooltip, const bool iIsActive) -> bool {
-	ImGui::PushID(iIconName);
-	if (iIsActive)
-		ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
-	const bool clicked = owl::gui::IconBank::instance().iconButton(iIconName, "", math::vec2{20.f, 20.f});
-	if (iIsActive)
-		ImGui::PopStyleColor();
-	if (ImGui::IsItemHovered())
-		ImGui::SetTooltip("%s", iTooltip);
-	ImGui::PopID();
-	return clicked;
-}
 
-}// namespace
-
-void Viewport::renderOverlayToolbar() {
-	if (mp_document == nullptr || m_parent == nullptr)
-		return;
-	if (mp_document->state() != SceneDocument::State::Edit)
-		return;
-
-	const ImVec2 overlayPos{m_lower.x() + 8.f, m_lower.y() + 8.f};
-	ImGui::SetNextWindowPos(overlayPos, ImGuiCond_Always);
-	ImGui::SetNextWindowBgAlpha(0.55f);
+// Translucent pill holding one cluster of viewport controls, anchored at a corner of the viewport.
+auto beginOverlay(const std::string& iId, const ImVec2& iPos, const ImVec2& iPivot) -> bool {
+	const auto& theme = gui::UiLayer::getTheme();
+	ImGui::SetNextWindowPos(iPos, ImGuiCond_Always, iPivot);
 	constexpr ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
 									   ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse |
 									   ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoFocusOnAppearing |
 									   ImGuiWindowFlags_NoNav | ImGuiWindowFlags_AlwaysAutoResize |
 									   ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoDocking;
-	const std::string overlayId = std::format("##viewport_overlay_{:x}", static_cast<uint64_t>(mp_document->id()));
-	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{4.f, 4.f});
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{3.f, 3.f});
 	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{2.f, 2.f});
-	if (ImGui::Begin(overlayId.c_str(), nullptr, flags)) {
-		// Show toggles (currently: Cameras).
-		auto& settings = m_parent->getSettings();
-		if (overlayToggle("comp_camera", "Show camera markers", settings.showCameraGizmos))
-			settings.showCameraGizmos = !settings.showCameraGizmos;
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 7.f);
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 1.f);
+	ImGui::PushStyleColor(ImGuiCol_WindowBg, gui::vec(gui::Theme::withAlpha(theme.surface1, 0.9f)));
+	ImGui::PushStyleColor(ImGuiCol_Border, gui::vec(gui::Theme::withAlpha(theme.line, 0.8f)));
+	return ImGui::Begin(iId.c_str(), nullptr, flags);
+}
 
-		ImGui::SameLine();
-		ImGui::TextDisabled("|");
-		ImGui::SameLine();
-
-		// Gizmo selector (Translate / Rotate / Scale).
-		const auto setOrToggle = [this](const gui::Guizmo::Type iType) -> void {
-			setGuizmoType(getGuizmoType() == iType ? gui::Guizmo::Type::None : iType);
-		};
-		if (overlayToggle("ctrl_translation", "Translate gizmo", m_gizmoType == gui::Guizmo::Type::Translation))
-			setOrToggle(gui::Guizmo::Type::Translation);
-		ImGui::SameLine();
-		if (overlayToggle("ctrl_rotation", "Rotate gizmo", m_gizmoType == gui::Guizmo::Type::Rotation))
-			setOrToggle(gui::Guizmo::Type::Rotation);
-		ImGui::SameLine();
-		if (overlayToggle("ctrl_scale", "Scale gizmo", m_gizmoType == gui::Guizmo::Type::Scale))
-			setOrToggle(gui::Guizmo::Type::Scale);
-	}
+void endOverlay() {
 	ImGui::End();
-	ImGui::PopStyleVar(2);
+	ImGui::PopStyleColor(2);
+	ImGui::PopStyleVar(4);
+}
+
+void overlaySeparator() {
+	ImGui::SameLine();
+	const auto pos = ImGui::GetCursorScreenPos();
+	const float height = ImGui::GetFrameHeight();
+	ImGui::GetWindowDrawList()->AddLine({pos.x + 2.f, pos.y + 4.f}, {pos.x + 2.f, pos.y + height - 4.f},
+										ImGui::GetColorU32(gui::vec(gui::UiLayer::getTheme().line)));
+	ImGui::Dummy({5.f, height});
+	ImGui::SameLine();
+}
+
+}// namespace
+
+void Viewport::renderGrid(const float iStep) const {
+	if (iStep <= 0.f)
+		return;
+	const auto& focal = m_editorCamera.getFocalPoint();
+	// Half of the visible height at the reference point, times a margin for the sides and the tilt.
+	const float extent = std::max(1.f, m_editorCamera.getDistance()) * 1.6f;
+	float step = iStep;
+	constexpr float maxLines = 120.f;
+	while (extent * 2.f / step > maxLines) step *= 2.f;
+	const float minX = std::floor((focal.x() - extent) / step) * step;
+	const float minY = std::floor((focal.y() - extent) / step) * step;
+	const float maxX = focal.x() + extent;
+	const float maxY = focal.y() + extent;
+	const auto& theme = gui::UiLayer::getTheme();
+	const math::vec4 lineColor = gui::Theme::withAlpha(theme.text, 0.07f);
+	const auto columns = static_cast<int>((maxX - minX) / step) + 1;
+	for (int i = 0; i < columns; ++i) {
+		const float x = minX + step * static_cast<float>(i);
+		const bool axis = std::abs(x) < step * 0.5f;
+		renderer::Renderer2D::drawLine({.point1 = {x, minY, 0.f},
+										.point2 = {x, maxY, 0.f},
+										.color = axis ? gui::Theme::withAlpha(theme.axisY, 0.45f) : lineColor});
+	}
+	const auto rows = static_cast<int>((maxY - minY) / step) + 1;
+	for (int i = 0; i < rows; ++i) {
+		const float y = minY + step * static_cast<float>(i);
+		const bool axis = std::abs(y) < step * 0.5f;
+		renderer::Renderer2D::drawLine({.point1 = {minX, y, 0.f},
+										.point2 = {maxX, y, 0.f},
+										.color = axis ? gui::Theme::withAlpha(theme.axisX, 0.45f) : lineColor});
+	}
+}
+
+void Viewport::frameSelection() {
+	if (mp_document == nullptr || m_parent == nullptr)
+		return;
+	const auto& activeScene = mp_document->getActiveScene();
+	const scene::Entity selected = m_parent->getSelectedEntity();
+	if (!activeScene || !selected)
+		return;
+	const math::Transform world = activeScene->getWorldTransform(selected);
+	// A unit quad scaled by the transform: half its diagonal encloses it.
+	const float radius =
+			0.5f * std::sqrt(world.scale().x() * world.scale().x() + world.scale().y() * world.scale().y());
+	m_editorCamera.frame(world.translation(), radius);
+}
+
+void Viewport::renderOverlayToolbar() {
+	if (mp_document == nullptr || m_parent == nullptr)
+		return;
+	using gui::widgets::iconButton;
+	const auto& theme = gui::UiLayer::getTheme();
+	const auto state = mp_document->state();
+	const bool editing = state == SceneDocument::State::Edit;
+	const auto id = static_cast<uint64_t>(mp_document->id());
+	const float margin = 8.f;
+	auto& settings = m_parent->getSettings();
+	const auto shortcut = [this](const char* iAction) -> std::string { return m_parent->getActionShortcut(iAction); };
+
+	if (!editing)
+		ImGui::GetWindowDrawList()->AddRect({m_lower.x() + 1.f, m_lower.y() + 1.f},
+											{m_upper.x() - 1.f, m_upper.y() - 1.f},
+											ImGui::GetColorU32(gui::vec(theme.play)), 0.f, ImDrawFlags_None, 2.f);
+
+	// Tools: gizmo mode and snap.
+	if (editing) {
+		if (beginOverlay(std::format("##vpTools{:x}", id), {m_lower.x() + margin, m_lower.y() + margin}, {0.f, 0.f})) {
+			struct Tool {
+				gui::Guizmo::Type type;
+				const char* glyph;
+				const char* name;
+				const char* action;
+				const char* description;
+			};
+			constexpr std::array tools{Tool{gui::Guizmo::Type::None, gui::icon::mousePointer2, "Select", "guizmo.none",
+											"Click an entity to select it; no gizmo."},
+									   Tool{gui::Guizmo::Type::Translation, gui::icon::move, "Move", "guizmo.translate",
+											"Drag an axis to move the selection. Hold Ctrl to snap."},
+									   Tool{gui::Guizmo::Type::Rotation, gui::icon::rotate3d, "Rotate", "guizmo.rotate",
+											"Drag a ring to rotate the selection."},
+									   Tool{gui::Guizmo::Type::Scale, gui::icon::scale3d, "Scale", "guizmo.scale",
+											"Drag an axis to scale the selection."}};
+			for (const auto& tool: tools) {
+				const auto key = shortcut(tool.action);
+				if (iconButton(tool.name, {.glyph = tool.glyph,
+										   .tooltip = tool.name,
+										   .shortcut = key.c_str(),
+										   .description = tool.description,
+										   .selected = m_gizmoType == tool.type}))
+					setGuizmoType(tool.type);
+				ImGui::SameLine();
+			}
+			overlaySeparator();
+			if (iconButton("space", {.glyph = settings.gizmoWorldSpace ? gui::icon::globe : gui::icon::box,
+									 .tooltip = settings.gizmoWorldSpace ? "World axes" : "Local axes",
+									 .description = "Move along the world axes, or along the axes of the selection."}))
+				settings.gizmoWorldSpace = !settings.gizmoWorldSpace;
+			ImGui::SameLine();
+			if (iconButton("snap", {.glyph = gui::icon::magnet,
+									.tooltip = "Snap to grid",
+									.description = "Moves snap to the grid step; Ctrl snaps while dragging anyway.",
+									.selected = settings.snapEnabled}))
+				settings.snapEnabled = !settings.snapEnabled;
+			ImGui::SameLine();
+			const auto& scene = mp_document->getActiveScene();
+			const float step =
+					resolveTranslationSnapStep(settings, findFirstTilemapInfo(scene ? scene.get() : nullptr));
+			const auto stepText = std::format("{:g}", step);
+			if (gui::widgets::button(
+						"snapStep",
+						{.label = stepText.c_str(),
+						 .tooltip = "Snap step",
+						 .description = "Presets from the tilemap cell when there is one, else world units."}))
+				ImGui::OpenPopup("##snapStep");
+			if (ImGui::BeginPopup("##snapStep")) {
+				m_parent->renderSnapStepPopup();
+				ImGui::EndPopup();
+			}
+		}
+		endOverlay();
+	}
+
+	// Playback, centred.
+	if (beginOverlay(std::format("##vpPlay{:x}", id), {(m_lower.x() + m_upper.x()) * 0.5f, m_lower.y() + margin},
+					 {0.5f, 0.f})) {
+		const bool playing = state == SceneDocument::State::Play;
+		const bool paused = state == SceneDocument::State::Pause;
+		const auto playKey = shortcut("scene.play");
+		if (iconButton("play",
+					   {.glyph = gui::icon::play,
+						.tooltip = paused ? "Resume" : "Play",
+						.shortcut = playKey.c_str(),
+						.description = "Run the scene in the viewport; changes made while playing are reverted.",
+						.selected = playing,
+						.disabled = playing}))
+			std::ignore = m_parent->runAction("scene.play");
+		ImGui::SameLine();
+		const auto pauseKey = shortcut("scene.pause");
+		if (iconButton("pause", {.glyph = gui::icon::pause,
+								 .tooltip = "Pause",
+								 .shortcut = pauseKey.c_str(),
+								 .selected = paused,
+								 .disabled = !playing}))
+			std::ignore = m_parent->runAction("scene.pause");
+		ImGui::SameLine();
+		const auto stepKey = shortcut("scene.step");
+		if (iconButton("step", {.glyph = gui::icon::skipForward,
+								.tooltip = "Step one frame",
+								.shortcut = stepKey.c_str(),
+								.disabled = !paused}))
+			std::ignore = m_parent->runAction("scene.step");
+		ImGui::SameLine();
+		const auto stopKey = shortcut("scene.stop");
+		if (iconButton("stop", {.glyph = gui::icon::square,
+								.tooltip = "Stop",
+								.shortcut = stopKey.c_str(),
+								.description = "Leave the play mode and restore the scene.",
+								.disabled = editing}))
+			std::ignore = m_parent->runAction("scene.stop");
+	}
+	endOverlay();
+
+	// View options, top-right.
+	if (editing)
+		renderViewOverlay();
+	else if (beginOverlay(
+					 std::format("##vpPlaying{:x}", id),
+					 {(m_lower.x() + m_upper.x()) * 0.5f, m_lower.y() + margin * 2.f + ImGui::GetFrameHeight() + 6.f},
+					 {0.5f, 0.f})) {
+		ImGui::AlignTextToFramePadding();
+		ImGui::TextColored(gui::vec(theme.play), " %s ", gui::icon::play);
+		ImGui::SameLine();
+		gui::UiLayer::pushTextStyle(gui::TextStyle::Label);
+		ImGui::AlignTextToFramePadding();
+		ImGui::TextUnformatted(state == SceneDocument::State::Pause ? "Paused" : "Playing");
+		ImGui::SameLine();
+		ImGui::AlignTextToFramePadding();
+		ImGui::TextColored(gui::vec(theme.textMuted), "%s", "— changes are reverted on Stop ");
+		gui::UiLayer::popTextStyle();
+	}
+	if (!editing)
+		endOverlay();
+
+	// Frame time chip, bottom-left.
+	if (beginOverlay(std::format("##vpFps{:x}", id), {m_lower.x() + margin, m_upper.y() - margin}, {0.f, 1.f})) {
+		const auto stats = renderer::Renderer2D::getStats();
+		const float fps = ImGui::GetIO().Framerate;
+		gui::UiLayer::pushTextStyle(gui::TextStyle::Value);
+		const auto text =
+				std::format("{:.0f} fps  {:.2f} ms  {} draws", fps, fps > 0.f ? 1000.f / fps : 0.f, stats.drawCalls);
+		ImGui::AlignTextToFramePadding();
+		ImGui::TextColored(gui::vec(theme.textMuted), " %s ", text.c_str());
+		gui::UiLayer::popTextStyle();
+		if (ImGui::IsItemClicked()) {
+			settings.showStats = true;
+			ImGui::SetWindowFocus(panelWindow::stats);
+		}
+		gui::widgets::itemTooltip("Frame stats", nullptr, "Click to open the Stats panel.");
+	}
+	endOverlay();
+}
+
+void Viewport::renderViewOverlay() {
+	using gui::widgets::iconButton;
+	using Projection = renderer::CameraEditor::Projection;
+	const auto id = static_cast<uint64_t>(mp_document->id());
+	constexpr float margin = 8.f;
+	auto& settings = m_parent->getSettings();
+	if (beginOverlay(std::format("##vpView{:x}", id), {m_upper.x() - margin, m_lower.y() + margin}, {1.f, 0.f})) {
+		const bool ortho = getViewProjection() == Projection::Orthographic;
+		if (gui::widgets::button("projection", {.glyph = ortho ? gui::icon::square : gui::icon::cuboid,
+												.label = ortho ? "2D" : "3D",
+												.tooltip = "View",
+												.description = "2D: orthographic front view of the scene plane. 3D: "
+															   "perspective, orbit with Ctrl + drag."}))
+			ImGui::OpenPopup("##projection");
+		if (ImGui::BeginPopup("##projection")) {
+			if (gui::widgets::menuItem({.glyph = ortho ? gui::icon::check : nullptr, .label = "2D Orthographic"}))
+				setViewProjection(Projection::Orthographic);
+			if (gui::widgets::menuItem({.glyph = ortho ? nullptr : gui::icon::check, .label = "3D Perspective"}))
+				setViewProjection(Projection::Perspective);
+			ImGui::EndPopup();
+		}
+		ImGui::SameLine();
+		if (iconButton("show", {.glyph = gui::icon::eye,
+								.tooltip = "Show",
+								.description = "Grid, camera markers and trigger icons drawn over the scene."}))
+			ImGui::OpenPopup("##show");
+		if (ImGui::BeginPopup("##show")) {
+			const auto option = [](const char* iLabel, bool& ioFlag) -> void {
+				if (gui::widgets::menuItem({.glyph = ioFlag ? gui::icon::check : nullptr, .label = iLabel}))
+					ioFlag = !ioFlag;
+			};
+			gui::widgets::menuHeader("Show");
+			option("Grid", settings.showGrid);
+			option("Camera markers", settings.showCameraGizmos);
+			option("Trigger icons", settings.showTriggerIcons);
+			ImGui::EndPopup();
+		}
+		ImGui::SameLine();
+		const auto frameKey = m_parent->getActionShortcut("view.frameSelection");
+		if (iconButton("frame", {.glyph = gui::icon::focus,
+								 .tooltip = "Frame selection",
+								 .shortcut = frameKey.c_str(),
+								 .description = "Centre the view on the selected entity.",
+								 .disabled = !m_parent->getSelectedEntity()}))
+			frameSelection();
+		ImGui::SameLine();
+		if (iconButton("stats", {.glyph = gui::icon::gauge,
+								 .tooltip = "Frame stats",
+								 .description = "Show the Stats panel: frame time, renderer and GPU counters.",
+								 .selected = settings.showStats}))
+			settings.showStats = !settings.showStats;
+	}
+	endOverlay();
 }
 
 void Viewport::setGuizmoType(const gui::Guizmo::Type& iType) { m_gizmoType = iType; }
@@ -625,7 +926,8 @@ void Viewport::renderGizmo() {
 
 	if (const scene::Entity selectedEntity = m_parent->getSelectedEntity();
 		selectedEntity && m_gizmoType != gui::Guizmo::Type::None) {
-		gui::Guizmo::initialize(m_lower, m_upper - m_lower);
+		gui::Guizmo::initialize(m_lower, m_upper - m_lower,
+								m_editorCamera.getProjectionMode() == renderer::CameraEditor::Projection::Orthographic);
 
 		math::mat4 cameraProjection = m_editorCamera.getProjection();
 		if (renderer::gpu::RenderCommand::getApi() == renderer::gpu::RenderAPI::Type::Vulkan)
@@ -646,7 +948,9 @@ void Viewport::renderGizmo() {
 			snapValue = resolveTranslationSnapStep(m_parent->getSettings(), tilemapInfo);
 		}
 
-		gui::Guizmo::manipulate(cameraView, cameraProjection, m_gizmoType, transform, snap ? snapValue : 0.f);
+		gui::Guizmo::manipulate(cameraView, cameraProjection, m_gizmoType, transform, snap ? snapValue : 0.f,
+								m_parent->getSettings().gizmoWorldSpace ? gui::Guizmo::Space::World
+																		: gui::Guizmo::Space::Local);
 
 		const bool isUsing = gui::Guizmo::isUsing();
 

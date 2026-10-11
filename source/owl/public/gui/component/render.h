@@ -11,6 +11,8 @@
 #include "scene/component/components.h"
 #include <core/Core.h>
 
+#include <filesystem>
+#include <functional>
 #include <tuple>
 
 /**
@@ -18,6 +20,22 @@
  *  Namespace defining functions for draw components in GUI.
  */
 namespace owl::gui::component {
+
+/**
+ * @brief
+ *  Set the function the Open buttons of the inspector call to open an asset in its editor (a tilemap, a tileset, a
+ *  script); the editor sets it, a game leaves it empty.
+ * @param[in] iHandler Called with the path as stored in the component (relative to an asset folder).
+ */
+OWL_API void setOpenAssetHandler(std::function<void(const std::filesystem::path&)> iHandler);
+
+/**
+ * @brief
+ *  Ask for an asset to be opened in its editor.
+ * @param[in] iPath The path as stored in the component.
+ * @return True when a handler is set and the path is not empty.
+ */
+OWL_API auto openAsset(const std::filesystem::path& iPath) -> bool;
 /**
  * @brief
  *  Render a Gui for editing the component.

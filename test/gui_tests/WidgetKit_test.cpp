@@ -1,0 +1,351 @@
+/**
+ * @file WidgetKit_test.cpp
+ * @author Silmaen
+ * @date 11/10/2026
+ * Copyright (c) 2026 All rights reserved.
+ * All modification must get authorization from the author.
+ */
+
+#include "testHelper.h"
+
+#include <gui/Guizmo.h>
+#include <gui/IconFont.h>
+#include <gui/UiLayer.h>
+#include <gui/widgets/Badge.h>
+#include <gui/widgets/Combo.h>
+#include <gui/widgets/EmptyState.h>
+#include <gui/widgets/IconButton.h>
+#include <gui/widgets/Menu.h>
+#include <gui/widgets/PropertyGrid.h>
+#include <gui/widgets/SearchField.h>
+#include <gui/widgets/SectionHeader.h>
+#include <gui/widgets/Toast.h>
+#include <gui/widgets/Toggle.h>
+#include <gui/widgets/Tooltip.h>
+#include <gui/widgets/TreeRow.h>
+#include <math/matrixCreation.h>
+
+#include <imgui.h>
+
+#include <array>
+#include <cstddef>
+#include <functional>
+#include <string>
+#include <tuple>
+
+using namespace owl;
+using namespace owl::gui;
+using namespace owl::gui::widgets;
+
+namespace {
+
+/**
+ * @brief
+ *  Headless ImGui frames with simulated mouse input.
+ */
+class WidgetKitTest : public ::testing::Test {
+protected:
+	void SetUp() override {
+		core::Log::init(core::Log::Level::Off);
+		m_layer.disableApp();
+		m_layer.onAttach();
+		ImGui::GetIO().IniFilename = nullptr;
+	}
+
+	void TearDown() override {
+		m_layer.onDetach();
+		core::Log::invalidate();
+	}
+
+	// One frame drawing the given widgets in a fixed window.
+	void frame(const std::function<void()>& iBody) {
+		m_layer.begin();
+		ImGui::SetNextWindowPos({0.f, 0.f});
+		ImGui::SetNextWindowSize({400.f, 500.f});
+		ImGui::Begin("Kit");
+		iBody();
+		ImGui::End();
+		m_layer.end();
+	}
+
+	// Click on the centre of the rectangle recorded by the body: move, press, release.
+	void click(const std::function<void()>& iBody) {
+		const ImVec2 centre{(m_min.x + m_max.x) * 0.5f, (m_min.y + m_max.y) * 0.5f};
+		ImGui::GetIO().AddMousePosEvent(centre.x, centre.y);
+		frame(iBody);
+		ImGui::GetIO().AddMouseButtonEvent(0, true);
+		frame(iBody);
+		ImGui::GetIO().AddMouseButtonEvent(0, false);
+		frame(iBody);
+	}
+
+	void record() {
+		m_min = ImGui::GetItemRectMin();
+		m_max = ImGui::GetItemRectMax();
+	}
+
+	gui::UiLayer m_layer;
+	ImVec2 m_min{0.f, 0.f};
+	ImVec2 m_max{0.f, 0.f};
+};
+
+}// namespace
+
+TEST(WidgetKit, FilterMatchesEveryWordIgnoringCase) {
+	EXPECT_TRUE(matchesFilter("MainCamera", ""));
+	EXPECT_TRUE(matchesFilter("MainCamera", "   "));
+	EXPECT_TRUE(matchesFilter("MainCamera", "camera"));
+	EXPECT_TRUE(matchesFilter("MainCamera", "CAM main"));
+	EXPECT_FALSE(matchesFilter("MainCamera", "main light"));
+	EXPECT_FALSE(matchesFilter("", "a"));
+	EXPECT_TRUE(matchesFilter("lava_tile.png", "tile png"));
+}
+
+TEST(WidgetKit, ToastHistoryOutlivesTheToasts) {
+	ToastQueue queue;
+	queue.push(ToastKind::Success, "Saved main_menu.owl");
+	queue.push(ToastKind::Success, "Saved main_menu.owl");
+	queue.push(ToastKind::Error, "Could not save", "See the Log.");
+	EXPECT_EQ(queue.getUnreadCount(), 3u);
+	ASSERT_EQ(queue.getHistory().size(), 2u);
+	EXPECT_EQ(queue.getHistory().front().count, 2u);
+	queue.update(ToastQueue::lifetime + ToastQueue::fadeTime);
+	EXPECT_TRUE(queue.getToasts().empty());
+	EXPECT_EQ(queue.getHistory().size(), 2u);
+	queue.markRead();
+	EXPECT_EQ(queue.getUnreadCount(), 0u);
+	for (size_t i = 0; i < ToastQueue::maxHistory + 5; ++i) queue.push(ToastKind::Info, std::to_string(i));
+	EXPECT_EQ(queue.getHistory().size(), ToastQueue::maxHistory);
+	queue.clearHistory();
+	EXPECT_TRUE(queue.getHistory().empty());
+	EXPECT_EQ(queue.getUnreadCount(), 0u);
+}
+
+TEST(WidgetKit, ToastsFoldExpireAndStayBounded) {
+	ToastQueue queue;
+	queue.push(ToastKind::Success, "Saved main_menu.owl");
+	queue.push(ToastKind::Success, "Saved main_menu.owl");
+	ASSERT_EQ(queue.getToasts().size(), 1u);
+	EXPECT_EQ(queue.getToasts().front().count, 2u);
+	queue.push(ToastKind::Error, "Could not save", "See the Log.");
+	EXPECT_EQ(queue.getToasts().size(), 2u);
+	for (int i = 0; i < 10; ++i) queue.push(ToastKind::Info, std::to_string(i));
+	EXPECT_EQ(queue.getToasts().size(), ToastQueue::maxToasts);
+	EXPECT_EQ(queue.getToasts().back().title, "9");
+
+	queue.update(ToastQueue::lifetime);
+	EXPECT_EQ(queue.getToasts().size(), ToastQueue::maxToasts);
+	queue.update(ToastQueue::fadeTime);
+	EXPECT_TRUE(queue.getToasts().empty());
+
+	EXPECT_FLOAT_EQ(ToastQueue::getOpacity(0.f), 1.f);
+	EXPECT_FLOAT_EQ(ToastQueue::getOpacity(ToastQueue::lifetime), 1.f);
+	EXPECT_NEAR(ToastQueue::getOpacity(ToastQueue::lifetime + ToastQueue::fadeTime * 0.5f), 0.5f, 1e-4f);
+	EXPECT_FLOAT_EQ(ToastQueue::getOpacity(ToastQueue::lifetime + ToastQueue::fadeTime * 2.f), 0.f);
+	queue.push(ToastKind::Warning, "x");
+	queue.clear();
+	EXPECT_TRUE(queue.getToasts().empty());
+}
+
+TEST_F(WidgetKitTest, EveryWidgetDrawsWithoutInput) {
+	std::string search = "cam";
+	float value = 2.f;
+	math::vec3 position{0.f, 1.f, 0.f};
+	bool flag = false;
+	ToastQueue toasts;
+	toasts.push(ToastKind::Success, "Saved", "scenes/main_menu.owl");
+	toasts.push(ToastKind::Warning, "Slow frame");
+	for (int i = 0; i < 2; ++i) {
+		frame([&]() -> void {
+			EXPECT_FALSE(iconButton("save", {.glyph = icon::save, .tooltip = "Save", .shortcut = "Ctrl+S"}));
+			EXPECT_FALSE(iconButton("off", {.glyph = icon::play, .tooltip = "Play", .disabled = true}));
+			EXPECT_FALSE(iconButton("on", {.glyph = icon::move, .selected = true}));
+			EXPECT_FALSE(searchField("search", search, "Search entities"));
+			badge("12");
+			badge("2", BadgeKind::Warning);
+			notice("No sprite sheet set.");
+			EXPECT_FALSE(toggle("##toggle", &flag));
+			EXPECT_FALSE(checkbox("Loop##cbx", &flag));
+			EXPECT_FALSE(chip("Error##level", true, {0.9f, 0.3f, 0.3f, 1.f}));
+			if (subHeader("Raycast (billboard)"))
+				ImGui::TextUnformatted("body");
+			EXPECT_FALSE(button("add", {.glyph = icon::plus, .label = "Add", .tooltip = "Add", .primary = true}));
+			if (const auto row = treeRow("world", {.label = "world",
+												   .glyph = icon::layers,
+												   .trailing = "2",
+												   .hasChildren = true,
+												   .defaultOpen = true});
+				row.open) {
+				EXPECT_FALSE(treeRow("cam", {.label = "MainCamera", .glyph = icon::video, .selected = true}).clicked);
+				endTreeRow();
+			}
+			int index = 1;
+			constexpr std::array names{"Orthographic", "Perspective"};
+			EXPECT_FALSE(combo("Projection", &index, names));
+			if (beginCombo("##theme", "Owl Dark"))
+				ImGui::EndCombo();
+			notice("Saved.", BadgeKind::Success);
+			notice("Broken.", BadgeKind::Error);
+			EXPECT_FALSE(chip("Textures##chip", true));
+			if (sectionHeader("Physics", icon::gauge, false).open)
+				endSection();
+			const auto header = sectionHeader("Transform", nullptr);
+			EXPECT_FALSE(header.menuClicked);
+			EXPECT_GT(header.max.y(), header.min.y());
+			if (header.open) {
+				if (beginProperties("props")) {
+					EXPECT_FALSE(propertyFloat("Size", value, 1.f));
+					EXPECT_FALSE(propertyVec3("Position", position, {0.f, 0.f, 0.f}));
+					EXPECT_FALSE(propertyBool("Primary", flag, false));
+					endProperties();
+				}
+				endSection();
+			}
+			EXPECT_FALSE(emptyState(icon::box, "No entity selected", "Select an entity to edit it.", "Add entity"));
+			richTooltip("Title", "F1", "Description.");
+			toasts.onImGuiRender();
+			toasts.renderHistory();
+			dragPreview(icon::file, "hero.png", "Texture");
+			dragPreview(icon::box, "Player");
+		});
+	}
+	EXPECT_EQ(search, "cam");
+	EXPECT_FLOAT_EQ(value, 2.f);
+}
+
+TEST_F(WidgetKitTest, IconButtonAndChipReportClicks) {
+	int clicks = 0;
+	const auto body = [&]() -> void {
+		if (iconButton("save", {.glyph = icon::save, .tooltip = "Save"}))
+			++clicks;
+		record();
+	};
+	frame(body);
+	click(body);
+	EXPECT_EQ(clicks, 1);
+
+	bool selected = false;
+	const auto chipBody = [&]() -> void {
+		if (chip("Scenes", selected))
+			selected = !selected;
+		record();
+	};
+	frame(chipBody);
+	click(chipBody);
+	EXPECT_TRUE(selected);
+}
+
+TEST_F(WidgetKitTest, ResetButtonRestoresTheDefault) {
+	float value = 5.f;
+	const auto body = [&]() -> void {
+		if (beginProperties("props")) {
+			std::ignore = propertyFloat("Size", value, 1.f);
+			record();
+			endProperties();
+		}
+	};
+	frame(body);
+	click(body);
+	EXPECT_FLOAT_EQ(value, 1.f);
+}
+
+TEST_F(WidgetKitTest, IntegerAndTextRowsKeepTheirValues) {
+	int value = 900;
+	std::string name = "Owl";
+	const auto body = [&]() -> void {
+		if (beginProperties("props")) {
+			EXPECT_FALSE(propertyText("Name", name, "Project name"));
+			std::ignore = propertyInt("Count", value, 3, 0, 10);
+			record();
+			endProperties();
+		}
+	};
+	frame(body);
+	EXPECT_EQ(value, 10);
+	EXPECT_EQ(name, "Owl");
+	click(body);
+	EXPECT_EQ(value, 3);
+}
+
+TEST_F(WidgetKitTest, MenuItemsReportClicksUnlessDisabled) {
+	int clicks = 0;
+	int disabledClicks = 0;
+	const auto body = [&]() -> void {
+		menuHeader("Camera", "Entity");
+		if (menuItem({.glyph = icon::trash2, .label = "Delete", .shortcut = "Del", .danger = true}))
+			++clicks;
+		record();
+		if (menuItem({.label = "Rename", .enabled = false}))
+			++disabledClicks;
+	};
+	frame(body);
+	click(body);
+	EXPECT_EQ(clicks, 1);
+	EXPECT_EQ(disabledClicks, 0);
+}
+
+TEST_F(WidgetKitTest, OrthographicWorldGizmoLeavesAnIdleTransform) {
+	auto transform = math::identity<float, 4>();
+	const auto view = math::identity<float, 4>();
+	const auto projection = math::ortho(-4.f, 4.f, -3.f, 3.f, 0.1f, 100.f);
+	frame([&]() -> void {
+		gui::Guizmo::initialize({0.f, 0.f}, {400.f, 300.f}, true);
+		gui::Guizmo::manipulate(view, projection, gui::Guizmo::Type::Translation, transform, 0.5f,
+								gui::Guizmo::Space::World);
+	});
+	EXPECT_FALSE(gui::Guizmo::isUsing());
+	EXPECT_EQ(transform, view);
+}
+
+TEST_F(WidgetKitTest, TextScaleIsClampedAndAppliedAtOnce) {
+	UiLayer::setTextScale(2.f);
+	EXPECT_FLOAT_EQ(UiLayer::getTextScale(), UiLayer::maxTextScale);
+	EXPECT_FLOAT_EQ(ImGui::GetStyle().FontScaleMain, UiLayer::maxTextScale);
+	UiLayer::setTextScale(0.1f);
+	EXPECT_FLOAT_EQ(UiLayer::getTextScale(), UiLayer::minTextScale);
+	UiLayer::setTextScale(1.f);
+	EXPECT_FLOAT_EQ(ImGui::GetStyle().FontScaleMain, 1.f);
+}
+
+TEST_F(WidgetKitTest, DisabledIconButtonIgnoresClicks) {
+	int clicks = 0;
+	const auto body = [&]() -> void {
+		if (iconButton("play", {.glyph = icon::play, .disabled = true}))
+			++clicks;
+		record();
+	};
+	frame(body);
+	click(body);
+	EXPECT_EQ(clicks, 0);
+}
+
+TEST_F(WidgetKitTest, ToggleAndCheckboxFlipOnClick) {
+	bool on = false;
+	const auto toggleBody = [&]() -> void {
+		std::ignore = toggle("##switch", &on);
+		record();
+	};
+	frame(toggleBody);
+	click(toggleBody);
+	EXPECT_TRUE(on);
+
+	bool checked = true;
+	const auto checkboxBody = [&]() -> void {
+		std::ignore = checkbox("Loop", &checked);
+		record();
+	};
+	frame(checkboxBody);
+	click(checkboxBody);
+	EXPECT_FALSE(checked);
+}
+
+TEST_F(WidgetKitTest, TreeRowReportsAClickOutsideItsChevron) {
+	bool clicked = false;
+	const auto body = [&]() -> void {
+		clicked = treeRow("row", {.label = "MainCamera", .glyph = icon::video}).clicked || clicked;
+		record();
+	};
+	frame(body);
+	click(body);
+	EXPECT_TRUE(clicked);
+}

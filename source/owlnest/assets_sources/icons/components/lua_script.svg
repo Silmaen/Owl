@@ -1,8 +1,5 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <!-- Lua moon crescent -->
-  <circle cx="256" cy="270" r="150" fill="white"/>
-  <circle cx="320" cy="220" r="120" fill="black"/>
-  <!-- Lua dot -->
-  <circle cx="370" cy="140" r="40" fill="white"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+  <circle cx="11" cy="13" r="7.5" fill="#ffffff" fill-opacity=".18"/>
+  <circle cx="18" cy="6" r="2.2"/>
+  <circle cx="13.5" cy="10.5" r="2" fill="#ff00ff" stroke="#ff00ff"/>
 </svg>

@@ -63,8 +63,8 @@ struct EditorSettings {
 
 	/// Whether the stats panel is visible.
 	bool showStats = true;
-	/// Current theme preset name (empty or "Custom" means use theme.yml).
-	std::string themePreset = "Dark";
+	/// Theme preset name (`gui::Theme::getPresetNames`); retired names are mapped on load.
+	std::string themePreset = "Owl Dark";
 	/// Font size (pixels) used inside the code editor tabs.
 	int codeEditorFontSize = 17;
 	/**
@@ -72,7 +72,9 @@ struct EditorSettings {
 	 * `UiLayer::onAttach`).  Default 18 — the previous default was 20 but 18 leaves more room
 	 * for docked panels on dense layouts.
 	 */
-	int uiFontSize = 18;
+	int uiFontSize = 16;
+	/// Scale of every text of the editor, in percent (75 to 150), applied at once.
+	int textScalePercent = 100;
 	/// Whether translation gizmos snap to a grid in Edit mode.
 	bool snapEnabled = false;
 	/// Grid step (world units) used when no tilemap is available or `snapAutoFromTilemap` is off.
@@ -83,8 +85,18 @@ struct EditorSettings {
 	bool snapAutoFromTilemap = true;
 	/// Whether the in-viewport camera markers (icon + forward arrow + FOV cone) are drawn in Edit mode.
 	bool showCameraGizmos = true;
+	/// Whether the viewport draws a grid of the snap step on the XY plane in Edit mode.
+	bool showGrid = true;
+	/// Whether the trigger type icons are drawn over the triggers in Edit mode.
+	bool showTriggerIcons = true;
+	/// Whether the gizmo moves along the world axes instead of the axes of the selection.
+	bool gizmoWorldSpace = false;
 	/// Seconds between two autosaves of the modified documents (crash recovery); 0 disables the autosave.
 	int autosaveIntervalSeconds = 60;
+	/// Panel arrangement (`DockLayout::getPresetName`).
+	std::string layoutPreset = "Default";
+	/// Generation of the saved dock layout; an older one is rebuilt once (`DockLayout::version`).
+	int layoutVersion = 0;
 	/// Custom keybinding overrides (action ID -> shortcut string). Only non-default bindings.
 	std::unordered_map<std::string, std::string> keybindingOverrides;
 	/// Recently opened project directories (most recent first).

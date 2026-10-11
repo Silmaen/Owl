@@ -50,3 +50,24 @@ TEST(EditorSettings, ProjectSessionRoundTripsThroughTheFile) {
 	EXPECT_FALSE(loaded.getProjectSession("/games/forgotten").has_value());
 	std::filesystem::remove_all(dir);
 }
+
+TEST(EditorSettings, ViewportDisplayOptionsRoundTrip) {
+	const auto dir = std::filesystem::temp_directory_path() / "owl_editor_settings_display_test";
+	std::filesystem::remove_all(dir);
+	std::filesystem::create_directories(dir);
+	EditorSettings settings;
+	EXPECT_TRUE(settings.showGrid);
+	EXPECT_TRUE(settings.showTriggerIcons);
+	EXPECT_FALSE(settings.gizmoWorldSpace);
+	settings.showGrid = false;
+	settings.showTriggerIcons = false;
+	settings.gizmoWorldSpace = true;
+	settings.saveToFile(dir / "settings.yml");
+
+	EditorSettings loaded;
+	loaded.loadFromFile(dir / "settings.yml");
+	EXPECT_FALSE(loaded.showGrid);
+	EXPECT_FALSE(loaded.showTriggerIcons);
+	EXPECT_TRUE(loaded.gizmoWorldSpace);
+	std::filesystem::remove_all(dir);
+}

@@ -91,7 +91,7 @@ void CodeEditorDocument::onImGuiRender() {
 	if (!mp_editor)
 		return;
 
-	const auto winTitle = std::format("{}##code_{:x}", title(), static_cast<uint64_t>(id()));
+	const auto winTitle = documentWindowTitle(DocumentType::Code, title(), static_cast<uint64_t>(id()));
 
 	ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse;
 	if (isDirty())
@@ -111,6 +111,8 @@ void CodeEditorDocument::onImGuiRender() {
 	if (wantFocus)
 		ImGui::SetNextWindowFocus();
 	const bool open = ImGui::Begin(winTitle.c_str(), &m_pOpen, flags);
+	if (mp_editorLayer != nullptr)
+		mp_editorLayer->renderDocumentTabMenu(*this);
 	if (wantFocus)
 		ImGui::SetWindowFocus();
 	if (open) {

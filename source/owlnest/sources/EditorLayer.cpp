@@ -17,9 +17,14 @@
 #include "document/TilemapDocument.h"
 #include "document/TilesetDocument.h"
 
+#include <debug/LogSink.h>
 #include <gui/FontPreviewCache.h>
 #include <gui/IconBank.h>
+#include <gui/IconFont.h>
+#include <gui/component/render.h>
 #include <gui/utils.h>
+#include <gui/widgets/IconButton.h>
+#include <gui/widgets/Menu.h>
 #include <physics/PhysicCommand.h>
 #include <platform/AtomicFile.h>
 #include <renderer/gpu/RenderCommand.h>
@@ -165,19 +170,80 @@ void EditorLayer::handleContentBrowserDrop(const std::filesystem::path& iRelativ
 		OWL_CORE_WARN("Could not load {}: unsupported file type.", relString)
 		return;
 	}
-	if (kind == AssetKind::Prefab) {
-		for (const auto& [title, assetsPath]: app::Application::get().getAssetDirectories()) {
-			if (const auto full = assetsPath / iRelativePath; exists(full)) {
-				instantiatePrefab(full, relString);
-				break;
-			}
-		}
+	// The path is relative to the root the browser shows: another asset folder may hold a file of the same name.
+	std::filesystem::path full;
+	if (const auto inBrowsed = m_contentBrowser.getRootPath() / iRelativePath; exists(inBrowsed))
+		full = inBrowsed;
+	for (const auto& [title, assetsPath]: app::Application::get().getAssetDirectories()) {
+		if (!full.empty())
+			break;
+		if (const auto candidate = assetsPath / iRelativePath; exists(candidate))
+			full = candidate;
+	}
+	if (full.empty()) {
+		OWL_CORE_WARN("Could not resolve dropped file: {}.", relString)
 		return;
 	}
-	if (const auto full = renderer::Renderer::getTextureLibrary().find(relString); full.has_value())
-		openAssetFile(full.value());
-	else if (kind == AssetKind::Code)
-		OWL_CORE_WARN("Could not resolve dropped file: {}.", relString)
+	if (kind == AssetKind::Prefab)
+		instantiatePrefab(full, relString);
+	else
+		requestDeferredOpen(full);
+}
+
+void EditorLayer::registerTextScaleActions() {
+	constexpr int step = 10;
+	m_actionRegistry.registerAction(
+			"view.textLarger", "Text Size: Larger", {input::key::Equal, Modifiers::Ctrl},
+			[this]() -> void { m_settings.textScalePercent = std::min(150, m_settings.textScalePercent + step); });
+	m_actionRegistry.registerAction(
+			"view.textSmaller", "Text Size: Smaller", {input::key::Minus, Modifiers::Ctrl},
+			[this]() -> void { m_settings.textScalePercent = std::max(75, m_settings.textScalePercent - step); });
+	m_actionRegistry.registerAction("view.textReset", "Text Size: Reset", {input::key::D0, Modifiers::Ctrl},
+									[this]() -> void { m_settings.textScalePercent = 100; });
+}
+
+void EditorLayer::renderDocumentTabMenu(Document& ioDocument) {
+	if (!ImGui::BeginPopupContextItem("##tabMenu"))
+		return;
+	const auto path = ioDocument.filePath();
+	gui::widgets::menuHeader(ioDocument.title().c_str(), path.empty() ? "Unsaved" : nullptr);
+	const auto saveKey = getActionShortcut("scene.save");
+	if (gui::widgets::menuItem({.glyph = gui::icon::save, .label = "Save", .shortcut = saveKey.c_str()})) {
+		m_documents.setActive(&ioDocument);
+		saveActiveDocument();
+	}
+	ImGui::Separator();
+	const auto closeKey = getActionShortcut("doc.close");
+	if (gui::widgets::menuItem({.glyph = gui::icon::x, .label = "Close", .shortcut = closeKey.c_str()}))
+		requestCloseDocument(ioDocument.id());
+	if (gui::widgets::menuItem({.label = "Close Others", .enabled = m_documents.list().size() > 1})) {
+		for (const auto& doc: m_documents.list()) {
+			if (doc && doc.get() != &ioDocument)
+				requestCloseDocument(doc->id());
+		}
+	}
+	ImGui::Separator();
+	if (gui::widgets::menuItem(
+				{.glyph = gui::icon::folderSearch, .label = "Reveal in Content Browser", .enabled = !path.empty()})) {
+		m_contentBrowser.reveal(path);
+		ImGui::SetWindowFocus(panelWindow::contentBrowser);
+	}
+	if (gui::widgets::menuItem({.glyph = gui::icon::clipboardCopy, .label = "Copy Path", .enabled = !path.empty()}))
+		ImGui::SetClipboardText(path.string().c_str());
+	ImGui::EndPopup();
+}
+
+void EditorLayer::openAssetFromInspector(const std::filesystem::path& iPath) {
+	for (const auto& [title, assetsPath]: app::Application::get().getAssetDirectories()) {
+		if (const auto candidate = assetsPath / iPath; exists(candidate)) {
+			requestDeferredOpen(candidate);
+			return;
+		}
+	}
+	if (exists(iPath))
+		requestDeferredOpen(iPath);
+	else
+		OWL_WARN("EditorLayer: Cannot open {}, it is in no asset folder.", iPath.string())
 }
 
 void EditorLayer::closeDocument(const core::UUID iId) {
@@ -205,28 +271,6 @@ void EditorLayer::requestCloseDocument(const core::UUID iId) {
 void EditorLayer::requestCloseActiveDocument() {
 	if (const auto* doc = m_documents.getActive(); doc != nullptr)
 		requestCloseDocument(doc->id());
-}
-
-void EditorLayer::renderRecentProjectsPopup() {
-	if (m_openRecentProjectsPopup) {
-		ImGui::OpenPopup("##RecentProjectsPopup");
-		m_openRecentProjectsPopup = false;
-	}
-	if (ImGui::BeginPopup("##RecentProjectsPopup")) {
-		if (m_settings.recentProjects.empty()) {
-			ImGui::TextDisabled("No recent projects");
-		} else {
-			for (const auto& recent: m_settings.recentProjects) {
-				const auto label = std::filesystem::path(recent).filename().string();
-				const auto display = label.empty() ? recent : label;
-				if (ImGui::MenuItem(display.c_str(), recent.c_str())) {
-					ImGui::CloseCurrentPopup();
-					openProject(std::filesystem::path{recent});
-				}
-			}
-		}
-		ImGui::EndPopup();
-	}
 }
 
 void EditorLayer::renderSnapStepPopup() {
@@ -279,15 +323,17 @@ void EditorLayer::renderCloseDocumentModal() {
 		if (const auto* doc = m_documents.find(m_pendingCloseDocId); doc != nullptr) {
 			ImGui::Text("'%s' has unsaved changes.", doc->title().c_str());
 			ImGui::Spacing();
-			const auto& iconBank = gui::IconBank::instance();
-			if (iconBank.iconButton("delete", "Discard changes", {ImGui::GetFontSize() * 9.f, 0})) {
+			if (gui::widgets::button("Discard changes", {.glyph = gui::icon::trash2,
+														 .label = "Discard changes",
+														 .width = ImGui::GetFontSize() * 9.f})) {
 				const auto id = m_pendingCloseDocId;
 				m_pendingCloseDocId = core::UUID{0};
 				ImGui::CloseCurrentPopup();
 				m_deferredCloseIds.push_back(id);
 			}
 			ImGui::SameLine();
-			if (iconBank.iconButton("close", "Cancel", {ImGui::GetFontSize() * 7.f, 0})) {
+			if (gui::widgets::button("Cancel",
+									 {.glyph = gui::icon::x, .label = "Cancel", .width = ImGui::GetFontSize() * 7.f})) {
 				m_pendingCloseDocId = core::UUID{0};
 				ImGui::CloseCurrentPopup();
 			}
@@ -308,15 +354,9 @@ void EditorLayer::onAttach() {
 
 	if (const auto f = app::Application::get().getWorkingDirectory() / "OwlNest_settings.yml"; exists(f))
 		m_settings.loadFromFile(f);
-	// Apply theme from saved settings
-	if (m_settings.themePreset != "Custom") {
-		for (const auto& [preset, name]: gui::Theme::getPresetNames()) {
-			if (name == m_settings.themePreset) {
-				gui::UiLayer::setTheme(gui::Theme::fromPreset(preset));
-				break;
-			}
-		}
-	}
+	utils::applyTheme(gui::Theme::fromPreset(gui::Theme::presetFromName(m_settings.themePreset)));
+
+	m_dockLayout.setPreset(DockLayout::presetFromName(m_settings.layoutPreset));
 
 	// Create the initial scene document. Its onAttach() initialises its own Viewport.
 	auto& initialDoc = ensureActiveSceneDocument();
@@ -350,33 +390,47 @@ void EditorLayer::onAttach() {
 										if (getState() == State::Edit)
 											onDuplicateEntity();
 									});
-	m_actionRegistry.registerAction("guizmo.none", "Guizmo: None", {input::key::Q, Modifiers::None}, [this]() -> void {
+	m_actionRegistry.registerAction("guizmo.none", "Gizmo: None", {input::key::Q, Modifiers::None}, [this]() -> void {
 		if (auto* vp = activeViewport(); vp != nullptr && getState() == State::Edit &&
 										 (vp->isFocused() || vp->isHovered()) && !gui::Guizmo::isUsing())
 			vp->setGuizmoType(gui::Guizmo::Type::None);
 	});
 	m_actionRegistry.registerAction(
-			"guizmo.translate", "Guizmo: Translate", {input::key::W, Modifiers::None}, [this]() -> void {
+			"guizmo.translate", "Gizmo: Translate", {input::key::W, Modifiers::None}, [this]() -> void {
 				if (auto* vp = activeViewport(); vp != nullptr && getState() == State::Edit &&
 												 (vp->isFocused() || vp->isHovered()) && !gui::Guizmo::isUsing())
 					vp->setGuizmoType(gui::Guizmo::Type::Translation);
 			});
 	m_actionRegistry.registerAction(
-			"guizmo.rotate", "Guizmo: Rotate", {input::key::E, Modifiers::None}, [this]() -> void {
+			"guizmo.rotate", "Gizmo: Rotate", {input::key::E, Modifiers::None}, [this]() -> void {
 				if (auto* vp = activeViewport(); vp != nullptr && getState() == State::Edit &&
 												 (vp->isFocused() || vp->isHovered()) && !gui::Guizmo::isUsing())
 					vp->setGuizmoType(gui::Guizmo::Type::Rotation);
 			});
 	m_actionRegistry.registerAction(
-			"guizmo.scale", "Guizmo: Scale", {input::key::R, Modifiers::None}, [this]() -> void {
+			"guizmo.scale", "Gizmo: Scale", {input::key::R, Modifiers::None}, [this]() -> void {
 				if (auto* vp = activeViewport(); vp != nullptr && getState() == State::Edit &&
 												 (vp->isFocused() || vp->isHovered()) && !gui::Guizmo::isUsing())
 					vp->setGuizmoType(gui::Guizmo::Type::Scale);
 			});
-	m_actionRegistry.registerAction("guizmo.all", "Guizmo: All", {input::key::T, Modifiers::None}, [this]() -> void {
+	m_actionRegistry.registerAction("guizmo.all", "Gizmo: All", {input::key::T, Modifiers::None}, [this]() -> void {
 		if (auto* vp = activeViewport(); vp != nullptr && getState() == State::Edit &&
 										 (vp->isFocused() || vp->isHovered()) && !gui::Guizmo::isUsing())
 			vp->setGuizmoType(gui::Guizmo::Type::All);
+	});
+	registerTextScaleActions();
+	m_actionRegistry.registerAction(
+			"view.frameSelection", "Frame Selection", {input::key::F, Modifiers::None}, [this]() -> void {
+				if (auto* vp = activeViewport(); vp != nullptr && getState() == State::Edit &&
+												 (vp->isFocused() || vp->isHovered()))
+					vp->frameSelection();
+			});
+	m_actionRegistry.registerAction("view.toggleProjection", "Toggle 2D / 3D View", {}, [this]() -> void {
+		if (auto* vp = activeViewport(); vp != nullptr) {
+			using Projection = renderer::CameraEditor::Projection;
+			vp->setViewProjection(vp->getViewProjection() == Projection::Orthographic ? Projection::Perspective
+																					  : Projection::Orthographic);
+		}
 	});
 	// Playback actions
 	m_actionRegistry.registerAction("scene.play", "Play/Resume", {input::key::F5, Modifiers::None}, [this]() -> void {
@@ -454,20 +508,33 @@ void EditorLayer::onAttach() {
 									});
 	m_actionRegistry.registerAction("help.context", "Help", {input::key::F1, Modifiers::None},
 									[this]() -> void { onContextualHelp(); });
+	m_actionRegistry.registerAction("view.layoutDefault", "Layout: Default", {input::key::D1, Modifiers::Alt},
+									[this]() -> void { applyLayoutPreset(LayoutPreset::Default); });
+	m_actionRegistry.registerAction("view.layoutHierarchyLeft", "Layout: Hierarchy Left", {input::key::D2, Modifiers::Alt},
+									[this]() -> void { applyLayoutPreset(LayoutPreset::HierarchyLeft); });
+	m_actionRegistry.registerAction("view.toggleRibbon", "Collapse / Expand the Ribbon", {input::key::F1, Modifiers::Ctrl},
+									[this]() -> void { m_ribbonBuilder.toggleCollapsed(); });
+	m_actionRegistry.registerAction("view.resetLayout", "Reset Layout", {},
+									[this]() -> void { applyLayoutPreset(m_dockLayout.getPreset()); });
+	m_actionRegistry.registerAction("view.commandPalette", "Command Palette", {},
+									[this]() -> void { m_commandPalette.open(); });
 	// clang-format on
 
 	// Apply saved keybinding overrides
 	m_actionRegistry.loadOverrides(m_settings.keybindingOverrides);
 
 	m_ribbonBuilder.build();
-	if (auto ui = app::Application::get().getImGuiLayer(); ui != nullptr)
-		ui->setTopBarCallback([this]() -> void {
-			m_ribbonBuilder.onRender();
-
-			renderRecentProjectsPopup();
+	if (auto ui = app::Application::get().getImGuiLayer(); ui != nullptr) {
+		ui->setTopBarCallback([this]() -> void { m_ribbonBuilder.onRender(); });
+		ui->setBottomBarCallback([this]() -> void { renderStatusBar(); });
+		ui->setDockLayoutCallback([this](const uint32_t iDockSpaceId) -> void {
+			std::ignore = m_dockLayout.onDockSpace(iDockSpaceId, m_settings.layoutVersion);
 		});
+	}
 
 	m_contentBrowser.attach();
+	gui::component::setOpenAssetHandler(
+			[this](const std::filesystem::path& iPath) -> void { openAssetFromInspector(iPath); });
 	m_contentBrowser.setSceneOpenCallback([this](const std::filesystem::path& iPath) -> void { openScene(iPath); });
 	m_contentBrowser.setCodeOpenCallback([this](const std::filesystem::path& iPath) -> void { openCodeFile(iPath); });
 	m_contentBrowser.setNodeGraphOpenCallback(
@@ -480,6 +547,10 @@ void EditorLayer::onAttach() {
 			[this](const std::filesystem::path& iPath) -> void { openTilesetFile(iPath); });
 
 	newScene();
+	if (!m_startupProject.empty())
+		openProject(m_startupProject);
+	if (!m_project.isLoaded())
+		m_backstage.open();
 }
 
 void EditorLayer::onDetach() {
@@ -494,8 +565,11 @@ void EditorLayer::onDetach() {
 
 	m_contentBrowser.detach();
 	OWL_TRACE("EditorLayer: deleted editor FrameBuffer.")
-	if (auto ui = app::Application::get().getImGuiLayer(); ui != nullptr)
+	if (auto ui = app::Application::get().getImGuiLayer(); ui != nullptr) {
 		ui->setTopBarCallback({});
+		ui->setBottomBarCallback({});
+		ui->setDockLayoutCallback({});
+	}
 	m_ribbonBuilder.clear();
 
 	// Unsaved changes survive a quit too: Nest asks nothing on exit.
@@ -505,6 +579,7 @@ void EditorLayer::onDetach() {
 
 	// Free the static IconBank's atlas while the device is still valid, else it outlives vkDestroyDevice and leaks.
 	gui::IconBank::instance().clear();
+	gui::component::setOpenAssetHandler({});
 }
 
 void EditorLayer::onUpdate(const core::Timestep& iTimeStep) {
@@ -513,8 +588,13 @@ void EditorLayer::onUpdate(const core::Timestep& iTimeStep) {
 	gui::FontPreviewCache::get().pumpPending();
 
 	m_recovery.setInterval(static_cast<float>(m_settings.autosaveIntervalSeconds));
-	if (m_recovery.onUpdate(iTimeStep.getSeconds()))
-		m_recovery.autosave(m_documents);
+	m_toasts.update(iTimeStep.getSeconds());
+	gui::UiLayer::setTextScale(static_cast<float>(m_settings.textScalePercent) / 100.f);
+	// Before the viewports: a preview render resets the 2D stats they show.
+	if (getState() == State::Edit)
+		m_contentBrowser.onUpdate();
+	if (m_recovery.onUpdate(iTimeStep.getSeconds()) && m_recovery.autosave(m_documents) > 0)
+		m_lastAutosave = std::chrono::steady_clock::now();
 
 	auto* activeDoc = activeSceneDocument();
 	for (const auto& docPtr: m_documents.list()) {
@@ -588,6 +668,8 @@ void EditorLayer::onEvent(event::Event& ioEvent) {
 void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 	OWL_PROFILE_FUNCTION()
 
+	std::ignore = m_actionRegistry.dispatchImGuiChords();
+
 	if (!m_deferredCloseIds.empty()) {
 		auto ids = std::move(m_deferredCloseIds);
 		m_deferredCloseIds.clear();
@@ -604,7 +686,6 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 		}
 	}
 
-	renderStats(iTimeStep);
 	const auto* activeBefore = m_documents.getActive();
 	std::vector<Document*> renderList;
 	renderList.reserve(m_documents.list().size());
@@ -665,6 +746,9 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 		createProject(*request);
 	//=============================================================
 	m_sceneHierarchy.onImGuiRender();
+	// The last window to appear takes the focus, which picks the tab shown in its group.
+	m_logPanel.onImGuiRender();
+	renderStats(iTimeStep);
 	m_contentBrowser.onImGuiRender();
 	m_parameters.onImGuiRender();
 	m_projectSettings.onImGuiRender();
@@ -679,80 +763,125 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 	if (m_sceneSettings.consumeDirtyFlag()) {
 		syncActiveDocumentPanels();
 	}
-	m_logPanel.onImGuiRender();
 	m_settingsPanel.onImGuiRender(m_settings, m_actionRegistry);
 	m_helpPanel.onImGuiRender(iTimeStep);
-	m_voxelPalette.onImGuiRender(m_voxelBrush);
+	{
+		// The palette paints the edited scene only: not while it plays, nor behind another document.
+		const auto* sceneDoc = activeSceneDocument();
+		m_voxelPalette.onImGuiRender(m_voxelBrush, sceneDoc != nullptr && sceneDoc == m_documents.getActive() &&
+														   sceneDoc->state() == SceneDocument::State::Edit);
+	}
 	m_asyncProgress.onImGuiRender();
 
-	renderWelcomeScreen();
+	renderBackstage();
 
 	m_packager.onRender();
+	renderCommandPalette();
+	m_toasts.onImGuiRender();
 }
 
-void EditorLayer::renderWelcomeScreen() {
-	if (m_project.isLoaded() || !m_showWelcomeScreen)
+void EditorLayer::renderCommandPalette() {
+	m_commandPalette.pollDoubleShift();
+	if (!m_commandPalette.isOpen())
 		return;
-
-	const auto* viewport = ImGui::GetMainViewport();
-	ImGui::SetNextWindowPos(viewport->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-	ImGui::SetNextWindowSize(ImVec2(520, 400), ImGuiCond_Appearing);
-
-	constexpr ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoDocking;
-	bool open = true;
-	if (ImGui::Begin("Welcome to Owl Nest", &open, flags)) {
-		ImGui::TextColored(ImVec4(1.0f, 0.85f, 0.2f, 1.0f), "Welcome to Owl Nest");
-		ImGui::TextWrapped("Get started by creating a new project or opening an existing one.");
-		ImGui::Spacing();
-		ImGui::Separator();
-		ImGui::Spacing();
-
-		const auto& iconBank = gui::IconBank::instance();
-		if (iconBank.iconButton("project", "New Project...", {ImGui::GetFontSize() * 8.f, 0}))
-			newProject();
-		ImGui::SameLine();
-		if (iconBank.iconButton("open", "Open Project...", {ImGui::GetFontSize() * 8.f, 0}))
-			openProject();
-		ImGui::SameLine();
-		if (iconBank.iconButton("info", "Getting Started", {ImGui::GetFontSize() * 8.f, 0}))
-			m_helpPanel.open("getting_started");
-
-		ImGui::Spacing();
-		ImGui::Separator();
-		ImGui::Text("Recent Projects");
-		ImGui::Spacing();
-
-		if (m_settings.recentProjects.empty()) {
-			ImGui::TextDisabled("No recent projects.");
-		} else {
-			std::filesystem::path toOpen;
-			std::filesystem::path toRemove;
-			ImGui::BeginChild("##recents", ImVec2(0, 200), ImGuiChildFlags_Borders);
-			for (const auto& recent: m_settings.recentProjects) {
-				const std::filesystem::path path(recent);
-				const auto name = path.filename().string();
-				ImGui::PushID(recent.c_str());
-				if (ImGui::Selectable(name.c_str(), false, ImGuiSelectableFlags_AllowDoubleClick)) {
-					if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
-						toOpen = path;
-				}
-				if (ImGui::IsItemHovered())
-					ImGui::SetTooltip("%s", recent.c_str());
-				ImGui::SameLine(ImGui::GetContentRegionAvail().x - 20);
-				if (ImGui::SmallButton("x"))
-					toRemove = path;
-				ImGui::PopID();
-			}
-			ImGui::EndChild();
-			if (!toOpen.empty())
-				openProject(toOpen);
-			if (!toRemove.empty())
-				m_settings.removeRecentProject(toRemove);
+	if (m_commandPalette.consumeOpened()) {
+		m_paletteAssets.clear();
+		for (const auto& [title, path]: app::Application::get().getAssetDirectories()) {
+			for (const auto& file: panel::CommandPalette::collectAssets(path))
+				m_paletteAssets.emplace_back(file, std::filesystem::relative(file, path).generic_string());
 		}
 	}
-	ImGui::End();
-	if (!open)
-		m_showWelcomeScreen = false;
+	std::vector<panel::PaletteItem> items;
+	for (const auto& action: m_actionRegistry.getActions()) {
+		if (action.id == "view.commandPalette")
+			continue;
+		items.push_back({.category = panel::CommandPalette::categoryOf(action.id),
+						 .label = action.displayName,
+						 .shortcut = m_actionRegistry.getShortcutString(action.id),
+						 .run = [this, id = action.id]() -> void { std::ignore = m_actionRegistry.run(id); }});
+	}
+	if (const auto& scene = getActiveScene(); scene != nullptr) {
+		for (const auto& entity: scene->getAllEntities()) {
+			if (!entity.hasComponent<scene::component::Tag>())
+				continue;
+			items.push_back({.category = "Select",
+							 .label = entity.getComponent<scene::component::Tag>().tag,
+							 .shortcut = {},
+							 .run = [this, entity]() -> void { setSelectedEntity(entity); }});
+		}
+	}
+	for (const auto& [path, name]: m_paletteAssets)
+		items.push_back({.category = "Asset", .label = name, .shortcut = {}, .run = [this, path]() -> void {
+							 openAssetFile(path);
+						 }});
+	m_commandPalette.onImGuiRender(items);
+}
+
+void EditorLayer::renderBackstage() {
+	if (!m_backstage.isOpen())
+		return;
+	const panel::BackstageContext context{
+			.projectName = m_project.isLoaded() ? m_project.name : std::string{},
+			.projectDirectory = m_project.projectDirectory,
+			.recentProjects = m_settings.recentProjects,
+			.newProject = [this]() -> void { newProject(); },
+			.openProject = [this]() -> void { openProject(); },
+			.openRecent = [this](const std::filesystem::path& iPath) -> void { openProject(iPath); },
+			.forgetRecent = [this](const std::filesystem::path& iPath) -> void {
+				m_settings.removeRecentProject(iPath);
+			},
+			.saveProject = [this]() -> void { saveProject(); },
+			.saveProjectAs = [this]() -> void { saveProjectAs(); },
+			.packGame = [this]() -> void { packGame(); },
+			.editorSettings = [this]() -> void { m_settingsPanel.open(); },
+			.projectSettings = [this]() -> void { m_projectSettings.open(m_project); },
+			.engineSettings = [this]() -> void { m_parameters.open(); },
+			.help = [this](const std::string& iPage) -> void {
+				if (iPage.empty())
+					m_helpPanel.open();
+				else
+					m_helpPanel.open(iPage);
+			},
+			.closeProject = [this]() -> void { closeProject(); },
+			.exit = []() -> void { app::Application::get().close(); }};
+	m_backstage.onImGuiRender(context);
+}
+
+void EditorLayer::applyLayoutPreset(const LayoutPreset iPreset) {
+	m_dockLayout.request(iPreset);
+	m_settings.layoutPreset = DockLayout::getPresetName(iPreset);
+}
+
+auto EditorLayer::buildStatusInfo() const -> panel::StatusInfo {
+	panel::StatusInfo info;
+	if (const auto* doc = m_documents.getActive(); doc != nullptr)
+		info.document = doc->title();
+	if (const auto* playing = findPlayingSceneDocument(); playing != nullptr)
+		info.mode = playing->state() == SceneDocument::State::Pause ? panel::StatusInfo::Mode::Pause
+																	: panel::StatusInfo::Mode::Play;
+	if (const auto* scene = activeSceneDocument(); scene != nullptr && scene == m_documents.getActive()) {
+		if (const auto& active = scene->getActiveScene(); active)
+			info.entityCount = active->getEntityCount();
+	}
+	if (m_lastAutosave.has_value())
+		info.secondsSinceAutosave =
+				std::chrono::duration<float>(std::chrono::steady_clock::now() - *m_lastAutosave).count();
+	info.backend = std::string{magic_enum::enum_name(renderer::gpu::RenderCommand::getApi())};
+	if (auto device = renderer::gpu::RenderCommand::getDeviceName(); device != "none")
+		info.device = std::move(device);
+	if (const auto [ready, total] = m_contentBrowser.getPreviewProgress(); ready < total)
+		info.previews = std::pair{ready, total};
+	info.warningCount = core::Log::getLogBuffer().getWarningCount();
+	info.errorCount = core::Log::getLogBuffer().getErrorCount();
+	return info;
+}
+
+void EditorLayer::renderStatusBar() {
+	auto info = buildStatusInfo();
+	info.notifications = &m_toasts;
+	m_statusBar.onImGuiRender(info);
+	if (m_statusBar.consumeOpenLogRequest())
+		ImGui::SetWindowFocus(panelWindow::log);
 }
 
 void EditorLayer::renderStats(const core::Timestep& iTimeStep) {
@@ -760,7 +889,7 @@ void EditorLayer::renderStats(const core::Timestep& iTimeStep) {
 		m_gpuCounters.reset();
 		return;
 	}
-	ImGui::Begin("Stats");
+	ImGui::Begin(panelWindow::title(gui::icon::gauge, "Stats", panelWindow::stats).c_str());
 	ImGui::Text("%s", std::format("FPS: {:.2f}", iTimeStep.getFps()).c_str());
 	ImGui::Separator();
 	ImGui::Text("%s", std::format("Profiler: {}{}", magic_enum::enum_name(debug::getProfilerBackend()),

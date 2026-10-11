@@ -9,6 +9,7 @@
 #include "RibbonBuilder.h"
 
 #include "EditorLayer.h"
+#include "EditorResources.h"
 #include "document/AnimationDocument.h"
 #include "document/CodeEditorDocument.h"
 #include "document/NodeGraphDocument.h"
@@ -16,6 +17,7 @@
 #include "document/TilesetDocument.h"
 
 #include <gui/IconBank.h>
+#include <gui/IconFont.h>
 
 #include <format>
 #include <string>
@@ -34,191 +36,198 @@ void RibbonBuilder::build() {
 	const auto shortcut = [this](const char* iActionId) -> std::string {
 		return mp_editor->m_actionRegistry.getShortcutString(iActionId);
 	};
-	const auto tipWithShortcut = [&](std::string_view iBase, const char* iActionId) -> std::string {
-		const auto sc = shortcut(iActionId);
-		return sc.empty() ? std::string{iBase} : std::format("{} ({})", iBase, sc);
+	const auto hasActive = [this]() -> bool { return mp_editor->m_documents.getActive() != nullptr; };
+	const auto canUndo = [this]() -> bool {
+		const auto* doc = mp_editor->m_documents.getActive();
+		return doc != nullptr && doc->canUndo();
 	};
+	const auto canRedo = [this]() -> bool {
+		const auto* doc = mp_editor->m_documents.getActive();
+		return doc != nullptr && doc->canRedo();
+	};
+	const auto projectLoaded = [this]() -> bool { return mp_editor->m_project.isLoaded(); };
 	m_ribbon.clear();
-	// =============================== File tab ===============================
-	const auto fileTab = m_ribbon.addTab("File");
-	m_ribbon.setTabHighlighted(fileTab, true);
-	const auto gProject = m_ribbon.addGroup(fileTab, "Project");
-	m_ribbon.addButton(fileTab, gProject,
-					   Button{.iconName = "new_folder",
+	m_ribbon.setBackstage("File", [this]() -> void { mp_editor->m_backstage.open(); });
+
+	// ============================ Quick access =============================
+	m_ribbon.setSearchBox("Search commands, assets, entities", "Shift Shift",
+						  [this]() -> void { mp_editor->m_commandPalette.open(); });
+	m_ribbon.addQuickAccess(Button{.iconName = gui::icon::save,
+								   .label = "Save",
+								   .tooltip = "Save the active document.",
+								   .shortcut = shortcut("scene.save"),
+								   .isEnabled = hasActive,
+								   .onClick = [this]() -> void { mp_editor->saveActiveDocument(); }});
+	m_ribbon.addQuickAccess(Button{.iconName = gui::icon::undo2,
+								   .label = "Undo",
+								   .tooltip = "Undo the last change of the active document.",
+								   .shortcut = shortcut("edit.undo"),
+								   .isEnabled = canUndo,
+								   .onClick = [this]() -> void { mp_editor->performUndo(); }});
+	m_ribbon.addQuickAccess(Button{.iconName = gui::icon::redo2,
+								   .label = "Redo",
+								   .tooltip = "Redo the change undone last.",
+								   .shortcut = shortcut("edit.redo"),
+								   .isEnabled = canRedo,
+								   .onClick = [this]() -> void { mp_editor->performRedo(); }});
+
+	// =============================== Home ==================================
+	const auto home = m_ribbon.addTab("Home");
+	const auto gEdit = m_ribbon.addGroup(home, "Edit");
+	m_ribbon.addButton(home, gEdit,
+					   Button{.iconName = "ribbon_undo",
+							  .label = "Undo",
+							  .tooltip = "Undo the last change of the active document.",
+							  .shortcut = shortcut("edit.undo"),
+							  .isEnabled = canUndo,
+							  .onClick = [this]() -> void { mp_editor->performUndo(); }});
+	m_ribbon.addButton(home, gEdit,
+					   Button{.iconName = "ribbon_redo",
+							  .label = "Redo",
+							  .tooltip = "Redo the change undone last.",
+							  .shortcut = shortcut("edit.redo"),
+							  .isEnabled = canRedo,
+							  .onClick = [this]() -> void { mp_editor->performRedo(); }});
+	m_ribbon.addButton(home, gEdit,
+					   Button{.iconName = "ribbon_copy",
+							  .label = "Duplicate",
+							  .tooltip = "Duplicate the selected entity.",
+							  .shortcut = shortcut("entity.duplicate"),
+							  .isEnabled = [this]() -> bool {
+								  return mp_editor->activeSceneDocument() != nullptr &&
+										 mp_editor->getState() == State::Edit;
+							  },
+							  .onClick = [this]() -> void { mp_editor->onDuplicateEntity(); }});
+	const auto gCreate = m_ribbon.addGroup(home, "Create");
+	m_ribbon.addButton(home, gCreate,
+					   Button{.iconName = "ribbon_new",
 							  .label = "New",
-							  .tooltip = "Create a new project",
-							  .onClick = [this]() -> void { mp_editor->newProject(); },
-							  .size = Size::Large});
-	m_ribbon.addButton(fileTab, gProject,
-					   Button{.iconName = "open",
-							  .label = "Open",
-							  .tooltip = "Open an existing project",
-							  .onClick = [this]() -> void { mp_editor->openProject(); },
-							  .size = Size::Large});
-	m_ribbon.addButton(fileTab, gProject,
-					   Button{.iconName = "save",
-							  .label = "Save",
-							  .tooltip = "Save the current project",
-							  .isEnabled = [this]() -> bool { return mp_editor->m_project.isLoaded(); },
-							  .onClick = [this]() -> void { mp_editor->saveProject(); },
-							  .size = Size::Small});
-	m_ribbon.addButton(fileTab, gProject,
-					   Button{.iconName = "save",
-							  .label = "Save As",
-							  .tooltip = "Duplicate the current project to a new folder",
-							  .isEnabled = [this]() -> bool { return mp_editor->m_project.isLoaded(); },
-							  .onClick = [this]() -> void { mp_editor->saveProjectAs(); },
-							  .size = Size::Small});
-	m_ribbon.addButton(fileTab, gProject,
-					   Button{.iconName = "close",
-							  .label = "Close",
-							  .tooltip = "Close the current project",
-							  .isEnabled = [this]() -> bool { return mp_editor->m_project.isLoaded(); },
-							  .onClick = [this]() -> void { mp_editor->closeProject(); },
-							  .size = Size::Small});
-	const auto gObject = m_ribbon.addGroup(fileTab, "Object");
-	m_ribbon.addButton(fileTab, gObject,
-					   Button{.iconName = "add_entity",
-							  .label = "New",
-							  .tooltip = "Create a new untitled document — pick the kind in the popup.",
-							  .isEnabled = [this]() -> bool { return mp_editor->m_project.isLoaded(); },
+							  .tooltip = "Create an untitled document: scene, animation, tilemap or tileset.",
+							  .isEnabled = projectLoaded,
 							  .size = Size::Large,
 							  .popupContents = [this]() -> void {
-								  if (gui::IconBank::instance().menuItem("comp_canvas", "New Scene"))
+								  if (gui::IconBank::instance().menuItem("owl_icon", "Scene"))
 									  mp_editor->newScene();
-								  if (gui::IconBank::instance().menuItem("comp_animated_sprite", "New Animation"))
+								  if (gui::IconBank::instance().menuItem("owlanim_icon", "Animation"))
 									  mp_editor->newAnimationClip();
-								  if (gui::IconBank::instance().menuItem("owltilemap_icon", "New Tilemap"))
+								  if (gui::IconBank::instance().menuItem("owltilemap_icon", "Tilemap"))
 									  mp_editor->newTilemapAsset();
-								  if (gui::IconBank::instance().menuItem("owltileset_icon", "New Tileset"))
+								  if (gui::IconBank::instance().menuItem("owltileset_icon", "Tileset"))
 									  mp_editor->newTilesetAsset();
 							  }});
-	const auto gRecent = m_ribbon.addGroup(fileTab, "Recent");
-	m_ribbon.addButton(fileTab, gRecent,
-					   Button{.iconName = "open",
-							  .label = "Recent",
-							  .tooltip = "Open a recently-used project",
-							  .isEnabled = [this]() -> bool { return !mp_editor->m_settings.recentProjects.empty(); },
-							  .onClick = [this]() -> void { mp_editor->m_openRecentProjectsPopup = true; },
-							  .size = Size::Large});
-	const auto gPack = m_ribbon.addGroup(fileTab, "Package");
-	m_ribbon.addButton(fileTab, gPack,
-					   Button{.iconName = "pack",
-							  .label = "Pack Game",
-							  .tooltip = "Package the current project as a standalone game",
-							  .isEnabled = [this]() -> bool { return mp_editor->m_project.isLoaded(); },
-							  .onClick = [this]() -> void { mp_editor->packGame(); },
-							  .size = Size::Large});
-	const auto gViews = m_ribbon.addGroup(fileTab, "Views");
-	m_ribbon.addButton(fileTab, gViews,
-					   Button{.iconName = "open",
+	const auto gProject = m_ribbon.addGroup(home, "Project");
+	m_ribbon.addButton(home, gProject,
+					   Button{.iconName = "ribbon_flow",
 							  .label = "Scene Flow",
-							  .tooltip = "Show the project scenes as a graph (teleport links)",
-							  .isEnabled = [this]() -> bool { return mp_editor->m_project.isLoaded(); },
+							  .tooltip = "Show the scenes of the project as a graph of their teleport links.",
+							  .isEnabled = projectLoaded,
 							  .onClick = [this]() -> void { mp_editor->openSceneFlowView(); },
 							  .size = Size::Large});
-	const auto gAssets = m_ribbon.addGroup(fileTab, "Assets");
-	m_ribbon.addButton(fileTab, gAssets,
-					   Button{.iconName = "new_scene",
-							  .label = "New Animation",
-							  .tooltip = "Create a new spritesheet animation clip (.owlanim)",
-							  .onClick = [this]() -> void { mp_editor->newAnimationClip(); },
-							  .size = Size::Small});
-	m_ribbon.addButton(fileTab, gAssets,
-					   Button{.iconName = "new_scene",
-							  .label = "New Tilemap",
-							  .tooltip = "Create a new tilemap level asset (.owltilemap)",
-							  .onClick = [this]() -> void { mp_editor->newTilemapAsset(); },
-							  .size = Size::Small});
-	m_ribbon.addButton(fileTab, gAssets,
-					   Button{.iconName = "new_scene",
-							  .label = "New Tileset",
-							  .tooltip = "Create a new tileset atlas asset (.owltileset)",
-							  .onClick = [this]() -> void { mp_editor->newTilesetAsset(); },
-							  .size = Size::Small});
-	const auto gHelp = m_ribbon.addGroup(fileTab, "Help");
-	m_ribbon.addButton(fileTab, gHelp,
-					   Button{.iconName = "info",
+	m_ribbon.addButton(
+			home, gProject,
+			Button{.iconName = "ribbon_settings",
+				   .label = "Settings",
+				   .tooltip = "Name, window, asset folders and renderer stack of the project.",
+				   .isEnabled = projectLoaded,
+				   .onClick = [this]() -> void { mp_editor->m_projectSettings.open(mp_editor->m_project); }});
+	m_ribbon.addButton(home, gProject,
+					   Button{.iconName = "ribbon_pack",
+							  .label = "Pack Game",
+							  .tooltip = "Package the project as a standalone game.",
+							  .isEnabled = projectLoaded,
+							  .onClick = [this]() -> void { mp_editor->packGame(); }});
+
+	// =============================== View ==================================
+	const auto view = m_ribbon.addTab("View");
+	const auto gLayout = m_ribbon.addGroup(view, "Layout");
+	m_ribbon.addButton(view, gLayout,
+					   Button{.iconName = "ribbon_panels",
+							  .label = "Hierarchy Left",
+							  .tooltip = "Move the Hierarchy to its own column left of the documents.",
+							  .shortcut = shortcut("view.layoutHierarchyLeft"),
+							  .isChecked = [this]() -> bool {
+								  return mp_editor->m_dockLayout.getPreset() == LayoutPreset::HierarchyLeft;
+							  },
+							  .onClick = [this]() -> void {
+								  mp_editor->applyLayoutPreset(mp_editor->m_dockLayout.getPreset() ==
+																			   LayoutPreset::HierarchyLeft
+																	   ? LayoutPreset::Default
+																	   : LayoutPreset::HierarchyLeft);
+							  }});
+	m_ribbon.addButton(
+			view, gLayout,
+			Button{.iconName = "ribbon_layout",
+				   .label = "Reset Layout",
+				   .tooltip = "Put every panel back in its default place.",
+				   .onClick = [this]() -> void { mp_editor->applyLayoutPreset(mp_editor->m_dockLayout.getPreset()); }});
+	const auto gPanels = m_ribbon.addGroup(view, "Panels");
+	m_ribbon.addButton(view, gPanels,
+					   Button{.iconName = "ribbon_stats",
+							  .label = "Frame Stats",
+							  .tooltip = "Show the frame time and renderer counters.",
+							  .isChecked = [this]() -> bool { return mp_editor->m_settings.showStats; },
+							  .onClick = [this]() -> void {
+								  mp_editor->m_settings.showStats = !mp_editor->m_settings.showStats;
+							  }});
+	m_ribbon.addButton(view, gPanels,
+					   Button{.iconName = "ribbon_help",
 							  .label = "Help",
-							  .tooltip = tipWithShortcut("Open the editor help", "help.context"),
-							  .onClick = [this]() -> void { mp_editor->m_helpPanel.open(); },
-							  .size = Size::Large});
-	const auto gExit = m_ribbon.addGroup(fileTab, "Session");
-	m_ribbon.addButton(fileTab, gExit,
-					   Button{.iconName = "exit",
-							  .label = "Exit",
-							  .tooltip = "Quit Owl Nest",
-							  .onClick = []() -> void { app::Application::get().close(); },
-							  .size = Size::Large});
-	// =============================== Edit tab ===============================
-	const auto editTab = m_ribbon.addTab("Edit");
-	const auto gHistory = m_ribbon.addGroup(editTab, "History");
-	m_ribbon.addButton(editTab, gHistory,
-					   Button{.iconName = "undo",
-							  .label = "Undo",
-							  .tooltip = tipWithShortcut("Undo", "edit.undo"),
-							  .isEnabled = [this]() -> bool {
-								  const auto* d = mp_editor->m_documents.getActive();
-								  return d != nullptr && d->canUndo();
-							  },
-							  .onClick = [this]() -> void { mp_editor->performUndo(); },
-							  .size = Size::Large});
-	m_ribbon.addButton(editTab, gHistory,
-					   Button{.iconName = "redo",
-							  .label = "Redo",
-							  .tooltip = tipWithShortcut("Redo", "edit.redo"),
-							  .isEnabled = [this]() -> bool {
-								  const auto* d = mp_editor->m_documents.getActive();
-								  return d != nullptr && d->canRedo();
-							  },
-							  .onClick = [this]() -> void { mp_editor->performRedo(); },
-							  .size = Size::Large});
-	const auto gSettings = m_ribbon.addGroup(editTab, "Settings");
-	m_ribbon.addButton(editTab, gSettings,
-					   Button{.iconName = "settings",
-							  .label = "Engine",
-							  .tooltip = "Open engine settings",
-							  .onClick = [this]() -> void { mp_editor->m_parameters.open(); },
-							  .size = Size::Small});
-	m_ribbon.addButton(editTab, gSettings,
-					   Button{.iconName = "settings",
-							  .label = "Editor",
-							  .tooltip = "Open editor settings",
-							  .onClick = [this]() -> void { mp_editor->m_settingsPanel.open(); },
-							  .size = Size::Small});
-	m_ribbon.addButton(editTab, gSettings,
-					   Button{.iconName = "settings",
-							  .label = "Project",
-							  .tooltip = "Open project settings",
-							  .isEnabled = [this]() -> bool { return mp_editor->m_project.isLoaded(); },
-							  .onClick = [this]() -> void { mp_editor->m_projectSettings.open(mp_editor->m_project); },
-							  .size = Size::Small});
-	// =============================== Contextual tab =========================
-	if (const auto* active = mp_editor->m_documents.getActive(); active != nullptr) {
-		if (active->type() == DocumentType::Code)
-
-			buildCodeTab();
-		else if (active->type() == DocumentType::NodeGraph)
-
-			buildNodeGraphTab();
-		else if (active->type() == DocumentType::Animation)
-
-			buildAnimationTab();
-		else if (active->type() == DocumentType::Tilemap)
-
-			buildTilemapTab();
-		else if (active->type() == DocumentType::Tileset)
-
-			buildTilesetTab();
-		else
-
-			buildSceneTab();
-		m_lastDocType = active->type();
-	} else {
-		// No document open: show the scene tab anyway so new-scene actions stay reachable.
-		buildSceneTab();
-		m_lastDocType = DocumentType::Scene;
+							  .tooltip = "Open the help of the focused panel.",
+							  .shortcut = shortcut("help.context"),
+							  .onClick = [this]() -> void { mp_editor->onContextualHelp(); }});
+	const auto gAppearance = m_ribbon.addGroup(view, "Appearance");
+	for (const auto& [preset, name]: gui::Theme::getPresetNames()) {
+		m_ribbon.addButton(
+				view, gAppearance,
+				Button{.iconName = "ribbon_settings",
+					   .label = name,
+					   .tooltip = std::format("Switch to the {} theme.", name),
+					   .isChecked = [this, name]() -> bool { return mp_editor->m_settings.themePreset == name; },
+					   .onClick = [this, preset, name]() -> void {
+						   mp_editor->m_settings.themePreset = name;
+						   utils::applyTheme(gui::Theme::fromPreset(preset));
+					   }});
 	}
+	const auto gSettings = m_ribbon.addGroup(view, "Settings");
+	m_ribbon.addButton(view, gSettings,
+					   Button{.iconName = "ribbon_settings",
+							  .label = "Editor",
+							  .tooltip = "Fonts, autosave, snap and keyboard shortcuts of the editor.",
+							  .onClick = [this]() -> void { mp_editor->m_settingsPanel.open(); }});
+	m_ribbon.addButton(view, gSettings,
+					   Button{.iconName = "ribbon_tune",
+							  .label = "Engine",
+							  .tooltip = "Engine parameters: renderer, physics, profiler.",
+							  .onClick = [this]() -> void { mp_editor->m_parameters.open(); }});
+
+	// =========================== Document tab ==============================
+	DocumentType type = DocumentType::Scene;
+	if (const auto* active = mp_editor->m_documents.getActive(); active != nullptr)
+		type = active->type();
+	switch (type) {
+		case DocumentType::Code:
+			buildCodeTab();
+			break;
+		case DocumentType::NodeGraph:
+			buildNodeGraphTab();
+			break;
+		case DocumentType::Animation:
+			buildAnimationTab();
+			break;
+		case DocumentType::Tilemap:
+			buildTilemapTab();
+			break;
+		case DocumentType::Tileset:
+			buildTilesetTab();
+			break;
+		case DocumentType::Scene:
+			buildSceneTab();
+			break;
+	}
+	m_ribbon.setTabHighlighted(m_ribbon.getTabCount() - 1, true);
+	if (m_lastDocType != type)
+		m_ribbon.selectTab(m_ribbon.getTabLabel(m_ribbon.getTabCount() - 1));
+	m_lastDocType = type;
 }
 
 void RibbonBuilder::buildSceneTab() {
@@ -229,23 +238,23 @@ void RibbonBuilder::buildSceneTab() {
 		return sc.empty() ? std::string{iBase} : std::format("{} ({})", iBase, sc);
 	};
 	const auto sceneTab = m_ribbon.addTab("Scene");
-	const auto gScene = m_ribbon.addGroup(sceneTab, "File");
+	const auto gScene = m_ribbon.addGroup(sceneTab, "Document");
 	m_ribbon.addButton(sceneTab, gScene,
-					   Button{.iconName = "new_scene",
+					   Button{.iconName = "ribbon_new",
 							  .label = "New",
 							  .tooltip = tipWithShortcut("New Scene", "scene.new"),
 							  .isEnabled = [this]() -> bool { return mp_editor->m_project.isLoaded(); },
 							  .onClick = [this]() -> void { mp_editor->newScene(); },
-							  .size = Size::Large});
+							  .size = Size::Small});
 	m_ribbon.addButton(sceneTab, gScene,
-					   Button{.iconName = "open",
+					   Button{.iconName = "ribbon_open",
 							  .label = "Open",
 							  .tooltip = tipWithShortcut("Open Scene", "scene.open"),
 							  .isEnabled = [this]() -> bool { return mp_editor->m_project.isLoaded(); },
 							  .onClick = [this]() -> void { mp_editor->openScene(); },
-							  .size = Size::Large});
+							  .size = Size::Small});
 	m_ribbon.addButton(sceneTab, gScene,
-					   Button{.iconName = "save",
+					   Button{.iconName = "ribbon_save",
 							  .label = "Save",
 							  .tooltip = tipWithShortcut("Save Scene", "scene.save"),
 							  .isEnabled = [this]() -> bool {
@@ -253,123 +262,31 @@ void RibbonBuilder::buildSceneTab() {
 								  return d != nullptr && !d->filePath().empty();
 							  },
 							  .onClick = [this]() -> void { mp_editor->saveCurrentScene(); },
-							  .size = Size::Small});
+							  .size = Size::Large});
 	m_ribbon.addButton(sceneTab, gScene,
-					   Button{.iconName = "save",
+					   Button{.iconName = "ribbon_save",
 							  .label = "Save As",
 							  .tooltip = tipWithShortcut("Save Scene As…", "scene.saveAs"),
 							  .isEnabled = [this]() -> bool { return mp_editor->activeSceneDocument() != nullptr; },
 							  .onClick = [this]() -> void { mp_editor->saveSceneAs(); },
 							  .size = Size::Small});
 	m_ribbon.addButton(sceneTab, gScene,
-					   Button{.iconName = "import_file",
+					   Button{.iconName = "ribbon_import",
 							  .label = "Import",
 							  .tooltip = "Import an existing scene file into this project",
 							  .isEnabled = [this]() -> bool { return mp_editor->m_project.isLoaded(); },
 							  .onClick = [this]() -> void { mp_editor->importScene(); },
 							  .size = Size::Small});
 	m_ribbon.addButton(sceneTab, gScene,
-					   Button{.iconName = "close",
+					   Button{.iconName = "ribbon_close",
 							  .label = "Close",
 							  .tooltip = tipWithShortcut("Close Scene", "doc.close"),
 							  .isEnabled = [this]() -> bool { return mp_editor->activeSceneDocument() != nullptr; },
 							  .onClick = [this]() -> void { mp_editor->requestCloseActiveDocument(); },
-							  .size = Size::Large});
-	const auto gPlay = m_ribbon.addGroup(sceneTab, "Playback");
-	m_ribbon.addButton(sceneTab, gPlay,
-					   Button{.iconName = "PlayButton",
-							  .label = "Play",
-							  .tooltip = tipWithShortcut("Play / Resume", "scene.play"),
-							  .isEnabled = [this]() -> bool {
-								  return mp_editor->activeSceneDocument() != nullptr &&
-
-										 mp_editor->getState() != State::Play;
-							  },
-							  .onClick = [this]() -> void {
-								  if (mp_editor->getState() == State::Edit)
-
-									  mp_editor->onScenePlay();
-								  else if (mp_editor->getState() == State::Pause)
-
-									  mp_editor->onSceneResume();
-							  },
-							  .size = Size::Large});
-	m_ribbon.addButton(sceneTab, gPlay,
-					   Button{.iconName = "StopButton",
-							  .label = "Stop",
-							  .tooltip = tipWithShortcut("Stop", "scene.stop"),
-							  .isEnabled = [this]() -> bool { return mp_editor->getState() != State::Edit; },
-							  .onClick = [this]() -> void { mp_editor->onSceneStop(); },
-							  .size = Size::Large});
-	m_ribbon.addButton(sceneTab, gPlay,
-					   Button{.iconName = "PauseButton",
-							  .label = "Pause",
-							  .tooltip = tipWithShortcut("Pause", "scene.pause"),
-							  .isEnabled = [this]() -> bool { return mp_editor->getState() == State::Play; },
-							  .onClick = [this]() -> void { mp_editor->onScenePause(); },
 							  .size = Size::Small});
-	m_ribbon.addButton(sceneTab, gPlay,
-					   Button{.iconName = "StepButton",
-							  .label = "Step",
-							  .tooltip = tipWithShortcut("Step Frame", "scene.step"),
-							  .isEnabled = [this]() -> bool { return mp_editor->getState() == State::Pause; },
-							  .onClick = [this]() -> void { mp_editor->onSceneStep(); },
-							  .size = Size::Small});
-
-	const auto gGizmo = m_ribbon.addGroup(sceneTab, "Gizmo");
-	const auto gizmoButton = [this](gui::Guizmo::Type iType, const char* iIcon, const char* iLabel,
-									const char* iShortcutAction) -> Button {
-		return Button{.iconName = iIcon,
-					  .label = iLabel,
-					  .tooltip = std::format("{} ({})", iLabel,
-											 mp_editor->m_actionRegistry.getShortcutString(iShortcutAction)),
-					  .isEnabled = [this]() -> bool {
-						  return mp_editor->activeViewport() != nullptr && mp_editor->getState() == State::Edit;
-					  },
-					  .isChecked = [this, iType]() -> bool {
-						  auto* vp = mp_editor->activeViewport();
-						  return vp != nullptr && vp->getGuizmoType() == iType;
-					  },
-					  .onClick = [this, iType]() -> void {
-						  if (auto* vp = mp_editor->activeViewport(); vp != nullptr)
-							  vp->setGuizmoType(vp->getGuizmoType() == iType ? gui::Guizmo::Type::None : iType);
-					  },
-					  .size = Size::Large};
-	};
-	m_ribbon.addButton(
-			sceneTab, gGizmo,
-
-			gizmoButton(gui::Guizmo::Type::Translation, "ctrl_translation", "Translate", "guizmo.translate"));
-	m_ribbon.addButton(sceneTab, gGizmo,
-
-					   gizmoButton(gui::Guizmo::Type::Rotation, "ctrl_rotation", "Rotate", "guizmo.rotate"));
-	m_ribbon.addButton(sceneTab, gGizmo,
-
-					   gizmoButton(gui::Guizmo::Type::Scale, "ctrl_scale", "Scale", "guizmo.scale"));
-	m_ribbon.addButton(
-			sceneTab, gGizmo,
-			Button{.iconName = "snap_grid",
-				   .label = "Snap",
-				   .tooltip =
-						   "Toggle snap-to-grid for translation gizmos. Holding Ctrl during a drag also forces snap.",
-				   .isEnabled = [this]() -> bool { return mp_editor->getState() == State::Edit; },
-				   .isChecked = [this]() -> bool { return mp_editor->m_settings.snapEnabled; },
-				   .onClick = [this]() -> void {
-					   mp_editor->m_settings.snapEnabled = !mp_editor->m_settings.snapEnabled;
-				   },
-				   .size = Size::Small});
-	m_ribbon.addButton(sceneTab, gGizmo,
-					   Button{.iconName = "snap_grid",
-							  .label = "Step",
-							  .tooltip = "Pick a snap step preset. With a tilemap in the scene the presets are "
-										 "fractions / multiples of the cell size, otherwise raw world units.",
-							  .isEnabled = [this]() -> bool { return mp_editor->getState() == State::Edit; },
-							  .size = Size::Small,
-							  .popupContents = [this]() -> void { mp_editor->renderSnapStepPopup(); }});
-
-	const auto gShow = m_ribbon.addGroup(sceneTab, "Show");
+	const auto gShow = m_ribbon.addGroup(sceneTab, "Scene");
 	m_ribbon.addButton(sceneTab, gShow,
-					   Button{.iconName = "comp_camera",
+					   Button{.iconName = "ribbon_cameras",
 							  .label = "Cameras",
 							  .tooltip = "Toggle in-viewport camera markers (icon + forward arrow + FOV cone)",
 							  .isEnabled = [this]() -> bool { return mp_editor->getState() == State::Edit; },
@@ -379,18 +296,16 @@ void RibbonBuilder::buildSceneTab() {
 							  },
 							  .size = Size::Small});
 
-	const auto gSceneSettings = m_ribbon.addGroup(sceneTab, "Settings");
-	m_ribbon.addButton(sceneTab, gSceneSettings,
-					   Button{.iconName = "settings",
-							  .label = "Scene",
+	m_ribbon.addButton(sceneTab, gShow,
+					   Button{.iconName = "ribbon_settings",
+							  .label = "Settings",
 							  .tooltip = "Open per-scene settings (renderer overrides, …)",
 							  .isEnabled = [this]() -> bool { return mp_editor->activeSceneDocument() != nullptr; },
 							  .onClick = [this]() -> void { mp_editor->m_sceneSettings.open(); },
 							  .size = Size::Small});
 
-	const auto gScenePack = m_ribbon.addGroup(sceneTab, "Package");
-	m_ribbon.addButton(sceneTab, gScenePack,
-					   Button{.iconName = "pack",
+	m_ribbon.addButton(sceneTab, gShow,
+					   Button{.iconName = "ribbon_pack",
 							  .label = "Pack Scene",
 							  .tooltip = "Package this scene as a standalone .owlpack",
 							  .isEnabled = [this]() -> bool {
@@ -398,7 +313,7 @@ void RibbonBuilder::buildSceneTab() {
 								  return d != nullptr && !d->filePath().empty();
 							  },
 							  .onClick = [this]() -> void { mp_editor->packScene(); },
-							  .size = Size::Large});
+							  .size = Size::Small});
 }
 
 void RibbonBuilder::buildCodeTab() {
@@ -411,7 +326,7 @@ void RibbonBuilder::buildCodeTab() {
 	const auto codeTab = m_ribbon.addTab("Text");
 	const auto gFile = m_ribbon.addGroup(codeTab, "File");
 	m_ribbon.addButton(codeTab, gFile,
-					   Button{.iconName = "save",
+					   Button{.iconName = "ribbon_save",
 							  .label = "Save",
 							  .tooltip = tipWithShortcut("Save", "scene.save"),
 							  .isEnabled = [this]() -> bool {
@@ -425,7 +340,7 @@ void RibbonBuilder::buildCodeTab() {
 							  },
 							  .size = Size::Large});
 	m_ribbon.addButton(codeTab, gFile,
-					   Button{.iconName = "close",
+					   Button{.iconName = "ribbon_close",
 							  .label = "Close",
 							  .tooltip = tipWithShortcut("Close Document", "doc.close"),
 							  .isEnabled = [this]() -> bool {
@@ -436,7 +351,7 @@ void RibbonBuilder::buildCodeTab() {
 							  .size = Size::Large});
 	const auto gPreview = m_ribbon.addGroup(codeTab, "Preview");
 	m_ribbon.addButton(codeTab, gPreview,
-					   Button{.iconName = "preview",
+					   Button{.iconName = "ribbon_visibility",
 							  .label = "Preview",
 							  .tooltip = "Toggle the live preview pane (Markdown / SVG)",
 							  .isEnabled = [this]() -> bool {
@@ -460,7 +375,7 @@ void RibbonBuilder::buildNodeGraphTab() {
 	const auto graphTab = m_ribbon.addTab("Graph");
 	const auto gFile = m_ribbon.addGroup(graphTab, "File");
 	m_ribbon.addButton(graphTab, gFile,
-					   Button{.iconName = "save",
+					   Button{.iconName = "ribbon_save",
 							  .label = "Save",
 							  .tooltip = tipWithShortcut("Save", "scene.save"),
 							  .isEnabled = [this]() -> bool {
@@ -474,7 +389,7 @@ void RibbonBuilder::buildNodeGraphTab() {
 							  },
 							  .size = Size::Large});
 	m_ribbon.addButton(graphTab, gFile,
-					   Button{.iconName = "close",
+					   Button{.iconName = "ribbon_close",
 							  .label = "Close",
 							  .tooltip = tipWithShortcut("Close Document", "doc.close"),
 							  .isEnabled = [this]() -> bool {
@@ -501,7 +416,7 @@ void RibbonBuilder::buildAnimationTab() {
 	const auto animTab = m_ribbon.addTab("Animation");
 	const auto gPlay = m_ribbon.addGroup(animTab, "Playback");
 	m_ribbon.addButton(animTab, gPlay,
-					   Button{.iconName = "PlayButton",
+					   Button{.iconName = "ribbon_play",
 							  .label = "Play",
 							  .tooltip = "Resume preview playback",
 							  .isEnabled = [activeAnim]() -> bool {
@@ -514,7 +429,7 @@ void RibbonBuilder::buildAnimationTab() {
 							  },
 							  .size = Size::Large});
 	m_ribbon.addButton(animTab, gPlay,
-					   Button{.iconName = "PauseButton",
+					   Button{.iconName = "ribbon_pause",
 							  .label = "Pause",
 							  .tooltip = "Pause preview playback",
 							  .isEnabled = [activeAnim]() -> bool {
@@ -527,7 +442,7 @@ void RibbonBuilder::buildAnimationTab() {
 							  },
 							  .size = Size::Small});
 	m_ribbon.addButton(animTab, gPlay,
-					   Button{.iconName = "StopButton",
+					   Button{.iconName = "ribbon_stop",
 							  .label = "Stop",
 							  .tooltip = "Stop and rewind to first frame",
 							  .isEnabled = [activeAnim]() -> bool { return activeAnim() != nullptr; },
@@ -538,7 +453,7 @@ void RibbonBuilder::buildAnimationTab() {
 							  .size = Size::Small});
 	const auto gFrame = m_ribbon.addGroup(animTab, "Frame");
 	m_ribbon.addButton(animTab, gFrame,
-					   Button{.iconName = "back",
+					   Button{.iconName = "ribbon_previous",
 							  .label = "Previous",
 							  .tooltip = "Step back one frame",
 							  .isEnabled = [activeAnim]() -> bool { return activeAnim() != nullptr; },
@@ -548,7 +463,7 @@ void RibbonBuilder::buildAnimationTab() {
 							  },
 							  .size = Size::Small});
 	m_ribbon.addButton(animTab, gFrame,
-					   Button{.iconName = "StepButton",
+					   Button{.iconName = "ribbon_next",
 							  .label = "Next",
 							  .tooltip = "Step forward one frame",
 							  .isEnabled = [activeAnim]() -> bool { return activeAnim() != nullptr; },
@@ -559,7 +474,7 @@ void RibbonBuilder::buildAnimationTab() {
 							  .size = Size::Small});
 	const auto gFile = m_ribbon.addGroup(animTab, "File");
 	m_ribbon.addButton(animTab, gFile,
-					   Button{.iconName = "save",
+					   Button{.iconName = "ribbon_save",
 							  .label = "Save",
 							  .tooltip = tipWithShortcut("Save", "scene.save"),
 							  .isEnabled = [this]() -> bool {
@@ -573,7 +488,7 @@ void RibbonBuilder::buildAnimationTab() {
 							  },
 							  .size = Size::Large});
 	m_ribbon.addButton(animTab, gFile,
-					   Button{.iconName = "save",
+					   Button{.iconName = "ribbon_save",
 							  .label = "Save As",
 							  .tooltip = "Save the clip to a new file",
 							  .isEnabled = [this]() -> bool {
@@ -594,7 +509,7 @@ void RibbonBuilder::buildAnimationTab() {
 							  },
 							  .size = Size::Small});
 	m_ribbon.addButton(animTab, gFile,
-					   Button{.iconName = "close",
+					   Button{.iconName = "ribbon_close",
 							  .label = "Close",
 							  .tooltip = tipWithShortcut("Close Document", "doc.close"),
 							  .isEnabled = [this]() -> bool {
@@ -617,7 +532,7 @@ void RibbonBuilder::buildTilemapTab() {
 	const auto tab = m_ribbon.addTab("Tilemap");
 	const auto gFile = m_ribbon.addGroup(tab, "File");
 	m_ribbon.addButton(tab, gFile,
-					   Button{.iconName = "save",
+					   Button{.iconName = "ribbon_save",
 							  .label = "Save",
 							  .tooltip = "Save the .owltilemap (Ctrl+S)",
 							  .isEnabled = [activeTilemap]() -> bool {
@@ -630,7 +545,7 @@ void RibbonBuilder::buildTilemapTab() {
 							  },
 							  .size = Size::Large});
 	m_ribbon.addButton(tab, gFile,
-					   Button{.iconName = "save",
+					   Button{.iconName = "ribbon_save",
 							  .label = "Save As",
 							  .tooltip = "Save the tilemap to a new file",
 							  .isEnabled = [activeTilemap]() -> bool { return activeTilemap() != nullptr; },
@@ -647,7 +562,7 @@ void RibbonBuilder::buildTilemapTab() {
 							  },
 							  .size = Size::Small});
 	m_ribbon.addButton(tab, gFile,
-					   Button{.iconName = "close",
+					   Button{.iconName = "ribbon_close",
 							  .label = "Close",
 							  .tooltip = "Close the active document",
 							  .isEnabled = [activeTilemap]() -> bool { return activeTilemap() != nullptr; },
@@ -667,7 +582,7 @@ void RibbonBuilder::buildTilesetTab() {
 	const auto tab = m_ribbon.addTab("Tileset");
 	const auto gFile = m_ribbon.addGroup(tab, "File");
 	m_ribbon.addButton(tab, gFile,
-					   Button{.iconName = "save",
+					   Button{.iconName = "ribbon_save",
 							  .label = "Save",
 							  .tooltip = "Save the .owltileset (Ctrl+S)",
 							  .isEnabled = [activeTileset]() -> bool {
@@ -680,7 +595,7 @@ void RibbonBuilder::buildTilesetTab() {
 							  },
 							  .size = Size::Large});
 	m_ribbon.addButton(tab, gFile,
-					   Button{.iconName = "save",
+					   Button{.iconName = "ribbon_save",
 							  .label = "Save As",
 							  .tooltip = "Save the tileset to a new file",
 							  .isEnabled = [activeTileset]() -> bool { return activeTileset() != nullptr; },
@@ -697,7 +612,7 @@ void RibbonBuilder::buildTilesetTab() {
 							  },
 							  .size = Size::Small});
 	m_ribbon.addButton(tab, gFile,
-					   Button{.iconName = "close",
+					   Button{.iconName = "ribbon_close",
 							  .label = "Close",
 							  .tooltip = "Close the active document",
 							  .isEnabled = [activeTileset]() -> bool { return activeTileset() != nullptr; },

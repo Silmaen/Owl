@@ -15,6 +15,8 @@
 #include "../document/SceneDocument.h"
 #include "EditorLayer.h"
 
+#include <gui/IconFont.h>
+#include <gui/widgets/Menu.h>
 #include <gui/widgets/NodeCanvasSerializer.h>
 #include <platform/AtomicFile.h>
 #include <scene/Entity.h>
@@ -890,9 +892,8 @@ void SceneFlowDocument::renderContextMenu() {
 		return;
 	const auto onNode = static_cast<uint64_t>(m_contextNodeId) != 0;
 	if (!onNode) {
-		ImGui::TextDisabled("Empty area");
-		ImGui::Separator();
-		if (ImGui::MenuItem("Add new scene...")) {
+		gui::widgets::menuHeader("Scene Flow");
+		if (gui::widgets::menuItem({.glyph = gui::icon::filePlus, .label = "Add New Scene..."})) {
 			m_openAddSceneModal = true;
 			m_newSceneNameBuf[0] = '\0';
 			ImGui::CloseCurrentPopup();
@@ -901,17 +902,16 @@ void SceneFlowDocument::renderContextMenu() {
 		return;
 	}
 	const auto* node = m_canvas.findNode(m_contextNodeId);
-	if (node != nullptr)
-		ImGui::TextDisabled("%s", node->title.c_str());
-	ImGui::Separator();
-	if (ImGui::MenuItem("Edit scene") && mp_editorLayer != nullptr) {
+	gui::widgets::menuHeader(node != nullptr ? node->title.c_str() : "Scene", "Scene");
+	if (gui::widgets::menuItem({.glyph = gui::icon::externalLink, .label = "Edit Scene"}) &&
+		mp_editorLayer != nullptr) {
 		if (const auto path = absolutePathFor(m_contextNodeId); !path.empty() && std::filesystem::exists(path))
 			mp_editorLayer->openScene(path);
 	}
 	if (node != nullptr) {
 		const bool anyTeleport = std::ranges::any_of(
 				node->outputs, [](const auto& iPin) -> bool { return iPin.typeTag == g_teleportPinTypeTag; });
-		if (anyTeleport && ImGui::BeginMenu("Edit teleport target")) {
+		if (anyTeleport && ImGui::BeginMenu("Edit Teleport Target")) {
 			for (const auto& pin: node->outputs) {
 				if (pin.typeTag == g_teleportPinTypeTag && ImGui::MenuItem(pin.label.c_str()))
 					openTargetNameModal(pin.id);
@@ -919,7 +919,8 @@ void SceneFlowDocument::renderContextMenu() {
 			ImGui::EndMenu();
 		}
 	}
-	if (ImGui::MenuItem("Delete scene")) {
+	ImGui::Separator();
+	if (gui::widgets::menuItem({.glyph = gui::icon::trash2, .label = "Delete Scene...", .danger = true})) {
 		m_pendingDeletePath = absolutePathFor(m_contextNodeId);
 		ImGui::CloseCurrentPopup();
 	}
