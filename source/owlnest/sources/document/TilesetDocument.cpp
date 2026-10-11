@@ -178,6 +178,8 @@ void TilesetDocument::onImGuiRender() {
 	if (wantFocus)
 		ImGui::SetNextWindowFocus();
 	const bool open = ImGui::Begin(winTitle.c_str(), &m_pOpen, flags);
+	if (mp_editorLayer != nullptr)
+		mp_editorLayer->renderDocumentTabMenu(*this);
 	if (wantFocus) {
 		ImGui::SetWindowFocus();
 		if (mp_editorLayer != nullptr)

@@ -73,6 +73,8 @@ struct EditorSettings {
 	 * for docked panels on dense layouts.
 	 */
 	int uiFontSize = 16;
+	/// Scale of every text of the editor, in percent (75 to 150), applied at once.
+	int textScalePercent = 100;
 	/// Whether translation gizmos snap to a grid in Edit mode.
 	bool snapEnabled = false;
 	/// Grid step (world units) used when no tilemap is available or `snapAutoFromTilemap` is off.

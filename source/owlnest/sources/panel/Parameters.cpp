@@ -11,6 +11,7 @@
 #include <gui/IconBank.h>
 #include <gui/IconFont.h>
 #include <gui/widgets/Combo.h>
+#include <gui/widgets/IconButton.h>
 #include <gui/widgets/PropertyGrid.h>
 #include <gui/widgets/SectionHeader.h>
 #include <magic_enum/magic_enum.hpp>
@@ -122,27 +123,27 @@ void Parameters::onImGuiRender() {
 		ImGui::Separator();
 
 		// --- OK / Apply / Cancel (centred) ---
-		const auto& iconBank = gui::IconBank::instance();
 		const float buttonWidth = ImGui::CalcTextSize("Cancel").x + ImGui::GetFontSize() +
 
 								  ImGui::GetStyle().ItemInnerSpacing.x + ImGui::GetStyle().FramePadding.x * 2.0f;
 		const float totalWidth = buttonWidth * 3.0f + ImGui::GetStyle().ItemSpacing.x * 2.0f;
 
 		ImGui::SetCursorPosX((ImGui::GetWindowSize().x - totalWidth) * 0.5f);
-		if (iconBank.iconButton("save", "OK##params", {buttonWidth, 0})) {
+		if (gui::widgets::button("OK##params",
+								 {.glyph = gui::icon::check, .label = "OK", .primary = true, .width = buttonWidth})) {
 			const bool needRestart = apply();
 			m_showRestartWarning = needRestart;
 			m_pendingClose = true;
 		}
 
 		ImGui::SameLine();
-		if (iconBank.iconButton("save", "Apply", {buttonWidth, 0})) {
+		if (gui::widgets::button("Apply", {.glyph = gui::icon::check, .label = "Apply", .width = buttonWidth})) {
 			if (apply())
 				m_showRestartWarning = true;
 		}
 
 		ImGui::SameLine();
-		if (iconBank.iconButton("close", "Cancel", {buttonWidth, 0})) {
+		if (gui::widgets::button("Cancel", {.glyph = gui::icon::x, .label = "Cancel", .width = buttonWidth})) {
 			ImGui::CloseCurrentPopup();
 		}
 
@@ -155,7 +156,7 @@ void Parameters::onImGuiRender() {
 						"take effect.");
 
 			ImGui::Separator();
-			if (iconBank.iconButton("close", "OK##restart")) {
+			if (gui::widgets::button("OK##restart", {.glyph = gui::icon::x, .label = "OK", .primary = true})) {
 				m_showRestartWarning = false;
 
 				ImGui::CloseCurrentPopup();

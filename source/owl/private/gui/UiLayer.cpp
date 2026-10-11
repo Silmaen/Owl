@@ -32,6 +32,8 @@ namespace owl::gui {
 
 namespace {
 float g_uiFontSize = 20.f;
+// Scale of every text, set by `setTextScale`.
+float g_textScale = 1.f;
 // Requested code-editor font size, applied on the next `UiLayer::onAttach`.
 float g_codeFontSize = 13.f;
 // ID of the main dockspace, refreshed each docked frame.
@@ -201,6 +203,14 @@ auto UiLayer::getDockSpaceId() -> uint32_t { return g_dockSpaceId; }
 auto UiLayer::getTheme() -> const Theme& { return g_theme; }
 
 auto UiLayer::getDpiScale() -> float { return g_dpiScale; }
+
+void UiLayer::setTextScale(const float iScale) {
+	g_textScale = std::clamp(iScale, minTextScale, maxTextScale);
+	if (ImGui::GetCurrentContext() != nullptr)
+		ImGui::GetStyle().FontScaleMain = g_textScale;
+}
+
+auto UiLayer::getTextScale() -> float { return g_textScale; }
 
 void UiLayer::pushTextStyle(const TextStyle iStyle) {
 	const float base = ImGui::GetStyle().FontSizeBase;
@@ -435,6 +445,7 @@ void UiLayer::setTheme(const Theme& iTheme) {
 	style.ScaleAllSizes(g_dpiScale);
 	style.FontSizeBase = fontSize;
 	style.FontScaleDpi = g_dpiScale;
+	style.FontScaleMain = g_textScale;
 	// No filled window-menu arrow on windows and docked groups: every panel has its tab and its close button.
 	style.WindowMenuButtonPosition = ImGuiDir_None;
 	style.ColorButtonPosition = ImGuiDir_Left;

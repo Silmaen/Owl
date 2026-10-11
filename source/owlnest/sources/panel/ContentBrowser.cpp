@@ -183,6 +183,7 @@ void drawTile(ImDrawList* iDraw, const TileView& iTile) {
 		renderUv1 = gui::vec(preview->framebuffer->getUpperData());
 	}
 	const bool hasWaveform = preview != nullptr && !preview->waveform.empty();
+	const bool hasMesh = preview != nullptr && !preview->mesh.empty();
 	if (iTile.list) {
 		const float iconSize = ImGui::GetFontSize();
 		const float y = std::floor(iTile.min.y + (iTile.height - iconSize) * 0.5f);
@@ -226,6 +227,20 @@ void drawTile(ImDrawList* iDraw, const TileView& iTile) {
 			// A rendered scene or prefab: square, drawn whole.
 			iDraw->AddImageRounded(thumbTexture.value(), thumbMin, thumbMax, renderUv0, renderUv1, IM_COL32_WHITE,
 								   theme.frameRounding, ImDrawFlags_RoundCornersTop);
+		} else if (hasMesh) {
+			// Back to front, each face in the family colour scaled by its light.
+			const float side = std::min(thumbMax.x - thumbMin.x, thumbMax.y - thumbMin.y);
+			const ImVec2 origin{thumbMin.x + (thumbMax.x - thumbMin.x - side) * 0.5f,
+								thumbMin.y + (thumbMax.y - thumbMin.y - side) * 0.5f};
+			const auto at = [&](const math::vec2& iCorner) -> ImVec2 {
+				return {origin.x + iCorner.x() * side, origin.y + iCorner.y() * side};
+			};
+			for (const auto& triangle: preview->mesh) {
+				const math::vec4 color{kind.color.x() * triangle.shade, kind.color.y() * triangle.shade,
+									   kind.color.z() * triangle.shade, 1.f};
+				iDraw->AddTriangleFilled(at(triangle.corners[0]), at(triangle.corners[1]), at(triangle.corners[2]),
+										 toU32(color));
+			}
 		} else if (hasWaveform) {
 			// One bar per slice, mirrored around the middle line, in the colour of the family.
 			const auto& peaks = preview->waveform;
@@ -249,8 +264,9 @@ void drawTile(ImDrawList* iDraw, const TileView& iTile) {
 		}
 		iDraw->AddRectFilled({iTile.min.x, iTile.min.y + iTile.thumbSize},
 							 {iTile.max.x, iTile.min.y + iTile.thumbSize + 2.f}, toU32(kind.color));
+		// The badge only fits short extensions; the kind under the name says the rest.
 		if (const auto extension = upperCase(iTile.path.extension().string());
-			!iTile.directory && extension.size() > 1) {
+			!iTile.directory && extension.size() > 1 && extension.size() <= 5) {
 			gui::UiLayer::pushTextStyle(gui::TextStyle::Caption);
 			const char* text = extension.c_str() + 1;
 			const ImVec2 textSize = ImGui::CalcTextSize(text);
@@ -276,6 +292,22 @@ void drawTile(ImDrawList* iDraw, const TileView& iTile) {
 ContentBrowser::ContentBrowser() = default;
 
 void ContentBrowser::detach() { m_previews.clear(); }
+
+void ContentBrowser::reveal(const std::filesystem::path& iPath) {
+	const auto file = iPath.lexically_normal();
+	for (const auto& [title, assetsPath]: app::Application::get().getAssetDirectories()) {
+		const auto root = assetsPath.lexically_normal();
+		if (const auto rel = file.lexically_relative(root); rel.empty() || rel.begin()->string() == "..")
+			continue;
+		m_currentRootPath = assetsPath;
+		m_currentPath = file.parent_path();
+		m_selectedPath = iPath;
+		m_searchFilter.clear();
+		m_kindFilter.clear();
+		return;
+	}
+	OWL_WARN("ContentBrowser: {} is in no asset folder.", iPath.string())
+}
 
 void ContentBrowser::attach() {
 	m_currentRootPath = app::Application::get().getAssetDirectories().front().assetsPath;
@@ -558,7 +590,8 @@ void ContentBrowser::renderContent() {
 		if (ImGui::BeginDragDropSource()) {
 			ImGui::SetDragDropPayload("CONTENT_BROWSER_ITEM", relativePath.string().c_str(),
 									  relativePath.string().size() + 1);
-			ImGui::TextUnformatted(name.c_str());
+			gui::widgets::dragPreview(directoryEntry.is_directory() ? gui::icon::folder : gui::icon::file, name.c_str(),
+									  describeKind(path, directoryEntry.is_directory()).label);
 			ImGui::EndDragDropSource();
 		}
 		if (directoryEntry.is_directory() && ImGui::BeginDragDropTarget()) {
@@ -662,11 +695,10 @@ void ContentBrowser::renderContextMenu() {
 				ImGui::InputText("##rename", &m_renameBuffer, ImGuiInputTextFlags_EnterReturnsTrue);
 
 		ImGui::SameLine();
-		const auto& buttonBank = gui::IconBank::instance();
-		const bool okClicked = buttonBank.iconButton("rename", "OK");
+		const bool okClicked = gui::widgets::button("OK", {.glyph = gui::icon::check, .label = "OK", .primary = true});
 
 		ImGui::SameLine();
-		if (buttonBank.iconButton("close", "Cancel")) {
+		if (gui::widgets::button("Cancel", {.glyph = gui::icon::x, .label = "Cancel"})) {
 			m_renaming = false;
 			m_selectedPath.clear();
 
@@ -705,21 +737,20 @@ void ContentBrowser::renderContextMenu() {
 			ImGui::TextColored({1.0f, 0.6f, 0.2f, 1.0f}, "This will delete all contents of the folder.");
 
 		ImGui::Separator();
-		const auto& buttonBank = gui::IconBank::instance();
 		const float buttonWidth = ImGui::CalcTextSize("Cancel").x + ImGui::GetFontSize() +
 
 								  ImGui::GetStyle().ItemInnerSpacing.x + ImGui::GetStyle().FramePadding.x * 2.0f;
 		const float totalWidth = buttonWidth * 2.0f + ImGui::GetStyle().ItemSpacing.x;
 
 		ImGui::SetCursorPosX((ImGui::GetWindowSize().x - totalWidth) * 0.5f);
-		if (buttonBank.iconButton("delete", "Delete", {buttonWidth, 0})) {
+		if (gui::widgets::button("Delete", {.glyph = gui::icon::trash2, .label = "Delete", .width = buttonWidth})) {
 			deleteSelected();
 
 			ImGui::CloseCurrentPopup();
 		}
 
 		ImGui::SameLine();
-		if (buttonBank.iconButton("close", "Cancel", {buttonWidth, 0})) {
+		if (gui::widgets::button("Cancel", {.glyph = gui::icon::x, .label = "Cancel", .width = buttonWidth})) {
 			m_selectedPath.clear();
 
 			ImGui::CloseCurrentPopup();

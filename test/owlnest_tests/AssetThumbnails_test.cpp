@@ -10,6 +10,8 @@
 #include "testHelper.h"
 
 #include <core/Log.h>
+#include <data/geometry/MeshLoader.h>
+#include <data/geometry/StaticMesh.h>
 
 #include <gtest/gtest.h>
 
@@ -29,6 +31,8 @@ TEST(AssetThumbnails, KindFollowsTheExtension) {
 	EXPECT_EQ(AssetThumbnails::getKind("coin.owlprefab"), AssetThumbnails::Kind::Prefab);
 	EXPECT_EQ(AssetThumbnails::getKind("jump.wav"), AssetThumbnails::Kind::Sound);
 	EXPECT_EQ(AssetThumbnails::getKind("theme.ogg"), AssetThumbnails::Kind::Sound);
+	EXPECT_EQ(AssetThumbnails::getKind("atlas.owltileset"), AssetThumbnails::Kind::Tileset);
+	EXPECT_EQ(AssetThumbnails::getKind("ship.glb"), AssetThumbnails::Kind::Mesh);
 	EXPECT_EQ(AssetThumbnails::getKind("hero.lua"), AssetThumbnails::Kind::None);
 }
 
@@ -75,6 +79,34 @@ TEST(AssetThumbnails, SoundGetsAWaveformAndCountsAsReady) {
 	EXPECT_EQ(previews.get(dir / "missing.wav"), nullptr);
 	EXPECT_EQ(previews.getProgress(), (std::pair<size_t, size_t>{1, 2}));
 	previews.clear();
+	std::filesystem::remove_all(dir);
+	core::Log::invalidate();
+}
+
+TEST(AssetThumbnails, MeshProjectsIntoTheUnitSquareBackToFront) {
+	core::Log::init(core::Log::Level::Off);
+	const auto dir = std::filesystem::temp_directory_path() / "owl_asset_thumbnails_mesh_test";
+	std::filesystem::create_directories(dir);
+	const auto obj = dir / "tetra.obj";
+	{
+		std::ofstream file(obj);
+		file << "v 0 0 0\nv 1 0 0\nv 0 1 0\nv 0 0 1\nf 1 3 2\nf 1 2 4\nf 1 4 3\nf 2 3 4\n";
+	}
+	const auto mesh = data::geometry::MeshLoader::loadStaticMesh(obj);
+	ASSERT_NE(mesh, nullptr);
+	const auto triangles = AssetThumbnails::projectMesh(*mesh);
+	ASSERT_EQ(triangles.size(), 4u);
+	for (const auto& triangle: triangles) {
+		EXPECT_GT(triangle.shade, 0.f);
+		EXPECT_LE(triangle.shade, 1.f);
+		for (const auto& corner: triangle.corners) {
+			EXPECT_GE(corner.x(), 0.f);
+			EXPECT_LE(corner.x(), 1.f);
+			EXPECT_GE(corner.y(), 0.f);
+			EXPECT_LE(corner.y(), 1.f);
+		}
+	}
+	EXPECT_TRUE(AssetThumbnails::projectMesh(data::geometry::StaticMesh{}).empty());
 	std::filesystem::remove_all(dir);
 	core::Log::invalidate();
 }

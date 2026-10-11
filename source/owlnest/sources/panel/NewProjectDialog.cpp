@@ -9,6 +9,8 @@
 #include "NewProjectDialog.h"
 
 #include <gui/IconBank.h>
+#include <gui/IconFont.h>
+#include <gui/widgets/IconButton.h>
 #include <imgui.h>
 #include <imgui_stdlib.h>
 #include <platform/FileDialog.h>
@@ -59,7 +61,7 @@ auto NewProjectDialog::onImGuiRender() -> std::optional<NewProjectRequest> {
 		ImGui::InputText("Name", &m_name);
 		ImGui::InputText("Location", &m_parentDirectory);
 		ImGui::SameLine();
-		if (ImGui::SmallButton("...")) {
+		if (gui::widgets::iconButton("browse", {.glyph = gui::icon::folderOpen, .tooltip = "Pick the folder"})) {
 			if (const auto picked = platform::FileDialog::pickFolder(); !picked.empty())
 				m_parentDirectory = picked.string();
 		}
@@ -77,16 +79,19 @@ auto NewProjectDialog::onImGuiRender() -> std::optional<NewProjectRequest> {
 		const auto target = std::filesystem::path{m_parentDirectory} / m_name;
 		ImGui::TextDisabled("Creates %s", target.string().c_str());
 		ImGui::Spacing();
-		const auto& iconBank = gui::IconBank::instance();
 		ImGui::BeginDisabled(m_name.empty() || m_parentDirectory.empty());
-		if (iconBank.iconButton("project", "Create", {ImGui::GetFontSize() * 7.f, 0})) {
+		if (gui::widgets::button("Create", {.glyph = gui::icon::folderPlus,
+											.label = "Create",
+											.primary = true,
+											.width = ImGui::GetFontSize() * 7.f})) {
 			request = makeRequest();
 			m_open = false;
 			ImGui::CloseCurrentPopup();
 		}
 		ImGui::EndDisabled();
 		ImGui::SameLine();
-		if (iconBank.iconButton("close", "Cancel", {ImGui::GetFontSize() * 7.f, 0})) {
+		if (gui::widgets::button("Cancel",
+								 {.glyph = gui::icon::x, .label = "Cancel", .width = ImGui::GetFontSize() * 7.f})) {
 			m_open = false;
 			ImGui::CloseCurrentPopup();
 		}

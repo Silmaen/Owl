@@ -303,6 +303,14 @@ public:
 
 	/**
 	 * @brief
+	 *  Context menu of a document tab: save, close, close the others, reveal the file in the Content Browser, copy its
+	 *  path. Call right after the `ImGui::Begin` of the document window, whose tab is then the last item.
+	 * @param[in,out] ioDocument The document of the tab.
+	 */
+	void renderDocumentTabMenu(Document& ioDocument);
+
+	/**
+	 * @brief
 	 *  New project.
 	 */
 	void newProject();
@@ -492,6 +500,12 @@ public:
 	 * @param[in] iPath The path stored in the component.
 	 */
 	void openAssetFromInspector(const std::filesystem::path& iPath);
+
+	/**
+	 * @brief
+	 *  Register the actions that make the text larger, smaller or back to its size (Ctrl+=, Ctrl+-, Ctrl+0).
+	 */
+	void registerTextScaleActions();
 
 	/**
 	 * @brief

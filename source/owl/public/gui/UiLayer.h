@@ -147,6 +147,25 @@ public:
 
 	/**
 	 * @brief
+	 *  Scale every text of the interface at once (and the sizes derived from the font), applied at once.
+	 * @param[in] iScale The scale, clamped to [`minTextScale`, `maxTextScale`]; 1 keeps the font size.
+	 */
+	static void setTextScale(float iScale);
+
+	/**
+	 * @brief
+	 *  Scale given to every text by `setTextScale`.
+	 * @return The scale.
+	 */
+	[[nodiscard]] static auto getTextScale() -> float;
+
+	/// Smallest text scale.
+	static constexpr float minTextScale = 0.75f;
+	/// Largest text scale.
+	static constexpr float maxTextScale = 1.5f;
+
+	/**
+	 * @brief
 	 *  Content scale of the primary monitor applied to the style sizes and fonts.
 	 * @return The scale, 1 on a standard-density screen and under Wayland (the framebuffer scale covers it there).
 	 */

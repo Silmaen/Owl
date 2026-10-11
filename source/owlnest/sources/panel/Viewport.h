@@ -210,6 +210,13 @@ private:
 
 	/**
 	 * @brief
+	 *  Context menu of a right click that did not drag: actions on the clicked entity, or view options on the empty
+	 *  scene.
+	 */
+	void renderContextMenu();
+
+	/**
+	 * @brief
 	 *  Render overlay.
 	 */
 	void renderOverlay() const;

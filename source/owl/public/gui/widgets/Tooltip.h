@@ -30,4 +30,14 @@ OWL_API void richTooltip(const char* iTitle, const char* iShortcut = nullptr, co
  */
 OWL_API void itemTooltip(const char* iTitle, const char* iShortcut = nullptr, const char* iDescription = nullptr);
 
+/**
+ * @brief
+ *  What follows the cursor while dragging: a glyph in the accent colour, the name of the dragged item and its kind,
+ *  muted. Call between `ImGui::BeginDragDropSource` and `ImGui::EndDragDropSource`, so every drag looks the same.
+ * @param[in] iGlyph `gui::icon` glyph of the item.
+ * @param[in] iLabel Name of the item.
+ * @param[in] iKind Kind of the item (`Texture`, `Entity`...), or null.
+ */
+OWL_API void dragPreview(const char* iGlyph, const char* iLabel, const char* iKind = nullptr);
+
 }// namespace owl::gui::widgets

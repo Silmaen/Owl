@@ -36,6 +36,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Owl Nest Content Browser previews of scenes and prefabs (rendered off-screen, `AssetThumbnails`) and of sounds (`sound::readWaveform`); the status bar shows the graphics device, the previews still to make and a notification bell (`ToastQueue::getHistory`).
 - Owl Nest Voxel Palette, Tile Palette and the tilemap and tileset editor panels in the inspector layout (sections, property grids, tile swatches `gui::widgets::imageTile`); the File screen uses the duotone icons of the ribbon; document tabs carry the glyph of their type (`documentWindowTitle`).
 - Owl Nest inspector: the tilemap, tileset and script fields get **Open** (in their editor, `gui::component::setOpenAssetHandler`) and **Clear** buttons, and the properties of a Lua script are read again when its file changes, without a Refresh button.
+- Owl Nest text size applied at once from the Editor Settings or `Ctrl+=` / `Ctrl+-` / `Ctrl+0` (`UiLayer::setTextScale`, 75 to 150 %).
+- Owl Nest context menus on the viewport (entity or view options), the document tabs (save, close, close others, reveal, copy path) and the node graphs; a common drag preview (`gui::widgets::dragPreview`).
+- Owl Nest Content Browser previews of tilesets (atlas) and 3D models (isometric shaded faces, `AssetThumbnails::projectMesh`); atlas swatches in the tileset and tilemap fields of the inspector; dialog buttons drawn with `gui::widgets::button` (`ButtonSpec::width`).
 - Owl Nest Log level chips show their message count and the Log tab its warnings and errors; the search and a labelled Clear button sit on the right.
 - Owl Nest Content Browser family chips with counts, an extension badge on the tiles, and context menus with a title, Lucide icons and Delete in red, like the Hierarchy menus.
 - `gui::widgets::notice`: an inline warning in the inspector, shown for an animated sprite without a sprite sheet and a Lua script without a path.

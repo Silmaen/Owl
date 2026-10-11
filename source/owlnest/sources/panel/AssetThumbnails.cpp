@@ -10,20 +10,28 @@
 
 #include <core/Log.h>
 #include <core/Timestep.h>
+#include <data/geometry/MeshLoader.h>
 #include <gui/UiLayer.h>
+#include <math/trigonometry.h>
 #include <renderer/gpu/RenderCommand.h>
 #include <scene/Entity.h>
 #include <scene/PrefabSerializer.h>
 #include <scene/SceneSerializer.h>
+#include <scene/Tileset.h>
 #include <scene/component/Transform.h>
 #include <sound/Waveform.h>
 
 #include <algorithm>
+#include <array>
 #include <chrono>
 #include <cmath>
+#include <cstddef>
+#include <cstdint>
 #include <limits>
 #include <ranges>
 #include <system_error>
+#include <utility>
+#include <vector>
 
 namespace owl::nest::panel {
 
@@ -79,7 +87,77 @@ auto AssetThumbnails::getKind(const std::filesystem::path& iPath) -> Kind {
 		return Kind::Prefab;
 	if (extension == ".wav" || extension == ".ogg" || extension == ".flac" || extension == ".mp3")
 		return Kind::Sound;
+	if (extension == ".owltileset")
+		return Kind::Tileset;
+	if (extension == ".obj" || extension == ".fbx" || extension == ".gltf" || extension == ".glb")
+		return Kind::Mesh;
 	return Kind::None;
+}
+
+auto AssetThumbnails::projectMesh(const data::geometry::StaticMesh& iMesh) -> std::vector<MeshTriangle> {
+	const auto& triangles = iMesh.getTriangles();
+	if (triangles.empty())
+		return {};
+	// Isometric view: a turn of 35 degrees around Y, then a tilt of 25 degrees towards the viewer.
+	const float yaw = math::radians(35.f);
+	const float pitch = math::radians(25.f);
+	const auto view = [&](const math::vec3& iPoint) -> math::vec3 {
+		const float x = iPoint.x() * std::cos(yaw) + iPoint.z() * std::sin(yaw);
+		const float z0 = -iPoint.x() * std::sin(yaw) + iPoint.z() * std::cos(yaw);
+		const float y = iPoint.y() * std::cos(pitch) - z0 * std::sin(pitch);
+		const float z = iPoint.y() * std::sin(pitch) + z0 * std::cos(pitch);
+		return {x, y, z};
+	};
+	struct Projected {
+		std::array<math::vec3, 3> corners;
+		float depth;
+		float shade;
+	};
+	std::vector<Projected> projected;
+	const size_t stride = std::max<size_t>(1, triangles.size() / maxMeshTriangles);
+	projected.reserve(triangles.size() / stride + 1);
+	math::vec2 low{std::numeric_limits<float>::max(), std::numeric_limits<float>::max()};
+	math::vec2 high{std::numeric_limits<float>::lowest(), std::numeric_limits<float>::lowest()};
+	for (size_t i = 0; i < triangles.size(); i += stride) {
+		const auto& triangle = triangles[i];
+		Projected item{};
+		bool valid = true;
+		for (uint8_t corner = 0; corner < 3; ++corner) {
+			const auto* vertex = triangle.getVertex(corner);
+			if (vertex == nullptr) {
+				valid = false;
+				break;
+			}
+			item.corners[corner] = view(vertex->getPosition());
+			low = {std::min(low.x(), item.corners[corner].x()), std::min(low.y(), item.corners[corner].y())};
+			high = {std::max(high.x(), item.corners[corner].x()), std::max(high.y(), item.corners[corner].y())};
+		}
+		if (!valid)
+			continue;
+		item.depth = (item.corners[0].z() + item.corners[1].z() + item.corners[2].z()) / 3.f;
+		const math::vec3 normal = view(triangle.getNormal());
+		// Light from the viewer: either side of a face is lit, the models need not be closed.
+		item.shade = 0.3f + 0.7f * std::min(1.f, std::abs(normal.z()));
+		projected.push_back(item);
+	}
+	if (projected.empty())
+		return {};
+	std::ranges::sort(projected, [](const Projected& iFirst, const Projected& iSecond) -> bool {
+		return iFirst.depth < iSecond.depth;
+	});
+	const float extent = std::max({high.x() - low.x(), high.y() - low.y(), 1e-6f});
+	const math::vec2 centre{(low.x() + high.x()) * 0.5f, (low.y() + high.y()) * 0.5f};
+	constexpr float fill = 0.84f;
+	std::vector<MeshTriangle> result;
+	result.reserve(projected.size());
+	for (const auto& item: projected) {
+		MeshTriangle triangle{.corners = {}, .shade = item.shade};
+		for (size_t corner = 0; corner < 3; ++corner)
+			triangle.corners[corner] = {0.5f + (item.corners[corner].x() - centre.x()) / extent * fill,
+										0.5f - (item.corners[corner].y() - centre.y()) / extent * fill};
+		result.push_back(triangle);
+	}
+	return result;
 }
 
 void AssetThumbnails::beginFrame() {
@@ -114,8 +192,10 @@ auto AssetThumbnails::get(const std::filesystem::path& iPath) -> const Preview* 
 		case Kind::Image:
 			if (m_readBudget > 0) {
 				--m_readBudget;
-				entry.preview =
-						Preview{.texture = renderer::gpu::Texture2D::create(iPath), .framebuffer = {}, .waveform = {}};
+				entry.preview = Preview{.texture = renderer::gpu::Texture2D::create(iPath),
+										.framebuffer = {},
+										.waveform = {},
+										.mesh = {}};
 				entry.failed = !entry.preview->texture;
 			}
 			break;
@@ -125,7 +205,29 @@ auto AssetThumbnails::get(const std::filesystem::path& iPath) -> const Preview* 
 				auto waveform = sound::readWaveform(iPath, waveformBuckets);
 				entry.failed = waveform.empty();
 				if (!entry.failed)
-					entry.preview = Preview{.texture = {}, .framebuffer = {}, .waveform = std::move(waveform)};
+					entry.preview =
+							Preview{.texture = {}, .framebuffer = {}, .waveform = std::move(waveform), .mesh = {}};
+			}
+			break;
+		case Kind::Tileset:
+			if (m_readBudget > 0) {
+				--m_readBudget;
+				scene::Tileset tileset;
+				entry.failed = !tileset.loadFromFile(iPath) || !tileset.texture;
+				if (!entry.failed)
+					entry.preview = Preview{.texture = tileset.texture, .framebuffer = {}, .waveform = {}, .mesh = {}};
+			}
+			break;
+		case Kind::Mesh:
+			if (m_readBudget > 0) {
+				// A mesh file is the heaviest read: it takes the whole budget of the frame.
+				m_readBudget = 0;
+				const auto mesh = data::geometry::MeshLoader::loadStaticMesh(iPath);
+				auto triangles = mesh ? projectMesh(*mesh) : std::vector<MeshTriangle>{};
+				entry.failed = triangles.empty();
+				if (!entry.failed)
+					entry.preview =
+							Preview{.texture = {}, .framebuffer = {}, .waveform = {}, .mesh = std::move(triangles)};
 			}
 			break;
 		case Kind::Scene:
@@ -222,7 +324,7 @@ void AssetThumbnails::onUpdate() {
 	if (++job.frames < renderFrames || elapsed.count() < renderSeconds)
 		return;
 	auto& entry = m_entries[job.path.string()];
-	entry.preview = Preview{.texture = {}, .framebuffer = job.framebuffer, .waveform = {}};
+	entry.preview = Preview{.texture = {}, .framebuffer = job.framebuffer, .waveform = {}, .mesh = {}};
 	entry.renderOrder = m_nextOrder++;
 	m_job.reset();
 }

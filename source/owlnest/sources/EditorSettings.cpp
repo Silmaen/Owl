@@ -102,6 +102,8 @@ void EditorSettings::loadFromFile(const std::filesystem::path& iFile) {
 			codeEditorFontSize = std::clamp(config["codeEditorFontSize"].as<int>(), 8, 48);
 		if (config["uiFontSize"])
 			uiFontSize = std::clamp(config["uiFontSize"].as<int>(), 14, 24);
+		if (config["textScalePercent"])
+			textScalePercent = std::clamp(config["textScalePercent"].as<int>(), 75, 150);
 		if (config["snapEnabled"])
 			snapEnabled = config["snapEnabled"].as<bool>();
 		if (config["snapStep"])
@@ -151,6 +153,7 @@ void EditorSettings::saveToFile(const std::filesystem::path& iFile) const {
 	out << YAML::Key << "themePreset" << YAML::Value << themePreset;
 	out << YAML::Key << "codeEditorFontSize" << YAML::Value << codeEditorFontSize;
 	out << YAML::Key << "uiFontSize" << YAML::Value << uiFontSize;
+	out << YAML::Key << "textScalePercent" << YAML::Value << textScalePercent;
 	out << YAML::Key << "snapEnabled" << YAML::Value << snapEnabled;
 	out << YAML::Key << "snapStep" << YAML::Value << snapStep;
 	out << YAML::Key << "snapMultiplier" << YAML::Value << snapMultiplier;

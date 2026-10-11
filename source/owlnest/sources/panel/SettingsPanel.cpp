@@ -12,7 +12,10 @@
 
 #include <gui/IconBank.h>
 #include <gui/IconFont.h>
+#include <gui/UiLayer.h>
+#include <gui/utils.h>
 #include <gui/widgets/Combo.h>
+#include <gui/widgets/IconButton.h>
 #include <gui/widgets/PropertyGrid.h>
 
 #include <algorithm>
@@ -73,6 +76,8 @@ void SettingsPanel::renderGeneralSection(EditorSettings& ioSettings) {
 		return;
 	std::ignore = gui::widgets::propertyBool("Stats Panel", ioSettings.showStats, defaults.showStats,
 											 "Show the frame statistics panel.");
+	std::ignore = settingInt("Text Size", ioSettings.textScalePercent, 75, 150, defaults.textScalePercent, "%d %%",
+							 "Scale of every text of the editor, applied at once (Ctrl+= / Ctrl+- / Ctrl+0).");
 	std::ignore = settingInt("UI Font Size", ioSettings.uiFontSize, 14, 24, defaults.uiFontSize, "%d px",
 							 "Pixel size of the main UI font. Takes effect on the next startup.");
 	std::ignore =
@@ -127,7 +132,8 @@ void SettingsPanel::renderThemeSection(EditorSettings& ioSettings) {
 }
 
 void SettingsPanel::renderKeybindingsSection(EditorSettings& ioSettings, ActionRegistry& ioRegistry) {
-	if (gui::IconBank::instance().iconButton("undo", "Reset All to Defaults")) {
+	if (gui::widgets::button("Reset All to Defaults",
+							 {.glyph = gui::icon::rotateCcw, .label = "Reset All to Defaults"})) {
 		ioRegistry.resetToDefaults();
 		ioSettings.keybindingOverrides.clear();
 		m_conflictMessage.clear();
@@ -173,7 +179,8 @@ void SettingsPanel::renderKeybindingsSection(EditorSettings& ioSettings, ActionR
 		// Column 2: Reset button
 		ImGui::TableSetColumnIndex(2);
 		if (action.currentShortcut != action.defaultShortcut) {
-			if (ImGui::SmallButton("Reset")) {
+			if (gui::widgets::iconButton("##reset",
+										 {.glyph = gui::icon::rotateCcw, .tooltip = "Reset to the default"})) {
 				ioRegistry.rebind(action.id, action.defaultShortcut);
 				if (m_capturing && m_captureActionId == action.id) {
 					m_capturing = false;
@@ -236,9 +243,10 @@ void SettingsPanel::handleKeyCapture(ActionEntry& ioAction, ActionRegistry& ioRe
 
 	// Show conflict warning
 	if (!m_conflictMessage.empty()) {
-		ImGui::TextColored({1.0f, 0.4f, 0.4f, 1.0f}, "%s", m_conflictMessage.c_str());
+		ImGui::AlignTextToFramePadding();
+		ImGui::TextColored(gui::vec(gui::UiLayer::getTheme().error), "%s", m_conflictMessage.c_str());
 		ImGui::SameLine();
-		if (ImGui::SmallButton("Cancel")) {
+		if (gui::widgets::button("cancelCapture", {.glyph = gui::icon::x, .label = "Cancel"})) {
 			m_capturing = false;
 			m_captureActionId.clear();
 			m_conflictMessage.clear();

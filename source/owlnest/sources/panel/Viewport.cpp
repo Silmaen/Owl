@@ -33,6 +33,7 @@
 #include <scene/component/RaycastDoor.h>
 #include <scene/component/RaycastPushWall.h>
 #include <scene/component/Tilemap.h>
+#include <scene/component/Visibility.h>
 
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG("-Wreserved-identifier")
@@ -145,6 +146,8 @@ void Viewport::onRender() {
 
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{0, 0});
 	const bool visible = ImGui::Begin(m_name.c_str(), &m_pOpen, flags);
+	if (m_parent != nullptr)
+		m_parent->renderDocumentTabMenu(*mp_document);
 	m_focused = ImGui::IsWindowFocused();
 	m_hovered = ImGui::IsWindowHovered();
 	app::Application::get().getImGuiLayer()->blockEvents(!m_focused && !m_hovered);
@@ -324,6 +327,57 @@ void Viewport::onRenderInternal() {
 	renderGizmo();
 	renderOverlayToolbar();
 	renderCameraGizmo();
+	renderContextMenu();
+}
+
+void Viewport::renderContextMenu() {
+	if (mp_document == nullptr || m_parent == nullptr || mp_document->state() != SceneDocument::State::Edit)
+		return;
+	// A right click that did not drag (the camera pans with Ctrl or Alt + right drag; the voxel brush erases).
+	const auto& io = ImGui::GetIO();
+	constexpr float clickTravel = 4.f;
+	const bool click = io.MouseDragMaxDistanceSqr[ImGuiMouseButton_Right] < clickTravel * clickTravel;
+	if (m_hovered && click && ImGui::IsMouseReleased(ImGuiMouseButton_Right) && !io.KeyCtrl && !io.KeyAlt &&
+		!m_parent->getVoxelBrush().active && !gui::Guizmo::isOver()) {
+		m_parent->setSelectedEntity(m_hoveredEntity);
+		ImGui::OpenPopup("##viewportMenu");
+	}
+	if (!ImGui::BeginPopup("##viewportMenu"))
+		return;
+	if (const scene::Entity selected = m_parent->getSelectedEntity(); selected) {
+		gui::widgets::menuHeader(selected.getName().c_str(), "Entity");
+		const auto frameKey = m_parent->getActionShortcut("view.frameSelection");
+		if (gui::widgets::menuItem({.glyph = gui::icon::focus, .label = "Frame", .shortcut = frameKey.c_str()}))
+			frameSelection();
+		const auto duplicateKey = m_parent->getActionShortcut("entity.duplicate");
+		if (gui::widgets::menuItem({.glyph = gui::icon::copy, .label = "Duplicate", .shortcut = duplicateKey.c_str()}))
+			std::ignore = m_parent->runAction("entity.duplicate");
+		if (selected.hasComponent<scene::component::Visibility>()) {
+			auto& visibility = selected.getComponent<scene::component::Visibility>();
+			if (gui::widgets::menuItem(
+						{.glyph = visibility.editorVisible ? gui::icon::eyeOff : gui::icon::eye,
+						 .label = visibility.editorVisible ? "Hide in the Editor" : "Show in the Editor"}))
+				visibility.editorVisible = !visibility.editorVisible;
+		}
+		ImGui::Separator();
+		const auto deleteKey = m_parent->getActionShortcut("entity.delete");
+		if (gui::widgets::menuItem(
+					{.glyph = gui::icon::trash2, .label = "Delete", .shortcut = deleteKey.c_str(), .danger = true}))
+			std::ignore = m_parent->runAction("entity.delete");
+	} else {
+		using Projection = renderer::CameraEditor::Projection;
+		gui::widgets::menuHeader(mp_document->title().c_str(), "Scene");
+		const bool ortho = getViewProjection() == Projection::Orthographic;
+		if (gui::widgets::menuItem({.glyph = ortho ? gui::icon::check : nullptr, .label = "2D Orthographic"}))
+			setViewProjection(Projection::Orthographic);
+		if (gui::widgets::menuItem({.glyph = ortho ? nullptr : gui::icon::check, .label = "3D Perspective"}))
+			setViewProjection(Projection::Perspective);
+		ImGui::Separator();
+		auto& settings = m_parent->getSettings();
+		if (gui::widgets::menuItem({.glyph = settings.showGrid ? gui::icon::check : nullptr, .label = "Grid"}))
+			settings.showGrid = !settings.showGrid;
+	}
+	ImGui::EndPopup();
 }
 
 void Viewport::renderCameraGizmo() const {

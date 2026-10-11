@@ -67,7 +67,8 @@ active document is a scene holding a `VoxelWorld`, in Edit mode. Both palettes, 
 panels, use the inspector layout: collapsible sections, property grids, swatches of the tiles or blocks
 (`gui::widgets::imageTile`) with their name in the tooltip. Document tabs carry the glyph of their type, and a
 document opened from the Content Browser, by a drop or by an inspector **Open** button comes to the front. Asset
-fields of the inspector (tilemap, tileset, script) show their path with **Open** (in its editor) and **Clear**.
+fields of the inspector (tilemap, tileset, script) show a swatch of their atlas when they have one, their path,
+**Open** (in its editor) and **Clear**.
 
 All panels can still be rearranged, resized and tabbed together freely; the arrangement persists in
 `OwlNest_imgui.ini`. The default layout is built on the first launch, when the saved one has no split, and once
@@ -240,6 +241,12 @@ panels. Its 2D view (`CameraEditor::Projection::Orthographic`) faces the XY plan
 view at the reference point and ignores rotations; the wheel zooms both. `CameraEditor::frame` centres the view on
 the selection. The grid follows the snap step (doubled while the lines would be too dense), the X and Y axes in
 their colours.
+
+**Context menus.** A right click that does not drag opens a menu on the entity under the cursor (Frame, Duplicate,
+Hide in the Editor, Delete) or, on the empty scene, the view options (2D / 3D, grid). A right click on a document tab
+offers Save, Close, Close Others, Reveal in Content Browser and Copy Path; on a node graph it deletes the node under
+the cursor or fits the view to the graph. Every menu has a title, Lucide icons, the shortcuts and its destructive
+entries in red (`gui::widgets::menuHeader`, `menuItem`).
 
 **Gizmos.** When an entity is selected, ImGuizmo renders a manipulator gizmo in
 the viewport. The gizmo type is controlled by the overlay buttons or keyboard
@@ -488,14 +495,18 @@ search field filtering the folder by name, the grid / list toggle and the thumbn
 above the selected root. Below, one chip per family present in the folder (`All 14`, `Texture 11`...) shows that
 family alone; the chips hide when the folder holds a single family.
 
-**Tiles.** Images (`.png`, `.jpg`) show their own thumbnail, filling the tile and cropped to its square; scenes are
-rendered through their primary camera, prefabs framed whole by an orthographic camera, and sounds show their
-waveform (`sound::readWaveform`). `AssetThumbnails` reads a few images and sounds per frame and renders one scene or
+**Tiles.** Images (`.png`, `.jpg`) show their own thumbnail, filling the tile and cropped to its square; tilesets
+show their atlas; scenes are rendered through their primary camera, prefabs framed whole by an orthographic camera;
+3D models (`.obj`, `.fbx`, `.gltf`, `.glb`) show their faces in an isometric view, shaded and sorted back to front
+(`AssetThumbnails::projectMesh`, at most 6000 triangles); sounds show their waveform (`sound::readWaveform`).
+`AssetThumbnails` reads a few images, sounds and tilesets per frame (a mesh takes the frame) and renders one scene or
 prefab at a time, for 0.75 s so its textures finish loading, into a pool of 48 framebuffers it reuses; the status bar
-counts the previews still to make. A preview is made again when its file changes. Other files show the duotone icon
-of their kind, centred. A bar under the tile carries the colour of the family (scene, prefab, texture, tileset,
-tilemap, sound, script, code, shader, font, animation, node graph, 3D model, data, folder), the kind is written in
-capitals under the name, and a badge in the corner gives the extension. An empty folder, or a search with no match, says so and how to go on.
+shows the previews still to make with a progress bar. A preview is made again when its file changes. Other files show
+the duotone icon of their kind, centred. A bar under the tile carries the colour of the family (scene, prefab,
+texture, tileset, tilemap, sound, script, code, shader, font, animation, node graph, 3D model, data, folder), the kind
+is written in capitals under the name, and a badge in the corner gives a short extension. An empty folder, or a search
+with no match, says so and how to go on. A dragged tile, like a dragged entity, follows the cursor as its glyph, its
+name and its kind (`gui::widgets::dragPreview`); drop targets light up in the accent.
 
 **Interactions:**
 
@@ -571,7 +582,8 @@ with its icon; each row has its label on the left and a reset button once it dif
 parameters dialog (Window, Backends, Debug), Project Settings and Scene Settings use the same grids under
 collapsible sections with an icon:
 
-**General.** The Stats Panel switch, the UI and code font sizes, and the autosave interval
+**General.** The Stats Panel switch, the text size (75 to 150 %, applied at once, `UiLayer::setTextScale`; also
+`Ctrl+=`, `Ctrl+-` and `Ctrl+0`), the UI and code font sizes (next startup), and the autosave interval
 (see [Autosave and crash recovery](#autosave-and-crash-recovery)).
 
 **Gizmo Snap.** Snap to grid, step from the tilemap, manual step and cell multiplier.
@@ -1135,6 +1147,9 @@ gizmo manipulation is in progress.
 | Help                         | F1               | `help.context`             |
 | Frame Selection              | F                | `view.frameSelection`      |
 | Toggle 2D / 3D View          |                  | `view.toggleProjection`    |
+| Text Size: Larger            | Ctrl+=           | `view.textLarger`          |
+| Text Size: Smaller           | Ctrl+-           | `view.textSmaller`         |
+| Text Size: Reset             | Ctrl+0           | `view.textReset`           |
 
 ### Command palette
 

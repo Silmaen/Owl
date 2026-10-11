@@ -23,6 +23,8 @@
 #include <gui/IconFont.h>
 #include <gui/component/render.h>
 #include <gui/utils.h>
+#include <gui/widgets/IconButton.h>
+#include <gui/widgets/Menu.h>
 #include <physics/PhysicCommand.h>
 #include <platform/AtomicFile.h>
 #include <renderer/gpu/RenderCommand.h>
@@ -188,6 +190,49 @@ void EditorLayer::handleContentBrowserDrop(const std::filesystem::path& iRelativ
 		requestDeferredOpen(full);
 }
 
+void EditorLayer::registerTextScaleActions() {
+	constexpr int step = 10;
+	m_actionRegistry.registerAction(
+			"view.textLarger", "Text Size: Larger", {input::key::Equal, Modifiers::Ctrl},
+			[this]() -> void { m_settings.textScalePercent = std::min(150, m_settings.textScalePercent + step); });
+	m_actionRegistry.registerAction(
+			"view.textSmaller", "Text Size: Smaller", {input::key::Minus, Modifiers::Ctrl},
+			[this]() -> void { m_settings.textScalePercent = std::max(75, m_settings.textScalePercent - step); });
+	m_actionRegistry.registerAction("view.textReset", "Text Size: Reset", {input::key::D0, Modifiers::Ctrl},
+									[this]() -> void { m_settings.textScalePercent = 100; });
+}
+
+void EditorLayer::renderDocumentTabMenu(Document& ioDocument) {
+	if (!ImGui::BeginPopupContextItem("##tabMenu"))
+		return;
+	const auto path = ioDocument.filePath();
+	gui::widgets::menuHeader(ioDocument.title().c_str(), path.empty() ? "Unsaved" : nullptr);
+	const auto saveKey = getActionShortcut("scene.save");
+	if (gui::widgets::menuItem({.glyph = gui::icon::save, .label = "Save", .shortcut = saveKey.c_str()})) {
+		m_documents.setActive(&ioDocument);
+		saveActiveDocument();
+	}
+	ImGui::Separator();
+	const auto closeKey = getActionShortcut("doc.close");
+	if (gui::widgets::menuItem({.glyph = gui::icon::x, .label = "Close", .shortcut = closeKey.c_str()}))
+		requestCloseDocument(ioDocument.id());
+	if (gui::widgets::menuItem({.label = "Close Others", .enabled = m_documents.list().size() > 1})) {
+		for (const auto& doc: m_documents.list()) {
+			if (doc && doc.get() != &ioDocument)
+				requestCloseDocument(doc->id());
+		}
+	}
+	ImGui::Separator();
+	if (gui::widgets::menuItem(
+				{.glyph = gui::icon::folderSearch, .label = "Reveal in Content Browser", .enabled = !path.empty()})) {
+		m_contentBrowser.reveal(path);
+		ImGui::SetWindowFocus(panelWindow::contentBrowser);
+	}
+	if (gui::widgets::menuItem({.glyph = gui::icon::clipboardCopy, .label = "Copy Path", .enabled = !path.empty()}))
+		ImGui::SetClipboardText(path.string().c_str());
+	ImGui::EndPopup();
+}
+
 void EditorLayer::openAssetFromInspector(const std::filesystem::path& iPath) {
 	for (const auto& [title, assetsPath]: app::Application::get().getAssetDirectories()) {
 		if (const auto candidate = assetsPath / iPath; exists(candidate)) {
@@ -278,15 +323,17 @@ void EditorLayer::renderCloseDocumentModal() {
 		if (const auto* doc = m_documents.find(m_pendingCloseDocId); doc != nullptr) {
 			ImGui::Text("'%s' has unsaved changes.", doc->title().c_str());
 			ImGui::Spacing();
-			const auto& iconBank = gui::IconBank::instance();
-			if (iconBank.iconButton("delete", "Discard changes", {ImGui::GetFontSize() * 9.f, 0})) {
+			if (gui::widgets::button("Discard changes", {.glyph = gui::icon::trash2,
+														 .label = "Discard changes",
+														 .width = ImGui::GetFontSize() * 9.f})) {
 				const auto id = m_pendingCloseDocId;
 				m_pendingCloseDocId = core::UUID{0};
 				ImGui::CloseCurrentPopup();
 				m_deferredCloseIds.push_back(id);
 			}
 			ImGui::SameLine();
-			if (iconBank.iconButton("close", "Cancel", {ImGui::GetFontSize() * 7.f, 0})) {
+			if (gui::widgets::button("Cancel",
+									 {.glyph = gui::icon::x, .label = "Cancel", .width = ImGui::GetFontSize() * 7.f})) {
 				m_pendingCloseDocId = core::UUID{0};
 				ImGui::CloseCurrentPopup();
 			}
@@ -371,6 +418,7 @@ void EditorLayer::onAttach() {
 										 (vp->isFocused() || vp->isHovered()) && !gui::Guizmo::isUsing())
 			vp->setGuizmoType(gui::Guizmo::Type::All);
 	});
+	registerTextScaleActions();
 	m_actionRegistry.registerAction(
 			"view.frameSelection", "Frame Selection", {input::key::F, Modifiers::None}, [this]() -> void {
 				if (auto* vp = activeViewport(); vp != nullptr && getState() == State::Edit &&
@@ -541,6 +589,7 @@ void EditorLayer::onUpdate(const core::Timestep& iTimeStep) {
 
 	m_recovery.setInterval(static_cast<float>(m_settings.autosaveIntervalSeconds));
 	m_toasts.update(iTimeStep.getSeconds());
+	gui::UiLayer::setTextScale(static_cast<float>(m_settings.textScalePercent) / 100.f);
 	// Before the viewports: a preview render resets the 2D stats they show.
 	if (getState() == State::Edit)
 		m_contentBrowser.onUpdate();

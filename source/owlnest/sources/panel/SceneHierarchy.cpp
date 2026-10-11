@@ -466,7 +466,7 @@ void SceneHierarchy::drawEntityNode(const scene::Entity& iEntity) {
 	if (ImGui::BeginDragDropSource()) {
 		const uint64_t uuid = iEntity.getUUID();
 		ImGui::SetDragDropPayload("HIERARCHY_ENTITY", &uuid, sizeof(uuid));
-		ImGui::Text("%s", tag.c_str());
+		gui::widgets::dragPreview(kind.glyph, tag.c_str(), "Entity");
 		ImGui::EndDragDropSource();
 	}
 
@@ -873,10 +873,11 @@ void SceneHierarchy::drawComponents(const scene::Entity& iEntity) {
 	gui::widgets::badge(std::format("{} {}", gui::icon::hash, static_cast<uint64_t>(iEntity.getUUID())).c_str());
 	if (isComponentOverridden(iEntity, Tag::key())) {
 		ImGui::SameLine();
-		if (ImGui::SmallButton("Revert name"))
+		if (gui::widgets::iconButton("revertName", {.glyph = gui::icon::rotateCcw,
+													.tooltip = "Revert the name",
+													.description = "The name overrides the prefab: take the prefab "
+																   "name back."}))
 			revertComponentToPrefab(iEntity, Tag::key(), "name", mp_undoManager);
-		if (ImGui::IsItemHovered())
-			ImGui::SetTooltip("The name overrides the prefab: revert it to the prefab name");
 	}
 
 	if (ImGui::BeginPopup("AddComponent")) {

@@ -199,12 +199,12 @@ void ProjectSettings::onImGuiRender() {
 		}
 		ImGui::Spacing();
 
-		const auto& iconBank = gui::IconBank::instance();
 		const float buttonWidth = ImGui::CalcTextSize("Cancel").x + ImGui::GetFontSize() +
 								  ImGui::GetStyle().ItemInnerSpacing.x + ImGui::GetStyle().FramePadding.x * 2.0f;
 		const float totalWidth = buttonWidth * 2.0f + ImGui::GetStyle().ItemSpacing.x;
 		ImGui::SetCursorPosX((ImGui::GetWindowSize().x - totalWidth) * 0.5f);
-		if (iconBank.iconButton("save", "OK##projSettings", {buttonWidth, 0})) {
+		if (gui::widgets::button("OK##projSettings",
+								 {.glyph = gui::icon::check, .label = "OK", .primary = true, .width = buttonWidth})) {
 			m_localProject.name = m_nameBuffer;
 			m_localProject.firstScene =
 					m_selectedSceneIndex >= 0 ? m_availableScenes[static_cast<size_t>(m_selectedSceneIndex)] : "";
@@ -216,7 +216,7 @@ void ProjectSettings::onImGuiRender() {
 			ImGui::CloseCurrentPopup();
 		}
 		ImGui::SameLine();
-		if (iconBank.iconButton("close", "Cancel", {buttonWidth, 0})) {
+		if (gui::widgets::button("Cancel", {.glyph = gui::icon::x, .label = "Cancel", .width = buttonWidth})) {
 			ImGui::CloseCurrentPopup();
 		}
 

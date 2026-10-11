@@ -19,6 +19,7 @@
 #include "gui/widgets/Combo.h"
 #include "gui/widgets/CurveEditor.h"
 #include "gui/widgets/IconButton.h"
+#include "gui/widgets/ImageTile.h"
 #include "gui/widgets/PropertyGrid.h"
 #include "gui/widgets/SectionHeader.h"
 #include "gui/widgets/Toggle.h"
@@ -143,12 +144,23 @@ auto openAssetHandler() -> std::function<void(const std::filesystem::path&)>& {
 	return handler;
 }
 
-// Path field of an asset: the path (read only, or a hint), then Open in its editor and Clear.
-auto assetPathRow(const char* iLabel, const std::string& iPath, const char* iHint, const char* iOpenTip) -> bool {
+// Asset path field: its atlas swatch, the path (read only), then Open in its editor and Clear.
+auto assetPathRow(const char* iLabel, const std::string& iPath, const char* iHint, const char* iOpenTip,
+				  const shared<renderer::gpu::Texture2D>& iPreview = nullptr) -> bool {
 	bool cleared = false;
 	std::ignore = prop::row(iLabel, [&](const char* iId) -> bool {
 		const float side = ImGui::GetFrameHeight();
 		const float spacing = ImGui::GetStyle().ItemSpacing.x;
+		if (iPreview && iPreview->isLoaded()) {
+			ImGui::PushID(iId);
+			std::ignore = widgets::imageTile("##preview", {.textureId = iPreview->getRendererId(),
+														   .uv0 = {0.f, 1.f},
+														   .uv1 = {1.f, 0.f},
+														   .size = side,
+														   .outline = {}});
+			ImGui::PopID();
+			ImGui::SameLine();
+		}
 		std::string shown = iPath;
 		ImGui::SetNextItemWidth(std::max(side, ImGui::GetContentRegionAvail().x - (side + spacing) * 2.f));
 		ImGui::InputTextWithHint(iId, iHint, &shown, ImGuiInputTextFlags_ReadOnly);
@@ -938,7 +950,8 @@ void renderProps(RendererTag& ioComponent) {
 void renderProps(Tilemap& ioComponent) {
 	// --- Tilemap asset slot (path drop target) --------------------------------------------
 	if (assetPathRow("Tilemap", ioComponent.tilemapPath.generic_string(), "drop a .owltilemap",
-					 "Edit the tilemap in the Tilemap Editor.")) {
+					 "Edit the tilemap in the Tilemap Editor.",
+					 ioComponent.asset && ioComponent.asset->tileset ? ioComponent.asset->tileset->texture : nullptr)) {
 		ioComponent.tilemapPath.clear();
 		ioComponent.asset.reset();
 	}
@@ -1021,9 +1034,9 @@ auto interactionKeyCombo(const char* iLabel, input::KeyCode& ioKey) -> bool {
 
 void renderProps(RaycastDoor& ioComponent) {
 	// --- Tileset asset slot ---------------------------------------------------------------
-	if (assetPathRow(
-				"Tileset", ioComponent.tilesetPath, "drop a .owltileset",
-				"Edit the atlas in the Tileset Editor; use the tileset of the world tilemap to share its texture.")) {
+	if (assetPathRow("Tileset", ioComponent.tilesetPath, "drop a .owltileset",
+					 "Edit the atlas in the Tileset Editor; use the tileset of the world tilemap to share its texture.",
+					 ioComponent.tileset ? ioComponent.tileset->texture : nullptr)) {
 		ioComponent.tilesetPath.clear();
 		ioComponent.tileset.reset();
 	}
@@ -1085,9 +1098,9 @@ void renderProps(RaycastDoor& ioComponent) {
 }
 
 void renderProps(RaycastPushWall& ioComponent) {
-	if (assetPathRow(
-				"Tileset", ioComponent.tilesetPath, "drop a .owltileset",
-				"Edit the atlas in the Tileset Editor; use the tileset of the world tilemap to share its texture.")) {
+	if (assetPathRow("Tileset", ioComponent.tilesetPath, "drop a .owltileset",
+					 "Edit the atlas in the Tileset Editor; use the tileset of the world tilemap to share its texture.",
+					 ioComponent.tileset ? ioComponent.tileset->texture : nullptr)) {
 		ioComponent.tilesetPath.clear();
 		ioComponent.tileset.reset();
 	}
@@ -1131,7 +1144,8 @@ void renderProps(VoxelWorld& ioComponent) {
 	ImGui::Text("Blocks: %zu", blockCount);
 	ImGui::Text("Chunks: %zu", ioComponent.world.chunkCount());
 	if (assetPathRow("Tileset", ioComponent.tilesetPath, "drop a .owltileset",
-					 "Edit the atlas of the blocks in the Tileset Editor; face indices are its tile indices.")) {
+					 "Edit the atlas of the blocks in the Tileset Editor; face indices are its tile indices.",
+					 ioComponent.tileset ? ioComponent.tileset->texture : nullptr)) {
 		ioComponent.tilesetPath.clear();
 		ioComponent.tileset.reset();
 	}

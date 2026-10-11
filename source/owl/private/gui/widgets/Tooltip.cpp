@@ -52,4 +52,15 @@ void itemTooltip(const char* iTitle, const char* iShortcut, const char* iDescrip
 		richTooltip(iTitle, iShortcut, iDescription);
 }
 
+void dragPreview(const char* iGlyph, const char* iLabel, const char* iKind) {
+	const auto& theme = UiLayer::getTheme();
+	ImGui::TextColored(vec(theme.accent), "%s", iGlyph);
+	ImGui::SameLine();
+	ImGui::TextUnformatted(iLabel);
+	if (iKind != nullptr) {
+		ImGui::SameLine();
+		ImGui::TextColored(vec(theme.textDisabled), "%s", iKind);
+	}
+}
+
 }// namespace owl::gui::widgets

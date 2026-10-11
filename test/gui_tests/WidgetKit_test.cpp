@@ -205,6 +205,8 @@ TEST_F(WidgetKitTest, EveryWidgetDrawsWithoutInput) {
 			richTooltip("Title", "F1", "Description.");
 			toasts.onImGuiRender();
 			toasts.renderHistory();
+			dragPreview(icon::file, "hero.png", "Texture");
+			dragPreview(icon::box, "Player");
 		});
 	}
 	EXPECT_EQ(search, "cam");
@@ -293,6 +295,16 @@ TEST_F(WidgetKitTest, OrthographicWorldGizmoLeavesAnIdleTransform) {
 	});
 	EXPECT_FALSE(gui::Guizmo::isUsing());
 	EXPECT_EQ(transform, view);
+}
+
+TEST_F(WidgetKitTest, TextScaleIsClampedAndAppliedAtOnce) {
+	UiLayer::setTextScale(2.f);
+	EXPECT_FLOAT_EQ(UiLayer::getTextScale(), UiLayer::maxTextScale);
+	EXPECT_FLOAT_EQ(ImGui::GetStyle().FontScaleMain, UiLayer::maxTextScale);
+	UiLayer::setTextScale(0.1f);
+	EXPECT_FLOAT_EQ(UiLayer::getTextScale(), UiLayer::minTextScale);
+	UiLayer::setTextScale(1.f);
+	EXPECT_FLOAT_EQ(ImGui::GetStyle().FontScaleMain, 1.f);
 }
 
 TEST_F(WidgetKitTest, DisabledIconButtonIgnoresClicks) {

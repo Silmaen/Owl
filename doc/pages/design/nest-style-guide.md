@@ -98,9 +98,11 @@ Build panels from the kit in `gui/widgets/` before writing raw ImGui:
 | An on / off property / option        | `toggle` (inspector rows) / `checkbox` (a label after a small box)                                   |
 | A nested block inside a component    | `subHeader`                                                                                          |
 | A row of a tree (entities, folders)  | `treeRow`, `endTreeRow`                                                                              |
-| A labelled button / the main action  | `button` (`primary` for the accent)                                                                  |
+| A labelled button / the main action  | `button` (`primary` for the accent; `width` for the OK / Cancel row of a dialog)                     |
 | A drop-down list                     | `beginCombo`, `combo` (never `ImGui::BeginCombo`: its arrow is a filled triangle)                    |
 | A context menu                       | `menuHeader`, then `menuItem` (glyph column, shortcut, `danger` for a deletion)                      |
+| A tile, block or atlas swatch        | `imageTile` (outline in the accent for the choice of the left button, `info` for the right)          |
+| What follows the cursor in a drag    | `dragPreview` (glyph, name, kind) inside `BeginDragDropSource`                                       |
 | A count or a state / a filter toggle | `badge` / `chip`                                                                                     |
 | A property that needs attention      | `notice`                                                                                             |
 | A short confirmation or failure      | `ToastQueue::push`                                                                                   |

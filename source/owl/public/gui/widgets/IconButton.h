@@ -61,6 +61,8 @@ struct ButtonSpec {
 	bool primary = false;
 	/// Greyed out and not clickable.
 	bool disabled = false;
+	/// Width of the button, its content centred; 0 or less fits the content.
+	float width = 0.f;
 };
 
 /**

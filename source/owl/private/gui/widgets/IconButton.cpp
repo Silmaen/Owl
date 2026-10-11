@@ -16,6 +16,7 @@
 
 #include <imgui.h>
 
+#include <algorithm>
 #include <cmath>
 
 namespace owl::gui::widgets {
@@ -63,7 +64,9 @@ auto button(const char* iId, const ButtonSpec& iSpec) -> bool {
 	const ImVec2 labelSize = ImGui::CalcTextSize(iSpec.label);
 	ImGui::PushID(iId);
 	ImGui::BeginDisabled(iSpec.disabled);
-	const bool clicked = ImGui::InvisibleButton("##button", {padX * 2.f + glyphWidth + labelSize.x, height});
+	const float content = glyphWidth + labelSize.x;
+	const float width = std::max(padX * 2.f + content, iSpec.width);
+	const bool clicked = ImGui::InvisibleButton("##button", {width, height});
 	const bool hovered = ImGui::IsItemHovered();
 	const bool active = ImGui::IsItemActive();
 	const ImVec2 min = ImGui::GetItemRectMin();
@@ -79,7 +82,7 @@ auto button(const char* iId, const ButtonSpec& iSpec) -> bool {
 	auto* draw = ImGui::GetWindowDrawList();
 	draw->AddRectFilled(min, max, ImGui::GetColorU32(vec(background)), theme.frameRounding);
 	const float textY = std::floor(min.y + (height - labelSize.y) * 0.5f);
-	float x = min.x + padX;
+	float x = std::floor(min.x + (width - content) * 0.5f);
 	if (iSpec.glyph != nullptr) {
 		draw->AddText({x, textY}, ImGui::GetColorU32(vec(color)), iSpec.glyph);
 		x += glyphWidth;

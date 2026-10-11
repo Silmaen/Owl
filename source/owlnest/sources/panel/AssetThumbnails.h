@@ -9,11 +9,13 @@
 #pragma once
 
 #include <core/Core.h>
+#include <data/geometry/StaticMesh.h>
 #include <renderer/CameraEditor.h>
 #include <renderer/gpu/Framebuffer.h>
 #include <renderer/gpu/Texture.h>
 #include <scene/Scene.h>
 
+#include <array>
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
@@ -45,6 +47,16 @@ public:
 		Scene,///< A render through the primary camera of the scene.
 		Prefab,///< A render of the prefab, framed by an orthographic camera.
 		Sound,///< The waveform of the sound.
+		Tileset,///< The atlas image of the tileset.
+		Mesh,///< The triangles of the mesh, projected in an isometric view and shaded.
+	};
+
+	/// A triangle of a mesh preview, in the unit square (y down), with its light level.
+	struct MeshTriangle {
+		/// Corners, from 0 to 1.
+		std::array<math::vec2, 3> corners;
+		/// Lambert light level, from 0 to 1.
+		float shade = 1.f;
 	};
 
 	/// A finished preview.
@@ -55,7 +67,20 @@ public:
 		shared<renderer::gpu::Framebuffer> framebuffer;
 		/// Peaks of the sound, 0 to 1 (Sound kind).
 		std::vector<float> waveform;
+		/// Triangles back to front (Mesh kind).
+		std::vector<MeshTriangle> mesh;
 	};
+
+	/// Triangles kept in a mesh preview; a larger mesh is sampled.
+	static constexpr size_t maxMeshTriangles = 6000;
+
+	/**
+	 * @brief
+	 *  Project a mesh in an isometric view into the unit square, back to front, shaded by a light from the viewer.
+	 * @param[in] iMesh The mesh.
+	 * @return The triangles to draw in order; empty for an empty mesh.
+	 */
+	[[nodiscard]] static auto projectMesh(const data::geometry::StaticMesh& iMesh) -> std::vector<MeshTriangle>;
 
 	/// Side of a rendered preview, in pixels.
 	static constexpr uint32_t renderSize = 192;

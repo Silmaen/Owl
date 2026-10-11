@@ -9,8 +9,10 @@
 #include "panel/AsyncProgressModal.h"
 
 #include <gui/IconBank.h>
+#include <gui/IconFont.h>
 #include <gui/UiLayer.h>
 #include <gui/utils.h>
+#include <gui/widgets/IconButton.h>
 
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG("-Wreserved-identifier")
@@ -46,14 +48,14 @@ void AsyncProgressModal::onImGuiRender() {
 		const float progress = m_state->progress.load();
 		const auto message = m_state->getMessage();
 
-		const auto& iconBank = gui::IconBank::instance();
 		if (m_state->hasError.load()) {
 			// Error state: show error in red + Close button.
 			const auto errorMsg = m_state->getError();
 			ImGui::TextColored(gui::vec(gui::UiLayer::getTheme().error), "Error:");
 			ImGui::TextWrapped("%s", errorMsg.c_str());
 			ImGui::Spacing();
-			if (iconBank.iconButton("close", "Close", {ImGui::GetFontSize() * 7.f, 0})) {
+			if (gui::widgets::button("Close",
+									 {.glyph = gui::icon::x, .label = "Close", .width = ImGui::GetFontSize() * 7.f})) {
 				ImGui::CloseCurrentPopup();
 				close();
 			}
@@ -69,7 +71,8 @@ void AsyncProgressModal::onImGuiRender() {
 				ImGui::TextWrapped("%s", summary.c_str());
 			}
 			ImGui::Spacing();
-			if (iconBank.iconButton("close", "Close", {ImGui::GetFontSize() * 7.f, 0})) {
+			if (gui::widgets::button("Close",
+									 {.glyph = gui::icon::x, .label = "Close", .width = ImGui::GetFontSize() * 7.f})) {
 				ImGui::CloseCurrentPopup();
 				close();
 			}
@@ -81,10 +84,14 @@ void AsyncProgressModal::onImGuiRender() {
 			if (m_cancellable) {
 				if (m_state->cancelRequested.load()) {
 					ImGui::BeginDisabled();
-					iconBank.iconButton("close", "Cancelling...", {ImGui::GetFontSize() * 8.f, 0});
+					gui::widgets::button(
+							"Cancelling...",
+							{.glyph = gui::icon::x, .label = "Cancelling...", .width = ImGui::GetFontSize() * 8.f});
 					ImGui::EndDisabled();
 				} else {
-					if (iconBank.iconButton("close", "Cancel", {ImGui::GetFontSize() * 7.f, 0}))
+					if (gui::widgets::button(
+								"Cancel",
+								{.glyph = gui::icon::x, .label = "Cancel", .width = ImGui::GetFontSize() * 7.f}))
 						m_state->cancelRequested.store(true);
 				}
 			}

@@ -69,6 +69,13 @@ public:
 
 	/**
 	 * @brief
+	 *  Show the folder of a file, the file selected, from the asset root that holds it.
+	 * @param[in] iPath The file, absolute.
+	 */
+	void reveal(const std::filesystem::path& iPath);
+
+	/**
+	 * @brief
 	 *  Asset root shown, the base of the paths the browser drags.
 	 * @return The root folder.
 	 */
