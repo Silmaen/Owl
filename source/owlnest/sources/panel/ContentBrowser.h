@@ -8,9 +8,12 @@
 
 #pragma once
 
+#include "AssetThumbnails.h"
+
 #include <owlgui.h>
 
 #include <atomic>
+#include <cstddef>
 #include <filesystem>
 #include <functional>
 #include <string>
@@ -50,6 +53,19 @@ public:
 	 *  The render command.
 	 */
 	void onImGuiRender();
+
+	/**
+	 * @brief
+	 *  Render the pending scene or prefab preview; call once per frame before the viewports.
+	 */
+	void onUpdate() { m_previews.onUpdate(); }
+
+	/**
+	 * @brief
+	 *  Previews of the folder shown that are ready, and to make in all.
+	 * @return Ready and total counts.
+	 */
+	[[nodiscard]] auto getPreviewProgress() const -> std::pair<size_t, size_t> { return m_previews.getProgress(); }
 
 	/**
 	 * @brief
@@ -158,23 +174,12 @@ private:
 	bool m_listView = false;
 	/// Side of a grid tile, in pixels (the thumbnail size).
 	float m_tileSize = 88.f;
-	/// Image thumbnails of the current folder, by file path; cleared when the folder changes.
-	std::unordered_map<std::string, shared<renderer::gpu::Texture2D>> m_thumbnails;
-	/// Folder the thumbnails belong to.
-	std::filesystem::path m_thumbnailFolder;
+	/// Previews of the files: images, rendered scenes and prefabs, sound waveforms.
+	AssetThumbnails m_previews;
 	/// Sub-folders of the folders shown in the tree, by path; cleared after each scan.
 	std::unordered_map<std::string, std::vector<std::filesystem::path>> m_folderCache;
 	/// Folder the tree last expanded its ancestors for.
 	std::filesystem::path m_treeSyncedPath;
-
-	/**
-	 * @brief
-	 *  Thumbnail of an image file, loaded on first use (a few per frame, so a large folder never stalls a frame).
-	 * @param[in] iPath The file.
-	 * @param[in,out] ioBudget Loads still allowed this frame.
-	 * @return The texture, or null when the file is not an image or not loaded yet.
-	 */
-	auto getThumbnail(const std::filesystem::path& iPath, int& ioBudget) -> shared<renderer::gpu::Texture2D>;
 
 	/**
 	 * @brief

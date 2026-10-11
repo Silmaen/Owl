@@ -63,6 +63,14 @@ auto fade(const math::vec4& iColor, const float iOpacity) -> ImU32 {
 }// namespace
 
 void ToastQueue::push(const ToastKind iKind, std::string iTitle, std::string iDetail) {
+	++m_unread;
+	if (!m_history.empty() && m_history.back().kind == iKind && m_history.back().title == iTitle &&
+		m_history.back().detail == iDetail) {
+		++m_history.back().count;
+	} else {
+		m_history.push_back({.kind = iKind, .title = iTitle, .detail = iDetail, .age = 0.f, .count = 1});
+		while (m_history.size() > maxHistory) m_history.pop_front();
+	}
 	for (auto& toast: m_toasts) {
 		if (toast.kind == iKind && toast.title == iTitle && toast.detail == iDetail && toast.age < lifetime) {
 			++toast.count;
@@ -124,6 +132,26 @@ void ToastQueue::onImGuiRender() const {
 			draw->AddText({textX, min.y + padding.y + titleSize.y + 2.f}, fade(theme.textMuted, opacity),
 						  toast.detail.c_str());
 		bottom = min.y - fontSize * 0.5f;
+	}
+}
+
+void ToastQueue::renderHistory() const {
+	const auto& theme = UiLayer::getTheme();
+	if (m_history.empty()) {
+		ImGui::TextColored(vec(theme.textDisabled), "No notification yet.");
+		return;
+	}
+	for (const auto& toast: m_history | std::views::reverse) {
+		ImGui::TextColored(vec(kindColor(toast.kind)), "%s", kindGlyph(toast.kind));
+		ImGui::SameLine();
+		ImGui::BeginGroup();
+		if (toast.count > 1)
+			ImGui::Text("%s (%ux)", toast.title.c_str(), toast.count);
+		else
+			ImGui::TextUnformatted(toast.title.c_str());
+		if (!toast.detail.empty())
+			ImGui::TextColored(vec(theme.textMuted), "%s", toast.detail.c_str());
+		ImGui::EndGroup();
 	}
 }
 

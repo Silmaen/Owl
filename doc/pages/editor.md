@@ -54,7 +54,9 @@ The default arrangement uses ImGui docking:
 - **Bottom strip** -- Content Browser, Log and Stats as tabs under the documents
 - **Status bar** -- one line under everything: the simulation mode (`EDIT`, `PLAYING`, `PAUSED`, the bar turns blue
   while the scene runs), the active document and its entity count, the last autosave, the graphics backend, and the
-  warnings and errors logged since you last looked; clicking a counter opens the Log
+  warnings and errors logged since you last looked (clicking a counter opens the Log), the graphics device, the
+  Content Browser previews still to make, and a bell holding the last 30 notifications (the toasts), with the count
+  of unread ones
 
 Two presets are available from **File > Views** and the shortcuts: **Default** (`Alt+1`) and **Hierarchy Left**
 (`Alt+2`), which moves the Scene Hierarchy to its own column left of the documents. **Reset Layout** puts every panel
@@ -482,9 +484,12 @@ search field filtering the folder by name, the grid / list toggle and the thumbn
 above the selected root. Below, one chip per family present in the folder (`All 14`, `Texture 11`...) shows that
 family alone; the chips hide when the folder holds a single family.
 
-**Tiles.** Images (`.png`, `.jpg`) show their own thumbnail, filling the tile and cropped to its square; the
-thumbnails load a few per frame and are dropped when you leave the folder. Other files show the duotone icon of
-their kind, centred. A bar under the tile carries the colour of the family (scene, prefab, texture, tileset,
+**Tiles.** Images (`.png`, `.jpg`) show their own thumbnail, filling the tile and cropped to its square; scenes are
+rendered through their primary camera, prefabs framed whole by an orthographic camera, and sounds show their
+waveform (`sound::readWaveform`). `AssetThumbnails` reads a few images and sounds per frame and renders one scene or
+prefab at a time, for 0.75 s so its textures finish loading, into a pool of 48 framebuffers it reuses; the status bar
+counts the previews still to make. A preview is made again when its file changes. Other files show the duotone icon
+of their kind, centred. A bar under the tile carries the colour of the family (scene, prefab, texture, tileset,
 tilemap, sound, script, code, shader, font, animation, node graph, 3D model, data, folder), the kind is written in
 capitals under the name, and a badge in the corner gives the extension. An empty folder, or a search with no match, says so and how to go on.
 

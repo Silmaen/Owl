@@ -8,9 +8,15 @@
 
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <optional>
 #include <string>
+#include <utility>
+
+namespace owl::gui::widgets {
+class ToastQueue;
+}// namespace owl::gui::widgets
 
 namespace owl::nest::panel {
 
@@ -38,6 +44,12 @@ struct StatusInfo {
 	std::optional<float> secondsSinceAutosave;
 	/// Graphics backend name.
 	std::string backend;
+	/// Name of the graphics device; empty when unknown.
+	std::string device;
+	/// Previews of the Content Browser ready and to make; empty when every one is done.
+	std::optional<std::pair<size_t, size_t>> previews;
+	/// Notifications shown by the bell (history, unread count); null for no bell.
+	gui::widgets::ToastQueue* notifications = nullptr;
 	/// Warnings logged since startup.
 	uint64_t warningCount = 0;
 	/// Errors logged since startup.

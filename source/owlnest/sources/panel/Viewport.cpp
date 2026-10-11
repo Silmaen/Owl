@@ -613,13 +613,17 @@ void Viewport::renderGrid(const float iStep) const {
 	const float maxY = focal.y() + extent;
 	const auto& theme = gui::UiLayer::getTheme();
 	const math::vec4 lineColor = gui::Theme::withAlpha(theme.text, 0.07f);
-	for (float x = minX; x <= maxX; x += step) {
+	const auto columns = static_cast<int>((maxX - minX) / step) + 1;
+	for (int i = 0; i < columns; ++i) {
+		const float x = minX + step * static_cast<float>(i);
 		const bool axis = std::abs(x) < step * 0.5f;
 		renderer::Renderer2D::drawLine({.point1 = {x, minY, 0.f},
 										.point2 = {x, maxY, 0.f},
 										.color = axis ? gui::Theme::withAlpha(theme.axisY, 0.45f) : lineColor});
 	}
-	for (float y = minY; y <= maxY; y += step) {
+	const auto rows = static_cast<int>((maxY - minY) / step) + 1;
+	for (int i = 0; i < rows; ++i) {
+		const float y = minY + step * static_cast<float>(i);
 		const bool axis = std::abs(y) < step * 0.5f;
 		renderer::Renderer2D::drawLine({.point1 = {minX, y, 0.f},
 										.point2 = {maxX, y, 0.f},

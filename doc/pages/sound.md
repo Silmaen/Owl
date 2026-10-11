@@ -172,6 +172,12 @@ owl::sound::SoundCommand::setPitch(handle, 1.2f);
 owl::sound::SoundCommand::stop(handle);
 ```
 
+## Waveform
+
+`sound::readWaveform(path, buckets)` (`sound/Waveform.h`) reads a sound file once, in blocks, and returns the peak
+amplitude (0 to 1, channels mixed) of each of `buckets` equal slices; the Content Browser draws it on sound tiles. It
+returns an empty vector, with a warning, when the file cannot be read or the audio module is not built.
+
 ## Scene Lifecycle Integration
 
 ![Scene Lifecycle](../images/scene_lifecycle.svg)

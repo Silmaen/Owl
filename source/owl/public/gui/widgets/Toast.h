@@ -59,6 +59,8 @@ public:
 	static constexpr float fadeTime = 0.4f;
 	/// Toasts shown at once; older ones are dropped.
 	static constexpr size_t maxToasts = 4;
+	/// Notifications kept in the history; older ones are dropped.
+	static constexpr size_t maxHistory = 30;
 
 	/**
 	 * @brief
@@ -97,6 +99,41 @@ public:
 
 	/**
 	 * @brief
+	 *  Every notification pushed, oldest first, kept after its toast has faded (repeats folded).
+	 * @return The history.
+	 */
+	[[nodiscard]] auto getHistory() const -> const std::deque<Toast>& { return m_history; }
+
+	/**
+	 * @brief
+	 *  Notifications pushed since the history was last read.
+	 * @return Their number.
+	 */
+	[[nodiscard]] auto getUnreadCount() const -> size_t { return m_unread; }
+
+	/**
+	 * @brief
+	 *  Mark the history as read.
+	 */
+	void markRead() { m_unread = 0; }
+
+	/**
+	 * @brief
+	 *  Empty the history.
+	 */
+	void clearHistory() {
+		m_history.clear();
+		m_unread = 0;
+	}
+
+	/**
+	 * @brief
+	 *  Draw the history as rows (newest first): the glyph of its kind, the title, the detail; for a popup.
+	 */
+	void renderHistory() const;
+
+	/**
+	 * @brief
 	 *  Opacity of a toast of a given age.
 	 * @param[in] iAge Seconds shown.
 	 * @return 1 while visible, falling to 0 over `fadeTime`.
@@ -106,6 +143,10 @@ public:
 private:
 	/// The toasts being shown, oldest first.
 	std::deque<Toast> m_toasts;
+	/// Every notification pushed, oldest first.
+	std::deque<Toast> m_history;
+	/// Notifications pushed since the history was last read.
+	size_t m_unread = 0;
 };
 
 }// namespace owl::gui::widgets

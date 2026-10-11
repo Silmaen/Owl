@@ -10,6 +10,8 @@
 
 #include <gui/IconFont.h>
 #include <gui/UiLayer.h>
+#include <gui/widgets/Menu.h>
+#include <gui/widgets/Toast.h>
 
 #include <imgui.h>
 
@@ -129,8 +131,36 @@ void StatusBar::onImGuiRender(const StatusInfo& iInfo) {
 			errors > 0 ? toU32(theme.error) : ImGui::GetColorU32(ImGuiCol_TextDisabled));
 	counter("##statusWarnings", std::format("{} {}", gui::icon::triangleAlert, plural(warnings, "warning")),
 			warnings > 0 ? toU32(theme.warning) : ImGui::GetColorU32(ImGuiCol_TextDisabled));
+	if (iInfo.notifications != nullptr) {
+		const size_t unread = iInfo.notifications->getUnreadCount();
+		const auto text = unread > 0 ? std::format("{} {}", gui::icon::bell, unread) : std::string{gui::icon::bell};
+		const ImVec2 size = ImGui::CalcTextSize(text.c_str());
+		right -= size.x + 2.f * spacing;
+		ImGui::SetCursorScreenPos({right, origin.y});
+		if (ImGui::InvisibleButton("##statusBell", {size.x + 2.f * spacing, height})) {
+			ImGui::OpenPopup("##notifications");
+			iInfo.notifications->markRead();
+		}
+		const bool hovered = ImGui::IsItemHovered();
+		if (hovered)
+			draw->AddRectFilled({right, origin.y + 2.f}, {right + size.x + 2.f * spacing, origin.y + height - 2.f},
+								ImGui::GetColorU32(ImGuiCol_ButtonHovered), 3.f);
+		if (hovered && !ImGui::IsPopupOpen("##notifications"))
+			ImGui::SetTooltip("Notifications");
+		draw->AddText({right + spacing, textY},
+					  unread > 0 ? toU32(theme.accent) : ImGui::GetColorU32(ImGuiCol_TextDisabled), text.c_str());
+		ImGui::SetNextWindowPos({right + size.x + 2.f * spacing, origin.y}, ImGuiCond_Always, {1.f, 1.f});
+		if (ImGui::BeginPopup("##notifications")) {
+			gui::widgets::menuHeader("Notifications");
+			iInfo.notifications->renderHistory();
+			ImGui::EndPopup();
+		}
+	}
 	if (!iInfo.backend.empty())
-		label(iInfo.backend);
+		label(iInfo.device.empty() ? iInfo.backend : std::format("{}{}{}", iInfo.backend, g_separator, iInfo.device));
+	if (iInfo.previews.has_value())
+		label(std::format("{} Generating previews {}/{}", gui::icon::image, iInfo.previews->first,
+						  iInfo.previews->second));
 	if (iInfo.secondsSinceAutosave.has_value())
 		label(std::format("{} Autosaved {}", gui::icon::save, formatElapsed(*iInfo.secondsSinceAutosave)));
 

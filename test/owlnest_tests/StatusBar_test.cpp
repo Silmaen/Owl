@@ -11,10 +11,14 @@
 
 #include <core/Log.h>
 #include <gui/UiLayer.h>
+#include <gui/widgets/Toast.h>
 
 #include <imgui.h>
 
 #include <gtest/gtest.h>
+
+#include <cstddef>
+#include <utility>
 
 using namespace owl;
 using namespace owl::nest::panel;
@@ -53,6 +57,8 @@ TEST(StatusBar, RendersEveryModeWithoutRequest) {
 	layer.onAttach();
 	ImGui::GetIO().IniFilename = nullptr;
 	StatusBar bar;
+	gui::widgets::ToastQueue toasts;
+	toasts.push(gui::widgets::ToastKind::Success, "Saved main_menu.owl");
 	for (const auto mode: {StatusInfo::Mode::Edit, StatusInfo::Mode::Play, StatusInfo::Mode::Pause}) {
 		layer.begin();
 		ImGui::Begin("Host");
@@ -61,6 +67,9 @@ TEST(StatusBar, RendersEveryModeWithoutRequest) {
 						   .entityCount = 18,
 						   .secondsSinceAutosave = 12.f,
 						   .backend = "Vulkan",
+						   .device = "llvmpipe",
+						   .previews = std::pair<size_t, size_t>{3, 8},
+						   .notifications = &toasts,
 						   .warningCount = 2,
 						   .errorCount = 0});
 		ImGui::End();

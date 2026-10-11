@@ -148,7 +148,7 @@ struct TileView {
 	std::filesystem::path path;
 	std::string name;
 	bool directory = false;
-	shared<renderer::gpu::Texture2D> thumbnail;
+	const AssetThumbnails::Preview* preview = nullptr;
 	ImVec2 min;
 	ImVec2 max;
 	float width = 0.f;
@@ -172,8 +172,17 @@ void drawTile(ImDrawList* iDraw, const TileView& iTile) {
 	if (iTile.selected && !iTile.list)
 		iDraw->AddRect(iTile.min, iTile.max, toU32(theme.accent), theme.frameRounding);
 	const auto icon = getFileIcon(iTile.path);
-	const auto thumbnail = iTile.thumbnail;
-	const auto thumbTexture = gui::imTexture(thumbnail);
+	const auto* preview = iTile.preview;
+	const auto thumbnail = preview != nullptr ? preview->texture : nullptr;
+	std::optional<ImTextureID> thumbTexture = gui::imTexture(thumbnail);
+	ImVec2 renderUv0{0.f, 1.f};
+	ImVec2 renderUv1{1.f, 0.f};
+	if (preview != nullptr && preview->framebuffer) {
+		thumbTexture = gui::imTexture(preview->framebuffer, 0);
+		renderUv0 = gui::vec(preview->framebuffer->getLowerData());
+		renderUv1 = gui::vec(preview->framebuffer->getUpperData());
+	}
+	const bool hasWaveform = preview != nullptr && !preview->waveform.empty();
 	if (iTile.list) {
 		const float iconSize = ImGui::GetFontSize();
 		const float y = std::floor(iTile.min.y + (iTile.height - iconSize) * 0.5f);
@@ -181,7 +190,7 @@ void drawTile(ImDrawList* iDraw, const TileView& iTile) {
 							 1.f);
 		if (thumbTexture.has_value())
 			iDraw->AddImage(thumbTexture.value(), {iTile.min.x + 12.f, y},
-							{iTile.min.x + 12.f + iconSize, y + iconSize}, {0, 1}, {1, 0});
+							{iTile.min.x + 12.f + iconSize, y + iconSize}, renderUv0, renderUv1);
 		else if (icon.has_value())
 			iDraw->AddImage(static_cast<ImTextureID>(icon->textureId), {iTile.min.x + 12.f, y},
 							{iTile.min.x + 12.f + iconSize, y + iconSize}, gui::vec(icon->uv0), gui::vec(icon->uv1));
@@ -196,7 +205,7 @@ void drawTile(ImDrawList* iDraw, const TileView& iTile) {
 		iDraw->AddRectFilled(thumbMin, thumbMax,
 							 toU32(gui::Theme::mix(theme.surface0, kind.color, thumbTexture.has_value() ? 0.f : 0.08f)),
 							 theme.frameRounding, ImDrawFlags_RoundCornersTop);
-		if (thumbTexture.has_value()) {
+		if (thumbTexture.has_value() && thumbnail) {
 			const auto size = thumbnail->getSize();
 			const float ratio = size.y() > 0 ? static_cast<float>(size.x()) / static_cast<float>(size.y()) : 1.f;
 			// Cover the square: crop the long side so the image keeps its proportions.
@@ -213,6 +222,24 @@ void drawTile(ImDrawList* iDraw, const TileView& iTile) {
 			}
 			iDraw->AddImageRounded(thumbTexture.value(), thumbMin, thumbMax, uv0, uv1, IM_COL32_WHITE,
 								   theme.frameRounding, ImDrawFlags_RoundCornersTop);
+		} else if (thumbTexture.has_value()) {
+			// A rendered scene or prefab: square, drawn whole.
+			iDraw->AddImageRounded(thumbTexture.value(), thumbMin, thumbMax, renderUv0, renderUv1, IM_COL32_WHITE,
+								   theme.frameRounding, ImDrawFlags_RoundCornersTop);
+		} else if (hasWaveform) {
+			// One bar per slice, mirrored around the middle line, in the colour of the family.
+			const auto& peaks = preview->waveform;
+			const float left = thumbMin.x + 8.f;
+			const float span = thumbMax.x - 8.f - left;
+			const float middle = (thumbMin.y + thumbMax.y) * 0.5f;
+			const float halfHeight = (thumbMax.y - thumbMin.y) * 0.32f;
+			const float slot = span / static_cast<float>(peaks.size());
+			for (size_t i = 0; i < peaks.size(); ++i) {
+				const float x = std::floor(left + slot * static_cast<float>(i));
+				const float h = std::max(1.f, std::round(peaks[i] * halfHeight));
+				iDraw->AddRectFilled({x, middle - h}, {x + std::max(1.f, std::floor(slot * 0.6f)), middle + h},
+									 toU32(kind.color), 1.f);
+			}
 		} else if (icon.has_value()) {
 			const float iconSize = std::floor(iTile.thumbSize * 0.5f);
 			const ImVec2 iconMin{std::floor(iTile.min.x + (iTile.width - iconSize) * 0.5f),
@@ -248,7 +275,7 @@ void drawTile(ImDrawList* iDraw, const TileView& iTile) {
 
 ContentBrowser::ContentBrowser() = default;
 
-void ContentBrowser::detach() {}
+void ContentBrowser::detach() { m_previews.clear(); }
 
 void ContentBrowser::attach() {
 	m_currentRootPath = app::Application::get().getAssetDirectories().front().assetsPath;
@@ -466,22 +493,6 @@ void ContentBrowser::renderKindChips() {
 	}
 }
 
-auto ContentBrowser::getThumbnail(const std::filesystem::path& iPath, int& ioBudget)
-		-> shared<renderer::gpu::Texture2D> {
-	const auto ext = iPath.extension().string();
-	if (ext != ".png" && ext != ".jpg" && ext != ".jpeg")
-		return nullptr;
-	const auto key = iPath.string();
-	if (const auto it = m_thumbnails.find(key); it != m_thumbnails.end())
-		return it->second;
-	if (ioBudget <= 0)
-		return nullptr;
-	--ioBudget;
-	auto texture = renderer::gpu::Texture2D::create(iPath);
-	m_thumbnails[key] = texture;
-	return texture;
-}
-
 void ContentBrowser::openEntry(const std::filesystem::directory_entry& iEntry) {
 	const auto& path = iEntry.path();
 	if (iEntry.is_directory()) {
@@ -507,11 +518,7 @@ void ContentBrowser::openEntry(const std::filesystem::directory_entry& iEntry) {
 }
 
 void ContentBrowser::renderContent() {
-	if (m_thumbnailFolder != m_currentPath) {
-		for (auto& [key, texture]: m_thumbnails) gui::UiLayer::deferTextureRelease(std::move(texture));
-		m_thumbnails.clear();
-		m_thumbnailFolder = m_currentPath;
-	}
+	m_previews.beginFrame();
 	ImGui::BeginChild("##cbItems", {0.f, 0.f}, ImGuiChildFlags_None);
 	const float spacing = ImGui::GetStyle().ItemSpacing.x;
 	const float labelHeight = ImGui::GetTextLineHeight() * 2.f + ImGui::GetFontSize() * 0.9f + 8.f;
@@ -520,7 +527,6 @@ void ContentBrowser::renderContent() {
 	const int columns = m_listView ? 1
 								   : std::max(1, static_cast<int>((ImGui::GetContentRegionAvail().x + spacing) /
 																  (tileWidth + spacing)));
-	int budget = 3;
 	bool openContextMenu = false;
 	int column = 0;
 	size_t shown = 0;
@@ -569,7 +575,7 @@ void ContentBrowser::renderContent() {
 		drawTile(draw, {.path = path,
 						.name = name,
 						.directory = directoryEntry.is_directory(),
-						.thumbnail = getThumbnail(path, budget),
+						.preview = directoryEntry.is_directory() ? nullptr : m_previews.get(path),
 						.min = min,
 						.max = max,
 						.width = tileWidth,

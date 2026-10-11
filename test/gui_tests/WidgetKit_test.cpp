@@ -28,6 +28,7 @@
 #include <imgui.h>
 
 #include <array>
+#include <cstddef>
 #include <functional>
 #include <string>
 #include <tuple>
@@ -98,6 +99,26 @@ TEST(WidgetKit, FilterMatchesEveryWordIgnoringCase) {
 	EXPECT_FALSE(matchesFilter("MainCamera", "main light"));
 	EXPECT_FALSE(matchesFilter("", "a"));
 	EXPECT_TRUE(matchesFilter("lava_tile.png", "tile png"));
+}
+
+TEST(WidgetKit, ToastHistoryOutlivesTheToasts) {
+	ToastQueue queue;
+	queue.push(ToastKind::Success, "Saved main_menu.owl");
+	queue.push(ToastKind::Success, "Saved main_menu.owl");
+	queue.push(ToastKind::Error, "Could not save", "See the Log.");
+	EXPECT_EQ(queue.getUnreadCount(), 3u);
+	ASSERT_EQ(queue.getHistory().size(), 2u);
+	EXPECT_EQ(queue.getHistory().front().count, 2u);
+	queue.update(ToastQueue::lifetime + ToastQueue::fadeTime);
+	EXPECT_TRUE(queue.getToasts().empty());
+	EXPECT_EQ(queue.getHistory().size(), 2u);
+	queue.markRead();
+	EXPECT_EQ(queue.getUnreadCount(), 0u);
+	for (size_t i = 0; i < ToastQueue::maxHistory + 5; ++i) queue.push(ToastKind::Info, std::to_string(i));
+	EXPECT_EQ(queue.getHistory().size(), ToastQueue::maxHistory);
+	queue.clearHistory();
+	EXPECT_TRUE(queue.getHistory().empty());
+	EXPECT_EQ(queue.getUnreadCount(), 0u);
 }
 
 TEST(WidgetKit, ToastsFoldExpireAndStayBounded) {
@@ -183,6 +204,7 @@ TEST_F(WidgetKitTest, EveryWidgetDrawsWithoutInput) {
 			EXPECT_FALSE(emptyState(icon::box, "No entity selected", "Select an entity to edit it.", "Add entity"));
 			richTooltip("Title", "F1", "Description.");
 			toasts.onImGuiRender();
+			toasts.renderHistory();
 		});
 	}
 	EXPECT_EQ(search, "cam");

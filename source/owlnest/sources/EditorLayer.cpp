@@ -519,6 +519,9 @@ void EditorLayer::onUpdate(const core::Timestep& iTimeStep) {
 
 	m_recovery.setInterval(static_cast<float>(m_settings.autosaveIntervalSeconds));
 	m_toasts.update(iTimeStep.getSeconds());
+	// Before the viewports: a preview render resets the 2D stats they show.
+	if (getState() == State::Edit)
+		m_contentBrowser.onUpdate();
 	if (m_recovery.onUpdate(iTimeStep.getSeconds()) && m_recovery.autosave(m_documents) > 0)
 		m_lastAutosave = std::chrono::steady_clock::now();
 
@@ -788,13 +791,19 @@ auto EditorLayer::buildStatusInfo() const -> panel::StatusInfo {
 		info.secondsSinceAutosave =
 				std::chrono::duration<float>(std::chrono::steady_clock::now() - *m_lastAutosave).count();
 	info.backend = std::string{magic_enum::enum_name(renderer::gpu::RenderCommand::getApi())};
+	if (auto device = renderer::gpu::RenderCommand::getDeviceName(); device != "none")
+		info.device = std::move(device);
+	if (const auto [ready, total] = m_contentBrowser.getPreviewProgress(); ready < total)
+		info.previews = std::pair{ready, total};
 	info.warningCount = core::Log::getLogBuffer().getWarningCount();
 	info.errorCount = core::Log::getLogBuffer().getErrorCount();
 	return info;
 }
 
 void EditorLayer::renderStatusBar() {
-	m_statusBar.onImGuiRender(buildStatusInfo());
+	auto info = buildStatusInfo();
+	info.notifications = &m_toasts;
+	m_statusBar.onImGuiRender(info);
 	if (m_statusBar.consumeOpenLogRequest())
 		ImGui::SetWindowFocus(panelWindow::log);
 }
