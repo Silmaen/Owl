@@ -48,6 +48,7 @@
 #include <tuple>
 #include <unordered_map>
 #include <utility>
+#include <vector>
 
 
 namespace owl::nest {
@@ -392,6 +393,12 @@ void EditorLayer::onAttach() {
 	m_sceneHierarchy.setCommandRegistry(&m_commands);
 
 	utils::buildIconBank();
+	{
+		std::vector<std::filesystem::path> assetDirectories;
+		for (const auto& [title, assetsPath]: app::Application::get().getAssetDirectories())
+			assetDirectories.push_back(assetsPath);
+		m_sampleProject = panel::findSampleProject(assetDirectories).value_or(std::filesystem::path{});
+	}
 
 	utils::loadTriggerTextures();
 
@@ -625,6 +632,8 @@ void EditorLayer::onUpdate(const core::Timestep& iTimeStep) {
 	if (m_recovery.onUpdate(iTimeStep.getSeconds()) && m_recovery.autosave(m_documents) > 0)
 		m_lastAutosave = std::chrono::steady_clock::now();
 
+	m_documents.updateSceneless(iTimeStep);
+
 	auto* activeDoc = activeSceneDocument();
 	for (const auto& docPtr: m_documents.list()) {
 		if (!docPtr || docPtr->type() != DocumentType::Scene)
@@ -853,6 +862,7 @@ void EditorLayer::renderBackstage() {
 			.projectName = m_project.isLoaded() ? m_project.name : std::string{},
 			.projectDirectory = m_project.projectDirectory,
 			.recentProjects = m_settings.recentProjects,
+			.sampleProject = m_sampleProject,
 			.newProject = [this]() -> void { newProject(); },
 			.openProject = [this]() -> void { openProject(); },
 			.openRecent = [this](const std::filesystem::path& iPath) -> void { openProject(iPath); },

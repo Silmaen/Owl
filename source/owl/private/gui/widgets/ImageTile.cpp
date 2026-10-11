@@ -36,7 +36,7 @@ auto imageTile(const char* iId, const ImageTileSpec& iSpec) -> ImageTileResult {
 							  {max.x - 2.f, max.y - 2.f}, vec(iSpec.uv0), vec(iSpec.uv1), IM_COL32_WHITE,
 							  theme.frameRounding);
 	if (iSpec.outline.w() > 0.f)
-		draw->AddRect(min, max, ImGui::GetColorU32(vec(iSpec.outline)), theme.frameRounding, ImDrawFlags_None, 2.f);
+		draw->AddRect(min, max, ImGui::GetColorU32(vec(iSpec.outline)), theme.frameRounding, 2.f);
 	else if (result.hovered)
 		draw->AddRect(min, max, ImGui::GetColorU32(vec(theme.textMuted)), theme.frameRounding);
 	return result;

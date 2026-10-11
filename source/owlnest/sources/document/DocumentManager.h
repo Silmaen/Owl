@@ -92,6 +92,14 @@ public:
 
 	/**
 	 * @brief
+	 *  Advance every document that has no scene (animation playback, code previews), open in a tab or not; the scene
+	 *  documents are advanced by the editor, the active one with its viewport.
+	 * @param[in] iTimeStep Time since the previous frame.
+	 */
+	void updateSceneless(const core::Timestep& iTimeStep) const;
+
+	/**
+	 * @brief
 	 *  Number of open documents.
 	 * @return The size_t.
 	 */

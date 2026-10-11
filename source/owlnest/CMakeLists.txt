@@ -118,3 +118,14 @@ install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/assets/
         DESTINATION ${${PROJECT_PREFIX}_INSTALL_BIN}/assets
         COMPONENT Nest
 )
+# The editor rasterizes its icons from the SVG sources, looked up in assets_sources/ next to assets/.
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/assets_sources/icons
+        DESTINATION ${${PROJECT_PREFIX}_INSTALL_BIN}/assets_sources
+        COMPONENT Nest
+        PATTERN "templates" EXCLUDE
+)
+# The feature showcase, opened from the File screen.
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/sample_project/
+        DESTINATION sample_project
+        COMPONENT Nest
+)

@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- The Owl Nest archive holds the sample project (`sample_project/`), opened from a **Sample project** card of the File screen (`panel::findSampleProject`).
+
+### Changed
+
+- Owl Nest animation editor in the inspector style: Preview, Spritesheet, Playback, Speed Curve and Timeline sections with icons, property rows with reset and tooltips, icon transport buttons, the sheet grid beside its thumbnail, the timeline bar in the accent colour and no scrollbar on the whole tab.
+
+### Fixed
+
+- Owl Nest animation editor plays again (Play did nothing, only the steps moved) and the Markdown / SVG previews of the code editor refresh: the documents without a scene are advanced every frame (`DocumentManager::updateSceneless`).
+- The packaged Owl Nest draws its icons again: the archive ships the SVG sources the editor rasterizes (`assets_sources/icons/`).
+- Draw calls written for the parameter order of imgui before 1.92.8 (flags before thickness) no longer fail and draw nothing: the tick of a checked box, the tile and cell selection outlines of the tileset and tilemap editors, the palette swatch outlines, the Play frame of the viewport, and in imguizmo the curve editor points, the graph editor links and node borders and the gradient markers (patched in the local recipe).
+
 ## [0.3.0] - 2026-10-11
 
 ### Added

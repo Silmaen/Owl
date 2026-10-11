@@ -22,6 +22,12 @@ auto DocumentManager::add(uniq<Document> iDocument) -> Document* {
 	return raw;
 }
 
+void DocumentManager::updateSceneless(const core::Timestep& iTimeStep) const {
+	for (const auto& document: m_documents)
+		if (document && document->type() != DocumentType::Scene)
+			document->onUpdate(iTimeStep);
+}
+
 auto DocumentManager::remove(const core::UUID iId) -> bool {
 	const auto it = std::ranges::find_if(
 			m_documents, [iId](const uniq<Document>& iDoc) -> bool { return iDoc && iDoc->id() == iId; });

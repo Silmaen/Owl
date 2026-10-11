@@ -19,10 +19,14 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <filesystem>
 #include <format>
 #include <functional>
+#include <optional>
 #include <string>
+#include <system_error>
+#include <vector>
 
 namespace owl::nest::panel {
 
@@ -96,6 +100,22 @@ void call(const std::function<void()>& iAction) {
 }
 
 }// namespace
+
+auto findSampleProject(const std::vector<std::filesystem::path>& iStartDirectories, const uint32_t iMaxDepth)
+		-> std::optional<std::filesystem::path> {
+	for (const auto& start: iStartDirectories) {
+		std::filesystem::path dir = start;
+		for (uint32_t depth = 0; depth <= iMaxDepth && !dir.empty(); ++depth) {
+			std::error_code error;
+			if (const auto candidate = dir / "sample_project"; exists(candidate / "owl_project.yml", error))
+				return candidate.lexically_normal();
+			if (dir == dir.parent_path())
+				break;
+			dir = dir.parent_path();
+		}
+	}
+	return std::nullopt;
+}
 
 void Backstage::onImGuiRender(const BackstageContext& iContext) {
 	if (!m_open)
@@ -194,17 +214,26 @@ void Backstage::onImGuiRender(const BackstageContext& iContext) {
 
 		const float maxWidth = std::min(ImGui::GetContentRegionAvail().x, ImGui::GetFontSize() * 54.f);
 		const float spacing = ImGui::GetStyle().ItemSpacing.x * 1.5f;
-		const float cardWidth = std::floor((maxWidth - 2.f * spacing) / 3.f);
-		if (card("ribbon_folder_new", "New project", "From a template: 2D, raycast, voxel or empty.", cardWidth))
+		const float cards = iContext.sampleProject.empty() ? 3.f : 4.f;
+		const float cardWidth = std::floor((maxWidth - (cards - 1.f) * spacing) / cards);
+		if (card("ribbon_folder_new", "New project", "2D, raycast, voxel or empty template.", cardWidth))
 			run(iContext.newProject);
 		ImGui::SameLine(0.f, spacing);
-		if (card("ribbon_open", "Open project", "Pick an owl_project.yml or its folder.", cardWidth))
+		if (card("ribbon_open", "Open project", "An owl_project.yml or its folder.", cardWidth))
 			run(iContext.openProject);
 		ImGui::SameLine(0.f, spacing);
-		if (card("ribbon_book", "Getting started", "A short tour of the editor and its panels.", cardWidth)) {
+		if (card("ribbon_book", "Getting started", "A short tour of the editor.", cardWidth)) {
 			if (iContext.help)
 				iContext.help("getting_started");
 			act = true;
+		}
+		if (!iContext.sampleProject.empty()) {
+			ImGui::SameLine(0.f, spacing);
+			if (card("ribbon_play", "Sample project", "Every engine feature in a game.", cardWidth) &&
+				iContext.openRecent) {
+				iContext.openRecent(iContext.sampleProject);
+				act = true;
+			}
 		}
 
 		ImGui::Dummy({0.f, ImGui::GetFontSize()});

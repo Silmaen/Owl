@@ -129,7 +129,9 @@ cmake --build output/build/<preset>
 
 `cpack` works in any build tree and writes one archive per component: `OwlEngine-<version>-<hash>-<platform>` (the
 SDK: `lib/`, `include/`, `assets/`, `lib/cmake/OwlEngine/`) and, when the editor is built, `OwlNest-…` (Owl Nest, the
-runner, their shared libraries and assets in `bin/<platform>_<arch>/`). The CI packages the release tree it has just
+runner, their shared libraries and assets in `bin/<platform>_<arch>/`, the SVG icons in
+`bin/<platform>_<arch>/assets_sources/icons/`, and the sample project in `sample_project/`). The SDK ships the Release
+library only: build the engine in Debug from the sources for a Debug one. The CI packages the release tree it has just
 tested (`linux-clang-release`, `windows-clang-release`), so the archive holds the tested binaries;
 `package-linux-cross-arm64` (the arm64 cross build without the tests) packages arm64, which has no tested release
 tree.

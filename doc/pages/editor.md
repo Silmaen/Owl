@@ -467,16 +467,17 @@ component.
 **Opening / creating.**
 
 - Double-click any `.owlanim` in the Content Browser, or drag-drop one onto the editor.
-- Ribbon → File → **New Animation** spawns an empty untitled clip; the first `Save` /
+- **Home > Create > New** (animation) spawns an empty untitled clip; the first `Save` /
   `Save As` writes it to disk.
 
-**Layout.** Three panels in one tab:
+**Layout.** Collapsible sections with an icon, like the inspector:
 
-- **Preview** — live spritesheet thumbnail at the current frame, with Play / Pause /
-  Stop and step-frame transport buttons underneath.
-- **Properties** — texture drop target, columns / rows / first frame / last frame,
-  frame duration, loop, and the optional speed curve (embedded `curveEditor`).
-- **Timeline** — `gui::widgets::sequencer()` bar; drag the handles to move
+- **Preview** — live spritesheet thumbnail at the current frame (an empty state without a texture), with the
+  Previous / Play-Pause / Stop / Next icon buttons and the current frame underneath.
+- **Spritesheet** — texture drop target, columns and rows in a property grid.
+- **Playback** — first frame, last frame, frame duration and loop, each with its reset button and tooltip.
+- **Speed Curve** — the optional speed curve (embedded `curveEditor`).
+- **Timeline** — `gui::widgets::sequencer()` bar in the accent colour; drag the handles to move
   `firstFrame` / `lastFrame`, click the ruler to scrub the playhead (which pauses
   playback so the user sees the picked frame).
 
@@ -848,7 +849,9 @@ The workflow commands live in the **File** screen (project), the **Home** tab (e
 | Pack Scene     | Scene > Scene > Pack Scene | Pack the current scene's assets into `.owlpack` (async) |
 
 **File screen at start-up.** When the editor starts without a loaded project, the File screen opens with **New
-project**, **Open project**, **Getting started** and the recent projects.
+project**, **Open project**, **Getting started**, **Sample project** and the recent projects. The sample card shows
+when a `sample_project/` sits next to `bin/` in the archive, or at the root of the sources
+(`panel::findSampleProject`, from the asset folders upwards).
 
 **Async operations.** Pack Game, Pack Scene, Open Scene, and Save Scene all run off the
 main thread via a progress modal (`AsyncProgressModal`). Pack Game additionally runs a

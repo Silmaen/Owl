@@ -88,8 +88,8 @@ auto checkbox(const char* iLabel, bool* ioValue) -> bool {
 		const ImVec2 points[3] = {{min.x + 3.5f * s, min.y + 7.2f * s},
 								  {min.x + 6.f * s, min.y + 9.7f * s},
 								  {min.x + 10.6f * s, min.y + 4.6f * s}};
-		draw->AddPolyline(points, 3, ImGui::GetColorU32(vec(theme.onAccent)), ImDrawFlags_None,
-						  std::max(1.5f, 1.7f * s));
+		draw->AddPolyline(points, 3, ImGui::GetColorU32(vec(theme.onAccent)), std::max(1.5f, 1.7f * s),
+						  ImDrawFlags_None);
 	} else {
 		draw->AddRectFilled(min, max, ImGui::GetColorU32(vec(theme.well)), rounding);
 		draw->AddRect(min, max, ImGui::GetColorU32(vec(hovered ? theme.textMuted : theme.textDisabled)), rounding);

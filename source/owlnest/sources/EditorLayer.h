@@ -690,6 +690,8 @@ private:
 	renderer::CameraOrthoController m_cameraController;
 	/// The File screen (projects, packaging, settings, help); shown at start-up without a project.
 	panel::Backstage m_backstage;
+	/// Folder of the sample project shipped with the editor, offered by the File screen; empty when not found.
+	std::filesystem::path m_sampleProject;
 	/// Project opened at attach time; empty to show the File screen instead.
 	std::filesystem::path m_startupProject;
 	/// Pending document id to close (awaits dirty-confirmation modal). 0 when idle.

@@ -410,7 +410,7 @@ void TilesetDocument::renderCanvas() {
 			if (m_tileset.tiles[idx].collidable)
 				drawList->AddRectFilled(cellMin, cellMax, IM_COL32(255, 90, 90, 60));
 			if (static_cast<int32_t>(idx) == m_inspectedTile)
-				drawList->AddRect(cellMin, cellMax, IM_COL32(255, 195, 38, 255), 0.f, 0, 3.f);
+				drawList->AddRect(cellMin, cellMax, IM_COL32(255, 195, 38, 255), 0.f, 3.f);
 		}
 	}
 
@@ -423,7 +423,7 @@ void TilesetDocument::renderCanvas() {
 			const ImVec2 hoverMin{atlasTopLeft.x + static_cast<float>(col) * cellW,
 								  atlasTopLeft.y + static_cast<float>(row) * cellH};
 			const ImVec2 hoverMax{hoverMin.x + cellW, hoverMin.y + cellH};
-			drawList->AddRect(hoverMin, hoverMax, IM_COL32(150, 220, 255, 200), 0.f, 0, 1.5f);
+			drawList->AddRect(hoverMin, hoverMax, IM_COL32(150, 220, 255, 200), 0.f, 1.5f);
 			if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
 				m_inspectedTile = static_cast<int32_t>(row * m_tileset.columns + col);
 			}
