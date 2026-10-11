@@ -115,7 +115,8 @@ TEST(WidgetKit, ToastHistoryOutlivesTheToasts) {
 	queue.markRead();
 	EXPECT_EQ(queue.getUnreadCount(), 0u);
 	for (size_t i = 0; i < ToastQueue::maxHistory + 5; ++i) queue.push(ToastKind::Info, std::to_string(i));
-	EXPECT_EQ(queue.getHistory().size(), ToastQueue::maxHistory);
+	// A copy: binding the constant to a reference would import it from the DLL, where MinGW does not export it.
+	EXPECT_EQ(queue.getHistory().size(), size_t{ToastQueue::maxHistory});
 	queue.clearHistory();
 	EXPECT_TRUE(queue.getHistory().empty());
 	EXPECT_EQ(queue.getUnreadCount(), 0u);
@@ -130,11 +131,11 @@ TEST(WidgetKit, ToastsFoldExpireAndStayBounded) {
 	queue.push(ToastKind::Error, "Could not save", "See the Log.");
 	EXPECT_EQ(queue.getToasts().size(), 2u);
 	for (int i = 0; i < 10; ++i) queue.push(ToastKind::Info, std::to_string(i));
-	EXPECT_EQ(queue.getToasts().size(), ToastQueue::maxToasts);
+	EXPECT_EQ(queue.getToasts().size(), size_t{ToastQueue::maxToasts});
 	EXPECT_EQ(queue.getToasts().back().title, "9");
 
 	queue.update(ToastQueue::lifetime);
-	EXPECT_EQ(queue.getToasts().size(), ToastQueue::maxToasts);
+	EXPECT_EQ(queue.getToasts().size(), size_t{ToastQueue::maxToasts});
 	queue.update(ToastQueue::fadeTime);
 	EXPECT_TRUE(queue.getToasts().empty());
 
