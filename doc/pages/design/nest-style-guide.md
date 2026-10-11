@@ -71,13 +71,14 @@ Component"), and end a hint, a tooltip or a notice with a period.
 
 ## Icons
 
-- **Action glyphs** come from the Lucide font, `gui::icon::*` (`gui/IconFont.h`), inside labels, icon buttons and the
-  ribbon (a `Ribbon::Button` takes a glyph as its `iconName`).
-  Add a missing name from the `lucide-static` `info.json`; never draw an action as an SVG.
+- **Action glyphs** come from the Lucide font, `gui::icon::*` (`gui/IconFont.h`), inside labels, icon buttons,
+  menus and the ribbon quick access. Add a missing name from the `lucide-static` `info.json`.
+- **Ribbon buttons** use the duotone SVGs of `icons/ribbon/` (`ribbon_<name>` in the `IconBank`), drawn after the
+  Lucide shapes with the accent on the part that carries the meaning (the label of the floppy, the arrow of undo).
 - **Asset kinds and components** are hand-drawn SVGs in `source/owlnest/assets_sources/icons/`, on a 24-unit grid
   with a 1.5 stroke and a duotone fill. Asset kinds carry the fixed colour of their family (scene amber, prefab
-  blue, texture red, sound green, script teal...); components use `#ffffff` (the theme text colour) plus one piece
-  in `#ff00ff` (the theme accent). SVGs are edited by hand only.
+  blue, texture red, sound green, script teal...); components and ribbon icons use `#ffffff` (the theme text
+  colour) plus one piece in `#ff00ff` (the theme accent). SVGs are edited by hand only.
 - Draw an icon with `IconBank::getIcon(name, size)` at the size it is shown, on a whole pixel.
 
 ## Widgets

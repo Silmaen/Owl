@@ -31,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Owl Nest Editor Settings in tabs (General, Gizmo Snap, Appearance, Shortcuts) built on the property grid.
 - Owl Nest engine parameters, Project Settings and Scene Settings in property grids under sections with a Lucide icon, like the inspector; the Editor Settings tabs and every panel tab get an icon.
 - `gui::widgets::propertyInt`, `propertyText`, `menuItem` (glyph column, shortcut, destructive entries in red) and `menuHeader`; `sectionHeader` also takes a `gui::icon` glyph.
+- Owl Nest ribbon icons drawn as duotone SVGs (`icons/ribbon/`), the accent on one part only like the component icons; the Help panel opens among the documents instead of the right column.
 - Owl Nest Log level chips show their message count and the Log tab its warnings and errors; the search and a labelled Clear button sit on the right.
 - Owl Nest Content Browser family chips with counts, an extension badge on the tiles, and context menus with a title, Lucide icons and Delete in red, like the Hierarchy menus.
 - `gui::widgets::notice`: an inline warning in the inspector, shown for an animated sprite without a sprite sheet and a Lua script without a path.
@@ -183,7 +184,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Owl Nest: pressing `Shift` twice opens the command palette (the Shift modifier key reported with it cancelled the tap), the main window no longer shows a scroll bar, and the ribbon glyphs and drop-down carets take the accent colour and a chevron.
+- Owl Nest: pressing `Shift` twice opens the command palette (the Shift modifier key reported with it cancelled the tap), the main window no longer shows a scroll bar, and the ribbon drop-down carets are chevrons.
 - `docker/run.sh --gui` lends the host cursor themes, so Owl Nest shows the desktop cursor instead of Adwaita.
 - Owl Nest node canvas (Scene Flow): the GraphEditor minimap no longer covers the canvas with white triangles, node titles stay readable when zoomed out, and the canvas follows the theme.
 - Editor icons drawn with the `white` keyword (components, panels...) follow the theme text colour, so they no longer stay white in Owl Light.

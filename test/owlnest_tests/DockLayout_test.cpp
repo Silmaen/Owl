@@ -129,7 +129,8 @@ TEST(DockLayoutPreset, SettingsKeepThePresetAndTheVersion) {
 }
 
 TEST_F(DockLayoutTest, FirstFrameBuildsTheDefaultLayout) {
-	frame({panelWindow::hierarchy, panelWindow::properties, panelWindow::contentBrowser, panelWindow::log});
+	frame({panelWindow::hierarchy, panelWindow::properties, panelWindow::contentBrowser, panelWindow::log,
+		   panelWindow::help});
 	EXPECT_TRUE(m_rebuilt);
 	EXPECT_EQ(m_savedVersion, DockLayout::version);
 	EXPECT_EQ(m_dockSpaceId, gui::UiLayer::getDockSpaceId());
@@ -152,6 +153,7 @@ TEST_F(DockLayoutTest, FirstFrameBuildsTheDefaultLayout) {
 	EXPECT_GT(content->Pos.y, central->Pos.y);
 	EXPECT_EQ(nodeOf(panelWindow::log), content);
 	EXPECT_EQ(nodeOf(panelWindow::tilePalette), properties);
+	EXPECT_EQ(nodeOf(panelWindow::help), central);
 }
 
 TEST_F(DockLayoutTest, HierarchyLeftGetsItsOwnColumn) {

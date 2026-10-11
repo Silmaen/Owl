@@ -94,8 +94,9 @@ void drawButtonIcon(const std::string& iIconName, const ImVec2& iCenter, const f
 		return;
 	const ImVec2 iconMin{std::floor(iCenter.x - iSize * 0.5f), std::floor(iCenter.y - iSize * 0.5f)};
 	const ImVec2 iconMax{iconMin.x + iSize, iconMin.y + iSize};
+	// The style alpha greys the icon of a disabled button.
 	ImGui::GetWindowDrawList()->AddImage(static_cast<ImTextureID>(info->textureId), iconMin, iconMax, vec(info->uv0),
-										 vec(info->uv1));
+										 vec(info->uv1), ImGui::GetColorU32(IM_COL32_WHITE));
 }
 
 void drawCaret(const ImVec2& iCenter, const float iSize) { drawButtonIcon(icon::chevronDown, iCenter, iSize * 1.4f); }
@@ -133,7 +134,7 @@ auto renderLargeButton(const Ribbon::Button& iButton) -> bool {
 	drawButtonBackground(iButton);
 	const float iconSize = scaled(g_largeIconSize);
 	drawButtonIcon(iButton.iconName, {rectMin.x + width * 0.5f, rectMin.y + scaled(g_largeInnerPadY) + iconSize * 0.5f},
-				   iconSize, UiLayer::getTheme().accent);
+				   iconSize, UiLayer::getTheme().text);
 	const ImVec2 textPos{std::floor(rectMin.x + (width - labelSize.x) * 0.5f),
 						 rectMax.y - labelSize.y - scaled(g_largeInnerPadY)};
 	ImGui::GetWindowDrawList()->AddText(textPos, ImGui::GetColorU32(ImGuiCol_Text), iButton.label.c_str());
@@ -159,7 +160,7 @@ auto renderSmallButton(const Ribbon::Button& iButton, const float iColumnWidth, 
 	const float cy = (rectMin.y + rectMax.y) * 0.5f;
 	const float iconSize = scaled(g_smallIconSize);
 	const float pad = scaled(g_smallLabelPadX);
-	drawButtonIcon(iButton.iconName, {rectMin.x + pad + iconSize * 0.5f, cy}, iconSize, UiLayer::getTheme().accent);
+	drawButtonIcon(iButton.iconName, {rectMin.x + pad + iconSize * 0.5f, cy}, iconSize);
 	const auto labelSize = ImGui::CalcTextSize(iButton.label.c_str());
 	const ImVec2 textPos{rectMin.x + pad + iconSize + pad, std::floor(cy - labelSize.y * 0.5f)};
 	ImGui::GetWindowDrawList()->AddText(textPos, ImGui::GetColorU32(ImGuiCol_Text), iButton.label.c_str());

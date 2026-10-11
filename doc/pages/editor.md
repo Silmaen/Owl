@@ -48,9 +48,9 @@ stateDiagram-v2
 The default arrangement uses ImGui docking:
 
 - **Centre** -- the open documents (scenes, scripts, graphs, tilemaps...) as tabs, the viewport with its overlaid
-  toolbar
-- **Right column** -- Scene Hierarchy (top) and Properties (bottom); Tile Palette, Voxel Palette, Scene Settings and
-  Help join Properties as tabs
+  toolbar; the Help pages open there too, or float
+- **Right column** -- Scene Hierarchy (top) and Properties (bottom); Tile Palette, Voxel Palette and Scene Settings
+  join Properties as tabs
 - **Bottom strip** -- Content Browser, Log and Stats as tabs under the documents
 - **Status bar** -- one line under everything: the simulation mode (`EDIT`, `PLAYING`, `PAUSED`, the bar turns blue
   while the scene runs), the active document and its entity count, the last autosave, the graphics backend, and the

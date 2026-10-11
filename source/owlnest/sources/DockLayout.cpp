@@ -108,9 +108,11 @@ void DockLayout::build(const uint32_t iDockSpaceId, const LayoutPreset iPreset,
 		hierarchy = ImGui::DockBuilderSplitNode(right, ImGuiDir_Up, g_hierarchyRatio, nullptr, &properties);
 
 	ImGui::DockBuilderDockWindow(panelWindow::hierarchy, hierarchy);
-	for (const auto* name: {panelWindow::properties, panelWindow::tilePalette, panelWindow::voxelPalette,
-							panelWindow::sceneSettings, panelWindow::help})
+	for (const auto* name:
+		 {panelWindow::properties, panelWindow::tilePalette, panelWindow::voxelPalette, panelWindow::sceneSettings})
 		ImGui::DockBuilderDockWindow(name, properties);
+	// The help pages need width: they open among the documents.
+	ImGui::DockBuilderDockWindow(panelWindow::help, center);
 	dockInOrder({panelWindow::contentBrowser, panelWindow::log, panelWindow::stats}, bottom);
 	for (const auto& name: iDocumentWindows) ImGui::DockBuilderDockWindow(name.c_str(), center);
 	// A new tab bar shows its node's saved tab, else the last tab added: the Stats panel.

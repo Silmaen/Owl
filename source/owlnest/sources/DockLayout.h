@@ -69,7 +69,7 @@ constexpr auto help = "###Help";
 class DockLayout final {
 public:
 	/// Layout generation; raising it rebuilds every saved layout once.
-	static constexpr int version = 2;
+	static constexpr int version = 3;
 
 	/**
 	 * @brief
