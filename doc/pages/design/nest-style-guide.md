@@ -87,8 +87,9 @@ Build panels from the kit in `gui/widgets/` before writing raw ImGui:
 | Need                                 | Widget                                                                                               |
 |--------------------------------------|------------------------------------------------------------------------------------------------------|
 | A property row                       | `beginProperties`, `propertyLabel`, `propertyReset`, `propertyFloat`, `propertyVec3`, `propertyBool` |
+| A whole number / a line of text      | `propertyInt` / `propertyText`                                                                       |
 | Two to four numbers                  | `vectorField` (thin axis mark, no coloured box)                                                      |
-| A collapsible block with a menu      | `sectionHeader`, `endSection`                                                                        |
+| A collapsible block with a menu      | `sectionHeader` (IconBank icon or `gui::icon` glyph), `endSection`                                   |
 | A button showing only an icon        | `iconButton` with an `IconButtonSpec` (tooltip, shortcut)                                            |
 | Help on hover                        | `richTooltip`, `itemTooltip`                                                                         |
 | A filter field                       | `searchField`, `matchesFilter`                                                                       |
@@ -98,6 +99,7 @@ Build panels from the kit in `gui/widgets/` before writing raw ImGui:
 | A row of a tree (entities, folders)  | `treeRow`, `endTreeRow`                                                                              |
 | A labelled button / the main action  | `button` (`primary` for the accent)                                                                  |
 | A drop-down list                     | `beginCombo`, `combo` (never `ImGui::BeginCombo`: its arrow is a filled triangle)                    |
+| A context menu                       | `menuHeader`, then `menuItem` (glyph column, shortcut, `danger` for a deletion)                      |
 | A count or a state / a filter toggle | `badge` / `chip`                                                                                     |
 | A property that needs attention      | `notice`                                                                                             |
 | A short confirmation or failure      | `ToastQueue::push`                                                                                   |

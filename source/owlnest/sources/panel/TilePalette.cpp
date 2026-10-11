@@ -8,7 +8,10 @@
 
 #include "TilePalette.h"
 
+#include "../DockLayout.h"
+
 #include <gui/IconBank.h>
+#include <gui/IconFont.h>
 #include <gui/utils.h>
 #include <gui/widgets/Combo.h>
 #include <imgui.h>
@@ -83,7 +86,7 @@ auto brushLabel(const int32_t iBrush) -> const char* {
 }// namespace
 
 void TilePalette::onImGuiRender(scene::TilemapAsset* iTarget) {
-	ImGui::Begin("Tile Palette");
+	ImGui::Begin(panelWindow::title(gui::icon::grid3x3, "Tile Palette", panelWindow::tilePalette).c_str());
 	if (iTarget == nullptr) {
 		ImGui::TextDisabled("Open a .owltilemap document to start painting.");
 		ImGui::End();

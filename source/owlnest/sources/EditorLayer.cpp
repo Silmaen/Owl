@@ -20,6 +20,7 @@
 #include <debug/LogSink.h>
 #include <gui/FontPreviewCache.h>
 #include <gui/IconBank.h>
+#include <gui/IconFont.h>
 #include <gui/utils.h>
 #include <physics/PhysicCommand.h>
 #include <platform/AtomicFile.h>
@@ -790,7 +791,7 @@ void EditorLayer::renderStats(const core::Timestep& iTimeStep) {
 		m_gpuCounters.reset();
 		return;
 	}
-	ImGui::Begin("Stats");
+	ImGui::Begin(panelWindow::title(gui::icon::gauge, "Stats", panelWindow::stats).c_str());
 	ImGui::Text("%s", std::format("FPS: {:.2f}", iTimeStep.getFps()).c_str());
 	ImGui::Separator();
 	ImGui::Text("%s", std::format("Profiler: {}{}", magic_enum::enum_name(debug::getProfilerBackend()),

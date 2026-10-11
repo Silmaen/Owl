@@ -24,11 +24,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `OwlNest --project <dir>` opens a project at start-up.
 - Owl Nest command palette, opened by pressing `Shift` twice or from the search box of the ribbon tab row: a fuzzy search over every editor action, with its shortcut, the entities of the active scene and the asset files.
 - Owl Nest Content Browser folder tree on the left (asset roots and their folders, unfolded down to the folder shown), replacing the root chips.
-- Owl Nest Hierarchy rows in the mockup style: thin chevrons, component glyphs coloured by kind, child counts, visibility switches on hover, an accent bar on the selection; the inspector header shows the entity glyph, its name, an **Add** button and its id.
+- Owl Nest Hierarchy rows in the mockup style: thin chevrons, component glyphs coloured by kind, child counts, visibility switches on every row, an accent bar on the selection; the inspector header shows the entity glyph, its name, an **Add** button and its id.
 - `gui::widgets::treeRow`, `button`, `beginCombo` / `combo` (a thin chevron instead of the filled arrow) and `Ribbon::setSearchBox`; component headers draw a chevron and frame their section as a card.
 - Owl Nest style guide ([design page](design/nest-style-guide.md)): colour tokens, text roles, spacing, icons, the widget to use for each need and the interaction rules.
 - `gui::widgets::toggle` (left / right switch, used for the inspector booleans), `checkbox` (a box the size of a capital letter, replacing `ImGui::Checkbox` in Owl Nest), `subHeader` (grey caption of a nested block) and a coloured `chip` (Log level filters).
 - Owl Nest Editor Settings in tabs (General, Gizmo Snap, Appearance, Shortcuts) built on the property grid.
+- Owl Nest engine parameters, Project Settings and Scene Settings in property grids under sections with a Lucide icon, like the inspector; the Editor Settings tabs and every panel tab get an icon.
+- `gui::widgets::propertyInt`, `propertyText`, `menuItem` (glyph column, shortcut, destructive entries in red) and `menuHeader`; `sectionHeader` also takes a `gui::icon` glyph.
+- Owl Nest Log level chips show their message count and the Log tab its warnings and errors; the search and a labelled Clear button sit on the right.
+- Owl Nest Content Browser family chips with counts, an extension badge on the tiles, and context menus with a title, Lucide icons and Delete in red, like the Hierarchy menus.
 - `gui::widgets::notice`: an inline warning in the inspector, shown for an animated sprite without a sprite sheet and a Lua script without a path.
 - Owl Nest inspector: component headers and vector fields use the kit (⋮ menu, reset buttons), and saving a document shows a toast.
 - Owl Nest UI font Inter (Regular, SemiBold) in `engine_assets/fonts/inter/`, text roles `gui::TextStyle` (`UiLayer::pushTextStyle`) and scaling to the primary monitor content scale (`UiLayer::getDpiScale`).
@@ -179,6 +183,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Owl Nest: pressing `Shift` twice opens the command palette (the Shift modifier key reported with it cancelled the tap), the main window no longer shows a scroll bar, and the ribbon glyphs and drop-down carets take the accent colour and a chevron.
+- `docker/run.sh --gui` lends the host cursor themes, so Owl Nest shows the desktop cursor instead of Adwaita.
 - Owl Nest node canvas (Scene Flow): the GraphEditor minimap no longer covers the canvas with white triangles, node titles stay readable when zoomed out, and the canvas follows the theme.
 - Editor icons drawn with the `white` keyword (components, panels...) follow the theme text colour, so they no longer stay white in Owl Light.
 - Owl Nest Ctrl and Alt shortcuts work while a panel (hierarchy, properties, content browser...) has the keyboard focus, not only with the viewport focused.

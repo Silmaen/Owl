@@ -19,12 +19,18 @@ OWL_DIAG_POP
 #include <algorithm>
 #include <array>
 #include <cstdint>
+#include <format>
 #include <initializer_list>
 #include <string>
 #include <string_view>
 #include <vector>
 
 namespace owl::nest {
+
+auto panelWindow::title(const std::string_view iGlyph, const std::string_view iLabel, const std::string_view iWindow)
+		-> std::string {
+	return std::format("{}  {}{}", iGlyph, iLabel, iWindow);
+}
 
 namespace {
 

@@ -8,6 +8,8 @@
 
 #include "SceneSettings.h"
 
+#include "../DockLayout.h"
+
 #include "../commands/SceneSettingsCommands.h"
 
 #include <gui/IconFont.h>
@@ -32,8 +34,6 @@
 namespace owl::nest::panel {
 
 namespace {
-
-constexpr auto g_windowName = "Scene Settings";
 
 auto serializeConfig(const renderer::EnabledRenderersConfig& iConfig) -> std::string {
 	if (iConfig.isEmpty())
@@ -279,7 +279,8 @@ void SceneSettings::onImGuiRender() {
 	if (!m_visible)
 		return;
 
-	if (!ImGui::Begin(g_windowName, &m_visible)) {
+	if (!ImGui::Begin(panelWindow::title(gui::icon::settings2, "Scene Settings", panelWindow::sceneSettings).c_str(),
+					  &m_visible)) {
 		ImGui::End();
 		return;
 	}
@@ -322,8 +323,10 @@ void SceneSettings::onImGuiRender() {
 		ImGui::End();
 		return;
 	}
-	ImGui::TextDisabled("Layers listed here are emitted in this order; project layers "
-						"omitted from the list still run after, in project order.");
+	ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
+	ImGui::TextWrapped("Layers listed here are emitted in this order; project layers "
+					   "omitted from the list still run after, in project order.");
+	ImGui::PopStyleColor();
 	ImGui::Spacing();
 
 	bool changed = renderRendererStackSection();

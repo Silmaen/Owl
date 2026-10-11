@@ -8,6 +8,8 @@
 
 #include "ContentBrowser.h"
 
+#include "../DockLayout.h"
+
 #include <gui/IconBank.h>
 #include <gui/IconFont.h>
 #include <gui/UiLayer.h>
@@ -15,6 +17,7 @@
 #include <gui/widgets/Badge.h>
 #include <gui/widgets/EmptyState.h>
 #include <gui/widgets/IconButton.h>
+#include <gui/widgets/Menu.h>
 #include <gui/widgets/SearchField.h>
 #include <gui/widgets/Tooltip.h>
 #include <gui/widgets/TreeRow.h>
@@ -23,13 +26,17 @@
 #include <platform/FileDialog.h>
 
 #include <algorithm>
+#include <cctype>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <format>
 #include <optional>
+#include <string>
 #include <system_error>
 #include <unordered_map>
+#include <utility>
+#include <vector>
 
 namespace owl::nest::panel {
 
@@ -129,6 +136,13 @@ auto getFileIcon(const std::filesystem::path& iPath) -> std::optional<gui::IconB
 	return iconBank.getIcon("text_icon");
 }
 
+auto upperCase(std::string iText) -> std::string {
+	std::ranges::transform(iText, iText.begin(), [](const char iChar) -> char {
+		return static_cast<char>(std::toupper(static_cast<unsigned char>(iChar)));
+	});
+	return iText;
+}
+
 // What a tile shows and where.
 struct TileView {
 	std::filesystem::path path;
@@ -208,13 +222,24 @@ void drawTile(ImDrawList* iDraw, const TileView& iTile) {
 		}
 		iDraw->AddRectFilled({iTile.min.x, iTile.min.y + iTile.thumbSize},
 							 {iTile.max.x, iTile.min.y + iTile.thumbSize + 2.f}, toU32(kind.color));
+		if (const auto extension = upperCase(iTile.path.extension().string());
+			!iTile.directory && extension.size() > 1) {
+			gui::UiLayer::pushTextStyle(gui::TextStyle::Caption);
+			const char* text = extension.c_str() + 1;
+			const ImVec2 textSize = ImGui::CalcTextSize(text);
+			const ImVec2 badgeMax{iTile.max.x - 4.f, iTile.min.y + 4.f + textSize.y + 2.f};
+			const ImVec2 badgeMin{badgeMax.x - textSize.x - 8.f, iTile.min.y + 4.f};
+			iDraw->AddRectFilled(badgeMin, badgeMax, toU32(gui::Theme::withAlpha(theme.surface0, 0.85f)), 3.f);
+			iDraw->AddText({badgeMin.x + 4.f, badgeMin.y + 1.f}, toU32(kind.color), text);
+			gui::UiLayer::popTextStyle();
+		}
 		const ImVec4 clip{iTile.min.x + 6.f, iTile.min.y + iTile.thumbSize + 4.f, iTile.max.x - 4.f,
 						  iTile.max.y - ImGui::GetFontSize() * 0.9f - 2.f};
 		iDraw->AddText(ImGui::GetFont(), ImGui::GetFontSize() * 0.92f, {clip.x, clip.y}, toU32(theme.text),
 					   iTile.name.c_str(), nullptr, iTile.width - 10.f, &clip);
 		gui::UiLayer::pushTextStyle(gui::TextStyle::Caption);
 		iDraw->AddText({iTile.min.x + 6.f, iTile.max.y - ImGui::GetFontSize() - 4.f}, toU32(theme.textDisabled),
-					   kind.label);
+					   upperCase(kind.label).c_str());
 		gui::UiLayer::popTextStyle();
 	}
 }
@@ -259,7 +284,7 @@ void ContentBrowser::requestScan(const std::filesystem::path& iPath) {
 }
 
 void ContentBrowser::onImGuiRender() {
-	ImGui::Begin("Content Browser");
+	ImGui::Begin(panelWindow::title(gui::icon::folderOpen, "Content Browser", panelWindow::contentBrowser).c_str());
 
 	// Swap in the latest background scan when it completes.
 	if (!m_scanInProgress.load() && m_pendingEntries) {
@@ -369,9 +394,14 @@ void ContentBrowser::renderTopBand() {
 			break;
 	}
 	std::ranges::reverse(crumbs);
+	std::string rootTitle = m_currentRootPath.filename().string();
+	for (const auto& [title, assetsPath]: app::Application::get().getAssetDirectories()) {
+		if (assetsPath == m_currentRootPath)
+			rootTitle = title;
+	}
 	for (size_t i = 0; i < crumbs.size(); ++i) {
 		const bool last = i + 1 == crumbs.size();
-		const auto name = i == 0 ? std::string{"Root"} : crumbs[i].filename().string();
+		const auto name = i == 0 ? rootTitle : crumbs[i].filename().string();
 		ImGui::AlignTextToFramePadding();
 		if (last) {
 			gui::UiLayer::pushTextStyle(gui::TextStyle::Strong);
@@ -407,7 +437,33 @@ void ContentBrowser::renderTopBand() {
 	ImGui::SliderFloat("##tileSize", &m_tileSize, 56.f, 160.f, "");
 	ImGui::EndDisabled();
 	gui::widgets::itemTooltip("Thumbnail size");
+	renderKindChips();
 	ImGui::Separator();
+}
+
+void ContentBrowser::renderKindChips() {
+	std::vector<std::pair<std::string, size_t>> kinds;
+	for (const auto& entry: m_cachedEntries) {
+		const std::string label = describeKind(entry.path(), entry.is_directory()).label;
+		if (auto it = std::ranges::find(kinds, label, &std::pair<std::string, size_t>::first); it != kinds.end())
+			++it->second;
+		else
+			kinds.emplace_back(label, 1);
+	}
+	if (!m_kindFilter.empty() &&
+		std::ranges::find(kinds, m_kindFilter, &std::pair<std::string, size_t>::first) == kinds.end())
+		m_kindFilter.clear();
+	if (kinds.size() < 2)
+		return;
+	std::ranges::sort(kinds);
+	if (gui::widgets::chip(std::format("All  {}###kindAll", m_cachedEntries.size()).c_str(), m_kindFilter.empty()))
+		m_kindFilter.clear();
+	for (const auto& [label, count]: kinds) {
+		ImGui::SameLine(0.f, 4.f);
+		const bool selected = m_kindFilter == label;
+		if (gui::widgets::chip(std::format("{}  {}###kind{}", label, count, label).c_str(), selected))
+			m_kindFilter = selected ? std::string{} : label;
+	}
 }
 
 auto ContentBrowser::getThumbnail(const std::filesystem::path& iPath, int& ioBudget)
@@ -474,6 +530,8 @@ void ContentBrowser::renderContent() {
 		const auto relativePath = relative(path, m_currentRootPath);
 		const std::string name = path.filename().string();
 		if (!gui::widgets::matchesFilter(name, m_searchFilter))
+			continue;
+		if (!m_kindFilter.empty() && describeKind(path, directoryEntry.is_directory()).label != m_kindFilter)
 			continue;
 		++shown;
 		if (column > 0)
@@ -555,59 +613,33 @@ void ContentBrowser::renderContent() {
 void ContentBrowser::renderContextMenu() {
 	if (!ImGui::BeginPopup("ContentBrowserContextMenu"))
 		return;
-	const auto& iconBank = gui::IconBank::instance();
-	if (m_selectedPath.empty()) {
-		// Background context menu
-		if (iconBank.menuItem("new_folder", "Create Folder")) {
+	const auto importItems = [this]() -> void {
+		if (gui::widgets::menuItem({.glyph = gui::icon::folderPlus, .label = "Create Folder"}))
 			createFolder();
-		}
-
 		ImGui::Separator();
-		if (iconBank.menuItem("import_file", "Import File...")) {
+		if (gui::widgets::menuItem({.glyph = gui::icon::download, .label = "Import File..."}))
 			importFiles();
-		}
-		if (iconBank.menuItem("import_folder", "Import Folder...")) {
+		if (gui::widgets::menuItem({.glyph = gui::icon::folderOpen, .label = "Import Folder..."}))
 			importFolder();
-		}
+	};
+	if (m_selectedPath.empty()) {
+		gui::widgets::menuHeader(m_currentPath.filename().string().c_str(), "Folder");
+		importItems();
 	} else {
-		// Item context menu
 		const bool isDir = is_directory(m_selectedPath);
 		const std::string itemName = m_selectedPath.filename().string();
-
-		ImGui::TextDisabled("%s", itemName.c_str());
-
-		ImGui::Separator();
-
-		// Open scene file
-		if (!isDir && m_selectedPath.extension() == ".owl" && m_sceneOpenCallback) {
-			if (iconBank.menuItem("open", "Open Scene")) {
-				m_sceneOpenCallback(m_selectedPath);
-			}
-
-			ImGui::Separator();
-		}
-
-		if (iconBank.menuItem("rename", "Rename")) {
+		gui::widgets::menuHeader(itemName.c_str(), describeKind(m_selectedPath, isDir).label);
+		if (gui::widgets::menuItem({.glyph = isDir ? gui::icon::folderOpen : gui::icon::externalLink, .label = "Open"}))
+			openEntry(std::filesystem::directory_entry{m_selectedPath});
+		if (gui::widgets::menuItem({.glyph = gui::icon::pencil, .label = "Rename"})) {
 			m_renaming = true;
 			m_renameBuffer = itemName;
 		}
-		if (iconBank.menuItem("delete", isDir ? "Delete Folder" : "Delete")) {
+		if (gui::widgets::menuItem(
+					{.glyph = gui::icon::trash2, .label = isDir ? "Delete Folder" : "Delete", .danger = true}))
 			m_pendingDelete = true;
-		}
-
 		ImGui::Separator();
-
-		if (iconBank.menuItem("new_folder", "Create Folder")) {
-			createFolder();
-		}
-
-		ImGui::Separator();
-		if (iconBank.menuItem("import_file", "Import File...")) {
-			importFiles();
-		}
-		if (iconBank.menuItem("import_folder", "Import Folder...")) {
-			importFolder();
-		}
+		importItems();
 	}
 
 	ImGui::EndPopup();

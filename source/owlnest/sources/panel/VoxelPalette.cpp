@@ -8,6 +8,9 @@
 
 #include "VoxelPalette.h"
 
+#include "../DockLayout.h"
+
+#include <gui/IconFont.h>
 #include <gui/widgets/Combo.h>
 #include <gui/widgets/Toggle.h>
 
@@ -69,7 +72,8 @@ void VoxelPalette::onImGuiRender(VoxelBrush& ioBrush) {
 	}
 	if (!m_visible)
 		return;
-	if (!ImGui::Begin("Voxel Palette", &m_visible)) {
+	if (!ImGui::Begin(panelWindow::title(gui::icon::boxes, "Voxel Palette", panelWindow::voxelPalette).c_str(),
+					  &m_visible)) {
 		ImGui::End();
 		return;
 	}

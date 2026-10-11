@@ -14,6 +14,7 @@
 #include <gui/widgets/Combo.h>
 #include <gui/widgets/EmptyState.h>
 #include <gui/widgets/IconButton.h>
+#include <gui/widgets/Menu.h>
 #include <gui/widgets/PropertyGrid.h>
 #include <gui/widgets/SearchField.h>
 #include <gui/widgets/SectionHeader.h>
@@ -238,6 +239,23 @@ TEST_F(WidgetKitTest, IntegerAndTextRowsKeepTheirValues) {
 	EXPECT_EQ(name, "Owl");
 	click(body);
 	EXPECT_EQ(value, 3);
+}
+
+TEST_F(WidgetKitTest, MenuItemsReportClicksUnlessDisabled) {
+	int clicks = 0;
+	int disabledClicks = 0;
+	const auto body = [&]() -> void {
+		menuHeader("Camera", "Entity");
+		if (menuItem({.glyph = icon::trash2, .label = "Delete", .shortcut = "Del", .danger = true}))
+			++clicks;
+		record();
+		if (menuItem({.label = "Rename", .enabled = false}))
+			++disabledClicks;
+	};
+	frame(body);
+	click(body);
+	EXPECT_EQ(clicks, 1);
+	EXPECT_EQ(disabledClicks, 0);
 }
 
 TEST_F(WidgetKitTest, DisabledIconButtonIgnoresClicks) {

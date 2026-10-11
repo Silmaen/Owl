@@ -8,6 +8,8 @@
 
 #include "LogPanel.h"
 
+#include "../DockLayout.h"
+
 #include <debug/LogSink.h>
 #include <gui/IconBank.h>
 #include <gui/IconFont.h>
@@ -15,8 +17,10 @@
 #include <gui/utils.h>
 #include <gui/widgets/Badge.h>
 #include <gui/widgets/IconButton.h>
+#include <magic_enum/magic_enum.hpp>
 
 #include <algorithm>
+#include <array>
 #include <chrono>
 #include <cstddef>
 #include <ctime>
@@ -134,12 +138,18 @@ auto formatTimestamp(const std::chrono::system_clock::time_point& iTime) -> std:
 }// namespace
 
 void LogPanel::onImGuiRender() {
-	ImGui::Begin("Log");
+	const auto entries = core::Log::getLogBuffer().getEntries();
+	std::array<size_t, magic_enum::enum_count<core::Log::Level>()> counts{};
+	for (const auto& entry: entries) ++counts[magic_enum::enum_index(entry.level).value_or(0)];
+	const auto countOf = [&counts](const core::Log::Level iLevel) -> size_t {
+		return counts[magic_enum::enum_index(iLevel).value_or(0)];
+	};
+	const size_t problems =
+			countOf(core::Log::Level::Warning) + countOf(core::Log::Level::Error) + countOf(core::Log::Level::Critical);
+	const std::string label = problems > 0 ? std::format("Log  {}", problems) : std::string{"Log"};
+	ImGui::Begin(panelWindow::title(gui::icon::scrollText, label, panelWindow::log).c_str());
 
-	// Toolbar: clear, follow, level and logger filter chips, search.
-	if (gui::widgets::iconButton("clear", {.glyph = gui::icon::eraser, .tooltip = "Clear the log"}))
-		core::Log::getLogBuffer().clear();
-	ImGui::SameLine();
+	// Toolbar: follow, level and logger filter chips, then search and clear on the right.
 	if (gui::widgets::iconButton("follow", {.glyph = gui::icon::arrowDown,
 											.tooltip = "Follow new messages",
 											.description = "Keep the view scrolled to the latest message.",
@@ -151,8 +161,9 @@ void LogPanel::onImGuiRender() {
 			ioFlag = !ioFlag;
 		ImGui::SameLine();
 	};
-	const auto levelChip = [](const char* iLabel, bool& ioFlag, const core::Log::Level iLevel) -> void {
-		if (gui::widgets::chip(iLabel, ioFlag, getLevelColor(iLevel)))
+	const auto levelChip = [&countOf](const char* iLabel, bool& ioFlag, const core::Log::Level iLevel) -> void {
+		if (gui::widgets::chip(std::format("{}  {}###{}", iLabel, countOf(iLevel), iLabel).c_str(), ioFlag,
+							   getLevelColor(iLevel)))
 			ioFlag = !ioFlag;
 		ImGui::SameLine();
 	};
@@ -166,8 +177,17 @@ void LogPanel::onImGuiRender() {
 	ImGui::SameLine();
 	chipToggle("Engine##logger", m_showCore);
 	chipToggle("Game##logger", m_showApp);
-	ImGui::SetNextItemWidth(std::max(ImGui::GetFontSize() * 8.f, ImGui::GetContentRegionAvail().x));
+	const float clearWidth = ImGui::CalcTextSize("Clear").x + ImGui::GetFontSize() * 2.f +
+							 ImGui::GetStyle().FramePadding.x * 2.f + ImGui::GetStyle().ItemSpacing.x;
+	const float searchWidth =
+			std::max(ImGui::GetFontSize() * 8.f,
+					 std::min(ImGui::GetFontSize() * 18.f, ImGui::GetContentRegionAvail().x - clearWidth));
+	ImGui::SameLine(std::max(ImGui::GetCursorPosX(), ImGui::GetContentRegionMax().x - clearWidth - searchWidth));
+	ImGui::SetNextItemWidth(searchWidth);
 	ImGui::InputTextWithHint("##Search", "Filter messages", m_searchBuffer.data(), m_searchBuffer.size());
+	ImGui::SameLine();
+	if (gui::widgets::button("clear", {.glyph = gui::icon::eraser, .label = "Clear", .tooltip = "Clear the log"}))
+		core::Log::getLogBuffer().clear();
 
 	ImGui::Separator();
 
@@ -175,8 +195,6 @@ void LogPanel::onImGuiRender() {
 	ImGui::SetWindowFontScale(g_fontScale);
 
 	ImGui::BeginChild("LogScrollRegion", ImVec2(0, 0), ImGuiChildFlags_None, ImGuiWindowFlags_HorizontalScrollbar);
-
-	const auto entries = core::Log::getLogBuffer().getEntries();
 
 	const std::string_view searchFilter(m_searchBuffer.data());
 

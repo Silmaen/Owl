@@ -152,6 +152,8 @@ private:
 	bool m_rescanRequested = false;
 	/// Text typed in the search field; filters the current folder by name.
 	std::string m_searchFilter;
+	/// Asset family shown alone (`Texture`, `Scene`...), empty for every file.
+	std::string m_kindFilter;
 	/// Show a list of rows instead of a grid of tiles.
 	bool m_listView = false;
 	/// Side of a grid tile, in pixels (the thumbnail size).
@@ -217,6 +219,12 @@ private:
 	 *  Render the navigation/top toolbar.
 	 */
 	void renderTopBand();
+
+	/**
+	 * @brief
+	 *  Render the family filter chips of the current folder, each with its count; hidden with a single family.
+	 */
+	void renderKindChips();
 
 	/**
 	 * @brief

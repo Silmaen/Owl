@@ -34,19 +34,29 @@ constexpr auto hierarchy = "###Hierarchy";
 /// Entity properties, retitled by the active document.
 constexpr auto properties = "###Properties";
 /// Project asset browser.
-constexpr auto contentBrowser = "Content Browser";
+constexpr auto contentBrowser = "###ContentBrowser";
 /// Engine log.
-constexpr auto log = "Log";
+constexpr auto log = "###Log";
 /// Frame statistics.
-constexpr auto stats = "Stats";
+constexpr auto stats = "###Stats";
 /// Voxel brush palette, shown with a voxel world.
-constexpr auto voxelPalette = "Voxel Palette";
+constexpr auto voxelPalette = "###VoxelPalette";
 /// Tile brush palette, shown with a tilemap document.
-constexpr auto tilePalette = "Tile Palette";
+constexpr auto tilePalette = "###TilePalette";
 /// Per-scene settings.
-constexpr auto sceneSettings = "Scene Settings";
+constexpr auto sceneSettings = "###SceneSettings";
 /// Bundled documentation.
-constexpr auto help = "Help##help_panel";
+constexpr auto help = "###Help";
+
+/**
+ * @brief
+ *  Visible title of a panel: its glyph and label, then its window name so docking keeps finding it.
+ * @param[in] iGlyph The `gui::icon` glyph of the panel.
+ * @param[in] iLabel The label shown in the tab.
+ * @param[in] iWindow One of the `panelWindow` names.
+ * @return The string to give to `ImGui::Begin`.
+ */
+[[nodiscard]] auto title(std::string_view iGlyph, std::string_view iLabel, std::string_view iWindow) -> std::string;
 }// namespace panelWindow
 
 /**
@@ -59,7 +69,7 @@ constexpr auto help = "Help##help_panel";
 class DockLayout final {
 public:
 	/// Layout generation; raising it rebuilds every saved layout once.
-	static constexpr int version = 1;
+	static constexpr int version = 2;
 
 	/**
 	 * @brief

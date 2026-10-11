@@ -8,6 +8,8 @@
 
 #include "Viewport.h"
 
+#include "../DockLayout.h"
+
 #include "EditorLayer.h"
 #include "document/DocumentManager.h"
 #include "document/SceneDocument.h"
@@ -725,7 +727,7 @@ void Viewport::renderOverlayToolbar() {
 		gui::UiLayer::popTextStyle();
 		if (ImGui::IsItemClicked()) {
 			settings.showStats = true;
-			ImGui::SetWindowFocus("Stats");
+			ImGui::SetWindowFocus(panelWindow::stats);
 		}
 		gui::widgets::itemTooltip("Frame stats", nullptr, "Click to open the Stats panel.");
 	}

@@ -8,6 +8,8 @@
 
 #include "HelpPanel.h"
 
+#include "../DockLayout.h"
+
 #include <app/Application.h>
 #include <core/Log.h>
 #include <core/Macros.h>
@@ -188,7 +190,7 @@ void HelpPanel::onImGuiRender(const core::Timestep& iTimeStep) {
 	m_renderer.update(iTimeStep, m_currentContent);
 
 	ImGui::SetNextWindowSize({720, 540}, ImGuiCond_FirstUseEver);
-	if (!ImGui::Begin("Help##help_panel", &m_visible)) {
+	if (!ImGui::Begin(panelWindow::title(gui::icon::circleHelp, "Help", panelWindow::help).c_str(), &m_visible)) {
 		ImGui::End();
 		return;
 	}

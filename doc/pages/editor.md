@@ -471,15 +471,16 @@ supports navigation, file operations, and drag-drop integration with other panel
 opens a folder, the chevrons fold them, and the tree unfolds down to the folder shown. Drag its right edge to resize
 it.
 
-**Toolbar.** The parent folder button, a clickable breadcrumb from the root to the current folder, a search field
-filtering the folder by name, the grid / list toggle and the thumbnail size. The browser never goes above the
-selected root.
+**Toolbar.** The parent folder button, a clickable breadcrumb from the root (named after it) to the current folder, a
+search field filtering the folder by name, the grid / list toggle and the thumbnail size. The browser never goes
+above the selected root. Below, one chip per family present in the folder (`All 14`, `Texture 11`...) shows that
+family alone; the chips hide when the folder holds a single family.
 
 **Tiles.** Images (`.png`, `.jpg`) show their own thumbnail, filling the tile and cropped to its square; the
 thumbnails load a few per frame and are dropped when you leave the folder. Other files show the duotone icon of
 their kind, centred. A bar under the tile carries the colour of the family (scene, prefab, texture, tileset,
-tilemap, sound, script, code, shader, font, animation, node graph, 3D model, data, folder) and the kind is written
-under the name. An empty folder, or a search with no match, says so and how to go on.
+tilemap, sound, script, code, shader, font, animation, node graph, 3D model, data, folder), the kind is written in
+capitals under the name, and a badge in the corner gives the extension. An empty folder, or a search with no match, says so and how to go on.
 
 **Interactions:**
 
@@ -491,7 +492,7 @@ under the name. An empty folder, or a search with no match, says so and how to g
 | Drag texture to Properties    | Assign the texture to a Sprite Renderer field |
 | Drag sound to Properties      | Assign the sound to a Sound Source field      |
 | Right-click background        | Context menu: New Folder, Import File/Folder  |
-| Right-click file/folder       | Context menu: Rename, Delete                  |
+| Right-click file/folder       | Context menu: Open, Rename, Delete            |
 | OS file drop                  | Copy dropped files into the current directory |
 
 ### Log Panel
@@ -499,8 +500,9 @@ under the name. An empty folder, or a search with no match, says so and how to g
 The Log panel displays a scrolling view of engine and application log messages. It
 supports filtering by log level and logger source.
 
-**Level filters.** One chip per severity level: Trace, Debug, Info, Warning, Error, Critical. A level whose chip is
-off is hidden from the output.
+**Level filters.** One chip per severity level, with its message count: Trace, Debug, Info, Warning, Error,
+Critical. A level whose chip is off is hidden from the output. The tab title adds the count of warnings and errors.
+The search field and the **Clear** button sit on the right of the toolbar.
 
 **Logger filters.** Two more chips: Engine (the `OWL` logger) and Game (the `APP` logger).
 
@@ -549,8 +551,10 @@ the maximum over the last 2 s, so a one-off queue drain stays readable; they are
 
 ### Settings
 
-The Settings panel is a dockable window opened via **View > Settings > Editor**, with one tab per topic; each row
-has its label on the left and a reset button once it differs from the default:
+The Settings panel is a dockable window opened via **View > Settings > Editor**, with one tab per topic, each tab
+with its icon; each row has its label on the left and a reset button once it differs from the default. The engine
+parameters dialog (Window, Backends, Debug), Project Settings and Scene Settings use the same grids under
+collapsible sections with an icon:
 
 **General.** The Stats Panel switch, the UI and code font sizes, and the autosave interval
 (see [Autosave and crash recovery](#autosave-and-crash-recovery)).
@@ -601,7 +605,7 @@ on disk, at the start of the next frame:
   recognised (the file holds what the editor would write) and reload nothing.
 - **Cost**: a background thread compares modification times every 500 ms and the frame reads one atomic flag; the
   frame bench measures it with `OwlRunner --frame-bench <scene> --hot-reload`.
-- **Turn it off**: *Debug > Hot Reload* in the *Parameters* dialog (`hotReload` in `config.yml`), `OwlRunner
+- **Turn it off**: the *Hot Reload* switch of the *Debug* section of the *Parameters* dialog (`hotReload` in `config.yml`), `OwlRunner
   --no-hot-reload`. A packaged game never watches: the hot reload stays off whenever an asset pack is open.
 - Not reloaded: colliders built when the play started (a tilemap's collision flags apply at the next play), new
   bindings in a shader (restart), C++ game code (a v0.7.0 evaluation).
@@ -609,7 +613,8 @@ on disk, at the start of the next frame:
 ### Project Settings
 
 The Project Settings dialog is opened via **Project > Project Settings**. It edits the
-active project's configuration:
+active project's configuration in three sections (General, Window, Renderer Stack) laid out as property grids, like
+the inspector:
 
 | Field        | Description                                             |
 |--------------|---------------------------------------------------------|
@@ -644,19 +649,19 @@ The renderer-stack section mirrors `renderer::EnabledRenderersConfig`:
 
 | Control                                  | Effect                                                                                               |
 |------------------------------------------|------------------------------------------------------------------------------------------------------|
-| Layer row (per scene-listed entry)       | Drag-handle text identifying the layer + bracketed type (`[Renderer2D]`, `[RendererRaycast]`).       |
-| `Enabled` checkbox                       | Toggle the scene-level enable flag. Disabled layers are skipped without affecting the order.         |
-| Up / Down arrows                         | Reorder the scene listing. Listed layers run in this order; unlisted layers append in project order. |
-| `Detach` button                          | Remove the scene-level entry — the layer reverts to the project's default config.                    |
-| `Overrides` collapsible                  | Per-layer-type override editor for known keys (see below).                                           |
+| Layer row (per scene-listed entry)       | The layer name and its type (`Renderer2D`, `RendererRaycast`).                                       |
+| Enabled switch                           | Toggle the scene-level enable flag. Disabled layers are skipped without affecting the order.         |
+| Up / Down chevrons                       | Reorder the scene listing. Listed layers run in this order; unlisted layers append in project order. |
+| Detach button                            | Remove the scene-level entry — the layer reverts to the project's default config.                    |
+| `Overrides` sub-section                  | Per-layer-type override editor for known keys (see below).                                           |
 | Add layer slot (`+` next to a name)      | Add a project layer absent from the scene listing — equivalent to declaring a new override.          |
 
 The `Overrides` collapsible exposes typed widgets per layer type:
 
 - **`Renderer2D`** — `Space` combo (`World` for sprite layers, `Screen` for
   HUD / pixel-overlay layers immune to camera rotation).
-- **`RendererRaycast`** — `Fov`, `MaxDistance`, `NumRays` numeric drags;
-  `CeilingColor` / `FloorColor` colour pickers.
+- **`RendererRaycast`** — Field of View, Max Distance and Rays numeric drags (keys `Fov`, `MaxDistance`,
+  `NumRays`); Ceiling / Floor colour pickers (`CeilingColor` / `FloorColor`).
 
 Every change pushes a `ModifyEnabledRenderersCommand` onto the active scene's
 undo manager and rebuilds the live `RenderStack` so the visual effect is

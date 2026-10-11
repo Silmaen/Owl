@@ -8,6 +8,8 @@
 
 #include "SceneHierarchy.h"
 
+#include "../DockLayout.h"
+
 #include "../EditorLayer.h"
 #include "../UndoManager.h"
 #include "../commands/ComponentCommands.h"
@@ -23,6 +25,7 @@
 #include <gui/widgets/Badge.h>
 #include <gui/widgets/EmptyState.h>
 #include <gui/widgets/IconButton.h>
+#include <gui/widgets/Menu.h>
 #include <gui/widgets/SearchField.h>
 #include <gui/widgets/SectionHeader.h>
 #include <gui/widgets/Tooltip.h>
@@ -231,9 +234,10 @@ auto SceneHierarchy::lastHoveredComponentName() -> const std::string& { return g
 
 // Function displaying the Hierarchy panel.
 void SceneHierarchy::renderHierarchy() {
-	const std::string title =
-			(mp_activeDocument != nullptr ? mp_activeDocument->hierarchyPanelTitle() : std::string{"Scene Hierarchy"}) +
-			std::string{"###Hierarchy"};
+	const std::string title = panelWindow::title(gui::icon::listTree,
+												 mp_activeDocument != nullptr ? mp_activeDocument->hierarchyPanelTitle()
+																			  : std::string{"Scene Hierarchy"},
+												 panelWindow::hierarchy);
 	ImGui::Begin(title.c_str());
 
 	if (mp_activeDocument != nullptr && mp_activeDocument->overridesGlobalPanels()) {
@@ -258,7 +262,7 @@ void SceneHierarchy::renderHierarchy() {
 		// Right-click on blank space
 		ImGui::PushID("...");
 		if (ImGui::BeginPopupContextWindow(nullptr, 1)) {
-			if (gui::IconBank::instance().menuItem("add_entity", "Create Empty Entity")) {
+			if (gui::widgets::menuItem({.glyph = gui::icon::plus, .label = "Create Empty Entity"})) {
 				std::ignore = getCommandTarget().execute("entity.create", {});
 			}
 			ImGui::EndPopup();
@@ -295,10 +299,11 @@ void SceneHierarchy::renderHierarchyToolbar() {
 										   .description = "Create an empty entity, or a child of the selection."}))
 		ImGui::OpenPopup("##addEntity");
 	if (ImGui::BeginPopup("##addEntity")) {
-		const auto& iconBank = gui::IconBank::instance();
-		if (iconBank.menuItem("add_entity", "Empty entity"))
+		if (gui::widgets::menuItem({.glyph = gui::icon::box, .label = "Empty entity"}))
 			std::ignore = getCommandTarget().execute("entity.create", {});
-		if (iconBank.menuItem("add_child_entity", "Child of the selection", nullptr, static_cast<bool>(m_selection)))
+		if (gui::widgets::menuItem({.glyph = gui::icon::listTree,
+									.label = "Child of the selection",
+									.enabled = static_cast<bool>(m_selection)}))
 			std::ignore = getCommandTarget().execute(
 					"entity.create", {{"parent", static_cast<int64_t>(static_cast<uint64_t>(m_selection.getUUID()))}});
 		ImGui::EndPopup();
@@ -529,20 +534,20 @@ void SceneHierarchy::drawEntityContextMenu(const scene::Entity& iEntity, const b
 										   const core::UUID iParentId) {
 	if (!ImGui::BeginPopup("EntityContext"))
 		return;
-	const auto& ib = gui::IconBank::instance();
+	gui::widgets::menuHeader(iEntity.getName().c_str(), "Entity");
 	// --- Create ---
 	const auto target = getCommandTarget();
 	const commands::ArgValue entityArg = static_cast<int64_t>(static_cast<uint64_t>(iEntity.getUUID()));
-	if (ib.menuItem("add_entity", "Create Root Entity"))
+	if (gui::widgets::menuItem({.glyph = gui::icon::plus, .label = "Create Root Entity"}))
 		std::ignore = target.execute("entity.create", {});
-	if (ib.menuItem("add_child_entity", "Create Child Entity"))
+	if (gui::widgets::menuItem({.glyph = gui::icon::plus, .label = "Create Child Entity"}))
 		std::ignore = target.execute("entity.create", {{"name", std::string{"Child Entity"}}, {"parent", entityArg}});
 
 	ImGui::Separator();
 	// --- Duplicate ---
-	if (ib.menuItem("duplicate", "Duplicate Entity"))
+	if (gui::widgets::menuItem({.glyph = gui::icon::copy, .label = "Duplicate Entity"}))
 		std::ignore = target.execute("entity.duplicate", {{"entity", entityArg}});
-	if (iHasChildren && ib.menuItem("duplicate", "Duplicate Subtree"))
+	if (iHasChildren && gui::widgets::menuItem({.glyph = gui::icon::copy, .label = "Duplicate Subtree"}))
 		std::ignore = target.execute("entity.duplicate", {{"entity", entityArg}, {"children", true}});
 
 	// --- Prefab ---
@@ -550,14 +555,16 @@ void SceneHierarchy::drawEntityContextMenu(const scene::Entity& iEntity, const b
 	if (isPrefabRoot(iEntity)) {
 		const auto prefabFullPath = resolvePrefabPath(iEntity.getComponent<PrefabLink>());
 		const bool prefabExists = !prefabFullPath.empty();
-		if (ib.menuItem("prefab_icon", "Update from Prefab", nullptr, prefabExists)) {
+		if (gui::widgets::menuItem(
+					{.glyph = gui::icon::refreshCw, .label = "Update from Prefab", .enabled = prefabExists})) {
 			auto before = SubtreeSnapshot::capture(iEntity, *m_context);
 			if (scene::PrefabSerializer::applyToInstance(prefabFullPath, iEntity, *m_context) &&
 				mp_undoManager != nullptr)
 				mp_undoManager->push(mkUniq<commands::ApplyPrefabCommand>(
 						std::move(before), SubtreeSnapshot::capture(iEntity, *m_context), "Update from Prefab"));
 		}
-		if (ib.menuItem("prefab_icon", "Revert to Prefab", nullptr, prefabExists)) {
+		if (gui::widgets::menuItem(
+					{.glyph = gui::icon::rotateCcw, .label = "Revert to Prefab", .enabled = prefabExists})) {
 			auto before = SubtreeSnapshot::capture(iEntity, *m_context);
 			if (scene::PrefabSerializer::revertInstance(prefabFullPath, iEntity, *m_context) &&
 				mp_undoManager != nullptr)
@@ -566,13 +573,13 @@ void SceneHierarchy::drawEntityContextMenu(const scene::Entity& iEntity, const b
 		}
 
 		ImGui::Separator();
-		if (ib.menuItem("prefab_icon", "Unlink Prefab"))
+		if (gui::widgets::menuItem({.glyph = gui::icon::unlink, .label = "Unlink Prefab"}))
 			std::ignore = target.execute("component.remove",
 										 {{"entity", entityArg}, {"component", std::string{PrefabLink::name()}}});
 
 		ImGui::Separator();
 	}
-	if (ib.menuItem("prefab_icon", "Create Prefab...")) {
+	if (gui::widgets::menuItem({.glyph = gui::icon::packagePlus, .label = "Create Prefab..."})) {
 		if (const auto filepath = platform::FileDialog::saveFile("Owl Prefab (*.owlprefab)|owlprefab\n");
 			!filepath.empty() && !scene::PrefabSerializer::serialize(iEntity, *m_context, filepath, iEntity.getName()))
 			OWL_ERROR("SceneHierarchy: Prefab {} was not created.", filepath.string())
@@ -582,7 +589,7 @@ void SceneHierarchy::drawEntityContextMenu(const scene::Entity& iEntity, const b
 		const auto& tilemap = iEntity.getComponent<scene::component::Tilemap>();
 		if (!tilemap.tilemapPath.empty()) {
 			ImGui::Separator();
-			if (ib.menuItem("owltilemap_icon", "Open in Tilemap Editor")) {
+			if (gui::widgets::menuItem({.glyph = gui::icon::grid3x3, .label = "Open in Tilemap Editor"})) {
 				const auto& app = app::Application::get();
 				std::filesystem::path resolved;
 				for (const auto& [title, assetsPath]: app.getAssetDirectories()) {
@@ -602,14 +609,18 @@ void SceneHierarchy::drawEntityContextMenu(const scene::Entity& iEntity, const b
 
 	// --- Hierarchy ---
 	if (iParentId != core::UUID{0}) {
-		if (ib.menuItem("unparent", "Unparent"))
+		if (gui::widgets::menuItem({.glyph = gui::icon::arrowUp, .label = "Unparent"}))
 			std::ignore = target.execute("entity.reparent", {{"entity", entityArg}});
 	}
 
 	ImGui::Separator();
 	// --- Delete ---
-	const bool deleteOne = ib.menuItem("delete_entity", iHasChildren ? "Delete Entity Only" : "Delete Entity");
-	const bool deleteAll = iHasChildren && ib.menuItem("delete_cascade", "Delete with Children");
+	const bool deleteOne = gui::widgets::menuItem({.glyph = gui::icon::trash2,
+												   .label = iHasChildren ? "Delete Entity Only" : "Delete Entity",
+												   .danger = true});
+	const bool deleteAll =
+			iHasChildren &&
+			gui::widgets::menuItem({.glyph = gui::icon::trash2, .label = "Delete with Children", .danger = true});
 	if (deleteOne || deleteAll) {
 		if (m_selection == iEntity)
 			m_selection = {};
@@ -621,9 +632,10 @@ void SceneHierarchy::drawEntityContextMenu(const scene::Entity& iEntity, const b
 
 // Function displaying the Entity Property panel.
 void SceneHierarchy::renderProperties() {
-	const std::string title =
-			(mp_activeDocument != nullptr ? mp_activeDocument->propertiesPanelTitle() : std::string{"Properties"}) +
-			std::string{"###Properties"};
+	const std::string title = panelWindow::title(
+			gui::icon::slidersHorizontal,
+			mp_activeDocument != nullptr ? mp_activeDocument->propertiesPanelTitle() : std::string{"Properties"},
+			panelWindow::properties);
 	ImGui::Begin(title.c_str());
 	if (mp_activeDocument != nullptr && mp_activeDocument->overridesGlobalPanels()) {
 		m_inspector.flush(m_context.get(), mp_undoManager);
