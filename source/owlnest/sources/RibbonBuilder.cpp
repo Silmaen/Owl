@@ -18,11 +18,15 @@
 
 #include <gui/IconBank.h>
 #include <gui/IconFont.h>
+#include <gui/widgets/Menu.h>
 
+#include <array>
 #include <format>
+#include <functional>
 #include <string>
 #include <string_view>
 #include <tuple>
+#include <utility>
 
 namespace owl::nest {
 
@@ -160,6 +164,54 @@ void RibbonBuilder::build() {
 				   .label = "Reset Layout",
 				   .tooltip = "Put every panel back in its default place.",
 				   .onClick = [this]() -> void { mp_editor->applyLayoutPreset(mp_editor->m_dockLayout.getPreset()); }});
+	const auto gCamera = m_ribbon.addGroup(view, "Camera");
+	const auto inEdit = [this]() -> bool {
+		return mp_editor->activeViewport() != nullptr && mp_editor->getState() == State::Edit;
+	};
+	const auto run = [this](const char* iAction) -> std::function<void()> {
+		return [this, iAction]() -> void { std::ignore = mp_editor->runAction(iAction); };
+	};
+	m_ribbon.addButton(view, gCamera,
+					   Button{.iconName = "ribbon_view_reset",
+							  .label = "Reset View",
+							  .tooltip = "Face the XY plane from +Z, ten units from the origin.",
+							  .shortcut = shortcut("view.resetCamera"),
+							  .isEnabled = inEdit,
+							  .onClick = run("view.resetCamera")});
+	m_ribbon.addButton(view, gCamera,
+					   Button{.iconName = "ribbon_axes",
+							  .label = "Axis Views",
+							  .tooltip = "Look at the scene from one side, around the same point.",
+							  .isEnabled = inEdit,
+							  .popupContents = [this]() -> void {
+								  constexpr std::array<std::pair<const char*, const char*>, 6> views{
+										  {{"view.cameraFront", "Front (XY)"},
+										   {"view.cameraBack", "Back"},
+										   {"view.cameraTop", "Top (XZ)"},
+										   {"view.cameraBottom", "Bottom"},
+										   {"view.cameraRight", "Right (YZ)"},
+										   {"view.cameraLeft", "Left"}}};
+								  for (const auto& [action, label]: views)
+									  if (gui::widgets::menuItem({.glyph = gui::icon::cuboid, .label = label}))
+										  std::ignore = mp_editor->runAction(action);
+							  }});
+	m_ribbon.addButton(view, gCamera,
+					   Button{.iconName = "ribbon_frame_scene",
+							  .label = "Frame Scene",
+							  .tooltip = "Back off until every entity of the scene fits the view.",
+							  .shortcut = shortcut("view.frameScene"),
+							  .isEnabled = inEdit,
+							  .onClick = run("view.frameScene")});
+	m_ribbon.addButton(view, gCamera,
+					   Button{.iconName = "ribbon_viewpoint",
+							  .label = "Camera Viewpoint",
+							  .tooltip = "Move the view onto the selected camera entity (not a raycast one).",
+							  .isEnabled = [this]() -> bool {
+								  const auto* viewport = mp_editor->activeViewport();
+								  return viewport != nullptr && mp_editor->getState() == State::Edit &&
+										 viewport->canGoToCameraViewpoint();
+							  },
+							  .onClick = run("view.cameraViewpoint")});
 	const auto gPanels = m_ribbon.addGroup(view, "Panels");
 	m_ribbon.addButton(view, gPanels,
 					   Button{.iconName = "ribbon_stats",

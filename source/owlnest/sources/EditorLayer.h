@@ -503,6 +503,12 @@ public:
 
 	/**
 	 * @brief
+	 *  Register the camera actions of the active viewport: reset, frame scene, axis views and camera viewpoint.
+	 */
+	void registerCameraActions();
+
+	/**
+	 * @brief
 	 *  Register the actions that make the text larger, smaller or back to its size (Ctrl+=, Ctrl+-, Ctrl+0).
 	 */
 	void registerTextScaleActions();

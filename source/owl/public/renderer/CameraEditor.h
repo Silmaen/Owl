@@ -101,6 +101,71 @@ public:
 
 	/**
 	 * @brief
+	 *  Axis-aligned views, named after the side of the scene the camera looks from.
+	 */
+	enum struct ViewAxis : uint8_t {
+		Front,///< From +Z towards -Z: the XY plane, as in the 2D view.
+		Back,///< From -Z towards +Z.
+		Top,///< From +Y down to -Y: the XZ plane, -Z at the top of the view.
+		Bottom,///< From -Y up to +Y.
+		Right,///< From +X towards -X: the YZ plane.
+		Left,///< From -X towards +X.
+	};
+
+	/**
+	 * @brief
+	 *  Turn the camera to look along an axis, around the same reference point and at the same distance.
+	 * @param[in] iAxis The side to look from.
+	 */
+	void viewAlong(ViewAxis iAxis);
+
+	/**
+	 * @brief
+	 *  Put the camera back to its default pose: facing the XY plane from +Z, ten units away from the origin.
+	 */
+	void resetView();
+
+	/**
+	 * @brief
+	 *  Place the eye and turn it to a direction; the reference point goes in front of it, at the current distance.
+	 * @param[in] iEye Position of the eye.
+	 * @param[in] iForward Direction to look at; ignored when null. The camera never rolls.
+	 */
+	void lookFrom(const math::vec3& iEye, const math::vec3& iForward);
+
+	/**
+	 * @brief
+	 *  How mouse drags and the wheel move the camera.
+	 */
+	struct Navigation {
+		/// Factor on the orbit and look-around speed.
+		float rotate = 1.f;
+		/// Factor on the pan speed.
+		float pan = 1.f;
+		/// Factor on the wheel zoom and the dolly speed.
+		float zoom = 1.f;
+		/// Turn the vertical drag of the orbit and look-around the other way.
+		bool invertY = false;
+		/// Distance in pixels the cursor travels before a drag moves the camera (filters a shaky click).
+		float deadZone = 0.f;
+	};
+
+	/**
+	 * @brief
+	 *  Change how drags and the wheel move the camera.
+	 * @param[in] iNavigation The new navigation settings.
+	 */
+	void setNavigation(const Navigation& iNavigation) { m_navigation = iNavigation; }
+
+	/**
+	 * @brief
+	 *  Current navigation settings.
+	 * @return The navigation settings.
+	 */
+	[[nodiscard]] auto getNavigation() const -> const Navigation& { return m_navigation; }
+
+	/**
+	 * @brief
 	 *  Reference point the camera orbits and pans around.
 	 * @return The reference point.
 	 */
@@ -119,6 +184,14 @@ public:
 	 * @param[in,out] ioEvent The event to treat.
 	 */
 	void onEvent(event::Event& ioEvent);
+
+	/**
+	 * @brief
+	 *  Vertical field of view of the perspective projection; the orthographic one shows the same height at the
+	 *  reference point.
+	 * @return The field of view, in degrees.
+	 */
+	[[nodiscard]] auto getFov() const -> float { return m_fov; }
 
 	/**
 	 * @brief
@@ -276,6 +349,13 @@ private:
 
 	/**
 	 * @brief
+	 *  Sign of the vertical drag on the pitch.
+	 * @return -1 when the navigation inverts it, else 1.
+	 */
+	[[nodiscard]] auto pitchSign() const -> float;
+
+	/**
+	 * @brief
 	 *  Get the zoom speed.
 	 * @return The zoom speed.
 	 */
@@ -299,6 +379,10 @@ private:
 
 	/// Save mouse position for drag.
 	math::vec2 m_initialMousePosition = {0.0f, 0.0f};
+	/// Pixels the cursor travelled since the current drag started, compared with the dead zone.
+	float m_dragTravel = 0.f;
+	/// Drag and wheel settings.
+	Navigation m_navigation;
 
 	/// Camera distance.
 	float m_distance = 10.0f;

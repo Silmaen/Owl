@@ -28,7 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `gui::widgets::treeRow`, `button`, `beginCombo` / `combo` (a thin chevron instead of the filled arrow) and `Ribbon::setSearchBox`; component headers draw a chevron and frame their section as a card.
 - Owl Nest style guide ([design page](design/nest-style-guide.md)): colour tokens, text roles, spacing, icons, the widget to use for each need and the interaction rules.
 - `gui::widgets::toggle` (left / right switch, used for the inspector booleans), `checkbox` (a box the size of a capital letter, replacing `ImGui::Checkbox` in Owl Nest), `subHeader` (grey caption of a nested block) and a coloured `chip` (Log level filters).
-- Owl Nest Editor Settings in tabs (General, Gizmo Snap, Appearance, Shortcuts) built on the property grid.
+- Owl Nest Editor Settings in tabs (General, Gizmo Snap, Camera, Appearance, Shortcuts) built on the property grid.
 - Owl Nest engine parameters, Project Settings and Scene Settings in property grids under sections with a Lucide icon, like the inspector; the Editor Settings tabs and every panel tab get an icon.
 - `gui::widgets::propertyInt`, `propertyText`, `menuItem` (glyph column, shortcut, destructive entries in red) and `menuHeader`; `sectionHeader` also takes a `gui::icon` glyph.
 - Owl Nest ribbon icons drawn as duotone SVGs (`icons/ribbon/`), the accent on one part only like the component icons; the Help panel opens among the documents instead of the right column.
@@ -39,6 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Owl Nest text size applied at once from the Editor Settings or `Ctrl+=` / `Ctrl+-` / `Ctrl+0` (`UiLayer::setTextScale`, 75 to 150 %).
 - Owl Nest context menus on the viewport (entity or view options), the document tabs (save, close, close others, reveal, copy path) and the node graphs; a common drag preview (`gui::widgets::dragPreview`).
 - Owl Nest Content Browser previews of tilesets (atlas) and 3D models (isometric shaded faces, `AssetThumbnails::projectMesh`); atlas swatches in the tileset and tilemap fields of the inspector; dialog buttons drawn with `gui::widgets::button` (`ButtonSpec::width`).
+- Owl Nest camera controls: **Reset View** (`Home`), six axis views (`CameraEditor::viewAlong`), **Frame Scene** (`Shift+F`) and the selected camera viewpoint (`CameraEditor::lookFrom`) from the ribbon **View > Camera** group, a viewport Camera menu and the command palette; a clickable view-cube; orbit, pan and zoom speeds, vertical inversion and dead zone in a **Camera** settings tab (`CameraEditor::Navigation`).
 - Owl Nest Log level chips show their message count and the Log tab its warnings and errors; the search and a labelled Clear button sit on the right.
 - Owl Nest Content Browser family chips with counts, an extension badge on the tiles, and context menus with a title, Lucide icons and Delete in red, like the Hierarchy menus.
 - `gui::widgets::notice`: an inline warning in the inspector, shown for an animated sprite without a sprite sheet and a Lua script without a path.

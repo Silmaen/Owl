@@ -172,6 +172,40 @@ public:
 
 	/**
 	 * @brief
+	 *  Centre the editor camera on every entity of the scene and back off until they fill the view.
+	 */
+	void frameScene();
+
+	/**
+	 * @brief
+	 *  Turn the editor camera to look along an axis, around the same reference point.
+	 * @param[in] iAxis The side to look from.
+	 */
+	void viewAlong(const renderer::CameraEditor::ViewAxis iAxis) { m_editorCamera.viewAlong(iAxis); }
+
+	/**
+	 * @brief
+	 *  Put the editor camera back to its default pose.
+	 */
+	void resetView() { m_editorCamera.resetView(); }
+
+	/**
+	 * @brief
+	 *  Whether the selected entity is a camera the editor view can be moved onto: a raycast camera is not, the
+	 *  editor draws those scenes flat.
+	 * @return True when `goToCameraViewpoint` would move the view.
+	 */
+	[[nodiscard]] auto canGoToCameraViewpoint() const -> bool;
+
+	/**
+	 * @brief
+	 *  Move the editor camera onto the pose of the selected camera entity: the 2D view framing its orthographic size,
+	 *  or the 3D view from its eye.
+	 */
+	void goToCameraViewpoint();
+
+	/**
+	 * @brief
 	 *  Switch the editor camera between the 2D orthographic and the perspective view.
 	 * @param[in] iProjection The projection.
 	 */
@@ -233,9 +267,17 @@ private:
 
 	/**
 	 * @brief
-	 *  Draw a small XYZ axis gizmo in the viewport corner reflecting the editor camera orientation.
+	 *  Draw the view-cube in the viewport corner: the six axis ends show the camera orientation, a click on one looks
+	 *  from that side, a click on the centre resets the view.
 	 */
-	void renderCameraGizmo() const;
+	void renderCameraGizmo();
+
+	/**
+	 * @brief
+	 *  Content of the camera menu shared by the view overlay and the context menu: reset, axis views, framing and the
+	 *  selected camera viewpoint.
+	 */
+	void renderCameraMenu();
 
 	/**
 	 * @brief

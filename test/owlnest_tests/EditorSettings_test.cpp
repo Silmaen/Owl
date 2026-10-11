@@ -71,3 +71,28 @@ TEST(EditorSettings, ViewportDisplayOptionsRoundTrip) {
 	EXPECT_TRUE(loaded.gizmoWorldSpace);
 	std::filesystem::remove_all(dir);
 }
+
+TEST(EditorSettings, CameraNavigationRoundTripsAndClamps) {
+	const auto dir = std::filesystem::temp_directory_path() / "owl_editor_settings_camera_test";
+	std::filesystem::remove_all(dir);
+	std::filesystem::create_directories(dir);
+	EditorSettings settings;
+	EXPECT_EQ(settings.cameraRotatePercent, 100);
+	EXPECT_EQ(settings.cameraDeadZone, 0);
+	EXPECT_FALSE(settings.cameraInvertY);
+	settings.cameraRotatePercent = 150;
+	settings.cameraPanPercent = 50;
+	settings.cameraZoomPercent = 1000;// out of range: clamped when read back
+	settings.cameraInvertY = true;
+	settings.cameraDeadZone = 4;
+	settings.saveToFile(dir / "settings.yml");
+
+	EditorSettings loaded;
+	loaded.loadFromFile(dir / "settings.yml");
+	EXPECT_EQ(loaded.cameraRotatePercent, 150);
+	EXPECT_EQ(loaded.cameraPanPercent, 50);
+	EXPECT_EQ(loaded.cameraZoomPercent, 300);
+	EXPECT_TRUE(loaded.cameraInvertY);
+	EXPECT_EQ(loaded.cameraDeadZone, 4);
+	std::filesystem::remove_all(dir);
+}

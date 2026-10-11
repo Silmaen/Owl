@@ -91,6 +91,16 @@ struct EditorSettings {
 	bool showTriggerIcons = true;
 	/// Whether the gizmo moves along the world axes instead of the axes of the selection.
 	bool gizmoWorldSpace = false;
+	/// Speed of the orbit and look-around drags of the editor camera, in percent (10 to 300).
+	int cameraRotatePercent = 100;
+	/// Speed of the pan drags of the editor camera, in percent (10 to 300).
+	int cameraPanPercent = 100;
+	/// Speed of the wheel zoom and the dolly of the editor camera, in percent (10 to 300).
+	int cameraZoomPercent = 100;
+	/// Whether the vertical drag of the orbit and look-around goes the other way.
+	bool cameraInvertY = false;
+	/// Pixels the cursor travels before a camera drag moves the view (0 to 20).
+	int cameraDeadZone = 0;
 	/// Seconds between two autosaves of the modified documents (crash recovery); 0 disables the autosave.
 	int autosaveIntervalSeconds = 60;
 	/// Panel arrangement (`DockLayout::getPresetName`).

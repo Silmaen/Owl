@@ -213,10 +213,10 @@ bench (PR-17) and the image tests (PR-18) of phase B are in place, and runs alon
 A much more ergonomic editor, designed together with the maintainer, with no new feature: the existing tools
 reorganised, made discoverable and consistent. See [Owl Nest UI](nest-ui.md).
 
-- ![Planned][planned] Ergonomics review — main workflows walked through, pain points listed, target layout agreed
-- ![Planned][planned] Interaction basics — tooltips, context menus, consistent drag & drop, text scale and DPI
-- ![Planned][planned] Visual overhaul — theme, icon set, asset thumbnails, style guide, layout presets, cleaner ribbon
-- ![In Progress][progress] Editor camera controls overhaul — presets, interactive view-cube, sensitivity
+- ![Done][done] Ergonomics review — main workflows walked through, pain points listed, target layout agreed
+- ![Done][done] Interaction basics — tooltips, context menus, consistent drag & drop, text scale and DPI
+- ![Done][done] Visual overhaul — theme, icon set, asset thumbnails, style guide, layout presets, cleaner ribbon
+- ![Done][done] Editor camera controls overhaul — presets, interactive view-cube, sensitivity
 
 ## Performance work
 

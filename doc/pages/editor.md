@@ -86,8 +86,8 @@ Every button has a tooltip with its shortcut; a greyed button is not applicable 
   **Back to the editor** closes it.
 - **Home** — Edit (Undo, Redo, Duplicate), Create (New scene / animation / tilemap / tileset), Project (Scene Flow,
   project Settings, Pack Game).
-- **View** — Layout (Hierarchy Left, Reset Layout), Panels (Frame Stats, Help), Appearance (Owl Dark, Owl Light),
-  Settings (Editor, Engine).
+- **View** — Layout (Hierarchy Left, Reset Layout), Camera (Reset View, Axis Views, Frame Scene, Camera Viewpoint),
+  Panels (Frame Stats, Help), Appearance (Owl Dark, Owl Light), Settings (Editor, Engine).
 - **Document tab** — the last tab, in the accent colour, follows the active document and is selected when its type
   changes: **Scene** (Document, Scene; playback and gizmo tools sit on the viewport), **Text**, **Graph**, **Animation**, **Tilemap** or
   **Tileset**.
@@ -228,9 +228,9 @@ off-screen `Framebuffer` with two colour attachments:
 - top-centre: Play (or Resume), Pause, Step and Stop, with their shortcuts in the tooltips; while the scene plays,
   a banner under them recalls that the changes are reverted on Stop;
 - top-right (Edit mode): the view (**2D** orthographic front view or **3D** perspective), **Show** (grid, camera
-  markers, trigger icons), **Frame selection** (`F`) and the frame stats toggle;
+  markers, trigger icons), **Frame selection** (`F`), the **Camera** menu and the frame stats toggle;
 - bottom-left: frame rate, frame time and draw calls (a click opens the Stats panel);
-- bottom-right: the axis gizmo of the editor camera.
+- bottom-right: the view-cube of the editor camera.
 
 While the scene plays or is paused, a frame in the play colour outlines the viewport and the status bar turns blue.
 
@@ -242,10 +242,39 @@ view at the reference point and ignores rotations; the wheel zooms both. `Camera
 the selection. The grid follows the snap step (doubled while the lines would be too dense), the X and Y axes in
 their colours.
 
+| Gesture                     | Effect                                       |
+|-----------------------------|----------------------------------------------|
+| Ctrl + left drag            | Orbit around the reference point             |
+| Ctrl + right or middle drag | Pan                                          |
+| Alt + left drag             | Look around from the eye                     |
+| Alt + right drag            | Pan                                          |
+| Alt + middle drag           | Dolly (the eye and the reference point move) |
+| Wheel                       | Zoom towards the reference point             |
+
+**Camera presets.** The **Camera** menu of the overlay, the **View > Camera** ribbon group and the command palette
+offer:
+
+- **Reset View** (`Home`): face the XY plane from +Z, ten units from the origin (`CameraEditor::resetView`);
+- **Frame Selection** (`F`) and **Frame Scene** (`Shift+F`): back off until the selection, or every entity of the
+  scene, fits the view;
+- **Selected Camera Viewpoint**: move the view onto the selected camera entity, the 2D view framing its orthographic
+  size or the 3D view from its eye; disabled for a camera of a `RendererRaycast` layer, whose scene the editor draws
+  flat;
+- the six axis views (**Front** XY, **Back**, **Top** XZ, **Bottom**, **Right** YZ, **Left**) around the same
+  reference point (`CameraEditor::viewAlong`); in the 2D view they give the orthographic views of each plane.
+
+**View-cube.** The bottom-right gizmo shows the six axis ends of the scene as the camera sees them, the positive
+ones labelled. A click on an end looks from that side, a click on the centre resets the view.
+
+**Camera settings.** The **Camera** tab of the Editor Settings scales the orbit, pan and zoom speeds (10 to 300 %),
+inverts the vertical drag and sets a dead zone: the pixels the cursor travels before a drag moves the view
+(`CameraEditor::Navigation`).
+
 **Context menus.** A right click that does not drag opens a menu on the entity under the cursor (Frame, Duplicate,
 Hide in the Editor, Delete) or, on the empty scene, the view options (2D / 3D, grid). A right click on a document tab
 offers Save, Close, Close Others, Reveal in Content Browser and Copy Path; on a node graph it deletes the node under
-the cursor or fits the view to the graph. Every menu has a title, Lucide icons, the shortcuts and its destructive
+the cursor or fits the view to the graph. A camera entity adds **Camera Viewpoint**, the empty scene **Reset View** and
+**Frame Scene**. Every menu has a title, Lucide icons, the shortcuts and its destructive
 entries in red (`gui::widgets::menuHeader`, `menuItem`).
 
 **Gizmos.** When an entity is selected, ImGuizmo renders a manipulator gizmo in
@@ -588,6 +617,9 @@ collapsible sections with an icon:
 
 **Gizmo Snap.** Snap to grid, step from the tilemap, manual step and cell multiplier.
 
+**Camera.** Orbit, pan and zoom speeds, vertical inversion and dead zone of the viewport navigation, see
+[Viewport](#viewport).
+
 **Shortcuts.** The keyboard shortcuts, see [Rebinding](#rebinding).
 
 **Appearance.** **Owl Dark** (default) or **Owl Light**. A theme is a small set of tokens (`gui::Theme`:
@@ -598,10 +630,9 @@ also re-tints the SVG icons (`IconBank::rebuild`): `#ffffff` becomes the text co
 Settings saved with a retired preset (Dark, Dark Blue, Nord, Solarized, Custom) open in Owl Dark, Light in
 Owl Light.
 
-**Icon buttons.** Dialog and panel buttons use `IconBank::iconButton(name, label, size)`
-to render an icon-prefixed button that falls back to a plain button when the icon is
-missing. `IconBank::menuItem(name, label, shortcut)` does the equivalent for menu
-entries.
+**Buttons.** Dialog and panel buttons are `gui::widgets::button` (Lucide glyph, label, tooltip, optional width;
+the main action of a dialog in the accent colour) and `gui::widgets::iconButton` for glyph-only ones; menus use
+`gui::widgets::menuItem`.
 
 **Keybinding editor.** A table listing all registered actions with their current
 shortcuts. Each row shows the action name, default shortcut, and current binding.
@@ -1146,6 +1177,10 @@ gizmo manipulation is in progress.
 | Collapse / Expand the Ribbon | Ctrl+F1          | `view.toggleRibbon`        |
 | Help                         | F1               | `help.context`             |
 | Frame Selection              | F                | `view.frameSelection`      |
+| Camera: Frame Scene          | Shift+F          | `view.frameScene`          |
+| Camera: Reset View           | Home             | `view.resetCamera`         |
+| Camera: axis views           |                  | `view.cameraFront`, …      |
+| Camera: Selected Viewpoint   |                  | `view.cameraViewpoint`     |
 | Toggle 2D / 3D View          |                  | `view.toggleProjection`    |
 | Text Size: Larger            | Ctrl+=           | `view.textLarger`          |
 | Text Size: Smaller           | Ctrl+-           | `view.textSmaller`         |
