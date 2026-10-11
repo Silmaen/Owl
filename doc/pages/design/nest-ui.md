@@ -42,8 +42,10 @@ filling their whole tile.
 
 ## Interaction basics
 
-Status after the revamp pull request: DPI scaling and tooltips on the ribbon, the viewport overlays and the icon
-buttons are done; context menus, drag & drop and an adjustable text scale remain.
+Status after the revamp pull request: DPI scaling, tooltips on the ribbon, the viewport overlays, the icon buttons and
+the palettes, and the context menus of the Hierarchy and the Content Browser (title, icons, destructive entries in
+red) are done; context menus on the viewport, tabs and nodes, one drag & drop feedback and an adjustable text scale
+remain.
 
 - Tooltips on every button, field and icon (extends the `fieldTooltip()` helper of v0.1.1 to the whole editor)
 - Context menus on every selectable object: hierarchy entries, Content Browser items, viewport selection, tabs,
@@ -55,8 +57,9 @@ buttons are done; context menus, drag & drop and an adjustable text scale remain
 
 ## Visual overhaul
 
-Status after the revamp pull request: theme, icon set and [style guide](nest-style-guide.md) are done; thumbnails
-cover images only, the background rendering of prefabs, scenes, tilesets, meshes and sounds remains.
+Status after the revamp pull request: theme, icon set (duotone ribbon and File screen icons included) and
+[style guide](nest-style-guide.md) are done; the Content Browser previews images, scenes, prefabs and sounds
+(`AssetThumbnails`); tilesets, meshes and the previews in asset fields remain.
 
 - Asset thumbnails in the Content Browser and asset fields (textures, prefabs, scenes, tilesets, meshes, sounds),
   rendered in the background and cached
