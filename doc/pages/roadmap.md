@@ -113,6 +113,7 @@ post-processing — with full 3D editing ([details](design/3d-core.md)).
 
 **Goal:** Complete the 2D experience — lighting, text, full 2D physics ([details](design/2d-complete.md)).
 
+- ![Planned][planned] Guaranteed 2D draw order: a sort key instead of the primitive type and storage order (PR-30: B-10)
 - ![Planned][planned] 2D lighting (point / spot lights, normal-mapped sprites, 2D shadows)
 - ![Planned][planned] Full 2D physics: callbacks, queries, joints, 3D-ready API ([Physics](design/physics-api.md))
 - ![Planned][planned] Aspect-correct text with alignment and fit modes
@@ -128,9 +129,11 @@ post-processing — with full 3D editing ([details](design/3d-core.md)).
 **Goal:** A third non-2D mode — a Transport Tycoon-style isometric renderer — plus a local MCP server in Owl Nest,
 basic gamepad support and a reworked HUD system with its editor.
 
+- ![Planned][planned] Persistent, chunked and culled tilemaps, before the isometric layer (PR-31: B-13)
 - ![Planned][planned] `RendererIsometric` layer, heightmap tiles, editor support ([details](design/isometric.md))
 - ![Planned][planned] MCP server built into Owl Nest, on the editor command API ([MCP server](design/mcp-server.md))
 - ![Planned][planned] Input actions and basic gamepad support ([Input](design/windowing-input.md))
+- ![Planned][planned] Renderer2D transients sized per frame and UTF-8 text with a wider charset (PR-30: B-09, D-18)
 - ![Planned][planned] HUD system overhaul: dedicated HUD layer and a HUD editor in Owl Nest ([details](design/2d-complete.md))
 - ![To evaluate][evaluate] Node-based editing of other assets (scripts first), with the visual scripting of v0.7.0
 

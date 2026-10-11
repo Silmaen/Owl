@@ -5,7 +5,7 @@ performance du moteur, confrontation à l'état de l'art, avenir du moteur, conf
 sont en français et vivent dans [`doc/audit/`](doc/audit/), exclu de Doxygen et de codespell.
 
 **Statut** : clos avec la v0.3.0 (2026-10-11). Le plan en PR de `90-synthese.md` est livré, sauf PR-30 (transitoires
-Renderer2D, tri 2D, texte UTF-8) et PR-31 (tilemap persistante et découpée), reportées ; l'audit reste un instantané
+Renderer2D et texte UTF-8 en v0.4.0, tri 2D en v0.5.0) et PR-31 (tilemap persistante et découpée, v0.4.0) ; l'audit reste un instantané
 du 2026-10-05.
 
 **Par où commencer** : [`90-synthese.md`](doc/audit/90-synthese.md) (verdict, forces, faiblesses, défauts à corriger,
