@@ -10,6 +10,7 @@
 
 #include "../commands/SceneSettingsCommands.h"
 
+#include <gui/widgets/Combo.h>
 #include <gui/widgets/Toggle.h>
 
 #include <imgui.h>
@@ -71,7 +72,7 @@ auto SceneSettings::renderLayerOverridesEditor(const std::string& iTypeKey, YAML
 				ioOverrides["Space"] ? ioOverrides["Space"].as<std::string>("World") : std::string{"World"};
 		const char* preview = space.c_str();
 		ImGui::SetNextItemWidth(160.f);
-		if (ImGui::BeginCombo("Space", preview)) {
+		if (gui::widgets::beginCombo("Space", preview)) {
 			for (const auto* candidate: {"World", "Screen"}) {
 				const bool selected = (space == candidate);
 				if (ImGui::Selectable(candidate, selected) && !selected) {

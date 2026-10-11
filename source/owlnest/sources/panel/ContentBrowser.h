@@ -160,6 +160,10 @@ private:
 	std::unordered_map<std::string, shared<renderer::gpu::Texture2D>> m_thumbnails;
 	/// Folder the thumbnails belong to.
 	std::filesystem::path m_thumbnailFolder;
+	/// Sub-folders of the folders shown in the tree, by path; cleared after each scan.
+	std::unordered_map<std::string, std::vector<std::filesystem::path>> m_folderCache;
+	/// Folder the tree last expanded its ancestors for.
+	std::filesystem::path m_treeSyncedPath;
 
 	/**
 	 * @brief
@@ -182,6 +186,31 @@ private:
 	 *  Kick off an asynchronous scan of the given path.
 	 */
 	void requestScan(const std::filesystem::path& iPath);
+
+	/**
+	 * @brief
+	 *  Render the folder tree on the left: every asset root and its sub-folders.
+	 */
+	void renderFolderTree();
+
+	/**
+	 * @brief
+	 *  Render one folder of the tree and, when expanded, its sub-folders.
+	 * @param[in] iPath The folder.
+	 * @param[in] iRoot The asset root it belongs to.
+	 * @param[in] iLabel Name shown.
+	 * @param[in] iIsRoot Whether it is an asset root.
+	 */
+	void renderFolderRow(const std::filesystem::path& iPath, const std::filesystem::path& iRoot,
+						 const std::string& iLabel, bool iIsRoot);
+
+	/**
+	 * @brief
+	 *  Sub-folders of a folder, read once and cached until the next scan.
+	 * @param[in] iPath The folder.
+	 * @return The sub-folders, sorted, hidden ones left out.
+	 */
+	auto getSubFolders(const std::filesystem::path& iPath) -> const std::vector<std::filesystem::path>&;
 
 	/**
 	 * @brief

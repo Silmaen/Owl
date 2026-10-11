@@ -42,4 +42,34 @@ struct IconButtonSpec {
  */
 OWL_API auto iconButton(const char* iId, const IconButtonSpec& iSpec) -> bool;
 
+/**
+ * @brief
+ *  What a labelled button shows.
+ */
+struct ButtonSpec {
+	/// Lucide glyph before the label, or null.
+	const char* glyph = nullptr;
+	/// Short verb ("Add", "Import").
+	const char* label = "";
+	/// Tooltip title, or null for none.
+	const char* tooltip = nullptr;
+	/// Shortcut shown in the tooltip, or null.
+	const char* shortcut = nullptr;
+	/// One sentence shown under the tooltip title, or null.
+	const char* description = nullptr;
+	/// Drawn in the accent: the main action of its panel.
+	bool primary = false;
+	/// Greyed out and not clickable.
+	bool disabled = false;
+};
+
+/**
+ * @brief
+ *  Rounded button with a glyph and a label: raised surface, or the accent for the primary action of a panel.
+ * @param[in] iId Unique ImGui identifier.
+ * @param[in] iSpec Glyph, label, help text and state.
+ * @return True on click.
+ */
+OWL_API auto button(const char* iId, const ButtonSpec& iSpec) -> bool;
+
 }// namespace owl::gui::widgets

@@ -9,6 +9,7 @@
 #include "Parameters.h"
 
 #include <gui/IconBank.h>
+#include <gui/widgets/Combo.h>
 #include <gui/widgets/Toggle.h>
 #include <magic_enum/magic_enum.hpp>
 
@@ -72,7 +73,8 @@ void Parameters::onImGuiRender() {// NOLINT(readability-function-cognitive-compl
 
 		// --- Renderer Section ---
 		if (ImGui::CollapsingHeader("Renderer", ImGuiTreeNodeFlags_DefaultOpen)) {
-			if (ImGui::BeginCombo("##Renderer", std::string(magic_enum::enum_name(m_localParams.renderer)).c_str())) {
+			if (gui::widgets::beginCombo("##Renderer",
+										 std::string(magic_enum::enum_name(m_localParams.renderer)).c_str())) {
 				for (const auto& type: magic_enum::enum_values<renderer::gpu::RenderAPI::Type>()) {
 					if (type == renderer::gpu::RenderAPI::Type::Null)
 						continue;
@@ -90,7 +92,7 @@ void Parameters::onImGuiRender() {// NOLINT(readability-function-cognitive-compl
 
 		// --- Sound Section ---
 		if (ImGui::CollapsingHeader("Sound", ImGuiTreeNodeFlags_DefaultOpen)) {
-			if (ImGui::BeginCombo("##Sound", std::string(magic_enum::enum_name(m_localParams.sound)).c_str())) {
+			if (gui::widgets::beginCombo("##Sound", std::string(magic_enum::enum_name(m_localParams.sound)).c_str())) {
 				for (const auto& type: magic_enum::enum_values<sound::SoundAPI::Type>()) {
 					if (type == sound::SoundAPI::Type::Null)
 						continue;

@@ -17,6 +17,7 @@
 #include <gui/widgets/IconButton.h>
 #include <gui/widgets/SearchField.h>
 #include <gui/widgets/Tooltip.h>
+#include <gui/widgets/TreeRow.h>
 #include <imgui_internal.h>
 #include <imgui_stdlib.h>
 #include <platform/FileDialog.h>
@@ -27,6 +28,7 @@
 #include <cstdint>
 #include <format>
 #include <optional>
+#include <system_error>
 #include <unordered_map>
 
 namespace owl::nest::panel {
@@ -264,6 +266,7 @@ void ContentBrowser::onImGuiRender() {
 		m_cachedEntries = std::move(*m_pendingEntries);
 		m_cachedPath = m_pendingScanPath;
 		m_pendingEntries.reset();
+		m_folderCache.clear();
 	}
 
 	// Navigation or external trigger may require a rescan.
@@ -274,9 +277,23 @@ void ContentBrowser::onImGuiRender() {
 		requestScan(m_currentPath);
 	}
 
+	const auto& theme = gui::UiLayer::getTheme();
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {0.f, 4.f});
+	ImGui::BeginChild("##cbTree", {ImGui::GetFontSize() * 13.f, 0.f}, ImGuiChildFlags_ResizeX);
+	renderFolderTree();
+	ImGui::EndChild();
+	ImGui::PopStyleVar();
+	{
+		const ImVec2 min = ImGui::GetItemRectMin();
+		const ImVec2 max = ImGui::GetItemRectMax();
+		ImGui::GetWindowDrawList()->AddLine({max.x, min.y}, {max.x, max.y},
+											ImGui::GetColorU32(gui::vec(theme.lineSoft)));
+	}
+	ImGui::SameLine();
+	ImGui::BeginChild("##cbMain", {0.f, 0.f});
 	renderTopBand();
-
 	renderContent();
+	ImGui::EndChild();
 
 	// Context menu (popup)
 	renderContextMenu();
@@ -284,18 +301,61 @@ void ContentBrowser::onImGuiRender() {
 	ImGui::End();
 }
 
+auto ContentBrowser::getSubFolders(const std::filesystem::path& iPath) -> const std::vector<std::filesystem::path>& {
+	const auto key = iPath.string();
+	if (const auto it = m_folderCache.find(key); it != m_folderCache.end())
+		return it->second;
+	std::vector<std::filesystem::path> folders;
+	std::error_code error;
+	for (const auto& entry: std::filesystem::directory_iterator(iPath, error)) {
+		if (entry.is_directory(error) && !entry.path().filename().string().starts_with('.'))
+			folders.push_back(entry.path());
+	}
+	std::ranges::sort(folders);
+	return m_folderCache.emplace(key, std::move(folders)).first->second;
+}
+
+void ContentBrowser::renderFolderTree() {
+	for (const auto& [title, assetsPath]: app::Application::get().getAssetDirectories()) {
+		ImGui::PushID(assetsPath.string().c_str());
+		renderFolderRow(assetsPath, assetsPath, title, true);
+		ImGui::PopID();
+	}
+	m_treeSyncedPath = m_currentPath;
+}
+
+// NOLINTNEXTLINE(misc-no-recursion)
+void ContentBrowser::renderFolderRow(const std::filesystem::path& iPath, const std::filesystem::path& iRoot,
+									 const std::string& iLabel, const bool iIsRoot) {
+	const auto& theme = gui::UiLayer::getTheme();
+	const auto& children = getSubFolders(iPath);
+	const bool selected = iPath == m_currentPath;
+	// Unfold the ancestors of the current folder once each time it changes (breadcrumb, double-click).
+	if (m_treeSyncedPath != m_currentPath) {
+		const auto relative = m_currentPath.lexically_relative(iPath);
+		if (!relative.empty() && !relative.string().starts_with("..") && relative != ".")
+			ImGui::SetNextItemOpen(true);
+	}
+	const auto row = gui::widgets::treeRow(iPath.filename().string().c_str(),
+										   {.label = iLabel.c_str(),
+											.glyph = selected ? gui::icon::folderOpen : gui::icon::folder,
+											.glyphColor = iIsRoot ? theme.accent : theme.textMuted,
+											.selected = selected,
+											.hasChildren = !children.empty(),
+											.defaultOpen = iIsRoot && iRoot == m_currentRootPath});
+	if (row.clicked && !selected) {
+		m_currentRootPath = iRoot;
+		m_currentPath = iPath;
+		m_searchFilter.clear();
+	}
+	if (!row.open)
+		return;
+	for (const auto& child: children) renderFolderRow(child, iRoot, child.filename().string(), false);
+	gui::widgets::endTreeRow();
+}
+
 void ContentBrowser::renderTopBand() {
 	const auto& theme = gui::UiLayer::getTheme();
-	for (const auto& [title, assetsPath]: app::Application::get().getAssetDirectories()) {
-		if (gui::widgets::chip(std::format("{}##root", title).c_str(), assetsPath == m_currentRootPath) &&
-			assetsPath != m_currentRootPath) {
-			m_currentRootPath = assetsPath;
-			m_currentPath = m_currentRootPath;
-		}
-		ImGui::SameLine();
-	}
-	ImGui::Dummy({ImGui::GetFontSize() * 0.5f, 0.f});
-	ImGui::SameLine();
 	if (gui::widgets::iconButton("back", {.glyph = gui::icon::arrowLeft,
 										  .tooltip = "Parent folder",
 										  .disabled = m_currentPath == m_currentRootPath}))

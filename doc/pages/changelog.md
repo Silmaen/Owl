@@ -22,7 +22,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Owl Nest viewport overlays: gizmo tools and snap (top-left), Play / Pause / Step / Stop (top-centre), camera markers and stats toggles (top-right), a frame-time chip (bottom-left), the axis gizmo (bottom-right) and a play-colour frame while the scene runs; the ribbon drops its Playback and Gizmo groups; `ActionRegistry::run`.
 - Owl Nest panels: the inspector puts every label on the left of its field; the Hierarchy gets an Add button, a name search and component icons; the Content Browser gets root chips, a breadcrumb, search, grid / list views, image thumbnails filling their tile and a colour per asset family; the Log filters become chips; empty panels say what to do.
 - `OwlNest --project <dir>` opens a project at start-up.
-- Owl Nest command palette (`Ctrl+K`): a fuzzy search over every editor action, with its shortcut, and over the entities of the active scene to select one.
+- Owl Nest command palette, opened by pressing `Shift` twice or from the search box of the ribbon tab row: a fuzzy search over every editor action, with its shortcut, the entities of the active scene and the asset files.
+- Owl Nest Content Browser folder tree on the left (asset roots and their folders, unfolded down to the folder shown), replacing the root chips.
+- Owl Nest Hierarchy rows in the mockup style: thin chevrons, component glyphs coloured by kind, child counts, visibility switches on hover, an accent bar on the selection; the inspector header shows the entity glyph, its name, an **Add** button and its id.
+- `gui::widgets::treeRow`, `button`, `beginCombo` / `combo` (a thin chevron instead of the filled arrow) and `Ribbon::setSearchBox`; component headers draw a chevron and frame their section as a card.
 - Owl Nest style guide ([design page](design/nest-style-guide.md)): colour tokens, text roles, spacing, icons, the widget to use for each need and the interaction rules.
 - `gui::widgets::toggle` (left / right switch, used for the inspector booleans), `checkbox` (a box the size of a capital letter, replacing `ImGui::Checkbox` in Owl Nest), `subHeader` (grey caption of a nested block) and a coloured `chip` (Log level filters).
 - Owl Nest Editor Settings in tabs (General, Gizmo Snap, Appearance, Shortcuts) built on the property grid.

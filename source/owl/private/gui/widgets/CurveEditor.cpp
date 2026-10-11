@@ -7,6 +7,7 @@
  */
 #include "owlpch.h"
 
+#include "gui/widgets/Combo.h"
 #include "gui/widgets/CurveEditor.h"
 
 #include <ImCurveEdit.h>
@@ -122,7 +123,7 @@ auto curveEditor(const char* iLabel, math::Curve& ioCurve, const ImVec2 iSize) -
 	}
 	constexpr std::array<const char*, 3> modeNames{"Constant", "Linear", "Smooth"};
 	int modeIndex = static_cast<int>(ioCurve.getInterpolation());
-	if (ImGui::Combo("Interpolation", &modeIndex, modeNames.data(), static_cast<int>(modeNames.size()))) {
+	if (combo("Interpolation", &modeIndex, modeNames)) {
 		ioCurve.setInterpolation(static_cast<math::CurveInterpolation>(modeIndex));
 		changed = true;
 	}

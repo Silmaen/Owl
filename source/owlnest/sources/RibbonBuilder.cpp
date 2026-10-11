@@ -50,6 +50,8 @@ void RibbonBuilder::build() {
 	m_ribbon.setBackstage("File", [this]() -> void { mp_editor->m_backstage.open(); });
 
 	// ============================ Quick access =============================
+	m_ribbon.setSearchBox("Search commands, assets, entities", "Shift Shift",
+						  [this]() -> void { mp_editor->m_commandPalette.open(); });
 	m_ribbon.addQuickAccess(Button{.iconName = gui::icon::save,
 								   .label = "Save",
 								   .tooltip = "Save the active document.",

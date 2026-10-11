@@ -23,8 +23,22 @@
 #include <cmath>
 #include <format>
 #include <string>
+#include <vector>
 
 namespace owl::gui::widgets {
+
+namespace {
+
+// Rectangle of the headers whose section is open, to draw the frame of the card when it ends.
+struct OpenSection {
+	ImDrawList* draw = nullptr;
+	ImVec2 min;
+	float maxX = 0.f;
+};
+
+thread_local std::vector<OpenSection> g_openSections;
+
+}// namespace
 
 auto sectionHeader(const char* iTitle, const char* iIconName, const bool iWithMenu, const bool iDefaultOpen)
 		-> SectionHeaderResult {
@@ -39,7 +53,11 @@ auto sectionHeader(const char* iTitle, const char* iIconName, const bool iWithMe
 	if (iDefaultOpen)
 		flags |= ImGuiTreeNodeFlags_DefaultOpen;
 	SectionHeaderResult result;
+	ImGui::Dummy({0.f, 2.f});
+	// The node's own filled arrow stays invisible: a thin chevron is drawn instead.
+	ImGui::PushStyleColor(ImGuiCol_Text, {0.f, 0.f, 0.f, 0.f});
 	result.open = ImGui::TreeNodeEx(std::format("##section_{}", iTitle).c_str(), flags);
+	ImGui::PopStyleColor();
 	result.hovered = ImGui::IsItemHovered();
 	ImGui::PopStyleVar();
 	ImGui::PopStyleColor(3);
@@ -50,6 +68,17 @@ auto sectionHeader(const char* iTitle, const char* iIconName, const bool iWithMe
 	result.max = {max.x, max.y};
 	const float height = max.y - min.y;
 	auto* draw = ImGui::GetWindowDrawList();
+	if (result.open)
+		g_openSections.push_back({.draw = draw, .min = min, .maxX = max.x});
+	{
+		const char* chevron = result.open ? icon::chevronDown : icon::chevronRight;
+		ImGui::PushFont(nullptr, ImGui::GetFontSize() * 0.85f);
+		const ImVec2 size = ImGui::CalcTextSize(chevron);
+		draw->AddText(
+				{std::floor(min.x + ImGui::GetStyle().FramePadding.x), std::floor(min.y + (height - size.y) * 0.5f)},
+				ImGui::GetColorU32(vec(result.hovered ? theme.text : theme.textMuted)), chevron);
+		ImGui::PopFont();
+	}
 	float x = std::floor(min.x + ImGui::GetTreeNodeToLabelSpacing());
 	const float iconSize = ImGui::GetFontSize();
 	if (iIconName != nullptr) {
@@ -82,7 +111,18 @@ auto sectionHeader(const char* iTitle, const char* iIconName, const bool iWithMe
 	return result;
 }
 
-void endSection() { ImGui::TreePop(); }
+void endSection() {
+	ImGui::TreePop();
+	if (g_openSections.empty())
+		return;
+	const auto section = g_openSections.back();
+	g_openSections.pop_back();
+	const float bottom = ImGui::GetCursorScreenPos().y + 2.f;
+	const auto& theme = UiLayer::getTheme();
+	section.draw->AddRect(section.min, {section.maxX, bottom}, ImGui::GetColorU32(vec(theme.line)),
+						  theme.frameRounding);
+	ImGui::Dummy({0.f, 4.f});
+}
 
 auto subHeader(const char* iTitle, const bool iDefaultOpen) -> bool {
 	const auto& theme = UiLayer::getTheme();

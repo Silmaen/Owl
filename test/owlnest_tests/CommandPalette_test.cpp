@@ -12,7 +12,9 @@
 #include <gtest/gtest.h>
 
 #include <cstddef>
+#include <filesystem>
 #include <format>
+#include <fstream>
 #include <string>
 #include <vector>
 
@@ -77,4 +79,39 @@ TEST(CommandPalette, OpensAndCloses) {
 	EXPECT_TRUE(palette.isOpen());
 	palette.close();
 	EXPECT_FALSE(palette.isOpen());
+}
+
+TEST(CommandPalette, OpensOnADoubleShift) {
+	CommandPalette palette;
+	EXPECT_FALSE(palette.onShiftPressed(1.0));
+	EXPECT_TRUE(palette.onShiftPressed(1.2));
+	EXPECT_FALSE(palette.onShiftPressed(1.3));
+	EXPECT_FALSE(palette.onShiftPressed(2.0));
+	palette.onOtherInput();
+	EXPECT_FALSE(palette.onShiftPressed(2.1));
+	EXPECT_TRUE(palette.onShiftPressed(2.3));
+}
+
+TEST(CommandPalette, ReportsEachOpeningOnce) {
+	CommandPalette palette;
+	EXPECT_FALSE(palette.consumeOpened());
+	palette.open();
+	EXPECT_TRUE(palette.consumeOpened());
+	EXPECT_FALSE(palette.consumeOpened());
+}
+
+TEST(CommandPalette, CollectsVisibleAssetFiles) {
+	const auto root = std::filesystem::temp_directory_path() / "owl_palette_assets_test";
+	std::filesystem::remove_all(root);
+	std::filesystem::create_directories(root / "textures");
+	std::filesystem::create_directories(root / ".cache");
+	for (const auto& file:
+		 {root / "main.owl", root / "textures" / "lava.png", root / ".cache" / "skip.bin", root / ".hidden"})
+		std::ofstream{file} << "x";
+	const auto files = CommandPalette::collectAssets(root);
+	ASSERT_EQ(files.size(), 2u);
+	EXPECT_EQ(files[0].filename(), "main.owl");
+	EXPECT_EQ(files[1].filename(), "lava.png");
+	EXPECT_TRUE(CommandPalette::collectAssets(root / "missing").empty());
+	std::filesystem::remove_all(root);
 }

@@ -11,6 +11,7 @@
 #include <gui/IconFont.h>
 #include <gui/UiLayer.h>
 #include <gui/widgets/Badge.h>
+#include <gui/widgets/Combo.h>
 #include <gui/widgets/EmptyState.h>
 #include <gui/widgets/IconButton.h>
 #include <gui/widgets/PropertyGrid.h>
@@ -19,9 +20,11 @@
 #include <gui/widgets/Toast.h>
 #include <gui/widgets/Toggle.h>
 #include <gui/widgets/Tooltip.h>
+#include <gui/widgets/TreeRow.h>
 
 #include <imgui.h>
 
+#include <array>
 #include <functional>
 #include <string>
 #include <tuple>
@@ -142,6 +145,21 @@ TEST_F(WidgetKitTest, EveryWidgetDrawsWithoutInput) {
 			EXPECT_FALSE(chip("Error##level", true, {0.9f, 0.3f, 0.3f, 1.f}));
 			if (subHeader("Raycast (billboard)"))
 				ImGui::TextUnformatted("body");
+			EXPECT_FALSE(button("add", {.glyph = icon::plus, .label = "Add", .tooltip = "Add", .primary = true}));
+			if (const auto row = treeRow("world", {.label = "world",
+												   .glyph = icon::layers,
+												   .trailing = "2",
+												   .hasChildren = true,
+												   .defaultOpen = true});
+				row.open) {
+				EXPECT_FALSE(treeRow("cam", {.label = "MainCamera", .glyph = icon::video, .selected = true}).clicked);
+				endTreeRow();
+			}
+			int index = 1;
+			constexpr std::array names{"Orthographic", "Perspective"};
+			EXPECT_FALSE(combo("Projection", &index, names));
+			if (beginCombo("##theme", "Owl Dark"))
+				ImGui::EndCombo();
 			notice("Saved.", BadgeKind::Success);
 			notice("Broken.", BadgeKind::Error);
 			EXPECT_FALSE(chip("Textures##chip", true));
@@ -232,4 +250,15 @@ TEST_F(WidgetKitTest, ToggleAndCheckboxFlipOnClick) {
 	frame(checkboxBody);
 	click(checkboxBody);
 	EXPECT_FALSE(checked);
+}
+
+TEST_F(WidgetKitTest, TreeRowReportsAClickOutsideItsChevron) {
+	bool clicked = false;
+	const auto body = [&]() -> void {
+		clicked = treeRow("row", {.label = "MainCamera", .glyph = icon::video}).clicked || clicked;
+		record();
+	};
+	frame(body);
+	click(body);
+	EXPECT_TRUE(clicked);
 }

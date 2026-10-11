@@ -312,6 +312,12 @@ void Ribbon::setBackstage(std::string iLabel, std::function<void()> iOnClick) {
 
 void Ribbon::addQuickAccess(Button iButton) { m_quickAccess.push_back(std::move(iButton)); }
 
+void Ribbon::setSearchBox(std::string iHint, std::string iShortcut, std::function<void()> iOnClick) {
+	m_searchHint = std::move(iHint);
+	m_searchShortcut = std::move(iShortcut);
+	m_onSearch = std::move(iOnClick);
+}
+
 void Ribbon::selectTab(const std::string& iLabel) {
 	for (size_t i = 0; i < m_tabs.size(); ++i) {
 		if (m_tabs[i].label == iLabel) {
@@ -400,6 +406,36 @@ void Ribbon::renderTabRow() {
 	const float side = height;
 	const float spacing = 2.f;
 	const float quickWidth = static_cast<float>(m_quickAccess.size() + 1) * (side + spacing);
+	if (!m_searchHint.empty()) {
+		const float tabsEnd = ImGui::GetCursorScreenPos().x + scaled(12.f);
+		const float available = right - quickWidth - scaled(12.f) - tabsEnd;
+		const float width = std::min(scaled(380.f), available);
+		if (width > scaled(140.f)) {
+			const float x = std::max(tabsEnd, std::floor((left + right - width) * 0.5f));
+			ImGui::SetCursorScreenPos({x, rowTop + 2.f});
+			if (ImGui::InvisibleButton("##ribbonSearch", {width, height}) && m_onSearch)
+				m_onSearch();
+			const bool hovered = ImGui::IsItemHovered();
+			const auto min = ImGui::GetItemRectMin();
+			const auto max = ImGui::GetItemRectMax();
+			draw->AddRectFilled(min, max, toU32(theme.surface2), theme.frameRounding);
+			draw->AddRect(min, max, toU32(hovered ? theme.surface4 : theme.line), theme.frameRounding);
+			UiLayer::pushTextStyle(TextStyle::Label);
+			const float textY = std::floor(min.y + (height - ImGui::GetTextLineHeight()) * 0.5f);
+			const auto textColor = toU32(hovered ? theme.textMuted : theme.textDisabled);
+			const float pad = scaled(8.f);
+			draw->AddText({min.x + pad, textY}, textColor, icon::search);
+			draw->AddText({min.x + pad + ImGui::CalcTextSize(icon::search).x + scaled(6.f), textY}, textColor,
+						  m_searchHint.c_str());
+			if (!m_searchShortcut.empty()) {
+				const auto size = ImGui::CalcTextSize(m_searchShortcut.c_str());
+				const ImVec2 kbdMin{max.x - pad - size.x - 8.f, min.y + 4.f};
+				draw->AddRectFilled(kbdMin, {max.x - pad, max.y - 4.f}, toU32(theme.surface3), theme.frameRounding);
+				draw->AddText({kbdMin.x + 4.f, textY}, toU32(theme.textMuted), m_searchShortcut.c_str());
+			}
+			UiLayer::popTextStyle();
+		}
+	}
 	ImGui::SetCursorScreenPos({right - quickWidth, rowTop + 2.f});
 	for (const auto& button: m_quickAccess) {
 		if (quickButton(button, side))

@@ -13,6 +13,7 @@
 #include <gui/IconBank.h>
 #include <gui/utils.h>
 #include <gui/widgets/AssetField.h>
+#include <gui/widgets/Combo.h>
 #include <gui/widgets/Toggle.h>
 #include <imgui_stdlib.h>
 #include <renderer/Renderer.h>
@@ -236,7 +237,7 @@ void TilesetDocument::renderHierarchyPanel() {
 	// --- Filter mode -----------------------------------------------------------------------
 	const auto& current = m_tileset.filterMode;
 	const char* currentLabel = (current == renderer::gpu::FilterMode::Nearest) ? "Nearest" : "Linear";
-	if (ImGui::BeginCombo("Filter", currentLabel)) {
+	if (gui::widgets::beginCombo("Filter", currentLabel)) {
 		if (ImGui::Selectable("Linear", current == renderer::gpu::FilterMode::Linear))
 			pushTilesetEdit(m_tileset, m_undoManager, "Set filter to Linear", [this]() -> void {
 				m_tileset.filterMode = renderer::gpu::FilterMode::Linear;

@@ -20,10 +20,13 @@
 #include <gui/IconFont.h>
 #include <gui/UiLayer.h>
 #include <gui/utils.h>
+#include <gui/widgets/Badge.h>
 #include <gui/widgets/EmptyState.h>
 #include <gui/widgets/IconButton.h>
 #include <gui/widgets/SearchField.h>
 #include <gui/widgets/SectionHeader.h>
+#include <gui/widgets/Tooltip.h>
+#include <gui/widgets/TreeRow.h>
 #include <imgui_internal.h>
 #include <imgui_stdlib.h>
 #include <platform/FileDialog.h>
@@ -132,41 +135,57 @@ void drawOverrideMarker(const gui::widgets::SectionHeaderResult& iHeader) {
 		ImGui::SetTooltip("Overrides the prefab: kept by Update from Prefab");
 }
 
-// Icon of the component that best says what an entity is, null for a plain group.
-auto entityIconName(const scene::Entity& iEntity) -> const char* {
-	if (iEntity.hasComponent<Camera>())
-		return "comp_camera";
-	if (iEntity.hasComponent<SpriteRenderer>())
-		return "comp_sprite";
-	if (iEntity.hasComponent<AnimatedSpriteRenderer>())
-		return "comp_animated_sprite";
+// Glyph and colour of an entity row, from its most telling component.
+struct EntityKind {
+	const char* glyph;
+	uint32_t color;
+};
+
+auto entityKind(const scene::Entity& iEntity, const bool iHasChildren) -> EntityKind {
+	if (iEntity.hasComponent<Camera>() || iEntity.hasComponent<FlyCamera>())
+		return {gui::icon::video, 0x7fb4ff};
+	if (iEntity.hasComponent<SpriteRenderer>() || iEntity.hasComponent<AnimatedSpriteRenderer>() ||
+		iEntity.hasComponent<BackgroundTexture>())
+		return {gui::icon::image, 0xf08ab0};
 	if (iEntity.hasComponent<CircleRenderer>())
-		return "comp_circle";
-	if (iEntity.hasComponent<Text>())
-		return "comp_text";
+		return {gui::icon::circle, 0xf2a65a};
+	if (iEntity.hasComponent<Text>() || iEntity.hasComponent<UiText>())
+		return {gui::icon::type, 0xc7a6ff};
 	if (iEntity.hasComponent<UiButton>())
-		return "comp_ui_button";
-	if (iEntity.hasComponent<UiText>())
-		return "comp_ui_text";
+		return {gui::icon::mousePointerClick, 0x6fd6c0};
 	if (iEntity.hasComponent<UiImage>())
-		return "comp_ui_image";
+		return {gui::icon::image, 0x6fd6c0};
 	if (iEntity.hasComponent<UiPanel>())
-		return "comp_ui_panel";
+		return {gui::icon::panelsTopLeft, 0x6fd6c0};
 	if (iEntity.hasComponent<Canvas>())
-		return "comp_canvas";
+		return {gui::icon::appWindow, 0x6fd6c0};
+	if (iEntity.hasComponent<Tilemap>())
+		return {gui::icon::grid3x3, 0xd65fb8};
 	if (iEntity.hasComponent<VoxelWorld>())
-		return "comp_voxel_world";
-	if (iEntity.hasComponent<Player>())
-		return "comp_player";
+		return {gui::icon::cuboid, 0xe8c15a};
+	if (iEntity.hasComponent<Player>() || iEntity.hasComponent<VoxelPlayer>())
+		return {gui::icon::userRound, 0xe8c15a};
 	if (iEntity.hasComponent<Trigger>())
-		return "comp_trigger";
+		return {gui::icon::zap, 0xef8a3c};
 	if (iEntity.hasComponent<SoundSource>())
-		return "comp_sound";
+		return {gui::icon::volume2, 0x3faa72};
 	if (iEntity.hasComponent<LuaScript>())
-		return "comp_lua_script";
+		return {gui::icon::fileCode2, 0x2fb5a0};
 	if (iEntity.hasComponent<PhysicBody>())
-		return "comp_physics";
-	return nullptr;
+		return {gui::icon::box, 0x8a929e};
+	return {iHasChildren ? gui::icon::folder : gui::icon::box, 0};
+}
+
+// Kind colours are tuned for the dark theme; on a light ground they are darkened to stay readable.
+auto kindColor(const uint32_t iHex) -> math::vec4 {
+	const auto& theme = gui::UiLayer::getTheme();
+	if (iHex == 0)
+		return theme.textMuted;
+	const math::vec4 color{static_cast<float>((iHex >> 16U) & 0xffU) / 255.f,
+						   static_cast<float>((iHex >> 8U) & 0xffU) / 255.f, static_cast<float>(iHex & 0xffU) / 255.f,
+						   1.f};
+	const bool light = theme.surface1.x() + theme.surface1.y() + theme.surface1.z() > 1.5f;
+	return light ? gui::Theme::mix(color, theme.text, 0.45f) : color;
 }
 
 auto componentIconName(const char* iCompName) -> const char* {
@@ -246,7 +265,12 @@ void SceneHierarchy::renderHierarchy() {
 		}
 		ImGui::PopID();
 
-		if (constexpr ImGuiTreeNodeFlags flag = ImGuiTreeNodeFlags_DefaultOpen; ImGui::TreeNodeEx("root", flag)) {
+		if (gui::widgets::treeRow("root", {.label = "Scene",
+										   .glyph = gui::icon::clapperboard,
+										   .glyphColor = gui::UiLayer::getTheme().accent,
+										   .hasChildren = true,
+										   .defaultOpen = true})
+					.open) {
 			// Drop target on root node: unparent dragged entity.
 			if (ImGui::BeginDragDropTarget()) {
 				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HIERARCHY_ENTITY")) {
@@ -257,7 +281,7 @@ void SceneHierarchy::renderHierarchy() {
 				ImGui::EndDragDropTarget();
 			}
 			renderRootEntities();
-			ImGui::TreePop();
+			gui::widgets::endTreeRow();
 		}
 		ImGui::PopStyleColor();
 	}
@@ -265,9 +289,10 @@ void SceneHierarchy::renderHierarchy() {
 }
 
 void SceneHierarchy::renderHierarchyToolbar() {
-	if (gui::widgets::iconButton("addEntity", {.glyph = gui::icon::plus,
-											   .tooltip = "Add entity",
-											   .description = "Create an empty entity, or a child of the selection."}))
+	if (gui::widgets::button("addEntity", {.glyph = gui::icon::plus,
+										   .label = "Add",
+										   .tooltip = "Add entity",
+										   .description = "Create an empty entity, or a child of the selection."}))
 		ImGui::OpenPopup("##addEntity");
 	if (ImGui::BeginPopup("##addEntity")) {
 		const auto& iconBank = gui::IconBank::instance();
@@ -333,10 +358,16 @@ void SceneHierarchy::renderRootEntities() {
 	for (const auto& layer: layers) {
 		const auto& name = layer->getName();
 		const auto count = bucketed.contains(name) ? bucketed.at(name).size() : 0u;
-		const std::string label = std::format("{}  ({})###layer_{}", name, count, name);
+		const std::string countText = std::format("{}", count);
 
 		ImGui::PushID(name.c_str());
-		const bool open = ImGui::TreeNodeEx(label.c_str(), ImGuiTreeNodeFlags_DefaultOpen);
+		const bool open = gui::widgets::treeRow("##layer", {.label = name.c_str(),
+															.glyph = gui::icon::layers,
+															.glyphColor = kindColor(0xe8c15a),
+															.trailing = countText.c_str(),
+															.hasChildren = true,
+															.defaultOpen = true})
+								  .open;
 		if (ImGui::BeginDragDropTarget()) {
 			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HIERARCHY_ENTITY")) {
 				const uint64_t droppedUuid = *static_cast<const uint64_t*>(payload->Data);
@@ -365,7 +396,7 @@ void SceneHierarchy::renderRootEntities() {
 				for (auto entity: it->second) drawEntityNode(entity);
 			}
 
-			ImGui::TreePop();
+			gui::widgets::endTreeRow();
 		}
 
 		ImGui::PopID();
@@ -374,11 +405,15 @@ void SceneHierarchy::renderRootEntities() {
 	if (!unrouted.empty()) {
 		ImGui::PushID("__unrouted__");
 
-		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.55f, 0.20f, 1.0f));
-		const std::string label = std::format("(unrouted)  ({})###layer_unrouted", unrouted.size());
-		const bool open = ImGui::TreeNodeEx(label.c_str(), ImGuiTreeNodeFlags_DefaultOpen);
-
-		ImGui::PopStyleColor();
+		const std::string countText = std::format("{}", unrouted.size());
+		const bool open = gui::widgets::treeRow("##layer_unrouted", {.label = "(unrouted)",
+																	 .glyph = gui::icon::triangleAlert,
+																	 .glyphColor = gui::UiLayer::getTheme().warning,
+																	 .trailing = countText.c_str(),
+																	 .labelColor = gui::UiLayer::getTheme().warning,
+																	 .hasChildren = true,
+																	 .defaultOpen = true})
+								  .open;
 		if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay))
 
 			ImGui::SetTooltip("These root entities have a RendererTag whose name does not match\n"
@@ -386,7 +421,7 @@ void SceneHierarchy::renderRootEntities() {
 		if (open) {
 			for (auto entity: unrouted) drawEntityNode(entity);
 
-			ImGui::TreePop();
+			gui::widgets::endTreeRow();
 		}
 
 		ImGui::PopID();
@@ -395,48 +430,38 @@ void SceneHierarchy::renderRootEntities() {
 
 // NOLINTNEXTLINE(misc-no-recursion)
 void SceneHierarchy::drawEntityNode(const scene::Entity& iEntity) {
+	const auto& theme = gui::UiLayer::getTheme();
 	const auto& tag = iEntity.getComponent<Tag>().tag;
 	const auto& [parentId, childrenIds] = iEntity.getComponent<Hierarchy>();
 	const bool hasChildren = !childrenIds.empty();
-	ImGuiTreeNodeFlags flag = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_OpenOnArrow;
-	if (!hasChildren)
-		flag |= ImGuiTreeNodeFlags_Leaf;
-	if (iEntity == m_selection)
-		flag |= ImGuiTreeNodeFlags_Selected;
-	// Tint prefab instance entities with a distinct colour.
+	auto& [gameVisible, editorVisible] = iEntity.getComponent<Visibility>();
 	const bool isPartOfPrefab = static_cast<bool>(findPrefabRoot(iEntity, *m_context));
-	if (isPartOfPrefab)
-		ImGui::PushStyleColor(ImGuiCol_Text, gui::vec(gui::UiLayer::getTheme().info));
+	const auto kind = entityKind(iEntity, hasChildren);
+	const std::string countText = hasChildren ? std::format("{}", childrenIds.size()) : std::string{};
+	auto labelColor = isPartOfPrefab ? theme.info : math::vec4{0.f, 0.f, 0.f, 0.f};
+	if (!editorVisible)
+		labelColor = theme.textDisabled;
 
 	ImGui::PushID(static_cast<int>(static_cast<uint32_t>(iEntity)));
-	const char* entityIcon = entityIconName(iEntity);
-	const float iconSize = ImGui::GetFontSize();
-	const std::string label = entityIcon != nullptr ? std::format("{}{}###node", std::string(4, ' '), tag)
-													: std::format("{}###node", tag);
-	const bool open = ImGui::TreeNodeEx(label.c_str(), flag);
-	if (entityIcon != nullptr) {
-		if (const auto info = gui::IconBank::instance().getIcon(entityIcon, iconSize); info.has_value()) {
-			const auto min = ImGui::GetItemRectMin();
-			const float x = std::floor(min.x + ImGui::GetTreeNodeToLabelSpacing());
-			const float y = std::floor(min.y + (ImGui::GetItemRectSize().y - iconSize) * 0.5f);
-			ImGui::GetWindowDrawList()->AddImage(static_cast<ImTextureID>(info->textureId), {x, y},
-												 {x + iconSize, y + iconSize}, gui::vec(info->uv0),
-												 gui::vec(info->uv1));
-		}
-	}
-	const bool treeNodeClicked = ImGui::IsItemClicked(ImGuiMouseButton_Left) && !ImGui::IsItemToggledOpen();
+	const auto row = gui::widgets::treeRow("##node", {.label = tag.c_str(),
+													  .glyph = kind.glyph,
+													  .glyphColor = kindColor(kind.color),
+													  .trailing = hasChildren ? countText.c_str() : nullptr,
+													  .labelColor = labelColor,
+													  .selected = iEntity == m_selection,
+													  .hasChildren = hasChildren,
+													  .defaultOpen = true});
+	const bool open = row.open;
+	const bool treeNodeClicked = row.clicked;
 
-	// Bind context menu to the tree node item (must be right after TreeNodeEx).
+	// Bind context menu to the row (must be right after it).
 	ImGui::OpenPopupOnItemClick("EntityContext", ImGuiPopupFlags_MouseButtonRight);
 
 	// Drag source for reparenting.
 	if (ImGui::BeginDragDropSource()) {
 		const uint64_t uuid = iEntity.getUUID();
-
 		ImGui::SetDragDropPayload("HIERARCHY_ENTITY", &uuid, sizeof(uuid));
-
 		ImGui::Text("%s", tag.c_str());
-
 		ImGui::EndDragDropSource();
 	}
 
@@ -450,79 +475,34 @@ void SceneHierarchy::drawEntityNode(const scene::Entity& iEntity) {
 						{{"entity", static_cast<int64_t>(droppedUuid)},
 						 {"parent", static_cast<int64_t>(static_cast<uint64_t>(iEntity.getUUID()))}});
 		}
-
 		ImGui::EndDragDropTarget();
 	}
 
-	// Visibility toggle buttons (right-aligned)
-	{
-		auto& [gameVisible, editorVisible] = iEntity.getComponent<Visibility>();
-		const auto& iconBank = gui::IconBank::instance();
-		const float btnSize = ImGui::GetTextLineHeight();
-		const float spacing = ImGui::GetStyle().ItemSpacing.x;
-
-		// Position: right edge minus space for 2 buttons
-		ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - (btnSize + spacing) * 2);
-
-		// Transparent button background
-		constexpr math::vec4 transparent{0.f, 0.f, 0.f, 0.f};
-		constexpr math::vec4 subtleHighlight{1.f, 1.f, 1.f, 0.15f};
-
-		ImGui::PushStyleColor(ImGuiCol_Button, gui::vec(transparent));
-
-		ImGui::PushStyleColor(ImGuiCol_ButtonActive, gui::vec(subtleHighlight));
-
-		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, gui::vec(math::vec2{0.f, 0.f}));
-
-		constexpr math::vec4 fullTint{1.0f, 1.0f, 1.0f, 1.0f};
-		constexpr math::vec4 dimTint{0.5f, 0.5f, 0.5f, 0.5f};
-		const math::vec2 btnSizeVec{btnSize, btnSize};
-
-		// --- Editor visibility button (left) — eye icon ---
-		ImGui::PushID("editorVis");
-		const auto* const edIconName = editorVisible ? "eye_open" : "eye_closed";
-		const auto edTint = editorVisible ? fullTint : dimTint;
-		if (const auto iconInfo = iconBank.getIcon(edIconName, btnSizeVec.y())) {
-			if (ImGui::ImageButton("##edVis", static_cast<ImTextureID>(iconInfo->textureId), gui::vec(btnSizeVec),
-
-								   gui::vec(iconInfo->uv0), gui::vec(iconInfo->uv1), gui::vec(transparent),
-								   gui::vec(edTint)))
-				editorVisible = !editorVisible;
-		} else {
-			if (ImGui::Button(editorVisible ? "E" : "-", gui::vec(btnSizeVec)))
-				editorVisible = !editorVisible;
-		}
-		if (ImGui::IsItemHovered())
-
-			ImGui::SetTooltip("Editor Visibility");
-
-		ImGui::PopID();
-
-		ImGui::SameLine();
-
-		// --- Game visibility button (right) — camera icon ---
-		ImGui::PushID("gameVis");
-		const auto* const gameIconName = gameVisible ? "camera_on" : "camera_off";
-		const auto gameTint = gameVisible ? fullTint : dimTint;
-		if (const auto iconInfo = iconBank.getIcon(gameIconName, btnSizeVec.y())) {
-			if (ImGui::ImageButton("##gameVis", static_cast<ImTextureID>(iconInfo->textureId), gui::vec(btnSizeVec),
-
-								   gui::vec(iconInfo->uv0), gui::vec(iconInfo->uv1), gui::vec(transparent),
-								   gui::vec(gameTint)))
-				gameVisible = !gameVisible;
-		} else {
-			if (ImGui::Button(gameVisible ? "V" : "-", gui::vec(btnSizeVec)))
-				gameVisible = !gameVisible;
-		}
-		if (ImGui::IsItemHovered())
-
-			ImGui::SetTooltip("Game Visibility");
-
-		ImGui::PopID();
-
-		ImGui::PopStyleVar();
-
-		ImGui::PopStyleColor(2);
+	// Visibility switches on the right: shown on hover, or kept while something is hidden.
+	if (row.hovered || !editorVisible || !gameVisible) {
+		const ImVec2 cursor = ImGui::GetCursorScreenPos();
+		const float side = row.max.y() - row.min.y();
+		const auto toggleButton = [&](const char* iId, const char* iGlyph, bool& ioFlag, const char* iTip,
+									  const float iX) -> void {
+			ImGui::SetCursorScreenPos({iX, row.min.y()});
+			if (ImGui::InvisibleButton(iId, {side, side}))
+				ioFlag = !ioFlag;
+			const bool hovered = ImGui::IsItemHovered();
+			const auto glyphSize = ImGui::CalcTextSize(iGlyph);
+			auto color = ioFlag ? theme.textMuted : theme.textDisabled;
+			if (hovered)
+				color = theme.text;
+			ImGui::GetWindowDrawList()->AddText({std::floor(iX + (side - glyphSize.x) * 0.5f),
+												 std::floor(row.min.y() + (side - glyphSize.y) * 0.5f)},
+												ImGui::GetColorU32(gui::vec(color)), iGlyph);
+			gui::widgets::itemTooltip(iTip);
+		};
+		const float right = row.max.x() - 4.f;
+		toggleButton("##edVis", editorVisible ? gui::icon::eye : gui::icon::eyeOff, editorVisible,
+					 "Visible in the editor", right - side * 2.f);
+		toggleButton("##gameVis", gameVisible ? gui::icon::video : gui::icon::videoOff, gameVisible,
+					 "Visible in the game", right - side);
+		ImGui::SetCursorScreenPos(cursor);
 	}
 
 	drawEntityContextMenu(iEntity, hasChildren, parentId);
@@ -531,17 +511,12 @@ void SceneHierarchy::drawEntityNode(const scene::Entity& iEntity) {
 		// Recursively draw children.
 		for (const auto childId: childrenIds) {
 			if (const auto child = m_context->findEntityByUUID(childId); child)
-
 				drawEntityNode(child);
 		}
-
-		ImGui::TreePop();
+		gui::widgets::endTreeRow();
 	}
 
 	ImGui::PopID();
-	if (isPartOfPrefab)
-
-		ImGui::PopStyleColor();
 
 	if (treeNodeClicked)
 		m_selection = iEntity;
@@ -804,11 +779,11 @@ void drawGameComponents(scene::Entity& ioEntity, SceneUndoManager* iUndoManager,
 		if (desc.builtin || !desc.has(ioEntity))
 			continue;
 		ImGui::PushID(desc.key.c_str());
-		ImGui::Separator();
-		const bool open =
-				ImGui::TreeNodeEx(desc.name.c_str(), ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed |
-															 ImGuiTreeNodeFlags_SpanAvailWidth);
-		if (ImGui::BeginPopupContextItem("ComponentSettings")) {
+		const auto header = gui::widgets::sectionHeader(desc.name.c_str(), nullptr, desc.optional);
+		const bool open = header.open;
+		if (header.menuClicked)
+			ImGui::OpenPopup("ComponentSettings");
+		if (ImGui::BeginPopup("ComponentSettings")) {
 			if (desc.optional && ImGui::MenuItem("Remove component"))
 				std::ignore = iCommands.execute("component.remove",
 												{{"entity", entityArgOf(ioEntity)}, {"component", desc.name}});
@@ -821,7 +796,7 @@ void drawGameComponents(scene::Entity& ioEntity, SceneUndoManager* iUndoManager,
 			else
 				ImGui::TextDisabled("No inspector registered for this component.");
 			ioInspector.endComponent(ioEntity, desc.key, desc.name, iUndoManager);
-			ImGui::TreePop();
+			gui::widgets::endSection();
 		}
 		ImGui::PopID();
 	}
@@ -833,7 +808,29 @@ void SceneHierarchy::drawComponents(const scene::Entity& iEntity) {
 	if (iEntity.hasComponent<Tag>()) {
 		auto& tag = iEntity.getComponent<Tag>().tag;
 		const auto frameTag = tag;
-		ImGui::InputText("##Tag", &tag);
+		const auto& theme = gui::UiLayer::getTheme();
+		const bool hasChildren =
+				iEntity.hasComponent<Hierarchy>() && !iEntity.getComponent<Hierarchy>().childrenIds.empty();
+		const auto kind = entityKind(iEntity, hasChildren);
+		const float box = std::round(ImGui::GetFrameHeight() * 1.2f);
+		ImGui::Dummy({box, box});
+		{
+			const ImVec2 min = ImGui::GetItemRectMin();
+			auto* draw = ImGui::GetWindowDrawList();
+			draw->AddRectFilled(min, {min.x + box, min.y + box}, ImGui::GetColorU32(gui::vec(theme.surface3)),
+								theme.frameRounding);
+			const ImVec2 glyphSize = ImGui::CalcTextSize(kind.glyph);
+			draw->AddText(
+					{std::floor(min.x + (box - glyphSize.x) * 0.5f), std::floor(min.y + (box - glyphSize.y) * 0.5f)},
+					ImGui::GetColorU32(gui::vec(kindColor(kind.color))), kind.glyph);
+		}
+		ImGui::SameLine();
+		const float addWidth = ImGui::CalcTextSize("Add").x + ImGui::GetFontSize() * 2.6f;
+		ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - addWidth - ImGui::GetStyle().ItemSpacing.x);
+		ImGui::SetCursorPosY(ImGui::GetCursorPosY() + std::floor((box - ImGui::GetFrameHeight()) * 0.5f));
+		gui::UiLayer::pushTextStyle(gui::TextStyle::Strong);
+		ImGui::InputTextWithHint("##Tag", "Entity name", &tag);
+		gui::UiLayer::popTextStyle();
 		if (ImGui::IsItemActivated())
 			m_renameBefore = frameTag;
 		if (ImGui::IsItemDeactivatedAfterEdit() && m_renameBefore.has_value() && tag != *m_renameBefore) {
@@ -853,7 +850,13 @@ void SceneHierarchy::drawComponents(const scene::Entity& iEntity) {
 			m_renameBefore.reset();
 	}
 	ImGui::SameLine();
-	ImGui::Text("Entity name");
+	if (gui::widgets::button("addComponent", {.glyph = gui::icon::plus,
+											  .label = "Add",
+											  .tooltip = "Add component",
+											  .description = "Pick a component to add to this entity.",
+											  .primary = true}))
+		ImGui::OpenPopup("AddComponent");
+	gui::widgets::badge(std::format("{} {}", gui::icon::hash, static_cast<uint64_t>(iEntity.getUUID())).c_str());
 	if (isComponentOverridden(iEntity, Tag::key())) {
 		ImGui::SameLine();
 		if (ImGui::SmallButton("Revert name"))
@@ -862,37 +865,12 @@ void SceneHierarchy::drawComponents(const scene::Entity& iEntity) {
 			ImGui::SetTooltip("The name overrides the prefab: revert it to the prefab name");
 	}
 
-	ImGui::PushItemWidth(-1);
-	{
-		const auto& iconBank = gui::IconBank::instance();
-		bool clicked = false;
-		if (const auto iconInfo = iconBank.getIcon("add_component", 16.f)) {
-			constexpr float iconSz = 16.0f;
-			const float buttonWidth = ImGui::CalcTextSize("Add Component").x + iconSz +
-									  ImGui::GetStyle().ItemSpacing.x + ImGui::GetStyle().FramePadding.x * 2;
-			clicked = ImGui::Button("##AddComp", ImVec2{buttonWidth, 0});
-			const auto btnMin = ImGui::GetItemRectMin();
-			const auto btnMax = ImGui::GetItemRectMax();
-			const float iconY = btnMin.y + (btnMax.y - btnMin.y - iconSz) * 0.5f;
-			ImGui::GetWindowDrawList()->AddImage(iconInfo->textureId, {btnMin.x + 4, iconY},
-												 {btnMin.x + 4 + iconSz, iconY + iconSz}, gui::vec(iconInfo->uv0),
-												 gui::vec(iconInfo->uv1));
-			const float textX = btnMin.x + iconSz + ImGui::GetStyle().ItemSpacing.x;
-			const float textY = btnMin.y + ImGui::GetStyle().FramePadding.y;
-			ImGui::GetWindowDrawList()->AddText({textX, textY}, IM_COL32_WHITE, "Add Component");
-		} else {
-			clicked = ImGui::Button("Add Component");
-		}
-		if (clicked)
-			ImGui::OpenPopup("AddComponent");
-	}
 	if (ImGui::BeginPopup("AddComponent")) {
 		const std::string layerTypeKey = layerTypeKeyForEntity(m_selection);
 		addComponentsFromTuple(m_selection, getCommandTarget(), layerTypeKey, OptionalComponents{});
 		addGameComponentItems(m_selection, getCommandTarget());
 		ImGui::EndPopup();
 	}
-	ImGui::PopItemWidth();
 	drawComponentsFromTuple(m_selection, mp_undoManager, getCommandTarget(), m_inspector,
 							gui::component::DrawableComponents{});
 	drawGameComponents(m_selection, mp_undoManager, getCommandTarget(), m_inspector);

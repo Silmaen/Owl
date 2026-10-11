@@ -10,6 +10,7 @@
 
 #include <gui/IconBank.h>
 #include <gui/utils.h>
+#include <gui/widgets/Combo.h>
 #include <imgui.h>
 #include <scene/TilemapAsset.h>
 #include <scene/Tileset.h>
@@ -104,7 +105,7 @@ void TilePalette::onImGuiRender(scene::TilemapAsset* iTarget) {
 	if (m_selectedLayer >= asset.layers.size())
 		m_selectedLayer = 0;
 	const auto& currentLayerName = asset.layers[m_selectedLayer].name;
-	if (ImGui::BeginCombo("Layer", currentLayerName.c_str())) {
+	if (gui::widgets::beginCombo("Layer", currentLayerName.c_str())) {
 		for (size_t i = 0; i < asset.layers.size(); ++i) {
 			const bool selected = i == m_selectedLayer;
 			const auto label = asset.layers[i].name.empty() ? std::format("layer{}", i) : asset.layers[i].name;

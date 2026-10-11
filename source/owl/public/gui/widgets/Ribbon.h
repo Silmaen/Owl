@@ -196,6 +196,15 @@ public:
 
 	/**
 	 * @brief
+	 *  Show a search box in the middle of the tab row; clicking it calls back (opens the command palette).
+	 * @param[in] iHint Text shown in the box.
+	 * @param[in] iShortcut Shortcut shown at its right end.
+	 * @param[in] iOnClick Invoked on click.
+	 */
+	void setSearchBox(std::string iHint, std::string iShortcut, std::function<void()> iOnClick);
+
+	/**
+	 * @brief
 	 *  Show only the tab row (collapsed) or the tab row and the groups.
 	 * @param[in] iCollapsed True to collapse.
 	 */
@@ -259,6 +268,12 @@ private:
 	std::function<void()> m_onBackstage;
 	/// Icon-only buttons at the right end of the tab row.
 	std::vector<Button> m_quickAccess;
+	/// Text of the search box; empty for none.
+	std::string m_searchHint;
+	/// Shortcut shown in the search box.
+	std::string m_searchShortcut;
+	/// Invoked when the search box is clicked.
+	std::function<void()> m_onSearch;
 	/// Only the tab row is shown.
 	bool m_collapsed = false;
 

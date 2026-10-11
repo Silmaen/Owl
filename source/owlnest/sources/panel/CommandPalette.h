@@ -9,7 +9,9 @@
 #pragma once
 
 #include <cstddef>
+#include <filesystem>
 #include <functional>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -33,13 +35,17 @@ struct PaletteItem {
 
 /**
  * @brief
- *  Searchable list of everything the editor can do, opened with `Ctrl+K`: type a few letters, move with the arrows,
- *  run with `Enter`, leave with `Escape`.
+ *  Searchable list of everything the editor can do, opened by pressing `Shift` twice: type a few letters, move with
+ *  the arrows, run with `Enter`, leave with `Escape`.
  */
 class CommandPalette final {
 public:
 	/// Entries shown at once.
 	static constexpr size_t maxResults = 12;
+	/// Longest delay between the two `Shift` presses that open the palette, in seconds.
+	static constexpr double doubleTapDelay = 0.4;
+	/// Most asset files listed by `collectAssets`.
+	static constexpr size_t maxAssets = 4000;
 
 	/**
 	 * @brief
@@ -70,6 +76,45 @@ public:
 	 * @return The category, "Command" for an unknown prefix.
 	 */
 	[[nodiscard]] static auto categoryOf(std::string_view iActionId) -> std::string;
+
+	/**
+	 * @brief
+	 *  Every file under a folder, hidden folders and files skipped, at most `maxAssets`.
+	 * @param[in] iRoot The folder.
+	 * @return The files, sorted.
+	 */
+	[[nodiscard]] static auto collectAssets(const std::filesystem::path& iRoot) -> std::vector<std::filesystem::path>;
+
+	/**
+	 * @brief
+	 *  Record a press of `Shift`.
+	 * @param[in] iTime Time of the press, in seconds.
+	 * @return True when it is the second press of a double tap: the palette should open.
+	 */
+	auto onShiftPressed(double iTime) -> bool;
+
+	/**
+	 * @brief
+	 *  Record a press of any other key or button, which breaks a double tap.
+	 */
+	void onOtherInput() { m_lastShift.reset(); }
+
+	/**
+	 * @brief
+	 *  Watch the keyboard of this frame and open the palette on a double `Shift` (not while typing in a field).
+	 */
+	void pollDoubleShift();
+
+	/**
+	 * @brief
+	 *  Whether the palette was opened since the last call, to refresh what it lists.
+	 * @return True once after each opening.
+	 */
+	auto consumeOpened() -> bool {
+		const bool opened = m_justOpened;
+		m_justOpened = false;
+		return opened;
+	}
 
 	/**
 	 * @brief
@@ -106,6 +151,10 @@ private:
 	std::string m_query;
 	/// Index of the highlighted result.
 	size_t m_highlighted = 0;
+	/// Time of the last `Shift` press not yet part of a double tap.
+	std::optional<double> m_lastShift;
+	/// Opened since the last `consumeOpened`.
+	bool m_justOpened = false;
 };
 
 }// namespace owl::nest::panel

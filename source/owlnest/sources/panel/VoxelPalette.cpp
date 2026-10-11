@@ -8,6 +8,7 @@
 
 #include "VoxelPalette.h"
 
+#include <gui/widgets/Combo.h>
 #include <gui/widgets/Toggle.h>
 
 #include <data/voxel/VoxelStructure.h>
@@ -83,7 +84,7 @@ void VoxelPalette::onImGuiRender(VoxelBrush& ioBrush) {
 	constexpr std::array<const char*, data::voxel::g_OrientationCount> kOrientationNames{
 			"Identity", "Yaw 90 CW", "Yaw 180", "Yaw 90 CCW", "Axis X", "Axis Z"};
 	int orientation = static_cast<int>(ioBrush.orientation);
-	if (ImGui::Combo("Orientation", &orientation, kOrientationNames.data(), static_cast<int>(kOrientationNames.size())))
+	if (gui::widgets::combo("Orientation", &orientation, kOrientationNames))
 		ioBrush.orientation = static_cast<data::voxel::BlockOrientation>(orientation);
 	if (ImGui::IsItemHovered())
 		ImGui::SetTooltip("Orientation applied to painted blocks (remaps per-face textures; geometry is unchanged).");

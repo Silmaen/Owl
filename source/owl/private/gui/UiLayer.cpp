@@ -435,7 +435,8 @@ void UiLayer::setTheme(const Theme& iTheme) {
 	style.ScaleAllSizes(g_dpiScale);
 	style.FontSizeBase = fontSize;
 	style.FontScaleDpi = g_dpiScale;
-	style.WindowMenuButtonPosition = ImGuiDir_Right;
+	// No filled window-menu arrow on windows and docked groups: every panel has its tab and its close button.
+	style.WindowMenuButtonPosition = ImGuiDir_None;
 	style.ColorButtonPosition = ImGuiDir_Left;
 	if ((ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable) != 0) {
 		style.WindowRounding = 0.0f;

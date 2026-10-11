@@ -46,6 +46,7 @@
 #include <filesystem>
 #include <optional>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace owl::nest {
@@ -702,8 +703,10 @@ private:
 	panel::StatusBar m_statusBar;
 	/// Short notifications in the bottom-right corner (saves, exports, failures).
 	gui::widgets::ToastQueue m_toasts;
-	/// Ctrl+K search over the actions and the entities.
+	/// Search over the actions, the entities and the assets, opened by pressing Shift twice.
 	panel::CommandPalette m_commandPalette;
+	/// Asset files listed by the palette, with their name relative to their asset folder; refreshed on each opening.
+	std::vector<std::pair<std::filesystem::path, std::string>> m_paletteAssets;
 	/// When the last autosave wrote something; empty before the first one.
 	std::optional<std::chrono::steady_clock::time_point> m_lastAutosave;
 	/// Per-frame Vulkan counter deltas and their 2 s maxima, for the Stats panel.

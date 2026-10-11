@@ -20,9 +20,11 @@
 #include <cctype>
 #include <cmath>
 #include <cstddef>
+#include <filesystem>
 #include <format>
 #include <string>
 #include <string_view>
+#include <system_error>
 #include <utility>
 #include <vector>
 
@@ -113,8 +115,63 @@ auto CommandPalette::categoryOf(const std::string_view iActionId) -> std::string
 	return "Command";
 }
 
+auto CommandPalette::collectAssets(const std::filesystem::path& iRoot) -> std::vector<std::filesystem::path> {
+	std::vector<std::filesystem::path> files;
+	std::error_code error;
+	if (!std::filesystem::is_directory(iRoot, error))
+		return files;
+	auto it = std::filesystem::recursive_directory_iterator(
+			iRoot, std::filesystem::directory_options::skip_permission_denied, error);
+	for (; !error && it != std::filesystem::recursive_directory_iterator(); it.increment(error)) {
+		const auto name = it->path().filename().string();
+		if (name.starts_with('.')) {
+			if (it->is_directory(error))
+				it.disable_recursion_pending();
+			continue;
+		}
+		if (!it->is_regular_file(error))
+			continue;
+		files.push_back(it->path());
+		if (files.size() == maxAssets)
+			break;
+	}
+	std::ranges::sort(files);
+	return files;
+}
+
+auto CommandPalette::onShiftPressed(const double iTime) -> bool {
+	if (m_lastShift.has_value() && iTime - *m_lastShift <= doubleTapDelay) {
+		m_lastShift.reset();
+		return true;
+	}
+	m_lastShift = iTime;
+	return false;
+}
+
+void CommandPalette::pollDoubleShift() {
+	const ImGuiIO& io = ImGui::GetIO();
+	if (m_open || io.WantTextInput) {
+		m_lastShift.reset();
+		return;
+	}
+	const bool shift =
+			ImGui::IsKeyPressed(ImGuiKey_LeftShift, false) || ImGui::IsKeyPressed(ImGuiKey_RightShift, false);
+	bool other = ImGui::IsAnyMouseDown();
+	for (int key = ImGuiKey_NamedKey_BEGIN; key < ImGuiKey_NamedKey_END && !other; ++key) {
+		const auto named = static_cast<ImGuiKey>(key);
+		if (named == ImGuiKey_LeftShift || named == ImGuiKey_RightShift || named == ImGuiMod_Shift)
+			continue;
+		other = ImGui::IsKeyPressed(named, false);
+	}
+	if (other)
+		onOtherInput();
+	if (shift && onShiftPressed(ImGui::GetTime()))
+		open();
+}
+
 void CommandPalette::open() {
 	m_open = true;
+	m_justOpened = true;
 	m_focusInput = true;
 	m_query.clear();
 	m_highlighted = 0;
@@ -164,7 +221,7 @@ void CommandPalette::onImGuiRender(const std::vector<PaletteItem>& iItems) {
 	}
 	ImGui::SetNextItemWidth(-FLT_MIN);
 	ImGui::PushStyleColor(ImGuiCol_FrameBg, gui::vec(gui::Theme::withAlpha(theme.well, 0.f)));
-	if (ImGui::InputTextWithHint("##paletteQuery", "Type a command or an entity name", &m_query))
+	if (ImGui::InputTextWithHint("##paletteQuery", "Type a command, an asset or an entity name", &m_query))
 		m_highlighted = 0;
 	ImGui::PopStyleColor();
 	ImGui::PopFont();
@@ -204,7 +261,8 @@ void CommandPalette::onImGuiRender(const std::vector<PaletteItem>& iItems) {
 	if (enter && !results.empty())
 		chosen = &iItems[results[m_highlighted]];
 	ImGui::Separator();
-	ImGui::TextColored(gui::vec(theme.textDisabled), "Up / Down to move, Enter to run, Escape to close");
+	ImGui::TextColored(gui::vec(theme.textDisabled), "Up / Down to move, Enter to run, Escape to close; Shift twice to "
+													 "open it again");
 	if (!ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) && !m_focusInput)
 		m_open = false;
 	ImGui::End();

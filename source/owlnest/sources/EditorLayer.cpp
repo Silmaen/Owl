@@ -435,7 +435,7 @@ void EditorLayer::onAttach() {
 									[this]() -> void { m_ribbonBuilder.toggleCollapsed(); });
 	m_actionRegistry.registerAction("view.resetLayout", "Reset Layout", {},
 									[this]() -> void { applyLayoutPreset(m_dockLayout.getPreset()); });
-	m_actionRegistry.registerAction("view.commandPalette", "Command Palette", {input::key::K, Modifiers::Ctrl},
+	m_actionRegistry.registerAction("view.commandPalette", "Command Palette", {},
 									[this]() -> void { m_commandPalette.open(); });
 	// clang-format on
 
@@ -688,8 +688,16 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 }
 
 void EditorLayer::renderCommandPalette() {
+	m_commandPalette.pollDoubleShift();
 	if (!m_commandPalette.isOpen())
 		return;
+	if (m_commandPalette.consumeOpened()) {
+		m_paletteAssets.clear();
+		for (const auto& [title, path]: app::Application::get().getAssetDirectories()) {
+			for (const auto& file: panel::CommandPalette::collectAssets(path))
+				m_paletteAssets.emplace_back(file, std::filesystem::relative(file, path).generic_string());
+		}
+	}
 	std::vector<panel::PaletteItem> items;
 	for (const auto& action: m_actionRegistry.getActions()) {
 		if (action.id == "view.commandPalette")
@@ -709,6 +717,10 @@ void EditorLayer::renderCommandPalette() {
 							 .run = [this, entity]() -> void { setSelectedEntity(entity); }});
 		}
 	}
+	for (const auto& [path, name]: m_paletteAssets)
+		items.push_back({.category = "Asset", .label = name, .shortcut = {}, .run = [this, path]() -> void {
+							 openAssetFile(path);
+						 }});
 	m_commandPalette.onImGuiRender(items);
 }
 

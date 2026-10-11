@@ -8,6 +8,7 @@
 
 #include "testHelper.h"
 
+#include <gui/IconFont.h>
 #include <gui/UiLayer.h>
 #include <gui/widgets/Ribbon.h>
 
@@ -107,4 +108,22 @@ TEST_F(RibbonTest, ClearRemovesTabsAndQuickAccess) {
 	EXPECT_EQ(m_ribbon.getTabCount(), 0u);
 	frame();
 	EXPECT_EQ(m_ribbon.getSelectedTab(), "");
+}
+
+TEST_F(RibbonTest, SearchBoxCallsBackOnClick) {
+	int searches = 0;
+	m_ribbon.setSearchBox("Search commands", "Shift Shift", [&searches]() -> void { ++searches; });
+	m_ribbon.addQuickAccess({.iconName = gui::icon::redo2, .label = "Redo", .tooltip = "Redo."});
+	frame();
+	// The box sits in the middle of the tab row: sweep down the centre line until it is hit.
+	for (float y = 0.f; y < 90.f && searches == 0; y += 3.f) {
+		ImGui::GetIO().AddMousePosEvent(400.f, y);
+		frame();
+		ImGui::GetIO().AddMouseButtonEvent(0, true);
+		frame();
+		ImGui::GetIO().AddMouseButtonEvent(0, false);
+		frame();
+	}
+	EXPECT_EQ(searches, 1);
+	EXPECT_EQ(m_backstage, 0);
 }

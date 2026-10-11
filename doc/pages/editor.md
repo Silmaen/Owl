@@ -285,10 +285,14 @@ The Scene Hierarchy panel displays all entities in the active scene as a tree vi
 Entities with children (via the `Hierarchy` component) expand to show nested items.
 Root entities have `parentId == 0` and appear at the top level.
 
-**Toolbar.** The **+** button creates an empty entity or a child of the selection; the search field filters the
-entities by name (every word, case-insensitive) and shows the matches as a flat list. Each entity shows the icon
-of its main component (camera, sprite, text, UI element, voxel world...); prefab instances are drawn in the info
-colour.
+**Toolbar.** The **Add** button creates an empty entity or a child of the selection; the search field filters the
+entities by name (every word, case-insensitive) and shows the matches as a flat list.
+
+**Rows.** A thin chevron folds the children, the glyph of the main component comes in the colour of its kind
+(camera blue, sprite pink, text violet, UI teal, world gold...), and a parent shows its child count. The eye and
+camera switches (visible in the editor, in the game) show when the row is hovered, and stay while the entity is
+hidden. Prefab instances are drawn in the info colour, entities hidden in the editor greyed out; the selection has
+an accent bar on its left.
 
 **Selection.** Clicking an entity selects it. The selection is shared with the
 Properties panel and the viewport gizmo; with nothing selected, Properties says how to select one.
@@ -463,9 +467,13 @@ The schema mirrors the corresponding fields of `AnimatedSpriteRenderer` 1:1, so 
 The Content Browser provides a file grid view of the project's asset directory. It
 supports navigation, file operations, and drag-drop integration with other panels.
 
-**Toolbar.** The asset roots as chips (project, application, engine), the parent folder button, a clickable
-breadcrumb from the root to the current folder, a search field filtering the folder by name, the grid / list toggle
-and the thumbnail size. The browser never goes above the selected root.
+**Folder tree.** The left column lists the asset roots (project, application, engine) and their folders; a click
+opens a folder, the chevrons fold them, and the tree unfolds down to the folder shown. Drag its right edge to resize
+it.
+
+**Toolbar.** The parent folder button, a clickable breadcrumb from the root to the current folder, a search field
+filtering the folder by name, the grid / list toggle and the thumbnail size. The browser never goes above the
+selected root.
 
 **Tiles.** Images (`.png`, `.jpg`) show their own thumbnail, filling the tile and cropped to its square; the
 thumbnails load a few per frame and are dropped when you leave the folder. Other files show the duotone icon of
@@ -1100,7 +1108,7 @@ gizmo manipulation is in progress.
 
 | Action                       | Default Shortcut | Action ID                  |
 |------------------------------|------------------|----------------------------|
-| Command Palette              | Ctrl+K           | `view.commandPalette`      |
+| Command Palette              | Shift, Shift     | `view.commandPalette`      |
 | Layout: Default              | Alt+1            | `view.layoutDefault`       |
 | Layout: Hierarchy Left       | Alt+2            | `view.layoutHierarchyLeft` |
 | Collapse / Expand the Ribbon | Ctrl+F1          | `view.toggleRibbon`        |
@@ -1108,10 +1116,12 @@ gizmo manipulation is in progress.
 
 ### Command palette
 
-`Ctrl+K` opens a search box at the top of the editor listing every action of the registry, with its category and
-its shortcut, followed by the entities of the active scene. Type a few letters in order (`svdoc` finds *Save
-Document*), move with the arrows, run with `Enter`, close with `Escape` or a click elsewhere. Choosing an entity
-selects it. Matches at the start of a word and runs of contiguous letters rank first (`CommandPalette::score`).
+Pressing `Shift` twice (within 0.4 s, outside a text field), or a click on the search box in the middle of the
+ribbon tab row, opens a search box at the top of the editor listing every action of the registry, with its category
+and its shortcut, then the entities of the active scene and the files of the asset folders. Type a few letters in
+order (`svdoc` finds *Save Document*), move with the arrows, run with `Enter`, close with `Escape` or a click
+elsewhere. Choosing an entity selects it, choosing an asset opens it. The action `view.commandPalette` has no key of
+its own and can be given one in the Shortcuts tab. Matches at the start of a word and runs of contiguous letters rank first (`CommandPalette::score`).
 
 ### Rebinding
 

@@ -11,6 +11,7 @@
 #include "../EditorResources.h"
 
 #include <gui/IconBank.h>
+#include <gui/widgets/Combo.h>
 #include <gui/widgets/PropertyGrid.h>
 
 #include <algorithm>
@@ -108,7 +109,7 @@ void SettingsPanel::renderThemeSection(EditorSettings& ioSettings) {
 	if (!gui::widgets::beginProperties("##appearance"))
 		return;
 	gui::widgets::propertyLabel("Theme", "Colours of the editor; applied at once.");
-	if (ImGui::BeginCombo("##ThemeCombo", ioSettings.themePreset.c_str())) {
+	if (gui::widgets::beginCombo("##ThemeCombo", ioSettings.themePreset.c_str())) {
 		for (const auto& [preset, name]: gui::Theme::getPresetNames()) {
 			const bool selected = ioSettings.themePreset == name;
 			if (ImGui::Selectable(name.c_str(), selected)) {

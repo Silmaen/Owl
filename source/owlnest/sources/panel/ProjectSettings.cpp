@@ -9,6 +9,7 @@
 #include "ProjectSettings.h"
 
 #include <gui/IconBank.h>
+#include <gui/widgets/Combo.h>
 #include <gui/widgets/Toggle.h>
 #include <imgui_stdlib.h>
 #include <renderer/RenderLayerFactory.h>
@@ -38,7 +39,7 @@ auto drawRendererStackEditor(renderer::RendererStackConfig& ioStack) -> void {
 		ImGui::PushID(i);
 		ImGui::SetNextItemWidth(140.f);
 		const char* typePreview = e.typeKey.empty() ? "(none)" : e.typeKey.c_str();
-		if (ImGui::BeginCombo("##type", typePreview)) {
+		if (gui::widgets::beginCombo("##type", typePreview)) {
 			for (const auto& t: availableTypes) {
 				const bool selected = (e.typeKey == t);
 				if (ImGui::Selectable(t.c_str(), selected))
@@ -148,7 +149,7 @@ void ProjectSettings::onImGuiRender() {
 		const char* preview = m_selectedSceneIndex >= 0
 									  ? m_availableScenes[static_cast<size_t>(m_selectedSceneIndex)].c_str()
 									  : "(none)";
-		if (ImGui::BeginCombo("First Scene", preview)) {
+		if (gui::widgets::beginCombo("First Scene", preview)) {
 			if (ImGui::Selectable("(none)", m_selectedSceneIndex < 0))
 				m_selectedSceneIndex = -1;
 			for (int i = 0; i < static_cast<int>(m_availableScenes.size()); ++i) {

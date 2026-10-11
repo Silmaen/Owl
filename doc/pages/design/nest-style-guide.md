@@ -95,6 +95,9 @@ Build panels from the kit in `gui/widgets/` before writing raw ImGui:
 | Nothing to show                      | `emptyState`                                                                                         |
 | An on / off property / option        | `toggle` (inspector rows) / `checkbox` (a label after a small box)                                   |
 | A nested block inside a component    | `subHeader`                                                                                          |
+| A row of a tree (entities, folders)  | `treeRow`, `endTreeRow`                                                                              |
+| A labelled button / the main action  | `button` (`primary` for the accent)                                                                  |
+| A drop-down list                     | `beginCombo`, `combo` (never `ImGui::BeginCombo`: its arrow is a filled triangle)                    |
 | A count or a state / a filter toggle | `badge` / `chip`                                                                                     |
 | A property that needs attention      | `notice`                                                                                             |
 | A short confirmation or failure      | `ToastQueue::push`                                                                                   |
@@ -102,8 +105,10 @@ Build panels from the kit in `gui/widgets/` before writing raw ImGui:
 ## Interaction
 
 - Every action lives in the `ActionRegistry`: it gets a shortcut that can be rebound, a place in the command
-  palette (`Ctrl+K`) and its shortcut in tooltips. A ribbon button or an overlay calls the action, not a copy of
+  palette (double `Shift`) and its shortcut in tooltips. A ribbon button or an overlay calls the action, not a copy of
   its code.
 - Selection is amber; hover is one surface step lighter; a disabled item uses `textDisabled` and keeps its
   tooltip, saying why it is disabled when it is not obvious.
 - Controls that act on the view float over the viewport in pills; the ribbon holds document and project commands.
+- Every fold uses a thin chevron (right when closed, down when open), never ImGui's filled triangle; windows draw no
+  window-menu arrow (`WindowMenuButtonPosition` is `None`).

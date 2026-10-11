@@ -16,6 +16,7 @@
 #include "gui/utils.h"
 #include "gui/widgets/AssetField.h"
 #include "gui/widgets/Badge.h"
+#include "gui/widgets/Combo.h"
 #include "gui/widgets/CurveEditor.h"
 #include "gui/widgets/IconButton.h"
 #include "gui/widgets/PropertyGrid.h"
@@ -38,6 +39,7 @@
 #include <cstdint>
 #include <cstring>
 #include <format>
+#include <span>
 
 using namespace owl::scene;
 using namespace owl::scene::component;
@@ -114,12 +116,12 @@ auto InputTextMultiline(const char* iLabel, std::string* ioText, const ImVec2& i
 
 template<typename... Args>
 auto BeginCombo(const char* iLabel, Args&&... iArgs) -> bool {
-	return row(iLabel, [&](const char* iId) -> bool { return ImGui::BeginCombo(iId, std::forward<Args>(iArgs)...); });
+	return row(iLabel, [&](const char* iId) -> bool { return widgets::beginCombo(iId, std::forward<Args>(iArgs)...); });
 }
 
 template<typename... Args>
 auto Combo(const char* iLabel, Args&&... iArgs) -> bool {
-	return row(iLabel, [&](const char* iId) -> bool { return ImGui::Combo(iId, std::forward<Args>(iArgs)...); });
+	return row(iLabel, [&](const char* iId) -> bool { return widgets::combo(iId, std::forward<Args>(iArgs)...); });
 }
 
 }// namespace prop
@@ -544,13 +546,13 @@ void renderProps(EntityLink& ioComponent) {
 void renderProps(BackgroundTexture& ioComponent) {
 	constexpr std::array modeNames = {"Background", "Skybox"};
 	int modeIndex = static_cast<int>(ioComponent.mode);
-	if (prop::Combo("Mode", &modeIndex, modeNames.data(), static_cast<int>(modeNames.size())))
+	if (prop::Combo("Mode", &modeIndex, std::span<const char* const>{modeNames}))
 		ioComponent.mode = static_cast<BackgroundTexture::Mode>(modeIndex);
 
 	if (ioComponent.mode == BackgroundTexture::Mode::Background) {
 		constexpr std::array typeNames = {"Solid Color", "Gradient", "Texture"};
 		int typeIndex = static_cast<int>(ioComponent.type);
-		if (prop::Combo("Type", &typeIndex, typeNames.data(), static_cast<int>(typeNames.size())))
+		if (prop::Combo("Type", &typeIndex, std::span<const char* const>{typeNames}))
 			ioComponent.type = static_cast<BackgroundTexture::Type>(typeIndex);
 
 		if (ioComponent.type == BackgroundTexture::Type::SolidColor) {
