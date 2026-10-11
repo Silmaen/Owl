@@ -72,6 +72,13 @@ private:
 
 	/**
 	 * @brief
+	 *  Camera tab: speeds, vertical inversion and dead zone of the viewport navigation.
+	 * @param[in,out] ioSettings Editor settings being modified.
+	 */
+	static void renderCameraSection(EditorSettings& ioSettings);
+
+	/**
+	 * @brief
 	 *  Appearance tab: the theme.
 	 * @param[in,out] ioSettings Editor settings being modified.
 	 */

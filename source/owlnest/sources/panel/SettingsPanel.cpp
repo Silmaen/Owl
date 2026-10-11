@@ -57,6 +57,10 @@ void SettingsPanel::onImGuiRender(EditorSettings& ioSettings, ActionRegistry& io
 			renderSnapSection(ioSettings);
 			ImGui::EndTabItem();
 		}
+		if (ImGui::BeginTabItem(std::format("{}  Camera###camera", gui::icon::video).c_str())) {
+			renderCameraSection(ioSettings);
+			ImGui::EndTabItem();
+		}
 		if (ImGui::BeginTabItem(std::format("{}  Appearance###appearance", gui::icon::paintbrush).c_str())) {
 			renderThemeSection(ioSettings);
 			ImGui::EndTabItem();
@@ -108,6 +112,26 @@ void SettingsPanel::renderSnapSection(EditorSettings& ioSettings) {
 	if (gui::widgets::propertyFloat("Cell Multiplier", ioSettings.snapMultiplier, defaults.snapMultiplier, 0.05f,
 									"%.3f", "Multiplier of the tilemap cell size (0.5 = half-cell snap)."))
 		ioSettings.snapMultiplier = std::max(0.0001f, ioSettings.snapMultiplier);
+	gui::widgets::endProperties();
+}
+
+void SettingsPanel::renderCameraSection(EditorSettings& ioSettings) {
+	const EditorSettings defaults;
+	if (!gui::widgets::beginProperties("##camera"))
+		return;
+	std::ignore =
+			settingInt("Orbit Speed", ioSettings.cameraRotatePercent, 10, 300, defaults.cameraRotatePercent, "%d %%",
+					   "Speed of the orbit (Ctrl + left drag) and of the look-around (Alt + left drag).");
+	std::ignore = settingInt("Pan Speed", ioSettings.cameraPanPercent, 10, 300, defaults.cameraPanPercent, "%d %%",
+							 "Speed of the pan (Ctrl or Alt + right drag).");
+	std::ignore = settingInt("Zoom Speed", ioSettings.cameraZoomPercent, 10, 300, defaults.cameraZoomPercent, "%d %%",
+							 "Speed of the wheel zoom and of the dolly (Alt + middle drag).");
+	std::ignore =
+			gui::widgets::propertyBool("Invert Vertical", ioSettings.cameraInvertY, defaults.cameraInvertY,
+									   "Turn the vertical drag of the orbit and of the look-around the other way.");
+	std::ignore = settingInt("Dead Zone", ioSettings.cameraDeadZone, 0, 20, defaults.cameraDeadZone, "%d px",
+							 "Distance the cursor travels before a camera drag moves the view, so a shaky click does "
+							 "not nudge it.");
 	gui::widgets::endProperties();
 }
 

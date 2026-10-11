@@ -67,7 +67,7 @@ Browser (`AssetThumbnails`), atlas swatches in the asset fields of the inspector
   action
 - Panel layout presets and a cleaner ribbon
 
-## Editor camera controls overhaul (In Progress)
+## Editor camera controls overhaul (Done)
 
 - **DCC-style navigation** — ![Done][done] (landed early, v0.2.1): Alt+LMB rotate-in-place, Alt+RMB pan, Alt+MMB
   dolly; Ctrl+LMB orbit, Ctrl+MMB/RMB pan, wheel zoom — shared by every scene viewport. A corner XYZ orientation gizmo
@@ -75,14 +75,16 @@ Browser (`AssetThumbnails`), atlas swatches in the asset fields of the inspector
 - **Orientation math reworked** — ![Done][done]: `CameraEditor` now builds its orientation from a proper Euler
   quaternion, so a full 360° turn works and the view no longer shears (the old `{1,-pitch,-yaw,0}` convention warped
   past ~180°).
-- Still to do: per-axis sensitivity / dead zones under `Settings > Editor > Camera`, and an **interactive** view-cube
-  for axis snapping (now feasible on the reworked orientation math).
-- **Standard navigation presets** — quick buttons (ribbon `View` group + viewport overlay) for: **Reset View** (snap
-  back to the default editor pose); axis-aligned ortho views **XY** (top-down), **XZ** (front), **YZ** (side);
-  **Frame Selection** (zoom to fit the selected entity); **Frame Scene** (zoom to fit the whole scene's bounds).
-- **Go to camera viewpoint** — snap the editor camera onto any selected `component::Camera` entity's pose
-  (translation + rotation) for a quick preview. Disabled for cameras whose `RendererTag` targets a `RendererRaycast`
-  layer (the editor renders those scenes flat — see "Look through scene camera" below).
+- **Navigation settings** — ![Done][done]: orbit, pan and zoom speeds, vertical inversion and a dead zone under
+  `Settings > Editor > Camera` (`CameraEditor::Navigation`).
+- **Interactive view-cube** — ![Done][done]: the corner gizmo shows the six axis ends; a click on one looks from that
+  side, a click on the centre resets the view.
+- **Standard navigation presets** — ![Done][done]: ribbon `View > Camera` group, viewport overlay menu and command
+  palette: **Reset View** (`Home`), the six axis views (`CameraEditor::viewAlong`; Front is the XY plane, Top XZ, Right
+  YZ, orthographic in the 2D view), **Frame Selection** (`F`), **Frame Scene** (`Shift+F`).
+- **Go to camera viewpoint** — ![Done][done]: move the editor camera onto the selected `component::Camera` entity
+  (`CameraEditor::lookFrom`; an orthographic camera gives the 2D view at its size). Disabled for a camera of a
+  `RendererRaycast` layer (the editor renders those scenes flat — see "Look through scene camera" below).
 
 ## "Look through scene camera" mode (v0.5.0)
 

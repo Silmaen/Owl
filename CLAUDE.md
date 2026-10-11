@@ -1,15 +1,15 @@
 # CLAUDE.md
 
 Owl is a C++23 game engine (`OwlEngine`) with an editor (Owl Nest), a game runner, a Python CI wrapper and
-TeamCity pipelines. Version in development: see `project(... VERSION ...)` in `CMakeLists.txt` (0.3.0 in
-development at the time of writing; 0.2.1 is the last release). Backends: graphics OpenGL 4.5 / Vulkan 1.4 / Null, input
+TeamCity pipelines. Version: see `project(... VERSION ...)` in `CMakeLists.txt` (0.3.0, released 2026-10-11,
+is the last release; the 0.4.0 kickoff bumps it). Backends: graphics OpenGL 4.5 / Vulkan 1.4 / Null, input
 GLFW / Null, sound OpenAL / Null. ECS on EnTT with parent-child hierarchy. Platforms: Linux x64/arm64,
 Windows x64 (MinGW).
 
 Detailed, path-scoped rules load automatically from `.claude/rules/` when you touch matching files
 (C++ style, CMake, tests, renderer, Slang, scene, editor, script, task system, dependencies, Python CI,
 docs, module layout). User documentation lives in `doc/pages/*.md` — read the relevant page before
-changing a subsystem. An ongoing repository audit lives in `doc/audit/` (entry point: `AUDIT.md`).
+changing a subsystem. The repository audit of 2026-10-05 lives in `doc/audit/` (entry point: `AUDIT.md`, closed with v0.3.0).
 
 ## Build, test, run — Docker only
 
@@ -52,6 +52,10 @@ docker/run.sh --perf perf ...                                      # ptrace / pe
 | `CodeStyle`                                        | Read-only gate: clang-format, codespell, comment quality, docs, cpp-style, headers, ruff/mypy. |
 | `ClangTidy`                                        | clang-tidy (or `--tool=analyzer`) over `compile_commands.json`; PR = diff-scoped.              |
 | `Documentation`                                    | Doxygen with `WARN_AS_ERROR=YES`.                                                              |
+| `Bench`                                            | `owl_bench` against `bench/baseline/<preset>.json` (e.g. `linux-bench`).                       |
+| `Fuzz`                                             | libFuzzer targets for a fixed time each (`linux-fuzz`).                                        |
+| `IncludeCheck`                                     | Every header and source compiled alone on strict libc++, no PCH (`linux-include-check`).       |
+| `DependencyReport`                                 | Informative list of dependencies with a newer version.                                         |
 | `Package`, `Clean`, `PublishDoc`, `PublishPackage` | As named; also `DefineTeamCityVariables`, `Help`.                                              |
 
 Run `CodeStyle` (and `ClangTidy linux-clang-tidy -- --diff_base=main` after a `linux-clang-tidy` build when C++
@@ -69,7 +73,7 @@ Python, never a bare `conan`. Inside the container the venv lives in `/fhome/.ca
 | `source/owl/public/`      | Public API, one folder per module = one namespace (see `.claude/rules/module-layout.md`). |
 | `source/owl/private/`     | Implementation, mirrors `public/`; third-party header wrappers in `core/external/`.       |
 | `source/owlnest/`         | Editor (`sources/`: panels, documents, undo commands) and runner (`runner/`).             |
-| `test/<cat>_tests/`       | Google Test, 16 categories, helpers in `test/test_helper/`.                               |
+| `test/<cat>_tests/`       | Google Test, 20 categories, helpers in `test/test_helper/`.                               |
 | `engine_assets/`          | Fonts, Slang shaders (`shaders/<renderer>/slang/`), textures, logo.                       |
 | `sample_project/`         | Feature showcase game: every engine feature must be demonstrated there.                   |
 | `ci/`, `ci_action.py`     | Python CI (`ci/actions/*` extend `BaseAction`, auto-discovered).                          |
@@ -106,6 +110,8 @@ Python, never a bare `conan`. Inside the container the venv lives in `/fhome/.ca
   `.claude/rules/renderer.md`.
 - Comment-stripping scripts must keep `// NOLINT*`, `// clang-format on/off`, `// IWYU pragma` lines;
   check that every `NOLINTBEGIN` / `clang-format off` stays balanced.
+- MinGW GCC does not export the `static constexpr` members of an `OWL_API` class: a test binding one to a reference
+  (`EXPECT_EQ(x, Class::max)`) fails to link on Windows GCC only; pass a copy (`size_t{Class::max}`).
 - `std::cerr` / iostreams are banned: logger macros, or `std::println(stderr, …)` before the logger exists.
 - Third-party code only through Conan (ConanCenter, else `conan/recipes/`), never vendored.
 - Editor SVG icons (`source/owlnest/assets_sources/icons/`) are hand-made: never edit them by script.

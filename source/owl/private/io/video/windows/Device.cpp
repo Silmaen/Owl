@@ -79,10 +79,8 @@ auto getPixelFormatString(const GUID& videoFormat) -> std::string {
 		return "RGB565";
 	if (videoFormat == MFVideoFormat_UYVY)
 		return "UYVY";
-	//if (videoFormat == MFVideoFormat_Y411) return "Y411";
 	if (videoFormat == MFVideoFormat_Y41P)
 		return "Y41P";
-	//if (videoFormat == MFVideoFormat_YUV) return "YUV";
 	if (videoFormat == MFVideoFormat_YUY2)
 		return "YUY2";
 	if (videoFormat == MFVideoFormat_YV12)
@@ -111,7 +109,6 @@ auto getPixelFormatString(const GUID& videoFormat) -> std::string {
 		return "I420";
 	if (videoFormat == MFVideoFormat_IYUV)
 		return "IYUV";
-	//if (videoFormat == MFVideoFormat_U420) return "U420";
 	if (videoFormat == MFVideoFormat_Y210)
 		return "Y210";
 	if (videoFormat == MFVideoFormat_Y216)
@@ -124,7 +121,6 @@ auto getPixelFormatString(const GUID& videoFormat) -> std::string {
 		return "Y41T";
 	if (videoFormat == MFVideoFormat_Y42T)
 		return "Y42T";
-	//if (videoFormat == MFVideoFormat_YVU420_MPEG2) return "YVU420_MPEG2";
 	if (videoFormat == MFVideoFormat_DVHD)
 		return "DVHD";
 	if (videoFormat == MFVideoFormat_DVSD)
@@ -149,7 +145,6 @@ auto getPixelFormatString(const GUID& videoFormat) -> std::string {
 		return "WMV3";
 	if (videoFormat == MFVideoFormat_WVC1)
 		return "WVC1";
-	//if (videoFormat == MFVideoFormat_FLV1) return "FLV1";
 	if (videoFormat == MFVideoFormat_HEVC)
 		return "HEVC";
 	return "Unknown";

@@ -213,20 +213,20 @@ bench (PR-17) and the image tests (PR-18) of phase B are in place, and runs alon
 A much more ergonomic editor, designed together with the maintainer, with no new feature: the existing tools
 reorganised, made discoverable and consistent. See [Owl Nest UI](nest-ui.md).
 
-- ![Planned][planned] Ergonomics review — main workflows walked through, pain points listed, target layout agreed
-- ![Planned][planned] Interaction basics — tooltips, context menus, consistent drag & drop, text scale and DPI
-- ![Planned][planned] Visual overhaul — theme, icon set, asset thumbnails, style guide, layout presets, cleaner ribbon
-- ![In Progress][progress] Editor camera controls overhaul — presets, interactive view-cube, sensitivity
+- ![Done][done] Ergonomics review — main workflows walked through, pain points listed, target layout agreed
+- ![Done][done] Interaction basics — tooltips, context menus, consistent drag & drop, text scale and DPI
+- ![Done][done] Visual overhaul — theme, icon set, asset thumbnails, style guide, layout presets, cleaner ribbon
+- ![Done][done] Editor camera controls overhaul — presets, interactive view-cube, sensitivity
 
 ## Performance work
 
-- ![Planned][planned] Dense per-frame transforms, direct TRS composition (PR-21: P-02, P-06, C-09)
+- ![Done][done] Dense per-frame transforms, direct TRS composition (PR-21: P-02, P-06, C-09)
 - ![Done][done] Fixed-step physics, multi-threaded Box2D solver on Taskflow (PR-22: D-05, P-12, D-14)
 - ![Done][done] Inspector serializes only the edited component, only on edit (PR-23: E-04)
 - ![Done][done] Voxel meshing on workers with a per-frame budget, neighbours invalidated; streaming frame peak
   14.3 → 0.35 ms (PR-24: D-08, P-09, B-15)
-- ![Planned][planned] Renderer2D per-frame transients, 2D sort order, UTF-8 text (PR-30: B-09, B-10, D-18)
-- ![Planned][planned] Persistent, chunked and culled tilemap (PR-31: B-13)
+- ![Planned][planned] Renderer2D per-frame transients, 2D sort order, UTF-8 text (PR-30: B-09, B-10, D-18) — carried over: transients and UTF-8 to v0.4.0, 2D sort to v0.5.0
+- ![Planned][planned] Persistent, chunked and culled tilemap (PR-31: B-13) — carried over to v0.4.0
 - ![Done][done] Faster scene loading: rapidyaml reads scenes, prefabs and snapshots, prefab instantiation copies
   through the component registry (10 000 entities: 1.21 s → 73 ms)
 - ![Done][done] Shaders precompiled at build time (both CPack components, embedded in a game pack), so the runner

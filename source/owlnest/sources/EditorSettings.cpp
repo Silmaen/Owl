@@ -120,6 +120,16 @@ void EditorSettings::loadFromFile(const std::filesystem::path& iFile) {
 			showTriggerIcons = config["showTriggerIcons"].as<bool>();
 		if (config["gizmoWorldSpace"])
 			gizmoWorldSpace = config["gizmoWorldSpace"].as<bool>();
+		if (config["cameraRotatePercent"])
+			cameraRotatePercent = std::clamp(config["cameraRotatePercent"].as<int>(), 10, 300);
+		if (config["cameraPanPercent"])
+			cameraPanPercent = std::clamp(config["cameraPanPercent"].as<int>(), 10, 300);
+		if (config["cameraZoomPercent"])
+			cameraZoomPercent = std::clamp(config["cameraZoomPercent"].as<int>(), 10, 300);
+		if (config["cameraInvertY"])
+			cameraInvertY = config["cameraInvertY"].as<bool>();
+		if (config["cameraDeadZone"])
+			cameraDeadZone = std::clamp(config["cameraDeadZone"].as<int>(), 0, 20);
 		if (config["autosaveIntervalSeconds"])
 			autosaveIntervalSeconds = std::clamp(config["autosaveIntervalSeconds"].as<int>(), 0, 3600);
 		if (config["layoutPreset"])
@@ -162,6 +172,11 @@ void EditorSettings::saveToFile(const std::filesystem::path& iFile) const {
 	out << YAML::Key << "showGrid" << YAML::Value << showGrid;
 	out << YAML::Key << "showTriggerIcons" << YAML::Value << showTriggerIcons;
 	out << YAML::Key << "gizmoWorldSpace" << YAML::Value << gizmoWorldSpace;
+	out << YAML::Key << "cameraRotatePercent" << YAML::Value << cameraRotatePercent;
+	out << YAML::Key << "cameraPanPercent" << YAML::Value << cameraPanPercent;
+	out << YAML::Key << "cameraZoomPercent" << YAML::Value << cameraZoomPercent;
+	out << YAML::Key << "cameraInvertY" << YAML::Value << cameraInvertY;
+	out << YAML::Key << "cameraDeadZone" << YAML::Value << cameraDeadZone;
 	out << YAML::Key << "autosaveIntervalSeconds" << YAML::Value << autosaveIntervalSeconds;
 	out << YAML::Key << "layoutPreset" << YAML::Value << layoutPreset;
 	out << YAML::Key << "layoutVersion" << YAML::Value << layoutVersion;

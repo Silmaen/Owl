@@ -28,10 +28,14 @@
 #include <gui/widgets/Menu.h>
 #include <gui/widgets/Tooltip.h>
 #include <owlgui.h>
+#include <renderer/RenderLayer.h>
+#include <renderer/RenderStack.h>
+#include <renderer/Renderer.h>
 #include <scene/SceneSerializer.h>
 #include <scene/TilemapAsset.h>
 #include <scene/component/RaycastDoor.h>
 #include <scene/component/RaycastPushWall.h>
+#include <scene/component/RendererTag.h>
 #include <scene/component/Tilemap.h>
 #include <scene/component/Visibility.h>
 
@@ -48,6 +52,7 @@ OWL_DIAG_POP
 #include <filesystem>
 #include <format>
 #include <optional>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -212,6 +217,14 @@ void Viewport::onUpdate(const core::Timestep& iTimeStep) {
 	activeScene->onViewportResize(getSize());
 
 	if (mp_document->state() == SceneDocument::State::Edit) {
+		if (m_parent != nullptr) {
+			const auto& settings = m_parent->getSettings();
+			m_editorCamera.setNavigation({.rotate = static_cast<float>(settings.cameraRotatePercent) / 100.f,
+										  .pan = static_cast<float>(settings.cameraPanPercent) / 100.f,
+										  .zoom = static_cast<float>(settings.cameraZoomPercent) / 100.f,
+										  .invertY = settings.cameraInvertY,
+										  .deadZone = static_cast<float>(settings.cameraDeadZone)});
+		}
 		if (isHovered())
 			m_editorCamera.onUpdate(iTimeStep);
 	}
@@ -349,6 +362,9 @@ void Viewport::renderContextMenu() {
 		const auto frameKey = m_parent->getActionShortcut("view.frameSelection");
 		if (gui::widgets::menuItem({.glyph = gui::icon::focus, .label = "Frame", .shortcut = frameKey.c_str()}))
 			frameSelection();
+		if (canGoToCameraViewpoint() &&
+			gui::widgets::menuItem({.glyph = gui::icon::video, .label = "Camera Viewpoint"}))
+			goToCameraViewpoint();
 		const auto duplicateKey = m_parent->getActionShortcut("entity.duplicate");
 		if (gui::widgets::menuItem({.glyph = gui::icon::copy, .label = "Duplicate", .shortcut = duplicateKey.c_str()}))
 			std::ignore = m_parent->runAction("entity.duplicate");
@@ -376,29 +392,143 @@ void Viewport::renderContextMenu() {
 		auto& settings = m_parent->getSettings();
 		if (gui::widgets::menuItem({.glyph = settings.showGrid ? gui::icon::check : nullptr, .label = "Grid"}))
 			settings.showGrid = !settings.showGrid;
+		if (gui::widgets::menuItem({.glyph = gui::icon::house, .label = "Reset View"}))
+			resetView();
+		if (gui::widgets::menuItem({.glyph = gui::icon::scan, .label = "Frame Scene"}))
+			frameScene();
 	}
 	ImGui::EndPopup();
 }
 
-void Viewport::renderCameraGizmo() const {
+void Viewport::renderCameraGizmo() {
 	if (mp_document == nullptr || mp_document->state() != SceneDocument::State::Edit)
 		return;
-	const math::mat4 view = m_editorCamera.getView();
-	// World axes mapped into view space; the (x, -y) components give their on-screen direction.
-	const std::array<std::pair<math::vec3, ImU32>, 3> axes{{{{1.f, 0.f, 0.f}, IM_COL32(230, 80, 80, 255)},
-															{{0.f, 1.f, 0.f}, IM_COL32(110, 210, 110, 255)},
-															{{0.f, 0.f, 1.f}, IM_COL32(90, 140, 235, 255)}}};
-	constexpr std::array<const char*, 3> labels{"X", "Y", "Z"};
-	constexpr float radius = 28.f;
-	const ImVec2 center{m_upper.x() - radius - 12.f, m_upper.y() - radius - 12.f};
-	auto* drawList = ImGui::GetWindowDrawList();
-	drawList->AddCircleFilled(center, radius + 4.f, IM_COL32(20, 20, 24, 120));
-	for (size_t i = 0; i < axes.size(); ++i) {
-		const math::vec4 v = view * math::vec4{axes[i].first.x(), axes[i].first.y(), axes[i].first.z(), 0.f};
-		const ImVec2 tip{center.x + v.x() * radius, center.y - v.y() * radius};
-		drawList->AddLine(center, tip, axes[i].second, 2.f);
-		drawList->AddText(ImVec2{tip.x - 4.f, tip.y - 7.f}, axes[i].second, labels[i]);
+	using Axis = renderer::CameraEditor::ViewAxis;
+	struct Tip {
+		math::vec3 direction;
+		ImU32 color;
+		const char* label;
+		Axis from;
+		const char* name;
+	};
+	constexpr ImU32 red = IM_COL32(230, 80, 80, 255);
+	constexpr ImU32 green = IM_COL32(110, 210, 110, 255);
+	constexpr ImU32 blue = IM_COL32(90, 140, 235, 255);
+	constexpr std::array<Tip, 6> tips{{{{1.f, 0.f, 0.f}, red, "X", Axis::Right, "Right (+X)"},
+									   {{-1.f, 0.f, 0.f}, red, nullptr, Axis::Left, "Left (-X)"},
+									   {{0.f, 1.f, 0.f}, green, "Y", Axis::Top, "Top (+Y)"},
+									   {{0.f, -1.f, 0.f}, green, nullptr, Axis::Bottom, "Bottom (-Y)"},
+									   {{0.f, 0.f, 1.f}, blue, "Z", Axis::Front, "Front (+Z)"},
+									   {{0.f, 0.f, -1.f}, blue, nullptr, Axis::Back, "Back (-Z)"}}};
+	constexpr float radius = 30.f;
+	constexpr float tipRadius = 7.f;
+	constexpr float margin = 10.f;
+	constexpr float side = 2.f * (radius + tipRadius + 2.f);
+	ImGui::SetNextWindowPos({m_upper.x() - margin, m_upper.y() - margin}, ImGuiCond_Always, {1.f, 1.f});
+	ImGui::SetNextWindowSize({side, side});
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{0.f, 0.f});
+	constexpr ImGuiWindowFlags flags =
+			ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
+			ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse |
+			ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoSavedSettings |
+			ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoBackground;
+	const bool open =
+			ImGui::Begin(std::format("##vpCube{:x}", static_cast<uint64_t>(mp_document->id())).c_str(), nullptr, flags);
+	ImGui::PopStyleVar();
+	if (!open) {
+		ImGui::End();
+		return;
 	}
+	const ImVec2 origin = ImGui::GetWindowPos();
+	const ImVec2 center{origin.x + side * 0.5f, origin.y + side * 0.5f};
+	const math::mat4 view = m_editorCamera.getView();
+	// World axes mapped into view space: (x, -y) is their direction on screen, z orders them back to front.
+	std::array<std::pair<ImVec2, float>, tips.size()> projected{};
+	for (size_t i = 0; i < tips.size(); ++i) {
+		const auto& dir = tips[i].direction;
+		const math::vec4 v = view * math::vec4{dir.x(), dir.y(), dir.z(), 0.f};
+		projected[i] = {{center.x + v.x() * radius, center.y - v.y() * radius}, v.z()};
+	}
+	std::array<size_t, tips.size()> order{0, 1, 2, 3, 4, 5};
+	std::ranges::sort(order, [&projected](const size_t iA, const size_t iB) -> bool {
+		return projected[iA].second < projected[iB].second;
+	});
+	const ImVec2 mouse = ImGui::GetMousePos();
+	const bool windowHovered = ImGui::IsWindowHovered();
+	const auto distanceSq = [&mouse](const ImVec2& iPoint) -> float {
+		return (mouse.x - iPoint.x) * (mouse.x - iPoint.x) + (mouse.y - iPoint.y) * (mouse.y - iPoint.y);
+	};
+	// The front-most tip under the cursor wins; the centre resets the view.
+	std::optional<size_t> hovered;
+	if (windowHovered) {
+		for (const size_t index: order)
+			if (distanceSq(projected[index].first) <= tipRadius * tipRadius)
+				hovered = index;
+	}
+	const bool centreHovered = windowHovered && !hovered && distanceSq(center) <= tipRadius * tipRadius;
+	auto* drawList = ImGui::GetWindowDrawList();
+	const auto& theme = gui::UiLayer::getTheme();
+	drawList->AddCircleFilled(center, radius + tipRadius,
+							  windowHovered ? IM_COL32(20, 20, 24, 170) : IM_COL32(20, 20, 24, 110));
+	drawList->AddCircleFilled(center, centreHovered ? 5.f : 3.f,
+							  ImGui::GetColorU32(gui::vec(centreHovered ? theme.accent : theme.textMuted)));
+	for (const size_t index: order) {
+		const auto& tip = tips[index];
+		const ImVec2 pos = projected[index].first;
+		const bool isHovered = hovered == index;
+		if (tip.label != nullptr) {
+			drawList->AddLine(center, pos, tip.color, 2.f);
+			drawList->AddCircleFilled(pos, tipRadius, tip.color);
+			const ImVec2 textSize = ImGui::CalcTextSize(tip.label);
+			drawList->AddText({pos.x - textSize.x * 0.5f, pos.y - textSize.y * 0.5f}, IM_COL32(20, 20, 24, 255),
+							  tip.label);
+		} else {
+			drawList->AddCircleFilled(pos, tipRadius - 1.f, (tip.color & 0x00FFFFFFu) | 0x50000000u);
+			drawList->AddCircle(pos, tipRadius - 1.f, tip.color, 0, 1.5f);
+		}
+		if (isHovered)
+			drawList->AddCircle(pos, tipRadius + 2.f, ImGui::GetColorU32(gui::vec(theme.accent)), 0, 2.f);
+	}
+	if (hovered) {
+		gui::widgets::richTooltip(std::format("View from {}", tips[*hovered].name).c_str(), nullptr,
+								  "Turn the camera to look from this side, around the same point.");
+		if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+			m_editorCamera.viewAlong(tips[*hovered].from);
+	} else if (centreHovered) {
+		gui::widgets::richTooltip("Reset View", nullptr, "Face the XY plane from +Z, ten units from the origin.");
+		if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+			m_editorCamera.resetView();
+	}
+	ImGui::End();
+}
+
+void Viewport::renderCameraMenu() {
+	using Axis = renderer::CameraEditor::ViewAxis;
+	gui::widgets::menuHeader("Camera");
+	if (gui::widgets::menuItem({.glyph = gui::icon::house, .label = "Reset View"}))
+		resetView();
+	const bool hasSelection = m_parent != nullptr && m_parent->getSelectedEntity();
+	const auto frameKey = m_parent != nullptr ? m_parent->getActionShortcut("view.frameSelection") : std::string{};
+	if (gui::widgets::menuItem({.glyph = gui::icon::focus,
+								.label = "Frame Selection",
+								.shortcut = frameKey.c_str(),
+								.enabled = hasSelection}))
+		frameSelection();
+	if (gui::widgets::menuItem({.glyph = gui::icon::scan, .label = "Frame Scene"}))
+		frameScene();
+	if (gui::widgets::menuItem(
+				{.glyph = gui::icon::video, .label = "Selected Camera Viewpoint", .enabled = canGoToCameraViewpoint()}))
+		goToCameraViewpoint();
+	ImGui::Separator();
+	constexpr std::array<std::pair<Axis, const char*>, 6> views{{{Axis::Front, "Front (XY)"},
+																 {Axis::Back, "Back"},
+																 {Axis::Top, "Top (XZ)"},
+																 {Axis::Bottom, "Bottom"},
+																 {Axis::Right, "Right (YZ)"},
+																 {Axis::Left, "Left"}}};
+	for (const auto& [axis, label]: views)
+		if (gui::widgets::menuItem({.glyph = gui::icon::cuboid, .label = label}))
+			viewAlong(axis);
 }
 
 void Viewport::renderOverlay() const {
@@ -853,6 +983,74 @@ void Viewport::renderOverlayToolbar() {
 	endOverlay();
 }
 
+void Viewport::frameScene() {
+	if (mp_document == nullptr)
+		return;
+	const auto& activeScene = mp_document->getActiveScene();
+	if (!activeScene)
+		return;
+	std::optional<std::pair<math::vec3, math::vec3>> bounds;
+	for (const auto entity: activeScene->registry.view<scene::component::Transform>()) {
+		const math::Transform world = activeScene->getWorldTransform(scene::Entity{entity, activeScene.get()});
+		const math::vec3 half = world.scale() * 0.5f;
+		const math::vec3 low = world.translation() - half;
+		const math::vec3 high = world.translation() + half;
+		if (!bounds) {
+			bounds = {low, high};
+			continue;
+		}
+		for (size_t axis = 0; axis < 3; ++axis) {
+			bounds->first[axis] = std::min(bounds->first[axis], low[axis]);
+			bounds->second[axis] = std::max(bounds->second[axis], high[axis]);
+		}
+	}
+	if (!bounds) {
+		m_editorCamera.resetView();
+		return;
+	}
+	const math::vec3 center = (bounds->first + bounds->second) * 0.5f;
+	m_editorCamera.frame(center, (bounds->second - bounds->first).norm() * 0.5f);
+}
+
+auto Viewport::canGoToCameraViewpoint() const -> bool {
+	if (m_parent == nullptr)
+		return false;
+	const scene::Entity selected = m_parent->getSelectedEntity();
+	if (!selected || !selected.hasComponent<scene::component::Camera>())
+		return false;
+	const auto& stack = renderer::Renderer::getRenderStack();
+	if (stack.isEmpty())
+		return true;
+	shared<renderer::RenderLayer> layer;
+	if (selected.hasComponent<scene::component::RendererTag>())
+		layer = stack.findByName(selected.getComponent<scene::component::RendererTag>().rendererName);
+	if (!layer)
+		layer = stack.getDefaultLayer();
+	return !layer || std::string_view{layer->getTypeKey()} != "RendererRaycast";
+}
+
+void Viewport::goToCameraViewpoint() {
+	if (!canGoToCameraViewpoint() || mp_document == nullptr || !mp_document->getActiveScene())
+		return;
+	const scene::Entity selected = m_parent->getSelectedEntity();
+	const auto& sceneCamera = selected.getComponent<scene::component::Camera>().camera;
+	const math::Transform world = mp_document->getActiveScene()->getWorldTransform(selected);
+	using Projection = renderer::CameraEditor::Projection;
+	if (sceneCamera.getProjectionType() == scene::SceneCamera::ProjectionType::Orthographic) {
+		// The 2D view shows `distance * tan(fov / 2)` above and below its centre: match the camera's half size.
+		const float halfHeight = sceneCamera.getOrthographicSize() * 0.5f;
+		const float distance = std::max(1.f, halfHeight / std::tan(math::radians(m_editorCamera.getFov()) * 0.5f));
+		m_editorCamera.setDistance(distance);
+		m_editorCamera.setProjection(Projection::Orthographic);
+		const math::vec3 eye{world.translation().x(), world.translation().y(), distance};
+		m_editorCamera.lookFrom(eye, {0.f, 0.f, -1.f});
+		return;
+	}
+	const math::vec4 forward = world() * math::vec4{0.f, 0.f, -1.f, 0.f};
+	m_editorCamera.setProjection(Projection::Perspective);
+	m_editorCamera.lookFrom(world.translation(), {forward.x(), forward.y(), forward.z()});
+}
+
 void Viewport::renderViewOverlay() {
 	using gui::widgets::iconButton;
 	using Projection = renderer::CameraEditor::Projection;
@@ -898,6 +1096,16 @@ void Viewport::renderViewOverlay() {
 								 .description = "Centre the view on the selected entity.",
 								 .disabled = !m_parent->getSelectedEntity()}))
 			frameSelection();
+		ImGui::SameLine();
+		if (iconButton("camera", {.glyph = gui::icon::video,
+								  .tooltip = "Camera",
+								  .description = "Reset the view, look along an axis, frame the scene or move onto the "
+												 "selected camera."}))
+			ImGui::OpenPopup("##camera");
+		if (ImGui::BeginPopup("##camera")) {
+			renderCameraMenu();
+			ImGui::EndPopup();
+		}
 		ImGui::SameLine();
 		if (iconButton("stats", {.glyph = gui::icon::gauge,
 								 .tooltip = "Frame stats",

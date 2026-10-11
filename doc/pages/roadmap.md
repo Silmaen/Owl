@@ -113,6 +113,7 @@ post-processing — with full 3D editing ([details](design/3d-core.md)).
 
 **Goal:** Complete the 2D experience — lighting, text, full 2D physics ([details](design/2d-complete.md)).
 
+- ![Planned][planned] Guaranteed 2D draw order: a sort key instead of the primitive type and storage order (PR-30: B-10)
 - ![Planned][planned] 2D lighting (point / spot lights, normal-mapped sprites, 2D shadows)
 - ![Planned][planned] Full 2D physics: callbacks, queries, joints, 3D-ready API ([Physics](design/physics-api.md))
 - ![Planned][planned] Aspect-correct text with alignment and fit modes
@@ -128,57 +129,33 @@ post-processing — with full 3D editing ([details](design/3d-core.md)).
 **Goal:** A third non-2D mode — a Transport Tycoon-style isometric renderer — plus a local MCP server in Owl Nest,
 basic gamepad support and a reworked HUD system with its editor.
 
+- ![Planned][planned] Persistent, chunked and culled tilemaps, before the isometric layer (PR-31: B-13)
 - ![Planned][planned] `RendererIsometric` layer, heightmap tiles, editor support ([details](design/isometric.md))
 - ![Planned][planned] MCP server built into Owl Nest, on the editor command API ([MCP server](design/mcp-server.md))
 - ![Planned][planned] Input actions and basic gamepad support ([Input](design/windowing-input.md))
+- ![Planned][planned] Renderer2D transients sized per frame and UTF-8 text with a wider charset (PR-30: B-09, D-18)
 - ![Planned][planned] HUD system overhaul: dedicated HUD layer and a HUD editor in Owl Nest ([details](design/2d-complete.md))
 - ![To evaluate][evaluate] Node-based editing of other assets (scripts first), with the visual scripting of v0.7.0
 
-## v0.3.0 -- Expected 2027-01-15
+## v0.3.0 -- 2026-10-11
 
-**Goal:** Foundations — phase 0 first and closed before the rest starts (Conan as the only provider, breaking
-dependency upgrades), then every known bug fixed, safety nets, Owl RHI repaired, architecture opened, iteration sped
-up, Owl Nest made ergonomic. No new gameplay feature ([details](design/foundations.md)). Order, one PR each: the
-rest of A and B, then D, then C, then E.
+**Goal:** Foundations — every known bug fixed, safety nets, Owl RHI repaired, architecture opened, iteration sped up,
+Owl Nest made ergonomic. No new gameplay feature ([details](design/foundations.md)).
 
-- ![Done][done] teamcity-github-bridge 1.10.0 wiring (diff annotations, doc-only PRs skip the C++ matrix)
-- ![Done][done] Phase 0 — Conan 2 on ConanCenter, missing recipes first, every preset green in CI ([Conan](design/conan-migration.md))
-- ![Done][done] Phase 0 — breaking upgrades first: EnTT 4, Taskflow 4.1, lagging dependencies
-- ![Done][done] Phase 0 — DepManager and `owl_engine.py` removed: Conan the only provider, consumers on the packaged archive
-- ![Done][done] Phase A — every confirmed correctness bug fixed with its regression test (PR-01 to PR-25; B-19 in phase C)
-- ![Done][done] Phase A — `on_collision` implemented from Box2D contact events (D-07)
-- ![Done][done] Phase A — game export tested end to end, sample run headless ([Export](design/game-export.md))
-- ![Done][done] Phase A — full Wayland: icon, editor multi-window, X11 kept ([details](design/windowing-input.md))
-- ![Done][done] Phase A — OpenGL compatibility backend fixed and tested, mipmaps and Nearest filtering on both backends
-- ![Done][done] Phase B — engine benchmark harness `bench/` (`OWL_BENCHMARK`), runner cold start measured
-- ![Done][done] Phase B — diff-scoped clang-tidy CI action, parallel by default (H-03)
-- ![Done][done] Phase B — blocking sanitizers, shuffled test order, LSan job removed (PR-11)
-- ![Done][done] Phase B — CI in two parallel levels, fast subset for `Experiment/*` PRs, `PR Ready` merge gate
-- ![Done][done] Phase B — package once per platform from the tested release tree, no rebuild ([details](design/foundations.md))
-- ![Done][done] Phase B — Tracy behind `OWL_PROFILE_*`, memory tracker opt-in, cheaper logs (PR-16, [Profiling](profiling.md))
-- ![Done][done] Phase B — runner frame bench: `OwlRunner --frame-bench`, GPU timestamps, Vulkan/OpenGL baseline (PR-17)
-- ![Done][done] Phase B — editor tests: `owlnest_tests` (undo, every command family, snapshots)
-- ![Done][done] Phase B — image tests on lavapipe / llvmpipe, validation clean, OpenGL GLSL fallback (PR-18)
-- ![Done][done] Phase B — tests without a window: scripted headless runner (`OwlRunner --scenario`)
-- ![Done][done] Phase B — benchmarks in CI: compiled on every PR, nightly run against a baseline (+15 % fails)
-- ![Done][done] Phase B — module dependency check, CI tooling tests
-- ![Done][done] Phase D — public dependencies reduced to EnTT (+ `Owl::Gui`) ([details](design/conan-migration.md))
-- ![Done][done] Phase D — configure without network or Doxygen, CMake clean-up (PR-26)
-- ![Done][done] Phase D — hot reload of assets, Slang shaders and Lua scripts ([Editor](editor.md#editor-hot-reload))
-- ![Done][done] Phase D — autosave, crash recovery, session restore, error messages, project templates
-- ![Done][done] Phase D — documentation faithful to the code, checked in CI, Doxygen checking the public API
-- ![Done][done] Phase C — Vulkan foundation first, as soon as the image tests land ([RHI](design/owl-rhi.md))
-- ![Done][done] Phase C — Owl RHI named, OpenGL frozen as fallback, backend interface ready for more
-- ![Done][done] Phase C — ABI cleanup, world per scene, phased systems, open component registry
-- ![Done][done] Phase C — optional CMake modules so each game can specialise the engine
-- ![Done][done] Phase C — `EditorLayer` split (packager, ribbon, project opening), level transitions shared
-- ![Done][done] Phase C — editor command API: named, undoable commands for the editor, the runner and the tests
-- ![Done][done] Phase C — typed Lua binding registry, generated [Lua API reference](lua-api.md)
-- ![Done][done] Phase C — SDL3 evaluation: Owl stays on GLFW (SDL3 rejected, gamepads included), OpenAL kept
-- ![In Progress][progress] Phase E — Owl Nest ergonomics revamp, designed together, no new feature ([Nest UI](design/nest-ui.md))
-- ![Done][done] Phase E — interaction basics: tooltips, context menus, drag & drop, text scale / DPI (`GLFW_SCALE_FRAMEBUFFER`)
-- ![Done][done] Phase E — visual overhaul: theme, icon set, thumbnails, style guide ([style guide](design/nest-style-guide.md))
-- ![In Progress][progress] Phase E — editor camera controls overhaul (presets, view-cube, sensitivity)
+- ![Done][done] Phase 0 — Conan 2 the only dependency provider (ConanCenter + local recipes), breaking upgrades first
+  (EnTT 4, Taskflow 4.1) ([Conan](design/conan-migration.md))
+- ![Done][done] Phase A — every confirmed correctness bug fixed with its regression test, `on_collision`, game export
+  tested end to end, full Wayland, OpenGL compatibility backend fixed
+- ![Done][done] Phase B — benchmark harness and runner frame bench in CI, blocking sanitizers, image tests on
+  lavapipe / llvmpipe, headless `OwlRunner --scenario`, editor tests, two-level CI with a `PR Ready` gate, Tracy
+  ([Profiling](profiling.md))
+- ![Done][done] Phase C — Vulkan first behind Owl RHI, OpenGL frozen as fallback, ABI clean-up, world per scene,
+  optional engine modules, editor command API, typed Lua bindings ([Lua API](lua-api.md)), Owl stays on GLFW
+- ![Done][done] Phase D — public dependencies reduced to EnTT, hot reload of assets, shaders and scripts, autosave,
+  crash recovery, session restore, project templates, documentation checked in CI
+- ![Done][done] Phase E — Owl Nest ergonomics revamp: default layout, ribbon and File screen, command palette, context
+  menus, drag & drop, text scale, Owl theme and duotone icons, asset previews, camera presets and view-cube
+  ([Nest UI](design/nest-ui.md))
 - ![Done][done] Performance targets met or accepted ([targets](design/foundations.md#performance-targets))
 
 ## v0.2.1 -- 2026-06-27

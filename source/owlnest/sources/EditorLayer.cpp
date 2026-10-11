@@ -42,6 +42,7 @@
 #include <cstdlib>
 #include <format>
 #include <fstream>
+#include <functional>
 #include <sstream>
 #include <string_view>
 #include <tuple>
@@ -188,6 +189,33 @@ void EditorLayer::handleContentBrowserDrop(const std::filesystem::path& iRelativ
 		instantiatePrefab(full, relString);
 	else
 		requestDeferredOpen(full);
+}
+
+void EditorLayer::registerCameraActions() {
+	const auto onViewport = [this](std::function<void(panel::Viewport&)> iAction) -> std::function<void()> {
+		return [this, action = std::move(iAction)]() -> void {
+			if (auto* vp = activeViewport(); vp != nullptr && getState() == State::Edit)
+				action(*vp);
+		};
+	};
+	m_actionRegistry.registerAction("view.resetCamera", "Camera: Reset View", {input::key::Home, Modifiers::None},
+									onViewport([](panel::Viewport& ioViewport) -> void { ioViewport.resetView(); }));
+	m_actionRegistry.registerAction("view.frameScene", "Camera: Frame Scene", {input::key::F, Modifiers::Shift},
+									onViewport([](panel::Viewport& ioViewport) -> void { ioViewport.frameScene(); }));
+	m_actionRegistry.registerAction(
+			"view.cameraViewpoint", "Camera: Selected Camera Viewpoint", {},
+			onViewport([](panel::Viewport& ioViewport) -> void { ioViewport.goToCameraViewpoint(); }));
+	using Axis = renderer::CameraEditor::ViewAxis;
+	constexpr std::array<std::tuple<Axis, const char*, const char*>, 6> views{
+			{{Axis::Front, "view.cameraFront", "Camera: Front View (XY)"},
+			 {Axis::Back, "view.cameraBack", "Camera: Back View"},
+			 {Axis::Top, "view.cameraTop", "Camera: Top View (XZ)"},
+			 {Axis::Bottom, "view.cameraBottom", "Camera: Bottom View"},
+			 {Axis::Right, "view.cameraRight", "Camera: Right View (YZ)"},
+			 {Axis::Left, "view.cameraLeft", "Camera: Left View"}}};
+	for (const auto& [axis, id, label]: views)
+		m_actionRegistry.registerAction(
+				id, label, {}, onViewport([axis](panel::Viewport& ioViewport) -> void { ioViewport.viewAlong(axis); }));
 }
 
 void EditorLayer::registerTextScaleActions() {
@@ -425,6 +453,7 @@ void EditorLayer::onAttach() {
 												 (vp->isFocused() || vp->isHovered()))
 					vp->frameSelection();
 			});
+	registerCameraActions();
 	m_actionRegistry.registerAction("view.toggleProjection", "Toggle 2D / 3D View", {}, [this]() -> void {
 		if (auto* vp = activeViewport(); vp != nullptr) {
 			using Projection = renderer::CameraEditor::Projection;

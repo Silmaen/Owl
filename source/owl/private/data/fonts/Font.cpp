@@ -27,9 +27,7 @@ struct MsdfData {
 namespace {
 template<typename T, typename S, int N, msdf_atlas::GeneratorFunction<S, N> GenFunc>
 
-auto createAndCacheAtlas([[maybe_unused]] const std::string& iFontName, [[maybe_unused]] float iFontSize,
-						 const std::vector<msdf_atlas::GlyphGeometry>& iGlyphs,
-						 [[maybe_unused]] const msdf_atlas::FontGeometry& iFontGeometry, math::vec2i iSize)
+auto createAtlas(const std::vector<msdf_atlas::GlyphGeometry>& iGlyphs, math::vec2i iSize)
 		-> shared<renderer::gpu::Texture2D> {
 	msdf_atlas::GeneratorAttributes attributes;
 	attributes.config.overlapSupport = true;
@@ -83,9 +81,8 @@ Font::Font(const std::filesystem::path& iPath, const bool iIsDefault) : m_defaul
 
 	OWL_CORE_INFO("Font {}: Loaded {} glyphs from font (out of {}).", iPath.filename().stem().string(), glyphsLoaded,
 				  charset.size())
-	double emSize = 40.0;
+	constexpr double emSize = 40.0;
 	msdf_atlas::TightAtlasPacker atlasPacker;
-	// atlasPacker.setDimensionsConstraint()
 	atlasPacker.setPixelRange(2.0);
 	atlasPacker.setMiterLimit(1.0);
 	atlasPacker.setScale(emSize);
@@ -95,7 +92,6 @@ Font::Font(const std::filesystem::path& iPath, const bool iIsDefault) : m_defaul
 	}
 	math::vec2i size;
 	atlasPacker.getDimensions(size.x(), size.y());
-	emSize = atlasPacker.getScale();
 
 #define DEFAULT_ANGLE_THRESHOLD 3.0
 	constexpr uint64_t lcgMultiplier = 6364136223846793005;
@@ -122,25 +118,7 @@ Font::Font(const std::filesystem::path& iPath, const bool iIsDefault) : m_defaul
 			glyph.edgeColoring(msdfgen::edgeColoringInkTrap, DEFAULT_ANGLE_THRESHOLD, glyphSeed);
 		}
 	}
-	m_atlasTexture = createAndCacheAtlas<uint8_t, float, 3, msdf_atlas::msdfGenerator>(
-			"Test", static_cast<float>(emSize), m_data->glyphs, m_data->fontGeometry, size);
-#if 0
-	msdfgen::Shape shape;
-	if (msdfgen::loadGlyph(shape, font, 'C'))
-	{
-		shape.normalize();
-
-		//                      max. angle
-		msdfgen::edgeColoringSimple(shape, 3.0);
-		//           image width, height
-		msdfgen::Bitmap<float, 3> msdf(32, 32);
-
-		//                     range, scale, translation
-		msdfgen::generateMSDF(msdf, shape, 4.0, 1.0, msdfgen::Vector2(4.0, 4.0));
-
-		msdfgen::savePng(msdf, "output.png");
-	}
-#endif
+	m_atlasTexture = createAtlas<uint8_t, float, 3, msdf_atlas::msdfGenerator>(m_data->glyphs, size);
 
 	destroyFont(font);
 

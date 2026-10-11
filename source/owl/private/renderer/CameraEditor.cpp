@@ -15,6 +15,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <numbers>
 
 namespace owl::renderer {
 
@@ -32,7 +33,8 @@ CameraEditor::~CameraEditor() = default;
 
 void CameraEditor::onUpdate([[maybe_unused]] const core::Timestep& iTimeStep) {
 	const math::vec2 mouse{input::Input::getMouseX(), input::Input::getMouseY()};
-	const math::vec2 delta = (mouse - m_initialMousePosition) * 0.003f;
+	const math::vec2 pixels = mouse - m_initialMousePosition;
+	const math::vec2 delta = pixels * 0.003f;
 	// Track the cursor every frame so re-engaging a drag never produces a jump from a stale anchor.
 	m_initialMousePosition = mouse;
 	const bool alt = input::Input::isKeyPressed(input::key::LeftAlt);
@@ -40,6 +42,18 @@ void CameraEditor::onUpdate([[maybe_unused]] const core::Timestep& iTimeStep) {
 	const bool lmb = input::Input::isMouseButtonPressed(input::mouse::ButtonLeft);
 	const bool rmb = input::Input::isMouseButtonPressed(input::mouse::ButtonRight);
 	const bool mmb = input::Input::isMouseButtonPressed(input::mouse::ButtonMiddle);
+	if (!(alt || ctrl) || !(lmb || rmb || mmb)) {
+		m_dragTravel = 0.f;
+		updateView();
+		return;
+	}
+	// The drag moves nothing until the cursor has left the dead zone around where it started.
+	const bool inDeadZone = m_dragTravel < m_navigation.deadZone;
+	m_dragTravel += pixels.norm();
+	if (inDeadZone) {
+		updateView();
+		return;
+	}
 	if (alt) {
 		// Alt: camera-local navigation (the camera moves, its reference point follows).
 		if (lmb)
@@ -140,8 +154,61 @@ void CameraEditor::frame(const math::vec3& iCenter, const float iRadius) {
 	updateProjection();
 }
 
+void CameraEditor::viewAlong(const ViewAxis iAxis) {
+	constexpr float quarter = std::numbers::pi_v<float> * 0.5f;
+	switch (iAxis) {
+		case ViewAxis::Front:
+			m_pitch = 0.f;
+			m_yaw = 0.f;
+			break;
+		case ViewAxis::Back:
+			m_pitch = 0.f;
+			m_yaw = 2.f * quarter;
+			break;
+		case ViewAxis::Top:
+			m_pitch = quarter;
+			m_yaw = 0.f;
+			break;
+		case ViewAxis::Bottom:
+			m_pitch = -quarter;
+			m_yaw = 0.f;
+			break;
+		case ViewAxis::Right:
+			m_pitch = 0.f;
+			m_yaw = -quarter;
+			break;
+		case ViewAxis::Left:
+			m_pitch = 0.f;
+			m_yaw = quarter;
+			break;
+	}
+	updateView();
+}
+
+void CameraEditor::resetView() {
+	m_focalPoint = {0.f, 0.f, 0.f};
+	m_distance = 10.f;
+	m_pitch = 0.f;
+	m_yaw = 0.f;
+	updateView();
+	updateProjection();
+}
+
+void CameraEditor::lookFrom(const math::vec3& iEye, const math::vec3& iForward) {
+	if (const float length = iForward.norm(); length > 1e-6f) {
+		// Inverse of `getForwardDirection()`: forward = (cos p sin y, -sin p, -cos p cos y).
+		const math::vec3 forward = iForward / length;
+		m_pitch = std::asin(std::clamp(-forward.y(), -1.f, 1.f));
+		m_yaw = std::atan2(forward.x(), -forward.z());
+	}
+	m_focalPoint = iEye + getForwardDirection() * m_distance;
+	updateView();
+}
+
 void CameraEditor::mousePan(const math::vec2& iDelta) {
 	auto [xSpeed, ySpeed] = panSpeed();
+	xSpeed *= m_navigation.pan;
+	ySpeed *= m_navigation.pan;
 	m_focalPoint += -getRightDirection() * iDelta.x() * xSpeed * m_distance;
 	m_focalPoint += getUpDirection() * iDelta.y() * ySpeed * m_distance;
 }
@@ -151,7 +218,7 @@ void CameraEditor::mouseRotate(const math::vec2& iDelta) {
 		return;
 	const float yawSign = getUpDirection().y() < 0 ? -1.0f : 1.0f;
 	m_yaw += yawSign * iDelta.x() * rotationSpeed();
-	m_pitch += iDelta.y() * rotationSpeed();
+	m_pitch += pitchSign() * iDelta.y() * rotationSpeed();
 }
 
 void CameraEditor::rotateInPlace(const math::vec2& iDelta) {
@@ -161,14 +228,16 @@ void CameraEditor::rotateInPlace(const math::vec2& iDelta) {
 	const math::vec3 eye = m_position;
 	const float yawSign = getUpDirection().y() < 0 ? -1.0f : 1.0f;
 	m_yaw += yawSign * iDelta.x() * rotationSpeed();
-	m_pitch += iDelta.y() * rotationSpeed();
+	m_pitch += pitchSign() * iDelta.y() * rotationSpeed();
 	m_focalPoint = eye + getForwardDirection() * m_distance;
 }
 
-void CameraEditor::mouseDolly(const float iDelta) { m_focalPoint += getForwardDirection() * iDelta * m_distance; }
+void CameraEditor::mouseDolly(const float iDelta) {
+	m_focalPoint += getForwardDirection() * iDelta * m_navigation.zoom * m_distance;
+}
 
 void CameraEditor::mouseZoom(const float iDelta) {
-	m_distance -= iDelta * zoomSpeed();
+	m_distance -= iDelta * m_navigation.zoom * zoomSpeed();
 	if (m_distance < 1.0f) {
 		m_focalPoint += getForwardDirection();
 		m_distance = 1.0f;
@@ -187,7 +256,9 @@ auto CameraEditor::panSpeed() const -> std::pair<float, float> {
 	return {xFactor, yFactor};
 }
 
-auto CameraEditor::rotationSpeed() const -> float { return 0.8f; }
+auto CameraEditor::rotationSpeed() const -> float { return 0.8f * m_navigation.rotate; }
+
+auto CameraEditor::pitchSign() const -> float { return m_navigation.invertY ? -1.f : 1.f; }
 
 auto CameraEditor::zoomSpeed() const -> float {
 	const float distance = std::max(m_distance * 0.2f, 0.0f);
