@@ -15,7 +15,7 @@ import pytest
 import requests
 
 from ci.actions.publish_doc import PublishDoc
-from ci.actions.publish_package import PublishPackage, find_archives
+from ci.actions.publish_package import PublishPackage, archive_flavor, find_archives
 from ci.tests.conftest import FAKE_PASSWORD
 from ci.utils import publish, secrets
 from ci.utils.publish import Revision, normalize_server_url, push_revision
@@ -155,6 +155,14 @@ def test_find_archives_keeps_one_archive_per_component(tmp_path: Path) -> None:
         ("OwlNest", "OwlNest-0.3.0-abcdef1-linux-glibc_2.43-x64.tar.gz"),
     ]
     assert find_archives(tmp_path, "0.3.0", "fedcba9", "tar.gz") == []
+
+
+def test_the_flavor_comes_from_the_archive_name_not_the_publishing_machine() -> None:
+    arm = Path("OwlNest-0.3.0-abcdef1-linux-glibc_2.43-arm64.tar.gz")
+    windows = Path("OwlEngine-0.3.0-abcdef1-windows-x64.zip")
+
+    assert archive_flavor(arm, "OwlNest", "0.3.0", "abcdef1", "tar.gz") == "linux glibc_2.43 arm64"
+    assert archive_flavor(windows, "OwlEngine", "0.3.0", "abcdef1", "zip") == "windows x64"
 
 
 def test_publish_package_needs_a_packaged_tree(masked_caplog: pytest.LogCaptureFixture) -> None:

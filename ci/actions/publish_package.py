@@ -12,7 +12,6 @@ from ci.utils.publish import (
     DEPLOY_PASSWORD_ENV,
     Revision,
     get_git_hash,
-    get_platform_info,
     get_project_version,
     normalize_server_url,
     push_revision,
@@ -76,8 +75,6 @@ class PublishPackage(BaseAction):
         if git_hash in ["0000000", "", None]:
             log.error("Could not determine git hash.")
             return 1
-        plat = get_platform_info()
-
         ext = preset.archive_format or "tar.gz"
         archives = find_archives(preset.get_build_dir(), version, git_hash, ext)
         if not archives:
@@ -91,7 +88,7 @@ class PublishPackage(BaseAction):
                 file=package_file,
                 hash=git_hash,
                 name=" ".join(re.findall("[A-Z][^A-Z]*", base_name)),
-                flavor_name=f"{plat['os']} {plat['arch']}",
+                flavor_name=archive_flavor(package_file, base_name, version, git_hash, ext),
                 date=datetime.now().isoformat(),
             )
             log.info(f"Package info: {revision}, user={login}, url={url}")
@@ -118,3 +115,21 @@ def find_archives(folder: Path, version: str, git_hash: str, ext: str) -> list[t
         if matches:
             found.append((base_name, matches[-1]))
     return found
+
+
+def archive_flavor(archive: Path, base_name: str, version: str, git_hash: str, ext: str) -> str:
+    """
+    Platform of an archive as the publication site names it, read from the archive name.
+
+    CPack names the archive after the target (`linux-glibc_2.43-arm64`), which differs from the machine running the
+    publication when the tree is cross compiled.
+
+    :param archive: The archive CPack wrote.
+    :param base_name: The package base name (`OwlEngine`, `OwlNest`).
+    :param version: The project version.
+    :param git_hash: The abbreviated commit hash.
+    :param ext: The archive extension (`tar.gz` or `zip`).
+    :return: The platform words of the archive name, e.g. `linux glibc_2.43 arm64`.
+    """
+    platform_part = archive.name.removeprefix(f"{base_name}-{version}-{git_hash}-").removesuffix(f".{ext}")
+    return platform_part.replace("-", " ")

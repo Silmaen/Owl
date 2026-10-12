@@ -649,6 +649,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (`assets_sources/icons/`).
 - Draw calls written for the parameter order of imgui before 1.92.8 (flags before thickness) no longer fail and draw
 - Nightly checks green again: `documentWindowTitle` no longer stores a value it overwrites (static analyzer), and the multi-threaded physics steps of 100 bodies, dominated by the worker wake-up, get a 40 % threshold (`bench/thresholds.json`).
+- The Linux arm64 packages are published as arm64 instead of overwriting the x64 entry of the site: `PublishPackage` reads the platform from the archive name, not from the machine that cross compiled it.
   nothing: the tick of a checked box, the tile and cell selection outlines of the tileset and tilemap editors, the
   palette swatch outlines, the Play frame of the viewport, and in imguizmo the curve editor points, the graph editor
   links and node borders and the gradient markers (patched in the local recipe).
