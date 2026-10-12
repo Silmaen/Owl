@@ -401,7 +401,7 @@ injected as globals before `on_create`.
 ### UI Components
 
 UI elements render in screen space via a **Canvas** parent entity. All UI entities must be
-children (direct or nested) of an entity with a `Canvas` component.
+direct children of an entity with a `Canvas` component (nested layouts arrive with the v0.4.0 HUD).
 
 #### Canvas
 

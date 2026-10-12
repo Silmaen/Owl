@@ -7,7 +7,9 @@ on the deterministic simulation, the per-scene world (PR-33) and the open compon
 
 ## Deterministic simulation
 
-- Fixed-step simulation (physics, scripts, timers) independent from the frame rate (builds on PR-22)
+- Fixed-step simulation (physics, scripts, timers) independent from the frame rate: the clock and `on_tick` land in
+  v0.4.0 (SIM1 of [Isometric worlds](isometric-worlds.md)), v0.9.0 makes every system run on it
+- Replays record the v0.4.0 `ActionFrame` stream ([Windowing and input](windowing-input.md))
 - Seeded random streams per system; no wall-clock reads in gameplay code
 - Determinism test in CI: the same input log produces the same world hash on Linux and Windows
 

@@ -20,6 +20,8 @@ Design page for the Blueprints-style visual scripting, summarised in the [Roadma
 - Node palette generated from the typed binding registry, so every engine API is a node
 - Debugging: live values shown on the wires during Play, breakpoints on nodes
 - Full editor coverage: select-many, move-group, delete-group, copy / paste, undo
+- Node editing of other assets (scripts first) folds in here, on the same palette and compiler (decided at the v0.4.0
+  kickoff)
 
 ## Node-graph link waypoints (v0.7.0)
 

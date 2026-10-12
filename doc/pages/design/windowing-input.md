@@ -197,15 +197,34 @@ existing OpenGL and Vulkan ones, for no feature Owl lacks. The Owl RHI work (Pha
 
 ## Input actions and basic gamepad (v0.4.0)
 
-- Named actions bound to keys, mouse buttons and gamepad buttons / axes; Lua reads actions, not keys (K-30)
-- Gamepad backend on GLFW (`glfwGetGamepadState`, mappings through `glfwUpdateGamepadMappings`), so the gamepad
-  mentioned in the README becomes true (I-03, D-25)
-- Editor: action map edited in Project Settings, undoable
+Pull requests SIM1 and IN1 to IN4 of [Isometric worlds](isometric-worlds.md). Today input is polling only, without
+"just pressed" edges nor gamepad; injection works on the Null backend only; keys are hard-coded in engine systems
+(`ScenePlayer`, `VoxelPlayerSystem`, doors and push-walls) and Lua reads raw key codes.
+
+- **Fixed simulation tick** (SIM1): systems and Lua get an `on_tick` at a fixed step set in the project (60 Hz by
+  default), beside the variable `on_update`; physics always runs on this fixed clock. Input is sampled per tick, so
+  edges are not lost when the frame rate and the tick differ
+- **Input frames** (IN1): a plain-data `InputFrame` (keys, mouse buttons and position, gamepad states) sampled once
+  per tick; `isKeyJustPressed` / `isKeyJustReleased`; injection moved out of the backends into one frame source, so
+  scenarios, editor Play and the MCP server can inject on GLFW too
+- **Gamepad** (IN2): GLFW `glfwGetGamepadState` for pads 0–15, connect / disconnect events, an optional project
+  mapping file passed to `glfwUpdateGamepadMappings`, Null backend injection for tests, Lua
+  `input.is_gamepad_connected` / `get_gamepad_name`; the gamepad of the README becomes true (I-03, D-25)
+- **Dead zone and curve** (IN2, from v0.10.0): radial dead zone per binding (0.15 by default) and a response-curve
+  exponent
+- **Action map** (IN3): actions are buttons, 1D axes or 2D axes; a binding is a device (key, mouse button, gamepad
+  button, gamepad axis), a code and a scale, 2D actions also take key composites; `evaluate(map, previous, current)`
+  is a pure function producing an `ActionFrame`, the stream v0.9.0 records for replays (K-30)
+- The map lives in `input_actions.yml` with its `DocumentFormat`, packed with the game like `game_settings.yml`, with
+  room for a user override layer; Lua `input.is_action_pressed`, `is_action_just_pressed`, `is_action_just_released`,
+  `get_action_value`, `get_action_vector`; `input.is_key_pressed` kept and deprecated; scenarios gain an `actions:`
+  step; engine systems and sample scripts move to actions
+- **Editor** (IN4): an action map document with its own undo stack, opened from Project Settings; "press a key"
+  capture; default maps in the project templates; a live action monitor during Play
 
 ## Gamepad improvements (v0.10.0)
 
-- Controller remapping UI
-- Haptic feedback / vibration API
-- Analogue stick dead zone and curve configuration
+- Controller remapping UI, on the v0.4.0 HUD widgets and action map
+- Haptic feedback / vibration API (GLFW has none: to study)
 
 [done]: https://img.shields.io/badge/-Done-2ea043?style=flat-square
