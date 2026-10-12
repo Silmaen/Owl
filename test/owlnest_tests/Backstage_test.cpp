@@ -17,6 +17,7 @@
 #include <gtest/gtest.h>
 
 #include <filesystem>
+#include <fstream>
 #include <string>
 
 using namespace owl;
@@ -103,4 +104,21 @@ TEST_F(BackstageTest, EscapeClosesTheScreen) {
 	frame();
 	EXPECT_FALSE(m_backstage.isOpen());
 	EXPECT_EQ(m_actions, 0);
+}
+
+TEST(Backstage, FindsTheSampleProjectAboveTheAssets) {
+	const auto root = std::filesystem::temp_directory_path() / "owl_backstage_sample_test";
+	std::filesystem::remove_all(root);
+	const auto assets = root / "bin" / "linux_x64" / "assets";
+	std::filesystem::create_directories(assets);
+	// Nothing to find yet.
+	EXPECT_FALSE(findSampleProject({assets}).has_value());
+	std::filesystem::create_directories(root / "sample_project");
+	std::ofstream{root / "sample_project" / "owl_project.yml"} << "name: Sample\n";
+	const auto found = findSampleProject({root / "missing", assets});
+	ASSERT_TRUE(found.has_value());
+	EXPECT_EQ(*found, (root / "sample_project").lexically_normal());
+	// Too deep for the depth allowed.
+	EXPECT_FALSE(findSampleProject({assets}, 1).has_value());
+	std::filesystem::remove_all(root);
 }

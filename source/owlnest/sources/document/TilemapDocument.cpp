@@ -449,7 +449,7 @@ void TilemapDocument::renderCanvas() {
 		const ImVec2 selMin{gridTopLeft.x + static_cast<float>(m_inspectedCellX) * cellPx,
 							gridTopLeft.y + static_cast<float>(m_inspectedCellY) * cellPx};
 		const ImVec2 selMax{selMin.x + cellPx, selMin.y + cellPx};
-		drawList->AddRect(selMin, selMax, IM_COL32(120, 220, 255, 220), 0.f, 0, 3.f);
+		drawList->AddRect(selMin, selMax, IM_COL32(120, 220, 255, 220), 0.f, 3.f);
 	}
 
 	if (hovered)
@@ -547,7 +547,7 @@ void TilemapDocument::handleCanvasHoverAndPaint(ImDrawList* iDrawList, const ImV
 	const ImVec2 hoverMin{iGridTopLeft.x + static_cast<float>(cellX) * iCellPx,
 						  iGridTopLeft.y + static_cast<float>(cellY) * iCellPx};
 	const ImVec2 hoverMax{hoverMin.x + iCellPx, hoverMin.y + iCellPx};
-	iDrawList->AddRect(hoverMin, hoverMax, IM_COL32(255, 195, 38, 255), 0.f, 0, 2.f);
+	iDrawList->AddRect(hoverMin, hoverMax, IM_COL32(255, 195, 38, 255), 0.f, 2.f);
 
 	const bool leftDown = ImGui::IsMouseDown(ImGuiMouseButton_Left);
 	const bool rightDown = ImGui::IsMouseDown(ImGuiMouseButton_Right);

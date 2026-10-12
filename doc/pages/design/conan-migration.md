@@ -257,7 +257,7 @@ ConanCenter as is.
 | `slang` 2026.19                      | Absent; building it pulls LLVM-sized dependencies, so the recipe repackages the upstream release binaries       |
 | `ufbx` 0.23.1                        | Absent; one `.c` file, upstream ships no build system                                                           |
 | `imgui-color-text-edit` 1.92.9       | Absent (goossens fork); the upstream release tag                                                                |
-| `imguizmo` 1.10                      | ConanCenter's only recent version (cci.20231114) calls `BeginChildFrame`, removed in imgui 1.92                 |
+| `imguizmo` 1.10                      | ConanCenter's only recent version (cci.20231114) calls `BeginChildFrame`, removed in imgui 1.92; the recipe also puts the thickness before the flags in the AddRect / AddPolyline calls of ImCurveEdit, GraphEditor and ImGradient (imgui 1.92.8 order) |
 | `nativefiledialog-extended` 1.4.1    | Absent; the GitHub archive lacks the `wayland-protocols` submodule, fetched as a second source                  |
 | `msdf-atlas-gen` 1.4                 | ConanCenter's recipe packages the command-line tool only; this one builds the library on ConanCenter's msdfgen  |
 | `libmp3lame` 3.100                   | ConanCenter's recipe, except MinGW Clang builds with autotools: upstream takes every Windows Clang for clang-cl |

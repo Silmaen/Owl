@@ -58,6 +58,7 @@ there is missing from the pack. Details in [editor.md](editor.md) and [Game expo
 ## Sample Project
 
 A complete demonstrator covering all major engine features lives in
-`sample_project/`. Open it from **File → Project → Open** in the ribbon and play any scene to see
+`sample_project/`, next to `bin/` in the Owl Nest archive. Open it from the **Sample project** card of the File
+screen (or **Open project**) and play any scene to see
 how Lua scripts, UI, sound and triggers fit together. Treat the sample as both a
 showcase and a reference for your own projects.

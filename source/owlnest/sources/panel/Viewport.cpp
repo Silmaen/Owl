@@ -843,7 +843,7 @@ void Viewport::renderOverlayToolbar() {
 	if (!editing)
 		ImGui::GetWindowDrawList()->AddRect({m_lower.x() + 1.f, m_lower.y() + 1.f},
 											{m_upper.x() - 1.f, m_upper.y() - 1.f},
-											ImGui::GetColorU32(gui::vec(theme.play)), 0.f, ImDrawFlags_None, 2.f);
+											ImGui::GetColorU32(gui::vec(theme.play)), 0.f, 2.f);
 
 	// Tools: gizmo mode and snap.
 	if (editing) {

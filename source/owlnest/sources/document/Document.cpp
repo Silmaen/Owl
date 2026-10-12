@@ -15,35 +15,36 @@
 namespace owl::nest {
 Document::~Document() = default;
 
-auto documentWindowTitle(const DocumentType iType, const std::string_view iName, const uint64_t iId) -> std::string {
-	const char* glyph = gui::icon::file;
-	const char* kind = "doc";
+namespace {
+// Glyph and ImGui id prefix of a document type.
+struct DocumentLabel {
+	// Lucide glyph of the tab.
+	const char* glyph;
+	// Stable part of the window id.
+	const char* kind;
+};
+
+auto documentLabel(const DocumentType iType) -> DocumentLabel {
 	switch (iType) {
 		case DocumentType::Scene:
-			glyph = gui::icon::clapperboard;
-			kind = "scene";
-			break;
+			return {.glyph = gui::icon::clapperboard, .kind = "scene"};
 		case DocumentType::Code:
-			glyph = gui::icon::fileCode2;
-			kind = "code";
-			break;
+			return {.glyph = gui::icon::fileCode2, .kind = "code"};
 		case DocumentType::NodeGraph:
-			glyph = gui::icon::workflow;
-			kind = "nodegraph";
-			break;
+			return {.glyph = gui::icon::workflow, .kind = "nodegraph"};
 		case DocumentType::Animation:
-			glyph = gui::icon::film;
-			kind = "animation";
-			break;
+			return {.glyph = gui::icon::film, .kind = "animation"};
 		case DocumentType::Tilemap:
-			glyph = gui::icon::grid3x3;
-			kind = "tilemap";
-			break;
+			return {.glyph = gui::icon::grid3x3, .kind = "tilemap"};
 		case DocumentType::Tileset:
-			glyph = gui::icon::layoutGrid;
-			kind = "tileset";
-			break;
+			return {.glyph = gui::icon::layoutGrid, .kind = "tileset"};
 	}
+	return {.glyph = gui::icon::file, .kind = "doc"};
+}
+}// namespace
+
+auto documentWindowTitle(const DocumentType iType, const std::string_view iName, const uint64_t iId) -> std::string {
+	const auto [glyph, kind] = documentLabel(iType);
 	return std::format("{}  {}###{}_{:x}", glyph, iName.empty() ? std::string_view{"Untitled"} : iName, kind, iId);
 }
 

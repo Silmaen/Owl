@@ -10,11 +10,16 @@
 
 #include "EditorLayer.h"
 
+#include <gui/IconFont.h>
+#include <gui/UiLayer.h>
 #include <gui/utils.h>
 #include <gui/widgets/AssetField.h>
 #include <gui/widgets/CurveEditor.h>
+#include <gui/widgets/EmptyState.h>
+#include <gui/widgets/IconButton.h>
+#include <gui/widgets/PropertyGrid.h>
 #include <gui/widgets/SectionHeader.h>
-#include <gui/widgets/Toggle.h>
+#include <gui/widgets/Tooltip.h>
 
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG("-Wreserved-identifier")
@@ -23,14 +28,16 @@ OWL_DIAG_DISABLE_CLANG("-Wreserved-identifier")
 OWL_DIAG_POP
 
 #include <algorithm>
+#include <cstdint>
 #include <format>
+#include <tuple>
 #include <vector>
 
 namespace owl::nest {
 
 namespace {
 constexpr float g_previewSize = 220.f;
-constexpr float g_timelineHeight = 200.f;
+constexpr float g_timelineHeight = 110.f;
 
 }// namespace
 
@@ -78,7 +85,8 @@ void AnimationDocument::onEvent([[maybe_unused]] event::Event& ioEvent) {
 void AnimationDocument::onImGuiRender() {
 	const auto winTitle = documentWindowTitle(DocumentType::Animation, title(), static_cast<uint64_t>(id()));
 
-	ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse;
+	ImGuiWindowFlags flags =
+			ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
 	if (isDirty())
 		flags |= ImGuiWindowFlags_UnsavedDocument;
 
@@ -103,7 +111,9 @@ void AnimationDocument::onImGuiRender() {
 			std::ignore = save();
 
 		const auto avail = ImGui::GetContentRegionAvail();
-		const float topHeight = std::max(180.f, avail.y - g_timelineHeight - 24.f);
+		// The timeline section: its header, the sequencer and the section frame, kept whole below the panels.
+		const float timelineHeight = g_timelineHeight + 2.f * ImGui::GetFrameHeightWithSpacing();
+		const float topHeight = std::max(180.f, avail.y - timelineHeight - ImGui::GetStyle().ItemSpacing.y);
 		const float leftWidth = std::max(g_previewSize + 16.f, avail.x * 0.45f);
 
 		ImGui::BeginChild("##animation_preview", ImVec2{leftWidth, topHeight}, ImGuiChildFlags_Borders);
@@ -116,7 +126,10 @@ void AnimationDocument::onImGuiRender() {
 		renderProperties();
 		ImGui::EndChild();
 
+		ImGui::BeginChild("##animation_timeline", ImVec2{0.f, 0.f}, ImGuiChildFlags_None,
+						  ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
 		renderTimeline();
+		ImGui::EndChild();
 	}
 	ImGui::End();
 }
@@ -180,77 +193,99 @@ void AnimationDocument::stepPrevious() {
 }
 
 void AnimationDocument::renderProperties() {
-	ImGui::TextDisabled("Animation Clip");
-	ImGui::Separator();
-
-	gui::widgets::textureField("Spritesheet", m_clip.texture);
-
+	const scene::AnimationClip defaults;
+	if (gui::widgets::sectionHeader("Spritesheet", gui::icon::image, false).open) {
+		std::ignore = gui::widgets::textureField("##spritesheet", m_clip.texture, ImVec2{96.f, 96.f});
+		gui::widgets::itemTooltip("Spritesheet", nullptr, "Drop a texture from the Content Browser.");
+		// The grid of the sheet beside its thumbnail.
+		ImGui::SameLine();
+		ImGui::BeginGroup();
+		if (gui::widgets::beginProperties("##sheet")) {
+			int cols = static_cast<int>(m_clip.columns);
+			if (gui::widgets::propertyInt("Columns", cols, static_cast<int>(defaults.columns), 1, 256, "%d",
+										  "Frames per row of the sheet."))
+				m_clip.columns = static_cast<uint32_t>(std::max(cols, 1));
+			int rows = static_cast<int>(m_clip.rows);
+			if (gui::widgets::propertyInt("Rows", rows, static_cast<int>(defaults.rows), 1, 256, "%d",
+										  "Rows of frames in the sheet."))
+				m_clip.rows = static_cast<uint32_t>(std::max(rows, 1));
+			gui::widgets::endProperties();
+		}
+		ImGui::EndGroup();
+		gui::widgets::endSection();
+	}
 	const int maxFrame = static_cast<int>(std::max(m_clip.columns * m_clip.rows, 1u) - 1);
-
-	int cols = static_cast<int>(m_clip.columns);
-	if (ImGui::DragInt("Columns", &cols, 1, 1, 256))
-		m_clip.columns = static_cast<uint32_t>(std::max(cols, 1));
-	int rows = static_cast<int>(m_clip.rows);
-	if (ImGui::DragInt("Rows", &rows, 1, 1, 256))
-		m_clip.rows = static_cast<uint32_t>(std::max(rows, 1));
-	int first = static_cast<int>(m_clip.firstFrame);
-	if (ImGui::DragInt("First Frame", &first, 1, 0, maxFrame))
-		m_clip.firstFrame = static_cast<uint32_t>(std::clamp(first, 0, maxFrame));
-	int last = static_cast<int>(m_clip.lastFrame);
-	if (ImGui::DragInt("Last Frame", &last, 1, static_cast<int>(m_clip.firstFrame), maxFrame))
-		m_clip.lastFrame = static_cast<uint32_t>(std::clamp(last, static_cast<int>(m_clip.firstFrame), maxFrame));
-	ImGui::DragFloat("Frame Duration", &m_clip.frameDuration, 0.01f, 0.001f, 10.f, "%.3f s");
-	gui::widgets::checkbox("Loop", &m_clip.loop);
-
-	ImGui::Spacing();
-	ImGui::Text("Current Frame: %u", m_currentFrame);
-
-	if (gui::widgets::subHeader("Speed Curve"))
+	if (gui::widgets::sectionHeader("Playback", gui::icon::film, false).open) {
+		if (gui::widgets::beginProperties("##playback")) {
+			int first = static_cast<int>(m_clip.firstFrame);
+			if (gui::widgets::propertyInt("First Frame", first, static_cast<int>(defaults.firstFrame), 0, maxFrame,
+										  "%d", "First frame of the clip, counted row by row from the top left."))
+				m_clip.firstFrame = static_cast<uint32_t>(std::clamp(first, 0, maxFrame));
+			int last = static_cast<int>(m_clip.lastFrame);
+			if (gui::widgets::propertyInt("Last Frame", last, std::max(static_cast<int>(defaults.lastFrame), first),
+										  static_cast<int>(m_clip.firstFrame), maxFrame, "%d",
+										  "Last frame of the clip, included."))
+				m_clip.lastFrame =
+						static_cast<uint32_t>(std::clamp(last, static_cast<int>(m_clip.firstFrame), maxFrame));
+			if (gui::widgets::propertyFloat("Frame Duration", m_clip.frameDuration, defaults.frameDuration, 0.01f,
+											"%.3f s", "Time each frame stays on screen, before the speed curve."))
+				m_clip.frameDuration = std::clamp(m_clip.frameDuration, 0.001f, 10.f);
+			std::ignore = gui::widgets::propertyBool("Loop", m_clip.loop, defaults.loop,
+													 "Start again from the first frame after the last one.");
+			gui::widgets::endProperties();
+		}
+		gui::widgets::endSection();
+	}
+	if (gui::widgets::sectionHeader("Speed Curve", gui::icon::timer, false).open) {
 		gui::widgets::curveEditor("##animSpeedCurve", m_clip.speedCurve);
+		gui::widgets::endSection();
+	}
 }
 
 void AnimationDocument::renderPreview() {
-	ImGui::TextDisabled("Preview");
-	ImGui::Separator();
-
+	if (!gui::widgets::sectionHeader("Preview", gui::icon::play, false).open)
+		return;
 	const auto previewArea = ImGui::GetContentRegionAvail();
-	const float side = std::max(80.f, std::min(previewArea.x, previewArea.y - 36.f));
+	const float side =
+			std::max(80.f, std::min(previewArea.x, previewArea.y - 2.f * ImGui::GetFrameHeightWithSpacing()));
 	const ImVec2 previewSize{side, side};
 
 	if (auto im = gui::imTexture(m_clip.texture); im.has_value() && m_clip.texture) {
 		const auto [uv0, uv1] = currentFrameUv();
 		ImGui::Image(im.value(), previewSize, gui::vec(uv0), gui::vec(uv1));
 	} else {
-		// Placeholder when no spritesheet is set.
-		const auto cursor = ImGui::GetCursorScreenPos();
-		auto* drawList = ImGui::GetWindowDrawList();
-		const ImU32 col = ImGui::GetColorU32(ImGuiCol_FrameBg);
-		drawList->AddRectFilled(cursor, ImVec2{cursor.x + previewSize.x, cursor.y + previewSize.y}, col, 4.f);
-		const auto* msg = "Drop a spritesheet";
-		const auto txtSize = ImGui::CalcTextSize(msg);
-		drawList->AddText(
-				ImVec2{cursor.x + (previewSize.x - txtSize.x) * 0.5f, cursor.y + (previewSize.y - txtSize.y) * 0.5f},
-				ImGui::GetColorU32(ImGuiCol_TextDisabled), msg);
-		ImGui::Dummy(previewSize);
+		ImGui::BeginChild("##noSheet", previewSize);
+		std::ignore = gui::widgets::emptyState(gui::icon::image, "No spritesheet",
+											   "Drop a texture on the Spritesheet field to preview the clip.");
+		ImGui::EndChild();
 	}
 
 	ImGui::Spacing();
-	if (ImGui::Button(m_playing ? "Pause" : "Play"))
-		m_playing = !m_playing;
-	ImGui::SameLine();
-	if (ImGui::Button("Stop"))
-		stop();
-	ImGui::SameLine();
-	if (ImGui::Button("|<"))
+	if (gui::widgets::iconButton("##previous", {.glyph = gui::icon::skipBack, .tooltip = "Previous frame"}))
 		stepPrevious();
 	ImGui::SameLine();
-	if (ImGui::Button(">|"))
+	if (gui::widgets::iconButton("##play", {.glyph = m_playing ? gui::icon::pause : gui::icon::play,
+											.tooltip = m_playing ? "Pause" : "Play",
+											.selected = m_playing}))
+		m_playing = !m_playing;
+	ImGui::SameLine();
+	if (gui::widgets::iconButton(
+				"##stop",
+				{.glyph = gui::icon::square, .tooltip = "Stop", .description = "Stop and go back to the first frame."}))
+		stop();
+	ImGui::SameLine();
+	if (gui::widgets::iconButton("##next", {.glyph = gui::icon::skipForward, .tooltip = "Next frame"}))
 		stepNext();
+	ImGui::SameLine();
+	ImGui::AlignTextToFramePadding();
+	ImGui::TextDisabled("Frame %u  (%u to %u)%s", m_currentFrame, m_clip.firstFrame, m_clip.lastFrame,
+						m_clip.loop ? ", loop" : "");
+	gui::widgets::endSection();
 }
 
 void AnimationDocument::renderTimeline() {
-	ImGui::TextDisabled("Timeline");
-	ImGui::Separator();
+	if (!gui::widgets::sectionHeader("Timeline", gui::icon::clapperboard, false).open)
+		return;
 
 	const int totalGrid = static_cast<int>(std::max(m_clip.columns * m_clip.rows, 1u));
 	gui::widgets::SequencerOptions opts;
@@ -264,7 +299,7 @@ void AnimationDocument::renderTimeline() {
 			.label = "Range",
 			.startFrame = static_cast<int32_t>(m_clip.firstFrame),
 			.endFrame = static_cast<int32_t>(m_clip.lastFrame),
-			.color = {0.30f, 0.70f, 1.0f, 1.0f},
+			.color = gui::UiLayer::getTheme().accent,
 	});
 
 	auto currentFrame = static_cast<int32_t>(m_currentFrame);
@@ -286,6 +321,7 @@ void AnimationDocument::renderTimeline() {
 			m_playing = false;
 		}
 	}
+	gui::widgets::endSection();
 }
 
 void AnimationDocument::refreshSavedSnapshot() {

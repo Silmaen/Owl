@@ -24,6 +24,9 @@ external sources into the repo. Check ConanCenter and `conan/recipes/` before as
   the compiler). No profile per build type or sanitizer: third parties are Release and never instrumented.
 - `conan.lock` pins every recipe revision and is always used. After touching `conanfile.py` or a local recipe,
   regenerate it with the `conan lock create` commands of the design page and commit it with the change.
+  Take a local recipe's revision from the `owl-local` remote (`conan list "<name>/<ver>#*" -r owl-local`), never from a
+  `conan export`: the index trims `conandata.yml`, so the revisions differ. A stale index cache keeps the old revision;
+  `conan remote add owl-local <repo>/conan --type=local-recipes-index --force --index 0` resets it.
 - Link with `owl_target_link_libraries()` (`cmake/OwlUtils.cmake`), never a raw `find_package()`. It maps the few
   names that differ (`OWL_CONAN_PACKAGE_<Module>` / `OWL_CONAN_TARGET_<Module>` in `cmake/Conan.cmake`) and
   compiles the imgui backends from the package.

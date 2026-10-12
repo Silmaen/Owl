@@ -50,7 +50,9 @@ The nightly *Benchmarks* configuration builds the `linux-bench` preset (release,
 `ci_action.py Bench linux-bench`: `owl_bench` writes `output/bench/linux-bench.json` (published as an artifact),
 compared to `bench/baseline/linux-bench.json`. A benchmark whose median exceeds its baseline by more than 15 %
 is measured again alone, and the faster of the two medians is kept; one still beyond the threshold fails the
-build. Without a baseline the run only reports: commit the artifact of a nightly run as the baseline (or run the
+build. `bench/thresholds.json` widens the threshold of the benchmarks matching a name pattern (the
+multi-threaded physics steps of 100 bodies, about 1 ms and dominated by the worker wake-up, get 40 %); it is not
+part of the baseline, so a refresh keeps it. Without a baseline the run only reports: commit the artifact of a nightly run as the baseline (or run the
 action with `-- --update-baseline` on the same agent), and refresh it when a change is deliberately slower or
 the agent changes.
 The configuration is pinned to the agent `linux-build-hephaistos` (8 cores): the committed baseline is the
