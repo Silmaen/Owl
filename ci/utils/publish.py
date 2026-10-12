@@ -8,7 +8,6 @@ the password comes from the environment (``OWL_DEPLOY_PASSWORD``).
 """
 
 import os
-import platform
 import tarfile
 from dataclasses import dataclass
 from pathlib import Path
@@ -244,15 +243,3 @@ def get_git_hash() -> str:
 
     log.error("Could not retrieve git hash via git, BUILD_VCS_NUMBER, or .git/HEAD.")
     return "0000000"
-
-
-def get_platform_info() -> dict[str, str]:
-    """
-    Get platform information: OS name and architecture.
-    :return: Dictionary with 'os' and 'arch' keys.
-    """
-    os_name = platform.system().replace("Darwin", "MacOS").lower()
-    if os_name == "linux":
-        os_name += f" glibc_{platform.libc_ver()[1]}"
-    arch = platform.machine().lower().replace("amd", "x").replace("86_", "").replace("arch", "rm").replace("v8", "64")
-    return {"os": os_name, "arch": arch}
