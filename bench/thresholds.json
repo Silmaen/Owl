@@ -1,0 +1,6 @@
+{
+  "comment": "Allowed median growth per benchmark name pattern, over the default --threshold. A multi-threaded physics step of 100 bodies lasts about 1 ms, dominated by waking the workers: it varies up to 30 % between nightly runs on the bench agent.",
+  "thresholds": {
+    "physics/step_*_mt*/100_bodies": 0.4
+  }
+}

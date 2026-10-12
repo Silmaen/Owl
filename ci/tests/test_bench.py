@@ -33,3 +33,12 @@ def test_a_confirmation_run_keeps_the_faster_median() -> None:
     second = _report(scene__create=101.0, voxel__mesh=290.0)
 
     assert medians(best_of(first, second)) == {"scene/create": 101.0, "voxel/mesh": 260.0}
+
+
+def test_a_pattern_widens_the_threshold_of_its_benchmarks() -> None:
+    baseline = _report(physics__mt2__small=100.0, physics__mt2__large=100.0)
+    current = _report(physics__mt2__small=130.0, physics__mt2__large=130.0)
+
+    regressions = compare(baseline, current, 0.15, {"physics/mt*/small": 0.4})
+
+    assert [r.name for r in regressions] == ["physics/mt2/large"]
