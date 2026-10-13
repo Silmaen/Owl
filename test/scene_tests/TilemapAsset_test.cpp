@@ -16,6 +16,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <string>
+#include <utility>
 
 using namespace owl;
 using namespace owl::scene;
@@ -38,8 +39,8 @@ TEST_F(TilemapAssetFixture, AddLayerInitializesGrid) {
 	EXPECT_TRUE(layer.visible);
 	EXPECT_FLOAT_EQ(layer.parallax.x(), 1.f);
 	EXPECT_FLOAT_EQ(layer.parallax.y(), 1.f);
-	EXPECT_EQ(layer.tiles.size(), 12u);
-	for (const auto t: layer.tiles) EXPECT_EQ(t, scene::component::g_EmptyTileIndex);
+	EXPECT_EQ(layer.getTiles().size(), 12u);
+	for (const auto t: layer.getTiles()) EXPECT_EQ(t, scene::component::g_EmptyTileIndex);
 }
 
 TEST_F(TilemapAssetFixture, ResizeClampsToOne) {
@@ -49,7 +50,7 @@ TEST_F(TilemapAssetFixture, ResizeClampsToOne) {
 	EXPECT_EQ(asset.width, 1u);
 	EXPECT_EQ(asset.height, 1u);
 	ASSERT_EQ(asset.layers.size(), 1u);
-	EXPECT_EQ(asset.layers[0].tiles.size(), 1u);
+	EXPECT_EQ(asset.layers[0].getTiles().size(), 1u);
 }
 
 TEST_F(TilemapAssetFixture, ResizePreservesExistingCells) {
@@ -58,12 +59,12 @@ TEST_F(TilemapAssetFixture, ResizePreservesExistingCells) {
 	asset.height = 2;
 	auto& layer = asset.addLayer("a");
 	// Encode a recognisable pattern: row-major 0..5
-	for (uint32_t i = 0; i < layer.tiles.size(); ++i) layer.tiles[i] = static_cast<int32_t>(i);
+	for (uint32_t i = 0; i < 6; ++i) layer.setTile(i % 3, i / 3, static_cast<int32_t>(i));
 	// Grow to 4x3 — original cells must stay at their (x,y) positions, new ones empty.
 	asset.resize(4, 3);
 	EXPECT_EQ(asset.width, 4u);
 	EXPECT_EQ(asset.height, 3u);
-	ASSERT_EQ(asset.layers[0].tiles.size(), 12u);
+	ASSERT_EQ(asset.layers[0].getTiles().size(), 12u);
 	EXPECT_EQ(asset.getTile(0, 0, 0), 0);
 	EXPECT_EQ(asset.getTile(0, 1, 0), 1);
 	EXPECT_EQ(asset.getTile(0, 2, 0), 2);
@@ -110,7 +111,7 @@ TEST_F(TilemapAssetFixture, RoundTripDefaults) {
 	ASSERT_EQ(restored.layers.size(), 1u);
 	EXPECT_EQ(restored.layers[0].name, "ground");
 	EXPECT_TRUE(restored.layers[0].visible);
-	EXPECT_EQ(restored.layers[0].tiles.size(), 32u);
+	EXPECT_EQ(restored.layers[0].getTiles().size(), 32u);
 }
 
 TEST_F(TilemapAssetFixture, RoundTripWithCustomLayers) {
@@ -121,9 +122,9 @@ TEST_F(TilemapAssetFixture, RoundTripWithCustomLayers) {
 	auto& bg = asset.addLayer("bg");
 	bg.visible = false;
 	bg.parallax = math::vec2{0.5f, 0.25f};
-	bg.tiles = {0, 1, 2, 3};
+	bg.assign({2, 2}, std::array{0, 1, 2, 3});
 	auto& fg = asset.addLayer("fg");
-	fg.tiles = {-1, 5, -1, 7};
+	fg.assign({2, 2}, std::array{-1, 5, -1, 7});
 
 	const auto yaml = asset.serializeToString("twolayer");
 	EXPECT_NE(yaml.find("visible: false"), std::string::npos);
@@ -136,13 +137,13 @@ TEST_F(TilemapAssetFixture, RoundTripWithCustomLayers) {
 	EXPECT_FALSE(restored.layers[0].visible);
 	EXPECT_FLOAT_EQ(restored.layers[0].parallax.x(), 0.5f);
 	EXPECT_FLOAT_EQ(restored.layers[0].parallax.y(), 0.25f);
-	EXPECT_EQ(restored.layers[0].tiles.size(), 4u);
-	EXPECT_EQ(restored.layers[0].tiles[0], 0);
-	EXPECT_EQ(restored.layers[0].tiles[3], 3);
+	EXPECT_EQ(restored.layers[0].getTiles().size(), 4u);
+	EXPECT_EQ(restored.layers[0].getTiles()[0], 0);
+	EXPECT_EQ(restored.layers[0].getTiles()[3], 3);
 	EXPECT_EQ(restored.layers[1].name, "fg");
 	EXPECT_TRUE(restored.layers[1].visible);
-	EXPECT_EQ(restored.layers[1].tiles[1], 5);
-	EXPECT_EQ(restored.layers[1].tiles[3], 7);
+	EXPECT_EQ(restored.layers[1].getTiles()[1], 5);
+	EXPECT_EQ(restored.layers[1].getTiles()[3], 7);
 }
 
 TEST_F(TilemapAssetFixture, DeserializeMalformedYamlFails) {
@@ -164,9 +165,9 @@ layers:
 	TilemapAsset asset;
 	ASSERT_TRUE(asset.deserializeFromString(yaml));
 	ASSERT_EQ(asset.layers.size(), 1u);
-	EXPECT_EQ(asset.layers[0].tiles.size(), 4u);
-	EXPECT_EQ(asset.layers[0].tiles[0], 1);
-	EXPECT_EQ(asset.layers[0].tiles[3], 4);
+	EXPECT_EQ(asset.layers[0].getTiles().size(), 4u);
+	EXPECT_EQ(asset.layers[0].getTiles()[0], 1);
+	EXPECT_EQ(asset.layers[0].getTiles()[3], 4);
 }
 
 TEST_F(TilemapAssetFixture, DeserializePadsShortTileBuffer) {
@@ -180,10 +181,10 @@ layers:
 	TilemapAsset asset;
 	ASSERT_TRUE(asset.deserializeFromString(yaml));
 	ASSERT_EQ(asset.layers.size(), 1u);
-	EXPECT_EQ(asset.layers[0].tiles.size(), 6u);
-	EXPECT_EQ(asset.layers[0].tiles[0], 1);
-	EXPECT_EQ(asset.layers[0].tiles[1], 2);
-	EXPECT_EQ(asset.layers[0].tiles[2], scene::component::g_EmptyTileIndex);
+	EXPECT_EQ(asset.layers[0].getTiles().size(), 6u);
+	EXPECT_EQ(asset.layers[0].getTiles()[0], 1);
+	EXPECT_EQ(asset.layers[0].getTiles()[1], 2);
+	EXPECT_EQ(asset.layers[0].getTiles()[2], scene::component::g_EmptyTileIndex);
 }
 
 TEST_F(TilemapAssetFixture, FileRoundTrip) {
@@ -192,7 +193,7 @@ TEST_F(TilemapAssetFixture, FileRoundTrip) {
 	asset.height = 3;
 	asset.cellSize = 0.5f;
 	auto& layer = asset.addLayer("level");
-	layer.tiles[5] = 42;
+	layer.setTile(1, 1, 42);
 
 	const auto path = std::filesystem::temp_directory_path() / "tilemap_asset_test.owltilemap";
 	ASSERT_TRUE(asset.saveToFile(path, "level1"));
@@ -203,7 +204,7 @@ TEST_F(TilemapAssetFixture, FileRoundTrip) {
 	EXPECT_EQ(restored.height, 3u);
 	EXPECT_FLOAT_EQ(restored.cellSize, 0.5f);
 	ASSERT_EQ(restored.layers.size(), 1u);
-	EXPECT_EQ(restored.layers[0].tiles[5], 42);
+	EXPECT_EQ(restored.layers[0].getTiles()[5], 42);
 
 	std::filesystem::remove(path);
 }
@@ -248,7 +249,7 @@ TEST_F(TilemapAssetFixture, LoadsMigratedSampleTilemaps) {
 		TilemapAsset asset;
 		ASSERT_TRUE(asset.loadFromFile(path)) << s.file;
 		ASSERT_FALSE(asset.layers.empty()) << s.file;
-		EXPECT_EQ(asset.layers[0].tiles.size(), static_cast<size_t>(asset.width) * asset.height) << s.file;
+		EXPECT_EQ(asset.layers[0].getTiles().size(), static_cast<size_t>(asset.width) * asset.height) << s.file;
 		if (s.width != 0u) {
 			EXPECT_EQ(asset.width, s.width) << s.file;
 		}
@@ -256,4 +257,65 @@ TEST_F(TilemapAssetFixture, LoadsMigratedSampleTilemaps) {
 			EXPECT_EQ(asset.height, s.height) << s.file;
 		}
 	}
+}
+
+TEST(TilemapLayer, ChunkGridCoversPartialChunks) {
+	component::TilemapLayer layer;
+	EXPECT_EQ(layer.getChunkGridSize(), (math::vec2ui{0, 0}));
+	EXPECT_EQ(layer.getGeneration(), 0u);
+	layer.resize({33, 64});
+	EXPECT_EQ(layer.getSize(), (math::vec2ui{33, 64}));
+	EXPECT_EQ(layer.getChunkGridSize(), (math::vec2ui{2, 2}));
+	EXPECT_NE(layer.getChunkGeneration({1, 1}), 0u);
+	EXPECT_EQ(layer.getChunkGeneration({2, 0}), 0u);
+	EXPECT_EQ(layer.getTile(40, 0), component::g_EmptyTileIndex);
+}
+
+TEST(TilemapLayer, SetTileStampsOnlyItsChunk) {
+	component::TilemapLayer layer;
+	layer.resize({64, 64});
+	const auto before00 = layer.getChunkGeneration({0, 0});
+	const auto before11 = layer.getChunkGeneration({1, 1});
+	EXPECT_TRUE(layer.setTile(40, 33, 7));
+	EXPECT_EQ(layer.getTile(40, 33), 7);
+	EXPECT_EQ(layer.getChunkGeneration({0, 0}), before00);
+	EXPECT_GT(layer.getChunkGeneration({1, 1}), before11);
+	EXPECT_EQ(layer.getGeneration(), layer.getChunkGeneration({1, 1}));
+	const auto stamped = layer.getGeneration();
+	EXPECT_FALSE(layer.setTile(40, 33, 7));
+	EXPECT_FALSE(layer.setTile(64, 0, 7));
+	EXPECT_EQ(layer.getGeneration(), stamped);
+	EXPECT_EQ(layer.getOccupiedCount(), 1u);
+}
+
+TEST(TilemapLayer, GenerationsAreUniqueAcrossLayers) {
+	component::TilemapLayer first;
+	component::TilemapLayer second;
+	first.resize({4, 4});
+	second.resize({4, 4});
+	EXPECT_NE(first.getGeneration(), second.getGeneration());
+	auto copy = first;
+	EXPECT_EQ(copy.getChunkGeneration({0, 0}), first.getChunkGeneration({0, 0}));
+	copy.setTile(0, 0, 1);
+	EXPECT_NE(copy.getChunkGeneration({0, 0}), first.getChunkGeneration({0, 0}));
+	EXPECT_EQ(first.getTile(0, 0), component::g_EmptyTileIndex);
+}
+
+TEST(TilemapLayer, MoveLeavesAnEmptyGrid) {
+	component::TilemapLayer source;
+	source.name = "ground";
+	source.assign({2, 2}, std::array{1, 2, 3});
+	EXPECT_EQ(source.getTile(1, 1), component::g_EmptyTileIndex);
+	const auto generation = source.getGeneration();
+	component::TilemapLayer moved{std::move(source)};
+	EXPECT_EQ(moved.getTile(0, 1), 3);
+	EXPECT_EQ(moved.getGeneration(), generation);
+	EXPECT_EQ(source.getSize(), (math::vec2ui{0, 0}));// NOLINT(bugprone-use-after-move): checks the moved-from state.
+	EXPECT_TRUE(source.getTiles().empty());// NOLINT(bugprone-use-after-move): checks the moved-from state.
+	component::TilemapLayer assigned;
+	assigned = std::move(moved);
+	EXPECT_EQ(assigned.name, "ground");
+	EXPECT_EQ(assigned.getTile(0, 0), 1);
+	assigned.fill(9);
+	EXPECT_EQ(assigned.getOccupiedCount(), 4u);
 }

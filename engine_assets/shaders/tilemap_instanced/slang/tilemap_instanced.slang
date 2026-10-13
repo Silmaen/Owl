@@ -1,19 +1,25 @@
-// Tilemap instanced renderer — every tilemap of a scene (all entities, all
-// layers) renders in a single `vkCmdDrawIndexed(6, cellCount, …)` /
-// `glDrawElementsInstanced(GL_TRIANGLES, 6, …, cellCount)`. The per-vertex VBO
-// holds a single 4-vertex quad reused for every cell; the per-instance VBO
-// carries one entry per non-empty cell with everything the cell needs (world
-// position, tile index, entity id, layer Z, atlas grid + cell size, half-texel
-// inset, and the slot inside `gTextures[32]` holding its tileset atlas). No
-// per-draw UBO: distinct tilesets are bound to distinct texture slots and each
-// cell indexes its own slot, so one drawcall spans any mix of tilemaps.
+// Tilemap chunk renderer — one `vkCmdDrawIndexed(6, cellCount, …)` /
+// `glDrawElementsInstanced(GL_TRIANGLES, 6, …, cellCount)` per visible chunk
+// of a tilemap layer. The per-vertex VBO holds a single 4-vertex quad reused
+// for every cell; the per-instance VBO of the chunk is persistent and carries
+// one entry per non-empty cell (layer cell coordinates and tile index). The
+// per-draw uniform block holds everything shared by the cells of one layer:
+// camera, entity world transform, grid origin, cell size, layer depth,
+// parallax offset, atlas grid, half-texel inset, entity id and texture slot.
 
-struct Camera {
+struct TilemapDraw {
 	column_major float4x4 viewProjection;
+	column_major float4x4 model;
+	// Local centre of cell (0, 0) in x, y; cell size; layer depth (painter's order).
+	float4 grid;
+	// Half-texel inset in x, y; parallax offset in world x, y.
+	float4 texel;
+	// Atlas columns, rows; entity id; slot inside `gTextures[32]`.
+	int4 atlas;
 };
 
 [[vk::binding(0)]]
-ConstantBuffer<Camera> gCamera;
+ConstantBuffer<TilemapDraw> gDraw;
 
 #ifdef BACKEND_VULKAN
 [[vk::binding(1)]]
@@ -23,29 +29,11 @@ ConstantBuffer<Camera> gCamera;
 Sampler2D gTextures[32];
 
 struct VertexInput {
-	// Per-vertex attributes (binding 0, advance per vertex).
-	// `cornerIndex` ∈ {0..3} picks the corner of the unit quad — the per-vertex
-	// VBO contains exactly 4 vertices reused for every instance.
+	// Per-vertex attribute (binding 0): `cornerIndex` ∈ {0..3} picks the corner of the unit quad.
 	[[vk::location(0)]] int cornerIndex : POSITION;
-
-	// Per-instance attributes (binding 1, advance per instance). One entry
-	// per non-empty cell.
-	[[vk::location(1)]] float2 cellWorld : TEXCOORD0;
+	// Per-instance attributes (binding 1): layer cell coordinates packed as `x | y << 16`, then the tile index.
+	[[vk::location(1)]] int cell : TEXCOORD0;
 	[[vk::location(2)]] int tileIndex : TEXCOORD1;
-	[[vk::location(3)]] int entityID : TEXCOORD2;
-	// Painter's-order Z for this cell's layer. Back layers carry a smaller Z
-	// than front layers so they stack correctly within the single drawcall.
-	[[vk::location(4)]] float layerZ : TEXCOORD3;
-	// Cell size in world units (`TilemapAsset::cellSize`).
-	[[vk::location(5)]] float cellSize : TEXCOORD4;
-	// Atlas grid metadata (cells inside this cell's tileset atlas).
-	[[vk::location(6)]] int atlasColumns : TEXCOORD5;
-	[[vk::location(7)]] int atlasRows : TEXCOORD6;
-	// Half-texel inset for the atlas sample — kills the seam flicker under
-	// Linear filtering (same trick as the raycast sprite path).
-	[[vk::location(8)]] float2 halfTexel : TEXCOORD7;
-	// Slot inside `gTextures[32]` holding this cell's tileset atlas.
-	[[vk::location(9)]] int textureSlot : TEXCOORD8;
 };
 
 struct FragmentInput {
@@ -84,16 +72,19 @@ static const float2 kCornerUv[4] = {
 VertexOutput vertexMain(VertexInput input) {
 	VertexOutput output;
 
-	const float2 cornerLocal = kCornerOffsets[input.cornerIndex] * input.cellSize;
-	const float3 worldPos = float3(input.cellWorld + cornerLocal, input.layerZ);
-	output.svPosition = mul(gCamera.viewProjection, float4(worldPos, 1.0f));
+	const uint packedCell = uint(input.cell);
+	const float2 cellCoord = float2(float(packedCell & 0xffffu), float(packedCell >> 16u));
+	const float cellSize = gDraw.grid.z;
+	// Rows grow downwards in the grid, upwards in the world.
+	const float2 cellCentre = gDraw.grid.xy + float2(cellCoord.x, -cellCoord.y) * cellSize;
+	const float2 cornerLocal = cellCentre + kCornerOffsets[input.cornerIndex] * cellSize;
+	float4 worldPos = mul(gDraw.model, float4(cornerLocal, gDraw.grid.w, 1.0f));
+	worldPos.xy += gDraw.texel.zw;
+	output.svPosition = mul(gDraw.viewProjection, worldPos);
 
-	// Resolve the tile's UV rectangle inside the atlas. The CPU-side
-	// `Tileset::getTileUv` performs the same math; doing it here saves the
-	// per-cell function call + the per-vertex bandwidth that would otherwise
-	// carry 4 vec2 UVs per cell.
-	const uint atlasColumns = uint(max(input.atlasColumns, 1));
-	const uint atlasRows = uint(max(input.atlasRows, 1));
+	// Resolve the tile's UV rectangle inside the atlas (same math as `Tileset::getTileUv`).
+	const uint atlasColumns = uint(max(gDraw.atlas.x, 1));
+	const uint atlasRows = uint(max(gDraw.atlas.y, 1));
 	const uint tileIdx = uint(max(input.tileIndex, 0));
 	const uint tileCol = tileIdx % atlasColumns;
 	const uint tileRow = tileIdx / atlasColumns;
@@ -104,10 +95,10 @@ VertexOutput vertexMain(VertexInput input) {
 	// Half-texel inset: pull the UV inward by half a texel on each side so
 	// linear filtering never reaches into neighbour tiles.
 	output.frag.texCoord =
-			atlasMin + cornerUv * atlasStep - (cornerUv * 2.0f - 1.0f) * input.halfTexel;
+			atlasMin + cornerUv * atlasStep - (cornerUv * 2.0f - 1.0f) * gDraw.texel.xy;
 
-	output.frag.entityID = input.entityID;
-	output.frag.textureSlot = input.textureSlot;
+	output.frag.entityID = gDraw.atlas.z;
+	output.frag.textureSlot = gDraw.atlas.w;
 	return output;
 }
 

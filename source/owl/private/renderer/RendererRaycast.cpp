@@ -107,7 +107,7 @@ auto pickActiveLayerIndex(const scene::TilemapAsset& iTilemap) -> size_t {
 		const auto& layer = iTilemap.layers[i];
 		if (!layer.visible)
 			continue;
-		if (layer.tiles.empty())
+		if (layer.getTiles().empty())
 			continue;
 		return i;
 	}

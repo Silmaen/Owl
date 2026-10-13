@@ -12,6 +12,8 @@
 #include "renderer/RenderLayerFactory.h"
 #include "renderer/RenderStackYaml.h"
 #include "renderer/Renderer2D.h"
+#include "renderer/RendererTilemap.h"
+#include "renderer/utils/LayerTilemaps.h"
 
 #include <algorithm>
 #include <cctype>
@@ -56,7 +58,15 @@ void Renderer2DLayer::onBeginFrame(const Camera& iCamera) {
 	}
 }
 
-void Renderer2DLayer::onRender([[maybe_unused]] scene::Scene& ioScene) {}
+void Renderer2DLayer::onRender(scene::Scene& ioScene) {
+	OWL_PROFILE_FUNCTION()
+
+	utils::forEachLayerTilemap(
+			ioScene,
+			[](const scene::TilemapAsset& iAsset, const math::Transform& iTransform, const int iEntityId) -> void {
+				RendererTilemap::drawTilemap(iAsset, iTransform, iEntityId);
+			});
+}
 
 void Renderer2DLayer::onEndFrame() { Renderer2D::endScene(); }
 

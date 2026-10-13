@@ -40,10 +40,9 @@ namespace owl::renderer {
  *
  * `onRender` iterates entities tagged with this layer's name (or untagged
  * entities when this is the first layer in the stack) — `Scene::layerAccepts`
- * does the routing. The legacy `Scene::render` path still drives the actual
- * `Renderer2D::drawXxx` calls; this layer's `onRender` only emits draws for
- * entity types whose dispatch has been migrated (currently empty — Tilemap
- * dispatch is handled in `Scene::render` based on the active layer name).
+ * does the routing. The tilemaps are drawn here (queued to `RendererTilemap`);
+ * the other 2D entity types are still drawn by `Scene::render`, until their
+ * dispatch moves into this layer too.
  */
 class OWL_API Renderer2DLayer final : public RenderLayer {
 public:
@@ -111,7 +110,7 @@ public:
 
 	/**
 	 * @brief
-	 *  Handle the render event.
+	 *  Handle the render event: queue the tilemaps routed to this layer.
 	 * @param[in,out] ioScene The scene being rendered (entities are queried in-place).
 	 */
 	void onRender(scene::Scene& ioScene) override;

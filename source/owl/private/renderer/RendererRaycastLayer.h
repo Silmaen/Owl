@@ -85,7 +85,7 @@ public:
 
 	/**
 	 * @brief
-	 *  Handle the render event.
+	 *  Handle the render event: cast the walls of the tilemaps routed to this layer.
 	 * @param[in,out] ioScene The scene being rendered (entities are queried in-place).
 	 */
 	void onRender(scene::Scene& ioScene) override;

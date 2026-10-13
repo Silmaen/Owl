@@ -14,6 +14,7 @@
 #include "renderer/CameraOrtho.h"
 #include "renderer/Renderer.h"
 #include "renderer/Renderer2D.h"
+#include "renderer/Renderer2DLayer.h"
 #include "renderer/RendererRaycast.h"
 #include "renderer/RendererRaycastLayer.h"
 #include "renderer/RendererTilemap.h"
@@ -769,16 +770,19 @@ void Scene::renderWithStack(const renderer::Camera& iCamera) {
 	OWL_PROFILE_FUNCTION()
 
 	prepareVoxelRenderData();
+	prepareTilemapRenderData();
 	const auto& stack = renderer::Renderer::getRenderStack();
 	if (const bool editorMode = (status == Status::Editing); editorMode || stack.isEmpty()) {
-		renderer::Renderer2D::resetStats();
-		renderer::Renderer2D::beginScene(iCamera);
+		// The editor composite is one world-space 2D pass drawing every entity.
+		renderer::Renderer2DLayer composite{"editor"};
 		m_currentLayerName.clear();
 		m_currentLayerIsFirst = true;
 		mp_currentLayer = nullptr;
+		composite.onBeginFrame(iCamera);
+		composite.onRender(*this);
 		render();
 		renderUI(iCamera.getViewProjection());
-		renderer::Renderer2D::endScene();
+		composite.onEndFrame();
 		// The editor composite above is 2D-only; render 3D voxel layers as a separate pass so they show while editing.
 		if (editorMode) {
 			for (const auto& layer: stack.getLayers()) {
@@ -812,6 +816,7 @@ void Scene::renderWithStack(const renderer::Camera& iCamera) {
 		m_currentLayerName = layer->getName();
 		m_currentLayerIsFirst = isFirst;
 		mp_currentLayer = layer.get();
+		layer->onRender(*this);
 		render();
 		renderUI(layer->getEffectiveViewProjection(iCamera));
 		layer->onEndFrame();
@@ -851,9 +856,6 @@ void Scene::render() {
 		renderVoxelWorlds(editorMode);
 		return;
 	}
-
-	resolveAllTilemapAssets();
-	renderTilemaps(editorMode, raycastLayer);
 
 	if (raycastLayer) {
 		renderRaycastDynamicWalls(editorMode);
@@ -992,26 +994,18 @@ void Scene::render() {
 	}
 }
 
-void Scene::renderTilemaps(const bool iEditorMode, const bool iRaycastLayer) {
+void Scene::prepareTilemapRenderData() {
 	OWL_PROFILE_FUNCTION()
 
-	for (const auto view = registry.view<component::Transform, component::Tilemap>(); auto entity: view) {
-		const Entity ent{entity, this};
-		if (!isEffectivelyVisible(ent, iEditorMode))
+	resolveAllTilemapAssets();
+	renderer::RendererTilemap::beginPrepare();
+	const bool editorMode = status == Status::Editing;
+	for (const auto view = registry.view<component::Tilemap>(); const auto entity: view) {
+		const auto& asset = view.get<component::Tilemap>(entity).asset;
+		if (!asset || !asset->tileset || !asset->tileset->texture)
 			continue;
-		if (!layerAccepts(ent))
-			continue;
-		auto& tilemap = view.get<component::Tilemap>(entity);
-		if (!tilemap.asset || !tilemap.asset->tileset || !tilemap.asset->tileset->texture)
-			continue;
-		const auto& assetData = *tilemap.asset;
-		const math::Transform worldTransform = getWorldTransform(ent);
-		const int entityId = static_cast<int>(entity);
-		if (iRaycastLayer) {
-			renderer::RendererRaycast::drawTilemapWalls(assetData, worldTransform, entityId);
-			continue;
-		}
-		renderer::RendererTilemap::drawTilemap(assetData, worldTransform, entityId);
+		if (isEffectivelyVisible(Entity{entity, this}, editorMode))
+			renderer::RendererTilemap::prepareTilemap(*asset);
 	}
 }
 

@@ -414,6 +414,17 @@ public:
 
 	/**
 	 * @brief
+	 *  Whether the current draw pass should include this entity.
+	 *
+	 * Decision is based on the entity's optional `RendererTag` and the layer being processed; a render layer's
+	 * `onRender` uses it to pick the entities routed to it (every entity when no layer is active).
+	 * @param[in] iEntity The entity being evaluated.
+	 * @return True if the entity should be drawn in the current layer.
+	 */
+	[[nodiscard]] auto layerAccepts(const Entity& iEntity) const -> bool;
+
+	/**
+	 * @brief
 	 *  Whether this scene wants the cursor captured for mouse-look (a `VoxelPlayer` with `captureCursor` is present).
 	 * @return True if at least one voxel player opts into cursor capture; false otherwise (the default).
 	 */
@@ -859,15 +870,6 @@ private:
 
 	/**
 	 * @brief
-	 *  Draw every visible tilemap accepted by the current layer.
-	 * @param[in] iEditorMode True if the scene is being drawn for the editor view.
-	 * @param[in] iRaycastLayer True if the current layer is a raycast renderer (routes walls
-	 * through `RendererRaycast::drawTilemapWalls` instead of emitting per-cell 2D quads).
-	 */
-	void renderTilemaps(bool iEditorMode, bool iRaycastLayer);
-
-	/**
-	 * @brief
 	 *  Collect Sprite/AnimatedSprite entities and submit them to the raycast renderer.
 	 * @param[in] iEditorMode True if the scene is being drawn for the editor view.
 	 */
@@ -878,7 +880,7 @@ private:
 	 *  Collect `RaycastDoor` and `RaycastPushWall` entities accepted by the current
 	 *  raycast layer and submit them to `RendererRaycast::drawDynamicWalls`.
 	 *
-	 * Runs between `renderTilemaps` (which fills the per-column wall zBuffer with
+	 * Runs between the raycast layer's `onRender` (whose tilemap walls fill the per-column zBuffer with
 	 * the static tilemap depths) and `renderRaycastSprites` (which uses that
 	 * zBuffer for billboard occlusion), so a closed door correctly hides what
 	 * lies behind it from both walls and sprites.
@@ -894,6 +896,14 @@ private:
 	 *  path: the voxel pipeline is created against the bound render target and no GPU resource is created mid-pass.
 	 */
 	void prepareVoxelRenderData();
+
+	/**
+	 * @brief
+	 *  Upload the changed tilemap chunks of every visible tilemap entity (`RendererTilemap::prepareTilemap`).
+	 *
+	 *  Called by `renderWithStack` before the first layer records a draw, so no chunk upload splits a render pass.
+	 */
+	void prepareTilemapRenderData();
 
 	/**
 	 * @brief
@@ -1029,16 +1039,6 @@ private:
 	 */
 	[[nodiscard]] auto composeWorldMatrix(const Entity& iEntity, core::UUID iForbiddenAncestor) const
 			-> std::optional<math::mat4>;
-
-	/**
-	 * @brief
-	 *  Whether the current draw pass should include this entity.
-	 *
-	 * Decision is based on the entity's optional `RendererTag` and the layer being processed.
-	 * @param[in] iEntity The entity being evaluated.
-	 * @return True if the entity should be drawn in the current layer.
-	 */
-	[[nodiscard]] auto layerAccepts(const Entity& iEntity) const -> bool;
 
 	/**
 	 * @brief

@@ -481,10 +481,7 @@ void PhysicCommand::init(scene::Scene& ioScene) {
 		for (const auto& layer: assetData.layers) {
 			for (uint32_t y = 0; y < assetData.height; ++y) {
 				for (uint32_t x = 0; x < assetData.width; ++x) {
-					const size_t flat = static_cast<size_t>(y) * assetData.width + x;
-					if (flat >= layer.tiles.size())
-						continue;
-					const int32_t tileIdx = layer.tiles[flat];
+					const int32_t tileIdx = layer.getTile(x, y);
 					if (tileIdx < 0 || !tilesetPtr->isCollidable(static_cast<uint32_t>(tileIdx)))
 						continue;
 					const float cx = (originX + static_cast<float>(x) * cellSize) * worldTransform.scale().x();
