@@ -811,6 +811,7 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 
 	m_packager.onRender();
 	renderCommandPalette();
+	renderCommandForm();
 	m_toasts.onImGuiRender();
 }
 
@@ -834,6 +835,23 @@ void EditorLayer::renderCommandPalette() {
 						 .shortcut = m_actionRegistry.getShortcutString(action.id),
 						 .run = [this, id = action.id]() -> void { std::ignore = m_actionRegistry.run(id); }});
 	}
+	const bool playing = getState() != State::Edit;
+	for (const auto& spec: m_commands.getCommands()) {
+		items.push_back({.category = "Command",
+						 .label = spec.name,
+						 .shortcut = {},
+						 .run = [this, name = spec.name]() -> void {
+							 const auto* command = m_commands.find(name);
+							 if (command == nullptr)
+								 return;
+							 if (command->args.empty())
+								 runCommandFromUi(name, {});
+							 else
+								 m_commandForm.open(*command, getSelectedEntity() ? getSelectedEntity().getUUID()
+																				  : core::UUID{0});
+						 },
+						 .enabled = commands::CommandForm::isAvailable(spec, playing)});
+	}
 	if (const auto& scene = getActiveScene(); scene != nullptr) {
 		for (const auto& entity: scene->getAllEntities()) {
 			if (!entity.hasComponent<scene::component::Tag>())
@@ -849,6 +867,34 @@ void EditorLayer::renderCommandPalette() {
 							 openAssetFile(path);
 						 }});
 	m_commandPalette.onImGuiRender(items);
+}
+
+void EditorLayer::renderCommandForm() {
+	if (!m_commandForm.isOpen())
+		return;
+	std::vector<panel::EntityChoice> entities;
+	if (const auto& scene = getActiveScene(); scene != nullptr) {
+		for (const auto& entity: scene->getAllEntities()) {
+			if (entity.hasComponent<scene::component::Tag>())
+				entities.push_back({.uuid = entity.getUUID(), .tag = entity.getComponent<scene::component::Tag>().tag});
+		}
+	}
+	if (const auto submission = m_commandForm.onImGuiRender(entities); submission)
+		runCommandFromUi(submission->command, submission->args);
+}
+
+void EditorLayer::runCommandFromUi(const std::string& iName, const commands::CommandArgs& iArgs) {
+	const auto result = runCommand(iName, iArgs);
+	if (!result) {
+		m_toasts.push(gui::widgets::ToastKind::Error, std::format("{} failed", iName), result.error().message);
+		return;
+	}
+	m_toasts.push(gui::widgets::ToastKind::Success, result->description.empty() ? iName : result->description,
+				  commands::CommandForm::describeData(result->data));
+	if (const auto& scene = getActiveScene(); scene != nullptr && result->entity != core::UUID{0}) {
+		if (const auto entity = scene->findEntityByUUID(result->entity); entity)
+			setSelectedEntity(entity);
+	}
 }
 
 void EditorLayer::renderBackstage() {

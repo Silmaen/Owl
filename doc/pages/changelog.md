@@ -12,7 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Editor command API v2: `Vec2`, `Vec4`, `Color` and `Enum` arguments with defaults and choices, structured result
-  data, new commands `component.set`, `scene.save`, `edit.undo` and `edit.redo`, and edits refused during Play.
+  data, new commands `component.set`, `scene.save`, `edit.undo` and `edit.redo`, edits refused during Play, and every
+  command runnable from the command palette through an argument form.
 
 ### Changed
 

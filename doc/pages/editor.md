@@ -1210,6 +1210,14 @@ order (`svdoc` finds *Save Document*), move with the arrows, run with `Enter`, c
 elsewhere. Choosing an entity selects it, choosing an asset opens it. The action `view.commandPalette` has no key of
 its own and can be given one in the Shortcuts tab. Matches at the start of a word and runs of contiguous letters rank first (`CommandPalette::score`).
 
+The palette also lists every [editor command](#editor-commands) (category *Command*, e.g. `component.set`). A
+command without arguments runs at once; otherwise an argument form opens in place of the palette, one row per
+argument: a field for a text or a number, a checkbox for a bool, drag fields for a vector, a colour picker, a list for
+an enum (its choices) or an entity (the entities of the scene, the selection given by default). The rows start from
+the declared defaults; an optional argument has a checkbox to give it or not. **Run** (or `Ctrl+Enter`) stays
+disabled, with the reason shown, until the form is valid (`commands::CommandForm`). The result shows in a toast: the
+undo description and the result data, or the error. While the scene plays, the commands that edit it are greyed out.
+
 ### Rebinding
 
 All shortcuts can be rebound through the **Editor Settings** panel (Settings >
