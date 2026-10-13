@@ -19,6 +19,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   into the v0.7.0 visual scripting, HUD planned in Y-down pixels.
 - Clang-Tidy and Static Analyzer configurations no longer run the unit tests: `vendor.silmaen.run_tests` turns off a
   preset's Test step.
+- Owl Nest file dialogues on Linux go through `xdg-desktop-portal` over D-Bus, parented to the editor window, instead
+  of GTK, whose start-up froze the UI; D-Bus joins the Linux runtime dependencies.
+
+### Fixed
+
+- `FileDialog` no longer reads past the end of a filter, leaks the saved path, or asserts when no dialogue can open.
 
 ## [0.3.0] - 2026-10-12
 

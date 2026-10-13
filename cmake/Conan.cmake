@@ -98,7 +98,7 @@ if (${PROJECT_PREFIX}_CONAN_INSTALL)
         list(APPEND _owl_conan_env "CONAN_HOME=${${PROJECT_PREFIX}_CONAN_HOME}")
     endif ()
     # Cross compiling against a sysroot, pkg-config reads the target's .pc files there: for the recipes built here and
-    # for the system packages (gtk, xorg...), whose package_info() calls pkg-config outside any build environment.
+    # for the system packages (dbus, xorg...), whose package_info() calls pkg-config outside any build environment.
     if (CMAKE_CROSSCOMPILING AND CMAKE_SYSROOT)
         set(_owl_conan_pc "${CMAKE_SYSROOT}/usr/lib/${CMAKE_LIBRARY_ARCHITECTURE}/pkgconfig")
         list(APPEND _owl_conan_env "PKG_CONFIG_SYSROOT_DIR=${CMAKE_SYSROOT}"

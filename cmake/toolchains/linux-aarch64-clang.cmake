@@ -3,7 +3,7 @@
 # (`linux-cross-arm64` preset, see doc/pages/building.md#arm64-cross-compilation).
 #
 # The sysroot is an arm64 root filesystem holding the -dev packages of the native arm64 build (libstdc++, Vulkan,
-# GL, X11, Wayland, GTK 3, ALSA / PulseAudio), its absolute symlinks made relative. The binaries built here
+# GL, X11, Wayland, D-Bus, ALSA / PulseAudio), its absolute symlinks made relative. The binaries built here
 # (shader bake, tests) run on the build machine through qemu-user: the kernel must have a binfmt_misc entry for
 # aarch64 with the F (fix binary) flag, which also makes it work inside a container without qemu in it.
 #
