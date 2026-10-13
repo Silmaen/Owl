@@ -19,6 +19,7 @@ Development is heavily AI-assisted (the AI writes the code, the maintainer tests
 - ![Ongoing][ongoing] Performance budgets enforced in CI — benchmark regression threshold fails the build
 - ![Ongoing][ongoing] Documentation quality — public API documented, `doc/pages` updated in the same PR
 - ![Ongoing][ongoing] Editor coverage for every authored object — selection, inspection, editing, bulk ops, discovery
+- ![Ongoing][ongoing] Every edit gesture is a named editor command — recorded, replayable, reachable through MCP
 
 ## v1.0.0 -- Expected 2028-04-01
 
@@ -121,6 +122,7 @@ post-processing — with full 3D editing ([details](design/3d-core.md)).
 - ![Planned][planned] Tileset editor: compose the atlas from source images
 - ![Planned][planned] First procedural brick for tilemaps ([PCG graphs](design/pcg-graphs.md))
 - ![Planned][planned] "Look through scene camera" mode
+- ![Planned][planned] Lua editor scripts and interactive Lua console ([Editor scripting](design/editor-scripting.md))
 - ![Planned][planned] Help panel: mermaid diagrams and rendering polish
 - ![Planned][planned] Sample project: enemies demo (moved out of the engine)
 
@@ -141,6 +143,7 @@ MCP server in Owl Nest ([plan](design/isometric-worlds.md)).
 - ![Planned][planned] Input actions and gamepad with dead zones, action map editor ([Input](design/windowing-input.md))
 - ![Planned][planned] MCP server built into Owl Nest, on the editor command API ([MCP server](design/mcp-server.md))
 - ![Done][done] Native file dialogues through the desktop portal, no GTK ([Nest UI](design/nest-ui.md))
+- ![Planned][planned] Editor console and command journal, macros replayable as `.owlmacro` ([Editor scripting](design/editor-scripting.md))
 - ![Planned][planned] Sample project: inventory demo on the new HUD widgets, playable with a gamepad
 
 ## v0.3.0 -- 2026-10-11

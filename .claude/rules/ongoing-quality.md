@@ -92,6 +92,13 @@ Minimum bar for every authored object:
 Pre-merge check: pick a fresh user, ask them to author the new object end-to-end with
 no docs and no shell access. If they can't, the PR isn't done.
 
+## Every Edit Gesture Is an Editor Command
+
+- Every gesture that changes a scene or an asset in Owl Nest goes through a named `CommandRegistry` command, never a
+  direct `UndoManager` push from a panel, so the console, the journal, macros, MCP and editor scripts all see it
+  (`doc/pages/design/editor-scripting.md`)
+- Existing gestures move over in the PRs that touch them
+
 ## When Implementing a New Feature
 
 Checklist to run through before considering a feature complete:
@@ -107,4 +114,4 @@ Checklist to run through before considering a feature complete:
 9. Performance of hot paths verified unchanged (or improved)
 10. **Editor support shipped** — selection, inspection, editing, bulk ops, discoverability
     (see *Editor Coverage for Authored Objects* above) — for any object the user is
-    expected to author
+    expected to author, every edit gesture a registry command

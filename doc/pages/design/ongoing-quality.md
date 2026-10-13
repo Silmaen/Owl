@@ -68,3 +68,10 @@ editor support in Owl Nest **in the same PR** as the engine-side feature. "Edito
 
 "Working in YAML or via Lua only" is **not** acceptable for any object the user is expected to author by hand; treat
 that gap as a regression of the same severity as a missing test or missing public API doc.
+
+## Every edit gesture is an editor command
+
+Every gesture that changes a scene or an asset in Owl Nest goes through a named command of `CommandRegistry`, never a
+direct `UndoManager` push from a panel: the console, the journal, the `.owlmacro` macros, the MCP tools and the editor
+scripts all see it (see [Editor scripting](editor-scripting.md)). Existing gestures move over in the PRs that touch
+them.
