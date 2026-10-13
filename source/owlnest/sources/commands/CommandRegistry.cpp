@@ -16,11 +16,16 @@
 
 #include <scene/ComponentRegistry.h>
 #include <scene/PrefabSerializer.h>
+#include <scene/SceneSerializer.h>
 #include <scene/component/components.h>
 
+#include <yaml-cpp/yaml.h>
+
 #include <algorithm>
+#include <cctype>
 #include <charconv>
 #include <cstddef>
+#include <exception>
 #include <filesystem>
 #include <format>
 #include <sstream>
@@ -50,6 +55,14 @@ auto typeName(const ArgType iType) -> std::string_view {
 			return "an entity UUID or tag";
 		case ArgType::Vec3:
 			return "three numbers";
+		case ArgType::Vec2:
+			return "two numbers";
+		case ArgType::Vec4:
+			return "four numbers";
+		case ArgType::Color:
+			return "a colour (three or four numbers, or #rrggbb[aa])";
+		case ArgType::Enum:
+			return "one of the declared choices";
 	}
 	return "";
 }
@@ -68,8 +81,21 @@ auto fits(const ArgType iType, const ArgValue& iValue) -> bool {
 			return std::holds_alternative<int64_t>(iValue) || std::holds_alternative<std::string>(iValue);
 		case ArgType::Vec3:
 			return std::holds_alternative<math::vec3>(iValue);
+		case ArgType::Vec2:
+			return std::holds_alternative<math::vec2>(iValue);
+		case ArgType::Vec4:
+		case ArgType::Color:
+			return std::holds_alternative<math::vec4>(iValue);
+		case ArgType::Enum:
+			return std::holds_alternative<std::string>(iValue);
 	}
 	return false;
+}
+
+auto joinChoices(const std::vector<std::string>& iChoices) -> std::string {
+	std::string joined;
+	for (const auto& choice: iChoices) joined += joined.empty() ? choice : std::format(", {}", choice);
+	return joined;
 }
 
 auto entityArg(const scene::Scene& iScene, const CommandArgs& iArgs, const std::string& iName)
@@ -261,6 +287,156 @@ auto instantiatePrefab(const shared<scene::Scene>& ioScene, const CommandArgs& i
 						   .entity = root.getUUID()};
 }
 
+auto toArg(const core::UUID iUuid) -> ArgValue { return static_cast<int64_t>(static_cast<uint64_t>(iUuid)); }
+
+void mergeYaml(const YAML::Node& ioTarget, const YAML::Node& iPatch) {
+	std::vector<std::pair<YAML::Node, YAML::Node>> pending{{ioTarget, iPatch}};
+	while (!pending.empty()) {
+		auto [target, patch] = pending.back();
+		pending.pop_back();
+		for (const auto& item: patch) {
+			const auto key = item.first.as<std::string>();
+			if (auto field = target[key]; field && field.IsMap() && item.second.IsMap())
+				pending.emplace_back(field, item.second);
+			else
+				target[key] = YAML::Clone(item.second);
+		}
+	}
+}
+
+auto unknownField(const YAML::Node& iBefore, const YAML::Node& iAfter, const YAML::Node& iPatch)
+		-> std::optional<std::string> {
+	for (const auto& item: iPatch) {
+		auto key = item.first.as<std::string>();
+		if (!iBefore[key] && !iAfter[key])
+			return key;
+	}
+	return std::nullopt;
+}
+
+auto mergedComponentYaml(const std::string& iComponentYaml, const std::string& iKey, const std::string& iValues)
+		-> expected<std::string, CommandFailure> {
+	try {
+		const auto patch = YAML::Load(iValues);
+		if (!patch.IsMap())
+			return fail(CommandError::InvalidArgument, "`values` must be a YAML or JSON map of fields");
+		auto root = YAML::Load(iComponentYaml);
+		auto fields = root[iKey];
+		if (!fields.IsMap())
+			return fail(CommandError::NotApplicable, std::format("`{}` has no editable fields", iKey));
+		mergeYaml(fields, patch);
+		YAML::Emitter out;
+		out << root;
+		return std::string{out.c_str()};
+	} catch (const std::exception& e) {
+		return fail(CommandError::InvalidArgument, std::format("`values` is not valid YAML: {}", e.what()));
+	}
+}
+
+auto setComponent(const shared<scene::Scene>& ioScene, const CommandArgs& iArgs) -> Prepared {
+	const auto entity = entityArg(*ioScene, iArgs, "entity");
+	if (!entity)
+		return unexpected<CommandFailure>{entity.error()};
+	const auto name = iArgs.getText("component");
+	const auto* desc = scene::ComponentRegistry::find(name);
+	if (desc == nullptr || !desc->has(*entity))
+		return fail(CommandError::InvalidArgument, std::format("the entity has no component `{}`", name));
+	const auto componentYaml = scene::SceneSerializer::serializeComponentToString(*entity, desc->key);
+	if (componentYaml.empty())
+		return fail(CommandError::NotApplicable, std::format("`{}` is not serializable", desc->key));
+	const auto merged = mergedComponentYaml(componentYaml, desc->key, iArgs.getText("values"));
+	if (!merged)
+		return unexpected<CommandFailure>{merged.error()};
+	const auto beforeYaml = scene::SceneSerializer::serializeEntityToString(*entity);
+	const auto entityYaml = scene::SceneSerializer::replaceComponentInString(beforeYaml, desc->key, *merged);
+	if (entityYaml.empty() || !scene::SceneSerializer::applyEntityFromString(*entity, entityYaml)) {
+		std::ignore = scene::SceneSerializer::applyEntityFromString(*entity, beforeYaml);
+		return fail(CommandError::InvalidArgument, std::format("`{}` refused the values", desc->key));
+	}
+	const auto afterYaml = scene::SceneSerializer::serializeComponentToString(*entity, desc->key);
+	const auto patch = YAML::Load(iArgs.getText("values"));
+	if (const auto field = unknownField(YAML::Load(componentYaml)[desc->key], YAML::Load(afterYaml)[desc->key], patch);
+		field) {
+		std::ignore = scene::SceneSerializer::applyEntityFromString(*entity, beforeYaml);
+		return fail(CommandError::InvalidArgument, std::format("`{}` has no field `{}`", desc->key, *field));
+	}
+	auto command = mkUniq<ModifyEntityCommand>(entity->getUUID(), EntitySnapshot{entity->getUUID(), beforeYaml},
+											   std::format("Edit {} of '{}'", desc->name, entity->getName()));
+	command->setPrefabOverrides(PrefabOverrideChange::record(*entity, *ioScene, beforeYaml));
+	command->captureAfter(*entity);
+	return PreparedCommand{.command = std::move(command),
+						   .applied = true,
+						   .entity = entity->getUUID(),
+						   .data = {{"component", desc->key}}};
+}
+
+auto saveScene(const CommandContext& iContext, const CommandArgs& iArgs) -> expected<CommandResult, CommandFailure> {
+	const std::filesystem::path path =
+			iArgs.has("path") ? std::filesystem::path{iArgs.getText("path")} : iContext.scenePath;
+	if (path.empty())
+		return fail(CommandError::MissingArgument, "the scene was never saved, give `path`");
+	if (const scene::SceneSerializer serializer{iContext.scene}; !serializer.serialize(path))
+		return fail(CommandError::NotApplicable, std::format("cannot write {}", path.string()));
+	iContext.undo->markSaved();
+	if (iContext.onSaved)
+		iContext.onSaved(path);
+	return CommandResult{.entity = core::UUID{0},
+						 .description = std::format("Save {}", path.filename().string()),
+						 .data = {{"path", path.generic_string()}}};
+}
+
+auto historyResult(const SceneUndoManager& iUndo, std::string iDescription) -> CommandResult {
+	CommandResult result{.entity = iUndo.lastSelectionHint(), .description = std::move(iDescription), .data = {}};
+	result.data = {{"can_undo", iUndo.canUndo()}, {"can_redo", iUndo.canRedo()}};
+	if (result.entity != core::UUID{0})
+		result.data.emplace("entity", toArg(result.entity));
+	return result;
+}
+
+auto undoEdit(const CommandContext& iContext, const CommandArgs& /*iArgs*/) -> expected<CommandResult, CommandFailure> {
+	if (!iContext.undo->canUndo())
+		return fail(CommandError::NotApplicable, "nothing to undo");
+	auto description = iContext.undo->undoDescription();
+	iContext.undo->undo(*iContext.scene);
+	return historyResult(*iContext.undo, std::move(description));
+}
+
+auto redoEdit(const CommandContext& iContext, const CommandArgs& /*iArgs*/) -> expected<CommandResult, CommandFailure> {
+	if (!iContext.undo->canRedo())
+		return fail(CommandError::NotApplicable, "nothing to redo");
+	auto description = iContext.undo->redoDescription();
+	iContext.undo->redo(*iContext.scene);
+	return historyResult(*iContext.undo, std::move(description));
+}
+
+auto parseNumbers(const std::string& iText) -> std::optional<std::vector<float>> {
+	std::string spaced = iText;
+	std::ranges::replace(spaced, ',', ' ');
+	std::istringstream stream{spaced};
+	std::vector<float> numbers;
+	float value = 0.f;
+	while (stream >> value) numbers.push_back(value);
+	if (!stream.eof())
+		return std::nullopt;
+	return numbers;
+}
+
+auto parseHexColor(const std::string& iText) -> std::optional<math::vec4> {
+	const auto digits = std::string_view{iText}.substr(1);
+	if (digits.size() != 6 && digits.size() != 8)
+		return std::nullopt;
+	math::vec4 color{0.f, 0.f, 0.f, 1.f};
+	for (size_t i = 0; i < digits.size() / 2; ++i) {
+		uint32_t channel = 0;
+		const auto* const first = digits.data() + (2 * i);
+		if (const auto [ptr, ec] = std::from_chars(first, first + 2, channel, 16);
+			ec != std::errc{} || ptr != first + 2)
+			return std::nullopt;
+		color[i] = static_cast<float>(channel) / 255.f;
+	}
+	return color;
+}
+
 auto entitySpec(std::string iDescription) -> ArgSpec {
 	return {.name = "entity", .type = ArgType::Entity, .required = true, .description = std::move(iDescription)};
 }
@@ -294,18 +470,27 @@ auto CommandArgs::getVec3(const std::string& iName) const -> std::optional<math:
 CommandRegistry::CommandRegistry() {
 	add({.name = "entity.create",
 		 .description = "Create an empty entity, at the root or under a parent.",
-		 .args = {{.name = "name", .type = ArgType::Text, .description = "Tag of the entity (`Empty Entity`)."},
+		 .args = {{.name = "name",
+				   .type = ArgType::Text,
+				   .description = "Tag of the entity.",
+				   .defaultValue = std::string{"Empty Entity"}},
 				  {.name = "parent", .type = ArgType::Entity, .description = "Parent entity (root when absent)."}},
 		 .factory = createEntity});
 	add({.name = "entity.delete",
 		 .description = "Delete an entity; its children move to its parent unless `children` is true.",
 		 .args = {entitySpec("Entity to delete."),
-				  {.name = "children", .type = ArgType::Bool, .description = "Delete the children too."}},
+				  {.name = "children",
+				   .type = ArgType::Bool,
+				   .description = "Delete the children too.",
+				   .defaultValue = false}},
 		 .factory = deleteEntity});
 	add({.name = "entity.duplicate",
 		 .description = "Duplicate an entity next to it, with its children when `children` is true.",
 		 .args = {entitySpec("Entity to duplicate."),
-				  {.name = "children", .type = ArgType::Bool, .description = "Duplicate the children too."}},
+				  {.name = "children",
+				   .type = ArgType::Bool,
+				   .description = "Duplicate the children too.",
+				   .defaultValue = false}},
 		 .factory = duplicateEntity});
 	add({.name = "entity.reparent",
 		 .description = "Move an entity under another one, or to the root without `parent`; the world position "
@@ -349,6 +534,34 @@ CommandRegistry::CommandRegistry() {
 				   .description = "Path recorded in the instance link (relative to the asset folder holding the "
 								  "file when absent)."}},
 		 .factory = instantiatePrefab});
+	add({.name = "component.set",
+		 .description = "Change fields of a component of an entity: the values are merged into its current state.",
+		 .args = {entitySpec("Entity changed."),
+				  {.name = "component",
+				   .type = ArgType::Text,
+				   .required = true,
+				   .description = "Component name or file key."},
+				  {.name = "values",
+				   .type = ArgType::Text,
+				   .required = true,
+				   .description = "YAML or JSON map of the fields to change, as in the scene file "
+								  "(`{color: [1, 0, 0, 1]}`)."}},
+		 .factory = setComponent});
+	add({.name = "scene.save",
+		 .description = "Save the scene to its file, or to `path`.",
+		 .args = {{.name = "path", .type = ArgType::Text, .description = "File written (the scene file when absent)."}},
+		 .factory = {},
+		 .run = saveScene});
+	add({.name = "edit.undo",
+		 .description = "Undo the last change of the scene.",
+		 .args = {},
+		 .factory = {},
+		 .run = undoEdit});
+	add({.name = "edit.redo",
+		 .description = "Redo the last change undone.",
+		 .args = {},
+		 .factory = {},
+		 .run = redoEdit});
 }
 
 void CommandRegistry::add(CommandSpec iSpec) {
@@ -374,6 +587,10 @@ auto CommandRegistry::validate(const CommandSpec& iSpec, const CommandArgs& iArg
 			return CommandFailure{.error = CommandError::WrongArgumentType,
 								  .message =
 										  std::format("{}: `{}` must be {}", iSpec.name, name, typeName(spec->type))};
+		if (spec->type == ArgType::Enum && !std::ranges::contains(spec->choices, std::get<std::string>(value)))
+			return CommandFailure{.error = CommandError::InvalidArgument,
+								  .message = std::format("{}: `{}` must be one of: {}", iSpec.name, name,
+														 joinChoices(spec->choices))};
 	}
 	for (const auto& arg: iSpec.args) {
 		if (arg.required && !iArgs.has(arg.name))
@@ -386,31 +603,59 @@ auto CommandRegistry::validate(const CommandSpec& iSpec, const CommandArgs& iArg
 auto CommandRegistry::execute(const std::string_view iName, const CommandArgs& iArgs,
 							  const shared<scene::Scene>& ioScene, SceneUndoManager& ioUndo) const
 		-> expected<CommandResult, CommandFailure> {
+	return execute(iName, iArgs, CommandContext{.scene = ioScene, .undo = &ioUndo, .playing = false});
+}
+
+auto CommandRegistry::execute(const std::string_view iName, const CommandArgs& iArgs,
+							  const CommandContext& iContext) const -> expected<CommandResult, CommandFailure> {
 	const auto* spec = find(iName);
 	if (spec == nullptr) {
 		OWL_WARN("Command: Unknown command '{}'.", iName)
 		return fail(CommandError::UnknownCommand, std::format("unknown command `{}`", iName));
 	}
+	if (iContext.playing && !spec->allowedInPlay) {
+		OWL_WARN("Command: {} refused, the scene is playing.", spec->name)
+		return fail(CommandError::RefusedDuringPlay,
+					std::format("{}: the scene is playing, stop it to edit the scene", spec->name));
+	}
 	if (const auto failure = validate(*spec, iArgs); failure) {
 		OWL_WARN("Command: {}.", failure->message)
 		return unexpected<CommandFailure>{*failure};
 	}
-	if (!ioScene) {
-		OWL_WARN("Command: {} needs a scene.", spec->name)
-		return fail(CommandError::NotApplicable, std::format("{}: no scene", spec->name));
+	if (!iContext.scene || iContext.undo == nullptr) {
+		OWL_WARN("Command: {} needs a scene and its undo history.", spec->name)
+		return fail(CommandError::NotApplicable, std::format("{}: no scene or undo history", spec->name));
 	}
-	auto prepared = spec->factory(ioScene, iArgs);
-	if (!prepared) {
-		auto failure = prepared.error();
-		failure.message = std::format("{}: {}", spec->name, failure.message);
-		OWL_WARN("Command: {}.", failure.message)
-		return unexpected<CommandFailure>{std::move(failure)};
+	CommandArgs args = iArgs;
+	for (const auto& arg: spec->args) {
+		if (arg.defaultValue && !args.has(arg.name))
+			args.set(arg.name, *arg.defaultValue);
 	}
-	CommandResult result{.entity = prepared->entity, .description = prepared->command->description()};
+	const auto withPrefix = [&spec](CommandFailure iFailure) -> unexpected<CommandFailure> {
+		iFailure.message = std::format("{}: {}", spec->name, iFailure.message);
+		OWL_WARN("Command: {}.", iFailure.message)
+		return unexpected<CommandFailure>{std::move(iFailure)};
+	};
+	if (!spec->factory) {
+		if (!spec->run)
+			return withPrefix({.error = CommandError::NotApplicable, .message = "the command does nothing"});
+		auto result = spec->run(iContext, args);
+		if (!result)
+			return withPrefix(result.error());
+		return result;
+	}
+	auto prepared = spec->factory(iContext.scene, args);
+	if (!prepared)
+		return withPrefix(prepared.error());
+	CommandResult result{.entity = prepared->entity,
+						 .description = prepared->command->description(),
+						 .data = std::move(prepared->data)};
+	if (result.entity != core::UUID{0})
+		result.data.insert_or_assign("entity", toArg(result.entity));
 	if (prepared->applied)
-		ioUndo.push(std::move(prepared->command));
+		iContext.undo->push(std::move(prepared->command));
 	else
-		ioUndo.execute(std::move(prepared->command), *ioScene);
+		iContext.undo->execute(std::move(prepared->command), *iContext.scene);
 	return result;
 }
 
@@ -445,17 +690,31 @@ auto CommandRegistry::parseArg(const ArgType iType, const std::string& iText) ->
 			if (const auto value = toInteger(); value)
 				return *value;
 			return iText;
+		case ArgType::Enum:
+			return iText;
+		case ArgType::Vec2:
 		case ArgType::Vec3:
-			{
-				std::string spaced = iText;
-				std::ranges::replace(spaced, ',', ' ');
-				std::istringstream stream{spaced};
-				math::vec3 value;
-				if (stream >> value.x() >> value.y() >> value.z())
-					return value;
-				return std::nullopt;
-			}
+		case ArgType::Vec4:
+		case ArgType::Color:
+			break;
 	}
+	if (iType == ArgType::Color && iText.starts_with('#')) {
+		if (const auto color = parseHexColor(iText); color)
+			return *color;
+		return std::nullopt;
+	}
+	const auto numbers = parseNumbers(iText);
+	if (!numbers)
+		return std::nullopt;
+	const auto& n = *numbers;
+	if (iType == ArgType::Vec2 && n.size() == 2)
+		return math::vec2{n[0], n[1]};
+	if (iType == ArgType::Vec3 && n.size() == 3)
+		return math::vec3{n[0], n[1], n[2]};
+	if (iType == ArgType::Vec4 && n.size() == 4)
+		return math::vec4{n[0], n[1], n[2], n[3]};
+	if (iType == ArgType::Color && (n.size() == 3 || n.size() == 4))
+		return math::vec4{n[0], n[1], n[2], n.size() == 4 ? n[3] : 1.f};
 	return std::nullopt;
 }
 

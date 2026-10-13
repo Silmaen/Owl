@@ -16,6 +16,7 @@
 #include <scene/Scene.h>
 
 #include <cstdint>
+#include <filesystem>
 #include <functional>
 #include <initializer_list>
 #include <map>
@@ -38,14 +39,18 @@ enum struct ArgType : uint8_t {
 	Number,///< Floating-point number (an integer is accepted).
 	Text,///< String.
 	Entity,///< An entity: its UUID (integer) or its tag (text).
-	Vec3///< Three numbers.
+	Vec3,///< Three numbers.
+	Vec2,///< Two numbers.
+	Vec4,///< Four numbers.
+	Color,///< A colour: three or four numbers in [0, 1] (alpha 1 when absent), or `#rrggbb` / `#rrggbbaa`.
+	Enum///< One text among the declared choices.
 };
 
 /**
  * @brief
  *  Value of a command argument.
  */
-using ArgValue = std::variant<bool, int64_t, double, std::string, math::vec3>;
+using ArgValue = std::variant<bool, int64_t, double, std::string, math::vec3, math::vec2, math::vec4>;
 
 /**
  * @brief
@@ -60,6 +65,10 @@ struct ArgSpec {
 	bool required{false};
 	/// One-line description, shown by tools.
 	std::string description;
+	/// Value the command receives when the caller omits the argument (none: the argument stays absent).
+	std::optional<ArgValue> defaultValue{};// NOLINT(readability-redundant-member-init) callers may omit it
+	/// Accepted values of an `Enum` argument.
+	std::vector<std::string> choices{};// NOLINT(readability-redundant-member-init) callers may omit it
 };
 
 /**
@@ -73,7 +82,8 @@ enum struct CommandError : uint8_t {
 	UnknownArgument,///< An argument the command does not declare.
 	UnknownEntity,///< No entity matches the UUID or tag given.
 	InvalidArgument,///< The value is of the right type but cannot be used (unknown component, missing file...).
-	NotApplicable///< The scene refused the change (e.g. a cycle in the hierarchy).
+	NotApplicable,///< The scene refused the change (e.g. a cycle in the hierarchy, nothing to undo).
+	RefusedDuringPlay///< The command edits the scene and the scene is playing.
 };
 
 /**
@@ -146,6 +156,22 @@ public:
 
 	/**
 	 * @brief
+	 *  Read an argument of any type.
+	 * @tparam T Alternative of `ArgValue` expected.
+	 * @param[in] iName Argument name.
+	 * @return The value, or nothing when the argument is absent or of another type.
+	 */
+	template<typename T>
+	[[nodiscard]] auto get(const std::string& iName) const -> std::optional<T> {
+		const auto found = m_values.find(iName);
+		if (found == m_values.end())
+			return std::nullopt;
+		const auto* value = std::get_if<T>(&found->second);
+		return value != nullptr ? std::optional<T>{*value} : std::nullopt;
+	}
+
+	/**
+	 * @brief
 	 *  Raw access to every argument.
 	 * @return The arguments by name.
 	 */
@@ -158,13 +184,21 @@ private:
 
 /**
  * @brief
+ *  Structured data returned by a command, by field name (sorted, hence deterministic).
+ */
+using ResultData = std::map<std::string, ArgValue>;
+
+/**
+ * @brief
  *  What a command did.
  */
 struct CommandResult {
 	/// The entity created or changed (0 when none), to select it.
 	core::UUID entity{0};
-	/// Description of the undo entry.
+	/// Description of the undo entry (or of the entry undone / redone).
 	std::string description;
+	/// Fields a tool can read: `entity` (UUID) when an entity is concerned, plus what the command adds.
+	ResultData data{};// NOLINT(readability-redundant-member-init) callers may omit it
 };
 
 /**
@@ -181,6 +215,27 @@ struct PreparedCommand {
 	bool applied{false};
 	/// The entity created or changed (0 when none).
 	core::UUID entity{0};
+	/// Extra result fields (see CommandResult::data).
+	ResultData data{};// NOLINT(readability-redundant-member-init) callers may omit it
+};
+
+/**
+ * @brief
+ *  Everything a command may act on: the scene, its undo history, the play state and the scene file.
+ */
+struct CommandContext {
+	/// Callback signature: told the path of the file written.
+	using SaveCallback = std::function<void(const std::filesystem::path& iPath)>;
+	/// The scene changed.
+	shared<scene::Scene> scene;
+	/// The undo manager of the scene (non-owning).
+	SceneUndoManager* undo{nullptr};
+	/// True while the scene plays: commands that edit it are refused.
+	bool playing{false};
+	/// File of the scene, used by `scene.save` without `path` (empty when never saved).
+	std::filesystem::path scenePath{};
+	/// Called after `scene.save` wrote the file, with its path (the editor updates the document).
+	SaveCallback onSaved{};// NOLINT(readability-redundant-member-init) callers may omit it
 };
 
 /**
@@ -191,14 +246,21 @@ struct CommandSpec {
 	/// Factory signature: build the command for a scene, from validated arguments.
 	using Factory = std::function<expected<PreparedCommand, CommandFailure>(const shared<scene::Scene>& ioScene,
 																			const CommandArgs& iArgs)>;
+	/// Runner signature: act directly on the context (commands that are not an undo entry: save, undo, redo).
+	using Runner = std::function<expected<CommandResult, CommandFailure>(const CommandContext& iContext,
+																		 const CommandArgs& iArgs)>;
 	/// Dotted command name (`entity.create`).
 	std::string name;
 	/// One-line description, shown by tools.
 	std::string description;
 	/// Declared arguments.
 	std::vector<ArgSpec> args;
-	/// Command factory.
+	/// Command factory, for a command recorded in the undo history.
 	Factory factory;
+	/// Command runner, used when there is no factory.
+	Runner run{};// NOLINT(readability-redundant-member-init) callers may omit it
+	/// Whether the command may run while the scene plays (only commands that do not edit it).
+	bool allowedInPlay{false};
 };
 
 /**
@@ -263,9 +325,21 @@ public:
 
 	/**
 	 * @brief
+	 *  Validate the arguments, fill the defaults and run the command on a context.
+	 * @param[in] iName Command name.
+	 * @param[in] iArgs Command arguments.
+	 * @param[in] iContext The scene, its undo manager, the play state and the scene file.
+	 * @return What the command did, or why it did not run (nothing changed then).
+	 */
+	[[nodiscard]] auto execute(std::string_view iName, const CommandArgs& iArgs, const CommandContext& iContext) const
+			-> expected<CommandResult, CommandFailure>;
+
+	/**
+	 * @brief
 	 *  Convert a textual value (scenario files, tools) into an argument of the given type.
 	 * @param[in] iType Declared type.
-	 * @param[in] iText The value as text; a vector is three numbers separated by commas or spaces.
+	 * @param[in] iText The value as text; a vector is its numbers separated by commas or spaces, a colour three or
+	 *  four numbers or `#rrggbb[aa]`, an enum its choice (checked against the choices when the command runs).
 	 * @return The value, or nothing when the text does not fit the type.
 	 */
 	[[nodiscard]] static auto parseArg(ArgType iType, const std::string& iText) -> std::optional<ArgValue>;

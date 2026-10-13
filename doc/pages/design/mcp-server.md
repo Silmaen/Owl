@@ -30,12 +30,17 @@ Pull requests MCP0 to MCP4 of [Isometric worlds](isometric-worlds.md).
 
 ### Command API v2 (MCP0)
 
-At v0.3.0 the registry has 9 commands, arguments without defaults nor choices, and results limited to an entity id.
+Done. At v0.3.0 the registry had 9 commands, arguments without defaults nor choices, and results limited to an
+entity id; it now has 13 (see [Editor](../editor.md), Editor commands).
 
-- Argument types Vec2, Vec4 / colour and enum; `ArgSpec` default value and choices, so tool schemas are precise
-- `CommandResult` carries structured data
-- New commands: `component.set` (merges a YAML fragment, recorded as a `ModifyEntityCommand`), `scene.save`,
-  `edit.undo`, `edit.redo`; edits are refused during Play
+- Argument types `Vec2`, `Vec4`, `Color` and `Enum`; `ArgSpec::defaultValue` (filled in before the command runs)
+  and `ArgSpec::choices` (checked), so tool schemas are precise
+- `CommandResult::data` carries structured fields (`entity`, `component`, `path`, `can_undo`...)
+- New commands: `component.set` (merges a YAML / JSON fragment, recorded as a `ModifyEntityCommand`), `scene.save`,
+  `edit.undo`, `edit.redo`; a `CommandSpec` holds either a factory (undo entry) or a runner (save, undo, redo)
+- `CommandContext` (scene, undo history, play state, scene file, save callback) is what a command runs on;
+  `EditorLayer::runCommand` builds it from the active document. While it plays, every command without
+  `allowedInPlay` is refused with `RefusedDuringPlay`
 - Every editor document adds its own named commands (the HUD editor first)
 
 ### Editor session (MCP1)

@@ -46,6 +46,7 @@
 #include <filesystem>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -377,6 +378,16 @@ public:
 	 * @param[in] iAssetRelativePath Asset-relative path stored in the resulting `PrefabLink` (auto-derived when empty).
 	 */
 	void instantiatePrefab(const std::filesystem::path& iPrefabPath, const std::string& iAssetRelativePath = {});
+
+	/**
+	 * @brief
+	 *  Run a named command on the active scene document; edits are refused while it plays.
+	 * @param[in] iName Command name.
+	 * @param[in] iArgs Command arguments.
+	 * @return What the command did, or why it did not run.
+	 */
+	auto runCommand(std::string_view iName, const commands::CommandArgs& iArgs)
+			-> expected<commands::CommandResult, commands::CommandFailure>;
 
 	/**
 	 * @brief

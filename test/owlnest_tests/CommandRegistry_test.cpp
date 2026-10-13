@@ -23,6 +23,9 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <filesystem>
+#include <fstream>
+#include <sstream>
 #include <string>
 #include <tuple>
 #include <variant>
@@ -70,8 +73,14 @@ TEST_F(CommandRegistryTest, DeclaresTheBuiltinCommands) {
 		EXPECT_FALSE(spec->description.empty()) << name;
 		EXPECT_TRUE(spec->factory) << name;
 	}
+	for (const auto* name: {"component.set", "scene.save", "edit.undo", "edit.redo"}) {
+		const auto* spec = m_registry.find(name);
+		ASSERT_NE(spec, nullptr) << name;
+		EXPECT_TRUE(spec->factory || spec->run) << name;
+		EXPECT_FALSE(spec->allowedInPlay) << name;
+	}
 	EXPECT_EQ(m_registry.find("entity.explode"), nullptr);
-	EXPECT_EQ(m_registry.getCommands().size(), 9u);
+	EXPECT_EQ(m_registry.getCommands().size(), 13u);
 }
 
 TEST_F(CommandRegistryTest, CreateUnderAParentThenUndoRedo) {
@@ -214,5 +223,184 @@ TEST_F(CommandRegistryTest, IncompleteTargetRefusesCommands) {
 TEST_F(CommandRegistryTest, AddReplacesACommandOfTheSameName) {
 	m_registry.add({.name = "entity.create", .description = "Replaced.", .args = {}, .factory = {}});
 	EXPECT_EQ(m_registry.find("entity.create")->description, "Replaced.");
-	EXPECT_EQ(m_registry.getCommands().size(), 9u);
+	EXPECT_EQ(m_registry.getCommands().size(), 13u);
+}
+
+TEST_F(CommandRegistryTest, ParsesVectorColourAndEnumArguments) {
+	const auto vec2 = CommandRegistry::parseArg(ArgType::Vec2, "1.5, -2");
+	ASSERT_TRUE(vec2.has_value());
+	EXPECT_FLOAT_EQ(std::get<math::vec2>(*vec2).y(), -2.f);
+	EXPECT_FALSE(CommandRegistry::parseArg(ArgType::Vec2, "1 2 3").has_value());
+	const auto vec4 = CommandRegistry::parseArg(ArgType::Vec4, "1 2 3 4");
+	ASSERT_TRUE(vec4.has_value());
+	EXPECT_FLOAT_EQ(std::get<math::vec4>(*vec4).w(), 4.f);
+	EXPECT_FALSE(CommandRegistry::parseArg(ArgType::Vec4, "1 2 3").has_value());
+	EXPECT_FALSE(CommandRegistry::parseArg(ArgType::Vec3, "1 2 x").has_value());
+	const auto rgb = CommandRegistry::parseArg(ArgType::Color, "1, 0.5, 0");
+	ASSERT_TRUE(rgb.has_value());
+	EXPECT_FLOAT_EQ(std::get<math::vec4>(*rgb).w(), 1.f);
+	const auto hex = CommandRegistry::parseArg(ArgType::Color, "#ff000080");
+	ASSERT_TRUE(hex.has_value());
+	EXPECT_FLOAT_EQ(std::get<math::vec4>(*hex).x(), 1.f);
+	EXPECT_NEAR(std::get<math::vec4>(*hex).w(), 0.5f, 0.01f);
+	const auto opaque = CommandRegistry::parseArg(ArgType::Color, "#00ff00");
+	ASSERT_TRUE(opaque.has_value());
+	EXPECT_FLOAT_EQ(std::get<math::vec4>(*opaque).w(), 1.f);
+	EXPECT_FALSE(CommandRegistry::parseArg(ArgType::Color, "#ff00").has_value());
+	EXPECT_FALSE(CommandRegistry::parseArg(ArgType::Color, "#gg0000").has_value());
+	EXPECT_EQ(std::get<std::string>(*CommandRegistry::parseArg(ArgType::Enum, "Linear")), "Linear");
+}
+
+TEST_F(CommandRegistryTest, DefaultsChoicesAndNewArgumentTypesReachTheCommand) {
+	CommandArgs seen;
+	m_registry.add({.name = "test.probe",
+					.description = "Record its arguments.",
+					.args = {{.name = "size", .type = ArgType::Vec2, .description = "Size."},
+							 {.name = "tint",
+							  .type = ArgType::Color,
+							  .description = "Tint.",
+							  .defaultValue = math::vec4{1.f, 1.f, 1.f, 1.f}},
+							 {.name = "mode",
+							  .type = ArgType::Enum,
+							  .description = "Mode.",
+							  .defaultValue = std::string{"Fast"},
+							  .choices = {"Fast", "Slow"}}},
+					.factory = {},
+					.run = [&seen](const CommandContext& /*iContext*/,
+								   const CommandArgs& iArgs) -> expected<CommandResult, CommandFailure> {
+						seen = iArgs;
+						return CommandResult{.entity = core::UUID{0}, .description = "Probe", .data = {{"ok", true}}};
+					}});
+	const auto result = run("test.probe", {{"size", math::vec2{2.f, 3.f}}});
+	ASSERT_TRUE(result.has_value());
+	EXPECT_TRUE(std::get<bool>(result->data.at("ok")));
+	EXPECT_EQ(seen.get<std::string>("mode"), "Fast");
+	EXPECT_FLOAT_EQ(seen.get<math::vec4>("tint")->x(), 1.f);
+	EXPECT_FLOAT_EQ(seen.get<math::vec2>("size")->y(), 3.f);
+	EXPECT_FALSE(seen.get<double>("size").has_value());
+	ASSERT_TRUE(run("test.probe", {{"mode", std::string{"Slow"}}}).has_value());
+	EXPECT_EQ(seen.get<std::string>("mode"), "Slow");
+	const auto badChoice = run("test.probe", {{"mode", std::string{"Warp"}}});
+	ASSERT_FALSE(badChoice.has_value());
+	EXPECT_EQ(badChoice.error().error, CommandError::InvalidArgument);
+	EXPECT_NE(badChoice.error().message.find("Fast, Slow"), std::string::npos);
+	EXPECT_EQ(run("test.probe", {{"tint", math::vec3{1.f, 0.f, 0.f}}}).error().error, CommandError::WrongArgumentType);
+	EXPECT_EQ(run("test.probe", {{"size", math::vec4{}}}).error().error, CommandError::WrongArgumentType);
+}
+
+TEST_F(CommandRegistryTest, ResultsCarryStructuredData) {
+	const auto created = run("entity.create", {});
+	ASSERT_TRUE(created.has_value());
+	EXPECT_EQ(std::get<int64_t>(created->data.at("entity")),
+			  static_cast<int64_t>(static_cast<uint64_t>(created->entity)));
+	EXPECT_EQ(m_scene->findEntityByUUID(created->entity).getName(), "Empty Entity");
+}
+
+TEST_F(CommandRegistryTest, SetComponentMergesFieldsAndUndoes) {
+	auto entity = m_scene->createEntity("Ring");
+	entity.addComponent<scene::component::CircleRenderer>();
+	const auto result =
+			run("component.set", {{"entity", idOf(entity)},
+								  {"component", std::string{"Circle Renderer"}},
+								  {"values", std::string{R"({"color": [1, 0, 0, 0.5], "thickness": 0.25})"}}});
+	ASSERT_TRUE(result.has_value()) << result.error().message;
+	EXPECT_EQ(std::get<std::string>(result->data.at("component")), "CircleRenderer");
+	const auto& circle = entity.getComponent<scene::component::CircleRenderer>();
+	EXPECT_FLOAT_EQ(circle.color.y(), 0.f);
+	EXPECT_FLOAT_EQ(circle.color.w(), 0.5f);
+	EXPECT_FLOAT_EQ(circle.thickness, 0.25f);
+	EXPECT_FLOAT_EQ(circle.fade, 0.005f);
+	ASSERT_TRUE(m_undo.canUndo());
+	m_undo.undo(*m_scene);
+	const auto restored = m_scene->findEntityByUUID(entity.getUUID());
+	EXPECT_FLOAT_EQ(restored.getComponent<scene::component::CircleRenderer>().thickness, 1.f);
+	m_undo.redo(*m_scene);
+	const auto redone = m_scene->findEntityByUUID(entity.getUUID());
+	EXPECT_FLOAT_EQ(redone.getComponent<scene::component::CircleRenderer>().thickness, 0.25f);
+}
+
+TEST_F(CommandRegistryTest, SetComponentRefusesBadValues) {
+	auto entity = m_scene->createEntity("Ring");
+	entity.addComponent<scene::component::CircleRenderer>();
+	const auto expectError = [this, &entity](const std::string& iComponent, const std::string& iValues,
+											 const CommandError iError) -> void {
+		const auto result =
+				run("component.set", {{"entity", idOf(entity)}, {"component", iComponent}, {"values", iValues}});
+		ASSERT_FALSE(result.has_value()) << iValues;
+		EXPECT_EQ(result.error().error, iError) << result.error().message;
+	};
+	expectError("Sprite Renderer", "{}", CommandError::InvalidArgument);
+	expectError("Circle Renderer", "[1, 2]", CommandError::InvalidArgument);
+	expectError("Circle Renderer", "{color: [1, 0", CommandError::InvalidArgument);
+	expectError("Circle Renderer", "{radius: 3}", CommandError::InvalidArgument);
+	EXPECT_FALSE(m_undo.canUndo());
+	EXPECT_FLOAT_EQ(entity.getComponent<scene::component::CircleRenderer>().thickness, 1.f);
+}
+
+TEST_F(CommandRegistryTest, UndoAndRedoCommands) {
+	EXPECT_EQ(run("edit.undo", {}).error().error, CommandError::NotApplicable);
+	EXPECT_EQ(run("edit.redo", {}).error().error, CommandError::NotApplicable);
+	const auto created = run("entity.create", {{"name", std::string{"Crate"}}});
+	ASSERT_TRUE(created.has_value());
+	const auto undone = run("edit.undo", {});
+	ASSERT_TRUE(undone.has_value());
+	EXPECT_EQ(undone->description, created->description);
+	EXPECT_FALSE(std::get<bool>(undone->data.at("can_undo")));
+	EXPECT_TRUE(std::get<bool>(undone->data.at("can_redo")));
+	EXPECT_EQ(count(), 0u);
+	const auto redone = run("edit.redo", {});
+	ASSERT_TRUE(redone.has_value());
+	EXPECT_EQ(count(), 1u);
+	EXPECT_FALSE(std::get<bool>(redone->data.at("can_redo")));
+}
+
+TEST_F(CommandRegistryTest, SaveWritesTheSceneAndMarksItSaved) {
+	const auto dir = std::filesystem::temp_directory_path() / "owl_command_save_test";
+	std::filesystem::create_directories(dir);
+	const auto path = dir / "saved.owl";
+	std::filesystem::path notified;
+	const CommandContext context{
+			.scene = m_scene,
+			.undo = &m_undo,
+			.playing = false,
+			.scenePath = {},
+			.onSaved = [&notified](const std::filesystem::path& iPath) -> void { notified = iPath; }};
+	ASSERT_TRUE(m_registry.execute("entity.create", {{"name", std::string{"Saved Crate"}}}, context).has_value());
+	EXPECT_TRUE(m_undo.isDirty());
+	EXPECT_EQ(m_registry.execute("scene.save", {}, context).error().error, CommandError::MissingArgument);
+	const auto saved = m_registry.execute("scene.save", {{"path", path.string()}}, context);
+	ASSERT_TRUE(saved.has_value()) << saved.error().message;
+	EXPECT_EQ(std::get<std::string>(saved->data.at("path")), path.generic_string());
+	EXPECT_EQ(notified, path);
+	EXPECT_FALSE(m_undo.isDirty());
+	const std::ifstream file{path};
+	std::stringstream content;
+	content << file.rdbuf();
+	EXPECT_NE(content.str().find("Saved Crate"), std::string::npos);
+	CommandContext withPath = context;
+	withPath.scenePath = path;
+	EXPECT_TRUE(m_registry.execute("scene.save", {}, withPath).has_value());
+	std::filesystem::remove_all(dir);
+}
+
+TEST_F(CommandRegistryTest, EditsAreRefusedDuringPlay) {
+	std::ignore = m_scene->createEntity("Box");
+	const CommandContext playing{.scene = m_scene, .undo = &m_undo, .playing = true, .scenePath = {}, .onSaved = {}};
+	for (const auto* name: {"entity.create", "edit.undo", "scene.save", "component.set"}) {
+		const auto result = m_registry.execute(name, {}, playing);
+		ASSERT_FALSE(result.has_value()) << name;
+		EXPECT_EQ(result.error().error, CommandError::RefusedDuringPlay) << name;
+		EXPECT_NE(result.error().message.find("playing"), std::string::npos);
+	}
+	EXPECT_EQ(count(), 1u);
+	m_registry.add({.name = "test.read",
+					.description = "Read only.",
+					.args = {},
+					.factory = {},
+					.run = [](const CommandContext& /*iContext*/, const CommandArgs& /*iArgs*/)
+							-> expected<CommandResult, CommandFailure> { return CommandResult{}; },
+					.allowedInPlay = true});
+	EXPECT_TRUE(m_registry.execute("test.read", {}, playing).has_value());
+	const CommandContext noUndo{.scene = m_scene, .undo = nullptr, .playing = false, .scenePath = {}, .onSaved = {}};
+	EXPECT_EQ(m_registry.execute("test.read", {}, noUndo).error().error, CommandError::NotApplicable);
 }

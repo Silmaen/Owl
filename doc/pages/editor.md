@@ -952,7 +952,8 @@ steps:
 |           | `exists`; or `gamestate: <key>`. Each check is a value or `equals` / `greater` / `less`,        |
 |           | `tolerance` for a numeric `equals`                                                              |
 | `command` | An editor command (see below) by name, its arguments under `args`:                              |
-|           | `{command: entity.delete, args: {entity: Crate}}`; a vector is a three-number list              |
+|           | `{command: entity.delete, args: {entity: Crate}}`; a vector or a colour is a list of numbers,   |
+|           | a text argument may be a map (`component.set` values)                                           |
 | `undo`    | Number of commands to undo                                                                      |
 | `redo`    | Number of commands to redo                                                                      |
 
@@ -963,10 +964,16 @@ the playing scene with an undo history of their own (`test/scenarios/editor_comm
 ### Editor commands
 
 Every discrete change of a scene in Owl Nest (creating, deleting, duplicating, moving in the hierarchy, adding or
-removing a component, instantiating a prefab) is a named command of `commands::CommandRegistry`, run through the
-scene's undo manager: the hierarchy menus, the drag and drop, the Delete / Ctrl+D shortcuts, the scenario runner and
-the tests call the same commands with typed arguments, so every change is undoable whoever asked for it. A command
-that cannot run (unknown entity, wrong argument type, missing file) changes nothing and logs why.
+removing a component, editing its fields, instantiating a prefab) is a named command of `commands::CommandRegistry`,
+run through the scene's undo manager: the hierarchy menus, the drag and drop, the Delete / Ctrl+D shortcuts, the
+scenario runner and the tests call the same commands with typed arguments, so every change is undoable whoever asked
+for it. A command that cannot run (unknown entity, wrong argument type, value outside the choices, missing file)
+changes nothing and logs why; while the scene plays, commands that edit it are refused.
+
+Argument types: bool, integer, number, text, entity, `Vec2` / `Vec3` / `Vec4` (numbers separated by commas or
+spaces), `Color` (three or four numbers in [0, 1], or `#rrggbb[aa]`) and `Enum` (one of the declared choices). An
+argument may declare a default value, given to the command when the caller omits it. A command returns its undo
+description and structured data (`entity` UUID, plus the fields listed below).
 
 | Command                | Arguments                                                                    |
 |------------------------|------------------------------------------------------------------------------|
@@ -979,6 +986,10 @@ that cannot run (unknown entity, wrong argument type, missing file) changes noth
 | `component.add`        | `entity`, `component` (display name `Circle Renderer` or file key)           |
 | `component.remove`     | `entity`, `component`                                                        |
 | `prefab.instantiate`   | `path` (prefab file), `asset_path` (link recorded, found from the folders)   |
+| `component.set`        | `entity`, `component`, `values` (YAML / JSON map merged into the component)  |
+| `scene.save`           | `path` (the scene file when absent); returns `path`                          |
+| `edit.undo`            | none; returns `can_undo`, `can_redo` and the entity to select                |
+| `edit.redo`            | none; same result as `edit.undo`                                             |
 
 An entity argument is a UUID (integer) or a tag (first match). Continuous edits previewed live (inspector fields,
 gizmo drags, voxel brush strokes, tile painting, node moves) are recorded as one command when the gesture ends.

@@ -494,15 +494,11 @@ void EditorLayer::onAttach() {
 									[this]() -> void {
 										if (getState() != State::Edit)
 											return;
-										auto* doc = activeSceneDocument();
-										if (doc == nullptr)
-											return;
 										if (const auto ent = getSelectedEntity(); ent) {
 											setSelectedEntity({});
-											std::ignore = m_commands.execute(
+											std::ignore = runCommand(
 													"entity.delete",
-													{{"entity", static_cast<int64_t>(static_cast<uint64_t>(ent.getUUID()))}},
-													doc->getActiveScene(), doc->undoManager());
+													{{"entity", static_cast<int64_t>(static_cast<uint64_t>(ent.getUUID()))}});
 										}
 									});
 	// Undo/Redo
@@ -1075,9 +1071,8 @@ void EditorLayer::onDuplicateEntity() {
 		return;
 
 	if (const scene::Entity selectedEntity = m_sceneHierarchy.getSelectedEntity(); selectedEntity)
-		std::ignore = m_commands.execute(
-				"entity.duplicate", {{"entity", static_cast<int64_t>(static_cast<uint64_t>(selectedEntity.getUUID()))}},
-				doc->getEditorScene(), doc->undoManager());
+		std::ignore = runCommand("entity.duplicate",
+								 {{"entity", static_cast<int64_t>(static_cast<uint64_t>(selectedEntity.getUUID()))}});
 }
 
 void EditorLayer::performUndo() {
@@ -1132,9 +1127,22 @@ void EditorLayer::instantiatePrefab(const std::filesystem::path& iPrefabPath, co
 	commands::CommandArgs args{{"path", iPrefabPath.string()}};
 	if (!iAssetRelativePath.empty())
 		args.set("asset_path", iAssetRelativePath);
-	const auto& scene = doc->getActiveScene();
-	if (const auto result = m_commands.execute("prefab.instantiate", args, scene, doc->undoManager()); result)
-		setSelectedEntity(scene->findEntityByUUID(result->entity));
+	if (const auto result = runCommand("prefab.instantiate", args); result)
+		setSelectedEntity(doc->getActiveScene()->findEntityByUUID(result->entity));
+}
+
+auto EditorLayer::runCommand(const std::string_view iName, const commands::CommandArgs& iArgs)
+		-> expected<commands::CommandResult, commands::CommandFailure> {
+	auto* doc = activeSceneDocument();
+	const commands::CommandContext context{.scene = doc != nullptr ? doc->getActiveScene() : nullptr,
+										   .undo = doc != nullptr ? &doc->undoManager() : nullptr,
+										   .playing = doc != nullptr && doc->state() != SceneDocument::State::Edit,
+										   .scenePath = doc != nullptr ? doc->filePath() : std::filesystem::path{},
+										   .onSaved = [this, doc](const std::filesystem::path& iPath) -> void {
+											   doc->setScenePath(iPath);
+											   refreshWindowTitle();
+										   }};
+	return m_commands.execute(iName, iArgs, context);
 }
 
 void EditorLayer::onContextualHelp() {
