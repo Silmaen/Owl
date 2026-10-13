@@ -237,12 +237,14 @@ and runs both in sync. The infrastructure is in place; the composite command is 
 
 ## Planned consumers
 
-| Document type          | Target type             | Extension  |
-|------------------------|-------------------------|------------|
-| `SceneFlowDocument`    | Scene graph overview    | (derived)  |
-| Animation graph (v0.3) | Anim state machine      | `.owlanim` |
-| Behaviour tree (v0.4)  | AI behaviour trees      | `.owlbt`   |
-| Dialogue tree (v0.4)   | Branching conversations | `.owldlg`  |
+| Document type          | Target type                  | Extension  |
+|------------------------|------------------------------|------------|
+| `SceneFlowDocument`    | Scene graph overview         | (derived)  |
+| Visual script (v0.7)   | Event graphs compiled to Lua | —          |
+| PCG graph (v0.7)       | Procedural generation        | —          |
+| Animation graph (v0.7) | Anim state machine           | `.owlanim` |
+| Behaviour tree (v0.8)  | AI behaviour trees           | `.owlbt`   |
+| Dialogue tree (v0.8)   | Branching conversations      | `.owldlg`  |
 
 The node canvas is free of domain knowledge so all of these can share a single widget and the single YAML serialization
 format above.

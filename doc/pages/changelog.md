@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Version 0.4.0 in development: plan of the release in `design/isometric-worlds.md`, sized for a Transport Tycoon-like
+  game, with the isometric decisions revised (real dimetric camera, depth with alpha cutout, corner heights on the map).
+- Aspect-correct text, management-game HUD widgets, the fixed simulation tick and gamepad dead zones moved to v0.4.0;
+  tile-graph pathfinding moved to v0.5.0; HUD design moved to `design/hud-system.md`.
+- File dialogues through the desktop portal and the inventory demo moved to v0.4.0, node editing of other assets folded
+  into the v0.7.0 visual scripting, HUD planned in Y-down pixels.
+
 ## [0.3.0] - 2026-10-12
 
 ### Added

@@ -92,14 +92,15 @@ Let the user temporarily drive the editor viewport from any `component::Camera` 
 otherwise), for previewing what the runtime camera will see without entering Play. Toggleable from the camera entity's
 context menu or a viewport overlay dropdown. Reverts to the editor camera on demand.
 
-## Custom ImGui-based file picker (v0.5.0)
+## Native file dialogues through the desktop portal (v0.4.0)
 
-- Replace the native file dialogue (NFD/GTK) which briefly freezes the UI on Linux when GTK initializes (triggers IDE
-  "antiloop" detection)
-- Pure ImGui implementation integrated with the task scheduler for async folder scanning
-- Benefits: consistent look-and-feel, truly non-blocking, theme-aware
-- Replaces the current sync `FileDialog::openFile/saveFile/pickFolder` blocking calls
-- Revisit if the SDL3 evaluation of v0.3.0 adopts SDL dialogues (see [Windowing and input](windowing-input.md))
+- The GTK backend of NFD briefly freezes the UI on Linux when GTK initializes (it trips the IDE "antiloop"
+  detection); a pure ImGui picker is not pursued
+- Build nativefiledialog-extended with its `portal=True` option (`conan/recipes/nativefiledialog-extended`):
+  dialogues go through `xdg-desktop-portal` over D-Bus, no GTK, with the desktop's own look
+- The `FileDialog::openFile` / `saveFile` / `pickFolder` calls stay unchanged
+- The build image already has `dbus-1`; D-Bus joins the Linux packages' dependencies; checked on GNOME and KDE,
+  Wayland and X11 (NEST1 of [Isometric worlds](isometric-worlds.md))
 
 ## In-editor documentation (v0.5.0)
 

@@ -46,7 +46,7 @@ Development is heavily AI-assisted (the AI writes the code, the maintainer tests
 - ![Planned][planned] Level streaming (chunks loaded around the player in the background)
 - ![Planned][planned] Web export through a WebGPU Owl RHI backend ([Owl RHI](design/owl-rhi.md))
 - ![Planned][planned] Cross-compile packaging and target platform selector ([Game export](design/game-export.md))
-- ![Planned][planned] Gamepad improvements: remapping UI, haptics, dead zones ([Input](design/windowing-input.md))
+- ![Planned][planned] Gamepad improvements: remapping UI, haptics ([Input](design/windowing-input.md))
 - ![To evaluate][evaluate] macOS (Metal) and Android — after 1.0
 
 ## v0.9.0 -- Expected 2027-12-15
@@ -54,7 +54,7 @@ Development is heavily AI-assisted (the AI writes the code, the maintainer tests
 **Goal:** A deterministic simulation with input replay and rewind, and networked multiplayer built on it
 ([details](design/simulation-networking.md)).
 
-- ![Planned][planned] Deterministic simulation (fixed step, seeded streams, cross-platform world-hash test)
+- ![Planned][planned] Deterministic simulation (seeded streams, cross-platform world-hash test) on the v0.4.0 fixed tick
 - ![Planned][planned] Input recording and frame-exact replay (replays double as regression tests)
 - ![Planned][planned] Rewind in Play (snapshot ring buffer + input log)
 - ![Planned][planned] Network transport layer (reliable UDP, authoritative server, connection management)
@@ -68,7 +68,7 @@ Development is heavily AI-assisted (the AI writes the code, the maintainer tests
 **Goal:** The systems that make games — AI, 3D physics, audio, narrative — as optional modules outside `Scene`
 ([details](design/gameplay-systems.md)).
 
-- ![Planned][planned] Pathfinding (NavMesh generation, A*, dynamic avoidance)
+- ![Planned][planned] Navigation (NavMesh generation, A*, dynamic avoidance); tile-graph pathfinding comes in v0.5.0
 - ![Planned][planned] Behaviour trees with a visual editor (`.owlbt`)
 - ![Planned][planned] Steering behaviours and flocking
 - ![Planned][planned] 3D physics with Jolt on the shared physics interface ([Physics API](design/physics-api.md))
@@ -87,7 +87,7 @@ procedural graphs, and Blueprints-style visual scripting compiled to Lua.
 - ![Planned][planned] Skeletal animation (skinning, blending, state machine) and mesh LODs
 - ![Planned][planned] GPU particle system with editor preview
 - ![Planned][planned] Advanced post-processing (chromatic aberration, film grain, motion blur, depth of field)
-- ![Planned][planned] Visual scripting MVP, event graphs compiled to Lua ([details](design/visual-scripting.md))
+- ![Planned][planned] Visual scripting MVP, event graphs compiled to Lua, node editing of assets ([details](design/visual-scripting.md))
 - ![Planned][planned] Node-graph link waypoints
 - ![Planned][planned] Script debugging aids (breakpoint markers, live watch)
 - ![Planned][planned] Procedural generation graphs on `NodeCanvas` ([PCG graphs](design/pcg-graphs.md))
@@ -114,28 +114,34 @@ post-processing — with full 3D editing ([details](design/3d-core.md)).
 **Goal:** Complete the 2D experience — lighting, text, full 2D physics ([details](design/2d-complete.md)).
 
 - ![Planned][planned] Guaranteed 2D draw order: a sort key instead of the primitive type and storage order (PR-30: B-10)
-- ![Planned][planned] 2D lighting (point / spot lights, normal-mapped sprites, 2D shadows)
+- ![Planned][planned] 2D lighting (point / spot lights, normal-mapped sprites, 2D shadows), isometric sprites included
 - ![Planned][planned] Full 2D physics: callbacks, queries, joints, 3D-ready API ([Physics](design/physics-api.md))
-- ![Planned][planned] Aspect-correct text with alignment and fit modes
+- ![Planned][planned] HUD scroll views, lists and minimap ([HUD system](design/hud-system.md))
+- ![Planned][planned] Tile-graph pathfinding on chunked tilemaps (moved from v0.8.0)
 - ![Planned][planned] Tileset editor: compose the atlas from source images
 - ![Planned][planned] First procedural brick for tilemaps ([PCG graphs](design/pcg-graphs.md))
 - ![Planned][planned] "Look through scene camera" mode
-- ![Planned][planned] Custom ImGui-based file picker
 - ![Planned][planned] Help panel: mermaid diagrams and rendering polish
-- ![Planned][planned] Sample project: inventory and enemies demos (moved out of the engine)
+- ![Planned][planned] Sample project: enemies demo (moved out of the engine)
 
 ## v0.4.0 -- Expected 2027-02-28
 
-**Goal:** A third non-2D mode — a Transport Tycoon-style isometric renderer — plus a local MCP server in Owl Nest,
-basic gamepad support and a reworked HUD system with its editor.
+**Goal:** An engine able to carry a Transport Tycoon-like game: an isometric renderer on large chunked tile maps with
+slopes, a HUD for management games and its editor, input actions with a gamepad, a fixed simulation tick, and a local
+MCP server in Owl Nest ([plan](design/isometric-worlds.md)).
 
-- ![Planned][planned] Persistent, chunked and culled tilemaps, before the isometric layer (PR-31: B-13)
-- ![Planned][planned] `RendererIsometric` layer, heightmap tiles, editor support ([details](design/isometric.md))
+- ![Planned][planned] Renderer2D transients sized per frame (PR-30: B-09)
+- ![Planned][planned] Persistent, chunked and culled tilemaps, binary storage up to 1024² (PR-31: B-13)
+- ![Planned][planned] `RendererIsometric` layer: dimetric camera, depth with alpha cutout, billboards ([details](design/isometric.md))
+- ![Planned][planned] Isometric terrain: corner heights, 19 slopes, foundations, tracks and roads, slope-aware picking
+- ![Planned][planned] Isometric atlas generator, objects and vehicles at scale, `iso_town` demo
+- ![Planned][planned] UTF-8 text with a wider charset (PR-30: D-18) and aspect-correct text with alignment and fit
+- ![Planned][planned] HUD overhaul: HUD pass in pixels, `.owlhud` asset, windows and layouts, HUD editor ([details](design/hud-system.md))
+- ![Planned][planned] Fixed simulation tick (`on_tick`) for systems and scripts
+- ![Planned][planned] Input actions and gamepad with dead zones, action map editor ([Input](design/windowing-input.md))
 - ![Planned][planned] MCP server built into Owl Nest, on the editor command API ([MCP server](design/mcp-server.md))
-- ![Planned][planned] Input actions and basic gamepad support ([Input](design/windowing-input.md))
-- ![Planned][planned] Renderer2D transients sized per frame and UTF-8 text with a wider charset (PR-30: B-09, D-18)
-- ![Planned][planned] HUD system overhaul: dedicated HUD layer and a HUD editor in Owl Nest ([details](design/2d-complete.md))
-- ![To evaluate][evaluate] Node-based editing of other assets (scripts first), with the visual scripting of v0.7.0
+- ![Planned][planned] Native file dialogues through the desktop portal, no GTK ([Nest UI](design/nest-ui.md))
+- ![Planned][planned] Sample project: inventory demo on the new HUD widgets, playable with a gamepad
 
 ## v0.3.0 -- 2026-10-11
 

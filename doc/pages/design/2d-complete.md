@@ -11,31 +11,34 @@ Design page for the v0.5.0 release, summarised in the [Roadmap](../roadmap.md). 
 - Normal-mapped sprites for dynamic 2D lighting
 - Shadow casting from 2D occluders
 
-## Text rendering quality — aspect-correct glyphs
+## Text and HUD
 
-- Today text drawn inside a `UiText` / `UiRect` is scaled to fill its rectangle, so a square-ish box stretches or
-  squashes the glyphs (characters look horizontally compressed or vertically elongated).
-- Render glyphs at their **native aspect ratio**: advance the pen by each glyph's own metrics and use a single uniform
-  scale (px-per-em) rather than independent X/Y scales derived from the rect. The rectangle should govern layout (wrap
-  width, line height, alignment), not per-axis glyph distortion.
-- Add text **fit / alignment** controls: horizontal (left / center / right) and vertical (top / middle / bottom)
-  alignment, optional word-wrap, and a fit mode (clip / shrink-to-fit / overflow) — so a glyph keeps its shape and the
-  box only decides where it sits and when it wraps.
-- Applies to both the screen-space HUD path and world-space `Renderer2D::drawString`.
+Aspect-correct text with alignment and fit modes, and the dedicated HUD layer with its editor, moved to v0.4.0:
+see [HUD system](hud-system.md). v0.5.0 builds on them:
 
-## Dedicated HUD layer, decoupled from the world renderer
+- Scroll views with clipping and virtualised lists and tables (vehicle lists of a management game)
+- Minimap from a CPU tile-colour texture of a tilemap, shown in a `UiImage` (a GPU render target comes with v0.6.0)
+- Live scene backdrop in the HUD editor, with "look through scene camera"
 
-- Today the sample project ships a two-layer stack `[Renderer2D(world), Renderer2D(ui)]` and entities are tagged `ui`
-  by hand — fine, but authoring the HUD still happens in the same top-down viewport as the world, with no preview of
-  how it will look stretched over a raycast scene
-- Promote UI authoring to a **dedicated HUD layer** in the renderer stack that always renders on top, in pixel-space,
-  regardless of what the layers underneath draw (raycast, voxel, isometric, 2D world, …)
-- **HUD Editor mode** in Owl Nest: a viewport variant that shows the HUD over a configurable backdrop (solid colour, a
-  snapshot of the target gameplay scene, or live preview) and snaps to screen-space coordinates by default. Drag-drop
-  sprites / text / panels onto the HUD; the existing `Ui*` components are reused
-- The HUD becomes a scene-level asset (`.owlhud` or a dedicated renderer-stack entry) referenced by gameplay scenes
-  instead of being embedded as one renderer in each scene's stack — so the same HUD can ride on top of a raycast scene,
-  a voxel scene, or a 2D scene without duplication
+## Draw-order sort key (B-10)
+
+A sort key on every 2D primitive instead of the primitive type and the storage order; it follows the depth convention
+of the v0.4.0 isometric layer ([Isometric](isometric.md)) so 2D and isometric layers order the same way.
+
+## 2D lighting on isometric sprites
+
+The 2D lights also light isometric sprites through the normal and depth atlases produced by the v0.4.0 generator; a
+global ambient tint gives day / night.
+
+## Tile-graph pathfinding
+
+Moved from the v0.8.0 navigation work: vehicles of a Transport Tycoon-like game follow a graph of tiles and tracks,
+not a navigation mesh.
+
+- A* on a tile grid or on a graph built from tilemap overlays (tracks, roads), with per-edge costs and one-way edges
+- Hierarchical search over the 32×32 chunks of the v0.4.0 tilemap storage, so 1024² maps stay cheap
+- Incremental update when a tile changes; queries spread over ticks on the task system
+- Lua API and an editor overlay drawing the graph and a test path
 
 ## Tileset editor — compose atlas by inserting / removing source images
 
@@ -63,6 +66,5 @@ A seeded noise / rule fill of a tilemap region, undoable — the first consumer 
 
 ## Sample project demos (moved out of the engine)
 
-- Inventory demo — collectible objects and key-locked switches, written in Lua (later in visual scripting) in
-  `sample_project/`, not as an engine system (A-02, C-14)
+- Inventory demo — moved to v0.4.0 as the showcase of the new HUD widgets ([HUD system](hud-system.md))
 - Enemies demo — patrol / chase enemies in Lua in `sample_project/`; engine-side AI arrives with v0.8.0

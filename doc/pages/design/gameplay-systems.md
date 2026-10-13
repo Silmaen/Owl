@@ -12,6 +12,7 @@ modules on the v0.3.0 phased systems, not inside `Scene` (A-02). 3D physics is d
     - Navigation mesh generation from scene geometry
     - A* pathfinding on NavMesh
     - Dynamic obstacle avoidance
+    - Tile-graph pathfinding moved to v0.5.0 ([2D complete](2d-complete.md))
 - Behaviour trees
     - Visual behaviour tree editor in Owl Nest (node graph)
     - Standard nodes: sequence, selector, parallel, decorator, condition, action
