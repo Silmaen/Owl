@@ -181,6 +181,9 @@ a few days, L a week.
 - ![Done][done] **NEST1 — File dialogues through the desktop portal (from v0.5.0), S.** nativefiledialog-extended
   built with `portal=True`: `xdg-desktop-portal` over D-Bus instead of GTK, no UI freeze; D-Bus added to the Linux
   package dependencies (the build image already has `dbus-1` 1.16); checked on GNOME and KDE, Wayland and X11.
+- ![Planned][planned] **NEST2 — Console and command journal, S/M.** Command-line syntax with `$n` result references,
+  console panel with history and completion from the `ArgSpec`s, journal of every executed command whatever its
+  source, `.owlmacro` macros replayed as one undo group; spec in [Editor scripting](editor-scripting.md).
 
 ### Order
 
@@ -199,6 +202,7 @@ flowchart LR
     HUD1 --> HUD5
     MCP0 --> MCP1 --> MCP2 --> MCP3 --> MCP4
     MCP0 --> HUD4
+    MCP1 --> NEST2
     IN3 --> MCP4
     HUD6 --> ISO5
     HUD3 --> DEMO1
