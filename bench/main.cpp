@@ -102,6 +102,7 @@ auto main(const int iArgc, char** iArgv) -> int {
 		owl::bench::runSceneBenches(runner);
 		owl::bench::runSerializeBenches(runner);
 		owl::bench::runRenderer2DBenches(runner);
+		owl::bench::runTilemapBenches(runner);
 		owl::bench::runFrameBenches(runner);
 		owl::bench::runVoxelBenches(runner);
 		owl::bench::runScriptBenches(runner);

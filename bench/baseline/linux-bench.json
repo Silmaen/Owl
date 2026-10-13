@@ -653,6 +653,116 @@
       "max_ns": 1358666.8
     },
     {
+      "name": "tilemap/static/32x32_layers1",
+      "items": 1024,
+      "batch": 60555,
+      "samples": 15,
+      "median_ns": 139.2,
+      "p25_ns": 134.4,
+      "p75_ns": 141.3,
+      "min_ns": 133.2,
+      "max_ns": 149.1
+    },
+    {
+      "name": "tilemap/static/32x32_layers4",
+      "items": 4096,
+      "batch": 49690,
+      "samples": 15,
+      "median_ns": 237.7,
+      "p25_ns": 237.1,
+      "p75_ns": 239.1,
+      "min_ns": 236.5,
+      "max_ns": 243.6
+    },
+    {
+      "name": "tilemap/static/128x128_layers1",
+      "items": 16384,
+      "batch": 39281,
+      "samples": 15,
+      "median_ns": 302.8,
+      "p25_ns": 300.4,
+      "p75_ns": 305.9,
+      "min_ns": 298.2,
+      "max_ns": 308.1
+    },
+    {
+      "name": "tilemap/static/128x128_layers4",
+      "items": 65536,
+      "batch": 12853,
+      "samples": 15,
+      "median_ns": 916.6,
+      "p25_ns": 910.4,
+      "p75_ns": 921.8,
+      "min_ns": 901.5,
+      "max_ns": 931.8
+    },
+    {
+      "name": "tilemap/static/256x256_layers1",
+      "items": 65536,
+      "batch": 15463,
+      "samples": 15,
+      "median_ns": 759.0,
+      "p25_ns": 757.8,
+      "p75_ns": 765.0,
+      "min_ns": 753.4,
+      "max_ns": 779.9
+    },
+    {
+      "name": "tilemap/static/256x256_layers4",
+      "items": 262144,
+      "batch": 4427,
+      "samples": 15,
+      "median_ns": 2757.8,
+      "p25_ns": 2742.1,
+      "p75_ns": 2762.8,
+      "min_ns": 2715.9,
+      "max_ns": 2823.0
+    },
+    {
+      "name": "tilemap/static/1024x1024_layers1",
+      "items": 1048576,
+      "batch": 1256,
+      "samples": 15,
+      "median_ns": 9709.9,
+      "p25_ns": 9550.5,
+      "p75_ns": 9989.1,
+      "min_ns": 9471.2,
+      "max_ns": 12983.7
+    },
+    {
+      "name": "tilemap/static/1024x1024_layers4",
+      "items": 4194304,
+      "batch": 321,
+      "samples": 15,
+      "median_ns": 38125.3,
+      "p25_ns": 37617.2,
+      "p75_ns": 39344.1,
+      "min_ns": 37363.3,
+      "max_ns": 51833.5
+    },
+    {
+      "name": "tilemap/edit_one_cell/256x256_layers4",
+      "items": 1,
+      "batch": 3182,
+      "samples": 15,
+      "median_ns": 3793.1,
+      "p25_ns": 3774.6,
+      "p75_ns": 3820.9,
+      "min_ns": 3734.7,
+      "max_ns": 3848.8
+    },
+    {
+      "name": "tilemap/build_chunk/32x32",
+      "items": 1024,
+      "batch": 10000,
+      "samples": 15,
+      "median_ns": 1084.1,
+      "p25_ns": 1028.3,
+      "p75_ns": 1106.6,
+      "min_ns": 964.7,
+      "max_ns": 1247.5
+    },
+    {
       "name": "frame/editor_update/flat1000",
       "items": 1000,
       "batch": 191,
@@ -1767,6 +1877,136 @@
       "name": "renderer2d/polylines_8/100000_draw_calls",
       "value": 5,
       "unit": "draw calls (one frame)"
+    },
+    {
+      "name": "tilemap/static/32x32_layers1_first_upload_bytes",
+      "value": 8208,
+      "unit": "bytes"
+    },
+    {
+      "name": "tilemap/static/32x32_layers1_uploaded_bytes",
+      "value": 0,
+      "unit": "bytes (one static frame)"
+    },
+    {
+      "name": "tilemap/static/32x32_layers1_draw_calls",
+      "value": 1,
+      "unit": "draw calls (one frame)"
+    },
+    {
+      "name": "tilemap/static/32x32_layers4_first_upload_bytes",
+      "value": 32832,
+      "unit": "bytes"
+    },
+    {
+      "name": "tilemap/static/32x32_layers4_uploaded_bytes",
+      "value": 0,
+      "unit": "bytes (one static frame)"
+    },
+    {
+      "name": "tilemap/static/32x32_layers4_draw_calls",
+      "value": 4,
+      "unit": "draw calls (one frame)"
+    },
+    {
+      "name": "tilemap/static/128x128_layers1_first_upload_bytes",
+      "value": 131328,
+      "unit": "bytes"
+    },
+    {
+      "name": "tilemap/static/128x128_layers1_uploaded_bytes",
+      "value": 0,
+      "unit": "bytes (one static frame)"
+    },
+    {
+      "name": "tilemap/static/128x128_layers1_draw_calls",
+      "value": 8,
+      "unit": "draw calls (one frame)"
+    },
+    {
+      "name": "tilemap/static/128x128_layers4_first_upload_bytes",
+      "value": 525312,
+      "unit": "bytes"
+    },
+    {
+      "name": "tilemap/static/128x128_layers4_uploaded_bytes",
+      "value": 0,
+      "unit": "bytes (one static frame)"
+    },
+    {
+      "name": "tilemap/static/128x128_layers4_draw_calls",
+      "value": 32,
+      "unit": "draw calls (one frame)"
+    },
+    {
+      "name": "tilemap/static/256x256_layers1_first_upload_bytes",
+      "value": 525312,
+      "unit": "bytes"
+    },
+    {
+      "name": "tilemap/static/256x256_layers1_uploaded_bytes",
+      "value": 0,
+      "unit": "bytes (one static frame)"
+    },
+    {
+      "name": "tilemap/static/256x256_layers1_draw_calls",
+      "value": 8,
+      "unit": "draw calls (one frame)"
+    },
+    {
+      "name": "tilemap/static/256x256_layers4_first_upload_bytes",
+      "value": 2101248,
+      "unit": "bytes"
+    },
+    {
+      "name": "tilemap/static/256x256_layers4_uploaded_bytes",
+      "value": 0,
+      "unit": "bytes (one static frame)"
+    },
+    {
+      "name": "tilemap/static/256x256_layers4_draw_calls",
+      "value": 32,
+      "unit": "draw calls (one frame)"
+    },
+    {
+      "name": "tilemap/static/1024x1024_layers1_first_upload_bytes",
+      "value": 8404992,
+      "unit": "bytes"
+    },
+    {
+      "name": "tilemap/static/1024x1024_layers1_uploaded_bytes",
+      "value": 0,
+      "unit": "bytes (one static frame)"
+    },
+    {
+      "name": "tilemap/static/1024x1024_layers1_draw_calls",
+      "value": 8,
+      "unit": "draw calls (one frame)"
+    },
+    {
+      "name": "tilemap/static/1024x1024_layers4_first_upload_bytes",
+      "value": 33619968,
+      "unit": "bytes"
+    },
+    {
+      "name": "tilemap/static/1024x1024_layers4_uploaded_bytes",
+      "value": 0,
+      "unit": "bytes (one static frame)"
+    },
+    {
+      "name": "tilemap/static/1024x1024_layers4_draw_calls",
+      "value": 32,
+      "unit": "draw calls (one frame)"
+    },
+    {
+      "name": "tilemap/edit_one_cell/256x256_layers4_chunks",
+      "value": 1,
+      "unit": "chunks uploaded"
+    },
+    {
+      "name": "tilemap/edit_one_cell/256x256_layers4_bytes",
+      "value": 8192,
+      "unit": "bytes uploaded"
     },
     {
       "name": "frame/editor_update/flat1000_quads",

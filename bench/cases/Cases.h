@@ -64,6 +64,13 @@ void runRenderer2DBenches(Runner& ioRunner);
 
 /**
  * @brief
+ *  Chunked tilemap benchmarks on the Null backend: static frames, one-cell edit, chunk build.
+ * @param[in,out] ioRunner The runner.
+ */
+void runTilemapBenches(Runner& ioRunner);
+
+/**
+ * @brief
  *  Whole-frame CPU benchmarks (editor update, runtime tick) on the Null backend.
  * @param[in,out] ioRunner The runner.
  */
