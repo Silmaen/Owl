@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   tile-graph pathfinding moved to v0.5.0; HUD design moved to `design/hud-system.md`.
 - File dialogues through the desktop portal and the inventory demo moved to v0.4.0, node editing of other assets folded
   into the v0.7.0 visual scripting, HUD planned in Y-down pixels.
+- Clang-Tidy and Static Analyzer configurations no longer run the unit tests: `vendor.silmaen.run_tests` turns off a
+  preset's Test step.
 
 ## [0.3.0] - 2026-10-12
 
