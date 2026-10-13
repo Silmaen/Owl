@@ -251,7 +251,8 @@ void CommandPalette::onImGuiRender(const std::vector<PaletteItem>& iItems) {
 		draw->AddText({origin.x + 4.f, textY},
 					  ImGui::GetColorU32(gui::vec(highlighted ? theme.accent : theme.textDisabled)),
 					  item.category.c_str());
-		draw->AddText({origin.x + categoryWidth, textY}, ImGui::GetColorU32(gui::vec(theme.text)), item.label.c_str());
+		draw->AddText({origin.x + categoryWidth, textY},
+					  ImGui::GetColorU32(gui::vec(item.enabled ? theme.text : theme.textDisabled)), item.label.c_str());
 		if (!item.shortcut.empty()) {
 			const auto size = ImGui::CalcTextSize(item.shortcut.c_str());
 			draw->AddText({origin.x + ImGui::GetContentRegionAvail().x - size.x - 6.f, textY},
@@ -267,6 +268,8 @@ void CommandPalette::onImGuiRender(const std::vector<PaletteItem>& iItems) {
 	if (!ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) && !m_focusInput)
 		m_open = false;
 	ImGui::End();
+	if (chosen != nullptr && !chosen->enabled)
+		chosen = nullptr;
 	if (chosen != nullptr) {
 		m_open = false;
 		if (chosen->run)

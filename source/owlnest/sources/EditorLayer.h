@@ -18,11 +18,13 @@
 #include "RecoveryManager.h"
 #include "RibbonBuilder.h"
 #include "VoxelBrush.h"
+#include "commands/CommandForm.h"
 #include "commands/CommandRegistry.h"
 #include "document/DocumentManager.h"
 #include "document/SceneDocument.h"
 #include "panel/AsyncProgressModal.h"
 #include "panel/Backstage.h"
+#include "panel/CommandFormWindow.h"
 #include "panel/CommandPalette.h"
 #include "panel/ContentBrowser.h"
 #include "panel/GpuCounterMonitor.h"
@@ -46,6 +48,7 @@
 #include <filesystem>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -380,6 +383,16 @@ public:
 
 	/**
 	 * @brief
+	 *  Run a named command on the active scene document; edits are refused while it plays.
+	 * @param[in] iName Command name.
+	 * @param[in] iArgs Command arguments.
+	 * @return What the command did, or why it did not run.
+	 */
+	auto runCommand(std::string_view iName, const commands::CommandArgs& iArgs)
+			-> expected<commands::CommandResult, commands::CommandFailure>;
+
+	/**
+	 * @brief
 	 *  Active scene from the currently active document (empty shared if none).
 	 * @return The active scene.
 	 */
@@ -566,6 +579,20 @@ private:
 
 	/**
 	 * @brief
+	 *  Draw the argument form of a registry command and run it once confirmed.
+	 */
+	void renderCommandForm();
+
+	/**
+	 * @brief
+	 *  Run a registry command chosen by the user and report its result in a toast.
+	 * @param[in] iName Command name.
+	 * @param[in] iArgs Command arguments.
+	 */
+	void runCommandFromUi(const std::string& iName, const commands::CommandArgs& iArgs);
+
+	/**
+	 * @brief
 	 *  Switch the panel arrangement and rebuild the dock tree on the next frame.
 	 * @param[in] iPreset The arrangement.
 	 */
@@ -734,6 +761,8 @@ private:
 	gui::widgets::ToastQueue m_toasts;
 	/// Search over the actions, the entities and the assets, opened by pressing Shift twice.
 	panel::CommandPalette m_commandPalette;
+	/// Argument form of the registry command chosen in the palette.
+	panel::CommandFormWindow m_commandForm;
 	/// Asset files listed by the palette, with their name relative to their asset folder; refreshed on each opening.
 	std::vector<std::pair<std::filesystem::path, std::string>> m_paletteAssets;
 	/// When the last autosave wrote something; empty before the first one.

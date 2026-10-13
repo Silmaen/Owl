@@ -31,6 +31,8 @@ struct PaletteItem {
 	std::string shortcut;
 	/// Run when the entry is chosen.
 	std::function<void()> run;
+	/// False to grey the entry out (an edit command while playing): it cannot be chosen.
+	bool enabled = true;
 };
 
 /**

@@ -101,10 +101,19 @@ auto parseCheck(const std::string& iField, const YAML::Node& iNode, ScenarioChec
 }
 
 auto parseArgValue(const commands::ArgSpec& iSpec, const YAML::Node& iValue) -> std::optional<commands::ArgValue> {
-	if (iSpec.type == commands::ArgType::Vec3) {
-		if (!iValue.IsSequence() || iValue.size() != 3)
-			return std::nullopt;
-		return commands::ArgValue{math::vec3{iValue[0].as<float>(), iValue[1].as<float>(), iValue[2].as<float>()}};
+	if (iValue.IsSequence()) {
+		std::string numbers;
+		for (const auto& item: iValue) {
+			if (!item.IsScalar())
+				return std::nullopt;
+			numbers += std::format("{} ", item.as<std::string>());
+		}
+		return commands::CommandRegistry::parseArg(iSpec.type, numbers);
+	}
+	if (iValue.IsMap() && iSpec.type == commands::ArgType::Text) {
+		YAML::Emitter out;
+		out << YAML::Flow << iValue;
+		return commands::ArgValue{std::string{out.c_str()}};
 	}
 	if (!iValue.IsScalar())
 		return std::nullopt;

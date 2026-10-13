@@ -494,15 +494,11 @@ void EditorLayer::onAttach() {
 									[this]() -> void {
 										if (getState() != State::Edit)
 											return;
-										auto* doc = activeSceneDocument();
-										if (doc == nullptr)
-											return;
 										if (const auto ent = getSelectedEntity(); ent) {
 											setSelectedEntity({});
-											std::ignore = m_commands.execute(
+											std::ignore = runCommand(
 													"entity.delete",
-													{{"entity", static_cast<int64_t>(static_cast<uint64_t>(ent.getUUID()))}},
-													doc->getActiveScene(), doc->undoManager());
+													{{"entity", static_cast<int64_t>(static_cast<uint64_t>(ent.getUUID()))}});
 										}
 									});
 	// Undo/Redo
@@ -815,6 +811,7 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 
 	m_packager.onRender();
 	renderCommandPalette();
+	renderCommandForm();
 	m_toasts.onImGuiRender();
 }
 
@@ -838,6 +835,23 @@ void EditorLayer::renderCommandPalette() {
 						 .shortcut = m_actionRegistry.getShortcutString(action.id),
 						 .run = [this, id = action.id]() -> void { std::ignore = m_actionRegistry.run(id); }});
 	}
+	const bool playing = getState() != State::Edit;
+	for (const auto& spec: m_commands.getCommands()) {
+		items.push_back({.category = "Command",
+						 .label = spec.name,
+						 .shortcut = {},
+						 .run = [this, name = spec.name]() -> void {
+							 const auto* command = m_commands.find(name);
+							 if (command == nullptr)
+								 return;
+							 if (command->args.empty())
+								 runCommandFromUi(name, {});
+							 else
+								 m_commandForm.open(*command, getSelectedEntity() ? getSelectedEntity().getUUID()
+																				  : core::UUID{0});
+						 },
+						 .enabled = commands::CommandForm::isAvailable(spec, playing)});
+	}
 	if (const auto& scene = getActiveScene(); scene != nullptr) {
 		for (const auto& entity: scene->getAllEntities()) {
 			if (!entity.hasComponent<scene::component::Tag>())
@@ -853,6 +867,34 @@ void EditorLayer::renderCommandPalette() {
 							 openAssetFile(path);
 						 }});
 	m_commandPalette.onImGuiRender(items);
+}
+
+void EditorLayer::renderCommandForm() {
+	if (!m_commandForm.isOpen())
+		return;
+	std::vector<panel::EntityChoice> entities;
+	if (const auto& scene = getActiveScene(); scene != nullptr) {
+		for (const auto& entity: scene->getAllEntities()) {
+			if (entity.hasComponent<scene::component::Tag>())
+				entities.push_back({.uuid = entity.getUUID(), .tag = entity.getComponent<scene::component::Tag>().tag});
+		}
+	}
+	if (const auto submission = m_commandForm.onImGuiRender(entities); submission)
+		runCommandFromUi(submission->command, submission->args);
+}
+
+void EditorLayer::runCommandFromUi(const std::string& iName, const commands::CommandArgs& iArgs) {
+	const auto result = runCommand(iName, iArgs);
+	if (!result) {
+		m_toasts.push(gui::widgets::ToastKind::Error, std::format("{} failed", iName), result.error().message);
+		return;
+	}
+	m_toasts.push(gui::widgets::ToastKind::Success, result->description.empty() ? iName : result->description,
+				  commands::CommandForm::describeData(result->data));
+	if (const auto& scene = getActiveScene(); scene != nullptr && result->entity != core::UUID{0}) {
+		if (const auto entity = scene->findEntityByUUID(result->entity); entity)
+			setSelectedEntity(entity);
+	}
 }
 
 void EditorLayer::renderBackstage() {
@@ -1075,9 +1117,8 @@ void EditorLayer::onDuplicateEntity() {
 		return;
 
 	if (const scene::Entity selectedEntity = m_sceneHierarchy.getSelectedEntity(); selectedEntity)
-		std::ignore = m_commands.execute(
-				"entity.duplicate", {{"entity", static_cast<int64_t>(static_cast<uint64_t>(selectedEntity.getUUID()))}},
-				doc->getEditorScene(), doc->undoManager());
+		std::ignore = runCommand("entity.duplicate",
+								 {{"entity", static_cast<int64_t>(static_cast<uint64_t>(selectedEntity.getUUID()))}});
 }
 
 void EditorLayer::performUndo() {
@@ -1132,9 +1173,22 @@ void EditorLayer::instantiatePrefab(const std::filesystem::path& iPrefabPath, co
 	commands::CommandArgs args{{"path", iPrefabPath.string()}};
 	if (!iAssetRelativePath.empty())
 		args.set("asset_path", iAssetRelativePath);
-	const auto& scene = doc->getActiveScene();
-	if (const auto result = m_commands.execute("prefab.instantiate", args, scene, doc->undoManager()); result)
-		setSelectedEntity(scene->findEntityByUUID(result->entity));
+	if (const auto result = runCommand("prefab.instantiate", args); result)
+		setSelectedEntity(doc->getActiveScene()->findEntityByUUID(result->entity));
+}
+
+auto EditorLayer::runCommand(const std::string_view iName, const commands::CommandArgs& iArgs)
+		-> expected<commands::CommandResult, commands::CommandFailure> {
+	auto* doc = activeSceneDocument();
+	const commands::CommandContext context{.scene = doc != nullptr ? doc->getActiveScene() : nullptr,
+										   .undo = doc != nullptr ? &doc->undoManager() : nullptr,
+										   .playing = doc != nullptr && doc->state() != SceneDocument::State::Edit,
+										   .scenePath = doc != nullptr ? doc->filePath() : std::filesystem::path{},
+										   .onSaved = [this, doc](const std::filesystem::path& iPath) -> void {
+											   doc->setScenePath(iPath);
+											   refreshWindowTitle();
+										   }};
+	return m_commands.execute(iName, iArgs, context);
 }
 
 void EditorLayer::onContextualHelp() {

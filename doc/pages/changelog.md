@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Editor command API v2: `Vec2`, `Vec4`, `Color` and `Enum` arguments with defaults and choices, structured result
+  data, new commands `component.set`, `scene.save`, `edit.undo` and `edit.redo`, edits refused during Play, and every
+  command runnable from the command palette through an argument form.
+
 ### Changed
 
 - Version 0.4.0 in development: plan of the release in `design/isometric-worlds.md`, sized for a Transport Tycoon-like
