@@ -380,6 +380,14 @@ auto luaTimeDelta(lua_State* iState) -> int {
 	return 1;
 }
 
+auto luaTimeTickAlpha(lua_State* iState) -> int {
+	const auto* activeScene = getBoundScene(iState);
+	lua_pushnumber(iState, activeScene != nullptr
+								   ? static_cast<lua_Number>(activeScene->getSimulationClock().getAlpha())
+								   : 0.0);
+	return 1;
+}
+
 auto luaLogTrace(lua_State* iState) -> int {
 	// Checked outside the macro: a disabled level evaluates none of its arguments.
 	const char* message = luaL_checkstring(iState, 1);
@@ -980,7 +988,11 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		{.table = "scene", .name = "quit", .function = guarded<luaSceneQuit>,
 		 .description = "Quit the game (stop Play in the editor) after this frame."},
 		{.table = "time", .name = "delta", .function = guarded<luaTimeDelta>,
-		 .description = "Duration of the current frame, in seconds.", .returns = {{"seconds", Number}}},
+		 .description = "Duration of the current frame, or of the fixed tick inside `on_tick`, in seconds.",
+		 .returns = {{"seconds", Number}}},
+		{.table = "time", .name = "tick_alpha", .function = guarded<luaTimeTickAlpha>,
+		 .description = "Progress of the frame between the last two fixed ticks, in [0, 1), to blend what is drawn.",
+		 .returns = {{"alpha", Number}}},
 		{.table = "log", .name = "trace", .function = guarded<luaLogTrace>,
 		 .description = "Log a message at trace level.", .params = {{"message", String}}},
 		{.table = "log", .name = "info", .function = guarded<luaLogInfo>,
@@ -1159,7 +1171,7 @@ auto getLuaTables() -> const std::vector<LuaTable>& {
 			{.name = "input", .description = "Keyboard and mouse state."},
 			{.name = "sound", .description = "Sound playback, by handle."},
 			{.name = "scene", .description = "Entities of the running level and level changes."},
-			{.name = "time", .description = "Frame time."},
+			{.name = "time", .description = "Frame and fixed-tick time."},
 			{.name = "log", .description = "Engine log."},
 			{.name = "entity", .description = "Entity queries."},
 			{.name = "ui", .description = "HUD widgets and screen transitions."},

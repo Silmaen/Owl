@@ -97,6 +97,21 @@ auto drawRendererStackEditor(renderer::RendererStackConfig& ioStack) -> void {
 	ImGui::AlignTextToFramePadding();
 	ImGui::TextDisabled("An empty stack draws with a single Renderer2D.");
 }
+
+void drawSimulationSettings(scene::SimulationSettings& ioSimulation) {
+	const scene::SimulationSettings defaults;
+	std::ignore = gui::widgets::propertyFloat("Tick Rate", ioSimulation.tickRate, defaults.tickRate, 1.f, "%.0f Hz",
+											  "Fixed simulation ticks per second, whatever the frame rate: rate of "
+											  "the Lua on_tick and of the physics steps.");
+	auto maxTicks = static_cast<int>(ioSimulation.maxTicksPerFrame);
+	if (gui::widgets::propertyInt("Max Ticks per Frame", maxTicks, static_cast<int>(defaults.maxTicksPerFrame), 1,
+								  static_cast<int>(scene::SimulationSettings::maxTicksLimit), "%d",
+								  "Time beyond this many ticks in one frame is dropped: the game slows down instead "
+								  "of stalling."))
+		ioSimulation.maxTicksPerFrame = static_cast<uint32_t>(maxTicks);
+	ioSimulation = ioSimulation.clamped();
+}
+
 }// namespace
 
 void ProjectSettings::open(const Project& iProject) {
@@ -189,6 +204,13 @@ void ProjectSettings::onImGuiRender() {
 						gui::widgets::propertyBool("Fullscreen", m_localProject.window.fullscreen, defaults.fullscreen);
 				std::ignore =
 						gui::widgets::propertyBool("Resizable", m_localProject.window.resizable, defaults.resizable);
+				gui::widgets::endProperties();
+			}
+			gui::widgets::endSection();
+		}
+		if (gui::widgets::sectionHeader("Simulation", gui::icon::timer, false).open) {
+			if (gui::widgets::beginProperties("##simulation")) {
+				drawSimulationSettings(m_localProject.simulation);
 				gui::widgets::endProperties();
 			}
 			gui::widgets::endSection();

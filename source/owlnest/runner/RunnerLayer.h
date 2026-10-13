@@ -14,6 +14,7 @@
 #include <data/assets/pack/PackReader.h>
 #include <owl.h>
 #include <scene/SceneSerializer.h>
+#include <scene/SimulationClock.h>
 
 #include <atomic>
 #include <cstddef>
@@ -46,6 +47,8 @@ struct RunnerConfig {
 	bool fullscreen{false};
 	/// Whether the window is resizable.
 	bool resizable{true};
+	/// Fixed simulation tick of the game (`TickRate`, `MaxTicksPerFrame`).
+	scene::SimulationSettings simulation;
 	/**
 	 * @brief
 	 *  Renderer-stack definition forwarded from the project's `RendererStack:` block.

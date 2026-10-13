@@ -40,6 +40,14 @@ void readWindowSettings(const YAML::Node& iNode, Project::WindowSettings& oWindo
 		oWindow.resizable = iNode["resizable"].as<bool>();
 }
 
+void readSimulationSettings(const YAML::Node& iNode, scene::SimulationSettings& oSimulation) {
+	if (iNode["tickRate"])
+		oSimulation.tickRate = iNode["tickRate"].as<float>();
+	if (iNode["maxTicksPerFrame"])
+		oSimulation.maxTicksPerFrame = iNode["maxTicksPerFrame"].as<uint32_t>();
+	oSimulation = oSimulation.clamped();
+}
+
 void readProjectConfig(const YAML::Node& iConfig, Project& oProject) {
 	if (iConfig["name"])
 		oProject.name = iConfig["name"].as<std::string>();
@@ -55,6 +63,8 @@ void readProjectConfig(const YAML::Node& iConfig, Project& oProject) {
 		oProject.icon = iConfig["icon"].as<std::string>();
 	if (const auto win = iConfig["window"]; win)
 		readWindowSettings(win, oProject.window);
+	if (const auto simulation = iConfig["simulation"]; simulation)
+		readSimulationSettings(simulation, oProject.simulation);
 	if (const auto stack = iConfig["RendererStack"]; stack)
 		oProject.rendererStack = renderer::RendererStackConfig::fromYaml(YAML::Dump(stack));
 }
@@ -103,6 +113,8 @@ auto Project::makeExportSettings(const std::filesystem::path& iOutputDir, const 
 			.windowSize = {window.width, window.height},
 			.fullscreen = window.fullscreen,
 			.resizable = window.resizable,
+			.tickRate = simulation.tickRate,
+			.maxTicksPerFrame = simulation.maxTicksPerFrame,
 			.rendererStackYaml = rendererStack.isEmpty() ? std::string{} : rendererStack.toYaml(),
 			.packFlags = data::assets::pack::PackFlags::Default};
 }
@@ -128,6 +140,12 @@ auto Project::saveToFile(const std::filesystem::path& iFile) const -> bool {
 	out << YAML::Key << "fullscreen" << YAML::Value << window.fullscreen;
 	out << YAML::Key << "resizable" << YAML::Value << window.resizable;
 	out << YAML::EndMap;// window
+	if (simulation != scene::SimulationSettings{}) {
+		out << YAML::Key << "simulation" << YAML::Value << YAML::BeginMap;
+		out << YAML::Key << "tickRate" << YAML::Value << simulation.tickRate;
+		out << YAML::Key << "maxTicksPerFrame" << YAML::Value << simulation.maxTicksPerFrame;
+		out << YAML::EndMap;// simulation
+	}
 	if (!rendererStack.isEmpty())
 		out << YAML::Key << "RendererStack" << YAML::Value << YAML::Load(rendererStack.toYaml());
 	out << YAML::EndMap;// OwlProject

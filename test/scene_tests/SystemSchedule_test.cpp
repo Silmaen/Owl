@@ -16,7 +16,9 @@
 #include <scene/component/Transform.h>
 
 #include <chrono>
+#include <cstdint>
 #include <string>
+#include <utility>
 #include <vector>
 
 using namespace owl;
@@ -133,6 +135,96 @@ TEST(SystemSchedule, GameOverRunsOnlyTheEndedPhase) {
 	scene.status = Scene::Status::Victory;
 	scene.onUpdateRuntime(makeStep(16), false);
 	EXPECT_EQ(log, std::vector<std::string>{"ended"});
+	scene.onEndRuntime();
+	core::Log::invalidate();
+}
+
+TEST(SystemSchedule, FixedTicksRunBetweenPrePhysicsAndPhysics) {
+	core::Log::init(core::Log::Level::Off);
+	std::vector<std::string> log;
+	Scene scene;
+	scene.getSystems() = SystemSchedule{};
+	for (const auto& [name, phase]:
+		 {std::pair{"scripts", SystemPhase::Scripts}, std::pair{"pre", SystemPhase::PrePhysics},
+		  std::pair{"physics", SystemPhase::Physics}, std::pair{"post", SystemPhase::PostPhysics}})
+		ASSERT_TRUE(scene.getSystems().add(
+				{.name = name, .phase = phase, .update = recorder(log, name), .tick = recorder(log, "tick")}));
+	ASSERT_TRUE(scene.getSystems().add({.name = "late", .phase = SystemPhase::Late, .update = recorder(log, "late")}));
+	scene.onStartRuntime();
+	// 34 ms at 60 Hz: two ticks of four phases each.
+	scene.onUpdateRuntime(makeStep(34), false);
+	EXPECT_EQ(log, (std::vector<std::string>{"scripts", "pre", "tick", "tick", "tick", "tick", "tick", "tick", "tick",
+											 "tick", "physics", "post", "late"}));
+	log.clear();
+	scene.onUpdateRuntime(makeStep(10), false);
+	EXPECT_EQ(log, (std::vector<std::string>{"scripts", "pre", "physics", "post", "late"}));
+	scene.onEndRuntime();
+	core::Log::invalidate();
+}
+
+TEST(SystemSchedule, TickContextGivesTheFixedStepAndTheTickIndex) {
+	core::Log::init(core::Log::Level::Off);
+	std::vector<uint32_t> indices;
+	float tickSeconds = 0.f;
+	uint32_t tickCount = 0;
+	uint32_t frameTicks = 99;
+	float frameAlpha = 0.f;
+	Scene scene;
+	scene.getSimulationClock().setSettings({.tickRate = 100.f});
+	ASSERT_TRUE(scene.getSystems().add(
+			{.name = "game.tick",
+			 .phase = SystemPhase::PostPhysics,
+			 .tick = [&indices, &tickSeconds, &tickCount](Scene&, const SystemContext& iContext) -> void {
+				 indices.push_back(iContext.tickIndex);
+				 tickSeconds = iContext.timeStep.getSeconds();
+				 tickCount = iContext.tickCount;
+			 }}));
+	ASSERT_TRUE(scene.getSystems().add(
+			{.name = "game.frame",
+			 .phase = SystemPhase::Late,
+			 .update = [&frameTicks, &frameAlpha](Scene&, const SystemContext& iContext) -> void {
+				 frameTicks = iContext.tickCount;
+				 frameAlpha = iContext.alpha;
+			 }}));
+	scene.onStartRuntime();
+	scene.onUpdateRuntime(makeStep(35), false);
+	EXPECT_EQ(indices, (std::vector<uint32_t>{0, 1, 2}));
+	EXPECT_NEAR(tickSeconds, 0.01f, 1e-6f);
+	EXPECT_EQ(tickCount, 3u);
+	EXPECT_EQ(frameTicks, 3u);
+	EXPECT_NEAR(frameAlpha, 0.5f, 1e-3f);
+	scene.onEndRuntime();
+	core::Log::invalidate();
+}
+
+TEST(SystemSchedule, TickOnlySystemsAndTickReplacement) {
+	core::Log::init(core::Log::Level::Off);
+	std::vector<std::string> log;
+	SystemSchedule schedule;
+	EXPECT_FALSE(schedule.add({.name = "empty", .phase = SystemPhase::Scripts}));
+	EXPECT_TRUE(schedule.add({.name = "ticker", .phase = SystemPhase::Scripts, .tick = recorder(log, "tick")}));
+	EXPECT_FALSE(schedule.replaceTick("missing", recorder(log, "x")));
+	EXPECT_FALSE(schedule.replaceTick("ticker", nullptr));
+	Scene scene;
+	schedule.run(SystemPhase::Scripts, scene, {});
+	EXPECT_TRUE(log.empty());
+	EXPECT_TRUE(schedule.replaceTick("ticker", recorder(log, "replaced")));
+	schedule.runTick(SystemPhase::Scripts, scene, {});
+	EXPECT_EQ(log, std::vector<std::string>{"replaced"});
+	core::Log::invalidate();
+}
+
+TEST(SystemSchedule, GameOverRunsNoTick) {
+	core::Log::init(core::Log::Level::Off);
+	std::vector<std::string> log;
+	Scene scene;
+	ASSERT_TRUE(scene.getSystems().add(
+			{.name = "game.tick", .phase = SystemPhase::Scripts, .tick = recorder(log, "tick")}));
+	scene.onStartRuntime();
+	scene.status = Scene::Status::Death;
+	scene.onUpdateRuntime(makeStep(100), false);
+	EXPECT_TRUE(log.empty());
+	EXPECT_EQ(scene.getSimulationClock().getTotalTickCount(), 0u);
 	scene.onEndRuntime();
 	core::Log::invalidate();
 }

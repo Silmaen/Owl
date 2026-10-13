@@ -21,7 +21,9 @@ namespace owl::scene {
 
 namespace {
 
-auto isValid(const SceneSystem& iSystem) -> bool { return !iSystem.name.empty() && iSystem.update != nullptr; }
+auto isValid(const SceneSystem& iSystem) -> bool {
+	return !iSystem.name.empty() && (iSystem.update != nullptr || iSystem.tick != nullptr);
+}
 
 }// namespace
 
@@ -58,6 +60,16 @@ auto SystemSchedule::replace(const std::string& iName, SystemFunction iUpdate) -
 	return true;
 }
 
+auto SystemSchedule::replaceTick(const std::string& iName, SystemFunction iTick) -> bool {
+	const auto it = std::ranges::find(m_systems, iName, &SceneSystem::name);
+	if (it == m_systems.end() || iTick == nullptr) {
+		OWL_CORE_WARN("SystemSchedule: Tick of system '{}' not replaced (unknown, or empty function).", iName)
+		return false;
+	}
+	it->tick = std::move(iTick);
+	return true;
+}
+
 auto SystemSchedule::remove(const std::string& iName) -> bool {
 	if (std::erase_if(m_systems, [&iName](const SceneSystem& iSystem) -> bool { return iSystem.name == iName; }) == 0) {
 		OWL_CORE_WARN("SystemSchedule: System '{}' not removed (unknown).", iName)
@@ -72,16 +84,22 @@ auto SystemSchedule::has(const std::string& iName) const -> bool {
 
 auto SystemSchedule::getNames(const SystemPhase iPhase) const -> std::vector<std::string> {
 	std::vector<std::string> names;
-	for (const auto& [name, phase, update]: m_systems)
-		if (phase == iPhase)
-			names.push_back(name);
+	for (const auto& system: m_systems)
+		if (system.phase == iPhase)
+			names.push_back(system.name);
 	return names;
 }
 
 void SystemSchedule::run(const SystemPhase iPhase, Scene& ioScene, const SystemContext& iContext) const {
-	for (const auto& [name, phase, update]: m_systems)
-		if (phase == iPhase)
-			update(ioScene, iContext);
+	for (const auto& system: m_systems)
+		if (system.phase == iPhase && system.update != nullptr)
+			system.update(ioScene, iContext);
+}
+
+void SystemSchedule::runTick(const SystemPhase iPhase, Scene& ioScene, const SystemContext& iContext) const {
+	for (const auto& system: m_systems)
+		if (system.phase == iPhase && system.tick != nullptr)
+			system.tick(ioScene, iContext);
 }
 
 auto SystemSchedule::getDefault() -> SystemSchedule& {

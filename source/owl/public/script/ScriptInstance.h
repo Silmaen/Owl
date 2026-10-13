@@ -151,6 +151,13 @@ public:
 
 	/**
 	 * @brief
+	 *  Call the script's `on_tick` callback, once per fixed simulation tick (no-op when the script has none).
+	 * @param[in] iTickTime Duration of the tick in seconds (also what `time.delta()` returns during the call).
+	 */
+	void onTick(float iTickTime) const;
+
+	/**
+	 * @brief
 	 *  Call the script's `on_destroy` callback.
 	 */
 	void onDestroy() const;

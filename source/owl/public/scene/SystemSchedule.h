@@ -23,11 +23,15 @@ class Scene;
 /**
  * @brief
  *  Phases of one runtime frame, run in this order by `Scene::onUpdateRuntime()`; the render follows them.
+ *
+ * Each frame runs the `update` functions of `Scripts` and `PrePhysics`, then the fixed ticks the scene's simulation
+ * clock holds (each tick runs the `tick` functions of `Scripts` to `PostPhysics`, in phase order), then the `update`
+ * functions of `Physics`, `PostPhysics` and `Late`.
  */
 enum struct SystemPhase : uint8_t {
-	Scripts,///< Native and Lua scripts (`on_update`).
+	Scripts,///< Native and Lua scripts (`on_update`, `on_tick`).
 	PrePhysics,///< Gameplay controllers before the physics step: cameras, players, raycast doors, inputs.
-	Physics,///< Physics step and collision callbacks.
+	Physics,///< Physics steps (one per tick), collision callbacks and the drawn transforms.
 	PostPhysics,///< Entity links and triggers: the last phase allowed to move or create entities.
 	Late,///< Reads the settled world: sound positions, sprite animation.
 	Ended,///< Runs instead of all the others once the game is won or lost (`Scene::Status`).
@@ -35,16 +39,22 @@ enum struct SystemPhase : uint8_t {
 
 /**
  * @brief
- *  What a system receives each frame besides the scene.
+ *  What a system receives each frame (or each tick) besides the scene.
  */
 struct OWL_API SystemContext {
-	/// Duration of the frame.
+	/// Duration of the frame, or of one tick in a `tick` function.
 	core::Timestep timeStep;
 	/// Whether the frame is rendered (false in headless updates).
 	bool render = true;
+	/// Number of fixed ticks this frame runs.
+	uint32_t tickCount = 0;
+	/// Index of the running tick in the frame (0 in an `update` function).
+	uint32_t tickIndex = 0;
+	/// Interpolation alpha of the simulation clock for this frame, in [0, 1).
+	float alpha = 0.f;
 };
 
-/// Body of a system: one call per frame in its phase.
+/// Body of a system: one call per frame (`update`) or per fixed tick (`tick`) in its phase.
 using SystemFunction = std::function<void(Scene& ioScene, const SystemContext& iContext)>;
 
 /**
@@ -56,8 +66,10 @@ struct OWL_API SceneSystem {
 	std::string name;
 	/// Phase the system runs in.
 	SystemPhase phase = SystemPhase::PrePhysics;
-	/// The function run every frame.
-	SystemFunction update;
+	/// The function run once per frame, may be empty when `tick` is set.
+	SystemFunction update = nullptr;
+	/// The function run once per fixed tick, may be empty when `update` is set (`Late` and `Ended` have no tick).
+	SystemFunction tick = nullptr;
 };
 
 /**
@@ -74,7 +86,7 @@ public:
 	 * @brief
 	 *  Append a system at the end of its phase.
 	 * @param[in] iSystem The system.
-	 * @return False (and nothing added) when the name is empty, already used, or the function is empty.
+	 * @return False (and nothing added) when the name is empty, already used, or both functions are empty.
 	 */
 	auto add(SceneSystem iSystem) -> bool;
 
@@ -89,12 +101,21 @@ public:
 
 	/**
 	 * @brief
-	 *  Replace the function of a system, keeping its name, phase and position.
+	 *  Replace the per-frame function of a system, keeping its name, phase, position and tick function.
 	 * @param[in] iName The system name.
 	 * @param[in] iUpdate The new function.
 	 * @return False when no system has that name or the function is empty.
 	 */
 	auto replace(const std::string& iName, SystemFunction iUpdate) -> bool;
+
+	/**
+	 * @brief
+	 *  Replace the per-tick function of a system, keeping its name, phase, position and update function.
+	 * @param[in] iName The system name.
+	 * @param[in] iTick The new function.
+	 * @return False when no system has that name or the function is empty.
+	 */
+	auto replaceTick(const std::string& iName, SystemFunction iTick) -> bool;
 
 	/**
 	 * @brief
@@ -122,12 +143,21 @@ public:
 
 	/**
 	 * @brief
-	 *  Run the systems of one phase.
+	 *  Run the `update` functions of one phase.
 	 * @param[in] iPhase The phase.
 	 * @param[in,out] ioScene The scene they update.
 	 * @param[in] iContext The frame context.
 	 */
 	void run(SystemPhase iPhase, Scene& ioScene, const SystemContext& iContext) const;
+
+	/**
+	 * @brief
+	 *  Run the `tick` functions of one phase, for one fixed tick.
+	 * @param[in] iPhase The phase.
+	 * @param[in,out] ioScene The scene they update.
+	 * @param[in] iContext The tick context (`timeStep` is the tick duration).
+	 */
+	void runTick(SystemPhase iPhase, Scene& ioScene, const SystemContext& iContext) const;
 
 	/**
 	 * @brief

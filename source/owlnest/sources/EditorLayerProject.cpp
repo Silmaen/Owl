@@ -534,6 +534,7 @@ void EditorLayer::openProject(const std::filesystem::path& iDir) {
 		return;
 	}
 	app::Application::get().addAssetDirectory({std::format("Project: {}", m_project.name), m_project.projectDirectory});
+	app::Application::get().getEngineContext().setSimulationSettings(m_project.simulation);
 	m_contentBrowser.attach();
 	refreshWindowTitle();
 
@@ -599,6 +600,7 @@ void EditorLayer::closeProject() {
 	m_recovery.autosave(m_documents);
 	m_recovery.setDirectory({});
 	m_project = {};
+	app::Application::get().getEngineContext().setSimulationSettings(m_project.simulation);
 	refreshWindowTitle();
 }
 

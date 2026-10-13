@@ -150,7 +150,7 @@ a few days, L a week.
 
 ### Simulation and input
 
-- ![Planned][planned] **SIM1 — Fixed simulation tick, S/M.** Systems and Lua get an `on_tick` at a fixed step (project
+- ![Done][done] **SIM1 — Fixed simulation tick, S/M.** Systems and Lua get an `on_tick` at a fixed step (project
   setting, 60 Hz by default), beside the variable `on_update`; physics always runs on this fixed clock. The first piece
   of the v0.9.0 determinism.
 - ![Planned][planned] **IN1 — Input frames and edges, M.** D10: `InputFrame` per tick, `isKeyJustPressed` /

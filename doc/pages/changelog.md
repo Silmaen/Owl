@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Editor command API v2: `Vec2`, `Vec4`, `Color` and `Enum` arguments with defaults and choices, structured result
   data, new commands `component.set`, `scene.save`, `edit.undo` and `edit.redo`, edits refused during Play, and every
   command runnable from the command palette through an argument form.
+- Fixed simulation tick: a project `simulation.tickRate` (60 Hz by default, `maxTicksPerFrame` bound) drives
+  `SimulationClock`, the systems' `tick` functions, Lua `on_tick(dt)` and `time.tick_alpha()`, and the physics steps.
 
 ### Changed
 

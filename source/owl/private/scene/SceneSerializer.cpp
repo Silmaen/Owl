@@ -168,8 +168,6 @@ void serializePhysicsSettings(YAML::Emitter& ioEmitter, const PhysicsSettings& i
 	if (iSettings == PhysicsSettings{})
 		return;
 	ioEmitter << YAML::Key << "Physics" << YAML::Value << YAML::BeginMap;
-	ioEmitter << YAML::Key << "tickRate" << YAML::Value << iSettings.tickRate;
-	ioEmitter << YAML::Key << "maxStepsPerFrame" << YAML::Value << iSettings.maxStepsPerFrame;
 	ioEmitter << YAML::Key << "solverSubSteps" << YAML::Value << iSettings.solverSubSteps;
 	ioEmitter << YAML::Key << "interpolate" << YAML::Value << iSettings.interpolate;
 	ioEmitter << YAML::Key << "workerCount" << YAML::Value << iSettings.workerCount;
@@ -180,8 +178,8 @@ auto deserializePhysicsSettings(const core::YamlNode& iNode) -> PhysicsSettings 
 	PhysicsSettings settings;
 	if (!iNode.isMap())
 		return settings;
-	settings.tickRate = iNode["tickRate"].as<float>(settings.tickRate);
-	settings.maxStepsPerFrame = iNode["maxStepsPerFrame"].as<uint32_t>(settings.maxStepsPerFrame);
+	if (iNode["tickRate"] || iNode["maxStepsPerFrame"])
+		OWL_CORE_WARN("SceneSerializer: Physics tickRate / maxStepsPerFrame ignored, see the project tick rate.")
 	settings.solverSubSteps = iNode["solverSubSteps"].as<uint32_t>(settings.solverSubSteps);
 	settings.interpolate = iNode["interpolate"].as<bool>(settings.interpolate);
 	settings.workerCount = iNode["workerCount"].as<uint32_t>(settings.workerCount);

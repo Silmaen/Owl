@@ -19,7 +19,6 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
-#include <limits>
 #include <string>
 #include <vector>
 
@@ -112,9 +111,8 @@ TEST_F(PhysicFixedStepTest, SameStepsGiveSamePositionsWhateverTheFrameDurations)
 TEST_F(PhysicFixedStepTest, StepCountFollowsTheTickRate) {
 	Scene scene;
 	addBox(scene, {0.f, 5.f, 0.f});
-	scene.getPhysicsSettings().tickRate = 120.f;
+	scene.getSimulationClock().setSettings({.tickRate = 120.f});
 	PhysicCommand::init(scene);
-	EXPECT_FLOAT_EQ(PhysicCommand::getSettings(scene).tickRate, 120.f);
 	PhysicCommand::frame(scene, makeFrame(16'667));
 	EXPECT_EQ(PhysicCommand::getLastFrameStepCount(scene), 2u);
 	PhysicCommand::frame(scene, makeFrame(4'000));
@@ -126,7 +124,7 @@ TEST_F(PhysicFixedStepTest, StepCountFollowsTheTickRate) {
 TEST_F(PhysicFixedStepTest, StepsPerFrameAreBoundedAndTheExcessIsDropped) {
 	Scene scene;
 	addBox(scene, {0.f, 5.f, 0.f});
-	scene.getPhysicsSettings().maxStepsPerFrame = 5;
+	scene.getSimulationClock().setSettings({.maxTicksPerFrame = 5});
 	PhysicCommand::init(scene);
 	PhysicCommand::frame(scene, makeFrame(2'000'000));
 	EXPECT_EQ(PhysicCommand::getLastFrameStepCount(scene), 5u);
@@ -198,7 +196,7 @@ TEST_F(PhysicFixedStepTest, CollisionReportedOnceInAFrameOfManySteps) {
 	body.restitution = 1.f;
 	body.friction = 0.f;
 	body.fixedRotation = true;
-	scene.getPhysicsSettings().maxStepsPerFrame = 64;
+	scene.getSimulationClock().setSettings({.maxTicksPerFrame = 64});
 	PhysicCommand::init(scene);
 	PhysicCommand::setGravityScale(ball, 0.f);
 	PhysicCommand::setVelocity(ball, {10.f, 0.f});
@@ -214,26 +212,59 @@ TEST_F(PhysicFixedStepTest, CollisionReportedOnceInAFrameOfManySteps) {
 	EXPECT_GT(std::abs(PhysicCommand::getVelocity(ball).x()), 9.f);
 }
 
+TEST_F(PhysicFixedStepTest, StepRunsOneTickOfTheSceneClock) {
+	Scene scene;
+	auto box = addBox(scene, {0.f, 0.f, 0.f});
+	scene.getSimulationClock().setSettings({.tickRate = 30.f});
+	PhysicCommand::init(scene);
+	PhysicCommand::setGravityScale(box, 0.f);
+	PhysicCommand::setVelocity(box, {3.f, 0.f});
+	PhysicCommand::step(scene);
+	PhysicCommand::step(scene);
+	PhysicCommand::writeFrameTransforms(scene);
+	EXPECT_EQ(PhysicCommand::getLastFrameStepCount(scene), 2u);
+	// The clock was not advanced: its alpha is 0, the drawn pose is the one of the step before the last.
+	const auto& transform = box.getComponent<component::Transform>().transform;
+	EXPECT_NEAR(transform.translation().x(), 3.f / 30.f, 1e-4f);
+	PhysicCommand::syncSimulatedTransforms(scene);
+	EXPECT_NEAR(transform.translation().x(), 2.f * 3.f / 30.f, 1e-4f);
+}
+
+TEST_F(PhysicFixedStepTest, SceneRunsOnePhysicsStepPerTick) {
+	Scene scene;
+	auto box = addBox(scene, {0.f, 0.f, 0.f});
+	scene.onStartRuntime();
+	PhysicCommand::setGravityScale(box, 0.f);
+	PhysicCommand::setVelocity(box, {6.f, 0.f});
+	const auto& transform = box.getComponent<component::Transform>().transform;
+	scene.onUpdateRuntime(makeFrame(34'000), false);
+	EXPECT_EQ(PhysicCommand::getLastFrameStepCount(scene), 2u);
+	EXPECT_EQ(scene.getSimulationClock().getFrameTickCount(), 2u);
+	const float afterTwoTicks = transform.translation().x();
+	EXPECT_GT(afterTwoTicks, 6.f / 60.f);
+	// A frame without a tick still moves the drawn pose (interpolation), the simulation does not step.
+	scene.onUpdateRuntime(makeFrame(5'000), false);
+	EXPECT_EQ(PhysicCommand::getLastFrameStepCount(scene), 0u);
+	EXPECT_GT(transform.translation().x(), afterTwoTicks);
+	EXPECT_LT(transform.translation().x(), 2.f * 6.f / 60.f + 1e-4f);
+	scene.onEndRuntime();
+}
+
 TEST(PhysicsSettings, ClampedKeepsFieldsInRange) {
 	PhysicsSettings settings;
-	settings.tickRate = 0.f;
-	settings.maxStepsPerFrame = 0;
 	settings.solverSubSteps = 1000;
-	auto clamped = settings.clamped();
-	EXPECT_FLOAT_EQ(clamped.tickRate, PhysicsSettings::minTickRate);
-	EXPECT_EQ(clamped.maxStepsPerFrame, 1u);
+	settings.workerCount = 1000;
+	const auto clamped = settings.clamped();
 	EXPECT_EQ(clamped.solverSubSteps, uint32_t{PhysicsSettings::maxSolverSubSteps});
-	settings.tickRate = std::numeric_limits<float>::quiet_NaN();
-	EXPECT_FLOAT_EQ(settings.clamped().tickRate, PhysicsSettings::defaultTickRate);
-	EXPECT_NEAR(PhysicsSettings{}.getStepSeconds(), 1.0 / 60.0, 1e-12);
+	EXPECT_EQ(clamped.workerCount, uint32_t{PhysicsSettings::maxWorkerCount});
+	settings.solverSubSteps = 0;
+	EXPECT_EQ(settings.clamped().solverSubSteps, 1u);
 }
 
 TEST(PhysicsSettings, SceneRoundTripAndDefaultOmitted) {
 	core::Log::init(core::Log::Level::Off);
 	const auto scene = mkShared<Scene>();
 	EXPECT_EQ(SceneSerializer(scene).serializeToString().find("Physics:"), std::string::npos);
-	scene->getPhysicsSettings().tickRate = 90.f;
-	scene->getPhysicsSettings().maxStepsPerFrame = 3;
 	scene->getPhysicsSettings().solverSubSteps = 6;
 	scene->getPhysicsSettings().interpolate = false;
 	const std::string yaml = SceneSerializer(scene).serializeToString();
@@ -242,5 +273,16 @@ TEST(PhysicsSettings, SceneRoundTripAndDefaultOmitted) {
 	ASSERT_TRUE(SceneSerializer(loaded).deserializeFromBuffer(std::vector<uint8_t>(yaml.begin(), yaml.end()), "mem"));
 	EXPECT_EQ(loaded->getPhysicsSettings(), scene->getPhysicsSettings());
 	EXPECT_EQ(Scene::copy(scene)->getPhysicsSettings(), scene->getPhysicsSettings());
+	core::Log::invalidate();
+}
+
+TEST(PhysicsSettings, FormerTickKeysOfASceneAreIgnored) {
+	core::Log::init(core::Log::Level::Off);
+	const std::string yaml = "Scene: old\nPhysics:\n  tickRate: 120\n  maxStepsPerFrame: 3\n  solverSubSteps: 6\n"
+							 "Entities: []\n";
+	const auto loaded = mkShared<Scene>();
+	ASSERT_TRUE(SceneSerializer(loaded).deserializeFromBuffer(std::vector<uint8_t>(yaml.begin(), yaml.end()), "mem"));
+	EXPECT_EQ(loaded->getPhysicsSettings().solverSubSteps, 6u);
+	EXPECT_EQ(loaded->getSimulationClock().getSettings(), SimulationSettings{});
 	core::Log::invalidate();
 }

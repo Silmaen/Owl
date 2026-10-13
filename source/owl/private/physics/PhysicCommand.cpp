@@ -148,8 +148,8 @@ public:
 		}
 	}
 
-	void capturePrevious(const bool iFromWorld) {
-		for (auto& tracked: synced) tracked.previous = iFromWorld ? b2Body_GetTransform(tracked.body) : tracked.current;
+	void capturePrevious() {
+		for (auto& tracked: synced) tracked.previous = tracked.current;
 	}
 
 	// Below this many bodies the per-frame copies stay on the calling thread (dispatch costs more than it saves).
@@ -392,8 +392,7 @@ public:
 	std::vector<SyncedBody> synced;
 	std::unordered_map<uint64_t, size_t> syncedIndex;
 	PhysicsSettings settings;
-	double stepSeconds = 1.0 / static_cast<double>(PhysicsSettings::defaultTickRate);
-	double accumulator = 0.0;
+	uint32_t stepsSinceWrite = 0;
 	uint32_t lastStepCount = 0;
 	float alpha = 1.f;
 	uniq<SolverTaskPool> taskPool;
@@ -427,7 +426,6 @@ void PhysicCommand::init(scene::Scene& ioScene) {
 	const auto world = mkShared<PhysicsWorld>();
 	ioScene.m_physicsWorld = world;
 	world->settings = ioScene.getPhysicsSettings().clamped();
-	world->stepSeconds = world->settings.getStepSeconds();
 	b2WorldDef def = b2DefaultWorldDef();
 	def.gravity = {.x = 0.0f, .y = -9.81f};
 	uint32_t dynamicBodies = 0;
@@ -565,6 +563,40 @@ void PhysicCommand::destroy(scene::Scene& ioScene) {
 
 auto PhysicCommand::isInitialized(const scene::Scene& iScene) -> bool { return iScene.getPhysicsWorld() != nullptr; }
 
+void PhysicCommand::step(scene::Scene& ioScene) {
+	OWL_PROFILE_FUNCTION()
+
+	auto* const world = ioScene.getPhysicsWorld();
+	if (world == nullptr) {
+		logNotInitialized("step");
+		return;
+	}
+	auto& impl = *world;
+	impl.createPendingBodies(ioScene);
+	if (impl.settings.interpolate)
+		impl.capturePrevious();
+	b2World_Step(impl.worldId, static_cast<float>(ioScene.getSimulationClock().getStepSeconds()),
+				 static_cast<int>(impl.settings.solverSubSteps));
+	if (impl.taskPool != nullptr)
+		impl.taskPool->recycle();
+	impl.collectContactEvents();
+	impl.captureCurrent();
+	++impl.stepsSinceWrite;
+}
+
+void PhysicCommand::writeFrameTransforms(scene::Scene& ioScene) {
+	auto* const world = ioScene.getPhysicsWorld();
+	if (world == nullptr) {
+		logNotInitialized("writeFrameTransforms");
+		return;
+	}
+	auto& impl = *world;
+	impl.lastStepCount = std::exchange(impl.stepsSinceWrite, 0);
+	impl.alpha = impl.settings.interpolate ? ioScene.getSimulationClock().getAlpha() : 1.f;
+	if (impl.lastStepCount > 0 || impl.settings.interpolate)
+		impl.writeTransforms(ioScene, impl.alpha);
+}
+
 void PhysicCommand::frame(scene::Scene& ioScene, const core::Timestep& iTimestep) {
 	OWL_PROFILE_FUNCTION()
 
@@ -573,33 +605,11 @@ void PhysicCommand::frame(scene::Scene& ioScene, const core::Timestep& iTimestep
 		logNotInitialized("frame");
 		return;
 	}
-	auto& impl = *world;
-	impl.createPendingBodies(ioScene);
-	const double step = impl.stepSeconds;
-	impl.accumulator += std::max(0.0, static_cast<double>(iTimestep.getMilliseconds()) / 1000.0);
-	// The tolerance absorbs the rounding of frame durations that are whole multiples of the step.
-	auto stepCount = static_cast<uint32_t>(std::floor((impl.accumulator + step * 1e-4) / step));
-	impl.accumulator = std::max(0.0, impl.accumulator - static_cast<double>(stepCount) * step);
-	if (stepCount > impl.settings.maxStepsPerFrame) {
-		stepCount = impl.settings.maxStepsPerFrame;
-		impl.accumulator = std::fmod(impl.accumulator, step);
-	}
-	impl.lastStepCount = stepCount;
-	impl.frameEventsStart = impl.collisionBegins.size();
-	const auto subSteps = static_cast<int>(impl.settings.solverSubSteps);
-	for (uint32_t i = 0; i < stepCount; ++i) {
-		if (impl.settings.interpolate && i + 1 == stepCount)
-			impl.capturePrevious(/*iFromWorld=*/stepCount > 1);
-		b2World_Step(impl.worldId, static_cast<float>(step), subSteps);
-		if (impl.taskPool != nullptr)
-			impl.taskPool->recycle();
-		impl.collectContactEvents();
-	}
-	if (stepCount > 0)
-		impl.captureCurrent();
-	impl.alpha = impl.settings.interpolate ? static_cast<float>(std::min(impl.accumulator / step, 1.0)) : 1.f;
-	if (stepCount > 0 || impl.settings.interpolate)
-		impl.writeTransforms(ioScene, impl.alpha);
+	world->createPendingBodies(ioScene);
+	world->frameEventsStart = world->collisionBegins.size();
+	const uint32_t steps = ioScene.getSimulationClock().advance(iTimestep);
+	for (uint32_t i = 0; i < steps; ++i) step(ioScene);
+	writeFrameTransforms(ioScene);
 }
 
 auto PhysicCommand::getSettings(const scene::Scene& iScene) -> PhysicsSettings {
@@ -633,6 +643,7 @@ auto PhysicCommand::takeCollisionEvents(scene::Scene& ioScene) -> std::vector<Co
 	auto* const world = ioScene.getPhysicsWorld();
 	if (world == nullptr)
 		return {};
+	world->frameEventsStart = 0;
 	return std::exchange(world->collisionBegins, {});
 }
 

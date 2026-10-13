@@ -9,6 +9,7 @@
 #pragma once
 
 #include "core/Core.h"
+#include "scene/SimulationClock.h"
 
 namespace owl::renderer {
 class VoxelMeshCache;
@@ -25,10 +26,10 @@ namespace owl::app {
  * @brief
  *  Engine state shared by the scenes of one application, owned by `Application` instead of static storage.
  *
- * Holds the screen transition, the game settings and the voxel mesh cache. The application creates it and releases
- * it before shutting the renderer down; every new scene points at the application's one (`Scene::getEngineContext`).
- * A test that needs one creates its own and gives it to its scenes (`Scene::setEngineContext`), so nothing leaks
- * from a test to the next.
+ * Holds the screen transition, the game settings, the project's simulation tick rate and the voxel mesh cache. The
+ * application creates it and releases it before shutting the renderer down; every new scene points at the
+ * application's one (`Scene::getEngineContext`). A test that needs one creates its own and gives it to its scenes
+ * (`Scene::setEngineContext`), so nothing leaks from a test to the next.
  */
 class OWL_API EngineContext final {
 public:
@@ -73,6 +74,20 @@ public:
 	 */
 	[[nodiscard]] auto getVoxelMeshCache() -> renderer::VoxelMeshCache& { return *mp_voxelMeshCache; }
 
+	/**
+	 * @brief
+	 *  Fixed simulation tick of the game, given to every scene's clock at `Scene::onStartRuntime()`.
+	 * @return The simulation settings (60 Hz unless the project sets another rate).
+	 */
+	[[nodiscard]] auto getSimulationSettings() const -> const scene::SimulationSettings& { return m_simulation; }
+
+	/**
+	 * @brief
+	 *  Set the fixed simulation tick of the game (the project's `simulation:` block); scenes started from now on use it.
+	 * @param[in] iSettings The settings, clamped into their accepted range.
+	 */
+	void setSimulationSettings(const scene::SimulationSettings& iSettings) { m_simulation = iSettings.clamped(); }
+
 private:
 	/// Screen transition state.
 	uniq<scene::ScreenTransition> mp_screenTransition;
@@ -80,6 +95,8 @@ private:
 	uniq<scene::SettingsManager> mp_settings;
 	/// Voxel mesh cache.
 	uniq<renderer::VoxelMeshCache> mp_voxelMeshCache;
+	/// Fixed simulation tick of the game.
+	scene::SimulationSettings m_simulation;
 };
 
 }// namespace owl::app

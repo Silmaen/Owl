@@ -18,20 +18,10 @@ namespace owl::scene {
  * @brief
  *  Per-scene physics simulation settings, saved in the scene file under `Physics:`.
  *
- * The world advances at a fixed rate whatever the frame rate: each frame adds its duration to an
- * accumulator and runs as many steps of `1 / tickRate` seconds as it holds, at most
- * `maxStepsPerFrame`. Rendered transforms are blended between the last two steps when `interpolate`
- * is set.
+ * The world advances one step per tick of the scene's fixed simulation clock (`Scene::getSimulationClock()`, rate
+ * set by the project). Rendered transforms are blended between the last two steps when `interpolate` is set.
  */
 struct OWL_API PhysicsSettings {
-	/// Default number of fixed steps per second.
-	static constexpr float defaultTickRate = 60.f;
-	/// Lowest accepted tick rate, in steps per second.
-	static constexpr float minTickRate = 1.f;
-	/// Highest accepted tick rate, in steps per second.
-	static constexpr float maxTickRate = 1000.f;
-	/// Highest accepted step count per frame.
-	static constexpr uint32_t maxStepsLimit = 64;
 	/// Highest accepted Box2D sub-step count.
 	static constexpr uint32_t maxSolverSubSteps = 16;
 	/// Highest accepted solver thread count.
@@ -41,23 +31,12 @@ struct OWL_API PhysicsSettings {
 	/// Dynamic bodies below which the automatic count stays single-threaded (task dispatch costs more than it saves).
 	static constexpr uint32_t autoThreadingMinBodies = 2000;
 
-	/// Fixed steps per second.
-	float tickRate = defaultTickRate;
-	/// Maximum number of fixed steps per frame; the time beyond is dropped (no spiral of death).
-	uint32_t maxStepsPerFrame = 8;
 	/// Box2D sub-steps inside one fixed step.
 	uint32_t solverSubSteps = 4;
 	/// Blend the rendered transforms between the last two fixed steps.
 	bool interpolate = true;
 	/// Solver threads: 0 picks a count from the hardware, 1 runs the solver on the calling thread.
 	uint32_t workerCount = 0;
-
-	/**
-	 * @brief
-	 *  Duration of one fixed step.
-	 * @return The step duration in seconds, from the clamped tick rate.
-	 */
-	[[nodiscard]] auto getStepSeconds() const -> double;
 
 	/**
 	 * @brief

@@ -672,25 +672,28 @@ on disk, at the start of the next frame:
 ### Project Settings
 
 The Project Settings dialog is opened via **Project > Project Settings**. It edits the
-active project's configuration in three sections (General, Window, Renderer Stack) laid out as property grids, like
-the inspector:
+active project's configuration in four sections (General, Window, Simulation, Renderer Stack) laid out as property
+grids, like the inspector:
 
-| Field        | Description                                             |
-|--------------|---------------------------------------------------------|
-| Project Name | Display name shown in the window title bar              |
-| First Scene  | Dropdown of `.owl` files found in the project directory |
-| Version      | Freeform version string (e.g., "1.0.0")                 |
-| Author       | Author or studio name                                   |
-| Description  | Short project description                               |
-| Icon         | Relative path to a PNG icon for the game window         |
-| Width        | Default window width in pixels (320–7680)               |
-| Height       | Default window height in pixels (240–4320)              |
-| Fullscreen   | Whether the game starts in fullscreen mode              |
-| Resizable    | Whether the game window can be resized                  |
+| Field               | Description                                                                   |
+|---------------------|-------------------------------------------------------------------------------|
+| Project Name        | Display name shown in the window title bar                                    |
+| First Scene         | Dropdown of `.owl` files found in the project directory                       |
+| Version             | Freeform version string (e.g., "1.0.0")                                       |
+| Author              | Author or studio name                                                         |
+| Description         | Short project description                                                     |
+| Icon                | Relative path to a PNG icon for the game window                               |
+| Width               | Default window width in pixels (320–7680)                                     |
+| Height              | Default window height in pixels (240–4320)                                    |
+| Fullscreen          | Whether the game starts in fullscreen mode                                    |
+| Resizable           | Whether the game window can be resized                                        |
+| Tick Rate           | Fixed simulation ticks per second (1–1000, 60 by default): `on_tick`, physics |
+| Max Ticks per Frame | Ticks one frame runs at most (1–64, 8 by default); the time beyond is dropped |
 
-Changes are applied on confirmation and saved to `owl_project.yml`. The window settings
-are also written to `runner.yml` during game export (`Project > Pack Game`) and applied
-by the Runner at startup.
+Changes are applied on confirmation (**Cancel** drops them, every field reverts to its default with its reset
+button) and saved to `owl_project.yml`; the project settings are not on the scene undo stack. The window and
+simulation settings are also written to `runner.yml` during game export (`Project > Pack Game`) and applied by the
+Runner at startup; the tick rate applies from the next Play (see [Fixed simulation tick](scene.md#fixed-tick)).
 
 ### Scene Settings
 
@@ -699,8 +702,9 @@ The Scene Settings panel is a dockable window opened via the ribbon
 the `EnabledRenderers` and `Physics` blocks in the `.owl` file — without requiring the user
 to hand-edit YAML.
 
-The **Physics** section edits the scene's `physics::PhysicsSettings`: tick rate, maximum steps per frame,
-solver sub-steps, solver threads (`auto` = 0) and transform interpolation (see [Physics](physics.md)). Each change pushes an undoable
+The **Physics** section edits the scene's `physics::PhysicsSettings`: solver sub-steps, solver threads (`auto` = 0)
+and transform interpolation (see [Physics](physics.md)); the world steps once per simulation tick, whose rate is a
+project setting. Each change pushes an undoable
 `ModifyPhysicsSettingsCommand`; the settings are read when Play starts. It is shown even when the project
 declares no renderer stack.
 
@@ -754,7 +758,7 @@ spatial sound positions, and invokes native scripts.
 
 Entered by pressing Pause during Play. The simulation freezes: `onUpdateRuntime()` is
 skipped, but the scene continues to render. The Step Frame action advances the
-simulation by exactly one frame, useful for debugging physics or animation timing.
+simulation by exactly one simulation tick, useful for debugging physics or animation timing.
 
 ### Stop
 

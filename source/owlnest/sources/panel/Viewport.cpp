@@ -299,7 +299,8 @@ void Viewport::onUpdate(const core::Timestep& iTimeStep) {
 		case SceneDocument::State::Pause:
 			{
 				if (mp_document->consumeStepRequest()) {
-					activeScene->onUpdateRuntime(iTimeStep);
+					// One step of Pause is one simulation tick, whatever the frame duration.
+					activeScene->onUpdateRuntime(activeScene->getSimulationClock().getStepTimestep());
 					mp_document->handleTeleportRequest(getSize());
 				} else {
 					activeScene->onRenderRuntime();

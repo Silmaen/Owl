@@ -45,6 +45,14 @@ void updateScripts(Scene& ioScene, const SystemContext& iContext);
 
 /**
  * @brief
+ *  Run `NativeScript` and `LuaScript` fixed ticks of the visible entities (`owl.scripts`, `on_tick`).
+ * @param[in,out] ioScene The scene.
+ * @param[in] iContext The tick context.
+ */
+void tickScripts(Scene& ioScene, const SystemContext& iContext);
+
+/**
+ * @brief
  *  Move the `FlyCamera` entities from the keyboard and mouse (`owl.fly_cameras`).
  * @param[in,out] ioScene The scene.
  * @param[in] iContext The frame context.
@@ -82,7 +90,19 @@ void updatePlayerInput(Scene& ioScene, const SystemContext& iContext);
 
 /**
  * @brief
- *  Step the scene's physics world, then dispatch the begun collisions to the scripts (`owl.physics`).
+ *  Run one step of the scene's physics world, write the transforms, then dispatch the begun collisions to the
+ *  scripts (`owl.physics` tick).
+ *
+ * The last tick of the frame writes the drawn (interpolated) poses, the others the simulated ones so the next tick
+ * reads where the bodies are.
+ * @param[in,out] ioScene The scene.
+ * @param[in] iContext The tick context.
+ */
+void tickPhysics(Scene& ioScene, const SystemContext& iContext);
+
+/**
+ * @brief
+ *  Blend the drawn poses of a frame that ran no tick (`owl.physics` update).
  * @param[in,out] ioScene The scene.
  * @param[in] iContext The frame context.
  */

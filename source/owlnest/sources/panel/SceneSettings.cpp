@@ -241,14 +241,6 @@ void SceneSettings::renderPhysicsSection() const {
 	const scene::PhysicsSettings before = m_scene->getPhysicsSettings();
 	scene::PhysicsSettings edited = before;
 	if (gui::widgets::beginProperties("##physics")) {
-		std::ignore = gui::widgets::propertyFloat("Tick Rate", edited.tickRate, defaults.tickRate, 1.f, "%.0f Hz",
-												  "Fixed physics steps per second, whatever the frame rate.");
-		auto maxSteps = static_cast<int>(edited.maxStepsPerFrame);
-		if (gui::widgets::propertyInt("Max Steps per Frame", maxSteps, static_cast<int>(defaults.maxStepsPerFrame), 1,
-									  static_cast<int>(scene::PhysicsSettings::maxStepsLimit), "%d",
-									  "Time beyond this many steps in one frame is dropped: the game slows down "
-									  "instead of stalling."))
-			edited.maxStepsPerFrame = static_cast<uint32_t>(maxSteps);
 		auto subSteps = static_cast<int>(edited.solverSubSteps);
 		if (gui::widgets::propertyInt("Solver Sub-steps", subSteps, static_cast<int>(defaults.solverSubSteps), 1,
 									  static_cast<int>(scene::PhysicsSettings::maxSolverSubSteps)))
@@ -265,7 +257,8 @@ void SceneSettings::renderPhysicsSection() const {
 												 "(smooth motion, one step of latency).");
 		gui::widgets::endProperties();
 	}
-	ImGui::TextDisabled("Applied when Play starts.");
+	ImGui::TextDisabled("One step per simulation tick (%.0f Hz, Project Settings). Applied when Play starts.",
+						static_cast<double>(mp_project->simulation.clamped().tickRate));
 	gui::widgets::endSection();
 	edited = edited.clamped();
 	if (edited == before)

@@ -28,6 +28,10 @@ void PhysicCommand::destroy([[maybe_unused]] scene::Scene& ioScene) {}
 
 auto PhysicCommand::isInitialized([[maybe_unused]] const scene::Scene& iScene) -> bool { return false; }
 
+void PhysicCommand::step([[maybe_unused]] scene::Scene& ioScene) {}
+
+void PhysicCommand::writeFrameTransforms([[maybe_unused]] scene::Scene& ioScene) {}
+
 void PhysicCommand::frame([[maybe_unused]] scene::Scene& ioScene, [[maybe_unused]] const core::Timestep& iTimestep) {}
 
 auto PhysicCommand::getSettings([[maybe_unused]] const scene::Scene& iScene) -> PhysicsSettings {
