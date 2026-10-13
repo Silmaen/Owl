@@ -454,7 +454,8 @@ Two consequences for this repository:
 
 ## Clang-tidy scoping
 
-`linux-clang-tidy` builds the tests too (`OWL_TESTING=ON`), so both analyses cover `test/` (about 510 translation
+`linux-clang-tidy` builds the tests too (`OWL_TESTING=ON`) but never runs them (`run_tests: false` in its
+`vendor.silmaen` block, which wins over `OWL_TESTING`), so both analyses cover `test/` (about 510 translation
 units): `test/.clang-tidy` inherits the root configuration minus the checks whose pattern is the point of a test
 (suspicious argument order, copies and moves under test, float loop counters, …), and the analyzer mode drops
 `EnumCastOutOfRange` and `FloatLoopCounter` on test files (`TEST_ANALYZER_EXCLUSIONS`).

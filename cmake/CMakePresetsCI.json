@@ -23,7 +23,8 @@
       },
       "vendor": {
         "silmaen": {
-          "release_preset": ""
+          "release_preset": "",
+          "run_tests": false
         }
       }
     },

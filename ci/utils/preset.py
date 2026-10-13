@@ -81,6 +81,8 @@ class PresetConfig:
         def is_true(value: Any) -> bool:
             return value in ["ON", "True", "true", "1", True]
 
+        # `vendor.silmaen.run_tests` wins over `OWL_TESTING`: a preset can compile the tests without running them.
+        run_tests_override: bool | None = None
         if "vendor" in self.raw_config:
             vendor = self.raw_config["vendor"]
             if "silmaen" in vendor:
@@ -108,6 +110,8 @@ class PresetConfig:
                     self.publish_doc = is_true(vendor_conf["publish_doc"])
                 if "package" in vendor_conf:
                     self.run_package = is_true(vendor_conf["package"])
+                if "run_tests" in vendor_conf:
+                    run_tests_override = is_true(vendor_conf["run_tests"])
 
         if "generator" in self.raw_config:
             self.cmake_generator = self.raw_config["generator"]
@@ -127,6 +131,9 @@ class PresetConfig:
                 )
             if "CMAKE_CXX_COMPILER" in cache_variables:
                 self.compiler = cache_variables["CMAKE_CXX_COMPILER"]
+        if run_tests_override is not None:
+            self.run_tests = run_tests_override
+            self.run_coverage = self.run_coverage and run_tests_override
 
         if "binaryDir" in self.raw_config:
             self.build_directory = Path(self.raw_config["binaryDir"])
