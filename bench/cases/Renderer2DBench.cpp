@@ -50,6 +50,42 @@ void measureFrame(Runner& ioRunner, const std::string& iName, const uint32_t iCo
 	ioRunner.metric(iName + "_draw_calls", renderer::Renderer2D::getStats().drawCalls, "draw calls (one frame)");
 }
 
+// Transient draws (no scene world index): quads and circles sharing the transient matrices, rects, polylines.
+void runTransientMixes(Runner& ioRunner, const renderer::CameraOrtho& iCamera,
+					   const std::vector<math::Transform>& iTransforms) {
+	const auto count = static_cast<uint32_t>(iTransforms.size());
+	measureFrame(ioRunner, std::format("renderer2d/transient_quads_circles/{}", count), count, iCamera, [&]() -> void {
+		for (uint32_t i = 0; i < count; ++i) {
+			if ((i & 1U) == 0)
+				renderer::Renderer2D::drawQuad({.transform = iTransforms[i], .color = {1.f, 0.5f, 0.2f, 1.f}});
+			else
+				renderer::Renderer2D::drawCircle({.transform = iTransforms[i], .color = {1.f, 1.f, 1.f, 1.f}});
+		}
+	});
+	measureFrame(ioRunner, std::format("renderer2d/rects/{}", count), count, iCamera, [&]() -> void {
+		for (uint32_t i = 0; i < count; ++i)
+			renderer::Renderer2D::drawRect({.transform = iTransforms[i], .color = {0.f, 1.f, 0.f, 1.f}});
+	});
+	renderer::PolyLineData polyLine{.transform = {},
+									.points = {{0.f, 0.f, 0.f},
+											   {1.f, 0.f, 0.f},
+											   {1.f, 1.f, 0.f},
+											   {0.5f, 1.5f, 0.f},
+											   {0.f, 1.f, 0.f},
+											   {-0.5f, 0.5f, 0.f},
+											   {0.f, 0.2f, 0.f},
+											   {0.2f, 0.f, 0.f}},
+									.closed = true,
+									.color = {0.f, 0.f, 1.f, 1.f}};
+	const uint32_t polyCount = count / static_cast<uint32_t>(polyLine.points.size());
+	measureFrame(ioRunner, std::format("renderer2d/polylines_8/{}", count), count, iCamera, [&]() -> void {
+		for (uint32_t i = 0; i < polyCount; ++i) {
+			polyLine.transform = iTransforms[i];
+			renderer::Renderer2D::drawPolyLine(polyLine);
+		}
+	});
+}
+
 void runQuads(Runner& ioRunner, const renderer::CameraOrtho& iCamera) {
 	std::vector<shared<renderer::gpu::Texture>> textures;
 	for (uint32_t i = 0; i < 16; ++i)
@@ -79,6 +115,9 @@ void runQuads(Runner& ioRunner, const renderer::CameraOrtho& iCamera) {
 			for (uint32_t i = 0; i < count; ++i)
 				renderer::Renderer2D::drawCircle({.transform = transforms[i], .color = {1.f, 1.f, 1.f, 1.f}});
 		});
+		if (count < 10000U)
+			continue;
+		runTransientMixes(ioRunner, iCamera, transforms);
 	}
 }
 

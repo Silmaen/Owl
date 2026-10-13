@@ -18,9 +18,14 @@
 #include "renderer/gpu/StorageBuffer.h"
 #include "renderer/gpu/UniformBuffer.h"
 
+#include <algorithm>
+#include <array>
 #include <bit>
+#include <cstddef>
 #include <cstdint>
 #include <span>
+#include <string>
+#include <vector>
 
 namespace owl::renderer {
 
@@ -31,7 +36,7 @@ constexpr uint32_t g_maxQuadsPerBatch = 20000;
 constexpr uint32_t g_maxCirclesPerBatch = 20000;
 constexpr uint32_t g_maxLinesPerBatch = 20000;
 constexpr uint32_t g_maxTextGlyphsPerBatch = 20000;
-constexpr uint32_t g_maxTransientWorldsPerBatch = 4096;
+constexpr uint32_t g_maxTransientWorldsPerBatch = 20000;
 
 constexpr std::array g_quadVertexPositions = {math::vec4{-0.5f, -0.5f, 0.0f, 1.0f}, math::vec4{0.5f, -0.5f, 0.0f, 1.0f},
 											  math::vec4{0.5f, 0.5f, 0.0f, 1.0f}, math::vec4{-0.5f, 0.5f, 0.0f, 1.0f}};
@@ -95,6 +100,13 @@ void resetBatch(BatchData<InstanceT>& iData, uint32_t iReserve) {
 	iData.instances.reserve(iReserve);
 }
 
+// Slot of a texture bound in the current batch, keyed by its backend identity; stale when generation differs.
+struct TextureSlotEntry {
+	uint64_t backendId = 0;
+	uint32_t slot = 0;
+	uint32_t generation = 0;
+};
+
 struct InternalData {
 	struct CameraData {
 		math::mat4 viewProjection;
@@ -109,6 +121,11 @@ struct InternalData {
 	shared<gpu::UniformBuffer> cameraUniformBuffer;
 	std::vector<shared<gpu::Texture2D>> textureSlots;
 	uint32_t textureSlotIndex = 1;
+	// Open-addressing table (power of two, at least twice the slot count), emptied by bumping the generation.
+	std::vector<TextureSlotEntry> textureLookup;
+	uint32_t textureLookupGeneration = 1;
+	const gpu::Texture* lastTexture = nullptr;
+	uint32_t lastTextureSlot = 0;
 	std::vector<math::mat4> sceneWorlds;
 	bool sceneWorldsDirty = false;
 	uint32_t sceneWorldsCapacity = 0;
@@ -116,6 +133,7 @@ struct InternalData {
 	shared<gpu::StorageBuffer> sceneWorldsFallback;
 	std::vector<math::mat4> transientWorlds;
 	shared<gpu::StorageBuffer> transientWorldsSsbo;
+	std::string latin1Text;
 };
 }// namespace
 }// namespace utils
@@ -123,33 +141,10 @@ struct InternalData {
 namespace {
 shared<utils::InternalData> g_Data;
 
-// Transient path of resolveWorldIndex, kept out of line so the scene-world path stays a compare.
-[[gnu::noinline]] auto allocateTransientTransform(const math::Transform& iTransform) -> int32_t {
-	if (g_Data->transientWorlds.size() >= utils::g_maxTransientWorldsPerBatch)
-		Renderer2D::nextBatch();
-	const auto slot = static_cast<int32_t>(g_Data->transientWorlds.size());
-	g_Data->transientWorlds.push_back(iTransform());
-	return -(slot + 1);
-}
-
-inline auto resolveWorldIndex(const int32_t iRequested, const math::Transform& iTransform) -> int32_t {
-	return iRequested >= 0 ? iRequested : allocateTransientTransform(iTransform);
-}
-
-// Texture slot of a quad's texture, binding it to a new slot (or starting a new batch) when needed.
-auto textureSlotOf(const shared<gpu::Texture>& iTexture) -> uint32_t {
-	// Same object first (no virtual call), then the backend identity (two objects can wrap one GPU texture).
-	for (uint32_t i = 1; i < g_Data->textureSlotIndex; ++i)
-		if (g_Data->textureSlots[i].get() == iTexture.get())
-			return i;
-	for (uint32_t i = 1; i < g_Data->textureSlotIndex; ++i)
-		if (*g_Data->textureSlots[i] == *iTexture)
-			return i;
-	if (g_Data->textureSlotIndex >= utils::g_MaxTextureSlots)
-		Renderer2D::nextBatch();
-	const uint32_t index = g_Data->textureSlotIndex++;
-	g_Data->textureSlots[index] = std::static_pointer_cast<gpu::Texture2D>(iTexture);
-	return index;
+// Identifier of this renderer's descriptor block, resolved once.
+auto blockId() -> gpu::RendererId {
+	static const gpu::RendererId sId = gpu::RendererDescriptors::getId("Renderer2D");
+	return sId;
 }
 
 auto allocateTransientWorld(const math::mat4& iMatrix) -> int32_t {
@@ -160,13 +155,62 @@ auto allocateTransientWorld(const math::mat4& iMatrix) -> int32_t {
 	return -(slot + 1);
 }
 
-auto utf8ToLatin1(const std::string& iText) -> std::string {
-	std::string out;
-	out.reserve(iText.size());
+// Transient path of resolveWorldIndex, kept out of line so the scene-world path stays a compare.
+[[gnu::noinline]] auto allocateTransientTransform(const math::Transform& iTransform) -> int32_t {
+	return allocateTransientWorld(iTransform());
+}
+
+inline auto resolveWorldIndex(const int32_t iRequested, const math::Transform& iTransform) -> int32_t {
+	return iRequested >= 0 ? iRequested : allocateTransientTransform(iTransform);
+}
+
+void forgetTextureSlots() {
+	g_Data->lastTexture = nullptr;
+	if (++g_Data->textureLookupGeneration != 0)
+		return;
+	std::ranges::fill(g_Data->textureLookup, utils::TextureSlotEntry{});
+	g_Data->textureLookupGeneration = 1;
+}
+
+auto textureLookupEntry(const uint64_t iBackendId) -> utils::TextureSlotEntry& {
+	const auto mask = g_Data->textureLookup.size() - 1;
+	// Fibonacci hashing spreads the small consecutive ids of the backends over the table.
+	auto index = static_cast<size_t>((iBackendId * 0x9E3779B97F4A7C15ULL) >> 32U) & mask;
+	while (true) {
+		auto& entry = g_Data->textureLookup[index];
+		if (entry.generation != g_Data->textureLookupGeneration || entry.backendId == iBackendId)
+			return entry;
+		index = (index + 1) & mask;
+	}
+}
+
+// Texture slot of a quad's texture, binding it to a new slot (or starting a new batch) when needed.
+auto textureSlotOf(const shared<gpu::Texture>& iTexture) -> uint32_t {
+	if (iTexture.get() == g_Data->lastTexture)
+		return g_Data->lastTextureSlot;
+	// Keyed by the backend identity: two objects can wrap one GPU texture.
+	const uint64_t backendId = iTexture->getBackendId();
+	auto* entry = &textureLookupEntry(backendId);
+	if (entry->generation != g_Data->textureLookupGeneration) {
+		if (g_Data->textureSlotIndex >= utils::g_MaxTextureSlots) {
+			Renderer2D::nextBatch();
+			entry = &textureLookupEntry(backendId);
+		}
+		const uint32_t index = g_Data->textureSlotIndex++;
+		g_Data->textureSlots[index] = std::static_pointer_cast<gpu::Texture2D>(iTexture);
+		*entry = {.backendId = backendId, .slot = index, .generation = g_Data->textureLookupGeneration};
+	}
+	g_Data->lastTexture = iTexture.get();
+	g_Data->lastTextureSlot = entry->slot;
+	return entry->slot;
+}
+
+void utf8ToLatin1(const std::string& iText, std::string& oOut) {
+	oOut.clear();
 	for (size_t i = 0; i < iText.size(); ++i) {
 		const auto byte = static_cast<unsigned char>(iText[i]);
 		if (byte < 0x80) {
-			out.push_back(static_cast<char>(byte));
+			oOut.push_back(static_cast<char>(byte));
 			continue;
 		}
 		if ((byte & 0xE0) == 0xC0 && i + 1 < iText.size()) {
@@ -174,13 +218,13 @@ auto utf8ToLatin1(const std::string& iText) -> std::string {
 				const uint32_t codepoint =
 						static_cast<uint32_t>(byte & 0x1Fu) << 6 | static_cast<uint32_t>(next & 0x3Fu);
 				if (codepoint <= 0xFFu) {
-					out.push_back(static_cast<char>(codepoint));
+					oOut.push_back(static_cast<char>(codepoint));
 					++i;
 					continue;
 				}
 			}
 		}
-		out.push_back('?');
+		oOut.push_back('?');
 		while (i + 1 < iText.size()) {
 			if (const auto next = static_cast<unsigned char>(iText[i + 1]); (next & 0xC0) == 0x80)
 				++i;
@@ -188,7 +232,6 @@ auto utf8ToLatin1(const std::string& iText) -> std::string {
 				break;
 		}
 	}
-	return out;
 }
 }// namespace
 
@@ -226,7 +269,7 @@ void Renderer2D::init() {
 		};
 		gpu::RendererDescriptors::declare("Renderer2D", r2dBindings);
 	}
-	const gpu::RendererDescriptors::ScopedActive r2dScoped{"Renderer2D"};
+	const gpu::RendererDescriptors::ScopedActive r2dScoped{blockId()};
 
 	std::vector<uint32_t> quadIndices = {0, 1, 2, 2, 3, 0};
 	std::vector<uint32_t> lineIndices = {0, 1};
@@ -264,6 +307,7 @@ void Renderer2D::init() {
 	utils::g_MaxTextureSlots = gpu::RenderCommand::getMaxTextureSlots();
 	g_Data->textureSlots.resize(utils::g_MaxTextureSlots);
 	g_Data->textureSlots[0] = g_Data->whiteTexture;
+	g_Data->textureLookup.resize(std::bit_ceil(2 * size_t{utils::g_MaxTextureSlots}));
 
 	g_Data->cameraUniformBuffer = gpu::UniformBuffer::create(sizeof(utils::InternalData::CameraData), 0, "Renderer2D");
 	g_Data->cameraUniformBuffer->bind();
@@ -286,6 +330,7 @@ void Renderer2D::init() {
 	g_Data->transientWorldsSsbo =
 			gpu::StorageBuffer::create(utils::g_maxTransientWorldsPerBatch * sizeof(math::mat4), 4, "Renderer2D");
 	g_Data->transientWorlds.reserve(utils::g_maxTransientWorldsPerBatch);
+	g_Data->latin1Text.reserve(256);
 }
 
 void Renderer2D::shutdown() {
@@ -321,7 +366,7 @@ void Renderer2D::beginScene(const Camera& iCamera) {
 	OWL_PROFILE_FUNCTION()
 
 	{
-		const gpu::RendererDescriptors::ScopedActive scoped{"Renderer2D"};
+		const gpu::RendererDescriptors::ScopedActive scoped{blockId()};
 		g_Data->cameraBuffer.viewProjection = iCamera.getViewProjection();
 		g_Data->cameraUniformBuffer->setData(&g_Data->cameraBuffer, sizeof(utils::InternalData::CameraData), 0);
 	}
@@ -336,7 +381,7 @@ void Renderer2D::endScene() {
 }
 
 void Renderer2D::flush() {
-	const gpu::RendererDescriptors::ScopedActive scoped{"Renderer2D"};
+	const gpu::RendererDescriptors::ScopedActive scoped{blockId()};
 	float bgTexIndex = 0.0f;
 	if (BackgroundRenderer::hasPending()) {
 		if (const auto bgTex = BackgroundRenderer::getPendingTexture()) {
@@ -412,8 +457,8 @@ void Renderer2D::startBatch() {
 	utils::resetBatch(g_Data->line, utils::g_maxLinesPerBatch);
 	utils::resetBatch(g_Data->text, utils::g_maxTextGlyphsPerBatch);
 	g_Data->textureSlotIndex = 1;
+	forgetTextureSlots();
 	g_Data->transientWorlds.clear();
-	g_Data->transientWorlds.reserve(utils::g_maxTransientWorldsPerBatch);
 }
 
 void Renderer2D::setSceneWorlds(const std::span<const math::mat4> iWorlds) {
@@ -454,13 +499,13 @@ void Renderer2D::drawLine(const LineData& iLineData) {
 
 void Renderer2D::drawRect(const RectData& iRectData) {
 	const math::mat4 trans = iRectData.transform();
-	std::vector<math::vec3> points;
-	static const std::vector<std::pair<uint8_t, uint8_t>> idx = {{0, 1}, {1, 2}, {2, 3}, {3, 0}};
-	points.reserve(utils::g_quadVertexPositions.size());
-	for (const auto& vtx: utils::g_quadVertexPositions) points.emplace_back(trans * vtx);
-	for (const auto& [p1, p2]: idx)
-		drawLine(
-				{.point1 = points[p1], .point2 = points[p2], .color = iRectData.color, .entityId = iRectData.entityId});
+	std::array<math::vec3, utils::g_quadVertexPositions.size()> corners;
+	for (size_t i = 0; i < corners.size(); ++i) corners[i] = math::vec3{trans * utils::g_quadVertexPositions[i]};
+	for (size_t i = 0; i < corners.size(); ++i)
+		drawLine({.point1 = corners[i],
+				  .point2 = corners[(i + 1) % corners.size()],
+				  .color = iRectData.color,
+				  .entityId = iRectData.entityId});
 }
 
 void Renderer2D::drawPolyLine(const PolyLineData& iLineData) {
@@ -469,20 +514,18 @@ void Renderer2D::drawPolyLine(const PolyLineData& iLineData) {
 		return;
 	}
 	const math::mat4 trans = iLineData.transform();
-	std::vector<math::vec3> points;
-	std::vector<std::pair<uint32_t, uint32_t>> link;
-	uint32_t i = 0;
-	for (const auto& vtx: iLineData.points) {
-		points.emplace_back(trans * math::vec4{vtx.x(), vtx.y(), vtx.z(), 1.f});
-		if (i < iLineData.points.size() - 1)
-			link.emplace_back(i, i + 1);
-		++i;
+	const auto toWorld = [&trans](const math::vec3& iPoint) -> math::vec3 {
+		return math::vec3{trans * math::vec4{iPoint.x(), iPoint.y(), iPoint.z(), 1.f}};
+	};
+	const math::vec3 first = toWorld(iLineData.points.front());
+	math::vec3 previous = first;
+	for (size_t i = 1; i < iLineData.points.size(); ++i) {
+		const math::vec3 current = toWorld(iLineData.points[i]);
+		drawLine({.point1 = previous, .point2 = current, .color = iLineData.color, .entityId = iLineData.entityId});
+		previous = current;
 	}
 	if (iLineData.closed)
-		link.emplace_back(iLineData.points.size() - 1, 0);
-	for (const auto& [p1, p2]: link)
-		drawLine(
-				{.point1 = points[p1], .point2 = points[p2], .color = iLineData.color, .entityId = iLineData.entityId});
+		drawLine({.point1 = previous, .point2 = first, .color = iLineData.color, .entityId = iLineData.entityId});
 }
 
 void Renderer2D::drawCircle(const CircleData& iCircleData) {
@@ -524,22 +567,9 @@ void Renderer2D::drawString(const StringData& iStringData) {
 		return;
 	}
 
-	const std::string text = utf8ToLatin1(iStringData.text);
-	const shared<gpu::Texture2D> fontAtlas = iStringData.font->getAtlasTexture();
-	uint32_t textureIndex = 0;
-	for (uint32_t i = 1; i < g_Data->textureSlotIndex; i++) {
-		if (*g_Data->textureSlots[i] == *fontAtlas) {
-			textureIndex = i;
-			break;
-		}
-	}
-	if (textureIndex == 0) {
-		if (g_Data->textureSlotIndex >= utils::g_MaxTextureSlots)
-			nextBatch();
-		textureIndex = g_Data->textureSlotIndex;
-		g_Data->textureSlots[g_Data->textureSlotIndex] = fontAtlas;
-		g_Data->textureSlotIndex++;
-	}
+	utf8ToLatin1(iStringData.text, g_Data->latin1Text);
+	const std::string& text = g_Data->latin1Text;
+	const uint32_t textureIndex = textureSlotOf(iStringData.font->getAtlasTexture());
 	math::box2f extents;
 	{
 		math::vec2 cursor{0.f, 0.f};

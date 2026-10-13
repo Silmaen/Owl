@@ -25,6 +25,12 @@ constexpr const char* k_RendererKey = "Renderer3D";
 constexpr const char* k_ShaderFolder = "renderer3D";
 constexpr uint32_t k_MaxTextureSlots = 32;
 
+// Identifier of this renderer's descriptor block, resolved once.
+auto blockId() -> gpu::RendererId {
+	static const gpu::RendererId sId = gpu::RendererDescriptors::getId(k_RendererKey);
+	return sId;
+}
+
 struct SceneUbo {
 	math::mat4 viewProjection = math::identity<float, 4>();
 	math::mat4 model = math::identity<float, 4>();
@@ -75,7 +81,7 @@ void Renderer3D::init() {
 							 .stages = gpu::ShaderStage::Fragment},
 	};
 	gpu::RendererDescriptors::declare(k_RendererKey, bindings);
-	const gpu::RendererDescriptors::ScopedActive scoped{k_RendererKey};
+	const gpu::RendererDescriptors::ScopedActive scoped{blockId()};
 
 	g_Data->whiteTexture =
 			gpu::Texture2D::create(gpu::Texture2D::Specification{.size = {1, 1}, .format = gpu::ImageFormat::Rgba8});
@@ -117,7 +123,7 @@ auto Renderer3D::createMesh(std::span<const Mesh3DVertex> iVertices, std::span<c
 							const std::string& iShaderName, const gpu::PipelineState& iState) -> MeshHandle {
 	auto draw = gpu::DrawData::create();
 	std::vector<uint32_t> indices{iIndices.begin(), iIndices.end()};
-	const gpu::RendererDescriptors::ScopedActive scoped{k_RendererKey};
+	const gpu::RendererDescriptors::ScopedActive scoped{blockId()};
 	draw->init({{"i_Position", gpu::ShaderDataType::Float3},
 				{"i_Normal", gpu::ShaderDataType::Float3},
 				{"i_Uv", gpu::ShaderDataType::Float2},
@@ -135,7 +141,7 @@ void Renderer3D::drawMesh(const MeshHandle& iMesh, const math::mat4& iModel,
 
 	if (!iMesh || iMesh->getIndexCount() == 0)
 		return;
-	const gpu::RendererDescriptors::ScopedActive scoped{k_RendererKey};
+	const gpu::RendererDescriptors::ScopedActive scoped{blockId()};
 
 	g_Data->scene.model = iModel;
 	g_Data->sceneUniformBuffer->setData(&g_Data->scene, sizeof(SceneUbo), 0);
@@ -149,7 +155,7 @@ void Renderer3D::drawMeshes(std::span<const MeshHandle> iMeshes, const math::mat
 
 	if (iMeshes.empty())
 		return;
-	const gpu::RendererDescriptors::ScopedActive scoped{k_RendererKey};
+	const gpu::RendererDescriptors::ScopedActive scoped{blockId()};
 
 	g_Data->scene.model = iModel;
 	g_Data->sceneUniformBuffer->setData(&g_Data->scene, sizeof(SceneUbo), 0);

@@ -18,6 +18,12 @@
 namespace owl::renderer {
 
 namespace {
+// Identifier of this renderer's descriptor block, resolved once.
+auto blockId() -> gpu::RendererId {
+	static const gpu::RendererId sId = gpu::RendererDescriptors::getId("Renderer2D");
+	return sId;
+}
+
 struct BackgroundVertex {
 	math::vec3 position;
 	math::vec2 texCoord;
@@ -53,7 +59,7 @@ void BackgroundRenderer::init() {
 
 	std::vector<uint32_t> indices = {0, 1, 2, 2, 3, 0};
 
-	const gpu::RendererDescriptors::ScopedActive scoped{"Renderer2D"};
+	const gpu::RendererDescriptors::ScopedActive scoped{blockId()};
 
 	g_data->drawData = gpu::DrawData::create();
 	g_data->drawData->init(

@@ -9,7 +9,13 @@
 
 #include "RenderAPI.h"
 
+#include <cstddef>
+
 namespace owl::renderer::gpu::null {
+
+namespace {
+constexpr size_t g_maxRecordedDraws = 256;
+}// namespace
 
 void RenderAPI::init() {
 	OWL_PROFILE_FUNCTION()
@@ -17,7 +23,8 @@ void RenderAPI::init() {
 	if (getState() != State::Created)
 		return;
 
-	// renderer is now ready
+	// Recording a draw never allocates in a frame.
+	m_drawnStates.reserve(g_maxRecordedDraws);
 	setState(State::Ready);
 }
 
@@ -42,8 +49,7 @@ void RenderAPI::bindTextures(const std::span<const shared<renderer::gpu::Texture
 }
 
 void RenderAPI::recordDraw(const shared<renderer::gpu::DrawData>& iData) {
-	constexpr size_t maxRecordedDraws = 256;
-	if (iData && m_drawnStates.size() < maxRecordedDraws)
+	if (iData && m_drawnStates.size() < g_maxRecordedDraws)
 		m_drawnStates.push_back(iData->getPipelineState());
 }
 

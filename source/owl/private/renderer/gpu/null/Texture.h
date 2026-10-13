@@ -67,6 +67,13 @@ public:
 
 	/**
 	 * @brief
+	 *  Identity of the GPU texture in its backend.
+	 * @return The backend identity of the texture.
+	 */
+	[[nodiscard]] auto getBackendId() const -> uint64_t override { return m_rendererId; }
+
+	/**
+	 * @brief
 	 *  Activate the texture in the GPU.
 	 * @param[in] iSlot Slot into put the texture.
 	 */

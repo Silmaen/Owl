@@ -15,6 +15,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <utility>
 #include <vector>
 
 using namespace owl::renderer;
@@ -207,5 +208,51 @@ TEST(Renderer2D, fakeTextScene) {
 	RenderCommand::invalidate();
 	Application::invalidate();
 	app.reset();
+	Log::invalidate();
+}
+
+TEST(Renderer2D, transientQuadsShareOneBatchUpToInstanceCapacity) {
+	Log::init(owl::core::Log::Level::Off);
+	RenderCommand::create(RenderAPI::Type::Null);
+	Renderer::init();
+	const CameraEditor cam;
+	const Transform tr{{1.f, 2.f, 0.f}, {0, 0, 0}, {1.f, 1.f, 1.f}};
+	for (const auto& [count, expectedCalls]: {std::pair{20'000u, 1u}, std::pair{20'001u, 2u}}) {
+		Renderer2D::resetStats();
+		Renderer2D::beginScene(cam);
+		for (uint32_t i = 0; i < count; ++i) Renderer2D::drawQuad({.transform = tr});
+		Renderer2D::endScene();
+		EXPECT_EQ(Renderer2D::getStats().quadCount, count);
+		EXPECT_EQ(Renderer2D::getStats().drawCalls, expectedCalls);
+	}
+
+	Renderer2D::shutdown();
+	RenderCommand::invalidate();
+	Log::invalidate();
+}
+
+TEST(Renderer2D, texturesKeepTheirSlotAcrossBatches) {
+	Log::init(owl::core::Log::Level::Off);
+	RenderCommand::create(RenderAPI::Type::Null);
+	Renderer::init();
+	const CameraEditor cam;
+	const owl::shared<Texture> texture = Texture2D::create(Texture2D::Specification{.size = {2, 2}});
+	const owl::shared<Texture> other = Texture2D::create(Texture2D::Specification{.size = {2, 2}});
+	Renderer2D::resetStats();
+	Renderer2D::beginScene(cam);
+	for (uint32_t i = 0; i < 100; ++i) {
+		Renderer2D::drawQuad({.transform = Transform{}, .texture = (i % 2) == 0 ? texture : other});
+		if (i == 50)
+			Renderer2D::nextBatch();
+	}
+	Renderer2D::drawRect({.transform = Transform{}});
+	Renderer2D::endScene();
+	const auto st = Renderer2D::getStats();
+	EXPECT_EQ(st.quadCount, 100u);
+	EXPECT_EQ(st.lineCount, 4u);
+	EXPECT_EQ(st.drawCalls, 3u);
+
+	Renderer2D::shutdown();
+	RenderCommand::invalidate();
 	Log::invalidate();
 }

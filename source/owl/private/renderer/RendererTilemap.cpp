@@ -23,6 +23,12 @@
 namespace owl::renderer {
 
 namespace {
+// Identifier of this renderer's descriptor block, resolved once.
+auto blockId() -> gpu::RendererId {
+	static const gpu::RendererId sId = gpu::RendererDescriptors::getId("tilemap_instanced");
+	return sId;
+}
+
 
 constexpr uint32_t kMaxInstancesPerDraw = 1u << 14u;
 
@@ -80,7 +86,7 @@ void RendererTilemap::init() {
 	};
 	gpu::RendererDescriptors::declare("tilemap_instanced", tilemapBindings);
 
-	const gpu::RendererDescriptors::ScopedActive scoped{"tilemap_instanced"};
+	const gpu::RendererDescriptors::ScopedActive scoped{blockId()};
 
 	const gpu::BufferLayout vertexLayout{
 			{"i_CornerIndex", gpu::ShaderDataType::Int},
@@ -120,7 +126,7 @@ void RendererTilemap::beginScene(const Camera& iCamera) {
 		return;
 	resetStats();
 	g_state->pending.clear();
-	const gpu::RendererDescriptors::ScopedActive scoped{"tilemap_instanced"};
+	const gpu::RendererDescriptors::ScopedActive scoped{blockId()};
 	g_state->cameraBuffer.viewProjection = iCamera.getViewProjection();
 	g_state->cameraUbo->setData(&g_state->cameraBuffer, sizeof(CameraUbo), 0);
 }
@@ -188,7 +194,7 @@ void RendererTilemap::flushPending() {
 	if (!g_state || !g_state->initialized || g_state->pending.empty())
 		return;
 
-	const gpu::RendererDescriptors::ScopedActive scoped{"tilemap_instanced"};
+	const gpu::RendererDescriptors::ScopedActive scoped{blockId()};
 
 	constexpr size_t kMaxTextureSlots = 32;
 	std::vector<const scene::Tileset*> slots;

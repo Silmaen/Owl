@@ -130,3 +130,16 @@ TEST(Texture, CreateFromString) {
 	RenderCommand::invalidate();
 	owl::core::Log::invalidate();
 }
+
+TEST(Texture, backendIdIsTheComparedIdentity) {
+	owl::core::Log::init(owl::core::Log::Level::Off);
+	RenderCommand::create(RenderAPI::Type::Null);
+	{
+		const auto first = Texture2D::create(Texture2D::Specification{.size = {2, 2}});
+		const auto second = Texture2D::create(Texture2D::Specification{.size = {4, 4}});
+		EXPECT_EQ(first->getBackendId(), first->getRendererId());
+		EXPECT_EQ(*first == *second, first->getBackendId() == second->getBackendId());
+	}
+	RenderCommand::invalidate();
+	owl::core::Log::invalidate();
+}

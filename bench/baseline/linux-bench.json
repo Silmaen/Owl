@@ -521,6 +521,39 @@
       "max_ns": 332240.1
     },
     {
+      "name": "renderer2d/transient_quads_circles/10000",
+      "items": 10000,
+      "batch": 48,
+      "samples": 15,
+      "median_ns": 334532.6,
+      "p25_ns": 329108.6,
+      "p75_ns": 340751.5,
+      "min_ns": 321830.3,
+      "max_ns": 347357.2
+    },
+    {
+      "name": "renderer2d/rects/10000",
+      "items": 10000,
+      "batch": 19,
+      "samples": 15,
+      "median_ns": 779648.8,
+      "p25_ns": 762891.1,
+      "p75_ns": 795957.6,
+      "min_ns": 735280.9,
+      "max_ns": 836774.1
+    },
+    {
+      "name": "renderer2d/polylines_8/10000",
+      "items": 10000,
+      "batch": 86,
+      "samples": 15,
+      "median_ns": 156024.6,
+      "p25_ns": 154940.2,
+      "p75_ns": 160630.2,
+      "min_ns": 151198.2,
+      "max_ns": 163667.3
+    },
+    {
       "name": "renderer2d/transform_to_matrix/100000",
       "items": 100000,
       "batch": 9,
@@ -574,6 +607,39 @@
       "p75_ns": 3325844.2,
       "min_ns": 3320274.2,
       "max_ns": 3328288.8
+    },
+    {
+      "name": "renderer2d/transient_quads_circles/100000",
+      "items": 100000,
+      "batch": 4,
+      "samples": 15,
+      "median_ns": 3284038.6,
+      "p25_ns": 3248467.7,
+      "p75_ns": 3329746.4,
+      "min_ns": 3070513.4,
+      "max_ns": 3400947.9
+    },
+    {
+      "name": "renderer2d/rects/100000",
+      "items": 100000,
+      "batch": 2,
+      "samples": 15,
+      "median_ns": 6831044.7,
+      "p25_ns": 6714487.4,
+      "p75_ns": 6935845.4,
+      "min_ns": 6509897.0,
+      "max_ns": 7291311.9
+    },
+    {
+      "name": "renderer2d/polylines_8/100000",
+      "items": 100000,
+      "batch": 8,
+      "samples": 15,
+      "median_ns": 1523233.1,
+      "p25_ns": 1504100.1,
+      "p75_ns": 1540627.2,
+      "min_ns": 1474812.3,
+      "max_ns": 1603114.6
     },
     {
       "name": "renderer2d/text/100_strings_54_chars",
@@ -1634,7 +1700,7 @@
     },
     {
       "name": "renderer2d/quads_color/10000_draw_calls",
-      "value": 3,
+      "value": 1,
       "unit": "draw calls (one frame)"
     },
     {
@@ -1644,17 +1710,32 @@
     },
     {
       "name": "renderer2d/quads_16_textures/10000_draw_calls",
-      "value": 3,
+      "value": 1,
       "unit": "draw calls (one frame)"
     },
     {
       "name": "renderer2d/circles/10000_draw_calls",
-      "value": 3,
+      "value": 1,
+      "unit": "draw calls (one frame)"
+    },
+    {
+      "name": "renderer2d/transient_quads_circles/10000_draw_calls",
+      "value": 2,
+      "unit": "draw calls (one frame)"
+    },
+    {
+      "name": "renderer2d/rects/10000_draw_calls",
+      "value": 2,
+      "unit": "draw calls (one frame)"
+    },
+    {
+      "name": "renderer2d/polylines_8/10000_draw_calls",
+      "value": 1,
       "unit": "draw calls (one frame)"
     },
     {
       "name": "renderer2d/quads_color/100000_draw_calls",
-      "value": 25,
+      "value": 5,
       "unit": "draw calls (one frame)"
     },
     {
@@ -1664,12 +1745,27 @@
     },
     {
       "name": "renderer2d/quads_16_textures/100000_draw_calls",
-      "value": 25,
+      "value": 5,
       "unit": "draw calls (one frame)"
     },
     {
       "name": "renderer2d/circles/100000_draw_calls",
-      "value": 25,
+      "value": 5,
+      "unit": "draw calls (one frame)"
+    },
+    {
+      "name": "renderer2d/transient_quads_circles/100000_draw_calls",
+      "value": 10,
+      "unit": "draw calls (one frame)"
+    },
+    {
+      "name": "renderer2d/rects/100000_draw_calls",
+      "value": 20,
+      "unit": "draw calls (one frame)"
+    },
+    {
+      "name": "renderer2d/polylines_8/100000_draw_calls",
+      "value": 5,
       "unit": "draw calls (one frame)"
     },
     {
