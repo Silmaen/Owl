@@ -178,7 +178,7 @@ a few days, L a week.
 
 ### Editor
 
-- ![Planned][planned] **NEST1 — File dialogues through the desktop portal (from v0.5.0), S.** nativefiledialog-extended
+- ![Done][done] **NEST1 — File dialogues through the desktop portal (from v0.5.0), S.** nativefiledialog-extended
   built with `portal=True`: `xdg-desktop-portal` over D-Bus instead of GTK, no UI freeze; D-Bus added to the Linux
   package dependencies (the build image already has `dbus-1` 1.16); checked on GNOME and KDE, Wayland and X11.
 

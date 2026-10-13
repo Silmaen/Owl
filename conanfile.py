@@ -110,6 +110,11 @@ class OwlEngineConan(ConanFile):
         if self.options.gui and not self.options.render:
             raise ConanInvalidConfiguration(f"{self.ref}: the gui module needs the render module")
 
+    def configure(self):
+        if self.settings.os == "Linux":
+            # File dialogues through xdg-desktop-portal over D-Bus: no GTK, whose start-up freezes the UI.
+            self.options["nativefiledialog-extended"].portal = True
+
     def requirements(self):
         # The only public dependency of Owl::OwlEngine (scene/Scene.h, scene/Entity.h include it).
         self.requires("entt/4.0.0", transitive_headers=True)

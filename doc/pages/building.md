@@ -141,6 +141,11 @@ docker/run.sh cmake --build output/build/linux-clang-release
 cd output/build/linux-clang-release && ../../../docker/run.sh cpack
 ```
 
+On Linux the archives rely on the system's graphics, audio and windowing libraries, plus D-Bus (`libdbus-1-3`, any
+desktop has it): the Owl Nest file dialogues go through `xdg-desktop-portal` (nativefiledialog-extended built with its
+`portal` option, set in `conanfile.py`), so they need a running portal with a desktop backend (GNOME, KDE or GTK) and
+no GTK in the process. Without a portal, opening a dialogue logs an error and returns no path.
+
 The binaries decide at run time where their assets are: `assets/` next to the working directory first, then, in a
 development tree, `engine_assets/` and the application's assets found above it. No build switch tells a package from
 a development build.
@@ -153,7 +158,7 @@ Only the binaries the build runs (`OwlShaderBake`) and the tests go through `qem
 `binfmt_misc`.
 
 - **Sysroot**: an arm64 root filesystem with the same `-dev` packages as the build image (libstdc++, Vulkan, GL, X11,
-  Wayland, GTK 3, ALSA, PulseAudio), its absolute symlinks made relative. `OWL_SYSROOT` (cache or environment
+  Wayland, D-Bus, ALSA, PulseAudio), its absolute symlinks made relative. `OWL_SYSROOT` (cache or environment
   variable, default `/opt/sysroot/aarch64-linux-gnu`) points at it.
 - **Emulation**: a `binfmt_misc` entry for aarch64 with the `F` flag (`/proc/sys/fs/binfmt_misc/qemu-aarch64`,
   package `qemu-user-binfmt`), so it works inside a container that has no QEMU. The tests run with
