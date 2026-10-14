@@ -111,14 +111,47 @@ Error mapping:
 
 ### Transport (MCP3)
 
-- HTTP on top of the dispatcher (`Mcp-Session-Id`, JSON responses, no SSE at first); its messages are queued for the
-  main loop
-- `cpp-httplib` (ConanCenter, header-only, no TLS) under the `nest` option
-- Security: bound to `127.0.0.1`; `Host` must be `127.0.0.1:port` or `localhost:port` and any `Origin` loopback
-  (DNS rebinding); `Content-Type: application/json` required (no browser simple POST); a 256-bit bearer token
-  regenerated per session, stored in a `0600` file next to the editor settings, never logged; body limited to 1 MiB,
-  bounded queue and jobs per frame; path arguments canonicalised and kept inside the project; no Lua eval nor shell
-  tool; resources returned as plain data, never as instructions
+Done. Three classes of `OwlNestMcp` (see [Editor](../editor.md), MCP server): `McpHttpServer` (the transport),
+`McpServer` (dispatcher + transport + token file, what the editor and the tests hold) and the token helpers of
+`McpToken.h`. `cpp-httplib` 0.59.0 (ConanCenter, header-only, built without TLS nor `getaddrinfo_a`, whose helper
+threads crash ThreadSanitizer) is a dependency under the `nest` option.
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant H as HTTP thread
+    participant Q as Queue
+    participant M as Main loop
+    C->>H: POST /mcp (Bearer token)
+    H->>H: Host, Origin (403), token (401), type (415), session (404), size (413)
+    H->>Q: push (503 when full)
+    M->>Q: pump, up to 8 per frame, unless busy
+    M->>M: McpDispatcher::handle
+    M-->>H: response (promise)
+    H-->>C: 200 JSON, or 202 for a notification
+```
+
+- Streamable HTTP, JSON responses only: `POST /mcp` answers 200 with the JSON-RPC response, 202 for a notification
+  or a client response; `GET` and `DELETE` answer 405 (no event stream, no session termination); every success
+  carries `Mcp-Session-Id` (128 random bits, new at every start), a request naming another one gets 404, an
+  unsupported `MCP-Protocol-Version` 400
+- Threads: the httplib pool (up to 8 connections at once) only checks and queues; a message runs on the main thread
+  (`McpServer::onUpdate`, from `EditorLayer::onUpdate`) or never. A message and its promise are claimed once, by
+  the main loop (runs it) or by the server thread on timeout (30 s: JSON-RPC error `-32001`, nothing run); `stop`
+  answers the queued messages with 503 before closing the socket, so no thread waits on the main loop it runs on
+- Busy: ImGui item active, any popup or modal open, an inspector edit session open, the gizmo held
+- Security (D12, every point tested in `McpHttp_test.cpp`): bound to `127.0.0.1` with `SO_REUSEADDR` instead of
+  httplib's `SO_REUSEPORT` (`SO_EXCLUSIVEADDRUSE` on Windows), so no other process can listen on the same port;
+  `Host` must be `127.0.0.1:port` or `localhost:port` and any `Origin` loopback (DNS rebinding); `Content-Type:
+  application/json` required (no browser simple POST); a 256-bit bearer token from the system CSPRNG, kept for the
+  editor run, compared in constant time, stored in a `0600` file of the user runtime directory (`0700` directory)
+  that exists only while listening, never logged, regenerated from the settings; body limited to 1 MiB; a queue of
+  4 messages (503 beyond) and 8 runs per frame; file arguments (`ArgSpec::projectPath`) canonicalised and kept
+  inside the project (`confinePath`), refused without a project; no Lua eval nor shell tool; resources returned as
+  plain data, never as instructions
+- Editor: the **MCP Server** settings tab (enabled, off by default; port 47800; status, endpoint, token file;
+  regenerate), persisted in `OwlNest_settings.yml` with a reset per row; a status bar indicator off / listening /
+  client active whose tooltip gives the endpoint and the token file
 
 ### Play and capture (MCP4)
 

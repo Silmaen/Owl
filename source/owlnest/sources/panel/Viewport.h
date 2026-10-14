@@ -170,6 +170,13 @@ public:
 
 	/**
 	 * @brief
+	 *  Check whether a gizmo drag is in progress (an edit not recorded yet).
+	 * @return True while the gizmo is held.
+	 */
+	[[nodiscard]] auto isGizmoInUse() const -> bool { return m_gizmoWasUsing; }
+
+	/**
+	 * @brief
 	 *  Reset the open flag (used by `EditorLayer` after a close is handled or cancelled).
 	 */
 	void setOpen(const bool iOpen) { m_pOpen = iOpen; }

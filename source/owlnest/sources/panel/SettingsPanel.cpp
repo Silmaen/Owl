@@ -20,6 +20,7 @@
 
 #include <algorithm>
 #include <format>
+#include <string>
 #include <tuple>
 
 namespace owl::nest::panel {
@@ -36,6 +37,14 @@ auto settingInt(const char* iLabel, int& ioValue, const int iMin, const int iMax
 		changed = true;
 	}
 	return changed;
+}
+
+void copyOnClick(const std::string& iText) {
+	if (iText.empty() || !ImGui::IsItemHovered())
+		return;
+	ImGui::SetTooltip("Click to copy");
+	if (ImGui::IsItemClicked())
+		ImGui::SetClipboardText(iText.c_str());
 }
 
 }// namespace
@@ -67,6 +76,12 @@ void SettingsPanel::onImGuiRender(EditorSettings& ioSettings, ActionRegistry& io
 		}
 		if (ImGui::BeginTabItem(std::format("{}  Shortcuts###shortcuts", gui::icon::keyboard).c_str())) {
 			renderKeybindingsSection(ioSettings, ioRegistry);
+			ImGui::EndTabItem();
+		}
+		const ImGuiTabItemFlags mcpFlags = m_selectMcpTab ? ImGuiTabItemFlags_SetSelected : ImGuiTabItemFlags_None;
+		m_selectMcpTab = false;
+		if (ImGui::BeginTabItem(std::format("{}  MCP Server###mcp", gui::icon::globe).c_str(), nullptr, mcpFlags)) {
+			renderMcpSection(ioSettings);
 			ImGui::EndTabItem();
 		}
 		ImGui::EndTabBar();
@@ -133,6 +148,37 @@ void SettingsPanel::renderCameraSection(EditorSettings& ioSettings) {
 							 "Distance the cursor travels before a camera drag moves the view, so a shaky click does "
 							 "not nudge it.");
 	gui::widgets::endProperties();
+}
+
+void SettingsPanel::renderMcpSection(EditorSettings& ioSettings) {
+	const EditorSettings defaults;
+	if (!gui::widgets::beginProperties("##mcp"))
+		return;
+	std::ignore = gui::widgets::propertyBool(
+			"Enabled", ioSettings.mcpEnabled, defaults.mcpEnabled,
+			"Serve the Model Context Protocol on 127.0.0.1 so a local AI agent can read the scene and run the editor "
+			"commands (undoable). Off by default: no socket is opened.");
+	std::ignore = gui::widgets::propertyInt("Port", ioSettings.mcpPort, defaults.mcpPort, 1024, 65535, "%d",
+											"Port listened on 127.0.0.1; the server moves when the field is released.");
+	gui::widgets::propertyLabel("Status");
+	ImGui::TextUnformatted(m_mcpInfo.status.c_str());
+	std::ignore = gui::widgets::propertyReset(false);
+	gui::widgets::propertyLabel("Endpoint", "URL to give the client (claude mcp add --transport http).");
+	ImGui::TextUnformatted(m_mcpInfo.endpoint.empty() ? "-" : m_mcpInfo.endpoint.c_str());
+	copyOnClick(m_mcpInfo.endpoint);
+	std::ignore = gui::widgets::propertyReset(false);
+	gui::widgets::propertyLabel(
+			"Token File", "The client sends its content as `Authorization: Bearer <token>`. Only you can read it; "
+						  "it exists while the server listens.");
+	ImGui::TextUnformatted(m_mcpInfo.tokenFile.c_str());
+	copyOnClick(m_mcpInfo.tokenFile);
+	std::ignore = gui::widgets::propertyReset(false);
+	gui::widgets::endProperties();
+	ImGui::Spacing();
+	if (gui::widgets::button("regenerateMcpToken", {.glyph = gui::icon::refreshCw, .label = "Regenerate Token"}))
+		m_regenerateTokenRequested = true;
+	if (ImGui::IsItemHovered())
+		ImGui::SetTooltip("Draw a new token: clients holding the old one are refused from now on.");
 }
 
 void SettingsPanel::renderThemeSection(EditorSettings& ioSettings) {

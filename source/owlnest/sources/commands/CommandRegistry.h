@@ -93,6 +93,8 @@ struct ArgSpec {
 	std::optional<ArgValue> defaultValue{};// NOLINT(readability-redundant-member-init) callers may omit it
 	/// Accepted values of an `Enum` argument.
 	std::vector<std::string> choices{};// NOLINT(readability-redundant-member-init) callers may omit it
+	/// Whether the `Text` argument is a file path: remote callers (MCP) must keep it inside the project.
+	bool projectPath{false};
 };
 
 /**

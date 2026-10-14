@@ -22,6 +22,7 @@
 #include "commands/CommandRegistry.h"
 #include "document/DocumentManager.h"
 #include "document/SceneDocument.h"
+#include "mcp/McpServer.h"
 #include "panel/AsyncProgressModal.h"
 #include "panel/Backstage.h"
 #include "panel/CommandFormWindow.h"
@@ -55,6 +56,15 @@
 #include <vector>
 
 namespace owl::nest {
+
+/**
+ * @brief
+ *  Indicator state of an MCP server activity.
+ * @param[in] iStatus The server activity.
+ * @return The status bar state.
+ */
+[[nodiscard]] auto getMcpIndicator(mcp::HttpStatus iStatus) -> panel::StatusInfo::Mcp;
+
 /**
  * @brief
  *  Class EditorLayer.
@@ -567,6 +577,15 @@ public:
 
 	/**
 	 * @brief
+	 *  Get the directory of the open project.
+	 * @return The directory, empty without a project.
+	 */
+	[[nodiscard]] auto getSessionProjectDirectory() const -> std::filesystem::path override {
+		return m_project.isLoaded() ? m_project.projectDirectory : std::filesystem::path{};
+	}
+
+	/**
+	 * @brief
 	 *  Get the undo history of the active scene document.
 	 * @return The undo manager, null without a scene document.
 	 */
@@ -717,9 +736,23 @@ private:
 
 	/**
 	 * @brief
-	 *  Draw the status bar and route its requests (open the Log).
+	 *  Draw the status bar and route its requests (open the Log, the MCP settings).
 	 */
 	void renderStatusBar();
+
+	/**
+	 * @brief
+	 *  Follow the MCP settings (start, stop, port, token) and run the queued MCP requests unless the editor is busy.
+	 */
+	void updateMcp();
+
+	/**
+	 * @brief
+	 *  Check whether an MCP request must wait: a gesture (gizmo drag, inspector edit, held widget) or a popup or
+	 *  modal is in progress.
+	 * @return True while busy.
+	 */
+	[[nodiscard]] auto isMcpBusy() const -> bool;
 
 
 	/**
@@ -1017,5 +1050,7 @@ private:
 	session::SessionStatistics m_sessionStatistics;
 	/// Scene and game packaging (wizard, validation, background export).
 	GamePackager m_packager{m_project, m_asyncProgress};
+	/// MCP server of the session (off unless the setting enables it); created on attach, destroyed on detach.
+	uniq<mcp::McpServer> mp_mcp;
 };
 }// namespace owl::nest

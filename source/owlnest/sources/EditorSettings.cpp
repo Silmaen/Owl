@@ -143,6 +143,10 @@ void EditorSettings::loadFromFile(const std::filesystem::path& iFile) {
 			cameraDeadZone = std::clamp(config["cameraDeadZone"].as<int>(), 0, 20);
 		if (config["autosaveIntervalSeconds"])
 			autosaveIntervalSeconds = std::clamp(config["autosaveIntervalSeconds"].as<int>(), 0, 3600);
+		if (config["mcpEnabled"])
+			mcpEnabled = config["mcpEnabled"].as<bool>();
+		if (config["mcpPort"])
+			mcpPort = std::clamp(config["mcpPort"].as<int>(), 1024, 65535);
 		if (config["layoutPreset"])
 			layoutPreset = config["layoutPreset"].as<std::string>();
 		if (config["layoutVersion"])
@@ -187,6 +191,8 @@ void EditorSettings::saveToFile(const std::filesystem::path& iFile) const {
 	out << YAML::Key << "cameraInvertY" << YAML::Value << cameraInvertY;
 	out << YAML::Key << "cameraDeadZone" << YAML::Value << cameraDeadZone;
 	out << YAML::Key << "autosaveIntervalSeconds" << YAML::Value << autosaveIntervalSeconds;
+	out << YAML::Key << "mcpEnabled" << YAML::Value << mcpEnabled;
+	out << YAML::Key << "mcpPort" << YAML::Value << mcpPort;
 	out << YAML::Key << "layoutPreset" << YAML::Value << layoutPreset;
 	out << YAML::Key << "layoutVersion" << YAML::Value << layoutVersion;
 	if (!keybindingOverrides.empty()) {

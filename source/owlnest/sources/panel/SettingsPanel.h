@@ -14,6 +14,20 @@
 #include <string>
 
 namespace owl::nest::panel {
+
+/**
+ * @brief
+ *  State of the MCP server shown in the settings window.
+ */
+struct McpSettingsInfo {
+	/// One-line state (`Off`, `Listening`, `Client active`, `Cannot listen on port N`).
+	std::string status;
+	/// Endpoint URL; empty when off.
+	std::string endpoint;
+	/// File holding the bearer token.
+	std::string tokenFile;
+};
+
 /**
  * @brief
  *  Dockable settings window with theme selection and keybinding editor.
@@ -46,6 +60,40 @@ public:
 	 */
 	void onImGuiRender(EditorSettings& ioSettings, ActionRegistry& ioRegistry);
 
+	/**
+	 * @brief
+	 *  Show the MCP server tab directly.
+	 */
+	void openMcp() {
+		m_visible = true;
+		m_selectMcpTab = true;
+	}
+
+	/**
+	 * @brief
+	 *  Set the state of the MCP server shown by its tab.
+	 * @param[in] iInfo The state.
+	 */
+	void setMcpInfo(const McpSettingsInfo& iInfo) { m_mcpInfo = iInfo; }
+
+	/**
+	 * @brief
+	 *  Check whether the user asked for a new MCP token since the last call, and clear the request.
+	 * @return True when asked.
+	 */
+	[[nodiscard]] auto consumeRegenerateTokenRequest() -> bool {
+		const bool request = m_regenerateTokenRequested;
+		m_regenerateTokenRequested = false;
+		return request;
+	}
+
+	/**
+	 * @brief
+	 *  Render the MCP server settings (also used by the tests).
+	 * @param[in,out] ioSettings Editor settings to read/modify.
+	 */
+	void renderMcpSection(EditorSettings& ioSettings);
+
 private:
 	/// Whether the window is visible.
 	bool m_visible = false;
@@ -55,6 +103,12 @@ private:
 	std::string m_captureActionId;
 	/// Conflict warning message (empty = no conflict).
 	std::string m_conflictMessage;
+	/// State of the MCP server.
+	McpSettingsInfo m_mcpInfo;
+	/// The user asked for a new MCP token.
+	bool m_regenerateTokenRequested = false;
+	/// Select the MCP tab on the next frame.
+	bool m_selectMcpTab = false;
 
 	/**
 	 * @brief

@@ -55,8 +55,9 @@ The default arrangement uses ImGui docking:
 - **Status bar** -- one line under everything: the simulation mode (`EDIT`, `PLAYING`, `PAUSED`, the bar turns blue
   while the scene runs), the active document and its entity count, the last autosave, the graphics backend, and the
   warnings and errors logged since you last looked (clicking a counter opens the Log), the graphics device, the
-  Content Browser previews still to make, and a bell holding the last 30 notifications (the toasts), with the count
-  of unread ones
+  Content Browser previews still to make, a bell holding the last 30 notifications (the toasts), with the count
+  of unread ones, and the MCP indicator (`MCP off`, `MCP listening`, `MCP client active` for 10 s after a request;
+  its tooltip gives the endpoint and the token file, a click opens its settings tab)
 
 Two presets are available from **View > Layout** and the shortcuts: **Default** (`Alt+1`) and **Hierarchy Left**
 (`Alt+2`), which moves the Scene Hierarchy to its own column left of the documents. **Reset Layout** puts every panel
@@ -692,6 +693,11 @@ collapsible sections with an icon:
 
 **Shortcuts.** The keyboard shortcuts, see [Rebinding](#rebinding).
 
+**MCP Server.** Off by default (no socket is opened): **Enabled** starts the [MCP server](#editor-mcp-server) on
+`127.0.0.1`, **Port** (47800 by default, 1024 to 65535) moves it once the field is released, the status, the endpoint
+and the token file are shown (click one to copy it), and **Regenerate Token** draws a new token, the old one being
+refused from then on.
+
 **Appearance.** **Owl Dark** (default) or **Owl Light**. A theme is a small set of tokens (`gui::Theme`:
 five surfaces from the ground to the pressed state, the input well, lines, three text levels, one amber accent,
 the play-mode blue, success / warning / error / info and the three axis colours); `UiLayer::setTheme` derives every
@@ -1138,6 +1144,42 @@ only), `stopAtEnd` and `capture`. Its `PlayReport` holds the frames and ticks pl
 the draw calls, the phase timings of the last frame, the entity count and the optional capture
 (`FrameCapture::encodePng`). `getStatistics()` reports the frame count, the last and mean frame times, the draw calls
 of the last frame, the entity count and the ticks since Play started.
+
+### MCP server {#editor-mcp-server}
+
+`mcp::McpServer` (`sources/mcp/`) serves the editor session to a local AI agent over the MCP Streamable HTTP
+transport (JSON responses, no event stream), at `http://127.0.0.1:<port>/mcp`. It is off until the **MCP Server**
+setting enables it, and lives and dies with the editor. Every tool is an editor command, journaled with the MCP source
+and undoable; the design is in [MCP server](design/mcp-server.md).
+
+- **Main thread only.** The server threads check a request and queue it (`McpHttpServer`); the editor loop runs up to
+  8 queued messages per frame through the dispatcher, before the scene updates. While a gizmo drag, an inspector
+  edit, a held widget or a popup or modal is in progress the messages wait; after 30 s the client gets a JSON-RPC
+  error `-32001` and the message is dropped unrun. Stopping the server answers the queued ones with 503.
+- **Token.** 256 bits from the system generator (`getrandom`, `BCryptGenRandom`), drawn at the first start of the
+  editor run, written to `$XDG_RUNTIME_DIR/owlnest/mcp_token` (else `~/.config/owlnest/`, `%LOCALAPPDATA%\OwlNest`
+  on Windows) with mode `0600`, removed when the server stops, never logged. Clients send
+  `Authorization: Bearer <token>`.
+- **Refusals**, checked before the body is read:
+
+| Case                                                           | Answer |
+|----------------------------------------------------------------|--------|
+| `Host` other than `127.0.0.1:<port>` / `localhost:<port>`      | 403    |
+| `Origin` present and not `http(s)://127.0.0.1` or `localhost`  | 403    |
+| Missing or wrong bearer token                                  | 401    |
+| `Content-Type` other than `application/json`                   | 415    |
+| `Mcp-Session-Id` other than the one of this run                | 404    |
+| `MCP-Protocol-Version` not supported                           | 400    |
+| Body over 1 MiB                                                | 413    |
+| 4 messages already queued, or the server stopping              | 503    |
+| `GET` (no event stream) or `DELETE`                            | 405    |
+
+- **Files.** A file argument (`ArgSpec::projectPath`: `prefab.instantiate`, `scene.save`, `macro.run`) is resolved
+  relative to the project, symbolic links followed, and refused outside it or without a project. No tool evaluates
+  Lua or runs a shell.
+
+Client setup: `claude mcp add --transport http owl-nest http://127.0.0.1:47800/mcp --header "Authorization: Bearer
+$(cat $XDG_RUNTIME_DIR/owlnest/mcp_token)"`.
 
 The Edit menu labels dynamically show the description of the next undo/redo action
 (e.g., "Undo Delete 'Player'").

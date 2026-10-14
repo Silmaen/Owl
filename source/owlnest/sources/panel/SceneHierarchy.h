@@ -97,6 +97,13 @@ public:
 
 	/**
 	 * @brief
+	 *  Check whether an inspector edit is in progress (an edit not recorded yet).
+	 * @return True while a component is being edited.
+	 */
+	[[nodiscard]] auto isEditing() const -> bool { return m_inspector.isEditing(); }
+
+	/**
+	 * @brief
 	 *  Set the selected entity.
 	 * @param[in] iEntity The target entity.
 	 */
