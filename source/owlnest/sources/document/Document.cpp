@@ -38,6 +38,8 @@ auto documentLabel(const DocumentType iType) -> DocumentLabel {
 			return {.glyph = gui::icon::grid3x3, .kind = "tilemap"};
 		case DocumentType::Tileset:
 			return {.glyph = gui::icon::layoutGrid, .kind = "tileset"};
+		case DocumentType::Font:
+			return {.glyph = gui::icon::type, .kind = "font"};
 	}
 	return {.glyph = gui::icon::file, .kind = "doc"};
 }

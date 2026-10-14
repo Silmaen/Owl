@@ -110,6 +110,12 @@ private:
 	 */
 	void buildTilesetTab();
 
+	/**
+	 * @brief
+	 *  Build the contextual tab of a font document.
+	 */
+	void buildFontTab();
+
 	/// The editor whose actions the buttons call.
 	EditorLayer* mp_editor;
 	/// Top-of-window action ribbon (File / Edit / contextual tabs).

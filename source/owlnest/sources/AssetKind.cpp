@@ -17,13 +17,16 @@
 namespace owl::nest {
 
 namespace {
-constexpr std::array<std::pair<std::string_view, AssetKind>, 22> g_kinds{{
+constexpr std::array<std::pair<std::string_view, AssetKind>, 25> g_kinds{{
 		{".owl", AssetKind::Scene},
 		{".owlflow", AssetKind::NodeGraph},
 		{".owlanim", AssetKind::Animation},
 		{".owltilemap", AssetKind::Tilemap},
 		{".owltileset", AssetKind::Tileset},
 		{".owlprefab", AssetKind::Prefab},
+		{".ttf", AssetKind::Font},
+		{".otf", AssetKind::Font},
+		{".owlfont", AssetKind::Font},
 		{".lua", AssetKind::Code},
 		{".py", AssetKind::Code},
 		{".c", AssetKind::Code},

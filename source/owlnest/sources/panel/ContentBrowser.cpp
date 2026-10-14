@@ -55,23 +55,39 @@ auto rgb(const uint32_t iHex) -> math::vec4 {
 auto describeKind(const std::filesystem::path& iPath, const bool iDirectory) -> KindInfo {
 	if (iDirectory)
 		return {rgb(0xc09a55), "Folder"};
-	static const std::unordered_map<std::string, KindInfo> kinds = {
-			{".owl", {rgb(0xd8a520), "Scene"}},          {".owlprefab", {rgb(0x4f8fe0), "Prefab"}},
-			{".png", {rgb(0xe0534a), "Texture"}},        {".jpg", {rgb(0xe0534a), "Texture"}},
-			{".jpeg", {rgb(0xe0534a), "Texture"}},       {".svg", {rgb(0xe0534a), "Vector image"}},
-			{".owltileset", {rgb(0xe48a3a), "Tileset"}}, {".owltilemap", {rgb(0xd65fb8), "Tilemap"}},
-			{".wav", {rgb(0x3faa72), "Sound"}},          {".ogg", {rgb(0x3faa72), "Sound"}},
-			{".flac", {rgb(0x3faa72), "Sound"}},         {".mp3", {rgb(0x3faa72), "Sound"}},
-			{".lua", {rgb(0x2fb5a0), "Lua script"}},     {".py", {rgb(0x2fb5a0), "Python"}},
-			{".c", {rgb(0x5b8fd6), "C source"}},         {".cpp", {rgb(0x5b8fd6), "C++ source"}},
-			{".h", {rgb(0x5b8fd6), "Header"}},           {".hpp", {rgb(0x5b8fd6), "Header"}},
-			{".glsl", {rgb(0xa274e8), "Shader"}},        {".slang", {rgb(0xa274e8), "Shader"}},
-			{".ttf", {rgb(0x9a7ae0), "Font"}},           {".otf", {rgb(0x9a7ae0), "Font"}},
-			{".owlanim", {rgb(0xef6c8f), "Animation"}},  {".owlflow", {rgb(0x5aa2f0), "Node graph"}},
-			{".obj", {rgb(0x7fb83e), "3D model"}},       {".fbx", {rgb(0x7fb83e), "3D model"}},
-			{".gltf", {rgb(0x7fb83e), "3D model"}},      {".glb", {rgb(0x7fb83e), "3D model"}},
-			{".yml", {rgb(0x8a929e), "Settings"}},       {".yaml", {rgb(0x8a929e), "Settings"}},
-			{".json", {rgb(0x8a929e), "Data"}},          {".md", {rgb(0x8a929e), "Document"}}};
+	static const std::unordered_map<std::string, KindInfo> kinds = {{".owl", {rgb(0xd8a520), "Scene"}},
+																	{".owlprefab", {rgb(0x4f8fe0), "Prefab"}},
+																	{".png", {rgb(0xe0534a), "Texture"}},
+																	{".jpg", {rgb(0xe0534a), "Texture"}},
+																	{".jpeg", {rgb(0xe0534a), "Texture"}},
+																	{".svg", {rgb(0xe0534a), "Vector image"}},
+																	{".owltileset", {rgb(0xe48a3a), "Tileset"}},
+																	{".owltilemap", {rgb(0xd65fb8), "Tilemap"}},
+																	{".wav", {rgb(0x3faa72), "Sound"}},
+																	{".ogg", {rgb(0x3faa72), "Sound"}},
+																	{".flac", {rgb(0x3faa72), "Sound"}},
+																	{".mp3", {rgb(0x3faa72), "Sound"}},
+																	{".lua", {rgb(0x2fb5a0), "Lua script"}},
+																	{".py", {rgb(0x2fb5a0), "Python"}},
+																	{".c", {rgb(0x5b8fd6), "C source"}},
+																	{".cpp", {rgb(0x5b8fd6), "C++ source"}},
+																	{".h", {rgb(0x5b8fd6), "Header"}},
+																	{".hpp", {rgb(0x5b8fd6), "Header"}},
+																	{".glsl", {rgb(0xa274e8), "Shader"}},
+																	{".slang", {rgb(0xa274e8), "Shader"}},
+																	{".ttf", {rgb(0x9a7ae0), "Font"}},
+																	{".otf", {rgb(0x9a7ae0), "Font"}},
+																	{".owlanim", {rgb(0xef6c8f), "Animation"}},
+																	{".owlflow", {rgb(0x5aa2f0), "Node graph"}},
+																	{".obj", {rgb(0x7fb83e), "3D model"}},
+																	{".fbx", {rgb(0x7fb83e), "3D model"}},
+																	{".gltf", {rgb(0x7fb83e), "3D model"}},
+																	{".glb", {rgb(0x7fb83e), "3D model"}},
+																	{".yml", {rgb(0x8a929e), "Settings"}},
+																	{".yaml", {rgb(0x8a929e), "Settings"}},
+																	{".json", {rgb(0x8a929e), "Data"}},
+																	{".md", {rgb(0x8a929e), "Document"}},
+																	{".owlfont", {rgb(0x9a7ae0), "Font settings"}}};
 	if (const auto it = kinds.find(iPath.extension().string()); it != kinds.end())
 		return it->second;
 	return {rgb(0x8a929e), "File"};
@@ -101,7 +117,7 @@ auto getFileIcon(const std::filesystem::path& iPath) -> std::optional<gui::IconB
 		return iconBank.getIcon("png_icon");
 	if (iPath.extension() == ".svg")
 		return iconBank.getIcon("svg_icon");
-	if (iPath.extension() == ".ttf")
+	if (iPath.extension() == ".ttf" || iPath.extension() == ".otf" || iPath.extension() == ".owlfont")
 		return iconBank.getIcon("ttf_icon");
 	if (iPath.extension() == ".yml" || iPath.extension() == ".yaml")
 		return iconBank.getIcon("yml_icon");
@@ -540,6 +556,9 @@ void ContentBrowser::openEntry(const std::filesystem::directory_entry& iEntry) {
 		m_tilemapOpenCallback(path);
 	} else if (path.extension() == ".owltileset" && m_tilesetOpenCallback) {
 		m_tilesetOpenCallback(path);
+	} else if ((path.extension() == ".ttf" || path.extension() == ".otf" || path.extension() == ".owlfont") &&
+			   m_fontOpenCallback) {
+		m_fontOpenCallback(path);
 	} else if (m_codeOpenCallback) {
 		static const std::vector<std::string> codeExts = {".lua", ".py",       ".c",   ".cpp", ".cc",   ".cxx",
 														  ".h",   ".hpp",      ".hxx", ".yml", ".yaml", ".json",

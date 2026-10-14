@@ -207,6 +207,13 @@ public:
 
 	/**
 	 * @brief
+	 *  Open a font asset (`.ttf`, `.otf` or its `.owlfont` sidecar) in a `FontDocument` (or switch to it).
+	 * @param[in] iPath Absolute path to the file.
+	 */
+	void openFontFile(const std::filesystem::path& iPath);
+
+	/**
+	 * @brief
 	 *  Create a new untitled `TilesetDocument`.
 	 */
 	void newTilesetAsset();

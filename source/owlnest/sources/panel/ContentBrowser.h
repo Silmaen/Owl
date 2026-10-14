@@ -155,6 +155,15 @@ public:
 		m_tilesetOpenCallback = std::move(iCallback);
 	}
 
+	/**
+	 * @brief
+	 *  Set a callback invoked when a font (`.ttf`, `.otf` or its `.owlfont` sidecar) is double-clicked.
+	 * @param[in] iCallback Function taking the font file path.
+	 */
+	void setFontOpenCallback(std::function<void(const std::filesystem::path&)> iCallback) {
+		m_fontOpenCallback = std::move(iCallback);
+	}
+
 private:
 	/// The actual folder
 	std::filesystem::path m_currentPath;
@@ -296,6 +305,8 @@ private:
 	std::function<void(const std::filesystem::path&)> m_animationOpenCallback;
 	std::function<void(const std::filesystem::path&)> m_tilemapOpenCallback;
 	std::function<void(const std::filesystem::path&)> m_tilesetOpenCallback;
+	/// Called when a font (`.ttf`, `.otf`, `.owlfont`) is double-clicked.
+	std::function<void(const std::filesystem::path&)> m_fontOpenCallback;
 };
 
 }// namespace owl::nest::panel

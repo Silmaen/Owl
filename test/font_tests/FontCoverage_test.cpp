@@ -108,7 +108,7 @@ TEST(FontCoverage, glyphBoxStandardChars) {
 	ASSERT_NE(myFont, nullptr);
 
 	// Test some standard ASCII chars to exercise the main getGlyphBox path.
-	for (const char c: {'A', 'Z', '0', '9', '!', '~'}) {
+	for (const char32_t c: {U'A', U'Z', U'0', U'9', U'!', U'~'}) {
 		const auto metrics = myFont->getGlyphBox(c);
 		// These chars should have non-trivial quads.
 		EXPECT_GT(metrics.quad.max().x() - metrics.quad.min().x(), 0.0f);

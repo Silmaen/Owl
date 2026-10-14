@@ -9,6 +9,7 @@
 #include "data/assets/pack/AssetScanner.h"
 
 #include "app/Application.h"
+#include "data/fonts/FontSettings.h"
 
 #include <fstream>
 #include <optional>
@@ -123,6 +124,15 @@ auto resolveTexture(const std::string& iSerialized) -> std::optional<AssetRefere
 	}
 
 	return AssetReference{.packPath = packPath, .diskPath = resolvedPath, .assetType = AssetType::Texture};
+}
+
+void addFontSidecar(std::vector<AssetReference>& ioAssets, const AssetReference& iFont) {
+	const auto diskPath = fonts::FontSettings::sidecarPath(iFont.diskPath);
+	if (!exists(diskPath))
+		return;
+	if (const auto packPath = fonts::FontSettings::sidecarPath(iFont.packPath).generic_string();
+		!hasAsset(ioAssets, packPath))
+		ioAssets.push_back({.packPath = packPath, .diskPath = diskPath, .assetType = AssetType::Other});
 }
 
 auto resolveFont(const std::string& iFontName) -> std::optional<AssetReference> {
@@ -347,10 +357,13 @@ void scanEntity(const YAML::Node& iEntity,// NOLINT(misc-no-recursion)
 		if (auto text = iEntity[component]; text)
 			if (auto font = text["font"]; font) {
 				const auto name = font.as<std::string>();
-				if (auto ref = resolveFont(name); ref && !hasAsset(ioAssets, ref->packPath))
-					ioAssets.push_back(*ref);
-				else if (!ref)
+				if (auto ref = resolveFont(name); ref) {
+					if (!hasAsset(ioAssets, ref->packPath))
+						ioAssets.push_back(*ref);
+					addFontSidecar(ioAssets, *ref);
+				} else {
 					pushWarning(ioWarnings, "Font", name, iSceneName);
+				}
 			}
 	if (auto soundSrc = iEntity["SoundSource"]; soundSrc)
 		if (auto asset = soundSrc["soundAsset"]; asset) {
@@ -414,9 +427,12 @@ void collectEngineAssets(std::vector<AssetReference>& ioAssets) {
 				const auto ext = item.path().extension().string();
 				if (ext != ".ttf" && ext != ".otf")
 					continue;
-				if (const auto rel = relative(item.path(), assetsPath).generic_string(); !hasAsset(ioAssets, rel)) {
-					ioAssets.push_back({.packPath = rel, .diskPath = item.path(), .assetType = AssetType::Font});
-				}
+				const AssetReference font{.packPath = relative(item.path(), assetsPath).generic_string(),
+										  .diskPath = item.path(),
+										  .assetType = AssetType::Font};
+				if (!hasAsset(ioAssets, font.packPath))
+					ioAssets.push_back(font);
+				addFontSidecar(ioAssets, font);
 			}
 		}
 		for (const auto* dirName: {"logo", "icons"}) {

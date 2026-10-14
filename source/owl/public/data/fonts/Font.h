@@ -9,11 +9,16 @@
 #pragma once
 
 #include "core/Core.h"
+#include "core/utils/Utf8.h"
+#include "data/fonts/FontSettings.h"
 
 #include "math/box.h"
 
+#include <cstddef>
 #include <filesystem>
 #include <string>
+#include <string_view>
+#include <utility>
 
 namespace owl::renderer::gpu {
 class Texture2D;
@@ -25,17 +30,22 @@ struct MsdfData;
 
 /**
  * @brief
- *  Class describing a font.
+ *  Class describing a font: an MSDF glyph atlas over a charset of Unicode code points.
+ *
+ * The charset is `FontSettings::defaultRanges()` plus the extra ranges of the settings. The atlas is cached on disk
+ * (`getAtlasCacheDirectory()`), keyed by the font file content, the charset and the atlas parameters: a change of any
+ * of them regenerates it.
  */
 class OWL_API Font final {
 public:
 	/**
 	 * @brief
 	 *  Load a font from a file.
-	 * @param[in] iPath Path of the font file.
+	 * @param[in] iPath Path of the font file (stored by the font, hence taken by value).
 	 * @param[in] iIsDefault True for the default font.
+	 * @param[in] iSettings Import settings (extra code-point ranges), stored too.
 	 */
-	explicit Font(const std::filesystem::path& iPath, bool iIsDefault = false);
+	explicit Font(std::filesystem::path iPath, bool iIsDefault = false, FontSettings iSettings = {});
 
 	/**
 	 * @brief
@@ -89,11 +99,28 @@ public:
 
 	/**
 	 * @brief
-	 *  Get the glyph metrics for the given character.
-	 * @param[in] iChar The character to look up.
+	 *  Get the glyph metrics for the given code point.
+	 *
+	 * A code point missing from the atlas falls back to `?`, a tab to a space, a line feed gives an empty box.
+	 * @param[in] iCodePoint The code point to look up.
 	 * @return Quad and UV boxes for the glyph in the font atlas.
 	 */
-	[[nodiscard]] auto getGlyphBox(const char& iChar) const -> GlyphMetrics;
+	[[nodiscard]] auto getGlyphBox(char32_t iCodePoint) const -> GlyphMetrics;
+
+	/**
+	 * @brief
+	 *  Check whether the atlas holds a glyph for a code point (no fallback).
+	 * @param[in] iCodePoint The code point.
+	 * @return True when the glyph is in the atlas.
+	 */
+	[[nodiscard]] auto hasGlyph(char32_t iCodePoint) const -> bool;
+
+	/**
+	 * @brief
+	 *  Number of glyphs in the atlas.
+	 * @return The glyph count.
+	 */
+	[[nodiscard]] auto getGlyphCount() const -> size_t;
 
 	/**
 	 * @brief
@@ -104,12 +131,98 @@ public:
 
 	/**
 	 * @brief
-	 *  Compute the position of the next character.
-	 * @param iChar The current char.
-	 * @param iNextChar The next char.
-	 * @return ne position.
+	 *  Horizontal advance from a code point to the next one, kerning included.
+	 * @param[in] iCodePoint The current code point.
+	 * @param[in] iNextCodePoint The next code point.
+	 * @return The advance, in the same unit as the glyph quads.
 	 */
-	[[nodiscard]] auto getAdvance(const char& iChar, const char& iNextChar) const -> float;
+	[[nodiscard]] auto getAdvance(char32_t iCodePoint, char32_t iNextCodePoint) const -> float;
+
+	/**
+	 * @brief
+	 *  Lay out a UTF-8 string on one baseline per line and call a function for each visible glyph.
+	 *
+	 * Control characters other than line feed and carriage return draw as `?`; a carriage return is skipped.
+	 * @tparam Fn Callable taking `const GlyphMetrics&` (quad translated to its pen position).
+	 * @param[in] iText The UTF-8 text, invalid sequences drawn as U+FFFD (or its fallback).
+	 * @param[in] iKerning Extra advance added between two glyphs.
+	 * @param[in] iLineSpacing Extra space added between two lines.
+	 * @param[in] iOnGlyph The function called per glyph.
+	 */
+	template<typename Fn>
+	void forEachGlyph(const std::string_view iText, const float iKerning, const float iLineSpacing,
+					  Fn&& iOnGlyph) const {
+		math::vec2 cursor{0.f, 0.f};
+		size_t offset = 0;
+		char32_t next = 0;
+		bool hasNext = !iText.empty();
+		if (hasNext)
+			next = core::utils::decodeNextCodePoint(iText, offset);
+		while (hasNext) {
+			const char32_t current = next < 0x20 && next != U'\r' && next != U'\n' ? U'?' : next;
+			hasNext = offset < iText.size();
+			if (hasNext)
+				next = core::utils::decodeNextCodePoint(iText, offset);
+			if (current == U'\r')
+				continue;
+			if (current == U'\n') {
+				cursor.x() = 0.f;
+				cursor.y() -= getScaledLineHeight() + iLineSpacing;
+				continue;
+			}
+			auto metrics = getGlyphBox(current);
+			metrics.quad.translate(cursor);
+			iOnGlyph(std::as_const(metrics));
+			if (hasNext)
+				cursor.x() += getAdvance(current, next < 0x20 ? U'?' : next) + iKerning;
+		}
+	}
+
+	/**
+	 * @brief
+	 *  Bounding box of a laid out UTF-8 string (see `forEachGlyph`).
+	 * @param[in] iText The UTF-8 text.
+	 * @param[in] iKerning Extra advance added between two glyphs.
+	 * @param[in] iLineSpacing Extra space added between two lines.
+	 * @return The union of the glyph quads.
+	 */
+	[[nodiscard]] auto measureText(std::string_view iText, float iKerning, float iLineSpacing) const -> math::box2f;
+
+	/**
+	 * @brief
+	 *  Rebuild the font from its file with new settings, in place: every holder of the font sees the new atlas.
+	 * @param[in] iSettings The new settings.
+	 */
+	void reload(const FontSettings& iSettings);
+
+	/**
+	 * @brief
+	 *  Get the import settings the font was built with.
+	 * @return The settings.
+	 */
+	[[nodiscard]] auto getSettings() const -> const FontSettings& { return m_settings; }
+
+	/**
+	 * @brief
+	 *  Get the path of the font file.
+	 * @return The path.
+	 */
+	[[nodiscard]] auto getPath() const -> const std::filesystem::path& { return m_path; }
+
+	/**
+	 * @brief
+	 *  Check whether the atlas was read from the disk cache instead of being generated.
+	 * @return True on a cache hit.
+	 */
+	[[nodiscard]] auto isAtlasFromCache() const -> bool { return m_atlasFromCache; }
+
+	/**
+	 * @brief
+	 *  Folder of the cached atlases: `cache/font` in the working directory of the application, or in the temporary
+	 *  directory without an application.
+	 * @return The folder path.
+	 */
+	[[nodiscard]] static auto getAtlasCacheDirectory() -> std::filesystem::path;
 
 	/**
 	 * @brief
@@ -132,8 +245,14 @@ private:
 	shared<MsdfData> m_data;
 	/// The name of the font.
 	std::string m_name;
+	/// Path of the font file.
+	std::filesystem::path m_path;
+	/// Import settings the atlas was built with.
+	FontSettings m_settings;
 	/// If this font is the default one.
 	bool m_default = false;
+	/// True when the atlas came from the disk cache.
+	bool m_atlasFromCache = false;
 };
 
 }// namespace owl::data::fonts

@@ -653,6 +653,17 @@
       "max_ns": 1358666.8
     },
     {
+      "name": "renderer2d/text/10000_glyphs_utf8",
+      "items": 10000,
+      "batch": 5,
+      "samples": 15,
+      "median_ns": 2733246.9,
+      "p25_ns": 2730860.1,
+      "p75_ns": 2754153.0,
+      "min_ns": 2718727.9,
+      "max_ns": 2991218.5
+    },
+    {
       "name": "tilemap/static/32x32_layers1",
       "items": 1024,
       "batch": 60555,
@@ -1801,6 +1812,11 @@
     },
     {
       "name": "renderer2d/quads_color/1000_draw_calls",
+      "value": 1,
+      "unit": "draw calls (one frame)"
+    },
+    {
+      "name": "renderer2d/text/10000_glyphs_utf8_draw_calls",
       "value": 1,
       "unit": "draw calls (one frame)"
     },

@@ -11,6 +11,7 @@
 #include "Timer.h"
 
 #include <cstddef>
+#include <cstdint>
 
 /**
  * @brief
@@ -121,6 +122,13 @@ public:
 	 * @return true if finished.
 	 */
 	[[nodiscard]] auto isTaskInQueue(size_t iTaskId) const -> bool;
+
+	/**
+	 * @brief
+	 *  Number of worker threads of the pool, for libraries that run their own workers (atlas generation).
+	 * @return The worker count, at least 1.
+	 */
+	[[nodiscard]] auto getWorkerCount() const -> uint32_t;
 
 	/**
 	 * @brief

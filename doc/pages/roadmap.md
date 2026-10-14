@@ -137,7 +137,8 @@ MCP server in Owl Nest ([plan](design/isometric-worlds.md)).
 - ![Planned][planned] `RendererIsometric` layer: dimetric camera, depth with alpha cutout, billboards ([details](design/isometric.md))
 - ![Planned][planned] Isometric terrain: corner heights, 19 slopes, foundations, tracks and roads, slope-aware picking
 - ![Planned][planned] Isometric atlas generator, objects and vehicles at scale, `iso_town` demo
-- ![Planned][planned] UTF-8 text with a wider charset (PR-30: D-18) and aspect-correct text with alignment and fit
+- ![Done][done] UTF-8 text, Latin charset with extra ranges per font, atlas cached on disk (PR-30: D-18)
+- ![Planned][planned] Aspect-correct text with alignment and fit
 - ![Planned][planned] HUD overhaul: HUD pass in pixels, `.owlhud` asset, windows and layouts, HUD editor ([details](design/hud-system.md))
 - ![Done][done] Fixed simulation tick (`on_tick`) for systems and scripts ([Scene](scene.md#fixed-tick))
 - ![Planned][planned] Input actions and gamepad with dead zones, action map editor ([Input](design/windowing-input.md))

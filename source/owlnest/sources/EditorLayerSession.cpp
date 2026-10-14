@@ -107,6 +107,9 @@ auto EditorLayer::openDocumentForRecovery(const RecoveryEntry& iEntry) -> Docume
 		case DocumentType::Tileset:
 			openTilesetFile(path);
 			break;
+		case DocumentType::Font:
+			openFontFile(path);
+			break;
 		case DocumentType::Scene:
 			break;
 	}

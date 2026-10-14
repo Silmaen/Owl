@@ -12,6 +12,7 @@
 #include "EditorResources.h"
 #include "document/AnimationDocument.h"
 #include "document/CodeEditorDocument.h"
+#include "document/FontDocument.h"
 #include "document/NodeGraphDocument.h"
 #include "document/TilemapDocument.h"
 #include "document/TilesetDocument.h"
@@ -271,6 +272,9 @@ void RibbonBuilder::build() {
 			break;
 		case DocumentType::Tileset:
 			buildTilesetTab();
+			break;
+		case DocumentType::Font:
+			buildFontTab();
 			break;
 		case DocumentType::Scene:
 			buildSceneTab();
@@ -668,6 +672,39 @@ void RibbonBuilder::buildTilesetTab() {
 							  .label = "Close",
 							  .tooltip = "Close the active document",
 							  .isEnabled = [activeTileset]() -> bool { return activeTileset() != nullptr; },
+							  .onClick = [this]() -> void { mp_editor->requestCloseActiveDocument(); },
+							  .size = Size::Small});
+}
+
+void RibbonBuilder::buildFontTab() {
+	using Button = gui::widgets::Ribbon::Button;
+	using Size = gui::widgets::Ribbon::ButtonSize;
+	const auto activeFont = [this]() -> FontDocument* {
+		auto* d = mp_editor->m_documents.getActive();
+		if (d != nullptr && d->type() == DocumentType::Font)
+			return static_cast<FontDocument*>(d);
+		return nullptr;
+	};
+	const auto tab = m_ribbon.addTab("Font");
+	const auto gFile = m_ribbon.addGroup(tab, "File");
+	m_ribbon.addButton(tab, gFile,
+					   Button{.iconName = "ribbon_save",
+							  .label = "Save",
+							  .tooltip = "Save the charset to the .owlfont sidecar and rebuild the atlas (Ctrl+S)",
+							  .isEnabled = [activeFont]() -> bool {
+								  auto* a = activeFont();
+								  return a != nullptr && a->isDirty();
+							  },
+							  .onClick = [activeFont]() -> void {
+								  if (auto* a = activeFont())
+									  std::ignore = a->save();
+							  },
+							  .size = Size::Large});
+	m_ribbon.addButton(tab, gFile,
+					   Button{.iconName = "ribbon_close",
+							  .label = "Close",
+							  .tooltip = "Close the active document",
+							  .isEnabled = [activeFont]() -> bool { return activeFont() != nullptr; },
 							  .onClick = [this]() -> void { mp_editor->requestCloseActiveDocument(); },
 							  .size = Size::Small});
 }

@@ -238,7 +238,7 @@ Entities:
       offsetX: 0
       offsetY: -210
     UiText:
-      text: Démo des fonctionnalités v0.1.1 - caractères éàüÇ
+      text: Démo des fonctionnalités v0.1.1 — caractères éàüÇ œ € “…”
       color: [0.850000024, 0.850000024, 0.850000024, 0.850000024]
       fontSize: 16
       alignment: Center

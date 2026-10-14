@@ -73,6 +73,15 @@ public:
 
 	/**
 	 * @brief
+	 *  Rebuild a loaded font in place with new import settings (editor, after saving its `.owlfont`).
+	 * @param[in] iName The font's name.
+	 * @param[in] iSettings The new settings.
+	 * @return True when the font was loaded and has been rebuilt.
+	 */
+	auto reloadFont(const std::string& iName, const FontSettings& iSettings) -> bool;
+
+	/**
+	 * @brief
 	 *  Get the list of already loaded fonts.
 	 * @return The list of loaded fonts.
 	 */

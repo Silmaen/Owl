@@ -83,29 +83,7 @@ auto computeTextAspect(const shared<data::fonts::Font>& iFont, const std::string
 					   const float iLineSpacing) -> float {
 	if (!iFont || iText.empty())
 		return 1.f;
-	math::box2f extents;
-	math::vec2 cursor{0.f, 0.f};
-	for (size_t ci = 0; ci < iText.size(); ++ci) {
-		char ch = iText[ci];
-		if (isascii(ch) == 0)
-			ch = '?';
-		if (ch == '\n') {
-			cursor.x() = 0;
-			cursor.y() -= iFont->getScaledLineHeight() + iLineSpacing;
-			continue;
-		}
-		if (ch == '\r')
-			continue;
-		auto [quad, uv] = iFont->getGlyphBox(ch);
-		quad.translate(cursor);
-		extents.update(quad);
-		if (ci < iText.size() - 1) {
-			char next = iText[ci + 1];
-			if (isascii(next) == 0)
-				next = '?';
-			cursor.x() += iFont->getAdvance(ch, next) + iKerning;
-		}
-	}
+	const auto extents = iFont->measureText(iText, iKerning, iLineSpacing);
 	const auto diag = extents.diagonal();
 	return diag.y() > 0.f ? diag.x() / diag.y() : 1.f;
 }
