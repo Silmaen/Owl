@@ -267,3 +267,19 @@ TEST_F(TilesetFixture, FileRoundTrip) {
 
 	std::filesystem::remove(path);
 }
+
+TEST_F(TilesetFixture, KindRoundTripsAndDefaultsToOrthogonal) {
+	Tileset ts;
+	ts.resize(2, 2);
+	const auto orthogonal = ts.serializeToString("ortho");
+	EXPECT_EQ(orthogonal.find("kind"), std::string::npos);
+	Tileset restored;
+	ASSERT_TRUE(restored.deserializeFromString(orthogonal));
+	EXPECT_EQ(restored.kind, Tileset::Kind::Orthogonal);
+
+	ts.kind = Tileset::Kind::Isometric;
+	const auto isometric = ts.serializeToString("iso");
+	EXPECT_NE(isometric.find("kind: Isometric"), std::string::npos);
+	ASSERT_TRUE(restored.deserializeFromString(isometric));
+	EXPECT_EQ(restored.kind, Tileset::Kind::Isometric);
+}

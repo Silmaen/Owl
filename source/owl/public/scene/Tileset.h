@@ -151,6 +151,18 @@ public:
 	 * (the default) for everything else.
 	 */
 	renderer::gpu::FilterMode filterMode = renderer::gpu::FilterMode::Linear;
+	/**
+	 * @brief
+	 *  Projection the tiles are drawn for.
+	 */
+	enum struct Kind : uint8_t {
+		/// Square top-down or side tiles, drawn by the 2D tilemap renderer.
+		Orthogonal,
+		/// 2:1 diamond tiles, drawn by the isometric layer.
+		Isometric,
+	};
+	/// Projection the tiles are drawn for (`kind` key, omitted when orthogonal).
+	Kind kind = Kind::Orthogonal;
 	/// Per-tile metadata, row-major. Resized to `columns * rows` on load and on `resize()`.
 	std::vector<TileMeta> tiles;
 

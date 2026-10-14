@@ -426,6 +426,16 @@ public:
 
 	/**
 	 * @brief
+	 *  First layer of the active render stack that draws its own entities and has some in this scene.
+	 *
+	 * Such a layer (the isometric one) makes the editor render the stack layer by layer, as in Play, instead of its
+	 * single 2D composite, and puts the viewport in the isometric mode.
+	 * @return The layer, or null when the stack holds none with content.
+	 */
+	[[nodiscard]] auto getSelfDrawnLayer() const -> shared<renderer::RenderLayer>;
+
+	/**
+	 * @brief
 	 *  Whether this scene wants the cursor captured for mouse-look (a `VoxelPlayer` with `captureCursor` is present).
 	 * @return True if at least one voxel player opts into cursor capture; false otherwise (the default).
 	 */

@@ -26,16 +26,26 @@ void CameraOrtho::setProjection(const float iLeft, const float iRight, const flo
 								const float iNear, const float iFar) {
 	OWL_PROFILE_FUNCTION()
 
-	m_projection = math::ortho(iLeft, iRight, iBottom, iTop, iNear, iFar);
-	if (gpu::RenderCommand::getApi() == gpu::RenderAPI::Type::Vulkan) {
+	m_projection = makeProjection(iLeft, iRight, iBottom, iTop, iNear, iFar, getActiveClipSpace());
+	m_viewProjection = m_projection * m_view;
+}
+
+auto CameraOrtho::makeProjection(const float iLeft, const float iRight, const float iBottom, const float iTop,
+								 const float iNear, const float iFar, const ClipSpace iClipSpace) -> math::mat4 {
+	math::mat4 projection = math::ortho(iLeft, iRight, iBottom, iTop, iNear, iFar);
+	if (iClipSpace == ClipSpace::Vulkan) {
 		auto biasMatrix = math::identity<float, 4>();
 		biasMatrix(2, 2) = 0.5f;
 		biasMatrix(2, 3) = 0.5f;
-		m_projection = biasMatrix * m_projection;
-		m_projection(1, 1) *= -1.f;
-		m_projection(1, 3) *= -1.f;
+		projection = biasMatrix * projection;
+		projection(1, 1) *= -1.f;
+		projection(1, 3) *= -1.f;
 	}
-	m_viewProjection = m_projection * m_view;
+	return projection;
+}
+
+auto CameraOrtho::getActiveClipSpace() -> ClipSpace {
+	return gpu::RenderCommand::getApi() == gpu::RenderAPI::Type::Vulkan ? ClipSpace::Vulkan : ClipSpace::OpenGl;
 }
 
 void CameraOrtho::recalculateViewMatrix() {

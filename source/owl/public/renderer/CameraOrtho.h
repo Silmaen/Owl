@@ -11,6 +11,8 @@
 #include "Camera.h"
 #include "core/Core.h"
 
+#include <cstdint>
+
 namespace owl::renderer {
 /**
  * @brief
@@ -71,6 +73,39 @@ public:
 	 * @param[in] iFar The far distance.
 	 */
 	void setProjection(float iLeft, float iRight, float iBottom, float iTop, float iNear = -1.0f, float iFar = 1.0f);
+
+	/**
+	 * @brief
+	 *  Clip-space convention of a projection matrix.
+	 */
+	enum struct ClipSpace : uint8_t {
+		/// OpenGL: depth in [-1, 1], NDC Y up.
+		OpenGl,
+		/// Vulkan: depth in [0, 1], NDC Y down (projection Y flipped).
+		Vulkan,
+	};
+
+	/**
+	 * @brief
+	 *  Build the orthographic projection `setProjection` uses, in a given clip-space convention.
+	 * @param[in] iLeft Left of the screen's coordinate.
+	 * @param[in] iRight Right of the screen's coordinate.
+	 * @param[in] iBottom Bottom of the screen's coordinate.
+	 * @param[in] iTop Top of the screen's coordinate.
+	 * @param[in] iNear The near distance.
+	 * @param[in] iFar The far distance.
+	 * @param[in] iClipSpace The convention of the target backend.
+	 * @return The projection matrix.
+	 */
+	[[nodiscard]] static auto makeProjection(float iLeft, float iRight, float iBottom, float iTop, float iNear,
+											 float iFar, ClipSpace iClipSpace) -> math::mat4;
+
+	/**
+	 * @brief
+	 *  Clip-space convention of the active render backend.
+	 * @return `Vulkan` on the Vulkan backend, `OpenGl` otherwise.
+	 */
+	[[nodiscard]] static auto getActiveClipSpace() -> ClipSpace;
 
 	/**
 	 * @brief
