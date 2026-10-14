@@ -990,7 +990,9 @@ steps:
 | `undo`    | Number of commands to undo                                                                      |
 | `redo`    | Number of commands to redo                                                                      |
 
-Expectations due at a step see the world left by the frames before it; positions are world-space. Commands run on
+Inputs go through the injection of the input layer (`input::Input::injectKey`, …), which works on any window
+back-end: a key held over two consecutive `input` steps stays held, so `input.is_key_just_pressed` fires once
+(`test/scenarios/platformer_jump.owltest`). Expectations due at a step see the world left by the frames before it; positions are world-space. Commands run on
 the playing scene with an undo history of their own (`test/scenarios/editor_commands.owltest`). Every
 `test/scenarios/*.owltest` is a CTest case (label `scenario`).
 

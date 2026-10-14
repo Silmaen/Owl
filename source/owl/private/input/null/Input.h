@@ -10,12 +10,10 @@
 
 #include "input/Input.h"
 
-#include <set>
-
 namespace owl::input::null {
 /**
  * @brief
- *  Specialization class for null input.
+ *  Input without any device: only the injection of the input layer drives it.
  */
 class OWL_API Input final : public input::Input {
 public:
@@ -41,56 +39,32 @@ public:
 
 	/**
 	 * @brief
-	 *  Keyboard pressed check, private implementation.
+	 *  Keyboard pressed check: no device, never pressed.
 	 * @param[in] iKeyCode The Key to check.
-	 * @return True if pressed.
+	 * @return False.
 	 */
 	auto isKeyPressed_impl(KeyCode iKeyCode) -> bool override;
 
 	/**
 	 * @brief
-	 *  Mouse button pressed check, private implementation.
+	 *  Mouse button pressed check: no device, never pressed.
 	 * @param[in] iMouseCode Mouse button to check.
-	 * @return True if pressed.
+	 * @return False.
 	 */
 	auto isMouseButtonPressed_impl(MouseCode iMouseCode) -> bool override;
 
 	/**
 	 * @brief
-	 *  Get mouse position, private implementation.
-	 * @return Mouse Position.
+	 *  Get mouse position: no device, the origin.
+	 * @return The origin.
 	 */
 	auto getMousePos_impl() -> math::vec2 override;
 
 	/**
 	 * @brief
-	 *  Simulate key toggle, private implementation.
-	 * @param[in] iKeyCode the key to press/release.
+	 *  Fill the device state: no device, nothing held.
+	 * @param[out] oState The state to fill (left untouched).
 	 */
-	void injectKey_impl(KeyCode iKeyCode) override;
-
-	/**
-	 * @brief
-	 *  Simulate mouse key toggle, private implementation.
-	 * @param[in] iMouseCode the key to press/release.
-	 */
-	void injectMouseButton_impl(MouseCode iMouseCode) override;
-
-	/**
-	 * @brief
-	 *  Simulate mouse movement, private implementation.
-	 * @param[in] iMousePos The new mouse pos.
-	 */
-	void injectMousePos_impl(const math::vec2& iMousePos) override;
-
-	/**
-	 * @brief
-	 *  Clear the previously defined injections.
-	 */
-	void resetInjection_impl() override;
-
-	std::set<KeyCode> keyPressed;
-	std::set<MouseCode> mouseBtnPressed;
-	math::vec2 mousePos{0, 0};
+	void readDevices_impl(InputState& oState) override;
 };
 }// namespace owl::input::null

@@ -31,6 +31,7 @@
 #include "core/task/Scheduler.h"
 #include "core/task/Task.h"
 #include "data/voxel/Chunk.h"
+#include "input/Input.h"
 #include "physics/PhysicCommand.h"
 #include "scene/ScreenTransition.h"
 #include "scene/component/components.h"
@@ -351,6 +352,10 @@ void Scene::onStartRuntime() {
 	if (mp_engineContext != nullptr)
 		m_simulationClock.setSettings(mp_engineContext->getSimulationSettings());
 	m_simulationClock.reset();
+	const auto heldInput = input::Input::readState();
+	m_frameInput.reset(heldInput);
+	m_tickInput.reset(heldInput);
+	m_inputSampler.reset(heldInput);
 
 	using clk = std::chrono::steady_clock;
 	const auto runtimeStart = clk::now();
@@ -491,6 +496,9 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep, const bool iRender)
 	m_toastTimer = std::max(0.f, m_toastTimer - iTimeStep.getSeconds());
 	m_inUpdatePass = false;
 	m_worldTransformCacheActive = false;
+	const auto frameInput = input::Input::readState();
+	m_frameInput.advance(frameInput);
+	m_inputSampler.observe(frameInput);
 	if (status == Status::Victory || status == Status::Death) {
 		m_systems.run(SystemPhase::Ended, *this, {.timeStep = iTimeStep, .render = iRender});
 		return;
@@ -541,12 +549,15 @@ void Scene::runSimulationTicks(const SystemContext& iFrame) {
 	m_tickContext.render = iFrame.render;
 	m_tickContext.tickCount = iFrame.tickCount;
 	m_tickContext.alpha = iFrame.alpha;
+	m_inTick = true;
 	for (uint32_t index = 0; index < iFrame.tickCount; ++index) {
 		m_tickContext.tickIndex = index;
+		m_tickInput.advance(m_inputSampler.take());
 		for (const auto phase:
 			 {SystemPhase::Scripts, SystemPhase::PrePhysics, SystemPhase::Physics, SystemPhase::PostPhysics})
 			m_systems.runTick(phase, *this, m_tickContext);
 	}
+	m_inTick = false;
 }
 
 void Scene::renderRuntimeFrame(const core::Timestep& iTimeStep) {

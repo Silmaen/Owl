@@ -11,7 +11,6 @@ properties = {
 }
 
 local transitioning = false  -- gate input while the engine is in scene-load orchestration
-local escape_was_down = false
 local teleporter_id = 0
 local teleporter_visible = false
 local health_bar_id = 0
@@ -107,8 +106,7 @@ function on_update(dt)
 
     -- Escape returns to the main menu, preserving the world position so the
     -- "Continuer" button on the menu can resume exactly where we left off.
-    local escape_down = input.is_key_pressed(256)
-    if escape_down and not escape_was_down then
+    if input.is_key_just_pressed(256) then
         local px, py, pz = transform.get_position(entity_id)
         gamestate.set("continue_scene", "scenes/world_map.owl")
         gamestate.set("continue_x", px)
@@ -119,7 +117,6 @@ function on_update(dt)
         transitioning = true
         scene.transition_to("scenes/main_menu.owl", "fade_out", 0.3)
     end
-    escape_was_down = escape_down
 end
 
 function on_destroy()

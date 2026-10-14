@@ -76,8 +76,6 @@ struct OWL_API RaycastPushWall {
 	State state = State::Idle;
 	/// Current slide progress, in cells. `0` at rest, `slideDistance` at Final.
 	float currentOffset = 0.0f;
-	/// Edge-detection latch: `interactionKey` was held last tick.
-	bool keyHeldLastTick = false;
 	/**
 	 * @brief
 	 *  Internal index into `PhysicCommand`'s body table for the kinematic block.

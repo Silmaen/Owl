@@ -9,6 +9,7 @@
 #pragma once
 
 #include "core/Core.h"
+#include "input/InputFrame.h"
 #include "input/KeyCodes.h"
 #include "input/MouseCode.h"
 #include "math/vectors.h"
@@ -26,7 +27,9 @@ enum struct Type : uint8_t;
 namespace owl::input {
 /**
  * @brief
- *  Base class for input management.
+ *  Input layer: polling of the device back-end (GLFW or Null) merged with the injected input.
+ *
+ * Injection lives here, not in the back-ends, so scenarios, tests and tools drive the game on any window type.
  */
 class OWL_API Input {
 public:
@@ -71,7 +74,7 @@ public:
 
 	/**
 	 * @brief
-	 *  Keyboard pressed check.
+	 *  Keyboard pressed check, live (device or injection): game code reads `scene::Scene::getInputFrame()`.
 	 * @param[in] iKeycode The Key to check.
 	 * @return True if pressed.
 	 */
@@ -79,7 +82,7 @@ public:
 
 	/**
 	 * @brief
-	 *  Mouse button pressed check.
+	 *  Mouse button pressed check, live (device or injection).
 	 * @param[in] iMouseCode Mouse button to check.
 	 * @return True if pressed.
 	 */
@@ -108,28 +111,50 @@ public:
 
 	/**
 	 * @brief
-	 *  Simulate key toggle.
+	 *  Snapshot of the devices merged with the injected input; the wheel is the offset of the current frame.
+	 * @return The current input state.
+	 */
+	static auto readState() -> InputState;
+
+	/**
+	 * @brief
+	 *  Start a frame: the wheel offset added since the previous call becomes the one of this frame.
+	 *
+	 * Called once per frame by `app::Application::run`, before the layers update.
+	 */
+	static void beginFrame();
+
+	/**
+	 * @brief
+	 *  Add a wheel offset to the current frame interval (scroll events, injection).
+	 * @param[in] iOffset The offset (x horizontal, y vertical).
+	 */
+	static void addWheel(const math::vec2& iOffset);
+
+	/**
+	 * @brief
+	 *  Simulate key toggle, on any back-end: the key reads as held until toggled again or reset.
 	 * @param[in] iKeycode the key to press/release.
 	 */
 	static void injectKey(KeyCode iKeycode);
 
 	/**
 	 * @brief
-	 *  Simulate mouse key toggle.
+	 *  Simulate mouse key toggle, on any back-end.
 	 * @param[in] iMouseCode the key to press/release.
 	 */
 	static void injectMouseButton(MouseCode iMouseCode);
 
 	/**
 	 * @brief
-	 *  Simulate mouse movement.
+	 *  Simulate mouse movement, on any back-end: the injected position replaces the device one until reset.
 	 * @param[in] iMousePos The new mouse pos.
 	 */
 	static void injectMousePos(const math::vec2& iMousePos);
 
 	/**
 	 * @brief
-	 *  Clear the previously defined injections.
+	 *  Clear the previously defined injections (keys, buttons, cursor).
 	 */
 	static void resetInjection();
 
@@ -164,30 +189,10 @@ private:
 
 	/**
 	 * @brief
-	 *  Simulate key toggle, private implementation.
-	 * @param[in] iKeycode the key to press/release.
+	 *  Fill the keys, buttons and cursor held by the devices, private implementation.
+	 * @param[out] oState The state to fill (cleared by the caller).
 	 */
-	virtual void injectKey_impl(KeyCode iKeycode) = 0;
-
-	/**
-	 * @brief
-	 *  Simulate mouse key toggle, private implementation.
-	 * @param[in] iMouseCode the key to press/release.
-	 */
-	virtual void injectMouseButton_impl(MouseCode iMouseCode) = 0;
-
-	/**
-	 * @brief
-	 *  Simulate mouse movement, private implementation.
-	 * @param[in] iMousePos The new mouse pos.
-	 */
-	virtual void injectMousePos_impl(const math::vec2& iMousePos) = 0;
-
-	/**
-	 * @brief
-	 *  Clear the previously defined injections.
-	 */
-	virtual void resetInjection_impl() = 0;
+	virtual void readDevices_impl(InputState& oState) = 0;
 };
 
 }// namespace owl::input

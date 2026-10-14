@@ -9,9 +9,10 @@
 
 #include "scene/SceneTrigger.h"
 
-#include "input/Input.h"
+#include "input/KeyCodes.h"
 #include "physics/PhysicCommand.h"
 #include "scene/Entity.h"
+#include "scene/Scene.h"
 #include "scene/component/components.h"
 
 #include <cmath>
@@ -76,13 +77,11 @@ void SceneTrigger::onTriggered(const Entity& ioPlayer, const Entity& iTriggerEnt
 			break;
 		case TriggerType::Interaction:
 			{
-				const bool keyDown = input::Input::isKeyPressed(input::key::E);
-				if (keyDown && !m_interactKeyWasDown) {
+				if (scene->getInputFrame().isKeyJustPressed(input::key::E)) {
 					const auto& func = callbackName.empty() ? std::string("on_interact") : callbackName;
 
 					dispatchLuaCallbackNoArg(iTriggerEntity, func);
 				}
-				m_interactKeyWasDown = keyDown;
 			}
 			break;
 		case TriggerType::LuaCallback:

@@ -169,6 +169,7 @@ independent of the event dispatch flow. Initialize it once with
 | `getMouseX()`                       | `float`      | Current mouse X position            |
 | `getMouseY()`                       | `float`      | Current mouse Y position            |
 | `getMousePos()`                     | `math::vec2` | Current mouse position as a vector  |
+| `readState()`                       | `InputState` | Keys, buttons, cursor and wheel     |
 | `injectKey(KeyCode)`                | `void`       | Simulate a key toggle (for testing) |
 | `injectMouseButton(MouseCode)`      | `void`       | Simulate a mouse button toggle      |
 | `injectMousePos(const math::vec2&)` | `void`       | Simulate mouse movement             |
@@ -178,8 +179,34 @@ independent of the event dispatch flow. Initialize it once with
 `input/KeyCodes.h`). `MouseCode` is `uint8_t` (values in `input/MouseCode.h`,
 e.g. `mouse::ButtonLeft`, `mouse::ButtonRight`, `mouse::ButtonMiddle`).
 
-The `inject*` and `resetInjection` methods exist for automated testing with the
-Null input backend, allowing tests to simulate user input without a real window.
+The `inject*` and `resetInjection` methods drive the input layer itself, merged with the device state whatever the
+back-end (GLFW or Null): scenarios, tests and tools simulate input with or without a real window. `init` and
+`invalidate` clear them.
+
+### Edges: input frames
+
+Game code reads the scene's `input::InputFrame` (`Scene::getInputFrame()`), a plain-data pair of `InputState`
+samples (previous and current) built once per simulation tick inside the ticks and once per frame elsewhere:
+
+| Method                                 | Description                                |
+|----------------------------------------|--------------------------------------------|
+| `isKeyPressed(KeyCode)`                | Key held at the current sample             |
+| `isKeyJustPressed(KeyCode)`            | Key went down since the previous sample    |
+| `isKeyJustReleased(KeyCode)`           | Key went up since the previous sample      |
+| `isMouseButtonJustPressed(MouseCode)`  | Button went down since the previous sample |
+| `isMouseButtonJustReleased(MouseCode)` | Button went up since the previous sample   |
+| `getCursor()` / `getCursorDelta()`     | Cursor position and motion, in pixels      |
+| `getWheel()`                           | Wheel offset scrolled since the sample     |
+
+```c++
+void tickDoor(scene::Scene& ioScene, const scene::SystemContext&) {
+    if (ioScene.getInputFrame().isKeyJustPressed(input::key::E))
+        openDoor(ioScene);   // once per press, at any frame rate
+}
+```
+
+No edge is lost or doubled when a frame runs several ticks or none; the rules are in
+[Windowing and input](design/windowing-input.md#input-frames-in1).
 
 ## CameraOrthoController
 

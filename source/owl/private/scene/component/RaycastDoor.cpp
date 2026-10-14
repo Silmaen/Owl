@@ -60,7 +60,6 @@ void RaycastDoor::deserialize(const core::Serializer& iNode) {
 	state = State::Idle;
 	currentOffset = 0.0f;
 	holdTimer = 0.0f;
-	keyHeldLastTick = false;
 	tileset.reset();
 }
 

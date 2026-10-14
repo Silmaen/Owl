@@ -197,16 +197,18 @@ existing OpenGL and Vulkan ones, for no feature Owl lacks. The Owl RHI work (Pha
 
 ## Input actions and basic gamepad (v0.4.0)
 
-Pull requests SIM1 and IN1 to IN4 of [Isometric worlds](isometric-worlds.md). Today input is polling only, without
-"just pressed" edges nor gamepad; injection works on the Null backend only; keys are hard-coded in engine systems
-(`ScenePlayer`, `VoxelPlayerSystem`, doors and push-walls) and Lua reads raw key codes.
+Pull requests SIM1 and IN1 to IN4 of [Isometric worlds](isometric-worlds.md). Before them input was polling only,
+without "just pressed" edges nor gamepad, and injection worked on the Null backend only (both fixed by IN1); keys are
+still hard-coded in engine systems (`ScenePlayer`, `VoxelPlayerSystem`, doors and push-walls) and Lua reads raw key
+codes until IN3.
 
 - **Fixed simulation tick** (SIM1): systems and Lua get an `on_tick` at a fixed step set in the project (60 Hz by
   default), beside the variable `on_update`; physics always runs on this fixed clock. Input is sampled per tick, so
   edges are not lost when the frame rate and the tick differ
-- **Input frames** (IN1): a plain-data `InputFrame` (keys, mouse buttons and position, gamepad states) sampled once
-  per tick; `isKeyJustPressed` / `isKeyJustReleased`; injection moved out of the backends into one frame source, so
-  scenarios, editor Play and the MCP server can inject on GLFW too
+- **Input frames** (IN1, Done): a plain-data `InputFrame` (previous and current `InputState`: keys, mouse buttons,
+  cursor, wheel) per tick and per frame, `isKeyJustPressed` / `isKeyJustReleased` and the mouse equivalents;
+  injection lives in the input layer, so scenarios, editor Play and the MCP server inject on GLFW too; gamepad states
+  join the frame with IN2. Details below
 - **Gamepad** (IN2): GLFW `glfwGetGamepadState` for pads 0–15, connect / disconnect events, an optional project
   mapping file passed to `glfwUpdateGamepadMappings`, Null backend injection for tests, Lua
   `input.is_gamepad_connected` / `get_gamepad_name`; the gamepad of the README becomes true (I-03, D-25)
@@ -221,6 +223,31 @@ Pull requests SIM1 and IN1 to IN4 of [Isometric worlds](isometric-worlds.md). To
   step; engine systems and sample scripts move to actions
 - **Editor** (IN4): an action map document with its own undo stack, opened from Project Settings; "press a key"
   capture; default maps in the project templates; a live action monitor during Play
+
+### Input frames (IN1) {#input-frames-in1}
+
+`input::Input::readState()` merges the device back-end (GLFW, or Null without device) with the injected input; the
+wheel comes from the `MouseScrolledEvent`s the application adds between two `Input::beginFrame()` calls. Each running
+scene samples it once per frame (`Scene::onUpdateRuntime`) and builds one state per simulation tick through an
+`input::InputSampler`:
+
+```mermaid
+flowchart LR
+    Devices[GLFW / Null back-end] --> Read[Input::readState]
+    Inject[injectKey / injectMouseButton / injectMousePos] --> Read
+    Read -->|once per frame| Frame[frame InputFrame]
+    Read -->|observe| Sampler[InputSampler]
+    Sampler -->|take, once per tick| Tick[tick InputFrame]
+```
+
+- `Scene::getInputFrame()` returns the tick frame inside the ticks (`tick` functions, `on_tick`) and the frame one
+  elsewhere (`update` functions, `on_update`): an edge is seen once at each rate.
+- Several ticks in one frame: the first one gets the edges and the wheel, the others repeat the held state.
+- Frames without a tick: a key held in any of them counts as held at the next tick, so a press shorter than a tick
+  gives a press edge then a release edge at the next tick. A key released and pressed again between two ticks reads
+  as held throughout.
+- `onStartRuntime()` starts both frames from the held state: a key held when the scene starts gives no edge.
+- `input.is_key_pressed` and `Input::isKeyPressed` stay live polls (device or injection).
 
 ## Gamepad improvements (v0.10.0)
 

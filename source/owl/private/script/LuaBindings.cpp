@@ -14,6 +14,7 @@
 #include "core/Macros.h"
 #include "core/external/lua.h"
 #include "input/Input.h"
+#include "input/InputFrame.h"
 #include "physics/PhysicCommand.h"
 #include "scene/Entity.h"
 #include "scene/SaveManager.h"
@@ -230,6 +231,35 @@ auto luaInputGetMouseX(lua_State* iState) -> int {
 auto luaInputGetMouseY(lua_State* iState) -> int {
 	lua_pushnumber(iState, static_cast<lua_Number>(input::Input::getMouseY()));
 	return 1;
+}
+
+auto inputFrameOf(lua_State* iState) -> const input::InputFrame* {
+	const auto* boundScene = getBoundScene(iState);
+	return boundScene != nullptr ? &boundScene->getInputFrame() : nullptr;
+}
+
+template<bool (input::InputFrame::*Edge)(input::KeyCode) const>
+auto luaInputKeyEdge(lua_State* iState) -> int {
+	const auto keyCode = static_cast<input::KeyCode>(luaL_checkinteger(iState, 1));
+	const auto* frame = inputFrameOf(iState);
+	lua_pushboolean(iState, frame != nullptr && (frame->*Edge)(keyCode) ? 1 : 0);
+	return 1;
+}
+
+template<bool (input::InputFrame::*Edge)(input::MouseCode) const>
+auto luaInputMouseButtonEdge(lua_State* iState) -> int {
+	const auto button = static_cast<input::MouseCode>(luaL_checkinteger(iState, 1));
+	const auto* frame = inputFrameOf(iState);
+	lua_pushboolean(iState, frame != nullptr && (frame->*Edge)(button) ? 1 : 0);
+	return 1;
+}
+
+auto luaInputGetMouseWheel(lua_State* iState) -> int {
+	const auto* frame = inputFrameOf(iState);
+	const math::vec2 wheel = frame != nullptr ? frame->getWheel() : math::vec2{0.f, 0.f};
+	lua_pushnumber(iState, static_cast<lua_Number>(wheel.x()));
+	lua_pushnumber(iState, static_cast<lua_Number>(wheel.y()));
+	return 2;
 }
 
 auto luaSoundPlay(lua_State* iState) -> int {
@@ -959,6 +989,25 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		 .description = "Mouse X position in the window, in pixels.", .returns = {{"x", Number}}},
 		{.table = "input", .name = "get_mouse_y", .function = guarded<luaInputGetMouseY>,
 		 .description = "Mouse Y position in the window, in pixels.", .returns = {{"y", Number}}},
+		{.table = "input", .name = "is_key_just_pressed",
+		 .function = guarded<luaInputKeyEdge<&input::InputFrame::isKeyJustPressed>>,
+		 .description = "Whether a key went down since the previous tick (in `on_tick`) or frame (in `on_update`).",
+		 .params = {{"keycode", Integer}}, .returns = {{"pressed", Boolean}}},
+		{.table = "input", .name = "is_key_just_released",
+		 .function = guarded<luaInputKeyEdge<&input::InputFrame::isKeyJustReleased>>,
+		 .description = "Whether a key went up since the previous tick (in `on_tick`) or frame (in `on_update`).",
+		 .params = {{"keycode", Integer}}, .returns = {{"released", Boolean}}},
+		{.table = "input", .name = "is_mouse_button_just_pressed",
+		 .function = guarded<luaInputMouseButtonEdge<&input::InputFrame::isMouseButtonJustPressed>>,
+		 .description = "Whether a mouse button went down since the previous tick or frame.",
+		 .params = {{"button", Integer}}, .returns = {{"pressed", Boolean}}},
+		{.table = "input", .name = "is_mouse_button_just_released",
+		 .function = guarded<luaInputMouseButtonEdge<&input::InputFrame::isMouseButtonJustReleased>>,
+		 .description = "Whether a mouse button went up since the previous tick or frame.",
+		 .params = {{"button", Integer}}, .returns = {{"released", Boolean}}},
+		{.table = "input", .name = "get_mouse_wheel", .function = guarded<luaInputGetMouseWheel>,
+		 .description = "Wheel offset scrolled since the previous tick or frame (horizontal, vertical).",
+		 .returns = {{"dx", Number}, {"dy", Number}}},
 		{.table = "sound", .name = "play", .function = guarded<luaSoundPlay>,
 		 .description = "Play a sound asset (loaded on first use); an invalid handle when sound is off or missing.",
 		 .params = {{"asset_path", String}}, .returns = {{"handle", Integer}}},

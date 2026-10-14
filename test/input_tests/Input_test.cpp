@@ -20,13 +20,19 @@ TEST(input, Input_uninitialized) {
 	EXPECT_EQ(Input::getMouseX(), 0);
 	EXPECT_EQ(Input::getMouseY(), 0);
 	const auto pos = Input::getMousePos();
-	Input::injectKey(0);
-	EXPECT_FALSE(Input::isKeyPressed(0));
-	Input::injectMouseButton(0);
-	Input::injectMousePos(pos);
 	EXPECT_EQ(pos.x(), 0);
 	EXPECT_EQ(pos.y(), 0);
+	// The injection belongs to the input layer: it works without a back-end and is cleared with the input.
+	Input::injectKey(0);
+	EXPECT_TRUE(Input::isKeyPressed(0));
+	Input::injectMouseButton(0);
+	EXPECT_TRUE(Input::isMouseButtonPressed(0));
+	Input::injectMousePos({5.f, 6.f});
+	EXPECT_EQ(Input::getMouseY(), 6.f);
 	Input::invalidate();
+	EXPECT_FALSE(Input::isKeyPressed(0));
+	EXPECT_FALSE(Input::isMouseButtonPressed(0));
+	EXPECT_EQ(Input::getMouseX(), 0);
 }
 
 TEST(input, Input_doubleinit) {

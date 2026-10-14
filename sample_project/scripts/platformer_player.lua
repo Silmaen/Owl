@@ -24,8 +24,6 @@ local k_land_threshold = 0.5    -- vy above -this from falling = landed (grounde
 
 -- State ------------------------------------------------------------------------
 local transitioning = false  -- gate input while the engine is in scene-load orchestration
-local escape_was_down = false
-local jump_was_down = false
 local health = 1.0
 local health_bar_id = 0
 local camera_id = 0
@@ -113,11 +111,9 @@ function on_update(dt)
     end
 
     -- Jump buffer: every fresh press extends the buffer; consumed on landing.
-    local jump_down = input.is_key_pressed(87) or input.is_key_pressed(32) or input.is_key_pressed(265)
-    if jump_down and not jump_was_down then
+    if input.is_key_just_pressed(87) or input.is_key_just_pressed(32) or input.is_key_just_pressed(265) then
         jump_buffer_timer = k_jump_buffer
     end
-    jump_was_down = jump_down
     jump_buffer_timer = math.max(0, jump_buffer_timer - dt)
 
     if jump_buffer_timer > 0 and can_jump_now then
@@ -142,8 +138,7 @@ function on_update(dt)
     end
 
     -- ESC: pause + return to menu, with a continue snapshot.
-    local escape_down = input.is_key_pressed(256)
-    if escape_down and not escape_was_down then
+    if input.is_key_just_pressed(256) then
         local px, py, pz = transform.get_position(entity_id)
         gamestate.set("continue_scene", "scenes/platformer_house.owl")
         gamestate.set("continue_x", px)
@@ -154,7 +149,6 @@ function on_update(dt)
         transitioning = true
         scene.transition_to("scenes/main_menu.owl", "fade_out", 0.3)
     end
-    escape_was_down = escape_down
 end
 
 -- Box2D contact: fires once when the player starts touching another body

@@ -178,8 +178,6 @@ private:
 	float m_timerElapsed = 0.0f;
 	/// Whether the timer is currently running.
 	bool m_timerRunning = false;
-	/// Cooldown for interaction key (prevents repeat while held).
-	bool m_interactKeyWasDown = false;
 };
 
 }// namespace owl::scene

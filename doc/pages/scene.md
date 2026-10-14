@@ -129,7 +129,9 @@ simulation tick (see [Fixed simulation tick](#fixed-tick)); either may be empty.
 | `Ended`       | `owl.game_over` ("Victory!" / "You loose!" message)                             | Replaces every other phase once game over |
 
 `owl.scripts` calls `on_update` in its `update` and `on_tick` in its `tick`; `owl.physics` steps the world in its
-`tick`. The `SystemContext` gives the frame (or tick) duration, the tick count of the frame, the index of the running
+`tick`. `Scene::getInputFrame()` gives the input of the running step (the tick frame in a `tick`, the frame one in an
+`update`), with `isKeyJustPressed` / `isKeyJustReleased` edges seen once at either rate
+([event and input](event_input.md)). The `SystemContext` gives the frame (or tick) duration, the tick count of the frame, the index of the running
 tick and the interpolation alpha. Every new scene copies `SystemSchedule::getDefault()`. A game changes it once,
 before loading its scenes, or edits one scene's schedule; `Scene::copy()` (Play) keeps the scene's schedule:
 
