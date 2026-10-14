@@ -393,6 +393,47 @@ flowchart LR
 - **Budgets** (`bench/`, Null backend, `tilemap/*`): a static 256² map of 4 layers costs a few microseconds and uploads
   0 byte per frame, a one-cell edit uploads one chunk, building one 32² chunk takes about 1 µs.
 
+## Isometric layer {#renderer-isometric}
+
+`RendererIsometricLayer` (factory key `RendererIsometric`, `renderer/RendererIsometricLayer.h`) draws the entities
+routed to it in a 2:1 dimetric view, from its own `onRender`: it is the first layer whose `drawsOwnEntities()` is true,
+so `Scene::renderWithStack` skips the generic 2D pass for it. It composes with the other layers of the stack (a 2D sky
+behind, a `Space: Screen` HUD on top) and shares the depth attachment of the frame.
+
+```yaml
+RendererStack:
+  - Type: RendererIsometric
+    Name: iso_world
+    DefaultConfig:
+      TileWidth: 64   # flat tile, pixels
+      TileHeight: 32  # half the width: 2:1, a 30° pitch
+      ZStep: 16       # screen pixels per height unit
+      Zoom: 0         # power-of-two level, -4 to 4
+```
+
+- **Camera.** `IsometricCamera` is a real view times a `CameraOrtho` projection in pixels: yaw 45°, pitch
+  `asin(TileHeight / TileWidth)`, world Z scaled by `ZStep`, world Y mirrored so the grid keeps the usual layout
+  (`x` to the lower right, `y` to the lower left). It matches `worldToScreen` / `screenToWorld`
+  (`screen.x = (x − y) · tileW / 2`, `screen.y = (x + y) · tileH / 2 − z · zStep`), takes the Vulkan Y flip and depth
+  range of `CameraOrtho::makeProjection`, and keeps a usable depth (`IsometricCamera::depthRange` view pixels around
+  the target). In Play the target is the scene camera's position (Z dropped) and the zoom the layer's `Zoom`; the
+  editor hands its own `IsometricCamera`, used as is.
+- **Billboards.** Every sprite is an `IsometricBillboard` anchored at its world foot point: only the foot point goes
+  through the view, the sprite keeps its pixels (scaled by the zoom). Each corner gets the depth of a plane through the
+  foot: a vertical plane facing the viewer for an upright sprite, the ground plane for a flat terrain tile. Sprites of
+  `SpriteRenderer` and `AnimatedSpriteRenderer` entities stand at their world translation, `scale.xy × TileWidth`
+  pixels large.
+- **Depth and cutout.** Opaque and cut-out billboards (texels under one half alpha are discarded) draw unsorted,
+  depth tested and written; a tint alpha below 1 makes a billboard translucent: those draw afterwards, sorted back to
+  front on the CPU (`getBackToFrontOrder`), depth tested, not written. Tilemap layers sit `tilemapLayerBias` apart,
+  upright sprites `spriteBias` above the ground they stand on.
+- **Tilemaps.** A tilemap routed to the layer (its tileset `kind: Isometric`) emits one flat billboard per non-empty
+  cell of the 32 × 32 chunks in view; cell `(cx, cy)` covers the world square from the entity translation plus
+  `(cx, cy)` to plus `(cx + 1, cy + 1)`, its sprite bottom centre on the front corner. `pickIsometricCell` finds the
+  tile under a viewport pixel (flat maps; slopes come with ISO2).
+- **Shader.** `engine_assets/shaders/isometric/slang/billboard.slang`: one instanced draw per pass from a storage
+  buffer of 96-byte instances (foot, size, depth slope, UVs, tint, texture slot, entity id), 20 000 per batch.
+
 ## Raycaster {#renderer-raycaster}
 
 `RendererRaycast` (`renderer/RendererRaycast.h`) is the first non-2D
@@ -615,18 +656,19 @@ sequenceDiagram
 
 ## Image tests {#render-image-tests}
 
-`test/render_tests` (`owl_render_tests_unit_test`, CTest label `render`) renders seven reference scenes on lavapipe
+`test/render_tests` (`owl_render_tests_unit_test`, CTest label `render`) renders eight reference scenes on lavapipe
 (Vulkan) and llvmpipe (OpenGL) and compares each capture to a versioned PNG:
 
-| Scene      | Covers                                                                         |
-|------------|--------------------------------------------------------------------------------|
-| `sprites`  | Gradient background, plain, rotated, textured, tiled and tinted quads, circles |
-| `text`     | World-space MSDF text (multi-line, rotated) and a screen-space UI label        |
-| `tilemap`  | Instanced tilemap with several tilesets                                        |
-| `raycast`  | GPU raycaster: walls, doors, billboard sprites, floor and ceiling              |
-| `voxel`    | Procedural voxel terrain with water, seen by the voxel player                  |
-| `mixed`    | Platformer level: tilemap, sprites, animated sprite, HUD text and panel        |
-| `stylemix` | Voxel terrain, perspective sprites, `Space: Screen` HUD, voxel crosshair       |
+| Scene       | Covers                                                                         |
+|-------------|--------------------------------------------------------------------------------|
+| `sprites`   | Gradient background, plain, rotated, textured, tiled and tinted quads, circles |
+| `text`      | World-space MSDF text (multi-line, rotated) and a screen-space UI label        |
+| `tilemap`   | Instanced tilemap with several tilesets                                        |
+| `raycast`   | GPU raycaster: walls, doors, billboard sprites, floor and ceiling              |
+| `voxel`     | Procedural voxel terrain with water, seen by the voxel player                  |
+| `mixed`     | Platformer level: tilemap, sprites, animated sprite, HUD text and panel        |
+| `stylemix`  | Voxel terrain, perspective sprites, `Space: Screen` HUD, voxel crosshair       |
+| `isometric` | Isometric map, depth-tested trees and houses, sorted translucent smoke, HUD    |
 
 Each case runs `OwlRunner --frame-bench <scene> --capture <png>` (320 x 180, 60 warm-up frames, fixed time step, Vulkan
 validation on) in its own process, then compares RGB per pixel: a pixel differs above 24 / 255 on a channel, the test
