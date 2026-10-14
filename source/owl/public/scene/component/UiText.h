@@ -10,6 +10,7 @@
 
 #include "core/Serializer.h"
 #include "data/fonts/Font.h"
+#include "data/fonts/TextLayout.h"
 
 #include <cstdint>
 #include <string>
@@ -19,7 +20,8 @@ namespace owl::scene::component {
  * @brief
  *  UI text widget component.
  *
- * Renders text in screen space within a Canvas hierarchy.
+ * Renders text in screen space within a Canvas hierarchy, laid out in the `UiRect` of its entity: the rectangle
+ * drives the wrap width, the alignment and the fit, the glyphs keep the aspect ratio of the font.
  */
 struct OWL_API UiText {
 	/// The text content.
@@ -28,20 +30,30 @@ struct OWL_API UiText {
 	shared<data::fonts::Font> font = nullptr;
 	/// Text colour.
 	math::vec4 color{1.0f, 1.0f, 1.0f, 1.0f};
-	/// Font size in pixels.
+	/// Font size in pixels: height from the ascender to the descender of the font.
 	float fontSize = 16.f;
-	/// Text alignment.
-	enum struct Alignment : uint8_t {
-		Left,///< Aligned on the left edge.
-		Center,///< Centred.
-		Right,///< Aligned on the right edge.
-	};
-	/// Current alignment.
-	Alignment alignment = Alignment::Left;
-	/// Kerning adjustment.
+	/// Horizontal alignment of the lines in the rectangle.
+	data::fonts::HorizontalAlignment horizontalAlignment = data::fonts::HorizontalAlignment::Left;
+	/// Vertical alignment of the block of lines in the rectangle.
+	data::fonts::VerticalAlignment verticalAlignment = data::fonts::VerticalAlignment::Middle;
+	/// Break the lines on spaces to keep them within the rectangle width.
+	bool wrap = false;
+	/// Behaviour of text larger than the rectangle.
+	data::fonts::TextFit fit = data::fonts::TextFit::Overflow;
+	/// Smallest font size, in pixels, reached by `TextFit::Shrink`.
+	float minFontSize = 8.f;
+	/// Kerning adjustment, in font units.
 	float kerning = 0.f;
-	/// Line spacing adjustment.
+	/// Line spacing adjustment, in font units.
 	float lineSpacing = 0.f;
+
+	/**
+	 * @brief
+	 *  Layout of this text in a rectangle.
+	 * @param[in] iRectSize Size of the rectangle, in pixels.
+	 * @return The layout options, in pixels.
+	 */
+	[[nodiscard]] auto getLayout(const math::vec2& iRectSize) const -> data::fonts::TextLayout;
 
 	/**
 	 * @brief

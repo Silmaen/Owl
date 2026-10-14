@@ -17,7 +17,6 @@ tooltips and construction tools at once, as in Transport Tycoon.
   hand; in the editor it floats at world coordinates over the level.
 - Only direct children of a `Canvas` draw and react to the mouse; the parent size is always the viewport, without
   resolution scaling; there is no keyboard or gamepad focus.
-- `UiText` stretches its glyphs to its rectangle and text is limited to Latin-1.
 - HUD drawing and hit-testing live in `Scene.cpp` (C-14).
 
 ## Text (TX1, TX2)

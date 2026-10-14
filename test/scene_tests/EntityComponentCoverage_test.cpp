@@ -317,7 +317,7 @@ TEST(EntityComponentCoverage, UiText) {
 	auto& ut = ent.addComponent<component::UiText>();
 	ut.text = "UI Label";
 	ut.fontSize = 24.f;
-	ut.alignment = component::UiText::Alignment::Center;
+	ut.horizontalAlignment = data::fonts::HorizontalAlignment::Center;
 	EXPECT_TRUE(ent.hasComponent<component::UiText>());
 	EXPECT_EQ(ent.getComponent<component::UiText>().text, "UI Label");
 	EXPECT_NEAR(ent.getComponent<component::UiText>().fontSize, 24.f, 0.01f);

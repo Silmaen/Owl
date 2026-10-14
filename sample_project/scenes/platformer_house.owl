@@ -1400,7 +1400,8 @@ Entities:
     - 0.550000012
     - 1
     fontSize: 18
-    alignment: Right
+    horizontalAlignment: Center
+    verticalAlignment: Middle
     kerning: 0
     lineSpacing: 0
 - Entity: 3000000000000000063
@@ -1441,6 +1442,7 @@ Entities:
     - 1
     - 0.850000024
     fontSize: 14
-    alignment: Left
+    horizontalAlignment: Center
+    verticalAlignment: Middle
     kerning: 0
     lineSpacing: 0

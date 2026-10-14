@@ -538,17 +538,9 @@ void Renderer2D::drawString(const StringData& iStringData) {
 
 	const auto& font = *iStringData.font;
 	const uint32_t textureIndex = textureSlotOf(font.getAtlasTexture());
-	const math::box2f extents = font.measureText(iStringData.text, iStringData.kerning, iStringData.lineSpacing);
-	math::vec2 scale = extents.diagonal();
-	scale.x() = 1.f / scale.x();
-	scale.y() = 1.f / scale.y();
-	const math::vec2 offset = -extents.min() - 0.5f * extents.diagonal();
 	const math::mat4 stringMat = iStringData.transform();
 	const auto emitGlyph = [&](const data::fonts::Font::GlyphMetrics& iGlyph) -> void {
-		auto [quad, uv] = iGlyph;
-		quad.translate(offset);
-		quad.scale(scale);
-
+		const auto& [quad, uv] = iGlyph;
 		if (g_Data->text.instances.size() >= utils::g_maxTextGlyphsPerBatch)
 			nextBatch();
 
@@ -572,7 +564,7 @@ void Renderer2D::drawString(const StringData& iStringData) {
 															 ._pad1 = {0u, 0u}});
 		g_Data->stats.quadCount++;
 	};
-	font.forEachGlyph(iStringData.text, iStringData.kerning, iStringData.lineSpacing, emitGlyph);
+	data::fonts::forEachLaidOutGlyph(font, iStringData.text, iStringData.layout, emitGlyph);
 }
 
 void Renderer2D::resetStats() {

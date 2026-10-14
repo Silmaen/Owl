@@ -508,12 +508,24 @@ direct children of an entity with a `Canvas` component (nested layouts arrive wi
 
 #### UiText
 
-| Field       | Type     | Description        |
-|-------------|----------|--------------------|
-| `text`      | `string` | Display text       |
-| `fontAsset` | `string` | Font file path     |
-| `fontSize`  | `float`  | Size in pixels     |
-| `color`     | `vec4`   | Text colour (RGBA) |
+| Field                 | Type     | Description                                                          |
+|-----------------------|----------|----------------------------------------------------------------------|
+| `text`                | `string` | Display text (UTF-8)                                                 |
+| `font`                | `string` | Font name (default font when absent)                                 |
+| `fontSize`            | `float`  | Ascender-to-descender height, in pixels                              |
+| `color`               | `vec4`   | Text colour (RGBA)                                                   |
+| `horizontalAlignment` | `enum`   | `Left` (default), `Center`, `Right` in the `UiRect`                  |
+| `verticalAlignment`   | `enum`   | `Top`, `Middle` (default), `Bottom`, `Baseline` (first one centred)  |
+| `wrap`                | `bool`   | Break the lines on spaces within the rectangle width                 |
+| `fit`                 | `enum`   | `Overflow` (default), `Clip` at the rectangle, `Shrink` the font     |
+| `minFontSize`         | `float`  | Smallest size `Shrink` reaches (8 by default)                        |
+| `kerning`             | `float`  | Extra advance between glyphs, in font units                          |
+| `lineSpacing`         | `float`  | Extra space between lines, in font units                             |
+
+Glyphs keep the aspect ratio of the font; the rectangle drives the wrap width, the alignment and the fit. Scene and
+prefab format 3 (TX2): a `UiText` of an older file, whose `alignment` key was never applied, migrates to `Center` /
+`Middle`, the way it was drawn. Its glyphs are smaller than before for the same `fontSize`: the size used to fill the
+ink height of the string, it is now the ascender-to-descender height of the font, whatever the text.
 
 #### UiImage
 
@@ -730,8 +742,9 @@ Every file the engine writes carries a root `FormatVersion` integer:
 | `settings.yml`, `game_settings.yml` | `SettingsManager::format()`                    |
 | `owl_project.yml` (Owl Nest)        | `nest::Project::format()`                      |
 
-Scenes and prefabs are at version 2: the 1 → 2 migration (`bindEntityLinksByName`) gives each name-only
-`EntityLink` the UUID of the first entity of the document with that tag. Tilemaps are at version 2 too: their
+Scenes and prefabs are at version 3: the 1 → 2 migration (`bindEntityLinksByName`) gives each name-only
+`EntityLink` the UUID of the first entity of the document with that tag, the 2 → 3 one (`centreLegacyUiText`) gives
+each `UiText` without `horizontalAlignment` the centred layout it was drawn with. Tilemaps are at version 2 too: their
 1 → 2 migration turns the dense `tiles` string of each layer into a terrain plane, saved back as binary chunks
 ([Tilemap storage](#tilemap-storage)). The prefab `Version` key is something else: it counts the edits of one prefab and feeds
 `PrefabLink::syncedVersion`. A save embeds its scene with the scene's own `FormatVersion`.
@@ -803,7 +816,7 @@ the engine auto-appends `.owl` and searches asset directories including a `scene
 2. **SpriteRenderer** — `drawQuad()` with texture/colour/tiling
 3. **AnimatedSpriteRenderer** — `drawQuad()` with computed UV coordinates
 4. **CircleRenderer** — `drawCircle()` with thickness/fade
-5. **Text** — `drawString()` with font/colour/kerning
+5. **Text** — `drawString()` with font/colour/kerning, em height from the Y scale
 
 Each entity is checked for visibility via `isEffectivelyVisible()` and rendered
 using its world transform from `getWorldTransform()`. Both calls hit a per-pass

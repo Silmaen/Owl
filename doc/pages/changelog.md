@@ -25,6 +25,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Text layout: glyphs keep the font aspect at one scale per em, with horizontal and vertical alignment, UTF-8 word
+  wrap and clip / shrink / overflow fit on `UiText` and `Renderer2D::drawString` (`StringData::layout`); scene format
+  3 keeps legacy `UiText` centred.
 - UTF-8 text decoded to code points (U+FFFD for invalid input), `Font` on `char32_t`, a Latin charset with `œ`, `€`
   and typographic punctuation plus extra ranges per font (`.owlfont`, edited in the new font document), and the atlas
   cached on disk.

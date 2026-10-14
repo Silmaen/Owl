@@ -96,15 +96,19 @@ Entities:
       anchor: TopLeft
       pivotX: 0
       pivotY: 1
-      sizeX: 360
-      sizeY: 20
+      sizeX: 200
+      sizeY: 40
       offsetX: 20
       offsetY: -20
     UiText:
       text: WASD = move, E = interact, ESC = pause
       color: [1, 1, 1, 0.850000024]
-      fontSize: 14
-      alignment: Left
+      fontSize: 16
+      horizontalAlignment: Left
+      verticalAlignment: Top
+      wrap: true
+      fit: Shrink
+      minFontSize: 10
       kerning: 0
       lineSpacing: 0
   - Entity: 2000000000000000061

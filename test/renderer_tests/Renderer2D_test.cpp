@@ -9,6 +9,7 @@
 #include "testHelper.h"
 
 #include <app/Application.h>
+#include <data/fonts/TextLayout.h>
 #include <renderer/Renderer.h>
 #include <renderer/Renderer2D.h>
 #include <scene/component/SpriteRenderer.h>
@@ -222,7 +223,7 @@ TEST(Renderer2D, utf8TextBeyondLatin1StaysOneDrawCall) {
 	RenderCommand::create(RenderAPI::Type::Null);
 	Renderer::init();
 	const CameraEditor cam;
-	// 10 glyphs, half of them beyond U+00FF (œ Œ € ’ …), 1000 times.
+	// 10 code points, half of them beyond U+00FF (œ Œ € ’ …), 1000 times; the space draws no quad.
 	const std::string line = "\u0153uvre \u0152\u20AC\u2019\u2026";
 	std::string text;
 	for (int i = 0; i < 1000; ++i) text += line;
@@ -231,7 +232,40 @@ TEST(Renderer2D, utf8TextBeyondLatin1StaysOneDrawCall) {
 	Renderer2D::drawString({.transform = Transform{owl::math::identity<float, 4>()}, .text = text, .font = font});
 	Renderer2D::endScene();
 	const auto st = Renderer2D::getStats();
-	EXPECT_EQ(st.quadCount, 10000u);
+	EXPECT_EQ(st.quadCount, 9000u);
+	EXPECT_EQ(st.drawCalls, 1u);
+
+	RenderCommand::invalidate();
+	Application::invalidate();
+	app.reset();
+	Log::invalidate();
+}
+
+TEST(Renderer2D, laidOutTextStaysOneDrawCall) {
+	Log::init(owl::core::Log::Level::Off);
+	auto app = owl::mkShared<Application>(
+			AppParams{.renderer = RenderAPI::Type::Null, .hasGui = false, .useDebugging = false, .isDummy = true});
+	const auto font = app->getFontLibrary().getDefaultFont();
+	ASSERT_NE(font, nullptr);
+
+	RenderCommand::create(RenderAPI::Type::Null);
+	Renderer::init();
+	const CameraEditor cam;
+	std::string text;
+	for (int i = 0; i < 1000; ++i) text += "abcd efghi ";
+	const owl::data::fonts::TextLayout layout{.fontSize = 2.f,
+											  .boxSize = {40.f, 20.f},
+											  .horizontal = owl::data::fonts::HorizontalAlignment::Right,
+											  .vertical = owl::data::fonts::VerticalAlignment::Top,
+											  .wrap = true,
+											  .fit = owl::data::fonts::TextFit::Shrink};
+	Renderer2D::resetStats();
+	Renderer2D::beginScene(cam);
+	Renderer2D::drawString(
+			{.transform = Transform{owl::math::identity<float, 4>()}, .text = text, .font = font, .layout = layout});
+	Renderer2D::endScene();
+	const auto st = Renderer2D::getStats();
+	EXPECT_EQ(st.quadCount, 9000u);
 	EXPECT_EQ(st.drawCalls, 1u);
 
 	RenderCommand::invalidate();

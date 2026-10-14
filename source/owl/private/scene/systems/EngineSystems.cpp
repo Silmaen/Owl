@@ -255,7 +255,6 @@ void renderGameOver(Scene& ioScene, const SystemContext& iContext) {
 	const math::Transform camTransform = ioScene.getWorldTransform(cameraEntity);
 	math::Transform textTransform = camTransform;
 	textTransform.translation().z() = 0;
-	textTransform.scale().x() = 3.f;
 	camera.setTransform(camTransform());
 
 	renderer::Renderer2D::resetStats();

@@ -29,10 +29,10 @@ auto bindEntityLinksByName(const core::Serializer& ioDocument) -> bool;
 /**
  * @brief
  *  Check whether a scene or prefab document reads as is, without going through its yaml-cpp migration chain: it is
- *  at the current format version, or it is a format 1 document whose only step (`bindEntityLinksByName`) has nothing
- *  to convert (no `EntityLink` naming its target without an id).
+ *  at the current format version, or the steps from its version have nothing to convert (`bindEntityLinksByName`:
+ *  no `EntityLink` naming its target without an id; `centreLegacyUiText`: no `UiText` without `horizontalAlignment`).
  * @param[in] iRoot The document root.
- * @param[in] iFormat The format of the document (scene or prefab, current version 2).
+ * @param[in] iFormat The format of the document (scene or prefab, current version 3).
  * @return True when the document can be read directly.
  */
 [[nodiscard]] OWL_API auto canReadWithoutMigration(const core::YamlNode& iRoot, const core::DocumentFormat& iFormat)

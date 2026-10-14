@@ -124,10 +124,26 @@ public:
 
 	/**
 	 * @brief
-	 *  Get the line width.
-	 * @return The line width.
+	 *  Get the distance between two baselines.
+	 *
+	 * The font unit is the ascender-to-descender height: `getAscender() - getDescender()` is 1.
+	 * @return The line height, in font units.
 	 */
 	[[nodiscard]] auto getScaledLineHeight() const -> float;
+
+	/**
+	 * @brief
+	 *  Height of the ascender above the baseline.
+	 * @return The ascender, in font units (positive).
+	 */
+	[[nodiscard]] auto getAscender() const -> float;
+
+	/**
+	 * @brief
+	 *  Height of the descender relative to the baseline.
+	 * @return The descender, in font units (negative or zero).
+	 */
+	[[nodiscard]] auto getDescender() const -> float;
 
 	/**
 	 * @brief

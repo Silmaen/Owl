@@ -16,38 +16,75 @@
 
 namespace owl::scene::component {
 
+namespace {
+
+template<typename Enum>
+void readEnum(const core::YamlNode& iNode, const char* iKey, Enum& oValue) {
+	if (iNode[iKey])
+		oValue = magic_enum::enum_cast<Enum>(iNode[iKey].as<std::string>()).value_or(oValue);
+}
+
+template<typename Value>
+void readValue(const core::YamlNode& iNode, const char* iKey, Value& oValue) {
+	if (iNode[iKey])
+		oValue = iNode[iKey].as<Value>();
+}
+
+}// namespace
+
+auto UiText::getLayout(const math::vec2& iRectSize) const -> data::fonts::TextLayout {
+	return {.fontSize = fontSize,
+			.boxSize = iRectSize,
+			.horizontal = horizontalAlignment,
+			.vertical = verticalAlignment,
+			.wrap = wrap,
+			.fit = fit,
+			.minFontSize = minFontSize,
+			.kerning = kerning,
+			.lineSpacing = lineSpacing};
+}
+
 void UiText::serialize(const core::Serializer& iOut) const {
-	iOut.getImpl()->emitter << YAML::Key << key();
-	iOut.getImpl()->emitter << YAML::BeginMap;
-	iOut.getImpl()->emitter << YAML::Key << "text" << YAML::Value << text;
-	iOut.getImpl()->emitter << YAML::Key << "color" << YAML::Value << color;
-	iOut.getImpl()->emitter << YAML::Key << "fontSize" << YAML::Value << fontSize;
-	iOut.getImpl()->emitter << YAML::Key << "alignment" << YAML::Value << std::string(magic_enum::enum_name(alignment));
-	iOut.getImpl()->emitter << YAML::Key << "kerning" << YAML::Value << kerning;
-	iOut.getImpl()->emitter << YAML::Key << "lineSpacing" << YAML::Value << lineSpacing;
+	auto& emitter = iOut.getImpl()->emitter;
+	emitter << YAML::Key << key();
+	emitter << YAML::BeginMap;
+	emitter << YAML::Key << "text" << YAML::Value << text;
+	emitter << YAML::Key << "color" << YAML::Value << color;
+	emitter << YAML::Key << "fontSize" << YAML::Value << fontSize;
+	emitter << YAML::Key << "horizontalAlignment" << YAML::Value
+			<< std::string(magic_enum::enum_name(horizontalAlignment));
+	emitter << YAML::Key << "verticalAlignment" << YAML::Value << std::string(magic_enum::enum_name(verticalAlignment));
+	emitter << YAML::Key << "wrap" << YAML::Value << wrap;
+	emitter << YAML::Key << "fit" << YAML::Value << std::string(magic_enum::enum_name(fit));
+	emitter << YAML::Key << "minFontSize" << YAML::Value << minFontSize;
+	emitter << YAML::Key << "kerning" << YAML::Value << kerning;
+	emitter << YAML::Key << "lineSpacing" << YAML::Value << lineSpacing;
 	if (font && !font->isDefault())
-		iOut.getImpl()->emitter << YAML::Key << "font" << YAML::Value << font->getName();
-	iOut.getImpl()->emitter << YAML::EndMap;
+		emitter << YAML::Key << "font" << YAML::Value << font->getName();
+	emitter << YAML::EndMap;
 }
 
 void UiText::deserialize(const core::Serializer& iNode) {
-	if (iNode.getImpl()->node["text"])
-		text = iNode.getImpl()->node["text"].as<std::string>();
-	if (iNode.getImpl()->node["color"])
-		color = iNode.getImpl()->node["color"].as<math::vec4>();
-	if (iNode.getImpl()->node["fontSize"])
-		fontSize = iNode.getImpl()->node["fontSize"].as<float>();
-	if (iNode.getImpl()->node["alignment"])
-		alignment = magic_enum::enum_cast<Alignment>(iNode.getImpl()->node["alignment"].as<std::string>())
-							.value_or(Alignment::Left);
-	if (iNode.getImpl()->node["kerning"])
-		kerning = iNode.getImpl()->node["kerning"].as<float>();
-	if (iNode.getImpl()->node["lineSpacing"])
-		lineSpacing = iNode.getImpl()->node["lineSpacing"].as<float>();
+	const auto& node = iNode.getImpl()->node;
+	readValue(node, "text", text);
+	readValue(node, "color", color);
+	readValue(node, "fontSize", fontSize);
+	// The legacy `alignment` key was never applied: such text was drawn centred, as the scene migration keeps it.
+	if (node["alignment"] && !node["horizontalAlignment"]) {
+		horizontalAlignment = data::fonts::HorizontalAlignment::Center;
+		verticalAlignment = data::fonts::VerticalAlignment::Middle;
+	}
+	readEnum(node, "horizontalAlignment", horizontalAlignment);
+	readEnum(node, "verticalAlignment", verticalAlignment);
+	readValue(node, "wrap", wrap);
+	readEnum(node, "fit", fit);
+	readValue(node, "minFontSize", minFontSize);
+	readValue(node, "kerning", kerning);
+	readValue(node, "lineSpacing", lineSpacing);
 	if (app::Application::instanced()) {
 		auto& lib = app::Application::get().getFontLibrary();
-		if (iNode.getImpl()->node["font"])
-			font = lib.getFont(iNode.getImpl()->node["font"].as<std::string>());
+		if (node["font"])
+			font = lib.getFont(node["font"].as<std::string>());
 		else
 			font = lib.getDefaultFont();
 	}

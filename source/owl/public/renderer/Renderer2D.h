@@ -9,6 +9,7 @@
 #pragma once
 
 #include "data/fonts/Font.h"
+#include "data/fonts/TextLayout.h"
 #include "math/Transform.h"
 #include "renderer/Camera.h"
 #include "renderer/CameraEditor.h"
@@ -161,11 +162,14 @@ struct OWL_API PolyLineData {
 /**
  * @brief
  *  Data for drawing a string.
+ *
+ * The glyphs are laid out by `layout` in its frame (origin on the box centre, one unit per `fontSize` unit, the
+ * font aspect ratio kept), then placed by `transform`: a non-uniform transform scale still stretches them.
  */
 struct OWL_API StringData {
 	/**
 	 * @brief
-	 *  Transformation of the render. Used by the shader when `worldIndex < 0`
+	 *  Transformation of the layout frame. Used by the shader when `worldIndex < 0`
 	 *  (transient path).
 	 */
 	math::Transform transform;
@@ -181,10 +185,8 @@ struct OWL_API StringData {
 	shared<data::fonts::Font> font = nullptr;
 	/// Colour to render.
 	math::vec4 color = math::vec4{1.f, 1.f, 1.f, 1.f};
-	/// The kerning.
-	float kerning = 0.f;
-	/// The line spacing.
-	float lineSpacing = 0.f;
+	/// Size, alignment, wrap, fit, kerning and line spacing of the text.
+	data::fonts::TextLayout layout{};
 	/// unique ID for the entity.
 	int entityId = -1;
 };
@@ -280,7 +282,7 @@ public:
 
 	/**
 	 * @brief
-	 *  Draws a Quad on the screen.
+	 *  Draws a string on the screen, laid out by `StringData::layout`.
 	 * @param[in] iStringData String's properties.
 	 */
 	static void drawString(const StringData& iStringData);

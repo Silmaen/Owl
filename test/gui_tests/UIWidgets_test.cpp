@@ -31,7 +31,7 @@ TEST(UiText, createAndDefaults) {
 
 	EXPECT_TRUE(text.text.empty());
 	EXPECT_NEAR(text.fontSize, 16.f, 0.01f);
-	EXPECT_EQ(text.alignment, component::UiText::Alignment::Left);
+	EXPECT_EQ(text.horizontalAlignment, data::fonts::HorizontalAlignment::Left);
 	EXPECT_NEAR(text.color.x(), 1.f, 0.01f);
 
 	core::Log::invalidate();
@@ -82,7 +82,7 @@ TEST(UiWidgets, serializeDeserializeViaScene) {
 		auto& text = textEnt.addComponent<component::UiText>();
 		text.text = "Hello UI";
 		text.fontSize = 24.f;
-		text.alignment = component::UiText::Alignment::Center;
+		text.horizontalAlignment = data::fonts::HorizontalAlignment::Center;
 		scn->setParent(textEnt, canvas);
 
 		auto imgEnt = scn->createEntity("Image");
@@ -115,7 +115,7 @@ TEST(UiWidgets, serializeDeserializeViaScene) {
 				const auto& text = entity.getComponent<component::UiText>();
 				EXPECT_EQ(text.text, "Hello UI");
 				EXPECT_NEAR(text.fontSize, 24.f, 0.01f);
-				EXPECT_EQ(text.alignment, component::UiText::Alignment::Center);
+				EXPECT_EQ(text.horizontalAlignment, data::fonts::HorizontalAlignment::Center);
 				foundText = true;
 			}
 			if (entity.hasComponent<component::UiImage>()) {
