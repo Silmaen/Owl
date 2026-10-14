@@ -65,7 +65,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Text drawing is about 5 times faster again: glyph boxes and advances of the first 256 code points come from a table built with the font.
+- Text drawing is about 5 times faster again: glyph boxes and advances of the first 256 code points come from a table
+  built with the font.
+- Transient quads and circles are back to their v0.3.0 speed: they flush every 4 096 matrices, glyphs keep 20 000 per
+  batch.
 - `clean` works again on Ninja build trees: the help bundle moves to `<build>/help_bundle/`, out of the way of the
   generator's `help` target (an existing `<build>/help/` is renamed at configure).
 - Windows GCC builds on `main` publish their artifacts again: `BuildArtefact.zip` leaves out Owl Nest's static

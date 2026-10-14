@@ -37,6 +37,8 @@ constexpr uint32_t g_maxCirclesPerBatch = 20000;
 constexpr uint32_t g_maxLinesPerBatch = 20000;
 constexpr uint32_t g_maxTextGlyphsPerBatch = 20000;
 constexpr uint32_t g_maxTransientWorldsPerBatch = 20000;
+// Shapes flush earlier than glyphs: 20000 matrices plus their instances leave the cache (+30 % per quad, #246).
+constexpr uint32_t g_maxShapeTransientsPerBatch = 4096;
 
 constexpr std::array g_quadVertexPositions = {math::vec4{-0.5f, -0.5f, 0.0f, 1.0f}, math::vec4{0.5f, -0.5f, 0.0f, 1.0f},
 											  math::vec4{0.5f, 0.5f, 0.0f, 1.0f}, math::vec4{-0.5f, 0.5f, 0.0f, 1.0f}};
@@ -146,8 +148,9 @@ auto blockId() -> gpu::RendererId {
 	return sId;
 }
 
-auto allocateTransientWorld(const math::mat4& iMatrix) -> int32_t {
-	if (g_Data->transientWorlds.size() >= utils::g_maxTransientWorldsPerBatch)
+auto allocateTransientWorld(const math::mat4& iMatrix, const uint32_t iBatchLimit = utils::g_maxTransientWorldsPerBatch)
+		-> int32_t {
+	if (g_Data->transientWorlds.size() >= iBatchLimit)
 		Renderer2D::nextBatch();
 	const auto slot = static_cast<int32_t>(g_Data->transientWorlds.size());
 	g_Data->transientWorlds.push_back(iMatrix);
@@ -156,7 +159,7 @@ auto allocateTransientWorld(const math::mat4& iMatrix) -> int32_t {
 
 // Transient path of resolveWorldIndex, kept out of line so the scene-world path stays a compare.
 [[gnu::noinline]] auto allocateTransientTransform(const math::Transform& iTransform) -> int32_t {
-	return allocateTransientWorld(iTransform());
+	return allocateTransientWorld(iTransform(), utils::g_maxShapeTransientsPerBatch);
 }
 
 inline auto resolveWorldIndex(const int32_t iRequested, const math::Transform& iTransform) -> int32_t {
