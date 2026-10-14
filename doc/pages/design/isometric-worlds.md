@@ -155,7 +155,7 @@ a few days, L a week.
   of the v0.9.0 determinism.
 - ![Done][done] **IN1 — Input frames and edges, M.** D10: `InputFrame` per tick, `isKeyJustPressed` /
   `JustReleased`, injection moved out of the backends so it works on GLFW too; hand-written edge code removed.
-- ![Planned][planned] **IN2 — Gamepad, M.** GLFW `glfwGetGamepadState`, connect / disconnect events, optional
+- ![Done][done] **IN2 — Gamepad, M.** GLFW `glfwGetGamepadState`, connect / disconnect events, optional
   project mapping file, Null backend injection, per-binding radial dead zone and response curve (from v0.10.0).
 - ![Planned][planned] **IN3 — Action map, M.** `input_actions.yml` packed with the game, Lua `input.is_action_*`,
   `get_action_value`, `get_action_vector`; scenarios gain an `actions:` step; engine systems and sample scripts move

@@ -33,7 +33,7 @@ dispatch callback to prevent layers below from seeing the event.
 
 ### Event Types
 
-The `event::Type` enum lists all 17 event types:
+The `event::Type` enum lists all 19 event types:
 
 | Group       | Type                  | Class                      |
 |-------------|-----------------------|----------------------------|
@@ -53,6 +53,8 @@ The `event::Type` enum lists all 17 event types:
 | Mouse       | `MouseMoved`          | `MouseMovedEvent`          |
 | Mouse       | `MouseScrolled`       | `MouseScrolledEvent`       |
 | File        | `FileDrop`            | `FileDropEvent`            |
+| Gamepad     | `GamepadConnected`    | `GamepadConnectedEvent`    |
+| Gamepad     | `GamepadDisconnected` | `GamepadDisconnectedEvent` |
 
 ### Category Bitmask
 
@@ -65,6 +67,7 @@ Categories allow testing multiple event types at once via `isInCategory()`:
 | `Keyboard`    | 4     | Keyboard events               |
 | `Mouse`       | 8     | Mouse movement and scroll     |
 | `MouseButton` | 16    | Mouse button press/release    |
+| `Gamepad`     | 32    | Gamepad connection            |
 
 A single event can belong to multiple categories. For example, `MouseButtonPressedEvent`
 has flags `Input | Mouse | MouseButton` (value `2 | 8 | 16 = 26`).
@@ -156,24 +159,43 @@ Both inherit from `MouseButtonEvent`:
 Emitted when the user drags files from the OS file manager onto the application
 window. The editor uses this to import assets.
 
+### GamepadConnectedEvent / GamepadDisconnectedEvent
+
+| Method             | Return Type          | Description                                  |
+|--------------------|----------------------|----------------------------------------------|
+| `getPad()`         | `std::size_t`        | Gamepad slot (GLFW joystick id, 0 to 15)     |
+| `getGamepadName()` | `const std::string&` | Name from the mapping (connected event only) |
+
+Emitted by the GLFW window when a joystick with a gamepad mapping is plugged in, or when any joystick is unplugged
+(GLFW joystick events are global: they go to the first window still open). `Application` logs them; game code reads
+the pad state instead.
+
 ## Input Polling
 
 The `owl::input::Input` static class provides per-frame state queries,
 independent of the event dispatch flow. Initialize it once with
 `Input::init(windowType)` (called automatically by `Application`).
 
-| Method                              | Return Type  | Description                         |
-|-------------------------------------|--------------|-------------------------------------|
-| `isKeyPressed(KeyCode)`             | `bool`       | True if the key is currently held   |
-| `isMouseButtonPressed(MouseCode)`   | `bool`       | True if the mouse button is held    |
-| `getMouseX()`                       | `float`      | Current mouse X position            |
-| `getMouseY()`                       | `float`      | Current mouse Y position            |
-| `getMousePos()`                     | `math::vec2` | Current mouse position as a vector  |
-| `readState()`                       | `InputState` | Keys, buttons, cursor and wheel     |
-| `injectKey(KeyCode)`                | `void`       | Simulate a key toggle (for testing) |
-| `injectMouseButton(MouseCode)`      | `void`       | Simulate a mouse button toggle      |
-| `injectMousePos(const math::vec2&)` | `void`       | Simulate mouse movement             |
-| `resetInjection()`                  | `void`       | Clear all injected state            |
+| Method                              | Return Type    | Description                          |
+|-------------------------------------|----------------|--------------------------------------|
+| `isKeyPressed(KeyCode)`             | `bool`         | True if the key is currently held    |
+| `isMouseButtonPressed(MouseCode)`   | `bool`         | True if the mouse button is held     |
+| `getMouseX()`                       | `float`        | Current mouse X position             |
+| `getMouseY()`                       | `float`        | Current mouse Y position             |
+| `getMousePos()`                     | `math::vec2`   | Current mouse position as a vector   |
+| `readState()`                       | `InputState`   | Keys, buttons, cursor and wheel      |
+| `getGamepadState(pad)`              | `GamepadState` | Gamepad connection, buttons and axes |
+| `isGamepadConnected(pad)`           | `bool`         | True if a gamepad is in the slot     |
+| `getGamepadName(pad)`               | `std::string`  | Gamepad name from its mapping        |
+| `addGamepadMappings(text)`          | `bool`         | Add SDL_GameControllerDB mappings    |
+| `loadGamepadMappings(path)`         | `bool`         | Read and add a mapping file          |
+| `injectKey(KeyCode)`                | `void`         | Simulate a key toggle (for testing)  |
+| `injectMouseButton(MouseCode)`      | `void`         | Simulate a mouse button toggle       |
+| `injectMousePos(const math::vec2&)` | `void`         | Simulate mouse movement              |
+| `injectGamepadButton(pad, button)`  | `void`         | Simulate a gamepad button toggle     |
+| `injectGamepadAxis(pad, axis, v)`   | `void`         | Simulate a gamepad axis value        |
+| `injectGamepad(pad, GamepadState)`  | `void`         | Replace the state of a gamepad slot  |
+| `resetInjection()`                  | `void`         | Clear all injected state             |
 
 **Type aliases:** `KeyCode` is `uint16_t` (GLFW-compatible values defined in
 `input/KeyCodes.h`). `MouseCode` is `uint8_t` (values in `input/MouseCode.h`,
@@ -197,6 +219,12 @@ samples (previous and current) built once per simulation tick inside the ticks a
 | `isMouseButtonJustReleased(MouseCode)` | Button went up since the previous sample   |
 | `getCursor()` / `getCursorDelta()`     | Cursor position and motion, in pixels      |
 | `getWheel()`                           | Wheel offset scrolled since the sample     |
+| `isGamepadConnected(pad)`              | Gamepad connected at the current sample    |
+| `isGamepadButtonPressed(pad, button)`  | Gamepad button held at the current sample  |
+| `isGamepadButtonJustPressed(pad, b)`   | Gamepad button went down since the sample  |
+| `isGamepadButtonJustReleased(pad, b)`  | Gamepad button went up since the sample    |
+| `getGamepadAxis(pad, axis)`            | Raw axis value at the current sample       |
+| `getGamepadStick(pad, stick, resp)`    | Stick through a dead zone and a curve      |
 
 ```c++
 void tickDoor(scene::Scene& ioScene, const scene::SystemContext&) {
@@ -207,6 +235,37 @@ void tickDoor(scene::Scene& ioScene, const scene::SystemContext&) {
 
 No edge is lost or doubled when a frame runs several ticks or none; the rules are in
 [Windowing and input](design/windowing-input.md#input-frames-in1).
+
+### Gamepads
+
+`InputState::gamepads` holds 16 `GamepadState` slots (GLFW joystick ids): `connected`, 15 buttons (`input/Gamepad.h`,
+Xbox names: `gamepad::A`, `B`, `X`, `Y`, bumpers, `Back`, `Start`, `Guide`, thumbs, D-pad) and 6 axes (`LeftX`,
+`LeftY`, `RightX`, `RightY` in [-1, 1] with y down, `LeftTrigger` / `RightTrigger` in [0, 1]). GLFW reads them with
+`glfwGetGamepadState`; a joystick without a gamepad mapping is not connected as a gamepad. Pad buttons follow the
+key rules in the tick sampler (a short press is kept); axes take the last frame.
+
+An injected slot (`injectGamepad*`) replaces the device slot on any back-end, so the Null back-end and scenarios drive
+pads without hardware; an injected disconnected state hides a real pad.
+
+**Mappings.** GLFW ships the SDL_GameControllerDB of its release. A project can add or correct mappings with an
+optional file in the same format (`gamepadMappings:` in `owl_project.yml`, *Project Settings → Input*): Owl Nest
+loads it when the project opens, the export packs it and names it in `runner.yml` (`GamepadMappings`), and the
+runner loads it from an asset directory or the pack. GLFW keeps the added mappings until the application exits.
+
+**Dead zone and response curve.** `input::AxisResponse` (dead zone, 0.15 by default, and a `ResponseCurve`: `Linear`,
+`Quadratic`, `Cubic` or `Custom` with an exponent) is the per-binding shaping, ready for the action map bindings (IN3):
+
+- `applyStickResponse(stick, response)`: radial dead zone on the vector length (diagonals are not clipped), then the
+  length past the dead zone is rescaled to [0, 1] and raised to the curve exponent, the direction kept;
+- `applyAxisResponse(value, response)`: the same on the absolute value of one axis, sign kept.
+
+```c++
+const auto& frame = ioScene.getInputFrame();
+const auto move = frame.getGamepadStick(0, input::gamepad::Stick::Left,
+                                        {.deadZone = 0.2f, .curve = input::ResponseCurve::Quadratic});
+if (frame.isGamepadButtonJustPressed(0, input::gamepad::A))
+    jump();
+```
 
 ## CameraOrthoController
 

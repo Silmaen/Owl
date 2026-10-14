@@ -19,4 +19,10 @@ auto Input::getMousePos_impl() -> math::vec2 { return {0.f, 0.f}; }
 
 void Input::readDevices_impl([[maybe_unused]] InputState& oState) {}
 
+auto Input::getGamepadState_impl([[maybe_unused]] const std::size_t iPad) -> GamepadState { return {}; }
+
+auto Input::getGamepadName_impl([[maybe_unused]] const std::size_t iPad) -> std::string { return {}; }
+
+auto Input::addGamepadMappings_impl([[maybe_unused]] const std::string_view iMappings) -> bool { return true; }
+
 }// namespace owl::input::null

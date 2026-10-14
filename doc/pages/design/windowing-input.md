@@ -209,11 +209,12 @@ codes until IN3.
   cursor, wheel) per tick and per frame, `isKeyJustPressed` / `isKeyJustReleased` and the mouse equivalents;
   injection lives in the input layer, so scenarios, editor Play and the MCP server inject on GLFW too; gamepad states
   join the frame with IN2. Details below
-- **Gamepad** (IN2): GLFW `glfwGetGamepadState` for pads 0–15, connect / disconnect events, an optional project
-  mapping file passed to `glfwUpdateGamepadMappings`, Null backend injection for tests, Lua
-  `input.is_gamepad_connected` / `get_gamepad_name`; the gamepad of the README becomes true (I-03, D-25)
-- **Dead zone and curve** (IN2, from v0.10.0): radial dead zone per binding (0.15 by default) and a response-curve
-  exponent
+- **Gamepad** (IN2, Done): GLFW `glfwGetGamepadState` for pads 0–15, connect / disconnect events, an optional
+  project mapping file passed to `glfwUpdateGamepadMappings`, Null backend injection for tests, Lua
+  `input.is_gamepad_connected` / `get_gamepad_name`; the gamepad of the README becomes true (I-03, D-25). Details
+  below
+- **Dead zone and curve** (IN2, Done, from v0.10.0): radial dead zone per binding (0.15 by default) and a
+  response-curve exponent
 - **Action map** (IN3): actions are buttons, 1D axes or 2D axes; a binding is a device (key, mouse button, gamepad
   button, gamepad axis), a code and a scale, 2D actions also take key composites; `evaluate(map, previous, current)`
   is a pure function producing an `ActionFrame`, the stream v0.9.0 records for replays (K-30)
@@ -248,6 +249,33 @@ flowchart LR
   as held throughout.
 - `onStartRuntime()` starts both frames from the held state: a key held when the scene starts gives no edge.
 - `input.is_key_pressed` and `Input::isKeyPressed` stay live polls (device or injection).
+
+### Gamepads (IN2) {#gamepads-in2}
+
+```mermaid
+flowchart LR
+    Pad[GLFW glfwGetGamepadState] --> Read[Input::readState]
+    Db[project mapping file] -->|glfwUpdateGamepadMappings| Pad
+    Inject[injectGamepad / injectGamepadButton / injectGamepadAxis] -->|replaces the slot| Read
+    Read --> Frames[frame and tick InputFrame]
+    Frames --> Shape[applyStickResponse / applyAxisResponse]
+```
+
+- `InputState` carries 16 `GamepadState` (connected, 15 buttons, 6 axes): plain data, about 0.5 KiB per state.
+  Triggers are rescaled from GLFW's [-1, 1] to [0, 1]; sticks keep GLFW's y down.
+- A slot is a gamepad when GLFW has a mapping for its joystick; a joystick without one is not connected as a pad.
+  Connect and disconnect come from `glfwSetJoystickCallback` as `GamepadConnectedEvent` / `GamepadDisconnectedEvent`
+  sent to the first open window.
+- The sampler ORs pad buttons over the frames of a tick like keys (a short press keeps both edges); axes and the
+  connection take the last frame.
+- Injection replaces a whole slot rather than merging with the device: a scenario pad is deterministic even with a
+  real pad plugged in, and an injected disconnected state can hide one.
+- Mapping file: `gamepadMappings` in `owl_project.yml`, `GamepadMappings` in `runner.yml`, packed under its relative
+  path. Lines are checked first (`countGamepadMappings`: 32-digit GUID, name, mappings); GLFW cannot remove a mapping,
+  so a changed file adds to the previous one until restart.
+- `AxisResponse` (dead zone, curve, custom exponent clamped to [0.1, 10]) shapes the length past the dead zone,
+  rescaled to [0, 1]: continuous at the edge, 1 at full deflection. Lua `get_gamepad_stick` uses it with a linear
+  curve and an optional dead zone; IN3 bindings carry their own.
 
 ## Gamepad improvements (v0.10.0)
 

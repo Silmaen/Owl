@@ -15,12 +15,14 @@
 #include "core/Log.h"
 #include "debug/Profiler.h"
 #include "event/AppEvent.h"
+#include "event/GamepadEvent.h"
 #include "event/KeyEvent.h"
 #include "event/MouseEvent.h"
 #include "platform/DesktopEntry.h"
 #include "renderer/gpu/RenderAPI.h"
 #include "renderer/gpu/RenderCommand.h"
 
+#include <cstddef>
 #include <cstdlib>
 #include <thread>
 
@@ -29,6 +31,8 @@ namespace owl::window::glfw {
 namespace {
 uint8_t g_GlfwWindowCount = 0;
 Platform g_GlfwPlatform = Platform::None;
+// Joystick events are global in GLFW: they go to the first window still open.
+void* g_JoystickTarget = nullptr;
 
 void glfwErrorCallback(int iError, const char* iDescription) {
 	if (iError == GLFW_FEATURE_UNAVAILABLE) {
@@ -270,6 +274,24 @@ void Window::init(const Properties& iProps) {
 			static_cast<WindowData*>(glfwGetWindowUserPointer(iWindow))->eventCallback(event);
 		});
 
+		if (g_JoystickTarget == nullptr) {
+			g_JoystickTarget = &m_windowData;
+			glfwSetJoystickCallback([](const int iJoystick, const int iEvent) -> void {
+				if (g_JoystickTarget == nullptr)
+					return;
+				auto* const data = static_cast<WindowData*>(g_JoystickTarget);
+				const auto pad = static_cast<std::size_t>(iJoystick);
+				if (iEvent == GLFW_CONNECTED && glfwJoystickIsGamepad(iJoystick) == GLFW_TRUE) {
+					const char* name = glfwGetGamepadName(iJoystick);
+					event::GamepadConnectedEvent event(pad, name != nullptr ? name : "");
+					data->eventCallback(event);
+				} else if (iEvent == GLFW_DISCONNECTED) {
+					event::GamepadDisconnectedEvent event(pad);
+					data->eventCallback(event);
+				}
+			});
+		}
+
 		glfwSetDropCallback(mp_glfwWindow, [](GLFWwindow* iWindow, const int iCount, const char** iPaths) -> void {
 			std::vector<std::filesystem::path> paths;
 			paths.reserve(static_cast<size_t>(iCount));
@@ -384,6 +406,10 @@ void Window::shutdown() {
 		return;
 	m_context->waitIdle();
 	glfwDestroyWindow(mp_glfwWindow);
+	if (g_JoystickTarget == &m_windowData) {
+		g_JoystickTarget = nullptr;
+		glfwSetJoystickCallback(nullptr);
+	}
 	--g_GlfwWindowCount;
 	mp_glfwWindow = nullptr;
 	OWL_CORE_INFO("GLFW: Window closed after {} presented frames.", m_presentedFrames)

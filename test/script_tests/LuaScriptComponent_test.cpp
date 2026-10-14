@@ -344,3 +344,66 @@ TEST(LuaScriptComponent, inputEdgesFollowTheTicksAndTheFrames) {
 	std::filesystem::remove_all(dir);
 	core::Log::invalidate();
 }
+
+TEST(LuaScriptComponent, gamepadBindingsReadTheInjectedPad) {
+	core::Log::init(core::Log::Level::Off);
+	input::Input::init(window::Type::Null);
+	const auto dir = std::filesystem::temp_directory_path() / "owl_luascriptcomponent_test_gamepad";
+	std::filesystem::remove_all(dir);
+	const auto path = writeTempScript(
+			dir, "pad.lua",
+			"connected = false\n"
+			"absent = true\n"
+			"name = ''\n"
+			"held = false\n"
+			"presses = 0\n"
+			"releases = 0\n"
+			"trigger = 0\n"
+			"stick_x = 0\n"
+			"stick_y = 0\n"
+			"raw_x = 0\n"
+			"function on_update(dt)\n"
+			"  connected = input.is_gamepad_connected(1)\n"
+			"  absent = not input.is_gamepad_connected(0) and not input.is_gamepad_connected(99)\n"
+			"  name = input.get_gamepad_name(1)\n"
+			"  held = input.is_gamepad_button_pressed(1, 0) and not input.is_gamepad_button_pressed(1, 99)\n"
+			"  if input.is_gamepad_button_just_pressed(1, 0) then presses = presses + 1 end\n"
+			"  if input.is_gamepad_button_just_released(1, 0) then releases = releases + 1 end\n"
+			"  trigger = input.get_gamepad_axis(1, 5) + input.get_gamepad_axis(1, -1)\n"
+			"  stick_x, stick_y = input.get_gamepad_stick(1, 0)\n"
+			"  raw_x, _ = input.get_gamepad_stick(1, 1, 0)\n"
+			"end\n");
+	auto scn = mkShared<Scene>();
+	auto entity = scn->createEntity("PadEntity");
+	entity.addComponent<component::LuaScript>().scriptPath = path.string();
+	scn->onStartRuntime();
+	const auto& comp = entity.getComponent<component::LuaScript>();
+	ASSERT_TRUE(comp.instance && comp.instance->isValid());
+
+	core::Timestep ts;
+	ts.forceUpdate(std::chrono::milliseconds(16));
+	input::Input::injectGamepadButton(1, input::gamepad::A);
+	input::Input::injectGamepadAxis(1, input::gamepad::RightTrigger, 0.75f);
+	input::Input::injectGamepadAxis(1, input::gamepad::LeftX, 0.1f);
+	input::Input::injectGamepadAxis(1, input::gamepad::RightX, 0.1f);
+	scn->onUpdateRuntime(ts, false);
+	EXPECT_TRUE(comp.instance->getPropertyBool("connected").value_or(false));
+	EXPECT_TRUE(comp.instance->getPropertyBool("absent").value_or(false));
+	EXPECT_EQ(comp.instance->getPropertyString("name").value_or(""), "Injected gamepad");
+	EXPECT_TRUE(comp.instance->getPropertyBool("held").value_or(false));
+	EXPECT_NEAR(comp.instance->getPropertyFloat("trigger").value_or(0.f), 0.75f, 1e-5f);
+	EXPECT_NEAR(comp.instance->getPropertyFloat("stick_x").value_or(1.f), 0.f, 1e-5f);
+	EXPECT_NEAR(comp.instance->getPropertyFloat("stick_y").value_or(1.f), 0.f, 1e-5f);
+	EXPECT_NEAR(comp.instance->getPropertyFloat("raw_x").value_or(0.f), 0.1f, 1e-5f);
+	scn->onUpdateRuntime(ts, false);
+	input::Input::injectGamepadButton(1, input::gamepad::A);
+	scn->onUpdateRuntime(ts, false);
+	EXPECT_EQ(comp.instance->getPropertyInt("presses").value_or(0), 1);
+	EXPECT_EQ(comp.instance->getPropertyInt("releases").value_or(0), 1);
+	EXPECT_FALSE(comp.instance->getPropertyBool("held").value_or(true));
+	scn->onEndRuntime();
+
+	input::Input::invalidate();
+	std::filesystem::remove_all(dir);
+	core::Log::invalidate();
+}

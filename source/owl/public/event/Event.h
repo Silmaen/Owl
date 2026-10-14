@@ -44,7 +44,10 @@ enum struct Type : uint8_t {
 	MouseMoved,///< Mouse moved.
 	MouseScrolled,///< Mouse wheel scrolled.
 
-	FileDrop///< File(s) dropped from OS.
+	FileDrop,///< File(s) dropped from OS.
+
+	GamepadConnected,///< Gamepad connected.
+	GamepadDisconnected///< Gamepad (or joystick) disconnected.
 };
 
 /**
@@ -57,7 +60,8 @@ enum Category : uint8_t {
 	Input = 2u,///< Input event.
 	Keyboard = 4u,///< Keyboard event.
 	Mouse = 8u,///< Mouse event.
-	MouseButton = 16u///< Mouse button.
+	MouseButton = 16u,///< Mouse button.
+	Gamepad = 32u///< Gamepad event.
 };
 
 /**

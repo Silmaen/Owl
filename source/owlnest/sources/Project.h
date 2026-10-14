@@ -36,6 +36,8 @@ struct Project {
 	std::string description;
 	/// Relative path to the project icon (PNG, relative to project directory).
 	std::string icon;
+	/// Optional gamepad mapping file (SDL_GameControllerDB format), relative to the project directory.
+	std::string gamepadMappings;
 	/// Absolute path to the project root directory.
 	std::filesystem::path projectDirectory;
 
@@ -90,6 +92,13 @@ struct Project {
 	 * @return True if a project directory is set.
 	 */
 	[[nodiscard]] auto isLoaded() const -> bool { return !projectDirectory.empty(); }
+
+	/**
+	 * @brief
+	 *  Add the mappings of the project gamepad mapping file to the input layer (GLFW keeps them until exit).
+	 * @return True if the project has no mapping file or if its mappings were added.
+	 */
+	[[nodiscard]] auto loadGamepadMappings() const -> bool;
 
 	/**
 	 * @brief

@@ -701,28 +701,30 @@ on disk, at the start of the next frame:
 ### Project Settings
 
 The Project Settings dialog is opened via **Project > Project Settings**. It edits the
-active project's configuration in four sections (General, Window, Simulation, Renderer Stack) laid out as property
+active project's configuration in five sections (General, Window, Input, Simulation, Renderer Stack) laid out as property
 grids, like the inspector:
 
-| Field               | Description                                                                   |
-|---------------------|-------------------------------------------------------------------------------|
-| Project Name        | Display name shown in the window title bar                                    |
-| First Scene         | Dropdown of `.owl` files found in the project directory                       |
-| Version             | Freeform version string (e.g., "1.0.0")                                       |
-| Author              | Author or studio name                                                         |
-| Description         | Short project description                                                     |
-| Icon                | Relative path to a PNG icon for the game window                               |
-| Width               | Default window width in pixels (320–7680)                                     |
-| Height              | Default window height in pixels (240–4320)                                    |
-| Fullscreen          | Whether the game starts in fullscreen mode                                    |
-| Resizable           | Whether the game window can be resized                                        |
-| Tick Rate           | Fixed simulation ticks per second (1–1000, 60 by default): `on_tick`, physics |
-| Max Ticks per Frame | Ticks one frame runs at most (1–64, 8 by default); the time beyond is dropped |
+| Field               | Description                                                                       |
+|---------------------|-----------------------------------------------------------------------------------|
+| Project Name        | Display name shown in the window title bar                                        |
+| First Scene         | Dropdown of `.owl` files found in the project directory                           |
+| Version             | Freeform version string (e.g., "1.0.0")                                           |
+| Author              | Author or studio name                                                             |
+| Description         | Short project description                                                         |
+| Icon                | Relative path to a PNG icon for the game window                                   |
+| Width               | Default window width in pixels (320–7680)                                         |
+| Height              | Default window height in pixels (240–4320)                                        |
+| Fullscreen          | Whether the game starts in fullscreen mode                                        |
+| Resizable           | Whether the game window can be resized                                            |
+| Gamepad Mappings    | Optional SDL_GameControllerDB file, relative to the project; packed with the game |
+| Tick Rate           | Fixed simulation ticks per second (1–1000, 60 by default): `on_tick`, physics     |
+| Max Ticks per Frame | Ticks one frame runs at most (1–64, 8 by default); the time beyond is dropped     |
 
 Changes are applied on confirmation (**Cancel** drops them, every field reverts to its default with its reset
 button) and saved to `owl_project.yml`; the project settings are not on the scene undo stack. The window and
 simulation settings are also written to `runner.yml` during game export (`Project > Pack Game`) and applied by the
-Runner at startup; the tick rate applies from the next Play (see [Fixed simulation tick](scene.md#fixed-tick)).
+Runner at startup; the tick rate applies from the next Play (see [Fixed simulation tick](scene.md#fixed-tick)). A
+new gamepad mapping file is loaded on confirmation (see [Gamepads](event_input.md)).
 
 ### Scene Settings
 
@@ -976,23 +978,28 @@ steps:
   - expect: {gamestate: health, equals: 1}
 ```
 
-| Step      | Keys                                                                                            |
-|-----------|-------------------------------------------------------------------------------------------------|
-| `frames`  | Number of frames to play                                                                        |
-| `input`   | `key` / `keys` (`A`..`Z`, `D0`..`D9`, `Space`, `Enter`, `Escape`, `Tab`, arrows, `LeftShift`,   |
-|           | `LeftControl` or a key code), `mouse` (`Left`, `Right`, `Middle`), `mouse_pos`, `frames` (1)    |
-| `expect`  | `entity: <tag>` or `player: true` with fields `translation.*`, `rotation.z`, `scale.*`,         |
-|           | `exists`; or `gamestate: <key>`. Each check is a value or `equals` / `greater` / `less`,        |
-|           | `tolerance` for a numeric `equals`                                                              |
-| `command` | An editor command (see below) by name, its arguments under `args`:                              |
-|           | `{command: entity.delete, args: {entity: Crate}}`; a vector or a colour is a list of numbers,   |
-|           | a text argument may be a map (`component.set` values)                                           |
-| `undo`    | Number of commands to undo                                                                      |
-| `redo`    | Number of commands to redo                                                                      |
+| Step      | Keys                                                                                          |
+|-----------|-----------------------------------------------------------------------------------------------|
+| `frames`  | Number of frames to play                                                                      |
+| `input`   | `key` / `keys` (`A`..`Z`, `D0`..`D9`, `Space`, `Enter`, `Escape`, `Tab`, arrows, `LeftShift`, |
+|           | `LeftControl` or a key code), `mouse` (`Left`, `Right`, `Middle`), `mouse_pos`, `frames` (1), |
+|           | `gamepad`: `{pad: 0, button: A, buttons: [...], left_x: 1.0}` (buttons `A`, `B`, `X`, `Y`,    |
+|           | `LeftBumper`, `RightBumper`, `Back`, `Start`, `Guide`, `LeftThumb`, `RightThumb`, `DpadUp`,   |
+|           | `DpadRight`, `DpadDown`, `DpadLeft`; axes `left_x`, `left_y`, `right_x`, `right_y`,           |
+|           | `left_trigger`, `right_trigger`): a connected pad in that slot                                |
+| `expect`  | `entity: <tag>` or `player: true` with fields `translation.*`, `rotation.z`, `scale.*`,       |
+|           | `exists`; or `gamestate: <key>`. Each check is a value or `equals` / `greater` / `less`,      |
+|           | `tolerance` for a numeric `equals`                                                            |
+| `command` | An editor command (see below) by name, its arguments under `args`:                            |
+|           | `{command: entity.delete, args: {entity: Crate}}`; a vector or a colour is a list of numbers, |
+|           | a text argument may be a map (`component.set` values)                                         |
+| `undo`    | Number of commands to undo                                                                    |
+| `redo`    | Number of commands to redo                                                                    |
 
 Inputs go through the injection of the input layer (`input::Input::injectKey`, …), which works on any window
 back-end: a key held over two consecutive `input` steps stays held, so `input.is_key_just_pressed` fires once
-(`test/scenarios/platformer_jump.owltest`). Expectations due at a step see the world left by the frames before it; positions are world-space. Commands run on
+(`test/scenarios/platformer_jump.owltest`); a `gamepad` drives a pad on the Null back-end
+(`test/scenarios/platformer_gamepad.owltest`). Expectations due at a step see the world left by the frames before it; positions are world-space. Commands run on
 the playing scene with an undo history of their own (`test/scenarios/editor_commands.owltest`). Every
 `test/scenarios/*.owltest` is a CTest case (label `scenario`).
 

@@ -11,6 +11,7 @@
 #include "event/Event.h"
 
 #include "event/AppEvent.h"
+#include "event/GamepadEvent.h"
 #include "event/KeyEvent.h"
 #include "event/MouseEvent.h"
 
@@ -52,5 +53,9 @@ auto MouseButtonEvent::getCategoryFlags() const -> uint8_t {
 auto MouseButtonPressedEvent::getName() const -> std::string { return std::format("MouseButtonPressedEvent"); }
 
 auto MouseButtonReleasedEvent::getName() const -> std::string { return std::format("MouseButtonReleasedEvent"); }
+
+auto GamepadConnectedEvent::getCategoryFlags() const -> uint8_t { return Input | Gamepad; }
+
+auto GamepadDisconnectedEvent::getCategoryFlags() const -> uint8_t { return Input | Gamepad; }
 
 }// namespace owl::event

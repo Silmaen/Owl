@@ -111,7 +111,8 @@ void copySharedLibs(const std::filesystem::path& iSrcDir, const std::filesystem:
 }
 
 void writeRunnerConfig(const ExportSettings& iSettings, const std::filesystem::path& iGameDir,
-					   const std::string& iFirstScene, const std::string& iPackFile, const std::string& iIcon) {
+					   const std::string& iFirstScene, const std::string& iPackFile, const std::string& iIcon,
+					   const std::string& iGamepadMappings) {
 	YAML::Emitter out;
 	out << YAML::BeginMap;
 	out << YAML::Key << "RunnerConfig" << YAML::Value << YAML::BeginMap;
@@ -124,6 +125,8 @@ void writeRunnerConfig(const ExportSettings& iSettings, const std::filesystem::p
 		out << YAML::Key << "Author" << YAML::Value << iSettings.author;
 	if (!iIcon.empty())
 		out << YAML::Key << "Icon" << YAML::Value << iIcon;
+	if (!iGamepadMappings.empty())
+		out << YAML::Key << "GamepadMappings" << YAML::Value << iGamepadMappings;
 	out << YAML::Key << "WindowWidth" << YAML::Value << iSettings.windowSize.x();
 	out << YAML::Key << "WindowHeight" << YAML::Value << iSettings.windowSize.y();
 	out << YAML::Key << "Fullscreen" << YAML::Value << iSettings.fullscreen;
@@ -266,6 +269,8 @@ auto GameExporter::validate(const ExportSettings& iSettings, std::vector<AssetRe
 										  iSettings.runnerDirectory.string()));
 	if (!iSettings.icon.empty() && !resolveIcon(iSettings))
 		warnings.emplace_back(std::format("Icon '{}' not found", iSettings.icon));
+	if (!iSettings.gamepadMappings.empty() && !exists(iSettings.projectDirectory / iSettings.gamepadMappings))
+		warnings.emplace_back(std::format("Gamepad mapping file '{}' not found", iSettings.gamepadMappings));
 	return warnings;
 }
 
@@ -315,6 +320,15 @@ auto GameExporter::exportGame(const ExportSettings& iSettings, const std::vector
 	}
 	if (const auto settingsPath = iSettings.projectDirectory / "game_settings.yml"; exists(settingsPath))
 		writer.addFile(settingsPath, "game_settings.yml", AssetType::Other);
+	std::string mappingsEntry;
+	if (!iSettings.gamepadMappings.empty()) {
+		if (const auto mappingsPath = iSettings.projectDirectory / iSettings.gamepadMappings; exists(mappingsPath)) {
+			mappingsEntry = std::filesystem::path{iSettings.gamepadMappings}.generic_string();
+			writer.addFile(mappingsPath, mappingsEntry, AssetType::Other);
+		} else {
+			OWL_CORE_WARN("GameExporter: Gamepad mapping file '{}' not found, not packed.", iSettings.gamepadMappings)
+		}
+	}
 	const auto packFilename = baseName + ".owlpack";
 	result.packFile = result.gameDirectory / packFilename;
 	const bool written = writer.write(
@@ -348,7 +362,7 @@ auto GameExporter::exportGame(const ExportSettings& iSettings, const std::vector
 		OWL_CORE_WARN("GameExporter: Icon '{}' not found, the game keeps the default icon.", iSettings.icon)
 	}
 	writeRunnerConfig(iSettings, result.gameDirectory, resolveFirstScene(iSettings.firstScene, assets), packFilename,
-					  iconEntry);
+					  iconEntry, mappingsEntry);
 	writeMetadata(iSettings, result.gameDirectory);
 	if (isCancelled(iCancel)) {
 		OWL_CORE_WARN("GameExporter: Export cancelled.")

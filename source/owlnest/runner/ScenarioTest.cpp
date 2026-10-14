@@ -10,6 +10,7 @@
 #include "FrameBench.h"
 #include "session/HeadlessSession.h"
 
+#include <input/Gamepad.h>
 #include <input/Input.h>
 #include <input/KeyCodes.h>
 #include <scene/Entity.h>
@@ -58,6 +59,80 @@ constexpr std::array g_namedKeys{
 		NamedKey{"LeftShift", input::key::LeftShift},
 		NamedKey{"LeftControl", input::key::LeftControl},
 };
+
+struct NamedCode {
+	std::string_view name;
+	uint8_t code;
+};
+
+constexpr std::array g_gamepadButtons{
+		NamedCode{"A", input::gamepad::A},
+		NamedCode{"B", input::gamepad::B},
+		NamedCode{"X", input::gamepad::X},
+		NamedCode{"Y", input::gamepad::Y},
+		NamedCode{"LeftBumper", input::gamepad::LeftBumper},
+		NamedCode{"RightBumper", input::gamepad::RightBumper},
+		NamedCode{"Back", input::gamepad::Back},
+		NamedCode{"Start", input::gamepad::Start},
+		NamedCode{"Guide", input::gamepad::Guide},
+		NamedCode{"LeftThumb", input::gamepad::LeftThumb},
+		NamedCode{"RightThumb", input::gamepad::RightThumb},
+		NamedCode{"DpadUp", input::gamepad::DpadUp},
+		NamedCode{"DpadRight", input::gamepad::DpadRight},
+		NamedCode{"DpadDown", input::gamepad::DpadDown},
+		NamedCode{"DpadLeft", input::gamepad::DpadLeft},
+};
+
+constexpr std::array g_gamepadAxes{
+		NamedCode{"left_x", input::gamepad::LeftX},
+		NamedCode{"left_y", input::gamepad::LeftY},
+		NamedCode{"right_x", input::gamepad::RightX},
+		NamedCode{"right_y", input::gamepad::RightY},
+		NamedCode{"left_trigger", input::gamepad::LeftTrigger},
+		NamedCode{"right_trigger", input::gamepad::RightTrigger},
+};
+
+template<std::size_t Size>
+auto findCode(const std::array<NamedCode, Size>& iCodes, const std::string& iName) -> std::optional<uint8_t> {
+	for (const auto& [name, code]: iCodes)
+		if (name == iName)
+			return code;
+	return std::nullopt;
+}
+
+auto parseGamepad(const YAML::Node& iNode, ScenarioStep& oStep) -> std::string {
+	if (!iNode.IsMap())
+		return "`gamepad` is a map (`pad`, `button`, `buttons`, axes)";
+	ScenarioGamepad gamepad;
+	gamepad.state.connected = true;
+	const auto addButton = [&gamepad](const YAML::Node& iButton) -> bool {
+		const auto code = findCode(g_gamepadButtons, iButton.as<std::string>());
+		if (code)
+			gamepad.state.setButton(*code, true);
+		return code.has_value();
+	};
+	for (const auto& item: iNode) {
+		const auto key = item.first.as<std::string>();
+		if (key == "pad") {
+			gamepad.pad = item.second.as<std::size_t>();
+			if (gamepad.pad >= input::g_GamepadCount)
+				return std::format("gamepad slot {} out of range", gamepad.pad);
+		} else if (key == "button") {
+			if (!addButton(item.second))
+				return std::format("unknown gamepad button '{}'", item.second.as<std::string>());
+		} else if (key == "buttons") {
+			for (const auto& button: item.second)
+				if (!addButton(button))
+					return std::format("unknown gamepad button '{}'", button.as<std::string>());
+		} else if (const auto axis = findCode(g_gamepadAxes, key); axis) {
+			gamepad.state.setAxis(*axis, item.second.as<float>());
+		} else {
+			return std::format("unknown gamepad entry '{}'", key);
+		}
+	}
+	oStep.gamepad = gamepad;
+	return "";
+}
 
 auto parseMouseButton(const std::string& iName) -> std::optional<uint8_t> {
 	if (iName == "Left")
@@ -173,6 +248,9 @@ auto parseStep(const YAML::Node& iNode, ScenarioStep& oStep) -> std::string {
 		}
 		if (const auto pos = input["mouse_pos"]; pos && pos.IsSequence() && pos.size() == 2)
 			oStep.mousePos = math::vec2{pos[0].as<float>(), pos[1].as<float>()};
+		if (const auto gamepad = input["gamepad"]; gamepad)
+			if (auto error = parseGamepad(gamepad, oStep); !error.empty())
+				return error;
 		return oStep.frames == 0 ? "input frames must be positive" : "";
 	}
 	if (const auto undo = iNode["undo"]; undo) {
@@ -396,6 +474,8 @@ auto ScenarioTest::beginFrame(const shared<scene::Scene>& iScene) -> bool {
 	for (const auto button: step.mouseButtons) input::Input::injectMouseButton(button);
 	if (step.mousePos)
 		input::Input::injectMousePos(*step.mousePos);
+	if (step.gamepad)
+		input::Input::injectGamepad(step.gamepad->pad, step.gamepad->state);
 	m_framesLeft = step.frames;
 	return false;
 }

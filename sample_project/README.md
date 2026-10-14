@@ -24,7 +24,8 @@ The sample game has been rebuilt around the new tilemap system:
    first house) — press **E** in front of its door to enter the first-person
    Wolfenstein-style demo level.
 3. **Inside the House** (`platformer_house.owl`) — side-scroller platformer.
-   A/D to run, W / Space / Up to jump. Hazards: lava pits at floor level
+   A/D to run, W / Space / Up to jump; or a gamepad: left stick / D-pad to run, A to jump, Start to pause
+   (extra pad mappings in `input/gamecontrollerdb.txt`). Hazards: lava pits at floor level
    (instant death), spike traps (lose ~1/3 of your health bar each contact).
    Reach the gold checkered **victory zone** at the top-right to clear the
    level.
@@ -135,6 +136,7 @@ it directly.
 - [x] `trigger` (start_timer, stop_timer, reset_timer)
 - [x] Trigger callbacks (on_trigger_enter/exit, on_timer, on_interact, custom)
 - [x] Collision callback (`on_collision(other_id)` from Box2D contacts)
+- [x] Gamepad (`input.get_gamepad_stick`, `is_gamepad_button_just_pressed`) in the platformer, project mapping file
 
 ### Gameplay Systems
 - [x] Scene transitions (menu / world map / platformer / victory / game-over / settings)

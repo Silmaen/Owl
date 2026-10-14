@@ -9,10 +9,12 @@
 #pragma once
 
 #include "core/Core.h"
+#include "input/Gamepad.h"
 #include "input/KeyCodes.h"
 #include "input/MouseCode.h"
 #include "math/vectors.h"
 
+#include <array>
 #include <bitset>
 #include <cstddef>
 
@@ -25,7 +27,7 @@ inline constexpr std::size_t g_MouseButtonCount = mouse::ButtonLast + 1;
 
 /**
  * @brief
- *  Plain-data snapshot of the keyboard and the mouse at one sampling point.
+ *  Plain-data snapshot of the keyboard, the mouse and the gamepads at one sampling point.
  */
 struct OWL_API InputState {
 	/// Keys held down, indexed by key code.
@@ -36,6 +38,37 @@ struct OWL_API InputState {
 	math::vec2 cursor{0.f, 0.f};
 	/// Wheel offset scrolled during the sampled interval (x horizontal, y vertical).
 	math::vec2 wheel{0.f, 0.f};
+	/// Gamepads, indexed by slot (GLFW joystick id).
+	std::array<GamepadState, g_GamepadCount> gamepads{};
+
+	/**
+	 * @brief
+	 *  State of a gamepad slot; a disconnected empty state for a slot out of range.
+	 * @param[in] iPad The gamepad slot.
+	 * @return The gamepad state.
+	 */
+	[[nodiscard]] auto getGamepad(const std::size_t iPad) const -> GamepadState {
+		return iPad < g_GamepadCount ? gamepads[iPad] : GamepadState{};
+	}
+
+	/**
+	 * @brief
+	 *  Whether a gamepad is connected in a slot.
+	 * @param[in] iPad The gamepad slot.
+	 * @return True if connected.
+	 */
+	[[nodiscard]] auto isGamepadConnected(const std::size_t iPad) const -> bool { return getGamepad(iPad).connected; }
+
+	/**
+	 * @brief
+	 *  Whether a gamepad button is held down.
+	 * @param[in] iPad The gamepad slot.
+	 * @param[in] iButton The button code.
+	 * @return True if held.
+	 */
+	[[nodiscard]] auto isGamepadButtonPressed(const std::size_t iPad, const GamepadButton iButton) const -> bool {
+		return getGamepad(iPad).isButtonPressed(iButton);
+	}
 
 	/**
 	 * @brief
@@ -172,6 +205,73 @@ struct OWL_API InputFrame {
 
 	/**
 	 * @brief
+	 *  Whether a gamepad is connected at the current sample.
+	 * @param[in] iPad The gamepad slot.
+	 * @return True if connected.
+	 */
+	[[nodiscard]] auto isGamepadConnected(const std::size_t iPad) const -> bool {
+		return current.isGamepadConnected(iPad);
+	}
+
+	/**
+	 * @brief
+	 *  Whether a gamepad button is held at the current sample.
+	 * @param[in] iPad The gamepad slot.
+	 * @param[in] iButton The button code.
+	 * @return True if held.
+	 */
+	[[nodiscard]] auto isGamepadButtonPressed(const std::size_t iPad, const GamepadButton iButton) const -> bool {
+		return current.isGamepadButtonPressed(iPad, iButton);
+	}
+
+	/**
+	 * @brief
+	 *  Whether a gamepad button went down between the previous and the current sample.
+	 * @param[in] iPad The gamepad slot.
+	 * @param[in] iButton The button code.
+	 * @return True on the press edge.
+	 */
+	[[nodiscard]] auto isGamepadButtonJustPressed(const std::size_t iPad, const GamepadButton iButton) const -> bool {
+		return current.isGamepadButtonPressed(iPad, iButton) && !previous.isGamepadButtonPressed(iPad, iButton);
+	}
+
+	/**
+	 * @brief
+	 *  Whether a gamepad button went up between the previous and the current sample.
+	 * @param[in] iPad The gamepad slot.
+	 * @param[in] iButton The button code.
+	 * @return True on the release edge.
+	 */
+	[[nodiscard]] auto isGamepadButtonJustReleased(const std::size_t iPad, const GamepadButton iButton) const -> bool {
+		return !current.isGamepadButtonPressed(iPad, iButton) && previous.isGamepadButtonPressed(iPad, iButton);
+	}
+
+	/**
+	 * @brief
+	 *  Raw value of a gamepad axis at the current sample.
+	 * @param[in] iPad The gamepad slot.
+	 * @param[in] iAxis The axis code.
+	 * @return The value (sticks in [-1, 1], triggers in [0, 1]).
+	 */
+	[[nodiscard]] auto getGamepadAxis(const std::size_t iPad, const GamepadAxis iAxis) const -> float {
+		return current.getGamepad(iPad).getAxis(iAxis);
+	}
+
+	/**
+	 * @brief
+	 *  Position of a gamepad stick at the current sample, through a dead zone and a response curve.
+	 * @param[in] iPad The gamepad slot.
+	 * @param[in] iStick The stick.
+	 * @param[in] iResponse The dead zone and curve.
+	 * @return The shaped position (x right, y down).
+	 */
+	[[nodiscard]] auto getGamepadStick(const std::size_t iPad, const gamepad::Stick iStick,
+									   const AxisResponse& iResponse = {}) const -> math::vec2 {
+		return applyStickResponse(current.getGamepad(iPad).getStick(iStick), iResponse);
+	}
+
+	/**
+	 * @brief
 	 *  Cursor position at the current sample.
 	 * @return The position in pixels.
 	 */
@@ -199,7 +299,8 @@ struct OWL_API InputFrame {
  * `observe()` takes the state of every frame, `take()` gives the state of every tick. A key held in any frame since
  * the previous tick counts as held at the next tick, so a press shorter than a tick still gives a press edge then a
  * release edge; several ticks in one frame see the frame state once (the edges and the wheel go to the first one).
- * A key released then pressed again between two ticks is seen as held throughout.
+ * A key released then pressed again between two ticks is seen as held throughout. Gamepad buttons follow the keys;
+ * gamepad axes and connections take the last observed frame.
  */
 class OWL_API InputSampler final {
 public:
@@ -220,7 +321,7 @@ public:
 	/**
 	 * @brief
 	 *  Build the state of a tick and start the next tick interval from the last observed frame.
-	 * @return The tick state: last cursor, keys and buttons held during the interval, wheel scrolled during it.
+	 * @return The tick state: last cursor and axes, keys and buttons held during the interval, wheel scrolled during it.
 	 */
 	auto take() -> InputState;
 

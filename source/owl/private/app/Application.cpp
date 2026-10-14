@@ -14,6 +14,7 @@
 #include "core/external/yaml.h"
 #include "core/utils/StringUtils.h"
 #include "data/assets/pack/PackExtractor.h"
+#include "event/GamepadEvent.h"
 #include "event/MouseEvent.h"
 #include "input/Input.h"
 #include "renderer/Renderer.h"
@@ -497,6 +498,14 @@ void Application::onEvent(event::Event& ioEvent) {
 			[this]<typename T0>(T0&& ioPh1) -> bool { return onWindowResized(std::forward<T0>(ioPh1)); });
 	dispatcher.dispatch<event::MouseScrolledEvent>([](const event::MouseScrolledEvent& iEvent) -> bool {
 		input::Input::addWheel({iEvent.getXOff(), iEvent.getYOff()});
+		return false;
+	});
+	dispatcher.dispatch<event::GamepadConnectedEvent>([](const event::GamepadConnectedEvent& iEvent) -> bool {
+		OWL_CORE_INFO("Input: Gamepad {} connected ({}).", iEvent.getPad(), iEvent.getGamepadName())
+		return false;
+	});
+	dispatcher.dispatch<event::GamepadDisconnectedEvent>([](const event::GamepadDisconnectedEvent& iEvent) -> bool {
+		OWL_CORE_INFO("Input: Gamepad {} disconnected.", iEvent.getPad())
 		return false;
 	});
 

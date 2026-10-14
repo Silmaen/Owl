@@ -8,6 +8,7 @@
 
 #include "Project.h"
 
+#include <input/Input.h>
 #include <platform/AtomicFile.h>
 
 OWL_DIAG_PUSH
@@ -61,6 +62,8 @@ void readProjectConfig(const YAML::Node& iConfig, Project& oProject) {
 		oProject.description = iConfig["description"].as<std::string>();
 	if (iConfig["icon"])
 		oProject.icon = iConfig["icon"].as<std::string>();
+	if (iConfig["gamepadMappings"])
+		oProject.gamepadMappings = iConfig["gamepadMappings"].as<std::string>();
 	if (const auto win = iConfig["window"]; win)
 		readWindowSettings(win, oProject.window);
 	if (const auto simulation = iConfig["simulation"]; simulation)
@@ -99,6 +102,12 @@ auto Project::loadFromFile(const std::filesystem::path& iFile) -> bool {
 	return true;
 }
 
+auto Project::loadGamepadMappings() const -> bool {
+	if (gamepadMappings.empty())
+		return true;
+	return input::Input::loadGamepadMappings(projectDirectory / gamepadMappings);
+}
+
 auto Project::makeExportSettings(const std::filesystem::path& iOutputDir, const std::filesystem::path& iRunnerDir) const
 		-> data::assets::pack::ExportSettings {
 	return {.gameName = name,
@@ -107,6 +116,7 @@ auto Project::makeExportSettings(const std::filesystem::path& iOutputDir, const 
 			.author = author,
 			.description = description,
 			.icon = icon,
+			.gamepadMappings = gamepadMappings,
 			.projectDirectory = projectDirectory,
 			.outputDirectory = iOutputDir,
 			.runnerDirectory = iRunnerDir,
@@ -134,6 +144,8 @@ auto Project::saveToFile(const std::filesystem::path& iFile) const -> bool {
 		out << YAML::Key << "description" << YAML::Value << description;
 	if (!icon.empty())
 		out << YAML::Key << "icon" << YAML::Value << icon;
+	if (!gamepadMappings.empty())
+		out << YAML::Key << "gamepadMappings" << YAML::Value << gamepadMappings;
 	out << YAML::Key << "window" << YAML::Value << YAML::BeginMap;
 	out << YAML::Key << "width" << YAML::Value << window.width;
 	out << YAML::Key << "height" << YAML::Value << window.height;

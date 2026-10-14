@@ -9,12 +9,17 @@
 #pragma once
 
 #include "core/Core.h"
+#include "input/Gamepad.h"
 #include "input/InputFrame.h"
 #include "input/KeyCodes.h"
 #include "input/MouseCode.h"
 #include "math/vectors.h"
 
+#include <cstddef>
 #include <cstdint>
+#include <filesystem>
+#include <string>
+#include <string_view>
 
 /**
  * @brief
@@ -111,6 +116,49 @@ public:
 
 	/**
 	 * @brief
+	 *  Gamepad state, live: the injected state of the slot when there is one, else the device.
+	 * @param[in] iPad The gamepad slot (0 to 15).
+	 * @return The state; disconnected for a slot out of range or without a gamepad.
+	 */
+	static auto getGamepadState(std::size_t iPad) -> GamepadState;
+
+	/**
+	 * @brief
+	 *  Whether a gamepad is connected in a slot, live (device or injection).
+	 * @param[in] iPad The gamepad slot.
+	 * @return True if connected.
+	 */
+	static auto isGamepadConnected(std::size_t iPad) -> bool;
+
+	/**
+	 * @brief
+	 *  Name of the gamepad of a slot, from its mapping.
+	 * @param[in] iPad The gamepad slot.
+	 * @return The name, `Injected gamepad` for an injected slot, empty when not connected.
+	 */
+	static auto getGamepadName(std::size_t iPad) -> std::string;
+
+	/**
+	 * @brief
+	 *  Add gamepad mappings in the SDL_GameControllerDB format (one `GUID,name,mapping...` per line).
+	 *
+	 * On GLFW they go to `glfwUpdateGamepadMappings` (a mapping replaces the built-in one of the same GUID); the Null
+	 * back-end only checks them.
+	 * @param[in] iMappings The mapping text.
+	 * @return True if at least one mapping line was found and accepted.
+	 */
+	static auto addGamepadMappings(std::string_view iMappings) -> bool;
+
+	/**
+	 * @brief
+	 *  Read a gamepad mapping file and add its mappings.
+	 * @param[in] iFile The file (SDL_GameControllerDB format).
+	 * @return True if the file was read and its mappings accepted.
+	 */
+	static auto loadGamepadMappings(const std::filesystem::path& iFile) -> bool;
+
+	/**
+	 * @brief
 	 *  Snapshot of the devices merged with the injected input; the wheel is the offset of the current frame.
 	 * @return The current input state.
 	 */
@@ -154,7 +202,32 @@ public:
 
 	/**
 	 * @brief
-	 *  Clear the previously defined injections (keys, buttons, cursor).
+	 *  Simulate a gamepad button toggle, on any back-end; the slot then reads as an injected, connected gamepad.
+	 * @param[in] iPad The gamepad slot.
+	 * @param[in] iButton The button to press/release.
+	 */
+	static void injectGamepadButton(std::size_t iPad, GamepadButton iButton);
+
+	/**
+	 * @brief
+	 *  Simulate a gamepad axis value, on any back-end; the slot then reads as an injected, connected gamepad.
+	 * @param[in] iPad The gamepad slot.
+	 * @param[in] iAxis The axis.
+	 * @param[in] iValue The raw value (sticks in [-1, 1], triggers in [0, 1]).
+	 */
+	static void injectGamepadAxis(std::size_t iPad, GamepadAxis iAxis, float iValue);
+
+	/**
+	 * @brief
+	 *  Replace the state of a gamepad slot, on any back-end (a disconnected state hides the device).
+	 * @param[in] iPad The gamepad slot.
+	 * @param[in] iState The injected state.
+	 */
+	static void injectGamepad(std::size_t iPad, const GamepadState& iState);
+
+	/**
+	 * @brief
+	 *  Clear the previously defined injections (keys, buttons, cursor, gamepads).
 	 */
 	static void resetInjection();
 
@@ -189,10 +262,34 @@ private:
 
 	/**
 	 * @brief
-	 *  Fill the keys, buttons and cursor held by the devices, private implementation.
+	 *  Fill the keys, buttons, cursor and gamepads held by the devices, private implementation.
 	 * @param[out] oState The state to fill (cleared by the caller).
 	 */
 	virtual void readDevices_impl(InputState& oState) = 0;
+
+	/**
+	 * @brief
+	 *  Gamepad state of the device, private implementation.
+	 * @param[in] iPad The gamepad slot (in range).
+	 * @return The state.
+	 */
+	virtual auto getGamepadState_impl(std::size_t iPad) -> GamepadState = 0;
+
+	/**
+	 * @brief
+	 *  Gamepad name of the device, private implementation.
+	 * @param[in] iPad The gamepad slot (in range).
+	 * @return The name, empty when none.
+	 */
+	virtual auto getGamepadName_impl(std::size_t iPad) -> std::string = 0;
+
+	/**
+	 * @brief
+	 *  Hand checked gamepad mappings to the device back-end, private implementation.
+	 * @param[in] iMappings The mapping text.
+	 * @return True if accepted.
+	 */
+	virtual auto addGamepadMappings_impl(std::string_view iMappings) -> bool = 0;
 };
 
 }// namespace owl::input

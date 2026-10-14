@@ -80,6 +80,8 @@ private:
 	std::string m_descriptionBuffer;
 	/// Icon path buffer.
 	std::string m_iconBuffer;
+	/// Gamepad mapping file buffer.
+	std::string m_gamepadMappingsBuffer;
 	/// Selected index in the scene list.
 	int m_selectedSceneIndex = -1;
 	/// List of available scene paths (relative to project directory).

@@ -8,6 +8,7 @@
 -- it just before touchdown.  These two together remove the "press exactly
 -- when grounded" frustration without changing the no-air-control rule:
 -- once airborne, A/D do nothing — your horizontal momentum is locked.
+-- Gamepad 0 plays too: left stick or D-pad to walk, A to jump, Start to pause.
 
 properties = {
     { name = "speed", type = "float", default = 5.5 },
@@ -99,10 +100,16 @@ function on_update(dt)
 
     local can_jump_now = (jump_state == "grounded") or (coyote_timer > 0)
 
-    -- Horizontal input — A/D + arrow keys.
+    -- Horizontal input — A/D + arrow keys, or gamepad 0: left stick (dead zone applied) and D-pad.
     local moveX = 0
     if input.is_key_pressed(65) or input.is_key_pressed(263) then moveX = moveX - 1 end
     if input.is_key_pressed(68) or input.is_key_pressed(262) then moveX = moveX + 1 end
+    if input.is_gamepad_connected(0) then
+        local stickX, _ = input.get_gamepad_stick(0, 0)
+        if input.is_gamepad_button_pressed(0, 14) then stickX = stickX - 1 end
+        if input.is_gamepad_button_pressed(0, 12) then stickX = stickX + 1 end
+        moveX = math.max(-1, math.min(1, moveX + stickX))
+    end
 
     -- Crisp ground motion: directly set vx (no slide). Air motion is preserved
     -- (locked to whatever velocity the player jumped with).
@@ -111,7 +118,8 @@ function on_update(dt)
     end
 
     -- Jump buffer: every fresh press extends the buffer; consumed on landing.
-    if input.is_key_just_pressed(87) or input.is_key_just_pressed(32) or input.is_key_just_pressed(265) then
+    if input.is_key_just_pressed(87) or input.is_key_just_pressed(32) or input.is_key_just_pressed(265)
+            or input.is_gamepad_button_just_pressed(0, 0) then
         jump_buffer_timer = k_jump_buffer
     end
     jump_buffer_timer = math.max(0, jump_buffer_timer - dt)
@@ -137,8 +145,8 @@ function on_update(dt)
         return
     end
 
-    -- ESC: pause + return to menu, with a continue snapshot.
-    if input.is_key_just_pressed(256) then
+    -- ESC or gamepad Start: pause + return to menu, with a continue snapshot.
+    if input.is_key_just_pressed(256) or input.is_gamepad_button_just_pressed(0, 7) then
         local px, py, pz = transform.get_position(entity_id)
         gamestate.set("continue_scene", "scenes/platformer_house.owl")
         gamestate.set("continue_x", px)

@@ -12,6 +12,7 @@
 #include "commands/CommandRegistry.h"
 
 #include <core/expected.h>
+#include <input/Gamepad.h>
 #include <owl.h>
 #include <scene/Scene.h>
 
@@ -53,6 +54,17 @@ struct ScenarioCheck {
 
 /**
  * @brief
+ *  Gamepad state injected by an `input` step (`gamepad:`).
+ */
+struct ScenarioGamepad {
+	/// Gamepad slot (`pad:`, 0 by default).
+	std::size_t pad{0};
+	/// Injected state: connected, buttons held, axis values.
+	input::GamepadState state;
+};
+
+/**
+ * @brief
  *  One step of a scenario: play frames (holding inputs), check the world, or edit it through an editor command.
  */
 struct ScenarioStep {
@@ -64,6 +76,8 @@ struct ScenarioStep {
 	std::vector<uint8_t> mouseButtons;
 	/// Mouse position while the frames play, if set.
 	std::optional<math::vec2> mousePos;
+	/// Gamepad held while the frames play, if set.
+	std::optional<ScenarioGamepad> gamepad;
 	/// Entity checked, by tag; empty with `player` or `gameState`.
 	std::string entity;
 	/// Check the primary player instead of a named entity.

@@ -39,6 +39,8 @@ struct RunnerConfig {
 	std::string author;
 	/// Relative path to the game icon.
 	std::string icon;
+	/// Gamepad mapping file (`GamepadMappings`), in the pack or an asset directory; empty for none.
+	std::string gamepadMappings;
 	/// Window width in pixels.
 	uint32_t windowWidth{1280};
 	/// Window height in pixels.
@@ -231,6 +233,12 @@ private:
 	 * Called at startup and after every scene swap so per-scene overrides apply after a teleport.
 	 */
 	void installRenderStack();
+
+	/**
+	 * @brief
+	 *  Add the mappings of `m_config.gamepadMappings`, read from an asset directory or the open pack.
+	 */
+	void loadGamepadMappings() const;
 
 	/**
 	 * @brief

@@ -32,6 +32,7 @@
 #include <format>
 #include <fstream>
 #include <optional>
+#include <string>
 #include <string_view>
 #include <tuple>
 #include <utility>
@@ -110,6 +111,7 @@ void RunnerConfig::loadYaml(const std::filesystem::path& iPath) {
 		get(appConfig, "Version", version);
 		get(appConfig, "Author", author);
 		get(appConfig, "Icon", icon);
+		get(appConfig, "GamepadMappings", gamepadMappings);
 		get(appConfig, "WindowWidth", windowWidth);
 		get(appConfig, "WindowHeight", windowHeight);
 		get(appConfig, "Fullscreen", fullscreen);
@@ -158,6 +160,8 @@ void RunnerConfig::saveYaml(const std::filesystem::path& iPath) const {
 		out << YAML::Key << "Author" << YAML::Value << author;
 	if (!icon.empty())
 		out << YAML::Key << "Icon" << YAML::Value << icon;
+	if (!gamepadMappings.empty())
+		out << YAML::Key << "GamepadMappings" << YAML::Value << gamepadMappings;
 	out << YAML::Key << "WindowWidth" << YAML::Value << windowWidth;
 	out << YAML::Key << "WindowHeight" << YAML::Value << windowHeight;
 	out << YAML::Key << "Fullscreen" << YAML::Value << fullscreen;
@@ -256,6 +260,8 @@ void RunnerLayer::onAttach() {
 		}
 	}
 
+	loadGamepadMappings();
+
 	// Load user overrides.
 	app::Application::get().getEngineContext().getSettings().loadUserSettings();
 
@@ -274,6 +280,26 @@ void RunnerLayer::onAttach() {
 	}
 	if (m_smokeTest.frames > 0)
 		initSmokeTest();
+}
+
+void RunnerLayer::loadGamepadMappings() const {
+	if (m_config.gamepadMappings.empty())
+		return;
+	const auto& app = app::Application::get();
+	for (const auto& [title, assetsPath]: app.getAssetDirectories()) {
+		if (const auto file = assetsPath / m_config.gamepadMappings; exists(file)) {
+			input::Input::loadGamepadMappings(file);
+			return;
+		}
+	}
+	if (app.hasOpenPack()) {
+		if (const auto data = app.loadFromPack(m_config.gamepadMappings); data) {
+			const std::string text(data->begin(), data->end());
+			input::Input::addGamepadMappings(text);
+			return;
+		}
+	}
+	OWL_CORE_WARN("Runner: Gamepad mapping file '{}' not found.", m_config.gamepadMappings)
 }
 
 auto RunnerLayer::loadScene(const std::string& iSceneName) -> bool {
@@ -395,12 +421,15 @@ auto RunnerLayer::attachSourceScene(const std::filesystem::path& iProject, const
 					get(simulation, "tickRate", m_config.simulation.tickRate);
 					get(simulation, "maxTicksPerFrame", m_config.simulation.maxTicksPerFrame);
 				}
+				get(project, "gamepadMappings", m_config.gamepadMappings);
 			}
 		} catch (const std::exception& iEx) {
 			OWL_WARN("{}: Cannot read {}/owl_project.yml ({}).", iMode, iProject.string(), iEx.what())
 		}
 		if (const auto gameSettings = iProject / "game_settings.yml"; exists(gameSettings))
 			app::Application::get().getEngineContext().getSettings().loadDefaults(gameSettings);
+		if (!m_config.gamepadMappings.empty())
+			input::Input::loadGamepadMappings(iProject / m_config.gamepadMappings);
 	}
 	app::Application::get().getEngineContext().getSettings().setGameName(m_config.gameName);
 	app::Application::get().getEngineContext().setSimulationSettings(m_config.simulation);
