@@ -169,7 +169,7 @@ a few days, L a week.
   choices, structured result data; `component.set`, `scene.save`, undo / redo commands; edits refused during Play.
 - ![Done][done] **MCP1 — Editor session, M.** `EditorSession` interface (scene, undo, registry, play for N
   frames, capture, statistics) implemented by `EditorLayer` and by a headless session on the Null renderer.
-- ![Planned][planned] **MCP2 — `OwlNestMcp` dispatcher, M.** Socket-free JSON-RPC: version negotiation, `tools/*`
+- ![Done][done] **MCP2 — `OwlNestMcp` dispatcher, M.** Socket-free JSON-RPC: version negotiation, `tools/*`
   generated from the registry, `resources/*` (scene tree, components, assets, prefabs, documentation, statistics).
 - ![Planned][planned] **MCP3 — HTTP transport, M.** D11, D12: queue drained by the main loop, setting off by
   default, port, token, status bar indicator; jobs wait while a gesture or a modal is in progress.

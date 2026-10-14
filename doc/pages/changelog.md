@@ -22,6 +22,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Editor session: `session::EditorSession` (scene, undo, command registry, bounded play for N frames or ticks at a fixed
   step, frame capture with `encodeImagePng`, statistics) implemented by `EditorLayer` and by a `HeadlessSession` on the
   Null renderer for tests and tools.
+- MCP dispatcher `OwlNestMcp`: socket-free JSON-RPC 2.0 (MCP 2025-11-25, 2026-07-28 accepted) exposing every editor
+  command as a tool and the scene, entities, assets, prefabs, documentation and statistics as resources.
 
 ### Changed
 

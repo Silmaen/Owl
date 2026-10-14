@@ -28,6 +28,18 @@ target_include_directories(${OWL_NEST_COMMANDS} PUBLIC sources)
 target_link_libraries(${OWL_NEST_COMMANDS} PUBLIC ${ENGINE_NAME})
 owl_target_link_libraries(${OWL_NEST_COMMANDS} PUBLIC yaml-cpp REQUIRED ${THIRD_PARTY_RELEASE})
 
+#
+#  MCP dispatcher: JSON-RPC 2.0 over an editor session (tools from the command registry, resources), no socket.
+#
+set(OWL_NEST_MCP ${OWL_PROJECT}Mcp)
+file(GLOB_RECURSE SRCS_MCP CONFIGURE_DEPENDS
+        sources/mcp/*.cpp
+)
+add_library(${OWL_NEST_MCP} STATIC ${SRCS_MCP})
+set_target_properties(${OWL_NEST_MCP} PROPERTIES FOLDER "App")
+target_link_libraries(${OWL_NEST_MCP} PUBLIC ${OWL_NEST_COMMANDS})
+owl_target_link_libraries(${OWL_NEST_MCP} PUBLIC nlohmann_json REQUIRED)
+
 set(RUNNER_NAME ${CMAKE_PROJECT_NAME}Runner)
 add_executable(${RUNNER_NAME} ${SRCS_RUNNER} ${HDRS_RUNNER})
 set_target_properties(${RUNNER_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
@@ -50,14 +62,14 @@ file(GLOB_RECURSE SRCS CONFIGURE_DEPENDS
         sources/*.cpp
 )
 list(REMOVE_ITEM SRCS ${CMAKE_CURRENT_SOURCE_DIR}/sources/main.cpp)
-list(REMOVE_ITEM SRCS ${SRCS_COMMANDS})
+list(REMOVE_ITEM SRCS ${SRCS_COMMANDS} ${SRCS_MCP})
 file(GLOB_RECURSE HDRS CONFIGURE_DEPENDS
         sources/*.h
 )
 add_library(${OWL_NEST_CORE} STATIC ${SRCS} ${HDRS})
 set_target_properties(${OWL_NEST_CORE} PROPERTIES FOLDER "App")
 target_include_directories(${OWL_NEST_CORE} PUBLIC sources)
-target_link_libraries(${OWL_NEST_CORE} PUBLIC Owl::Gui ${OWL_NEST_COMMANDS})
+target_link_libraries(${OWL_NEST_CORE} PUBLIC Owl::Gui ${OWL_NEST_COMMANDS} ${OWL_NEST_MCP})
 target_compile_definitions(${OWL_NEST_CORE} PUBLIC OWL_ASSETS_LOCATION="source/owlnest/assets")
 # The help bundle of this build tree, used when no asset directory holds `help/` (a package installs it in assets/).
 target_compile_definitions(${OWL_NEST_CORE} PUBLIC OWL_HELP_BUILD_DIR="${${PROJECT_PREFIX}_HELP_DIR}")
