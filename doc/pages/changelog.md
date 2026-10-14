@@ -41,6 +41,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `clean` works again on Ninja build trees: the help bundle moves to `<build>/help_bundle/`, out of the way of the
   generator's `help` target (an existing `<build>/help/` is renamed at configure).
+- Windows GCC builds on `main` publish their artifacts again: `BuildArtefact.zip` leaves out Owl Nest's static
+  libraries, which pushed it past the 300 MB limit of the server.
 - `FileDialog` no longer reads past the end of a filter, leaks the saved path, or asserts when no dialogue can open.
 
 ## [0.3.0] - 2026-10-12
