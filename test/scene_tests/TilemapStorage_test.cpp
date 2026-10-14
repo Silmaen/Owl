@@ -287,7 +287,7 @@ TEST_F(TilemapStorage, OversizedGridIsRefused) {
 	EXPECT_FALSE(asset.deserializeFromString("Tilemap: bad\nwidth: -3\n"));
 	asset.addLayer("a");
 	asset.resize(TilemapAsset::maxGridSide + 5, 2);
-	EXPECT_EQ(asset.width, TilemapAsset::maxGridSide);
+	EXPECT_EQ(asset.width, uint32_t{TilemapAsset::maxGridSide});
 }
 
 TEST_F(TilemapStorage, InvalidTileIndicesAreRefused) {
@@ -312,7 +312,7 @@ TEST_F(TilemapStorage, CopiesShareChunksUntilWritten) {
 	EXPECT_FALSE(original.getChunkRef({0, 0}) == kept);
 	EXPECT_EQ(copy.getChunkRef({0, 0}), kept);
 	EXPECT_EQ(copy.getTile(2, 2), component::g_EmptyTileIndex);
-	EXPECT_EQ(kept.get()->terrain[2 * 32 + 2], TilemapChunk::emptyId);
+	EXPECT_EQ(kept.get()->terrain[2 * 32 + 2], uint16_t{TilemapChunk::emptyId});
 	EXPECT_TRUE(original.hasSameContent(original));
 	EXPECT_FALSE(copy.hasSameContent(original));
 

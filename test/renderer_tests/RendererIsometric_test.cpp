@@ -121,7 +121,7 @@ TEST(RendererIsometric, applyConfigParsesYaml) {
 	EXPECT_EQ(layer.getConfig().tileSize.x(), 128u);
 	EXPECT_EQ(layer.getConfig().tileSize.y(), 64u);
 	EXPECT_FLOAT_EQ(layer.getConfig().zStep, 24.f);
-	EXPECT_EQ(layer.getZoomLevel(), IsometricCamera::maxZoomLevel);
+	EXPECT_EQ(layer.getZoomLevel(), int32_t{IsometricCamera::maxZoomLevel});
 }
 
 TEST(RendererIsometric, applyConfigKeepsDefaultsOnEmpty) {
@@ -233,7 +233,7 @@ TEST(RendererIsometric, viewportRoundTripPanAndZoom) {
 	camera.setZoomLevel(1);
 	EXPECT_FLOAT_EQ(camera.getZoom(), 2.f);
 	camera.setZoomLevel(-100);
-	EXPECT_EQ(camera.getZoomLevel(), IsometricCamera::minZoomLevel);
+	EXPECT_EQ(camera.getZoomLevel(), int32_t{IsometricCamera::minZoomLevel});
 	EXPECT_FLOAT_EQ(camera.getZoom(), 1.f / 16.f);
 }
 

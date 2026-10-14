@@ -627,7 +627,7 @@ boom. Fix: fix the script at the first line of the traceback; the callback runs 
 
 ### Console {#editor-console}
 
-The Console panel (``Ctrl+` ``, action `view.console`) is a command line over the
+The Console panel (Ctrl+&#96;, action `view.console`) is a command line over the
 [editor commands](#editor-commands) and the journal of every command run in the session.
 
 **Command line.** One [command line](#editor-command-line) per input, run with `Enter` on the active scene; the
@@ -1332,7 +1332,7 @@ gizmo manipulation is in progress.
 | Action                       | Default Shortcut | Action ID                  |
 |------------------------------|------------------|----------------------------|
 | Command Palette              | Shift, Shift     | `view.commandPalette`      |
-| Console                      | Ctrl+`           | `view.console`             |
+| Console                      | Ctrl+&#96;       | `view.console`             |
 | Layout: Default              | Alt+1            | `view.layoutDefault`       |
 | Layout: Hierarchy Left       | Alt+2            | `view.layoutHierarchyLeft` |
 | Collapse / Expand the Ribbon | Ctrl+F1          | `view.toggleRibbon`        |

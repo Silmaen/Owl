@@ -93,8 +93,8 @@ auto renderIsometricOverrides(YAML::Node& ioOverrides) -> bool {
 	if (gui::widgets::propertyInt("Zoom", zoom, 0, renderer::IsometricCamera::minZoomLevel,
 								  renderer::IsometricCamera::maxZoomLevel, "2^%d",
 								  "Zoom level in Play: each step doubles or halves the sprite pixels.")) {
-		ioOverrides["Zoom"] =
-				std::clamp(zoom, renderer::IsometricCamera::minZoomLevel, renderer::IsometricCamera::maxZoomLevel);
+		ioOverrides["Zoom"] = std::clamp(zoom, int32_t{renderer::IsometricCamera::minZoomLevel},
+										 int32_t{renderer::IsometricCamera::maxZoomLevel});
 		changed = true;
 	}
 	return changed;

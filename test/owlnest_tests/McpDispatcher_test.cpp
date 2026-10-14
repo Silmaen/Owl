@@ -141,8 +141,9 @@ TEST_F(McpDispatcherTest, ListsEveryCommandWithASchema) {
 			const auto& property = schema["properties"][arg.name];
 			EXPECT_TRUE(property.contains("type") || property.contains("anyOf")) << spec.name << " " << arg.name;
 			EXPECT_EQ(property.contains("default"), arg.defaultValue.has_value()) << spec.name << " " << arg.name;
-			if (!arg.choices.empty())
+			if (!arg.choices.empty()) {
 				EXPECT_EQ(property["enum"].size(), arg.choices.size());
+			}
 		}
 		if (schema.contains("required")) {
 			for (const auto& name: schema["required"]) EXPECT_TRUE(schema["properties"].contains(name)) << spec.name;
