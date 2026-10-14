@@ -4,3 +4,4 @@
 *.png -text
 *.jpg -text
 *.ttf -text
+*.owltilemap -text

@@ -361,8 +361,9 @@ the headless suite asserts correctness (stats, SSBO round-trip), not timing.
 ## Chunked tilemaps {#chunked-tilemaps}
 
 `RendererTilemap` keeps the cells of a tilemap on the GPU between frames. Each layer of a `TilemapAsset` is cut into
-`TilemapLayer::chunkSize`² (32 × 32) chunks; every write to a layer (`setTile`, `resize`, `assign`, `fill`) stamps
-the touched chunks with a fresh generation taken from one process-wide counter. The renderer caches, per asset, one
+`TilemapLayer::chunkSize`² (32 × 32) chunks, the unit of storage too ([Tilemap storage](scene.md)); every write to a
+layer (`setTile`, `setCell`, `setChunk`, `resize`, `assign`, `fill`) stamps the touched chunks with a fresh
+generation taken from one process-wide counter. The renderer reads the terrain plane of each chunk, caches, per asset, one
 persistent instance buffer per non-empty chunk (packed cell coordinates and tile index, 8 bytes per non-empty cell)
 and rebuilds a chunk only when its generation changed.
 

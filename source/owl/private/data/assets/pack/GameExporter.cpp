@@ -14,6 +14,7 @@
 #include "core/external/yaml.h"
 #include "data/assets/pack/PackWriter.h"
 
+#include <algorithm>
 #include <chrono>
 #include <fstream>
 #include <sstream>
@@ -302,7 +303,10 @@ auto GameExporter::exportGame(const ExportSettings& iSettings, const std::vector
 	for (const auto& ref: assets) {
 		if (isRelocatable(ref)) {
 			if (const auto text = readText(ref.diskPath); text) {
-				const auto relocated = relocateAbsolutePaths(*text, assets);
+				// Only the YAML header is text: what follows a document-end line (tilemap chunks) is copied as is.
+				const auto headerEnd = std::min(text->size(), text->find("\n...\n"));
+				auto relocated = relocateAbsolutePaths(text->substr(0, headerEnd), assets);
+				relocated.append(*text, headerEnd);
 				writer.addData(std::vector<uint8_t>(relocated.begin(), relocated.end()), ref.packPath, ref.assetType);
 				continue;
 			}

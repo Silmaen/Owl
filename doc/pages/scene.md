@@ -308,17 +308,19 @@ YAML key: `TextRenderer`
 
 Each layer carries its own grid + parallax:
 
-| Layer field    | Type                   | Default  | Description                                                                   |
-|----------------|------------------------|----------|-------------------------------------------------------------------------------|
-| `name`         | `string`               | `""`     | Designer-friendly layer name                                                  |
-| `visible`      | `bool`                 | `true`   | Whether the layer is rendered                                                 |
-| `parallax`     | `vec2`                 | `{1, 1}` | Per-axis camera multiplier (1 = world, 0 = camera-locked)                     |
-| `tiles`        | flat `int32` row-major | all `-1` | Per-cell tile index (`-1` = empty), encoded as comma-separated string in YAML |
+| Layer field | Type             | Default  | Description                                                             |
+|-------------|------------------|----------|-------------------------------------------------------------------------|
+| `name`      | `string`         | `""`     | Designer-friendly layer name                                            |
+| `visible`   | `bool`           | `true`   | Whether the layer is rendered                                           |
+| `parallax`  | `vec2`           | `{1, 1}` | Per-axis camera multiplier (1 = world, 0 = camera-locked)               |
+| cells       | `TileCell` grid  | empty    | Terrain tile, overlay tile (`-1` = none, at most 65534) and 8-bit flags |
 
 YAML key: `Tilemap`. The grid is centred on the entity origin (rows extend downward
-along Y) and follows the full entity world transform (translation, rotation, scale). In memory the cells of a layer
-are only reachable through `TilemapLayer::getTile` / `setTile` / `resize` / `assign` / `fill`, which keep one
-generation per 32 × 32 chunk for the renderer cache ([Chunked tilemaps](renderer.md)). Tiles index the asset's atlas in
+along Y) and follows the full entity world transform (translation, rotation, scale). The renderer draws the terrain
+tile; the overlay and the flags are stored and saved for the isometric tracks and roads and for games. In memory the
+cells of a layer are only reachable through `TilemapLayer::getTile` / `setTile` / `getCell` / `setCell` / `getChunk` /
+`setChunk` / `resize` / `assign` / `fill`, which keep one generation per 32 × 32 chunk for the renderer cache
+([Chunked tilemaps](renderer.md)). Tiles index the asset's atlas in
 row-major order; collidable tiles
 (declared in the tileset) emit one static Box2D fixture per occurrence at
 `onStartRuntime`. The tileset is lazily resolved against
@@ -328,6 +330,51 @@ The companion **`Tileset`** asset (`.owltileset`) holds the atlas texture +
 `tileWidth`/`tileHeight` + `columns × rows` + sparse per-tile metadata
 (`collidable`, `name`). See `scene::Tileset` and the Tile Palette panel for
 authoring.
+
+##### Tilemap storage and the `.owltilemap` file {#tilemap-storage}
+
+A layer stores its cells in 32 × 32 chunks (`TilemapChunk`), each a structure of arrays: 1 024 `uint16` terrain ids,
+1 024 `uint16` overlay ids, 1 024 `uint8` flags, 5 KiB in all. A chunk is allocated on its first write, so the memory
+follows the painted area and not the grid: an empty 4096² layer costs its chunk tables (384 KiB), a full 1024² one
+5 MiB. No call returns or takes the whole grid but `assign`, kept for small maps. Copies of a layer share their
+chunks until one of them writes (copy on write); `getChunkRef` hands out a shared, read-only `TilemapChunkRef` that
+later writes never change, and `setChunkRef` puts one back. Owl Nest's undo is built on it.
+
+A `.owltilemap` file (format 2) is a YAML header, the YAML end-of-document line `...`, then a binary payload:
+
+```yaml
+Tilemap: world_map
+FormatVersion: 2
+tilesetPath: tilesets/world_platform.owltileset
+width: 48
+height: 24
+cellSize: 1
+layers:
+  - name: ground
+  - name: roads
+    visible: false
+payloadBytes: 10280
+...
+<binary payload>
+```
+
+The payload holds only the non-empty chunks, **little-endian whatever the host**:
+
+| Field            | Type                         | Content                                                     |
+|------------------|------------------------------|-------------------------------------------------------------|
+| magic            | 8 bytes                      | `OWLTCHNK`                                                  |
+| chunk side       | `u32`                        | 32                                                          |
+| layer count      | `u32`                        | the number of layers of the header                          |
+| per layer: count | `u32`                        | its stored chunks                                           |
+| per chunk: x, y  | `u32`, `u32`                 | chunk coordinates, inside the layer's chunk grid            |
+| per chunk: cells | 1 024 × (`u16`, `u16`, `u8`) | terrain ids, then overlay ids (`0xFFFF` = none), then flags |
+| checksum         | `u32`                        | FNV-1a 32 of every payload byte before it                   |
+
+A file whose payload is missing, shorter or longer than `payloadBytes`, has a wrong magic, chunk side or layer count,
+a chunk outside its layer or given twice, or a checksum mismatch is refused with a log, and the asset keeps its
+content. Format 1 files (pure YAML, one comma-separated `tiles` string per layer) load through the 1 → 2 migration
+and are written back as format 2; the `inline:` tilemaps of scenes keep that text form (terrain only). A full 1024²
+layer loads in about 9 ms (bench `tilemap/load/1024x1024`).
 
 #### BackgroundTexture
 
@@ -682,7 +729,9 @@ Every file the engine writes carries a root `FormatVersion` integer:
 | `owl_project.yml` (Owl Nest)        | `nest::Project::format()`                      |
 
 Scenes and prefabs are at version 2: the 1 → 2 migration (`bindEntityLinksByName`) gives each name-only
-`EntityLink` the UUID of the first entity of the document with that tag. The prefab `Version` key is something else: it counts the edits of one prefab and feeds
+`EntityLink` the UUID of the first entity of the document with that tag. Tilemaps are at version 2 too: their
+1 → 2 migration turns the dense `tiles` string of each layer into a terrain plane, saved back as binary chunks
+([Tilemap storage](#tilemap-storage)). The prefab `Version` key is something else: it counts the edits of one prefab and feeds
 `PrefabLink::syncedVersion`. A save embeds its scene with the scene's own `FormatVersion`.
 
 On load, `core::upgradeDocument` (or `upgradeYamlDocument` inside the engine) reads the version:

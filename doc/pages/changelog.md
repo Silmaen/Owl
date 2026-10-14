@@ -24,6 +24,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Tilemaps render from persistent 32 × 32 chunks cached per asset, uploaded only when a cell changes, culled against
   the view, drawn with the full entity transform and the layer parallax, without the 16 384-cell cap, from the layers'
   `onRender` (`RendererTilemap::prepareTilemap`, `TilemapLayer::setTile`).
+- `.owltilemap` format 2: cells kept in shared 32 × 32 chunks (terrain, overlay, flags) and saved as a checksummed
+  little-endian binary payload after the YAML header; format 1 files migrate, Owl Nest undoes tilemaps by chunk.
 - Version 0.4.0 in development: plan of the release in `design/isometric-worlds.md`, sized for a Transport Tycoon-like
   game, with the isometric decisions revised (real dimetric camera, depth with alpha cutout, corner heights on the map).
 - Aspect-correct text, management-game HUD widgets, the fixed simulation tick and gamepad dead zones moved to v0.4.0;

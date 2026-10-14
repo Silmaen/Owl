@@ -11,6 +11,7 @@
 #include "Document.h"
 #include "UndoManager.h"
 
+#include "../commands/TilemapCommands.h"
 #include "../panel/TilePalette.h"
 
 #include <scene/TilemapAsset.h>
@@ -28,9 +29,8 @@ namespace owl::nest {
  * @brief
  *  Undo manager typed for `scene::TilemapAsset` edits.
  *
- * Each command captures the full asset YAML before/after the edit (coarse-grained
- * but trivially correct). The dedicated `ModifyTilemapAssetCommand` is the only
- * command kind currently routed through this manager.
+ * Cell edits push a `commands::ModifyTilemapChunksCommand` holding the chunks they changed; layout edits (tileset,
+ * size, layers) a `commands::ModifyTilemapLayoutCommand` whose asset copies share their chunks.
  */
 using TilemapUndoManager = UndoManager<scene::TilemapAsset>;
 
@@ -43,11 +43,11 @@ using TilemapUndoManager = UndoManager<scene::TilemapAsset>;
  *   (add / delete / reorder / visibility / parallax).
  * - **Canvas** (centre): zoomable / pannable top-down grid. Left-click paints the
  *   selected tile from the palette into the active layer's cell; right-click
- *   erases. Each completed stroke pushes one `ModifyTilemapAssetCommand`.
+ *   erases. Each completed stroke pushes one `ModifyTilemapChunksCommand` holding the changed chunks.
  * - **Palette** (right): the existing `TilePalette` panel, fed with the asset's
  *   resolved tileset.
  *
- * Saves the asset in the engine's `.owltilemap` YAML format. The undo stack is
+ * Saves the asset in the engine's `.owltilemap` format (YAML header, binary chunks). The undo stack is
  * typed over the asset itself so future graph / inline editors can share commands.
  */
 class TilemapDocument final : public Document {
@@ -367,15 +367,19 @@ private:
 
 	/**
 	 * @brief
-	 *  Begin a paint stroke: capture the asset's pre-edit YAML for undo.
+	 *  Overlay and flags rows of the cell panel, edited through the current stroke.
+	 * @param[in] iLayer Layer index of the inspected cell.
+	 * @param[in] iX Cell x.
+	 * @param[in] iY Cell y.
 	 */
-	void beginStroke();
+	void renderCellDataRows(uint32_t iLayer, uint32_t iX, uint32_t iY);
 
 	/**
 	 * @brief
-	 *  End a paint stroke: push a `ModifyTilemapAssetCommand` if anything changed.
+	 *  End the current stroke: push the chunks it changed as one `ModifyTilemapChunksCommand`.
+	 * @param[in] iDescription Description of the command.
 	 */
-	void endStroke();
+	void endStroke(const std::string& iDescription);
 
 	/// Disk path for the asset backing this document.
 	std::filesystem::path m_path;
@@ -383,8 +387,12 @@ private:
 	scene::TilemapAsset m_asset;
 	/// Per-document undo/redo manager for tilemap edits.
 	TilemapUndoManager m_undoManager;
-	/// YAML snapshot taken at the last save — drives the dirty indicator.
-	std::string m_savedSnapshot;
+	/// Asset as last saved (its chunks shared with `m_asset` until written) — drives the dirty indicator.
+	scene::TilemapAsset m_savedAsset;
+	/// Asset at the start of a grid resize drag, which the preview resizes from.
+	std::optional<scene::TilemapAsset> m_resizeOrigin;
+	/// Cell edits in progress, pushed as one undo step when the gesture ends.
+	commands::TilemapStroke m_stroke;
 	/// Editor layer back-pointer for menus/dialogs that need editor-wide context.
 	EditorLayer* mp_editorLayer{nullptr};
 	/// Tile palette state (selected layer + brush).
@@ -396,8 +404,6 @@ private:
 	math::vec2 m_panOffset{0.f, 0.f};
 	/// Whether a paint stroke is currently active (between mouse-down and mouse-up).
 	bool m_strokeInProgress = false;
-	/// Asset YAML captured at the start of the active stroke (used for undo).
-	std::string m_strokeBeforeYaml;
 	/// Currently inspected cell on the canvas (X on the active painting layer). Negative = none.
 	int32_t m_inspectedCellX = -1;
 	/// Currently inspected cell on the canvas (Y on the active painting layer). Negative = none.

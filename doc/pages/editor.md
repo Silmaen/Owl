@@ -200,6 +200,16 @@ Key types live in `source/owlnest/sources/document/`: `Document` (interface),
 `DocumentManager`, `SceneDocument`, `CodeEditorDocument`, `NodeGraphDocument`,
 `SceneFlowDocument`, `AnimationDocument`, `TilemapDocument`, `TilesetDocument`.
 
+### Tilemap document
+
+A `.owltilemap` opens in a `TilemapDocument`: the canvas paints the selected tile of the Tile Palette into the active
+layer (left button) or erases (right button); the hierarchy panel holds the tileset, the grid size and the layers; the
+properties panel shows the clicked cell (position, layer, tile, collision) and edits its overlay tile and its flags.
+A paint stroke or a cell edit is one undo step recording only the 32 × 32 chunks it changed
+(`commands::ModifyTilemapChunksCommand`, one chunk for a one-cell edit, whatever the map size); a layout edit (tileset,
+size, layers) keeps the asset before and after, whose layers share their chunks. A resize drag previews from the grid
+of its start, so shrinking then growing back in one drag loses nothing.
+
 ### Scene Flow view
 
 Opens from **Home > Project > Scene Flow** in the ribbon. Presents every `.owl`

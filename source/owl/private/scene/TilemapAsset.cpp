@@ -7,70 +7,135 @@
  */
 #include "owlpch.h"
 
+#include "TilemapCodec.h"
 #include "core/FormatVersionYaml.h"
+#include "core/SerializerImpl.h"
 #include "core/external/yaml.h"
 #include "platform/AtomicFile.h"
 #include "scene/TilemapAsset.h"
 
-#include <charconv>
+#include <algorithm>
+#include <array>
+#include <bit>
 #include <cstdint>
 #include <fstream>
-#include <span>
 #include <sstream>
+#include <string>
 
 namespace owl::scene {
 
 namespace {
-constexpr std::array<core::MigrationStep, 0> g_tilemapMigrations{};
+
+constexpr auto g_tilesKeyV1 = "tiles";
+constexpr auto g_terrainTextKey = "terrain";
+constexpr auto g_payloadBytesKey = "payloadBytes";
+
+// Format 1 kept one dense `tiles` string per layer: it becomes a `terrain` text plane, read once, never written.
+auto migrateDenseTilesToTerrainText(const core::Serializer& ioDocument) -> bool {
+	auto layers = ioDocument.getImpl()->document["layers"];
+	if (!layers)
+		return true;
+	if (!layers.IsSequence()) {
+		OWL_CORE_WARN("TilemapAsset: Layers of a format 1 tilemap are not a sequence.")
+		return false;
+	}
+	for (auto layer: layers) {
+		if (!layer.IsMap() || !layer[g_tilesKeyV1])
+			continue;
+		layer[g_terrainTextKey] = layer[g_tilesKeyV1].as<std::string>();
+		layer.remove(g_tilesKeyV1);
+	}
+	return true;
+}
+
+constexpr std::array<core::MigrationStep, 1> g_tilemapMigrations{&migrateDenseTilesToTerrainText};
 constexpr core::DocumentFormat g_tilemapFormat{.name = "Tilemap", .migrations = g_tilemapMigrations};
+
+void emitLayerHeader(YAML::Emitter& ioEmitter, const component::TilemapLayer& iLayer) {
+	ioEmitter << YAML::BeginMap;
+	ioEmitter << YAML::Key << "name" << YAML::Value << iLayer.name;
+	if (!iLayer.visible)
+		ioEmitter << YAML::Key << "visible" << YAML::Value << iLayer.visible;
+	if (iLayer.parallax.x() != 1.f || iLayer.parallax.y() != 1.f) {
+		ioEmitter << YAML::Key << "parallax" << YAML::Value << YAML::Flow << YAML::BeginSeq << iLayer.parallax.x()
+				  << iLayer.parallax.y() << YAML::EndSeq;
+	}
+	ioEmitter << YAML::EndMap;
+}
+
+auto readLayerHeader(const YAML::Node& iNode, const math::vec2ui& iGridSize) -> component::TilemapLayer {
+	component::TilemapLayer layer;
+	if (iNode["name"])
+		layer.name = iNode["name"].as<std::string>();
+	if (iNode["visible"])
+		layer.visible = iNode["visible"].as<bool>();
+	if (const auto px = iNode["parallax"]; px && px.IsSequence() && px.size() >= 2)
+		layer.parallax = math::vec2{px[0].as<float>(), px[1].as<float>()};
+	if (const auto text = iNode[g_terrainTextKey]; text) {
+		const size_t expected = static_cast<size_t>(iGridSize.x()) * iGridSize.y();
+		layer.assign(iGridSize, codec::decodeTileText(text.as<std::string>(), expected));
+	} else {
+		layer.resize(iGridSize);
+	}
+	return layer;
+}
+
+auto readPayload(const YAML::Node& iRoot, const codec::TilemapFileParts& iParts, TilemapAsset& ioParsed) -> bool {
+	if (!iRoot[g_payloadBytesKey]) {
+		OWL_CORE_ERROR("TilemapAsset: Header has no `{}` (truncated file).", g_payloadBytesKey)
+		return false;
+	}
+	const auto expected = iRoot[g_payloadBytesKey].as<uint64_t>();
+	if (!iParts.hasPayload) {
+		OWL_CORE_ERROR("TilemapAsset: Binary payload of {} bytes is missing (truncated file).", expected)
+		return false;
+	}
+	if (iParts.payload.size() != expected) {
+		OWL_CORE_ERROR("TilemapAsset: Binary payload holds {} bytes, the header announces {}.", iParts.payload.size(),
+					   expected)
+		return false;
+	}
+	return codec::decodePayload(iParts.payload, ioParsed.layers);
+}
+
+auto parseHeader(const YAML::Node& iRoot, TilemapAsset& oParsed) -> bool {
+	if (iRoot["tilesetPath"])
+		oParsed.tilesetPath = iRoot["tilesetPath"].as<std::string>();
+	if (iRoot["width"])
+		oParsed.width = std::max(1u, iRoot["width"].as<uint32_t>());
+	if (iRoot["height"])
+		oParsed.height = std::max(1u, iRoot["height"].as<uint32_t>());
+	if (iRoot["cellSize"])
+		oParsed.cellSize = iRoot["cellSize"].as<float>();
+	if (oParsed.width > TilemapAsset::maxGridSide || oParsed.height > TilemapAsset::maxGridSide) {
+		OWL_CORE_ERROR("TilemapAsset: Grid of {}×{} cells exceeds the {} cells side limit.", oParsed.width,
+					   oParsed.height, TilemapAsset::maxGridSide)
+		return false;
+	}
+	if (const auto layerNodes = iRoot["layers"]; layerNodes) {
+		if (!layerNodes.IsSequence()) {
+			OWL_CORE_ERROR("TilemapAsset: `layers` is not a sequence.")
+			return false;
+		}
+		const math::vec2ui gridSize{oParsed.width, oParsed.height};
+		for (const auto& layerNode: layerNodes) oParsed.layers.push_back(readLayerHeader(layerNode, gridSize));
+	}
+	return true;
+}
+
 }// namespace
 
 auto TilemapAsset::format() -> const core::DocumentFormat& { return g_tilemapFormat; }
 
-namespace {
-constexpr int32_t k_Empty = scene::component::g_EmptyTileIndex;
-
-auto encodeTiles(const std::span<const int32_t> iTiles) -> std::string {
-	std::string out;
-	out.reserve(iTiles.size() * 3);
-	for (size_t i = 0; i < iTiles.size(); ++i) {
-		if (i > 0)
-			out.push_back(',');
-		out += std::to_string(iTiles[i]);
-	}
-	return out;
-}
-
-auto decodeTiles(const std::string& iEncoded, const size_t iExpected) -> std::vector<int32_t> {
-	std::vector<int32_t> out(iExpected, k_Empty);
-	if (iEncoded.empty())
-		return out;
-	size_t cursor = 0;
-	size_t idx = 0;
-	while (cursor <= iEncoded.size() && idx < iExpected) {
-		const size_t comma = iEncoded.find(',', cursor);
-		const size_t end = (comma == std::string::npos) ? iEncoded.size() : comma;
-		int32_t value = k_Empty;
-		(void) std::from_chars(iEncoded.data() + cursor, iEncoded.data() + end, value);
-		out[idx++] = value;
-		if (comma == std::string::npos)
-			break;
-		cursor = comma + 1;
-	}
-	return out;
-}
-
-}// namespace
-
 void TilemapAsset::resize(const uint32_t iWidth, const uint32_t iHeight) {
-	const uint32_t newWidth = std::max(1u, iWidth);
-	const uint32_t newHeight = std::max(1u, iHeight);
+	const uint32_t newWidth = std::clamp(iWidth, 1u, maxGridSide);
+	const uint32_t newHeight = std::clamp(iHeight, 1u, maxGridSide);
 	for (auto& layer: layers) layer.resize({newWidth, newHeight});
 	width = newWidth;
 	height = newHeight;
 }
 
-auto TilemapAsset::addLayer(const std::string& iName) -> scene::component::TilemapLayer& {
+auto TilemapAsset::addLayer(const std::string& iName) -> component::TilemapLayer& {
 	auto& layer = layers.emplace_back();
 	layer.name = iName;
 	layer.visible = true;
@@ -81,7 +146,7 @@ auto TilemapAsset::addLayer(const std::string& iName) -> scene::component::Tilem
 
 auto TilemapAsset::getTile(const uint32_t iLayer, const uint32_t iX, const uint32_t iY) const -> int32_t {
 	if (iLayer >= layers.size() || iX >= width || iY >= height)
-		return k_Empty;
+		return component::g_EmptyTileIndex;
 	return layers[iLayer].getTile(iX, iY);
 }
 
@@ -94,7 +159,26 @@ void TilemapAsset::setTile(const uint32_t iLayer, const uint32_t iX, const uint3
 	layer.setTile(iX, iY, iValue);
 }
 
+auto TilemapAsset::getStorageBytes() const -> size_t {
+	size_t bytes = 0;
+	for (const auto& layer: layers) bytes += layer.getStorageBytes();
+	return bytes;
+}
+
+auto TilemapAsset::hasSameContent(const TilemapAsset& iOther) const -> bool {
+	if (tilesetPath != iOther.tilesetPath || width != iOther.width || height != iOther.height ||
+		std::bit_cast<uint32_t>(cellSize) != std::bit_cast<uint32_t>(iOther.cellSize) ||
+		layers.size() != iOther.layers.size())
+		return false;
+	return std::ranges::equal(
+			layers, iOther.layers,
+			[](const component::TilemapLayer& iFirst, const component::TilemapLayer& iSecond) -> bool {
+				return iFirst.hasSameContent(iSecond);
+			});
+}
+
 auto TilemapAsset::serializeToString(const std::string_view iName) const -> std::string {
+	const auto payload = codec::encodePayload(layers);
 	YAML::Emitter emitter;
 	emitter << YAML::BeginMap;
 	emitter << YAML::Key << "Tilemap" << YAML::Value << std::string{iName};
@@ -105,27 +189,21 @@ auto TilemapAsset::serializeToString(const std::string_view iName) const -> std:
 	emitter << YAML::Key << "height" << YAML::Value << height;
 	emitter << YAML::Key << "cellSize" << YAML::Value << cellSize;
 	emitter << YAML::Key << "layers" << YAML::Value << YAML::BeginSeq;
-	for (const auto& layer: layers) {
-		emitter << YAML::BeginMap;
-		emitter << YAML::Key << "name" << YAML::Value << layer.name;
-		if (!layer.visible)
-			emitter << YAML::Key << "visible" << YAML::Value << layer.visible;
-		if (layer.parallax.x() != 1.f || layer.parallax.y() != 1.f) {
-			emitter << YAML::Key << "parallax" << YAML::Value << YAML::Flow << YAML::BeginSeq << layer.parallax.x()
-					<< layer.parallax.y() << YAML::EndSeq;
-		}
-		emitter << YAML::Key << "tiles" << YAML::Value << encodeTiles(layer.getTiles());
-		emitter << YAML::EndMap;
-	}
+	for (const auto& layer: layers) emitLayerHeader(emitter, layer);
 	emitter << YAML::EndSeq;
+	emitter << YAML::Key << g_payloadBytesKey << YAML::Value << static_cast<uint64_t>(payload.size());
 	emitter << YAML::EndMap;
-	return std::string{emitter.c_str()};
+	std::string out{emitter.c_str()};
+	out.append(codec::g_PayloadSeparator);
+	out.append(payload);
+	return out;
 }
 
-auto TilemapAsset::deserializeFromString(const std::string_view iYaml) -> bool {
+auto TilemapAsset::deserializeFromString(const std::string_view iText) -> bool {
+	const auto parts = codec::splitFile(iText);
 	YAML::Node root;
 	try {
-		root = YAML::Load(std::string{iYaml});
+		root = YAML::Load(std::string{parts.header});
 	} catch (const YAML::Exception& e) {
 		OWL_CORE_ERROR("TilemapAsset: failed to parse YAML — {}.", e.what())
 		return false;
@@ -134,37 +212,21 @@ auto TilemapAsset::deserializeFromString(const std::string_view iYaml) -> bool {
 		OWL_CORE_WARN("TilemapAsset: Document is not a tilemap.")
 		return false;
 	}
-	if (!core::upgradeYamlDocument(g_tilemapFormat, root, "<buffer>")) {
+	const auto version = core::upgradeYamlDocument(g_tilemapFormat, root, "<buffer>");
+	if (!version) {
 		OWL_CORE_ERROR("TilemapAsset: Document cannot be read.")
 		return false;
 	}
 	TilemapAsset parsed;
-	if (root["tilesetPath"])
-		parsed.tilesetPath = root["tilesetPath"].as<std::string>();
-	if (root["width"])
-		parsed.width = std::max(1u, root["width"].as<uint32_t>());
-	if (root["height"])
-		parsed.height = std::max(1u, root["height"].as<uint32_t>());
-	if (root["cellSize"])
-		parsed.cellSize = root["cellSize"].as<float>();
-	if (const auto layerNodes = root["layers"]; layerNodes && layerNodes.IsSequence()) {
-		const size_t expected = static_cast<size_t>(parsed.width) * parsed.height;
-		const math::vec2ui gridSize{parsed.width, parsed.height};
-		for (const auto& layerNode: layerNodes) {
-			scene::component::TilemapLayer layer;
-			if (layerNode["name"])
-				layer.name = layerNode["name"].as<std::string>();
-			if (layerNode["visible"])
-				layer.visible = layerNode["visible"].as<bool>();
-			if (const auto px = layerNode["parallax"]; px && px.IsSequence() && px.size() >= 2)
-				layer.parallax = math::vec2{px[0].as<float>(), px[1].as<float>()};
-			if (layerNode["tiles"])
-				layer.assign(gridSize, decodeTiles(layerNode["tiles"].as<std::string>(), expected));
-			else
-				layer.resize(gridSize);
-			parsed.layers.push_back(std::move(layer));
-		}
+	try {
+		if (!parseHeader(root, parsed))
+			return false;
+	} catch (const YAML::Exception& e) {
+		OWL_CORE_ERROR("TilemapAsset: Invalid header value — {}.", e.what())
+		return false;
 	}
+	if (*version >= 2 && !readPayload(root, parts, parsed))
+		return false;
 	*this = std::move(parsed);
 	return true;
 }

@@ -11,6 +11,7 @@
 #include "core/FormatVersion.h"
 #include "scene/component/Tilemap.h"
 
+#include <cstddef>
 #include <cstdint>
 #include <filesystem>
 #include <string>
@@ -30,22 +31,27 @@ class Tileset;
  * can be referenced by multiple scenes and edited in a dedicated tilemap
  * editor instead of being inlined into a single `.owl` scene.
  *
- * The on-disk format is YAML with the extension `.owltilemap`:
+ * The on-disk format (version 2) is a YAML header, the YAML end-of-document line `...`, then a binary payload
+ * holding the non-empty chunks of every layer (little-endian, checksummed, see `doc/pages/scene.md`):
  * ```yaml
  * Tilemap: <name>
- * FormatVersion: 1
+ * FormatVersion: 2
  * tilesetPath: assets/tilesets/dungeon.owltileset
  * width: 32
  * height: 16
  * cellSize: 1.0
  * layers:
  *   - name: ground
- *     visible: true
- *     parallax: [1.0, 1.0]
- *     tiles: "0,0,1,1,...,-1,-1"
+ *     visible: false
+ *     parallax: [0.5, 0.5]
  *   - name: props
- *     ...
+ * payloadBytes: 10268
+ * ...
+ * <binary payload>
  * ```.
+ *
+ * Version 1 files (pure YAML, one comma-separated `tiles` string per layer) load through the migration chain and
+ * are written back as version 2.
  *
  * The `TilemapLayer` value type is reused from
  * `scene::component::Tilemap` — both the inline-on-component path
@@ -91,6 +97,9 @@ public:
 	 */
 	static auto fileExtension() noexcept -> const char* { return ".owltilemap"; }
 
+	/// Largest grid width or height: a file announcing more is refused, `resize` clamps to it.
+	static constexpr uint32_t maxGridSide = 16384;
+
 	/**
 	 * @brief
 	 *  Format descriptor of the `.owltilemap` files, with its migration chain.
@@ -117,7 +126,7 @@ public:
 	 *
 	 * Existing tile data is preserved for cells that fit in the new bounds; new
 	 * cells are filled with `g_EmptyTileIndex`. Width / height are clamped to
-	 * at least 1.
+	 * `[1, maxGridSide]`.
 	 * @param[in] iWidth New grid width (>= 1).
 	 * @param[in] iHeight New grid height (>= 1).
 	 */
@@ -158,19 +167,34 @@ public:
 
 	/**
 	 * @brief
-	 *  Serialize the tilemap asset to a YAML string.
+	 *  Memory used by the cells of every layer.
+	 * @return The size in bytes (`TilemapLayer::getStorageBytes` summed).
+	 */
+	[[nodiscard]] auto getStorageBytes() const -> size_t;
+
+	/**
+	 * @brief
+	 *  Whether two assets hold the same tileset path, grid, cell size and layers (the resolved tileset ignored).
+	 * @param[in] iOther The other asset.
+	 * @return True when the assets have the same content.
+	 */
+	[[nodiscard]] auto hasSameContent(const TilemapAsset& iOther) const -> bool;
+
+	/**
+	 * @brief
+	 *  Serialize the tilemap asset in the `.owltilemap` format (YAML header and binary payload).
 	 * @param[in] iName Optional display name written under the `Tilemap:` key.
-	 * @return The YAML document as a string.
+	 * @return The file content (binary after the header).
 	 */
 	[[nodiscard]] auto serializeToString(std::string_view iName = "") const -> std::string;
 
 	/**
 	 * @brief
-	 *  Populate the tilemap asset from a YAML string (asset is reset on success).
-	 * @param[in] iYaml The YAML document.
-	 * @return True on success, false on malformed input (asset left unchanged).
+	 *  Populate the tilemap asset from a `.owltilemap` content, version 1 (YAML) or 2 (YAML header and binary).
+	 * @param[in] iText The file content.
+	 * @return True on success, false on malformed, truncated or corrupted input (asset left unchanged).
 	 */
-	[[nodiscard]] auto deserializeFromString(std::string_view iYaml) -> bool;
+	[[nodiscard]] auto deserializeFromString(std::string_view iText) -> bool;
 
 	/**
 	 * @brief

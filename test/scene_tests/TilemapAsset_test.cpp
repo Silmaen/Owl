@@ -22,6 +22,11 @@ using namespace owl;
 using namespace owl::scene;
 
 namespace {
+// Row-major cell `iIndex` of a layer.
+auto tileAt(const component::TilemapLayer& iLayer, const uint32_t iIndex) -> int32_t {
+	return iLayer.getTile(iIndex % iLayer.getSize().x(), iIndex / iLayer.getSize().x());
+}
+
 class TilemapAssetFixture : public testing::Test {
 protected:
 	static void SetUpTestSuite() { core::Log::init(core::Log::Level::Off); }
@@ -39,8 +44,9 @@ TEST_F(TilemapAssetFixture, AddLayerInitializesGrid) {
 	EXPECT_TRUE(layer.visible);
 	EXPECT_FLOAT_EQ(layer.parallax.x(), 1.f);
 	EXPECT_FLOAT_EQ(layer.parallax.y(), 1.f);
-	EXPECT_EQ(layer.getTiles().size(), 12u);
-	for (const auto t: layer.getTiles()) EXPECT_EQ(t, scene::component::g_EmptyTileIndex);
+	EXPECT_EQ(static_cast<size_t>(layer.getSize().x()) * layer.getSize().y(), 12u);
+	EXPECT_EQ(layer.getOccupiedCount(), 0u);
+	EXPECT_EQ(layer.getAllocatedChunkCount(), 0u);
 }
 
 TEST_F(TilemapAssetFixture, ResizeClampsToOne) {
@@ -50,7 +56,7 @@ TEST_F(TilemapAssetFixture, ResizeClampsToOne) {
 	EXPECT_EQ(asset.width, 1u);
 	EXPECT_EQ(asset.height, 1u);
 	ASSERT_EQ(asset.layers.size(), 1u);
-	EXPECT_EQ(asset.layers[0].getTiles().size(), 1u);
+	EXPECT_EQ(static_cast<size_t>(asset.layers[0].getSize().x()) * asset.layers[0].getSize().y(), 1u);
 }
 
 TEST_F(TilemapAssetFixture, ResizePreservesExistingCells) {
@@ -64,7 +70,7 @@ TEST_F(TilemapAssetFixture, ResizePreservesExistingCells) {
 	asset.resize(4, 3);
 	EXPECT_EQ(asset.width, 4u);
 	EXPECT_EQ(asset.height, 3u);
-	ASSERT_EQ(asset.layers[0].getTiles().size(), 12u);
+	ASSERT_EQ(static_cast<size_t>(asset.layers[0].getSize().x()) * asset.layers[0].getSize().y(), 12u);
 	EXPECT_EQ(asset.getTile(0, 0, 0), 0);
 	EXPECT_EQ(asset.getTile(0, 1, 0), 1);
 	EXPECT_EQ(asset.getTile(0, 2, 0), 2);
@@ -111,7 +117,7 @@ TEST_F(TilemapAssetFixture, RoundTripDefaults) {
 	ASSERT_EQ(restored.layers.size(), 1u);
 	EXPECT_EQ(restored.layers[0].name, "ground");
 	EXPECT_TRUE(restored.layers[0].visible);
-	EXPECT_EQ(restored.layers[0].getTiles().size(), 32u);
+	EXPECT_EQ(static_cast<size_t>(restored.layers[0].getSize().x()) * restored.layers[0].getSize().y(), 32u);
 }
 
 TEST_F(TilemapAssetFixture, RoundTripWithCustomLayers) {
@@ -137,13 +143,13 @@ TEST_F(TilemapAssetFixture, RoundTripWithCustomLayers) {
 	EXPECT_FALSE(restored.layers[0].visible);
 	EXPECT_FLOAT_EQ(restored.layers[0].parallax.x(), 0.5f);
 	EXPECT_FLOAT_EQ(restored.layers[0].parallax.y(), 0.25f);
-	EXPECT_EQ(restored.layers[0].getTiles().size(), 4u);
-	EXPECT_EQ(restored.layers[0].getTiles()[0], 0);
-	EXPECT_EQ(restored.layers[0].getTiles()[3], 3);
+	EXPECT_EQ(static_cast<size_t>(restored.layers[0].getSize().x()) * restored.layers[0].getSize().y(), 4u);
+	EXPECT_EQ(tileAt(restored.layers[0], 0), 0);
+	EXPECT_EQ(tileAt(restored.layers[0], 3), 3);
 	EXPECT_EQ(restored.layers[1].name, "fg");
 	EXPECT_TRUE(restored.layers[1].visible);
-	EXPECT_EQ(restored.layers[1].getTiles()[1], 5);
-	EXPECT_EQ(restored.layers[1].getTiles()[3], 7);
+	EXPECT_EQ(tileAt(restored.layers[1], 1), 5);
+	EXPECT_EQ(tileAt(restored.layers[1], 3), 7);
 }
 
 TEST_F(TilemapAssetFixture, DeserializeMalformedYamlFails) {
@@ -165,9 +171,9 @@ layers:
 	TilemapAsset asset;
 	ASSERT_TRUE(asset.deserializeFromString(yaml));
 	ASSERT_EQ(asset.layers.size(), 1u);
-	EXPECT_EQ(asset.layers[0].getTiles().size(), 4u);
-	EXPECT_EQ(asset.layers[0].getTiles()[0], 1);
-	EXPECT_EQ(asset.layers[0].getTiles()[3], 4);
+	EXPECT_EQ(static_cast<size_t>(asset.layers[0].getSize().x()) * asset.layers[0].getSize().y(), 4u);
+	EXPECT_EQ(tileAt(asset.layers[0], 0), 1);
+	EXPECT_EQ(tileAt(asset.layers[0], 3), 4);
 }
 
 TEST_F(TilemapAssetFixture, DeserializePadsShortTileBuffer) {
@@ -181,10 +187,10 @@ layers:
 	TilemapAsset asset;
 	ASSERT_TRUE(asset.deserializeFromString(yaml));
 	ASSERT_EQ(asset.layers.size(), 1u);
-	EXPECT_EQ(asset.layers[0].getTiles().size(), 6u);
-	EXPECT_EQ(asset.layers[0].getTiles()[0], 1);
-	EXPECT_EQ(asset.layers[0].getTiles()[1], 2);
-	EXPECT_EQ(asset.layers[0].getTiles()[2], scene::component::g_EmptyTileIndex);
+	EXPECT_EQ(static_cast<size_t>(asset.layers[0].getSize().x()) * asset.layers[0].getSize().y(), 6u);
+	EXPECT_EQ(tileAt(asset.layers[0], 0), 1);
+	EXPECT_EQ(tileAt(asset.layers[0], 1), 2);
+	EXPECT_EQ(tileAt(asset.layers[0], 2), scene::component::g_EmptyTileIndex);
 }
 
 TEST_F(TilemapAssetFixture, FileRoundTrip) {
@@ -204,7 +210,7 @@ TEST_F(TilemapAssetFixture, FileRoundTrip) {
 	EXPECT_EQ(restored.height, 3u);
 	EXPECT_FLOAT_EQ(restored.cellSize, 0.5f);
 	ASSERT_EQ(restored.layers.size(), 1u);
-	EXPECT_EQ(restored.layers[0].getTiles()[5], 42);
+	EXPECT_EQ(tileAt(restored.layers[0], 5), 42);
 
 	std::filesystem::remove(path);
 }
@@ -249,7 +255,9 @@ TEST_F(TilemapAssetFixture, LoadsMigratedSampleTilemaps) {
 		TilemapAsset asset;
 		ASSERT_TRUE(asset.loadFromFile(path)) << s.file;
 		ASSERT_FALSE(asset.layers.empty()) << s.file;
-		EXPECT_EQ(asset.layers[0].getTiles().size(), static_cast<size_t>(asset.width) * asset.height) << s.file;
+		EXPECT_EQ(static_cast<size_t>(asset.layers[0].getSize().x()) * asset.layers[0].getSize().y(),
+				  static_cast<size_t>(asset.width) * asset.height)
+				<< s.file;
 		if (s.width != 0u) {
 			EXPECT_EQ(asset.width, s.width) << s.file;
 		}
@@ -311,7 +319,7 @@ TEST(TilemapLayer, MoveLeavesAnEmptyGrid) {
 	EXPECT_EQ(moved.getTile(0, 1), 3);
 	EXPECT_EQ(moved.getGeneration(), generation);
 	EXPECT_EQ(source.getSize(), (math::vec2ui{0, 0}));// NOLINT(bugprone-use-after-move): checks the moved-from state.
-	EXPECT_TRUE(source.getTiles().empty());// NOLINT(bugprone-use-after-move): checks the moved-from state.
+	EXPECT_EQ(source.getAllocatedChunkCount(), 0u);// NOLINT(bugprone-use-after-move): checks the moved-from state.
 	component::TilemapLayer assigned;
 	assigned = std::move(moved);
 	EXPECT_EQ(assigned.name, "ground");
