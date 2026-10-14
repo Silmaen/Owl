@@ -33,8 +33,18 @@
 namespace owl::data::fonts {
 
 struct MsdfData {
+	static constexpr size_t denseCount = 256;
+
+	struct DenseGlyph {
+		Font::GlyphMetrics box;
+		float advance = 0.f;
+		bool valid = false;
+	};
+
 	std::vector<msdf_atlas::GlyphGeometry> glyphs;
 	msdf_atlas::FontGeometry fontGeometry;
+	std::array<DenseGlyph, denseCount> dense{};
+	bool denseAdvance = false;
 };
 
 namespace {
@@ -249,6 +259,14 @@ Font::Font(std::filesystem::path iPath, const bool iIsDefault, FontSettings iSet
 	}
 	m_atlasTexture = createTexture(*bitmap);
 	m_name = stem;
+	m_data->denseAdvance = m_data->fontGeometry.getKerning().empty();
+	for (size_t code = 0; code < MsdfData::denseCount; ++code) {
+		const auto codePoint = static_cast<char32_t>(code);
+		auto& entry = m_data->dense[code];
+		entry.box = getGlyphBox(codePoint);
+		entry.advance = getAdvance(codePoint, codePoint);
+		entry.valid = true;
+	}
 }
 
 Font::~Font() {
@@ -278,6 +296,8 @@ auto Font::getGlyphBox(const char32_t iCodePoint) const -> GlyphMetrics {
 	GlyphMetrics result{.quad = {{0, 0}, {0, 0}}, .uv = {{0, 0}, {0, 0}}};
 	if (m_data == nullptr || iCodePoint == U'\n')
 		return result;
+	if (iCodePoint < MsdfData::denseCount && m_data->dense[iCodePoint].valid)
+		return m_data->dense[iCodePoint].box;
 	const auto& metrics = m_data->fontGeometry.getMetrics();
 	const float fsScale = 1.0f / static_cast<float>(metrics.ascenderY - metrics.descenderY);
 	const char32_t lookup = iCodePoint == U'\t' ? U' ' : iCodePoint;
@@ -330,6 +350,8 @@ auto Font::getDescender() const -> float {
 auto Font::getAdvance(const char32_t iCodePoint, const char32_t iNextCodePoint) const -> float {
 	if (m_data == nullptr)
 		return 0.f;
+	if (m_data->denseAdvance && iCodePoint < MsdfData::denseCount && m_data->dense[iCodePoint].valid)
+		return m_data->dense[iCodePoint].advance;
 	const auto resolve = [this](const char32_t iCode) -> msdfgen::unicode_t {
 		const auto code = static_cast<msdfgen::unicode_t>(iCode == U'\t' ? U' ' : iCode);
 		return m_data->fontGeometry.getGlyph(code) != nullptr ? code : static_cast<msdfgen::unicode_t>('?');

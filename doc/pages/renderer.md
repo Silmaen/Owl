@@ -291,7 +291,8 @@ flowchart LR
   per-glyph layout in `drawString`) leave `worldIndex` at its default `-1`.
   Renderer2D appends each requested `math::Transform` to a per-batch
   `transientWorlds[]` SSBO (20 000 matrices, the instance capacity) and emits a negative `worldIndex` that
-  points into it.
+  points into it. Quads and circles start a new batch every 4 096 transient matrices (a bigger batch leaves the CPU
+  cache, about 30 % slower per quad); glyphs fill the 20 000, so a long text stays one draw call.
 - `gpu::StorageBuffer::bind(uint32_t iBinding)` lets the same SSBO be
   bound at different slot numbers across descriptor blocks.
 - Per-instance footprint dropped: `QuadInstance` 128 → 80 bytes,

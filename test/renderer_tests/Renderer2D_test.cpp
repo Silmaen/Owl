@@ -274,13 +274,13 @@ TEST(Renderer2D, laidOutTextStaysOneDrawCall) {
 	Log::invalidate();
 }
 
-TEST(Renderer2D, transientQuadsShareOneBatchUpToInstanceCapacity) {
+TEST(Renderer2D, transientQuadsFlushEveryShapeTransientBatch) {
 	Log::init(owl::core::Log::Level::Off);
 	RenderCommand::create(RenderAPI::Type::Null);
 	Renderer::init();
 	const CameraEditor cam;
 	const Transform tr{{1.f, 2.f, 0.f}, {0, 0, 0}, {1.f, 1.f, 1.f}};
-	for (const auto& [count, expectedCalls]: {std::pair{20'000u, 1u}, std::pair{20'001u, 2u}}) {
+	for (const auto& [count, expectedCalls]: {std::pair{4096u, 1u}, std::pair{4097u, 2u}, std::pair{20'000u, 5u}}) {
 		Renderer2D::resetStats();
 		Renderer2D::beginScene(cam);
 		for (uint32_t i = 0; i < count; ++i) Renderer2D::drawQuad({.transform = tr});
