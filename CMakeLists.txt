@@ -85,7 +85,7 @@ endif ()
 #
 # ---=== Bundle help pages ===---
 # Copy the Markdown documentation pages from `doc/pages/` plus the canonical
-# README/CONTRIBUTING into `<build>/help/`, and generate a small `index.yml`
+# README/CONTRIBUTING into `<build>/help_bundle/`, and generate a small `index.yml`
 # describing each page (id, title, category). The runtime `HelpPanel` reads it
 # from the build tree, or from `assets/help/` where both CPack components
 # install it.

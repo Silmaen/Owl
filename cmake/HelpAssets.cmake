@@ -6,11 +6,11 @@
 #
 # Bundles the Markdown documentation pages from `doc/pages/` plus the canonical
 # repository-root files (README, CONTRIBUTING) into
-# `<build>/help/` (installed as `assets/help/`), generates an `index.yml` describing each page, and
+# `<build>/help_bundle/` (installed as `assets/help/`), generates an `index.yml` describing each page, and
 # scrubs Doxygen-specific syntax (`{#page-anchor}`, `[TOC]`) so the bundled
 # pages render cleanly in the in-editor `HelpPanel` (md4c-based renderer).
 #
-# Image references are normalised to point at `<build>/help/images/`:
+# Image references are normalised to point at `<build>/help_bundle/images/`:
 #  * `../images/foo.svg` (Doxygen INPUT convention) -> `images/foo.svg`
 #  * `engine_assets/<dir>/foo.png` (project-relative paths used in the README,
 #    such as `engine_assets/logo/logo_owl.png`) -> `images/foo.png`
@@ -94,8 +94,15 @@ function(_owl_help_extract_title IN_FILE OUT_VAR)
 endfunction()
 
 function(owl_bundle_help_assets)
-    # In the build tree: the configure writes nothing in the sources (audit G-09).
-    set(HELP_DIR "${CMAKE_BINARY_DIR}/help")
+    # In the build tree: the configure writes nothing in the sources (audit G-09). Not `help/`: the Ninja generator
+    # declares a `help` target at the build root, and `clean` fails on a directory of that name.
+    set(HELP_DIR "${CMAKE_BINARY_DIR}/help_bundle")
+    # A build tree configured before keeps its bundle (and its badge cache) under the new name.
+    if (IS_DIRECTORY "${CMAKE_BINARY_DIR}/help" AND NOT EXISTS "${HELP_DIR}")
+        file(RENAME "${CMAKE_BINARY_DIR}/help" "${HELP_DIR}")
+    elseif (IS_DIRECTORY "${CMAKE_BINARY_DIR}/help")
+        file(REMOVE_RECURSE "${CMAKE_BINARY_DIR}/help")
+    endif ()
     set(${PROJECT_PREFIX}_HELP_DIR "${HELP_DIR}" PARENT_SCOPE)
     set(IMG_OUT_DIR "${HELP_DIR}/images")
     set(BADGE_CACHE_DIR "${IMG_OUT_DIR}/badges")
