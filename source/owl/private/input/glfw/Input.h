@@ -10,6 +10,10 @@
 
 #include "input/Input.h"
 
+#include <cstddef>
+#include <string>
+#include <string_view>
+
 namespace owl::input::glfw {
 /**
  * @brief
@@ -66,6 +70,30 @@ public:
 	 * @param[out] oState The state to fill.
 	 */
 	void readDevices_impl(InputState& oState) override;
+
+	/**
+	 * @brief
+	 *  Gamepad state through `glfwGetGamepadState`, triggers rescaled to [0, 1].
+	 * @param[in] iPad The gamepad slot (GLFW joystick id).
+	 * @return The state; disconnected without a window or a mapped gamepad.
+	 */
+	auto getGamepadState_impl(std::size_t iPad) -> GamepadState override;
+
+	/**
+	 * @brief
+	 *  Gamepad name through `glfwGetGamepadName`.
+	 * @param[in] iPad The gamepad slot (GLFW joystick id).
+	 * @return The name, empty when not a gamepad.
+	 */
+	auto getGamepadName_impl(std::size_t iPad) -> std::string override;
+
+	/**
+	 * @brief
+	 *  Hand gamepad mappings to `glfwUpdateGamepadMappings`.
+	 * @param[in] iMappings The mapping text.
+	 * @return True if GLFW accepted them (GLFW must be initialised: a window exists).
+	 */
+	auto addGamepadMappings_impl(std::string_view iMappings) -> bool override;
 };
 
 }// namespace owl::input::glfw

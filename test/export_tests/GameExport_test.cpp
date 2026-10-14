@@ -113,6 +113,7 @@ protected:
 		writeFile(m_project / "textures" / "b.png", "PNG-B");
 		writeFile(m_project / "logo" / "icon.png", "ICON");
 		writeFile(m_project / "game_settings.yml", "GameSettings: []\n");
+		writeFile(m_project / "input" / "gamecontrollerdb.txt", "# mappings\n");
 		writeFile(m_project / "tilesets" / "blocks.owltileset", "Tileset: blocks\ntexture: nam:textures/b.png\n");
 		writeFile(m_project / "scenes" / "level.owl", std::format("Scene: level\nEntities:\n"
 																  "  - Entity: 1\n"
@@ -139,6 +140,7 @@ protected:
 				.author = "Tester",
 				.description = "A # tricky: description",
 				.icon = "logo/icon.png",
+				.gamepadMappings = "input/gamecontrollerdb.txt",
 				.projectDirectory = m_project,
 				.outputDirectory = m_root / "out",
 				.runnerDirectory = m_runner,
@@ -200,8 +202,10 @@ TEST_F(GameExporterFixture, ValidateReportsMissingPieces) {
 	settings.icon = "logo/missing.png";
 	settings.runnerDirectory = m_root / "nowhere";
 	EXPECT_EQ(GameExporter::validate(settings, assets).size(), 2u);
+	settings.gamepadMappings = "input/missing.txt";
+	EXPECT_EQ(GameExporter::validate(settings, assets).size(), 3u);
 	settings.firstScene = "scenes/missing";
-	EXPECT_GE(GameExporter::validate(settings, assets).size(), 3u);
+	EXPECT_GE(GameExporter::validate(settings, assets).size(), 4u);
 	EXPECT_TRUE(assets.empty());
 }
 
@@ -229,6 +233,7 @@ TEST_F(GameExporterFixture, ExportWritesAPlayableFolder) {
 	EXPECT_EQ(config["FirstScene"].as<std::string>(), "scenes/level.owl");
 	EXPECT_EQ(config["PackFile"].as<std::string>(), "My_Game__Deluxe.owlpack");
 	EXPECT_EQ(config["Icon"].as<std::string>(), "logo/icon.png");
+	EXPECT_EQ(config["GamepadMappings"].as<std::string>(), "input/gamecontrollerdb.txt");
 	EXPECT_EQ(config["WindowWidth"].as<uint32_t>(), 800u);
 	EXPECT_FLOAT_EQ(config["TickRate"].as<float>(), settings.tickRate);
 	EXPECT_EQ(config["MaxTicksPerFrame"].as<uint32_t>(), settings.maxTicksPerFrame);
@@ -238,8 +243,8 @@ TEST_F(GameExporterFixture, ExportWritesAPlayableFolder) {
 
 	PackReader reader;
 	ASSERT_TRUE(reader.open(result->packFile));
-	for (const auto* entry:
-		 {"scenes/level.owl", "textures/a.png", "textures/b.png", "tilesets/blocks.owltileset", "game_settings.yml"})
+	for (const auto* entry: {"scenes/level.owl", "textures/a.png", "textures/b.png", "tilesets/blocks.owltileset",
+							 "game_settings.yml", "input/gamecontrollerdb.txt"})
 		EXPECT_TRUE(reader.contains(entry)) << entry;
 	reader.close();
 	const auto scene = readPackEntry(result->packFile, "scenes/level.owl");

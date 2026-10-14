@@ -121,6 +121,7 @@ void ProjectSettings::open(const Project& iProject) {
 	m_authorBuffer = iProject.author;
 	m_descriptionBuffer = iProject.description;
 	m_iconBuffer = iProject.icon;
+	m_gamepadMappingsBuffer = iProject.gamepadMappings;
 	m_hasResult = false;
 	scanScenes();
 	m_selectedSceneIndex = -1;
@@ -208,6 +209,16 @@ void ProjectSettings::onImGuiRender() {
 			}
 			gui::widgets::endSection();
 		}
+		if (gui::widgets::sectionHeader("Input", gui::icon::gamepad2, false).open) {
+			if (gui::widgets::beginProperties("##input")) {
+				std::ignore = gui::widgets::propertyText(
+						"Gamepad Mappings", m_gamepadMappingsBuffer, "gamecontrollerdb.txt",
+						"Optional SDL_GameControllerDB file, relative to the project: extra or corrected gamepad "
+						"mappings, packed with the game.");
+				gui::widgets::endProperties();
+			}
+			gui::widgets::endSection();
+		}
 		if (gui::widgets::sectionHeader("Simulation", gui::icon::timer, false).open) {
 			if (gui::widgets::beginProperties("##simulation")) {
 				drawSimulationSettings(m_localProject.simulation);
@@ -234,6 +245,7 @@ void ProjectSettings::onImGuiRender() {
 			m_localProject.author = m_authorBuffer;
 			m_localProject.description = m_descriptionBuffer;
 			m_localProject.icon = m_iconBuffer;
+			m_localProject.gamepadMappings = m_gamepadMappingsBuffer;
 			m_hasResult = true;
 			ImGui::CloseCurrentPopup();
 		}

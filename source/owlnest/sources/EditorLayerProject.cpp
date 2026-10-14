@@ -25,6 +25,7 @@
 #include <fstream>
 #include <string>
 #include <system_error>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -563,6 +564,7 @@ void EditorLayer::openProject(const std::filesystem::path& iDir) {
 	}
 	app::Application::get().addAssetDirectory({std::format("Project: {}", m_project.name), m_project.projectDirectory});
 	app::Application::get().getEngineContext().setSimulationSettings(m_project.simulation);
+	std::ignore = m_project.loadGamepadMappings();
 	m_contentBrowser.attach();
 	refreshWindowTitle();
 

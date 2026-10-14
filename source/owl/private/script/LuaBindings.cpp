@@ -13,6 +13,7 @@
 #include "app/EngineContext.h"
 #include "core/Macros.h"
 #include "core/external/lua.h"
+#include "input/Gamepad.h"
 #include "input/Input.h"
 #include "input/InputFrame.h"
 #include "physics/PhysicCommand.h"
@@ -259,6 +260,65 @@ auto luaInputGetMouseWheel(lua_State* iState) -> int {
 	const math::vec2 wheel = frame != nullptr ? frame->getWheel() : math::vec2{0.f, 0.f};
 	lua_pushnumber(iState, static_cast<lua_Number>(wheel.x()));
 	lua_pushnumber(iState, static_cast<lua_Number>(wheel.y()));
+	return 2;
+}
+
+auto checkGamepadSlot(lua_State* iState, const int iArg) -> std::size_t {
+	const auto pad = luaL_checkinteger(iState, iArg);
+	return pad >= 0 && pad < static_cast<lua_Integer>(input::g_GamepadCount) ? static_cast<std::size_t>(pad)
+																			 : input::g_GamepadCount;
+}
+
+template<typename Code, std::size_t Count>
+auto checkGamepadCode(lua_State* iState, const int iArg) -> Code {
+	const auto code = luaL_checkinteger(iState, iArg);
+	return code >= 0 && code < static_cast<lua_Integer>(Count) ? static_cast<Code>(code) : static_cast<Code>(Count);
+}
+
+auto luaInputIsGamepadConnected(lua_State* iState) -> int {
+	const auto pad = checkGamepadSlot(iState, 1);
+	lua_pushboolean(iState, input::Input::isGamepadConnected(pad) ? 1 : 0);
+	return 1;
+}
+
+auto luaInputGetGamepadName(lua_State* iState) -> int {
+	const auto pad = checkGamepadSlot(iState, 1);
+	const auto name = input::Input::getGamepadName(pad);
+	lua_pushlstring(iState, name.data(), name.size());
+	return 1;
+}
+
+auto luaInputIsGamepadButtonPressed(lua_State* iState) -> int {
+	const auto pad = checkGamepadSlot(iState, 1);
+	const auto button = checkGamepadCode<input::GamepadButton, input::g_GamepadButtonCount>(iState, 2);
+	lua_pushboolean(iState, input::Input::getGamepadState(pad).isButtonPressed(button) ? 1 : 0);
+	return 1;
+}
+
+template<bool (input::InputFrame::*Edge)(std::size_t, input::GamepadButton) const>
+auto luaInputGamepadButtonEdge(lua_State* iState) -> int {
+	const auto pad = checkGamepadSlot(iState, 1);
+	const auto button = checkGamepadCode<input::GamepadButton, input::g_GamepadButtonCount>(iState, 2);
+	const auto* frame = inputFrameOf(iState);
+	lua_pushboolean(iState, frame != nullptr && (frame->*Edge)(pad, button) ? 1 : 0);
+	return 1;
+}
+
+auto luaInputGetGamepadAxis(lua_State* iState) -> int {
+	const auto pad = checkGamepadSlot(iState, 1);
+	const auto axis = checkGamepadCode<input::GamepadAxis, input::g_GamepadAxisCount>(iState, 2);
+	lua_pushnumber(iState, static_cast<lua_Number>(input::Input::getGamepadState(pad).getAxis(axis)));
+	return 1;
+}
+
+auto luaInputGetGamepadStick(lua_State* iState) -> int {
+	const auto pad = checkGamepadSlot(iState, 1);
+	const auto stick = luaL_checkinteger(iState, 2) == 1 ? input::gamepad::Stick::Right : input::gamepad::Stick::Left;
+	const input::AxisResponse response{.deadZone = static_cast<float>(luaL_optnumber(
+											   iState, 3, lua_Number{input::AxisResponse::defaultDeadZone}))};
+	const auto shaped = input::applyStickResponse(input::Input::getGamepadState(pad).getStick(stick), response);
+	lua_pushnumber(iState, static_cast<lua_Number>(shaped.x()));
+	lua_pushnumber(iState, static_cast<lua_Number>(shaped.y()));
 	return 2;
 }
 
@@ -1008,6 +1068,30 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		{.table = "input", .name = "get_mouse_wheel", .function = guarded<luaInputGetMouseWheel>,
 		 .description = "Wheel offset scrolled since the previous tick or frame (horizontal, vertical).",
 		 .returns = {{"dx", Number}, {"dy", Number}}},
+		{.table = "input", .name = "is_gamepad_connected", .function = guarded<luaInputIsGamepadConnected>,
+		 .description = "Whether a gamepad is connected in a slot (0 to 15).",
+		 .params = {{"pad", Integer}}, .returns = {{"connected", Boolean}}},
+		{.table = "input", .name = "get_gamepad_name", .function = guarded<luaInputGetGamepadName>,
+		 .description = "Name of the gamepad of a slot, empty when none is connected.",
+		 .params = {{"pad", Integer}}, .returns = {{"name", String}}},
+		{.table = "input", .name = "is_gamepad_button_pressed", .function = guarded<luaInputIsGamepadButtonPressed>,
+		 .description = "Whether a gamepad button is held (0 = A, 1 = B, 2 = X, 3 = Y, 7 = Start, 11-14 = D-pad).",
+		 .params = {{"pad", Integer}, {"button", Integer}}, .returns = {{"pressed", Boolean}}},
+		{.table = "input", .name = "is_gamepad_button_just_pressed",
+		 .function = guarded<luaInputGamepadButtonEdge<&input::InputFrame::isGamepadButtonJustPressed>>,
+		 .description = "Whether a gamepad button went down since the previous tick or frame.",
+		 .params = {{"pad", Integer}, {"button", Integer}}, .returns = {{"pressed", Boolean}}},
+		{.table = "input", .name = "is_gamepad_button_just_released",
+		 .function = guarded<luaInputGamepadButtonEdge<&input::InputFrame::isGamepadButtonJustReleased>>,
+		 .description = "Whether a gamepad button went up since the previous tick or frame.",
+		 .params = {{"pad", Integer}, {"button", Integer}}, .returns = {{"released", Boolean}}},
+		{.table = "input", .name = "get_gamepad_axis", .function = guarded<luaInputGetGamepadAxis>,
+		 .description = "Raw gamepad axis (0-3 = sticks in [-1, 1], y down; 4, 5 = triggers in [0, 1]).",
+		 .params = {{"pad", Integer}, {"axis", Integer}}, .returns = {{"value", Number}}},
+		{.table = "input", .name = "get_gamepad_stick", .function = guarded<luaInputGetGamepadStick>,
+		 .description = "Gamepad stick (0 = left, 1 = right) through a radial dead zone (0.15 by default), y down.",
+		 .params = {{"pad", Integer}, {"stick", Integer}, {"dead_zone", Number, true}},
+		 .returns = {{"x", Number}, {"y", Number}}},
 		{.table = "sound", .name = "play", .function = guarded<luaSoundPlay>,
 		 .description = "Play a sound asset (loaded on first use); an invalid handle when sound is off or missing.",
 		 .params = {{"asset_path", String}}, .returns = {{"handle", Integer}}},
@@ -1217,7 +1301,7 @@ auto getLuaTables() -> const std::vector<LuaTable>& {
 	static const std::vector<LuaTable> s_tables{
 			{.name = "transform", .description = "Local transform of an entity."},
 			{.name = "physics", .description = "Box2D body of an entity."},
-			{.name = "input", .description = "Keyboard and mouse state."},
+			{.name = "input", .description = "Keyboard, mouse and gamepad state."},
 			{.name = "sound", .description = "Sound playback, by handle."},
 			{.name = "scene", .description = "Entities of the running level and level changes."},
 			{.name = "time", .description = "Frame and fixed-tick time."},

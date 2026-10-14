@@ -799,8 +799,11 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 	m_parameters.onImGuiRender();
 	m_projectSettings.onImGuiRender();
 	if (m_projectSettings.hasResult()) {
+		const auto previousMappings = m_project.gamepadMappings;
 		m_project = m_projectSettings.consumeResult();
 		app::Application::get().getEngineContext().setSimulationSettings(m_project.simulation);
+		if (m_project.gamepadMappings != previousMappings)
+			std::ignore = m_project.loadGamepadMappings();
 
 		saveProject();
 

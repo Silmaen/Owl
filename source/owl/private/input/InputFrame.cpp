@@ -10,6 +10,8 @@
 
 #include "input/InputFrame.h"
 
+#include <cstddef>
+
 namespace owl::input {
 
 void InputSampler::reset(const InputState& iState) {
@@ -25,6 +27,13 @@ void InputSampler::observe(const InputState& iFrame) {
 		m_pending.mouseButtons |= iFrame.mouseButtons;
 		m_pending.cursor = iFrame.cursor;
 		m_pending.wheel += iFrame.wheel;
+		for (std::size_t pad = 0; pad < g_GamepadCount; ++pad) {
+			auto& pending = m_pending.gamepads[pad];
+			const auto& frame = iFrame.gamepads[pad];
+			pending.buttons |= frame.buttons;
+			pending.axes = frame.axes;
+			pending.connected = frame.connected;
+		}
 	} else {
 		m_pending = iFrame;
 	}

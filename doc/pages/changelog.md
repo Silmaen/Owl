@@ -19,6 +19,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Input frames: a plain-data `InputFrame` sampled per tick and per frame (`Scene::getInputFrame`) gives
   `isKeyJustPressed` / `isKeyJustReleased`, mouse edges and the wheel in C++ and Lua (`input.is_key_just_pressed`, …),
   injection moves into the input layer so it works on GLFW too, and the hand-written edge latches are gone.
+- Gamepads: 16 pad slots in `InputState` / `InputFrame` (buttons with edges, sticks, triggers) read through
+  `glfwGetGamepadState`, connect / disconnect events, an optional project mapping file packed with the game, Null
+  injection and scenario `gamepad` steps, Lua `input.is_gamepad_*` / `get_gamepad_axis` / `get_gamepad_stick`, and a
+  radial dead zone with a response curve (`input::AxisResponse`) ready for the action map.
 - Editor session: `session::EditorSession` (scene, undo, command registry, bounded play for N frames or ticks at a fixed
   step, frame capture with `encodeImagePng`, statistics) implemented by `EditorLayer` and by a `HeadlessSession` on the
   Null renderer for tests and tools.

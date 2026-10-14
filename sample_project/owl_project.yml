@@ -5,6 +5,7 @@ OwlProject:
   author: Silmaen
   description: ho ho ho
   icon: logo/logo_owl.png
+  gamepadMappings: input/gamecontrollerdb.txt
   window:
     width: 1280
     height: 720

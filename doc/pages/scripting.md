@@ -198,6 +198,22 @@ function table cannot say.
 
 Key codes match the GLFW key constants (e.g. `65` = A, `87` = W, `32` = Space).
 
+Gamepads are read by slot (`0` to `15`, the first pad plugged in is `0`). Buttons use the Xbox layout: `0` = A,
+`1` = B, `2` = X, `3` = Y, `4` / `5` = bumpers, `6` = Back, `7` = Start, `8` = Guide, `9` / `10` = stick clicks,
+`11` to `14` = D-pad up, right, down, left. Axes: `0` / `1` = left stick x / y, `2` / `3` = right stick, y down, in
+[-1, 1]; `4` / `5` = left / right trigger in [0, 1]. `input.get_gamepad_stick(pad, stick, dead_zone)` applies a
+radial dead zone (0.15 when left out) and rescales past it, so a resting stick reads exactly `0, 0`;
+`input.get_gamepad_axis(pad, axis)` is the raw value. The `_just_` functions follow the tick and frame rules above.
+
+```lua
+function on_tick(dt)
+    if not input.is_gamepad_connected(0) then return end
+    local x, _ = input.get_gamepad_stick(0, 0)
+    physics.set_velocity(entity_id, x * speed, select(2, physics.get_velocity(entity_id)))
+    if input.is_gamepad_button_just_pressed(0, 0) then jump() end
+end
+```
+
 ### `scene`
 
 `scene.find_entity` scans every entity: call it once (in `on_create`) and keep the id.
