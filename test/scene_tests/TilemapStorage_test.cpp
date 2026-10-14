@@ -346,6 +346,7 @@ TEST_F(TilemapStorage, SampleTilemapsAreFormatTwo) {
 			root / "sample_project" / "tilemaps" / "world_map.owltilemap",
 			root / "sample_project" / "tilemaps" / "platformer_house.owltilemap",
 			root / "sample_project" / "tilemaps" / "raycast_demo.owltilemap",
+			root / "sample_project" / "tilemaps" / "iso_test.owltilemap",
 			root / "engine_assets" / "project_templates" / "raycast" / "tilemaps" / "room.owltilemap",
 			root / "engine_assets" / "project_templates" / "mixed" / "tilemaps" / "room.owltilemap",
 	};

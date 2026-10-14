@@ -154,6 +154,16 @@ public:
 	[[nodiscard]] virtual auto getEffectiveViewProjection(const Camera& iCamera) const -> math::mat4 {
 		return iCamera.getViewProjection();
 	}
+
+	/**
+	 * @brief
+	 *  Whether `onRender` draws every entity routed to the layer.
+	 *
+	 * When true, the scene skips its generic 2D entity and UI passes for this layer (the isometric layer). The
+	 * default is false: the scene still draws the 2D entities of the layer after `onRender`.
+	 * @return True when the layer draws its entities itself.
+	 */
+	[[nodiscard]] virtual auto drawsOwnEntities() const -> bool { return false; }
 };
 
 }// namespace owl::renderer

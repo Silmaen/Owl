@@ -108,7 +108,7 @@ a few days, L a week.
 
 ### Isometric
 
-- ![Planned][planned] **ISO1 — Isometric camera and layer, L.** D1, D2, D5, D7: `RendererIsometricLayer` drawing
+- ![Done][done] **ISO1 — Isometric camera and layer, L.** D1, D2, D5, D7: `RendererIsometricLayer` drawing
   from `onRender`, depth-tested pipeline state with alpha cutout, billboards, translucent sort, projection helpers
   ported from the old branch, `Tileset::kind`. Editor: isometric viewport mode, gizmo fed with the layer's view and
   projection, world-axis cursor and tile highlight.

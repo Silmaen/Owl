@@ -41,6 +41,7 @@
 #include "sound/SoundSystem.h"
 
 #include <cmath>
+#include <cstddef>
 #include <cstdint>
 #include <filesystem>
 #include <limits>
@@ -694,6 +695,15 @@ auto Scene::layerAccepts(const Entity& iEntity) const -> bool {
 	return iEntity.getComponent<component::RendererTag>().rendererName == m_currentLayerName;
 }
 
+auto Scene::getSelfDrawnLayer() const -> shared<renderer::RenderLayer> {
+	const auto& layers = renderer::Renderer::getRenderStack().getLayers();
+	for (size_t index = 0; index < layers.size(); ++index) {
+		if (layers[index]->drawsOwnEntities() && layerHasContent(layers[index]->getName(), index == 0))
+			return layers[index];
+	}
+	return nullptr;
+}
+
 auto Scene::layerHasContent(const std::string& iLayerName, const bool iIsFirst) const -> bool {
 	OWL_PROFILE_FUNCTION()
 
@@ -754,7 +764,8 @@ void Scene::renderWithStack(const renderer::Camera& iCamera) {
 	prepareVoxelRenderData();
 	prepareTilemapRenderData();
 	const auto& stack = renderer::Renderer::getRenderStack();
-	if (const bool editorMode = (status == Status::Editing); editorMode || stack.isEmpty()) {
+	const bool editorMode = status == Status::Editing;
+	if (stack.isEmpty() || (editorMode && getSelfDrawnLayer() == nullptr)) {
 		// The editor composite is one world-space 2D pass drawing every entity.
 		renderer::Renderer2DLayer composite{"editor"};
 		m_currentLayerName.clear();
@@ -791,6 +802,9 @@ void Scene::renderWithStack(const renderer::Camera& iCamera) {
 	for (const auto& layer: stack.getLayers()) {
 		const bool isFirst = first;
 		first = false;
+		// The raycaster casts from the scene camera: the editor never draws it.
+		if (editorMode && std::string_view{layer->getTypeKey()} == "RendererRaycast")
+			continue;
 		if (!layerHasContent(layer->getName(), isFirst))
 			continue;
 		layer->setViewport(m_viewportSize);
@@ -799,8 +813,10 @@ void Scene::renderWithStack(const renderer::Camera& iCamera) {
 		m_currentLayerIsFirst = isFirst;
 		mp_currentLayer = layer.get();
 		layer->onRender(*this);
-		render();
-		renderUI(layer->getEffectiveViewProjection(iCamera));
+		if (!layer->drawsOwnEntities()) {
+			render();
+			renderUI(layer->getEffectiveViewProjection(iCamera));
+		}
 		layer->onEndFrame();
 	}
 	m_currentLayerName.clear();

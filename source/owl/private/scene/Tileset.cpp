@@ -127,6 +127,8 @@ auto Tileset::serializeToString(const std::string_view iName) const -> std::stri
 	emitter << YAML::Key << "rows" << YAML::Value << rows;
 	if (filterMode == renderer::gpu::FilterMode::Nearest)
 		emitter << YAML::Key << "filterMode" << YAML::Value << "Nearest";
+	if (kind == Kind::Isometric)
+		emitter << YAML::Key << "kind" << YAML::Value << "Isometric";
 
 	// Sparse: emit only the entries that differ from the default.
 	const uint32_t total = tileCount();
@@ -182,6 +184,8 @@ auto Tileset::deserializeFromString(const std::string_view iYaml) -> bool {
 		else
 			parsed.filterMode = renderer::gpu::FilterMode::Linear;
 	}
+	if (const auto kindNode = root["kind"]; kindNode && kindNode.IsScalar())
+		parsed.kind = kindNode.as<std::string>() == "Isometric" ? Kind::Isometric : Kind::Orthogonal;
 	if (root["texture"]) {
 		parsed.texture =
 				renderer::gpu::Texture2D::createFromSerializedForDeserialize(root["texture"].as<std::string>());

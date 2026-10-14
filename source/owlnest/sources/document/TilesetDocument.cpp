@@ -263,6 +263,23 @@ void TilesetDocument::renderHierarchyPanel() {
 		ImGui::EndCombo();
 	}
 	std::ignore = gui::widgets::propertyReset(false);
+
+	using Kind = scene::Tileset::Kind;
+	const bool isometric = m_tileset.kind == Kind::Isometric;
+	gui::widgets::propertyLabel("Kind", "Orthogonal: square tiles of the 2D tilemaps. Isometric: 2:1 diamond tiles "
+										"drawn by the isometric layer.");
+	if (gui::widgets::beginCombo("##kind", isometric ? "Isometric" : "Orthogonal")) {
+		for (const auto& [kind, label]:
+			 {std::pair{Kind::Orthogonal, "Orthogonal"}, std::pair{Kind::Isometric, "Isometric"}}) {
+			if (ImGui::Selectable(label, m_tileset.kind == kind) && m_tileset.kind != kind)
+				pushTilesetEdit(m_tileset, m_undoManager, std::format("Set kind to {}", label),
+								[this, kind]() -> void { m_tileset.kind = kind; });
+		}
+		ImGui::EndCombo();
+	}
+	if (gui::widgets::propertyReset(isometric))
+		pushTilesetEdit(m_tileset, m_undoManager, "Set kind to Orthogonal",
+						[this]() -> void { m_tileset.kind = Kind::Orthogonal; });
 	gui::widgets::endProperties();
 	gui::widgets::endSection();
 }

@@ -31,8 +31,10 @@
 #include <renderer/RenderLayer.h>
 #include <renderer/RenderStack.h>
 #include <renderer/Renderer.h>
+#include <renderer/RendererIsometricLayer.h>
 #include <scene/SceneSerializer.h>
 #include <scene/TilemapAsset.h>
+#include <scene/Tileset.h>
 #include <scene/component/RaycastDoor.h>
 #include <scene/component/RaycastPushWall.h>
 #include <scene/component/RendererTag.h>
@@ -217,7 +219,13 @@ void Viewport::onUpdate(const core::Timestep& iTimeStep) {
 	}
 	activeScene->onViewportResize(getSize());
 
-	if (mp_document->state() == SceneDocument::State::Edit) {
+	if (mp_document->state() == SceneDocument::State::Edit)
+		updateIsometricMode(activeScene);
+	if (mp_document->state() == SceneDocument::State::Edit && m_isometric) {
+		if (isHovered())
+			handleIsometricInput();
+		updateIsometricCursor(activeScene);
+	} else if (mp_document->state() == SceneDocument::State::Edit) {
 		if (m_parent != nullptr) {
 			const auto& settings = m_parent->getSettings();
 			m_editorCamera.setNavigation({.rotate = static_cast<float>(settings.cameraRotatePercent) / 100.f,
@@ -259,7 +267,7 @@ void Viewport::onUpdate(const core::Timestep& iTimeStep) {
 		case SceneDocument::State::Edit:
 			{
 				handleVoxelBrush(activeScene);
-				activeScene->onUpdateEditor(iTimeStep, m_editorCamera);
+				activeScene->onUpdateEditor(iTimeStep, getActiveCamera());
 				break;
 			}
 		case SceneDocument::State::Play:
@@ -386,10 +394,14 @@ void Viewport::renderContextMenu() {
 		using Projection = renderer::CameraEditor::Projection;
 		gui::widgets::menuHeader(mp_document->title().c_str(), "Scene");
 		const bool ortho = getViewProjection() == Projection::Orthographic;
-		if (gui::widgets::menuItem({.glyph = ortho ? gui::icon::check : nullptr, .label = "2D Orthographic"}))
-			setViewProjection(Projection::Orthographic);
-		if (gui::widgets::menuItem({.glyph = ortho ? nullptr : gui::icon::check, .label = "3D Perspective"}))
-			setViewProjection(Projection::Perspective);
+		if (m_isometric) {
+			std::ignore = gui::widgets::menuItem({.glyph = gui::icon::check, .label = "Isometric", .enabled = false});
+		} else {
+			if (gui::widgets::menuItem({.glyph = ortho ? gui::icon::check : nullptr, .label = "2D Orthographic"}))
+				setViewProjection(Projection::Orthographic);
+			if (gui::widgets::menuItem({.glyph = ortho ? nullptr : gui::icon::check, .label = "3D Perspective"}))
+				setViewProjection(Projection::Perspective);
+		}
 		ImGui::Separator();
 		auto& settings = m_parent->getSettings();
 		if (gui::widgets::menuItem({.glyph = settings.showGrid ? gui::icon::check : nullptr, .label = "Grid"}))
@@ -403,7 +415,7 @@ void Viewport::renderContextMenu() {
 }
 
 void Viewport::renderCameraGizmo() {
-	if (mp_document == nullptr || mp_document->state() != SceneDocument::State::Edit)
+	if (mp_document == nullptr || mp_document->state() != SceneDocument::State::Edit || m_isometric)
 		return;
 	using Axis = renderer::CameraEditor::ViewAxis;
 	struct Tip {
@@ -548,7 +560,7 @@ void Viewport::renderOverlay() const {
 		cam.setTransform(activeScene->getWorldTransform(camera)());
 		renderer::Renderer2D::beginScene(cam);
 	} else {
-		renderer::Renderer2D::beginScene(m_editorCamera);
+		renderer::Renderer2D::beginScene(getActiveCamera());
 	}
 
 	if (mp_document->state() == SceneDocument::State::Edit) {
@@ -562,6 +574,8 @@ void Viewport::renderOverlay() const {
 
 		if (m_parent != nullptr && m_parent->getSettings().showGrid)
 			renderGrid(resolveTranslationSnapStep(m_parent->getSettings(), findFirstTilemapInfo(activeScene.get())));
+		if (m_isometric)
+			renderIsometricCursor();
 
 		// Draw trigger type icons
 		auto& textureLibrary = renderer::Renderer::getTextureLibrary();
@@ -786,9 +800,16 @@ void overlaySeparator() {
 void Viewport::renderGrid(const float iStep) const {
 	if (iStep <= 0.f)
 		return;
-	const auto& focal = m_editorCamera.getFocalPoint();
+	const auto& focal = m_isometric ? m_isoCamera.getTarget() : m_editorCamera.getFocalPoint();
 	// Half of the visible height at the reference point, times a margin for the sides and the tilt.
-	const float extent = std::max(1.f, m_editorCamera.getDistance()) * 1.6f;
+	float extent = std::max(1.f, m_editorCamera.getDistance()) * 1.6f;
+	if (m_isometric) {
+		const auto& tile = m_isoCamera.getConfig().tileSize;
+		const auto& size = m_isoCamera.getViewportSize();
+		extent = (static_cast<float>(size.x()) / static_cast<float>(tile.x()) +
+				  static_cast<float>(size.y()) / static_cast<float>(tile.y())) /
+				 m_isoCamera.getZoom();
+	}
 	float step = iStep;
 	constexpr float maxLines = 120.f;
 	while (extent * 2.f / step > maxLines) step *= 2.f;
@@ -825,6 +846,10 @@ void Viewport::frameSelection() {
 		return;
 	const math::Transform world = activeScene->getWorldTransform(selected);
 	// A unit quad scaled by the transform: half its diagonal encloses it.
+	if (m_isometric) {
+		m_isoCamera.setTarget(world.translation());
+		return;
+	}
 	const float radius =
 			0.5f * std::sqrt(world.scale().x() * world.scale().x() + world.scale().y() * world.scale().y());
 	m_editorCamera.frame(world.translation(), radius);
@@ -1011,6 +1036,10 @@ void Viewport::frameScene() {
 		return;
 	}
 	const math::vec3 center = (bounds->first + bounds->second) * 0.5f;
+	if (m_isometric) {
+		m_isoCamera.setTarget({center.x(), center.y(), 0.f});
+		return;
+	}
 	m_editorCamera.frame(center, (bounds->second - bounds->first).norm() * 0.5f);
 }
 
@@ -1037,6 +1066,10 @@ void Viewport::goToCameraViewpoint() {
 	const scene::Entity selected = m_parent->getSelectedEntity();
 	const auto& sceneCamera = selected.getComponent<scene::component::Camera>().camera;
 	const math::Transform world = mp_document->getActiveScene()->getWorldTransform(selected);
+	if (m_isometric) {
+		m_isoCamera.setTarget({world.translation().x(), world.translation().y(), 0.f});
+		return;
+	}
 	using Projection = renderer::CameraEditor::Projection;
 	if (sceneCamera.getProjectionType() == scene::SceneCamera::ProjectionType::Orthographic) {
 		// The 2D view shows `distance * tan(fov / 2)` above and below its centre: match the camera's half size.
@@ -1061,11 +1094,22 @@ void Viewport::renderViewOverlay() {
 	auto& settings = m_parent->getSettings();
 	if (beginOverlay(std::format("##vpView{:x}", id), {m_upper.x() - margin, m_lower.y() + margin}, {1.f, 0.f})) {
 		const bool ortho = getViewProjection() == Projection::Orthographic;
-		if (gui::widgets::button("projection", {.glyph = ortho ? gui::icon::square : gui::icon::cuboid,
-												.label = ortho ? "2D" : "3D",
-												.tooltip = "View",
-												.description = "2D: orthographic front view of the scene plane. 3D: "
-															   "perspective, orbit with Ctrl + drag."}))
+		if (m_isometric) {
+			std::ignore = gui::widgets::button(
+					"projection",
+					{.glyph = gui::icon::grid3x3,
+					 .label = "Iso",
+					 .tooltip = "Isometric view",
+					 .description = "The scene draws an isometric layer: the 2:1 dimetric view is locked. "
+									"Pan with the middle or right drag, zoom by powers of two with the "
+									"wheel.",
+					 .disabled = true});
+		} else if (gui::widgets::button("projection",
+										{.glyph = ortho ? gui::icon::square : gui::icon::cuboid,
+										 .label = ortho ? "2D" : "3D",
+										 .tooltip = "View",
+										 .description = "2D: orthographic front view of the scene plane. 3D: "
+														"perspective, orbit with Ctrl + drag."}))
 			ImGui::OpenPopup("##projection");
 		if (ImGui::BeginPopup("##projection")) {
 			if (gui::widgets::menuItem({.glyph = ortho ? gui::icon::check : nullptr, .label = "2D Orthographic"}))
@@ -1118,6 +1162,97 @@ void Viewport::renderViewOverlay() {
 	endOverlay();
 }
 
+void Viewport::resetView() {
+	if (m_isometric) {
+		m_isoCamera.setTarget({0.f, 0.f, 0.f});
+		m_isoCamera.setZoomLevel(0);
+		return;
+	}
+	m_editorCamera.resetView();
+}
+
+auto Viewport::getActiveCamera() const -> const renderer::Camera& {
+	if (m_isometric)
+		return m_isoCamera;
+	return m_editorCamera;
+}
+
+void Viewport::updateIsometricMode(const shared<scene::Scene>& iScene) {
+	const auto layer = iScene ? iScene->getSelfDrawnLayer() : nullptr;
+	const auto* isometric = dynamic_cast<const renderer::RendererIsometricLayer*>(layer.get());
+	const bool entering = isometric != nullptr && !m_isometric;
+	m_isometric = isometric != nullptr;
+	if (!m_isometric) {
+		m_isoCursor.reset();
+		m_hoveredCell.reset();
+		return;
+	}
+	m_isoCamera.setConfig(isometric->getConfig());
+	m_isoCamera.setViewportSize(getSize());
+	if (entering)
+		m_isoCamera.setZoomLevel(isometric->getZoomLevel());
+}
+
+void Viewport::handleIsometricInput() {
+	const auto& io = ImGui::GetIO();
+	const auto mouse = ImGui::GetMousePos();
+	const math::vec2 pixel{mouse.x - m_lower.x(), mouse.y - m_lower.y()};
+	if (io.MouseWheel > 0.f || io.MouseWheel < 0.f) {
+		// Zoom around the cursor: the ground point under it stays put.
+		const float height = m_isoCamera.getTarget().z();
+		const math::vec3 before = m_isoCamera.viewportToWorld(pixel, height);
+		m_isoCamera.setZoomLevel(m_isoCamera.getZoomLevel() + (io.MouseWheel > 0.f ? 1 : -1));
+		const math::vec3 after = m_isoCamera.viewportToWorld(pixel, height);
+		m_isoCamera.setTarget(m_isoCamera.getTarget() + (before - after));
+	}
+	const bool drag = ImGui::IsMouseDragging(ImGuiMouseButton_Middle) ||
+					  ImGui::IsMouseDragging(ImGuiMouseButton_Right) ||
+					  (io.KeyAlt && ImGui::IsMouseDragging(ImGuiMouseButton_Left));
+	if (drag && !gui::Guizmo::isUsing())
+		m_isoCamera.pan({io.MouseDelta.x, io.MouseDelta.y});
+}
+
+void Viewport::updateIsometricCursor(const shared<scene::Scene>& iScene) {
+	m_isoCursor.reset();
+	m_hoveredCell.reset();
+	if (!isHovered() || !iScene)
+		return;
+	const auto mouse = ImGui::GetMousePos();
+	const math::vec2 pixel{mouse.x - m_lower.x(), mouse.y - m_lower.y()};
+	float height = 0.f;
+	for (const auto view = iScene->registry.view<scene::component::Tilemap>(); const auto entity: view) {
+		const auto& asset = view.get<scene::component::Tilemap>(entity).asset;
+		if (!asset || !asset->tileset || asset->tileset->kind != scene::Tileset::Kind::Isometric)
+			continue;
+		const math::vec3 origin = iScene->getWorldTransform(scene::Entity{entity, iScene.get()}).translation();
+		height = origin.z();
+		m_hoveredMapOrigin = origin;
+		m_hoveredCell = renderer::pickIsometricCell(m_isoCamera, pixel, origin, {asset->width, asset->height});
+		break;
+	}
+	m_isoCursor = m_isoCamera.viewportToWorld(pixel, height);
+}
+
+void Viewport::renderIsometricCursor() const {
+	const auto& theme = gui::UiLayer::getTheme();
+	if (m_hoveredCell.has_value()) {
+		math::Transform cell;
+		cell.translation() = m_hoveredMapOrigin + math::vec3{static_cast<float>(m_hoveredCell->x()) + 0.5f,
+															 static_cast<float>(m_hoveredCell->y()) + 0.5f, 0.f};
+		renderer::Renderer2D::drawRect({.transform = cell, .color = theme.accent});
+		renderer::Renderer2D::drawQuad({.transform = cell, .color = gui::Theme::withAlpha(theme.accent, 0.18f)});
+	}
+	if (!m_isoCursor.has_value())
+		return;
+	const math::vec3& origin = *m_isoCursor;
+	renderer::Renderer2D::drawLine(
+			{.point1 = origin, .point2 = origin + math::vec3{1.f, 0.f, 0.f}, .color = theme.axisX});
+	renderer::Renderer2D::drawLine(
+			{.point1 = origin, .point2 = origin + math::vec3{0.f, 1.f, 0.f}, .color = theme.axisY});
+	renderer::Renderer2D::drawLine(
+			{.point1 = origin, .point2 = origin + math::vec3{0.f, 0.f, 1.f}, .color = theme.axisZ});
+}
+
 void Viewport::setGuizmoType(const gui::Guizmo::Type& iType) { m_gizmoType = iType; }
 
 auto Viewport::getGuizmoType() const -> gui::Guizmo::Type { return m_gizmoType; }
@@ -1137,12 +1272,14 @@ void Viewport::renderGizmo() {
 	if (const scene::Entity selectedEntity = m_parent->getSelectedEntity();
 		selectedEntity && m_gizmoType != gui::Guizmo::Type::None) {
 		gui::Guizmo::initialize(m_lower, m_upper - m_lower,
-								m_editorCamera.getProjectionMode() == renderer::CameraEditor::Projection::Orthographic);
+								m_isometric || m_editorCamera.getProjectionMode() ==
+													   renderer::CameraEditor::Projection::Orthographic);
 
-		math::mat4 cameraProjection = m_editorCamera.getProjection();
+		const auto& camera = getActiveCamera();
+		math::mat4 cameraProjection = camera.getProjection();
 		if (renderer::gpu::RenderCommand::getApi() == renderer::gpu::RenderAPI::Type::Vulkan)
 			cameraProjection(1, 1) *= -1.f;
-		const math::mat4 cameraView = m_editorCamera.getView();
+		const math::mat4 cameraView = camera.getView();
 
 		auto& tc = selectedEntity.getComponent<scene::component::Transform>();
 		math::mat4 transform = activeScene->getWorldTransform(selectedEntity)();
@@ -1230,7 +1367,7 @@ void Viewport::commitGizmoEdit(const scene::Entity& iEntity, const shared<scene:
 }
 
 void Viewport::onEvent(event::Event& ioEvent) {
-	if (mp_document != nullptr && mp_document->state() == SceneDocument::State::Edit && isHovered())
+	if (mp_document != nullptr && mp_document->state() == SceneDocument::State::Edit && isHovered() && !m_isometric)
 		m_editorCamera.onEvent(ioEvent);
 
 	event::EventDispatcher dispatcher(ioEvent);

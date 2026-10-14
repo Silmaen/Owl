@@ -12,7 +12,10 @@
 
 #include "../UndoManager.h"
 
+#include <renderer/RendererIsometric.h>
+
 #include <cstdint>
+#include <optional>
 #include <string>
 
 namespace owl::nest {
@@ -194,7 +197,7 @@ public:
 	 * @brief
 	 *  Put the editor camera back to its default pose.
 	 */
-	void resetView() { m_editorCamera.resetView(); }
+	void resetView();
 
 	/**
 	 * @brief
@@ -229,7 +232,62 @@ public:
 		return m_editorCamera.getProjectionMode();
 	}
 
+	/**
+	 * @brief
+	 *  Whether the viewport shows the scene through the isometric camera: the scene's stack holds an isometric
+	 *  layer with content, the dimetric projection is then locked in Edit.
+	 * @return True in the isometric mode.
+	 */
+	[[nodiscard]] auto isIsometric() const -> bool { return m_isometric; }
+
+	/**
+	 * @brief
+	 *  Camera of the isometric mode.
+	 * @return The isometric editor camera.
+	 */
+	[[nodiscard]] auto getIsometricCamera() const -> const renderer::IsometricCamera& { return m_isoCamera; }
+
+	/**
+	 * @brief
+	 *  Tile of the first isometric tilemap under the cursor, highlighted in the isometric mode.
+	 * @return The cell, or nothing when the cursor is off every isometric map.
+	 */
+	[[nodiscard]] auto getHoveredCell() const -> const std::optional<math::vec2ui>& { return m_hoveredCell; }
+
 private:
+	/**
+	 * @brief
+	 *  Enter or leave the isometric mode from the scene's stack, and take the layer's presentation.
+	 * @param[in] iScene The edited scene.
+	 */
+	void updateIsometricMode(const shared<scene::Scene>& iScene);
+
+	/**
+	 * @brief
+	 *  Pan (middle or right drag, Alt + left drag) and zoom by powers of two (wheel) the isometric camera.
+	 */
+	void handleIsometricInput();
+
+	/**
+	 * @brief
+	 *  Find the hovered tile and the ground point under the cursor in the isometric mode.
+	 * @param[in] iScene The edited scene.
+	 */
+	void updateIsometricCursor(const shared<scene::Scene>& iScene);
+
+	/**
+	 * @brief
+	 *  Draw the world-axis cursor and the hovered tile outline in the isometric mode.
+	 */
+	void renderIsometricCursor() const;
+
+	/**
+	 * @brief
+	 *  Camera the edited scene is drawn with: the isometric one in the isometric mode, else the editor camera.
+	 * @return The active editor camera.
+	 */
+	[[nodiscard]] auto getActiveCamera() const -> const renderer::Camera&;
+
 	/**
 	 * @brief
 	 *  Render gizmo.
@@ -322,6 +380,16 @@ private:
 	gui::Guizmo::Type m_gizmoType = gui::Guizmo::Type::None;
 	/// The editor camera
 	renderer::CameraEditor m_editorCamera;
+	/// Camera of the isometric mode.
+	renderer::IsometricCamera m_isoCamera;
+	/// Whether the viewport is in the isometric mode.
+	bool m_isometric = false;
+	/// Ground point under the cursor in the isometric mode, at the height of the hovered map.
+	std::optional<math::vec3> m_isoCursor;
+	/// World position of the back corner of the hovered isometric map.
+	math::vec3 m_hoveredMapOrigin{0.f, 0.f, 0.f};
+	/// Hovered tile of the first isometric map.
+	std::optional<math::vec2ui> m_hoveredCell;
 	/// Undo manager (non-owning, optional).
 	SceneUndoManager* mp_undoManager = nullptr;
 	/// Whether the gizmo was being used last frame.

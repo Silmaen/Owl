@@ -1,0 +1,26 @@
+Tileset: iso_ground
+FormatVersion: 1
+texture: nam:textures/iso_tiles.png
+tileWidth: 64
+tileHeight: 32
+columns: 4
+rows: 2
+filterMode: Nearest
+kind: Isometric
+tiles:
+  - index: 0
+    name: grass
+  - index: 1
+    name: sand
+  - index: 2
+    name: water
+  - index: 3
+    name: road
+  - index: 4
+    name: dirt
+  - index: 5
+    name: pavement
+  - index: 6
+    name: dark grass
+  - index: 7
+    name: flowers

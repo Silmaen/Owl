@@ -330,8 +330,9 @@ row-major order; collidable tiles
 
 The companion **`Tileset`** asset (`.owltileset`) holds the atlas texture +
 `tileWidth`/`tileHeight` + `columns × rows` + sparse per-tile metadata
-(`collidable`, `name`). See `scene::Tileset` and the Tile Palette panel for
-authoring.
+(`collidable`, `name`) and its `kind`: `Orthogonal` (default, omitted) for the 2D tilemaps, `Isometric` for 2:1
+diamond tiles drawn by the isometric layer ([Isometric layer](renderer.md)). See `scene::Tileset` and the Tile Palette
+panel for authoring.
 
 ##### Tilemap storage and the `.owltilemap` file {#tilemap-storage}
 

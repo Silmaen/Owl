@@ -28,6 +28,10 @@ The first step on the unmerged `Feature/KickoffIsometricRenderer` branch (2026-0
   and depth stays usable. Pixel snapping at integer zoom.
 - World axes map to screen as `screen.x = (worldX − worldY) · (tileW / 2)` and
   `screen.y = (worldX + worldY) · (tileH / 2) − worldZ · zStep`; tiles are 64×32 px by default (layer config).
+  This layout is the mirror image of a right-handed world seen from above, so the view mirrors world Y before the
+  rotation: distances and depth are unchanged, the pitch is `asin(tileH / tileW)` (30° for 2:1).
+- Layer config keys `TileWidth`, `TileHeight`, `ZStep` and `Zoom` (power-of-two level, −4 to 4). In Play the camera
+  target is the scene camera's position, Z dropped; the editor hands its own `IsometricCamera`, used as is.
 
 ### Draw order
 
@@ -36,7 +40,10 @@ The first step on the unmerged `Feature/KickoffIsometricRenderer` branch (2026-0
   previews) are sorted back to front on the CPU.
 - Terrain chunks have a static order and are never sorted per frame.
 - Pre-rendered sprites are billboards anchored at their world foot point; they are never pushed through the dimetric
-  matrix a second time.
+  matrix a second time. Each corner takes the depth of a plane through the foot: vertical, facing the viewer, for an
+  upright sprite; the ground plane for a flat terrain tile. Tilemap layers are depth sub-layers a sixteenth of a view
+  pixel apart, upright sprites one view pixel above the ground under them; a tint alpha below 1 marks a translucent
+  sprite. An entity sprite is `scale.xy × TileWidth` pixels large.
 - Objects wider than a tile are cut into one slice per footprint tile, as Transport Tycoon does; each slice carries a
   3D box that gives its depth, which avoids the sorting artefacts of long vehicles and tall buildings.
 - Moving sprites use an anchor-plus-size billboard instance without a per-sprite matrix, so thousands of vehicles stay
@@ -80,6 +87,13 @@ The first step on the unmerged `Feature/KickoffIsometricRenderer` branch (2026-0
 Layer factory registration, scene round-trip with `EnabledRenderers: [{ Name: iso, Type: RendererIsometric }]`, the
 projection helpers on both Y conventions, slope derivation and picking on the 19 slopes, tileset and tilemap format
 migrations, image tests on lavapipe and llvmpipe with zero validation message, and the `iso/*` benches.
+
+## Status
+
+ISO1 (2026-10-14) shipped the layer, the camera, the billboards with depth and cutout, the translucent sort, the
+ported projection helpers, `Tileset::kind`, the isometric viewport mode of Owl Nest, `sample_project/scenes/iso_test.owl`
+and the `isometric` image test on both backends. Isometric tilemaps emit their cells per frame from the chunks in view;
+persistent isometric chunk buffers and the `iso/*` benches come with ISO4, slopes and slope-aware picking with ISO2.
 
 ## Later
 

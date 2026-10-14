@@ -211,6 +211,13 @@ A paint stroke or a cell edit is one undo step recording only the 32 × 32 chunk
 size, layers) keeps the asset before and after, whose layers share their chunks. A resize drag previews from the grid
 of its start, so shrinking then growing back in one drag loses nothing.
 
+### Tileset document
+
+A `.owltileset` opens in a `TilesetDocument`: the Atlas section sets the texture, the grid, the tile size, the filter
+and the **Kind** (`Orthogonal` square tiles of the 2D tilemaps, `Isometric` 2:1 diamond tiles drawn by the isometric
+layer, written `kind: Isometric`); the properties panel edits the clicked tile. Every edit is one undo step of the
+tileset document.
+
 ### Scene Flow view
 
 Opens from **Home > Project > Scene Flow** in the ribbon. Presents every `.owl`
@@ -238,7 +245,8 @@ off-screen `Framebuffer` with two colour attachments:
   current snap step (a click opens its presets);
 - top-centre: Play (or Resume), Pause, Step and Stop, with their shortcuts in the tooltips; while the scene plays,
   a banner under them recalls that the changes are reverted on Stop;
-- top-right (Edit mode): the view (**2D** orthographic front view or **3D** perspective), **Show** (grid, camera
+- top-right (Edit mode): the view (**2D** orthographic front view, **3D** perspective, or **Iso** locked in the
+  isometric mode), **Show** (grid, camera
   markers, trigger icons), **Frame selection** (`F`), the **Camera** menu and the frame stats toggle;
 - bottom-left: frame rate, frame time and draw calls (a click opens the Stats panel);
 - bottom-right: the view-cube of the editor camera.
@@ -261,6 +269,16 @@ their colours.
 | Alt + right drag            | Pan                                          |
 | Alt + middle drag           | Dolly (the eye and the reference point move) |
 | Wheel                       | Zoom towards the reference point             |
+
+**Isometric mode.** When the scene's stack holds an isometric layer with content (`Scene::getSelfDrawnLayer`), the
+viewport switches to the isometric mode: the scene is drawn layer by layer as in Play, through the viewport's own
+`IsometricCamera` built from the layer's tile size and height step, and the dimetric projection stays locked (the view
+button reads **Iso**, the view-cube is hidden). The middle or right drag (or Alt + left drag) pans, the wheel zooms by
+powers of two around the cursor; **Reset View**, **Frame Selection**, **Frame Scene** and **Selected Camera
+Viewpoint** move the target. A world-axis cursor (X red, Y green, Z blue, one tile long) follows the ground under the
+mouse and the tile of the first isometric tilemap under it is outlined (`pickIsometricCell`); the grid lies on the
+ground plane. The gizmo receives the isometric view and projection, so it moves the selection along the world axes of
+the map; picking reads the entity id the billboards write.
 
 **Camera presets.** The **Camera** menu of the overlay, the **View > Camera** ribbon group and the command palette
 offer:
@@ -765,7 +783,7 @@ The renderer-stack section mirrors `renderer::EnabledRenderersConfig`:
 
 | Control                                  | Effect                                                                                               |
 |------------------------------------------|------------------------------------------------------------------------------------------------------|
-| Layer row (per scene-listed entry)       | The layer name and its type (`Renderer2D`, `RendererRaycast`).                                       |
+| Layer row (per scene-listed entry)       | The layer name and its type (`Renderer2D`, `RendererRaycast`, …).                                    |
 | Enabled switch                           | Toggle the scene-level enable flag. Disabled layers are skipped without affecting the order.         |
 | Up / Down chevrons                       | Reorder the scene listing. Listed layers run in this order; unlisted layers append in project order. |
 | Detach button                            | Remove the scene-level entry — the layer reverts to the project's default config.                    |
@@ -778,6 +796,8 @@ The `Overrides` collapsible exposes typed widgets per layer type:
   HUD / pixel-overlay layers immune to camera rotation).
 - **`RendererRaycast`** — Field of View, Max Distance and Rays numeric drags (keys `Fov`, `MaxDistance`,
   `NumRays`); Ceiling / Floor colour pickers (`CeilingColor` / `FloorColor`).
+- **`RendererIsometric`** — Tile Width, Tile Height, Height Step and Zoom (keys `TileWidth`, `TileHeight`, `ZStep`,
+  `Zoom`, the zoom level used in Play).
 
 Every change pushes a `ModifyEnabledRenderersCommand` onto the active scene's
 undo manager and rebuilds the live `RenderStack` so the visual effect is

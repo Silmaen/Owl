@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Isometric layer `RendererIsometric`: a real 2:1 dimetric `IsometricCamera` (pan, power-of-two zoom, Vulkan flip,
+  usable depth), depth-tested billboards anchored at their foot with alpha cutout and translucent ones sorted back to
+  front, `Tileset::kind`, and an isometric viewport mode in Owl Nest (locked view, world-axis cursor, tile highlight).
 - Editor command API v2: `Vec2`, `Vec4`, `Color` and `Enum` arguments with defaults and choices, structured result
   data, new commands `component.set`, `scene.save`, `edit.undo` and `edit.redo`, edits refused during Play, and every
   command runnable from the command palette through an argument form.
