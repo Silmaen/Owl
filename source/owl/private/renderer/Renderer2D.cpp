@@ -183,11 +183,8 @@ auto textureLookupEntry(const uint64_t iBackendId) -> utils::TextureSlotEntry& {
 	}
 }
 
-// Texture slot of a quad's texture, binding it to a new slot (or starting a new batch) when needed.
-auto textureSlotOf(const shared<gpu::Texture>& iTexture) -> uint32_t {
-	if (iTexture.get() == g_Data->lastTexture)
-		return g_Data->lastTextureSlot;
-	// Keyed by the backend identity: two objects can wrap one GPU texture.
+// Binds a texture not yet in the batch to a new slot (or starts a new batch), keyed by its backend identity.
+[[gnu::noinline]] auto bindNewTextureSlot(const shared<gpu::Texture>& iTexture) -> uint32_t {
 	const uint64_t backendId = iTexture->getBackendId();
 	auto* entry = &textureLookupEntry(backendId);
 	if (entry->generation != g_Data->textureLookupGeneration) {
@@ -202,6 +199,18 @@ auto textureSlotOf(const shared<gpu::Texture>& iTexture) -> uint32_t {
 	g_Data->lastTexture = iTexture.get();
 	g_Data->lastTextureSlot = entry->slot;
 	return entry->slot;
+}
+
+// Texture slot of a quad's texture; the few bound slots are scanned before the hash is consulted.
+inline auto textureSlotOf(const shared<gpu::Texture>& iTexture) -> uint32_t {
+	if (iTexture.get() == g_Data->lastTexture)
+		return g_Data->lastTextureSlot;
+	const auto* slots = g_Data->textureSlots.data();
+	const uint32_t count = g_Data->textureSlotIndex;
+	for (uint32_t i = 1; i < count; ++i)
+		if (slots[i].get() == iTexture.get())
+			return i;
+	return bindNewTextureSlot(iTexture);
 }
 }// namespace
 
