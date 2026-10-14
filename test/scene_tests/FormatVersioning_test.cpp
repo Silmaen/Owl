@@ -268,7 +268,7 @@ TEST_F(FormatVersioningTest, TilemapVersioning) {
 	TilemapAsset asset;
 	asset.width = 3;
 	asset.height = 2;
-	asset.addLayer("ground").tiles[1] = 5;
+	asset.addLayer("ground").setTile(1, 0, 5);
 	const auto path = m_dir / "map.owltilemap";
 	ASSERT_TRUE(asset.saveToFile(path));
 	const auto text = readText(path);

@@ -15,6 +15,7 @@
 #include "renderer/RenderStackYaml.h"
 #include "renderer/Renderer2D.h"
 #include "renderer/gpu/RenderCommand.h"
+#include "renderer/utils/LayerTilemaps.h"
 
 #include <cstdint>
 
@@ -87,7 +88,15 @@ void RendererRaycastLayer::resolveBackdropTilesets() {
 	}
 }
 
-void RendererRaycastLayer::onRender([[maybe_unused]] scene::Scene& ioScene) {}
+void RendererRaycastLayer::onRender(scene::Scene& ioScene) {
+	OWL_PROFILE_FUNCTION()
+
+	utils::forEachLayerTilemap(
+			ioScene,
+			[](const scene::TilemapAsset& iAsset, const math::Transform& iTransform, const int iEntityId) -> void {
+				RendererRaycast::drawTilemapWalls(iAsset, iTransform, iEntityId);
+			});
+}
 
 void RendererRaycastLayer::onEndFrame() {
 	OWL_PROFILE_FUNCTION()

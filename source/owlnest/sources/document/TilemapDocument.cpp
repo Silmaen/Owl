@@ -511,10 +511,7 @@ void TilemapDocument::drawCanvasTiles(ImDrawList* iDrawList, const ImVec2& iGrid
 			continue;
 		for (uint32_t y = 0; y < m_asset.height; ++y) {
 			for (uint32_t x = 0; x < m_asset.width; ++x) {
-				const size_t flat = static_cast<size_t>(y) * m_asset.width + x;
-				if (flat >= layer.tiles.size())
-					continue;
-				const int32_t tileIdx = layer.tiles[flat];
+				const int32_t tileIdx = layer.getTile(x, y);
 				if (tileIdx < 0)
 					continue;
 				const auto uvs = tileset.getTileUv(static_cast<uint32_t>(tileIdx));

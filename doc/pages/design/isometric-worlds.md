@@ -89,7 +89,7 @@ a few days, L a week.
 - ![Done][done] **R1 — Renderer2D transients (B-09), M.** Transients sized per frame like the instances
   (20 000), texture slot lookup by id, no temporary vectors, renderer id instead of a string in `ScopedActive`. Bench:
   transient path at 10 000 and 100 000 quads, zero allocation per frame in `renderer/`.
-- ![Planned][planned] **TM1 — Persistent, chunked, culled tilemap (PR-31: B-13), L.** D6 and D7 for tilemaps:
+- ![Done][done] **TM1 — Persistent, chunked, culled tilemap (PR-31: B-13), L.** D6 and D7 for tilemaps:
   encapsulated cells with generation counters, chunk cache per asset, culling, full entity transform, no cap,
   `parallax` rendered. Changes a shipped render path: `tilemap.owl` image test stays pixel-identical, the
   maintainer confirms before merge. Bench `tilemap/{32,128,256,1024}` × {1, 4} layers and `edit_one_cell`.

@@ -972,10 +972,7 @@ void renderProps(Tilemap& ioComponent) {
 		ImGui::Text("Layers: %zu", asset.layers.size());
 		for (size_t i = 0; i < asset.layers.size(); ++i) {
 			const auto& layer = asset.layers[i];
-			size_t occupied = 0;
-			for (const auto t: layer.tiles)
-				if (t >= 0)
-					++occupied;
+			const size_t occupied = layer.getOccupiedCount();
 			ImGui::BulletText("[%zu] %s (%s, %zu / %u tiles, parallax %.2f, %.2f)", i,
 							  layer.name.empty() ? "<unnamed>" : layer.name.c_str(),
 							  layer.visible ? "visible" : "hidden", occupied, asset.width * asset.height,

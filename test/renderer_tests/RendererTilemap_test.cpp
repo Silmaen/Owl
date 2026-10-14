@@ -15,6 +15,8 @@
 #include <scene/Tileset.h>
 #include <scene/component/Tilemap.h>
 
+#include <cstdint>
+#include <numbers>
 #include <string>
 #include <utility>
 
@@ -27,6 +29,9 @@ using owl::scene::Tileset;
 using owl::scene::component::TilemapLayer;
 
 namespace {
+
+// Bytes of one chunk instance (`{packed cell, tile index}`).
+constexpr uint64_t g_instanceBytes = 8;
 
 auto bootRendererStack() -> void {
 	core::Log::init(core::Log::Level::Off);
@@ -57,8 +62,25 @@ auto makeLayer(const TilemapAsset& iAsset, const std::string& iName, const bool 
 	layer.name = iName;
 	layer.visible = iVisible;
 	layer.parallax = math::vec2{1.f, 1.f};
-	layer.tiles.assign(iAsset.width * iAsset.height, owl::scene::component::g_EmptyTileIndex);
+	layer.resize({iAsset.width, iAsset.height});
 	return layer;
+}
+
+auto makeFilledMap(const uint32_t iSize) -> TilemapAsset {
+	TilemapAsset tm;
+	tm.width = iSize;
+	tm.height = iSize;
+	tm.tileset = makeTileset();
+	TilemapLayer layer = makeLayer(tm, "ground", true);
+	layer.fill(1);
+	tm.layers.push_back(std::move(layer));
+	return tm;
+}
+
+void drawFrame(const renderer::Camera& iCamera, const TilemapAsset& iAsset, const math::Transform& iTransform = {}) {
+	RendererTilemap::beginScene(iCamera);
+	RendererTilemap::drawTilemap(iAsset, iTransform, /*iEntityId=*/1);
+	RendererTilemap::flushPending();
 }
 
 }// namespace
@@ -80,13 +102,13 @@ TEST(RendererTilemap, beginSceneResetsStats) {
 	EXPECT_EQ(stats.drawCallCount, 0u);
 	EXPECT_EQ(stats.instanceCount, 0u);
 	EXPECT_EQ(stats.layerCount, 0u);
+	EXPECT_EQ(stats.culledChunkCount, 0u);
 	teardownRendererStack();
 }
 
 TEST(RendererTilemap, drawTilemapCountsNonEmptyCells) {
 	bootRendererStack();
-	const CameraOrtho cam(0, 800, 0, 600);
-	RendererTilemap::beginScene(cam);
+	const CameraOrtho cam(-10, 10, -10, 10);
 
 	TilemapAsset tm;
 	tm.width = 3;
@@ -94,13 +116,12 @@ TEST(RendererTilemap, drawTilemapCountsNonEmptyCells) {
 	tm.cellSize = 1.f;
 	tm.tileset = makeTileset();
 	TilemapLayer layer = makeLayer(tm, "ground", true);
-	layer.tiles[0] = 0;
-	layer.tiles[4] = 1;
-	layer.tiles[8] = 2;
+	layer.setTile(0, 0, 0);
+	layer.setTile(1, 1, 1);
+	layer.setTile(2, 2, 2);
 	tm.layers.push_back(std::move(layer));
 
-	RendererTilemap::drawTilemap(tm, math::Transform{}, /*iEntityId=*/7);
-	RendererTilemap::flushPending();
+	drawFrame(cam, tm);
 	const auto stats = RendererTilemap::getStatistics();
 	EXPECT_EQ(stats.layerCount, 1u);
 	EXPECT_EQ(stats.drawCallCount, 1u);
@@ -110,20 +131,18 @@ TEST(RendererTilemap, drawTilemapCountsNonEmptyCells) {
 
 TEST(RendererTilemap, invisibleLayerIsWalkedButNotDrawn) {
 	bootRendererStack();
-	const CameraOrtho cam(0, 800, 0, 600);
-	RendererTilemap::beginScene(cam);
+	const CameraOrtho cam(-10, 10, -10, 10);
 
 	TilemapAsset tm;
 	tm.width = 2;
 	tm.height = 2;
 	tm.tileset = makeTileset();
 	TilemapLayer hidden = makeLayer(tm, "hidden", false);
-	hidden.tiles[0] = 1;
-	hidden.tiles[1] = 1;
+	hidden.setTile(0, 0, 1);
+	hidden.setTile(1, 0, 1);
 	tm.layers.push_back(std::move(hidden));
 
-	RendererTilemap::drawTilemap(tm, math::Transform{}, /*iEntityId=*/-1);
-	RendererTilemap::flushPending();
+	drawFrame(cam, tm);
 	const auto stats = RendererTilemap::getStatistics();
 	EXPECT_EQ(stats.layerCount, 1u);
 	EXPECT_EQ(stats.drawCallCount, 0u);
@@ -133,8 +152,7 @@ TEST(RendererTilemap, invisibleLayerIsWalkedButNotDrawn) {
 
 TEST(RendererTilemap, emptyVisibleLayerEmitsNoDrawCall) {
 	bootRendererStack();
-	const CameraOrtho cam(0, 800, 0, 600);
-	RendererTilemap::beginScene(cam);
+	const CameraOrtho cam(-10, 10, -10, 10);
 
 	TilemapAsset tm;
 	tm.width = 4;
@@ -142,8 +160,7 @@ TEST(RendererTilemap, emptyVisibleLayerEmitsNoDrawCall) {
 	tm.tileset = makeTileset();
 	tm.layers.push_back(makeLayer(tm, "empty", true));
 
-	RendererTilemap::drawTilemap(tm, math::Transform{}, /*iEntityId=*/-1);
-	RendererTilemap::flushPending();
+	drawFrame(cam, tm);
 	const auto stats = RendererTilemap::getStatistics();
 	EXPECT_EQ(stats.layerCount, 1u);
 	EXPECT_EQ(stats.drawCallCount, 0u);
@@ -151,47 +168,39 @@ TEST(RendererTilemap, emptyVisibleLayerEmitsNoDrawCall) {
 	teardownRendererStack();
 }
 
-TEST(RendererTilemap, multiLayerAccumulatesStats) {
+TEST(RendererTilemap, eachLayerDrawsItsOwnChunks) {
 	bootRendererStack();
-	const CameraOrtho cam(0, 800, 0, 600);
-	RendererTilemap::beginScene(cam);
+	const CameraOrtho cam(-10, 10, -10, 10);
 
 	TilemapAsset tm;
 	tm.width = 2;
 	tm.height = 2;
 	tm.tileset = makeTileset();
 	TilemapLayer ground = makeLayer(tm, "ground", true);
-	ground.tiles[0] = 0;
-	ground.tiles[1] = 0;
-	ground.tiles[2] = 0;
-	ground.tiles[3] = 0;
+	ground.fill(0);
 	tm.layers.push_back(std::move(ground));
 	TilemapLayer decor = makeLayer(tm, "decor", true);
-	decor.tiles[3] = 5;
+	decor.setTile(1, 1, 5);
 	tm.layers.push_back(std::move(decor));
 
-	RendererTilemap::drawTilemap(tm, math::Transform{}, /*iEntityId=*/-1);
-	RendererTilemap::flushPending();
+	drawFrame(cam, tm);
 	const auto stats = RendererTilemap::getStatistics();
 	EXPECT_EQ(stats.layerCount, 2u);
-	// All visible layers combine into a single instanced drawcall.
-	EXPECT_EQ(stats.drawCallCount, 1u);
+	EXPECT_EQ(stats.drawCallCount, 2u);
 	EXPECT_EQ(stats.instanceCount, 5u);
 	teardownRendererStack();
 }
 
 TEST(RendererTilemap, missingTilesetEmitsNothing) {
 	bootRendererStack();
-	const CameraOrtho cam(0, 800, 0, 600);
-	RendererTilemap::beginScene(cam);
+	const CameraOrtho cam(-10, 10, -10, 10);
 
 	TilemapAsset tm;
 	tm.width = 2;
 	tm.height = 2;
 	tm.layers.push_back(makeLayer(tm, "ground", true));
 
-	RendererTilemap::drawTilemap(tm, math::Transform{}, /*iEntityId=*/-1);
-	RendererTilemap::flushPending();
+	drawFrame(cam, tm);
 	const auto stats = RendererTilemap::getStatistics();
 	EXPECT_EQ(stats.layerCount, 0u);
 	EXPECT_EQ(stats.drawCallCount, 0u);
@@ -199,9 +208,9 @@ TEST(RendererTilemap, missingTilesetEmitsNothing) {
 	teardownRendererStack();
 }
 
-TEST(RendererTilemap, multipleEntitiesCombineIntoOneDrawcall) {
+TEST(RendererTilemap, multipleEntitiesDrawInQueueOrder) {
 	bootRendererStack();
-	const CameraOrtho cam(0, 800, 0, 600);
+	const CameraOrtho cam(-10, 10, -10, 10);
 	RendererTilemap::beginScene(cam);
 
 	TilemapAsset first;
@@ -209,8 +218,8 @@ TEST(RendererTilemap, multipleEntitiesCombineIntoOneDrawcall) {
 	first.height = 2;
 	first.tileset = makeTileset();
 	TilemapLayer firstLayer = makeLayer(first, "a", true);
-	firstLayer.tiles[0] = 0;
-	firstLayer.tiles[1] = 0;
+	firstLayer.setTile(0, 0, 0);
+	firstLayer.setTile(1, 0, 0);
 	first.layers.push_back(std::move(firstLayer));
 
 	TilemapAsset second;
@@ -218,7 +227,7 @@ TEST(RendererTilemap, multipleEntitiesCombineIntoOneDrawcall) {
 	second.height = 2;
 	second.tileset = makeTileset();
 	TilemapLayer secondLayer = makeLayer(second, "b", true);
-	secondLayer.tiles[3] = 1;
+	secondLayer.setTile(1, 1, 1);
 	second.layers.push_back(std::move(secondLayer));
 
 	RendererTilemap::drawTilemap(first, math::Transform{}, /*iEntityId=*/1);
@@ -227,8 +236,156 @@ TEST(RendererTilemap, multipleEntitiesCombineIntoOneDrawcall) {
 
 	const auto stats = RendererTilemap::getStatistics();
 	EXPECT_EQ(stats.layerCount, 2u);
-	// Two tilemap entities with distinct tilesets combine into one drawcall.
-	EXPECT_EQ(stats.drawCallCount, 1u);
+	EXPECT_EQ(stats.drawCallCount, 2u);
 	EXPECT_EQ(stats.instanceCount, 3u);
+	teardownRendererStack();
+}
+
+TEST(RendererTilemap, staticMapUploadsOnlyOnce) {
+	bootRendererStack();
+	const auto tm = makeFilledMap(64);
+
+	RendererTilemap::beginPrepare();
+	RendererTilemap::prepareTilemap(tm);
+	const auto first = RendererTilemap::getPrepareStatistics();
+	EXPECT_EQ(first.builtChunkCount, 4u);
+	EXPECT_GE(first.uploadedBytes, uint64_t{64} * 64 * g_instanceBytes);
+
+	RendererTilemap::beginPrepare();
+	RendererTilemap::prepareTilemap(tm);
+	const auto second = RendererTilemap::getPrepareStatistics();
+	EXPECT_EQ(second.builtChunkCount, 0u);
+	EXPECT_EQ(second.uploadedBytes, 0u);
+	EXPECT_EQ(RendererTilemap::getCachedAssetCount(), 1u);
+	teardownRendererStack();
+}
+
+TEST(RendererTilemap, oneCellEditUploadsOneChunk) {
+	bootRendererStack();
+	auto tm = makeFilledMap(64);
+	RendererTilemap::beginPrepare();
+	RendererTilemap::prepareTilemap(tm);
+
+	tm.setTile(0, 40, 33, scene::component::g_EmptyTileIndex);
+	RendererTilemap::beginPrepare();
+	RendererTilemap::prepareTilemap(tm);
+	const auto stats = RendererTilemap::getPrepareStatistics();
+	EXPECT_EQ(stats.builtChunkCount, 1u);
+	EXPECT_EQ(stats.lateBuiltChunkCount, 0u);
+	EXPECT_EQ(stats.uploadedBytes, uint64_t{1023} * g_instanceBytes);
+	teardownRendererStack();
+}
+
+TEST(RendererTilemap, unpreparedAssetIsBuiltLate) {
+	bootRendererStack();
+	const CameraOrtho cam(-40, 40, -40, 40);
+	const auto tm = makeFilledMap(40);
+	RendererTilemap::beginPrepare();
+	drawFrame(cam, tm);
+	const auto stats = RendererTilemap::getPrepareStatistics();
+	EXPECT_EQ(stats.builtChunkCount, 4u);
+	EXPECT_EQ(stats.lateBuiltChunkCount, 4u);
+	EXPECT_EQ(RendererTilemap::getStatistics().instanceCount, 1600u);
+	teardownRendererStack();
+}
+
+TEST(RendererTilemap, largeMapIsNotTruncated) {
+	bootRendererStack();
+	const CameraOrtho cam(-200, 200, -200, 200);
+	const auto tm = makeFilledMap(256);
+	RendererTilemap::beginPrepare();
+	RendererTilemap::prepareTilemap(tm);
+	drawFrame(cam, tm);
+	const auto stats = RendererTilemap::getStatistics();
+	EXPECT_EQ(stats.instanceCount, 256u * 256u);
+	EXPECT_EQ(stats.drawCallCount, 64u);
+	EXPECT_EQ(stats.culledChunkCount, 0u);
+	teardownRendererStack();
+}
+
+TEST(RendererTilemap, chunksOutsideTheViewAreCulled) {
+	bootRendererStack();
+	const CameraOrtho cam(0.25f, 9.75f, 0.25f, 9.75f);
+	const auto tm = makeFilledMap(128);
+	RendererTilemap::beginPrepare();
+	RendererTilemap::prepareTilemap(tm);
+	drawFrame(cam, tm);
+	const auto stats = RendererTilemap::getStatistics();
+	EXPECT_EQ(stats.drawCallCount, 1u);
+	EXPECT_EQ(stats.instanceCount, 1024u);
+	EXPECT_EQ(stats.culledChunkCount, 15u);
+	teardownRendererStack();
+}
+
+TEST(RendererTilemap, entityTransformMovesTheChunks) {
+	bootRendererStack();
+	const CameraOrtho cam(0.25f, 9.75f, 0.25f, 9.75f);
+	const auto tm = makeFilledMap(128);
+	RendererTilemap::beginPrepare();
+	RendererTilemap::prepareTilemap(tm);
+
+	math::Transform far;
+	far.translation() = {1000.f, 0.f, 0.f};
+	drawFrame(cam, tm, far);
+	EXPECT_EQ(RendererTilemap::getStatistics().drawCallCount, 0u);
+	EXPECT_EQ(RendererTilemap::getStatistics().culledChunkCount, 16u);
+
+	math::Transform scaled;
+	scaled.scale() = {0.1f, 0.1f, 1.f};
+	drawFrame(cam, tm, scaled);
+	EXPECT_EQ(RendererTilemap::getStatistics().drawCallCount, 4u);
+
+	math::Transform rotated;
+	rotated.rotation() = {0.f, 0.f, std::numbers::pi_v<float>};
+	drawFrame(cam, tm, rotated);
+	EXPECT_EQ(RendererTilemap::getStatistics().drawCallCount, 1u);
+	EXPECT_EQ(RendererTilemap::getStatistics().culledChunkCount, 15u);
+	teardownRendererStack();
+}
+
+TEST(RendererTilemap, parallaxZeroFollowsTheCamera) {
+	bootRendererStack();
+	CameraOrtho cam(0.25f, 9.75f, 0.25f, 9.75f);
+	cam.setPosition({5000.f, 0.f, 0.f});
+	auto tm = makeFilledMap(128);
+	RendererTilemap::beginPrepare();
+	RendererTilemap::prepareTilemap(tm);
+
+	drawFrame(cam, tm);
+	EXPECT_EQ(RendererTilemap::getStatistics().drawCallCount, 0u);
+
+	tm.layers[0].parallax = {0.f, 0.f};
+	drawFrame(cam, tm);
+	EXPECT_EQ(RendererTilemap::getStatistics().drawCallCount, 1u);
+	EXPECT_EQ(RendererTilemap::getStatistics().instanceCount, 1024u);
+	teardownRendererStack();
+}
+
+TEST(RendererTilemap, unusedAssetsAreEvicted) {
+	bootRendererStack();
+	const auto tm = makeFilledMap(8);
+	RendererTilemap::beginPrepare();
+	RendererTilemap::prepareTilemap(tm);
+	EXPECT_EQ(RendererTilemap::getCachedAssetCount(), 1u);
+	for (uint64_t i = 0; i < uint64_t{RendererTilemap::cacheEvictionPrepares}; ++i) RendererTilemap::beginPrepare();
+	EXPECT_EQ(RendererTilemap::getCachedAssetCount(), 1u);
+	RendererTilemap::beginPrepare();
+	EXPECT_EQ(RendererTilemap::getCachedAssetCount(), 0u);
+
+	RendererTilemap::prepareTilemap(tm);
+	RendererTilemap::clearCache();
+	EXPECT_EQ(RendererTilemap::getCachedAssetCount(), 0u);
+	teardownRendererStack();
+}
+
+TEST(RendererTilemap, resizedLayerIsRebuilt) {
+	bootRendererStack();
+	auto tm = makeFilledMap(32);
+	RendererTilemap::beginPrepare();
+	RendererTilemap::prepareTilemap(tm);
+	tm.resize(40, 32);
+	RendererTilemap::beginPrepare();
+	RendererTilemap::prepareTilemap(tm);
+	EXPECT_EQ(RendererTilemap::getPrepareStatistics().builtChunkCount, 2u);
 	teardownRendererStack();
 }

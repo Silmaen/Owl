@@ -93,10 +93,10 @@ auto makeCorridorTilemap() -> TilemapAsset {
 	layer.name = "walls";
 	layer.visible = true;
 	layer.parallax = math::vec2{1.f, 1.f};
-	layer.tiles.assign(tm.width * tm.height, owl::scene::component::g_EmptyTileIndex);
+	layer.resize({tm.width, tm.height});
 	// Fill the row at y=5 with wall tiles (tile index 1) — that's the one row that
 	// will produce hits when the camera looks along +Y from below.
-	for (uint32_t x = 0; x < tm.width; ++x) layer.tiles[5u * tm.width + x] = 1;
+	for (uint32_t x = 0; x < tm.width; ++x) layer.setTile(x, 5u, 1);
 	tm.layers.push_back(std::move(layer));
 	return tm;
 }
@@ -211,7 +211,7 @@ TEST(RendererRaycast, missAllRaysWhenSurroundedByEmptyCells) {
 	tm.tileset = tileset;
 	TilemapLayer layer;
 	layer.name = "walls";
-	layer.tiles.assign(tm.width * tm.height, owl::scene::component::g_EmptyTileIndex);
+	layer.resize({tm.width, tm.height});
 	tm.layers.push_back(std::move(layer));
 
 	const RaycastConfig config = makeTestConfig(60.f, 8.f, 32);
@@ -276,14 +276,14 @@ TEST(RendererRaycast, transparentTilesDoNotStopTheRay) {
 	tm.tileset = tileset;
 	TilemapLayer layer;
 	layer.name = "walls";
-	layer.tiles.assign(tm.width * tm.height, owl::scene::component::g_EmptyTileIndex);
+	layer.resize({tm.width, tm.height});
 	// Cell row Y in a 16x16 tilemap centred at origin maps to world Y = 7.5 - row,
 	// so smaller cell-row Y = farther in world space when the camera looks +Y from
 	// the origin. The transparent screen has to be the *nearer* cell so the DDA
 	// has a chance to walk past it and reach the opaque wall behind.
 	for (uint32_t x = 0; x < tm.width; ++x) {
-		layer.tiles[5u * tm.width + x] = 2;// transparent screen (closer, world Y = 2.5)
-		layer.tiles[3u * tm.width + x] = 1;// opaque wall behind it (farther, world Y = 4.5)
+		layer.setTile(x, 5u, 2);// transparent screen (closer, world Y = 2.5)
+		layer.setTile(x, 3u, 1);// opaque wall behind it (farther, world Y = 4.5)
 	}
 	tm.layers.push_back(std::move(layer));
 
@@ -324,10 +324,10 @@ TEST(RendererRaycast, transparentBudgetCapsTheStack) {
 	tm.tileset = tileset;
 	TilemapLayer layer;
 	layer.name = "walls";
-	layer.tiles.assign(tm.width * tm.height, owl::scene::component::g_EmptyTileIndex);
+	layer.resize({tm.width, tm.height});
 	// 12 transparent rows in front of the camera at y=2..14.
 	for (uint32_t y = 2; y < 14; ++y)
-		for (uint32_t x = 0; x < tm.width; ++x) layer.tiles[y * tm.width + x] = 1;
+		for (uint32_t x = 0; x < tm.width; ++x) layer.setTile(x, y, 1);
 	tm.layers.push_back(std::move(layer));
 
 	const RaycastConfig config = makeTestConfig(60.f, 32.f, 1);

@@ -133,7 +133,7 @@ slopes, a HUD for management games and its editor, input actions with a gamepad,
 MCP server in Owl Nest ([plan](design/isometric-worlds.md)).
 
 - ![Done][done] Renderer2D transients sized per frame (PR-30: B-09)
-- ![Planned][planned] Persistent, chunked and culled tilemaps, binary storage up to 1024² (PR-31: B-13)
+- ![In Progress][progress] Persistent, chunked and culled tilemaps (done), binary storage up to 1024² (PR-31: B-13)
 - ![Planned][planned] `RendererIsometric` layer: dimetric camera, depth with alpha cutout, billboards ([details](design/isometric.md))
 - ![Planned][planned] Isometric terrain: corner heights, 19 slopes, foundations, tracks and roads, slope-aware picking
 - ![Planned][planned] Isometric atlas generator, objects and vehicles at scale, `iso_town` demo

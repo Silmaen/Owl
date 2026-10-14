@@ -316,7 +316,10 @@ Each layer carries its own grid + parallax:
 | `tiles`        | flat `int32` row-major | all `-1` | Per-cell tile index (`-1` = empty), encoded as comma-separated string in YAML |
 
 YAML key: `Tilemap`. The grid is centred on the entity origin (rows extend downward
-along Y). Tiles index the asset's atlas in row-major order; collidable tiles
+along Y) and follows the full entity world transform (translation, rotation, scale). In memory the cells of a layer
+are only reachable through `TilemapLayer::getTile` / `setTile` / `resize` / `assign` / `fill`, which keep one
+generation per 32 × 32 chunk for the renderer cache ([Chunked tilemaps](renderer.md)). Tiles index the asset's atlas in
+row-major order; collidable tiles
 (declared in the tileset) emit one static Box2D fixture per occurrence at
 `onStartRuntime`. The tileset is lazily resolved against
 `Application::getAssetDirectories()` on first render.

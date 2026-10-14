@@ -11,15 +11,115 @@
 #include "scene/TilemapAsset.h"
 #include "scene/component/Tilemap.h"
 
+#include <algorithm>
+#include <atomic>
 #include <charconv>
 #include <cstdint>
+#include <span>
+#include <utility>
 
 namespace owl::scene::component {
 
 namespace {
 constexpr int32_t k_Empty = g_EmptyTileIndex;
 
-auto encodeTiles(const std::vector<int32_t>& iTiles) -> std::string {
+std::atomic<uint64_t> g_nextChunkGeneration{1};
+
+auto newGeneration() -> uint64_t { return g_nextChunkGeneration.fetch_add(1, std::memory_order_relaxed); }
+
+auto chunkCount(const uint32_t iCells) -> uint32_t {
+	return (iCells + TilemapLayer::chunkSize - 1) / TilemapLayer::chunkSize;
+}
+
+}// namespace
+
+TilemapLayer::TilemapLayer(TilemapLayer&& ioOther) noexcept
+	: name{std::move(ioOther.name)}, visible{ioOther.visible}, parallax{ioOther.parallax},
+	  m_size{std::exchange(ioOther.m_size, math::vec2ui{0, 0})}, m_tiles{std::move(ioOther.m_tiles)},
+	  m_chunkGenerations{std::move(ioOther.m_chunkGenerations)}, m_generation{std::exchange(ioOther.m_generation, 0)} {
+	ioOther.m_tiles.clear();
+	ioOther.m_chunkGenerations.clear();
+}
+
+auto TilemapLayer::operator=(TilemapLayer&& ioOther) noexcept -> TilemapLayer& {
+	if (this == &ioOther)
+		return *this;
+	name = std::move(ioOther.name);
+	visible = ioOther.visible;
+	parallax = ioOther.parallax;
+	m_size = std::exchange(ioOther.m_size, math::vec2ui{0, 0});
+	m_tiles = std::move(ioOther.m_tiles);
+	m_chunkGenerations = std::move(ioOther.m_chunkGenerations);
+	m_generation = std::exchange(ioOther.m_generation, 0);
+	ioOther.m_tiles.clear();
+	ioOther.m_chunkGenerations.clear();
+	return *this;
+}
+
+void TilemapLayer::restampAll() {
+	m_generation = newGeneration();
+	m_chunkGenerations.assign(static_cast<size_t>(chunkCount(m_size.x())) * chunkCount(m_size.y()), m_generation);
+}
+
+void TilemapLayer::resize(const math::vec2ui& iSize) {
+	std::vector<int32_t> next(static_cast<size_t>(iSize.x()) * iSize.y(), k_Empty);
+	const uint32_t copyW = std::min(m_size.x(), iSize.x());
+	const uint32_t copyH = std::min(m_size.y(), iSize.y());
+	for (uint32_t y = 0; y < copyH; ++y) {
+		const auto src = m_tiles.begin() + static_cast<ptrdiff_t>(static_cast<size_t>(y) * m_size.x());
+		std::copy_n(src, copyW, next.begin() + static_cast<ptrdiff_t>(static_cast<size_t>(y) * iSize.x()));
+	}
+	m_tiles = std::move(next);
+	m_size = iSize;
+	restampAll();
+}
+
+void TilemapLayer::assign(const math::vec2ui& iSize, const std::span<const int32_t> iTiles) {
+	m_size = iSize;
+	m_tiles.assign(static_cast<size_t>(iSize.x()) * iSize.y(), k_Empty);
+	std::copy_n(iTiles.begin(), std::min(iTiles.size(), m_tiles.size()), m_tiles.begin());
+	restampAll();
+}
+
+void TilemapLayer::fill(const int32_t iValue) {
+	std::ranges::fill(m_tiles, iValue);
+	restampAll();
+}
+
+auto TilemapLayer::getTile(const uint32_t iX, const uint32_t iY) const -> int32_t {
+	if (iX >= m_size.x() || iY >= m_size.y())
+		return k_Empty;
+	return m_tiles[static_cast<size_t>(iY) * m_size.x() + iX];
+}
+
+auto TilemapLayer::setTile(const uint32_t iX, const uint32_t iY, const int32_t iValue) -> bool {
+	if (iX >= m_size.x() || iY >= m_size.y())
+		return false;
+	auto& cell = m_tiles[static_cast<size_t>(iY) * m_size.x() + iX];
+	if (cell == iValue)
+		return false;
+	cell = iValue;
+	m_generation = newGeneration();
+	m_chunkGenerations[static_cast<size_t>(iY / chunkSize) * chunkCount(m_size.x()) + iX / chunkSize] = m_generation;
+	return true;
+}
+
+auto TilemapLayer::getOccupiedCount() const -> size_t {
+	return static_cast<size_t>(std::ranges::count_if(m_tiles, [](const int32_t iTile) -> bool { return iTile >= 0; }));
+}
+
+auto TilemapLayer::getChunkGridSize() const -> math::vec2ui { return {chunkCount(m_size.x()), chunkCount(m_size.y())}; }
+
+auto TilemapLayer::getChunkGeneration(const math::vec2ui& iChunk) const -> uint64_t {
+	const auto grid = getChunkGridSize();
+	if (iChunk.x() >= grid.x() || iChunk.y() >= grid.y())
+		return 0;
+	return m_chunkGenerations[static_cast<size_t>(iChunk.y()) * grid.x() + iChunk.x()];
+}
+
+namespace {
+
+auto encodeTiles(const std::span<const int32_t> iTiles) -> std::string {
 	std::string out;
 	out.reserve(iTiles.size() * 3);
 	for (size_t i = 0; i < iTiles.size(); ++i) {
@@ -65,7 +165,7 @@ void emitInline(YAML::Emitter& iEmitter, const scene::TilemapAsset& iAsset) {
 			iEmitter << YAML::Key << "parallax" << YAML::Value << YAML::Flow << YAML::BeginSeq << layer.parallax.x()
 					 << layer.parallax.y() << YAML::EndSeq;
 		}
-		iEmitter << YAML::Key << "tiles" << YAML::Value << encodeTiles(layer.tiles);
+		iEmitter << YAML::Key << "tiles" << YAML::Value << encodeTiles(layer.getTiles());
 		iEmitter << YAML::EndMap;
 	}
 	iEmitter << YAML::EndSeq;
@@ -83,6 +183,7 @@ auto readInline(const core::YamlNode& iNode) -> shared<scene::TilemapAsset> {
 		asset->cellSize = iNode["cellSize"].as<float>();
 	if (const auto layerNodes = iNode["layers"]; layerNodes && layerNodes.isSequence()) {
 		const size_t expected = static_cast<size_t>(asset->width) * asset->height;
+		const math::vec2ui gridSize{asset->width, asset->height};
 		for (const auto layerNode: layerNodes) {
 			TilemapLayer layer;
 			if (layerNode["name"])
@@ -92,9 +193,9 @@ auto readInline(const core::YamlNode& iNode) -> shared<scene::TilemapAsset> {
 			if (const auto px = layerNode["parallax"]; px && px.isSequence() && px.size() >= 2)
 				layer.parallax = math::vec2{px[0].as<float>(), px[1].as<float>()};
 			if (layerNode["tiles"])
-				layer.tiles = decodeTiles(layerNode["tiles"].as<std::string>(), expected);
+				layer.assign(gridSize, decodeTiles(layerNode["tiles"].as<std::string>(), expected));
 			else
-				layer.tiles.assign(expected, k_Empty);
+				layer.resize(gridSize);
 			asset->layers.push_back(std::move(layer));
 		}
 	}

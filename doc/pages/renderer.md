@@ -313,7 +313,7 @@ this same shape rather than the retired Hazel-style CPU-vertex batch.
 Clean-ups in Phase 5:
 
 - **Tilemap rendering routes through the instanced `RendererTilemap`.**
-  `Scene::renderTilemaps` queues each non-raycast 2D tilemap via
+  `Scene::render` queued each non-raycast 2D tilemap via
   `RendererTilemap::drawTilemap`; the draw is **deferred**, not immediate.
   `Renderer2D::flush` drains the queue with `RendererTilemap::flushPending`
   from inside its own `beginBatch`/`endBatch` render pass — after the
@@ -330,7 +330,8 @@ Clean-ups in Phase 5:
   (one descriptor set per frame per block, undefined to update between
   recorded draws), so folding every per-draw datum into the instance stream —
   the same pattern `Renderer2D` uses for its 32-texture batch — sidesteps the
-  descriptor race entirely. Cap: 32 distinct tilesets per batch.
+  descriptor race entirely. Cap: 32 distinct tilesets per batch. v0.4.0 replaced
+  this single draw by persistent chunks, see [Chunked tilemaps](#chunked-tilemaps).
 - **No redundant `getWorldTransform` on the 2D entity draws.** The quad /
   circle / animated-sprite loops in `Scene::render` pass
   `Scene::getWorldIndex(entity)`; when that slot is valid (the normal case
@@ -357,6 +358,40 @@ record the GPU model alongside the numbers, since the instanced path is
 bandwidth- rather than CPU-bound. There is no automated perf gate in CI —
 the headless suite asserts correctness (stats, SSBO round-trip), not timing.
 
+## Chunked tilemaps {#chunked-tilemaps}
+
+`RendererTilemap` keeps the cells of a tilemap on the GPU between frames. Each layer of a `TilemapAsset` is cut into
+`TilemapLayer::chunkSize`² (32 × 32) chunks; every write to a layer (`setTile`, `resize`, `assign`, `fill`) stamps
+the touched chunks with a fresh generation taken from one process-wide counter. The renderer caches, per asset, one
+persistent instance buffer per non-empty chunk (packed cell coordinates and tile index, 8 bytes per non-empty cell)
+and rebuilds a chunk only when its generation changed.
+
+```mermaid
+flowchart LR
+    Prep["Scene::prepareTilemapRenderData<br/>(before any layer)"] -->|changed chunks only| Cache["Chunk cache<br/>per asset"]
+    Layer["Renderer2DLayer::onRender"] -->|drawTilemap| Queue["Queue"]
+    Queue -->|"Renderer2D::flush → flushPending"| Cull["Cull chunks<br/>against the view"]
+    Cache --> Cull
+    Cull -->|one draw per visible chunk| FB["Framebuffer"]
+```
+
+- **Prepare phase.** `Scene::renderWithStack` calls `RendererTilemap::beginPrepare` then `prepareTilemap` for every
+  visible tilemap before any layer opens a render pass, so no upload splits a pass. A static map uploads nothing;
+  a one-cell edit uploads its chunk. An asset drawn without a prepare is built inside `flushPending` and counted in
+  `PrepareStatistics::lateBuiltChunkCount`. An asset neither prepared nor drawn for
+  `RendererTilemap::cacheEvictionPrepares` prepare phases leaves the cache.
+- **Layers draw from `onRender`.** `Renderer2DLayer::onRender` queues the tilemaps routed to it,
+  `RendererRaycastLayer::onRender` casts their walls; `Scene::render` no longer handles tilemaps. The editor
+  composite draws through a `Renderer2DLayer` too.
+- **Draw.** For each queued entity and each visible layer, one update of the per-draw uniform block (camera, entity
+  world transform with rotation and scale, grid origin, cell size, layer depth, parallax offset, atlas grid, entity id,
+  texture slot), then one instanced draw per non-empty chunk whose transformed bounds touch the view. Layers keep
+  their painter's order (each visible layer is `1e-4` in front of the previous one); there is no cell cap.
+- **Parallax.** A layer is shifted by `cameraPosition × (1 − parallax)`: `(1, 1)` moves with the world, `(0, 0)`
+  stays locked to the camera.
+- **Budgets** (`bench/`, Null backend, `tilemap/*`): a static 256² map of 4 layers costs a few microseconds and uploads
+  0 byte per frame, a one-cell edit uploads one chunk, building one 32² chunk takes about 1 µs.
+
 ## Raycaster {#renderer-raycaster}
 
 `RendererRaycast` (`renderer/RendererRaycast.h`) is the first non-2D
@@ -377,8 +412,8 @@ flowchart LR
 ```
 
 The raycaster's `RenderLayer` switches `Renderer2D` to a pixel-space ortho
-camera in `onBeginFrame`, lets `Scene::render` dispatch every accepted
-tilemap into `RendererRaycast::drawTilemapWalls`, then closes the
+camera in `onBeginFrame`, dispatches every accepted tilemap into
+`RendererRaycast::drawTilemapWalls` from its own `onRender`, then closes the
 `Renderer2D` batch in `onEndFrame`. The DDA traversal runs on the CPU per
 screen column, producing one textured `Renderer2D::drawQuad` per stripe; the
 sky / floor backdrop is emitted lazily on the first wall draw so empty

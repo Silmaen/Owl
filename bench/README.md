@@ -37,7 +37,7 @@ cd output/build/linux-clang-release-bench/bin
 | `--json=<file>`     | (none)  | Write the results, metrics and load average as JSON.         |
 | `--verbose`         | off     | Keep engine warnings and errors in the output.               |
 
-Groups (name prefixes): `scene`, `serialize`, `prefab`, `renderer2d`, `frame`, `voxel`, `script`,
+Groups (name prefixes): `scene`, `serialize`, `prefab`, `renderer2d`, `tilemap`, `frame`, `voxel`, `script`,
 `physics`, `sample`, `slang`. The first Slang compilation is only "cold" when `slang` is the first group to
 compile a shader in the process, which is the case for a full run. `voxel/streaming` streams a procedural world
 through a real `RendererVoxel` layer with frames paced at 60 Hz (about 12 s) and reports the main-thread CPU time per

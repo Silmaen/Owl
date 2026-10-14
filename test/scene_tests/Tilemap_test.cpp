@@ -102,8 +102,8 @@ TEST_F(TilemapComponentFixture, SerializeInlineFallbackForUnsavedAsset) {
 	map.asset->height = 3;
 	map.asset->cellSize = 0.5f;
 	auto& layer = map.asset->addLayer("ground");
-	layer.tiles[0] = 5;
-	layer.tiles[11] = 11;
+	layer.setTile(0, 0, 5);
+	layer.setTile(3, 2, 11);
 
 	const SceneSerializer saver(sc);
 	const auto fs = std::filesystem::temp_directory_path() / "tilemap_inline.yml";

@@ -15,6 +15,7 @@
 #include <charconv>
 #include <cstdint>
 #include <fstream>
+#include <span>
 #include <sstream>
 
 namespace owl::scene {
@@ -29,23 +30,7 @@ auto TilemapAsset::format() -> const core::DocumentFormat& { return g_tilemapFor
 namespace {
 constexpr int32_t k_Empty = scene::component::g_EmptyTileIndex;
 
-void resizeLayerStorage(std::vector<int32_t>& ioTiles, const uint32_t iOldWidth, const uint32_t iOldHeight,
-						const uint32_t iNewWidth, const uint32_t iNewHeight) {
-	std::vector<int32_t> next(static_cast<size_t>(iNewWidth) * iNewHeight, k_Empty);
-	const uint32_t copyW = std::min(iOldWidth, iNewWidth);
-	const uint32_t copyH = std::min(iOldHeight, iNewHeight);
-	for (uint32_t y = 0; y < copyH; ++y) {
-		for (uint32_t x = 0; x < copyW; ++x) {
-			const size_t srcIdx = static_cast<size_t>(y) * iOldWidth + x;
-			const size_t dstIdx = static_cast<size_t>(y) * iNewWidth + x;
-			if (srcIdx < ioTiles.size())
-				next[dstIdx] = ioTiles[srcIdx];
-		}
-	}
-	ioTiles = std::move(next);
-}
-
-auto encodeTiles(const std::vector<int32_t>& iTiles) -> std::string {
+auto encodeTiles(const std::span<const int32_t> iTiles) -> std::string {
 	std::string out;
 	out.reserve(iTiles.size() * 3);
 	for (size_t i = 0; i < iTiles.size(); ++i) {
@@ -80,7 +65,7 @@ auto decodeTiles(const std::string& iEncoded, const size_t iExpected) -> std::ve
 void TilemapAsset::resize(const uint32_t iWidth, const uint32_t iHeight) {
 	const uint32_t newWidth = std::max(1u, iWidth);
 	const uint32_t newHeight = std::max(1u, iHeight);
-	for (auto& layer: layers) resizeLayerStorage(layer.tiles, width, height, newWidth, newHeight);
+	for (auto& layer: layers) layer.resize({newWidth, newHeight});
 	width = newWidth;
 	height = newHeight;
 }
@@ -90,27 +75,23 @@ auto TilemapAsset::addLayer(const std::string& iName) -> scene::component::Tilem
 	layer.name = iName;
 	layer.visible = true;
 	layer.parallax = math::vec2{1.f, 1.f};
-	layer.tiles.assign(static_cast<size_t>(width) * height, k_Empty);
+	layer.resize({width, height});
 	return layer;
 }
 
 auto TilemapAsset::getTile(const uint32_t iLayer, const uint32_t iX, const uint32_t iY) const -> int32_t {
 	if (iLayer >= layers.size() || iX >= width || iY >= height)
 		return k_Empty;
-	const size_t idx = static_cast<size_t>(iY) * width + iX;
-	if (idx >= layers[iLayer].tiles.size())
-		return k_Empty;
-	return layers[iLayer].tiles[idx];
+	return layers[iLayer].getTile(iX, iY);
 }
 
 void TilemapAsset::setTile(const uint32_t iLayer, const uint32_t iX, const uint32_t iY, const int32_t iValue) {
 	if (iLayer >= layers.size() || iX >= width || iY >= height)
 		return;
-	auto& tiles = layers[iLayer].tiles;
-	const size_t idx = static_cast<size_t>(iY) * width + iX;
-	if (idx >= tiles.size())
-		tiles.resize(static_cast<size_t>(width) * height, k_Empty);
-	tiles[idx] = iValue;
+	auto& layer = layers[iLayer];
+	if (const math::vec2ui gridSize{width, height}; layer.getSize() != gridSize)
+		layer.resize(gridSize);
+	layer.setTile(iX, iY, iValue);
 }
 
 auto TilemapAsset::serializeToString(const std::string_view iName) const -> std::string {
@@ -133,7 +114,7 @@ auto TilemapAsset::serializeToString(const std::string_view iName) const -> std:
 			emitter << YAML::Key << "parallax" << YAML::Value << YAML::Flow << YAML::BeginSeq << layer.parallax.x()
 					<< layer.parallax.y() << YAML::EndSeq;
 		}
-		emitter << YAML::Key << "tiles" << YAML::Value << encodeTiles(layer.tiles);
+		emitter << YAML::Key << "tiles" << YAML::Value << encodeTiles(layer.getTiles());
 		emitter << YAML::EndMap;
 	}
 	emitter << YAML::EndSeq;
@@ -168,6 +149,7 @@ auto TilemapAsset::deserializeFromString(const std::string_view iYaml) -> bool {
 		parsed.cellSize = root["cellSize"].as<float>();
 	if (const auto layerNodes = root["layers"]; layerNodes && layerNodes.IsSequence()) {
 		const size_t expected = static_cast<size_t>(parsed.width) * parsed.height;
+		const math::vec2ui gridSize{parsed.width, parsed.height};
 		for (const auto& layerNode: layerNodes) {
 			scene::component::TilemapLayer layer;
 			if (layerNode["name"])
@@ -177,9 +159,9 @@ auto TilemapAsset::deserializeFromString(const std::string_view iYaml) -> bool {
 			if (const auto px = layerNode["parallax"]; px && px.IsSequence() && px.size() >= 2)
 				layer.parallax = math::vec2{px[0].as<float>(), px[1].as<float>()};
 			if (layerNode["tiles"])
-				layer.tiles = decodeTiles(layerNode["tiles"].as<std::string>(), expected);
+				layer.assign(gridSize, decodeTiles(layerNode["tiles"].as<std::string>(), expected));
 			else
-				layer.tiles.assign(expected, k_Empty);
+				layer.resize(gridSize);
 			parsed.layers.push_back(std::move(layer));
 		}
 	}
