@@ -34,6 +34,7 @@
 #include <renderer/RendererIsometricLayer.h>
 #include <scene/SceneSerializer.h>
 #include <scene/TilemapAsset.h>
+#include <scene/TilemapTerrain.h>
 #include <scene/Tileset.h>
 #include <scene/component/RaycastDoor.h>
 #include <scene/component/RaycastPushWall.h>
@@ -1215,6 +1216,7 @@ void Viewport::handleIsometricInput() {
 void Viewport::updateIsometricCursor(const shared<scene::Scene>& iScene) {
 	m_isoCursor.reset();
 	m_hoveredCell.reset();
+	m_hoveredCornerZ.fill(0.f);
 	if (!isHovered() || !iScene)
 		return;
 	const auto mouse = ImGui::GetMousePos();
@@ -1227,7 +1229,14 @@ void Viewport::updateIsometricCursor(const shared<scene::Scene>& iScene) {
 		const math::vec3 origin = iScene->getWorldTransform(scene::Entity{entity, iScene.get()}).translation();
 		height = origin.z();
 		m_hoveredMapOrigin = origin;
-		m_hoveredCell = renderer::pickIsometricCell(m_isoCamera, pixel, origin, {asset->width, asset->height});
+		if (const auto hit = scene::terrain::pickTerrain(*asset, m_isoCamera, pixel, origin); hit.has_value()) {
+			m_hoveredCell = hit->cell;
+			const auto corners = asset->getCellCorners(hit->cell.x(), hit->cell.y());
+			for (size_t i = 0; i < corners.size(); ++i)
+				m_hoveredCornerZ[i] = static_cast<float>(corners[i]) * scene::terrain::heightStep;
+			m_isoCursor = hit->point;
+			return;
+		}
 		break;
 	}
 	m_isoCursor = m_isoCamera.viewportToWorld(pixel, height);
@@ -1236,11 +1245,16 @@ void Viewport::updateIsometricCursor(const shared<scene::Scene>& iScene) {
 void Viewport::renderIsometricCursor() const {
 	const auto& theme = gui::UiLayer::getTheme();
 	if (m_hoveredCell.has_value()) {
-		math::Transform cell;
-		cell.translation() = m_hoveredMapOrigin + math::vec3{static_cast<float>(m_hoveredCell->x()) + 0.5f,
-															 static_cast<float>(m_hoveredCell->y()) + 0.5f, 0.f};
-		renderer::Renderer2D::drawRect({.transform = cell, .color = theme.accent});
-		renderer::Renderer2D::drawQuad({.transform = cell, .color = gui::Theme::withAlpha(theme.accent, 0.18f)});
+		const auto cx = static_cast<float>(m_hoveredCell->x());
+		const auto cy = static_cast<float>(m_hoveredCell->y());
+		const std::array<math::vec3, 4> corners{m_hoveredMapOrigin + math::vec3{cx, cy, m_hoveredCornerZ[0]},
+												m_hoveredMapOrigin + math::vec3{cx + 1.f, cy, m_hoveredCornerZ[1]},
+												m_hoveredMapOrigin +
+														math::vec3{cx + 1.f, cy + 1.f, m_hoveredCornerZ[2]},
+												m_hoveredMapOrigin + math::vec3{cx, cy + 1.f, m_hoveredCornerZ[3]}};
+		for (size_t i = 0; i < corners.size(); ++i)
+			renderer::Renderer2D::drawLine(
+					{.point1 = corners[i], .point2 = corners[(i + 1) % corners.size()], .color = theme.accent});
 	}
 	if (!m_isoCursor.has_value())
 		return;

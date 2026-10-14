@@ -25,6 +25,7 @@
 #include <imgui_stdlib.h>
 #include <renderer/Renderer.h>
 #include <renderer/gpu/Texture.h>
+#include <scene/TilemapTerrain.h>
 
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG("-Wreserved-identifier")
@@ -35,6 +36,7 @@ OWL_DIAG_POP
 #include <algorithm>
 #include <cstddef>
 #include <format>
+#include <optional>
 #include <tuple>
 #include <utility>
 
@@ -281,6 +283,75 @@ void TilesetDocument::renderHierarchyPanel() {
 		pushTilesetEdit(m_tileset, m_undoManager, "Set kind to Orthogonal",
 						[this]() -> void { m_tileset.kind = Kind::Orthogonal; });
 	gui::widgets::endProperties();
+	gui::widgets::endSection();
+	if (m_tileset.kind == Kind::Isometric)
+		renderSlopeSection();
+}
+
+void TilesetDocument::renderSlopeSection() {
+	if (!gui::widgets::sectionHeader("Slopes", gui::icon::layers, false).open)
+		return;
+	ImGui::TextWrapped("Tile drawn for a terrain or overlay id on each slope; -1 falls back on the flat tile. A "
+					   "foundation replaces the terrain tile of a cell whose flag bit 0 is set.");
+	if (gui::widgets::button("addSlopeSet", {.glyph = gui::icon::plus, .label = "Add Terrain"})) {
+		pushTilesetEdit(m_tileset, m_undoManager, "Add slope table", [this]() -> void {
+			scene::SlopeSet set;
+			set.id = std::max(0, m_inspectedTile);
+			set.tiles[scene::terrain::flatSlope] = set.id;
+			m_tileset.slopeSets.push_back(set);
+		});
+	}
+	std::optional<size_t> eraseIndex;
+	for (size_t i = 0; i < m_tileset.slopeSets.size(); ++i) {
+		ImGui::PushID(static_cast<int>(i));
+		const auto label = std::format("Terrain {}", m_tileset.slopeSets[i].id);
+		const bool open = ImGui::TreeNodeEx("##set", ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowOverlap,
+											"%s", label.c_str());
+		ImGui::SameLine(ImGui::GetContentRegionAvail().x + ImGui::GetCursorPosX() - ImGui::GetFrameHeight());
+		if (gui::widgets::iconButton("##delete", {.glyph = gui::icon::trash2, .tooltip = "Delete the table"}))
+			eraseIndex = i;
+		if (open) {
+			if (gui::widgets::beginProperties("##slopeSet")) {
+				const auto& set = m_tileset.slopeSets[i];
+				int id = set.id;
+				if (gui::widgets::propertyInt("Id", id, 0, 0, scene::component::g_MaxTileIndex, "%d",
+											  "Terrain or overlay id stored in the cells."))
+					pushTilesetEdit(m_tileset, m_undoManager, "Set slope table id",
+									[this, i, id]() -> void { m_tileset.slopeSets[i].id = id; });
+				for (uint8_t slope = 0; slope < scene::terrain::slopeCount; ++slope) {
+					const auto name = std::string{scene::terrain::getSlopeName(slope)};
+					int tile = set.tiles[slope];
+					if (gui::widgets::propertyInt(name.c_str(), tile, -1, -1,
+												  static_cast<int>(m_tileset.tileCount()) - 1, "%d",
+												  "Tile index on this slope (-1: the flat tile)."))
+						pushTilesetEdit(m_tileset, m_undoManager, "Set slope tile", [this, i, slope, tile]() -> void {
+							m_tileset.slopeSets[i].tiles[slope] = tile;
+						});
+				}
+				gui::widgets::endProperties();
+			}
+			if (gui::widgets::beginProperties("##foundations")) {
+				const auto& set = m_tileset.slopeSets[i];
+				for (uint8_t slope = 0; slope < scene::terrain::slopeCount; ++slope) {
+					const auto name = std::format("{} foundation", scene::terrain::getSlopeName(slope));
+					int tile = set.foundations[slope];
+					if (gui::widgets::propertyInt(name.c_str(), tile, -1, -1,
+												  static_cast<int>(m_tileset.tileCount()) - 1, "%d",
+												  "Foundation tile on this slope (-1: none)."))
+						pushTilesetEdit(
+								m_tileset, m_undoManager, "Set foundation tile",
+								[this, i, slope, tile]() -> void { m_tileset.slopeSets[i].foundations[slope] = tile; });
+				}
+				gui::widgets::endProperties();
+			}
+			ImGui::TreePop();
+		}
+		ImGui::PopID();
+	}
+	if (eraseIndex)
+		pushTilesetEdit(m_tileset, m_undoManager, "Delete slope table", [this, eraseIndex]() -> void {
+			m_tileset.slopeSets.erase(m_tileset.slopeSets.begin() + static_cast<ptrdiff_t>(*eraseIndex));
+		});
 	gui::widgets::endSection();
 }
 

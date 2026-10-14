@@ -153,6 +153,90 @@ private:
 
 /**
  * @brief
+ *  Undoable terraforming: the corners a raise, lower or level operation moved.
+ *
+ * The command is pushed once the operation is applied; only the changed corners are kept.
+ */
+class ModifyTerrainHeightsCommand final : public TilemapUndoCommand {
+public:
+	/**
+	 * @brief
+	 *  Constructor.
+	 * @param[in] iChanges The corners that changed, with their heights before and after.
+	 * @param[in] iDescription Human-readable description for menus.
+	 */
+	ModifyTerrainHeightsCommand(std::vector<scene::CornerHeightChange> iChanges, std::string iDescription);
+
+	/**
+	 * @brief
+	 *  Put the corners back to their previous heights.
+	 * @param[in,out] ioTarget The tilemap asset.
+	 */
+	void undo(scene::TilemapAsset& ioTarget) override;
+
+	/**
+	 * @brief
+	 *  Move the corners to their new heights again.
+	 * @param[in,out] ioTarget The tilemap asset.
+	 */
+	void redo(scene::TilemapAsset& ioTarget) override;
+
+	/**
+	 * @brief
+	 *  Human-readable description for the Edit menu / tooltips.
+	 * @return The description string.
+	 */
+	[[nodiscard]] auto description() const -> std::string override { return m_description; }
+
+	/**
+	 * @brief
+	 *  The corners the command moves.
+	 * @return The changes.
+	 */
+	[[nodiscard]] auto getChanges() const -> const std::vector<scene::CornerHeightChange>& { return m_changes; }
+
+private:
+	/// The corners that changed.
+	std::vector<scene::CornerHeightChange> m_changes;
+	/// Description shown in menus.
+	std::string m_description;
+};
+
+/**
+ * @brief
+ *  Gathers the terraforming operations of one gesture (a click or a drag) into a single undo step.
+ */
+class TerrainStroke final {
+public:
+	/**
+	 * @brief
+	 *  Add the corners one operation moved.
+	 * @param[in] iChanges The result of a terraforming call of the asset.
+	 */
+	void add(const std::vector<scene::CornerHeightChange>& iChanges);
+
+	/**
+	 * @brief
+	 *  Whether nothing has been recorded.
+	 * @return True when the stroke holds no change.
+	 */
+	[[nodiscard]] auto isEmpty() const -> bool { return m_changes.empty(); }
+
+	/**
+	 * @brief
+	 *  Close the stroke into one command.
+	 * @param[in] iDescription Description for the Edit menu.
+	 * @return The command, or null when the gesture changed nothing.
+	 */
+	[[nodiscard]] auto finish(const std::string& iDescription) -> uniq<ModifyTerrainHeightsCommand>;
+
+private:
+	/// Changes of the operations so far.
+	std::vector<scene::CornerHeightChange> m_changes;
+};
+
+/**
+ * @brief
  *  Cell edits gathered into one `ModifyTilemapChunksCommand` (a paint stroke).
  *
  * Every write goes through the stroke, which records the content of a chunk the first time one of its cells

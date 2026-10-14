@@ -15,6 +15,7 @@
 #include "../panel/TilePalette.h"
 
 #include <scene/TilemapAsset.h>
+#include <scene/TilemapTerrain.h>
 
 #include <cstdint>
 #include <filesystem>
@@ -33,6 +34,15 @@ namespace owl::nest {
  * size, layers) a `commands::ModifyTilemapLayoutCommand` whose asset copies share their chunks.
  */
 using TilemapUndoManager = UndoManager<scene::TilemapAsset>;
+
+/// Tools of the isometric preview of a tilemap.
+enum struct IsometricTool : uint8_t {
+	Paint,///< Paint terrain tiles with the palette brushes.
+	Raise,///< Left raises a corner (or an area), right lowers it.
+	Lower,///< Left lowers a corner (or an area), right raises it.
+	Level,///< Bring a corner (or an area) to the level height.
+	Overlay,///< Paint the overlay layer (tracks, roads) with the palette brush.
+};
 
 /**
  * @brief
@@ -354,6 +364,56 @@ private:
 	 * @brief
 	 *  Refresh the saved-snapshot baseline used by `isDirty()`.
 	 */
+	/**
+	 * @brief
+	 *  Whether the tileset is isometric, which swaps the top-down canvas for the isometric preview.
+	 * @return True for a tileset of `kind: Isometric`.
+	 */
+	[[nodiscard]] auto isIsometric() const -> bool;
+
+	/**
+	 * @brief
+	 *  Isometric preview of the map with the terraforming tools.
+	 */
+	void renderIsometricCanvas();
+
+	/**
+	 * @brief
+	 *  Row of tool buttons and options above the isometric preview.
+	 */
+	void renderIsometricToolbar();
+
+	/**
+	 * @brief
+	 *  Draw the cells, back to front, of the isometric preview.
+	 */
+	void drawIsometricTiles(ImDrawList* iDrawList, const ImVec2& iOrigin, const ImVec2& iCanvasMin,
+							const ImVec2& iCanvasMax) const;
+
+	/**
+	 * @brief
+	 *  Hover highlight, picking and tools of the isometric preview.
+	 */
+	void handleIsometricInput(ImDrawList* iDrawList, const ImVec2& iOrigin);
+
+	/**
+	 * @brief
+	 *  Apply the active tool at a picked corner.
+	 */
+	void applyIsometricTool(const scene::terrain::TerrainHit& iHit, bool iLeftPressed, bool iRightPressed);
+
+	/**
+	 * @brief
+	 *  Close the terraforming and cell strokes of the gesture that ended.
+	 */
+	void finishIsometricGesture();
+
+	/**
+	 * @brief
+	 *  Paint the primary or secondary brush into a cell of the active layer.
+	 */
+	void applyBrush(uint32_t iCellX, uint32_t iCellY, bool iLeftDown, bool iRightDown);
+
 	void refreshSavedSnapshot();
 
 	/**
@@ -393,6 +453,20 @@ private:
 	std::optional<scene::TilemapAsset> m_resizeOrigin;
 	/// Cell edits in progress, pushed as one undo step when the gesture ends.
 	commands::TilemapStroke m_stroke;
+	/// Terraforming in progress, pushed as one undo step when the gesture ends.
+	commands::TerrainStroke m_terrainStroke;
+	/// Tool of the isometric preview.
+	IsometricTool m_isoTool = IsometricTool::Paint;
+	/// Side, in corners, of the raise / lower / level area.
+	int m_terrainBrushSize = 1;
+	/// Height the level tool brings its area to, in corner steps.
+	int m_levelHeight = 0;
+	/// Corner the terrain tool acted on last, so a drag acts once per corner.
+	std::optional<math::vec2ui> m_lastTerrainCorner;
+	/// Corner and cell under the cursor in the isometric preview.
+	std::optional<scene::terrain::TerrainHit> m_isoHover;
+	/// Whether the preview has been centred once.
+	bool m_isoCentred = false;
 	/// Editor layer back-pointer for menus/dialogs that need editor-wide context.
 	EditorLayer* mp_editorLayer{nullptr};
 	/// Tile palette state (selected layer + brush).

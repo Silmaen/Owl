@@ -14,6 +14,7 @@
 
 #include <renderer/RendererIsometric.h>
 
+#include <array>
 #include <cstdint>
 #include <optional>
 #include <string>
@@ -395,6 +396,8 @@ private:
 	std::optional<math::vec3> m_isoCursor;
 	/// World position of the back corner of the hovered isometric map.
 	math::vec3 m_hoveredMapOrigin{0.f, 0.f, 0.f};
+	/// Heights above the map origin of the corners of the hovered cell (back, right, front, left), in world units.
+	std::array<float, 4> m_hoveredCornerZ{};
 	/// Hovered tile of the first isometric map.
 	std::optional<math::vec2ui> m_hoveredCell;
 	/// Undo manager (non-owning, optional).

@@ -292,6 +292,12 @@ public:
 private:
 	/**
 	 * @brief
+	 *  Render the slope table of an isometric tileset: the tile of each terrain id on the 19 slopes.
+	 */
+	void renderSlopeSection();
+
+	/**
+	 * @brief
 	 *  Render the atlas preview canvas (full texture + grid overlay + click-to-select).
 	 */
 	void renderCanvas();
