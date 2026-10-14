@@ -281,6 +281,15 @@ TEST_F(TilemapStorage, FullMapOf1024FitsTheBudget) {
 	EXPECT_EQ(restored.layers[0].getOccupiedCount(), 1024u * 1024u);
 }
 
+TEST_F(TilemapStorage, OversizedGridIsRefused) {
+	TilemapAsset asset;
+	EXPECT_FALSE(asset.deserializeFromString("Tilemap: huge\nwidth: 20000\nheight: 4\nlayers:\n  - name: a\n"));
+	EXPECT_FALSE(asset.deserializeFromString("Tilemap: bad\nwidth: -3\n"));
+	asset.addLayer("a");
+	asset.resize(TilemapAsset::maxGridSide + 5, 2);
+	EXPECT_EQ(asset.width, TilemapAsset::maxGridSide);
+}
+
 TEST_F(TilemapStorage, InvalidTileIndicesAreRefused) {
 	TilemapLayer layer;
 	layer.resize({2, 2});
@@ -343,7 +352,7 @@ TEST_F(TilemapStorage, SampleTilemapsAreFormatTwo) {
 	for (const auto& file: files) {
 		if (!std::filesystem::exists(file))
 			continue;
-		std::ifstream in(file, std::ios::binary);
+		const std::ifstream in(file, std::ios::binary);
 		std::stringstream buffer;
 		buffer << in.rdbuf();
 		const auto text = buffer.str();

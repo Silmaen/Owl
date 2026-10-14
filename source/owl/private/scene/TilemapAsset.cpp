@@ -107,6 +107,11 @@ auto parseHeader(const YAML::Node& iRoot, TilemapAsset& oParsed) -> bool {
 		oParsed.height = std::max(1u, iRoot["height"].as<uint32_t>());
 	if (iRoot["cellSize"])
 		oParsed.cellSize = iRoot["cellSize"].as<float>();
+	if (oParsed.width > TilemapAsset::maxGridSide || oParsed.height > TilemapAsset::maxGridSide) {
+		OWL_CORE_ERROR("TilemapAsset: Grid of {}×{} cells exceeds the {} cells side limit.", oParsed.width,
+					   oParsed.height, TilemapAsset::maxGridSide)
+		return false;
+	}
 	if (const auto layerNodes = iRoot["layers"]; layerNodes) {
 		if (!layerNodes.IsSequence()) {
 			OWL_CORE_ERROR("TilemapAsset: `layers` is not a sequence.")
@@ -123,8 +128,8 @@ auto parseHeader(const YAML::Node& iRoot, TilemapAsset& oParsed) -> bool {
 auto TilemapAsset::format() -> const core::DocumentFormat& { return g_tilemapFormat; }
 
 void TilemapAsset::resize(const uint32_t iWidth, const uint32_t iHeight) {
-	const uint32_t newWidth = std::max(1u, iWidth);
-	const uint32_t newHeight = std::max(1u, iHeight);
+	const uint32_t newWidth = std::clamp(iWidth, 1u, maxGridSide);
+	const uint32_t newHeight = std::clamp(iHeight, 1u, maxGridSide);
 	for (auto& layer: layers) layer.resize({newWidth, newHeight});
 	width = newWidth;
 	height = newHeight;

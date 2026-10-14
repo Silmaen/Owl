@@ -339,9 +339,9 @@ auto readInline(const core::YamlNode& iNode) -> shared<scene::TilemapAsset> {
 	if (iNode["tilesetPath"])
 		asset->tilesetPath = iNode["tilesetPath"].as<std::string>();
 	if (iNode["width"])
-		asset->width = std::max(1u, iNode["width"].as<uint32_t>());
+		asset->width = std::clamp(iNode["width"].as<uint32_t>(), 1u, scene::TilemapAsset::maxGridSide);
 	if (iNode["height"])
-		asset->height = std::max(1u, iNode["height"].as<uint32_t>());
+		asset->height = std::clamp(iNode["height"].as<uint32_t>(), 1u, scene::TilemapAsset::maxGridSide);
 	if (iNode["cellSize"])
 		asset->cellSize = iNode["cellSize"].as<float>();
 	if (const auto layerNodes = iNode["layers"]; layerNodes && layerNodes.isSequence()) {

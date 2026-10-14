@@ -97,6 +97,9 @@ public:
 	 */
 	static auto fileExtension() noexcept -> const char* { return ".owltilemap"; }
 
+	/// Largest grid width or height: a file announcing more is refused, `resize` clamps to it.
+	static constexpr uint32_t maxGridSide = 16384;
+
 	/**
 	 * @brief
 	 *  Format descriptor of the `.owltilemap` files, with its migration chain.
@@ -123,7 +126,7 @@ public:
 	 *
 	 * Existing tile data is preserved for cells that fit in the new bounds; new
 	 * cells are filled with `g_EmptyTileIndex`. Width / height are clamped to
-	 * at least 1.
+	 * `[1, maxGridSide]`.
 	 * @param[in] iWidth New grid width (>= 1).
 	 * @param[in] iHeight New grid height (>= 1).
 	 */

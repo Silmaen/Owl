@@ -763,6 +763,17 @@
       "max_ns": 1247.5
     },
     {
+      "name": "tilemap/load/1024x1024",
+      "items": 1048576,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 8848528.0,
+      "p25_ns": 8796473.5,
+      "p75_ns": 9099484.0,
+      "min_ns": 8568777.0,
+      "max_ns": 9684826.0
+    },
+    {
       "name": "frame/editor_update/flat1000",
       "items": 1000,
       "batch": 191,
@@ -2007,6 +2018,16 @@
       "name": "tilemap/edit_one_cell/256x256_layers4_bytes",
       "value": 8192,
       "unit": "bytes uploaded"
+    },
+    {
+      "name": "tilemap/load/1024x1024_tile_bytes",
+      "value": 5267456,
+      "unit": "bytes of cells in memory"
+    },
+    {
+      "name": "tilemap/load/1024x1024_file_bytes",
+      "value": 5251233,
+      "unit": "bytes on disk"
     },
     {
       "name": "frame/editor_update/flat1000_quads",
