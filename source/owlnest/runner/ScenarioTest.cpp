@@ -8,6 +8,7 @@
 
 #include "ScenarioTest.h"
 #include "FrameBench.h"
+#include "commands/Macro.h"
 #include "session/HeadlessSession.h"
 
 #include <input/Gamepad.h>
@@ -263,9 +264,13 @@ auto parseStep(const YAML::Node& iNode, ScenarioStep& oStep) -> std::string {
 	}
 	if (iNode["command"])
 		return parseCommand(iNode, oStep);
+	if (const auto macro = iNode["macro"]; macro) {
+		oStep.macro = macro.as<std::string>();
+		return oStep.macro.empty() ? "`macro` names a .owlmacro file" : "";
+	}
 	const auto expect = iNode["expect"];
 	if (!expect || !expect.IsMap())
-		return "a step is `frames`, `input`, `expect`, `command`, `undo` or `redo`";
+		return "a step is `frames`, `input`, `expect`, `command`, `macro`, `undo` or `redo`";
 	if (const auto gameState = expect["gamestate"]; gameState) {
 		oStep.gameState = gameState.as<std::string>();
 		ScenarioCheck check;
@@ -386,6 +391,12 @@ auto ScenarioTest::load(const std::filesystem::path& iFile) -> expected<Scenario
 			ScenarioStep step;
 			if (const auto error = parseStep(node, step); !error.empty())
 				return unexpected<std::string>{std::format("line {}: {}", step.line, error)};
+			if (!step.macro.empty()) {
+				step.macro = weakly_canonical(absolute(iFile).parent_path() / step.macro);
+				if (!exists(step.macro))
+					return unexpected<std::string>{
+							std::format("line {}: macro {} not found", step.line, step.macro.string())};
+			}
 			scenario.m_steps.push_back(std::move(step));
 		}
 	} catch (const std::exception& iEx) { return unexpected<std::string>{iEx.what()}; }
@@ -405,6 +416,21 @@ auto ScenarioTest::runStep(const ScenarioStep& iStep, const shared<scene::Scene>
 	}
 	if (iStep.undo > 0 || iStep.redo > 0)
 		return "";
+	if (!iStep.macro.empty()) {
+		const auto macro = commands::Macro::load(iStep.macro);
+		if (!macro)
+			return std::format("line {}: {}", iStep.line, macro.error().message);
+		const commands::CommandContext context{.scene = iScene,
+											   .undo = m_undo.get(),
+											   .playing = false,
+											   .source = commands::CommandSource::Scenario};
+		if (const auto report =
+					macro->replay(m_commands, context, std::format("Macro {}", iStep.macro.filename().string()));
+			!report)
+			return std::format("line {}: macro {}: {}", iStep.line, iStep.macro.filename().string(),
+							   report.error().message);
+		return "";
+	}
 	if (!iStep.command.empty()) {
 		if (const auto result = m_commands.execute(iStep.command, iStep.args, iScene, *m_undo); !result)
 			return std::format("line {}: {}", iStep.line, result.error().message);

@@ -29,9 +29,18 @@ flowchart LR
 The journal only records what goes through `CommandRegistry`. At v0.4.0 kickoff the registry holds 13 commands while the
 inspector, the viewport gizmo and several panels still push `UndoCommand`s directly. From now on every new edit gesture
 is a registry command (ongoing rule, see [Ongoing quality](ongoing-quality.md)); existing gestures move over in the PRs
-that touch them, the inspector field edit (`component.set`) and the gizmo transform first.
+that touch them, the inspector field edit (`component.set`) and the gizmo transform first (done in NEST2).
 
 ## v0.4.0 — NEST2: console and journal
+
+**Status: done.** Parser and printer in `commands/CommandLine.h`, journal in `commands/CommandJournal.h` (bound to the
+registry, owned by the session), macros in `commands/Macro.h` (`macro.run`, undo groups of `UndoManager`), console
+without UI in `session/Console.h` and its panel in `panel/ConsolePanel.h`; user documentation in
+[Editor](../editor.md#editor-console). The inspector field edit (`component.set replace=true`), the gizmo drag
+(`entity.set_transform`) and the inspector rename (`entity.rename`) are registry commands. Gestures still pushing an
+undo command directly: the scene settings panel (physics, layers), "Revert to Prefab" and "Apply to Prefab", "Route to
+layer" in the hierarchy, the voxel brush and tile painting, and the edits of the asset documents (tilemap, tileset,
+font, node graph, Scene Flow), which have undo histories of their own.
 
 - **Command line syntax**: `entity.create name="Tree" parent=$1`, one command per line; values in the argument types
   of the registry (text, number, bool, Vec2 / Vec4 as `(1, 2)`, colour as `#rrggbb`, enum by name, entity by UUID or

@@ -51,7 +51,7 @@ The default arrangement uses ImGui docking:
   toolbar; the Help pages open there too, or float
 - **Right column** -- Scene Hierarchy (top) and Properties (bottom); Tile Palette, Voxel Palette and Scene Settings
   join Properties as tabs
-- **Bottom strip** -- Content Browser, Log and Stats as tabs under the documents
+- **Bottom strip** -- Content Browser, Log, Console and Stats as tabs under the documents
 - **Status bar** -- one line under everything: the simulation mode (`EDIT`, `PLAYING`, `PAUSED`, the bar turns blue
   while the scene runs), the active document and its entity count, the last autosave, the graphics backend, and the
   warnings and errors logged since you last looked (clicking a counter opens the Log), the graphics device, the
@@ -607,6 +607,28 @@ LuaEngine: Error in on_update of script 'scripts/hero.lua' on entity 'Hero' (77)
 boom. Fix: fix the script at the first line of the traceback; the callback runs again on its next call.
 ```
 
+### Console {#editor-console}
+
+The Console panel (``Ctrl+` ``, action `view.console`) is a command line over the
+[editor commands](#editor-commands) and the journal of every command run in the session.
+
+**Command line.** One [command line](#editor-command-line) per input, run with `Enter` on the active scene; the
+result shows as `$n  description  (data)`, an error with its column, a command refused while the scene plays as
+*refused during Play*. `help` lists the commands, `help <command>` prints its arguments, types, defaults and choices.
+`Tab` completes the command name, then the argument names not given yet, then the choices of an enum or a bool;
+`↑` / `↓` browse the history, kept in `OwlNest_settings.yml` (`consoleHistory`, 100 lines).
+
+**Journal.** Every command executed in the session appears as one line, whatever asked for it: a gesture (hierarchy,
+inspector, gizmo, menus, shortcuts, Content Browser), the console, the palette, an external tool (MCP), a macro
+replay or a scenario step. Each line shows its number `$n`, its source and the command in the command syntax, then
+its undo description or its error. The source chips filter the lines; **Clear** empties the view (the numbers go on).
+
+**Macros.** Click journal lines to select them, then **Save as Macro** writes them to a `.owlmacro` file: the
+commands that ran, in order, the entities they created replaced by `$n` references (`commands::Macro::fromJournal`).
+A macro is replayed by a double-click in the Content Browser (its context menu also offers **Edit as Text**), by
+`macro.run path=...` in the console or from MCP. A replay is one undo step (one `Ctrl+Z` cancels it); the first line
+that fails stops it, undoes what it did and reports its line number.
+
 ### Stats
 
 The Stats panel, a tab of the bottom strip, displays real-time performance
@@ -993,6 +1015,7 @@ steps:
 | `command` | An editor command (see below) by name, its arguments under `args`:                            |
 |           | `{command: entity.delete, args: {entity: Crate}}`; a vector or a colour is a list of numbers, |
 |           | a text argument may be a map (`component.set` values)                                         |
+| `macro`   | A `.owlmacro` file (relative to the scenario) replayed as one undo step                       |
 | `undo`    | Number of commands to undo                                                                    |
 | `redo`    | Number of commands to redo                                                                    |
 
@@ -1000,7 +1023,8 @@ Inputs go through the injection of the input layer (`input::Input::injectKey`, �
 back-end: a key held over two consecutive `input` steps stays held, so `input.is_key_just_pressed` fires once
 (`test/scenarios/platformer_jump.owltest`); a `gamepad` drives a pad on the Null back-end
 (`test/scenarios/platformer_gamepad.owltest`). Expectations due at a step see the world left by the frames before it; positions are world-space. Commands run on
-the playing scene with an undo history of their own (`test/scenarios/editor_commands.owltest`). Every
+the playing scene with an undo history of their own (`test/scenarios/editor_commands.owltest`, macros in
+`test/scenarios/editor_macro.owltest`). Every
 `test/scenarios/*.owltest` is a CTest case (label `scenario`).
 
 ### Editor commands
@@ -1028,13 +1052,49 @@ description and structured data (`entity` UUID, plus the fields listed below).
 | `component.add`        | `entity`, `component` (display name `Circle Renderer` or file key)           |
 | `component.remove`     | `entity`, `component`                                                        |
 | `prefab.instantiate`   | `path` (prefab file), `asset_path` (link recorded, found from the folders)   |
-| `component.set`        | `entity`, `component`, `values` (YAML / JSON map merged into the component)  |
+| `component.set`        | `entity`, `component`, `values` (YAML / JSON map merged into the component), |
+|                        | `replace` (bool: `values` replaces every field, used by the inspector)       |
 | `scene.save`           | `path` (the scene file when absent); returns `path`                          |
 | `edit.undo`            | none; returns `can_undo`, `can_redo` and the entity to select                |
 | `edit.redo`            | none; same result as `edit.undo`                                             |
+| `macro.run`            | `path` (`.owlmacro`, absolute or in an asset folder); returns `commands`     |
 
-An entity argument is a UUID (integer) or a tag (first match). Continuous edits previewed live (inspector fields,
-gizmo drags, voxel brush strokes, tile painting, node moves) are recorded as one command when the gesture ends.
+An entity argument is a UUID (integer) or a tag (first match). Continuous edits previewed live (voxel brush strokes,
+tile painting, node moves) are recorded as one command when the gesture ends. An inspector field edit and a gizmo drag
+end as a registry command: the panel puts the entity back as it was before the gesture and runs `component.set`
+(`replace=true`) or `entity.set_transform` with the final values, so the console journal and the macros see them.
+
+Every command run through a registry bound to a journal (`CommandRegistry::setJournal`; the editor and the headless
+session bind theirs to `EditorSession::getJournal()`) is appended to `commands::CommandJournal` with its source
+(`CommandContext::source`: gesture, console, palette, MCP, replay, scenario) and its result or failure, numbered from
+1 for the whole session.
+
+#### Command line {#editor-command-line}
+
+One command per line, `#` starting a comment at the start of a word, arguments as `name=value`:
+
+```
+entity.create name="Tree" parent=$1          # parent: the entity of command 1
+entity.set_transform entity=$_ translation=(0, 2, 0) scale=(1, 1, 1)
+component.add entity="Tree" component="Circle Renderer"
+component.set entity=$1 component=Transform values="{translation: [4, 3, 0]}"
+```
+
+| Type    | Written as                                                                               |
+|---------|------------------------------------------------------------------------------------------|
+| bool    | `true`, `false`                                                                          |
+| integer | `-12`                                                                                    |
+| number  | `0.25`, `1e-3`                                                                           |
+| text    | `"quoted"` (escapes `\"`, `\\`, `\n`, `\t`) or a bare word                               |
+| entity  | a UUID, a tag (`"Tree"`), `$n` (the entity of command `n`) or `$_` (of the last command) |
+| vectors | `(1, 2)`, `(1, 2, 3)`, `(1, 2, 3, 4)`                                                    |
+| colour  | `#rrggbb`, `#rrggbbaa` or `(r, g, b[, a])`                                               |
+| enum    | the choice, bare or quoted                                                               |
+
+In the console `$n` counts the commands of the session journal; in a macro it counts the commands of the macro, so a
+recorded sequence refers to the entities it creates without hard-coded ids. `commands::parseCommandLine` reads a line
+(errors give their column) and `commands::printCommandLine` writes one back; every value printed reads back to the
+same value.
 
 ### Editor session
 
@@ -1047,6 +1107,10 @@ plays, frame captures and statistics. Two implementations:
 - `HeadlessSession`, without window nor ImGui (tests, tools): loads a scene with its project (asset folder, renderer
   stack, simulation settings), plays synchronously into an offscreen frame, switches a windowless application to the
   Null input. On the Null renderer a capture is a blank image of the session size; scene transitions are not followed.
+
+The session owns the journal of its commands (`getJournal()`); `execute` takes the source to record (an external tool
+by default), `replay` runs a `commands::Macro` as one undo step, refused while the scene plays. `session::Console` is
+the console without UI (parse, run, `help`, completion, history), so it works on a headless session too.
 
 A `PlayRequest` gives `frames` and / or `ticks` (the first bound reached ends the play), `timestepMs` (0: one simulation
 tick per frame, so N frames run exactly N ticks), held `keys` (through the input injection, so on the Null input
@@ -1248,6 +1312,7 @@ gizmo manipulation is in progress.
 | Action                       | Default Shortcut | Action ID                  |
 |------------------------------|------------------|----------------------------|
 | Command Palette              | Shift, Shift     | `view.commandPalette`      |
+| Console                      | Ctrl+`           | `view.console`             |
 | Layout: Default              | Alt+1            | `view.layoutDefault`       |
 | Layout: Hierarchy Left       | Alt+2            | `view.layoutHierarchyLeft` |
 | Collapse / Expand the Ribbon | Ctrl+F1          | `view.toggleRibbon`        |

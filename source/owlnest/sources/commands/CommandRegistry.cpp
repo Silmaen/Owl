@@ -9,9 +9,11 @@
 #include "CommandRegistry.h"
 
 #include "../EntitySnapshot.h"
+#include "CommandJournal.h"
 #include "ComponentCommands.h"
 #include "EntityCommands.h"
 #include "HierarchyCommands.h"
+#include "Macro.h"
 #include "PrefabCommands.h"
 
 #include <scene/ComponentRegistry.h>
@@ -314,8 +316,8 @@ auto unknownField(const YAML::Node& iBefore, const YAML::Node& iAfter, const YAM
 	return std::nullopt;
 }
 
-auto mergedComponentYaml(const std::string& iComponentYaml, const std::string& iKey, const std::string& iValues)
-		-> expected<std::string, CommandFailure> {
+auto mergedComponentYaml(const std::string& iComponentYaml, const std::string& iKey, const std::string& iValues,
+						 const bool iReplace) -> expected<std::string, CommandFailure> {
 	try {
 		const auto patch = YAML::Load(iValues);
 		if (!patch.IsMap())
@@ -324,7 +326,10 @@ auto mergedComponentYaml(const std::string& iComponentYaml, const std::string& i
 		auto fields = root[iKey];
 		if (!fields.IsMap())
 			return fail(CommandError::NotApplicable, std::format("`{}` has no editable fields", iKey));
-		mergeYaml(fields, patch);
+		if (iReplace)
+			root[iKey] = patch;
+		else
+			mergeYaml(fields, patch);
 		YAML::Emitter out;
 		out << root;
 		return std::string{out.c_str()};
@@ -344,7 +349,8 @@ auto setComponent(const shared<scene::Scene>& ioScene, const CommandArgs& iArgs)
 	const auto componentYaml = scene::SceneSerializer::serializeComponentToString(*entity, desc->key);
 	if (componentYaml.empty())
 		return fail(CommandError::NotApplicable, std::format("`{}` is not serializable", desc->key));
-	const auto merged = mergedComponentYaml(componentYaml, desc->key, iArgs.getText("values"));
+	const auto merged =
+			mergedComponentYaml(componentYaml, desc->key, iArgs.getText("values"), iArgs.getBool("replace"));
 	if (!merged)
 		return unexpected<CommandFailure>{merged.error()};
 	const auto beforeYaml = scene::SceneSerializer::serializeEntityToString(*entity);
@@ -442,6 +448,24 @@ auto entitySpec(std::string iDescription) -> ArgSpec {
 }
 
 }// namespace
+
+auto getSourceName(const CommandSource iSource) -> std::string_view {
+	switch (iSource) {
+		case CommandSource::Gesture:
+			return "gesture";
+		case CommandSource::Console:
+			return "console";
+		case CommandSource::Palette:
+			return "palette";
+		case CommandSource::Mcp:
+			return "mcp";
+		case CommandSource::Replay:
+			return "replay";
+		case CommandSource::Scenario:
+			return "scenario";
+	}
+	return "";
+}
 
 auto CommandArgs::getBool(const std::string& iName, const bool iDefault) const -> bool {
 	const auto found = m_values.find(iName);
@@ -545,7 +569,11 @@ CommandRegistry::CommandRegistry() {
 				   .type = ArgType::Text,
 				   .required = true,
 				   .description = "YAML or JSON map of the fields to change, as in the scene file "
-								  "(`{color: [1, 0, 0, 1]}`)."}},
+								  "(`{color: [1, 0, 0, 1]}`)."},
+				  {.name = "replace",
+				   .type = ArgType::Bool,
+				   .description = "Replace every field by `values` instead of merging them (the inspector edits).",
+				   .defaultValue = false}},
 		 .factory = setComponent});
 	add({.name = "scene.save",
 		 .description = "Save the scene to its file, or to `path`.",
@@ -562,6 +590,7 @@ CommandRegistry::CommandRegistry() {
 		 .args = {},
 		 .factory = {},
 		 .run = redoEdit});
+	add(getMacroRunSpec());
 }
 
 void CommandRegistry::add(CommandSpec iSpec) {
@@ -608,6 +637,16 @@ auto CommandRegistry::execute(const std::string_view iName, const CommandArgs& i
 
 auto CommandRegistry::execute(const std::string_view iName, const CommandArgs& iArgs,
 							  const CommandContext& iContext) const -> expected<CommandResult, CommandFailure> {
+	CommandContext context = iContext;
+	context.registry = this;
+	auto result = run(iName, iArgs, context);
+	if (mp_journal != nullptr)
+		mp_journal->record(find(iName), iName, iArgs, iContext.source, result);
+	return result;
+}
+
+auto CommandRegistry::run(const std::string_view iName, const CommandArgs& iArgs, const CommandContext& iContext) const
+		-> expected<CommandResult, CommandFailure> {
 	const auto* spec = find(iName);
 	if (spec == nullptr) {
 		OWL_WARN("Command: Unknown command '{}'.", iName)
@@ -741,7 +780,8 @@ auto CommandTarget::execute(const std::string_view iName, const CommandArgs& iAr
 		OWL_WARN("Command: {} ignored, no scene or undo history to run it on.", iName)
 		return fail(CommandError::NotApplicable, std::format("{}: no scene or undo history", iName));
 	}
-	return registry->execute(iName, iArgs, scene, *undo);
+	return registry->execute(iName, iArgs,
+							 CommandContext{.scene = scene, .undo = undo, .playing = false, .source = source});
 }
 
 }// namespace owl::nest::commands

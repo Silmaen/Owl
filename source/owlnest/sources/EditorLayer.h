@@ -26,6 +26,7 @@
 #include "panel/Backstage.h"
 #include "panel/CommandFormWindow.h"
 #include "panel/CommandPalette.h"
+#include "panel/ConsolePanel.h"
 #include "panel/ContentBrowser.h"
 #include "panel/GpuCounterMonitor.h"
 #include "panel/HelpPanel.h"
@@ -695,8 +696,10 @@ private:
 	 *  Run a registry command chosen by the user and report its result in a toast.
 	 * @param[in] iName Command name.
 	 * @param[in] iArgs Command arguments.
+	 * @param[in] iSource Who asks, recorded by the journal.
 	 */
-	void runCommandFromUi(const std::string& iName, const commands::CommandArgs& iArgs);
+	void runCommandFromUi(const std::string& iName, const commands::CommandArgs& iArgs,
+						  commands::CommandSource iSource = commands::CommandSource::Palette);
 
 	/**
 	 * @brief
@@ -969,6 +972,8 @@ private:
 	panel::SceneSettings m_sceneSettings;
 	/// Log output panel (filterable).
 	panel::LogPanel m_logPanel;
+	/// Command console and journal of the session.
+	panel::ConsolePanel m_consolePanel{*this};
 	/// Editor preferences panel (theme, key bindings).
 	panel::SettingsPanel m_settingsPanel;
 	/// Modal that surfaces progress for long-running async work (packaging, asset scans).

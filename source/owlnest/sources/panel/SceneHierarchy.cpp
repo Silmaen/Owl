@@ -219,7 +219,7 @@ auto componentIconName(const char* iCompName) -> const char* {
 [[maybe_unused]] SceneHierarchy::SceneHierarchy(const shared<scene::Scene>& iScene) { setContext(iScene); }
 
 void SceneHierarchy::setContext(const shared<scene::Scene>& iContext) {
-	m_inspector.flush(m_context.get(), mp_undoManager);
+	m_inspector.flush(getCommandTarget());
 	m_context = iContext;
 	m_selection = {};
 }
@@ -638,10 +638,10 @@ void SceneHierarchy::renderProperties() {
 			panelWindow::properties);
 	ImGui::Begin(title.c_str());
 	if (mp_activeDocument != nullptr && mp_activeDocument->overridesGlobalPanels()) {
-		m_inspector.flush(m_context.get(), mp_undoManager);
+		m_inspector.flush(getCommandTarget());
 		mp_activeDocument->renderPropertiesPanel();
 	} else {
-		m_inspector.beginFrame(m_selection, m_context.get(), mp_undoManager);
+		m_inspector.beginFrame(m_selection, getCommandTarget());
 		if (m_selection) {
 			gui::UiLayer::pushTextStyle(gui::TextStyle::Label);
 			drawComponents(m_selection);
@@ -650,7 +650,7 @@ void SceneHierarchy::renderProperties() {
 			std::ignore = gui::widgets::emptyState(gui::icon::mousePointer2, "No entity selected",
 												   "Click an entity in the viewport or in the Hierarchy to edit its "
 												   "components here.");
-		m_inspector.endFrame(m_context.get(), mp_undoManager);
+		m_inspector.endFrame(getCommandTarget());
 	}
 	ImGui::End();
 }
@@ -750,7 +750,7 @@ void drawComponent(scene::Entity& ioEntity, SceneUndoManager* iUndoManager, cons
 		if (open) {
 			ioInspector.beginComponent(ioEntity, T::key());
 			gui::component::renderProps(component);
-			ioInspector.endComponent(ioEntity, T::key(), T::name(), iUndoManager);
+			ioInspector.endComponent(T::key(), T::name(), iCommands);
 			gui::widgets::endSection();
 		}
 		if (revertComponent)
@@ -787,8 +787,8 @@ void addGameComponentItems(scene::Entity& ioEntity, const commands::CommandTarge
 	}
 }
 
-void drawGameComponents(scene::Entity& ioEntity, SceneUndoManager* iUndoManager,
-						const commands::CommandTarget& iCommands, InspectorEditTracker& ioInspector) {
+void drawGameComponents(scene::Entity& ioEntity, const commands::CommandTarget& iCommands,
+						InspectorEditTracker& ioInspector) {
 	for (const auto& desc: scene::ComponentRegistry::getAll()) {
 		if (desc.builtin || !desc.has(ioEntity))
 			continue;
@@ -809,7 +809,7 @@ void drawGameComponents(scene::Entity& ioEntity, SceneUndoManager* iUndoManager,
 				std::ignore = desc.inspect(ioEntity);
 			else
 				ImGui::TextDisabled("No inspector registered for this component.");
-			ioInspector.endComponent(ioEntity, desc.key, desc.name, iUndoManager);
+			ioInspector.endComponent(desc.key, desc.name, iCommands);
 			gui::widgets::endSection();
 		}
 		ImGui::PopID();
@@ -850,15 +850,10 @@ void SceneHierarchy::drawComponents(const scene::Entity& iEntity) {
 		if (ImGui::IsItemDeactivatedAfterEdit() && m_renameBefore.has_value() && tag != *m_renameBefore) {
 			const auto currentTag = tag;
 			tag = *m_renameBefore;
-			auto before = EntitySnapshot::capture(iEntity);
-			tag = currentTag;
-			auto overrides = recordOverrides(iEntity, before.yamlData);
-			if (mp_undoManager != nullptr) {
-				auto cmd = mkUniq<commands::ModifyEntityCommand>(iEntity.getUUID(), std::move(before), "Rename Entity");
-				cmd->captureAfter(iEntity);
-				cmd->setPrefabOverrides(std::move(overrides));
-				mp_undoManager->push(std::move(cmd));
-			}
+			if (const auto renamed = getCommandTarget().execute(
+						"entity.rename", {{"entity", entityArgOf(iEntity)}, {"name", currentTag}});
+				!renamed)
+				tag = currentTag;
 		}
 		if (ImGui::IsItemDeactivated())
 			m_renameBefore.reset();
@@ -888,7 +883,7 @@ void SceneHierarchy::drawComponents(const scene::Entity& iEntity) {
 	}
 	drawComponentsFromTuple(m_selection, mp_undoManager, getCommandTarget(), m_inspector,
 							gui::component::DrawableComponents{});
-	drawGameComponents(m_selection, mp_undoManager, getCommandTarget(), m_inspector);
+	drawGameComponents(m_selection, getCommandTarget(), m_inspector);
 }
 
 }// namespace owl::nest::panel

@@ -84,6 +84,17 @@ void EditorSettings::removeRecentProject(const std::filesystem::path& iProjectDi
 	std::erase_if(recentProjects, [&canonical](const std::string& iEntry) -> bool { return iEntry == canonical; });
 }
 
+namespace {
+
+void readStrings(const YAML::Node& iNode, std::vector<std::string>& oStrings) {
+	if (!iNode || !iNode.IsSequence())
+		return;
+	oStrings.clear();
+	for (const auto& entry: iNode) oStrings.push_back(entry.as<std::string>());
+}
+
+}// namespace
+
 void EditorSettings::loadFromFile(const std::filesystem::path& iFile) {
 	if (!exists(iFile))
 		return;
@@ -141,10 +152,8 @@ void EditorSettings::loadFromFile(const std::filesystem::path& iFile) {
 			for (const auto& pair: bindings)
 				keybindingOverrides[pair.first.as<std::string>()] = pair.second.as<std::string>();
 		}
-		if (const auto recents = config["recentProjects"]; recents && recents.IsSequence()) {
-			recentProjects.clear();
-			for (const auto& entry: recents) recentProjects.push_back(entry.as<std::string>());
-		}
+		readStrings(config["consoleHistory"], consoleHistory);
+		readStrings(config["recentProjects"], recentProjects);
 		if (const auto sessions = config["projectSessions"]; sessions && sessions.IsSequence()) {
 			projectSessions.clear();
 			for (const auto& session: sessions) {
@@ -184,6 +193,11 @@ void EditorSettings::saveToFile(const std::filesystem::path& iFile) const {
 		out << YAML::Key << "keybindings" << YAML::Value << YAML::BeginMap;
 		for (const auto& [id, shortcut]: keybindingOverrides) out << YAML::Key << id << YAML::Value << shortcut;
 		out << YAML::EndMap;
+	}
+	if (!consoleHistory.empty()) {
+		out << YAML::Key << "consoleHistory" << YAML::Value << YAML::BeginSeq;
+		for (const auto& line: consoleHistory) out << YAML::DoubleQuoted << line;
+		out << YAML::EndSeq;
 	}
 	if (!recentProjects.empty()) {
 		out << YAML::Key << "recentProjects" << YAML::Value << YAML::BeginSeq;

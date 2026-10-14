@@ -9,7 +9,9 @@
 #pragma once
 
 #include "../UndoManager.h"
+#include "../commands/CommandJournal.h"
 #include "../commands/CommandRegistry.h"
+#include "../commands/Macro.h"
 
 #include <core/Timestep.h>
 #include <core/expected.h>
@@ -377,10 +379,40 @@ public:
 	 *  Run a named command on the session's context (see CommandRegistry::execute).
 	 * @param[in] iName Command name.
 	 * @param[in] iArgs Command arguments.
+	 * @param[in] iSource Who asks, recorded by the journal (by default an external tool, the MCP server).
 	 * @return What the command did, or why it did not run.
 	 */
-	auto execute(std::string_view iName, const commands::CommandArgs& iArgs)
+	auto execute(std::string_view iName, const commands::CommandArgs& iArgs,
+				 commands::CommandSource iSource = commands::CommandSource::Mcp)
 			-> expected<commands::CommandResult, commands::CommandFailure>;
+
+	/**
+	 * @brief
+	 *  Replay a macro on the session's scene, as one undo step (refused while the scene plays).
+	 * @param[in] iMacro The macro.
+	 * @param[in] iDescription Description of the undo step.
+	 * @return What the replay did, or the failing line and why.
+	 */
+	auto replay(const commands::Macro& iMacro, const std::string& iDescription)
+			-> expected<commands::MacroReport, commands::MacroFailure>;
+
+	/**
+	 * @brief
+	 *  Get the journal of the commands executed in the session, whatever their source.
+	 * @return The journal.
+	 */
+	[[nodiscard]] auto getJournal() -> commands::CommandJournal& { return m_journal; }
+
+	/**
+	 * @brief
+	 *  Get the journal of the commands executed in the session, whatever their source.
+	 * @return The journal.
+	 */
+	[[nodiscard]] auto getJournal() const -> const commands::CommandJournal& { return m_journal; }
+
+private:
+	/// Commands executed in the session; the implementation binds its registry to it.
+	commands::CommandJournal m_journal;
 };
 
 }// namespace owl::nest::session

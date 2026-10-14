@@ -54,6 +54,7 @@ HeadlessSession::HeadlessSession(const math::vec2ui iSize)
 	  m_previousSimulation{app::Application::instanced()
 								   ? app::Application::get().getEngineContext().getSimulationSettings()
 								   : scene::SimulationSettings{}} {
+	m_registry.setJournal(&getJournal());
 	// Without a window the GLFW input has nothing to poll: the Null input also takes the injected keys.
 	if (app::Application::instanced() && app::Application::get().getWindow().getType() == window::Type::Null)
 		input::Input::init(window::Type::Null);

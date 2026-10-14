@@ -90,6 +90,8 @@ struct ScenarioStep {
 	std::string command;
 	/// Arguments of the command.
 	commands::CommandArgs args;
+	/// Macro file replayed by the step (`macro:`, relative to the scenario file), empty otherwise.
+	std::filesystem::path macro;
 	/// Commands undone by the step (`undo: N`).
 	uint32_t undo{0};
 	/// Commands redone by the step (`redo: N`).

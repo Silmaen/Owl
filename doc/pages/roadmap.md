@@ -144,7 +144,7 @@ MCP server in Owl Nest ([plan](design/isometric-worlds.md)).
 - ![In Progress][progress] Input frames with edges and gamepad with dead zones (done), actions, action map editor ([Input](design/windowing-input.md))
 - ![In Progress][progress] MCP server built into Owl Nest, on the editor command API ([MCP server](design/mcp-server.md))
 - ![Done][done] Native file dialogues through the desktop portal, no GTK ([Nest UI](design/nest-ui.md))
-- ![Planned][planned] Editor console and command journal, macros replayable as `.owlmacro` ([Editor scripting](design/editor-scripting.md))
+- ![Done][done] Editor console and command journal, macros replayable as `.owlmacro` ([Editor scripting](design/editor-scripting.md))
 - ![Planned][planned] Sample project: inventory demo on the new HUD widgets, playable with a gamepad
 
 ## v0.3.0 -- 2026-10-11

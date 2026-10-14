@@ -7,6 +7,7 @@
  */
 
 #include "panel/InspectorEditTracker.h"
+#include "commands/CommandJournal.h"
 #include "nestTestHelper.h"
 #include "panel/SceneHierarchy.h"
 #include "testHelper.h"
@@ -67,9 +68,9 @@ protected:
 		ImGui::SetNextWindowPos({0.f, 0.f});
 		ImGui::SetNextWindowSize({400.f, 500.f});
 		ImGui::Begin("Inspector");
-		m_tracker.beginFrame(m_entity, &m_scene, &m_undo);
+		m_tracker.beginFrame(m_entity, target());
 		iBodies();
-		m_tracker.endFrame(&m_scene, &m_undo);
+		m_tracker.endFrame(target());
 		ImGui::End();
 		m_layer.end();
 	}
@@ -78,7 +79,14 @@ protected:
 	void body(const char* iKey, const char* iName, const std::function<void()>& iWidgets) {
 		m_tracker.beginComponent(m_entity, iKey);
 		iWidgets();
-		m_tracker.endComponent(m_entity, iKey, iName, &m_undo);
+		m_tracker.endComponent(iKey, iName, target());
+	}
+
+	// The registry the edits go through, bound to the test scene (not owned).
+	auto target() -> commands::CommandTarget {
+		return {.registry = &m_registry,
+				.scene = shared<scene::Scene>(shared<scene::Scene>{}, &m_scene),
+				.undo = &m_undo};
 	}
 
 	// Center of the last submitted item.
@@ -131,6 +139,10 @@ protected:
 	gui::UiLayer m_layer;
 	/// The tracker under test.
 	panel::InspectorEditTracker m_tracker;
+	/// Registry running the `component.set` of the edits, recording them in the journal.
+	commands::CommandRegistry m_registry;
+	/// Journal of the edits.
+	commands::CommandJournal m_journal;
 	/// The inspected entity.
 	scene::Entity m_entity;
 	/// Screen position of the widget the test interacts with.
@@ -162,13 +174,28 @@ TEST_F(InspectorEditTest, DragRecordsOneStep) {
 	EXPECT_GT(edited, 0.5f);
 	EXPECT_FALSE(m_tracker.isEditing());
 	EXPECT_EQ(undoDepth(), 1u);
-	EXPECT_EQ(m_undo.undoDescription(), "Modify Circle Renderer");
+	EXPECT_EQ(m_undo.undoDescription(), "Edit Circle Renderer of 'Edited'");
 	EXPECT_LE(panel::InspectorEditTracker::serializationCount() - start, 4u);
 
 	m_undo.undo(m_scene);
 	EXPECT_FLOAT_EQ(m_entity.getComponent<CircleRenderer>().thickness, 0.5f);
 	m_undo.redo(m_scene);
 	EXPECT_FLOAT_EQ(m_entity.getComponent<CircleRenderer>().thickness, edited);
+}
+
+TEST_F(InspectorEditTest, EditIsAJournaledRegistryCommand) {
+	m_registry.setJournal(&m_journal);
+	m_entity.addComponent<CircleRenderer>().thickness = 0.5f;
+	frame([this]() -> void { thicknessBody(); });
+	dragThickness(40.f);
+	ASSERT_EQ(m_journal.getEntries().size(), 1u);
+	const auto& entry = m_journal.getEntries().front();
+	EXPECT_EQ(entry.name, "component.set");
+	EXPECT_EQ(entry.source, commands::CommandSource::Gesture);
+	EXPECT_TRUE(entry.succeeded);
+	EXPECT_TRUE(entry.args.getBool("replace"));
+	EXPECT_TRUE(entry.line.starts_with("component.set entity="));
+	m_registry.setJournal(nullptr);
 }
 
 TEST_F(InspectorEditTest, RapidEditsMerge) {

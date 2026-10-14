@@ -238,6 +238,14 @@ private:
 
 	/**
 	 * @brief
+	 *  Record a finished gizmo drag as an `entity.set_transform` command (journaled, undoable, replayable).
+	 * @param[in] iEntity The moved entity, put back as it was, then moved by the command.
+	 * @param[in] iScene The edited scene.
+	 */
+	void commitGizmoEdit(const scene::Entity& iEntity, const shared<scene::Scene>& iScene) const;
+
+	/**
+	 * @brief
 	 *  Draw the grid of the snap step on the XY plane around the camera reference point, with the two axes.
 	 * @param[in] iStep Step between two lines, in world units.
 	 */

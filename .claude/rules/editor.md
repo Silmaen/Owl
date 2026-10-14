@@ -26,17 +26,20 @@ same PR (see `ongoing-quality.md`, *Editor Coverage*).
   commands derive from `SceneUndoCommand`.
 - Property edits: `drawComponent<T>` wraps `renderProps()` in `panel::InspectorEditTracker`. A session opens
   on interaction with the body (click / release over it, active widget, key with the nav focus inside),
-  captures **the component alone** (`SceneSerializer::serializeComponentToString`) and pushes one
-  `ModifyEntityCommand` when it ends, prefab override marks included.
+  captures **the component alone** (`SceneSerializer::serializeComponentToString`); when it ends the entity is put
+  back as it was and `component.set replace=true` runs through the panel's `CommandTarget` (journaled, undoable).
 - **No per-frame serialization in the inspector**: nothing may serialize an entity or a component on a frame
   where nothing is edited (`InspectorEditTracker::serializationCount()` is the spy the tests check).
-- Gizmo: `Viewport` captures the transform before/after manipulation and pushes `ModifyEntityCommand`.
+- Gizmo: `Viewport` captures the entity before the drag, puts it back at the end and runs `entity.set_transform`.
+- Journal / console / macros: `CommandRegistry::setJournal` records every `execute` (`CommandContext::source`) into
+  the session's `CommandJournal`; `commands/CommandLine.h` (syntax, `$n`), `commands/Macro.h` (`.owlmacro`, replay =
+  `UndoManager::beginGroup` / `endGroup`, `cancelGroup` on a failing line), `session/Console.h`, `panel/ConsolePanel.h`.
 - Selection is restored through each command's `selectAfterUndo` / `selectAfterRedo` hints.
 - **Command API** (`commands/CommandRegistry.h`, library `OwlNestCommands`, also linked by the runner): a discrete
   scene change is a named command run by `CommandRegistry::execute` (or `CommandTarget::execute` from a panel),
   never a direct scene write followed by a `push`. A new discrete action adds a `CommandSpec` (typed `ArgSpec`s,
   description) and a test in `owlnest_tests/CommandRegistry_test.cpp`; it is then reachable from scenarios too.
-  Only gestures previewed live (inspector session, gizmo, brushes, node moves) `push` an already-applied command.
+  Only gestures previewed live (brushes, node moves) `push` an already-applied command.
 
 ## Icons
 

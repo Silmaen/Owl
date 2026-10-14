@@ -73,14 +73,14 @@ TEST_F(CommandRegistryTest, DeclaresTheBuiltinCommands) {
 		EXPECT_FALSE(spec->description.empty()) << name;
 		EXPECT_TRUE(spec->factory) << name;
 	}
-	for (const auto* name: {"component.set", "scene.save", "edit.undo", "edit.redo"}) {
+	for (const auto* name: {"component.set", "scene.save", "edit.undo", "edit.redo", "macro.run"}) {
 		const auto* spec = m_registry.find(name);
 		ASSERT_NE(spec, nullptr) << name;
 		EXPECT_TRUE(spec->factory || spec->run) << name;
 		EXPECT_FALSE(spec->allowedInPlay) << name;
 	}
 	EXPECT_EQ(m_registry.find("entity.explode"), nullptr);
-	EXPECT_EQ(m_registry.getCommands().size(), 13u);
+	EXPECT_EQ(m_registry.getCommands().size(), 14u);
 }
 
 TEST_F(CommandRegistryTest, CreateUnderAParentThenUndoRedo) {
@@ -223,7 +223,7 @@ TEST_F(CommandRegistryTest, IncompleteTargetRefusesCommands) {
 TEST_F(CommandRegistryTest, AddReplacesACommandOfTheSameName) {
 	m_registry.add({.name = "entity.create", .description = "Replaced.", .args = {}, .factory = {}});
 	EXPECT_EQ(m_registry.find("entity.create")->description, "Replaced.");
-	EXPECT_EQ(m_registry.getCommands().size(), 13u);
+	EXPECT_EQ(m_registry.getCommands().size(), 14u);
 }
 
 TEST_F(CommandRegistryTest, ParsesVectorColourAndEnumArguments) {
