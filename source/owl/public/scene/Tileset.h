@@ -11,6 +11,7 @@
 #include "core/FormatVersion.h"
 #include "math/vectors.h"
 #include "renderer/gpu/Texture.h"
+#include "scene/TilemapTerrain.h"
 
 #include <array>
 #include <cstdint>
@@ -58,6 +59,36 @@ struct OWL_API TileMeta {
 	 * intentionally not supported.
 	 */
 	bool transparent = false;
+};
+
+/**
+ * @brief
+ *  The tiles drawn for one terrain (or overlay) id on each of the 19 slopes, and the foundations of its buildings.
+ */
+struct OWL_API SlopeSet {
+	/// Terrain or overlay id of the cells the set applies to.
+	int32_t id = -1;
+	/// Tile index per slope (`-1`: fall back on the flat tile, then on `id`).
+	std::array<int32_t, terrain::slopeCount> tiles{};
+	/// Foundation tile index per slope, drawn instead of the slope when the cell has the foundation flag (`-1`: none).
+	std::array<int32_t, terrain::slopeCount> foundations{};
+
+	/**
+	 * @brief
+	 *  Build a set with no tile.
+	 */
+	SlopeSet() {
+		tiles.fill(-1);
+		foundations.fill(-1);
+	}
+
+	/**
+	 * @brief
+	 *  Comparison operator.
+	 * @param[in] iOther The other set.
+	 * @return True when both sets hold the same values.
+	 */
+	auto operator==(const SlopeSet& iOther) const -> bool = default;
 };
 
 /**
@@ -163,6 +194,8 @@ public:
 	};
 	/// Projection the tiles are drawn for (`kind` key, omitted when orthogonal).
 	Kind kind = Kind::Orthogonal;
+	/// Slope tables of the isometric terrain, one per terrain or overlay id that has slope variants (`slopes` key).
+	std::vector<SlopeSet> slopeSets;
 	/// Per-tile metadata, row-major. Resized to `columns * rows` on load and on `resize()`.
 	std::vector<TileMeta> tiles;
 
@@ -172,6 +205,24 @@ public:
 	 * @return The slot count.
 	 */
 	[[nodiscard]] auto tileCount() const noexcept -> uint32_t { return columns * rows; }
+
+	/**
+	 * @brief
+	 *  Slope table of a terrain or overlay id.
+	 * @param[in] iId The id stored in the cells.
+	 * @return The set, or null when the id has no slope variant.
+	 */
+	[[nodiscard]] auto findSlopeSet(int32_t iId) const -> const SlopeSet*;
+
+	/**
+	 * @brief
+	 *  Tile to draw for an id on a slope.
+	 * @param[in] iId The terrain or overlay id stored in the cell.
+	 * @param[in] iSlope The slope of the cell, `[0, terrain::slopeCount)`.
+	 * @param[in] iFoundation Whether the cell asks for its foundation.
+	 * @return The slope tile, else the flat tile, else `iId` itself (an id without a set is a tile index).
+	 */
+	[[nodiscard]] auto resolveTile(int32_t iId, uint8_t iSlope, bool iFoundation = false) const -> int32_t;
 
 	/**
 	 * @brief
