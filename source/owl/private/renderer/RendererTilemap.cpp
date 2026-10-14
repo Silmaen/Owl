@@ -129,17 +129,19 @@ auto makeChunkDrawData(const uint32_t iCapacity) -> shared<gpu::DrawData> {
 
 void collectChunkCells(const TilemapLayer& iLayer, const math::vec2ui& iChunk, std::vector<CellInstance>& oCells) {
 	oCells.clear();
+	const auto* chunk = iLayer.getChunk(iChunk);
+	if (chunk == nullptr)
+		return;
 	const auto& size = iLayer.getSize();
-	const auto tiles = iLayer.getTiles();
 	const uint32_t x0 = iChunk.x() * TilemapLayer::chunkSize;
 	const uint32_t y0 = iChunk.y() * TilemapLayer::chunkSize;
 	const uint32_t x1 = std::min(size.x(), x0 + TilemapLayer::chunkSize);
 	const uint32_t y1 = std::min(size.y(), y0 + TilemapLayer::chunkSize);
 	for (uint32_t y = y0; y < y1; ++y) {
-		const size_t row = static_cast<size_t>(y) * size.x();
+		const uint32_t row = (y - y0) * TilemapLayer::chunkSize;
 		for (uint32_t x = x0; x < x1; ++x) {
-			if (const int32_t tile = tiles[row + x]; tile >= 0)
-				oCells.push_back({.cell = x | (y << g_cellCoordShift), .tileIndex = tile});
+			if (const uint16_t id = chunk->terrain[row + x - x0]; id != scene::component::TilemapChunk::emptyId)
+				oCells.push_back({.cell = x | (y << g_cellCoordShift), .tileIndex = static_cast<int32_t>(id)});
 		}
 	}
 }

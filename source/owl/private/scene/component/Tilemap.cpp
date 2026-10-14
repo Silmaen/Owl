@@ -7,13 +7,13 @@
  */
 #include "owlpch.h"
 
+#include "../TilemapCodec.h"
 #include "core/SerializerImpl.h"
 #include "scene/TilemapAsset.h"
 #include "scene/component/Tilemap.h"
 
 #include <algorithm>
 #include <atomic>
-#include <charconv>
 #include <cstdint>
 #include <span>
 #include <utility>
@@ -21,8 +21,6 @@
 namespace owl::scene::component {
 
 namespace {
-constexpr int32_t k_Empty = g_EmptyTileIndex;
-
 std::atomic<uint64_t> g_nextChunkGeneration{1};
 
 auto newGeneration() -> uint64_t { return g_nextChunkGeneration.fetch_add(1, std::memory_order_relaxed); }
@@ -31,13 +29,57 @@ auto chunkCount(const uint32_t iCells) -> uint32_t {
 	return (iCells + TilemapLayer::chunkSize - 1) / TilemapLayer::chunkSize;
 }
 
+auto toId(const int32_t iTile) -> uint16_t {
+	if (iTile < 0 || iTile > g_MaxTileIndex)
+		return TilemapChunk::emptyId;
+	return static_cast<uint16_t>(iTile);
+}
+
+auto fromId(const uint16_t iId) -> int32_t {
+	return iId == TilemapChunk::emptyId ? g_EmptyTileIndex : static_cast<int32_t>(iId);
+}
+
+auto isValidTile(const int32_t iTile) -> bool {
+	return iTile == g_EmptyTileIndex || (iTile >= 0 && iTile <= g_MaxTileIndex);
+}
+
+auto localIndex(const uint32_t iX, const uint32_t iY) -> uint32_t {
+	return (iY % TilemapLayer::chunkSize) * TilemapLayer::chunkSize + iX % TilemapLayer::chunkSize;
+}
+
+auto emptyChunk() -> const TilemapChunk& {
+	static const TilemapChunk s_empty;
+	return s_empty;
+}
+
 }// namespace
+
+TilemapChunk::TilemapChunk() {
+	terrain.fill(emptyId);
+	overlay.fill(emptyId);
+}
+
+auto TilemapChunk::isEmpty() const -> bool {
+	return std::ranges::all_of(terrain, [](const uint16_t iId) -> bool { return iId == emptyId; }) &&
+		   std::ranges::all_of(overlay, [](const uint16_t iId) -> bool { return iId == emptyId; }) &&
+		   std::ranges::all_of(flags, [](const uint8_t iFlags) -> bool { return iFlags == 0; });
+}
+
+auto TilemapChunk::getCell(const uint32_t iIndex) const -> TileCell {
+	return {.terrain = fromId(terrain[iIndex]), .overlay = fromId(overlay[iIndex]), .flags = flags[iIndex]};
+}
+
+void TilemapChunk::setCell(const uint32_t iIndex, const TileCell& iCell) {
+	terrain[iIndex] = toId(iCell.terrain);
+	overlay[iIndex] = toId(iCell.overlay);
+	flags[iIndex] = iCell.flags;
+}
 
 TilemapLayer::TilemapLayer(TilemapLayer&& ioOther) noexcept
 	: name{std::move(ioOther.name)}, visible{ioOther.visible}, parallax{ioOther.parallax},
-	  m_size{std::exchange(ioOther.m_size, math::vec2ui{0, 0})}, m_tiles{std::move(ioOther.m_tiles)},
+	  m_size{std::exchange(ioOther.m_size, math::vec2ui{0, 0})}, m_chunks{std::move(ioOther.m_chunks)},
 	  m_chunkGenerations{std::move(ioOther.m_chunkGenerations)}, m_generation{std::exchange(ioOther.m_generation, 0)} {
-	ioOther.m_tiles.clear();
+	ioOther.m_chunks.clear();
 	ioOther.m_chunkGenerations.clear();
 }
 
@@ -48,10 +90,10 @@ auto TilemapLayer::operator=(TilemapLayer&& ioOther) noexcept -> TilemapLayer& {
 	visible = ioOther.visible;
 	parallax = ioOther.parallax;
 	m_size = std::exchange(ioOther.m_size, math::vec2ui{0, 0});
-	m_tiles = std::move(ioOther.m_tiles);
+	m_chunks = std::move(ioOther.m_chunks);
 	m_chunkGenerations = std::move(ioOther.m_chunkGenerations);
 	m_generation = std::exchange(ioOther.m_generation, 0);
-	ioOther.m_tiles.clear();
+	ioOther.m_chunks.clear();
 	ioOther.m_chunkGenerations.clear();
 	return *this;
 }
@@ -61,93 +103,214 @@ void TilemapLayer::restampAll() {
 	m_chunkGenerations.assign(static_cast<size_t>(chunkCount(m_size.x())) * chunkCount(m_size.y()), m_generation);
 }
 
-void TilemapLayer::resize(const math::vec2ui& iSize) {
-	std::vector<int32_t> next(static_cast<size_t>(iSize.x()) * iSize.y(), k_Empty);
-	const uint32_t copyW = std::min(m_size.x(), iSize.x());
-	const uint32_t copyH = std::min(m_size.y(), iSize.y());
-	for (uint32_t y = 0; y < copyH; ++y) {
-		const auto src = m_tiles.begin() + static_cast<ptrdiff_t>(static_cast<size_t>(y) * m_size.x());
-		std::copy_n(src, copyW, next.begin() + static_cast<ptrdiff_t>(static_cast<size_t>(y) * iSize.x()));
+void TilemapLayer::stamp(const size_t iIndex) {
+	m_generation = newGeneration();
+	m_chunkGenerations[iIndex] = m_generation;
+}
+
+auto TilemapLayer::chunkIndex(const math::vec2ui& iChunk) const -> size_t {
+	return static_cast<size_t>(iChunk.y()) * chunkCount(m_size.x()) + iChunk.x();
+}
+
+auto TilemapLayer::writableChunk(const size_t iIndex) -> TilemapChunk& {
+	auto& slot = m_chunks[iIndex];
+	if (!slot)
+		slot = mkShared<TilemapChunk>();
+	else if (slot.use_count() > 1)
+		slot = mkShared<TilemapChunk>(*slot);
+	return *slot;
+}
+
+auto TilemapLayer::hasCellsOutside(const math::vec2ui& iChunk, const TilemapChunk& iContent) const -> bool {
+	const uint32_t usedW = std::min(chunkSize, m_size.x() - iChunk.x() * chunkSize);
+	const uint32_t usedH = std::min(chunkSize, m_size.y() - iChunk.y() * chunkSize);
+	if (usedW == chunkSize && usedH == chunkSize)
+		return false;
+	for (uint32_t y = 0; y < chunkSize; ++y) {
+		for (uint32_t x = (y < usedH ? usedW : 0); x < chunkSize; ++x) {
+			if (iContent.getCell(y * chunkSize + x) != TileCell{})
+				return true;
+		}
 	}
-	m_tiles = std::move(next);
+	return false;
+}
+
+void TilemapLayer::clearOutside(const math::vec2ui& iChunk, TilemapChunk& ioContent) const {
+	const uint32_t usedW = std::min(chunkSize, m_size.x() - iChunk.x() * chunkSize);
+	const uint32_t usedH = std::min(chunkSize, m_size.y() - iChunk.y() * chunkSize);
+	for (uint32_t y = 0; y < chunkSize; ++y) {
+		for (uint32_t x = (y < usedH ? usedW : 0); x < chunkSize; ++x) ioContent.setCell(y * chunkSize + x, TileCell{});
+	}
+}
+
+void TilemapLayer::resize(const math::vec2ui& iSize) {
+	const auto oldGrid = getChunkGridSize();
+	const math::vec2ui newGrid{chunkCount(iSize.x()), chunkCount(iSize.y())};
+	std::vector<shared<TilemapChunk>> next(static_cast<size_t>(newGrid.x()) * newGrid.y());
+	const uint32_t keepW = std::min(oldGrid.x(), newGrid.x());
+	const uint32_t keepH = std::min(oldGrid.y(), newGrid.y());
+	for (uint32_t cy = 0; cy < keepH; ++cy) {
+		for (uint32_t cx = 0; cx < keepW; ++cx)
+			next[static_cast<size_t>(cy) * newGrid.x() + cx] = std::move(m_chunks[chunkIndex({cx, cy})]);
+	}
+	m_chunks = std::move(next);
 	m_size = iSize;
+	for (uint32_t cy = 0; cy < keepH; ++cy) {
+		for (uint32_t cx = 0; cx < keepW; ++cx) {
+			const size_t index = chunkIndex({cx, cy});
+			if (m_chunks[index] && hasCellsOutside({cx, cy}, *m_chunks[index]))
+				clearOutside({cx, cy}, writableChunk(index));
+		}
+	}
 	restampAll();
 }
 
 void TilemapLayer::assign(const math::vec2ui& iSize, const std::span<const int32_t> iTiles) {
 	m_size = iSize;
-	m_tiles.assign(static_cast<size_t>(iSize.x()) * iSize.y(), k_Empty);
-	std::copy_n(iTiles.begin(), std::min(iTiles.size(), m_tiles.size()), m_tiles.begin());
+	m_chunks.assign(static_cast<size_t>(chunkCount(iSize.x())) * chunkCount(iSize.y()), nullptr);
+	const size_t count = std::min(iTiles.size(), static_cast<size_t>(iSize.x()) * iSize.y());
+	for (size_t i = 0; i < count; ++i) {
+		if (const uint16_t id = toId(iTiles[i]); id != TilemapChunk::emptyId) {
+			const auto x = static_cast<uint32_t>(i % iSize.x());
+			const auto y = static_cast<uint32_t>(i / iSize.x());
+			writableChunk(chunkIndex({x / chunkSize, y / chunkSize})).terrain[localIndex(x, y)] = id;
+		}
+	}
 	restampAll();
 }
 
 void TilemapLayer::fill(const int32_t iValue) {
-	std::ranges::fill(m_tiles, iValue);
+	const auto grid = getChunkGridSize();
+	m_chunks.assign(m_chunks.size(), nullptr);
+	if (const uint16_t id = toId(iValue); id != TilemapChunk::emptyId) {
+		for (uint32_t cy = 0; cy < grid.y(); ++cy) {
+			for (uint32_t cx = 0; cx < grid.x(); ++cx) {
+				auto& chunk = writableChunk(chunkIndex({cx, cy}));
+				chunk.terrain.fill(id);
+				clearOutside({cx, cy}, chunk);
+			}
+		}
+	}
 	restampAll();
 }
 
 auto TilemapLayer::getTile(const uint32_t iX, const uint32_t iY) const -> int32_t {
 	if (iX >= m_size.x() || iY >= m_size.y())
-		return k_Empty;
-	return m_tiles[static_cast<size_t>(iY) * m_size.x() + iX];
+		return g_EmptyTileIndex;
+	const auto& chunk = m_chunks[chunkIndex({iX / chunkSize, iY / chunkSize})];
+	return chunk ? fromId(chunk->terrain[localIndex(iX, iY)]) : g_EmptyTileIndex;
 }
 
 auto TilemapLayer::setTile(const uint32_t iX, const uint32_t iY, const int32_t iValue) -> bool {
+	if (iX >= m_size.x() || iY >= m_size.y() || !isValidTile(iValue) || getTile(iX, iY) == iValue)
+		return false;
+	const size_t index = chunkIndex({iX / chunkSize, iY / chunkSize});
+	writableChunk(index).terrain[localIndex(iX, iY)] = toId(iValue);
+	stamp(index);
+	return true;
+}
+
+auto TilemapLayer::getCell(const uint32_t iX, const uint32_t iY) const -> TileCell {
 	if (iX >= m_size.x() || iY >= m_size.y())
+		return {};
+	const auto& chunk = m_chunks[chunkIndex({iX / chunkSize, iY / chunkSize})];
+	return chunk ? chunk->getCell(localIndex(iX, iY)) : TileCell{};
+}
+
+auto TilemapLayer::setCell(const uint32_t iX, const uint32_t iY, const TileCell& iCell) -> bool {
+	if (iX >= m_size.x() || iY >= m_size.y() || !isValidTile(iCell.terrain) || !isValidTile(iCell.overlay) ||
+		getCell(iX, iY) == iCell)
 		return false;
-	auto& cell = m_tiles[static_cast<size_t>(iY) * m_size.x() + iX];
-	if (cell == iValue)
-		return false;
-	cell = iValue;
-	m_generation = newGeneration();
-	m_chunkGenerations[static_cast<size_t>(iY / chunkSize) * chunkCount(m_size.x()) + iX / chunkSize] = m_generation;
+	const size_t index = chunkIndex({iX / chunkSize, iY / chunkSize});
+	writableChunk(index).setCell(localIndex(iX, iY), iCell);
+	stamp(index);
 	return true;
 }
 
 auto TilemapLayer::getOccupiedCount() const -> size_t {
-	return static_cast<size_t>(std::ranges::count_if(m_tiles, [](const int32_t iTile) -> bool { return iTile >= 0; }));
+	size_t count = 0;
+	for (const auto& chunk: m_chunks) {
+		if (chunk)
+			count += static_cast<size_t>(std::ranges::count_if(
+					chunk->terrain, [](const uint16_t iId) -> bool { return iId != TilemapChunk::emptyId; }));
+	}
+	return count;
 }
 
 auto TilemapLayer::getChunkGridSize() const -> math::vec2ui { return {chunkCount(m_size.x()), chunkCount(m_size.y())}; }
+
+auto TilemapLayer::getChunk(const math::vec2ui& iChunk) const -> const TilemapChunk* {
+	const auto grid = getChunkGridSize();
+	if (iChunk.x() >= grid.x() || iChunk.y() >= grid.y())
+		return nullptr;
+	return m_chunks[chunkIndex(iChunk)].get();
+}
+
+auto TilemapLayer::getChunkRef(const math::vec2ui& iChunk) const -> TilemapChunkRef {
+	TilemapChunkRef ref;
+	const auto grid = getChunkGridSize();
+	if (iChunk.x() < grid.x() && iChunk.y() < grid.y())
+		ref.m_chunk = m_chunks[chunkIndex(iChunk)];
+	return ref;
+}
+
+auto TilemapLayer::setChunkRef(const math::vec2ui& iChunk, const TilemapChunkRef& iRef) -> bool {
+	const auto grid = getChunkGridSize();
+	if (iChunk.x() >= grid.x() || iChunk.y() >= grid.y())
+		return false;
+	const size_t index = chunkIndex(iChunk);
+	m_chunks[index] = iRef.m_chunk;
+	if (m_chunks[index] && hasCellsOutside(iChunk, *m_chunks[index]))
+		clearOutside(iChunk, writableChunk(index));
+	stamp(index);
+	return true;
+}
+
+auto TilemapLayer::setChunk(const math::vec2ui& iChunk, const TilemapChunk& iContent) -> bool {
+	const auto grid = getChunkGridSize();
+	if (iChunk.x() >= grid.x() || iChunk.y() >= grid.y())
+		return false;
+	const size_t index = chunkIndex(iChunk);
+	auto content = mkShared<TilemapChunk>(iContent);
+	clearOutside(iChunk, *content);
+	m_chunks[index] = content->isEmpty() ? nullptr : std::move(content);
+	stamp(index);
+	return true;
+}
+
+auto TilemapLayer::getAllocatedChunkCount() const -> size_t {
+	return static_cast<size_t>(std::ranges::count_if(
+			m_chunks, [](const shared<TilemapChunk>& iChunk) -> bool { return iChunk != nullptr; }));
+}
+
+auto TilemapLayer::getStorageBytes() const -> size_t {
+	return getAllocatedChunkCount() * sizeof(TilemapChunk) + m_chunks.size() * sizeof(shared<TilemapChunk>) +
+		   m_chunkGenerations.size() * sizeof(uint64_t);
+}
 
 auto TilemapLayer::getChunkGeneration(const math::vec2ui& iChunk) const -> uint64_t {
 	const auto grid = getChunkGridSize();
 	if (iChunk.x() >= grid.x() || iChunk.y() >= grid.y())
 		return 0;
-	return m_chunkGenerations[static_cast<size_t>(iChunk.y()) * grid.x() + iChunk.x()];
+	return m_chunkGenerations[chunkIndex(iChunk)];
+}
+
+auto TilemapLayer::hasSameContent(const TilemapLayer& iOther) const -> bool {
+	if (name != iOther.name || visible != iOther.visible || parallax != iOther.parallax || m_size != iOther.m_size)
+		return false;
+	const auto& empty = emptyChunk();
+	for (size_t i = 0; i < m_chunks.size(); ++i) {
+		const auto& mine = m_chunks[i];
+		const auto& theirs = iOther.m_chunks[i];
+		if (mine == theirs)
+			continue;
+		if ((mine ? *mine : empty) != (theirs ? *theirs : empty))
+			return false;
+	}
+	return true;
 }
 
 namespace {
-
-auto encodeTiles(const std::span<const int32_t> iTiles) -> std::string {
-	std::string out;
-	out.reserve(iTiles.size() * 3);
-	for (size_t i = 0; i < iTiles.size(); ++i) {
-		if (i > 0)
-			out.push_back(',');
-		out += std::to_string(iTiles[i]);
-	}
-	return out;
-}
-
-auto decodeTiles(const std::string& iEncoded, const size_t iExpected) -> std::vector<int32_t> {
-	std::vector<int32_t> out(iExpected, k_Empty);
-	if (iEncoded.empty())
-		return out;
-	size_t cursor = 0;
-	size_t idx = 0;
-	while (cursor <= iEncoded.size() && idx < iExpected) {
-		const size_t comma = iEncoded.find(',', cursor);
-		const size_t end = (comma == std::string::npos) ? iEncoded.size() : comma;
-		int32_t value = k_Empty;
-		(void) std::from_chars(iEncoded.data() + cursor, iEncoded.data() + end, value);
-		out[idx++] = value;
-		if (comma == std::string::npos)
-			break;
-		cursor = comma + 1;
-	}
-	return out;
-}
 
 void emitInline(YAML::Emitter& iEmitter, const scene::TilemapAsset& iAsset) {
 	if (!iAsset.tilesetPath.empty())
@@ -165,7 +328,7 @@ void emitInline(YAML::Emitter& iEmitter, const scene::TilemapAsset& iAsset) {
 			iEmitter << YAML::Key << "parallax" << YAML::Value << YAML::Flow << YAML::BeginSeq << layer.parallax.x()
 					 << layer.parallax.y() << YAML::EndSeq;
 		}
-		iEmitter << YAML::Key << "tiles" << YAML::Value << encodeTiles(layer.getTiles());
+		iEmitter << YAML::Key << "tiles" << YAML::Value << codec::encodeTerrainText(layer);
 		iEmitter << YAML::EndMap;
 	}
 	iEmitter << YAML::EndSeq;
@@ -193,7 +356,7 @@ auto readInline(const core::YamlNode& iNode) -> shared<scene::TilemapAsset> {
 			if (const auto px = layerNode["parallax"]; px && px.isSequence() && px.size() >= 2)
 				layer.parallax = math::vec2{px[0].as<float>(), px[1].as<float>()};
 			if (layerNode["tiles"])
-				layer.assign(gridSize, decodeTiles(layerNode["tiles"].as<std::string>(), expected));
+				layer.assign(gridSize, codec::decodeTileText(layerNode["tiles"].as<std::string>(), expected));
 			else
 				layer.resize(gridSize);
 			asset->layers.push_back(std::move(layer));

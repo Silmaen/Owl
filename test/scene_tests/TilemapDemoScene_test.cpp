@@ -17,6 +17,7 @@
 #include <scene/Tileset.h>
 #include <scene/component/components.h>
 
+#include <cstddef>
 #include <filesystem>
 
 using namespace owl;
@@ -58,11 +59,11 @@ TEST(TilemapDemoScene, loadsAndExposesExpectedShape) {
 	EXPECT_EQ(asset.layers[0].name, "background");
 	EXPECT_FLOAT_EQ(asset.layers[0].parallax.x(), 0.5f);
 	EXPECT_FLOAT_EQ(asset.layers[0].parallax.y(), 0.5f);
-	EXPECT_EQ(asset.layers[0].getTiles().size(), 160u);
+	EXPECT_EQ(static_cast<size_t>(asset.layers[0].getSize().x()) * asset.layers[0].getSize().y(), 160u);
 
 	EXPECT_EQ(asset.layers[1].name, "world");
 	EXPECT_FLOAT_EQ(asset.layers[1].parallax.x(), 1.f);
-	EXPECT_EQ(asset.layers[1].getTiles().size(), 160u);
+	EXPECT_EQ(static_cast<size_t>(asset.layers[1].getSize().x()) * asset.layers[1].getSize().y(), 160u);
 
 	// Spot-check a few authored cells:
 	// world (5, 5) is a ladder (tile 4)

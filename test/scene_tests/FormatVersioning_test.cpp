@@ -272,12 +272,15 @@ TEST_F(FormatVersioningTest, TilemapVersioning) {
 	const auto path = m_dir / "map.owltilemap";
 	ASSERT_TRUE(asset.saveToFile(path));
 	const auto text = readText(path);
-	EXPECT_NE(text.find("FormatVersion: 1"), std::string::npos);
+	EXPECT_NE(text.find("FormatVersion: 2"), std::string::npos);
 	TilemapAsset restored;
 	ASSERT_TRUE(restored.loadFromFile(path));
 	EXPECT_EQ(restored.getTile(0, 1, 0), 5);
-	EXPECT_TRUE(TilemapAsset{}.deserializeFromString(withoutVersion(text)));
-	EXPECT_FALSE(TilemapAsset{}.deserializeFromString(withVersion(text, "2")));
+	TilemapAsset unversioned;
+	ASSERT_TRUE(unversioned.deserializeFromString("Tilemap: old\nwidth: 3\nheight: 2\nlayers:\n  - name: ground\n"
+												  "    tiles: \"-1,5,-1,-1,-1,-1\"\n"));
+	EXPECT_EQ(unversioned.getTile(0, 1, 0), 5);
+	EXPECT_FALSE(TilemapAsset{}.deserializeFromString(withVersion(text, "3")));
 }
 
 TEST_F(FormatVersioningTest, AnimationClipVersioning) {

@@ -68,8 +68,12 @@ auto readYamlScalar(const std::filesystem::path& iFile, const char* iKey) -> std
 		return {};
 	std::stringstream buffer;
 	buffer << in.rdbuf();
+	auto text = buffer.str();
+	// A document-end line may be followed by binary data (`.owltilemap` chunks): only the first document is read.
+	if (const auto end = text.find("\n...\n"); end != std::string::npos)
+		text.resize(end + 1);
 	try {
-		if (const YAML::Node root = YAML::Load(buffer.str()); root && root[iKey] && root[iKey].IsScalar())
+		if (const YAML::Node root = YAML::Load(text); root && root[iKey] && root[iKey].IsScalar())
 			return root[iKey].as<std::string>();
 	} catch (const YAML::Exception&) { return {}; }
 	return {};

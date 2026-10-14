@@ -16,8 +16,10 @@
 #include <scene/Tileset.h>
 
 #include <cstdint>
+#include <filesystem>
 #include <format>
 #include <string>
+#include <tuple>
 
 namespace owl::bench {
 
@@ -114,6 +116,24 @@ void runEdits(Runner& ioRunner, const renderer::CameraOrtho& iCamera) {
 	}
 }
 
+void runLoad(Runner& ioRunner) {
+	if (!ioRunner.wants("tilemap/load"))
+		return;
+	const auto map = makeMap(1024, 1);
+	const auto path = std::filesystem::temp_directory_path() / "owl_bench_tilemap_1024.owltilemap";
+	if (!map.saveToFile(path))
+		return;
+	ioRunner.measure("tilemap/load/1024x1024", 1024ULL * 1024ULL, [&]() -> void {
+		scene::TilemapAsset loaded;
+		std::ignore = loaded.loadFromFile(path);
+	});
+	ioRunner.metric("tilemap/load/1024x1024_tile_bytes", static_cast<double>(map.getStorageBytes()),
+					"bytes of cells in memory");
+	ioRunner.metric("tilemap/load/1024x1024_file_bytes", static_cast<double>(std::filesystem::file_size(path)),
+					"bytes on disk");
+	std::filesystem::remove(path);
+}
+
 }// namespace
 
 void runTilemapBenches(Runner& ioRunner) {
@@ -123,6 +143,7 @@ void runTilemapBenches(Runner& ioRunner) {
 	const renderer::CameraOrtho camera(-32, 32, -18, 18);
 	runStaticFrames(ioRunner, camera);
 	runEdits(ioRunner, camera);
+	runLoad(ioRunner);
 }
 
 }// namespace owl::bench
