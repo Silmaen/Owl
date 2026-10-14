@@ -716,10 +716,26 @@ The `textureCoords` field defaults to full-texture UVs. Custom UVs are used by t
 | `lineSpacing` | `float`           | `0.0`          | Extra line spacing   |
 | `entityId`    | `int`             | `-1`           | Entity ID            |
 
-**Text encoding.** `text` is consumed as UTF-8. The MSDF atlas covers Latin-1 codepoints
-(`0x20`-`0xFF`); `Renderer2D::drawString` decodes UTF-8 input into single-byte Latin-1 up
-front, mapping accented glyphs (`éàüÇ`…) to their atlas codepoint and substituting
-`?` for codepoints beyond `U+00FF`.
+**Text encoding.** `text` is UTF-8, decoded to code points while it is laid out (`core::utils::decodeNextCodePoint`,
+no conversion buffer); an invalid sequence becomes U+FFFD, drawn as `?` like any code point missing from the atlas.
+`Font::forEachGlyph` lays the glyphs out and `Font::measureText` gives their box (also used for the text aspect of
+`UiText`); the glyphs keep their per-axis stretch to the transform.
+
+**Charset and atlas.** Every font loads Basic Latin, Latin-1, Latin Extended-A, General Punctuation and `€`
+(`FontSettings::defaultRanges()`: `œ`, `Œ`, `’`, `“ ”`, `…` included). More code-point ranges are import settings of
+the font, in a `.owlfont` sidecar next to the `.ttf` / `.otf` (packed with it), edited in the font document of Owl
+Nest:
+
+```yaml
+FontSettings: {}
+FormatVersion: 1
+extraRanges:
+  - [1024, 1279]  # Cyrillic, U+0400 to U+04FF
+```
+
+The MSDF atlas is cached in `cache/font/<font>-<key>.owlatlas` under the working directory: the key hashes the font
+file, the charset and the atlas parameters, so a change of any of them regenerates it (and drops the stale file).
+Generation runs on as many threads as the task pool has workers (`Scheduler::getWorkerCount`).
 
 ### Batching Internals
 

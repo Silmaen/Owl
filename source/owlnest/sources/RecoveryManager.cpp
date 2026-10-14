@@ -36,13 +36,14 @@ namespace {
 constexpr std::array<core::MigrationStep, 0> g_recoveryMigrations{};
 constexpr core::DocumentFormat g_recoveryFormat{.name = "Recovery", .migrations = g_recoveryMigrations};
 
-constexpr std::array<std::pair<DocumentType, const char*>, 6> g_typeNames{{
+constexpr std::array<std::pair<DocumentType, const char*>, 7> g_typeNames{{
 		{DocumentType::Scene, "Scene"},
 		{DocumentType::Code, "Code"},
 		{DocumentType::NodeGraph, "NodeGraph"},
 		{DocumentType::Animation, "Animation"},
 		{DocumentType::Tilemap, "Tilemap"},
 		{DocumentType::Tileset, "Tileset"},
+		{DocumentType::Font, "Font"},
 }};
 
 auto typeName(const DocumentType iType) -> std::string {

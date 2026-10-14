@@ -178,6 +178,7 @@ the open documents and tracks which one is **active**. Global panels
 | Code        | `.lua`, `.py`, `.json`, `.md`, `.svg`...    | Syntax-highlighted text editor (ImGuiColorTextEdit)                 |
 | Node Graph  | `.owlflow` (or derived like **Scene Flow**) | Generic node canvas — see [Node Graph](node_graph.md)               |
 | Animation   | `.owlanim`                                  | Spritesheet animation clip editor (timeline + preview + properties) |
+| Font        | `.ttf`, `.otf`, `.owlfont`                  | Charset of a font: extra code-point ranges, glyph atlas             |
 
 - **Document tabs** — each open scene has its own `Viewport` window (stable
   `##scene_<uuid>` id). ImGui's docking groups viewports in the same dock node
@@ -198,7 +199,7 @@ the open documents and tracks which one is **active**. Global panels
 
 Key types live in `source/owlnest/sources/document/`: `Document` (interface),
 `DocumentManager`, `SceneDocument`, `CodeEditorDocument`, `NodeGraphDocument`,
-`SceneFlowDocument`, `AnimationDocument`, `TilemapDocument`, `TilesetDocument`.
+`SceneFlowDocument`, `AnimationDocument`, `TilemapDocument`, `TilesetDocument`, `FontDocument`.
 
 ### Tilemap document
 
@@ -438,8 +439,8 @@ async-loaded texture is still decoding, a `(loading...)` overlay is drawn over t
 the thumbnail; failed loads show a red `(failed)` overlay and keep the placeholder visible.
 
 **Font preview.** Selecting a non-default font in a Text component displays a 220x44 strip
-showing the sample string `Aa Bb 1!? éàüÇ` rendered with the selected font (lower/upper
-case, digits, punctuation, accented Latin-1). Previews are produced by `gui::FontPreviewCache`
+showing the sample string `Aa Bb 1!? éàüÇœ€` rendered with the selected font (lower/upper
+case, digits, punctuation, accented Latin, `œ` and `€` beyond Latin-1). Previews are produced by `gui::FontPreviewCache`
 on first request and cached for subsequent frames; the cache is pumped from
 `EditorLayer::onUpdate` and freed on editor shutdown. While the first frame's render is
 in flight, the panel temporarily falls back to the font's MSDF atlas thumbnail.
@@ -521,6 +522,23 @@ speedCurve:
 The schema mirrors the corresponding fields of `AnimatedSpriteRenderer` 1:1, so a future
 "Source clip" reference on the component can be added without a YAML migration.
 
+### Font Editor (`.ttf`, `.otf`)
+
+Double-click a font (or its `.owlfont` sidecar) in the Content Browser to open its charset in a font document. The
+window shows the glyph atlas of the loaded font; the **Font** panel gives its file, glyph count and atlas size (marked
+*cached* when read from the disk cache).
+
+The **Font Charset** panel lists the default Latin charset, read only, then the **extra ranges**:
+
+- **Add** (`+`) offers Unicode blocks (Latin Extended-B, Greek, Cyrillic, arrows, box drawing...) or a custom range.
+- Each range has its first and last code point in hexadecimal; a range matching a block shows its name.
+- Click a range to select it, Ctrl+click to select several; the trash button or `Delete` removes the selection, the
+  eraser removes every range.
+
+Every edit is undoable (`Ctrl+Z` / `Ctrl+Y`; consecutive edits of one bound merge). **Save** (`Ctrl+S` or the Font
+ribbon tab) writes the `.owlfont` sidecar, or deletes it when no extra range is left, and rebuilds the atlas of the
+loaded font in place: every text using it shows the new glyphs at once.
+
 ### Content Browser
 
 The Content Browser provides a file grid view of the project's asset directory. It
@@ -554,6 +572,7 @@ name and its kind (`gui::widgets::dragPreview`); drop targets light up in the ac
 |-------------------------------|-----------------------------------------------|
 | Double-click folder           | Navigate into the folder                      |
 | Double-click `.owl` file      | Open the scene in the editor                  |
+| Double-click a font           | Open its charset in a font document           |
 | Drag `.owlprefab` to Viewport | Instantiate the prefab into the scene         |
 | Drag texture to Properties    | Assign the texture to a Sprite Renderer field |
 | Drag sound to Properties      | Assign the sound to a Sound Source field      |

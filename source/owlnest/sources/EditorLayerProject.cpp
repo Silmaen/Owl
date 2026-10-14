@@ -10,6 +10,7 @@
 #include "EditorLayer.h"
 #include "document/AnimationDocument.h"
 #include "document/CodeEditorDocument.h"
+#include "document/FontDocument.h"
 #include "document/NodeGraphDocument.h"
 #include "document/SceneFlowDocument.h"
 #include "document/TilemapDocument.h"
@@ -45,6 +46,9 @@ void EditorLayer::openAssetFile(const std::filesystem::path& iPath) {
 			return;
 		case AssetKind::Tileset:
 			openTilesetFile(iPath);
+			return;
+		case AssetKind::Font:
+			openFontFile(iPath);
 			return;
 		case AssetKind::Prefab:
 			instantiatePrefab(iPath);
@@ -308,6 +312,30 @@ void EditorLayer::openTilesetFile(const std::filesystem::path& iPath) {
 		OWL_CORE_WARN("Failed to open tileset file: {}.", iPath.string())
 		doc->onDetach();
 		return;
+	}
+	auto* raw = m_documents.add(std::move(doc));
+	m_documents.setActive(raw);
+	syncActiveDocumentPanels();
+}
+
+void EditorLayer::openFontFile(const std::filesystem::path& iPath) {
+	if (iPath.empty() || !exists(iPath))
+		return;
+	auto doc = mkUniq<FontDocument>();
+	doc->onAttach(this);
+	if (!doc->loadFromFile(iPath)) {
+		OWL_CORE_WARN("Failed to open font file: {}.", iPath.string())
+		doc->onDetach();
+		return;
+	}
+	for (const auto& docPtr: m_documents.list()) {
+		if (docPtr && docPtr->type() == DocumentType::Font && docPtr->filePath() == doc->filePath()) {
+			doc->onDetach();
+			m_documents.setActive(docPtr.get());
+			docPtr->requestFocus();
+			syncActiveDocumentPanels();
+			return;
+		}
 	}
 	auto* raw = m_documents.add(std::move(doc));
 	m_documents.setActive(raw);

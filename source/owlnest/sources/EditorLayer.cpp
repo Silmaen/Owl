@@ -12,6 +12,7 @@
 #include "EditorResources.h"
 #include "document/AnimationDocument.h"
 #include "document/CodeEditorDocument.h"
+#include "document/FontDocument.h"
 #include "document/NodeGraphDocument.h"
 #include "document/SceneFlowDocument.h"
 #include "document/TilemapDocument.h"
@@ -577,6 +578,7 @@ void EditorLayer::onAttach() {
 			[this](const std::filesystem::path& iPath) -> void { openTilemapFile(iPath); });
 	m_contentBrowser.setTilesetOpenCallback(
 			[this](const std::filesystem::path& iPath) -> void { openTilesetFile(iPath); });
+	m_contentBrowser.setFontOpenCallback([this](const std::filesystem::path& iPath) -> void { openFontFile(iPath); });
 
 	newScene();
 	if (!m_startupProject.empty())
@@ -766,6 +768,12 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 			if (!tileset->isOpen()) {
 				toClose.push_back(tileset->id());
 				tileset->setOpen(true);
+			}
+		} else if (doc->type() == DocumentType::Font) {
+			auto* font = static_cast<FontDocument*>(doc);
+			if (!font->isOpen()) {
+				toClose.push_back(font->id());
+				font->setOpen(true);
 			}
 		}
 	}

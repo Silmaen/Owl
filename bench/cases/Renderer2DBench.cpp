@@ -136,6 +136,16 @@ void runText(Runner& ioRunner, const renderer::CameraOrtho& iCamera) {
 					{.transform = tr, .text = line, .font = font, .color = {1.f, 1.f, 1.f, 1.f}});
 		renderer::Renderer2D::endScene();
 	});
+	// 50 code points, a third of them beyond U+00FF: 200 strings make 10 000 glyphs, one batch.
+	const std::string utf8Line =
+			"\u0152uvre \u00E0 20 \u20AC \u201Cl\u2019\u00E9t\u00E9\u201D \u2026 \u0161\u0165\u017E\u0151 "
+			"\u0153\u0153\u0153 fa\u00E7ade \u2013 na\u00EFve \u0141\u00F3d";
+	const auto utf8Transforms = makeTransforms(200);
+	measureFrame(ioRunner, "renderer2d/text/10000_glyphs_utf8", 10000U, iCamera, [&]() -> void {
+		for (const auto& tr: utf8Transforms)
+			renderer::Renderer2D::drawString(
+					{.transform = tr, .text = utf8Line, .font = font, .color = {1.f, 1.f, 1.f, 1.f}});
+	});
 }
 
 }// namespace

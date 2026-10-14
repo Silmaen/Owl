@@ -12,6 +12,9 @@
 #include "app/Application.h"
 #include "data/assets/pack/PackExtractor.h"
 
+#include <string>
+#include <string_view>
+
 namespace owl::data::fonts {
 
 namespace {
@@ -28,6 +31,19 @@ auto getFontPath() -> std::list<std::filesystem::path> {
 		}
 	}
 	return paths;
+}
+
+auto loadPackedSettings(const std::string& iFontEntry) -> FontSettings {
+	FontSettings settings;
+	const auto sidecar = FontSettings::sidecarPath(iFontEntry).generic_string();
+	if (!app::Application::get().packContains(sidecar))
+		return settings;
+	if (const auto data = app::Application::get().loadFromPack(sidecar); data) {
+		if (!settings.deserializeFromString(
+					std::string_view{reinterpret_cast<const char*>(data->data()), data->size()}))
+			OWL_CORE_WARN("FontLibrary: Packed settings '{}' ignored, default charset only.", sidecar)
+	}
+	return settings;
 }
 
 }// namespace
@@ -61,7 +77,8 @@ void FontLibrary::loadFont(const std::string& iName) {
 					const auto tempFile = std::filesystem::temp_directory_path() / "owl_pack_cache" /
 										  std::filesystem::path(entry).filename();
 					if (assets::pack::writeEntryFile(tempFile, *data)) {
-						m_fonts.emplace(iName, mkShared<Font>(tempFile, iName == m_defaultFontName));
+						m_fonts.emplace(
+								iName, mkShared<Font>(tempFile, iName == m_defaultFontName, loadPackedSettings(entry)));
 						return;
 					}
 					OWL_CORE_WARN("FontLibrary: cannot cache pack entry '{}', trying font directories.", entry)
@@ -77,7 +94,8 @@ void FontLibrary::loadFont(const std::string& iName) {
 			if (!item.is_regular_file() || item.path().extension() != ".ttf")
 				continue;
 			if (item.path().stem() == iName) {
-				m_fonts.emplace(iName, mkShared<Font>(item.path(), iName == m_defaultFontName));
+				m_fonts.emplace(iName, mkShared<Font>(item.path(), iName == m_defaultFontName,
+													  FontSettings::loadForFont(item.path())));
 			}
 		}
 	}
@@ -98,6 +116,16 @@ auto FontLibrary::getFont(const std::string& iName) -> const shared<Font>& {
 		}
 	}
 	return it->second;
+}
+
+auto FontLibrary::reloadFont(const std::string& iName, const FontSettings& iSettings) -> bool {
+	const auto it = m_fonts.find(iName);
+	if (it == m_fonts.end() || it->second == nullptr) {
+		OWL_CORE_WARN("FontLibrary: Font '{}' is not loaded, nothing to reload.", iName)
+		return false;
+	}
+	it->second->reload(iSettings);
+	return true;
 }
 
 auto FontLibrary::getLoadedFontNames() const -> std::list<std::string> {

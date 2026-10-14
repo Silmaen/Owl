@@ -89,6 +89,8 @@ auto typeShortName(const DocumentType iType) -> const char* {
 			return "Tilemap";
 		case DocumentType::Tileset:
 			return "Tileset";
+		case DocumentType::Font:
+			return "Font";
 	}
 	return "Doc";
 }

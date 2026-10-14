@@ -19,6 +19,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- UTF-8 text decoded to code points (U+FFFD for invalid input), `Font` on `char32_t`, a Latin charset with `œ`, `€`
+  and typographic punctuation plus extra ranges per font (`.owlfont`, edited in the new font document), and the atlas
+  cached on disk.
 - Renderer2D transients sized like the instances (20 000 per batch), texture slots found by backend id, no allocation
   in a frame; `ScopedActive` takes a `RendererId` from `RendererDescriptors::getId` instead of a name.
 - Tilemaps render from persistent 32 × 32 chunks cached per asset, uploaded only when a cell changes, culled against

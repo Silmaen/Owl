@@ -55,10 +55,10 @@ TEST(FontLibrary, basic_with_app) {
 	EXPECT_NEAR(quad.min().y(), -0.0333, 0.001);
 	EXPECT_NEAR(quad.max().x(), 0.3745, 0.001);
 	EXPECT_NEAR(quad.max().y(), 0.4256, 0.001);
-	EXPECT_NEAR(uv.min().x(), 0.3642, 0.001);
-	EXPECT_NEAR(uv.min().y(), 0.5244, 0.001);
-	EXPECT_NEAR(uv.max().x(), 0.4033, 0.001);
-	EXPECT_NEAR(uv.max().y(), 0.5732, 0.001);
+	EXPECT_NEAR(uv.min().x(), 0.0166, 0.001);
+	EXPECT_NEAR(uv.min().y(), 0.0752, 0.001);
+	EXPECT_NEAR(uv.max().x(), 0.0557, 0.001);
+	EXPECT_NEAR(uv.max().y(), 0.1240, 0.001);
 	EXPECT_NEAR(myFont->getAdvance('a', 'b'), 0.408, 0.001);
 
 	Application::invalidate();

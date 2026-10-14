@@ -18,7 +18,7 @@
 namespace owl::gui {
 
 namespace {
-constexpr const char* kSample = "Aa Bb 1!? \xE9\xE0\xFC\xC7";
+constexpr const char* kSample = "Aa Bb 1!? \u00E9\u00E0\u00FC\u00C7\u0153\u20AC";
 
 constexpr math::vec2ui kPreviewSize{256u, 64u};
 

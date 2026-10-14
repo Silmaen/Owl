@@ -133,7 +133,6 @@ struct InternalData {
 	shared<gpu::StorageBuffer> sceneWorldsFallback;
 	std::vector<math::mat4> transientWorlds;
 	shared<gpu::StorageBuffer> transientWorldsSsbo;
-	std::string latin1Text;
 };
 }// namespace
 }// namespace utils
@@ -203,35 +202,6 @@ auto textureSlotOf(const shared<gpu::Texture>& iTexture) -> uint32_t {
 	g_Data->lastTexture = iTexture.get();
 	g_Data->lastTextureSlot = entry->slot;
 	return entry->slot;
-}
-
-void utf8ToLatin1(const std::string& iText, std::string& oOut) {
-	oOut.clear();
-	for (size_t i = 0; i < iText.size(); ++i) {
-		const auto byte = static_cast<unsigned char>(iText[i]);
-		if (byte < 0x80) {
-			oOut.push_back(static_cast<char>(byte));
-			continue;
-		}
-		if ((byte & 0xE0) == 0xC0 && i + 1 < iText.size()) {
-			if (const auto next = static_cast<unsigned char>(iText[i + 1]); (next & 0xC0) == 0x80) {
-				const uint32_t codepoint =
-						static_cast<uint32_t>(byte & 0x1Fu) << 6 | static_cast<uint32_t>(next & 0x3Fu);
-				if (codepoint <= 0xFFu) {
-					oOut.push_back(static_cast<char>(codepoint));
-					++i;
-					continue;
-				}
-			}
-		}
-		oOut.push_back('?');
-		while (i + 1 < iText.size()) {
-			if (const auto next = static_cast<unsigned char>(iText[i + 1]); (next & 0xC0) == 0x80)
-				++i;
-			else
-				break;
-		}
-	}
 }
 }// namespace
 
@@ -330,7 +300,6 @@ void Renderer2D::init() {
 	g_Data->transientWorldsSsbo =
 			gpu::StorageBuffer::create(utils::g_maxTransientWorldsPerBatch * sizeof(math::mat4), 4, "Renderer2D");
 	g_Data->transientWorlds.reserve(utils::g_maxTransientWorldsPerBatch);
-	g_Data->latin1Text.reserve(256);
 }
 
 void Renderer2D::shutdown() {
@@ -567,55 +536,17 @@ void Renderer2D::drawString(const StringData& iStringData) {
 		return;
 	}
 
-	utf8ToLatin1(iStringData.text, g_Data->latin1Text);
-	const std::string& text = g_Data->latin1Text;
-	const uint32_t textureIndex = textureSlotOf(iStringData.font->getAtlasTexture());
-	math::box2f extents;
-	{
-		math::vec2 cursor{0.f, 0.f};
-		for (size_t i = 0; i < text.size(); i++) {
-			char character = text[i];
-			if (const auto code = static_cast<unsigned char>(character);
-				code < 0x20 && character != '\r' && character != '\n')
-				character = '?';
-			if (character == '\r')
-				continue;
-			if (character == '\n') {
-				cursor.x() = 0;
-				cursor.y() -= iStringData.font->getScaledLineHeight() + iStringData.lineSpacing;
-				continue;
-			}
-			auto [quad, uv] = iStringData.font->getGlyphBox(character);
-			quad.translate(cursor);
-			extents.update(quad);
-			if (i < text.size() - 1) {
-				char next = text[i + 1];
-				if (const auto nextCode = static_cast<unsigned char>(next); nextCode < 0x20)
-					next = '?';
-				cursor.x() += iStringData.font->getAdvance(character, next) + iStringData.kerning;
-			}
-		}
-	}
+	const auto& font = *iStringData.font;
+	const uint32_t textureIndex = textureSlotOf(font.getAtlasTexture());
+	const math::box2f extents = font.measureText(iStringData.text, iStringData.kerning, iStringData.lineSpacing);
 	math::vec2 scale = extents.diagonal();
 	scale.x() = 1.f / scale.x();
 	scale.y() = 1.f / scale.y();
 	const math::vec2 offset = -extents.min() - 0.5f * extents.diagonal();
 	const math::mat4 stringMat = iStringData.transform();
-	math::vec2 cursor{0.f, 0.f};
-	for (size_t i = 0; i < text.size(); i++) {
-		char character = text[i];
-		if (const auto code = static_cast<unsigned char>(character);
-			code < 0x20 && character != '\r' && character != '\n')
-			character = '?';
-		if (character == '\r')
-			continue;
-		if (character == '\n') {
-			cursor.x() = 0;
-			cursor.y() -= iStringData.font->getScaledLineHeight() + iStringData.lineSpacing;
-			continue;
-		}
-		auto [quad, uv] = iStringData.font->getGlyphBox(character);
-		quad.translate(cursor + offset);
+	const auto emitGlyph = [&](const data::fonts::Font::GlyphMetrics& iGlyph) -> void {
+		auto [quad, uv] = iGlyph;
+		quad.translate(offset);
 		quad.scale(scale);
 
 		if (g_Data->text.instances.size() >= utils::g_maxTextGlyphsPerBatch)
@@ -640,14 +571,8 @@ void Renderer2D::drawString(const StringData& iStringData) {
 															 .entityId = iStringData.entityId,
 															 ._pad1 = {0u, 0u}});
 		g_Data->stats.quadCount++;
-
-		if (i < text.size() - 1) {
-			char next = text[i + 1];
-			if (const auto nextCode = static_cast<unsigned char>(next); nextCode < 0x20)
-				next = '?';
-			cursor.x() += iStringData.font->getAdvance(character, next) + iStringData.kerning;
-		}
-	}
+	};
+	font.forEachGlyph(iStringData.text, iStringData.kerning, iStringData.lineSpacing, emitGlyph);
 }
 
 void Renderer2D::resetStats() {

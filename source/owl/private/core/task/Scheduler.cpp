@@ -11,6 +11,8 @@
 #include "core/task/SchedulerImpl.h"
 #include "debug/Profiler.h"
 
+#include <algorithm>
+#include <cstdint>
 #include <exception>
 #include <format>
 #include <future>
@@ -80,6 +82,10 @@ auto Scheduler::isTaskInQueue(const size_t iTaskId) const -> bool {
 	return std::ranges::find_if(mp_impl->tasksQueue, [iTaskId](const shared<Task>& iTask) -> bool {
 			   return iTask->m_taskId == iTaskId;
 		   }) != mp_impl->tasksQueue.end();
+}
+
+auto Scheduler::getWorkerCount() const -> uint32_t {
+	return std::max(static_cast<uint32_t>(mp_impl->executor.num_workers()), 1u);
 }
 
 void Scheduler::clearQueue() { mp_impl->tasksQueue.clear(); }

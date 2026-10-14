@@ -23,6 +23,7 @@ enum struct AssetKind : uint8_t {
 	Animation,///< `.owlanim`: opened in an animation document.
 	Tilemap,///< `.owltilemap`: opened in a tilemap document.
 	Tileset,///< `.owltileset`: opened in a tileset document.
+	Font,///< `.ttf`, `.otf` or the `.owlfont` sidecar: opened in a font document.
 	Prefab,///< `.owlprefab`: instantiated in the active scene.
 	Code,///< Script, source, data or markup text: opened in the code editor.
 	Unsupported///< Anything else.
