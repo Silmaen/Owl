@@ -102,7 +102,7 @@ a few days, L a week.
 - ![Done][done] **TX1 — UTF-8 text (PR-30: D-18), M.** UTF-8 decoded to code points, `Font` API on `char32_t`,
   default charset Latin only (Latin-1 + Latin Extended-A + punctuation + €), extra ranges per font, atlas cached on
   disk, thread count from the task pool.
-- ![Planned][planned] **TX2 — Text layout (from v0.5.0), M.** One uniform scale per em instead of per-axis stretch,
+- ![Done][done] **TX2 — Text layout (from v0.5.0), M.** One uniform scale per em instead of per-axis stretch,
   horizontal and vertical alignment, word wrap, fit modes (clip, shrink, overflow), on `UiText` and
   `Renderer2D::drawString`; scene format migration.
 

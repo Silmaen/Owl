@@ -80,16 +80,13 @@ void copyCopiableComponents(Entity& oDst, const Entity& iSrc) {
 			desc.copy(oDst, iSrc);
 }
 
-auto computeTextAspect(const shared<data::fonts::Font>& iFont, const std::string& iText, const float iKerning,
-					   const float iLineSpacing) -> float {
-	if (!iFont || iText.empty())
-		return 1.f;
-	const auto extents = iFont->measureText(iText, iKerning, iLineSpacing);
-	const auto diag = extents.diagonal();
-	return diag.y() > 0.f ? diag.x() / diag.y() : 1.f;
+// A world-space string takes its em height from the Y scale: the X scale no longer squeezes the glyphs.
+auto uniformTextTransform(math::Transform iTransform) -> math::Transform {
+	iTransform.scale().x() = std::copysign(iTransform.scale().y(), iTransform.scale().x());
+	return iTransform;
 }
 
-void renderUIChild(const Entity& iChild, const math::Transform& iTransform, const float iPxScaleY) {
+void renderUIChild(const Entity& iChild, const math::Transform& iTransform, const math::vec2& iPxScale) {
 	const int entId = static_cast<int>(static_cast<entt::entity>(iChild));
 	// Sprite.
 	if (iChild.hasComponent<component::SpriteRenderer>()) {
@@ -105,12 +102,11 @@ void renderUIChild(const Entity& iChild, const math::Transform& iTransform, cons
 	if (iChild.hasComponent<component::Text>()) {
 		const auto& [text, font, color, kerning, lineSpacing] = iChild.getComponent<component::Text>();
 
-		renderer::Renderer2D::drawString({.transform = iTransform,
+		renderer::Renderer2D::drawString({.transform = uniformTextTransform(iTransform),
 										  .text = text,
 										  .font = font,
 										  .color = color,
-										  .kerning = kerning,
-										  .lineSpacing = lineSpacing,
+										  .layout = {.kerning = kerning, .lineSpacing = lineSpacing},
 										  .entityId = entId});
 	}
 	// Circle.
@@ -138,18 +134,15 @@ void renderUIChild(const Entity& iChild, const math::Transform& iTransform, cons
 		shared<data::fonts::Font> font = uiText.font;
 		if (!font && app::Application::instanced())
 			font = app::Application::get().getFontLibrary().getDefaultFont();
-		const float textAspect = computeTextAspect(font, uiText.text, uiText.kerning, uiText.lineSpacing);
 		math::Transform textTransform;
 		textTransform.translation() = iTransform.translation();
-		const float baseScale = uiText.fontSize * iPxScaleY;
-		textTransform.scale() = {baseScale * textAspect, baseScale, 1.f};
+		textTransform.scale() = {iPxScale.x(), iPxScale.y(), 1.f};
 
 		renderer::Renderer2D::drawString({.transform = textTransform,
 										  .text = uiText.text,
 										  .font = font,
 										  .color = uiText.color,
-										  .kerning = uiText.kerning,
-										  .lineSpacing = uiText.lineSpacing,
+										  .layout = uiText.getLayout(iChild.getComponent<component::UiRect>().size),
 										  .entityId = entId});
 	}
 	// UiButton.
@@ -925,12 +918,11 @@ void Scene::render() {
 		auto [transform, text] = view.get<component::Transform, component::Text>(entity);
 		const math::Transform worldTransform = getWorldTransform(ent);
 
-		renderer::Renderer2D::drawString({.transform = worldTransform,
+		renderer::Renderer2D::drawString({.transform = uniformTextTransform(worldTransform),
 										  .text = text.text,
 										  .font = text.font,
 										  .color = text.color,
-										  .kerning = text.kerning,
-										  .lineSpacing = text.lineSpacing,
+										  .layout = {.kerning = text.kerning, .lineSpacing = text.lineSpacing},
 										  .entityId = static_cast<int>(entity)});
 	}
 	// Pushwall plates override the entity's scale to a 1-cell square, so the cached world matrix doesn't match.
@@ -1205,7 +1197,7 @@ void Scene::renderToast() {
 	const renderer::CameraOrtho overlay{0.f, vpW, 0.f, vpH};
 	constexpr float kTextHeight = 28.f;
 	math::Transform textTransform;
-	textTransform.translation() = math::vec3{vpW * 0.3f, vpH - kTextHeight * 1.5f, 0.f};
+	textTransform.translation() = math::vec3{vpW * 0.5f, vpH - kTextHeight * 1.5f, 0.f};
 	textTransform.scale() = math::vec3{kTextHeight, kTextHeight, 1.f};
 	const auto font = app::Application::get().getFontLibrary().getDefaultFont();
 	renderer::Renderer2D::beginScene(overlay);
@@ -1588,7 +1580,7 @@ void Scene::renderUI(const math::mat4& iEffectiveViewProjection) {
 			uiTransform.translation() = {posWorld.x(), posWorld.y(), 0.5f};
 			uiTransform.scale() = {rect.size.x() * pxScaleX, rect.size.y() * pxScaleY, 1.f};
 
-			renderUIChild(child, uiTransform, pxScaleY);
+			renderUIChild(child, uiTransform, {pxScaleX, pxScaleY});
 		}
 	}
 }

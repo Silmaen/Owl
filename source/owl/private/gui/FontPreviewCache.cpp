@@ -37,14 +37,11 @@ void renderPreviewInto(renderer::gpu::Framebuffer& ioFramebuffer, const shared<d
 	ioFramebuffer.bind();
 	renderer::gpu::RenderCommand::setClearColor({0.f, 0.f, 0.f, 0.f});
 	renderer::gpu::RenderCommand::clear();
-	const renderer::CameraOrtho camera{-1.f, 1.f, -1.f, 1.f};
+	const auto aspect = static_cast<float>(kPreviewSize.x()) / static_cast<float>(std::max(kPreviewSize.y(), 1u));
+	const renderer::CameraOrtho camera{-aspect, aspect, -1.f, 1.f};
 	renderer::Renderer2D::beginScene(camera);
 	renderer::StringData drawData;
-	const auto aspect = static_cast<float>(kPreviewSize.x()) / static_cast<float>(std::max(kPreviewSize.y(), 1u));
-	// Text fits into a unit-square quad locally; scale it so it spans most of the framebuffer.
-	const math::Transform xform{math::vec3{0.f, 0.f, 0.f}, math::vec3{0.f, 0.f, 0.f},
-								math::vec3{0.9f * aspect, 0.9f, 1.f}};
-	drawData.transform = xform;
+	drawData.layout = {.fontSize = 1.8f, .boxSize = {1.8f * aspect, 1.8f}, .fit = data::fonts::TextFit::Shrink};
 	drawData.text = kSample;
 	drawData.font = iFont;
 	drawData.color = math::vec4{1.f, 1.f, 1.f, 1.f};

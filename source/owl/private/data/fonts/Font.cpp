@@ -313,6 +313,20 @@ auto Font::getScaledLineHeight() const -> float {
 	return fsScale * static_cast<float>(metrics.lineHeight);
 }
 
+auto Font::getAscender() const -> float {
+	if (m_data == nullptr)
+		return 0.f;
+	const auto& metrics = m_data->fontGeometry.getMetrics();
+	return static_cast<float>(metrics.ascenderY / (metrics.ascenderY - metrics.descenderY));
+}
+
+auto Font::getDescender() const -> float {
+	if (m_data == nullptr)
+		return 0.f;
+	const auto& metrics = m_data->fontGeometry.getMetrics();
+	return static_cast<float>(metrics.descenderY / (metrics.ascenderY - metrics.descenderY));
+}
+
 auto Font::getAdvance(const char32_t iCodePoint, const char32_t iNextCodePoint) const -> float {
 	if (m_data == nullptr)
 		return 0.f;

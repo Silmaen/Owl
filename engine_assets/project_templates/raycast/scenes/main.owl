@@ -100,7 +100,8 @@ Entities:
       text: "W/S move, A/D turn"
       color: [1, 1, 1, 1]
       fontSize: 24
-      alignment: Center
+      horizontalAlignment: Center
+      verticalAlignment: Middle
       kerning: 0
       lineSpacing: 0
     RendererTag:

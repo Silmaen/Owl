@@ -10,6 +10,8 @@
 
 #include "EntityLinkMigration.h"
 
+#include "UiTextMigration.h"
+
 #include "core/SerializerImpl.h"
 
 #include <algorithm>
@@ -42,19 +44,23 @@ auto bindEntityLinksByName(const core::Serializer& ioDocument) -> bool {
 }
 
 auto canReadWithoutMigration(const core::YamlNode& iRoot, const core::DocumentFormat& iFormat) -> bool {
-	const auto version = iRoot[core::g_FormatVersionKey];
+	const auto versionNode = iRoot[core::g_FormatVersionKey];
 	const auto current = static_cast<int64_t>(iFormat.currentVersion());
-	if (version)
-		return version.isScalar() && version.as<int64_t>(0) == current;
-	// Only the 1 -> 2 step exists: a new step must extend this shortcut or drop it.
-	if (current != 2)
+	if (versionNode && !versionNode.isScalar())
+		return false;
+	const int64_t version = versionNode ? versionNode.as<int64_t>(0) : static_cast<int64_t>(core::g_UnversionedFormat);
+	if (version == current)
+		return true;
+	// Only the 1 -> 2 and 2 -> 3 steps exist: a new step must extend this shortcut or drop it.
+	if (current != 3 || version < 1 || version > current)
 		return false;
 	const auto entities = iRoot["Entities"];
-	return std::all_of(entities.begin(), entities.end(), [](const auto& iEntity) -> bool {
+	return std::all_of(entities.begin(), entities.end(), [version](const auto& iEntity) -> bool {
 		if (!iEntity.isMap())
 			return true;
 		const auto link = iEntity["EntityLink"];
-		return !(link.isMap() && !link["linkedEntityId"] && link["linkedEntityName"]);
+		const bool nameOnlyLink = link.isMap() && !link["linkedEntityId"] && link["linkedEntityName"];
+		return (version >= 2 || !nameOnlyLink) && !hasLegacyUiText(iEntity);
 	});
 }
 

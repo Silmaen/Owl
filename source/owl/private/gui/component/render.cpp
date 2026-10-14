@@ -831,22 +831,40 @@ void renderProps(UiRect& ioComponent) {
 	fieldTooltip("Pixel offset from the anchor point. Positive X goes right, positive Y goes down.");
 }
 
+// Combo over every value of an enum, named by magic_enum.
+template<typename Enum>
+void enumCombo(const char* iLabel, Enum& ioValue) {
+	const std::string current{magic_enum::enum_name(ioValue)};
+	if (!prop::BeginCombo(iLabel, current.c_str()))
+		return;
+	for (const auto value: magic_enum::enum_values<Enum>()) {
+		const std::string name{magic_enum::enum_name(value)};
+		if (ImGui::Selectable(name.c_str(), value == ioValue))
+			ioValue = value;
+	}
+	ImGui::EndCombo();
+}
+
 void renderProps(UiText& ioComponent) {
 	prop::InputTextMultiline("Text", &ioComponent.text, ImVec2(0, 60));
 	prop::ColorEdit4("Color", reinterpret_cast<float*>(&ioComponent.color));
 	prop::DragFloat("Font Size", &ioComponent.fontSize, 0.5f, 1.0f, 200.0f);
-	const std::string currentAlign{magic_enum::enum_name(ioComponent.alignment)};
-	if (prop::BeginCombo("Alignment", currentAlign.c_str())) {
-		for (const auto& alignName: magic_enum::enum_names<UiText::Alignment>()) {
-			const std::string sName{alignName};
-			if (ImGui::Selectable(sName.c_str(), currentAlign == sName))
-				ioComponent.alignment =
-						magic_enum::enum_cast<UiText::Alignment>(sName).value_or(UiText::Alignment::Left);
-		}
-		ImGui::EndCombo();
+	fieldTooltip("Ascender-to-descender height of the font, in pixels. Glyphs keep the font aspect ratio.");
+	enumCombo("Horizontal", ioComponent.horizontalAlignment);
+	fieldTooltip("Placement of each line in the rectangle.");
+	enumCombo("Vertical", ioComponent.verticalAlignment);
+	fieldTooltip("Placement of the block of lines in the rectangle; Baseline puts the first baseline on its centre.");
+	prop::Checkbox("Wrap", &ioComponent.wrap);
+	fieldTooltip("Break the lines on spaces to stay within the rectangle width.");
+	enumCombo("Fit", ioComponent.fit);
+	fieldTooltip(
+			"Text larger than the rectangle: Overflow draws it whole, Clip cuts it, Shrink reduces the font size.");
+	if (ioComponent.fit == data::fonts::TextFit::Shrink) {
+		prop::DragFloat("Min Font Size", &ioComponent.minFontSize, 0.5f, 1.0f, 200.0f);
+		fieldTooltip("Smallest font size Shrink may reach, in pixels.");
 	}
-	prop::DragFloat("Kerning", &ioComponent.kerning, 0.1f);
-	prop::DragFloat("Line Spacing", &ioComponent.lineSpacing, 0.1f);
+	prop::DragFloat("Kerning", &ioComponent.kerning, 0.01f);
+	prop::DragFloat("Line Spacing", &ioComponent.lineSpacing, 0.01f);
 }
 
 void renderProps(UiImage& ioComponent) {

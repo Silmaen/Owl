@@ -90,7 +90,8 @@ Entities:
       text: "Empty 2D project"
       color: [1, 1, 1, 1]
       fontSize: 32
-      alignment: Center
+      horizontalAlignment: Center
+      verticalAlignment: Middle
       kerning: 0
       lineSpacing: 0
     RendererTag:

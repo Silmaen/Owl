@@ -9,6 +9,7 @@
 #include "cases/Cases.h"
 
 #include <app/Application.h>
+#include <data/fonts/TextLayout.h>
 #include <renderer/CameraOrtho.h>
 #include <renderer/Renderer2D.h>
 #include <renderer/gpu/Texture.h>
@@ -145,6 +146,16 @@ void runText(Runner& ioRunner, const renderer::CameraOrtho& iCamera) {
 		for (const auto& tr: utf8Transforms)
 			renderer::Renderer2D::drawString(
 					{.transform = tr, .text = utf8Line, .font = font, .color = {1.f, 1.f, 1.f, 1.f}});
+	});
+	// Same glyphs wrapped and shrunk in a box: the layout must keep them in one batch.
+	const data::fonts::TextLayout wrapped{.boxSize = {12.f, 3.f}, .wrap = true, .fit = data::fonts::TextFit::Shrink};
+	measureFrame(ioRunner, "renderer2d/text/10000_glyphs_wrapped", 10000U, iCamera, [&]() -> void {
+		for (const auto& tr: utf8Transforms)
+			renderer::Renderer2D::drawString({.transform = tr,
+											  .text = utf8Line,
+											  .font = font,
+											  .color = {1.f, 1.f, 1.f, 1.f},
+											  .layout = wrapped});
 	});
 }
 

@@ -706,20 +706,40 @@ The `textureCoords` field defaults to full-texture UVs. Custom UVs are used by t
 
 ### StringData
 
-| Field         | Type              | Default        | Description          |
-|---------------|-------------------|----------------|----------------------|
-| `transform`   | `math::Transform` | —              | Text transformation  |
-| `text`        | `std::string`     | —              | Text content         |
-| `font`        | `shared<Font>`    | `nullptr`      | Font (or default)    |
-| `color`       | `math::vec4`      | `{1, 1, 1, 1}` | Text colour          |
-| `kerning`     | `float`           | `0.0`          | Extra letter spacing |
-| `lineSpacing` | `float`           | `0.0`          | Extra line spacing   |
-| `entityId`    | `int`             | `-1`           | Entity ID            |
+| Field       | Type                      | Default        | Description                         |
+|-------------|---------------------------|----------------|-------------------------------------|
+| `transform` | `math::Transform`         | —              | Placement of the layout frame       |
+| `text`      | `std::string`             | —              | Text content (UTF-8)                |
+| `font`      | `shared<Font>`            | `nullptr`      | Font (or default)                   |
+| `color`     | `math::vec4`              | `{1, 1, 1, 1}` | Text colour                         |
+| `layout`    | `data::fonts::TextLayout` | see below      | Size, alignment, wrap, fit, spacing |
+| `entityId`  | `int`                     | `-1`           | Entity ID                           |
 
 **Text encoding.** `text` is UTF-8, decoded to code points while it is laid out (`core::utils::decodeNextCodePoint`,
 no conversion buffer); an invalid sequence becomes U+FFFD, drawn as `?` like any code point missing from the atlas.
-`Font::forEachGlyph` lays the glyphs out and `Font::measureText` gives their box (also used for the text aspect of
-`UiText`); the glyphs keep their per-axis stretch to the transform.
+`Font::forEachGlyph` lays the glyphs out on raw baselines and `Font::measureText` gives their box.
+
+**Layout.** `drawString` lays the text out with `data::fonts::forEachLaidOutGlyph` (`data/fonts/TextLayout.h`) in a
+frame whose origin is the centre of the layout box, then applies `transform`. Glyphs keep the aspect ratio of the
+font: one scale per em, the box only drives the wrap width, the alignment and the fit (a non-uniform `transform` scale
+still stretches, so give it a uniform one). The font unit is the ascender-to-descender height (`Font::getAscender()`
+minus `Font::getDescender()` is 1); spaces draw no quad. Nothing is allocated.
+
+| `TextLayout` field | Default    | Meaning                                                                        |
+|--------------------|------------|--------------------------------------------------------------------------------|
+| `fontSize`         | `1`        | Ascender-to-descender height, in frame units                                   |
+| `boxSize`          | `{0, 0}`   | Layout box centred on the origin; 0 on an axis leaves it unbounded             |
+| `horizontal`       | `Center`   | `Left`, `Center`, `Right`: each line on the box edge (the origin without box)  |
+| `vertical`         | `Middle`   | `Top`, `Middle`, `Bottom` on the box edge; `Baseline`: first baseline on 0     |
+| `wrap`             | `false`    | Break on spaces within the box width; a longer word breaks between code points |
+| `fit`              | `Overflow` | `Overflow` draws all, `Clip` cuts glyphs and UVs at the box, `Shrink` resizes  |
+| `minFontSize`      | `0`        | Lower bound of `Shrink`                                                        |
+| `kerning`          | `0`        | Extra advance between glyphs, in font units                                    |
+| `lineSpacing`      | `0`        | Extra space between lines, in font units                                       |
+
+`computeTextLayout` resolves the shrunk size, the line count and the block placement, `measureTextLayout` the box of
+the line boxes, `LineBreaker` the lines (byte ranges). A world-space `Text` takes its em height from the entity's Y
+scale (the X scale no longer squeezes the glyphs); a `UiText` lays out in its `UiRect`, in pixels.
 
 **Charset and atlas.** Every font loads Basic Latin, Latin-1, Latin Extended-A, General Punctuation and `€`
 (`FontSettings::defaultRanges()`: `œ`, `Œ`, `’`, `“ ”`, `…` included). More code-point ranges are import settings of

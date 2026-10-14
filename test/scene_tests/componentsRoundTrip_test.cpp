@@ -92,7 +92,11 @@ TEST(ComponentRoundTrip, UiText) {
 				uiText.text = "hello";
 				uiText.color = {0.1f, 0.2f, 0.3f, 0.4f};
 				uiText.fontSize = 24.f;
-				uiText.alignment = scene::component::UiText::Alignment::Right;
+				uiText.horizontalAlignment = data::fonts::HorizontalAlignment::Right;
+				uiText.verticalAlignment = data::fonts::VerticalAlignment::Baseline;
+				uiText.wrap = true;
+				uiText.fit = data::fonts::TextFit::Shrink;
+				uiText.minFontSize = 10.f;
 				uiText.kerning = 1.5f;
 				uiText.lineSpacing = 2.f;
 			},
@@ -101,7 +105,11 @@ TEST(ComponentRoundTrip, UiText) {
 				EXPECT_EQ(t.text, "hello");
 				EXPECT_NEAR(t.color.x(), 0.1f, 0.01f);
 				EXPECT_NEAR(t.fontSize, 24.f, 0.01f);
-				EXPECT_EQ(t.alignment, scene::component::UiText::Alignment::Right);
+				EXPECT_EQ(t.horizontalAlignment, data::fonts::HorizontalAlignment::Right);
+				EXPECT_EQ(t.verticalAlignment, data::fonts::VerticalAlignment::Baseline);
+				EXPECT_TRUE(t.wrap);
+				EXPECT_EQ(t.fit, data::fonts::TextFit::Shrink);
+				EXPECT_NEAR(t.minFontSize, 10.f, 0.01f);
 				EXPECT_NEAR(t.kerning, 1.5f, 0.01f);
 				EXPECT_NEAR(t.lineSpacing, 2.f, 0.01f);
 			});
