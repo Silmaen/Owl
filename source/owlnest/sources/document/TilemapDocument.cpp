@@ -10,6 +10,8 @@
 
 #include "EditorLayer.h"
 
+#include "../commands/TilemapCommands.h"
+
 #include <gui/IconFont.h>
 #include <gui/UiLayer.h>
 #include <gui/component/render.h>
@@ -43,44 +45,13 @@ constexpr float g_minZoom = 4.f;
 constexpr float g_maxZoom = 128.f;
 constexpr float g_zoomWheelStep = 1.15f;
 
-class ModifyTilemapAssetCommand final : public UndoCommand<scene::TilemapAsset> {
-public:
-	ModifyTilemapAssetCommand(std::string iBeforeYaml, std::string iAfterYaml, std::string iDescription)
-		: m_beforeYaml{std::move(iBeforeYaml)}, m_afterYaml{std::move(iAfterYaml)},
-		  m_description{std::move(iDescription)} {}
-
-	void undo(scene::TilemapAsset& ioTarget) override {
-		const auto savedTileset = ioTarget.tileset;
-		std::ignore = ioTarget.deserializeFromString(m_beforeYaml);
-		ioTarget.tileset = savedTileset;
-	}
-
-	void redo(scene::TilemapAsset& ioTarget) override {
-		const auto savedTileset = ioTarget.tileset;
-		std::ignore = ioTarget.deserializeFromString(m_afterYaml);
-		ioTarget.tileset = savedTileset;
-	}
-
-	[[nodiscard]] auto description() const -> std::string override { return m_description; }
-
-private:
-	std::string m_beforeYaml;
-	std::string m_afterYaml;
-	std::string m_description;
-};
-
-auto snapshotAsset(const scene::TilemapAsset& iAsset) -> std::string { return iAsset.serializeToString("undo"); }
-
 template<typename Fn>
 void pushTilemapEdit(scene::TilemapAsset& ioAsset, TilemapUndoManager& ioUndo, const std::string& iDescription,
 					 Fn&& iMutator) {
-	const auto before = snapshotAsset(ioAsset);
+	scene::TilemapAsset before = ioAsset;
 	std::forward<Fn>(iMutator)();
-	const auto after = snapshotAsset(ioAsset);
-	if (before != after) {
-		auto cmd = mkUniq<ModifyTilemapAssetCommand>(before, after, iDescription);
-		ioUndo.push(std::move(cmd));
-	}
+	if (!before.hasSameContent(ioAsset))
+		ioUndo.push(mkUniq<commands::ModifyTilemapLayoutCommand>(std::move(before), ioAsset, iDescription));
 }
 
 }// namespace
@@ -95,10 +66,7 @@ auto TilemapDocument::title() const -> std::string {
 	return "Untitled";
 }
 
-auto TilemapDocument::isDirty() const -> bool {
-	const auto displayName = m_path.empty() ? std::string{"untitled"} : m_path.stem().string();
-	return m_asset.serializeToString(displayName) != m_savedSnapshot;
-}
+auto TilemapDocument::isDirty() const -> bool { return !m_asset.hasSameContent(m_savedAsset); }
 
 auto TilemapDocument::recoverySnapshot() const -> std::optional<std::string> {
 	return m_asset.serializeToString(m_path.empty() ? std::string{"untitled"} : m_path.stem().string());
@@ -267,15 +235,18 @@ void TilemapDocument::renderGridSection() {
 	const bool heightChanged = ImGui::DragInt("##height", &height, 1.f, 1, 1024, "%d cells");
 	const bool heightCommitted = ImGui::IsItemDeactivatedAfterEdit();
 	std::ignore = gui::widgets::propertyReset(false);
-	if (widthChanged || heightChanged)
+	if (widthChanged || heightChanged) {
+		// The preview always resizes the grid of the drag start, so shrinking then growing back loses nothing.
+		if (!m_resizeOrigin)
+			m_resizeOrigin = m_asset;
+		m_asset = *m_resizeOrigin;
 		m_asset.resize(static_cast<uint32_t>(std::max(1, width)), static_cast<uint32_t>(std::max(1, height)));
-	if (widthCommitted || heightCommitted) {
-		const auto after = snapshotAsset(m_asset);
-		if (after != m_savedSnapshot) {
-			auto cmd = mkUniq<ModifyTilemapAssetCommand>(m_savedSnapshot, after, "Resize grid");
-			m_undoManager.push(std::move(cmd));
-			m_savedSnapshot = after;// keep dirty tracking consistent — saved snapshot still drives `isDirty`
-		}
+	}
+	if ((widthCommitted || heightCommitted) && m_resizeOrigin) {
+		if (!m_resizeOrigin->hasSameContent(m_asset))
+			m_undoManager.push(
+					mkUniq<commands::ModifyTilemapLayoutCommand>(std::move(*m_resizeOrigin), m_asset, "Resize grid"));
+		m_resizeOrigin.reset();
 	}
 	if (gui::widgets::propertyFloat("Cell Size", m_asset.cellSize, 1.f, 0.05f, "%.3f",
 									"Side of a cell in world units."))
@@ -389,11 +360,31 @@ void TilemapDocument::renderPropertiesPanel() {
 		}
 		textRow("Tile", tileLabel, tileAtCell >= 0 ? theme.text : theme.textDisabled);
 		textRow("Passable", passable ? "Yes" : "No (solid)", passable ? theme.success : theme.error);
+		renderCellDataRows(layerIdx, cellX, cellY);
 		gui::widgets::endProperties();
 	}
 	gui::widgets::notice("The name and the collision of a tile belong to the tileset: open it from the Grid section.",
 						 gui::widgets::BadgeKind::Info);
 	gui::widgets::endSection();
+}
+
+void TilemapDocument::renderCellDataRows(const uint32_t iLayer, const uint32_t iX, const uint32_t iY) {
+	auto cell = m_asset.layers[iLayer].getCell(iX, iY);
+	int overlay = cell.overlay;
+	int flags = cell.flags;
+	bool changed = gui::widgets::propertyInt("Overlay", overlay, scene::component::g_EmptyTileIndex,
+											 scene::component::g_EmptyTileIndex, scene::component::g_MaxTileIndex, "%d",
+											 "Tile drawn over the terrain (-1 for none); stored for the isometric "
+											 "tracks and roads, not drawn yet.");
+	changed |= gui::widgets::propertyInt("Flags", flags, 0, 0, 255, "0x%02X",
+										 "Eight free bits of the cell, saved with the map, read by games.");
+	if (changed) {
+		cell.overlay = overlay;
+		cell.flags = static_cast<uint8_t>(std::clamp(flags, 0, 255));
+		std::ignore = m_stroke.setCell(m_asset, iLayer, iX, iY, cell);
+	}
+	if (!m_strokeInProgress && !ImGui::IsAnyItemActive())
+		endStroke("Edit cell");
 }
 
 void TilemapDocument::renderCanvas() {
@@ -456,7 +447,7 @@ void TilemapDocument::renderCanvas() {
 		handleCanvasHoverAndPaint(drawList, gridTopLeft, ImVec2{gridW * cellPx, gridH * cellPx}, cellPx);
 	else if (m_strokeInProgress && !ImGui::IsMouseDown(ImGuiMouseButton_Left) &&
 			 !ImGui::IsMouseDown(ImGuiMouseButton_Right)) {
-		endStroke();
+		endStroke("Paint tiles");
 		m_strokeInProgress = false;
 	}
 
@@ -556,7 +547,7 @@ void TilemapDocument::handleCanvasHoverAndPaint(ImDrawList* iDrawList, const ImV
 
 	if (!leftDown && !rightDown) {
 		if (m_strokeInProgress) {
-			endStroke();
+			endStroke("Paint tiles");
 			m_strokeInProgress = false;
 		}
 		return;
@@ -571,19 +562,12 @@ void TilemapDocument::handleCanvasHoverAndPaint(ImDrawList* iDrawList, const ImV
 		brush = m_palette.getSecondaryBrush();
 	if (brush == panel::g_TileBrushPick)
 		return;
-	if (!m_strokeInProgress) {
-		beginStroke();
-		m_strokeInProgress = true;
-	}
+	m_strokeInProgress = true;
 	const int32_t value = (brush == panel::g_TileBrushEraser) ? scene::component::g_EmptyTileIndex : brush;
-	if (m_asset.getTile(layerIdx, cellX, cellY) != value)
-		m_asset.setTile(layerIdx, cellX, cellY, value);
+	std::ignore = m_stroke.setTile(m_asset, layerIdx, cellX, cellY, value);
 }
 
-void TilemapDocument::refreshSavedSnapshot() {
-	const auto displayName = m_path.empty() ? std::string{"untitled"} : m_path.stem().string();
-	m_savedSnapshot = m_asset.serializeToString(displayName);
-}
+void TilemapDocument::refreshSavedSnapshot() { m_savedAsset = m_asset; }
 
 void TilemapDocument::resolveTileset() {
 	if (!m_asset.tileset && !m_asset.tilesetPath.empty() && app::Application::instanced()) {
@@ -604,17 +588,9 @@ void TilemapDocument::resolveTileset() {
 	}
 }
 
-void TilemapDocument::beginStroke() { m_strokeBeforeYaml = snapshotAsset(m_asset); }
-
-void TilemapDocument::endStroke() {
-	if (m_strokeBeforeYaml.empty())
-		return;
-	const auto after = snapshotAsset(m_asset);
-	if (after != m_strokeBeforeYaml) {
-		auto cmd = mkUniq<ModifyTilemapAssetCommand>(m_strokeBeforeYaml, after, "Paint tiles");
-		m_undoManager.push(std::move(cmd));
-	}
-	m_strokeBeforeYaml.clear();
+void TilemapDocument::endStroke(const std::string& iDescription) {
+	if (auto command = m_stroke.finish(m_asset, iDescription); command)
+		m_undoManager.push(std::move(command));
 }
 
 }// namespace owl::nest
