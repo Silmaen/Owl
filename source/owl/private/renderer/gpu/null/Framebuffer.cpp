@@ -28,4 +28,18 @@ auto Framebuffer::readPixel(uint32_t, int, int) -> int { return 0; }
 
 void Framebuffer::clearAttachment(uint32_t, int) {}
 
+auto Framebuffer::readColorAttachment(const uint32_t iAttachmentIndex) -> std::vector<uint8_t> {
+	using Format = AttachmentSpecification::Format;
+	if (iAttachmentIndex >= m_specs.attachments.size()) {
+		OWL_CORE_WARN("Null Framebuffer: No attachment {} to read back.", iAttachmentIndex)
+		return {};
+	}
+	if (const auto format = m_specs.attachments[iAttachmentIndex].format;
+		format != Format::Surface && format != Format::Rgba8) {
+		OWL_CORE_WARN("Null Framebuffer: Attachment {} is not an 8-bit colour attachment.", iAttachmentIndex)
+		return {};
+	}
+	return std::vector<uint8_t>(static_cast<size_t>(m_specs.size.surface()) * 4, 0);
+}
+
 }// namespace owl::renderer::gpu::null

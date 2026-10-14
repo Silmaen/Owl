@@ -126,6 +126,13 @@ public:
 
 	/**
 	 * @brief
+	 *  Get the framebuffer the viewport renders into.
+	 * @return The framebuffer (null once detached).
+	 */
+	[[nodiscard]] auto getFramebuffer() const -> const shared<renderer::gpu::Framebuffer>& { return m_framebuffer; }
+
+	/**
+	 * @brief
 	 *  Set the guizmo type.
 	 * @param[in] iType The element type.
 	 */

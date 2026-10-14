@@ -80,4 +80,13 @@ OWL_API auto decodeImageFile(const std::filesystem::path& iPath, int iDesiredCha
 OWL_API auto writeImagePng(const std::filesystem::path& iPath, math::vec2ui iSize, std::span<const uint8_t> iRgba)
 		-> bool;
 
+/**
+ * @brief
+ *  Encode an 8-bit RGBA image as PNG bytes in memory (frame captures sent to tools).
+ * @param[in] iSize Image size in pixels.
+ * @param[in] iRgba `width * height * 4` bytes, top row first.
+ * @return The PNG file content, empty on failure.
+ */
+OWL_API auto encodeImagePng(math::vec2ui iSize, std::span<const uint8_t> iRgba) -> std::vector<uint8_t>;
+
 }// namespace owl::renderer

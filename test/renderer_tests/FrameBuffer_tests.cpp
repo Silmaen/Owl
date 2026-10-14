@@ -11,6 +11,9 @@
 #include <renderer/gpu/RenderCommand.h>
 #include <renderer/gpu/null/Framebuffer.h>
 
+#include <algorithm>
+#include <cstdint>
+
 using namespace owl::renderer;
 using namespace owl::renderer::gpu;
 
@@ -41,6 +44,26 @@ TEST(Renderer, FramebufferBase) {
 	EXPECT_EQ(fbuf->getLowerData().x(), 0);
 	EXPECT_EQ(fbuf->getUpperData().x(), 1);
 
+	RenderCommand::invalidate();
+	owl::core::Log::invalidate();
+}
+
+TEST(Renderer, NullFramebufferReadsBackABlankImage) {
+	owl::core::Log::init(owl::core::Log::Level::Off);
+	RenderCommand::create(RenderAPI::Type::Null);
+	const auto fbuf = Framebuffer::create({.size = {4, 3},
+										   .attachments = {{.format = AttachmentSpecification::Format::Surface,
+															.tiling = AttachmentSpecification::Tiling::Optimal},
+														   {.format = AttachmentSpecification::Format::RedInteger,
+															.tiling = AttachmentSpecification::Tiling::Optimal}},
+										   .samples = 1,
+										   .swapChainTarget = false,
+										   .debugName = "blank"});
+	const auto pixels = fbuf->readColorAttachment(0);
+	EXPECT_EQ(pixels.size(), 4u * 3u * 4u);
+	EXPECT_TRUE(std::ranges::all_of(pixels, [](const uint8_t iByte) -> bool { return iByte == 0; }));
+	EXPECT_TRUE(fbuf->readColorAttachment(1).empty());
+	EXPECT_TRUE(fbuf->readColorAttachment(2).empty());
 	RenderCommand::invalidate();
 	owl::core::Log::invalidate();
 }

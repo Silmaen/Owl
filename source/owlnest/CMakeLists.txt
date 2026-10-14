@@ -10,12 +10,13 @@ file(GLOB_RECURSE HDRS_RUNNER CONFIGURE_DEPENDS
         runner/*.h
 )
 #
-#  Editor commands: undo stack, scene commands and the command registry, without any UI.
-#  Shared by the editor, the runner (scenario `command:` steps) and the owlnest tests.
+#  Editor commands: undo stack, scene commands, the command registry and the editor session (headless one included),
+#  without any UI. Shared by the editor, the runner (scenario `command:` steps) and the owlnest tests.
 #
 set(OWL_NEST_COMMANDS ${OWL_PROJECT}Commands)
 file(GLOB_RECURSE SRCS_COMMANDS CONFIGURE_DEPENDS
         sources/commands/*.cpp
+        sources/session/*.cpp
         sources/EntitySnapshot.cpp
         sources/Undo*.cpp
 )

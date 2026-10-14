@@ -57,14 +57,6 @@ struct FrameBenchOptions {
 
 /**
  * @brief
- *  Find the project a scene belongs to: the nearest parent directory holding an `owl_project.yml`.
- * @param[in] iScene The scene file.
- * @return The project directory, empty when none was found.
- */
-[[nodiscard]] auto findProject(const std::filesystem::path& iScene) -> std::filesystem::path;
-
-/**
- * @brief
  *  Check whether the command line asks for the frame bench.
  * @param[in] iArgc Number of arguments.
  * @param[in] iArgv The arguments.

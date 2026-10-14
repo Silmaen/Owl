@@ -19,6 +19,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Input frames: a plain-data `InputFrame` sampled per tick and per frame (`Scene::getInputFrame`) gives
   `isKeyJustPressed` / `isKeyJustReleased`, mouse edges and the wheel in C++ and Lua (`input.is_key_just_pressed`, …),
   injection moves into the input layer so it works on GLFW too, and the hand-written edge latches are gone.
+- Editor session: `session::EditorSession` (scene, undo, command registry, bounded play for N frames or ticks at a fixed
+  step, frame capture with `encodeImagePng`, statistics) implemented by `EditorLayer` and by a `HeadlessSession` on the
+  Null renderer for tests and tools.
 
 ### Changed
 
