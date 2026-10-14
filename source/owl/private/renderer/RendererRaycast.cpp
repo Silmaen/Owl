@@ -34,6 +34,12 @@
 namespace owl::renderer {
 
 namespace {
+// Identifier of this renderer's descriptor block, resolved once.
+auto blockId() -> gpu::RendererId {
+	static const gpu::RendererId sId = gpu::RendererDescriptors::getId("RendererRaycast");
+	return sId;
+}
+
 // std140 layout — must match `StripeParams` in `raycast_stripe.slang`.
 struct StripeParamsUbo {
 	math::mat4 viewProjection;
@@ -278,7 +284,7 @@ auto emitWallStripesGpu(const WallStripeContext& iCtx) -> bool {
 		g_state->zBufferPerColumn[col] = opaque == hits.end() ? g_NoWallDepth : opaque->perpDist;
 	}
 
-	const gpu::RendererDescriptors::ScopedActive scoped{"RendererRaycast"};
+	const gpu::RendererDescriptors::ScopedActive scoped{blockId()};
 	g_state->stripeParams->setData(&ubo, static_cast<uint32_t>(sizeof(StripeParamsUbo)), 0);
 	g_state->stripeParams->bind();
 
@@ -336,7 +342,7 @@ void RendererRaycast::init() {
 		g_state->descriptorBlockReady = true;
 	}
 
-	const gpu::RendererDescriptors::ScopedActive scoped{"RendererRaycast"};
+	const gpu::RendererDescriptors::ScopedActive scoped{blockId()};
 
 	g_state->stripeParams =
 			gpu::UniformBuffer::create(static_cast<uint32_t>(sizeof(StripeParamsUbo)), 0, "RendererRaycast");

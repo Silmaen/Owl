@@ -186,6 +186,14 @@ public:
 
 	/**
 	 * @brief
+	 *  Identity of the GPU texture in its backend: two objects wrapping one GPU texture give the same value, the
+	 *  value `operator==` compares. Cheap and side-effect free, unlike `getRendererId` on Vulkan.
+	 * @return The backend identity of the texture.
+	 */
+	[[nodiscard]] virtual auto getBackendId() const -> uint64_t = 0;
+
+	/**
+	 * @brief
 	 *  Activate the texture in the GPU.
 	 * @param[in] iSlot Slot into put the texture.
 	 */

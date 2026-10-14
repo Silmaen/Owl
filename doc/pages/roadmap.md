@@ -132,7 +132,7 @@ post-processing — with full 3D editing ([details](design/3d-core.md)).
 slopes, a HUD for management games and its editor, input actions with a gamepad, a fixed simulation tick, and a local
 MCP server in Owl Nest ([plan](design/isometric-worlds.md)).
 
-- ![Planned][planned] Renderer2D transients sized per frame (PR-30: B-09)
+- ![Done][done] Renderer2D transients sized per frame (PR-30: B-09)
 - ![Planned][planned] Persistent, chunked and culled tilemaps, binary storage up to 1024² (PR-31: B-13)
 - ![Planned][planned] `RendererIsometric` layer: dimetric camera, depth with alpha cutout, billboards ([details](design/isometric.md))
 - ![Planned][planned] Isometric terrain: corner heights, 19 slopes, foundations, tracks and roads, slope-aware picking

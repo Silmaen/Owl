@@ -66,6 +66,13 @@ public:
 
 	/**
 	 * @brief
+	 *  Identity of the GPU texture in its backend.
+	 * @return The backend identity of the texture.
+	 */
+	[[nodiscard]] auto getBackendId() const -> uint64_t override { return m_textureId; }
+
+	/**
+	 * @brief
 	 *  Get the identifier of the texture in the descriptor registry.
 	 * @return The registry identifier (0 when the texture was never registered).
 	 */

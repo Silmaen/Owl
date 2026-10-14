@@ -58,7 +58,8 @@ the agent changes.
 The configuration is pinned to the agent `linux-build-hephaistos` (8 cores): the committed baseline is the
 median of its 5 runs of 2026-10-11 on `main` after #235 (builds 35758 to 35847, listed in `context.baseline_runs`);
 since #233 the agent takes 230 ms instead of 183 for the first Slang compilation of a process, with the same Slang
-package and no change on a local machine. Timings from
+package and no change on a local machine. The `renderer2d/{transient_quads_circles,rects,polylines_8}` entries are
+estimates, a local run scaled by the ratio of the other `renderer2d` cases, until the next refresh. Timings from
 another agent do not compare (artemis is 20 % faster but varies 10.7 % between runs, against 1.7 % here).
 
 ```bash

@@ -86,7 +86,7 @@ a few days, L a week.
 
 ### Rendering foundations
 
-- ![Planned][planned] **R1 — Renderer2D transients (B-09), M.** Transients sized per frame like the instances
+- ![Done][done] **R1 — Renderer2D transients (B-09), M.** Transients sized per frame like the instances
   (20 000), texture slot lookup by id, no temporary vectors, renderer id instead of a string in `ScopedActive`. Bench:
   transient path at 10 000 and 100 000 quads, zero allocation per frame in `renderer/`.
 - ![Planned][planned] **TM1 — Persistent, chunked, culled tilemap (PR-31: B-13), L.** D6 and D7 for tilemaps:

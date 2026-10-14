@@ -13,7 +13,10 @@ fallback, or Null for headless). All rendering goes through static facade classe
 (quads, circles, lines, text), and `BackgroundRenderer` for fullscreen backgrounds.
 
 The renderer supports up to **20,000 quads per batch** with automatic batch splitting
-and GPU-managed texture slot allocation.
+and GPU-managed texture slot allocation. Quads, circles and glyphs drawn with an explicit transform share
+20,000 transient matrices per batch, a batch finds a texture's slot by its backend identity
+(`Texture::getBackendId`, a hashed table instead of a scan), and a frame allocates nothing once the batches reached
+their size (`Renderer2D.transientFrameDoesNotAllocate`).
 
 ## Architecture
 
@@ -189,14 +192,18 @@ gpu::RendererDescriptors::declare("MyRenderer", myBindings);
 
 // Then scope `ScopedActive` around every operation that touches the
 // renderer's GPU state — pipeline creation, UBO upload, texture binding,
-// the draw itself:
-const gpu::RendererDescriptors::ScopedActive scoped{"MyRenderer"};
+// the draw itself. It takes the block identifier, resolved once from the name:
+static const gpu::RendererId myBlock = gpu::RendererDescriptors::getId("MyRenderer");
+const gpu::RendererDescriptors::ScopedActive scoped{myBlock};
 // ... drawData->init(), UniformBuffer::create(), RenderCommand::bindTextures(),
 // drawDataInstanced(), …
 
 // And in MyRenderer::shutdown():
 gpu::RendererDescriptors::release("MyRenderer");
 ```
+
+The identifier of a name never changes (before `declare`, after `release`), and `ScopedActive` reads the backend
+block cached for it: activating a block builds no string and does no lookup.
 
 While a `ScopedActive` is alive, `vulkan::UniformBuffer`, `RenderCommand::bindTextures`,
 `vulkan::Texture2D::bind`, `VulkanHandler::pushPipeline` and
@@ -283,7 +290,7 @@ flowchart LR
 - Non-entity draws (UI canvas widgets, gizmo / debug overlays, the
   per-glyph layout in `drawString`) leave `worldIndex` at its default `-1`.
   Renderer2D appends each requested `math::Transform` to a per-batch
-  `transientWorlds[]` SSBO and emits a negative `worldIndex` that
+  `transientWorlds[]` SSBO (20 000 matrices, the instance capacity) and emits a negative `worldIndex` that
   points into it.
 - `gpu::StorageBuffer::bind(uint32_t iBinding)` lets the same SSBO be
   bound at different slot numbers across descriptor blocks.

@@ -64,6 +64,13 @@ struct BindingDecl {
 
 /**
  * @brief
+ *  Identifier of a renderer block, from `RendererDescriptors::getId`: stable for the whole process, so a renderer
+ *  computes it once and activates its block without building or hashing a name.
+ */
+using RendererId = uint32_t;
+
+/**
+ * @brief
  *  Renderer blocks: the explicit bindings of the Owl RHI. Each high-level renderer (`Renderer2D`,
  *  `RendererTilemap`, `Renderer3D`, `RendererRaycast`) calls `declare()` once at init with the union of the bindings
  *  of its shaders, then wraps its init and its draws in a `ScopedActive`. Uniform buffers, textures
@@ -110,6 +117,15 @@ public:
 
 	/**
 	 * @brief
+	 *  Get the identifier of a renderer block, given to `ScopedActive`. The same name always gives the same
+	 *  identifier, before `declare`, after `release` and across a new `declare`.
+	 * @param[in] iRenderer Renderer namespace key.
+	 * @return The identifier of the block.
+	 */
+	[[nodiscard]] static auto getId(const std::string& iRenderer) -> RendererId;
+
+	/**
+	 * @brief
 	 *  RAII guard that makes `iRenderer`'s block the active one. While alive, buffer and texture binds,
 	 *  pipeline-layout creation and the bindings of every draw route through this renderer's block. The previous
 	 *  active is restored on destruction so guards nest cleanly.
@@ -118,10 +134,10 @@ public:
 	public:
 		/**
 		 * @brief
-		 *  Push the renderer's block onto the active slot.
-		 * @param[in] iRenderer Renderer namespace key.
+		 *  Push the renderer's block onto the active slot (no-op for an unknown identifier).
+		 * @param[in] iRenderer Identifier of the block, from `getId`.
 		 */
-		explicit ScopedActive(const std::string& iRenderer);
+		explicit ScopedActive(RendererId iRenderer);
 
 		/**
 		 * @brief

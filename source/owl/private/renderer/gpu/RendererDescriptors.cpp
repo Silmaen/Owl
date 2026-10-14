@@ -15,10 +15,43 @@
 #include "vulkan/internal/RendererDescriptors.h"
 #endif
 
+#include <cstddef>
 #include <cstdint>
 #include <span>
+#include <string>
+#include <vector>
 
 namespace owl::renderer::gpu {
+
+namespace {
+
+// A renderer block known by its identifier, with the backend blocks cached so `ScopedActive` needs no lookup.
+struct BlockSlot {
+	// Renderer namespace key.
+	std::string name;
+#if OWL_WITH_RENDER
+	// OpenGL binding table of the block, or nullptr until first used.
+	opengl::BindingTable* openGl = nullptr;
+	// Vulkan block, or nullptr when not declared.
+	vulkan::internal::RendererDescriptors* vulkan = nullptr;
+#endif
+};
+
+auto getSlots() -> std::vector<BlockSlot>& {
+	static std::vector<BlockSlot> sSlots;
+	return sSlots;
+}
+
+}// namespace
+
+auto RendererDescriptors::getId(const std::string& iRenderer) -> RendererId {
+	auto& slots = getSlots();
+	for (size_t i = 0; i < slots.size(); ++i)
+		if (slots[i].name == iRenderer)
+			return static_cast<RendererId>(i);
+	slots.push_back(BlockSlot{.name = iRenderer});
+	return static_cast<RendererId>(slots.size() - 1);
+}
 
 #if OWL_WITH_RENDER
 namespace {
@@ -55,7 +88,7 @@ auto getOwnedBlocks() -> std::unordered_map<std::string, uniq<vulkan::internal::
 void RendererDescriptors::declare(const std::string& iRenderer, std::span<const BindingDecl> iBindings) {
 	if (const auto api = RenderCommand::getApi(); api == RenderAPI::Type::OpenGL) {
 		opengl::BindingTable::release(iRenderer);
-		static_cast<void>(opengl::BindingTable::getForRenderer(iRenderer));
+		getSlots()[getId(iRenderer)].openGl = &opengl::BindingTable::getForRenderer(iRenderer);
 		return;
 	}
 	if (const auto api = RenderCommand::getApi(); api != RenderAPI::Type::Vulkan) {
@@ -72,36 +105,46 @@ void RendererDescriptors::declare(const std::string& iRenderer, std::span<const 
 	}
 	auto block = mkUniq<vulkan::internal::RendererDescriptors>(iRenderer);
 	block->init(vkBindings);
+	getSlots()[getId(iRenderer)].vulkan = block.get();
 	getOwnedBlocks()[iRenderer] = std::move(block);
 }
 
 void RendererDescriptors::release(const std::string& iRenderer) {
+	auto& slot = getSlots()[getId(iRenderer)];
+	slot.openGl = nullptr;
+	slot.vulkan = nullptr;
 	getOwnedBlocks().erase(iRenderer);
 	opengl::BindingTable::release(iRenderer);
 }
 
 void RendererDescriptors::releaseAll() {
+	for (auto& slot: getSlots()) {
+		slot.openGl = nullptr;
+		slot.vulkan = nullptr;
+	}
 	getOwnedBlocks().clear();
 	opengl::BindingTable::releaseAll();
 }
 
-RendererDescriptors::ScopedActive::ScopedActive(const std::string& iRenderer) {
+RendererDescriptors::ScopedActive::ScopedActive(const RendererId iRenderer) {
+	auto& slots = getSlots();
+	if (iRenderer >= slots.size())
+		return;
+	auto& slot = slots[iRenderer];
 	if (const auto api = RenderCommand::getApi(); api == RenderAPI::Type::OpenGL) {
+		if (slot.openGl == nullptr)
+			slot.openGl = &opengl::BindingTable::getForRenderer(slot.name);
 		mp_state = opengl::BindingTable::getActive();
-		opengl::BindingTable::setActive(&opengl::BindingTable::getForRenderer(iRenderer));
+		opengl::BindingTable::setActive(slot.openGl);
 		m_engaged = true;
 		m_openGl = true;
 		return;
 	}
-	if (const auto api = RenderCommand::getApi(); api != RenderAPI::Type::Vulkan) {
-		return;
-	}
-	auto* const block = vulkan::internal::RendererDescriptors::getForRenderer(iRenderer);
-	if (block == nullptr) {
+	if (const auto api = RenderCommand::getApi(); api != RenderAPI::Type::Vulkan || slot.vulkan == nullptr) {
 		return;
 	}
 	mp_state = vulkan::internal::RendererDescriptors::getActive();
-	vulkan::internal::RendererDescriptors::setActive(block);
+	vulkan::internal::RendererDescriptors::setActive(slot.vulkan);
 	m_engaged = true;
 }
 
@@ -123,7 +166,7 @@ void RendererDescriptors::release([[maybe_unused]] const std::string& iRenderer)
 
 void RendererDescriptors::releaseAll() {}
 
-RendererDescriptors::ScopedActive::ScopedActive([[maybe_unused]] const std::string& iRenderer) {}
+RendererDescriptors::ScopedActive::ScopedActive([[maybe_unused]] const RendererId iRenderer) {}
 
 RendererDescriptors::ScopedActive::~ScopedActive() {
 	// Never engaged without the Vulkan backend: nothing to restore.
