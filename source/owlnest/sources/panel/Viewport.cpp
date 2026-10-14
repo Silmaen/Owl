@@ -53,6 +53,7 @@ OWL_DIAG_POP
 #include <format>
 #include <optional>
 #include <string_view>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -1204,21 +1205,28 @@ void Viewport::renderGizmo() {
 		}
 
 		if (!isUsing && m_gizmoWasUsing && mp_undoManager != nullptr && !m_gizmoBeforeYaml.empty()) {
-			const auto afterYaml = scene::SceneSerializer::serializeEntityToString(selectedEntity);
-			if (m_gizmoBeforeYaml != afterYaml) {
-				auto overrides =
-						commands::PrefabOverrideChange::record(selectedEntity, *activeScene, m_gizmoBeforeYaml);
-				auto cmd = mkUniq<commands::ModifyEntityCommand>(
-						selectedEntity.getUUID(), EntitySnapshot{selectedEntity.getUUID(), m_gizmoBeforeYaml},
-						"Transform (Gizmo)");
-				cmd->captureAfter(selectedEntity);
-				cmd->setPrefabOverrides(std::move(overrides));
-				mp_undoManager->push(std::move(cmd));
-			}
+			commitGizmoEdit(selectedEntity, activeScene);
 			m_gizmoBeforeYaml.clear();
 		}
 		m_gizmoWasUsing = isUsing;
 	}
+}
+
+void Viewport::commitGizmoEdit(const scene::Entity& iEntity, const shared<scene::Scene>& iScene) const {
+	const auto afterYaml = scene::SceneSerializer::serializeEntityToString(iEntity);
+	if (m_gizmoBeforeYaml == afterYaml)
+		return;
+	const auto transform = iEntity.getComponent<scene::component::Transform>().transform;
+	// The command records the move from the state before the drag.
+	std::ignore = scene::SceneSerializer::applyEntityFromString(iEntity, m_gizmoBeforeYaml);
+	const commands::CommandTarget target{.registry = &m_parent->getRegistry(), .scene = iScene, .undo = mp_undoManager};
+	if (const auto moved = target.execute("entity.set_transform",
+										  {{"entity", static_cast<int64_t>(static_cast<uint64_t>(iEntity.getUUID()))},
+										   {"translation", transform.translation()},
+										   {"rotation", transform.rotation()},
+										   {"scale", transform.scale()}});
+		!moved)
+		std::ignore = scene::SceneSerializer::applyEntityFromString(iEntity, afterYaml);
 }
 
 void Viewport::onEvent(event::Event& ioEvent) {

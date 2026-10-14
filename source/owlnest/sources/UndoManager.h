@@ -13,11 +13,87 @@
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
+#include <ranges>
 #include <string>
 #include <utility>
 #include <vector>
 
 namespace owl::nest {
+/**
+ * @brief
+ *  Several commands undone and redone as one step (a macro replay).
+ * @tparam Target Concrete editor state the commands operate on.
+ */
+template<typename Target>
+class UndoGroupCommand final : public UndoCommand<Target> {
+public:
+	UndoGroupCommand(const UndoGroupCommand&) = delete;
+
+	UndoGroupCommand(UndoGroupCommand&&) = default;
+
+	auto operator=(const UndoGroupCommand&) -> UndoGroupCommand& = delete;
+
+	auto operator=(UndoGroupCommand&&) -> UndoGroupCommand& = default;
+
+	/**
+	 * @brief
+	 *  Build the group from commands already applied, oldest first.
+	 * @param[in] iCommands The commands.
+	 * @param[in] iDescription Description of the group.
+	 */
+	UndoGroupCommand(std::vector<uniq<UndoCommand<Target>>> iCommands, std::string iDescription)
+		: m_commands{std::move(iCommands)}, m_description{std::move(iDescription)} {
+		if (!m_commands.empty()) {
+			this->m_selectAfterUndo = m_commands.front()->m_selectAfterUndo;
+			this->m_selectAfterRedo = m_commands.back()->m_selectAfterRedo;
+		}
+	}
+
+	/**
+	 * @brief
+	 *  Destructor.
+	 */
+	~UndoGroupCommand() override = default;
+
+	/**
+	 * @brief
+	 *  Undo every command, newest first.
+	 * @param[in,out] ioTarget The target.
+	 */
+	void undo(Target& ioTarget) override {
+		for (auto& command: m_commands | std::views::reverse) command->undo(ioTarget);
+	}
+
+	/**
+	 * @brief
+	 *  Redo every command, oldest first.
+	 * @param[in,out] ioTarget The target.
+	 */
+	void redo(Target& ioTarget) override {
+		for (auto& command: m_commands) command->redo(ioTarget);
+	}
+
+	/**
+	 * @brief
+	 *  Description of the group.
+	 * @return The description.
+	 */
+	[[nodiscard]] auto description() const -> std::string override { return m_description; }
+
+	/**
+	 * @brief
+	 *  Number of commands in the group.
+	 * @return The count.
+	 */
+	[[nodiscard]] auto size() const -> size_t { return m_commands.size(); }
+
+private:
+	/// The commands, oldest first.
+	std::vector<uniq<UndoCommand<Target>>> m_commands;
+	/// Description of the group.
+	std::string m_description;
+};
+
 /**
  * @brief
  *  Manages undo/redo stacks for one editor target type.
@@ -56,7 +132,7 @@ public:
 	 * @param[in] iCommand The command to push.
 	 */
 	void push(uniq<UndoCommand<Target>> iCommand) {
-		if (m_mergeEnabled && !m_undoStack.empty()) {
+		if (m_mergeEnabled && m_undoStack.size() > undoFloor()) {
 			auto& top = m_undoStack.back();
 			if (top.command->typeId() != 0 && top.command->typeId() == iCommand->typeId()) {
 				const auto elapsed = iCommand->m_timestamp - top.command->m_timestamp;
@@ -67,7 +143,8 @@ public:
 			}
 		}
 		m_redoStack.clear();
-		if (!m_undoStack.empty() && m_undoStack.size() >= m_maxDepth) {
+		for (auto& group: m_groups) group.redoFloor = 0;
+		if (m_groups.empty() && !m_undoStack.empty() && m_undoStack.size() >= m_maxDepth) {
 			m_baseGeneration = m_undoStack.front().generation;
 			m_undoStack.erase(m_undoStack.begin());
 		}
@@ -92,7 +169,7 @@ public:
 	 * @param[in,out] ioTarget The target to undo in.
 	 */
 	void undo(Target& ioTarget) {
-		if (m_undoStack.empty())
+		if (!canUndo())
 			return;
 		auto entry = std::move(m_undoStack.back());
 		m_undoStack.pop_back();
@@ -107,7 +184,7 @@ public:
 	 * @param[in,out] ioTarget The target to redo in.
 	 */
 	void redo(Target& ioTarget) {
-		if (m_redoStack.empty())
+		if (!canRedo())
 			return;
 		auto entry = std::move(m_redoStack.back());
 		m_redoStack.pop_back();
@@ -121,14 +198,16 @@ public:
 	 *  Check if undo is possible.
 	 * @return True when undo is allowed.
 	 */
-	[[nodiscard]] auto canUndo() const -> bool { return !m_undoStack.empty(); }
+	[[nodiscard]] auto canUndo() const -> bool { return m_undoStack.size() > undoFloor(); }
 
 	/**
 	 * @brief
 	 *  Check if redo is possible.
 	 * @return True when redo is allowed.
 	 */
-	[[nodiscard]] auto canRedo() const -> bool { return !m_redoStack.empty(); }
+	[[nodiscard]] auto canRedo() const -> bool {
+		return m_redoStack.size() > (m_groups.empty() ? 0 : m_groups.back().redoFloor);
+	}
 
 	/**
 	 * @brief
@@ -166,6 +245,7 @@ public:
 	void clear() {
 		m_undoStack.clear();
 		m_redoStack.clear();
+		m_groups.clear();
 		m_baseGeneration = m_nextGeneration++;
 		m_savedGeneration = m_baseGeneration;
 		m_lastSelectionHint = core::UUID{0};
@@ -202,7 +282,87 @@ public:
 	 */
 	[[nodiscard]] auto isDirty() const -> bool { return currentGeneration() != m_savedGeneration; }
 
+	/**
+	 * @brief
+	 *  Open a group: the commands pushed until `endGroup` become one undo step.
+	 *
+	 * Groups nest. While a group is open, `undo` and `redo` only reach the commands of the innermost group and the
+	 * history depth is not trimmed.
+	 * @param[in] iDescription Description of the step.
+	 */
+	void beginGroup(const std::string& iDescription) {
+		m_groups.push_back(
+				{.description = iDescription, .undoFloor = m_undoStack.size(), .redoFloor = m_redoStack.size()});
+	}
+
+	/**
+	 * @brief
+	 *  Close the innermost group: its commands, when any, are replaced by one `UndoGroupCommand`.
+	 */
+	void endGroup() {
+		if (m_groups.empty())
+			return;
+		auto group = std::move(m_groups.back());
+		m_groups.pop_back();
+		if (m_undoStack.size() <= group.undoFloor)
+			return;
+		std::vector<uniq<UndoCommand<Target>>> commands;
+		const auto first = m_undoStack.begin() + static_cast<std::ptrdiff_t>(group.undoFloor);
+		for (auto entry = first; entry != m_undoStack.end(); ++entry) commands.push_back(std::move(entry->command));
+		m_undoStack.erase(first, m_undoStack.end());
+		m_undoStack.push_back(
+				{.command = mkUniq<UndoGroupCommand<Target>>(std::move(commands), std::move(group.description)),
+				 .generation = m_nextGeneration++});
+		while (m_groups.empty() && m_undoStack.size() > m_maxDepth) {
+			m_baseGeneration = m_undoStack.front().generation;
+			m_undoStack.erase(m_undoStack.begin());
+		}
+	}
+
+	/**
+	 * @brief
+	 *  Close the innermost group, undoing and forgetting its commands (a replay that failed).
+	 * @param[in,out] ioTarget The target the commands changed.
+	 */
+	void cancelGroup(Target& ioTarget) {
+		if (m_groups.empty())
+			return;
+		const auto floor = m_groups.back().undoFloor;
+		m_groups.pop_back();
+		while (m_undoStack.size() > floor) {
+			m_undoStack.back().command->undo(ioTarget);
+			m_lastSelectionHint = m_undoStack.back().command->m_selectAfterUndo;
+			m_undoStack.pop_back();
+		}
+	}
+
+	/**
+	 * @brief
+	 *  Check whether a group is open.
+	 * @return True between `beginGroup` and the matching `endGroup` or `cancelGroup`.
+	 */
+	[[nodiscard]] auto isGrouping() const -> bool { return !m_groups.empty(); }
+
 private:
+	/**
+	 * @brief
+	 *  An open group.
+	 */
+	struct Group {
+		/// Description of the step.
+		std::string description;
+		/// Undo stack size when the group opened.
+		size_t undoFloor = 0;
+		/// Redo stack size when the group opened (0 once a push cleared the redo stack).
+		size_t redoFloor = 0;
+	};
+
+	/**
+	 * @brief
+	 *  Undo stack size below which the innermost open group cannot undo.
+	 * @return The floor, 0 without group.
+	 */
+	[[nodiscard]] auto undoFloor() const -> size_t { return m_groups.empty() ? 0 : m_groups.back().undoFloor; }
 	/**
 	 * @brief
 	 *  A recorded command and the generation of the state it leads to.
@@ -241,6 +401,8 @@ private:
 	uint64_t m_savedGeneration = 0;
 	/// Entity UUID to select after last undo/redo operation.
 	core::UUID m_lastSelectionHint{0};
+	/// Open groups, innermost last.
+	std::vector<Group> m_groups;
 };
 
 /**

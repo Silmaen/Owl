@@ -54,6 +54,9 @@ void EditorLayer::openAssetFile(const std::filesystem::path& iPath) {
 		case AssetKind::Prefab:
 			instantiatePrefab(iPath);
 			return;
+		case AssetKind::Macro:
+			runCommandFromUi("macro.run", {{"path", iPath.string()}}, commands::CommandSource::Gesture);
+			return;
 		case AssetKind::Code:
 		case AssetKind::Unsupported:
 			openCodeFile(iPath);

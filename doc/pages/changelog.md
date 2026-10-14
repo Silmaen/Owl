@@ -28,6 +28,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Null renderer for tests and tools.
 - MCP dispatcher `OwlNestMcp`: socket-free JSON-RPC 2.0 (MCP 2025-11-25, 2026-07-28 accepted) exposing every editor
   command as a tool and the scene, entities, assets, prefabs, documentation and statistics as resources.
+- Editor console and journal: a command-line syntax with `$n` result references, a Console panel (history,
+  completion, `help`), a journal of every command whatever its source, `.owlmacro` macros replayed as one undo step
+  (Content Browser, `macro.run`, scenario `macro:` steps), and the inspector edits and gizmo drags as registry commands.
 
 ### Changed
 

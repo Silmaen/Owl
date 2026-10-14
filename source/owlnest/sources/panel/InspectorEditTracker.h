@@ -10,7 +10,7 @@
 
 #include <owlgui.h>
 
-#include "../UndoManager.h"
+#include "../commands/CommandRegistry.h"
 
 #include <cstdint>
 #include <optional>
@@ -40,10 +40,9 @@ public:
 	 *
 	 * Ends the sessions left open on a previously inspected entity when the selection changed.
 	 * @param[in] iEntity The inspected entity (may be invalid).
-	 * @param[in,out] ioScene The scene holding the entities (may be null).
-	 * @param[in,out] ioUndoManager The undo manager receiving the steps (may be null).
+	 * @param[in] iCommands The scene and the registry the edits go through (`component.set`).
 	 */
-	void beginFrame(const scene::Entity& iEntity, scene::Scene* ioScene, SceneUndoManager* ioUndoManager);
+	void beginFrame(const scene::Entity& iEntity, const commands::CommandTarget& iCommands);
 
 	/**
 	 * @brief
@@ -56,29 +55,26 @@ public:
 	/**
 	 * @brief
 	 *  Close the body of a component; call right after drawing its properties.
-	 * @param[in] iEntity The inspected entity.
 	 * @param[in] iComponentKey The component key (`Component::key()`).
 	 * @param[in] iComponentName The component display name, used in the undo step description.
-	 * @param[in,out] ioUndoManager The undo manager receiving the steps (may be null).
+	 * @param[in] iCommands The scene and the registry the edits go through.
 	 */
-	void endComponent(const scene::Entity& iEntity, const std::string& iComponentKey, const std::string& iComponentName,
-					  SceneUndoManager* ioUndoManager);
+	void endComponent(const std::string& iComponentKey, const std::string& iComponentName,
+					  const commands::CommandTarget& iCommands);
 
 	/**
 	 * @brief
 	 *  End an inspector frame: end the sessions of the components that were not drawn.
-	 * @param[in,out] ioScene The scene holding the entities (may be null).
-	 * @param[in,out] ioUndoManager The undo manager receiving the steps (may be null).
+	 * @param[in] iCommands The scene and the registry the edits go through.
 	 */
-	void endFrame(scene::Scene* ioScene, SceneUndoManager* ioUndoManager);
+	void endFrame(const commands::CommandTarget& iCommands);
 
 	/**
 	 * @brief
 	 *  End every open session now and forget the tracked entity.
-	 * @param[in,out] ioScene The scene holding the entities (may be null).
-	 * @param[in,out] ioUndoManager The undo manager receiving the steps (may be null).
+	 * @param[in] iCommands The scene and the registry the edits go through.
 	 */
-	void flush(scene::Scene* ioScene, SceneUndoManager* ioUndoManager);
+	void flush(const commands::CommandTarget& iCommands);
 
 	/**
 	 * @brief
@@ -135,14 +131,15 @@ private:
 
 	/**
 	 * @brief
-	 *  End a session: push an undo step when the component changed.
-	 * @param[in,out] ioScene The scene holding the entity.
+	 *  End a session: when the component changed, put it back as it was and run `component.set` with its new
+	 *  fields, so the edit is a registry command (journaled, undoable, replayable).
 	 * @param[in] iComponentKey The component key.
 	 * @param[in,out] ioState The body state; its session is closed.
-	 * @param[in,out] ioUndoManager The undo manager receiving the step (may be null).
+	 * @param[in] iCommands The scene and the registry the edit goes through (an incomplete target keeps the
+	 *  edit unrecorded).
 	 */
-	void commit(scene::Scene& ioScene, const std::string& iComponentKey, ComponentState& ioState,
-				SceneUndoManager* ioUndoManager) const;
+	void commit(const std::string& iComponentKey, ComponentState& ioState,
+				const commands::CommandTarget& iCommands) const;
 
 	/// UUID of the inspected entity.
 	core::UUID m_entityUuid{0};

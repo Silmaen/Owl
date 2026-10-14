@@ -88,9 +88,24 @@ auto PlayDriver::finish(const scene::Scene* iScene, const bool iInterrupted) -> 
 
 EditorSession::~EditorSession() = default;
 
-auto EditorSession::execute(const std::string_view iName, const commands::CommandArgs& iArgs)
+auto EditorSession::execute(const std::string_view iName, const commands::CommandArgs& iArgs,
+							const commands::CommandSource iSource)
 		-> expected<commands::CommandResult, commands::CommandFailure> {
-	return getRegistry().execute(iName, iArgs, makeCommandContext());
+	auto context = makeCommandContext();
+	context.source = iSource;
+	return getRegistry().execute(iName, iArgs, context);
+}
+
+auto EditorSession::replay(const commands::Macro& iMacro, const std::string& iDescription)
+		-> expected<commands::MacroReport, commands::MacroFailure> {
+	if (isScenePlaying()) {
+		OWL_WARN("EditorSession: Macro refused, the scene is playing.")
+		return unexpected<commands::MacroFailure>{
+				commands::MacroFailure{.error = commands::MacroError::NoScene,
+									   .line = 0,
+									   .message = "the scene is playing, stop it to edit"}};
+	}
+	return iMacro.replay(getRegistry(), makeCommandContext(), iDescription);
 }
 
 }// namespace owl::nest::session

@@ -8,17 +8,16 @@
 
 #include "InspectorEditTracker.h"
 
-#include "../commands/ComponentCommands.h"
-
 #include <gui/utils.h>
 #include <imgui_internal.h>
 #include <scene/SceneSerializer.h>
+#include <yaml-cpp/yaml.h>
 
 #include <algorithm>
 #include <cstdint>
-#include <format>
 #include <ranges>
 #include <string>
+#include <tuple>
 
 namespace owl::nest::panel {
 
@@ -52,17 +51,30 @@ auto anyKeyTyped() -> bool {
 	return false;
 }
 
+auto componentFields(const std::string& iComponentYaml, const std::string& iComponentKey) -> std::string {
+	try {
+		const auto fields = YAML::Load(iComponentYaml)[iComponentKey];
+		if (!fields.IsMap())
+			return {};
+		YAML::Emitter out;
+		out << YAML::Flow << fields;
+		return out.c_str();
+	} catch (const YAML::Exception& iEx) {
+		OWL_WARN("Inspector: Component {} does not read back ({}).", iComponentKey, iEx.what())
+		return {};
+	}
+}
+
 auto popupDepth() -> int { return GImGui->OpenPopupStack.Size; }
 
 auto toVec(const ImVec2& iVec) -> math::vec2 { return {iVec.x, iVec.y}; }
 
 }// namespace
 
-void InspectorEditTracker::beginFrame(const scene::Entity& iEntity, scene::Scene* ioScene,
-									  SceneUndoManager* ioUndoManager) {
+void InspectorEditTracker::beginFrame(const scene::Entity& iEntity, const commands::CommandTarget& iCommands) {
 	const core::UUID uuid = iEntity ? iEntity.getUUID() : core::UUID{0};
 	if (uuid != m_entityUuid) {
-		flush(ioScene, ioUndoManager);
+		flush(iCommands);
 		m_entityUuid = uuid;
 	}
 	for (auto& state: m_states | std::views::values) state.drawn = false;
@@ -78,8 +90,8 @@ void InspectorEditTracker::beginComponent(const scene::Entity& iEntity, const st
 	ImGui::BeginGroup();
 }
 
-void InspectorEditTracker::endComponent(const scene::Entity& iEntity, const std::string& iComponentKey,
-										const std::string& iComponentName, SceneUndoManager* ioUndoManager) {
+void InspectorEditTracker::endComponent(const std::string& iComponentKey, const std::string& iComponentName,
+										const commands::CommandTarget& iCommands) {
 	ImGui::EndGroup();
 	auto& state = m_states[iComponentKey];
 	state.name = iComponentName;
@@ -99,12 +111,11 @@ void InspectorEditTracker::endComponent(const scene::Entity& iEntity, const std:
 			ImGui::IsAnyMouseDown() && ImGui::IsMouseHoveringRect(gui::vec(state.rectMin), gui::vec(state.rectMax));
 	if (state.containsActive || state.ownedPopupDepth >= 0 || mouseHeldOver)
 		return;
-	if (auto* scene = iEntity.getScene(); scene != nullptr)
-		commit(*scene, iComponentKey, state, ioUndoManager);
+	commit(iComponentKey, state, iCommands);
 	state.before.reset();
 }
 
-void InspectorEditTracker::endFrame(scene::Scene* ioScene, SceneUndoManager* ioUndoManager) {
+void InspectorEditTracker::endFrame(const commands::CommandTarget& iCommands) {
 	for (auto& [key, state]: m_states) {
 		if (state.drawn)
 			continue;
@@ -114,16 +125,15 @@ void InspectorEditTracker::endFrame(scene::Scene* ioScene, SceneUndoManager* ioU
 		state.ownedPopupDepth = -1;
 		if (!state.before.has_value())
 			continue;
-		if (ioScene != nullptr)
-			commit(*ioScene, key, state, ioUndoManager);
+		commit(key, state, iCommands);
 		state.before.reset();
 	}
 }
 
-void InspectorEditTracker::flush(scene::Scene* ioScene, SceneUndoManager* ioUndoManager) {
+void InspectorEditTracker::flush(const commands::CommandTarget& iCommands) {
 	for (auto& [key, state]: m_states) {
-		if (state.before.has_value() && ioScene != nullptr)
-			commit(*ioScene, key, state, ioUndoManager);
+		if (state.before.has_value())
+			commit(key, state, iCommands);
 	}
 	m_states.clear();
 	m_entityUuid = core::UUID{0};
@@ -145,33 +155,33 @@ auto InspectorEditTracker::shouldOpen(const ComponentState& iState) -> bool {
 		   anyMouseClickedOrReleased();
 }
 
-void InspectorEditTracker::commit(scene::Scene& ioScene, const std::string& iComponentKey, ComponentState& ioState,
-								  SceneUndoManager* ioUndoManager) const {
-	const auto entity = ioScene.findEntityByUUID(m_entityUuid);
+void InspectorEditTracker::commit(const std::string& iComponentKey, ComponentState& ioState,
+								  const commands::CommandTarget& iCommands) const {
+	if (!iCommands.scene)
+		return;
+	const auto entity = iCommands.scene->findEntityByUUID(m_entityUuid);
 	if (!entity || !ioState.before.has_value())
 		return;
 	const auto after = countedComponentYaml(entity, iComponentKey);
-	if (after.empty() || after == *ioState.before)
+	if (after.empty() || after == *ioState.before || !iCommands.isValid())
 		return;
+	const auto values = componentFields(after, iComponentKey);
 	++serializationCounter();
-	auto afterSnapshot = EntitySnapshot::capture(entity);
-	++serializationCounter();
-	auto beforeYaml =
-			scene::SceneSerializer::replaceComponentInString(afterSnapshot.yamlData, iComponentKey, *ioState.before);
-	if (beforeYaml.empty())
+	const auto afterYaml = scene::SceneSerializer::serializeEntityToString(entity);
+	const auto beforeYaml = scene::SceneSerializer::replaceComponentInString(afterYaml, iComponentKey, *ioState.before);
+	if (beforeYaml.empty() || values.empty())
 		return;
-	auto overrides = commands::PrefabOverrideChange::record(entity, ioScene, beforeYaml);
-	if (!overrides.isEmpty()) {
-		++serializationCounter();
-		afterSnapshot = EntitySnapshot::capture(entity);
+	// The command records the change from the state before the session.
+	std::ignore = scene::SceneSerializer::applyEntityFromString(entity, beforeYaml);
+	const auto result =
+			iCommands.execute("component.set", {{"entity", static_cast<int64_t>(static_cast<uint64_t>(m_entityUuid))},
+												{"component", iComponentKey},
+												{"values", values},
+												{"replace", true}});
+	if (!result) {
+		OWL_WARN("Inspector: Edit of {} not recorded ({}).", ioState.name, result.error().message)
+		std::ignore = scene::SceneSerializer::applyEntityFromString(entity, afterYaml);
 	}
-	if (ioUndoManager == nullptr)
-		return;
-	auto command = mkUniq<commands::ModifyEntityCommand>(entity.getUUID(), EntitySnapshot{entity.getUUID(), beforeYaml},
-														 std::format("Modify {}", ioState.name));
-	command->setAfter(std::move(afterSnapshot));
-	command->setPrefabOverrides(std::move(overrides));
-	ioUndoManager->push(std::move(command));
 }
 
 }// namespace owl::nest::panel

@@ -43,9 +43,10 @@ constexpr float g_bottomRatio = 0.3f;
 // Share of the right column height given to the hierarchy (Default).
 constexpr float g_hierarchyRatio = 0.42f;
 
-constexpr std::array g_panels{panelWindow::hierarchy,   panelWindow::properties,    panelWindow::contentBrowser,
-							  panelWindow::log,         panelWindow::stats,         panelWindow::voxelPalette,
-							  panelWindow::tilePalette, panelWindow::sceneSettings, panelWindow::help};
+constexpr std::array g_panels{panelWindow::hierarchy,    panelWindow::properties,  panelWindow::contentBrowser,
+							  panelWindow::log,          panelWindow::console,     panelWindow::stats,
+							  panelWindow::voxelPalette, panelWindow::tilePalette, panelWindow::sceneSettings,
+							  panelWindow::help};
 
 auto isPanelWindow(const ImGuiID iWindowId) -> bool {
 	return std::ranges::any_of(g_panels,
@@ -113,7 +114,7 @@ void DockLayout::build(const uint32_t iDockSpaceId, const LayoutPreset iPreset,
 		ImGui::DockBuilderDockWindow(name, properties);
 	// The help pages need width: they open among the documents.
 	ImGui::DockBuilderDockWindow(panelWindow::help, center);
-	dockInOrder({panelWindow::contentBrowser, panelWindow::log, panelWindow::stats}, bottom);
+	dockInOrder({panelWindow::contentBrowser, panelWindow::log, panelWindow::console, panelWindow::stats}, bottom);
 	for (const auto& name: iDocumentWindows) ImGui::DockBuilderDockWindow(name.c_str(), center);
 	// A new tab bar shows its node's saved tab, else the last tab added: the Stats panel.
 	if (auto* bottomNode = ImGui::DockBuilderGetNode(bottom); bottomNode != nullptr)

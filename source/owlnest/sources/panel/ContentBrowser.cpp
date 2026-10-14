@@ -559,6 +559,8 @@ void ContentBrowser::openEntry(const std::filesystem::directory_entry& iEntry) {
 	} else if ((path.extension() == ".ttf" || path.extension() == ".otf" || path.extension() == ".owlfont") &&
 			   m_fontOpenCallback) {
 		m_fontOpenCallback(path);
+	} else if (path.extension() == ".owlmacro" && m_macroRunCallback) {
+		m_macroRunCallback(path);
 	} else if (m_codeOpenCallback) {
 		static const std::vector<std::string> codeExts = {".lua", ".py",       ".c",   ".cpp", ".cc",   ".cxx",
 														  ".h",   ".hpp",      ".hxx", ".yml", ".yaml", ".json",
@@ -689,6 +691,9 @@ void ContentBrowser::renderContextMenu() {
 		gui::widgets::menuHeader(itemName.c_str(), describeKind(m_selectedPath, isDir).label);
 		if (gui::widgets::menuItem({.glyph = isDir ? gui::icon::folderOpen : gui::icon::externalLink, .label = "Open"}))
 			openEntry(std::filesystem::directory_entry{m_selectedPath});
+		if (m_selectedPath.extension() == ".owlmacro" && m_codeOpenCallback &&
+			gui::widgets::menuItem({.glyph = gui::icon::fileCode2, .label = "Edit as Text"}))
+			m_codeOpenCallback(m_selectedPath);
 		if (gui::widgets::menuItem({.glyph = gui::icon::pencil, .label = "Rename"})) {
 			m_renaming = true;
 			m_renameBuffer = itemName;

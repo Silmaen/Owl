@@ -1,0 +1,5 @@
+# A crate with a lid on top, recorded from the console journal: `$n` is the result of the n-th command.
+entity.create name="Crate"
+entity.set_transform entity=$1 translation=(2, 3, 0)
+entity.create name="Lid" parent=$1
+entity.set_transform entity=$_ translation=(0, 1, 0)  # local to the crate

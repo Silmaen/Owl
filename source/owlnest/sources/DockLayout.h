@@ -37,6 +37,8 @@ constexpr auto properties = "###Properties";
 constexpr auto contentBrowser = "###ContentBrowser";
 /// Engine log.
 constexpr auto log = "###Log";
+/// Command console and journal.
+constexpr auto console = "###Console";
 /// Frame statistics.
 constexpr auto stats = "###Stats";
 /// Voxel brush palette, shown with a voxel world.
@@ -69,7 +71,7 @@ constexpr auto help = "###Help";
 class DockLayout final {
 public:
 	/// Layout generation; raising it rebuilds every saved layout once.
-	static constexpr int version = 3;
+	static constexpr int version = 4;
 
 	/**
 	 * @brief

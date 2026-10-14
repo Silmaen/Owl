@@ -147,7 +147,7 @@ auto EditorLayer::restoreProjectSession() -> bool {
 		}
 		if (const auto kind = classifyAsset(path); kind == AssetKind::Scene)
 			std::ignore = loadOrOpenSceneDocument(path);
-		else if (kind == AssetKind::Prefab)
+		else if (kind == AssetKind::Prefab || kind == AssetKind::Macro)
 			openCodeFile(path);
 		else
 			openAssetFile(path);

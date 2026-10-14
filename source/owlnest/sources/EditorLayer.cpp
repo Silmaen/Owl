@@ -392,6 +392,8 @@ void EditorLayer::onAttach() {
 	auto& initialDoc = ensureActiveSceneDocument();
 	m_sceneHierarchy.setUndoManager(&initialDoc.undoManager());
 	m_sceneHierarchy.setCommandRegistry(&m_commands);
+	m_commands.setJournal(&getJournal());
+	m_consolePanel.getConsole().setHistory(m_settings.consoleHistory);
 
 	utils::buildIconBank();
 	{
@@ -499,7 +501,8 @@ void EditorLayer::onAttach() {
 											setSelectedEntity({});
 											std::ignore = execute(
 													"entity.delete",
-													{{"entity", static_cast<int64_t>(static_cast<uint64_t>(ent.getUUID()))}});
+													{{"entity", static_cast<int64_t>(static_cast<uint64_t>(ent.getUUID()))}},
+													commands::CommandSource::Gesture);
 										}
 									});
 	// Undo/Redo
@@ -551,6 +554,8 @@ void EditorLayer::onAttach() {
 									[this]() -> void { applyLayoutPreset(m_dockLayout.getPreset()); });
 	m_actionRegistry.registerAction("view.commandPalette", "Command Palette", {},
 									[this]() -> void { m_commandPalette.open(); });
+	m_actionRegistry.registerAction("view.console", "Console", {input::key::GraveAccent, Modifiers::Ctrl},
+									[]() -> void { ImGui::SetWindowFocus(panelWindow::console); });
 	// clang-format on
 
 	// Apply saved keybinding overrides
@@ -579,6 +584,9 @@ void EditorLayer::onAttach() {
 	m_contentBrowser.setTilesetOpenCallback(
 			[this](const std::filesystem::path& iPath) -> void { openTilesetFile(iPath); });
 	m_contentBrowser.setFontOpenCallback([this](const std::filesystem::path& iPath) -> void { openFontFile(iPath); });
+	m_contentBrowser.setMacroRunCallback([this](const std::filesystem::path& iPath) -> void {
+		runCommandFromUi("macro.run", {{"path", iPath.string()}}, commands::CommandSource::Gesture);
+	});
 
 	newScene();
 	if (!m_startupProject.empty())
@@ -595,6 +603,7 @@ void EditorLayer::onDetach() {
 	saveProjectSession();
 	// Sync keybinding overrides before saving
 	m_settings.keybindingOverrides = m_actionRegistry.getOverrides();
+	m_settings.consoleHistory = m_consolePanel.getConsole().getHistory();
 	m_settings.saveToFile(app::Application::get().getWorkingDirectory() / "OwlNest_settings.yml");
 
 	m_contentBrowser.detach();
@@ -794,6 +803,7 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 	m_sceneHierarchy.onImGuiRender();
 	// The last window to appear takes the focus, which picks the tab shown in its group.
 	m_logPanel.onImGuiRender();
+	m_consolePanel.onImGuiRender();
 	renderStats(iTimeStep);
 	m_contentBrowser.onImGuiRender();
 	m_parameters.onImGuiRender();
@@ -899,8 +909,9 @@ void EditorLayer::renderCommandForm() {
 		runCommandFromUi(submission->command, submission->args);
 }
 
-void EditorLayer::runCommandFromUi(const std::string& iName, const commands::CommandArgs& iArgs) {
-	const auto result = execute(iName, iArgs);
+void EditorLayer::runCommandFromUi(const std::string& iName, const commands::CommandArgs& iArgs,
+								   const commands::CommandSource iSource) {
+	const auto result = execute(iName, iArgs, iSource);
 	if (!result) {
 		m_toasts.push(gui::widgets::ToastKind::Error, std::format("{} failed", iName), result.error().message);
 		return;
@@ -1136,7 +1147,8 @@ void EditorLayer::onDuplicateEntity() {
 
 	if (const scene::Entity selectedEntity = m_sceneHierarchy.getSelectedEntity(); selectedEntity)
 		std::ignore = execute("entity.duplicate",
-							  {{"entity", static_cast<int64_t>(static_cast<uint64_t>(selectedEntity.getUUID()))}});
+							  {{"entity", static_cast<int64_t>(static_cast<uint64_t>(selectedEntity.getUUID()))}},
+							  commands::CommandSource::Gesture);
 }
 
 void EditorLayer::performUndo() {
@@ -1191,7 +1203,7 @@ void EditorLayer::instantiatePrefab(const std::filesystem::path& iPrefabPath, co
 	commands::CommandArgs args{{"path", iPrefabPath.string()}};
 	if (!iAssetRelativePath.empty())
 		args.set("asset_path", iAssetRelativePath);
-	if (const auto result = execute("prefab.instantiate", args); result)
+	if (const auto result = execute("prefab.instantiate", args, commands::CommandSource::Gesture); result)
 		setSelectedEntity(doc->getActiveScene()->findEntityByUUID(result->entity));
 }
 

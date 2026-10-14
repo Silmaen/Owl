@@ -29,6 +29,30 @@
 
 namespace owl::nest::commands {
 
+class CommandJournal;
+class CommandRegistry;
+
+/**
+ * @brief
+ *  Who asked for a command: the journal records it and filters on it.
+ */
+enum struct CommandSource : uint8_t {
+	Gesture,///< A panel, a menu, a shortcut or the viewport.
+	Console,///< A line typed in the console.
+	Palette,///< The command palette and its argument form.
+	Mcp,///< An external tool (the MCP server).
+	Replay,///< A line of a replayed macro.
+	Scenario///< A step of a headless scenario.
+};
+
+/**
+ * @brief
+ *  Name of a command source, as shown and filtered by the console.
+ * @param[in] iSource The source.
+ * @return The lower-case name (`gesture`, `console`...).
+ */
+[[nodiscard]] auto getSourceName(CommandSource iSource) -> std::string_view;
+
 /**
  * @brief
  *  Type of a command argument.
@@ -236,6 +260,10 @@ struct CommandContext {
 	std::filesystem::path scenePath{};
 	/// Called after `scene.save` wrote the file, with its path (the editor updates the document).
 	SaveCallback onSaved{};// NOLINT(readability-redundant-member-init) callers may omit it
+	/// Who asks for the command, recorded by the journal.
+	CommandSource source{CommandSource::Gesture};
+	/// The registry running the command, set by `CommandRegistry::execute` (commands that run other commands).
+	const CommandRegistry* registry{nullptr};
 };
 
 /**
@@ -336,6 +364,20 @@ public:
 
 	/**
 	 * @brief
+	 *  Record every command executed from now on (whatever its source, failures included) into a journal.
+	 * @param[in] ioJournal The journal (non-owning, outlives the registry), null to stop recording.
+	 */
+	void setJournal(CommandJournal* ioJournal) { mp_journal = ioJournal; }
+
+	/**
+	 * @brief
+	 *  Get the journal the registry records into.
+	 * @return The journal, null when none.
+	 */
+	[[nodiscard]] auto getJournal() const -> CommandJournal* { return mp_journal; }
+
+	/**
+	 * @brief
 	 *  Convert a textual value (scenario files, tools) into an argument of the given type.
 	 * @param[in] iType Declared type.
 	 * @param[in] iText The value as text; a vector is its numbers separated by commas or spaces, a colour three or
@@ -365,8 +407,21 @@ private:
 	[[nodiscard]] static auto validate(const CommandSpec& iSpec, const CommandArgs& iArgs)
 			-> std::optional<CommandFailure>;
 
+	/**
+	 * @brief
+	 *  Run a command without recording it (see `execute`).
+	 * @param[in] iName Command name.
+	 * @param[in] iArgs Command arguments.
+	 * @param[in] iContext The context.
+	 * @return What the command did, or why it did not run.
+	 */
+	[[nodiscard]] auto run(std::string_view iName, const CommandArgs& iArgs, const CommandContext& iContext) const
+			-> expected<CommandResult, CommandFailure>;
+
 	/// Registered commands.
 	std::vector<CommandSpec> m_commands;
+	/// Journal recording the executed commands (non-owning, may be null).
+	CommandJournal* mp_journal{nullptr};
 };
 
 /**
@@ -380,6 +435,8 @@ struct CommandTarget {
 	shared<scene::Scene> scene;
 	/// The undo manager of the scene (non-owning).
 	SceneUndoManager* undo{nullptr};
+	/// Who issues the commands, recorded by the journal.
+	CommandSource source{CommandSource::Gesture};
 
 	/**
 	 * @brief

@@ -109,6 +109,8 @@ struct EditorSettings {
 	int layoutVersion = 0;
 	/// Custom keybinding overrides (action ID -> shortcut string). Only non-default bindings.
 	std::unordered_map<std::string, std::string> keybindingOverrides;
+	/// Lines typed in the console, oldest first (at most `session::Console::maxHistory`).
+	std::vector<std::string> consoleHistory;
 	/// Recently opened project directories (most recent first).
 	std::vector<std::string> recentProjects;
 	/// Last session of each recent project, keyed like `recentProjects`.
