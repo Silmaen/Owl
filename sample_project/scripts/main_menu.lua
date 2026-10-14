@@ -10,6 +10,7 @@ local save_info_id = 0
 local delete_save_id = 0
 local continue_id = 0
 local mouse_label_id = 0
+local iso_requested = false
 
 function on_create()
     log.info("Main Menu loaded")
@@ -92,6 +93,13 @@ function on_update(dt)
             save.load_game(1)
             pending_load_save = false
         end
+        return
+    end
+
+    -- I opens the isometric layer test scene.
+    if not iso_requested and input.is_key_pressed(73) then
+        iso_requested = true
+        scene.transition_to("scenes/iso_test.owl", "fade", 0.3)
         return
     end
 

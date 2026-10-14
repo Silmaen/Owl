@@ -26,5 +26,12 @@ OwlProject:
       DefaultConfig:
         SunDirection: [-0.4, -1.0, -0.6]
         Ambient: [0.4, 0.4, 0.45]
+    - Type: RendererIsometric
+      Name: iso_world
+      DefaultConfig:
+        TileWidth: 64
+        TileHeight: 32
+        ZStep: 16
+        Zoom: 0
     - Type: Renderer2D
       Name: ui
