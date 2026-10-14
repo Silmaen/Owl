@@ -197,7 +197,7 @@ auto pickTerrain(const TilemapAsset& iAsset, const math::vec3& iMapOrigin, const
 								 const int32_t iStep) -> float {
 		if (std::abs(iDirectionAxis) < 1e-9f)
 			return never;
-		const float edge = static_cast<float>(iCell + (iStep > 0 ? 1 : 0));
+		const auto edge = static_cast<float>(iCell + (iStep > 0 ? 1 : 0));
 		return (edge - iOriginAxis) / iDirectionAxis;
 	};
 	float nextX = nextBoundary(origin.x, direction.x, cellX, stepX);

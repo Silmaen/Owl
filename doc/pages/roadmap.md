@@ -135,7 +135,7 @@ MCP server in Owl Nest ([plan](design/isometric-worlds.md)).
 - ![Done][done] Renderer2D transients sized per frame (PR-30: B-09)
 - ![Done][done] Persistent, chunked and culled tilemaps, binary storage up to 1024² (PR-31: B-13)
 - ![In Progress][progress] `RendererIsometric` layer: dimetric camera, depth with alpha cutout, billboards ([details](design/isometric.md))
-- ![Planned][planned] Isometric terrain: corner heights, 19 slopes, foundations, tracks and roads, slope-aware picking
+- ![Done][done] Isometric terrain: corner heights, 19 slopes, foundations, tracks and roads, slope-aware picking
 - ![Planned][planned] Isometric atlas generator, objects and vehicles at scale, `iso_town` demo
 - ![Done][done] UTF-8 text, Latin charset with extra ranges per font, atlas cached on disk (PR-30: D-18)
 - ![Done][done] Aspect-correct text with alignment and fit

@@ -212,12 +212,25 @@ A paint stroke or a cell edit is one undo step recording only the 32 × 32 chunk
 size, layers) keeps the asset before and after, whose layers share their chunks. A resize drag previews from the grid
 of its start, so shrinking then growing back in one drag loses nothing.
 
+When the tileset is `kind: Isometric` the canvas is an isometric preview (middle drag pans, the wheel zooms) drawn back
+to front with the slope tiles, the foundations and the overlays; a toolbar picks the tool. **Paint** uses the Tile
+Palette brushes on the cell under the cursor (picked on the sloped surface, not on a flat grid), **Raise** and **Lower**
+move the corner nearest to the cursor by one step (left button; right button does the opposite) or an area of 1 to 16
+corners, **Level** brings the area to the level height (Ctrl + click reads the height of a corner), **Overlay** paints
+the overlay (tracks, roads) of the active layer with the primary brush and clears it with the right button. The
+neighbouring corners follow so every cell keeps one of the 19 slopes. A click or a drag is one undo step
+(`commands::ModifyTerrainHeightsCommand`, only the corners that moved); the properties panel shows the slope and the
+four corner heights of the clicked cell. The `TilemapDocument` keeps its own undo stack, so these edits are not
+registry commands.
+
 ### Tileset document
 
 A `.owltileset` opens in a `TilesetDocument`: the Atlas section sets the texture, the grid, the tile size, the filter
 and the **Kind** (`Orthogonal` square tiles of the 2D tilemaps, `Isometric` 2:1 diamond tiles drawn by the isometric
-layer, written `kind: Isometric`); the properties panel edits the clicked tile. Every edit is one undo step of the
-tileset document.
+layer, written `kind: Isometric`); the properties panel edits the clicked tile. For an isometric tileset the **Slopes**
+section holds one table per terrain or overlay id with the tile of each of the 19 slopes and the foundation tile of
+each slope (`-1` falls back on the flat tile); the cells of a map find their tile through it. Every edit is one undo
+step of the tileset document.
 
 ### Scene Flow view
 
@@ -277,7 +290,7 @@ viewport switches to the isometric mode: the scene is drawn layer by layer as in
 button reads **Iso**, the view-cube is hidden). The middle or right drag (or Alt + left drag) pans, the wheel zooms by
 powers of two around the cursor; **Reset View**, **Frame Selection**, **Frame Scene** and **Selected Camera
 Viewpoint** move the target. A world-axis cursor (X red, Y green, Z blue, one tile long) follows the ground under the
-mouse and the tile of the first isometric tilemap under it is outlined (`pickIsometricCell`); the grid lies on the
+mouse and the cell of the first isometric tilemap under it is outlined along its slope (`pickTerrain`); the grid lies on the
 ground plane. The gizmo receives the isometric view and projection, so it moves the selection along the world axes of
 the map; picking reads the entity id the billboards write.
 

@@ -362,10 +362,6 @@ private:
 
 	/**
 	 * @brief
-	 *  Refresh the saved-snapshot baseline used by `isDirty()`.
-	 */
-	/**
-	 * @brief
 	 *  Whether the tileset is isometric, which swaps the top-down canvas for the isometric preview.
 	 * @return True for a tileset of `kind: Isometric`.
 	 */
@@ -400,7 +396,7 @@ private:
 	 * @brief
 	 *  Apply the active tool at a picked corner.
 	 */
-	void applyIsometricTool(const scene::terrain::TerrainHit& iHit, bool iLeftPressed, bool iRightPressed);
+	void applyIsometricTool(const scene::terrain::TerrainHit& iHit, bool iLeftDown, bool iRightDown);
 
 	/**
 	 * @brief
@@ -414,6 +410,10 @@ private:
 	 */
 	void applyBrush(uint32_t iCellX, uint32_t iCellY, bool iLeftDown, bool iRightDown);
 
+	/**
+	 * @brief
+	 *  Refresh the saved-snapshot baseline used by `isDirty()`.
+	 */
 	void refreshSavedSnapshot();
 
 	/**

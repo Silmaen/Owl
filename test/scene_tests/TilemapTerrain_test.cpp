@@ -20,7 +20,6 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
-#include <random>
 #include <set>
 #include <string>
 #include <string_view>
@@ -223,9 +222,10 @@ TEST_F(TilemapTerrain, AreaOperationsKeepTheMapValid) {
 
 TEST_F(TilemapTerrain, RandomTerraformingKeepsTheInvariants) {
 	auto map = makeMap(9, 7);
-	std::mt19937 random{12345U};
-	const auto next = [&random](const uint32_t iModulo) -> uint32_t {
-		return static_cast<uint32_t>(random() % iModulo);
+	uint32_t state = 12345U;
+	const auto next = [&state](const uint32_t iModulo) -> uint32_t {
+		state = state * 1664525U + 1013904223U;
+		return (state >> 16U) % iModulo;
 	};
 	for (int step = 0; step < 400; ++step) {
 		const auto before = snapshot(map);
@@ -484,6 +484,6 @@ TEST_F(TilemapTerrain, TilesetSlopeTablesRoundTrip) {
 	Tileset loaded;
 	ASSERT_TRUE(loaded.deserializeFromString(text));
 	EXPECT_EQ(loaded.slopeSets, tileset.slopeSets);
-	Tileset without;
+	const Tileset without;
 	EXPECT_EQ(without.serializeToString("iso").find("slopes:"), std::string::npos);
 }

@@ -731,7 +731,8 @@ void TilemapDocument::drawIsometricTiles(ImDrawList* iDrawList, const ImVec2& iO
 	};
 
 	for (int32_t diagonal = 0; diagonal <= width + height - 2; ++diagonal) {
-		const float footY = iOrigin.y + static_cast<float>(diagonal + 2) * config.tileSize.y() * 0.5f * view.scale;
+		const float footY = iOrigin.y + static_cast<float>(diagonal + 2) * static_cast<float>(config.tileSize.y()) *
+												0.5f * view.scale;
 		if (footY < iCanvasMin.y || footY - raisePixels - spriteHeight > iCanvasMax.y)
 			continue;
 		const float columnLow = (iCanvasMin.x - halfWidthPixels - iOrigin.x) / halfWidthPixels;
