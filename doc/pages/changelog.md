@@ -37,6 +37,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Bench baseline taken again on `linux-build-hephaistos` (median of 5 runs of 2026-10-15) after the v0.4.0 performance
+  fixes, replacing the local estimates of the new benchmarks.
 - Text layout: glyphs keep the font aspect at one scale per em, with horizontal and vertical alignment, UTF-8 word
   wrap and clip / shrink / overflow fit on `UiText` and `Renderer2D::drawString` (`StringData::layout`); scene format
   3 keeps legacy `UiText` centred.

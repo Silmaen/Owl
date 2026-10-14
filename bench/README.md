@@ -56,11 +56,9 @@ part of the baseline, so a refresh keeps it. Without a baseline the run only rep
 action with `-- --update-baseline` on the same agent), and refresh it when a change is deliberately slower or
 the agent changes.
 The configuration is pinned to the agent `linux-build-hephaistos` (8 cores): the committed baseline is the
-median of its 5 runs of 2026-10-11 on `main` after #235 (builds 35758 to 35847, listed in `context.baseline_runs`);
-since #233 the agent takes 230 ms instead of 183 for the first Slang compilation of a process, with the same Slang
-package and no change on a local machine. The `renderer2d/{transient_quads_circles,rects,polylines_8}` and
-`renderer2d/text/10000_glyphs_{utf8,wrapped}` entries are estimates, a local run scaled by the ratio of the other `renderer2d`
-cases, and `tilemap/load/1024x1024` a local run, until the next refresh. Timings from
+median of its 5 runs of 2026-10-15 on the v0.4.0 performance fixes (builds 36879 to 36887, listed in
+`context.baseline_runs`), the code `main` gets with them; the runs agree within 2 % (median), the multi-threaded
+physics of 100 bodies and `sample/load/game_over` within 30 %. Timings from
 another agent do not compare (artemis is 20 % faster but varies 10.7 % between runs, against 1.7 % here).
 
 ```bash
