@@ -8,6 +8,7 @@
 
 #include "ScenarioTest.h"
 #include "FrameBench.h"
+#include "session/HeadlessSession.h"
 
 #include <input/Input.h>
 #include <input/KeyCodes.h>
@@ -296,7 +297,7 @@ auto ScenarioTest::load(const std::filesystem::path& iFile) -> expected<Scenario
 		scenario.m_scene = weakly_canonical(absolute(iFile).parent_path() / sceneNode.as<std::string>());
 		if (!exists(scenario.m_scene))
 			return unexpected<std::string>{std::format("scene {} not found", scenario.m_scene.string())};
-		scenario.m_project = findProject(scenario.m_scene);
+		scenario.m_project = session::findProjectDirectory(scenario.m_scene);
 		const double stepMs = root["timestep_ms"] ? root["timestep_ms"].as<double>() : 1000.0 / 60.0;
 		scenario.m_step.forceUpdate(std::chrono::duration_cast<core::Timestep::duration>(
 				std::chrono::duration<double, std::milli>{stepMs}));

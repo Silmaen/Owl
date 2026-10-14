@@ -497,7 +497,7 @@ void EditorLayer::onAttach() {
 											return;
 										if (const auto ent = getSelectedEntity(); ent) {
 											setSelectedEntity({});
-											std::ignore = runCommand(
+											std::ignore = execute(
 													"entity.delete",
 													{{"entity", static_cast<int64_t>(static_cast<uint64_t>(ent.getUUID()))}});
 										}
@@ -632,6 +632,10 @@ void EditorLayer::onUpdate(const core::Timestep& iTimeStep) {
 
 	m_documents.updateSceneless(iTimeStep);
 
+	// The document of a bounded play stopped playing or was closed: the play ends there.
+	if (m_playDriver.isActive() && !isPlayDocumentPlaying())
+		finishBoundedPlay(/*iInterrupted=*/true);
+
 	auto* activeDoc = activeSceneDocument();
 	for (const auto& docPtr: m_documents.list()) {
 		if (!docPtr || docPtr->type() != DocumentType::Scene)
@@ -679,7 +683,7 @@ void EditorLayer::onUpdate(const core::Timestep& iTimeStep) {
 	}
 
 	// Drive the active document's scene update (which renders into its own framebuffer).
-	activeDoc->onUpdate(iTimeStep);
+	updateActiveDocument(*activeDoc, iTimeStep);
 
 	if (activeDoc->consumeSceneSwapped())
 		syncActiveDocumentPanels();
@@ -893,7 +897,7 @@ void EditorLayer::renderCommandForm() {
 }
 
 void EditorLayer::runCommandFromUi(const std::string& iName, const commands::CommandArgs& iArgs) {
-	const auto result = runCommand(iName, iArgs);
+	const auto result = execute(iName, iArgs);
 	if (!result) {
 		m_toasts.push(gui::widgets::ToastKind::Error, std::format("{} failed", iName), result.error().message);
 		return;
@@ -1080,6 +1084,8 @@ void EditorLayer::onSceneStop() {
 	auto* doc = activeSceneDocument();
 	if (doc == nullptr)
 		return;
+	if (m_playDriver.isActive() && doc == mp_playDocument)
+		finishBoundedPlay(/*iInterrupted=*/true);
 	doc->onSceneStop();
 	m_sceneHierarchy.setContext(doc->getActiveScene());
 }
@@ -1126,8 +1132,8 @@ void EditorLayer::onDuplicateEntity() {
 		return;
 
 	if (const scene::Entity selectedEntity = m_sceneHierarchy.getSelectedEntity(); selectedEntity)
-		std::ignore = runCommand("entity.duplicate",
-								 {{"entity", static_cast<int64_t>(static_cast<uint64_t>(selectedEntity.getUUID()))}});
+		std::ignore = execute("entity.duplicate",
+							  {{"entity", static_cast<int64_t>(static_cast<uint64_t>(selectedEntity.getUUID()))}});
 }
 
 void EditorLayer::performUndo() {
@@ -1182,22 +1188,8 @@ void EditorLayer::instantiatePrefab(const std::filesystem::path& iPrefabPath, co
 	commands::CommandArgs args{{"path", iPrefabPath.string()}};
 	if (!iAssetRelativePath.empty())
 		args.set("asset_path", iAssetRelativePath);
-	if (const auto result = runCommand("prefab.instantiate", args); result)
+	if (const auto result = execute("prefab.instantiate", args); result)
 		setSelectedEntity(doc->getActiveScene()->findEntityByUUID(result->entity));
-}
-
-auto EditorLayer::runCommand(const std::string_view iName, const commands::CommandArgs& iArgs)
-		-> expected<commands::CommandResult, commands::CommandFailure> {
-	auto* doc = activeSceneDocument();
-	const commands::CommandContext context{.scene = doc != nullptr ? doc->getActiveScene() : nullptr,
-										   .undo = doc != nullptr ? &doc->undoManager() : nullptr,
-										   .playing = doc != nullptr && doc->state() != SceneDocument::State::Edit,
-										   .scenePath = doc != nullptr ? doc->filePath() : std::filesystem::path{},
-										   .onSaved = [this, doc](const std::filesystem::path& iPath) -> void {
-											   doc->setScenePath(iPath);
-											   refreshWindowTitle();
-										   }};
-	return m_commands.execute(iName, iArgs, context);
 }
 
 void EditorLayer::onContextualHelp() {

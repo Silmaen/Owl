@@ -45,9 +45,18 @@ entity id; it now has 13 (see [Editor](../editor.md), Editor commands).
 
 ### Editor session (MCP1)
 
-An `EditorSession` interface — active scene, undo, registry, a play request for N frames at a fixed step with held
-input actions, capture, statistics — implemented by `EditorLayer` (delegation only) and by a headless session on the
-Null renderer for the tests.
+Done. `session::EditorSession` (`source/owlnest/sources/session/`, library `OwlNestCommands`, see [Editor](../editor.md),
+Editor session) — scene and file, undo, registry and `execute` with the context the session builds, bounded play,
+capture, statistics — implemented by `EditorLayer` (delegation to the active scene document) and by `HeadlessSession`
+(no window, no ImGui) on the Null renderer for the tests.
+
+- `PlayRequest`: `frames` and / or `ticks`, `timestepMs` (default one tick per frame), held `keys`, `stopAtEnd`,
+  `capture`; a shared `PlayDriver` steps it one frame at a time (editor main loop) or in a loop (headless)
+- `PlayReport`: frames, ticks, CPU time, draw calls, last phase timings, entity count, optional `FrameCapture`
+  (`encodePng` through the engine's `encodeImagePng`); the Null renderer reads back a blank image of the right size
+- Held keys go through the input injection, hence the Null input only; input actions in the editor come with IN3 / MCP4
+- `EditorLayer::runCommand` is gone: the editor runs commands through `EditorSession::execute`; the scenario runner keeps
+  its own registry and undo history (it edits the playing scene on purpose) and shares `findProjectDirectory`
 
 ### Protocol and transport (MCP2, MCP3)
 

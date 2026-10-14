@@ -136,3 +136,27 @@ TEST(TextureDecoder, WriteImagePngRejectsBadInput) {
 	EXPECT_FALSE(exists(file));
 	owl::core::Log::invalidate();
 }
+
+TEST(TextureDecoder, EncodeImagePngRoundTrips) {
+	owl::core::Log::init(owl::core::Log::Level::Off);
+	std::vector<uint8_t> pixels(3u * 2u * 4u);
+	for (size_t i = 0; i < pixels.size(); ++i) pixels[i] = static_cast<uint8_t>(i * 10);
+	const auto png = encodeImagePng({3, 2}, pixels);
+	ASSERT_FALSE(png.empty());
+	const auto decoded = decodeImageBytes(png, 4);
+	ASSERT_TRUE(decoded.valid);
+	EXPECT_EQ(decoded.size.x(), 3u);
+	EXPECT_EQ(decoded.size.y(), 2u);
+	// The decoder returns the bottom row first (OpenGL convention): compare with the rows swapped.
+	std::vector<uint8_t> bottomFirst(pixels.begin() + 12, pixels.end());
+	bottomFirst.insert(bottomFirst.end(), pixels.begin(), pixels.begin() + 12);
+	EXPECT_EQ(decoded.pixels, bottomFirst);
+	owl::core::Log::invalidate();
+}
+
+TEST(TextureDecoder, EncodeImagePngRejectsBadInput) {
+	owl::core::Log::init(owl::core::Log::Level::Off);
+	EXPECT_TRUE(encodeImagePng({3, 2}, std::vector<uint8_t>(5, 0)).empty());
+	EXPECT_TRUE(encodeImagePng({0, 0}, {}).empty());
+	owl::core::Log::invalidate();
+}

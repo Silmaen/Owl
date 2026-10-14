@@ -167,7 +167,7 @@ a few days, L a week.
 
 - ![Done][done] **MCP0 — Command API v2, M.** Arguments Vec2, Vec4 / colour and enum with defaults and
   choices, structured result data; `component.set`, `scene.save`, undo / redo commands; edits refused during Play.
-- ![Planned][planned] **MCP1 — Editor session, M.** `EditorSession` interface (scene, undo, registry, play for N
+- ![Done][done] **MCP1 — Editor session, M.** `EditorSession` interface (scene, undo, registry, play for N
   frames, capture, statistics) implemented by `EditorLayer` and by a headless session on the Null renderer.
 - ![Planned][planned] **MCP2 — `OwlNestMcp` dispatcher, M.** Socket-free JSON-RPC: version negotiation, `tools/*`
   generated from the registry, `resources/*` (scene tree, components, assets, prefabs, documentation, statistics).

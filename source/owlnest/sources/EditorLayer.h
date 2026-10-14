@@ -39,6 +39,7 @@
 #include "panel/SettingsPanel.h"
 #include "panel/StatusBar.h"
 #include "panel/VoxelPalette.h"
+#include "session/EditorSession.h"
 
 #include <gui/widgets/Toast.h>
 
@@ -57,7 +58,7 @@ namespace owl::nest {
  * @brief
  *  Class EditorLayer.
  */
-class EditorLayer final : public app::layer::Layer {
+class EditorLayer final : public app::layer::Layer, public session::EditorSession {
 	friend class RibbonBuilder;
 
 public:
@@ -390,16 +391,6 @@ public:
 
 	/**
 	 * @brief
-	 *  Run a named command on the active scene document; edits are refused while it plays.
-	 * @param[in] iName Command name.
-	 * @param[in] iArgs Command arguments.
-	 * @return What the command did, or why it did not run.
-	 */
-	auto runCommand(std::string_view iName, const commands::CommandArgs& iArgs)
-			-> expected<commands::CommandResult, commands::CommandFailure>;
-
-	/**
-	 * @brief
 	 *  Active scene from the currently active document (empty shared if none).
 	 * @return The active scene.
 	 */
@@ -557,7 +548,116 @@ public:
 	 */
 	void requestCloseActiveDocument();
 
+	// --- EditorSession: the active scene document (EditorLayerEditorSession.cpp) ---------------------------------
+
+	/**
+	 * @brief
+	 *  Get the scene of the active scene document (its running copy while it plays).
+	 * @return The scene, null without a scene document.
+	 */
+	[[nodiscard]] auto getSessionScene() const -> shared<scene::Scene> override { return getActiveScene(); }
+
+	/**
+	 * @brief
+	 *  Get the file of the active scene document.
+	 * @return The path, empty when never saved.
+	 */
+	[[nodiscard]] auto getSessionScenePath() const -> std::filesystem::path override;
+
+	/**
+	 * @brief
+	 *  Get the undo history of the active scene document.
+	 * @return The undo manager, null without a scene document.
+	 */
+	[[nodiscard]] auto getSessionUndo() -> SceneUndoManager* override { return activeUndoManager(); }
+
+	/**
+	 * @brief
+	 *  Get the editor command registry.
+	 * @return The registry.
+	 */
+	[[nodiscard]] auto getRegistry() const -> const commands::CommandRegistry& override { return m_commands; }
+
+	/**
+	 * @brief
+	 *  Build the command context of the active scene document; edits are refused while it plays.
+	 * @return The context.
+	 */
+	[[nodiscard]] auto makeCommandContext() -> commands::CommandContext override;
+
+	/**
+	 * @brief
+	 *  Check whether the active scene document plays.
+	 * @return True in Play or Pause.
+	 */
+	[[nodiscard]] auto isScenePlaying() const -> bool override { return getState() != State::Edit; }
+
+	/**
+	 * @brief
+	 *  Start a bounded play of the active scene document, played over the next frames of the main loop.
+	 * @param[in] iRequest The request.
+	 * @return Nothing on success, or why the play did not start.
+	 */
+	auto startPlay(const session::PlayRequest& iRequest) -> expected<void, session::SessionFailure> override;
+
+	/**
+	 * @brief
+	 *  Check whether a bounded play is running.
+	 * @return True until its bound is reached.
+	 */
+	[[nodiscard]] auto isPlayRunning() const -> bool override { return m_playDriver.isActive(); }
+
+	/**
+	 * @brief
+	 *  Take the report of the last bounded play.
+	 * @return The report, once.
+	 */
+	auto takePlayReport() -> std::optional<session::PlayReport> override;
+
+	/**
+	 * @brief
+	 *  Stop the active scene document.
+	 * @return Nothing on success, `NotPlaying` in Edit.
+	 */
+	auto stopPlay() -> expected<void, session::SessionFailure> override;
+
+	/**
+	 * @brief
+	 *  Read the last frame of the active viewport back.
+	 * @return The image, or why it cannot be read.
+	 */
+	auto captureFrame() -> expected<session::FrameCapture, session::SessionFailure> override;
+
+	/**
+	 * @brief
+	 *  Get the frame measurements of the active viewport.
+	 * @return The statistics.
+	 */
+	[[nodiscard]] auto getStatistics() const -> session::SessionStatistics override;
+
 private:
+	/**
+	 * @brief
+	 *  Update the active scene document (its viewport renders it), at the fixed step of a bounded play if one runs.
+	 * @param[in,out] ioDocument The active scene document.
+	 * @param[in] iTimeStep Duration of the frame.
+	 */
+	void updateActiveDocument(SceneDocument& ioDocument, const core::Timestep& iTimeStep);
+
+	/**
+	 * @brief
+	 *  Check that the document of the bounded play is still open and plays.
+	 * @return True when it is open, in Play or Pause.
+	 */
+	[[nodiscard]] auto isPlayDocumentPlaying() const -> bool;
+
+	/**
+	 * @brief
+	 *  End the bounded play: report, capture, then stop or pause the scene.
+	 * @param[in] iInterrupted True when the play stops before its bound.
+	 */
+	void finishBoundedPlay(bool iInterrupted);
+
 	/**
 	 * @brief
 	 *  Render stats.
@@ -900,6 +1000,16 @@ private:
 	ActionRegistry m_actionRegistry;
 	/// Named, undoable scene commands, issued by the panels, the shortcuts and the tests.
 	commands::CommandRegistry m_commands;
+	/// Bounded play of the session in progress.
+	session::PlayDriver m_playDriver;
+	/// Document the bounded play runs in (compared, never dereferenced once it may be closed).
+	const SceneDocument* mp_playDocument{nullptr};
+	/// Scene the bounded play last updated.
+	shared<scene::Scene> m_playScene;
+	/// Report of the last bounded play, until taken.
+	std::optional<session::PlayReport> m_playReport;
+	/// Frame measurements of the active viewport.
+	session::SessionStatistics m_sessionStatistics;
 	/// Scene and game packaging (wizard, validation, background export).
 	GamePackager m_packager{m_project, m_asyncProgress};
 };

@@ -11,6 +11,7 @@
 #include "renderer/gpu/Framebuffer.h"
 
 #include <cstdint>
+#include <vector>
 
 namespace owl::renderer::gpu::null {
 /**
@@ -82,6 +83,14 @@ public:
 	 * @param[in] iValue Clearing value.
 	 */
 	void clearAttachment(uint32_t iAttachmentIndex, int iValue) override;
+
+	/**
+	 * @brief
+	 *  Read back a colour attachment: the Null backend draws nothing, the image is blank (all bytes zero).
+	 * @param[in] iAttachmentIndex Index of the attachment.
+	 * @return `width * height * 4` zero bytes for an 8-bit colour attachment, empty otherwise.
+	 */
+	[[nodiscard]] auto readColorAttachment(uint32_t iAttachmentIndex) -> std::vector<uint8_t> override;
 
 	/**
 	 * @brief

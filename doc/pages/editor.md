@@ -1029,6 +1029,25 @@ description and structured data (`entity` UUID, plus the fields listed below).
 An entity argument is a UUID (integer) or a tag (first match). Continuous edits previewed live (inspector fields,
 gizmo drags, voxel brush strokes, tile painting, node moves) are recorded as one command when the gesture ends.
 
+### Editor session
+
+`session::EditorSession` (`sources/session/`, in the commands library shared with the runner) is what tools drive the editor through: the
+scene shown and its file, its undo history, the command registry (`execute` builds the `CommandContext`), bounded
+plays, frame captures and statistics. Two implementations:
+
+- `EditorLayer`, on the active scene document: a bounded play runs over the next frames of the main loop, at its fixed
+  step, then stops (or pauses); the capture reads the viewport back.
+- `HeadlessSession`, without window nor ImGui (tests, tools): loads a scene with its project (asset folder, renderer
+  stack, simulation settings), plays synchronously into an offscreen frame, switches a windowless application to the
+  Null input. On the Null renderer a capture is a blank image of the session size; scene transitions are not followed.
+
+A `PlayRequest` gives `frames` and / or `ticks` (the first bound reached ends the play), `timestepMs` (0: one simulation
+tick per frame, so N frames run exactly N ticks), held `keys` (through the input injection, so on the Null input
+only), `stopAtEnd` and `capture`. Its `PlayReport` holds the frames and ticks played, the CPU time (total, longest),
+the draw calls, the phase timings of the last frame, the entity count and the optional capture
+(`FrameCapture::encodePng`). `getStatistics()` reports the frame count, the last and mean frame times, the draw calls
+of the last frame, the entity count and the ticks since Play started.
+
 The Edit menu labels dynamically show the description of the next undo/redo action
 (e.g., "Undo Delete 'Player'").
 

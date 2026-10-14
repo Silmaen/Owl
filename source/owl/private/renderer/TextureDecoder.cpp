@@ -12,8 +12,10 @@
 #include <png.h>
 #include <stb_image.h>
 
+#include <cstddef>
 #include <cstdint>
 #include <span>
+#include <vector>
 
 namespace owl::renderer {
 
@@ -103,6 +105,33 @@ auto writeImagePng(const std::filesystem::path& iPath, const math::vec2ui iSize,
 		return false;
 	}
 	return true;
+}
+
+auto encodeImagePng(const math::vec2ui iSize, const std::span<const uint8_t> iRgba) -> std::vector<uint8_t> {
+	if (iSize.surface() == 0 || iRgba.size() != static_cast<size_t>(iSize.surface()) * 4) {
+		OWL_CORE_ERROR("TextureDecoder: Cannot encode a {}x{} image from {} bytes.", iSize.x(), iSize.y(), iRgba.size())
+		return {};
+	}
+	png_image image{};
+	image.version = PNG_IMAGE_VERSION;
+	image.width = iSize.x();
+	image.height = iSize.y();
+	image.format = PNG_FORMAT_RGBA;
+	png_alloc_size_t bytes = 0;
+	if (png_image_write_to_memory(&image, nullptr, &bytes, 0, iRgba.data(), 0, nullptr) == 0) {
+		OWL_CORE_ERROR("TextureDecoder: Cannot size the PNG of a {}x{} image ({}).", iSize.x(), iSize.y(),
+					   image.message)
+		png_image_free(&image);
+		return {};
+	}
+	std::vector<uint8_t> png(bytes);
+	if (png_image_write_to_memory(&image, png.data(), &bytes, 0, iRgba.data(), 0, nullptr) == 0) {
+		OWL_CORE_ERROR("TextureDecoder: Cannot encode a {}x{} image ({}).", iSize.x(), iSize.y(), image.message)
+		png_image_free(&image);
+		return {};
+	}
+	png.resize(bytes);
+	return png;
 }
 
 }// namespace owl::renderer

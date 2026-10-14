@@ -9,6 +9,7 @@
 #include "FrameBench.h"
 
 #include "FrameBenchStats.h"
+#include "session/HeadlessSession.h"
 
 #include <renderer/RendererVoxel.h>
 #include <renderer/gpu/RenderCommand.h>
@@ -152,16 +153,6 @@ auto jsonNumber(const std::optional<double>& iValue) -> std::string {
 
 }// namespace
 
-auto findProject(const std::filesystem::path& iScene) -> std::filesystem::path {
-	for (auto dir = iScene.parent_path(); !dir.empty(); dir = dir.parent_path()) {
-		if (exists(dir / "owl_project.yml"))
-			return dir;
-		if (dir == dir.root_path())
-			break;
-	}
-	return {};
-}
-
 auto hasFrameBenchFlag(const int iArgc, char** iArgv) -> bool {
 	const std::span args(iArgv, static_cast<size_t>(std::max(iArgc, 0)));
 	return std::ranges::any_of(args, [](const char* iArg) -> bool {
@@ -238,7 +229,7 @@ auto parseFrameBenchOptions(const int iArgc, char** iArgv, const std::filesystem
 	if (!exists(options.scene))
 		return unexpected<std::string>{std::format("scene file {} not found", options.scene.string())};
 	if (options.project.empty())
-		options.project = findProject(options.scene);
+		options.project = session::findProjectDirectory(options.scene);
 	return options;
 }
 
