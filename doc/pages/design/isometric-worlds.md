@@ -93,7 +93,7 @@ a few days, L a week.
   encapsulated cells with generation counters, chunk cache per asset, culling, full entity transform, no cap,
   `parallax` rendered. Changes a shipped render path: `tilemap.owl` image test stays pixel-identical, the
   maintainer confirms before merge. Bench `tilemap/{32,128,256,1024}` × {1, 4} layers and `edit_one_cell`.
-- ![Planned][planned] **TM2 — Tilemap storage v2, M.** Structure of arrays per map (terrain id, overlay id, flags),
+- ![Done][done] **TM2 — Tilemap storage v2, M.** Structure of arrays per map (terrain id, overlay id, flags),
   binary chunks inside `.owltilemap`, `FormatVersion` 2 with the first migration of the chain, storage interface ready
   for 4096². `TilemapDocument` undo by changed chunks instead of whole-asset snapshots.
 
