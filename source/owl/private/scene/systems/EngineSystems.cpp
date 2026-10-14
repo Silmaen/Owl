@@ -100,18 +100,20 @@ void updateTrigger(Scene& ioScene, const Entity& iEntity, const Entity& iPlayer,
 }// namespace
 
 void registerEngineSystems(SystemSchedule& ioSchedule) {
-	const auto add = [&ioSchedule](const char* iName, const SystemPhase iPhase, SystemFunction&& iUpdate) -> void {
-		std::ignore = ioSchedule.add({.name = iName, .phase = iPhase, .update = std::move(iUpdate)});
+	const auto add = [&ioSchedule](const char* iName, const SystemPhase iPhase, SystemFunction&& iUpdate,
+								   SystemFunction&& iTick = nullptr) -> void {
+		std::ignore = ioSchedule.add(
+				{.name = iName, .phase = iPhase, .update = std::move(iUpdate), .tick = std::move(iTick)});
 	};
 	add("owl.physics_poses", SystemPhase::Scripts, &restorePhysicsPoses);
-	add("owl.scripts", SystemPhase::Scripts, &updateScripts);
+	add("owl.scripts", SystemPhase::Scripts, &updateScripts, &tickScripts);
 	add("owl.fly_cameras", SystemPhase::PrePhysics, &updateFlyCameras);
 	add("owl.voxel_players", SystemPhase::PrePhysics, &updateVoxelPlayers);
 	add("owl.raycast_walls", SystemPhase::PrePhysics, [](Scene& ioScene, const SystemContext& iContext) -> void {
 		updateRaycastDynamicWalls(ioScene, iContext.timeStep.getSeconds());
 	});
 	add("owl.player_input", SystemPhase::PrePhysics, &updatePlayerInput);
-	add("owl.physics", SystemPhase::Physics, &updatePhysics);
+	add("owl.physics", SystemPhase::Physics, &updatePhysics, &tickPhysics);
 	add("owl.entity_links", SystemPhase::PostPhysics, &updateEntityLinks);
 	add("owl.triggers", SystemPhase::PostPhysics, &updateTriggers);
 	add("owl.sound", SystemPhase::Late, &updateSound);
@@ -147,6 +149,23 @@ void updateScripts(Scene& ioScene, const SystemContext& iContext) {
 	}
 }
 
+void tickScripts(Scene& ioScene, const SystemContext& iContext) {
+	OWL_PROFILE_FUNCTION()
+
+	for (const auto view = ioScene.registry.view<component::NativeScript>(); const auto entity: view) {
+		if (const auto& nsc = view.get<component::NativeScript>(entity);
+			nsc.instance != nullptr && ioScene.isEffectivelyVisible(Entity{entity, &ioScene}, /*iEditorMode=*/false))
+			nsc.instance->onTick(iContext.timeStep);
+	}
+	for (const auto view = ioScene.registry.view<component::LuaScript>(); const auto entity: view) {
+		if (!ioScene.isEffectivelyVisible(Entity{entity, &ioScene}, /*iEditorMode=*/false))
+			continue;
+		if (const auto& luaScript = view.get<component::LuaScript>(entity);
+			luaScript.instance && luaScript.instance->isValid())
+			luaScript.instance->onTick(iContext.timeStep.getSeconds());
+	}
+}
+
 void updateFlyCameras(Scene& ioScene, const SystemContext& iContext) {
 	for (const auto view = ioScene.registry.view<component::Transform, component::FlyCamera>();
 		 const auto entity: view) {
@@ -169,9 +188,20 @@ void updatePlayerInput(Scene& ioScene, [[maybe_unused]] const SystemContext& iCo
 	}
 }
 
-void updatePhysics(Scene& ioScene, const SystemContext& iContext) {
-	physics::PhysicCommand::frame(ioScene, iContext.timeStep);
+void tickPhysics(Scene& ioScene, const SystemContext& iContext) {
+	if (!physics::PhysicCommand::isInitialized(ioScene))
+		return;
+	physics::PhysicCommand::step(ioScene);
+	if (iContext.tickIndex + 1 == iContext.tickCount)
+		physics::PhysicCommand::writeFrameTransforms(ioScene);
+	else
+		physics::PhysicCommand::syncSimulatedTransforms(ioScene);
 	ioScene.dispatchCollisionEvents();
+}
+
+void updatePhysics(Scene& ioScene, const SystemContext& iContext) {
+	if (iContext.tickCount == 0 && physics::PhysicCommand::isInitialized(ioScene))
+		physics::PhysicCommand::writeFrameTransforms(ioScene);
 }
 
 void updateTriggers(Scene& ioScene, const SystemContext& iContext) {

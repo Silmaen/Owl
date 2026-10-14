@@ -69,11 +69,12 @@ Entities of the running level and level changes.
 
 ## `time`
 
-Frame time.
+Frame and fixed-tick time.
 
-| Function       | Returns           | Description                                |
-|----------------|-------------------|--------------------------------------------|
-| `time.delta()` | `seconds: number` | Duration of the current frame, in seconds. |
+| Function            | Returns           | Description                                                                                |
+|---------------------|-------------------|--------------------------------------------------------------------------------------------|
+| `time.delta()`      | `seconds: number` | Duration of the current frame, or of the fixed tick inside `on_tick`, in seconds.          |
+| `time.tick_alpha()` | `alpha: number`   | Progress of the frame between the last two fixed ticks, in [0, 1), to blend what is drawn. |
 
 ## `log`
 

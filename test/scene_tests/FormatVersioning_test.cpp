@@ -355,6 +355,29 @@ TEST_F(FormatVersioningTest, ProjectVersioning) {
 	EXPECT_EQ(future.name, "Untouched");
 	EXPECT_EQ(nest::Project::format().currentVersion(), 1u);
 }
+
+TEST_F(FormatVersioningTest, ProjectSimulationTickRoundTrip) {
+	nest::Project project;
+	project.name = "Ticked";
+	const auto path = m_dir / "owl_project.yml";
+	ASSERT_TRUE(project.saveToFile(path));
+	EXPECT_EQ(readText(path).find("simulation"), std::string::npos);
+
+	project.simulation = {.tickRate = 30.f, .maxTicksPerFrame = 4};
+	ASSERT_TRUE(project.saveToFile(path));
+	nest::Project restored;
+	ASSERT_TRUE(restored.loadFromFile(path));
+	EXPECT_EQ(restored.simulation, project.simulation);
+	const auto exported = restored.makeExportSettings(m_dir, m_dir);
+	EXPECT_FLOAT_EQ(exported.tickRate, 30.f);
+	EXPECT_EQ(exported.maxTicksPerFrame, 4u);
+
+	writeText(path, "OwlProject:\n  name: Clamped\n  simulation:\n    tickRate: 5000\n    maxTicksPerFrame: 0\n");
+	nest::Project clamped;
+	ASSERT_TRUE(clamped.loadFromFile(path));
+	EXPECT_FLOAT_EQ(clamped.simulation.tickRate, float{SimulationSettings::maxTickRate});
+	EXPECT_EQ(clamped.simulation.maxTicksPerFrame, 1u);
+}
 #endif
 
 TEST_F(FormatVersioningTest, EngineSampleAssetsStillLoad) {

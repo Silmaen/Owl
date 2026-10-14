@@ -114,6 +114,9 @@ void RunnerConfig::loadYaml(const std::filesystem::path& iPath) {
 		get(appConfig, "WindowHeight", windowHeight);
 		get(appConfig, "Fullscreen", fullscreen);
 		get(appConfig, "Resizable", resizable);
+		get(appConfig, "TickRate", simulation.tickRate);
+		get(appConfig, "MaxTicksPerFrame", simulation.maxTicksPerFrame);
+		simulation = simulation.clamped();
 		std::string sceneName;
 		get(appConfig, "FirstScene", sceneName);
 		OWL_CORE_INFO("FirstScene: {}", sceneName)
@@ -159,6 +162,8 @@ void RunnerConfig::saveYaml(const std::filesystem::path& iPath) const {
 	out << YAML::Key << "WindowHeight" << YAML::Value << windowHeight;
 	out << YAML::Key << "Fullscreen" << YAML::Value << fullscreen;
 	out << YAML::Key << "Resizable" << YAML::Value << resizable;
+	out << YAML::Key << "TickRate" << YAML::Value << simulation.tickRate;
+	out << YAML::Key << "MaxTicksPerFrame" << YAML::Value << simulation.maxTicksPerFrame;
 	if (!rendererStack.isEmpty())
 		out << YAML::Key << "RendererStack" << YAML::Value << YAML::Load(rendererStack.toYaml());
 	out << YAML::EndMap;
@@ -204,6 +209,7 @@ void RunnerLayer::onAttach() {
 		}
 		m_config.loadYaml(config);
 	}
+	app::Application::get().getEngineContext().setSimulationSettings(m_config.simulation);
 
 	// Initialize settings system.
 	if (!m_config.gameName.empty()) {
@@ -385,6 +391,10 @@ auto RunnerLayer::attachSourceScene(const std::filesystem::path& iProject, const
 				get(project, "name", m_config.gameName);
 				if (const auto stack = project["RendererStack"]; stack)
 					m_config.rendererStack = renderer::RendererStackConfig::fromYaml(YAML::Dump(stack));
+				if (const auto simulation = project["simulation"]; simulation) {
+					get(simulation, "tickRate", m_config.simulation.tickRate);
+					get(simulation, "maxTicksPerFrame", m_config.simulation.maxTicksPerFrame);
+				}
 			}
 		} catch (const std::exception& iEx) {
 			OWL_WARN("{}: Cannot read {}/owl_project.yml ({}).", iMode, iProject.string(), iEx.what())
@@ -393,6 +403,7 @@ auto RunnerLayer::attachSourceScene(const std::filesystem::path& iProject, const
 			app::Application::get().getEngineContext().getSettings().loadDefaults(gameSettings);
 	}
 	app::Application::get().getEngineContext().getSettings().setGameName(m_config.gameName);
+	app::Application::get().getEngineContext().setSimulationSettings(m_config.simulation);
 	input::Input::init(window::Type::Null);
 	m_viewportSize = app.getWindow().getSize();
 	m_activeScene = mkShared<scene::Scene>();

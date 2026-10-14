@@ -230,6 +230,8 @@ TEST_F(GameExporterFixture, ExportWritesAPlayableFolder) {
 	EXPECT_EQ(config["PackFile"].as<std::string>(), "My_Game__Deluxe.owlpack");
 	EXPECT_EQ(config["Icon"].as<std::string>(), "logo/icon.png");
 	EXPECT_EQ(config["WindowWidth"].as<uint32_t>(), 800u);
+	EXPECT_FLOAT_EQ(config["TickRate"].as<float>(), settings.tickRate);
+	EXPECT_EQ(config["MaxTicksPerFrame"].as<uint32_t>(), settings.maxTicksPerFrame);
 	const auto info = YAML::LoadFile((gameDir / "game_info.yml").string())["GameInfo"];
 	ASSERT_TRUE(info);
 	EXPECT_EQ(info["Description"].as<std::string>(), "A # tricky: description");

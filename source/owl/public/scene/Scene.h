@@ -15,6 +15,7 @@
 #include "renderer/Camera.h"
 #include "renderer/RenderStack.h"
 #include "scene/PhysicsSettings.h"
+#include "scene/SimulationClock.h"
 #include "scene/SystemSchedule.h"
 
 #include <entt/entt.hpp>
@@ -94,7 +95,7 @@ struct VoxelWorld;
 struct OWL_API RuntimeTimings {
 	/// `SystemPhase::Scripts`: native and Lua script updates.
 	double scriptsMs{0.0};
-	/// `SystemPhase::Physics`: physics step and collision callbacks.
+	/// The fixed ticks (physics steps, collision callbacks, `on_tick`) and the `SystemPhase::Physics` update.
 	double physicsMs{0.0};
 	/// Render pass: voxel streaming, render stack recording and submission, screen transition.
 	double renderMs{0.0};
@@ -192,9 +193,10 @@ public:
 	 * @brief
 	 *  Update actions for the runtime.
 	 *
-	 * Runs the systems of `getSystems()` phase by phase (`SystemPhase` order; only `Ended` once the game is
-	 * won or lost), prepares the world transforms between `PostPhysics` and `Late`, then flushes the deferred
-	 * destructions. When `iRender` is true
+	 * Advances the simulation clock by the frame duration, then runs the systems of `getSystems()` phase by phase
+	 * (`SystemPhase` order; only `Ended` once the game is won or lost): the `update` functions of `Scripts` and
+	 * `PrePhysics`, the fixed ticks the clock holds, the `update` functions of `Physics` and `PostPhysics`. Prepares
+	 * the world transforms before `Late`, then flushes the deferred destructions. When `iRender` is true
 	 * (the default) also draws the scene with the primary camera. Set it to
 	 * false to run simulation in the background without touching the renderer
 	 * (used by the editor for non-active document tabs in Play mode).
@@ -649,6 +651,23 @@ public:
 
 	/**
 	 * @brief
+	 *  Fixed simulation clock of the scene (mutable): the ticks of `onUpdateRuntime`, the physics steps.
+	 *
+	 * `onStartRuntime()` resets it and gives it the simulation settings of the engine context (the project's tick
+	 * rate) when the scene has one; a scene without context keeps the settings set here.
+	 * @return The simulation clock.
+	 */
+	[[nodiscard]] auto getSimulationClock() -> SimulationClock& { return m_simulationClock; }
+
+	/**
+	 * @brief
+	 *  Fixed simulation clock of the scene (const).
+	 * @return The simulation clock.
+	 */
+	[[nodiscard]] auto getSimulationClock() const -> const SimulationClock& { return m_simulationClock; }
+
+	/**
+	 * @brief
 	 *  Physical world of this scene, created by `physics::PhysicCommand::init()`.
 	 * @return The world, or nullptr while the scene is not simulated.
 	 */
@@ -705,8 +724,12 @@ private:
 	GameState m_gameState;
 	/// Scene-level enable/override of the project renderer stack (empty → all active with defaults).
 	renderer::EnabledRenderersConfig m_enabledRenderers;
-	/// Fixed-step rate, step bound, interpolation and solver settings of the scene's physics world.
+	/// Interpolation and solver settings of the scene's physics world.
 	PhysicsSettings m_physicsSettings;
+	/// Fixed-tick accumulator of the runtime (systems' `tick`, physics steps).
+	SimulationClock m_simulationClock;
+	/// Context given to the systems' `tick` functions, reused from frame to frame.
+	SystemContext m_tickContext;
 	/// Box2D world of the scene while it is simulated (owned here, managed by `physics::PhysicCommand`).
 	shared<physics::PhysicsWorld> m_physicsWorld;
 	/// Runtime UI mouse state (hover, previous press).
@@ -965,6 +988,13 @@ private:
 	 * @param[in] iTimeStep The frame duration (advances the screen transition).
 	 */
 	void renderRuntimeFrame(const core::Timestep& iTimeStep);
+
+	/**
+	 * @brief
+	 *  Run the fixed ticks of a frame: for each one, the `tick` functions of `Scripts` to `PostPhysics`.
+	 * @param[in] iFrame The frame context (`tickCount` ticks to run).
+	 */
+	void runSimulationTicks(const SystemContext& iFrame);
 
 	/**
 	 * @brief

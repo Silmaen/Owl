@@ -66,6 +66,8 @@ void ScriptInstance::onCreate() const {}
 
 void ScriptInstance::onUpdate([[maybe_unused]] const float iDeltaTime) const {}
 
+void ScriptInstance::onTick([[maybe_unused]] const float iTickTime) const {}
+
 void ScriptInstance::onDestroy() const {}
 
 void ScriptInstance::onCollision([[maybe_unused]] const uint64_t iOtherEntityId) const {}

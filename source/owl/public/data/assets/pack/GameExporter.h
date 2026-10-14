@@ -12,6 +12,7 @@
 #include "core/expected.h"
 #include "math/vectors.h"
 
+#include <cstdint>
 #include <filesystem>
 #include <functional>
 
@@ -45,6 +46,10 @@ struct OWL_API ExportSettings {
 	bool fullscreen{false};
 	/// Whether the game window is resizable.
 	bool resizable{true};
+	/// Fixed simulation ticks per second (`scene::SimulationSettings::tickRate`), forwarded to `runner.yml`.
+	float tickRate{60.f};
+	/// Maximum number of ticks per frame (`scene::SimulationSettings::maxTicksPerFrame`), forwarded to `runner.yml`.
+	uint32_t maxTicksPerFrame{8};
 	/// Project renderer stack as YAML (`RendererStackConfig::toYaml`), forwarded to `runner.yml`; empty for none.
 	std::string rendererStackYaml;
 	/// Pack flags (compression, obfuscation).

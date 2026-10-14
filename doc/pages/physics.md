@@ -109,25 +109,29 @@ world with default gravity `(0, -9.81)` and, when several solver threads are use
 Collidable tilemaps, raycast doors and pushwalls get their bodies the same way, owned by their entity.
 
 From then on the bodies follow their components: a `PhysicBody` added while running gets its body at the next
-`frame()` (once its transform and parent are set), a copied one never shares the source's body, and removing a
+`step()` (once its transform and parent are set), a copied one never shares the source's body, and removing a
 `PhysicBody`, `Tilemap`, door or pushwall component, or its entity, destroys the body. A door or pushwall added
 while running gets no body.
 
-### frame(timestep)
+### step() and writeFrameTransforms() {#step}
 
-Called by the `owl.physics` system (phase `Physics`, see [Systems and phases](scene.md#systems)) once per
-rendered frame. Performs four steps:
+The `owl.physics` system (phase `Physics`, see [Systems and phases](scene.md#systems)) calls `step(scene)` once per
+fixed tick of the scene's simulation clock, and writes the transforms once per frame:
 
-1. **Fixed steps** -- adds the frame duration to an accumulator and runs as many Box2D steps of
-   `1 / tickRate` seconds as it holds (`b2World_Step`, `solverSubSteps` sub-steps each), at most
-   `maxStepsPerFrame` (see [Fixed Step](#fixed-step)).
-2. **Contact events** -- after each step, reads the begin / end touch events (`b2World_GetContactEvents`) and
-   records the collisions that began (see [Collision Events](#collision-events)).
+1. **Fixed step** -- one Box2D step of the tick duration (`b2World_Step`, `solverSubSteps` sub-steps) (see
+   [Fixed Step](#fixed-step)).
+2. **Contact events** -- after the step, reads the begin / end touch events (`b2World_GetContactEvents`) and
+   records the collisions that began (see [Collision Events](#collision-events)); they are dispatched to the
+   scripts right after the step.
 3. **Capture** -- keeps the body poses of the last two steps.
-4. **Sync transforms** -- for each entity with a `PhysicBody`, writes the body position and rotation (blended
-   between the last two steps when interpolation is on) to the entity's `Transform` component. If the entity has
-   a parent in the hierarchy, the world position is converted back to **local space** using the inverse of the
-   parent's world transform.
+4. **Sync transforms** -- for each entity with a `PhysicBody`, writes the body position and rotation to the entity's
+   `Transform` component: the simulated pose after a tick that is not the frame's last one, the drawn pose (blended
+   between the last two steps when interpolation is on, `writeFrameTransforms`) after the last one or, in a frame
+   without a tick, in the `Physics` update. If the entity has a parent in the hierarchy, the world position is
+   converted back to **local space** using the inverse of the parent's world transform.
+
+`frame(scene, timestep)` does the same for a scene driven outside its systems (benchmarks, physics tests): it
+advances the scene's clock by the frame duration, runs the steps it holds, then writes the transforms.
 
 ### destroy()
 
@@ -137,17 +141,17 @@ body-id map, and resets the `Impl` pointer and scene pointer. After this call,
 
 ## Fixed Step {#fixed-step}
 
-The world advances at a fixed rate, whatever the frame rate: the result of a simulation depends only on the
-number of steps, not on how frames are cut. A frame of 40 ms at 60 Hz runs two steps and keeps 6.7 ms in the
-accumulator; a frame of 4 ms runs none and only moves the interpolated transforms.
+The world advances one step per tick of the scene's **simulation clock** (`Scene::getSimulationClock()`,
+`scene::SimulationClock`), whatever the frame rate: the result of a simulation depends only on the number of ticks,
+not on how frames are cut. The tick rate is a project setting (`simulation:` in `owl_project.yml`, see
+[Fixed simulation tick](scene.md#fixed-tick)); at the default 60 Hz a frame of 40 ms runs two steps and keeps
+6.7 ms, a frame of 4 ms runs none and only moves the interpolated transforms.
 
-| Setting            | Default | Range     | Meaning                                                    |
-|--------------------|---------|-----------|------------------------------------------------------------|
-| `tickRate`         | `60`    | 1 to 1000 | Fixed steps per second                                     |
-| `maxStepsPerFrame` | `8`     | 1 to 64   | Steps run by one frame at most; the time beyond is dropped |
-| `solverSubSteps`   | `4`     | 1 to 16   | Box2D sub-steps inside one step                            |
-| `interpolate`      | `true`  |           | Draw the transforms blended between the last two steps     |
-| `workerCount`      | `0`     | 0 to 32   | Solver threads: 0 automatic, 1 single-threaded (see below) |
+| Setting          | Default | Range   | Meaning                                                    |
+|------------------|---------|---------|------------------------------------------------------------|
+| `solverSubSteps` | `4`     | 1 to 16 | Box2D sub-steps inside one step                            |
+| `interpolate`    | `true`  |         | Draw the transforms blended between the last two steps     |
+| `workerCount`    | `0`     | 0 to 32 | Solver threads: 0 automatic, 1 single-threaded (see below) |
 
 The settings belong to the scene (`Scene::getPhysicsSettings()`, `physics::PhysicsSettings`) and are saved in the
 scene file only when they differ from the defaults:
@@ -155,42 +159,45 @@ scene file only when they differ from the defaults:
 ```yaml
 Scene: untitled
 Physics:
-  tickRate: 120
-  maxStepsPerFrame: 8
   solverSubSteps: 4
   interpolate: true
   workerCount: 0
 Entities: ...
 ```
 
-In Owl Nest they are edited in the **Physics** section of the *Scene Settings* panel (undoable); they are read
-when Play starts.
+The `tickRate` and `maxStepsPerFrame` keys of scenes written before v0.4.0 are ignored with a warning: the project's
+tick rate and tick bound replace them. In Owl Nest the settings are edited in the **Physics** section of the *Scene
+Settings* panel (undoable), the tick rate in *Project Settings*; they are read when Play starts.
 
-- **Step bound.** A long frame (synchronous load, window drag) runs `maxStepsPerFrame` steps and drops the rest:
+- **Step bound.** A long frame (synchronous load, window drag) runs `maxTicksPerFrame` ticks and drops the rest:
   the game slows down for that frame instead of stalling under an ever larger backlog (spiral of death), and no
   single step grows large enough to tunnel or explode contacts.
 - **Interpolation.** With `interpolate` on, `Transform` shows the pose between the last two steps, by the
-  fraction of a step left in the accumulator (`PhysicCommand::getInterpolationAlpha(scene)`): motion is smooth at
-  any frame rate, at the cost of up to one step of display latency. Box2D stays the authority: velocities, impulses
-  and `getVelocity` act on the simulated state. `setTransform` (teleport) moves both poses by the same offset, so a
-  teleport is never blended across. Before the scripts, the `owl.physics_poses` system writes the simulated poses back
-  into the transforms: gameplay code reads the simulation and only the drawing sees the blend. `SaveManager::save` calls `PhysicCommand::syncSimulatedTransforms(scene)` first, so a save stores the
-  simulated positions that match its velocity snapshots.
-- **Per-frame input.** Scripts and `Player::parseInputs` still run once per frame: an impulse applied in
-  `on_update` lands before the frame's first step.
+  fraction of a tick left in the clock (`SimulationClock::getAlpha()`, `PhysicCommand::getInterpolationAlpha(scene)`):
+  motion is smooth at any frame rate, at the cost of up to one step of display latency. Box2D stays the authority:
+  velocities, impulses and `getVelocity` act on the simulated state. `setTransform` (teleport) moves both poses by the
+  same offset, so a teleport is never blended across. Before the scripts, the `owl.physics_poses` system writes the
+  simulated poses back into the transforms: gameplay code reads the simulation and only the drawing sees the blend.
+  `SaveManager::save` calls `PhysicCommand::syncSimulatedTransforms(scene)` first, so a save stores the simulated
+  positions that match its velocity snapshots.
+- **Input.** `on_update` and `Player::parseInputs` run once per frame, before the frame's ticks: an impulse applied
+  there lands before the frame's first step. Code that must run with the simulation, once per step, goes in
+  `on_tick` (Lua) or a system's `tick` function.
 
 ```mermaid
 sequenceDiagram
     participant S as Scene::onUpdateRuntime
-    participant P as PhysicCommand::frame
+    participant C as SimulationClock
+    participant P as PhysicCommand
     participant B as Box2D
-    S->>P: frame(scene, dt)
-    P-->>P: accumulator += dt, n = steps it holds (at most maxStepsPerFrame)
-    loop n fixed steps
+    S->>C: advance(dt)
+    C-->>S: n ticks (at most maxTicksPerFrame), alpha = leftover / tick
+    loop n ticks
+        S->>P: step(scene)
         P->>B: b2World_Step(1 / tickRate, solverSubSteps)
         P->>B: b2World_GetContactEvents
+        S->>S: dispatchCollisionEvents
     end
-    P-->>P: previous / current poses, alpha = accumulator / step
     P-->>S: Transform = blend(previous, current, alpha)
 ```
 
@@ -239,11 +246,13 @@ Measured on the 5 000-box pile of `bench/` (`physics/step_settled*`, i9-13950HX,
 | `init(scene)`                              | Create Box2D world and bodies from scene      |
 | `destroy()`                                | Destroy Box2D world and clear all bodies      |
 | `isInitialized()`                          | Check if the physics world is active          |
-| `frame(timestep)`                          | Run the fixed steps due and sync transforms   |
+| `step()`                                   | Run one fixed step of the scene's clock       |
+| `writeFrameTransforms()`                   | Write the drawn (blended) poses               |
+| `frame(timestep)`                          | Advance the clock, step and sync transforms   |
 | `getSettings()`                            | Settings of the running world                 |
-| `getLastFrameStepCount()`                  | Fixed steps run by the last `frame()`         |
+| `getLastFrameStepCount()`                  | Steps run before the last transform write     |
 | `getWorkerCount()`                         | Solver threads in use (1 = single-threaded)   |
-| `getInterpolationAlpha()`                  | Blend factor of the last `frame()`            |
+| `getInterpolationAlpha()`                  | Blend factor of the last transform write      |
 | `syncSimulatedTransforms()`                | Write the last step's poses, not blended ones |
 | `takeCollisionEvents()`                    | Hand over and clear the collisions begun      |
 | `destroyBody(entity)`                      | Remove the entity's Box2D bodies              |
@@ -276,15 +285,15 @@ void MyScript::onUpdate(const owl::core::Timestep& iTimeStep) {
 
 ## Collision Events {#collision-events}
 
-`frame()` turns Box2D contact events into entity-level collisions. Each begin-touch event is resolved to the two
+`step()` turns Box2D contact events into entity-level collisions. Each begin-touch event is resolved to the two
 owning entities; Owl counts the touching shape pairs of every entity pair and records a `CollisionEvent`
-(`entityA`, `entityB` UUIDs) only when the count goes from 0 to 1. The events of all the fixed steps of a frame
-are gathered, and a pair is recorded at most once per frame even if it touches, separates and touches again
-within that frame's steps. End-touch events decrement the count, so a body
+(`entityA`, `entityB` UUIDs) only when the count goes from 0 to 1. The events gathered since the last
+`takeCollisionEvents()` record a pair at most once (with `frame()`, once per frame even if it touches, separates and
+touches again within that frame's steps). End-touch events decrement the count, so a body
 resting on the ground, or a player crossing the cells of a tilemap (one Box2D shape per cell), yields one collision,
 not one per frame or per cell. `destroyBody()` forgets every pair of the destroyed entity.
 
-The `owl.physics` system calls `Scene::dispatchCollisionEvents()` right after `frame()`: it takes
+The `owl.physics` system calls `Scene::dispatchCollisionEvents()` right after each `step()`: it takes
 `PhysicCommand::takeCollisionEvents(scene)` and calls Lua `on_collision(other_id)` on both entities (see
 [Lua Scripting](scripting.md)). Entities that are hidden or queued for destruction (`Scene::isPendingDestructionInTree()`)
 are skipped, and the check is redone before each call. The events are read from a vector owned by the caller, not
@@ -358,7 +367,7 @@ relationships and physics:
 | Physics     | Physics     | Both bodies move **independently** -- Box2D simulates each body on its own regardless of parent-child link |
 | Physics     | Non-physics | The non-physics child **follows** the parent via the normal hierarchy transform chain                      |
 
-During `frame()`, world positions read from Box2D are converted back to local
+When the transforms are written, world positions read from Box2D are converted back to local
 space when the entity has a parent, using the inverse of the parent's world
 transform. This ensures the local `Transform` component stays consistent with
 the hierarchy while Box2D remains the authority on world position.

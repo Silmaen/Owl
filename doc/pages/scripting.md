@@ -113,14 +113,29 @@ end
 
 ### Lifecycle Callbacks
 
-| Callback                 | When                                       | Arguments                  |
-|--------------------------|--------------------------------------------|----------------------------|
-| `on_create()`            | Scene enters Play mode                     | None                       |
-| `on_update(dt)`          | Every frame during Play mode               | `dt`: delta time (seconds) |
-| `on_destroy()`           | Entity destroyed, or Play mode ends        | None                       |
-| `on_collision(other_id)` | Body starts touching another entity's body | `other_id`: UUID           |
+| Callback                 | When                                       | Arguments                     |
+|--------------------------|--------------------------------------------|-------------------------------|
+| `on_create()`            | Scene enters Play mode                     | None                          |
+| `on_update(dt)`          | Every frame during Play mode               | `dt`: delta time (seconds)    |
+| `on_tick(dt)`            | Every fixed simulation tick (60 Hz)        | `dt`: tick duration (seconds) |
+| `on_destroy()`           | Entity destroyed, or Play mode ends        | None                          |
+| `on_collision(other_id)` | Body starts touching another entity's body | `other_id`: UUID              |
 
 All callbacks are optional — missing callbacks are silently skipped.
+
+`on_update` follows the frame rate; `on_tick` runs at the project's fixed rate (`simulation.tickRate`, 60 Hz by
+default, see [Fixed simulation tick](scene.md#fixed-tick)), zero, one or several times per frame, right before each
+physics step. Put in `on_tick` what must behave the same at any frame rate (driving bodies, counters, AI steps) and
+in `on_update` what follows the display (input polling, UI, camera). Inside `on_tick`, `time.delta()` returns the
+tick duration; `time.tick_alpha()` gives the fraction of a tick the frame stands at, to blend what a script draws
+between two ticks.
+
+```lua
+function on_tick(dt)
+    local vx, vy = physics.get_velocity(entity_id)
+    physics.set_velocity(entity_id, vx * 0.98, vy)   -- the same damping per step at 30 or 240 FPS
+end
+```
 
 ### Collision Callback
 
@@ -376,7 +391,8 @@ Lua callbacks to match your game.
 ### onUpdateRuntime (each frame)
 
 - For each `LuaScript` with a valid instance, calls `on_update(dt)`
-- Steps the physics, then calls `on_collision(other_id)` for every collision begun during the step
+- For each fixed tick the frame holds: calls `on_tick(dt)`, steps the physics, then calls `on_collision(other_id)`
+  for every collision begun during the step
 - Runs the triggers (`on_trigger_enter` / `on_trigger_exit` / primary callbacks)
 
 ### Entity destruction {#entity-destruction}

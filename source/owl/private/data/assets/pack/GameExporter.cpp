@@ -127,6 +127,8 @@ void writeRunnerConfig(const ExportSettings& iSettings, const std::filesystem::p
 	out << YAML::Key << "WindowHeight" << YAML::Value << iSettings.windowSize.y();
 	out << YAML::Key << "Fullscreen" << YAML::Value << iSettings.fullscreen;
 	out << YAML::Key << "Resizable" << YAML::Value << iSettings.resizable;
+	out << YAML::Key << "TickRate" << YAML::Value << iSettings.tickRate;
+	out << YAML::Key << "MaxTicksPerFrame" << YAML::Value << iSettings.maxTicksPerFrame;
 	if (!iSettings.rendererStackYaml.empty())
 		out << YAML::Key << "RendererStack" << YAML::Value << YAML::Load(iSettings.rendererStackYaml);
 	out << YAML::EndMap;

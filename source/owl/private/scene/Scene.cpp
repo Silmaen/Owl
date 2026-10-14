@@ -291,6 +291,7 @@ auto Scene::copy(const shared<Scene>& iOther) -> shared<Scene> {
 	newScene->m_gameState = iOther->m_gameState;
 	newScene->m_enabledRenderers = iOther->m_enabledRenderers;
 	newScene->m_physicsSettings = iOther->m_physicsSettings;
+	newScene->m_simulationClock.setSettings(iOther->m_simulationClock.getSettings());
 	newScene->m_systems = iOther->m_systems;
 	newScene->mp_engineContext = iOther->mp_engineContext;
 
@@ -368,6 +369,9 @@ void Scene::onStartRuntime() {
 	OWL_PROFILE_FUNCTION()
 
 	status = Status::Playing;
+	if (mp_engineContext != nullptr)
+		m_simulationClock.setSettings(mp_engineContext->getSimulationSettings());
+	m_simulationClock.reset();
 
 	using clk = std::chrono::steady_clock;
 	const auto runtimeStart = clk::now();
@@ -508,16 +512,21 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep, const bool iRender)
 	m_toastTimer = std::max(0.f, m_toastTimer - iTimeStep.getSeconds());
 	m_inUpdatePass = false;
 	m_worldTransformCacheActive = false;
-	const SystemContext context{.timeStep = iTimeStep, .render = iRender};
 	if (status == Status::Victory || status == Status::Death) {
-		m_systems.run(SystemPhase::Ended, *this, context);
+		m_systems.run(SystemPhase::Ended, *this, {.timeStep = iTimeStep, .render = iRender});
 		return;
 	}
+	const uint32_t ticks = m_simulationClock.advance(iTimeStep);
+	const SystemContext context{.timeStep = iTimeStep,
+								.render = iRender,
+								.tickCount = ticks,
+								.alpha = m_simulationClock.getAlpha()};
 	const auto tScripts = now();
 	m_systems.run(SystemPhase::Scripts, *this, context);
 	const auto tScriptsEnd = now();
 	m_systems.run(SystemPhase::PrePhysics, *this, context);
 	const auto tPhysics = now();
+	runSimulationTicks(context);
 	m_systems.run(SystemPhase::Physics, *this, context);
 	const auto tPhysicsEnd = now();
 	m_systems.run(SystemPhase::PostPhysics, *this, context);
@@ -543,6 +552,22 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep, const bool iRender)
 								.totalMs = elapsedMs(tStart, tEnd)};
 	}
 	flushPendingDestructions();
+}
+
+void Scene::runSimulationTicks(const SystemContext& iFrame) {
+	if (iFrame.tickCount == 0)
+		return;
+	// Assigned into a member: the time step's buffers are reused instead of allocated every frame.
+	m_tickContext.timeStep = m_simulationClock.getStepTimestep();
+	m_tickContext.render = iFrame.render;
+	m_tickContext.tickCount = iFrame.tickCount;
+	m_tickContext.alpha = iFrame.alpha;
+	for (uint32_t index = 0; index < iFrame.tickCount; ++index) {
+		m_tickContext.tickIndex = index;
+		for (const auto phase:
+			 {SystemPhase::Scripts, SystemPhase::PrePhysics, SystemPhase::Physics, SystemPhase::PostPhysics})
+			m_systems.runTick(phase, *this, m_tickContext);
+	}
 }
 
 void Scene::renderRuntimeFrame(const core::Timestep& iTimeStep) {

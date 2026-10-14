@@ -107,29 +107,65 @@ stateDiagram-v2
 
 ### Systems and phases {#systems}
 
-`onUpdateRuntime()` holds no gameplay: it runs the systems of the scene's `SystemSchedule`
-(`Scene::getSystems()`), phase by phase, then prepares the world transforms and renders. Within a phase, systems run
-in insertion order. Once the game is won or lost (`Victory` / `Death`), only the `Ended` phase runs.
+`onUpdateRuntime()` holds no gameplay: it advances the scene's simulation clock, runs the systems of the scene's
+`SystemSchedule` (`Scene::getSystems()`), phase by phase, then prepares the world transforms and renders. Within a
+phase, systems run in insertion order. Once the game is won or lost (`Victory` / `Death`), only the `Ended` phase
+runs.
+
+A system has an `update` function, run once per frame, and an optional `tick` function, run once per fixed
+simulation tick (see [Fixed simulation tick](#fixed-tick)); either may be empty. A frame runs:
+
+1. the `update` of `Scripts`, then of `PrePhysics`;
+2. the ticks the clock holds: each tick runs the `tick` of `Scripts`, `PrePhysics`, `Physics`, then `PostPhysics`;
+3. the `update` of `Physics`, `PostPhysics`, then `Late`.
 
 | Phase         | Engine systems                                                                  | Contract                                  |
 |---------------|---------------------------------------------------------------------------------|-------------------------------------------|
 | `Scripts`     | `owl.physics_poses` (simulated body poses), `owl.scripts` (native, Lua)         | May move, create or destroy entities      |
 | `PrePhysics`  | `owl.fly_cameras`, `owl.voxel_players`, `owl.raycast_walls`, `owl.player_input` | Gameplay controllers before the step      |
-| `Physics`     | `owl.physics` (fixed-step Box2D, then `on_collision`)                           | Owns the physics step                     |
+| `Physics`     | `owl.physics` (one Box2D step and `on_collision` per tick)                      | Owns the physics step                     |
 | `PostPhysics` | `owl.entity_links`, `owl.triggers`                                              | Last phase allowed to change the world    |
 | `Late`        | `owl.sound`, `owl.sprite_animation`                                             | Reads the settled world (caches armed)    |
 | `Ended`       | `owl.game_over` ("Victory!" / "You loose!" message)                             | Replaces every other phase once game over |
 
-Every new scene copies `SystemSchedule::getDefault()`. A game changes it once, before loading its scenes, or edits
-one scene's schedule; `Scene::copy()` (Play) keeps the scene's schedule:
+`owl.scripts` calls `on_update` in its `update` and `on_tick` in its `tick`; `owl.physics` steps the world in its
+`tick`. The `SystemContext` gives the frame (or tick) duration, the tick count of the frame, the index of the running
+tick and the interpolation alpha. Every new scene copies `SystemSchedule::getDefault()`. A game changes it once,
+before loading its scenes, or edits one scene's schedule; `Scene::copy()` (Play) keeps the scene's schedule:
 
 ```c++
 auto& systems = scene::SystemSchedule::getDefault();
 systems.add({.name = "game.score", .phase = scene::SystemPhase::PostPhysics, .update = &updateScore});
-systems.insertBefore("owl.physics", {.name = "game.wind", .phase = {}, .update = &applyWind});
+systems.add({.name = "game.ai", .phase = scene::SystemPhase::PrePhysics, .tick = &stepAi});
+systems.insertBefore("owl.physics", {.name = "game.wind", .phase = {}, .tick = &applyWind});
 systems.replace("owl.game_over", &showMyGameOverScreen);
+systems.replaceTick("game.ai", &stepSmarterAi);
 systems.remove("owl.voxel_players");
 ```
+
+### Fixed simulation tick {#fixed-tick}
+
+Each scene owns a `SimulationClock` (`Scene::getSimulationClock()`): every frame adds its duration to an accumulator
+and runs as many ticks of `1 / tickRate` seconds as it holds, at most `maxTicksPerFrame` (the time beyond is
+dropped, so a long frame slows the game down instead of stalling it). The leftover time over the tick duration is
+the interpolation alpha (`SimulationClock::getAlpha()`, Lua `time.tick_alpha()`), used to draw the physics bodies
+between their last two steps. A simulation run with the same ticks gives the same result however the frames are cut.
+
+The rate is a project setting, edited in Owl Nest's *Project Settings* (**Simulation** section) and saved in
+`owl_project.yml` when it differs from the defaults:
+
+```yaml
+OwlProject:
+  name: MyGame
+  simulation:
+    tickRate: 60          # ticks per second, 1 to 1000 (default 60)
+    maxTicksPerFrame: 8   # ticks one frame runs at most, 1 to 64 (default 8)
+```
+
+The editor and the runner hand it to the `app::EngineContext` (`setSimulationSettings`; *Pack Game* writes it to
+`runner.yml` as `TickRate` / `MaxTicksPerFrame`), and `onStartRuntime()` gives it to the scene's clock and resets
+it; a scene without engine context (tests) keeps the settings set on its clock. In the editor, **Step Frame** while
+paused runs exactly one tick.
 
 The engine systems live in `scene::systems` (private, `source/owl/private/scene/systems/`).
 

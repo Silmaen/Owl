@@ -12,6 +12,7 @@
 #include <data/assets/pack/GameExporter.h>
 #include <owlgui.h>
 #include <renderer/RenderStack.h>
+#include <scene/SimulationClock.h>
 
 #include <cstdint>
 #include <filesystem>
@@ -51,6 +52,9 @@ struct Project {
 	};
 	/// Window settings for the game.
 	WindowSettings window;
+
+	/// Fixed simulation tick of the game (`simulation:`): rate of `on_tick` and of the physics steps.
+	scene::SimulationSettings simulation;
 
 	/// Project-level renderer stack definition. Empty → engine falls back to a single Renderer2D.
 	renderer::RendererStackConfig rendererStack;

@@ -46,7 +46,7 @@ public:
 	 *
 	 * The world belongs to the scene: several scenes simulate side by side, and the scene destructor
 	 * destroys it. From then on the bodies follow their components: a `PhysicBody` added while running gets
-	 * its body at the next `frame()`, and removing a `PhysicBody`, `Tilemap`, raycast door or pushwall
+	 * its body at the next `step()`, and removing a `PhysicBody`, `Tilemap`, raycast door or pushwall
 	 * component (or its entity) destroys the matching body.
 	 * @param[in,out] ioScene The scene whose world is created.
 	 */
@@ -69,12 +69,34 @@ public:
 
 	/**
 	 * @brief
-	 *  Advance the world of a scene by one rendered frame, at the fixed rate of its `PhysicsSettings`.
+	 *  Run one fixed step of a scene's world, of the tick duration of its simulation clock.
 	 *
-	 * The frame duration is added to an accumulator; as many fixed steps as it holds are run, at most
-	 * `maxStepsPerFrame` (the excess time is dropped). The contact events of all the steps are gathered,
-	 * a pair being reported at most once per frame. The entity transforms are then written, blended
-	 * between the last two steps when interpolation is on, so a frame without a step still moves them.
+	 * Bodies of the `PhysicBody` components added since the last step are created first. The begun contacts are
+	 * gathered for `takeCollisionEvents()`; the entity transforms are left as they are (`writeFrameTransforms()`,
+	 * `syncSimulatedTransforms()`). The `owl.physics` system calls it once per tick of `Scene::onUpdateRuntime()`.
+	 * @param[in,out] ioScene The scene whose world is stepped.
+	 */
+	static void step(scene::Scene& ioScene);
+
+	/**
+	 * @brief
+	 *  Write the bodies' poses into the entity transforms for drawing.
+	 *
+	 * With interpolation on, the poses are blended between the last two steps by the alpha of the scene's simulation
+	 * clock, so a frame without a step still moves them; without it, the poses of the last step are written when a
+	 * step ran since the previous call. Also sets `getLastFrameStepCount()` and `getInterpolationAlpha()`.
+	 * @param[in,out] ioScene The scene whose transforms are written.
+	 */
+	static void writeFrameTransforms(scene::Scene& ioScene);
+
+	/**
+	 * @brief
+	 *  Advance the world of a scene by one rendered frame, outside of the scene's systems.
+	 *
+	 * The frame duration is given to the scene's simulation clock (`Scene::getSimulationClock()`), which runs as
+	 * many fixed steps as it holds, at most `maxTicksPerFrame` (the excess time is dropped); then
+	 * `writeFrameTransforms()`. The contact events of all the steps are gathered, a pair being reported at most once
+	 * per frame. `Scene::onUpdateRuntime()` does not use it: it advances the clock itself and steps per tick.
 	 * @param[in,out] ioScene The scene whose world is stepped.
 	 * @param[in] iTimestep The duration of the rendered frame.
 	 */
@@ -98,7 +120,7 @@ public:
 
 	/**
 	 * @brief
-	 *  Number of fixed steps run by the last `frame()` call on a scene.
+	 *  Number of fixed steps run before the last `writeFrameTransforms()` (or `frame()`) call on a scene.
 	 * @param[in] iScene The scene.
 	 * @return The step count, 0 without a world.
 	 */
@@ -106,9 +128,9 @@ public:
 
 	/**
 	 * @brief
-	 *  Blend factor used for the transforms written by the last `frame()` call on a scene.
+	 *  Blend factor used for the transforms written by the last `writeFrameTransforms()` call on a scene.
 	 * @param[in] iScene The scene.
-	 * @return The leftover accumulated time over the step duration, in [0, 1); 1 when interpolation is off.
+	 * @return The alpha of the scene's simulation clock, in [0, 1); 1 when interpolation is off.
 	 */
 	[[nodiscard]] static auto getInterpolationAlpha(const scene::Scene& iScene) -> float;
 
@@ -117,7 +139,7 @@ public:
 	 *  Write the state of the last fixed step, not the interpolated one, into the entity transforms.
 	 *
 	 * Used before serialising a running scene (save game) so the saved positions match the saved
-	 * velocities. The next `frame()` writes interpolated transforms again.
+	 * velocities. The next `writeFrameTransforms()` writes interpolated transforms again.
 	 * @param[in,out] ioScene The scene whose transforms are written.
 	 */
 	static void syncSimulatedTransforms(scene::Scene& ioScene);
@@ -135,7 +157,7 @@ public:
 
 	/**
 	 * @brief
-	 *  Hand over the collisions that began during the last `frame()` calls on a scene, and clear them.
+	 *  Hand over the collisions that began during the steps since the last call on a scene, and clear them.
 	 *
 	 * Built from Box2D begin-touch contact events. A pair is reported once when its first contact
 	 * begins; contacts between further shapes of the same two entities (tilemap cells) are not

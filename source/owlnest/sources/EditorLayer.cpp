@@ -788,6 +788,7 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 	m_projectSettings.onImGuiRender();
 	if (m_projectSettings.hasResult()) {
 		m_project = m_projectSettings.consumeResult();
+		app::Application::get().getEngineContext().setSimulationSettings(m_project.simulation);
 
 		saveProject();
 

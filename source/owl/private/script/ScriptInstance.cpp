@@ -24,6 +24,7 @@ namespace {
 // Built once: the callbacks run every frame.
 constexpr std::string_view g_OnCreate = "on_create";
 constexpr std::string_view g_OnUpdate = "on_update";
+constexpr std::string_view g_OnTick = "on_tick";
 constexpr std::string_view g_OnDestroy = "on_destroy";
 constexpr std::string_view g_OnCollision = "on_collision";
 }// namespace
@@ -151,6 +152,13 @@ void ScriptInstance::onUpdate(const float iDeltaTime) const {
 		return;
 	mp_impl->engine.setDeltaTime(static_cast<double>(iDeltaTime));
 	mp_impl->checkQuota(g_OnUpdate, mp_impl->engine.callFunction(g_OnUpdate, iDeltaTime));
+}
+
+void ScriptInstance::onTick(const float iTickTime) const {
+	if (!isValid() || mp_impl->disabled)
+		return;
+	mp_impl->engine.setDeltaTime(static_cast<double>(iTickTime));
+	mp_impl->checkQuota(g_OnTick, mp_impl->engine.callFunction(g_OnTick, iTickTime));
 }
 
 void ScriptInstance::onDestroy() const {

@@ -373,10 +373,13 @@ TEST_F(CommandRegistryTest, SaveWritesTheSceneAndMarksItSaved) {
 	EXPECT_EQ(std::get<std::string>(saved->data.at("path")), path.generic_string());
 	EXPECT_EQ(notified, path);
 	EXPECT_FALSE(m_undo.isDirty());
-	const std::ifstream file{path};
-	std::stringstream content;
-	content << file.rdbuf();
-	EXPECT_NE(content.str().find("Saved Crate"), std::string::npos);
+	{
+		// Closed before the next save and the removal: Windows cannot delete an open file.
+		const std::ifstream file{path};
+		std::stringstream content;
+		content << file.rdbuf();
+		EXPECT_NE(content.str().find("Saved Crate"), std::string::npos);
+	}
 	CommandContext withPath = context;
 	withPath.scenePath = path;
 	EXPECT_TRUE(m_registry.execute("scene.save", {}, withPath).has_value());

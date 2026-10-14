@@ -240,3 +240,51 @@ TEST(LuaScriptComponent, propertiesAppliedOnStart) {
 	std::filesystem::remove_all(dir);
 	core::Log::invalidate();
 }
+
+TEST(LuaScriptComponent, onTickRunsAtTheFixedRate) {
+	core::Log::init(core::Log::Level::Off);
+	const auto dir = std::filesystem::temp_directory_path() / "owl_luascriptcomponent_test_tick";
+	std::filesystem::remove_all(dir);
+	const auto path = writeTempScript(dir, "tick_comp.lua",
+									  "ticks = 0\n"
+									  "updates = 0\n"
+									  "tick_dt = 0\n"
+									  "tick_delta = 0\n"
+									  "alpha = -1\n"
+									  "function on_update(dt)\n"
+									  "  updates = updates + 1\n"
+									  "  alpha = time.tick_alpha()\n"
+									  "end\n"
+									  "function on_tick(dt)\n"
+									  "  ticks = ticks + 1\n"
+									  "  tick_dt = dt\n"
+									  "  tick_delta = time.delta()\n"
+									  "end\n");
+	auto scn = mkShared<Scene>();
+	auto entity = scn->createEntity("TickEntity");
+	entity.addComponent<component::LuaScript>().scriptPath = path.string();
+	scn->getSimulationClock().setSettings({.tickRate = 50.f});
+	scn->onStartRuntime();
+	const auto& comp = entity.getComponent<component::LuaScript>();
+	ASSERT_TRUE(comp.instance && comp.instance->isValid());
+
+	// 50 Hz: 20 ms per tick. 10 ms frames tick every other frame; one 70 ms frame runs 3 ticks and keeps 10 ms.
+	core::Timestep ts;
+	for (int i = 0; i < 4; ++i) {
+		ts.forceUpdate(std::chrono::milliseconds(10));
+		scn->onUpdateRuntime(ts, false);
+	}
+	EXPECT_EQ(comp.instance->getPropertyInt("updates").value_or(0), 4);
+	EXPECT_EQ(comp.instance->getPropertyInt("ticks").value_or(0), 2);
+	ts.forceUpdate(std::chrono::milliseconds(70));
+	scn->onUpdateRuntime(ts, false);
+	EXPECT_EQ(comp.instance->getPropertyInt("ticks").value_or(0), 5);
+	EXPECT_NEAR(comp.instance->getPropertyFloat("tick_dt").value_or(0.f), 0.02f, 1e-5f);
+	EXPECT_NEAR(comp.instance->getPropertyFloat("tick_delta").value_or(0.f), 0.02f, 1e-5f);
+	EXPECT_NEAR(comp.instance->getPropertyFloat("alpha").value_or(-1.f), 0.5f, 1e-3f);
+	EXPECT_EQ(scn->getSimulationClock().getTotalTickCount(), 5u);
+	scn->onEndRuntime();
+
+	std::filesystem::remove_all(dir);
+	core::Log::invalidate();
+}

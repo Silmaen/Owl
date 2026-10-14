@@ -125,7 +125,7 @@ private:
 
 	/**
 	 * @brief
-	 *  Render the physics section (tick rate, step bound, sub-steps, interpolation); pushes an
+	 *  Render the physics section (sub-steps, solver threads, interpolation); pushes an
 	 *  undoable `ModifyPhysicsSettingsCommand` on change.
 	 */
 	void renderPhysicsSection() const;

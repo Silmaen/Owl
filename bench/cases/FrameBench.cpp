@@ -65,11 +65,27 @@ void runRuntimeFrames(Runner& ioRunner) {
 	}
 }
 
+void runCatchUpFrame(Runner& ioRunner) {
+	constexpr uint32_t count = 1000;
+	const std::string name = std::format("frame/runtime_update/logic_ticks4_flat{}", count);
+	if (!ioRunner.wants(name))
+		return;
+	const auto scn = makeSpriteScene(count, Shape::Flat);
+	scn->onStartRuntime();
+	// Four 60 Hz ticks in one frame: the cost of the fixed-tick block when a frame falls behind.
+	core::Timestep frame;
+	frame.forceUpdate(std::chrono::microseconds(66'667));
+	ioRunner.measure(name, count, [&]() -> void { scn->onUpdateRuntime(frame, false); });
+	ioRunner.metric(name + "_ticks", scn->getSimulationClock().getFrameTickCount(), "ticks (last frame)");
+	scn->onEndRuntime();
+}
+
 }// namespace
 
 void runFrameBenches(Runner& ioRunner) {
 	runEditorFrames(ioRunner);
 	runRuntimeFrames(ioRunner);
+	runCatchUpFrame(ioRunner);
 }
 
 }// namespace owl::bench

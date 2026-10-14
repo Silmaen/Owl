@@ -60,6 +60,13 @@ public:
 	 */
 	void onUpdate([[maybe_unused]] const core::Timestep& iTimeStep) {}
 
+	/**
+	 * @brief
+	 *  Function called on every fixed simulation tick.
+	 * @param[in] iTimeStep Duration of the tick.
+	 */
+	void onTick([[maybe_unused]] const core::Timestep& iTimeStep) {}
+
 	ScriptableEntity(const ScriptableEntity&) = delete;
 
 	ScriptableEntity(ScriptableEntity&&) = delete;

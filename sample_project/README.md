@@ -100,7 +100,7 @@ it directly.
 | `lava_damage.lua`            | `Trigger.Type=LuaCallback`, continuous health drain via `time.delta()` (used by the world-map water trigger boxes)                                                                |
 | `spike_damage.lua`           | `Trigger.Type=LuaCallback`, instantaneous HP step on each entry (platformer spikes)                                                                                                |
 | `coin.lua`                   | `Trigger.Type=LuaCallback`, score increment, sprite spin, sound + entity destroy                                                                                                  |
-| `moving_platform_h.lua`      | Kinematic body driven by `physics.set_velocity` along X — pushes the player horizontally                                                                                          |
+| `moving_platform_h.lua`      | Kinematic body driven by `physics.set_velocity` along X from `on_tick` (fixed simulation tick) — pushes the player                                                                |
 | `moving_platform_v.lua`      | Same idea on Y — pushes the player vertically                                                                                                                                      |
 | `hud.lua`                    | Passive HUD root (HealthBar + ScoreText drawn under it, kept in sync by player scripts)                                                                                            |
 | `settings_menu.lua`          | `settings.get/set/save/load/apply/reset_all`, slider handling, fade transitions                                                                                                   |

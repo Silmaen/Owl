@@ -116,7 +116,7 @@ private:
 
 /**
  * @brief
- *  Undoable edit of a scene's `PhysicsSettings` (tick rate, step bound, sub-steps, interpolation).
+ *  Undoable edit of a scene's `PhysicsSettings` (sub-steps, solver threads, interpolation).
  *
  * Holds the settings before and after the edit; successive edits within the `UndoManager` merge
  * window collapse into one history entry.
