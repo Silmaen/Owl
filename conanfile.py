@@ -157,6 +157,8 @@ class OwlEngineConan(ConanFile):
         if self.options.nest:
             self.requires("imgui-color-text-edit/1.92.9")
             self.requires("md4c/0.5.2")
+            # MCP dispatcher (JSON-RPC); tinygltf pulls the same version.
+            self.requires("nlohmann_json/3.12.0")
         # Transitive versions newer than the ones their ConanCenter recipes pin.
         self.requires("brotli/1.2.0", override=True)
         self.requires("flac/1.5.0", override=True)
