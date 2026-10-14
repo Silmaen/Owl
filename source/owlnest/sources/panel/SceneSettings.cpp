@@ -19,6 +19,7 @@
 #include <gui/widgets/SectionHeader.h>
 #include <gui/widgets/Toggle.h>
 #include <gui/widgets/Tooltip.h>
+#include <renderer/RendererIsometric.h>
 
 #include <imgui.h>
 
@@ -68,13 +69,44 @@ void writeColor(YAML::Node& ioNode, const char* iKey, const math::vec4& iValue) 
 	ioNode[iKey] = seq;
 }
 
+auto renderIsometricOverrides(YAML::Node& ioOverrides) -> bool {
+	bool changed = false;
+	const renderer::IsometricConfig defaults;
+	for (const auto& [key, label, fallback, tooltip]:
+		 {std::tuple{"TileWidth", "Tile Width", static_cast<int>(defaults.tileSize.x()),
+					 "Width of a flat tile, in pixels."},
+		  std::tuple{"TileHeight", "Tile Height", static_cast<int>(defaults.tileSize.y()),
+					 "Height of a flat tile, in pixels: half the width gives the 2:1 view (30° pitch)."}}) {
+		int value = ioOverrides[key] ? ioOverrides[key].as<int>(fallback) : fallback;
+		if (gui::widgets::propertyInt(label, value, fallback, 2, 4096, "%d px", tooltip)) {
+			ioOverrides[key] = std::clamp(value, 2, 4096);
+			changed = true;
+		}
+	}
+	float zStep = ioOverrides["ZStep"] ? ioOverrides["ZStep"].as<float>(defaults.zStep) : defaults.zStep;
+	if (gui::widgets::propertyFloat("Height Step", zStep, defaults.zStep, 0.5f, "%.1f px",
+									"Screen pixels of one world height unit.")) {
+		ioOverrides["ZStep"] = std::clamp(zStep, 0.f, 4096.f);
+		changed = true;
+	}
+	int zoom = ioOverrides["Zoom"] ? ioOverrides["Zoom"].as<int>(0) : 0;
+	if (gui::widgets::propertyInt("Zoom", zoom, 0, renderer::IsometricCamera::minZoomLevel,
+								  renderer::IsometricCamera::maxZoomLevel, "2^%d",
+								  "Zoom level in Play: each step doubles or halves the sprite pixels.")) {
+		ioOverrides["Zoom"] =
+				std::clamp(zoom, renderer::IsometricCamera::minZoomLevel, renderer::IsometricCamera::maxZoomLevel);
+		changed = true;
+	}
+	return changed;
+}
+
 }// namespace
 
 auto SceneSettings::renderLayerOverridesEditor(const std::string& iTypeKey, YAML::Node& ioOverrides) -> bool {
 	bool changed = false;
 	if (!ioOverrides || !ioOverrides.IsMap())
 		ioOverrides = YAML::Node{YAML::NodeType::Map};
-	if (iTypeKey != "Renderer2D" && iTypeKey != "RendererRaycast") {
+	if (iTypeKey != "Renderer2D" && iTypeKey != "RendererRaycast" && iTypeKey != "RendererIsometric") {
 		ImGui::TextDisabled("No editable override for the type '%s'.", iTypeKey.c_str());
 		return false;
 	}
@@ -97,6 +129,8 @@ auto SceneSettings::renderLayerOverridesEditor(const std::string& iTypeKey, YAML
 			ImGui::EndCombo();
 		}
 		std::ignore = gui::widgets::propertyReset(false);
+	} else if (iTypeKey == "RendererIsometric") {
+		changed = renderIsometricOverrides(ioOverrides);
 	} else {
 		float fov = ioOverrides["Fov"] ? ioOverrides["Fov"].as<float>(75.f) : 75.f;
 		if (gui::widgets::propertyFloat("Field of View", fov, 75.f, 0.5f, "%.1f deg")) {
