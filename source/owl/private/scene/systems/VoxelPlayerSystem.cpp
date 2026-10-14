@@ -14,6 +14,7 @@
 #include "data/voxel/VoxelCollision.h"
 #include "data/voxel/VoxelRaycast.h"
 #include "input/Input.h"
+#include "input/InputFrame.h"
 #include "input/MouseCode.h"
 #include "scene/Entity.h"
 #include "scene/Scene.h"
@@ -54,11 +55,11 @@ void applyPlayerLook(component::VoxelPlayer& ioPlayer, math::Transform& ioTransf
 	ioTransform.rotation() = math::vec3{ioPlayer.pitch, ioPlayer.yaw, 0.f};
 }
 
-auto updatePlayerModes(component::VoxelPlayer& ioPlayer, const float iDt) -> std::string {
+auto updatePlayerModes(component::VoxelPlayer& ioPlayer, const input::InputFrame& iInput, const float iDt)
+		-> std::string {
 	std::string toast;
 	ioPlayer.doubleTapTimer = std::max(0.f, ioPlayer.doubleTapTimer - iDt);
-	const bool space = input::Input::isKeyPressed(input::key::Space);
-	if (const bool spaceEdge = space && !ioPlayer.spaceWasPressed; spaceEdge) {
+	if (iInput.isKeyJustPressed(input::key::Space)) {
 		if (ioPlayer.doubleTapTimer > 0.f) {
 			ioPlayer.flyMode = !ioPlayer.flyMode;
 			ioPlayer.velocityY = 0.f;
@@ -70,13 +71,10 @@ auto updatePlayerModes(component::VoxelPlayer& ioPlayer, const float iDt) -> std
 			ioPlayer.doubleTapTimer = 0.3f;
 		}
 	}
-	ioPlayer.spaceWasPressed = space;
-	const bool superKey = input::Input::isKeyPressed(input::key::J);
-	if (const bool superEdge = superKey && !ioPlayer.superSpeedWasPressed; superEdge && ioPlayer.flyMode) {
+	if (iInput.isKeyJustPressed(input::key::J) && ioPlayer.flyMode) {
 		ioPlayer.superSpeed = !ioPlayer.superSpeed;
 		toast = ioPlayer.superSpeed ? "Super speed ON" : "Super speed OFF";
 	}
-	ioPlayer.superSpeedWasPressed = superKey;
 	return toast;
 }
 
@@ -162,17 +160,9 @@ void updatePlayerInteraction(Scene& ioScene, component::VoxelPlayer& ioPlayer, c
 		ioScene.setEditorVoxelHighlight(true, hit->block, hit->normal);
 	}
 
-	const bool leftHeld = input::Input::isMouseButtonPressed(input::mouse::ButtonLeft);
-	const bool rightHeld = input::Input::isMouseButtonPressed(input::mouse::ButtonRight);
-	bool breakEdge = false;
-	bool placeEdge = false;
-	if (iCursorCaptured) {
-		breakEdge = leftHeld && !ioPlayer.breakWasPressed;
-		placeEdge = rightHeld && !ioPlayer.placeWasPressed;
-	}
-	// Track the raw button state (even uncaptured) so the click that captures the cursor is never read as an edit edge.
-	ioPlayer.breakWasPressed = leftHeld;
-	ioPlayer.placeWasPressed = rightHeld;
+	const auto& inputFrame = ioScene.getInputFrame();
+	const bool breakEdge = iCursorCaptured && inputFrame.isMouseButtonJustPressed(input::mouse::ButtonLeft);
+	const bool placeEdge = iCursorCaptured && inputFrame.isMouseButtonJustPressed(input::mouse::ButtonRight);
 	if (!hit || !(breakEdge || placeEdge))
 		return;
 
@@ -240,7 +230,7 @@ void updateVoxelPlayers(Scene& ioScene, const SystemContext& iContext) {
 			player.initialized = true;
 		}
 		applyPlayerLook(player, tr, dt, cursorCaptured);
-		if (const auto toast = updatePlayerModes(player, dt); !toast.empty())
+		if (const auto toast = updatePlayerModes(player, ioScene.getInputFrame(), dt); !toast.empty())
 			ioScene.showToast(toast);
 		updatePlayerInteraction(ioScene, player, tr.translation(), cursorCaptured);
 

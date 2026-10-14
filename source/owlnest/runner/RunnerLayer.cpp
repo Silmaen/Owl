@@ -404,7 +404,6 @@ auto RunnerLayer::attachSourceScene(const std::filesystem::path& iProject, const
 	}
 	app::Application::get().getEngineContext().getSettings().setGameName(m_config.gameName);
 	app::Application::get().getEngineContext().setSimulationSettings(m_config.simulation);
-	input::Input::init(window::Type::Null);
 	m_viewportSize = app.getWindow().getSize();
 	m_activeScene = mkShared<scene::Scene>();
 	if (const scene::SceneSerializer sc(m_activeScene); !sc.deserialize(iScene)) {

@@ -10,7 +10,6 @@
 
 #include "EngineSystems.h"
 
-#include "input/Input.h"
 #include "physics/PhysicCommand.h"
 #include "scene/Entity.h"
 #include "scene/Scene.h"
@@ -24,6 +23,7 @@ namespace owl::scene::systems {
 void updateRaycastDynamicWalls(Scene& ioScene, const float iTimeStep) {
 	OWL_PROFILE_FUNCTION()
 
+	const auto& inputFrame = ioScene.getInputFrame();
 	// Find primary player position once (used for built-in proximity activation).
 	math::vec2 playerWorldXY{0.f, 0.f};
 	bool hasPlayer = false;
@@ -44,13 +44,9 @@ void updateRaycastDynamicWalls(Scene& ioScene, const float iTimeStep) {
 			const float dx = playerWorldXY.x() - transform.translation().x();
 			const float dy = playerWorldXY.y() - transform.translation().y();
 			const float distSq = dx * dx + dy * dy;
-			const bool keyHeld = input::Input::isKeyPressed(door.interactionKey);
-			const bool keyEdge = keyHeld && !door.keyHeldLastTick;
-			if (keyEdge && distSq <= door.interactionRange * door.interactionRange)
+			if (inputFrame.isKeyJustPressed(door.interactionKey) &&
+				distSq <= door.interactionRange * door.interactionRange)
 				door.state = component::RaycastDoor::State::Opening;
-			door.keyHeldLastTick = keyHeld;
-		} else if (door.interactionKey != 0) {
-			door.keyHeldLastTick = input::Input::isKeyPressed(door.interactionKey);
 		}
 
 		const float prevOffset = door.currentOffset;
@@ -115,13 +111,9 @@ void updateRaycastDynamicWalls(Scene& ioScene, const float iTimeStep) {
 			const float dx = playerWorldXY.x() - transform.translation().x();
 			const float dy = playerWorldXY.y() - transform.translation().y();
 			const float distSq = dx * dx + dy * dy;
-			const bool keyHeld = input::Input::isKeyPressed(push.interactionKey);
-			if (const bool keyEdge = keyHeld && !push.keyHeldLastTick;
-				keyEdge && distSq <= push.interactionRange * push.interactionRange)
+			if (inputFrame.isKeyJustPressed(push.interactionKey) &&
+				distSq <= push.interactionRange * push.interactionRange)
 				push.state = component::RaycastPushWall::State::Moving;
-			push.keyHeldLastTick = keyHeld;
-		} else if (push.interactionKey != 0) {
-			push.keyHeldLastTick = input::Input::isKeyPressed(push.interactionKey);
 		}
 
 		const float prevOffset = push.currentOffset;

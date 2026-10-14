@@ -14,6 +14,7 @@
 #include "core/external/yaml.h"
 #include "core/utils/StringUtils.h"
 #include "data/assets/pack/PackExtractor.h"
+#include "event/MouseEvent.h"
 #include "input/Input.h"
 #include "renderer/Renderer.h"
 #include "sound/SoundSystem.h"
@@ -157,7 +158,7 @@ Application::Application(AppParams iAppParams)// NOLINT(readability-function-cog
 				.installDesktopEntry = m_initParams.installDesktopEntry,
 		});
 
-		input::Input::init();
+		input::Input::init(mp_appWindow->getType());
 		if (!m_initParams.vSync)
 			mp_appWindow->setVSync(false);
 
@@ -408,6 +409,7 @@ void Application::run() {
 		auto tGui = tStart;
 		auto tEnd = tStart;
 		m_stepper.update();
+		input::Input::beginFrame();
 
 		// Graphics part.
 		if (!m_minimized) {
@@ -493,6 +495,10 @@ void Application::onEvent(event::Event& ioEvent) {
 			[this]<typename T0>(T0&& ioPh1) -> bool { return onWindowClosed(std::forward<T0>(ioPh1)); });
 	dispatcher.dispatch<event::WindowResizeEvent>(
 			[this]<typename T0>(T0&& ioPh1) -> bool { return onWindowResized(std::forward<T0>(ioPh1)); });
+	dispatcher.dispatch<event::MouseScrolledEvent>([](const event::MouseScrolledEvent& iEvent) -> bool {
+		input::Input::addWheel({iEvent.getXOff(), iEvent.getYOff()});
+		return false;
+	});
 
 #if !defined(__clang__) or __clang_major__ > 15
 	for (const auto& it: std::ranges::reverse_view(m_layerStack)) {

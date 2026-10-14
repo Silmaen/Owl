@@ -70,7 +70,7 @@ function on_update(dt)
     physics.set_velocity(entity_id, mvx, mvy)
 
     -- ESC returns to the world map and stashes our pose so we land back here.
-    if input.is_key_pressed(256) then
+    if input.is_key_just_pressed(256) then
         local px, py, _ = transform.get_position(entity_id)
         gamestate.set("raycast_return_x", px)
         gamestate.set("raycast_return_y", py)

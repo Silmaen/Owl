@@ -11,6 +11,7 @@
 #include "GameState.h"
 #include "core/Timestep.h"
 #include "core/UUID.h"
+#include "input/InputFrame.h"
 #include "math/Transform.h"
 #include "renderer/Camera.h"
 #include "renderer/RenderStack.h"
@@ -679,6 +680,20 @@ public:
 
 	/**
 	 * @brief
+	 *  Input of the running step: the tick frame inside a simulation tick, the frame one otherwise.
+	 *
+	 * `onUpdateRuntime()` samples `input::Input::readState()` once per frame into the frame input, and builds one
+	 * tick input per simulation tick (`input::InputSampler`): the `tick` functions and `on_tick` see each edge once
+	 * whatever the number of ticks in a frame, the `update` functions and `on_update` see it once per frame.
+	 * `onStartRuntime()` starts both from the held state, without edge.
+	 * @return The input frame.
+	 */
+	[[nodiscard]] auto getInputFrame() const -> const input::InputFrame& {
+		return m_inTick ? m_tickInput : m_frameInput;
+	}
+
+	/**
+	 * @brief
 	 *  Physical world of this scene, created by `physics::PhysicCommand::init()`.
 	 * @return The world, or nullptr while the scene is not simulated.
 	 */
@@ -741,6 +756,14 @@ private:
 	SimulationClock m_simulationClock;
 	/// Context given to the systems' `tick` functions, reused from frame to frame.
 	SystemContext m_tickContext;
+	/// Input sampled once per runtime frame (read outside the ticks).
+	input::InputFrame m_frameInput;
+	/// Input built once per simulation tick (read inside the ticks).
+	input::InputFrame m_tickInput;
+	/// Latch turning the frame samples into tick samples.
+	input::InputSampler m_inputSampler;
+	/// Whether the simulation ticks are running (selects the tick input).
+	bool m_inTick = false;
 	/// Box2D world of the scene while it is simulated (owned here, managed by `physics::PhysicCommand`).
 	shared<physics::PhysicsWorld> m_physicsWorld;
 	/// Runtime UI mouse state (hover, previous press).

@@ -137,6 +137,19 @@ function on_tick(dt)
 end
 ```
 
+`input.is_key_just_pressed(key)` / `is_key_just_released(key)`, their mouse equivalents and `get_mouse_wheel()`
+read the scene's input frame: in `on_tick` the edge since the previous tick, in `on_update` the edge since the
+previous frame. Each press is seen once at either rate, even when a frame runs several ticks or none, and a key held
+when the scene starts gives no edge; no `was_down` latch is needed:
+
+```lua
+function on_update(dt)
+    if input.is_key_just_pressed(256) then   -- Escape, once per press
+        scene.transition_to("scenes/main_menu.owl", "fade_out", 0.3)
+    end
+end
+```
+
 ### Collision Callback
 
 `on_collision(other_id)` is fed by Box2D contact events. It needs a Box2D body on both sides: a `PhysicBody`

@@ -48,7 +48,6 @@ void RaycastPushWall::deserialize(const core::Serializer& iNode) {
 		interactionRange = node["interactionRange"].as<float>();
 	state = State::Idle;
 	currentOffset = 0.0f;
-	keyHeldLastTick = false;
 	tileset.reset();
 }
 

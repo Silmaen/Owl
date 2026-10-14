@@ -35,12 +35,17 @@ Box2D body of an entity.
 
 Keyboard and mouse state.
 
-| Function                                         | Returns            | Description                                                        |
-|--------------------------------------------------|--------------------|--------------------------------------------------------------------|
-| `input.is_key_pressed(keycode: integer)`         | `pressed: boolean` | Whether a key is held (GLFW key code: 65 = A, 87 = W, 32 = Space). |
-| `input.is_mouse_button_pressed(button: integer)` | `pressed: boolean` | Whether a mouse button is held (0 = left, 1 = right, 2 = middle).  |
-| `input.get_mouse_x()`                            | `x: number`        | Mouse X position in the window, in pixels.                         |
-| `input.get_mouse_y()`                            | `y: number`        | Mouse Y position in the window, in pixels.                         |
+| Function                                               | Returns                    | Description                                                                               |
+|--------------------------------------------------------|----------------------------|-------------------------------------------------------------------------------------------|
+| `input.is_key_pressed(keycode: integer)`               | `pressed: boolean`         | Whether a key is held (GLFW key code: 65 = A, 87 = W, 32 = Space).                        |
+| `input.is_mouse_button_pressed(button: integer)`       | `pressed: boolean`         | Whether a mouse button is held (0 = left, 1 = right, 2 = middle).                         |
+| `input.get_mouse_x()`                                  | `x: number`                | Mouse X position in the window, in pixels.                                                |
+| `input.get_mouse_y()`                                  | `y: number`                | Mouse Y position in the window, in pixels.                                                |
+| `input.is_key_just_pressed(keycode: integer)`          | `pressed: boolean`         | Whether a key went down since the previous tick (in `on_tick`) or frame (in `on_update`). |
+| `input.is_key_just_released(keycode: integer)`         | `released: boolean`        | Whether a key went up since the previous tick (in `on_tick`) or frame (in `on_update`).   |
+| `input.is_mouse_button_just_pressed(button: integer)`  | `pressed: boolean`         | Whether a mouse button went down since the previous tick or frame.                        |
+| `input.is_mouse_button_just_released(button: integer)` | `released: boolean`        | Whether a mouse button went up since the previous tick or frame.                          |
+| `input.get_mouse_wheel()`                              | `dx: number`, `dy: number` | Wheel offset scrolled since the previous tick or frame (horizontal, vertical).            |
 
 ## `sound`
 

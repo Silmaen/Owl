@@ -9,11 +9,13 @@
 #include "testHelper.h"
 
 #include <core/Log.h>
+#include <input/Input.h>
 #include <scene/Entity.h>
 #include <scene/Scene.h>
 #include <scene/SceneSerializer.h>
 #include <scene/component/LuaScript.h>
 #include <script/ScriptEngine.h>
+#include <window/Window.h>
 
 #include <chrono>
 #include <cstdint>
@@ -285,6 +287,60 @@ TEST(LuaScriptComponent, onTickRunsAtTheFixedRate) {
 	EXPECT_EQ(scn->getSimulationClock().getTotalTickCount(), 5u);
 	scn->onEndRuntime();
 
+	std::filesystem::remove_all(dir);
+	core::Log::invalidate();
+}
+
+TEST(LuaScriptComponent, inputEdgesFollowTheTicksAndTheFrames) {
+	core::Log::init(core::Log::Level::Off);
+	input::Input::init(window::Type::Null);
+	const auto dir = std::filesystem::temp_directory_path() / "owl_luascriptcomponent_test_edges";
+	std::filesystem::remove_all(dir);
+	const auto path = writeTempScript(dir, "edges.lua",
+									  "tick_presses = 0\n"
+									  "tick_releases = 0\n"
+									  "frame_presses = 0\n"
+									  "clicks = 0\n"
+									  "wheel = 0\n"
+									  "function on_update(dt)\n"
+									  "  if input.is_key_just_pressed(32) then frame_presses = frame_presses + 1 end\n"
+									  "end\n"
+									  "function on_tick(dt)\n"
+									  "  if input.is_key_just_pressed(32) then tick_presses = tick_presses + 1 end\n"
+									  "  if input.is_key_just_released(32) then tick_releases = tick_releases + 1 end\n"
+									  "  if input.is_mouse_button_just_pressed(0) then clicks = clicks + 1 end\n"
+									  "  if input.is_mouse_button_just_released(0) then clicks = clicks + 10 end\n"
+									  "  local _, dy = input.get_mouse_wheel()\n"
+									  "  wheel = wheel + dy\n"
+									  "end\n");
+	auto scn = mkShared<Scene>();
+	auto entity = scn->createEntity("EdgeEntity");
+	entity.addComponent<component::LuaScript>().scriptPath = path.string();
+	scn->getSimulationClock().setSettings({.tickRate = 50.f});
+	scn->onStartRuntime();
+	const auto& comp = entity.getComponent<component::LuaScript>();
+	ASSERT_TRUE(comp.instance && comp.instance->isValid());
+
+	core::Timestep ts;
+	input::Input::injectKey(input::key::Space);
+	input::Input::injectMouseButton(input::mouse::ButtonLeft);
+	input::Input::addWheel({0.f, 1.f});
+	input::Input::beginFrame();
+	ts.forceUpdate(std::chrono::milliseconds(70));// three ticks in one frame
+	scn->onUpdateRuntime(ts, false);
+	input::Input::beginFrame();
+	input::Input::injectKey(input::key::Space);
+	input::Input::injectMouseButton(input::mouse::ButtonLeft);
+	ts.forceUpdate(std::chrono::milliseconds(20));
+	scn->onUpdateRuntime(ts, false);
+	EXPECT_EQ(comp.instance->getPropertyInt("tick_presses").value_or(0), 1);
+	EXPECT_EQ(comp.instance->getPropertyInt("tick_releases").value_or(0), 1);
+	EXPECT_EQ(comp.instance->getPropertyInt("frame_presses").value_or(0), 1);
+	EXPECT_EQ(comp.instance->getPropertyInt("clicks").value_or(0), 11);
+	EXPECT_NEAR(comp.instance->getPropertyFloat("wheel").value_or(0.f), 1.f, 1e-5f);
+	scn->onEndRuntime();
+
+	input::Input::invalidate();
 	std::filesystem::remove_all(dir);
 	core::Log::invalidate();
 }

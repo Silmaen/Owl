@@ -123,8 +123,6 @@ struct OWL_API RaycastDoor {
 	float currentOffset = 0.0f;
 	/// Hold timer (seconds remaining in the Open state).
 	float holdTimer = 0.0f;
-	/// Edge-detection latch: `interactionKey` was held last tick.
-	bool keyHeldLastTick = false;
 	/**
 	 * @brief
 	 *  Internal index into `PhysicCommand`'s body table for the kinematic plate body.

@@ -62,31 +62,10 @@ public:
 
 	/**
 	 * @brief
-	 *  Simulate key toggle, private implementation.
-	 * @param[in] iKeycode the key to press/release.
+	 *  Fill the keys, buttons and cursor held by the devices of the application window.
+	 * @param[out] oState The state to fill.
 	 */
-	void injectKey_impl([[maybe_unused]] KeyCode iKeycode) override {}
-
-	/**
-	 * @brief
-	 *  Simulate mouse key toggle, private implementation.
-	 * @param[in] iMouseCode the key to press/release.
-	 */
-	void injectMouseButton_impl([[maybe_unused]] MouseCode iMouseCode) override {}
-
-	/**
-	 * @brief
-	 *  Simulate mouse movement, private implementation.
-	 * @param[in] iMousePos The new mouse pos.
-	 */
-	void injectMousePos_impl([[maybe_unused]] const math::vec2& iMousePos) override {}
-
-	/**
-	 * @brief
-	 *  Clear the previously defined injections.
-	 */
-	void resetInjection_impl() override {}
+	void readDevices_impl(InputState& oState) override;
 };
-
 
 }// namespace owl::input::glfw

@@ -73,14 +73,6 @@ struct OWL_API VoxelPlayer {
 	bool mouseValid = false;
 	/// Countdown for the Space double-tap window in seconds (runtime).
 	float doubleTapTimer = 0.f;
-	/// Edge-detection latch for the Space key (runtime).
-	bool spaceWasPressed = false;
-	/// Edge-detection latch for the 'J' key (runtime).
-	bool superSpeedWasPressed = false;
-	/// Edge-detection latch for the break (left mouse) button (runtime).
-	bool breakWasPressed = false;
-	/// Edge-detection latch for the place (right mouse) button (runtime).
-	bool placeWasPressed = false;
 	/// True while the targeting ray hits a block this frame (runtime; drives the highlight).
 	bool hasTarget = false;
 	/// World-grid coordinates of the currently targeted block (runtime; valid when `hasTarget`).

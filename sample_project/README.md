@@ -123,7 +123,7 @@ it directly.
 ### Lua API Coverage
 - [x] `transform` (get/set position, rotation, scale)
 - [x] `physics` (impulse, get_velocity, set_velocity, set_transform, set_gravity_scale)
-- [x] `input` (is_key_pressed, is_mouse_button_pressed, get_mouse_x, get_mouse_y)
+- [x] `input` (is_key_pressed, is_key_just_pressed, is_mouse_button_pressed, get_mouse_x, get_mouse_y)
 - [x] `scene` (find_entity, destroy_entity, create_entity, load_scene)
 - [x] `entity` (has_component, get_name)
 - [x] `ui` (set_text, get_text, set_visible, set_progress, set_slider_value, get_slider_value, set_button_enabled, transition_fade_in/out, is_transition_active)

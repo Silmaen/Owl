@@ -16,6 +16,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   command runnable from the command palette through an argument form.
 - Fixed simulation tick: a project `simulation.tickRate` (60 Hz by default, `maxTicksPerFrame` bound) drives
   `SimulationClock`, the systems' `tick` functions, Lua `on_tick(dt)` and `time.tick_alpha()`, and the physics steps.
+- Input frames: a plain-data `InputFrame` sampled per tick and per frame (`Scene::getInputFrame`) gives
+  `isKeyJustPressed` / `isKeyJustReleased`, mouse edges and the wheel in C++ and Lua (`input.is_key_just_pressed`, …),
+  injection moves into the input layer so it works on GLFW too, and the hand-written edge latches are gone.
 
 ### Changed
 

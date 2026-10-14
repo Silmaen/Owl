@@ -7,40 +7,16 @@
  */
 #include "owlpch.h"
 
-#include "app/Application.h"
 #include "input/null/Input.h"
 
 namespace owl::input::null {
 
-auto Input::isKeyPressed_impl(const KeyCode iKeyCode) -> bool { return keyPressed.contains(iKeyCode); }
+auto Input::isKeyPressed_impl([[maybe_unused]] const KeyCode iKeyCode) -> bool { return false; }
 
-auto Input::isMouseButtonPressed_impl(const MouseCode iMouseCode) -> bool {
-	return mouseBtnPressed.contains(iMouseCode);
-}
+auto Input::isMouseButtonPressed_impl([[maybe_unused]] const MouseCode iMouseCode) -> bool { return false; }
 
-auto Input::getMousePos_impl() -> math::vec2 { return mousePos; }
+auto Input::getMousePos_impl() -> math::vec2 { return {0.f, 0.f}; }
 
-void Input::injectKey_impl(const KeyCode iKeyCode) {
-	if (keyPressed.contains(iKeyCode)) {
-		keyPressed.erase(iKeyCode);
-	} else {
-		keyPressed.insert(iKeyCode);
-	}
-}
-
-void Input::injectMouseButton_impl(const MouseCode iMouseCode) {
-	if (mouseBtnPressed.contains(iMouseCode)) {
-		mouseBtnPressed.erase(iMouseCode);
-	} else {
-		mouseBtnPressed.insert(iMouseCode);
-	}
-}
-
-void Input::injectMousePos_impl(const math::vec2& iMousePos) { mousePos = iMousePos; }
-
-void Input::resetInjection_impl() {
-	keyPressed.clear();
-	mouseBtnPressed.clear();
-}
+void Input::readDevices_impl([[maybe_unused]] InputState& oState) {}
 
 }// namespace owl::input::null
