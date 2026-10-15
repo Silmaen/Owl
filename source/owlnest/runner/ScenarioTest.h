@@ -10,6 +10,7 @@
 
 #include "UndoManager.h"
 #include "commands/CommandRegistry.h"
+#include "session/HeldInput.h"
 
 #include <core/expected.h>
 #include <input/Gamepad.h>
@@ -52,27 +53,11 @@ struct ScenarioCheck {
 	double tolerance{1e-4};
 };
 
-/**
- * @brief
- *  Gamepad state injected by an `input` step (`gamepad:`).
- */
-struct ScenarioGamepad {
-	/// Gamepad slot (`pad:`, 0 by default).
-	std::size_t pad{0};
-	/// Injected state: connected, buttons held, axis values.
-	input::GamepadState state;
-};
+/// Gamepad state injected by an `input` step (`gamepad:`).
+using ScenarioGamepad = session::HeldGamepad;
 
-/**
- * @brief
- *  One action held by an `actions` step.
- */
-struct ScenarioActionHold {
-	/// Action name.
-	std::string name;
-	/// Held value: `x` for a button (non-zero = held) or an axis, both for a vector.
-	math::vec2 value{0.f, 0.f};
-};
+/// One action held by an `actions` step.
+using ScenarioActionHold = session::ActionHold;
 
 /**
  * @brief

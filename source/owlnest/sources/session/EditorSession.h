@@ -12,6 +12,7 @@
 #include "../commands/CommandJournal.h"
 #include "../commands/CommandRegistry.h"
 #include "../commands/Macro.h"
+#include "HeldInput.h"
 
 #include <core/Timestep.h>
 #include <core/expected.h>
@@ -65,8 +66,12 @@ struct PlayRequest {
 	uint32_t ticks{0};
 	/// Duration of every frame in milliseconds; 0 plays one simulation tick per frame.
 	double timestepMs{0.0};
-	/// Keys held during the whole play (through the input injection, effective on the Null input).
+	/// Keys held during the whole play (through the input injection).
 	std::vector<uint16_t> keys{};// NOLINT(readability-redundant-member-init) callers may omit it
+	/// Mouse buttons held during the whole play.
+	std::vector<uint8_t> mouseButtons{};// NOLINT(readability-redundant-member-init) callers may omit it
+	/// Gamepad held during the whole play (the slot then reads as connected).
+	std::optional<HeldGamepad> gamepad{};// NOLINT(readability-redundant-member-init) callers may omit it
 	/// True to stop the scene at the end (back to the edited scene); false leaves it paused on the last frame.
 	bool stopAtEnd{true};
 	/// True to capture the last frame into the report.
@@ -225,7 +230,7 @@ public:
 
 	/**
 	 * @brief
-	 *  Set the inputs of the next frame (the held keys).
+	 *  Set the inputs of the next frame (the held keys, buttons and gamepad).
 	 */
 	void beginFrame() const;
 

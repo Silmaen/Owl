@@ -10,6 +10,7 @@
 #include "FrameBench.h"
 #include "commands/Macro.h"
 #include "session/HeadlessSession.h"
+#include "session/HeldInput.h"
 
 #include <input/ActionMap.h>
 #include <input/Gamepad.h>
@@ -317,131 +318,15 @@ auto opName(const ScenarioCheck::Op iOp) -> std::string_view {
 }
 
 
-auto inverseResponse(const float iShaped, const input::AxisResponse& iResponse) -> float {
-	if (iShaped <= 0.f)
-		return 0.f;
-	const float deadZone = std::clamp(iResponse.deadZone, 0.f, 0.99f);
-	return deadZone + std::pow(std::min(iShaped, 1.f), 1.f / iResponse.getExponent()) * (1.f - deadZone);
-}
-
-auto holdPadState(ScenarioStep& ioStep, const int32_t iPad) -> input::GamepadState* {
-	const auto slot = iPad < 0 ? std::size_t{0} : static_cast<std::size_t>(iPad);
-	if (!ioStep.gamepad) {
-		ioStep.gamepad = ScenarioGamepad{.pad = slot, .state = {}};
-		ioStep.gamepad->state.connected = true;
-	}
-	return ioStep.gamepad->pad == slot ? &ioStep.gamepad->state : nullptr;
-}
-
-auto holdStick(ScenarioStep& ioStep, const input::ActionBinding& iBinding, const math::vec2& iTarget) -> bool {
-	auto* state = holdPadState(ioStep, iBinding.pad);
-	if (state == nullptr)
-		return false;
-	const math::vec2 shaped = iTarget * (1.f / iBinding.scale);
-	const float length = shaped.norm();
-	const math::vec2 raw = length > 0.f ? shaped * (inverseResponse(length, iBinding.response) / length) : shaped;
-	const auto first = iBinding.code == 0 ? input::gamepad::LeftX : input::gamepad::RightX;
-	state->setAxis(first, raw.x());
-	state->setAxis(static_cast<input::GamepadAxis>(first + 1), raw.y());
-	return true;
-}
-
-auto holdScalar(ScenarioStep& ioStep, const input::ActionBinding& iBinding, const float iValue) -> bool {
-	switch (iBinding.source) {
-		case input::BindingSource::Key:
-			ioStep.keys.push_back(iBinding.code);
-			return true;
-		case input::BindingSource::MouseButton:
-			ioStep.mouseButtons.push_back(static_cast<uint8_t>(iBinding.code));
-			return true;
-		case input::BindingSource::GamepadButton:
-			{
-				auto* state = holdPadState(ioStep, iBinding.pad);
-				if (state != nullptr)
-					state->setButton(static_cast<input::GamepadButton>(iBinding.code), true);
-				return state != nullptr;
-			}
-		case input::BindingSource::GamepadAxis:
-			{
-				auto* state = holdPadState(ioStep, iBinding.pad);
-				if (state != nullptr) {
-					const float target = std::clamp(iValue / iBinding.scale, -1.f, 1.f);
-					state->setAxis(static_cast<input::GamepadAxis>(iBinding.code),
-								   std::copysign(inverseResponse(std::abs(target), iBinding.response), target));
-				}
-				return state != nullptr;
-			}
-		case input::BindingSource::GamepadStick:
-			return holdStick(ioStep, iBinding, {iValue, 0.f});
-	}
-	return false;
-}
-
-auto feeds(const input::ActionBinding& iBinding, const bool iYComponent, const float iValue) -> bool {
-	if (!(std::abs(iBinding.scale) > 0.f))
-		return false;
-	const bool analog = iBinding.source == input::BindingSource::GamepadAxis ||
-						iBinding.source == input::BindingSource::GamepadStick;
-	if (!analog && (iBinding.scale < 0.f) != (iValue < 0.f))
-		return false;
-	if (iBinding.source == input::BindingSource::GamepadStick)
-		return iBinding.component == input::BindingComponent::Both ||
-			   (iBinding.component == input::BindingComponent::Y) == iYComponent;
-	return (iBinding.component == input::BindingComponent::Y) == iYComponent;
-}
-
-auto holdVector(ScenarioStep& ioStep, const ScenarioActionHold& iHold, const input::ActionDefinition& iAction) -> bool {
-	std::vector<std::pair<const input::ActionBinding*, math::vec2>> sticks;
-	for (const bool yComponent: {false, true}) {
-		const float value = yComponent ? iHold.value.y() : iHold.value.x();
-		if (!(std::abs(value) > 0.f))
-			continue;
-		const auto found = std::ranges::find_if(iAction.bindings, [&](const input::ActionBinding& iBinding) -> bool {
-			return feeds(iBinding, yComponent, value);
-		});
-		if (found == iAction.bindings.end())
-			return false;
-		if (found->source != input::BindingSource::GamepadStick) {
-			if (!holdScalar(ioStep, *found, value))
-				return false;
-			continue;
-		}
-		auto stick =
-				std::ranges::find_if(sticks, [&found](const auto& iEntry) -> bool { return iEntry.first == &*found; });
-		if (stick == sticks.end())
-			stick = sticks.insert(sticks.end(), {&*found, math::vec2{0.f, 0.f}});
-		(yComponent ? stick->second.y() : stick->second.x()) = value;
-	}
-	return std::ranges::all_of(
-			sticks, [&ioStep](const auto& iEntry) -> bool { return holdStick(ioStep, *iEntry.first, iEntry.second); });
-}
-
-auto holdAction(ScenarioStep& ioStep, const ScenarioActionHold& iHold, const input::ActionDefinition& iAction)
-		-> std::string {
-	const auto fail = [&iHold]() -> std::string {
-		return std::format("action `{}` has no binding to hold it at that value (or two gamepads are needed)",
-						   iHold.name);
-	};
-	if (iAction.kind == input::ActionKind::Vector)
-		return holdVector(ioStep, iHold, iAction) ? std::string{} : fail();
-	if (!(std::abs(iHold.value.x()) > 0.f))
-		return {};
-	const float value = iAction.kind == input::ActionKind::Button ? 1.f : iHold.value.x();
-	const auto found = std::ranges::find_if(iAction.bindings, [value](const input::ActionBinding& iBinding) -> bool {
-		return feeds(iBinding, false, value);
-	});
-	return found != iAction.bindings.end() && holdScalar(ioStep, *found, value) ? std::string{} : fail();
-}
-
 auto resolveActions(ScenarioStep& ioStep, const input::ActionMap& iMap) -> std::string {
-	for (const auto& hold: ioStep.actions) {
-		const auto* action = iMap.find(hold.name);
-		if (action == nullptr)
-			return std::format("unknown action `{}`", hold.name);
-		if (auto error = holdAction(ioStep, hold, *action); !error.empty())
-			return error;
-	}
-	return {};
+	session::HeldInput held{.keys = std::move(ioStep.keys),
+							.mouseButtons = std::move(ioStep.mouseButtons),
+							.gamepad = ioStep.gamepad};
+	auto error = session::resolveActionHolds(iMap, ioStep.actions, held);
+	ioStep.keys = std::move(held.keys);
+	ioStep.mouseButtons = std::move(held.mouseButtons);
+	ioStep.gamepad = held.gamepad;
+	return error;
 }
 }// namespace
 
@@ -584,12 +469,9 @@ auto ScenarioTest::beginFrame(const shared<scene::Scene>& iScene) -> bool {
 	if (m_index >= m_steps.size())
 		return true;
 	const auto& step = m_steps[m_index];
-	for (const auto key: step.keys) input::Input::injectKey(key);
-	for (const auto button: step.mouseButtons) input::Input::injectMouseButton(button);
+	session::injectHeldInput({.keys = step.keys, .mouseButtons = step.mouseButtons, .gamepad = step.gamepad});
 	if (step.mousePos)
 		input::Input::injectMousePos(*step.mousePos);
-	if (step.gamepad)
-		input::Input::injectGamepad(step.gamepad->pad, step.gamepad->state);
 	m_framesLeft = step.frames;
 	return false;
 }
