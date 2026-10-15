@@ -27,7 +27,7 @@ pytest = "^9.1.1"
 [tool.ruff]
 line-length = 120
 target-version = "py312"
-include = ["ci/**/*.py", "ci_action.py"]
+include = ["ci/**/*.py", "ci_action.py", "tools/**/*.py"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "UP", "B", "SIM"]
@@ -40,12 +40,12 @@ select = ["E", "F", "W", "I", "UP", "B", "SIM"]
 
 [tool.mypy]
 python_version = "3.12"
-files = ["ci", "ci_action.py"]
+files = ["ci", "ci_action.py", "tools"]
 ignore_missing_imports = true
 check_untyped_defs = true
 
 [tool.pytest.ini_options]
-testpaths = ["ci/tests"]
+testpaths = ["ci/tests", "tools/tests"]
 pythonpath = ["."]
 
 [build-system]
