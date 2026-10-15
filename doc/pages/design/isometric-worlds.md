@@ -139,7 +139,7 @@ a few days, L a week.
 - ![Done][done] **HUD3 — Management-game widgets, M/L.** `UiWindow` (title bar, drag, close, raise on click,
   clamped to the screen), `UiLayout` (row, column, grid), clipping by scissor, `UiTooltip`, tool cursor sprite; any
   window blocks world clicks under it. Each window draws as its own batch until the v0.5.0 sort key.
-- ![Planned][planned] **HUD4 — HUD editor document, L.** `HudDocument` on `.owlhud` and embedded canvases: pixel
+- ![Done][done] **HUD4 — HUD editor document, L.** `HudDocument` on `.owlhud` and embedded canvases: pixel
   viewport with resolution presets and a colour or image backdrop, rect gizmo with anchor handles and snapping, widget
   palette and drag & drop, multi-select; every action a named command, hence undoable and reachable through MCP.
 - ![Planned][planned] **HUD5 — Focus navigation, S/M.** Keyboard and gamepad focus driven by the `ui_*` actions.
