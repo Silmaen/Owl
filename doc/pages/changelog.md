@@ -99,6 +99,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- The inspector reads a script's properties from its file in the asset folders and keeps them when the script does
+  not load, instead of emptying them (scripts then ran with `nil` properties in Play).
 - Text drawing is about 5 times faster again: glyph boxes and advances of the first 256 code points come from a table
   built with the font.
 - Transient quads and circles are back to their v0.3.0 speed: they flush every 4 096 matrices, glyphs keep 20 000 per

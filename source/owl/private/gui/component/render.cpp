@@ -210,7 +210,10 @@ void syncScriptProperties(LuaScript& ioComponent) {
 		return;
 	scan.path = ioComponent.scriptPath;
 	scan.time = time;
-	auto fresh = script::ScriptEngine::extractProperties(ioComponent.scriptPath);
+	auto fresh = script::ScriptEngine::extractProperties(resolved);
+	// An unreadable script (syntax error) yields nothing: keep the values set until it reads again.
+	if (fresh.empty() && !ioComponent.properties.empty())
+		return;
 	for (auto& property: fresh) {
 		const auto old = std::ranges::find_if(ioComponent.properties, [&property](const auto& iOld) -> bool {
 			return iOld.name == property.name && iOld.type == property.type;
