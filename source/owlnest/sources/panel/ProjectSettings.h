@@ -13,6 +13,7 @@
 #include "../Project.h"
 
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace owl::nest::panel {
@@ -61,6 +62,13 @@ public:
 	 */
 	auto consumeResult() -> Project;
 
+	/**
+	 * @brief
+	 *  Consume the request to open the action map editor (the button of the Input section closes the dialog).
+	 * @return True when the editor was asked for since the last call.
+	 */
+	[[nodiscard]] auto consumeActionMapRequest() -> bool { return std::exchange(m_actionMapRequested, false); }
+
 private:
 	/**
 	 * @brief
@@ -92,6 +100,8 @@ private:
 	bool m_pendingOpen = false;
 	/// Whether a result is ready to be consumed.
 	bool m_hasResult = false;
+	/// Whether the action map editor was asked for.
+	bool m_actionMapRequested = false;
 };
 
 }// namespace owl::nest::panel

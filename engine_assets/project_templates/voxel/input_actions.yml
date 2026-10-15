@@ -1,0 +1,83 @@
+FormatVersion: 1
+actions:
+  - name: move
+    type: vector
+    bindings:
+      - {key: W, component: y, scale: -1}
+      - {key: S, component: y}
+      - {key: A, component: x, scale: -1}
+      - {key: D, component: x}
+      - {gamepad_stick: left}
+  - name: look
+    type: vector
+    bindings:
+      - {key: Up, component: y, scale: -1}
+      - {key: Down, component: y}
+      - {key: Left, component: x, scale: -1}
+      - {key: Right, component: x}
+      - {gamepad_stick: right}
+  - name: jump
+    type: button
+    bindings:
+      - {key: Space}
+      - {gamepad_button: A}
+  - name: descend
+    type: button
+    bindings:
+      - {key: LeftShift}
+      - {gamepad_button: LeftBumper}
+  - name: sprint
+    type: button
+    bindings:
+      - {key: LeftShift}
+      - {gamepad_button: LeftThumb}
+  - name: boost
+    type: button
+    bindings:
+      - {key: J}
+      - {gamepad_button: Y}
+  - name: interact
+    type: button
+    bindings:
+      - {key: E}
+      - {gamepad_button: X}
+  - name: primary
+    type: button
+    bindings:
+      - {mouse_button: Left}
+      - {gamepad_axis: right_trigger}
+  - name: secondary
+    type: button
+    bindings:
+      - {mouse_button: Right}
+      - {gamepad_axis: left_trigger}
+  - name: ui_up
+    type: button
+    bindings:
+      - {key: Up}
+      - {gamepad_button: DpadUp}
+  - name: ui_down
+    type: button
+    bindings:
+      - {key: Down}
+      - {gamepad_button: DpadDown}
+  - name: ui_left
+    type: button
+    bindings:
+      - {key: Left}
+      - {gamepad_button: DpadLeft}
+  - name: ui_right
+    type: button
+    bindings:
+      - {key: Right}
+      - {gamepad_button: DpadRight}
+  - name: ui_accept
+    type: button
+    bindings:
+      - {key: Enter}
+      - {gamepad_button: A}
+  - name: ui_cancel
+    type: button
+    bindings:
+      - {key: Escape}
+      - {gamepad_button: B}

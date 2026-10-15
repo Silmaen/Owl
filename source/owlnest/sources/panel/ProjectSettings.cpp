@@ -238,6 +238,14 @@ void ProjectSettings::onImGuiRender() {
 						"mappings, packed with the game.");
 				gui::widgets::endProperties();
 			}
+			if (gui::widgets::button("##editActions",
+									 {.glyph = gui::icon::gamepad2,
+									  .label = "Edit Input Actions",
+									  .tooltip = "Open input_actions.yml: actions and their bindings",
+									  .description = "Closes this dialog without applying its changes."})) {
+				m_actionMapRequested = true;
+				ImGui::CloseCurrentPopup();
+			}
 			gui::widgets::endSection();
 		}
 		if (gui::widgets::sectionHeader("Simulation", gui::icon::timer, false).open) {

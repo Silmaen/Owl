@@ -166,6 +166,15 @@ public:
 
 	/**
 	 * @brief
+	 *  Set a callback invoked when the action map (`input_actions.yml`) is double-clicked.
+	 * @param[in] iCallback Function taking the file path.
+	 */
+	void setActionMapOpenCallback(std::function<void(const std::filesystem::path&)> iCallback) {
+		m_actionMapOpenCallback = std::move(iCallback);
+	}
+
+	/**
+	 * @brief
 	 *  Set a callback invoked when a macro (`.owlmacro`) is double-clicked or run from its context menu.
 	 * @param[in] iCallback Function taking the macro file path.
 	 */
@@ -316,6 +325,8 @@ private:
 	std::function<void(const std::filesystem::path&)> m_tilesetOpenCallback;
 	/// Called when a font (`.ttf`, `.otf`, `.owlfont`) is double-clicked.
 	std::function<void(const std::filesystem::path&)> m_fontOpenCallback;
+	/// Called when the action map (`input_actions.yml`) is double-clicked.
+	std::function<void(const std::filesystem::path&)> m_actionMapOpenCallback;
 	/// Called when a macro (`.owlmacro`) is double-clicked or run from its context menu.
 	std::function<void(const std::filesystem::path&)> m_macroRunCallback;
 };
