@@ -27,6 +27,8 @@ local k_land_threshold = 0.5    -- vy above -this from falling = landed (grounde
 local transitioning = false  -- gate input while the engine is in scene-load orchestration
 local health = 1.0
 local health_bar_id = 0
+local tool_cursor_id = 0
+local tool_active = false
 local camera_id = 0
 local jump_state = "grounded"   -- "grounded" | "rising" | "falling"
 local coyote_timer = 0.0
@@ -53,6 +55,7 @@ function on_create()
 
     health_bar_id = scene.find_entity("HealthBar")
     camera_id = scene.find_entity("MainCamera")
+    tool_cursor_id = ui.find("BuildCursor")
     if health_bar_id ~= 0 then ui.set_progress(health_bar_id, health) end
     ui.transition_fade_in(0.3)
 end
@@ -128,6 +131,12 @@ function on_update(dt)
     if health_bar_id ~= 0 then ui.set_progress(health_bar_id, health) end
 
     follow_camera()
+
+    -- T: the tool cursor (a HUD sprite following the mouse) as a construction tool would show it.
+    if tool_cursor_id ~= 0 and input.is_action_just_pressed("toggle_tool") then
+        tool_active = not tool_active
+        ui.set_tool_cursor(tool_cursor_id, tool_active)
+    end
 
     if health <= 0 then
         log.info("Health depleted in platformer level.")

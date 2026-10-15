@@ -123,6 +123,7 @@ it directly.
 - [x] LuaScript (with properties)
 - [x] SoundListener, BackgroundTexture
 - [x] UiRect, UiText, UiButton, UiSlider, UiProgressBar, UiImage, UiPanel
+- [x] UiWindow, UiLayout, UiTooltip, UiToolCursor (the "Controls" window of `huds/gameplay.owlhud`)
 
 ### Lua API Coverage
 - [x] `transform` (get/set position, rotation, scale)
@@ -173,6 +174,8 @@ it directly.
 - [x] Sound effects (jump, coin pickup, victory, menu start)
 - [x] UiImage (owl logo), UiPanel, UiButton, UiSlider, UiProgressBar, UiText —
       all 8 widget types in use across menu / settings / HUD
+- [x] HUD windows — the platformer HUD holds a draggable, closable "Controls" window (column `UiLayout`, content
+      clipped to the window, tooltip on hover); T (or gamepad X) toggles a `UiToolCursor` sprite following the mouse
 - [x] BackgroundTexture (sky gradient on world map, dark gradient inside the house)
 - [x] Mouse input tracking — mouse coordinates displayed on the main menu
 
