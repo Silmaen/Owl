@@ -1239,6 +1239,7 @@ void EditorLayer::onContextualHelp() {
 			{"SoundListener", "sound"},
 			{"SpriteRenderer", "renderer"},
 			{"AnimatedSpriteRenderer", "renderer"},
+			{"Isometric Object", "renderer"},
 			{"CircleRenderer", "renderer"},
 			{"BackgroundTexture", "renderer"},
 			{"Text", "renderer"},

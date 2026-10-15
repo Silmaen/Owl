@@ -955,6 +955,52 @@ void renderProps(RendererTag& ioComponent) {
 	}
 }
 
+void renderProps(IsometricObject& ioComponent) {
+	const auto& texture = ioComponent.atlas ? ioComponent.atlas->getTexture() : nullptr;
+	if (assetPathRow("Sheet", ioComponent.atlasPath.generic_string(), "drop an object sheet .json",
+					 "Object sheets are written by tools/iso_atlas.", texture)) {
+		ioComponent.atlasPath.clear();
+		ioComponent.atlas.reset();
+		ioComponent.building.clear();
+	}
+	if (std::filesystem::path dropped; widgets::assetDropTarget(widgets::AssetKind::ObjectSheet, dropped)) {
+		ioComponent.atlasPath = dropped;
+		ioComponent.atlas.reset();
+	}
+	prop::ColorEdit4("Color", ioComponent.color.data());
+	fieldTooltip("Tint multiplied with the sprites of the object.");
+	if (ioComponent.atlasPath.empty()) {
+		widgets::notice("No sheet: drop the .json of an object sheet from the Content Browser on the field.");
+		return;
+	}
+	if (!ioComponent.atlas) {
+		ImGui::TextDisabled("(sheet will be loaded on the next scene resolve)");
+		return;
+	}
+	const auto& objects = ioComponent.atlas->getObjects();
+	if (objects.empty()) {
+		widgets::notice("The sheet could not be read: check the path and the file.");
+		return;
+	}
+	if (prop::BeginCombo("Building", ioComponent.building.empty() ? "(none)" : ioComponent.building.c_str())) {
+		for (const auto& object: objects) {
+			const bool isSelected = object.name == ioComponent.building;
+			if (ImGui::Selectable(object.name.c_str(), isSelected))
+				ioComponent.building = object.name;
+			if (isSelected)
+				ImGui::SetItemDefaultFocus();
+		}
+		ImGui::EndCombo();
+	}
+	fieldTooltip("Object of the sheet. The entity position is the back corner of its footprint.");
+	if (const auto* object = ioComponent.getObject(); object != nullptr) {
+		ImGui::Text("Footprint: %u x %u tiles", object->footprint.x(), object->footprint.y());
+		ImGui::Text("Slices: %zu, height %.2f", object->slices.size(), static_cast<double>(object->getHeight()));
+	} else {
+		widgets::notice("No such building in the sheet: pick one in the list.");
+	}
+}
+
 void renderProps(Tilemap& ioComponent) {
 	// --- Tilemap asset slot (path drop target) --------------------------------------------
 	if (assetPathRow("Tilemap", ioComponent.tilemapPath.generic_string(), "drop a .owltilemap",

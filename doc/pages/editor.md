@@ -292,7 +292,9 @@ powers of two around the cursor; **Reset View**, **Frame Selection**, **Frame Sc
 Viewpoint** move the target. A world-axis cursor (X red, Y green, Z blue, one tile long) follows the ground under the
 mouse and the cell of the first isometric tilemap under it is outlined along its slope (`pickTerrain`); the grid lies on the
 ground plane. The gizmo receives the isometric view and projection, so it moves the selection along the world axes of
-the map; picking reads the entity id the billboards write.
+the map; picking reads the entity id the billboards write, so the slices of an `IsometricObject` select their entity.
+The **Isometric Object** component of the inspector takes the sheet (`.json`) from the Content Browser, lists its
+buildings and shows the footprint, slice count and height; every edit is a component command, so it is undoable.
 
 **Camera presets.** The **Camera** menu of the overlay, the **View > Camera** ribbon group and the command palette
 offer:
