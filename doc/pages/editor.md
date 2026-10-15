@@ -521,7 +521,8 @@ component.
 
 - **Preview** — live spritesheet thumbnail at the current frame (an empty state without a texture), with the
   Previous / Play-Pause / Stop / Next icon buttons and the current frame underneath.
-- **Spritesheet** — texture drop target, columns and rows in a property grid.
+- **Spritesheet** — texture drop target, columns and rows in a property grid; **Show Current Frame** outlines the
+  current frame on the thumbnail (frames run row by row from the top left).
 - **Playback** — first frame, last frame, frame duration and loop, each with its reset button and tooltip.
 - **Speed Curve** — the optional speed curve (embedded `curveEditor`).
 - **Timeline** — `gui::widgets::sequencer()` bar in the accent colour; drag the handles to move

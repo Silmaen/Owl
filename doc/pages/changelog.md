@@ -46,6 +46,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   loop and held during a gesture or a modal, a 256-bit bearer token in a `0600` file, `Host` / `Origin` / content
   type / body size / queue checks, file arguments kept inside the project, and its settings tab and status bar
   indicator.
+- The Animation editor outlines the current frame on the spritesheet thumbnail, with a **Show Current Frame** toggle.
 
 ### Changed
 
@@ -88,6 +89,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Windows GCC builds on `main` publish their artifacts again: `BuildArtefact.zip` leaves out Owl Nest's static
   libraries, which pushed it past the 300 MB limit of the server.
 - `FileDialog` no longer reads past the end of a filter, leaks the saved path, or asserts when no dialogue can open.
+- The bundled `coin.owlanim` spins at a steady speed: its speed curve, which made it speed up and slow down, is gone.
+- The Animation editor preview reads the sheet from the top left, like the game, instead of from the bottom row.
 
 ## [0.3.0] - 2026-10-12
 

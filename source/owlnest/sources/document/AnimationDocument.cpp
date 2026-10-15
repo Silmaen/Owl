@@ -195,8 +195,21 @@ void AnimationDocument::stepPrevious() {
 void AnimationDocument::renderProperties() {
 	const scene::AnimationClip defaults;
 	if (gui::widgets::sectionHeader("Spritesheet", gui::icon::image, false).open) {
-		std::ignore = gui::widgets::textureField("##spritesheet", m_clip.texture, ImVec2{96.f, 96.f});
+		static constexpr ImVec2 thumbnailSize{96.f, 96.f};
+		const ImVec2 cursor = ImGui::GetCursorScreenPos();
+		const ImVec2 thumbnail{cursor.x + ImGui::GetStyle().FramePadding.x,
+							   cursor.y + ImGui::GetStyle().FramePadding.y};
+		std::ignore = gui::widgets::textureField("##spritesheet", m_clip.texture, thumbnailSize);
 		gui::widgets::itemTooltip("Spritesheet", nullptr, "Drop a texture from the Content Browser.");
+		if (m_frameOutlined && m_clip.texture) {
+			const auto [topLeft, bottomRight] = currentFrameRect();
+			const auto corner = [&thumbnail](const math::vec2& iPoint) -> ImVec2 {
+				return {thumbnail.x + iPoint.x() * thumbnailSize.x, thumbnail.y + iPoint.y() * thumbnailSize.y};
+			};
+			ImGui::GetWindowDrawList()->AddRect(corner(topLeft), corner(bottomRight),
+												ImGui::GetColorU32(gui::vec(gui::UiLayer::getTheme().accent)), 0.f, 0,
+												2.f);
+		}
 		// The grid of the sheet beside its thumbnail.
 		ImGui::SameLine();
 		ImGui::BeginGroup();
@@ -209,6 +222,8 @@ void AnimationDocument::renderProperties() {
 			if (gui::widgets::propertyInt("Rows", rows, static_cast<int>(defaults.rows), 1, 256, "%d",
 										  "Rows of frames in the sheet."))
 				m_clip.rows = static_cast<uint32_t>(std::max(rows, 1));
+			std::ignore = gui::widgets::propertyBool("Show Current Frame", m_frameOutlined, true,
+													 "Outline the current frame on the spritesheet.");
 			gui::widgets::endProperties();
 		}
 		ImGui::EndGroup();
@@ -366,20 +381,23 @@ void AnimationDocument::advancePlayback(const float iSeconds) {
 	}
 }
 
-auto AnimationDocument::currentFrameUv() const -> std::pair<math::vec2, math::vec2> {
+auto AnimationDocument::currentFrameRect() const -> std::pair<math::vec2, math::vec2> {
 	if (m_clip.columns == 0u || m_clip.rows == 0u)
 		return {{0.f, 0.f}, {1.f, 1.f}};
 	const uint32_t frame = std::clamp(m_currentFrame, 0u, m_clip.columns * m_clip.rows - 1u);
 	const uint32_t colIdx = frame % m_clip.columns;
 	const uint32_t rowIdx = frame / m_clip.columns;
-	const float invCols = 1.f / static_cast<float>(m_clip.columns);
-	const float invRows = 1.f / static_cast<float>(m_clip.rows);
 	const auto col = static_cast<float>(colIdx);
 	const auto row = static_cast<float>(rowIdx);
-	// Row-major from the top, V-flipped to display the same way Renderer2D draws the sub-texture.
-	const math::vec2 uv0{col * invCols, row * invRows};
-	const math::vec2 uv1{(col + 1.f) * invCols, (row + 1.f) * invRows};
-	return {uv0, uv1};
+	const float invCols = 1.f / static_cast<float>(m_clip.columns);
+	const float invRows = 1.f / static_cast<float>(m_clip.rows);
+	return {{col * invCols, row * invRows}, {(col + 1.f) * invCols, (row + 1.f) * invRows}};
+}
+
+auto AnimationDocument::currentFrameUv() const -> std::pair<math::vec2, math::vec2> {
+	// Engine textures are loaded bottom-up: the top row of the sheet sits at V = 1.
+	const auto [topLeft, bottomRight] = currentFrameRect();
+	return {{topLeft.x(), 1.f - topLeft.y()}, {bottomRight.x(), 1.f - bottomRight.y()}};
 }
 
 }// namespace owl::nest
