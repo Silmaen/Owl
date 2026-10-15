@@ -750,6 +750,10 @@ void Scene::renderWithStack(const renderer::Camera& iCamera) {
 	renderToast();
 }
 
+void Scene::renderHud(const math::vec2ui& iViewport, const bool iEditorMode) {
+	ui::HudPass::render(*this, iViewport, iEditorMode);
+}
+
 void Scene::render() {
 	OWL_PROFILE_FUNCTION()
 

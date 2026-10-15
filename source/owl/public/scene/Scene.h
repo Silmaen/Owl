@@ -245,6 +245,17 @@ public:
 
 	/**
 	 * @brief
+	 *  Draw only the HUD (the canvases of the scene, then those of its HUD asset) in pixels, at a given size.
+	 *
+	 * The HUD editor draws a document at a resolution of its own, whatever the viewport size of the scene; the layout
+	 * (`getHudLayout`) is left computed for that size.
+	 * @param[in] iViewport Size in pixels of the surface drawn into.
+	 * @param[in] iEditorMode Use the editor visibility instead of the game one.
+	 */
+	void renderHud(const math::vec2ui& iViewport, bool iEditorMode);
+
+	/**
+	 * @brief
 	 *  Action when viewport resized.
 	 * @param[in] iSize New viewport's size.
 	 */
