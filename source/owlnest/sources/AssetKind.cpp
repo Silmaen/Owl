@@ -12,18 +12,21 @@
 #include <array>
 #include <string>
 #include <string_view>
+#include <system_error>
 #include <utility>
+#include <vector>
 
 namespace owl::nest {
 
 namespace {
-constexpr std::array<std::pair<std::string_view, AssetKind>, 26> g_kinds{{
+constexpr std::array<std::pair<std::string_view, AssetKind>, 27> g_kinds{{
 		{".owl", AssetKind::Scene},
 		{".owlflow", AssetKind::NodeGraph},
 		{".owlanim", AssetKind::Animation},
 		{".owltilemap", AssetKind::Tilemap},
 		{".owltileset", AssetKind::Tileset},
 		{".owlprefab", AssetKind::Prefab},
+		{".owlhud", AssetKind::Hud},
 		{".owlmacro", AssetKind::Macro},
 		{".ttf", AssetKind::Font},
 		{".otf", AssetKind::Font},
@@ -52,6 +55,21 @@ auto classifyAsset(const std::filesystem::path& iPath) -> AssetKind {
 	const auto* const found =
 			std::ranges::find_if(g_kinds, [&ext](const auto& iEntry) -> bool { return iEntry.first == ext; });
 	return found == g_kinds.end() ? AssetKind::Unsupported : found->second;
+}
+
+auto listAssets(const std::filesystem::path& iDirectory, const std::string_view iExtension)
+		-> std::vector<std::string> {
+	std::vector<std::string> found;
+	std::error_code error;
+	if (!is_directory(iDirectory, error))
+		return found;
+	for (std::filesystem::recursive_directory_iterator it{iDirectory, error}; !error && it != end(it);
+		 it.increment(error)) {
+		if (it->is_regular_file(error) && it->path().extension() == iExtension)
+			found.push_back(relative(it->path(), iDirectory).generic_string());
+	}
+	std::ranges::sort(found);
+	return found;
 }
 
 }// namespace owl::nest

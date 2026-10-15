@@ -51,7 +51,7 @@ tooltips and construction tools at once, as in Transport Tycoon.
   (budget in [Isometric worlds](isometric-worlds.md)); image tests `hud_raycast` and `hud_voxel` at 320×180, 480×270
   and 240×240.
 
-## `.owlhud` asset (HUD2)
+## `.owlhud` asset (HUD2, done)
 
 - A HUD is an `.owlhud` file (scene entity format, own `DocumentFormat`) loaded into its own scene by a `HudLibrary`
   cached per path in `EngineContext`: shared by several scenes, kept across scene transitions.
@@ -60,6 +60,23 @@ tooltips and construction tools at once, as in Transport Tycoon.
   ignored on them.
 - Lua: `ui.find(name)` searches the active HUD then the scene; `scene.find_entity` falls back to the HUD.
 - Saves record the HUD path and its widget values. Content Browser kind and thumbnail.
+
+Implementation notes:
+
+- `SceneSerializer(scene, DocumentKind::Hud)` reads and writes the file: root key `Hud`, `FormatVersion` of its own
+  `DocumentFormat` (`SceneSerializer::format(DocumentKind::Hud)`, version 1, no migration yet), the entities only. A
+  scene remembers the document it was loaded from (`Scene::getDocumentKind`), so every save goes back to the right one.
+- `HudLibrary::get(path)` reads the open pack, then the asset folders, then the plain path; a failure is logged once and
+  cached. A scene loaded from an `.owlhud` has an explicit empty `Hud:`: a HUD never draws another one.
+- `Scene::getHudPath()` is nothing (project `DefaultHud`), empty (no HUD) or a path; `Scene::getHud()` resolves it.
+- `HudPass` draws the scene's canvases, then the HUD's. `UiInputSystem` lets a HUD widget take the mouse before the
+  scene's own. The HUD scene does not run its scripts: a button callback runs on the nearest script above it, else on
+  the first script of the active scene defining it.
+- Saves add `HudData` (the effective path and the HUD entities); loading puts the widget values back by UUID into the
+  shared HUD scene. Widget UUIDs of a HUD and of the scenes using it should not collide (Lua ids look in the scene
+  first).
+- The exporter follows `Hud:` keys and `DefaultHud` (`runner.yml` carries it) and packs the HUD with its textures and
+  fonts. The editor reads the HUD files again after a save and when Play starts or stops.
 
 ## Management-game widgets (HUD3)
 

@@ -12,8 +12,10 @@
 
 #include "../Project.h"
 #include "../UndoManager.h"
+#include "../commands/CommandRegistry.h"
 
 #include <string>
+#include <vector>
 
 namespace YAML {
 class Node;
@@ -77,6 +79,13 @@ public:
 
 	/**
 	 * @brief
+	 *  Set the command registry the HUD choice is issued through.
+	 * @param[in] iCommands The registry (non-owning, may be null: the choice is then refused).
+	 */
+	void setCommandRegistry(const commands::CommandRegistry* iCommands) { mp_commands = iCommands; }
+
+	/**
+	 * @brief
 	 *  Set the undo manager to push commands onto.
 	 * @param[in] iUndoManager Owning manager pointer (may be null when no
 	 * document is active).
@@ -130,8 +139,21 @@ private:
 	 */
 	void renderPhysicsSection() const;
 
+	/**
+	 * @brief
+	 *  Render the HUD section: the `.owlhud` the scene draws (project default, none or a file), chosen through the
+	 *  undoable `scene.set_hud` command.
+	 */
+	void renderHudSection();
+
 	/// Active project (non-owning).
 	const Project* mp_project = nullptr;
+	/// Command registry (non-owning).
+	const commands::CommandRegistry* mp_commands = nullptr;
+	/// `.owlhud` files offered by the HUD choice, listed when it opens.
+	std::vector<std::string> m_hudFiles;
+	/// Whether the HUD choice was open on the last frame (the list is read again when it opens).
+	bool m_hudChoiceOpen = false;
 	/// Active scene (shared_ptr — same lifetime as `SceneDocument`).
 	shared<scene::Scene> m_scene;
 	/// Undo manager for the active scene (non-owning).

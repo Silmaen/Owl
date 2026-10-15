@@ -8,8 +8,11 @@
 
 #include "SceneDocument.h"
 
+#include <app/Application.h>
+#include <app/EngineContext.h>
 #include <imgui.h>
 #include <physics/PhysicCommand.h>
+#include <scene/HudLibrary.h>
 #include <scene/LevelTransition.h>
 #include <scene/SaveManager.h>
 #include <scene/SceneSerializer.h>
@@ -89,7 +92,8 @@ auto SceneDocument::restoreRecoverySnapshot(const std::string& iSnapshot) -> boo
 	const auto restored = mkShared<scene::Scene>();
 	const std::vector<uint8_t> bytes(iSnapshot.begin(), iSnapshot.end());
 	const auto source = m_scenePath.empty() ? std::string{"autosave"} : m_scenePath.string();
-	if (const auto loaded = scene::SceneSerializer(restored).deserializeFromBuffer(bytes, source); !loaded) {
+	const auto kind = m_editorScene ? m_editorScene->getDocumentKind() : scene::documentKindOf(m_scenePath);
+	if (const auto loaded = scene::SceneSerializer(restored, kind).deserializeFromBuffer(bytes, source); !loaded) {
 		OWL_WARN("Recovery: Cannot restore the autosave of '{}': {}.", title(), scene::describe(loaded.error()))
 		return false;
 	}
@@ -147,7 +151,9 @@ auto SceneDocument::reloadFromDisk(const math::vec2ui& iViewportSize) -> bool {
 		text == scene::SceneSerializer(m_editorScene).serializeToString())
 		return false;
 	const auto fresh = mkShared<scene::Scene>();
-	if (const auto loaded = scene::SceneSerializer(fresh).deserializeFromBuffer(bytes, m_scenePath.string()); !loaded) {
+	if (const auto loaded = scene::SceneSerializer(fresh, m_editorScene->getDocumentKind())
+									.deserializeFromBuffer(bytes, m_scenePath.string());
+		!loaded) {
 		OWL_ERROR("Hot reload: Scene '{}' failed to load ({}), the open version is kept.", m_scenePath.string(),
 				  scene::describe(loaded.error()))
 		return false;
@@ -165,6 +171,7 @@ void SceneDocument::onScenePlay() {
 	sound::SoundCommand::playSound(soundLibrary.get("clic.wav"));
 
 	m_state = State::Play;
+	resetHudValues();
 	m_activeScene = scene::Scene::copy(m_editorScene);
 	m_activeScene->onStartRuntime();
 }
@@ -175,6 +182,13 @@ void SceneDocument::onSceneStop() {
 	if (m_activeScene)
 		m_activeScene->onEndRuntime();
 	m_activeScene = m_editorScene;
+	resetHudValues();
+}
+
+void SceneDocument::resetHudValues() {
+	// The HUD scenes are shared: what the game did to their widgets must not outlive the play.
+	if (app::Application::instanced())
+		app::Application::get().getEngineContext().getHudLibrary().clear();
 }
 
 auto SceneDocument::consumeStepRequest() -> bool {

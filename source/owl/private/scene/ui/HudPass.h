@@ -22,7 +22,8 @@ namespace owl::scene::ui {
  *  The HUD pass: the implicit last pass of a frame, after the renderer stack and the overlays, before the toasts.
  *
  * It lays out the canvases of the scene into the scene's `HudLayout` and draws every widget in pixels through
- * `Renderer2D`, whatever the layers underneath drew.
+ * `Renderer2D`, whatever the layers underneath drew. The canvases embedded in the scene come first, then those of the
+ * scene's HUD asset (`Scene::getHud`), which lies on top.
  */
 class OWL_API HudPass final {
 public:

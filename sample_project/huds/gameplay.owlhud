@@ -1,0 +1,141 @@
+Hud: untitled
+FormatVersion: 1
+Entities:
+- Entity: 3000000000000000060
+  Tag:
+    tag: HUDCanvas
+  Transform:
+    translation:
+    - 0
+    - 0
+    - 0
+    rotation:
+    - 0
+    - 0
+    - 0
+    scale:
+    - 1
+    - 1
+    - 1
+  Canvas:
+    space: ScreenOverlay
+    sortOrder: 0
+    referenceResolution: [1280, 720]
+    scaleMode: ScaleWithHeight
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3000000000000000061
+  Tag:
+    tag: HealthBar
+  Transform:
+    translation:
+    - 0
+    - 0
+    - 0
+    rotation:
+    - 0
+    - 0
+    - 0
+    scale:
+    - 1
+    - 1
+    - 1
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 3000000000000000060
+  UiProgressBar:
+    value: 1
+    backgroundColor:
+    - 0.400000006
+    - 0.100000001
+    - 0.100000001
+    - 0.800000012
+    fillColor:
+    - 0.200000003
+    - 0.850000024
+    - 0.200000003
+    - 1
+  UiRect:
+    anchorMin: [1, 0]
+    anchorMax: [1, 0]
+    pivot: [1, 0]
+    size: [200, 22]
+    offset: [-20, 20]
+- Entity: 3000000000000000062
+  Tag:
+    tag: ScoreText
+  Transform:
+    translation:
+    - 0
+    - 0
+    - 0
+    rotation:
+    - 0
+    - 0
+    - 0
+    scale:
+    - 1
+    - 1
+    - 1
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 3000000000000000060
+  UiRect:
+    anchorMin: [1, 0]
+    anchorMax: [1, 0]
+    pivot: [1, 0]
+    size: [200, 26]
+    offset: [-20, 50]
+  UiText:
+    text: 'Score: 0'
+    color:
+    - 1
+    - 0.949999988
+    - 0.550000012
+    - 1
+    fontSize: 18
+    horizontalAlignment: Center
+    verticalAlignment: Middle
+    kerning: 0
+    lineSpacing: 0
+- Entity: 3000000000000000063
+  Tag:
+    tag: HudHint
+  Transform:
+    translation:
+    - 0
+    - 0
+    - 0
+    rotation:
+    - 0
+    - 0
+    - 0
+    scale:
+    - 1
+    - 1
+    - 1
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 3000000000000000060
+  UiRect:
+    anchorMin: [0, 0]
+    anchorMax: [0, 0]
+    pivot: [0, 0]
+    size: [460, 20]
+    offset: [20, 20]
+  UiText:
+    text: A/D = move (only on ground), W/Space = jump, ESC = pause
+    color:
+    - 1
+    - 1
+    - 1
+    - 0.850000024
+    fontSize: 14
+    horizontalAlignment: Center
+    verticalAlignment: Middle
+    kerning: 0
+    lineSpacing: 0

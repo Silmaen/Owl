@@ -8,11 +8,13 @@
 
 #include "SceneSettings.h"
 
+#include "../AssetKind.h"
 #include "../DockLayout.h"
 
 #include "../commands/SceneSettingsCommands.h"
 
 #include <gui/IconFont.h>
+#include <gui/widgets/AssetField.h>
 #include <gui/widgets/Combo.h>
 #include <gui/widgets/IconButton.h>
 #include <gui/widgets/PropertyGrid.h>
@@ -27,6 +29,8 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <filesystem>
+#include <format>
 #include <string>
 #include <tuple>
 #include <utility>
@@ -302,6 +306,39 @@ void SceneSettings::renderPhysicsSection() const {
 		mp_undoManager->push(mkUniq<commands::ModifyPhysicsSettingsCommand>(before, edited));
 }
 
+void SceneSettings::renderHudSection() {
+	if (!gui::widgets::sectionHeader("HUD", gui::icon::panelsTopLeft, false).open)
+		return;
+	const auto& own = m_scene->getHudPath();
+	const std::string& projectDefault = mp_project->defaultHud;
+	const auto choose = [this](const commands::CommandArgs& iArgs) -> void {
+		const commands::CommandTarget target{.registry = mp_commands, .scene = m_scene, .undo = mp_undoManager};
+		std::ignore = target.execute("scene.set_hud", iArgs);
+	};
+	std::string preview = std::format("Project default ({})", projectDefault.empty() ? "none" : projectDefault);
+	if (own)
+		preview = own->empty() ? "None" : *own;
+	const bool open = gui::widgets::beginCombo("##hud", preview.c_str());
+	if (open) {
+		if (!m_hudChoiceOpen)
+			m_hudFiles = listAssets(mp_project->projectDirectory, ".owlhud");
+		if (ImGui::Selectable("Project default", !own))
+			choose({{"use_default", true}});
+		if (ImGui::Selectable("None", own && own->empty()))
+			choose({{"path", std::string{}}});
+		for (const auto& file: m_hudFiles) {
+			if (ImGui::Selectable(file.c_str(), own && *own == file))
+				choose({{"path", file}});
+		}
+		ImGui::EndCombo();
+	}
+	m_hudChoiceOpen = open;
+	if (std::filesystem::path dropped; gui::widgets::assetDropTarget(gui::widgets::AssetKind::Hud, dropped))
+		choose({{"path", dropped.generic_string()}});
+	ImGui::TextDisabled("Drawn over the scene in pixels, shared by the scenes naming the same file.");
+	gui::widgets::endSection();
+}
+
 void SceneSettings::onImGuiRender() {
 	if (!m_visible)
 		return;
@@ -337,6 +374,7 @@ void SceneSettings::onImGuiRender() {
 	ImGui::Separator();
 
 	renderPhysicsSection();
+	renderHudSection();
 
 	if (!gui::widgets::sectionHeader("Renderer Stack", gui::icon::layers, false).open) {
 		ImGui::End();

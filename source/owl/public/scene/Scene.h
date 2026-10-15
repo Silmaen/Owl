@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include "DocumentKind.h"
 #include "GameState.h"
 #include "core/Timestep.h"
 #include "core/UUID.h"
@@ -30,6 +31,7 @@
 #include <span>
 #include <string>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 /**
@@ -764,6 +766,50 @@ public:
 
 	/**
 	 * @brief
+	 *  Document the scene was loaded from, which `SceneSerializer` writes it back to.
+	 * @return `DocumentKind::Hud` for the scene of an `.owlhud`, `DocumentKind::Scene` otherwise.
+	 */
+	[[nodiscard]] auto getDocumentKind() const -> DocumentKind { return m_documentKind; }
+
+	/**
+	 * @brief
+	 *  Set the document the scene is saved to (set by `SceneSerializer` when it loads one).
+	 * @param[in] iKind The document.
+	 */
+	void setDocumentKind(const DocumentKind iKind) { m_documentKind = iKind; }
+
+	/**
+	 * @brief
+	 *  HUD asset the scene asks for: its `Hud:` key.
+	 * @return The asset path (relative to the asset folders); an empty path means no HUD, nothing means the project's
+	 *  default HUD.
+	 */
+	[[nodiscard]] auto getHudPath() const -> const std::optional<std::string>& { return m_hudPath; }
+
+	/**
+	 * @brief
+	 *  Choose the HUD asset of the scene.
+	 * @param[in] iPath The asset path, an empty path for no HUD, nothing for the project's default HUD.
+	 */
+	void setHudPath(std::optional<std::string> iPath) { m_hudPath = std::move(iPath); }
+
+	/**
+	 * @brief
+	 *  Path of the HUD asset the scene draws: its own `Hud:` key, else the project's `DefaultHud`.
+	 * @return The asset path, empty when the scene has no HUD.
+	 */
+	[[nodiscard]] auto getEffectiveHudPath() const -> std::string;
+
+	/**
+	 * @brief
+	 *  The HUD scene drawn over this scene and receiving its UI input, loaded on first use by the engine context's
+	 *  `HudLibrary` and shared with every other scene asking for the same file.
+	 * @return The HUD scene, or nullptr when the scene has no HUD, no engine context, or the file cannot be loaded.
+	 */
+	[[nodiscard]] auto getHud() const -> shared<Scene>;
+
+	/**
+	 * @brief
 	 *  Access the HUD layout of this scene, computed by the HUD pass and reused by `UiInputSystem`.
 	 * @return The HUD layout.
 	 */
@@ -819,6 +865,10 @@ private:
 	UiInputState m_uiInputState;
 	/// Layout of the HUD widgets drawn by the last HUD pass.
 	ui::HudLayout m_hudLayout;
+	/// Document the scene is saved to.
+	DocumentKind m_documentKind = DocumentKind::Scene;
+	/// HUD asset asked by the scene (nothing: the project's default HUD, empty: none).
+	std::optional<std::string> m_hudPath;
 	/// Systems run every runtime frame, phase by phase.
 	SystemSchedule m_systems;
 	/// Engine state used by the scene (not owned).

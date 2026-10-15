@@ -15,8 +15,11 @@
 #include "HierarchyCommands.h"
 #include "Macro.h"
 #include "PrefabCommands.h"
+#include "SceneSettingsCommands.h"
 
+#include <app/EngineContext.h>
 #include <scene/ComponentRegistry.h>
+#include <scene/HudLibrary.h>
 #include <scene/PrefabSerializer.h>
 #include <scene/SceneSerializer.h>
 #include <scene/component/components.h>
@@ -289,6 +292,17 @@ auto instantiatePrefab(const shared<scene::Scene>& ioScene, const CommandArgs& i
 						   .entity = root.getUUID()};
 }
 
+auto setSceneHud(const shared<scene::Scene>& ioScene, const CommandArgs& iArgs) -> Prepared {
+	std::optional<std::string> path;
+	if (!iArgs.getBool("use_default"))
+		path = iArgs.getText("path");
+	if (path && !path->empty() && std::filesystem::path{*path}.extension() != ".owlhud")
+		return fail(CommandError::InvalidArgument, std::format("`{}` is not an `.owlhud` file", *path));
+	if (path == ioScene->getHudPath())
+		return fail(CommandError::NotApplicable, "the scene already has this HUD");
+	return PreparedCommand{.command = mkUniq<SetSceneHudCommand>(ioScene->getHudPath(), path), .applied = false};
+}
+
 auto toArg(const core::UUID iUuid) -> ArgValue { return static_cast<int64_t>(static_cast<uint64_t>(iUuid)); }
 
 void mergeYaml(const YAML::Node& ioTarget, const YAML::Node& iPatch) {
@@ -384,6 +398,9 @@ auto saveScene(const CommandContext& iContext, const CommandArgs& iArgs) -> expe
 	if (const scene::SceneSerializer serializer{iContext.scene}; !serializer.serialize(path))
 		return fail(CommandError::NotApplicable, std::format("cannot write {}", path.string()));
 	iContext.undo->markSaved();
+	// The scenes drawing a HUD that was just saved read it again from the file.
+	if (iContext.scene->getDocumentKind() == scene::DocumentKind::Hud && iContext.scene->getEngineContext() != nullptr)
+		iContext.scene->getEngineContext()->getHudLibrary().clear();
 	if (iContext.onSaved)
 		iContext.onSaved(path);
 	return CommandResult{.entity = core::UUID{0},
@@ -579,6 +596,18 @@ CommandRegistry::CommandRegistry() {
 				   .description = "Replace every field by `values` instead of merging them (the inspector edits).",
 				   .defaultValue = false}},
 		 .factory = setComponent});
+	add({.name = "scene.set_hud",
+		 .description = "Choose the HUD asset (`.owlhud`) the scene draws: a path, none, or the project's default HUD.",
+		 .args = {{.name = "path",
+				   .type = ArgType::Text,
+				   .description = "HUD asset, relative to an asset folder; empty for no HUD.",
+				   .defaultValue = std::string{},
+				   .projectPath = true},
+				  {.name = "use_default",
+				   .type = ArgType::Bool,
+				   .description = "Use the project's `DefaultHud` (the scene then names no HUD).",
+				   .defaultValue = false}},
+		 .factory = setSceneHud});
 	add({.name = "scene.save",
 		 .description = "Save the scene to its file, or to `path`.",
 		 .args = {{.name = "path",

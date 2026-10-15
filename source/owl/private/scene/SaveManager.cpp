@@ -29,12 +29,34 @@ OWL_DIAG_POP
 #include <exception>
 #include <format>
 #include <fstream>
+#include <tuple>
 
 namespace owl::scene {
 
 namespace {
 constexpr std::array<core::MigrationStep, 0> g_saveMigrations{};
 constexpr core::DocumentFormat g_saveFormat{.name = "Save", .migrations = g_saveMigrations};
+
+// Put the saved widget values back into the HUD the scene draws (shared with the other scenes asking for it).
+void restoreHud(Scene& ioScene, const YAML::Node& iHudData) {
+	if (const auto path = iHudData["path"];
+		path && path.IsScalar() && path.as<std::string>() != ioScene.getEffectiveHudPath())
+		ioScene.setHudPath(path.as<std::string>());
+	const auto hud = ioScene.getHud();
+	const auto entities = iHudData["state"]["Entities"];
+	if (!hud || !entities.IsSequence())
+		return;
+	for (const auto& node: entities) {
+		if (!node["Entity"])
+			continue;
+		const auto widget = hud->findEntityByUUID(core::UUID{node["Entity"].as<uint64_t>()});
+		if (!widget)
+			continue;
+		YAML::Emitter emitter;
+		emitter << node;
+		std::ignore = SceneSerializer::applyEntityFromString(widget, emitter.c_str());
+	}
+}
 }// namespace
 
 auto SaveManager::format() -> const core::DocumentFormat& { return g_saveFormat; }
@@ -98,6 +120,15 @@ auto SaveManager::save(const uint32_t iSlot, const shared<Scene>& iScene, const 
 
 		// Scene data as embedded YAML node.
 		sOut.getImpl()->emitter << YAML::Key << "SceneData" << YAML::Value << YAML::Load(sceneYaml);
+
+		// Widget values of the HUD asset.
+		if (const auto hud = iScene->getHud(); hud) {
+			sOut.getImpl()->emitter << YAML::Key << "HudData" << YAML::Value << YAML::BeginMap;
+			sOut.getImpl()->emitter << YAML::Key << "path" << YAML::Value << iScene->getEffectiveHudPath();
+			sOut.getImpl()->emitter << YAML::Key << "state" << YAML::Value
+									<< YAML::Load(SceneSerializer(hud, DocumentKind::Hud).serializeToString());
+			sOut.getImpl()->emitter << YAML::EndMap;
+		}
 
 		// Physics snapshots (velocities for dynamic bodies).
 		if (physics::PhysicCommand::isInitialized(*iScene)) {
@@ -170,6 +201,9 @@ auto SaveManager::load(const uint32_t iSlot, const shared<Scene>& iScene) -> Loa
 			if (!serializer.deserializeFromBuffer(sceneData, "save_slot_" + std::to_string(iSlot)))
 				return result;
 		}
+
+		if (const auto hudData = root["HudData"]; hudData.IsMap())
+			restoreHud(*iScene, hudData);
 
 		// Load physics snapshots.
 		if (const auto snapNode = root["PhysicsSnapshots"]; snapNode && snapNode.IsSequence()) {

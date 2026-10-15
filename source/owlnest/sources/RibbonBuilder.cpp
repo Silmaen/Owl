@@ -107,12 +107,14 @@ void RibbonBuilder::build() {
 	m_ribbon.addButton(home, gCreate,
 					   Button{.iconName = "ribbon_new",
 							  .label = "New",
-							  .tooltip = "Create an untitled document: scene, animation, tilemap or tileset.",
+							  .tooltip = "Create an untitled document: scene, HUD, animation, tilemap or tileset.",
 							  .isEnabled = projectLoaded,
 							  .size = Size::Large,
 							  .popupContents = [this]() -> void {
 								  if (gui::IconBank::instance().menuItem("owl_icon", "Scene"))
 									  mp_editor->newScene();
+								  if (gui::IconBank::instance().menuItem("owlhud_icon", "HUD"))
+									  mp_editor->newHud();
 								  if (gui::IconBank::instance().menuItem("owlanim_icon", "Animation"))
 									  mp_editor->newAnimationClip();
 								  if (gui::IconBank::instance().menuItem("owltilemap_icon", "Tilemap"))

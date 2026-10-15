@@ -89,6 +89,9 @@ void scanEntity(const YAML::Node& iEntity, const std::string& iSceneName, std::s
 void scanTileset(const std::string& iTilesetPath, const std::string& iSceneName, std::vector<AssetReference>& ioAssets,
 				 std::vector<std::string>* ioWarnings);
 
+void scanHud(const std::string& iHudPath, const std::string& iSource, std::set<std::string>& ioVisitedScenes,
+			 std::vector<AssetReference>& ioAssets, std::vector<std::string>* ioWarnings);
+
 auto resolveTexture(const std::string& iSerialized) -> std::optional<AssetReference> {
 	if (iSerialized.size() < 4)
 		return std::nullopt;
@@ -290,11 +293,14 @@ void scanSceneRecursive(const std::filesystem::path& iSceneFile,// NOLINT(misc-n
 	if (!data["Scene"])
 		return;
 
+	const auto sceneName = iSceneFile.filename().string();
+	if (const auto hud = data["Hud"]; hud && hud.IsScalar())
+		scanHud(hud.as<std::string>(), sceneName, ioVisitedScenes, ioAssets, ioWarnings);
+
 	auto entities = data["Entities"];
 	if (!entities)
 		return;
 
-	const auto sceneName = iSceneFile.filename().string();
 	for (auto entity: entities) scanEntity(entity, sceneName, ioVisitedScenes, ioAssets, ioWarnings);
 }
 
@@ -406,6 +412,33 @@ void scanEntity(const YAML::Node& iEntity,// NOLINT(misc-no-recursion)
 			scanTileset(path.as<std::string>(), iSceneName, ioAssets, ioWarnings);
 }
 
+// NOLINTNEXTLINE(misc-no-recursion) a HUD is scanned like a scene, and its scripts can name scenes
+void scanHud(const std::string& iHudPath, const std::string& iSource, std::set<std::string>& ioVisitedScenes,
+			 std::vector<AssetReference>& ioAssets, std::vector<std::string>* ioWarnings) {
+	if (iHudPath.empty())
+		return;
+	const auto hudRef = resolveDataAsset(iHudPath);
+	if (!hudRef) {
+		pushWarning(ioWarnings, "HUD", iHudPath, iSource);
+		return;
+	}
+	if (hasAsset(ioAssets, hudRef->packPath))
+		return;
+	ioAssets.push_back(*hudRef);
+	YAML::Node data;
+	try {
+		data = YAML::LoadFile(hudRef->diskPath.string());
+	} catch (...) {
+		pushWarning(ioWarnings, "HUD", iHudPath, iSource);
+		return;
+	}
+	const auto entities = data["Entities"];
+	if (!data["Hud"] || !entities)
+		return;
+	const auto hudName = hudRef->diskPath.filename().string();
+	for (auto entity: entities) scanEntity(entity, hudName, ioVisitedScenes, ioAssets, ioWarnings);
+}
+
 void collectEngineAssets(std::vector<AssetReference>& ioAssets) {
 	if (!app::Application::instanced())
 		return;
@@ -465,7 +498,8 @@ auto AssetScanner::scanScene(const std::filesystem::path& iSceneFile, std::vecto
 }
 
 auto AssetScanner::scanProject(const std::filesystem::path& iProjectDir, const std::string& iFirstScene,
-							   std::vector<std::string>* oWarnings) -> std::vector<AssetReference> {
+							   std::vector<std::string>* oWarnings, const std::string& iDefaultHud)
+		-> std::vector<AssetReference> {
 	// Resolve the first scene path.
 	std::filesystem::path firstScenePath;
 	std::string resolvedName = iFirstScene;
@@ -498,7 +532,10 @@ auto AssetScanner::scanProject(const std::filesystem::path& iProjectDir, const s
 		return {};
 	}
 
-	return scanScene(firstScenePath, oWarnings);
+	auto assets = scanScene(firstScenePath, oWarnings);
+	std::set<std::string> visited;
+	scanHud(iDefaultHud, "the project's DefaultHud", visited, assets, oWarnings);
+	return assets;
 }
 
 }// namespace owl::data::assets::pack

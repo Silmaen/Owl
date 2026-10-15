@@ -151,6 +151,7 @@ void EditorLayer::syncActiveDocumentPanels() {
 		// The per-document viewport owns its own undo pointer already (set in SceneDocument::onAttach).
 	}
 	m_sceneSettings.setProject(m_project);
+	m_sceneSettings.setCommandRegistry(&m_commands);
 	m_voxelPalette.setProjectDirectory(m_project.projectDirectory);
 	m_sceneHierarchy.setActiveDocument(m_documents.getActive());
 	m_sceneHierarchy.setParentEditor(this);
@@ -820,6 +821,7 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 		const auto previousMappings = m_project.gamepadMappings;
 		m_project = m_projectSettings.consumeResult();
 		app::Application::get().getEngineContext().setSimulationSettings(m_project.simulation);
+		app::Application::get().getEngineContext().setDefaultHud(m_project.defaultHud);
 		if (m_project.gamepadMappings != previousMappings)
 			std::ignore = m_project.loadGamepadMappings();
 

@@ -34,6 +34,8 @@ struct Project {
 	std::string author;
 	/// Short project description.
 	std::string description;
+	/// HUD asset (`.owlhud`, relative to an asset folder) of the scenes that name none; empty for none.
+	std::string defaultHud;
 	/// Relative path to the project icon (PNG, relative to project directory).
 	std::string icon;
 	/// Optional gamepad mapping file (SDL_GameControllerDB format), relative to the project directory.

@@ -33,6 +33,7 @@
 #include "data/voxel/Chunk.h"
 #include "input/Input.h"
 #include "physics/PhysicCommand.h"
+#include "scene/HudLibrary.h"
 #include "scene/ScreenTransition.h"
 #include "scene/component/components.h"
 #include "scene/ui/HudPass.h"
@@ -164,6 +165,8 @@ auto Scene::copy(const shared<Scene>& iOther) -> shared<Scene> {
 	newScene->m_gameState = iOther->m_gameState;
 	newScene->m_enabledRenderers = iOther->m_enabledRenderers;
 	newScene->m_physicsSettings = iOther->m_physicsSettings;
+	newScene->m_hudPath = iOther->m_hudPath;
+	newScene->m_documentKind = iOther->m_documentKind;
 	newScene->m_simulationClock.setSettings(iOther->m_simulationClock.getSettings());
 	newScene->m_systems = iOther->m_systems;
 	newScene->mp_engineContext = iOther->mp_engineContext;
@@ -189,6 +192,19 @@ auto Scene::copy(const shared<Scene>& iOther) -> shared<Scene> {
 		view.get<component::VoxelWorld>(entity).pendingChunks.clear();
 
 	return newScene;
+}
+
+auto Scene::getEffectiveHudPath() const -> std::string {
+	if (m_hudPath)
+		return *m_hudPath;
+	return mp_engineContext != nullptr ? mp_engineContext->getDefaultHud() : std::string{};
+}
+
+auto Scene::getHud() const -> shared<Scene> {
+	if (mp_engineContext == nullptr)
+		return nullptr;
+	const auto path = getEffectiveHudPath();
+	return path.empty() ? nullptr : mp_engineContext->getHudLibrary().get(path);
 }
 
 auto Scene::createEntity(const std::string& iName) -> Entity { return createEntityWithUUID(core::UUID(), iName); }

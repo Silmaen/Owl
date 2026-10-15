@@ -16,6 +16,7 @@
 #include <renderer/Renderer2D.h>
 #include <scene/Entity.h>
 #include <scene/Scene.h>
+#include <scene/SceneSerializer.h>
 #include <scene/UiInputSystem.h>
 #include <scene/component/components.h>
 #include <scene/ui/HudLayout.h>
@@ -23,6 +24,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <filesystem>
 #include <string>
 
 using namespace owl;
@@ -263,4 +265,26 @@ TEST_F(HudPassTest, emptyHudDrawsNothing) {
 	scene::ui::HudPass::render(scn, {640u, 360u}, false);
 	EXPECT_TRUE(scn.getHudLayout().getNodes().empty());
 	EXPECT_EQ(scn.getHudLayout().getComputeCount(), 1u);
+}
+
+TEST_F(HudPassTest, hudAssetIsDrawnAfterTheSceneCanvases) {
+	const auto hud = mkShared<scene::Scene>();
+	auto canvas = makeCanvas(*hud, Canvas::ScaleMode::ConstantPixels);
+	auto panel = makeWidget(*hud, canvas, UiRect::Anchor::TopLeft, {0.f, 0.f}, {50.f, 20.f}, {5.f, 5.f});
+	panel.addComponent<scene::component::UiPanel>();
+	const auto path = std::filesystem::temp_directory_path() / "owl_hud_pass_test.owlhud";
+	ASSERT_TRUE(scene::SceneSerializer(hud, scene::DocumentKind::Hud).serialize(path));
+
+	const auto sc = makeHudScene();
+	sc->setHudPath(path.string());
+	sc->onRenderRuntime();
+	// The scene's panel and button, then the HUD's panel.
+	EXPECT_EQ(renderer::Renderer2D::getStats().quadCount, 3u);
+	const auto shared = sc->getHud();
+	ASSERT_TRUE(shared);
+	EXPECT_EQ(shared->getHudLayout().getNodes().size(), 1u);
+	sc->setHudPath(std::string{});
+	sc->onRenderRuntime();
+	EXPECT_EQ(renderer::Renderer2D::getStats().quadCount, 2u);
+	std::filesystem::remove(path);
 }

@@ -41,6 +41,8 @@ struct RunnerConfig {
 	std::string icon;
 	/// Gamepad mapping file (`GamepadMappings`), in the pack or an asset directory; empty for none.
 	std::string gamepadMappings;
+	/// HUD asset of the scenes that name none (`DefaultHud`); empty for none.
+	std::string defaultHud;
 	/// Window width in pixels.
 	uint32_t windowWidth{1280};
 	/// Window height in pixels.

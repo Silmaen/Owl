@@ -132,7 +132,7 @@ a few days, L a week.
   computed once per frame and shared by drawing and hit-testing, anchors, reference resolution and scale modes, Y-down
   coordinates with a scene migration of every `UiRect`; the old `renderHud` (voxel crosshair) renamed
   `renderOverlays`. Image tests of the HUD over raycast and voxel at three resolutions; bench at 500 widgets.
-- ![Planned][planned] **HUD2 — `.owlhud` asset, L.** D8: serializer with its own `DocumentFormat`, `HudLibrary` in
+- ![Done][done] **HUD2 — `.owlhud` asset, L.** D8: serializer with its own `DocumentFormat`, `HudLibrary` in
   `EngineContext`, scene key `Hud:` and project `DefaultHud`, Lua `ui.find` (HUD then scene), HUD state in saves,
   Content Browser kind and thumbnail.
 - ![Planned][planned] **HUD3 — Management-game widgets, M/L.** `UiWindow` (title bar, drag, close, raise on click,

@@ -141,6 +141,7 @@ protected:
 				.author = "Tester",
 				.description = "A # tricky: description",
 				.icon = "logo/icon.png",
+				.defaultHud = {},
 				.gamepadMappings = "input/gamecontrollerdb.txt",
 				.projectDirectory = m_project,
 				.outputDirectory = m_root / "out",
@@ -251,6 +252,29 @@ TEST_F(GameExporterFixture, ExportWritesAPlayableFolder) {
 	const auto scene = readPackEntry(result->packFile, "scenes/level.owl");
 	EXPECT_NE(scene.find("nam:textures/a.png"), std::string::npos);
 	EXPECT_EQ(scene.find("pat:"), std::string::npos);
+}
+
+TEST_F(GameExporterFixture, ExportPacksTheHudsAndTheirAssets) {
+	writeFile(m_project / "huds" / "own.owlhud",
+			  "Hud: own\nEntities:\n  - Entity: 1\n    UiImage:\n      texture: nam:textures/a.png\n");
+	writeFile(m_project / "huds" / "default.owlhud",
+			  "Hud: default\nEntities:\n  - Entity: 1\n    UiImage:\n      texture: nam:textures/b.png\n");
+	writeFile(m_project / "scenes" / "level.owl", "Scene: level\nHud: huds/own.owlhud\nEntities: []\n");
+	auto settings = makeSettings();
+	settings.defaultHud = "huds/default.owlhud";
+	std::vector<AssetReference> assets;
+	EXPECT_TRUE(GameExporter::validate(settings, assets).empty());
+	const auto result = GameExporter::exportGame(settings, assets);
+	ASSERT_TRUE(result.has_value());
+	PackReader reader;
+	ASSERT_TRUE(reader.open(result->packFile));
+	for (const auto* entry: {"huds/own.owlhud", "huds/default.owlhud", "textures/a.png", "textures/b.png"})
+		EXPECT_TRUE(reader.contains(entry)) << entry;
+	reader.close();
+	const auto config = YAML::LoadFile((result->gameDirectory / "runner.yml").string())["RunnerConfig"];
+	EXPECT_EQ(config["DefaultHud"].as<std::string>(), "huds/default.owlhud");
+	settings.defaultHud = "huds/missing.owlhud";
+	EXPECT_EQ(GameExporter::validate(settings, assets).size(), 1u);
 }
 
 TEST_F(GameExporterFixture, ExportFailures) {

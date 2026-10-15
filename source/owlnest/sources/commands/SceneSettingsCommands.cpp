@@ -72,4 +72,24 @@ auto ModifyPhysicsSettingsCommand::typeId() const -> size_t {
 	return kTypeHash;
 }
 
+SetSceneHudCommand::SetSceneHudCommand(std::optional<std::string> iBefore, std::optional<std::string> iAfter)
+	: m_before{std::move(iBefore)}, m_after{std::move(iAfter)} {}
+
+SetSceneHudCommand::~SetSceneHudCommand() = default;
+
+void SetSceneHudCommand::undo(scene::Scene& ioScene) { ioScene.setHudPath(m_before); }
+
+void SetSceneHudCommand::redo(scene::Scene& ioScene) { ioScene.setHudPath(m_after); }
+
+auto SetSceneHudCommand::description() const -> std::string {
+	if (!m_after)
+		return "Use the default HUD";
+	return m_after->empty() ? "Remove the HUD" : "Set the HUD";
+}
+
+auto SetSceneHudCommand::typeId() const -> size_t {
+	constexpr size_t kTypeHash = 0x536574487564ULL;// "SetHud"
+	return kTypeHash;
+}
+
 }// namespace owl::nest::commands

@@ -154,6 +154,12 @@ public:
 
 	/**
 	 * @brief
+	 *  New HUD: an untitled scene document saved as an `.owlhud`, holding a full-screen canvas.
+	 */
+	void newHud();
+
+	/**
+	 * @brief
 	 *  Open scene.
 	 */
 	void openScene();
