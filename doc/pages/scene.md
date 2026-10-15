@@ -538,6 +538,7 @@ its widget values. Design: [HUD system](design/hud-system.md).
 | `sortOrder`           | `int`  | `sortOrder`           | Canvases draw in ascending order, the last one on top             |
 | `referenceResolution` | `vec2` | `referenceResolution` | Resolution the widgets are authored at (1280×720 by default)      |
 | `scaleMode`           | `enum` | `scaleMode`           | `ConstantPixels`, `ScaleWithHeight` (default), `MatchSmallerSide` |
+| `wrapFocus`           | `bool` | `wrapFocus`           | Keyboard and gamepad focus wraps at the ends of the menu (off)    |
 
 #### UiRect
 
@@ -601,11 +602,12 @@ ink height of the string, it is now the ascender-to-descender height of the font
 
 #### UiSlider
 
-| Field      | Type    | Description   |
-|------------|---------|---------------|
-| `value`    | `float` | Current value |
-| `minValue` | `float` | Minimum value |
-| `maxValue` | `float` | Maximum value |
+| Field      | Type    | Description                                                                        |
+|------------|---------|------------------------------------------------------------------------------------|
+| `value`    | `float` | Current value                                                                      |
+| `minValue` | `float` | Minimum value                                                                      |
+| `maxValue` | `float` | Maximum value                                                                      |
+| `step`     | `float` | Change per `ui_left` / `ui_right` press when focused (0: a twentieth of the range) |
 
 #### UiProgressBar
 
@@ -676,6 +678,25 @@ isometric layer. It needs no `UiRect`; the first active one is drawn last, in pl
 | `size`    | `vec2`    | Size in reference pixels                                              |
 | `hotspot` | `vec2`    | Point of the sprite on the mouse ((0,0) top-left, (1,1) bottom-right) |
 | `active`  | `bool`    | Whether it is drawn                                                   |
+
+#### UiFocus
+
+Optional: a `UiButton` (not disabled) or a `UiSlider` already takes part in the keyboard and gamepad navigation
+([HUD system](design/hud-system.md#focus-navigation-hud5-done)); this component tunes it. A neighbour is the UUID of
+another widget among the focusable widgets of the scene and its HUD (remapped to the copies when a subtree is duplicated
+or a prefab instantiated).
+
+| Field                | Type     | Description                                                             |
+|----------------------|----------|-------------------------------------------------------------------------|
+| `focusable`          | `bool`   | Whether the widget can take the focus                                   |
+| `initial`            | `bool`   | Takes the focus, shown, as soon as the scene plays                      |
+| `up`                 | `uuid`   | Widget `ui_up` goes to (0: the nearest one above)                       |
+| `down`               | `uuid`   | Widget `ui_down` goes to (0: the nearest one below)                     |
+| `left`               | `uuid`   | Widget `ui_left` goes to (0: the nearest one on the left)               |
+| `right`              | `uuid`   | Widget `ui_right` goes to (0: the nearest one on the right)             |
+| `onFocusCallback`    | `string` | Lua function called when the widget takes the focus (`_focused_entity`) |
+| `highlightColor`     | `vec4`   | Colour of the frame drawn around the focused widget                     |
+| `highlightThickness` | `float`  | Thickness of the frame, in reference pixels                             |
 
 ### Prefab Components
 

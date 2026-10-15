@@ -43,6 +43,7 @@ void Canvas::serialize(const core::Serializer& iOut) const {
 	iOut.getImpl()->emitter << YAML::Key << "referenceResolution" << YAML::Value << YAML::Flow << YAML::BeginSeq
 							<< referenceResolution.x() << referenceResolution.y() << YAML::EndSeq;
 	iOut.getImpl()->emitter << YAML::Key << "scaleMode" << YAML::Value << std::string(magic_enum::enum_name(scaleMode));
+	iOut.getImpl()->emitter << YAML::Key << "wrapFocus" << YAML::Value << wrapFocus;
 	iOut.getImpl()->emitter << YAML::EndMap;
 }
 
@@ -58,6 +59,8 @@ void Canvas::deserialize(const core::Serializer& iNode) {
 	if (iNode.getImpl()->node["scaleMode"])
 		scaleMode = magic_enum::enum_cast<ScaleMode>(iNode.getImpl()->node["scaleMode"].as<std::string>())
 							.value_or(ScaleMode::ScaleWithHeight);
+	if (iNode.getImpl()->node["wrapFocus"])
+		wrapFocus = iNode.getImpl()->node["wrapFocus"].as<bool>();
 }
 
 }// namespace owl::scene::component

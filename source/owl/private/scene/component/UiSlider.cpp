@@ -22,6 +22,7 @@ void UiSlider::serialize(const core::Serializer& iOut) const {
 	iOut.getImpl()->emitter << YAML::Key << "trackColor" << YAML::Value << trackColor;
 	iOut.getImpl()->emitter << YAML::Key << "fillColor" << YAML::Value << fillColor;
 	iOut.getImpl()->emitter << YAML::Key << "handleColor" << YAML::Value << handleColor;
+	iOut.getImpl()->emitter << YAML::Key << "step" << YAML::Value << step;
 	iOut.getImpl()->emitter << YAML::Key << "onValueChangedCallback" << YAML::Value << onValueChangedCallback;
 	iOut.getImpl()->emitter << YAML::EndMap;
 }
@@ -39,6 +40,8 @@ void UiSlider::deserialize(const core::Serializer& iNode) {
 		fillColor = iNode.getImpl()->node["fillColor"].as<math::vec4>();
 	if (iNode.getImpl()->node["handleColor"])
 		handleColor = iNode.getImpl()->node["handleColor"].as<math::vec4>();
+	if (iNode.getImpl()->node["step"])
+		step = iNode.getImpl()->node["step"].as<float>();
 	if (iNode.getImpl()->node["onValueChangedCallback"])
 		onValueChangedCallback = iNode.getImpl()->node["onValueChangedCallback"].as<std::string>();
 }

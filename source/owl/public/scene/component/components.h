@@ -35,6 +35,7 @@
 #include "Transform.h"
 #include "Trigger.h"
 #include "UiButton.h"
+#include "UiFocus.h"
 #include "UiImage.h"
 #include "UiLayout.h"
 #include "UiPanel.h"
@@ -76,9 +77,9 @@ concept isComponent =
 		std::is_same_v<Component, UiPanel> || std::is_same_v<Component, UiProgressBar> ||
 		std::is_same_v<Component, UiRect> || std::is_same_v<Component, UiSlider> || std::is_same_v<Component, UiText> ||
 		std::is_same_v<Component, UiLayout> || std::is_same_v<Component, UiToolCursor> ||
-		std::is_same_v<Component, UiTooltip> || std::is_same_v<Component, UiWindow> ||
-		std::is_same_v<Component, Visibility> || std::is_same_v<Component, VoxelWorld> ||
-		std::is_same_v<Component, VoxelPlayer>;
+		std::is_same_v<Component, UiFocus> || std::is_same_v<Component, UiTooltip> ||
+		std::is_same_v<Component, UiWindow> || std::is_same_v<Component, Visibility> ||
+		std::is_same_v<Component, VoxelWorld> || std::is_same_v<Component, VoxelPlayer>;
 
 /**
  * @brief
@@ -122,7 +123,7 @@ using CopiableComponents =
 				   IsometricObject, PhysicBody, Player, Trigger, EntityLink, FlyCamera, BackgroundTexture, Visibility,
 				   Hierarchy, SoundSource, SoundListener, LuaScript, PrefabLink, RaycastDoor, RaycastPushWall,
 				   RendererTag, VoxelWorld, VoxelPlayer, UiButton, UiImage, UiPanel, UiProgressBar, UiRect, UiSlider,
-				   UiText, UiLayout, UiToolCursor, UiTooltip, UiWindow>;
+				   UiText, UiLayout, UiToolCursor, UiTooltip, UiWindow, UiFocus>;
 
 /**
  * @brief
@@ -134,7 +135,7 @@ using SerializableComponents =
 				   Tilemap, IsometricObject, PhysicBody, Player, Trigger, EntityLink, FlyCamera, BackgroundTexture,
 				   Visibility, Hierarchy, SoundSource, SoundListener, LuaScript, PrefabLink, RaycastDoor,
 				   RaycastPushWall, RendererTag, VoxelWorld, VoxelPlayer, UiButton, UiImage, UiPanel, UiProgressBar,
-				   UiRect, UiSlider, UiText, UiLayout, UiToolCursor, UiTooltip, UiWindow>;
+				   UiRect, UiSlider, UiText, UiLayout, UiToolCursor, UiTooltip, UiWindow, UiFocus>;
 
 /**
  * @brief
@@ -146,6 +147,6 @@ using OptionalComponents =
 				   IsometricObject, PhysicBody, Player, Trigger, EntityLink, FlyCamera, BackgroundTexture, SoundSource,
 				   SoundListener, LuaScript, PrefabLink, RaycastDoor, RaycastPushWall, RendererTag, VoxelWorld,
 				   VoxelPlayer, UiButton, UiImage, UiPanel, UiProgressBar, UiRect, UiSlider, UiText, UiLayout,
-				   UiToolCursor, UiTooltip, UiWindow>;
+				   UiToolCursor, UiTooltip, UiWindow, UiFocus>;
 
 }// namespace owl::scene::component

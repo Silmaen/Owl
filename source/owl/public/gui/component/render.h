@@ -241,6 +241,14 @@ OWL_API void renderProps(scene::component::UiToolCursor& ioComponent);
 
 /**
  * @brief
+ *  Render a Gui for editing the component; the neighbours are picked among the UI entities of the owner's scene.
+ * @param ioComponent The component to edit.
+ * @param[in] iOwner The entity holding the component.
+ */
+OWL_API void renderProps(scene::component::UiFocus& ioComponent, const scene::Entity& iOwner);
+
+/**
+ * @brief
  *  Render a read-only Gui displaying the prefab link info.
  * @param ioComponent The component to display.
  */
@@ -304,7 +312,8 @@ using DrawableComponents =
 				   scene::component::Canvas, scene::component::UiRect, scene::component::UiText,
 				   scene::component::UiImage, scene::component::UiPanel, scene::component::UiButton,
 				   scene::component::UiSlider, scene::component::UiProgressBar, scene::component::UiWindow,
-				   scene::component::UiLayout, scene::component::UiTooltip, scene::component::UiToolCursor>;
+				   scene::component::UiLayout, scene::component::UiTooltip, scene::component::UiToolCursor,
+				   scene::component::UiFocus>;
 
 
 }// namespace owl::gui::component

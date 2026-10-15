@@ -41,6 +41,8 @@ struct OWL_API Canvas {
 	math::vec2 referenceResolution = {1280.f, 720.f};
 	/// How `referenceResolution` maps to the screen.
 	ScaleMode scaleMode = ScaleMode::ScaleWithHeight;
+	/// Whether the keyboard and gamepad focus wraps to the opposite end of the menu when nothing lies ahead.
+	bool wrapFocus = false;
 
 	/**
 	 * @brief

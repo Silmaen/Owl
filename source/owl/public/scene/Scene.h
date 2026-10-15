@@ -83,6 +83,7 @@ struct Tilemap;
 struct Transform;
 struct Trigger;
 struct UiButton;
+struct UiFocus;
 struct UiImage;
 struct UiLayout;
 struct UiPanel;
@@ -326,8 +327,9 @@ public:
 
 	/**
 	 * @brief
-	 *  Point the `EntityLink`s of some entities at new UUIDs (duplication, prefab instantiation).
-	 * @param[in] iEntities The entities whose links are remapped.
+	 *  Point the `EntityLink`s and the `UiFocus` neighbours of some entities at new UUIDs (duplication, prefab
+	 *  instantiation).
+	 * @param[in] iEntities The entities whose links and neighbours are remapped.
 	 * @param[in] iRemap Old target UUID to new target UUID; targets absent from it are kept.
 	 */
 	static void remapEntityLinks(const std::vector<Entity>& iEntities,
@@ -780,6 +782,18 @@ public:
 		bool tooltipInHud = false;
 		/// Seconds the mouse has stayed over `tooltipWidget`.
 		float hoverTime = 0.f;
+		/// Widget holding the keyboard and gamepad focus (`entt::null` for none).
+		entt::entity focus = entt::null;
+		/// Whether `focus` belongs to the HUD asset.
+		bool focusInHud = false;
+		/// Whether the focus is drawn: set by the keyboard, the gamepad and scripts, cleared when the mouse takes over.
+		bool focusVisible = false;
+		/// Whether the widget flagged `UiFocus::initial` has been given the focus (done once, on the first update).
+		bool focusStarted = false;
+		/// Direction held for the auto-repeat (0 none, else 1 up, 2 down, 3 left, 4 right).
+		uint8_t repeatDirection = 0;
+		/// Seconds `repeatDirection` has been held.
+		float repeatTime = 0.f;
 	};
 
 	/**
@@ -1346,6 +1360,9 @@ OWL_API void Scene::onComponentAdded<component::UiTooltip>(const Entity& iEntity
 template<>
 OWL_API void Scene::onComponentAdded<component::UiToolCursor>(const Entity& iEntity,
 															  component::UiToolCursor& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::UiFocus>(const Entity& iEntity, component::UiFocus& ioComponent);
 
 template<>
 OWL_API void Scene::onComponentAdded<component::PrefabLink>(const Entity& iEntity, component::PrefabLink& ioComponent);

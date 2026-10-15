@@ -33,6 +33,8 @@ struct OWL_API UiSlider {
 	math::vec4 fillColor{0.4f, 0.6f, 1.f, 1.f};
 	/// Handle colour.
 	math::vec4 handleColor{1.f, 1.f, 1.f, 1.f};
+	/// Change of the value per `ui_left` / `ui_right` press on a focused slider (0: a twentieth of the range).
+	float step = 0.f;
 	/// Lua callback name (called when value changes).
 	std::string onValueChangedCallback;
 

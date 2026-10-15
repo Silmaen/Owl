@@ -695,6 +695,8 @@ template<>
 constexpr bool isUiOnlyComponent<scene::component::UiTooltip> = true;
 template<>
 constexpr bool isUiOnlyComponent<scene::component::UiToolCursor> = true;
+template<>
+constexpr bool isUiOnlyComponent<scene::component::UiFocus> = true;
 
 auto layerTypeKeyForEntity(const scene::Entity& iEntity) -> std::string {
 	const auto& stack = renderer::Renderer::getRenderStack();
@@ -765,7 +767,10 @@ void drawComponent(scene::Entity& ioEntity, SceneUndoManager* iUndoManager, cons
 		}
 		if (open) {
 			ioInspector.beginComponent(ioEntity, T::key());
-			gui::component::renderProps(component);
+			if constexpr (requires { gui::component::renderProps(component, ioEntity); })
+				gui::component::renderProps(component, ioEntity);
+			else
+				gui::component::renderProps(component);
 			ioInspector.endComponent(T::key(), T::name(), iCommands);
 			gui::widgets::endSection();
 		}

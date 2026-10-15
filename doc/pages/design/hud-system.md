@@ -154,10 +154,37 @@ Implementation notes:
 - Tests: `HudDocument_test.cpp` (resolution, selection, hit-testing, gestures, snapping, creation by drop) and the
   `HudCommandsTest` cases of `CommandRegistry_test.cpp`.
 
-## Focus navigation (HUD5)
+## Focus navigation (HUD5, done)
 
-Keyboard and gamepad focus on buttons and sliders, driven by the `ui_up` / `ui_down` / `ui_left` / `ui_right` /
-`ui_confirm` / `ui_cancel` input actions ([Windowing and input](windowing-input.md)).
+Keyboard and gamepad focus on buttons and sliders, driven by the built-in `ui_up` / `ui_down` / `ui_left` /
+`ui_right` / `ui_accept` / `ui_cancel` actions of the scene's action map (`UiInputSystem::navigate`, called by
+`update` with `Scene::getActions()`; held directions repeat after 0.4 s, then every 0.1 s).
+
+- **Where the focus goes.** A direction picks, among the focusable widgets of the scene then of its HUD, the one whose
+  centre lies past the current one in that direction with the lowest `distance + 2 × sideways drift`, from the layout
+  `HudPass` draws (`HudLayout`): what is seen is what is reached, a widget cut away by its clipping panel is not.
+  No wrap-around unless the menu's `Canvas` has `wrapFocus`: with nothing ahead, the focus then jumps to the widget at
+  the opposite end of that canvas (the left stick never navigates). A `UiFocus` names a neighbour by entity UUID per
+  direction, which wins over the layout (a missing entity falls back to it); duplicating a subtree or instantiating a
+  prefab points the neighbours inside the copy at the copies, like `EntityLink`. The inspector picks a neighbour by
+  name among the UI entities of the scene (with a filter), undoable through `component.set`.
+- **Who can take it.** A `UiButton` not disabled or a `UiSlider`, unless its `UiFocus` has `focusable` off. While a
+  `UiWindow` is open the focus stays in the window drawn last (the HUD's over the scene's), and goes to the widgets
+  behind when it closes.
+- **Starting.** Nothing is focused until a `ui_*` direction or `ui_accept` is pressed: the first press only shows the
+  focus, on the widget flagged `UiFocus::initial`, else the first one in hierarchy order. A widget flagged `initial`
+  takes the focus, shown, as soon as the scene plays: a menu a gamepad can drive from the first frame.
+- **Acting.** `ui_accept` runs the `onClickCallback` of the focused button; `ui_left` / `ui_right` change the focused
+  slider by `UiSlider::step` (a twentieth of the range by default) and run its callback, unless the `UiFocus` names a
+  neighbour on that side; `ui_cancel` closes the top window when it is closable. A cancel never starts the
+  navigation, so the `pause` key of a game that shares Escape keeps working.
+- **Mouse.** The mouse takes the focus where it moves or clicks and hides the highlight (`focusVisible`); the next
+  key press shows it again, from the widget under the mouse. A motionless mouse never takes it back.
+- **Look.** A focused button draws as hovered and a frame in the `UiFocus` colour and thickness (default gold, 2
+  reference pixels) is drawn just outside it, over the windows, in the HUD pass overlay.
+- **Lua.** `ui.set_focus(id)`, `ui.get_focus()`, and `UiFocus::onFocusCallback`, called with `_focused_entity` when the
+  widget takes the focus.
+- The state (`focus`, `focusInHud`, `focusVisible`, repeat) lives in `Scene::UiInputState`, like the hover state.
 
 ## Migration (HUD6)
 

@@ -1269,6 +1269,7 @@ void EditorLayer::onContextualHelp() {
 			{"UiLayout", "editor"},
 			{"UiTooltip", "editor"},
 			{"UiToolCursor", "editor"},
+			{"UiFocus", "editor"},
 	};
 	const auto& hovered = panel::SceneHierarchy::lastHoveredComponentName();
 	if (const auto it = kComponentToPage.find(hovered); it != kComponentToPage.end()) {

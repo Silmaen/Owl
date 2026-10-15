@@ -451,6 +451,9 @@ each component marked by a thin axis colour, with a reset button that appears wh
   closable, clipped content), a row, column or grid arrangement of the children, a hover tooltip and a sprite following
   the mouse; every field is edited in the inspector, undoable through `component.set`, and a click on a window in the
   viewport selects it
+- **UI Focus** -- Keyboard and gamepad navigation of a button or a slider: focusable, initial focus, neighbours picked by name in
+  the scene (stored as UUIDs), focus callback and frame colour; a Canvas option wraps the focus at the ends of a menu; edited in the inspector like the other widgets, undoable through `component.set`;
+  in Play (editor or runner) the `ui_*` actions move the focus over the widgets
 - **Prefab Link** -- Read-only display: source asset path, synced version, mapped entity count,
   override count
 
