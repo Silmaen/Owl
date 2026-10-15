@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Isometric atlas generator `tools/iso_atlas` (Pillow, seeded, deterministic): terrain × 19 slopes, foundations, road and rail overlays, five sliced buildings and two trees as albedo + normal + depth at 1x, 2x and half size; it replaces the placeholder art and the generator of the isometric sample.
 - Isometric terrain: a corner-height grid on `TilemapAsset` (tilemap format 3, migrated from 2) with the 19 slopes
   derived from it, terraforming (raise, lower, level, areas), a (terrain, slope) table and foundations in the tileset,
   overlays drawn along the slope, slope-aware picking (`scene::terrain::pickTerrain`), and in Owl Nest an isometric

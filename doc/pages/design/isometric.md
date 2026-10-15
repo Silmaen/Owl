@@ -115,6 +115,22 @@ and the terraforming tools of `TilemapDocument`, the slope table of `TilesetDocu
 (an 8×8 map with a hump under the house on a foundation, a ridge and a road climbing a ramp); the `isometric` image
 references changed because the sample map is no longer flat.
 
+ISO3 (2026-10-15) added the atlas generator `tools/iso_atlas`, run from the repository root with
+`docker/run.sh poetry run python -m tools.iso_atlas [--project sample_project] [--seed 1] [--levels 1x,2x,half]`.
+It writes into `textures/iso/`, `tilesets/` and `tilemaps/` of the project:
+
+| Output                                 | Content                                                                                                                           |
+|----------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------|
+| `tiles.png`                            | 16-column atlas of 64×48 tiles: 11 flat terrains, 18 slopes of 9 terrains, 2 foundation sets                                      |
+| `buildings.png`, `buildings.json`      | Per-footprint-tile slices (64×128) of five buildings, with each slice's 3D box and rectangle                                      |
+| `cottage`, `tower`, `oak`, `pine`, `…` | Whole sprites, bottom centre on the front corner of the footprint                                                                 |
+| `smoke.png`                            | Translucent puff                                                                                                                  |
+| `*_normal.png`, `*_depth.png`          | Same grid as the albedo; normals are world space (`n * 0.5 + 0.5`), depth is the height above the sprite's ground (`z / 8 * 255`) |
+| `@2x`, `@0.5x` suffixes                | Atlases drawn natively at twice the size, and the mip at half the size, with their tilesets                                       |
+
+The same seed always gives the same pixels (pytest hash in `tools/tests/`); the sample map `iso_test.owltilemap` is
+written by the same run. Nothing reads the normal and depth atlases yet (v0.5.0 lights).
+
 ## Later
 
 - v0.5.0: normal-mapped isometric sprites under the 2D lights, from the generator's normal atlas; day / night as an
