@@ -64,7 +64,7 @@ Entities:
 - Entity: 4100000000000000021
   Tag: {tag: TreeWest}
   Transform:
-    translation: [0.5, 6.5, 0]
+    translation: [1.5, 5.5, 0]
     rotation: [0, 0, 0]
     scale: [1, 1.5, 1]
   SpriteRenderer:
@@ -76,7 +76,7 @@ Entities:
 - Entity: 4100000000000000022
   Tag: {tag: TreeSouth}
   Transform:
-    translation: [6.5, 6.5, 0]
+    translation: [5.5, 5.5, 0]
     rotation: [0, 0, 0]
     scale: [1, 1.5, 1]
   SpriteRenderer:
@@ -88,25 +88,49 @@ Entities:
 - Entity: 4100000000000000030
   Tag: {tag: House}
   Transform:
-    translation: [4, 3, 0.5]
+    translation: [3, 2, 0.5]
     rotation: [0, 0, 0]
-    scale: [1, 1.25, 1]
-  SpriteRenderer:
+    scale: [1, 1, 1]
+  IsometricObject:
+    atlasPath: textures/iso/buildings.json
+    building: cottage
     color: [1, 1, 1, 1]
-    texture: nam:textures/iso/cottage.png
-    tilingFactor: 1
   Visibility: {gameVisible: true}
   RendererTag: {Name: iso_world}
 - Entity: 4100000000000000031
   Tag: {tag: Tower}
   Transform:
+    translation: [6, 6, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  IsometricObject:
+    atlasPath: textures/iso/buildings.json
+    building: tower
+    color: [1, 1, 1, 1]
+  Visibility: {gameVisible: true}
+  RendererTag: {Name: iso_world}
+- Entity: 4100000000000000032
+  Tag: {tag: Townhouse}
+  Transform:
     translation: [3, 6, 0]
     rotation: [0, 0, 0]
-    scale: [1, 1.75, 1]
-  SpriteRenderer:
+    scale: [1, 1, 1]
+  IsometricObject:
+    atlasPath: textures/iso/buildings.json
+    building: townhouse
     color: [1, 1, 1, 1]
-    texture: nam:textures/iso/tower.png
-    tilingFactor: 1
+  Visibility: {gameVisible: true}
+  RendererTag: {Name: iso_world}
+- Entity: 4100000000000000033
+  Tag: {tag: Station}
+  Transform:
+    translation: [0, 6, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  IsometricObject:
+    atlasPath: textures/iso/buildings.json
+    building: station
+    color: [1, 1, 1, 1]
   Visibility: {gameVisible: true}
   RendererTag: {Name: iso_world}
 - Entity: 4100000000000000040
@@ -144,6 +168,93 @@ Entities:
     texture: nam:textures/iso/smoke.png
     tilingFactor: 1
   Visibility: {gameVisible: true}
+  RendererTag: {Name: iso_world}
+- Entity: 4100000000000000060
+  Tag: {tag: Car}
+  Transform:
+    translation: [1.0, 4.8, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/iso/vehicles.png
+    columns: 4
+    rows: 1
+    firstFrame: 0
+    lastFrame: 0
+    frameDuration: 0.1
+    loop: true
+  Visibility: {gameVisible: true}
+  LuaScript:
+    scriptPath: scripts/iso_vehicle.lua
+    properties:
+    - name: speed
+      type: float
+      value: 1.6
+    - name: min_x
+      type: float
+      value: 0.0
+    - name: max_x
+      type: float
+      value: 6.0
+  RendererTag: {Name: iso_world}
+- Entity: 4100000000000000061
+  Tag: {tag: Truck}
+  Transform:
+    translation: [5.0, 4.4, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/iso/vehicles.png
+    columns: 4
+    rows: 1
+    firstFrame: 2
+    lastFrame: 2
+    frameDuration: 0.1
+    loop: true
+  Visibility: {gameVisible: true}
+  LuaScript:
+    scriptPath: scripts/iso_vehicle.lua
+    properties:
+    - name: speed
+      type: float
+      value: -1.1
+    - name: min_x
+      type: float
+      value: 0.0
+    - name: max_x
+      type: float
+      value: 6.0
+  RendererTag: {Name: iso_world}
+- Entity: 4100000000000000062
+  Tag: {tag: Van}
+  Transform:
+    translation: [3.0, 4.8, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/iso/vehicles.png
+    columns: 4
+    rows: 1
+    firstFrame: 2
+    lastFrame: 2
+    frameDuration: 0.1
+    loop: true
+  Visibility: {gameVisible: true}
+  LuaScript:
+    scriptPath: scripts/iso_vehicle.lua
+    properties:
+    - name: speed
+      type: float
+      value: 1.6
+    - name: min_x
+      type: float
+      value: 0.0
+    - name: max_x
+      type: float
+      value: 6.0
   RendererTag: {Name: iso_world}
 - Entity: 4100000000000000050
   Tag: {tag: Hud}

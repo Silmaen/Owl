@@ -347,6 +347,52 @@ def _pine() -> list[Solid]:
     ]
 
 
+def _vehicle(length: float, width: float, body: RGB, cargo: RGB | None, along_x: bool) -> list[Solid]:
+    """
+    A car or a truck whose front ground corner is the front corner of the tile, where the sprite is anchored.
+
+    :param length: Length along its heading, in tiles.
+    :param width: Width across its heading, in tiles.
+    :param body: Paint of the body.
+    :param cargo: Colour of a cargo box behind the cab, None for a car.
+    :param along_x: Whether it heads along x (towards the lower right) or along y (towards the lower left).
+    :return: The solids.
+    """
+    glass = plain((58.0, 78.0, 104.0), 0.04)
+    tyre = plain((34.0, 34.0, 38.0), 0.04)
+
+    def oriented(
+        low: float, high: float, side_low: float, side_high: float, bottom: float, top: float, shader: Shader
+    ) -> Solid:
+        a, b = 1.0 - length + low, 1.0 - length + high
+        c, d = 1.0 - width + side_low, 1.0 - width + side_high
+        return box((a, c, bottom), (b, d, top), shader) if along_x else box((c, a, bottom), (d, b, top), shader)
+
+    solids: list[Solid] = [
+        oriented(0.0, length, 0.0, width, 0.07, 0.3, plain(body)),
+        oriented(length * 0.08, length * 0.2, -0.02, width + 0.02, 0.0, 0.14, tyre),
+        oriented(length * 0.72, length * 0.86, -0.02, width + 0.02, 0.0, 0.14, tyre),
+    ]
+    if cargo is None:
+        solids.append(oriented(length * 0.3, length * 0.7, 0.03, width - 0.03, 0.3, 0.5, glass))
+    else:
+        solids.append(oriented(length * 0.62, length * 0.94, 0.03, width - 0.03, 0.3, 0.5, glass))
+        solids.append(oriented(0.0, length * 0.58, 0.0, width, 0.3, 0.58, plain(cargo)))
+    return solids
+
+
+VEHICLES: list[ObjectSpec] = [
+    ObjectSpec("car_x", (1, 1), 64, lambda: _vehicle(0.55, 0.26, (196.0, 52.0, 48.0), None, True), 301),
+    ObjectSpec("car_y", (1, 1), 64, lambda: _vehicle(0.55, 0.26, (196.0, 52.0, 48.0), None, False), 302),
+    ObjectSpec(
+        "truck_x", (1, 1), 64, lambda: _vehicle(0.85, 0.32, (62.0, 108.0, 168.0), (226.0, 222.0, 210.0), True), 303
+    ),
+    ObjectSpec(
+        "truck_y", (1, 1), 64, lambda: _vehicle(0.85, 0.32, (62.0, 108.0, 168.0), (226.0, 222.0, 210.0), False), 304
+    ),
+]
+"""Vehicles, one cell each, packed in the order of this list into the vehicle sheet (a 4 x 1 spritesheet)."""
+
 BUILDINGS: list[ObjectSpec] = [
     ObjectSpec("cottage", (1, 1), 80, _cottage, 101),
     ObjectSpec("townhouse", (2, 1), 104, _townhouse, 102),

@@ -212,6 +212,15 @@ INSTANTIATE_TEST_SUITE_P(Scenes, RenderImage,
 							 return iInfo.param.scene + "_" + iInfo.param.backend;
 						 });
 
+// Isometric buildings sliced per tile and vehicles at an integer zoom (pixel snapping), on a larger capture.
+INSTANTIATE_TEST_SUITE_P(IsometricObjects, RenderImage,
+						 testing::Values(RenderCase{"isometric_objects", "vulkan", {640, 360}},
+										 RenderCase{"isometric_objects", "opengl", {640, 360}}),
+						 [](const testing::TestParamInfo<RenderCase>& iInfo) -> std::string {
+							 return std::format("{}_{}_{}x{}", iInfo.param.scene, iInfo.param.backend,
+												iInfo.param.size.x(), iInfo.param.size.y());
+						 });
+
 // The same HUD over a raycast and a voxel scene at three resolutions: anchors, stretch and scale modes on screen.
 INSTANTIATE_TEST_SUITE_P(Hud, RenderImage,
 						 testing::Values(RenderCase{"hud_raycast", "vulkan"}, RenderCase{"hud_raycast", "opengl"},

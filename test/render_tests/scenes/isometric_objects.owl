@@ -1,0 +1,167 @@
+Scene: RenderTestIsometricObjects
+EnabledRenderers:
+- {Name: raycast_world, Enabled: false}
+- {Name: world, Enabled: true}
+- Name: iso_world
+  Enabled: true
+  Overrides: {Zoom: 0}
+- Name: ui
+  Enabled: true
+  Overrides: {Space: Screen}
+Entities:
+- Entity: 4100000000000000001
+  Tag: {tag: MainCamera}
+  Transform:
+    translation: [4, 4, 5]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Camera:
+    camera: {projectionType: Orthographic, perspectiveFOV: 0.785398185, perspectiveNear: 0.00999999978, perspectiveFar: 1000,
+      orthographicSize: 10, orthographicNear: -1, orthographicFar: 10}
+    primary: true
+    fixedAspectRatio: false
+  Visibility: {gameVisible: true}
+- Entity: 4100000000000000002
+  Tag: {tag: Sky}
+  Transform:
+    translation: [4, 4, -5]
+    rotation: [0, 0, 0]
+    scale: [50, 50, 1]
+  BackgroundTexture:
+    mode: 0
+    type: 1
+    color: [0.16, 0.22, 0.3, 1]
+    topColor: [0.45, 0.62, 0.82, 1]
+  Visibility: {gameVisible: true}
+  RendererTag: {Name: world}
+- Entity: 4100000000000000010
+  Tag: {tag: Ground}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Tilemap: {tilemapPath: tilemaps/iso_test.owltilemap}
+  Visibility: {gameVisible: true}
+  RendererTag: {Name: iso_world}
+- Entity: 4100000000000000101
+  Tag: {tag: Cottage}
+  Transform:
+    translation: [3, 2, 0.5]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  IsometricObject:
+    atlasPath: textures/iso/buildings.json
+    building: cottage
+    color: [1, 1, 1, 1]
+  Visibility: {gameVisible: true}
+  RendererTag: {Name: iso_world}
+- Entity: 4100000000000000102
+  Tag: {tag: Townhouse}
+  Transform:
+    translation: [3, 6, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  IsometricObject:
+    atlasPath: textures/iso/buildings.json
+    building: townhouse
+    color: [1, 1, 1, 1]
+  Visibility: {gameVisible: true}
+  RendererTag: {Name: iso_world}
+- Entity: 4100000000000000103
+  Tag: {tag: Station}
+  Transform:
+    translation: [0, 6, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  IsometricObject:
+    atlasPath: textures/iso/buildings.json
+    building: station
+    color: [1, 1, 1, 1]
+  Visibility: {gameVisible: true}
+  RendererTag: {Name: iso_world}
+- Entity: 4100000000000000104
+  Tag: {tag: Tower}
+  Transform:
+    translation: [6, 6, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  IsometricObject:
+    atlasPath: textures/iso/buildings.json
+    building: tower
+    color: [1, 1, 1, 1]
+  Visibility: {gameVisible: true}
+  RendererTag: {Name: iso_world}
+- Entity: 4100000000000000201
+  Tag: {tag: Car}
+  Transform:
+    translation: [2.4, 4.8, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/iso/vehicles.png
+    columns: 4
+    rows: 1
+    firstFrame: 0
+    lastFrame: 0
+    frameDuration: 0.1
+    loop: true
+  Visibility: {gameVisible: true}
+  RendererTag: {Name: iso_world}
+- Entity: 4100000000000000202
+  Tag: {tag: Truck}
+  Transform:
+    translation: [4.6, 4.4, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/iso/vehicles.png
+    columns: 4
+    rows: 1
+    firstFrame: 2
+    lastFrame: 2
+    frameDuration: 0.1
+    loop: true
+  Visibility: {gameVisible: true}
+  RendererTag: {Name: iso_world}
+- Entity: 4100000000000000203
+  Tag: {tag: CarCrossing}
+  Transform:
+    translation: [5.3, 5.2, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/iso/vehicles.png
+    columns: 4
+    rows: 1
+    firstFrame: 1
+    lastFrame: 1
+    frameDuration: 0.1
+    loop: true
+  Visibility: {gameVisible: true}
+  RendererTag: {Name: iso_world}
+- Entity: 4100000000000000050
+  Tag: {tag: Hud}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Canvas: {space: ScreenOverlay, sortOrder: 0, referenceResolution: [1280, 720], scaleMode: ConstantPixels}
+  Visibility: {gameVisible: true}
+  RendererTag: {Name: ui}
+- Entity: 4100000000000000051
+  Tag: {tag: HudText}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 4100000000000000050}
+  RendererTag: {Name: ui}
+  UiRect: {anchorMin: [0, 0], anchorMax: [0, 0], pivot: [0, 0], size: [140, 20], offset: [10, 10]}
+  UiText:
+    text: Objects
+    color: [1, 0.95, 0.55, 1]
+    fontSize: 16
