@@ -10,8 +10,10 @@
 #include "scene/Scene.h"
 
 #include "data/voxel/TerrainGenerator.h"
+#include "platform/FileUtils.h"
 #include "renderer/BackgroundRenderer.h"
 #include "renderer/CameraOrtho.h"
+#include "renderer/IsometricObjects.h"
 #include "renderer/Renderer.h"
 #include "renderer/Renderer2D.h"
 #include "renderer/Renderer2DLayer.h"
@@ -42,6 +44,7 @@
 #include "sound/SoundCommand.h"
 #include "sound/SoundSystem.h"
 
+#include <algorithm>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -50,6 +53,7 @@
 #include <mutex>
 #include <span>
 #include <string>
+#include <string_view>
 #include <tuple>
 #include <utility>
 
@@ -1268,7 +1272,13 @@ void Scene::renderRaycastDynamicWalls(const bool iEditorMode) {
 }
 
 void Scene::resolveAllTilemapAssets() {
-	if (!m_tilemapAssetsDirty)
+	const auto hasPendingObject = [this]() -> bool {
+		return std::ranges::any_of(registry.view<component::IsometricObject>(), [this](const auto iEntity) -> bool {
+			const auto& object = registry.get<component::IsometricObject>(iEntity);
+			return !object.atlas && !object.atlasPath.empty();
+		});
+	};
+	if (!m_tilemapAssetsDirty && !hasPendingObject())
 		return;
 	if (!app::Application::instanced())
 		return;
@@ -1334,6 +1344,37 @@ void Scene::resolveAllTilemapAssets() {
 			continue;
 		if (auto resolved = resolveTileset(tilemap.asset->tilesetPath); resolved)
 			tilemap.asset->tileset = std::move(resolved);
+	}
+	std::unordered_map<std::string, shared<renderer::IsometricObjectSet>> objectSetCache;
+	const auto resolveObjectSet = [&](const std::filesystem::path& iPath) -> shared<renderer::IsometricObjectSet> {
+		const std::string key = iPath.generic_string();
+		if (const auto cached = objectSetCache.find(key); cached != objectSetCache.end())
+			return cached->second;
+		auto fresh = mkShared<renderer::IsometricObjectSet>();
+		const auto parse = [&fresh](const std::string_view iText) -> bool {
+			auto parsed = renderer::IsometricObjectSet::parse(iText);
+			if (!parsed)
+				return false;
+			*fresh = std::move(*parsed);
+			return true;
+		};
+		const bool loaded = loadAsset(iPath, parse, [&parse](const std::filesystem::path& iFullPath) -> bool {
+			return parse(platform::fileToString(iFullPath));
+		});
+		if (!loaded)
+			OWL_CORE_WARN("Scene: Isometric object sheet {} not found or invalid.", key)
+		else {
+			const std::filesystem::path texturePath = std::filesystem::path{iPath}.replace_extension(".png");
+			fresh->setTexture(renderer::gpu::Texture2D::createFromSerializedForDeserialize(
+					(texturePath.is_absolute() ? "pat:" : "nam:") + texturePath.generic_string()));
+		}
+		objectSetCache.emplace(key, fresh);
+		return fresh;
+	};
+	for (const auto view = registry.view<component::IsometricObject>(); const auto entity: view) {
+		auto& object = view.get<component::IsometricObject>(entity);
+		if (!object.atlas && !object.atlasPath.empty())
+			object.atlas = resolveObjectSet(object.atlasPath);
 	}
 	for (const auto view = registry.view<component::RaycastDoor>(); auto entity: view) {
 		auto& door = view.get<component::RaycastDoor>(entity);
@@ -2143,6 +2184,13 @@ OWL_API void Scene::onComponentAdded<component::RendererTag>([[maybe_unused]] co
 template<>
 OWL_API void Scene::onComponentAdded<component::Tilemap>([[maybe_unused]] const Entity& iEntity,
 														 [[maybe_unused]] component::Tilemap& ioComponent) {
+	m_tilemapAssetsDirty = true;
+}
+
+template<>
+OWL_API void
+Scene::onComponentAdded<component::IsometricObject>([[maybe_unused]] const Entity& iEntity,
+													[[maybe_unused]] component::IsometricObject& ioComponent) {
 	m_tilemapAssetsDirty = true;
 }
 

@@ -71,6 +71,8 @@ auto isPathOfKind(const std::filesystem::path& iPath, const AssetKind iKind) -> 
 			return ext == ".owltileset";
 		case AssetKind::Tilemap:
 			return ext == ".owltilemap";
+		case AssetKind::ObjectSheet:
+			return ext == ".json";
 		case AssetKind::Any:
 			return true;
 	}

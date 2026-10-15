@@ -9,6 +9,7 @@
 
 #include "renderer/RendererIsometric.h"
 
+#include "renderer/IsometricObjects.h"
 #include "renderer/gpu/DrawData.h"
 #include "renderer/gpu/RenderCommand.h"
 #include "renderer/gpu/RendererDescriptors.h"
@@ -179,6 +180,24 @@ auto getBackToFrontOrder(const IsometricCamera& iCamera, const std::span<const I
 	return order;
 }
 
+auto packColor(const math::vec4& iColor) -> uint32_t {
+	const auto channel = [](const float iValue) -> uint32_t {
+		return static_cast<uint32_t>(std::lround(std::clamp(iValue, 0.f, 1.f) * 255.f));
+	};
+	return channel(iColor.x()) | (channel(iColor.y()) << 8u) | (channel(iColor.z()) << 16u) |
+		   (channel(iColor.w()) << 24u);
+}
+
+auto getSpriteScreenRect(const IsometricCamera& iCamera, const IsometricSprite& iSprite) -> math::vec4 {
+	const float zoom = iCamera.getZoom();
+	const math::vec2 foot = iCamera.worldToViewport(iSprite.foot);
+	const float width = iSprite.size.x() * zoom;
+	const float height = iSprite.size.y() * zoom;
+	const float left = foot.x() - iSprite.anchor.x() * width;
+	const float bottom = foot.y() + iSprite.anchor.y() * height;
+	return {left, bottom - height, left + width, bottom};
+}
+
 auto pickIsometricCell(const IsometricCamera& iCamera, const math::vec2& iPixel, const math::vec3& iMapOrigin,
 					   const math::vec2ui& iMapSize) -> std::optional<math::vec2ui> {
 	const math::vec3 ground = iCamera.viewportToWorld(iPixel, iMapOrigin.z());
@@ -197,6 +216,7 @@ namespace {
 constexpr auto g_rendererKey = "RendererIsometric";
 constexpr auto g_shaderFolder = "isometric";
 constexpr auto g_shaderName = "billboard";
+constexpr auto g_spriteShaderName = "sprite";
 constexpr uint32_t g_maxTextureSlots = 32;
 constexpr float g_cutoutAlpha = 0.5f;
 constexpr float g_translucentDiscardAlpha = 0.001f;
@@ -222,8 +242,25 @@ struct SceneUbo {
 	math::vec4 params{0.f, 0.f, 0.f, 0.f};
 };
 
+// Mirrored by `SpriteInstance` in `sprite.slang` (std430).
+struct GpuSprite {
+	math::vec4 foot;
+	math::vec4 sizeAnchor;
+	math::vec4 uvRect;
+	uint32_t color = 0xFFFFFFFFu;
+	uint32_t texIndex = 0;
+	int32_t entityId = -1;
+	uint32_t pad = 0;
+};
+static_assert(sizeof(GpuSprite) == 64, "GpuSprite must match the shader std430 layout");
+
 struct Queued {
 	GpuInstance gpu;
+	uint16_t frameTexture = g_whiteTexture;
+};
+
+struct QueuedSprite {
+	GpuSprite gpu;
 	uint16_t frameTexture = g_whiteTexture;
 };
 
@@ -231,7 +268,9 @@ struct InternalState {
 	bool initialized = false;
 	shared<gpu::DrawData> opaqueDraw;
 	shared<gpu::DrawData> translucentDraw;
+	shared<gpu::DrawData> spriteDraw;
 	shared<gpu::StorageBuffer> instances;
+	shared<gpu::StorageBuffer> spriteInstances;
 	shared<gpu::UniformBuffer> sceneUbo;
 	shared<gpu::Texture2D> whiteTexture;
 	SceneUbo scene;
@@ -240,11 +279,15 @@ struct InternalState {
 	float flatSlope = 0.f;
 	std::vector<Queued> opaque;
 	std::vector<Queued> translucent;
+	std::vector<QueuedSprite> sprites;
 	std::vector<DepthKey> translucentKeys;
 	std::vector<shared<gpu::Texture2D>> frameTextures;
 	const gpu::Texture2D* lastTexture = nullptr;
 	uint16_t lastFrameTexture = g_whiteTexture;
 	std::vector<GpuInstance> batch;
+	std::vector<GpuSprite> spriteBatch;
+	float snapZoom = 0.f;
+	math::vec2 snapOffset{0.f, 0.f};
 	std::vector<shared<gpu::Texture2D>> slots;
 	std::vector<int32_t> slotOfFrameTexture;
 	RendererIsometric::Statistics stats;
@@ -263,6 +306,16 @@ auto makeDraw(const gpu::PipelineState& iState) -> shared<gpu::DrawData> {
 	std::vector<uint32_t> indices{0, 1, 2, 2, 3, 0};
 	auto draw = gpu::DrawData::create();
 	draw->init({{"i_CornerIndex", gpu::ShaderDataType::Int}}, g_shaderFolder, indices, g_shaderName, iState);
+	constexpr std::array<int32_t, 4> corners{0, 1, 2, 3};
+	draw->setVertexData(corners.data(), static_cast<uint32_t>(corners.size() * sizeof(int32_t)));
+	return draw;
+}
+
+auto makeSpriteDraw() -> shared<gpu::DrawData> {
+	std::vector<uint32_t> indices{0, 1, 2, 2, 3, 0};
+	auto draw = gpu::DrawData::create();
+	draw->init({{"i_CornerIndex", gpu::ShaderDataType::Int}}, g_shaderFolder, indices, g_spriteShaderName,
+			   {.blendMode = gpu::BlendMode::Opaque, .depthTest = true, .depthWrite = true});
 	constexpr std::array<int32_t, 4> corners{0, 1, 2, 3};
 	draw->setVertexData(corners.data(), static_cast<uint32_t>(corners.size() * sizeof(int32_t)));
 	return draw;
@@ -289,6 +342,25 @@ auto frameTextureOf(const shared<gpu::Texture2D>& iTexture) -> uint16_t {
 	return index;
 }
 
+void queueSprite(const uint16_t iFrameTexture, const IsometricSprite& iSprite) {
+	auto& state = *g_state;
+	const auto& viewport = state.camera.getViewportSize();
+	const math::vec4 rect = getSpriteScreenRect(state.camera, iSprite);
+	if (rect.z() < 0.f || rect.x() > static_cast<float>(viewport.x()) || rect.w() < 0.f ||
+		rect.y() > static_cast<float>(viewport.y())) {
+		++state.stats.culledSpriteCount;
+		return;
+	}
+	QueuedSprite item;
+	item.frameTexture = iFrameTexture;
+	item.gpu.foot = math::vec4{iSprite.foot.x(), iSprite.foot.y(), iSprite.foot.z(), iSprite.depthBias};
+	item.gpu.sizeAnchor = math::vec4{iSprite.size.x(), iSprite.size.y(), iSprite.anchor.x(), iSprite.anchor.y()};
+	item.gpu.uvRect = iSprite.uvRect;
+	item.gpu.color = iSprite.color;
+	item.gpu.entityId = iSprite.entityId;
+	state.sprites.push_back(item);
+}
+
 void queue(const IsometricBillboard& iBillboard) {
 	auto& state = *g_state;
 	Queued item;
@@ -308,6 +380,7 @@ void queue(const IsometricBillboard& iBillboard) {
 void resetSlots() {
 	auto& state = *g_state;
 	state.batch.clear();
+	state.spriteBatch.clear();
 	state.slots.clear();
 	state.slots.push_back(state.whiteTexture);
 	state.slotOfFrameTexture.assign(state.frameTextures.size(), -1);
@@ -325,6 +398,43 @@ void flushBatch(const shared<gpu::DrawData>& iDraw) {
 	gpu::RenderCommand::drawDataInstanced(iDraw, /*iIndexCount=*/6u, count);
 	++state.stats.drawCallCount;
 	resetSlots();
+}
+
+void flushSpriteBatch() {
+	auto& state = *g_state;
+	if (state.spriteBatch.empty())
+		return;
+	const auto count = static_cast<uint32_t>(state.spriteBatch.size());
+	state.sceneUbo->setData(&state.scene, sizeof(SceneUbo), 0);
+	gpu::RenderCommand::bindTextures(state.slots);
+	state.spriteInstances->setData(state.spriteBatch.data(), static_cast<uint32_t>(count * sizeof(GpuSprite)), 0);
+	state.spriteInstances->bind();
+	gpu::RenderCommand::drawDataInstanced(state.spriteDraw, /*iIndexCount=*/6u, count);
+	++state.stats.drawCallCount;
+	resetSlots();
+}
+
+void emitSprite(const QueuedSprite& iItem) {
+	auto& state = *g_state;
+	if (state.spriteBatch.size() >= RendererIsometric::maxSpritesPerBatch)
+		flushSpriteBatch();
+	uint32_t slot = 0;
+	if (iItem.frameTexture != g_whiteTexture) {
+		if (state.slotOfFrameTexture[iItem.frameTexture] < 0) {
+			if (state.slots.size() >= g_maxTextureSlots)
+				flushSpriteBatch();
+			state.slotOfFrameTexture[iItem.frameTexture] = static_cast<int32_t>(state.slots.size());
+			state.slots.push_back(state.frameTextures[iItem.frameTexture]);
+		}
+		slot = static_cast<uint32_t>(state.slotOfFrameTexture[iItem.frameTexture]);
+	}
+	state.spriteBatch.push_back(iItem.gpu);
+	state.spriteBatch.back().texIndex = slot;
+}
+
+void setPassParams(const float iAlpha) {
+	auto& state = *g_state;
+	state.scene.params = math::vec4{iAlpha, state.snapZoom, state.snapOffset.x(), state.snapOffset.y()};
 }
 
 void emit(const Queued& iItem, const shared<gpu::DrawData>& iDraw) {
@@ -349,11 +459,22 @@ void drawOpaquePass() {
 	auto& state = *g_state;
 	if (state.opaque.empty())
 		return;
-	state.scene.params = math::vec4{g_cutoutAlpha, 1.f, 0.f, 0.f};
+	setPassParams(g_cutoutAlpha);
 	resetSlots();
 	for (const auto& item: state.opaque) emit(item, state.opaqueDraw);
 	flushBatch(state.opaqueDraw);
 	state.stats.opaqueCount += static_cast<uint32_t>(state.opaque.size());
+}
+
+void drawSpritePass() {
+	auto& state = *g_state;
+	if (state.sprites.empty())
+		return;
+	setPassParams(g_cutoutAlpha);
+	resetSlots();
+	for (const auto& item: state.sprites) emitSprite(item);
+	flushSpriteBatch();
+	state.stats.spriteCount += static_cast<uint32_t>(state.sprites.size());
 }
 
 void drawTranslucentPass() {
@@ -368,7 +489,7 @@ void drawTranslucentPass() {
 				{.depth = state.camera.getViewDepth({foot.x(), foot.y(), foot.z()}), .bias = foot.w(), .index = index});
 	}
 	std::ranges::stable_sort(keys, isFarther);
-	state.scene.params = math::vec4{g_translucentDiscardAlpha, 0.f, 0.f, 0.f};
+	setPassParams(g_translucentDiscardAlpha);
 	resetSlots();
 	for (const auto& key: keys) emit(state.translucent[key.index], state.translucentDraw);
 	flushBatch(state.translucentDraw);
@@ -423,12 +544,14 @@ void RendererIsometric::init() {
 
 	g_state->opaqueDraw = makeDraw({.blendMode = gpu::BlendMode::Opaque, .depthTest = true, .depthWrite = true});
 	g_state->translucentDraw = makeDraw({.blendMode = gpu::BlendMode::Alpha, .depthTest = true, .depthWrite = false});
+	g_state->spriteDraw = makeSpriteDraw();
 	g_state->whiteTexture =
 			gpu::Texture2D::create(gpu::Texture2D::Specification{.size = {1, 1}, .format = gpu::ImageFormat::Rgba8});
 	uint32_t white = 0xffffffff;
 	g_state->whiteTexture->setData(&white, sizeof(uint32_t));
 	g_state->sceneUbo = gpu::UniformBuffer::create(sizeof(SceneUbo), 0, g_rendererKey);
 	g_state->instances = gpu::StorageBuffer::create(maxBillboardsPerBatch * sizeof(GpuInstance), 2, g_rendererKey);
+	g_state->spriteInstances = gpu::StorageBuffer::create(maxSpritesPerBatch * sizeof(GpuSprite), 2, g_rendererKey);
 	g_state->batch.reserve(maxBillboardsPerBatch);
 	g_state->initialized = true;
 }
@@ -450,8 +573,13 @@ void RendererIsometric::beginScene(const IsometricCamera& iCamera) {
 	const float pitch = getIsometricPitch(iCamera.getConfig());
 	state.uprightSlope = std::tan(pitch);
 	state.flatSlope = -1.f / std::tan(pitch);
+	const float zoom = iCamera.getZoom();
+	state.snapZoom = zoom >= 1.f ? zoom : 0.f;
+	const auto& viewport = iCamera.getViewportSize();
+	state.snapOffset = {static_cast<float>(viewport.x() % 2u) * 0.5f, static_cast<float>(viewport.y() % 2u) * 0.5f};
 	state.opaque.clear();
 	state.translucent.clear();
+	state.sprites.clear();
 	state.frameTextures.clear();
 	state.lastTexture = nullptr;
 	state.lastFrameTexture = g_whiteTexture;
@@ -461,6 +589,53 @@ void RendererIsometric::drawBillboard(const IsometricBillboard& iBillboard) {
 	if (!isReady())
 		return;
 	queue(iBillboard);
+}
+
+void RendererIsometric::drawSprite(const shared<gpu::Texture2D>& iTexture, const IsometricSprite& iSprite) {
+	drawSprites(iTexture, std::span{&iSprite, 1});
+}
+
+void RendererIsometric::drawSprites(const shared<gpu::Texture2D>& iTexture,
+									const std::span<const IsometricSprite> iSprites) {
+	if (!isReady() || iSprites.empty())
+		return;
+	auto& state = *g_state;
+	const uint16_t frameTexture = frameTextureOf(iTexture);
+	state.sprites.reserve(state.sprites.size() + iSprites.size());
+	for (const auto& sprite: iSprites) queueSprite(frameTexture, sprite);
+}
+
+void RendererIsometric::drawObject(const IsometricObjectSet& iSet, const IsometricObjectDef& iObject,
+								   const math::vec3& iOrigin, const math::vec4& iColor, const int iEntityId) {
+	if (!isReady() || !iSet.getTexture())
+		return;
+	const auto& state = *g_state;
+	const auto& texture = iSet.getTexture();
+	const math::vec2ui textureSize = texture->getSize();
+	if (textureSize.x() == 0 || textureSize.y() == 0)
+		return;
+	const auto sheetWidth = static_cast<float>(textureSize.x());
+	const auto sheetHeight = static_cast<float>(textureSize.y());
+	const float scale = static_cast<float>(state.camera.getConfig().tileSize.x()) / iSet.getTileWidth();
+	const uint32_t color = packColor(iColor);
+	const uint16_t frameTexture = frameTextureOf(texture);
+	const float halfU = 0.5f / sheetWidth;
+	const float halfV = 0.5f / sheetHeight;
+	for (const auto& slice: iObject.slices) {
+		const float rectWidth = slice.rect.z();
+		const float rectHeight = slice.rect.w();
+		queueSprite(frameTexture, {.foot = iOrigin + math::vec3{static_cast<float>(slice.cell.x() + 1),
+																static_cast<float>(slice.cell.y() + 1), 0.f},
+								   .size = {rectWidth * scale, rectHeight * scale},
+								   .anchor = {slice.anchor.x() / rectWidth, 1.f - slice.anchor.y() / rectHeight},
+								   .uvRect = {slice.rect.x() / sheetWidth + halfU,
+											  1.f - (slice.rect.y() + rectHeight) / sheetHeight + halfV,
+											  (slice.rect.x() + rectWidth) / sheetWidth - halfU,
+											  1.f - slice.rect.y() / sheetHeight - halfV},
+								   .color = color,
+								   .depthBias = spriteBias,
+								   .entityId = iEntityId});
+	}
 }
 
 void RendererIsometric::drawTilemap(const scene::TilemapAsset& iAsset, const math::Transform& iWorldTransform,
@@ -546,15 +721,17 @@ void RendererIsometric::endScene() {
 	if (!isReady())
 		return;
 	auto& state = *g_state;
-	if (state.opaque.empty() && state.translucent.empty())
+	if (state.opaque.empty() && state.translucent.empty() && state.sprites.empty())
 		return;
 	const gpu::RendererDescriptors::ScopedActive scoped{blockId()};
 	gpu::RenderCommand::beginBatch();
 	drawOpaquePass();
+	drawSpritePass();
 	drawTranslucentPass();
 	gpu::RenderCommand::endBatch();
 	state.opaque.clear();
 	state.translucent.clear();
+	state.sprites.clear();
 }
 
 auto RendererIsometric::getStatistics() -> Statistics { return g_state ? g_state->stats : Statistics{}; }

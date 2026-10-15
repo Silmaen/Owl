@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from .common import TILE_H, TILE_W, Z_RANGE, Layers, Vec3
-from .objects import BUILDINGS, PROPS, SLICE_HEIGHT, render_object, slice_object, smoke
+from .objects import BUILDINGS, PROPS, SLICE_HEIGHT, VEHICLES, render_object, slice_object, smoke
 from .sample_map import write_map
 from .terrain import FOUNDATION_TOPS, SLOPE_COUNT, SLOPES, TERRAINS, draw_foundation, draw_surface
 
@@ -23,6 +23,8 @@ LEVELS = ("1x", "2x", "half")
 """Zoom levels, in generation order."""
 SUFFIX = {"1x": "", "2x": "@2x", "half": "@0.5x"}
 """File name suffix of each level."""
+VEHICLE_HEIGHT = 64
+"""Height in pixels of a vehicle cell."""
 SHEET_COLUMNS = 4
 """Slices per row of the building sheet."""
 
@@ -169,6 +171,21 @@ def build_buildings(seed: int, scale: int) -> tuple[Layers, list[SheetEntry]]:
     return sheet, entries
 
 
+def build_vehicles(seed: int) -> Layers:
+    """
+    Render the vehicles into a one-row spritesheet of 64x64 cells, at zoom 1.
+
+    The bottom centre of a cell is the front ground corner of the vehicle, the point the engine puts on the entity.
+
+    :param seed: Seed of the run.
+    :return: The sheet.
+    """
+    sheet = Layers(len(VEHICLES) * TILE_W, VEHICLE_HEIGHT)
+    for index, spec in enumerate(VEHICLES):
+        sheet.paste(render_object(spec, seed, 1).layers, index * TILE_W, 0)
+    return sheet
+
+
 def buildings_json(entries: list[SheetEntry], level: str) -> str:
     """
     Describe the slices of the building sheet.
@@ -247,6 +264,7 @@ def generate(project: Path, seed: int = 1, levels: tuple[str, ...] = LEVELS) -> 
     for spec in BUILDINGS + PROPS:
         written += _save(render_object(spec, seed, 1).layers, folder, spec.name, "1x")
     written += _save(smoke(1, seed), folder, "smoke", "1x")
+    written += _save(build_vehicles(seed), folder, "vehicles", "1x")
     written.append(write_map(project, seed))
     return written
 

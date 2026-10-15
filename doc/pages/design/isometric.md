@@ -46,8 +46,29 @@ The first step on the unmerged `Feature/KickoffIsometricRenderer` branch (2026-0
   sprite. An entity sprite is `scale.xy × TileWidth` pixels large.
 - Objects wider than a tile are cut into one slice per footprint tile, as Transport Tycoon does; each slice carries a
   3D box that gives its depth, which avoids the sorting artefacts of long vehicles and tall buildings.
-- Moving sprites use an anchor-plus-size billboard instance without a per-sprite matrix, so thousands of vehicles stay
-  on the instanced path.
+- Moving sprites use an anchor-plus-size instance without a per-sprite matrix (`IsometricSprite`, 64 bytes against 96
+  for an `IsometricBillboard`), so thousands of vehicles stay on the instanced path: `drawSprites` takes a span sharing
+  one texture, drops the sprites outside the viewport on the CPU and batches the rest in one draw call.
+- The foot of every sprite and tile snaps to whole screen pixels at an integer zoom (level 0 and above), so a moving
+  sprite never shimmers; below zoom 1 the projection is left alone.
+
+### Objects
+
+- An object sheet is the `buildings.json` of the generator: for each building its footprint and one slice per footprint
+  tile (`cell`, `rect` in the sheet, `anchor`, `box` = the 3D box of the slice in tiles). `renderer::IsometricObjectSet`
+  parses it (`zoom` gives the art's tile width, 64 at `1x`) and holds the texture.
+- A slice is an upright sprite whose bottom centre sits on the front corner of its tile, at the object's origin plus
+  `(cell + 1)`: each one writes the depth of its own plane, so a vehicle drives between the slices of a station and a
+  tree stands behind or in front of a tower per pixel. The box gives the object's height (`IsometricObjectDef::getHeight`);
+  the sprites are cut against the viewport.
+- The `IsometricObject` component (`atlasPath`, `building`, `color`) puts one on an entity: the translation is the back
+  corner of the footprint, rotation and scale are ignored, only the isometric layer draws it. Its inspector has a sheet
+  drop field (`.json`), the building list and a footprint summary; edits go through the usual component command, so they
+  are undoable, and the entity is picked in the viewport through the entity id the slices write. A pack includes the
+  sheet and the `.png` beside it.
+- Vehicles are plain `SpriteRenderer` / `AnimatedSpriteRenderer` entities: opaque ones leave the layer as compact
+  sprites. `tools/iso_atlas` writes `vehicles.png`, a 4 × 1 sheet of 64 × 64 cells (car and truck, heading along x and
+  along y); the bottom centre of a cell is the front ground corner of the vehicle.
 
 ### Terrain
 
@@ -107,7 +128,7 @@ migrations, image tests on lavapipe and llvmpipe with zero validation message, a
 ISO1 (2026-10-14) shipped the layer, the camera, the billboards with depth and cutout, the translucent sort, the
 ported projection helpers, `Tileset::kind`, the isometric viewport mode of Owl Nest, `sample_project/scenes/iso_test.owl`
 and the `isometric` image test on both backends. Isometric tilemaps emit their cells per frame from the chunks in view;
-persistent isometric chunk buffers come with ISO4.
+persistent isometric chunk buffers are left to ISO5.
 
 ISO2 (2026-10-15) added the corner heights (tilemap format 3), the 19 slopes, terraforming, the (terrain, slope) table
 and foundations of the tileset, overlays drawn along the slope, `pickTerrain` (bench `iso/pick`), the isometric preview
@@ -130,6 +151,23 @@ It writes into `textures/iso/`, `tilesets/` and `tilemaps/` of the project:
 
 The same seed always gives the same pixels (pytest hash in `tools/tests/`); the sample map `iso_test.owltilemap` is
 written by the same run. Nothing reads the normal and depth atlases yet (v0.5.0 lights).
+
+ISO4 (2026-10-15) added the objects: `IsometricObjectSet` and the `IsometricObject` component with its inspector, the
+compact `IsometricSprite` and `RendererIsometric::drawSprite` / `drawSprites` / `drawObject` (`sprite.slang`), pixel
+snapping at integer zoom in both shaders, the vehicle sheet of the generator, the `iso_test.owl` buildings from slices
+and three vehicles driven by `iso_vehicle.lua`, and the `isometric_objects` image test (640 × 360, both backends; the
+`isometric` references did not change). Measured on the Null backend (1920 × 1080, 512² map with hills, one P-core):
+
+| Case                                             | Median  | Budget |
+|--------------------------------------------------|---------|--------|
+| Frame, zoom 1, no vehicle                        | 0.21 ms | < 1 ms |
+| Frame, zoom 1, 5 000 vehicles over the whole map | 0.26 ms | < 2 ms |
+| Frame, zoom 1, 5 000 vehicles in view            | 0.31 ms | < 2 ms |
+| Frame, zoomed out ×4 (51 200 cells in 3 chunks)  | 1.42 ms | < 4 ms |
+| 1 000 buildings of 3 slices (3 000 sprites)      | 63 µs   | -      |
+
+The baseline of these entries in `bench/baseline/linux-bench.json` is an estimate (this run scaled by the agent ratio
+of `renderer2d/quads_color`) until a nightly run replaces it.
 
 ## Later
 

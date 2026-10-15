@@ -21,6 +21,12 @@ TEST(AssetField, IsPathOfKindAcceptsTextureExtensions) {
 	EXPECT_FALSE(isPathOfKind("sprite", AssetKind::Texture));
 }
 
+TEST(AssetField, IsPathOfKindObjectSheetIsJsonOnly) {
+	EXPECT_TRUE(isPathOfKind("buildings.json", AssetKind::ObjectSheet));
+	EXPECT_TRUE(isPathOfKind("buildings.JSON", AssetKind::ObjectSheet));
+	EXPECT_FALSE(isPathOfKind("buildings.png", AssetKind::ObjectSheet));
+}
+
 TEST(AssetField, IsPathOfKindAcceptsFontExtensions) {
 	EXPECT_TRUE(isPathOfKind("hero.ttf", AssetKind::Font));
 	EXPECT_TRUE(isPathOfKind("hero.otf", AssetKind::Font));

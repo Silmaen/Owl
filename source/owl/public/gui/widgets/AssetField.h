@@ -35,6 +35,7 @@ enum struct AssetKind : uint8_t {
 	Hud,///< HUD asset (`.owlhud`).
 	Tileset,///< Tileset asset (`.owltileset`).
 	Tilemap,///< Tilemap asset (`.owltilemap`).
+	ObjectSheet,///< Isometric object sheet description (`.json`).
 	Any,///< Accepts any extension.
 };
 

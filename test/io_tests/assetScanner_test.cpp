@@ -553,6 +553,42 @@ TEST_F(AssetScannerTest, ScanSceneWithTilemapChainPacksTilesetAndTexture) {
 	EXPECT_TRUE(foundTexture);
 }
 
+TEST_F(AssetScannerTest, ScanSceneWithIsometricObjectPacksSheetAndTexture) {
+	const auto sheetPath = m_tempDir / "iso" / "buildings.json";
+	writeFile(sheetPath, R"({"zoom": "1x", "buildings": {}})");
+	const auto texPath = m_tempDir / "iso" / "buildings.png";
+	writeDummyBinary(texPath);
+	const auto scenePath = m_tempDir / "test.owl";
+	writeFile(scenePath, "Scene: test\nEntities:\n"
+						 "  - Entity: 1\n"
+						 "    IsometricObject:\n"
+						 "      atlasPath: " +
+								 sheetPath.generic_string() + "\n      building: cottage\n");
+
+	const auto assets = AssetScanner::scanScene(scenePath);
+	bool foundSheet = false;
+	bool foundTexture = false;
+	for (const auto& ref: assets) {
+		if (ref.diskPath == sheetPath)
+			foundSheet = true;
+		if (ref.assetType == AssetType::Texture && ref.diskPath == texPath)
+			foundTexture = true;
+	}
+	EXPECT_TRUE(foundSheet);
+	EXPECT_TRUE(foundTexture);
+}
+
+TEST_F(AssetScannerTest, ScanSceneWithMissingIsometricSheetLogsWarning) {
+	const auto scenePath = m_tempDir / "test.owl";
+	writeFile(scenePath, "Scene: test\nEntities:\n"
+						 "  - Entity: 1\n"
+						 "    IsometricObject:\n"
+						 "      atlasPath: /no/such/buildings.json\n");
+	std::vector<std::string> warnings;
+	(void) AssetScanner::scanScene(scenePath, &warnings);
+	EXPECT_FALSE(warnings.empty());
+}
+
 TEST_F(AssetScannerTest, ScanSceneWithMissingTilemapLogsWarning) {
 	const auto scenePath = m_tempDir / "test.owl";
 	writeFile(scenePath, "Scene: test\nEntities:\n"

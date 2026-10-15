@@ -13,7 +13,7 @@ from PIL import Image, ImageStat
 
 from tools.iso_atlas import atlas
 from tools.iso_atlas.common import TILE_H, TILE_W, Layers
-from tools.iso_atlas.objects import BUILDINGS, PROPS, SLICE_HEIGHT, render_object, slice_object
+from tools.iso_atlas.objects import BUILDINGS, PROPS, SLICE_HEIGHT, VEHICLES, render_object, slice_object
 from tools.iso_atlas.terrain import SLOPE_COUNT, SLOPES
 
 SEED = 1
@@ -122,6 +122,17 @@ def test_objects_fit_their_canvas() -> None:
         assert rendered.layers.albedo.getchannel("A").getbbox() is not None, spec.name
 
 
+def test_vehicle_sheet_has_one_drawn_cell_per_vehicle() -> None:
+    sheet = atlas.build_vehicles(SEED)
+    assert sheet.albedo.size == (len(VEHICLES) * TILE_W, atlas.VEHICLE_HEIGHT)
+    for index in range(len(VEHICLES)):
+        cell = sheet.albedo.crop((index * TILE_W, 0, (index + 1) * TILE_W, atlas.VEHICLE_HEIGHT))
+        box = cell.getchannel("A").getbbox()
+        assert box is not None, index
+        assert box[3] >= atlas.VEHICLE_HEIGHT - 4, "the front corner of the vehicle is the bottom edge"
+    assert _digest(atlas.build_vehicles(SEED)) == _digest(sheet)
+
+
 def test_generate_writes_the_expected_files(tmp_path: Path) -> None:
     written = atlas.generate(tmp_path, SEED, ("1x",))
     names = {p.relative_to(tmp_path).as_posix() for p in written}
@@ -131,6 +142,7 @@ def test_generate_writes_the_expected_files(tmp_path: Path) -> None:
     assert "tilesets/iso_ground.owltileset" in names
     assert "tilemaps/iso_test.owltilemap" in names
     assert "textures/iso/oak.png" in names
+    assert "textures/iso/vehicles.png" in names
     sheet = json.loads((tmp_path / "textures/iso/buildings.json").read_text())
     assert set(sheet["buildings"]) == {b.name for b in BUILDINGS}
     assert len(sheet["buildings"]["warehouse"]["slices"]) == 4

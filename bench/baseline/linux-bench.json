@@ -697,6 +697,72 @@
       "max_ns": 228066.1
     },
     {
+      "name": "iso/pick/256x256_hills",
+      "items": 1,
+      "batch": 144256,
+      "samples": 15,
+      "median_ns": 194.8,
+      "p25_ns": 194.3,
+      "p75_ns": 195.0,
+      "min_ns": 193.9,
+      "max_ns": 207.6
+    },
+    {
+      "name": "iso/frame/512x512_1080p_zoom1",
+      "items": 1,
+      "batch": 56,
+      "samples": 15,
+      "median_ns": 496469.7,
+      "p25_ns": 496034.1,
+      "p75_ns": 497528.2,
+      "min_ns": 493726.6,
+      "max_ns": 500563.7
+    },
+    {
+      "name": "iso/frame/512x512_1080p_zoom1_5000_vehicles_spread",
+      "items": 1,
+      "batch": 44,
+      "samples": 15,
+      "median_ns": 619986.1,
+      "p25_ns": 619238.5,
+      "p75_ns": 621377.6,
+      "min_ns": 616727.0,
+      "max_ns": 623967.1
+    },
+    {
+      "name": "iso/frame/512x512_1080p_zoom1_5000_vehicles_in_view",
+      "items": 1,
+      "batch": 39,
+      "samples": 15,
+      "median_ns": 721730.6,
+      "p25_ns": 721198.3,
+      "p75_ns": 723167.4,
+      "min_ns": 717870.1,
+      "max_ns": 727051.9
+    },
+    {
+      "name": "iso/frame/512x512_1080p_zoom_out4",
+      "items": 1,
+      "batch": 8,
+      "samples": 15,
+      "median_ns": 3333149.1,
+      "p25_ns": 3328351.6,
+      "p75_ns": 3337902.3,
+      "min_ns": 3327356.2,
+      "max_ns": 3349390.7
+    },
+    {
+      "name": "iso/objects/1000_buildings_3_slices",
+      "items": 1000,
+      "batch": 191,
+      "samples": 15,
+      "median_ns": 146429.3,
+      "p25_ns": 146301.3,
+      "p75_ns": 146676.4,
+      "min_ns": 146201.6,
+      "max_ns": 146957.8
+    },
+    {
       "name": "tilemap/static/32x32_layers1",
       "items": 1024,
       "batch": 45235,
@@ -1985,6 +2051,96 @@
       "name": "hud/layout/500_widgets_nodes",
       "value": 500,
       "unit": "widgets laid out"
+    },
+    {
+      "name": "iso/frame/512x512_1080p_zoom1_cells",
+      "value": 8192,
+      "unit": "tiles drawn (one frame)"
+    },
+    {
+      "name": "iso/frame/512x512_1080p_zoom1_sprites",
+      "value": 0,
+      "unit": "sprites drawn (one frame)"
+    },
+    {
+      "name": "iso/frame/512x512_1080p_zoom1_sprites_culled",
+      "value": 0,
+      "unit": "sprites outside the view (one frame)"
+    },
+    {
+      "name": "iso/frame/512x512_1080p_zoom1_draw_calls",
+      "value": 1,
+      "unit": "draw calls (one frame)"
+    },
+    {
+      "name": "iso/frame/512x512_1080p_zoom1_5000_vehicles_spread_cells",
+      "value": 8192,
+      "unit": "tiles drawn (one frame)"
+    },
+    {
+      "name": "iso/frame/512x512_1080p_zoom1_5000_vehicles_spread_sprites",
+      "value": 252,
+      "unit": "sprites drawn (one frame)"
+    },
+    {
+      "name": "iso/frame/512x512_1080p_zoom1_5000_vehicles_spread_sprites_culled",
+      "value": 4748,
+      "unit": "sprites outside the view (one frame)"
+    },
+    {
+      "name": "iso/frame/512x512_1080p_zoom1_5000_vehicles_spread_draw_calls",
+      "value": 2,
+      "unit": "draw calls (one frame)"
+    },
+    {
+      "name": "iso/frame/512x512_1080p_zoom1_5000_vehicles_in_view_cells",
+      "value": 8192,
+      "unit": "tiles drawn (one frame)"
+    },
+    {
+      "name": "iso/frame/512x512_1080p_zoom1_5000_vehicles_in_view_sprites",
+      "value": 5000,
+      "unit": "sprites drawn (one frame)"
+    },
+    {
+      "name": "iso/frame/512x512_1080p_zoom1_5000_vehicles_in_view_sprites_culled",
+      "value": 0,
+      "unit": "sprites outside the view (one frame)"
+    },
+    {
+      "name": "iso/frame/512x512_1080p_zoom1_5000_vehicles_in_view_draw_calls",
+      "value": 2,
+      "unit": "draw calls (one frame)"
+    },
+    {
+      "name": "iso/frame/512x512_1080p_zoom_out4_cells",
+      "value": 51200,
+      "unit": "tiles drawn (one frame)"
+    },
+    {
+      "name": "iso/frame/512x512_1080p_zoom_out4_sprites",
+      "value": 0,
+      "unit": "sprites drawn (one frame)"
+    },
+    {
+      "name": "iso/frame/512x512_1080p_zoom_out4_sprites_culled",
+      "value": 0,
+      "unit": "sprites outside the view (one frame)"
+    },
+    {
+      "name": "iso/frame/512x512_1080p_zoom_out4_draw_calls",
+      "value": 3,
+      "unit": "draw calls (one frame)"
+    },
+    {
+      "name": "iso/objects/1000_buildings_3_slices_sprites",
+      "value": 2208,
+      "unit": "slices drawn (one frame)"
+    },
+    {
+      "name": "iso/objects/1000_buildings_3_slices_draw_calls",
+      "value": 1,
+      "unit": "draw calls (one frame)"
     },
     {
       "name": "tilemap/static/32x32_layers1_first_upload_bytes",
