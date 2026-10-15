@@ -9,6 +9,7 @@
 #include "testHelper.h"
 
 #include <math/linAlgebra.h>
+#include <renderer/IsometricObjects.h>
 #include <renderer/RenderLayerFactory.h>
 #include <renderer/Renderer.h>
 #include <renderer/RendererIsometric.h>
@@ -23,15 +24,21 @@
 #include <cstddef>
 #include <cstdint>
 #include <numbers>
+#include <string>
 #include <tuple>
+#include <utility>
 #include <vector>
 
 using namespace owl;
 using owl::renderer::CameraOrtho;
 using owl::renderer::getBackToFrontOrder;
+using owl::renderer::getSpriteScreenRect;
 using owl::renderer::IsometricBillboard;
 using owl::renderer::IsometricCamera;
 using owl::renderer::IsometricConfig;
+using owl::renderer::IsometricObjectSet;
+using owl::renderer::IsometricSprite;
+using owl::renderer::packColor;
 using owl::renderer::pickIsometricCell;
 using owl::renderer::Renderer;
 using owl::renderer::RendererIsometric;
@@ -342,4 +349,97 @@ TEST(RendererIsometric, layerUsesAnIsometricCameraAsIs) {
 	EXPECT_NEAR(fromScene.getTarget().x(), 7.f, 1e-5f);
 	EXPECT_NEAR(fromScene.getTarget().y(), 2.f, 1e-5f);
 	EXPECT_NEAR(fromScene.getTarget().z(), 0.f, 1e-5f);
+}
+
+TEST(RendererIsometric, packColorWritesRgbaBytesRedLowest) {
+	EXPECT_EQ(packColor({1.f, 1.f, 1.f, 1.f}), 0xFFFFFFFFu);
+	EXPECT_EQ(packColor({1.f, 0.f, 0.f, 0.f}), 0x000000FFu);
+	EXPECT_EQ(packColor({0.f, 0.f, 0.f, 1.f}), 0xFF000000u);
+	EXPECT_EQ(packColor({0.f, 1.f, 0.f, 0.f}), 0x0000FF00u);
+	EXPECT_EQ(packColor({2.f, -1.f, 0.5f, 1.f}), 0xFF8000FFu) << "channels are clamped to [0, 1]";
+}
+
+TEST(RendererIsometric, spriteScreenRectFollowsTheAnchor) {
+	IsometricCamera camera = makeCamera();
+	camera.setTarget({2.f, 2.f, 0.f});
+	const math::vec2 foot = camera.worldToViewport({2.f, 2.f, 0.f});
+	const math::vec4 rect = getSpriteScreenRect(camera, {.foot = {2.f, 2.f, 0.f}, .size = {40.f, 30.f}});
+	EXPECT_FLOAT_EQ(rect.x(), foot.x() - 20.f);
+	EXPECT_FLOAT_EQ(rect.z(), foot.x() + 20.f);
+	EXPECT_FLOAT_EQ(rect.w(), foot.y());
+	EXPECT_FLOAT_EQ(rect.y(), foot.y() - 30.f);
+	const math::vec4 centred =
+			getSpriteScreenRect(camera, {.foot = {2.f, 2.f, 0.f}, .size = {40.f, 30.f}, .anchor = {0.5f, 0.5f}});
+	EXPECT_FLOAT_EQ(centred.w(), foot.y() + 15.f);
+	camera.setZoomLevel(1);
+	const math::vec4 doubled = getSpriteScreenRect(camera, {.foot = {2.f, 2.f, 0.f}, .size = {40.f, 30.f}});
+	EXPECT_FLOAT_EQ(doubled.z() - doubled.x(), 80.f) << "the rectangle grows with the zoom";
+}
+
+TEST(RendererIsometric, spritesOutsideTheViewAreDropped) {
+	bootRendererStack();
+	const IsometricCamera camera = makeCamera();
+	const auto texture = renderer::gpu::Texture2D::create(renderer::gpu::Texture2D::Specification{.size = {8, 8}});
+	std::vector<IsometricSprite> sprites;
+	for (int i = 0; i < 10; ++i) sprites.push_back({.foot = {static_cast<float>(i) * 0.1f, 0.f, 0.f}, .entityId = i});
+	sprites.push_back({.foot = {900.f, -900.f, 0.f}});
+	sprites.push_back({.foot = {-900.f, 900.f, 0.f}});
+	RendererIsometric::resetStats();
+	RendererIsometric::beginScene(camera);
+	RendererIsometric::drawSprites(texture, sprites);
+	RendererIsometric::endScene();
+	const auto stats = RendererIsometric::getStatistics();
+	EXPECT_EQ(stats.spriteCount, 10u);
+	EXPECT_EQ(stats.culledSpriteCount, 2u);
+	EXPECT_EQ(stats.drawCallCount, 1u);
+	teardownRendererStack();
+}
+
+TEST(RendererIsometric, thousandsOfSpritesShareOneDrawCall) {
+	bootRendererStack();
+	IsometricCamera camera = makeCamera();
+	camera.setZoomLevel(-2);
+	const auto texture = renderer::gpu::Texture2D::create(renderer::gpu::Texture2D::Specification{.size = {8, 8}});
+	std::vector<IsometricSprite> sprites;
+	for (uint32_t i = 0; i < 5000; ++i) {
+		const uint32_t row = i / 100;
+		sprites.push_back({.foot = {static_cast<float>(i % 100) * 0.4f, static_cast<float>(row) * 0.4f, 0.f},
+						   .size = {16.f, 8.f},
+						   .color = packColor({0.5f, 0.5f, 0.5f, 1.f})});
+	}
+	RendererIsometric::resetStats();
+	RendererIsometric::beginScene(camera);
+	RendererIsometric::drawSprites(texture, sprites);
+	RendererIsometric::endScene();
+	const auto stats = RendererIsometric::getStatistics();
+	EXPECT_EQ(stats.spriteCount + stats.culledSpriteCount, 5000u);
+	EXPECT_GT(stats.spriteCount, 4000u);
+	EXPECT_EQ(stats.drawCallCount, 1u);
+	teardownRendererStack();
+}
+
+TEST(RendererIsometric, objectDrawsOneSpritePerSlice) {
+	bootRendererStack();
+	const IsometricCamera camera = makeCamera();
+	auto parsed = IsometricObjectSet::parse(
+			"{zoom: 1x, buildings: {wide: {footprint: [3, 1], slices: ["
+			"{cell: [0, 0], rect: [0, 0, 64, 128], anchor: [32, 128], box: {min: [0, 0, 0], max: [1, 1, 2]}},"
+			"{cell: [1, 0], rect: [64, 0, 64, 128], anchor: [32, 128], box: {min: [1, 0, 0], max: [2, 1, 2]}},"
+			"{cell: [2, 0], rect: [128, 0, 64, 128], anchor: [32, 128], box: {min: [2, 0, 0], max: [3, 1, 2]}}]}}}");
+	ASSERT_TRUE(parsed.has_value());
+	IsometricObjectSet set = std::move(*parsed);
+	RendererIsometric::resetStats();
+	RendererIsometric::beginScene(camera);
+	RendererIsometric::drawObject(set, *set.find("wide"), {3.f, 3.f, 0.f}, {1.f, 1.f, 1.f, 1.f}, 7);
+	RendererIsometric::endScene();
+	EXPECT_EQ(RendererIsometric::getStatistics().spriteCount, 0u) << "a set without texture draws nothing";
+	set.setTexture(renderer::gpu::Texture2D::create(renderer::gpu::Texture2D::Specification{.size = {256, 128}}));
+	RendererIsometric::resetStats();
+	RendererIsometric::beginScene(camera);
+	RendererIsometric::drawObject(set, *set.find("wide"), {3.f, 3.f, 0.f}, {1.f, 1.f, 1.f, 1.f}, 7);
+	RendererIsometric::endScene();
+	const auto stats = RendererIsometric::getStatistics();
+	EXPECT_EQ(stats.spriteCount, 3u);
+	EXPECT_EQ(stats.drawCallCount, 1u);
+	teardownRendererStack();
 }

@@ -14,6 +14,7 @@
 #include "math/vectors.h"
 #include "renderer/Camera.h"
 #include "renderer/CameraOrtho.h"
+#include "renderer/IsometricObjects.h"
 #include "renderer/gpu/Texture.h"
 
 #include <array>
@@ -299,6 +300,50 @@ struct OWL_API IsometricBillboard {
 
 /**
  * @brief
+ *  A compact sprite instance: an anchor on the ground, a size and a texture rectangle, no matrix.
+ *
+ * 64 bytes on the GPU against 96 for an `IsometricBillboard`: made for thousands of moving sprites (vehicles) and
+ * for the slices of buildings. Always upright, opaque or cut out (a texel whose alpha times the tint alpha is below
+ * one half is discarded), drawn in the depth-tested pass in submission order. The foot is snapped to whole screen
+ * pixels at an integer zoom.
+ */
+struct OWL_API IsometricSprite {
+	/// World foot point, in tiles.
+	math::vec3 foot{0.f, 0.f, 0.f};
+	/// Sprite size at zoom 1, in pixels.
+	math::vec2 size{64.f, 64.f};
+	/// Point of the sprite put on the foot, as a fraction of its size from the bottom left (bottom centre by default).
+	math::vec2 anchor{0.5f, 0.f};
+	/// Texture rectangle: u of the left, v of the bottom, u of the right, v of the top (swap to flip).
+	math::vec4 uvRect{0.f, 0.f, 1.f, 1.f};
+	/// Tint, RGBA8 with red in the low byte (`packColor`).
+	uint32_t color = 0xFFFFFFFFu;
+	/// Depth offset towards the viewer, in view pixels.
+	float depthBias = 0.f;
+	/// Entity id written to the picking attachment.
+	int entityId = -1;
+};
+
+/**
+ * @brief
+ *  Pack a colour into the RGBA8 of an `IsometricSprite`.
+ * @param[in] iColor Colour in [0, 1] per channel (clamped).
+ * @return The packed colour, red in the low byte.
+ */
+[[nodiscard]] OWL_API auto packColor(const math::vec4& iColor) -> uint32_t;
+
+/**
+ * @brief
+ *  Screen rectangle covered by a sprite, in viewport pixels (Y down).
+ * @param[in] iCamera The camera of the viewport.
+ * @param[in] iSprite The sprite.
+ * @return The rectangle: x min, y min, x max, y max.
+ */
+[[nodiscard]] OWL_API auto getSpriteScreenRect(const IsometricCamera& iCamera, const IsometricSprite& iSprite)
+		-> math::vec4;
+
+/**
+ * @brief
  *  Order in which translucent billboards are drawn: back to front.
  *
  * Farther foot points first; at equal depth, the smaller depth bias first; then the submission order.
@@ -376,6 +421,8 @@ public:
 
 	/// Billboards per GPU batch (a full batch is flushed and a new one starts).
 	static constexpr uint32_t maxBillboardsPerBatch = 20000;
+	/// Compact sprites per GPU batch.
+	static constexpr uint32_t maxSpritesPerBatch = 40000;
 	/// Depth offset between two layers of a tilemap, in view pixels.
 	static constexpr float tilemapLayerBias = 0.0625f;
 	/// Depth offset of upright sprites, above every tilemap layer of the same plane, in view pixels.
@@ -409,6 +456,37 @@ public:
 
 	/**
 	 * @brief
+	 *  Queue one compact sprite; one outside the viewport is dropped.
+	 * @param[in] iTexture Texture (white when null).
+	 * @param[in] iSprite The sprite.
+	 */
+	static void drawSprite(const shared<gpu::Texture2D>& iTexture, const IsometricSprite& iSprite);
+
+	/**
+	 * @brief
+	 *  Queue many compact sprites sharing one texture (a vehicle atlas); those outside the viewport are dropped.
+	 * @param[in] iTexture Texture (white when null).
+	 * @param[in] iSprites The sprites.
+	 */
+	static void drawSprites(const shared<gpu::Texture2D>& iTexture, std::span<const IsometricSprite> iSprites);
+
+	/**
+	 * @brief
+	 *  Queue the slices of an object of a sheet.
+	 *
+	 * Each slice is an upright sprite anchored at the front corner of its footprint tile, so every slice tests its
+	 * own depth; a slice outside the viewport is dropped like any sprite.
+	 * @param[in] iSet The sheet.
+	 * @param[in] iObject The object, from `iSet`.
+	 * @param[in] iOrigin World position of the back corner of the object's footprint.
+	 * @param[in] iColor Tint.
+	 * @param[in] iEntityId Entity id written to the picking attachment.
+	 */
+	static void drawObject(const IsometricObjectSet& iSet, const IsometricObjectDef& iObject, const math::vec3& iOrigin,
+						   const math::vec4& iColor, int iEntityId);
+
+	/**
+	 * @brief
 	 *  Queue the cells in view of an isometric tilemap as flat billboards.
 	 *
 	 * The map's back corner sits at the entity translation; rotation and scale are ignored. Each layer is one depth
@@ -438,6 +516,10 @@ public:
 		uint32_t translucentCount = 0;
 		/// Tilemap chunks skipped because they lie outside the view.
 		uint32_t culledChunkCount = 0;
+		/// Compact sprites drawn.
+		uint32_t spriteCount = 0;
+		/// Compact sprites dropped because they lie outside the view.
+		uint32_t culledSpriteCount = 0;
 	};
 
 	/**

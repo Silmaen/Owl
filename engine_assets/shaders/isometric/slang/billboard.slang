@@ -9,7 +9,9 @@
 struct IsometricScene {
 	column_major float4x4 view;
 	column_major float4x4 projection;
-	// x: alpha below which a texel is discarded (cutout); yzw unused.
+	// x: alpha below which a texel is discarded (cutout).
+	// y: zoom to snap the foot to whole screen pixels at (0 = no snapping); zw: fractional pixel offset of the
+	// viewport centre (0 or 0.5 on an odd size).
 	float4 params;
 };
 
@@ -74,6 +76,11 @@ VertexOutput vertexMain(VertexInput input, uint iid : SV_InstanceID) {
 	VertexOutput output;
 	BillboardInstance inst = gInstances[iid];
 	float4 viewPos = mul(gScene.view, float4(inst.foot.xyz, 1.0f));
+	if (gScene.params.y > 0.0f) {
+		const float zoom = gScene.params.y;
+		const float2 centre = gScene.params.zw;
+		viewPos.xy = (round(viewPos.xy * zoom - centre) + centre) / zoom;
+	}
 	const float2 offset = kCorners[input.cornerIndex] * inst.size.xy;
 	viewPos.xy += offset;
 	viewPos.z += offset.y * inst.size.z + inst.foot.w;

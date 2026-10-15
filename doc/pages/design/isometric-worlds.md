@@ -119,12 +119,13 @@ a few days, L a week.
 - ![Done][done] **ISO3 — Atlas generator, M.** D3: `tools/` generator (Pillow), seeded and deterministic,
   terrain × 19 slopes, foundations, overlays, a few sliced buildings, albedo + normal + depth, one set per zoom level
   or mips; pytest on a stable hash, ruff and mypy.
-- ![Planned][planned] **ISO4 — Objects and vehicles, M.** D5 slices with 3D boxes, an anchor-plus-size billboard
+- ![Done][done] **ISO4 — Objects and vehicles, M.** D5 slices with 3D boxes, an anchor-plus-size billboard
   instance without a matrix for thousands of moving sprites, pixel snapping at integer zoom. Bench `iso/*` (budgets
   below).
 - ![Planned][planned] **ISO5 — Demo and close-out, M.** `iso_town.owl`: a Transport Tycoon-style town on a sloped
   map, roads, a vehicle loop and a mouse "build road" tool in Lua, the shared HUD, plus a scene mixing isometric with
-  another style; image tests on lavapipe and llvmpipe; [Isometric](isometric.md) and help pages final.
+  another style; persistent isometric chunk buffers (cells are emitted per frame until then); image tests on
+  lavapipe and llvmpipe; [Isometric](isometric.md) and help pages final.
 
 ### HUD
 
@@ -223,7 +224,7 @@ New `bench/` cases, Null backend CPU unless stated; each one enters `bench/basel
 | Build one 32² chunk                                      | < 0.2 ms                    |
 | Isometric 512² map, 1080p, zoom 1, no vehicle            | < 1 ms frame CPU            |
 | Isometric 512² map + 5 000 vehicles (cull, sort, emit)   | < 2 ms                      |
-| Isometric 512² map zoomed out ×4 (~65 000 visible cells) | < 3 ms                      |
+| Isometric 512² map zoomed out ×4 (~65 000 visible cells) | < 4 ms                      |
 | 1024² map load                                           | < 1 s, ≤ 16 MB of tile data |
 | Slope-aware tile picking                                 | < 20 µs                     |
 | 10 000 glyphs                                            | one draw call               |

@@ -319,6 +319,24 @@ void scanTilemap(const std::string& iTilemapPath, const std::string& iSceneName,
 		scanTileset(tilesetPath, iSceneName, ioAssets, ioWarnings);
 }
 
+void scanObjectSheet(const std::string& iSheetPath, const std::string& iSceneName,
+					 std::vector<AssetReference>& ioAssets, std::vector<std::string>* ioWarnings) {
+	const auto sheetRef = resolveDataAsset(iSheetPath);
+	if (!sheetRef) {
+		pushWarning(ioWarnings, "Object sheet", iSheetPath, iSceneName);
+		return;
+	}
+	if (!hasAsset(ioAssets, sheetRef->packPath))
+		ioAssets.push_back(*sheetRef);
+	const std::filesystem::path texturePath = std::filesystem::path{iSheetPath}.replace_extension(".png");
+	const auto textureSerialized = (texturePath.is_absolute() ? "pat:" : "nam:") + texturePath.generic_string();
+	if (auto textureRef = resolveTexture(textureSerialized)) {
+		if (!hasAsset(ioAssets, textureRef->packPath))
+			ioAssets.push_back(*textureRef);
+	} else
+		pushWarning(ioWarnings, "Texture", textureSerialized, iSceneName);
+}
+
 void scanTileset(const std::string& iTilesetPath, const std::string& iSceneName, std::vector<AssetReference>& ioAssets,
 				 std::vector<std::string>* ioWarnings) {
 	const auto tilesetRef = resolveDataAsset(iTilesetPath);
@@ -403,6 +421,9 @@ void scanEntity(const YAML::Node& iEntity,// NOLINT(misc-no-recursion)
 	if (auto tilemap = iEntity["Tilemap"]; tilemap)
 		if (auto path = tilemap["tilemapPath"]; path)
 			scanTilemap(path.as<std::string>(), iSceneName, ioAssets, ioWarnings);
+	if (auto object = iEntity["IsometricObject"]; object)
+		if (auto path = object["atlasPath"]; path)
+			scanObjectSheet(path.as<std::string>(), iSceneName, ioAssets, ioWarnings);
 	for (const char* component: {"RaycastDoor", "RaycastPushWall"})
 		if (auto node = iEntity[component]; node)
 			if (auto path = node["tilesetPath"]; path)

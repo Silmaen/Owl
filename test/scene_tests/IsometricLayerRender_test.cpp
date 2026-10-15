@@ -11,6 +11,7 @@
 #include <app/Application.h>
 #include <core/Log.h>
 #include <core/Timestep.h>
+#include <renderer/IsometricObjects.h>
 #include <renderer/RenderStack.h>
 #include <renderer/Renderer.h>
 #include <renderer/Renderer2D.h>
@@ -22,6 +23,7 @@
 
 #include <chrono>
 #include <string>
+#include <utility>
 
 using namespace owl;
 
@@ -92,7 +94,44 @@ auto makeScene() -> shared<scene::Scene> {
 	return sc;
 }
 
+constexpr auto g_sheet = R"({"zoom": "1x", "buildings": {
+  "shed": {"footprint": [2, 1], "slices": [
+    {"cell": [0, 0], "rect": [0, 0, 64, 128], "anchor": [32, 128], "box": {"min": [0, 0, 0], "max": [1, 1, 2]}},
+    {"cell": [1, 0], "rect": [64, 0, 64, 128], "anchor": [32, 128], "box": {"min": [1, 0, 0], "max": [2, 1, 2]}}]}}})";
+
+auto addObject(scene::Scene& ioScene, const math::vec3& iPosition, const std::string& iBuilding) -> scene::Entity {
+	auto entity = ioScene.createEntity("Shed");
+	entity.getComponent<scene::component::Transform>().transform.translation() = iPosition;
+	auto& object = entity.addComponent<scene::component::IsometricObject>();
+	object.building = iBuilding;
+	object.atlasPath = "textures/shed.json";
+	auto set = renderer::IsometricObjectSet::parse(g_sheet);
+	object.atlas = mkShared<renderer::IsometricObjectSet>(std::move(*set));
+	object.atlas->setTexture(
+			renderer::gpu::Texture2D::create(renderer::gpu::Texture2D::Specification{.size = {128, 128}}));
+	entity.addComponent<scene::component::RendererTag>().rendererName = "iso";
+	return entity;
+}
+
 }// namespace
+
+TEST_F(IsometricLayerRenderTest, isometricObjectDrawsOneSpritePerSlice) {
+	const auto sc = makeScene();
+	addObject(*sc, {3.f, 3.f, 0.f}, "shed");
+	sc->status = scene::Scene::Status::Playing;
+	sc->onRenderRuntime();
+	EXPECT_EQ(renderer::RendererIsometric::getStatistics().spriteCount, 1u + 2u);
+}
+
+TEST_F(IsometricLayerRenderTest, isometricObjectWithAnUnknownBuildingOrHiddenIsSkipped) {
+	const auto sc = makeScene();
+	addObject(*sc, {3.f, 3.f, 0.f}, "castle");
+	auto hidden = addObject(*sc, {2.f, 2.f, 0.f}, "shed");
+	hidden.addOrReplaceComponent<scene::component::Visibility>().gameVisible = false;
+	sc->status = scene::Scene::Status::Playing;
+	sc->onRenderRuntime();
+	EXPECT_EQ(renderer::RendererIsometric::getStatistics().spriteCount, 1u);
+}
 
 TEST_F(IsometricLayerRenderTest, selfDrawnLayerNeedsContent) {
 	const auto sc = makeScene();
@@ -112,7 +151,7 @@ TEST_F(IsometricLayerRenderTest, editorDrawsTheStackLayerByLayer) {
 	camera.setTarget({4.f, 4.f, 0.f});
 	sc->onUpdateEditor(makeStep(), camera);
 	const auto stats = renderer::RendererIsometric::getStatistics();
-	EXPECT_EQ(stats.opaqueCount, 1u);
+	EXPECT_EQ(stats.spriteCount, 1u);
 	EXPECT_EQ(stats.translucentCount, 1u);
 	// The 2D pass drew only the untagged sprite: the isometric ones are the layer's own.
 	EXPECT_EQ(renderer::Renderer2D::getStats().quadCount, 1u);
@@ -123,7 +162,7 @@ TEST_F(IsometricLayerRenderTest, runtimeDrawsTheIsometricLayerWithTheSceneCamera
 	sc->status = scene::Scene::Status::Playing;
 	sc->onRenderRuntime();
 	const auto stats = renderer::RendererIsometric::getStatistics();
-	EXPECT_EQ(stats.opaqueCount, 1u);
+	EXPECT_EQ(stats.spriteCount, 1u);
 	EXPECT_EQ(stats.translucentCount, 1u);
 	EXPECT_EQ(renderer::Renderer2D::getStats().quadCount, 1u);
 }
@@ -137,6 +176,6 @@ TEST_F(IsometricLayerRenderTest, hiddenSpritesAreSkipped) {
 	sc->status = scene::Scene::Status::Playing;
 	sc->onRenderRuntime();
 	const auto stats = renderer::RendererIsometric::getStatistics();
-	EXPECT_EQ(stats.opaqueCount, 1u);
+	EXPECT_EQ(stats.spriteCount, 1u);
 	EXPECT_EQ(stats.translucentCount, 0u);
 }

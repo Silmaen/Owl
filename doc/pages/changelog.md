@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Isometric objects and vehicles: the `IsometricObject` component draws a building of a generated sheet as one depth-correct slice per footprint tile (inspector with sheet drop and building list, undoable, picked in the viewport), the layer sends every opaque sprite as a 64-byte matrix-free `IsometricSprite` (`drawSprites` for thousands of vehicles, off-screen ones dropped on the CPU), the foot snaps to whole pixels at integer zoom, `tools/iso_atlas` writes a vehicle sheet, and `iso/*` benches enter the baseline.
 - Isometric atlas generator `tools/iso_atlas` (Pillow, seeded, deterministic): terrain × 19 slopes, foundations, road and rail overlays, five sliced buildings and two trees as albedo + normal + depth at 1x, 2x and half size; it replaces the placeholder art and the generator of the isometric sample.
 - HUD asset: an `.owlhud` file (own format, root key `Hud`) loaded into its own scene by a `HudLibrary` in
   `EngineContext`, cached per path and shared across scenes and transitions, named by the scene key `Hud:` or the

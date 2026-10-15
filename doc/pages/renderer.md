@@ -426,6 +426,15 @@ RendererStack:
   foot: a vertical plane facing the viewer for an upright sprite, the ground plane for a flat terrain tile. Sprites of
   `SpriteRenderer` and `AnimatedSpriteRenderer` entities stand at their world translation, `scale.xy × TileWidth`
   pixels large.
+- **Sprites.** Opaque entity sprites leave the layer as `IsometricSprite`: an anchor (a fraction of the size, bottom
+  centre by default), a size, a texture rectangle and a packed RGBA8 tint, 64 bytes through `sprite.slang` against 96
+  for a billboard. `RendererIsometric::drawSprites` queues a span sharing one texture (a vehicle atlas) and drops the
+  sprites whose screen rectangle (`getSpriteScreenRect`) misses the viewport, counted in
+  `Statistics::culledSpriteCount`. At an integer zoom (level 0 and above) the foot of sprites and tiles snaps to whole
+  screen pixels.
+- **Objects.** An `IsometricObject` entity draws a building of an object sheet (`IsometricObjectSet`, the
+  `buildings.json` of `tools/iso_atlas`) as one sprite per footprint tile through `RendererIsometric::drawObject`
+  ([Objects](design/isometric.md)); an unresolved sheet or an unknown building draws nothing.
 - **Depth and cutout.** Opaque and cut-out billboards (texels under one half alpha are discarded) draw unsorted,
   depth tested and written; a tint alpha below 1 makes a billboard translucent: those draw afterwards, sorted back to
   front on the CPU (`getBackToFrontOrder`), depth tested, not written. Tilemap layers sit `tilemapLayerBias` apart,
@@ -435,7 +444,8 @@ RendererStack:
   `(cx, cy)` to plus `(cx + 1, cy + 1)`, its sprite bottom centre on the front corner. `pickIsometricCell` finds the
   tile under a viewport pixel (flat maps; slopes come with ISO2).
 - **Shader.** `engine_assets/shaders/isometric/slang/billboard.slang`: one instanced draw per pass from a storage
-  buffer of 96-byte instances (foot, size, depth slope, UVs, tint, texture slot, entity id), 20 000 per batch.
+  buffer of 96-byte instances (foot, size, depth slope, UVs, tint, texture slot, entity id), 20 000 per batch;
+  `sprite.slang` draws the 64-byte sprite instances, 40 000 per batch, between the opaque and the translucent pass.
 
 ## Raycaster {#renderer-raycaster}
 

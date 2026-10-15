@@ -502,3 +502,22 @@ TEST(ComponentRoundTrip, VoxelPlayer) {
 				EXPECT_TRUE(vp.captureCursor);
 			});
 }
+
+TEST(ComponentRoundTrip, IsometricObject) {
+	roundTrip(
+			"IsometricObject",
+			[](scene::Entity& iEnt) -> void {
+				auto& object = iEnt.addComponent<scene::component::IsometricObject>();
+				object.atlasPath = "textures/iso/buildings.json";
+				object.building = "townhouse";
+				object.color = {0.5f, 0.25f, 1.f, 1.f};
+			},
+			[](const scene::Entity& iEnt) -> void {
+				const auto& object = iEnt.getComponent<scene::component::IsometricObject>();
+				EXPECT_EQ(object.atlasPath.generic_string(), "textures/iso/buildings.json");
+				EXPECT_EQ(object.building, "townhouse");
+				EXPECT_NEAR(object.color.x(), 0.5f, 0.001f);
+				EXPECT_NEAR(object.color.y(), 0.25f, 0.001f);
+				EXPECT_EQ(object.atlas, nullptr);
+			});
+}

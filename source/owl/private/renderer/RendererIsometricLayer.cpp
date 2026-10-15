@@ -15,6 +15,7 @@
 #include "scene/Entity.h"
 #include "scene/Scene.h"
 #include "scene/component/AnimatedSpriteRenderer.h"
+#include "scene/component/IsometricObject.h"
 #include "scene/component/SpriteRenderer.h"
 #include "scene/component/Transform.h"
 
@@ -122,16 +123,40 @@ void RendererIsometricLayer::onRender(scene::Scene& ioScene) {
 					   [&ioScene, tileWidth](const scene::Entity& iEntity, const shared<gpu::Texture2D>& iTexture,
 											 const math::vec4& iColor, const std::array<math::vec2, 4>& iUv) -> void {
 						   const math::Transform world = ioScene.getWorldTransform(iEntity);
-						   RendererIsometric::drawBillboard(
-								   {.foot = world.translation(),
-									.size = {world.scale().x() * tileWidth, world.scale().y() * tileWidth},
-									.textureCoords = iUv,
-									.color = iColor,
-									.texture = iTexture,
-									.depthBias = RendererIsometric::spriteBias,
-									.flat = false,
-									.entityId = static_cast<int>(static_cast<uint32_t>(iEntity))});
+						   const math::vec2 size{world.scale().x() * tileWidth, world.scale().y() * tileWidth};
+						   const auto entityId = static_cast<int>(static_cast<uint32_t>(iEntity));
+						   if (iColor.w() >= 1.f) {
+							   RendererIsometric::drawSprite(
+									   iTexture, {.foot = world.translation(),
+												  .size = size,
+												  .uvRect = {iUv[0].x(), iUv[0].y(), iUv[2].x(), iUv[2].y()},
+												  .color = packColor(iColor),
+												  .depthBias = RendererIsometric::spriteBias,
+												  .entityId = entityId});
+							   return;
+						   }
+						   RendererIsometric::drawBillboard({.foot = world.translation(),
+															 .size = size,
+															 .textureCoords = iUv,
+															 .color = iColor,
+															 .texture = iTexture,
+															 .depthBias = RendererIsometric::spriteBias,
+															 .flat = false,
+															 .entityId = entityId});
 					   });
+	const bool editorMode = ioScene.status == scene::Scene::Status::Editing;
+	for (const auto view = ioScene.registry.view<scene::component::Transform, scene::component::IsometricObject>();
+		 const auto entity: view) {
+		const scene::Entity ent{entity, &ioScene};
+		if (!ioScene.isEffectivelyVisible(ent, editorMode) || !ioScene.layerAccepts(ent))
+			continue;
+		const auto& object = view.get<scene::component::IsometricObject>(entity);
+		const auto* def = object.getObject();
+		if (def == nullptr)
+			continue;
+		RendererIsometric::drawObject(*object.atlas, *def, ioScene.getWorldTransform(ent).translation(), object.color,
+									  static_cast<int>(static_cast<uint32_t>(ent)));
+	}
 }
 
 void RendererIsometricLayer::onEndFrame() {

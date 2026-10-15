@@ -78,6 +78,7 @@ struct SoundSource;
 struct SpriteRenderer;
 struct Tag;
 struct Text;
+struct IsometricObject;
 struct Tilemap;
 struct Transform;
 struct Trigger;
@@ -1311,6 +1312,16 @@ OWL_API void Scene::onComponentAdded<component::RendererTag>(const Entity& iEnti
 
 template<>
 OWL_API void Scene::onComponentAdded<component::Tilemap>(const Entity& iEntity, component::Tilemap& ioComponent);
+
+/**
+ * @brief
+ *  Specialisation of `onComponentAdded` for `IsometricObject`: schedules the sheet resolution.
+ * @param[in] iEntity The entity the component was added to.
+ * @param[in,out] ioComponent The component.
+ */
+template<>
+OWL_API void Scene::onComponentAdded<component::IsometricObject>(const Entity& iEntity,
+																 component::IsometricObject& ioComponent);
 
 template<>
 OWL_API void Scene::onComponentAdded<component::RaycastDoor>(const Entity& iEntity,

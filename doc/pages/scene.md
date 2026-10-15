@@ -393,6 +393,18 @@ ones. Bit 0 of a cell's flags (`foundationFlag`) asks the isometric renderer for
 tile. `.owltileset` files of `kind: Isometric` may hold a `slopes` list (`id`, `tiles` and optional `foundations`, 19
 tile indices each, `-1` for none) read by `Tileset::resolveTile`. See [Isometric renderer](design/isometric.md).
 
+#### IsometricObject
+
+| Field       | Type     | Default        | Description                                                                                          |
+|-------------|----------|----------------|------------------------------------------------------------------------------------------------------|
+| `atlasPath` | `path`   | `""`           | Relative path of an object sheet (`.json` of `tools/iso_atlas`); the texture is the `.png` beside it |
+| `building`  | `string` | `""`           | Name of the object in the sheet                                                                      |
+| `color`     | `vec4`   | `{1, 1, 1, 1}` | Tint multiplied with the sprites                                                                     |
+
+YAML key: `IsometricObject`. A building of the sheet drawn by the isometric layer as one depth-correct slice per
+footprint tile; the translation is the back corner of the footprint, rotation and scale are ignored. The sheet is
+resolved lazily like a tilemap, from the open pack first, then the asset directories ([Objects](design/isometric.md)).
+
 #### BackgroundTexture
 
 | Field      | Type        | Default              | Description                         |
