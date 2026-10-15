@@ -177,7 +177,7 @@ a few days, L a week.
   generated from the registry, `resources/*` (scene tree, components, assets, prefabs, documentation, statistics).
 - ![Done][done] **MCP3 — HTTP transport, M.** D11, D12: queue drained by the main loop, setting off by
   default, port, token, status bar indicator; jobs wait while a gesture or a modal is in progress.
-- ![Planned][planned] **MCP4 — Play and capture, M.** `play.run` (frames, step, held actions, capture as PNG plus
+- ![Done][done] **MCP4 — Play and capture, M.** `play.run` (frames, step, held actions, capture as PNG plus
   phase timings); `doc/pages/mcp.md` with the client setup.
 
 ### Editor

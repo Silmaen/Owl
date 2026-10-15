@@ -1208,8 +1208,8 @@ by default), `replay` runs a `commands::Macro` as one undo step, refused while t
 the console without UI (parse, run, `help`, completion, history), so it works on a headless session too.
 
 A `PlayRequest` gives `frames` and / or `ticks` (the first bound reached ends the play), `timestepMs` (0: one simulation
-tick per frame, so N frames run exactly N ticks), held `keys` (through the input injection, so on the Null input
-only), `stopAtEnd` and `capture`. Its `PlayReport` holds the frames and ticks played, the CPU time (total, longest),
+tick per frame, so N frames run exactly N ticks), held `keys`, `mouseButtons` and `gamepad` (through the input
+injection, any window type), `stopAtEnd` and `capture`. Its `PlayReport` holds the frames and ticks played, the CPU time (total, longest),
 the draw calls, the phase timings of the last frame, the entity count and the optional capture
 (`FrameCapture::encodePng`). `getStatistics()` reports the frame count, the last and mean frame times, the draw calls
 of the last frame, the entity count and the ticks since Play started.
@@ -1247,8 +1247,13 @@ and undoable; the design is in [MCP server](design/mcp-server.md).
   relative to the project, symbolic links followed, and refused outside it or without a project. No tool evaluates
   Lua or runs a shell.
 
-Client setup: `claude mcp add --transport http owl-nest http://127.0.0.1:47800/mcp --header "Authorization: Bearer
-$(cat $XDG_RUNTIME_DIR/owlnest/mcp_token)"`.
+- **`play.run`.** The one tool that is not a command: it plays the scene for N frames or ticks with held input actions
+  (`session::resolveActionHolds`, shared with the scenario `actions:` steps) and returns the viewport as an `image`
+  content with the phase timings. The editor plays it over the next frames of its main loop, so the dispatcher
+  answers later (`handleDeferrable`: the HTTP server keeps the request and polls it every frame; a stopped server or a
+  play over 10 minutes cancels it).
+
+Client setup, tools and `play.run` arguments: [MCP server (user guide)](mcp.md).
 
 The Edit menu labels dynamically show the description of the next undo/redo action
 (e.g., "Undo Delete 'Player'").
