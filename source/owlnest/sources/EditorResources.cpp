@@ -112,6 +112,7 @@ void buildIconBank() {
 		{"yml_icon",          resolve("icons/browser/yml")},
 		{"lua_icon",          resolve("icons/browser/lua")},
 		{"prefab_icon",       resolve("icons/browser/prefab")},
+		{"owlhud_icon",       resolve("icons/browser/owlhud")},
 		{"owlanim_icon",      resolve("icons/browser/owlanim")},
 		{"owltileset_icon",   resolve("icons/browser/owltileset")},
 		{"owltilemap_icon",   resolve("icons/browser/owltilemap")},

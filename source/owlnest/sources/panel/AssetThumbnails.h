@@ -46,6 +46,7 @@ public:
 		Image,///< A texture of the image itself.
 		Scene,///< A render through the primary camera of the scene.
 		Prefab,///< A render of the prefab, framed by an orthographic camera.
+		Hud,///< A render of the widgets of the HUD, in pixels, over the backdrop colour.
 		Sound,///< The waveform of the sound.
 		Tileset,///< The atlas image of the tileset.
 		Mesh,///< The triangles of the mesh, projected in an isometric view and shaded.

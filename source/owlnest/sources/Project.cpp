@@ -54,6 +54,8 @@ void readProjectConfig(const YAML::Node& iConfig, Project& oProject) {
 		oProject.name = iConfig["name"].as<std::string>();
 	if (iConfig["firstScene"])
 		oProject.firstScene = iConfig["firstScene"].as<std::string>();
+	if (iConfig["DefaultHud"])
+		oProject.defaultHud = iConfig["DefaultHud"].as<std::string>();
 	if (iConfig["version"])
 		oProject.version = iConfig["version"].as<std::string>();
 	if (iConfig["author"])
@@ -116,6 +118,7 @@ auto Project::makeExportSettings(const std::filesystem::path& iOutputDir, const 
 			.author = author,
 			.description = description,
 			.icon = icon,
+			.defaultHud = defaultHud,
 			.gamepadMappings = gamepadMappings,
 			.projectDirectory = projectDirectory,
 			.outputDirectory = iOutputDir,
@@ -136,6 +139,8 @@ auto Project::saveToFile(const std::filesystem::path& iFile) const -> bool {
 	out << YAML::Key << "OwlProject" << YAML::Value << YAML::BeginMap;
 	out << YAML::Key << "name" << YAML::Value << name;
 	out << YAML::Key << "firstScene" << YAML::Value << firstScene;
+	if (!defaultHud.empty())
+		out << YAML::Key << "DefaultHud" << YAML::Value << defaultHud;
 	if (!version.empty())
 		out << YAML::Key << "version" << YAML::Value << version;
 	if (!author.empty())

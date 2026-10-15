@@ -8,6 +8,8 @@
 
 #include "ProjectSettings.h"
 
+#include "../AssetKind.h"
+
 #include <gui/IconBank.h>
 #include <gui/IconFont.h>
 #include <gui/widgets/Combo.h>
@@ -22,6 +24,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <format>
+#include <string>
 #include <tuple>
 #include <utility>
 
@@ -112,6 +115,22 @@ void drawSimulationSettings(scene::SimulationSettings& ioSimulation) {
 	ioSimulation = ioSimulation.clamped();
 }
 
+// The row choosing the HUD of the scenes that name none.
+void drawDefaultHud(std::string& ioDefaultHud, const std::vector<std::string>& iAvailable) {
+	gui::widgets::propertyLabel("Default HUD", "HUD of the scenes that name none (their `Hud:` key).");
+	if (gui::widgets::beginCombo("##defaultHud", ioDefaultHud.empty() ? "(none)" : ioDefaultHud.c_str())) {
+		if (ImGui::Selectable("(none)", ioDefaultHud.empty()))
+			ioDefaultHud.clear();
+		for (const auto& hud: iAvailable) {
+			if (ImGui::Selectable(hud.c_str(), ioDefaultHud == hud))
+				ioDefaultHud = hud;
+		}
+		ImGui::EndCombo();
+	}
+	if (gui::widgets::propertyReset(!ioDefaultHud.empty()))
+		ioDefaultHud.clear();
+}
+
 }// namespace
 
 void ProjectSettings::open(const Project& iProject) {
@@ -123,6 +142,7 @@ void ProjectSettings::open(const Project& iProject) {
 	m_iconBuffer = iProject.icon;
 	m_gamepadMappingsBuffer = iProject.gamepadMappings;
 	m_hasResult = false;
+	m_availableHuds = listAssets(iProject.projectDirectory, ".owlhud");
 	scanScenes();
 	m_selectedSceneIndex = -1;
 	for (int i = 0; i < static_cast<int>(m_availableScenes.size()); ++i) {
@@ -183,6 +203,7 @@ void ProjectSettings::onImGuiRender() {
 					ImGui::EndCombo();
 				}
 				std::ignore = gui::widgets::propertyReset(false);
+				drawDefaultHud(m_localProject.defaultHud, m_availableHuds);
 				std::ignore = gui::widgets::propertyText("Version", m_versionBuffer, "1.0.0");
 				std::ignore = gui::widgets::propertyText("Author", m_authorBuffer);
 				std::ignore = gui::widgets::propertyText("Description", m_descriptionBuffer);

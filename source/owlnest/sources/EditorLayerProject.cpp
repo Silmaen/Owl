@@ -16,7 +16,10 @@
 #include "document/TilemapDocument.h"
 #include "document/TilesetDocument.h"
 
+#include <app/EngineContext.h>
 #include <platform/AtomicFile.h>
+#include <scene/HudLibrary.h>
+#include <scene/SceneSerializer.h>
 
 #include <cstddef>
 #include <cstdint>
@@ -34,6 +37,7 @@ namespace owl::nest {
 void EditorLayer::openAssetFile(const std::filesystem::path& iPath) {
 	switch (classifyAsset(iPath)) {
 		case AssetKind::Scene:
+		case AssetKind::Hud:
 			openScene(iPath);
 			return;
 		case AssetKind::NodeGraph:
@@ -80,14 +84,26 @@ void EditorLayer::newScene() {
 	syncActiveDocumentPanels();
 }
 
+void EditorLayer::newHud() {
+	newScene();
+	auto* target = activeSceneDocument();
+	if (target == nullptr || !target->getActiveScene())
+		return;
+	const auto& hud = target->getActiveScene();
+	hud->setDocumentKind(scene::DocumentKind::Hud);
+	hud->setHudPath(std::string{});
+	hud->createEntity("HUD Canvas").addComponent<scene::component::Canvas>();
+	syncActiveDocumentPanels();
+}
+
 void EditorLayer::openScene() {
 	if (const auto filepath = platform::FileDialog::openFile("Owl Scene (*.owl)|owl\n"); !filepath.empty())
 		openScene(filepath);
 }
 
 void EditorLayer::openScene(const std::filesystem::path& iScenePath) {
-	if (iScenePath.extension().string() != ".owl") {
-		OWL_CORE_WARN("Cannot Open file {}: not a scene.", iScenePath.string())
+	if (const auto extension = iScenePath.extension().string(); extension != ".owl" && extension != ".owlhud") {
+		OWL_CORE_WARN("Cannot Open file {}: not a scene nor a HUD.", iScenePath.string())
 		return;
 	}
 
@@ -122,7 +138,8 @@ void EditorLayer::openScene(const std::filesystem::path& iScenePath) {
 				file.read(reinterpret_cast<char*>(bytes.data()), static_cast<std::streamsize>(size));
 				state->progress.store(0.4f);
 				state->setMessage("Parsing scene...");
-				*parsed = scene::SceneSerializer::parseBuffer(bytes, scenePath.string());
+				*parsed = scene::SceneSerializer::parseBuffer(bytes, scenePath.string(),
+															  scene::documentKindOf(scenePath));
 				if (!parsed->valid) {
 					const auto message = std::format("Cannot open scene '{}': {}. Fix: {}.", scenePath.string(),
 													 parsed->error, scene::fixHint(parsed->failure));
@@ -438,7 +455,7 @@ auto EditorLayer::loadOrOpenSceneDocument(const std::filesystem::path& iScenePat
 	std::vector<uint8_t> bytes(size);
 	file.read(reinterpret_cast<char*>(bytes.data()), static_cast<std::streamsize>(size));
 	const auto newScene = mkShared<scene::Scene>();
-	const scene::SceneSerializer serializer(newScene);
+	const scene::SceneSerializer serializer(newScene, scene::documentKindOf(iScenePath));
 	if (const auto loaded = serializer.deserializeFromBuffer(bytes, iScenePath.string()); !loaded) {
 		OWL_CORE_WARN("loadOrOpenSceneDocument: Cannot open scene '{}': {}. Fix: {}.", iScenePath.string(),
 					  scene::describe(loaded.error()), scene::fixHint(loaded.error()))
@@ -453,9 +470,13 @@ auto EditorLayer::loadOrOpenSceneDocument(const std::filesystem::path& iScenePat
 
 void EditorLayer::saveSceneAs() {
 	const auto* doc = activeSceneDocument();
-	const std::string defaultName = (doc != nullptr && !doc->filePath().empty()) ? doc->filePath().filename().string()
-																				 : std::string{"Untitled.owl"};
-	if (const auto filepath = platform::FileDialog::saveFile("Owl Scene (*.owl)|owl\n", defaultName); !filepath.empty())
+	const bool isHud = doc != nullptr && doc->getActiveScene() &&
+					   doc->getActiveScene()->getDocumentKind() == scene::DocumentKind::Hud;
+	const std::string defaultName = (doc != nullptr && !doc->filePath().empty())
+											? doc->filePath().filename().string()
+											: std::string{isHud ? "Untitled.owlhud" : "Untitled.owl"};
+	const char* filter = isHud ? "Owl HUD (*.owlhud)|owlhud\n" : "Owl Scene (*.owl)|owl\n";
+	if (const auto filepath = platform::FileDialog::saveFile(filter, defaultName); !filepath.empty())
 		saveSceneAs(filepath);
 }
 
@@ -484,7 +505,12 @@ void EditorLayer::saveSceneAs(const std::filesystem::path& iScenePath) {
 				state->setMessage("Done!");
 				OWL_CORE_INFO("Scene saved to {}.", path.string())
 			},
-			[state]() -> void { state->completed.store(true); }));
+			[state, isHud = doc->getActiveScene()->getDocumentKind() == scene::DocumentKind::Hud]() -> void {
+				// The scenes drawing this HUD read it again from the file just written.
+				if (isHud)
+					app::Application::get().getEngineContext().getHudLibrary().clear();
+				state->completed.store(true);
+			}));
 	refreshWindowTitle();
 }
 
@@ -568,6 +594,7 @@ void EditorLayer::openProject(const std::filesystem::path& iDir) {
 	app::Application::get().addAssetDirectory({std::format("Project: {}", m_project.name), m_project.projectDirectory});
 	app::Application::get().getEngineContext().setSimulationSettings(m_project.simulation);
 	std::ignore = app::Application::get().getEngineContext().loadActionMap(m_project.projectDirectory);
+	app::Application::get().getEngineContext().setDefaultHud(m_project.defaultHud);
 	std::ignore = m_project.loadGamepadMappings();
 	m_contentBrowser.attach();
 	refreshWindowTitle();
@@ -636,6 +663,7 @@ void EditorLayer::closeProject() {
 	m_project = {};
 	app::Application::get().getEngineContext().setSimulationSettings(m_project.simulation);
 	std::ignore = app::Application::get().getEngineContext().loadActionMap({});
+	app::Application::get().getEngineContext().setDefaultHud(m_project.defaultHud);
 	refreshWindowTitle();
 }
 

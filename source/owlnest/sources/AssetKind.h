@@ -10,6 +10,9 @@
 
 #include <cstdint>
 #include <filesystem>
+#include <string>
+#include <string_view>
+#include <vector>
 
 namespace owl::nest {
 
@@ -25,6 +28,7 @@ enum struct AssetKind : uint8_t {
 	Tileset,///< `.owltileset`: opened in a tileset document.
 	Font,///< `.ttf`, `.otf` or the `.owlfont` sidecar: opened in a font document.
 	Prefab,///< `.owlprefab`: instantiated in the active scene.
+	Hud,///< `.owlhud`: opened in a scene document (the HUD is a scene of widgets).
 	Macro,///< `.owlmacro`: replayed on the active scene (one undo step).
 	Code,///< Script, source, data or markup text: opened in the code editor.
 	Unsupported///< Anything else.
@@ -37,5 +41,15 @@ enum struct AssetKind : uint8_t {
  * @return The kind of asset.
  */
 [[nodiscard]] auto classifyAsset(const std::filesystem::path& iPath) -> AssetKind;
+
+/**
+ * @brief
+ *  List the files of a folder tree that have an extension (what an asset picker offers).
+ * @param[in] iDirectory The folder searched recursively (nothing is listed when it does not exist).
+ * @param[in] iExtension The extension, with its dot (`.owlhud`).
+ * @return The paths relative to the folder, with `/` separators, sorted.
+ */
+[[nodiscard]] auto listAssets(const std::filesystem::path& iDirectory, std::string_view iExtension)
+		-> std::vector<std::string>;
 
 }// namespace owl::nest

@@ -85,6 +85,8 @@ auto AssetThumbnails::getKind(const std::filesystem::path& iPath) -> Kind {
 		return Kind::Scene;
 	if (extension == ".owlprefab")
 		return Kind::Prefab;
+	if (extension == ".owlhud")
+		return Kind::Hud;
 	if (extension == ".wav" || extension == ".ogg" || extension == ".flac" || extension == ".mp3")
 		return Kind::Sound;
 	if (extension == ".owltileset")
@@ -232,6 +234,7 @@ auto AssetThumbnails::get(const std::filesystem::path& iPath) -> const Preview* 
 			break;
 		case Kind::Scene:
 		case Kind::Prefab:
+		case Kind::Hud:
 			if (inserted || std::ranges::find(m_pending, iPath) == m_pending.end()) {
 				if (!m_job.has_value() || m_job->path != iPath)
 					m_pending.push_back(iPath);
@@ -281,8 +284,8 @@ auto AssetThumbnails::startJob() -> bool {
 			continue;
 		auto loaded = mkShared<scene::Scene>();
 		bool ok = false;
-		if (getKind(path) == Kind::Scene) {
-			ok = scene::SceneSerializer(loaded).deserialize(path).has_value();
+		if (getKind(path) == Kind::Scene || getKind(path) == Kind::Hud) {
+			ok = scene::SceneSerializer(loaded, scene::documentKindOf(path)).deserialize(path).has_value();
 		} else {
 			ok = static_cast<bool>(scene::PrefabSerializer::instantiate(path, loaded));
 		}

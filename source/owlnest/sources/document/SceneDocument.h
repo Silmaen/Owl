@@ -331,6 +331,12 @@ public:
 	[[nodiscard]] auto getViewport() const -> const panel::Viewport& { return m_viewport; }
 
 private:
+	/**
+	 * @brief
+	 *  Forget the HUD scenes loaded so far, so the next frame reads them again from their files (widget values of a play).
+	 */
+	static void resetHudValues();
+
 	/// The persistent editor-side scene (what is saved to disk / restored when leaving Play).
 	shared<scene::Scene> m_editorScene;
 	/// The scene currently being updated/rendered (a copy of `m_editorScene` while in Play).

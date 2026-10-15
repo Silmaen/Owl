@@ -16,6 +16,7 @@ OWL_DIAG_DISABLE_CLANG("-Wshadow")
 OWL_DIAG_POP
 
 #include <cstddef>
+#include <optional>
 #include <string>
 
 namespace owl::nest::commands {
@@ -186,6 +187,69 @@ private:
 	scene::PhysicsSettings m_before;
 	/// Settings after the edit.
 	scene::PhysicsSettings m_after;
+};
+
+/**
+ * @brief
+ *  Undoable choice of the HUD asset a scene draws (its `Hud:` key).
+ */
+class SetSceneHudCommand final : public SceneUndoCommand {
+public:
+	SetSceneHudCommand(const SetSceneHudCommand&) = delete;
+
+	SetSceneHudCommand(SetSceneHudCommand&&) = default;
+
+	auto operator=(const SetSceneHudCommand&) -> SetSceneHudCommand& = delete;
+
+	auto operator=(SetSceneHudCommand&&) -> SetSceneHudCommand& = default;
+
+	/**
+	 * @brief
+	 *  Construct from the HUD path before and after the change.
+	 * @param[in] iBefore Path before (nothing: the project's default HUD, empty: none).
+	 * @param[in] iAfter Path after.
+	 */
+	SetSceneHudCommand(std::optional<std::string> iBefore, std::optional<std::string> iAfter);
+
+	/**
+	 * @brief
+	 *  Destructor.
+	 */
+	~SetSceneHudCommand() override;
+
+	/**
+	 * @brief
+	 *  Restore the previous HUD.
+	 * @param[in,out] ioScene The target scene.
+	 */
+	void undo(scene::Scene& ioScene) override;
+
+	/**
+	 * @brief
+	 *  Choose the new HUD again.
+	 * @param[in,out] ioScene The target scene.
+	 */
+	void redo(scene::Scene& ioScene) override;
+
+	/**
+	 * @brief
+	 *  Description.
+	 * @return Human-readable description for menus and tooltips.
+	 */
+	[[nodiscard]] auto description() const -> std::string override;
+
+	/**
+	 * @brief
+	 *  Stable identifier of the command type for merge compatibility checks.
+	 * @return The command type id.
+	 */
+	[[nodiscard]] auto typeId() const -> size_t override;
+
+private:
+	/// HUD path before the change.
+	std::optional<std::string> m_before;
+	/// HUD path after the change.
+	std::optional<std::string> m_after;
 };
 
 }// namespace owl::nest::commands

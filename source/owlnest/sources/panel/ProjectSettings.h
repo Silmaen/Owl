@@ -86,6 +86,8 @@ private:
 	int m_selectedSceneIndex = -1;
 	/// List of available scene paths (relative to project directory).
 	std::vector<std::string> m_availableScenes;
+	/// `.owlhud` files of the project, relative to its folder.
+	std::vector<std::string> m_availableHuds;
 	/// Whether the popup should be opened on the next render call.
 	bool m_pendingOpen = false;
 	/// Whether a result is ready to be consumed.
