@@ -576,6 +576,15 @@ Every edit is undoable (`Ctrl+Z` / `Ctrl+Y`; consecutive edits of one bound merg
 ribbon tab) writes the `.owlfont` sidecar, or deletes it when no extra range is left, and rebuilds the atlas of the
 loaded font in place: every text using it shows the new glyphs at once.
 
+### HUD documents {#editor-hud}
+
+An `.owlhud` opens (double click in the Content Browser) in a scene document: the hierarchy, the inspector, the
+viewport (the canvases drawn in pixels) and the undo history work as for a scene, and Save writes the `Hud:` file
+atomically. **New > HUD** (Home ribbon) creates an untitled one holding a full-screen canvas, saved as `.owlhud`. The
+scenes drawing a HUD read it again once it is saved; Play starts and ends with the HUD files read again, so the
+widget values changed by the game never stay in the editor. A dedicated HUD editor (resolution presets, rect gizmo)
+comes with HUD4 ([HUD system](design/hud-system.md)).
+
 ### Content Browser
 
 The Content Browser provides a file grid view of the project's asset directory. It
@@ -591,7 +600,7 @@ above the selected root. Below, one chip per family present in the folder (`All 
 family alone; the chips hide when the folder holds a single family.
 
 **Tiles.** Images (`.png`, `.jpg`) show their own thumbnail, filling the tile and cropped to its square; tilesets
-show their atlas; scenes are rendered through their primary camera, prefabs framed whole by an orthographic camera;
+show their atlas; HUDs are rendered in pixels on a dark backdrop; scenes are rendered through their primary camera, prefabs framed whole by an orthographic camera;
 3D models (`.obj`, `.fbx`, `.gltf`, `.glb`) show their faces in an isometric view, shaded and sorted back to front
 (`AssetThumbnails::projectMesh`, at most 6000 triangles); sounds show their waveform (`sound::readWaveform`).
 `AssetThumbnails` reads a few images, sounds and tilesets per frame (a mesh takes the frame) and renders one scene or
@@ -772,6 +781,7 @@ grids, like the inspector:
 |---------------------|-----------------------------------------------------------------------------------|
 | Project Name        | Display name shown in the window title bar                                        |
 | First Scene         | Dropdown of `.owl` files found in the project directory                           |
+| Default HUD         | Dropdown of `.owlhud` files: the HUD of the scenes that name none (`DefaultHud`)  |
 | Version             | Freeform version string (e.g., "1.0.0")                                           |
 | Author              | Author or studio name                                                             |
 | Description         | Short project description                                                         |
@@ -802,6 +812,10 @@ and transform interpolation (see [Physics](physics.md)); the world steps once pe
 project setting. Each change pushes an undoable
 `ModifyPhysicsSettingsCommand`; the settings are read when Play starts. It is shown even when the project
 declares no renderer stack.
+
+The **HUD** section chooses the `.owlhud` the scene draws (its `Hud:` key): *Project default*, *None*, a file listed
+from the project, or a file dropped from the Content Browser. The choice runs the undoable `scene.set_hud` command
+(`path`, or `use_default`), so the console, macros and MCP issue it too.
 
 The renderer-stack section mirrors `renderer::EnabledRenderersConfig`:
 

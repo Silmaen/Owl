@@ -234,9 +234,14 @@ end
 
 ### `scene`
 
-`scene.find_entity` scans every entity: call it once (in `on_create`) and keep the id.
+`scene.find_entity` scans every entity: call it once (in `on_create`) and keep the id. It looks in the scene, then in the
+scene's HUD asset (`Hud:` key, see [Scene](scene.md#hud-asset)).
 
 ### `ui`
+
+`ui.find(name)` returns the first widget with this tag, searching the HUD asset before the scene (0 when none); the other
+`ui.*` functions take its id wherever the widget lives. A button callback of a HUD widget runs on the script above it in
+the HUD, else on the first script of the active scene that defines it.
 
 #### Transition kinds
 

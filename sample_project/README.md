@@ -106,7 +106,7 @@ it directly.
 | `coin.lua`                   | `Trigger.Type=LuaCallback`, score increment, sprite spin, sound + entity destroy                                                                                                  |
 | `moving_platform_h.lua`      | Kinematic body driven by `physics.set_velocity` along X from `on_tick` (fixed simulation tick) — pushes the player                                                                |
 | `moving_platform_v.lua`      | Same idea on Y — pushes the player vertically                                                                                                                                      |
-| `hud.lua`                    | Passive HUD root (HealthBar + ScoreText drawn under it, kept in sync by player scripts)                                                                                            |
+| `hud.lua`                    | Passive HUD root of the `world_map` canvas (the platformer HUD is `huds/gameplay.owlhud`, shared through the scene key `Hud:`)                                                       |
 | `settings_menu.lua`          | `settings.get/set/save/load/apply/reset_all`, slider handling, fade transitions                                                                                                   |
 | `victory.lua`                | `gamestate.get`, fade transitions                                                                                                                                                  |
 | `game_over.lua`              | Retry → world map, Menu → main menu, gamestate clear                                                                                                                              |
