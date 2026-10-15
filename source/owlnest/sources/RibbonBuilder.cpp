@@ -365,6 +365,25 @@ void RibbonBuilder::buildSceneTab() {
 							  .size = Size::Small});
 
 	m_ribbon.addButton(sceneTab, gShow,
+					   Button{.iconName = "owlhud_icon",
+							  .label = "HUD Editor",
+							  .tooltip = "Edit the HUD canvases of the scene in pixels: resolution presets, rect "
+										 "gizmo, widget palette",
+							  .isEnabled = [this]() -> bool {
+								  const auto* d = mp_editor->activeSceneDocument();
+								  return d != nullptr && d->state() == State::Edit && d->getEditorScene() &&
+										 d->getEditorScene()->getDocumentKind() != scene::DocumentKind::Hud;
+							  },
+							  .isChecked = [this]() -> bool {
+								  const auto* d = mp_editor->activeSceneDocument();
+								  return d != nullptr && d->isHudMode();
+							  },
+							  .onClick = [this]() -> void {
+								  if (auto* d = mp_editor->activeSceneDocument(); d != nullptr)
+									  d->setHudMode(!d->isHudMode());
+							  },
+							  .size = Size::Small});
+	m_ribbon.addButton(sceneTab, gShow,
 					   Button{.iconName = "ribbon_settings",
 							  .label = "Settings",
 							  .tooltip = "Open per-scene settings (renderer overrides, …)",

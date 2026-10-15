@@ -10,6 +10,7 @@
 
 #include "Document.h"
 #include "UndoManager.h"
+#include "panel/HudEditor.h"
 #include "panel/Viewport.h"
 
 #include <cstdint>
@@ -330,6 +331,35 @@ public:
 	 */
 	[[nodiscard]] auto getViewport() const -> const panel::Viewport& { return m_viewport; }
 
+	// --- HUD editing ---------------------------------------------------------------------------------------------
+	/**
+	 * @brief
+	 *  Check whether the tab shows the HUD editor instead of the scene viewport (an `.owlhud` always does).
+	 * @return True when the HUD view is on.
+	 */
+	[[nodiscard]] auto isHudMode() const -> bool { return m_hudMode; }
+
+	/**
+	 * @brief
+	 *  Check whether the HUD editor is the live view: HUD view on and the scene not playing.
+	 * @return True when the HUD editor draws and takes the mouse.
+	 */
+	[[nodiscard]] auto isHudEditing() const -> bool { return m_hudMode && m_state == State::Edit; }
+
+	/**
+	 * @brief
+	 *  Switch between the scene viewport and the HUD editor of the canvases of the scene.
+	 * @param[in] iEnabled True for the HUD editor.
+	 */
+	void setHudMode(const bool iEnabled) { m_hudMode = iEnabled; }
+
+	/**
+	 * @brief
+	 *  Access the HUD editor of this document.
+	 * @return The HUD editor panel.
+	 */
+	[[nodiscard]] auto getHudEditor() -> panel::HudEditor& { return m_hudEditor; }
+
 private:
 	/**
 	 * @brief
@@ -370,6 +400,10 @@ private:
 	EditorLayer* mp_editor = nullptr;
 	/// Viewport panel rendering this scene.
 	panel::Viewport m_viewport;
+	/// HUD editor shown in place of the viewport while `m_hudMode` is on.
+	panel::HudEditor m_hudEditor;
+	/// Whether the tab shows the HUD editor.
+	bool m_hudMode = false;
 };
 
 }// namespace owl::nest
