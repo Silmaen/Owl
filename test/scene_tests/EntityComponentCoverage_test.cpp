@@ -292,11 +292,11 @@ TEST(EntityComponentCoverage, UiRect) {
 
 	EXPECT_FALSE(ent.hasComponent<component::UiRect>());
 	auto& rect = ent.addComponent<component::UiRect>();
-	rect.anchor = component::UiRect::Anchor::TopLeft;
+	rect.setAnchor(component::UiRect::Anchor::TopLeft);
 	rect.size = {200.f, 50.f};
 	rect.anchorOffset = {10.f, 20.f};
 	EXPECT_TRUE(ent.hasComponent<component::UiRect>());
-	EXPECT_EQ(ent.getComponent<component::UiRect>().anchor, component::UiRect::Anchor::TopLeft);
+	EXPECT_EQ(ent.getComponent<component::UiRect>().getAnchor(), component::UiRect::Anchor::TopLeft);
 	EXPECT_NEAR(ent.getComponent<component::UiRect>().size.x(), 200.f, 0.01f);
 	ent.removeComponent<component::UiRect>();
 	EXPECT_FALSE(ent.hasComponent<component::UiRect>());

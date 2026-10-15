@@ -11,6 +11,7 @@
 #include "ImageCompare.h"
 
 #include <cstdio>
+#include <math/vectors.h>
 #include <renderer/TextureDecoder.h>
 
 #include <cstdint>
@@ -18,6 +19,7 @@
 #include <filesystem>
 #include <format>
 #include <fstream>
+#include <ostream>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -28,16 +30,30 @@ using test::render::ImageTolerance;
 
 namespace {
 
+// Default capture size: small enough for software rasterisers, large enough for the text.
+constexpr math::vec2ui g_captureSize{320, 180};
+
 // One reference image: a scene rendered by one backend on its software driver.
 struct RenderCase {
 	// Scene file stem in `test/render_tests/scenes`.
 	std::string scene;
 	// Backend name passed to `OwlRunner --backend`.
 	std::string backend;
+	// Capture size; a size other than the default suffixes the reference name with it.
+	math::vec2ui size = g_captureSize;
 };
 
-// Capture size: small enough for software rasterisers, large enough for the text.
-constexpr math::vec2ui g_captureSize{320, 180};
+// Readable case names in the gtest output (the default prints the object bytes).
+[[maybe_unused]] void PrintTo(const RenderCase& iCase, std::ostream* oStream) {
+	*oStream << iCase.scene << " on " << iCase.backend << " at " << iCase.size.x() << "x" << iCase.size.y();
+}
+
+// Reference and capture stem of a case: the scene, plus the size when it is not the default one.
+auto getCaseStem(const RenderCase& iCase) -> std::string {
+	if (iCase.size == g_captureSize)
+		return iCase.scene;
+	return std::format("{}_{}x{}", iCase.scene, iCase.size.x(), iCase.size.y());
+}
 // Frames run before the capture (streaming, animations and async loads settle).
 constexpr uint32_t g_warmupFrames = 60;
 
@@ -123,7 +139,7 @@ TEST_P(RenderImage, matchesReference) {
 #ifndef OWL_RUNNER_EXECUTABLE
 	GTEST_SKIP() << "OwlRunner is not built (OWL_BUILD_NEST=OFF).";
 #else
-	const auto& [scene, backend] = GetParam();
+	const auto& [scene, backend, size] = GetParam();
 	if (backend == "vulkan" && !exists(getVulkanIcd()))
 		GTEST_SKIP() << "lavapipe not found (" << getVulkanIcd() << "); set OWL_RENDER_TESTS_VK_ICD.";
 	if (getEnv("DISPLAY").empty() && getEnv("WAYLAND_DISPLAY").empty())
@@ -131,10 +147,10 @@ TEST_P(RenderImage, matchesReference) {
 
 	const auto root = test::getRootPath();
 	const auto sceneFile = root / "test" / "render_tests" / "scenes" / (scene + ".owl");
-	const auto reference = root / "test" / "render_tests" / "references" / backend / (scene + ".png");
+	const auto reference = root / "test" / "render_tests" / "references" / backend / (getCaseStem(GetParam()) + ".png");
 	const auto outDir = getOutputDir();
 	std::filesystem::create_directories(outDir);
-	const auto stem = std::format("{}.{}", scene, backend);
+	const auto stem = std::format("{}.{}", getCaseStem(GetParam()), backend);
 	const auto actualFile = outDir / (stem + ".actual.png");
 	const auto diffFile = outDir / (stem + ".diff.png");
 	const auto logFile = outDir / (stem + ".log");
@@ -145,8 +161,8 @@ TEST_P(RenderImage, matchesReference) {
 									 R"(--backend {} --frames 2 --warmup {} --size {}x{} --validation )"
 									 R"(--capture "{}" > "{}" 2>&1)",
 									 getDriverEnvironment(backend), OWL_RUNNER_EXECUTABLE, sceneFile.string(),
-									 (root / "sample_project").string(), backend, g_warmupFrames, g_captureSize.x(),
-									 g_captureSize.y(), actualFile.string(), logFile.string());
+									 (root / "sample_project").string(), backend, g_warmupFrames, size.x(), size.y(),
+									 actualFile.string(), logFile.string());
 	// NOLINTNEXTLINE(bugprone-command-processor) The runner must run in its own process (one GPU context).
 	const int status = std::system(command.c_str());
 	const auto log = readFile(logFile);
@@ -156,8 +172,8 @@ TEST_P(RenderImage, matchesReference) {
 
 	const auto actual = renderer::decodeImageFile(actualFile, 4);
 	ASSERT_TRUE(actual.valid) << "No capture written, log: " << logFile;
-	ASSERT_EQ(actual.size.x(), g_captureSize.x());
-	ASSERT_EQ(actual.size.y(), g_captureSize.y());
+	ASSERT_EQ(actual.size.x(), size.x());
+	ASSERT_EQ(actual.size.y(), size.y());
 
 	if (!getEnv("OWL_RENDER_TESTS_UPDATE").empty()) {
 		std::filesystem::create_directories(reference.parent_path());
@@ -194,4 +210,21 @@ INSTANTIATE_TEST_SUITE_P(Scenes, RenderImage,
 										 RenderCase{"isometric", "vulkan"}, RenderCase{"isometric", "opengl"}),
 						 [](const testing::TestParamInfo<RenderCase>& iInfo) -> std::string {
 							 return iInfo.param.scene + "_" + iInfo.param.backend;
+						 });
+
+// The same HUD over a raycast and a voxel scene at three resolutions: anchors, stretch and scale modes on screen.
+INSTANTIATE_TEST_SUITE_P(Hud, RenderImage,
+						 testing::Values(RenderCase{"hud_raycast", "vulkan"}, RenderCase{"hud_raycast", "opengl"},
+										 RenderCase{"hud_raycast", "vulkan", {480, 270}},
+										 RenderCase{"hud_raycast", "opengl", {480, 270}},
+										 RenderCase{"hud_raycast", "vulkan", {240, 240}},
+										 RenderCase{"hud_raycast", "opengl", {240, 240}},
+										 RenderCase{"hud_voxel", "vulkan"}, RenderCase{"hud_voxel", "opengl"},
+										 RenderCase{"hud_voxel", "vulkan", {480, 270}},
+										 RenderCase{"hud_voxel", "opengl", {480, 270}},
+										 RenderCase{"hud_voxel", "vulkan", {240, 240}},
+										 RenderCase{"hud_voxel", "opengl", {240, 240}}),
+						 [](const testing::TestParamInfo<RenderCase>& iInfo) -> std::string {
+							 return std::format("{}_{}_{}x{}", iInfo.param.scene, iInfo.param.backend,
+												iInfo.param.size.x(), iInfo.param.size.y());
 						 });

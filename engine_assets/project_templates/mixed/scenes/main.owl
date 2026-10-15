@@ -77,6 +77,8 @@ Entities:
     Canvas:
       space: ScreenOverlay
       sortOrder: 0
+      referenceResolution: [1280, 720]
+      scaleMode: ScaleWithHeight
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -95,13 +97,11 @@ Entities:
     Hierarchy:
       parentId: 7400000000000000010
     UiRect:
-      anchor: BottomCenter
-      pivotX: 0.5
-      pivotY: 0
-      sizeX: 1000
-      sizeY: 32
-      offsetX: 0
-      offsetY: 16
+      anchorMin: [0.5, 1]
+      anchorMax: [0.5, 1]
+      pivot: [0.5, 1]
+      size: [1000, 32]
+      offset: [0, -16]
     UiText:
       text: "Raycast view under a 2D HUD - open scenes/terrain.owl for voxels"
       color: [1, 1, 1, 1]

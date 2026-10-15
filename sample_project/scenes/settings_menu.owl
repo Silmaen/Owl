@@ -23,13 +23,11 @@ Entities:
       disabledColor: [0.150000006, 0.150000006, 0.150000006, 0.5]
       onClickCallback: go_back
     UiRect:
-      anchor: BottomCenter
-      pivotX: 0.5
-      pivotY: 0
-      sizeX: 160
-      sizeY: 40
-      offsetX: 0
-      offsetY: 40
+      anchorMin: [0.5, 1]
+      anchorMax: [0.5, 1]
+      pivot: [0.5, 1]
+      size: [160, 40]
+      offset: [0, -40]
     UiText:
       text: Back
       color: [1, 1, 1, 1]
@@ -58,13 +56,11 @@ Entities:
       disabledColor: [0.150000006, 0.150000006, 0.150000006, 0.5]
       onClickCallback: on_reset_clicked
     UiRect:
-      anchor: Center
-      pivotX: 0.5
-      pivotY: 0.5
-      sizeX: 200
-      sizeY: 40
-      offsetX: 0
-      offsetY: -60
+      anchorMin: [0.5, 0.5]
+      anchorMax: [0.5, 0.5]
+      pivot: [0.5, 0.5]
+      size: [200, 40]
+      offset: [0, 60]
     UiText:
       text: Reset Defaults
       color: [1, 1, 1, 1]
@@ -87,13 +83,11 @@ Entities:
     RendererTag:
       Name: ui
     UiRect:
-      anchor: Center
-      pivotX: 0.5
-      pivotY: 0.5
-      sizeX: 300
-      sizeY: 20
-      offsetX: 0
-      offsetY: 0
+      anchorMin: [0.5, 0.5]
+      anchorMax: [0.5, 0.5]
+      pivot: [0.5, 0.5]
+      size: [300, 20]
+      offset: [0, 0]
     UiSlider:
       value: 0.5
       minValue: 0
@@ -116,13 +110,11 @@ Entities:
     RendererTag:
       Name: ui
     UiRect:
-      anchor: Center
-      pivotX: 0.5
-      pivotY: 0.5
-      sizeX: 300
-      sizeY: 30
-      offsetX: 0
-      offsetY: 30
+      anchorMin: [0.5, 0.5]
+      anchorMax: [0.5, 0.5]
+      pivot: [0.5, 0.5]
+      size: [300, 30]
+      offset: [0, -30]
     UiText:
       text: "Player Speed: 8.0"
       color: [0.899999976, 0.899999976, 0.899999976, 1]
@@ -145,13 +137,11 @@ Entities:
     RendererTag:
       Name: ui
     UiRect:
-      anchor: Center
-      pivotX: 0.5
-      pivotY: 0.5
-      sizeX: 300
-      sizeY: 20
-      offsetX: 0
-      offsetY: 70
+      anchorMin: [0.5, 0.5]
+      anchorMax: [0.5, 0.5]
+      pivot: [0.5, 0.5]
+      size: [300, 20]
+      offset: [0, -70]
     UiSlider:
       value: 1
       minValue: 0
@@ -174,13 +164,11 @@ Entities:
     RendererTag:
       Name: ui
     UiRect:
-      anchor: Center
-      pivotX: 0.5
-      pivotY: 0.5
-      sizeX: 300
-      sizeY: 30
-      offsetX: 0
-      offsetY: 100
+      anchorMin: [0.5, 0.5]
+      anchorMax: [0.5, 0.5]
+      pivot: [0.5, 0.5]
+      size: [300, 30]
+      offset: [0, -100]
     UiText:
       text: "Master Volume: 100%"
       color: [0.899999976, 0.899999976, 0.899999976, 1]
@@ -203,13 +191,11 @@ Entities:
     RendererTag:
       Name: ui
     UiRect:
-      anchor: TopCenter
-      pivotX: 0.5
-      pivotY: 1
-      sizeX: 400
-      sizeY: 60
-      offsetX: 0
-      offsetY: -40
+      anchorMin: [0.5, 0]
+      anchorMax: [0.5, 0]
+      pivot: [0.5, 0]
+      size: [400, 60]
+      offset: [0, 40]
     UiText:
       text: Settings
       color: [1, 0.850000024, 0.200000003, 1]
@@ -228,6 +214,8 @@ Entities:
     Canvas:
       space: ScreenOverlay
       sortOrder: 0
+      referenceResolution: [1280, 720]
+      scaleMode: ScaleWithHeight
     Visibility:
       gameVisible: true
     Hierarchy:

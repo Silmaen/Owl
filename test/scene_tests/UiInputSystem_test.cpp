@@ -28,10 +28,10 @@ auto makeButton(scene::Scene& iScene, const scene::Entity& iCanvas, const math::
 		-> scene::Entity {
 	auto ent = iScene.createEntity("button");
 	auto& rect = ent.addComponent<scene::component::UiRect>();
-	rect.anchor = scene::component::UiRect::Anchor::BottomLeft;
+	rect.setAnchor(scene::component::UiRect::Anchor::TopLeft);
 	rect.pivot = {0.5f, 0.5f};
 	rect.size = iSize;
-	rect.anchorOffset = iCenter;// since pivot 0.5,0.5 + size cancels, position = anchor + offset
+	rect.anchorOffset = iCenter;// the centred pivot sits on the top-left anchor plus the offset
 	ent.addComponent<scene::component::UiButton>();
 	iScene.setParent(ent, iCanvas);
 	return ent;
@@ -48,7 +48,7 @@ TEST_F(UiInputSystemTest, NullSceneDoesNothing) {
 TEST_F(UiInputSystemTest, NotPlayingDoesNothing) {
 	scene::Scene scn;
 	auto canvas = scn.createEntity("Canvas");
-	canvas.addComponent<scene::component::Canvas>();
+	canvas.addComponent<scene::component::Canvas>().scaleMode = scene::component::Canvas::ScaleMode::ConstantPixels;
 	auto button = makeButton(scn, canvas, {100.f, 100.f}, {80.f, 40.f});
 	// status defaults to Editing; UiInputSystem only runs in Playing.
 	scene::UiInputSystem::update(&scn, {800u, 600u}, {100.f, 100.f}, false);
@@ -60,7 +60,7 @@ TEST_F(UiInputSystemTest, ButtonHoverPressClick) {
 	scene::Scene scn;
 	scn.status = scene::Scene::Status::Playing;
 	auto canvas = scn.createEntity("Canvas");
-	canvas.addComponent<scene::component::Canvas>();
+	canvas.addComponent<scene::component::Canvas>().scaleMode = scene::component::Canvas::ScaleMode::ConstantPixels;
 	auto button = makeButton(scn, canvas, {100.f, 100.f}, {80.f, 40.f});
 
 	// Hover only — no press.
@@ -82,7 +82,7 @@ TEST_F(UiInputSystemTest, DisabledButtonIgnoresPointer) {
 	scene::Scene scn;
 	scn.status = scene::Scene::Status::Playing;
 	auto canvas = scn.createEntity("Canvas");
-	canvas.addComponent<scene::component::Canvas>();
+	canvas.addComponent<scene::component::Canvas>().scaleMode = scene::component::Canvas::ScaleMode::ConstantPixels;
 	auto button = makeButton(scn, canvas, {100.f, 100.f}, {80.f, 40.f});
 	button.getComponent<scene::component::UiButton>().state = scene::component::UiButton::State::Disabled;
 
@@ -95,10 +95,10 @@ TEST_F(UiInputSystemTest, SliderUpdatesValueWhenDragged) {
 	scene::Scene scn;
 	scn.status = scene::Scene::Status::Playing;
 	auto canvas = scn.createEntity("Canvas");
-	canvas.addComponent<scene::component::Canvas>();
+	canvas.addComponent<scene::component::Canvas>().scaleMode = scene::component::Canvas::ScaleMode::ConstantPixels;
 	auto sliderEnt = scn.createEntity("slider");
 	auto& rect = sliderEnt.addComponent<scene::component::UiRect>();
-	rect.anchor = scene::component::UiRect::Anchor::BottomLeft;
+	rect.setAnchor(scene::component::UiRect::Anchor::TopLeft);
 	rect.pivot = {0.5f, 0.5f};
 	rect.size = {200.f, 20.f};
 	rect.anchorOffset = {200.f, 100.f};// center at (200, 100)
@@ -125,7 +125,7 @@ TEST_F(UiInputSystemTest, HiddenChildIsSkipped) {
 	scene::Scene scn;
 	scn.status = scene::Scene::Status::Playing;
 	auto canvas = scn.createEntity("Canvas");
-	canvas.addComponent<scene::component::Canvas>();
+	canvas.addComponent<scene::component::Canvas>().scaleMode = scene::component::Canvas::ScaleMode::ConstantPixels;
 	auto button = makeButton(scn, canvas, {100.f, 100.f}, {80.f, 40.f});
 	button.getComponent<scene::component::Visibility>().gameVisible = false;
 
@@ -138,7 +138,7 @@ TEST_F(UiInputSystemTest, HiddenCanvasSkipsAllChildren) {
 	scene::Scene scn;
 	scn.status = scene::Scene::Status::Playing;
 	auto canvas = scn.createEntity("Canvas");
-	canvas.addComponent<scene::component::Canvas>();
+	canvas.addComponent<scene::component::Canvas>().scaleMode = scene::component::Canvas::ScaleMode::ConstantPixels;
 	canvas.getComponent<scene::component::Visibility>().gameVisible = false;
 	auto button = makeButton(scn, canvas, {100.f, 100.f}, {80.f, 40.f});
 
@@ -151,7 +151,7 @@ TEST_F(UiInputSystemTest, HoverStateIsPerScene) {
 	scene::Scene hovered;
 	hovered.status = scene::Scene::Status::Playing;
 	auto canvas = hovered.createEntity("Canvas");
-	canvas.addComponent<scene::component::Canvas>();
+	canvas.addComponent<scene::component::Canvas>().scaleMode = scene::component::Canvas::ScaleMode::ConstantPixels;
 	makeButton(hovered, canvas, {100.f, 100.f}, {80.f, 40.f});
 	scene::Scene idle;
 	idle.status = scene::Scene::Status::Playing;
@@ -163,4 +163,56 @@ TEST_F(UiInputSystemTest, HoverStateIsPerScene) {
 	EXPECT_FALSE(idle.getUiInputState().wasPressed);
 	scene::UiInputSystem::reset(hovered);
 	EXPECT_FALSE(scene::UiInputSystem::isUIConsuming(hovered));
+}
+
+TEST_F(UiInputSystemTest, TopmostButtonTakesTheMouse) {
+	scene::Scene scn;
+	scn.status = scene::Scene::Status::Playing;
+	auto canvas = scn.createEntity("Canvas");
+	canvas.addComponent<scene::component::Canvas>().scaleMode = scene::component::Canvas::ScaleMode::ConstantPixels;
+	auto below = makeButton(scn, canvas, {100.f, 100.f}, {80.f, 40.f});
+	auto above = makeButton(scn, canvas, {110.f, 100.f}, {80.f, 40.f});
+	// A label drawn over the top button does not steal the mouse.
+	auto label = scn.createEntity("label");
+	label.addComponent<scene::component::UiRect>().size = {80.f, 40.f};
+	scn.setParent(label, above);
+
+	scene::UiInputSystem::update(&scn, {800u, 600u}, {105.f, 100.f}, false);
+	EXPECT_TRUE(scene::UiInputSystem::isUIConsuming(scn));
+	EXPECT_EQ(above.getComponent<scene::component::UiButton>().state, scene::component::UiButton::State::Hovered);
+	EXPECT_EQ(below.getComponent<scene::component::UiButton>().state, scene::component::UiButton::State::Normal);
+}
+
+TEST_F(UiInputSystemTest, HitTestFollowsTheCanvasScale) {
+	scene::Scene scn;
+	scn.status = scene::Scene::Status::Playing;
+	auto canvas = scn.createEntity("Canvas");
+	auto& canvasComponent = canvas.addComponent<scene::component::Canvas>();
+	canvasComponent.referenceResolution = {400.f, 300.f};
+	canvasComponent.scaleMode = scene::component::Canvas::ScaleMode::ScaleWithHeight;
+	auto button = makeButton(scn, canvas, {100.f, 100.f}, {80.f, 40.f});
+
+	// At 800 x 600 the reference pixels double: the button centre is at (200, 200), its width 160.
+	scene::UiInputSystem::update(&scn, {800u, 600u}, {270.f, 200.f}, false);
+	EXPECT_EQ(button.getComponent<scene::component::UiButton>().state, scene::component::UiButton::State::Hovered);
+	scene::UiInputSystem::update(&scn, {800u, 600u}, {100.f, 100.f}, false);
+	EXPECT_EQ(button.getComponent<scene::component::UiButton>().state, scene::component::UiButton::State::Normal);
+}
+
+TEST_F(UiInputSystemTest, ReusesTheLayoutOfTheDrawnFrame) {
+	scene::Scene scn;
+	scn.status = scene::Scene::Status::Playing;
+	auto canvas = scn.createEntity("Canvas");
+	canvas.addComponent<scene::component::Canvas>().scaleMode = scene::component::Canvas::ScaleMode::ConstantPixels;
+	auto button = makeButton(scn, canvas, {100.f, 100.f}, {80.f, 40.f});
+	auto& layout = scn.getHudLayout();
+	layout.compute(scn, {800u, 600u}, false);
+	const auto computed = layout.getComputeCount();
+
+	scene::UiInputSystem::update(&scn, {800u, 600u}, {100.f, 100.f}, false);
+	EXPECT_EQ(layout.getComputeCount(), computed);
+	EXPECT_EQ(button.getComponent<scene::component::UiButton>().state, scene::component::UiButton::State::Hovered);
+	// No frame drawn since: the next update lays the HUD out itself.
+	scene::UiInputSystem::update(&scn, {800u, 600u}, {100.f, 100.f}, false);
+	EXPECT_EQ(layout.getComputeCount(), computed + 1);
 }
