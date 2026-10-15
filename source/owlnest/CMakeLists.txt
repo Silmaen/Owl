@@ -29,7 +29,8 @@ target_link_libraries(${OWL_NEST_COMMANDS} PUBLIC ${ENGINE_NAME})
 owl_target_link_libraries(${OWL_NEST_COMMANDS} PUBLIC yaml-cpp REQUIRED ${THIRD_PARTY_RELEASE})
 
 #
-#  MCP dispatcher: JSON-RPC 2.0 over an editor session (tools from the command registry, resources), no socket.
+#  MCP server: JSON-RPC 2.0 dispatcher over an editor session (tools from the command registry, resources) and its
+#  Streamable HTTP transport on 127.0.0.1 (cpp-httplib, no TLS), whose messages the main loop runs.
 #
 set(OWL_NEST_MCP ${OWL_PROJECT}Mcp)
 file(GLOB_RECURSE SRCS_MCP CONFIGURE_DEPENDS
@@ -39,6 +40,14 @@ add_library(${OWL_NEST_MCP} STATIC ${SRCS_MCP})
 set_target_properties(${OWL_NEST_MCP} PROPERTIES FOLDER "App")
 target_link_libraries(${OWL_NEST_MCP} PUBLIC ${OWL_NEST_COMMANDS})
 owl_target_link_libraries(${OWL_NEST_MCP} PUBLIC nlohmann_json REQUIRED)
+# Public: the owlnest tests drive the server with its client.
+owl_target_link_libraries(${OWL_NEST_MCP} PUBLIC httplib REQUIRED)
+if (WIN32)
+    # Token drawn from BCryptGenRandom.
+    target_link_libraries(${OWL_NEST_MCP} PRIVATE bcrypt)
+    # cpp-httplib requires Windows 10, MinGW defaults to an older target.
+    target_compile_definitions(${OWL_NEST_MCP} PUBLIC _WIN32_WINNT=0x0A00)
+endif ()
 
 set(RUNNER_NAME ${CMAKE_PROJECT_NAME}Runner)
 add_executable(${RUNNER_NAME} ${SRCS_RUNNER} ${HDRS_RUNNER})

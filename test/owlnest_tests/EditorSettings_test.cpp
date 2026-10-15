@@ -96,3 +96,24 @@ TEST(EditorSettings, CameraNavigationRoundTripsAndClamps) {
 	EXPECT_EQ(loaded.cameraDeadZone, 4);
 	std::filesystem::remove_all(dir);
 }
+
+TEST(EditorSettings, McpServerIsOffByDefaultAndRoundTrips) {
+	const auto dir = std::filesystem::temp_directory_path() / "owl_editor_settings_mcp_test";
+	std::filesystem::remove_all(dir);
+	std::filesystem::create_directories(dir);
+	EditorSettings settings;
+	EXPECT_FALSE(settings.mcpEnabled);
+	EXPECT_EQ(settings.mcpPort, 47800);
+	settings.saveToFile(dir / "settings.yml");
+	EditorSettings loaded;
+	loaded.loadFromFile(dir / "settings.yml");
+	EXPECT_FALSE(loaded.mcpEnabled);
+
+	settings.mcpEnabled = true;
+	settings.mcpPort = 80;// below 1024: clamped when read back
+	settings.saveToFile(dir / "settings.yml");
+	loaded.loadFromFile(dir / "settings.yml");
+	EXPECT_TRUE(loaded.mcpEnabled);
+	EXPECT_EQ(loaded.mcpPort, 1024);
+	std::filesystem::remove_all(dir);
+}

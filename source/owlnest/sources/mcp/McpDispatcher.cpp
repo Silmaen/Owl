@@ -15,8 +15,10 @@
 
 #include <algorithm>
 #include <exception>
+#include <filesystem>
 #include <format>
 #include <string>
+#include <system_error>
 #include <utility>
 
 namespace owl::nest::mcp {
@@ -58,6 +60,23 @@ auto invalidParams(const std::string_view iMessage) -> unexpected<json> {
 }
 
 }// namespace
+
+auto confinePath(const std::filesystem::path& iProject, const std::filesystem::path& iPath)
+		-> expected<std::filesystem::path, std::string> {
+	if (iProject.empty())
+		return unexpected<std::string>{"no project is open, remote callers cannot name files"};
+	std::error_code error;
+	const auto root = std::filesystem::weakly_canonical(std::filesystem::absolute(iProject, error), error);
+	if (error)
+		return unexpected<std::string>{std::format("the project directory cannot be resolved ({})", error.message())};
+	auto resolved = std::filesystem::weakly_canonical(iPath.is_absolute() ? iPath : root / iPath, error);
+	if (error)
+		return unexpected<std::string>{std::format("{} cannot be resolved ({})", iPath.string(), error.message())};
+	const auto relative = resolved.lexically_relative(root);
+	if (relative.empty() || relative == "." || *relative.begin() == "..")
+		return unexpected<std::string>{std::format("{} is outside the project", iPath.string())};
+	return resolved;
+}
 
 McpDispatcher::McpDispatcher(session::EditorSession& ioSession, const McpOptions& iOptions)
 	: m_session{ioSession}, m_resources{ioSession, iOptions.helpRoot} {}
@@ -182,10 +201,30 @@ auto McpDispatcher::callTool(const json& iParams) -> expected<json, json> {
 			parseArguments(*spec, arguments != iParams.end() && arguments->is_object() ? *arguments : json::object());
 	if (!args)
 		return makeToolError(args.error());
+	if (const auto confined = confinePaths(*spec, *args); !confined)
+		return makeToolError(confined.error());
 	const auto result = m_session.execute(toolName, *args);
 	if (!result)
 		return makeToolError(result.error());
 	return makeToolResult(*result);
+}
+
+auto McpDispatcher::confinePaths(const commands::CommandSpec& iSpec, commands::CommandArgs& ioArgs) const
+		-> expected<void, commands::CommandFailure> {
+	const auto project = m_session.getSessionProjectDirectory();
+	for (const auto& arg: iSpec.args) {
+		if (!arg.projectPath || !ioArgs.has(arg.name))
+			continue;
+		const std::filesystem::path given{ioArgs.getText(arg.name)};
+		auto confined = confinePath(project, given);
+		if (!confined) {
+			OWL_CORE_WARN("Mcp: Argument {} of {} refused ({}).", arg.name, iSpec.name, confined.error())
+			return unexpected{commands::CommandFailure{.error = commands::CommandError::InvalidArgument,
+													   .message = std::format("`{}`: {}", arg.name, confined.error())}};
+		}
+		ioArgs.set(arg.name, confined->string());
+	}
+	return {};
 }
 
 auto McpDispatcher::readResource(const json& iParams) const -> expected<json, json> {

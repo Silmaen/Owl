@@ -181,7 +181,8 @@ auto getMacroRunSpec() -> CommandSpec {
 			.args = {{.name = "path",
 					  .type = ArgType::Text,
 					  .required = true,
-					  .description = "Macro file, absolute or relative to an asset folder."}},
+					  .description = "Macro file, absolute or relative to an asset folder.",
+					  .projectPath = true}},
 			.factory = {},
 			.run = runMacro};
 }

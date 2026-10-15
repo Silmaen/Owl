@@ -48,6 +48,19 @@ auto getPillColor(const StatusInfo::Mode iMode) -> ImU32 {
 	return toU32(theme.surface4);
 }
 
+auto getMcpColor(const StatusInfo::Mcp iState) -> ImU32 {
+	const auto& theme = gui::UiLayer::getTheme();
+	switch (iState) {
+		case StatusInfo::Mcp::Off:
+			return ImGui::GetColorU32(ImGuiCol_TextDisabled);
+		case StatusInfo::Mcp::Listening:
+			return toU32(theme.accent);
+		case StatusInfo::Mcp::ClientActive:
+			return toU32(theme.play);
+	}
+	return ImGui::GetColorU32(ImGuiCol_TextDisabled);
+}
+
 }// namespace
 
 auto StatusBar::formatElapsed(const float iSeconds) -> std::string {
@@ -71,6 +84,25 @@ auto StatusBar::getModeLabel(const StatusInfo::Mode iMode) -> std::string {
 			return "PAUSED";
 	}
 	return "EDIT";
+}
+
+auto StatusBar::getMcpLabel(const StatusInfo::Mcp iState) -> std::string {
+	switch (iState) {
+		case StatusInfo::Mcp::Off:
+			return "MCP off";
+		case StatusInfo::Mcp::Listening:
+			return "MCP listening";
+		case StatusInfo::Mcp::ClientActive:
+			return "MCP client active";
+	}
+	return "MCP off";
+}
+
+auto StatusBar::getMcpTooltip(const StatusInfo& iInfo) -> std::string {
+	if (iInfo.mcp == StatusInfo::Mcp::Off)
+		return "MCP server off: enable it in the Editor Settings (click).";
+	return std::format("{}\nEndpoint: {}\nToken file: {}\nClick to open its settings.", getMcpLabel(iInfo.mcp),
+					   iInfo.mcpEndpoint, iInfo.mcpTokenFile);
 }
 
 void StatusBar::onImGuiRender(const StatusInfo& iInfo) {
@@ -155,6 +187,20 @@ void StatusBar::onImGuiRender(const StatusInfo& iInfo) {
 			iInfo.notifications->renderHistory();
 			ImGui::EndPopup();
 		}
+	}
+	{
+		const auto text = std::format("{} {}", gui::icon::link, getMcpLabel(iInfo.mcp));
+		const ImVec2 size = ImGui::CalcTextSize(text.c_str());
+		right -= size.x + 2.f * spacing;
+		ImGui::SetCursorScreenPos({right, origin.y});
+		if (ImGui::InvisibleButton("##statusMcp", {size.x + 2.f * spacing, height}))
+			m_openMcpSettingsRequested = true;
+		if (ImGui::IsItemHovered()) {
+			draw->AddRectFilled({right, origin.y + 2.f}, {right + size.x + 2.f * spacing, origin.y + height - 2.f},
+								ImGui::GetColorU32(ImGuiCol_ButtonHovered), 3.f);
+			ImGui::SetTooltip("%s", getMcpTooltip(iInfo).c_str());
+		}
+		draw->AddText({right + spacing, textY}, getMcpColor(iInfo.mcp), text.c_str());
 	}
 	if (!iInfo.backend.empty())
 		label(iInfo.device.empty() ? iInfo.backend : std::format("{}{}{}", iInfo.backend, g_separator, iInfo.device));

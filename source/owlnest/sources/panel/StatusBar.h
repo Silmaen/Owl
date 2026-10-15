@@ -27,6 +27,15 @@ namespace owl::nest::panel {
 struct StatusInfo {
 	/**
 	 * @brief
+	 *  State of the MCP server.
+	 */
+	enum struct Mcp : uint8_t {
+		Off,///< No socket open.
+		Listening,///< Listening, no client lately.
+		ClientActive,///< A client sent a request lately.
+	};
+	/**
+	 * @brief
 	 *  Simulation state of the active scene.
 	 */
 	enum struct Mode : uint8_t {
@@ -54,6 +63,12 @@ struct StatusInfo {
 	uint64_t warningCount = 0;
 	/// Errors logged since startup.
 	uint64_t errorCount = 0;
+	/// State of the MCP server.
+	Mcp mcp = Mcp::Off;
+	/// Endpoint of the MCP server; empty when off.
+	std::string mcpEndpoint;
+	/// File holding the MCP bearer token.
+	std::string mcpTokenFile;
 };
 
 /**
@@ -80,6 +95,22 @@ public:
 	 * @return "EDIT", "PLAYING" or "PAUSED".
 	 */
 	[[nodiscard]] static auto getModeLabel(StatusInfo::Mode iMode) -> std::string;
+
+	/**
+	 * @brief
+	 *  Label of the MCP indicator.
+	 * @param[in] iState The server state.
+	 * @return "MCP off", "MCP listening" or "MCP client active".
+	 */
+	[[nodiscard]] static auto getMcpLabel(StatusInfo::Mcp iState) -> std::string;
+
+	/**
+	 * @brief
+	 *  Tooltip of the MCP indicator: the state, the endpoint and the token file.
+	 * @param[in] iInfo The status.
+	 * @return The tooltip text.
+	 */
+	[[nodiscard]] static auto getMcpTooltip(const StatusInfo& iInfo) -> std::string;
 
 	/**
 	 * @brief
@@ -130,6 +161,17 @@ public:
 		return request;
 	}
 
+	/**
+	 * @brief
+	 *  Whether the user clicked the MCP indicator since the last call, then reset the request.
+	 * @return True once per click.
+	 */
+	[[nodiscard]] auto consumeOpenMcpSettingsRequest() -> bool {
+		const bool request = m_openMcpSettingsRequested;
+		m_openMcpSettingsRequested = false;
+		return request;
+	}
+
 private:
 	/// Warnings already seen.
 	uint64_t m_seenWarnings = 0;
@@ -137,6 +179,8 @@ private:
 	uint64_t m_seenErrors = 0;
 	/// A counter was clicked.
 	bool m_openLogRequested = false;
+	/// The MCP indicator was clicked.
+	bool m_openMcpSettingsRequested = false;
 };
 
 }// namespace owl::nest::panel

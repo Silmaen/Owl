@@ -552,7 +552,11 @@ CommandRegistry::CommandRegistry() {
 		 .factory = removeComponent});
 	add({.name = "prefab.instantiate",
 		 .description = "Instantiate a prefab file in the scene.",
-		 .args = {{.name = "path", .type = ArgType::Text, .required = true, .description = "Prefab file."},
+		 .args = {{.name = "path",
+				   .type = ArgType::Text,
+				   .required = true,
+				   .description = "Prefab file.",
+				   .projectPath = true},
 				  {.name = "asset_path",
 				   .type = ArgType::Text,
 				   .description = "Path recorded in the instance link (relative to the asset folder holding the "
@@ -577,7 +581,10 @@ CommandRegistry::CommandRegistry() {
 		 .factory = setComponent});
 	add({.name = "scene.save",
 		 .description = "Save the scene to its file, or to `path`.",
-		 .args = {{.name = "path", .type = ArgType::Text, .description = "File written (the scene file when absent)."}},
+		 .args = {{.name = "path",
+				   .type = ArgType::Text,
+				   .description = "File written (the scene file when absent).",
+				   .projectPath = true}},
 		 .factory = {},
 		 .run = saveScene});
 	add({.name = "edit.undo",

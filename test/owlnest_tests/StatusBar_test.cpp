@@ -18,6 +18,7 @@
 #include <gtest/gtest.h>
 
 #include <cstddef>
+#include <string>
 #include <utility>
 
 using namespace owl;
@@ -30,6 +31,20 @@ TEST(StatusBar, FormatsElapsedTime) {
 	EXPECT_EQ(StatusBar::formatElapsed(59.9f), "59 s ago");
 	EXPECT_EQ(StatusBar::formatElapsed(185.f), "3 min ago");
 	EXPECT_EQ(StatusBar::formatElapsed(7300.f), "2 h ago");
+}
+
+TEST(StatusBar, LabelsTheMcpIndicator) {
+	EXPECT_EQ(StatusBar::getMcpLabel(StatusInfo::Mcp::Off), "MCP off");
+	EXPECT_EQ(StatusBar::getMcpLabel(StatusInfo::Mcp::Listening), "MCP listening");
+	EXPECT_EQ(StatusBar::getMcpLabel(StatusInfo::Mcp::ClientActive), "MCP client active");
+	StatusInfo info;
+	EXPECT_NE(StatusBar::getMcpTooltip(info).find("off"), std::string::npos);
+	info.mcp = StatusInfo::Mcp::Listening;
+	info.mcpEndpoint = "http://127.0.0.1:47800/mcp";
+	info.mcpTokenFile = "/run/user/1000/owlnest/mcp_token";
+	const auto tooltip = StatusBar::getMcpTooltip(info);
+	EXPECT_NE(tooltip.find(info.mcpEndpoint), std::string::npos);
+	EXPECT_NE(tooltip.find(info.mcpTokenFile), std::string::npos);
 }
 
 TEST(StatusBar, LabelsEveryMode) {
@@ -48,6 +63,7 @@ TEST(StatusBar, CountsOnlyUnseenWarningsAndErrors) {
 	EXPECT_EQ(bar.getUnseenWarnings(5), 2u);
 	EXPECT_EQ(bar.getUnseenErrors(0), 0u);
 	EXPECT_FALSE(bar.consumeOpenLogRequest());
+	EXPECT_FALSE(bar.consumeOpenMcpSettingsRequest());
 }
 
 TEST(StatusBar, RendersEveryModeWithoutRequest) {
@@ -59,7 +75,9 @@ TEST(StatusBar, RendersEveryModeWithoutRequest) {
 	StatusBar bar;
 	gui::widgets::ToastQueue toasts;
 	toasts.push(gui::widgets::ToastKind::Success, "Saved main_menu.owl");
-	for (const auto mode: {StatusInfo::Mode::Edit, StatusInfo::Mode::Play, StatusInfo::Mode::Pause}) {
+	for (const auto [mode, mcp]: {std::pair{StatusInfo::Mode::Edit, StatusInfo::Mcp::Off},
+								  std::pair{StatusInfo::Mode::Play, StatusInfo::Mcp::Listening},
+								  std::pair{StatusInfo::Mode::Pause, StatusInfo::Mcp::ClientActive}}) {
 		layer.begin();
 		ImGui::Begin("Host");
 		bar.onImGuiRender({.mode = mode,
@@ -71,11 +89,15 @@ TEST(StatusBar, RendersEveryModeWithoutRequest) {
 						   .previews = std::pair<size_t, size_t>{3, 8},
 						   .notifications = &toasts,
 						   .warningCount = 2,
-						   .errorCount = 0});
+						   .errorCount = 0,
+						   .mcp = mcp,
+						   .mcpEndpoint = "http://127.0.0.1:47800/mcp",
+						   .mcpTokenFile = "/run/user/1000/owlnest/mcp_token"});
 		ImGui::End();
 		layer.end();
 	}
 	EXPECT_FALSE(bar.consumeOpenLogRequest());
+	EXPECT_FALSE(bar.consumeOpenMcpSettingsRequest());
 	EXPECT_EQ(bar.getUnseenWarnings(2), 2u);
 	layer.onDetach();
 	core::Log::invalidate();

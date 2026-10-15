@@ -171,7 +171,7 @@ a few days, L a week.
   frames, capture, statistics) implemented by `EditorLayer` and by a headless session on the Null renderer.
 - ![Done][done] **MCP2 — `OwlNestMcp` dispatcher, M.** Socket-free JSON-RPC: version negotiation, `tools/*`
   generated from the registry, `resources/*` (scene tree, components, assets, prefabs, documentation, statistics).
-- ![Planned][planned] **MCP3 — HTTP transport, M.** D11, D12: queue drained by the main loop, setting off by
+- ![Done][done] **MCP3 — HTTP transport, M.** D11, D12: queue drained by the main loop, setting off by
   default, port, token, status bar indicator; jobs wait while a gesture or a modal is in progress.
 - ![Planned][planned] **MCP4 — Play and capture, M.** `play.run` (frames, step, held actions, capture as PNG plus
   phase timings); `doc/pages/mcp.md` with the client setup.

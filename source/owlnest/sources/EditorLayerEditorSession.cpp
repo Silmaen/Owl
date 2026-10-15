@@ -10,13 +10,17 @@
 
 #include <renderer/gpu/RenderCommand.h>
 
+#include <imgui.h>
+
 #include <algorithm>
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
+#include <format>
 #include <optional>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -31,6 +35,47 @@ auto failure(const session::SessionError iError, std::string iMessage) -> unexpe
 }
 
 }// namespace
+
+auto getMcpIndicator(const mcp::HttpStatus iStatus) -> panel::StatusInfo::Mcp {
+	switch (iStatus) {
+		case mcp::HttpStatus::Off:
+			return panel::StatusInfo::Mcp::Off;
+		case mcp::HttpStatus::Listening:
+			return panel::StatusInfo::Mcp::Listening;
+		case mcp::HttpStatus::ClientActive:
+			return panel::StatusInfo::Mcp::ClientActive;
+	}
+	return panel::StatusInfo::Mcp::Off;
+}
+
+void EditorLayer::updateMcp() {
+	if (!mp_mcp)
+		return;
+	const bool busy = isMcpBusy();
+	if (m_settingsPanel.consumeRegenerateTokenRequest())
+		std::ignore = mp_mcp->regenerateToken();
+	// A port being dragged is applied when the field is released, not at every step.
+	if (!busy)
+		mp_mcp->applySettings(m_settings.mcpEnabled, static_cast<uint16_t>(m_settings.mcpPort));
+	std::ignore = mp_mcp->onUpdate(busy);
+	panel::McpSettingsInfo info{.status = panel::StatusBar::getMcpLabel(getMcpIndicator(mp_mcp->getStatus())),
+								.endpoint = mp_mcp->getEndpoint(),
+								.tokenFile = mp_mcp->getTokenFile().string()};
+	if (const auto failed = mp_mcp->getFailedPort(); failed.has_value() && m_settings.mcpEnabled)
+		info.status = std::format("Cannot listen on 127.0.0.1:{} (port taken?)", *failed);
+	m_settingsPanel.setMcpInfo(info);
+}
+
+auto EditorLayer::isMcpBusy() const -> bool {
+	if (ImGui::GetCurrentContext() != nullptr &&
+		(ImGui::IsAnyItemActive() ||
+		 ImGui::IsPopupOpen("", ImGuiPopupFlags_AnyPopupId | ImGuiPopupFlags_AnyPopupLevel)))
+		return true;
+	if (m_sceneHierarchy.isEditing())
+		return true;
+	const auto* doc = activeSceneDocument();
+	return doc != nullptr && doc->getViewport().isGizmoInUse();
+}
 
 auto EditorLayer::getSessionScenePath() const -> std::filesystem::path {
 	const auto* doc = activeSceneDocument();

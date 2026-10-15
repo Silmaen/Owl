@@ -111,6 +111,13 @@ public:
 
 	/**
 	 * @brief
+	 *  Get the project of the loaded scene.
+	 * @return The directory, empty without a project.
+	 */
+	[[nodiscard]] auto getSessionProjectDirectory() const -> std::filesystem::path override { return m_project; }
+
+	/**
+	 * @brief
 	 *  Get the undo history of the scene.
 	 * @return The undo manager, null when no scene is open.
 	 */

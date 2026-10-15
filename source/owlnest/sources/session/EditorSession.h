@@ -302,6 +302,13 @@ public:
 
 	/**
 	 * @brief
+	 *  Get the directory of the open project, the only place remote callers may name files in.
+	 * @return The directory, empty without a project.
+	 */
+	[[nodiscard]] virtual auto getSessionProjectDirectory() const -> std::filesystem::path = 0;
+
+	/**
+	 * @brief
 	 *  Get the undo history of the scene.
 	 * @return The undo manager, null when no scene is open.
 	 */

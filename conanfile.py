@@ -74,6 +74,8 @@ class OwlEngineConan(ConanFile):
         "glad/*:gl_profile": "compatibility",
         "glad/*:gl_version": "4.6",
         "spdlog/*:use_std_fmt": True,
+        # glibc's getaddrinfo_a helper threads escape ThreadSanitizer (crash); the MCP server only binds 127.0.0.1.
+        "cpp-httplib/*:use_non_blocking_getaddrinfo": False,
         "spirv-cross/*:build_executable": False,
         "spirv-cross/*:c_api": False,
         "spirv-cross/*:hlsl": False,
@@ -159,6 +161,8 @@ class OwlEngineConan(ConanFile):
             self.requires("md4c/0.5.2")
             # MCP dispatcher (JSON-RPC); tinygltf pulls the same version.
             self.requires("nlohmann_json/3.12.0")
+            # MCP HTTP transport on loopback, header-only, built without TLS (the recipe defaults).
+            self.requires("cpp-httplib/0.59.0")
         # Transitive versions newer than the ones their ConanCenter recipes pin.
         self.requires("brotli/1.2.0", override=True)
         self.requires("flac/1.5.0", override=True)

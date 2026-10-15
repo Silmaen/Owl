@@ -588,6 +588,9 @@ void EditorLayer::onAttach() {
 		runCommandFromUi("macro.run", {{"path", iPath.string()}}, commands::CommandSource::Gesture);
 	});
 
+	mp_mcp = mkUniq<mcp::McpServer>(
+			*this, mcp::McpServerOptions{.dispatcher = {.helpRoot = panel::HelpPanel::resolveHelpRoot()}});
+
 	newScene();
 	if (!m_startupProject.empty())
 		openProject(m_startupProject);
@@ -606,6 +609,8 @@ void EditorLayer::onDetach() {
 	m_settings.consoleHistory = m_consolePanel.getConsole().getHistory();
 	m_settings.saveToFile(app::Application::get().getWorkingDirectory() / "OwlNest_settings.yml");
 
+	// Pending MCP requests get 503 and the token file goes before any document closes.
+	mp_mcp.reset();
 	m_contentBrowser.detach();
 	OWL_TRACE("EditorLayer: deleted editor FrameBuffer.")
 	if (auto ui = app::Application::get().getImGuiLayer(); ui != nullptr) {
@@ -640,6 +645,9 @@ void EditorLayer::onUpdate(const core::Timestep& iTimeStep) {
 		m_lastAutosave = std::chrono::steady_clock::now();
 
 	m_documents.updateSceneless(iTimeStep);
+
+	// Queued MCP requests run here, on the main thread, before the scene of the frame updates.
+	updateMcp();
 
 	// The document of a bounded play stopped playing or was closed: the play ends there.
 	if (m_playDriver.isActive() && !isPlayDocumentPlaying())
@@ -981,6 +989,11 @@ auto EditorLayer::buildStatusInfo() const -> panel::StatusInfo {
 		info.previews = std::pair{ready, total};
 	info.warningCount = core::Log::getLogBuffer().getWarningCount();
 	info.errorCount = core::Log::getLogBuffer().getErrorCount();
+	if (mp_mcp) {
+		info.mcp = getMcpIndicator(mp_mcp->getStatus());
+		info.mcpEndpoint = mp_mcp->getEndpoint();
+		info.mcpTokenFile = mp_mcp->getTokenFile().string();
+	}
 	return info;
 }
 
@@ -990,6 +1003,8 @@ void EditorLayer::renderStatusBar() {
 	m_statusBar.onImGuiRender(info);
 	if (m_statusBar.consumeOpenLogRequest())
 		ImGui::SetWindowFocus(panelWindow::log);
+	if (m_statusBar.consumeOpenMcpSettingsRequest())
+		m_settingsPanel.openMcp();
 }
 
 void EditorLayer::renderStats(const core::Timestep& iTimeStep) {

@@ -34,6 +34,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Editor console and journal: a command-line syntax with `$n` result references, a Console panel (history,
   completion, `help`), a journal of every command whatever its source, `.owlmacro` macros replayed as one undo step
   (Content Browser, `macro.run`, scenario `macro:` steps), and the inspector edits and gizmo drags as registry commands.
+- MCP Streamable HTTP transport on `127.0.0.1` (`cpp-httplib`, no TLS), off by default: requests queued for the main
+  loop and held during a gesture or a modal, a 256-bit bearer token in a `0600` file, `Host` / `Origin` / content
+  type / body size / queue checks, file arguments kept inside the project, and its settings tab and status bar
+  indicator.
 
 ### Changed
 

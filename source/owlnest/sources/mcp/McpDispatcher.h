@@ -48,6 +48,16 @@ struct McpOptions {
 
 /**
  * @brief
+ *  Resolve a file argument of a remote caller inside the project: relative to the project, symbolic links followed.
+ * @param[in] iProject The project directory (empty: every file is refused).
+ * @param[in] iPath The path given.
+ * @return The canonical path, or why it is refused (outside the project, no project).
+ */
+[[nodiscard]] auto confinePath(const std::filesystem::path& iProject, const std::filesystem::path& iPath)
+		-> expected<std::filesystem::path, std::string>;
+
+/**
+ * @brief
  *  A Model Context Protocol server without transport: one JSON-RPC message in, its response out.
  *
  * Tools are the commands of the session registry (hence undoable), resources the scene, its entities, the assets,
@@ -156,6 +166,16 @@ private:
 	 * @return The result, or the error object (unknown tool, ill-typed parameters).
 	 */
 	[[nodiscard]] auto callTool(const nlohmann::json& iParams) -> expected<nlohmann::json, nlohmann::json>;
+
+	/**
+	 * @brief
+	 *  Keep the file arguments (`ArgSpec::projectPath`) inside the project, rewritten as canonical paths.
+	 * @param[in] iSpec The command.
+	 * @param[in,out] ioArgs The parsed arguments.
+	 * @return Nothing, or the failure naming the refused argument.
+	 */
+	[[nodiscard]] auto confinePaths(const commands::CommandSpec& iSpec, commands::CommandArgs& ioArgs) const
+			-> expected<void, commands::CommandFailure>;
 
 	/**
 	 * @brief

@@ -103,6 +103,10 @@ struct EditorSettings {
 	int cameraDeadZone = 0;
 	/// Seconds between two autosaves of the modified documents (crash recovery); 0 disables the autosave.
 	int autosaveIntervalSeconds = 60;
+	/// Whether the MCP server listens on 127.0.0.1 (off by default: no socket is opened).
+	bool mcpEnabled = false;
+	/// Port of the MCP server (1024 to 65535).
+	int mcpPort = 47800;
 	/// Panel arrangement (`DockLayout::getPresetName`).
 	std::string layoutPreset = "Default";
 	/// Generation of the saved dock layout; an older one is rebuilt once (`DockLayout::version`).
