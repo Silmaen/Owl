@@ -41,8 +41,7 @@ Everything happens on the **CPU**. Each draw is emitted through the existing
    `RendererRaycast::drawTilemapWalls(tilemap, worldTransform, entityId)`
    instead of the normal per-cell quad loop.
 4. `RendererRaycast::drawTilemapWalls` runs the per-column DDA (see below).
-5. `Scene::renderUI(camera)` runs after `render()` — UI canvases tagged with the raycast layer's name would render here.
-   The sample's HUD is tagged `"ui"` and falls into the next 2D layer instead.
+5. No HUD here: canvases are drawn after every layer by the HUD pass, in pixels (`HudPass`).
 6. `RendererRaycastLayer::onEndFrame()`:
     - `RendererRaycast::endScene()` (clears the lazy-backdrop flag, no GPU work).
     - `Renderer2D::endScene()` flushes the batch — the actual GPU draw call happens here, with the ortho camera

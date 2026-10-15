@@ -502,23 +502,35 @@ injected as globals before `on_create`.
 
 ### UI Components
 
-UI elements render in screen space via a **Canvas** parent entity. All UI entities must be
-direct children of an entity with a `Canvas` component (nested layouts arrive with the v0.4.0 HUD).
+UI elements are drawn by the **HUD pass**, the implicit last pass of the frame, in pixels on top of every render
+layer (`RendererTag` does not route them). A HUD is a tree under an entity carrying a `Canvas`; each `UiRect` lives in
+its parent's rectangle (the nearest ancestor with a `UiRect`, or the whole screen), in Y-down pixels with the origin at
+the top left. `HudLayout` (`Scene::getHudLayout`) lays the HUD out once per frame; `UiInputSystem`
+hit-tests that same layout. Design: [HUD system](design/hud-system.md).
 
 #### Canvas
 
-| Field | Type | YAML Key | Description                   |
-|-------|------|----------|-------------------------------|
-| —     | —    | `Canvas` | Marks the entity as a UI root |
+| Field                 | Type   | YAML Key              | Description                                                       |
+|-----------------------|--------|-----------------------|-------------------------------------------------------------------|
+| `space`               | `enum` | `space`               | `ScreenOverlay`                                                   |
+| `sortOrder`           | `int`  | `sortOrder`           | Canvases draw in ascending order, the last one on top             |
+| `referenceResolution` | `vec2` | `referenceResolution` | Resolution the widgets are authored at (1280×720 by default)      |
+| `scaleMode`           | `enum` | `scaleMode`           | `ConstantPixels`, `ScaleWithHeight` (default), `MatchSmallerSide` |
 
 #### UiRect
 
-| Field    | Type   | YAML Key | Description                                    |
-|----------|--------|----------|------------------------------------------------|
-| `anchor` | `vec4` | `UiRect` | Normalized anchor rectangle (min x/y, max x/y) |
-| `pivot`  | `vec2` | —        | Normalized pivot point                         |
-| `size`   | `vec2` | —        | Size in pixels                                 |
-| `offset` | `vec2` | —        | Offset from anchored position                  |
+| Field          | Type   | YAML Key    | Description                                                                       |
+|----------------|--------|-------------|-----------------------------------------------------------------------------------|
+| `anchorMin`    | `vec2` | `anchorMin` | Anchor of the top-left corner in the parent, (0, 0) top-left, (1, 1) bottom-right |
+| `anchorMax`    | `vec2` | `anchorMax` | Anchor of the bottom-right corner; distinct from `anchorMin`, the rect stretches  |
+| `pivot`        | `vec2` | `pivot`     | Point of the rect placed at the anchors plus the offset, (0, 0) top-left          |
+| `size`         | `vec2` | `size`      | Reference pixels, added to the span of the anchors                                |
+| `anchorOffset` | `vec2` | `offset`    | Offset of the pivot from its anchor, positive Y down                              |
+
+The 9 presets (`UiRect::Anchor`, `setAnchor`, `getAnchor`) put both anchors on one point of the parent. Scene and
+prefab format 4 (HUD1): a `UiRect` written in the old Y-up layout (`anchor`, `pivotX`, `sizeX`, `offsetX` keys) gets
+the preset point as both anchors, `pivot.y = 1 - pivotY` and `offset.y = -offsetY`, and a `Canvas` without
+`scaleMode` gets `ConstantPixels`: every widget stays where it was drawn.
 
 #### UiText
 
@@ -756,9 +768,11 @@ Every file the engine writes carries a root `FormatVersion` integer:
 | `settings.yml`, `game_settings.yml` | `SettingsManager::format()`                    |
 | `owl_project.yml` (Owl Nest)        | `nest::Project::format()`                      |
 
-Scenes and prefabs are at version 3: the 1 → 2 migration (`bindEntityLinksByName`) gives each name-only
+Scenes and prefabs are at version 4: the 1 → 2 migration (`bindEntityLinksByName`) gives each name-only
 `EntityLink` the UUID of the first entity of the document with that tag, the 2 → 3 one (`centreLegacyUiText`) gives
-each `UiText` without `horizontalAlignment` the centred layout it was drawn with. Tilemaps are at version 2 too: their
+each `UiText` without `horizontalAlignment` the centred layout it was drawn with, the 3 → 4 one
+(`convertLegacyHudLayout`) moves each `UiRect` to the Y-down layout and each older `Canvas` to `ConstantPixels`
+([UI components](#ui-components)). Tilemaps are at version 2 too: their
 1 → 2 migration turns the dense `tiles` string of each layer into a terrain plane, saved back as binary chunks
 ([Tilemap storage](#tilemap-storage)). The prefab `Version` key is something else: it counts the edits of one prefab and feeds
 `PrefabLink::syncedVersion`. A save embeds its scene with the scene's own `FormatVersion`.

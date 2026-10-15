@@ -15,6 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   derived from it, terraforming (raise, lower, level, areas), a (terrain, slope) table and foundations in the tileset,
   overlays drawn along the slope, slope-aware picking (`scene::terrain::pickTerrain`), and in Owl Nest an isometric
   preview of the tilemap with raise / lower / level tools, an overlay brush and a slope table in the tileset editor.
+- HUD pass: canvases leave the render layers for an implicit last pass in pixels (`HudPass`) whose layout,
+  computed once per frame (`HudLayout`), is the one `UiInputSystem` hit-tests; `UiRect` nests, uses Y-down pixels with
+  min / max anchors besides the 9 presets, `Canvas` gains a 1280×720 reference resolution with three scale modes, and
+  scene format 4 migrates every `UiRect` without moving it on screen.
 - Isometric layer `RendererIsometric`: a real 2:1 dimetric `IsometricCamera` (pan, power-of-two zoom, Vulkan flip,
   usable depth), depth-tested billboards anchored at their foot with alpha cutout and translucent ones sorted back to
   front, `Tileset::kind`, and an isometric viewport mode in Owl Nest (locked view, world-axis cursor, tile highlight).

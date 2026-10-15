@@ -160,8 +160,10 @@ it directly.
 - [x] Renderer stack — three project layers `[Renderer2D(world),
       RendererRaycast(raycast_world), Renderer2D(ui)]`. Most scenes use the
       2D world; the raycast demo flips `world` off and `raycast_world` on
-      via `EnabledRenderers`. The HUD canvas in every scene carries
-      `RendererTag: { Name: ui }` so it lands on the dedicated 2D pass.
+      via `EnabledRenderers`. Every HUD canvas is drawn by the HUD pass, in
+      pixels on top of the layers (its leftover `RendererTag: { Name: ui }`
+      goes in HUD6), at 1280×720 reference pixels scaled with the window
+      height.
 - [x] Static + Kinematic platforms — `PhysicBody Static` for jumpable ledges,
       `PhysicBody Kinematic` driven by `physics.set_velocity` for moving platforms
       that push the player
