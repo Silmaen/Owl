@@ -116,7 +116,7 @@ a few days, L a week.
   foundations in the tileset, track and road overlay layers following the slope, slope-aware picking (CPU ray against
   the two triangles of each candidate cell). Editor: isometric preview in `TilemapDocument`, raise / lower / level
   tools, overlay brush, slope table in `TilesetDocument`, all undoable.
-- ![Planned][planned] **ISO3 — Atlas generator, M.** D3: `tools/` generator (Pillow), seeded and deterministic,
+- ![Done][done] **ISO3 — Atlas generator, M.** D3: `tools/` generator (Pillow), seeded and deterministic,
   terrain × 19 slopes, foundations, overlays, a few sliced buildings, albedo + normal + depth, one set per zoom level
   or mips; pytest on a stable hash, ruff and mypy.
 - ![Planned][planned] **ISO4 — Objects and vehicles, M.** D5 slices with 3D boxes, an anchor-plus-size billboard

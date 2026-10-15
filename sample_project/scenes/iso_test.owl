@@ -57,7 +57,7 @@ Entities:
     scale: [1, 1.5, 1]
   SpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/iso_tree.png
+    texture: nam:textures/iso/oak.png
     tilingFactor: 1
   Visibility: {gameVisible: true}
   RendererTag: {Name: iso_world}
@@ -69,7 +69,7 @@ Entities:
     scale: [1, 1.5, 1]
   SpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/iso_tree.png
+    texture: nam:textures/iso/pine.png
     tilingFactor: 1
   Visibility: {gameVisible: true}
   RendererTag: {Name: iso_world}
@@ -81,7 +81,7 @@ Entities:
     scale: [1, 1.5, 1]
   SpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/iso_tree.png
+    texture: nam:textures/iso/oak.png
     tilingFactor: 1
   Visibility: {gameVisible: true}
   RendererTag: {Name: iso_world}
@@ -93,19 +93,19 @@ Entities:
     scale: [1, 1.25, 1]
   SpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/iso_house.png
+    texture: nam:textures/iso/cottage.png
     tilingFactor: 1
   Visibility: {gameVisible: true}
   RendererTag: {Name: iso_world}
 - Entity: 4100000000000000031
-  Tag: {tag: HouseSouth}
+  Tag: {tag: Tower}
   Transform:
     translation: [3, 6, 0]
     rotation: [0, 0, 0]
-    scale: [1, 1.25, 1]
+    scale: [1, 1.75, 1]
   SpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/iso_house.png
+    texture: nam:textures/iso/tower.png
     tilingFactor: 1
   Visibility: {gameVisible: true}
   RendererTag: {Name: iso_world}
@@ -117,7 +117,7 @@ Entities:
     scale: [0.75, 0.75, 1]
   SpriteRenderer:
     color: [1, 1, 1, 0.6]
-    texture: nam:textures/iso_smoke.png
+    texture: nam:textures/iso/smoke.png
     tilingFactor: 1
   Visibility: {gameVisible: true}
   RendererTag: {Name: iso_world}
@@ -129,7 +129,7 @@ Entities:
     scale: [0.75, 0.75, 1]
   SpriteRenderer:
     color: [0.8, 0.8, 0.85, 0.5]
-    texture: nam:textures/iso_smoke.png
+    texture: nam:textures/iso/smoke.png
     tilingFactor: 1
   Visibility: {gameVisible: true}
   RendererTag: {Name: iso_world}
@@ -141,7 +141,7 @@ Entities:
     scale: [0.75, 0.75, 1]
   SpriteRenderer:
     color: [0.85, 0.9, 1, 0.55]
-    texture: nam:textures/iso_smoke.png
+    texture: nam:textures/iso/smoke.png
     tilingFactor: 1
   Visibility: {gameVisible: true}
   RendererTag: {Name: iso_world}
