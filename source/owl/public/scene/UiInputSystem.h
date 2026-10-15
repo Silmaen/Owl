@@ -30,9 +30,23 @@ public:
 	 * @param[in] iViewportSize The viewport dimensions.
 	 * @param[in] iMousePos Mouse position in Y-down viewport pixels from the top left (the HUD layout space).
 	 * @param[in] iMousePressed Whether the left mouse button is currently pressed.
+	 * @param[in] iDeltaTime Time since the previous update, in seconds (drives the tooltip delay).
+	 *
+	 * A `UiWindow` under the mouse blocks every widget beneath it and counts as consuming the mouse. A click on a window
+	 * raises it (last child of its parent, hence drawn last), the title bar drags it (kept inside the screen) and the
+	 * close button hides it.
 	 */
 	static void update(Scene* iScene, const math::vec2ui& iViewportSize, const math::vec2& iMousePos,
-					   bool iMousePressed);
+					   bool iMousePressed, float iDeltaTime = 0.f);
+
+	/**
+	 * @brief
+	 *  Draw a window over its siblings: it becomes the last child of its parent.
+	 * @param[in,out] ioScene The scene (or HUD asset) the window belongs to.
+	 * @param[in] iWindow The window entity.
+	 * @return True when the order changed.
+	 */
+	static auto raiseWindow(Scene& ioScene, entt::entity iWindow) -> bool;
 
 	/**
 	 * @brief

@@ -447,6 +447,10 @@ each component marked by a thin axis colour, with a reset button that appears wh
   Y-down reference pixels of the parent rectangle; the HUD is drawn in pixels over the viewport, a click on a widget
   selects it
 - **UI Text / Image / Panel / Button / Slider / Progress Bar** -- In-game UI elements
+- **UI Window / Layout / Tooltip / Tool Cursor** -- Management-game widgets: a window with a title bar (draggable,
+  closable, clipped content), a row, column or grid arrangement of the children, a hover tooltip and a sprite following
+  the mouse; every field is edited in the inspector, undoable through `component.set`, and a click on a window in the
+  viewport selects it
 - **Prefab Link** -- Read-only display: source asset path, synced version, mapped entity count,
   override count
 

@@ -17,6 +17,8 @@
 #include "app/Application.h"
 #include "core/external/opengl46.h"
 
+#include <algorithm>
+
 namespace owl::renderer::gpu::opengl {
 
 namespace {
@@ -81,6 +83,16 @@ void RenderAPI::setViewport(const uint32_t iX, const uint32_t iY, const uint32_t
 	glViewport(static_cast<int32_t>(iX), static_cast<int32_t>(iY), static_cast<int32_t>(iWidth),
 			   static_cast<int32_t>(iHeight));
 }
+
+void RenderAPI::setScissor(const math::vec2ui& iPosition, const math::vec2ui& iSize, const uint32_t iTargetHeight) {
+	const uint32_t top = std::min(iPosition.y(), iTargetHeight);
+	const uint32_t height = std::min(iSize.y(), iTargetHeight - top);
+	glEnable(GL_SCISSOR_TEST);
+	glScissor(static_cast<int32_t>(iPosition.x()), static_cast<int32_t>(iTargetHeight - top - height),
+			  static_cast<int32_t>(iSize.x()), static_cast<int32_t>(height));
+}
+
+void RenderAPI::clearScissor() { glDisable(GL_SCISSOR_TEST); }
 
 void RenderAPI::setClearColor(const math::vec4& iColor) {
 	glClearColor(iColor.r(), iColor.g(), iColor.b(), iColor.a());

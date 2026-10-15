@@ -62,6 +62,14 @@ struct OWL_API UiRect {
 		 * @return The centre.
 		 */
 		[[nodiscard]] auto getCenter() const -> math::vec2;
+
+		/**
+		 * @brief
+		 *  Get the part shared with another rectangle.
+		 * @param[in] iOther The other rectangle.
+		 * @return The common rectangle, with a zero size when they do not overlap.
+		 */
+		[[nodiscard]] auto intersect(const Bounds& iOther) const -> Bounds;
 	};
 
 	/// Anchor of the top-left corner, normalised in the parent ((0, 0) = top-left, (1, 1) = bottom-right).

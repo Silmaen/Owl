@@ -40,6 +40,8 @@ struct OWL_API UiPanel {
 	float spacing = 0.f;
 	/// Padding inside the panel in pixels.
 	float padding = 0.f;
+	/// Whether the children are cut at the panel edges (scissor).
+	bool clipChildren = false;
 
 	/**
 	 * @brief

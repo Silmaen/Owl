@@ -54,6 +54,13 @@ void RenderAPI::setViewport(uint32_t, uint32_t, uint32_t, uint32_t) {
 	vkh.setResize();
 }
 
+void RenderAPI::setScissor(const math::vec2ui& iPosition, const math::vec2ui& iSize,
+						   [[maybe_unused]] const uint32_t iTargetHeight) {
+	internal::VulkanHandler::get().setScissor(iPosition, iSize);
+}
+
+void RenderAPI::clearScissor() { internal::VulkanHandler::get().clearScissor(); }
+
 void RenderAPI::setClearColor(const math::vec4& iColor) {
 	auto& vkh = internal::VulkanHandler::get();
 	vkh.setClearColor(iColor);

@@ -16,6 +16,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   actions, kind, bindings with scale, dead zone, curve and gamepad slot), a "press a key" capture of keyboard, mouse and
   gamepad bindings, a live reading of every action, a reload of the saved map in the running editor, and the built-in
   map in the project templates.
+- HUD windows: `UiWindow` (title bar, drag, close, raise on click, kept inside the screen, blocks the mouse for the
+  world and the widgets under it), `UiLayout` (row, column, grid), clipping by scissor (`Renderer2D::setScissor`, on
+  OpenGL and Vulkan) for windows and for panels with `clipChildren`, `UiTooltip` after a hover delay and a `UiToolCursor`
+  sprite following the mouse, each window drawn as its own batch, Lua `ui.raise_window`, `ui.set_window_title`,
+  `ui.set_tooltip` and `ui.set_tool_cursor`, inspector support in Owl Nest and a draggable "Controls" window in the
+  sample project.
 - Isometric atlas generator `tools/iso_atlas` (Pillow, seeded, deterministic): terrain × 19 slopes, foundations, road and rail overlays, five sliced buildings and two trees as albedo + normal + depth at 1x, 2x and half size; it replaces the placeholder art and the generator of the isometric sample.
 - HUD asset: an `.owlhud` file (own format, root key `Hud`) loaded into its own scene by a `HudLibrary` in
   `EngineContext`, cached per path and shared across scenes and transitions, named by the scene key `Hud:` or the

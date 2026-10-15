@@ -78,16 +78,40 @@ Implementation notes:
 - The exporter follows `Hud:` keys and `DefaultHud` (`runner.yml` carries it) and packs the HUD with its textures and
   fonts. The editor reads the HUD files again after a save and when Play starts or stops.
 
-## Management-game widgets (HUD3)
+## Management-game widgets (HUD3, done)
 
-- `UiWindow`: title bar, drag, close, raise on click, clamped to the screen; a window blocks world clicks under it.
-- `UiLayout`: row, column and grid arrangement with spacing and padding.
-- Clipping by scissor for windows and panels.
-- `UiTooltip`: text after a hover delay.
-- Tool cursor: a sprite following the mouse in the HUD, paired with the tile highlight of the isometric layer, for
-  construction tools ("build road", "raise land").
-- Until the v0.5.0 draw-order sort key, each window draws as its own batch so a window covers the text of the window
-  under it.
+- `UiWindow`: a title bar over the body; the title bar drags the window (kept inside the screen), a click raises it
+  (it becomes the last child of its parent, hence drawn last), the close button hides it (`Visibility`, Lua
+  `ui.set_visible` shows it again, `onCloseCallback` runs first). The rectangle includes the bar; the children live in
+  the content area under it and are clipped to it.
+- A window under the mouse blocks every widget under it, in the scene and in the HUD, and the world
+  (`UiInputSystem::isUIConsuming`); so does a drag in progress.
+- `UiLayout`: row, column and grid arrangement of the children that carry a `UiRect`, with spacing, padding, a cross
+  alignment and, for a grid, a column count and an optional cell size. The children keep their `size`; their anchors
+  and offset no longer apply.
+- Clipping by scissor for windows and for `UiPanel::clipChildren`: the layout gives every node the clip rectangle of
+  its ancestors (`HudNode::clip`), the pass sets it on `Renderer2D` and hit-testing stops at it too.
+- `UiTooltip`: text after a hover delay, sized to the text, kept inside the screen, drawn over every window; it
+  belongs to the widget and to its descendants without a tooltip of their own, and hides while the button is down.
+- `UiToolCursor`: a sprite following the mouse in the HUD, active from Lua (`ui.set_tool_cursor`), paired with the tile
+  highlight of the isometric layer for construction tools ("build road", "raise land").
+- Each window draws as its own batch (`Renderer2D::nextBatch` between two windows) so a window covers the text of the
+  window under it, until the v0.5.0 draw-order sort key.
+
+Implementation notes:
+
+- `HudLayout` is still computed once per frame. A node gains `content` (the area its children live in), `clip` /
+  `clipped`, `clipsChildren` and `window` (index of the nearest window above it, itself included, which the pass uses to
+  break batches). A window is clamped to the screen in the layout, and the drag clamps the stored offset too, so the
+  window follows the mouse again as soon as it comes back.
+- `UiInputSystem::update` takes the frame time (tooltip delay). Window state (drag, tooltip, mouse position) lives in
+  the active scene's `UiInputState`, with a flag telling whether the entity belongs to the HUD asset.
+- Scissor in the RHI: `RenderAPI::setScissor` / `clearScissor` (Y-down rectangle plus the target height, OpenGL counts
+  from the bottom), applied by `Renderer2D::flush` inside the open batch and lifted at its end; on Vulkan it is the
+  dynamic scissor of the open render pass.
+- Scene and `.owlhud` files list the siblings of a parent in the reverse of their hierarchy order (the serializer
+  walks the entity storage backwards): the last window listed in a file is the first child, hence the one drawn
+  under the others.
 
 ## HUD editor (HUD4)
 

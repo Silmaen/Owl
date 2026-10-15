@@ -2174,6 +2174,22 @@ OWL_API void Scene::onComponentAdded<component::UiProgressBar>([[maybe_unused]] 
 }
 
 template<>
+OWL_API void Scene::onComponentAdded<component::UiLayout>([[maybe_unused]] const Entity& iEntity,
+														  [[maybe_unused]] component::UiLayout& ioComponent) {}
+
+template<>
+OWL_API void Scene::onComponentAdded<component::UiWindow>([[maybe_unused]] const Entity& iEntity,
+														  [[maybe_unused]] component::UiWindow& ioComponent) {}
+
+template<>
+OWL_API void Scene::onComponentAdded<component::UiTooltip>([[maybe_unused]] const Entity& iEntity,
+														   [[maybe_unused]] component::UiTooltip& ioComponent) {}
+
+template<>
+OWL_API void Scene::onComponentAdded<component::UiToolCursor>([[maybe_unused]] const Entity& iEntity,
+															  [[maybe_unused]] component::UiToolCursor& ioComponent) {}
+
+template<>
 OWL_API void Scene::onComponentAdded<component::PrefabLink>([[maybe_unused]] const Entity& iEntity,
 															[[maybe_unused]] component::PrefabLink& ioComponent) {}
 

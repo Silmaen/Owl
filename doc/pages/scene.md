@@ -584,9 +584,10 @@ ink height of the string, it is now the ascender-to-descender height of the font
 
 #### UiPanel
 
-| Field   | Type   | Description       |
-|---------|--------|-------------------|
-| `color` | `vec4` | Background colour |
+| Field             | Type   | Description                                      |
+|-------------------|--------|--------------------------------------------------|
+| `backgroundColor` | `vec4` | Background colour                                |
+| `clipChildren`    | `bool` | Cut the descendants at the panel edges (scissor) |
 
 #### UiButton
 
@@ -613,6 +614,68 @@ ink height of the string, it is now the ascender-to-descender height of the font
 | `value`           | `float` | Current value (0–1) |
 | `backgroundColor` | `vec4`  | Track colour        |
 | `fillColor`       | `vec4`  | Fill bar colour     |
+
+#### UiWindow
+
+A panel with a title bar, drawn as a batch of its own over the windows before it. Its `UiRect` includes the bar; the
+children are laid out in the area under it and clipped to it. A window stays inside the screen, blocks the mouse for
+the widgets and the world under it, comes to the front when clicked (it becomes the last child of its parent), moves
+with its title bar and hides itself with the close button (`Visibility`; `ui.set_visible` shows it again).
+
+| Field             | Type     | Description                                      |
+|-------------------|----------|--------------------------------------------------|
+| `title`           | `string` | Text of the title bar                            |
+| `titleBarHeight`  | `float`  | Height of the bar, in reference pixels           |
+| `titleFontSize`   | `float`  | Font size of the title                           |
+| `bodyColor`       | `vec4`   | Colour of the body                               |
+| `titleColor`      | `vec4`   | Colour of the title bar                          |
+| `titleTextColor`  | `vec4`   | Colour of the title and of the close mark        |
+| `draggable`       | `bool`   | The title bar drags the window                   |
+| `closable`        | `bool`   | Show the close button                            |
+| `onCloseCallback` | `string` | Lua function called when the close button is hit |
+
+#### UiLayout
+
+Arranges the children that carry a `UiRect` in hierarchy order, inside the content area of the widget (under the
+title bar for a `UiWindow`) minus `padding`. Each child keeps the `size` of its own `UiRect`; its anchors and offset
+no longer apply, and a hidden child takes no room.
+
+| Field         | Type    | Description                                                              |
+|---------------|---------|--------------------------------------------------------------------------|
+| `arrangement` | `enum`  | `Row`, `Column` or `Grid`                                                |
+| `crossAlign`  | `enum`  | `Start`, `Center` or `End` across the direction (in the cell for a grid) |
+| `spacing`     | `float` | Space between two children, in reference pixels                          |
+| `padding`     | `float` | Space between the content area and the children                          |
+| `columns`     | `uint`  | Cells per line of a grid                                                 |
+| `cellSize`    | `vec2`  | Size of a grid cell; 0 on an axis takes the largest child                |
+
+#### UiTooltip
+
+Shown near the mouse once the widget, or a descendant without a tooltip of its own, has been hovered for `delay`
+seconds; hidden while the button is pressed. Sized to its text, kept inside the screen, drawn over every window.
+
+| Field             | Type     | Description                            |
+|-------------------|----------|----------------------------------------|
+| `text`            | `string` | Text (line feeds allowed)              |
+| `delay`           | `float`  | Hover time before it shows, in seconds |
+| `fontSize`        | `float`  | Font size, in reference pixels         |
+| `padding`         | `float`  | Space between the text and the border  |
+| `offset`          | `vec2`   | Offset of the box from the mouse       |
+| `backgroundColor` | `vec4`   | Colour of the box                      |
+| `textColor`       | `vec4`   | Colour of the text                     |
+
+#### UiToolCursor
+
+A sprite following the mouse over the HUD while a construction tool is active, pairing with the tile highlight of the
+isometric layer. It needs no `UiRect`; the first active one is drawn last, in play only. Lua `ui.set_tool_cursor`.
+
+| Field     | Type      | Description                                                           |
+|-----------|-----------|-----------------------------------------------------------------------|
+| `texture` | `texture` | Sprite                                                                |
+| `tint`    | `vec4`    | Colour multiplied with the texture                                    |
+| `size`    | `vec2`    | Size in reference pixels                                              |
+| `hotspot` | `vec2`    | Point of the sprite on the mouse ((0,0) top-left, (1,1) bottom-right) |
+| `active`  | `bool`    | Whether it is drawn                                                   |
 
 ### Prefab Components
 

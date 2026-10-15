@@ -12,6 +12,11 @@ actions:
     bindings:
       - {key: I}
       - {gamepad_button: Y}
+  - name: toggle_tool
+    type: button
+    bindings:
+      - {key: T}
+      - {gamepad_button: X}
   - name: platformer_move
     type: axis
     bindings:

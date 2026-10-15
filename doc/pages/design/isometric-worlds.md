@@ -136,7 +136,7 @@ a few days, L a week.
 - ![Done][done] **HUD2 — `.owlhud` asset, L.** D8: serializer with its own `DocumentFormat`, `HudLibrary` in
   `EngineContext`, scene key `Hud:` and project `DefaultHud`, Lua `ui.find` (HUD then scene), HUD state in saves,
   Content Browser kind and thumbnail.
-- ![Planned][planned] **HUD3 — Management-game widgets, M/L.** `UiWindow` (title bar, drag, close, raise on click,
+- ![Done][done] **HUD3 — Management-game widgets, M/L.** `UiWindow` (title bar, drag, close, raise on click,
   clamped to the screen), `UiLayout` (row, column, grid), clipping by scissor, `UiTooltip`, tool cursor sprite; any
   window blocks world clicks under it. Each window draws as its own batch until the v0.5.0 sort key.
 - ![Planned][planned] **HUD4 — HUD editor document, L.** `HudDocument` on `.owlhud` and embedded canvases: pixel
@@ -148,6 +148,9 @@ a few days, L a week.
 - ![Planned][planned] **DEMO1 — Inventory demo (from v0.5.0), S/M.** Collectible objects, key-locked switches and an
   inventory window with slots in `sample_project/`, in Lua only, navigable with the gamepad: the showcase of the HUD
   widgets, the shared HUD and focus navigation.
+- ![Planned][planned] **DEMO2 — Sample overhaul, M/L.** The isometric renderer in the sample's flow, the new HUD,
+  text and input in every scene (voxel text no longer stretched), the hub map and the platformer redrawn with versioned
+  CC0 packs (Kenney-style, licences kept beside them) and the isometric art from `tools/iso_atlas`; closes the release.
 
 ### Simulation and input
 
@@ -208,6 +211,8 @@ flowchart LR
     HUD6 --> ISO5
     HUD3 --> DEMO1
     HUD5 --> DEMO1
+    ISO5 --> DEMO2
+    DEMO1 --> DEMO2
 ```
 
 First wave: R1, TM1, SIM1, MCP0 (disjoint files); NEST1 fits in any wave. `Renderer2D.cpp` is touched by R1, TX1, TX2

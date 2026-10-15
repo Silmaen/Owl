@@ -850,6 +850,24 @@ void VulkanHandler::beginBatch() {
 	vkCmdSetScissor(cmd, 0, 1, &scissor);
 }
 
+void VulkanHandler::setScissor(const math::vec2ui& iPosition, const math::vec2ui& iSize) {
+	auto* const cmd = getRenderPassCommandBuffer();
+	if (cmd == VK_NULL_HANDLE)
+		return;
+	const auto target = m_currentFramebuffer->getSpecification().size;
+	const uint32_t left = std::min(iPosition.x(), target.x());
+	const uint32_t top = std::min(iPosition.y(), target.y());
+	const VkRect2D scissor{.offset = {static_cast<int32_t>(left), static_cast<int32_t>(top)},
+						   .extent = {std::min(iSize.x(), target.x() - left), std::min(iSize.y(), target.y() - top)}};
+	vkCmdSetScissor(cmd, 0, 1, &scissor);
+}
+
+void VulkanHandler::clearScissor() {
+	if (getRenderPassCommandBuffer() == VK_NULL_HANDLE)
+		return;
+	setScissor({0, 0}, m_currentFramebuffer->getSpecification().size);
+}
+
 void VulkanHandler::endBatch() {
 	if (!inBatch)
 		return;

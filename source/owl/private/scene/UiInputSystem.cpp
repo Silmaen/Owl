@@ -11,15 +11,20 @@
 
 #include "scene/Entity.h"
 #include "scene/component/Hierarchy.h"
+#include "scene/component/ID.h"
 #include "scene/component/LuaScript.h"
 #include "scene/component/UiButton.h"
 #include "scene/component/UiSlider.h"
+#include "scene/component/UiTooltip.h"
+#include "scene/component/UiWindow.h"
+#include "scene/component/Visibility.h"
 #include "scene/ui/HudLayout.h"
 #include "script/ScriptInstance.h"
 
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <iterator>
 #include <ranges>
 #include <string>
 #include <tuple>
@@ -87,14 +92,35 @@ auto isInteractive(const Scene& iScene, const entt::entity iEntity) -> bool {
 	return button != nullptr && button->state != component::UiButton::State::Disabled;
 }
 
-// The topmost button or slider under the mouse takes it: labels and panels drawn over it do not.
-auto findTopmostInteractive(const Scene& iScene, const ui::HudLayout& iLayout, const math::vec2& iPoint)
-		-> const ui::HudNode* {
-	for (const auto& node: iLayout.getNodes() | std::views::reverse) {
-		if (node.bounds.contains(iPoint) && isInteractive(iScene, node.entity))
-			return &node;
+// What the mouse reaches in one surface; a window under it blocks everything drawn before it.
+struct Probe {
+	const ui::HudNode* interactive = nullptr;
+	const ui::HudNode* top = nullptr;
+	const ui::HudNode* window = nullptr;
+
+	[[nodiscard]] auto consumes() const -> bool { return interactive != nullptr || window != nullptr; }
+};
+
+auto probeSurface(const Scene& iScene, const ui::HudLayout& iLayout, const math::vec2& iPoint) -> Probe {
+	Probe result;
+	const auto nodes = iLayout.getNodes();
+	for (const auto& node: nodes | std::views::reverse) {
+		if (!node.isHit(iPoint))
+			continue;
+		if (result.top == nullptr)
+			result.top = &node;
+		if (isInteractive(iScene, node.entity)) {
+			result.interactive = &node;
+			if (node.window != ui::HudNode::noParent)
+				result.window = &nodes[node.window];
+			return result;
+		}
+		if (iScene.registry.all_of<component::UiWindow>(node.entity)) {
+			result.window = &node;
+			return result;
+		}
 	}
-	return nullptr;
+	return result;
 }
 
 void updateButton(const Scene* iActive, const Entity& iWidget, const bool iHovered, const bool iPressed,
@@ -151,8 +177,111 @@ void updateWidgets(Scene& ioSurface, const Scene* iActive, const ui::HudLayout& 
 
 }// namespace
 
+auto UiInputSystem::raiseWindow(Scene& ioScene, const entt::entity iWindow) -> bool {
+	const auto* hierarchy = ioScene.registry.try_get<component::Hierarchy>(iWindow);
+	if (hierarchy == nullptr || hierarchy->parentId == core::UUID{0})
+		return false;
+	const Entity parent = ioScene.findEntityByUUID(hierarchy->parentId);
+	if (!parent)
+		return false;
+	auto& siblings = parent.getComponent<component::Hierarchy>().childrenIds;
+	const auto self = std::ranges::find(siblings, ioScene.registry.get<component::ID>(iWindow).id);
+	if (self == siblings.end() || std::next(self) == siblings.end())
+		return false;
+	std::ranges::rotate(self, std::next(self), siblings.end());
+	return true;
+}
+
+namespace {
+
+// The title bar of a window: where a click drags it, closes it, or does neither.
+auto titleBarOf(const ui::HudNode& iNode, const component::UiWindow& iWindow) -> component::UiRect::Bounds {
+	return {.position = iNode.bounds.position,
+			.size = {iNode.bounds.size.x(), std::min(iWindow.titleBarHeight * iNode.scale, iNode.bounds.size.y())}};
+}
+
+void closeWindow(Scene& ioSurface, const Scene* iActive, const Entity& iWindow) {
+	invokeLuaCallback(&ioSurface, iActive, iWindow, iWindow.getComponent<component::UiWindow>().onCloseCallback,
+					  static_cast<uint64_t>(iWindow.getUUID()));
+	if (ioSurface.registry.valid(static_cast<entt::entity>(iWindow)))
+		iWindow.getComponent<component::Visibility>().gameVisible = false;
+}
+
+// A click on a window raises it, then its title bar closes or drags it.
+void clickWindow(Scene& ioSurface, Scene& ioActive, const bool iInHud, const Probe& iProbe,
+				 const math::vec2& iMousePos) {
+	const Entity window{iProbe.window->entity, &ioSurface};
+	UiInputSystem::raiseWindow(ioSurface, iProbe.window->entity);
+	if (iProbe.interactive != nullptr)
+		return;
+	const auto& data = window.getComponent<component::UiWindow>();
+	const auto titleBar = titleBarOf(*iProbe.window, data);
+	if (!titleBar.contains(iMousePos))
+		return;
+	const float buttonSize = titleBar.size.y();
+	const component::UiRect::Bounds closeButton{
+			.position = {titleBar.position.x() + titleBar.size.x() - buttonSize, titleBar.position.y()},
+			.size = {buttonSize, buttonSize}};
+	if (data.closable && closeButton.contains(iMousePos)) {
+		closeWindow(ioSurface, &ioActive, window);
+		return;
+	}
+	if (!data.draggable)
+		return;
+	auto& state = ioActive.getUiInputState();
+	state.dragWindow = iProbe.window->entity;
+	state.dragInHud = iInHud;
+	state.dragGrab = iMousePos - iProbe.window->bounds.position;
+}
+
+// Move the dragged window under the mouse, inside the screen; false once the drag is over.
+auto dragWindow(Scene& ioActive, Scene* iHud, const math::vec2ui& iViewportSize, const math::vec2& iMousePos,
+				const bool iMousePressed) -> bool {
+	auto& state = ioActive.getUiInputState();
+	if (state.dragWindow == entt::null)
+		return false;
+	Scene& surface = state.dragInHud && iHud != nullptr ? *iHud : ioActive;
+	const auto* node = surface.registry.valid(state.dragWindow) && iMousePressed
+							   ? layoutOf(surface, iViewportSize).findNode(state.dragWindow)
+							   : nullptr;
+	if (node == nullptr) {
+		state.dragWindow = entt::null;
+		return false;
+	}
+	const math::vec2 screen{static_cast<float>(iViewportSize.x()), static_cast<float>(iViewportSize.y())};
+	const math::vec2 wanted = iMousePos - state.dragGrab;
+	const math::vec2 target{std::clamp(wanted.x(), 0.f, std::max(0.f, screen.x() - node->bounds.size.x())),
+							std::clamp(wanted.y(), 0.f, std::max(0.f, screen.y() - node->bounds.size.y()))};
+	surface.registry.get<component::UiRect>(state.dragWindow).anchorOffset +=
+			(target - node->bounds.position) / node->scale;
+	return true;
+}
+
+// The nearest widget at or above the one the mouse is on that carries a tooltip.
+auto findTooltipWidget(const Scene& iScene, const ui::HudLayout& iLayout, const ui::HudNode* iTop) -> entt::entity {
+	const auto nodes = iLayout.getNodes();
+	for (const auto* node = iTop; node != nullptr;
+		 node = node->parent == ui::HudNode::noParent ? nullptr : &nodes[node->parent]) {
+		if (iScene.registry.all_of<component::UiTooltip>(node->entity))
+			return node->entity;
+	}
+	return entt::null;
+}
+
+void trackTooltip(Scene::UiInputState& ioState, const entt::entity iWidget, const bool iInHud, const bool iPressed,
+				  const float iDeltaTime) {
+	if (iWidget != ioState.tooltipWidget || iInHud != ioState.tooltipInHud) {
+		ioState.tooltipWidget = iWidget;
+		ioState.tooltipInHud = iInHud;
+		ioState.hoverTime = 0.f;
+	} else
+		ioState.hoverTime = iPressed ? 0.f : ioState.hoverTime + iDeltaTime;
+}
+
+}// namespace
+
 void UiInputSystem::update(Scene* iScene, const math::vec2ui& iViewportSize, const math::vec2& iMousePos,
-						   const bool iMousePressed) {
+						   const bool iMousePressed, const float iDeltaTime) {
 	OWL_PROFILE_FUNCTION()
 
 	if (iScene == nullptr)
@@ -164,21 +293,42 @@ void UiInputSystem::update(Scene* iScene, const math::vec2ui& iViewportSize, con
 
 	const bool clicked = !state.wasPressed && iMousePressed;
 	state.wasPressed = iMousePressed;
+	state.hasMouse = true;
+	state.mousePosition = iMousePos;
 
 	// The HUD asset is drawn over the scene: a widget of it takes the mouse before the scene's own.
-	const auto hud = iScene->getHud();
-	const bool hasHud = hud && hud.get() != iScene;
-	const ui::HudLayout* hudLayout = hasHud ? &layoutOf(*hud, iViewportSize) : nullptr;
-	const auto* hudTopmost = hasHud ? findTopmostInteractive(*hud, *hudLayout, iMousePos) : nullptr;
+	const auto hudHandle = iScene->getHud();
+	Scene* const hud = hudHandle && hudHandle.get() != iScene ? hudHandle.get() : nullptr;
+	const bool dragging = dragWindow(*iScene, hud, iViewportSize, iMousePos, iMousePressed);
+	const ui::HudLayout* hudLayout = hud != nullptr ? &layoutOf(*hud, iViewportSize) : nullptr;
 	const auto& layout = layoutOf(*iScene, iViewportSize);
-	const auto* topmost = hudTopmost != nullptr ? nullptr : findTopmostInteractive(*iScene, layout, iMousePos);
-	updateWidgets(*iScene, iScene, layout, topmost, iMousePos, iMousePressed, clicked);
-	if (hasHud)
-		updateWidgets(*hud, iScene, *hudLayout, hudTopmost, iMousePos, iMousePressed, clicked);
-	state.consuming = topmost != nullptr || hudTopmost != nullptr;
+	const Probe hudProbe = hud != nullptr && !dragging ? probeSurface(*hud, *hudLayout, iMousePos) : Probe{};
+	const Probe sceneProbe = dragging || hudProbe.consumes() ? Probe{} : probeSurface(*iScene, layout, iMousePos);
+	if (clicked && !dragging) {
+		if (hudProbe.window != nullptr)
+			clickWindow(*hud, *iScene, true, hudProbe, iMousePos);
+		else if (sceneProbe.window != nullptr)
+			clickWindow(*iScene, *iScene, false, sceneProbe, iMousePos);
+	}
+	updateWidgets(*iScene, iScene, layout, sceneProbe.interactive, iMousePos, iMousePressed, clicked);
+	if (hud != nullptr)
+		updateWidgets(*hud, iScene, *hudLayout, hudProbe.interactive, iMousePos, iMousePressed, clicked);
+	state.consuming = dragging || hudProbe.consumes() || sceneProbe.consumes();
+
+	entt::entity tooltip = entt::null;
+	bool tooltipInHud = false;
+	if (!dragging) {
+		if (hud != nullptr)
+			tooltip = findTooltipWidget(*hud, *hudLayout, hudProbe.top);
+		tooltipInHud = tooltip != entt::null;
+		if (!tooltipInHud)
+			tooltip = findTooltipWidget(*iScene, layout, sceneProbe.top);
+	}
+	trackTooltip(state, tooltip, tooltipInHud, iMousePressed, iDeltaTime);
+
 	// Drawing lays the HUD out again: the next update reuses that layout, or recomputes one when no frame was drawn.
 	iScene->getHudLayout().invalidate();
-	if (hasHud)
+	if (hud != nullptr)
 		hud->getHudLayout().invalidate();
 }
 

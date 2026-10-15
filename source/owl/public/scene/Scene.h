@@ -84,11 +84,15 @@ struct Transform;
 struct Trigger;
 struct UiButton;
 struct UiImage;
+struct UiLayout;
 struct UiPanel;
 struct UiProgressBar;
 struct UiRect;
 struct UiSlider;
 struct UiText;
+struct UiToolCursor;
+struct UiTooltip;
+struct UiWindow;
 struct Visibility;
 struct VoxelPlayer;
 struct VoxelWorld;
@@ -749,6 +753,22 @@ public:
 		bool consuming = false;
 		/// Whether the mouse was pressed last frame (for click detection).
 		bool wasPressed = false;
+		/// Whether `mousePosition` was set by an update (a HUD tool cursor needs a mouse).
+		bool hasMouse = false;
+		/// Mouse position of the last update, in Y-down viewport pixels.
+		math::vec2 mousePosition{0.f, 0.f};
+		/// `UiWindow` whose title bar is being dragged (`entt::null` for none).
+		entt::entity dragWindow = entt::null;
+		/// Distance from the top-left corner of the dragged window to the mouse, in pixels.
+		math::vec2 dragGrab{0.f, 0.f};
+		/// Whether `dragWindow` belongs to the HUD asset rather than to the scene.
+		bool dragInHud = false;
+		/// Widget whose `UiTooltip` is waiting to show or shown (`entt::null` for none).
+		entt::entity tooltipWidget = entt::null;
+		/// Whether `tooltipWidget` belongs to the HUD asset.
+		bool tooltipInHud = false;
+		/// Seconds the mouse has stayed over `tooltipWidget`.
+		float hoverTime = 0.f;
 	};
 
 	/**
@@ -1302,6 +1322,19 @@ OWL_API void Scene::onComponentAdded<component::UiSlider>(const Entity& iEntity,
 template<>
 OWL_API void Scene::onComponentAdded<component::UiProgressBar>(const Entity& iEntity,
 															   component::UiProgressBar& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::UiLayout>(const Entity& iEntity, component::UiLayout& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::UiWindow>(const Entity& iEntity, component::UiWindow& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::UiTooltip>(const Entity& iEntity, component::UiTooltip& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::UiToolCursor>(const Entity& iEntity,
+															  component::UiToolCursor& ioComponent);
 
 template<>
 OWL_API void Scene::onComponentAdded<component::PrefabLink>(const Entity& iEntity, component::PrefabLink& ioComponent);

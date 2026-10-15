@@ -139,3 +139,120 @@ Entities:
     verticalAlignment: Middle
     kerning: 0
     lineSpacing: 0
+- Entity: 3000000000000000074
+  Tag:
+    tag: BuildCursor
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 3000000000000000060
+  UiToolCursor:
+    texture: nam:textures/portal.png
+    tint: [1, 1, 1, 0.9]
+    size: [28, 28]
+    hotspot: [0.5, 0.5]
+    active: false
+- Entity: 3000000000000000073
+  Tag:
+    tag: ControlsTool
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 3000000000000000070
+  UiRect:
+    anchorMin: [0, 0]
+    anchorMax: [0, 0]
+    pivot: [0, 0]
+    size: [236, 20]
+    offset: [0, 0]
+  UiText:
+    text: T   tool cursor on / off
+    fontSize: 14
+    horizontalAlignment: Left
+    verticalAlignment: Middle
+- Entity: 3000000000000000072
+  Tag:
+    tag: ControlsJump
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 3000000000000000070
+  UiRect:
+    anchorMin: [0, 0]
+    anchorMax: [0, 0]
+    pivot: [0, 0]
+    size: [236, 20]
+    offset: [0, 0]
+  UiText:
+    text: W / Space   jump
+    fontSize: 14
+    horizontalAlignment: Left
+    verticalAlignment: Middle
+- Entity: 3000000000000000071
+  Tag:
+    tag: ControlsMove
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 3000000000000000070
+  UiRect:
+    anchorMin: [0, 0]
+    anchorMax: [0, 0]
+    pivot: [0, 0]
+    size: [236, 20]
+    offset: [0, 0]
+  UiText:
+    text: A / D   move
+    fontSize: 14
+    horizontalAlignment: Left
+    verticalAlignment: Middle
+- Entity: 3000000000000000070
+  Tag:
+    tag: ControlsWindow
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 3000000000000000060
+  UiRect:
+    anchorMin: [0, 1]
+    anchorMax: [0, 1]
+    pivot: [0, 1]
+    size: [260, 128]
+    offset: [20, -20]
+  UiWindow:
+    title: Controls
+    titleBarHeight: 24
+    titleFontSize: 14
+    closable: true
+    draggable: true
+  UiLayout:
+    arrangement: Column
+    crossAlign: Start
+    spacing: 6
+    padding: 10
+    columns: 2
+    cellSize: [0, 0]
+  UiTooltip:
+    text: "Drag the title bar to move the window.\nThe red button closes it."
+    delay: 0.4
+    fontSize: 13

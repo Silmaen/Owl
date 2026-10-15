@@ -197,6 +197,19 @@ struct OWL_API StringData {
  */
 class OWL_API Renderer2D {
 public:
+	/**
+	 * @brief
+	 *  Rectangle of the target the next draws are restricted to.
+	 */
+	struct Scissor {
+		/// Top-left corner, in pixels from the top-left of the target (Y-down).
+		math::vec2ui position{0, 0};
+		/// Size in pixels.
+		math::vec2ui size{0, 0};
+		/// Height of the target in pixels.
+		uint32_t targetHeight = 0;
+	};
+
 	Renderer2D() = default;
 
 	Renderer2D(const Renderer2D&) = delete;
@@ -243,6 +256,20 @@ public:
 	 *  Flush the vertex buffer.
 	 */
 	static void flush();
+
+	/**
+	 * @brief
+	 *  Restrict the draws that follow to a rectangle of the target (clipping). What was queued so far is drawn first,
+	 *  with the previous rectangle; `endScene` and `beginScene` lift it.
+	 * @param[in] iScissor The rectangle.
+	 */
+	static void setScissor(const Scissor& iScissor);
+
+	/**
+	 * @brief
+	 *  Draw on the whole target again. What was queued so far is drawn first, with the rectangle.
+	 */
+	static void clearScissor();
 
 	// Primitives
 	/**

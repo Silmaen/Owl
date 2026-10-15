@@ -158,6 +158,12 @@ auto entityKind(const scene::Entity& iEntity, const bool iHasChildren) -> Entity
 		return {gui::icon::mousePointerClick, 0x6fd6c0};
 	if (iEntity.hasComponent<UiImage>())
 		return {gui::icon::image, 0x6fd6c0};
+	if (iEntity.hasComponent<UiWindow>())
+		return {gui::icon::appWindow, 0x6fd6c0};
+	if (iEntity.hasComponent<UiLayout>())
+		return {gui::icon::layoutGrid, 0x6fd6c0};
+	if (iEntity.hasComponent<UiToolCursor>())
+		return {gui::icon::mousePointer2, 0x6fd6c0};
 	if (iEntity.hasComponent<UiPanel>())
 		return {gui::icon::panelsTopLeft, 0x6fd6c0};
 	if (iEntity.hasComponent<Canvas>())
@@ -681,6 +687,14 @@ template<>
 constexpr bool isUiOnlyComponent<scene::component::UiSlider> = true;
 template<>
 constexpr bool isUiOnlyComponent<scene::component::UiText> = true;
+template<>
+constexpr bool isUiOnlyComponent<scene::component::UiWindow> = true;
+template<>
+constexpr bool isUiOnlyComponent<scene::component::UiLayout> = true;
+template<>
+constexpr bool isUiOnlyComponent<scene::component::UiTooltip> = true;
+template<>
+constexpr bool isUiOnlyComponent<scene::component::UiToolCursor> = true;
 
 auto layerTypeKeyForEntity(const scene::Entity& iEntity) -> std::string {
 	const auto& stack = renderer::Renderer::getRenderStack();

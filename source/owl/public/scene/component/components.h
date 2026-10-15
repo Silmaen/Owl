@@ -36,11 +36,15 @@
 #include "Trigger.h"
 #include "UiButton.h"
 #include "UiImage.h"
+#include "UiLayout.h"
 #include "UiPanel.h"
 #include "UiProgressBar.h"
 #include "UiRect.h"
 #include "UiSlider.h"
 #include "UiText.h"
+#include "UiToolCursor.h"
+#include "UiTooltip.h"
+#include "UiWindow.h"
 #include "Visibility.h"
 #include "VoxelPlayer.h"
 #include "VoxelWorld.h"
@@ -71,6 +75,8 @@ concept isComponent =
 		std::is_same_v<Component, UiButton> || std::is_same_v<Component, UiImage> ||
 		std::is_same_v<Component, UiPanel> || std::is_same_v<Component, UiProgressBar> ||
 		std::is_same_v<Component, UiRect> || std::is_same_v<Component, UiSlider> || std::is_same_v<Component, UiText> ||
+		std::is_same_v<Component, UiLayout> || std::is_same_v<Component, UiToolCursor> ||
+		std::is_same_v<Component, UiTooltip> || std::is_same_v<Component, UiWindow> ||
 		std::is_same_v<Component, Visibility> || std::is_same_v<Component, VoxelWorld> ||
 		std::is_same_v<Component, VoxelPlayer>;
 
@@ -111,11 +117,12 @@ concept isDeserializableComponent =
  * @note All except ID and Tag. With the two lists below, it only seeds the engine entries of
  * `scene::ComponentRegistry`, which the engine and the games use.
  */
-using CopiableComponents = std::tuple<Transform, Camera, Canvas, SpriteRenderer, AnimatedSpriteRenderer, CircleRenderer,
-									  Text, Tilemap, IsometricObject, PhysicBody, Player, Trigger, EntityLink,
-									  FlyCamera, BackgroundTexture, Visibility, Hierarchy, SoundSource, SoundListener,
-									  LuaScript, PrefabLink, RaycastDoor, RaycastPushWall, RendererTag, VoxelWorld,
-									  VoxelPlayer, UiButton, UiImage, UiPanel, UiProgressBar, UiRect, UiSlider, UiText>;
+using CopiableComponents =
+		std::tuple<Transform, Camera, Canvas, SpriteRenderer, AnimatedSpriteRenderer, CircleRenderer, Text, Tilemap,
+				   IsometricObject, PhysicBody, Player, Trigger, EntityLink, FlyCamera, BackgroundTexture, Visibility,
+				   Hierarchy, SoundSource, SoundListener, LuaScript, PrefabLink, RaycastDoor, RaycastPushWall,
+				   RendererTag, VoxelWorld, VoxelPlayer, UiButton, UiImage, UiPanel, UiProgressBar, UiRect, UiSlider,
+				   UiText, UiLayout, UiToolCursor, UiTooltip, UiWindow>;
 
 /**
  * @brief
@@ -127,7 +134,7 @@ using SerializableComponents =
 				   Tilemap, IsometricObject, PhysicBody, Player, Trigger, EntityLink, FlyCamera, BackgroundTexture,
 				   Visibility, Hierarchy, SoundSource, SoundListener, LuaScript, PrefabLink, RaycastDoor,
 				   RaycastPushWall, RendererTag, VoxelWorld, VoxelPlayer, UiButton, UiImage, UiPanel, UiProgressBar,
-				   UiRect, UiSlider, UiText>;
+				   UiRect, UiSlider, UiText, UiLayout, UiToolCursor, UiTooltip, UiWindow>;
 
 /**
  * @brief
@@ -138,6 +145,7 @@ using OptionalComponents =
 		std::tuple<Camera, Canvas, SpriteRenderer, AnimatedSpriteRenderer, CircleRenderer, Text, Tilemap,
 				   IsometricObject, PhysicBody, Player, Trigger, EntityLink, FlyCamera, BackgroundTexture, SoundSource,
 				   SoundListener, LuaScript, PrefabLink, RaycastDoor, RaycastPushWall, RendererTag, VoxelWorld,
-				   VoxelPlayer, UiButton, UiImage, UiPanel, UiProgressBar, UiRect, UiSlider, UiText>;
+				   VoxelPlayer, UiButton, UiImage, UiPanel, UiProgressBar, UiRect, UiSlider, UiText, UiLayout,
+				   UiToolCursor, UiTooltip, UiWindow>;
 
 }// namespace owl::scene::component

@@ -70,6 +70,21 @@ public:
 
 	/**
 	 * @brief
+	 *  Restrict the drawing to a rectangle of the target (dynamic scissor of the open render pass).
+	 * @param[in] iPosition Top-left corner of the rectangle, in pixels (Y-down).
+	 * @param[in] iSize Size of the rectangle in pixels.
+	 * @param[in] iTargetHeight Height of the target in pixels (unused, the origin is the top-left).
+	 */
+	void setScissor(const math::vec2ui& iPosition, const math::vec2ui& iSize, uint32_t iTargetHeight) override;
+
+	/**
+	 * @brief
+	 *  Draw on the whole target again.
+	 */
+	void clearScissor() override;
+
+	/**
+	 * @brief
 	 *  Define the background colour.
 	 * @param[in] iColor The background colour.
 	 */

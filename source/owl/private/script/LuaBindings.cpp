@@ -23,6 +23,7 @@
 #include "scene/Scene.h"
 #include "scene/ScreenTransition.h"
 #include "scene/SettingsManager.h"
+#include "scene/UiInputSystem.h"
 #include "scene/component/components.h"
 #include "script/LuaEngine.h"
 #include "script/ScriptEngine.h"
@@ -602,6 +603,14 @@ auto luaEntityHasComponent(lua_State* iState) -> int {
 		has = entity->hasComponent<scene::component::UiSlider>();
 	else if (compName == "UiProgressBar")
 		has = entity->hasComponent<scene::component::UiProgressBar>();
+	else if (compName == "UiWindow")
+		has = entity->hasComponent<scene::component::UiWindow>();
+	else if (compName == "UiLayout")
+		has = entity->hasComponent<scene::component::UiLayout>();
+	else if (compName == "UiTooltip")
+		has = entity->hasComponent<scene::component::UiTooltip>();
+	else if (compName == "UiToolCursor")
+		has = entity->hasComponent<scene::component::UiToolCursor>();
 	lua_pushboolean(iState, has ? 1 : 0);
 	return 1;
 }
@@ -639,6 +648,30 @@ auto luaUiSetVisible(lua_State* iState) -> int {
 auto luaUiSetProgress(lua_State* iState) -> int {
 	if (const auto entity = findEntity(iState); entity && entity->hasComponent<scene::component::UiProgressBar>())
 		entity->getComponent<scene::component::UiProgressBar>().value = static_cast<float>(luaL_checknumber(iState, 2));
+	return 0;
+}
+
+auto luaUiRaiseWindow(lua_State* iState) -> int {
+	if (const auto entity = findEntity(iState); entity && entity->hasComponent<scene::component::UiWindow>())
+		scene::UiInputSystem::raiseWindow(*entity->getScene(), static_cast<entt::entity>(*entity));
+	return 0;
+}
+
+auto luaUiSetWindowTitle(lua_State* iState) -> int {
+	if (const auto entity = findEntity(iState); entity && entity->hasComponent<scene::component::UiWindow>())
+		entity->getComponent<scene::component::UiWindow>().title = luaL_checkstring(iState, 2);
+	return 0;
+}
+
+auto luaUiSetTooltip(lua_State* iState) -> int {
+	if (const auto entity = findEntity(iState); entity && entity->hasComponent<scene::component::UiTooltip>())
+		entity->getComponent<scene::component::UiTooltip>().text = luaL_checkstring(iState, 2);
+	return 0;
+}
+
+auto luaUiSetToolCursor(lua_State* iState) -> int {
+	if (const auto entity = findEntity(iState); entity && entity->hasComponent<scene::component::UiToolCursor>())
+		entity->getComponent<scene::component::UiToolCursor>().active = lua_toboolean(iState, 2) != 0;
 	return 0;
 }
 
@@ -1237,6 +1270,15 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		 .description = "Show or hide the entity in the game.", .params = {entityId, {"visible", Boolean}}},
 		{.table = "ui", .name = "set_progress", .function = guarded<luaUiSetProgress>,
 		 .description = "Set the value of a `UiProgressBar` (0 to 1).", .params = {entityId, {"value", Number}}},
+		{.table = "ui", .name = "raise_window", .function = guarded<luaUiRaiseWindow>,
+		 .description = "Draw a `UiWindow` over its siblings (a click on it does the same).", .params = {entityId}},
+		{.table = "ui", .name = "set_window_title", .function = guarded<luaUiSetWindowTitle>,
+		 .description = "Set the title of a `UiWindow`.", .params = {entityId, {"title", String}}},
+		{.table = "ui", .name = "set_tooltip", .function = guarded<luaUiSetTooltip>,
+		 .description = "Set the text of a `UiTooltip`.", .params = {entityId, {"text", String}}},
+		{.table = "ui", .name = "set_tool_cursor", .function = guarded<luaUiSetToolCursor>,
+		 .description = "Show or hide a `UiToolCursor`, the sprite following the mouse over the HUD.",
+		 .params = {entityId, {"active", Boolean}}},
 		{.table = "ui", .name = "get_slider_value", .function = guarded<luaUiGetSliderValue>,
 		 .description = "Value of a `UiSlider`.", .params = {entityId}, .returns = {{"value", Number}}},
 		{.table = "ui", .name = "set_slider_value", .function = guarded<luaUiSetSliderValue>,

@@ -171,6 +171,27 @@ public:
 
 	/**
 	 * @brief
+	 *  Restrict the next draws to a rectangle of the target, until `clearScissor` (see `RenderAPI::setScissor`).
+	 * @param[in] iPosition Top-left corner of the rectangle, in pixels from the top-left of the target (Y-down).
+	 * @param[in] iSize Size of the rectangle in pixels.
+	 * @param[in] iTargetHeight Height of the target in pixels.
+	 */
+	static void setScissor(const math::vec2ui& iPosition, const math::vec2ui& iSize, const uint32_t iTargetHeight) {
+		if (m_renderAPI)
+			m_renderAPI->setScissor(iPosition, iSize, iTargetHeight);
+	}
+
+	/**
+	 * @brief
+	 *  Draw on the whole target again.
+	 */
+	static void clearScissor() {
+		if (m_renderAPI)
+			m_renderAPI->clearScissor();
+	}
+
+	/**
+	 * @brief
 	 *  Ends draw call for the current batch.
 	 */
 	static void endBatch() {
