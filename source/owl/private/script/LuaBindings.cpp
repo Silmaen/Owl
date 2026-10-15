@@ -74,7 +74,21 @@ auto findEntity(lua_State* iState) -> std::optional<scene::Entity> {
 	const auto uuid = static_cast<uint64_t>(luaL_checkinteger(iState, 1));
 	if (auto entity = activeScene->findEntityByUUID(core::UUID{uuid}); entity)
 		return entity;
+	// The widgets of the scene's HUD asset answer to their id like the scene's own entities.
+	if (const auto hud = activeScene->getHud(); hud) {
+		if (auto entity = hud->findEntityByUUID(core::UUID{uuid}); entity)
+			return entity;
+	}
 	return std::nullopt;
+}
+
+// First entity of a scene with this tag, as a Lua id (0 when none).
+auto findByTag(const scene::Scene& iScene, const char* iName) -> uint64_t {
+	for (const auto view = iScene.registry.view<scene::component::Tag>(); const auto entity: view) {
+		if (view.get<scene::component::Tag>(entity).tag == iName)
+			return static_cast<uint64_t>(iScene.registry.get<scene::component::ID>(entity).id);
+	}
+	return 0;
 }
 
 auto parseTransitionType(const std::string_view iName) -> scene::ScreenTransition::Type {
@@ -409,14 +423,26 @@ auto luaSceneFindEntity(lua_State* iState) -> int {
 		return 1;
 	}
 	const char* name = luaL_checkstring(iState, 1);
-	for (const auto view = activeScene->registry.view<scene::component::Tag>(); const auto entity: view) {
-		if (view.get<scene::component::Tag>(entity).tag == name) {
-			const auto uuid = activeScene->registry.get<scene::component::ID>(entity).id;
-			lua_pushinteger(iState, static_cast<lua_Integer>(static_cast<uint64_t>(uuid)));
-			return 1;
-		}
+	uint64_t found = findByTag(*activeScene, name);
+	if (const auto hud = activeScene->getHud(); found == 0 && hud)
+		found = findByTag(*hud, name);
+	lua_pushinteger(iState, static_cast<lua_Integer>(found));
+	return 1;
+}
+
+auto luaUiFind(lua_State* iState) -> int {
+	auto* activeScene = getBoundScene(iState);
+	if (activeScene == nullptr) {
+		lua_pushinteger(iState, 0);
+		return 1;
 	}
-	lua_pushinteger(iState, 0);
+	const char* name = luaL_checkstring(iState, 1);
+	uint64_t found = 0;
+	if (const auto hud = activeScene->getHud(); hud)
+		found = findByTag(*hud, name);
+	if (found == 0)
+		found = findByTag(*activeScene, name);
+	lua_pushinteger(iState, static_cast<lua_Integer>(found));
 	return 1;
 }
 
@@ -1163,7 +1189,8 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		 .description = "Set the volume of a sound (0.0 to 2.0).",
 		 .params = {{"handle", Integer}, {"volume", Number}}},
 		{.table = "scene", .name = "find_entity", .function = guarded<luaSceneFindEntity>,
-		 .description = "First entity with this tag (0 when none); scans every entity, cache the result.",
+		 .description = "First entity with this tag (0 when none), in the scene then in its HUD; scans every entity, "
+						"cache the result.",
 		 .params = {{"name", String}}, .returns = {{"entity_id", Entity}}},
 		{.table = "scene", .name = "create_entity", .function = guarded<luaSceneCreateEntity>,
 		 .description = "Create an empty entity.",
@@ -1198,6 +1225,10 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		 .params = {entityId, {"component", String}}, .returns = {{"has", Boolean}}},
 		{.table = "entity", .name = "get_name", .function = guarded<luaEntityGetName>,
 		 .description = "Tag of the entity (empty when unknown).", .params = {entityId}, .returns = {{"name", String}}},
+		{.table = "ui", .name = "find", .function = guarded<luaUiFind>,
+		 .description = "First widget with this tag, searched in the scene's HUD asset then in the scene (0 when none); "
+						"cache the result.",
+		 .params = {{"name", String}}, .returns = {{"entity_id", Entity}}},
 		{.table = "ui", .name = "set_text", .function = guarded<luaUiSetText>,
 		 .description = "Set the text of a `UiText`.", .params = {entityId, {"text", String}}},
 		{.table = "ui", .name = "get_text", .function = guarded<luaUiGetText>,

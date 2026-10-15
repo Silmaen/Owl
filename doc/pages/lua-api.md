@@ -76,14 +76,14 @@ Sound playback, by handle.
 
 Entities of the running level and level changes.
 
-| Function                                                                      | Returns             | Description                                                                                   |
-|-------------------------------------------------------------------------------|---------------------|-----------------------------------------------------------------------------------------------|
-| `scene.find_entity(name: string)`                                             | `entity_id: entity` | First entity with this tag (0 when none); scans every entity, cache the result.               |
-| `scene.create_entity(name: string)`                                           | `entity_id: entity` | Create an empty entity.                                                                       |
-| `scene.destroy_entity(entity_id: entity)`                                     |                     | Destroy an entity and its children at the end of the frame.                                   |
-| `scene.load_scene(level: string)`                                             |                     | Load another level after this frame, keeping the game state (no transition).                  |
-| `scene.transition_to(scene_path: string, [kind: string], [duration: number])` |                     | Load a level behind a screen transition (kind as in `ui.transition_play`, `fade` by default). |
-| `scene.quit()`                                                                |                     | Quit the game (stop Play in the editor) after this frame.                                     |
+| Function                                                                      | Returns             | Description                                                                                                   |
+|-------------------------------------------------------------------------------|---------------------|---------------------------------------------------------------------------------------------------------------|
+| `scene.find_entity(name: string)`                                             | `entity_id: entity` | First entity with this tag (0 when none), in the scene then in its HUD; scans every entity, cache the result. |
+| `scene.create_entity(name: string)`                                           | `entity_id: entity` | Create an empty entity.                                                                                       |
+| `scene.destroy_entity(entity_id: entity)`                                     |                     | Destroy an entity and its children at the end of the frame.                                                   |
+| `scene.load_scene(level: string)`                                             |                     | Load another level after this frame, keeping the game state (no transition).                                  |
+| `scene.transition_to(scene_path: string, [kind: string], [duration: number])` |                     | Load a level behind a screen transition (kind as in `ui.transition_play`, `fade` by default).                 |
+| `scene.quit()`                                                                |                     | Quit the game (stop Play in the editor) after this frame.                                                     |
 
 ## `time`
 
@@ -118,19 +118,20 @@ Entity queries.
 
 HUD widgets and screen transitions.
 
-| Function                                                                                                 | Returns           | Description                                                                          |
-|----------------------------------------------------------------------------------------------------------|-------------------|--------------------------------------------------------------------------------------|
-| `ui.set_text(entity_id: entity, text: string)`                                                           |                   | Set the text of a `UiText`.                                                          |
-| `ui.get_text(entity_id: entity)`                                                                         | `text: string`    | Text of a `UiText`.                                                                  |
-| `ui.set_visible(entity_id: entity, visible: boolean)`                                                    |                   | Show or hide the entity in the game.                                                 |
-| `ui.set_progress(entity_id: entity, value: number)`                                                      |                   | Set the value of a `UiProgressBar` (0 to 1).                                         |
-| `ui.get_slider_value(entity_id: entity)`                                                                 | `value: number`   | Value of a `UiSlider`.                                                               |
-| `ui.set_slider_value(entity_id: entity, value: number)`                                                  |                   | Set the value of a `UiSlider`.                                                       |
-| `ui.set_button_enabled(entity_id: entity, enabled: boolean)`                                             |                   | Enable or disable a `UiButton`.                                                      |
-| `ui.transition_fade_in(duration: number)`                                                                |                   | Start a fade-in screen transition.                                                   |
-| `ui.transition_fade_out(duration: number)`                                                               |                   | Start a fade-out screen transition.                                                  |
-| `ui.transition_play(kind: string, duration: number, [r: number], [g: number], [b: number], [a: number])` |                   | Start a screen transition of a kind (see Transition kinds), opaque black by default. |
-| `ui.is_transition_active()`                                                                              | `active: boolean` | Whether a screen transition is running.                                              |
+| Function                                                                                                 | Returns             | Description                                                                                                      |
+|----------------------------------------------------------------------------------------------------------|---------------------|------------------------------------------------------------------------------------------------------------------|
+| `ui.find(name: string)`                                                                                  | `entity_id: entity` | First widget with this tag, searched in the scene's HUD asset then in the scene (0 when none); cache the result. |
+| `ui.set_text(entity_id: entity, text: string)`                                                           |                     | Set the text of a `UiText`.                                                                                      |
+| `ui.get_text(entity_id: entity)`                                                                         | `text: string`      | Text of a `UiText`.                                                                                              |
+| `ui.set_visible(entity_id: entity, visible: boolean)`                                                    |                     | Show or hide the entity in the game.                                                                             |
+| `ui.set_progress(entity_id: entity, value: number)`                                                      |                     | Set the value of a `UiProgressBar` (0 to 1).                                                                     |
+| `ui.get_slider_value(entity_id: entity)`                                                                 | `value: number`     | Value of a `UiSlider`.                                                                                           |
+| `ui.set_slider_value(entity_id: entity, value: number)`                                                  |                     | Set the value of a `UiSlider`.                                                                                   |
+| `ui.set_button_enabled(entity_id: entity, enabled: boolean)`                                             |                     | Enable or disable a `UiButton`.                                                                                  |
+| `ui.transition_fade_in(duration: number)`                                                                |                     | Start a fade-in screen transition.                                                                               |
+| `ui.transition_fade_out(duration: number)`                                                               |                     | Start a fade-out screen transition.                                                                              |
+| `ui.transition_play(kind: string, duration: number, [r: number], [g: number], [b: number], [a: number])` |                     | Start a screen transition of a kind (see Transition kinds), opaque black by default.                             |
+| `ui.is_transition_active()`                                                                              | `active: boolean`   | Whether a screen transition is running.                                                                          |
 
 ## `gamestate`
 

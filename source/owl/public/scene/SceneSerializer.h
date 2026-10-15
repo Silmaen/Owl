@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include "DocumentKind.h"
 #include "Scene.h"
 #include "core/FormatVersion.h"
 #include "core/Serializer.h"
@@ -28,7 +29,7 @@ namespace owl::scene {
 enum struct SceneLoadError : uint8_t {
 	FileUnreadable,///< The scene file does not exist or cannot be read.
 	InvalidYaml,///< The data is not valid YAML.
-	NotAScene,///< The YAML has no `Scene` key, or its top-level layout is not a scene.
+	NotAScene,///< The YAML has no `Scene` key (`Hud` for a HUD), or its top-level layout is not a scene.
 	InvalidEntity,///< An entity is malformed (missing `Entity` id, field of the wrong type...).
 	InvalidFormatVersion,///< The `FormatVersion` field is not a positive integer.
 	NewerFormatVersion,///< The file was created by a newer version of Owl.
@@ -72,6 +73,8 @@ struct OWL_API ParsedScene {
 	std::string sourceName;
 	/// True when the buffer parsed cleanly and looked like a scene file.
 	bool valid = false;
+	/// The document the buffer was parsed as.
+	DocumentKind kind = DocumentKind::Scene;
 	/// Optional human-readable error message when `valid` is false.
 	std::string error;
 	/// Failure reason when `valid` is false.
@@ -85,17 +88,26 @@ class OWL_API SceneSerializer {
 public:
 	/**
 	 * @brief
-	 *  Constructor.
+	 *  Constructor reading and writing the document the scene was loaded from (a new scene is an `.owl` scene).
 	 * @param[in] iScene The attached scene.
 	 */
 	explicit SceneSerializer(const shared<Scene>& iScene);
 
 	/**
 	 * @brief
-	 *  Format descriptor of the scene files (`.owl`), with its migration chain.
-	 * @return The scene format.
+	 *  Constructor reading and writing a given document.
+	 * @param[in] iScene The attached scene.
+	 * @param[in] iKind The document the serializer reads and writes.
 	 */
-	[[nodiscard]] static auto format() -> const core::DocumentFormat&;
+	SceneSerializer(const shared<Scene>& iScene, DocumentKind iKind);
+
+	/**
+	 * @brief
+	 *  Format descriptor of the scene files (`.owl`) or of the HUD files (`.owlhud`), with its migration chain.
+	 * @param[in] iKind The document.
+	 * @return The format of the document.
+	 */
+	[[nodiscard]] static auto format(DocumentKind iKind = DocumentKind::Scene) -> const core::DocumentFormat&;
 
 	/**
 	 * @brief
@@ -114,7 +126,7 @@ public:
 
 	/**
 	 * @brief
-	 *  Load the scene from a file.
+	 *  Load the scene from a file (read as the document the serializer was built for).
 	 *
 	 * Same validation and rollback as `applyParsed`.
 	 * @param[in] iFilepath The file to load.
@@ -140,11 +152,13 @@ public:
 	 *  thread to actually populate the scene.
 	 * @param[in] iData The raw YAML data.
 	 * @param[in] iSourceName Optional source name for error messages.
+	 * @param[in] iKind The document expected.
 	 * @return A `ParsedScene` whose `valid` flag tells whether the parse
 	 *         succeeded; the `error` field carries the failure reason on miss.
 	 */
 	[[nodiscard]] static auto parseBuffer(const std::vector<uint8_t>& iData,
-										  const std::string& iSourceName = "<buffer>") -> ParsedScene;
+										  const std::string& iSourceName = "<buffer>",
+										  DocumentKind iKind = DocumentKind::Scene) -> ParsedScene;
 
 	/**
 	 * @brief
@@ -225,5 +239,7 @@ public:
 private:
 	/// Parent Scene.
 	shared<Scene> mp_scene;
+	/// The document read and written.
+	DocumentKind m_kind = DocumentKind::Scene;
 };
 }// namespace owl::scene

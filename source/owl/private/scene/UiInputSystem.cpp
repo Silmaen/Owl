@@ -22,6 +22,7 @@
 #include <cstdint>
 #include <ranges>
 #include <string>
+#include <tuple>
 
 namespace owl::scene {
 
@@ -37,32 +38,46 @@ auto findScriptOwner(const Scene* iScene, Entity iEntity) -> Entity {
 	return iEntity;
 }
 
-void invokeLuaCallback(const Scene* iScene, const Entity& iEntity, const std::string& iCallbackName,
-					   const uint64_t iEntityId) {
+// A HUD widget falls back to the active scene scripts: the HUD scene runs none.
+template<typename Prepare>
+void invokeCallback(const Scene* iSurface, const Scene* iActive, const Entity& iEntity,
+					const std::string& iCallbackName, const Prepare& iPrepare) {
 	if (iCallbackName.empty())
 		return;
-	const Entity owner = findScriptOwner(iScene, iEntity);
-	if (!owner)
+	if (const Entity owner = findScriptOwner(iSurface, iEntity); owner) {
+		if (const auto& luaScript = owner.getComponent<component::LuaScript>();
+			luaScript.instance && luaScript.instance->isValid()) {
+			iPrepare(*luaScript.instance);
+			std::ignore = luaScript.instance->callFunction(iCallbackName);
+			return;
+		}
+	}
+	if (iActive == nullptr || iActive == iSurface)
 		return;
-	if (const auto& luaScript = owner.getComponent<component::LuaScript>();
-		luaScript.instance && luaScript.instance->isValid()) {
-		luaScript.instance->setProperty("_clicked_entity", static_cast<int64_t>(iEntityId));
-		std::ignore = luaScript.instance->callFunction(iCallbackName);
+	for (const auto view = iActive->registry.view<component::LuaScript>(); const auto entity: view) {
+		const auto& luaScript = view.get<component::LuaScript>(entity);
+		if (!luaScript.instance || !luaScript.instance->isValid())
+			continue;
+		iPrepare(*luaScript.instance);
+		if (luaScript.instance->callFunction(iCallbackName))
+			return;
 	}
 }
 
-void invokeSliderCallback(const Scene* iScene, const Entity& iEntity, const std::string& iCallbackName,
-						  const float iValue) {
-	if (iCallbackName.empty())
-		return;
-	const Entity owner = findScriptOwner(iScene, iEntity);
-	if (!owner)
-		return;
-	if (const auto& luaScript = owner.getComponent<component::LuaScript>();
-		luaScript.instance && luaScript.instance->isValid()) {
-		luaScript.instance->setProperty("_slider_value", iValue);
-		std::ignore = luaScript.instance->callFunction(iCallbackName);
-	}
+void invokeLuaCallback(const Scene* iSurface, const Scene* iActive, const Entity& iEntity,
+					   const std::string& iCallbackName, const uint64_t iEntityId) {
+	invokeCallback(iSurface, iActive, iEntity, iCallbackName,
+				   [iEntityId](const script::ScriptInstance& iInstance) -> void {
+					   iInstance.setProperty("_clicked_entity", static_cast<int64_t>(iEntityId));
+				   });
+}
+
+void invokeSliderCallback(const Scene* iSurface, const Scene* iActive, const Entity& iEntity,
+						  const std::string& iCallbackName, const float iValue) {
+	invokeCallback(iSurface, iActive, iEntity, iCallbackName,
+				   [iValue](const script::ScriptInstance& iInstance) -> void {
+					   iInstance.setProperty("_slider_value", iValue);
+				   });
 }
 
 auto isInteractive(const Scene& iScene, const entt::entity iEntity) -> bool {
@@ -82,7 +97,7 @@ auto findTopmostInteractive(const Scene& iScene, const ui::HudLayout& iLayout, c
 	return nullptr;
 }
 
-void updateButton(const Scene* iScene, const Entity& iWidget, const bool iHovered, const bool iPressed,
+void updateButton(const Scene* iActive, const Entity& iWidget, const bool iHovered, const bool iPressed,
 				  const bool iClicked) {
 	auto& button = iWidget.getComponent<component::UiButton>();
 	if (button.state == component::UiButton::State::Disabled)
@@ -93,10 +108,11 @@ void updateButton(const Scene* iScene, const Entity& iWidget, const bool iHovere
 	}
 	button.state = iPressed ? component::UiButton::State::Pressed : component::UiButton::State::Hovered;
 	if (iClicked)
-		invokeLuaCallback(iScene, iWidget, button.onClickCallback, static_cast<uint64_t>(iWidget.getUUID()));
+		invokeLuaCallback(iWidget.getScene(), iActive, iWidget, button.onClickCallback,
+						  static_cast<uint64_t>(iWidget.getUUID()));
 }
 
-void updateSlider(const Scene* iScene, const Entity& iWidget, const ui::HudNode& iNode, const bool iHovered,
+void updateSlider(const Scene* iActive, const Entity& iWidget, const ui::HudNode& iNode, const bool iHovered,
 				  const bool iPressed, const math::vec2& iMousePos) {
 	if (!iHovered || !iPressed || iNode.bounds.size.x() <= 0.f)
 		return;
@@ -105,7 +121,31 @@ void updateSlider(const Scene* iScene, const Entity& iWidget, const ui::HudNode&
 	if (const float newValue = slider.minValue + normalized * (slider.maxValue - slider.minValue);
 		std::abs(newValue - slider.value) > 1e-6f) {
 		slider.value = newValue;
-		invokeSliderCallback(iScene, iWidget, slider.onValueChangedCallback, slider.value);
+		invokeSliderCallback(iWidget.getScene(), iActive, iWidget, slider.onValueChangedCallback, slider.value);
+	}
+}
+
+// The layout of a surface (the scene or its HUD), reused from the frame drawn or computed again.
+auto layoutOf(Scene& ioSurface, const math::vec2ui& iViewportSize) -> const ui::HudLayout& {
+	auto& layout = ioSurface.getHudLayout();
+	if (!layout.isComputedFor(iViewportSize))
+		layout.compute(ioSurface, iViewportSize, false);
+	return layout;
+}
+
+// Update the widgets of a surface; only the one the mouse reaches (`iTopmost`) is hovered.
+void updateWidgets(Scene& ioSurface, const Scene* iActive, const ui::HudLayout& iLayout, const ui::HudNode* iTopmost,
+				   const math::vec2& iMousePos, const bool iMousePressed, const bool iClicked) {
+	for (const auto& node: iLayout.getNodes()) {
+		// A callback may destroy entities: the layout can name one that is gone.
+		if (!ioSurface.registry.valid(node.entity))
+			continue;
+		const Entity widget{node.entity, &ioSurface};
+		const bool hovered = &node == iTopmost;
+		if (widget.hasComponent<component::UiButton>())
+			updateButton(iActive, widget, hovered, iMousePressed, iClicked);
+		if (widget.hasComponent<component::UiSlider>())
+			updateSlider(iActive, widget, node, hovered, iMousePressed, iMousePos);
 	}
 }
 
@@ -125,24 +165,21 @@ void UiInputSystem::update(Scene* iScene, const math::vec2ui& iViewportSize, con
 	const bool clicked = !state.wasPressed && iMousePressed;
 	state.wasPressed = iMousePressed;
 
-	auto& layout = iScene->getHudLayout();
-	if (!layout.isComputedFor(iViewportSize))
-		layout.compute(*iScene, iViewportSize, false);
-	const auto* topmost = findTopmostInteractive(*iScene, layout, iMousePos);
-	for (const auto& node: layout.getNodes()) {
-		// A callback may destroy entities: the layout can name one that is gone.
-		if (!iScene->registry.valid(node.entity))
-			continue;
-		const Entity widget{node.entity, iScene};
-		const bool hovered = &node == topmost;
-		if (widget.hasComponent<component::UiButton>())
-			updateButton(iScene, widget, hovered, iMousePressed, clicked);
-		if (widget.hasComponent<component::UiSlider>())
-			updateSlider(iScene, widget, node, hovered, iMousePressed, iMousePos);
-	}
-	state.consuming = topmost != nullptr;
+	// The HUD asset is drawn over the scene: a widget of it takes the mouse before the scene's own.
+	const auto hud = iScene->getHud();
+	const bool hasHud = hud && hud.get() != iScene;
+	const ui::HudLayout* hudLayout = hasHud ? &layoutOf(*hud, iViewportSize) : nullptr;
+	const auto* hudTopmost = hasHud ? findTopmostInteractive(*hud, *hudLayout, iMousePos) : nullptr;
+	const auto& layout = layoutOf(*iScene, iViewportSize);
+	const auto* topmost = hudTopmost != nullptr ? nullptr : findTopmostInteractive(*iScene, layout, iMousePos);
+	updateWidgets(*iScene, iScene, layout, topmost, iMousePos, iMousePressed, clicked);
+	if (hasHud)
+		updateWidgets(*hud, iScene, *hudLayout, hudTopmost, iMousePos, iMousePressed, clicked);
+	state.consuming = topmost != nullptr || hudTopmost != nullptr;
 	// Drawing lays the HUD out again: the next update reuses that layout, or recomputes one when no frame was drawn.
-	layout.invalidate();
+	iScene->getHudLayout().invalidate();
+	if (hasHud)
+		hud->getHudLayout().invalidate();
 }
 
 auto UiInputSystem::isUIConsuming(const Scene& iScene) -> bool { return iScene.getUiInputState().consuming; }

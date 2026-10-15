@@ -54,10 +54,12 @@ public:
 	 * @param[in] iProjectDir The project root directory.
 	 * @param[in] iFirstScene Relative path to the first scene.
 	 * @param[out] oWarnings Optional output filled with messages for unresolvable references.
+	 * @param[in] iDefaultHud Relative path to the project's default HUD (scenes naming their own are followed anyway).
 	 * @return Deduplicated list of all assets across all reachable scenes.
 	 */
 	[[nodiscard]] static auto scanProject(const std::filesystem::path& iProjectDir, const std::string& iFirstScene,
-										  std::vector<std::string>* oWarnings = nullptr) -> std::vector<AssetReference>;
+										  std::vector<std::string>* oWarnings = nullptr,
+										  const std::string& iDefaultHud = {}) -> std::vector<AssetReference>;
 };
 
 }// namespace owl::data::assets::pack

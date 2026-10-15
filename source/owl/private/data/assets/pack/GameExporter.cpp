@@ -53,7 +53,7 @@ auto isRelocatable(const AssetReference& iRef) -> bool {
 	if (iRef.assetType == AssetType::Scene)
 		return true;
 	const auto ext = iRef.diskPath.extension().string();
-	return ext == ".owltileset" || ext == ".owltilemap" || ext == ".owlprefab";
+	return ext == ".owltileset" || ext == ".owltilemap" || ext == ".owlprefab" || ext == ".owlhud";
 }
 
 auto resolveIcon(const ExportSettings& iSettings) -> std::optional<std::filesystem::path> {
@@ -132,6 +132,8 @@ void writeRunnerConfig(const ExportSettings& iSettings, const std::filesystem::p
 	out << YAML::Key << "WindowHeight" << YAML::Value << iSettings.windowSize.y();
 	out << YAML::Key << "Fullscreen" << YAML::Value << iSettings.fullscreen;
 	out << YAML::Key << "Resizable" << YAML::Value << iSettings.resizable;
+	if (!iSettings.defaultHud.empty())
+		out << YAML::Key << "DefaultHud" << YAML::Value << iSettings.defaultHud;
 	out << YAML::Key << "TickRate" << YAML::Value << iSettings.tickRate;
 	out << YAML::Key << "MaxTicksPerFrame" << YAML::Value << iSettings.maxTicksPerFrame;
 	if (!iSettings.rendererStackYaml.empty())
@@ -262,7 +264,8 @@ auto GameExporter::relocateAbsolutePaths(const std::string& iText, const std::ve
 auto GameExporter::validate(const ExportSettings& iSettings, std::vector<AssetReference>& oAssets)
 		-> std::vector<std::string> {
 	std::vector<std::string> warnings;
-	oAssets = AssetScanner::scanProject(iSettings.projectDirectory, iSettings.firstScene, &warnings);
+	oAssets = AssetScanner::scanProject(iSettings.projectDirectory, iSettings.firstScene, &warnings,
+										iSettings.defaultHud);
 	if (oAssets.empty())
 		warnings.emplace_back("No assets to pack — check firstScene and its references");
 	if (!findRunner(iSettings.runnerDirectory))
@@ -283,7 +286,8 @@ auto GameExporter::exportGame(const ExportSettings& iSettings, const std::vector
 	std::vector<AssetReference> assets = iAssets;
 	if (assets.empty()) {
 		report(iProgress, 0.f, "Scanning assets...");
-		assets = AssetScanner::scanProject(iSettings.projectDirectory, iSettings.firstScene);
+		assets = AssetScanner::scanProject(iSettings.projectDirectory, iSettings.firstScene, nullptr,
+										   iSettings.defaultHud);
 	}
 	if (assets.empty()) {
 		OWL_CORE_ERROR("GameExporter: No asset found to pack for first scene '{}'.", iSettings.firstScene)

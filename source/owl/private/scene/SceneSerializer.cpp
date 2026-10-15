@@ -60,7 +60,8 @@ auto fixHint(const SceneLoadError iError) -> std::string_view {
 		case SceneLoadError::InvalidYaml:
 			return "fix the YAML syntax at the reported line, or restore the file from version control";
 		case SceneLoadError::NotAScene:
-			return "open the file with its own editor: a scene is an `.owl` file with a root `Scene:` key";
+			return "open the file with its own editor: a scene is an `.owl` file with a root `Scene:` key, a HUD an "
+				   "`.owlhud` file with a root `Hud:` key";
 		case SceneLoadError::InvalidEntity:
 			return "fix or remove the reported entity in the file, then reload the scene";
 		case SceneLoadError::InvalidFormatVersion:
@@ -73,7 +74,15 @@ auto fixHint(const SceneLoadError iError) -> std::string_view {
 	return "check the scene file";
 }
 
-SceneSerializer::SceneSerializer(const shared<Scene>& iScene) : mp_scene(iScene) {}
+auto documentKindOf(const std::filesystem::path& iPath) -> DocumentKind {
+	return iPath.extension() == ".owlhud" ? DocumentKind::Hud : DocumentKind::Scene;
+}
+
+SceneSerializer::SceneSerializer(const shared<Scene>& iScene)
+	: mp_scene(iScene), m_kind(iScene ? iScene->getDocumentKind() : DocumentKind::Scene) {}
+
+SceneSerializer::SceneSerializer(const shared<Scene>& iScene, const DocumentKind iKind)
+	: mp_scene(iScene), m_kind(iKind) {}
 
 namespace {
 
@@ -81,6 +90,15 @@ namespace {
 constexpr std::array<core::MigrationStep, 3> g_sceneMigrations{&bindEntityLinksByName, &centreLegacyUiText,
 															   &convertLegacyHudLayout};
 constexpr core::DocumentFormat g_sceneFormat{.name = "Scene", .migrations = g_sceneMigrations};
+
+constexpr std::array<core::MigrationStep, 0> g_hudMigrations{};
+constexpr core::DocumentFormat g_hudFormat{.name = "Hud", .migrations = g_hudMigrations};
+
+auto formatOf(const DocumentKind iKind) -> const core::DocumentFormat& {
+	return iKind == DocumentKind::Hud ? g_hudFormat : g_sceneFormat;
+}
+
+auto rootKeyOf(const DocumentKind iKind) -> std::string_view { return iKind == DocumentKind::Hud ? "Hud" : "Scene"; }
 
 auto toSceneLoadError(const core::FormatError iError) -> SceneLoadError {
 	switch (iError) {
@@ -289,18 +307,23 @@ auto serializeComponentByKey(const Entity& iEntity, const std::string_view iKey)
 
 }// namespace
 
-auto SceneSerializer::format() -> const core::DocumentFormat& { return g_sceneFormat; }
+auto SceneSerializer::format(const DocumentKind iKind) -> const core::DocumentFormat& { return formatOf(iKind); }
 
 auto SceneSerializer::serializeToString() const -> std::string {
 	const core::Serializer sOut;
 	sOut.getImpl()->emitter << YAML::BeginMap;
-	sOut.getImpl()->emitter << YAML::Key << "Scene" << YAML::Value << "untitled";
-	emitFormatVersion(sOut.getImpl()->emitter, g_sceneFormat);
+	sOut.getImpl()->emitter << YAML::Key << std::string{rootKeyOf(m_kind)} << YAML::Value << "untitled";
+	emitFormatVersion(sOut.getImpl()->emitter, formatOf(m_kind));
 	mp_scene->assignEntityLinkIds();
-	if (const auto& enabled = mp_scene->getEnabledRenderers(); !enabled.isEmpty()) {
-		sOut.getImpl()->emitter << YAML::Key << "EnabledRenderers" << YAML::Value << renderer::enabledToYaml(enabled);
+	if (m_kind == DocumentKind::Scene) {
+		if (const auto& hudPath = mp_scene->getHudPath(); hudPath)
+			sOut.getImpl()->emitter << YAML::Key << "Hud" << YAML::Value << *hudPath;
+		if (const auto& enabled = mp_scene->getEnabledRenderers(); !enabled.isEmpty()) {
+			sOut.getImpl()->emitter << YAML::Key << "EnabledRenderers" << YAML::Value
+									<< renderer::enabledToYaml(enabled);
+		}
+		serializePhysicsSettings(sOut.getImpl()->emitter, mp_scene->getPhysicsSettings());
 	}
-	serializePhysicsSettings(sOut.getImpl()->emitter, mp_scene->getPhysicsSettings());
 	sOut.getImpl()->emitter << YAML::Key << "Entities" << YAML::Value << YAML::BeginSeq;
 	for (const auto& entity: mp_scene->getAllEntities()) {
 		if (!entity)
@@ -332,7 +355,7 @@ auto SceneSerializer::deserialize(const std::filesystem::path& iFilepath) const 
 
 auto SceneSerializer::deserializeFromBuffer(const std::vector<uint8_t>& iData, const std::string& iSourceName) const
 		-> SceneLoadResult {
-	const auto parsed = parseBuffer(iData, iSourceName);
+	const auto parsed = parseBuffer(iData, iSourceName, m_kind);
 	if (!parsed.valid) {
 		OWL_CORE_ERROR("SceneSerializer: Cannot load scene '{}': {}. Fix: {}.", iSourceName, parsed.error,
 					   fixHint(parsed.failure))
@@ -341,22 +364,26 @@ auto SceneSerializer::deserializeFromBuffer(const std::vector<uint8_t>& iData, c
 	return applyParsed(parsed);
 }
 
-auto SceneSerializer::parseBuffer(const std::vector<uint8_t>& iData, const std::string& iSourceName) -> ParsedScene {
+auto SceneSerializer::parseBuffer(const std::vector<uint8_t>& iData, const std::string& iSourceName,
+								  const DocumentKind iKind) -> ParsedScene {
 	using clk = std::chrono::steady_clock;
 	const auto t0 = clk::now();
 	ParsedScene out;
 	out.sourceName = iSourceName;
+	out.kind = iKind;
+	const auto& docFormat = formatOf(iKind);
+	const std::string rootKey{rootKeyOf(iKind)};
 	try {
 		const std::string_view text{reinterpret_cast<const char*>(iData.data()), iData.size()};
 		auto document = mkShared<const core::YamlDocument>(text, iSourceName);
-		if (const auto head = document->getRoot(); !head.isMap() || !head["Scene"].isScalar()) {
+		if (const auto head = document->getRoot(); !head.isMap() || !head[rootKey].isScalar()) {
 			out.error = std::string{describe(SceneLoadError::NotAScene)};
 			out.failure = SceneLoadError::NotAScene;
 			return out;
 		}
-		if (!canReadWithoutMigration(document->getRoot(), g_sceneFormat)) {
+		if (!canReadWithoutMigration(document->getRoot(), docFormat)) {
 			std::string migrated{text};
-			if (const auto version = upgradeDocumentText(g_sceneFormat, migrated, iSourceName); !version) {
+			if (const auto version = upgradeDocumentText(docFormat, migrated, iSourceName); !version) {
 				out.error = std::string{describe(version.error())};
 				out.failure = toSceneLoadError(version.error());
 				return out;
@@ -373,7 +400,7 @@ auto SceneSerializer::parseBuffer(const std::vector<uint8_t>& iData, const std::
 			out.serializer.reset();
 			return out;
 		}
-		out.sceneName = root["Scene"].as<std::string>();
+		out.sceneName = root[rootKey].as<std::string>();
 		out.valid = true;
 	} catch (const std::exception& iEx) {
 		out.error = iEx.what();
@@ -401,6 +428,8 @@ auto SceneSerializer::applyParsed(const ParsedScene& iParsed) const -> SceneLoad
 	const auto& sData = *iParsed.serializer;
 	const auto previousRenderers = mp_scene->getEnabledRenderers();
 	const auto previousPhysics = mp_scene->getPhysicsSettings();
+	const auto previousHud = mp_scene->getHudPath();
+	const bool isHud = iParsed.kind == DocumentKind::Hud;
 	const auto& source = iParsed.sourceName.empty() ? iParsed.sceneName : iParsed.sourceName;
 	std::vector<Entity> created;
 	core::YamlNode current;
@@ -413,13 +442,20 @@ auto SceneSerializer::applyParsed(const ParsedScene& iParsed) const -> SceneLoad
 		rollback(mp_scene, created);
 		mp_scene->getEnabledRenderers() = previousRenderers;
 		mp_scene->getPhysicsSettings() = previousPhysics;
+		mp_scene->setHudPath(previousHud);
 		return unexpected{SceneLoadError::InvalidEntity};
 	};
 	try {
 		const auto& root = sData.getImpl()->node;
-		if (const auto enabled = root["EnabledRenderers"]; enabled)
-			mp_scene->getEnabledRenderers() = renderer::enabledFromYaml(enabled);
-		mp_scene->getPhysicsSettings() = deserializePhysicsSettings(root["Physics"]);
+		if (isHud) {
+			mp_scene->setHudPath(std::string{});
+		} else {
+			if (const auto hud = root["Hud"]; hud.isScalar())
+				mp_scene->setHudPath(hud.as<std::string>());
+			if (const auto enabled = root["EnabledRenderers"]; enabled)
+				mp_scene->getEnabledRenderers() = renderer::enabledFromYaml(enabled);
+			mp_scene->getPhysicsSettings() = deserializePhysicsSettings(root["Physics"]);
+		}
 		SeenUuids seen;
 		if (const auto entities = root["Entities"]; entities.isSequence()) {
 			created.reserve(entities.size());
@@ -442,6 +478,7 @@ auto SceneSerializer::applyParsed(const ParsedScene& iParsed) const -> SceneLoad
 	mp_scene->rebuildHierarchyChildren();
 	OWL_CORE_INFO("SceneSerializer::applyParsed: rebuildHierarchyChildren {:.1f} ms.",
 				  std::chrono::duration<double, std::milli>{clk::now() - hierStart}.count())
+	mp_scene->setDocumentKind(iParsed.kind);
 	OWL_CORE_INFO("SceneSerializer::applyParsed: '{}' total {:.1f} ms ({} entities).", iParsed.sceneName,
 				  std::chrono::duration<double, std::milli>{clk::now() - t0}.count(), created.size())
 	return {};

@@ -119,11 +119,7 @@ void drawWidget(const Entity& iEntity, const HudNode& iNode, const math::Transfo
 		drawSlider(iEntity.getComponent<component::UiSlider>(), iTransform, entityId);
 }
 
-}// namespace
-
-void HudPass::render(Scene& ioScene, const math::vec2ui& iViewport, const bool iEditorMode) {
-	OWL_PROFILE_FUNCTION()
-
+void drawCanvases(Scene& ioScene, const math::vec2ui& iViewport, const bool iEditorMode) {
 	auto& layout = ioScene.getHudLayout();
 	layout.compute(ioScene, iViewport, iEditorMode);
 	if (layout.getNodes().empty())
@@ -140,6 +136,16 @@ void HudPass::render(Scene& ioScene, const math::vec2ui& iViewport, const bool i
 		drawWidget(Entity{node.entity, &ioScene}, node, transform);
 	}
 	renderer::Renderer2D::endScene();
+}
+
+}// namespace
+
+void HudPass::render(Scene& ioScene, const math::vec2ui& iViewport, const bool iEditorMode) {
+	OWL_PROFILE_FUNCTION()
+
+	drawCanvases(ioScene, iViewport, iEditorMode);
+	if (const auto hud = ioScene.getHud(); hud && hud.get() != &ioScene)
+		drawCanvases(*hud, iViewport, iEditorMode);
 }
 
 }// namespace owl::scene::ui

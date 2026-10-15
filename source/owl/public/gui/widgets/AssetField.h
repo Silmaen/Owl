@@ -32,6 +32,7 @@ enum struct AssetKind : uint8_t {
 	AnyScript,///< Any source/script file (`.lua`, `.py`, `.c`, `.cpp`, `.cc`, `.cxx`, `.h`, `.hpp`).
 	Scene,///< Scene file (`.owl`).
 	Prefab,///< Prefab file (`.owlprefab`).
+	Hud,///< HUD asset (`.owlhud`).
 	Tileset,///< Tileset asset (`.owltileset`).
 	Tilemap,///< Tilemap asset (`.owltilemap`).
 	Any,///< Accepts any extension.
