@@ -84,7 +84,7 @@ constexpr size_t g_chunkBytes = 8 + TilemapChunk::cellCount * 5;
 TEST_F(TilemapStorage, RoundTripKeepsEveryCellPlane) {
 	const auto map = makeMap();
 	const auto text = map.serializeToString("terrain");
-	EXPECT_NE(text.find("FormatVersion: 2"), std::string::npos);
+	EXPECT_NE(text.find("FormatVersion: 3"), std::string::npos);
 	EXPECT_NE(text.find("payloadBytes:"), std::string::npos);
 	EXPECT_EQ(text.find("tiles:"), std::string::npos);
 	const auto parts = codec::splitFile(text);
@@ -122,7 +122,7 @@ TEST_F(TilemapStorage, PayloadIsLittleEndian) {
 	map.addLayer("one").setCell(0, 0, {.terrain = 0x0102, .overlay = 0x0304, .flags = 0x56});
 	const auto text = map.serializeToString("one");
 	const auto payload = codec::splitFile(text).payload;
-	ASSERT_EQ(payload.size(), g_headerBytes + 4 + g_chunkBytes + 4);
+	ASSERT_EQ(payload.size(), g_headerBytes + 4 + g_chunkBytes + 1 + 4);
 	EXPECT_EQ(payload.substr(0, 8), "OWLTCHNK");
 	EXPECT_EQ(std::string(payload.substr(8, 4)), (std::string{"\x20\x00\x00\x00", 4}));
 	EXPECT_EQ(u32At(payload, 12), 1u);// layers
@@ -145,7 +145,7 @@ TEST_F(TilemapStorage, PayloadIsLittleEndian) {
 	EXPECT_EQ(codec::checksum("a"), 0xE40C292Cu);// FNV-1a 32 reference value
 }
 
-TEST_F(TilemapStorage, FormatOneMigratesAndIsWrittenAsFormatTwo) {
+TEST_F(TilemapStorage, FormatOneMigratesAndIsWrittenAsFormatThree) {
 	const std::string legacy = R"(Tilemap: legacy
 FormatVersion: 1
 tilesetPath: tilesets/walls.owltileset
@@ -166,7 +166,7 @@ layers:
 	EXPECT_EQ(asset.getTile(0, 0, 1), 7);
 	EXPECT_EQ(asset.layers[1].getAllocatedChunkCount(), 0u);
 	const auto rewritten = asset.serializeToString("legacy");
-	EXPECT_NE(rewritten.find("FormatVersion: 2"), std::string::npos);
+	EXPECT_NE(rewritten.find("FormatVersion: 3"), std::string::npos);
 	EXPECT_EQ(rewritten.find("tiles:"), std::string::npos);
 	EXPECT_EQ(rewritten.find("terrain:"), std::string::npos);
 	TilemapAsset reloaded;
@@ -340,7 +340,7 @@ TEST_F(TilemapStorage, ShrinkingClearsTheCellsLeftOutside) {
 	EXPECT_EQ(before.getTile(20, 5), 2);
 }
 
-TEST_F(TilemapStorage, SampleTilemapsAreFormatTwo) {
+TEST_F(TilemapStorage, SampleTilemapsAreFormatThree) {
 	const auto root = owl::test::getRootPath();
 	const std::array files{
 			root / "sample_project" / "tilemaps" / "world_map.owltilemap",
@@ -357,7 +357,7 @@ TEST_F(TilemapStorage, SampleTilemapsAreFormatTwo) {
 		std::stringstream buffer;
 		buffer << in.rdbuf();
 		const auto text = buffer.str();
-		EXPECT_NE(text.find("FormatVersion: 2"), std::string::npos) << file;
+		EXPECT_NE(text.find("FormatVersion: 3"), std::string::npos) << file;
 		TilemapAsset asset;
 		ASSERT_TRUE(asset.deserializeFromString(text)) << file;
 		EXPECT_GT(asset.layers.at(0).getOccupiedCount(), 0u) << file;

@@ -68,11 +68,14 @@ struct TilemapFileParts {
  *
  * Little-endian whatever the host: the magic, `u32` chunk side, `u32` layer count, then per layer a `u32` chunk
  * count and per chunk `u32` x, `u32` y, the `u16` terrain ids, the `u16` overlay ids and the `u8` flags of its
- * cells; a final `u32` FNV-1a checksum of every byte before it.
+ * cells; then a `u8` height flag followed, when 1, by the `u8` corner heights; a final `u32` FNV-1a checksum of every
+ * byte before it.
  * @param[in] iLayers The layers.
+ * @param[in] iHeights The corner heights, empty for a flat map.
  * @return The payload bytes.
  */
-[[nodiscard]] OWL_API auto encodePayload(std::span<const component::TilemapLayer> iLayers) -> std::string;
+[[nodiscard]] OWL_API auto encodePayload(std::span<const component::TilemapLayer> iLayers,
+										 std::span<const uint8_t> iHeights) -> std::string;
 
 /**
  * @brief
@@ -83,9 +86,13 @@ struct TilemapFileParts {
  * valid.
  * @param[in] iPayload The payload bytes.
  * @param[in,out] ioLayers The layers, in file order.
+ * @param[out] oHeights The corner heights, left empty when the payload holds none.
+ * @param[in] iHeightCount Number of corners of the grid, `(width + 1) * (height + 1)`.
+ * @param[in] iWithHeights Whether the payload has the height section (format 3 and later).
  * @return True when the payload was valid and applied.
  */
-[[nodiscard]] OWL_API auto decodePayload(std::string_view iPayload, std::span<component::TilemapLayer> ioLayers)
+[[nodiscard]] OWL_API auto decodePayload(std::string_view iPayload, std::span<component::TilemapLayer> ioLayers,
+										 std::vector<uint8_t>& oHeights, size_t iHeightCount, bool iWithHeights)
 		-> bool;
 
 /**

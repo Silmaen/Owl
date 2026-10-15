@@ -117,3 +117,35 @@ TEST_F(TilemapCommandsTest, LayoutCommandSharesTheCells) {
 	EXPECT_EQ(m_asset.getTile(0, 200, 200), g_EmptyTileIndex);
 	EXPECT_EQ(m_tilemapUndo.undoDescription(), "Resize grid");
 }
+
+TEST_F(TilemapCommandsTest, TerraformingGestureIsOneUndoStep) {
+	const scene::TilemapAsset saved = m_asset;
+	TerrainStroke stroke;
+	EXPECT_TRUE(stroke.isEmpty());
+	stroke.add(m_asset.raiseCorner(10, 10));
+	stroke.add(m_asset.raiseCorner(11, 10));
+	stroke.add(m_asset.raiseCorner(10, 10));
+	EXPECT_FALSE(stroke.isEmpty());
+	auto command = stroke.finish("Terraform");
+	ASSERT_NE(command, nullptr);
+	EXPECT_EQ(command->description(), "Terraform");
+	EXPECT_TRUE(stroke.isEmpty());
+	EXPECT_EQ(m_asset.getCornerHeight(10, 10), 2);
+	EXPECT_EQ(m_asset.getCornerHeight(11, 10), 1);
+	m_tilemapUndo.push(std::move(command));
+	m_tilemapUndo.undo(m_asset);
+	EXPECT_FALSE(m_asset.hasHeights());
+	EXPECT_TRUE(m_asset.hasSameContent(saved));
+	m_tilemapUndo.redo(m_asset);
+	EXPECT_EQ(m_asset.getCornerHeight(10, 10), 2);
+	EXPECT_EQ(m_asset.getCornerHeight(9, 10), 1);
+}
+
+TEST_F(TilemapCommandsTest, TerraformingThatChangesNothingMakesNoCommand) {
+	TerrainStroke stroke;
+	stroke.add(m_asset.lowerCorner(3, 3));
+	EXPECT_EQ(stroke.finish("Terraform"), nullptr);
+	stroke.add(m_asset.raiseCorner(3, 3));
+	stroke.add(m_asset.lowerCorner(3, 3));
+	EXPECT_EQ(stroke.finish("Terraform"), nullptr);
+}

@@ -165,6 +165,23 @@ auto readLayers(Reader& ioReader, const std::span<TilemapLayer> iLayers, std::ve
 	return true;
 }
 
+auto readHeights(Reader& ioReader, const size_t iHeightCount, std::vector<uint8_t>& oHeights) -> bool {
+	const auto flag = ioReader.take(1);
+	if (!flag || (*flag)[0] > '\1') {
+		OWL_CORE_ERROR("TilemapAsset: Payload has no valid height section.")
+		return false;
+	}
+	if ((*flag)[0] == '\0')
+		return true;
+	const auto bytes = ioReader.take(iHeightCount);
+	if (!bytes) {
+		OWL_CORE_ERROR("TilemapAsset: Payload truncated in the {} corner heights.", iHeightCount)
+		return false;
+	}
+	oHeights.assign(bytes->begin(), bytes->end());
+	return true;
+}
+
 }// namespace
 
 auto splitFile(const std::string_view iText) -> TilemapFileParts {
@@ -209,11 +226,12 @@ auto decodeTileText(const std::string_view iEncoded, const size_t iExpected) -> 
 	return out;
 }
 
-auto encodePayload(const std::span<const TilemapLayer> iLayers) -> std::string {
+auto encodePayload(const std::span<const TilemapLayer> iLayers, const std::span<const uint8_t> iHeights)
+		-> std::string {
 	size_t chunkTotal = 0;
 	for (const auto& layer: iLayers) chunkTotal += layer.getAllocatedChunkCount();
 	std::string out;
-	out.reserve(g_PayloadMagic.size() + 12 + iLayers.size() * 4 + chunkTotal * g_chunkBytes);
+	out.reserve(g_PayloadMagic.size() + 17 + iLayers.size() * 4 + chunkTotal * g_chunkBytes + iHeights.size());
 	out.append(g_PayloadMagic);
 	putU32(out, TilemapChunk::side);
 	putU32(out, static_cast<uint32_t>(iLayers.size()));
@@ -236,11 +254,14 @@ auto encodePayload(const std::span<const TilemapLayer> iLayers) -> std::string {
 			for (const uint8_t flag: chunk->flags) out.push_back(static_cast<char>(flag));
 		}
 	}
+	out.push_back(iHeights.empty() ? '\0' : '\1');
+	for (const uint8_t height: iHeights) out.push_back(static_cast<char>(height));
 	putU32(out, checksum(out));
 	return out;
 }
 
-auto decodePayload(const std::string_view iPayload, const std::span<TilemapLayer> ioLayers) -> bool {
+auto decodePayload(const std::string_view iPayload, const std::span<TilemapLayer> ioLayers,
+				   std::vector<uint8_t>& oHeights, const size_t iHeightCount, const bool iWithHeights) -> bool {
 	if (iPayload.size() < sizeof(uint32_t)) {
 		OWL_CORE_ERROR("TilemapAsset: Binary payload truncated ({} bytes).", iPayload.size())
 		return false;
@@ -257,11 +278,15 @@ auto decodePayload(const std::string_view iPayload, const std::span<TilemapLayer
 	std::vector<DecodedChunk> chunks;
 	if (!readLayers(reader, ioLayers, chunks))
 		return false;
+	std::vector<uint8_t> heights;
+	if (iWithHeights && !readHeights(reader, iHeightCount, heights))
+		return false;
 	if (reader.remaining() != 0) {
 		OWL_CORE_ERROR("TilemapAsset: Binary payload has {} unexpected trailing bytes.", reader.remaining())
 		return false;
 	}
 	for (const auto& [layer, coords, content]: chunks) std::ignore = ioLayers[layer].setChunk(coords, content);
+	oHeights = std::move(heights);
 	return true;
 }
 

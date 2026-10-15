@@ -343,11 +343,11 @@ follows the painted area and not the grid: an empty 4096² layer costs its chunk
 chunks until one of them writes (copy on write); `getChunkRef` hands out a shared, read-only `TilemapChunkRef` that
 later writes never change, and `setChunkRef` puts one back. Owl Nest's undo is built on it.
 
-A `.owltilemap` file (format 2) is a YAML header, the YAML end-of-document line `...`, then a binary payload:
+A `.owltilemap` file (format 3) is a YAML header, the YAML end-of-document line `...`, then a binary payload:
 
 ```yaml
 Tilemap: world_map
-FormatVersion: 2
+FormatVersion: 3
 tilesetPath: tilesets/world_platform.owltileset
 width: 48
 height: 24
@@ -371,6 +371,7 @@ The payload holds only the non-empty chunks, **little-endian whatever the host**
 | per layer: count | `u32`                        | its stored chunks                                           |
 | per chunk: x, y  | `u32`, `u32`                 | chunk coordinates, inside the layer's chunk grid            |
 | per chunk: cells | 1 024 × (`u16`, `u16`, `u8`) | terrain ids, then overlay ids (`0xFFFF` = none), then flags |
+| corner heights   | `u8`, then `u8` × (w + 1)(h + 1) | `0` for a flat map, else `1` and the corner heights, row by row |
 | checksum         | `u32`                        | FNV-1a 32 of every payload byte before it                   |
 
 A file whose payload is missing, shorter or longer than `payloadBytes`, has a wrong magic, chunk side or layer count,
@@ -378,6 +379,18 @@ a chunk outside its layer or given twice, or a checksum mismatch is refused with
 content. Format 1 files (pure YAML, one comma-separated `tiles` string per layer) load through the 1 → 2 migration
 and are written back as format 2; the `inline:` tilemaps of scenes keep that text form (terrain only). A full 1024²
 layer loads in about 9 ms (bench `tilemap/load/1024x1024`).
+
+Format 3 adds the **corner heights** of the isometric terrain, `(width + 1) × (height + 1)` bytes after the layers (one
+flag byte when the map is flat). Format 2 files load flat through the 2 → 3 migration (the header does not change) and
+are written back as format 3. In memory the grid is private to `TilemapAsset`, empty while flat: `getCornerHeight`,
+`getCellCorners`, `getCellSlope` and `getCellBaseHeight` read it, `setCornerHeight`, `raiseCorner`, `lowerCorner`,
+`raiseArea`, `lowerArea` and `levelArea` edit it and return the `CornerHeightChange` list (undo / redo with
+`applyCornerChanges`), `setCornerHeights` replaces it. The invariant is that corners next to each other differ by at
+most one step, which gives every cell one of the 19 slopes of `scene/TilemapTerrain.h`; the edits pull the neighbours
+along, a loaded grid that breaks it is repaired with a warning, and `resize` copies the border corners into the new
+ones. Bit 0 of a cell's flags (`foundationFlag`) asks the isometric renderer for the foundation of the terrain
+tile. `.owltileset` files of `kind: Isometric` may hold a `slopes` list (`id`, `tiles` and optional `foundations`, 19
+tile indices each, `-1` for none) read by `Tileset::resolveTile`. See [Isometric renderer](design/isometric.md).
 
 #### BackgroundTexture
 

@@ -71,6 +71,13 @@ void runTilemapBenches(Runner& ioRunner);
 
 /**
  * @brief
+ *  Isometric terrain: slope-aware picking against its 20 microsecond budget.
+ * @param[in,out] ioRunner The bench runner.
+ */
+void runIsometricBenches(Runner& ioRunner);
+
+/**
+ * @brief
  *  Whole-frame CPU benchmarks (editor update, runtime tick) on the Null backend.
  * @param[in,out] ioRunner The runner.
  */

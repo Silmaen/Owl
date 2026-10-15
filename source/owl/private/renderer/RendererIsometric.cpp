@@ -15,6 +15,7 @@
 #include "renderer/gpu/StorageBuffer.h"
 #include "renderer/gpu/UniformBuffer.h"
 #include "scene/TilemapAsset.h"
+#include "scene/TilemapTerrain.h"
 #include "scene/Tileset.h"
 #include "scene/component/Tilemap.h"
 
@@ -483,6 +484,9 @@ void RendererIsometric::drawTilemap(const scene::TilemapAsset& iAsset, const mat
 	item.gpu.size = math::vec4{spriteSize.x(), spriteSize.y(), state.flatSlope, 0.f};
 	item.gpu.color = math::vec4{1.f, 1.f, 1.f, 1.f};
 	item.gpu.entityId = iEntityId;
+	const float terrainRaise =
+			static_cast<float>(iAsset.getMaxCornerHeight()) * scene::terrain::heightStep * camera.getConfig().zStep;
+	constexpr float overlayBias = tilemapLayerBias * 0.5f;
 	float bias = 0.f;
 	for (const auto& layer: iAsset.layers) {
 		const float layerBias = bias;
@@ -499,20 +503,36 @@ void RendererIsometric::drawTilemap(const scene::TilemapAsset& iAsset, const mat
 				const math::vec2ui first{cx * TilemapLayer::chunkSize, cy * TilemapLayer::chunkSize};
 				const math::vec2ui last{std::min(size.x(), first.x() + TilemapLayer::chunkSize),
 										std::min(size.y(), first.y() + TilemapLayer::chunkSize)};
-				if (isChunkOutside(camera, origin, first, last, spriteSize.y())) {
+				if (isChunkOutside(camera, origin, first, last, spriteSize.y() + terrainRaise)) {
 					++state.stats.culledChunkCount;
 					continue;
 				}
 				for (uint32_t y = first.y(); y < last.y(); ++y) {
 					const uint32_t row = (y - first.y()) * TilemapLayer::chunkSize;
 					for (uint32_t x = first.x(); x < last.x(); ++x) {
-						const uint16_t id = chunk->terrain[row + x - first.x()];
-						if (id == TilemapChunk::emptyId)
+						const size_t cell = row + x - first.x();
+						const uint16_t id = chunk->terrain[cell];
+						const uint16_t overlayId = chunk->overlay[cell];
+						if (id == TilemapChunk::emptyId && overlayId == TilemapChunk::emptyId)
 							continue;
-						item.gpu.foot = math::vec4{origin.x() + static_cast<float>(x + 1),
-												   origin.y() + static_cast<float>(y + 1), origin.z(), layerBias};
-						item.gpu.uv = tileset.getTileUv(id);
-						state.opaque.push_back(item);
+						const uint8_t slope = iAsset.getCellSlope(x, y);
+						const float baseZ = origin.z() + static_cast<float>(iAsset.getCellBaseHeight(x, y)) *
+																 scene::terrain::heightStep;
+						const float footX = origin.x() + static_cast<float>(x + 1);
+						const float footY = origin.y() + static_cast<float>(y + 1);
+						if (id != TilemapChunk::emptyId) {
+							const bool foundation = (chunk->flags[cell] & scene::terrain::foundationFlag) != 0;
+							item.gpu.foot = math::vec4{footX, footY, baseZ, layerBias};
+							item.gpu.uv = tileset.getTileUv(
+									static_cast<uint32_t>(tileset.resolveTile(id, slope, foundation)));
+							state.opaque.push_back(item);
+						}
+						if (overlayId != TilemapChunk::emptyId) {
+							item.gpu.foot = math::vec4{footX, footY, baseZ, layerBias + overlayBias};
+							item.gpu.uv =
+									tileset.getTileUv(static_cast<uint32_t>(tileset.resolveTile(overlayId, slope)));
+							state.opaque.push_back(item);
+						}
 					}
 				}
 			}

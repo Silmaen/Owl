@@ -12,15 +12,60 @@
 #include "platform/AtomicFile.h"
 #include "scene/Tileset.h"
 
+#include <algorithm>
+#include <array>
 #include <cstdint>
 #include <fstream>
 #include <sstream>
+#include <vector>
 
 namespace owl::scene {
 
 namespace {
 constexpr std::array<core::MigrationStep, 0> g_tilesetMigrations{};
 constexpr core::DocumentFormat g_tilesetFormat{.name = "Tileset", .migrations = g_tilesetMigrations};
+
+void emitSlopeRow(YAML::Emitter& ioEmitter, const char* iKey, const std::array<int32_t, terrain::slopeCount>& iRow) {
+	ioEmitter << YAML::Key << iKey << YAML::Value << YAML::Flow << YAML::BeginSeq;
+	for (const int32_t tile: iRow) ioEmitter << tile;
+	ioEmitter << YAML::EndSeq;
+}
+
+void emitSlopeSets(YAML::Emitter& ioEmitter, const std::vector<SlopeSet>& iSets) {
+	if (iSets.empty())
+		return;
+	ioEmitter << YAML::Key << "slopes" << YAML::Value << YAML::BeginSeq;
+	for (const auto& set: iSets) {
+		ioEmitter << YAML::BeginMap << YAML::Key << "id" << YAML::Value << set.id;
+		emitSlopeRow(ioEmitter, "tiles", set.tiles);
+		if (std::ranges::any_of(set.foundations, [](const int32_t iTile) -> bool { return iTile >= 0; }))
+			emitSlopeRow(ioEmitter, "foundations", set.foundations);
+		ioEmitter << YAML::EndMap;
+	}
+	ioEmitter << YAML::EndSeq;
+}
+
+void readSlopeRow(const YAML::Node& iNode, std::array<int32_t, terrain::slopeCount>& oRow) {
+	if (!iNode || !iNode.IsSequence())
+		return;
+	for (size_t i = 0; i < std::min<size_t>(iNode.size(), terrain::slopeCount); ++i)
+		oRow[i] = std::max(-1, iNode[i].as<int32_t>());
+}
+
+void readSlopeSets(const YAML::Node& iNode, std::vector<SlopeSet>& oSets) {
+	if (!iNode || !iNode.IsSequence())
+		return;
+	for (const auto& entry: iNode) {
+		if (!entry.IsMap() || !entry["id"])
+			continue;
+		SlopeSet set;
+		set.id = entry["id"].as<int32_t>();
+		readSlopeRow(entry["tiles"], set.tiles);
+		readSlopeRow(entry["foundations"], set.foundations);
+		oSets.push_back(set);
+	}
+}
+
 }// namespace
 
 auto Tileset::format() -> const core::DocumentFormat& { return g_tilesetFormat; }
@@ -114,6 +159,24 @@ auto Tileset::getTileMeta(const uint32_t iIndex) const -> const TileMeta& {
 
 auto Tileset::isCollidable(const uint32_t iIndex) const -> bool { return getTileMeta(iIndex).collidable; }
 
+auto Tileset::findSlopeSet(const int32_t iId) const -> const SlopeSet* {
+	const auto found = std::ranges::find(slopeSets, iId, &SlopeSet::id);
+	return found == slopeSets.end() ? nullptr : &*found;
+}
+
+auto Tileset::resolveTile(const int32_t iId, const uint8_t iSlope, const bool iFoundation) const -> int32_t {
+	const auto* set = findSlopeSet(iId);
+	if (set == nullptr || iSlope >= terrain::slopeCount)
+		return iId;
+	if (iFoundation && set->foundations[iSlope] >= 0)
+		return set->foundations[iSlope];
+	if (set->tiles[iSlope] >= 0)
+		return set->tiles[iSlope];
+	if (set->tiles[terrain::flatSlope] >= 0)
+		return set->tiles[terrain::flatSlope];
+	return iId;
+}
+
 auto Tileset::serializeToString(const std::string_view iName) const -> std::string {
 	YAML::Emitter emitter;
 	emitter << YAML::BeginMap;
@@ -129,6 +192,7 @@ auto Tileset::serializeToString(const std::string_view iName) const -> std::stri
 		emitter << YAML::Key << "filterMode" << YAML::Value << "Nearest";
 	if (kind == Kind::Isometric)
 		emitter << YAML::Key << "kind" << YAML::Value << "Isometric";
+	emitSlopeSets(emitter, slopeSets);
 
 	// Sparse: emit only the entries that differ from the default.
 	const uint32_t total = tileCount();
@@ -220,6 +284,7 @@ auto Tileset::deserializeFromString(const std::string_view iYaml) -> bool {
 			parsed.tiles[idx] = std::move(meta);
 		}
 	}
+	readSlopeSets(root["slopes"], parsed.slopeSets);
 	*this = std::move(parsed);
 	return true;
 }

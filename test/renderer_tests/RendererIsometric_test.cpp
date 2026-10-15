@@ -14,6 +14,7 @@
 #include <renderer/RendererIsometric.h>
 #include <renderer/RendererIsometricLayer.h>
 #include <scene/TilemapAsset.h>
+#include <scene/TilemapTerrain.h>
 #include <scene/Tileset.h>
 #include <scene/component/Tilemap.h>
 
@@ -22,6 +23,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <numbers>
+#include <tuple>
 #include <vector>
 
 using namespace owl;
@@ -282,6 +284,28 @@ TEST(RendererIsometric, drawCountsOpaqueAndTranslucentBillboards) {
 	EXPECT_EQ(stats.opaqueCount, 1u + 64u + 1u);
 	EXPECT_EQ(stats.translucentCount, 1u);
 	EXPECT_EQ(stats.drawCallCount, 2u);
+	teardownRendererStack();
+}
+
+TEST(RendererIsometric, tilemapDrawsOverlaysAndFoundationsOnSlopes) {
+	bootRendererStack();
+	const IsometricCamera camera = makeCamera();
+	auto map = makeIsometricMap();
+	std::ignore = map.setCornerHeight(3, 3, 2);
+	scene::SlopeSet grass;
+	grass.id = 0;
+	grass.foundations.fill(1);
+	map.tileset->slopeSets.push_back(grass);
+	map.layers[1].setCell(2, 2, {.terrain = scene::component::g_EmptyTileIndex, .overlay = 2, .flags = 0});
+	map.layers[1].setCell(5, 5, {.terrain = scene::component::g_EmptyTileIndex, .overlay = 2, .flags = 0});
+	map.layers[0].setCell(
+			3, 3,
+			{.terrain = 0, .overlay = scene::component::g_EmptyTileIndex, .flags = scene::terrain::foundationFlag});
+	RendererIsometric::resetStats();
+	RendererIsometric::beginScene(camera);
+	RendererIsometric::drawTilemap(map, math::Transform{}, 3);
+	RendererIsometric::endScene();
+	EXPECT_EQ(RendererIsometric::getStatistics().opaqueCount, 64u + 1u + 2u) << "terrain, a road tile and two overlays";
 	teardownRendererStack();
 }
 

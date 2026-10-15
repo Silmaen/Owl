@@ -9,11 +9,14 @@
 #pragma once
 
 #include "core/FormatVersion.h"
+#include "math/vectors.h"
 #include "scene/component/Tilemap.h"
 
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
+#include <span>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -21,6 +24,24 @@
 namespace owl::scene {
 
 class Tileset;
+
+/// One corner whose height a terraforming operation changed.
+struct OWL_API CornerHeightChange {
+	/// Index in the corner grid (`y * (width + 1) + x`).
+	uint32_t index = 0;
+	/// Height before the operation.
+	uint8_t before = 0;
+	/// Height after the operation.
+	uint8_t after = 0;
+
+	/**
+	 * @brief
+	 *  Comparison operator.
+	 * @param[in] iOther The other change.
+	 * @return True when both changes are the same.
+	 */
+	auto operator==(const CornerHeightChange& iOther) const -> bool = default;
+};
 
 /**
  * @brief
@@ -31,11 +52,12 @@ class Tileset;
  * can be referenced by multiple scenes and edited in a dedicated tilemap
  * editor instead of being inlined into a single `.owl` scene.
  *
- * The on-disk format (version 2) is a YAML header, the YAML end-of-document line `...`, then a binary payload
- * holding the non-empty chunks of every layer (little-endian, checksummed, see `doc/pages/scene.md`):
+ * The on-disk format (version 3) is a YAML header, the YAML end-of-document line `...`, then a binary payload
+ * holding the non-empty chunks of every layer and the corner heights of the isometric terrain (little-endian,
+ * checksummed, see `doc/pages/scene.md`):
  * ```yaml
  * Tilemap: <name>
- * FormatVersion: 2
+ * FormatVersion: 3
  * tilesetPath: assets/tilesets/dungeon.owltileset
  * width: 32
  * height: 16
@@ -50,8 +72,12 @@ class Tileset;
  * <binary payload>
  * ```.
  *
- * Version 1 files (pure YAML, one comma-separated `tiles` string per layer) load through the migration chain and
- * are written back as version 2.
+ * Version 1 files (pure YAML, one comma-separated `tiles` string per layer) and version 2 files (no heights) load
+ * through the migration chain and are written back as version 3.
+ *
+ * The isometric terrain is a `(width + 1) x (height + 1)` grid of corner heights (steps of
+ * `terrain::heightStep`), empty while the map is flat. Corners next to each other never differ by more than one
+ * step, so every cell has one of the 19 slopes of `scene/TilemapTerrain.h`; the terraforming calls keep that true.
  *
  * The `TilemapLayer` value type is reused from
  * `scene::component::Tilemap` — both the inline-on-component path
@@ -165,6 +191,141 @@ public:
 	 */
 	void setTile(uint32_t iLayer, uint32_t iX, uint32_t iY, int32_t iValue);
 
+	/// Highest corner height.
+	static constexpr uint8_t maxCornerHeight = 255;
+
+	/**
+	 * @brief
+	 *  Whether the terrain has any corner above zero (the corner grid is allocated).
+	 * @return False for a flat map.
+	 */
+	[[nodiscard]] auto hasHeights() const -> bool { return !m_cornerHeights.empty(); }
+
+	/**
+	 * @brief
+	 *  The corner heights, row by row.
+	 * @return The `(width + 1) * (height + 1)` heights, or an empty span for a flat map.
+	 */
+	[[nodiscard]] auto getCornerHeights() const -> std::span<const uint8_t> { return m_cornerHeights; }
+
+	/**
+	 * @brief
+	 *  Highest corner height of the map.
+	 * @return The height in steps (0 for a flat map).
+	 */
+	[[nodiscard]] auto getMaxCornerHeight() const -> uint8_t { return m_maxCornerHeight; }
+
+	/**
+	 * @brief
+	 *  Height of one corner.
+	 * @param[in] iX Corner x, `[0, width]`.
+	 * @param[in] iY Corner y, `[0, height]`.
+	 * @return The height in steps (0 outside the grid).
+	 */
+	[[nodiscard]] auto getCornerHeight(uint32_t iX, uint32_t iY) const -> uint8_t;
+
+	/**
+	 * @brief
+	 *  Heights of the four corners of a cell.
+	 * @param[in] iX Cell x.
+	 * @param[in] iY Cell y.
+	 * @return The heights, back, right, front, left (all 0 outside the grid).
+	 */
+	[[nodiscard]] auto getCellCorners(uint32_t iX, uint32_t iY) const -> std::array<uint8_t, 4>;
+
+	/**
+	 * @brief
+	 *  Slope of a cell, derived from its corners.
+	 * @param[in] iX Cell x.
+	 * @param[in] iY Cell y.
+	 * @return The slope, `[0, terrain::slopeCount)`; flat outside the grid.
+	 */
+	[[nodiscard]] auto getCellSlope(uint32_t iX, uint32_t iY) const -> uint8_t;
+
+	/**
+	 * @brief
+	 *  Height of the lowest corner of a cell.
+	 * @param[in] iX Cell x.
+	 * @param[in] iY Cell y.
+	 * @return The height in steps.
+	 */
+	[[nodiscard]] auto getCellBaseHeight(uint32_t iX, uint32_t iY) const -> uint8_t;
+
+	/**
+	 * @brief
+	 *  Set the height of one corner, bringing the neighbours back within one step of it.
+	 * @param[in] iX Corner x, `[0, width]`.
+	 * @param[in] iY Corner y, `[0, height]`.
+	 * @param[in] iHeight New height in steps.
+	 * @return The corners that changed (empty when nothing moved or the corner is outside the grid).
+	 */
+	auto setCornerHeight(uint32_t iX, uint32_t iY, uint8_t iHeight) -> std::vector<CornerHeightChange>;
+
+	/**
+	 * @brief
+	 *  Raise one corner by one step.
+	 * @param[in] iX Corner x.
+	 * @param[in] iY Corner y.
+	 * @return The corners that changed.
+	 */
+	auto raiseCorner(uint32_t iX, uint32_t iY) -> std::vector<CornerHeightChange>;
+
+	/**
+	 * @brief
+	 *  Lower one corner by one step.
+	 * @param[in] iX Corner x.
+	 * @param[in] iY Corner y.
+	 * @return The corners that changed.
+	 */
+	auto lowerCorner(uint32_t iX, uint32_t iY) -> std::vector<CornerHeightChange>;
+
+	/**
+	 * @brief
+	 *  Raise every corner of an area by one step.
+	 * @param[in] iFirst First corner (clamped to the grid).
+	 * @param[in] iLast Last corner, inclusive.
+	 * @return The corners that changed.
+	 */
+	auto raiseArea(const math::vec2ui& iFirst, const math::vec2ui& iLast) -> std::vector<CornerHeightChange>;
+
+	/**
+	 * @brief
+	 *  Lower every corner of an area by one step.
+	 * @param[in] iFirst First corner (clamped to the grid).
+	 * @param[in] iLast Last corner, inclusive.
+	 * @return The corners that changed.
+	 */
+	auto lowerArea(const math::vec2ui& iFirst, const math::vec2ui& iLast) -> std::vector<CornerHeightChange>;
+
+	/**
+	 * @brief
+	 *  Bring every corner of an area to the same height.
+	 * @param[in] iFirst First corner (clamped to the grid).
+	 * @param[in] iLast Last corner, inclusive.
+	 * @param[in] iHeight The height in steps.
+	 * @return The corners that changed.
+	 */
+	auto levelArea(const math::vec2ui& iFirst, const math::vec2ui& iLast, uint8_t iHeight)
+			-> std::vector<CornerHeightChange>;
+
+	/**
+	 * @brief
+	 *  Play corner changes back, or undo them.
+	 * @param[in] iChanges The changes of a terraforming call.
+	 * @param[in] iUndo True to put the `before` heights back, false to apply the `after` ones.
+	 */
+	void applyCornerChanges(std::span<const CornerHeightChange> iChanges, bool iUndo);
+
+	/**
+	 * @brief
+	 *  Replace the whole corner grid.
+	 *
+	 * Corners that break the one-step rule are raised until it holds again.
+	 * @param[in] iHeights `(width + 1) * (height + 1)` heights, or empty for a flat map.
+	 * @return False (and nothing changed) when the size does not match the grid.
+	 */
+	auto setCornerHeights(std::vector<uint8_t> iHeights) -> bool;
+
 	/**
 	 * @brief
 	 *  Memory used by the cells of every layer.
@@ -196,6 +357,7 @@ public:
 	 */
 	[[nodiscard]] auto deserializeFromString(std::string_view iText) -> bool;
 
+
 	/**
 	 * @brief
 	 *  Save the tilemap asset to disk. Atomic: a failed write keeps the previous file.
@@ -212,6 +374,48 @@ public:
 	 * @return True on success.
 	 */
 	[[nodiscard]] auto loadFromFile(const std::filesystem::path& iPath) -> bool;
+
+private:
+	/**
+	 * @brief
+	 *  Index of a corner in the height grid.
+	 * @param[in] iX Corner x.
+	 * @param[in] iY Corner y.
+	 * @return The position in `m_cornerHeights`.
+	 */
+	[[nodiscard]] auto getCornerIndex(uint32_t iX, uint32_t iY) const -> size_t {
+		return static_cast<size_t>(iY) * (width + 1) + iX;
+	}
+
+	/**
+	 * @brief
+	 *  Move a corner and its neighbours, recording the changes.
+	 */
+	void flattenAround(uint32_t iX, uint32_t iY, uint8_t iHeight, std::vector<CornerHeightChange>& ioChanges);
+
+	/**
+	 * @brief
+	 *  Raise (+1), lower (-1) or level (0, to `iLevel`) every corner of an area.
+	 */
+	auto terraformArea(const math::vec2ui& iFirst, const math::vec2ui& iLast, int iDelta, uint8_t iLevel)
+			-> std::vector<CornerHeightChange>;
+
+	/**
+	 * @brief
+	 *  Recompute the highest corner and drop the grid when it is all zero.
+	 */
+	void refreshHeightSummary();
+
+	/**
+	 * @brief
+	 *  Raise corners until neighbours differ by at most one step.
+	 */
+	void repairHeights();
+
+	/// Corner heights, row by row, empty for a flat map.
+	std::vector<uint8_t> m_cornerHeights;
+	/// Highest value of `m_cornerHeights`.
+	uint8_t m_maxCornerHeight = 0;
 };
 
 }// namespace owl::scene

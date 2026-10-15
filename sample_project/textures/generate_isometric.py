@@ -1,19 +1,21 @@
 #!/usr/bin/env python3
-"""Generate the small isometric test set of the sample project (ISO1).
+"""Generate the small isometric test set of the sample project (ISO1, ISO2).
 
-Produces, next to this script and in ``../tilemaps``:
+Produces, next to this script, in ``../tilemaps`` and in ``../tilesets``:
 
-* ``iso_tiles.png``     — 4x2 atlas of 64x32 diamond terrain tiles (grass, sand,
-  water, road, dirt, pavement, dark grass, flowers).
+* ``iso_tiles.png``     — 8x17 atlas of 64x48 tiles: the 8 flat diamond terrain tiles (grass, sand,
+  water, road, dirt, pavement, dark grass, flowers) bottom-aligned, then the 18 sloped variants of the
+  grass, sand, dirt, dark grass, flowers and road tiles, then the 18 grass foundations.
+* ``iso_ground.owltileset`` — the slope table (terrain id and slope to tile) of that atlas.
 * ``iso_tree.png``      — 64x96 upright tree, its foot at the bottom centre.
 * ``iso_house.png``     — 64x80 one-tile house, its front corner at the bottom
   centre.
 * ``iso_smoke.png``     — 48x48 soft smoke puff, drawn translucent.
-* ``iso_test.owltilemap`` — 8x8 map (ground and road layers) in the chunked
-  tilemap format 2.
+* ``iso_test.owltilemap`` — 8x8 map (ground and road layers) with corner heights, in the chunked
+  tilemap format 3.
 
-The full procedural generator (slopes, foundations, normal and depth atlases)
-comes with ISO3 under ``tools/``. Deterministic; run with ``poetry run python``.
+The full procedural generator (normal and depth atlases, a bigger tile set) comes with ISO3 under
+``tools/``. Deterministic; run with ``poetry run python``.
 """
 
 from __future__ import annotations
@@ -27,7 +29,7 @@ from PIL import Image, ImageDraw
 OUT = Path(__file__).parent
 TILEMAPS = OUT.parent / "tilemaps"
 TILE_W = 64
-TILE_H = 32
+TILE_H = 48
 CHUNK = 32
 EMPTY = 0xFFFF
 
@@ -43,36 +45,143 @@ TERRAIN = [
 ]
 
 
-def _inside(x: int, y: int) -> bool:
-    """Whether pixel (x, y) of a 64x32 tile lies in its diamond."""
-    return abs(x + 0.5 - TILE_W / 2) / (TILE_W / 2) + abs(y + 0.5 - TILE_H / 2) / (TILE_H / 2) <= 1.0
+COLUMNS = 8
+ROWS = 17
+STEP_PX = 8
+# Corner heights of the 19 slopes relative to the lowest corner (back, right, front, left): flat, 4 corners up,
+# 4 corners down, 4 edges up, 2 saddles, 4 steep. Same order as ``scene::terrain`` in the engine.
+SLOPES = [
+    (0, 0, 0, 0),
+    (1, 0, 0, 0), (0, 1, 0, 0), (0, 0, 1, 0), (0, 0, 0, 1),
+    (0, 1, 1, 1), (1, 0, 1, 1), (1, 1, 0, 1), (1, 1, 1, 0),
+    (1, 1, 0, 0), (0, 1, 1, 0), (0, 0, 1, 1), (1, 0, 0, 1),
+    (1, 0, 1, 0), (0, 1, 0, 1),
+    (2, 1, 0, 1), (1, 2, 1, 0), (0, 1, 2, 1), (1, 0, 1, 2),
+]
+SLOPED_TERRAINS = [0, 1, 4, 6, 7, 3]  # grass, sand, dirt, dark grass, flowers, road
+FIRST_SLOPED = len(TERRAIN)
+FIRST_FOUNDATION = FIRST_SLOPED + 18 * len(SLOPED_TERRAINS)
+LIGHT = (-0.35, 0.35, 0.87)
 
 
-def _tile(atlas: Image.Image, index: int, name: str, base: tuple[int, int, int]) -> None:
+def tile_index(terrain: int, slope: int) -> int:
+    """Atlas index of a terrain on a slope (the flat tile is the terrain id itself)."""
+    if slope == 0:
+        return terrain
+    return FIRST_SLOPED + SLOPED_TERRAINS.index(terrain) * 18 + slope - 1
+
+
+def foundation_index(slope: int) -> int:
+    """Atlas index of the grass foundation of a slope."""
+    return FIRST_FOUNDATION + slope - 1
+
+
+def _corners_px(profile: tuple[int, ...]) -> list[tuple[float, float]]:
+    return [(32.0, 16.0 - STEP_PX * profile[0]), (64.0, 32.0 - STEP_PX * profile[1]),
+            (32.0, 48.0 - STEP_PX * profile[2]), (0.0, 32.0 - STEP_PX * profile[3])]
+
+
+def _triangles(profile: tuple[int, ...]) -> list[tuple[int, int, int]]:
+    """The two triangles of a cell: the engine splits it along the diagonal whose corners are the closest."""
+    if abs(profile[0] - profile[2]) <= abs(profile[1] - profile[3]):
+        return [(0, 1, 2), (0, 2, 3)]
+    return [(0, 1, 3), (1, 2, 3)]
+
+
+def _in_triangle(point: tuple[float, float], a: tuple[float, float], b: tuple[float, float],
+                 c: tuple[float, float]) -> bool:
+    def sign(p: tuple[float, float], q: tuple[float, float], r: tuple[float, float]) -> float:
+        return (p[0] - r[0]) * (q[1] - r[1]) - (q[0] - r[0]) * (p[1] - r[1])
+
+    d1, d2, d3 = sign(point, a, b), sign(point, b, c), sign(point, c, a)
+    return not ((d1 < 0 or d2 < 0 or d3 < 0) and (d1 > 0 or d2 > 0 or d3 > 0))
+
+
+def _shade(profile: tuple[int, ...], triangle: tuple[int, int, int]) -> float:
+    world = [(0.0, 0.0), (1.0, 0.0), (1.0, 1.0), (0.0, 1.0)]
+    a, b, c = ((*world[i], profile[i] * 0.5) for i in triangle)
+    u = (b[0] - a[0], b[1] - a[1], b[2] - a[2])
+    v = (c[0] - a[0], c[1] - a[1], c[2] - a[2])
+    n = (u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0])
+    if n[2] < 0:
+        n = (-n[0], -n[1], -n[2])
+    length = sum(x * x for x in n) ** 0.5
+    return max(0.6, min(1.3, sum(n[i] * LIGHT[i] for i in range(3)) / length / LIGHT[2]))
+
+
+def _surface(profile: tuple[int, ...]) -> dict[tuple[int, int], float]:
+    """Pixels of the sloped diamond of a 64x48 tile with their brightness."""
+    corners = _corners_px(profile)
+    pixels: dict[tuple[int, int], float] = {}
+    for triangle in _triangles(profile):
+        a, b, c = (corners[i] for i in triangle)
+        shade = _shade(profile, triangle)
+        for y in range(TILE_H):
+            for x in range(TILE_W):
+                if (x, y) not in pixels and _in_triangle((x + 0.5, y + 0.5), a, b, c):
+                    pixels[(x, y)] = shade
+    return pixels
+
+
+def _draw_surface(atlas: Image.Image, index: int, name: str, base: tuple[int, int, int], profile: tuple[int, ...],
+                  seed: int) -> None:
     px = atlas.load()
-    ox = (index % 4) * TILE_W
-    oy = (index // 4) * TILE_H
-    rng = random.Random(1000 + index)
-    for y in range(TILE_H):
-        for x in range(TILE_W):
-            if not _inside(x, y):
-                continue
-            n = rng.randint(-10, 10)
-            edge = not (_inside(x - 2, y) and _inside(x + 2, y) and _inside(x, y - 1) and _inside(x, y + 1))
-            shade = -22 if edge else 0
-            color = tuple(max(0, min(255, c + n + shade)) for c in base)
-            if name == "road" and abs((x - TILE_W / 2) / 2 - (y - TILE_H / 2)) < 1.2 and (x // 6) % 2 == 0:
-                color = (236, 206, 70)
-            if name == "flowers" and rng.random() < 0.06:
-                color = rng.choice([(236, 84, 84), (240, 220, 90), (250, 250, 250)])
-            px[ox + x, oy + y] = (*color, 255)
+    ox = (index % COLUMNS) * TILE_W
+    oy = (index // COLUMNS) * TILE_H
+    rng = random.Random(seed)
+    surface = _surface(profile)
+    for (x, y), shade in sorted(surface.items()):
+        n = rng.randint(-10, 10)
+        edge = not all((x + dx, y + dy) in surface for dx, dy in ((-2, 0), (2, 0), (0, -1), (0, 1)))
+        color = tuple(max(0, min(255, int(c * shade) + n + (-22 if edge else 0))) for c in base)
+        if name == "road" and not any(profile) and abs((x - TILE_W / 2) / 2 - (y - 32)) < 1.2 and (x // 6) % 2 == 0:
+            color = (236, 206, 70)
+        if name == "flowers" and rng.random() < 0.06:
+            color = rng.choice([(236, 84, 84), (240, 220, 90), (250, 250, 250)])
+        px[ox + x, oy + y] = (*color, 255)
+
+
+def _draw_foundation(atlas: Image.Image, index: int, profile: tuple[int, ...]) -> None:
+    """Level platform of a building on a slope: a flat top at the highest corner, walls down to the ground."""
+    tile = Image.new("RGBA", (TILE_W, TILE_H), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(tile)
+    top = max(profile)
+    back, right, front, left = _corners_px((top, top, top, top))
+    ground = _corners_px(profile)
+    draw.polygon([left, front, ground[2], ground[3]], fill=(150, 144, 132, 255))
+    draw.polygon([front, right, ground[1], ground[2]], fill=(118, 112, 102, 255))
+    draw.polygon([back, right, front, left], fill=(92, 150, 66, 255), outline=(70, 118, 52, 255))
+    atlas.alpha_composite(tile, ((index % COLUMNS) * TILE_W, (index // COLUMNS) * TILE_H))
 
 
 def make_tiles() -> None:
-    atlas = Image.new("RGBA", (4 * TILE_W, 2 * TILE_H), (0, 0, 0, 0))
+    atlas = Image.new("RGBA", (COLUMNS * TILE_W, ROWS * TILE_H), (0, 0, 0, 0))
     for index, (name, base) in enumerate(TERRAIN):
-        _tile(atlas, index, name, base)
+        _draw_surface(atlas, index, name, base, SLOPES[0], 1000 + index)
+    for terrain in SLOPED_TERRAINS:
+        name, base = TERRAIN[terrain]
+        for slope in range(1, len(SLOPES)):
+            _draw_surface(atlas, tile_index(terrain, slope), name, base, SLOPES[slope], 5000 + terrain * 100 + slope)
+    for slope in range(1, len(SLOPES)):
+        _draw_foundation(atlas, foundation_index(slope), SLOPES[slope])
     atlas.save(OUT / "iso_tiles.png")
+
+
+def make_tileset() -> None:
+    """The slope table: terrain id and slope to atlas tile, plus the grass foundations."""
+    lines = ["Tileset: iso_ground", "FormatVersion: 1", "texture: nam:textures/iso_tiles.png", "tileWidth: 64",
+             f"tileHeight: {TILE_H}", f"columns: {COLUMNS}", f"rows: {ROWS}", "filterMode: Nearest",
+             "kind: Isometric", "slopes:"]
+    for terrain in SLOPED_TERRAINS:
+        tiles = ", ".join(str(tile_index(terrain, slope)) for slope in range(len(SLOPES)))
+        lines += [f"  - id: {terrain}", f"    tiles: [{tiles}]"]
+        if terrain == 0:
+            foundations = ", ".join(["-1"] + [str(foundation_index(slope)) for slope in range(1, len(SLOPES))])
+            lines.append(f"    foundations: [{foundations}]")
+    lines.append("tiles:")
+    for index, (name, _) in enumerate(TERRAIN):
+        lines += [f"  - index: {index}", f"    name: {name.replace('_', ' ')}"]
+    (OUT.parent / "tilesets" / "iso_ground.owltileset").write_text("\n".join(lines) + "\n")
 
 
 def make_tree() -> None:
@@ -119,16 +228,53 @@ def _fnv1a(data: bytes) -> int:
     return value
 
 
-def _chunk(cells: dict[tuple[int, int], int]) -> bytes:
+def _chunk(terrain_cells: dict[tuple[int, int], int], overlay_cells: dict[tuple[int, int], int],
+           flag_cells: dict[tuple[int, int], int]) -> bytes:
     terrain = [EMPTY] * (CHUNK * CHUNK)
-    for (x, y), tile in cells.items():
+    overlay = [EMPTY] * (CHUNK * CHUNK)
+    flags = bytearray(CHUNK * CHUNK)
+    for (x, y), tile in terrain_cells.items():
         terrain[y * CHUNK + x] = tile
-    return (struct.pack(f"<{CHUNK * CHUNK}H", *terrain) + struct.pack(f"<{CHUNK * CHUNK}H", *([EMPTY] * CHUNK * CHUNK))
-            + bytes(CHUNK * CHUNK))
+    for (x, y), tile in overlay_cells.items():
+        overlay[y * CHUNK + x] = tile
+    for (x, y), bits in flag_cells.items():
+        flags[y * CHUNK + x] = bits
+    return struct.pack(f"<{CHUNK * CHUNK}H", *terrain) + struct.pack(f"<{CHUNK * CHUNK}H", *overlay) + bytes(flags)
+
+
+def _corner_heights(size: int) -> list[int]:
+    """Corner grid of the test map: a hump under the house, a low ridge on the east edge and a ramp for the road."""
+    heights = [[0] * (size + 1) for _ in range(size + 1)]
+    raised = {(4, 2): 1, (4, 3): 1, (7, 4): 1, (8, 4): 1, (7, 5): 1, (8, 5): 1, (8, 3): 1,
+              (8, 0): 1, (8, 1): 1, (8, 2): 1}
+    for (x, y), height in raised.items():
+        heights[y][x] = height
+    changed = True
+    while changed:
+        changed = False
+        for y in range(size + 1):
+            for x in range(size + 1):
+                for nx, ny in ((x + 1, y), (x, y + 1)):
+                    if nx > size or ny > size:
+                        continue
+                    low, high = sorted([(heights[y][x], (x, y)), (heights[ny][nx], (nx, ny))])
+                    if high[0] - low[0] > 1:
+                        heights[low[1][1]][low[1][0]] = high[0] - 1
+                        changed = True
+    return [h for row in heights for h in row]
+
+
+def _slope_of(heights: list[int], size: int, x: int, y: int) -> int:
+    row = size + 1
+    corners = (heights[y * row + x], heights[y * row + x + 1], heights[(y + 1) * row + x + 1],
+               heights[(y + 1) * row + x])
+    lowest = min(corners)
+    return SLOPES.index(tuple(c - lowest for c in corners))
 
 
 def make_tilemap() -> None:
     size = 8
+    heights = _corner_heights(size)
     ground: dict[tuple[int, int], int] = {}
     rng = random.Random(42)
     for y in range(size):
@@ -138,14 +284,18 @@ def make_tilemap() -> None:
                 tile = 2
             elif (x == 5 and y <= 3) or (y == 3 and x >= 5):
                 tile = 1
+            if tile in (2, 5) and _slope_of(heights, size, x, y) != 0:
+                tile = 0
             ground[(x, y)] = tile
+    ground[(3, 2)] = 0
     roads = {(x, 4): 3 for x in range(size)}
     roads.update({(2, 4): 5, (3, 4): 5})
     body = b"OWLTCHNK" + struct.pack("<II", CHUNK, 2)
-    for layer in (ground, roads):
-        body += struct.pack("<I", 1) + struct.pack("<II", 0, 0) + _chunk(layer)
+    for terrain_cells, overlay_cells, flag_cells in (({**ground}, {}, {(3, 2): 1}), ({}, roads, {})):
+        body += struct.pack("<I", 1) + struct.pack("<II", 0, 0) + _chunk(terrain_cells, overlay_cells, flag_cells)
+    body += b"\x01" + bytes(heights)
     payload = body + struct.pack("<I", _fnv1a(body))
-    header = ("Tilemap: iso_test\nFormatVersion: 2\ntilesetPath: tilesets/iso_ground.owltileset\n"
+    header = ("Tilemap: iso_test\nFormatVersion: 3\ntilesetPath: tilesets/iso_ground.owltileset\n"
               f"width: {size}\nheight: {size}\ncellSize: 1\nlayers:\n  - name: ground\n  - name: roads\n"
               f"payloadBytes: {len(payload)}\n")
     (TILEMAPS / "iso_test.owltilemap").write_bytes(header.encode() + b"...\n" + payload)
@@ -153,6 +303,7 @@ def make_tilemap() -> None:
 
 if __name__ == "__main__":
     make_tiles()
+    make_tileset()
     make_tree()
     make_house()
     make_smoke()

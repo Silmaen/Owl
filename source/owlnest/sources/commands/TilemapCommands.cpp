@@ -8,6 +8,8 @@
 
 #include "TilemapCommands.h"
 
+#include <scene/TilemapTerrain.h>
+
 #include <algorithm>
 #include <tuple>
 #include <utility>
@@ -68,6 +70,27 @@ ModifyTilemapLayoutCommand::ModifyTilemapLayoutCommand(scene::TilemapAsset iBefo
 void ModifyTilemapLayoutCommand::undo(scene::TilemapAsset& ioTarget) { ioTarget = m_before; }
 
 void ModifyTilemapLayoutCommand::redo(scene::TilemapAsset& ioTarget) { ioTarget = m_after; }
+
+ModifyTerrainHeightsCommand::ModifyTerrainHeightsCommand(std::vector<scene::CornerHeightChange> iChanges,
+														 std::string iDescription)
+	: m_changes{std::move(iChanges)}, m_description{std::move(iDescription)} {}
+
+void ModifyTerrainHeightsCommand::undo(scene::TilemapAsset& ioTarget) { ioTarget.applyCornerChanges(m_changes, true); }
+
+void ModifyTerrainHeightsCommand::redo(scene::TilemapAsset& ioTarget) { ioTarget.applyCornerChanges(m_changes, false); }
+
+void TerrainStroke::add(const std::vector<scene::CornerHeightChange>& iChanges) {
+	m_changes.insert(m_changes.end(), iChanges.begin(), iChanges.end());
+}
+
+auto TerrainStroke::finish(const std::string& iDescription) -> uniq<ModifyTerrainHeightsCommand> {
+	scene::terrain::mergeCornerChanges(m_changes);
+	if (m_changes.empty())
+		return nullptr;
+	auto command = mkUniq<ModifyTerrainHeightsCommand>(std::move(m_changes), iDescription);
+	m_changes.clear();
+	return command;
+}
 
 auto TilemapStroke::setTile(scene::TilemapAsset& ioAsset, const uint32_t iLayer, const uint32_t iX, const uint32_t iY,
 							const int32_t iValue) -> bool {

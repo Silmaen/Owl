@@ -112,7 +112,7 @@ a few days, L a week.
   from `onRender`, depth-tested pipeline state with alpha cutout, billboards, translucent sort, projection helpers
   ported from the old branch, `Tileset::kind`. Editor: isometric viewport mode, gizmo fed with the layer's view and
   projection, world-axis cursor and tile highlight.
-- ![Planned][planned] **ISO2 — Isometric terrain, L.** D4: corner heights, 19 slopes, (terrain, slope) table and
+- ![Done][done] **ISO2 — Isometric terrain, L.** D4: corner heights, 19 slopes, (terrain, slope) table and
   foundations in the tileset, track and road overlay layers following the slope, slope-aware picking (CPU ray against
   the two triangles of each candidate cell). Editor: isometric preview in `TilemapDocument`, raise / lower / level
   tools, overlay brush, slope table in `TilesetDocument`, all undoable.
