@@ -860,6 +860,12 @@ over when full triggers `nextBatch()` (flush + restart).
 5. Lines (`RenderCommand::drawDataInstanced`, 2 indices × N instances, line topology)
 6. Text (`RenderCommand::drawDataInstanced`)
 
+**Clipping.** `Renderer2D::setScissor` restricts the draws that follow to a rectangle of the target (`RenderCommand::setScissor`:
+`glScissor` on OpenGL, the dynamic scissor of the open render pass on Vulkan); the queued draws are flushed first with
+the previous rectangle, `clearScissor`, `beginScene` and `endScene` lift it, and the RHI puts the whole target back at
+the end of each flush, so a draw inherits nothing. The HUD pass uses it for windows and `clipChildren` panels, and
+flushes between windows (`nextBatch`) so a window covers the text of the one under it.
+
 **Per-batch descriptor layout** declared in `Renderer2D::init`:
 
 | Binding | Type                   | Stage         |

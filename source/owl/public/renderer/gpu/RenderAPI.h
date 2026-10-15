@@ -215,6 +215,23 @@ public:
 	 */
 	virtual void beginBatch() {}
 
+	/**
+	 * @brief
+	 *  Restrict the drawing of the next draws to a rectangle of the target (scissor), until `clearScissor`. It applies
+	 *  to the open batch only: a batch begun after an end starts with the whole target.
+	 * @param[in] iPosition Top-left corner of the rectangle, in pixels from the top-left of the target (Y-down).
+	 * @param[in] iSize Size of the rectangle in pixels; a rectangle outside the target is cut.
+	 * @param[in] iTargetHeight Height of the target in pixels (OpenGL counts rows from the bottom).
+	 */
+	virtual void setScissor([[maybe_unused]] const math::vec2ui& iPosition, [[maybe_unused]] const math::vec2ui& iSize,
+							[[maybe_unused]] uint32_t iTargetHeight) {}
+
+	/**
+	 * @brief
+	 *  Draw on the whole target again.
+	 */
+	virtual void clearScissor() {}
+
 
 	/**
 	 * @brief

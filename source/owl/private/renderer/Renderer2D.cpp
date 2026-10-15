@@ -23,6 +23,7 @@
 #include <bit>
 #include <cstddef>
 #include <cstdint>
+#include <optional>
 #include <span>
 #include <string>
 #include <vector>
@@ -135,6 +136,7 @@ struct InternalData {
 	shared<gpu::StorageBuffer> sceneWorldsFallback;
 	std::vector<math::mat4> transientWorlds;
 	shared<gpu::StorageBuffer> transientWorldsSsbo;
+	std::optional<Renderer2D::Scissor> scissor;
 };
 }// namespace
 }// namespace utils
@@ -351,6 +353,7 @@ void Renderer2D::beginScene(const Camera& iCamera) {
 		g_Data->cameraBuffer.viewProjection = iCamera.getViewProjection();
 		g_Data->cameraUniformBuffer->setData(&g_Data->cameraBuffer, sizeof(utils::InternalData::CameraData), 0);
 	}
+	g_Data->scissor.reset();
 	startBatch();
 	RendererTilemap::beginScene(iCamera);
 }
@@ -359,6 +362,17 @@ void Renderer2D::endScene() {
 	OWL_PROFILE_FUNCTION()
 
 	flush();
+	g_Data->scissor.reset();
+}
+
+void Renderer2D::setScissor(const Scissor& iScissor) {
+	nextBatch();
+	g_Data->scissor = iScissor;
+}
+
+void Renderer2D::clearScissor() {
+	nextBatch();
+	g_Data->scissor.reset();
 }
 
 void Renderer2D::flush() {
@@ -374,6 +388,8 @@ void Renderer2D::flush() {
 
 	shared<gpu::StorageBuffer> retiredSceneWorlds = g_Data->sceneWorldsDirty ? reserveSceneWorlds() : nullptr;
 	gpu::RenderCommand::beginBatch();
+	if (g_Data->scissor)
+		gpu::RenderCommand::setScissor(g_Data->scissor->position, g_Data->scissor->size, g_Data->scissor->targetHeight);
 	retiredSceneWorlds.reset();
 	gpu::RenderCommand::bindTextures(std::span{g_Data->textureSlots}.first(g_Data->textureSlotIndex));
 
@@ -429,6 +445,8 @@ void Renderer2D::flush() {
 		gpu::RenderCommand::drawDataInstanced(g_Data->text.drawData, /*iIndexCount=*/6u, count);
 		g_Data->stats.drawCalls++;
 	}
+	if (g_Data->scissor)
+		gpu::RenderCommand::clearScissor();
 	gpu::RenderCommand::endBatch();
 }
 

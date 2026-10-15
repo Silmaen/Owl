@@ -252,6 +252,20 @@ public:
 
 	/**
 	 * @brief
+	 *  Restrict the drawing of the open render pass to a rectangle (nothing when no pass is open).
+	 * @param[in] iPosition Top-left corner of the rectangle, in pixels.
+	 * @param[in] iSize Size of the rectangle in pixels, cut at the framebuffer.
+	 */
+	void setScissor(const math::vec2ui& iPosition, const math::vec2ui& iSize);
+
+	/**
+	 * @brief
+	 *  Put the scissor of the open render pass back on the whole framebuffer.
+	 */
+	void clearScissor();
+
+	/**
+	 * @brief
 	 *  Close the open render pass; nothing is submitted.
 	 */
 	void endBatch();

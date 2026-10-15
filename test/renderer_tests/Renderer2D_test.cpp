@@ -319,3 +319,37 @@ TEST(Renderer2D, texturesKeepTheirSlotAcrossBatches) {
 	RenderCommand::invalidate();
 	Log::invalidate();
 }
+
+TEST(Renderer2D, aScissorSplitsTheBatchAndIsLiftedByTheScene) {
+	Log::init(owl::core::Log::Level::Off);
+	RenderCommand::create(RenderAPI::Type::Null);
+	Renderer::init();
+	const CameraOrtho cam(0, 800, 0, 600);
+	Renderer2D::resetStats();
+	Renderer2D::beginScene(cam);
+	Renderer2D::drawQuad({.transform = Transform{}});
+	Renderer2D::setScissor({.position = {10, 20}, .size = {100, 50}, .targetHeight = 600});
+	Renderer2D::drawQuad({.transform = Transform{}});
+	Renderer2D::clearScissor();
+	Renderer2D::drawQuad({.transform = Transform{}});
+	Renderer2D::endScene();
+	const auto st = Renderer2D::getStats();
+	EXPECT_EQ(st.quadCount, 3u);
+	// One batch before the rectangle, one inside it, one after.
+	EXPECT_EQ(st.drawCalls, 3u);
+
+	// A rectangle left set when the scene ends does not leak into the next one.
+	Renderer2D::resetStats();
+	Renderer2D::beginScene(cam);
+	Renderer2D::setScissor({.position = {0, 0}, .size = {1, 1}, .targetHeight = 600});
+	Renderer2D::drawQuad({.transform = Transform{}});
+	Renderer2D::endScene();
+	Renderer2D::beginScene(cam);
+	Renderer2D::drawQuad({.transform = Transform{}});
+	Renderer2D::endScene();
+	EXPECT_EQ(Renderer2D::getStats().quadCount, 2u);
+
+	Renderer2D::shutdown();
+	RenderCommand::invalidate();
+	Log::invalidate();
+}
