@@ -1,0 +1,87 @@
+Scene: RenderTestHudFocus
+EnabledRenderers:
+- {Name: raycast_world, Enabled: false}
+Entities:
+- Entity: 9400000000000000110
+  Tag: {tag: Volume}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 9400000000000000106}
+  UiRect: {anchorMin: [0, 0], anchorMax: [0, 0], pivot: [0, 0], size: [120, 12], offset: [100, 150]}
+  UiSlider: {value: 0.6, minValue: 0, maxValue: 1, trackColor: [0.2, 0.2, 0.2, 1], fillColor: [0.2, 0.8, 0.3, 1], handleColor: [1, 1, 1, 1], onValueChangedCallback: ''}
+- Entity: 9400000000000000109
+  Tag: {tag: Quit}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 9400000000000000106}
+  UiRect: {anchorMin: [0, 0], anchorMax: [0, 0], pivot: [0, 0], size: [120, 24], offset: [100, 112]}
+  UiButton: {normalColor: [0.15, 0.35, 0.65, 1], hoverColor: [0.25, 0.45, 0.75, 1], pressedColor: [0.1, 0.25, 0.5, 1], disabledColor: [0.15, 0.15, 0.15, 0.5], onClickCallback: ''}
+  UiText: {text: Quit, color: [1, 1, 1, 1], fontSize: 12, horizontalAlignment: Center, verticalAlignment: Middle, wrap: false, fit: Overflow, minFontSize: 8, kerning: 0, lineSpacing: 0}
+- Entity: 9400000000000000108
+  Tag: {tag: Options}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 9400000000000000106}
+  UiRect: {anchorMin: [0, 0], anchorMax: [0, 0], pivot: [0, 0], size: [120, 24], offset: [100, 76]}
+  UiButton: {normalColor: [0.15, 0.35, 0.65, 1], hoverColor: [0.25, 0.45, 0.75, 1], pressedColor: [0.1, 0.25, 0.5, 1], disabledColor: [0.15, 0.15, 0.15, 0.5], onClickCallback: ''}
+  UiText: {text: Options, color: [1, 1, 1, 1], fontSize: 12, horizontalAlignment: Center, verticalAlignment: Middle, wrap: false, fit: Overflow, minFontSize: 8, kerning: 0, lineSpacing: 0}
+  UiFocus: {focusable: true, initial: true, highlightColor: [1, 0.82, 0.2, 1], highlightThickness: 2}
+- Entity: 9400000000000000107
+  Tag: {tag: Start}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 9400000000000000106}
+  UiRect: {anchorMin: [0, 0], anchorMax: [0, 0], pivot: [0, 0], size: [120, 24], offset: [100, 40]}
+  UiButton: {normalColor: [0.15, 0.35, 0.65, 1], hoverColor: [0.25, 0.45, 0.75, 1], pressedColor: [0.1, 0.25, 0.5, 1], disabledColor: [0.15, 0.15, 0.15, 0.5], onClickCallback: ''}
+  UiText: {text: Start, color: [1, 1, 1, 1], fontSize: 12, horizontalAlignment: Center, verticalAlignment: Middle, wrap: false, fit: Overflow, minFontSize: 8, kerning: 0, lineSpacing: 0}
+- Entity: 9400000000000000106
+  Tag: {tag: HudCanvas}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 0}
+  Canvas:
+    space: ScreenOverlay
+    sortOrder: 0
+    referenceResolution: [320, 180]
+    scaleMode: ScaleWithHeight
+- Entity: 9400000000000000102
+  Tag: {tag: Background}
+  Transform:
+    translation: [0, 0, -1]
+    rotation: [0, 0, 0]
+    scale: [30, 20, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 0}
+  BackgroundTexture:
+    mode: 0
+    type: 0
+    color: [0.16, 0.30, 0.20, 1]
+    topColor: [0.35, 0.50, 0.60, 1]
+- Entity: 9400000000000000101
+  Tag: {tag: MainCamera}
+  Transform:
+    translation: [0, 0, 5]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 0}
+  Camera:
+    camera: {projectionType: Orthographic, perspectiveFOV: 0.785398185, perspectiveNear: 0.00999999978, perspectiveFar: 1000,
+      orthographicSize: 8, orthographicNear: -1, orthographicFar: 10}
+    primary: true
+    fixedAspectRatio: false

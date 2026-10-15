@@ -248,3 +248,14 @@ INSTANTIATE_TEST_SUITE_P(HudWindows, RenderImage,
 							 return std::format("{}_{}_{}x{}", iInfo.param.scene, iInfo.param.backend,
 												iInfo.param.size.x(), iInfo.param.size.y());
 						 });
+
+// Keyboard and gamepad focus: the button flagged `initial` takes it when the scene plays and is framed in gold, among
+// two other buttons and a slider; at a scale of 1 and of 1.5.
+INSTANTIATE_TEST_SUITE_P(HudFocus, RenderImage,
+						 testing::Values(RenderCase{"hud_focus", "vulkan"}, RenderCase{"hud_focus", "opengl"},
+										 RenderCase{"hud_focus", "vulkan", {480, 270}},
+										 RenderCase{"hud_focus", "opengl", {480, 270}}),
+						 [](const testing::TestParamInfo<RenderCase>& iInfo) -> std::string {
+							 return std::format("{}_{}_{}x{}", iInfo.param.scene, iInfo.param.backend,
+												iInfo.param.size.x(), iInfo.param.size.y());
+						 });
