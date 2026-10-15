@@ -11,6 +11,7 @@
 #include <core/Log.h>
 #include <core/SerializerImpl.h>
 #include <core/Timestep.h>
+#include <input/Input.h>
 #include <physics/PhysicCommand.h>
 #include <scene/Entity.h>
 #include <scene/Scene.h>
@@ -19,6 +20,7 @@
 #include <scene/component/RaycastPushWall.h>
 #include <scene/component/components.h>
 #include <scene/systems/EngineSystems.h>
+#include <window/Window.h>
 
 #include <cstdint>
 #include <string>
@@ -48,8 +50,8 @@ auto makeDoorScene(scene::Scene& oScene, const float = 1.0f, const float iSlideS
 	door.slideSpeed = iSlideSpeed;
 	door.holdTime = iHoldTime;
 	door.closeSpeed = iSlideSpeed;
-	// Disable the engine-handled key path so the test drives state explicitly.
-	door.interactionKey = 0;
+	// Disable the engine-handled action path so the test drives state explicitly.
+	door.interactionAction.clear();
 	return entity;
 }
 
@@ -61,7 +63,7 @@ auto makePushScene(scene::Scene& oScene, const float iSlideDistance = 2.0f, cons
 	push.slideDirection = math::vec2{0.f, 1.f};
 	push.slideDistance = iSlideDistance;
 	push.slideSpeed = iSlideSpeed;
-	push.interactionKey = 0;
+	push.interactionAction.clear();
 	return entity;
 }
 
@@ -150,7 +152,7 @@ TEST_F(RaycastDynamicWallsTest, DoorYamlRoundTrip) {
 	source.slideSpeed = 3.0f;
 	source.holdTime = 1.25f;
 	source.closeSpeed = 2.5f;
-	source.interactionKey = input::key::F;
+	source.interactionAction = "open_door";
 	source.interactionRange = 2.0f;
 
 	const core::Serializer outSerializer;
@@ -171,7 +173,7 @@ TEST_F(RaycastDynamicWallsTest, DoorYamlRoundTrip) {
 	EXPECT_FLOAT_EQ(restored.slideSpeed, 3.0f);
 	EXPECT_FLOAT_EQ(restored.holdTime, 1.25f);
 	EXPECT_FLOAT_EQ(restored.closeSpeed, 2.5f);
-	EXPECT_EQ(restored.interactionKey, input::key::F);
+	EXPECT_EQ(restored.interactionAction, "open_door");
 	EXPECT_FLOAT_EQ(restored.interactionRange, 2.0f);
 	// Runtime fields always reset to the closed/idle pose.
 	EXPECT_EQ(restored.state, scene::component::RaycastDoor::State::Idle);
@@ -183,7 +185,7 @@ TEST_F(RaycastDynamicWallsTest, PushWallYamlRoundTrip) {
 	source.slideDirection = math::vec2{-1.f, 0.f};
 	source.slideDistance = 3.5f;
 	source.slideSpeed = 0.75f;
-	source.interactionKey = input::key::Space;
+	source.interactionAction = "push";
 	source.interactionRange = 1.75f;
 
 	const core::Serializer outSerializer;
@@ -204,7 +206,7 @@ TEST_F(RaycastDynamicWallsTest, PushWallYamlRoundTrip) {
 	EXPECT_FLOAT_EQ(restored.slideDirection.y(), 0.f);
 	EXPECT_FLOAT_EQ(restored.slideDistance, 3.5f);
 	EXPECT_FLOAT_EQ(restored.slideSpeed, 0.75f);
-	EXPECT_EQ(restored.interactionKey, input::key::Space);
+	EXPECT_EQ(restored.interactionAction, "push");
 	EXPECT_FLOAT_EQ(restored.interactionRange, 1.75f);
 	EXPECT_EQ(restored.state, scene::component::RaycastPushWall::State::Idle);
 	EXPECT_FLOAT_EQ(restored.currentOffset, 0.f);
@@ -220,7 +222,7 @@ TEST_F(RaycastDynamicWallsTest, DoorSurvivesSceneSerializerRoundTrip) {
 	d.slideSpeed = 2.0f;
 	d.holdTime = 1.5f;
 	d.closeSpeed = 3.0f;
-	d.interactionKey = input::key::E;
+	d.interactionAction = "interact";
 	d.interactionRange = 1.25f;
 	const auto uuid = door.getUUID();
 
@@ -238,6 +240,45 @@ TEST_F(RaycastDynamicWallsTest, DoorSurvivesSceneSerializerRoundTrip) {
 	const auto& r = restored.getComponent<scene::component::RaycastDoor>();
 	EXPECT_EQ(r.openingDirection, scene::component::RaycastDoor::OpeningDirection::East);
 	EXPECT_FLOAT_EQ(r.holdTime, 1.5f);
-	EXPECT_EQ(r.interactionKey, input::key::E);
+	EXPECT_EQ(r.interactionAction, "interact");
 	EXPECT_EQ(r.state, scene::component::RaycastDoor::State::Idle);
+}
+
+namespace {
+
+auto deserializeDoor(const std::string& iYaml) -> scene::component::RaycastDoor {
+	const core::YamlDocument document{iYaml};
+	scene::component::RaycastDoor door;
+	const core::Serializer serializer;
+	serializer.getImpl()->node = document.getRoot()[scene::component::RaycastDoor::key()];
+	door.deserialize(serializer);
+	return door;
+}
+
+}// namespace
+
+TEST_F(RaycastDynamicWallsTest, LegacyInteractionKeyZeroDisablesTheAction) {
+	const auto disabled = deserializeDoor("RaycastDoor:\n  interactionKey: 0\n");
+	EXPECT_TRUE(disabled.interactionAction.empty());
+	const auto enabled = deserializeDoor("RaycastDoor:\n  interactionKey: 69\n");
+	EXPECT_EQ(enabled.interactionAction, "interact");
+	const auto renamed = deserializeDoor("RaycastDoor:\n  interactionAction: use\n  interactionKey: 0\n");
+	EXPECT_EQ(renamed.interactionAction, "use");
+}
+
+TEST_F(RaycastDynamicWallsTest, DoorOpensWhenItsActionGoesDownInRange) {
+	input::Input::init(window::Type::Null);
+	scene::Scene scn;
+	auto entity = scn.createEntity("Door");
+	entity.addComponent<scene::component::RaycastDoor>().interactionAction = "interact";
+	auto player = scn.createEntity("Player");
+	player.addComponent<scene::component::Player>();
+	scn.onStartRuntime();
+	scn.onUpdateRuntime(core::Timestep{}, false);
+	EXPECT_EQ(entity.getComponent<scene::component::RaycastDoor>().state, scene::component::RaycastDoor::State::Idle);
+	input::Input::injectKey(input::key::E);
+	scn.onUpdateRuntime(core::Timestep{}, false);
+	EXPECT_NE(entity.getComponent<scene::component::RaycastDoor>().state, scene::component::RaycastDoor::State::Idle);
+	scn.onEndRuntime();
+	input::Input::invalidate();
 }

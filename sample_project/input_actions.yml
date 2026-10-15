@@ -1,0 +1,55 @@
+FormatVersion: 1
+# Actions of the sample game. The built-in ones (`move`, `look`, `jump`, `sprint`, `interact`, `primary`, `ui_*`...)
+# are always there; an action defined here replaces the built-in one of the same name.
+actions:
+  - name: pause
+    type: button
+    bindings:
+      - {key: Escape}
+      - {gamepad_button: Start}
+  - name: open_iso
+    type: button
+    bindings:
+      - {key: I}
+      - {gamepad_button: Y}
+  - name: platformer_move
+    type: axis
+    bindings:
+      - {key: A, scale: -1}
+      - {key: Left, scale: -1}
+      - {key: D}
+      - {key: Right}
+      - {gamepad_axis: left_x}
+      - {gamepad_button: DpadLeft, scale: -1}
+      - {gamepad_button: DpadRight}
+  - name: platformer_jump
+    type: button
+    bindings:
+      - {key: Space}
+      - {key: W}
+      - {key: Up}
+      - {gamepad_button: A}
+  - name: pan
+    type: vector
+    bindings:
+      - {key: D, component: x}
+      - {key: Right, component: x}
+      - {key: A, component: x, scale: -1}
+      - {key: Left, component: x, scale: -1}
+      - {key: S, component: y}
+      - {key: Down, component: y}
+      - {key: W, component: y, scale: -1}
+      - {key: Up, component: y, scale: -1}
+      - {gamepad_stick: left}
+  - name: turn
+    type: axis
+    bindings:
+      - {key: A}
+      - {key: D, scale: -1}
+      - {gamepad_axis: right_x, scale: -1}
+  - name: walk
+    type: axis
+    bindings:
+      - {key: W}
+      - {key: S, scale: -1}
+      - {gamepad_axis: left_y, scale: -1}

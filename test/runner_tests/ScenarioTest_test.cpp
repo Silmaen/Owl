@@ -10,11 +10,14 @@
 
 #include "ScenarioTest.h"
 
+#include <input/Gamepad.h>
 #include <input/KeyCodes.h>
+#include <input/MouseCode.h>
 #include <scene/Entity.h>
 #include <scene/Scene.h>
 #include <scene/component/components.h>
 
+#include <algorithm>
 #include <cstdint>
 #include <cstdlib>
 #include <filesystem>
@@ -112,6 +115,75 @@ TEST_F(ScenarioFile, RejectsBrokenFiles) {
 	EXPECT_FALSE(ScenarioTest::load(m_dir / "noscene.owltest").has_value());
 	std::ofstream(m_dir / "badscene.owltest") << "scene: nowhere.owl\nsteps:\n  - frames: 1\n";
 	EXPECT_FALSE(ScenarioTest::load(m_dir / "badscene.owltest").has_value());
+}
+
+TEST_F(ScenarioFile, ActionsStepHoldsTheBuiltInBindings) {
+	const auto scenario = ScenarioTest::load(write(R"(steps:
+  - actions: {frames: 4, jump: true, move: [1, -1], primary: true, sprint: false}
+)"));
+	ASSERT_TRUE(scenario.has_value()) << scenario.error();
+	const auto& step = scenario->getSteps().front();
+	EXPECT_EQ(step.frames, 4u);
+	ASSERT_EQ(step.actions.size(), 4u);
+	EXPECT_FLOAT_EQ(step.actions[1].value.y(), -1.f);
+	EXPECT_EQ(step.keys.size(), 3u);// Space, D and W
+	EXPECT_NE(std::ranges::find(step.keys, input::key::Space), step.keys.end());
+	EXPECT_NE(std::ranges::find(step.keys, input::key::D), step.keys.end());
+	EXPECT_NE(std::ranges::find(step.keys, input::key::W), step.keys.end());
+	ASSERT_EQ(step.mouseButtons.size(), 1u);
+	EXPECT_EQ(step.mouseButtons.front(), input::mouse::ButtonLeft);
+	EXPECT_FALSE(step.gamepad.has_value());
+}
+
+TEST_F(ScenarioFile, ActionsStepUsesTheProjectMap) {
+	std::ofstream(m_dir / "owl_project.yml") << "OwlProject:\n  name: Test\n";
+	std::ofstream(m_dir / "input_actions.yml") << R"(actions:
+  - name: steer
+    type: axis
+    bindings:
+      - {gamepad_axis: left_x, dead_zone: 0.2}
+  - name: brake
+    type: button
+    bindings:
+      - {gamepad_button: B, pad: 2}
+  - name: aim
+    type: vector
+    bindings:
+      - {gamepad_stick: right, dead_zone: 0.1}
+)";
+	const auto scenario = ScenarioTest::load(write(R"(steps:
+  - actions: {steer: -0.5, aim: [0.5, 0]}
+  - actions: {brake: true}
+)"));
+	ASSERT_TRUE(scenario.has_value()) << scenario.error();
+	const auto& first = scenario->getSteps()[0];
+	ASSERT_TRUE(first.gamepad.has_value());
+	EXPECT_EQ(first.gamepad->pad, 0u);
+	EXPECT_TRUE(first.gamepad->state.connected);
+	// The injected raw values read back as the held ones once the dead zone and the curve are applied.
+	const auto steer =
+			input::applyAxisResponse(first.gamepad->state.getAxis(input::gamepad::LeftX), {.deadZone = 0.2f});
+	EXPECT_NEAR(steer, -0.5f, 1e-4f);
+	const auto aim =
+			input::applyStickResponse(first.gamepad->state.getStick(input::gamepad::Stick::Right), {.deadZone = 0.1f});
+	EXPECT_NEAR(aim.x(), 0.5f, 1e-4f);
+	EXPECT_NEAR(aim.y(), 0.f, 1e-4f);
+	const auto& second = scenario->getSteps()[1];
+	ASSERT_TRUE(second.gamepad.has_value());
+	EXPECT_EQ(second.gamepad->pad, 2u);
+	EXPECT_TRUE(second.gamepad->state.isButtonPressed(input::gamepad::B));
+}
+
+TEST_F(ScenarioFile, ActionsStepRejectsWhatItCannotHold) {
+	EXPECT_FALSE(ScenarioTest::load(write("steps:\n  - actions: {fly: true}\n")).has_value());
+	EXPECT_FALSE(ScenarioTest::load(write("steps:\n  - actions: [jump]\n")).has_value());
+	EXPECT_FALSE(ScenarioTest::load(write("steps:\n  - actions: {move: [1]}\n")).has_value());
+	EXPECT_FALSE(ScenarioTest::load(write("steps:\n  - actions: {frames: 0, jump: true}\n")).has_value());
+	std::ofstream(m_dir / "owl_project.yml") << "OwlProject:\n  name: Test\n";
+	std::ofstream(m_dir / "input_actions.yml") << "actions:\n  - {name: jump, bindings: []}\n";
+	EXPECT_FALSE(ScenarioTest::load(write("steps:\n  - actions: {jump: true}\n")).has_value());
+	std::ofstream(m_dir / "input_actions.yml") << "actions:\n  - {name: jump, type: slider}\n";
+	EXPECT_FALSE(ScenarioTest::load(write("steps:\n  - frames: 1\n")).has_value());
 }
 
 TEST(ScenarioTest, ChecksEntitiesAndGameState) {

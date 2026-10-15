@@ -345,6 +345,72 @@ TEST(LuaScriptComponent, inputEdgesFollowTheTicksAndTheFrames) {
 	core::Log::invalidate();
 }
 
+TEST(LuaScriptComponent, actionBindingsFollowTheTicksAndTheFrames) {
+	core::Log::init(core::Log::Level::Off);
+	input::Input::init(window::Type::Null);
+	const auto dir = std::filesystem::temp_directory_path() / "owl_luascriptcomponent_test_actions";
+	std::filesystem::remove_all(dir);
+	const auto path =
+			writeTempScript(dir, "actions.lua",
+							"tick_presses = 0\n"
+							"tick_releases = 0\n"
+							"frame_presses = 0\n"
+							"held = false\n"
+							"known = false\n"
+							"unknown = true\n"
+							"ghost = true\n"
+							"mx = 0\n"
+							"my = 0\n"
+							"jump_value = 0\n"
+							"function on_update(dt)\n"
+							"  if input.is_action_just_pressed('jump') then frame_presses = frame_presses + 1 end\n"
+							"  held = input.is_action_pressed('jump')\n"
+							"  known = input.has_action('jump')\n"
+							"  unknown = input.has_action('no_such_action')\n"
+							"  ghost = input.is_action_pressed('no_such_action')\n"
+							"  mx, my = input.get_action_vector('move')\n"
+							"  jump_value = input.get_action_value('jump')\n"
+							"end\n"
+							"function on_tick(dt)\n"
+							"  if input.is_action_just_pressed('jump') then tick_presses = tick_presses + 1 end\n"
+							"  if input.is_action_just_released('jump') then tick_releases = tick_releases + 1 end\n"
+							"end\n");
+	auto scn = mkShared<Scene>();
+	auto entity = scn->createEntity("ActionEntity");
+	entity.addComponent<component::LuaScript>().scriptPath = path.string();
+	scn->getSimulationClock().setSettings({.tickRate = 50.f});
+	scn->onStartRuntime();
+	const auto& comp = entity.getComponent<component::LuaScript>();
+	ASSERT_TRUE(comp.instance && comp.instance->isValid());
+
+	core::Timestep ts;
+	input::Input::injectKey(input::key::Space);
+	input::Input::injectKey(input::key::D);
+	input::Input::beginFrame();
+	ts.forceUpdate(std::chrono::milliseconds(70));// three ticks in one frame
+	scn->onUpdateRuntime(ts, false);
+	EXPECT_EQ(comp.instance->getPropertyInt("tick_presses").value_or(0), 1);
+	EXPECT_EQ(comp.instance->getPropertyInt("frame_presses").value_or(0), 1);
+	EXPECT_TRUE(comp.instance->getPropertyBool("held").value_or(false));
+	EXPECT_TRUE(comp.instance->getPropertyBool("known").value_or(false));
+	EXPECT_FALSE(comp.instance->getPropertyBool("unknown").value_or(true));
+	EXPECT_FALSE(comp.instance->getPropertyBool("ghost").value_or(true));
+	EXPECT_NEAR(comp.instance->getPropertyFloat("mx").value_or(0.f), 1.f, 1e-5f);
+	EXPECT_NEAR(comp.instance->getPropertyFloat("my").value_or(1.f), 0.f, 1e-5f);
+	EXPECT_NEAR(comp.instance->getPropertyFloat("jump_value").value_or(0.f), 1.f, 1e-5f);
+	input::Input::beginFrame();
+	input::Input::injectKey(input::key::Space);
+	ts.forceUpdate(std::chrono::milliseconds(20));
+	scn->onUpdateRuntime(ts, false);
+	EXPECT_EQ(comp.instance->getPropertyInt("tick_releases").value_or(0), 1);
+	EXPECT_FALSE(comp.instance->getPropertyBool("held").value_or(true));
+	scn->onEndRuntime();
+
+	input::Input::invalidate();
+	std::filesystem::remove_all(dir);
+	core::Log::invalidate();
+}
+
 TEST(LuaScriptComponent, gamepadBindingsReadTheInjectedPad) {
 	core::Log::init(core::Log::Level::Off);
 	input::Input::init(window::Type::Null);

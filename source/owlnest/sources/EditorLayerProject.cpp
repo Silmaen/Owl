@@ -567,6 +567,7 @@ void EditorLayer::openProject(const std::filesystem::path& iDir) {
 	}
 	app::Application::get().addAssetDirectory({std::format("Project: {}", m_project.name), m_project.projectDirectory});
 	app::Application::get().getEngineContext().setSimulationSettings(m_project.simulation);
+	std::ignore = app::Application::get().getEngineContext().loadActionMap(m_project.projectDirectory);
 	std::ignore = m_project.loadGamepadMappings();
 	m_contentBrowser.attach();
 	refreshWindowTitle();
@@ -634,6 +635,7 @@ void EditorLayer::closeProject() {
 	m_recovery.setDirectory({});
 	m_project = {};
 	app::Application::get().getEngineContext().setSimulationSettings(m_project.simulation);
+	std::ignore = app::Application::get().getEngineContext().loadActionMap({});
 	refreshWindowTitle();
 }
 

@@ -9,7 +9,11 @@
 #pragma once
 
 #include "core/Core.h"
+#include "input/ActionMap.h"
 #include "scene/SimulationClock.h"
+
+#include <filesystem>
+#include <string_view>
 
 namespace owl::renderer {
 class VoxelMeshCache;
@@ -26,7 +30,8 @@ namespace owl::app {
  * @brief
  *  Engine state shared by the scenes of one application, owned by `Application` instead of static storage.
  *
- * Holds the screen transition, the game settings, the project's simulation tick rate and the voxel mesh cache. The
+ * Holds the screen transition, the game settings, the project's simulation tick rate, its action map and the voxel mesh
+ * cache. The
  * application creates it and releases it before shutting the renderer down; every new scene points at the
  * application's one (`Scene::getEngineContext`). A test that needs one creates its own and gives it to its scenes
  * (`Scene::setEngineContext`), so nothing leaks from a test to the next.
@@ -88,6 +93,40 @@ public:
 	 */
 	void setSimulationSettings(const scene::SimulationSettings& iSettings) { m_simulation = iSettings.clamped(); }
 
+	/**
+	 * @brief
+	 *  Action map of the game, read by the scenes when they sample the input.
+	 * @return The map: the built-in actions until a project map is set.
+	 */
+	[[nodiscard]] auto getActionMap() const -> const shared<const input::ActionMap>& { return m_actionMap; }
+
+	/**
+	 * @brief
+	 *  Set the action map of the game (the project's `input_actions.yml`); scenes read it from their next sample.
+	 * @param[in] iMap The project map, completed with the built-in actions it does not define.
+	 */
+	void setActionMap(const input::ActionMap& iMap) {
+		m_actionMap = mkShared<const input::ActionMap>(iMap.withDefaults());
+	}
+
+	/**
+	 * @brief
+	 *  Read the `input_actions.yml` of a project folder and make it the action map of the game.
+	 *
+	 * A project without the file, or with an unreadable one (logged), plays with the built-in actions.
+	 * @param[in] iProjectDirectory The project folder; empty for none.
+	 * @return True if the project's own map was loaded.
+	 */
+	auto loadActionMap(const std::filesystem::path& iProjectDirectory) -> bool;
+
+	/**
+	 * @brief
+	 *  Make the action map of the game from the text of an `input_actions.yml` (a packed game).
+	 * @param[in] iText The YAML text.
+	 * @return True if the text was a valid map; the built-in actions are used otherwise.
+	 */
+	auto loadActionMapFromText(std::string_view iText) -> bool;
+
 private:
 	/// Screen transition state.
 	uniq<scene::ScreenTransition> mp_screenTransition;
@@ -97,6 +136,8 @@ private:
 	uniq<renderer::VoxelMeshCache> mp_voxelMeshCache;
 	/// Fixed simulation tick of the game.
 	scene::SimulationSettings m_simulation;
+	/// Action map of the game.
+	shared<const input::ActionMap> m_actionMap = input::ActionMap::getDefault();
 };
 
 }// namespace owl::app

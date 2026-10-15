@@ -113,6 +113,7 @@ protected:
 		writeFile(m_project / "textures" / "b.png", "PNG-B");
 		writeFile(m_project / "logo" / "icon.png", "ICON");
 		writeFile(m_project / "game_settings.yml", "GameSettings: []\n");
+		writeFile(m_project / "input_actions.yml", "actions:\n  - {name: fire, bindings: [{key: F}]}\n");
 		writeFile(m_project / "input" / "gamecontrollerdb.txt", "# mappings\n");
 		writeFile(m_project / "tilesets" / "blocks.owltileset", "Tileset: blocks\ntexture: nam:textures/b.png\n");
 		writeFile(m_project / "scenes" / "level.owl", std::format("Scene: level\nEntities:\n"
@@ -244,7 +245,7 @@ TEST_F(GameExporterFixture, ExportWritesAPlayableFolder) {
 	PackReader reader;
 	ASSERT_TRUE(reader.open(result->packFile));
 	for (const auto* entry: {"scenes/level.owl", "textures/a.png", "textures/b.png", "tilesets/blocks.owltileset",
-							 "game_settings.yml", "input/gamecontrollerdb.txt"})
+							 "game_settings.yml", "input_actions.yml", "input/gamecontrollerdb.txt"})
 		EXPECT_TRUE(reader.contains(entry)) << entry;
 	reader.close();
 	const auto scene = readPackEntry(result->packFile, "scenes/level.owl");
@@ -301,7 +302,7 @@ TEST(GameExportEndToEnd, SampleProjectPlaysFromItsExportFolder) {
 	}
 	for (const auto* entry:
 		 {"tilesets/voxel_blocks.owltileset", "textures/voxel_blocks.png", "tilesets/raycast_w3d_walls.owltileset",
-		  "tilemaps/world_map.owltilemap", "scripts/main_menu.lua", "game_settings.yml"})
+		  "tilemaps/world_map.owltilemap", "scripts/main_menu.lua", "game_settings.yml", "input_actions.yml"})
 		EXPECT_TRUE(reader.contains(entry)) << entry;
 	reader.close();
 

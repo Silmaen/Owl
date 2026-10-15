@@ -65,6 +65,17 @@ struct ScenarioGamepad {
 
 /**
  * @brief
+ *  One action held by an `actions` step.
+ */
+struct ScenarioActionHold {
+	/// Action name.
+	std::string name;
+	/// Held value: `x` for a button (non-zero = held) or an axis, both for a vector.
+	math::vec2 value{0.f, 0.f};
+};
+
+/**
+ * @brief
  *  One step of a scenario: play frames (holding inputs), check the world, or edit it through an editor command.
  */
 struct ScenarioStep {
@@ -76,6 +87,8 @@ struct ScenarioStep {
 	std::vector<uint8_t> mouseButtons;
 	/// Mouse position while the frames play, if set.
 	std::optional<math::vec2> mousePos;
+	/// Actions held while the frames play (`actions:`); already turned into the inputs above.
+	std::vector<ScenarioActionHold> actions;
 	/// Gamepad held while the frames play, if set.
 	std::optional<ScenarioGamepad> gamepad;
 	/// Entity checked, by tag; empty with `player` or `gameState`.
@@ -117,8 +130,8 @@ public:
 
 	/**
 	 * @brief
-	 *  Parse a key name (`A`..`Z`, `D0`..`D9`, `Space`, `Enter`, `Escape`, `Tab`, `Left`, `Right`, `Up`, `Down`,
-	 *  `LeftShift`, `LeftControl`) or a numeric key code.
+	 *  Parse a key name (`input::names::parseKey`: `A`..`Z`, `D0`..`D9`, `Space`, `Enter`, `Escape`, `Left`, `F1`...)
+	 *  or a numeric key code.
 	 * @param[in] iName The name.
 	 * @return The key code, or nothing for an unknown name.
 	 */

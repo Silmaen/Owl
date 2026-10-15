@@ -9,21 +9,18 @@
 
 #include "scene/ScenePlayer.h"
 
-#include "input/Input.h"
 #include "physics/PhysicCommand.h"
+
+#include <cmath>
 
 namespace owl::scene {
 
 ScenePlayer::ScenePlayer() = default;
 
-void ScenePlayer::parseInputs(const Entity& iPlayer) const {
-	if (input::Input::isKeyPressed(input::key::D)) {
-		physics::PhysicCommand::impulse(iPlayer, {linearImpulse, 0});
-	}
-	if (input::Input::isKeyPressed(input::key::A)) {
-		physics::PhysicCommand::impulse(iPlayer, {-linearImpulse, 0});
-	}
-	if (canJump && input::Input::isKeyPressed(input::key::Space)) {
+void ScenePlayer::parseInputs(const Entity& iPlayer, const input::ActionFrame& iActions) const {
+	if (const float horizontal = iActions.getVector("move").x(); std::abs(horizontal) > 0.f)
+		physics::PhysicCommand::impulse(iPlayer, {horizontal * linearImpulse, 0});
+	if (canJump && iActions.isHeld("jump")) {
 		if (const auto vel = physics::PhysicCommand::getVelocity(iPlayer);
 			std::abs(vel.y()) < 0.001f) {// no vertical velocity means on the ground!
 			physics::PhysicCommand::impulse(iPlayer, {0, jumpImpulse});

@@ -1053,6 +1053,10 @@ steps:
 |           | `LeftBumper`, `RightBumper`, `Back`, `Start`, `Guide`, `LeftThumb`, `RightThumb`, `DpadUp`,   |
 |           | `DpadRight`, `DpadDown`, `DpadLeft`; axes `left_x`, `left_y`, `right_x`, `right_y`,           |
 |           | `left_trigger`, `right_trigger`): a connected pad in that slot                                |
+| `actions` | Hold actions of the project map (`input_actions.yml`, built-in ones otherwise) by name:       |
+|           | `{frames: 10, jump: true, move: [1, 0], zoom: 0.5}`: a button is `true`, an axis a number,    |
+|           | a vector `[x, y]`; the first binding that can produce the value is injected (gamepad axes     |
+|           | with the inverse of their dead zone and curve); `frames` defaults to 1                        |
 | `expect`  | `entity: <tag>` or `player: true` with fields `translation.*`, `rotation.z`, `scale.*`,       |
 |           | `exists`; or `gamestate: <key>`. Each check is a value or `equals` / `greater` / `less`,      |
 |           | `tolerance` for a numeric `equals`                                                            |
@@ -1066,7 +1070,8 @@ steps:
 Inputs go through the injection of the input layer (`input::Input::injectKey`, …), which works on any window
 back-end: a key held over two consecutive `input` steps stays held, so `input.is_key_just_pressed` fires once
 (`test/scenarios/platformer_jump.owltest`); a `gamepad` drives a pad on the Null back-end
-(`test/scenarios/platformer_gamepad.owltest`). Expectations due at a step see the world left by the frames before it; positions are world-space. Commands run on
+(`test/scenarios/platformer_gamepad.owltest`); an `actions` step resolves the names against the project's action map
+when the file is read, so it stays valid when a binding changes (`test/scenarios/platformer_actions.owltest`). Expectations due at a step see the world left by the frames before it; positions are world-space. Commands run on
 the playing scene with an undo history of their own (`test/scenarios/editor_commands.owltest`, macros in
 `test/scenarios/editor_macro.owltest`). Every
 `test/scenarios/*.owltest` is a CTest case (label `scenario`).

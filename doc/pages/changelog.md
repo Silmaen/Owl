@@ -47,9 +47,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   type / body size / queue checks, file arguments kept inside the project, and its settings tab and status bar
   indicator.
 - The Animation editor outlines the current frame on the spritesheet thumbnail, with a **Show Current Frame** toggle.
+- Input action map: an `input_actions.yml` (buttons, axes and vectors bound to keys, mouse buttons, gamepad buttons,
+  axes and sticks with dead zone and curve) packed with the game, built-in `move` / `jump` / `interact` / `ui_*`
+  actions, `Scene::getActions` per tick and per frame, Lua `input.is_action_*` / `get_action_value` /
+  `get_action_vector`, and scenario `actions:` steps.
 
 ### Changed
 
+- Engine systems (platformer player, voxel player, interaction triggers, doors and pushwalls) and the sample and
+  template scripts read actions instead of keys; `RaycastDoor` / `RaycastPushWall` `interactionKey` becomes
+  `interactionAction` (an old `interactionKey: 0` still disables it).
 - Bench baseline taken again on `linux-build-hephaistos` (median of 5 runs of 2026-10-15) after the v0.4.0 performance
   fixes, replacing the local estimates of the new benchmarks.
 - Text layout: glyphs keep the font aspect at one scale per em, with horizontal and vertical alignment, UTF-8 word
@@ -77,6 +84,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   preset's Test step.
 - Owl Nest file dialogues on Linux go through `xdg-desktop-portal` over D-Bus, parented to the editor window, instead
   of GTK, whose start-up froze the UI; D-Bus joins the Linux runtime dependencies.
+
+### Deprecated
+
+- Lua `input.is_key_pressed`, `is_key_just_*`, `is_mouse_button_pressed` and `is_mouse_button_just_*`: read an action
+  (`input.is_action_pressed`, `is_action_just_pressed`) instead.
 
 ### Fixed
 

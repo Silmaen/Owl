@@ -199,7 +199,7 @@ existing OpenGL and Vulkan ones, for no feature Owl lacks. The Owl RHI work (Pha
 
 Pull requests SIM1 and IN1 to IN4 of [Isometric worlds](isometric-worlds.md). Before them input was polling only,
 without "just pressed" edges nor gamepad, and injection worked on the Null backend only (both fixed by IN1); keys are
-still hard-coded in engine systems (`ScenePlayer`, `VoxelPlayerSystem`, doors and push-walls) and Lua reads raw key
+were hard-coded in engine systems (`ScenePlayer`, `VoxelPlayerSystem`, doors and push-walls) and Lua read raw key
 codes until IN3.
 
 - **Fixed simulation tick** (SIM1): systems and Lua get an `on_tick` at a fixed step set in the project (60 Hz by
@@ -215,7 +215,7 @@ codes until IN3.
   below
 - **Dead zone and curve** (IN2, Done, from v0.10.0): radial dead zone per binding (0.15 by default) and a
   response-curve exponent
-- **Action map** (IN3): actions are buttons, 1D axes or 2D axes; a binding is a device (key, mouse button, gamepad
+- **Action map** (IN3, Done, details below): actions are buttons, 1D axes or 2D axes; a binding is a device (key, mouse button, gamepad
   button, gamepad axis), a code and a scale, 2D actions also take key composites; `evaluate(map, previous, current)`
   is a pure function producing an `ActionFrame`, the stream v0.9.0 records for replays (K-30)
 - The map lives in `input_actions.yml` with its `DocumentFormat`, packed with the game like `game_settings.yml`, with
@@ -276,6 +276,42 @@ flowchart LR
 - `AxisResponse` (dead zone, curve, custom exponent clamped to [0.1, 10]) shapes the length past the dead zone,
   rescaled to [0, 1]: continuous at the edge, 1 at full deflection. Lua `get_gamepad_stick` uses it with a linear
   curve and an optional dead zone; IN3 bindings carry their own.
+
+### Action map (IN3) {#action-map-in3}
+
+```mermaid
+flowchart LR
+    File[input_actions.yml] -->|ActionMap::loadFile / fromYaml| Map[ActionMap]
+    Map -->|withDefaults| Ctx[EngineContext::getActionMap]
+    Frames[frame and tick InputFrame] --> Eval[sampleAction / evaluateAction]
+    Ctx --> Eval
+    Eval --> AF[frame and tick ActionFrame]
+    AF --> Sys[systems: Scene::getActions]
+    AF --> Lua[Lua input.is_action_*]
+```
+
+- **Pure data.** `input::ActionMap` (actions in file order) holds `ActionDefinition`s (name, `Button` / `Axis` /
+  `Vector`, bindings); an `ActionBinding` is a source (key, mouse button, gamepad button, axis or stick), a code, a pad
+  slot (any when negative), a vector component, a scale and an `AxisResponse`. The map loads from and saves to YAML
+  with a `FormatVersion` (`ActionMap::format()`, no migration yet); the in-memory form is what the IN4 editor document
+  edits (`setAction`, `removeAction`, `==` for the dirty state), and the key names are shared through
+  `input/InputNames.h`.
+- **Pure evaluation.** `sampleAction(action, InputState)` reads one sample, `evaluateAction(action, InputFrame)` adds
+  the edges between the two samples; `ActionFrame` holds one `ActionState` per action, ready to be recorded by the
+  v0.9.0 replays (K-30). It allocates nothing after the first frame.
+- **Combination.** The bindings of an action add up, then the result is clamped to [-1, 1], or to the unit disc for a
+  vector (a diagonal is not faster). A button is held when a binding reads past half; an axis or a vector is held
+  past half deflection, so `ui_*`-style tests work on them.
+- **Y down.** Vectors keep the gamepad convention (y down): a key bound to `W` feeds `y` with `scale: -1`.
+- **Where the map lives.** `app::EngineContext` owns it (state shared by the scenes, never a static); Owl Nest loads it
+  when it opens a project, the runner from an asset folder, the source project of a scenario or the pack, and an
+  unreadable file is logged and replaced by the built-in actions. A project map is completed with the built-in
+  actions (`withDefaults`): engine systems never miss `move`, `jump` or `interact`, and a project may override them.
+- **Scenarios.** An `actions:` step is resolved when the scenario is read: each held action picks the first binding
+  that can produce the value (right sign, right component) and injects it through the same path as an `input` step,
+  with the inverse of the dead zone and curve for an analog binding.
+- **Doors and pushwalls** carry `interactionAction` (a button action name, empty to disable) instead of a key code;
+  an old `interactionKey: 0` still disables the built-in path.
 
 ## Gamepad improvements (v0.10.0)
 

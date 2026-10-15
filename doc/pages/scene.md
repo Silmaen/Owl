@@ -131,7 +131,8 @@ simulation tick (see [Fixed simulation tick](#fixed-tick)); either may be empty.
 `owl.scripts` calls `on_update` in its `update` and `on_tick` in its `tick`; `owl.physics` steps the world in its
 `tick`. `Scene::getInputFrame()` gives the input of the running step (the tick frame in a `tick`, the frame one in an
 `update`), with `isKeyJustPressed` / `isKeyJustReleased` edges seen once at either rate
-([event and input](event_input.md)). The `SystemContext` gives the frame (or tick) duration, the tick count of the frame, the index of the running
+([event and input](event_input.md)); `Scene::getActions()` gives the same split for the game's
+[actions](event_input.md#actions), which engine systems and scripts read instead of keys. The `SystemContext` gives the frame (or tick) duration, the tick count of the frame, the index of the running
 tick and the interpolation alpha. Every new scene copies `SystemSchedule::getDefault()`. A game changes it once,
 before loading its scenes, or edits one scene's schedule; `Scene::copy()` (Play) keeps the scene's schedule:
 
@@ -425,7 +426,7 @@ YAML key: `Camera`. See [Renderer > Camera System](renderer.md).
 | `jumpImpulse`   | `float` | `0.2`   | Vertical jump force        |
 | `canJump`       | `bool`  | `true`  | Whether jumping is allowed |
 
-YAML key: `Player`. Input is parsed from keyboard each frame via `parseInputs()`.
+YAML key: `Player`. Input is read each frame from the `move` and `jump` actions via `parseInputs()`.
 
 #### PhysicBody
 

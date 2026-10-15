@@ -94,7 +94,7 @@ end
 
 -- Called every frame during Play mode
 function on_update(dt)
-    if input.is_key_pressed(87) then  -- W key
+    if input.is_action_pressed("jump") then  -- Space or gamepad A, see input_actions.yml
         local x, y, z = transform.get_position(entity_id)
         transform.set_position(entity_id, x, y + speed * dt, z)
     end
@@ -137,14 +137,15 @@ function on_tick(dt)
 end
 ```
 
-`input.is_key_just_pressed(key)` / `is_key_just_released(key)`, their mouse equivalents and `get_mouse_wheel()`
+`input.is_action_just_pressed(action)` / `is_action_just_released(action)` (and the deprecated
+`input.is_key_just_pressed(key)` / `is_key_just_released(key)` with their mouse equivalents) and `get_mouse_wheel()`
 read the scene's input frame: in `on_tick` the edge since the previous tick, in `on_update` the edge since the
 previous frame. Each press is seen once at either rate, even when a frame runs several ticks or none, and a key held
 when the scene starts gives no edge; no `was_down` latch is needed:
 
 ```lua
 function on_update(dt)
-    if input.is_key_just_pressed(256) then   -- Escape, once per press
+    if input.is_action_just_pressed("pause") then   -- Escape or Start, once per press
         scene.transition_to("scenes/main_menu.owl", "fade_out", 0.3)
     end
 end
@@ -196,7 +197,24 @@ function table cannot say.
 
 ### `input`
 
-Key codes match the GLFW key constants (e.g. `65` = A, `87` = W, `32` = Space).
+**Actions** are the way to read the player: `input.is_action_pressed(action)`, `is_action_just_pressed`,
+`is_action_just_released`, `get_action_value(action)` (button 0 or 1, axis in [-1, 1]) and
+`get_action_vector(action)` (x right, y down, in the unit disc) read the actions of the project's `input_actions.yml`
+(plus the built-in `move`, `look`, `jump`, `sprint`, `interact`, `primary`, `secondary` and `ui_*`; see
+[Actions](event_input.md#actions)). `input.has_action(action)` tells a misspelt name from a released action. They
+follow the tick and frame rules above and work with the keyboard, the mouse and any gamepad without a line of code:
+
+```lua
+function on_update(dt)
+    local dx, dy = input.get_action_vector("move")
+    physics.set_velocity(entity_id, dx * speed, -dy * speed)
+    if input.is_action_just_pressed("jump") then jump() end
+end
+```
+
+`input.is_key_pressed`, `is_key_just_*`, `is_mouse_button_pressed` and `is_mouse_button_just_*` are **deprecated**: a
+raw key cannot be rebound nor played with a pad. Key codes match the GLFW key constants (e.g. `65` = A, `87` = W,
+`32` = Space).
 
 Gamepads are read by slot (`0` to `15`, the first pad plugged in is `0`). Buttons use the Xbox layout: `0` = A,
 `1` = B, `2` = X, `3` = Y, `4` / `5` = bumpers, `6` = Back, `7` = Start, `8` = Guide, `9` / `10` = stick clicks,

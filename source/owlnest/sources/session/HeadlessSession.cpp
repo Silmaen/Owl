@@ -9,6 +9,8 @@
 #include "HeadlessSession.h"
 
 #include <app/Application.h>
+#include <app/EngineContext.h>
+#include <input/ActionMap.h>
 #include <input/Input.h>
 #include <renderer/Renderer.h>
 #include <renderer/gpu/RenderCommand.h>
@@ -53,7 +55,9 @@ HeadlessSession::HeadlessSession(const math::vec2ui iSize)
 	: m_size{iSize.surface() > 0 ? iSize : defaultSize},
 	  m_previousSimulation{app::Application::instanced()
 								   ? app::Application::get().getEngineContext().getSimulationSettings()
-								   : scene::SimulationSettings{}} {
+								   : scene::SimulationSettings{}},
+	  m_previousActions{app::Application::instanced() ? app::Application::get().getEngineContext().getActionMap()
+													  : input::ActionMap::getDefault()} {
 	m_registry.setJournal(&getJournal());
 	// Without a window the GLFW input has nothing to poll: the Null input also takes the injected keys.
 	if (app::Application::instanced() && app::Application::get().getWindow().getType() == window::Type::Null)
@@ -74,6 +78,7 @@ HeadlessSession::~HeadlessSession() {
 	if (!m_project.empty())
 		app.removeAssetDirectory(m_project);
 	app.getEngineContext().setSimulationSettings(m_previousSimulation);
+	app.getEngineContext().setActionMap(*m_previousActions);
 }
 
 void HeadlessSession::newScene() {
@@ -134,6 +139,7 @@ void HeadlessSession::loadProjectSettings() {
 		}
 	}
 	app::Application::get().getEngineContext().setSimulationSettings(simulation);
+	std::ignore = app::Application::get().getEngineContext().loadActionMap(m_project);
 }
 
 void HeadlessSession::installRenderStack() const {

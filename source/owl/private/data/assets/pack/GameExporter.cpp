@@ -13,6 +13,7 @@
 #include "app/Application.h"
 #include "core/external/yaml.h"
 #include "data/assets/pack/PackWriter.h"
+#include "input/ActionMap.h"
 
 #include <algorithm>
 #include <chrono>
@@ -320,6 +321,8 @@ auto GameExporter::exportGame(const ExportSettings& iSettings, const std::vector
 	}
 	if (const auto settingsPath = iSettings.projectDirectory / "game_settings.yml"; exists(settingsPath))
 		writer.addFile(settingsPath, "game_settings.yml", AssetType::Other);
+	if (const auto actionsPath = iSettings.projectDirectory / input::ActionMap::fileName; exists(actionsPath))
+		writer.addFile(actionsPath, std::string{input::ActionMap::fileName}, AssetType::Other);
 	std::string mappingsEntry;
 	if (!iSettings.gamepadMappings.empty()) {
 		if (const auto mappingsPath = iSettings.projectDirectory / iSettings.gamepadMappings; exists(mappingsPath)) {

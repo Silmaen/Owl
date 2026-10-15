@@ -413,10 +413,11 @@ current position.
 Built-in activation runs *before* the physics step:
 
 - Detect player presence via `Scene::getPrimaryPlayer()`.
-- If `interactionKey != 0` and the player centre is within
-  `interactionRange` cells of the entity centre, and `interactionKey`
-  transitioned from released to held this tick, kick the state machine out of Idle.
-- Setting `interactionKey = 0` disables the built-in path entirely; Lua scripts drive activation through the `door` and
+- If `interactionAction` is not empty and the player centre is within
+  `interactionRange` cells of the entity centre, and the action
+  transitioned from released to held this tick (`Scene::getActions()`, `interact` by default), kick the state machine
+  out of Idle.
+- Emptying `interactionAction` disables the built-in path entirely; Lua scripts drive activation through the `door` and
   `pushwall` API tables.
 
 ### Lua API

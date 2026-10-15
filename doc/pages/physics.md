@@ -323,11 +323,12 @@ sequenceDiagram
 The `Player` component provides a built-in input handler that drives physics
 through `ScenePlayer::parseInputs()`. Each frame during runtime the scene
 finds the primary `Player` entity and calls `parseInputs`, which reads
-keyboard state and applies impulses via `PhysicCommand`:
+the `move` (horizontal) and `jump` actions of the [action map](event_input.md#actions) and applies impulses via
+`PhysicCommand`:
 
 | Field         | Type    | Default | Description                            |
 |---------------|---------|---------|----------------------------------------|
-| linearImpulse | `float` | `0.1`   | Horizontal impulse applied on A/D keys |
+| linearImpulse | `float` | `0.1`   | Horizontal impulse scaled by `move.x`  |
 | jumpImpulse   | `float` | `0.2`   | Vertical impulse applied on Space      |
 | canJump       | `bool`  | `true`  | Whether jumping is allowed             |
 
