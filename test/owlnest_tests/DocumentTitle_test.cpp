@@ -29,6 +29,7 @@ TEST(DocumentTitle, ShowsTheGlyphAndKeepsAnIdWithoutTheName) {
 	EXPECT_TRUE(documentWindowTitle(DocumentType::Scene, "level.owl*", 0xab).ends_with("###scene_ab"));
 	EXPECT_NE(documentWindowTitle(DocumentType::Code, "", 1).find("Untitled"), std::string::npos);
 	EXPECT_TRUE(documentWindowTitle(DocumentType::Tileset, "atlas", 2).starts_with(gui::icon::layoutGrid));
+	EXPECT_TRUE(documentWindowTitle(DocumentType::ActionMap, "input_actions", 3).ends_with("###actionmap_3"));
 }
 
 TEST(DocumentTitle, FocusRequestLastsAFewFrames) {

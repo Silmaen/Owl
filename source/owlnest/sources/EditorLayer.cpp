@@ -10,6 +10,7 @@
 
 #include "AssetKind.h"
 #include "EditorResources.h"
+#include "document/ActionMapDocument.h"
 #include "document/AnimationDocument.h"
 #include "document/CodeEditorDocument.h"
 #include "document/FontDocument.h"
@@ -796,6 +797,12 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 			if (!font->isOpen()) {
 				toClose.push_back(font->id());
 				font->setOpen(true);
+			}
+		} else if (doc->type() == DocumentType::ActionMap) {
+			auto* actions = static_cast<ActionMapDocument*>(doc);
+			if (!actions->isOpen()) {
+				toClose.push_back(actions->id());
+				actions->setOpen(true);
 			}
 		}
 	}

@@ -8,6 +8,7 @@
 
 #include "AssetKind.h"
 #include "EditorLayer.h"
+#include "document/ActionMapDocument.h"
 #include "document/AnimationDocument.h"
 #include "document/CodeEditorDocument.h"
 #include "document/FontDocument.h"
@@ -57,6 +58,9 @@ void EditorLayer::openAssetFile(const std::filesystem::path& iPath) {
 			return;
 		case AssetKind::Prefab:
 			instantiatePrefab(iPath);
+			return;
+		case AssetKind::ActionMap:
+			openActionMapFile(iPath);
 			return;
 		case AssetKind::Macro:
 			runCommandFromUi("macro.run", {{"path", iPath.string()}}, commands::CommandSource::Gesture);
@@ -361,6 +365,47 @@ void EditorLayer::openFontFile(const std::filesystem::path& iPath) {
 	auto* raw = m_documents.add(std::move(doc));
 	m_documents.setActive(raw);
 	syncActiveDocumentPanels();
+}
+
+void EditorLayer::openActionMapFile(const std::filesystem::path& iPath) {
+	if (iPath.empty())
+		return;
+	for (const auto& docPtr: m_documents.list()) {
+		if (docPtr && docPtr->type() == DocumentType::ActionMap && docPtr->filePath() == iPath) {
+			m_documents.setActive(docPtr.get());
+			docPtr->requestFocus();
+			syncActiveDocumentPanels();
+			return;
+		}
+	}
+	auto doc = mkUniq<ActionMapDocument>();
+	doc->onAttach(this);
+	if (exists(iPath)) {
+		if (!doc->loadFromFile(iPath)) {
+			OWL_CORE_WARN("Failed to open action map: {}.", iPath.string())
+			doc->onDetach();
+			return;
+		}
+	} else {
+		doc->startFromDefaults(iPath);
+	}
+	auto* raw = m_documents.add(std::move(doc));
+	m_documents.setActive(raw);
+	syncActiveDocumentPanels();
+}
+
+void EditorLayer::openActionMapEditor() {
+	if (!m_project.isLoaded())
+		return;
+	openActionMapFile(m_project.projectDirectory / std::string{input::ActionMap::fileName});
+}
+
+void EditorLayer::onActionMapSaved(const std::filesystem::path& iAbsolutePath) {
+	if (!m_project.isLoaded() || iAbsolutePath.filename() != input::ActionMap::fileName)
+		return;
+	if (weakly_canonical(iAbsolutePath.parent_path()) != weakly_canonical(m_project.projectDirectory))
+		return;
+	std::ignore = app::Application::get().getEngineContext().loadActionMap(m_project.projectDirectory);
 }
 
 void EditorLayer::newTilesetAsset() {

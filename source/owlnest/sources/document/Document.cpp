@@ -40,6 +40,8 @@ auto documentLabel(const DocumentType iType) -> DocumentLabel {
 			return {.glyph = gui::icon::layoutGrid, .kind = "tileset"};
 		case DocumentType::Font:
 			return {.glyph = gui::icon::type, .kind = "font"};
+		case DocumentType::ActionMap:
+			return {.glyph = gui::icon::gamepad2, .kind = "actionmap"};
 	}
 	return {.glyph = gui::icon::file, .kind = "doc"};
 }

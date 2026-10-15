@@ -30,13 +30,14 @@ enum struct AssetKind : uint8_t {
 	Prefab,///< `.owlprefab`: instantiated in the active scene.
 	Hud,///< `.owlhud`: opened in a scene document (the HUD is a scene of widgets).
 	Macro,///< `.owlmacro`: replayed on the active scene (one undo step).
+	ActionMap,///< `input_actions.yml`: opened in the action map document.
 	Code,///< Script, source, data or markup text: opened in the code editor.
 	Unsupported///< Anything else.
 };
 
 /**
  * @brief
- *  Classify a file by its extension (case-sensitive, as the engine writes them).
+ *  Classify a file by its extension (case-sensitive, as the engine writes them); `input_actions.yml` is told by name.
  * @param[in] iPath The file path.
  * @return The kind of asset.
  */

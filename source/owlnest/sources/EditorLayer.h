@@ -232,6 +232,35 @@ public:
 
 	/**
 	 * @brief
+	 *  Open an `input_actions.yml` in an `ActionMapDocument` (or switch to it); a missing file starts from the built-in
+	 *  actions and is created by the first save.
+	 * @param[in] iPath Absolute path to the file.
+	 */
+	void openActionMapFile(const std::filesystem::path& iPath);
+
+	/**
+	 * @brief
+	 *  Open the action map of the project (`input_actions.yml` at its root).
+	 */
+	void openActionMapEditor();
+
+	/**
+	 * @brief
+	 *  Notify the editor that an action map has just been saved: the one of the project is reloaded in the engine
+	 *  context, so a running Play session reads the new bindings on its next frame.
+	 * @param[in] iAbsolutePath The absolute path of the saved file.
+	 */
+	void onActionMapSaved(const std::filesystem::path& iAbsolutePath);
+
+	/**
+	 * @brief
+	 *  Suspend the editor shortcuts (a binding capture needs every key).
+	 * @param[in] iSuspended True to suspend them.
+	 */
+	void setShortcutsSuspended(const bool iSuspended) { m_actionRegistry.setSuspended(iSuspended); }
+
+	/**
+	 * @brief
 	 *  Create a new untitled `TilesetDocument`.
 	 */
 	void newTilesetAsset();

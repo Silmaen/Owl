@@ -10,6 +10,7 @@
 
 #include "EditorLayer.h"
 #include "EditorResources.h"
+#include "document/ActionMapDocument.h"
 #include "document/AnimationDocument.h"
 #include "document/CodeEditorDocument.h"
 #include "document/FontDocument.h"
@@ -137,6 +138,12 @@ void RibbonBuilder::build() {
 				   .tooltip = "Name, window, asset folders and renderer stack of the project.",
 				   .isEnabled = projectLoaded,
 				   .onClick = [this]() -> void { mp_editor->m_projectSettings.open(mp_editor->m_project); }});
+	m_ribbon.addButton(home, gProject,
+					   Button{.iconName = "ribbon_tune",
+							  .label = "Input Actions",
+							  .tooltip = "Edit the actions of the project and their key, mouse and gamepad bindings.",
+							  .isEnabled = projectLoaded,
+							  .onClick = [this]() -> void { mp_editor->openActionMapEditor(); }});
 	m_ribbon.addButton(home, gProject,
 					   Button{.iconName = "ribbon_pack",
 							  .label = "Pack Game",
@@ -277,6 +284,9 @@ void RibbonBuilder::build() {
 			break;
 		case DocumentType::Font:
 			buildFontTab();
+			break;
+		case DocumentType::ActionMap:
+			buildActionMapTab();
 			break;
 		case DocumentType::Scene:
 			buildSceneTab();
@@ -707,6 +717,57 @@ void RibbonBuilder::buildFontTab() {
 							  .label = "Close",
 							  .tooltip = "Close the active document",
 							  .isEnabled = [activeFont]() -> bool { return activeFont() != nullptr; },
+							  .onClick = [this]() -> void { mp_editor->requestCloseActiveDocument(); },
+							  .size = Size::Small});
+}
+
+void RibbonBuilder::buildActionMapTab() {
+	using Button = gui::widgets::Ribbon::Button;
+	using Size = gui::widgets::Ribbon::ButtonSize;
+	const auto activeMap = [this]() -> ActionMapDocument* {
+		auto* d = mp_editor->m_documents.getActive();
+		if (d != nullptr && d->type() == DocumentType::ActionMap)
+			return static_cast<ActionMapDocument*>(d);
+		return nullptr;
+	};
+	const auto tab = m_ribbon.addTab("Input Actions");
+	const auto gFile = m_ribbon.addGroup(tab, "File");
+	m_ribbon.addButton(
+			tab, gFile,
+			Button{.iconName = "ribbon_save",
+				   .label = "Save",
+				   .tooltip = "Save input_actions.yml and apply it to the editor and a running Play (Ctrl+S)",
+				   .isEnabled = [activeMap]() -> bool {
+					   auto* a = activeMap();
+					   return a != nullptr && !a->filePath().empty();
+				   },
+				   .onClick = [activeMap]() -> void {
+					   if (auto* a = activeMap())
+						   std::ignore = a->save();
+				   },
+				   .size = Size::Large});
+	m_ribbon.addButton(tab, gFile,
+					   Button{.iconName = "ribbon_save",
+							  .label = "Save As",
+							  .tooltip = "Save the action map to another file",
+							  .isEnabled = [activeMap]() -> bool { return activeMap() != nullptr; },
+							  .onClick = [activeMap]() -> void {
+								  if (auto* a = activeMap()) {
+									  const std::string defaultName = a->filePath().empty()
+																			  ? std::string{input::ActionMap::fileName}
+																			  : a->filePath().filename().string();
+									  if (const auto path = platform::FileDialog::saveFile(
+												  "Input actions (*.yml)|yml\n", defaultName);
+										  !path.empty())
+										  std::ignore = a->saveAs(path);
+								  }
+							  },
+							  .size = Size::Small});
+	m_ribbon.addButton(tab, gFile,
+					   Button{.iconName = "ribbon_close",
+							  .label = "Close",
+							  .tooltip = "Close the active document",
+							  .isEnabled = [activeMap]() -> bool { return activeMap() != nullptr; },
 							  .onClick = [this]() -> void { mp_editor->requestCloseActiveDocument(); },
 							  .size = Size::Small});
 }
