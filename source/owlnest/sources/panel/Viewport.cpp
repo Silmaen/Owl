@@ -290,7 +290,7 @@ void Viewport::onUpdate(const core::Timestep& iTimeStep) {
 				const math::vec2 vpMouse = {mx, flipped ? viewportSizeInternal.y() - my : my};
 				const bool mousePressed = ImGui::IsMouseDown(ImGuiMouseButton_Left);
 				scene::UiInputSystem::update(activeScene.get(), m_framebuffer->getSpecification().size, vpMouse,
-											 mousePressed);
+											 mousePressed, iTimeStep.getSeconds());
 				activeScene->onUpdateRuntime(iTimeStep);
 				// Handle quit request from Lua (scene.quit()) → request stop.
 				if (activeScene->quitRequested)

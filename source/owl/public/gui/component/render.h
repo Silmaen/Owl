@@ -213,6 +213,34 @@ OWL_API void renderProps(scene::component::UiProgressBar& ioComponent);
 
 /**
  * @brief
+ *  Render a Gui for editing the component.
+ * @param ioComponent The component to edit.
+ */
+OWL_API void renderProps(scene::component::UiWindow& ioComponent);
+
+/**
+ * @brief
+ *  Render a Gui for editing the component.
+ * @param ioComponent The component to edit.
+ */
+OWL_API void renderProps(scene::component::UiLayout& ioComponent);
+
+/**
+ * @brief
+ *  Render a Gui for editing the component.
+ * @param ioComponent The component to edit.
+ */
+OWL_API void renderProps(scene::component::UiTooltip& ioComponent);
+
+/**
+ * @brief
+ *  Render a Gui for editing the component.
+ * @param ioComponent The component to edit.
+ */
+OWL_API void renderProps(scene::component::UiToolCursor& ioComponent);
+
+/**
+ * @brief
  *  Render a read-only Gui displaying the prefab link info.
  * @param ioComponent The component to display.
  */
@@ -275,7 +303,8 @@ using DrawableComponents =
 				   scene::component::VoxelWorld, scene::component::FlyCamera, scene::component::VoxelPlayer,
 				   scene::component::Canvas, scene::component::UiRect, scene::component::UiText,
 				   scene::component::UiImage, scene::component::UiPanel, scene::component::UiButton,
-				   scene::component::UiSlider, scene::component::UiProgressBar>;
+				   scene::component::UiSlider, scene::component::UiProgressBar, scene::component::UiWindow,
+				   scene::component::UiLayout, scene::component::UiTooltip, scene::component::UiToolCursor>;
 
 
 }// namespace owl::gui::component

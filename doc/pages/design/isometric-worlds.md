@@ -136,7 +136,7 @@ a few days, L a week.
 - ![Done][done] **HUD2 — `.owlhud` asset, L.** D8: serializer with its own `DocumentFormat`, `HudLibrary` in
   `EngineContext`, scene key `Hud:` and project `DefaultHud`, Lua `ui.find` (HUD then scene), HUD state in saves,
   Content Browser kind and thumbnail.
-- ![Planned][planned] **HUD3 — Management-game widgets, M/L.** `UiWindow` (title bar, drag, close, raise on click,
+- ![Done][done] **HUD3 — Management-game widgets, M/L.** `UiWindow` (title bar, drag, close, raise on click,
   clamped to the screen), `UiLayout` (row, column, grid), clipping by scissor, `UiTooltip`, tool cursor sprite; any
   window blocks world clicks under it. Each window draws as its own batch until the v0.5.0 sort key.
 - ![Planned][planned] **HUD4 — HUD editor document, L.** `HudDocument` on `.owlhud` and embedded canvases: pixel

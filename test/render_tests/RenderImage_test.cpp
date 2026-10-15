@@ -237,3 +237,14 @@ INSTANTIATE_TEST_SUITE_P(Hud, RenderImage,
 							 return std::format("{}_{}_{}x{}", iInfo.param.scene, iInfo.param.backend,
 												iInfo.param.size.x(), iInfo.param.size.y());
 						 });
+
+// Windows over a 2D scene: title bars, layouts (column, grid), overlapping windows drawn as their own batch, content
+// and panels clipped by the scissor, a window clamped into the screen; at a scale of 1 and of 1.5.
+INSTANTIATE_TEST_SUITE_P(HudWindows, RenderImage,
+						 testing::Values(RenderCase{"hud_windows", "vulkan"}, RenderCase{"hud_windows", "opengl"},
+										 RenderCase{"hud_windows", "vulkan", {480, 270}},
+										 RenderCase{"hud_windows", "opengl", {480, 270}}),
+						 [](const testing::TestParamInfo<RenderCase>& iInfo) -> std::string {
+							 return std::format("{}_{}_{}x{}", iInfo.param.scene, iInfo.param.backend,
+												iInfo.param.size.x(), iInfo.param.size.y());
+						 });

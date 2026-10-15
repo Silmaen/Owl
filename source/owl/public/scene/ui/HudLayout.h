@@ -10,6 +10,7 @@
 
 #include "core/Core.h"
 #include "math/vectors.h"
+#include "scene/component/UiLayout.h"
 #include "scene/component/UiRect.h"
 
 #include <entt/entt.hpp>
@@ -45,8 +46,28 @@ struct OWL_API HudNode {
 	component::UiRect::Bounds bounds;
 	/// Screen pixels per reference pixel (the canvas scale).
 	float scale = 1.f;
-	/// Value of `parent` for a widget whose parent is the canvas.
+	/// Area the children are laid out in, in screen pixels: the bounds, minus the title bar of a `UiWindow`.
+	component::UiRect::Bounds content;
+	/// Rectangle the widget is cut to (an ancestor window content or clipping panel); only meaningful when `clipped`.
+	component::UiRect::Bounds clip;
+	/// Whether the widget is cut to `clip`.
+	bool clipped = false;
+	/// Whether the children are cut to `content` (a window, a panel with `clipChildren`).
+	bool clipsChildren = false;
+	/// Index of the nearest window above the widget, itself included (`noParent` when it is in none).
+	size_t window = noParent;
+	/// Value of `parent` and `window` for a widget with no parent widget or no window.
 	static constexpr size_t noParent = static_cast<size_t>(-1);
+
+	/**
+	 * @brief
+	 *  Check whether a point reaches the widget: inside its bounds and inside its clip rectangle.
+	 * @param[in] iPoint The point, in Y-down viewport pixels.
+	 * @return True when the widget is visible there.
+	 */
+	[[nodiscard]] auto isHit(const math::vec2& iPoint) const -> bool {
+		return bounds.contains(iPoint) && (!clipped || clip.contains(iPoint));
+	}
 };
 
 /**
@@ -57,6 +78,10 @@ struct OWL_API HudNode {
  * Canvases are taken in ascending `sortOrder`; under each one the widgets are listed depth first, a parent before its
  * children, children in hierarchy order: the list is the draw order, the last widget is drawn on top. An entity
  * without `UiRect` under a canvas passes its parent rectangle on to its children. Hidden entities hide their subtree.
+ *
+ * The children of a `UiWindow` are laid out in the area under its title bar, and a window stays inside the screen. A
+ * widget carrying a `UiLayout` places its children itself. Windows and panels with `clipChildren` give their
+ * descendants a clip rectangle.
  */
 class OWL_API HudLayout final {
 public:
@@ -161,7 +186,44 @@ private:
 		entt::entity entity = entt::null;
 		/// Index of the nearest widget above it (`HudNode::noParent` for the canvas).
 		size_t parent = HudNode::noParent;
+		/// Whether `slot` places the widget (its parent carries a `UiLayout`).
+		bool slotted = false;
+		/// Top-left corner in the parent content area, in reference pixels.
+		math::vec2 slot{0.f, 0.f};
 	};
+
+	/**
+	 * @brief
+	 *  One child waiting for its cell in a `UiLayout`.
+	 */
+	struct LayoutChild {
+		/// The child entity.
+		entt::entity entity = entt::null;
+		/// Its size in reference pixels.
+		math::vec2 size{0.f, 0.f};
+		/// Whether the layout places it (a visible widget with a `UiRect`).
+		bool placed = false;
+	};
+
+	/**
+	 * @brief
+	 *  Queue the children of a widget for the walk, placed by its `UiLayout` when it has one.
+	 * @param[in] iScene The scene.
+	 * @param[in] iEntity The widget (or canvas) entity.
+	 * @param[in] iParent Index of the widget in the layout (`HudNode::noParent` for a canvas).
+	 * @param[in] iEditorMode Use the editor visibility.
+	 */
+	void pushChildren(Scene& iScene, entt::entity iEntity, size_t iParent, bool iEditorMode);
+
+	/**
+	 * @brief
+	 *  Compute the cells of the children of a `UiLayout`.
+	 * @param[in] iLayout The arrangement.
+	 * @param[in] iContent Size of the content area, in reference pixels.
+	 *
+	 * Fills `m_slots`, one cell per child of `m_layoutChildren`.
+	 */
+	void arrange(const component::UiLayout& iLayout, const math::vec2& iContent);
 
 	/**
 	 * @brief
@@ -178,6 +240,10 @@ private:
 	std::vector<std::pair<int32_t, entt::entity>> m_canvases;
 	/// Depth-first walk stack (kept to reuse its storage).
 	std::vector<PendingEntity> m_pending;
+	/// Children of the layout being arranged (kept to reuse its storage).
+	std::vector<LayoutChild> m_layoutChildren;
+	/// Cells of `m_layoutChildren`, in reference pixels (kept to reuse its storage).
+	std::vector<math::vec2> m_slots;
 	/// Viewport of the last `compute`.
 	math::vec2ui m_viewport{0, 0};
 	/// Whether the layout matches `m_viewport` (cleared by `invalidate`).

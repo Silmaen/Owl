@@ -10,6 +10,7 @@
 #include "HudPass.h"
 
 #include "app/Application.h"
+#include "data/fonts/TextLayout.h"
 #include "renderer/CameraOrtho.h"
 #include "renderer/Renderer2D.h"
 #include "scene/Entity.h"
@@ -18,6 +19,10 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstddef>
+#include <cstdint>
+#include <optional>
+#include <string>
 
 namespace owl::scene::ui {
 
@@ -35,6 +40,65 @@ auto leftFill(const math::Transform& iTransform, const float iFraction) -> math:
 	fill.scale().x() *= iFraction;
 	fill.translation().x() -= iTransform.scale().x() * (1.f - iFraction) * 0.5f;
 	return fill;
+}
+
+// A rectangle of the Y-down pixel layout as a Y-up transform of the pixel camera.
+auto pixelTransform(const component::UiRect::Bounds& iBounds, const float iHeight) -> math::Transform {
+	const auto center = iBounds.getCenter();
+	math::Transform transform;
+	transform.translation() = {center.x(), iHeight - center.y(), 0.f};
+	transform.scale() = {iBounds.size.x(), iBounds.size.y(), 1.f};
+	return transform;
+}
+
+auto fontOrDefault(const shared<data::fonts::Font>& iFont) -> shared<data::fonts::Font> {
+	if (!iFont && app::Application::instanced())
+		return app::Application::get().getFontLibrary().getDefaultFont();
+	return iFont;
+}
+
+// A text laid out in a rectangle of the pixel layout, its font size given in reference pixels.
+void drawBoxedText(const component::UiRect::Bounds& iBox, const float iScale, const float iHeight,
+				   const std::string& iText, const math::vec4& iColor, const float iFontSize,
+				   const data::fonts::HorizontalAlignment iHorizontal, const int iEntityId) {
+	math::Transform transform = pixelTransform(iBox, iHeight);
+	transform.scale() = {iScale, iScale, 1.f};
+	renderer::Renderer2D::drawString({.transform = transform,
+									  .text = iText,
+									  .font = fontOrDefault(nullptr),
+									  .color = iColor,
+									  .layout = {.fontSize = iFontSize,
+												 .boxSize = iBox.size / iScale,
+												 .horizontal = iHorizontal,
+												 .vertical = data::fonts::VerticalAlignment::Middle},
+									  .entityId = iEntityId});
+}
+
+void drawWindow(const component::UiWindow& iWindow, const HudNode& iNode, const float iHeight, const int iEntityId) {
+	static constexpr math::vec4 closeColor{0.65f, 0.18f, 0.18f, 1.f};
+	renderer::Renderer2D::drawQuad(
+			{.transform = pixelTransform(iNode.bounds, iHeight), .color = iWindow.bodyColor, .entityId = iEntityId});
+	const component::UiRect::Bounds bar{
+			.position = iNode.bounds.position,
+			.size = {iNode.bounds.size.x(), std::min(iWindow.titleBarHeight * iNode.scale, iNode.bounds.size.y())}};
+	renderer::Renderer2D::drawQuad(
+			{.transform = pixelTransform(bar, iHeight), .color = iWindow.titleColor, .entityId = iEntityId});
+	const float margin = 6.f * iNode.scale;
+	const float buttonSize = iWindow.closable ? bar.size.y() : 0.f;
+	const component::UiRect::Bounds titleBox{
+			.position = {bar.position.x() + margin, bar.position.y()},
+			.size = {std::max(0.f, bar.size.x() - buttonSize - 2.f * margin), bar.size.y()}};
+	drawBoxedText(titleBox, iNode.scale, iHeight, iWindow.title, iWindow.titleTextColor, iWindow.titleFontSize,
+				  data::fonts::HorizontalAlignment::Left, iEntityId);
+	if (!iWindow.closable)
+		return;
+	const component::UiRect::Bounds button{.position = {bar.position.x() + bar.size.x() - buttonSize, bar.position.y()},
+										   .size = {buttonSize, buttonSize}};
+	renderer::Renderer2D::drawQuad(
+			{.transform = pixelTransform(button, iHeight), .color = closeColor, .entityId = iEntityId});
+	// U+00D7 MULTIPLICATION SIGN, in the Latin-1 range of the default charset.
+	drawBoxedText(button, iNode.scale, iHeight, "\xC3\x97", iWindow.titleTextColor, iWindow.titleFontSize * 1.3f,
+				  data::fonts::HorizontalAlignment::Center, iEntityId);
 }
 
 void drawText(const Entity& iEntity, const HudNode& iNode, const math::Transform& iTransform, const int iEntityId) {
@@ -69,8 +133,10 @@ void drawSlider(const component::UiSlider& iSlider, const math::Transform& iTran
 	renderer::Renderer2D::drawQuad({.transform = handle, .color = iSlider.handleColor, .entityId = iEntityId});
 }
 
-void drawWidget(const Entity& iEntity, const HudNode& iNode, const math::Transform& iTransform) {
+void drawWidget(const Entity& iEntity, const HudNode& iNode, const math::Transform& iTransform, const float iHeight) {
 	const int entityId = static_cast<int>(static_cast<entt::entity>(iEntity));
+	if (iEntity.hasComponent<component::UiWindow>())
+		drawWindow(iEntity.getComponent<component::UiWindow>(), iNode, iHeight, entityId);
 	if (iEntity.hasComponent<component::SpriteRenderer>()) {
 		const auto& sprite = iEntity.getComponent<component::SpriteRenderer>();
 		renderer::Renderer2D::drawQuad({.transform = iTransform,
@@ -119,6 +185,22 @@ void drawWidget(const Entity& iEntity, const HudNode& iNode, const math::Transfo
 		drawSlider(iEntity.getComponent<component::UiSlider>(), iTransform, entityId);
 }
 
+// Pixel rectangle of a clip, rounded outwards and kept inside the viewport.
+auto scissorOf(const component::UiRect::Bounds& iClip, const math::vec2ui& iViewport) -> renderer::Renderer2D::Scissor {
+	const auto edge = [](const float iValue, const uint32_t iLimit) -> uint32_t {
+		return static_cast<uint32_t>(std::clamp(iValue, 0.f, static_cast<float>(iLimit)));
+	};
+	const uint32_t left = edge(std::floor(iClip.position.x()), iViewport.x());
+	const uint32_t top = edge(std::floor(iClip.position.y()), iViewport.y());
+	const uint32_t right = edge(std::ceil(iClip.position.x() + iClip.size.x()), iViewport.x());
+	const uint32_t bottom = edge(std::ceil(iClip.position.y() + iClip.size.y()), iViewport.y());
+	return {.position = {left, top}, .size = {right - left, bottom - top}, .targetHeight = iViewport.y()};
+}
+
+auto pixelCamera(const math::vec2ui& iViewport) -> renderer::CameraOrtho {
+	return {0.f, static_cast<float>(iViewport.x()), 0.f, static_cast<float>(iViewport.y())};
+}
+
 void drawCanvases(Scene& ioScene, const math::vec2ui& iViewport, const bool iEditorMode) {
 	auto& layout = ioScene.getHudLayout();
 	layout.compute(ioScene, iViewport, iEditorMode);
@@ -126,15 +208,119 @@ void drawCanvases(Scene& ioScene, const math::vec2ui& iViewport, const bool iEdi
 		return;
 	const auto height = static_cast<float>(iViewport.y());
 	// Renderer2D draws Y-up: the Y-down layout is flipped here, so the glyphs keep their orientation.
-	const renderer::CameraOrtho pixels{0.f, static_cast<float>(iViewport.x()), 0.f, height};
-	renderer::Renderer2D::beginScene(pixels);
+	renderer::Renderer2D::beginScene(pixelCamera(iViewport));
+	// A window is a batch of its own (its text over the quads of the windows below); a clip is a scissor.
+	size_t window = HudNode::noParent;
+	std::optional<component::UiRect::Bounds> clip;
 	for (const auto& node: layout.getNodes()) {
-		const auto center = node.bounds.getCenter();
-		math::Transform transform;
-		transform.translation() = {center.x(), height - center.y(), 0.f};
-		transform.scale() = {node.bounds.size.x(), node.bounds.size.y(), 1.f};
-		drawWidget(Entity{node.entity, &ioScene}, node, transform);
+		const std::optional<component::UiRect::Bounds> wanted = node.clipped ? std::optional{node.clip} : std::nullopt;
+		const bool clipChanged = wanted.has_value() != clip.has_value() ||
+								 (wanted && (wanted->position != clip->position || wanted->size != clip->size));
+		if (clipChanged) {
+			if (wanted)
+				renderer::Renderer2D::setScissor(scissorOf(*wanted, iViewport));
+			else
+				renderer::Renderer2D::clearScissor();
+			clip = wanted;
+		} else if (node.window != window)
+			renderer::Renderer2D::nextBatch();
+		window = node.window;
+		drawWidget(Entity{node.entity, &ioScene}, node, pixelTransform(node.bounds, height), height);
 	}
+	renderer::Renderer2D::endScene();
+}
+
+// Scale of the canvas above an entity (1 when it hangs under none).
+auto canvasScaleOf(const Scene& iScene, entt::entity iEntity, const math::vec2& iScreen) -> float {
+	while (iEntity != entt::null) {
+		if (const auto* canvas = iScene.registry.try_get<component::Canvas>(iEntity))
+			return canvas->getScale(iScreen);
+		const auto* hierarchy = iScene.registry.try_get<component::Hierarchy>(iEntity);
+		if (hierarchy == nullptr || hierarchy->parentId == core::UUID{0})
+			break;
+		iEntity = static_cast<entt::entity>(iScene.findEntityByUUID(hierarchy->parentId));
+	}
+	return 1.f;
+}
+
+void drawTooltip(Scene& ioSurface, const Scene::UiInputState& iState, const math::vec2ui& iViewport) {
+	if (!ioSurface.registry.valid(iState.tooltipWidget))
+		return;
+	const auto* tooltip = ioSurface.registry.try_get<component::UiTooltip>(iState.tooltipWidget);
+	const auto* node = ioSurface.getHudLayout().findNode(iState.tooltipWidget);
+	if (tooltip == nullptr || node == nullptr || tooltip->text.empty() || iState.hoverTime < tooltip->delay)
+		return;
+	const auto height = static_cast<float>(iViewport.y());
+	const float scale = node->scale;
+	const auto font = fontOrDefault(nullptr);
+	const data::fonts::TextLayout layout{.fontSize = tooltip->fontSize};
+	// Without a font (headless) a glyph is taken half an em wide.
+	math::vec2 text{tooltip->fontSize * 0.5f * static_cast<float>(tooltip->text.size()), tooltip->fontSize};
+	if (font) {
+		const auto measured = measureTextLayout(*font, tooltip->text, layout).diagonal();
+		text = {measured.x(), measured.y()};
+	}
+	const math::vec2 size = (text + math::vec2{2.f, 2.f} * tooltip->padding) * scale;
+	const math::vec2 screen{static_cast<float>(iViewport.x()), static_cast<float>(iViewport.y())};
+	const math::vec2 wanted = iState.mousePosition + tooltip->offset * scale;
+	const component::UiRect::Bounds box{.position = {std::clamp(wanted.x(), 0.f, std::max(0.f, screen.x() - size.x())),
+													 std::clamp(wanted.y(), 0.f, std::max(0.f, screen.y() - size.y()))},
+										.size = size};
+	renderer::Renderer2D::drawQuad(
+			{.transform = pixelTransform(box, height), .color = tooltip->backgroundColor, .entityId = -1});
+	const component::UiRect::Bounds textBox{.position = box.position +
+														math::vec2{tooltip->padding, tooltip->padding} * scale,
+											.size = text * scale};
+	drawBoxedText(textBox, scale, height, tooltip->text, tooltip->textColor, tooltip->fontSize,
+				  data::fonts::HorizontalAlignment::Left, -1);
+}
+
+// The first active, visible tool cursor of a surface.
+auto findToolCursor(Scene& ioSurface, const bool iEditorMode) -> entt::entity {
+	for (const auto view = ioSurface.registry.view<component::UiToolCursor>(); const auto entity: view) {
+		if (view.get<component::UiToolCursor>(entity).active &&
+			ioSurface.isEffectivelyVisible(Entity{entity, &ioSurface}, iEditorMode))
+			return entity;
+	}
+	return entt::null;
+}
+
+void drawToolCursor(const Scene& iSurface, const entt::entity iEntity, const Scene::UiInputState& iState,
+					const math::vec2ui& iViewport) {
+	const auto& cursor = iSurface.registry.get<component::UiToolCursor>(iEntity);
+	const math::vec2 screen{static_cast<float>(iViewport.x()), static_cast<float>(iViewport.y())};
+	const float scale = canvasScaleOf(iSurface, iEntity, screen);
+	const component::UiRect::Bounds box{
+			.position = iState.mousePosition -
+						math::vec2{cursor.hotspot.x() * cursor.size.x(), cursor.hotspot.y() * cursor.size.y()} * scale,
+			.size = cursor.size * scale};
+	renderer::Renderer2D::drawQuad({.transform = pixelTransform(box, screen.y()),
+									.color = cursor.tint,
+									.texture = cursor.texture,
+									.entityId = -1});
+}
+
+// The tooltip then the tool cursor, over every window of the scene and of its HUD.
+void drawOverlays(Scene& ioScene, Scene* iHud, const math::vec2ui& iViewport, const bool iEditorMode) {
+	const auto& state = ioScene.getUiInputState();
+	if (ioScene.status != Scene::Status::Playing || !state.hasMouse)
+		return;
+	const Scene* cursorSurface = nullptr;
+	entt::entity cursor = entt::null;
+	for (Scene* surface: {iHud, &ioScene}) {
+		if (surface == nullptr || cursorSurface != nullptr)
+			continue;
+		if (cursor = findToolCursor(*surface, iEditorMode); cursor != entt::null)
+			cursorSurface = surface;
+	}
+	const bool tooltip = state.tooltipWidget != entt::null;
+	if (!tooltip && cursorSurface == nullptr)
+		return;
+	renderer::Renderer2D::beginScene(pixelCamera(iViewport));
+	if (tooltip)
+		drawTooltip(state.tooltipInHud && iHud != nullptr ? *iHud : ioScene, state, iViewport);
+	if (cursorSurface != nullptr)
+		drawToolCursor(*cursorSurface, cursor, state, iViewport);
 	renderer::Renderer2D::endScene();
 }
 
@@ -144,8 +330,11 @@ void HudPass::render(Scene& ioScene, const math::vec2ui& iViewport, const bool i
 	OWL_PROFILE_FUNCTION()
 
 	drawCanvases(ioScene, iViewport, iEditorMode);
-	if (const auto hud = ioScene.getHud(); hud && hud.get() != &ioScene)
-		drawCanvases(*hud, iViewport, iEditorMode);
+	const auto hud = ioScene.getHud();
+	Scene* const hudScene = hud && hud.get() != &ioScene ? hud.get() : nullptr;
+	if (hudScene != nullptr)
+		drawCanvases(*hudScene, iViewport, iEditorMode);
+	drawOverlays(ioScene, hudScene, iViewport, iEditorMode);
 }
 
 }// namespace owl::scene::ui

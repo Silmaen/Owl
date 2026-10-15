@@ -24,6 +24,7 @@ void UiPanel::serialize(const core::Serializer& iOut) const {
 	iOut.getImpl()->emitter << YAML::Key << "layout" << YAML::Value << std::string(magic_enum::enum_name(layout));
 	iOut.getImpl()->emitter << YAML::Key << "spacing" << YAML::Value << spacing;
 	iOut.getImpl()->emitter << YAML::Key << "padding" << YAML::Value << padding;
+	iOut.getImpl()->emitter << YAML::Key << "clipChildren" << YAML::Value << clipChildren;
 	iOut.getImpl()->emitter << YAML::EndMap;
 }
 
@@ -41,6 +42,8 @@ void UiPanel::deserialize(const core::Serializer& iNode) {
 		spacing = iNode.getImpl()->node["spacing"].as<float>();
 	if (iNode.getImpl()->node["padding"])
 		padding = iNode.getImpl()->node["padding"].as<float>();
+	if (iNode.getImpl()->node["clipChildren"])
+		clipChildren = iNode.getImpl()->node["clipChildren"].as<bool>();
 }
 
 }// namespace owl::scene::component

@@ -882,6 +882,8 @@ void renderProps(UiPanel& ioComponent) {
 		prop::DragFloat("Spacing", &ioComponent.spacing, 0.5f, 0.0f, 100.0f);
 		prop::DragFloat("Padding", &ioComponent.padding, 0.5f, 0.0f, 100.0f);
 	}
+	prop::Checkbox("Clip Children", &ioComponent.clipChildren);
+	fieldTooltip("Cut the children at the panel edges (scissor).");
 }
 
 void renderProps(UiButton& ioComponent) {
@@ -915,6 +917,63 @@ void renderProps(UiProgressBar& ioComponent) {
 	prop::DragFloat("Value", &ioComponent.value, 0.01f, 0.0f, 1.0f);
 	prop::ColorEdit4("Background", reinterpret_cast<float*>(&ioComponent.backgroundColor));
 	prop::ColorEdit4("Fill Color", reinterpret_cast<float*>(&ioComponent.fillColor));
+}
+
+void renderProps(UiWindow& ioComponent) {
+	prop::InputText("Title", &ioComponent.title);
+	fieldTooltip("Text of the title bar.");
+	prop::DragFloat("Title Bar Height", &ioComponent.titleBarHeight, 0.5f, 0.0f, 200.0f);
+	fieldTooltip("Height of the title bar in reference pixels; the children are laid out under it.");
+	prop::DragFloat("Title Font Size", &ioComponent.titleFontSize, 0.5f, 1.0f, 200.0f);
+	prop::ColorEdit4("Body Color", reinterpret_cast<float*>(&ioComponent.bodyColor));
+	prop::ColorEdit4("Title Color", reinterpret_cast<float*>(&ioComponent.titleColor));
+	prop::ColorEdit4("Title Text Color", reinterpret_cast<float*>(&ioComponent.titleTextColor));
+	prop::Checkbox("Draggable", &ioComponent.draggable);
+	fieldTooltip("The title bar drags the window; it stays inside the screen.");
+	prop::Checkbox("Closable", &ioComponent.closable);
+	fieldTooltip("Show a close button that hides the window (ui.set_visible shows it again).");
+	prop::InputText("On Close Callback", &ioComponent.onCloseCallback);
+	fieldTooltip("Lua function called when the close button is pressed.");
+}
+
+void renderProps(UiLayout& ioComponent) {
+	enumCombo("Arrangement", ioComponent.arrangement);
+	fieldTooltip("Row: left to right. Column: top to bottom. Grid: Columns per line, then the next line.");
+	enumCombo("Cross Align", ioComponent.crossAlign);
+	fieldTooltip("Placement of a child across the arrangement direction (in its cell for a grid).");
+	prop::DragFloat("Spacing", &ioComponent.spacing, 0.5f, 0.0f, 200.0f);
+	prop::DragFloat("Padding", &ioComponent.padding, 0.5f, 0.0f, 200.0f);
+	if (ioComponent.arrangement == UiLayout::Arrangement::Grid) {
+		auto columns = static_cast<int>(ioComponent.columns);
+		if (prop::DragInt("Columns", &columns, 1.0f, 1, 64))
+			ioComponent.columns = static_cast<uint32_t>(std::max(columns, 1));
+		prop::DragFloat2("Cell Size", ioComponent.cellSize.data(), 1.0f, 0.0f, 10000.0f);
+		fieldTooltip("Size of a cell in reference pixels; 0 on an axis takes the largest child.");
+	}
+}
+
+void renderProps(UiTooltip& ioComponent) {
+	prop::InputTextMultiline("Text", &ioComponent.text, ImVec2(0, 60));
+	fieldTooltip("Text shown near the mouse once the widget has been hovered for the delay.");
+	prop::DragFloat("Delay", &ioComponent.delay, 0.01f, 0.0f, 10.0f);
+	fieldTooltip("Hover time before the tooltip shows, in seconds.");
+	prop::DragFloat("Font Size", &ioComponent.fontSize, 0.5f, 1.0f, 200.0f);
+	prop::DragFloat("Padding", &ioComponent.padding, 0.5f, 0.0f, 100.0f);
+	prop::DragFloat2("Offset", ioComponent.offset.data(), 0.5f, -500.0f, 500.0f);
+	fieldTooltip("Offset of the box from the mouse, in reference pixels.");
+	prop::ColorEdit4("Background", reinterpret_cast<float*>(&ioComponent.backgroundColor));
+	prop::ColorEdit4("Text Color", reinterpret_cast<float*>(&ioComponent.textColor));
+}
+
+void renderProps(UiToolCursor& ioComponent) {
+	widgets::textureField("Texture", ioComponent.texture);
+	prop::ColorEdit4("Tint", reinterpret_cast<float*>(&ioComponent.tint));
+	prop::DragFloat2("Size", ioComponent.size.data(), 1.0f, 1.0f, 1024.0f);
+	fieldTooltip("Size of the sprite in reference pixels.");
+	prop::DragFloat2("Hotspot", ioComponent.hotspot.data(), 0.01f, 0.0f, 1.0f);
+	fieldTooltip("Point of the sprite put on the mouse: (0,0) = top-left, (1,1) = bottom-right.");
+	prop::Checkbox("Active", &ioComponent.active);
+	fieldTooltip("Drawn over the HUD in play; a script switches it with ui.set_tool_cursor.");
 }
 
 void renderProps(PrefabLink& ioComponent) {

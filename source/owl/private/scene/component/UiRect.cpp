@@ -10,8 +10,11 @@
 #include "core/SerializerImpl.h"
 #include "scene/component/UiRect.h"
 
+#include "Vec2Yaml.h"
+
 #include <magic_enum/magic_enum.hpp>
 
+#include <algorithm>
 #include <cmath>
 #include <optional>
 
@@ -23,21 +26,19 @@ auto scaled(const math::vec2& iValue, const math::vec2& iFactor) -> math::vec2 {
 	return {iValue.x() * iFactor.x(), iValue.y() * iFactor.y()};
 }
 
-void emitVec2(YAML::Emitter& ioEmitter, const char* iKey, const math::vec2& iValue) {
-	ioEmitter << YAML::Key << iKey << YAML::Value << YAML::Flow << YAML::BeginSeq << iValue.x() << iValue.y()
-			  << YAML::EndSeq;
-}
-
-void readVec2(const core::YamlNode& iNode, const char* iKey, math::vec2& oValue) {
-	if (const auto value = iNode[iKey]; value.isSequence() && value.size() >= 2)
-		oValue = {value[0].as<float>(), value[1].as<float>()};
-}
-
 }// namespace
 
 auto UiRect::Bounds::contains(const math::vec2& iPoint) const -> bool {
 	return iPoint.x() >= position.x() && iPoint.x() <= position.x() + size.x() && iPoint.y() >= position.y() &&
 		   iPoint.y() <= position.y() + size.y();
+}
+
+auto UiRect::Bounds::intersect(const Bounds& iOther) const -> Bounds {
+	const float left = std::max(position.x(), iOther.position.x());
+	const float top = std::max(position.y(), iOther.position.y());
+	const float right = std::min(position.x() + size.x(), iOther.position.x() + iOther.size.x());
+	const float bottom = std::min(position.y() + size.y(), iOther.position.y() + iOther.size.y());
+	return {.position = {left, top}, .size = {std::max(0.f, right - left), std::max(0.f, bottom - top)}};
 }
 
 auto UiRect::Bounds::getCenter() const -> math::vec2 { return position + size * 0.5f; }

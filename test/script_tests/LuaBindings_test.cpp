@@ -360,6 +360,42 @@ TEST(LuaBindings, uiTextSetGetAndVisibility) {
 	core::Log::invalidate();
 }
 
+TEST(LuaBindings, uiWindowTooltipAndToolCursor) {
+	core::Log::init(core::Log::Level::Off);
+	auto scn = mkShared<scene::Scene>();
+	auto canvas = scn->createEntity("Canvas");
+	canvas.addComponent<scene::component::Canvas>();
+	auto first = scn->createEntity("First");
+	first.addComponent<scene::component::UiWindow>();
+	scn->setParent(first, canvas);
+	auto second = scn->createEntity("Second");
+	second.addComponent<scene::component::UiWindow>();
+	scn->setParent(second, canvas);
+	auto& tooltip = first.addComponent<scene::component::UiTooltip>();
+	auto& cursor = first.addComponent<scene::component::UiToolCursor>();
+	const std::string script =
+			"has = false\n"
+			"function on_create()\n"
+			"  has = entity.has_component(entity_id, 'UiWindow') and entity.has_component(entity_id, 'UiTooltip')"
+			" and entity.has_component(entity_id, 'UiToolCursor')\n"
+			"  ui.set_window_title(entity_id, 'Depot')\n"
+			"  ui.set_tooltip(entity_id, 'Hint')\n"
+			"  ui.set_tool_cursor(entity_id, true)\n"
+			"  ui.raise_window(entity_id)\n"
+			"end\n";
+	const std::vector<uint8_t> data(script.begin(), script.end());
+	const ScriptInstance inst;
+	inst.setScene(scn.get());
+	ASSERT_TRUE(inst.createFromBuffer(data, "ui_window_test", static_cast<uint64_t>(first.getUUID())));
+	inst.onCreate();
+	EXPECT_EQ(inst.getPropertyBool("has").value_or(false), true);
+	EXPECT_EQ(first.getComponent<scene::component::UiWindow>().title, "Depot");
+	EXPECT_EQ(tooltip.text, "Hint");
+	EXPECT_TRUE(cursor.active);
+	EXPECT_EQ(canvas.getComponent<scene::component::Hierarchy>().childrenIds.back(), first.getUUID());
+	core::Log::invalidate();
+}
+
 TEST(LuaBindings, uiGettersFallbackWhenComponentMissing) {
 	core::Log::init(core::Log::Level::Off);
 	auto scn = mkShared<scene::Scene>();
