@@ -238,6 +238,10 @@ void Scene::destroyEntity(Entity& ioEntity) {
 	ioEntity.m_entityHandle = entt::null;
 }
 
+auto Scene::getActionMap() const -> shared<const input::ActionMap> {
+	return mp_engineContext != nullptr ? mp_engineContext->getActionMap() : input::ActionMap::getDefault();
+}
+
 void Scene::onStartRuntime() {
 	OWL_PROFILE_FUNCTION()
 
@@ -249,6 +253,8 @@ void Scene::onStartRuntime() {
 	m_frameInput.reset(heldInput);
 	m_tickInput.reset(heldInput);
 	m_inputSampler.reset(heldInput);
+	m_frameActions.update(getActionMap(), m_frameInput);
+	m_tickActions.update(getActionMap(), m_tickInput);
 
 	using clk = std::chrono::steady_clock;
 	const auto runtimeStart = clk::now();
@@ -392,6 +398,7 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep, const bool iRender)
 	const auto frameInput = input::Input::readState();
 	m_frameInput.advance(frameInput);
 	m_inputSampler.observe(frameInput);
+	m_frameActions.update(getActionMap(), m_frameInput);
 	if (status == Status::Victory || status == Status::Death) {
 		m_systems.run(SystemPhase::Ended, *this, {.timeStep = iTimeStep, .render = iRender});
 		return;
@@ -446,6 +453,7 @@ void Scene::runSimulationTicks(const SystemContext& iFrame) {
 	for (uint32_t index = 0; index < iFrame.tickCount; ++index) {
 		m_tickContext.tickIndex = index;
 		m_tickInput.advance(m_inputSampler.take());
+		m_tickActions.update(getActionMap(), m_tickInput);
 		for (const auto phase:
 			 {SystemPhase::Scripts, SystemPhase::PrePhysics, SystemPhase::Physics, SystemPhase::PostPhysics})
 			m_systems.runTick(phase, *this, m_tickContext);

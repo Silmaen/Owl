@@ -9,6 +9,7 @@
 #pragma once
 
 #include "core/Core.h"
+#include "core/Macros.h"
 #include "math/vectors.h"
 
 #include <array>
@@ -187,6 +188,8 @@ struct OWL_API AxisResponse {
 	 */
 	[[nodiscard]] auto getExponent() const -> float;
 
+	OWL_DIAG_PUSH
+	OWL_DIAG_DISABLE_CLANG("-Wfloat-equal")
 	/**
 	 * @brief
 	 *  Equality comparison.
@@ -194,6 +197,7 @@ struct OWL_API AxisResponse {
 	 * @return True if equal.
 	 */
 	auto operator==(const AxisResponse& iOther) const -> bool = default;
+	OWL_DIAG_POP
 };
 
 /**

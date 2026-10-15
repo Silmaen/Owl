@@ -9,7 +9,6 @@
 
 #include "scene/SceneTrigger.h"
 
-#include "input/KeyCodes.h"
 #include "physics/PhysicCommand.h"
 #include "scene/Entity.h"
 #include "scene/Scene.h"
@@ -77,7 +76,7 @@ void SceneTrigger::onTriggered(const Entity& ioPlayer, const Entity& iTriggerEnt
 			break;
 		case TriggerType::Interaction:
 			{
-				if (scene->getInputFrame().isKeyJustPressed(input::key::E)) {
+				if (scene->getActions().isJustPressed("interact")) {
 					const auto& func = callbackName.empty() ? std::string("on_interact") : callbackName;
 
 					dispatchLuaCallbackNoArg(iTriggerEntity, func);

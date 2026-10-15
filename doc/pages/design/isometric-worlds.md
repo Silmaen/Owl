@@ -157,7 +157,7 @@ a few days, L a week.
   `JustReleased`, injection moved out of the backends so it works on GLFW too; hand-written edge code removed.
 - ![Done][done] **IN2 — Gamepad, M.** GLFW `glfwGetGamepadState`, connect / disconnect events, optional
   project mapping file, Null backend injection, per-binding radial dead zone and response curve (from v0.10.0).
-- ![Planned][planned] **IN3 — Action map, M.** `input_actions.yml` packed with the game, Lua `input.is_action_*`,
+- ![Done][done] **IN3 — Action map, M.** `input_actions.yml` packed with the game, Lua `input.is_action_*`,
   `get_action_value`, `get_action_vector`; scenarios gain an `actions:` step; engine systems and sample scripts move
   to actions (`is_key_pressed` kept, deprecated).
 - ![Planned][planned] **IN4 — Action map editor, M.** Document with its own undo stack, "press a key" capture,

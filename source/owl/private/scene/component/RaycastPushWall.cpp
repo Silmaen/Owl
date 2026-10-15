@@ -25,7 +25,7 @@ void RaycastPushWall::serialize(const core::Serializer& iOut) const {
 							<< slideDirection.x() << slideDirection.y() << YAML::EndSeq;
 	iOut.getImpl()->emitter << YAML::Key << "slideDistance" << YAML::Value << slideDistance;
 	iOut.getImpl()->emitter << YAML::Key << "slideSpeed" << YAML::Value << slideSpeed;
-	iOut.getImpl()->emitter << YAML::Key << "interactionKey" << YAML::Value << static_cast<uint32_t>(interactionKey);
+	iOut.getImpl()->emitter << YAML::Key << "interactionAction" << YAML::Value << interactionAction;
 	iOut.getImpl()->emitter << YAML::Key << "interactionRange" << YAML::Value << interactionRange;
 	iOut.getImpl()->emitter << YAML::EndMap;
 }
@@ -42,8 +42,10 @@ void RaycastPushWall::deserialize(const core::Serializer& iNode) {
 		slideDistance = node["slideDistance"].as<float>();
 	if (node["slideSpeed"])
 		slideSpeed = node["slideSpeed"].as<float>();
-	if (node["interactionKey"])
-		interactionKey = static_cast<input::KeyCode>(node["interactionKey"].as<uint32_t>());
+	if (node["interactionAction"])
+		interactionAction = node["interactionAction"].as<std::string>();
+	else if (node["interactionKey"] && node["interactionKey"].as<uint32_t>() == 0)
+		interactionAction.clear();
 	if (node["interactionRange"])
 		interactionRange = node["interactionRange"].as<float>();
 	state = State::Idle;

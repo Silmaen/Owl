@@ -242,6 +242,12 @@ private:
 
 	/**
 	 * @brief
+	 *  Load the game's `input_actions.yml` from an asset directory or the open pack; the built-in actions otherwise.
+	 */
+	void loadActionMap() const;
+
+	/**
+	 * @brief
 	 *  Load a scene straight from a source project (frame bench, scenario): project assets, renderer stack and
 	 *  game settings (no user settings, so the run does not depend on the machine), null input, the scene.
 	 * @param[in] iProject The project directory, empty for none.

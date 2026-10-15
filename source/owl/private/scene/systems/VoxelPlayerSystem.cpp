@@ -13,9 +13,8 @@
 #include "app/Application.h"
 #include "data/voxel/VoxelCollision.h"
 #include "data/voxel/VoxelRaycast.h"
+#include "input/ActionFrame.h"
 #include "input/Input.h"
-#include "input/InputFrame.h"
-#include "input/MouseCode.h"
 #include "scene/Entity.h"
 #include "scene/Scene.h"
 #include "scene/component/components.h"
@@ -30,8 +29,8 @@ namespace owl::scene::systems {
 
 namespace {
 
-void applyPlayerLook(component::VoxelPlayer& ioPlayer, math::Transform& ioTransform, const float iDt,
-					 const bool iCursorCaptured) {
+void applyPlayerLook(component::VoxelPlayer& ioPlayer, math::Transform& ioTransform, const input::ActionFrame& iActions,
+					 const float iDt, const bool iCursorCaptured) {
 	if (iCursorCaptured) {
 		const math::vec2 mouse = input::Input::getMousePos();
 		if (ioPlayer.mouseValid) {
@@ -43,23 +42,18 @@ void applyPlayerLook(component::VoxelPlayer& ioPlayer, math::Transform& ioTransf
 	} else {
 		ioPlayer.mouseValid = false;
 	}
-	if (input::Input::isKeyPressed(input::key::Left))
-		ioPlayer.yaw += ioPlayer.lookSpeed * iDt;
-	if (input::Input::isKeyPressed(input::key::Right))
-		ioPlayer.yaw -= ioPlayer.lookSpeed * iDt;
-	if (input::Input::isKeyPressed(input::key::Up))
-		ioPlayer.pitch += ioPlayer.lookSpeed * iDt;
-	if (input::Input::isKeyPressed(input::key::Down))
-		ioPlayer.pitch -= ioPlayer.lookSpeed * iDt;
+	const math::vec2 look = iActions.getVector("look");
+	ioPlayer.yaw -= look.x() * ioPlayer.lookSpeed * iDt;
+	ioPlayer.pitch -= look.y() * ioPlayer.lookSpeed * iDt;
 	ioPlayer.pitch = std::clamp(ioPlayer.pitch, -1.5f, 1.5f);
 	ioTransform.rotation() = math::vec3{ioPlayer.pitch, ioPlayer.yaw, 0.f};
 }
 
-auto updatePlayerModes(component::VoxelPlayer& ioPlayer, const input::InputFrame& iInput, const float iDt)
+auto updatePlayerModes(component::VoxelPlayer& ioPlayer, const input::ActionFrame& iActions, const float iDt)
 		-> std::string {
 	std::string toast;
 	ioPlayer.doubleTapTimer = std::max(0.f, ioPlayer.doubleTapTimer - iDt);
-	if (iInput.isKeyJustPressed(input::key::Space)) {
+	if (iActions.isJustPressed("jump")) {
 		if (ioPlayer.doubleTapTimer > 0.f) {
 			ioPlayer.flyMode = !ioPlayer.flyMode;
 			ioPlayer.velocityY = 0.f;
@@ -71,7 +65,7 @@ auto updatePlayerModes(component::VoxelPlayer& ioPlayer, const input::InputFrame
 			ioPlayer.doubleTapTimer = 0.3f;
 		}
 	}
-	if (iInput.isKeyJustPressed(input::key::J) && ioPlayer.flyMode) {
+	if (iActions.isJustPressed("boost") && ioPlayer.flyMode) {
 		ioPlayer.superSpeed = !ioPlayer.superSpeed;
 		toast = ioPlayer.superSpeed ? "Super speed ON" : "Super speed OFF";
 	}
@@ -86,39 +80,33 @@ auto cellOverlapsBox(const math::vec3i& iCell, const math::vec3& iCenter, const 
 		   iCenter.y() - iHalf.y() < cy + 1.f && iCenter.z() + iHalf.z() > cz && iCenter.z() - iHalf.z() < cz + 1.f;
 }
 
-void applyPlayerMovement(component::VoxelPlayer& ioPlayer, math::Transform& ioTransform, const float iDt,
+void applyPlayerMovement(component::VoxelPlayer& ioPlayer, math::Transform& ioTransform,
+						 const input::ActionFrame& iActions, const float iDt,
 						 const data::voxel::SolidPredicate& iIsSolid) {
 	const float sy = std::sin(ioPlayer.yaw);
 	const float cy = std::cos(ioPlayer.yaw);
-	math::vec3 move{0.f, 0.f, 0.f};
-	if (input::Input::isKeyPressed(input::key::W))
-		move += math::vec3{-sy, 0.f, -cy};
-	if (input::Input::isKeyPressed(input::key::S))
-		move -= math::vec3{-sy, 0.f, -cy};
-	if (input::Input::isKeyPressed(input::key::D))
-		move += math::vec3{cy, 0.f, -sy};
-	if (input::Input::isKeyPressed(input::key::A))
-		move -= math::vec3{cy, 0.f, -sy};
+	const math::vec2 steer = iActions.getVector("move");
+	const math::vec3 move = math::vec3{-sy, 0.f, -cy} * -steer.y() + math::vec3{cy, 0.f, -sy} * steer.x();
 	const float horizLen = std::sqrt(move.x() * move.x() + move.z() * move.z());
-	const bool space = input::Input::isKeyPressed(input::key::Space);
+	const bool space = iActions.isHeld("jump");
 	math::vec3 velocity{0.f, 0.f, 0.f};
 	if (ioPlayer.flyMode) {
 		const float speed = ioPlayer.flySpeed * (ioPlayer.superSpeed ? ioPlayer.superSpeedMultiplier : 1.f);
 		if (horizLen > 0.f) {
-			velocity.x() = move.x() / horizLen * speed;
-			velocity.z() = move.z() / horizLen * speed;
+			velocity.x() = move.x() / horizLen * speed * std::min(horizLen, 1.f);
+			velocity.z() = move.z() / horizLen * speed * std::min(horizLen, 1.f);
 		}
 		if (space)
 			velocity.y() += speed;
-		if (input::Input::isKeyPressed(input::key::LeftShift))
+		if (iActions.isHeld("descend"))
 			velocity.y() -= speed;
 		ioPlayer.velocityY = 0.f;
 		ioPlayer.grounded = false;
 	} else {
-		const float speed = input::Input::isKeyPressed(input::key::LeftShift) ? ioPlayer.runSpeed : ioPlayer.walkSpeed;
+		const float speed = iActions.isHeld("sprint") ? ioPlayer.runSpeed : ioPlayer.walkSpeed;
 		if (horizLen > 0.f) {
-			velocity.x() = move.x() / horizLen * speed;
-			velocity.z() = move.z() / horizLen * speed;
+			velocity.x() = move.x() / horizLen * speed * std::min(horizLen, 1.f);
+			velocity.z() = move.z() / horizLen * speed * std::min(horizLen, 1.f);
 		}
 		if (ioPlayer.grounded && space)
 			ioPlayer.velocityY = ioPlayer.jumpSpeed;
@@ -160,9 +148,9 @@ void updatePlayerInteraction(Scene& ioScene, component::VoxelPlayer& ioPlayer, c
 		ioScene.setEditorVoxelHighlight(true, hit->block, hit->normal);
 	}
 
-	const auto& inputFrame = ioScene.getInputFrame();
-	const bool breakEdge = iCursorCaptured && inputFrame.isMouseButtonJustPressed(input::mouse::ButtonLeft);
-	const bool placeEdge = iCursorCaptured && inputFrame.isMouseButtonJustPressed(input::mouse::ButtonRight);
+	const auto& actions = ioScene.getActions();
+	const bool breakEdge = iCursorCaptured && actions.isJustPressed("primary");
+	const bool placeEdge = iCursorCaptured && actions.isJustPressed("secondary");
 	if (!hit || !(breakEdge || placeEdge))
 		return;
 
@@ -229,8 +217,8 @@ void updateVoxelPlayers(Scene& ioScene, const SystemContext& iContext) {
 			player.pitch = tr.rotation().x();
 			player.initialized = true;
 		}
-		applyPlayerLook(player, tr, dt, cursorCaptured);
-		if (const auto toast = updatePlayerModes(player, ioScene.getInputFrame(), dt); !toast.empty())
+		applyPlayerLook(player, tr, ioScene.getActions(), dt, cursorCaptured);
+		if (const auto toast = updatePlayerModes(player, ioScene.getActions(), dt); !toast.empty())
 			ioScene.showToast(toast);
 		updatePlayerInteraction(ioScene, player, tr.translation(), cursorCaptured);
 
@@ -239,7 +227,7 @@ void updateVoxelPlayers(Scene& ioScene, const SystemContext& iContext) {
 			player.velocityY = 0.f;
 			continue;
 		}
-		applyPlayerMovement(player, tr, dt, isSolid);
+		applyPlayerMovement(player, tr, ioScene.getActions(), dt, isSolid);
 	}
 }
 

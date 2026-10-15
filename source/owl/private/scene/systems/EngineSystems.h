@@ -73,7 +73,7 @@ void updateVoxelPlayers(Scene& ioScene, const SystemContext& iContext);
  *
  * Handles the engine-built-in activation path (player proximity + key edge), advances the open/close (or
  * one-shot slide) animation, updates each entity's local transform along `slideDirection`, and mirrors that to
- * the kinematic Box2D body. Lua scripts that bypass the built-in path (by setting `interactionKey` to `0`) drive
+ * the kinematic Box2D body. Lua scripts that bypass the built-in path (by emptying `interactionAction`) drive
  * the same state machine through `door.activate` / `pushwall.activate`.
  * @param[in,out] ioScene The scene.
  * @param[in] iTimeStep The elapsed time in seconds for this tick.

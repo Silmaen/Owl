@@ -22,4 +22,27 @@ EngineContext::EngineContext()
 
 EngineContext::~EngineContext() = default;
 
+auto EngineContext::loadActionMap(const std::filesystem::path& iProjectDirectory) -> bool {
+	setActionMap({});
+	if (iProjectDirectory.empty())
+		return false;
+	const auto file = iProjectDirectory / input::ActionMap::fileName;
+	if (!exists(file))
+		return false;
+	auto map = input::ActionMap::loadFile(file);
+	if (!map)
+		return false;
+	setActionMap(*map);
+	return true;
+}
+
+auto EngineContext::loadActionMapFromText(const std::string_view iText) -> bool {
+	setActionMap({});
+	auto map = input::ActionMap::fromYaml(iText, input::ActionMap::fileName);
+	if (!map)
+		return false;
+	setActionMap(*map);
+	return true;
+}
+
 }// namespace owl::app

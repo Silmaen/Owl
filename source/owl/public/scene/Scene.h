@@ -11,6 +11,7 @@
 #include "GameState.h"
 #include "core/Timestep.h"
 #include "core/UUID.h"
+#include "input/ActionFrame.h"
 #include "input/InputFrame.h"
 #include "math/Transform.h"
 #include "renderer/Camera.h"
@@ -705,6 +706,18 @@ public:
 
 	/**
 	 * @brief
+	 *  Actions of the running step: the tick frame inside a simulation tick, the frame one otherwise.
+	 *
+	 * The actions of the game's map (`app::EngineContext::getActionMap()`, the built-in ones without a context)
+	 * evaluated on `getInputFrame()` each time the input advances: gameplay and scripts read these, not the keys.
+	 * @return The action frame.
+	 */
+	[[nodiscard]] auto getActions() const -> const input::ActionFrame& {
+		return m_inTick ? m_tickActions : m_frameActions;
+	}
+
+	/**
+	 * @brief
 	 *  Physical world of this scene, created by `physics::PhysicCommand::init()`.
 	 * @return The world, or nullptr while the scene is not simulated.
 	 */
@@ -771,6 +784,13 @@ private:
 	 */
 	void breakHierarchyCycles(const std::unordered_map<core::UUID, entt::entity>& iByUuid);
 
+	/**
+	 * @brief
+	 *  Action map to evaluate: the one of the engine context, the built-in one without a context.
+	 * @return The action map.
+	 */
+	[[nodiscard]] auto getActionMap() const -> shared<const input::ActionMap>;
+
 	/// Game state key-value store (progression data).
 	GameState m_gameState;
 	/// Scene-level enable/override of the project renderer stack (empty → all active with defaults).
@@ -787,6 +807,10 @@ private:
 	input::InputFrame m_tickInput;
 	/// Latch turning the frame samples into tick samples.
 	input::InputSampler m_inputSampler;
+	/// Actions evaluated on the frame input.
+	input::ActionFrame m_frameActions;
+	/// Actions evaluated on the tick input.
+	input::ActionFrame m_tickActions;
 	/// Whether the simulation ticks are running (selects the tick input).
 	bool m_inTick = false;
 	/// Box2D world of the scene while it is simulated (owned here, managed by `physics::PhysicCommand`).

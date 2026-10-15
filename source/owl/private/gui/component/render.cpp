@@ -9,6 +9,7 @@
 #include "owlpch.h"
 
 #include "app/Application.h"
+#include "app/EngineContext.h"
 #include "gui/FontPreviewCache.h"
 #include "gui/IconFont.h"
 #include "gui/UiLayer.h"
@@ -24,7 +25,7 @@
 #include "gui/widgets/SectionHeader.h"
 #include "gui/widgets/Toggle.h"
 
-#include "input/KeyCodes.h"
+#include "input/ActionMap.h"
 #include "renderer/Renderer.h"
 #include "scene/TilemapAsset.h"
 #include "scene/Tileset.h"
@@ -998,33 +999,21 @@ void renderProps(Tilemap& ioComponent) {
 }
 
 namespace {
-auto interactionKeyCombo(const char* iLabel, input::KeyCode& ioKey) -> bool {
-	struct Entry {
-		const char* name;
-		input::KeyCode code;
-	};
-	static constexpr std::array entries{
-			Entry{"(disabled)", 0},
-			Entry{"E", input::key::E},
-			Entry{"F", input::key::F},
-			Entry{"Q", input::key::Q},
-			Entry{"R", input::key::R},
-			Entry{"Space", input::key::Space},
-			Entry{"Enter", input::key::Enter},
-	};
-	const char* preview = "(custom)";
-	for (const auto& entry: entries) {
-		if (entry.code == ioKey) {
-			preview = entry.name;
-			break;
-		}
-	}
+auto interactionActionCombo(const char* iLabel, std::string& ioAction) -> bool {
+	const auto& actions = app::Application::get().getEngineContext().getActionMap()->getActions();
+	const char* preview = ioAction.empty() ? "(disabled)" : ioAction.c_str();
 	bool changed = false;
 	if (prop::BeginCombo(iLabel, preview)) {
-		for (const auto& entry: entries) {
-			const bool selected = entry.code == ioKey;
-			if (ImGui::Selectable(entry.name, selected)) {
-				ioKey = entry.code;
+		if (ImGui::Selectable("(disabled)", ioAction.empty())) {
+			ioAction.clear();
+			changed = true;
+		}
+		for (const auto& action: actions) {
+			if (action.kind != input::ActionKind::Button)
+				continue;
+			const bool selected = action.name == ioAction;
+			if (ImGui::Selectable(action.name.c_str(), selected)) {
+				ioAction = action.name;
 				changed = true;
 			}
 			if (selected)
@@ -1075,12 +1064,12 @@ void renderProps(RaycastDoor& ioComponent) {
 	fieldTooltip("How long the door stays fully open before automatically closing. 0 = close immediately.");
 	prop::DragFloat("Close Speed", &ioComponent.closeSpeed, 0.1f, 0.0f, 32.0f, "%.2f c/s");
 	fieldTooltip("Animation speed while closing, in cells per second.");
-	interactionKeyCombo("Interaction Key", ioComponent.interactionKey);
-	fieldTooltip("Key the player presses to open the door when in range. Pick (disabled) to drive activation "
-				 "exclusively from Lua via door.activate(entity_id).");
+	interactionActionCombo("Interaction Action", ioComponent.interactionAction);
+	fieldTooltip("Button action of the project's input map the player triggers to open the door when in range. "
+				 "Pick (disabled) to drive activation exclusively from Lua via door.activate(entity_id).");
 	prop::DragFloat("Interaction Range", &ioComponent.interactionRange, 0.05f, 0.0f, 8.0f, "%.2f cells");
 	fieldTooltip("Maximum distance between the player and the door's current centre for the built-in "
-				 "interaction key to fire.");
+				 "interaction action to fire.");
 	ImGui::Separator();
 	const char* stateName = nullptr;
 	switch (ioComponent.state) {
@@ -1121,12 +1110,12 @@ void renderProps(RaycastPushWall& ioComponent) {
 	fieldTooltip("Total travel distance, in cells. Pushwalls slide once and stay at Final.");
 	prop::DragFloat("Slide Speed", &ioComponent.slideSpeed, 0.1f, 0.0f, 32.0f, "%.2f c/s");
 	fieldTooltip("Animation speed while moving, in cells per second.");
-	interactionKeyCombo("Interaction Key", ioComponent.interactionKey);
-	fieldTooltip("Key the player presses to trigger the pushwall when in range. "
+	interactionActionCombo("Interaction Action", ioComponent.interactionAction);
+	fieldTooltip("Button action of the project's input map the player triggers to open the pushwall when in range. "
 				 "Pick (disabled) to drive activation exclusively from Lua via pushwall.activate(entity_id).");
 	prop::DragFloat("Interaction Range", &ioComponent.interactionRange, 0.05f, 0.0f, 8.0f, "%.2f cells");
 	fieldTooltip("Maximum distance between the player and the pushwall's current centre for the built-in "
-				 "interaction key to fire.");
+				 "interaction action to fire.");
 	ImGui::Separator();
 	const char* stateName = nullptr;
 	switch (ioComponent.state) {

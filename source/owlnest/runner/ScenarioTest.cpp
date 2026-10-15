@@ -11,8 +11,10 @@
 #include "commands/Macro.h"
 #include "session/HeadlessSession.h"
 
+#include <input/ActionMap.h>
 #include <input/Gamepad.h>
 #include <input/Input.h>
+#include <input/InputNames.h>
 #include <input/KeyCodes.h>
 #include <scene/Entity.h>
 #include <scene/component/components.h>
@@ -43,71 +45,13 @@ namespace owl::nest::runner {
 
 namespace {
 
-struct NamedKey {
-	std::string_view name;
-	uint16_t code;
-};
-
-constexpr std::array g_namedKeys{
-		NamedKey{"Space", input::key::Space},
-		NamedKey{"Enter", input::key::Enter},
-		NamedKey{"Escape", input::key::Escape},
-		NamedKey{"Tab", input::key::Tab},
-		NamedKey{"Left", input::key::Left},
-		NamedKey{"Right", input::key::Right},
-		NamedKey{"Up", input::key::Up},
-		NamedKey{"Down", input::key::Down},
-		NamedKey{"LeftShift", input::key::LeftShift},
-		NamedKey{"LeftControl", input::key::LeftControl},
-};
-
-struct NamedCode {
-	std::string_view name;
-	uint8_t code;
-};
-
-constexpr std::array g_gamepadButtons{
-		NamedCode{"A", input::gamepad::A},
-		NamedCode{"B", input::gamepad::B},
-		NamedCode{"X", input::gamepad::X},
-		NamedCode{"Y", input::gamepad::Y},
-		NamedCode{"LeftBumper", input::gamepad::LeftBumper},
-		NamedCode{"RightBumper", input::gamepad::RightBumper},
-		NamedCode{"Back", input::gamepad::Back},
-		NamedCode{"Start", input::gamepad::Start},
-		NamedCode{"Guide", input::gamepad::Guide},
-		NamedCode{"LeftThumb", input::gamepad::LeftThumb},
-		NamedCode{"RightThumb", input::gamepad::RightThumb},
-		NamedCode{"DpadUp", input::gamepad::DpadUp},
-		NamedCode{"DpadRight", input::gamepad::DpadRight},
-		NamedCode{"DpadDown", input::gamepad::DpadDown},
-		NamedCode{"DpadLeft", input::gamepad::DpadLeft},
-};
-
-constexpr std::array g_gamepadAxes{
-		NamedCode{"left_x", input::gamepad::LeftX},
-		NamedCode{"left_y", input::gamepad::LeftY},
-		NamedCode{"right_x", input::gamepad::RightX},
-		NamedCode{"right_y", input::gamepad::RightY},
-		NamedCode{"left_trigger", input::gamepad::LeftTrigger},
-		NamedCode{"right_trigger", input::gamepad::RightTrigger},
-};
-
-template<std::size_t Size>
-auto findCode(const std::array<NamedCode, Size>& iCodes, const std::string& iName) -> std::optional<uint8_t> {
-	for (const auto& [name, code]: iCodes)
-		if (name == iName)
-			return code;
-	return std::nullopt;
-}
-
 auto parseGamepad(const YAML::Node& iNode, ScenarioStep& oStep) -> std::string {
 	if (!iNode.IsMap())
 		return "`gamepad` is a map (`pad`, `button`, `buttons`, axes)";
 	ScenarioGamepad gamepad;
 	gamepad.state.connected = true;
 	const auto addButton = [&gamepad](const YAML::Node& iButton) -> bool {
-		const auto code = findCode(g_gamepadButtons, iButton.as<std::string>());
+		const auto code = input::names::parseGamepadButton(iButton.as<std::string>());
 		if (code)
 			gamepad.state.setButton(*code, true);
 		return code.has_value();
@@ -125,7 +69,7 @@ auto parseGamepad(const YAML::Node& iNode, ScenarioStep& oStep) -> std::string {
 			for (const auto& button: item.second)
 				if (!addButton(button))
 					return std::format("unknown gamepad button '{}'", button.as<std::string>());
-		} else if (const auto axis = findCode(g_gamepadAxes, key); axis) {
+		} else if (const auto axis = input::names::parseGamepadAxis(key); axis) {
 			gamepad.state.setAxis(*axis, item.second.as<float>());
 		} else {
 			return std::format("unknown gamepad entry '{}'", key);
@@ -133,16 +77,6 @@ auto parseGamepad(const YAML::Node& iNode, ScenarioStep& oStep) -> std::string {
 	}
 	oStep.gamepad = gamepad;
 	return "";
-}
-
-auto parseMouseButton(const std::string& iName) -> std::optional<uint8_t> {
-	if (iName == "Left")
-		return static_cast<uint8_t>(input::mouse::ButtonLeft);
-	if (iName == "Right")
-		return static_cast<uint8_t>(input::mouse::ButtonRight);
-	if (iName == "Middle")
-		return static_cast<uint8_t>(input::mouse::ButtonMiddle);
-	return std::nullopt;
 }
 
 void parseExpected(const YAML::Node& iValue, ScenarioCheck& oCheck) {
@@ -221,12 +155,39 @@ auto parseCommand(const YAML::Node& iNode, ScenarioStep& oStep) -> std::string {
 	return "";
 }
 
+auto parseActions(const YAML::Node& iNode, ScenarioStep& oStep) -> std::string {
+	if (!iNode.IsMap())
+		return "`actions` is a map: `frames` and the held actions (`jump: true`, `move: [1, 0]`, `zoom: 0.5`)";
+	oStep.frames = 1;
+	for (const auto& item: iNode) {
+		const auto name = item.first.as<std::string>();
+		if (name == "frames") {
+			oStep.frames = item.second.as<uint32_t>();
+			continue;
+		}
+		ScenarioActionHold hold{.name = name};
+		if (item.second.IsSequence()) {
+			if (item.second.size() != 2)
+				return std::format("action `{}`: a vector is `[x, y]`", name);
+			hold.value = math::vec2{item.second[0].as<float>(), item.second[1].as<float>()};
+		} else if (const auto text = item.second.as<std::string>(); text == "true" || text == "false") {
+			hold.value = math::vec2{text == "true" ? 1.f : 0.f, 0.f};
+		} else {
+			hold.value = math::vec2{item.second.as<float>(), 0.f};
+		}
+		oStep.actions.push_back(std::move(hold));
+	}
+	return oStep.frames == 0 ? "actions frames must be positive" : "";
+}
+
 auto parseStep(const YAML::Node& iNode, ScenarioStep& oStep) -> std::string {
 	oStep.line = iNode.Mark().line + 1;
 	if (const auto frames = iNode["frames"]; frames && !iNode["input"]) {
 		oStep.frames = frames.as<uint32_t>();
 		return oStep.frames == 0 ? "frames must be positive" : "";
 	}
+	if (const auto actions = iNode["actions"]; actions)
+		return parseActions(actions, oStep);
 	if (const auto input = iNode["input"]; input) {
 		oStep.frames = input["frames"] ? input["frames"].as<uint32_t>() : 1;
 		const auto addKey = [&oStep](const YAML::Node& iKey) -> bool {
@@ -242,7 +203,7 @@ auto parseStep(const YAML::Node& iNode, ScenarioStep& oStep) -> std::string {
 				if (!addKey(key))
 					return std::format("unknown key '{}'", key.as<std::string>());
 		if (const auto mouse = input["mouse"]; mouse) {
-			const auto button = parseMouseButton(mouse.as<std::string>());
+			const auto button = input::names::parseMouseButton(mouse.as<std::string>());
 			if (!button)
 				return std::format("unknown mouse button '{}'", mouse.as<std::string>());
 			oStep.mouseButtons.push_back(*button);
@@ -355,19 +316,137 @@ auto opName(const ScenarioCheck::Op iOp) -> std::string_view {
 	return "";
 }
 
+
+auto inverseResponse(const float iShaped, const input::AxisResponse& iResponse) -> float {
+	if (iShaped <= 0.f)
+		return 0.f;
+	const float deadZone = std::clamp(iResponse.deadZone, 0.f, 0.99f);
+	return deadZone + std::pow(std::min(iShaped, 1.f), 1.f / iResponse.getExponent()) * (1.f - deadZone);
+}
+
+auto holdPadState(ScenarioStep& ioStep, const int32_t iPad) -> input::GamepadState* {
+	const auto slot = iPad < 0 ? std::size_t{0} : static_cast<std::size_t>(iPad);
+	if (!ioStep.gamepad) {
+		ioStep.gamepad = ScenarioGamepad{.pad = slot, .state = {}};
+		ioStep.gamepad->state.connected = true;
+	}
+	return ioStep.gamepad->pad == slot ? &ioStep.gamepad->state : nullptr;
+}
+
+auto holdStick(ScenarioStep& ioStep, const input::ActionBinding& iBinding, const math::vec2& iTarget) -> bool {
+	auto* state = holdPadState(ioStep, iBinding.pad);
+	if (state == nullptr)
+		return false;
+	const math::vec2 shaped = iTarget * (1.f / iBinding.scale);
+	const float length = shaped.norm();
+	const math::vec2 raw = length > 0.f ? shaped * (inverseResponse(length, iBinding.response) / length) : shaped;
+	const auto first = iBinding.code == 0 ? input::gamepad::LeftX : input::gamepad::RightX;
+	state->setAxis(first, raw.x());
+	state->setAxis(static_cast<input::GamepadAxis>(first + 1), raw.y());
+	return true;
+}
+
+auto holdScalar(ScenarioStep& ioStep, const input::ActionBinding& iBinding, const float iValue) -> bool {
+	switch (iBinding.source) {
+		case input::BindingSource::Key:
+			ioStep.keys.push_back(iBinding.code);
+			return true;
+		case input::BindingSource::MouseButton:
+			ioStep.mouseButtons.push_back(static_cast<uint8_t>(iBinding.code));
+			return true;
+		case input::BindingSource::GamepadButton:
+			{
+				auto* state = holdPadState(ioStep, iBinding.pad);
+				if (state != nullptr)
+					state->setButton(static_cast<input::GamepadButton>(iBinding.code), true);
+				return state != nullptr;
+			}
+		case input::BindingSource::GamepadAxis:
+			{
+				auto* state = holdPadState(ioStep, iBinding.pad);
+				if (state != nullptr) {
+					const float target = std::clamp(iValue / iBinding.scale, -1.f, 1.f);
+					state->setAxis(static_cast<input::GamepadAxis>(iBinding.code),
+								   std::copysign(inverseResponse(std::abs(target), iBinding.response), target));
+				}
+				return state != nullptr;
+			}
+		case input::BindingSource::GamepadStick:
+			return holdStick(ioStep, iBinding, {iValue, 0.f});
+	}
+	return false;
+}
+
+auto feeds(const input::ActionBinding& iBinding, const bool iYComponent, const float iValue) -> bool {
+	if (!(std::abs(iBinding.scale) > 0.f))
+		return false;
+	const bool analog = iBinding.source == input::BindingSource::GamepadAxis ||
+						iBinding.source == input::BindingSource::GamepadStick;
+	if (!analog && (iBinding.scale < 0.f) != (iValue < 0.f))
+		return false;
+	if (iBinding.source == input::BindingSource::GamepadStick)
+		return iBinding.component == input::BindingComponent::Both ||
+			   (iBinding.component == input::BindingComponent::Y) == iYComponent;
+	return (iBinding.component == input::BindingComponent::Y) == iYComponent;
+}
+
+auto holdVector(ScenarioStep& ioStep, const ScenarioActionHold& iHold, const input::ActionDefinition& iAction) -> bool {
+	std::vector<std::pair<const input::ActionBinding*, math::vec2>> sticks;
+	for (const bool yComponent: {false, true}) {
+		const float value = yComponent ? iHold.value.y() : iHold.value.x();
+		if (!(std::abs(value) > 0.f))
+			continue;
+		const auto found = std::ranges::find_if(iAction.bindings, [&](const input::ActionBinding& iBinding) -> bool {
+			return feeds(iBinding, yComponent, value);
+		});
+		if (found == iAction.bindings.end())
+			return false;
+		if (found->source != input::BindingSource::GamepadStick) {
+			if (!holdScalar(ioStep, *found, value))
+				return false;
+			continue;
+		}
+		auto stick =
+				std::ranges::find_if(sticks, [&found](const auto& iEntry) -> bool { return iEntry.first == &*found; });
+		if (stick == sticks.end())
+			stick = sticks.insert(sticks.end(), {&*found, math::vec2{0.f, 0.f}});
+		(yComponent ? stick->second.y() : stick->second.x()) = value;
+	}
+	return std::ranges::all_of(
+			sticks, [&ioStep](const auto& iEntry) -> bool { return holdStick(ioStep, *iEntry.first, iEntry.second); });
+}
+
+auto holdAction(ScenarioStep& ioStep, const ScenarioActionHold& iHold, const input::ActionDefinition& iAction)
+		-> std::string {
+	const auto fail = [&iHold]() -> std::string {
+		return std::format("action `{}` has no binding to hold it at that value (or two gamepads are needed)",
+						   iHold.name);
+	};
+	if (iAction.kind == input::ActionKind::Vector)
+		return holdVector(ioStep, iHold, iAction) ? std::string{} : fail();
+	if (!(std::abs(iHold.value.x()) > 0.f))
+		return {};
+	const float value = iAction.kind == input::ActionKind::Button ? 1.f : iHold.value.x();
+	const auto found = std::ranges::find_if(iAction.bindings, [value](const input::ActionBinding& iBinding) -> bool {
+		return feeds(iBinding, false, value);
+	});
+	return found != iAction.bindings.end() && holdScalar(ioStep, *found, value) ? std::string{} : fail();
+}
+
+auto resolveActions(ScenarioStep& ioStep, const input::ActionMap& iMap) -> std::string {
+	for (const auto& hold: ioStep.actions) {
+		const auto* action = iMap.find(hold.name);
+		if (action == nullptr)
+			return std::format("unknown action `{}`", hold.name);
+		if (auto error = holdAction(ioStep, hold, *action); !error.empty())
+			return error;
+	}
+	return {};
+}
 }// namespace
 
 auto ScenarioTest::parseKey(const std::string& iName) -> std::optional<uint16_t> {
-	if (iName.size() == 1 && iName.front() >= 'A' && iName.front() <= 'Z')
-		return static_cast<uint16_t>(input::key::A + (iName.front() - 'A'));
-	if (iName.size() == 2 && iName.front() == 'D' && iName.back() >= '0' && iName.back() <= '9')
-		return static_cast<uint16_t>(input::key::D0 + (iName.back() - '0'));
-	for (const auto& [name, code]: g_namedKeys)
-		if (name == iName)
-			return code;
-	if (!iName.empty() && iName.find_first_not_of("0123456789") == std::string::npos && iName.size() <= 3)
-		return static_cast<uint16_t>(std::stoul(iName));
-	return std::nullopt;
+	return input::names::parseKey(iName);
 }
 
 auto ScenarioTest::load(const std::filesystem::path& iFile) -> expected<ScenarioTest, std::string> {
@@ -385,11 +464,20 @@ auto ScenarioTest::load(const std::filesystem::path& iFile) -> expected<Scenario
 		scenario.m_step.forceUpdate(std::chrono::duration_cast<core::Timestep::duration>(
 				std::chrono::duration<double, std::milli>{stepMs}));
 		const auto steps = root["steps"];
+		auto actionMap = input::ActionMap{}.withDefaults();
+		if (!scenario.m_project.empty() && exists(scenario.m_project / input::ActionMap::fileName)) {
+			auto projectMap = input::ActionMap::loadFile(scenario.m_project / input::ActionMap::fileName);
+			if (!projectMap)
+				return unexpected<std::string>{projectMap.error()};
+			actionMap = projectMap->withDefaults();
+		}
 		if (!steps || !steps.IsSequence() || steps.size() == 0)
 			return unexpected<std::string>{"no `steps`"};
 		for (const auto& node: steps) {
 			ScenarioStep step;
 			if (const auto error = parseStep(node, step); !error.empty())
+				return unexpected<std::string>{std::format("line {}: {}", step.line, error)};
+			if (const auto error = resolveActions(step, actionMap); !error.empty())
 				return unexpected<std::string>{std::format("line {}: {}", step.line, error)};
 			if (!step.macro.empty()) {
 				step.macro = weakly_canonical(absolute(iFile).parent_path() / step.macro);

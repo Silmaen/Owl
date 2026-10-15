@@ -8,7 +8,9 @@
 
 #include "RunnerLayer.h"
 
+#include <app/EngineContext.h>
 #include <debug/LogSink.h>
+#include <input/ActionMap.h>
 #include <input/Input.h>
 #include <input/KeyCodes.h>
 #include <input/MouseCode.h>
@@ -261,6 +263,7 @@ void RunnerLayer::onAttach() {
 	}
 
 	loadGamepadMappings();
+	loadActionMap();
 
 	// Load user overrides.
 	app::Application::get().getEngineContext().getSettings().loadUserSettings();
@@ -300,6 +303,24 @@ void RunnerLayer::loadGamepadMappings() const {
 		}
 	}
 	OWL_CORE_WARN("Runner: Gamepad mapping file '{}' not found.", m_config.gamepadMappings)
+}
+
+void RunnerLayer::loadActionMap() const {
+	auto& app = app::Application::get();
+	auto& context = app.getEngineContext();
+	for (const auto& [title, assetsPath]: app.getAssetDirectories()) {
+		if (exists(assetsPath / input::ActionMap::fileName)) {
+			context.loadActionMap(assetsPath);
+			return;
+		}
+	}
+	if (app.hasOpenPack()) {
+		if (const auto data = app.loadFromPack(std::string{input::ActionMap::fileName}); data) {
+			context.loadActionMapFromText(std::string_view{reinterpret_cast<const char*>(data->data()), data->size()});
+			return;
+		}
+	}
+	OWL_CORE_INFO("Runner: No {} found, the built-in actions are used.", input::ActionMap::fileName)
 }
 
 auto RunnerLayer::loadScene(const std::string& iSceneName) -> bool {
@@ -430,6 +451,7 @@ auto RunnerLayer::attachSourceScene(const std::filesystem::path& iProject, const
 			app::Application::get().getEngineContext().getSettings().loadDefaults(gameSettings);
 		if (!m_config.gamepadMappings.empty())
 			input::Input::loadGamepadMappings(iProject / m_config.gamepadMappings);
+		app::Application::get().getEngineContext().loadActionMap(iProject);
 	}
 	app::Application::get().getEngineContext().getSettings().setGameName(m_config.gameName);
 	app::Application::get().getEngineContext().setSimulationSettings(m_config.simulation);

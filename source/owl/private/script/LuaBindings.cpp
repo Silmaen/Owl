@@ -13,6 +13,7 @@
 #include "app/EngineContext.h"
 #include "core/Macros.h"
 #include "core/external/lua.h"
+#include "input/ActionFrame.h"
 #include "input/Gamepad.h"
 #include "input/Input.h"
 #include "input/InputFrame.h"
@@ -253,6 +254,42 @@ auto luaInputMouseButtonEdge(lua_State* iState) -> int {
 	const auto* frame = inputFrameOf(iState);
 	lua_pushboolean(iState, frame != nullptr && (frame->*Edge)(button) ? 1 : 0);
 	return 1;
+}
+
+auto actionsOf(lua_State* iState) -> const input::ActionFrame* {
+	const auto* boundScene = getBoundScene(iState);
+	return boundScene != nullptr ? &boundScene->getActions() : nullptr;
+}
+
+auto luaInputHasAction(lua_State* iState) -> int {
+	const char* name = luaL_checkstring(iState, 1);
+	const auto* actions = actionsOf(iState);
+	lua_pushboolean(iState, actions != nullptr && actions->has(name) ? 1 : 0);
+	return 1;
+}
+
+template<bool (input::ActionFrame::*Query)(std::string_view) const>
+auto luaInputActionQuery(lua_State* iState) -> int {
+	const char* name = luaL_checkstring(iState, 1);
+	const auto* actions = actionsOf(iState);
+	lua_pushboolean(iState, actions != nullptr && (actions->*Query)(name) ? 1 : 0);
+	return 1;
+}
+
+auto luaInputGetActionValue(lua_State* iState) -> int {
+	const char* name = luaL_checkstring(iState, 1);
+	const auto* actions = actionsOf(iState);
+	lua_pushnumber(iState, actions != nullptr ? static_cast<lua_Number>(actions->getValue(name)) : lua_Number{0});
+	return 1;
+}
+
+auto luaInputGetActionVector(lua_State* iState) -> int {
+	const char* name = luaL_checkstring(iState, 1);
+	const auto* actions = actionsOf(iState);
+	const math::vec2 vector = actions != nullptr ? actions->getVector(name) : math::vec2{0.f, 0.f};
+	lua_pushnumber(iState, static_cast<lua_Number>(vector.x()));
+	lua_pushnumber(iState, static_cast<lua_Number>(vector.y()));
+	return 2;
 }
 
 auto luaInputGetMouseWheel(lua_State* iState) -> int {
@@ -1039,11 +1076,32 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		{.table = "physics", .name = "set_gravity_scale", .function = guarded<luaPhysicsSetGravityScale>,
 		 .description = "Scale the world gravity for this body (0 = none).",
 		 .params = {entityId, {"scale", Number}}},
+		{.table = "input", .name = "has_action", .function = guarded<luaInputHasAction>,
+		 .description = "Whether the game's action map defines an action (a misspelt name reads as released).",
+		 .params = {{"action", String}}, .returns = {{"exists", Boolean}}},
+		{.table = "input", .name = "is_action_pressed",
+		 .function = guarded<luaInputActionQuery<&input::ActionFrame::isHeld>>,
+		 .description = "Whether an action is held (a button down, an axis or vector past half deflection).",
+		 .params = {{"action", String}}, .returns = {{"pressed", Boolean}}},
+		{.table = "input", .name = "is_action_just_pressed",
+		 .function = guarded<luaInputActionQuery<&input::ActionFrame::isJustPressed>>,
+		 .description = "Whether an action went down since the previous tick (in `on_tick`) or frame (in `on_update`).",
+		 .params = {{"action", String}}, .returns = {{"pressed", Boolean}}},
+		{.table = "input", .name = "is_action_just_released",
+		 .function = guarded<luaInputActionQuery<&input::ActionFrame::isJustReleased>>,
+		 .description = "Whether an action went up since the previous tick (in `on_tick`) or frame (in `on_update`).",
+		 .params = {{"action", String}}, .returns = {{"released", Boolean}}},
+		{.table = "input", .name = "get_action_value", .function = guarded<luaInputGetActionValue>,
+		 .description = "Reading of a button (0 or 1) or axis action, in [-1, 1].",
+		 .params = {{"action", String}}, .returns = {{"value", Number}}},
+		{.table = "input", .name = "get_action_vector", .function = guarded<luaInputGetActionVector>,
+		 .description = "Reading of a vector action in the unit disc (x right, y down).",
+		 .params = {{"action", String}}, .returns = {{"x", Number}, {"y", Number}}},
 		{.table = "input", .name = "is_key_pressed", .function = guarded<luaInputIsKeyPressed>,
-		 .description = "Whether a key is held (GLFW key code: 65 = A, 87 = W, 32 = Space).",
+		 .description = "Deprecated, use `input.is_action_pressed`: whether a key is held (GLFW key code: 65 = A, 87 = W, 32 = Space).",
 		 .params = {{"keycode", Integer}}, .returns = {{"pressed", Boolean}}},
 		{.table = "input", .name = "is_mouse_button_pressed", .function = guarded<luaInputIsMouseButtonPressed>,
-		 .description = "Whether a mouse button is held (0 = left, 1 = right, 2 = middle).",
+		 .description = "Deprecated, use `input.is_action_pressed`: whether a mouse button is held (0 = left, 1 = right, 2 = middle).",
 		 .params = {{"button", Integer}}, .returns = {{"pressed", Boolean}}},
 		{.table = "input", .name = "get_mouse_x", .function = guarded<luaInputGetMouseX>,
 		 .description = "Mouse X position in the window, in pixels.", .returns = {{"x", Number}}},
@@ -1051,19 +1109,19 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		 .description = "Mouse Y position in the window, in pixels.", .returns = {{"y", Number}}},
 		{.table = "input", .name = "is_key_just_pressed",
 		 .function = guarded<luaInputKeyEdge<&input::InputFrame::isKeyJustPressed>>,
-		 .description = "Whether a key went down since the previous tick (in `on_tick`) or frame (in `on_update`).",
+		 .description = "Deprecated, use `input.is_action_just_pressed`: whether a key went down since the previous tick (in `on_tick`) or frame (in `on_update`).",
 		 .params = {{"keycode", Integer}}, .returns = {{"pressed", Boolean}}},
 		{.table = "input", .name = "is_key_just_released",
 		 .function = guarded<luaInputKeyEdge<&input::InputFrame::isKeyJustReleased>>,
-		 .description = "Whether a key went up since the previous tick (in `on_tick`) or frame (in `on_update`).",
+		 .description = "Deprecated, use `input.is_action_just_released`: whether a key went up since the previous tick (in `on_tick`) or frame (in `on_update`).",
 		 .params = {{"keycode", Integer}}, .returns = {{"released", Boolean}}},
 		{.table = "input", .name = "is_mouse_button_just_pressed",
 		 .function = guarded<luaInputMouseButtonEdge<&input::InputFrame::isMouseButtonJustPressed>>,
-		 .description = "Whether a mouse button went down since the previous tick or frame.",
+		 .description = "Deprecated, use `input.is_action_just_pressed`: whether a mouse button went down since the previous tick or frame.",
 		 .params = {{"button", Integer}}, .returns = {{"pressed", Boolean}}},
 		{.table = "input", .name = "is_mouse_button_just_released",
 		 .function = guarded<luaInputMouseButtonEdge<&input::InputFrame::isMouseButtonJustReleased>>,
-		 .description = "Whether a mouse button went up since the previous tick or frame.",
+		 .description = "Deprecated, use `input.is_action_just_released`: whether a mouse button went up since the previous tick or frame.",
 		 .params = {{"button", Integer}}, .returns = {{"released", Boolean}}},
 		{.table = "input", .name = "get_mouse_wheel", .function = guarded<luaInputGetMouseWheel>,
 		 .description = "Wheel offset scrolled since the previous tick or frame (horizontal, vertical).",
@@ -1301,7 +1359,8 @@ auto getLuaTables() -> const std::vector<LuaTable>& {
 	static const std::vector<LuaTable> s_tables{
 			{.name = "transform", .description = "Local transform of an entity."},
 			{.name = "physics", .description = "Box2D body of an entity."},
-			{.name = "input", .description = "Keyboard, mouse and gamepad state."},
+			{.name = "input",
+			 .description = "Actions of the game's input map, then the raw keyboard, mouse and gamepad state."},
 			{.name = "sound", .description = "Sound playback, by handle."},
 			{.name = "scene", .description = "Entities of the running level and level changes."},
 			{.name = "time", .description = "Frame and fixed-tick time."},

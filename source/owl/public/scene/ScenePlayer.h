@@ -10,6 +10,7 @@
 
 #include "Entity.h"
 #include "core/Core.h"
+#include "input/ActionFrame.h"
 
 namespace owl::scene {
 /**
@@ -58,10 +59,11 @@ public:
 
 	/**
 	 * @brief
-	 *  Look the inputs for actions.
+	 *  Turn the `move` (horizontal) and `jump` actions into impulses on the player.
 	 * @param[in] iPlayer The player entity.
+	 * @param[in] iActions The actions of the running step.
 	 */
-	void parseInputs(const Entity& iPlayer) const;
+	void parseInputs(const Entity& iPlayer, const input::ActionFrame& iActions) const;
 
 	/// The intensity of the linear impulsion.
 	float linearImpulse = 0.1f;

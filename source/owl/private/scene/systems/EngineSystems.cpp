@@ -184,7 +184,7 @@ void updateFlyCameras(Scene& ioScene, const SystemContext& iContext) {
 void updatePlayerInput(Scene& ioScene, [[maybe_unused]] const SystemContext& iContext) {
 	if (const Entity player = ioScene.getPrimaryPlayer()) {
 		auto& [primary, iplayer] = player.getComponent<component::Player>();
-		iplayer.parseInputs(player);
+		iplayer.parseInputs(player, ioScene.getActions());
 	}
 }
 

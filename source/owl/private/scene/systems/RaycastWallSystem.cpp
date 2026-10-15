@@ -23,7 +23,7 @@ namespace owl::scene::systems {
 void updateRaycastDynamicWalls(Scene& ioScene, const float iTimeStep) {
 	OWL_PROFILE_FUNCTION()
 
-	const auto& inputFrame = ioScene.getInputFrame();
+	const auto& actions = ioScene.getActions();
 	// Find primary player position once (used for built-in proximity activation).
 	math::vec2 playerWorldXY{0.f, 0.f};
 	bool hasPlayer = false;
@@ -39,12 +39,12 @@ void updateRaycastDynamicWalls(Scene& ioScene, const float iTimeStep) {
 		auto& door = view.get<component::RaycastDoor>(entity);
 		auto& [transform] = view.get<component::Transform>(entity);
 
-		// Built-in activation (proximity + key edge). `interactionKey == 0` disables.
-		if (door.state == component::RaycastDoor::State::Idle && door.interactionKey != 0 && hasPlayer) {
+		// Built-in activation (proximity + action edge). An empty `interactionAction` disables.
+		if (door.state == component::RaycastDoor::State::Idle && !door.interactionAction.empty() && hasPlayer) {
 			const float dx = playerWorldXY.x() - transform.translation().x();
 			const float dy = playerWorldXY.y() - transform.translation().y();
 			const float distSq = dx * dx + dy * dy;
-			if (inputFrame.isKeyJustPressed(door.interactionKey) &&
+			if (actions.isJustPressed(door.interactionAction) &&
 				distSq <= door.interactionRange * door.interactionRange)
 				door.state = component::RaycastDoor::State::Opening;
 		}
@@ -107,11 +107,11 @@ void updateRaycastDynamicWalls(Scene& ioScene, const float iTimeStep) {
 		auto& push = view.get<component::RaycastPushWall>(entity);
 		auto& [transform] = view.get<component::Transform>(entity);
 
-		if (push.state == component::RaycastPushWall::State::Idle && push.interactionKey != 0 && hasPlayer) {
+		if (push.state == component::RaycastPushWall::State::Idle && !push.interactionAction.empty() && hasPlayer) {
 			const float dx = playerWorldXY.x() - transform.translation().x();
 			const float dy = playerWorldXY.y() - transform.translation().y();
 			const float distSq = dx * dx + dy * dy;
-			if (inputFrame.isKeyJustPressed(push.interactionKey) &&
+			if (actions.isJustPressed(push.interactionAction) &&
 				distSq <= push.interactionRange * push.interactionRange)
 				push.state = component::RaycastPushWall::State::Moving;
 		}

@@ -9,7 +9,6 @@
 #pragma once
 
 #include "core/Serializer.h"
-#include "input/KeyCodes.h"
 #include "scene/Tileset.h"
 
 #include <cstdint>
@@ -63,13 +62,13 @@ struct OWL_API RaycastPushWall {
 	float slideSpeed = 1.0f;
 	/**
 	 * @brief
-	 *  Engine-handled activation key, as a GLFW key code.
+	 *  Engine-handled activation action, by name in the game's action map.
 	 *
-	 * Set to `0` to disable the built-in handler and drive activation from
+	 * Leave it empty to disable the built-in handler and drive activation from
 	 * Lua via `pushwall.activate(entity)`.
 	 */
-	input::KeyCode interactionKey = input::key::E;
-	/// Maximum distance (cells) between player and pushwall centre for the built-in key to fire.
+	std::string interactionAction = "interact";
+	/// Maximum distance (cells) between player and pushwall centre for the built-in action to fire.
 	float interactionRange = 1.5f;
 
 	/// Runtime state.

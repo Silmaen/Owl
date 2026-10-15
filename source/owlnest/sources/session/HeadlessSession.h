@@ -10,6 +10,7 @@
 
 #include "EditorSession.h"
 
+#include <input/ActionMap.h>
 #include <renderer/RenderStack.h>
 #include <renderer/gpu/Framebuffer.h>
 #include <scene/SimulationClock.h>
@@ -246,6 +247,8 @@ private:
 	SessionStatistics m_statistics;
 	/// Simulation settings of the engine before the session, restored by the destructor.
 	scene::SimulationSettings m_previousSimulation;
+	/// Action map of the application before the session, put back at the end.
+	shared<const input::ActionMap> m_previousActions;
 	/// True while the running copy plays.
 	bool m_playing{false};
 };

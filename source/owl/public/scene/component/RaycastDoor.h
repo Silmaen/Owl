@@ -9,7 +9,6 @@
 #pragma once
 
 #include "core/Serializer.h"
-#include "input/KeyCodes.h"
 #include "scene/Tileset.h"
 
 #include <cstdint>
@@ -46,9 +45,9 @@ namespace owl::scene::component {
  * The kinematic Box2D body, when present, tracks the plate position so the
  * player collides with the actual moving surface.
  *
- * Activation matches `RaycastPushWall`: built-in proximity-and-key
- * (`interactionKey`, `interactionRange`) with a Lua override when the key
- * is set to `0`. State machine: Idle → Opening → Open (`holdTime` seconds)
+ * Activation matches `RaycastPushWall`: built-in proximity-and-action
+ * (`interactionAction`, `interactionRange`) with a Lua override when the
+ * action is empty. State machine: Idle → Opening → Open (`holdTime` seconds)
  * → Closing → Idle.
  */
 struct OWL_API RaycastDoor {
@@ -106,15 +105,15 @@ struct OWL_API RaycastDoor {
 	float closeSpeed = 2.0f;
 	/**
 	 * @brief
-	 *  Engine-handled activation key, as a GLFW key code.
+	 *  Engine-handled activation action, by name in the game's action map.
 	 *
 	 * When the primary player is within `interactionRange` cells of the door's
-	 * **current** centre and presses this key, the door auto-activates. Set
-	 * to `0` to disable the built-in handler entirely and drive activation
+	 * **current** centre and the action goes down, the door auto-activates. Leave
+	 * it empty to disable the built-in handler entirely and drive activation
 	 * from Lua via `door.activate(entity)`.
 	 */
-	input::KeyCode interactionKey = input::key::E;
-	/// Maximum distance (cells) between the player centre and the door centre for the built-in key to fire.
+	std::string interactionAction = "interact";
+	/// Maximum distance (cells) between the player centre and the door centre for the built-in action to fire.
 	float interactionRange = 1.5f;
 
 	/// Runtime state — not authored, advanced by the `owl.raycast_walls` system (`scene::systems::updateRaycastDynamicWalls`).
