@@ -127,7 +127,7 @@ it directly.
 ### Lua API Coverage
 - [x] `transform` (get/set position, rotation, scale)
 - [x] `physics` (impulse, get_velocity, set_velocity, set_transform, set_gravity_scale)
-- [x] `input` (is_key_pressed, is_key_just_pressed, is_mouse_button_pressed, get_mouse_x, get_mouse_y)
+- [x] `input` (action map: is_action_pressed, is_action_just_pressed, get_action_value, get_action_vector; get_mouse_x, get_mouse_y)
 - [x] `scene` (find_entity, destroy_entity, create_entity, load_scene)
 - [x] `entity` (has_component, get_name)
 - [x] `ui` (set_text, get_text, set_visible, set_progress, set_slider_value, get_slider_value, set_button_enabled, transition_fade_in/out, is_transition_active)
@@ -140,6 +140,7 @@ it directly.
 - [x] Trigger callbacks (on_trigger_enter/exit, on_timer, on_interact, custom)
 - [x] Collision callback (`on_collision(other_id)` from Box2D contacts)
 - [x] Gamepad (`input.get_gamepad_stick`, `is_gamepad_button_just_pressed`) in the platformer, project mapping file
+- [x] Action map (`input_actions.yml`: axis, button and vector actions on keys, mouse and gamepad, overriding the built-in ones)
 
 ### Gameplay Systems
 - [x] Scene transitions (menu / world map / platformer / victory / game-over / settings)

@@ -70,12 +70,9 @@ function on_update(dt)
         return
     end
 
-    -- Movement (WASD: W=87, A=65, S=83, D=68)
-    local mvx, mvy = 0, 0
-    if input.is_key_pressed(87) then mvy = mvy + speed end
-    if input.is_key_pressed(83) then mvy = mvy - speed end
-    if input.is_key_pressed(65) then mvx = mvx - speed end
-    if input.is_key_pressed(68) then mvx = mvx + speed end
+    -- Movement: the built-in `move` vector (WASD or left stick; y points down).
+    local dirx, diry = input.get_action_vector("move")
+    local mvx, mvy = dirx * speed, -diry * speed
 
     physics.set_velocity(entity_id, mvx, mvy)
 
@@ -106,7 +103,7 @@ function on_update(dt)
 
     -- Escape returns to the main menu, preserving the world position so the
     -- "Continuer" button on the menu can resume exactly where we left off.
-    if input.is_key_just_pressed(256) then
+    if input.is_action_just_pressed("pause") then
         local px, py, pz = transform.get_position(entity_id)
         gamestate.set("continue_scene", "scenes/world_map.owl")
         gamestate.set("continue_x", px)

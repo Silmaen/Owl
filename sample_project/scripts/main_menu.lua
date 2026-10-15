@@ -3,7 +3,7 @@
 --               settings, log, entity visibility, UiImage, UiPanel,
 --               save.load_game, save.list_saves, save.delete_save,
 --               ui.transition_fade_in/out, ui.set_button_enabled, ui.set_visible,
---               input.get_mouse_x, input.get_mouse_y, ui.get_text
+--               input.get_mouse_x, input.get_mouse_y, input.is_action_pressed, ui.get_text
 
 local pending_load_save = false
 local save_info_id = 0
@@ -96,18 +96,18 @@ function on_update(dt)
         return
     end
 
-    -- I opens the isometric layer test scene.
-    if not iso_requested and input.is_key_pressed(73) then
+    -- The `open_iso` action (I, Y) opens the isometric layer test scene.
+    if not iso_requested and input.is_action_pressed("open_iso") then
         iso_requested = true
         scene.transition_to("scenes/iso_test.owl", "fade", 0.3)
         return
     end
 
-    -- Display mouse position and button state (demonstrates input.get_mouse_x/y/is_mouse_button_pressed)
+    -- Display mouse position and button state (demonstrates input.get_mouse_x/y and the `primary` action)
     if mouse_label_id ~= 0 then
         local mx = input.get_mouse_x()
         local my = input.get_mouse_y()
-        local lmb = input.is_mouse_button_pressed(0)
+        local lmb = input.is_action_pressed("primary")
         local indicator = lmb and " [click]" or ""
         ui.set_text(mouse_label_id, string.format("Mouse: %d, %d%s", math.floor(mx), math.floor(my), indicator))
     end

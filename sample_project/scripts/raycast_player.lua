@@ -51,9 +51,7 @@ function on_update(dt)
     -- and it overwrites `Transform.rotation` after every physics step. Going
     -- through `b2Body_SetTransform` rotates the body itself, so the rotation
     -- survives the next sync.
-    local turning = 0
-    if input.is_key_pressed(65) then turning = turning + 1 end  -- AZERTY Q (turn left, CCW)
-    if input.is_key_pressed(68) then turning = turning - 1 end  -- AZERTY D (turn right, CW)
+    local turning = input.get_action_value("turn")  -- A / right stick left: turn left (CCW)
     if turning ~= 0 then
         rz = rz + turning * turn_speed * dt
         local px, py, _ = transform.get_position(entity_id)
@@ -64,13 +62,12 @@ function on_update(dt)
     local fx = -math.sin(rz)
     local fy =  math.cos(rz)
 
-    local mvx, mvy = 0, 0
-    if input.is_key_pressed(87) then mvx = mvx + fx * speed; mvy = mvy + fy * speed end -- AZERTY Z
-    if input.is_key_pressed(83) then mvx = mvx - fx * speed; mvy = mvy - fy * speed end -- AZERTY S
+    local walk = input.get_action_value("walk")  -- W / left stick up: forward
+    local mvx, mvy = fx * walk * speed, fy * walk * speed
     physics.set_velocity(entity_id, mvx, mvy)
 
     -- ESC returns to the world map and stashes our pose so we land back here.
-    if input.is_key_just_pressed(256) then
+    if input.is_action_just_pressed("pause") then
         local px, py, _ = transform.get_position(entity_id)
         gamestate.set("raycast_return_x", px)
         gamestate.set("raycast_return_y", py)

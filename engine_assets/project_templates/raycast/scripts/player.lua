@@ -13,17 +13,16 @@ end
 
 function on_update(dt)
     local _, _, rz = transform.get_rotation(entity_id)
-    local turning = 0
-    if input.is_key_pressed(65) then turning = turning + 1 end -- A: turn left
-    if input.is_key_pressed(68) then turning = turning - 1 end -- D: turn right
+    -- Built-in `move` action (WASD or left stick, y down): x turns, y walks.
+    local steer_x, steer_y = input.get_action_vector("move")
+    local turning = -steer_x -- A: turn left
     if turning ~= 0 then
         rz = rz + turning * turn_speed * dt
         local px, py, _ = transform.get_position(entity_id)
         physics.set_transform(entity_id, px, py, rz)
     end
     local fx, fy = -math.sin(rz), math.cos(rz)
-    local vx, vy = 0, 0
-    if input.is_key_pressed(87) then vx = vx + fx * speed; vy = vy + fy * speed end -- W: forward
-    if input.is_key_pressed(83) then vx = vx - fx * speed; vy = vy - fy * speed end -- S: back
+    local walk = -steer_y -- W: forward, S: back
+    local vx, vy = fx * walk * speed, fy * walk * speed
     physics.set_velocity(entity_id, vx, vy)
 end
