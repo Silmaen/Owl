@@ -28,18 +28,28 @@ tooltips and construction tools at once, as in Transport Tycoon.
 - Horizontal (left / centre / right) and vertical (top / middle / bottom) alignment, optional word wrap, fit mode
   (clip / shrink to fit / overflow), on `UiText` and on world-space `Renderer2D::drawString`.
 
-## HUD layer (HUD1)
+## HUD layer (HUD1, done)
 
-- An implicit last pass of the frame, in pixel space, after the renderer stack and before the toasts; it cannot be
-  misordered, whatever the layers underneath draw. The old `Scene::renderHud` (voxel highlight and crosshair) becomes
-  `renderOverlays`.
-- The code leaves `Scene.cpp` for its own module; one layout pass per frame feeds both drawing and hit-testing.
-- Nested `UiRect`: a parent rectangle is its children's space.
-- Y-down pixels with the origin at the top left, the most common UI convention; a scene migration converts every
-  existing `UiRect` (today Y-up, pivot at the centre).
-- Anchors: min / max anchors (stretch) besides the 9 presets, which stay as shortcuts.
-- Reference resolution (1280×720 by default) with a scale mode: constant pixels, scale with height, match the
-  smaller side.
+- An implicit last pass of the frame, in pixel space, after the renderer stack and the overlays, before the toasts and
+  the screen transition (`HudPass`); it cannot be misordered, whatever the layers underneath draw, in Play
+  as in the editor viewport (where a click on a widget selects it). `Scene::renderHud` (voxel highlight and crosshair)
+  became `renderOverlays`; `RendererTag` no longer routes a canvas, so the `ui` layer of the templates stays empty.
+- The code left `Scene.cpp`: `HudLayout` lays the canvases out once per frame (in ascending `sortOrder`,
+  depth first, a parent before its children) and `UiInputSystem` hit-tests that same layout, so a click lands on the
+  rectangle that was drawn; the topmost button or slider under the mouse takes it, labels and panels over it do not.
+- Nested `UiRect`: the nearest ancestor carrying a `UiRect` is the parent rectangle, an entity without one passes
+  its parent on, a hidden entity hides its subtree.
+- Y-down pixels with the origin at the top left; scene and prefab format 4 converts every `UiRect` written before
+  (preset point to both anchors, `pivot.y = 1 - pivotY`, `offset.y = -offsetY`) and gives the legacy canvases
+  `ConstantPixels`, so no widget moves; the sample project and the templates were rewritten and use
+  `ScaleWithHeight`.
+- Anchors: `anchorMin` / `anchorMax` (normalised, a distinct pair stretches the widget, `size` is then added to the
+  span) besides the 9 presets (`UiRect::setAnchor`, `getAnchor`), which stay as shortcuts in the inspector.
+- `Canvas::referenceResolution` (1280×720 by default) with `Canvas::scaleMode`: `ConstantPixels`, `ScaleWithHeight`
+  (default) or `MatchSmallerSide`; widgets are authored in reference pixels, fonts scale with them.
+- Every new field is edited in the inspector, undoable through `component.set`; bench `hud/{layout,frame}/500_widgets`
+  (budget in [Isometric worlds](isometric-worlds.md)); image tests `hud_raycast` and `hud_voxel` at 320×180, 480×270
+  and 240×240.
 
 ## `.owlhud` asset (HUD2)
 

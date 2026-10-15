@@ -610,11 +610,8 @@ void RunnerLayer::onUpdate(const core::Timestep& iTimeStep) {
 							static_cast<float>(m_viewportSize.x()), static_cast<float>(m_viewportSize.y()));
 					handleTeleportRequest();
 				} else {
-					// UiRect uses Y=0 at bottom; window mouse Y=0 at top → flip Y.
-					const math::vec2 mousePos = {input::Input::getMousePos().x(),
-												 static_cast<float>(m_viewportSize.y()) -
-														 input::Input::getMousePos().y()};
-					scene::UiInputSystem::update(m_activeScene.get(), m_viewportSize, mousePos,
+					// The HUD and the window mouse are both Y-down pixels from the top left.
+					scene::UiInputSystem::update(m_activeScene.get(), m_viewportSize, input::Input::getMousePos(),
 												 input::Input::isMouseButtonPressed(input::mouse::ButtonLeft));
 					updateSceneRuntime(timeStep);
 					// Handle quit request from Lua (scene.quit()).

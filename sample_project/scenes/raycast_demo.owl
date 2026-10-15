@@ -1250,6 +1250,8 @@ Entities:
     Canvas:
       space: ScreenOverlay
       sortOrder: 0
+      referenceResolution: [1280, 720]
+      scaleMode: ScaleWithHeight
     Visibility:
       gameVisible: true
     Hierarchy:

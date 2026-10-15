@@ -675,6 +675,28 @@
       "max_ns": 3030265.0
     },
     {
+      "name": "hud/layout/500_widgets",
+      "items": 500,
+      "batch": 367,
+      "samples": 15,
+      "median_ns": 71126.0,
+      "p25_ns": 70983.7,
+      "p75_ns": 71410.5,
+      "min_ns": 70906.0,
+      "max_ns": 71837.3
+    },
+    {
+      "name": "hud/frame/500_widgets",
+      "items": 500,
+      "batch": 100,
+      "samples": 15,
+      "median_ns": 225808.0,
+      "p25_ns": 225356.4,
+      "p75_ns": 226711.2,
+      "min_ns": 224884.0,
+      "max_ns": 228066.1
+    },
+    {
       "name": "tilemap/static/32x32_layers1",
       "items": 1024,
       "batch": 45235,
@@ -1953,6 +1975,16 @@
       "name": "renderer2d/text/10000_glyphs_wrapped_draw_calls",
       "value": 1,
       "unit": "draw calls (one frame)"
+    },
+    {
+      "name": "hud/frame/500_widgets_draw_calls",
+      "value": 2,
+      "unit": "draw calls (one frame)"
+    },
+    {
+      "name": "hud/layout/500_widgets_nodes",
+      "value": 500,
+      "unit": "widgets laid out"
     },
     {
       "name": "tilemap/static/32x32_layers1_first_upload_bytes",

@@ -58,7 +58,7 @@ Entities:
     translation: [0, 0, 0]
     rotation: [0, 0, 0]
     scale: [1, 1, 1]
-  Canvas: {space: ScreenOverlay, sortOrder: 0}
+  Canvas: {space: ScreenOverlay, sortOrder: 0, referenceResolution: [1280, 720], scaleMode: ConstantPixels}
   Visibility: {gameVisible: true}
   Hierarchy: {parentId: 0}
   RendererTag: {Name: ui}
@@ -75,7 +75,7 @@ Entities:
     value: 0.7
     backgroundColor: [0.4, 0.1, 0.1, 0.8]
     fillColor: [0.2, 0.85, 0.2, 1]
-  UiRect: {anchor: TopRight, pivotX: 1, pivotY: 1, sizeX: 120, sizeY: 16, offsetX: -10, offsetY: -10}
+  UiRect: {anchorMin: [1, 0], anchorMax: [1, 0], pivot: [1, 0], size: [120, 16], offset: [-10, 10]}
 - Entity: 3500000000000000032
   Tag: {tag: HudText}
   Transform:
@@ -85,7 +85,7 @@ Entities:
   Visibility: {gameVisible: true}
   Hierarchy: {parentId: 3500000000000000030}
   RendererTag: {Name: ui}
-  UiRect: {anchor: TopLeft, pivotX: 0, pivotY: 1, sizeX: 140, sizeY: 20, offsetX: 10, offsetY: -10}
+  UiRect: {anchorMin: [0, 0], anchorMax: [0, 0], pivot: [0, 0], size: [140, 20], offset: [10, 10]}
   UiText:
     text: Owl HUD
     color: [1, 0.95, 0.55, 1]

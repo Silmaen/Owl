@@ -439,8 +439,12 @@ each component marked by a thin axis colour, with a reset button that appears wh
 - **Background** -- Background layer settings
 - **Visibility** -- Per-entity visibility toggle (inherited by children)
 - **Lua Script** -- Script asset path, editable property list
-- **Canvas** -- UI container for screen-space overlay elements
-- **UI Rect / Text / Image / Panel / Button / Slider / Progress Bar** -- In-game UI elements
+- **Canvas** -- HUD root: sort order, reference resolution and scale mode (`ConstantPixels`, `ScaleWithHeight`,
+  `MatchSmallerSide`)
+- **UI Rect** -- Anchor preset (Custom when the anchors stretch), Anchor Min / Max, Pivot, Size and Offset, in
+  Y-down reference pixels of the parent rectangle; the HUD is drawn in pixels over the viewport, a click on a widget
+  selects it
+- **UI Text / Image / Panel / Button / Slider / Progress Bar** -- In-game UI elements
 - **Prefab Link** -- Read-only display: source asset path, synced version, mapped entity count,
   override count
 
@@ -517,7 +521,8 @@ component.
 
 - **Preview** — live spritesheet thumbnail at the current frame (an empty state without a texture), with the
   Previous / Play-Pause / Stop / Next icon buttons and the current frame underneath.
-- **Spritesheet** — texture drop target, columns and rows in a property grid.
+- **Spritesheet** — texture drop target, columns and rows in a property grid; **Show Current Frame** outlines the
+  current frame on the thumbnail (frames run row by row from the top left).
 - **Playback** — first frame, last frame, frame duration and loop, each with its reset button and tooltip.
 - **Speed Curve** — the optional speed curve (embedded `curveEditor`).
 - **Timeline** — `gui::widgets::sequencer()` bar in the accent colour; drag the handles to move

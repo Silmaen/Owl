@@ -14,6 +14,8 @@ Entities:
     Canvas:
       space: ScreenOverlay
       sortOrder: 10
+      referenceResolution: [1280, 720]
+      scaleMode: ScaleWithHeight
   - Entity: 2001
     Tag:
       tag: PauseBackground
@@ -26,13 +28,11 @@ Entities:
     Hierarchy:
       parentId: 2000
     UiRect:
-      anchor: Center
-      pivotX: 0.5
-      pivotY: 0.5
-      sizeX: 300
-      sizeY: 250
-      offsetX: 0
-      offsetY: 0
+      anchorMin: [0.5, 0.5]
+      anchorMax: [0.5, 0.5]
+      pivot: [0.5, 0.5]
+      size: [300, 250]
+      offset: [0, 0]
     UiPanel:
       backgroundColor: [0.1, 0.1, 0.1, 0.85]
       borderColor: [1, 1, 1, 0.3]
@@ -52,13 +52,11 @@ Entities:
     Hierarchy:
       parentId: 2000
     UiRect:
-      anchor: Center
-      pivotX: 0.5
-      pivotY: 0.5
-      sizeX: 250
-      sizeY: 40
-      offsetX: 0
-      offsetY: 70
+      anchorMin: [0.5, 0.5]
+      anchorMax: [0.5, 0.5]
+      pivot: [0.5, 0.5]
+      size: [250, 40]
+      offset: [0, -70]
     UiText:
       text: "Paused"
       color: [1, 1, 1, 1]
@@ -79,13 +77,11 @@ Entities:
     Hierarchy:
       parentId: 2000
     UiRect:
-      anchor: Center
-      pivotX: 0.5
-      pivotY: 0.5
-      sizeX: 180
-      sizeY: 45
-      offsetX: 0
-      offsetY: 10
+      anchorMin: [0.5, 0.5]
+      anchorMax: [0.5, 0.5]
+      pivot: [0.5, 0.5]
+      size: [180, 45]
+      offset: [0, -10]
     UiButton:
       normalColor: [0.3, 0.5, 0.3, 1]
       hoverColor: [0.4, 0.6, 0.4, 1]
@@ -112,13 +108,11 @@ Entities:
     Hierarchy:
       parentId: 2000
     UiRect:
-      anchor: Center
-      pivotX: 0.5
-      pivotY: 0.5
-      sizeX: 180
-      sizeY: 45
-      offsetX: 0
-      offsetY: -50
+      anchorMin: [0.5, 0.5]
+      anchorMax: [0.5, 0.5]
+      pivot: [0.5, 0.5]
+      size: [180, 45]
+      offset: [0, 50]
     UiButton:
       normalColor: [0.5, 0.3, 0.3, 1]
       hoverColor: [0.6, 0.4, 0.4, 1]

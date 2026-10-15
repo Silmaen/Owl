@@ -75,9 +75,9 @@ TEST(StatusBar, RendersEveryModeWithoutRequest) {
 	StatusBar bar;
 	gui::widgets::ToastQueue toasts;
 	toasts.push(gui::widgets::ToastKind::Success, "Saved main_menu.owl");
-	for (const auto [mode, mcp]: {std::pair{StatusInfo::Mode::Edit, StatusInfo::Mcp::Off},
-								  std::pair{StatusInfo::Mode::Play, StatusInfo::Mcp::Listening},
-								  std::pair{StatusInfo::Mode::Pause, StatusInfo::Mcp::ClientActive}}) {
+	for (const auto& [mode, mcp]: {std::pair{StatusInfo::Mode::Edit, StatusInfo::Mcp::Off},
+								   std::pair{StatusInfo::Mode::Play, StatusInfo::Mcp::Listening},
+								   std::pair{StatusInfo::Mode::Pause, StatusInfo::Mcp::ClientActive}}) {
 		layer.begin();
 		ImGui::Begin("Host");
 		bar.onImGuiRender({.mode = mode,

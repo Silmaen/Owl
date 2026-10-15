@@ -10,6 +10,7 @@
 
 #include "EntityLinkMigration.h"
 
+#include "HudLayoutMigration.h"
 #include "UiTextMigration.h"
 
 #include "core/SerializerImpl.h"
@@ -51,8 +52,8 @@ auto canReadWithoutMigration(const core::YamlNode& iRoot, const core::DocumentFo
 	const int64_t version = versionNode ? versionNode.as<int64_t>(0) : static_cast<int64_t>(core::g_UnversionedFormat);
 	if (version == current)
 		return true;
-	// Only the 1 -> 2 and 2 -> 3 steps exist: a new step must extend this shortcut or drop it.
-	if (current != 3 || version < 1 || version > current)
+	// Only the 1 -> 2, 2 -> 3 and 3 -> 4 steps exist: a new step must extend this shortcut or drop it.
+	if (current != 4 || version < 1 || version > current)
 		return false;
 	const auto entities = iRoot["Entities"];
 	return std::all_of(entities.begin(), entities.end(), [version](const auto& iEntity) -> bool {
@@ -60,7 +61,8 @@ auto canReadWithoutMigration(const core::YamlNode& iRoot, const core::DocumentFo
 			return true;
 		const auto link = iEntity["EntityLink"];
 		const bool nameOnlyLink = link.isMap() && !link["linkedEntityId"] && link["linkedEntityName"];
-		return (version >= 2 || !nameOnlyLink) && !hasLegacyUiText(iEntity);
+		return (version >= 2 || !nameOnlyLink) && (version >= 3 || !hasLegacyUiText(iEntity)) &&
+			   !hasLegacyHudLayout(iEntity);
 	});
 }
 

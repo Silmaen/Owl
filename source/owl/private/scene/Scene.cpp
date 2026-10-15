@@ -35,6 +35,7 @@
 #include "physics/PhysicCommand.h"
 #include "scene/ScreenTransition.h"
 #include "scene/component/components.h"
+#include "scene/ui/HudPass.h"
 #include "script/ScriptEngine.h"
 #include "script/ScriptInstance.h"
 #include "sound/SoundCommand.h"
@@ -85,108 +86,6 @@ void copyCopiableComponents(Entity& oDst, const Entity& iSrc) {
 auto uniformTextTransform(math::Transform iTransform) -> math::Transform {
 	iTransform.scale().x() = std::copysign(iTransform.scale().y(), iTransform.scale().x());
 	return iTransform;
-}
-
-void renderUIChild(const Entity& iChild, const math::Transform& iTransform, const math::vec2& iPxScale) {
-	const int entId = static_cast<int>(static_cast<entt::entity>(iChild));
-	// Sprite.
-	if (iChild.hasComponent<component::SpriteRenderer>()) {
-		const auto& sprite = iChild.getComponent<component::SpriteRenderer>();
-
-		renderer::Renderer2D::drawQuad({.transform = iTransform,
-										.color = sprite.color,
-										.texture = sprite.texture,
-										.tilingFactor = sprite.tilingFactor,
-										.entityId = entId});
-	}
-	// Text (world-space component on a UI entity).
-	if (iChild.hasComponent<component::Text>()) {
-		const auto& [text, font, color, kerning, lineSpacing] = iChild.getComponent<component::Text>();
-
-		renderer::Renderer2D::drawString({.transform = uniformTextTransform(iTransform),
-										  .text = text,
-										  .font = font,
-										  .color = color,
-										  .layout = {.kerning = kerning, .lineSpacing = lineSpacing},
-										  .entityId = entId});
-	}
-	// Circle.
-	if (iChild.hasComponent<component::CircleRenderer>()) {
-		const auto& [color, thickness, fade] = iChild.getComponent<component::CircleRenderer>();
-
-		renderer::Renderer2D::drawCircle(
-				{.transform = iTransform, .color = color, .thickness = thickness, .fade = fade, .entityId = entId});
-	}
-	// UiPanel.
-	if (iChild.hasComponent<component::UiPanel>()) {
-		const auto& panel = iChild.getComponent<component::UiPanel>();
-
-		renderer::Renderer2D::drawQuad({.transform = iTransform, .color = panel.backgroundColor, .entityId = entId});
-	}
-	// UiImage.
-	if (iChild.hasComponent<component::UiImage>()) {
-		const auto& [texture, tint] = iChild.getComponent<component::UiImage>();
-
-		renderer::Renderer2D::drawQuad({.transform = iTransform, .color = tint, .texture = texture, .entityId = entId});
-	}
-	// UiText.
-	if (iChild.hasComponent<component::UiText>()) {
-		const auto& uiText = iChild.getComponent<component::UiText>();
-		shared<data::fonts::Font> font = uiText.font;
-		if (!font && app::Application::instanced())
-			font = app::Application::get().getFontLibrary().getDefaultFont();
-		math::Transform textTransform;
-		textTransform.translation() = iTransform.translation();
-		textTransform.scale() = {iPxScale.x(), iPxScale.y(), 1.f};
-
-		renderer::Renderer2D::drawString({.transform = textTransform,
-										  .text = uiText.text,
-										  .font = font,
-										  .color = uiText.color,
-										  .layout = uiText.getLayout(iChild.getComponent<component::UiRect>().size),
-										  .entityId = entId});
-	}
-	// UiButton.
-	if (iChild.hasComponent<component::UiButton>()) {
-		const auto& button = iChild.getComponent<component::UiButton>();
-
-		renderer::Renderer2D::drawQuad({.transform = iTransform, .color = button.getCurrentColor(), .entityId = entId});
-	}
-	// UiProgressBar.
-	if (iChild.hasComponent<component::UiProgressBar>()) {
-		const auto& [value, backgroundColor, fillColor] = iChild.getComponent<component::UiProgressBar>();
-		const float worldWidth = iTransform.scale().x();
-
-		renderer::Renderer2D::drawQuad({.transform = iTransform, .color = backgroundColor, .entityId = entId});
-		if (const float fillFraction = std::clamp(value, 0.f, 1.f); fillFraction > 0.f) {
-			math::Transform fillTransform = iTransform;
-			fillTransform.scale().x() *= fillFraction;
-			fillTransform.translation().x() -= worldWidth * (1.f - fillFraction) * 0.5f;
-
-			renderer::Renderer2D::drawQuad({.transform = fillTransform, .color = fillColor, .entityId = entId});
-		}
-	}
-	// UiSlider.
-	if (iChild.hasComponent<component::UiSlider>()) {
-		const auto& slider = iChild.getComponent<component::UiSlider>();
-		const float worldWidth = iTransform.scale().x();
-		const float worldHeight = iTransform.scale().y();
-
-		renderer::Renderer2D::drawQuad({.transform = iTransform, .color = slider.trackColor, .entityId = entId});
-		const float norm = slider.getNormalized();
-		if (norm > 0.f) {
-			math::Transform fillTransform = iTransform;
-			fillTransform.scale().x() *= norm;
-			fillTransform.translation().x() -= worldWidth * (1.f - norm) * 0.5f;
-
-			renderer::Renderer2D::drawQuad({.transform = fillTransform, .color = slider.fillColor, .entityId = entId});
-		}
-		math::Transform handleTransform = iTransform;
-		handleTransform.scale() = {worldHeight, worldHeight, 1.f};
-		handleTransform.translation().x() = iTransform.translation().x() - worldWidth * 0.5f + norm * worldWidth;
-
-		renderer::Renderer2D::drawQuad({.transform = handleTransform, .color = slider.handleColor, .entityId = entId});
-	}
 }
 
 auto collectSubtree(const Scene& iScene, const Entity& iRoot) -> std::vector<Entity> {
@@ -738,9 +637,6 @@ auto Scene::layerHasContent(const std::string& iLayerName, const bool iIsFirst) 
 		for (const auto e: registry.view<component::Text>())
 			if (matches(e))
 				return true;
-		for (const auto e: registry.view<component::Canvas>())
-			if (matches(e))
-				return true;
 		for (const auto e: registry.view<component::VoxelWorld>())
 			if (matches(e))
 				return true;
@@ -774,7 +670,6 @@ void Scene::renderWithStack(const renderer::Camera& iCamera) {
 		composite.onBeginFrame(iCamera);
 		composite.onRender(*this);
 		render();
-		renderUI(iCamera.getViewProjection());
 		composite.onEndFrame();
 		// The editor composite above is 2D-only; render 3D voxel layers as a separate pass so they show while editing.
 		if (editorMode) {
@@ -793,7 +688,8 @@ void Scene::renderWithStack(const renderer::Camera& iCamera) {
 			m_currentLayerName.clear();
 			mp_currentLayer = nullptr;
 		}
-		renderHud(iCamera);
+		renderOverlays(iCamera);
+		ui::HudPass::render(*this, m_viewportSize, editorMode);
 		renderToast();
 		return;
 	}
@@ -813,16 +709,15 @@ void Scene::renderWithStack(const renderer::Camera& iCamera) {
 		m_currentLayerIsFirst = isFirst;
 		mp_currentLayer = layer.get();
 		layer->onRender(*this);
-		if (!layer->drawsOwnEntities()) {
+		if (!layer->drawsOwnEntities())
 			render();
-			renderUI(layer->getEffectiveViewProjection(iCamera));
-		}
 		layer->onEndFrame();
 	}
 	m_currentLayerName.clear();
 	m_currentLayerIsFirst = true;
 	mp_currentLayer = nullptr;
-	renderHud(iCamera);
+	renderOverlays(iCamera);
+	ui::HudPass::render(*this, m_viewportSize, editorMode);
 	renderToast();
 }
 
@@ -1136,7 +1031,7 @@ void Scene::showToast(const std::string& iMessage, const float iSeconds) {
 	m_toastTimer = iSeconds;
 }
 
-void Scene::renderHud(const renderer::Camera& iCamera) {
+void Scene::renderOverlays(const renderer::Camera& iCamera) {
 	OWL_PROFILE_FUNCTION()
 
 	if (!m_hasVoxelHighlight && !m_showCrosshair)
@@ -1527,76 +1422,6 @@ void Scene::remapEntityLinks(const std::vector<Entity>& iEntities,
 		if (const auto it = iRemap.find(link.linkedEntityId); it != iRemap.end()) {
 			link.linkedEntityId = it->second;
 			link.linkedEntity = {};
-		}
-	}
-}
-
-void Scene::renderUI(const math::mat4& iEffectiveViewProjection) {
-	OWL_PROFILE_FUNCTION()
-
-	if (m_viewportSize.x() == 0 || m_viewportSize.y() == 0)
-		return;
-
-	const bool editorMode = status == Status::Editing;
-	const auto vpWidth = static_cast<float>(m_viewportSize.x());
-	const auto vpHeight = static_cast<float>(m_viewportSize.y());
-
-	struct CanvasEntry {
-		entt::entity entity;
-		int32_t sortOrder;
-	};
-	thread_local std::vector<CanvasEntry> canvases;
-	canvases.clear();
-	for (const auto view = registry.view<component::Canvas>(); const auto entity: view) {
-		const Entity ent{entity, this};
-		if (!isEffectivelyVisible(ent, editorMode))
-			continue;
-		if (!layerAccepts(ent))
-			continue;
-		canvases.push_back({entity, view.get<component::Canvas>(entity).sortOrder});
-	}
-	if (canvases.empty())
-		return;
-	std::ranges::sort(canvases, [](const auto& iA, const auto& iB) -> auto { return iA.sortOrder < iB.sortOrder; });
-
-	const math::mat4 invVP = math::inverse(iEffectiveViewProjection);
-	const math::vec4 cornerA4 = invVP * math::vec4{-1.f, -1.f, 0.f, 1.f};
-	const math::vec4 cornerB4 = invVP * math::vec4{1.f, 1.f, 0.f, 1.f};
-	const math::vec2 cornerA = {cornerA4.x() / cornerA4.w(), cornerA4.y() / cornerA4.w()};
-	const math::vec2 cornerB = {cornerB4.x() / cornerB4.w(), cornerB4.y() / cornerB4.w()};
-	const math::vec2 worldMin = {std::min(cornerA.x(), cornerB.x()), std::min(cornerA.y(), cornerB.y())};
-	const math::vec2 worldMax = {std::max(cornerA.x(), cornerB.x()), std::max(cornerA.y(), cornerB.y())};
-	const float worldW = worldMax.x() - worldMin.x();
-	const float worldH = worldMax.y() - worldMin.y();
-	// Pixel (0,0)=bottom-left, (vpW,vpH)=top-right → world (worldMin → worldMax).
-	const auto pixelToWorld = [&](const float iPx, const float iPy) -> math::vec2 {
-		return {worldMin.x() + (iPx / vpWidth) * worldW, worldMin.y() + (iPy / vpHeight) * worldH};
-	};
-	const float pxScaleX = worldW / vpWidth;
-	const float pxScaleY = worldH / vpHeight;
-
-	for (const auto& [canvasEnt, sortOrder]: canvases) {
-		const Entity canvasEntity{canvasEnt, this};
-		const math::vec2 canvasSize = {vpWidth, vpHeight};
-
-		// Render children of the Canvas that have UiRect + visual components.
-		for (const auto& [parentId, childrenIds] = canvasEntity.getComponent<component::Hierarchy>();
-			 const auto childId: childrenIds) {
-			const Entity child = findEntityByUUID(childId);
-			if (!child || !child.hasComponent<component::UiRect>())
-				continue;
-			if (!isEffectivelyVisible(child, editorMode))
-				continue;
-
-			const auto& rect = child.getComponent<component::UiRect>();
-			const math::vec2 posPx = rect.computePosition(canvasSize);
-			const math::vec2 posWorld = pixelToWorld(posPx.x(), posPx.y());
-
-			math::Transform uiTransform;
-			uiTransform.translation() = {posWorld.x(), posWorld.y(), 0.5f};
-			uiTransform.scale() = {rect.size.x() * pxScaleX, rect.size.y() * pxScaleY, 1.f};
-
-			renderUIChild(child, uiTransform, {pxScaleX, pxScaleY});
 		}
 	}
 }

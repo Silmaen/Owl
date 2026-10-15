@@ -93,13 +93,11 @@ Entities:
     RendererTag:
       Name: ui
     UiRect:
-      anchor: TopLeft
-      pivotX: 0
-      pivotY: 1
-      sizeX: 200
-      sizeY: 40
-      offsetX: 20
-      offsetY: -20
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [200, 40]
+      offset: [20, 20]
     UiText:
       text: WASD = move, E = interact, ESC = pause
       color: [1, 1, 1, 0.850000024]
@@ -129,13 +127,11 @@ Entities:
       backgroundColor: [0.400000006, 0.100000001, 0.100000001, 0.800000012]
       fillColor: [0.200000003, 0.850000024, 0.200000003, 1]
     UiRect:
-      anchor: TopRight
-      pivotX: 1
-      pivotY: 1
-      sizeX: 200
-      sizeY: 22
-      offsetX: -20
-      offsetY: -20
+      anchorMin: [1, 0]
+      anchorMax: [1, 0]
+      pivot: [1, 0]
+      size: [200, 22]
+      offset: [-20, 20]
   - Entity: 2000000000000000060
     Tag:
       tag: HUDCanvas
@@ -146,6 +142,8 @@ Entities:
     Canvas:
       space: ScreenOverlay
       sortOrder: 0
+      referenceResolution: [1280, 720]
+      scaleMode: ScaleWithHeight
     Visibility:
       gameVisible: true
     Hierarchy:

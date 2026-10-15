@@ -64,10 +64,12 @@ In v0.2.0 the foundation ships with the runtime now wired end-to-end:
 `EditorLayer::syncActiveDocumentPanels` (and the runner equivalent) builds the
 `RenderStack` from `Project::rendererStack` + `Scene::getEnabledRenderers()` and
 installs it via `Renderer::setRenderStack`. `Scene::renderWithStack` then runs
-one pass per layer (`onBeginFrame` → `render` → `renderUI` → `onEndFrame`),
+one pass per layer (`onBeginFrame` → `render` → `onEndFrame`),
 filtering entities by their `RendererTag` so each layer only sees the entities
 that opt into it. Untagged entities default to the first layer and backgrounds
-draw only on the first pass to preserve the legacy z-order. A project with no
+draw only on the first pass to preserve the legacy z-order. After the last layer come the world-space overlays
+(`Scene::renderOverlays`: voxel block highlight and crosshair), then the HUD pass (`HudPass`, every
+`Canvas` in pixels whatever its `RendererTag`, see [Scene](scene.md#ui-components)), then the toasts. A project with no
 `RendererStack:` entry falls back to a single implicit `Renderer2D` and behaves
 identically to the legacy single-pass path.
 

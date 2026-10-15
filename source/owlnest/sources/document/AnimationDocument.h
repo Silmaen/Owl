@@ -258,6 +258,34 @@ public:
 	 */
 	[[nodiscard]] auto currentFrame() const -> uint32_t { return m_currentFrame; }
 
+	/**
+	 * @brief
+	 *  Cell of the current frame in the sheet, frames counted row by row from the top left.
+	 * @return The top-left and bottom-right corners, in [0, 1] with Y down.
+	 */
+	[[nodiscard]] auto currentFrameRect() const -> std::pair<math::vec2, math::vec2>;
+
+	/**
+	 * @brief
+	 *  ImGui UV corners of the current frame.
+	 * @return The top-left and bottom-right UVs, V-flipped like every engine texture shown in ImGui.
+	 */
+	[[nodiscard]] auto currentFrameUv() const -> std::pair<math::vec2, math::vec2>;
+
+	/**
+	 * @brief
+	 *  Whether the spritesheet thumbnail outlines the current frame.
+	 * @return True when the outline is drawn.
+	 */
+	[[nodiscard]] auto isFrameOutlined() const -> bool { return m_frameOutlined; }
+
+	/**
+	 * @brief
+	 *  Show or hide the outline of the current frame on the spritesheet thumbnail.
+	 * @param[in] iOutlined True to draw the outline.
+	 */
+	void setFrameOutlined(const bool iOutlined) { m_frameOutlined = iOutlined; }
+
 private:
 	/**
 	 * @brief
@@ -289,13 +317,6 @@ private:
 	 */
 	void advancePlayback(float iSeconds);
 
-	/**
-	 * @brief
-	 *  Compute UV coordinates for the current frame (row-major, V-flipped to match Renderer2D).
-	 * @return The std pair.
-	 */
-	[[nodiscard]] auto currentFrameUv() const -> std::pair<math::vec2, math::vec2>;
-
 	/// Disk path for the animation clip backing this document.
 	std::filesystem::path m_path;
 	/// Animation clip currently being edited.
@@ -313,6 +334,8 @@ private:
 	float m_elapsedTime{0.f};
 	/// Whether timeline playback is running.
 	bool m_playing{true};
+	/// Outline the current frame on the spritesheet thumbnail (view option, not saved in the clip).
+	bool m_frameOutlined{true};
 
 	/// First sequencer-row index currently visible (kept across frames for stable scrolling).
 	int32_t m_seqFirstVisibleFrame{0};

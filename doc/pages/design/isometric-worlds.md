@@ -128,7 +128,7 @@ a few days, L a week.
 
 ### HUD
 
-- ![Planned][planned] **HUD1 — HUD layer out of `Scene.cpp`, L.** D9: implicit last pass in pixels, nested layout
+- ![Done][done] **HUD1 — HUD layer out of `Scene.cpp`, L.** D9: implicit last pass in pixels, nested layout
   computed once per frame and shared by drawing and hit-testing, anchors, reference resolution and scale modes, Y-down
   coordinates with a scene migration of every `UiRect`; the old `renderHud` (voxel crosshair) renamed
   `renderOverlays`. Image tests of the HUD over raycast and voxel at three resolutions; bench at 500 widgets.
@@ -227,7 +227,7 @@ New `bench/` cases, Null backend CPU unless stated; each one enters `bench/basel
 | 1024² map load                                           | < 1 s, ≤ 16 MB of tile data |
 | Slope-aware tile picking                                 | < 20 µs                     |
 | 10 000 glyphs                                            | one draw call               |
-| HUD with 500 widgets                                     | budget set by HUD1          |
+| HUD with 500 widgets (layout + draw)                     | < 0.5 ms, ≤ 2 draw calls    |
 | MCP `tools/call` round trip                              | ≤ one frame + 5 ms (median) |
 
 ## Later releases prepared here

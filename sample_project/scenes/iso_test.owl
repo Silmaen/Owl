@@ -151,7 +151,7 @@ Entities:
     translation: [0, 0, 0]
     rotation: [0, 0, 0]
     scale: [1, 1, 1]
-  Canvas: {space: ScreenOverlay, sortOrder: 0}
+  Canvas: {space: ScreenOverlay, sortOrder: 0, referenceResolution: [1280, 720], scaleMode: ScaleWithHeight}
   Visibility: {gameVisible: true}
   RendererTag: {Name: ui}
 - Entity: 4100000000000000051
@@ -163,7 +163,7 @@ Entities:
   Visibility: {gameVisible: true}
   Hierarchy: {parentId: 4100000000000000050}
   RendererTag: {Name: ui}
-  UiRect: {anchor: TopLeft, pivotX: 0, pivotY: 1, sizeX: 420, sizeY: 24, offsetX: 10, offsetY: -10}
+  UiRect: {anchorMin: [0, 0], anchorMax: [0, 0], pivot: [0, 0], size: [420, 24], offset: [10, 10]}
   UiText:
     text: Isometric test - arrows pan, Escape returns
     color: [1, 0.95, 0.55, 1]

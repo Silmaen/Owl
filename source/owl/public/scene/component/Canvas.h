@@ -9,26 +9,46 @@
 #pragma once
 
 #include "core/Serializer.h"
+#include "math/vectors.h"
 
 #include <cstdint>
 
 namespace owl::scene::component {
 /**
  * @brief
- *  Canvas component — marks an entity as a UI root.
+ *  Canvas component — marks an entity as a HUD root.
  *
- * Child entities of a Canvas are rendered in screen space using an orthographic
- * projection. The Canvas defines coordinate space and draw order.
+ * The `UiRect` entities under a Canvas are drawn by the HUD pass, in pixels on top of every render layer. The
+ * Canvas sets the draw order and how its reference resolution maps to the screen: the widgets are authored in
+ * reference pixels, multiplied by `getScale` on screen.
  */
 struct OWL_API Canvas {
 	/// Coordinate space for the Canvas.
 	enum struct Space : uint8_t {
 		ScreenOverlay,///< Screen-space overlay (always on top of scene).
 	};
+	/// How the reference resolution maps to the screen.
+	enum struct ScaleMode : uint8_t {
+		ConstantPixels,///< One reference pixel is one screen pixel, whatever the resolution.
+		ScaleWithHeight,///< The reference height fills the screen height.
+		MatchSmallerSide,///< The whole reference resolution fits in the screen (the smaller ratio of the two sides).
+	};
 	/// The coordinate space.
 	Space space = Space::ScreenOverlay;
 	/// Sort order — higher values render on top of lower values.
 	int32_t sortOrder = 0;
+	/// Resolution the widgets are authored at, in pixels.
+	math::vec2 referenceResolution = {1280.f, 720.f};
+	/// How `referenceResolution` maps to the screen.
+	ScaleMode scaleMode = ScaleMode::ScaleWithHeight;
+
+	/**
+	 * @brief
+	 *  Get the number of screen pixels per reference pixel.
+	 * @param[in] iScreenSize The screen (viewport) size in pixels.
+	 * @return The scale factor (1 for a degenerate reference resolution or screen).
+	 */
+	[[nodiscard]] auto getScale(const math::vec2& iScreenSize) const -> float;
 
 	/**
 	 * @brief

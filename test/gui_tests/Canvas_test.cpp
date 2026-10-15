@@ -29,6 +29,9 @@ TEST(Canvas, createAndDefaults) {
 
 	EXPECT_EQ(canvas.space, component::Canvas::Space::ScreenOverlay);
 	EXPECT_EQ(canvas.sortOrder, 0);
+	EXPECT_NEAR(canvas.referenceResolution.x(), 1280.f, 0.01f);
+	EXPECT_NEAR(canvas.referenceResolution.y(), 720.f, 0.01f);
+	EXPECT_EQ(canvas.scaleMode, component::Canvas::ScaleMode::ScaleWithHeight);
 
 	core::Log::invalidate();
 }
@@ -39,7 +42,7 @@ TEST(UiRect, createAndDefaults) {
 	auto entity = scn->createEntity("UiElement");
 	auto& rect = entity.addComponent<component::UiRect>();
 
-	EXPECT_EQ(rect.anchor, component::UiRect::Anchor::Center);
+	EXPECT_EQ(rect.getAnchor(), component::UiRect::Anchor::Center);
 	EXPECT_NEAR(rect.pivot.x(), 0.5f, 0.01f);
 	EXPECT_NEAR(rect.pivot.y(), 0.5f, 0.01f);
 	EXPECT_NEAR(rect.size.x(), 100.f, 0.01f);
@@ -50,53 +53,59 @@ TEST(UiRect, createAndDefaults) {
 	core::Log::invalidate();
 }
 
-TEST(UiRect, computePositionCenter) {
+TEST(UiRect, computeBoundsCenter) {
 	component::UiRect rect;
-	rect.anchor = component::UiRect::Anchor::Center;
+	rect.setAnchor(component::UiRect::Anchor::Center);
 	rect.size = {200.f, 100.f};
-	rect.pivot = {0.5f, 0.5f};
-	rect.anchorOffset = {0.f, 0.f};
 
-	const math::vec2 parentSize = {800.f, 600.f};
-	const auto pos = rect.computePosition(parentSize);
-
-	// Centre of parent = (400, 300). Pivot at centre → pos = centre.
-	EXPECT_NEAR(pos.x(), 400.f, 0.01f);
-	EXPECT_NEAR(pos.y(), 300.f, 0.01f);
+	const auto bounds = rect.computeBounds({.position = {0.f, 0.f}, .size = {800.f, 600.f}});
+	EXPECT_NEAR(bounds.position.x(), 300.f, 0.01f);
+	EXPECT_NEAR(bounds.position.y(), 250.f, 0.01f);
+	EXPECT_NEAR(bounds.getCenter().x(), 400.f, 0.01f);
+	EXPECT_NEAR(bounds.getCenter().y(), 300.f, 0.01f);
 }
 
-TEST(UiRect, computePositionTopLeft) {
+TEST(UiRect, computeBoundsTopLeftIsYDown) {
 	component::UiRect rect;
-	rect.anchor = component::UiRect::Anchor::TopLeft;
+	rect.setAnchor(component::UiRect::Anchor::TopLeft);
 	rect.size = {200.f, 100.f};
-	rect.pivot = {0.f, 1.f};// top-left pivot
-	rect.anchorOffset = {10.f, -10.f};
+	rect.pivot = {0.f, 0.f};
+	rect.anchorOffset = {10.f, 10.f};
 
-	const math::vec2 parentSize = {800.f, 600.f};
-	const auto pos = rect.computePosition(parentSize);
-
-	// TopLeft anchor = (0, 600). Pivot (0,1) → offset by (size.x*0.5, -size.y*0.5)
-	// pos.x = 0 + 10 + 200*(0.5 - 0) = 110
-	// pos.y = 600 - 10 + 100*(0.5 - 1) = 540
-	EXPECT_NEAR(pos.x(), 110.f, 0.01f);
-	EXPECT_NEAR(pos.y(), 540.f, 0.01f);
+	const auto bounds = rect.computeBounds({.position = {0.f, 0.f}, .size = {800.f, 600.f}});
+	EXPECT_NEAR(bounds.position.x(), 10.f, 0.01f);
+	EXPECT_NEAR(bounds.position.y(), 10.f, 0.01f);
+	EXPECT_NEAR(bounds.size.x(), 200.f, 0.01f);
+	EXPECT_NEAR(bounds.size.y(), 100.f, 0.01f);
 }
 
-TEST(UiRect, computePositionBottomRight) {
+TEST(UiRect, computeBoundsBottomRight) {
 	component::UiRect rect;
-	rect.anchor = component::UiRect::Anchor::BottomRight;
+	rect.setAnchor(component::UiRect::Anchor::BottomRight);
 	rect.size = {150.f, 50.f};
-	rect.pivot = {1.f, 0.f};// bottom-right pivot
-	rect.anchorOffset = {-20.f, 20.f};
+	rect.pivot = {1.f, 1.f};
+	rect.anchorOffset = {-20.f, -20.f};
 
-	const math::vec2 parentSize = {800.f, 600.f};
-	const auto pos = rect.computePosition(parentSize);
+	const auto bounds = rect.computeBounds({.position = {0.f, 0.f}, .size = {800.f, 600.f}});
+	EXPECT_NEAR(bounds.position.x(), 630.f, 0.01f);
+	EXPECT_NEAR(bounds.position.y(), 530.f, 0.01f);
+}
 
-	// BottomRight anchor = (800, 0). Pivot (1,0) → offset by (size.x*(0.5-1), size.y*0.5)
-	// pos.x = 800 - 20 + 150*(0.5 - 1) = 705
-	// pos.y = 0 + 20 + 50*(0.5 - 0) = 45
-	EXPECT_NEAR(pos.x(), 705.f, 0.01f);
-	EXPECT_NEAR(pos.y(), 45.f, 0.01f);
+TEST(Canvas, scaleModes) {
+	component::Canvas canvas;
+	canvas.referenceResolution = {1280.f, 720.f};
+	canvas.scaleMode = component::Canvas::ScaleMode::ConstantPixels;
+	EXPECT_NEAR(canvas.getScale({640.f, 360.f}), 1.f, 1e-5f);
+	canvas.scaleMode = component::Canvas::ScaleMode::ScaleWithHeight;
+	EXPECT_NEAR(canvas.getScale({640.f, 360.f}), 0.5f, 1e-5f);
+	EXPECT_NEAR(canvas.getScale({3000.f, 1440.f}), 2.f, 1e-5f);
+	canvas.scaleMode = component::Canvas::ScaleMode::MatchSmallerSide;
+	EXPECT_NEAR(canvas.getScale({640.f, 720.f}), 0.5f, 1e-5f);
+	EXPECT_NEAR(canvas.getScale({2560.f, 720.f}), 1.f, 1e-5f);
+	canvas.referenceResolution = {0.f, 720.f};
+	EXPECT_NEAR(canvas.getScale({640.f, 360.f}), 1.f, 1e-5f);
+	canvas.referenceResolution = {1280.f, 720.f};
+	EXPECT_NEAR(canvas.getScale({0.f, 0.f}), 1.f, 1e-5f);
 }
 
 TEST(Canvas, serializeDeserializeViaScene) {
@@ -111,10 +120,12 @@ TEST(Canvas, serializeDeserializeViaScene) {
 		auto canvasEntity = scn->createEntity("UICanvas");
 		auto& canvas = canvasEntity.addComponent<component::Canvas>();
 		canvas.sortOrder = 5;
+		canvas.referenceResolution = {800.f, 600.f};
+		canvas.scaleMode = component::Canvas::ScaleMode::MatchSmallerSide;
 
 		auto childEntity = scn->createEntity("UIChild");
 		auto& rect = childEntity.addComponent<component::UiRect>();
-		rect.anchor = component::UiRect::Anchor::TopCenter;
+		rect.setAnchor(component::UiRect::Anchor::TopCenter);
 		rect.size = {300.f, 80.f};
 		rect.anchorOffset = {0.f, -50.f};
 		scn->setParent(childEntity, canvasEntity);
@@ -133,11 +144,14 @@ TEST(Canvas, serializeDeserializeViaScene) {
 			if (entity.hasComponent<component::Canvas>()) {
 				const auto& canvas = entity.getComponent<component::Canvas>();
 				EXPECT_EQ(canvas.sortOrder, 5);
+				EXPECT_NEAR(canvas.referenceResolution.x(), 800.f, 0.01f);
+				EXPECT_NEAR(canvas.referenceResolution.y(), 600.f, 0.01f);
+				EXPECT_EQ(canvas.scaleMode, component::Canvas::ScaleMode::MatchSmallerSide);
 				foundCanvas = true;
 			}
 			if (entity.hasComponent<component::UiRect>()) {
 				const auto& rect = entity.getComponent<component::UiRect>();
-				EXPECT_EQ(rect.anchor, component::UiRect::Anchor::TopCenter);
+				EXPECT_EQ(rect.getAnchor(), component::UiRect::Anchor::TopCenter);
 				EXPECT_NEAR(rect.size.x(), 300.f, 0.01f);
 				EXPECT_NEAR(rect.size.y(), 80.f, 0.01f);
 				EXPECT_NEAR(rect.anchorOffset.y(), -50.f, 0.01f);

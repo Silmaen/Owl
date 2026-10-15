@@ -18,6 +18,7 @@
 #include "scene/PhysicsSettings.h"
 #include "scene/SimulationClock.h"
 #include "scene/SystemSchedule.h"
+#include "scene/ui/HudLayout.h"
 
 #include <entt/entt.hpp>
 
@@ -748,6 +749,20 @@ public:
 	 */
 	[[nodiscard]] auto getUiInputState() const -> const UiInputState& { return m_uiInputState; }
 
+	/**
+	 * @brief
+	 *  Access the HUD layout of this scene, computed by the HUD pass and reused by `UiInputSystem`.
+	 * @return The HUD layout.
+	 */
+	[[nodiscard]] auto getHudLayout() -> ui::HudLayout& { return m_hudLayout; }
+
+	/**
+	 * @brief
+	 *  Access the HUD layout of this scene, computed by the HUD pass and reused by `UiInputSystem`.
+	 * @return The HUD layout.
+	 */
+	[[nodiscard]] auto getHudLayout() const -> const ui::HudLayout& { return m_hudLayout; }
+
 private:
 	/**
 	 * @brief
@@ -778,6 +793,8 @@ private:
 	shared<physics::PhysicsWorld> m_physicsWorld;
 	/// Runtime UI mouse state (hover, previous press).
 	UiInputState m_uiInputState;
+	/// Layout of the HUD widgets drawn by the last HUD pass.
+	ui::HudLayout m_hudLayout;
 	/// Systems run every runtime frame, phase by phase.
 	SystemSchedule m_systems;
 	/// Engine state used by the scene (not owned).
@@ -959,7 +976,7 @@ private:
 
 	/**
 	 * @brief
-	 *  Draw the world-space voxel HUD (targeted-block highlight + aiming crosshair) through the active camera.
+	 *  Draw the world-space overlays (voxel targeted-block highlight + aiming crosshair) through the active camera.
 	 *
 	 * Both the block wireframe and the crosshair are emitted as world-space lines
 	 * in a single `Renderer2D` scene that uses `iCamera` directly, so they project
@@ -967,7 +984,7 @@ private:
 	 * second 2D camera into the frame.
 	 * @param[in] iCamera The active perspective camera.
 	 */
-	void renderHud(const renderer::Camera& iCamera);
+	void renderOverlays(const renderer::Camera& iCamera);
 
 	/**
 	 * @brief
@@ -1003,17 +1020,6 @@ private:
 	 *  or tileset path is mutated outside the component-add path (e.g. inspector text-edit).
 	 */
 	void invalidateTilemapAssets() { m_tilemapAssetsDirty = true; }
-
-	/**
-	 * @brief
-	 *  Draw screen-space UI overlays (Canvas entities) within the current render batch.
-	 * @param[in] iEffectiveViewProjection The view-projection matrix the active layer has bound
-	 * to `Renderer2D` (world camera VP for legacy 2D layers, pixel-space ortho VP for raycast /
-	 * screen-overlay layers). Used to map pixel anchors into the same coordinate frame the layer
-	 * is currently drawing in, so HUDs follow the layer's space rather than the raw world camera
-	 * (which would rotate the HUD with the player in the raycast scene).
-	 */
-	void renderUI(const math::mat4& iEffectiveViewProjection);
 
 	/**
 	 * @brief
@@ -1095,8 +1101,8 @@ private:
 	 * @brief
 	 *  Name of the `RenderLayer` currently being filled.
 	 *
-	 * Empty during the legacy single-pass path. Set by `renderWithStack` before each `render()` /
-	 * `renderUI()` call so per-layer entity filtering can run.
+	 * Empty during the legacy single-pass path. Set by `renderWithStack` before each `render()` call so per-layer
+	 * entity filtering can run.
 	 */
 	std::string m_currentLayerName;
 	/// Whether the layer being processed is the first one in the stack (untagged entities default to it).

@@ -14,6 +14,8 @@ Entities:
     Canvas:
       space: ScreenOverlay
       sortOrder: 20
+      referenceResolution: [1280, 720]
+      scaleMode: ScaleWithHeight
   - Entity: 3001
     Tag:
       tag: GameOverTitle
@@ -26,13 +28,11 @@ Entities:
     Hierarchy:
       parentId: 3000
     UiRect:
-      anchor: Center
-      pivotX: 0.5
-      pivotY: 0.5
-      sizeX: 400
-      sizeY: 60
-      offsetX: 0
-      offsetY: 60
+      anchorMin: [0.5, 0.5]
+      anchorMax: [0.5, 0.5]
+      pivot: [0.5, 0.5]
+      size: [400, 60]
+      offset: [0, -60]
     UiText:
       text: "Game Over"
       color: [1, 0.3, 0.3, 1]
@@ -53,13 +53,11 @@ Entities:
     Hierarchy:
       parentId: 3000
     UiRect:
-      anchor: Center
-      pivotX: 0.5
-      pivotY: 0.5
-      sizeX: 180
-      sizeY: 45
-      offsetX: 0
-      offsetY: -20
+      anchorMin: [0.5, 0.5]
+      anchorMax: [0.5, 0.5]
+      pivot: [0.5, 0.5]
+      size: [180, 45]
+      offset: [0, 20]
     UiButton:
       normalColor: [0.3, 0.3, 0.5, 1]
       hoverColor: [0.4, 0.4, 0.6, 1]
@@ -86,13 +84,11 @@ Entities:
     Hierarchy:
       parentId: 3000
     UiRect:
-      anchor: Center
-      pivotX: 0.5
-      pivotY: 0.5
-      sizeX: 180
-      sizeY: 45
-      offsetX: 0
-      offsetY: -80
+      anchorMin: [0.5, 0.5]
+      anchorMax: [0.5, 0.5]
+      pivot: [0.5, 0.5]
+      size: [180, 45]
+      offset: [0, 80]
     UiButton:
       normalColor: [0.3, 0.3, 0.3, 1]
       hoverColor: [0.4, 0.4, 0.4, 1]

@@ -67,14 +67,19 @@ TEST(ComponentRoundTrip, UiRect) {
 			"UiRect",
 			[](scene::Entity& iEnt) -> void {
 				auto& rect = iEnt.addComponent<scene::component::UiRect>();
-				rect.anchor = scene::component::UiRect::Anchor::BottomRight;
+				rect.anchorMin = {0.1f, 0.2f};
+				rect.anchorMax = {0.9f, 0.8f};
 				rect.pivot = {0.25f, 0.75f};
 				rect.size = {200.f, 50.f};
 				rect.anchorOffset = {-10.f, 5.f};
 			},
 			[](const scene::Entity& iEnt) -> void {
 				const auto& rect = iEnt.getComponent<scene::component::UiRect>();
-				EXPECT_EQ(rect.anchor, scene::component::UiRect::Anchor::BottomRight);
+				EXPECT_NEAR(rect.anchorMin.x(), 0.1f, 0.001f);
+				EXPECT_NEAR(rect.anchorMin.y(), 0.2f, 0.001f);
+				EXPECT_NEAR(rect.anchorMax.x(), 0.9f, 0.001f);
+				EXPECT_NEAR(rect.anchorMax.y(), 0.8f, 0.001f);
+				EXPECT_FALSE(rect.getAnchor().has_value());
 				EXPECT_NEAR(rect.pivot.x(), 0.25f, 0.001f);
 				EXPECT_NEAR(rect.pivot.y(), 0.75f, 0.001f);
 				EXPECT_NEAR(rect.size.x(), 200.f, 0.001f);
@@ -358,72 +363,61 @@ TEST(ComponentRoundTrip, PhysicBody) {
 			});
 }
 
-TEST(UiRect, ComputePositionAcrossAllAnchors) {
+TEST(UiRect, ComputeBoundsAcrossAllAnchors) {
 	using A = scene::component::UiRect::Anchor;
-	const math::vec2 parent{200.f, 100.f};
+	const scene::component::UiRect::Bounds parent{.position = {10.f, 20.f}, .size = {200.f, 100.f}};
 	scene::component::UiRect rect;
 	rect.size = {0.f, 0.f};
-	rect.pivot = {0.5f, 0.5f};
-	rect.anchorOffset = {0.f, 0.f};
-
-	rect.anchor = A::TopLeft;
-	auto p = rect.computePosition(parent);
-	EXPECT_NEAR(p.x(), 0.f, 0.001f);
-	EXPECT_NEAR(p.y(), 100.f, 0.001f);
-
-	rect.anchor = A::TopCenter;
-	p = rect.computePosition(parent);
-	EXPECT_NEAR(p.x(), 100.f, 0.001f);
-	EXPECT_NEAR(p.y(), 100.f, 0.001f);
-
-	rect.anchor = A::TopRight;
-	p = rect.computePosition(parent);
-	EXPECT_NEAR(p.x(), 200.f, 0.001f);
-	EXPECT_NEAR(p.y(), 100.f, 0.001f);
-
-	rect.anchor = A::MiddleLeft;
-	p = rect.computePosition(parent);
-	EXPECT_NEAR(p.x(), 0.f, 0.001f);
-	EXPECT_NEAR(p.y(), 50.f, 0.001f);
-
-	rect.anchor = A::Center;
-	p = rect.computePosition(parent);
-	EXPECT_NEAR(p.x(), 100.f, 0.001f);
-	EXPECT_NEAR(p.y(), 50.f, 0.001f);
-
-	rect.anchor = A::MiddleRight;
-	p = rect.computePosition(parent);
-	EXPECT_NEAR(p.x(), 200.f, 0.001f);
-	EXPECT_NEAR(p.y(), 50.f, 0.001f);
-
-	rect.anchor = A::BottomLeft;
-	p = rect.computePosition(parent);
-	EXPECT_NEAR(p.x(), 0.f, 0.001f);
-	EXPECT_NEAR(p.y(), 0.f, 0.001f);
-
-	rect.anchor = A::BottomCenter;
-	p = rect.computePosition(parent);
-	EXPECT_NEAR(p.x(), 100.f, 0.001f);
-	EXPECT_NEAR(p.y(), 0.f, 0.001f);
-
-	rect.anchor = A::BottomRight;
-	p = rect.computePosition(parent);
-	EXPECT_NEAR(p.x(), 200.f, 0.001f);
-	EXPECT_NEAR(p.y(), 0.f, 0.001f);
+	struct Expected {
+		A anchor;
+		math::vec2 point;
+	};
+	for (const auto& [anchor, point]:
+		 {Expected{A::TopLeft, {10.f, 20.f}}, Expected{A::TopCenter, {110.f, 20.f}},
+		  Expected{A::TopRight, {210.f, 20.f}}, Expected{A::MiddleLeft, {10.f, 70.f}},
+		  Expected{A::Center, {110.f, 70.f}}, Expected{A::MiddleRight, {210.f, 70.f}},
+		  Expected{A::BottomLeft, {10.f, 120.f}}, Expected{A::BottomCenter, {110.f, 120.f}},
+		  Expected{A::BottomRight, {210.f, 120.f}}}) {
+		rect.setAnchor(anchor);
+		EXPECT_EQ(rect.getAnchor(), anchor);
+		const auto bounds = rect.computeBounds(parent);
+		EXPECT_NEAR(bounds.position.x(), point.x(), 0.001f);
+		EXPECT_NEAR(bounds.position.y(), point.y(), 0.001f);
+	}
 }
 
-TEST(UiRect, ComputePositionWithPivotAndOffset) {
+TEST(UiRect, ComputeBoundsWithPivotAndOffset) {
 	scene::component::UiRect rect;
-	rect.anchor = scene::component::UiRect::Anchor::TopLeft;
-	rect.pivot = {0.f, 1.f};// top-left pivot
+	rect.setAnchor(scene::component::UiRect::Anchor::TopLeft);
+	rect.pivot = {1.f, 1.f};
 	rect.size = {40.f, 20.f};
-	rect.anchorOffset = {3.f, -7.f};
-	const auto p = rect.computePosition({100.f, 100.f});
-	// TopLeft anchor in this engine = (0, parentY) = (0, 100).
-	// posX = 0 + 3 + 40*(0.5 - 0) = 23
-	// posY = 100 - 7 + 20*(0.5 - 1) = 83
-	EXPECT_NEAR(p.x(), 23.f, 0.001f);
-	EXPECT_NEAR(p.y(), 83.f, 0.001f);
+	rect.anchorOffset = {50.f, 30.f};
+	const auto bounds = rect.computeBounds({.position = {0.f, 0.f}, .size = {100.f, 100.f}});
+	// The bottom-right corner (pivot 1, 1) sits on the anchor plus the offset.
+	EXPECT_NEAR(bounds.position.x(), 10.f, 0.001f);
+	EXPECT_NEAR(bounds.position.y(), 10.f, 0.001f);
+	EXPECT_NEAR(bounds.size.x(), 40.f, 0.001f);
+	EXPECT_NEAR(bounds.size.y(), 20.f, 0.001f);
+}
+
+TEST(UiRect, StretchedAnchorsFollowTheParent) {
+	scene::component::UiRect rect;
+	rect.anchorMin = {0.f, 0.f};
+	rect.anchorMax = {1.f, 0.f};
+	rect.pivot = {0.5f, 0.f};
+	rect.size = {-20.f, 30.f};
+	rect.anchorOffset = {0.f, 5.f};
+	EXPECT_FALSE(rect.getAnchor().has_value());
+	for (const float width: {200.f, 640.f}) {
+		const auto bounds = rect.computeBounds({.position = {0.f, 0.f}, .size = {width, 100.f}});
+		EXPECT_NEAR(bounds.position.x(), 10.f, 0.001f);
+		EXPECT_NEAR(bounds.position.y(), 5.f, 0.001f);
+		EXPECT_NEAR(bounds.size.x(), width - 20.f, 0.001f);
+		EXPECT_NEAR(bounds.size.y(), 30.f, 0.001f);
+	}
+	const scene::component::UiRect::Bounds square{.position = {0.f, 0.f}, .size = {10.f, 10.f}};
+	EXPECT_TRUE(square.contains({10.f, 0.f}));
+	EXPECT_FALSE(square.contains({10.1f, 0.f}));
 }
 
 TEST(ComponentRoundTrip, VoxelWorld) {

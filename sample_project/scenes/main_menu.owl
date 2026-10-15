@@ -14,13 +14,11 @@ Entities:
     RendererTag:
       Name: ui
     UiRect:
-      anchor: BottomRight
-      pivotX: 1
-      pivotY: 0
-      sizeX: 180
-      sizeY: 25
-      offsetX: -15
-      offsetY: 15
+      anchorMin: [1, 1]
+      anchorMax: [1, 1]
+      pivot: [1, 1]
+      size: [180, 25]
+      offset: [-15, -15]
     UiText:
       text: v0.1.1
       color: [0.5, 0.5, 0.5, 0.699999988]
@@ -49,13 +47,11 @@ Entities:
       disabledColor: [0.150000006, 0.150000006, 0.150000006, 0.5]
       onClickCallback: on_play_clicked
     UiRect:
-      anchor: Center
-      pivotX: 0.5
-      pivotY: 0.5
-      sizeX: 200
-      sizeY: 50
-      offsetX: 0
-      offsetY: 0
+      anchorMin: [0.5, 0.5]
+      anchorMax: [0.5, 0.5]
+      pivot: [0.5, 0.5]
+      size: [200, 50]
+      offset: [0, 0]
     UiText:
       text: Play
       color: [1, 1, 1, 1]
@@ -84,13 +80,11 @@ Entities:
       disabledColor: [0.150000006, 0.150000006, 0.150000006, 0.5]
       onClickCallback: on_continue_clicked
     UiRect:
-      anchor: Center
-      pivotX: 0.5
-      pivotY: 0.5
-      sizeX: 200
-      sizeY: 40
-      offsetX: 0
-      offsetY: -50
+      anchorMin: [0.5, 0.5]
+      anchorMax: [0.5, 0.5]
+      pivot: [0.5, 0.5]
+      size: [200, 40]
+      offset: [0, 50]
     UiText:
       text: Continue
       color: [1, 1, 1, 1]
@@ -119,13 +113,11 @@ Entities:
       disabledColor: [0.150000006, 0.150000006, 0.150000006, 0.5]
       onClickCallback: on_settings_clicked
     UiRect:
-      anchor: Center
-      pivotX: 0.5
-      pivotY: 0.5
-      sizeX: 200
-      sizeY: 40
-      offsetX: 0
-      offsetY: -100
+      anchorMin: [0.5, 0.5]
+      anchorMax: [0.5, 0.5]
+      pivot: [0.5, 0.5]
+      size: [200, 40]
+      offset: [0, 100]
     UiText:
       text: Settings
       color: [1, 1, 1, 1]
@@ -154,13 +146,11 @@ Entities:
       disabledColor: [0.150000006, 0.150000006, 0.150000006, 0.5]
       onClickCallback: on_quit_clicked
     UiRect:
-      anchor: Center
-      pivotX: 0.5
-      pivotY: 0.5
-      sizeX: 200
-      sizeY: 40
-      offsetX: 0
-      offsetY: -150
+      anchorMin: [0.5, 0.5]
+      anchorMax: [0.5, 0.5]
+      pivot: [0.5, 0.5]
+      size: [200, 40]
+      offset: [0, 150]
     UiText:
       text: Quit
       color: [1, 1, 1, 1]
@@ -186,13 +176,11 @@ Entities:
       tint: [1, 1, 1, 1]
       texture: nam:textures/logo_owl.png
     UiRect:
-      anchor: TopCenter
-      pivotX: 0.5
-      pivotY: 1
-      sizeX: 120
-      sizeY: 120
-      offsetX: 0
-      offsetY: -20
+      anchorMin: [0.5, 0]
+      anchorMax: [0.5, 0]
+      pivot: [0.5, 0]
+      size: [120, 120]
+      offset: [0, 20]
   - Entity: 15166799538320535829
     Tag:
       tag: TitleText
@@ -207,13 +195,11 @@ Entities:
     RendererTag:
       Name: ui
     UiRect:
-      anchor: TopCenter
-      pivotX: 0.5
-      pivotY: 1
-      sizeX: 600
-      sizeY: 80
-      offsetX: 0
-      offsetY: -150
+      anchorMin: [0.5, 0]
+      anchorMax: [0.5, 0]
+      pivot: [0.5, 0]
+      size: [600, 80]
+      offset: [0, 150]
     UiText:
       text: Owl Feature Demo
       color: [1, 0.850000024, 0.200000003, 1]
@@ -236,13 +222,11 @@ Entities:
     RendererTag:
       Name: ui
     UiRect:
-      anchor: TopCenter
-      pivotX: 0.5
-      pivotY: 1
-      sizeX: 600
-      sizeY: 28
-      offsetX: 0
-      offsetY: -210
+      anchorMin: [0.5, 0]
+      anchorMax: [0.5, 0]
+      pivot: [0.5, 0]
+      size: [600, 28]
+      offset: [0, 210]
     UiText:
       text: Démo des fonctionnalités v0.1.1 — caractères éàüÇ œ € “…”
       color: [0.850000024, 0.850000024, 0.850000024, 0.850000024]
@@ -272,13 +256,11 @@ Entities:
       spacing: 0
       padding: 0
     UiRect:
-      anchor: Center
-      pivotX: 0.5
-      pivotY: 0.5
-      sizeX: 250
-      sizeY: 230
-      offsetX: 0
-      offsetY: -30
+      anchorMin: [0.5, 0.5]
+      anchorMax: [0.5, 0.5]
+      pivot: [0.5, 0.5]
+      size: [250, 230]
+      offset: [0, 30]
   - Entity: 700000000000000010
     Tag:
       tag: SaveInfoText
@@ -293,13 +275,11 @@ Entities:
     RendererTag:
       Name: ui
     UiRect:
-      anchor: BottomLeft
-      pivotX: 0
-      pivotY: 0
-      sizeX: 350
-      sizeY: 25
-      offsetX: 15
-      offsetY: 15
+      anchorMin: [0, 1]
+      anchorMax: [0, 1]
+      pivot: [0, 1]
+      size: [350, 25]
+      offset: [15, -15]
     UiText:
       text: ""
       color: [0.600000024, 0.600000024, 0.699999988, 0.800000012]
@@ -328,13 +308,11 @@ Entities:
       disabledColor: [0.150000006, 0.150000006, 0.150000006, 0.5]
       onClickCallback: on_delete_save_clicked
     UiRect:
-      anchor: BottomLeft
-      pivotX: 0
-      pivotY: 0
-      sizeX: 120
-      sizeY: 25
-      offsetX: 15
-      offsetY: 42
+      anchorMin: [0, 1]
+      anchorMax: [0, 1]
+      pivot: [0, 1]
+      size: [120, 25]
+      offset: [15, -42]
     UiText:
       text: Delete Save
       color: [1, 1, 1, 0.899999976]
@@ -357,13 +335,11 @@ Entities:
     RendererTag:
       Name: ui
     UiRect:
-      anchor: TopLeft
-      pivotX: 0
-      pivotY: 1
-      sizeX: 200
-      sizeY: 20
-      offsetX: 10
-      offsetY: -10
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [200, 20]
+      offset: [10, 10]
     UiText:
       text: ""
       color: [0.400000006, 0.400000006, 0.5, 0.5]
@@ -382,6 +358,8 @@ Entities:
     Canvas:
       space: ScreenOverlay
       sortOrder: 0
+      referenceResolution: [1280, 720]
+      scaleMode: ScaleWithHeight
     Visibility:
       gameVisible: true
     Hierarchy:

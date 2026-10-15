@@ -15,6 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   derived from it, terraforming (raise, lower, level, areas), a (terrain, slope) table and foundations in the tileset,
   overlays drawn along the slope, slope-aware picking (`scene::terrain::pickTerrain`), and in Owl Nest an isometric
   preview of the tilemap with raise / lower / level tools, an overlay brush and a slope table in the tileset editor.
+- HUD pass: canvases leave the render layers for an implicit last pass in pixels (`HudPass`) whose layout,
+  computed once per frame (`HudLayout`), is the one `UiInputSystem` hit-tests; `UiRect` nests, uses Y-down pixels with
+  min / max anchors besides the 9 presets, `Canvas` gains a 1280×720 reference resolution with three scale modes, and
+  scene format 4 migrates every `UiRect` without moving it on screen.
 - Isometric layer `RendererIsometric`: a real 2:1 dimetric `IsometricCamera` (pan, power-of-two zoom, Vulkan flip,
   usable depth), depth-tested billboards anchored at their foot with alpha cutout and translucent ones sorted back to
   front, `Tileset::kind`, and an isometric viewport mode in Owl Nest (locked view, world-axis cursor, tile highlight).
@@ -42,6 +46,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   loop and held during a gesture or a modal, a 256-bit bearer token in a `0600` file, `Host` / `Origin` / content
   type / body size / queue checks, file arguments kept inside the project, and its settings tab and status bar
   indicator.
+- The Animation editor outlines the current frame on the spritesheet thumbnail, with a **Show Current Frame** toggle.
 
 ### Changed
 
@@ -84,6 +89,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Windows GCC builds on `main` publish their artifacts again: `BuildArtefact.zip` leaves out Owl Nest's static
   libraries, which pushed it past the 300 MB limit of the server.
 - `FileDialog` no longer reads past the end of a filter, leaks the saved path, or asserts when no dialogue can open.
+- The bundled `coin.owlanim` spins at a steady speed: its speed curve, which made it speed up and slow down, is gone.
+- The Animation editor preview reads the sheet from the top left, like the game, instead of from the bottom row.
 
 ## [0.3.0] - 2026-10-12
 

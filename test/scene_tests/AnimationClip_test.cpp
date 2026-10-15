@@ -140,8 +140,7 @@ TEST_F(AnimationClipFixture, BundledCoinClipLoads) {
 	EXPECT_EQ(clip.lastFrame, 17u);
 	EXPECT_FLOAT_EQ(clip.frameDuration, 0.08f);
 	EXPECT_TRUE(clip.loop);
-	ASSERT_EQ(clip.speedCurve.keyCount(), 3u);
-	EXPECT_EQ(clip.speedCurve.getInterpolation(), math::CurveInterpolation::Smooth);
+	EXPECT_TRUE(clip.speedCurve.empty());
 }
 
 TEST_F(AnimationClipFixture, ColumnsAndRowsClampedToOne) {

@@ -14,10 +14,12 @@
 #include <scene/ComponentRegistry.h>
 #include <scene/Entity.h>
 #include <scene/Scene.h>
+#include <scene/component/Canvas.h>
 #include <scene/component/CircleRenderer.h>
 #include <scene/component/Hierarchy.h>
 #include <scene/component/Tag.h>
 #include <scene/component/Transform.h>
+#include <scene/component/UiRect.h>
 
 #include <gtest/gtest.h>
 
@@ -317,6 +319,36 @@ TEST_F(CommandRegistryTest, SetComponentMergesFieldsAndUndoes) {
 	m_undo.redo(*m_scene);
 	const auto redone = m_scene->findEntityByUUID(entity.getUUID());
 	EXPECT_FLOAT_EQ(redone.getComponent<scene::component::CircleRenderer>().thickness, 0.25f);
+}
+
+TEST_F(CommandRegistryTest, SetComponentEditsTheHudLayoutAndUndoes) {
+	auto canvas = m_scene->createEntity("Hud");
+	canvas.addComponent<scene::component::Canvas>();
+	auto widget = m_scene->createEntity("Bar");
+	widget.addComponent<scene::component::UiRect>();
+	const auto setRect = run("component.set", {{"entity", idOf(widget)},
+											   {"component", std::string{"UI Rect"}},
+											   {"values", std::string{R"({"anchorMin": [0, 1], "anchorMax": [1, 1], )"
+																	  R"("pivot": [0.5, 1], "size": [-20, 40]})"}}});
+	ASSERT_TRUE(setRect.has_value()) << setRect.error().message;
+	const auto setCanvas = run("component.set", {{"entity", idOf(canvas)},
+												 {"component", std::string{"Canvas"}},
+												 {"values", std::string{R"({"referenceResolution": [640, 360], )"
+																		R"("scaleMode": "MatchSmallerSide"})"}}});
+	ASSERT_TRUE(setCanvas.has_value()) << setCanvas.error().message;
+	const auto& rect = widget.getComponent<scene::component::UiRect>();
+	EXPECT_FLOAT_EQ(rect.anchorMax.x(), 1.f);
+	EXPECT_FLOAT_EQ(rect.pivot.y(), 1.f);
+	EXPECT_FLOAT_EQ(rect.size.x(), -20.f);
+	EXPECT_FALSE(rect.getAnchor().has_value());
+	EXPECT_EQ(canvas.getComponent<scene::component::Canvas>().scaleMode,
+			  scene::component::Canvas::ScaleMode::MatchSmallerSide);
+	m_undo.undo(*m_scene);
+	EXPECT_EQ(m_scene->findEntityByUUID(canvas.getUUID()).getComponent<scene::component::Canvas>().scaleMode,
+			  scene::component::Canvas::ScaleMode::ScaleWithHeight);
+	m_undo.undo(*m_scene);
+	EXPECT_EQ(m_scene->findEntityByUUID(widget.getUUID()).getComponent<scene::component::UiRect>().getAnchor(),
+			  scene::component::UiRect::Anchor::Center);
 }
 
 TEST_F(CommandRegistryTest, SetComponentRefusesBadValues) {

@@ -37,8 +37,8 @@ cd output/build/linux-clang-release-bench/bin
 | `--json=<file>`     | (none)  | Write the results, metrics and load average as JSON.         |
 | `--verbose`         | off     | Keep engine warnings and errors in the output.               |
 
-Groups (name prefixes): `scene`, `serialize`, `prefab`, `renderer2d`, `tilemap`, `frame`, `voxel`, `script`,
-`physics`, `sample`, `slang`. The first Slang compilation is only "cold" when `slang` is the first group to
+Groups (name prefixes): `scene`, `serialize`, `prefab`, `renderer2d`, `hud`, `tilemap`, `frame`, `voxel`,
+`script`, `physics`, `sample`, `slang`. The first Slang compilation is only "cold" when `slang` is the first group to
 compile a shader in the process, which is the case for a full run. `voxel/streaming` streams a procedural world
 through a real `RendererVoxel` layer with frames paced at 60 Hz (about 12 s) and reports the main-thread CPU time per
 frame (p50, p99, peak), the meshing work and the chunk appearance latency.
@@ -58,7 +58,8 @@ the agent changes.
 The configuration is pinned to the agent `linux-build-hephaistos` (8 cores): the committed baseline is the
 median of its 5 runs of 2026-10-15 on the v0.4.0 performance fixes (builds 36879 to 36887, listed in
 `context.baseline_runs`), the code `main` gets with them; the runs agree within 2 % (median), the multi-threaded
-physics of 100 bodies and `sample/load/game_over` within 30 %. Timings from
+physics of 100 bodies and `sample/load/game_over` within 30 %. The `hud/{layout,frame}/500_widgets` entries are
+estimates, a local run scaled by the ratio of the `renderer2d/quads_color` cases, until the next refresh. Timings from
 another agent do not compare (artemis is 20 % faster but varies 10.7 % between runs, against 1.7 % here).
 
 ```bash

@@ -318,8 +318,10 @@ TEST(TilemapLayer, MoveLeavesAnEmptyGrid) {
 	component::TilemapLayer moved{std::move(source)};
 	EXPECT_EQ(moved.getTile(0, 1), 3);
 	EXPECT_EQ(moved.getGeneration(), generation);
-	EXPECT_EQ(source.getSize(), (math::vec2ui{0, 0}));// NOLINT(bugprone-use-after-move): checks the moved-from state.
-	EXPECT_EQ(source.getAllocatedChunkCount(), 0u);// NOLINT(bugprone-use-after-move): checks the moved-from state.
+	// NOLINTBEGIN(bugprone-use-after-move,clang-analyzer-cplusplus.Move): checks the moved-from state.
+	EXPECT_EQ(source.getSize(), (math::vec2ui{0, 0}));
+	EXPECT_EQ(source.getAllocatedChunkCount(), 0u);
+	// NOLINTEND(bugprone-use-after-move,clang-analyzer-cplusplus.Move)
 	component::TilemapLayer assigned;
 	assigned = std::move(moved);
 	EXPECT_EQ(assigned.name, "ground");

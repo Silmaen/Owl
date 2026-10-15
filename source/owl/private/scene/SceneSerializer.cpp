@@ -10,6 +10,7 @@
 #include "scene/SceneSerializer.h"
 
 #include "EntityLinkMigration.h"
+#include "HudLayoutMigration.h"
 #include "UiTextMigration.h"
 #include "app/Application.h"
 #include "core/FormatVersionYaml.h"
@@ -77,7 +78,8 @@ SceneSerializer::SceneSerializer(const shared<Scene>& iScene) : mp_scene(iScene)
 namespace {
 
 // 1 -> 2: entity links reference their target by UUID; 2 -> 3: legacy UiText keeps its centred layout.
-constexpr std::array<core::MigrationStep, 2> g_sceneMigrations{&bindEntityLinksByName, &centreLegacyUiText};
+constexpr std::array<core::MigrationStep, 3> g_sceneMigrations{&bindEntityLinksByName, &centreLegacyUiText,
+															   &convertLegacyHudLayout};
 constexpr core::DocumentFormat g_sceneFormat{.name = "Scene", .migrations = g_sceneMigrations};
 
 auto toSceneLoadError(const core::FormatError iError) -> SceneLoadError {

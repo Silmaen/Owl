@@ -377,7 +377,7 @@ Entities:
     translation: [0, 0, 0]
     rotation: [0, 0, 0]
     scale: [1, 1, 1]
-  Canvas: {space: ScreenOverlay, sortOrder: 0}
+  Canvas: {space: ScreenOverlay, sortOrder: 0, referenceResolution: [1280, 720], scaleMode: ConstantPixels}
   Visibility: {gameVisible: true}
   Hierarchy: {}
   RendererTag: {Name: ui}
@@ -394,7 +394,7 @@ Entities:
     value: 1
     backgroundColor: [0.400000006, 0.100000001, 0.100000001, 0.800000012]
     fillColor: [0.200000003, 0.850000024, 0.200000003, 1]
-  UiRect: {anchor: TopRight, pivotX: 1, pivotY: 1, sizeX: 200, sizeY: 22, offsetX: -20, offsetY: -20}
+  UiRect: {anchorMin: [1, 0], anchorMax: [1, 0], pivot: [1, 0], size: [200, 22], offset: [-20, 20]}
 - Entity: 3000000000000000062
   Tag: {tag: ScoreText}
   Transform:
@@ -404,7 +404,7 @@ Entities:
   Visibility: {gameVisible: true}
   Hierarchy: {parentId: 3000000000000000060}
   RendererTag: {Name: ui}
-  UiRect: {anchor: TopRight, pivotX: 1, pivotY: 1, sizeX: 200, sizeY: 26, offsetX: -20, offsetY: -50}
+  UiRect: {anchorMin: [1, 0], anchorMax: [1, 0], pivot: [1, 0], size: [200, 26], offset: [-20, 50]}
   UiText:
     text: 'Score: 0'
     color: [1, 0.949999988, 0.550000012, 1]
@@ -421,7 +421,7 @@ Entities:
   Visibility: {gameVisible: true}
   Hierarchy: {parentId: 3000000000000000060}
   RendererTag: {Name: ui}
-  UiRect: {anchor: TopLeft, pivotX: 0, pivotY: 1, sizeX: 460, sizeY: 20, offsetX: 20, offsetY: -20}
+  UiRect: {anchorMin: [0, 0], anchorMax: [0, 0], pivot: [0, 0], size: [460, 20], offset: [20, 20]}
   UiText:
     text: A/D = move (only on ground), W/Space = jump, ESC = pause
     color: [1, 1, 1, 0.850000024]

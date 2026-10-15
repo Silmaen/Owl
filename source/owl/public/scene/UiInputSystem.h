@@ -28,7 +28,7 @@ public:
 	 *  Process UI input for the current frame.
 	 * @param[in] iScene The scene whose UI receives the mouse (nullptr: nothing happens).
 	 * @param[in] iViewportSize The viewport dimensions.
-	 * @param[in] iMousePos Mouse position in viewport coordinates.
+	 * @param[in] iMousePos Mouse position in Y-down viewport pixels from the top left (the HUD layout space).
 	 * @param[in] iMousePressed Whether the left mouse button is currently pressed.
 	 */
 	static void update(Scene* iScene, const math::vec2ui& iViewportSize, const math::vec2& iMousePos,

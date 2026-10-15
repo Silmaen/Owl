@@ -10,28 +10,22 @@
 #include "scene/UiInputSystem.h"
 
 #include "scene/Entity.h"
-#include "scene/component/Canvas.h"
 #include "scene/component/Hierarchy.h"
 #include "scene/component/LuaScript.h"
 #include "scene/component/UiButton.h"
-#include "scene/component/UiRect.h"
 #include "scene/component/UiSlider.h"
+#include "scene/ui/HudLayout.h"
 #include "script/ScriptInstance.h"
 
 #include <algorithm>
+#include <cmath>
 #include <cstdint>
+#include <ranges>
+#include <string>
 
 namespace owl::scene {
 
-
 namespace {
-auto hitTestRect(const component::UiRect& iRect, const math::vec2& iParentSize, const math::vec2& iPoint) -> bool {
-	const math::vec2 center = iRect.computePosition(iParentSize);
-	const float halfW = iRect.size.x() * 0.5f;
-	const float halfH = iRect.size.y() * 0.5f;
-	return iPoint.x() >= center.x() - halfW && iPoint.x() <= center.x() + halfW && iPoint.y() >= center.y() - halfH &&
-		   iPoint.y() <= center.y() + halfH;
-}
 
 auto findScriptOwner(const Scene* iScene, Entity iEntity) -> Entity {
 	while (iEntity) {
@@ -71,6 +65,50 @@ void invokeSliderCallback(const Scene* iScene, const Entity& iEntity, const std:
 	}
 }
 
+auto isInteractive(const Scene& iScene, const entt::entity iEntity) -> bool {
+	if (iScene.registry.all_of<component::UiSlider>(iEntity))
+		return true;
+	const auto* button = iScene.registry.try_get<component::UiButton>(iEntity);
+	return button != nullptr && button->state != component::UiButton::State::Disabled;
+}
+
+// The topmost button or slider under the mouse takes it: labels and panels drawn over it do not.
+auto findTopmostInteractive(const Scene& iScene, const ui::HudLayout& iLayout, const math::vec2& iPoint)
+		-> const ui::HudNode* {
+	for (const auto& node: iLayout.getNodes() | std::views::reverse) {
+		if (node.bounds.contains(iPoint) && isInteractive(iScene, node.entity))
+			return &node;
+	}
+	return nullptr;
+}
+
+void updateButton(const Scene* iScene, const Entity& iWidget, const bool iHovered, const bool iPressed,
+				  const bool iClicked) {
+	auto& button = iWidget.getComponent<component::UiButton>();
+	if (button.state == component::UiButton::State::Disabled)
+		return;
+	if (!iHovered) {
+		button.state = component::UiButton::State::Normal;
+		return;
+	}
+	button.state = iPressed ? component::UiButton::State::Pressed : component::UiButton::State::Hovered;
+	if (iClicked)
+		invokeLuaCallback(iScene, iWidget, button.onClickCallback, static_cast<uint64_t>(iWidget.getUUID()));
+}
+
+void updateSlider(const Scene* iScene, const Entity& iWidget, const ui::HudNode& iNode, const bool iHovered,
+				  const bool iPressed, const math::vec2& iMousePos) {
+	if (!iHovered || !iPressed || iNode.bounds.size.x() <= 0.f)
+		return;
+	auto& slider = iWidget.getComponent<component::UiSlider>();
+	const float normalized = std::clamp((iMousePos.x() - iNode.bounds.position.x()) / iNode.bounds.size.x(), 0.f, 1.f);
+	if (const float newValue = slider.minValue + normalized * (slider.maxValue - slider.minValue);
+		std::abs(newValue - slider.value) > 1e-6f) {
+		slider.value = newValue;
+		invokeSliderCallback(iScene, iWidget, slider.onValueChangedCallback, slider.value);
+	}
+}
+
 }// namespace
 
 void UiInputSystem::update(Scene* iScene, const math::vec2ui& iViewportSize, const math::vec2& iMousePos,
@@ -84,75 +122,27 @@ void UiInputSystem::update(Scene* iScene, const math::vec2ui& iViewportSize, con
 	if (iScene->status != Scene::Status::Playing)
 		return;
 
-	const auto vpSize = math::vec2{static_cast<float>(iViewportSize.x()), static_cast<float>(iViewportSize.y())};
 	const bool clicked = !state.wasPressed && iMousePressed;
 	state.wasPressed = iMousePressed;
 
-	// Iterate Canvas entities (sorted by sortOrder, highest first for input priority).
-	struct CanvasEntry {
-		entt::entity entity;
-		int32_t sortOrder;
-	};
-	std::vector<CanvasEntry> canvases;
-	for (const auto view = iScene->registry.view<component::Canvas>(); const auto entity: view)
-		canvases.push_back({entity, view.get<component::Canvas>(entity).sortOrder});
-	std::ranges::sort(canvases, [](const auto& iA, const auto& iB) -> auto { return iA.sortOrder > iB.sortOrder; });
-
-	for (const auto& [canvasEnt, sortOrder]: canvases) {
-		const Entity canvasEntity{canvasEnt, iScene};
-		if (!iScene->isEffectivelyVisible(canvasEntity, false))
+	auto& layout = iScene->getHudLayout();
+	if (!layout.isComputedFor(iViewportSize))
+		layout.compute(*iScene, iViewportSize, false);
+	const auto* topmost = findTopmostInteractive(*iScene, layout, iMousePos);
+	for (const auto& node: layout.getNodes()) {
+		// A callback may destroy entities: the layout can name one that is gone.
+		if (!iScene->registry.valid(node.entity))
 			continue;
-
-		for (const auto& [parentId, childrenIds] = canvasEntity.getComponent<component::Hierarchy>();
-			 const auto childId: childrenIds) {
-			const Entity child = iScene->findEntityByUUID(childId);
-			if (!child || !child.hasComponent<component::UiRect>())
-				continue;
-			if (!iScene->isEffectivelyVisible(child, false))
-				continue;
-
-			const auto& rect = child.getComponent<component::UiRect>();
-			const bool hovered = hitTestRect(rect, vpSize, iMousePos);
-
-			// UiButton interaction.
-			if (child.hasComponent<component::UiButton>()) {
-				auto& button = child.getComponent<component::UiButton>();
-				if (button.state == component::UiButton::State::Disabled)
-					continue;
-				if (hovered) {
-					state.consuming = true;
-					if (iMousePressed)
-						button.state = component::UiButton::State::Pressed;
-					else
-						button.state = component::UiButton::State::Hovered;
-					if (clicked) {
-						const auto uuid = static_cast<uint64_t>(child.getUUID());
-						invokeLuaCallback(iScene, child, button.onClickCallback, uuid);
-					}
-				} else {
-					button.state = component::UiButton::State::Normal;
-				}
-			}
-
-			// UiSlider interaction.
-			if (child.hasComponent<component::UiSlider>()) {
-				auto& slider = child.getComponent<component::UiSlider>();
-				if (hovered && iMousePressed) {
-					state.consuming = true;
-					const math::vec2 center = rect.computePosition(vpSize);
-					const float leftEdge = center.x() - rect.size.x() * 0.5f;
-					const float normalized = std::clamp((iMousePos.x() - leftEdge) / rect.size.x(), 0.f, 1.f);
-					if (const float newValue = slider.minValue + normalized * (slider.maxValue - slider.minValue);
-						std::abs(newValue - slider.value) > 1e-6f) {
-						slider.value = newValue;
-						invokeSliderCallback(iScene, child, slider.onValueChangedCallback, slider.value);
-					}
-				} else if (hovered) {
-					state.consuming = true;
-				}
-			}
-		}
+		const Entity widget{node.entity, iScene};
+		const bool hovered = &node == topmost;
+		if (widget.hasComponent<component::UiButton>())
+			updateButton(iScene, widget, hovered, iMousePressed, clicked);
+		if (widget.hasComponent<component::UiSlider>())
+			updateSlider(iScene, widget, node, hovered, iMousePressed, iMousePos);
 	}
+	state.consuming = topmost != nullptr;
+	// Drawing lays the HUD out again: the next update reuses that layout, or recomputes one when no frame was drawn.
+	layout.invalidate();
 }
 
 auto UiInputSystem::isUIConsuming(const Scene& iScene) -> bool { return iScene.getUiInputState().consuming; }

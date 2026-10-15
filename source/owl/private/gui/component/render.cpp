@@ -785,52 +785,6 @@ void renderProps(LuaScript& ioComponent) {
 	}
 }
 
-void renderProps(Canvas& ioComponent) {
-	const std::string currentSpace{magic_enum::enum_name(ioComponent.space)};
-	if (prop::BeginCombo("Space", currentSpace.c_str())) {
-		for (const auto& spaceName: magic_enum::enum_names<Canvas::Space>()) {
-			const std::string sName{spaceName};
-			if (ImGui::Selectable(sName.c_str(), currentSpace == sName))
-				ioComponent.space = magic_enum::enum_cast<Canvas::Space>(sName).value_or(Canvas::Space::ScreenOverlay);
-		}
-		ImGui::EndCombo();
-	}
-	fieldTooltip("ScreenOverlay: always on top, scaled to window. WorldSpace: rendered in the 3D scene.");
-	prop::DragInt("Sort Order", &ioComponent.sortOrder);
-	fieldTooltip("Higher sort order renders on top. Used to layer multiple canvases.");
-}
-
-void renderProps(UiRect& ioComponent) {
-	const std::string currentAnchor{magic_enum::enum_name(ioComponent.anchor)};
-	if (prop::BeginCombo("Anchor", currentAnchor.c_str())) {
-		for (const auto& anchorName: magic_enum::enum_names<UiRect::Anchor>()) {
-			const std::string sName{anchorName};
-			if (ImGui::Selectable(sName.c_str(), currentAnchor == sName))
-				ioComponent.anchor = magic_enum::enum_cast<UiRect::Anchor>(sName).value_or(UiRect::Anchor::Center);
-		}
-		ImGui::EndCombo();
-	}
-	fieldTooltip("Reference point on the parent canvas (e.g. TopLeft, Center). Widget is positioned relative to this.");
-	float pivotArr[2] = {ioComponent.pivot.x(), ioComponent.pivot.y()};
-	if (prop::DragFloat2("Pivot", pivotArr, 0.01f, 0.0f, 1.0f)) {
-		ioComponent.pivot.x() = pivotArr[0];
-		ioComponent.pivot.y() = pivotArr[1];
-	}
-	fieldTooltip("Origin within the widget itself (0,0) = top-left, (0.5,0.5) = center, (1,1) = bottom-right.");
-	float sizeArr[2] = {ioComponent.size.x(), ioComponent.size.y()};
-	if (prop::DragFloat2("Size", sizeArr, 1.0f, 0.0f, 10000.0f)) {
-		ioComponent.size.x() = sizeArr[0];
-		ioComponent.size.y() = sizeArr[1];
-	}
-	fieldTooltip("Width and height of the widget in pixels.");
-	float offsetArr[2] = {ioComponent.anchorOffset.x(), ioComponent.anchorOffset.y()};
-	if (prop::DragFloat2("Offset", offsetArr, 1.0f)) {
-		ioComponent.anchorOffset.x() = offsetArr[0];
-		ioComponent.anchorOffset.y() = offsetArr[1];
-	}
-	fieldTooltip("Pixel offset from the anchor point. Positive X goes right, positive Y goes down.");
-}
-
 // Combo over every value of an enum, named by magic_enum.
 template<typename Enum>
 void enumCombo(const char* iLabel, Enum& ioValue) {
@@ -843,6 +797,41 @@ void enumCombo(const char* iLabel, Enum& ioValue) {
 			ioValue = value;
 	}
 	ImGui::EndCombo();
+}
+
+void renderProps(Canvas& ioComponent) {
+	enumCombo("Space", ioComponent.space);
+	fieldTooltip("ScreenOverlay: drawn by the HUD pass, in pixels on top of every render layer.");
+	prop::DragInt("Sort Order", &ioComponent.sortOrder);
+	fieldTooltip("Higher sort order renders on top. Used to layer multiple canvases.");
+	prop::DragFloat2("Reference Resolution", ioComponent.referenceResolution.data(), 1.0f, 1.0f, 16384.0f);
+	fieldTooltip("Resolution the widgets are authored at, in pixels (1280 x 720 by default).");
+	enumCombo("Scale Mode", ioComponent.scaleMode);
+	fieldTooltip("ConstantPixels: one pixel per pixel. ScaleWithHeight: the reference height fills the screen. "
+				 "MatchSmallerSide: the whole reference resolution fits in the screen.");
+}
+
+void renderProps(UiRect& ioComponent) {
+	const auto preset = ioComponent.getAnchor();
+	const std::string currentAnchor = preset ? std::string{magic_enum::enum_name(*preset)} : std::string{"Custom"};
+	if (prop::BeginCombo("Anchor Preset", currentAnchor.c_str())) {
+		for (const auto value: magic_enum::enum_values<UiRect::Anchor>()) {
+			if (ImGui::Selectable(std::string{magic_enum::enum_name(value)}.c_str(), preset == value))
+				ioComponent.setAnchor(value);
+		}
+		ImGui::EndCombo();
+	}
+	fieldTooltip("Shortcut putting both anchors on one point of the parent (Custom when they differ or stretch).");
+	prop::DragFloat2("Anchor Min", ioComponent.anchorMin.data(), 0.01f, 0.0f, 1.0f);
+	fieldTooltip("Anchor of the top-left corner in the parent: (0,0) = top-left, (1,1) = bottom-right.");
+	prop::DragFloat2("Anchor Max", ioComponent.anchorMax.data(), 0.01f, 0.0f, 1.0f);
+	fieldTooltip("Anchor of the bottom-right corner; distinct from Anchor Min, the widget stretches with its parent.");
+	prop::DragFloat2("Pivot", ioComponent.pivot.data(), 0.01f, 0.0f, 1.0f);
+	fieldTooltip("Point of the widget placed at the anchors plus the offset: (0,0) = top-left, (1,1) = bottom-right.");
+	prop::DragFloat2("Size", ioComponent.size.data(), 1.0f, -10000.0f, 10000.0f);
+	fieldTooltip("Size in reference pixels, added to the span of the anchors (the whole size for a fixed anchor).");
+	prop::DragFloat2("Offset", ioComponent.anchorOffset.data(), 1.0f, -10000.0f, 10000.0f);
+	fieldTooltip("Offset of the pivot from its anchor, in reference pixels. Positive X goes right, positive Y down.");
 }
 
 void renderProps(UiText& ioComponent) {

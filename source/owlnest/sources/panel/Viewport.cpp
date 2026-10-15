@@ -285,8 +285,9 @@ void Viewport::onUpdate(const core::Timestep& iTimeStep) {
 					window.setCursorMode(window::CursorMode::Normal);
 					ImGui::GetIO().ConfigFlags &= ~ImGuiConfigFlags_NoMouseCursorChange;
 				}
-				// UiRect uses Y=0 at bottom; ImGui mouse Y=0 at top → always flip.
-				const math::vec2 vpMouse = {mx, viewportSizeInternal.y() - my};
+				// The HUD is Y-down from the top left: undo the OpenGL flip of the picking coordinates.
+				const bool flipped = renderer::gpu::RenderCommand::getApi() == renderer::gpu::RenderAPI::Type::OpenGL;
+				const math::vec2 vpMouse = {mx, flipped ? viewportSizeInternal.y() - my : my};
 				const bool mousePressed = ImGui::IsMouseDown(ImGuiMouseButton_Left);
 				scene::UiInputSystem::update(activeScene.get(), m_framebuffer->getSpecification().size, vpMouse,
 											 mousePressed);
