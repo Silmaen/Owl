@@ -34,6 +34,9 @@ same PR (see `ongoing-quality.md`, *Editor Coverage*).
 - Journal / console / macros: `CommandRegistry::setJournal` records every `execute` (`CommandContext::source`) into
   the session's `CommandJournal`; `commands/CommandLine.h` (syntax, `$n`), `commands/Macro.h` (`.owlmacro`, replay =
   `UndoManager::beginGroup` / `endGroup`, `cancelGroup` on a failing line), `session/Console.h`, `panel/ConsolePanel.h`.
+- `ActionMapDocument` (`input_actions.yml`) keeps its own `UndoManager<input::ActionMap>`: every edit is a method of the
+  document (whole-map before / after command, slider drags merge) and `BindingCapture` is the pure "press a key" state
+  machine; saving reloads the project map in `EngineContext`.
 - Selection is restored through each command's `selectAfterUndo` / `selectAfterRedo` hints.
 - **Command API** (`commands/CommandRegistry.h`, library `OwlNestCommands`, also linked by the runner): a discrete
   scene change is a named command run by `CommandRegistry::execute` (or `CommandTarget::execute` from a panel),

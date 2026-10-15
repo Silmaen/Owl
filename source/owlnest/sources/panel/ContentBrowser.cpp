@@ -23,6 +23,7 @@
 #include <gui/widgets/TreeRow.h>
 #include <imgui_internal.h>
 #include <imgui_stdlib.h>
+#include <input/ActionMap.h>
 #include <platform/FileDialog.h>
 
 #include <algorithm>
@@ -55,6 +56,8 @@ auto rgb(const uint32_t iHex) -> math::vec4 {
 auto describeKind(const std::filesystem::path& iPath, const bool iDirectory) -> KindInfo {
 	if (iDirectory)
 		return {rgb(0xc09a55), "Folder"};
+	if (iPath.filename() == input::ActionMap::fileName)
+		return {rgb(0x3fa8d8), "Input actions"};
 	static const std::unordered_map<std::string, KindInfo> kinds = {
 			{".owl", {rgb(0xd8a520), "Scene"}},          {".owlprefab", {rgb(0x4f8fe0), "Prefab"}},
 			{".owlhud", {rgb(0x2fa8b8), "HUD"}},         {".png", {rgb(0xe0534a), "Texture"}},
@@ -546,6 +549,8 @@ void ContentBrowser::openEntry(const std::filesystem::directory_entry& iEntry) {
 	} else if ((path.extension() == ".ttf" || path.extension() == ".otf" || path.extension() == ".owlfont") &&
 			   m_fontOpenCallback) {
 		m_fontOpenCallback(path);
+	} else if (path.filename() == input::ActionMap::fileName && m_actionMapOpenCallback) {
+		m_actionMapOpenCallback(path);
 	} else if (path.extension() == ".owlmacro" && m_macroRunCallback) {
 		m_macroRunCallback(path);
 	} else if (m_codeOpenCallback) {

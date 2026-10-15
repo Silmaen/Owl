@@ -91,6 +91,8 @@ auto typeShortName(const DocumentType iType) -> const char* {
 			return "Tileset";
 		case DocumentType::Font:
 			return "Font";
+		case DocumentType::ActionMap:
+			return "Actions";
 	}
 	return "Doc";
 }

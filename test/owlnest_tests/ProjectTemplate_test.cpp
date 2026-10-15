@@ -11,6 +11,7 @@
 #include "panel/NewProjectDialog.h"
 #include "testHelper.h"
 
+#include <input/ActionMap.h>
 #include <scene/Entity.h>
 #include <scene/Scene.h>
 #include <scene/SceneSerializer.h>
@@ -86,6 +87,16 @@ TEST_F(ProjectTemplateTest, EveryTemplateCreatesAProjectWhoseFirstSceneLoads) {
 											}))
 					<< tpl.id << ": the HUD has no text";
 		}
+	}
+}
+
+TEST_F(ProjectTemplateTest, EveryTemplateShipsTheBuiltInActionMap) {
+	for (const auto& tpl: m_templates) {
+		const auto dest = m_dir / ("actions_" + tpl.id);
+		ASSERT_TRUE(createProjectFromTemplate(tpl, dest, "Game"));
+		const auto map = input::ActionMap::loadFile(dest / input::ActionMap::fileName);
+		ASSERT_TRUE(map) << tpl.id;
+		EXPECT_EQ(*map, input::ActionMap::createDefault()) << tpl.id;
 	}
 }
 

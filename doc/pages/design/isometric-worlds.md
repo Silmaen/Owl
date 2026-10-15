@@ -161,7 +161,7 @@ a few days, L a week.
 - ![Done][done] **IN3 — Action map, M.** `input_actions.yml` packed with the game, Lua `input.is_action_*`,
   `get_action_value`, `get_action_vector`; scenarios gain an `actions:` step; engine systems and sample scripts move
   to actions (`is_key_pressed` kept, deprecated).
-- ![Planned][planned] **IN4 — Action map editor, M.** Document with its own undo stack, "press a key" capture,
+- ![Done][done] **IN4 — Action map editor, M.** Document with its own undo stack, "press a key" capture,
   default maps in the project templates, live action monitor in Play.
 
 ### MCP server

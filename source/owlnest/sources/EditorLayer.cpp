@@ -10,6 +10,7 @@
 
 #include "AssetKind.h"
 #include "EditorResources.h"
+#include "document/ActionMapDocument.h"
 #include "document/AnimationDocument.h"
 #include "document/CodeEditorDocument.h"
 #include "document/FontDocument.h"
@@ -584,6 +585,8 @@ void EditorLayer::onAttach() {
 			[this](const std::filesystem::path& iPath) -> void { openTilemapFile(iPath); });
 	m_contentBrowser.setTilesetOpenCallback(
 			[this](const std::filesystem::path& iPath) -> void { openTilesetFile(iPath); });
+	m_contentBrowser.setActionMapOpenCallback(
+			[this](const std::filesystem::path& iPath) -> void { openActionMapFile(iPath); });
 	m_contentBrowser.setFontOpenCallback([this](const std::filesystem::path& iPath) -> void { openFontFile(iPath); });
 	m_contentBrowser.setMacroRunCallback([this](const std::filesystem::path& iPath) -> void {
 		runCommandFromUi("macro.run", {{"path", iPath.string()}}, commands::CommandSource::Gesture);
@@ -797,6 +800,12 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 				toClose.push_back(font->id());
 				font->setOpen(true);
 			}
+		} else if (doc->type() == DocumentType::ActionMap) {
+			auto* actions = static_cast<ActionMapDocument*>(doc);
+			if (!actions->isOpen()) {
+				toClose.push_back(actions->id());
+				actions->setOpen(true);
+			}
 		}
 	}
 	if (m_documents.getActive() != activeBefore)
@@ -817,6 +826,8 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 	m_contentBrowser.onImGuiRender();
 	m_parameters.onImGuiRender();
 	m_projectSettings.onImGuiRender();
+	if (m_projectSettings.consumeActionMapRequest())
+		openActionMapEditor();
 	if (m_projectSettings.hasResult()) {
 		const auto previousMappings = m_project.gamepadMappings;
 		m_project = m_projectSettings.consumeResult();

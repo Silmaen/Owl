@@ -8,6 +8,8 @@
 
 #include "AssetKind.h"
 
+#include <input/ActionMap.h>
+
 #include <algorithm>
 #include <array>
 #include <string>
@@ -51,6 +53,8 @@ constexpr std::array<std::pair<std::string_view, AssetKind>, 27> g_kinds{{
 }// namespace
 
 auto classifyAsset(const std::filesystem::path& iPath) -> AssetKind {
+	if (iPath.filename() == input::ActionMap::fileName)
+		return AssetKind::ActionMap;
 	const auto ext = iPath.extension().string();
 	const auto* const found =
 			std::ranges::find_if(g_kinds, [&ext](const auto& iEntry) -> bool { return iEntry.first == ext; });

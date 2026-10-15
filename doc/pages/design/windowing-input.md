@@ -222,8 +222,9 @@ codes until IN3.
   room for a user override layer; Lua `input.is_action_pressed`, `is_action_just_pressed`, `is_action_just_released`,
   `get_action_value`, `get_action_vector`; `input.is_key_pressed` kept and deprecated; scenarios gain an `actions:`
   step; engine systems and sample scripts move to actions
-- **Editor** (IN4): an action map document with its own undo stack, opened from Project Settings; "press a key"
-  capture; default maps in the project templates; a live action monitor during Play
+- **Editor** (IN4, Done): an action map document with its own undo stack, opened from the Content Browser, the ribbon
+  or Project Settings; "press a key" capture; the built-in map in every project template; a live action monitor
+  ([Action map editor](../editor.md#editor-action-map))
 
 ### Input frames (IN1) {#input-frames-in1}
 

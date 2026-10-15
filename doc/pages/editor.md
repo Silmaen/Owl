@@ -578,6 +578,29 @@ Every edit is undoable (`Ctrl+Z` / `Ctrl+Y`; consecutive edits of one bound merg
 ribbon tab) writes the `.owlfont` sidecar, or deletes it when no extra range is left, and rebuilds the atlas of the
 loaded font in place: every text using it shows the new glyphs at once.
 
+### Action Map Editor (`input_actions.yml`) {#editor-action-map}
+
+Double-click `input_actions.yml` in the Content Browser, press **Home > Project > Input Actions** or **Edit Input Actions**
+in the Input section of Project Settings to open the action map of the project in an action map document. A project
+without the file starts from the built-in actions, and the first save creates it.
+
+- The left list holds the actions with a live bar of their reading; **+** adds an action (a free name, `Button`), the trash
+  removes the selected one, the circular arrow puts the built-in actions back. The built-in actions the file leaves out
+  are listed below, dimmed, and **+** copies one with its default bindings into the file to edit it.
+- The details give the **Name** (applied on Enter, refused when empty or taken) and the **Kind** (`Button`, `Axis`,
+  `Vector`), the **Live reading** (held, just pressed, value or vector) and the **Bindings**: source (key, mouse button,
+  gamepad button, axis or stick), the key or button, the gamepad slot (-1 for any), the vector component, the scale and,
+  for an axis or a stick, the dead zone, curve and exponent.
+- **Add by pressing an input** waits for the next key, mouse button, gamepad button or axis push and adds it as a binding
+  (a `Vector` action takes a whole stick); the keyboard button of a binding rebinds it and keeps its scale and
+  component. What is held when the capture starts is ignored until released, **Esc** cancels (bind Escape itself from the
+  Input list), and the editor shortcuts are suspended meanwhile.
+- The live reading evaluates the edited map on the real devices every frame, in Edit and in Play alike, so a binding
+  can be tried before it is saved.
+- Every edit is an undo step (`Ctrl+Z` / `Ctrl+Y`; a slider drag is one step) and the tab shows the unsaved mark.
+  **Save** (`Ctrl+S`) writes the file atomically and reloads it in the engine context: the editor, and a Play running
+  meanwhile, read the new bindings from their next frame.
+
 ### HUD documents {#editor-hud}
 
 An `.owlhud` opens (double click in the Content Browser) in a scene document: the hierarchy, the inspector, the
@@ -793,6 +816,7 @@ grids, like the inspector:
 | Fullscreen          | Whether the game starts in fullscreen mode                                        |
 | Resizable           | Whether the game window can be resized                                            |
 | Gamepad Mappings    | Optional SDL_GameControllerDB file, relative to the project; packed with the game |
+| Edit Input Actions  | Closes the dialog (changes dropped) and opens the action map editor               |
 | Tick Rate           | Fixed simulation ticks per second (1–1000, 60 by default): `on_tick`, physics     |
 | Max Ticks per Frame | Ticks one frame runs at most (1–64, 8 by default); the time beyond is dropped     |
 
@@ -1014,7 +1038,9 @@ must be new or empty, and opened on its first scene. The templates are folders o
 | Voxel        | `voxel_world`            | Procedural streamed terrain, `VoxelPlayer` (WASD, space)   |
 | Mixed styles | 2D, raycast, voxel, `ui` | Raycast room under a 2D HUD, voxel `terrain.owl`           |
 
-A new folder in `project_templates/` with these two files is offered as a template too. Without any template
+Every template ships an `input_actions.yml` holding the built-in actions, ready to edit (see the
+[action map editor](#editor-action-map)). A new folder in `project_templates/` with these two files is offered as a
+template too. Without any template
 installed, the project starts empty (an `owl_project.yml` and a `scenes/` folder).
 
 ### Session restore

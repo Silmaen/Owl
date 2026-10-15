@@ -110,6 +110,9 @@ auto EditorLayer::openDocumentForRecovery(const RecoveryEntry& iEntry) -> Docume
 		case DocumentType::Font:
 			openFontFile(path);
 			break;
+		case DocumentType::ActionMap:
+			openActionMapFile(path);
+			break;
 		case DocumentType::Scene:
 			break;
 	}

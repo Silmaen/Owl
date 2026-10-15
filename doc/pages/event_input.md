@@ -313,6 +313,9 @@ actions:
       - {gamepad_stick: left, pad: 0}
 ```
 
+The map is edited in Owl Nest, with a "press a key" capture and a live reading of every action: see the
+[action map editor](editor.md#editor-action-map).
+
 | Binding key                                                              | Meaning                                                                    |
 |--------------------------------------------------------------------------|----------------------------------------------------------------------------|
 | `key`, `mouse_button`, `gamepad_button`, `gamepad_axis`, `gamepad_stick` | The source, one per binding; names of `input/InputNames.h` or a code       |
