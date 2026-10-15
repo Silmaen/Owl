@@ -18,6 +18,7 @@
 #include <array>
 #include <cstdint>
 #include <filesystem>
+#include <functional>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -35,6 +36,26 @@ enum struct RpcError : int16_t {
 	InvalidParams = -32602,///< Missing or ill-typed parameters, unknown tool.
 	InternalError = -32603,///< The request failed inside the dispatcher.
 	ResourceNotFound = -32002///< `resources/read` of an unknown URI.
+};
+
+/**
+ * @brief
+ *  Poll of an answer the dispatcher could not give at once (a play that spans several frames of the editor).
+ *
+ * The main loop calls it every frame until it answers. With `iCancel` the work is ended first (the play is stopped)
+ * and the answer is given whatever the state.
+ */
+using DeferredPoll = std::function<std::optional<std::string>(bool iCancel)>;
+
+/**
+ * @brief
+ *  What the dispatcher did with a message.
+ */
+struct DispatchResult {
+	/// The response text; nothing for a notification, or while `poll` is set.
+	std::optional<std::string> answer{};// NOLINT(readability-redundant-member-init) callers may omit it
+	/// Set when the response comes later: the main loop polls it until it answers.
+	DeferredPoll poll{};// NOLINT(readability-redundant-member-init) callers may omit it
 };
 
 /**
@@ -106,6 +127,14 @@ public:
 
 	/**
 	 * @brief
+	 *  Handle one JSON-RPC message that may be answered later (`play.run` in the editor spans several frames).
+	 * @param[in] iMessage The message text.
+	 * @return The response, or the poll that gives it; nothing for a notification.
+	 */
+	[[nodiscard]] auto handleDeferrable(std::string_view iMessage) -> DispatchResult;
+
+	/**
+	 * @brief
 	 *  Get the protocol revision negotiated by the last `initialize`.
 	 * @return The revision, empty before any handshake.
 	 */
@@ -169,6 +198,22 @@ private:
 
 	/**
 	 * @brief
+	 *  `play.run`: start a bounded play; answered at once when the session plays it synchronously, else deferred.
+	 * @param[in] iArguments The `arguments` object of the call.
+	 * @return The tool result (an `isError` one when the play does not start), the null JSON when it is deferred.
+	 */
+	[[nodiscard]] auto callPlay(const nlohmann::json& iArguments) -> nlohmann::json;
+
+	/**
+	 * @brief
+	 *  Take the report of the play and make the response of the call that started it.
+	 * @param[in] iId The id of the `tools/call` request.
+	 * @return The response.
+	 */
+	[[nodiscard]] auto finishPlay(const nlohmann::json& iId) -> std::string;
+
+	/**
+	 * @brief
 	 *  Keep the file arguments (`ArgSpec::projectPath`) inside the project, rewritten as canonical paths.
 	 * @param[in] iSpec The command.
 	 * @param[in,out] ioArgs The parsed arguments.
@@ -195,6 +240,12 @@ private:
 	std::string m_clientName;
 	/// True once the client sent `notifications/initialized`.
 	bool m_initialized{false};
+	/// Id of the request being handled.
+	nlohmann::json m_currentId;
+	/// True while the request being handled waits for a play that spans frames.
+	bool m_playDeferred{false};
+	/// True from the start of a deferred play to its answer (a second `play.run` is refused meanwhile).
+	bool m_playPending{false};
 };
 
 }// namespace owl::nest::mcp

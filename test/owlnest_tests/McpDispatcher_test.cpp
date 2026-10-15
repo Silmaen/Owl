@@ -126,7 +126,8 @@ TEST_F(McpDispatcherTest, ListsEveryCommandWithASchema) {
 	McpDispatcher dispatcher{session};
 	const auto tools = request(dispatcher, "tools/list")["result"]["tools"];
 	const auto& commands = session.getRegistry().getCommands();
-	ASSERT_EQ(tools.size(), commands.size());
+	ASSERT_EQ(tools.size(), commands.size() + 1);
+	EXPECT_EQ(tools.back()["name"], "play.run");
 	for (size_t i = 0; i < commands.size(); ++i) {
 		const auto& tool = tools[i];
 		const auto& spec = commands[i];

@@ -8,6 +8,8 @@
 
 #pragma once
 
+#include "McpDispatcher.h"
+
 #include <core/Core.h>
 #include <core/expected.h>
 
@@ -45,6 +47,8 @@ struct HttpOptions {
 	size_t maxBodyBytes{size_t{1} << 20u};
 	/// Time a request waits for the main loop before its timeout answer.
 	std::chrono::milliseconds requestTimeout{std::chrono::seconds{30}};
+	/// Time a deferred answer (a play spanning frames) may take before the work is cancelled and answered.
+	std::chrono::milliseconds deferredTimeout{std::chrono::minutes{10}};
 	/// Threads serving the connections.
 	size_t workerThreads{8};
 	/// Time after a served request during which a client counts as active.
@@ -75,6 +79,8 @@ class McpHttpServer final {
 public:
 	/// Message handler: one JSON-RPC message in, its response out (nothing for a notification).
 	using Handler = std::function<std::optional<std::string>(std::string_view iMessage)>;
+	/// Message handler that may answer later: the response, or the poll that gives it.
+	using DeferrableHandler = std::function<DispatchResult(std::string_view iMessage)>;
 	/// Path of the MCP endpoint.
 	static constexpr std::string_view endpointPath = "/mcp";
 	/// JSON-RPC error code of a message the main loop did not run in time.
@@ -158,6 +164,31 @@ public:
 	 * @return Number of messages run.
 	 */
 	auto pump(const Handler& iHandler, size_t iMaxMessages) -> size_t;
+
+	/**
+	 * @brief
+	 *  Run the queued messages through a handler that may answer later, on the calling thread (the main loop).
+	 *
+	 * A message whose answer is deferred stays out of the queue until its poll answers (`pollDeferred`).
+	 * @param[in] iHandler The message handler.
+	 * @param[in] iMaxMessages Largest number of messages run by this call.
+	 * @return Number of messages run.
+	 */
+	auto pump(const DeferrableHandler& iHandler, size_t iMaxMessages) -> size_t;
+
+	/**
+	 * @brief
+	 *  Poll the deferred answers; the ones ready (or past `HttpOptions::deferredTimeout`, cancelled) are sent. Main thread.
+	 * @return Number of answers sent.
+	 */
+	auto pollDeferred() -> size_t;
+
+	/**
+	 * @brief
+	 *  Get the number of answers waiting for their work to end.
+	 * @return The count.
+	 */
+	[[nodiscard]] auto getDeferredCount() const -> size_t;
 
 	/**
 	 * @brief

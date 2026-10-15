@@ -28,6 +28,7 @@
 #include <thread>
 #include <tuple>
 #include <utility>
+#include <vector>
 
 namespace owl::nest::mcp {
 
@@ -57,6 +58,16 @@ struct Job {
 	std::promise<Reply> promise;
 	// Set by whoever takes the job first: the main loop runs it, the server thread abandons it on timeout.
 	std::atomic<bool> claimed{false};
+};
+
+// A message whose answer waits for the main loop to end some work.
+struct Deferred {
+	// The message and its promise.
+	shared<Job> job;
+	// Gives the answer once the work ends.
+	DeferredPoll poll;
+	// When the answer was deferred.
+	Clock::time_point since;
 };
 
 auto errorBody(const json& iId, const int iCode, const std::string_view iMessage) -> std::string {
@@ -101,6 +112,8 @@ struct McpHttpServer::Impl {
 	mutable std::mutex mutex;
 	// Messages waiting for the main loop.
 	std::deque<shared<Job>> queue;
+	// Answers waiting for their work to end (main thread only).
+	std::vector<Deferred> deferred;
 	// False while stopping: new messages get 503.
 	bool accepting{false};
 	// Bearer token.
@@ -315,6 +328,12 @@ void McpHttpServer::stop() {
 		if (!job->claimed.exchange(true))
 			job->promise.set_value({.status = 503, .body = std::string{g_stoppedBody}});
 	}
+	for (auto& waiting: mp_impl->deferred) {
+		auto answer = waiting.poll(/*iCancel=*/true);
+		waiting.job->promise.set_value(
+				{.status = 200, .body = answer ? std::move(*answer) : std::string{g_stoppedBody}});
+	}
+	mp_impl->deferred.clear();
 	mp_impl->server->stop();
 	if (mp_impl->thread.joinable())
 		mp_impl->thread.join();
@@ -344,6 +363,12 @@ void McpHttpServer::setToken(const std::string& iToken) {
 }
 
 auto McpHttpServer::pump(const Handler& iHandler, const size_t iMaxMessages) -> size_t {
+	return pump(
+			[&iHandler](const std::string_view iMessage) -> DispatchResult { return {.answer = iHandler(iMessage)}; },
+			iMaxMessages);
+}
+
+auto McpHttpServer::pump(const DeferrableHandler& iHandler, const size_t iMaxMessages) -> size_t {
 	size_t ran = 0;
 	while (ran < iMaxMessages) {
 		shared<Job> job;
@@ -358,8 +383,14 @@ auto McpHttpServer::pump(const Handler& iHandler, const size_t iMaxMessages) -> 
 			continue;
 		Reply reply;
 		try {
-			if (const auto answer = iHandler(job->body); answer.has_value())
-				reply = {.status = 200, .body = *answer};
+			auto result = iHandler(job->body);
+			if (result.poll) {
+				mp_impl->deferred.push_back({.job = job, .poll = std::move(result.poll), .since = Clock::now()});
+				++ran;
+				continue;
+			}
+			if (result.answer.has_value())
+				reply = {.status = 200, .body = std::move(*result.answer)};
 			else
 				reply = {.status = 202, .body = {}};
 		} catch (const std::exception& iEx) {
@@ -372,6 +403,26 @@ auto McpHttpServer::pump(const Handler& iHandler, const size_t iMaxMessages) -> 
 	}
 	return ran;
 }
+
+auto McpHttpServer::pollDeferred() -> size_t {
+	size_t sent = 0;
+	const auto now = Clock::now();
+	std::erase_if(mp_impl->deferred, [this, now, &sent](Deferred& ioWaiting) -> bool {
+		const bool expired = now - ioWaiting.since > mp_impl->options.deferredTimeout;
+		if (expired)
+			OWL_CORE_WARN("Mcp: A deferred answer took more than {} ms, cancelled.",
+						  mp_impl->options.deferredTimeout.count())
+		auto answer = ioWaiting.poll(expired);
+		if (!answer)
+			return false;
+		ioWaiting.job->promise.set_value({.status = 200, .body = std::move(*answer)});
+		++sent;
+		return true;
+	});
+	return sent;
+}
+
+auto McpHttpServer::getDeferredCount() const -> size_t { return mp_impl->deferred.size(); }
 
 auto McpHttpServer::getPendingCount() const -> size_t {
 	const std::lock_guard<std::mutex> lock{mp_impl->mutex};
