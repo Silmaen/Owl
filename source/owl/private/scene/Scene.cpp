@@ -2216,6 +2216,14 @@ OWL_API void Scene::onComponentAdded<component::UiFocus>([[maybe_unused]] const 
 														 [[maybe_unused]] component::UiFocus& ioComponent) {}
 
 template<>
+OWL_API void Scene::onComponentAdded<component::UiScrollView>([[maybe_unused]] const Entity& iEntity,
+															  [[maybe_unused]] component::UiScrollView& ioComponent) {}
+
+template<>
+OWL_API void Scene::onComponentAdded<component::UiList>([[maybe_unused]] const Entity& iEntity,
+														[[maybe_unused]] component::UiList& ioComponent) {}
+
+template<>
 OWL_API void Scene::onComponentAdded<component::PrefabLink>([[maybe_unused]] const Entity& iEntity,
 															[[maybe_unused]] component::PrefabLink& ioComponent) {}
 

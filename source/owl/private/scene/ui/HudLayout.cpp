@@ -13,12 +13,16 @@
 #include "scene/Scene.h"
 #include "scene/component/Canvas.h"
 #include "scene/component/Hierarchy.h"
+#include "scene/component/UiList.h"
 #include "scene/component/UiPanel.h"
+#include "scene/component/UiScrollView.h"
 #include "scene/component/UiWindow.h"
 
 #include <algorithm>
 #include <cstddef>
+#include <optional>
 #include <ranges>
+#include <tuple>
 
 namespace owl::scene::ui {
 
@@ -27,6 +31,7 @@ void HudLayout::compute(Scene& iScene, const math::vec2ui& iViewport, const bool
 
 	++m_computeCount;
 	m_nodes.clear();
+	m_scrolls.clear();
 	m_viewport = iViewport;
 	m_valid = true;
 	if (iViewport.x() == 0 || iViewport.y() == 0)
@@ -63,7 +68,7 @@ void clampToScreen(component::UiRect::Bounds& ioBounds, const math::vec2& iScree
 
 }// namespace
 
-void HudLayout::arrange(const component::UiLayout& iLayout, const math::vec2& iContent) {
+auto HudLayout::arrange(const component::UiLayout& iLayout, const math::vec2& iContent) -> math::vec2 {
 	using Arrangement = component::UiLayout::Arrangement;
 	m_slots.assign(m_layoutChildren.size(), {0.f, 0.f});
 	const float pad = iLayout.padding;
@@ -104,6 +109,43 @@ void HudLayout::arrange(const component::UiLayout& iLayout, const math::vec2& iC
 		}
 		++placed;
 	}
+	if (placed == 0)
+		return {0.f, 0.f};
+	math::vec2 extent{0.f, 0.f};
+	for (size_t i = 0; i < m_layoutChildren.size(); ++i) {
+		if (!m_layoutChildren[i].placed)
+			continue;
+		extent.x() = std::max(extent.x(), m_slots[i].x() + m_layoutChildren[i].size.x());
+		extent.y() = std::max(extent.y(), m_slots[i].y() + m_layoutChildren[i].size.y());
+	}
+	return {extent.x() + pad, extent.y() + pad};
+}
+
+void HudLayout::collectLayoutChildren(Scene& iScene, const entt::entity iEntity, const bool iEditorMode) {
+	m_layoutChildren.clear();
+	const auto* hierarchy = iScene.registry.try_get<component::Hierarchy>(iEntity);
+	if (hierarchy == nullptr)
+		return;
+	for (const auto childId: hierarchy->childrenIds) {
+		const Entity child = iScene.findEntityByUUID(childId);
+		if (!child)
+			continue;
+		const auto entity = static_cast<entt::entity>(child);
+		const auto* rect = iScene.registry.try_get<component::UiRect>(entity);
+		const bool placed = rect != nullptr && !iScene.registry.all_of<component::Canvas>(entity) &&
+							iScene.isEffectivelyVisible(child, iEditorMode);
+		m_layoutChildren.push_back(
+				{.entity = entity, .size = placed ? rect->size : math::vec2{0.f, 0.f}, .placed = placed});
+	}
+}
+
+auto HudLayout::measureLayout(Scene& iScene, const entt::entity iEntity, const math::vec2& iContent,
+							  const bool iEditorMode) -> std::optional<math::vec2> {
+	const auto* layout = iScene.registry.try_get<component::UiLayout>(iEntity);
+	if (layout == nullptr)
+		return std::nullopt;
+	collectLayoutChildren(iScene, iEntity, iEditorMode);
+	return arrange(*layout, iContent);
 }
 
 void HudLayout::pushChildren(Scene& iScene, const entt::entity iEntity, const size_t iParent, const bool iEditorMode) {
@@ -118,20 +160,9 @@ void HudLayout::pushChildren(Scene& iScene, const entt::entity iEntity, const si
 		}
 		return;
 	}
-	m_layoutChildren.clear();
-	for (const auto childId: hierarchy->childrenIds) {
-		const Entity child = iScene.findEntityByUUID(childId);
-		if (!child)
-			continue;
-		const auto entity = static_cast<entt::entity>(child);
-		const auto* rect = iScene.registry.try_get<component::UiRect>(entity);
-		const bool placed = rect != nullptr && !iScene.registry.all_of<component::Canvas>(entity) &&
-							iScene.isEffectivelyVisible(child, iEditorMode);
-		m_layoutChildren.push_back(
-				{.entity = entity, .size = placed ? rect->size : math::vec2{0.f, 0.f}, .placed = placed});
-	}
+	collectLayoutChildren(iScene, iEntity, iEditorMode);
 	const auto& parent = m_nodes[iParent];
-	arrange(*layout, parent.content.size / parent.scale);
+	std::ignore = arrange(*layout, parent.content.size / parent.scale);
 	for (size_t i = m_layoutChildren.size(); i-- > 0;)
 		m_pending.push_back({.entity = m_layoutChildren[i].entity,
 							 .parent = iParent,
@@ -160,7 +191,7 @@ void HudLayout::layoutCanvas(Scene& iScene, const entt::entity iCanvas, const bo
 		const auto parentBounds =
 				parent == HudNode::noParent
 						? root
-						: component::UiRect::Bounds{.position = m_nodes[parent].content.position / scale,
+						: component::UiRect::Bounds{.position = m_nodes[parent].childArea().position / scale,
 													.size = m_nodes[parent].content.size / scale};
 		const auto local =
 				slotted ? component::UiRect::Bounds{.position = parentBounds.position + slot, .size = rect->size}
@@ -188,6 +219,7 @@ void HudLayout::layoutCanvas(Scene& iScene, const entt::entity iCanvas, const bo
 				   panel != nullptr && panel->clipChildren) {
 			node.clipsChildren = true;
 		}
+		attachScroll(iScene, node, iEditorMode);
 		if (parent != HudNode::noParent) {
 			const auto& above = m_nodes[parent];
 			node.clipped = above.clipsChildren || above.clipped;
@@ -196,12 +228,104 @@ void HudLayout::layoutCanvas(Scene& iScene, const entt::entity iCanvas, const bo
 			else
 				node.clip = above.clip;
 			node.window = above.window;
+			node.scrollAncestor = above.scroll != HudNode::noParent ? parent : above.scrollAncestor;
 		}
 		if (window != nullptr)
 			node.window = m_nodes.size();
 		m_nodes.push_back(node);
 		pushChildren(iScene, entity, m_nodes.size() - 1, iEditorMode);
 	}
+}
+
+namespace {
+
+constexpr float g_minThumbReference = 16.f;
+
+}// namespace
+
+void HudLayout::attachScroll(Scene& iScene, HudNode& ioNode, const bool iEditorMode) {
+	const auto* view = iScene.registry.try_get<component::UiScrollView>(ioNode.entity);
+	auto* list = view == nullptr ? iScene.registry.try_get<component::UiList>(ioNode.entity) : nullptr;
+	if (view == nullptr && list == nullptr)
+		return;
+	const float scale = ioNode.scale;
+	HudScroll scroll;
+	scroll.entity = ioNode.entity;
+	scroll.scale = scale;
+	scroll.isList = list != nullptr;
+	bool vertical = true;
+	bool horizontal = false;
+	bool showBars = true;
+	float barWidth = 0.f;
+	math::vec2 content{0.f, 0.f};
+	math::vec2 wanted{0.f, 0.f};
+	if (view != nullptr) {
+		vertical = view->vertical;
+		horizontal = view->horizontal;
+		showBars = view->showScrollBar;
+		barWidth = view->scrollBarWidth * scale;
+		scroll.trackColor = view->trackColor;
+		scroll.thumbColor = view->thumbColor;
+		wanted = view->scrollOffset * scale;
+		content = view->contentSize * scale;
+		if (content.x() <= 0.f || content.y() <= 0.f) {
+			if (const auto extent = measureLayout(iScene, ioNode.entity, ioNode.bounds.size / scale, iEditorMode)) {
+				content.x() = content.x() > 0.f ? content.x() : extent->x() * scale;
+				content.y() = content.y() > 0.f ? content.y() : extent->y() * scale;
+			}
+		}
+	} else {
+		showBars = list->showScrollBar;
+		barWidth = list->scrollBarWidth * scale;
+		scroll.trackColor = list->trackColor;
+		scroll.thumbColor = list->thumbColor;
+		scroll.rowHeight = list->rowHeight * scale;
+		scroll.rowSpacing = list->rowSpacing * scale;
+		scroll.rowCount = list->itemCount;
+		wanted = {0.f, list->scrollOffset * scale};
+		content = {0.f, ui::listContentHeight(scroll.rowHeight, scroll.rowSpacing, list->itemCount)};
+	}
+	scroll.minThumb = g_minThumbReference * scale;
+	scroll.geometry = computeScrollGeometry(ioNode.bounds, content, vertical, horizontal, showBars, barWidth);
+	scroll.offset = {std::clamp(wanted.x(), 0.f, scroll.geometry.maxOffset.x()),
+					 std::clamp(wanted.y(), 0.f, scroll.geometry.maxOffset.y())};
+	if (list != nullptr && list->revealSelected) {
+		if (list->selectedIndex >= 0) {
+			const float pitch = scroll.rowHeight + scroll.rowSpacing;
+			const float start = static_cast<float>(list->selectedIndex) * pitch;
+			scroll.offset.y() = std::clamp(
+					revealRange(scroll.offset.y(), scroll.geometry.viewport.size.y(), start, start + scroll.rowHeight),
+					0.f, scroll.geometry.maxOffset.y());
+		}
+		list->revealSelected = false;
+	}
+	if (view != nullptr)
+		iScene.registry.get<component::UiScrollView>(ioNode.entity).scrollOffset = scroll.offset / scale;
+	else
+		list->scrollOffset = scroll.offset.y() / scale;
+	ioNode.content = scroll.geometry.viewport;
+	ioNode.clipsChildren = true;
+	ioNode.scrollOffset = view != nullptr ? scroll.offset : math::vec2{0.f, 0.f};
+	ioNode.scroll = m_scrolls.size();
+	m_scrolls.push_back(scroll);
+}
+
+auto HudScroll::verticalThumb() const -> component::UiRect::Bounds {
+	if (!geometry.verticalBar)
+		return {};
+	const auto thumb = thumbOf(geometry.verticalTrack.size.y(), geometry.viewport.size.y(), geometry.content.y(),
+							   offset.y(), minThumb);
+	return {.position = {geometry.verticalTrack.position.x(), geometry.verticalTrack.position.y() + thumb.start},
+			.size = {geometry.verticalTrack.size.x(), thumb.length}};
+}
+
+auto HudScroll::horizontalThumb() const -> component::UiRect::Bounds {
+	if (!geometry.horizontalBar)
+		return {};
+	const auto thumb = thumbOf(geometry.horizontalTrack.size.x(), geometry.viewport.size.x(), geometry.content.x(),
+							   offset.x(), minThumb);
+	return {.position = {geometry.horizontalTrack.position.x() + thumb.start, geometry.horizontalTrack.position.y()},
+			.size = {thumb.length, geometry.horizontalTrack.size.y()}};
 }
 
 void HudLayout::invalidate() { m_valid = false; }
