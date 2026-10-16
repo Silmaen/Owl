@@ -174,6 +174,21 @@ TEST_F(HeadlessSessionTest, PlaysTicksDeterministically) {
 	ASSERT_TRUE(session.stopPlay().has_value());
 }
 
+TEST_F(HeadlessSessionTest, PlaysAndStopsEveryDemoScene) {
+	OWL_REQUIRE_MODULE(PHYSICS);
+	for (const auto& entry: std::filesystem::directory_iterator(owl::test::getRootPath() / "engine_demo" / "scenes")) {
+		if (entry.path().extension() != ".owl")
+			continue;
+		SCOPED_TRACE(entry.path().filename().string());
+		HeadlessSession session;
+		ASSERT_TRUE(session.loadScene(entry.path()).has_value());
+		ASSERT_TRUE(session.startPlay({.frames = 0, .ticks = 30, .stopAtEnd = false}).has_value());
+		ASSERT_TRUE(session.startPlay({.frames = 10, .keys = {input::key::Tab}, .stopAtEnd = false}).has_value());
+		ASSERT_TRUE(session.stopPlay().has_value());
+		EXPECT_FALSE(session.isScenePlaying());
+	}
+}
+
 TEST_F(HeadlessSessionTest, BoundsAPlayByTicksAtALargerStep) {
 	HeadlessSession session;
 	ASSERT_TRUE(session.loadScene(samplePath()).has_value());
