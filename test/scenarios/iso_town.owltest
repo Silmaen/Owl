@@ -54,6 +54,14 @@ steps:
   - input: {mouse: Right, mouse_pos: [544, 496], frames: 3}
   - frames: 20
   - expect: {gamestate: town_reroutes, greater: 0}
+  # A bypass built inside the ring, beside the cut: (7, 15), (8, 15), (9, 15) join the cells (7, 16) and (9, 16). The vehicles
+  # that took the long way round plan their route again and find the shorter one over the new road.
+  - input: {mouse: Left, mouse_pos: [544, 464], frames: 3}
+  - input: {mouse: Left, mouse_pos: [576, 480], frames: 3}
+  - input: {mouse: Left, mouse_pos: [608, 496], frames: 3}
+  - expect: {gamestate: town_roads, equals: 4}
+  - frames: 120
+  - expect: {gamestate: town_shortcuts, greater: 0}
   # The road is rebuilt (the default tool is the road); the vehicles keep driving from stop to stop.
   - input: {mouse: Left, mouse_pos: [544, 496], frames: 3}
   - frames: 1500
@@ -64,3 +72,5 @@ steps:
   - expect: {gamestate: town_frame_errors, equals: 0}
   - expect: {gamestate: town_heading_errors, equals: 0}
   - expect: {gamestate: town_frames_seen, greater: 4}
+  # No vehicle waited long for a route: a road built or rebuilt is taken as soon as the graph changes.
+  - expect: {gamestate: town_longest_wait, less: 6}

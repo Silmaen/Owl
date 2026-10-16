@@ -98,6 +98,10 @@ actions:
     bindings:
       - {key: Q}
       - {gamepad_button: RightBumper}
+  - name: nav_debug
+    type: button
+    bindings:
+      - {key: F3}
   - name: cursor
     type: vector
     bindings:
