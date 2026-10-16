@@ -186,11 +186,12 @@ private:
  * @brief
  *  Find the rectangle that places a widget on a target, its anchors and pivot kept.
  * @param[in] iBase The rectangle whose anchors and pivot are kept.
- * @param[in] iParent The parent rectangle, in reference pixels.
+ * @param[in] iFrame The parent rectangle and the canvas size, in reference pixels.
  * @param[in] iTarget The rectangle the widget must cover, in the same coordinates.
- * @return The rectangle (size and offset) for which `computeBounds(iParent)` gives `iTarget`.
+ * @return The rectangle (size and offset, written in the units of `iBase`) for which
+ *  `computeBounds(iFrame.parent, iFrame.screen)` gives `iTarget`.
  */
-[[nodiscard]] auto solveHudRect(const scene::component::UiRect& iBase, const scene::component::UiRect::Bounds& iParent,
+[[nodiscard]] auto solveHudRect(const scene::component::UiRect& iBase, const scene::component::UiRect::Frame& iFrame,
 								const scene::component::UiRect::Bounds& iTarget) -> scene::component::UiRect;
 
 /**

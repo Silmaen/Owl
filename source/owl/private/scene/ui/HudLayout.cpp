@@ -34,6 +34,7 @@ void HudLayout::compute(Scene& iScene, const math::vec2ui& iViewport, const bool
 	m_scrolls.clear();
 	m_viewport = iViewport;
 	m_valid = true;
+	m_screenReference = {0.f, 0.f};
 	if (iViewport.x() == 0 || iViewport.y() == 0)
 		return;
 	m_canvases.clear();
@@ -121,7 +122,10 @@ auto HudLayout::arrange(const component::UiLayout& iLayout, const math::vec2& iC
 	return {extent.x() + pad, extent.y() + pad};
 }
 
-void HudLayout::collectLayoutChildren(Scene& iScene, const entt::entity iEntity, const bool iEditorMode) {
+void HudLayout::collectLayoutChildren(Scene& iScene, const entt::entity iEntity, const math::vec2& iContent,
+									  const bool iEditorMode) {
+	const component::UiRect::Frame frame{.parent = {.position = {0.f, 0.f}, .size = iContent},
+										 .screen = m_screenReference};
 	m_layoutChildren.clear();
 	const auto* hierarchy = iScene.registry.try_get<component::Hierarchy>(iEntity);
 	if (hierarchy == nullptr)
@@ -134,8 +138,9 @@ void HudLayout::collectLayoutChildren(Scene& iScene, const entt::entity iEntity,
 		const auto* rect = iScene.registry.try_get<component::UiRect>(entity);
 		const bool placed = rect != nullptr && !iScene.registry.all_of<component::Canvas>(entity) &&
 							iScene.isEffectivelyVisible(child, iEditorMode);
-		m_layoutChildren.push_back(
-				{.entity = entity, .size = placed ? rect->size : math::vec2{0.f, 0.f}, .placed = placed});
+		m_layoutChildren.push_back({.entity = entity,
+									.size = placed ? rect->getPixelSize(frame) : math::vec2{0.f, 0.f},
+									.placed = placed});
 	}
 }
 
@@ -144,7 +149,7 @@ auto HudLayout::measureLayout(Scene& iScene, const entt::entity iEntity, const m
 	const auto* layout = iScene.registry.try_get<component::UiLayout>(iEntity);
 	if (layout == nullptr)
 		return std::nullopt;
-	collectLayoutChildren(iScene, iEntity, iEditorMode);
+	collectLayoutChildren(iScene, iEntity, iContent, iEditorMode);
 	return arrange(*layout, iContent);
 }
 
@@ -160,9 +165,10 @@ void HudLayout::pushChildren(Scene& iScene, const entt::entity iEntity, const si
 		}
 		return;
 	}
-	collectLayoutChildren(iScene, iEntity, iEditorMode);
 	const auto& parent = m_nodes[iParent];
-	std::ignore = arrange(*layout, parent.content.size / parent.scale);
+	const math::vec2 content = parent.content.size / parent.scale;
+	collectLayoutChildren(iScene, iEntity, content, iEditorMode);
+	std::ignore = arrange(*layout, content);
 	for (size_t i = m_layoutChildren.size(); i-- > 0;)
 		m_pending.push_back({.entity = m_layoutChildren[i].entity,
 							 .parent = iParent,
@@ -174,6 +180,7 @@ void HudLayout::layoutCanvas(Scene& iScene, const entt::entity iCanvas, const bo
 	const math::vec2 screen{static_cast<float>(m_viewport.x()), static_cast<float>(m_viewport.y())};
 	const float scale = iScene.registry.get<component::Canvas>(iCanvas).getScale(screen);
 	const component::UiRect::Bounds root{.position = {0.f, 0.f}, .size = screen / scale};
+	m_screenReference = root.size;
 	m_pending.clear();
 	pushChildren(iScene, iCanvas, HudNode::noParent, iEditorMode);
 	while (!m_pending.empty()) {
@@ -194,8 +201,10 @@ void HudLayout::layoutCanvas(Scene& iScene, const entt::entity iCanvas, const bo
 						: component::UiRect::Bounds{.position = m_nodes[parent].childArea().position / scale,
 													.size = m_nodes[parent].content.size / scale};
 		const auto local =
-				slotted ? component::UiRect::Bounds{.position = parentBounds.position + slot, .size = rect->size}
-						: rect->computeBounds(parentBounds);
+				slotted ? component::UiRect::Bounds{.position = parentBounds.position + slot,
+													.size = rect->getPixelSize(
+															{.parent = parentBounds, .screen = m_screenReference})}
+						: rect->computeBounds(parentBounds, m_screenReference);
 		HudNode node{.entity = entity,
 					 .canvas = iCanvas,
 					 .parent = parent,

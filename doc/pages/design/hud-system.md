@@ -45,6 +45,15 @@ tooltips and construction tools at once, as in Transport Tycoon.
   `ScaleWithHeight`.
 - Anchors: `anchorMin` / `anchorMax` (normalised, a distinct pair stretches the widget, `size` is then added to the
   span) besides the 9 presets (`UiRect::setAnchor`, `getAnchor`), which stay as shortcuts in the inspector.
+- Relative units: each of `size.x`, `size.y`, `offset.x` and `offset.y` has a `UiRect::Unit`, `Pixels` (default,
+  reference pixels, scaled by the scale mode) or a ratio (0.25 = a quarter) of `ParentWidth`, `ParentHeight`,
+  `ScreenWidth` or `ScreenHeight` (the parent content area or the whole canvas). `HudLayout` resolves them in
+  reference pixels at layout time against the parent and the canvas (the scale is uniform, so this is the ratio of the
+  screen pixels too, in every scale mode); a square widget uses `ParentHeight` for both sizes, a child of a `UiLayout`
+  is measured the same way. Files write `sizeUnit: [X, Y]` / `offsetUnit: [X, Y]` only when a number leaves the pixels,
+  so older files and pixel widgets are unchanged (no format bump: absent means `Pixels`, an unknown name too).
+  `UiRect::convertSizeUnit` / `convertOffsetUnit` change a unit keeping the screen rectangle, `moveBy` moves in
+  reference pixels whatever the units (window drag, `hud.move`).
 - `Canvas::referenceResolution` (1280×720 by default) with `Canvas::scaleMode`: `ConstantPixels`, `ScaleWithHeight`
   (default) or `MatchSmallerSide`; widgets are authored in reference pixels, fonts scale with them.
 - Legibility floor: a scale mode that shrinks (scale under 1) never draws a text below 12 screen pixels of em height
@@ -152,7 +161,10 @@ Implementation notes:
 - `HudRectsCommand` records the `UiRect` of one or several widgets before and after and merges with the next change of
   the same widgets; `HudReparentCommand` adds the parent and the index. Creation and deletion reuse
   `CreateEntityCommand`, `DeleteSubtreeCommand` and `UndoGroupCommand`.
-- Positions in the commands are reference pixels; `keep_bounds` (default true on `hud.set_anchors`, `hud.set_pivot`
+- Positions in the commands are reference pixels, except the `size` and `offset` of `hud.add_widget` and `hud.set_rect`,
+  which are read in `size_unit` / `offset_unit` (one unit name for both axes or two separated by a comma, the
+  widget's own units when absent; the gizmo writes in each field's current unit through `solveHudRect`, and `hud.move`
+  moves a ratio offset by the equivalent ratio, the unit kept); `keep_bounds` (default true on `hud.set_anchors`, `hud.set_pivot`
   and `hud.reparent`) lays the HUD out at `resolution` (the reference resolution of the canvas when absent) to read
   the parent rectangle.
 - Tests: `HudDocument_test.cpp` (resolution, selection, hit-testing, gestures, snapping, creation by drop) and the

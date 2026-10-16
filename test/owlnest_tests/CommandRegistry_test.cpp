@@ -488,6 +488,14 @@ TEST_F(HudCommandsTest, DeclaresTheHudCommands) {
 		EXPECT_TRUE(spec->factory) << name;
 		EXPECT_FALSE(spec->allowedInPlay) << name;
 	}
+	for (const auto* name: {"hud.add_widget", "hud.set_rect"}) {
+		const auto* spec = m_registry.find(name);
+		ASSERT_NE(spec, nullptr) << name;
+		for (const auto* arg: {"size_unit", "offset_unit"}) {
+			EXPECT_TRUE(std::ranges::any_of(spec->args, [&](const ArgSpec& iArg) -> bool { return iArg.name == arg; }))
+					<< name << " " << arg;
+		}
+	}
 }
 
 TEST_F(HudCommandsTest, AddWidgetCreatesTheCanvasWhenTheSceneHasNone) {
@@ -775,6 +783,100 @@ TEST_F(HudCommandsTest, EveryHudCommandIsRefusedWhilePlaying) {
 	EXPECT_EQ(result.error().error, CommandError::RefusedDuringPlay);
 }
 
+TEST_F(HudCommandsTest, SetRectWritesTheUnitsAndKeepsThemUndoable) {
+	const auto panel = addWidget("panel");
+	const auto result = run("hud.set_rect", {{"entity", idOf(panel)},
+											 {"size", math::vec2{0.5f, 0.25f}},
+											 {"size_unit", std::string{"ScreenWidth, ParentHeight"}},
+											 {"offset_unit", std::string{"ScreenHeight"}}});
+	ASSERT_TRUE(result.has_value()) << result.error().message;
+	using Unit = scene::component::UiRect::Unit;
+	EXPECT_EQ(rectOf(panel).sizeUnit.x, Unit::ScreenWidth);
+	EXPECT_EQ(rectOf(panel).sizeUnit.y, Unit::ParentHeight);
+	EXPECT_EQ(rectOf(panel).offsetUnit.x, Unit::ScreenHeight);
+	EXPECT_EQ(rectOf(panel).offsetUnit.y, Unit::ScreenHeight);
+	EXPECT_FLOAT_EQ(rectOf(panel).size.x(), 0.5f);
+	// A later set_rect without units keeps them.
+	ASSERT_TRUE(run("hud.set_rect", {{"entity", idOf(panel)}, {"offset", math::vec2{0.1f, 0.f}}}).has_value());
+	EXPECT_EQ(rectOf(panel).sizeUnit.x, Unit::ScreenWidth);
+	// The two edits of the same widget merge in one step.
+	m_undo.undo(*m_scene);
+	EXPECT_TRUE(rectOf(panel).sizeUnit.isPixels());
+	EXPECT_TRUE(rectOf(panel).offsetUnit.isPixels());
+	m_undo.redo(*m_scene);
+	EXPECT_EQ(rectOf(panel).sizeUnit.y, Unit::ParentHeight);
+}
+
+TEST_F(HudCommandsTest, SetRectRefusesAnUnknownUnit) {
+	const auto panel = addWidget("panel");
+	const auto bad = run("hud.set_rect", {{"entity", idOf(panel)}, {"size_unit", std::string{"Furlongs"}}});
+	ASSERT_FALSE(bad.has_value());
+	EXPECT_EQ(bad.error().error, CommandError::InvalidArgument);
+	const auto many =
+			run("hud.set_rect", {{"entity", idOf(panel)}, {"size_unit", std::string{"Pixels,Pixels,Pixels"}}});
+	ASSERT_FALSE(many.has_value());
+	EXPECT_EQ(many.error().error, CommandError::InvalidArgument);
+}
+
+TEST_F(HudCommandsTest, AddWidgetTakesUnits) {
+	const auto panel = addWidget(
+			"panel", {{"size", math::vec2{0.5f, 0.5f}}, {"size_unit", std::string{"ScreenWidth,ScreenHeight"}}});
+	ASSERT_TRUE(panel);
+	EXPECT_EQ(rectOf(panel).sizeUnit.x, scene::component::UiRect::Unit::ScreenWidth);
+	EXPECT_EQ(rectOf(panel).sizeUnit.y, scene::component::UiRect::Unit::ScreenHeight);
+	EXPECT_TRUE(rectOf(panel).offsetUnit.isPixels());
+}
+
+TEST_F(HudCommandsTest, MoveKeepsTheUnitOfARatioOffset) {
+	using Unit = scene::component::UiRect::Unit;
+	const auto panel = addWidget("panel");
+	ASSERT_TRUE(run("hud.set_rect", {{"entity", idOf(panel)},
+									 {"offset", math::vec2{0.1f, 5.f}},
+									 {"offset_unit", std::string{"ParentWidth,Pixels"}}})
+						.has_value());
+	// The canvas is 1280 reference pixels wide: 128 pixels are 0.1 of it.
+	const auto result = run("hud.move", {{"entities", idList({panel})}, {"delta", math::vec2{128.f, 4.f}}});
+	ASSERT_TRUE(result.has_value()) << result.error().message;
+	EXPECT_EQ(rectOf(panel).offsetUnit.x, Unit::ParentWidth);
+	EXPECT_NEAR(rectOf(panel).anchorOffset.x(), 0.2f, 1e-4f);
+	EXPECT_NEAR(rectOf(panel).anchorOffset.y(), 9.f, 1e-4f);
+	// Merged with the set_rect just before: one undo goes back to the pixels.
+	m_undo.undo(*m_scene);
+	EXPECT_TRUE(rectOf(panel).offsetUnit.isPixels());
+}
+
+TEST_F(HudCommandsTest, SetAnchorsKeepsTheBoundsOfARatioSizedWidget) {
+	const auto panel = addWidget("panel");
+	ASSERT_TRUE(run("hud.set_rect", {{"entity", idOf(panel)},
+									 {"size", math::vec2{0.25f, 0.25f}},
+									 {"size_unit", std::string{"ScreenWidth,ScreenWidth"}}})
+						.has_value());
+	ASSERT_TRUE(run("hud.set_anchors", {{"entity", idOf(panel)}, {"anchor_min", math::vec2{0.f, 0.f}}}).has_value());
+	const auto bounds = rectOf(panel).computeBounds({.position = {0.f, 0.f}, .size = {1280.f, 720.f}});
+	EXPECT_NEAR(bounds.position.x(), 640.f - 160.f, 1e-3f);
+	EXPECT_NEAR(bounds.size.x(), 320.f, 1e-3f);
+	EXPECT_NEAR(bounds.size.y(), 320.f, 1e-3f);
+	EXPECT_EQ(rectOf(panel).sizeUnit.x, scene::component::UiRect::Unit::ScreenWidth);
+}
+
+TEST_F(HudCommandsTest, SolveRectWritesBackInTheUnitsOfTheBase) {
+	scene::component::UiRect base;
+	base.sizeUnit = {.x = scene::component::UiRect::Unit::ParentWidth,
+					 .y = scene::component::UiRect::Unit::ScreenHeight};
+	base.offsetUnit = {.x = scene::component::UiRect::Unit::ScreenWidth, .y = scene::component::UiRect::Unit::Pixels};
+	const scene::component::UiRect::Frame frame{.parent = {.position = {10.f, 20.f}, .size = {800.f, 400.f}},
+												.screen = {1280.f, 720.f}};
+	const scene::component::UiRect::Bounds target{.position = {55.f, 77.f}, .size = {200.f, 72.f}};
+	const auto solved = solveHudRect(base, frame, target);
+	EXPECT_EQ(solved.sizeUnit, base.sizeUnit);
+	EXPECT_NEAR(solved.size.x(), 0.25f, 1e-5f);
+	EXPECT_NEAR(solved.size.y(), 0.1f, 1e-5f);
+	const auto bounds = solved.computeBounds(frame.parent, frame.screen);
+	EXPECT_NEAR(bounds.position.x(), 55.f, 1e-3f);
+	EXPECT_NEAR(bounds.position.y(), 77.f, 1e-3f);
+	EXPECT_NEAR(bounds.size.x(), 200.f, 1e-3f);
+}
+
 TEST_F(HudCommandsTest, SolveRectCoversTheTargetWhateverTheAnchorsAndPivot) {
 	scene::component::UiRect base;
 	base.anchorMin = {0.f, 0.25f};
@@ -782,7 +884,7 @@ TEST_F(HudCommandsTest, SolveRectCoversTheTargetWhateverTheAnchorsAndPivot) {
 	base.pivot = {0.2f, 0.9f};
 	const scene::component::UiRect::Bounds parent{.position = {10.f, 20.f}, .size = {800.f, 400.f}};
 	const scene::component::UiRect::Bounds target{.position = {55.f, 77.f}, .size = {123.f, 45.f}};
-	const auto solved = solveHudRect(base, parent, target);
+	const auto solved = solveHudRect(base, {.parent = parent, .screen = parent.size}, target);
 	const auto bounds = solved.computeBounds(parent);
 	EXPECT_NEAR(bounds.position.x(), target.position.x(), 1e-3f);
 	EXPECT_NEAR(bounds.position.y(), target.position.y(), 1e-3f);

@@ -330,8 +330,16 @@ auto dragWindow(Scene& ioActive, Scene* iHud, const math::vec2ui& iViewportSize,
 	const math::vec2 wanted = iMousePos - state.dragGrab;
 	const math::vec2 target{std::clamp(wanted.x(), 0.f, std::max(0.f, screen.x() - node->bounds.size.x())),
 							std::clamp(wanted.y(), 0.f, std::max(0.f, screen.y() - node->bounds.size.y()))};
-	surface.registry.get<component::UiRect>(state.dragWindow).anchorOffset +=
-			(target - node->bounds.position) / node->scale;
+	// The offset may be a ratio: the move in reference pixels goes through the frame of the window.
+	const auto& layout = layoutOf(surface, iViewportSize);
+	const auto above = node->parent == ui::HudNode::noParent
+							   ? component::UiRect::Bounds{.position = {0.f, 0.f}, .size = screen}
+							   : layout.getNodes()[node->parent].childArea();
+	const component::UiRect::Frame frame{
+			.parent = {.position = above.position / node->scale, .size = above.size / node->scale},
+			.screen = screen / node->scale};
+	surface.registry.get<component::UiRect>(state.dragWindow)
+			.moveBy((target - node->bounds.position) / node->scale, frame);
 	return true;
 }
 

@@ -311,6 +311,44 @@ TEST_F(HudDocumentTest, ResizingAnEdgeKeepsTheOppositeEdge) {
 	EXPECT_FLOAT_EQ(bounds.size.y(), 100.f);
 }
 
+TEST_F(HudDocumentTest, ResizingWritesTheNumbersInTheCurrentUnits) {
+	{
+		auto panel = panelEntity();
+		auto& rect = panel.getComponent<UiRect>();
+		rect.size = {200.f / 1280.f, 100.f};
+		rect.sizeUnit = {.x = UiRect::Unit::ParentWidth, .y = UiRect::Unit::Pixels};
+		rect.offsetUnit = {.x = UiRect::Unit::ScreenWidth, .y = UiRect::Unit::Pixels};
+	}
+	m_document.select(m_panel);
+	ASSERT_TRUE(drag(HudHandle::Right, {741.f, 360.f}, {771.4f, 360.f}));
+	const auto bounds = boundsOf(m_panel);
+	EXPECT_NEAR(bounds.position.x(), 540.f, 1e-3f);
+	EXPECT_NEAR(bounds.size.x(), 230.f, 1e-3f);
+	const auto rect = rectOf(m_panel);
+	EXPECT_EQ(rect.sizeUnit.x, UiRect::Unit::ParentWidth);
+	EXPECT_EQ(rect.offsetUnit.x, UiRect::Unit::ScreenWidth);
+	EXPECT_NEAR(rect.size.x(), 230.f / 1280.f, 1e-5f);
+	EXPECT_NEAR(rect.anchorOffset.x(), 15.f / 1280.f, 1e-5f);
+	EXPECT_FLOAT_EQ(rect.size.y(), 100.f);
+	m_undo.undo(*m_scene);
+	EXPECT_NEAR(rectOf(m_panel).size.x(), 200.f / 1280.f, 1e-5f);
+}
+
+TEST_F(HudDocumentTest, MovingAGroupKeepsTheUnitOfARatioOffset) {
+	{
+		auto& rect = m_scene->findEntityByUUID(m_panel).getComponent<UiRect>();
+		rect.offsetUnit = {.x = UiRect::Unit::ScreenWidth, .y = UiRect::Unit::ScreenHeight};
+	}
+	m_document.setSelection({m_other, m_panel});
+	ASSERT_TRUE(drag(HudHandle::Body, {600.f, 330.f}, {728.f, 366.f}, false));
+	const auto panel = rectOf(m_panel);
+	EXPECT_EQ(panel.offsetUnit.x, UiRect::Unit::ScreenWidth);
+	EXPECT_NEAR(panel.anchorOffset.x(), 0.1f, 1e-5f);
+	EXPECT_NEAR(panel.anchorOffset.y(), 0.05f, 1e-5f);
+	EXPECT_FLOAT_EQ(rectOf(m_other).anchorOffset.x(), 228.f);
+	EXPECT_TRUE(rectOf(m_other).offsetUnit.isPixels());
+}
+
 TEST_F(HudDocumentTest, ResizingACornerMovesBothEdgesAndStaysAboveAMinimumSize) {
 	m_document.select(m_panel);
 	ASSERT_TRUE(drag(HudHandle::TopLeft, {540.f, 310.f}, {900.f, 700.f}));

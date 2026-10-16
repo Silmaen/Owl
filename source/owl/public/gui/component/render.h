@@ -164,10 +164,12 @@ OWL_API void renderProps(scene::component::Canvas& ioComponent);
 
 /**
  * @brief
- *  Render a Gui for editing the component.
+ *  Render a Gui for editing the component; changing the unit of a size or offset number converts its value so the
+ *  widget does not move on screen (from the HUD layout of the owner's scene).
  * @param ioComponent The component to edit.
+ * @param[in] iOwner The entity holding the component.
  */
-OWL_API void renderProps(scene::component::UiRect& ioComponent);
+OWL_API void renderProps(scene::component::UiRect& ioComponent, const scene::Entity& iOwner);
 
 /**
  * @brief

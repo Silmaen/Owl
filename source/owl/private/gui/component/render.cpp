@@ -29,6 +29,7 @@
 #include "renderer/Renderer.h"
 #include "scene/TilemapAsset.h"
 #include "scene/Tileset.h"
+#include "scene/ui/HudLayout.h"
 #include "script/ScriptEngine.h"
 #include "sound/SoundCommand.h"
 #include "sound/SoundSystem.h"
@@ -819,7 +820,59 @@ void renderProps(Canvas& ioComponent) {
 	fieldTooltip("The keyboard and gamepad focus jumps to the opposite end of the menu when nothing lies ahead.");
 }
 
-void renderProps(UiRect& ioComponent) {
+namespace {
+
+// Frame of the ratio units in reference pixels, from the last HUD layout (nothing when not laid out).
+auto unitFrameOf(const Entity& iOwner) -> std::optional<UiRect::Frame> {
+	const Scene* const scene = iOwner.getScene();
+	if (scene == nullptr)
+		return std::nullopt;
+	const auto& layout = scene->getHudLayout();
+	const auto* node = layout.findNode(static_cast<entt::entity>(iOwner));
+	if (node == nullptr || node->scale <= 0.f)
+		return std::nullopt;
+	const math::vec2 screen =
+			math::vec2{static_cast<float>(layout.getViewport().x()), static_cast<float>(layout.getViewport().y())} /
+			node->scale;
+	UiRect::Frame frame{.parent = {.position = {0.f, 0.f}, .size = screen}, .screen = screen};
+	if (node->parent != scene::ui::HudNode::noParent) {
+		const auto area = layout.getNodes()[node->parent].childArea();
+		frame.parent = {.position = area.position / node->scale, .size = area.size / node->scale};
+	}
+	return frame;
+}
+
+// A number and its unit on one row: the value first, the unit selector at its right.
+auto unitField(const char* iLabel, float& ioValue, UiRect::Unit& ioUnit, UiRect::Unit& oNewUnit) -> bool {
+	static constexpr float unitWidth = 112.f;
+	const bool ratio = ioUnit != UiRect::Unit::Pixels;
+	bool picked = false;
+	prop::row(iLabel, [&](const char* iId) -> bool {
+		ImGui::SetNextItemWidth(-(unitWidth + ImGui::GetStyle().ItemSpacing.x));
+		if (ratio)
+			ImGui::DragFloat(iId, &ioValue, 0.005f, -10.f, 10.f, "%.3f");
+		else
+			ImGui::DragFloat(iId, &ioValue, 1.0f, -10000.f, 10000.f, "%.3f");
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(unitWidth);
+		const std::string unitId = std::string{"##unit"} + iLabel;
+		if (widgets::beginCombo(unitId.c_str(), std::string{magic_enum::enum_name(ioUnit)}.c_str())) {
+			for (const auto value: magic_enum::enum_values<UiRect::Unit>()) {
+				if (ImGui::Selectable(std::string{magic_enum::enum_name(value)}.c_str(), value == ioUnit)) {
+					oNewUnit = value;
+					picked = true;
+				}
+			}
+			ImGui::EndCombo();
+		}
+		return picked;
+	});
+	return picked;
+}
+
+}// namespace
+
+void renderProps(UiRect& ioComponent, const Entity& iOwner) {
 	const auto preset = ioComponent.getAnchor();
 	const std::string currentAnchor = preset ? std::string{magic_enum::enum_name(*preset)} : std::string{"Custom"};
 	if (prop::BeginCombo("Anchor Preset", currentAnchor.c_str())) {
@@ -836,10 +889,30 @@ void renderProps(UiRect& ioComponent) {
 	fieldTooltip("Anchor of the bottom-right corner; distinct from Anchor Min, the widget stretches with its parent.");
 	prop::DragFloat2("Pivot", ioComponent.pivot.data(), 0.01f, 0.0f, 1.0f);
 	fieldTooltip("Point of the widget placed at the anchors plus the offset: (0,0) = top-left, (1,1) = bottom-right.");
-	prop::DragFloat2("Size", ioComponent.size.data(), 1.0f, -10000.0f, 10000.0f);
-	fieldTooltip("Size in reference pixels, added to the span of the anchors (the whole size for a fixed anchor).");
-	prop::DragFloat2("Offset", ioComponent.anchorOffset.data(), 1.0f, -10000.0f, 10000.0f);
-	fieldTooltip("Offset of the pivot from its anchor, in reference pixels. Positive X goes right, positive Y down.");
+	// Changing a unit converts the value, so the widget keeps its place and size.
+	const auto frame = unitFrameOf(iOwner);
+	UiRect::Unit unit = UiRect::Unit::Pixels;
+	const auto field = [&](const char* iLabel, float& ioValue, UiRect::Units& ioUnits, const UiRect::Axis iAxis,
+						   const bool iSize) -> void {
+		auto current = ioUnits.get(iAxis);
+		if (!unitField(iLabel, ioValue, current, unit))
+			return;
+		if (frame && iSize)
+			ioComponent.convertSizeUnit(iAxis, unit, *frame);
+		else if (frame)
+			ioComponent.convertOffsetUnit(iAxis, unit, *frame);
+		else
+			ioUnits.set(iAxis, unit);
+	};
+	field("Width", ioComponent.size.x(), ioComponent.sizeUnit, UiRect::Axis::X, true);
+	fieldTooltip("Width added to the span of the anchors. Pixels (reference) or a ratio of the parent or screen width "
+				 "or height (0.25 = a quarter).");
+	field("Height", ioComponent.size.y(), ioComponent.sizeUnit, UiRect::Axis::Y, true);
+	fieldTooltip("Height added to the span of the anchors. Use ParentHeight for both to keep a square.");
+	field("Offset X", ioComponent.anchorOffset.x(), ioComponent.offsetUnit, UiRect::Axis::X, false);
+	fieldTooltip("Offset of the pivot from its anchor, to the right. Pixels or a ratio, as the size.");
+	field("Offset Y", ioComponent.anchorOffset.y(), ioComponent.offsetUnit, UiRect::Axis::Y, false);
+	fieldTooltip("Offset of the pivot from its anchor, downwards. Pixels or a ratio, as the size.");
 }
 
 void renderProps(UiText& ioComponent) {

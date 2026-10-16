@@ -460,8 +460,9 @@ each component marked by a thin axis colour, with a reset button that appears wh
 - **Lua Script** -- Script asset path, editable property list
 - **Canvas** -- HUD root: sort order, reference resolution and scale mode (`ConstantPixels`, `ScaleWithHeight`,
   `MatchSmallerSide`)
-- **UI Rect** -- Anchor preset (Custom when the anchors stretch), Anchor Min / Max, Pivot, Size and Offset, in
-  Y-down reference pixels of the parent rectangle; the HUD is drawn in pixels over the viewport, a click on a widget
+- **UI Rect** -- Anchor preset (Custom when the anchors stretch), Anchor Min / Max, Pivot, Width, Height, Offset X and
+  Offset Y, in Y-down reference pixels of the parent rectangle or, with the unit selector at the right of each field,
+  a ratio of the parent or screen width or height (changing the unit converts the value, the widget does not move); the HUD is drawn in pixels over the viewport, a click on a widget
   selects it
 - **UI Text / Image / Panel / Button / Slider / Progress Bar** -- In-game UI elements
 - **UI Window / Layout / Tooltip / Tool Cursor** -- Management-game widgets: a window with a title bar (draggable,
@@ -1205,11 +1206,11 @@ description and structured data (`entity` UUID, plus the fields listed below).
 | `edit.undo`            | none; returns `can_undo`, `can_redo` and the entity to select                |
 | `edit.redo`            | none; same result as `edit.undo`                                             |
 | `macro.run`            | `path` (`.owlmacro`, absolute or in an asset folder); returns `commands`     |
-| `hud.add_widget`       | `kind` (`panel`, `label`...), `name`, `parent`, `size`, `anchor`, `offset`   |
-| `hud.set_rect`         | `entity`, `anchor_min`, `anchor_max`, `pivot`, `size`, `offset` (as given)   |
+| `hud.add_widget`       | `kind` (`panel`, `label`...), `name`, `parent`, `size`, `anchor`, `offset`, `size_unit`, `offset_unit` |
+| `hud.set_rect`         | `entity`, `anchor_min`, `anchor_max`, `pivot`, `size`, `offset`, `size_unit`, `offset_unit` (as given) |
 | `hud.set_anchors`      | `entity`, `anchor_min`, `anchor_max`, `keep_bounds`, `resolution`            |
 | `hud.set_pivot`        | `entity`, `pivot`, `keep_bounds`, `resolution`                               |
-| `hud.move`             | `entities` (UUIDs or tags, comma separated), `delta` (reference pixels)      |
+| `hud.move`             | `entities` (UUIDs or tags, comma separated), `delta` (reference pixels), `resolution` |
 | `hud.delete`           | `entities`: the widgets and their children, one step                         |
 | `hud.reparent`         | `entity`, `parent`, `index`, `keep_bounds`, `resolution`                     |
 | `hud.extract_canvas`   | `entity` (root canvas), `path` (`.owlhud`), `asset_path`; returns `hud`      |
