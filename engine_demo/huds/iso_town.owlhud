@@ -160,11 +160,16 @@ Entities:
     anchorMin: [0, 1]
     anchorMax: [0, 1]
     pivot: [0, 1]
-    size: [1000, 40]
-    offset: [16, -12]
+    size: [760, 56]
+    offset: [12, -12]
+  UiPanel:
+    backgroundColor: [0.05, 0.07, 0.12, 0.78]
+    borderColor: [0.45, 0.5, 0.6, 0.6]
+    borderWidth: 1
+    clipChildren: false
   UiText:
-    text: "Click: build a road (hold to drag)   Right click: bulldoze   Q: switch tool   WASD / arrows: pan   I J K L + B / X: keyboard cursor   Pad: stick pans, right stick + A / X, RB switches   Esc: menu"
-    color: [1, 1, 1, 0.9]
+    text: "  Click: build road (hold to drag)    Right click: bulldoze    Q: switch tool    WASD / arrows: pan    Esc: menu\n  Keyboard cursor: I J K L, then B / X    Pad: left stick pans, right stick + A / X, RB switches tool"
+    color: [1, 1, 1, 0.95]
     fontSize: 15
     horizontalAlignment: Left
     verticalAlignment: Middle
