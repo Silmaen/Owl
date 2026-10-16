@@ -238,8 +238,10 @@ A `.owltileset` opens in a `TilesetDocument`: the Atlas section sets the texture
 and the **Kind** (`Orthogonal` square tiles of the 2D tilemaps, `Isometric` 2:1 diamond tiles drawn by the isometric
 layer, written `kind: Isometric`); the properties panel edits the clicked tile. For an isometric tileset the **Slopes**
 section holds one table per terrain or overlay id with the tile of each of the 19 slopes and the foundation tile of
-each slope (`-1` falls back on the flat tile); the cells of a map find their tile through it. Every edit is one undo
-step of the tileset document.
+each slope (`-1` falls back on the flat tile); the cells of a map find their tile through it. The **Navigation** section
+of a tile makes it part of a road graph and lights the sides it joins with four arrows oriented as on the screen of the
+isometric view (the pathfinding reads them, see [Pathfinding](pathfinding.md)). Every edit is one undo step of the
+tileset document.
 
 ### Scene Flow view
 
@@ -274,8 +276,9 @@ off-screen `Framebuffer` with two colour attachments:
 - a "Playing" / "Paused" message appears under them for about two seconds when Play or Pause starts, fades and goes;
 - top-right (Edit mode): the view (**2D** orthographic front view, **3D** perspective, or **Iso** locked in the
   isometric mode), **Show** (grid, camera
-  markers, trigger icons, and in the isometric mode the navigation graph of the tilemaps with a Shift-click test path,
-  see [Pathfinding](pathfinding.md)), **Frame selection** (`F`), the **Camera** menu and the frame stats toggle;
+  markers, trigger icons, and in the isometric mode the navigation graph of the tilemaps with a Shift-click test path),
+  in the isometric mode the **Navigation tool** that edits one-way roads, closed sides and slower cells on the map
+  (see [Pathfinding](pathfinding.md)), **Frame selection** (`F`), the **Camera** menu and the frame stats toggle;
 - bottom-left: frame rate, frame time and draw calls (a click opens the Stats panel);
 - bottom-right: the view-cube of the editor camera; in Play of an isometric scene, the eye button that draws the
   navigation graph and the routes of the vehicles (see [Pathfinding](pathfinding.md)).
