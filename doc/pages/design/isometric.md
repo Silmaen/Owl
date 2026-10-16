@@ -145,7 +145,7 @@ It writes into `textures/iso/`, `tilesets/` and `tilemaps/` of the project:
 
 | Output                                 | Content                                                                                                                           |
 |----------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------|
-| `tiles.png`                            | 16-column atlas of 64×48 tiles: 12 flat terrains, 18 slopes of 10 terrains, 2 foundation sets (road along Y included)                                      |
+| `tiles.png`                            | 16-column atlas of 64×48 tiles: 26 flat terrains (road shapes included), 18 slopes of 24 terrains, 2 foundation sets                                      |
 | `buildings.png`, `buildings.json`      | Per-footprint-tile slices (64×128) of five buildings, with each slice's 3D box and rectangle                                      |
 | `cottage`, `tower`, `oak`, `pine`, `…` | Whole sprites, bottom centre on the front corner of the footprint                                                                 |
 | `smoke.png`                            | Translucent puff                                                                                                                  |
@@ -188,6 +188,14 @@ Same Null-backend measures as above:
 | Frame, zoom 1, 5 000 vehicles over the whole map | 267 µs  | 125 µs  | < 2 ms |
 | Frame, zoom 1, 5 000 vehicles in view            | 308 µs  | 178 µs  | < 2 ms |
 | Frame, zoomed out ×4 (51 200 cells in 3 chunks)  | 1.43 ms | 17 µs   | < 4 ms |
+
+Road junctions (Experiment/RoadJunctions): the road overlay has 16 shapes, one per neighbour mask (bits N = -y, E = +x,
+S = +y, W = -x): ids 3 (E+W) and 11 (N+S) as before, then 12 alone, 13-16 dead ends N/E/S/W, 17-20 corners NE/ES/SW/WN,
+21-24 T missing W/N/E/S (NES, ESW, SWN, WNE), 25 cross. The asphalt fills the cell, an edge line closes every side that
+leads nowhere and the dashed centre line runs to every joined side. All of them exist on every slope: the pattern is
+drawn in world coordinates, so a junction on a ramp is as well defined as a straight piece (the tileset grows from 228
+to 494 tiles). `iso_town.lua` tiles a cell from its mask and re-tiles the four neighbours when a road is built or
+bulldozed; the `navigation` rules of the scene list the arms of each tile (`exits` the arms, `enters` their opposites).
 
 ISO5 demo (2026-10-16): `engine_demo/scenes/iso_town.owl` (**O** from the main menu), the road along Y, a `marker`
 prop and `iso_town.owltilemap` from the generator, `scripts/iso_town.lua`, `iso_town_traffic.lua` and `iso_cloud.lua`,

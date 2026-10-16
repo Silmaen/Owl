@@ -41,7 +41,8 @@ Tilemap:
     climbCost: 0.5
     allowSteep: false
     rules:
-      - {tile: 3, cost: 1, exits: [east, south, west, north], enters: [east, south, west, north]}
+      - {tile: 3, cost: 1, exits: [east, west], enters: [east, west]}
+      - {tile: 13, cost: 1, exits: [north], enters: [south]}   # a dead end open to the north
 ```
 
 A move to a neighbour (4 directions) exists when both cells have a rule, the first one lets the mover leave in that
