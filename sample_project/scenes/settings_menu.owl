@@ -14,8 +14,6 @@ Entities:
       gameVisible: true
     Hierarchy:
       parentId: 1234567890123456789
-    RendererTag:
-      Name: ui
     UiButton:
       normalColor: [0.400000006, 0.200000003, 0.200000003, 1]
       hoverColor: [0.550000012, 0.300000012, 0.300000012, 1]
@@ -47,8 +45,6 @@ Entities:
       gameVisible: true
     Hierarchy:
       parentId: 1234567890123456789
-    RendererTag:
-      Name: ui
     UiButton:
       normalColor: [0.449999988, 0.349999994, 0.100000001, 1]
       hoverColor: [0.600000024, 0.449999988, 0.150000006, 1]
@@ -80,8 +76,6 @@ Entities:
       gameVisible: true
     Hierarchy:
       parentId: 1234567890123456789
-    RendererTag:
-      Name: ui
     UiRect:
       anchorMin: [0.5, 0.5]
       anchorMax: [0.5, 0.5]
@@ -109,8 +103,6 @@ Entities:
       gameVisible: true
     Hierarchy:
       parentId: 1234567890123456789
-    RendererTag:
-      Name: ui
     UiRect:
       anchorMin: [0.5, 0.5]
       anchorMax: [0.5, 0.5]
@@ -136,8 +128,6 @@ Entities:
       gameVisible: true
     Hierarchy:
       parentId: 1234567890123456789
-    RendererTag:
-      Name: ui
     UiRect:
       anchorMin: [0.5, 0.5]
       anchorMax: [0.5, 0.5]
@@ -166,8 +156,6 @@ Entities:
       gameVisible: true
     Hierarchy:
       parentId: 1234567890123456789
-    RendererTag:
-      Name: ui
     UiRect:
       anchorMin: [0.5, 0.5]
       anchorMax: [0.5, 0.5]
@@ -193,8 +181,6 @@ Entities:
       gameVisible: true
     Hierarchy:
       parentId: 1234567890123456789
-    RendererTag:
-      Name: ui
     UiRect:
       anchorMin: [0.5, 0]
       anchorMax: [0.5, 0]
@@ -227,8 +213,6 @@ Entities:
       {}
     LuaScript:
       scriptPath: scripts/settings_menu.lua
-    RendererTag:
-      Name: ui
   - Entity: 8901234567890123456
     Tag:
       tag: Background

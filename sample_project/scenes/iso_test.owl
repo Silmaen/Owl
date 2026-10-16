@@ -1,4 +1,5 @@
 Scene: IsoTest
+Hud: huds/iso_test.owlhud
 EnabledRenderers:
 - {Name: raycast_world, Enabled: false}
 - {Name: world, Enabled: true}
@@ -256,26 +257,3 @@ Entities:
       type: float
       value: 6.0
   RendererTag: {Name: iso_world}
-- Entity: 4100000000000000050
-  Tag: {tag: Hud}
-  Transform:
-    translation: [0, 0, 0]
-    rotation: [0, 0, 0]
-    scale: [1, 1, 1]
-  Canvas: {space: ScreenOverlay, sortOrder: 0, referenceResolution: [1280, 720], scaleMode: ScaleWithHeight}
-  Visibility: {gameVisible: true}
-  RendererTag: {Name: ui}
-- Entity: 4100000000000000051
-  Tag: {tag: HudText}
-  Transform:
-    translation: [0, 0, 0]
-    rotation: [0, 0, 0]
-    scale: [1, 1, 1]
-  Visibility: {gameVisible: true}
-  Hierarchy: {parentId: 4100000000000000050}
-  RendererTag: {Name: ui}
-  UiRect: {anchorMin: [0, 0], anchorMax: [0, 0], pivot: [0, 0], size: [420, 24], offset: [10, 10]}
-  UiText:
-    text: Isometric test - arrows pan, Escape returns
-    color: [1, 0.95, 0.55, 1]
-    fontSize: 20

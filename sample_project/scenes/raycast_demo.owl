@@ -1,4 +1,5 @@
 Scene: untitled
+Hud: huds/raycast.owlhud
 EnabledRenderers:
   - Name: world
     Enabled: false
@@ -1227,37 +1228,6 @@ Entities:
       parentId: 7570686549718889332
     RendererTag:
       Name: raycast_world
-  - Entity: 2100000000000000061
-    Tag:
-      tag: HUDHint
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 2100000000000000060
-    RendererTag:
-      Name: ui
-  - Entity: 2100000000000000060
-    Tag:
-      tag: HUDCanvas
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Canvas:
-      space: ScreenOverlay
-      sortOrder: 0
-      referenceResolution: [1280, 720]
-      scaleMode: ScaleWithHeight
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      {}
-    RendererTag:
-      Name: ui
   - Entity: 8958173406567325626
     Tag:
       tag: table2

@@ -106,7 +106,6 @@ it directly.
 | `coin.lua`                   | `Trigger.Type=LuaCallback`, score increment, sprite spin, sound + entity destroy                                                                                                  |
 | `moving_platform_h.lua`      | Kinematic body driven by `physics.set_velocity` along X from `on_tick` (fixed simulation tick) — pushes the player                                                                |
 | `moving_platform_v.lua`      | Same idea on Y — pushes the player vertically                                                                                                                                      |
-| `hud.lua`                    | Passive HUD root of the `world_map` canvas (the platformer HUD is `huds/gameplay.owlhud`, shared through the scene key `Hud:`)                                                       |
 | `settings_menu.lua`          | `settings.get/set/save/load/apply/reset_all`, slider handling, fade transitions                                                                                                   |
 | `victory.lua`                | `gamestate.get`, fade transitions                                                                                                                                                  |
 | `game_over.lua`              | Retry → world map, Menu → main menu, gamestate clear                                                                                                                              |
@@ -163,9 +162,10 @@ it directly.
       RendererRaycast(raycast_world), Renderer2D(ui)]`. Most scenes use the
       2D world; the raycast demo flips `world` off and `raycast_world` on
       via `EnabledRenderers`. Every HUD canvas is drawn by the HUD pass, in
-      pixels on top of the layers (its leftover `RendererTag: { Name: ui }`
-      goes in HUD6), at 1280×720 reference pixels scaled with the window
-      height.
+      pixels on top of the layers, at 1280×720 reference pixels scaled with
+      the window height; the gameplay scenes name their HUD with `Hud:`
+      (`huds/gameplay.owlhud` for the platformer, `world_map`, `raycast` and
+      `iso_test` have their own), the menus keep their canvas.
 - [x] Static + Kinematic platforms — `PhysicBody Static` for jumpable ledges,
       `PhysicBody Kinematic` driven by `physics.set_velocity` for moving platforms
       that push the player

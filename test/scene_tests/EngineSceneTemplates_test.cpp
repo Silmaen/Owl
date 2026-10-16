@@ -15,9 +15,13 @@
 #include <gtest/gtest.h>
 #include <yaml-cpp/yaml.h>
 
+#include <cstddef>
 #include <cstdint>
 #include <filesystem>
+#include <fstream>
+#include <iterator>
 #include <map>
+#include <regex>
 #include <string>
 #include <vector>
 
@@ -73,4 +77,23 @@ TEST(EngineSceneTemplates, EveryKeySurvivesALoadSaveRoundTrip) {
 		}
 	}
 	core::Log::invalidate();
+}
+
+// The HUD pass draws every canvas whatever its tag: no shipped scene or HUD names the `ui` layer on a widget any more.
+TEST(EngineSceneTemplates, NoShippedWidgetNamesTheUiLayer) {
+	const auto root = test::getRootPath();
+	const std::regex uiTag{R"(RendererTag:\s*(\{\s*Name:\s*ui\s*\}|\n\s+Name:\s*ui\b))"};
+	size_t checked = 0;
+	for (const auto* folder: {"engine_assets", "sample_project"}) {
+		for (const auto& entry: std::filesystem::recursive_directory_iterator(root / folder)) {
+			const auto& path = entry.path();
+			if (path.extension() != ".owl" && path.extension() != ".owlhud")
+				continue;
+			std::ifstream file{path};
+			const std::string text{std::istreambuf_iterator<char>{file}, std::istreambuf_iterator<char>{}};
+			EXPECT_FALSE(std::regex_search(text, uiTag)) << path;
+			++checked;
+		}
+	}
+	EXPECT_GE(checked, 10u);
 }
