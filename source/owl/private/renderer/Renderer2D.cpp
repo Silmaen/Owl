@@ -17,6 +17,7 @@
 #include "renderer/gpu/RendererDescriptors.h"
 #include "renderer/gpu/StorageBuffer.h"
 #include "renderer/gpu/UniformBuffer.h"
+#include "renderer/utils/DrawRuns.h"
 
 #include <algorithm>
 #include <array>
@@ -38,6 +39,8 @@ constexpr uint32_t g_maxCirclesPerBatch = 20000;
 constexpr uint32_t g_maxLinesPerBatch = 20000;
 constexpr uint32_t g_maxTextGlyphsPerBatch = 20000;
 constexpr uint32_t g_maxTransientWorldsPerBatch = 20000;
+// A run costs a draw: a batch with this many runs is drawn before it grows more.
+constexpr uint32_t g_maxRunsPerBatch = 4096;
 // Shapes flush earlier than glyphs: 20000 matrices plus their instances leave the cache (+30 % per quad, #246).
 constexpr uint32_t g_maxShapeTransientsPerBatch = 4096;
 
@@ -119,6 +122,8 @@ struct InternalData {
 	BatchData<CircleInstance> circle;
 	BatchData<LineInstance> line;
 	BatchData<TextInstance> text;
+	// Draw order of the batch: sorted by key at flush only when a key went backwards.
+	DrawRuns runs;
 	Renderer2D::Statistics stats;
 	shared<gpu::Texture2D> whiteTexture;
 	shared<gpu::UniformBuffer> cameraUniformBuffer;
@@ -166,6 +171,39 @@ auto allocateTransientWorld(const math::mat4& iMatrix, const uint32_t iBatchLimi
 
 inline auto resolveWorldIndex(const int32_t iRequested, const math::Transform& iTransform) -> int32_t {
 	return iRequested >= 0 ? iRequested : allocateTransientTransform(iTransform);
+}
+
+// Uploads and draws `iCount` instances of a batch, from `iBegin`.
+template<typename InstanceT>
+void drawRange(utils::BatchData<InstanceT>& iBatch, const uint32_t iBegin, const uint32_t iCount,
+			   const uint32_t iIndexCount) {
+	iBatch.ssbo->setData(iBatch.instances.data() + iBegin, static_cast<uint32_t>(iCount * sizeof(InstanceT)), 0);
+	iBatch.ssbo->bind();
+	gpu::RenderCommand::drawDataInstanced(iBatch.drawData, iIndexCount, iCount);
+	g_Data->stats.drawCalls++;
+}
+
+void drawRun(const utils::RunKind iKind, const uint32_t iBegin, const uint32_t iCount) {
+	switch (iKind) {
+		case utils::RunKind::Quad:
+			drawRange(g_Data->quad, iBegin, iCount, 6u);
+			break;
+		case utils::RunKind::Circle:
+			drawRange(g_Data->circle, iBegin, iCount, 6u);
+			break;
+		case utils::RunKind::Line:
+			drawRange(g_Data->line, iBegin, iCount, 2u);
+			break;
+		case utils::RunKind::Text:
+			drawRange(g_Data->text, iBegin, iCount, 6u);
+			break;
+	}
+}
+
+void drawRuns() {
+	g_Data->runs.forEachDraw([](const utils::RunKind iKind, const uint32_t iBegin, const uint32_t iCount) -> void {
+		drawRun(iKind, iBegin, iCount);
+	});
 }
 
 void forgetTextureSlots() {
@@ -314,6 +352,7 @@ void Renderer2D::init() {
 	g_Data->transientWorldsSsbo =
 			gpu::StorageBuffer::create(utils::g_maxTransientWorldsPerBatch * sizeof(math::mat4), 4, "Renderer2D");
 	g_Data->transientWorlds.reserve(utils::g_maxTransientWorldsPerBatch);
+	g_Data->runs.reserve(utils::g_maxRunsPerBatch);
 }
 
 void Renderer2D::shutdown() {
@@ -413,38 +452,7 @@ void Renderer2D::flush() {
 
 	RendererTilemap::flushPending();
 
-	if (!g_Data->quad.instances.empty()) {
-		const auto count = static_cast<uint32_t>(g_Data->quad.instances.size());
-		g_Data->quad.ssbo->setData(g_Data->quad.instances.data(),
-								   static_cast<uint32_t>(count * sizeof(utils::QuadInstance)), 0);
-		g_Data->quad.ssbo->bind();
-		gpu::RenderCommand::drawDataInstanced(g_Data->quad.drawData, /*iIndexCount=*/6u, count);
-		g_Data->stats.drawCalls++;
-	}
-	if (!g_Data->circle.instances.empty()) {
-		const auto count = static_cast<uint32_t>(g_Data->circle.instances.size());
-		g_Data->circle.ssbo->setData(g_Data->circle.instances.data(),
-									 static_cast<uint32_t>(count * sizeof(utils::CircleInstance)), 0);
-		g_Data->circle.ssbo->bind();
-		gpu::RenderCommand::drawDataInstanced(g_Data->circle.drawData, /*iIndexCount=*/6u, count);
-		g_Data->stats.drawCalls++;
-	}
-	if (!g_Data->line.instances.empty()) {
-		const auto count = static_cast<uint32_t>(g_Data->line.instances.size());
-		g_Data->line.ssbo->setData(g_Data->line.instances.data(),
-								   static_cast<uint32_t>(count * sizeof(utils::LineInstance)), 0);
-		g_Data->line.ssbo->bind();
-		gpu::RenderCommand::drawDataInstanced(g_Data->line.drawData, /*iIndexCount=*/2u, count);
-		g_Data->stats.drawCalls++;
-	}
-	if (!g_Data->text.instances.empty()) {
-		const auto count = static_cast<uint32_t>(g_Data->text.instances.size());
-		g_Data->text.ssbo->setData(g_Data->text.instances.data(),
-								   static_cast<uint32_t>(count * sizeof(utils::TextInstance)), 0);
-		g_Data->text.ssbo->bind();
-		gpu::RenderCommand::drawDataInstanced(g_Data->text.drawData, /*iIndexCount=*/6u, count);
-		g_Data->stats.drawCalls++;
-	}
+	drawRuns();
 	if (g_Data->scissor)
 		gpu::RenderCommand::clearScissor();
 	gpu::RenderCommand::endBatch();
@@ -455,6 +463,7 @@ void Renderer2D::startBatch() {
 	utils::resetBatch(g_Data->circle, utils::g_maxCirclesPerBatch);
 	utils::resetBatch(g_Data->line, utils::g_maxLinesPerBatch);
 	utils::resetBatch(g_Data->text, utils::g_maxTextGlyphsPerBatch);
+	g_Data->runs.clear();
 	g_Data->textureSlotIndex = 1;
 	forgetTextureSlots();
 	g_Data->transientWorlds.clear();
@@ -484,7 +493,7 @@ void Renderer2D::nextBatch() {
 }
 
 void Renderer2D::drawLine(const LineData& iLineData) {
-	if (g_Data->line.instances.size() >= utils::g_maxLinesPerBatch)
+	if (g_Data->line.instances.size() >= utils::g_maxLinesPerBatch || g_Data->runs.size() >= utils::g_maxRunsPerBatch)
 		nextBatch();
 	g_Data->line.instances.push_back(utils::LineInstance{.point1 = iLineData.point1,
 														 ._pad0 = 0.f,
@@ -493,6 +502,7 @@ void Renderer2D::drawLine(const LineData& iLineData) {
 														 .color = iLineData.color,
 														 .entityId = iLineData.entityId,
 														 ._pad2 = {0.f, 0.f, 0.f}});
+	g_Data->runs.note(utils::RunKind::Line, iLineData.depth);
 	g_Data->stats.lineCount++;
 }
 
@@ -504,7 +514,8 @@ void Renderer2D::drawRect(const RectData& iRectData) {
 		drawLine({.point1 = corners[i],
 				  .point2 = corners[(i + 1) % corners.size()],
 				  .color = iRectData.color,
-				  .entityId = iRectData.entityId});
+				  .entityId = iRectData.entityId,
+				  .depth = iRectData.depth});
 }
 
 void Renderer2D::drawPolyLine(const PolyLineData& iLineData) {
@@ -520,17 +531,26 @@ void Renderer2D::drawPolyLine(const PolyLineData& iLineData) {
 	math::vec3 previous = first;
 	for (size_t i = 1; i < iLineData.points.size(); ++i) {
 		const math::vec3 current = toWorld(iLineData.points[i]);
-		drawLine({.point1 = previous, .point2 = current, .color = iLineData.color, .entityId = iLineData.entityId});
+		drawLine({.point1 = previous,
+				  .point2 = current,
+				  .color = iLineData.color,
+				  .entityId = iLineData.entityId,
+				  .depth = iLineData.depth});
 		previous = current;
 	}
 	if (iLineData.closed)
-		drawLine({.point1 = previous, .point2 = first, .color = iLineData.color, .entityId = iLineData.entityId});
+		drawLine({.point1 = previous,
+				  .point2 = first,
+				  .color = iLineData.color,
+				  .entityId = iLineData.entityId,
+				  .depth = iLineData.depth});
 }
 
 void Renderer2D::drawCircle(const CircleData& iCircleData) {
 	OWL_PROFILE_FUNCTION()
 
-	if (g_Data->circle.instances.size() >= utils::g_maxCirclesPerBatch)
+	if (g_Data->circle.instances.size() >= utils::g_maxCirclesPerBatch ||
+		g_Data->runs.size() >= utils::g_maxRunsPerBatch)
 		nextBatch();
 	const int32_t worldIndex = resolveWorldIndex(iCircleData.worldIndex, iCircleData.transform);
 	g_Data->circle.instances.push_back(utils::CircleInstance{.worldIndex = worldIndex,
@@ -540,13 +560,14 @@ void Renderer2D::drawCircle(const CircleData& iCircleData) {
 															 .fade = iCircleData.fade,
 															 .entityId = iCircleData.entityId,
 															 ._pad1 = 0u});
+	g_Data->runs.note(utils::RunKind::Circle, iCircleData.depth);
 	g_Data->stats.quadCount++;
 }
 
 void Renderer2D::drawQuad(const Quad2DData& iQuadData) {
 	OWL_PROFILE_FUNCTION()
 
-	if (g_Data->quad.instances.size() >= utils::g_maxQuadsPerBatch)
+	if (g_Data->quad.instances.size() >= utils::g_maxQuadsPerBatch || g_Data->runs.size() >= utils::g_maxRunsPerBatch)
 		nextBatch();
 	const uint32_t textureIndex = iQuadData.texture == nullptr ? 0 : textureSlotOf(iQuadData.texture);
 	const int32_t worldIndex = resolveWorldIndex(iQuadData.worldIndex, iQuadData.transform);
@@ -557,6 +578,7 @@ void Renderer2D::drawQuad(const Quad2DData& iQuadData) {
 														 .texIndex = textureIndex,
 														 .entityId = iQuadData.entityId,
 														 .tilingFactor = iQuadData.tilingFactor});
+	g_Data->runs.note(utils::RunKind::Quad, iQuadData.depth);
 	g_Data->stats.quadCount++;
 }
 
@@ -571,7 +593,8 @@ void Renderer2D::drawString(const StringData& iStringData) {
 	const math::mat4 stringMat = iStringData.transform();
 	const auto emitGlyph = [&](const data::fonts::Font::GlyphMetrics& iGlyph) -> void {
 		const auto& [quad, uv] = iGlyph;
-		if (g_Data->text.instances.size() >= utils::g_maxTextGlyphsPerBatch)
+		if (g_Data->text.instances.size() >= utils::g_maxTextGlyphsPerBatch ||
+			g_Data->runs.size() >= utils::g_maxRunsPerBatch)
 			nextBatch();
 
 		const math::vec2 glyphCenter = (quad.min() + quad.max()) * 0.5f;
@@ -596,6 +619,7 @@ void Renderer2D::drawString(const StringData& iStringData) {
 															 .texIndex = textureIndex,
 															 .entityId = iStringData.entityId,
 															 ._pad1 = {0u, 0u}});
+		g_Data->runs.note(utils::RunKind::Text, iStringData.depth);
 		g_Data->stats.quadCount++;
 	};
 	data::fonts::forEachLaidOutGlyph(font, iStringData.text, iStringData.layout, emitGlyph);

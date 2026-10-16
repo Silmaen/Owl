@@ -129,6 +129,66 @@ TEST(Renderer2D, fakeQuadSpriteScene) {
 	Log::invalidate();
 }
 
+TEST(Renderer2D, equalDepthsDrawOneRangePerType) {
+	Log::init(owl::core::Log::Level::Off);
+	RenderCommand::create(RenderAPI::Type::Null);
+	Renderer::init();
+	const CameraEditor cam;
+	const Transform tr{owl::math::identity<float, 4>()};
+	Renderer2D::resetStats();
+	Renderer2D::beginScene(cam);
+	// Interleaved types at one depth: one draw per type (quads, circles, lines).
+	Renderer2D::drawQuad({.transform = tr});
+	Renderer2D::drawCircle({.transform = tr});
+	Renderer2D::drawLine({.point1 = {0, 0, 0}, .point2 = {1.f, 1.f, 0.f}});
+	Renderer2D::drawQuad({.transform = tr});
+	Renderer2D::drawCircle({.transform = tr});
+	Renderer2D::endScene();
+	const auto st = Renderer2D::getStats();
+	EXPECT_EQ(st.drawCalls, 3u);
+	EXPECT_EQ(st.quadCount, 4u);
+	EXPECT_EQ(st.lineCount, 1u);
+
+	RenderCommand::invalidate();
+	Log::invalidate();
+}
+
+TEST(Renderer2D, depthSplitsAndMergesDraws) {
+	Log::init(owl::core::Log::Level::Off);
+	RenderCommand::create(RenderAPI::Type::Null);
+	Renderer::init();
+	const CameraEditor cam;
+	const Transform tr{owl::math::identity<float, 4>()};
+	Renderer2D::resetStats();
+	Renderer2D::beginScene(cam);
+	// Quad, circle (depth 1), quad: the quads touch in their buffer, one draw, then the circle.
+	Renderer2D::drawQuad({.transform = tr});
+	Renderer2D::drawCircle({.transform = tr, .depth = 1.f});
+	Renderer2D::drawQuad({.transform = tr});
+	Renderer2D::endScene();
+	EXPECT_EQ(Renderer2D::getStats().drawCalls, 2u);
+
+	Renderer2D::resetStats();
+	Renderer2D::beginScene(cam);
+	// Quads on both sides of a deeper quad cannot merge: three draws.
+	Renderer2D::drawQuad({.transform = tr});
+	Renderer2D::drawQuad({.transform = tr, .depth = 1.f});
+	Renderer2D::drawQuad({.transform = tr});
+	Renderer2D::endScene();
+	EXPECT_EQ(Renderer2D::getStats().drawCalls, 3u);
+
+	Renderer2D::resetStats();
+	Renderer2D::beginScene(cam);
+	// A rect carries the depth too: its lines (depth 1) draw after the quad (depth 0) submitted later.
+	Renderer2D::drawRect({.transform = tr, .depth = 1.f});
+	Renderer2D::drawQuad({.transform = tr});
+	Renderer2D::endScene();
+	EXPECT_EQ(Renderer2D::getStats().drawCalls, 2u);
+
+	RenderCommand::invalidate();
+	Log::invalidate();
+}
+
 TEST(Renderer2D, sceneWorldsUploadedAndGrownAtFlush) {
 	Log::init(owl::core::Log::Level::Off);
 	RenderCommand::create(RenderAPI::Type::Null);
