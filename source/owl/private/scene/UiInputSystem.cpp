@@ -17,11 +17,14 @@
 #include "scene/component/Tag.h"
 #include "scene/component/UiButton.h"
 #include "scene/component/UiFocus.h"
+#include "scene/component/UiList.h"
+#include "scene/component/UiScrollView.h"
 #include "scene/component/UiSlider.h"
 #include "scene/component/UiTooltip.h"
 #include "scene/component/UiWindow.h"
 #include "scene/component/Visibility.h"
 #include "scene/ui/HudLayout.h"
+#include "scene/ui/ScrollMath.h"
 #include "script/ScriptInstance.h"
 
 #include <algorithm>
@@ -95,11 +98,69 @@ void invokeSliderCallback(const Scene* iSurface, const Scene* iActive, const Ent
 				   });
 }
 
+void invokeListCallback(const Scene* iSurface, const Scene* iActive, const Entity& iEntity,
+						const std::string& iCallbackName, const std::string_view iIndexProperty, const int64_t iIndex) {
+	const auto id = static_cast<int64_t>(static_cast<uint64_t>(iEntity.getUUID()));
+	invokeCallback(iSurface, iActive, iEntity, iCallbackName,
+				   [id, iIndexProperty, iIndex](const script::ScriptInstance& iInstance) -> void {
+					   iInstance.setProperty("_list_entity", id);
+					   iInstance.setProperty(std::string{iIndexProperty}, iIndex);
+				   });
+}
+
 auto isInteractive(const Scene& iScene, const entt::entity iEntity) -> bool {
-	if (iScene.registry.all_of<component::UiSlider>(iEntity))
+	if (iScene.registry.any_of<component::UiSlider, component::UiList>(iEntity))
 		return true;
 	const auto* button = iScene.registry.try_get<component::UiButton>(iEntity);
 	return button != nullptr && button->state != component::UiButton::State::Disabled;
+}
+
+// The scroll container data of a node, nullptr when the widget is not one.
+auto scrollOf(const ui::HudLayout& iLayout, const ui::HudNode& iNode) -> const ui::HudScroll* {
+	return iNode.scroll == ui::HudNode::noParent ? nullptr : &iLayout.getScrolls()[iNode.scroll];
+}
+
+// The bar a point is on: the vertical one, the horizontal one, or none.
+enum struct BarHit : uint8_t { None, Vertical, Horizontal };
+
+auto barUnder(const ui::HudScroll& iScroll, const math::vec2& iPoint) -> BarHit {
+	if (iScroll.geometry.verticalBar && iScroll.geometry.verticalTrack.contains(iPoint))
+		return BarHit::Vertical;
+	if (iScroll.geometry.horizontalBar && iScroll.geometry.horizontalTrack.contains(iPoint))
+		return BarHit::Horizontal;
+	return BarHit::None;
+}
+
+// The row of a list under a point, nothing over a bar or between two rows.
+auto rowUnder(const ui::HudScroll& iScroll, const math::vec2& iPoint) -> std::optional<size_t> {
+	if (!iScroll.isList || !iScroll.geometry.viewport.contains(iPoint))
+		return std::nullopt;
+	return ui::rowAt(iPoint.y() - iScroll.geometry.viewport.position.y() + iScroll.offset.y(), iScroll.rowHeight,
+					 iScroll.rowSpacing, iScroll.rowCount);
+}
+
+// Move a scroll container to an offset in screen pixels (kept inside its content); true when it moved.
+auto setScrollPixels(Scene& ioSurface, const ui::HudScroll& iScroll, const math::vec2& iTarget) -> bool {
+	const math::vec2 target{std::clamp(iTarget.x(), 0.f, iScroll.geometry.maxOffset.x()),
+							std::clamp(iTarget.y(), 0.f, iScroll.geometry.maxOffset.y())};
+	if (iScroll.isList) {
+		auto& list = ioSurface.registry.get<component::UiList>(iScroll.entity);
+		const float wanted = target.y() / iScroll.scale;
+		const bool moved = std::abs(list.scrollOffset - wanted) > 1e-4f;
+		list.scrollOffset = wanted;
+		return moved;
+	}
+	auto& view = ioSurface.registry.get<component::UiScrollView>(iScroll.entity);
+	const math::vec2 wanted = target / iScroll.scale;
+	const bool moved = std::abs(view.scrollOffset.x() - wanted.x()) > 1e-4f ||
+					   std::abs(view.scrollOffset.y() - wanted.y()) > 1e-4f;
+	view.scrollOffset = wanted;
+	return moved;
+}
+
+auto wheelStepOf(const Scene& iSurface, const ui::HudScroll& iScroll) -> float {
+	return iScroll.isList ? iSurface.registry.get<component::UiList>(iScroll.entity).wheelStep
+						  : iSurface.registry.get<component::UiScrollView>(iScroll.entity).wheelStep;
 }
 
 // What the mouse reaches in one surface; a window under it blocks everything drawn before it.
@@ -119,7 +180,8 @@ auto probeSurface(const Scene& iScene, const ui::HudLayout& iLayout, const math:
 			continue;
 		if (result.top == nullptr)
 			result.top = &node;
-		if (isInteractive(iScene, node.entity)) {
+		const auto* scroll = scrollOf(iLayout, node);
+		if (isInteractive(iScene, node.entity) || (scroll != nullptr && barUnder(*scroll, iPoint) != BarHit::None)) {
 			result.interactive = &node;
 			if (node.window != ui::HudNode::noParent)
 				result.window = &nodes[node.window];
@@ -184,6 +246,10 @@ void updateWidgets(Scene& ioSurface, const Scene* iActive, const ui::HudLayout& 
 			updateButton(iActive, widget, hovered, node.entity == iFocused, iMousePressed, iClicked);
 		if (widget.hasComponent<component::UiSlider>())
 			updateSlider(iActive, widget, node, hovered, iMousePressed, iMousePos);
+		if (const auto* scroll = scrollOf(iLayout, node); scroll != nullptr && scroll->isList) {
+			const auto row = hovered ? rowUnder(*scroll, iMousePos) : std::nullopt;
+			widget.getComponent<component::UiList>().hoverIndex = row ? static_cast<int32_t>(*row) : -1;
+		}
 	}
 }
 
@@ -267,6 +333,90 @@ auto dragWindow(Scene& ioActive, Scene* iHud, const math::vec2ui& iViewportSize,
 	surface.registry.get<component::UiRect>(state.dragWindow).anchorOffset +=
 			(target - node->bounds.position) / node->scale;
 	return true;
+}
+
+// Move the thumb of a bar so it sits `iGrab` pixels before the mouse along the track.
+void dragThumb(Scene& ioSurface, const ui::HudScroll& iScroll, const bool iVertical, const math::vec2& iMousePos,
+			   const float iGrab) {
+	const auto& geometry = iScroll.geometry;
+	math::vec2 target = iScroll.offset;
+	if (iVertical) {
+		const float start = iMousePos.y() - geometry.verticalTrack.position.y() - iGrab;
+		target.y() = ui::offsetFromThumb(geometry.verticalTrack.size.y(), geometry.viewport.size.y(),
+										 geometry.content.y(), start, iScroll.minThumb);
+	} else {
+		const float start = iMousePos.x() - geometry.horizontalTrack.position.x() - iGrab;
+		target.x() = ui::offsetFromThumb(geometry.horizontalTrack.size.x(), geometry.viewport.size.x(),
+										 geometry.content.x(), start, iScroll.minThumb);
+	}
+	setScrollPixels(ioSurface, iScroll, target);
+}
+
+// A click on a scroll bar grabs its thumb (the track jumps to the click first); a click on a list row selects it.
+void clickScroll(Scene& ioSurface, Scene& ioActive, const bool iInHud, const ui::HudScroll& iScroll,
+				 const math::vec2& iMousePos) {
+	if (const auto bar = barUnder(iScroll, iMousePos); bar != BarHit::None) {
+		const bool vertical = bar == BarHit::Vertical;
+		const auto thumb = vertical ? iScroll.verticalThumb() : iScroll.horizontalThumb();
+		const float along = vertical ? iMousePos.y() - thumb.position.y() : iMousePos.x() - thumb.position.x();
+		const float half = (vertical ? thumb.size.y() : thumb.size.x()) * 0.5f;
+		const float grab = thumb.contains(iMousePos) ? along : half;
+		auto& state = ioActive.getUiInputState();
+		state.dragScroll = iScroll.entity;
+		state.dragScrollInHud = iInHud;
+		state.dragScrollVertical = vertical;
+		state.dragScrollGrab = grab;
+		dragThumb(ioSurface, iScroll, vertical, iMousePos, grab);
+		return;
+	}
+	const auto row = rowUnder(iScroll, iMousePos);
+	if (!row)
+		return;
+	auto& list = ioSurface.registry.get<component::UiList>(iScroll.entity);
+	if (!list.select(static_cast<int64_t>(*row)))
+		return;
+	const std::string callback = list.onSelectCallback;
+	invokeListCallback(&ioSurface, &ioActive, Entity{iScroll.entity, &ioSurface}, callback, "_selected_index",
+					   static_cast<int64_t>(*row) + 1);
+}
+
+// Keep a thumb under the mouse while the button is down; false once the drag is over.
+auto dragScrollBar(Scene& ioActive, Scene* iHud, const math::vec2ui& iViewportSize, const math::vec2& iMousePos,
+				   const bool iMousePressed) -> bool {
+	auto& state = ioActive.getUiInputState();
+	if (state.dragScroll == entt::null)
+		return false;
+	Scene& surface = state.dragScrollInHud && iHud != nullptr ? *iHud : ioActive;
+	const auto& layout = layoutOf(surface, iViewportSize);
+	const auto* node =
+			surface.registry.valid(state.dragScroll) && iMousePressed ? layout.findNode(state.dragScroll) : nullptr;
+	const auto* scroll = node != nullptr ? scrollOf(layout, *node) : nullptr;
+	if (scroll == nullptr) {
+		state.dragScroll = entt::null;
+		return false;
+	}
+	dragThumb(surface, *scroll, state.dragScrollVertical, iMousePos, state.dragScrollGrab);
+	return true;
+}
+
+// Scroll the container under the mouse (or the first one above it that can move) by wheel notches.
+auto scrollWithWheel(Scene& ioSurface, const ui::HudLayout& iLayout, const ui::HudNode* iTop, const math::vec2& iWheel)
+		-> bool {
+	const auto nodes = iLayout.getNodes();
+	for (const auto* node = iTop; node != nullptr;
+		 node = node->parent == ui::HudNode::noParent ? nullptr : &nodes[node->parent]) {
+		const auto* scroll = scrollOf(iLayout, *node);
+		if (scroll == nullptr)
+			continue;
+		const float step = wheelStepOf(ioSurface, *scroll) * scroll->scale;
+		math::vec2 delta{-iWheel.x() * step, -iWheel.y() * step};
+		if (scroll->geometry.maxOffset.y() <= 0.f && delta.x() == 0.f)
+			std::swap(delta.x(), delta.y());
+		if ((delta.x() != 0.f && scroll->geometry.maxOffset.x() > 0.f) ||
+			(delta.y() != 0.f && scroll->geometry.maxOffset.y() > 0.f))
+			return setScrollPixels(ioSurface, *scroll, scroll->offset + delta);
+	}
+	return false;
 }
 
 // The nearest widget at or above the one the mouse is on that carries a tooltip.
@@ -414,12 +564,22 @@ auto isFocusable(const Scene& iSurface, const entt::entity iEntity) -> bool {
 	return focus == nullptr || focus->focusable;
 }
 
-// A widget scrolled out of its clipping panel cannot be reached.
-auto isReachable(const ui::HudNode& iNode) -> bool {
+auto isCutAway(const ui::HudNode& iNode) -> bool {
 	if (!iNode.clipped)
-		return true;
+		return false;
 	const auto visible = iNode.bounds.intersect(iNode.clip);
-	return visible.size.x() > 0.f && visible.size.y() > 0.f;
+	return visible.size.x() <= 0.f || visible.size.y() <= 0.f;
+}
+
+// A widget cut away by its clipping panel cannot be reached; one scrolled out of a scroll view can, the focus scrolls it in.
+auto isReachable(const ui::HudNode& iNode, const ui::HudLayout& iLayout) -> bool {
+	const auto nodes = iLayout.getNodes();
+	for (const auto* node = &iNode; node != nullptr;
+		 node = node->scrollAncestor == ui::HudNode::noParent ? nullptr : &nodes[node->scrollAncestor]) {
+		if (!isCutAway(*node))
+			return true;
+	}
+	return false;
 }
 
 auto isInTopWindow(const ui::HudNode& iNode, const ui::HudLayout& iLayout, const TopWindow& iTop) -> bool {
@@ -430,7 +590,7 @@ auto isInTopWindow(const ui::HudNode& iNode, const ui::HudLayout& iLayout, const
 
 auto canHoldFocus(const Scene& iSurface, const ui::HudNode& iNode, const ui::HudLayout& iLayout, const TopWindow& iTop)
 		-> bool {
-	return isFocusable(iSurface, iNode.entity) && isReachable(iNode) && isInTopWindow(iNode, iLayout, iTop);
+	return isFocusable(iSurface, iNode.entity) && isReachable(iNode, iLayout) && isInTopWindow(iNode, iLayout, iTop);
 }
 
 auto locateFocus(const FocusSurfaces& iSurfaces, const Scene::UiInputState& iState, const TopWindow& iTop)
@@ -599,6 +759,22 @@ void adjustFocusedSlider(Scene& ioActive, const Candidate& iCurrent, const float
 	invokeSliderCallback(iCurrent.surface, &ioActive, widget, callback, newValue);
 }
 
+// Move the selection of the focused list by a row; false when it is not a list or the selection is at its end.
+auto stepListSelection(Scene& ioActive, const Candidate& iCurrent, const int64_t iStep) -> bool {
+	auto* list = iCurrent.surface->registry.try_get<component::UiList>(iCurrent.node->entity);
+	if (list == nullptr)
+		return false;
+	int64_t wanted = list->selectedIndex + iStep;
+	if (list->selectedIndex < 0)
+		wanted = iStep > 0 ? 0 : static_cast<int64_t>(list->itemCount) - 1;
+	if (wanted < 0 || wanted >= static_cast<int64_t>(list->itemCount) || !list->select(wanted))
+		return false;
+	const std::string callback = list->onSelectCallback;
+	invokeListCallback(iCurrent.surface, &ioActive, Entity{iCurrent.node->entity, iCurrent.surface}, callback,
+					   "_selected_index", wanted + 1);
+	return true;
+}
+
 void closeTopWindow(Scene& ioActive, const TopWindow& iTop) {
 	if (iTop.surface == nullptr)
 		return;
@@ -629,6 +805,9 @@ void moveFocus(Scene& ioActive, const FocusSurfaces& iSurfaces, const TopWindow&
 		adjustFocusedSlider(ioActive, iCurrent, iDirection == Direction::Right ? 1.f : -1.f);
 		return;
 	}
+	if (!hasNeighbour && (iDirection == Direction::Up || iDirection == Direction::Down) &&
+		stepListSelection(ioActive, iCurrent, iDirection == Direction::Down ? 1 : -1))
+		return;
 	const auto candidates = collectCandidates(iSurfaces, iTop);
 	const Candidate* target = hasNeighbour ? findByUuid(candidates, neighbour) : nullptr;
 	if (target == nullptr)
@@ -640,6 +819,30 @@ void moveFocus(Scene& ioActive, const FocusSurfaces& iSurfaces, const TopWindow&
 		focusCandidate(ioActive, *target, true);
 }
 
+// Scroll the views above the focused widget so it is in view (once per focus change, when the focus is shown).
+void revealFocus(Scene& ioActive, const Candidate& iCurrent) {
+	auto& state = ioActive.getUiInputState();
+	if (!state.focusVisible || state.revealedFocus == iCurrent.node->entity)
+		return;
+	state.revealedFocus = iCurrent.node->entity;
+	const auto& layout = iCurrent.surface->getHudLayout();
+	const auto nodes = layout.getNodes();
+	const auto& item = iCurrent.node->bounds;
+	for (size_t index = iCurrent.node->scrollAncestor; index != ui::HudNode::noParent;
+		 index = nodes[index].scrollAncestor) {
+		const auto& container = nodes[index];
+		const auto* scroll = scrollOf(layout, container);
+		if (scroll == nullptr || scroll->isList)
+			continue;
+		const auto& viewport = scroll->geometry.viewport;
+		const math::vec2 start = item.position - viewport.position + scroll->offset;
+		const math::vec2 target{
+				ui::revealRange(scroll->offset.x(), viewport.size.x(), start.x(), start.x() + item.size.x()),
+				ui::revealRange(scroll->offset.y(), viewport.size.y(), start.y(), start.y() + item.size.y())};
+		setScrollPixels(*iCurrent.surface, *scroll, target);
+	}
+}
+
 void navigateSurfaces(Scene& ioActive, const FocusSurfaces& iSurfaces, const NavInput& iInput) {
 	auto& state = ioActive.getUiInputState();
 	const TopWindow top = findTopWindow(iSurfaces);
@@ -649,6 +852,7 @@ void navigateSurfaces(Scene& ioActive, const FocusSurfaces& iSurfaces, const Nav
 		acquireFocus(ioActive, iSurfaces, top, wasShown || iInput.startsNavigation());
 		return;
 	}
+	revealFocus(ioActive, *current);
 	if (!iInput.startsNavigation() && !iInput.cancel)
 		return;
 	if (!state.focusVisible) {
@@ -672,8 +876,36 @@ auto surfacesOf(Scene& ioScene, const shared<Scene>& iHud, const math::vec2ui& i
 			.hudLayout = hud != nullptr ? &layoutOf(*hud, iViewportSize) : nullptr};
 }
 
+// Scroll the view holding the focus with the `ui_scroll` action (right stick, Page Up / Page Down).
+void scrollWithAction(Scene& ioScene, const math::vec2ui& iViewportSize, const input::ActionFrame& iActions,
+					  const float iDeltaTime) {
+	static constexpr float actionScrollSpeed = 480.f;
+	if (!iActions.has("ui_scroll"))
+		return;
+	const math::vec2 value = iActions.getVector("ui_scroll");
+	const auto& state = ioScene.getUiInputState();
+	if ((value.x() == 0.f && value.y() == 0.f) || state.focus == entt::null)
+		return;
+	const auto hudHandle = ioScene.getHud();
+	Scene* const surface = state.focusInHud && hudHandle ? hudHandle.get() : &ioScene;
+	if (!surface->registry.valid(state.focus))
+		return;
+	const auto& layout = layoutOf(*surface, iViewportSize);
+	const auto* node = layout.findNode(state.focus);
+	for (const auto nodes = layout.getNodes(); node != nullptr;
+		 node = node->scrollAncestor == ui::HudNode::noParent ? nullptr : &nodes[node->scrollAncestor]) {
+		const auto* scroll = scrollOf(layout, *node);
+		if (scroll == nullptr)
+			continue;
+		const math::vec2 delta = value * (actionScrollSpeed * scroll->scale * iDeltaTime);
+		if (setScrollPixels(*surface, *scroll, scroll->offset + delta))
+			return;
+	}
+}
+
 void navigateFrame(Scene& ioScene, const math::vec2ui& iViewportSize, const input::ActionFrame& iActions,
 				   const float iDeltaTime) {
+	scrollWithAction(ioScene, iViewportSize, iActions, iDeltaTime);
 	auto& state = ioScene.getUiInputState();
 	const NavInput input = readNavInput(state, iActions, iDeltaTime);
 	const bool starting = !state.focusStarted;
@@ -691,6 +923,36 @@ void navigateFrame(Scene& ioScene, const math::vec2ui& iViewportSize, const inpu
 	navigateSurfaces(ioScene, surfaces, input);
 }
 
+// Ask for the rows of the lists that are in view and were never filled.
+void bindVisibleRows(Scene& ioSurface, const Scene* iActive, const ui::HudLayout& iLayout) {
+	std::vector<size_t> pending;
+	for (const auto& scroll: iLayout.getScrolls()) {
+		if (!scroll.isList || !ioSurface.registry.valid(scroll.entity))
+			continue;
+		auto& list = ioSurface.registry.get<component::UiList>(scroll.entity);
+		if (list.onBindCallback.empty() || list.itemCount == 0)
+			continue;
+		list.rows.resize(list.itemCount);
+		const float offset = std::clamp(list.scrollOffset * scroll.scale, 0.f, scroll.geometry.maxOffset.y());
+		const auto [first, end] = ui::visibleRows(offset, scroll.geometry.viewport.size.y(), scroll.rowHeight,
+												  scroll.rowSpacing, scroll.rowCount);
+		pending.clear();
+		for (size_t row = first; row < end; ++row) {
+			if (!list.rows[row].bound) {
+				list.rows[row].bound = true;
+				pending.push_back(row);
+			}
+		}
+		const std::string callback = list.onBindCallback;
+		for (const auto row: pending) {
+			if (!ioSurface.registry.valid(scroll.entity))
+				break;
+			invokeListCallback(&ioSurface, iActive, Entity{scroll.entity, &ioSurface}, callback, "_row_index",
+							   static_cast<int64_t>(row) + 1);
+		}
+	}
+}
+
 // The mouse takes the focus where it moves or clicks, and hides its highlight.
 void focusUnderMouse(Scene& ioActive, const Candidate& iHovered) {
 	if (isFocusable(*iHovered.surface, iHovered.node->entity))
@@ -700,7 +962,7 @@ void focusUnderMouse(Scene& ioActive, const Candidate& iHovered) {
 }// namespace
 
 void UiInputSystem::update(Scene* iScene, const math::vec2ui& iViewportSize, const math::vec2& iMousePos,
-						   const bool iMousePressed, const float iDeltaTime) {
+						   const bool iMousePressed, const float iDeltaTime, const math::vec2& iWheel) {
 	OWL_PROFILE_FUNCTION()
 
 	if (iScene == nullptr)
@@ -720,7 +982,8 @@ void UiInputSystem::update(Scene* iScene, const math::vec2ui& iViewportSize, con
 	// The HUD asset is drawn over the scene: a widget of it takes the mouse before the scene's own.
 	const auto hudHandle = iScene->getHud();
 	Scene* const hud = hudHandle && hudHandle.get() != iScene ? hudHandle.get() : nullptr;
-	const bool dragging = dragWindow(*iScene, hud, iViewportSize, iMousePos, iMousePressed);
+	const bool dragging = dragWindow(*iScene, hud, iViewportSize, iMousePos, iMousePressed) ||
+						  dragScrollBar(*iScene, hud, iViewportSize, iMousePos, iMousePressed);
 	const ui::HudLayout* hudLayout = hud != nullptr ? &layoutOf(*hud, iViewportSize) : nullptr;
 	const auto& layout = layoutOf(*iScene, iViewportSize);
 	const Probe hudProbe = hud != nullptr && !dragging ? probeSurface(*hud, *hudLayout, iMousePos) : Probe{};
@@ -730,6 +993,20 @@ void UiInputSystem::update(Scene* iScene, const math::vec2ui& iViewportSize, con
 			clickWindow(*hud, *iScene, true, hudProbe, iMousePos);
 		else if (sceneProbe.window != nullptr)
 			clickWindow(*iScene, *iScene, false, sceneProbe, iMousePos);
+	}
+	if (clicked && !dragging) {
+		const bool inHud = hudProbe.interactive != nullptr;
+		const Probe& probe = inHud ? hudProbe : sceneProbe;
+		Scene* const surface = inHud ? hud : iScene;
+		const auto& surfaceLayout = inHud ? *hudLayout : layout;
+		if (const auto* scroll = probe.interactive != nullptr ? scrollOf(surfaceLayout, *probe.interactive) : nullptr;
+			scroll != nullptr)
+			clickScroll(*surface, *iScene, inHud, *scroll, iMousePos);
+	}
+	if (iWheel.x() != 0.f || iWheel.y() != 0.f) {
+		const bool scrolled = hud != nullptr && scrollWithWheel(*hud, *hudLayout, hudProbe.top, iWheel);
+		if (!scrolled && !hudProbe.consumes())
+			scrollWithWheel(*iScene, layout, sceneProbe.top, iWheel);
 	}
 	if ((mouseMoved || clicked) && !dragging) {
 		if (hudProbe.interactive != nullptr)
@@ -747,6 +1024,9 @@ void UiInputSystem::update(Scene* iScene, const math::vec2ui& iViewportSize, con
 		updateWidgets(*hud, iScene, *hudLayout, hudProbe.interactive, shownFocus(true), iMousePos, iMousePressed,
 					  clicked);
 	state.consuming = dragging || hudProbe.consumes() || sceneProbe.consumes();
+	bindVisibleRows(*iScene, iScene, layout);
+	if (hud != nullptr)
+		bindVisibleRows(*hud, iScene, *hudLayout);
 
 	entt::entity tooltip = entt::null;
 	bool tooltipInHud = false;

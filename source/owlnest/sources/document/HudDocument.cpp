@@ -59,7 +59,7 @@ auto parentArea(const scene::ui::HudLayout& iLayout, const HudNode& iNode, const
 		-> UiRect::Bounds {
 	if (iNode.parent == HudNode::noParent)
 		return {.position = {0.f, 0.f}, .size = {static_cast<float>(iScreen.x()), static_cast<float>(iScreen.y())}};
-	return iLayout.getNodes()[iNode.parent].content;
+	return iLayout.getNodes()[iNode.parent].childArea();
 }
 
 auto toReference(const UiRect::Bounds& iBounds, const float iScale) -> UiRect::Bounds {
@@ -310,7 +310,7 @@ void HudDocument::collectCandidates(const scene::Scene& iScene, Drag& ioDrag) co
 		const auto entity = iScene.findEntityByUUID(ioDrag.items.back().entity);
 		if (const auto* primary = entity ? layout.findNode(static_cast<entt::entity>(entity)) : nullptr;
 			primary != nullptr && primary->parent != HudNode::noParent)
-			addBox(nodes[primary->parent].content);
+			addBox(nodes[primary->parent].childArea());
 	}
 }
 
@@ -555,7 +555,8 @@ auto HudDocument::addWidget(scene::Scene& ioScene, const commands::CommandTarget
 	const HudNode* container = hit;
 	while (container != nullptr) {
 		const auto entity = scene::Entity{container->entity, &ioScene};
-		if (entity.hasComponent<scene::component::UiWindow>() || entity.hasComponent<scene::component::UiPanel>())
+		if (entity.hasComponent<scene::component::UiWindow>() || entity.hasComponent<scene::component::UiPanel>() ||
+			entity.hasComponent<scene::component::UiScrollView>())
 			break;
 		container = container->parent == HudNode::noParent ? nullptr : &nodes[container->parent];
 	}
@@ -565,7 +566,7 @@ auto HudDocument::addWidget(scene::Scene& ioScene, const commands::CommandTarget
 	float scale = scene::component::Canvas{}.getScale(screen);
 	if (container != nullptr) {
 		args.set("parent", toArg(uuidOf(ioScene, container->entity)));
-		origin = container->content.position;
+		origin = container->childArea().position;
 		scale = container->scale;
 	} else if (hit != nullptr) {
 		args.set("parent", toArg(uuidOf(ioScene, hit->canvas)));

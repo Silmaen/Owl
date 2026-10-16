@@ -22,8 +22,10 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <format>
 #include <optional>
 #include <string>
+#include <vector>
 
 namespace owl::scene::ui {
 
@@ -134,7 +136,77 @@ void drawSlider(const component::UiSlider& iSlider, const math::Transform& iTran
 	renderer::Renderer2D::drawQuad({.transform = handle, .color = iSlider.handleColor, .entityId = iEntityId});
 }
 
-void drawWidget(const Entity& iEntity, const HudNode& iNode, const math::Transform& iTransform, const float iHeight) {
+// One bar: its track and, when the content overflows, its thumb.
+void drawBar(const component::UiRect::Bounds& iTrack, const component::UiRect::Bounds& iThumb, const HudScroll& iScroll,
+			 const float iHeight, const int iEntityId) {
+	if (iTrack.size.x() <= 0.f || iTrack.size.y() <= 0.f)
+		return;
+	renderer::Renderer2D::drawQuad(
+			{.transform = pixelTransform(iTrack, iHeight), .color = iScroll.trackColor, .entityId = iEntityId});
+	renderer::Renderer2D::drawQuad(
+			{.transform = pixelTransform(iThumb, iHeight), .color = iScroll.thumbColor, .entityId = iEntityId});
+}
+
+void drawScrollBars(const HudScroll& iScroll, const float iHeight, const int iEntityId) {
+	const auto& geometry = iScroll.geometry;
+	if (geometry.verticalBar)
+		drawBar(geometry.verticalTrack, iScroll.verticalThumb(), iScroll, iHeight, iEntityId);
+	if (geometry.horizontalBar)
+		drawBar(geometry.horizontalTrack, iScroll.horizontalThumb(), iScroll, iHeight, iEntityId);
+}
+
+// The background and the texts of the rows in view; the others are never touched.
+void drawListRow(const component::UiList& iList, const size_t iRow, const component::UiRect::Bounds& iRowBox,
+				 const float iScale, const float iHeight, const int iEntityId) {
+	const auto index = static_cast<int32_t>(iRow);
+	math::vec4 background = iRow % 2 == 0 ? iList.rowColor : iList.rowAltColor;
+	if (index == iList.selectedIndex)
+		background = iList.selectedColor;
+	else if (index == iList.hoverIndex)
+		background = iList.hoverColor;
+	renderer::Renderer2D::drawQuad(
+			{.transform = pixelTransform(iRowBox, iHeight), .color = background, .entityId = iEntityId});
+	const auto* row = iList.findRow(iRow);
+	const float margin = 6.f * iScale;
+	float left = iRowBox.position.x() + margin;
+	if (row != nullptr && row->icon) {
+		const float side = std::max(0.f, iRowBox.size.y() - 4.f * iScale);
+		const component::UiRect::Bounds iconBox{.position = {left, iRowBox.position.y() + 2.f * iScale},
+												.size = {side, side}};
+		renderer::Renderer2D::drawQuad({.transform = pixelTransform(iconBox, iHeight),
+										.color = {1.f, 1.f, 1.f, 1.f},
+										.texture = row->icon,
+										.entityId = iEntityId});
+		left += side + margin;
+	}
+	const float right = iRowBox.position.x() + iRowBox.size.x() - margin;
+	const component::UiRect::Bounds textBox{.position = {left, iRowBox.position.y()},
+											.size = {std::max(0.f, right - left), iRowBox.size.y()}};
+	const std::string text = row != nullptr ? row->text : std::format("Item {}", iRow + 1);
+	drawBoxedText(textBox, iScale, iHeight, text, iList.textColor, iList.fontSize,
+				  data::fonts::HorizontalAlignment::Left, iEntityId);
+	if (row != nullptr && !row->detail.empty())
+		drawBoxedText(textBox, iScale, iHeight, row->detail, iList.textColor, iList.fontSize,
+					  data::fonts::HorizontalAlignment::Right, iEntityId);
+}
+
+void drawList(const component::UiList& iList, const HudNode& iNode, const HudScroll& iScroll, const float iHeight,
+			  const int iEntityId) {
+	const auto& viewport = iScroll.geometry.viewport;
+	const float pitch = iScroll.rowHeight + iScroll.rowSpacing;
+	const auto [first, end] =
+			visibleRows(iScroll.offset.y(), viewport.size.y(), iScroll.rowHeight, iScroll.rowSpacing, iScroll.rowCount);
+	for (size_t row = first; row < end; ++row) {
+		const component::UiRect::Bounds box{
+				.position = {viewport.position.x(),
+							 viewport.position.y() + static_cast<float>(row) * pitch - iScroll.offset.y()},
+				.size = {viewport.size.x(), iScroll.rowHeight}};
+		drawListRow(iList, row, box, iNode.scale, iHeight, iEntityId);
+	}
+}
+
+void drawWidget(const Entity& iEntity, const HudNode& iNode, const math::Transform& iTransform, const float iHeight,
+				const HudScroll* iScroll) {
 	const int entityId = static_cast<int>(static_cast<entt::entity>(iEntity));
 	if (iEntity.hasComponent<component::UiWindow>())
 		drawWindow(iEntity.getComponent<component::UiWindow>(), iNode, iHeight, entityId);
@@ -184,6 +256,10 @@ void drawWidget(const Entity& iEntity, const HudNode& iNode, const math::Transfo
 	}
 	if (iEntity.hasComponent<component::UiSlider>())
 		drawSlider(iEntity.getComponent<component::UiSlider>(), iTransform, entityId);
+	if (iScroll != nullptr && iScroll->isList) {
+		drawList(iEntity.getComponent<component::UiList>(), iNode, *iScroll, iHeight, entityId);
+		drawScrollBars(*iScroll, iHeight, entityId);
+	}
 }
 
 // Pixel rectangle of a clip, rounded outwards and kept inside the viewport.
@@ -213,21 +289,52 @@ void drawCanvases(Scene& ioScene, const math::vec2ui& iViewport, const bool iEdi
 	// A window is a batch of its own (its text over the quads of the windows below); a clip is a scissor.
 	size_t window = HudNode::noParent;
 	std::optional<component::UiRect::Bounds> clip;
-	for (const auto& node: layout.getNodes()) {
-		const std::optional<component::UiRect::Bounds> wanted = node.clipped ? std::optional{node.clip} : std::nullopt;
-		const bool clipChanged = wanted.has_value() != clip.has_value() ||
-								 (wanted && (wanted->position != clip->position || wanted->size != clip->size));
-		if (clipChanged) {
-			if (wanted)
-				renderer::Renderer2D::setScissor(scissorOf(*wanted, iViewport));
-			else
-				renderer::Renderer2D::clearScissor();
-			clip = wanted;
-		} else if (node.window != window)
+	const auto nodes = layout.getNodes();
+	const auto scrolls = layout.getScrolls();
+	const auto setClip = [&clip, &iViewport](const std::optional<component::UiRect::Bounds>& iWanted) -> bool {
+		const bool changed = iWanted.has_value() != clip.has_value() ||
+							 (iWanted && (iWanted->position != clip->position || iWanted->size != clip->size));
+		if (!changed)
+			return false;
+		if (iWanted)
+			renderer::Renderer2D::setScissor(scissorOf(*iWanted, iViewport));
+		else
+			renderer::Renderer2D::clearScissor();
+		clip = iWanted;
+		return true;
+	};
+	const auto ownClip = [](const HudNode& iNode) -> std::optional<component::UiRect::Bounds> {
+		return iNode.clipped ? std::optional{iNode.clip} : std::nullopt;
+	};
+	// Scroll views draw their bars once their children are drawn, so the bars lie over the content.
+	std::vector<size_t> pendingBars;
+	const auto isBelow = [&nodes](size_t iIndex, const size_t iAncestor) -> bool {
+		while (iIndex != HudNode::noParent && iIndex != iAncestor) iIndex = nodes[iIndex].parent;
+		return iIndex == iAncestor;
+	};
+	const auto flushBars = [&](const size_t iNext) -> void {
+		while (!pendingBars.empty() && (iNext == nodes.size() || !isBelow(iNext, pendingBars.back()))) {
+			const auto& owner = nodes[pendingBars.back()];
+			setClip(ownClip(owner));
+			drawScrollBars(scrolls[owner.scroll], height, static_cast<int>(static_cast<entt::entity>(owner.entity)));
+			pendingBars.pop_back();
+		}
+	};
+	for (size_t index = 0; index < nodes.size(); ++index) {
+		const auto& node = nodes[index];
+		flushBars(index);
+		const HudScroll* scroll = node.scroll != HudNode::noParent ? &scrolls[node.scroll] : nullptr;
+		auto wanted = ownClip(node);
+		if (scroll != nullptr && scroll->isList)
+			wanted = node.clipped ? node.bounds.intersect(node.clip) : node.bounds;
+		if (!setClip(wanted) && node.window != window)
 			renderer::Renderer2D::nextBatch();
 		window = node.window;
-		drawWidget(Entity{node.entity, &ioScene}, node, pixelTransform(node.bounds, height), height);
+		drawWidget(Entity{node.entity, &ioScene}, node, pixelTransform(node.bounds, height), height, scroll);
+		if (scroll != nullptr && !scroll->isList)
+			pendingBars.push_back(index);
 	}
+	flushBars(nodes.size());
 	renderer::Renderer2D::endScene();
 }
 

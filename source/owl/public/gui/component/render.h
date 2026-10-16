@@ -230,6 +230,20 @@ OWL_API void renderProps(scene::component::UiLayout& ioComponent);
  *  Render a Gui for editing the component.
  * @param ioComponent The component to edit.
  */
+OWL_API void renderProps(scene::component::UiScrollView& ioComponent);
+
+/**
+ * @brief
+ *  Render a Gui for editing the component: the model size, the rows, the colours and the callbacks.
+ * @param ioComponent The component to edit.
+ */
+OWL_API void renderProps(scene::component::UiList& ioComponent);
+
+/**
+ * @brief
+ *  Render a Gui for editing the component.
+ * @param ioComponent The component to edit.
+ */
 OWL_API void renderProps(scene::component::UiTooltip& ioComponent);
 
 /**
@@ -313,7 +327,7 @@ using DrawableComponents =
 				   scene::component::UiImage, scene::component::UiPanel, scene::component::UiButton,
 				   scene::component::UiSlider, scene::component::UiProgressBar, scene::component::UiWindow,
 				   scene::component::UiLayout, scene::component::UiTooltip, scene::component::UiToolCursor,
-				   scene::component::UiFocus>;
+				   scene::component::UiFocus, scene::component::UiScrollView, scene::component::UiList>;
 
 
 }// namespace owl::gui::component

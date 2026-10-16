@@ -3,7 +3,7 @@
 [TOC]
 
 Design page for the v0.4.0 HUD overhaul and the text work it relies on, summarised in the [Roadmap](../roadmap.md).
-The pull requests and their order are in [Isometric worlds](isometric-worlds.md) (TX1, TX2, HUD1 to HUD6).
+The pull requests and their order are in [Isometric worlds](isometric-worlds.md) (TX1, TX2, HUD1 to HUD7).
 
 ## Goal
 
@@ -201,6 +201,51 @@ Keyboard and gamepad focus on buttons and sliders, driven by the built-in `ui_up
 - The dead `UiPanel::layout`, `spacing` and `padding` are gone; old files keep loading (unknown keys are ignored).
 - The empty raycast hint of `raycast_demo.owl` is fixed: its HUD now carries the walk, turn and interact keys.
 
+## Scroll views and virtualised lists (HUD7, done)
+
+- **`UiScrollView`.** The children are laid out in the viewport (the rectangle minus the bars the overflow needs),
+  shifted by `scrollOffset`, and clipped to it by the same scissor as a window: a click, a hover or the focus reaches
+  only what is in view. The content is `contentSize`, or, on an axis left at 0, the extent of the children a
+  `UiLayout` of the same widget places (a column of buttons scrolls with no size to write), or else the viewport.
+  `HudLayout` keeps the offset inside the content and writes it back to the component.
+- **`UiList`.** A model of `itemCount` rows of `rowHeight` and `rowSpacing`, drawn by the pass: only
+  `visibleRows` (the rows at least partly in view) are drawn, hit-tested and bound, whatever the count (a 1000-row list
+  costs the same as a 10-row one). A row holds a text, a right-aligned detail and an icon (`UiListRow`), filled from
+  Lua by `ui.list_set_row`; the engine calls `onBindCallback` once for a row in view that nobody filled
+  (`_list_entity`, `_row_index`, 1-based), so a script builds the row it is asked for and nothing else. A row not filled
+  shows `Item N`. `ui.list_invalidate` binds the rows in view again after the data changed. There is no row template
+  entity: the rows are drawn by the engine, which keeps a row at a few quads.
+- **Input.** The wheel scrolls the nearest container above the widget under the mouse that can move (`wheelStep`
+  reference pixels per notch; a view that only scrolls sideways takes the vertical wheel); a bar is dragged by its
+  thumb and a click on its track brings the thumb there. A click on a list row selects it and runs `onSelectCallback`
+  (`_list_entity`, `_selected_index`, 1-based); the hovered row is lit. `UiInputSystem::update` takes the wheel of the
+  frame (`Input::readState().wheel` in the runner, ImGui in the editor viewport).
+- **Focus.** A list takes the focus like a button: `ui_up` / `ui_down` step the selection (and scroll it into view),
+  and past the first or last row the focus moves on to the next widget. A widget scrolled out of a `UiScrollView` stays
+  reachable (it is not cut away by a clipping panel): moving the focus to it scrolls the view just enough to show it,
+  once per focus change and only while the focus is shown, so the mouse never scrolls by hovering. The new built-in
+  `ui_scroll` action (right stick, Page Up / Page Down) scrolls the view or list holding the focus.
+- **Look.** The bar track and thumb are drawn after the content of the view, over it, with the clip of the view.
+- **Saves.** `scrollOffset`, `selectedIndex` and `itemCount` are component fields of the HUD entity, hence saved with
+  its widget values; the rows are not, a script binds them again (they are asked for once the list is loaded).
+- **Editor.** Scroll View (a panel with a column `UiLayout`) and List are in the HUD editor palette and in
+  `hud.add_widget` (`scroll_view`, `list`); every field is in the inspector, undoable through `component.set`, and a
+  widget dropped into a scroll view lands in its scrolled content. The gizmo and `keep_bounds` read the parent rectangle
+  shifted by the scroll (`HudNode::childArea`). The preview shows `Item N` rows from `itemCount`.
+- **Format.** New components only: scene and `.owlhud` files need no migration step.
+
+Implementation notes:
+
+- `scene/ui/ScrollMath.h` holds the pure maths (offset clamp, thumb length and position, reveal of a range, geometry of
+  the viewport and bars, visible rows, row at a position); `HudLayout` adds a `HudScroll` per container
+  (`getScrolls`, `HudNode::scroll`, `scrollOffset`, `scrollAncestor`) that the pass, the input system and Lua read.
+- The pass draws the rows of a list in its own scissor (bounds clipped by the ancestors) and the bars of a scroll view
+  once its last descendant is drawn.
+- A bar is interactive for the hit-test, so it takes the click before the widgets and the world under it.
+- Tests: `ScrollMath_test.cpp`, `HudScroll_test.cpp` (layout, clipping, hit-testing through the clip, wheel, bars,
+  focus, virtualisation counted in quads), `LuaScrollList_test.cpp`, the `hud.add_widget` and `component.set` cases of
+  `CommandRegistry_test.cpp`, bench `hud/frame/1000_row_list`.
+
 ## Inventory demo (DEMO1)
 
 Done. Collectible objects, key-locked switches and an inventory window with slots in `sample_project/`, in Lua only,
@@ -215,6 +260,9 @@ navigable with the gamepad (`scenes/inventory_demo.owl`, **N** or Back from the 
   closes (`onCloseCallback`), `onFocusCallback` updates the info text. The player is still while it is open.
 - **State.** The inventory is the gamestate keys `inv_<item>` (counts), so a save keeps it; `picked_<tag>` and
   `unlocked_<tag>` keep taken items and opened locks, F6 / F9 quick-save and load slot 2.
+- **Journal.** A `UiList` under the info text lists every message of the game (pick-ups, doors, saves), grown by
+  `inventory.lua` with `ui.list_set_count`, scrolled to the newest, its rows bound on demand (`onBindCallback`); a
+  selected line shows in full in the info text.
 - **Scripts.** `pickup.lua` (`Trigger.Type=LuaCallback`), `lock.lua` (`Trigger.Type=Interaction`, E / X, a `key` and a
   `target` property), `inventory.lua` (window, toast, save keys), `inventory_player.lua`. Scenario
   `test/scenarios/inventory_demo.owltest` picks a key, opens the window, navigates it and opens the door and the vault.
@@ -228,7 +276,7 @@ resolutions, the HUD editor commands, and a bench at 500 widgets.
 
 ## Later
 
-- v0.4.0: scroll views and virtualised lists (vehicle lists), the draw-order sort key across primitives.
+- v0.4.0: the draw-order sort key across primitives (scroll views and virtualised lists shipped with HUD7).
 - v0.5.0: a minimap on a render target, a live scene backdrop in the HUD editor.
 - v0.6.0: docking and saved window layouts for in-game windows.
 - v0.8.0: controller remapping UI on the HUD widgets.

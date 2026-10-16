@@ -296,8 +296,10 @@ void Viewport::onUpdate(const core::Timestep& iTimeStep) {
 				const bool flipped = renderer::gpu::RenderCommand::getApi() == renderer::gpu::RenderAPI::Type::OpenGL;
 				const math::vec2 vpMouse = {mx, flipped ? viewportSizeInternal.y() - my : my};
 				const bool mousePressed = ImGui::IsMouseDown(ImGuiMouseButton_Left);
+				const math::vec2 wheel = m_hovered ? math::vec2{ImGui::GetIO().MouseWheelH, ImGui::GetIO().MouseWheel}
+												   : math::vec2{0.f, 0.f};
 				scene::UiInputSystem::update(activeScene.get(), m_framebuffer->getSpecification().size, vpMouse,
-											 mousePressed, iTimeStep.getSeconds());
+											 mousePressed, iTimeStep.getSeconds(), wheel);
 				activeScene->onUpdateRuntime(iTimeStep);
 				// Handle quit request from Lua (scene.quit()) → request stop.
 				if (activeScene->quitRequested)

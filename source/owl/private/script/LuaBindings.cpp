@@ -28,6 +28,7 @@
 #include "scene/TilemapTerrain.h"
 #include "scene/UiInputSystem.h"
 #include "scene/component/components.h"
+#include "scene/ui/HudLayout.h"
 #include "script/LuaEngine.h"
 #include "script/ScriptEngine.h"
 #include "sound/SoundCommand.h"
@@ -617,6 +618,10 @@ auto luaEntityHasComponent(lua_State* iState) -> int {
 		has = entity->hasComponent<scene::component::UiToolCursor>();
 	else if (compName == "UiFocus")
 		has = entity->hasComponent<scene::component::UiFocus>();
+	else if (compName == "UiScrollView")
+		has = entity->hasComponent<scene::component::UiScrollView>();
+	else if (compName == "UiList")
+		has = entity->hasComponent<scene::component::UiList>();
 	lua_pushboolean(iState, has ? 1 : 0);
 	return 1;
 }
@@ -718,6 +723,113 @@ auto luaUiSetButtonEnabled(lua_State* iState) -> int {
 													 : scene::component::UiButton::State::Disabled;
 	}
 	return 0;
+}
+
+auto luaUiScrollGet(lua_State* iState) -> int {
+	lua_Number x = 0;
+	lua_Number y = 0;
+	if (const auto entity = findEntity(iState)) {
+		if (entity->hasComponent<scene::component::UiScrollView>()) {
+			const auto& offset = entity->getComponent<scene::component::UiScrollView>().scrollOffset;
+			x = static_cast<lua_Number>(offset.x());
+			y = static_cast<lua_Number>(offset.y());
+		} else if (entity->hasComponent<scene::component::UiList>()) {
+			y = static_cast<lua_Number>(entity->getComponent<scene::component::UiList>().scrollOffset);
+		}
+	}
+	lua_pushnumber(iState, x);
+	lua_pushnumber(iState, y);
+	return 2;
+}
+
+auto luaUiScrollSet(lua_State* iState) -> int {
+	const auto x = static_cast<float>(luaL_checknumber(iState, 2));
+	const auto y = static_cast<float>(luaL_checknumber(iState, 3));
+	if (const auto entity = findEntity(iState)) {
+		if (entity->hasComponent<scene::component::UiScrollView>())
+			entity->getComponent<scene::component::UiScrollView>().scrollOffset = {x, y};
+		else if (entity->hasComponent<scene::component::UiList>())
+			entity->getComponent<scene::component::UiList>().scrollOffset = y;
+	}
+	return 0;
+}
+
+auto luaUiListSetCount(lua_State* iState) -> int {
+	const auto count = luaL_checkinteger(iState, 2);
+	if (const auto entity = findEntity(iState); entity && entity->hasComponent<scene::component::UiList>())
+		entity->getComponent<scene::component::UiList>().setCount(
+				static_cast<uint32_t>(std::max<lua_Integer>(count, 0)));
+	return 0;
+}
+
+auto luaUiListGetCount(lua_State* iState) -> int {
+	lua_Integer count = 0;
+	if (const auto entity = findEntity(iState); entity && entity->hasComponent<scene::component::UiList>())
+		count = static_cast<lua_Integer>(entity->getComponent<scene::component::UiList>().itemCount);
+	lua_pushinteger(iState, count);
+	return 1;
+}
+
+auto luaUiListSetRow(lua_State* iState) -> int {
+	const auto index = luaL_checkinteger(iState, 2);
+	const std::string text = luaL_checkstring(iState, 3);
+	const std::string detail = luaL_optstring(iState, 4, "");
+	const std::string icon = luaL_optstring(iState, 5, "");
+	const auto entity = findEntity(iState);
+	if (!entity || !entity->hasComponent<scene::component::UiList>())
+		return 0;
+	auto& list = entity->getComponent<scene::component::UiList>();
+	if (index < 1 || index > static_cast<lua_Integer>(list.itemCount))
+		return 0;
+	list.rows.resize(list.itemCount);
+	auto& row = list.rows[static_cast<size_t>(index) - 1];
+	row.text = text;
+	row.detail = detail;
+	row.icon = list.loadIcon(icon);
+	row.bound = true;
+	return 0;
+}
+
+auto luaUiListInvalidate(lua_State* iState) -> int {
+	if (const auto entity = findEntity(iState); entity && entity->hasComponent<scene::component::UiList>())
+		entity->getComponent<scene::component::UiList>().invalidateRows();
+	return 0;
+}
+
+auto luaUiListGetSelected(lua_State* iState) -> int {
+	lua_Integer selected = 0;
+	if (const auto entity = findEntity(iState); entity && entity->hasComponent<scene::component::UiList>())
+		selected = static_cast<lua_Integer>(entity->getComponent<scene::component::UiList>().selectedIndex) + 1;
+	lua_pushinteger(iState, selected);
+	return 1;
+}
+
+auto luaUiListSetSelected(lua_State* iState) -> int {
+	const auto index = luaL_checkinteger(iState, 2);
+	if (const auto entity = findEntity(iState); entity && entity->hasComponent<scene::component::UiList>())
+		entity->getComponent<scene::component::UiList>().select(index - 1);
+	return 0;
+}
+
+auto luaUiListGetVisible(lua_State* iState) -> int {
+	lua_Integer first = 0;
+	lua_Integer last = 0;
+	if (const auto entity = findEntity(iState); entity && entity->hasComponent<scene::component::UiList>()) {
+		const auto& layout = entity->getScene()->getHudLayout();
+		if (const auto* node = layout.findNode(static_cast<entt::entity>(*entity));
+			node != nullptr && node->scroll != scene::ui::HudNode::noParent) {
+			const auto& scroll = layout.getScrolls()[node->scroll];
+			const auto [begin, end] = scene::ui::visibleRows(scroll.offset.y(), scroll.geometry.viewport.size.y(),
+															 scroll.rowHeight, scroll.rowSpacing, scroll.rowCount);
+			if (end > begin) {
+				first = static_cast<lua_Integer>(begin) + 1;
+				last = static_cast<lua_Integer>(end);
+			}
+		}
+	}
+	lua_pushinteger(iState, first);
+	lua_pushinteger(iState, last);
+	return 2;
 }
 
 auto luaUiTransitionFadeIn(lua_State* iState) -> int {
@@ -1439,6 +1551,37 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		 .returns = {{"entity_id", Entity}}},
 		{.table = "ui", .name = "set_button_enabled", .function = guarded<luaUiSetButtonEnabled>,
 		 .description = "Enable or disable a `UiButton`.", .params = {entityId, {"enabled", Boolean}}},
+		{.table = "ui", .name = "scroll_get", .function = guarded<luaUiScrollGet>,
+		 .description = "Scroll offset of a `UiScrollView` (a `UiList` has `y` only), in reference pixels from the top "
+						"left of the content.",
+		 .params = {entityId}, .returns = {{"x", Number}, {"y", Number}}},
+		{.table = "ui", .name = "scroll_set", .function = guarded<luaUiScrollSet>,
+		 .description = "Scroll a `UiScrollView` or a `UiList` to an offset, in reference pixels; it is kept inside the "
+						"content when the HUD is laid out.",
+		 .params = {entityId, {"x", Number}, {"y", Number}}},
+		{.table = "ui", .name = "list_set_count", .function = guarded<luaUiListSetCount>,
+		 .description = "Set the number of rows of a `UiList`; the rows kept stay filled, a selection past the end is "
+						"dropped.",
+		 .params = {entityId, {"count", Integer}}},
+		{.table = "ui", .name = "list_get_count", .function = guarded<luaUiListGetCount>,
+		 .description = "Number of rows of a `UiList`.", .params = {entityId}, .returns = {{"count", Integer}}},
+		{.table = "ui", .name = "list_set_row", .function = guarded<luaUiListSetRow>,
+		 .description = "Fill a row of a `UiList` (1-based): its text, a right-aligned detail and an icon texture path. "
+						"Only the rows in view need it, from the list's `onBindCallback` (reads `_row_index`).",
+		 .params = {entityId, {"index", Integer}, {"text", String}, {"detail", String, true}, {"icon", String, true}}},
+		{.table = "ui", .name = "list_invalidate", .function = guarded<luaUiListInvalidate>,
+		 .description = "Forget what the rows of a `UiList` show: the ones in view are bound again.",
+		 .params = {entityId}},
+		{.table = "ui", .name = "list_get_selected", .function = guarded<luaUiListGetSelected>,
+		 .description = "Selected row of a `UiList`, 1-based (0 for none).", .params = {entityId},
+		 .returns = {{"index", Integer}}},
+		{.table = "ui", .name = "list_set_selected", .function = guarded<luaUiListSetSelected>,
+		 .description = "Select a row of a `UiList`, 1-based (0 or out of range for none) and scroll it into view; "
+						"`onSelectCallback` does not run.",
+		 .params = {entityId, {"index", Integer}}},
+		{.table = "ui", .name = "list_get_visible", .function = guarded<luaUiListGetVisible>,
+		 .description = "Rows of a `UiList` in view at the last frame drawn, 1-based and inclusive (0, 0 when none).",
+		 .params = {entityId}, .returns = {{"first", Integer}, {"last", Integer}}},
 		{.table = "ui", .name = "transition_fade_in", .function = guarded<luaUiTransitionFadeIn>,
 		 .description = "Start a fade-in screen transition.", .params = {{"duration", Number}}},
 		{.table = "ui", .name = "transition_fade_out", .function = guarded<luaUiTransitionFadeOut>,

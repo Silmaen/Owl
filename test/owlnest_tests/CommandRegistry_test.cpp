@@ -22,11 +22,15 @@
 #include <scene/component/Tag.h>
 #include <scene/component/Transform.h>
 #include <scene/component/UiButton.h>
+#include <scene/component/UiLayout.h>
+#include <scene/component/UiList.h>
 #include <scene/component/UiRect.h>
+#include <scene/component/UiScrollView.h>
 #include <scene/component/UiText.h>
 
 #include <gtest/gtest.h>
 
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
@@ -524,6 +528,60 @@ TEST_F(HudCommandsTest, AddWidgetUsesTheGivenParentAnchorAndOffset) {
 	EXPECT_FLOAT_EQ(rectOf(label).size.y(), 20.f);
 	EXPECT_EQ(m_scene->registry.view<scene::component::Canvas>().size(), 1u);
 	EXPECT_EQ(panel.getComponent<scene::component::Hierarchy>().childrenIds.size(), 1u);
+}
+
+TEST_F(HudCommandsTest, AddWidgetMakesAScrollViewAndAListAndUndoes) {
+	const auto before = count();
+	const auto view = addWidget("scroll_view");
+	ASSERT_TRUE(view);
+	EXPECT_TRUE(view.hasComponent<scene::component::UiScrollView>());
+	EXPECT_TRUE(view.hasComponent<scene::component::UiLayout>());
+	EXPECT_TRUE(view.hasComponent<scene::component::UiRect>());
+	const auto list = addWidget("list", {{"parent", idOf(view)}, {"name", std::string{"Vehicles"}}});
+	ASSERT_TRUE(list);
+	EXPECT_EQ(list.getName(), "Vehicles");
+	ASSERT_TRUE(list.hasComponent<scene::component::UiList>());
+	EXPECT_GT(list.getComponent<scene::component::UiList>().itemCount, 0u);
+	EXPECT_EQ(list.getComponent<scene::component::Hierarchy>().parentId, view.getUUID());
+	const auto listId = list.getUUID();
+	m_undo.undo(*m_scene);
+	EXPECT_FALSE(m_scene->findEntityByUUID(listId));
+	m_undo.redo(*m_scene);
+	const auto restored = m_scene->findEntityByUUID(listId);
+	ASSERT_TRUE(restored);
+	EXPECT_TRUE(restored.hasComponent<scene::component::UiList>());
+	EXPECT_GT(count(), before);
+	const auto& kinds = getHudWidgetKinds();
+	EXPECT_NE(std::ranges::find(kinds, "scroll_view"), kinds.end());
+	EXPECT_NE(std::ranges::find(kinds, "list"), kinds.end());
+}
+
+TEST_F(HudCommandsTest, SetComponentEditsAListAndAScrollViewAndUndoes) {
+	const auto view = addWidget("scroll_view");
+	const auto list = addWidget("list");
+	const auto setList = run("component.set", {{"entity", idOf(list)},
+											   {"component", std::string{"UI List"}},
+											   {"values", std::string{R"({"itemCount": 40, "rowHeight": 32, )"
+																	  R"("onBindCallback": "bind_rows"})"}}});
+	ASSERT_TRUE(setList.has_value()) << setList.error().message;
+	const auto setView = run("component.set", {{"entity", idOf(view)},
+											   {"component", std::string{"UI Scroll View"}},
+											   {"values", std::string{R"({"horizontal": true, "wheelStep": 20, )"
+																	  R"("contentSize": [600, 0]})"}}});
+	ASSERT_TRUE(setView.has_value()) << setView.error().message;
+	const auto& data = list.getComponent<scene::component::UiList>();
+	EXPECT_EQ(data.itemCount, 40u);
+	EXPECT_FLOAT_EQ(data.rowHeight, 32.f);
+	EXPECT_EQ(data.onBindCallback, "bind_rows");
+	const auto& scroll = view.getComponent<scene::component::UiScrollView>();
+	EXPECT_TRUE(scroll.horizontal);
+	EXPECT_FLOAT_EQ(scroll.contentSize.x(), 600.f);
+	const auto listId = list.getUUID();
+	m_undo.undo(*m_scene);
+	m_undo.undo(*m_scene);
+	const auto reverted = m_scene->findEntityByUUID(listId);
+	EXPECT_EQ(reverted.getComponent<scene::component::UiList>().itemCount, 12u);
+	EXPECT_TRUE(reverted.getComponent<scene::component::UiList>().onBindCallback.empty());
 }
 
 TEST_F(HudCommandsTest, AddWidgetRefusesAParentOutsideTheHud) {

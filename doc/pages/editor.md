@@ -622,8 +622,8 @@ The tab shows the **HUD editor** instead of the 3D viewport; a scene with canvas
 - **Toolbar**: preview resolution (presets or a custom size), fit / 1:1 zoom (mouse wheel zooms, middle button pans,
   `F` fits), widget outlines and the reference resolution frame, backdrop (colour, or an image dropped from the
   Content Browser), snapping (pixel grid and its step, edges), draw order (later / earlier) and delete.
-- **Palette** (left): Canvas, Panel, Label, Image, Button, Slider, Progress Bar, Window, Layout. Click one to add it at
-  the centre, or drag it into the preview: it goes into the panel or window under the mouse, else under the canvas
+- **Palette** (left): Canvas, Panel, Label, Image, Button, Slider, Progress Bar, Window, Layout, Scroll View, List. Click one to add it at
+  the centre, or drag it into the preview: it goes into the panel, window or scroll view under the mouse, else under the canvas
   (created when the scene has none). A texture dragged from the Content Browser makes an Image.
 - **Preview**: the HUD at the chosen resolution over the backdrop. Click selects, Ctrl-click adds or removes, dragging
   on empty space draws a selection box; the selection is the one of the Scene Hierarchy and the Properties panel.

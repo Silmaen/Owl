@@ -27,7 +27,9 @@ namespace owl::scene {
  * the neighbour a `UiFocus` names; held, they repeat. `ui_accept` clicks the focused button, `ui_left` / `ui_right`
  * adjust the focused slider, `ui_cancel` closes the top window when it is closable. The first press only shows the
  * focus. While a `UiWindow` is open the focus stays in the top one. The mouse takes the focus where it moves or
- * clicks and hides its highlight.
+ * clicks and hides its highlight. A `UiList` is focusable too: `ui_up` / `ui_down` step its selection before the focus
+ * leaves it; a widget scrolled out of a `UiScrollView` stays reachable and the view scrolls to show the focused one; the
+ * `ui_scroll` action scrolls the view or list holding the focus.
  */
 class OWL_API UiInputSystem final {
 public:
@@ -41,13 +43,15 @@ public:
 	 * @param[in] iMousePos Mouse position in Y-down viewport pixels from the top left (the HUD layout space).
 	 * @param[in] iMousePressed Whether the left mouse button is currently pressed.
 	 * @param[in] iDeltaTime Time since the previous update, in seconds (drives the tooltip delay).
+	 * @param[in] iWheel Mouse wheel offset of the frame (x horizontal, y vertical, positive up and right).
 	 *
-	 * A `UiWindow` under the mouse blocks every widget beneath it and counts as consuming the mouse. A click on a window
+	 * The wheel scrolls the `UiScrollView` or `UiList` under the mouse (the nearest one above the widget under it that can
+	 * move); a click on a bar grabs its thumb, a click on a list row selects it. A `UiWindow` under the mouse blocks every widget beneath it and counts as consuming the mouse. A click on a window
 	 * raises it (last child of its parent, hence drawn last), the title bar drags it (kept inside the screen) and the
 	 * close button hides it.
 	 */
 	static void update(Scene* iScene, const math::vec2ui& iViewportSize, const math::vec2& iMousePos,
-					   bool iMousePressed, float iDeltaTime = 0.f);
+					   bool iMousePressed, float iDeltaTime = 0.f, const math::vec2& iWheel = {0.f, 0.f});
 
 	/**
 	 * @brief

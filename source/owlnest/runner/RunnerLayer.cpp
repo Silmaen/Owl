@@ -641,7 +641,7 @@ void RunnerLayer::onUpdate(const core::Timestep& iTimeStep) {
 					// The HUD and the window mouse are both Y-down pixels from the top left.
 					scene::UiInputSystem::update(m_activeScene.get(), m_viewportSize, input::Input::getMousePos(),
 												 input::Input::isMouseButtonPressed(input::mouse::ButtonLeft),
-												 timeStep.getSeconds());
+												 timeStep.getSeconds(), input::Input::readState().wheel);
 					updateSceneRuntime(timeStep);
 					// Handle quit request from Lua (scene.quit()).
 					if (m_activeScene->quitRequested) {

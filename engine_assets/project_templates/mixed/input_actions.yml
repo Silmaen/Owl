@@ -81,3 +81,9 @@ actions:
     bindings:
       - {key: Escape}
       - {gamepad_button: B}
+  - name: ui_scroll
+    type: vector
+    bindings:
+      - {key: PageUp, component: y, scale: -1}
+      - {key: PageDown, component: y}
+      - {gamepad_stick: right}

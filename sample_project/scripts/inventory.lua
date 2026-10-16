@@ -1,7 +1,8 @@
 -- Inventory window of the inventory demo (huds/inventory.owlhud).
 -- Demonstrates: an `.owlhud` of its own driven from Lua (slots, icons, counts, tooltips), a window opened by an input
 --               action, keyboard and gamepad focus (ui.set_focus, onFocusCallback, ui_* actions), onCloseCallback,
---               gamestate as the inventory (kept in saves), save.save_game / save.load_game, scene.transition_to.
+--               gamestate as the inventory (kept in saves), save.save_game / save.load_game, scene.transition_to,
+--               a scrolling journal (UiList: ui.list_set_count, onBindCallback + ui.list_set_row, onSelectCallback).
 --
 -- The inventory is the gamestate keys `inv_<item>` (counts), written by pickup.lua and lock.lua. One slot per item:
 -- its icon and count show once the count is above zero. `inv_window_open` and `inv_focus` (slot index) mirror the UI
@@ -18,7 +19,7 @@ local ITEMS = {
 local SAVE_SLOT = 2
 local TOAST_SECONDS = 2.5
 
-local window_id, info_id, toast_id = 0, 0, 0
+local window_id, info_id, toast_id, log_id = 0, 0, 0, 0
 local slots, icons, counts = {}, {}, {}
 local slot_index = {}  -- slot entity id -> index in ITEMS
 local open = false
@@ -66,7 +67,17 @@ local function set_open(value)
     end
 end
 
+local log_lines = {}
+
+-- The journal keeps every message; the list only asks for the rows in view (`on_log_bind`).
+local function log_add(text)
+    log_lines[#log_lines + 1] = text
+    ui.list_set_count(log_id, #log_lines)
+    ui.scroll_set(log_id, 0, #log_lines * 24)
+end
+
 local function toast(text)
+    log_add(text)
     ui.set_text(toast_id, text)
     ui.set_visible(toast_id, true)
     toast_left = TOAST_SECONDS
@@ -76,6 +87,7 @@ function on_create()
     window_id = ui.find("InventoryWindow")
     info_id = ui.find("InventoryInfo")
     toast_id = ui.find("InventoryToast")
+    log_id = ui.find("InventoryLog")
     for i, item in ipairs(ITEMS) do
         slots[i] = ui.find("InvSlot" .. i)
         icons[i] = ui.find("InvIcon" .. i)
@@ -113,9 +125,28 @@ function on_slot_clicked()
     end
 end
 
+-- Called for a journal row that comes in view (`_list_entity`, `_row_index`, 1-based).
+function on_log_bind()
+    ui.list_set_row(_list_entity, _row_index, log_lines[_row_index] or "", tostring(_row_index))
+end
+
+-- Called when a journal row is selected (`_selected_index`): the info text shows it in full.
+function on_log_selected()
+    local line = log_lines[_selected_index]
+    if line then
+        ui.set_text(info_id, line)
+    end
+end
+
 function on_update(dt)
     if leaving or ui.is_transition_active() then
         return
+    end
+
+    -- A save restores the list size but not the journal lines of this script: keep the two in step.
+    if ui.list_get_count(log_id) ~= #log_lines then
+        ui.list_set_count(log_id, #log_lines)
+        ui.list_invalidate(log_id)
     end
 
     -- Messages of the pickups and the locks.

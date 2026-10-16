@@ -86,9 +86,11 @@ struct UiButton;
 struct UiFocus;
 struct UiImage;
 struct UiLayout;
+struct UiList;
 struct UiPanel;
 struct UiProgressBar;
 struct UiRect;
+struct UiScrollView;
 struct UiSlider;
 struct UiText;
 struct UiToolCursor;
@@ -776,6 +778,14 @@ public:
 		math::vec2 dragGrab{0.f, 0.f};
 		/// Whether `dragWindow` belongs to the HUD asset rather than to the scene.
 		bool dragInHud = false;
+		/// `UiScrollView` or `UiList` whose bar thumb is being dragged (`entt::null` for none).
+		entt::entity dragScroll = entt::null;
+		/// Whether `dragScroll` belongs to the HUD asset rather than to the scene.
+		bool dragScrollInHud = false;
+		/// Whether the dragged bar is the vertical one.
+		bool dragScrollVertical = true;
+		/// Distance from the start of the dragged thumb to the mouse, in pixels.
+		float dragScrollGrab = 0.f;
 		/// Widget whose `UiTooltip` is waiting to show or shown (`entt::null` for none).
 		entt::entity tooltipWidget = entt::null;
 		/// Whether `tooltipWidget` belongs to the HUD asset.
@@ -790,6 +800,8 @@ public:
 		bool focusVisible = false;
 		/// Whether the widget flagged `UiFocus::initial` has been given the focus (done once, on the first update).
 		bool focusStarted = false;
+		/// Widget the scroll containers were last scrolled to show (`entt::null` for none).
+		entt::entity revealedFocus = entt::null;
 		/// Direction held for the auto-repeat (0 none, else 1 up, 2 down, 3 left, 4 right).
 		uint8_t repeatDirection = 0;
 		/// Seconds `repeatDirection` has been held.
@@ -1363,6 +1375,13 @@ OWL_API void Scene::onComponentAdded<component::UiToolCursor>(const Entity& iEnt
 
 template<>
 OWL_API void Scene::onComponentAdded<component::UiFocus>(const Entity& iEntity, component::UiFocus& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::UiScrollView>(const Entity& iEntity,
+															  component::UiScrollView& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::UiList>(const Entity& iEntity, component::UiList& ioComponent);
 
 template<>
 OWL_API void Scene::onComponentAdded<component::PrefabLink>(const Entity& iEntity, component::PrefabLink& ioComponent);

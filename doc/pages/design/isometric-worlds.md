@@ -154,9 +154,10 @@ S < 1 day of review, M a few days, L a week.
   hover moves the focus, Lua `ui.set_focus` / `ui.get_focus`; the sample menus play with a gamepad alone.
 - ![Done][done] **HUD6 — Migration, M.** "Extract canvas to `.owlhud`" command; sample project and project
   templates moved to a shared `huds/gameplay.owlhud`, no `RendererTag: ui` left; empty raycast hint fixed.
-- ![Planned][planned] **HUD7 — Scroll views and lists (from v0.5.0), M.** `UiScrollView` clipping its content
-  with a scroll bar, mouse wheel, drag and gamepad scrolling, and a virtualised `UiList` drawing only the visible rows
-  of a Lua-fed model (vehicle lists of a management game); editor support in the HUD document.
+- ![Done][done] **HUD7 — Scroll views and lists (from v0.5.0), M.** `UiScrollView` (clip, wheel, draggable bars,
+  `ui_scroll`, focus scrolled into view) and `UiList` (a model of any size, only the rows in view drawn and bound from
+  Lua, selection by mouse and keys), Lua `ui.scroll_*` / `ui.list_*`, HUD editor palette and `hud.add_widget` kinds,
+  bench with a 1000-row list.
 - ![Done][done] **DEMO1 — Inventory demo (from v0.5.0), S/M.** Collectible objects, key-locked switches and an
   inventory window with slots in `sample_project/`, in Lua only, navigable with the gamepad: the showcase of the HUD
   widgets, the shared HUD and focus navigation.
