@@ -67,6 +67,7 @@ tiles:
     name: water
   - index: 3
     name: road
+    connections: [east, west]
   - index: 4
     name: dirt
   - index: 5
@@ -83,31 +84,46 @@ tiles:
     name: rail
   - index: 11
     name: road y
+    connections: [north, south]
   - index: 12
     name: road alone
+    connections: []
   - index: 13
     name: road end n
+    connections: [north]
   - index: 14
     name: road end e
+    connections: [east]
   - index: 15
     name: road end s
+    connections: [south]
   - index: 16
     name: road end w
+    connections: [west]
   - index: 17
     name: road corner ne
+    connections: [north, east]
   - index: 18
     name: road corner es
+    connections: [east, south]
   - index: 19
     name: road corner sw
+    connections: [south, west]
   - index: 20
     name: road corner wn
+    connections: [north, west]
   - index: 21
     name: road t nes
+    connections: [north, east, south]
   - index: 22
     name: road t esw
+    connections: [east, south, west]
   - index: 23
     name: road t swn
+    connections: [north, south, west]
   - index: 24
     name: road t wne
+    connections: [north, east, west]
   - index: 25
     name: road cross
+    connections: [north, east, south, west]

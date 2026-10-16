@@ -260,3 +260,39 @@ def test_town_trees_stand_on_free_grass() -> None:
 def test_town_map_file_is_deterministic() -> None:
     assert town_map.map_bytes(SEED) == town_map.map_bytes(SEED)
     assert town_map.map_bytes(SEED).startswith(b"Tilemap: iso_town\n")
+
+
+def _tileset_connections(text: str) -> dict[int, list[str]]:
+    """Connections written for each tile of a generated ``.owltileset``, by tile index."""
+    found: dict[int, list[str]] = {}
+    index = -1
+    for line in text.splitlines():
+        stripped = line.strip().removeprefix("- ")
+        if stripped.startswith("index:"):
+            index = int(stripped.split(":")[1])
+        elif stripped.startswith("connections:"):
+            found[index] = [side.strip() for side in stripped.split("[")[1].rstrip("]").split(",") if side.strip()]
+    return found
+
+
+def test_tileset_writes_the_connections_of_every_road_tile() -> None:
+    text = atlas.tileset_text("1x", "nam:textures/iso/tiles.png")
+    found = _tileset_connections(text)
+    assert sorted(found) == sorted(terrain_module.ROAD_MASKS.values())
+    names = dict(terrain_module.CONNECTION_NAMES)
+    for mask, tile in terrain_module.ROAD_MASKS.items():
+        assert sorted(found[tile]) == sorted(name for bit, name in names.items() if mask & bit), (mask, tile)
+
+
+def test_straight_roads_and_junction_shapes_join_the_expected_sides() -> None:
+    found = _tileset_connections(atlas.tileset_text("1x", "nam:textures/iso/tiles.png"))
+    assert sorted(found[3]) == ["east", "west"]
+    assert sorted(found[11]) == ["north", "south"]
+    assert found[12] == []
+    assert sorted(found[25]) == ["east", "north", "south", "west"]
+
+
+def test_other_terrains_are_not_part_of_the_road_graph() -> None:
+    found = _tileset_connections(atlas.tileset_text("1x", "nam:textures/iso/tiles.png"))
+    for terrain in terrain_module.TERRAINS:
+        assert (terrain.id in found) == (terrain.connections is not None), terrain.name

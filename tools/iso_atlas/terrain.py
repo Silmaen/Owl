@@ -138,6 +138,9 @@ ROAD_MASK_NAMES: dict[int, str] = {
     NORTH | EAST | SOUTH | WEST: "road cross",
 }
 """Editor name of each of those masks."""
+
+CONNECTION_NAMES = ((NORTH, "north"), (EAST, "east"), (SOUTH, "south"), (WEST, "west"))
+"""File name of each bit of a connections mask (the same sides as the engine's ``nav::Direction``)."""
 FIRST_JUNCTION_ID = 12
 """Terrain id of the first road variant beyond the two straights."""
 ROAD_MASKS: dict[int, int] = {
@@ -243,13 +246,15 @@ class Terrain:
     """Colour of a pixel."""
     sloped: bool
     """Whether the atlas holds its 18 sloped variants."""
+    connections: int | None = None
+    """Sides the tile joins on the road graph (``NORTH`` | ``EAST`` ...), ``None`` off the graph."""
 
 
 TERRAINS: list[Terrain] = [
     Terrain(0, "grass", _grass((88.0, 156.0, 64.0)), True),
     Terrain(1, "sand", _sand, True),
     Terrain(2, "water", _water, False),
-    Terrain(3, "road", _road, True),
+    Terrain(3, "road", _road, True, ROAD_X_MASK),
     Terrain(4, "dirt", _dirt, True),
     Terrain(5, "pavement", _pavement, False),
     Terrain(6, "dark grass", _grass((60.0, 120.0, 52.0)), True),
@@ -262,8 +267,8 @@ TERRAINS: list[Terrain] = [
     Terrain(8, "rock", _rock, True),
     Terrain(9, "snow", _snow, True),
     Terrain(10, "rail", _rail, True),
-    Terrain(11, "road y", _road_mask(ROAD_Y_MASK), True),
-    *(Terrain(ROAD_MASKS[mask], ROAD_MASK_NAMES[mask], _road_mask(mask), True) for mask in ROAD_MASK_ORDER),
+    Terrain(11, "road y", _road_mask(ROAD_Y_MASK), True, ROAD_Y_MASK),
+    *(Terrain(ROAD_MASKS[mask], ROAD_MASK_NAMES[mask], _road_mask(mask), True, mask) for mask in ROAD_MASK_ORDER),
 ]
 """
 The terrains, grass first; ids 3 (road along X), 11 (road along Y), 12 to 25 (the other road shapes) and 10 (rail) are

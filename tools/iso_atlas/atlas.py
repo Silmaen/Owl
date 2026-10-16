@@ -13,9 +13,19 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from .common import TILE_H, TILE_W, Z_RANGE, Layers, Vec3
-from .objects import BUILDINGS, PROPS, SLICE_HEIGHT, VEHICLE_HEADINGS, VEHICLE_MODELS, VEHICLES, render_object, slice_object, smoke
+from .objects import (
+    BUILDINGS,
+    PROPS,
+    SLICE_HEIGHT,
+    VEHICLE_HEADINGS,
+    VEHICLE_MODELS,
+    VEHICLES,
+    render_object,
+    slice_object,
+    smoke,
+)
 from .sample_map import write_map
-from .terrain import FOUNDATION_TOPS, SLOPE_COUNT, SLOPES, TERRAINS, draw_foundation, draw_surface
+from .terrain import CONNECTION_NAMES, FOUNDATION_TOPS, SLOPE_COUNT, SLOPES, TERRAINS, draw_foundation, draw_surface
 from .town_map import write_town_map
 
 COLUMNS = 16
@@ -131,6 +141,9 @@ def tileset_text(level: str, texture: str) -> str:
     lines.append("tiles:")
     for terrain in TERRAINS:
         lines += [f"  - index: {terrain.id}", f"    name: {terrain.name}"]
+        if terrain.connections is not None:
+            sides = ", ".join(name for bit, name in CONNECTION_NAMES if terrain.connections & bit)
+            lines.append(f"    connections: [{sides}]")
     return "\n".join(lines) + "\n"
 
 
