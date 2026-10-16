@@ -41,6 +41,7 @@
 #include <scene/component/RendererTag.h>
 #include <scene/component/Tilemap.h>
 #include <scene/component/Visibility.h>
+#include <scene/nav/NavWorld.h>
 
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG("-Wreserved-identifier")
@@ -233,6 +234,7 @@ void Viewport::onUpdate(const core::Timestep& iTimeStep) {
 		if (isHovered())
 			handleIsometricInput();
 		updateIsometricCursor(activeScene);
+		pickNavigationCells();
 	} else if (mp_document->state() == SceneDocument::State::Edit) {
 		if (m_parent != nullptr) {
 			const auto& settings = m_parent->getSettings();
@@ -585,8 +587,10 @@ void Viewport::renderOverlay() const {
 
 		if (m_parent != nullptr && m_parent->getSettings().showGrid)
 			renderGrid(resolveTranslationSnapStep(m_parent->getSettings(), findFirstTilemapInfo(activeScene.get())));
-		if (m_isometric)
+		if (m_isometric) {
 			renderIsometricCursor();
+			renderNavigationOverlay(activeScene);
+		}
 
 		// Draw trigger type icons
 		auto& textureLibrary = renderer::Renderer::getTextureLibrary();
@@ -1143,6 +1147,8 @@ void Viewport::renderViewOverlay() {
 			option("Grid", settings.showGrid);
 			option("Camera markers", settings.showCameraGizmos);
 			option("Trigger icons", settings.showTriggerIcons);
+			if (m_isometric)
+				option("Navigation graph", settings.showNavGraph);
 			ImGui::EndPopup();
 		}
 		ImGui::SameLine();
@@ -1250,6 +1256,112 @@ void Viewport::updateIsometricCursor(const shared<scene::Scene>& iScene) {
 		break;
 	}
 	m_isoCursor = m_isoCamera.viewportToWorld(pixel, height);
+}
+
+void Viewport::pickNavigationCells() {
+	if (m_parent == nullptr || !m_parent->getSettings().showNavGraph || !m_hovered)
+		return;
+	const auto& io = ImGui::GetIO();
+	if (!io.KeyShift)
+		return;
+	if (ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
+		m_navFrom.reset();
+		m_navTo.reset();
+		return;
+	}
+	if (!ImGui::IsMouseClicked(ImGuiMouseButton_Left) || !m_hoveredCell.has_value())
+		return;
+	if (!m_navFrom.has_value() || m_navTo.has_value()) {
+		m_navFrom = m_hoveredCell;
+		m_navTo.reset();
+	} else {
+		m_navTo = m_hoveredCell;
+	}
+}
+
+void Viewport::renderNavigationOverlay(const shared<scene::Scene>& iScene) const {
+	if (m_parent == nullptr || !m_parent->getSettings().showNavGraph || !iScene)
+		return;
+	constexpr math::vec4 twoWay{0.30f, 0.90f, 0.40f, 0.9f};
+	constexpr math::vec4 oneWay{1.f, 0.60f, 0.10f, 1.f};
+	constexpr math::vec4 pathColor{1.f, 0.95f, 0.20f, 1.f};
+	constexpr size_t maxEdges = 40000;
+	size_t drawn = 0;
+	bool pathDone = false;
+	for (const auto view = iScene->registry.view<scene::component::Tilemap>(); const auto entity: view) {
+		const auto& tilemap = view.get<scene::component::Tilemap>(entity);
+		if (!tilemap.asset || tilemap.navigation.isEmpty())
+			continue;
+		const scene::Entity sceneEntity{entity, iScene.get()};
+		const auto& asset = *tilemap.asset;
+		const math::vec3 origin = iScene->getWorldTransform(sceneEntity).translation();
+		auto& entry = iScene->getNavigation().acquire(static_cast<uint64_t>(sceneEntity.getUUID()), asset,
+													  tilemap.navigation);
+		const auto& map = entry.map;
+		const auto center = [&](const uint32_t iX, const uint32_t iY) -> math::vec3 {
+			const auto corners = asset.getCellCorners(iX, iY);
+			const float height = static_cast<float>(corners[0] + corners[1] + corners[2] + corners[3]) * 0.25f *
+								 scene::terrain::heightStep;
+			return origin + math::vec3{static_cast<float>(iX) + 0.5f, static_cast<float>(iY) + 0.5f, height + 0.03f};
+		};
+		const auto& size = map.getSize();
+		for (uint32_t y = 0; y < size.y() && drawn < maxEdges; ++y) {
+			for (uint32_t x = 0; x < size.x() && drawn < maxEdges; ++x) {
+				if (!map.isWalkable(x, y))
+					continue;
+				for (const auto direction: {scene::nav::Direction::East, scene::nav::Direction::South}) {
+					const uint32_t nx = x + static_cast<uint32_t>(scene::nav::offsetX(direction));
+					const uint32_t ny = y + static_cast<uint32_t>(scene::nav::offsetY(direction));
+					const bool forward = map.getEdgeCost(x, y, direction) != 0;
+					const bool backward = map.getEdgeCost(nx, ny, scene::nav::opposite(direction)) != 0;
+					if (!forward && !backward)
+						continue;
+					const auto from = center(x, y);
+					const auto to = center(nx, ny);
+					renderer::Renderer2D::drawLine(
+							{.point1 = from, .point2 = to, .color = forward && backward ? twoWay : oneWay});
+					if (forward != backward) {
+						const auto tip = forward ? to : from;
+						const auto tail = forward ? from : to;
+						const auto along = (tail - tip) * 0.3f;
+						const math::vec3 side{-along.y(), along.x(), 0.f};
+						renderer::Renderer2D::drawLine(
+								{.point1 = tip, .point2 = tip + along + side * 0.5f, .color = oneWay});
+						renderer::Renderer2D::drawLine(
+								{.point1 = tip, .point2 = tip + along - side * 0.5f, .color = oneWay});
+					}
+					++drawn;
+				}
+			}
+		}
+		if (pathDone || !m_navFrom.has_value() || !m_navTo.has_value())
+			continue;
+		pathDone = true;
+		const std::array<uint64_t, 6> key{m_navFrom->x(),   m_navFrom->y(),
+										  m_navTo->x(),     m_navTo->y(),
+										  map.getVersion(), static_cast<uint64_t>(sceneEntity.getUUID())};
+		if (key != m_navKey) {
+			m_navKey = key;
+			if (mp_navFinder == nullptr)
+				mp_navFinder = mkUniq<scene::nav::Pathfinder>();
+			if (!mp_navFinder->find(map, *m_navFrom, *m_navTo, scene::nav::PathMode::Auto, m_navPath))
+				m_navPath.cells.clear();
+		}
+		for (size_t i = 1; i < m_navPath.cells.size(); ++i) {
+			const auto from =
+					center(m_navPath.cells[i - 1].x(), m_navPath.cells[i - 1].y()) + math::vec3{0.f, 0.f, 0.03f};
+			const auto to = center(m_navPath.cells[i].x(), m_navPath.cells[i].y()) + math::vec3{0.f, 0.f, 0.03f};
+			renderer::Renderer2D::drawLine({.point1 = from, .point2 = to, .color = pathColor});
+		}
+		for (const auto& end: {*m_navFrom, *m_navTo}) {
+			const auto c = center(end.x(), end.y());
+			const std::array<math::vec3, 4> ring{c + math::vec3{-0.3f, 0.f, 0.05f}, c + math::vec3{0.f, -0.3f, 0.05f},
+												 c + math::vec3{0.3f, 0.f, 0.05f}, c + math::vec3{0.f, 0.3f, 0.05f}};
+			for (size_t i = 0; i < ring.size(); ++i)
+				renderer::Renderer2D::drawLine(
+						{.point1 = ring[i], .point2 = ring[(i + 1) % ring.size()], .color = pathColor});
+		}
+	}
 }
 
 void Viewport::renderIsometricCursor() const {

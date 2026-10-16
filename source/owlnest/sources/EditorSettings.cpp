@@ -127,6 +127,8 @@ void EditorSettings::loadFromFile(const std::filesystem::path& iFile) {
 			showCameraGizmos = config["showCameraGizmos"].as<bool>();
 		if (config["showGrid"])
 			showGrid = config["showGrid"].as<bool>();
+		if (config["showNavGraph"])
+			showNavGraph = config["showNavGraph"].as<bool>();
 		if (config["showTriggerIcons"])
 			showTriggerIcons = config["showTriggerIcons"].as<bool>();
 		if (config["gizmoWorldSpace"])
@@ -183,6 +185,7 @@ void EditorSettings::saveToFile(const std::filesystem::path& iFile) const {
 	out << YAML::Key << "snapAutoFromTilemap" << YAML::Value << snapAutoFromTilemap;
 	out << YAML::Key << "showCameraGizmos" << YAML::Value << showCameraGizmos;
 	out << YAML::Key << "showGrid" << YAML::Value << showGrid;
+	out << YAML::Key << "showNavGraph" << YAML::Value << showNavGraph;
 	out << YAML::Key << "showTriggerIcons" << YAML::Value << showTriggerIcons;
 	out << YAML::Key << "gizmoWorldSpace" << YAML::Value << gizmoWorldSpace;
 	out << YAML::Key << "cameraRotatePercent" << YAML::Value << cameraRotatePercent;

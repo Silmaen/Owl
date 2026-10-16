@@ -87,6 +87,8 @@ struct EditorSettings {
 	bool showCameraGizmos = true;
 	/// Whether the viewport draws a grid of the snap step on the XY plane in Edit mode.
 	bool showGrid = true;
+	/// Whether the viewport draws the pathfinding graph of the tilemaps and the test path (isometric Edit mode).
+	bool showNavGraph = false;
 	/// Whether the trigger type icons are drawn over the triggers in Edit mode.
 	bool showTriggerIcons = true;
 	/// Whether the gizmo moves along the world axes instead of the axes of the selection.

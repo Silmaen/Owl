@@ -13,6 +13,7 @@
 #include "../UndoManager.h"
 
 #include <renderer/RendererIsometric.h>
+#include <scene/nav/Pathfinder.h>
 
 #include <array>
 #include <cstdint>
@@ -291,6 +292,21 @@ private:
 
 	/**
 	 * @brief
+	 *  Draw the pathfinding graph of the isometric tilemaps (two-way moves green, one-way moves orange with an arrow)
+	 *  and the test path between the two picked cells.
+	 * @param[in] iScene The edited scene.
+	 */
+	void renderNavigationOverlay(const shared<scene::Scene>& iScene) const;
+
+	/**
+	 * @brief
+	 *  Pick the ends of the test path: Shift + click sets the start, then the goal, then starts over; Shift + right
+	 *  click clears both.
+	 */
+	void pickNavigationCells();
+
+	/**
+	 * @brief
 	 *  Camera the edited scene is drawn with: the isometric one in the isometric mode, else the editor camera.
 	 * @return The active editor camera.
 	 */
@@ -400,6 +416,16 @@ private:
 	std::array<float, 4> m_hoveredCornerZ{};
 	/// Hovered tile of the first isometric map.
 	std::optional<math::vec2ui> m_hoveredCell;
+	/// Start of the navigation test path.
+	std::optional<math::vec2ui> m_navFrom;
+	/// Goal of the navigation test path.
+	std::optional<math::vec2ui> m_navTo;
+	/// Search that computes the test path.
+	mutable uniq<scene::nav::Pathfinder> mp_navFinder;
+	/// The test path.
+	mutable scene::nav::PathResult m_navPath;
+	/// What the test path was computed for: start, goal and graph version (0 when stale).
+	mutable std::array<uint64_t, 6> m_navKey{};
 	/// Undo manager (non-owning, optional).
 	SceneUndoManager* mp_undoManager = nullptr;
 	/// Whether the gizmo was being used last frame.
