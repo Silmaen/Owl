@@ -34,6 +34,7 @@ OWL_DIAG_DISABLE_CLANG("-Wreserved-identifier")
 OWL_DIAG_POP
 
 #include <algorithm>
+#include <array>
 #include <cstddef>
 #include <format>
 #include <optional>
@@ -392,6 +393,10 @@ void TilesetDocument::renderPropertiesPanel() {
 		}
 		gui::widgets::endSection();
 	}
+	if (gui::widgets::sectionHeader("Navigation", gui::icon::route, false).open) {
+		renderConnectionsSection();
+		gui::widgets::endSection();
+	}
 	if (gui::widgets::sectionHeader("Raycast", gui::icon::scan, false).open) {
 		if (gui::widgets::beginProperties("##tileRaycast")) {
 			if (gui::widgets::propertyFloat(
@@ -406,6 +411,63 @@ void TilesetDocument::renderPropertiesPanel() {
 			gui::widgets::endProperties();
 		}
 		gui::widgets::endSection();
+	}
+}
+
+void TilesetDocument::renderConnectionsSection() {
+	const auto index = static_cast<size_t>(m_inspectedTile);
+	const auto connections = m_tileset.tiles[index].connections;
+	bool road = connections.has_value();
+	if (ImGui::Checkbox("Part of a road graph", &road)) {
+		pushTilesetEdit(m_tileset, m_undoManager, road ? "Make tile a road" : "Make tile no road",
+						[this, index, road]() -> void {
+							m_tileset.tiles[index].connections =
+									road ? std::optional<uint8_t>{0} : std::optional<uint8_t>{};
+						});
+	}
+	ImGui::SetItemTooltip("%s", "Vehicles and walkers can travel on a cell holding this tile (as overlay) and leave it "
+								"by the sides lit below. Unchecked: the tile is not a road.");
+	if (!road) {
+		ImGui::TextDisabled("Not part of a road graph.");
+		return;
+	}
+	// The four sides as they look on the screen of the isometric view: north up-right, east down-right.
+	struct Side {
+		scene::nav::Direction direction;
+		const char* glyph;
+		const char* label;
+	};
+	constexpr std::array<std::array<Side, 2>, 2> layout{{
+			{{{scene::nav::Direction::West, gui::icon::arrowUpLeft, "##west"},
+			  {scene::nav::Direction::North, gui::icon::arrowUpRight, "##north"}}},
+			{{{scene::nav::Direction::South, gui::icon::arrowDownLeft, "##south"},
+			  {scene::nav::Direction::East, gui::icon::arrowDownRight, "##east"}}},
+	}};
+	const float side = ImGui::GetFrameHeight() * 1.6f;
+	uint8_t mask = connections.value_or(0);
+	std::optional<scene::nav::Direction> toggled;
+	for (const auto& row: layout) {
+		for (size_t column = 0; column < row.size(); ++column) {
+			const auto& entry = row[column];
+			if (column != 0)
+				ImGui::SameLine();
+			const bool on = (mask & scene::nav::directionBit(entry.direction)) != 0;
+			ImGui::PushStyleColor(ImGuiCol_Button, on ? ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive)
+													  : ImGui::GetStyleColorVec4(ImGuiCol_FrameBg));
+			if (ImGui::Button(std::format("{}{}", entry.glyph, entry.label).c_str(), {side, side}))
+				toggled = entry.direction;
+			ImGui::PopStyleColor();
+			ImGui::SetItemTooltip("%s",
+								  on ? "Joined: click to cut this side." : "Not joined: click to join this side.");
+		}
+	}
+	ImGui::TextDisabled("Arrows follow the screen of the isometric view.");
+	if (toggled.has_value()) {
+		const uint8_t bit = scene::nav::directionBit(*toggled);
+		pushTilesetEdit(m_tileset, m_undoManager, "Change tile connections", [this, index, bit]() -> void {
+			auto& value = m_tileset.tiles[index].connections;
+			value = static_cast<uint8_t>(value.value_or(0) ^ bit);
+		});
 	}
 }
 
