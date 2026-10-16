@@ -346,6 +346,7 @@ void Viewport::onUpdate(const core::Timestep& iTimeStep) {
 		m_hoveredEntity = pixelData == -1 || !activeScene->registry.valid(handle)
 								  ? scene::Entity()
 								  : scene::Entity(handle, activeScene.get());
+		mp_hoveredScene = activeScene.get();
 	}
 	renderOverlay();
 
@@ -382,7 +383,7 @@ void Viewport::renderContextMenu() {
 	const bool click = io.MouseDragMaxDistanceSqr[ImGuiMouseButton_Right] < clickTravel * clickTravel;
 	if (m_hovered && click && ImGui::IsMouseReleased(ImGuiMouseButton_Right) && !io.KeyCtrl && !io.KeyAlt &&
 		!m_parent->getVoxelBrush().active && !gui::Guizmo::isOver()) {
-		m_parent->setSelectedEntity(m_hoveredEntity);
+		m_parent->setSelectedEntity(getHoveredEntity());
 		ImGui::OpenPopup("##viewportMenu");
 	}
 	if (!ImGui::BeginPopup("##viewportMenu"))
@@ -1711,6 +1712,12 @@ auto Viewport::onMouseButtonPressed(const event::MouseButtonPressedEvent& ioEven
 				m_parent->setSelectedEntity(getHoveredEntity());
 	}
 	return false;
+}
+
+auto Viewport::getHoveredEntity() const -> scene::Entity {
+	if (mp_document == nullptr || mp_document->getActiveScene().get() != mp_hoveredScene)
+		return {};
+	return m_hoveredEntity;
 }
 
 }// namespace owl::nest::panel

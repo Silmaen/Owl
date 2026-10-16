@@ -139,6 +139,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Owl Nest no longer crashes in the Stats panel after a Stop or a scene transition: the hovered entity of a replaced scene is dropped instead of read.
 - Owl Nest no longer crashes when Play is stopped from the viewport button or F7: the stop runs at the start of the next frame, not while the running scene is still being drawn.
 - Saving a scene or a HUD keeps the entity order of its file instead of reversing it on every save (`Scene::getAllEntities` returns the creation order).
 - The HUD Editor button of the ribbon has its own dual-colour ribbon icon instead of the `.owlhud` asset icon.

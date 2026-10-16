@@ -126,10 +126,11 @@ public:
 
 	/**
 	 * @brief
-	 *  Get the hovered entity.
-	 * @return The hovered entity.
+	 *  Get the hovered entity of the scene the document shows now.
+	 * @return The hovered entity, or an empty one when the scene it was picked in has been replaced since (Stop,
+	 * scene transition).
 	 */
-	[[nodiscard]] auto getHoveredEntity() const -> scene::Entity { return m_hoveredEntity; }
+	[[nodiscard]] auto getHoveredEntity() const -> scene::Entity;
 
 	/**
 	 * @brief
@@ -426,6 +427,8 @@ private:
 	SceneDocument* mp_document = nullptr;
 	/// The hovered entity
 	scene::Entity m_hoveredEntity;
+	/// Scene the hovered entity was picked in: a handle of a replaced scene points at freed memory.
+	const scene::Scene* mp_hoveredScene = nullptr;
 	/// The Gizmo type
 	gui::Guizmo::Type m_gizmoType = gui::Guizmo::Type::None;
 	/// The editor camera
