@@ -226,6 +226,66 @@ local function direction(route, index)
     return route[index * 2 + 1] - route[index * 2 - 1], route[index * 2 + 2] - route[index * 2]
 end
 
+-- The U-turn of a dead end, as a rounded square that runs along the edges of the cell: in by the right lane, out to the
+-- right side, round the two far corners turning left, back down the other side and in to the right lane of the way
+-- out, so it passes by the four corners of the cell. Sampled once into a polyline; the heading is its tangent.
+local LOOP_CORNER = 0.16
+local LOOP_SAMPLES = 12
+
+local function smooth(u)
+    return u * u * (3 - 2 * u)
+end
+
+local function loop_path(cx, cy, d_x, d_y, right_x, right_y)
+    local half, corner = LOOP, LOOP_CORNER
+    local points = {}
+    local function add(side, along)
+        points[#points + 1] = { cx + right_x * side + d_x * along, cy + right_y * side + d_y * along }
+    end
+    for i = 0, LOOP_SAMPLES do
+        local u = i / LOOP_SAMPLES
+        add(LANE + (half - LANE) * smooth(u), -0.5 + 0.5 * u)
+    end
+    for i = 1, LOOP_SAMPLES do
+        add(half, (half - corner) * i / LOOP_SAMPLES)
+    end
+    for _, centre_side in ipairs({ half - corner, -(half - corner) }) do
+        local start = centre_side > 0 and 0 or math.pi / 2
+        for i = 1, LOOP_SAMPLES do
+            local phi = start + (math.pi / 2) * i / LOOP_SAMPLES
+            add(centre_side + corner * math.cos(phi), half - corner + corner * math.sin(phi))
+        end
+        if centre_side > 0 then
+            for i = 1, LOOP_SAMPLES do
+                add((half - corner) * (1 - 2 * i / LOOP_SAMPLES), half)
+            end
+        end
+    end
+    for i = 1, LOOP_SAMPLES do
+        add(-half, (half - corner) * (1 - i / LOOP_SAMPLES))
+    end
+    for i = 1, LOOP_SAMPLES do
+        local u = i / LOOP_SAMPLES
+        add(-half + (half - LANE) * smooth(u), -0.5 * u)
+    end
+    local lengths, total = { 0 }, 0
+    for i = 2, #points do
+        total = total + math.sqrt((points[i][1] - points[i - 1][1]) ^ 2 + (points[i][2] - points[i - 1][2]) ^ 2)
+        lengths[i] = total
+    end
+    return total, function(t)
+        local target = math.max(0, math.min(1, t)) * total
+        local i = 2
+        while i < #points and lengths[i] < target do
+            i = i + 1
+        end
+        local a, b = points[i - 1], points[i]
+        local span = lengths[i] - lengths[i - 1]
+        local f = span > 0 and (target - lengths[i - 1]) / span or 0
+        return a[1] + (b[1] - a[1]) * f, a[2] + (b[2] - a[2]) * f, math.atan(b[2] - a[2], b[1] - a[1])
+    end
+end
+
 -- The path through the cell `index` of the route: its length and a function giving the position and the heading angle
 -- at a fraction of it. `entry_x`, `entry_y` is the direction the vehicle came into the first cell by, when it did.
 local function cell_path(route, index, entry_x, entry_y)
@@ -255,42 +315,15 @@ local function cell_path(route, index, entry_x, entry_y)
         end
     end
     if cross == 0 and in_x ~= nil and out_x ~= nil and in_x * out_x + in_y * out_y < 0 then
-        -- A U-turn at a dead end, a loop round the middle of the cell: from the middle of the edge by the right lane the
-        -- vehicle eases out to a circle of radius LOOP round the middle of the cell, drives half of it turning left
-        -- through the far half of the cell, and eases back to the right lane of the way out. The heading is continuous all
-        -- along. A U-turn anywhere else is counted as a mistake.
+        -- A U-turn at a dead end: a rounded square along the edges of the cell (`loop_path`). A U-turn anywhere else
+        -- is counted as a mistake.
         if exits(route[index * 2 - 1], route[index * 2]) > 1 then
             count("town_bad_uturns")
         else
             count("town_dead_end_loops")
         end
         local right_x, right_y = -d_in_y, d_in_x
-        local start_angle = math.atan(d_in_y, d_in_x)
-        local ease = LOOP - LANE
-        local arc = LOOP * math.pi
-        local total = 1 + arc
-        local function eased(u)
-            return 3 * u * u - 2 * u * u * u, (6 * u - 6 * u * u) * ease * 2
-        end
-        local function at(side, along)
-            return cx + right_x * side + d_in_x * along, cy + right_y * side + d_in_y * along
-        end
-        return total, function(t)
-            local s = t * total
-            if s < 0.5 then
-                local value, slope = eased(s * 2)
-                local x, y = at(LANE + ease * value, s - 0.5)
-                return x, y, start_angle + math.atan(slope)
-            elseif s < 0.5 + arc then
-                local phi = (s - 0.5) / LOOP
-                local x, y = at(LOOP * math.cos(phi), LOOP * math.sin(phi))
-                return x, y, start_angle - phi
-            end
-            local back = (s - 0.5 - arc) * 2
-            local value, slope = eased(back)
-            local x, y = at(-(LOOP - ease * value), -back * 0.5)
-            return x, y, start_angle - math.pi - math.atan(slope)
-        end
+        return loop_path(cx, cy, d_in_x, d_in_y, right_x, right_y)
     end
     -- A straight run, or half of one in the first and the last cell of the route.
     local right_x, right_y = -d_out_y * LANE, d_out_x * LANE
