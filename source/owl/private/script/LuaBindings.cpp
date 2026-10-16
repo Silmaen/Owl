@@ -1273,7 +1273,9 @@ auto makeIsometricCamera(const scene::Scene& iScene) -> renderer::IsometricCamer
 }
 
 auto luaIsometricPickCell(lua_State* iState) -> int {
-	const auto mouse = input::Input::getMousePos();
+	// The viewport mouse of the last HUD update: in Owl Nest the game is drawn inside a panel, not at the window origin.
+	const auto& uiState = getBoundScene(iState)->getUiInputState();
+	const auto mouse = uiState.hasMouse ? uiState.mousePosition : input::Input::getMousePos();
 	const auto windowX = static_cast<float>(luaL_optnumber(iState, 2, static_cast<lua_Number>(mouse.x())));
 	const auto windowY = static_cast<float>(luaL_optnumber(iState, 3, static_cast<lua_Number>(mouse.y())));
 	const auto map = findIsometricMap(iState);
@@ -1826,7 +1828,7 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		 .description = "State of the push-wall: `idle`, `moving` or `final`.",
 		 .params = {entityId}, .returns = {{"state", String}}},
 		{.table = "isometric", .name = "pick_cell", .function = guarded<luaIsometricPickCell>,
-		 .description = "Terrain cell under a window pixel (the mouse by default), slope-aware; nothing when it is off the map.",
+		 .description = "Terrain cell under a viewport pixel (the mouse by default), slope-aware; nothing when it is off the map.",
 		 .params = {entityId, {"x", Number, true}, {"y", Number, true}}, .returns = {{"cell_x", Integer}, {"cell_y", Integer}}},
 		{.table = "isometric", .name = "get_cell", .function = guarded<luaIsometricGetCell>,
 		 .description = "Terrain and overlay tile of a cell of a layer of the tilemap (layers from 0, -1 for none or outside).",
