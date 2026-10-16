@@ -4,13 +4,26 @@
 --               keyboard through input actions (`build`, `bulldoze`, `town_tool`, `cursor`), a HUD of its own
 --               (huds/iso_town.owlhud) with tool buttons, ui.is_mouse_over_ui, gamestate.
 --
--- The road layer (layer 1 of the tilemap) holds road overlays: tile 3 runs along X, tile 11 along Y; a cell follows the
--- axis of its road neighbours. The ground layer (layer 0) tells where one may build: grass, sand, dirt and flowers
+-- The road layer (layer 1 of the tilemap) holds road overlays, 16 shapes (tiles 3, 11 and 12 to 25): a cell is tiled from
+-- the mask of its four road neighbours (straight along X or Y, corner, T, cross, dead end, alone), and building or
+-- bulldozing re-tiles the cell and its four neighbours. The ground layer (layer 0) tells where one may build: grass, sand, dirt and flowers
 -- only, on a slope that is not steep, never on a pavement plot, water or rock. `town_money`, `town_roads` (roads built
--- by the player) and `town_cursor_x` / `town_cursor_y` mirror the state for the other scripts and the scenario test.
+-- by the player), `town_cursor_x` / `town_cursor_y` and `town_cursor_tile` (the road tile under the cursor) mirror the state for the other scripts and the scenario test.
 
 local GROUND_LAYER, ROAD_LAYER = 0, 1
 local ROAD_X, ROAD_Y = 3, 11
+-- Neighbour mask bits: north is -y, east +x, south +y, west -x.
+local NORTH, EAST, SOUTH, WEST = 1, 2, 4, 8
+-- Road tile of each neighbour mask, as laid out by tools/iso_atlas (and listed in the navigation rules of the scene).
+local TILE_OF_MASK = {
+    [0] = 12,
+    [NORTH] = 13, [EAST] = 14, [SOUTH] = 15, [WEST] = 16,
+    [NORTH | EAST] = 17, [EAST | SOUTH] = 18, [SOUTH | WEST] = 19, [WEST | NORTH] = 20,
+    [NORTH | EAST | SOUTH] = 21, [EAST | SOUTH | WEST] = 22, [SOUTH | WEST | NORTH] = 23, [WEST | NORTH | EAST] = 24,
+    [NORTH | EAST | SOUTH | WEST] = 25,
+    [EAST | WEST] = ROAD_X, [NORTH | SOUTH] = ROAD_Y,
+}
+local FIRST_ROAD_TILE, LAST_ROAD_TILE = 11, 25
 local BUILDABLE = { [0] = true, [1] = true, [4] = true, [6] = true, [7] = true }
 local SIZE = 24
 local FIRST_STEEP_SLOPE = 15
@@ -46,7 +59,7 @@ local function toast(text)
 end
 
 local function is_road(tile)
-    return tile == ROAD_X or tile == ROAD_Y
+    return tile == ROAD_X or (tile >= FIRST_ROAD_TILE and tile <= LAST_ROAD_TILE)
 end
 
 local function road_at(x, y)
@@ -57,19 +70,19 @@ local function road_at(x, y)
     return is_road(overlay)
 end
 
--- A road cell runs along Y when only its Y neighbours are roads, along X otherwise.
-local function orientation(x, y)
-    local along_y = road_at(x, y - 1) or road_at(x, y + 1)
-    local along_x = road_at(x - 1, y) or road_at(x + 1, y)
-    if along_y and not along_x then
-        return ROAD_Y
-    end
-    return ROAD_X
+-- The road tile of a cell from which of its four neighbours are roads.
+local function tile_for(x, y)
+    local mask = 0
+    if road_at(x, y - 1) then mask = mask | NORTH end
+    if road_at(x + 1, y) then mask = mask | EAST end
+    if road_at(x, y + 1) then mask = mask | SOUTH end
+    if road_at(x - 1, y) then mask = mask | WEST end
+    return TILE_OF_MASK[mask]
 end
 
 local function refresh_cell(x, y)
     if road_at(x, y) then
-        isometric.set_cell(map_id, ROAD_LAYER, x, y, -1, orientation(x, y))
+        isometric.set_cell(map_id, ROAD_LAYER, x, y, -1, tile_for(x, y))
     end
 end
 
@@ -106,7 +119,7 @@ local function build_road(x, y)
         toast(problem)
         return
     end
-    isometric.set_cell(map_id, ROAD_LAYER, x, y, -1, ROAD_X)
+    isometric.set_cell(map_id, ROAD_LAYER, x, y, -1, ROAD_X) -- any road tile: refresh_around picks the shape
     refresh_around(x, y)
     built[y * SIZE + x] = true
     gamestate.set("town_money", money() - ROAD_COST)
@@ -196,6 +209,11 @@ local function update_cursor(dt)
     end
     gamestate.set("town_cursor_x", cursor_valid and cursor_x or -1)
     gamestate.set("town_cursor_y", cursor_valid and cursor_y or -1)
+    local under = -1
+    if cursor_valid then
+        under = select(2, isometric.get_cell(map_id, ROAD_LAYER, cursor_x, cursor_y))
+    end
+    gamestate.set("town_cursor_tile", under)
     ui.set_visible(marker_id, cursor_valid)
     if cursor_valid then
         -- The marker sprite stands on the front corner of its cell.

@@ -142,8 +142,22 @@ Entities:
       climbCost: 0.5
       allowSteep: false
       rules:
-        - {tile: 3, cost: 1, exits: [east, south, west, north], enters: [east, south, west, north]}
-        - {tile: 11, cost: 1, exits: [east, south, west, north], enters: [east, south, west, north]}
+        - {tile: 3, cost: 1, exits: [east, west], enters: [east, west]}
+        - {tile: 11, cost: 1, exits: [south, north], enters: [south, north]}
+        - {tile: 12, cost: 1, exits: [], enters: []}
+        - {tile: 13, cost: 1, exits: [north], enters: [south]}
+        - {tile: 14, cost: 1, exits: [east], enters: [west]}
+        - {tile: 15, cost: 1, exits: [south], enters: [north]}
+        - {tile: 16, cost: 1, exits: [west], enters: [east]}
+        - {tile: 17, cost: 1, exits: [east, north], enters: [south, west]}
+        - {tile: 18, cost: 1, exits: [east, south], enters: [west, north]}
+        - {tile: 19, cost: 1, exits: [south, west], enters: [east, north]}
+        - {tile: 20, cost: 1, exits: [west, north], enters: [east, south]}
+        - {tile: 21, cost: 1, exits: [east, south, north], enters: [south, west, north]}
+        - {tile: 22, cost: 1, exits: [east, south, west], enters: [east, west, north]}
+        - {tile: 23, cost: 1, exits: [south, west, north], enters: [east, south, north]}
+        - {tile: 24, cost: 1, exits: [east, west, north], enters: [east, south, west]}
+        - {tile: 25, cost: 1, exits: [east, south, west, north], enters: [east, south, west, north]}
   Visibility: {gameVisible: true}
   RendererTag: {Name: iso_world}
 
