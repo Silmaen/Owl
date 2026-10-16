@@ -389,6 +389,9 @@ void EditorLayer::onAttach() {
 	utils::applyTheme(gui::Theme::fromPreset(gui::Theme::presetFromName(m_settings.themePreset)));
 
 	m_dockLayout.setPreset(DockLayout::presetFromName(m_settings.layoutPreset));
+	gui::component::setNavigationGraphSwitch(
+			{.isShown = [this]() -> bool { return m_settings.showNavGraph; },
+			 .setShown = [this](const bool iShown) -> void { m_settings.showNavGraph = iShown; }});
 
 	// Create the initial scene document. Its onAttach() initialises its own Viewport.
 	auto& initialDoc = ensureActiveSceneDocument();
@@ -611,6 +614,7 @@ void EditorLayer::onDetach() {
 	OWL_PROFILE_FUNCTION()
 
 	app::Application::get().getHotReload().removeListener(m_hotReloadListener);
+	gui::component::setNavigationGraphSwitch({});
 
 	saveProjectSession();
 	// Sync keybinding overrides before saving

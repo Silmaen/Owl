@@ -279,6 +279,25 @@ OWL_API void renderProps(scene::component::Tilemap& ioComponent);
 
 /**
  * @brief
+ *  The switch of the navigation graph overlay of the viewport, drawn as the "Show graph" button of the Tilemap
+ *  inspector.
+ */
+struct NavigationGraphSwitch {
+	/// Whether the overlay is shown.
+	std::function<bool()> isShown;
+	/// Show or hide the overlay.
+	std::function<void(bool)> setShown;
+};
+
+/**
+ * @brief
+ *  Give the Tilemap inspector the switch of the graph overlay (the button is hidden without it).
+ * @param[in] iSwitch The switch, empty functions to remove it.
+ */
+OWL_API void setNavigationGraphSwitch(NavigationGraphSwitch iSwitch);
+
+/**
+ * @brief
  *  Render a Gui for editing an isometric object (sheet, building, tint).
  * @param ioComponent The component to edit.
  */
