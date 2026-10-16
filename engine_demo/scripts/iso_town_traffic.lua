@@ -242,12 +242,12 @@ local function loop_path(cx, cy, d_x, d_y, right_x, right_y)
     local function add(side, along)
         points[#points + 1] = { cx + right_x * side + d_x * along, cy + right_y * side + d_y * along }
     end
-    for i = 0, LOOP_SAMPLES do
-        local u = i / LOOP_SAMPLES
-        add(LANE + (half - LANE) * smooth(u), -0.5 + 0.5 * u)
-    end
-    for i = 1, LOOP_SAMPLES do
-        add(half, (half - corner) * i / LOOP_SAMPLES)
+    -- The drift from the lane to the edge spans the whole straight, so the heading stays under 22.5 degrees and the
+    -- sprite keeps its straight frame.
+    local reach = half - corner + 0.5
+    for i = 0, 2 * LOOP_SAMPLES do
+        local u = i / (2 * LOOP_SAMPLES)
+        add(LANE + (half - LANE) * smooth(u), -0.5 + reach * u)
     end
     for _, centre_side in ipairs({ half - corner, -(half - corner) }) do
         local start = centre_side > 0 and 0 or math.pi / 2
@@ -261,12 +261,9 @@ local function loop_path(cx, cy, d_x, d_y, right_x, right_y)
             end
         end
     end
-    for i = 1, LOOP_SAMPLES do
-        add(-half, (half - corner) * (1 - i / LOOP_SAMPLES))
-    end
-    for i = 1, LOOP_SAMPLES do
-        local u = i / LOOP_SAMPLES
-        add(-half + (half - LANE) * smooth(u), -0.5 * u)
+    for i = 1, 2 * LOOP_SAMPLES do
+        local u = i / (2 * LOOP_SAMPLES)
+        add(-half + (half - LANE) * smooth(u), half - corner - reach * u)
     end
     local lengths, total = { 0 }, 0
     for i = 2, #points do
