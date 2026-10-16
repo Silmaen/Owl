@@ -38,7 +38,7 @@ The first step on the unmerged `Feature/KickoffIsometricRenderer` branch (2026-0
 - Depth test with alpha cutout: every sprite writes its isometric depth (diagonal, height, sub-layer), so opaque and
   cut-out sprites — the whole Transport Tycoon look — draw without sorting. Only translucent sprites (smoke, glass,
   previews) are sorted back to front on the CPU.
-- Terrain chunks have a static order and are never sorted per frame.
+- Terrain chunks have a static order and are never sorted per frame; they live in persistent GPU buffers (below).
 - Pre-rendered sprites are billboards anchored at their world foot point; they are never pushed through the dimetric
   matrix a second time. Each corner takes the depth of a plane through the foot: vertical, facing the viewer, for an
   upright sprite; the ground plane for a flat terrain tile. Tilemap layers are depth sub-layers a sixteenth of a view
@@ -127,8 +127,8 @@ migrations, image tests on lavapipe and llvmpipe with zero validation message, a
 
 ISO1 (2026-10-14) shipped the layer, the camera, the billboards with depth and cutout, the translucent sort, the
 ported projection helpers, `Tileset::kind`, the isometric viewport mode of Owl Nest, `sample_project/scenes/iso_test.owl`
-and the `isometric` image test on both backends. Isometric tilemaps emit their cells per frame from the chunks in view;
-persistent isometric chunk buffers are left to ISO5.
+and the `isometric` image test on both backends. Isometric tilemaps keep one persistent GPU instance buffer per 32 x 32
+chunk and layer, uploaded in the prepare phase only when a chunk changed (see the ISO5 chunk buffers below).
 
 ISO2 (2026-10-15) added the corner heights (tilemap format 3), the 19 slopes, terraforming, the (terrain, slope) table
 and foundations of the tileset, overlays drawn along the slope, `pickTerrain` (bench `iso/pick`), the isometric preview
@@ -168,6 +168,23 @@ and three vehicles driven by `iso_vehicle.lua`, and the `isometric_objects` imag
 
 The baseline of these entries in `bench/baseline/linux-bench.json` is an estimate (this run scaled by the agent ratio
 of `renderer2d/quads_color`) until a nightly run replaces it.
+
+ISO5 chunk buffers (2026-10-16): a tilemap of the isometric layer keeps, per layer and 32 x 32 chunk, a persistent
+instance buffer of 32 bytes per tile (foot in map space, height of the lowest corner, depth bias, texture rectangle;
+`tile.slang`). What the cells of a map share (origin, sprite size, depth slope, entity id) is in the per-draw uniform
+block, so a moved map, a new camera or another presentation rebuild nothing. `Scene::prepareTilemapRenderData` builds
+and uploads, before any layer draws, the chunks whose cell generation, corner-height generation
+(`TilemapAsset::getChunkHeightGeneration`, stamped on the up to four chunks around a changed corner) or tileset
+(layout, slope tables) changed: a static frame uploads 0 byte, a one-cell edit one chunk, and the frame draws one
+instanced call per chunk in view. A map drawn without a prepare is built at draw time and counted as a late build.
+Same Null-backend measures as above:
+
+| Case                                             | Before  | After   | Budget |
+|--------------------------------------------------|---------|---------|--------|
+| Frame, zoom 1, no vehicle                        | 218 µs  | 16 µs   | < 1 ms |
+| Frame, zoom 1, 5 000 vehicles over the whole map | 267 µs  | 125 µs  | < 2 ms |
+| Frame, zoom 1, 5 000 vehicles in view            | 308 µs  | 178 µs  | < 2 ms |
+| Frame, zoomed out ×4 (51 200 cells in 3 chunks)  | 1.43 ms | 17 µs   | < 4 ms |
 
 ## Later
 

@@ -290,7 +290,7 @@ TEST(RendererIsometric, drawCountsOpaqueAndTranslucentBillboards) {
 	const auto stats = RendererIsometric::getStatistics();
 	EXPECT_EQ(stats.opaqueCount, 1u + 64u + 1u);
 	EXPECT_EQ(stats.translucentCount, 1u);
-	EXPECT_EQ(stats.drawCallCount, 2u);
+	EXPECT_EQ(stats.drawCallCount, 4u) << "one per tilemap chunk (two layers), the opaque batch, the translucent batch";
 	teardownRendererStack();
 }
 
@@ -441,5 +441,162 @@ TEST(RendererIsometric, objectDrawsOneSpritePerSlice) {
 	const auto stats = RendererIsometric::getStatistics();
 	EXPECT_EQ(stats.spriteCount, 3u);
 	EXPECT_EQ(stats.drawCallCount, 1u);
+	teardownRendererStack();
+}
+
+namespace {
+
+constexpr uint64_t g_tileInstanceBytes = 32;
+
+auto makeBigMap() -> scene::TilemapAsset {
+	auto map = makeIsometricMap();
+	map.resize(64, 64);
+	map.layers[0].fill(0);
+	return map;
+}
+
+auto prepareOnce(const scene::TilemapAsset& iMap) -> RendererIsometric::PrepareStatistics {
+	RendererIsometric::beginPrepare();
+	RendererIsometric::prepareTilemap(iMap);
+	return RendererIsometric::getPrepareStatistics();
+}
+
+}// namespace
+
+TEST(RendererIsometric, firstPrepareUploadsEveryChunkOnce) {
+	bootRendererStack();
+	const auto map = makeBigMap();
+	const auto first = prepareOnce(map);
+	EXPECT_EQ(first.builtChunkCount, 8u) << "four chunks for each of the two layers";
+	EXPECT_EQ(first.lateBuiltChunkCount, 0u);
+	EXPECT_GE(first.uploadedBytes, uint64_t{64} * 64 * g_tileInstanceBytes);
+	EXPECT_EQ(RendererIsometric::getCachedAssetCount(), 1u);
+	teardownRendererStack();
+}
+
+TEST(RendererIsometric, staticFramesUploadNothing) {
+	bootRendererStack();
+	const auto map = makeBigMap();
+	std::ignore = prepareOnce(map);
+	IsometricCamera camera = makeCamera();
+	camera.setTarget({32.f, 32.f, 0.f});
+	for (int frame = 0; frame < 3; ++frame) {
+		const auto stats = prepareOnce(map);
+		EXPECT_EQ(stats.builtChunkCount, 0u);
+		EXPECT_EQ(stats.uploadedBytes, 0u);
+		RendererIsometric::resetStats();
+		RendererIsometric::beginScene(camera);
+		RendererIsometric::drawTilemap(map, math::Transform{}, 3);
+		RendererIsometric::endScene();
+		EXPECT_GT(RendererIsometric::getStatistics().opaqueCount, 0u);
+		const auto drawn = RendererIsometric::getPrepareStatistics();
+		EXPECT_EQ(drawn.lateBuiltChunkCount, 0u) << "a prepared map is never built at draw time";
+		EXPECT_EQ(drawn.uploadedBytes, 0u);
+	}
+	teardownRendererStack();
+}
+
+TEST(RendererIsometric, movingTheCameraOrTheMapUploadsNothing) {
+	bootRendererStack();
+	const auto map = makeBigMap();
+	std::ignore = prepareOnce(map);
+	RendererIsometric::beginPrepare();
+	IsometricCamera camera = makeCamera();
+	for (const float shift: {0.f, 10.f, 40.f}) {
+		camera.setTarget({shift, shift, 0.f});
+		camera.setZoomLevel(shift > 20.f ? -1 : 0);
+		RendererIsometric::beginScene(camera);
+		math::Transform transform;
+		transform.translation() = {shift, -shift, 2.f};
+		RendererIsometric::drawTilemap(map, transform, 3);
+		RendererIsometric::endScene();
+	}
+	const auto stats = RendererIsometric::getPrepareStatistics();
+	EXPECT_EQ(stats.builtChunkCount, 0u);
+	EXPECT_EQ(stats.uploadedBytes, 0u);
+	teardownRendererStack();
+}
+
+TEST(RendererIsometric, oneCellEditUploadsOneChunk) {
+	bootRendererStack();
+	auto map = makeBigMap();
+	std::ignore = prepareOnce(map);
+	map.setTile(0, 40, 5, 2);
+	const auto stats = prepareOnce(map);
+	EXPECT_EQ(stats.builtChunkCount, 1u);
+	EXPECT_EQ(stats.uploadedBytes, uint64_t{32} * 32 * g_tileInstanceBytes);
+	EXPECT_EQ(prepareOnce(map).uploadedBytes, 0u);
+	teardownRendererStack();
+}
+
+TEST(RendererIsometric, overlayEditAddsAnInstanceInItsChunkOnly) {
+	bootRendererStack();
+	auto map = makeBigMap();
+	std::ignore = prepareOnce(map);
+	map.layers[1].setCell(3, 3, {.terrain = scene::component::g_EmptyTileIndex, .overlay = 2, .flags = 0});
+	const auto stats = prepareOnce(map);
+	EXPECT_EQ(stats.builtChunkCount, 1u);
+	EXPECT_EQ(stats.uploadedBytes, uint64_t{2} * g_tileInstanceBytes) << "the road tile and the overlay";
+	teardownRendererStack();
+}
+
+TEST(RendererIsometric, cornerHeightChangeRebuildsTheChunksAroundTheCorner) {
+	bootRendererStack();
+	auto map = makeBigMap();
+	std::ignore = prepareOnce(map);
+	std::ignore = map.setCornerHeight(5, 5, 1);
+	EXPECT_EQ(prepareOnce(map).builtChunkCount, 2u) << "an inner corner touches one chunk of each of the two layers";
+	const auto changes = map.setCornerHeight(32, 5, 1);
+	EXPECT_EQ(prepareOnce(map).builtChunkCount, 4u) << "a corner on a chunk border touches two chunks per layer";
+	EXPECT_EQ(prepareOnce(map).builtChunkCount, 0u);
+	map.applyCornerChanges(changes, true);
+	EXPECT_EQ(prepareOnce(map).builtChunkCount, 4u) << "an undo is a change like any other";
+	teardownRendererStack();
+}
+
+TEST(RendererIsometric, tilesetChangeRebuildsEveryChunk) {
+	bootRendererStack();
+	auto map = makeBigMap();
+	std::ignore = prepareOnce(map);
+	EXPECT_EQ(prepareOnce(map).builtChunkCount, 0u);
+	scene::SlopeSet grass;
+	grass.id = 0;
+	grass.foundations.fill(1);
+	map.tileset->slopeSets.push_back(grass);
+	EXPECT_EQ(prepareOnce(map).builtChunkCount, 8u) << "a slope table changes the tile of the cells";
+	map.tileset->columns = 4;
+	map.tileset->tiles.resize(map.tileset->tileCount());
+	EXPECT_EQ(prepareOnce(map).builtChunkCount, 8u) << "the atlas layout changes the texture rectangles";
+	map.tileset = mkShared<scene::Tileset>(*map.tileset);
+	EXPECT_EQ(prepareOnce(map).builtChunkCount, 8u) << "another tileset object";
+	EXPECT_EQ(prepareOnce(map).builtChunkCount, 0u);
+	teardownRendererStack();
+}
+
+TEST(RendererIsometric, unpreparedMapIsBuiltAtDrawTimeOnce) {
+	bootRendererStack();
+	const auto map = makeBigMap();
+	const IsometricCamera camera = makeCamera();
+	for (int frame = 0; frame < 2; ++frame) {
+		RendererIsometric::beginPrepare();
+		RendererIsometric::beginScene(camera);
+		RendererIsometric::drawTilemap(map, math::Transform{}, 3);
+		RendererIsometric::endScene();
+		const auto stats = RendererIsometric::getPrepareStatistics();
+		EXPECT_EQ(stats.lateBuiltChunkCount, frame == 0 ? 8u : 0u);
+		EXPECT_EQ(stats.builtChunkCount, frame == 0 ? 8u : 0u);
+	}
+	teardownRendererStack();
+}
+
+TEST(RendererIsometric, unusedMapIsEvictedFromTheCache) {
+	bootRendererStack();
+	{
+		const auto map = makeBigMap();
+		std::ignore = prepareOnce(map);
+		EXPECT_EQ(RendererIsometric::getCachedAssetCount(), 1u);
+	}
+	for (uint64_t i = 0; i <= RendererIsometric::cacheEvictionPrepares; ++i) RendererIsometric::beginPrepare();
+	EXPECT_EQ(RendererIsometric::getCachedAssetCount(), 0u);
 	teardownRendererStack();
 }

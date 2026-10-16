@@ -18,6 +18,7 @@
 #include "renderer/gpu/Texture.h"
 
 #include <array>
+#include <cstddef>
 #include <cstdint>
 #include <optional>
 #include <span>
@@ -376,8 +377,12 @@ struct OWL_API IsometricSprite {
  *  Static renderer of the isometric layer: depth-tested billboards with alpha cutout.
  *
  * Opaque and cut-out billboards (texel alpha below one half is discarded) draw in submission order with depth test
- * and write; translucent ones draw after them, sorted back to front, depth tested but not written. Tilemaps emit one
- * flat billboard per non-empty cell of the chunks in view.
+ * and write; translucent ones draw after them, sorted back to front, depth tested but not written.
+ *
+ * A tilemap keeps one persistent GPU instance buffer per chunk of 32x32 cells and per layer (the 2D tilemap scheme):
+ * `prepareTilemap` (the prepare phase, before any render pass) rebuilds and uploads only the chunks whose cell
+ * generation, height generation or tileset changed, and a frame draws one instanced call per chunk in view without
+ * uploading anything. A chunk first met at draw time is built there (counted as a late build).
  */
 class OWL_API RendererIsometric final {
 public:
@@ -427,6 +432,8 @@ public:
 	static constexpr float tilemapLayerBias = 0.0625f;
 	/// Depth offset of upright sprites, above every tilemap layer of the same plane, in view pixels.
 	static constexpr float spriteBias = 1.f;
+	/// Prepare phases an unused tilemap stays cached before `beginPrepare` evicts it.
+	static constexpr uint64_t cacheEvictionPrepares = 600;
 
 	/**
 	 * @brief
@@ -439,6 +446,36 @@ public:
 	 *  Release the GPU resources.
 	 */
 	static void shutdown();
+
+	/**
+	 * @brief
+	 *  Start a prepare phase: reset the prepare counters and evict the tilemaps unused for a long time.
+	 */
+	static void beginPrepare();
+
+	/**
+	 * @brief
+	 *  Bring the GPU chunks of a tilemap up to date; call it outside any render pass.
+	 *
+	 * Only the chunks whose generation changed (cells, corner heights, or any change of the tileset) are rebuilt and
+	 * uploaded, so a frame without edit uploads nothing. The chunks do not depend on the camera, the transform or
+	 * the presentation.
+	 * @param[in] iAsset The tilemap.
+	 */
+	static void prepareTilemap(const scene::TilemapAsset& iAsset);
+
+	/**
+	 * @brief
+	 *  Drop every cached tilemap.
+	 */
+	static void clearCache();
+
+	/**
+	 * @brief
+	 *  Number of tilemaps with GPU chunks.
+	 * @return The count.
+	 */
+	[[nodiscard]] static auto getCachedAssetCount() -> size_t;
 
 	/**
 	 * @brief
@@ -487,10 +524,10 @@ public:
 
 	/**
 	 * @brief
-	 *  Queue the cells in view of an isometric tilemap as flat billboards.
+	 *  Queue an isometric tilemap: its chunks in view are drawn from their persistent GPU buffers.
 	 *
 	 * The map's back corner sits at the entity translation; rotation and scale are ignored. Each layer is one depth
-	 * sub-layer above the previous one (`tilemapLayerBias`).
+	 * sub-layer above the previous one (`tilemapLayerBias`), its overlays half a sub-layer above its terrain.
 	 * @param[in] iAsset The tilemap.
 	 * @param[in] iWorldTransform World transform of the entity.
 	 * @param[in] iEntityId Entity id written to the picking attachment.
@@ -510,7 +547,7 @@ public:
 	struct Statistics {
 		/// Draw calls issued.
 		uint32_t drawCallCount = 0;
-		/// Opaque and cut-out billboards drawn.
+		/// Opaque and cut-out billboards and tilemap cells drawn.
 		uint32_t opaqueCount = 0;
 		/// Translucent billboards drawn.
 		uint32_t translucentCount = 0;
@@ -524,10 +561,30 @@ public:
 
 	/**
 	 * @brief
+	 *  Counters of the chunk uploads since the last `beginPrepare`.
+	 */
+	struct PrepareStatistics {
+		/// Chunks built and uploaded.
+		uint32_t builtChunkCount = 0;
+		/// Chunks built at draw time because no prepare ran for them (uploads inside the render pass).
+		uint32_t lateBuiltChunkCount = 0;
+		/// Bytes sent to the GPU buffers of the chunks.
+		uint64_t uploadedBytes = 0;
+	};
+
+	/**
+	 * @brief
 	 *  Get the counters since the last `resetStats`.
 	 * @return The counters.
 	 */
 	[[nodiscard]] static auto getStatistics() -> Statistics;
+
+	/**
+	 * @brief
+	 *  Get the upload counters since the last `beginPrepare`.
+	 * @return The counters.
+	 */
+	[[nodiscard]] static auto getPrepareStatistics() -> PrepareStatistics;
 
 	/**
 	 * @brief
