@@ -54,7 +54,7 @@ capture, statistics — implemented by `EditorLayer` (delegation to the active s
   `capture`; a shared `PlayDriver` steps it one frame at a time (editor main loop) or in a loop (headless)
 - `PlayReport`: frames, ticks, CPU time, draw calls, last phase timings, entity count, optional `FrameCapture`
   (`encodePng` through the engine's `encodeImagePng`); the Null renderer reads back a blank image of the right size
-- Held keys go through the input injection, hence the Null input only; input actions in the editor come with IN3 / MCP4
+- Held keys, mouse buttons and a gamepad go through the input injection (any window type); input actions come with MCP4
 - `EditorLayer::runCommand` is gone: the editor runs commands through `EditorSession::execute`; the scenario runner keeps
   its own registry and undo history (it edits the playing scene on purpose) and shares `findProjectDirectory`
 
@@ -155,6 +155,21 @@ sequenceDiagram
 
 ### Play and capture (MCP4)
 
-`play.run { frames, timestep_ms, actions, capture }` plays the scene headlessly at a fixed step with injected input
-actions and returns a PNG capture plus phase timings. `doc/pages/mcp.md` documents the client setup
-(`claude mcp add --transport http`). The same play state machine drives the v0.9.0 replay tooling.
+Done. `play.run` (`McpPlay.h`) is the one tool that is not a registry command; the user page is [MCP server](../mcp.md).
+
+- Arguments `frames`, `ticks`, `timestep_ms`, `actions`, `keys`, `capture`, `stop_at_end`; `actions` are held through
+  the first matching binding of each action of the engine action map (`session::resolveActionHolds`, moved out of the
+  scenario runner, so a scenario `actions:` step and `play.run` hold the same inputs); `PlayRequest` gained
+  `mouseButtons` and `gamepad`
+- Result: structured content (frames, ticks, CPU times, draw calls, entity count, phase timings, capture size) also as
+  text, then the capture as an `image` content (`image/png`, base64); a failure is an `isError` result (`PlayFailed`)
+- The editor plays over several frames of its main loop, so the answer is deferred: `McpDispatcher::handleDeferrable`
+  returns a poll (`DeferredPoll`), `McpHttpServer` keeps the job out of the queue and calls `pollDeferred` every frame,
+  also while the editor is busy; the headless session plays synchronously and answers at once. One deferred play at a
+  time. `stop()` and a play longer than `HttpOptions::deferredTimeout` (10 minutes) call the poll with `iCancel`: the
+  play is stopped and answered as interrupted
+- `stop_at_end` and the edited scene are those of `EditorSession::startPlay`; the capture is the viewport of the active
+  document in the editor, the offscreen target in the headless session
+- Tests: `McpPlay_test.cpp` (arguments, base64, held actions, deferral with a fake asynchronous session) and
+  `McpHttp_test.cpp` (a whole session over HTTP: `tools/list`, create then undo restores the scene, `play.run`; the
+  deferred answers), run under `linux-sanitizer-thread`

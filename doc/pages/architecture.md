@@ -88,7 +88,7 @@ What a game plugs in without patching the engine, and what the architecture work
 **Dedicated guides:** [Renderer](renderer.md) · [Scene & Components](scene.md) ·
 [Events & Input](event_input.md) · [Physics](physics.md) · [Sound](sound.md) ·
 [Lua Scripting](scripting.md) · [Lua API](lua-api.md) · [Editor (Owl Nest)](editor.md) ·
-[Node Graph Framework](node_graph.md)
+[Node Graph Framework](node_graph.md) · [MCP server](mcp.md)
 
 ## Backend System
 

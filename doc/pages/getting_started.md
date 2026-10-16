@@ -33,6 +33,7 @@ desktop windows, which GLFW cannot place under Wayland). See [Building](building
 | Physics (Box2D bodies, triggers)  | [physics.md](physics.md)           |
 | Sound (effects, music, listeners) | [sound.md](sound.md)               |
 | Node graph editor                 | [node_graph.md](node_graph.md)     |
+| Driving Owl Nest from an AI agent | [mcp.md](mcp.md)                   |
 | Building from source              | [building.md](building.md)         |
 | Engine architecture               | [architecture.md](architecture.md) |
 | How to contribute                 | [contributing.md](contributing.md) |

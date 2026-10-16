@@ -8,10 +8,14 @@
 
 #include "McpDispatcher.h"
 
+#include "McpPlay.h"
 #include "McpTools.h"
 
+#include <app/Application.h>
+#include <app/EngineContext.h>
 #include <core/Core.h>
 #include <core/Log.h>
+#include <input/ActionMap.h>
 
 #include <algorithm>
 #include <exception>
@@ -19,6 +23,7 @@
 #include <format>
 #include <string>
 #include <system_error>
+#include <tuple>
 #include <utility>
 
 namespace owl::nest::mcp {
@@ -82,19 +87,39 @@ McpDispatcher::McpDispatcher(session::EditorSession& ioSession, const McpOptions
 	: m_session{ioSession}, m_resources{ioSession, iOptions.helpRoot} {}
 
 auto McpDispatcher::handle(const std::string_view iMessage) -> std::optional<std::string> {
+	auto result = handleDeferrable(iMessage);
+	if (result.poll)
+		return result.poll(/*iCancel=*/true);
+	return std::move(result.answer);
+}
+
+auto McpDispatcher::handleDeferrable(const std::string_view iMessage) -> DispatchResult {
 	const auto message = json::parse(iMessage, nullptr, false);
 	if (message.is_discarded()) {
 		OWL_CORE_WARN("Mcp: Message is not JSON.")
-		return dumpJson(errorResponse(nullptr, rpcError(RpcError::ParseError, "Parse error")));
+		return {.answer = dumpJson(errorResponse(nullptr, rpcError(RpcError::ParseError, "Parse error")))};
 	}
 	if (message.is_array()) {
 		OWL_CORE_WARN("Mcp: Batch refused.")
-		return dumpJson(errorResponse(
-				nullptr, rpcError(RpcError::InvalidRequest, "Batch requests are not part of this protocol revision")));
+		return {.answer = dumpJson(
+						errorResponse(nullptr, rpcError(RpcError::InvalidRequest,
+														"Batch requests are not part of this protocol revision")))};
 	}
-	if (auto answer = handleMessage(message); answer)
-		return dumpJson(*answer);
-	return std::nullopt;
+	m_playDeferred = false;
+	auto answer = handleMessage(message);
+	if (m_playDeferred) {
+		m_playDeferred = false;
+		return {.poll = [this, id = m_currentId](const bool iCancel) -> std::optional<std::string> {
+			if (iCancel)
+				std::ignore = m_session.stopPlay();
+			else if (m_session.isPlayRunning())
+				return std::nullopt;
+			return finishPlay(id);
+		}};
+	}
+	if (answer)
+		return {.answer = dumpJson(*answer)};
+	return {};
 }
 
 auto McpDispatcher::handleMessage(const json& iMessage) -> std::optional<json> {
@@ -113,6 +138,7 @@ auto McpDispatcher::handleMessage(const json& iMessage) -> std::optional<json> {
 							 rpcError(RpcError::InvalidRequest, "Invalid Request"));
 	}
 	const json id = hasId ? iMessage["id"] : json(nullptr);
+	m_currentId = id;
 	if (getString(iMessage, "jsonrpc") != "2.0" || !method->is_string() || (hasId && !isValidId(id))) {
 		OWL_CORE_WARN("Mcp: Not a JSON-RPC 2.0 request.")
 		if (!hasId)
@@ -181,6 +207,7 @@ auto McpDispatcher::initialize(const json& iParams) -> expected<json, json> {
 auto McpDispatcher::listTools() const -> json {
 	auto tools = json::array();
 	for (const auto& spec: m_session.getRegistry().getCommands()) tools.push_back(makeTool(spec));
+	tools.push_back(makePlayTool());
 	return {{"tools", std::move(tools)}};
 }
 
@@ -189,6 +216,12 @@ auto McpDispatcher::callTool(const json& iParams) -> expected<json, json> {
 	if (name == iParams.end() || !name->is_string())
 		return invalidParams("tools/call: name must be a string");
 	const auto& toolName = name->get_ref<const std::string&>();
+	if (toolName == playToolName) {
+		const auto arguments = iParams.find("arguments");
+		const auto result =
+				callPlay(arguments != iParams.end() && arguments->is_object() ? *arguments : json::object());
+		return result.is_null() ? json::object() : result;
+	}
 	const auto* spec = m_session.getRegistry().find(toolName);
 	if (spec == nullptr) {
 		OWL_CORE_WARN("Mcp: Unknown tool {}.", toolName)
@@ -207,6 +240,33 @@ auto McpDispatcher::callTool(const json& iParams) -> expected<json, json> {
 	if (!result)
 		return makeToolError(result.error());
 	return makeToolResult(*result);
+}
+
+auto McpDispatcher::callPlay(const json& iArguments) -> json {
+	if (m_playPending)
+		return makePlayError("a play.run is still running");
+	const auto map = app::Application::instanced() ? app::Application::get().getEngineContext().getActionMap()
+												   : input::ActionMap::getDefault();
+	const auto request = parsePlayRequest(iArguments, *map);
+	if (!request)
+		return makePlayError(request.error());
+	if (const auto started = m_session.startPlay(*request); !started)
+		return makePlayError(started.error().message);
+	if (!m_session.isPlayRunning())
+		return makePlayResult(m_session.takePlayReport().value_or(session::PlayReport{}));
+	m_playDeferred = true;
+	m_playPending = true;
+	return nullptr;
+}
+
+auto McpDispatcher::finishPlay(const json& iId) -> std::string {
+	m_playPending = false;
+	auto report = m_session.takePlayReport();
+	if (!report) {
+		OWL_CORE_WARN("Mcp: The play ended without a report.")
+		return dumpJson(response(iId, makePlayError("the play ended without a report")));
+	}
+	return dumpJson(response(iId, makePlayResult(*report)));
 }
 
 auto McpDispatcher::confinePaths(const commands::CommandSpec& iSpec, commands::CommandArgs& ioArgs) const

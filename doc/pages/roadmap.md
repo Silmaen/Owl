@@ -144,7 +144,7 @@ MCP server in Owl Nest ([plan](design/isometric-worlds.md)).
 - ![In Progress][progress] HUD overhaul: HUD pass in pixels, `.owlhud` asset, windows, layouts, tooltips and tool cursor (done), HUD editor ([details](design/hud-system.md))
 - ![Done][done] Fixed simulation tick (`on_tick`) for systems and scripts ([Scene](scene.md#fixed-tick))
 - ![Done][done] Input frames with edges, gamepad with dead zones and the action map and its editor ([Input](design/windowing-input.md))
-- ![In Progress][progress] MCP server built into Owl Nest, on the editor command API ([MCP server](design/mcp-server.md))
+- ![Done][done] MCP server built into Owl Nest, on the editor command API, with `play.run` and a client guide ([MCP server](mcp.md))
 - ![Done][done] Native file dialogues through the desktop portal, no GTK ([Nest UI](design/nest-ui.md))
 - ![Done][done] Editor console and command journal, macros replayable as `.owlmacro` ([Editor scripting](design/editor-scripting.md))
 - ![Planned][planned] Sample project: inventory demo on the new HUD widgets, playable with a gamepad

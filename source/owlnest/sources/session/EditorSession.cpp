@@ -59,7 +59,7 @@ void PlayDriver::start(const PlayRequest& iRequest, const core::Timestep& iTickS
 
 void PlayDriver::beginFrame() const {
 	input::Input::resetInjection();
-	for (const auto key: m_request.keys) input::Input::injectKey(key);
+	injectHeldInput({.keys = m_request.keys, .mouseButtons = m_request.mouseButtons, .gamepad = m_request.gamepad});
 }
 
 auto PlayDriver::endFrame(const double iFrameMs, const uint64_t iDrawCalls, const scene::Scene& iScene) -> bool {

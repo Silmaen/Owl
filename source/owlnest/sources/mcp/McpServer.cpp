@@ -15,6 +15,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <tuple>
 #include <utility>
 
 namespace owl::nest::mcp {
@@ -94,11 +95,14 @@ auto McpServer::regenerateToken() -> bool {
 }
 
 auto McpServer::onUpdate(const bool iBusy) -> size_t {
-	if (iBusy || !m_http.isRunning())
+	if (!m_http.isRunning())
+		return 0;
+	std::ignore = m_http.pollDeferred();
+	if (iBusy)
 		return 0;
 	return m_http.pump(
-			[this](const std::string_view iMessage) -> std::optional<std::string> {
-				return m_dispatcher.handle(iMessage);
+			[this](const std::string_view iMessage) -> DispatchResult {
+				return m_dispatcher.handleDeferrable(iMessage);
 			},
 			m_options.maxMessagesPerFrame);
 }

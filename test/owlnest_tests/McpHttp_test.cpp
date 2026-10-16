@@ -28,6 +28,7 @@
 #include <functional>
 #include <future>
 #include <optional>
+#include <set>
 #include <sstream>
 #include <string>
 #include <string_view>
@@ -290,7 +291,7 @@ TEST_F(McpHttpTest, ServesARoundTripOnLoopback) {
 	reply = post(server, rpc("tools/list", nullptr, 2), withSession);
 	ASSERT_EQ(reply.status, 200);
 	EXPECT_EQ(reply.json()["id"], 2);
-	EXPECT_EQ(reply.json()["result"]["tools"].size(), session.getRegistry().getCommands().size());
+	EXPECT_EQ(reply.json()["result"]["tools"].size(), session.getRegistry().getCommands().size() + 1);
 	EXPECT_EQ(server.getHttp().getPendingCount(), 0u);
 }
 
@@ -550,4 +551,120 @@ TEST_F(McpHttpTest, KeepsToolPathsInsideTheProject) {
 	ASSERT_TRUE(bareServer.start());
 	result = callTool(bareServer, "scene.save", {{"path", "scene.owl"}});
 	EXPECT_EQ(result["structuredContent"]["error"], "InvalidArgument");
+}
+
+TEST_F(McpHttpTest, DrivesACompleteSessionOverHttp) {
+	session::HeadlessSession session;
+	ASSERT_TRUE(session.loadScene(owl::test::getRootPath() / "sample_project" / "scenes" / "platformer_house.owl")
+						.has_value());
+	const auto before = nest::test::sceneState(*session.getSessionScene());
+	McpServer server{session, options()};
+	ASSERT_TRUE(server.start());
+
+	const auto list = post(server, rpc("tools/list"));
+	ASSERT_EQ(list.status, 200);
+	std::set<std::string> names;
+	for (const auto& tool: list.json()["result"]["tools"]) names.insert(tool["name"].get<std::string>());
+	for (const auto& spec: session.getRegistry().getCommands()) EXPECT_TRUE(names.contains(spec.name)) << spec.name;
+	EXPECT_TRUE(names.contains("play.run"));
+
+	const auto created = callTool(server, "entity.create", {{"name", "EndToEnd"}});
+	ASSERT_FALSE(created["isError"].get<bool>()) << created.dump();
+	EXPECT_NE(nest::test::sceneState(*session.getSessionScene()), before);
+	ASSERT_FALSE(callTool(server, "edit.undo", json::object())["isError"].get<bool>());
+	EXPECT_EQ(nest::test::sceneState(*session.getSessionScene()), before);
+
+	const auto played = callTool(server, "play.run", {{"frames", 10}, {"actions", {{"platformer_move", 1}}}});
+	ASSERT_FALSE(played["isError"].get<bool>()) << played.dump();
+	EXPECT_EQ(played["structuredContent"]["frames"], 10);
+	ASSERT_EQ(played["content"].size(), 2u);
+	EXPECT_EQ(played["content"][1]["type"], "image");
+	EXPECT_EQ(played["content"][1]["mimeType"], "image/png");
+	EXPECT_FALSE(session.isScenePlaying());
+	EXPECT_EQ(nest::test::sceneState(*session.getSessionScene()), before);
+
+	const auto refused = callTool(server, "play.run", {{"frames", 1}, {"actions", {{"nope", true}}}});
+	EXPECT_TRUE(refused["isError"].get<bool>());
+	server.stop();
+}
+
+TEST_F(McpHttpTest, AnswersADeferredMessageWhenItsWorkEnds) {
+	McpHttpServer server;
+	ASSERT_TRUE(server.start({.port = 0}, "secret").has_value());
+	int polls = 0;
+	const McpHttpServer::DeferrableHandler handler = [&polls](const std::string_view) -> DispatchResult {
+		return {.poll = [&polls](const bool iCancel) -> std::optional<std::string> {
+			if (!iCancel && ++polls < 3)
+				return std::nullopt;
+			return R"({"done":true})";
+		}};
+	};
+	const auto reply = send(
+			server.getPort(),
+			[](httplib::Client& ioClient) -> httplib::Result {
+				return ioClient.Post("/mcp", {{"Authorization", "Bearer secret"}}, R"({"x":1})", "application/json");
+			},
+			[&server, &handler]() -> void {
+				std::ignore = server.pump(handler, 4);
+				std::ignore = server.pollDeferred();
+			});
+	EXPECT_EQ(reply.status, 200);
+	EXPECT_EQ(reply.body, R"({"done":true})");
+	EXPECT_EQ(polls, 3);
+	EXPECT_EQ(server.getDeferredCount(), 0u);
+	server.stop();
+}
+
+TEST_F(McpHttpTest, CancelsADeferredMessageAtStop) {
+	McpHttpServer server;
+	ASSERT_TRUE(server.start({.port = 0}, "secret").has_value());
+	bool cancelled = false;
+	const McpHttpServer::DeferrableHandler handler = [&cancelled](const std::string_view) -> DispatchResult {
+		return {.poll = [&cancelled](const bool iCancel) -> std::optional<std::string> {
+			cancelled = iCancel;
+			return iCancel ? std::optional<std::string>{R"({"cancelled":true})"} : std::nullopt;
+		}};
+	};
+	const auto port = server.getPort();
+	auto client = std::async(std::launch::async, [port]() -> HttpReply {
+		httplib::Client http{"127.0.0.1", port};
+		http.set_read_timeout(20s);
+		const auto result = http.Post("/mcp", {{"Authorization", "Bearer secret"}}, R"({"x":1})", "application/json");
+		return result ? HttpReply{.status = result->status, .body = result->body, .headers = {}} : HttpReply{};
+	});
+	while (server.getDeferredCount() == 0) {
+		std::ignore = server.pump(handler, 4);
+		std::this_thread::sleep_for(1ms);
+	}
+	EXPECT_EQ(server.pollDeferred(), 0u);
+	server.stop();
+	const auto reply = client.get();
+	EXPECT_EQ(reply.status, 200);
+	EXPECT_EQ(reply.body, R"({"cancelled":true})");
+	EXPECT_TRUE(cancelled);
+}
+
+TEST_F(McpHttpTest, CancelsADeferredMessageThatTakesTooLong) {
+	McpHttpServer server;
+	ASSERT_TRUE(server.start({.port = 0, .deferredTimeout = 30ms}, "secret").has_value());
+	bool cancelled = false;
+	const McpHttpServer::DeferrableHandler handler = [&cancelled](const std::string_view) -> DispatchResult {
+		return {.poll = [&cancelled](const bool iCancel) -> std::optional<std::string> {
+			cancelled = iCancel;
+			return iCancel ? std::optional<std::string>{R"({"late":true})"} : std::nullopt;
+		}};
+	};
+	const auto reply = send(
+			server.getPort(),
+			[](httplib::Client& ioClient) -> httplib::Result {
+				return ioClient.Post("/mcp", {{"Authorization", "Bearer secret"}}, R"({"x":1})", "application/json");
+			},
+			[&server, &handler]() -> void {
+				std::ignore = server.pump(handler, 4);
+				std::ignore = server.pollDeferred();
+			});
+	EXPECT_EQ(reply.status, 200);
+	EXPECT_EQ(reply.body, R"({"late":true})");
+	EXPECT_TRUE(cancelled);
+	server.stop();
 }
