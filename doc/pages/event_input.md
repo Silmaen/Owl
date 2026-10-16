@@ -340,6 +340,7 @@ with them (`ActionMap::withDefaults`) and an action of the same name replaces th
 | `interact`                                                          | `button` | E, gamepad X                             | Interaction triggers, doors, pushwalls    |
 | `primary`, `secondary`                                              | `button` | left / right mouse, right / left trigger | `VoxelPlayer` (break, place)              |
 | `ui_up`, `ui_down`, `ui_left`, `ui_right`, `ui_accept`, `ui_cancel` | `button` | arrows, Enter, Escape, D-pad, A, B       | UI navigation (HUD5)                      |
+| `ui_scroll`                                                         | `vector` | Page Up / Page Down, right stick         | Scroll the view or list holding the focus |
 
 ### Reading actions
 

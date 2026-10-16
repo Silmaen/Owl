@@ -19,7 +19,8 @@ full 2D physics and the enemies demo in v0.7.0. The 2D physics part has its own 
 Aspect-correct text with alignment and fit modes, and the dedicated HUD layer with its editor, moved to v0.4.0:
 see [HUD system](hud-system.md). Built on them:
 
-- v0.4.0: scroll views with clipping and virtualised lists and tables (vehicle lists of a management game)
+- v0.4.0: scroll views with clipping and virtualised lists (vehicle lists of a management game), done in HUD7
+- v0.5.0: tables (columns and sortable headers) over the virtualised list
 - v0.5.0: minimap of a tilemap on a render target, shown in a `UiImage`
 - v0.5.0: live scene backdrop in the HUD editor, with "look through scene camera"
 

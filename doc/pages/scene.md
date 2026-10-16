@@ -699,6 +699,55 @@ or a prefab instantiated).
 | `highlightColor`     | `vec4`   | Colour of the frame drawn around the focused widget                     |
 | `highlightThickness` | `float`  | Thickness of the frame, in reference pixels                             |
 
+#### UiScrollView
+
+Shows a window of a content larger than the widget: the children are laid out in the viewport (the rectangle minus the
+bars), shifted by `scrollOffset` and clipped to it. The content is `contentSize`, or, on an axis at 0, the extent of the
+children a `UiLayout` of the same widget places, else the viewport. The offset is kept inside the content when the HUD
+is laid out. Wheel, bars, `ui_scroll` and the focus scroll it, Lua `ui.scroll_get` / `ui.scroll_set`
+([HUD system](design/hud-system.md#scroll-views-and-virtualised-lists-hud7-done)).
+
+| Field            | Type    | Description                                                                   |
+|------------------|---------|-------------------------------------------------------------------------------|
+| `vertical`       | `bool`  | Scrolls up and down                                                           |
+| `horizontal`     | `bool`  | Scrolls left and right                                                        |
+| `contentSize`    | `vec2`  | Size of the content in reference pixels; 0 on an axis takes the layout extent |
+| `scrollOffset`   | `vec2`  | Distance scrolled, in reference pixels                                        |
+| `wheelStep`      | `float` | Scroll distance of a wheel notch, in reference pixels                         |
+| `showScrollBar`  | `bool`  | Draw the bars (they take room) when the content overflows                     |
+| `scrollBarWidth` | `float` | Thickness of a bar, in reference pixels                                       |
+| `trackColor`     | `vec4`  | Colour of the bar track                                                       |
+| `thumbColor`     | `vec4`  | Colour of the bar thumb                                                       |
+
+#### UiList
+
+A virtualised vertical list: a model of `itemCount` rows of which only those in view are drawn and bound, whatever the
+count. A script gives the count (`ui.list_set_count`) and fills the rows in view in `onBindCallback`
+(`ui.list_set_row(list, _row_index, text, detail, icon)`); a row not filled shows `Item N`. A click or `ui_up` /
+`ui_down` on the focused list selects a row and runs `onSelectCallback`. Rows and indices are 1-based in Lua, 0-based
+in the file.
+
+| Field              | Type     | Description                                                          |
+|--------------------|----------|----------------------------------------------------------------------|
+| `itemCount`        | `uint`   | Number of rows of the model                                          |
+| `rowHeight`        | `float`  | Height of a row, in reference pixels                                 |
+| `rowSpacing`       | `float`  | Space between two rows                                               |
+| `selectedIndex`    | `int`    | Selected row (-1 for none)                                           |
+| `scrollOffset`     | `float`  | Distance scrolled, in reference pixels                               |
+| `wheelStep`        | `float`  | Scroll distance of a wheel notch                                     |
+| `fontSize`         | `float`  | Font size of the row texts                                           |
+| `rowColor`         | `vec4`   | Colour of the rows                                                   |
+| `rowAltColor`      | `vec4`   | Colour of every other row                                            |
+| `hoverColor`       | `vec4`   | Colour of the row under the mouse                                    |
+| `selectedColor`    | `vec4`   | Colour of the selected row                                           |
+| `textColor`        | `vec4`   | Colour of the texts                                                  |
+| `showScrollBar`    | `bool`   | Draw the bar (it takes room) when the rows overflow                  |
+| `scrollBarWidth`   | `float`  | Thickness of the bar, in reference pixels                            |
+| `trackColor`       | `vec4`   | Colour of the bar track                                              |
+| `thumbColor`       | `vec4`   | Colour of the bar thumb                                              |
+| `onSelectCallback` | `string` | Lua function called when the selection changes (`_selected_index`)   |
+| `onBindCallback`   | `string` | Lua function called once for a row in view not filled (`_row_index`) |
+
 ### Prefab Components
 
 #### PrefabLink

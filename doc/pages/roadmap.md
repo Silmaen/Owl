@@ -131,7 +131,7 @@ MCP server in Owl Nest ([plan](design/isometric-worlds.md)).
 - ![Done][done] UTF-8 text, Latin charset with extra ranges per font, atlas cached on disk (PR-30: D-18)
 - ![Done][done] Aspect-correct text with alignment and fit
 - ![Done][done] HUD overhaul: HUD pass in pixels, `.owlhud` asset, windows, layouts, tooltips and tool cursor, HUD editor, keyboard and gamepad focus, migration ([details](design/hud-system.md))
-- ![Planned][planned] HUD scroll views and virtualised lists (moved from v0.5.0) ([HUD system](design/hud-system.md))
+- ![Done][done] HUD scroll views and virtualised lists (moved from v0.5.0) ([HUD system](design/hud-system.md))
 - ![Done][done] Fixed simulation tick (`on_tick`) for systems and scripts ([Scene](scene.md#fixed-tick))
 - ![Done][done] Input frames with edges, gamepad with dead zones and the action map and its editor ([Input](design/windowing-input.md))
 - ![Done][done] MCP server built into Owl Nest, on the editor command API, with `play.run` and a client guide ([MCP server](mcp.md))

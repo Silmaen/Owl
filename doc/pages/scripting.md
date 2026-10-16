@@ -249,6 +249,27 @@ The keyboard and the gamepad drive a focus over the buttons and sliders (`ui_*` 
 function when its widget takes the focus, with the widget id in `_focused_entity`. A script can also read
 `input.is_action_just_pressed("ui_cancel")` to go back from a menu.
 
+A `UiScrollView` or a `UiList` scrolls with the wheel, its bar and the focus; `ui.scroll_get(id)` and
+`ui.scroll_set(id, x, y)` read and move it (reference pixels, kept inside the content). A list is a model fed by the
+script, which only builds the rows in view ([HUD system](design/hud-system.md#scroll-views-and-virtualised-lists-hud7-done)):
+
+```lua
+function on_create()
+    ui.list_set_count(ui.find("Vehicles"), 1000)      -- the rows exist, none is built yet
+end
+
+function on_bind_vehicle()                            -- the list's onBindCallback, once per row coming in view
+    ui.list_set_row(_list_entity, _row_index, "Train " .. _row_index, "12 km/h", "textures/train.png")
+end
+
+function on_pick_vehicle()                            -- the list's onSelectCallback
+    log.info("selected " .. _selected_index)          -- 1-based, as the rows
+end
+```
+
+`ui.list_invalidate(id)` binds the rows in view again after the data changed; `ui.list_set_selected(id, index)` selects
+and scrolls without running the callback.
+
 #### Transition kinds
 
 `ui.transition_play(type, duration, [r, g, b, a])` accepts:
