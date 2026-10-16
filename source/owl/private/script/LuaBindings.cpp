@@ -18,11 +18,14 @@
 #include "input/Input.h"
 #include "input/InputFrame.h"
 #include "physics/PhysicCommand.h"
+#include "renderer/Renderer.h"
+#include "renderer/RendererIsometricLayer.h"
 #include "scene/Entity.h"
 #include "scene/SaveManager.h"
 #include "scene/Scene.h"
 #include "scene/ScreenTransition.h"
 #include "scene/SettingsManager.h"
+#include "scene/TilemapTerrain.h"
 #include "scene/UiInputSystem.h"
 #include "scene/component/components.h"
 #include "script/LuaEngine.h"
@@ -36,6 +39,7 @@
 #include <cstdint>
 #include <deque>
 #include <format>
+#include <optional>
 #include <ranges>
 #include <string>
 #include <string_view>
@@ -736,6 +740,12 @@ auto luaUiIsTransitionActive(lua_State* iState) -> int {
 	return 1;
 }
 
+auto luaUiIsMouseOverUi(lua_State* iState) -> int {
+	const auto* boundScene = getBoundScene(iState);
+	lua_pushboolean(iState, boundScene != nullptr && scene::UiInputSystem::isUIConsuming(*boundScene) ? 1 : 0);
+	return 1;
+}
+
 auto luaUiTransitionPlay(lua_State* iState) -> int {
 	const std::string_view typeName = luaL_checkstring(iState, 1);
 	const auto duration = static_cast<float>(luaL_checknumber(iState, 2));
@@ -1110,6 +1120,126 @@ auto luaTriggerResetTimer(lua_State* iState) -> int {
 	return withTrigger(iState, [](scene::SceneTrigger& ioTrigger) -> void { ioTrigger.resetTimer(); });
 }
 
+// The tilemap of an isometric map entity, with its world origin.
+struct IsometricMap {
+	scene::TilemapAsset* asset = nullptr;
+	math::vec3 origin{0.f, 0.f, 0.f};
+};
+
+// The isometric map of the entity at argument 1, if it carries a loaded tilemap.
+auto findIsometricMap(lua_State* iState) -> std::optional<IsometricMap> {
+	const auto entity = findEntity(iState);
+	if (!entity || !entity->hasComponent<scene::component::Tilemap>())
+		return std::nullopt;
+	auto* asset = entity->getComponent<scene::component::Tilemap>().asset.get();
+	if (asset == nullptr)
+		return std::nullopt;
+	return IsometricMap{.asset = asset, .origin = getBoundScene(iState)->getWorldTransform(*entity).translation()};
+}
+
+// The camera the isometric layer draws with: the layer's presentation and zoom, centred on the primary camera.
+auto makeIsometricCamera(const scene::Scene& iScene) -> renderer::IsometricCamera {
+	renderer::IsometricCamera camera;
+	for (const auto& layer: renderer::Renderer::getRenderStack().getLayers()) {
+		if (const auto* isometric = dynamic_cast<const renderer::RendererIsometricLayer*>(layer.get());
+			isometric != nullptr) {
+			camera.setConfig(isometric->getConfig());
+			camera.setZoomLevel(isometric->getZoomLevel());
+			break;
+		}
+	}
+	const auto& viewport = iScene.getViewportSize();
+	camera.setViewportSize(viewport.x() == 0 || viewport.y() == 0 ? math::vec2ui{1280u, 720u} : viewport);
+	if (const auto primary = iScene.getPrimaryCamera(); primary) {
+		const auto eye = iScene.getWorldTransform(primary).translation();
+		camera.setTarget({eye.x(), eye.y(), 0.f});
+	}
+	return camera;
+}
+
+auto luaIsometricPickCell(lua_State* iState) -> int {
+	const auto mouse = input::Input::getMousePos();
+	const auto windowX = static_cast<float>(luaL_optnumber(iState, 2, static_cast<lua_Number>(mouse.x())));
+	const auto windowY = static_cast<float>(luaL_optnumber(iState, 3, static_cast<lua_Number>(mouse.y())));
+	const auto map = findIsometricMap(iState);
+	if (!map) {
+		lua_pushnil(iState);
+		return 1;
+	}
+	const auto camera = makeIsometricCamera(*getBoundScene(iState));
+	if (const auto hit = scene::terrain::pickTerrain(*map->asset, camera, {windowX, windowY}, map->origin); hit) {
+		lua_pushinteger(iState, static_cast<lua_Integer>(hit->cell.x()));
+		lua_pushinteger(iState, static_cast<lua_Integer>(hit->cell.y()));
+		return 2;
+	}
+	lua_pushnil(iState);
+	return 1;
+}
+
+auto luaIsometricGetCell(lua_State* iState) -> int {
+	const auto layer = luaL_checkinteger(iState, 2);
+	const auto cellX = luaL_checkinteger(iState, 3);
+	const auto cellY = luaL_checkinteger(iState, 4);
+	const auto map = findIsometricMap(iState);
+	if (!map || layer < 0 || cellX < 0 || cellY < 0 || static_cast<size_t>(layer) >= map->asset->layers.size()) {
+		lua_pushinteger(iState, scene::component::g_EmptyTileIndex);
+		lua_pushinteger(iState, scene::component::g_EmptyTileIndex);
+		return 2;
+	}
+	const auto cell = map->asset->layers[static_cast<size_t>(layer)].getCell(static_cast<uint32_t>(cellX),
+																			 static_cast<uint32_t>(cellY));
+	lua_pushinteger(iState, cell.terrain);
+	lua_pushinteger(iState, cell.overlay);
+	return 2;
+}
+
+auto luaIsometricSetCell(lua_State* iState) -> int {
+	const auto layer = luaL_checkinteger(iState, 2);
+	const auto cellX = luaL_checkinteger(iState, 3);
+	const auto cellY = luaL_checkinteger(iState, 4);
+	const auto terrain = luaL_checkinteger(iState, 5);
+	const auto overlay = luaL_checkinteger(iState, 6);
+	const auto map = findIsometricMap(iState);
+	bool done = false;
+	if (map && layer >= 0 && cellX >= 0 && cellY >= 0 && static_cast<size_t>(layer) < map->asset->layers.size()) {
+		auto& tiles = map->asset->layers[static_cast<size_t>(layer)];
+		const auto x = static_cast<uint32_t>(cellX);
+		const auto y = static_cast<uint32_t>(cellY);
+		auto cell = tiles.getCell(x, y);
+		cell.terrain = static_cast<int32_t>(terrain);
+		cell.overlay = static_cast<int32_t>(overlay);
+		done = tiles.setCell(x, y, cell);
+	}
+	lua_pushboolean(iState, done ? 1 : 0);
+	return 1;
+}
+
+auto luaIsometricGetSlope(lua_State* iState) -> int {
+	const auto cellX = luaL_checkinteger(iState, 2);
+	const auto cellY = luaL_checkinteger(iState, 3);
+	const auto map = findIsometricMap(iState);
+	const bool inside = map && cellX >= 0 && cellY >= 0;
+	lua_pushinteger(iState,
+					inside ? map->asset->getCellSlope(static_cast<uint32_t>(cellX), static_cast<uint32_t>(cellY))
+						   : scene::terrain::flatSlope);
+	return 1;
+}
+
+auto luaIsometricGetHeight(lua_State* iState) -> int {
+	const auto worldX = static_cast<float>(luaL_checknumber(iState, 2));
+	const auto worldY = static_cast<float>(luaL_checknumber(iState, 3));
+	const auto map = findIsometricMap(iState);
+	if (!map) {
+		lua_pushnumber(iState, 0);
+		return 1;
+	}
+	const float top =
+			map->origin.z() + static_cast<float>(map->asset->getMaxCornerHeight()) * scene::terrain::heightStep + 1.f;
+	const auto hit = scene::terrain::pickTerrain(*map->asset, map->origin, {worldX, worldY, top}, {0.f, 0.f, -1.f});
+	lua_pushnumber(iState, static_cast<lua_Number>(hit ? hit->point.z() : map->origin.z()));
+	return 1;
+}
+
 using enum LuaType;
 
 OWL_DIAG_PUSH
@@ -1319,6 +1449,9 @@ auto declareBindings() -> std::vector<LuaBinding> {
 					{"b", Number, true}, {"a", Number, true}}},
 		{.table = "ui", .name = "is_transition_active", .function = guarded<luaUiIsTransitionActive>,
 		 .description = "Whether a screen transition is running.", .returns = {{"active", Boolean}}},
+		{.table = "ui", .name = "is_mouse_over_ui", .function = guarded<luaUiIsMouseOverUi>,
+		 .description = "Whether the mouse is over a HUD widget or window that takes it (a click there is not for the scene).",
+		 .returns = {{"over", Boolean}}},
 		{.table = "gamestate", .name = "set", .function = guarded<luaGamestateSet>,
 		 .description = "Store a value (integer, number, string or boolean) kept across levels and in saves.",
 		 .params = {{"key", String}, {"value", Any}}},
@@ -1379,6 +1512,23 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		{.table = "pushwall", .name = "get_state", .function = guarded<luaPushwallGetState>,
 		 .description = "State of the push-wall: `idle`, `moving` or `final`.",
 		 .params = {entityId}, .returns = {{"state", String}}},
+		{.table = "isometric", .name = "pick_cell", .function = guarded<luaIsometricPickCell>,
+		 .description = "Terrain cell under a window pixel (the mouse by default), slope-aware; nothing when it is off the map.",
+		 .params = {entityId, {"x", Number, true}, {"y", Number, true}}, .returns = {{"cell_x", Integer}, {"cell_y", Integer}}},
+		{.table = "isometric", .name = "get_cell", .function = guarded<luaIsometricGetCell>,
+		 .description = "Terrain and overlay tile of a cell of a layer of the tilemap (layers from 0, -1 for none or outside).",
+		 .params = {entityId, {"layer", Integer}, {"cell_x", Integer}, {"cell_y", Integer}},
+		 .returns = {{"terrain", Integer}, {"overlay", Integer}}},
+		{.table = "isometric", .name = "set_cell", .function = guarded<luaIsometricSetCell>,
+		 .description = "Set the terrain and overlay tile of a cell of a layer (-1 for none), without undo; false outside the grid.",
+		 .params = {entityId, {"layer", Integer}, {"cell_x", Integer}, {"cell_y", Integer}, {"terrain", Integer}, {"overlay", Integer}},
+		 .returns = {{"done", Boolean}}},
+		{.table = "isometric", .name = "get_slope", .function = guarded<luaIsometricGetSlope>,
+		 .description = "Slope of a cell, from its corner heights (0 is flat, 1 to 18 are the other slopes of the tileset).",
+		 .params = {entityId, {"cell_x", Integer}, {"cell_y", Integer}}, .returns = {{"slope", Integer}}},
+		{.table = "isometric", .name = "get_height", .function = guarded<luaIsometricGetHeight>,
+		 .description = "World height of the terrain surface at a world position (the map's own height outside the map).",
+		 .params = {entityId, {"x", Number}, {"y", Number}}, .returns = {{"z", Number}}},
 	};
 	// clang-format on
 }
@@ -1470,6 +1620,7 @@ auto getLuaTables() -> const std::vector<LuaTable>& {
 			{.name = "trigger", .description = "Timer triggers."},
 			{.name = "door", .description = "Raycast doors."},
 			{.name = "pushwall", .description = "Raycast push-walls."},
+			{.name = "isometric", .description = "Terrain picking and tile editing of an isometric tilemap."},
 	};
 	return s_tables;
 }
