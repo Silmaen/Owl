@@ -66,18 +66,29 @@ enum struct HudLayer : uint8_t { Shape, Circle, Text };
 // Sort key of a HUD primitive: the rank of its window (a window covers those under it), then the layer.
 auto hudDepth(const float iRank, const HudLayer iLayer) -> float { return iRank * 4.f + static_cast<float>(iLayer); }
 
+// Smallest em height, in screen pixels, a scale mode may shrink a HUD text to: below it the glyphs turn to mush.
+constexpr float g_minTextPixels = 9.f;
+
+// Scale of a text: the canvas scale, raised so that a shrinking scale mode keeps the text legible, never past 1.
+auto legibleTextScale(const float iScale, const float iFontSize) -> float {
+	if (iFontSize <= 0.f || iScale >= 1.f)
+		return iScale;
+	return std::max(iScale, std::min(1.f, g_minTextPixels / iFontSize));
+}
+
 // A text laid out in a rectangle of the pixel layout, its font size given in reference pixels.
 void drawBoxedText(const component::UiRect::Bounds& iBox, const float iScale, const float iHeight,
 				   const std::string& iText, const math::vec4& iColor, const float iFontSize,
 				   const data::fonts::HorizontalAlignment iHorizontal, const int iEntityId, const float iRank) {
 	math::Transform transform = pixelTransform(iBox, iHeight);
-	transform.scale() = {iScale, iScale, 1.f};
+	const float scale = legibleTextScale(iScale, iFontSize);
+	transform.scale() = {scale, scale, 1.f};
 	renderer::Renderer2D::drawString({.transform = transform,
 									  .text = iText,
 									  .font = fontOrDefault(nullptr),
 									  .color = iColor,
 									  .layout = {.fontSize = iFontSize,
-												 .boxSize = iBox.size / iScale,
+												 .boxSize = iBox.size / scale,
 												 .horizontal = iHorizontal,
 												 .vertical = data::fonts::VerticalAlignment::Middle},
 									  .entityId = iEntityId,
@@ -126,13 +137,14 @@ void drawText(const Entity& iEntity, const HudNode& iNode, const math::Transform
 		font = app::Application::get().getFontLibrary().getDefaultFont();
 	math::Transform textTransform;
 	textTransform.translation() = iTransform.translation();
-	textTransform.scale() = {iNode.scale, iNode.scale, 1.f};
+	const float scale = legibleTextScale(iNode.scale, uiText.fontSize);
+	textTransform.scale() = {scale, scale, 1.f};
 
 	renderer::Renderer2D::drawString({.transform = textTransform,
 									  .text = uiText.text,
 									  .font = font,
 									  .color = uiText.color,
-									  .layout = uiText.getLayout(iNode.bounds.size / iNode.scale),
+									  .layout = uiText.getLayout(iNode.bounds.size / scale),
 									  .entityId = iEntityId,
 									  .depth = hudDepth(iRank, HudLayer::Text)});
 }
@@ -411,7 +423,8 @@ void drawTooltip(Scene& ioSurface, const Scene::UiInputState& iState, const math
 	if (tooltip == nullptr || node == nullptr || tooltip->text.empty() || iState.hoverTime < tooltip->delay)
 		return;
 	const auto height = static_cast<float>(iViewport.y());
-	const float scale = node->scale;
+	// The whole tooltip grows with its text, so the box still fits it.
+	const float scale = legibleTextScale(node->scale, tooltip->fontSize);
 	const auto font = fontOrDefault(nullptr);
 	const data::fonts::TextLayout layout{.fontSize = tooltip->fontSize};
 	// Without a font (headless) a glyph is taken half an em wide.

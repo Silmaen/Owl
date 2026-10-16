@@ -47,6 +47,10 @@ tooltips and construction tools at once, as in Transport Tycoon.
   span) besides the 9 presets (`UiRect::setAnchor`, `getAnchor`), which stay as shortcuts in the inspector.
 - `Canvas::referenceResolution` (1280×720 by default) with `Canvas::scaleMode`: `ConstantPixels`, `ScaleWithHeight`
   (default) or `MatchSmallerSide`; widgets are authored in reference pixels, fonts scale with them.
+- Legibility floor: a scale mode that shrinks (scale under 1) never draws a text below 9 screen pixels of em height
+  (a 14 px font at 640×360 stays at 9 px, not 7); the scale of that text is raised, never past 1, and its layout runs at
+  that scale, so a box too small for it wraps or clips the text as for any other size. Authored sizes at scale 1 or
+  more, and boxes, are untouched.
 - Every new field is edited in the inspector, undoable through `component.set`; bench `hud/{layout,frame}/500_widgets`
   (budget in [Isometric worlds](isometric-worlds.md)); image tests `hud_raycast` and `hud_voxel` at 320×180, 480×270
   and 240×240.

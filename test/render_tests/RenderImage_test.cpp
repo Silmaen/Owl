@@ -288,3 +288,13 @@ INSTANTIATE_TEST_SUITE_P(HudFocus, RenderImage,
 							 return std::format("{}_{}_{}x{}", iInfo.param.scene, iInfo.param.backend,
 												iInfo.param.size.x(), iInfo.param.size.y());
 						 });
+
+// HUD text under a shrinking scale mode (reference 1280x720 shown at 480x270): the glyphs keep a legible height (the
+// text scale floor) and are smoothed by the supersampled MSDF coverage.
+INSTANTIATE_TEST_SUITE_P(HudText, RenderImage,
+						 testing::Values(RenderCase{"hud_text", "vulkan", {480, 270}},
+										 RenderCase{"hud_text", "opengl", {480, 270}}),
+						 [](const testing::TestParamInfo<RenderCase>& iInfo) -> std::string {
+							 return std::format("{}_{}_{}x{}", iInfo.param.scene, iInfo.param.backend,
+												iInfo.param.size.x(), iInfo.param.size.y());
+						 });

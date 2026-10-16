@@ -817,6 +817,12 @@ The MSDF atlas is cached in `cache/font/<font>-<key>.owlatlas` under the working
 file, the charset and the atlas parameters, so a change of any of them regenerates it (and drops the stale file).
 Generation runs on as many threads as the task pool has workers (`Scheduler::getWorkerCount`).
 
+**Small text.** The atlas em is 40 px with a 2 px distance range, and `text.slang` uses the same 2 px (keep both in
+step). Text under about 40 px on screen minifies the atlas, which has no mipmaps, so one linear sample per pixel
+aliases: the fragment shader then averages four taps of a rotated grid over the pixel footprint (`SampleGrad`), larger
+text keeps the single sample. HUD text is also kept legible by the scale modes
+([HUD system](design/hud-system.md)).
+
 ### Batching Internals
 
 Each draw primitive emits one instance struct (`QuadInstance`, `CircleInstance`, `LineInstance`,
