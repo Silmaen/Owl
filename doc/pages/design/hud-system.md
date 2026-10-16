@@ -96,7 +96,7 @@ Implementation notes:
 - `UiToolCursor`: a sprite following the mouse in the HUD, active from Lua (`ui.set_tool_cursor`), paired with the tile
   highlight of the isometric layer for construction tools ("build road", "raise land").
 - Each window draws as its own batch (`Renderer2D::nextBatch` between two windows) so a window covers the text of the
-  window under it, until the v0.5.0 draw-order sort key.
+  window under it, until the v0.4.0 draw-order sort key.
 
 Implementation notes:
 
@@ -228,7 +228,7 @@ resolutions, the HUD editor commands, and a bench at 500 widgets.
 
 ## Later
 
-- v0.5.0: scroll views and virtualised lists (vehicle lists), a minimap from a CPU tile-colour texture, the
-  draw-order sort key across primitives, a live scene backdrop in the HUD editor.
-- v0.7.0: docking and saved window layouts for in-game windows.
-- v0.10.0: controller remapping UI on the HUD widgets.
+- v0.4.0: scroll views and virtualised lists (vehicle lists), the draw-order sort key across primitives.
+- v0.5.0: a minimap on a render target, a live scene backdrop in the HUD editor.
+- v0.6.0: docking and saved window layouts for in-game windows.
+- v0.8.0: controller remapping UI on the HUD widgets.

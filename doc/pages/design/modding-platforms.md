@@ -2,7 +2,8 @@
 
 [TOC]
 
-Design page for the v0.10.0 release (opening, platforms, release candidate), summarised in the
+Design page for the modding and platform part of the v0.8.0 release (opening, release candidate; its networking is
+in [Simulation and networking](simulation-networking.md)), summarised in the
 [Roadmap](../roadmap.md).
 
 ## API freeze — release candidate for 1.0

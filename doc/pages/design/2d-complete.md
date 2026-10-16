@@ -2,10 +2,13 @@
 
 [TOC]
 
-Design page for the v0.5.0 release, summarised in the [Roadmap](../roadmap.md). The 2D physics part has its own page,
+Design page of the 2D work once planned as v0.5.0; the 2026-10-16 replan spread it over the releases, see the
+[Roadmap](../roadmap.md): the draw-order sort key, scroll views and lists, and tile-graph pathfinding in v0.4.0; 2D
+lights, the minimap and "look through scene camera" in v0.5.0; the tileset editor and the procedural brick in v0.6.0;
+full 2D physics and the enemies demo in v0.7.0. The 2D physics part has its own page,
 [Physics API](physics-api.md); the editor part is in [Owl Nest UI](nest-ui.md).
 
-## 2D lighting system
+## 2D lighting system (v0.5.0)
 
 - Point lights, spotlights in 2D scenes
 - Normal-mapped sprites for dynamic 2D lighting
@@ -14,23 +17,23 @@ Design page for the v0.5.0 release, summarised in the [Roadmap](../roadmap.md). 
 ## Text and HUD
 
 Aspect-correct text with alignment and fit modes, and the dedicated HUD layer with its editor, moved to v0.4.0:
-see [HUD system](hud-system.md). v0.5.0 builds on them:
+see [HUD system](hud-system.md). Built on them:
 
-- Scroll views with clipping and virtualised lists and tables (vehicle lists of a management game)
-- Minimap from a CPU tile-colour texture of a tilemap, shown in a `UiImage` (a GPU render target comes with v0.6.0)
-- Live scene backdrop in the HUD editor, with "look through scene camera"
+- v0.4.0: scroll views with clipping and virtualised lists and tables (vehicle lists of a management game)
+- v0.5.0: minimap of a tilemap on a render target, shown in a `UiImage`
+- v0.5.0: live scene backdrop in the HUD editor, with "look through scene camera"
 
-## Draw-order sort key (B-10)
+## Draw-order sort key (B-10, v0.4.0)
 
 A sort key on every 2D primitive instead of the primitive type and the storage order; it follows the depth convention
 of the v0.4.0 isometric layer ([Isometric](isometric.md)) so 2D and isometric layers order the same way.
 
-## 2D lighting on isometric sprites
+## 2D lighting on isometric sprites (v0.5.0)
 
 The 2D lights also light isometric sprites through the normal and depth atlases produced by the v0.4.0 generator; a
 global ambient tint gives day / night.
 
-## Tile-graph pathfinding
+## Tile-graph pathfinding (v0.4.0)
 
 Moved from the v0.8.0 navigation work: vehicles of a Transport Tycoon-like game follow a graph of tiles and tracks,
 not a navigation mesh.
@@ -40,7 +43,7 @@ not a navigation mesh.
 - Incremental update when a tile changes; queries spread over ticks on the task system
 - Lua API and an editor overlay drawing the graph and a test path
 
-## Tileset editor — compose atlas by inserting / removing source images
+## Tileset editor (v0.6.0) — compose atlas by inserting / removing source images
 
 - Today `TilesetDocument` only edits per-tile metadata (name, collidable, wallHeight, transparent). The atlas itself is
   authored offline — drop a PNG, edit metadata. There's no way to **build** or **mutate** an atlas from inside the
@@ -59,12 +62,12 @@ not a navigation mesh.
 - Undo/redo: every insert / replace / remove pushes a single `ModifyTilesetCommand` (mirrors `ModifyEntityCommand`
   semantics) with the standard 1 s merge-coalescing for rapid drag chains.
 
-## First procedural brick for tilemaps
+## First procedural brick for tilemaps (v0.6.0)
 
-A seeded noise / rule fill of a tilemap region, undoable — the first consumer and the seed of the v0.7.0
+A seeded noise / rule fill of a tilemap region, undoable — the first consumer and the seed of the v0.6.0
 [PCG graphs](pcg-graphs.md).
 
 ## Sample project demos (moved out of the engine)
 
 - Inventory demo — moved to v0.4.0 as the showcase of the new HUD widgets ([HUD system](hud-system.md))
-- Enemies demo — patrol / chase enemies in Lua in `sample_project/`; engine-side AI arrives with v0.8.0
+- Enemies demo (v0.7.0) — patrol / chase enemies in Lua in `sample_project/`; engine-side AI arrives with v0.7.0

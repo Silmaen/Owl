@@ -828,7 +828,7 @@ on disk, at the start of the next frame:
 - **Turn it off**: the *Hot Reload* switch of the *Debug* section of the *Parameters* dialog (`hotReload` in `config.yml`), `OwlRunner
   --no-hot-reload`. A packaged game never watches: the hot reload stays off whenever an asset pack is open.
 - Not reloaded: colliders built when the play started (a tilemap's collision flags apply at the next play), new
-  bindings in a shader (restart), C++ game code (a v0.7.0 evaluation).
+  bindings in a shader (restart), C++ game code (a v0.6.0 evaluation).
 
 ### Project Settings
 

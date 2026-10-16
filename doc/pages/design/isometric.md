@@ -90,7 +90,7 @@ The first step on the unmerged `Feature/KickoffIsometricRenderer` branch (2026-0
 - Track and road overlays are the overlay ids of the tilemap cells (TM2): drawn right after the terrain of the same
   cell, half a sub-layer above it, through the same (id, slope) table, so they follow the slope.
 - Map storage is the chunked format of TM2 (structure of arrays, binary chunks), now version 3 with the corner heights
-  after the chunks, up to 1024² in v0.4.0; 4096² maps wait for the v0.7.0 content pipeline on the same storage interface.
+  after the chunks, up to 1024² in v0.4.0; 4096² maps wait for the v0.6.0 content pipeline on the same storage interface.
 
 ### Picking
 
@@ -173,6 +173,6 @@ of `renderer2d/quads_color`) until a nightly run replaces it.
 
 - v0.5.0: normal-mapped isometric sprites under the 2D lights, from the generator's normal atlas; day / night as an
   ambient tint; tile-graph pathfinding for vehicles on the chunked map.
-- v0.6.0: 3D meshes drawn under the same camera into the same depth buffer; shadows from the depth atlas or from
+- v0.5.0: 3D meshes drawn under the same camera into the same depth buffer; shadows from the depth atlas or from
   shadow maps.
-- v0.7.0: 4096² maps from the content pipeline; procedural terrain heights from the [PCG graphs](pcg-graphs.md).
+- v0.6.0: 4096² maps from the content pipeline; procedural terrain heights from the [PCG graphs](pcg-graphs.md).

@@ -21,7 +21,7 @@ code, Lua bindings and the editor only see the interface. One physics world per 
 - Bodies destroyed with their entity, no ghost collider (PR-13: C-08, D-04)
 - `on_collision` implemented from Box2D contact events, with the other entity (D-07, I-02) — done
 
-## v0.5.0 — 2D physics complete
+## v0.7.0 — 2D physics complete
 
 - Backend-independent physics world interface introduced, Box2D as its first backend
 - Collision callbacks
@@ -36,7 +36,7 @@ code, Lua bindings and the editor only see the interface. One physics world per 
     - Motor joints for vehicles/mechanisms
     - Visual joint editor in Owl Nest
 
-## v0.8.0 — 3D physics (Jolt)
+## v0.7.0 — 3D physics (Jolt)
 
 - 3D rigid body component on the same interface (2D stays on Box2D)
 - Collision shapes: box, sphere, capsule, mesh

@@ -2,7 +2,8 @@
 
 [TOC]
 
-Design page for the v0.8.0 release, summarised in the [Roadmap](../roadmap.md). Gameplay systems ship as optional
+Design page for the gameplay systems of the v0.7.0 release (its deterministic simulation is in
+[Simulation and networking](simulation-networking.md)), summarised in the [Roadmap](../roadmap.md). Gameplay systems ship as optional
 modules on the v0.3.0 phased systems, not inside `Scene` (A-02). 3D physics is described in
 [Physics API](physics-api.md).
 
@@ -12,7 +13,7 @@ modules on the v0.3.0 phased systems, not inside `Scene` (A-02). 3D physics is d
     - Navigation mesh generation from scene geometry
     - A* pathfinding on NavMesh
     - Dynamic obstacle avoidance
-    - Tile-graph pathfinding moved to v0.5.0 ([2D complete](2d-complete.md))
+    - Tile-graph pathfinding moved to v0.4.0 ([2D complete](2d-complete.md))
 - Behaviour trees
     - Visual behaviour tree editor in Owl Nest (node graph)
     - Standard nodes: sequence, selector, parallel, decorator, condition, action

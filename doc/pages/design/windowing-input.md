@@ -217,7 +217,7 @@ codes until IN3.
   response-curve exponent
 - **Action map** (IN3, Done, details below): actions are buttons, 1D axes or 2D axes; a binding is a device (key, mouse button, gamepad
   button, gamepad axis), a code and a scale, 2D actions also take key composites; `evaluate(map, previous, current)`
-  is a pure function producing an `ActionFrame`, the stream v0.9.0 records for replays (K-30)
+  is a pure function producing an `ActionFrame`, the stream v0.7.0 records for replays (K-30)
 - The map lives in `input_actions.yml` with its `DocumentFormat`, packed with the game like `game_settings.yml`, with
   room for a user override layer; Lua `input.is_action_pressed`, `is_action_just_pressed`, `is_action_just_released`,
   `get_action_value`, `get_action_vector`; `input.is_key_pressed` kept and deprecated; scenarios gain an `actions:`
@@ -299,7 +299,7 @@ flowchart LR
   `input/InputNames.h`.
 - **Pure evaluation.** `sampleAction(action, InputState)` reads one sample, `evaluateAction(action, InputFrame)` adds
   the edges between the two samples; `ActionFrame` holds one `ActionState` per action, ready to be recorded by the
-  v0.9.0 replays (K-30). It allocates nothing after the first frame.
+  v0.7.0 replays (K-30). It allocates nothing after the first frame.
 - **Combination.** The bindings of an action add up, then the result is clamped to [-1, 1], or to the unit disc for a
   vector (a diagonal is not faster). A button is held when a binding reads past half; an axis or a vector is held
   past half deflection, so `ui_*`-style tests work on them.
@@ -314,7 +314,7 @@ flowchart LR
 - **Doors and pushwalls** carry `interactionAction` (a button action name, empty to disable) instead of a key code;
   an old `interactionKey: 0` still disables the built-in path.
 
-## Gamepad improvements (v0.10.0)
+## Gamepad improvements (v0.8.0)
 
 - Controller remapping UI, on the v0.4.0 HUD widgets and action map
 - Haptic feedback / vibration API (GLFW has none: to study)

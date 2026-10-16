@@ -73,7 +73,7 @@ flowchart LR
 - Shaders are compiled at first run from the packed `.slang` sources; precompiled SPIR-V in the pack is still to do.
 - The exported binaries keep the build-tree RPATH after `$ORIGIN`; harmless (`$ORIGIN` comes first) but not clean.
 
-## v0.10.0 — cross-platform packaging
+## v0.8.0 — cross-platform packaging
 
 - Cross-compile packaging from any host
     - Package a Linux game from Windows and a Windows game from Linux
