@@ -248,7 +248,7 @@ INSTANTIATE_TEST_SUITE_P(Hud, RenderImage,
 												iInfo.param.size.x(), iInfo.param.size.y());
 						 });
 
-// Windows over a 2D scene: title bars, layouts (column, grid), overlapping windows drawn as their own batch, content
+// Windows over a 2D scene: title bars, layouts (column, grid), overlapping windows covering each other, content
 // and panels clipped by the scissor, a window clamped into the screen; at a scale of 1 and of 1.5.
 INSTANTIATE_TEST_SUITE_P(HudWindows, RenderImage,
 						 testing::Values(RenderCase{"hud_windows", "vulkan"}, RenderCase{"hud_windows", "opengl"},
@@ -268,6 +268,14 @@ INSTANTIATE_TEST_SUITE_P(HudScroll, RenderImage,
 						 [](const testing::TestParamInfo<RenderCase>& iInfo) -> std::string {
 							 return std::format("{}_{}_{}x{}", iInfo.param.scene, iInfo.param.backend,
 												iInfo.param.size.x(), iInfo.param.size.y());
+						 });
+
+// Draw order across primitive types: quads, circles and text at interleaved depths cover each other by their world z
+// (a quad stored last but lowest goes under the others), not by their type.
+INSTANTIATE_TEST_SUITE_P(DrawOrder, RenderImage,
+						 testing::Values(RenderCase{"draworder", "vulkan"}, RenderCase{"draworder", "opengl"}),
+						 [](const testing::TestParamInfo<RenderCase>& iInfo) -> std::string {
+							 return iInfo.param.scene + "_" + iInfo.param.backend;
 						 });
 
 // Keyboard and gamepad focus: the button flagged `initial` takes it when the scene plays and is framed in gold, among
