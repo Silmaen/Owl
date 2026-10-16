@@ -576,10 +576,14 @@ void Renderer2D::drawString(const StringData& iStringData) {
 
 		const math::vec2 glyphCenter = (quad.min() + quad.max()) * 0.5f;
 		const math::vec2 glyphSize = quad.max() - quad.min();
-		math::Transform glyphLocal;
-		glyphLocal.translation() = math::vec3{glyphCenter.x(), glyphCenter.y(), 0.f};
-		glyphLocal.scale() = math::vec3{glyphSize.x(), glyphSize.y(), 1.f};
-		const math::mat4 glyphMat = stringMat * glyphLocal();
+		// stringMat * translate(center) * scale(size, 1), expanded: the glyph is an axis-aligned quad of its frame.
+		math::mat4 glyphMat = stringMat;
+		for (size_t row = 0; row < 4; ++row) {
+			glyphMat(row, 3) =
+					stringMat(row, 0) * glyphCenter.x() + stringMat(row, 1) * glyphCenter.y() + stringMat(row, 3);
+			glyphMat(row, 0) = stringMat(row, 0) * glyphSize.x();
+			glyphMat(row, 1) = stringMat(row, 1) * glyphSize.y();
+		}
 
 		const std::array<math::vec2, 4> glyphUv{
 				math::vec2{uv.min().x(), uv.min().y()}, math::vec2{uv.max().x(), uv.min().y()},

@@ -76,6 +76,20 @@ constexpr float g_eps = 1e-4f;
 
 }// namespace
 
+TEST_F(TextLayoutTest, unmeasuredBreakerSplitsTheSameLinesWithoutWidth) {
+	const std::string_view text = "alpha beta\r\ngamma\n\ndelta";
+	LineBreaker measured(font(), text, 0.f, 0.f);
+	LineBreaker unmeasured(font(), text, 0.f, 0.f, false);
+	while (const auto expected = measured.next()) {
+		const auto line = unmeasured.next();
+		ASSERT_TRUE(line.has_value());
+		EXPECT_EQ(line->begin, expected->begin);
+		EXPECT_EQ(line->end, expected->end);
+		EXPECT_FLOAT_EQ(line->width, 0.f);
+	}
+	EXPECT_FALSE(unmeasured.next().has_value());
+}
+
 TEST_F(TextLayoutTest, glyphsKeepTheFontAspect) {
 	const auto reference = font().getGlyphBox(U'H').quad.diagonal();
 	for (const TextLayout& layout: {TextLayout{.fontSize = 1.f}, TextLayout{.fontSize = 3.f, .boxSize = {300.f, 10.f}},

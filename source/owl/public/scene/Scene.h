@@ -819,7 +819,7 @@ public:
 	 *  Path of the HUD asset the scene draws: its own `Hud:` key, else the project's `DefaultHud`.
 	 * @return The asset path, empty when the scene has no HUD.
 	 */
-	[[nodiscard]] auto getEffectiveHudPath() const -> std::string;
+	[[nodiscard]] auto getEffectiveHudPath() const -> const std::string&;
 
 	/**
 	 * @brief
