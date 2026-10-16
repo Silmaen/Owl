@@ -132,6 +132,37 @@ TEST_F(LuaIsometric, entitiesWithoutATilemapAreIgnored) {
 	EXPECT_NEAR(instance->getPropertyFloat("z").value_or(-1.f), 0.f, 1e-3f);
 }
 
+TEST_F(LuaIsometric, spriteFrameIsPickedFromTheSheet) {
+	auto vehicle = m_scene->createEntity("Vehicle");
+	auto& sprite = vehicle.addComponent<scene::component::AnimatedSpriteRenderer>();
+	sprite.columns = 8;
+	sprite.rows = 2;
+	const auto id = static_cast<int64_t>(static_cast<uint64_t>(vehicle.getUUID()));
+	const auto instance = run(std::format("start = isometric.get_sprite_frame({0})\n"
+										  "done = isometric.set_sprite_frame({0}, 5)\n"
+										  "shown = isometric.get_sprite_frame({0})\n"
+										  "far = isometric.set_sprite_frame({0}, 99)\n"
+										  "last = isometric.get_sprite_frame({0})\n"
+										  "negative = isometric.set_sprite_frame({0}, -3)\n"
+										  "first = isometric.get_sprite_frame({0})",
+										  id));
+	EXPECT_EQ(instance->getPropertyInt("start").value_or(-1), 0);
+	EXPECT_TRUE(instance->getPropertyBool("done").value_or(false));
+	EXPECT_EQ(instance->getPropertyInt("shown").value_or(-1), 5);
+	EXPECT_TRUE(instance->getPropertyBool("far").value_or(false));
+	EXPECT_EQ(instance->getPropertyInt("last").value_or(-1), 15) << "a frame past the sheet shows the last one";
+	EXPECT_TRUE(instance->getPropertyBool("negative").value_or(false));
+	EXPECT_EQ(instance->getPropertyInt("first").value_or(-1), 0);
+	EXPECT_EQ(sprite.firstFrame, 0u);
+	EXPECT_EQ(sprite.lastFrame, 0u) << "the animation is pinned on the frame";
+}
+
+TEST_F(LuaIsometric, spriteFrameIgnoresEntitiesWithoutASheet) {
+	const auto instance = run("done = isometric.set_sprite_frame(map, 3)\nframe = isometric.get_sprite_frame(map)");
+	EXPECT_FALSE(instance->getPropertyBool("done").value_or(true));
+	EXPECT_EQ(instance->getPropertyInt("frame").value_or(-1), -1);
+}
+
 TEST_F(LuaIsometric, mouseOverUiFollowsTheHudState) {
 	EXPECT_FALSE(run("over = ui.is_mouse_over_ui()")->getPropertyBool("over").value_or(true));
 	m_scene->getUiInputState().consuming = true;

@@ -1357,6 +1357,32 @@ auto luaIsometricGetHeight(lua_State* iState) -> int {
 	return 1;
 }
 
+auto luaIsometricSetSpriteFrame(lua_State* iState) -> int {
+	const auto frame = luaL_checkinteger(iState, 2);
+	const auto entity = findEntity(iState);
+	if (!entity || !entity->hasComponent<scene::component::AnimatedSpriteRenderer>()) {
+		lua_pushboolean(iState, 0);
+		return 1;
+	}
+	auto& sprite = entity->getComponent<scene::component::AnimatedSpriteRenderer>();
+	const auto count = static_cast<int64_t>(sprite.columns) * static_cast<int64_t>(sprite.rows);
+	const auto index = static_cast<uint32_t>(std::clamp<int64_t>(frame, 0, std::max<int64_t>(count - 1, 0)));
+	sprite.firstFrame = index;
+	sprite.lastFrame = index;
+	sprite.m_currentFrame = index;
+	sprite.m_elapsedTime = 0.f;
+	lua_pushboolean(iState, 1);
+	return 1;
+}
+
+auto luaIsometricGetSpriteFrame(lua_State* iState) -> int {
+	const auto entity = findEntity(iState);
+	if (!entity || !entity->hasComponent<scene::component::AnimatedSpriteRenderer>())
+		return 0;
+	lua_pushinteger(iState, entity->getComponent<scene::component::AnimatedSpriteRenderer>().m_currentFrame);
+	return 1;
+}
+
 // The navigation entry of the tilemap entity at argument 1: its graph, synchronised, and its request queue.
 auto findNavigation(lua_State* iState) -> scene::nav::NavWorld::Entry* {
 	const auto entity = findEntity(iState);
@@ -1844,6 +1870,12 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		{.table = "isometric", .name = "get_height", .function = guarded<luaIsometricGetHeight>,
 		 .description = "World height of the terrain surface at a world position (the map's own height outside the map).",
 		 .params = {entityId, {"x", Number}, {"y", Number}}, .returns = {{"z", Number}}},
+		{.table = "isometric", .name = "set_sprite_frame", .function = guarded<luaIsometricSetSpriteFrame>,
+		 .description = "Show one frame (from 0, row by row) of the sheet of an `AnimatedSpriteRenderer` and stop its animation there, so one entity picks its picture from its heading; false when the entity has no such sprite.",
+		 .params = {entityId, {"frame", Integer}}, .returns = {{"done", Boolean}}},
+		{.table = "isometric", .name = "get_sprite_frame", .function = guarded<luaIsometricGetSpriteFrame>,
+		 .description = "Frame an `AnimatedSpriteRenderer` shows now; nothing when the entity has no such sprite.",
+		 .params = {entityId}, .returns = {{"frame", Integer}}},
 		{.table = "path", .name = "find", .function = guarded<luaPathFind>,
 		 .description = "Queue a shortest-path query between two cells of the tilemap's graph (its `navigation` rules); 0 when the entity has no graph. The path is searched over the next frames, `mode` is `auto`, `flat` or `hierarchical`.",
 		 .params = {entityId, {"from_x", Integer}, {"from_y", Integer}, {"to_x", Integer}, {"to_y", Integer}, {"mode", String, true}},
