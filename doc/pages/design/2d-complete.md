@@ -24,10 +24,14 @@ see [HUD system](hud-system.md). Built on them:
 - v0.5.0: minimap of a tilemap on a render target, shown in a `UiImage`
 - v0.5.0: live scene backdrop in the HUD editor, with "look through scene camera"
 
-## Draw-order sort key (B-10, v0.4.0)
+## Draw-order sort key (B-10, v0.4.0, done)
 
 A sort key on every 2D primitive instead of the primitive type and the storage order; it follows the depth convention
-of the v0.4.0 isometric layer ([Isometric](isometric.md)) so 2D and isometric layers order the same way.
+of the v0.4.0 isometric layer ([Isometric](isometric.md)) so 2D and isometric layers order the same way: `depth` on each
+data struct of `Renderer2D`, larger is nearer; the rule is depth first, then type (quads, circles, lines, text), then
+submission order. `Scene` feeds it the world z of sprites,
+circles and text, the HUD pass the window rank. An authored layer on the components (a field in the inspector) is not
+there yet: z is the only way to order a scene.
 
 ## 2D lighting on isometric sprites (v0.5.0)
 

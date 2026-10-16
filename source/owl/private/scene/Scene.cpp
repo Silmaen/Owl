@@ -790,6 +790,11 @@ void Scene::render() {
 		return;
 	}
 
+	// Sort key of a 2D primitive: its world z (larger is nearer); equal keys keep the submission order.
+	const auto sortDepthOf = [this](const Entity& iEntity, const int32_t iWorldIndex) -> float {
+		return iWorldIndex >= 0 ? m_worldMatrices[static_cast<size_t>(iWorldIndex)](2, 3)
+								: getWorldTransform(iEntity).translation().z();
+	};
 	// Draw sprites
 	for (const auto group = registry.group<component::Transform>(entt::get<component::SpriteRenderer>);
 		 auto entity: group) {
@@ -806,7 +811,8 @@ void Scene::render() {
 										.color = sprite.color,
 										.texture = sprite.texture,
 										.tilingFactor = sprite.tilingFactor,
-										.entityId = static_cast<int>(entity)});
+										.entityId = static_cast<int>(entity),
+										.depth = sortDepthOf(ent, worldIndex)});
 	}
 	// Draw animated sprites
 	for (const auto view = registry.view<component::Transform, component::AnimatedSpriteRenderer>();
@@ -834,7 +840,8 @@ void Scene::render() {
 										.texture = anim.texture,
 										.textureCoords = {math::vec2{uMin, vMin}, math::vec2{uMax, vMin},
 														  math::vec2{uMax, vMax}, math::vec2{uMin, vMax}},
-										.entityId = static_cast<int>(entity)});
+										.entityId = static_cast<int>(entity),
+										.depth = sortDepthOf(ent, worldIndex)});
 	}
 	// Draw circles
 	for (const auto view = registry.view<component::Transform, component::CircleRenderer>(); auto entity: view) {
@@ -851,7 +858,8 @@ void Scene::render() {
 										  .color = circle.color,
 										  .thickness = circle.thickness,
 										  .fade = circle.fade,
-										  .entityId = static_cast<int>(entity)});
+										  .entityId = static_cast<int>(entity),
+										  .depth = sortDepthOf(ent, worldIndex)});
 	}
 	// drawString always uses the transient buffer (per-glyph local matrices), so worldIndex is left default.
 	for (const auto view = registry.view<component::Transform, component::Text>(); auto entity: view) {
@@ -868,7 +876,8 @@ void Scene::render() {
 										  .font = text.font,
 										  .color = text.color,
 										  .layout = {.kerning = text.kerning, .lineSpacing = text.lineSpacing},
-										  .entityId = static_cast<int>(entity)});
+										  .entityId = static_cast<int>(entity),
+										  .depth = worldTransform.translation().z()});
 	}
 	// Pushwall plates override the entity's scale to a 1-cell square, so the cached world matrix doesn't match.
 	for (const auto view = registry.view<component::Transform, component::RaycastPushWall>(); auto entity: view) {

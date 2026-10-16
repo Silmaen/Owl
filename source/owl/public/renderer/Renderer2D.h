@@ -85,6 +85,12 @@ struct OWL_API Quad2DData {
 											   math::vec2{0.0f, 1.0f}};
 	/// unique ID for the entity.
 	int entityId = -1;
+	/**
+	 * @brief
+	 *  Sort key: primitives draw by increasing depth, then by type (quads, circles, lines, text), then in submission
+	 *  order. Larger is nearer the viewer, as the view depth of the isometric layer. Default 0: the old type order.
+	 */
+	float depth = 0.f;
 };
 
 /**
@@ -112,6 +118,12 @@ struct OWL_API CircleData {
 	float fade = 0.005f;
 	/// unique ID for the entity.
 	int entityId = -1;
+	/**
+	 * @brief
+	 *  Sort key: primitives draw by increasing depth, then by type (quads, circles, lines, text), then in submission
+	 *  order. Larger is nearer the viewer, as the view depth of the isometric layer. Default 0: the old type order.
+	 */
+	float depth = 0.f;
 };
 
 /**
@@ -127,6 +139,12 @@ struct OWL_API LineData {
 	math::vec4 color = math::vec4{1.f, 1.f, 1.f, 1.f};
 	/// unique ID for the entity.
 	int entityId = -1;
+	/**
+	 * @brief
+	 *  Sort key: primitives draw by increasing depth, then by type (quads, circles, lines, text), then in submission
+	 *  order. Larger is nearer the viewer, as the view depth of the isometric layer. Default 0: the old type order.
+	 */
+	float depth = 0.f;
 };
 
 /**
@@ -140,6 +158,12 @@ struct OWL_API RectData {
 	math::vec4 color = math::vec4{1.f, 1.f, 1.f, 1.f};
 	/// unique ID for the entity.
 	int entityId = -1;
+	/**
+	 * @brief
+	 *  Sort key: primitives draw by increasing depth, then by type (quads, circles, lines, text), then in submission
+	 *  order. Larger is nearer the viewer, as the view depth of the isometric layer. Default 0: the old type order.
+	 */
+	float depth = 0.f;
 };
 
 /**
@@ -157,6 +181,12 @@ struct OWL_API PolyLineData {
 	math::vec4 color = math::vec4{1.f, 1.f, 1.f, 1.f};
 	/// unique ID for the entity.
 	int entityId = -1;
+	/**
+	 * @brief
+	 *  Sort key: primitives draw by increasing depth, then by type (quads, circles, lines, text), then in submission
+	 *  order. Larger is nearer the viewer, as the view depth of the isometric layer. Default 0: the old type order.
+	 */
+	float depth = 0.f;
 };
 
 /**
@@ -189,6 +219,12 @@ struct OWL_API StringData {
 	data::fonts::TextLayout layout{};
 	/// unique ID for the entity.
 	int entityId = -1;
+	/**
+	 * @brief
+	 *  Sort key: primitives draw by increasing depth, then by type (quads, circles, lines, text), then in submission
+	 *  order. Larger is nearer the viewer, as the view depth of the isometric layer. Default 0: the old type order.
+	 */
+	float depth = 0.f;
 };
 
 /**
