@@ -494,6 +494,10 @@ void EditorLayer::onAttach() {
 		if (getState() == State::Pause)
 			onSceneStep();
 	});
+	m_actionRegistry.registerAction("scene.play_controls", "Fold Play Controls", {input::key::F10, Modifiers::None},
+									[this]() -> void {
+										m_settings.playControlsCollapsed = !m_settings.playControlsCollapsed;
+									});
 	// Entity actions
 	m_actionRegistry.registerAction("entity.delete", "Delete Entity", {input::key::Delete, Modifiers::None},
 									[this]() -> void {

@@ -131,6 +131,8 @@ void EditorSettings::loadFromFile(const std::filesystem::path& iFile) {
 			showNavGraph = config["showNavGraph"].as<bool>();
 		if (config["showTriggerIcons"])
 			showTriggerIcons = config["showTriggerIcons"].as<bool>();
+		if (config["playControlsCollapsed"])
+			playControlsCollapsed = config["playControlsCollapsed"].as<bool>();
 		if (config["gizmoWorldSpace"])
 			gizmoWorldSpace = config["gizmoWorldSpace"].as<bool>();
 		if (config["cameraRotatePercent"])
@@ -187,6 +189,7 @@ void EditorSettings::saveToFile(const std::filesystem::path& iFile) const {
 	out << YAML::Key << "showGrid" << YAML::Value << showGrid;
 	out << YAML::Key << "showNavGraph" << YAML::Value << showNavGraph;
 	out << YAML::Key << "showTriggerIcons" << YAML::Value << showTriggerIcons;
+	out << YAML::Key << "playControlsCollapsed" << YAML::Value << playControlsCollapsed;
 	out << YAML::Key << "gizmoWorldSpace" << YAML::Value << gizmoWorldSpace;
 	out << YAML::Key << "cameraRotatePercent" << YAML::Value << cameraRotatePercent;
 	out << YAML::Key << "cameraPanPercent" << YAML::Value << cameraPanPercent;

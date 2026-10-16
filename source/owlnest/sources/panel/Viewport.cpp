@@ -8,6 +8,8 @@
 
 #include "Viewport.h"
 
+#include "PlayOverlay.h"
+
 #include "../DockLayout.h"
 
 #include "EditorLayer.h"
@@ -297,7 +299,12 @@ void Viewport::onUpdate(const core::Timestep& iTimeStep) {
 				// The HUD is Y-down from the top left: undo the OpenGL flip of the picking coordinates.
 				const bool flipped = renderer::gpu::RenderCommand::getApi() == renderer::gpu::RenderAPI::Type::OpenGL;
 				const math::vec2 vpMouse = {mx, flipped ? viewportSizeInternal.y() - my : my};
-				const bool mousePressed = ImGui::IsMouseDown(ImGuiMouseButton_Left);
+				// A press reaches the game only when it starts on the game: not on an overlay control, not on another panel.
+				const bool captured = window.getCursorMode() == window::CursorMode::Disabled;
+				const bool overOverlay =
+						anyContains(m_overlayRects, m_overlayCount, ImGui::GetMousePos().x, ImGui::GetMousePos().y);
+				const bool mousePressed = m_playGate.filter(ImGui::IsMouseDown(ImGuiMouseButton_Left),
+															captured || m_hovered, !captured && overOverlay);
 				const math::vec2 wheel = m_hovered ? math::vec2{ImGui::GetIO().MouseWheelH, ImGui::GetIO().MouseWheel}
 												   : math::vec2{0.f, 0.f};
 				scene::UiInputSystem::update(activeScene.get(), m_framebuffer->getSpecification().size, vpMouse,
@@ -777,14 +784,17 @@ void Viewport::renderOverlay() const {
 namespace {
 
 // Translucent pill holding one cluster of viewport controls, anchored at a corner of the viewport.
-auto beginOverlay(const std::string& iId, const ImVec2& iPos, const ImVec2& iPivot) -> bool {
+auto beginOverlay(const std::string& iId, const ImVec2& iPos, const ImVec2& iPivot, const bool iNoInputs = false)
+		-> bool {
 	const auto& theme = gui::UiLayer::getTheme();
 	ImGui::SetNextWindowPos(iPos, ImGuiCond_Always, iPivot);
-	constexpr ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
-									   ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse |
-									   ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoFocusOnAppearing |
-									   ImGuiWindowFlags_NoNav | ImGuiWindowFlags_AlwaysAutoResize |
-									   ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoDocking;
+	ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
+							 ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar |
+							 ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav |
+							 ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings |
+							 ImGuiWindowFlags_NoDocking;
+	if (iNoInputs)
+		flags |= ImGuiWindowFlags_NoInputs;
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{3.f, 3.f});
 	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{2.f, 2.f});
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 7.f);
@@ -792,6 +802,25 @@ auto beginOverlay(const std::string& iId, const ImVec2& iPos, const ImVec2& iPiv
 	ImGui::PushStyleColor(ImGuiCol_WindowBg, gui::vec(gui::Theme::withAlpha(theme.surface1, 0.9f)));
 	ImGui::PushStyleColor(ImGuiCol_Border, gui::vec(gui::Theme::withAlpha(theme.line, 0.8f)));
 	return ImGui::Begin(iId.c_str(), nullptr, flags);
+}
+
+auto toPhase(const SceneDocument::State iState) -> PlayPhase {
+	switch (iState) {
+		case SceneDocument::State::Play:
+			return PlayPhase::Play;
+		case SceneDocument::State::Pause:
+			return PlayPhase::Pause;
+		case SceneDocument::State::Edit:
+			break;
+	}
+	return PlayPhase::Edit;
+}
+
+// Screen rectangle of the current overlay window, to keep the game from seeing the clicks it takes.
+auto currentOverlayRect() -> OverlayRect {
+	const auto pos = ImGui::GetWindowPos();
+	const auto size = ImGui::GetWindowSize();
+	return {pos.x, pos.y, pos.x + size.x, pos.y + size.y};
 }
 
 void endOverlay() {
@@ -882,6 +911,8 @@ void Viewport::renderOverlayToolbar() {
 	auto& settings = m_parent->getSettings();
 	const auto shortcut = [this](const char* iAction) -> std::string { return m_parent->getActionShortcut(iAction); };
 
+	m_overlayCount = 0;
+	m_playBanner.update(toPhase(state), ImGui::GetIO().DeltaTime);
 	if (!editing)
 		ImGui::GetWindowDrawList()->AddRect({m_lower.x() + 1.f, m_lower.y() + 1.f},
 											{m_upper.x() - 1.f, m_upper.y() - 1.f},
@@ -945,9 +976,64 @@ void Viewport::renderOverlayToolbar() {
 		endOverlay();
 	}
 
-	// Playback, centred.
-	if (beginOverlay(std::format("##vpPlay{:x}", id), {(m_lower.x() + m_upper.x()) * 0.5f, m_lower.y() + margin},
-					 {0.5f, 0.f})) {
+	// Playback, centred; while the scene runs it folds into a handle in the top-right corner.
+	const bool collapsed = !editing && settings.playControlsCollapsed;
+	renderPlayControls(collapsed);
+
+	// View options, top-right.
+	if (editing)
+		renderViewOverlay();
+	else
+		renderPlayBanner(collapsed);
+
+	// Frame time chip, bottom-left.
+	if (beginOverlay(std::format("##vpFps{:x}", id), {m_lower.x() + margin, m_upper.y() - margin}, {0.f, 1.f})) {
+		const auto stats = renderer::Renderer2D::getStats();
+		const float fps = ImGui::GetIO().Framerate;
+		gui::UiLayer::pushTextStyle(gui::TextStyle::Value);
+		const auto text =
+				std::format("{:.0f} fps  {:.2f} ms  {} draws", fps, fps > 0.f ? 1000.f / fps : 0.f, stats.drawCalls);
+		ImGui::AlignTextToFramePadding();
+		ImGui::TextColored(gui::vec(theme.textMuted), " %s ", text.c_str());
+		gui::UiLayer::popTextStyle();
+		if (ImGui::IsItemClicked()) {
+			settings.showStats = true;
+			ImGui::SetWindowFocus(panelWindow::stats);
+		}
+		gui::widgets::itemTooltip("Frame stats", nullptr, "Click to open the Stats panel.");
+		addOverlayRect(currentOverlayRect());
+	}
+	endOverlay();
+}
+
+void Viewport::renderPlayControls(const bool iCollapsed) {
+	using gui::widgets::iconButton;
+	const auto& theme = gui::UiLayer::getTheme();
+	const auto state = mp_document->state();
+	const bool editing = state == SceneDocument::State::Edit;
+	const auto id = static_cast<uint64_t>(mp_document->id());
+	const float margin = 8.f;
+	auto& settings = m_parent->getSettings();
+	const auto shortcut = [this](const char* iAction) -> std::string { return m_parent->getActionShortcut(iAction); };
+	const bool collapsed = iCollapsed;
+	if (collapsed) {
+		if (beginOverlay(std::format("##vpPlayHandle{:x}", id), {m_upper.x() - margin, m_lower.y() + margin},
+						 {1.f, 0.f})) {
+			const bool paused = state == SceneDocument::State::Pause;
+			const auto key = shortcut("scene.play_controls");
+			ImGui::PushStyleColor(ImGuiCol_Text, gui::vec(paused ? theme.textMuted : theme.play));
+			if (iconButton("handle",
+						   {.glyph = paused ? gui::icon::pause : gui::icon::play,
+							.tooltip = paused ? "Paused: show the play controls" : "Playing: show the play controls",
+							.shortcut = key.c_str(),
+							.description = "Click to bring back Play, Pause, Step and Stop over the game."}))
+				settings.playControlsCollapsed = false;
+			ImGui::PopStyleColor();
+			addOverlayRect(currentOverlayRect());
+		}
+		endOverlay();
+	} else if (beginOverlay(std::format("##vpPlay{:x}", id), {(m_lower.x() + m_upper.x()) * 0.5f, m_lower.y() + margin},
+							{0.5f, 0.f})) {
 		const bool playing = state == SceneDocument::State::Play;
 		const bool paused = state == SceneDocument::State::Pause;
 		const auto playKey = shortcut("scene.play");
@@ -982,47 +1068,50 @@ void Viewport::renderOverlayToolbar() {
 								.description = "Leave the play mode and restore the scene.",
 								.disabled = editing}))
 			std::ignore = m_parent->runAction("scene.stop");
-	}
-	endOverlay();
-
-	// View options, top-right.
-	if (editing)
-		renderViewOverlay();
-	else if (beginOverlay(
-					 std::format("##vpPlaying{:x}", id),
-					 {(m_lower.x() + m_upper.x()) * 0.5f, m_lower.y() + margin * 2.f + ImGui::GetFrameHeight() + 6.f},
-					 {0.5f, 0.f})) {
-		ImGui::AlignTextToFramePadding();
-		ImGui::TextColored(gui::vec(theme.play), " %s ", gui::icon::play);
-		ImGui::SameLine();
-		gui::UiLayer::pushTextStyle(gui::TextStyle::Label);
-		ImGui::AlignTextToFramePadding();
-		ImGui::TextUnformatted(state == SceneDocument::State::Pause ? "Paused" : "Playing");
-		ImGui::SameLine();
-		ImGui::AlignTextToFramePadding();
-		ImGui::TextColored(gui::vec(theme.textMuted), "%s", "— changes are reverted on Stop ");
-		gui::UiLayer::popTextStyle();
-	}
-	if (!editing)
-		endOverlay();
-
-	// Frame time chip, bottom-left.
-	if (beginOverlay(std::format("##vpFps{:x}", id), {m_lower.x() + margin, m_upper.y() - margin}, {0.f, 1.f})) {
-		const auto stats = renderer::Renderer2D::getStats();
-		const float fps = ImGui::GetIO().Framerate;
-		gui::UiLayer::pushTextStyle(gui::TextStyle::Value);
-		const auto text =
-				std::format("{:.0f} fps  {:.2f} ms  {} draws", fps, fps > 0.f ? 1000.f / fps : 0.f, stats.drawCalls);
-		ImGui::AlignTextToFramePadding();
-		ImGui::TextColored(gui::vec(theme.textMuted), " %s ", text.c_str());
-		gui::UiLayer::popTextStyle();
-		if (ImGui::IsItemClicked()) {
-			settings.showStats = true;
-			ImGui::SetWindowFocus(panelWindow::stats);
+		if (!editing) {
+			overlaySeparator();
+			const auto key = shortcut("scene.play_controls");
+			if (iconButton("fold", {.glyph = gui::icon::chevronUp,
+									.tooltip = "Hide the play controls",
+									.shortcut = key.c_str(),
+									.description = "Folds the controls into a small handle in the corner, so they "
+												   "never cover the game."}))
+				settings.playControlsCollapsed = true;
 		}
-		gui::widgets::itemTooltip("Frame stats", nullptr, "Click to open the Stats panel.");
+		addOverlayRect(currentOverlayRect());
 	}
-	endOverlay();
+	if (!collapsed)
+		endOverlay();
+}
+
+void Viewport::renderPlayBanner(const bool iCollapsed) {
+	const auto& theme = gui::UiLayer::getTheme();
+	const auto state = mp_document->state();
+	const auto id = static_cast<uint64_t>(mp_document->id());
+	const float margin = 8.f;
+	const bool collapsed = iCollapsed;
+	if (!m_playBanner.visible())
+		return;
+	{
+		// Brief, non-interactive message when Play or Pause starts; the state stays readable on the handle.
+		const float y = collapsed ? margin : margin * 2.f + ImGui::GetFrameHeight() + 6.f;
+		ImGui::PushStyleVar(ImGuiStyleVar_Alpha, m_playBanner.alpha());
+		if (beginOverlay(std::format("##vpPlaying{:x}", id), {(m_lower.x() + m_upper.x()) * 0.5f, m_lower.y() + y},
+						 {0.5f, 0.f}, true)) {
+			ImGui::AlignTextToFramePadding();
+			ImGui::TextColored(gui::vec(theme.play), " %s ", gui::icon::play);
+			ImGui::SameLine();
+			gui::UiLayer::pushTextStyle(gui::TextStyle::Label);
+			ImGui::AlignTextToFramePadding();
+			ImGui::TextUnformatted(state == SceneDocument::State::Pause ? "Paused" : "Playing");
+			ImGui::SameLine();
+			ImGui::AlignTextToFramePadding();
+			ImGui::TextColored(gui::vec(theme.textMuted), "%s", "— changes are reverted on Stop ");
+			gui::UiLayer::popTextStyle();
+		}
+		endOverlay();
+		ImGui::PopStyleVar();
+	}
 }
 
 void Viewport::frameScene() {

@@ -62,6 +62,7 @@ TEST(EditorSettings, ViewportDisplayOptionsRoundTrip) {
 	settings.showGrid = false;
 	settings.showTriggerIcons = false;
 	settings.gizmoWorldSpace = true;
+	settings.playControlsCollapsed = true;
 	settings.saveToFile(dir / "settings.yml");
 
 	EditorSettings loaded;
@@ -69,6 +70,7 @@ TEST(EditorSettings, ViewportDisplayOptionsRoundTrip) {
 	EXPECT_FALSE(loaded.showGrid);
 	EXPECT_FALSE(loaded.showTriggerIcons);
 	EXPECT_TRUE(loaded.gizmoWorldSpace);
+	EXPECT_TRUE(loaded.playControlsCollapsed);
 	std::filesystem::remove_all(dir);
 }
 

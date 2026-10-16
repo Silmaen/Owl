@@ -86,6 +86,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - `sample_project/` is renamed `engine_demo/`, the Engine Demo: an all-in-one showcase of the engine features, apart from the planned sample games.
+- Play overlay of the Owl Nest viewport: the controls fold into a corner handle (**F10**, kept in the settings), the "Playing" message fades after two seconds, and clicks on the overlay no longer reach the game.
 - The sample project and the project templates draw their HUD from `.owlhud` files (`huds/gameplay.owlhud` for the
   templates and the platformer, one each for the world map, the raycast demo and the isometric test) and no widget
   names the `ui` layer any more; scene and prefab format 5 drops `RendererTag: ui` from canvases and widgets.

@@ -258,13 +258,20 @@ off-screen `Framebuffer` with two colour attachments:
 - top-left (Edit mode): Select / Move / Rotate / Scale, the Local / World axes of the gizmo, then Snap and the
   current snap step (a click opens its presets);
 - top-centre: Play (or Resume), Pause, Step and Stop, with their shortcuts in the tooltips; while the scene plays,
-  a banner under them recalls that the changes are reverted on Stop;
+  a chevron at their end (or **F10**, "Fold Play Controls") folds them into a small handle in the top-right corner, so
+  nothing but the handle covers the game; the handle shows the state (blue play glyph while playing, grey pause glyph
+  while paused) and a click unfolds the controls again; the choice is kept in the editor settings
+  (`playControlsCollapsed`); in Edit mode the controls always show;
+- a "Playing" / "Paused" message appears under them for about two seconds when Play or Pause starts, fades and goes;
 - top-right (Edit mode): the view (**2D** orthographic front view, **3D** perspective, or **Iso** locked in the
   isometric mode), **Show** (grid, camera
   markers, trigger icons, and in the isometric mode the navigation graph of the tilemaps with a Shift-click test path,
   see [Pathfinding](pathfinding.md)), **Frame selection** (`F`), the **Camera** menu and the frame stats toggle;
 - bottom-left: frame rate, frame time and draw calls (a click opens the Stats panel);
 - bottom-right: the view-cube of the editor camera.
+
+In Play the overlay controls take their own clicks: a click that starts on them, or on another panel, never reaches the
+game, and a drag started in the game keeps going when the cursor leaves the viewport.
 
 While the scene plays or is paused, a frame in the play colour outlines the viewport and the status bar turns blue.
 

@@ -11,11 +11,13 @@
 #include <owlgui.h>
 
 #include "../UndoManager.h"
+#include "PlayOverlay.h"
 
 #include <renderer/RendererIsometric.h>
 #include <scene/nav/Pathfinder.h>
 
 #include <array>
+#include <cstddef>
 #include <cstdint>
 #include <optional>
 #include <string>
@@ -364,6 +366,30 @@ private:
 
 	/**
 	 * @brief
+	 *  Draw the Play, Pause, Step and Stop controls, or the corner handle that stands for them when folded.
+	 * @param[in] iCollapsed Whether the controls are folded into the handle.
+	 */
+	void renderPlayControls(bool iCollapsed);
+
+	/**
+	 * @brief
+	 *  Draw the "Playing" / "Paused" message while its timer runs.
+	 * @param[in] iCollapsed Whether the controls are folded, which moves the message to the top.
+	 */
+	void renderPlayBanner(bool iCollapsed);
+
+	/**
+	 * @brief
+	 *  Remember the screen rectangle of an overlay control, so the game does not see the clicks it takes.
+	 * @param[in] iRect Rectangle of the overlay window.
+	 */
+	void addOverlayRect(const OverlayRect& iRect) {
+		if (m_overlayCount < m_overlayRects.size())
+			m_overlayRects[m_overlayCount++] = iRect;
+	}
+
+	/**
+	 * @brief
 	 *  Draw the view-cube in the viewport corner: the six axis ends show the camera orientation, a click on one looks
 	 *  from that side, a click on the centre resets the view.
 	 */
@@ -432,6 +458,14 @@ private:
 	bool m_gizmoWasUsing = false;
 	/// Entity YAML snapshot captured when gizmo manipulation began.
 	std::string m_gizmoBeforeYaml;
+	/// Message shown for a moment when Play or Pause starts.
+	PlayBanner m_playBanner;
+	/// Keeps the clicks on the overlay controls away from the game.
+	PlayInputGate m_playGate;
+	/// Screen rectangles of the overlay controls drawn last frame.
+	std::array<OverlayRect, 8> m_overlayRects{};
+	/// Number of rectangles in use.
+	std::size_t m_overlayCount = 0;
 	/// Whether the window was focused last frame (used to detect a focus transition).
 	bool m_wasFocused = false;
 	/// ImGui close state — set to false by ImGui when the tab's close X is clicked.
