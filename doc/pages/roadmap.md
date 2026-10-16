@@ -29,7 +29,7 @@ Development is heavily AI-assisted (the AI writes the code, the maintainer tests
 - ![Planned][planned] Public API frozen, semantic versioning and deprecation policy
 - ![Planned][planned] Versioned scene and save formats with tested migrations
 - ![Planned][planned] Consumable SDK: OwlEngine Conan package, `find_package(OwlEngine)` with 1–2 public dependencies, consumer test in CI
-- ![Planned][planned] Two showcase games (2D and 3D) authored only in the editor, each mixing rendering styles
+- ![Planned][planned] Two showcase games (2D and 3D) authored only in the editor, each mixing rendering styles, picked from the sample games
 - ![Planned][planned] Linux and Windows flawless, the Web as third platform
 - ![Planned][planned] Zero known crash; fuzzers on every file loader
 - ![Planned][planned] Performance budgets verified in CI on every target platform
@@ -54,6 +54,7 @@ v0.7.0 deterministic simulation, mods, the Web; this release is the 1.0 release 
 - ![Planned][planned] Web export through a WebGPU Owl RHI backend ([Owl RHI](design/owl-rhi.md))
 - ![Planned][planned] Cross-compile packaging and target platform selector ([Game export](design/game-export.md))
 - ![Planned][planned] Gamepad improvements: remapping UI, haptics ([Input](design/windowing-input.md))
+- ![Planned][planned] Sample game: a networked Bomberman ([Sample games](design/sample-games.md))
 - ![To evaluate][evaluate] macOS (Metal) and Android — after 1.0
 
 ## v0.7.0 -- Expected 2027-06-30
@@ -74,6 +75,7 @@ v0.7.0 deterministic simulation, mods, the Web; this release is the 1.0 release 
 - ![Planned][planned] Audio effects (reverb zones, low / high-pass filters)
 - ![Planned][planned] Dialogue system with a visual editor (`.owldlg`)
 - ![Planned][planned] Sample project: enemies demo on the AI modules
+- ![Planned][planned] Sample games: a one-room Zelda-like and a 3D marble or kart game ([Sample games](design/sample-games.md))
 
 ## v0.6.0 -- Expected 2027-04-15
 
@@ -93,6 +95,7 @@ procedural graphs, tile tools, Lua editor scripts, and Blueprints-style visual s
 - ![Planned][planned] Procedural generation graphs on `NodeCanvas`, first brick on tilemaps ([PCG graphs](design/pcg-graphs.md))
 - ![Planned][planned] Tileset editor: compose the atlas from source images ([2D](design/2d-complete.md))
 - ![To evaluate][evaluate] Hot reload of a C++ game module
+- ![Planned][planned] Sample games: a Wolfenstein mini and a Mini Minecraft ([Sample games](design/sample-games.md))
 
 ## v0.5.0 -- Expected 2027-01-31
 
@@ -112,6 +115,7 @@ render graph, essential post-processing — with full 3D editing ([details](desi
 - ![Planned][planned] HUD minimap on a render target ([HUD system](design/hud-system.md))
 - ![Planned][planned] 3D scene editing in Owl Nest (3D gizmos, snapping, mesh preview), "look through scene camera" mode
 - ![Planned][planned] Help panel: mermaid diagrams and rendering polish
+- ![Planned][planned] Sample games: Breakout, Sokoban and a Mini Transport Tycoon, small real games ([Sample games](design/sample-games.md))
 
 ## v0.4.0 -- Expected 2026-11-01
 

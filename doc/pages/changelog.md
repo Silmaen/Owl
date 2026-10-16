@@ -117,6 +117,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   scroll views and lists; the rest of the old v0.5.0 is spread over the later releases, which merge into four (v0.5.0
   3D core and lighting, v0.6.0 content and scripting, v0.7.0 gameplay and simulation, v0.8.0 opening and release
   candidate), 1.0 expected 2027-10-31.
+- Sample games planned beside the Engine Demo: small real games (Breakout, Sokoban, Mini Transport Tycoon, …), one or
+  two per release from v0.5.0, in `design/sample-games.md`.
 - Clang-Tidy and Static Analyzer configurations no longer run the unit tests: `vendor.silmaen.run_tests` turns off a
   preset's Test step.
 - Owl Nest file dialogues on Linux go through `xdg-desktop-portal` over D-Bus, parented to the editor window, instead
