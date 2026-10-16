@@ -12,6 +12,7 @@
 
 #include "scene/TilemapAsset.h"
 #include "scene/TilemapTerrain.h"
+#include "scene/Tileset.h"
 #include "scene/component/Tilemap.h"
 
 #include <algorithm>
@@ -60,6 +61,35 @@ auto toCostUnits(const float iCost) -> uint16_t {
 	return static_cast<uint16_t>(std::lround(clamped * 16.f));
 }
 
+/// Key of a cell in the table of exceptions.
+constexpr auto cellKey(const uint32_t iX, const uint32_t iY) -> uint64_t {
+	return (static_cast<uint64_t>(iY) << 32) | iX;
+}
+
+/// Hash of the connections of a tileset (one byte for the presence, one for the mask, per tile).
+auto connectionSignature(const Tileset* iTileset) -> uint64_t {
+	uint64_t hash = 0xcbf29ce484222325ull;
+	const auto mix = [&hash](const uint8_t iByte) -> void { hash = (hash ^ iByte) * 0x100000001b3ull; };
+	if (iTileset == nullptr)
+		return hash;
+	mix(1);
+	for (const auto& meta: iTileset->tiles) {
+		mix(meta.connections.has_value() ? 1 : 0);
+		mix(meta.connections.value_or(0));
+	}
+	return hash;
+}
+
+/// Directions of travel a cell with these connections can be entered in: the opposite of each connected side.
+constexpr auto entersOfConnections(const uint8_t iConnections) -> uint8_t {
+	uint8_t enters = 0;
+	for (const auto direction: directions) {
+		if ((iConnections & directionBit(direction)) != 0)
+			enters = static_cast<uint8_t>(enters | directionBit(opposite(direction)));
+	}
+	return enters;
+}
+
 }// namespace
 
 NavMap::NavMap() = default;
@@ -93,11 +123,63 @@ void NavMap::setProfile(const NavProfile& iProfile) {
 			m_ruleOfTile.resize(tile + 1, 0);
 		if (m_ruleOfTile[tile] == 0)
 			m_ruleOfTile[tile] = static_cast<uint16_t>(i + 1);
-		lowest = std::min(lowest, toCostUnits(rule.cost));
+		if (m_profile.mode == NavMode::Rules)
+			lowest = std::min(lowest, toCostUnits(rule.cost));
 	}
+	m_overrideOfCell.clear();
+	for (size_t i = 0; i < m_profile.overrides.size(); ++i) {
+		const auto& entry = m_profile.overrides[i];
+		m_overrideOfCell.try_emplace(cellKey(entry.x, entry.y), i);
+		if (entry.cost > 0.f)
+			lowest = std::min(lowest, toCostUnits(entry.cost));
+	}
+	if (m_profile.mode != NavMode::Rules)
+		lowest = std::min<uint16_t>(lowest, 16);
 	m_minEdgeCost = lowest == std::numeric_limits<uint16_t>::max() ? edgeUnit : 2u * lowest;
 	m_climbUnits = static_cast<uint32_t>(std::lround(m_profile.climbCost * 8.f));
 	m_profileDirty = true;
+}
+
+void NavMap::readConnections(const Tileset* const iTileset) {
+	m_connectionOfTile.clear();
+	if (iTileset == nullptr)
+		return;
+	m_connectionOfTile.reserve(iTileset->tiles.size());
+	for (const auto& meta: iTileset->tiles)
+		m_connectionOfTile.push_back(
+				meta.connections.has_value() ? static_cast<int16_t>(*meta.connections & allDirections) : int16_t{-1});
+}
+
+auto NavMap::resolveId(const uint16_t iId) const -> std::optional<NavTileRule> {
+	switch (m_profile.mode) {
+		case NavMode::Rules:
+			if (iId < m_ruleOfTile.size() && m_ruleOfTile[iId] != 0)
+				return m_profile.rules[m_ruleOfTile[iId] - 1u];
+			return std::nullopt;
+		case NavMode::Connections:
+			if (iId < m_connectionOfTile.size() && m_connectionOfTile[iId] >= 0) {
+				const auto mask = static_cast<uint8_t>(m_connectionOfTile[iId]);
+				return NavTileRule{.tile = iId, .cost = 1.f, .exits = mask, .enters = entersOfConnections(mask)};
+			}
+			return std::nullopt;
+		case NavMode::AnyCell:
+			return NavTileRule{.tile = iId};
+	}
+	return std::nullopt;
+}
+
+auto NavMap::getBaseCell(const TilemapAsset& iAsset, const uint32_t iX, const uint32_t iY) const
+		-> std::optional<NavTileRule> {
+	if (m_profile.layer >= iAsset.layers.size() || iX >= iAsset.width || iY >= iAsset.height)
+		return std::nullopt;
+	const auto* chunk = iAsset.layers[m_profile.layer].getChunk({iX / chunkSide, iY / chunkSide});
+	if (chunk == nullptr)
+		return std::nullopt;
+	const auto& ids = m_profile.source == NavSource::Overlay ? chunk->overlay : chunk->terrain;
+	const uint16_t id = ids[(iY % chunkSide) * chunkSide + iX % chunkSide];
+	if (id == component::TilemapChunk::emptyId)
+		return std::nullopt;
+	return resolveId(id);
 }
 
 void NavMap::reset() {
@@ -120,9 +202,12 @@ auto NavMap::sync(const TilemapAsset& iAsset) -> uint32_t {
 
 	const math::vec2ui size{iAsset.width, iAsset.height};
 	const math::vec2ui grid{(size.x() + chunkSide - 1) / chunkSide, (size.y() + chunkSide - 1) / chunkSide};
-	const bool everything = m_profileDirty || size != m_size;
+	const uint64_t signature = m_profile.mode == NavMode::Connections ? connectionSignature(iAsset.tileset.get()) : 0;
+	const bool everything = m_profileDirty || size != m_size || signature != m_connectionSignature;
 	if (everything) {
 		reset();
+		m_connectionSignature = signature;
+		readConnections(m_profile.mode == NavMode::Connections ? iAsset.tileset.get() : nullptr);
 		m_size = size;
 		m_chunkGrid = grid;
 		const size_t count = static_cast<size_t>(grid.x()) * grid.y();
@@ -162,7 +247,7 @@ void NavMap::rebuildChunk(const TilemapAsset& iAsset, const uint32_t iChunkX, co
 	m_chunks[index].reset();
 	m_walkableCount -= m_chunkWalkable[index];
 	m_chunkWalkable[index] = 0;
-	if (m_profile.layer >= iAsset.layers.size() || m_ruleOfTile.empty())
+	if (m_profile.layer >= iAsset.layers.size())
 		return;
 	const auto& layer = iAsset.layers[m_profile.layer];
 	const auto* source = layer.getChunk({iChunkX, iChunkY});
@@ -184,9 +269,12 @@ void NavMap::rebuildChunk(const TilemapAsset& iAsset, const uint32_t iChunkX, co
 				break;
 			const uint32_t local = ly * chunkSide + lx;
 			const uint16_t id = ids[local];
-			if (id == component::TilemapChunk::emptyId || id >= m_ruleOfTile.size() || m_ruleOfTile[id] == 0)
+			if (id == component::TilemapChunk::emptyId)
 				continue;
-			const auto& rule = m_profile.rules[m_ruleOfTile[id] - 1u];
+			const auto found = resolveId(id);
+			if (!found.has_value())
+				continue;
+			const auto& rule = *found;
 			int32_t riseX = 0;
 			int32_t riseY = 0;
 			if (heights) {
@@ -205,9 +293,24 @@ void NavMap::rebuildChunk(const TilemapAsset& iAsset, const uint32_t iChunkX, co
 											   ~(directionBit(Direction::South) | directionBit(Direction::North)));
 			if (built == nullptr)
 				built = mkUniq<NavChunk>();
-			built->cost[local] = toCostUnits(rule.cost);
-			built->exits[local] = static_cast<uint8_t>(rule.exits & slopeOk & allDirections);
-			built->enters[local] = static_cast<uint8_t>(rule.enters & slopeOk & allDirections);
+			uint8_t exits = static_cast<uint8_t>(rule.exits & slopeOk & allDirections);
+			uint8_t enters = static_cast<uint8_t>(rule.enters & slopeOk & allDirections);
+			float cost = rule.cost;
+			if (!m_overrideOfCell.empty()) {
+				if (const auto entry = m_overrideOfCell.find(cellKey(x, y)); entry != m_overrideOfCell.end()) {
+					const auto& exception = m_profile.overrides[entry->second];
+					exits = static_cast<uint8_t>(exits & ~exception.noExit);
+					for (const auto side: directions) {
+						if ((exception.noEnter & directionBit(side)) != 0)
+							enters = static_cast<uint8_t>(enters & ~directionBit(opposite(side)));
+					}
+					if (exception.cost > 0.f)
+						cost = exception.cost;
+				}
+			}
+			built->cost[local] = toCostUnits(cost);
+			built->exits[local] = exits;
+			built->enters[local] = enters;
 			built->riseX[local] = static_cast<int8_t>(riseX);
 			built->riseY[local] = static_cast<int8_t>(riseY);
 			++walkable;
@@ -290,12 +393,6 @@ auto NavMap::getRows(const size_t iIndex) const -> NavRows& {
 
 void NavMap::releaseSearchCaches() const {
 	for (auto& rows: m_rows) rows.reset();
-}
-
-auto NavProfile::findRule(const int32_t iTile) const -> const NavTileRule* {
-	const auto found =
-			std::ranges::find_if(rules, [iTile](const NavTileRule& iRule) -> bool { return iRule.tile == iTile; });
-	return found == rules.end() ? nullptr : &*found;
 }
 
 }// namespace owl::scene::nav

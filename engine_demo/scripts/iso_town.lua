@@ -14,7 +14,7 @@ local GROUND_LAYER, ROAD_LAYER = 0, 1
 local ROAD_X, ROAD_Y = 3, 11
 -- Neighbour mask bits: north is -y, east +x, south +y, west -x.
 local NORTH, EAST, SOUTH, WEST = 1, 2, 4, 8
--- Road tile of each neighbour mask, as laid out by tools/iso_atlas (and listed in the navigation rules of the scene).
+-- Road tile of each neighbour mask, as laid out by tools/iso_atlas (their connections are in the tileset).
 local TILE_OF_MASK = {
     [0] = 12,
     [NORTH] = 13, [EAST] = 14, [SOUTH] = 15, [WEST] = 16,

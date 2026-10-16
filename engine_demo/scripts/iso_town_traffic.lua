@@ -1,6 +1,6 @@
 -- Isometric town traffic: vehicles driving to destinations over the road graph of scenes/iso_town.owl.
 -- Demonstrates: tile-graph pathfinding (`path.find`, `path.poll`, `path.get`, `path.is_valid`, `path.get_version`,
---               `path.get_edge_cost`, `path.is_walkable`, the `navigation` rules of the Ground tilemap), the debug
+--               `path.get_edge_cost`, `path.is_walkable`, the tileset connections of the Ground tilemap), the debug
 --               overlay (`path.set_debug`, `path.show_route`: F3 draws the road graph and the route of each vehicle in
 --               its own colour, in the game and in the Play view of Owl Nest), vehicles that
 --               re-route when a road is bulldozed or built, the terrain height under them (isometric.get_height), one
