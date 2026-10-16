@@ -96,6 +96,28 @@ TEST_F(LuaPath, findNowReturnsTheCellsAndTheCost) {
 	EXPECT_NEAR(instance->getPropertyFloat("cost").value_or(-1.f), 4.f, 1e-4f);
 }
 
+TEST_F(LuaPath, noReverseKeepsTheHeadingAndGoesRoundTheLoop) {
+	// From (45, 5) heading East, the goal (40, 5) lies behind: the route goes round the loop of the two rows (45 + 4 +
+	// 90 + 4 + 40 moves) where the plain one steps back 5 cells.
+	const auto instance =
+			run("plain = path.find_now(map, 45, 5, 40, 5)\nplain_count = #plain\n"
+				"round = path.find_now(map, 45, 5, 40, 5, {no_reverse = true, heading_x = 1, heading_y = 0})\n"
+				"round_count = #round\nsecond_x = round[3]\n"
+				"with_mode = path.find_now(map, 45, 5, 40, 5, 'flat', {no_reverse = true, heading_x = -1})\n"
+				"west_count = #with_mode\n"
+				"request = path.find(map, 45, 5, 40, 5, {no_reverse = true, heading_x = 1})",
+				"status = path.poll(map, request)\nif status == 'found' then cells, cost = path.get(map, request)\n"
+				"request_count = #cells\nend");
+	m_scene->getNavigation().update(*m_scene);
+	instance->onUpdate(0.016f);
+	EXPECT_EQ(instance->getPropertyInt("plain_count").value_or(0), 2 * 6);
+	EXPECT_EQ(instance->getPropertyInt("round_count").value_or(0), 2 * (45 + 4 + 90 + 4 + 40 + 1));
+	EXPECT_EQ(instance->getPropertyInt("second_x").value_or(0), 46) << "the route goes on East first";
+	EXPECT_EQ(instance->getPropertyInt("west_count").value_or(0), 2 * 6) << "heading West the plain way is allowed";
+	EXPECT_EQ(instance->getPropertyString("status").value_or(""), "found");
+	EXPECT_EQ(instance->getPropertyInt("request_count").value_or(0), 2 * (45 + 4 + 90 + 4 + 40 + 1));
+}
+
 TEST_F(LuaPath, aRequestIsServedOverTheNextFrames) {
 	m_scene->getNavigation().setBudget(40);
 	const auto instance =

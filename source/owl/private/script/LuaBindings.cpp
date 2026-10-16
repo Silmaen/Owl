@@ -1396,12 +1396,38 @@ auto findNavigation(lua_State* iState) -> scene::nav::NavWorld::Entry* {
 }
 
 auto readNavMode(lua_State* iState, const int iIndex) -> scene::nav::PathMode {
+	if (lua_istable(iState, iIndex))
+		return scene::nav::PathMode::Auto;
 	const std::string_view mode = luaL_optstring(iState, iIndex, "auto");
 	if (mode == "flat")
 		return scene::nav::PathMode::Flat;
 	if (mode == "hierarchical")
 		return scene::nav::PathMode::Hierarchical;
 	return scene::nav::PathMode::Auto;
+}
+
+// The optional table at `iIndex` (the mode may be left out, the table then comes in its place): `{heading_x = dx, heading_y = dy, no_reverse = true}` (a heading is one of the four
+// axis directions; without `no_reverse` the search is the usual one).
+auto readNavOptions(lua_State* iState, const int iIndex) -> scene::nav::PathOptions {
+	scene::nav::PathOptions options;
+	if (!lua_istable(iState, iIndex))
+		return options;
+	lua_getfield(iState, iIndex, "no_reverse");
+	options.noReverse = lua_toboolean(iState, -1) != 0;
+	lua_getfield(iState, iIndex, "heading_x");
+	lua_getfield(iState, iIndex, "heading_y");
+	const auto headingX = lua_tointeger(iState, -2);
+	const auto headingY = lua_tointeger(iState, -1);
+	lua_pop(iState, 3);
+	if (headingX > 0 && headingY == 0)
+		options.heading = scene::nav::Direction::East;
+	else if (headingX < 0 && headingY == 0)
+		options.heading = scene::nav::Direction::West;
+	else if (headingX == 0 && headingY > 0)
+		options.heading = scene::nav::Direction::South;
+	else if (headingX == 0 && headingY < 0)
+		options.heading = scene::nav::Direction::North;
+	return options;
 }
 
 // A cell from two Lua integers; false when one is negative.
@@ -1431,8 +1457,10 @@ auto luaPathFind(lua_State* iState) -> int {
 	const auto from = readNavCell(iState, 2);
 	const auto to = readNavCell(iState, 4);
 	const auto mode = readNavMode(iState, 6);
+	const auto options = readNavOptions(iState, lua_istable(iState, 6) ? 6 : 7);
 	auto* navigation = findNavigation(iState);
-	lua_pushinteger(iState, navigation != nullptr && from && to ? navigation->queue.request(*from, *to, mode) : 0);
+	lua_pushinteger(iState,
+					navigation != nullptr && from && to ? navigation->queue.request(*from, *to, mode, options) : 0);
 	return 1;
 }
 
@@ -1440,6 +1468,7 @@ auto luaPathFindNow(lua_State* iState) -> int {
 	const auto from = readNavCell(iState, 2);
 	const auto to = readNavCell(iState, 4);
 	const auto mode = readNavMode(iState, 6);
+	const auto options = readNavOptions(iState, lua_istable(iState, 6) ? 6 : 7);
 	auto* navigation = findNavigation(iState);
 	if (navigation == nullptr || !from || !to) {
 		lua_pushnil(iState);
@@ -1447,7 +1476,7 @@ auto luaPathFindNow(lua_State* iState) -> int {
 	}
 	scene::nav::Pathfinder finder;
 	scene::nav::PathResult path;
-	if (!finder.find(navigation->map, *from, *to, mode, path)) {
+	if (!finder.find(navigation->map, *from, *to, mode, path, options)) {
 		lua_pushnil(iState);
 		return 1;
 	}
@@ -1922,12 +1951,12 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		 .description = "Frame an `AnimatedSpriteRenderer` shows now; nothing when the entity has no such sprite.",
 		 .params = {entityId}, .returns = {{"frame", Integer}}},
 		{.table = "path", .name = "find", .function = guarded<luaPathFind>,
-		 .description = "Queue a shortest-path query between two cells of the tilemap's graph (its `navigation` rules); 0 when the entity has no graph. The path is searched over the next frames, `mode` is `auto`, `flat` or `hierarchical`.",
-		 .params = {entityId, {"from_x", Integer}, {"from_y", Integer}, {"to_x", Integer}, {"to_y", Integer}, {"mode", String, true}},
+		 .description = "Queue a shortest-path query between two cells of the tilemap's graph (its `navigation` rules); 0 when the entity has no graph. The path is searched over the next frames, `mode` is `auto`, `flat` or `hierarchical`. `options` (a table, which may replace `mode`) is `{no_reverse = true, heading_x = dx, heading_y = dy}`: the route never goes back to the cell it just left, except from a dead end (a cell with a single exit), and its first move goes on in the heading (an axis direction) when there is one; the search is then always flat.",
+		 .params = {entityId, {"from_x", Integer}, {"from_y", Integer}, {"to_x", Integer}, {"to_y", Integer}, {"mode", String, true}, {"options", Table, true}},
 		 .returns = {{"request", Integer}}},
 		{.table = "path", .name = "find_now", .function = guarded<luaPathFindNow>,
-		 .description = "Search a shortest path at once (a long query on a big map costs frame time, prefer `path.find`): the cells as `{x1, y1, x2, y2, ...}` and the cost in cells, nothing when no path joins the cells.",
-		 .params = {entityId, {"from_x", Integer}, {"from_y", Integer}, {"to_x", Integer}, {"to_y", Integer}, {"mode", String, true}},
+		 .description = "Search a shortest path at once (a long query on a big map costs frame time, prefer `path.find`): the cells as `{x1, y1, x2, y2, ...}` and the cost in cells, nothing when no path joins the cells. `options` as in `path.find`.",
+		 .params = {entityId, {"from_x", Integer}, {"from_y", Integer}, {"to_x", Integer}, {"to_y", Integer}, {"mode", String, true}, {"options", Table, true}},
 		 .returns = {{"cells", Table}, {"cost", Number}}},
 		{.table = "path", .name = "poll", .function = guarded<luaPathPoll>,
 		 .description = "State of a request: `pending`, `found`, `not_found` or `unknown` (released or never made).",

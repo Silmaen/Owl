@@ -63,6 +63,13 @@ tiles, costs and slopes):
 - **Auto** (default): flat, except hierarchical for cells at least 3 chunks apart on a sparse graph (at most one cell
   in five is a node).
 
+- **No reverse** (`PathOptions`): for a vehicle that keeps its heading. A move back to the cell just left is forbidden
+  unless the cell is a dead end (a single exit), and the first move cannot reverse the `heading` the vehicle has at the
+  start. The state of the search is the cell and the direction it was entered by (5 entry states per cell, none when
+  there is no heading), so the path is the cheapest one under the constraint, and a goal that only a U-turn reaches is
+  `NotFound`. It is always a flat search: `Auto` and `Hierarchical` fall back to flat when `noReverse` is set. Sliced
+  and resumable like the others, `PathQueue::request` keeps the options of each request.
+
 `Pathfinder::begin` / `step(budget)` run a search in slices, `Pathfinder::find` runs it whole. The working arrays are
 kept, so a search allocates nothing once they reached the size of the map.
 
@@ -89,12 +96,15 @@ if path.poll(map, request) == "found" then
     path.release(map, request)
 end
 if path.get_version(map) ~= version then ... end              -- a road was built or bulldozed
+-- a vehicle heading East that never turns back, except at a dead end (options may replace the mode)
+local request = path.find(map, x, y, to_x, to_y, { no_reverse = true, heading_x = 1, heading_y = 0 })
 ```
 
 Every function is in the [Lua API reference](lua-api.md#path). The `iso_town` vehicles of the Engine Demo
-(`scripts/iso_town_traffic.lua`) drive from stop to stop that way, look for another way when a road of their route is
-bulldozed (scenario `iso_town`), plan their route again at the next cell when a road was built (a vehicle left
-standing on a bulldozed cell asks from the road cell it came from), and wait when no route exists.
+(`scripts/iso_town_traffic.lua`) drive to a random road cell (seeded, another one on arrival) that way, never turning back except at a dead end where
+they loop round the middle of the cell, look for another way when a road of their route is bulldozed (scenario
+`iso_town`), plan their route again at the next cell when a road was built (a vehicle left standing on a bulldozed cell
+asks from the road cell it came from, without a heading), and wait when no route exists.
 
 ## Seeing the graph and the routes
 
@@ -102,7 +112,7 @@ standing on a bulldozed cell asks from the road cell it came from), and wait whe
 moves in orange with an arrow) and the routes scripts hand to `path.show_route(map, id, cells, r, g, b)` (one line per
 id, a diamond on the last cell, `path.clear_routes(map)` removes them all). The overlay is drawn by the scene over the
 isometric view, in the game and in the Play view of Owl Nest. In the Engine Demo **F3** (the `nav_debug` action) toggles
-it and `iso_town_traffic.lua` gives each vehicle its own colour.
+it and `iso_town_traffic.lua` gives each vehicle its own colour and gives the overlay its route at every plan.
 
 ## Owl Nest
 

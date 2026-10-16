@@ -26,7 +26,8 @@ PathQueue::PathQueue(PathQueue&&) noexcept = default;
 
 auto PathQueue::operator=(PathQueue&&) noexcept -> PathQueue& = default;
 
-auto PathQueue::request(const math::vec2ui& iFrom, const math::vec2ui& iTo, const PathMode iMode) -> PathRequestId {
+auto PathQueue::request(const math::vec2ui& iFrom, const math::vec2ui& iTo, const PathMode iMode,
+						const PathOptions& iOptions) -> PathRequestId {
 	auto slot = std::ranges::find_if(m_slots, [](const Slot& iSlot) -> bool { return iSlot.id == 0; });
 	if (slot == m_slots.end())
 		slot = m_slots.insert(m_slots.end(), Slot{});
@@ -35,6 +36,7 @@ auto PathQueue::request(const math::vec2ui& iFrom, const math::vec2ui& iTo, cons
 	slot->id = m_lastId;
 	slot->status = PathStatus::Pending;
 	slot->mode = iMode;
+	slot->options = iOptions;
 	slot->from = iFrom;
 	slot->to = iTo;
 	slot->result.cells.clear();
@@ -101,7 +103,7 @@ auto PathQueue::update(const NavMap& iMap, const uint32_t iBudget) -> uint64_t {
 							 mp_finder->getMapVersion() != iMap.getVersion();
 		if (restart) {
 			m_current = active->id;
-			mp_finder->begin(iMap, active->from, active->to, active->mode);
+			mp_finder->begin(iMap, active->from, active->to, active->mode, active->options);
 		}
 		const uint64_t before = mp_finder->getWorkDone();
 		const auto state = mp_finder->step(static_cast<uint32_t>(iBudget - spent));
