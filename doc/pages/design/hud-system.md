@@ -203,8 +203,21 @@ Keyboard and gamepad focus on buttons and sliders, driven by the built-in `ui_up
 
 ## Inventory demo (DEMO1)
 
-Pulled from v0.5.0: collectible objects, key-locked switches and an inventory window with slots in
-`sample_project/`, in Lua only, navigable with the gamepad.
+Done. Collectible objects, key-locked switches and an inventory window with slots in `sample_project/`, in Lua only,
+navigable with the gamepad (`scenes/inventory_demo.owl`, **N** or Back from the main menu).
+
+- **Window.** `huds/inventory.owlhud` is the scene's `Hud:` (one HUD per scene): a closable `UiWindow` holding a grid of
+  six `UiButton` slots (a `UiImage` icon and a `UiText` count each, a `UiTooltip` with the item name) and an info
+  text. A slot exists per item; its icon and count show once the count is above zero (`ui.set_visible`, `ui.set_text`),
+  so no image binding is needed.
+- **Opening.** The `inventory` action (Tab, gamepad Y) shows the window and `ui.set_focus` puts the focus on the first
+  filled slot; the window then keeps the focus, `ui_*` walk the slots (no wrap), `ui_accept` inspects, `ui_cancel`
+  closes (`onCloseCallback`), `onFocusCallback` updates the info text. The player is still while it is open.
+- **State.** The inventory is the gamestate keys `inv_<item>` (counts), so a save keeps it; `picked_<tag>` and
+  `unlocked_<tag>` keep taken items and opened locks, F6 / F9 quick-save and load slot 2.
+- **Scripts.** `pickup.lua` (`Trigger.Type=LuaCallback`), `lock.lua` (`Trigger.Type=Interaction`, E / X, a `key` and a
+  `target` property), `inventory.lua` (window, toast, save keys), `inventory_player.lua`. Scenario
+  `test/scenarios/inventory_demo.owltest` picks a key, opens the window, navigates it and opens the door and the vault.
 
 ## Tests
 
