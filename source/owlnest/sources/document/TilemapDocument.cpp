@@ -364,9 +364,11 @@ void TilemapDocument::renderPropertiesPanel() {
 		textRow("Tile", tileLabel, tileAtCell >= 0 ? theme.text : theme.textDisabled);
 		textRow("Passable", passable ? "Yes" : "No (solid)", passable ? theme.success : theme.error);
 		if (isIsometric()) {
-			const auto corners = m_asset.getCellCorners(cellX, cellY);
-			textRow("Slope", std::string{scene::terrain::getSlopeName(m_asset.getCellSlope(cellX, cellY))}, theme.text);
-			textRow("Corners", std::format("{} {} {} {}", corners[0], corners[1], corners[2], corners[3]), theme.text);
+			renderCellCornerRows(cellX, cellY);
+		} else {
+			textRow("Corners", "Need an isometric tileset", theme.textDisabled);
+			if (ImGui::IsItemHovered())
+				ImGui::SetTooltip("Corner heights only exist on an isometric tilemap (tileset of kind Isometric).");
 		}
 		renderCellDataRows(layerIdx, cellX, cellY);
 		gui::widgets::endProperties();
@@ -394,6 +396,98 @@ void TilemapDocument::renderCellDataRows(const uint32_t iLayer, const uint32_t i
 	}
 	if (!m_strokeInProgress && !ImGui::IsAnyItemActive())
 		endStroke("Edit cell");
+}
+
+void TilemapDocument::renderCellCornerRows(const uint32_t iX, const uint32_t iY) {
+	static constexpr std::array<const char*, 4> labels{"Corner back", "Corner right", "Corner front", "Corner left"};
+	const auto corners = m_asset.getCellCorners(iX, iY);
+	for (size_t i = 0; i < corners.size(); ++i) {
+		int value = corners[i];
+		const auto node = getCellCornerNode(iX, iY, i);
+		ImGui::PushID(static_cast<int>(i));
+		if (gui::widgets::propertyInt(labels[i], value, 0, 0, scene::TilemapAsset::maxCornerHeight, "%d",
+									  "Height of this corner of the cell, in steps. The neighbouring corners follow "
+									  "so every cell keeps one of the 19 slopes."))
+			std::ignore = previewNodeHeight(node.x(), node.y(), static_cast<uint8_t>(std::clamp(value, 0, 255)));
+		ImGui::PopID();
+	}
+	if (!ImGui::IsAnyItemActive() && !ImGui::IsMouseDown(ImGuiMouseButton_Left))
+		std::ignore = commitTerrainEdit("Edit corner heights");
+	const auto& theme = gui::UiLayer::getTheme();
+	gui::widgets::propertyLabel("Slope");
+	ImGui::AlignTextToFramePadding();
+	ImGui::TextColored(gui::vec(theme.text), "%s",
+					   std::string{scene::terrain::getSlopeName(m_asset.getCellSlope(iX, iY))}.c_str());
+	std::ignore = gui::widgets::propertyReset(false);
+}
+
+auto TilemapDocument::getCellCornerNode(const uint32_t iCellX, const uint32_t iCellY, const size_t iIndex)
+		-> math::vec2ui {
+	const uint32_t dx = (iIndex == 1 || iIndex == 2) ? 1u : 0u;
+	const uint32_t dy = (iIndex == 2 || iIndex == 3) ? 1u : 0u;
+	return {iCellX + dx, iCellY + dy};
+}
+
+void TilemapDocument::selectNode(const math::vec2ui& iNode, const bool iAdditive) {
+	if (iNode.x() > m_asset.width || iNode.y() > m_asset.height)
+		return;
+	const auto found = std::ranges::find(m_selectedNodes, iNode);
+	if (!iAdditive) {
+		m_selectedNodes.assign(1, iNode);
+		return;
+	}
+	if (found != m_selectedNodes.end())
+		m_selectedNodes.erase(found);
+	else
+		m_selectedNodes.push_back(iNode);
+}
+
+auto TilemapDocument::previewNodeHeight(const uint32_t iX, const uint32_t iY, const uint8_t iHeight) -> bool {
+	auto changes = m_asset.setCornerHeight(iX, iY, iHeight);
+	const bool moved = !changes.empty();
+	m_terrainStroke.add(changes);
+	return moved;
+}
+
+auto TilemapDocument::commitTerrainEdit(const std::string& iDescription) -> bool {
+	auto command = m_terrainStroke.finish(iDescription);
+	if (!command)
+		return false;
+	m_undoManager.push(std::move(command));
+	return true;
+}
+
+auto TilemapDocument::setNodeHeight(const uint32_t iX, const uint32_t iY, const uint8_t iHeight) -> bool {
+	const bool moved = previewNodeHeight(iX, iY, iHeight);
+	std::ignore = commitTerrainEdit("Set node height");
+	return moved;
+}
+
+auto TilemapDocument::moveSelectedNodes(const int iDelta) -> bool {
+	std::vector<std::pair<math::vec2ui, uint8_t>> targets;
+	targets.reserve(m_selectedNodes.size());
+	for (const auto& node: m_selectedNodes) {
+		const int target = std::clamp(m_asset.getCornerHeight(node.x(), node.y()) + iDelta, 0,
+									  static_cast<int>(scene::TilemapAsset::maxCornerHeight));
+		targets.emplace_back(node, static_cast<uint8_t>(target));
+	}
+	bool moved = false;
+	for (const auto& [node, height]: targets) moved |= previewNodeHeight(node.x(), node.y(), height);
+	std::ignore = commitTerrainEdit("Move nodes");
+	return moved;
+}
+
+void TilemapDocument::previewNodeDrag(const int iDelta) {
+	scene::terrain::mergeCornerChanges(m_nodeDragChanges);
+	m_asset.applyCornerChanges(m_nodeDragChanges, true);
+	m_nodeDragChanges.clear();
+	m_nodeDragDelta = iDelta;
+	for (const auto& [node, height]: m_nodeDragStart) {
+		const int target = std::clamp(height + iDelta, 0, static_cast<int>(scene::TilemapAsset::maxCornerHeight));
+		const auto changes = m_asset.setCornerHeight(node.x(), node.y(), static_cast<uint8_t>(target));
+		m_nodeDragChanges.insert(m_nodeDragChanges.end(), changes.begin(), changes.end());
+	}
+	scene::terrain::mergeCornerChanges(m_nodeDragChanges);
 }
 
 auto TilemapDocument::isIsometric() const -> bool {
@@ -630,7 +724,7 @@ void TilemapDocument::renderIsometricToolbar() {
 		const char* tooltip;
 		const char* description;
 	};
-	static constexpr std::array<ToolEntry, 5> tools{{
+	static constexpr std::array<ToolEntry, 6> tools{{
 			{IsometricTool::Paint, "##toolPaint", gui::icon::paintbrush, "Paint",
 			 "Paint terrain tiles with the palette brushes."},
 			{IsometricTool::Raise, "##toolRaise", gui::icon::chevronUp, "Raise",
@@ -641,6 +735,9 @@ void TilemapDocument::renderIsometricToolbar() {
 			 "Bring a corner (or the area) to the level height; Ctrl+click reads the height of a corner."},
 			{IsometricTool::Overlay, "##toolOverlay", gui::icon::layers, "Overlay",
 			 "Paint the overlay of the active layer (tracks, roads) with the primary brush, right click clears it."},
+			{IsometricTool::Node, "##toolNode", gui::icon::mousePointerClick, "Node",
+			 "Select a corner (Shift adds or removes one), drag it up or down or press + / - to change its height; "
+			 "the neighbouring corners follow."},
 	}};
 	for (size_t i = 0; i < tools.size(); ++i) {
 		if (i > 0)
@@ -774,6 +871,10 @@ void TilemapDocument::handleIsometricInput(ImDrawList* iDrawList, const ImVec2& 
 	const math::vec3 start = renderer::screenToWorld(screen, top, config);
 	const math::vec3 ground = renderer::screenToWorld(screen, 0.f, config);
 	m_isoHover = scene::terrain::pickTerrain(m_asset, math::vec3{0.f, 0.f, 0.f}, start, ground - start);
+	if (m_isoTool == IsometricTool::Node) {
+		handleNodeInput(iDrawList, iOrigin);
+		return;
+	}
 	const bool leftDown = ImGui::IsMouseDown(ImGuiMouseButton_Left);
 	const bool rightDown = ImGui::IsMouseDown(ImGuiMouseButton_Right);
 	if (!m_isoHover) {
@@ -797,6 +898,62 @@ void TilemapDocument::handleIsometricInput(ImDrawList* iDrawList, const ImVec2& 
 		return;
 	}
 	applyIsometricTool(hit, leftDown, rightDown);
+}
+
+void TilemapDocument::handleNodeInput(ImDrawList* iDrawList, const ImVec2& iOrigin) {
+	const auto& io = ImGui::GetIO();
+	const IsoView view{iOrigin, m_zoomPixelsPerCell / 32.f};
+	const renderer::IsometricConfig config;
+	const auto nodePoint = [this, &view](const math::vec2ui& iNode) -> ImVec2 {
+		return view.project(static_cast<float>(iNode.x()), static_cast<float>(iNode.y()),
+							static_cast<float>(m_asset.getCornerHeight(iNode.x(), iNode.y())) *
+									scene::terrain::heightStep);
+	};
+	for (const auto& node: m_selectedNodes) {
+		const auto point = nodePoint(node);
+		iDrawList->AddCircleFilled(point, 6.f, IM_COL32(120, 220, 255, 255));
+		iDrawList->AddCircle(point, 6.f, IM_COL32(20, 40, 60, 255), 0, 1.5f);
+	}
+	if (m_isoHover) {
+		const auto& hit = *m_isoHover;
+		drawCellSurface(iDrawList, view, m_asset, hit.cell.x(), hit.cell.y(), IM_COL32(255, 195, 38, 255), 2.f);
+		iDrawList->AddCircleFilled(nodePoint(hit.corner), 4.f, IM_COL32(255, 195, 38, 255));
+		if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+			m_inspectedCellX = static_cast<int32_t>(hit.cell.x());
+			m_inspectedCellY = static_cast<int32_t>(hit.cell.y());
+			const bool selected = std::ranges::find(m_selectedNodes, hit.corner) != m_selectedNodes.end();
+			if (io.KeyShift || !selected)
+				selectNode(hit.corner, io.KeyShift);
+			m_nodeClickPending = !io.KeyShift;
+			m_nodeDragMouseY = io.MousePos.y;
+			m_nodeDragDelta = 0;
+			m_nodeDragChanges.clear();
+			m_nodeDragStart.clear();
+			for (const auto& node: m_selectedNodes)
+				m_nodeDragStart.push_back({node, m_asset.getCornerHeight(node.x(), node.y())});
+		}
+	} else if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !io.KeyShift) {
+		clearNodeSelection();
+	}
+	if (ImGui::IsMouseDown(ImGuiMouseButton_Left) && !m_nodeDragStart.empty()) {
+		const float pixelsPerStep = scene::terrain::heightStep * config.zStep * view.scale;
+		const int delta = static_cast<int>(std::lround((m_nodeDragMouseY - io.MousePos.y) / pixelsPerStep));
+		if (delta != m_nodeDragDelta) {
+			m_nodeClickPending = false;
+			previewNodeDrag(delta);
+		}
+		return;
+	}
+	if (m_nodeClickPending && m_selectedNodes.size() > 1 && m_isoHover && !ImGui::IsMouseDown(ImGuiMouseButton_Left))
+		selectNode(m_isoHover->corner, false);
+	m_nodeClickPending = false;
+	finishIsometricGesture();
+	if (m_selectedNodes.empty() || ImGui::GetIO().WantTextInput)
+		return;
+	if (ImGui::IsKeyPressed(ImGuiKey_Equal) || ImGui::IsKeyPressed(ImGuiKey_KeypadAdd))
+		std::ignore = moveSelectedNodes(1);
+	if (ImGui::IsKeyPressed(ImGuiKey_Minus) || ImGui::IsKeyPressed(ImGuiKey_KeypadSubtract))
+		std::ignore = moveSelectedNodes(-1);
 }
 
 void TilemapDocument::applyIsometricTool(const scene::terrain::TerrainHit& iHit, const bool iLeftDown,
@@ -841,8 +998,12 @@ void TilemapDocument::applyIsometricTool(const scene::terrain::TerrainHit& iHit,
 }
 
 void TilemapDocument::finishIsometricGesture() {
-	if (auto command = m_terrainStroke.finish("Terraform"); command)
-		m_undoManager.push(std::move(command));
+	if (!m_nodeDragChanges.empty()) {
+		m_terrainStroke.add(m_nodeDragChanges);
+		m_nodeDragChanges.clear();
+	}
+	m_nodeDragStart.clear();
+	std::ignore = commitTerrainEdit(m_isoTool == IsometricTool::Node ? "Move nodes" : "Terraform");
 	m_lastTerrainCorner.reset();
 	if (m_strokeInProgress) {
 		endStroke(m_isoTool == IsometricTool::Overlay ? "Paint overlay" : "Paint tiles");

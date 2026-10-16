@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Tilemap editor node tool: select corners of the isometric terrain (Shift for several), drag or press +/- to change their height with the neighbours adapting, and edit the four corner heights of a cell in Cell Properties, each one undo step.
 - Engine Demo art: six Kenney CC0 packs (Tiny Town, Tiny Dungeon, Pixel Platformer and its farm and industrial expansions, Micro Roguelike) under `engine_demo/textures/kenney/`.
 - Tile-graph pathfinding (`scene::nav`): a graph read from the overlay (roads, tracks) or the terrain of a tilemap through its `navigation` rules (cost per tile, one-way moves, slope limits), exact A* and a hierarchical search over the 32 x 32 chunks, chunk-by-chunk incremental update, requests spread over frames by the `owl.navigation` system, Lua `path.*`, an inspector section and a graph and test-path overlay in the viewport, `path/*` benches, and the `iso_town` vehicles driving to destinations over the road graph and re-routing when a road is bulldozed ([Pathfinding](pathfinding.md)).
 - Draw-order sort key: every 2D primitive carries a `depth` (larger is nearer, as in the isometric layer) and draws by increasing depth, then by type (quads, circles, lines, text), then in submission order, one instanced draw per type and depth; sprites, circles and text take their world z, HUD windows no longer need a batch each (B-10).

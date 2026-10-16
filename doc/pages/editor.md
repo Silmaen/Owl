@@ -223,6 +223,15 @@ neighbouring corners follow so every cell keeps one of the 19 slopes. A click or
 four corner heights of the clicked cell. The `TilemapDocument` keeps its own undo stack, so these edits are not
 registry commands.
 
+The **Node** tool edits single corners (nodes): a click selects the hovered corner (the nearest one to the cursor is
+highlighted; Shift + click adds or removes one, a click in the void clears the selection), dragging up or down raises
+or lowers every selected node by one step per `zStep` of mouse travel, and **+** / **-** (or the keypad) move them by
+one step. Neighbouring corners follow with the same rule as the other terraform tools (`TilemapAsset::setCornerHeight`),
+so each of the four cells around a node keeps one of the 19 slopes. The four corner heights of the selected cell are
+also drag fields in Cell Properties (back, right, front, left) next to the derived slope, with the same neighbour
+adaptation. A drag, a key press or a field edit is one undo step (`commands::ModifyTerrainHeightsCommand`). On a flat
+(non-isometric) tilemap there are no heights: the Node tool is not offered and Cell Properties says so.
+
 ### Tileset document
 
 A `.owltileset` opens in a `TilesetDocument`: the Atlas section sets the texture, the grid, the tile size, the filter
