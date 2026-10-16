@@ -25,11 +25,8 @@ constexpr auto g_uiLayer = "ui";
 auto isHudKey(const std::string_view iKey) -> bool { return iKey == "Canvas" || iKey.starts_with("Ui"); }
 
 auto isUiEntity(const YAML::Node& iEntity) -> bool {
-	for (const auto& item: iEntity) {
-		if (isHudKey(item.first.as<std::string>("")))
-			return true;
-	}
-	return false;
+	return std::any_of(iEntity.begin(), iEntity.end(),
+					   [](const auto& iItem) -> bool { return isHudKey(iItem.first.template as<std::string>("")); });
 }
 
 auto isUiTag(const YAML::Node& iTag) -> bool {
