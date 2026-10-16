@@ -871,19 +871,6 @@ void renderProps(UiPanel& ioComponent) {
 	prop::ColorEdit4("Background", reinterpret_cast<float*>(&ioComponent.backgroundColor));
 	prop::ColorEdit4("Border Color", reinterpret_cast<float*>(&ioComponent.borderColor));
 	prop::DragFloat("Border Width", &ioComponent.borderWidth, 0.5f, 0.0f, 20.0f);
-	const std::string currentLayout{magic_enum::enum_name(ioComponent.layout)};
-	if (prop::BeginCombo("Layout", currentLayout.c_str())) {
-		for (const auto& layoutName: magic_enum::enum_names<UiPanel::Layout>()) {
-			const std::string sName{layoutName};
-			if (ImGui::Selectable(sName.c_str(), currentLayout == sName))
-				ioComponent.layout = magic_enum::enum_cast<UiPanel::Layout>(sName).value_or(UiPanel::Layout::None);
-		}
-		ImGui::EndCombo();
-	}
-	if (ioComponent.layout != UiPanel::Layout::None) {
-		prop::DragFloat("Spacing", &ioComponent.spacing, 0.5f, 0.0f, 100.0f);
-		prop::DragFloat("Padding", &ioComponent.padding, 0.5f, 0.0f, 100.0f);
-	}
 	prop::Checkbox("Clip Children", &ioComponent.clipChildren);
 	fieldTooltip("Cut the children at the panel edges (scissor).");
 }

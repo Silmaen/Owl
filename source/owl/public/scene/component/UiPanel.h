@@ -18,8 +18,8 @@ namespace owl::scene::component {
  * @brief
  *  UI panel widget component.
  *
- * Renders a coloured rectangle background. Can optionally lay out children
- * vertically or horizontally.
+ * Renders a coloured rectangle background, optionally cutting its children at its edges. Children are laid out by a
+ * `UiLayout` entity, not by the panel.
  */
 struct OWL_API UiPanel {
 	/// Background colour.
@@ -28,18 +28,6 @@ struct OWL_API UiPanel {
 	math::vec4 borderColor{1.0f, 1.0f, 1.0f, 1.0f};
 	/// Border width in pixels (0 = no border).
 	float borderWidth = 0.f;
-	/// Layout mode for children.
-	enum struct Layout : uint8_t {
-		None,///< No automatic layout.
-		Vertical,///< Stack children vertically.
-		Horizontal,///< Stack children horizontally.
-	};
-	/// Current layout mode.
-	Layout layout = Layout::None;
-	/// Spacing between children in pixels (for Vertical/Horizontal layout).
-	float spacing = 0.f;
-	/// Padding inside the panel in pixels.
-	float padding = 0.f;
 	/// Whether the children are cut at the panel edges (scissor).
 	bool clipChildren = false;
 

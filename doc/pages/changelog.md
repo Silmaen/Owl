@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `hud.extract_canvas` command (Scene Hierarchy context menu "Extract Canvas to .owlhud..."): writes a root canvas and
+  its widgets to an `.owlhud`, removes them from the scene and sets the scene's `Hud:` key, as one undo step.
 - HUD editor in Owl Nest: an `.owlhud` (and, from the Scene ribbon, the canvases of a scene) opens in a pixel viewport with resolution presets and a custom size, a colour or image backdrop, the reference resolution framed, a rect gizmo (move, edges, anchors, pivot) snapped to pixels and to the edges of siblings, parent and screen, a widget palette (click, drag and drop, texture drop), box and Ctrl-click multi-select with group move and delete, and `hud.add_widget`, `hud.set_rect`, `hud.set_anchors`, `hud.set_pivot`, `hud.move`, `hud.delete` and `hud.reparent` commands (undoable, journaled, reachable through MCP); `Scene::renderHud` draws a HUD at any size.
 - Keyboard and gamepad focus for the HUD: the `ui_*` actions move it to the nearest button or slider (held, they repeat), `ui_accept` clicks, left and right adjust a slider (`UiSlider.step`), `ui_cancel` closes the top window, the focus stays in the top window, the mouse takes it where it moves, a gold frame shows it; `UiFocus` (focusable, initial, neighbours by entity UUID, focus callback, highlight; `Canvas.wrapFocus` wraps the focus at the ends of a menu) with inspector support (entity pickers), Lua `ui.set_focus` / `ui.get_focus`, and the sample menus playable with a gamepad alone (scenario `main_menu_focus`).
 - Isometric objects and vehicles: the `IsometricObject` component draws a building of a generated sheet as one depth-correct slice per footprint tile (inspector with sheet drop and building list, undoable, picked in the viewport), the layer sends every opaque sprite as a 64-byte matrix-free `IsometricSprite` (`drawSprites` for thousands of vehicles, off-screen ones dropped on the CPU), the foot snaps to whole pixels at integer zoom, `tools/iso_atlas` writes a vehicle sheet, and `iso/*` benches enter the baseline.
@@ -76,6 +78,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- The sample project and the project templates draw their HUD from `.owlhud` files (`huds/gameplay.owlhud` for the
+  templates and the platformer, one each for the world map, the raycast demo and the isometric test) and no widget
+  names the `ui` layer any more; scene and prefab format 5 drops `RendererTag: ui` from canvases and widgets.
 - Engine systems (platformer player, voxel player, interaction triggers, doors and pushwalls) and the sample and
   template scripts read actions instead of keys; `RaycastDoor` / `RaycastPushWall` `interactionKey` becomes
   `interactionAction` (an old `interactionKey: 0` still disables it).
@@ -112,8 +117,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Lua `input.is_key_pressed`, `is_key_just_*`, `is_mouse_button_pressed` and `is_mouse_button_just_*`: read an action
   (`input.is_action_pressed`, `is_action_just_pressed`) instead.
 
+### Removed
+
+- `UiPanel::layout`, `spacing` and `padding`, which nothing read (a `UiLayout` arranges children); files that still
+  carry the keys load without complaint and no longer write them.
+
 ### Fixed
 
+- The raycast demo hint shows its text again (the `HUDHint` widget had no rectangle nor text).
 - The inspector reads a script's properties from its file in the asset folders and keeps them when the script does
   not load, instead of emptying them (scripts then ran with `nil` properties in Play).
 - Text drawing is about 5 times faster again: glyph boxes and advances of the first 256 code points come from a table

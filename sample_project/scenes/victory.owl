@@ -55,8 +55,6 @@ Entities:
       {}
     LuaScript:
       scriptPath: scripts/victory.lua
-    RendererTag:
-      Name: ui
   - Entity: 200000000000000004
     Tag:
       tag: VictoryTitle
@@ -68,8 +66,6 @@ Entities:
       gameVisible: true
     Hierarchy:
       parentId: 200000000000000003
-    RendererTag:
-      Name: ui
     UiRect:
       anchorMin: [0.5, 0]
       anchorMax: [0.5, 0]
@@ -95,8 +91,6 @@ Entities:
       gameVisible: true
     Hierarchy:
       parentId: 200000000000000003
-    RendererTag:
-      Name: ui
     UiRect:
       anchorMin: [0.5, 0.5]
       anchorMax: [0.5, 0.5]
@@ -122,8 +116,6 @@ Entities:
       gameVisible: true
     Hierarchy:
       parentId: 200000000000000003
-    RendererTag:
-      Name: ui
     UiButton:
       normalColor: [0.150000006, 0.349999994, 0.649999976, 1]
       hoverColor: [0.25, 0.449999988, 0.75, 1]

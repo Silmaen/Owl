@@ -358,13 +358,9 @@ TEST(EntityComponentCoverage, UiPanel) {
 
 	EXPECT_FALSE(ent.hasComponent<component::UiPanel>());
 	auto& panel = ent.addComponent<component::UiPanel>();
-	panel.layout = component::UiPanel::Layout::Vertical;
-	panel.spacing = 5.f;
-	panel.padding = 10.f;
 	panel.borderWidth = 2.f;
 	EXPECT_TRUE(ent.hasComponent<component::UiPanel>());
-	EXPECT_EQ(ent.getComponent<component::UiPanel>().layout, component::UiPanel::Layout::Vertical);
-	EXPECT_NEAR(ent.getComponent<component::UiPanel>().spacing, 5.f, 0.01f);
+	EXPECT_NEAR(ent.getComponent<component::UiPanel>().borderWidth, 2.f, 0.01f);
 	ent.removeComponent<component::UiPanel>();
 	EXPECT_FALSE(ent.hasComponent<component::UiPanel>());
 

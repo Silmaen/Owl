@@ -38,6 +38,8 @@
 #include <renderer/Renderer.h>
 #include <scene/ComponentRegistry.h>
 #include <scene/PrefabSerializer.h>
+#include <scene/component/Canvas.h>
+#include <scene/component/Hierarchy.h>
 
 #include <algorithm>
 #include <cmath>
@@ -591,6 +593,20 @@ void SceneHierarchy::drawEntityContextMenu(const scene::Entity& iEntity, const b
 		if (const auto filepath = platform::FileDialog::saveFile("Owl Prefab (*.owlprefab)|owlprefab\n");
 			!filepath.empty() && !scene::PrefabSerializer::serialize(iEntity, *m_context, filepath, iEntity.getName()))
 			OWL_ERROR("SceneHierarchy: Prefab {} was not created.", filepath.string())
+	}
+	// --- HUD: a root canvas moves to an `.owlhud` the scene then draws.
+	if (iEntity.hasComponent<scene::component::Canvas>() && iParentId == core::UUID{0}) {
+		if (gui::widgets::menuItem({.glyph = gui::icon::packagePlus, .label = "Extract Canvas to .owlhud..."})) {
+			if (const auto filepath = platform::FileDialog::saveFile("Owl HUD (*.owlhud)|owlhud\n");
+				!filepath.empty()) {
+				if (m_selection == iEntity)
+					m_selection = {};
+				if (const auto done = target.execute("hud.extract_canvas",
+													 {{"entity", entityArg}, {"path", filepath.generic_string()}});
+					!done)
+					OWL_ERROR("SceneHierarchy: Canvas not extracted: {}.", done.error().message)
+			}
+		}
 	}
 	// --- Tilemap quick action: open the referenced asset in the tilemap editor.
 	if (iEntity.hasComponent<scene::component::Tilemap>() && mp_parentEditor != nullptr) {

@@ -9,6 +9,7 @@
 #include "CommandRegistry.h"
 
 #include "../EntitySnapshot.h"
+#include "../UndoManager.h"
 #include "CommandJournal.h"
 #include "ComponentCommands.h"
 #include "EntityCommands.h"
@@ -302,6 +303,34 @@ auto setSceneHud(const shared<scene::Scene>& ioScene, const CommandArgs& iArgs) 
 	if (path == ioScene->getHudPath())
 		return fail(CommandError::NotApplicable, "the scene already has this HUD");
 	return PreparedCommand{.command = mkUniq<SetSceneHudCommand>(ioScene->getHudPath(), path), .applied = false};
+}
+
+auto extractCanvas(const shared<scene::Scene>& ioScene, const CommandArgs& iArgs) -> Prepared {
+	auto canvas = entityArg(*ioScene, iArgs, "entity");
+	if (!canvas)
+		return unexpected<CommandFailure>{canvas.error()};
+	if (!canvas->hasComponent<scene::component::Canvas>())
+		return fail(CommandError::InvalidArgument, std::format("`{}` is not a canvas", canvas->getName()));
+	if (canvas->getComponent<scene::component::Hierarchy>().parentId != core::UUID{0})
+		return fail(CommandError::InvalidArgument, std::format("`{}` is not a root entity", canvas->getName()));
+	const std::filesystem::path path = iArgs.getText("path");
+	if (path.extension() != ".owlhud")
+		return fail(CommandError::InvalidArgument, std::format("`{}` is not an `.owlhud` file", path.string()));
+	const auto hudPath = iArgs.has("asset_path") ? iArgs.getText("asset_path") : assetRelativePath(path);
+	if (hudPath.empty())
+		return fail(CommandError::InvalidArgument,
+					std::format("`{}` is not in an asset folder, pass `asset_path`", path.string()));
+	const auto hud = mkShared<scene::Scene>();
+	if (!SubtreeSnapshot::capture(*canvas, *ioScene).restore(*hud) ||
+		!scene::SceneSerializer(hud, scene::DocumentKind::Hud).serialize(path))
+		return fail(CommandError::NotApplicable, std::format("`{}` could not be written", path.string()));
+	std::vector<uniq<SceneUndoCommand>> commands;
+	commands.push_back(mkUniq<DeleteSubtreeCommand>(*canvas, *ioScene));
+	commands.push_back(mkUniq<SetSceneHudCommand>(ioScene->getHudPath(), std::optional<std::string>{hudPath}));
+	return PreparedCommand{.command = mkUniq<UndoGroupCommand<scene::Scene>>(
+								   std::move(commands), std::format("Extract '{}' to {}", canvas->getName(), hudPath)),
+						   .applied = false,
+						   .data = {{"hud", hudPath}}};
 }
 
 auto toArg(const core::UUID iUuid) -> ArgValue { return static_cast<int64_t>(static_cast<uint64_t>(iUuid)); }
@@ -609,6 +638,20 @@ CommandRegistry::CommandRegistry() {
 				   .description = "Use the project's `DefaultHud` (the scene then names no HUD).",
 				   .defaultValue = false}},
 		 .factory = setSceneHud});
+	add({.name = "hud.extract_canvas",
+		 .description = "Write a canvas and its widgets to an `.owlhud` file, remove them from the scene and make the "
+						"scene draw that HUD.",
+		 .args = {entitySpec("Root canvas extracted."),
+				  {.name = "path",
+				   .type = ArgType::Text,
+				   .required = true,
+				   .description = "`.owlhud` file written.",
+				   .projectPath = true},
+				  {.name = "asset_path",
+				   .type = ArgType::Text,
+				   .description = "HUD path recorded in the scene (relative to the asset folder holding the file when "
+								  "absent)."}},
+		 .factory = extractCanvas});
 	add({.name = "scene.save",
 		 .description = "Save the scene to its file, or to `path`.",
 		 .args = {{.name = "path",

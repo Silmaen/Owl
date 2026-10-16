@@ -11,8 +11,6 @@ Entities:
       gameVisible: true
     Hierarchy:
       parentId: 827593881302582438
-    RendererTag:
-      Name: ui
     UiRect:
       anchorMin: [1, 1]
       anchorMax: [1, 1]
@@ -38,8 +36,6 @@ Entities:
       gameVisible: true
     Hierarchy:
       parentId: 827593881302582438
-    RendererTag:
-      Name: ui
     UiButton:
       normalColor: [0.150000006, 0.349999994, 0.649999976, 1]
       hoverColor: [0.25, 0.449999988, 0.75, 1]
@@ -73,8 +69,6 @@ Entities:
       gameVisible: true
     Hierarchy:
       parentId: 827593881302582438
-    RendererTag:
-      Name: ui
     UiButton:
       normalColor: [0.100000001, 0.449999988, 0.300000012, 1]
       hoverColor: [0.150000006, 0.550000012, 0.400000006, 1]
@@ -106,8 +100,6 @@ Entities:
       gameVisible: true
     Hierarchy:
       parentId: 827593881302582438
-    RendererTag:
-      Name: ui
     UiButton:
       normalColor: [0.300000012, 0.300000012, 0.300000012, 1]
       hoverColor: [0.400000006, 0.400000006, 0.400000006, 1]
@@ -139,8 +131,6 @@ Entities:
       gameVisible: true
     Hierarchy:
       parentId: 827593881302582438
-    RendererTag:
-      Name: ui
     UiButton:
       normalColor: [0.400000006, 0.150000006, 0.150000006, 1]
       hoverColor: [0.550000012, 0.200000003, 0.200000003, 1]
@@ -172,8 +162,6 @@ Entities:
       gameVisible: true
     Hierarchy:
       parentId: 827593881302582438
-    RendererTag:
-      Name: ui
     UiImage:
       tint: [1, 1, 1, 1]
       texture: nam:textures/logo_owl.png
@@ -194,8 +182,6 @@ Entities:
       gameVisible: true
     Hierarchy:
       parentId: 827593881302582438
-    RendererTag:
-      Name: ui
     UiRect:
       anchorMin: [0.5, 0]
       anchorMax: [0.5, 0]
@@ -221,8 +207,6 @@ Entities:
       gameVisible: true
     Hierarchy:
       parentId: 827593881302582438
-    RendererTag:
-      Name: ui
     UiRect:
       anchorMin: [0.5, 0]
       anchorMax: [0.5, 0]
@@ -248,15 +232,10 @@ Entities:
       gameVisible: true
     Hierarchy:
       parentId: 827593881302582438
-    RendererTag:
-      Name: ui
     UiPanel:
       backgroundColor: [0.100000001, 0.100000001, 0.150000006, 0.600000024]
       borderColor: [0.400000006, 0.400000006, 0.5, 0.400000006]
       borderWidth: 1
-      layout: None
-      spacing: 0
-      padding: 0
     UiRect:
       anchorMin: [0.5, 0.5]
       anchorMax: [0.5, 0.5]
@@ -274,8 +253,6 @@ Entities:
       gameVisible: true
     Hierarchy:
       parentId: 827593881302582438
-    RendererTag:
-      Name: ui
     UiRect:
       anchorMin: [0, 1]
       anchorMax: [0, 1]
@@ -301,8 +278,6 @@ Entities:
       gameVisible: false
     Hierarchy:
       parentId: 827593881302582438
-    RendererTag:
-      Name: ui
     UiButton:
       normalColor: [0.5, 0.150000006, 0.150000006, 0.800000012]
       hoverColor: [0.699999988, 0.200000003, 0.200000003, 1]
@@ -334,8 +309,6 @@ Entities:
       gameVisible: true
     Hierarchy:
       parentId: 827593881302582438
-    RendererTag:
-      Name: ui
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -368,8 +341,6 @@ Entities:
       {}
     LuaScript:
       scriptPath: scripts/main_menu.lua
-    RendererTag:
-      Name: ui
   - Entity: 3410311073425440625
     Tag:
       tag: DecoCircle2

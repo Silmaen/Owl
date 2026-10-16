@@ -80,7 +80,11 @@ TEST_F(ProjectTemplateTest, EveryTemplateCreatesAProjectWhoseFirstSceneLoads) {
 		for (const auto& enabled: scn->getEnabledRenderers().entries)
 			EXPECT_NE(project.rendererStack.find(enabled.name), nullptr) << tpl.id << ": " << enabled.name;
 		if (project.rendererStack.find("ui") != nullptr) {
-			const auto entities = scn->getAllEntities();
+			ASSERT_TRUE(scn->getHudPath().has_value()) << tpl.id << ": the first scene names no HUD";
+			const auto hud = mkShared<scene::Scene>();
+			ASSERT_TRUE(scene::SceneSerializer(hud, scene::DocumentKind::Hud).deserialize(dest / *scn->getHudPath()))
+					<< tpl.id;
+			const auto entities = hud->getAllEntities();
 			EXPECT_TRUE(std::ranges::any_of(entities,
 											[](const scene::Entity& iEntity) -> bool {
 												return iEntity.hasComponent<scene::component::UiText>();

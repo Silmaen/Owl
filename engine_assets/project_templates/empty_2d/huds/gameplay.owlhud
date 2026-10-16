@@ -1,0 +1,44 @@
+Hud: gameplay
+FormatVersion: 1
+Entities:
+- Entity: 7100000000000000010
+  Tag:
+    tag: HUDCanvas
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Canvas:
+    space: ScreenOverlay
+    sortOrder: 0
+    referenceResolution: [1280, 720]
+    scaleMode: ScaleWithHeight
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 0
+- Entity: 7100000000000000011
+  Tag:
+    tag: Title
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 7100000000000000010
+  UiRect:
+    anchorMin: [0.5, 0]
+    anchorMax: [0.5, 0]
+    pivot: [0.5, 0]
+    size: [600, 48]
+    offset: [0, 24]
+  UiText:
+    text: "Empty 2D project"
+    color: [1, 1, 1, 1]
+    fontSize: 32
+    horizontalAlignment: Center
+    verticalAlignment: Middle
+    kerning: 0
+    lineSpacing: 0

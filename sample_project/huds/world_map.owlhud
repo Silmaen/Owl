@@ -1,0 +1,68 @@
+Hud: world_map
+FormatVersion: 1
+Entities:
+- Entity: 2000000000000000060
+  Tag:
+    tag: HUDCanvas
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Canvas:
+    space: ScreenOverlay
+    sortOrder: 0
+    referenceResolution: [1280, 720]
+    scaleMode: ScaleWithHeight
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    {}
+- Entity: 2000000000000000062
+  Tag:
+    tag: HudHint
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 2000000000000000060
+  UiRect:
+    anchorMin: [0, 0]
+    anchorMax: [0, 0]
+    pivot: [0, 0]
+    size: [200, 40]
+    offset: [20, 20]
+  UiText:
+    text: WASD = move, E = interact, ESC = pause
+    color: [1, 1, 1, 0.850000024]
+    fontSize: 16
+    horizontalAlignment: Left
+    verticalAlignment: Top
+    wrap: true
+    fit: Shrink
+    minFontSize: 10
+    kerning: 0
+    lineSpacing: 0
+- Entity: 2000000000000000061
+  Tag:
+    tag: HealthBar
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 2000000000000000060
+  UiProgressBar:
+    value: 1
+    backgroundColor: [0.400000006, 0.100000001, 0.100000001, 0.800000012]
+    fillColor: [0.200000003, 0.850000024, 0.200000003, 1]
+  UiRect:
+    anchorMin: [1, 0]
+    anchorMax: [1, 0]
+    pivot: [1, 0]
+    size: [200, 22]
+    offset: [-20, 20]

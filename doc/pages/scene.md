@@ -553,7 +553,8 @@ its widget values. Design: [HUD system](design/hud-system.md).
 The 9 presets (`UiRect::Anchor`, `setAnchor`, `getAnchor`) put both anchors on one point of the parent. Scene and
 prefab format 4 (HUD1): a `UiRect` written in the old Y-up layout (`anchor`, `pivotX`, `sizeX`, `offsetX` keys) gets
 the preset point as both anchors, `pivot.y = 1 - pivotY` and `offset.y = -offsetY`, and a `Canvas` without
-`scaleMode` gets `ConstantPixels`: every widget stays where it was drawn.
+`scaleMode` gets `ConstantPixels`: every widget stays where it was drawn. Format 5 (HUD6) drops `RendererTag: ui` from
+canvases and widgets, since the HUD pass draws them whatever their tag.
 
 #### UiText
 

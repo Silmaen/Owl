@@ -37,9 +37,6 @@ Entities:
       backgroundColor: [0.1, 0.1, 0.1, 0.85]
       borderColor: [1, 1, 1, 0.3]
       borderWidth: 2
-      layout: None
-      spacing: 0
-      padding: 0
   - Entity: 2002
     Tag:
       tag: PauseTitle

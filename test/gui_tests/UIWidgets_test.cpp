@@ -18,7 +18,10 @@
 #include <scene/component/UiRect.h>
 #include <scene/component/UiText.h>
 
+#include <cstdint>
 #include <filesystem>
+#include <string>
+#include <vector>
 
 using namespace owl;
 using namespace owl::scene;
@@ -50,6 +53,24 @@ TEST(UiImage, createAndDefaults) {
 	core::Log::invalidate();
 }
 
+TEST(UiPanel, legacyLayoutKeysAreIgnored) {
+	core::Log::init(core::Log::Level::Off);
+	auto scn = mkShared<Scene>();
+	const std::string text =
+			"Scene: legacy\nFormatVersion: 5\nEntities:\n  - Entity: 7\n    Tag: {tag: Old}\n"
+			"    UiPanel: {borderWidth: 2, layout: Vertical, spacing: 10, padding: 5, clipChildren: true}\n";
+	const std::vector<uint8_t> bytes(text.begin(), text.end());
+	ASSERT_TRUE(SceneSerializer(scn).deserializeFromBuffer(bytes, "test"));
+	const auto entities = scn->getAllEntities();
+	ASSERT_EQ(entities.size(), 1u);
+	ASSERT_TRUE(entities.front().hasComponent<component::UiPanel>());
+	EXPECT_NEAR(entities.front().getComponent<component::UiPanel>().borderWidth, 2.f, 0.01f);
+	EXPECT_TRUE(entities.front().getComponent<component::UiPanel>().clipChildren);
+	const auto saved = SceneSerializer(scn).serializeToString();
+	EXPECT_EQ(saved.find("spacing"), std::string::npos);
+	core::Log::invalidate();
+}
+
 TEST(UiPanel, createAndDefaults) {
 	core::Log::init(core::Log::Level::Off);
 	auto scn = mkShared<Scene>();
@@ -57,10 +78,8 @@ TEST(UiPanel, createAndDefaults) {
 	auto& panel = entity.addComponent<component::UiPanel>();
 
 	EXPECT_NEAR(panel.backgroundColor.w(), 0.8f, 0.01f);
-	EXPECT_EQ(panel.layout, component::UiPanel::Layout::None);
 	EXPECT_NEAR(panel.borderWidth, 0.f, 0.01f);
-	EXPECT_NEAR(panel.spacing, 0.f, 0.01f);
-	EXPECT_NEAR(panel.padding, 0.f, 0.01f);
+	EXPECT_FALSE(panel.clipChildren);
 
 	core::Log::invalidate();
 }
@@ -94,9 +113,8 @@ TEST(UiWidgets, serializeDeserializeViaScene) {
 		auto panelEnt = scn->createEntity("Panel");
 		panelEnt.addComponent<component::UiRect>();
 		auto& panel = panelEnt.addComponent<component::UiPanel>();
-		panel.layout = component::UiPanel::Layout::Vertical;
-		panel.spacing = 10.f;
-		panel.padding = 5.f;
+		panel.borderWidth = 3.f;
+		panel.clipChildren = true;
 		scn->setParent(panelEnt, canvas);
 
 		const SceneSerializer serializer(scn);
@@ -125,9 +143,8 @@ TEST(UiWidgets, serializeDeserializeViaScene) {
 			}
 			if (entity.hasComponent<component::UiPanel>()) {
 				const auto& panel = entity.getComponent<component::UiPanel>();
-				EXPECT_EQ(panel.layout, component::UiPanel::Layout::Vertical);
-				EXPECT_NEAR(panel.spacing, 10.f, 0.01f);
-				EXPECT_NEAR(panel.padding, 5.f, 0.01f);
+				EXPECT_NEAR(panel.borderWidth, 3.f, 0.01f);
+				EXPECT_TRUE(panel.clipChildren);
 				foundPanel = true;
 			}
 		}

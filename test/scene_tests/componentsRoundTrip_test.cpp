@@ -204,16 +204,14 @@ TEST(ComponentRoundTrip, UiPanel) {
 				p.backgroundColor = {0.4f, 0.4f, 0.4f, 0.9f};
 				p.borderColor = {1.f, 0.8f, 0.f, 1.f};
 				p.borderWidth = 2.5f;
-				p.spacing = 4.f;
-				p.padding = 6.f;
+				p.clipChildren = true;
 			},
 			[](const scene::Entity& iEnt) -> void {
 				const auto& p = iEnt.getComponent<scene::component::UiPanel>();
 				EXPECT_NEAR(p.backgroundColor.w(), 0.9f, 0.01f);
 				EXPECT_NEAR(p.borderColor.y(), 0.8f, 0.01f);
 				EXPECT_NEAR(p.borderWidth, 2.5f, 0.01f);
-				EXPECT_NEAR(p.spacing, 4.f, 0.01f);
-				EXPECT_NEAR(p.padding, 6.f, 0.01f);
+				EXPECT_TRUE(p.clipChildren);
 			});
 }
 

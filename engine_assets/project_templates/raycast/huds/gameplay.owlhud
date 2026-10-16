@@ -1,0 +1,44 @@
+Hud: gameplay
+FormatVersion: 1
+Entities:
+- Entity: 7200000000000000010
+  Tag:
+    tag: HUDCanvas
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Canvas:
+    space: ScreenOverlay
+    sortOrder: 0
+    referenceResolution: [1280, 720]
+    scaleMode: ScaleWithHeight
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 0
+- Entity: 7200000000000000011
+  Tag:
+    tag: Hint
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 7200000000000000010
+  UiRect:
+    anchorMin: [0.5, 1]
+    anchorMax: [0.5, 1]
+    pivot: [0.5, 1]
+    size: [600, 32]
+    offset: [0, -16]
+  UiText:
+    text: "W/S move, A/D turn"
+    color: [1, 1, 1, 1]
+    fontSize: 24
+    horizontalAlignment: Center
+    verticalAlignment: Middle
+    kerning: 0
+    lineSpacing: 0
