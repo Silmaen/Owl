@@ -108,6 +108,31 @@ TEST_F(LuaIsometric, cellsAreReadAndWrittenPerLayer) {
 	EXPECT_EQ(m_asset->layers[1].getCell(3, 3).overlay, 3);
 }
 
+TEST_F(LuaIsometric, setCellStampsTheChunkGeneration) {
+	const auto before = m_asset->layers[1].getChunkGeneration({0, 0});
+	std::ignore = run("isometric.set_cell(map, 1, 3, 3, -1, 3)");
+	EXPECT_NE(m_asset->layers[1].getChunkGeneration({0, 0}), before);
+}
+
+TEST_F(LuaIsometric, aRuntimeEditLeavesTheAssetOfTheEditSceneUntouched) {
+	// Owl Nest Play: the running scene is a copy sharing the tilemap asset of the edit scene.
+	const auto running = scene::Scene::copy(m_scene);
+	running->onStartRuntime();
+	const auto copy = running->findEntityByUUID(m_map.getUUID());
+	ASSERT_TRUE(copy);
+	const std::string text =
+			std::format("map = {}\nfunction on_create()\nisometric.set_cell(map, 1, 3, 3, -1, 3)\nend\n",
+						static_cast<int64_t>(static_cast<uint64_t>(m_map.getUUID())));
+	const std::vector<uint8_t> data(text.begin(), text.end());
+	ScriptInstance instance;
+	instance.setScene(running.get());
+	ASSERT_TRUE(instance.createFromBuffer(data, "iso_play", static_cast<uint64_t>(m_map.getUUID())));
+	instance.onCreate();
+	EXPECT_EQ(m_asset->layers[1].getCell(3, 3).overlay, -1) << "the edit scene keeps its map";
+	EXPECT_EQ(copy.getComponent<scene::component::Tilemap>().asset->layers[1].getCell(3, 3).overlay, 3);
+	running->onEndRuntime();
+}
+
 TEST_F(LuaIsometric, slopeAndHeightFollowTheCorners) {
 	const auto instance = run("flat = isometric.get_slope(map, 0, 0)\n"
 							  "plateau = isometric.get_slope(map, 2, 2)\n"

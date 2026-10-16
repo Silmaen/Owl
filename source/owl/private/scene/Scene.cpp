@@ -294,6 +294,7 @@ void Scene::onStartRuntime() {
 
 	const auto tilesetStart = clk::now();
 	resolveAllTilemapAssets();
+	detachSharedTilemapAssets();
 	OWL_CORE_INFO("Scene::onStartRuntime: tileset resolve {:.1f} ms.", ms(clk::now() - tilesetStart))
 
 	const auto linksStart = clk::now();
@@ -1297,6 +1298,25 @@ void Scene::renderRaycastDynamicWalls(const bool iEditorMode) {
 	}
 	renderer::RendererRaycast::drawDoors(doors);
 	doors.clear();
+}
+
+void Scene::detachSharedTilemapAssets() {
+	// A scene copy (Owl Nest Play) shares the tilemap assets of the edit scene: scripts edit the map at runtime, so the
+	// running scene works on its own copy and Stop finds the edit scene untouched.
+	std::unordered_map<const TilemapAsset*, shared<TilemapAsset>> detached;
+	for (const auto view = registry.view<component::Tilemap>(); const auto entity: view) {
+		auto& tilemap = view.get<component::Tilemap>(entity);
+		if (!tilemap.asset)
+			continue;
+		const auto* original = tilemap.asset.get();
+		if (const auto known = detached.find(original); known != detached.end()) {
+			tilemap.asset = known->second;
+		} else if (tilemap.asset.use_count() > 1) {
+			auto copy = mkShared<TilemapAsset>(*tilemap.asset);
+			detached.emplace(original, copy);
+			tilemap.asset = std::move(copy);
+		}
+	}
 }
 
 void Scene::resolveAllTilemapAssets() {

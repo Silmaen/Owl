@@ -1159,6 +1159,13 @@ private:
 
 	/**
 	 * @brief
+	 *  Give the scene its own copy of every tilemap asset another scene still holds (a `copy()` shares them), so
+	 *  runtime edits never reach the edit scene.
+	 */
+	void detachSharedTilemapAssets();
+
+	/**
+	 * @brief
 	 *  Public invalidator: mark the tilemap / tileset asset cache as needing a re-resolve on
 	 *  the next `resolveAllTilemapAssets()` call. Use this from editor code when a tilemap
 	 *  or tileset path is mutated outside the component-add path (e.g. inspector text-edit).
