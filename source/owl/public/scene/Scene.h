@@ -354,7 +354,7 @@ public:
 
 	/**
 	 * @brief
-	 *  Get the list of all entities.
+	 *  Get the list of all entities, in creation order (the order of a loaded file).
 	 * @return List of all entities.
 	 */
 	[[nodiscard]] auto getAllEntities() const -> std::vector<Entity>;

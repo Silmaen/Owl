@@ -1545,6 +1545,8 @@ void Scene::onViewportResize(const math::vec2ui& iSize) {
 auto Scene::getAllEntities() const -> std::vector<Entity> {
 	std::vector<Entity> entities;
 	for (auto&& [e]: registry.storage<entt::entity>()->each()) { entities.emplace_back(e, const_cast<Scene*>(this)); }
+	// EnTT walks its storage from the newest entity: creation order keeps a saved file in the order it was loaded.
+	std::ranges::reverse(entities);
 	return entities;
 }
 
