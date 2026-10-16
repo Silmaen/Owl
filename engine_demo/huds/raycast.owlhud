@@ -37,7 +37,7 @@ Entities:
   UiText:
     text: "E1L1 (Wolfenstein 3D inspired)  -  W/S = walk, A/D = turn, E = interact, ESC = pause"
     color: [1, 1, 1, 0.850000024]
-    fontSize: 16
+    fontSize: 18
     horizontalAlignment: Left
     verticalAlignment: Middle
     fit: Shrink

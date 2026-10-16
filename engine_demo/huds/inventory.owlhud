@@ -31,7 +31,7 @@ Entities:
   UiText:
     text: "Move: WASD / left stick    Interact: E / X    Inventory: Tab / Y"
     color: [1, 1, 1, 0.85]
-    fontSize: 14
+    fontSize: 16
     horizontalAlignment: Left
     verticalAlignment: Middle
 - Entity: 5300000000000000005
@@ -71,7 +71,7 @@ Entities:
   UiWindow:
     title: Inventory
     titleBarHeight: 26
-    titleFontSize: 15
+    titleFontSize: 17
     closable: true
     draggable: true
     onCloseCallback: on_inventory_closed
@@ -103,7 +103,7 @@ Entities:
     selectedIndex: -1
     scrollOffset: 0
     wheelStep: 44
-    fontSize: 13
+    fontSize: 16
     onSelectCallback: on_log_selected
     onBindCallback: on_log_bind
   UiTooltip:
@@ -125,7 +125,7 @@ Entities:
   UiText:
     text: Select a slot.
     color: [1, 1, 1, 1]
-    fontSize: 14
+    fontSize: 16
     horizontalAlignment: Left
     verticalAlignment: Top
     wrap: true
@@ -175,7 +175,7 @@ Entities:
   UiTooltip:
     text: "Roast\nA warm meal."
     delay: 0.3
-    fontSize: 13
+    fontSize: 16
 - Entity: 5300000000000000062
   Tag: {tag: InvCount6}
   Transform:
@@ -193,7 +193,7 @@ Entities:
   UiText:
     text: x0
     color: [1, 1, 1, 1]
-    fontSize: 16
+    fontSize: 18
     horizontalAlignment: Right
     verticalAlignment: Bottom
 - Entity: 5300000000000000061
@@ -238,7 +238,7 @@ Entities:
   UiTooltip:
     text: "First-aid kit\nPatches you up."
     delay: 0.3
-    fontSize: 13
+    fontSize: 16
 - Entity: 5300000000000000052
   Tag: {tag: InvCount5}
   Transform:
@@ -256,7 +256,7 @@ Entities:
   UiText:
     text: x0
     color: [1, 1, 1, 1]
-    fontSize: 16
+    fontSize: 18
     horizontalAlignment: Right
     verticalAlignment: Bottom
 - Entity: 5300000000000000051
@@ -301,7 +301,7 @@ Entities:
   UiTooltip:
     text: "Crown\nThe prize of the vault."
     delay: 0.3
-    fontSize: 13
+    fontSize: 16
 - Entity: 5300000000000000042
   Tag: {tag: InvCount4}
   Transform:
@@ -319,7 +319,7 @@ Entities:
   UiText:
     text: x0
     color: [1, 1, 1, 1]
-    fontSize: 16
+    fontSize: 18
     horizontalAlignment: Right
     verticalAlignment: Bottom
 - Entity: 5300000000000000041
@@ -364,7 +364,7 @@ Entities:
   UiTooltip:
     text: "Treasure chest\nShiny, and worth a lot."
     delay: 0.3
-    fontSize: 13
+    fontSize: 16
 - Entity: 5300000000000000032
   Tag: {tag: InvCount3}
   Transform:
@@ -382,7 +382,7 @@ Entities:
   UiText:
     text: x0
     color: [1, 1, 1, 1]
-    fontSize: 16
+    fontSize: 18
     horizontalAlignment: Right
     verticalAlignment: Bottom
 - Entity: 5300000000000000031
@@ -427,7 +427,7 @@ Entities:
   UiTooltip:
     text: "Blue key\nWorks the switch of the vault."
     delay: 0.3
-    fontSize: 13
+    fontSize: 16
 - Entity: 5300000000000000022
   Tag: {tag: InvCount2}
   Transform:
@@ -445,7 +445,7 @@ Entities:
   UiText:
     text: x0
     color: [1, 1, 1, 1]
-    fontSize: 16
+    fontSize: 18
     horizontalAlignment: Right
     verticalAlignment: Bottom
 - Entity: 5300000000000000021
@@ -490,7 +490,7 @@ Entities:
   UiTooltip:
     text: "Gold key\nOpens the gold door."
     delay: 0.3
-    fontSize: 13
+    fontSize: 16
 - Entity: 5300000000000000012
   Tag: {tag: InvCount1}
   Transform:
@@ -508,7 +508,7 @@ Entities:
   UiText:
     text: x0
     color: [1, 1, 1, 1]
-    fontSize: 16
+    fontSize: 18
     horizontalAlignment: Right
     verticalAlignment: Bottom
 - Entity: 5300000000000000011

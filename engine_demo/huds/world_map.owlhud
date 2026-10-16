@@ -37,7 +37,7 @@ Entities:
   UiText:
     text: WASD = move, E = interact, ESC = pause
     color: [1, 1, 1, 0.850000024]
-    fontSize: 16
+    fontSize: 18
     horizontalAlignment: Left
     verticalAlignment: Top
     wrap: true

@@ -134,7 +134,7 @@ Entities:
     - 1
     - 1
     - 0.850000024
-    fontSize: 14
+    fontSize: 16
     horizontalAlignment: Center
     verticalAlignment: Middle
     kerning: 0
@@ -175,7 +175,7 @@ Entities:
     offset: [0, 0]
   UiText:
     text: T   tool cursor on / off
-    fontSize: 14
+    fontSize: 16
     horizontalAlignment: Left
     verticalAlignment: Middle
 - Entity: 3000000000000000072
@@ -197,7 +197,7 @@ Entities:
     offset: [0, 0]
   UiText:
     text: W / Space   jump
-    fontSize: 14
+    fontSize: 16
     horizontalAlignment: Left
     verticalAlignment: Middle
 - Entity: 3000000000000000071
@@ -219,7 +219,7 @@ Entities:
     offset: [0, 0]
   UiText:
     text: A / D   move
-    fontSize: 14
+    fontSize: 16
     horizontalAlignment: Left
     verticalAlignment: Middle
 - Entity: 3000000000000000070
@@ -242,7 +242,7 @@ Entities:
   UiWindow:
     title: Controls
     titleBarHeight: 24
-    titleFontSize: 14
+    titleFontSize: 16
     closable: true
     draggable: true
   UiLayout:
@@ -255,4 +255,4 @@ Entities:
   UiTooltip:
     text: "Drag the title bar to move the window.\nThe red button closes it."
     delay: 0.4
-    fontSize: 13
+    fontSize: 16
