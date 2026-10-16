@@ -595,7 +595,7 @@ A draw is fully described by two explicit objects, so no draw inherits state fro
 | `beginBatch()` / `endBatch()`       | Render pass scope on the bound framebuffer (opened lazily by any draw)   |
 | `getRenderCounters`, GPU timestamps | Profiling (`OwlRunner --frame-bench`)                                    |
 
-**Adding a backend** (WebGPU is planned for v0.10.0): implement under `private/renderer/gpu/<backend>/` the classes
+**Adding a backend** (WebGPU is planned for v0.8.0): implement under `private/renderer/gpu/<backend>/` the classes
 `RenderAPI`, `GraphContext`, `DrawData`, `Shader`, `ComputeShader`, `Texture2D`, `Framebuffer`, `UniformBuffer`,
 `StorageBuffer`, `VertexBuffer` / `IndexBuffer`, add the enumerator to `RenderAPI::Type` and a case to each `create`
 factory (`private/renderer/gpu/*.cpp`), and give `RendererDescriptors` a branch for the backend's binding model. The

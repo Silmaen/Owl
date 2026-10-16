@@ -2,7 +2,7 @@
 
 [TOC]
 
-Design page for the v0.7.0 content work (assets, animation, effects), summarised in the [Roadmap](../roadmap.md).
+Design page for the v0.6.0 content work (assets, animation, effects), summarised in the [Roadmap](../roadmap.md).
 Visual scripting and procedural graphs have their own pages: [Visual scripting](visual-scripting.md),
 [PCG graphs](pcg-graphs.md).
 
@@ -47,7 +47,7 @@ PackReader thread-safety audit + a worker-friendly API.
     - Configurable: lifetime, velocity, colour over time, size, gravity
     - Emitter shapes: point, sphere, cone, box
     - Editor: visual particle preview and property curves
-- Advanced post-processing on the v0.6.0 stack: chromatic aberration, film grain, motion blur, depth of field
+- Advanced post-processing on the v0.5.0 stack: chromatic aberration, film grain, motion blur, depth of field
 - Weather and environment effects (rain, snow, fog, day-night cycle) are a sample-project demo built on particles and
   post-processing, not an engine system
 

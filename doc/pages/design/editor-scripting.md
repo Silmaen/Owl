@@ -1,4 +1,4 @@
-# Editor console and scripting (v0.4.0, v0.5.0) {#page-design-editor-scripting}
+# Editor console and scripting (v0.4.0, v0.6.0) {#page-design-editor-scripting}
 
 [TOC]
 
@@ -9,7 +9,7 @@ clients of the same command registry.
 ## Goal
 
 Everything done in the editor can be typed, recorded, replayed and scripted: a gesture produces a named command, the
-command is written to a journal, the journal can be saved and replayed, and from v0.5.0 a Lua script can issue the same
+command is written to a journal, the journal can be saved and replayed, and from v0.6.0 a Lua script can issue the same
 commands with loops and conditions. Game scripts and editor scripts share one language, Lua, already embedded.
 
 ```mermaid
@@ -17,7 +17,7 @@ flowchart LR
     G[Gesture: viewport, inspector, menus] --> R[CommandRegistry]
     C[Console] --> R
     M[MCP tools/call] --> R
-    L[Editor Lua script, v0.5.0] --> R
+    L[Editor Lua script, v0.6.0] --> R
     R --> U[UndoManager]
     R --> J[Journal]
     J -->|save| F[.owlmacro]
@@ -61,7 +61,7 @@ font, node graph, Scene Flow), which have undo histories of their own.
 Depends on MCP1 (`EditorSession`): console, journal and replay are written against the session interface, so they work
 in the headless session too.
 
-## v0.5.0 — Lua editor scripts
+## v0.6.0 — Lua editor scripts
 
 - **Interactive Lua console**: the v0.4.0 console gains a Lua mode, a REPL like Python's — variables kept between
   lines, the value of an expression printed, multi-line input while a block is open, `help(editor.entity)`. Lines in
@@ -83,5 +83,5 @@ in the headless session too.
   a second set of bindings. JavaScript is excluded.
 - **No custom language**: the command syntax stays a flat list of commands; loops and conditions are Lua's job.
 - **Journal records commands, not input events**: replays are independent of window size, camera and timing. Input
-  replay for games is a separate v0.9.0 topic.
+  replay for games is a separate v0.7.0 topic.
 

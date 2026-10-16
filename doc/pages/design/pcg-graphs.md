@@ -4,12 +4,12 @@
 
 Design page for the procedural content generation (PCG) graphs, summarised in the [Roadmap](../roadmap.md).
 
-## v0.5.0 — first brick
+## v0.6.0 — first brick
 
 A seeded noise / rule fill of a tilemap region, undoable, if it serves the tilemap workflow (see
 [2D complete](2d-complete.md)).
 
-## v0.7.0 — PCG graphs
+## v0.6.0 — PCG graphs
 
 - Non-destructive graph on `NodeCanvas`: noise → thresholds → point scattering → filters → placement of prefabs, tiles
   or voxels

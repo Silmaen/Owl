@@ -17,7 +17,7 @@ and because it already carries the renderer stack.
 | Vulkan  | Reference backend: every feature lands here first            | v0.3.0  |
 | OpenGL  | Compatibility / fallback backend, frozen in features, tested | v0.3.0  |
 | Null    | Headless tests and benchmarks                                | today   |
-| WebGPU  | Browser target, so a game is playable on the Web             | v0.10.0 |
+| WebGPU  | Browser target, so a game is playable on the Web             | v0.8.0 |
 
 ## v0.3.0 — repair and name the RHI
 
@@ -74,12 +74,12 @@ by hand; `beginBatch` / `endBatch` / `nextSubpass` stay public for the editor's 
 - Done: the backend interface is documented (*Owl RHI* in [Renderer](../renderer.md), with the list of classes
   a backend implements) so a further backend can be added without touching the renderers
 
-## v0.6.0 — 3D on the RHI
+## v0.5.0 — 3D on the RHI
 
 The render graph, PBR, shadows and GPU-driven culling build on the repaired Vulkan backend; OpenGL receives only what
 is needed to keep the 2D, raycast and voxel paths working. See [3D core](3d-core.md).
 
-## v0.10.0 — new backends
+## v0.8.0 — new backends
 
 - ![Planned][planned] WebGPU backend (Dawn or wgpu through `webgpu.h`), the third platform for 1.0 (see
   [Modding and platforms](modding-platforms.md))

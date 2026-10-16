@@ -2,7 +2,7 @@
 
 [TOC]
 
-Design page for the v0.6.0 release, summarised in the [Roadmap](../roadmap.md). It builds on the repaired
+Design page for the v0.5.0 release, summarised in the [Roadmap](../roadmap.md). It builds on the repaired
 [Owl RHI](owl-rhi.md) of v0.3.0.
 
 ## Graphics
@@ -24,11 +24,11 @@ Design page for the v0.6.0 release, summarised in the [Roadmap](../roadmap.md). 
 - Mesh rendering
     - Static mesh component with transform
     - Instanced rendering for repeated meshes
-    - LOD support moves to the v0.7.0 [Content pipeline](content-pipeline.md) (LODs produced by the cook)
+    - LOD support moves to the v0.6.0 [Content pipeline](content-pipeline.md) (LODs produced by the cook)
 - Essential post-processing pipeline
     - Configurable post-process stack per camera
     - Effects: tone mapping, bloom, vignette, colour grading (LUT)
-    - Chromatic aberration, film grain, motion blur and depth of field move to v0.7.0
+    - Chromatic aberration, film grain, motion blur and depth of field move to v0.6.0
 - Compute-driven frustum / occlusion culling pre-pass feeding indirect draws
     - The `renderer::utils::FrustumCullingPass` utility + `frustum_culling.slang` shader ship, alongside the
       `RenderCommand::drawIndexedIndirect` API (Vulkan `vkCmdDrawIndexedIndirectCount`, OpenGL

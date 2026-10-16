@@ -79,7 +79,7 @@ Every fix lands with its regression test.
 - ![Done][done] Format version and atomic writes — every engine file carries a `FormatVersion` with a migration
   chain, newer files are refused, and writes go through a temporary file renamed in place (PR-25: C-10, C-13)
 - ![Done][done] `on_collision` implemented — the callback documented since v0.1 is fed by Box2D contact events,
-  with the entity it collided with (D-07, I-02); the rest of the 2D physics API is v0.5.0, see
+  with the entity it collided with (D-07, I-02); the rest of the 2D physics API is v0.7.0, see
   [Physics API](physics-api.md)
 - ![Done][done] Game export works end to end — packaging, pack, runner, assets, voxel in the runner (D-03),
   window icon; an automated test exports the sample project and runs it headless. See [Game export](game-export.md)
@@ -148,7 +148,7 @@ imported-configuration fallback.
     - Assets: textures, scenes, tilesets reloaded when the file changes on disk
     - Slang shaders recompiled and swapped live
     - Lua scripts reloaded, with properties preserved
-    - Hot reload of a C++ game module is a separate v0.7.0 evaluation, see [Content pipeline](content-pipeline.md)
+    - Hot reload of a C++ game module is a separate v0.6.0 evaluation, see [Content pipeline](content-pipeline.md)
     - Shipped: a background poller (`platform::FileWatcher`, one atomic read per frame, no measurable cost in the
       frame bench), never active with an asset pack open; a failed reload keeps the previous version. A shader
       reload changes code, not bindings: a new binding needs a restart. See [Editor](../editor.md#editor-hot-reload)
@@ -225,7 +225,7 @@ reorganised, made discoverable and consistent. See [Owl Nest UI](nest-ui.md).
 - ![Done][done] Inspector serializes only the edited component, only on edit (PR-23: E-04)
 - ![Done][done] Voxel meshing on workers with a per-frame budget, neighbours invalidated; streaming frame peak
   14.3 → 0.35 ms (PR-24: D-08, P-09, B-15)
-- ![Planned][planned] Renderer2D per-frame transients, 2D sort order, UTF-8 text (PR-30: B-09, B-10, D-18) — carried over: transients and UTF-8 to v0.4.0, 2D sort to v0.5.0
+- ![Planned][planned] Renderer2D per-frame transients, 2D sort order, UTF-8 text (PR-30: B-09, B-10, D-18) — carried over: transients and UTF-8 to v0.4.0, 2D sort to v0.4.0
 - ![Planned][planned] Persistent, chunked and culled tilemap (PR-31: B-13) — carried over to v0.4.0
 - ![Done][done] Faster scene loading: rapidyaml reads scenes, prefabs and snapshots, prefab instantiation copies
   through the component registry (10 000 entities: 1.21 s → 73 ms)

@@ -55,7 +55,7 @@ scale; two of them change.
   objects wider than a tile are sliced per footprint tile, each slice with a 3D box.
 - **D6** — Tilemaps: 32×32 chunks in persistent GPU buffers, generation counter per chunk, uploads in the prepare phase
   before any layer, chunk culling against the view; maps up to **1024²** stored as binary chunks in the file (format v2
-  + migration); 4096² waits for the v0.7.0 content pipeline.
+  + migration); 4096² waits for the v0.6.0 content pipeline.
 - **D7** — Every render layer draws from its own `onRender`; the isometric and tilemap layers are the first,
   `Scene::render` loses a type-key branch each time a layer moves.
 - **D8** — The HUD is an `.owlhud` asset loaded into its own scene, cached per path, shared between scenes and kept
@@ -64,7 +64,7 @@ scale; two of them change.
   migrated), nested `UiRect`, min / max anchors besides the 9 presets, reference resolution 1280×720 with a scale
   mode.
 - **D10** — Input sampled once per simulation tick into a plain-data `InputFrame`; actions (button, 1D axis, 2D axis)
-  evaluated by a pure function into an `ActionFrame` that v0.9.0 can record; the map lives in a packed
+  evaluated by a pure function into an `ActionFrame` that v0.7.0 can record; the map lives in a packed
   `input_actions.yml`.
 - **D11** — MCP: `cpp-httplib` without TLS, `nlohmann_json` promoted to a direct dependency, protocol 2025-11-25 with a
   stateless core that also accepts 2026-07-28.
@@ -76,19 +76,25 @@ Pulled into v0.4.0 from later releases: aspect-correct text with alignment and f
 widgets — windows, layout, clipping, tooltips (new), the fixed simulation tick (part of v0.9.0), gamepad dead zones
 and response curves (v0.10.0), file dialogues through the desktop portal (v0.5.0), the inventory demo (v0.5.0).
 Moved earlier: tile-graph pathfinding, from the v0.8.0 navigation work to v0.5.0. Moved later: node-based editing of
-other assets, folded into the v0.7.0 visual scripting.
+other assets, folded into the v0.7.0 visual scripting. The 2026-10-16 replan, which dropped the old v0.5.0 and merged
+the later releases into four, pulled three more items in: tile-graph pathfinding, the draw-order sort key (B-10), and
+HUD scroll views and lists.
 
 ## Pull requests
 
 One branch `Feature/*` per pull request. **R** rendering, **TM** tilemaps, **ISO** isometric, **TX** text, **HUD**,
-**SIM** simulation tick, **IN** input, **MCP**, **NEST** editor, **DEMO** sample project. Sizes: S < 1 day of review, M
-a few days, L a week.
+**SIM** simulation tick, **IN** input, **MCP**, **NEST** editor, **PATH** pathfinding, **DEMO** sample project. Sizes:
+S < 1 day of review, M a few days, L a week.
 
 ### Rendering foundations
 
 - ![Done][done] **R1 — Renderer2D transients (B-09), M.** Transients sized per frame like the instances
   (20 000), texture slot lookup by id, no temporary vectors, renderer id instead of a string in `ScopedActive`. Bench:
   transient path at 10 000 and 100 000 quads, zero allocation per frame in `renderer/`.
+- ![Planned][planned] **R2 — Draw-order sort key (PR-30: B-10, from v0.5.0), M.** A sort key on every 2D
+  primitive instead of the primitive type and the storage order, on the depth convention of D2, so 2D, isometric and
+  HUD primitives order the same way; HUD windows no longer need one batch each. Changes a shipped render path: the
+  image tests stay pixel-identical, the maintainer confirms before merge.
 - ![Done][done] **TM1 — Persistent, chunked, culled tilemap (PR-31: B-13), L.** D6 and D7 for tilemaps:
   encapsulated cells with generation counters, chunk cache per asset, culling, full entity transform, no cap,
   `parallax` rendered. Changes a shipped render path: `tilemap.owl` image test stays pixel-identical, the
@@ -138,7 +144,7 @@ a few days, L a week.
   Content Browser kind and thumbnail.
 - ![Done][done] **HUD3 — Management-game widgets, M/L.** `UiWindow` (title bar, drag, close, raise on click,
   clamped to the screen), `UiLayout` (row, column, grid), clipping by scissor, `UiTooltip`, tool cursor sprite; any
-  window blocks world clicks under it. Each window draws as its own batch until the v0.5.0 sort key.
+  window blocks world clicks under it. Each window draws as its own batch until the v0.4.0 sort key.
 - ![Done][done] **HUD4 — HUD editor document, L.** `HudDocument` on `.owlhud` and embedded canvases: pixel
   viewport with resolution presets and a colour or image backdrop, rect gizmo with anchor handles and snapping, widget
   palette and drag & drop, multi-select; every action a named command, hence undoable and reachable through MCP.
@@ -148,6 +154,9 @@ a few days, L a week.
   hover moves the focus, Lua `ui.set_focus` / `ui.get_focus`; the sample menus play with a gamepad alone.
 - ![Done][done] **HUD6 — Migration, M.** "Extract canvas to `.owlhud`" command; sample project and project
   templates moved to a shared `huds/gameplay.owlhud`, no `RendererTag: ui` left; empty raycast hint fixed.
+- ![Planned][planned] **HUD7 — Scroll views and lists (from v0.5.0), M.** `UiScrollView` clipping its content
+  with a scroll bar, mouse wheel, drag and gamepad scrolling, and a virtualised `UiList` drawing only the visible rows
+  of a Lua-fed model (vehicle lists of a management game); editor support in the HUD document.
 - ![Done][done] **DEMO1 — Inventory demo (from v0.5.0), S/M.** Collectible objects, key-locked switches and an
   inventory window with slots in `sample_project/`, in Lua only, navigable with the gamepad: the showcase of the HUD
   widgets, the shared HUD and focus navigation.
@@ -155,11 +164,18 @@ a few days, L a week.
   text and input in every scene (voxel text no longer stretched), the hub map and the platformer redrawn with versioned
   CC0 packs (Kenney-style, licences kept beside them) and the isometric art from `tools/iso_atlas`; closes the release.
 
+### Pathfinding
+
+- ![Planned][planned] **PATH1 — Tile-graph pathfinding (from v0.5.0), M/L.** A* on a tile grid or on a graph built
+  from tilemap overlays (roads, tracks), per-edge costs and one-way edges, hierarchical over the 32×32 chunks of TM2,
+  incremental update when a tile changes, queries spread over ticks on the task system; Lua API, an editor overlay of
+  the graph and a test path; the `iso_town` vehicles follow the roads with it. Spec in [2D complete](2d-complete.md).
+
 ### Simulation and input
 
 - ![Done][done] **SIM1 — Fixed simulation tick, S/M.** Systems and Lua get an `on_tick` at a fixed step (project
   setting, 60 Hz by default), beside the variable `on_update`; physics always runs on this fixed clock. The first piece
-  of the v0.9.0 determinism.
+  of the v0.7.0 determinism.
 - ![Done][done] **IN1 — Input frames and edges, M.** D10: `InputFrame` per tick, `isKeyJustPressed` /
   `JustReleased`, injection moved out of the backends so it works on GLFW too; hand-written edge code removed.
 - ![Done][done] **IN2 — Gamepad, M.** GLFW `glfwGetGamepadState`, connect / disconnect events, optional
@@ -216,6 +232,10 @@ flowchart LR
     HUD5 --> DEMO1
     ISO5 --> DEMO2
     DEMO1 --> DEMO2
+    TM2 --> PATH1
+    ISO5 --> PATH1 --> DEMO2
+    ISO5 --> R2 --> DEMO2
+    HUD3 --> HUD7 --> DEMO2
 ```
 
 First wave: R1, TM1, SIM1, MCP0 (disjoint files); NEST1 fits in any wave. `Renderer2D.cpp` is touched by R1, TX1, TX2
@@ -241,12 +261,10 @@ New `bench/` cases, Null backend CPU unless stated; each one enters `bench/basel
 
 ## Later releases prepared here
 
-- v0.5.0: 2D lights use the normal and depth atlases of D3 and an ambient tint (day / night); the draw-order sort key
-  (B-10) follows the depth convention of D2; scroll views, lists and a minimap build on HUD3; tile-graph pathfinding
-  on the TM2 storage.
-- v0.6.0: 3D meshes draw under the D1 camera into the same depth buffer.
-- v0.7.0: 4096² maps through the content pipeline, on the TM2 storage interface; procedural terrain heights.
-- v0.9.0: replays record the D10 `ActionFrame` stream and drive `play.run`; SIM1 is the clock of the deterministic
+- v0.5.0: 2D lights use the normal and depth atlases of D3 and an ambient tint (day / night); 3D meshes draw under
+  the D1 camera into the same depth buffer; a minimap on a render target builds on HUD3.
+- v0.6.0: 4096² maps through the content pipeline, on the TM2 storage interface; procedural terrain heights.
+- v0.7.0: replays record the D10 `ActionFrame` stream and drive `play.run`; SIM1 is the clock of the deterministic
   simulation.
 
 ## Exit criteria
@@ -256,6 +274,8 @@ The release ships when these hold, whatever the date:
 - Tilemaps: no truncation (100 000+ visible cells), 0 byte uploaded for a static map, 1024² maps load
 - `iso_town.owl` plays in editor and runner: sloped terrain, roads, moving vehicles, a construction tool, zero Vulkan
   validation message on lavapipe, image tests green on OpenGL and Vulkan
+- Vehicles of `iso_town` find their way on the road graph; a 2D primitive draws in sort-key order whatever its
+  type; a HUD list of 1 000 rows draws only its visible rows
 - Tile picking correct on the 19 slopes; the gizmo follows the isometric axes
 - One `.owlhud` draws the same over 2D, raycast, voxel and isometric scenes at three resolutions; no
   `RendererTag: ui` left in `sample_project/`; windows drag, close and stack
