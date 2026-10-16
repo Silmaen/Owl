@@ -11,6 +11,7 @@
 #include "core/Core.h"
 #include "core/Serializer.h"
 #include "math/vectors.h"
+#include "scene/nav/NavProfile.h"
 
 #include <array>
 #include <cstddef>
@@ -471,6 +472,20 @@ private:
  *   tilemapPath: assets/tilemaps/dungeon_l1.owltilemap
  * ```.
  *
+ * A `navigation` map next to the path holds the pathfinding rules (`scene/nav/NavProfile.h`):
+ * ```yaml
+ * Tilemap:
+ *   tilemapPath: assets/tilemaps/town.owltilemap
+ *   navigation:
+ *     layer: 1
+ *     source: overlay
+ *     maxRise: 1
+ *     climbCost: 0.5
+ *     allowSteep: false
+ *     rules:
+ *       - {tile: 3, cost: 1.0, exits: [east, south, west, north], enters: [east, south, west, north]}
+ * ```.
+ *
  * On-disk form (legacy / in-memory fallback, terrain tiles only):
  * ```yaml
  * Tilemap:
@@ -488,6 +503,8 @@ struct OWL_API Tilemap {
 	std::filesystem::path tilemapPath;
 	/// Resolved asset (runtime only — built from the path or from inline data on load).
 	shared<scene::TilemapAsset> asset;
+	/// Rules turning the tilemap into a graph for the pathfinding (no rule: no graph).
+	scene::nav::NavProfile navigation;
 
 	/**
 	 * @brief

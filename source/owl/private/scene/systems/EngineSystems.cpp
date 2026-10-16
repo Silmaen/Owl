@@ -18,6 +18,7 @@
 #include "scene/Entity.h"
 #include "scene/Scene.h"
 #include "scene/component/components.h"
+#include "scene/nav/NavWorld.h"
 #include "script/ScriptInstance.h"
 #include "sound/SoundCommand.h"
 
@@ -116,6 +117,7 @@ void registerEngineSystems(SystemSchedule& ioSchedule) {
 	add("owl.physics", SystemPhase::Physics, &updatePhysics, &tickPhysics);
 	add("owl.entity_links", SystemPhase::PostPhysics, &updateEntityLinks);
 	add("owl.triggers", SystemPhase::PostPhysics, &updateTriggers);
+	add("owl.navigation", SystemPhase::Late, &updateNavigation);
 	add("owl.sound", SystemPhase::Late, &updateSound);
 	add("owl.sprite_animation", SystemPhase::Late, &updateAnimatedSprites);
 	add("owl.game_over", SystemPhase::Ended, &renderGameOver);
@@ -164,6 +166,10 @@ void tickScripts(Scene& ioScene, const SystemContext& iContext) {
 			luaScript.instance && luaScript.instance->isValid())
 			luaScript.instance->onTick(iContext.timeStep.getSeconds());
 	}
+}
+
+void updateNavigation(Scene& ioScene, [[maybe_unused]] const SystemContext& iContext) {
+	ioScene.getNavigation().update(ioScene);
 }
 
 void updateFlyCameras(Scene& ioScene, const SystemContext& iContext) {

@@ -126,7 +126,7 @@ MCP server in Owl Nest ([plan](design/isometric-worlds.md)).
 - ![Done][done] Isometric atlas generator (`tools/iso_atlas`): terrain × 19 slopes, foundations, overlays, sliced buildings, albedo + normal + depth
 - ![Done][done] Isometric objects sliced per footprint tile and thousands of vehicles as matrix-free sprites, pixel snapping at integer zoom
 - ![Done][done] Persistent isometric chunk buffers and the `iso_town` demo
-- ![Planned][planned] Tile-graph pathfinding on chunked tilemaps, vehicles following roads (moved from v0.5.0)
+- ![Done][done] Tile-graph pathfinding on chunked tilemaps, vehicles following roads (moved from v0.5.0) ([Pathfinding](pathfinding.md))
 - ![Done][done] Guaranteed 2D draw order: a sort key instead of the primitive type and storage order (PR-30: B-10, moved from v0.5.0)
 - ![Done][done] UTF-8 text, Latin charset with extra ranges per font, atlas cached on disk (PR-30: D-18)
 - ![Done][done] Aspect-correct text with alignment and fit

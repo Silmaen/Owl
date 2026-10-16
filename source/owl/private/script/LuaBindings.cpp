@@ -28,6 +28,8 @@
 #include "scene/TilemapTerrain.h"
 #include "scene/UiInputSystem.h"
 #include "scene/component/components.h"
+#include "scene/nav/NavWorld.h"
+#include "scene/nav/Pathfinder.h"
 #include "scene/ui/HudLayout.h"
 #include "script/LuaEngine.h"
 #include "script/ScriptEngine.h"
@@ -42,6 +44,7 @@
 #include <format>
 #include <optional>
 #include <ranges>
+#include <span>
 #include <string>
 #include <string_view>
 #include <type_traits>
@@ -1352,6 +1355,173 @@ auto luaIsometricGetHeight(lua_State* iState) -> int {
 	return 1;
 }
 
+// The navigation entry of the tilemap entity at argument 1: its graph, synchronised, and its request queue.
+auto findNavigation(lua_State* iState) -> scene::nav::NavWorld::Entry* {
+	const auto entity = findEntity(iState);
+	if (!entity || !entity->hasComponent<scene::component::Tilemap>())
+		return nullptr;
+	const auto& tilemap = entity->getComponent<scene::component::Tilemap>();
+	if (!tilemap.asset || tilemap.navigation.isEmpty())
+		return nullptr;
+	return &getBoundScene(iState)->getNavigation().acquire(static_cast<uint64_t>(entity->getUUID()), *tilemap.asset,
+														   tilemap.navigation);
+}
+
+auto readNavMode(lua_State* iState, const int iIndex) -> scene::nav::PathMode {
+	const std::string_view mode = luaL_optstring(iState, iIndex, "auto");
+	if (mode == "flat")
+		return scene::nav::PathMode::Flat;
+	if (mode == "hierarchical")
+		return scene::nav::PathMode::Hierarchical;
+	return scene::nav::PathMode::Auto;
+}
+
+// A cell from two Lua integers; false when one is negative.
+auto readNavCell(lua_State* iState, const int iIndex) -> std::optional<math::vec2ui> {
+	const auto x = luaL_checkinteger(iState, iIndex);
+	const auto y = luaL_checkinteger(iState, iIndex + 1);
+	if (x < 0 || y < 0)
+		return std::nullopt;
+	return math::vec2ui{static_cast<uint32_t>(x), static_cast<uint32_t>(y)};
+}
+
+// The cells as a flat table `{x1, y1, x2, y2, ...}` then the cost in cells.
+auto pushNavPath(lua_State* iState, const scene::nav::PathResult& iPath) -> int {
+	lua_createtable(iState, static_cast<int>(iPath.cells.size() * 2), 0);
+	lua_Integer index = 1;
+	for (const auto& cell: iPath.cells) {
+		lua_pushinteger(iState, static_cast<lua_Integer>(cell.x()));
+		lua_rawseti(iState, -2, index++);
+		lua_pushinteger(iState, static_cast<lua_Integer>(cell.y()));
+		lua_rawseti(iState, -2, index++);
+	}
+	lua_pushnumber(iState, static_cast<lua_Number>(iPath.getCostInCells()));
+	return 2;
+}
+
+auto luaPathFind(lua_State* iState) -> int {
+	const auto from = readNavCell(iState, 2);
+	const auto to = readNavCell(iState, 4);
+	const auto mode = readNavMode(iState, 6);
+	auto* navigation = findNavigation(iState);
+	lua_pushinteger(iState, navigation != nullptr && from && to ? navigation->queue.request(*from, *to, mode) : 0);
+	return 1;
+}
+
+auto luaPathFindNow(lua_State* iState) -> int {
+	const auto from = readNavCell(iState, 2);
+	const auto to = readNavCell(iState, 4);
+	const auto mode = readNavMode(iState, 6);
+	auto* navigation = findNavigation(iState);
+	if (navigation == nullptr || !from || !to) {
+		lua_pushnil(iState);
+		return 1;
+	}
+	scene::nav::Pathfinder finder;
+	scene::nav::PathResult path;
+	if (!finder.find(navigation->map, *from, *to, mode, path)) {
+		lua_pushnil(iState);
+		return 1;
+	}
+	return pushNavPath(iState, path);
+}
+
+auto luaPathPoll(lua_State* iState) -> int {
+	const auto request = static_cast<scene::nav::PathRequestId>(luaL_checkinteger(iState, 2));
+	const auto* navigation = findNavigation(iState);
+	auto status = scene::nav::PathStatus::Unknown;
+	if (navigation != nullptr)
+		status = navigation->queue.getStatus(request);
+	switch (status) {
+		case scene::nav::PathStatus::Pending:
+			lua_pushstring(iState, "pending");
+			break;
+		case scene::nav::PathStatus::Found:
+			lua_pushstring(iState, "found");
+			break;
+		case scene::nav::PathStatus::NotFound:
+			lua_pushstring(iState, "not_found");
+			break;
+		case scene::nav::PathStatus::Unknown:
+			lua_pushstring(iState, "unknown");
+			break;
+	}
+	return 1;
+}
+
+auto luaPathGet(lua_State* iState) -> int {
+	const auto request = static_cast<scene::nav::PathRequestId>(luaL_checkinteger(iState, 2));
+	const auto* navigation = findNavigation(iState);
+	const auto* path = navigation != nullptr ? navigation->queue.getResult(request) : nullptr;
+	if (path == nullptr) {
+		lua_pushnil(iState);
+		return 1;
+	}
+	return pushNavPath(iState, *path);
+}
+
+auto luaPathRelease(lua_State* iState) -> int {
+	const auto request = static_cast<scene::nav::PathRequestId>(luaL_checkinteger(iState, 2));
+	if (auto* navigation = findNavigation(iState); navigation != nullptr)
+		navigation->queue.release(request);
+	return 0;
+}
+
+auto luaPathIsValid(lua_State* iState) -> int {
+	const auto request = static_cast<scene::nav::PathRequestId>(luaL_checkinteger(iState, 2));
+	const auto first = std::max<lua_Integer>(luaL_optinteger(iState, 3, 1), 1);
+	const auto* navigation = findNavigation(iState);
+	const auto* path = navigation != nullptr ? navigation->queue.getResult(request) : nullptr;
+	bool valid = false;
+	if (path != nullptr && static_cast<size_t>(first) <= path->cells.size()) {
+		const std::span<const math::vec2ui> remaining{path->cells.begin() + (first - 1), path->cells.end()};
+		valid = scene::nav::isPathValid(navigation->map, remaining);
+	}
+	lua_pushboolean(iState, valid ? 1 : 0);
+	return 1;
+}
+
+auto luaPathGetEdgeCost(lua_State* iState) -> int {
+	const auto from = readNavCell(iState, 2);
+	const auto to = readNavCell(iState, 4);
+	const auto* navigation = findNavigation(iState);
+	if (navigation == nullptr || !from || !to) {
+		lua_pushnil(iState);
+		return 1;
+	}
+	for (const auto direction: scene::nav::directions) {
+		if (static_cast<int64_t>(from->x()) + scene::nav::offsetX(direction) != static_cast<int64_t>(to->x()) ||
+			static_cast<int64_t>(from->y()) + scene::nav::offsetY(direction) != static_cast<int64_t>(to->y()))
+			continue;
+		if (const auto cost = navigation->map.getEdgeCost(from->x(), from->y(), direction); cost != 0) {
+			lua_pushnumber(iState, static_cast<lua_Number>(scene::nav::NavMap::unitsToCells(cost)));
+			return 1;
+		}
+	}
+	lua_pushnil(iState);
+	return 1;
+}
+
+auto luaPathIsWalkable(lua_State* iState) -> int {
+	const auto cell = readNavCell(iState, 2);
+	const auto* navigation = findNavigation(iState);
+	lua_pushboolean(iState, navigation != nullptr && cell && navigation->map.isWalkable(cell->x(), cell->y()) ? 1 : 0);
+	return 1;
+}
+
+auto luaPathGetVersion(lua_State* iState) -> int {
+	const auto* navigation = findNavigation(iState);
+	lua_pushinteger(iState, navigation != nullptr ? static_cast<lua_Integer>(navigation->map.getVersion()) : 0);
+	return 1;
+}
+
+auto luaPathSetBudget(lua_State* iState) -> int {
+	const auto budget = luaL_checkinteger(iState, 1);
+	getBoundScene(iState)->getNavigation().setBudget(
+			static_cast<uint32_t>(std::clamp<lua_Integer>(budget, 1, 1000000)));
+	return 0;
+}
+
 using enum LuaType;
 
 OWL_DIAG_PUSH
@@ -1672,6 +1842,38 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		{.table = "isometric", .name = "get_height", .function = guarded<luaIsometricGetHeight>,
 		 .description = "World height of the terrain surface at a world position (the map's own height outside the map).",
 		 .params = {entityId, {"x", Number}, {"y", Number}}, .returns = {{"z", Number}}},
+		{.table = "path", .name = "find", .function = guarded<luaPathFind>,
+		 .description = "Queue a shortest-path query between two cells of the tilemap's graph (its `navigation` rules); 0 when the entity has no graph. The path is searched over the next frames, `mode` is `auto`, `flat` or `hierarchical`.",
+		 .params = {entityId, {"from_x", Integer}, {"from_y", Integer}, {"to_x", Integer}, {"to_y", Integer}, {"mode", String, true}},
+		 .returns = {{"request", Integer}}},
+		{.table = "path", .name = "find_now", .function = guarded<luaPathFindNow>,
+		 .description = "Search a shortest path at once (a long query on a big map costs frame time, prefer `path.find`): the cells as `{x1, y1, x2, y2, ...}` and the cost in cells, nothing when no path joins the cells.",
+		 .params = {entityId, {"from_x", Integer}, {"from_y", Integer}, {"to_x", Integer}, {"to_y", Integer}, {"mode", String, true}},
+		 .returns = {{"cells", Table}, {"cost", Number}}},
+		{.table = "path", .name = "poll", .function = guarded<luaPathPoll>,
+		 .description = "State of a request: `pending`, `found`, `not_found` or `unknown` (released or never made).",
+		 .params = {entityId, {"request", Integer}}, .returns = {{"status", String}}},
+		{.table = "path", .name = "get", .function = guarded<luaPathGet>,
+		 .description = "Path of a found request: the cells as `{x1, y1, x2, y2, ...}` (start and goal included) and the cost in cells; nothing otherwise.",
+		 .params = {entityId, {"request", Integer}}, .returns = {{"cells", Table}, {"cost", Number}}},
+		{.table = "path", .name = "release", .function = guarded<luaPathRelease>,
+		 .description = "Forget a request, pending or finished.", .params = {entityId, {"request", Integer}}},
+		{.table = "path", .name = "is_valid", .function = guarded<luaPathIsValid>,
+		 .description = "Whether every step of a found path still exists (false after a road of the path was bulldozed), from its `from_cell`-th cell (1 for the whole path).",
+		 .params = {entityId, {"request", Integer}, {"from_cell", Integer, true}}, .returns = {{"valid", Boolean}}},
+		{.table = "path", .name = "get_edge_cost", .function = guarded<luaPathGetEdgeCost>,
+		 .description = "Cost, in cells, of the move between two neighbouring cells; nothing when the move does not exist.",
+		 .params = {entityId, {"from_x", Integer}, {"from_y", Integer}, {"to_x", Integer}, {"to_y", Integer}},
+		 .returns = {{"cost", Number}}},
+		{.table = "path", .name = "is_walkable", .function = guarded<luaPathIsWalkable>,
+		 .description = "Whether a cell is a node of the graph.",
+		 .params = {entityId, {"cell_x", Integer}, {"cell_y", Integer}}, .returns = {{"walkable", Boolean}}},
+		{.table = "path", .name = "get_version", .function = guarded<luaPathGetVersion>,
+		 .description = "Counter that grows each time the graph changes (a road built or bulldozed): compare it to know when to search again.",
+		 .params = {entityId}, .returns = {{"version", Integer}}},
+		{.table = "path", .name = "set_budget", .function = guarded<luaPathSetBudget>,
+		 .description = "Node expansions the scene spends on path requests each frame (4000 by default).",
+		 .params = {{"nodes", Integer}}},
 	};
 	// clang-format on
 }
@@ -1764,6 +1966,9 @@ auto getLuaTables() -> const std::vector<LuaTable>& {
 			{.name = "door", .description = "Raycast doors."},
 			{.name = "pushwall", .description = "Raycast push-walls."},
 			{.name = "isometric", .description = "Terrain picking and tile editing of an isometric tilemap."},
+			{.name = "path",
+			 .description = "Shortest paths over the graph a tilemap's `navigation` rules describe (roads, tracks), "
+							"searched over several frames."},
 	};
 	return s_tables;
 }

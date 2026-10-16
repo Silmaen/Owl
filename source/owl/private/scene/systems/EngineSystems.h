@@ -53,6 +53,14 @@ void tickScripts(Scene& ioScene, const SystemContext& iContext);
 
 /**
  * @brief
+ *  Spend the frame's budget on the pending path requests of the scene (`owl.navigation`).
+ * @param[in,out] ioScene The scene.
+ * @param[in] iContext The frame context.
+ */
+void updateNavigation(Scene& ioScene, const SystemContext& iContext);
+
+/**
+ * @brief
  *  Move the `FlyCamera` entities from the keyboard and mouse (`owl.fly_cameras`).
  * @param[in,out] ioScene The scene.
  * @param[in] iContext The frame context.

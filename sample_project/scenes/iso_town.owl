@@ -133,7 +133,17 @@ Entities:
     translation: [0, 0, 0]
     rotation: [0, 0, 0]
     scale: [1, 1, 1]
-  Tilemap: {tilemapPath: tilemaps/iso_town.owltilemap}
+  Tilemap:
+    tilemapPath: tilemaps/iso_town.owltilemap
+    navigation:
+      layer: 1
+      source: overlay
+      maxRise: 1
+      climbCost: 0.5
+      allowSteep: false
+      rules:
+        - {tile: 3, cost: 1, exits: [east, south, west, north], enters: [east, south, west, north]}
+        - {tile: 11, cost: 1, exits: [east, south, west, north], enters: [east, south, west, north]}
   Visibility: {gameVisible: true}
   RendererTag: {Name: iso_world}
 

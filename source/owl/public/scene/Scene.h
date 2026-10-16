@@ -52,6 +52,9 @@ namespace owl::scene {
 
 class Entity;
 class ScriptableEntity;
+namespace nav {
+class NavWorld;
+}// namespace nav
 /// Shared sink for asynchronously generated voxel chunks (defined in Scene.cpp).
 struct VoxelStreamState;
 
@@ -747,6 +750,13 @@ public:
 
 	/**
 	 * @brief
+	 *  Pathfinding state of this scene (graphs of its tilemaps and path requests), created on first use.
+	 * @return The navigation world.
+	 */
+	[[nodiscard]] auto getNavigation() const -> nav::NavWorld&;
+
+	/**
+	 * @brief
 	 *  Engine state this scene uses (screen transition, settings, voxel meshes): the application's one by default.
 	 * @return The engine context, or nullptr when the scene was created without application and none was given.
 	 */
@@ -919,6 +929,8 @@ private:
 	bool m_inTick = false;
 	/// Box2D world of the scene while it is simulated (owned here, managed by `physics::PhysicCommand`).
 	shared<physics::PhysicsWorld> m_physicsWorld;
+	/// Pathfinding graphs and requests, created by `getNavigation`.
+	mutable uniq<nav::NavWorld> m_navigation;
 	/// Runtime UI mouse state (hover, previous press).
 	UiInputState m_uiInputState;
 	/// Layout of the HUD widgets drawn by the last HUD pass.

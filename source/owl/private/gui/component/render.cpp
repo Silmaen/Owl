@@ -40,11 +40,13 @@
 #include <array>
 #include <cfloat>
 #include <cmath>
+#include <cstddef>
 #include <cstdint>
 #include <cstring>
 #include <filesystem>
 #include <format>
 #include <functional>
+#include <optional>
 #include <span>
 #include <string>
 #include <system_error>
@@ -1156,6 +1158,81 @@ void renderProps(IsometricObject& ioComponent) {
 	}
 }
 
+namespace {
+
+void renderDirectionMask(const char* iId, uint8_t& ioMask) {
+	constexpr std::array<const char*, 4> labels{"E", "S", "W", "N"};
+	ImGui::PushID(iId);
+	for (uint32_t i = 0; i < labels.size(); ++i) {
+		if (i != 0)
+			ImGui::SameLine();
+		bool on = (ioMask & (1u << i)) != 0;
+		if (ImGui::Checkbox(labels[i], &on))
+			ioMask = static_cast<uint8_t>(on ? (ioMask | (1u << i)) : (ioMask & ~(1u << i)));
+	}
+	ImGui::PopID();
+}
+
+void renderNavigation(scene::nav::NavProfile& ioProfile) {
+	ImGui::Separator();
+	if (!ImGui::TreeNodeEx("Navigation", ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_SpanAvailWidth))
+		return;
+	ImGui::TextDisabled("Rules turning the tilemap into a graph for the pathfinding (no rule: no graph).");
+	auto layer = static_cast<int>(ioProfile.layer);
+	if (prop::DragInt("Layer", &layer, 1.f, 0, 255))
+		ioProfile.layer = static_cast<uint32_t>(std::max(layer, 0));
+	fieldTooltip("Layer of the tilemap the graph is read from.");
+	const bool overlay = ioProfile.source == scene::nav::NavSource::Overlay;
+	if (prop::BeginCombo("Source", overlay ? "Overlay" : "Terrain")) {
+		if (ImGui::Selectable("Overlay", overlay))
+			ioProfile.source = scene::nav::NavSource::Overlay;
+		if (ImGui::Selectable("Terrain", !overlay))
+			ioProfile.source = scene::nav::NavSource::Terrain;
+		ImGui::EndCombo();
+	}
+	fieldTooltip("Overlay: roads and tracks. Terrain: the ground tile itself (walking on a grid).");
+	auto rise = static_cast<int>(ioProfile.maxRise);
+	if (prop::DragInt("Max Rise", &rise, 1.f, 0, scene::nav::NavProfile::maxRiseLimit))
+		ioProfile.maxRise = static_cast<uint8_t>(std::clamp(rise, 0, int{scene::nav::NavProfile::maxRiseLimit}));
+	fieldTooltip("Highest rise, in height steps, a move may cross over one cell.");
+	prop::DragFloat("Climb Cost", &ioProfile.climbCost, 0.05f, 0.f, 20.f, "%.2f");
+	fieldTooltip("Extra cost, in cells, of climbing one height step.");
+	prop::Checkbox("Allow Steep", &ioProfile.allowSteep);
+	fieldTooltip("Whether a cell on a steep slope can be crossed.");
+	ImGui::TextUnformatted("Rules (tile, cost, exits, enters)");
+	std::optional<size_t> removed;
+	for (size_t i = 0; i < ioProfile.rules.size(); ++i) {
+		auto& rule = ioProfile.rules[i];
+		ImGui::PushID(static_cast<int>(i));
+		auto tile = static_cast<int>(rule.tile);
+		ImGui::SetNextItemWidth(70.f);
+		if (ImGui::DragInt("##tile", &tile, 1.f, 0, scene::component::g_MaxTileIndex))
+			rule.tile = tile;
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(70.f);
+		ImGui::DragFloat("##cost", &rule.cost, 0.05f, 0.0625f, 64.f, "%.2f");
+		ImGui::SameLine();
+		if (ImGui::SmallButton("Remove"))
+			removed = i;
+		renderDirectionMask("exits", rule.exits);
+		ImGui::SameLine();
+		ImGui::TextDisabled("|");
+		ImGui::SameLine();
+		renderDirectionMask("enters", rule.enters);
+		ImGui::PopID();
+	}
+	if (removed)
+		ioProfile.rules.erase(ioProfile.rules.begin() + static_cast<std::ptrdiff_t>(*removed));
+	if (ImGui::Button("Add rule"))
+		ioProfile.rules.push_back({});
+	fieldTooltip("A tile of the layer that is part of the graph. Exits: directions it can be left in. Enters: "
+				 "directions of travel it can be entered in. Leave one-way roads with a single exit.");
+	ImGui::TextDisabled("Show the graph and test a path: Show > Navigation graph in the viewport, Shift + click.");
+	ImGui::TreePop();
+}
+
+}// namespace
+
 void renderProps(Tilemap& ioComponent) {
 	// --- Tilemap asset slot (path drop target) --------------------------------------------
 	if (assetPathRow("Tilemap", ioComponent.tilemapPath.generic_string(), "drop a .owltilemap",
@@ -1197,6 +1274,7 @@ void renderProps(Tilemap& ioComponent) {
 	} else {
 		ImGui::TextDisabled("(no tilemap assigned)");
 	}
+	renderNavigation(ioComponent.navigation);
 }
 
 namespace {
