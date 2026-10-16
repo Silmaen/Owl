@@ -17,6 +17,7 @@
 #include "renderer/Renderer.h"
 #include "renderer/Renderer2D.h"
 #include "renderer/Renderer2DLayer.h"
+#include "renderer/RendererIsometric.h"
 #include "renderer/RendererRaycast.h"
 #include "renderer/RendererRaycastLayer.h"
 #include "renderer/RendererTilemap.h"
@@ -924,12 +925,18 @@ void Scene::prepareTilemapRenderData() {
 
 	resolveAllTilemapAssets();
 	renderer::RendererTilemap::beginPrepare();
+	renderer::RendererIsometric::beginPrepare();
 	const bool editorMode = status == Status::Editing;
 	for (const auto view = registry.view<component::Tilemap>(); const auto entity: view) {
 		const auto& asset = view.get<component::Tilemap>(entity).asset;
 		if (!asset || !asset->tileset || !asset->tileset->texture)
 			continue;
-		if (isEffectivelyVisible(Entity{entity, this}, editorMode))
+		if (!isEffectivelyVisible(Entity{entity, this}, editorMode))
+			continue;
+		// An isometric tileset is drawn by the isometric layer from its own chunk buffers.
+		if (asset->tileset->kind == Tileset::Kind::Isometric)
+			renderer::RendererIsometric::prepareTilemap(*asset);
+		else
 			renderer::RendererTilemap::prepareTilemap(*asset);
 	}
 }

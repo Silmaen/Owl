@@ -439,13 +439,17 @@ RendererStack:
   depth tested and written; a tint alpha below 1 makes a billboard translucent: those draw afterwards, sorted back to
   front on the CPU (`getBackToFrontOrder`), depth tested, not written. Tilemap layers sit `tilemapLayerBias` apart,
   upright sprites `spriteBias` above the ground they stand on.
-- **Tilemaps.** A tilemap routed to the layer (its tileset `kind: Isometric`) emits one flat billboard per non-empty
-  cell of the 32 × 32 chunks in view; cell `(cx, cy)` covers the world square from the entity translation plus
+- **Tilemaps.** A tilemap routed to the layer (its tileset `kind: Isometric`) keeps one persistent GPU instance buffer
+  per layer and 32 × 32 chunk (`tile.slang`, 32 bytes per non-empty cell and overlay), built by
+  `RendererIsometric::prepareTilemap` in the prepare phase when its cell generation, corner-height generation or
+  tileset changed (a static frame uploads nothing, a one-cell edit one chunk) and drawn as one instanced call per
+  chunk in view; cell `(cx, cy)` covers the world square from the entity translation plus
   `(cx, cy)` to plus `(cx + 1, cy + 1)`, its sprite bottom centre on the front corner. `pickIsometricCell` finds the
   tile under a viewport pixel (flat maps; slopes come with ISO2).
 - **Shader.** `engine_assets/shaders/isometric/slang/billboard.slang`: one instanced draw per pass from a storage
   buffer of 96-byte instances (foot, size, depth slope, UVs, tint, texture slot, entity id), 20 000 per batch;
-  `sprite.slang` draws the 64-byte sprite instances, 40 000 per batch, between the opaque and the translucent pass.
+  `sprite.slang` draws the 64-byte sprite instances, 40 000 per batch, between the opaque and the translucent pass, and
+  `tile.slang` the tilemap chunks (per-instance vertex attributes) before the opaque billboards.
 
 ## Raycaster {#renderer-raycaster}
 

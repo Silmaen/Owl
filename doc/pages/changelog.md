@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Persistent isometric chunk buffers: tilemaps of the isometric layer keep one GPU instance buffer per 32 x 32 chunk and layer (`tile.slang`), uploaded in the prepare phase only for the chunks whose cells, corner heights (`TilemapAsset::getChunkHeightGeneration`) or tileset changed (a static frame uploads 0 byte, a one-cell edit one chunk), on OpenGL and Vulkan; the 512² frame drops from 218 to 16 µs and the zoomed-out one from 1.43 ms to 17 µs.
 - `hud.extract_canvas` command (Scene Hierarchy context menu "Extract Canvas to .owlhud..."): writes a root canvas and
   its widgets to an `.owlhud`, removes them from the scene and sets the scene's `Hud:` key, as one undo step.
 - Sample inventory demo (`scenes/inventory_demo.owl`, **N** or Back from the main menu): pick-ups, a gold door and a vault switch that open only with their key, and an inventory window (`huds/inventory.owlhud`, **Tab** or Y) with icon, count and tooltip slots, driven with the gamepad through the HUD focus, kept in saves, played by the `inventory_demo` scenario.

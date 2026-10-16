@@ -22,6 +22,7 @@
 
 #include <algorithm>
 #include <array>
+#include <bit>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -29,6 +30,7 @@
 #include <ranges>
 #include <span>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 namespace owl::renderer {
@@ -217,6 +219,7 @@ constexpr auto g_rendererKey = "RendererIsometric";
 constexpr auto g_shaderFolder = "isometric";
 constexpr auto g_shaderName = "billboard";
 constexpr auto g_spriteShaderName = "sprite";
+constexpr auto g_tileShaderName = "tile";
 constexpr uint32_t g_maxTextureSlots = 32;
 constexpr float g_cutoutAlpha = 0.5f;
 constexpr float g_translucentDiscardAlpha = 0.001f;
@@ -235,11 +238,17 @@ struct GpuInstance {
 };
 static_assert(sizeof(GpuInstance) == 96, "GpuInstance must match the shader std430 layout");
 
-// Mirrored by `IsometricScene` in `billboard.slang`.
+// Mirrored by `IsometricScene` in `billboard.slang` (the first three members) and `tile.slang` (all of them).
 struct SceneUbo {
 	math::mat4 view = math::identity<float, 4>();
 	math::mat4 projection = math::identity<float, 4>();
 	math::vec4 params{0.f, 0.f, 0.f, 0.f};
+	// Tilemap draws only: back corner of the map.
+	math::vec4 origin{0.f, 0.f, 0.f, 0.f};
+	// Tilemap draws only: sprite size in pixels, depth slope.
+	math::vec4 tile{0.f, 0.f, 0.f, 0.f};
+	// Tilemap draws only: entity id.
+	std::array<int32_t, 4> ids{-1, 0, 0, 0};
 };
 
 // Mirrored by `SpriteInstance` in `sprite.slang` (std430).
@@ -264,6 +273,51 @@ struct QueuedSprite {
 	uint16_t frameTexture = g_whiteTexture;
 };
 
+using scene::component::TilemapChunk;
+using scene::component::TilemapLayer;
+
+constexpr uint32_t g_chunkCells = TilemapLayer::chunkSize * TilemapLayer::chunkSize;
+constexpr uint32_t g_minChunkCapacity = 64;
+// A cell holds a terrain tile and an overlay: two instances at most.
+constexpr uint32_t g_maxChunkInstances = 2 * g_chunkCells;
+
+// One tile of a chunk, mirrored by the per-instance attributes of `tile.slang`.
+struct TileInstance {
+	// xy: foot in map space (the front corner of the cell), z: height of the lowest corner, w: depth bias.
+	math::vec4 foot;
+	// Texture rectangle: u of the left, v of the bottom, u of the right, v of the top.
+	math::vec4 uvRect;
+};
+static_assert(sizeof(TileInstance) == 32, "TileInstance must match the instance layout of tile.slang");
+
+struct ChunkGpu {
+	uint64_t generation = 0;
+	uint64_t heightGeneration = 0;
+	uint32_t instanceCount = 0;
+	uint32_t capacity = 0;
+	shared<gpu::DrawData> drawData;
+};
+
+struct LayerGpu {
+	math::vec2ui size{0, 0};
+	math::vec2ui chunkGrid{0, 0};
+	uint32_t occupiedChunkCount = 0;
+	std::vector<ChunkGpu> chunks;
+};
+
+struct AssetGpu {
+	std::vector<LayerGpu> layers;
+	const scene::Tileset* tileset = nullptr;
+	uint64_t tilesetSignature = 0;
+	uint64_t lastUsedPrepare = 0;
+};
+
+struct PendingTilemap {
+	const scene::TilemapAsset* asset = nullptr;
+	math::vec3 origin{0.f, 0.f, 0.f};
+	int entityId = -1;
+};
+
 struct InternalState {
 	bool initialized = false;
 	shared<gpu::DrawData> opaqueDraw;
@@ -280,6 +334,12 @@ struct InternalState {
 	std::vector<Queued> opaque;
 	std::vector<Queued> translucent;
 	std::vector<QueuedSprite> sprites;
+	std::vector<PendingTilemap> tilemaps;
+	std::unordered_map<const scene::TilemapAsset*, AssetGpu> cache;
+	std::vector<TileInstance> tileScratch;
+	std::vector<uint32_t> quadIndices{0, 1, 2, 2, 3, 0};
+	uint64_t prepareIndex = 0;
+	RendererIsometric::PrepareStatistics prepareStats;
 	std::vector<DepthKey> translucentKeys;
 	std::vector<shared<gpu::Texture2D>> frameTextures;
 	const gpu::Texture2D* lastTexture = nullptr;
@@ -517,6 +577,190 @@ auto isChunkOutside(const IsometricCamera& iCamera, const math::vec3& iOrigin, c
 		   minY - raise > static_cast<float>(viewport.y());
 }
 
+auto makeChunkDraw(const uint32_t iCapacity) -> shared<gpu::DrawData> {
+	const gpu::BufferLayout vertexLayout{{"i_CornerIndex", gpu::ShaderDataType::Int}};
+	const gpu::BufferLayout instanceLayout{{"i_Foot", gpu::ShaderDataType::Float4},
+										   {"i_UvRect", gpu::ShaderDataType::Float4}};
+	auto draw = gpu::DrawData::create();
+	draw->initInstanced(vertexLayout, instanceLayout, /*iVertexCapacity=*/4u, iCapacity, g_shaderFolder,
+						g_state->quadIndices, g_tileShaderName,
+						{.blendMode = gpu::BlendMode::Opaque, .depthTest = true, .depthWrite = true});
+	constexpr std::array<int32_t, 4> corners{0, 1, 2, 3};
+	draw->setVertexData(corners.data(), static_cast<uint32_t>(corners.size() * sizeof(int32_t)));
+	g_state->prepareStats.uploadedBytes += corners.size() * sizeof(int32_t);
+	return draw;
+}
+
+// Everything of a tileset that decides the slope variant and the texture rectangle of a tile.
+auto getTilesetSignature(const scene::Tileset& iTileset) -> uint64_t {
+	uint64_t hash = 14695981039346656037ull;
+	const auto mix = [&hash](const uint64_t iValue) -> void { hash = (hash ^ iValue) * 1099511628211ull; };
+	mix(iTileset.columns);
+	mix(iTileset.rows);
+	mix(iTileset.tileWidth);
+	mix(iTileset.tileHeight);
+	mix(iTileset.slopeSets.size());
+	for (const auto& set: iTileset.slopeSets) {
+		mix(static_cast<uint32_t>(set.id));
+		for (const auto tile: set.tiles) mix(static_cast<uint32_t>(tile));
+		for (const auto tile: set.foundations) mix(static_cast<uint32_t>(tile));
+	}
+	return hash;
+}
+
+void collectChunkTiles(const scene::TilemapAsset& iAsset, const TilemapLayer& iLayer, const math::vec2ui& iChunk,
+					   const float iLayerBias, std::vector<TileInstance>& oTiles) {
+	oTiles.clear();
+	const auto* chunk = iLayer.getChunk(iChunk);
+	if (chunk == nullptr)
+		return;
+	const auto& tileset = *iAsset.tileset;
+	const auto& size = iLayer.getSize();
+	const uint32_t x0 = iChunk.x() * TilemapLayer::chunkSize;
+	const uint32_t y0 = iChunk.y() * TilemapLayer::chunkSize;
+	const uint32_t x1 = std::min(size.x(), x0 + TilemapLayer::chunkSize);
+	const uint32_t y1 = std::min(size.y(), y0 + TilemapLayer::chunkSize);
+	constexpr float overlayBias = RendererIsometric::tilemapLayerBias * 0.5f;
+	const auto rectOf = [&tileset](const int32_t iTile) -> math::vec4 {
+		const auto uv = tileset.getTileUv(static_cast<uint32_t>(iTile));
+		return {uv[0].x(), uv[0].y(), uv[2].x(), uv[2].y()};
+	};
+	for (uint32_t y = y0; y < y1; ++y) {
+		const uint32_t row = (y - y0) * TilemapLayer::chunkSize;
+		for (uint32_t x = x0; x < x1; ++x) {
+			const size_t cell = row + x - x0;
+			const uint16_t id = chunk->terrain[cell];
+			const uint16_t overlayId = chunk->overlay[cell];
+			if (id == TilemapChunk::emptyId && overlayId == TilemapChunk::emptyId)
+				continue;
+			const uint8_t slope = iAsset.getCellSlope(x, y);
+			const float baseZ = static_cast<float>(iAsset.getCellBaseHeight(x, y)) * scene::terrain::heightStep;
+			const auto footX = static_cast<float>(x + 1);
+			const auto footY = static_cast<float>(y + 1);
+			if (id != TilemapChunk::emptyId) {
+				const bool foundation = (chunk->flags[cell] & scene::terrain::foundationFlag) != 0;
+				oTiles.push_back({.foot = {footX, footY, baseZ, iLayerBias},
+								  .uvRect = rectOf(tileset.resolveTile(id, slope, foundation))});
+			}
+			if (overlayId != TilemapChunk::emptyId) {
+				oTiles.push_back({.foot = {footX, footY, baseZ, iLayerBias + overlayBias},
+								  .uvRect = rectOf(tileset.resolveTile(overlayId, slope))});
+			}
+		}
+	}
+}
+
+void buildChunk(const scene::TilemapAsset& iAsset, const size_t iLayerIndex, const math::vec2ui& iChunk,
+				ChunkGpu& ioChunk, const bool iLate) {
+	auto& tiles = g_state->tileScratch;
+	collectChunkTiles(iAsset, iAsset.layers[iLayerIndex], iChunk,
+					  static_cast<float>(iLayerIndex) * RendererIsometric::tilemapLayerBias, tiles);
+	ioChunk.generation = iAsset.layers[iLayerIndex].getChunkGeneration(iChunk);
+	ioChunk.heightGeneration = iAsset.getChunkHeightGeneration(iChunk);
+	ioChunk.instanceCount = static_cast<uint32_t>(tiles.size());
+	++g_state->prepareStats.builtChunkCount;
+	if (iLate)
+		++g_state->prepareStats.lateBuiltChunkCount;
+	if (tiles.empty()) {
+		ioChunk.drawData.reset();
+		ioChunk.capacity = 0;
+		return;
+	}
+	if (!ioChunk.drawData || ioChunk.capacity < ioChunk.instanceCount) {
+		ioChunk.capacity =
+				std::min(g_maxChunkInstances, std::bit_ceil(std::max(ioChunk.instanceCount, g_minChunkCapacity)));
+		ioChunk.drawData = makeChunkDraw(ioChunk.capacity);
+	}
+	const auto bytes = static_cast<uint32_t>(tiles.size() * sizeof(TileInstance));
+	ioChunk.drawData->setInstanceData(tiles.data(), bytes);
+	g_state->prepareStats.uploadedBytes += bytes;
+}
+
+void syncLayer(const scene::TilemapAsset& iAsset, const size_t iLayerIndex, LayerGpu& ioLayer, const bool iStale,
+			   const bool iLate) {
+	const auto& layer = iAsset.layers[iLayerIndex];
+	const auto chunkGrid = layer.getChunkGridSize();
+	if (ioLayer.size != layer.getSize() || ioLayer.chunkGrid != chunkGrid) {
+		ioLayer.chunks.clear();
+		ioLayer.chunks.resize(static_cast<size_t>(chunkGrid.x()) * chunkGrid.y());
+		ioLayer.size = layer.getSize();
+		ioLayer.chunkGrid = chunkGrid;
+	}
+	ioLayer.occupiedChunkCount = 0;
+	for (uint32_t cy = 0; cy < chunkGrid.y(); ++cy) {
+		for (uint32_t cx = 0; cx < chunkGrid.x(); ++cx) {
+			auto& chunk = ioLayer.chunks[static_cast<size_t>(cy) * chunkGrid.x() + cx];
+			if (iStale || chunk.generation != layer.getChunkGeneration({cx, cy}) ||
+				chunk.heightGeneration != iAsset.getChunkHeightGeneration({cx, cy}))
+				buildChunk(iAsset, iLayerIndex, {cx, cy}, chunk, iLate);
+			if (chunk.instanceCount > 0)
+				++ioLayer.occupiedChunkCount;
+		}
+	}
+}
+
+auto syncAsset(const scene::TilemapAsset& iAsset, const bool iLate) -> AssetGpu& {
+	auto& entry = g_state->cache[&iAsset];
+	entry.lastUsedPrepare = g_state->prepareIndex;
+	if (entry.layers.size() != iAsset.layers.size())
+		entry.layers.resize(iAsset.layers.size());
+	const uint64_t signature = getTilesetSignature(*iAsset.tileset);
+	const bool stale = entry.tileset != iAsset.tileset.get() || entry.tilesetSignature != signature;
+	entry.tileset = iAsset.tileset.get();
+	entry.tilesetSignature = signature;
+	for (size_t i = 0; i < iAsset.layers.size(); ++i) syncLayer(iAsset, i, entry.layers[i], stale, iLate);
+	return entry;
+}
+
+void drawTilemapChunks(const PendingTilemap& iPending, const AssetGpu& iEntry) {
+	auto& state = *g_state;
+	const auto& asset = *iPending.asset;
+	const auto& tileset = *asset.tileset;
+	const auto& camera = state.camera;
+	const auto tileWidth = static_cast<float>(camera.getConfig().tileSize.x());
+	const float pixelScale = tileWidth / static_cast<float>(std::max(1u, tileset.tileWidth));
+	const float spriteHeight = static_cast<float>(tileset.tileHeight) * pixelScale;
+	const float terrainRaise =
+			static_cast<float>(asset.getMaxCornerHeight()) * scene::terrain::heightStep * camera.getConfig().zStep;
+	state.scene.origin = math::vec4{iPending.origin.x(), iPending.origin.y(), iPending.origin.z(), 0.f};
+	state.scene.tile = math::vec4{tileWidth, spriteHeight, state.flatSlope, 0.f};
+	state.scene.ids = {iPending.entityId, 0, 0, 0};
+	state.sceneUbo->setData(&state.scene, sizeof(SceneUbo), 0);
+	gpu::RenderCommand::bindTextures(std::span{&tileset.texture, 1});
+	for (size_t index = 0; index < asset.layers.size(); ++index) {
+		if (!asset.layers[index].visible)
+			continue;
+		const auto& layer = iEntry.layers[index];
+		if (layer.occupiedChunkCount == 0)
+			continue;
+		for (uint32_t cy = 0; cy < layer.chunkGrid.y(); ++cy) {
+			for (uint32_t cx = 0; cx < layer.chunkGrid.x(); ++cx) {
+				const auto& chunk = layer.chunks[static_cast<size_t>(cy) * layer.chunkGrid.x() + cx];
+				if (chunk.instanceCount == 0 || !chunk.drawData)
+					continue;
+				const math::vec2ui first{cx * TilemapLayer::chunkSize, cy * TilemapLayer::chunkSize};
+				const math::vec2ui last{std::min(layer.size.x(), first.x() + TilemapLayer::chunkSize),
+										std::min(layer.size.y(), first.y() + TilemapLayer::chunkSize)};
+				if (isChunkOutside(camera, iPending.origin, first, last, spriteHeight + terrainRaise)) {
+					++state.stats.culledChunkCount;
+					continue;
+				}
+				gpu::RenderCommand::drawDataInstanced(chunk.drawData, /*iIndexCount=*/6u, chunk.instanceCount);
+				++state.stats.drawCallCount;
+				state.stats.opaqueCount += chunk.instanceCount;
+			}
+		}
+	}
+}
+
+void drawTilePass() {
+	auto& state = *g_state;
+	if (state.tilemaps.empty())
+		return;
+	setPassParams(g_cutoutAlpha);
+	for (const auto& pending: state.tilemaps) drawTilemapChunks(pending, syncAsset(*pending.asset, true));
+}
+
 }// namespace
 
 void RendererIsometric::init() {
@@ -580,6 +824,7 @@ void RendererIsometric::beginScene(const IsometricCamera& iCamera) {
 	state.opaque.clear();
 	state.translucent.clear();
 	state.sprites.clear();
+	state.tilemaps.clear();
 	state.frameTextures.clear();
 	state.lastTexture = nullptr;
 	state.lastFrameTexture = g_whiteTexture;
@@ -640,79 +885,39 @@ void RendererIsometric::drawObject(const IsometricObjectSet& iSet, const Isometr
 
 void RendererIsometric::drawTilemap(const scene::TilemapAsset& iAsset, const math::Transform& iWorldTransform,
 									const int iEntityId) {
+	if (!isReady() || !iAsset.tileset || !iAsset.tileset->texture || iAsset.layers.empty())
+		return;
+	g_state->tilemaps.push_back({.asset = &iAsset, .origin = iWorldTransform.translation(), .entityId = iEntityId});
+}
+
+void RendererIsometric::beginPrepare() {
+	if (!isReady())
+		return;
+	++g_state->prepareIndex;
+	g_state->prepareStats = PrepareStatistics{};
+	std::erase_if(g_state->cache, [](const auto& iEntry) -> bool {
+		return iEntry.second.lastUsedPrepare + cacheEvictionPrepares < g_state->prepareIndex;
+	});
+}
+
+void RendererIsometric::prepareTilemap(const scene::TilemapAsset& iAsset) {
 	OWL_PROFILE_FUNCTION()
 
-	if (!isReady() || !iAsset.tileset || !iAsset.tileset->texture)
+	if (!isReady() || iAsset.layers.empty() || !iAsset.tileset)
 		return;
-	using scene::component::TilemapChunk;
-	using scene::component::TilemapLayer;
-	auto& state = *g_state;
-	const auto& tileset = *iAsset.tileset;
-	const auto& camera = state.camera;
-	const auto tileWidth = static_cast<float>(camera.getConfig().tileSize.x());
-	const float pixelScale = tileWidth / static_cast<float>(std::max(1u, tileset.tileWidth));
-	const math::vec2 spriteSize{tileWidth, static_cast<float>(tileset.tileHeight) * pixelScale};
-	const math::vec3 origin = iWorldTransform.translation();
-	const uint16_t frameTexture = frameTextureOf(tileset.texture);
-	Queued item;
-	item.frameTexture = frameTexture;
-	item.gpu.size = math::vec4{spriteSize.x(), spriteSize.y(), state.flatSlope, 0.f};
-	item.gpu.color = math::vec4{1.f, 1.f, 1.f, 1.f};
-	item.gpu.entityId = iEntityId;
-	const float terrainRaise =
-			static_cast<float>(iAsset.getMaxCornerHeight()) * scene::terrain::heightStep * camera.getConfig().zStep;
-	constexpr float overlayBias = tilemapLayerBias * 0.5f;
-	float bias = 0.f;
-	for (const auto& layer: iAsset.layers) {
-		const float layerBias = bias;
-		bias += tilemapLayerBias;
-		if (!layer.visible)
-			continue;
-		const auto grid = layer.getChunkGridSize();
-		const auto& size = layer.getSize();
-		for (uint32_t cy = 0; cy < grid.y(); ++cy) {
-			for (uint32_t cx = 0; cx < grid.x(); ++cx) {
-				const auto* chunk = layer.getChunk({cx, cy});
-				if (chunk == nullptr)
-					continue;
-				const math::vec2ui first{cx * TilemapLayer::chunkSize, cy * TilemapLayer::chunkSize};
-				const math::vec2ui last{std::min(size.x(), first.x() + TilemapLayer::chunkSize),
-										std::min(size.y(), first.y() + TilemapLayer::chunkSize)};
-				if (isChunkOutside(camera, origin, first, last, spriteSize.y() + terrainRaise)) {
-					++state.stats.culledChunkCount;
-					continue;
-				}
-				for (uint32_t y = first.y(); y < last.y(); ++y) {
-					const uint32_t row = (y - first.y()) * TilemapLayer::chunkSize;
-					for (uint32_t x = first.x(); x < last.x(); ++x) {
-						const size_t cell = row + x - first.x();
-						const uint16_t id = chunk->terrain[cell];
-						const uint16_t overlayId = chunk->overlay[cell];
-						if (id == TilemapChunk::emptyId && overlayId == TilemapChunk::emptyId)
-							continue;
-						const uint8_t slope = iAsset.getCellSlope(x, y);
-						const float baseZ = origin.z() + static_cast<float>(iAsset.getCellBaseHeight(x, y)) *
-																 scene::terrain::heightStep;
-						const float footX = origin.x() + static_cast<float>(x + 1);
-						const float footY = origin.y() + static_cast<float>(y + 1);
-						if (id != TilemapChunk::emptyId) {
-							const bool foundation = (chunk->flags[cell] & scene::terrain::foundationFlag) != 0;
-							item.gpu.foot = math::vec4{footX, footY, baseZ, layerBias};
-							item.gpu.uv = tileset.getTileUv(
-									static_cast<uint32_t>(tileset.resolveTile(id, slope, foundation)));
-							state.opaque.push_back(item);
-						}
-						if (overlayId != TilemapChunk::emptyId) {
-							item.gpu.foot = math::vec4{footX, footY, baseZ, layerBias + overlayBias};
-							item.gpu.uv =
-									tileset.getTileUv(static_cast<uint32_t>(tileset.resolveTile(overlayId, slope)));
-							state.opaque.push_back(item);
-						}
-					}
-				}
-			}
-		}
-	}
+	const gpu::RendererDescriptors::ScopedActive scoped{blockId()};
+	syncAsset(iAsset, false);
+}
+
+void RendererIsometric::clearCache() {
+	if (g_state)
+		g_state->cache.clear();
+}
+
+auto RendererIsometric::getCachedAssetCount() -> size_t { return g_state ? g_state->cache.size() : 0; }
+
+auto RendererIsometric::getPrepareStatistics() -> PrepareStatistics {
+	return g_state ? g_state->prepareStats : PrepareStatistics{};
 }
 
 void RendererIsometric::endScene() {
@@ -721,10 +926,11 @@ void RendererIsometric::endScene() {
 	if (!isReady())
 		return;
 	auto& state = *g_state;
-	if (state.opaque.empty() && state.translucent.empty() && state.sprites.empty())
+	if (state.opaque.empty() && state.translucent.empty() && state.sprites.empty() && state.tilemaps.empty())
 		return;
 	const gpu::RendererDescriptors::ScopedActive scoped{blockId()};
 	gpu::RenderCommand::beginBatch();
+	drawTilePass();
 	drawOpaquePass();
 	drawSpritePass();
 	drawTranslucentPass();
@@ -732,6 +938,7 @@ void RendererIsometric::endScene() {
 	state.opaque.clear();
 	state.translucent.clear();
 	state.sprites.clear();
+	state.tilemaps.clear();
 }
 
 auto RendererIsometric::getStatistics() -> Statistics { return g_state ? g_state->stats : Statistics{}; }
