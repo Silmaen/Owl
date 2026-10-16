@@ -85,6 +85,13 @@ void runIsometricBenches(Runner& ioRunner);
 
 /**
  * @brief
+ *  Tile-graph pathfinding on a 1024x1024 map: graph build, long queries (flat and hierarchical), one-cell edits.
+ * @param[in,out] ioRunner The bench runner.
+ */
+void runPathBenches(Runner& ioRunner);
+
+/**
+ * @brief
  *  Whole-frame CPU benchmarks (editor update, runtime tick) on the Null backend.
  * @param[in,out] ioRunner The runner.
  */
