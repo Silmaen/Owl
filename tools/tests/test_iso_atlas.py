@@ -12,6 +12,7 @@ import pytest
 from PIL import Image, ImageStat
 
 from tools.iso_atlas import atlas, town_map
+from tools.iso_atlas import terrain as terrain_module
 from tools.iso_atlas.common import TILE_H, TILE_W, Layers
 from tools.iso_atlas.objects import BUILDINGS, PROPS, SLICE_HEIGHT, VEHICLES, render_object, slice_object
 from tools.iso_atlas.terrain import SLOPE_COUNT, SLOPES
@@ -42,7 +43,7 @@ def terrain() -> Layers:
 
 
 def test_terrain_hash_is_stable(terrain: Layers) -> None:
-    assert _digest(terrain) == "b3ce35de02aa361890b6cae8c7c087a72441f3787bb0f26b2f9f1c90be31bc15"
+    assert _digest(terrain) == "18b9d851cf936444b4c4c22a9076ac67701cc0b871626af11fe9b09396d403ea"
 
 
 def test_same_seed_same_pixels(terrain: Layers) -> None:
@@ -179,6 +180,25 @@ def test_town_ring_is_closed_and_roads_follow_their_neighbours() -> None:
     roads = town_map.road_tiles()
     assert roads[(town_map.RING[0] + 2, town_map.RING[1])] == town_map.ROAD
     assert roads[(town_map.RING[0], town_map.RING[1] + 2)] == town_map.ROAD_Y
+
+
+def test_every_road_mask_has_its_own_tile() -> None:
+    assert sorted(terrain_module.ROAD_MASKS) == list(range(16))
+    assert len(set(terrain_module.ROAD_MASKS.values())) == 16
+    for mask, tile in terrain_module.ROAD_MASKS.items():
+        assert tile < atlas.TILE_COUNT
+        assert tile in atlas.SLOPED_TERRAINS, mask
+
+
+def test_town_junctions_are_tiled_from_the_neighbours() -> None:
+    roads = town_map.road_tiles()
+    x0, y0, x1, y1 = town_map.RING
+    masks = terrain_module.ROAD_MASKS
+    assert roads[(x0, y0)] == masks[terrain_module.EAST | terrain_module.SOUTH]
+    assert roads[(x1, y1)] == masks[terrain_module.NORTH | terrain_module.WEST]
+    assert roads[(x0, 12)] == masks[terrain_module.NORTH | terrain_module.SOUTH | terrain_module.WEST]
+    assert roads[(2, 12)] == masks[terrain_module.EAST]
+    assert roads[(11, y1)] == masks[terrain_module.EAST | terrain_module.SOUTH | terrain_module.WEST]
 
 
 def test_town_trees_stand_on_free_grass() -> None:

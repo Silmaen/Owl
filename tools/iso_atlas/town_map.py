@@ -12,13 +12,15 @@ import struct
 from dataclasses import dataclass
 from pathlib import Path
 
-from .sample_map import CHUNK, DARK_GRASS, DIRT, FLOWERS, GRASS, PAVEMENT, RAIL, ROAD, ROCK, SAND, WATER, _chunk, _fnv1a
-from .terrain import SLOPES
+from .sample_map import CHUNK, DARK_GRASS, DIRT, FLOWERS, GRASS, PAVEMENT, RAIL, ROCK, SAND, WATER, _chunk, _fnv1a
+from .terrain import EAST, NORTH, ROAD_MASKS, SLOPES, SOUTH, WEST
 
 SIZE = 24
 """Map size in cells."""
-ROAD_Y = 11
-"""Terrain id of the road along the Y axis (the plain ``ROAD`` runs along X)."""
+ROAD = ROAD_MASKS[EAST | WEST]
+"""Terrain id of the road along the X axis."""
+ROAD_Y = ROAD_MASKS[NORTH | SOUTH]
+"""Terrain id of the road along the Y axis."""
 RING = (6, 8, 18, 16)
 """The ring road: first column, first row, last column, last row (cells)."""
 SPURS = [(x, 12) for x in range(2, 6)] + [(11, y) for y in range(17, 20)]
@@ -160,19 +162,31 @@ def ring_cells() -> list[tuple[int, int]]:
     return cells
 
 
+def road_mask(cells: set[tuple[int, int]], x: int, y: int) -> int:
+    """
+    Neighbour mask of a road cell.
+
+    :param cells: Every road cell.
+    :param x: Cell column.
+    :param y: Cell row.
+    :return: The OR of ``NORTH`` (-y), ``EAST`` (+x), ``SOUTH`` (+y) and ``WEST`` (-x) for the neighbours in ``cells``.
+    """
+    return (
+        (NORTH if (x, y - 1) in cells else 0)
+        | (EAST if (x + 1, y) in cells else 0)
+        | (SOUTH if (x, y + 1) in cells else 0)
+        | (WEST if (x - 1, y) in cells else 0)
+    )
+
+
 def road_tiles() -> dict[tuple[int, int], int]:
     """
-    The road overlay: the ring and the two streets, each cell along the axis of its neighbours.
+    The road overlay: the ring and the two streets, each cell tiled from the mask of its road neighbours.
 
     :return: The overlay tile of each road cell.
     """
     cells = set(ring_cells()) | set(SPURS)
-    return {
-        (x, y): ROAD_Y
-        if ((x, y - 1) in cells or (x, y + 1) in cells) and not ((x - 1, y) in cells or (x + 1, y) in cells)
-        else ROAD
-        for x, y in cells
-    }
+    return {(x, y): ROAD_MASKS[road_mask(cells, x, y)] for x, y in cells}
 
 
 def plot_cells(plot: Plot) -> list[tuple[int, int]]:
