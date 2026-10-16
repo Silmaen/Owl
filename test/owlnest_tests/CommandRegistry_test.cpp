@@ -495,11 +495,12 @@ TEST_F(HudCommandsTest, AddWidgetCreatesTheCanvasWhenTheSceneHasNone) {
 	ASSERT_TRUE(parent);
 	EXPECT_TRUE(parent.hasComponent<scene::component::Canvas>());
 
+	const auto buttonId = button.getUUID();
 	m_undo.undo(*m_scene);
 	EXPECT_EQ(count(), 0u);
 	m_undo.redo(*m_scene);
 	EXPECT_EQ(count(), 2u);
-	const auto again = m_scene->findEntityByUUID(button.getUUID());
+	const auto again = m_scene->findEntityByUUID(buttonId);
 	ASSERT_TRUE(again);
 	EXPECT_TRUE(again.hasComponent<scene::component::UiButton>());
 	EXPECT_TRUE(m_scene->findEntityByUUID(again.getComponent<scene::component::Hierarchy>().parentId)
