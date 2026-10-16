@@ -261,7 +261,8 @@ off-screen `Framebuffer` with two colour attachments:
   a banner under them recalls that the changes are reverted on Stop;
 - top-right (Edit mode): the view (**2D** orthographic front view, **3D** perspective, or **Iso** locked in the
   isometric mode), **Show** (grid, camera
-  markers, trigger icons), **Frame selection** (`F`), the **Camera** menu and the frame stats toggle;
+  markers, trigger icons, and in the isometric mode the navigation graph of the tilemaps with a Shift-click test path,
+  see [Pathfinding](pathfinding.md)), **Frame selection** (`F`), the **Camera** menu and the frame stats toggle;
 - bottom-left: frame rate, frame time and draw calls (a click opens the Stats panel);
 - bottom-right: the view-cube of the editor camera.
 

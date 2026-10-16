@@ -125,7 +125,7 @@ simulation tick (see [Fixed simulation tick](#fixed-tick)); either may be empty.
 | `PrePhysics`  | `owl.fly_cameras`, `owl.voxel_players`, `owl.raycast_walls`, `owl.player_input` | Gameplay controllers before the step      |
 | `Physics`     | `owl.physics` (one Box2D step and `on_collision` per tick)                      | Owns the physics step                     |
 | `PostPhysics` | `owl.entity_links`, `owl.triggers`                                              | Last phase allowed to change the world    |
-| `Late`        | `owl.sound`, `owl.sprite_animation`                                             | Reads the settled world (caches armed)    |
+| `Late`        | `owl.navigation`, `owl.sound`, `owl.sprite_animation`                           | Reads the settled world (caches armed)    |
 | `Ended`       | `owl.game_over` ("Victory!" / "You loose!" message)                             | Replaces every other phase once game over |
 
 `owl.scripts` calls `on_update` in its `update` and `on_tick` in its `tick`; `owl.physics` steps the world in its

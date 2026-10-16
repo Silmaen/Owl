@@ -167,7 +167,7 @@ S < 1 day of review, M a few days, L a week.
 
 ### Pathfinding
 
-- ![Planned][planned] **PATH1 — Tile-graph pathfinding (from v0.5.0), M/L.** A* on a tile grid or on a graph built
+- ![Done][done] **PATH1 — Tile-graph pathfinding (from v0.5.0), M/L.** A* on a tile grid or on a graph built
   from tilemap overlays (roads, tracks), per-edge costs and one-way edges, hierarchical over the 32×32 chunks of TM2,
   incremental update when a tile changes, queries spread over ticks on the task system; Lua API, an editor overlay of
   the graph and a test path; the `iso_town` vehicles follow the roads with it. Spec in [2D complete](2d-complete.md).
