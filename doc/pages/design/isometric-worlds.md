@@ -91,7 +91,7 @@ S < 1 day of review, M a few days, L a week.
 - ![Done][done] **R1 — Renderer2D transients (B-09), M.** Transients sized per frame like the instances
   (20 000), texture slot lookup by id, no temporary vectors, renderer id instead of a string in `ScopedActive`. Bench:
   transient path at 10 000 and 100 000 quads, zero allocation per frame in `renderer/`.
-- ![Planned][planned] **R2 — Draw-order sort key (PR-30: B-10, from v0.5.0), M.** A sort key on every 2D
+- ![Done][done] **R2 — Draw-order sort key (PR-30: B-10, from v0.5.0), M.** A sort key on every 2D
   primitive instead of the primitive type and the storage order, on the depth convention of D2, so 2D, isometric and
   HUD primitives order the same way; HUD windows no longer need one batch each. Changes a shipped render path: the
   image tests stay pixel-identical, the maintainer confirms before merge.
@@ -144,7 +144,7 @@ S < 1 day of review, M a few days, L a week.
   Content Browser kind and thumbnail.
 - ![Done][done] **HUD3 — Management-game widgets, M/L.** `UiWindow` (title bar, drag, close, raise on click,
   clamped to the screen), `UiLayout` (row, column, grid), clipping by scissor, `UiTooltip`, tool cursor sprite; any
-  window blocks world clicks under it. Each window draws as its own batch until the v0.4.0 sort key.
+  window blocks world clicks under it. A window covers the ones under it through the R2 sort key.
 - ![Done][done] **HUD4 — HUD editor document, L.** `HudDocument` on `.owlhud` and embedded canvases: pixel
   viewport with resolution presets and a colour or image backdrop, rect gizmo with anchor handles and snapping, widget
   palette and drag & drop, multi-select; every action a named command, hence undoable and reachable through MCP.

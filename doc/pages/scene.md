@@ -1002,6 +1002,10 @@ the engine auto-appends `.owl` and searches asset directories including a `scene
 4. **CircleRenderer** — `drawCircle()` with thickness/fade
 5. **Text** — `drawString()` with font/colour/kerning, em height from the Y scale
 
+Every primitive carries its world z as sort key (depth first, then type, then submission order), so a circle under a
+sprite (lower z) draws under it, whatever the group (`Renderer2D` draw order, see
+[Renderer](renderer.md#renderer2d)).
+
 Each entity is checked for visibility via `isEffectivelyVisible()` and rendered
 using its world transform from `getWorldTransform()`. Both calls hit a per-pass
 cache during the render tick, so duplicated reads across the renderable

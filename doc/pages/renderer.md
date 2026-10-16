@@ -673,7 +673,7 @@ sequenceDiagram
 
 ## Image tests {#render-image-tests}
 
-`test/render_tests` (`owl_render_tests_unit_test`, CTest label `render`) renders eight reference scenes on lavapipe
+`test/render_tests` (`owl_render_tests_unit_test`, CTest label `render`) renders the reference scenes on lavapipe
 (Vulkan) and llvmpipe (OpenGL) and compares each capture to a versioned PNG:
 
 | Scene       | Covers                                                                         |
@@ -686,6 +686,7 @@ sequenceDiagram
 | `mixed`     | Platformer level: tilemap, sprites, animated sprite, HUD text and panel        |
 | `stylemix`  | Voxel terrain, perspective sprites, `Space: Screen` HUD, voxel crosshair       |
 | `isometric` | Isometric map, depth-tested trees and houses, sorted translucent smoke, HUD    |
+| `draworder` | Quads, circles and text at interleaved world z, a quad stored last but lowest  |
 
 Each case runs `OwlRunner --frame-bench <scene> --capture <png>` (320 x 180, 60 warm-up frames, fixed time step, Vulkan
 validation on) in its own process, then compares RGB per pixel: a pixel differs above 24 / 255 on a channel, the test
@@ -858,17 +859,29 @@ over when full triggers `nextBatch()` (flush + restart).
 **Flush order** (within a single render pass):
 
 1. Bind all texture slots (`RenderCommand::bindTextures`)
-2. Background (via `BackgroundRenderer::flushPending()`)
-3. Quads (`RenderCommand::drawDataInstanced`, 6 indices × N instances)
-4. Circles (`RenderCommand::drawDataInstanced`)
-5. Lines (`RenderCommand::drawDataInstanced`, 2 indices × N instances, line topology)
-6. Text (`RenderCommand::drawDataInstanced`)
+2. Background (via `BackgroundRenderer::flushPending()`), then the tilemaps
+3. The runs of primitives, in draw order (see below): each one uploads its instances and issues one
+   `RenderCommand::drawDataInstanced` (6 indices per quad, circle and glyph, 2 per line)
+
+**Draw order** (`DrawRuns`, B-10). Every primitive carries a sort key, the `depth` field of its data struct (default 0;
+larger is nearer the viewer, the convention of the isometric layer). The rule is *depth first, then type, then
+submission order*: primitives draw by increasing depth; at one depth quads (and sprites) come first, then circles,
+lines (rects, polylines), then text, as before; within one type the submission order holds. A batch whose primitives
+share one depth keeps one counter per type and draws one range per type. When a second depth appears, consecutive
+primitives of one type and depth become *runs*, sorted at `flush()` by depth, type and submission rank (`std::sort` on a
+vector reserved at `init`, no allocation); runs of one type that touch in their instance buffer merge into a single
+draw. A batch holds at most 4 096 runs. The key is per batch: `nextBatch`, a scissor change and the tilemaps (drawn
+first) are never reordered across.
+
+Callers give the key as they need it: `Scene` uses the world z of sprites, animated sprites, circles and text (equal z
+keeps the order sprites, animated sprites, circles, text); the HUD pass uses the rank of the window of a widget and, in a
+window, the layer (shapes, circles, then text) so a window covers the ones under it and a label stays over its panel,
+with no batch per window.
 
 **Clipping.** `Renderer2D::setScissor` restricts the draws that follow to a rectangle of the target (`RenderCommand::setScissor`:
 `glScissor` on OpenGL, the dynamic scissor of the open render pass on Vulkan); the queued draws are flushed first with
 the previous rectangle, `clearScissor`, `beginScene` and `endScene` lift it, and the RHI puts the whole target back at
-the end of each flush, so a draw inherits nothing. The HUD pass uses it for windows and `clipChildren` panels, and
-flushes between windows (`nextBatch`) so a window covers the text of the one under it.
+the end of each flush, so a draw inherits nothing. The HUD pass uses it for windows and `clipChildren` panels.
 
 **Per-batch descriptor layout** declared in `Renderer2D::init`:
 
