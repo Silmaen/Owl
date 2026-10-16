@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Pathfinding for vehicles that keep their heading: `PathOptions` (`noReverse`, `heading`) and `path.find` / `path.find_now` options forbid the move back to the cell just left except at a dead end (flat search over cell and entry direction), and `iso_town` vehicles drive to random road cells without U-turns, looping round the whole cell at a dead end.
 - Navigation overlay in the game and in Owl Nest Play: `path.set_debug`, `path.show_route` and `path.clear_routes` draw the graph and the route of each vehicle, F3 in the Engine Demo and the eye button of the Play view.
 - Engine Demo vehicles with eight headings: `vehicles.png` is an 8 × 2 sheet (a frame every 45° per model, lights on the front), one sprite per vehicle in `iso_town` picks its frame from its heading with the new Lua `isometric.set_sprite_frame` / `get_sprite_frame`, vehicles keep to the right as seen on screen on their lane and turn corners along a quarter circle.
 - Tilemap editor node tool: select corners of the isometric terrain (Shift for several), drag or press +/- to change their height with the neighbours adapting, and edit the four corner heights of a cell in Cell Properties, each one undo step.

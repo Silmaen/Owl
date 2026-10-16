@@ -29,3 +29,5 @@ steps:
   - expect: {entity: Truck, translation.x: {greater: 7}}
   - expect: {gamestate: town_longest_wait, less: 4}
   - expect: {gamestate: town_offroad, equals: 0}
+  - expect: {gamestate: town_bad_uturns, equals: 0}
+  - expect: {gamestate: town_route_calls, greater: 10}

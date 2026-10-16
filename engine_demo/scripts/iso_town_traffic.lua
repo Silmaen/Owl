@@ -7,23 +7,28 @@
 --               sprite per vehicle whose frame follows its heading every 45 degrees (isometric.set_sprite_frame),
 --               gamestate.
 --
--- Each vehicle owns a list of stops (cells of the road) and drives to the next one by the cheapest route. A trip pays
--- `TRIP_PAY` into `town_money` and counts in `town_trips`; a route that a bulldozed road cut counts in `town_reroutes`.
--- A vehicle with no route waits and asks again when the graph changes. Every vehicle plans its route again at its next
--- cell boundary when the graph changed (`path.get_version`), so a new road is taken if shorter: `town_replans`. A vehicle
--- left standing on a bulldozed cell asks from the road cell it came from, so it drives off and finds its way again.
+-- Each vehicle drives to a destination picked at random among the cells of the road (a generator seeded per vehicle, so a
+-- run is repeatable), by the cheapest route that never turns back (`no_reverse` and the heading of the vehicle in
+-- `path.find`): a vehicle goes on the way it was heading and reverses only at a dead end, a cell with a single exit. On
+-- arrival it picks another destination. A trip pays `TRIP_PAY` into `town_money` and counts in `town_trips`; a route that a
+-- bulldozed road cut counts in `town_reroutes`. A vehicle with no route waits and asks again when the graph changes.
+-- Every vehicle plans its route again at its next cell boundary when the graph changed (`path.get_version`), so a new
+-- road is taken if shorter: `town_replans`. A vehicle left standing on a bulldozed cell asks from the road cell it came
+-- from, without the heading, so it drives off and finds its way again. The route of each vehicle is given to the overlay
+-- at every plan (`town_route_calls` counts the `path.show_route` calls).
 --
 -- Traffic keeps to the right as seen on screen. World +x runs to the lower right and +y to the lower left, so the right
 -- hand of a vehicle heading (dx, dy) is (-dy, dx): driving to the lower right it keeps to the lower left side of the
 -- road. A vehicle crosses each cell of its route from the middle of the edge it enters by to the middle of the edge it
 -- leaves by, LANE away from the middle of the road; in a corner it follows a quarter circle around the corner of the
--- cell, its heading turning with it; a U-turn drives on to the middle of the cell, swings round it through a half circle,
--- turning left, and comes back out by the other lane. The sheet holds eight frames per model, every 45 degrees from +x
+-- cell, its heading turning with it; at a dead end it blends from its lane to a circle round the middle of the cell,
+-- drives half of it turning left, through the far half of the cell, and comes back out by the other lane. The sheet holds eight frames per model, every 45 degrees from +x
 -- towards +y.
 --
 -- The script counts what the scenario `iso_town.owltest` checks: `town_offroad` (updates a moving vehicle stood off the
 -- road), `town_frame_errors` (frame not matching the heading), `town_heading_errors` (moving away from its heading) and
--- `town_shortcuts` (re-plans that found a shorter route, a road built or rebuilt), `town_frames_seen` (number of distinct headings shown, 0 to 8), `town_longest_wait` (the longest time, in seconds, a
+-- `town_shortcuts` (re-plans that found a shorter route, a road built or rebuilt), `town_bad_uturns` (reversals outside a
+-- dead end), `town_dead_end_loops` (loops at a dead end), `town_frames_seen` (number of distinct headings shown, 0 to 8), `town_longest_wait` (the longest time, in seconds, a
 -- vehicle waited without a route) and `town_debug` (1 while the navigation overlay is on).
 
 local TRIP_PAY = 5
@@ -34,15 +39,16 @@ local TURN = math.pi / 2
 local HEADING_STEP = math.pi / 4
 
 -- One vehicle: its sprite, the first frame of its model in the sheet (8 frames per model), its speed (cells per
--- second), where it starts and where it goes.
+-- second), where it starts, its colour in the overlay and the seed of its destinations.
 local FLEET = {
-    { sprite = "Car", model = 0, speed = 2.2, start = { 13, 8 }, color = { 1.0, 0.35, 0.3 },
-      stops = { { 18, 8 }, { 11, 19 }, { 2, 12 }, { 18, 16 } } },
-    { sprite = "Truck", model = 8, speed = 1.5, start = { 6, 12 }, color = { 0.3, 0.6, 1.0 },
-      stops = { { 11, 19 }, { 18, 8 }, { 2, 12 } } },
-    { sprite = "CarB", model = 0, speed = 1.9, start = { 18, 12 }, color = { 1.0, 0.9, 0.2 },
-      stops = { { 2, 12 }, { 11, 19 }, { 6, 8 } } },
+    { sprite = "Car", model = 0, speed = 2.2, start = { 13, 8 }, color = { 1.0, 0.35, 0.3 }, seed = 11 },
+    { sprite = "Truck", model = 8, speed = 1.5, start = { 6, 12 }, color = { 0.3, 0.6, 1.0 }, seed = 23 },
+    { sprite = "CarB", model = 0, speed = 1.9, start = { 18, 12 }, color = { 1.0, 0.9, 0.2 }, seed = 37 },
 }
+
+local SIZE = 24
+local MIN_TRIP = 4
+local LOOP = 0.36
 
 local map_id = 0
 
@@ -67,22 +73,63 @@ local function anchor(vehicle)
         if cell[1] ~= nil and path.is_walkable(map_id, cell[1], cell[2]) then
             vehicle.cell_x, vehicle.cell_y = cell[1], cell[2]
             vehicle.stranded = true
+            vehicle.dir_x, vehicle.dir_y = nil, nil
             return
         end
     end
 end
 
--- Ask for a route from the cell the vehicle stands on (or leaves) to its stop.
-local function ask(vehicle)
-    anchor(vehicle)
-    local stop = vehicle.stops[vehicle.stop]
-    vehicle.request = path.find(map_id, vehicle.cell_x, vehicle.cell_y, stop[1], stop[2])
-    vehicle.version = path.get_version(map_id)
-    vehicle.retry = RETRY_SECONDS
+-- Next number of the vehicle's generator (a linear congruential one: the same sequence on every run).
+local function roll(vehicle, count)
+    vehicle.rng = (vehicle.rng * 1103515245 + 12345) % 2147483648
+    return (vehicle.rng // 65536) % count
 end
 
-local function next_stop(vehicle)
-    vehicle.stop = vehicle.stop % #vehicle.stops + 1
+-- Number of ways out of a cell of the road: one makes a dead end.
+local function exits(x, y)
+    local count = 0
+    for _, step in ipairs(NEIGHBOURS) do
+        if path.get_edge_cost(map_id, x, y, x + step[1], y + step[2]) ~= nil then
+            count = count + 1
+        end
+    end
+    return count
+end
+
+-- A road cell picked at random, a few cells away from the vehicle (any cell of the road when the road is too small).
+local function choose_destination(vehicle)
+    local fallback = nil
+    for _ = 1, 400 do
+        local x, y = roll(vehicle, SIZE), roll(vehicle, SIZE)
+        if path.is_walkable(map_id, x, y) and (x ~= vehicle.cell_x or y ~= vehicle.cell_y) then
+            if math.abs(x - vehicle.cell_x) + math.abs(y - vehicle.cell_y) >= MIN_TRIP then
+                vehicle.dest = { x, y }
+                return
+            end
+            fallback = fallback or { x, y }
+        end
+    end
+    vehicle.dest = fallback
+end
+
+-- Ask for a route from the cell the vehicle stands on (or leaves) to its destination, going on the way it heads.
+local function ask(vehicle)
+    anchor(vehicle)
+    if vehicle.dest == nil then
+        choose_destination(vehicle)
+    end
+    vehicle.version = path.get_version(map_id)
+    vehicle.retry = RETRY_SECONDS
+    if vehicle.dest == nil then
+        vehicle.request = 0
+        return
+    end
+    if vehicle.stranded or vehicle.dir_x == nil then
+        vehicle.request = path.find(map_id, vehicle.cell_x, vehicle.cell_y, vehicle.dest[1], vehicle.dest[2])
+    else
+        vehicle.request = path.find(map_id, vehicle.cell_x, vehicle.cell_y, vehicle.dest[1], vehicle.dest[2],
+            { no_reverse = true, heading_x = vehicle.dir_x, heading_y = vehicle.dir_y })
+    end
 end
 
 local function release(vehicle)
@@ -103,17 +150,16 @@ local function wrap(angle)
     return (angle + math.pi) % (2 * math.pi) - math.pi
 end
 
--- Give the debug overlay the rest of a vehicle's route, in the colour of the vehicle (nothing without a route).
+-- Give the debug overlay the rest of a vehicle's route, in the colour of the vehicle (nothing without a route). Always
+-- given, shown or not: the overlay holds the current route of every vehicle when it is switched on.
 local function publish(vehicle)
-    if not path.get_debug() then
-        return
-    end
     if vehicle.route == nil then
         path.show_route(map_id, vehicle.id)
         return
     end
     local first = (vehicle.index - 1) * 2 + 1
     path.show_route(map_id, vehicle.id, table.move(vehicle.route, first, #vehicle.route, 1, {}), table.unpack(vehicle.color))
+    gamestate.set("town_route_calls", gamestate.get("town_route_calls", 0) + 1)
 end
 
 function on_create()
@@ -123,7 +169,9 @@ function on_create()
         vehicle.cell_x, vehicle.cell_y = vehicle.start[1], vehicle.start[2]
         vehicle.x, vehicle.y = vehicle.cell_x + 0.5, vehicle.cell_y + 0.5
         vehicle.angle = 0
-        vehicle.stop = 1
+        vehicle.rng = vehicle.seed
+        vehicle.dest = nil
+        vehicle.dir_x, vehicle.dir_y = nil, nil
         vehicle.route = nil
         vehicle.request = 0
         vehicle.version = 0
@@ -143,6 +191,9 @@ function on_create()
     gamestate.set("town_frames_seen", 0)
     gamestate.set("town_longest_wait", 0)
     gamestate.set("town_debug", 0)
+    gamestate.set("town_bad_uturns", 0)
+    gamestate.set("town_dead_end_loops", 0)
+    gamestate.set("town_route_calls", 0)
 end
 
 local function count(key)
@@ -204,25 +255,41 @@ local function cell_path(route, index, entry_x, entry_y)
         end
     end
     if cross == 0 and in_x ~= nil and out_x ~= nil and in_x * out_x + in_y * out_y < 0 then
-        -- A U-turn, symmetric round the middle of the cell: on in by the right lane to the middle, a half circle there
-        -- turning left, and out by the right lane of the way back, so the car reaches as far on the way in as on the way
-        -- out. The heading is continuous all along.
+        -- A U-turn at a dead end, a loop round the middle of the cell: from the middle of the edge by the right lane the
+        -- vehicle eases out to a circle of radius LOOP round the middle of the cell, drives half of it turning left
+        -- through the far half of the cell, and eases back to the right lane of the way out. The heading is continuous all
+        -- along. A U-turn anywhere else is counted as a mistake.
+        if exits(route[index * 2 - 1], route[index * 2]) > 1 then
+            count("town_bad_uturns")
+        else
+            count("town_dead_end_loops")
+        end
         local right_x, right_y = -d_in_y, d_in_x
         local start_angle = math.atan(d_in_y, d_in_x)
-        local arc = LANE * math.pi
+        local ease = LOOP - LANE
+        local arc = LOOP * math.pi
         local total = 1 + arc
+        local function eased(u)
+            return 3 * u * u - 2 * u * u * u, (6 * u - 6 * u * u) * ease * 2
+        end
+        local function at(side, along)
+            return cx + right_x * side + d_in_x * along, cy + right_y * side + d_in_y * along
+        end
         return total, function(t)
             local s = t * total
             if s < 0.5 then
-                return cx - d_in_x * (0.5 - s) + right_x * LANE, cy - d_in_y * (0.5 - s) + right_y * LANE, start_angle
+                local value, slope = eased(s * 2)
+                local x, y = at(LANE + ease * value, s - 0.5)
+                return x, y, start_angle + math.atan(slope)
             elseif s < 0.5 + arc then
-                local phi = (s - 0.5) / LANE
-                return cx + LANE * (right_x * math.cos(phi) + d_in_x * math.sin(phi)),
-                       cy + LANE * (right_y * math.cos(phi) + d_in_y * math.sin(phi)),
-                       start_angle - phi
+                local phi = (s - 0.5) / LOOP
+                local x, y = at(LOOP * math.cos(phi), LOOP * math.sin(phi))
+                return x, y, start_angle - phi
             end
-            local back = s - 0.5 - arc
-            return cx - d_in_x * back - right_x * LANE, cy - d_in_y * back - right_y * LANE, start_angle - math.pi
+            local back = (s - 0.5 - arc) * 2
+            local value, slope = eased(back)
+            local x, y = at(-(LOOP - ease * value), -back * 0.5)
+            return x, y, start_angle - math.pi - math.atan(slope)
         end
     end
     -- A straight run, or half of one in the first and the last cell of the route.
@@ -247,7 +314,12 @@ local function take_route(vehicle)
     vehicle.route = cells
     vehicle.index = 1
     vehicle.t = 0
-    vehicle.length, vehicle.curve = cell_path(cells, 1)
+    -- The way the vehicle was heading only matters when the route turns back (at a dead end).
+    local entry_x, entry_y = nil, nil
+    if vehicle.dir_x ~= nil and (cells[3] - cells[1]) * vehicle.dir_x + (cells[4] - cells[2]) * vehicle.dir_y < 0 then
+        entry_x, entry_y = vehicle.dir_x, vehicle.dir_y
+    end
+    vehicle.length, vehicle.curve = cell_path(cells, 1, entry_x, entry_y)
     publish(vehicle)
     local x, y, angle = vehicle.curve(0)
     if angle ~= nil then
@@ -268,8 +340,10 @@ local function poll(vehicle, dt)
         if status == "found" then
             take_route(vehicle)
         elseif status ~= "pending" then
+            -- No way there without turning back: another destination, asked for at once.
             release(vehicle)
-            vehicle.retry = RETRY_SECONDS
+            vehicle.dest = nil
+            vehicle.retry = 0
         end
         return
     end
@@ -311,8 +385,8 @@ local function replan(vehicle)
     vehicle.version = path.get_version(map_id)
     count("town_replans")
     local entry_x, entry_y = direction(route, vehicle.index - 1)
-    local stop = vehicle.stops[vehicle.stop]
-    local cells = path.find_now(map_id, vehicle.cell_x, vehicle.cell_y, stop[1], stop[2])
+    local cells = path.find_now(map_id, vehicle.cell_x, vehicle.cell_y, vehicle.dest[1], vehicle.dest[2],
+        { no_reverse = true, heading_x = entry_x, heading_y = entry_y })
     if cells == nil or #cells < 2 then
         vehicle.route = nil
         publish(vehicle)
@@ -336,7 +410,7 @@ local function arrive(vehicle)
     publish(vehicle)
     gamestate.set("town_trips", gamestate.get("town_trips", 0) + 1)
     gamestate.set("town_money", gamestate.get("town_money", 0) + TRIP_PAY)
-    next_stop(vehicle)
+    vehicle.dest = nil
     ask(vehicle)
 end
 
@@ -366,10 +440,10 @@ local function drive(vehicle, dt)
         end
         vehicle.index = vehicle.index + 1
         vehicle.t = 0
-        vehicle.length, vehicle.curve = cell_path(route, vehicle.index)
         vehicle.slide_x, vehicle.slide_y, vehicle.slide_angle = 0, 0, 0
         vehicle.stranded = false
         vehicle.prev_x, vehicle.prev_y = vehicle.cell_x, vehicle.cell_y
+        vehicle.dir_x, vehicle.dir_y = direction(route, vehicle.index - 1)
         vehicle.cell_x, vehicle.cell_y = route[vehicle.index * 2 - 1], route[vehicle.index * 2]
         publish(vehicle)
         if path.get_version(map_id) ~= vehicle.version then
@@ -379,6 +453,8 @@ local function drive(vehicle, dt)
                 return
             end
             last = #route // 2
+        else
+            vehicle.length, vehicle.curve = cell_path(route, vehicle.index)
         end
     end
     local x, y, angle = vehicle.curve(vehicle.t)
@@ -396,26 +472,12 @@ local function drive(vehicle, dt)
     end
 end
 
-local shown = false
-
--- F3 (the `nav_debug` action) shows or hides the road graph and the route of each vehicle.
+-- F3 (the `nav_debug` action) shows or hides the road graph and the route of each vehicle, which the overlay always holds.
 local function update_debug()
     if input.is_action_just_pressed("nav_debug") then
         path.set_debug(not path.get_debug())
     end
-    local visible = path.get_debug()
-    gamestate.set("town_debug", visible and 1 or 0)
-    if visible == shown then
-        return
-    end
-    shown = visible
-    if visible then
-        for _, vehicle in ipairs(FLEET) do
-            publish(vehicle)
-        end
-    else
-        path.clear_routes(map_id)
-    end
+    gamestate.set("town_debug", path.get_debug() and 1 or 0)
 end
 
 function on_update(dt)
