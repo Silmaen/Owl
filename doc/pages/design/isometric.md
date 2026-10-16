@@ -113,9 +113,12 @@ The first step on the unmerged `Feature/KickoffIsometricRenderer` branch (2026-0
 - Procedural Python generator under `tools/` (Poetry, Pillow), seeded and deterministic, output committed: terrain ×
   19 slopes, foundations, tracks and roads, a few sliced buildings, vehicles. It writes albedo plus normal and depth
   atlases on the same grid, one set per zoom level or mips.
-- `sample_project/scenes/iso_town.owl`: a Transport Tycoon-style town on two height plateaus linked by ramps, roads,
-  a vehicle loop, a mouse "build road" tool in Lua, the shared HUD, and a scene mixing isometric with another style.
-  Game rules stay in Lua in the sample project.
+- `sample_project/scenes/iso_town.owl`: a Transport Tycoon-style town on a 24×24 sloped map (a hill, a one-step embankment under the north street), a ring
+  road and two streets along both axes, buildings from the generated sheet, three vehicles looping on the ring, a mouse
+  / keyboard / gamepad "build road" and bulldoze tool in Lua, its own `.owlhud`, and a 2D sky with clouds behind the
+  isometric layer. Game rules stay in Lua in the sample project; the Lua `isometric` table (pick, cells, slope,
+  height) is the only engine support. A raycast or voxel layer cannot join the stack of this scene: both cast from a
+  first-person camera, the town has an orthographic one.
 
 ### Tests
 
@@ -142,7 +145,7 @@ It writes into `textures/iso/`, `tilesets/` and `tilemaps/` of the project:
 
 | Output                                 | Content                                                                                                                           |
 |----------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------|
-| `tiles.png`                            | 16-column atlas of 64×48 tiles: 11 flat terrains, 18 slopes of 9 terrains, 2 foundation sets                                      |
+| `tiles.png`                            | 16-column atlas of 64×48 tiles: 12 flat terrains, 18 slopes of 10 terrains, 2 foundation sets (road along Y included)                                      |
 | `buildings.png`, `buildings.json`      | Per-footprint-tile slices (64×128) of five buildings, with each slice's 3D box and rectangle                                      |
 | `cottage`, `tower`, `oak`, `pine`, `…` | Whole sprites, bottom centre on the front corner of the footprint                                                                 |
 | `smoke.png`                            | Translucent puff                                                                                                                  |
@@ -185,6 +188,12 @@ Same Null-backend measures as above:
 | Frame, zoom 1, 5 000 vehicles over the whole map | 267 µs  | 125 µs  | < 2 ms |
 | Frame, zoom 1, 5 000 vehicles in view            | 308 µs  | 178 µs  | < 2 ms |
 | Frame, zoomed out ×4 (51 200 cells in 3 chunks)  | 1.43 ms | 17 µs   | < 4 ms |
+
+ISO5 demo (2026-10-16): `sample_project/scenes/iso_town.owl` (**O** from the main menu), the road along Y, a `marker`
+prop and `iso_town.owltilemap` from the generator, `scripts/iso_town.lua`, `iso_town_traffic.lua` and `iso_cloud.lua`,
+`huds/iso_town.owlhud`, the `build`, `bulldoze`, `town_tool` and `cursor` actions, the Lua `isometric.*` functions and
+`ui.is_mouse_over_ui`, the `iso_town` and `iso_town_actions` scenarios and the `iso_town` image test (640 × 360, both
+backends).
 
 ## Later
 
