@@ -13,8 +13,8 @@ from dataclasses import dataclass
 
 from PIL import Image
 
-from .common import RGB, TILE_W, Layers, fbm, hash01, mix, scale_color, value_noise
-from .solids import Ellipsoid, Hit, Rendered, Shader, Solid, box, gable, pyramid, render
+from .common import RGB, TILE_W, Layers, Vec3, fbm, hash01, mix, scale_color, value_noise
+from .solids import Convex, Ellipsoid, Hit, Rendered, Shader, Solid, box, gable, pyramid, render
 
 SLICE_HEIGHT = 128
 """Height in pixels, at zoom 1, of a building slice: the 32 pixels diamond plus 96 pixels of relief."""
@@ -347,26 +347,46 @@ def _pine() -> list[Solid]:
     ]
 
 
-def _vehicle(length: float, width: float, body: RGB, cargo: RGB | None, along_x: bool) -> list[Solid]:
+def _vehicle(length: float, width: float, body: RGB, cargo: RGB | None, heading: int) -> list[Solid]:
     """
-    A car or a truck whose front ground corner is the front corner of the tile, where the sprite is anchored.
+    A car or a truck standing at the centre of its tile, heading along one of the eight ground directions.
+
+    The engine puts the front corner of the tile on the entity, so a vehicle at world position ``p`` is drawn centred on
+    that tile whatever its heading: the entity sits at ``p + (0.5, 0.5)``.
 
     :param length: Length along its heading, in tiles.
     :param width: Width across its heading, in tiles.
     :param body: Paint of the body.
     :param cargo: Colour of a cargo box behind the cab, None for a car.
-    :param along_x: Whether it heads along x (towards the lower right) or along y (towards the lower left).
+    :param heading: Heading in steps of 45 degrees counted from +x towards +y (0: +x, lower right; 2: +y, lower left).
     :return: The solids.
     """
     glass = plain((58.0, 78.0, 104.0), 0.04)
     tyre = plain((34.0, 34.0, 38.0), 0.04)
+    headlight = plain((252.0, 238.0, 170.0), 0.0)
+    taillight = plain((198.0, 30.0, 28.0), 0.0)
+    angle = math.radians(45.0 * heading)
+    forward = (math.cos(angle), math.sin(angle))
+    side = (-forward[1], forward[0])
 
     def oriented(
         low: float, high: float, side_low: float, side_high: float, bottom: float, top: float, shader: Shader
     ) -> Solid:
-        a, b = 1.0 - length + low, 1.0 - length + high
-        c, d = 1.0 - width + side_low, 1.0 - width + side_high
-        return box((a, c, bottom), (b, d, top), shader) if along_x else box((c, a, bottom), (d, b, top), shader)
+        """A box from ``low`` to ``high`` along the heading (rear to front) and across it, around the tile centre."""
+        a_low, a_high = low - length / 2.0, high - length / 2.0
+        c_low, c_high = side_low - width / 2.0, side_high - width / 2.0
+        centre = (0.5, 0.5)
+        along = forward[0] * centre[0] + forward[1] * centre[1]
+        across = side[0] * centre[0] + side[1] * centre[1]
+        planes: list[tuple[Vec3, float]] = [
+            ((forward[0], forward[1], 0.0), a_high + along),
+            ((-forward[0], -forward[1], 0.0), -a_low - along),
+            ((side[0], side[1], 0.0), c_high + across),
+            ((-side[0], -side[1], 0.0), -c_low - across),
+            ((0.0, 0.0, 1.0), top),
+            ((0.0, 0.0, -1.0), -bottom),
+        ]
+        return Convex(planes, top, shader)
 
     solids: list[Solid] = [
         oriented(0.0, length, 0.0, width, 0.07, 0.3, plain(body)),
@@ -374,24 +394,41 @@ def _vehicle(length: float, width: float, body: RGB, cargo: RGB | None, along_x:
         oriented(length * 0.72, length * 0.86, -0.02, width + 0.02, 0.0, 0.14, tyre),
     ]
     if cargo is None:
-        solids.append(oriented(length * 0.3, length * 0.7, 0.03, width - 0.03, 0.3, 0.5, glass))
+        solids.append(oriented(length * 0.22, length * 0.62, 0.03, width - 0.03, 0.3, 0.5, glass))
     else:
         solids.append(oriented(length * 0.62, length * 0.94, 0.03, width - 0.03, 0.3, 0.5, glass))
         solids.append(oriented(0.0, length * 0.58, 0.0, width, 0.3, 0.58, plain(cargo)))
+    for low, high in ((0.02, 0.08), (width - 0.08, width - 0.02)):
+        solids.append(oriented(length - 0.02, length + 0.012, low, high, 0.12, 0.22, headlight))
+        solids.append(oriented(-0.012, 0.02, low, high, 0.12, 0.22, taillight))
     return solids
 
 
-VEHICLES: list[ObjectSpec] = [
-    ObjectSpec("car_x", (1, 1), 64, lambda: _vehicle(0.55, 0.26, (196.0, 52.0, 48.0), None, True), 301),
-    ObjectSpec("car_y", (1, 1), 64, lambda: _vehicle(0.55, 0.26, (196.0, 52.0, 48.0), None, False), 302),
-    ObjectSpec(
-        "truck_x", (1, 1), 64, lambda: _vehicle(0.85, 0.32, (62.0, 108.0, 168.0), (226.0, 222.0, 210.0), True), 303
-    ),
-    ObjectSpec(
-        "truck_y", (1, 1), 64, lambda: _vehicle(0.85, 0.32, (62.0, 108.0, 168.0), (226.0, 222.0, 210.0), False), 304
-    ),
+VEHICLE_HEADINGS = 8
+"""Headings drawn per vehicle, every 45 degrees from +x towards +y (frame ``i`` heads along ``45 * i`` degrees)."""
+
+VEHICLE_MODELS: list[tuple[str, float, float, RGB, RGB | None]] = [
+    ("car", 0.55, 0.26, (196.0, 52.0, 48.0), None),
+    ("truck", 0.85, 0.32, (62.0, 108.0, 168.0), (226.0, 222.0, 210.0)),
 ]
-"""Vehicles, one cell each, packed in the order of this list into the vehicle sheet (a 4 x 1 spritesheet)."""
+"""The vehicle models: name, length, width, body paint and cargo colour."""
+
+
+def _vehicle_spec(model: int, heading: int) -> ObjectSpec:
+    name, length, width, body, cargo = VEHICLE_MODELS[model]
+    return ObjectSpec(
+        f"{name}_{heading}",
+        (1, 1),
+        64,
+        lambda: _vehicle(length, width, body, cargo, heading),
+        301 + model * VEHICLE_HEADINGS + heading,
+    )
+
+
+VEHICLES: list[ObjectSpec] = [
+    _vehicle_spec(model, heading) for model in range(len(VEHICLE_MODELS)) for heading in range(VEHICLE_HEADINGS)
+]
+"""Vehicles, one cell each: one row of ``VEHICLE_HEADINGS`` headings per model in the vehicle sheet."""
 
 BUILDINGS: list[ObjectSpec] = [
     ObjectSpec("cottage", (1, 1), 80, _cottage, 101),

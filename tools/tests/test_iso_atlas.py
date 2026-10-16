@@ -6,6 +6,8 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
+from collections.abc import Callable
 from pathlib import Path
 
 import pytest
@@ -14,7 +16,16 @@ from PIL import Image, ImageStat
 from tools.iso_atlas import atlas, town_map
 from tools.iso_atlas import terrain as terrain_module
 from tools.iso_atlas.common import TILE_H, TILE_W, Layers
-from tools.iso_atlas.objects import BUILDINGS, PROPS, SLICE_HEIGHT, VEHICLES, render_object, slice_object
+from tools.iso_atlas.objects import (
+    BUILDINGS,
+    PROPS,
+    SLICE_HEIGHT,
+    VEHICLE_HEADINGS,
+    VEHICLE_MODELS,
+    VEHICLES,
+    render_object,
+    slice_object,
+)
 from tools.iso_atlas.terrain import SLOPE_COUNT, SLOPES
 
 SEED = 1
@@ -123,15 +134,51 @@ def test_objects_fit_their_canvas() -> None:
         assert rendered.layers.albedo.getchannel("A").getbbox() is not None, spec.name
 
 
-def test_vehicle_sheet_has_one_drawn_cell_per_vehicle() -> None:
+def _vehicle_cell(sheet: Layers, model: int, heading: int) -> Image.Image:
+    left, top = heading * TILE_W, model * atlas.VEHICLE_HEIGHT
+    return sheet.albedo.crop((left, top, left + TILE_W, top + atlas.VEHICLE_HEIGHT))
+
+
+def test_vehicle_sheet_draws_every_heading_of_every_model() -> None:
     sheet = atlas.build_vehicles(SEED)
-    assert sheet.albedo.size == (len(VEHICLES) * TILE_W, atlas.VEHICLE_HEIGHT)
-    for index in range(len(VEHICLES)):
-        cell = sheet.albedo.crop((index * TILE_W, 0, (index + 1) * TILE_W, atlas.VEHICLE_HEIGHT))
-        box = cell.getchannel("A").getbbox()
-        assert box is not None, index
-        assert box[3] >= atlas.VEHICLE_HEIGHT - 4, "the front corner of the vehicle is the bottom edge"
+    assert sheet.albedo.size == (VEHICLE_HEADINGS * TILE_W, len(VEHICLE_MODELS) * atlas.VEHICLE_HEIGHT)
+    assert len(VEHICLES) == VEHICLE_HEADINGS * len(VEHICLE_MODELS)
+    for model in range(len(VEHICLE_MODELS)):
+        cells = [_vehicle_cell(sheet, model, heading) for heading in range(VEHICLE_HEADINGS)]
+        for heading, cell in enumerate(cells):
+            box = cell.getchannel("A").getbbox()
+            assert box is not None, (model, heading)
+            assert box[0] >= 4 and box[2] <= TILE_W - 4, "the vehicle stays over its tile"
+            assert box[3] <= atlas.VEHICLE_HEIGHT - 4, "the vehicle is centred on its tile, above the front corner"
+        assert len({cell.tobytes() for cell in cells}) == VEHICLE_HEADINGS, "every heading has its own picture"
     assert _digest(atlas.build_vehicles(SEED)) == _digest(sheet)
+
+
+def test_vehicle_headings_follow_the_ground_axes_on_screen() -> None:
+    # The truck has its cab (dark glass) at the front and a white cargo box behind: the cab sits further along the
+    # heading than the cargo. +x runs to the lower right of the screen and +y to the lower left.
+    sheet = atlas.build_vehicles(SEED)
+    truck = next(i for i, model in enumerate(VEHICLE_MODELS) if model[4] is not None)
+
+    def centroid(heading: int, wanted: Callable[[int, int, int], bool]) -> tuple[float, float]:
+        cell = _vehicle_cell(sheet, truck, heading).convert("RGBA")
+        points = [
+            (x, y)
+            for x in range(TILE_W)
+            for y in range(atlas.VEHICLE_HEIGHT)
+            if cell.getpixel((x, y))[3] > 0 and wanted(*cell.getpixel((x, y))[:3])
+        ]
+        assert points, heading
+        return sum(p[0] for p in points) / len(points), sum(p[1] for p in points) / len(points)
+
+    for heading in range(VEHICLE_HEADINGS):
+        cargo = centroid(heading, lambda r, g, b: min(r, g, b) > 190)
+        cab = centroid(heading, lambda r, g, b: b > r + 20 and r + g + b < 270)
+        angle = math.radians(45.0 * heading)
+        across = math.cos(angle) - math.sin(angle)
+        # Only the screen column tells the front: the cargo box is taller, which confuses the rows.
+        if abs(across) > 0.1:
+            assert (cab[0] - cargo[0]) * across > 0.0, heading
 
 
 def test_generate_writes_the_expected_files(tmp_path: Path) -> None:
