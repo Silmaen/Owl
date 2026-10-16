@@ -259,6 +259,17 @@ INSTANTIATE_TEST_SUITE_P(HudWindows, RenderImage,
 												iInfo.param.size.x(), iInfo.param.size.y());
 						 });
 
+// A scroll view of buttons (placed by a column layout, scrolled by 40, with its bar) beside a list of 40 rows (row 5
+// selected, scrolled by 66): the content cut by the scissor, the rows in view only; at a scale of 1 and of 1.5.
+INSTANTIATE_TEST_SUITE_P(HudScroll, RenderImage,
+						 testing::Values(RenderCase{"hud_scroll", "vulkan"}, RenderCase{"hud_scroll", "opengl"},
+										 RenderCase{"hud_scroll", "vulkan", {480, 270}},
+										 RenderCase{"hud_scroll", "opengl", {480, 270}}),
+						 [](const testing::TestParamInfo<RenderCase>& iInfo) -> std::string {
+							 return std::format("{}_{}_{}x{}", iInfo.param.scene, iInfo.param.backend,
+												iInfo.param.size.x(), iInfo.param.size.y());
+						 });
+
 // Keyboard and gamepad focus: the button flagged `initial` takes it when the scene plays and is framed in gold, among
 // two other buttons and a slider; at a scale of 1 and of 1.5.
 INSTANTIATE_TEST_SUITE_P(HudFocus, RenderImage,

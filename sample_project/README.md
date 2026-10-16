@@ -139,6 +139,7 @@ it directly.
 - [x] UiRect, UiText, UiButton, UiSlider, UiProgressBar, UiImage, UiPanel
 - [x] UiWindow, UiLayout, UiTooltip, UiToolCursor (the "Controls" window of `huds/gameplay.owlhud`)
 - [x] UiFocus (slots of the inventory window, `onFocusCallback`) and a window with a grid `UiLayout` (`huds/inventory.owlhud`)
+- [x] UiList (the journal of the inventory window: a model grown by the script, only the rows in view bound with `onBindCallback` and `ui.list_set_row`, `onSelectCallback`, wheel and bar)
 
 ### Lua API Coverage
 - [x] `transform` (get/set position, rotation, scale)

@@ -1,0 +1,153 @@
+Scene: RenderTestHudScroll
+EnabledRenderers:
+- {Name: raycast_world, Enabled: false}
+Entities:
+- Entity: 9500000000000000117
+  Tag: {tag: Item8}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 9500000000000000102}
+  UiRect: {anchorMin: [0, 0], anchorMax: [0, 0], pivot: [0, 0], size: [96, 22], offset: [0, 0]}
+  UiButton: {normalColor: [0.15, 0.35, 0.65, 1], hoverColor: [0.25, 0.45, 0.75, 1], pressedColor: [0.1, 0.25, 0.5, 1], disabledColor: [0.15, 0.15, 0.15, 0.5], onClickCallback: ''}
+  UiText: {text: 'Button 8', color: [1, 1, 1, 1], fontSize: 11, horizontalAlignment: Center, verticalAlignment: Middle, wrap: false, fit: Overflow, minFontSize: 8, kerning: 0, lineSpacing: 0}
+- Entity: 9500000000000000116
+  Tag: {tag: Item7}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 9500000000000000102}
+  UiRect: {anchorMin: [0, 0], anchorMax: [0, 0], pivot: [0, 0], size: [96, 22], offset: [0, 0]}
+  UiButton: {normalColor: [0.15, 0.35, 0.65, 1], hoverColor: [0.25, 0.45, 0.75, 1], pressedColor: [0.1, 0.25, 0.5, 1], disabledColor: [0.15, 0.15, 0.15, 0.5], onClickCallback: ''}
+  UiText: {text: 'Button 7', color: [1, 1, 1, 1], fontSize: 11, horizontalAlignment: Center, verticalAlignment: Middle, wrap: false, fit: Overflow, minFontSize: 8, kerning: 0, lineSpacing: 0}
+- Entity: 9500000000000000115
+  Tag: {tag: Item6}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 9500000000000000102}
+  UiRect: {anchorMin: [0, 0], anchorMax: [0, 0], pivot: [0, 0], size: [96, 22], offset: [0, 0]}
+  UiButton: {normalColor: [0.15, 0.35, 0.65, 1], hoverColor: [0.25, 0.45, 0.75, 1], pressedColor: [0.1, 0.25, 0.5, 1], disabledColor: [0.15, 0.15, 0.15, 0.5], onClickCallback: ''}
+  UiText: {text: 'Button 6', color: [1, 1, 1, 1], fontSize: 11, horizontalAlignment: Center, verticalAlignment: Middle, wrap: false, fit: Overflow, minFontSize: 8, kerning: 0, lineSpacing: 0}
+- Entity: 9500000000000000114
+  Tag: {tag: Item5}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 9500000000000000102}
+  UiRect: {anchorMin: [0, 0], anchorMax: [0, 0], pivot: [0, 0], size: [96, 22], offset: [0, 0]}
+  UiButton: {normalColor: [0.15, 0.35, 0.65, 1], hoverColor: [0.25, 0.45, 0.75, 1], pressedColor: [0.1, 0.25, 0.5, 1], disabledColor: [0.15, 0.15, 0.15, 0.5], onClickCallback: ''}
+  UiText: {text: 'Button 5', color: [1, 1, 1, 1], fontSize: 11, horizontalAlignment: Center, verticalAlignment: Middle, wrap: false, fit: Overflow, minFontSize: 8, kerning: 0, lineSpacing: 0}
+- Entity: 9500000000000000113
+  Tag: {tag: Item4}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 9500000000000000102}
+  UiRect: {anchorMin: [0, 0], anchorMax: [0, 0], pivot: [0, 0], size: [96, 22], offset: [0, 0]}
+  UiButton: {normalColor: [0.15, 0.35, 0.65, 1], hoverColor: [0.25, 0.45, 0.75, 1], pressedColor: [0.1, 0.25, 0.5, 1], disabledColor: [0.15, 0.15, 0.15, 0.5], onClickCallback: ''}
+  UiText: {text: 'Button 4', color: [1, 1, 1, 1], fontSize: 11, horizontalAlignment: Center, verticalAlignment: Middle, wrap: false, fit: Overflow, minFontSize: 8, kerning: 0, lineSpacing: 0}
+- Entity: 9500000000000000112
+  Tag: {tag: Item3}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 9500000000000000102}
+  UiRect: {anchorMin: [0, 0], anchorMax: [0, 0], pivot: [0, 0], size: [96, 22], offset: [0, 0]}
+  UiButton: {normalColor: [0.15, 0.35, 0.65, 1], hoverColor: [0.25, 0.45, 0.75, 1], pressedColor: [0.1, 0.25, 0.5, 1], disabledColor: [0.15, 0.15, 0.15, 0.5], onClickCallback: ''}
+  UiText: {text: 'Button 3', color: [1, 1, 1, 1], fontSize: 11, horizontalAlignment: Center, verticalAlignment: Middle, wrap: false, fit: Overflow, minFontSize: 8, kerning: 0, lineSpacing: 0}
+- Entity: 9500000000000000111
+  Tag: {tag: Item2}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 9500000000000000102}
+  UiRect: {anchorMin: [0, 0], anchorMax: [0, 0], pivot: [0, 0], size: [96, 22], offset: [0, 0]}
+  UiButton: {normalColor: [0.15, 0.35, 0.65, 1], hoverColor: [0.25, 0.45, 0.75, 1], pressedColor: [0.1, 0.25, 0.5, 1], disabledColor: [0.15, 0.15, 0.15, 0.5], onClickCallback: ''}
+  UiText: {text: 'Button 2', color: [1, 1, 1, 1], fontSize: 11, horizontalAlignment: Center, verticalAlignment: Middle, wrap: false, fit: Overflow, minFontSize: 8, kerning: 0, lineSpacing: 0}
+- Entity: 9500000000000000110
+  Tag: {tag: Item1}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 9500000000000000102}
+  UiRect: {anchorMin: [0, 0], anchorMax: [0, 0], pivot: [0, 0], size: [96, 22], offset: [0, 0]}
+  UiButton: {normalColor: [0.15, 0.35, 0.65, 1], hoverColor: [0.25, 0.45, 0.75, 1], pressedColor: [0.1, 0.25, 0.5, 1], disabledColor: [0.15, 0.15, 0.15, 0.5], onClickCallback: ''}
+  UiText: {text: 'Button 1', color: [1, 1, 1, 1], fontSize: 11, horizontalAlignment: Center, verticalAlignment: Middle, wrap: false, fit: Overflow, minFontSize: 8, kerning: 0, lineSpacing: 0}
+- Entity: 9500000000000000103
+  Tag: {tag: List}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 9500000000000000101}
+  UiRect: {anchorMin: [0, 0], anchorMax: [0, 0], pivot: [0, 0], size: [140, 120], offset: [160, 30]}
+  UiList: {itemCount: 40, rowHeight: 20, rowSpacing: 2, selectedIndex: 4, scrollOffset: 66, wheelStep: 56, fontSize: 11}
+- Entity: 9500000000000000102
+  Tag: {tag: View}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 9500000000000000101}
+  UiRect: {anchorMin: [0, 0], anchorMax: [0, 0], pivot: [0, 0], size: [120, 120], offset: [20, 30]}
+  UiPanel: {backgroundColor: [0.05, 0.05, 0.08, 0.9], clipChildren: false}
+  UiScrollView: {vertical: true, horizontal: false, contentSize: [0, 0], scrollOffset: [0, 40], wheelStep: 48, showScrollBar: true, scrollBarWidth: 8}
+  UiLayout: {arrangement: Column, crossAlign: Start, spacing: 4, padding: 4, columns: 2, cellSize: [0, 0]}
+- Entity: 9500000000000000101
+  Tag: {tag: HudCanvas}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 0}
+  Canvas:
+    space: ScreenOverlay
+    sortOrder: 0
+    referenceResolution: [320, 180]
+    scaleMode: ScaleWithHeight
+- Entity: 9500000000000000102
+  Tag: {tag: Background}
+  Transform:
+    translation: [0, 0, -1]
+    rotation: [0, 0, 0]
+    scale: [30, 20, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 0}
+  BackgroundTexture:
+    mode: 0
+    type: 0
+    color: [0.16, 0.30, 0.20, 1]
+    topColor: [0.35, 0.50, 0.60, 1]
+- Entity: 9500000000000000101
+  Tag: {tag: MainCamera}
+  Transform:
+    translation: [0, 0, 5]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 0}
+  Camera:
+    camera: {projectionType: Orthographic, perspectiveFOV: 0.785398185, perspectiveNear: 0.00999999978, perspectiveFar: 1000,
+      orthographicSize: 8, orthographicNear: -1, orthographicFar: 10}
+    primary: true
+    fixedAspectRatio: false
