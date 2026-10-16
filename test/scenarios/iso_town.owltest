@@ -25,6 +25,9 @@ steps:
   # The right button bulldozes: the cell is refunded, the count follows.
   - input: {mouse: Right, mouse_pos: [448, 320], frames: 3}
   - expect: {gamestate: town_roads, equals: 1}
+  # Every vehicle plans its route again at its next cell boundary once the road graph changed.
+  - frames: 30
+  - expect: {gamestate: town_replans, greater: 0}
   # Building on a pavement plot is refused.
   - input: {mouse_pos: [704, 416], frames: 3}
   - expect: {gamestate: town_cursor_x, equals: 8}

@@ -143,6 +143,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Engine Demo vehicles turn back through a half circle swinging left across to the opposite lane, and plan their route again at the next cell boundary when roads are built or bulldozed (`town_replans`).
+- Play no longer leaves the runtime edits of `isometric.set_cell` in the edit scene: the running scene works on its own copy of the tilemap assets it shares with the edit scene, so Stop restores the map.
+- A Lua callback failing on every frame logs its error once, then a repeat counter at most once per second, instead of flooding the log.
 - `isometric.pick_cell` reads the mouse in viewport pixels, so the cell under the cursor is right when the game plays inside an Owl Nest viewport.
 - Owl Nest no longer crashes in the Stats panel after a Stop or a scene transition: the hovered entity of a replaced scene is dropped instead of read.
 - Owl Nest no longer crashes when Play is stopped from the viewport button or F7: the stop runs at the start of the next frame, not while the running scene is still being drawn.

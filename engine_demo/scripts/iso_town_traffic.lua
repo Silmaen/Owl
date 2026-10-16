@@ -7,13 +7,14 @@
 --
 -- Each vehicle owns a list of stops (cells of the road) and drives to the next one by the cheapest route. A trip pays
 -- `TRIP_PAY` into `town_money` and counts in `town_trips`; a route that a bulldozed road cut counts in `town_reroutes`.
--- A vehicle with no route waits and asks again when the graph changes.
+-- A vehicle with no route waits and asks again when the graph changes. Every vehicle plans its route again at its next
+-- cell boundary when the graph changed (`path.get_version`), so a new road is taken if shorter: `town_replans`.
 --
 -- Traffic keeps to the right as seen on screen. World +x runs to the lower right and +y to the lower left, so the right
 -- hand of a vehicle heading (dx, dy) is (-dy, dx): driving to the lower right it keeps to the lower left side of the
 -- road. A vehicle crosses each cell of its route from the middle of the edge it enters by to the middle of the edge it
 -- leaves by, LANE away from the middle of the road; in a corner it follows a quarter circle around the corner of the
--- cell, its heading turning with it. The sheet holds eight frames per model, every 45 degrees from +x towards +y.
+-- cell, its heading turning with it; a U-turn swings across to the other lane through a half circle, turning left. The sheet holds eight frames per model, every 45 degrees from +x towards +y.
 --
 -- The script counts what the scenario `iso_town.owltest` checks: `town_offroad` (updates a moving vehicle stood off the
 -- road), `town_frame_errors` (frame not matching the heading), `town_heading_errors` (moving away from its heading) and
@@ -73,25 +74,6 @@ local function wrap(angle)
     return (angle + math.pi) % (2 * math.pi) - math.pi
 end
 
--- Ask for a route from the cell the vehicle stands on (or leaves) to its stop.
-local function ask(vehicle)
-    local stop = vehicle.stops[vehicle.stop]
-    vehicle.request = path.find(map_id, vehicle.cell_x, vehicle.cell_y, stop[1], stop[2])
-    vehicle.version = path.get_version(map_id)
-    vehicle.retry = RETRY_SECONDS
-end
-
-local function next_stop(vehicle)
-    vehicle.stop = vehicle.stop % #vehicle.stops + 1
-end
-
-local function release(vehicle)
-    if vehicle.request ~= 0 then
-        path.release(map_id, vehicle.request)
-        vehicle.request = 0
-    end
-end
-
 function on_create()
     map_id = scene.find_entity("Ground")
     for _, vehicle in ipairs(FLEET) do
@@ -103,11 +85,13 @@ function on_create()
         vehicle.route = nil
         vehicle.request = 0
         vehicle.version = 0
+        vehicle.checked = 0
         vehicle.retry = 0
         ask(vehicle)
     end
     gamestate.set("town_trips", 0)
     gamestate.set("town_reroutes", 0)
+    gamestate.set("town_replans", 0)
     gamestate.set("town_offroad", 0)
     gamestate.set("town_frame_errors", 0)
     gamestate.set("town_heading_errors", 0)
@@ -145,10 +129,10 @@ local function direction(route, index)
 end
 
 -- The path through the cell `index` of the route: its length and a function giving the position and the heading angle
--- at a fraction of it.
-local function cell_path(route, index)
+-- at a fraction of it. `entry_x`, `entry_y` is the direction the vehicle came into the first cell by, when it did.
+local function cell_path(route, index, entry_x, entry_y)
     local cx, cy = route[index * 2 - 1] + 0.5, route[index * 2] + 0.5
-    local in_x, in_y
+    local in_x, in_y = entry_x, entry_y
     if index > 1 then
         in_x, in_y = direction(route, index - 1)
     end
@@ -170,6 +154,19 @@ local function cell_path(route, index)
             return pivot_x + radius * (-d_out_x * math.cos(phi) + d_in_x * math.sin(phi)),
                    pivot_y + radius * (-d_out_y * math.cos(phi) + d_in_y * math.sin(phi)),
                    start_angle + cross * phi
+        end
+    end
+    if cross == 0 and in_x ~= nil and out_x ~= nil and in_x * out_x + in_y * out_y < 0 then
+        -- A U-turn: a half circle on the middle of the entry edge, from the right lane of the way in across to the right
+        -- lane of the way out. The heading turns left (against the sense of the corners to the right).
+        local edge_x, edge_y = cx - d_in_x * 0.5, cy - d_in_y * 0.5
+        local right_x, right_y = -d_in_y, d_in_x
+        local start_angle = math.atan(d_in_y, d_in_x)
+        return LANE * math.pi, function(t)
+            local phi = t * math.pi
+            return edge_x + LANE * (right_x * math.cos(phi) + d_in_x * math.sin(phi)),
+                   edge_y + LANE * (right_y * math.cos(phi) + d_in_y * math.sin(phi)),
+                   start_angle - phi
         end
     end
     -- A straight run, or half of one in the first and the last cell of the route.
@@ -199,6 +196,10 @@ local function take_route(vehicle)
     if angle ~= nil then
         vehicle.slide_x, vehicle.slide_y = vehicle.x - x, vehicle.y - y
         vehicle.slide_angle = wrap(vehicle.angle - angle)
+        if math.abs(vehicle.slide_angle) > math.pi - 0.01 then
+            -- Turning back: swing round through the left, not the right.
+            vehicle.slide_angle = math.pi
+        end
     else
         vehicle.slide_x, vehicle.slide_y, vehicle.slide_angle = 0, 0, 0
     end
@@ -223,13 +224,14 @@ local function poll(vehicle, dt)
     end
 end
 
--- A road of the route is gone: stop and look for another one from the cell the vehicle is in.
+-- A road of the route is gone: stop and look for another one from the cell the vehicle is in. A graph change that leaves
+-- the route whole is handled at the next cell boundary (`replan`).
 local function check_route(vehicle)
     local version = path.get_version(map_id)
-    if vehicle.route == nil or version == vehicle.version then
+    if vehicle.route == nil or version == vehicle.version or version == vehicle.checked then
         return
     end
-    vehicle.version = version
+    vehicle.checked = version
     local route = vehicle.route
     local last = #route // 2
     for index = vehicle.index + 1, last do
@@ -242,6 +244,27 @@ local function check_route(vehicle)
             return
         end
     end
+end
+
+-- The graph changed: plan the route again from the cell the vehicle just entered, its path through that cell
+-- continuing the way it came in. Without a route, the vehicle stops and asks.
+local function replan(vehicle)
+    local route = vehicle.route
+    vehicle.version = path.get_version(map_id)
+    count("town_replans")
+    local entry_x, entry_y = direction(route, vehicle.index - 1)
+    local stop = vehicle.stops[vehicle.stop]
+    local cells = path.find_now(map_id, vehicle.cell_x, vehicle.cell_y, stop[1], stop[2])
+    if cells == nil or #cells < 2 then
+        vehicle.route = nil
+        ask(vehicle)
+        return
+    end
+    vehicle.route = cells
+    vehicle.index = 1
+    vehicle.t = 0
+    vehicle.slide_x, vehicle.slide_y, vehicle.slide_angle = 0, 0, 0
+    vehicle.length, vehicle.curve = cell_path(cells, 1, entry_x, entry_y)
 end
 
 -- The vehicle reached the last cell of its route.
@@ -282,6 +305,14 @@ local function drive(vehicle, dt)
         vehicle.length, vehicle.curve = cell_path(route, vehicle.index)
         vehicle.slide_x, vehicle.slide_y, vehicle.slide_angle = 0, 0, 0
         vehicle.cell_x, vehicle.cell_y = route[vehicle.index * 2 - 1], route[vehicle.index * 2]
+        if path.get_version(map_id) ~= vehicle.version then
+            replan(vehicle)
+            route = vehicle.route
+            if route == nil then
+                return
+            end
+            last = #route // 2
+        end
     end
     local x, y, angle = vehicle.curve(vehicle.t)
     local fade = 1 - vehicle.t
