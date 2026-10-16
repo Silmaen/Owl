@@ -134,6 +134,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- The HUD Editor button of the ribbon has its own dual-colour ribbon icon instead of the `.owlhud` asset icon.
 - The raycast demo hint shows its text again (the `HUDHint` widget had no rectangle nor text).
 - The inspector reads a script's properties from its file in the asset folders and keeps them when the script does
   not load, instead of emptying them (scripts then ran with `nil` properties in Play).

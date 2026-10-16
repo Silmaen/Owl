@@ -86,6 +86,7 @@ void buildIconBank() {
 		{"ribbon_axes",     resolve("icons/ribbon/axes")},
 		{"ribbon_frame_scene", resolve("icons/ribbon/frame_scene")},
 		{"ribbon_viewpoint", resolve("icons/ribbon/viewpoint")},
+		{"ribbon_hud",      resolve("icons/ribbon/hud")},
 		// Visibility icons
 		{"camera_on",         resolve("icons/visibility/camera_on")},
 		{"camera_off",        resolve("icons/visibility/camera_off")},
