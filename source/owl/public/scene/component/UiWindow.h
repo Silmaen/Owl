@@ -20,7 +20,7 @@ namespace owl::scene::component {
  *
  * The window rectangle (`UiRect`) includes the title bar. Its children are laid out in the content area under the bar
  * and clipped to it. A window stays inside the screen, blocks the mouse for the world and the widgets under it, and is
- * drawn as its own batch, so it covers the text of the windows below. Closing hides the entity (`Visibility`); a script
+ * drawn after the windows below it (its rank in the `Renderer2D` sort key), so it covers their text. Closing hides the entity (`Visibility`); a script
  * shows it again with `ui.set_visible`.
  */
 struct OWL_API UiWindow {

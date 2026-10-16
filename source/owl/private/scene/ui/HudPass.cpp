@@ -60,10 +60,16 @@ auto fontOrDefault(const shared<data::fonts::Font>& iFont) -> shared<data::fonts
 	return iFont;
 }
 
+// Layer of a primitive inside its window: text over circles over the other shapes, as a widget label over panels.
+enum struct HudLayer : uint8_t { Shape, Circle, Text };
+
+// Sort key of a HUD primitive: the rank of its window (a window covers those under it), then the layer.
+auto hudDepth(const float iRank, const HudLayer iLayer) -> float { return iRank * 4.f + static_cast<float>(iLayer); }
+
 // A text laid out in a rectangle of the pixel layout, its font size given in reference pixels.
 void drawBoxedText(const component::UiRect::Bounds& iBox, const float iScale, const float iHeight,
 				   const std::string& iText, const math::vec4& iColor, const float iFontSize,
-				   const data::fonts::HorizontalAlignment iHorizontal, const int iEntityId) {
+				   const data::fonts::HorizontalAlignment iHorizontal, const int iEntityId, const float iRank) {
 	math::Transform transform = pixelTransform(iBox, iHeight);
 	transform.scale() = {iScale, iScale, 1.f};
 	renderer::Renderer2D::drawString({.transform = transform,
@@ -74,37 +80,46 @@ void drawBoxedText(const component::UiRect::Bounds& iBox, const float iScale, co
 												 .boxSize = iBox.size / iScale,
 												 .horizontal = iHorizontal,
 												 .vertical = data::fonts::VerticalAlignment::Middle},
-									  .entityId = iEntityId});
+									  .entityId = iEntityId,
+									  .depth = hudDepth(iRank, HudLayer::Text)});
 }
 
-void drawWindow(const component::UiWindow& iWindow, const HudNode& iNode, const float iHeight, const int iEntityId) {
+void drawWindow(const component::UiWindow& iWindow, const HudNode& iNode, const float iHeight, const int iEntityId,
+				const float iRank) {
 	static constexpr math::vec4 closeColor{0.65f, 0.18f, 0.18f, 1.f};
-	renderer::Renderer2D::drawQuad(
-			{.transform = pixelTransform(iNode.bounds, iHeight), .color = iWindow.bodyColor, .entityId = iEntityId});
+	renderer::Renderer2D::drawQuad({.transform = pixelTransform(iNode.bounds, iHeight),
+									.color = iWindow.bodyColor,
+									.entityId = iEntityId,
+									.depth = hudDepth(iRank, HudLayer::Shape)});
 	const component::UiRect::Bounds bar{
 			.position = iNode.bounds.position,
 			.size = {iNode.bounds.size.x(), std::min(iWindow.titleBarHeight * iNode.scale, iNode.bounds.size.y())}};
-	renderer::Renderer2D::drawQuad(
-			{.transform = pixelTransform(bar, iHeight), .color = iWindow.titleColor, .entityId = iEntityId});
+	renderer::Renderer2D::drawQuad({.transform = pixelTransform(bar, iHeight),
+									.color = iWindow.titleColor,
+									.entityId = iEntityId,
+									.depth = hudDepth(iRank, HudLayer::Shape)});
 	const float margin = 6.f * iNode.scale;
 	const float buttonSize = iWindow.closable ? bar.size.y() : 0.f;
 	const component::UiRect::Bounds titleBox{
 			.position = {bar.position.x() + margin, bar.position.y()},
 			.size = {std::max(0.f, bar.size.x() - buttonSize - 2.f * margin), bar.size.y()}};
 	drawBoxedText(titleBox, iNode.scale, iHeight, iWindow.title, iWindow.titleTextColor, iWindow.titleFontSize,
-				  data::fonts::HorizontalAlignment::Left, iEntityId);
+				  data::fonts::HorizontalAlignment::Left, iEntityId, iRank);
 	if (!iWindow.closable)
 		return;
 	const component::UiRect::Bounds button{.position = {bar.position.x() + bar.size.x() - buttonSize, bar.position.y()},
 										   .size = {buttonSize, buttonSize}};
-	renderer::Renderer2D::drawQuad(
-			{.transform = pixelTransform(button, iHeight), .color = closeColor, .entityId = iEntityId});
+	renderer::Renderer2D::drawQuad({.transform = pixelTransform(button, iHeight),
+									.color = closeColor,
+									.entityId = iEntityId,
+									.depth = hudDepth(iRank, HudLayer::Shape)});
 	// U+00D7 MULTIPLICATION SIGN, in the Latin-1 range of the default charset.
 	drawBoxedText(button, iNode.scale, iHeight, "\xC3\x97", iWindow.titleTextColor, iWindow.titleFontSize * 1.3f,
-				  data::fonts::HorizontalAlignment::Center, iEntityId);
+				  data::fonts::HorizontalAlignment::Center, iEntityId, iRank);
 }
 
-void drawText(const Entity& iEntity, const HudNode& iNode, const math::Transform& iTransform, const int iEntityId) {
+void drawText(const Entity& iEntity, const HudNode& iNode, const math::Transform& iTransform, const int iEntityId,
+			  const float iRank) {
 	const auto& uiText = iEntity.getComponent<component::UiText>();
 	shared<data::fonts::Font> font = uiText.font;
 	if (!font && app::Application::instanced())
@@ -118,54 +133,70 @@ void drawText(const Entity& iEntity, const HudNode& iNode, const math::Transform
 									  .font = font,
 									  .color = uiText.color,
 									  .layout = uiText.getLayout(iNode.bounds.size / iNode.scale),
-									  .entityId = iEntityId});
+									  .entityId = iEntityId,
+									  .depth = hudDepth(iRank, HudLayer::Text)});
 }
 
-void drawSlider(const component::UiSlider& iSlider, const math::Transform& iTransform, const int iEntityId) {
-	renderer::Renderer2D::drawQuad({.transform = iTransform, .color = iSlider.trackColor, .entityId = iEntityId});
+void drawSlider(const component::UiSlider& iSlider, const math::Transform& iTransform, const int iEntityId,
+				const float iRank) {
+	renderer::Renderer2D::drawQuad({.transform = iTransform,
+									.color = iSlider.trackColor,
+									.entityId = iEntityId,
+									.depth = hudDepth(iRank, HudLayer::Shape)});
 	const float norm = iSlider.getNormalized();
 	if (norm > 0.f)
-		renderer::Renderer2D::drawQuad(
-				{.transform = leftFill(iTransform, norm), .color = iSlider.fillColor, .entityId = iEntityId});
+		renderer::Renderer2D::drawQuad({.transform = leftFill(iTransform, norm),
+										.color = iSlider.fillColor,
+										.entityId = iEntityId,
+										.depth = hudDepth(iRank, HudLayer::Shape)});
 	const float width = iTransform.scale().x();
 	const float height = iTransform.scale().y();
 	math::Transform handle = iTransform;
 	handle.scale() = {height, height, 1.f};
 	handle.translation().x() = iTransform.translation().x() - width * 0.5f + norm * width;
 
-	renderer::Renderer2D::drawQuad({.transform = handle, .color = iSlider.handleColor, .entityId = iEntityId});
+	renderer::Renderer2D::drawQuad({.transform = handle,
+									.color = iSlider.handleColor,
+									.entityId = iEntityId,
+									.depth = hudDepth(iRank, HudLayer::Shape)});
 }
 
 // One bar: its track and, when the content overflows, its thumb.
 void drawBar(const component::UiRect::Bounds& iTrack, const component::UiRect::Bounds& iThumb, const HudScroll& iScroll,
-			 const float iHeight, const int iEntityId) {
+			 const float iHeight, const int iEntityId, const float iRank) {
 	if (iTrack.size.x() <= 0.f || iTrack.size.y() <= 0.f)
 		return;
-	renderer::Renderer2D::drawQuad(
-			{.transform = pixelTransform(iTrack, iHeight), .color = iScroll.trackColor, .entityId = iEntityId});
-	renderer::Renderer2D::drawQuad(
-			{.transform = pixelTransform(iThumb, iHeight), .color = iScroll.thumbColor, .entityId = iEntityId});
+	renderer::Renderer2D::drawQuad({.transform = pixelTransform(iTrack, iHeight),
+									.color = iScroll.trackColor,
+									.entityId = iEntityId,
+									.depth = hudDepth(iRank, HudLayer::Shape)});
+	renderer::Renderer2D::drawQuad({.transform = pixelTransform(iThumb, iHeight),
+									.color = iScroll.thumbColor,
+									.entityId = iEntityId,
+									.depth = hudDepth(iRank, HudLayer::Shape)});
 }
 
-void drawScrollBars(const HudScroll& iScroll, const float iHeight, const int iEntityId) {
+void drawScrollBars(const HudScroll& iScroll, const float iHeight, const int iEntityId, const float iRank) {
 	const auto& geometry = iScroll.geometry;
 	if (geometry.verticalBar)
-		drawBar(geometry.verticalTrack, iScroll.verticalThumb(), iScroll, iHeight, iEntityId);
+		drawBar(geometry.verticalTrack, iScroll.verticalThumb(), iScroll, iHeight, iEntityId, iRank);
 	if (geometry.horizontalBar)
-		drawBar(geometry.horizontalTrack, iScroll.horizontalThumb(), iScroll, iHeight, iEntityId);
+		drawBar(geometry.horizontalTrack, iScroll.horizontalThumb(), iScroll, iHeight, iEntityId, iRank);
 }
 
 // The background and the texts of the rows in view; the others are never touched.
 void drawListRow(const component::UiList& iList, const size_t iRow, const component::UiRect::Bounds& iRowBox,
-				 const float iScale, const float iHeight, const int iEntityId) {
+				 const float iScale, const float iHeight, const int iEntityId, const float iRank) {
 	const auto index = static_cast<int32_t>(iRow);
 	math::vec4 background = iRow % 2 == 0 ? iList.rowColor : iList.rowAltColor;
 	if (index == iList.selectedIndex)
 		background = iList.selectedColor;
 	else if (index == iList.hoverIndex)
 		background = iList.hoverColor;
-	renderer::Renderer2D::drawQuad(
-			{.transform = pixelTransform(iRowBox, iHeight), .color = background, .entityId = iEntityId});
+	renderer::Renderer2D::drawQuad({.transform = pixelTransform(iRowBox, iHeight),
+									.color = background,
+									.entityId = iEntityId,
+									.depth = hudDepth(iRank, HudLayer::Shape)});
 	const auto* row = iList.findRow(iRow);
 	const float margin = 6.f * iScale;
 	float left = iRowBox.position.x() + margin;
@@ -176,7 +207,8 @@ void drawListRow(const component::UiList& iList, const size_t iRow, const compon
 		renderer::Renderer2D::drawQuad({.transform = pixelTransform(iconBox, iHeight),
 										.color = {1.f, 1.f, 1.f, 1.f},
 										.texture = row->icon,
-										.entityId = iEntityId});
+										.entityId = iEntityId,
+										.depth = hudDepth(iRank, HudLayer::Shape)});
 		left += side + margin;
 	}
 	const float right = iRowBox.position.x() + iRowBox.size.x() - margin;
@@ -184,14 +216,14 @@ void drawListRow(const component::UiList& iList, const size_t iRow, const compon
 											.size = {std::max(0.f, right - left), iRowBox.size.y()}};
 	const std::string text = row != nullptr ? row->text : std::format("Item {}", iRow + 1);
 	drawBoxedText(textBox, iScale, iHeight, text, iList.textColor, iList.fontSize,
-				  data::fonts::HorizontalAlignment::Left, iEntityId);
+				  data::fonts::HorizontalAlignment::Left, iEntityId, iRank);
 	if (row != nullptr && !row->detail.empty())
 		drawBoxedText(textBox, iScale, iHeight, row->detail, iList.textColor, iList.fontSize,
-					  data::fonts::HorizontalAlignment::Right, iEntityId);
+					  data::fonts::HorizontalAlignment::Right, iEntityId, iRank);
 }
 
 void drawList(const component::UiList& iList, const HudNode& iNode, const HudScroll& iScroll, const float iHeight,
-			  const int iEntityId) {
+			  const int iEntityId, const float iRank) {
 	const auto& viewport = iScroll.geometry.viewport;
 	const float pitch = iScroll.rowHeight + iScroll.rowSpacing;
 	const auto [first, end] =
@@ -201,22 +233,23 @@ void drawList(const component::UiList& iList, const HudNode& iNode, const HudScr
 				.position = {viewport.position.x(),
 							 viewport.position.y() + static_cast<float>(row) * pitch - iScroll.offset.y()},
 				.size = {viewport.size.x(), iScroll.rowHeight}};
-		drawListRow(iList, row, box, iNode.scale, iHeight, iEntityId);
+		drawListRow(iList, row, box, iNode.scale, iHeight, iEntityId, iRank);
 	}
 }
 
 void drawWidget(const Entity& iEntity, const HudNode& iNode, const math::Transform& iTransform, const float iHeight,
-				const HudScroll* iScroll) {
+				const HudScroll* iScroll, const float iRank) {
 	const int entityId = static_cast<int>(static_cast<entt::entity>(iEntity));
 	if (iEntity.hasComponent<component::UiWindow>())
-		drawWindow(iEntity.getComponent<component::UiWindow>(), iNode, iHeight, entityId);
+		drawWindow(iEntity.getComponent<component::UiWindow>(), iNode, iHeight, entityId, iRank);
 	if (iEntity.hasComponent<component::SpriteRenderer>()) {
 		const auto& sprite = iEntity.getComponent<component::SpriteRenderer>();
 		renderer::Renderer2D::drawQuad({.transform = iTransform,
 										.color = sprite.color,
 										.texture = sprite.texture,
 										.tilingFactor = sprite.tilingFactor,
-										.entityId = entityId});
+										.entityId = entityId,
+										.depth = hudDepth(iRank, HudLayer::Shape)});
 	}
 	if (iEntity.hasComponent<component::Text>()) {
 		const auto& [text, font, color, kerning, lineSpacing] = iEntity.getComponent<component::Text>();
@@ -225,40 +258,55 @@ void drawWidget(const Entity& iEntity, const HudNode& iNode, const math::Transfo
 										  .font = font,
 										  .color = color,
 										  .layout = {.kerning = kerning, .lineSpacing = lineSpacing},
-										  .entityId = entityId});
+										  .entityId = entityId,
+										  .depth = hudDepth(iRank, HudLayer::Text)});
 	}
 	if (iEntity.hasComponent<component::CircleRenderer>()) {
 		const auto& [color, thickness, fade] = iEntity.getComponent<component::CircleRenderer>();
-		renderer::Renderer2D::drawCircle(
-				{.transform = iTransform, .color = color, .thickness = thickness, .fade = fade, .entityId = entityId});
+		renderer::Renderer2D::drawCircle({.transform = iTransform,
+										  .color = color,
+										  .thickness = thickness,
+										  .fade = fade,
+										  .entityId = entityId,
+										  .depth = hudDepth(iRank, HudLayer::Circle)});
 	}
 	if (iEntity.hasComponent<component::UiPanel>())
 		renderer::Renderer2D::drawQuad({.transform = iTransform,
 										.color = iEntity.getComponent<component::UiPanel>().backgroundColor,
-										.entityId = entityId});
+										.entityId = entityId,
+										.depth = hudDepth(iRank, HudLayer::Shape)});
 	if (iEntity.hasComponent<component::UiImage>()) {
 		const auto& [texture, tint] = iEntity.getComponent<component::UiImage>();
-		renderer::Renderer2D::drawQuad(
-				{.transform = iTransform, .color = tint, .texture = texture, .entityId = entityId});
+		renderer::Renderer2D::drawQuad({.transform = iTransform,
+										.color = tint,
+										.texture = texture,
+										.entityId = entityId,
+										.depth = hudDepth(iRank, HudLayer::Shape)});
 	}
 	if (iEntity.hasComponent<component::UiText>())
-		drawText(iEntity, iNode, iTransform, entityId);
+		drawText(iEntity, iNode, iTransform, entityId, iRank);
 	if (iEntity.hasComponent<component::UiButton>())
 		renderer::Renderer2D::drawQuad({.transform = iTransform,
 										.color = iEntity.getComponent<component::UiButton>().getCurrentColor(),
-										.entityId = entityId});
+										.entityId = entityId,
+										.depth = hudDepth(iRank, HudLayer::Shape)});
 	if (iEntity.hasComponent<component::UiProgressBar>()) {
 		const auto& [value, backgroundColor, fillColor] = iEntity.getComponent<component::UiProgressBar>();
-		renderer::Renderer2D::drawQuad({.transform = iTransform, .color = backgroundColor, .entityId = entityId});
+		renderer::Renderer2D::drawQuad({.transform = iTransform,
+										.color = backgroundColor,
+										.entityId = entityId,
+										.depth = hudDepth(iRank, HudLayer::Shape)});
 		if (const float fraction = std::clamp(value, 0.f, 1.f); fraction > 0.f)
-			renderer::Renderer2D::drawQuad(
-					{.transform = leftFill(iTransform, fraction), .color = fillColor, .entityId = entityId});
+			renderer::Renderer2D::drawQuad({.transform = leftFill(iTransform, fraction),
+											.color = fillColor,
+											.entityId = entityId,
+											.depth = hudDepth(iRank, HudLayer::Shape)});
 	}
 	if (iEntity.hasComponent<component::UiSlider>())
-		drawSlider(iEntity.getComponent<component::UiSlider>(), iTransform, entityId);
+		drawSlider(iEntity.getComponent<component::UiSlider>(), iTransform, entityId, iRank);
 	if (iScroll != nullptr && iScroll->isList) {
-		drawList(iEntity.getComponent<component::UiList>(), iNode, *iScroll, iHeight, entityId);
-		drawScrollBars(*iScroll, iHeight, entityId);
+		drawList(iEntity.getComponent<component::UiList>(), iNode, *iScroll, iHeight, entityId, iRank);
+		drawScrollBars(*iScroll, iHeight, entityId, iRank);
 	}
 }
 
@@ -286,8 +334,9 @@ void drawCanvases(Scene& ioScene, const math::vec2ui& iViewport, const bool iEdi
 	const auto height = static_cast<float>(iViewport.y());
 	// Renderer2D draws Y-up: the Y-down layout is flipped here, so the glyphs keep their orientation.
 	renderer::Renderer2D::beginScene(pixelCamera(iViewport));
-	// A window is a batch of its own (its text over the quads of the windows below); a clip is a scissor.
+	// A window covers those under it through its rank in the sort key; a clip is a scissor.
 	size_t window = HudNode::noParent;
+	float rank = 0.f;
 	std::optional<component::UiRect::Bounds> clip;
 	const auto nodes = layout.getNodes();
 	const auto scrolls = layout.getScrolls();
@@ -316,7 +365,8 @@ void drawCanvases(Scene& ioScene, const math::vec2ui& iViewport, const bool iEdi
 		while (!pendingBars.empty() && (iNext == nodes.size() || !isBelow(iNext, pendingBars.back()))) {
 			const auto& owner = nodes[pendingBars.back()];
 			setClip(ownClip(owner));
-			drawScrollBars(scrolls[owner.scroll], height, static_cast<int>(static_cast<entt::entity>(owner.entity)));
+			drawScrollBars(scrolls[owner.scroll], height, static_cast<int>(static_cast<entt::entity>(owner.entity)),
+						   rank);
 			pendingBars.pop_back();
 		}
 	};
@@ -327,10 +377,12 @@ void drawCanvases(Scene& ioScene, const math::vec2ui& iViewport, const bool iEdi
 		auto wanted = ownClip(node);
 		if (scroll != nullptr && scroll->isList)
 			wanted = node.clipped ? node.bounds.intersect(node.clip) : node.bounds;
-		if (!setClip(wanted) && node.window != window)
-			renderer::Renderer2D::nextBatch();
-		window = node.window;
-		drawWidget(Entity{node.entity, &ioScene}, node, pixelTransform(node.bounds, height), height, scroll);
+		setClip(wanted);
+		if (node.window != window) {
+			rank += 1.f;
+			window = node.window;
+		}
+		drawWidget(Entity{node.entity, &ioScene}, node, pixelTransform(node.bounds, height), height, scroll, rank);
 		if (scroll != nullptr && !scroll->isList)
 			pendingBars.push_back(index);
 	}
@@ -380,7 +432,7 @@ void drawTooltip(Scene& ioSurface, const Scene::UiInputState& iState, const math
 														math::vec2{tooltip->padding, tooltip->padding} * scale,
 											.size = text * scale};
 	drawBoxedText(textBox, scale, height, tooltip->text, tooltip->textColor, tooltip->fontSize,
-				  data::fonts::HorizontalAlignment::Left, -1);
+				  data::fonts::HorizontalAlignment::Left, -1, 0.f);
 }
 
 // A frame just outside the focused widget, in the colour and thickness of its `UiFocus`.
