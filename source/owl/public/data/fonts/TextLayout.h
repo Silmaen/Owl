@@ -107,8 +107,10 @@ public:
 	 * @param[in] iText The UTF-8 text; it must outlive the breaker.
 	 * @param[in] iKerning Extra advance between two glyphs, in font units.
 	 * @param[in] iWrapWidth Maximal line width in font units; 0 or less breaks on line feeds only.
+	 * @param[in] iMeasure False to skip the measure of the lines when nothing wraps: their width is then 0.
 	 */
-	LineBreaker(const Font& iFont, std::string_view iText, float iKerning, float iWrapWidth) noexcept;
+	LineBreaker(const Font& iFont, std::string_view iText, float iKerning, float iWrapWidth,
+				bool iMeasure = true) noexcept;
 
 	/**
 	 * @brief
@@ -129,6 +131,8 @@ private:
 	float m_wrapWidth;
 	/// Byte offset of the next line.
 	size_t m_position = 0;
+	/// True when the width of the lines is needed.
+	bool m_measure;
 	/// True once the last line is returned.
 	bool m_done;
 };
@@ -225,7 +229,9 @@ void forEachLaidOutGlyph(const Font& iFont, const std::string_view iText, const 
 	const math::box2f clipBox{
 			{iLayout.boxSize.x() > 0.f ? -half.x() : -unbounded, iLayout.boxSize.y() > 0.f ? -half.y() : -unbounded},
 			{iLayout.boxSize.x() > 0.f ? half.x() : unbounded, iLayout.boxSize.y() > 0.f ? half.y() : unbounded}};
-	LineBreaker breaker(iFont, iText, iLayout.kerning, metrics.wrapWidth);
+	// A left-aligned line is placed from its start: its width is not needed.
+	LineBreaker breaker(iFont, iText, iLayout.kerning, metrics.wrapWidth,
+						iLayout.horizontal != HorizontalAlignment::Left);
 	float baseline = metrics.firstBaseline;
 	while (const auto line = breaker.next()) {
 		float penX = lineStart(iLayout, line->width * scale) / scale;

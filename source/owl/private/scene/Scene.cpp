@@ -198,16 +198,17 @@ auto Scene::copy(const shared<Scene>& iOther) -> shared<Scene> {
 	return newScene;
 }
 
-auto Scene::getEffectiveHudPath() const -> std::string {
+auto Scene::getEffectiveHudPath() const -> const std::string& {
+	static const std::string noHud;
 	if (m_hudPath)
 		return *m_hudPath;
-	return mp_engineContext != nullptr ? mp_engineContext->getDefaultHud() : std::string{};
+	return mp_engineContext != nullptr ? mp_engineContext->getDefaultHud() : noHud;
 }
 
 auto Scene::getHud() const -> shared<Scene> {
 	if (mp_engineContext == nullptr)
 		return nullptr;
-	const auto path = getEffectiveHudPath();
+	const auto& path = getEffectiveHudPath();
 	return path.empty() ? nullptr : mp_engineContext->getHudLibrary().get(path);
 }
 

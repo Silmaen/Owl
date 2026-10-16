@@ -81,14 +81,27 @@ auto blockTop(const TextLayout& iLayout, const float iHeight, const float iAscen
 
 }// namespace
 
-LineBreaker::LineBreaker(const Font& iFont, const std::string_view iText, const float iKerning,
-						 const float iWrapWidth) noexcept
-	: mp_font{&iFont}, m_text{iText}, m_kerning{iKerning}, m_wrapWidth{iWrapWidth}, m_done{iText.empty()} {}
+LineBreaker::LineBreaker(const Font& iFont, const std::string_view iText, const float iKerning, const float iWrapWidth,
+						 const bool iMeasure) noexcept
+	: mp_font{&iFont}, m_text{iText}, m_kerning{iKerning}, m_wrapWidth{iWrapWidth}, m_measure{iMeasure},
+	  m_done{iText.empty()} {}
 
 auto LineBreaker::next() -> std::optional<TextLine> {
 	if (m_done)
 		return std::nullopt;
 	const size_t lineBegin = m_position;
+	if (!m_measure && m_wrapWidth <= 0.f) {
+		for (size_t offset = m_position; offset < m_text.size();) {
+			const size_t glyphBegin = offset;
+			if (drawnCodePoint(core::utils::decodeNextCodePoint(m_text, offset)) == U'\n') {
+				m_position = offset;
+				return TextLine{.begin = lineBegin, .end = glyphBegin, .width = 0.f};
+			}
+		}
+		m_done = true;
+		m_position = m_text.size();
+		return TextLine{.begin = lineBegin, .end = m_text.size(), .width = 0.f};
+	}
 	float width = 0.f;
 	float penX = 0.f;
 	bool hasGlyph = false;

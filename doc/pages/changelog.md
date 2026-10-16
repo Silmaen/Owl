@@ -116,6 +116,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   not load, instead of emptying them (scripts then ran with `nil` properties in Play).
 - Text drawing is about 5 times faster again: glyph boxes and advances of the first 256 code points come from a table
   built with the font.
+- HUD text is about 15 % cheaper per frame: a left-aligned text no longer measures its lines twice, a glyph's matrix is
+  composed in place, and `Scene::getHud` stops copying the HUD path.
 - Transient quads and circles are back to their v0.3.0 speed: they flush every 4 096 matrices, glyphs keep 20 000 per
   batch.
 - `clean` works again on Ninja build trees: the help bundle moves to `<build>/help_bundle/`, out of the way of the
