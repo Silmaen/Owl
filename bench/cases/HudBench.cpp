@@ -60,6 +60,19 @@ auto makeHudScene() -> shared<scene::Scene> {
 	return sc;
 }
 
+// A list of a thousand rows at the size of a vehicle list: only the rows in view are laid out, drawn and hit-tested.
+auto makeListScene(const uint32_t iRows) -> shared<scene::Scene> {
+	auto sc = mkShared<scene::Scene>();
+	auto canvas = sc->createEntity("Hud");
+	canvas.addComponent<scene::component::Canvas>();
+	auto list = addWidget(*sc, canvas, scene::component::UiRect::Anchor::TopLeft, {320.f, 600.f}, {40.f, 40.f});
+	auto& data = list.addComponent<scene::component::UiList>();
+	data.setCount(iRows);
+	data.scrollOffset = static_cast<float>(iRows) * 15.f;
+	sc->onViewportResize(g_viewport);
+	return sc;
+}
+
 }// namespace
 
 void runHudBenches(Runner& ioRunner) {
@@ -80,6 +93,16 @@ void runHudBenches(Runner& ioRunner) {
 					"draw calls (one frame)");
 	ioRunner.metric(std::format("hud/layout/{}_widgets_nodes", widgets), static_cast<double>(layout.getNodes().size()),
 					"widgets laid out");
+	constexpr uint32_t rows = 1000;
+	const auto listScene = makeListScene(rows);
+	const auto listName = std::format("hud/frame/{}_row_list", rows);
+	ioRunner.measure(listName, rows, [&]() -> void { scene::ui::HudPass::render(*listScene, g_viewport, false); });
+	if (!ioRunner.wants(listName))
+		return;
+	renderer::Renderer2D::resetStats();
+	scene::ui::HudPass::render(*listScene, g_viewport, false);
+	ioRunner.metric(listName + "_quads", static_cast<double>(renderer::Renderer2D::getStats().quadCount),
+					"quads (one frame)");
 }
 
 }// namespace owl::bench

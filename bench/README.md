@@ -58,7 +58,8 @@ the agent changes.
 The configuration is pinned to the agent `linux-build-hephaistos` (8 cores): the committed baseline is the
 median of its 5 runs of 2026-10-15 on the v0.4.0 performance fixes (builds 36879 to 36887, listed in
 `context.baseline_runs`), the code `main` gets with them; the runs agree within 2 % (median), the multi-threaded
-physics of 100 bodies and `sample/load/game_over` within 30 %. The `hud/{layout,frame}/500_widgets` and `iso/*` entries are
+physics of 100 bodies and `sample/load/game_over` within 30 %. `hud/frame/1000_row_list` (a list of a thousand rows,
+scrolled to the middle; the quads of one frame as a metric) is new and not in the baseline yet. The `hud/{layout,frame}/500_widgets` and `iso/*` entries are
 estimates, a local run scaled by the ratio of the `renderer2d/quads_color` cases, until the next refresh. Timings from
 another agent do not compare (artemis is 20 % faster but varies 10.7 % between runs, against 1.7 % here).
 
