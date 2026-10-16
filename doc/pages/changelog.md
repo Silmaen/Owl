@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Engine Demo art: six Kenney CC0 packs (Tiny Town, Tiny Dungeon, Pixel Platformer and its farm and industrial expansions, Micro Roguelike) under `engine_demo/textures/kenney/`.
 - Tile-graph pathfinding (`scene::nav`): a graph read from the overlay (roads, tracks) or the terrain of a tilemap through its `navigation` rules (cost per tile, one-way moves, slope limits), exact A* and a hierarchical search over the 32 x 32 chunks, chunk-by-chunk incremental update, requests spread over frames by the `owl.navigation` system, Lua `path.*`, an inspector section and a graph and test-path overlay in the viewport, `path/*` benches, and the `iso_town` vehicles driving to destinations over the road graph and re-routing when a road is bulldozed ([Pathfinding](pathfinding.md)).
 - Draw-order sort key: every 2D primitive carries a `depth` (larger is nearer, as in the isometric layer) and draws by increasing depth, then by type (quads, circles, lines, text), then in submission order, one instanced draw per type and depth; sprites, circles and text take their world z, HUD windows no longer need a batch each (B-10).
 - Persistent isometric chunk buffers: tilemaps of the isometric layer keep one GPU instance buffer per 32 x 32 chunk and layer (`tile.slang`), uploaded in the prepare phase only for the chunks whose cells, corner heights (`TilemapAsset::getChunkHeightGeneration`) or tileset changed (a static frame uploads 0 byte, a one-cell edit one chunk), on OpenGL and Vulkan; the 512² frame drops from 218 to 16 µs and the zoomed-out one from 1.43 ms to 17 µs.
@@ -84,6 +85,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- `sample_project/` is renamed `engine_demo/`, the Engine Demo: an all-in-one showcase of the engine features, apart from the planned sample games.
 - The sample project and the project templates draw their HUD from `.owlhud` files (`huds/gameplay.owlhud` for the
   templates and the platformer, one each for the world map, the raycast demo and the isometric test) and no widget
   names the `ui` layer any more; scene and prefab format 5 drops `RendererTag: ui` from canvases and widgets.
