@@ -148,7 +148,7 @@ a few days, L a week.
   hover moves the focus, Lua `ui.set_focus` / `ui.get_focus`; the sample menus play with a gamepad alone.
 - ![Done][done] **HUD6 — Migration, M.** "Extract canvas to `.owlhud`" command; sample project and project
   templates moved to a shared `huds/gameplay.owlhud`, no `RendererTag: ui` left; empty raycast hint fixed.
-- ![Planned][planned] **DEMO1 — Inventory demo (from v0.5.0), S/M.** Collectible objects, key-locked switches and an
+- ![Done][done] **DEMO1 — Inventory demo (from v0.5.0), S/M.** Collectible objects, key-locked switches and an
   inventory window with slots in `sample_project/`, in Lua only, navigable with the gamepad: the showcase of the HUD
   widgets, the shared HUD and focus navigation.
 - ![Planned][planned] **DEMO2 — Sample overhaul, M/L.** The isometric renderer in the sample's flow, the new HUD,

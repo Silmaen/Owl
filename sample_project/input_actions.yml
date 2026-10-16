@@ -12,6 +12,24 @@ actions:
     bindings:
       - {key: I}
       - {gamepad_button: Y}
+  - name: open_inventory_demo
+    type: button
+    bindings:
+      - {key: N}
+      - {gamepad_button: Back}
+  - name: inventory
+    type: button
+    bindings:
+      - {key: Tab}
+      - {gamepad_button: Y}
+  - name: quick_save
+    type: button
+    bindings:
+      - {key: F6}
+  - name: quick_load
+    type: button
+    bindings:
+      - {key: F9}
   - name: toggle_tool
     type: button
     bindings:
