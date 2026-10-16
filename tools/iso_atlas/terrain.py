@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import math
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 from .common import RGB, STEP, TILE_H, TILE_W, Z_PX, Layers, Vec3, fbm, hash01, light, mix, normalize, scale_color
 
@@ -109,6 +109,10 @@ def _road(s: Sample) -> RGB:
     return color
 
 
+def _road_y(s: Sample) -> RGB:
+    return _road(replace(s, wx=s.wy, wy=s.wx))
+
+
 def _dirt(s: Sample) -> RGB:
     color = scale_color((138.0, 98.0, 62.0), 0.82 + 0.34 * fbm(s.seed, s.wx * 8.0, s.wy * 8.0))
     r = hash01(s.seed + 3, s.ix, s.iy)
@@ -189,8 +193,9 @@ TERRAINS: list[Terrain] = [
     Terrain(8, "rock", _rock, True),
     Terrain(9, "snow", _snow, True),
     Terrain(10, "rail", _rail, True),
+    Terrain(11, "road y", _road_y, True),
 ]
-"""The terrains, grass first; ids 3 (road) and 10 (rail) are meant for the overlay layer."""
+"""The terrains, grass first; ids 3 (road along X), 11 (road along Y) and 10 (rail) are meant for the overlay layer."""
 
 FOUNDATION_TOPS: list[tuple[int, Material]] = [
     (0, _grass((92.0, 150.0, 66.0))),

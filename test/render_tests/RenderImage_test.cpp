@@ -221,6 +221,16 @@ INSTANTIATE_TEST_SUITE_P(IsometricObjects, RenderImage,
 												iInfo.param.size.x(), iInfo.param.size.y());
 						 });
 
+// The isometric town of the sample project: sloped terrain, roads along both axes, buildings, trees, vehicles and the
+// 2D sky behind, under the town HUD.
+INSTANTIATE_TEST_SUITE_P(IsometricTown, RenderImage,
+						 testing::Values(RenderCase{"iso_town", "vulkan", {640, 360}},
+										 RenderCase{"iso_town", "opengl", {640, 360}}),
+						 [](const testing::TestParamInfo<RenderCase>& iInfo) -> std::string {
+							 return std::format("{}_{}_{}x{}", iInfo.param.scene, iInfo.param.backend,
+												iInfo.param.size.x(), iInfo.param.size.y());
+						 });
+
 // The same HUD over a raycast and a voxel scene at three resolutions: anchors, stretch and scale modes on screen.
 INSTANTIATE_TEST_SUITE_P(Hud, RenderImage,
 						 testing::Values(RenderCase{"hud_raycast", "vulkan"}, RenderCase{"hud_raycast", "opengl"},

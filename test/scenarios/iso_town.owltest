@@ -1,0 +1,41 @@
+# The isometric town with the mouse only: the build-road tool lays a road on a free cell and drags along the street,
+# the right button bulldozes, a pavement plot refuses a road, and a vehicle of the ring road stops in front of a
+# bulldozed cell and drives on when the road is rebuilt. The headless view is 1600x960 centred on the camera at
+# (12, 12): the centre of cell (x, y) on the ground is at pixel (800 + 32 * (x - y), 480 + 16 * (x + y - 23)), 8
+# pixels higher per half unit of height.
+scene: ../../sample_project/scenes/iso_town.owl
+steps:
+  # The traffic runs from the first frame, the tool answers once the fade-in is over.
+  - frames: 30
+  - expect: {entity: Ground, exists: true}
+  - expect: {gamestate: town_money, equals: 1000}
+  - expect: {gamestate: town_roads, equals: 0}
+  - expect: {entity: CarX, translation.x: {greater: 7.0}}
+  # The cursor follows the mouse: cell (1, 12), west of the street.
+  - input: {mouse_pos: [448, 320], frames: 3}
+  - expect: {gamestate: town_cursor_x, equals: 1}
+  - expect: {gamestate: town_cursor_y, equals: 12}
+  # A click lays a road, a drag on to the next cell another one; a held button never pays twice for a cell.
+  - input: {mouse: Left, mouse_pos: [448, 320], frames: 4}
+  - expect: {gamestate: town_roads, equals: 1}
+  - expect: {gamestate: town_money, greater: 985}
+  - input: {mouse: Left, mouse_pos: [416, 304], frames: 4}
+  - expect: {gamestate: town_roads, equals: 2}
+  - input: {mouse_pos: [448, 320], frames: 3}
+  # The right button bulldozes: the cell is refunded, the count follows.
+  - input: {mouse: Right, mouse_pos: [448, 320], frames: 3}
+  - expect: {gamestate: town_roads, equals: 1}
+  # Building on a pavement plot is refused.
+  - input: {mouse_pos: [704, 416], frames: 3}
+  - expect: {gamestate: town_cursor_x, equals: 8}
+  - input: {mouse: Left, mouse_pos: [704, 416], frames: 3}
+  - expect: {gamestate: town_roads, equals: 1}
+  # Bulldoze a cell of the north street, ahead of the red car: it stops short of it.
+  - input: {mouse: Right, mouse_pos: [928, 424], frames: 3}
+  - frames: 400
+  - expect: {entity: CarX, translation.x: {less: 12.5}}
+  - expect: {entity: CarX, translation.x: {greater: 11.0}}
+  # The road is rebuilt (the default tool is the road), the car drives on.
+  - input: {mouse: Left, mouse_pos: [928, 424], frames: 3}
+  - frames: 120
+  - expect: {entity: CarX, translation.x: {greater: 14.0}}

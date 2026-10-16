@@ -280,6 +280,16 @@ ui.transition_play("fade_out", 0.5, 0.8, 0.1, 0.6, 1.0)
 as zero-allocation shorthands for scripts written before the wipe variants
 existed.
 
+### `isometric`
+
+The `isometric` functions take the entity carrying the isometric `Tilemap` (`scene.find_entity("Ground")`, cached).
+`isometric.pick_cell(map)` returns the cell under the mouse (or under a window pixel), slope-aware, nothing when the
+pixel is off the map; `isometric.get_cell(map, layer, x, y)` and `isometric.set_cell(map, layer, x, y, terrain, overlay)`
+read and write a cell of a layer (layers from 0, -1 for none) without undo, which is how the sample town lays roads;
+`isometric.get_slope(map, x, y)` and `isometric.get_height(map, x, y)` give the slope of a cell and the world height of
+the surface under a world position, to stand vehicles on the terrain. `ui.is_mouse_over_ui()` tells a click on the HUD
+from a click on the map. See `sample_project/scripts/iso_town.lua` and `iso_town_traffic.lua`.
+
 ### `gamestate`
 
 The game state persists across scene transitions and is included in save files.

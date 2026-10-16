@@ -402,9 +402,18 @@ BUILDINGS: list[ObjectSpec] = [
 ]
 """The buildings, sliced per footprint tile into the building sheet."""
 
+
+def _marker() -> list[Solid]:
+    return [
+        box((0.47, 0.47, 0.0), (0.53, 0.53, 1.0), plain((226.0, 226.0, 230.0))),
+        box((0.53, 0.47, 0.6), (0.92, 0.53, 1.0), plain((214.0, 58.0, 48.0))),
+    ]
+
+
 PROPS: list[ObjectSpec] = [
     ObjectSpec("oak", (1, 1), 96, _oak, 201),
     ObjectSpec("pine", (1, 1), 96, _pine, 202),
+    ObjectSpec("marker", (1, 1), 64, _marker, 203),
 ]
 """Single-sprite props."""
 

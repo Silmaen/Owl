@@ -12,6 +12,11 @@ actions:
     bindings:
       - {key: I}
       - {gamepad_button: Y}
+  - name: open_town
+    type: button
+    bindings:
+      - {key: O}
+      - {gamepad_button: LeftBumper}
   - name: open_inventory_demo
     type: button
     bindings:
@@ -76,3 +81,28 @@ actions:
       - {key: W}
       - {key: S, scale: -1}
       - {gamepad_axis: left_y, scale: -1}
+  - name: build
+    type: button
+    bindings:
+      - {mouse_button: Left}
+      - {key: B}
+      - {gamepad_button: A}
+  - name: bulldoze
+    type: button
+    bindings:
+      - {mouse_button: Right}
+      - {key: X}
+      - {gamepad_button: X}
+  - name: town_tool
+    type: button
+    bindings:
+      - {key: Q}
+      - {gamepad_button: RightBumper}
+  - name: cursor
+    type: vector
+    bindings:
+      - {key: L, component: x}
+      - {key: J, component: x, scale: -1}
+      - {key: K, component: y}
+      - {key: I, component: y, scale: -1}
+      - {gamepad_stick: right}

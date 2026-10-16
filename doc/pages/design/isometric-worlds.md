@@ -128,7 +128,7 @@ S < 1 day of review, M a few days, L a week.
 - ![Done][done] **ISO4 — Objects and vehicles, M.** D5 slices with 3D boxes, an anchor-plus-size billboard
   instance without a matrix for thousands of moving sprites, pixel snapping at integer zoom. Bench `iso/*` (budgets
   below).
-- ![Planned][planned] **ISO5 — Demo and close-out, M.** `iso_town.owl`: a Transport Tycoon-style town on a sloped
+- ![Done][done] **ISO5 — Demo and close-out, M.** `iso_town.owl`: a Transport Tycoon-style town on a sloped
   map, roads, a vehicle loop and a mouse "build road" tool in Lua, the shared HUD, plus a scene mixing isometric with
   another style; persistent isometric chunk buffers (cells are emitted per frame until then); image tests on
   lavapipe and llvmpipe; [Isometric](isometric.md) and help pages final.

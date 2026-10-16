@@ -138,6 +138,7 @@ HUD widgets and screen transitions.
 | `ui.transition_fade_out(duration: number)`                                                               |                     | Start a fade-out screen transition.                                                                                                                  |
 | `ui.transition_play(kind: string, duration: number, [r: number], [g: number], [b: number], [a: number])` |                     | Start a screen transition of a kind (see Transition kinds), opaque black by default.                                                                 |
 | `ui.is_transition_active()`                                                                              | `active: boolean`   | Whether a screen transition is running.                                                                                                              |
+| `ui.is_mouse_over_ui()`                                                                                  | `over: boolean`     | Whether the mouse is over a HUD widget or window that takes it (a click there is not for the scene).                                                 |
 
 ## `gamestate`
 
@@ -206,3 +207,15 @@ Raycast push-walls.
 | `pushwall.activate(entity_id: entity)`  |                  | Start pushing an idle raycast push-wall.             |
 | `pushwall.has_moved(entity_id: entity)` | `moved: boolean` | Whether the push-wall reached its final position.    |
 | `pushwall.get_state(entity_id: entity)` | `state: string`  | State of the push-wall: `idle`, `moving` or `final`. |
+
+## `isometric`
+
+Terrain picking and tile editing of an isometric tilemap.
+
+| Function                                                                                                                      | Returns                                | Description                                                                                                |
+|-------------------------------------------------------------------------------------------------------------------------------|----------------------------------------|------------------------------------------------------------------------------------------------------------|
+| `isometric.pick_cell(entity_id: entity, [x: number], [y: number])`                                                            | `cell_x: integer`, `cell_y: integer`   | Terrain cell under a window pixel (the mouse by default), slope-aware; nothing when it is off the map.     |
+| `isometric.get_cell(entity_id: entity, layer: integer, cell_x: integer, cell_y: integer)`                                     | `terrain: integer`, `overlay: integer` | Terrain and overlay tile of a cell of a layer of the tilemap (layers from 0, -1 for none or outside).      |
+| `isometric.set_cell(entity_id: entity, layer: integer, cell_x: integer, cell_y: integer, terrain: integer, overlay: integer)` | `done: boolean`                        | Set the terrain and overlay tile of a cell of a layer (-1 for none), without undo; false outside the grid. |
+| `isometric.get_slope(entity_id: entity, cell_x: integer, cell_y: integer)`                                                    | `slope: integer`                       | Slope of a cell, from its corner heights (0 is flat, 1 to 18 are the other slopes of the tileset).         |
+| `isometric.get_height(entity_id: entity, x: number, y: number)`                                                               | `z: number`                            | World height of the terrain surface at a world position (the map's own height outside the map).            |

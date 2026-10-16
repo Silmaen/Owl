@@ -11,7 +11,7 @@ from pathlib import Path
 import pytest
 from PIL import Image, ImageStat
 
-from tools.iso_atlas import atlas
+from tools.iso_atlas import atlas, town_map
 from tools.iso_atlas.common import TILE_H, TILE_W, Layers
 from tools.iso_atlas.objects import BUILDINGS, PROPS, SLICE_HEIGHT, VEHICLES, render_object, slice_object
 from tools.iso_atlas.terrain import SLOPE_COUNT, SLOPES
@@ -42,7 +42,7 @@ def terrain() -> Layers:
 
 
 def test_terrain_hash_is_stable(terrain: Layers) -> None:
-    assert _digest(terrain) == "d10f8e42d9021eae35bc93c1b9919f8a52ab1977c940cd1dc54cb5956c7e0aa5"
+    assert _digest(terrain) == "b3ce35de02aa361890b6cae8c7c087a72441f3787bb0f26b2f9f1c90be31bc15"
 
 
 def test_same_seed_same_pixels(terrain: Layers) -> None:
@@ -141,8 +141,55 @@ def test_generate_writes_the_expected_files(tmp_path: Path) -> None:
     assert "textures/iso/tiles_depth.png" in names
     assert "tilesets/iso_ground.owltileset" in names
     assert "tilemaps/iso_test.owltilemap" in names
+    assert "tilemaps/iso_town.owltilemap" in names
     assert "textures/iso/oak.png" in names
     assert "textures/iso/vehicles.png" in names
     sheet = json.loads((tmp_path / "textures/iso/buildings.json").read_text())
     assert set(sheet["buildings"]) == {b.name for b in BUILDINGS}
     assert len(sheet["buildings"]["warehouse"]["slices"]) == 4
+
+
+def test_town_map_is_smooth_and_buildings_stand_on_flat_cells() -> None:
+    heights = town_map.corner_heights()
+    row = town_map.SIZE + 1
+    for y in range(row):
+        for x in range(row):
+            for nx, ny in ((x + 1, y), (x, y + 1)):
+                if nx < row and ny < row:
+                    assert abs(heights[y * row + x] - heights[ny * row + nx]) <= 1
+    used: set[tuple[int, int]] = set()
+    for plot in town_map.PLOTS:
+        for x, y in town_map.plot_cells(plot):
+            assert 0 <= x < town_map.SIZE and 0 <= y < town_map.SIZE
+            assert len(set(town_map.cell_corners(heights, x, y))) == 1, (plot, x, y)
+            assert (x, y) not in used, (plot, x, y)
+            used.add((x, y))
+    roads = town_map.road_tiles()
+    assert not used & set(roads)
+    assert all(town_map.slope_of(heights, x, y) < 15 for x, y in roads)
+
+
+def test_town_ring_is_closed_and_roads_follow_their_neighbours() -> None:
+    ring = town_map.ring_cells()
+    assert (
+        len(ring) == len(set(ring)) == 2 * (town_map.RING[2] - town_map.RING[0] + town_map.RING[3] - town_map.RING[1])
+    )
+    for (x, y), (nx, ny) in zip(ring, ring[1:] + ring[:1], strict=True):
+        assert abs(x - nx) + abs(y - ny) == 1
+    roads = town_map.road_tiles()
+    assert roads[(town_map.RING[0] + 2, town_map.RING[1])] == town_map.ROAD
+    assert roads[(town_map.RING[0], town_map.RING[1] + 2)] == town_map.ROAD_Y
+
+
+def test_town_trees_stand_on_free_grass() -> None:
+    blocked = set(town_map.road_tiles())
+    for plot in town_map.PLOTS:
+        blocked.update(town_map.plot_cells(plot))
+    for _, x, y in town_map.TREES:
+        assert 0 <= x < town_map.SHORE_COLUMN and 0 <= y < town_map.SIZE and int(y) != town_map.RAIL_ROW
+        assert (int(x), int(y)) not in blocked, (x, y)
+
+
+def test_town_map_file_is_deterministic() -> None:
+    assert town_map.map_bytes(SEED) == town_map.map_bytes(SEED)
+    assert town_map.map_bytes(SEED).startswith(b"Tilemap: iso_town\n")
