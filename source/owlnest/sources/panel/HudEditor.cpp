@@ -54,7 +54,7 @@ struct PaletteEntry {
 	const char* description;
 };
 
-constexpr std::array<PaletteEntry, 9> palette{
+constexpr std::array<PaletteEntry, 11> palette{
 		{{"canvas", "Canvas", gui::icon::panelsTopLeft, "A root of widgets, with its own reference resolution."},
 		 {"panel", "Panel", gui::icon::square, "A coloured rectangle holding other widgets."},
 		 {"label", "Label", gui::icon::type, "A text."},
@@ -63,7 +63,10 @@ constexpr std::array<PaletteEntry, 9> palette{
 		 {"slider", "Slider", gui::icon::slidersHorizontal, "A value dragged along a track."},
 		 {"progress_bar", "Progress Bar", gui::icon::gauge, "A bar filled to a fraction."},
 		 {"window", "Window", gui::icon::appWindow, "A draggable window with a title bar."},
-		 {"layout", "Layout", gui::icon::layoutGrid, "A panel placing its children in a row, a column or a grid."}}};
+		 {"layout", "Layout", gui::icon::layoutGrid, "A panel placing its children in a row, a column or a grid."},
+		 {"scroll_view", "Scroll View", gui::icon::scrollText,
+		  "A clipped area scrolling a content larger than itself."},
+		 {"list", "List", gui::icon::list, "A virtualised list: only the rows in view are drawn, filled from Lua."}}};
 
 auto isTexture(const std::filesystem::path& iPath) -> bool {
 	auto extension = iPath.extension().string();

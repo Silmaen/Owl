@@ -158,7 +158,7 @@ auto layOut(scene::Scene& ioScene, const scene::Entity& iEntity, const math::vec
 		const math::vec2 screen{static_cast<float>(iResolution.x()), static_cast<float>(iResolution.y())};
 		result.parent = {.position = {0.f, 0.f}, .size = screen / node->scale};
 	} else {
-		result.parent = inReference(layout.getNodes()[node->parent].content);
+		result.parent = inReference(layout.getNodes()[node->parent].childArea());
 	}
 	layout.invalidate();
 	return result;
@@ -350,15 +350,17 @@ struct KindDefaults {
 	math::vec2 size;
 };
 
-constexpr std::array<KindDefaults, 9> kindDefaults{{{"canvas", {0.f, 0.f}},
-													{"panel", {240.f, 160.f}},
-													{"label", {160.f, 32.f}},
-													{"image", {96.f, 96.f}},
-													{"button", {140.f, 40.f}},
-													{"slider", {200.f, 20.f}},
-													{"progress_bar", {200.f, 16.f}},
-													{"window", {320.f, 220.f}},
-													{"layout", {240.f, 160.f}}}};
+constexpr std::array<KindDefaults, 11> kindDefaults{{{"canvas", {0.f, 0.f}},
+													 {"panel", {240.f, 160.f}},
+													 {"label", {160.f, 32.f}},
+													 {"image", {96.f, 96.f}},
+													 {"button", {140.f, 40.f}},
+													 {"slider", {200.f, 20.f}},
+													 {"progress_bar", {200.f, 16.f}},
+													 {"window", {320.f, 220.f}},
+													 {"layout", {240.f, 160.f}},
+													 {"scroll_view", {240.f, 160.f}},
+													 {"list", {240.f, 200.f}}}};
 
 void addKindComponents(scene::Entity& ioEntity, const std::string& iKind, const std::string& iTexture) {
 	namespace comp = scene::component;
@@ -385,6 +387,14 @@ void addKindComponents(scene::Entity& ioEntity, const std::string& iKind, const 
 		auto& panel = ioEntity.addComponent<comp::UiPanel>();
 		panel.backgroundColor = {0.f, 0.f, 0.f, 0.f};
 		ioEntity.addComponent<comp::UiLayout>();
+	} else if (iKind == "scroll_view") {
+		auto& panel = ioEntity.addComponent<comp::UiPanel>();
+		panel.backgroundColor = {0.f, 0.f, 0.f, 0.f};
+		ioEntity.addComponent<comp::UiScrollView>();
+		ioEntity.addComponent<comp::UiLayout>();
+	} else if (iKind == "list") {
+		auto& list = ioEntity.addComponent<comp::UiList>();
+		list.setCount(12);
 	}
 }
 

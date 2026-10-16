@@ -944,6 +944,56 @@ void renderProps(UiLayout& ioComponent) {
 	}
 }
 
+void renderProps(UiScrollView& ioComponent) {
+	prop::Checkbox("Vertical", &ioComponent.vertical);
+	fieldTooltip("The content scrolls up and down.");
+	prop::Checkbox("Horizontal", &ioComponent.horizontal);
+	fieldTooltip("The content scrolls left and right.");
+	prop::DragFloat2("Content Size", ioComponent.contentSize.data(), 1.0f, 0.0f, 100000.0f);
+	fieldTooltip("Size of the content in reference pixels; 0 on an axis takes the extent of the children a UiLayout "
+				 "of this widget places, else the view (nothing to scroll).");
+	prop::DragFloat2("Scroll Offset", ioComponent.scrollOffset.data(), 1.0f, 0.0f, 100000.0f);
+	fieldTooltip("Distance the content is scrolled by, in reference pixels; kept inside the content.");
+	prop::DragFloat("Wheel Step", &ioComponent.wheelStep, 0.5f, 1.0f, 1000.0f);
+	fieldTooltip("Scroll distance of one mouse wheel notch, in reference pixels.");
+	prop::Checkbox("Show Scroll Bar", &ioComponent.showScrollBar);
+	fieldTooltip("Draw the bars (they take room) when the content overflows.");
+	prop::DragFloat("Scroll Bar Width", &ioComponent.scrollBarWidth, 0.5f, 1.0f, 64.0f);
+	prop::ColorEdit4("Track Color", reinterpret_cast<float*>(&ioComponent.trackColor));
+	prop::ColorEdit4("Thumb Color", reinterpret_cast<float*>(&ioComponent.thumbColor));
+}
+
+void renderProps(UiList& ioComponent) {
+	auto count = static_cast<int>(ioComponent.itemCount);
+	if (prop::DragInt("Item Count", &count, 1.0f, 0, 1000000))
+		ioComponent.setCount(static_cast<uint32_t>(std::max(count, 0)));
+	fieldTooltip("Number of rows of the model; a script sets it with ui.list_set_count.");
+	prop::DragFloat("Row Height", &ioComponent.rowHeight, 0.5f, 1.0f, 500.0f);
+	prop::DragFloat("Row Spacing", &ioComponent.rowSpacing, 0.5f, 0.0f, 100.0f);
+	auto selected = static_cast<int>(ioComponent.selectedIndex);
+	if (prop::DragInt("Selected Index", &selected, 1.0f, -1, std::max(static_cast<int>(ioComponent.itemCount) - 1, -1)))
+		ioComponent.select(selected);
+	fieldTooltip("Selected row, 0 based (-1 for none).");
+	prop::DragFloat("Scroll Offset", &ioComponent.scrollOffset, 1.0f, 0.0f, 10000000.0f);
+	fieldTooltip("Distance the rows are scrolled by, in reference pixels; kept inside the content.");
+	prop::DragFloat("Wheel Step", &ioComponent.wheelStep, 0.5f, 1.0f, 1000.0f);
+	prop::DragFloat("Font Size", &ioComponent.fontSize, 0.5f, 1.0f, 200.0f);
+	prop::ColorEdit4("Row Color", reinterpret_cast<float*>(&ioComponent.rowColor));
+	prop::ColorEdit4("Alternate Row Color", reinterpret_cast<float*>(&ioComponent.rowAltColor));
+	prop::ColorEdit4("Hover Color", reinterpret_cast<float*>(&ioComponent.hoverColor));
+	prop::ColorEdit4("Selected Color", reinterpret_cast<float*>(&ioComponent.selectedColor));
+	prop::ColorEdit4("Text Color", reinterpret_cast<float*>(&ioComponent.textColor));
+	prop::Checkbox("Show Scroll Bar", &ioComponent.showScrollBar);
+	prop::DragFloat("Scroll Bar Width", &ioComponent.scrollBarWidth, 0.5f, 1.0f, 64.0f);
+	prop::ColorEdit4("Track Color", reinterpret_cast<float*>(&ioComponent.trackColor));
+	prop::ColorEdit4("Thumb Color", reinterpret_cast<float*>(&ioComponent.thumbColor));
+	prop::InputText("On Select", &ioComponent.onSelectCallback);
+	fieldTooltip("Lua function called when the selection changes. Reads _list_entity and _selected_index (1-based).");
+	prop::InputText("On Bind", &ioComponent.onBindCallback);
+	fieldTooltip("Lua function called once for a row in view nobody filled. Reads _list_entity and _row_index "
+				 "(1-based); it fills the row with ui.list_set_row. A row not filled shows Item N.");
+}
+
 void renderProps(UiTooltip& ioComponent) {
 	prop::InputTextMultiline("Text", &ioComponent.text, ImVec2(0, 60));
 	fieldTooltip("Text shown near the mouse once the widget has been hovered for the delay.");
