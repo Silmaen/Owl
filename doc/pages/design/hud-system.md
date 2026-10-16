@@ -186,11 +186,20 @@ Keyboard and gamepad focus on buttons and sliders, driven by the built-in `ui_up
   widget takes the focus.
 - The state (`focus`, `focusInHud`, `focusVisible`, repeat) lives in `Scene::UiInputState`, like the hover state.
 
-## Migration (HUD6)
+## Migration (HUD6, done)
 
-- An undoable "Extract canvas to `.owlhud`" command; the sample project and the project templates move to a shared
-  `huds/gameplay.owlhud` and lose their `ui` layer; scene migration drops `RendererTag: ui` from UI entities.
-- The empty raycast hint of `raycast_demo.owl` is fixed on the way.
+- `hud.extract_canvas` (Scene Hierarchy context menu, [Editor](../editor.md#editor-commands)) writes a root canvas and
+  its widgets to an `.owlhud`, removes them from the scene and sets the scene's `Hud:` key, as one undo step (a
+  `DeleteSubtreeCommand` and a `SetSceneHudCommand` in a group). The file is written when the command is prepared and
+  stays after an undo.
+- Scene and prefab format 5 (`dropUiRendererTag`) removes `RendererTag: ui` from every entity carrying a `Canvas` or a
+  `Ui*` component; a world entity tagged `ui` keeps its tag. Legacy fixture: `UiRendererTagMigration_test.cpp`.
+- The project templates (`empty_2d`, `mixed`, `raycast`) each ship a `huds/gameplay.owlhud`; in `sample_project/` the
+  platformer keeps `huds/gameplay.owlhud` and the world map, the raycast demo and the isometric test have their own HUD
+  (`world_map`, `raycast`, `iso_test`) because their hints and widgets differ; the menus keep their embedded canvas.
+  No shipped `.owl` or `.owlhud` names the `ui` layer (`EngineSceneTemplates.NoShippedWidgetNamesTheUiLayer`).
+- The dead `UiPanel::layout`, `spacing` and `padding` are gone; old files keep loading (unknown keys are ignored).
+- The empty raycast hint of `raycast_demo.owl` is fixed: its HUD now carries the walk, turn and interact keys.
 
 ## Inventory demo (DEMO1)
 

@@ -146,7 +146,7 @@ a few days, L a week.
   widget in the direction pressed from the shared layout, `UiFocus` (focusable, initial, neighbours by UUID, focus
   callback, highlight), confirm and cancel, sliders adjusted with left / right, restricted to the top window, mouse
   hover moves the focus, Lua `ui.set_focus` / `ui.get_focus`; the sample menus play with a gamepad alone.
-- ![Planned][planned] **HUD6 — Migration, M.** "Extract canvas to `.owlhud`" command; sample project and project
+- ![Done][done] **HUD6 — Migration, M.** "Extract canvas to `.owlhud`" command; sample project and project
   templates moved to a shared `huds/gameplay.owlhud`, no `RendererTag: ui` left; empty raycast hint fixed.
 - ![Planned][planned] **DEMO1 — Inventory demo (from v0.5.0), S/M.** Collectible objects, key-locked switches and an
   inventory window with slots in `sample_project/`, in Lua only, navigable with the gamepad: the showcase of the HUD

@@ -877,6 +877,11 @@ The **HUD** section chooses the `.owlhud` the scene draws (its `Hud:` key): *Pro
 from the project, or a file dropped from the Content Browser. The choice runs the undoable `scene.set_hud` command
 (`path`, or `use_default`), so the console, macros and MCP issue it too.
 
+A root canvas of a scene moves to a shared HUD with **Extract Canvas to .owlhud...** in its Scene Hierarchy context
+menu: the canvas and its widgets are written to the chosen `.owlhud` (inside an asset folder), removed from the scene,
+and the scene's `Hud:` key points at the file (`hud.extract_canvas`, one undo step; the file stays on disk after an
+undo).
+
 The renderer-stack section mirrors `renderer::EnabledRenderersConfig`:
 
 | Control                                  | Effect                                                                                               |
@@ -1190,6 +1195,7 @@ description and structured data (`entity` UUID, plus the fields listed below).
 | `hud.move`             | `entities` (UUIDs or tags, comma separated), `delta` (reference pixels)      |
 | `hud.delete`           | `entities`: the widgets and their children, one step                         |
 | `hud.reparent`         | `entity`, `parent`, `index`, `keep_bounds`, `resolution`                     |
+| `hud.extract_canvas`   | `entity` (root canvas), `path` (`.owlhud`), `asset_path`; returns `hud`      |
 
 An entity argument is a UUID (integer) or a tag (first match). Continuous edits previewed live (voxel brush strokes,
 tile painting, node moves) are recorded as one command when the gesture ends. An inspector field edit and a gizmo drag
