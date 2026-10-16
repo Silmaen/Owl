@@ -1,12 +1,12 @@
 # Owl Feature Demo
 
-Sample project exercising all Owl engine features. This project serves as a
+Engine Demo exercising all Owl engine features. This project serves as a
 living showcase — it must be updated whenever new features are added to the engine.
 
 ## How to Open
 
 1. Launch **Owl Nest**
-2. **Open project** in the File screen and select `sample_project/owl_project.yml`
+2. **Open project** in the File screen and select `engine_demo/owl_project.yml`
 3. The Main Menu scene loads automatically
 
 ## How to Play

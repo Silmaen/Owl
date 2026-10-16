@@ -55,7 +55,7 @@ protected:
 	}
 
 	static auto samplePath() -> std::filesystem::path {
-		return owl::test::getRootPath() / "sample_project" / "scenes" / "platformer_house.owl";
+		return owl::test::getRootPath() / "engine_demo" / "scenes" / "platformer_house.owl";
 	}
 
 	static auto playerX(const EditorSession& iSession) -> float {
@@ -78,7 +78,7 @@ TEST_F(HeadlessSessionTest, LoadsASampleScene) {
 	ASSERT_TRUE(session.getSessionScene());
 	EXPECT_EQ(session.getSessionScenePath(), std::filesystem::weakly_canonical(samplePath()));
 	EXPECT_EQ(session.getProjectDirectory(),
-			  std::filesystem::weakly_canonical(owl::test::getRootPath() / "sample_project"));
+			  std::filesystem::weakly_canonical(owl::test::getRootPath() / "engine_demo"));
 	EXPECT_FALSE(session.isScenePlaying());
 	ASSERT_NE(session.getSessionUndo(), nullptr);
 	EXPECT_FALSE(session.getSessionUndo()->canUndo());
@@ -86,7 +86,7 @@ TEST_F(HeadlessSessionTest, LoadsASampleScene) {
 	EXPECT_TRUE(session.getSessionScene()->getPrimaryPlayer());
 	EXPECT_EQ(session.getRegistry().find("entity.create")->name, "entity.create");
 
-	const auto missing = session.loadScene(owl::test::getRootPath() / "sample_project" / "scenes" / "missing.owl");
+	const auto missing = session.loadScene(owl::test::getRootPath() / "engine_demo" / "scenes" / "missing.owl");
 	ASSERT_FALSE(missing.has_value());
 	EXPECT_EQ(missing.error().error, SessionError::LoadFailed);
 	EXPECT_EQ(session.getSessionScenePath(), std::filesystem::weakly_canonical(samplePath()));
@@ -258,6 +258,6 @@ TEST(SessionStatistics, AveragesTheFrames) {
 
 TEST(SessionProject, FindsTheProjectOfAScene) {
 	const auto root = owl::test::getRootPath();
-	EXPECT_EQ(findProjectDirectory(root / "sample_project" / "scenes" / "main_menu.owl"), root / "sample_project");
+	EXPECT_EQ(findProjectDirectory(root / "engine_demo" / "scenes" / "main_menu.owl"), root / "engine_demo");
 	EXPECT_TRUE(findProjectDirectory(std::filesystem::path{"/no_such_dir/scene.owl"}).empty());
 }

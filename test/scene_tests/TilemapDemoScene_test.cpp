@@ -26,7 +26,7 @@ using namespace owl::scene;
 TEST(TilemapDemoScene, loadsAndExposesExpectedShape) {
 	core::Log::init(core::Log::Level::Off);
 
-	// Fixtures live under engine_assets/ — tests must not depend on sample_project/.
+	// Fixtures live under engine_assets/ — tests must not depend on engine_demo/.
 	const auto root = owl::test::getRootPath();
 	const auto scenePath = root / "engine_assets" / "scenes" / "tilemap_demo.owl";
 	const auto tilesetPath = root / "engine_assets" / "tilesets" / "demo.owltileset";

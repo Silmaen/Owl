@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate the procedural tile atlases for the sample project.
+"""Generate the procedural tile atlases for the Engine Demo.
 
 Produces three 64 px-tile atlases:
 

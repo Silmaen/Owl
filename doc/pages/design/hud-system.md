@@ -41,7 +41,7 @@ tooltips and construction tools at once, as in Transport Tycoon.
   its parent on, a hidden entity hides its subtree.
 - Y-down pixels with the origin at the top left; scene and prefab format 4 converts every `UiRect` written before
   (preset point to both anchors, `pivot.y = 1 - pivotY`, `offset.y = -offsetY`) and gives the legacy canvases
-  `ConstantPixels`, so no widget moves; the sample project and the templates were rewritten and use
+  `ConstantPixels`, so no widget moves; the Engine Demo and the templates were rewritten and use
   `ScaleWithHeight`.
 - Anchors: `anchorMin` / `anchorMax` (normalised, a distinct pair stretches the widget, `size` is then added to the
   span) besides the 9 presets (`UiRect::setAnchor`, `getAnchor`), which stay as shortcuts in the inspector.
@@ -194,7 +194,7 @@ Keyboard and gamepad focus on buttons and sliders, driven by the built-in `ui_up
   stays after an undo.
 - Scene and prefab format 5 (`dropUiRendererTag`) removes `RendererTag: ui` from every entity carrying a `Canvas` or a
   `Ui*` component; a world entity tagged `ui` keeps its tag. Legacy fixture: `UiRendererTagMigration_test.cpp`.
-- The project templates (`empty_2d`, `mixed`, `raycast`) each ship a `huds/gameplay.owlhud`; in `sample_project/` the
+- The project templates (`empty_2d`, `mixed`, `raycast`) each ship a `huds/gameplay.owlhud`; in `engine_demo/` the
   platformer keeps `huds/gameplay.owlhud` and the world map, the raycast demo and the isometric test have their own HUD
   (`world_map`, `raycast`, `iso_test`) because their hints and widgets differ; the menus keep their embedded canvas.
   No shipped `.owl` or `.owlhud` names the `ui` layer (`EngineSceneTemplates.NoShippedWidgetNamesTheUiLayer`).
@@ -248,7 +248,7 @@ Implementation notes:
 
 ## Inventory demo (DEMO1)
 
-Done. Collectible objects, key-locked switches and an inventory window with slots in `sample_project/`, in Lua only,
+Done. Collectible objects, key-locked switches and an inventory window with slots in `engine_demo/`, in Lua only,
 navigable with the gamepad (`scenes/inventory_demo.owl`, **N** or Back from the main menu).
 
 - **Window.** `huds/inventory.owlhud` is the scene's `Hud:` (one HUD per scene): a closable `UiWindow` holding a grid of

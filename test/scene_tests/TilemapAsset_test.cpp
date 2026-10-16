@@ -234,9 +234,9 @@ TEST_F(TilemapAssetFixture, LoadsMigratedSampleTilemaps) {
 	// scene tilemap must round-trip through `loadFromFile` without falling back
 	// to the empty-buffer path.
 	const auto root = owl::test::getRootPath();
-	const auto tilemapsDir = root / "sample_project" / "tilemaps";
+	const auto tilemapsDir = root / "engine_demo" / "tilemaps";
 	if (!std::filesystem::exists(tilemapsDir))
-		GTEST_SKIP() << "sample_project tilemaps directory not present";
+		GTEST_SKIP() << "engine_demo tilemaps directory not present";
 
 	struct Sample {
 		const char* file;

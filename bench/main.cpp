@@ -87,7 +87,7 @@ auto main(const int iArgc, char** iArgv) -> int {
 				owl::app::AppParams{.args = nullptr,
 									.frameLogFrequency = 0,
 									.name = "owl_bench",
-									.assetsPattern = "sample_project",
+									.assetsPattern = "engine_demo",
 									.icon = "",
 									.width = 0,
 									.height = 0,

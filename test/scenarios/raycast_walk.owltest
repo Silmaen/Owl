@@ -1,5 +1,5 @@
 # The raycast player walks forward (W) along its view direction.
-scene: ../../sample_project/scenes/raycast_demo.owl
+scene: ../../engine_demo/scenes/raycast_demo.owl
 steps:
   - frames: 30
   - expect: {player: true, translation.x: {equals: -3.094, tolerance: 0.01}}

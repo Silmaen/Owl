@@ -47,7 +47,7 @@ for backend in vulkan opengl; do
 		driver=(LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe __EGL_VENDOR_LIBRARY_FILENAMES=/usr/share/glvnd/egl_vendor.d/50_mesa.json)
 	fi
 	(cd "${work}" && env "${driver[@]}" "${runner}" --frame-bench "${root}/test/render_tests/scenes/sprites.owl" \
-		--project "${root}/sample_project" --backend "${backend}" --frames 30 --warmup 5 --size 640x360 \
+		--project "${root}/engine_demo" --backend "${backend}" --frames 30 --warmup 5 --size 640x360 \
 		--out "${work}/wayland_${backend}.json") >"${log}" 2>&1
 	code=$?
 	if [[ ${code} -ne 0 ]] || ! grep -q "Using the wayland platform" "${log}" || grep -q "\[error\]" "${log}"; then

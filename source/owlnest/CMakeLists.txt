@@ -147,7 +147,7 @@ install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/assets_sources/icons
         PATTERN "templates" EXCLUDE
 )
 # The feature showcase, opened from the File screen.
-install(DIRECTORY ${CMAKE_SOURCE_DIR}/sample_project/
-        DESTINATION sample_project
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/engine_demo/
+        DESTINATION engine_demo
         COMPONENT Nest
 )

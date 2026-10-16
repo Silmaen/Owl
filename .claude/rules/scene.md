@@ -2,7 +2,7 @@
 paths:
   - "source/owl/*/scene/**"
   - "test/scene_tests/**"
-  - "sample_project/**"
+  - "engine_demo/**"
 ---
 
 # Scene, hierarchy, prefab, save & settings
@@ -97,7 +97,7 @@ Every entity carries the mandatory `Hierarchy` component (`parentId` UUID + `chi
 - Runner order: `runner.yml` defaults → `game_settings.yml` → user `settings.yml` → `applyBuiltins()` →
   first scene load.
 
-## Sample project
+## Engine Demo
 
-`sample_project/` is the feature showcase: every engine feature must be demonstrated there. Validate YAML
+`engine_demo/` is the feature showcase: every engine feature must be demonstrated there. Validate YAML
 edits with `poetry run python -c 'import yaml; yaml.safe_load(open("<file>"))'`.

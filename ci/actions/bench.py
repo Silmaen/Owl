@@ -122,7 +122,7 @@ class Bench(BaseAction):
         out_dir = root / "output" / "bench"
         out_dir.mkdir(parents=True, exist_ok=True)
         result_file = out_dir / f"{preset.cmake_preset}.json"
-        # The dummy application looks up engine_assets/ and sample_project/ from its working directory.
+        # The dummy application looks up engine_assets/ and engine_demo/ from its working directory.
         status = run_command([str(binary), f"--json={result_file}"], cwd=binary.parent)
         if status != 0 or not result_file.is_file():
             log.error("Bench: owl_bench failed.")

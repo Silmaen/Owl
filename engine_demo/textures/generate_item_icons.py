@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Crop the inventory item icons of the sample project out of the Wolfenstein sprites.
+"""Crop the inventory item icons of the Engine Demo out of the Wolfenstein sprites.
 
 The sprites sit at the bottom of a 128 px canvas; every icon is cropped to the ink, centred in a square and scaled
 to 64 px (nearest) so that it fills a world sprite and an inventory slot. Run with ``poetry run python``.

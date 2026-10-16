@@ -1,7 +1,7 @@
 # The inventory demo with actions only: a locked door refuses a player without its key, the gold key is picked up, the
 # inventory window opens with the `inventory` action (then with a gamepad button), `ui_*` actions walk its slots, the
 # key opens the door and is used up, the blue key and the vault switch lead to the crown.
-scene: ../../sample_project/scenes/inventory_demo.owl
+scene: ../../engine_demo/scenes/inventory_demo.owl
 steps:
   # The fade-in of the scene holds the player for 0.4 s.
   - frames: 40

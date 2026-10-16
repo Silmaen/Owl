@@ -195,7 +195,7 @@ A voxel world reaches the screen through two pieces:
   drawn mesh counts and the meshing counters of a `VoxelMeshCache` (one per engine context, see
   [Architecture](architecture.md#engine-context)).
 
-The sample project ships a `voxel_terrain.owl` scene — an endless seeded procedural landscape (see *Procedural
+The Engine Demo ships a `voxel_terrain.owl` scene — an endless seeded procedural landscape (see *Procedural
 Terrain* below), textured from the dedicated `voxel_blocks` tileset (16 block faces: grass, dirt, stone, sand, wood,
 leaves, … with room for future block types) — under a perspective camera, reachable from a **Voxel House** on the
 world map. Voxels render in both **Play** and the **editor viewport** (the world streams around the editor camera too).

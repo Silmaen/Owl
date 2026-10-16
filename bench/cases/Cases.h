@@ -127,7 +127,7 @@ void runPhysicsBenches(Runner& ioRunner);
 
 /**
  * @brief
- *  Load and editor-frame benchmarks on the scenes of `sample_project/` (Null backend).
+ *  Load and editor-frame benchmarks on the scenes of `engine_demo/` (Null backend).
  * @param[in,out] ioRunner The runner.
  */
 void runSampleBenches(Runner& ioRunner);

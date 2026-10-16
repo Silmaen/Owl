@@ -74,7 +74,7 @@ v0.7.0 deterministic simulation, mods, the Web; this release is the 1.0 release 
 - ![Planned][planned] Audio mixer (buses, per-bus volume, crossfades)
 - ![Planned][planned] Audio effects (reverb zones, low / high-pass filters)
 - ![Planned][planned] Dialogue system with a visual editor (`.owldlg`)
-- ![Planned][planned] Sample project: enemies demo on the AI modules
+- ![Planned][planned] Engine Demo: enemies demo on the AI modules
 - ![Planned][planned] Sample games: a one-room Zelda-like and a 3D marble or kart game ([Sample games](design/sample-games.md))
 
 ## v0.6.0 -- Expected 2027-04-15
@@ -141,8 +141,8 @@ MCP server in Owl Nest ([plan](design/isometric-worlds.md)).
 - ![Done][done] MCP server built into Owl Nest, on the editor command API, with `play.run` and a client guide ([MCP server](mcp.md))
 - ![Done][done] Native file dialogues through the desktop portal, no GTK ([Nest UI](design/nest-ui.md))
 - ![Done][done] Editor console and command journal, macros replayable as `.owlmacro` ([Editor scripting](design/editor-scripting.md))
-- ![Done][done] Sample project: inventory demo on the new HUD widgets, playable with a gamepad
-- ![Planned][planned] Sample project overhaul: the isometric town, the new HUD everywhere, hub and platformer redrawn with CC0 art
+- ![Done][done] Engine Demo: inventory demo on the new HUD widgets, playable with a gamepad
+- ![Planned][planned] Engine Demo overhaul: the isometric town, the new HUD everywhere, hub and platformer redrawn with CC0 art
 
 ## v0.3.0 -- 2026-10-11
 

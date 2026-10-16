@@ -84,7 +84,7 @@ TEST(EngineSceneTemplates, NoShippedWidgetNamesTheUiLayer) {
 	const auto root = test::getRootPath();
 	const std::regex uiTag{R"(RendererTag:\s*(\{\s*Name:\s*ui\s*\}|\n\s+Name:\s*ui\b))"};
 	size_t checked = 0;
-	for (const auto* folder: {"engine_assets", "sample_project"}) {
+	for (const auto* folder: {"engine_assets", "engine_demo"}) {
 		for (const auto& entry: std::filesystem::recursive_directory_iterator(root / folder)) {
 			const auto& path = entry.path();
 			if (path.extension() != ".owl" && path.extension() != ".owlhud")

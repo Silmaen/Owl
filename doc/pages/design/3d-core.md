@@ -57,6 +57,6 @@ Design page for the v0.5.0 release, summarised in the [Roadmap](../roadmap.md). 
     - Grid snapping, vertex snapping
     - Mesh import preview
 
-## Sample project
+## Engine Demo
 
 - A 3D demo scene mixing a 3D level with a 2D HUD and a raycast or voxel side area

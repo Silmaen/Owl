@@ -231,7 +231,7 @@ def generate(project: Path, seed: int = 1, levels: tuple[str, ...] = LEVELS) -> 
     """
     Generate every atlas, the tilesets, the sprites and the sample map into a project folder.
 
-    :param project: The project folder (``sample_project``); textures go to ``textures/iso``, tilesets to ``tilesets``.
+    :param project: The project folder (``engine_demo``); textures go to ``textures/iso``, tilesets to ``tilesets``.
     :param seed: Seed of the run; the same seed always gives the same pixels.
     :param levels: The zoom levels to write.
     :return: Every written file.

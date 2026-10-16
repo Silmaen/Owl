@@ -238,7 +238,7 @@ TEST_F(McpDispatcherTest, AnswersProtocolErrorsWithTheirCodes) {
 
 TEST_F(McpDispatcherTest, ReadsTheResources) {
 	session::HeadlessSession session;
-	ASSERT_TRUE(session.loadScene(owl::test::getRootPath() / "sample_project" / "scenes" / "platformer_house.owl")
+	ASSERT_TRUE(session.loadScene(owl::test::getRootPath() / "engine_demo" / "scenes" / "platformer_house.owl")
 						.has_value());
 	McpDispatcher dispatcher{session, options()};
 

@@ -1030,8 +1030,8 @@ The workflow commands live in the **File** screen (project), the **Home** tab (e
 | Pack Scene     | Scene > Scene > Pack Scene | Pack the current scene's assets into `.owlpack` (async) |
 
 **File screen at start-up.** When the editor starts without a loaded project, the File screen opens with **New
-project**, **Open project**, **Getting started**, **Sample project** and the recent projects. The sample card shows
-when a `sample_project/` sits next to `bin/` in the archive, or at the root of the sources
+project**, **Open project**, **Getting started**, **Engine Demo** and the recent projects. The sample card shows
+when a `engine_demo/` sits next to `bin/` in the archive, or at the root of the sources
 (`panel::findSampleProject`, from the asset folders upwards).
 
 **Async operations.** Pack Game, Pack Scene, Open Scene, and Save Scene all run off the
@@ -1115,7 +1115,7 @@ the same result on any machine. It exits with 0 when every expectation holds and
 
 ```yaml
 # test/scenarios/platformer_walk.owltest
-scene: ../../sample_project/scenes/platformer_house.owl   # relative to the file; project found above it
+scene: ../../engine_demo/scenes/platformer_house.owl   # relative to the file; project found above it
 timestep_ms: 16.667                                       # optional
 steps:
   - frames: 30                                            # play 30 frames, no input
@@ -1351,7 +1351,7 @@ re-creating the prefab), instances can be updated in place, keeping their hierar
 - **Unlink Prefab** -- Removes the `PrefabLink` component, turning the instance into a
   standalone entity subtree with no connection to the source file.
 
-All prefab operations are fully undoable, Unlink included. The sample project's
+All prefab operations are fully undoable, Unlink included. The Engine Demo's
 `platformer_house.owl` holds two instances of `prefabs/coin_pair.owlprefab`; the second one overrides
 the colour of its right coin.
 

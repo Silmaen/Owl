@@ -526,7 +526,7 @@ TEST_F(McpHttpTest, FollowsTheSettingsAndDoesNotRetryATakenPort) {
 
 TEST_F(McpHttpTest, KeepsToolPathsInsideTheProject) {
 	session::HeadlessSession session;
-	ASSERT_TRUE(session.loadScene(owl::test::getRootPath() / "sample_project" / "scenes" / "platformer_house.owl")
+	ASSERT_TRUE(session.loadScene(owl::test::getRootPath() / "engine_demo" / "scenes" / "platformer_house.owl")
 						.has_value());
 	McpServer server{session, options()};
 	ASSERT_TRUE(server.start());
@@ -555,7 +555,7 @@ TEST_F(McpHttpTest, KeepsToolPathsInsideTheProject) {
 
 TEST_F(McpHttpTest, DrivesACompleteSessionOverHttp) {
 	session::HeadlessSession session;
-	ASSERT_TRUE(session.loadScene(owl::test::getRootPath() / "sample_project" / "scenes" / "platformer_house.owl")
+	ASSERT_TRUE(session.loadScene(owl::test::getRootPath() / "engine_demo" / "scenes" / "platformer_house.owl")
 						.has_value());
 	const auto before = nest::test::sceneState(*session.getSessionScene());
 	McpServer server{session, options()};

@@ -25,7 +25,7 @@ namespace owl::bench {
 void runSampleBenches(Runner& ioRunner) {
 	if (!ioRunner.wants("sample"))
 		return;
-	const auto scenes = std::filesystem::path(OWL_BENCH_SOURCE_DIR) / "sample_project" / "scenes";
+	const auto scenes = std::filesystem::path(OWL_BENCH_SOURCE_DIR) / "engine_demo" / "scenes";
 	if (!exists(scenes))
 		return;
 	std::vector<std::filesystem::path> files;

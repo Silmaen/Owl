@@ -233,7 +233,7 @@ TEST_F(ScenarioFile, RunnerFailsOnABrokenExpectation) {
 #ifndef OWL_RUNNER_EXECUTABLE
 	GTEST_SKIP() << "OwlRunner is not built (OWL_BUILD_NEST=OFF).";
 #else
-	const auto scene = test::getRootPath() / "sample_project" / "scenes" / "platformer_house.owl";
+	const auto scene = test::getRootPath() / "engine_demo" / "scenes" / "platformer_house.owl";
 	const auto file = m_dir / "fail.owltest";
 	std::ofstream(file) << std::format(
 			"scene: {}\nsteps:\n  - frames: 2\n  - expect: {{entity: NoSuchEntity, exists: true}}\n",

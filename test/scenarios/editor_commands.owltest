@@ -1,5 +1,5 @@
 # Editor commands drive the running world: a crate created, moved, edited, deleted, then the deletion undone.
-scene: ../../sample_project/scenes/platformer_house.owl
+scene: ../../engine_demo/scenes/platformer_house.owl
 steps:
   - frames: 5
   - {command: entity.create, args: {name: Crate}}

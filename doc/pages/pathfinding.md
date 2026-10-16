@@ -90,7 +90,7 @@ end
 if path.get_version(map) ~= version then ... end              -- a road was built or bulldozed
 ```
 
-Every function is in the [Lua API reference](lua-api.md#path). The `iso_town` vehicles of the sample project
+Every function is in the [Lua API reference](lua-api.md#path). The `iso_town` vehicles of the Engine Demo
 (`scripts/iso_town_traffic.lua`) drive from stop to stop that way, look for another way when a road of their route is
 bulldozed (scenario `iso_town`), and wait when no route exists.
 

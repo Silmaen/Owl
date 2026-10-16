@@ -8,7 +8,7 @@ Design page of the sample games, summarised in the [Roadmap](../roadmap.md).
 
 Owl ships two kinds of example content:
 
-- **Engine Demo** (today's `sample_project/`): an all-in-one showcase of every engine feature, not a game in itself.
+- **Engine Demo** (today's `engine_demo/`): an all-in-one showcase of every engine feature, not a game in itself.
 - **Sample games**: small but real games, each one built on only what it needs, most of them mini remakes of known
   games. They prove that Owl makes games, give a newcomer a project of a readable size to start from, and feed the
   two showcase games of v1.0.

@@ -21,7 +21,7 @@ policy that applies to every PR.
 - Tables must be **column-aligned in raw text**: every `|` separator must be at the same column
   position across all rows. Pad each cell with spaces so all columns have uniform width.
   The separator row (`|---|`) must match the exact column widths. This applies to ALL markdown
-  files in the project (doc pages, README, CHANGELOG, CONTRIBUTING, sample_project/README).
+  files in the project (doc pages, README, CHANGELOG, CONTRIBUTING, engine_demo/README).
 - Use `[Link Text](other_page.md)` for cross-page links (INPUT_FILTER converts to `@ref` for Doxygen)
 - Code blocks: use ` ```c++ ` for C++, ` ```lua ` for Lua, ` ```yaml ` for YAML, ` ```bash ` for shell
 

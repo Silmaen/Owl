@@ -113,10 +113,10 @@ The first step on the unmerged `Feature/KickoffIsometricRenderer` branch (2026-0
 - Procedural Python generator under `tools/` (Poetry, Pillow), seeded and deterministic, output committed: terrain ×
   19 slopes, foundations, tracks and roads, a few sliced buildings, vehicles. It writes albedo plus normal and depth
   atlases on the same grid, one set per zoom level or mips.
-- `sample_project/scenes/iso_town.owl`: a Transport Tycoon-style town on a 24×24 sloped map (a hill, a one-step embankment under the north street), a ring
+- `engine_demo/scenes/iso_town.owl`: a Transport Tycoon-style town on a 24×24 sloped map (a hill, a one-step embankment under the north street), a ring
   road and two streets along both axes, buildings from the generated sheet, three vehicles looping on the ring, a mouse
   / keyboard / gamepad "build road" and bulldoze tool in Lua, its own `.owlhud`, and a 2D sky with clouds behind the
-  isometric layer. Game rules stay in Lua in the sample project; the Lua `isometric` table (pick, cells, slope,
+  isometric layer. Game rules stay in Lua in the Engine Demo; the Lua `isometric` table (pick, cells, slope,
   height) is the only engine support. A raycast or voxel layer cannot join the stack of this scene: both cast from a
   first-person camera, the town has an orthographic one.
 
@@ -129,7 +129,7 @@ migrations, image tests on lavapipe and llvmpipe with zero validation message, a
 ## Status
 
 ISO1 (2026-10-14) shipped the layer, the camera, the billboards with depth and cutout, the translucent sort, the
-ported projection helpers, `Tileset::kind`, the isometric viewport mode of Owl Nest, `sample_project/scenes/iso_test.owl`
+ported projection helpers, `Tileset::kind`, the isometric viewport mode of Owl Nest, `engine_demo/scenes/iso_test.owl`
 and the `isometric` image test on both backends. Isometric tilemaps keep one persistent GPU instance buffer per 32 x 32
 chunk and layer, uploaded in the prepare phase only when a chunk changed (see the ISO5 chunk buffers below).
 
@@ -140,7 +140,7 @@ and the terraforming tools of `TilemapDocument`, the slope table of `TilesetDocu
 references changed because the sample map is no longer flat.
 
 ISO3 (2026-10-15) added the atlas generator `tools/iso_atlas`, run from the repository root with
-`docker/run.sh poetry run python -m tools.iso_atlas [--project sample_project] [--seed 1] [--levels 1x,2x,half]`.
+`docker/run.sh poetry run python -m tools.iso_atlas [--project engine_demo] [--seed 1] [--levels 1x,2x,half]`.
 It writes into `textures/iso/`, `tilesets/` and `tilemaps/` of the project:
 
 | Output                                 | Content                                                                                                                           |
@@ -189,7 +189,7 @@ Same Null-backend measures as above:
 | Frame, zoom 1, 5 000 vehicles in view            | 308 µs  | 178 µs  | < 2 ms |
 | Frame, zoomed out ×4 (51 200 cells in 3 chunks)  | 1.43 ms | 17 µs   | < 4 ms |
 
-ISO5 demo (2026-10-16): `sample_project/scenes/iso_town.owl` (**O** from the main menu), the road along Y, a `marker`
+ISO5 demo (2026-10-16): `engine_demo/scenes/iso_town.owl` (**O** from the main menu), the road along Y, a `marker`
 prop and `iso_town.owltilemap` from the generator, `scripts/iso_town.lua`, `iso_town_traffic.lua` and `iso_cloud.lua`,
 `huds/iso_town.owlhud`, the `build`, `bulldoze`, `town_tool` and `cursor` actions, the Lua `isometric.*` functions and
 `ui.is_mouse_over_ui`, the `iso_town` and `iso_town_actions` scenarios and the `iso_town` image test (640 × 360, both

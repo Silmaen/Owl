@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate the procedural textures still used by the sample project.
+"""Generate the procedural textures still used by the Engine Demo.
 
 Only the textures referenced by the current scene flow are generated here.
 Older sprites (brick / ground / coin / checkpoint / sky) were retired

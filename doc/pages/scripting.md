@@ -309,7 +309,7 @@ pixel is off the map; `isometric.get_cell(map, layer, x, y)` and `isometric.set_
 read and write a cell of a layer (layers from 0, -1 for none) without undo, which is how the sample town lays roads;
 `isometric.get_slope(map, x, y)` and `isometric.get_height(map, x, y)` give the slope of a cell and the world height of
 the surface under a world position, to stand vehicles on the terrain. `ui.is_mouse_over_ui()` tells a click on the HUD
-from a click on the map. See `sample_project/scripts/iso_town.lua` and `iso_town_traffic.lua`.
+from a click on the map. See `engine_demo/scripts/iso_town.lua` and `iso_town_traffic.lua`.
 
 ### `path`
 
@@ -319,7 +319,7 @@ next frames, `path.poll(map, request)` answers `pending`, `found`, `not_found` o
 returns the cells as `{x1, y1, x2, y2, ...}` and the cost in cells, `path.release(map, request)` frees the request.
 `path.find_now` searches at once, `path.get_version(map)` changes when a road is built or bulldozed,
 `path.is_valid(map, request, from_cell)` tells whether the rest of a path still exists and `path.get_edge_cost` and
-`path.is_walkable` read the graph. See `sample_project/scripts/iso_town_traffic.lua`.
+`path.is_walkable` read the graph. See `engine_demo/scripts/iso_town_traffic.lua`.
 
 ### `gamestate`
 

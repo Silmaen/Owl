@@ -161,7 +161,7 @@ TEST_P(RenderImage, matchesReference) {
 									 R"(--backend {} --frames 2 --warmup {} --size {}x{} --validation )"
 									 R"(--capture "{}" > "{}" 2>&1)",
 									 getDriverEnvironment(backend), OWL_RUNNER_EXECUTABLE, sceneFile.string(),
-									 (root / "sample_project").string(), backend, g_warmupFrames, size.x(), size.y(),
+									 (root / "engine_demo").string(), backend, g_warmupFrames, size.x(), size.y(),
 									 actualFile.string(), logFile.string());
 	// NOLINTNEXTLINE(bugprone-command-processor) The runner must run in its own process (one GPU context).
 	const int status = std::system(command.c_str());
@@ -221,7 +221,7 @@ INSTANTIATE_TEST_SUITE_P(IsometricObjects, RenderImage,
 												iInfo.param.size.x(), iInfo.param.size.y());
 						 });
 
-// The isometric town of the sample project: sloped terrain, roads along both axes, buildings, trees, vehicles and the
+// The isometric town of the Engine Demo: sloped terrain, roads along both axes, buildings, trees, vehicles and the
 // 2D sky behind, under the town HUD.
 INSTANTIATE_TEST_SUITE_P(IsometricTown, RenderImage,
 						 testing::Values(RenderCase{"iso_town", "vulkan", {640, 360}},

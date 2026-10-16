@@ -58,7 +58,7 @@ protected:
 	}
 
 	static auto samplePath() -> std::filesystem::path {
-		return owl::test::getRootPath() / "sample_project" / "scenes" / "platformer_house.owl";
+		return owl::test::getRootPath() / "engine_demo" / "scenes" / "platformer_house.owl";
 	}
 
 	static auto last(const std::vector<ConsoleOutput>& iOutput) -> ConsoleOutput {

@@ -531,7 +531,7 @@ Convention:
 - Rotation values are stored in **radians** in the `Transform` component
   (matching the rest of Owl's transform pipeline).
 
-The accompanying `scripts/raycast_player.lua` in the sample project
+The accompanying `scripts/raycast_player.lua` in the Engine Demo
 implements WASD strafing + Q/E turning following this convention.
 
 ## 3D Forward Renderer {#renderer3d}
@@ -692,7 +692,7 @@ Each case runs `OwlRunner --frame-bench <scene> --capture <png>` (320 x 180, 60 
 validation on) in its own process, then compares RGB per pixel: a pixel differs above 24 / 255 on a channel, the test
 fails above 0.25 % of differing pixels. Software rasterisers are deterministic run to run; the tolerance absorbs a
 Mesa update, not a missing sprite. On failure the capture, a diff (differing pixels in red) and the runner log are left
-in `<build>/render_tests/`. The scenes live in `test/render_tests/scenes/` and use the sample project's assets.
+in `<build>/render_tests/`. The scenes live in `test/render_tests/scenes/` and use the Engine Demo's assets.
 
 ```bash
 docker/run.sh ctest --test-dir output/build/linux-clang-release -L render --output-on-failure
