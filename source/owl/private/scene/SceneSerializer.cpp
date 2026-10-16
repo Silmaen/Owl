@@ -11,6 +11,7 @@
 
 #include "EntityLinkMigration.h"
 #include "HudLayoutMigration.h"
+#include "UiRendererTagMigration.h"
 #include "UiTextMigration.h"
 #include "app/Application.h"
 #include "core/FormatVersionYaml.h"
@@ -86,9 +87,9 @@ SceneSerializer::SceneSerializer(const shared<Scene>& iScene, const DocumentKind
 
 namespace {
 
-// 1 -> 2: entity links reference their target by UUID; 2 -> 3: legacy UiText keeps its centred layout.
-constexpr std::array<core::MigrationStep, 3> g_sceneMigrations{&bindEntityLinksByName, &centreLegacyUiText,
-															   &convertLegacyHudLayout};
+// Steps 1 to 5: links by UUID, centred legacy UiText, Y-down HUD layout, no `ui` renderer tag on widgets.
+constexpr std::array<core::MigrationStep, 4> g_sceneMigrations{&bindEntityLinksByName, &centreLegacyUiText,
+															   &convertLegacyHudLayout, &dropUiRendererTag};
 constexpr core::DocumentFormat g_sceneFormat{.name = "Scene", .migrations = g_sceneMigrations};
 
 constexpr std::array<core::MigrationStep, 0> g_hudMigrations{};

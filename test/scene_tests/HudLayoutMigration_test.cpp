@@ -133,7 +133,7 @@ TEST_F(HudLayoutMigrationTest, OnlyLegacyHudNeedsTheMigration) {
 	EXPECT_TRUE(canRead("Scene: a\nFormatVersion: 3\nEntities:\n  - Entity: 1\n    UiRect: {anchorMin: [0, 0]}\n"));
 	EXPECT_TRUE(canRead("Scene: a\nFormatVersion: 3\nEntities:\n  - Entity: 1\n    Canvas: {scaleMode: "
 						"ConstantPixels}\n"));
-	EXPECT_TRUE(canRead("Scene: a\nFormatVersion: 4\nEntities:\n  - Entity: 1\n    UiRect: {}\n"));
+	EXPECT_TRUE(canRead("Scene: a\nFormatVersion: 5\nEntities:\n  - Entity: 1\n    UiRect: {}\n"));
 }
 
 TEST_F(HudLayoutMigrationTest, CurrentCanvasKeepsItsScaleMode) {

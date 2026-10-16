@@ -15,6 +15,7 @@
 #include <scene/ComponentRegistry.h>
 #include <scene/Entity.h>
 #include <scene/Scene.h>
+#include <scene/SceneSerializer.h>
 #include <scene/component/Canvas.h>
 #include <scene/component/CircleRenderer.h>
 #include <scene/component/Hierarchy.h>
@@ -30,6 +31,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
+#include <optional>
 #include <sstream>
 #include <string>
 #include <tuple>
@@ -86,7 +88,7 @@ TEST_F(CommandRegistryTest, DeclaresTheBuiltinCommands) {
 		EXPECT_FALSE(spec->allowedInPlay) << name;
 	}
 	EXPECT_EQ(m_registry.find("entity.explode"), nullptr);
-	EXPECT_EQ(m_registry.getCommands().size(), 22u);
+	EXPECT_EQ(m_registry.getCommands().size(), 23u);
 }
 
 TEST_F(CommandRegistryTest, CreateUnderAParentThenUndoRedo) {
@@ -229,7 +231,7 @@ TEST_F(CommandRegistryTest, IncompleteTargetRefusesCommands) {
 TEST_F(CommandRegistryTest, AddReplacesACommandOfTheSameName) {
 	m_registry.add({.name = "entity.create", .description = "Replaced.", .args = {}, .factory = {}});
 	EXPECT_EQ(m_registry.find("entity.create")->description, "Replaced.");
-	EXPECT_EQ(m_registry.getCommands().size(), 22u);
+	EXPECT_EQ(m_registry.getCommands().size(), 23u);
 }
 
 TEST_F(CommandRegistryTest, ParsesVectorColourAndEnumArguments) {
@@ -475,7 +477,7 @@ OWL_DIAG_POP
 
 TEST_F(HudCommandsTest, DeclaresTheHudCommands) {
 	for (const auto* name: {"hud.add_widget", "hud.set_rect", "hud.set_anchors", "hud.set_pivot", "hud.move",
-							"hud.delete", "hud.reparent"}) {
+							"hud.delete", "hud.reparent", "hud.extract_canvas"}) {
 		const auto* spec = m_registry.find(name);
 		ASSERT_NE(spec, nullptr) << name;
 		EXPECT_FALSE(spec->description.empty()) << name;
@@ -730,4 +732,62 @@ TEST_F(HudCommandsTest, SolveRectCoversTheTargetWhateverTheAnchorsAndPivot) {
 	EXPECT_NEAR(bounds.size.y(), target.size.y(), 1e-3f);
 	EXPECT_EQ(solved.anchorMin, base.anchorMin);
 	EXPECT_EQ(solved.pivot, base.pivot);
+}
+
+TEST_F(HudCommandsTest, ExtractCanvasWritesTheHudRemovesTheCanvasAndUndoesIt) {
+	const auto button = addWidget("button", {{"name", std::string{"Play"}}});
+	ASSERT_TRUE(button);
+	const auto canvas = m_scene->findEntityByUUID(button.getComponent<scene::component::Hierarchy>().parentId);
+	ASSERT_TRUE(canvas);
+	const auto buttonId = button.getUUID();
+	const auto otherId = m_scene->createEntity("World Thing").getUUID();
+	const auto dir = std::filesystem::temp_directory_path() / "owl_extract_canvas_test";
+	std::filesystem::create_directories(dir);
+	const auto path = dir / "extracted.owlhud";
+	const auto done = run("hud.extract_canvas", {{"entity", idOf(canvas)},
+												 {"path", path.generic_string()},
+												 {"asset_path", std::string{"huds/extracted.owlhud"}}});
+	ASSERT_TRUE(done.has_value()) << done.error().message;
+	EXPECT_EQ(std::get<std::string>(done->data.at("hud")), "huds/extracted.owlhud");
+	EXPECT_EQ(m_scene->getHudPath(), std::optional<std::string>{"huds/extracted.owlhud"});
+	EXPECT_EQ(m_scene->registry.view<scene::component::Canvas>().size(), 0u);
+	EXPECT_FALSE(m_scene->findEntityByUUID(buttonId));
+	EXPECT_TRUE(m_scene->findEntityByUUID(otherId));
+
+	const auto hud = mkShared<scene::Scene>();
+	ASSERT_TRUE(scene::SceneSerializer(hud, scene::DocumentKind::Hud).deserialize(path).has_value());
+	const auto loadedButton = hud->findEntityByUUID(buttonId);
+	ASSERT_TRUE(loadedButton);
+	EXPECT_TRUE(loadedButton.hasComponent<scene::component::UiButton>());
+	EXPECT_EQ(hud->registry.view<scene::component::Canvas>().size(), 1u);
+
+	m_undo.undo(*m_scene);
+	EXPECT_EQ(m_scene->registry.view<scene::component::Canvas>().size(), 1u);
+	EXPECT_TRUE(m_scene->findEntityByUUID(buttonId));
+	EXPECT_EQ(m_scene->getHudPath(), std::nullopt);
+	m_undo.redo(*m_scene);
+	EXPECT_EQ(m_scene->registry.view<scene::component::Canvas>().size(), 0u);
+	EXPECT_EQ(m_scene->getHudPath(), std::optional<std::string>{"huds/extracted.owlhud"});
+	std::filesystem::remove_all(dir);
+}
+
+TEST_F(HudCommandsTest, ExtractCanvasRefusesWhatIsNotAHudSource) {
+	const auto button = addWidget("button");
+	ASSERT_TRUE(button);
+	const auto canvas = m_scene->findEntityByUUID(button.getComponent<scene::component::Hierarchy>().parentId);
+	const auto dir = std::filesystem::temp_directory_path() / "owl_extract_canvas_refused_test";
+	const auto path = (dir / "refused.owlhud").generic_string();
+	const auto notCanvas = run("hud.extract_canvas",
+							   {{"entity", idOf(button)}, {"path", path}, {"asset_path", std::string{"a.owlhud"}}});
+	ASSERT_FALSE(notCanvas.has_value());
+	EXPECT_EQ(notCanvas.error().error, CommandError::InvalidArgument);
+	const auto badExtension =
+			run("hud.extract_canvas", {{"entity", idOf(canvas)}, {"path", (dir / "x.owl").generic_string()}});
+	ASSERT_FALSE(badExtension.has_value());
+	EXPECT_EQ(badExtension.error().error, CommandError::InvalidArgument);
+	const auto noAssetFolder = run("hud.extract_canvas", {{"entity", idOf(canvas)}, {"path", path}});
+	ASSERT_FALSE(noAssetFolder.has_value());
+	EXPECT_EQ(noAssetFolder.error().error, CommandError::InvalidArgument);
+	EXPECT_FALSE(std::filesystem::exists(path));
+	EXPECT_EQ(m_scene->registry.view<scene::component::Canvas>().size(), 1u);
 }

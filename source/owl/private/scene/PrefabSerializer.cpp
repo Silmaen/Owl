@@ -11,6 +11,7 @@
 
 #include "EntityLinkMigration.h"
 #include "HudLayoutMigration.h"
+#include "UiRendererTagMigration.h"
 #include "UiTextMigration.h"
 #include "scene/SceneSerializer.h"
 
@@ -41,9 +42,9 @@ namespace owl::scene {
 
 namespace {
 
-// 1 -> 2: entity links reference their target by UUID; 2 -> 3: legacy UiText keeps its centred layout.
-constexpr std::array<core::MigrationStep, 3> g_prefabMigrations{&bindEntityLinksByName, &centreLegacyUiText,
-																&convertLegacyHudLayout};
+// Steps 1 to 5: links by UUID, centred legacy UiText, Y-down HUD layout, no `ui` renderer tag on widgets.
+constexpr std::array<core::MigrationStep, 4> g_prefabMigrations{&bindEntityLinksByName, &centreLegacyUiText,
+																&convertLegacyHudLayout, &dropUiRendererTag};
 constexpr core::DocumentFormat g_prefabFormat{.name = "Prefab", .migrations = g_prefabMigrations};
 
 auto readText(const std::filesystem::path& iFilepath) -> std::string {
