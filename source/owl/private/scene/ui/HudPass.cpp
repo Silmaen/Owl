@@ -67,7 +67,7 @@ enum struct HudLayer : uint8_t { Shape, Circle, Text };
 auto hudDepth(const float iRank, const HudLayer iLayer) -> float { return iRank * 4.f + static_cast<float>(iLayer); }
 
 // Smallest em height, in screen pixels, a scale mode may shrink a HUD text to: below it the glyphs turn to mush.
-constexpr float g_minTextPixels = 9.f;
+constexpr float g_minTextPixels = 12.f;
 
 // Scale of a text: the canvas scale, raised so that a shrinking scale mode keeps the text legible, never past 1.
 auto legibleTextScale(const float iScale, const float iFontSize) -> float {
