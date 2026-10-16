@@ -196,6 +196,17 @@ public:
 
 	/**
 	 * @brief
+	 *  Generation of the corner heights around one chunk of cells.
+	 *
+	 * A change of a corner stamps the chunks of the (up to four) cells that share it with a new value drawn from a
+	 * process-wide counter, so a renderer caching the slopes of a chunk rebuilds it only when this value changes.
+	 * @param[in] iChunk Chunk coordinates (cells divided by `TilemapLayer::chunkSize`).
+	 * @return The generation, or 0 for a chunk whose heights were never written.
+	 */
+	[[nodiscard]] auto getChunkHeightGeneration(const math::vec2ui& iChunk) const -> uint64_t;
+
+	/**
+	 * @brief
 	 *  Whether the terrain has any corner above zero (the corner grid is allocated).
 	 * @return False for a flat map.
 	 */
@@ -412,8 +423,23 @@ private:
 	 */
 	void repairHeights();
 
+	/**
+	 * @brief
+	 *  Stamp the chunks of the cells around a corner with a new height generation.
+	 * @param[in] iIndex Corner index in the height grid.
+	 */
+	void stampCorner(size_t iIndex);
+
+	/**
+	 * @brief
+	 *  Stamp every chunk with one new height generation (the chunk grid follows the size).
+	 */
+	void stampAllHeights();
+
 	/// Corner heights, row by row, empty for a flat map.
 	std::vector<uint8_t> m_cornerHeights;
+	/// Row-major height generation of each chunk of cells (empty until a height is written).
+	std::vector<uint64_t> m_chunkHeightGenerations;
 	/// Highest value of `m_cornerHeights`.
 	uint8_t m_maxCornerHeight = 0;
 };

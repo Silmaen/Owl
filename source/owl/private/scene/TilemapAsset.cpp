@@ -17,6 +17,7 @@
 
 #include <algorithm>
 #include <array>
+#include <atomic>
 #include <bit>
 #include <cstdint>
 #include <fstream>
@@ -27,6 +28,8 @@
 namespace owl::scene {
 
 namespace {
+
+std::atomic<uint64_t> g_nextHeightGeneration{1};
 
 constexpr auto g_tilesKeyV1 = "tiles";
 constexpr auto g_terrainTextKey = "terrain";
@@ -153,6 +156,7 @@ void TilemapAsset::resize(const uint32_t iWidth, const uint32_t iHeight) {
 	}
 	width = newWidth;
 	height = newHeight;
+	stampAllHeights();
 	refreshHeightSummary();
 }
 
@@ -216,6 +220,7 @@ void TilemapAsset::flattenAround(const uint32_t iX, const uint32_t iY, const uin
 		const auto value = static_cast<uint8_t>(iValue);
 		ioChanges.push_back({.index = iIndex, .before = m_cornerHeights[iIndex], .after = value});
 		m_cornerHeights[iIndex] = value;
+		stampCorner(iIndex);
 		pending.push_back(iIndex);
 	};
 	if (const auto start = static_cast<uint32_t>(getCornerIndex(iX, iY)); m_cornerHeights[start] != iHeight)
@@ -239,6 +244,33 @@ void TilemapAsset::flattenAround(const uint32_t iX, const uint32_t iY, const uin
 			else if (otherValue + 1 < value)
 				assign(other, value - 1);
 		}
+	}
+}
+
+auto TilemapAsset::getChunkHeightGeneration(const math::vec2ui& iChunk) const -> uint64_t {
+	const uint32_t columns = (width + component::TilemapLayer::chunkSize - 1) / component::TilemapLayer::chunkSize;
+	const size_t index = static_cast<size_t>(iChunk.y()) * columns + iChunk.x();
+	return iChunk.x() < columns && index < m_chunkHeightGenerations.size() ? m_chunkHeightGenerations[index] : 0;
+}
+
+void TilemapAsset::stampAllHeights() {
+	const uint32_t side = component::TilemapLayer::chunkSize;
+	const size_t count = static_cast<size_t>((width + side - 1) / side) * ((height + side - 1) / side);
+	m_chunkHeightGenerations.assign(count, g_nextHeightGeneration.fetch_add(1));
+}
+
+void TilemapAsset::stampCorner(const size_t iIndex) {
+	const uint32_t side = component::TilemapLayer::chunkSize;
+	const uint32_t columns = (width + side - 1) / side;
+	if (m_chunkHeightGenerations.size() != static_cast<size_t>(columns) * ((height + side - 1) / side))
+		stampAllHeights();
+	const auto cornerX = static_cast<uint32_t>(iIndex % (width + 1));
+	const auto cornerY = static_cast<uint32_t>(iIndex / (width + 1));
+	const uint64_t generation = g_nextHeightGeneration.fetch_add(1);
+	// The corner belongs to the cells (x - 1, y - 1) to (x, y): at most four chunks.
+	for (uint32_t cellY = cornerY > 0 ? cornerY - 1 : 0; cellY <= std::min(cornerY, height - 1); ++cellY) {
+		for (uint32_t cellX = cornerX > 0 ? cornerX - 1 : 0; cellX <= std::min(cornerX, width - 1); ++cellX)
+			m_chunkHeightGenerations[static_cast<size_t>(cellY / side) * columns + cellX / side] = generation;
 	}
 }
 
@@ -351,8 +383,10 @@ void TilemapAsset::applyCornerChanges(const std::span<const CornerHeightChange> 
 	if (m_cornerHeights.empty())
 		m_cornerHeights.assign((static_cast<size_t>(width) + 1) * (height + 1), 0);
 	for (const auto& change: iChanges) {
-		if (change.index < m_cornerHeights.size())
+		if (change.index < m_cornerHeights.size()) {
 			m_cornerHeights[change.index] = iUndo ? change.before : change.after;
+			stampCorner(change.index);
+		}
 	}
 	refreshHeightSummary();
 }
@@ -365,6 +399,7 @@ auto TilemapAsset::setCornerHeights(std::vector<uint8_t> iHeights) -> bool {
 	const auto given = iHeights;
 	m_cornerHeights = std::move(iHeights);
 	repairHeights();
+	stampAllHeights();
 	if (m_cornerHeights != given)
 		OWL_CORE_WARN("TilemapAsset: Corner heights differing by more than one step were raised.")
 	refreshHeightSummary();

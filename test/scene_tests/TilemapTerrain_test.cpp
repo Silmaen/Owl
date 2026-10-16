@@ -487,3 +487,21 @@ TEST_F(TilemapTerrain, TilesetSlopeTablesRoundTrip) {
 	const Tileset without;
 	EXPECT_EQ(without.serializeToString("iso").find("slopes:"), std::string::npos);
 }
+
+TEST_F(TilemapTerrain, ACornerStampsTheHeightGenerationOfTheChunksAroundIt) {
+	auto map = makeMap(64, 64);
+	const math::vec2ui first{0, 0};
+	const math::vec2ui second{1, 0};
+	const math::vec2ui third{0, 1};
+	const auto before = map.getChunkHeightGeneration(first);
+	std::ignore = map.setCornerHeight(5, 5, 1);
+	EXPECT_NE(map.getChunkHeightGeneration(first), before);
+	EXPECT_EQ(map.getChunkHeightGeneration(second), map.getChunkHeightGeneration(third));
+	const auto untouched = map.getChunkHeightGeneration(second);
+	const auto changed = map.getChunkHeightGeneration(first);
+	std::ignore = map.setCornerHeight(32, 5, 1);
+	EXPECT_NE(map.getChunkHeightGeneration(first), changed);
+	EXPECT_NE(map.getChunkHeightGeneration(second), untouched);
+	EXPECT_EQ(map.getChunkHeightGeneration(third), untouched);
+	EXPECT_EQ(map.getChunkHeightGeneration({9, 9}), 0u) << "outside the grid";
+}
