@@ -365,7 +365,7 @@ void RibbonBuilder::buildSceneTab() {
 							  .size = Size::Small});
 
 	m_ribbon.addButton(sceneTab, gShow,
-					   Button{.iconName = "owlhud_icon",
+					   Button{.iconName = "ribbon_hud",
 							  .label = "HUD Editor",
 							  .tooltip = "Edit the HUD canvases of the scene in pixels: resolution presets, rect "
 										 "gizmo, widget palette",
