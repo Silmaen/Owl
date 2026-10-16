@@ -611,6 +611,8 @@ auto luaEntityHasComponent(lua_State* iState) -> int {
 		has = entity->hasComponent<scene::component::UiTooltip>();
 	else if (compName == "UiToolCursor")
 		has = entity->hasComponent<scene::component::UiToolCursor>();
+	else if (compName == "UiFocus")
+		has = entity->hasComponent<scene::component::UiFocus>();
 	lua_pushboolean(iState, has ? 1 : 0);
 	return 1;
 }
@@ -688,6 +690,21 @@ auto luaUiSetSliderValue(lua_State* iState) -> int {
 	if (const auto entity = findEntity(iState); entity && entity->hasComponent<scene::component::UiSlider>())
 		entity->getComponent<scene::component::UiSlider>().value = static_cast<float>(luaL_checknumber(iState, 2));
 	return 0;
+}
+
+auto luaUiSetFocus(lua_State* iState) -> int {
+	auto* activeScene = getBoundScene(iState);
+	const auto entity = findEntity(iState);
+	const bool focused = activeScene != nullptr && entity && scene::UiInputSystem::setFocus(*activeScene, *entity);
+	lua_pushboolean(iState, focused ? 1 : 0);
+	return 1;
+}
+
+auto luaUiGetFocus(lua_State* iState) -> int {
+	auto* activeScene = getBoundScene(iState);
+	const auto focus = activeScene != nullptr ? scene::UiInputSystem::getFocus(*activeScene) : scene::Entity{};
+	lua_pushinteger(iState, focus ? static_cast<lua_Integer>(static_cast<uint64_t>(focus.getUUID())) : 0);
+	return 1;
 }
 
 auto luaUiSetButtonEnabled(lua_State* iState) -> int {
@@ -1283,6 +1300,13 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		 .description = "Value of a `UiSlider`.", .params = {entityId}, .returns = {{"value", Number}}},
 		{.table = "ui", .name = "set_slider_value", .function = guarded<luaUiSetSliderValue>,
 		 .description = "Set the value of a `UiSlider`.", .params = {entityId, {"value", Number}}},
+		{.table = "ui", .name = "set_focus", .function = guarded<luaUiSetFocus>,
+		 .description = "Give the keyboard and gamepad focus to a `UiButton` or a `UiSlider` and show it (false when "
+						"the widget cannot take it); its `UiFocus` callback runs.",
+		 .params = {entityId}, .returns = {{"focused", Boolean}}},
+		{.table = "ui", .name = "get_focus", .function = guarded<luaUiGetFocus>,
+		 .description = "Widget holding the keyboard and gamepad focus (0 when none).",
+		 .returns = {{"entity_id", Entity}}},
 		{.table = "ui", .name = "set_button_enabled", .function = guarded<luaUiSetButtonEnabled>,
 		 .description = "Enable or disable a `UiButton`.", .params = {entityId, {"enabled", Boolean}}},
 		{.table = "ui", .name = "transition_fade_in", .function = guarded<luaUiTransitionFadeIn>,

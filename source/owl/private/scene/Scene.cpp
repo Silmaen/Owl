@@ -1485,13 +1485,23 @@ void Scene::assignEntityLinkIds() {
 
 void Scene::remapEntityLinks(const std::vector<Entity>& iEntities,
 							 const std::unordered_map<core::UUID, core::UUID>& iRemap) {
+	const auto remapped = [&iRemap](core::UUID& ioId) -> void {
+		if (const auto it = iRemap.find(ioId); it != iRemap.end())
+			ioId = it->second;
+	};
 	for (const auto& entity: iEntities) {
-		if (!entity || !entity.hasComponent<component::EntityLink>())
+		if (!entity)
 			continue;
-		auto& link = entity.getComponent<component::EntityLink>();
-		if (const auto it = iRemap.find(link.linkedEntityId); it != iRemap.end()) {
-			link.linkedEntityId = it->second;
-			link.linkedEntity = {};
+		if (entity.hasComponent<component::EntityLink>()) {
+			auto& link = entity.getComponent<component::EntityLink>();
+			if (const auto it = iRemap.find(link.linkedEntityId); it != iRemap.end()) {
+				link.linkedEntityId = it->second;
+				link.linkedEntity = {};
+			}
+		}
+		if (entity.hasComponent<component::UiFocus>()) {
+			auto& focus = entity.getComponent<component::UiFocus>();
+			for (auto* neighbour: {&focus.up, &focus.down, &focus.left, &focus.right}) remapped(*neighbour);
 		}
 	}
 }
@@ -2193,6 +2203,10 @@ OWL_API void Scene::onComponentAdded<component::UiTooltip>([[maybe_unused]] cons
 template<>
 OWL_API void Scene::onComponentAdded<component::UiToolCursor>([[maybe_unused]] const Entity& iEntity,
 															  [[maybe_unused]] component::UiToolCursor& ioComponent) {}
+
+template<>
+OWL_API void Scene::onComponentAdded<component::UiFocus>([[maybe_unused]] const Entity& iEntity,
+														 [[maybe_unused]] component::UiFocus& ioComponent) {}
 
 template<>
 OWL_API void Scene::onComponentAdded<component::PrefabLink>([[maybe_unused]] const Entity& iEntity,

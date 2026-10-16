@@ -1,6 +1,7 @@
 -- Settings menu controller.
 -- Demonstrates: settings.get/set/save/load/apply/reset/reset_all,
 --               ui.set_text, ui.set_slider_value, ui.get_slider_value,
+--               ui.get_focus, UiFocus callback, input.is_action_just_pressed("ui_cancel"),
 --               scene.transition_to (engine-driven scene-load orchestration).
 
 local vol_label_id = 0
@@ -45,9 +46,21 @@ function update_labels()
     end
 end
 
+local leaving = false
+
 function on_update(dt)
-    -- Scene-to-scene handoffs are driven by `scene.transition_to`; nothing to
-    -- pump per-frame here.
+    -- Scene-to-scene handoffs are driven by `scene.transition_to`; the only
+    -- per-frame work is the gamepad / keyboard "back": ui_cancel (Esc, B).
+    if not leaving and input.is_action_just_pressed("ui_cancel") then
+        leaving = true
+        go_back()
+    end
+end
+
+-- Focus callback (UiFocus.onFocusCallback): the keyboard / gamepad focus moved
+-- onto a slider; `_focused_entity` is its id, ui.get_focus() the current one.
+function on_slider_focused()
+    log.trace("Slider focused: " .. ui.get_focus() .. " (" .. entity.get_name(_focused_entity) .. ")")
 end
 
 function on_destroy()

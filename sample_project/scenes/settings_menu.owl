@@ -96,6 +96,8 @@ Entities:
       fillColor: [0.200000003, 0.800000012, 0.300000012, 1]
       handleColor: [1, 1, 1, 1]
       onValueChangedCallback: on_speed_changed
+    UiFocus:
+      onFocusCallback: on_slider_focused
   - Entity: 5678901234567890123
     Tag:
       tag: PlayerSpeedLabel
@@ -150,6 +152,9 @@ Entities:
       fillColor: [0.300000012, 0.600000024, 0.899999976, 1]
       handleColor: [1, 1, 1, 1]
       onValueChangedCallback: on_master_vol_changed
+    UiFocus:
+      initial: true
+      onFocusCallback: on_slider_focused
   - Entity: 3456789012345678901
     Tag:
       tag: MasterVolLabel

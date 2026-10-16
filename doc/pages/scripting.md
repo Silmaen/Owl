@@ -243,6 +243,12 @@ scene's HUD asset (`Hud:` key, see [Scene](scene.md#hud-asset)).
 `ui.*` functions take its id wherever the widget lives. A button callback of a HUD widget runs on the script above it in
 the HUD, else on the first script of the active scene that defines it.
 
+The keyboard and the gamepad drive a focus over the buttons and sliders (`ui_*` actions, see
+[HUD system](design/hud-system.md#focus-navigation-hud5-done)): `ui.set_focus(id)` gives it to a widget and shows it,
+`ui.get_focus()` returns the widget holding it (0 when none), and a `UiFocus` with an `onFocusCallback` calls that
+function when its widget takes the focus, with the widget id in `_focused_entity`. A script can also read
+`input.is_action_just_pressed("ui_cancel")` to go back from a menu.
+
 #### Transition kinds
 
 `ui.transition_play(type, duration, [r, g, b, a])` accepts:

@@ -142,7 +142,10 @@ a few days, L a week.
 - ![Done][done] **HUD4 — HUD editor document, L.** `HudDocument` on `.owlhud` and embedded canvases: pixel
   viewport with resolution presets and a colour or image backdrop, rect gizmo with anchor handles and snapping, widget
   palette and drag & drop, multi-select; every action a named command, hence undoable and reachable through MCP.
-- ![Planned][planned] **HUD5 — Focus navigation, S/M.** Keyboard and gamepad focus driven by the `ui_*` actions.
+- ![Done][done] **HUD5 — Focus navigation, S/M.** Keyboard and gamepad focus driven by the `ui_*` actions: nearest
+  widget in the direction pressed from the shared layout, `UiFocus` (focusable, initial, neighbours by UUID, focus
+  callback, highlight), confirm and cancel, sliders adjusted with left / right, restricted to the top window, mouse
+  hover moves the focus, Lua `ui.set_focus` / `ui.get_focus`; the sample menus play with a gamepad alone.
 - ![Planned][planned] **HUD6 — Migration, M.** "Extract canvas to `.owlhud`" command; sample project and project
   templates moved to a shared `huds/gameplay.owlhud`, no `RendererTag: ui` left; empty raycast hint fixed.
 - ![Planned][planned] **DEMO1 — Inventory demo (from v0.5.0), S/M.** Collectible objects, key-locked switches and an

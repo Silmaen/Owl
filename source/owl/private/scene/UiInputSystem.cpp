@@ -10,10 +10,13 @@
 #include "scene/UiInputSystem.h"
 
 #include "scene/Entity.h"
+#include "scene/component/Canvas.h"
 #include "scene/component/Hierarchy.h"
 #include "scene/component/ID.h"
 #include "scene/component/LuaScript.h"
+#include "scene/component/Tag.h"
 #include "scene/component/UiButton.h"
+#include "scene/component/UiFocus.h"
 #include "scene/component/UiSlider.h"
 #include "scene/component/UiTooltip.h"
 #include "scene/component/UiWindow.h"
@@ -22,12 +25,19 @@
 #include "script/ScriptInstance.h"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstdint>
 #include <iterator>
+#include <limits>
+#include <optional>
 #include <ranges>
+#include <span>
 #include <string>
+#include <string_view>
 #include <tuple>
+#include <utility>
+#include <vector>
 
 namespace owl::scene {
 
@@ -123,17 +133,18 @@ auto probeSurface(const Scene& iScene, const ui::HudLayout& iLayout, const math:
 	return result;
 }
 
-void updateButton(const Scene* iActive, const Entity& iWidget, const bool iHovered, const bool iPressed,
-				  const bool iClicked) {
+// A focused button looks hovered; only the mouse presses and clicks it here (`ui_accept` clicks through `navigate`).
+void updateButton(const Scene* iActive, const Entity& iWidget, const bool iHovered, const bool iFocused,
+				  const bool iPressed, const bool iClicked) {
 	auto& button = iWidget.getComponent<component::UiButton>();
 	if (button.state == component::UiButton::State::Disabled)
 		return;
-	if (!iHovered) {
+	if (!iHovered && !iFocused) {
 		button.state = component::UiButton::State::Normal;
 		return;
 	}
-	button.state = iPressed ? component::UiButton::State::Pressed : component::UiButton::State::Hovered;
-	if (iClicked)
+	button.state = iHovered && iPressed ? component::UiButton::State::Pressed : component::UiButton::State::Hovered;
+	if (iHovered && iClicked)
 		invokeLuaCallback(iWidget.getScene(), iActive, iWidget, button.onClickCallback,
 						  static_cast<uint64_t>(iWidget.getUUID()));
 }
@@ -161,7 +172,8 @@ auto layoutOf(Scene& ioSurface, const math::vec2ui& iViewportSize) -> const ui::
 
 // Update the widgets of a surface; only the one the mouse reaches (`iTopmost`) is hovered.
 void updateWidgets(Scene& ioSurface, const Scene* iActive, const ui::HudLayout& iLayout, const ui::HudNode* iTopmost,
-				   const math::vec2& iMousePos, const bool iMousePressed, const bool iClicked) {
+				   const entt::entity iFocused, const math::vec2& iMousePos, const bool iMousePressed,
+				   const bool iClicked) {
 	for (const auto& node: iLayout.getNodes()) {
 		// A callback may destroy entities: the layout can name one that is gone.
 		if (!ioSurface.registry.valid(node.entity))
@@ -169,7 +181,7 @@ void updateWidgets(Scene& ioSurface, const Scene* iActive, const ui::HudLayout& 
 		const Entity widget{node.entity, &ioSurface};
 		const bool hovered = &node == iTopmost;
 		if (widget.hasComponent<component::UiButton>())
-			updateButton(iActive, widget, hovered, iMousePressed, iClicked);
+			updateButton(iActive, widget, hovered, node.entity == iFocused, iMousePressed, iClicked);
 		if (widget.hasComponent<component::UiSlider>())
 			updateSlider(iActive, widget, node, hovered, iMousePressed, iMousePos);
 	}
@@ -278,6 +290,413 @@ void trackTooltip(Scene::UiInputState& ioState, const entt::entity iWidget, cons
 		ioState.hoverTime = iPressed ? 0.f : ioState.hoverTime + iDeltaTime;
 }
 
+enum struct Direction : uint8_t { None, Up, Down, Left, Right };
+
+constexpr std::array g_directions{Direction::Up, Direction::Down, Direction::Left, Direction::Right};
+// Seconds a direction is held before it repeats, then between two repeats.
+constexpr float g_repeatDelay = 0.4f;
+constexpr float g_repeatInterval = 0.1f;
+
+auto actionOf(const Direction iDirection) -> std::string_view {
+	switch (iDirection) {
+		case Direction::Up:
+			return "ui_up";
+		case Direction::Down:
+			return "ui_down";
+		case Direction::Left:
+			return "ui_left";
+		case Direction::Right:
+			return "ui_right";
+		case Direction::None:
+			break;
+	}
+	return {};
+}
+
+auto neighbourOf(const component::UiFocus& iFocus, const Direction iDirection) -> core::UUID {
+	switch (iDirection) {
+		case Direction::Up:
+			return iFocus.up;
+		case Direction::Down:
+			return iFocus.down;
+		case Direction::Left:
+			return iFocus.left;
+		case Direction::Right:
+			return iFocus.right;
+		case Direction::None:
+			break;
+	}
+	return core::UUID{0};
+}
+
+// The edges of the frame of the actions, and the direction to move this frame (a press or a repeat).
+struct NavInput {
+	Direction direction = Direction::None;
+	bool accept = false;
+	bool cancel = false;
+
+	[[nodiscard]] auto startsNavigation() const -> bool { return direction != Direction::None || accept; }
+};
+
+auto readNavInput(Scene::UiInputState& ioState, const input::ActionFrame& iActions, const float iDeltaTime)
+		-> NavInput {
+	const auto pressed = [&iActions](const std::string_view iName) -> bool {
+		return iActions.has(iName) && iActions.isJustPressed(iName);
+	};
+	NavInput result{.accept = pressed("ui_accept"), .cancel = pressed("ui_cancel")};
+	for (const auto direction: g_directions) {
+		if (!pressed(actionOf(direction)))
+			continue;
+		result.direction = direction;
+		ioState.repeatDirection = static_cast<uint8_t>(direction);
+		ioState.repeatTime = 0.f;
+		return result;
+	}
+	if (ioState.repeatDirection == static_cast<uint8_t>(Direction::None))
+		return result;
+	const auto held = static_cast<Direction>(ioState.repeatDirection);
+	if (const auto name = actionOf(held); !iActions.has(name) || !iActions.isHeld(name)) {
+		ioState.repeatDirection = static_cast<uint8_t>(Direction::None);
+		return result;
+	}
+	ioState.repeatTime += iDeltaTime;
+	if (ioState.repeatTime >= g_repeatDelay) {
+		result.direction = held;
+		ioState.repeatTime -= g_repeatInterval;
+	}
+	return result;
+}
+
+// One widget that can take the focus.
+struct Candidate {
+	Scene* surface = nullptr;
+	const ui::HudNode* node = nullptr;
+	bool inHud = false;
+};
+
+// The scene and its HUD asset, with their layouts of the frame.
+struct FocusSurfaces {
+	Scene* active = nullptr;
+	Scene* hud = nullptr;
+	const ui::HudLayout* activeLayout = nullptr;
+	const ui::HudLayout* hudLayout = nullptr;
+
+	[[nodiscard]] auto surfaceOf(const bool iInHud) const -> Scene* { return iInHud ? hud : active; }
+
+	[[nodiscard]] auto layoutFor(const bool iInHud) const -> const ui::HudLayout* {
+		return iInHud ? hudLayout : activeLayout;
+	}
+};
+
+// The window drawn last (the HUD's over the scene's): the focus stays in it.
+struct TopWindow {
+	Scene* surface = nullptr;
+	const ui::HudNode* node = nullptr;
+};
+
+auto findTopWindow(const FocusSurfaces& iSurfaces) -> TopWindow {
+	for (const bool inHud: {true, false}) {
+		Scene* const surface = iSurfaces.surfaceOf(inHud);
+		if (surface == nullptr)
+			continue;
+		for (const auto& node: iSurfaces.layoutFor(inHud)->getNodes() | std::views::reverse) {
+			if (surface->registry.all_of<component::UiWindow>(node.entity))
+				return {.surface = surface, .node = &node};
+		}
+	}
+	return {};
+}
+
+auto isFocusable(const Scene& iSurface, const entt::entity iEntity) -> bool {
+	if (!isInteractive(iSurface, iEntity))
+		return false;
+	const auto* focus = iSurface.registry.try_get<component::UiFocus>(iEntity);
+	return focus == nullptr || focus->focusable;
+}
+
+// A widget scrolled out of its clipping panel cannot be reached.
+auto isReachable(const ui::HudNode& iNode) -> bool {
+	if (!iNode.clipped)
+		return true;
+	const auto visible = iNode.bounds.intersect(iNode.clip);
+	return visible.size.x() > 0.f && visible.size.y() > 0.f;
+}
+
+auto isInTopWindow(const ui::HudNode& iNode, const ui::HudLayout& iLayout, const TopWindow& iTop) -> bool {
+	if (iTop.node == nullptr)
+		return true;
+	return iNode.window != ui::HudNode::noParent && &iLayout.getNodes()[iNode.window] == iTop.node;
+}
+
+auto canHoldFocus(const Scene& iSurface, const ui::HudNode& iNode, const ui::HudLayout& iLayout, const TopWindow& iTop)
+		-> bool {
+	return isFocusable(iSurface, iNode.entity) && isReachable(iNode) && isInTopWindow(iNode, iLayout, iTop);
+}
+
+auto locateFocus(const FocusSurfaces& iSurfaces, const Scene::UiInputState& iState, const TopWindow& iTop)
+		-> std::optional<Candidate> {
+	Scene* const surface = iSurfaces.surfaceOf(iState.focusInHud);
+	if (iState.focus == entt::null || surface == nullptr || !surface->registry.valid(iState.focus))
+		return std::nullopt;
+	const auto& layout = *iSurfaces.layoutFor(iState.focusInHud);
+	const auto* node = layout.findNode(iState.focus);
+	if (node == nullptr || !canHoldFocus(*surface, *node, layout, iTop))
+		return std::nullopt;
+	return Candidate{.surface = surface, .node = node, .inHud = iState.focusInHud};
+}
+
+// The focusable widgets of the scene then of its HUD, in layout order.
+auto collectCandidates(const FocusSurfaces& iSurfaces, const TopWindow& iTop) -> std::vector<Candidate> {
+	std::vector<Candidate> result;
+	for (const bool inHud: {false, true}) {
+		Scene* const surface = iSurfaces.surfaceOf(inHud);
+		if (surface == nullptr)
+			continue;
+		const auto& layout = *iSurfaces.layoutFor(inHud);
+		for (const auto& node: layout.getNodes()) {
+			if (canHoldFocus(*surface, node, layout, iTop))
+				result.push_back({.surface = surface, .node = &node, .inHud = inHud});
+		}
+	}
+	return result;
+}
+
+auto findInitial(const std::span<const Candidate> iCandidates) -> const Candidate* {
+	for (const auto& candidate: iCandidates) {
+		const auto* focus = candidate.surface->registry.try_get<component::UiFocus>(candidate.node->entity);
+		if (focus != nullptr && focus->initial)
+			return &candidate;
+	}
+	return nullptr;
+}
+
+auto pickInitial(const std::span<const Candidate> iCandidates) -> const Candidate* {
+	if (const auto* initial = findInitial(iCandidates); initial != nullptr)
+		return initial;
+	return iCandidates.empty() ? nullptr : &iCandidates.front();
+}
+
+auto findByUuid(const std::span<const Candidate> iCandidates, const core::UUID iUuid) -> const Candidate* {
+	for (const auto& candidate: iCandidates) {
+		if (Entity{candidate.node->entity, candidate.surface}.getUUID() == iUuid)
+			return &candidate;
+	}
+	return nullptr;
+}
+
+// The canvas above a widget: its menu.
+auto canvasOf(const Candidate& iCandidate) -> Entity {
+	Entity entity{iCandidate.node->entity, iCandidate.surface};
+	while (entity && !entity.hasComponent<component::Canvas>())
+		entity = iCandidate.surface->findEntityByUUID(entity.getComponent<component::Hierarchy>().parentId);
+	return entity;
+}
+
+// Distance travelled in the direction, and drift sideways, from one centre to another.
+auto axesOf(const math::vec2& iDelta, const Direction iDirection) -> std::pair<float, float> {
+	switch (iDirection) {
+		case Direction::Up:
+			return {-iDelta.y(), iDelta.x()};
+		case Direction::Down:
+			return {iDelta.y(), iDelta.x()};
+		case Direction::Left:
+			return {-iDelta.x(), iDelta.y()};
+		case Direction::Right:
+			return {iDelta.x(), iDelta.y()};
+		case Direction::None:
+			break;
+	}
+	return {0.f, 0.f};
+}
+
+// The nearest widget past the current one in a direction; a sideways drift weighs double.
+auto pickInDirection(const std::span<const Candidate> iCandidates, const Candidate& iCurrent,
+					 const Direction iDirection) -> const Candidate* {
+	const math::vec2 from = iCurrent.node->bounds.getCenter();
+	const Candidate* best = nullptr;
+	float bestScore = std::numeric_limits<float>::max();
+	for (const auto& candidate: iCandidates) {
+		if (candidate.node == iCurrent.node)
+			continue;
+		const auto [along, across] = axesOf(candidate.node->bounds.getCenter() - from, iDirection);
+		if (along <= 0.5f)
+			continue;
+		if (const float score = along + 2.f * std::abs(across); score < bestScore) {
+			bestScore = score;
+			best = &candidate;
+		}
+	}
+	return best;
+}
+
+// With nothing ahead, the widget at the far end on the opposite side (same menu as the current one).
+auto pickWrapped(const std::span<const Candidate> iCandidates, const Candidate& iCurrent, const Direction iDirection,
+				 const Entity& iCanvas) -> const Candidate* {
+	const math::vec2 from = iCurrent.node->bounds.getCenter();
+	const Candidate* best = nullptr;
+	float bestScore = std::numeric_limits<float>::max();
+	for (const auto& candidate: iCandidates) {
+		if (candidate.node == iCurrent.node || canvasOf(candidate) != iCanvas)
+			continue;
+		const auto [along, across] = axesOf(candidate.node->bounds.getCenter() - from, iDirection);
+		if (const float score = along + 2.f * std::abs(across); score < bestScore) {
+			bestScore = score;
+			best = &candidate;
+		}
+	}
+	return best;
+}
+
+void invokeFocusCallback(const Scene& iSurface, const Scene& iActive, const Entity& iWidget,
+						 const std::string& iCallbackName) {
+	const auto id = static_cast<int64_t>(static_cast<uint64_t>(iWidget.getUUID()));
+	invokeCallback(&iSurface, &iActive, iWidget, iCallbackName, [id](const script::ScriptInstance& iInstance) -> void {
+		iInstance.setProperty("_focused_entity", id);
+	});
+}
+
+// Put the focus on a widget; a new one runs its `onFocusCallback`.
+void setFocusState(Scene& ioActive, Scene& ioSurface, const bool iInHud, const entt::entity iWidget,
+				   const bool iVisible) {
+	auto& state = ioActive.getUiInputState();
+	const bool changed = state.focus != iWidget || state.focusInHud != iInHud;
+	state.focus = iWidget;
+	state.focusInHud = iInHud;
+	state.focusVisible = iVisible;
+	if (!changed)
+		return;
+	const auto* focus = ioSurface.registry.try_get<component::UiFocus>(iWidget);
+	if (focus == nullptr || focus->onFocusCallback.empty())
+		return;
+	const std::string callback = focus->onFocusCallback;
+	invokeFocusCallback(ioSurface, ioActive, Entity{iWidget, &ioSurface}, callback);
+}
+
+void focusCandidate(Scene& ioActive, const Candidate& iCandidate, const bool iVisible) {
+	setFocusState(ioActive, *iCandidate.surface, iCandidate.inHud, iCandidate.node->entity, iVisible);
+}
+
+void activateFocus(Scene& ioActive, const Candidate& iCurrent) {
+	const auto* button = iCurrent.surface->registry.try_get<component::UiButton>(iCurrent.node->entity);
+	if (button == nullptr)
+		return;
+	const Entity widget{iCurrent.node->entity, iCurrent.surface};
+	const std::string callback = button->onClickCallback;
+	invokeLuaCallback(iCurrent.surface, &ioActive, widget, callback, static_cast<uint64_t>(widget.getUUID()));
+}
+
+void adjustFocusedSlider(Scene& ioActive, const Candidate& iCurrent, const float iSign) {
+	const Entity widget{iCurrent.node->entity, iCurrent.surface};
+	auto& slider = widget.getComponent<component::UiSlider>();
+	if (slider.maxValue <= slider.minValue)
+		return;
+	const float step = slider.step > 0.f ? slider.step : (slider.maxValue - slider.minValue) / 20.f;
+	const float newValue = std::clamp(slider.value + iSign * step, slider.minValue, slider.maxValue);
+	if (std::abs(newValue - slider.value) <= 1e-6f)
+		return;
+	slider.value = newValue;
+	const std::string callback = slider.onValueChangedCallback;
+	invokeSliderCallback(iCurrent.surface, &ioActive, widget, callback, newValue);
+}
+
+void closeTopWindow(Scene& ioActive, const TopWindow& iTop) {
+	if (iTop.surface == nullptr)
+		return;
+	const Entity window{iTop.node->entity, iTop.surface};
+	if (window.getComponent<component::UiWindow>().closable)
+		closeWindow(*iTop.surface, &ioActive, window);
+}
+
+// The focus is lost (hidden, disabled, outside the top window...) or never was: pick the first widget, or none.
+void acquireFocus(Scene& ioActive, const FocusSurfaces& iSurfaces, const TopWindow& iTop, const bool iVisible) {
+	auto& state = ioActive.getUiInputState();
+	state.focus = entt::null;
+	state.focusVisible = false;
+	if (!iVisible)
+		return;
+	const auto candidates = collectCandidates(iSurfaces, iTop);
+	if (const auto* first = pickInitial(candidates); first != nullptr)
+		focusCandidate(ioActive, *first, true);
+}
+
+void moveFocus(Scene& ioActive, const FocusSurfaces& iSurfaces, const TopWindow& iTop, const Candidate& iCurrent,
+			   const Direction iDirection) {
+	const auto* focus = iCurrent.surface->registry.try_get<component::UiFocus>(iCurrent.node->entity);
+	const core::UUID neighbour = focus != nullptr ? neighbourOf(*focus, iDirection) : core::UUID{0};
+	const bool hasNeighbour = neighbour != core::UUID{0};
+	const bool sideways = iDirection == Direction::Left || iDirection == Direction::Right;
+	if (sideways && !hasNeighbour && iCurrent.surface->registry.all_of<component::UiSlider>(iCurrent.node->entity)) {
+		adjustFocusedSlider(ioActive, iCurrent, iDirection == Direction::Right ? 1.f : -1.f);
+		return;
+	}
+	const auto candidates = collectCandidates(iSurfaces, iTop);
+	const Candidate* target = hasNeighbour ? findByUuid(candidates, neighbour) : nullptr;
+	if (target == nullptr)
+		target = pickInDirection(candidates, iCurrent, iDirection);
+	if (const Entity canvas = target == nullptr ? canvasOf(iCurrent) : Entity{};
+		canvas && canvas.getComponent<component::Canvas>().wrapFocus)
+		target = pickWrapped(candidates, iCurrent, iDirection, canvas);
+	if (target != nullptr)
+		focusCandidate(ioActive, *target, true);
+}
+
+void navigateSurfaces(Scene& ioActive, const FocusSurfaces& iSurfaces, const NavInput& iInput) {
+	auto& state = ioActive.getUiInputState();
+	const TopWindow top = findTopWindow(iSurfaces);
+	const auto current = locateFocus(iSurfaces, state, top);
+	if (!current) {
+		const bool wasShown = state.focusVisible;
+		acquireFocus(ioActive, iSurfaces, top, wasShown || iInput.startsNavigation());
+		return;
+	}
+	if (!iInput.startsNavigation() && !iInput.cancel)
+		return;
+	if (!state.focusVisible) {
+		state.focusVisible = iInput.startsNavigation();
+		return;
+	}
+	if (iInput.accept)
+		activateFocus(ioActive, *current);
+	else if (iInput.direction != Direction::None)
+		moveFocus(ioActive, iSurfaces, top, *current, iInput.direction);
+	else if (iInput.cancel)
+		closeTopWindow(ioActive, top);
+}
+
+// The surfaces of a scene, laid out for the frame; the HUD handle keeps its asset alive.
+auto surfacesOf(Scene& ioScene, const shared<Scene>& iHud, const math::vec2ui& iViewportSize) -> FocusSurfaces {
+	Scene* const hud = iHud && iHud.get() != &ioScene ? iHud.get() : nullptr;
+	return {.active = &ioScene,
+			.hud = hud,
+			.activeLayout = &layoutOf(ioScene, iViewportSize),
+			.hudLayout = hud != nullptr ? &layoutOf(*hud, iViewportSize) : nullptr};
+}
+
+void navigateFrame(Scene& ioScene, const math::vec2ui& iViewportSize, const input::ActionFrame& iActions,
+				   const float iDeltaTime) {
+	auto& state = ioScene.getUiInputState();
+	const NavInput input = readNavInput(state, iActions, iDeltaTime);
+	const bool starting = !state.focusStarted;
+	if (!starting && state.focus == entt::null && !input.startsNavigation())
+		return;
+	const auto hudHandle = ioScene.getHud();
+	const auto surfaces = surfacesOf(ioScene, hudHandle, iViewportSize);
+	if (starting) {
+		state.focusStarted = true;
+		if (const auto candidates = collectCandidates(surfaces, findTopWindow(surfaces)); !candidates.empty()) {
+			if (const auto* initial = findInitial(candidates); initial != nullptr)
+				focusCandidate(ioScene, *initial, true);
+		}
+	}
+	navigateSurfaces(ioScene, surfaces, input);
+}
+
+// The mouse takes the focus where it moves or clicks, and hides its highlight.
+void focusUnderMouse(Scene& ioActive, const Candidate& iHovered) {
+	if (isFocusable(*iHovered.surface, iHovered.node->entity))
+		focusCandidate(ioActive, iHovered, false);
+}
+
 }// namespace
 
 void UiInputSystem::update(Scene* iScene, const math::vec2ui& iViewportSize, const math::vec2& iMousePos,
@@ -292,6 +711,8 @@ void UiInputSystem::update(Scene* iScene, const math::vec2ui& iViewportSize, con
 		return;
 
 	const bool clicked = !state.wasPressed && iMousePressed;
+	const bool mouseMoved = state.hasMouse && (std::abs(iMousePos.x() - state.mousePosition.x()) > 0.5f ||
+											   std::abs(iMousePos.y() - state.mousePosition.y()) > 0.5f);
 	state.wasPressed = iMousePressed;
 	state.hasMouse = true;
 	state.mousePosition = iMousePos;
@@ -310,9 +731,21 @@ void UiInputSystem::update(Scene* iScene, const math::vec2ui& iViewportSize, con
 		else if (sceneProbe.window != nullptr)
 			clickWindow(*iScene, *iScene, false, sceneProbe, iMousePos);
 	}
-	updateWidgets(*iScene, iScene, layout, sceneProbe.interactive, iMousePos, iMousePressed, clicked);
+	if ((mouseMoved || clicked) && !dragging) {
+		if (hudProbe.interactive != nullptr)
+			focusUnderMouse(*iScene, {.surface = hud, .node = hudProbe.interactive, .inHud = true});
+		else if (sceneProbe.interactive != nullptr)
+			focusUnderMouse(*iScene, {.surface = iScene, .node = sceneProbe.interactive, .inHud = false});
+	}
+	navigateFrame(*iScene, iViewportSize, iScene->getActions(), iDeltaTime);
+	const auto shownFocus = [&state](const bool iInHud) -> entt::entity {
+		return state.focusVisible && state.focusInHud == iInHud ? state.focus : entt::null;
+	};
+	updateWidgets(*iScene, iScene, layout, sceneProbe.interactive, shownFocus(false), iMousePos, iMousePressed,
+				  clicked);
 	if (hud != nullptr)
-		updateWidgets(*hud, iScene, *hudLayout, hudProbe.interactive, iMousePos, iMousePressed, clicked);
+		updateWidgets(*hud, iScene, *hudLayout, hudProbe.interactive, shownFocus(true), iMousePos, iMousePressed,
+					  clicked);
 	state.consuming = dragging || hudProbe.consumes() || sceneProbe.consumes();
 
 	entt::entity tooltip = entt::null;
@@ -330,6 +763,41 @@ void UiInputSystem::update(Scene* iScene, const math::vec2ui& iViewportSize, con
 	iScene->getHudLayout().invalidate();
 	if (hud != nullptr)
 		hud->getHudLayout().invalidate();
+}
+
+void UiInputSystem::navigate(Scene& ioScene, const math::vec2ui& iViewportSize, const input::ActionFrame& iActions,
+							 const float iDeltaTime) {
+	OWL_PROFILE_FUNCTION()
+
+	navigateFrame(ioScene, iViewportSize, iActions, iDeltaTime);
+	ioScene.getHudLayout().invalidate();
+	if (const auto hud = ioScene.getHud(); hud && hud.get() != &ioScene)
+		hud->getHudLayout().invalidate();
+}
+
+auto UiInputSystem::setFocus(Scene& ioScene, const Entity& iWidget) -> bool {
+	Scene* const surface = iWidget.getScene();
+	if (!iWidget || surface == nullptr || !isFocusable(*surface, static_cast<entt::entity>(iWidget)))
+		return false;
+	setFocusState(ioScene, *surface, surface != &ioScene, static_cast<entt::entity>(iWidget), true);
+	return true;
+}
+
+auto UiInputSystem::getFocus(Scene& ioScene) -> Entity {
+	const auto& state = ioScene.getUiInputState();
+	if (state.focus == entt::null)
+		return {};
+	const auto hud = ioScene.getHud();
+	Scene* const surface = state.focusInHud ? hud.get() : &ioScene;
+	if (surface == nullptr || !surface->registry.valid(state.focus))
+		return {};
+	return Entity{state.focus, surface};
+}
+
+void UiInputSystem::clearFocus(Scene& ioScene) {
+	auto& state = ioScene.getUiInputState();
+	state.focus = entt::null;
+	state.focusVisible = false;
 }
 
 auto UiInputSystem::isUIConsuming(const Scene& iScene) -> bool { return iScene.getUiInputState().consuming; }

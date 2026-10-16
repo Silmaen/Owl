@@ -813,6 +813,8 @@ void renderProps(Canvas& ioComponent) {
 	enumCombo("Scale Mode", ioComponent.scaleMode);
 	fieldTooltip("ConstantPixels: one pixel per pixel. ScaleWithHeight: the reference height fills the screen. "
 				 "MatchSmallerSide: the whole reference resolution fits in the screen.");
+	prop::Checkbox("Wrap Focus", &ioComponent.wrapFocus);
+	fieldTooltip("The keyboard and gamepad focus jumps to the opposite end of the menu when nothing lies ahead.");
 }
 
 void renderProps(UiRect& ioComponent) {
@@ -909,6 +911,9 @@ void renderProps(UiSlider& ioComponent) {
 	prop::ColorEdit4("Track Color", reinterpret_cast<float*>(&ioComponent.trackColor));
 	prop::ColorEdit4("Fill Color", reinterpret_cast<float*>(&ioComponent.fillColor));
 	prop::ColorEdit4("Handle Color", reinterpret_cast<float*>(&ioComponent.handleColor));
+	prop::DragFloat("Step", &ioComponent.step, 0.01f, 0.0f, 1000.0f);
+	fieldTooltip(
+			"Change of the value per ui_left / ui_right press on the focused slider. 0: a twentieth of the range.");
 	prop::InputText("On Value Changed", &ioComponent.onValueChangedCallback);
 	fieldTooltip("Lua function called when the value changes. Receives the new value in _slider_value.");
 }
@@ -974,6 +979,57 @@ void renderProps(UiToolCursor& ioComponent) {
 	fieldTooltip("Point of the sprite put on the mouse: (0,0) = top-left, (1,1) = bottom-right.");
 	prop::Checkbox("Active", &ioComponent.active);
 	fieldTooltip("Drawn over the HUD in play; a script switches it with ui.set_tool_cursor.");
+}
+
+namespace {
+// A combo listing the UI entities of the scene by name, with a filter and a "none" entry.
+void uiEntityPicker(const char* iLabel, core::UUID& ioTarget, const Entity& iOwner) {
+	Scene* const scene = iOwner.getScene();
+	const Entity current = scene != nullptr && ioTarget != core::UUID{0} ? scene->findEntityByUUID(ioTarget) : Entity{};
+	std::string preview = ioTarget != core::UUID{0} ? "(missing)" : "(nearest)";
+	if (current)
+		preview = current.getName();
+	if (!prop::BeginCombo(iLabel, preview.c_str()))
+		return;
+	static ImGuiTextFilter s_filter;
+	s_filter.Draw("##filter", -FLT_MIN);
+	if (ImGui::Selectable("(nearest)", ioTarget == core::UUID{0}))
+		ioTarget = core::UUID{0};
+	if (scene != nullptr) {
+		for (const auto view = scene->registry.view<UiRect, ID>(); const auto entity: view) {
+			const Entity candidate{entity, scene};
+			if (candidate == iOwner || !s_filter.PassFilter(candidate.getName().c_str()))
+				continue;
+			const auto uuid = view.get<ID>(entity).id;
+			ImGui::PushID(static_cast<int>(static_cast<uint64_t>(uuid) & 0x7fffffff));
+			if (ImGui::Selectable(candidate.getName().c_str(), uuid == ioTarget))
+				ioTarget = uuid;
+			ImGui::PopID();
+		}
+	}
+	ImGui::EndCombo();
+}
+
+}// namespace
+
+void renderProps(UiFocus& ioComponent, const Entity& iOwner) {
+	prop::Checkbox("Focusable", &ioComponent.focusable);
+	fieldTooltip("Whether the keyboard and the gamepad can reach the widget.");
+	prop::Checkbox("Initial", &ioComponent.initial);
+	fieldTooltip("Takes the focus, shown, as soon as the scene plays; a lost focus restarts from it.");
+	uiEntityPicker("Up", ioComponent.up, iOwner);
+	fieldTooltip("Widget the focus goes to on ui_up. (nearest): the nearest one above.");
+	uiEntityPicker("Down", ioComponent.down, iOwner);
+	fieldTooltip("Widget the focus goes to on ui_down. (nearest): the nearest one below.");
+	uiEntityPicker("Left", ioComponent.left, iOwner);
+	fieldTooltip("Widget the focus goes to on ui_left. (nearest): the nearest one on the left.");
+	uiEntityPicker("Right", ioComponent.right, iOwner);
+	fieldTooltip("Widget the focus goes to on ui_right. (nearest): the nearest one on the right.");
+	prop::InputText("On Focus", &ioComponent.onFocusCallback);
+	fieldTooltip("Lua function called when the widget takes the focus. Receives the widget id in _focused_entity.");
+	prop::ColorEdit4("Highlight", reinterpret_cast<float*>(&ioComponent.highlightColor));
+	prop::DragFloat("Thickness", &ioComponent.highlightThickness, 0.1f, 0.5f, 32.0f);
+	fieldTooltip("Thickness of the frame around the focused widget, in reference pixels.");
 }
 
 void renderProps(PrefabLink& ioComponent) {

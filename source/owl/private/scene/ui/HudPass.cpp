@@ -18,6 +18,7 @@
 #include "scene/component/components.h"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -275,6 +276,32 @@ void drawTooltip(Scene& ioSurface, const Scene::UiInputState& iState, const math
 				  data::fonts::HorizontalAlignment::Left, -1);
 }
 
+// A frame just outside the focused widget, in the colour and thickness of its `UiFocus`.
+void drawFocusFrame(Scene& ioSurface, const Scene::UiInputState& iState, const math::vec2ui& iViewport) {
+	if (!ioSurface.registry.valid(iState.focus))
+		return;
+	const auto* node = ioSurface.getHudLayout().findNode(iState.focus);
+	if (node == nullptr)
+		return;
+	const component::UiFocus defaults;
+	const auto* authored = ioSurface.registry.try_get<component::UiFocus>(iState.focus);
+	const auto& focus = authored != nullptr ? *authored : defaults;
+	const float thickness = std::max(1.f, focus.highlightThickness * node->scale);
+	const auto height = static_cast<float>(iViewport.y());
+	const auto& [position, size] = node->bounds;
+	const std::array<component::UiRect::Bounds, 4> bars{{
+			{.position = {position.x() - thickness, position.y() - thickness},
+			 .size = {size.x() + 2.f * thickness, thickness}},
+			{.position = {position.x() - thickness, position.y() + size.y()},
+			 .size = {size.x() + 2.f * thickness, thickness}},
+			{.position = {position.x() - thickness, position.y()}, .size = {thickness, size.y()}},
+			{.position = {position.x() + size.x(), position.y()}, .size = {thickness, size.y()}},
+	}};
+	for (const auto& bar: bars)
+		renderer::Renderer2D::drawQuad(
+				{.transform = pixelTransform(bar, height), .color = focus.highlightColor, .entityId = -1});
+}
+
 // The first active, visible tool cursor of a surface.
 auto findToolCursor(Scene& ioSurface, const bool iEditorMode) -> entt::entity {
 	for (const auto view = ioSurface.registry.view<component::UiToolCursor>(); const auto entity: view) {
@@ -314,9 +341,12 @@ void drawOverlays(Scene& ioScene, Scene* iHud, const math::vec2ui& iViewport, co
 			cursorSurface = surface;
 	}
 	const bool tooltip = state.tooltipWidget != entt::null;
-	if (!tooltip && cursorSurface == nullptr)
+	const bool focusFrame = state.focusVisible && state.focus != entt::null;
+	if (!tooltip && !focusFrame && cursorSurface == nullptr)
 		return;
 	renderer::Renderer2D::beginScene(pixelCamera(iViewport));
+	if (focusFrame)
+		drawFocusFrame(state.focusInHud && iHud != nullptr ? *iHud : ioScene, state, iViewport);
 	if (tooltip)
 		drawTooltip(state.tooltipInHud && iHud != nullptr ? *iHud : ioScene, state, iViewport);
 	if (cursorSurface != nullptr)
