@@ -238,6 +238,7 @@ void Viewport::onUpdate(const core::Timestep& iTimeStep) {
 			handleIsometricInput();
 		updateIsometricCursor(activeScene);
 		pickNavigationCells();
+		handleNavigationTool(activeScene);
 	} else if (mp_document->state() == SceneDocument::State::Edit) {
 		if (m_parent != nullptr) {
 			const auto& settings = m_parent->getSettings();
@@ -986,9 +987,10 @@ void Viewport::renderOverlayToolbar() {
 	renderPlayControls(collapsed);
 
 	// View options, top-right.
-	if (editing)
+	if (editing) {
 		renderViewOverlay();
-	else
+		renderNavigationPopup();
+	} else
 		renderPlayBanner(collapsed);
 
 	// Frame time chip, bottom-left.
@@ -1260,6 +1262,20 @@ void Viewport::renderViewOverlay() {
 				option("Navigation graph and routes", settings.showNavGraph);
 			ImGui::EndPopup();
 		}
+		if (m_isometric) {
+			ImGui::SameLine();
+			if (iconButton("navTool",
+						   {.glyph = gui::icon::signpost,
+							.tooltip = "Navigation tool",
+							.description = "Edit one-way roads, closed sides and slower cells on the graph. Click an "
+										   "arrow of a cell edge to cycle two-way, exit only, enter only, closed; "
+										   "right-click a cell to set its cost.",
+							.selected = m_navTool})) {
+				m_navTool = !m_navTool;
+				if (m_navTool)
+					settings.showNavGraph = true;
+			}
+		}
 		ImGui::SameLine();
 		const auto frameKey = m_parent->getActionShortcut("view.frameSelection");
 		if (iconButton("frame", {.glyph = gui::icon::focus,
@@ -1354,6 +1370,7 @@ void Viewport::updateIsometricCursor(const shared<scene::Scene>& iScene) {
 		const math::vec3 origin = iScene->getWorldTransform(scene::Entity{entity, iScene.get()}).translation();
 		height = origin.z();
 		m_hoveredMapOrigin = origin;
+		m_hoveredMapEntity = scene::Entity{entity, iScene.get()}.getUUID();
 		if (const auto hit = scene::terrain::pickTerrain(*asset, m_isoCamera, pixel, origin); hit.has_value()) {
 			m_hoveredCell = hit->cell;
 			const auto corners = asset->getCellCorners(hit->cell.x(), hit->cell.y());
@@ -1388,12 +1405,111 @@ void Viewport::pickNavigationCells() {
 	}
 }
 
+void Viewport::handleNavigationTool(const shared<scene::Scene>& iScene) {
+	m_navSide.reset();
+	if (!m_navTool || m_parent == nullptr || !m_parent->getSettings().showNavGraph || !m_hovered ||
+		!m_hoveredCell.has_value() || !m_isoCursor.has_value() || !iScene)
+		return;
+	const auto& io = ImGui::GetIO();
+	if (io.KeyShift || io.KeyAlt)
+		return;
+	const auto entity = iScene->findEntityByUUID(m_hoveredMapEntity);
+	if (!entity || !entity.hasComponent<scene::component::Tilemap>())
+		return;
+	const auto& tilemap = entity.getComponent<scene::component::Tilemap>();
+	if (!tilemap.asset || tilemap.navigation.isEmpty())
+		return;
+	auto& entry = iScene->getNavigation().acquire(static_cast<uint64_t>(entity.getUUID()), *tilemap.asset,
+												  tilemap.navigation);
+	const auto cell = *m_hoveredCell;
+	const auto base = entry.map.getBaseCell(*tilemap.asset, cell.x(), cell.y());
+	if (!base.has_value())
+		return;
+	const commands::CommandTarget target{.registry = &m_parent->getRegistry(), .scene = iScene, .undo = mp_undoManager};
+	const auto id = static_cast<int64_t>(static_cast<uint64_t>(entity.getUUID()));
+	if (ImGui::IsMouseReleased(ImGuiMouseButton_Right)) {
+		const auto drag = ImGui::GetMouseDragDelta(ImGuiMouseButton_Right, 0.f);
+		if (drag.x * drag.x + drag.y * drag.y < 16.f) {
+			m_navPopupCell = cell;
+			m_navPopupEntity = entity.getUUID();
+			m_navOpenPopup = true;
+			const auto* exception = tilemap.navigation.findOverride(cell.x(), cell.y());
+			m_navCostEdit = exception != nullptr ? exception->cost : 0.f;
+		}
+	}
+	// The side nearest to the cursor inside the cell.
+	const float fx = m_isoCursor->x() - m_hoveredMapOrigin.x() - static_cast<float>(cell.x()) - 0.5f;
+	const float fy = m_isoCursor->y() - m_hoveredMapOrigin.y() - static_cast<float>(cell.y()) - 0.5f;
+	const auto side = std::abs(fx) >= std::abs(fy)
+							  ? (fx > 0.f ? scene::nav::Direction::East : scene::nav::Direction::West)
+							  : (fy > 0.f ? scene::nav::Direction::South : scene::nav::Direction::North);
+	const auto nx = static_cast<int64_t>(cell.x()) + scene::nav::offsetX(side);
+	const auto ny = static_cast<int64_t>(cell.y()) + scene::nav::offsetY(side);
+	if (nx < 0 || ny < 0)
+		return;
+	const auto neighbour = entry.map.getBaseCell(*tilemap.asset, static_cast<uint32_t>(nx), static_cast<uint32_t>(ny));
+	const auto bit = scene::nav::directionBit(side);
+	const auto back = scene::nav::directionBit(scene::nav::opposite(side));
+	if (!neighbour.has_value() || !(((base->exits & bit) != 0 && (neighbour->enters & bit) != 0) ||
+									((neighbour->exits & back) != 0 && (base->enters & back) != 0)))
+		return;
+	m_navSide = side;
+	if (!ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+		return;
+	const auto next = scene::nav::nextSideState(tilemap.navigation.getSideState(cell.x(), cell.y(), side));
+	std::ignore = target.execute("nav.set_edge",
+								 {{"entity", id},
+								  {"x", static_cast<int64_t>(cell.x())},
+								  {"y", static_cast<int64_t>(cell.y())},
+								  {"side", std::string{scene::nav::directionNames[static_cast<size_t>(side)]}},
+								  {"state", std::string{scene::nav::sideStateNames[static_cast<size_t>(next)]}}});
+}
+
+void Viewport::renderNavigationPopup() {
+	if (m_navOpenPopup) {
+		ImGui::OpenPopup("##navCell");
+		m_navOpenPopup = false;
+	}
+	if (!ImGui::BeginPopup("##navCell"))
+		return;
+	const auto& scene = mp_document->getActiveScene();
+	if (!m_navPopupCell.has_value() || !scene || m_parent == nullptr) {
+		ImGui::EndPopup();
+		return;
+	}
+	const auto cell = *m_navPopupCell;
+	const commands::CommandTarget target{.registry = &m_parent->getRegistry(), .scene = scene, .undo = mp_undoManager};
+	const auto id = static_cast<int64_t>(static_cast<uint64_t>(m_navPopupEntity));
+	ImGui::TextUnformatted(std::format("Road cell ({}, {})", cell.x(), cell.y()).c_str());
+	ImGui::SetNextItemWidth(120.f);
+	ImGui::DragFloat("Cost", &m_navCostEdit, 0.05f, 0.f, 64.f, m_navCostEdit > 0.f ? "%.2f" : "tile default");
+	if (ImGui::IsItemDeactivatedAfterEdit()) {
+		std::ignore = target.execute("nav.set_cell_cost", {{"entity", id},
+														   {"x", static_cast<int64_t>(cell.x())},
+														   {"y", static_cast<int64_t>(cell.y())},
+														   {"cost", static_cast<double>(m_navCostEdit)}});
+	}
+	ImGui::SetItemTooltip("%s",
+						  "Cost of crossing the cell, in cells (1 is a normal road, 3 three times slower). 0 keeps "
+						  "the cost of its tile.");
+	if (ImGui::Button("Clear exceptions")) {
+		std::ignore = target.execute(
+				"nav.clear_cell",
+				{{"entity", id}, {"x", static_cast<int64_t>(cell.x())}, {"y", static_cast<int64_t>(cell.y())}});
+		ImGui::CloseCurrentPopup();
+	}
+	ImGui::EndPopup();
+}
+
 void Viewport::renderNavigationOverlay(const shared<scene::Scene>& iScene) const {
 	if (m_parent == nullptr || !m_parent->getSettings().showNavGraph || !iScene)
 		return;
 	constexpr math::vec4 pathColor{1.f, 0.95f, 0.20f, 1.f};
 	scene::nav::drawNavigationGraph(*iScene);
 	scene::nav::drawNavigationRoutes(*iScene);
+	if (m_navTool && m_hoveredCell.has_value() && m_isometric)
+		scene::nav::drawNavigationCellEditor(*iScene, static_cast<uint64_t>(m_hoveredMapEntity), m_hoveredCell->x(),
+											 m_hoveredCell->y(), m_navSide);
 	bool pathDone = false;
 	for (const auto view = iScene->registry.view<scene::component::Tilemap>(); const auto entity: view) {
 		const auto& tilemap = view.get<scene::component::Tilemap>(entity);
@@ -1689,6 +1805,9 @@ auto Viewport::onMouseButtonPressed(const event::MouseButtonPressedEvent& ioEven
 		return false;
 	// The voxel brush owns clicks when active; don't also change the entity selection.
 	if (m_parent != nullptr && m_parent->getVoxelBrush().active)
+		return false;
+	// So does the navigation tool of the isometric view.
+	if (m_navTool && m_isometric && m_parent != nullptr && m_parent->getSettings().showNavGraph)
 		return false;
 	if (ioEvent.getMouseButton() == input::mouse::ButtonLeft) {
 		if (isHovered() && !gui::Guizmo::isOver() && !input::Input::isKeyPressed(input::key::LeftAlt))

@@ -310,6 +310,21 @@ private:
 
 	/**
 	 * @brief
+	 *  Navigation tool: with the graph shown, hovering a road cell of the isometric view picks the side of the cell
+	 *  nearest to the cursor and a left click cycles its state (two-way, exit only, enter only, closed) through the
+	 *  `nav.set_edge` command; a right click opens the cost popup of the cell.
+	 * @param[in] iScene The edited scene.
+	 */
+	void handleNavigationTool(const shared<scene::Scene>& iScene);
+
+	/**
+	 * @brief
+	 *  Popup of one cell of the navigation tool: its own cost and a button clearing its exceptions.
+	 */
+	void renderNavigationPopup();
+
+	/**
+	 * @brief
 	 *  Camera the edited scene is drawn with: the isometric one in the isometric mode, else the editor camera.
 	 * @return The active editor camera.
 	 */
@@ -445,6 +460,20 @@ private:
 	std::array<float, 4> m_hoveredCornerZ{};
 	/// Hovered tile of the first isometric map.
 	std::optional<math::vec2ui> m_hoveredCell;
+	/// Tilemap entity of the hovered isometric map.
+	core::UUID m_hoveredMapEntity{0};
+	/// Whether the navigation tool is on.
+	bool m_navTool = false;
+	/// Side of the hovered cell the navigation tool would change.
+	std::optional<scene::nav::Direction> m_navSide;
+	/// Cell the navigation popup is about.
+	std::optional<math::vec2ui> m_navPopupCell;
+	/// Tilemap entity the navigation popup is about.
+	core::UUID m_navPopupEntity{0};
+	/// The popup was asked for this frame.
+	bool m_navOpenPopup = false;
+	/// Cost typed in the navigation popup.
+	float m_navCostEdit = 0.f;
 	/// Start of the navigation test path.
 	std::optional<math::vec2ui> m_navFrom;
 	/// Goal of the navigation test path.

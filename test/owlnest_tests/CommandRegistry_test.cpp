@@ -20,6 +20,7 @@
 #include <scene/component/CircleRenderer.h>
 #include <scene/component/Hierarchy.h>
 #include <scene/component/Tag.h>
+#include <scene/component/Tilemap.h>
 #include <scene/component/Transform.h>
 #include <scene/component/UiButton.h>
 #include <scene/component/UiLayout.h>
@@ -27,6 +28,7 @@
 #include <scene/component/UiRect.h>
 #include <scene/component/UiScrollView.h>
 #include <scene/component/UiText.h>
+#include <scene/nav/NavProfile.h>
 
 #include <gtest/gtest.h>
 
@@ -92,7 +94,7 @@ TEST_F(CommandRegistryTest, DeclaresTheBuiltinCommands) {
 		EXPECT_FALSE(spec->allowedInPlay) << name;
 	}
 	EXPECT_EQ(m_registry.find("entity.explode"), nullptr);
-	EXPECT_EQ(m_registry.getCommands().size(), 23u);
+	EXPECT_EQ(m_registry.getCommands().size(), 26u);
 }
 
 TEST_F(CommandRegistryTest, CreateUnderAParentThenUndoRedo) {
@@ -235,7 +237,7 @@ TEST_F(CommandRegistryTest, IncompleteTargetRefusesCommands) {
 TEST_F(CommandRegistryTest, AddReplacesACommandOfTheSameName) {
 	m_registry.add({.name = "entity.create", .description = "Replaced.", .args = {}, .factory = {}});
 	EXPECT_EQ(m_registry.find("entity.create")->description, "Replaced.");
-	EXPECT_EQ(m_registry.getCommands().size(), 23u);
+	EXPECT_EQ(m_registry.getCommands().size(), 26u);
 }
 
 TEST_F(CommandRegistryTest, ParsesVectorColourAndEnumArguments) {
@@ -950,4 +952,57 @@ TEST_F(HudCommandsTest, ExtractCanvasRefusesWhatIsNotAHudSource) {
 	EXPECT_EQ(noAssetFolder.error().error, CommandError::InvalidArgument);
 	EXPECT_FALSE(std::filesystem::exists(path));
 	EXPECT_EQ(m_scene->registry.view<scene::component::Canvas>().size(), 1u);
+}
+
+TEST_F(CommandRegistryTest, NavigationExceptionsAreUndoableCommands) {
+	auto map = m_scene->createEntity("Map");
+	map.addComponent<scene::component::Tilemap>().navigation.mode = scene::nav::NavMode::Connections;
+	const auto& navigation = [&]() -> const scene::nav::NavProfile& {
+		return m_scene->findEntityByUUID(map.getUUID()).getComponent<scene::component::Tilemap>().navigation;
+	};
+	const auto edge = [&](const std::string& iSide, const std::string& iState) -> auto {
+		return run("nav.set_edge",
+				   {{"entity", idOf(map)}, {"x", int64_t{4}}, {"y", int64_t{5}}, {"side", iSide}, {"state", iState}});
+	};
+	ASSERT_TRUE(edge("east", "exit_only").has_value());
+	EXPECT_EQ(navigation().getSideState(4, 5, scene::nav::Direction::East), scene::nav::SideState::ExitOnly);
+	EXPECT_EQ(navigation().getSideState(5, 5, scene::nav::Direction::West), scene::nav::SideState::EnterOnly);
+	ASSERT_TRUE(run("nav.set_cell_cost", {{"entity", idOf(map)}, {"x", int64_t{4}}, {"y", int64_t{5}}, {"cost", 2.5}})
+						.has_value());
+	ASSERT_NE(navigation().findOverride(4, 5), nullptr);
+	EXPECT_FLOAT_EQ(navigation().findOverride(4, 5)->cost, 2.5f);
+	// Edits of the same entity within a second merge into one history entry.
+	m_undo.undo(*m_scene);
+	EXPECT_TRUE(navigation().overrides.empty());
+	m_undo.redo(*m_scene);
+	EXPECT_EQ(navigation().getSideState(4, 5, scene::nav::Direction::East), scene::nav::SideState::ExitOnly);
+	EXPECT_FLOAT_EQ(navigation().findOverride(4, 5)->cost, 2.5f);
+	ASSERT_TRUE(run("nav.clear_cell", {{"entity", idOf(map)}, {"x", int64_t{4}}, {"y", int64_t{5}}}).has_value());
+	EXPECT_TRUE(navigation().overrides.empty());
+	m_undo.undo(*m_scene);
+	EXPECT_TRUE(navigation().overrides.empty()) << "merged with the edits above, back to the start";
+}
+
+TEST_F(CommandRegistryTest, NavigationCommandsRefuseATilemapWithoutNavigation) {
+	const auto plain = m_scene->createEntity("Plain");
+	auto map = m_scene->createEntity("Map");
+	map.addComponent<scene::component::Tilemap>();
+	const auto expectError = [this](const std::string& iName, const CommandArgs& iArgs,
+									const CommandError iError) -> void {
+		const auto result = run(iName, iArgs);
+		ASSERT_FALSE(result.has_value()) << iName;
+		EXPECT_EQ(result.error().error, iError) << result.error().message;
+	};
+	const CommandArgs onPlain{{"entity", idOf(plain)}, {"x", int64_t{1}}, {"y", int64_t{1}}, {"cost", 2.0}};
+	expectError("nav.set_cell_cost", onPlain, CommandError::InvalidArgument);
+	expectError("nav.set_cell_cost", {{"entity", idOf(map)}, {"x", int64_t{1}}, {"y", int64_t{1}}, {"cost", 2.0}},
+				CommandError::NotApplicable);
+	expectError("nav.set_edge",
+				{{"entity", idOf(map)},
+				 {"x", int64_t{1}},
+				 {"y", int64_t{1}},
+				 {"side", std::string{"up"}},
+				 {"state", std::string{"closed"}}},
+				CommandError::InvalidArgument);
+	EXPECT_FALSE(m_undo.canUndo());
 }
