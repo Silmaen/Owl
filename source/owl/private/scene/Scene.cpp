@@ -18,6 +18,7 @@
 #include "renderer/Renderer2D.h"
 #include "renderer/Renderer2DLayer.h"
 #include "renderer/RendererIsometric.h"
+#include "renderer/RendererIsometricLayer.h"
 #include "renderer/RendererRaycast.h"
 #include "renderer/RendererRaycastLayer.h"
 #include "renderer/RendererTilemap.h"
@@ -27,6 +28,7 @@
 #include "scene/Entity.h"
 #include "scene/TilemapAsset.h"
 #include "scene/Tileset.h"
+#include "scene/nav/NavDebugDraw.h"
 #include "scene/nav/NavWorld.h"
 
 #include "ScriptLoader.h"
@@ -1091,6 +1093,22 @@ void Scene::showToast(const std::string& iMessage, const float iSeconds) {
 void Scene::renderOverlays(const renderer::Camera& iCamera) {
 	OWL_PROFILE_FUNCTION()
 
+	const bool navigationDebug = m_navigation != nullptr && m_navigation->isDebugVisible();
+	if (navigationDebug) {
+		// The graph lies on the ground of the isometric view: the lines go through the camera the isometric layer draws with.
+		std::optional<renderer::IsometricCamera> isometricCamera;
+		for (const auto& layer: renderer::Renderer::getRenderStack().getLayers()) {
+			if (const auto* isometric = dynamic_cast<const renderer::RendererIsometricLayer*>(layer.get());
+				isometric != nullptr) {
+				isometricCamera = isometric->makeCamera(iCamera);
+				break;
+			}
+		}
+		renderer::Renderer2D::beginScene(isometricCamera.has_value() ? *isometricCamera : iCamera);
+		nav::drawNavigationGraph(*this);
+		nav::drawNavigationRoutes(*this);
+		renderer::Renderer2D::endScene();
+	}
 	if (!m_hasVoxelHighlight && !m_showCrosshair)
 		return;
 	const math::vec4 cameraPos4 = inverse(iCamera.getView()) * math::vec4{0.f, 0.f, 0.f, 1.f};

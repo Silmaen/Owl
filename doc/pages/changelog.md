@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Navigation overlay in the game and in Owl Nest Play: `path.set_debug`, `path.show_route` and `path.clear_routes` draw the graph and the route of each vehicle, F3 in the Engine Demo and the eye button of the Play view.
 - Engine Demo vehicles with eight headings: `vehicles.png` is an 8 × 2 sheet (a frame every 45° per model, lights on the front), one sprite per vehicle in `iso_town` picks its frame from its heading with the new Lua `isometric.set_sprite_frame` / `get_sprite_frame`, vehicles keep to the right as seen on screen on their lane and turn corners along a quarter circle.
 - Tilemap editor node tool: select corners of the isometric terrain (Shift for several), drag or press +/- to change their height with the neighbours adapting, and edit the four corner heights of a cell in Cell Properties, each one undo step.
 - Relative HUD units: the size and the offset of a `UiRect` can be a ratio of the parent or screen width or height (`size_unit`, `offset_unit`, per number), with a unit selector in the inspector that converts the value, the gizmo and `hud.set_rect` / `hud.move` / `hud.add_widget` keeping the units; older files are unchanged.
@@ -89,6 +90,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Show > Navigation graph of the isometric viewport is "Navigation graph and routes" and shares its drawing with the game (`scene::nav::drawNavigationGraph`).
 - `sample_project/` is renamed `engine_demo/`, the Engine Demo: an all-in-one showcase of the engine features, apart from the planned sample games.
 - Play overlay of the Owl Nest viewport: the controls fold into a corner handle (**F10**, kept in the settings), the "Playing" message fades after two seconds, and clicks on the overlay no longer reach the game.
 - The sample project and the project templates draw their HUD from `.owlhud` files (`huds/gameplay.owlhud` for the
@@ -143,6 +145,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Engine Demo vehicles whose cell is bulldozed under them drive off to the road cell they came from and find a way again (a bypass built beside the cut used to leave them stuck), and a U-turn goes through the middle of the cell, symmetric on the way in and out.
 - Engine Demo vehicles turn back through a half circle swinging left across to the opposite lane, and plan their route again at the next cell boundary when roads are built or bulldozed (`town_replans`).
 - Play no longer leaves the runtime edits of `isometric.set_cell` in the edit scene: the running scene works on its own copy of the tilemap assets it shares with the edit scene, so Stop restores the map.
 - A Lua callback failing on every frame logs its error once, then a repeat counter at most once per second, instead of flooding the log.

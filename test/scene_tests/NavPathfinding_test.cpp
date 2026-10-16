@@ -709,3 +709,39 @@ TEST_F(NavPathfinding, theSceneSystemServesTheRequestsOfItsTilemaps) {
 	world.clear();
 	EXPECT_EQ(world.find(static_cast<uint64_t>(entity.getUUID())), nullptr);
 }
+
+TEST_F(NavPathfinding, theDebugOverlayKeepsTheRoutesScriptsGaveItPerKey) {
+	auto scene = mkShared<Scene>();
+	auto entity = scene->createEntity("Map");
+	auto asset = mkShared<TilemapAsset>(makeAsset(40, 10));
+	paintRow(*asset, 0, 30, 3);
+	auto& tilemap = entity.addComponent<component::Tilemap>();
+	tilemap.asset = asset;
+	tilemap.navigation = makeProfile();
+	auto& world = scene->getNavigation();
+	const auto key = static_cast<uint64_t>(entity.getUUID());
+	EXPECT_FALSE(world.isDebugVisible());
+	world.setDebugVisible(NavWorld::DebugSource::Editor, true);
+	world.setDebugVisible(NavWorld::DebugSource::Script, true);
+	world.setDebugVisible(NavWorld::DebugSource::Editor, false);
+	EXPECT_TRUE(world.isDebugVisible()) << "the script still asks";
+	world.setDebugVisible(NavWorld::DebugSource::Script, false);
+	EXPECT_FALSE(world.isDebugVisible());
+
+	const std::vector<math::vec2ui> cells{{0, 3}, {1, 3}, {2, 3}};
+	world.setDebugRoute(key, 7, cells, {1.f, 0.f, 0.f});
+	EXPECT_TRUE(world.getEntries().empty()) << "a map nobody searched has no entry to hold a route";
+	std::ignore = world.acquire(key, *asset, tilemap.navigation);
+	world.setDebugRoute(key, 7, cells, {1.f, 0.f, 0.f});
+	world.setDebugRoute(key, 8, cells, {0.f, 1.f, 0.f});
+	ASSERT_NE(world.find(key), nullptr);
+	EXPECT_EQ(world.find(key)->debugRoutes.size(), 2u);
+	world.setDebugRoute(key, 7, std::vector<math::vec2ui>{{4, 3}, {5, 3}}, {0.f, 0.f, 1.f});
+	EXPECT_EQ(world.find(key)->debugRoutes.size(), 2u) << "the same key replaces its route";
+	EXPECT_EQ(world.find(key)->debugRoutes.at(7).cells.size(), 2u);
+	EXPECT_FLOAT_EQ(world.find(key)->debugRoutes.at(7).color.z(), 1.f);
+	world.setDebugRoute(key, 8, {}, {});
+	EXPECT_EQ(world.find(key)->debugRoutes.size(), 1u) << "no cells removes the route";
+	world.clearDebugRoutes(key);
+	EXPECT_TRUE(world.find(key)->debugRoutes.empty());
+}

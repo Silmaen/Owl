@@ -93,13 +93,23 @@ if path.get_version(map) ~= version then ... end              -- a road was buil
 
 Every function is in the [Lua API reference](lua-api.md#path). The `iso_town` vehicles of the Engine Demo
 (`scripts/iso_town_traffic.lua`) drive from stop to stop that way, look for another way when a road of their route is
-bulldozed (scenario `iso_town`), and wait when no route exists.
+bulldozed (scenario `iso_town`), plan their route again at the next cell when a road was built (a vehicle left
+standing on a bulldozed cell asks from the road cell it came from), and wait when no route exists.
+
+## Seeing the graph and the routes
+
+`path.set_debug(true)` makes the scene draw the graph of every tilemap with rules (two-way moves in green, one-way
+moves in orange with an arrow) and the routes scripts hand to `path.show_route(map, id, cells, r, g, b)` (one line per
+id, a diamond on the last cell, `path.clear_routes(map)` removes them all). The overlay is drawn by the scene over the
+isometric view, in the game and in the Play view of Owl Nest. In the Engine Demo **F3** (the `nav_debug` action) toggles
+it and `iso_town_traffic.lua` gives each vehicle its own colour.
 
 ## Owl Nest
 
 The **Navigation** section of the `Tilemap` inspector edits the rules (undoable like any component edit). In the
-isometric viewport, **Show > Navigation graph** draws the graph over the map: two-way moves in green, one-way moves in
-orange with an arrow. With the overlay on, **Shift + click** picks the start then the goal of a test path drawn in
+isometric viewport, **Show > Navigation graph and routes** draws the graph over the map: two-way moves in green, one-way
+moves in orange with an arrow. In Play, the eye button at the bottom-right of the view toggles the same overlay,
+with the routes the running scripts give it. With the overlay on, **Shift + click** picks the start then the goal of a test path drawn in
 yellow (a third click starts over, **Shift + right click** clears it).
 
 ## Measures

@@ -1550,6 +1550,51 @@ auto luaPathSetBudget(lua_State* iState) -> int {
 	return 0;
 }
 
+// Draw (or stop drawing, with no cells) a route of the map in the debug overlay: `path.show_route(map, id, cells, r, g, b)`.
+auto luaPathShowRoute(lua_State* iState) -> int {
+	luaL_checkinteger(iState, 1);
+	const auto routeId = static_cast<uint64_t>(luaL_checkinteger(iState, 2));
+	const bool hasCells = lua_istable(iState, 3);
+	const auto red = static_cast<float>(luaL_optnumber(iState, 4, 1.));
+	const auto green = static_cast<float>(luaL_optnumber(iState, 5, 1.));
+	const auto blue = static_cast<float>(luaL_optnumber(iState, 6, 1.));
+	std::vector<math::vec2ui> cells;
+	if (hasCells) {
+		const auto count = static_cast<lua_Integer>(lua_rawlen(iState, 3)) / 2;
+		cells.reserve(static_cast<size_t>(count));
+		for (lua_Integer i = 1; i <= count; ++i) {
+			lua_rawgeti(iState, 3, i * 2 - 1);
+			lua_rawgeti(iState, 3, i * 2);
+			cells.emplace_back(static_cast<uint32_t>(std::max<lua_Integer>(lua_tointeger(iState, -2), 0)),
+							   static_cast<uint32_t>(std::max<lua_Integer>(lua_tointeger(iState, -1), 0)));
+			lua_pop(iState, 2);
+		}
+	}
+	if (const auto entity = findEntity(iState); entity && findNavigation(iState) != nullptr)
+		getBoundScene(iState)->getNavigation().setDebugRoute(static_cast<uint64_t>(entity->getUUID()), routeId, cells,
+															 math::vec3{red, green, blue});
+	return 0;
+}
+
+auto luaPathClearRoutes(lua_State* iState) -> int {
+	luaL_checkinteger(iState, 1);
+	if (const auto entity = findEntity(iState); entity && findNavigation(iState) != nullptr)
+		getBoundScene(iState)->getNavigation().clearDebugRoutes(static_cast<uint64_t>(entity->getUUID()));
+	return 0;
+}
+
+auto luaPathSetDebug(lua_State* iState) -> int {
+	luaL_checkany(iState, 1);
+	getBoundScene(iState)->getNavigation().setDebugVisible(scene::nav::NavWorld::DebugSource::Script,
+														   lua_toboolean(iState, 1) != 0);
+	return 0;
+}
+
+auto luaPathGetDebug(lua_State* iState) -> int {
+	lua_pushboolean(iState, getBoundScene(iState)->getNavigation().isDebugVisible() ? 1 : 0);
+	return 1;
+}
+
 using enum LuaType;
 
 OWL_DIAG_PUSH
@@ -1908,6 +1953,18 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		{.table = "path", .name = "set_budget", .function = guarded<luaPathSetBudget>,
 		 .description = "Node expansions the scene spends on path requests each frame (4000 by default).",
 		 .params = {{"nodes", Integer}}},
+		{.table = "path", .name = "set_debug", .function = guarded<luaPathSetDebug>,
+		 .description = "Show or hide the navigation overlay over the scene: the graph of every tilemap (green two-way moves, orange one-way moves with an arrow) and the routes given to `path.show_route`. Drawn in the editor's Play view and in the game.",
+		 .params = {{"visible", Boolean}}},
+		{.table = "path", .name = "get_debug", .function = guarded<luaPathGetDebug>,
+		 .description = "Whether the navigation overlay is shown, by a script or by the editor.",
+		 .returns = {{"visible", Boolean}}},
+		{.table = "path", .name = "show_route", .function = guarded<luaPathShowRoute>,
+		 .description = "Give the overlay a route to draw over the tilemap, from its first cell to its last, in a colour (components 0 to 1, white by default): `route_id` names it (a vehicle), a new route with the same id replaces the old one and no cells removes it. Cells are `{x1, y1, x2, y2, ...}` as `path.get` returns them.",
+		 .params = {entityId, {"route_id", Integer}, {"cells", Table, true}, {"r", Number, true}, {"g", Number, true}, {"b", Number, true}}},
+		{.table = "path", .name = "clear_routes", .function = guarded<luaPathClearRoutes>,
+		 .description = "Remove every route given to `path.show_route` for the tilemap.",
+		 .params = {entityId}},
 	};
 	// clang-format on
 }

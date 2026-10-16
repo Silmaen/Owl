@@ -277,7 +277,8 @@ off-screen `Framebuffer` with two colour attachments:
   markers, trigger icons, and in the isometric mode the navigation graph of the tilemaps with a Shift-click test path,
   see [Pathfinding](pathfinding.md)), **Frame selection** (`F`), the **Camera** menu and the frame stats toggle;
 - bottom-left: frame rate, frame time and draw calls (a click opens the Stats panel);
-- bottom-right: the view-cube of the editor camera.
+- bottom-right: the view-cube of the editor camera; in Play of an isometric scene, the eye button that draws the
+  navigation graph and the routes of the vehicles (see [Pathfinding](pathfinding.md)).
 
 In Play the overlay controls take their own clicks: a click that starts on them, or on another panel, never reaches the
 game, and a drag started in the game keeps going when the cursor leaves the viewport.

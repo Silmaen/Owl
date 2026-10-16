@@ -14,7 +14,10 @@
 #include "scene/nav/PathQueue.h"
 
 #include <cstdint>
+#include <map>
+#include <span>
 #include <unordered_map>
+#include <vector>
 
 namespace owl::scene {
 
@@ -33,12 +36,30 @@ namespace owl::scene::nav {
  */
 class OWL_API NavWorld final {
 public:
+	/// A route a script asks the debug overlay to draw.
+	struct DebugRoute {
+		/// Cells of the route, in order.
+		std::vector<math::vec2ui> cells;
+		/// Colour of the line (RGB).
+		math::vec3 color{1.f, 1.f, 1.f};
+	};
+
+	/// Who asks for the debug overlay: a script (a key of the game) or the editor (Show menu of the viewport).
+	enum class DebugSource : uint8_t {
+		/// A script, through `path.set_debug`.
+		Script = 1,
+		/// The editor viewport.
+		Editor = 2,
+	};
+
 	/// Graph and requests of one tilemap entity.
 	struct Entry {
 		/// The graph.
 		NavMap map;
 		/// The requests.
 		PathQueue queue;
+		/// The routes to draw, by the key a script gave them.
+		std::map<uint64_t, DebugRoute> debugRoutes;
 	};
 
 	/// Node expansions spent on the requests of the scene each frame, by default.
@@ -121,11 +142,53 @@ public:
 	 */
 	void clear();
 
+	/**
+	 * @brief
+	 *  Ask for, or stop asking for, the debug overlay (graph and routes drawn over the maps).
+	 * @param[in] iSource Who asks.
+	 * @param[in] iVisible True to show.
+	 */
+	void setDebugVisible(DebugSource iSource, bool iVisible);
+
+	/**
+	 * @brief
+	 *  Whether the debug overlay is on, whoever asked.
+	 * @return True when drawn.
+	 */
+	[[nodiscard]] auto isDebugVisible() const -> bool { return m_debugRequests != 0; }
+
+	/**
+	 * @brief
+	 *  Set the route drawn for a key, replacing the previous one; an empty route removes it.
+	 * @param[in] iKey Key of the tilemap entity.
+	 * @param[in] iRouteId Key of the route (a vehicle, for instance).
+	 * @param[in] iCells Cells of the route.
+	 * @param[in] iColor Colour of the line.
+	 */
+	void setDebugRoute(uint64_t iKey, uint64_t iRouteId, std::span<const math::vec2ui> iCells,
+					   const math::vec3& iColor);
+
+	/**
+	 * @brief
+	 *  Remove every debug route of a tilemap entity.
+	 * @param[in] iKey Key of the tilemap entity.
+	 */
+	void clearDebugRoutes(uint64_t iKey);
+
+	/**
+	 * @brief
+	 *  Every entry, to draw them.
+	 * @return The entries by entity key.
+	 */
+	[[nodiscard]] auto getEntries() const -> const std::unordered_map<uint64_t, Entry>& { return m_entries; }
+
 private:
 	/// Entries by entity.
 	std::unordered_map<uint64_t, Entry> m_entries;
 	/// Node expansions per frame.
 	uint32_t m_budget = defaultBudget;
+	/// Bits of `DebugSource` asking for the overlay.
+	uint8_t m_debugRequests = 0;
 };
 
 }// namespace owl::scene::nav

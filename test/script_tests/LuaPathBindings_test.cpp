@@ -139,6 +139,67 @@ TEST_F(LuaPath, aBulldozedRoadInvalidatesTheFoundPathAndChangesTheVersion) {
 	EXPECT_EQ(rerouted->getPropertyInt("count").value_or(0), 2 * (91 + 8));
 }
 
+TEST_F(LuaPath, aRoadAddedLaterShortensTheNextSearchInEveryMode) {
+	for (const char* mode: {"auto", "flat", "hierarchical"}) {
+		for (uint32_t y = 6; y <= 8; ++y)
+			std::ignore = m_asset->layers[0].setCell(40, y, {.terrain = -1, .overlay = -1, .flags = 0});
+		const std::string search = std::format("cells, cost = path.find_now(map, 40, 5, 40, 9, '{}')\n"
+											   "count = #cells\nversion = path.get_version(map)",
+											   mode);
+		const auto before = run(search);
+		EXPECT_EQ(before->getPropertyInt("count").value_or(0), 2 * 85) << mode << " goes round by the ends";
+		const auto version = before->getPropertyInt("version").value_or(0);
+		for (uint32_t y = 6; y <= 8; ++y)
+			std::ignore = m_asset->layers[0].setCell(40, y, {.terrain = -1, .overlay = 1, .flags = 0});
+		const auto after = run(search);
+		EXPECT_NE(after->getPropertyInt("version").value_or(version), version) << mode;
+		EXPECT_EQ(after->getPropertyInt("count").value_or(0), 2 * 5) << mode << " takes the new road";
+	}
+}
+
+TEST_F(LuaPath, aRoadAddedInARunningCopyOfTheSceneIsUsed) {
+	// Owl Nest Play: the running scene is a copy sharing the tilemap asset of the edit scene.
+	for (uint32_t y = 6; y <= 8; ++y)
+		std::ignore = m_asset->layers[0].setCell(40, y, {.terrain = -1, .overlay = -1, .flags = 0});
+	const auto running = scene::Scene::copy(m_scene);
+	running->onStartRuntime();
+	const std::string text =
+			std::format("map = {}\nfunction on_create()\ncells = path.find_now(map, 40, 5, 40, 9)\nbefore = #cells\n"
+						"for y = 6, 8 do isometric.set_cell(map, 0, 40, y, -1, 1) end\n"
+						"cells = path.find_now(map, 40, 5, 40, 9)\nafter = #cells\nend\n",
+						static_cast<int64_t>(static_cast<uint64_t>(m_map.getUUID())));
+	const std::vector<uint8_t> data(text.begin(), text.end());
+	ScriptInstance instance;
+	instance.setScene(running.get());
+	ASSERT_TRUE(instance.createFromBuffer(data, "path_play", static_cast<uint64_t>(m_map.getUUID())));
+	instance.onCreate();
+	EXPECT_EQ(instance.getPropertyInt("before").value_or(0), 2 * 85);
+	EXPECT_EQ(instance.getPropertyInt("after").value_or(0), 2 * 5);
+	running->onEndRuntime();
+}
+
+TEST_F(LuaPath, theDebugOverlayIsSwitchedAndFedByScripts) {
+	const auto instance = run("before = path.get_debug()\n"
+							  "path.set_debug(true)\nduring = path.get_debug()\n"
+							  "path.show_route(map, 1, {0, 5, 1, 5, 2, 5}, 1, 0.5, 0)\n"
+							  "path.show_route(map, 2, {0, 9, 1, 9}, 0, 1, 0)\n"
+							  "path.show_route(map, 2, nil)\n"
+							  "path.show_route(bare, 1, {0, 0, 1, 0})\n"
+							  "path.set_debug(false)\nafter = path.get_debug()");
+	EXPECT_FALSE(instance->getPropertyBool("before").value_or(true));
+	EXPECT_TRUE(instance->getPropertyBool("during").value_or(false));
+	EXPECT_FALSE(instance->getPropertyBool("after").value_or(true));
+	const auto* entry = m_scene->getNavigation().find(static_cast<uint64_t>(m_map.getUUID()));
+	ASSERT_NE(entry, nullptr);
+	ASSERT_EQ(entry->debugRoutes.size(), 1u) << "route 2 was removed, the map without rules keeps none";
+	const auto& route = entry->debugRoutes.at(1);
+	ASSERT_EQ(route.cells.size(), 3u);
+	EXPECT_EQ(route.cells[2], (math::vec2ui{2, 5}));
+	EXPECT_FLOAT_EQ(route.color.y(), 0.5f);
+	std::ignore = run("path.clear_routes(map)");
+	EXPECT_TRUE(m_scene->getNavigation().find(static_cast<uint64_t>(m_map.getUUID()))->debugRoutes.empty());
+}
+
 TEST_F(LuaPath, edgesAndNodesAreQueryable) {
 	const auto instance = run("cost = path.get_edge_cost(map, 3, 5, 4, 5)\n"
 							  "gap = path.get_edge_cost(map, 3, 5, 3, 6)\nfar = path.get_edge_cost(map, 3, 5, 9, 5)\n"

@@ -43,6 +43,7 @@
 #include <scene/component/RendererTag.h>
 #include <scene/component/Tilemap.h>
 #include <scene/component/Visibility.h>
+#include <scene/nav/NavDebugDraw.h>
 #include <scene/nav/NavWorld.h>
 
 OWL_DIAG_PUSH
@@ -576,6 +577,9 @@ void Viewport::renderOverlay() const {
 		return;
 
 	if (mp_document->state() != SceneDocument::State::Edit) {
+		// The running scene draws the overlay itself, with its own camera, once asked.
+		activeScene->getNavigation().setDebugVisible(scene::nav::NavWorld::DebugSource::Editor,
+													 m_parent != nullptr && m_parent->getSettings().showNavGraph);
 		const scene::Entity camera = activeScene->getPrimaryCamera();
 		auto& cam = camera.getComponent<scene::component::Camera>().camera;
 		cam.setTransform(activeScene->getWorldTransform(camera)());
@@ -1005,6 +1009,21 @@ void Viewport::renderOverlayToolbar() {
 		addOverlayRect(currentOverlayRect());
 	}
 	endOverlay();
+
+	// While the scene runs, the navigation overlay (graph and routes of the vehicles) is one toggle, bottom-right.
+	if (!editing && m_isometric) {
+		if (beginOverlay(std::format("##vpPlayShow{:x}", id), {m_upper.x() - margin, m_upper.y() - margin},
+						 {1.f, 1.f})) {
+			if (gui::widgets::iconButton("playShow", {.glyph = gui::icon::eye,
+													  .tooltip = "Navigation graph and routes",
+													  .description = "Draw the road graph and the route of each "
+																	 "vehicle over the running scene.",
+													  .selected = settings.showNavGraph}))
+				settings.showNavGraph = !settings.showNavGraph;
+			addOverlayRect(currentOverlayRect());
+		}
+		endOverlay();
+	}
 }
 
 void Viewport::renderPlayControls(const bool iCollapsed) {
@@ -1238,7 +1257,7 @@ void Viewport::renderViewOverlay() {
 			option("Camera markers", settings.showCameraGizmos);
 			option("Trigger icons", settings.showTriggerIcons);
 			if (m_isometric)
-				option("Navigation graph", settings.showNavGraph);
+				option("Navigation graph and routes", settings.showNavGraph);
 			ImGui::EndPopup();
 		}
 		ImGui::SameLine();
@@ -1372,11 +1391,9 @@ void Viewport::pickNavigationCells() {
 void Viewport::renderNavigationOverlay(const shared<scene::Scene>& iScene) const {
 	if (m_parent == nullptr || !m_parent->getSettings().showNavGraph || !iScene)
 		return;
-	constexpr math::vec4 twoWay{0.30f, 0.90f, 0.40f, 0.9f};
-	constexpr math::vec4 oneWay{1.f, 0.60f, 0.10f, 1.f};
 	constexpr math::vec4 pathColor{1.f, 0.95f, 0.20f, 1.f};
-	constexpr size_t maxEdges = 40000;
-	size_t drawn = 0;
+	scene::nav::drawNavigationGraph(*iScene);
+	scene::nav::drawNavigationRoutes(*iScene);
 	bool pathDone = false;
 	for (const auto view = iScene->registry.view<scene::component::Tilemap>(); const auto entity: view) {
 		const auto& tilemap = view.get<scene::component::Tilemap>(entity);
@@ -1389,41 +1406,8 @@ void Viewport::renderNavigationOverlay(const shared<scene::Scene>& iScene) const
 													  tilemap.navigation);
 		const auto& map = entry.map;
 		const auto center = [&](const uint32_t iX, const uint32_t iY) -> math::vec3 {
-			const auto corners = asset.getCellCorners(iX, iY);
-			const float height = static_cast<float>(corners[0] + corners[1] + corners[2] + corners[3]) * 0.25f *
-								 scene::terrain::heightStep;
-			return origin + math::vec3{static_cast<float>(iX) + 0.5f, static_cast<float>(iY) + 0.5f, height + 0.03f};
+			return scene::nav::getCellCenter(asset, origin, iX, iY);
 		};
-		const auto& size = map.getSize();
-		for (uint32_t y = 0; y < size.y() && drawn < maxEdges; ++y) {
-			for (uint32_t x = 0; x < size.x() && drawn < maxEdges; ++x) {
-				if (!map.isWalkable(x, y))
-					continue;
-				for (const auto direction: {scene::nav::Direction::East, scene::nav::Direction::South}) {
-					const uint32_t nx = x + static_cast<uint32_t>(scene::nav::offsetX(direction));
-					const uint32_t ny = y + static_cast<uint32_t>(scene::nav::offsetY(direction));
-					const bool forward = map.getEdgeCost(x, y, direction) != 0;
-					const bool backward = map.getEdgeCost(nx, ny, scene::nav::opposite(direction)) != 0;
-					if (!forward && !backward)
-						continue;
-					const auto from = center(x, y);
-					const auto to = center(nx, ny);
-					renderer::Renderer2D::drawLine(
-							{.point1 = from, .point2 = to, .color = forward && backward ? twoWay : oneWay});
-					if (forward != backward) {
-						const auto tip = forward ? to : from;
-						const auto tail = forward ? from : to;
-						const auto along = (tail - tip) * 0.3f;
-						const math::vec3 side{-along.y(), along.x(), 0.f};
-						renderer::Renderer2D::drawLine(
-								{.point1 = tip, .point2 = tip + along + side * 0.5f, .color = oneWay});
-						renderer::Renderer2D::drawLine(
-								{.point1 = tip, .point2 = tip + along - side * 0.5f, .color = oneWay});
-					}
-					++drawn;
-				}
-			}
-		}
 		if (pathDone || !m_navFrom.has_value() || !m_navTo.has_value())
 			continue;
 		pathDone = true;
