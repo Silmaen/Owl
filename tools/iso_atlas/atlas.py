@@ -16,6 +16,7 @@ from .common import TILE_H, TILE_W, Z_RANGE, Layers, Vec3
 from .objects import BUILDINGS, PROPS, SLICE_HEIGHT, VEHICLES, render_object, slice_object, smoke
 from .sample_map import write_map
 from .terrain import FOUNDATION_TOPS, SLOPE_COUNT, SLOPES, TERRAINS, draw_foundation, draw_surface
+from .town_map import write_town_map
 
 COLUMNS = 16
 """Tiles per row of the terrain atlas."""
@@ -266,6 +267,7 @@ def generate(project: Path, seed: int = 1, levels: tuple[str, ...] = LEVELS) -> 
     written += _save(smoke(1, seed), folder, "smoke", "1x")
     written += _save(build_vehicles(seed), folder, "vehicles", "1x")
     written.append(write_map(project, seed))
+    written.append(write_town_map(project, seed))
     return written
 
 
