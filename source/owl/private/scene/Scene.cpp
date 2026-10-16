@@ -27,6 +27,7 @@
 #include "scene/Entity.h"
 #include "scene/TilemapAsset.h"
 #include "scene/Tileset.h"
+#include "scene/nav/NavWorld.h"
 
 #include "ScriptLoader.h"
 #include "app/Application.h"
@@ -161,6 +162,12 @@ Scene::Scene()
 Scene::~Scene() {
 	disconnectRuntimeHooks(registry);
 	physics::PhysicCommand::destroy(*this);
+}
+
+auto Scene::getNavigation() const -> nav::NavWorld& {
+	if (m_navigation == nullptr)
+		m_navigation = mkUniq<nav::NavWorld>();
+	return *m_navigation;
 }
 
 auto Scene::copy(const shared<Scene>& iOther) -> shared<Scene> {
@@ -1325,8 +1332,9 @@ void Scene::resolveAllTilemapAssets() {
 	};
 
 	for (const auto view = registry.view<component::Tilemap>(); const auto entity: view) {
-		auto& [tilemapPath, asset] = view.get<component::Tilemap>(entity);
-		if (asset || tilemapPath.empty())
+		auto& tilemap = view.get<component::Tilemap>(entity);
+		const auto& tilemapPath = tilemap.tilemapPath;
+		if (tilemap.asset || tilemapPath.empty())
 			continue;
 		auto resolved = mkShared<TilemapAsset>();
 		const bool loaded = loadAsset(
@@ -1337,7 +1345,7 @@ void Scene::resolveAllTilemapAssets() {
 			OWL_CORE_WARN("Scene: Tilemap {} not found.", tilemapPath.generic_string())
 			continue;
 		}
-		asset = std::move(resolved);
+		tilemap.asset = std::move(resolved);
 	}
 
 	std::unordered_map<std::string, shared<Tileset>> tilesetCache;

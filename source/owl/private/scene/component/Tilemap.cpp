@@ -13,6 +13,7 @@
 #include "scene/component/Tilemap.h"
 
 #include <algorithm>
+#include <array>
 #include <atomic>
 #include <cstdint>
 #include <span>
@@ -312,6 +313,85 @@ auto TilemapLayer::hasSameContent(const TilemapLayer& iOther) const -> bool {
 
 namespace {
 
+constexpr std::array<const char*, nav::directionCount> g_directionNames{"east", "south", "west", "north"};
+
+void emitDirections(YAML::Emitter& iEmitter, const uint8_t iMask) {
+	iEmitter << YAML::Flow << YAML::BeginSeq;
+	for (const auto direction: nav::directions) {
+		if ((iMask & nav::directionBit(direction)) != 0)
+			iEmitter << g_directionNames[static_cast<size_t>(direction)];
+	}
+	iEmitter << YAML::EndSeq;
+}
+
+auto readDirections(const core::YamlNode& iNode, const uint8_t iDefault) -> uint8_t {
+	if (!iNode || !iNode.isSequence())
+		return iDefault;
+	uint8_t mask = 0;
+	for (const auto entry: iNode) {
+		const auto name = entry.as<std::string>();
+		for (const auto direction: nav::directions) {
+			if (name == g_directionNames[static_cast<size_t>(direction)])
+				mask = static_cast<uint8_t>(mask | nav::directionBit(direction));
+		}
+	}
+	return mask;
+}
+
+void emitNavigation(YAML::Emitter& iEmitter, const nav::NavProfile& iProfile) {
+	iEmitter << YAML::Key << "navigation" << YAML::Value << YAML::BeginMap;
+	iEmitter << YAML::Key << "layer" << YAML::Value << iProfile.layer;
+	iEmitter << YAML::Key << "source" << YAML::Value
+			 << (iProfile.source == nav::NavSource::Overlay ? "overlay" : "terrain");
+	iEmitter << YAML::Key << "maxRise" << YAML::Value << static_cast<uint32_t>(iProfile.maxRise);
+	iEmitter << YAML::Key << "climbCost" << YAML::Value << iProfile.climbCost;
+	iEmitter << YAML::Key << "allowSteep" << YAML::Value << iProfile.allowSteep;
+	iEmitter << YAML::Key << "rules" << YAML::Value << YAML::BeginSeq;
+	for (const auto& rule: iProfile.rules) {
+		iEmitter << YAML::BeginMap << YAML::Flow;
+		iEmitter << YAML::Key << "tile" << YAML::Value << rule.tile;
+		iEmitter << YAML::Key << "cost" << YAML::Value << rule.cost;
+		iEmitter << YAML::Key << "exits" << YAML::Value;
+		emitDirections(iEmitter, rule.exits);
+		iEmitter << YAML::Key << "enters" << YAML::Value;
+		emitDirections(iEmitter, rule.enters);
+		iEmitter << YAML::EndMap;
+	}
+	iEmitter << YAML::EndSeq << YAML::EndMap;
+}
+
+auto readNavigation(const core::YamlNode& iNode) -> nav::NavProfile {
+	nav::NavProfile profile;
+	if (!iNode || !iNode.isMap())
+		return profile;
+	if (iNode["layer"])
+		profile.layer = iNode["layer"].as<uint32_t>();
+	if (iNode["source"])
+		profile.source =
+				iNode["source"].as<std::string>() == "terrain" ? nav::NavSource::Terrain : nav::NavSource::Overlay;
+	if (iNode["maxRise"])
+		profile.maxRise = static_cast<uint8_t>(
+				std::min<uint32_t>(iNode["maxRise"].as<uint32_t>(), nav::NavProfile::maxRiseLimit));
+	if (iNode["climbCost"])
+		profile.climbCost = iNode["climbCost"].as<float>();
+	if (iNode["allowSteep"])
+		profile.allowSteep = iNode["allowSteep"].as<bool>();
+	if (const auto rules = iNode["rules"]; rules && rules.isSequence()) {
+		for (const auto ruleNode: rules) {
+			if (!ruleNode["tile"])
+				continue;
+			nav::NavTileRule rule;
+			rule.tile = ruleNode["tile"].as<int32_t>();
+			if (ruleNode["cost"])
+				rule.cost = ruleNode["cost"].as<float>();
+			rule.exits = readDirections(ruleNode["exits"], nav::allDirections);
+			rule.enters = readDirections(ruleNode["enters"], nav::allDirections);
+			profile.rules.push_back(rule);
+		}
+	}
+	return profile;
+}
+
 void emitInline(YAML::Emitter& iEmitter, const scene::TilemapAsset& iAsset) {
 	if (!iAsset.tilesetPath.empty())
 		iEmitter << YAML::Key << "tilesetPath" << YAML::Value << iAsset.tilesetPath.generic_string();
@@ -378,6 +458,8 @@ void Tilemap::serialize(const core::Serializer& iOut) const {
 		emitInline(emitter, *asset);
 		emitter << YAML::EndMap;
 	}
+	if (!navigation.isEmpty())
+		emitNavigation(emitter, navigation);
 	emitter << YAML::EndMap;
 }
 
@@ -385,6 +467,7 @@ void Tilemap::deserialize(const core::Serializer& iNode) {
 	const auto& root = iNode.getImpl()->node;
 	tilemapPath.clear();
 	asset.reset();
+	navigation = readNavigation(root["navigation"]);
 	if (root["tilemapPath"]) {
 		tilemapPath = root["tilemapPath"].as<std::string>();
 		// `asset` is left null on purpose: scene loading resolves it via `Scene::loadAssetReferences`.
