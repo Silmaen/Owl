@@ -281,6 +281,9 @@ auto ActionMap::createDefault() -> ActionMap {
 			{"ui_right", ActionKind::Button, {keyBind(key::Right), padButtonBind(gamepad::DpadRight)}},
 			{"ui_accept", ActionKind::Button, {keyBind(key::Enter), padButtonBind(gamepad::A)}},
 			{"ui_cancel", ActionKind::Button, {keyBind(key::Escape), padButtonBind(gamepad::B)}},
+			{"ui_scroll",
+			 ActionKind::Vector,
+			 {keyBind(key::PageUp, Y, -1.f), keyBind(key::PageDown, Y), padStickBind(gamepad::Stick::Right)}},
 	};
 	return map;
 }
