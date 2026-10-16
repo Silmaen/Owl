@@ -97,6 +97,7 @@ void EditorLayer::newHud() {
 	hud->setDocumentKind(scene::DocumentKind::Hud);
 	hud->setHudPath(std::string{});
 	hud->createEntity("HUD Canvas").addComponent<scene::component::Canvas>();
+	target->setHudMode(true);
 	syncActiveDocumentPanels();
 }
 

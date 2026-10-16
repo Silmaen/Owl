@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- HUD editor in Owl Nest: an `.owlhud` (and, from the Scene ribbon, the canvases of a scene) opens in a pixel viewport with resolution presets and a custom size, a colour or image backdrop, the reference resolution framed, a rect gizmo (move, edges, anchors, pivot) snapped to pixels and to the edges of siblings, parent and screen, a widget palette (click, drag and drop, texture drop), box and Ctrl-click multi-select with group move and delete, and `hud.add_widget`, `hud.set_rect`, `hud.set_anchors`, `hud.set_pivot`, `hud.move`, `hud.delete` and `hud.reparent` commands (undoable, journaled, reachable through MCP); `Scene::renderHud` draws a HUD at any size.
 - Isometric objects and vehicles: the `IsometricObject` component draws a building of a generated sheet as one depth-correct slice per footprint tile (inspector with sheet drop and building list, undoable, picked in the viewport), the layer sends every opaque sprite as a 64-byte matrix-free `IsometricSprite` (`drawSprites` for thousands of vehicles, off-screen ones dropped on the CPU), the foot snaps to whole pixels at integer zoom, `tools/iso_atlas` writes a vehicle sheet, and `iso/*` benches enter the baseline.
 - Action map editor in Owl Nest: `input_actions.yml` opens in a document with its own undo stack (add, rename, remove
   actions, kind, bindings with scale, dead zone, curve and gamepad slot), a "press a key" capture of keyboard, mouse and

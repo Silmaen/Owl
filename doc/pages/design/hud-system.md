@@ -113,15 +113,46 @@ Implementation notes:
   walks the entity storage backwards): the last window listed in a file is the first child, hence the one drawn
   under the others.
 
-## HUD editor (HUD4)
+## HUD editor (HUD4, done)
 
-- `HudDocument` on `.owlhud` files and on embedded canvases: a pixel-space viewport with resolution presets and the
-  reference resolution framed, over a colour or image backdrop (a live scene backdrop comes with "look through scene
-  camera", v0.5.0).
-- Rect gizmo snapped to pixels and anchors, anchor handles, widget palette, drag & drop of textures and fonts,
-  hierarchy and multi-select.
-- Every action is a named command (`hud.add_widget`, `hud.set_rect`, …): undoable, and reachable through the MCP
-  server.
+- `HudDocument` (`document/HudDocument.h`) holds the state of the editor of a scene's canvases: preview resolution
+  (presets 640 x 360, 1280 x 720, 1920 x 1080, 2560 x 1440, 1024 x 768, 720 x 1280, or a custom size), backdrop (a
+  colour or an image), snapping, selection and the gizmo gestures. It owns no scene and no undo history: it edits the
+  scene of a `SceneDocument`, an `.owlhud` or the canvases embedded in a scene, so the hierarchy, the inspector, the
+  autosave, the hot reload and Save work as they do for a scene. A live scene backdrop comes with "look through scene
+  camera" (v0.5.0).
+- `panel::HudEditor` draws it in the tab of the document in place of the 3D viewport: an `.owlhud` always opens in it,
+  a scene switches with **HUD Editor** of the Scene ribbon tab (Play brings the viewport back). The preview is the
+  HUD drawn into its own framebuffer at the chosen resolution (`Scene::renderHud`), zoomed to fit or 1:1, panned with
+  the middle button; the reference resolution of each canvas is framed.
+- Rect gizmo on the primary selected widget: move (body), eight resize handles, the pivot (Alt), the anchors (diamonds on
+  the parent rectangle; Ctrl+Alt when they sit under the pivot). Dragging the pivot, an anchor or an edge keeps the rest
+  of the rectangle where it is on screen (`solveHudRect` finds the offset and the size). Snapping rounds to the pixel
+  grid (step 1 to 64 reference pixels) and sticks to the edges and centres of the siblings, the parent and the screen
+  (guides are drawn); Shift snaps nothing.
+- Selection: click, Ctrl-click, box; shared with the Scene Hierarchy (the primary widget). Group move by dragging or the
+  arrow keys (Shift = 10 pixels), Delete removes the group; a widget under another selected one follows it.
+- Palette: Canvas, Panel, Label, Image, Button, Slider, Progress Bar, Window and Layout, by click (centre of the preview)
+  or drag and drop into the container under the mouse; a texture dropped from the Content Browser makes an Image.
+  Fonts are still assigned from the inspector.
+- Every action is a named command of the registry (`hud.add_widget`, `hud.set_rect`, `hud.set_anchors`,
+  `hud.set_pivot`, `hud.move`, `hud.delete`, `hud.reparent`, see [Editor](../editor.md#editor-commands)): undoable,
+  journaled, replayable in macros and reachable through the MCP server. A gesture previews on the scene; when it ends
+  the scene is put back and one command runs with the final values (a drag is one undo step, a nudge merges into the
+  previous one within a second).
+- The project `DefaultHud` stays a field of Project Settings, applied with the dialog: it is a project setting, not a
+  scene edit, so it has no undo entry and no command yet (the dialog applies and saves the whole project at once).
+
+Implementation notes:
+
+- `HudRectsCommand` records the `UiRect` of one or several widgets before and after and merges with the next change of
+  the same widgets; `HudReparentCommand` adds the parent and the index. Creation and deletion reuse
+  `CreateEntityCommand`, `DeleteSubtreeCommand` and `UndoGroupCommand`.
+- Positions in the commands are reference pixels; `keep_bounds` (default true on `hud.set_anchors`, `hud.set_pivot`
+  and `hud.reparent`) lays the HUD out at `resolution` (the reference resolution of the canvas when absent) to read
+  the parent rectangle.
+- Tests: `HudDocument_test.cpp` (resolution, selection, hit-testing, gestures, snapping, creation by drop) and the
+  `HudCommandsTest` cases of `CommandRegistry_test.cpp`.
 
 ## Focus navigation (HUD5)
 

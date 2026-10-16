@@ -13,6 +13,7 @@
 #include "ComponentCommands.h"
 #include "EntityCommands.h"
 #include "HierarchyCommands.h"
+#include "HudCommands.h"
 #include "Macro.h"
 #include "PrefabCommands.h"
 #include "SceneSettingsCommands.h"
@@ -626,6 +627,7 @@ CommandRegistry::CommandRegistry() {
 		 .args = {},
 		 .factory = {},
 		 .run = redoEdit});
+	addHudCommands(*this);
 	add(getMacroRunSpec());
 }
 

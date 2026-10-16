@@ -51,10 +51,12 @@ void SceneDocument::onAttach(EditorLayer* iEditor) {
 	m_viewport.attachParent(iEditor);
 	m_viewport.setDocument(this);
 	m_viewport.setUndoManager(&m_undoManager);
+	m_hudEditor.attachParent(iEditor);
 }
 
 void SceneDocument::onDetach() {
 	m_viewport.detach();
+	m_hudEditor.detach();
 	if (m_state != State::Edit && m_activeScene)
 		m_activeScene->onEndRuntime();
 	m_activeScene.reset();
@@ -107,6 +109,7 @@ void SceneDocument::newScene(const math::vec2ui& iViewportSize) {
 	m_activeScene->onViewportResize(iViewportSize);
 	m_editorScene = m_activeScene;
 	m_scenePath.clear();
+	m_hudMode = false;
 	m_state = State::Edit;
 	m_stepRequested = false;
 	m_stopRequested = false;
@@ -122,6 +125,7 @@ void SceneDocument::applyLoadedScene(const shared<scene::Scene>& iScene, const s
 	m_editorScene->onViewportResize(iViewportSize);
 	m_activeScene = m_editorScene;
 	m_scenePath = iPath;
+	m_hudMode = m_editorScene->getDocumentKind() == scene::DocumentKind::Hud;
 	m_state = State::Edit;
 	m_stepRequested = false;
 	m_stopRequested = false;

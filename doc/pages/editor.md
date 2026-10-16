@@ -607,12 +607,39 @@ without the file starts from the built-in actions, and the first save creates it
 
 ### HUD documents {#editor-hud}
 
-An `.owlhud` opens (double click in the Content Browser) in a scene document: the hierarchy, the inspector, the
-viewport (the canvases drawn in pixels) and the undo history work as for a scene, and Save writes the `Hud:` file
-atomically. **New > HUD** (Home ribbon) creates an untitled one holding a full-screen canvas, saved as `.owlhud`. The
-scenes drawing a HUD read it again once it is saved; Play starts and ends with the HUD files read again, so the
-widget values changed by the game never stay in the editor. A dedicated HUD editor (resolution presets, rect gizmo)
-comes with HUD4 ([HUD system](design/hud-system.md)).
+An `.owlhud` opens (double click in the Content Browser) in a scene document: the hierarchy, the inspector and the
+undo history work as for a scene, and Save writes the `Hud:` file atomically. **New > HUD** (Home ribbon) creates an
+untitled one holding a full-screen canvas, saved as `.owlhud`. The scenes drawing a HUD read it again once it is
+saved; Play starts and ends with the HUD files read again, so the widget values changed by the game never stay in
+the editor.
+
+The tab shows the **HUD editor** instead of the 3D viewport; a scene with canvases gets it too with **HUD Editor**
+(Scene ribbon tab; *Scene View* in its toolbar goes back; Play always shows the scene). It has three parts:
+
+- **Toolbar**: preview resolution (presets or a custom size), fit / 1:1 zoom (mouse wheel zooms, middle button pans,
+  `F` fits), widget outlines and the reference resolution frame, backdrop (colour, or an image dropped from the
+  Content Browser), snapping (pixel grid and its step, edges), draw order (later / earlier) and delete.
+- **Palette** (left): Canvas, Panel, Label, Image, Button, Slider, Progress Bar, Window, Layout. Click one to add it at
+  the centre, or drag it into the preview: it goes into the panel or window under the mouse, else under the canvas
+  (created when the scene has none). A texture dragged from the Content Browser makes an Image.
+- **Preview**: the HUD at the chosen resolution over the backdrop. Click selects, Ctrl-click adds or removes, dragging
+  on empty space draws a selection box; the selection is the one of the Scene Hierarchy and the Properties panel.
+
+| Gesture                                    | Effect                                                    |
+|--------------------------------------------|-----------------------------------------------------------|
+| Drag the body                              | Move the selected widgets together                        |
+| Drag an edge or a corner handle            | Resize; the opposite edge stays                           |
+| Alt + drag the circle                      | Move the pivot; the widget stays where it is              |
+| Drag a diamond (Ctrl+Alt when under pivot) | Move the anchors; the widget stays where it is            |
+| Arrow keys (Shift: 10 pixels)              | Nudge the selection                                       |
+| Delete                                     | Delete the selection and its children                     |
+| Shift while dragging                       | Snap nothing                                              |
+| Right click                                | Add a widget here, bring to front, send to back, delete   |
+
+Positions snap to whole reference pixels and stick to the edges and centres of the siblings, the parent and the
+screen (red guides). Every gesture is one undo step and runs a `hud.*` command (see
+[Editor commands](#editor-commands)), so it is journaled and available from the console and the MCP server.
+Details in [HUD system](design/hud-system.md).
 
 ### Content Browser
 
@@ -1153,6 +1180,13 @@ description and structured data (`entity` UUID, plus the fields listed below).
 | `edit.undo`            | none; returns `can_undo`, `can_redo` and the entity to select                |
 | `edit.redo`            | none; same result as `edit.undo`                                             |
 | `macro.run`            | `path` (`.owlmacro`, absolute or in an asset folder); returns `commands`     |
+| `hud.add_widget`       | `kind` (`panel`, `label`...), `name`, `parent`, `size`, `anchor`, `offset`   |
+| `hud.set_rect`         | `entity`, `anchor_min`, `anchor_max`, `pivot`, `size`, `offset` (as given)   |
+| `hud.set_anchors`      | `entity`, `anchor_min`, `anchor_max`, `keep_bounds`, `resolution`            |
+| `hud.set_pivot`        | `entity`, `pivot`, `keep_bounds`, `resolution`                               |
+| `hud.move`             | `entities` (UUIDs or tags, comma separated), `delta` (reference pixels)      |
+| `hud.delete`           | `entities`: the widgets and their children, one step                         |
+| `hud.reparent`         | `entity`, `parent`, `index`, `keep_bounds`, `resolution`                     |
 
 An entity argument is a UUID (integer) or a tag (first match). Continuous edits previewed live (voxel brush strokes,
 tile painting, node moves) are recorded as one command when the gesture ends. An inspector field edit and a gizmo drag

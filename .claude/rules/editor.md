@@ -37,6 +37,10 @@ same PR (see `ongoing-quality.md`, *Editor Coverage*).
 - `ActionMapDocument` (`input_actions.yml`) keeps its own `UndoManager<input::ActionMap>`: every edit is a method of the
   document (whole-map before / after command, slider drags merge) and `BindingCapture` is the pure "press a key" state
   machine; saving reloads the project map in `EngineContext`.
+- `HudDocument` (`document/HudDocument.h`) is the HUD editor of a scene document (an `.owlhud` always, a scene through
+  `SceneDocument::setHudMode`): preview resolution, backdrop, snapping, selection and the gizmo gestures, no scene and
+  no history of its own; `panel::HudEditor` draws it in place of the viewport. A gesture previews on the scene, then
+  puts it back and runs one `hud.*` command (`commands/HudCommands.h`: `HudRectsCommand`, `HudReparentCommand`).
 - Selection is restored through each command's `selectAfterUndo` / `selectAfterRedo` hints.
 - **Command API** (`commands/CommandRegistry.h`, library `OwlNestCommands`, also linked by the runner): a discrete
   scene change is a named command run by `CommandRegistry::execute` (or `CommandTarget::execute` from a panel),

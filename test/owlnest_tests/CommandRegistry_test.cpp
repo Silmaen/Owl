@@ -8,6 +8,7 @@
 
 #include "commands/CommandRegistry.h"
 #include "UndoManager.h"
+#include "commands/HudCommands.h"
 #include "testHelper.h"
 
 #include <core/SerializerImpl.h>
@@ -19,7 +20,9 @@
 #include <scene/component/Hierarchy.h>
 #include <scene/component/Tag.h>
 #include <scene/component/Transform.h>
+#include <scene/component/UiButton.h>
 #include <scene/component/UiRect.h>
+#include <scene/component/UiText.h>
 
 #include <gtest/gtest.h>
 
@@ -31,6 +34,7 @@
 #include <string>
 #include <tuple>
 #include <variant>
+#include <vector>
 
 using namespace owl;
 using namespace owl::nest;
@@ -82,7 +86,7 @@ TEST_F(CommandRegistryTest, DeclaresTheBuiltinCommands) {
 		EXPECT_FALSE(spec->allowedInPlay) << name;
 	}
 	EXPECT_EQ(m_registry.find("entity.explode"), nullptr);
-	EXPECT_EQ(m_registry.getCommands().size(), 15u);
+	EXPECT_EQ(m_registry.getCommands().size(), 22u);
 }
 
 TEST_F(CommandRegistryTest, CreateUnderAParentThenUndoRedo) {
@@ -225,7 +229,7 @@ TEST_F(CommandRegistryTest, IncompleteTargetRefusesCommands) {
 TEST_F(CommandRegistryTest, AddReplacesACommandOfTheSameName) {
 	m_registry.add({.name = "entity.create", .description = "Replaced.", .args = {}, .factory = {}});
 	EXPECT_EQ(m_registry.find("entity.create")->description, "Replaced.");
-	EXPECT_EQ(m_registry.getCommands().size(), 15u);
+	EXPECT_EQ(m_registry.getCommands().size(), 22u);
 }
 
 TEST_F(CommandRegistryTest, ParsesVectorColourAndEnumArguments) {
@@ -438,4 +442,291 @@ TEST_F(CommandRegistryTest, EditsAreRefusedDuringPlay) {
 	EXPECT_TRUE(m_registry.execute("test.read", {}, playing).has_value());
 	const CommandContext noUndo{.scene = m_scene, .undo = nullptr, .playing = false, .scenePath = {}, .onSaved = {}};
 	EXPECT_EQ(m_registry.execute("test.read", {}, noUndo).error().error, CommandError::NotApplicable);
+}
+
+namespace {
+
+OWL_DIAG_PUSH
+OWL_DIAG_DISABLE_CLANG("-Wweak-vtables")
+class HudCommandsTest : public CommandRegistryTest {
+protected:
+	auto addWidget(const std::string& iKind, const CommandArgs& iExtra = {}) -> scene::Entity {
+		CommandArgs args = iExtra;
+		args.set("kind", iKind);
+		const auto added = run("hud.add_widget", args);
+		EXPECT_TRUE(added.has_value()) << (added ? "" : added.error().message);
+		return added ? m_scene->findEntityByUUID(added->entity) : scene::Entity{};
+	}
+
+	static auto rectOf(const scene::Entity& iEntity) -> const scene::component::UiRect& {
+		return iEntity.getComponent<scene::component::UiRect>();
+	}
+
+	static auto idList(const std::vector<scene::Entity>& iEntities) -> std::string {
+		std::string text;
+		for (const auto& entity: iEntities)
+			text += (text.empty() ? "" : ",") + std::to_string(static_cast<uint64_t>(entity.getUUID()));
+		return text;
+	}
+};
+OWL_DIAG_POP
+
+}// namespace
+
+TEST_F(HudCommandsTest, DeclaresTheHudCommands) {
+	for (const auto* name: {"hud.add_widget", "hud.set_rect", "hud.set_anchors", "hud.set_pivot", "hud.move",
+							"hud.delete", "hud.reparent"}) {
+		const auto* spec = m_registry.find(name);
+		ASSERT_NE(spec, nullptr) << name;
+		EXPECT_FALSE(spec->description.empty()) << name;
+		EXPECT_TRUE(spec->factory) << name;
+		EXPECT_FALSE(spec->allowedInPlay) << name;
+	}
+}
+
+TEST_F(HudCommandsTest, AddWidgetCreatesTheCanvasWhenTheSceneHasNone) {
+	const auto button = addWidget("button", {{"name", std::string{"Play"}}});
+	ASSERT_TRUE(button);
+	EXPECT_EQ(m_scene->registry.view<scene::component::Canvas>().size(), 1u);
+	EXPECT_TRUE(button.hasComponent<scene::component::UiButton>());
+	EXPECT_TRUE(button.hasComponent<scene::component::UiText>());
+	EXPECT_EQ(button.getName(), "Play");
+	const auto parent = m_scene->findEntityByUUID(button.getComponent<scene::component::Hierarchy>().parentId);
+	ASSERT_TRUE(parent);
+	EXPECT_TRUE(parent.hasComponent<scene::component::Canvas>());
+
+	m_undo.undo(*m_scene);
+	EXPECT_EQ(count(), 0u);
+	m_undo.redo(*m_scene);
+	EXPECT_EQ(count(), 2u);
+	const auto again = m_scene->findEntityByUUID(button.getUUID());
+	ASSERT_TRUE(again);
+	EXPECT_TRUE(again.hasComponent<scene::component::UiButton>());
+	EXPECT_TRUE(m_scene->findEntityByUUID(again.getComponent<scene::component::Hierarchy>().parentId)
+						.hasComponent<scene::component::Canvas>());
+}
+
+TEST_F(HudCommandsTest, AddWidgetUsesTheGivenParentAnchorAndOffset) {
+	const auto canvas = addWidget("canvas", {{"name", std::string{"Gameplay"}}});
+	ASSERT_TRUE(canvas);
+	const auto panel = addWidget("panel", {{"parent", idOf(canvas)}});
+	const auto label = addWidget("label", {{"parent", idOf(panel)},
+										   {"anchor", math::vec2{0.f, 0.f}},
+										   {"offset", math::vec2{30.f, 12.f}},
+										   {"size", math::vec2{50.f, 20.f}}});
+	ASSERT_TRUE(label);
+	EXPECT_EQ(label.getComponent<scene::component::Hierarchy>().parentId, panel.getUUID());
+	EXPECT_EQ(rectOf(label).getAnchor(), scene::component::UiRect::Anchor::TopLeft);
+	EXPECT_FLOAT_EQ(rectOf(label).anchorOffset.x(), 30.f);
+	EXPECT_FLOAT_EQ(rectOf(label).size.y(), 20.f);
+	EXPECT_EQ(m_scene->registry.view<scene::component::Canvas>().size(), 1u);
+	EXPECT_EQ(panel.getComponent<scene::component::Hierarchy>().childrenIds.size(), 1u);
+}
+
+TEST_F(HudCommandsTest, AddWidgetRefusesAParentOutsideTheHud) {
+	auto plain = m_scene->createEntity("Plain");
+	const auto result = run("hud.add_widget", {{"kind", std::string{"panel"}}, {"parent", idOf(plain)}});
+	ASSERT_FALSE(result.has_value());
+	EXPECT_EQ(result.error().error, CommandError::InvalidArgument);
+	const auto bad = run("hud.add_widget", {{"kind", std::string{"sprite"}}});
+	ASSERT_FALSE(bad.has_value());
+	EXPECT_EQ(bad.error().error, CommandError::InvalidArgument);
+}
+
+TEST_F(HudCommandsTest, SetRectChangesOnlyTheGivenFieldsAndMergesDrags) {
+	const auto panel = addWidget("panel");
+	const auto sizeBefore = rectOf(panel).size;
+	const auto first = run("hud.set_rect", {{"entity", idOf(panel)}, {"offset", math::vec2{10.f, 5.f}}});
+	ASSERT_TRUE(first.has_value()) << first.error().message;
+	const auto second = run("hud.set_rect", {{"entity", idOf(panel)}, {"offset", math::vec2{20.f, 9.f}}});
+	ASSERT_TRUE(second.has_value());
+	EXPECT_FLOAT_EQ(rectOf(panel).anchorOffset.x(), 20.f);
+	EXPECT_EQ(rectOf(panel).size, sizeBefore);
+	m_undo.undo(*m_scene);
+	EXPECT_FLOAT_EQ(rectOf(panel).anchorOffset.x(), 0.f);
+	m_undo.redo(*m_scene);
+	EXPECT_FLOAT_EQ(rectOf(panel).anchorOffset.x(), 20.f);
+}
+
+TEST_F(HudCommandsTest, SetRectRefusesNothingToChangeAndNonWidgets) {
+	const auto panel = addWidget("panel");
+	const auto none = run("hud.set_rect", {{"entity", idOf(panel)}});
+	ASSERT_FALSE(none.has_value());
+	EXPECT_EQ(none.error().error, CommandError::MissingArgument);
+	const auto same = run("hud.set_rect", {{"entity", idOf(panel)}, {"size", rectOf(panel).size}});
+	ASSERT_FALSE(same.has_value());
+	EXPECT_EQ(same.error().error, CommandError::NotApplicable);
+	auto plain = m_scene->createEntity("Plain");
+	const auto noRect = run("hud.set_rect", {{"entity", idOf(plain)}, {"size", math::vec2{1.f, 1.f}}});
+	ASSERT_FALSE(noRect.has_value());
+	EXPECT_EQ(noRect.error().error, CommandError::InvalidArgument);
+}
+
+TEST_F(HudCommandsTest, SetAnchorsKeepsTheWidgetWhereItIs) {
+	const auto panel = addWidget("panel", {{"size", math::vec2{200.f, 100.f}}});
+	const auto result = run("hud.set_anchors", {{"entity", idOf(panel)}, {"anchor_min", math::vec2{0.f, 0.f}}});
+	ASSERT_TRUE(result.has_value()) << result.error().message;
+	const auto& rect = rectOf(panel);
+	EXPECT_EQ(rect.getAnchor(), scene::component::UiRect::Anchor::TopLeft);
+	const auto bounds = rect.computeBounds({.position = {0.f, 0.f}, .size = {1280.f, 720.f}});
+	EXPECT_FLOAT_EQ(bounds.position.x(), 540.f);
+	EXPECT_FLOAT_EQ(bounds.position.y(), 310.f);
+	EXPECT_FLOAT_EQ(bounds.size.x(), 200.f);
+	m_undo.undo(*m_scene);
+	EXPECT_EQ(rectOf(panel).getAnchor(), scene::component::UiRect::Anchor::Center);
+}
+
+TEST_F(HudCommandsTest, SetAnchorsStretchesWithTheParentAndKeepsTheBounds) {
+	const auto panel = addWidget("panel", {{"size", math::vec2{200.f, 100.f}}});
+	const auto result = run(
+			"hud.set_anchors",
+			{{"entity", idOf(panel)}, {"anchor_min", math::vec2{0.f, 0.5f}}, {"anchor_max", math::vec2{1.f, 0.5f}}});
+	ASSERT_TRUE(result.has_value()) << result.error().message;
+	const auto bounds = rectOf(panel).computeBounds({.position = {0.f, 0.f}, .size = {1280.f, 720.f}});
+	EXPECT_FLOAT_EQ(bounds.position.x(), 540.f);
+	EXPECT_FLOAT_EQ(bounds.size.x(), 200.f);
+	const auto wider = rectOf(panel).computeBounds({.position = {0.f, 0.f}, .size = {1920.f, 720.f}});
+	EXPECT_FLOAT_EQ(wider.size.x(), 840.f);
+}
+
+TEST_F(HudCommandsTest, SetAnchorsWithoutKeepingBoundsSetsThemAsGiven) {
+	const auto panel = addWidget("panel", {{"size", math::vec2{200.f, 100.f}}});
+	const auto result = run("hud.set_anchors",
+							{{"entity", idOf(panel)}, {"anchor_min", math::vec2{0.f, 0.f}}, {"keep_bounds", false}});
+	ASSERT_TRUE(result.has_value());
+	EXPECT_FLOAT_EQ(rectOf(panel).anchorOffset.x(), 0.f);
+	EXPECT_FLOAT_EQ(rectOf(panel).size.x(), 200.f);
+}
+
+TEST_F(HudCommandsTest, SetPivotKeepsTheBounds) {
+	const auto panel = addWidget("panel", {{"size", math::vec2{200.f, 100.f}}});
+	const auto result = run("hud.set_pivot", {{"entity", idOf(panel)}, {"pivot", math::vec2{0.f, 0.f}}});
+	ASSERT_TRUE(result.has_value()) << result.error().message;
+	const auto bounds = rectOf(panel).computeBounds({.position = {0.f, 0.f}, .size = {1280.f, 720.f}});
+	EXPECT_FLOAT_EQ(bounds.position.x(), 540.f);
+	EXPECT_FLOAT_EQ(bounds.position.y(), 310.f);
+	EXPECT_FLOAT_EQ(rectOf(panel).pivot.x(), 0.f);
+	const auto missing = run("hud.set_pivot", {{"entity", idOf(panel)}});
+	ASSERT_FALSE(missing.has_value());
+	EXPECT_EQ(missing.error().error, CommandError::MissingArgument);
+}
+
+TEST_F(HudCommandsTest, MoveShiftsTheGroupInOneStepAndSkipsFollowers) {
+	const auto first = addWidget("panel");
+	const auto second = addWidget("panel");
+	const auto child = addWidget("label", {{"parent", idOf(first)}});
+	const auto result =
+			run("hud.move", {{"entities", idList({first, second, child})}, {"delta", math::vec2{5.f, -3.f}}});
+	ASSERT_TRUE(result.has_value()) << result.error().message;
+	EXPECT_EQ(std::get<int64_t>(result->data.at("count")), 2);
+	EXPECT_FLOAT_EQ(rectOf(first).anchorOffset.x(), 5.f);
+	EXPECT_FLOAT_EQ(rectOf(second).anchorOffset.y(), -3.f);
+	EXPECT_FLOAT_EQ(rectOf(child).anchorOffset.x(), 0.f);
+	m_undo.undo(*m_scene);
+	EXPECT_FLOAT_EQ(rectOf(first).anchorOffset.x(), 0.f);
+	EXPECT_FLOAT_EQ(rectOf(second).anchorOffset.y(), 0.f);
+	m_undo.redo(*m_scene);
+	EXPECT_FLOAT_EQ(rectOf(second).anchorOffset.x(), 5.f);
+}
+
+TEST_F(HudCommandsTest, MoveFindsWidgetsByTagAndRefusesUnknownOnes) {
+	const auto panel = addWidget("panel", {{"name", std::string{"Bar"}}});
+	ASSERT_TRUE(run("hud.move", {{"entities", std::string{"Bar"}}, {"delta", math::vec2{1.f, 0.f}}}).has_value());
+	EXPECT_FLOAT_EQ(rectOf(panel).anchorOffset.x(), 1.f);
+	const auto unknown = run("hud.move", {{"entities", std::string{"Nope"}}, {"delta", math::vec2{1.f, 0.f}}});
+	ASSERT_FALSE(unknown.has_value());
+	EXPECT_EQ(unknown.error().error, CommandError::UnknownEntity);
+	const auto empty = run("hud.move", {{"entities", std::string{" , "}}, {"delta", math::vec2{1.f, 0.f}}});
+	ASSERT_FALSE(empty.has_value());
+	EXPECT_EQ(empty.error().error, CommandError::MissingArgument);
+	const auto idle = run("hud.move", {{"entities", std::string{"Bar"}}, {"delta", math::vec2{0.f, 0.f}}});
+	ASSERT_FALSE(idle.has_value());
+	EXPECT_EQ(idle.error().error, CommandError::NotApplicable);
+}
+
+TEST_F(HudCommandsTest, DeleteRemovesTheGroupWithItsChildrenAndUndoes) {
+	const auto window = addWidget("window");
+	const auto inner = addWidget("label", {{"parent", idOf(window)}});
+	const auto other = addWidget("panel");
+	const auto kept = addWidget("panel");
+	const auto before = count();
+	const auto windowId = window.getUUID();
+	const auto innerId = inner.getUUID();
+	const auto result = run("hud.delete", {{"entities", idList({window, inner, other})}});
+	ASSERT_TRUE(result.has_value()) << result.error().message;
+	EXPECT_EQ(std::get<int64_t>(result->data.at("count")), 2);
+	EXPECT_EQ(count(), before - 3);
+	EXPECT_TRUE(m_scene->findEntityByUUID(kept.getUUID()));
+	m_undo.undo(*m_scene);
+	EXPECT_EQ(count(), before);
+	const auto restoredInner = m_scene->findEntityByUUID(innerId);
+	ASSERT_TRUE(restoredInner);
+	EXPECT_EQ(restoredInner.getComponent<scene::component::Hierarchy>().parentId, windowId);
+	m_undo.redo(*m_scene);
+	EXPECT_EQ(count(), before - 3);
+}
+
+TEST_F(HudCommandsTest, ReparentKeepsTheWidgetOnScreenAndSetsTheIndex) {
+	const auto panel = addWidget("panel", {{"size", math::vec2{400.f, 300.f}}});
+	const auto label = addWidget("label", {{"size", math::vec2{100.f, 40.f}}});
+	const auto sibling = addWidget("label", {{"parent", idOf(panel)}});
+	const auto result = run("hud.reparent", {{"entity", idOf(label)}, {"parent", idOf(panel)}, {"index", int64_t{0}}});
+	ASSERT_TRUE(result.has_value()) << result.error().message;
+	const auto& children = panel.getComponent<scene::component::Hierarchy>().childrenIds;
+	ASSERT_EQ(children.size(), 2u);
+	EXPECT_EQ(children.front(), label.getUUID());
+	EXPECT_EQ(children.back(), sibling.getUUID());
+	// Centred in the canvas before, in the panel (centred as well) after: same screen rectangle.
+	const auto bounds = rectOf(label).computeBounds({.position = {440.f, 210.f}, .size = {400.f, 300.f}});
+	EXPECT_FLOAT_EQ(bounds.position.x(), 590.f);
+	EXPECT_FLOAT_EQ(bounds.position.y(), 340.f);
+	m_undo.undo(*m_scene);
+	EXPECT_NE(label.getComponent<scene::component::Hierarchy>().parentId, panel.getUUID());
+	EXPECT_EQ(panel.getComponent<scene::component::Hierarchy>().childrenIds.size(), 1u);
+	EXPECT_FLOAT_EQ(rectOf(label).anchorOffset.x(), 0.f);
+	m_undo.redo(*m_scene);
+	EXPECT_EQ(label.getComponent<scene::component::Hierarchy>().parentId, panel.getUUID());
+}
+
+TEST_F(HudCommandsTest, ReparentRefusesCyclesAndDoesNothingTwice) {
+	const auto panel = addWidget("panel");
+	const auto child = addWidget("panel", {{"parent", idOf(panel)}});
+	const auto cycle = run("hud.reparent", {{"entity", idOf(panel)}, {"parent", idOf(child)}});
+	ASSERT_FALSE(cycle.has_value());
+	EXPECT_EQ(cycle.error().error, CommandError::NotApplicable);
+	const auto self = run("hud.reparent", {{"entity", idOf(panel)}, {"parent", idOf(panel)}});
+	ASSERT_FALSE(self.has_value());
+	const auto same = run("hud.reparent", {{"entity", idOf(child)}, {"parent", idOf(panel)}});
+	ASSERT_FALSE(same.has_value());
+	EXPECT_EQ(same.error().error, CommandError::NotApplicable);
+	auto plain = m_scene->createEntity("Plain");
+	const auto outside = run("hud.reparent", {{"entity", idOf(child)}, {"parent", idOf(plain)}});
+	ASSERT_FALSE(outside.has_value());
+	EXPECT_EQ(outside.error().error, CommandError::InvalidArgument);
+}
+
+TEST_F(HudCommandsTest, EveryHudCommandIsRefusedWhilePlaying) {
+	const auto panel = addWidget("panel");
+	const CommandContext playing{.scene = m_scene, .undo = &m_undo, .playing = true, .scenePath = {}, .onSaved = {}};
+	const auto result =
+			m_registry.execute("hud.set_rect", {{"entity", idOf(panel)}, {"size", math::vec2{1.f, 1.f}}}, playing);
+	ASSERT_FALSE(result.has_value());
+	EXPECT_EQ(result.error().error, CommandError::RefusedDuringPlay);
+}
+
+TEST_F(HudCommandsTest, SolveRectCoversTheTargetWhateverTheAnchorsAndPivot) {
+	scene::component::UiRect base;
+	base.anchorMin = {0.f, 0.25f};
+	base.anchorMax = {1.f, 0.75f};
+	base.pivot = {0.2f, 0.9f};
+	const scene::component::UiRect::Bounds parent{.position = {10.f, 20.f}, .size = {800.f, 400.f}};
+	const scene::component::UiRect::Bounds target{.position = {55.f, 77.f}, .size = {123.f, 45.f}};
+	const auto solved = solveHudRect(base, parent, target);
+	const auto bounds = solved.computeBounds(parent);
+	EXPECT_NEAR(bounds.position.x(), target.position.x(), 1e-3f);
+	EXPECT_NEAR(bounds.position.y(), target.position.y(), 1e-3f);
+	EXPECT_NEAR(bounds.size.x(), target.size.x(), 1e-3f);
+	EXPECT_NEAR(bounds.size.y(), target.size.y(), 1e-3f);
+	EXPECT_EQ(solved.anchorMin, base.anchorMin);
+	EXPECT_EQ(solved.pivot, base.pivot);
 }

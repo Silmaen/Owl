@@ -174,7 +174,10 @@ void Viewport::onRender() {
 		m_lower = {cursor.x, cursor.y};
 		m_upper = {cursor.x + safeW, cursor.y + safeH};
 		m_size = {static_cast<uint32_t>(safeW), static_cast<uint32_t>(safeH)};
-		onRenderInternal();
+		if (mp_document->isHudEditing())
+			mp_document->getHudEditor().onRender(*mp_document);
+		else
+			onRenderInternal();
 	}
 	ImGui::End();
 	ImGui::PopStyleVar();
@@ -212,6 +215,10 @@ void Viewport::onUpdate(const core::Timestep& iTimeStep) {
 	const auto& activeScene = mp_document->getActiveScene();
 	if (!activeScene)
 		return;
+	if (mp_document->isHudEditing()) {
+		mp_document->getHudEditor().onUpdate(*mp_document->getEditorScene());
+		return;
+	}
 
 	// resize frame buffer if needed.
 	if (const auto spec = m_framebuffer->getSpecification(); getSize().surface() > 0 && getSize() != spec.size) {
