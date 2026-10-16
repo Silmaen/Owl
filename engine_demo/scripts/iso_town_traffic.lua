@@ -1,24 +1,39 @@
 -- Isometric town traffic: vehicles driving to destinations over the road graph of scenes/iso_town.owl.
 -- Demonstrates: tile-graph pathfinding (`path.find`, `path.poll`, `path.get`, `path.is_valid`, `path.get_version`,
---               `path.get_edge_cost`, the `navigation` rules of the Ground tilemap), vehicles that re-route when a road
---               is bulldozed or built, the terrain height under them (isometric.get_height), one sprite per axis
---               switched with ui.set_visible (the sheet holds a frame for X and one for Y), gamestate.
+--               `path.get_edge_cost`, `path.is_walkable`, the `navigation` rules of the Ground tilemap), vehicles that
+--               re-route when a road is bulldozed or built, the terrain height under them (isometric.get_height), one
+--               sprite per vehicle whose frame follows its heading every 45 degrees (isometric.set_sprite_frame),
+--               gamestate.
 --
 -- Each vehicle owns a list of stops (cells of the road) and drives to the next one by the cheapest route. A trip pays
 -- `TRIP_PAY` into `town_money` and counts in `town_trips`; a route that a bulldozed road cut counts in `town_reroutes`.
 -- A vehicle with no route waits and asks again when the graph changes.
+--
+-- Traffic keeps to the right as seen on screen. World +x runs to the lower right and +y to the lower left, so the right
+-- hand of a vehicle heading (dx, dy) is (-dy, dx): driving to the lower right it keeps to the lower left side of the
+-- road. A vehicle crosses each cell of its route from the middle of the edge it enters by to the middle of the edge it
+-- leaves by, LANE away from the middle of the road; in a corner it follows a quarter circle around the corner of the
+-- cell, its heading turning with it. The sheet holds eight frames per model, every 45 degrees from +x towards +y.
+--
+-- The script counts what the scenario `iso_town.owltest` checks: `town_offroad` (updates a moving vehicle stood off the
+-- road), `town_frame_errors` (frame not matching the heading), `town_heading_errors` (moving away from its heading) and
+-- `town_frames_seen` (number of distinct headings shown, 0 to 8).
 
 local TRIP_PAY = 5
 local LANE = 0.2
 local RETRY_SECONDS = 0.5
+local HEADINGS = 8
+local TURN = math.pi / 2
+local HEADING_STEP = math.pi / 4
 
--- One vehicle: its sprites along X and along Y, its speed (cells per second), where it starts and where it goes.
+-- One vehicle: its sprite, the first frame of its model in the sheet (8 frames per model), its speed (cells per
+-- second), where it starts and where it goes.
 local FLEET = {
-    { x_sprite = "CarX", y_sprite = "CarY", speed = 2.2, start = { 13, 8 },
+    { sprite = "Car", model = 0, speed = 2.2, start = { 13, 8 },
       stops = { { 18, 8 }, { 11, 19 }, { 2, 12 }, { 18, 16 } } },
-    { x_sprite = "TruckX", y_sprite = "TruckY", speed = 1.5, start = { 6, 12 },
+    { sprite = "Truck", model = 8, speed = 1.5, start = { 6, 12 },
       stops = { { 11, 19 }, { 18, 8 }, { 2, 12 } } },
-    { x_sprite = "CarBX", y_sprite = "CarBY", speed = 1.9, start = { 18, 12 },
+    { sprite = "CarB", model = 0, speed = 1.9, start = { 18, 12 },
       stops = { { 2, 12 }, { 11, 19 }, { 6, 8 } } },
 }
 
@@ -47,36 +62,129 @@ local function release(vehicle)
     end
 end
 
+local seen = {}
+
+-- Frame of a model for a heading angle (radians, from +x towards +y): the nearest multiple of 45 degrees.
+local function frame_of(vehicle, angle)
+    return vehicle.model + math.floor(angle / HEADING_STEP + 0.5) % HEADINGS
+end
+
+local function wrap(angle)
+    return (angle + math.pi) % (2 * math.pi) - math.pi
+end
+
+-- Ask for a route from the cell the vehicle stands on (or leaves) to its stop.
+local function ask(vehicle)
+    local stop = vehicle.stops[vehicle.stop]
+    vehicle.request = path.find(map_id, vehicle.cell_x, vehicle.cell_y, stop[1], stop[2])
+    vehicle.version = path.get_version(map_id)
+    vehicle.retry = RETRY_SECONDS
+end
+
+local function next_stop(vehicle)
+    vehicle.stop = vehicle.stop % #vehicle.stops + 1
+end
+
+local function release(vehicle)
+    if vehicle.request ~= 0 then
+        path.release(map_id, vehicle.request)
+        vehicle.request = 0
+    end
+end
+
 function on_create()
     map_id = scene.find_entity("Ground")
     for _, vehicle in ipairs(FLEET) do
-        vehicle.x_id = scene.find_entity(vehicle.x_sprite)
-        vehicle.y_id = scene.find_entity(vehicle.y_sprite)
+        vehicle.id = scene.find_entity(vehicle.sprite)
         vehicle.cell_x, vehicle.cell_y = vehicle.start[1], vehicle.start[2]
+        vehicle.x, vehicle.y = vehicle.cell_x + 0.5, vehicle.cell_y + 0.5
+        vehicle.angle = 0
         vehicle.stop = 1
         vehicle.route = nil
         vehicle.request = 0
         vehicle.version = 0
         vehicle.retry = 0
-        vehicle.heading_x, vehicle.heading_y = 1, 0
         ask(vehicle)
     end
     gamestate.set("town_trips", 0)
     gamestate.set("town_reroutes", 0)
+    gamestate.set("town_offroad", 0)
+    gamestate.set("town_frame_errors", 0)
+    gamestate.set("town_heading_errors", 0)
+    gamestate.set("town_frames_seen", 0)
 end
 
-local function place(vehicle, x, y)
-    local body_x, body_y = x - vehicle.heading_y * LANE, y + vehicle.heading_x * LANE
-    local z = isometric.get_height(map_id, body_x, body_y)
-    -- The sprite anchor is the front corner of the vehicle's cell.
-    transform.set_position(vehicle.x_id, body_x + 0.5, body_y + 0.5, z)
-    transform.set_position(vehicle.y_id, body_x + 0.5, body_y + 0.5, z)
-    local along_x = vehicle.heading_x ~= 0
-    ui.set_visible(vehicle.x_id, along_x)
-    ui.set_visible(vehicle.y_id, not along_x)
+local function count(key)
+    gamestate.set(key, gamestate.get(key, 0) + 1)
 end
 
--- A route arrived: drive it from its first cell.
+-- Show the vehicle at a ground position, its sprite frame following its heading angle.
+local function place(vehicle, x, y, angle)
+    vehicle.x, vehicle.y, vehicle.angle = x, y, angle
+    local frame = frame_of(vehicle, angle)
+    isometric.set_sprite_frame(vehicle.id, frame)
+    -- The sprite is drawn centred on its tile, and its entity sits on the front corner of that tile.
+    transform.set_position(vehicle.id, x + 0.5, y + 0.5, isometric.get_height(map_id, x, y))
+    local heading = frame % HEADINGS
+    if not seen[heading] then
+        seen[heading] = true
+        local distinct = 0
+        for _ in pairs(seen) do
+            distinct = distinct + 1
+        end
+        gamestate.set("town_frames_seen", distinct)
+    end
+end
+
+-- Direction between two consecutive cells of the route, nil beyond its ends.
+local function direction(route, index)
+    if index < 1 or index >= #route // 2 then
+        return nil
+    end
+    return route[index * 2 + 1] - route[index * 2 - 1], route[index * 2 + 2] - route[index * 2]
+end
+
+-- The path through the cell `index` of the route: its length and a function giving the position and the heading angle
+-- at a fraction of it.
+local function cell_path(route, index)
+    local cx, cy = route[index * 2 - 1] + 0.5, route[index * 2] + 0.5
+    local in_x, in_y
+    if index > 1 then
+        in_x, in_y = direction(route, index - 1)
+    end
+    local out_x, out_y = direction(route, index)
+    if in_x == nil and out_x == nil then
+        return 0, function() return cx, cy, nil end
+    end
+    local d_in_x, d_in_y = in_x or out_x, in_y or out_y
+    local d_out_x, d_out_y = out_x or in_x, out_y or in_y
+    local cross = d_in_x * d_out_y - d_in_y * d_out_x
+    if cross ~= 0 and in_x ~= nil and out_x ~= nil then
+        -- A corner: a quarter circle around the corner of the cell inside the turn, a bit tighter for a turn to the right.
+        local pivot_x = cx + (d_out_x - d_in_x) * 0.5
+        local pivot_y = cy + (d_out_y - d_in_y) * 0.5
+        local radius = 0.5 - cross * LANE
+        local start_angle = math.atan(d_in_y, d_in_x)
+        return radius * TURN, function(t)
+            local phi = t * TURN
+            return pivot_x + radius * (-d_out_x * math.cos(phi) + d_in_x * math.sin(phi)),
+                   pivot_y + radius * (-d_out_y * math.cos(phi) + d_in_y * math.sin(phi)),
+                   start_angle + cross * phi
+        end
+    end
+    -- A straight run, or half of one in the first and the last cell of the route.
+    local right_x, right_y = -d_out_y * LANE, d_out_x * LANE
+    local from_x = (in_x ~= nil) and (cx - d_in_x * 0.5 + right_x) or (cx + right_x)
+    local from_y = (in_y ~= nil) and (cy - d_in_y * 0.5 + right_y) or (cy + right_y)
+    local to_x = (out_x ~= nil) and (cx + d_out_x * 0.5 + right_x) or (cx + right_x)
+    local to_y = (out_y ~= nil) and (cy + d_out_y * 0.5 + right_y) or (cy + right_y)
+    local angle = math.atan(d_out_y, d_out_x)
+    return math.sqrt((to_x - from_x) ^ 2 + (to_y - from_y) ^ 2), function(t)
+        return from_x + (to_x - from_x) * t, from_y + (to_y - from_y) * t, angle
+    end
+end
+
+-- A route arrived: drive it from its first cell, sliding from where the vehicle stands to the lane.
 local function take_route(vehicle)
     local cells = path.get(map_id, vehicle.request)
     release(vehicle)
@@ -84,8 +192,16 @@ local function take_route(vehicle)
         return
     end
     vehicle.route = cells
-    vehicle.next = 2
-    vehicle.progress = 0
+    vehicle.index = 1
+    vehicle.t = 0
+    vehicle.length, vehicle.curve = cell_path(cells, 1)
+    local x, y, angle = vehicle.curve(0)
+    if angle ~= nil then
+        vehicle.slide_x, vehicle.slide_y = vehicle.x - x, vehicle.y - y
+        vehicle.slide_angle = wrap(vehicle.angle - angle)
+    else
+        vehicle.slide_x, vehicle.slide_y, vehicle.slide_angle = 0, 0, 0
+    end
 end
 
 local function poll(vehicle, dt)
@@ -107,7 +223,7 @@ local function poll(vehicle, dt)
     end
 end
 
--- A road of the route is gone: stop and look for another one from the cell the vehicle is leaving.
+-- A road of the route is gone: stop and look for another one from the cell the vehicle is in.
 local function check_route(vehicle)
     local version = path.get_version(map_id)
     if vehicle.route == nil or version == vehicle.version then
@@ -116,12 +232,11 @@ local function check_route(vehicle)
     vehicle.version = version
     local route = vehicle.route
     local last = #route // 2
-    for index = vehicle.next, last do
+    for index = vehicle.index + 1, last do
         local from_x, from_y = route[index * 2 - 3], route[index * 2 - 2]
         local to_x, to_y = route[index * 2 - 1], route[index * 2]
         if path.get_edge_cost(map_id, from_x, from_y, to_x, to_y) == nil then
             vehicle.route = nil
-            vehicle.progress = 0
             gamestate.set("town_reroutes", gamestate.get("town_reroutes", 0) + 1)
             ask(vehicle)
             return
@@ -129,28 +244,58 @@ local function check_route(vehicle)
     end
 end
 
+-- The vehicle reached the last cell of its route.
+local function arrive(vehicle)
+    vehicle.route = nil
+    gamestate.set("town_trips", gamestate.get("town_trips", 0) + 1)
+    gamestate.set("town_money", gamestate.get("town_money", 0) + TRIP_PAY)
+    next_stop(vehicle)
+    ask(vehicle)
+end
+
 local function drive(vehicle, dt)
     local route = vehicle.route
     local last = #route // 2
-    vehicle.progress = vehicle.progress + vehicle.speed * dt
-    while vehicle.progress >= 1 and vehicle.next <= last do
-        vehicle.progress = vehicle.progress - 1
-        vehicle.cell_x, vehicle.cell_y = route[vehicle.next * 2 - 1], route[vehicle.next * 2]
-        vehicle.next = vehicle.next + 1
+    local before_x, before_y = vehicle.x, vehicle.y
+    local travel = vehicle.speed * dt
+    while true do
+        if vehicle.length > 0 then
+            vehicle.t = vehicle.t + travel / vehicle.length
+        else
+            vehicle.t = 1
+        end
+        if vehicle.t < 1 then
+            break
+        end
+        travel = (vehicle.t - 1) * vehicle.length
+        vehicle.cell_x, vehicle.cell_y = route[vehicle.index * 2 - 1], route[vehicle.index * 2]
+        if vehicle.index >= last then
+            local x, y, angle = vehicle.curve(1)
+            if angle ~= nil then
+                place(vehicle, x, y, angle)
+            end
+            arrive(vehicle)
+            return
+        end
+        vehicle.index = vehicle.index + 1
+        vehicle.t = 0
+        vehicle.length, vehicle.curve = cell_path(route, vehicle.index)
+        vehicle.slide_x, vehicle.slide_y, vehicle.slide_angle = 0, 0, 0
+        vehicle.cell_x, vehicle.cell_y = route[vehicle.index * 2 - 1], route[vehicle.index * 2]
     end
-    if vehicle.next > last then
-        vehicle.route = nil
-        gamestate.set("town_trips", gamestate.get("town_trips", 0) + 1)
-        gamestate.set("town_money", gamestate.get("town_money", 0) + TRIP_PAY)
-        next_stop(vehicle)
-        ask(vehicle)
-        place(vehicle, vehicle.cell_x + 0.5, vehicle.cell_y + 0.5)
-        return
+    local x, y, angle = vehicle.curve(vehicle.t)
+    local fade = 1 - vehicle.t
+    place(vehicle, x + vehicle.slide_x * fade, y + vehicle.slide_y * fade, angle + vehicle.slide_angle * fade)
+    if not path.is_walkable(map_id, math.floor(vehicle.x), math.floor(vehicle.y)) then
+        count("town_offroad")
     end
-    local from_x, from_y = center(route, vehicle.next - 1)
-    local to_x, to_y = center(route, vehicle.next)
-    vehicle.heading_x, vehicle.heading_y = to_x - from_x, to_y - from_y
-    place(vehicle, from_x + vehicle.heading_x * vehicle.progress, from_y + vehicle.heading_y * vehicle.progress)
+    if isometric.get_sprite_frame(vehicle.id) ~= frame_of(vehicle, vehicle.angle) then
+        count("town_frame_errors")
+    end
+    local moved_x, moved_y = vehicle.x - before_x, vehicle.y - before_y
+    if vehicle.index > 1 and moved_x * math.cos(vehicle.angle) + moved_y * math.sin(vehicle.angle) < 0 then
+        count("town_heading_errors")
+    end
 end
 
 function on_update(dt)
@@ -160,7 +305,7 @@ function on_update(dt)
         if vehicle.route ~= nil then
             drive(vehicle, dt)
         else
-            place(vehicle, vehicle.cell_x + 0.5, vehicle.cell_y + 0.5)
+            place(vehicle, vehicle.x, vehicle.y, vehicle.angle)
         end
     end
 end

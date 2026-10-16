@@ -100,8 +100,8 @@ Entities:
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
     texture: nam:textures/iso/vehicles.png
-    columns: 4
-    rows: 1
+    columns: 8
+    rows: 2
     firstFrame: 0
     lastFrame: 0
     frameDuration: 0.1
@@ -117,10 +117,10 @@ Entities:
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
     texture: nam:textures/iso/vehicles.png
-    columns: 4
-    rows: 1
-    firstFrame: 2
-    lastFrame: 2
+    columns: 8
+    rows: 2
+    firstFrame: 8
+    lastFrame: 8
     frameDuration: 0.1
     loop: true
   Visibility: {gameVisible: true}
@@ -134,10 +134,10 @@ Entities:
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
     texture: nam:textures/iso/vehicles.png
-    columns: 4
-    rows: 1
-    firstFrame: 1
-    lastFrame: 1
+    columns: 8
+    rows: 2
+    firstFrame: 2
+    lastFrame: 2
     frameDuration: 0.1
     loop: true
   Visibility: {gameVisible: true}

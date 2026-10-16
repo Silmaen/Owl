@@ -10,7 +10,7 @@ steps:
   - expect: {entity: Ground, exists: true}
   - expect: {gamestate: town_money, equals: 1000}
   - expect: {gamestate: town_roads, equals: 0}
-  - expect: {entity: CarX, translation.x: {greater: 13.5}}
+  - expect: {entity: Car, translation.x: {greater: 14.2}}
   # The cursor follows the mouse: cell (1, 12), west of the street.
   - input: {mouse_pos: [448, 320], frames: 3}
   - expect: {gamestate: town_cursor_x, equals: 1}
@@ -55,3 +55,9 @@ steps:
   - input: {mouse: Left, mouse_pos: [544, 496], frames: 3}
   - frames: 1500
   - expect: {gamestate: town_trips, greater: 1}
+  # Every vehicle kept to the road cells, its frame matched its heading and it never drove away from it; the ring and
+  # the streets have shown more than the four axis headings.
+  - expect: {gamestate: town_offroad, equals: 0}
+  - expect: {gamestate: town_frame_errors, equals: 0}
+  - expect: {gamestate: town_heading_errors, equals: 0}
+  - expect: {gamestate: town_frames_seen, greater: 4}

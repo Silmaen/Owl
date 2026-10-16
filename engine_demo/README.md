@@ -123,7 +123,7 @@ it directly.
 | `lock.lua`               | `Trigger.Type=Interaction`, a key-locked door or switch: opens only when `inv_<key>` is in the inventory, uses the key up, remembers it in gamestate                                                      |
 | `inventory.lua`          | An `.owlhud` of its own driven from Lua: slots (icon, count, tooltip), window opened by the `inventory` action, `ui.set_focus`, `onFocusCallback`, `onCloseCallback`, quick save / load (F6 / F9)         |
 | `iso_town.lua`           | Build-road and bulldoze tool: `isometric.pick_cell` / `get_cell` / `set_cell` / `get_slope` / `get_height`, actions `build`, `bulldoze`, `town_tool`, `cursor`, `ui.is_mouse_over_ui`, funds in gamestate |
-| `iso_town_traffic.lua`   | Vehicles driving from stop to stop over the road graph (`path.find`, `poll`, `get`, `get_edge_cost`, `get_version`), re-routing when a road is bulldozed, on the terrain, one sprite per axis             |
+| `iso_town_traffic.lua`   | Vehicles driving from stop to stop over the road graph (`path.find`, `poll`, `get`, `get_edge_cost`, `get_version`), re-routing when a road is bulldozed, on the terrain, one sprite per vehicle with eight headings, right-hand lanes and quarter-circle turns             |
 | `iso_cloud.lua`          | Parallax cloud of the 2D layer behind the isometric one                                                                                                                                                   |
 | `inventory_player.lua`   | Top-down movement of the inventory demo, still while the inventory window is open                                                                                                                         |
 

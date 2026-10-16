@@ -67,8 +67,11 @@ The first step on the unmerged `Feature/KickoffIsometricRenderer` branch (2026-0
   are undoable, and the entity is picked in the viewport through the entity id the slices write. A pack includes the
   sheet and the `.png` beside it.
 - Vehicles are plain `SpriteRenderer` / `AnimatedSpriteRenderer` entities: opaque ones leave the layer as compact
-  sprites. `tools/iso_atlas` writes `vehicles.png`, a 4 × 1 sheet of 64 × 64 cells (car and truck, heading along x and
-  along y); the bottom centre of a cell is the front ground corner of the vehicle.
+  sprites. `tools/iso_atlas` writes `vehicles.png`, an 8 × 2 sheet of 64 × 64 cells (car and truck, one frame every 45° from +x
+  towards +y, so the front and the back are drawn right); the vehicle is centred on its tile, whose front corner is the
+  bottom centre of the cell and where the entity sits (`body + 0.5`). On screen +x runs to the lower right and +y to
+  the lower left, so the right hand of a heading `(dx, dy)` is `(-dy, dx)`: `iso_town_traffic.lua` keeps to the right with
+  that lane offset and turns corners on a quarter circle, picking the frame with `isometric.set_sprite_frame`.
 
 ### Terrain
 
