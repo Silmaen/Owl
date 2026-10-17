@@ -22,9 +22,15 @@ properties = {
     {name = "turn_speed", type = "float", default = 1.8},  -- rad/sec (~103 deg/s)
 }
 
+-- The yaw lives here: the transform only follows the body on the fixed physics tick, so reading it back every frame
+-- would drop or repeat a turn whenever frames and ticks do not line up.
+local yaw = 0
+
 function on_create()
     -- Top-down: gravity must not pull the player along Y.
     physics.set_gravity_scale(entity_id, 0)
+    local _, _, start_yaw = transform.get_rotation(entity_id)
+    yaw = start_yaw
     -- Restore world-position if returning from a transition. Route through
     -- `physics.set_transform` so the Box2D body picks up the new pose;
     -- `transform.set_position/set_rotation` would be silently overwritten on
@@ -34,6 +40,7 @@ function on_create()
         local ry = gamestate.get("raycast_return_y", 0.0)
         local rz = gamestate.get("raycast_return_z", 0.0)
         physics.set_transform(entity_id, rx, ry, rz)
+        yaw = rz
         gamestate.remove("raycast_return_x")
         gamestate.remove("raycast_return_y")
         gamestate.remove("raycast_return_z")
@@ -47,7 +54,7 @@ function on_update(dt)
         physics.set_velocity(entity_id, 0, 0)
         return
     end
-    local _, _, rz = transform.get_rotation(entity_id)
+    local rz = yaw
 
     -- A / D rotate the player in place (GLFW-A = AZERTY 'Q' = turn left;
     -- GLFW-D = AZERTY 'D' = turn right). CCW is positive rz.
@@ -58,7 +65,8 @@ function on_update(dt)
     -- survives the next sync.
     local turning = input.get_action_value("turn")  -- A / right stick left: turn left (CCW)
     if turning ~= 0 then
-        rz = rz + turning * turn_speed * dt
+        rz = (rz + turning * turn_speed * dt + math.pi) % (2 * math.pi) - math.pi
+        yaw = rz
         local px, py, _ = transform.get_position(entity_id)
         physics.set_transform(entity_id, px, py, rz)
     end
