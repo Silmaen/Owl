@@ -169,6 +169,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+- Engine Demo unused assets: 1071 Kenney per-tile images, previews and sheets (only the packed sheets read by `generate_kenney_atlases.py` and the licences stay), the `@2x` / `@0.5x` isometric atlases and tilesets, and two unused atlases, 1089 files and 5.3 MB in all (`tools.iso_atlas` now writes the `1x` level by default).
 - Engine Demo scenes outside the hub, `iso_test.owl` and `inventory_demo.owl` (menu shortcuts **I** and **N** included), with their key lock, vehicle and player scripts; the isometric render fixtures moved to `test/render_tests/assets`.
 - `UiPanel::layout`, `spacing` and `padding`, which nothing read (a `UiLayout` arranges children); files that still
   carry the keys load without complaint and no longer write them.
