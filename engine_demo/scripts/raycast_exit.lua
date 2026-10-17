@@ -24,6 +24,6 @@ function on_elevator_use(player_id)
     gamestate.remove("raycast_return_y")
     gamestate.remove("raycast_return_z")
     log.info("Elevator taken (" .. kind .. "): E1M1 complete")
-    sound.play("sounds/victory.wav")
+    sound.play("sounds/raycast_elevator.wav")
     scene.transition_to("scenes/world_map.owl", "wipe_right", 0.4)
 end

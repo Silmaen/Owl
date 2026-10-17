@@ -2686,3 +2686,24 @@ Entities:
       {}
     RendererTag:
       Name: overlay
+  - Entity: 5400000000000000080
+    Tag:
+      tag: RaycastAmbience
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      {}
+    SoundSource:
+      soundAsset: sounds/raycast_ambience.wav
+      category: Ambient
+      volume: 0.5
+      pitch: 1
+      loop: true
+      spatial: false
+      playOnStart: true
+      maxDistance: 50
+      rolloff: 1
