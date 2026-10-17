@@ -1,24 +1,19 @@
--- Labels of the hub that grow in when the hero is near, and the name tags that follow the villagers.
+-- Name tags of the hub: each villager carries a label that follows it and grows in when the hero is near.
 -- Demonstrates: world `TextRenderer` labels driven from Lua (`transform.set_scale`: the text height is the Y scale, so a
 --               label grows from nothing to its size, and `ui.set_visible` hides it once it is gone), an entity that
---               follows another (`transform.get_position` / `set_position`), a distance with a hysteresis (the label
+--               follows another (`transform.get_position` / `set_position`), a distance with a hysteresis (the tag
 --               appears at NEAR cells and goes at FAR, so it does not flicker at the limit).
 --
--- The place names (church, square, houses, shrine...) are plain labels of the scene that are always shown. The entities
--- `Hint_<name>` (fields, stalls, signposts, river...) only appear near the hero. The entities `Tag_<name>` hold the name of
--- the character `<name>` and float above it. `labels_shown` in gamestate counts the labels that are fully grown.
+-- The entities `Tag_<name>` hold the name of the character `<name>` and float above it. The only other texts of the
+-- hub are the four level titles of the houses, plain labels of the scene that are always shown. `labels_shown` in
+-- gamestate counts the tags that are fully grown.
 
-local HINTS = {
-    "Sign1", "Sign2", "Sign3", "Sign4", "Danger", "Well", "Bakery", "Dairy", "Cider", "Wheat", "Cabbages", "Carrots",
-    "Flowers", "Woodcutter", "RiverW", "RiverE", "RiverC", "Bridge", "Lever", "Gate", "Market",
-}
 local TAGS = {
     "Villager", "Guard", "Wizard", "Knight", "Farmer", "Merchant1", "Merchant2", "Merchant3", "Priest", "Woodcutter",
 }
-local NEAR, FAR = 6.5, 8.0      -- cells from the hero at which a label appears and disappears
-local TAG_NEAR, TAG_FAR = 4.0, 5.0
-local GROW_SPEED = 6.0          -- per second: a label takes a sixth of a second to grow
-local TAG_HEIGHT = 0.95         -- cells above the character
+local TAG_NEAR, TAG_FAR = 4.0, 5.0 -- cells from the hero at which a tag appears and disappears
+local GROW_SPEED = 6.0 -- per second: a tag takes a sixth of a second to grow
+local TAG_HEIGHT = 0.95 -- cells above the character
 
 local player_id = 0
 local items = {}
@@ -40,10 +35,6 @@ end
 
 function on_create()
     player_id = scene.find_entity("Player")
-    for _, name in ipairs(HINTS) do
-        local id = scene.find_entity("Hint_" .. name)
-        add(id, id, NEAR, FAR, false)
-    end
     for _, name in ipairs(TAGS) do
         add(scene.find_entity("Tag_" .. name), scene.find_entity(name), TAG_NEAR, TAG_FAR, true)
     end
