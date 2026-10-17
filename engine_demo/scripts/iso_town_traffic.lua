@@ -46,9 +46,9 @@ local HEADING_STEP = math.pi / 4
 -- One vehicle: its sprite, the first frame of its model in the sheet (8 frames per model), its speed (cells per
 -- second), where it starts, its colour in the overlay and the seed of its destinations.
 local FLEET = {
-    { sprite = "Car", model = 0, speed = 2.2, start = { 13, 8 }, color = { 1.0, 0.35, 0.3 }, seed = 11 },
-    { sprite = "Truck", model = 8, speed = 1.5, start = { 6, 12 }, color = { 0.3, 0.6, 1.0 }, seed = 23 },
-    { sprite = "CarB", model = 0, speed = 1.9, start = { 18, 12 }, color = { 1.0, 0.9, 0.2 }, seed = 37 },
+    { sprite = "Car", model = 0, speed = 3.2, start = { 13, 8 }, color = { 1.0, 0.35, 0.3 }, seed = 11 },
+    { sprite = "Truck", model = 8, speed = 2.3, start = { 6, 12 }, color = { 0.3, 0.6, 1.0 }, seed = 23 },
+    { sprite = "CarB", model = 0, speed = 2.7, start = { 18, 12 }, color = { 1.0, 0.9, 0.2 }, seed = 37 },
 }
 
 local SIZE = 24

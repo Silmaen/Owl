@@ -81,6 +81,12 @@ function on_update(dt)
         return
     end
 
+    -- Still while the information board is open: the move keys scroll it (info_board.lua).
+    if gamestate.get("board_open", 0) == 1 then
+        physics.set_velocity(entity_id, 0, 0)
+        return
+    end
+
     -- Movement: the built-in `move` vector (WASD or left stick; y points down).
     local dirx, diry = input.get_action_vector("move")
     local mvx, mvy = dirx * speed, -diry * speed
@@ -139,7 +145,9 @@ function on_update(dt)
 
     -- Escape returns to the main menu, preserving the world position so the
     -- "Continuer" button on the menu can resume exactly where we left off.
-    if input.is_action_just_pressed("pause") then
+    -- (the Escape that closed the board is not a pause)
+    local closing = gamestate.get("board_frame", 0) - gamestate.get("board_closed_frame", -100) <= 1
+    if input.is_action_just_pressed("pause") and not closing then
         local px, py, pz = transform.get_position(entity_id)
         gamestate.set("continue_scene", "scenes/world_map.owl")
         gamestate.set("continue_x", px)
