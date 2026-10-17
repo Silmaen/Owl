@@ -638,6 +638,19 @@ auto luaEntityGetName(lua_State* iState) -> int {
 	return 1;
 }
 
+auto luaEntityGetLink(lua_State* iState) -> int {
+	if (const auto entity = findEntity(iState); entity && entity->hasComponent<scene::component::EntityLink>()) {
+		auto& link = entity->getComponent<scene::component::EntityLink>();
+		const auto* activeScene = getBoundScene(iState);
+		if (activeScene != nullptr && activeScene->resolveEntityLink(link)) {
+			lua_pushinteger(iState, static_cast<lua_Integer>(static_cast<uint64_t>(link.linkedEntity.getUUID())));
+			return 1;
+		}
+	}
+	lua_pushinteger(iState, 0);
+	return 1;
+}
+
 auto luaUiSetText(lua_State* iState) -> int {
 	if (const auto entity = findEntity(iState); entity && entity->hasComponent<scene::component::UiText>())
 		entity->getComponent<scene::component::UiText>().text = luaL_checkstring(iState, 2);
@@ -1788,6 +1801,9 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		 .params = {entityId, {"component", String}}, .returns = {{"has", Boolean}}},
 		{.table = "entity", .name = "get_name", .function = guarded<luaEntityGetName>,
 		 .description = "Tag of the entity (empty when unknown).", .params = {entityId}, .returns = {{"name", String}}},
+		{.table = "entity", .name = "get_link", .function = guarded<luaEntityGetLink>,
+		 .description = "Entity an `EntityLink` of this entity points at (0 when it has none or the target is missing).",
+		 .params = {entityId}, .returns = {{"linked_id", Entity}}},
 		{.table = "ui", .name = "find", .function = guarded<luaUiFind>,
 		 .description = "First widget with this tag, searched in the scene's HUD asset then in the scene (0 when none); "
 						"cache the result.",

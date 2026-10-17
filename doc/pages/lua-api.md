@@ -109,10 +109,11 @@ Engine log.
 
 Entity queries.
 
-| Function                                                     | Returns        | Description                                                                                                                                      |
-|--------------------------------------------------------------|----------------|--------------------------------------------------------------------------------------------------------------------------------------------------|
-| `entity.has_component(entity_id: entity, component: string)` | `has: boolean` | Whether the entity has a component: `Transform`, `PhysicBody`, `SpriteRenderer`, `Camera`, `Text`, `SoundSource`, `Canvas` or a `Ui*` component. |
-| `entity.get_name(entity_id: entity)`                         | `name: string` | Tag of the entity (empty when unknown).                                                                                                          |
+| Function                                                     | Returns             | Description                                                                                                                                      |
+|--------------------------------------------------------------|---------------------|--------------------------------------------------------------------------------------------------------------------------------------------------|
+| `entity.has_component(entity_id: entity, component: string)` | `has: boolean`      | Whether the entity has a component: `Transform`, `PhysicBody`, `SpriteRenderer`, `Camera`, `Text`, `SoundSource`, `Canvas` or a `Ui*` component. |
+| `entity.get_name(entity_id: entity)`                         | `name: string`      | Tag of the entity (empty when unknown).                                                                                                          |
+| `entity.get_link(entity_id: entity)`                         | `linked_id: entity` | Entity an `EntityLink` of this entity points at (0 when it has none or the target is missing).                                                   |
 
 ## `ui`
 

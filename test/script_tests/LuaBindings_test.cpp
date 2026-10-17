@@ -161,6 +161,35 @@ TEST(LuaBindings, entityGetName) {
 	core::Log::invalidate();
 }
 
+TEST(LuaBindings, entityGetLink) {
+	core::Log::init(core::Log::Level::Off);
+	auto scn = mkShared<scene::Scene>();
+	const auto target = scn->createEntity("Gate");
+	auto lever = scn->createEntity("Lever");
+	lever.addComponent<scene::component::EntityLink>().linkedEntityName = "Gate";
+	const auto loose = scn->createEntity("Loose");
+
+	const std::string script = "linked = -1\n"
+							   "function on_create()\n"
+							   "  linked = entity.get_link(entity_id)\n"
+							   "end\n";
+	const std::vector<uint8_t> data(script.begin(), script.end());
+
+	const ScriptInstance linked;
+	linked.setScene(scn.get());
+	ASSERT_TRUE(linked.createFromBuffer(data, "link_test", static_cast<uint64_t>(lever.getUUID())));
+	linked.onCreate();
+	const ScriptInstance unlinked;
+	unlinked.setScene(scn.get());
+	ASSERT_TRUE(unlinked.createFromBuffer(data, "no_link_test", static_cast<uint64_t>(loose.getUUID())));
+	unlinked.onCreate();
+
+	EXPECT_EQ(linked.getPropertyInt("linked").value_or(-1), static_cast<int64_t>(static_cast<uint64_t>(target.getUUID())));
+	EXPECT_EQ(unlinked.getPropertyInt("linked").value_or(-1), 0);
+
+	core::Log::invalidate();
+}
+
 TEST(LuaBindings, logDoesNotCrash) {
 	core::Log::init(core::Log::Level::Off);
 	auto scn = mkShared<scene::Scene>();
