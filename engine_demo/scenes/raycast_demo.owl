@@ -2686,6 +2686,23 @@ Entities:
       {}
     RendererTag:
       Name: overlay
+  - Entity: 5400000000000000072
+    Tag:
+      tag: MinimapFacing
+    Transform:
+      translation: [127, 120, 0.2]
+      rotation: [0, 0, 0]
+      scale: [4, 4, 1]
+    CircleRenderer:
+      color: [1, 0.45, 0.1, 1]
+      thickness: 1
+      fade: 0.05
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      {}
+    RendererTag:
+      Name: overlay
   - Entity: 5400000000000000080
     Tag:
       tag: RaycastAmbience

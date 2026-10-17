@@ -2,7 +2,9 @@
 """Build the minimap of the raycast level: ``minimap.png``, ``tilesets/minimap.owltileset`` and ``tilemaps/minimap.owltilemap``.
 
 The tilemap is the wall layer of ``tilemaps/raycast_demo.owltilemap`` reduced to two tiles, a dark translucent wall and a light floor
-so that a Renderer2D layer can draw it over the raycast view without colliders. Run from anywhere:
+so that a Renderer2D layer can draw it over the raycast view without colliders. It has two layers: ``walls`` (the whole level, hidden: the
+truth ``raycast_level.lua`` casts its rays in) and ``seen`` (empty: the script copies a cell of ``walls`` into it once the player has
+seen it, the fog of war). Run from anywhere:
 ``python3 engine_demo/textures/generate_minimap.py``.
 """
 import struct
@@ -58,7 +60,7 @@ def main() -> None:
                "tiles": [{"index": WALL, "name": "wall"}, {"index": FLOOR, "name": "floor"}]}
     (PROJECT / "tilesets" / "minimap.owltileset").write_text(yaml.safe_dump(tileset, sort_keys=False))
     chunk = 32
-    body = b"OWLTCHNK" + struct.pack("<II", chunk, 1)
+    body = b"OWLTCHNK" + struct.pack("<II", chunk, 2)
     chunks = []
     for cy in range(size // chunk):
         for cx in range(size // chunk):
@@ -66,12 +68,13 @@ def main() -> None:
                        for k in range(chunk * chunk)]
             chunks.append(struct.pack("<II", cx, cy) + struct.pack(f"<{chunk * chunk}H", *terrain)
                           + struct.pack(f"<{chunk * chunk}H", *([EMPTY] * chunk * chunk)) + bytes(chunk * chunk))
-    body += struct.pack("<I", len(chunks)) + b"".join(chunks) + b"\x00"
+    body += struct.pack("<I", len(chunks)) + b"".join(chunks)  # layer 0: walls
+    body += struct.pack("<I", 0) + b"\x00"  # layer 1: seen, no chunk; then no heights
     payload = body + struct.pack("<I", fnv1a(body))
     header = (f"Tilemap: minimap\nFormatVersion: 3\ntilesetPath: tilesets/minimap.owltileset\nwidth: {size}\n"
-              f"height: {size}\ncellSize: 1\nlayers:\n  - name: minimap\npayloadBytes: {len(payload)}\n")
+              f"height: {size}\ncellSize: 1\nlayers:\n  - name: walls\n    visible: false\n  - name: seen\n"
+              f"payloadBytes: {len(payload)}\n")
     (PROJECT / "tilemaps" / "minimap.owltilemap").write_bytes(header.encode() + b"...\n" + payload)
-
 
 if __name__ == "__main__":
     main()
