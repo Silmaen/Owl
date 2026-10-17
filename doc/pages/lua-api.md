@@ -109,11 +109,13 @@ Engine log.
 
 Entity queries.
 
-| Function                                                     | Returns             | Description                                                                                                                                      |
-|--------------------------------------------------------------|---------------------|--------------------------------------------------------------------------------------------------------------------------------------------------|
-| `entity.has_component(entity_id: entity, component: string)` | `has: boolean`      | Whether the entity has a component: `Transform`, `PhysicBody`, `SpriteRenderer`, `Camera`, `Text`, `SoundSource`, `Canvas` or a `Ui*` component. |
-| `entity.get_name(entity_id: entity)`                         | `name: string`      | Tag of the entity (empty when unknown).                                                                                                          |
-| `entity.get_link(entity_id: entity)`                         | `linked_id: entity` | Entity an `EntityLink` of this entity points at (0 when it has none or the target is missing).                                                   |
+| Function                                                                           | Returns                                            | Description                                                                                                                                                  |
+|------------------------------------------------------------------------------------|----------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `entity.has_component(entity_id: entity, component: string)`                       | `has: boolean`                                     | Whether the entity has a component: `Transform`, `PhysicBody`, `SpriteRenderer`, `Camera`, `Text`, `SoundSource`, `Canvas` or a `Ui*` component.             |
+| `entity.get_name(entity_id: entity)`                                               | `name: string`                                     | Tag of the entity (empty when unknown).                                                                                                                      |
+| `entity.get_link(entity_id: entity)`                                               | `linked_id: entity`                                | Entity an `EntityLink` of this entity points at (0 when it has none or the target is missing).                                                               |
+| `entity.set_tint(entity_id: entity, r: number, g: number, b: number, [a: number])` | `done: boolean`                                    | Set the colour multiplied into a `SpriteRenderer` or `AnimatedSpriteRenderer` (hit flash, fade); false when the entity has no sprite. `a` is 1 when omitted. |
+| `entity.get_tint(entity_id: entity)`                                               | `r: number`, `g: number`, `b: number`, `a: number` | Colour multiplied into a `SpriteRenderer` or `AnimatedSpriteRenderer`; nothing when the entity has no sprite.                                                |
 
 ## `ui`
 
