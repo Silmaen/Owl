@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Engine Demo hub redesigned as a 64×40 RPG village: plaza with an animated fountain, church, market, fields, forest edge, river with three bridges, a shrine for the victory portal, signposts, labels and flags on the four level houses, villagers with idle and walk frames (two on grid pathfinding), butterflies, sparrows and a church bell.
+- Engine Demo hub: a label on every place (houses, church, square, well, stalls, fields, river, shrine, lava), minor ones growing in near the hero and name tags on the villagers, and signposts and villagers that answer on E with a line in the HUD.
+- Engine Demo raycast minimap is a fog of war: rays cast in Lua reveal the cells in the field of view, closed doors stop them, the seen cells survive saves, and a marker shows the facing.
+- Engine Demo hub sound less repetitive: a 48 s wind loop, bird scenes and wind gusts at random gaps, four footsteps with random volume, a rarer bell, and river and fountain loops quieter and heard only near.
 - Engine Demo sounds: hub ambience, river and fountain loops, footsteps, doors, board, lever, gate, portal hum and bell; raycast ambience, doors, push-walls, treasure / food / ammo pick-ups and elevator, synthesised by `engine_demo/sounds/generate_sounds.py` (no download).
 - A `SoundSource` with `playOnStart` loads its sound file on first use, like `sound.play`, so ambience loops play in the runner.
 - `ui_scale` player setting: every HUD grows by this factor in game (0.5 to 3, never in the HUD editor); the Engine Demo starts at 150 % with an Interface Size slider in its settings menu.

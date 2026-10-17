@@ -35,7 +35,7 @@ Entities:
     size: [500, 40]
     offset: [20, 20]
   UiText:
-    text: WASD = move, E = interact, ESC = pause
+    text: WASD = move, E = interact or talk, ESC = pause
     color: [1, 1, 1, 0.850000024]
     fontSize: 22
     horizontalAlignment: Left
@@ -151,6 +151,40 @@ Entities:
     lineSpacing: 0
     outlineColor: [0, 0, 0, 1]
     outlineWidth: 2
+- Entity: 2000000000000000075
+  Tag:
+    tag: HubSpeech
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility:
+    gameVisible: false
+  Hierarchy:
+    parentId: 2000000000000000060
+  UiRect:
+    anchorMin: [0.5, 1]
+    anchorMax: [0.5, 1]
+    pivot: [0.5, 1]
+    size: [0.6, 0.12]
+    sizeUnit: [ScreenWidth, ScreenHeight]
+    offset: [0, -0.04]
+    offsetUnit: [ScreenWidth, ScreenHeight]
+  UiText:
+    text: ""
+    color: [1, 1, 1, 1]
+    fontSize: 24
+    horizontalAlignment: Center
+    verticalAlignment: Middle
+    wrap: true
+    fit: Shrink
+    minFontSize: 14
+    kerning: 0
+    lineSpacing: 0
+    outlineColor: [0, 0, 0, 1]
+    outlineWidth: 1.5
+    backgroundColor: [0.05, 0.07, 0.12, 0.8]
+    backgroundPadding: 10
 - Entity: 2000000000000000071
   Tag:
     tag: BoardWindow
@@ -230,7 +264,7 @@ Entities:
     sizeUnit: [ParentWidth, Pixels]
     offset: [0, 0]
   UiText:
-    text: "OWL ENGINE DEMO\nThe hub leads to four levels, one per house. Finish them all and the portal wakes up.\n\nCONTROLS\nWASD or left stick: move\nE: use a door, this board, the lever\nW / S, the wheel or the bar: scroll this board\nEscape: close this board, or pause the game\nF3: road graph and routes in the Iso Town\nTab: inventory in the raycast level\n\nOBJECTIVES\nPlatformer: reach the door at the end of the house.\nRaycast: find an elevator in E1M1 (secrets hide a second one). The minimap in the corner is a 2D layer over the raycast view.\nIso Town: the vehicles make 20 trips, keep the road graph connected. Right click bulldozes.\nVoxel: walk 100 blocks away from the landing point.\n\nIN THE VILLAGE\nThe four houses along the high street are the levels (signs and labels above the roofs): platformer, raycast, iso town, voxel. The shrine in the north east holds the victory portal, asleep until every level is done.\nThe lever in the east meadow, south of the river, opens the gate of the walled grove in the west meadow: the two are joined by an entity link.\nThe villager and the guard walk between points of the village on a grid profile of the ground tilemap (path.find, cells mode), around houses, stalls, trees and the river; the others pace a street or keep their post. The river and the fountain are animated tiles.\nWater drains health (use the bridges), lava is deadly.\nBirds and the wind in the village, footsteps, doors, the lever, the portal and the bell of the church are sounds played from Lua or by sound sources.\n\nCREDITS\nArt: Kenney CC0 packs (Tiny Town, Tiny Dungeon, Pixel Platformer with its farm and industrial expansions, Micro Roguelike), kenney.nl.\nRaycast level: the layout and sprites of Wolfenstein 3D episode 1 map 1 (id Software), used as a demonstration.\nEngine: Owl, by Silmaen."
+    text: "OWL ENGINE DEMO\nThe hub leads to four levels, one per house. Finish them all and the portal wakes up.\n\nCONTROLS\nWASD or left stick: move\nE: use a door, this board, the lever, or talk to a signpost or a villager\nW / S, the wheel or the bar: scroll this board\nEscape: close this board, or pause the game\nF3: road graph and routes in the Iso Town\nTab: inventory in the raycast level\n\nOBJECTIVES\nPlatformer: reach the door at the end of the house.\nRaycast: find an elevator in E1M1 (secrets hide a second one). The minimap in the corner is a 2D layer over the raycast view that only shows what you have seen.\nIso Town: the vehicles make 20 trips, keep the road graph connected. Right click bulldozes.\nVoxel: walk 100 blocks away from the landing point.\n\nIN THE VILLAGE\nThe four houses along the high street are the levels (signs and labels above the roofs): platformer, raycast, iso town, voxel. The shrine in the north east holds the victory portal, asleep until every level is done.\nThe lever in the east meadow, south of the river, opens the gate of the walled grove in the west meadow: the two are joined by an entity link.\nThe villager and the guard walk between points of the village on a grid profile of the ground tilemap (path.find, cells mode), around houses, stalls, trees and the river; the others pace a street or keep their post. The river and the fountain are animated tiles.\nWater drains health (use the bridges), lava is deadly.\nBirds and the wind in the village, footsteps, doors, the lever, the portal and the bell of the church are sounds played from Lua or by sound sources.\n\nCREDITS\nArt: Kenney CC0 packs (Tiny Town, Tiny Dungeon, Pixel Platformer with its farm and industrial expansions, Micro Roguelike), kenney.nl.\nRaycast level: the layout and sprites of Wolfenstein 3D episode 1 map 1 (id Software), used as a demonstration.\nEngine: Owl, by Silmaen."
     color: [1, 1, 1, 1]
     fontSize: 20
     horizontalAlignment: Left
