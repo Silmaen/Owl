@@ -75,7 +75,7 @@ Entities:
     UiText:
       text: Game Over
       color: [1, 0.200000003, 0.200000003, 1]
-      fontSize: 48
+      fontSize: 60
       horizontalAlignment: Center
       verticalAlignment: Middle
       kerning: 0
@@ -100,7 +100,7 @@ Entities:
     UiText:
       text: "Score: 0"
       color: [1, 1, 1, 1]
-      fontSize: 24
+      fontSize: 30
       horizontalAlignment: Center
       verticalAlignment: Middle
       kerning: 0
@@ -133,7 +133,7 @@ Entities:
     UiText:
       text: Retry
       color: [1, 1, 1, 1]
-      fontSize: 20
+      fontSize: 25
       horizontalAlignment: Center
       verticalAlignment: Middle
       kerning: 0
@@ -164,7 +164,7 @@ Entities:
     UiText:
       text: Main Menu
       color: [1, 1, 1, 1]
-      fontSize: 20
+      fontSize: 25
       horizontalAlignment: Center
       verticalAlignment: Middle
       kerning: 0

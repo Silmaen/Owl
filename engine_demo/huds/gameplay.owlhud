@@ -96,7 +96,7 @@ Entities:
     - 0.949999988
     - 0.550000012
     - 1
-    fontSize: 18
+    fontSize: 22
     horizontalAlignment: Center
     verticalAlignment: Middle
     kerning: 0
@@ -125,7 +125,7 @@ Entities:
     anchorMin: [0, 0]
     anchorMax: [0, 0]
     pivot: [0, 0]
-    size: [460, 20]
+    size: [630, 20]
     offset: [20, 20]
   UiText:
     text: A/D = move (only on ground), W/Space = jump, ESC = pause
@@ -134,7 +134,7 @@ Entities:
     - 1
     - 1
     - 0.850000024
-    fontSize: 16
+    fontSize: 20
     horizontalAlignment: Center
     verticalAlignment: Middle
     kerning: 0
@@ -171,11 +171,11 @@ Entities:
     anchorMin: [0, 0]
     anchorMax: [0, 0]
     pivot: [0, 0]
-    size: [236, 20]
+    size: [270, 20]
     offset: [0, 0]
   UiText:
     text: T   tool cursor on / off
-    fontSize: 16
+    fontSize: 20
     horizontalAlignment: Left
     verticalAlignment: Middle
 - Entity: 3000000000000000072
@@ -197,7 +197,7 @@ Entities:
     offset: [0, 0]
   UiText:
     text: W / Space   jump
-    fontSize: 16
+    fontSize: 20
     horizontalAlignment: Left
     verticalAlignment: Middle
 - Entity: 3000000000000000071
@@ -219,7 +219,7 @@ Entities:
     offset: [0, 0]
   UiText:
     text: A / D   move
-    fontSize: 16
+    fontSize: 20
     horizontalAlignment: Left
     verticalAlignment: Middle
 - Entity: 3000000000000000070

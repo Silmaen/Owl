@@ -100,12 +100,12 @@ Entities:
     UiText:
       text: ""
       color: [0.4, 0.4, 0.5, 0.5]
-      fontSize: 14
+      fontSize: 18
       horizontalAlignment: Center
       verticalAlignment: Middle
       wrap: false
       fit: Overflow
-      minFontSize: 8
+      minFontSize: 10
       kerning: 0
       lineSpacing: 0
   - Entity: 700000000000000011
@@ -134,12 +134,12 @@ Entities:
     UiText:
       text: Delete Save
       color: [1, 1, 1, 0.9]
-      fontSize: 14
+      fontSize: 18
       horizontalAlignment: Center
       verticalAlignment: Middle
       wrap: false
       fit: Overflow
-      minFontSize: 8
+      minFontSize: 10
       kerning: 0
       lineSpacing: 0
   - Entity: 700000000000000010
@@ -162,12 +162,12 @@ Entities:
     UiText:
       text: ""
       color: [0.6, 0.6, 0.7, 0.8]
-      fontSize: 14
+      fontSize: 18
       horizontalAlignment: Center
       verticalAlignment: Middle
       wrap: false
       fit: Overflow
-      minFontSize: 8
+      minFontSize: 10
       kerning: 0
       lineSpacing: 0
   - Entity: 700000000000000002
@@ -207,17 +207,17 @@ Entities:
       anchorMin: [0.5, 0]
       anchorMax: [0.5, 0]
       pivot: [0.5, 0]
-      size: [600, 28]
+      size: [710, 28]
       offset: [0, 210]
     UiText:
       text: Démo des fonctionnalités v0.1.1 — caractères éàüÇ œ € “…”
       color: [0.85, 0.85, 0.85, 0.85]
-      fontSize: 18
+      fontSize: 22
       horizontalAlignment: Center
       verticalAlignment: Middle
       wrap: false
       fit: Overflow
-      minFontSize: 8
+      minFontSize: 10
       kerning: 0
       lineSpacing: 0
   - Entity: 15166799538320535829
@@ -240,12 +240,12 @@ Entities:
     UiText:
       text: Owl Feature Demo
       color: [1, 0.85, 0.2, 1]
-      fontSize: 42
+      fontSize: 52
       horizontalAlignment: Center
       verticalAlignment: Middle
       wrap: false
       fit: Overflow
-      minFontSize: 8
+      minFontSize: 10
       kerning: 0
       lineSpacing: 0
   - Entity: 700000000000000001
@@ -294,12 +294,12 @@ Entities:
     UiText:
       text: Quit
       color: [1, 1, 1, 1]
-      fontSize: 20
+      fontSize: 25
       horizontalAlignment: Center
       verticalAlignment: Middle
       wrap: false
       fit: Overflow
-      minFontSize: 8
+      minFontSize: 10
       kerning: 0
       lineSpacing: 0
   - Entity: 4492837156209384711
@@ -328,12 +328,12 @@ Entities:
     UiText:
       text: Settings
       color: [1, 1, 1, 1]
-      fontSize: 20
+      fontSize: 25
       horizontalAlignment: Center
       verticalAlignment: Middle
       wrap: false
       fit: Overflow
-      minFontSize: 8
+      minFontSize: 10
       kerning: 0
       lineSpacing: 0
   - Entity: 700000000000000003
@@ -362,12 +362,12 @@ Entities:
     UiText:
       text: Continue
       color: [1, 1, 1, 1]
-      fontSize: 20
+      fontSize: 25
       horizontalAlignment: Center
       verticalAlignment: Middle
       wrap: false
       fit: Overflow
-      minFontSize: 8
+      minFontSize: 10
       kerning: 0
       lineSpacing: 0
   - Entity: 6578682931661001362
@@ -396,12 +396,12 @@ Entities:
     UiText:
       text: Play
       color: [1, 1, 1, 1]
-      fontSize: 26
+      fontSize: 32
       horizontalAlignment: Center
       verticalAlignment: Middle
       wrap: false
       fit: Overflow
-      minFontSize: 8
+      minFontSize: 10
       kerning: 0
       lineSpacing: 0
     UiFocus:
@@ -434,11 +434,11 @@ Entities:
     UiText:
       text: v0.1.1
       color: [0.5, 0.5, 0.5, 0.7]
-      fontSize: 15
+      fontSize: 19
       horizontalAlignment: Center
       verticalAlignment: Middle
       wrap: false
       fit: Overflow
-      minFontSize: 8
+      minFontSize: 10
       kerning: 0
       lineSpacing: 0

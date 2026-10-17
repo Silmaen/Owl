@@ -32,19 +32,21 @@ Entities:
     anchorMin: [0, 0]
     anchorMax: [0, 0]
     pivot: [0, 0]
-    size: [200, 40]
+    size: [500, 40]
     offset: [20, 20]
   UiText:
     text: WASD = move, E = interact, ESC = pause
     color: [1, 1, 1, 0.850000024]
-    fontSize: 18
+    fontSize: 22
     horizontalAlignment: Left
     verticalAlignment: Top
     wrap: true
     fit: Shrink
-    minFontSize: 10
+    minFontSize: 12
     kerning: 0
     lineSpacing: 0
+    outlineColor: [0, 0, 0, 1]
+    outlineWidth: 2
 - Entity: 2000000000000000061
   Tag:
     tag: HealthBar

@@ -26,12 +26,12 @@ Entities:
     anchorMin: [0, 0]
     anchorMax: [0, 0]
     pivot: [0, 0]
-    size: [640, 22]
+    size: [720, 22]
     offset: [20, 20]
   UiText:
     text: "Move: WASD / left stick    Interact: E / X    Inventory: Tab / Y"
     color: [1, 1, 1, 0.85]
-    fontSize: 16
+    fontSize: 20
     horizontalAlignment: Left
     verticalAlignment: Middle
 - Entity: 5300000000000000005
@@ -51,7 +51,7 @@ Entities:
   UiText:
     text: ""
     color: [1, 0.95, 0.55, 1]
-    fontSize: 20
+    fontSize: 25
     horizontalAlignment: Center
     verticalAlignment: Middle
 - Entity: 5300000000000000002
@@ -125,7 +125,7 @@ Entities:
   UiText:
     text: Select a slot.
     color: [1, 1, 1, 1]
-    fontSize: 16
+    fontSize: 20
     horizontalAlignment: Left
     verticalAlignment: Top
     wrap: true
@@ -193,7 +193,7 @@ Entities:
   UiText:
     text: x0
     color: [1, 1, 1, 1]
-    fontSize: 18
+    fontSize: 22
     horizontalAlignment: Right
     verticalAlignment: Bottom
 - Entity: 5300000000000000061
@@ -256,7 +256,7 @@ Entities:
   UiText:
     text: x0
     color: [1, 1, 1, 1]
-    fontSize: 18
+    fontSize: 22
     horizontalAlignment: Right
     verticalAlignment: Bottom
 - Entity: 5300000000000000051
@@ -319,7 +319,7 @@ Entities:
   UiText:
     text: x0
     color: [1, 1, 1, 1]
-    fontSize: 18
+    fontSize: 22
     horizontalAlignment: Right
     verticalAlignment: Bottom
 - Entity: 5300000000000000041
@@ -382,7 +382,7 @@ Entities:
   UiText:
     text: x0
     color: [1, 1, 1, 1]
-    fontSize: 18
+    fontSize: 22
     horizontalAlignment: Right
     verticalAlignment: Bottom
 - Entity: 5300000000000000031
@@ -445,7 +445,7 @@ Entities:
   UiText:
     text: x0
     color: [1, 1, 1, 1]
-    fontSize: 18
+    fontSize: 22
     horizontalAlignment: Right
     verticalAlignment: Bottom
 - Entity: 5300000000000000021
@@ -508,7 +508,7 @@ Entities:
   UiText:
     text: x0
     color: [1, 1, 1, 1]
-    fontSize: 18
+    fontSize: 22
     horizontalAlignment: Right
     verticalAlignment: Bottom
 - Entity: 5300000000000000011
