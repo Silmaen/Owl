@@ -34,6 +34,8 @@ local walk_clock = 0
 local shown_frame = -1
 local shown_step = -1
 local STEP_VARIANTS = 4
+-- Spelt out so the game export finds and packs every footstep.
+local STEP_SOUNDS = { "sounds/hub/step_1.wav", "sounds/hub/step_2.wav", "sounds/hub/step_3.wav", "sounds/hub/step_4.wav" }
 local step_sound = 0
 
 -- The camera follows the hero but stays inside the map: the view is as many cells high as the camera's orthographic
@@ -122,7 +124,7 @@ function on_update(dt)
         if frame >= k_frame_walk and step ~= shown_step and step % 2 == 0 then
             -- Four variants, never the same twice in a row, each a little louder or softer (no pitch control in Lua).
             step_sound = (step_sound + math.random(STEP_VARIANTS - 1) - 1) % STEP_VARIANTS + 1
-            sound.set_volume(sound.play("sounds/hub/step_" .. step_sound .. ".wav"), 0.55 + math.random() * 0.4)
+            sound.set_volume(sound.play(STEP_SOUNDS[step_sound]), 0.55 + math.random() * 0.4)
         end
         shown_step = frame >= k_frame_walk and step or -1
     end

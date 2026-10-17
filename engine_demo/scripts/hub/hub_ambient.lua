@@ -32,9 +32,16 @@ local function between(range)
     return range[1] + math.random() * (range[2] - range[1])
 end
 
--- One sound of a numbered family at a random variant and volume.
+-- The variants of each family, spelt out so the game export finds and packs every file.
+local FAMILIES = {
+    birds = { "sounds/hub/birds_1.wav", "sounds/hub/birds_2.wav", "sounds/hub/birds_3.wav", "sounds/hub/birds_4.wav" },
+    wind = { "sounds/hub/wind_1.wav", "sounds/hub/wind_2.wav", "sounds/hub/wind_3.wav" },
+}
+
+-- One sound of a family at a random variant and volume.
 local function scatter(name, variants, volume)
-    sound.set_volume(sound.play("sounds/hub/" .. name .. "_" .. math.random(variants) .. ".wav"), between(volume))
+    local files = FAMILIES[name]
+    sound.set_volume(sound.play(files[math.random(math.min(variants, #files))]), between(volume))
 end
 
 function on_create()

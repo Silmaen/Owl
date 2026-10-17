@@ -253,11 +253,13 @@ void scanLuaScriptForSounds(const std::filesystem::path& iScriptPath, std::vecto
 		return;
 	std::ifstream scriptFile(iScriptPath);
 	const std::string scriptContent((std::istreambuf_iterator<char>(scriptFile)), std::istreambuf_iterator<char>());
-	static const std::regex soundPlayPattern(R"(sound\.play\s*\(\s*["']([^"']+)["']\s*\))");
+	// A `sound.play("…")` argument, or any quoted sound file (a table of variants picked at random).
+	static const std::regex soundPlayPattern(
+			R"((?:sound\.play\s*\(\s*["']([^"']+)["']\s*\))|["']([^"'\s]+\.(?:wav|ogg|mp3|flac))["'])");
 	auto begin = std::sregex_iterator(scriptContent.begin(), scriptContent.end(), soundPlayPattern);
 	const auto end = std::sregex_iterator();
 	for (auto it = begin; it != end; ++it) {
-		const auto soundName = (*it)[1].str();
+		const auto soundName = (*it)[1].matched ? (*it)[1].str() : (*it)[2].str();
 		if (auto ref = resolveSound(soundName); ref) {
 			if (!hasAsset(ioAssets, ref->packPath))
 				ioAssets.push_back(*ref);

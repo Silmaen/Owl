@@ -326,7 +326,8 @@ TEST(GameExportEndToEnd, SampleProjectPlaysFromItsExportFolder) {
 	}
 	for (const auto* entry: {"tilesets/voxel_blocks.owltileset", "textures/atlases/voxel_blocks.png",
 							 "tilesets/raycast_w3d_walls.owltileset", "tilemaps/world_map.owltilemap",
-							 "scripts/ui/main_menu.lua", "game_settings.yml", "input_actions.yml"})
+							 "scripts/ui/main_menu.lua", "game_settings.yml", "input_actions.yml",
+							 "sounds/hub/birds_4.wav", "sounds/hub/wind_3.wav", "sounds/hub/step_2.wav"})
 		EXPECT_TRUE(reader.contains(entry)) << entry;
 	reader.close();
 
