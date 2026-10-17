@@ -191,7 +191,7 @@ TEST_F(LuaPath, aRoadAddedInARunningCopyOfTheSceneIsUsed) {
 						"cells = path.find_now(map, 40, 5, 40, 9)\nafter = #cells\nend\n",
 						static_cast<int64_t>(static_cast<uint64_t>(m_map.getUUID())));
 	const std::vector<uint8_t> data(text.begin(), text.end());
-	ScriptInstance instance;
+	const ScriptInstance instance;
 	instance.setScene(running.get());
 	ASSERT_TRUE(instance.createFromBuffer(data, "path_play", static_cast<uint64_t>(m_map.getUUID())));
 	instance.onCreate();

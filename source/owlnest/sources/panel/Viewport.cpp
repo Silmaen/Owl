@@ -1440,9 +1440,9 @@ void Viewport::handleNavigationTool(const shared<scene::Scene>& iScene) {
 	// The side nearest to the cursor inside the cell.
 	const float fx = m_isoCursor->x() - m_hoveredMapOrigin.x() - static_cast<float>(cell.x()) - 0.5f;
 	const float fy = m_isoCursor->y() - m_hoveredMapOrigin.y() - static_cast<float>(cell.y()) - 0.5f;
-	const auto side = std::abs(fx) >= std::abs(fy)
-							  ? (fx > 0.f ? scene::nav::Direction::East : scene::nav::Direction::West)
-							  : (fy > 0.f ? scene::nav::Direction::South : scene::nav::Direction::North);
+	auto side = fy > 0.f ? scene::nav::Direction::South : scene::nav::Direction::North;
+	if (std::abs(fx) >= std::abs(fy))
+		side = fx > 0.f ? scene::nav::Direction::East : scene::nav::Direction::West;
 	const auto nx = static_cast<int64_t>(cell.x()) + scene::nav::offsetX(side);
 	const auto ny = static_cast<int64_t>(cell.y()) + scene::nav::offsetY(side);
 	if (nx < 0 || ny < 0)
@@ -1450,8 +1450,11 @@ void Viewport::handleNavigationTool(const shared<scene::Scene>& iScene) {
 	const auto neighbour = entry.map.getBaseCell(*tilemap.asset, static_cast<uint32_t>(nx), static_cast<uint32_t>(ny));
 	const auto bit = scene::nav::directionBit(side);
 	const auto back = scene::nav::directionBit(scene::nav::opposite(side));
-	if (!neighbour.has_value() || !(((base->exits & bit) != 0 && (neighbour->enters & bit) != 0) ||
-									((neighbour->exits & back) != 0 && (base->enters & back) != 0)))
+	if (!neighbour.has_value())
+		return;
+	const bool forward = (base->exits & bit) != 0 && (neighbour->enters & bit) != 0;
+	const bool backward = (neighbour->exits & back) != 0 && (base->enters & back) != 0;
+	if (!forward && !backward)
 		return;
 	m_navSide = side;
 	if (!ImGui::IsMouseClicked(ImGuiMouseButton_Left))

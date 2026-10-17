@@ -843,9 +843,9 @@ auto unitFrameOf(const Entity& iOwner) -> std::optional<UiRect::Frame> {
 }
 
 // A number and its unit on one row: the value first, the unit selector at its right.
-auto unitField(const char* iLabel, float& ioValue, UiRect::Unit& ioUnit, UiRect::Unit& oNewUnit) -> bool {
+auto unitField(const char* iLabel, float& ioValue, UiRect::Unit& ioCurrent, UiRect::Unit& oPicked) -> bool {
 	static constexpr float unitWidth = 112.f;
-	const bool ratio = ioUnit != UiRect::Unit::Pixels;
+	const bool ratio = ioCurrent != UiRect::Unit::Pixels;
 	bool picked = false;
 	prop::row(iLabel, [&](const char* iId) -> bool {
 		ImGui::SetNextItemWidth(-(unitWidth + ImGui::GetStyle().ItemSpacing.x));
@@ -856,10 +856,10 @@ auto unitField(const char* iLabel, float& ioValue, UiRect::Unit& ioUnit, UiRect:
 		ImGui::SameLine();
 		ImGui::SetNextItemWidth(unitWidth);
 		const std::string unitId = std::string{"##unit"} + iLabel;
-		if (widgets::beginCombo(unitId.c_str(), std::string{magic_enum::enum_name(ioUnit)}.c_str())) {
+		if (widgets::beginCombo(unitId.c_str(), std::string{magic_enum::enum_name(ioCurrent)}.c_str())) {
 			for (const auto value: magic_enum::enum_values<UiRect::Unit>()) {
-				if (ImGui::Selectable(std::string{magic_enum::enum_name(value)}.c_str(), value == ioUnit)) {
-					oNewUnit = value;
+				if (ImGui::Selectable(std::string{magic_enum::enum_name(value)}.c_str(), value == ioCurrent)) {
+					oPicked = value;
 					picked = true;
 				}
 			}

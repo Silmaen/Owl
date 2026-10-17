@@ -148,7 +148,7 @@ TEST_F(NavConnections, theGraphFromTheConnectionsIsTheOneOfTheOldRules) {
 		rules.rules.push_back({.tile = shape.tile, .exits = shape.joins, .enters = shape.enters});
 	constexpr uint32_t size = 24;
 	auto asset = makeAsset(size);
-	std::mt19937 random{7};
+	std::mt19937 random{7};// NOLINT(bugprone-random-generator-seed): a fixed seed keeps the random maps reproducible
 	for (uint32_t y = 0; y < size; ++y) {
 		for (uint32_t x = 0; x < size; ++x) {
 			if (random() % 3 != 0)
