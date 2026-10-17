@@ -20,5 +20,6 @@ function on_raycast_door_interact(player_id)
     end
     log.info("Entering raycast house — loading raycast demo")
     -- Wipe left so the demo shows off a non-fade variant.
+    sound.play("sounds/hub_door.wav")
     scene.transition_to("scenes/raycast_demo.owl", "wipe_left", 0.3)
 end

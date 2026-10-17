@@ -19,6 +19,7 @@ local function set_open(value)
     if value then
         ui.raise_window(window_id)
     end
+    sound.play("sounds/hub_board.wav")
     gamestate.set("board_open", value and 1 or 0)
     if not value then
         gamestate.set("board_closed_frame", frame)
@@ -42,6 +43,7 @@ end
 -- Called when the close button or ui_cancel (Escape) closes the window.
 function on_board_closed()
     open = false
+    sound.play("sounds/hub_board.wav")
     gamestate.set("board_open", 0)
     gamestate.set("board_closed_frame", frame)
 end

@@ -1,18 +1,21 @@
-# The hub's villager walks from point to point over the `walkable` navigation layer of the world map (cells mode):
-# it reaches its first point after crossing the town round the houses and trees, and never steps onto a cell outside the
-# graph. About 24 cells at 1.9 cells per second.
+# The hub's villager and guard walk from point to point over the `walkable` navigation layer of the world map (cells
+# mode): the villager reaches its first point after crossing the village round the lamps, stalls and fountain, and neither
+# ever steps onto a cell outside the graph. About 17 cells at 1.9 cells per second for the villager.
 scene: ../../engine_demo/scenes/world_map.owl
 steps:
   - frames: 60
   - expect: {entity: Villager, exists: true}
   - expect: {gamestate: villager_route_cells, greater: 15}
   - expect: {gamestate: villager_trips, equals: 0}
+  - expect: {gamestate: guard_route_cells, greater: 8}
   # The other villagers pace along their street on a plain Lua loop.
-  - expect: {entity: Wizard, translation.x: {greater: 12.6}}
-  - expect: {entity: Knight, translation.x: {greater: -2.0}}
+  - expect: {entity: Wizard, translation.x: {greater: 29.6}}
+  - expect: {entity: Knight, translation.x: {greater: 39.6}}
   - frames: 840
   - expect: {gamestate: villager_trips, greater: 0}
-  - expect: {entity: Villager, translation.x: {greater: 10}}
-  - frames: 600
+  - expect: {entity: Villager, translation.x: {greater: 14}}
+  - frames: 1200
   - expect: {gamestate: villager_trips, greater: 1}
+  - expect: {gamestate: guard_trips, greater: 0}
   - expect: {gamestate: villager_offgrid, equals: 0}
+  - expect: {gamestate: guard_offgrid, equals: 0}

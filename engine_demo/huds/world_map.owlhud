@@ -204,7 +204,7 @@ Entities:
   UiScrollView:
     vertical: true
     horizontal: false
-    contentSize: [0, 680]
+    contentSize: [0, 780]
     scrollOffset: [0, 0]
     wheelStep: 48
     showScrollBar: true
@@ -226,11 +226,11 @@ Entities:
     anchorMin: [0, 0]
     anchorMax: [0, 0]
     pivot: [0, 0]
-    size: [1, 680]
+    size: [1, 780]
     sizeUnit: [ParentWidth, Pixels]
     offset: [0, 0]
   UiText:
-    text: "OWL ENGINE DEMO\nThe hub leads to four levels, one per house. Finish them all and the portal wakes up.\n\nCONTROLS\nWASD or left stick: move\nE: use a door, this board, the lever\nW / S, the wheel or the bar: scroll this board\nEscape: close this board, or pause the game\nF3: road graph and routes in the Iso Town\nTab: inventory in the raycast level\n\nOBJECTIVES\nPlatformer: reach the door at the end of the house.\nRaycast: find an elevator in E1M1 (secrets hide a second one). The minimap in the corner is a 2D layer over the raycast view.\nIso Town: the vehicles make 20 trips, keep the road graph connected. Right click bulldozes.\nVoxel: walk 100 blocks away from the landing point.\n\nIN THE HUB\nThe lever at the east end of the south street opens the gate of the chest alcove: the two are joined by an entity link.\nThe villager walks between five points of the town on a grid profile of the ground tilemap (path.find, cells mode), around houses, trees and the moat.\nWater drains health, lava is deadly.\n\nCREDITS\nArt: Kenney CC0 packs (Tiny Town, Tiny Dungeon, Pixel Platformer with its farm and industrial expansions, Micro Roguelike), kenney.nl.\nRaycast level: the layout and sprites of Wolfenstein 3D episode 1 map 1 (id Software), used as a demonstration.\nEngine: Owl, by Silmaen."
+    text: "OWL ENGINE DEMO\nThe hub leads to four levels, one per house. Finish them all and the portal wakes up.\n\nCONTROLS\nWASD or left stick: move\nE: use a door, this board, the lever\nW / S, the wheel or the bar: scroll this board\nEscape: close this board, or pause the game\nF3: road graph and routes in the Iso Town\nTab: inventory in the raycast level\n\nOBJECTIVES\nPlatformer: reach the door at the end of the house.\nRaycast: find an elevator in E1M1 (secrets hide a second one). The minimap in the corner is a 2D layer over the raycast view.\nIso Town: the vehicles make 20 trips, keep the road graph connected. Right click bulldozes.\nVoxel: walk 100 blocks away from the landing point.\n\nIN THE VILLAGE\nThe four houses along the high street are the levels (signs and labels above the roofs): platformer, raycast, iso town, voxel. The shrine in the north east holds the victory portal, asleep until every level is done.\nThe lever in the east meadow, south of the river, opens the gate of the walled grove in the west meadow: the two are joined by an entity link.\nThe villager and the guard walk between points of the village on a grid profile of the ground tilemap (path.find, cells mode), around houses, stalls, trees and the river; the others pace a street or keep their post. The river and the fountain are animated tiles.\nWater drains health (use the bridges), lava is deadly.\nBirds and the wind in the village, footsteps, doors, the lever, the portal and the bell of the church are sounds played from Lua or by sound sources.\n\nCREDITS\nArt: Kenney CC0 packs (Tiny Town, Tiny Dungeon, Pixel Platformer with its farm and industrial expansions, Micro Roguelike), kenney.nl.\nRaycast level: the layout and sprites of Wolfenstein 3D episode 1 map 1 (id Software), used as a demonstration.\nEngine: Owl, by Silmaen."
     color: [1, 1, 1, 1]
     fontSize: 20
     horizontalAlignment: Left

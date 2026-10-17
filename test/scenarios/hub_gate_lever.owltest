@@ -1,13 +1,12 @@
 # The hub's lever and gate: the lever script reads the EntityLink of its `LeverLink` entity to find the gate. Pulling it
-# (E) destroys the gate and opens the chest behind it; a second pull only says it is already pulled.
-# The lever stands at the east end of the south street, 28 cells east of the start.
+# (E) destroys the gate of the walled grove and opens the chest behind it; a second pull only says it is already pulled.
+# The lever stands in the east meadow, 18 cells east of the start along a footpath of stepping stones.
 scene: ../../engine_demo/scenes/world_map.owl
 steps:
   - frames: 30
   - expect: {gamestate: gate_open, equals: 0}
   - expect: {entity: Gate, exists: true}
-  - input: {key: D, frames: 336}
-  - input: {key: S, frames: 6}
+  - input: {key: D, frames: 204}
   - input: {key: E, frames: 3}
   - frames: 5
   - expect: {gamestate: gate_open, equals: 1}

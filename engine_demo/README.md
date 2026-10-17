@@ -11,16 +11,17 @@ living showcase — it must be updated whenever new features are added to the en
 
 ## How to Play
 
-The hub is a top-down town with four houses, one per level. Each level has a **victory objective** shown in its HUD;
+The hub is a small top-down RPG village with four houses, one per level (labels above the roofs, a signpost at each door). Each level has a **victory objective** shown in its HUD;
 completing it marks the level done (`level_<name>_done` in gamestate), returns to the hub and bumps the hub counter
 "Levels completed: n / 4". When all four are done the **victory portal** (a purple teleporter) appears and answers.
 
 1. **Main Menu** → press **Démarrer** to begin a new run, or **Continuer** if a pause snapshot exists. **O** (left
    bumper) opens the isometric town directly.
 2. **Hub** (`world_map.owl`) — WASD to move (the hero has a walk cycle and mirrors toward the direction of motion),
-   **E** at a door to enter a level. Hazards: lava patches and the water moat south of the first house cause
-   **instant death** (the moat: damage over time). The houses from west to east: platformer, raycast, isometric town,
-   voxel terrain. **ESC** pauses and returns to the Main Menu.
+   **E** at a door to enter a level. Hazards: the lava crater in the north west forest is **instant death**, the river
+   drains health (cross it by the three bridges). The houses along the high street from west to east: platformer,
+   raycast, isometric town, voxel terrain; the victory portal sleeps in the shrine of the north east. The hub has its
+   own sounds: wind and birds, footsteps, doors, the board, the lever and gate, the portal's hum, the bell of the church. **ESC** pauses and returns to the Main Menu.
 3. **Platformer** (`platformer_house.owl`) — A/D to run, W / Space / Up to jump; gamepad: left stick / D-pad, A, Start.
    A 197×32 level in three zones (meadow, farm, factory): spike traps and hits cost a third of the health bar (then a
    short invulnerability and a kick back), a fall into a water pit costs the same and respawns at the last checkpoint
@@ -46,7 +47,7 @@ completing it marks the level done (`level_<name>_done` in gamestate), returns t
 | Scene                  | Purpose                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 |------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `main_menu.owl`        | Logo, dynamic Démarrer/Continuer button, Settings, Delete Save, Quit                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| `world_map.owl`        | Hub: top-down 48×24 town drawn with Tiny Town (Tiny Dungeon hero with a walk cycle, camera at a pixel-exact 3×): four houses (platformer, raycast, isometric town, voxel), stone roads, a moat with a bridge (water = damage), a lava meadow (death), the HUD counter of levels completed and the victory portal that wakes when all four are done Also an information board (E: a window with a scroll view of help text), a lever that opens a gate through an `EntityLink`, a villager walking over a grid navigation layer, two more villagers on Lua loops, drifting cloud shadows and chimney smoke. |
+| `world_map.owl`        | Hub: a 64×40 RPG village drawn with Tiny Town (Tiny Dungeon hero with a walk cycle, camera at a pixel-exact 3× held inside the map): four houses (platformer, raycast, isometric town, voxel) with signposts, outlined labels and flags along the high street, a plaza with an animated fountain, a church with a tower, a market with three stalls, fenced fields and flower beds, a forest edge with a woodcutter, a river with three bridges (animated water, damage), a lava crater (death), a shrine holding the victory portal that wakes when all four levels are done, the HUD counter of levels completed. Also an information board (E: a window with a scroll view of help text), a lever that opens a gate through an `EntityLink`, two villagers walking over a grid navigation layer, merchants, a farmer, hens and sentries with idle or walk frames, butterflies and sparrows, drifting cloud shadows, chimney smoke, a church bell, and ambience sound sources (wind and birds, river, fountain). |
 | `platformer_house.owl` | Level 1: side-scroller 197×32 in Pixel Platformer art with its farm and industrial expansions (pixel-exact 3×): meadow (x 0-55), farm (56-132, a stair of slabs up to a plateau, a chasm, a secret cave at the foot of the cliff) and factory (133-196, acid pits, a lift, a spiked catwalk, a tower of slabs and a last lift to the door), 90 coins (two `coin_pair` prefab instances, 8 in the secret cave), 4 hearts, 16 spikes, 7 water pits, 6 kinematic moving platforms (4 h, 2 v), 5 checkpoint flags, animated water, 5 torches and 4 beacons, a 3-layer parallax backdrop, a camera that leads and shakes, a hit flash with invulnerability, coin pops and fades, a door at the top of the tower as the objective, an astronaut with idle / walk / jump frames |
 | `raycast_demo.owl`     | Level 2: Wolfenstein 3D E1M1 (64×64, `RendererRaycast`): doors, five secret pushwalls, decorations, 20 pick-ups (11 treasures, food, first aid, ammo, a machine gun), two elevators (`ExitElevator`, the secret `SecretElevator`) and the inventory window of `huds/raycast.owlhud` A minimap (a 2D `ui` layer over the raycast one) shows the walls and the player. |
 | `iso_town.owl`         | Level 3: isometric town (also **O** from the main menu), a generated 64×64 map (`tools/iso_atlas`, `city_map.py`) in five districts: sloped hills with cottages in the north-west, a park with a pond in the north-east, a river down to the sea crossed by three bridges, a town centre around a paved plaza, and the industrial yards and the harbour (quay, pier) in the south with a railway between them. A street grid with junctions, dead ends, a one-way centre street, a one-way avenue and a one-way industrial street and two slow roads (navigation exceptions of the Ground tilemap), 195 buildings from `IsometricObject` slices, 277 trees, twelve cars and trucks driving to random road cells over the road graph (`iso_town_traffic.lua`), and a mouse / keyboard / gamepad build-road and bulldoze tool (`iso_town.lua`, `huds/iso_town.owlhud`). Life (`iso_town_life.lua`): smoke from seven chimneys, glints on the water, street lamps and tower beacons that blink, gulls and a day and night tint in the 2D `overlay` layer, clouds of the 2D sky. Sounds: a town ambience and the surf and yard loops, an engine loop on each vehicle (spatial `SoundSource`, heard near the camera), a coin on each trip, a horn near the camera, tool clicks and a bell. The trips objective is 100. |
@@ -91,7 +92,7 @@ scaled by `volume_sfx`, the loops of `SoundSource` components are not (no catego
 
 | Tileset                     | Atlas size      | Tiles            | Notable collidables / hazards                                                                                                                                                                                                                                                              |
 |-----------------------------|-----------------|------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `town_atlas.owltileset`     | 12×14 / 16px    | 168              | Tiny Town sheet (grass, dirt autotile, stepping stones, trees, houses, fences, sign; trees, houses and fences collidable) plus water, lava and bridge tiles drawn in its palette and the Tiny Dungeon characters; `Nearest` filter |
+| `town_atlas.owltileset`     | 12×21 / 16px    | 248              | Tiny Town sheet (grass, dirt autotile, stepping stones, trees, houses, fences, sign; trees, houses and fences collidable) plus water (four phases), lava and bridge tiles drawn in its palette, the Tiny Dungeon characters, and the village tiles of `generate_village_tiles.py` (cobbles, crops, flower beds, fountain, flags, butterflies, sparrow, hen, idle and walk frames of ten characters); `Nearest` filter |
 | `platformer_atlas.owltileset` | 20×16 / 18px | 320              | Pixel Platformer packed sheet (grass, dirt, orange and snow tops, bricks, crates collidable; water, spikes, ladder, door, coin, props) with its 24 px characters at the bottom (read as a 15×12 grid by the sprites); `Nearest` filter |
 | `platformer_ext.owltileset` | 16×16 / 18px   | 256              | Farm and industrial expansions (orange and metal terrain, hay, girders, conveyors, hazard strips collidable), water surface phases, flag, cave and secret-room tiles; `Nearest` filter |
 | `pixel_backdrop.owltileset` | 8×5 / 24px     | 32               | Pixel Platformer backgrounds (sky, clouds, hills, forest) and their keyed horizon bands; the platformer backdrop with three parallax layers (sky locked to the camera, far bands at 0.12, hills at 0.3); `Nearest` filter |
@@ -157,9 +158,11 @@ it directly.
 | `iso_cloud.lua`          | Parallax cloud of the 2D layer behind the isometric one                                                                                                                                                   |
 | `info_board.lua`         | Interaction trigger opening a window of the hub HUD: `ui.set_visible`, `ui.raise_window`, `onCloseCallback`, `UiScrollView` scrolled by `ui.scroll_get` / `ui.scroll_set` |
 | `hub_lever.lua`          | `entity.get_link` on a hidden `EntityLink` entity, `scene.destroy_entity`, `transform.set_rotation`, `isometric.set_sprite_frame`, toast |
-| `hub_villager.lua`       | `path.find` / `poll` / `get` in `cells` mode over the hidden `walkable` layer of the hub tilemap (the hub's terrain-grid pathfinding). The F3 overlay draws over the isometric view only, so this route is not shown |
-| `hub_wanderer.lua`       | Two-point pacing loop with script properties set per entity in the scene |
-| `hub_ambient.lua`        | Chimney smoke and cloud shadows moved by one script (`CircleRenderer`, `transform.set_*`) |
+| `hub_villager.lua`       | `path.find` / `poll` / `get` in `cells` mode over the hidden `walkable` layer of the hub tilemap (the hub's terrain-grid pathfinding, two walkers with a `route` property). The F3 overlay draws over the isometric view only, so this route is not shown |
+| `hub_wanderer.lua`       | Two-point pacing loop (or a post, with equal points) with script properties set per entity in the scene, two-frame idle and walk (`isometric.set_sprite_frame`) |
+| `hub_ambient.lua`        | Chimney smoke and cloud shadows moved by one script (`CircleRenderer`, `transform.set_*`), the church bell on a timer (`sound.play`) |
+| `hub_water.lua`          | River on four frames and fountain on two, tiles edited over time (`isometric.get_cell` / `set_cell` on a 2D tilemap) |
+| `hub_critters.lua`       | Butterflies fluttering round their garden and sparrows crossing the sky (animated sprites moved with `transform.set_*`) |
 
 ## Engine Features Covered
 
@@ -209,7 +212,7 @@ it directly.
       after an ESC pause, so the user resumes exactly where they left off
 - [x] Settings persistence (game defaults + user overrides + reset to defaults)
 - [x] Trigger zones (Death, LuaCallback, Interaction, Teleport)
-- [x] Tilemap system — world map (32×24, top-down), platformer (176×32, side-view, two tilemaps)
+- [x] Tilemap system — world map (64×40, top-down), platformer (176×32, side-view, two tilemaps)
       and raycast demo (16×16, first-person via `RendererRaycast`) all use the
       same `Tilemap` component; per-renderer dispatch comes from the active
       `RenderLayer` type. Per-tile collidable flags from the matching
@@ -230,6 +233,7 @@ it directly.
 - [x] Sound effects (jump, coin pickup, victory, menu start) and the sounds of the iso town: spatial looping
       `SoundSource` components (an engine on each vehicle, the surf, the yard) with a `SoundListener` on the camera, a
       non-spatial ambience loop, one-shot effects from Lua scaled by `volume_sfx` (see *Sounds*)
+      Hub and raycast: the hub (ambience loops, footsteps, doors, board, lever, gate, portal hum, bell) and the raycast level (ambience loop, doors, push-walls, treasure / food / ammo pick-ups, elevator) use files synthesised by `sounds/generate_sounds.py` (stdlib only; the Kenney audio packs were not reachable); `SoundSource` with `loop` and `playOnStart` for the ambience
 - [x] UiImage (owl logo), UiPanel, UiButton, UiSlider, UiProgressBar, UiText —
       all 8 widget types in use across menu / settings / HUD
 - [x] HUD windows — the platformer HUD holds a draggable, closable "Controls" window (column `UiLayout`, content

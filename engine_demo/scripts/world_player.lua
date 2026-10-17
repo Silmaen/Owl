@@ -32,6 +32,14 @@ local k_walk_frames = 4
 local k_step_time = 0.11
 local walk_clock = 0
 local shown_frame = -1
+local shown_step = -1
+local step_sound = 1
+
+-- The camera follows the hero but stays inside the map: the view is as many cells high as the camera's orthographic
+-- size (15, a pixel-exact 3x at 720p), so k_view_half_height = 7.5, and a 16:9 window shows k_view_half_width cells on each side.
+local k_map_width, k_map_height = 64, 40
+local k_view_half_height = 7.5
+local k_view_half_width = k_view_half_height * 16 / 9
 
 function on_create()
     log.info("WorldPlayer created with speed=" .. speed)
@@ -108,15 +116,22 @@ function on_update(dt)
             shown_frame = frame
             isometric.set_sprite_frame(sprite_id, frame)
         end
+        -- A footstep each time a foot lands: the contact frames of the cycle (the first and the third).
+        local step = (frame - k_frame_walk) % k_walk_frames
+        if frame >= k_frame_walk and step ~= shown_step and step % 2 == 0 then
+            sound.play("sounds/hub_step_" .. step_sound .. ".wav")
+            step_sound = 3 - step_sound
+        end
+        shown_step = frame >= k_frame_walk and step or -1
     end
 
-    -- Camera always centred on the player. No clamping — if the player walks past the
-    -- mountain border, we want to see the void rather than have the camera lag behind.
-    -- The mountain colliders should keep the player inside the playable area regardless.
+    -- Camera centred on the player, held inside the map (the forest colliders keep the player inside it too).
     if camera_id ~= 0 then
         local px, py, _ = transform.get_position(entity_id)
         local _, _, cz = transform.get_position(camera_id)
-        transform.set_position(camera_id, px, py, cz)
+        local cx = math.max(k_view_half_width, math.min(k_map_width - k_view_half_width, px))
+        local cy = math.max(-(k_map_height - k_view_half_height), math.min(-k_view_half_height, py))
+        transform.set_position(camera_id, cx, cy, cz)
     end
 
     -- Push current health to the HUD bar.
@@ -139,6 +154,7 @@ function on_update(dt)
         end
         if all_done and not teleporter_visible then
             log.info("All levels completed - the victory portal has appeared!")
+            sound.play("sounds/hub_portal_wake.wav")
         end
         teleporter_visible = all_done
     end

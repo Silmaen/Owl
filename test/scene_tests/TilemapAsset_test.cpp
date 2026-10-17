@@ -244,7 +244,7 @@ TEST_F(TilemapAssetFixture, LoadsMigratedSampleTilemaps) {
 		uint32_t height;
 	};
 	const std::array samples{
-			Sample{"world_map.owltilemap", 48u, 24u},
+			Sample{"world_map.owltilemap", 64u, 40u},
 			Sample{"platformer_house.owltilemap", 0u, 0u},
 			Sample{"raycast_demo.owltilemap", 64u, 64u},
 	};

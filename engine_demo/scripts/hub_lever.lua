@@ -48,6 +48,7 @@ end
 -- Bound by Trigger.Type=Interaction with CallbackName=on_lever_interact.
 function on_lever_interact(player_id)
     if pulled then
+        sound.play("sounds/hub_board.wav")
         toast("The lever is already pulled.")
         return
     end
@@ -57,6 +58,8 @@ function on_lever_interact(player_id)
         return
     end
     open_gate(target)
+    sound.play("sounds/hub_lever.wav")
+    sound.play("sounds/hub_gate.wav")
     toast("The gate swings open!")
 end
 

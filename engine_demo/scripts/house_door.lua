@@ -25,5 +25,6 @@ function on_door_interact(player_id)
     end
     gamestate.set("active_door", door_index)
     log.info("Entering house — loading platformer scene")
+    sound.play("sounds/hub_door.wav")
     scene.transition_to("scenes/platformer_house.owl", "fade_out", 0.3)
 end

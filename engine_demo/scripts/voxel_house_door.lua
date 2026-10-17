@@ -15,5 +15,6 @@ function on_voxel_door_interact(player_id)
         gamestate.set("world_return_y", py)
     end
     log.info("Entering voxel house — loading voxel terrain")
+    sound.play("sounds/hub_door.wav")
     scene.transition_to("scenes/voxel_terrain.owl", "fade", 0.3)
 end

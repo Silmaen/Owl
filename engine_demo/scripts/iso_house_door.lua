@@ -15,5 +15,6 @@ function on_iso_door_interact(player_id)
     end
     gamestate.set("iso_return", "scenes/world_map.owl")
     log.info("Entering iso town house — loading the isometric town")
+    sound.play("sounds/hub_door.wav")
     scene.transition_to("scenes/iso_town.owl", "fade", 0.3)
 end

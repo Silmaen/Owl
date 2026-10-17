@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Engine Demo hub redesigned as a 64×40 RPG village: plaza with an animated fountain, church, market, fields, forest edge, river with three bridges, a shrine for the victory portal, signposts, labels and flags on the four level houses, villagers with idle and walk frames (two on grid pathfinding), butterflies, sparrows and a church bell.
+- Engine Demo sounds: hub ambience, river and fountain loops, footsteps, doors, board, lever, gate, portal hum and bell; raycast ambience, doors, push-walls, treasure / food / ammo pick-ups and elevator, synthesised by `engine_demo/sounds/generate_sounds.py` (no download).
+- A `SoundSource` with `playOnStart` loads its sound file on first use, like `sound.play`, so ambience loops play in the runner.
 - `ui_scale` player setting: every HUD grows by this factor in game (0.5 to 3, never in the HUD editor); the Engine Demo starts at 150 % with an Interface Size slider in its settings menu.
 - Owl Nest viewport: the frame stats chip can be hidden (right-click it, or Show > Frame stats).
 - `entity.get_link(entity_id)`: the entity an `EntityLink` points at, readable from Lua.
