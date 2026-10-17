@@ -2654,3 +2654,35 @@ Entities:
       gameVisible: true
     LuaScript:
       scriptPath: scripts/inventory.lua
+  - Entity: 5400000000000000070
+    Tag:
+      tag: Minimap
+    Transform:
+      translation: [120, 120, 0]
+      rotation: [0, 0, 0]
+      scale: [3, 3, 1]
+    Tilemap:
+      tilemapPath: tilemaps/minimap.owltilemap
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      {}
+    RendererTag:
+      Name: ui
+  - Entity: 5400000000000000071
+    Tag:
+      tag: MinimapPlayer
+    Transform:
+      translation: [120, 120, 0.1]
+      rotation: [0, 0, 0]
+      scale: [7, 7, 1]
+    CircleRenderer:
+      color: [1, 0.85, 0.1, 1]
+      thickness: 1
+      fade: 0.05
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      {}
+    RendererTag:
+      Name: ui
