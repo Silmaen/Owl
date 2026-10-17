@@ -25,6 +25,11 @@
 -- drives half of it turning left, through the far half of the cell, and comes back out by the other lane. The sheet holds eight frames per model, every 45 degrees from +x
 -- towards +y.
 --
+-- The navigation exceptions of the Ground tilemap (per-cell overrides) shape the traffic: the north street of the ring is
+-- one way to the east (no route goes west along it, `town_wrong_way` counts the moves that would) and the east side of the
+-- ring costs three, so vehicles drive it three times slower (`town_slow_frames`) and prefer the other way when it is
+-- not much longer. F3 shows both: one-way moves in orange with an arrow, the slow cells ringed in yellow.
+--
 -- The script counts what the scenario `iso_town.owltest` checks: `town_offroad` (updates a moving vehicle stood off the
 -- road), `town_frame_errors` (frame not matching the heading), `town_heading_errors` (moving away from its heading) and
 -- `town_shortcuts` (re-plans that found a shorter route, a road built or rebuilt), `town_bad_uturns` (reversals outside a
@@ -47,6 +52,8 @@ local FLEET = {
 }
 
 local SIZE = 24
+-- The one way street of the navigation exceptions of scenes/iso_town.owl.
+local ONE_WAY_ROW, ONE_WAY_FIRST, ONE_WAY_LAST = 8, 9, 18
 local MIN_TRIP = 4
 local LOOP = 0.36
 
@@ -194,6 +201,8 @@ function on_create()
     gamestate.set("town_bad_uturns", 0)
     gamestate.set("town_dead_end_loops", 0)
     gamestate.set("town_route_calls", 0)
+    gamestate.set("town_wrong_way", 0)
+    gamestate.set("town_slow_frames", 0)
 end
 
 local function count(key)
@@ -444,11 +453,26 @@ local function arrive(vehicle)
     ask(vehicle)
 end
 
+-- How many times slower the vehicle drives on the cell it is crossing: the cost of its next move (a cell with its own
+-- cost in the navigation exceptions of the Ground tilemap, a slope).
+local function pace(vehicle)
+    local route, i = vehicle.route, vehicle.index
+    if i >= #route // 2 then
+        return 1
+    end
+    local cost = path.get_edge_cost(map_id, route[i * 2 - 1], route[i * 2], route[i * 2 + 1], route[i * 2 + 2])
+    return (cost ~= nil and cost > 1) and cost or 1
+end
+
 local function drive(vehicle, dt)
     local route = vehicle.route
     local last = #route // 2
     local before_x, before_y = vehicle.x, vehicle.y
-    local travel = vehicle.speed * dt
+    local slow = pace(vehicle)
+    local travel = vehicle.speed * dt / slow
+    if slow >= 2.5 then
+        count("town_slow_frames")
+    end
     while true do
         if vehicle.length > 0 then
             vehicle.t = vehicle.t + travel / vehicle.length
@@ -475,6 +499,11 @@ local function drive(vehicle, dt)
         vehicle.prev_x, vehicle.prev_y = vehicle.cell_x, vehicle.cell_y
         vehicle.dir_x, vehicle.dir_y = direction(route, vehicle.index - 1)
         vehicle.cell_x, vehicle.cell_y = route[vehicle.index * 2 - 1], route[vehicle.index * 2]
+        -- The north street (row 8, x 8 to 18) is one way, to the east.
+        if vehicle.dir_x == -1 and vehicle.prev_y == ONE_WAY_ROW and vehicle.prev_x >= ONE_WAY_FIRST
+            and vehicle.prev_x <= ONE_WAY_LAST then
+            count("town_wrong_way")
+        end
         publish(vehicle)
         if path.get_version(map_id) ~= vehicle.version then
             replan(vehicle)

@@ -79,3 +79,7 @@ steps:
   - expect: {gamestate: town_frames_seen, greater: 4}
   # No vehicle waited long for a route: a road built or rebuilt is taken as soon as the graph changes.
   - expect: {gamestate: town_longest_wait, less: 6}
+  # The navigation exceptions of the Ground tilemap: nobody drove west along the one way north street, and the vehicles
+  # crossed the slow east side of the ring (cost 3) at a third of their speed.
+  - expect: {gamestate: town_wrong_way, equals: 0}
+  - expect: {gamestate: town_slow_frames, greater: 0}
