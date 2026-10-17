@@ -36,8 +36,8 @@ steps:
   - input: {key: E, frames: 3}
   - frames: 90
   - expect: {entity: Ground, exists: true}
-  - expect: {gamestate: town_trips, less: 19}
-  - frames: 4500
+  - expect: {gamestate: town_trips, less: 99}
+  - frames: 9000
   - expect: {gamestate: level_iso_done, equals: 1}
   - expect: {gamestate: levels_done, equals: 3}
   # The victory portal is asleep: brought next to the player (away from the house door), E does nothing while a

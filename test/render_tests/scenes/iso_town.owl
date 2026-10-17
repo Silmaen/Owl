@@ -82,7 +82,7 @@ Entities:
     translation: [0, 0, 0]
     rotation: [0, 0, 0]
     scale: [1, 1, 1]
-  Tilemap: {tilemapPath: tilemaps/iso_town.owltilemap}
+  Tilemap: {tilemapPath: tilemaps/iso_town_small.owltilemap}
   Visibility: {gameVisible: true}
   RendererTag: {Name: iso_world}
 

@@ -1,6 +1,6 @@
 # The isometric town without the mouse: the `cursor` action walks the cell cursor over the map (J K L I, the right
 # stick), `build` lays a road under it, `town_tool` switches to the bulldozer and `build` then removes it again.
-scene: ../../engine_demo/scenes/iso_town.owl
+scene: ../../engine_demo/scenes/iso_town_small.owl
 steps:
   - frames: 30
   # Five steps down the screen from the middle of the plaza, to a grass cell below the ring road.

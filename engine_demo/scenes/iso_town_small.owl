@@ -1,0 +1,837 @@
+Scene: IsoTownSmall
+Hud: huds/iso_town.owlhud
+EnabledRenderers:
+- {Name: raycast_world, Enabled: false}
+- {Name: world, Enabled: true}
+- Name: iso_world
+  Enabled: true
+  Overrides: {Zoom: 0}
+- Name: ui
+  Enabled: true
+  Overrides: {Space: Screen}
+Entities:
+- Entity: 4300000000000000001
+  Tag: {tag: MainCamera}
+  Transform:
+    translation: [12, 12, 5]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Camera:
+    camera: {projectionType: Orthographic, perspectiveFOV: 0.785398185, perspectiveNear: 0.00999999978, perspectiveFar: 1000,
+      orthographicSize: 10, orthographicNear: -1, orthographicFar: 10}
+    primary: true
+    fixedAspectRatio: false
+  Visibility: {gameVisible: true}
+  LuaScript:
+    scriptPath: scripts/iso_camera.lua
+    properties:
+    - name: speed
+      type: float
+      value: 7
+
+- Entity: 4300000000000000002
+  Tag: {tag: Sky}
+  Transform:
+    translation: [12, 12, -5]
+    rotation: [0, 0, 0]
+    scale: [60, 60, 1]
+  BackgroundTexture:
+    mode: 0
+    type: 1
+    color: [0.16, 0.22, 0.3, 1]
+    topColor: [0.45, 0.62, 0.82, 1]
+  Visibility: {gameVisible: true}
+  RendererTag: {Name: world}
+
+- Entity: 4300000000000000003
+  Tag: {tag: CloudNear}
+  Transform:
+    translation: [6, 17, -4]
+    rotation: [0, 0, 0]
+    scale: [9, 4.5, 1]
+  SpriteRenderer:
+    color: [1, 1, 1, 0.8]
+    texture: nam:textures/iso/smoke.png
+    tilingFactor: 1
+  Visibility: {gameVisible: true}
+  LuaScript:
+    scriptPath: scripts/iso_cloud.lua
+    properties:
+    - name: offset_x
+      type: float
+      value: -6
+    - name: offset_y
+      type: float
+      value: 5
+    - name: parallax
+      type: float
+      value: 0.5
+    - name: speed
+      type: float
+      value: 0.35
+  RendererTag: {Name: world}
+
+- Entity: 4300000000000000004
+  Tag: {tag: CloudFar}
+  Transform:
+    translation: [19, 20, -4]
+    rotation: [0, 0, 0]
+    scale: [12, 6, 1]
+  SpriteRenderer:
+    color: [1, 1, 1, 0.6]
+    texture: nam:textures/iso/smoke.png
+    tilingFactor: 1
+  Visibility: {gameVisible: true}
+  LuaScript:
+    scriptPath: scripts/iso_cloud.lua
+    properties:
+    - name: offset_x
+      type: float
+      value: 7
+    - name: offset_y
+      type: float
+      value: 8
+    - name: parallax
+      type: float
+      value: 0.3
+    - name: speed
+      type: float
+      value: 0.2
+  RendererTag: {Name: world}
+
+- Entity: 4300000000000000005
+  Tag: {tag: CloudLow}
+  Transform:
+    translation: [26, 8, -4]
+    rotation: [0, 0, 0]
+    scale: [8, 4, 1]
+  SpriteRenderer:
+    color: [1, 1, 1, 0.7]
+    texture: nam:textures/iso/smoke.png
+    tilingFactor: 1
+  Visibility: {gameVisible: true}
+  LuaScript:
+    scriptPath: scripts/iso_cloud.lua
+    properties:
+    - name: offset_x
+      type: float
+      value: 14
+    - name: offset_y
+      type: float
+      value: -4
+    - name: parallax
+      type: float
+      value: 0.4
+    - name: speed
+      type: float
+      value: 0.28
+  RendererTag: {Name: world}
+
+- Entity: 4300000000000000006
+  Tag: {tag: Ground}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Tilemap:
+    tilemapPath: tilemaps/iso_town_small.owltilemap
+    navigation:
+      mode: connections
+      layer: 1
+      source: overlay
+      maxRise: 1
+      climbCost: 0.5
+      allowSteep: false
+      overrides:
+        - {cell: [8, 8], noEnter: [east]}
+        - {cell: [9, 8], noExit: [west], noEnter: [east]}
+        - {cell: [10, 8], noExit: [west], noEnter: [east]}
+        - {cell: [11, 8], noExit: [west], noEnter: [east]}
+        - {cell: [12, 8], noExit: [west], noEnter: [east]}
+        - {cell: [13, 8], noExit: [west], noEnter: [east]}
+        - {cell: [14, 8], noExit: [west], noEnter: [east]}
+        - {cell: [15, 8], noExit: [west], noEnter: [east]}
+        - {cell: [16, 8], noExit: [west], noEnter: [east]}
+        - {cell: [17, 8], noExit: [west], noEnter: [east]}
+        - {cell: [18, 8], noExit: [west]}
+        - {cell: [18, 10], cost: 3}
+        - {cell: [18, 11], cost: 3}
+        - {cell: [18, 12], cost: 3}
+        - {cell: [18, 13], cost: 3}
+        - {cell: [18, 14], cost: 3}
+  Visibility: {gameVisible: true}
+  RendererTag: {Name: iso_world}
+
+- Entity: 4300000000000000007
+  Tag: {tag: Cottage}
+  Transform:
+    translation: [7, 6, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  IsometricObject:
+    atlasPath: textures/iso/buildings.json
+    building: cottage
+    color: [1, 1, 1, 1]
+  Visibility: {gameVisible: true}
+  RendererTag: {Name: iso_world}
+
+- Entity: 4300000000000000008
+  Tag: {tag: Cottage}
+  Transform:
+    translation: [8, 6, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  IsometricObject:
+    atlasPath: textures/iso/buildings.json
+    building: cottage
+    color: [1, 1, 1, 1]
+  Visibility: {gameVisible: true}
+  RendererTag: {Name: iso_world}
+
+- Entity: 4300000000000000009
+  Tag: {tag: Townhouse}
+  Transform:
+    translation: [10, 6, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  IsometricObject:
+    atlasPath: textures/iso/buildings.json
+    building: townhouse
+    color: [1, 1, 1, 1]
+  Visibility: {gameVisible: true}
+  RendererTag: {Name: iso_world}
+
+- Entity: 4300000000000000010
+  Tag: {tag: Tower}
+  Transform:
+    translation: [13, 6, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  IsometricObject:
+    atlasPath: textures/iso/buildings.json
+    building: tower
+    color: [1, 1, 1, 1]
+  Visibility: {gameVisible: true}
+  RendererTag: {Name: iso_world}
+
+- Entity: 4300000000000000011
+  Tag: {tag: Cottage}
+  Transform:
+    translation: [15, 6, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  IsometricObject:
+    atlasPath: textures/iso/buildings.json
+    building: cottage
+    color: [1, 1, 1, 1]
+  Visibility: {gameVisible: true}
+  RendererTag: {Name: iso_world}
+
+- Entity: 4300000000000000012
+  Tag: {tag: Warehouse}
+  Transform:
+    translation: [16, 4, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  IsometricObject:
+    atlasPath: textures/iso/buildings.json
+    building: warehouse
+    color: [1, 1, 1, 1]
+  Visibility: {gameVisible: true}
+  RendererTag: {Name: iso_world}
+
+- Entity: 4300000000000000013
+  Tag: {tag: Cottage}
+  Transform:
+    translation: [4, 9, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  IsometricObject:
+    atlasPath: textures/iso/buildings.json
+    building: cottage
+    color: [1, 1, 1, 1]
+  Visibility: {gameVisible: true}
+  RendererTag: {Name: iso_world}
+
+- Entity: 4300000000000000014
+  Tag: {tag: Cottage}
+  Transform:
+    translation: [4, 11, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  IsometricObject:
+    atlasPath: textures/iso/buildings.json
+    building: cottage
+    color: [1, 1, 1, 1]
+  Visibility: {gameVisible: true}
+  RendererTag: {Name: iso_world}
+
+- Entity: 4300000000000000015
+  Tag: {tag: Townhouse}
+  Transform:
+    translation: [3, 14, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  IsometricObject:
+    atlasPath: textures/iso/buildings.json
+    building: townhouse
+    color: [1, 1, 1, 1]
+  Visibility: {gameVisible: true}
+  RendererTag: {Name: iso_world}
+
+- Entity: 4300000000000000016
+  Tag: {tag: Warehouse}
+  Transform:
+    translation: [1, 16, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  IsometricObject:
+    atlasPath: textures/iso/buildings.json
+    building: warehouse
+    color: [1, 1, 1, 1]
+  Visibility: {gameVisible: true}
+  RendererTag: {Name: iso_world}
+
+- Entity: 4300000000000000017
+  Tag: {tag: Cottage}
+  Transform:
+    translation: [19, 9, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  IsometricObject:
+    atlasPath: textures/iso/buildings.json
+    building: cottage
+    color: [1, 1, 1, 1]
+  Visibility: {gameVisible: true}
+  RendererTag: {Name: iso_world}
+
+- Entity: 4300000000000000018
+  Tag: {tag: Townhouse}
+  Transform:
+    translation: [19, 11, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  IsometricObject:
+    atlasPath: textures/iso/buildings.json
+    building: townhouse
+    color: [1, 1, 1, 1]
+  Visibility: {gameVisible: true}
+  RendererTag: {Name: iso_world}
+
+- Entity: 4300000000000000019
+  Tag: {tag: Cottage}
+  Transform:
+    translation: [19, 14, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  IsometricObject:
+    atlasPath: textures/iso/buildings.json
+    building: cottage
+    color: [1, 1, 1, 1]
+  Visibility: {gameVisible: true}
+  RendererTag: {Name: iso_world}
+
+- Entity: 4300000000000000020
+  Tag: {tag: Cottage}
+  Transform:
+    translation: [7, 17, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  IsometricObject:
+    atlasPath: textures/iso/buildings.json
+    building: cottage
+    color: [1, 1, 1, 1]
+  Visibility: {gameVisible: true}
+  RendererTag: {Name: iso_world}
+
+- Entity: 4300000000000000021
+  Tag: {tag: Tower}
+  Transform:
+    translation: [9, 17, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  IsometricObject:
+    atlasPath: textures/iso/buildings.json
+    building: tower
+    color: [1, 1, 1, 1]
+  Visibility: {gameVisible: true}
+  RendererTag: {Name: iso_world}
+
+- Entity: 4300000000000000022
+  Tag: {tag: Cottage}
+  Transform:
+    translation: [14, 17, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  IsometricObject:
+    atlasPath: textures/iso/buildings.json
+    building: cottage
+    color: [1, 1, 1, 1]
+  Visibility: {gameVisible: true}
+  RendererTag: {Name: iso_world}
+
+- Entity: 4300000000000000023
+  Tag: {tag: Cottage}
+  Transform:
+    translation: [16, 17, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  IsometricObject:
+    atlasPath: textures/iso/buildings.json
+    building: cottage
+    color: [1, 1, 1, 1]
+  Visibility: {gameVisible: true}
+  RendererTag: {Name: iso_world}
+
+- Entity: 4300000000000000024
+  Tag: {tag: Townhouse}
+  Transform:
+    translation: [8, 11, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  IsometricObject:
+    atlasPath: textures/iso/buildings.json
+    building: townhouse
+    color: [1, 1, 1, 1]
+  Visibility: {gameVisible: true}
+  RendererTag: {Name: iso_world}
+
+- Entity: 4300000000000000025
+  Tag: {tag: Tower}
+  Transform:
+    translation: [12, 11, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  IsometricObject:
+    atlasPath: textures/iso/buildings.json
+    building: tower
+    color: [1, 1, 1, 1]
+  Visibility: {gameVisible: true}
+  RendererTag: {Name: iso_world}
+
+- Entity: 4300000000000000026
+  Tag: {tag: Cottage}
+  Transform:
+    translation: [15, 11, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  IsometricObject:
+    atlasPath: textures/iso/buildings.json
+    building: cottage
+    color: [1, 1, 1, 1]
+  Visibility: {gameVisible: true}
+  RendererTag: {Name: iso_world}
+
+- Entity: 4300000000000000027
+  Tag: {tag: Cottage}
+  Transform:
+    translation: [10, 14, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  IsometricObject:
+    atlasPath: textures/iso/buildings.json
+    building: cottage
+    color: [1, 1, 1, 1]
+  Visibility: {gameVisible: true}
+  RendererTag: {Name: iso_world}
+
+- Entity: 4300000000000000028
+  Tag: {tag: Station}
+  Transform:
+    translation: [8, 19, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  IsometricObject:
+    atlasPath: textures/iso/buildings.json
+    building: station
+    color: [1, 1, 1, 1]
+  Visibility: {gameVisible: true}
+  RendererTag: {Name: iso_world}
+
+- Entity: 4300000000000000029
+  Tag: {tag: Warehouse}
+  Transform:
+    translation: [14, 19, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  IsometricObject:
+    atlasPath: textures/iso/buildings.json
+    building: warehouse
+    color: [1, 1, 1, 1]
+  Visibility: {gameVisible: true}
+  RendererTag: {Name: iso_world}
+
+- Entity: 4300000000000000030
+  Tag: {tag: Tree}
+  Transform:
+    translation: [2, 2, 1.125]
+    rotation: [0, 0, 0]
+    scale: [1, 1.5, 1]
+  SpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/iso/oak.png
+    tilingFactor: 1
+  Visibility: {gameVisible: true}
+  RendererTag: {Name: iso_world}
+
+- Entity: 4300000000000000031
+  Tag: {tag: Tree}
+  Transform:
+    translation: [4, 2, 0.75]
+    rotation: [0, 0, 0]
+    scale: [1, 1.5, 1]
+  SpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/iso/pine.png
+    tilingFactor: 1
+  Visibility: {gameVisible: true}
+  RendererTag: {Name: iso_world}
+
+- Entity: 4300000000000000032
+  Tag: {tag: Tree}
+  Transform:
+    translation: [2, 5, 0.5]
+    rotation: [0, 0, 0]
+    scale: [1, 1.5, 1]
+  SpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/iso/pine.png
+    tilingFactor: 1
+  Visibility: {gameVisible: true}
+  RendererTag: {Name: iso_world}
+
+- Entity: 4300000000000000033
+  Tag: {tag: Tree}
+  Transform:
+    translation: [5, 4, 0.5]
+    rotation: [0, 0, 0]
+    scale: [1, 1.5, 1]
+  SpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/iso/oak.png
+    tilingFactor: 1
+  Visibility: {gameVisible: true}
+  RendererTag: {Name: iso_world}
+
+- Entity: 4300000000000000034
+  Tag: {tag: Tree}
+  Transform:
+    translation: [9, 3, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1.5, 1]
+  SpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/iso/pine.png
+    tilingFactor: 1
+  Visibility: {gameVisible: true}
+  RendererTag: {Name: iso_world}
+
+- Entity: 4300000000000000035
+  Tag: {tag: Tree}
+  Transform:
+    translation: [12, 3, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1.5, 1]
+  SpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/iso/oak.png
+    tilingFactor: 1
+  Visibility: {gameVisible: true}
+  RendererTag: {Name: iso_world}
+
+- Entity: 4300000000000000036
+  Tag: {tag: Tree}
+  Transform:
+    translation: [15, 2, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1.5, 1]
+  SpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/iso/pine.png
+    tilingFactor: 1
+  Visibility: {gameVisible: true}
+  RendererTag: {Name: iso_world}
+
+- Entity: 4300000000000000037
+  Tag: {tag: Tree}
+  Transform:
+    translation: [19, 3, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1.5, 1]
+  SpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/iso/oak.png
+    tilingFactor: 1
+  Visibility: {gameVisible: true}
+  RendererTag: {Name: iso_world}
+
+- Entity: 4300000000000000038
+  Tag: {tag: Tree}
+  Transform:
+    translation: [3, 9, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1.5, 1]
+  SpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/iso/pine.png
+    tilingFactor: 1
+  Visibility: {gameVisible: true}
+  RendererTag: {Name: iso_world}
+
+- Entity: 4300000000000000039
+  Tag: {tag: Tree}
+  Transform:
+    translation: [2, 12, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1.5, 1]
+  SpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/iso/oak.png
+    tilingFactor: 1
+  Visibility: {gameVisible: true}
+  RendererTag: {Name: iso_world}
+
+- Entity: 4300000000000000040
+  Tag: {tag: Tree}
+  Transform:
+    translation: [1, 14, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1.5, 1]
+  SpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/iso/pine.png
+    tilingFactor: 1
+  Visibility: {gameVisible: true}
+  RendererTag: {Name: iso_world}
+
+- Entity: 4300000000000000041
+  Tag: {tag: Tree}
+  Transform:
+    translation: [3, 20, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1.5, 1]
+  SpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/iso/oak.png
+    tilingFactor: 1
+  Visibility: {gameVisible: true}
+  RendererTag: {Name: iso_world}
+
+- Entity: 4300000000000000042
+  Tag: {tag: Tree}
+  Transform:
+    translation: [6, 18, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1.5, 1]
+  SpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/iso/pine.png
+    tilingFactor: 1
+  Visibility: {gameVisible: true}
+  RendererTag: {Name: iso_world}
+
+- Entity: 4300000000000000043
+  Tag: {tag: Tree}
+  Transform:
+    translation: [5, 23, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1.5, 1]
+  SpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/iso/oak.png
+    tilingFactor: 1
+  Visibility: {gameVisible: true}
+  RendererTag: {Name: iso_world}
+
+- Entity: 4300000000000000044
+  Tag: {tag: Tree}
+  Transform:
+    translation: [13, 23, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1.5, 1]
+  SpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/iso/pine.png
+    tilingFactor: 1
+  Visibility: {gameVisible: true}
+  RendererTag: {Name: iso_world}
+
+- Entity: 4300000000000000045
+  Tag: {tag: Tree}
+  Transform:
+    translation: [19, 23, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1.5, 1]
+  SpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/iso/oak.png
+    tilingFactor: 1
+  Visibility: {gameVisible: true}
+  RendererTag: {Name: iso_world}
+
+- Entity: 4300000000000000046
+  Tag: {tag: Tree}
+  Transform:
+    translation: [18, 20, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1.5, 1]
+  SpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/iso/pine.png
+    tilingFactor: 1
+  Visibility: {gameVisible: true}
+  RendererTag: {Name: iso_world}
+
+- Entity: 4300000000000000047
+  Tag: {tag: Tree}
+  Transform:
+    translation: [19, 19, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1.5, 1]
+  SpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/iso/oak.png
+    tilingFactor: 1
+  Visibility: {gameVisible: true}
+  RendererTag: {Name: iso_world}
+
+- Entity: 4300000000000000048
+  Tag: {tag: Tree}
+  Transform:
+    translation: [20, 7, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1.5, 1]
+  SpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/iso/pine.png
+    tilingFactor: 1
+  Visibility: {gameVisible: true}
+  RendererTag: {Name: iso_world}
+
+- Entity: 4300000000000000049
+  Tag: {tag: Tree}
+  Transform:
+    translation: [20, 5, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1.5, 1]
+  SpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/iso/oak.png
+    tilingFactor: 1
+  Visibility: {gameVisible: true}
+  RendererTag: {Name: iso_world}
+
+- Entity: 4300000000000000050
+  Tag: {tag: Tree}
+  Transform:
+    translation: [15, 16, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1.5, 1]
+  SpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/iso/pine.png
+    tilingFactor: 1
+  Visibility: {gameVisible: true}
+  RendererTag: {Name: iso_world}
+
+- Entity: 4300000000000000051
+  Tag: {tag: Cursor}
+  Transform:
+    translation: [13, 13, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  SpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/iso/marker.png
+    tilingFactor: 1
+  Visibility: {gameVisible: true}
+  RendererTag: {Name: iso_world}
+
+- Entity: 4300000000000000052
+  Tag: {tag: Car}
+  Transform:
+    translation: [14, 9.2, 0.5]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/iso/vehicles.png
+    columns: 8
+    rows: 2
+    firstFrame: 0
+    lastFrame: 0
+    frameDuration: 0.1
+    loop: true
+  Visibility: {gameVisible: true}
+  RendererTag: {Name: iso_world}
+
+- Entity: 4300000000000000054
+  Tag: {tag: Truck}
+  Transform:
+    translation: [7.2, 13, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/iso/vehicles.png
+    columns: 8
+    rows: 2
+    firstFrame: 14
+    lastFrame: 14
+    frameDuration: 0.1
+    loop: true
+  Visibility: {gameVisible: true}
+  RendererTag: {Name: iso_world}
+
+- Entity: 4300000000000000056
+  Tag: {tag: CarB}
+  Transform:
+    translation: [12, 16.8, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [0.45, 0.9, 0.55, 1]
+    texture: nam:textures/iso/vehicles.png
+    columns: 8
+    rows: 2
+    firstFrame: 4
+    lastFrame: 4
+    frameDuration: 0.1
+    loop: true
+  Visibility: {gameVisible: true}
+  RendererTag: {Name: iso_world}
+
+- Entity: 4300000000000000058
+  Tag: {tag: Manager}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  LuaScript:
+    scriptPath: scripts/iso_town.lua
+    properties:
+    - name: map_size
+      type: float
+      value: 24
+    - name: target_trips
+      type: float
+      value: 20
+  Visibility: {gameVisible: true}
+
+- Entity: 4300000000000000059
+  Tag: {tag: Traffic}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  LuaScript:
+    scriptPath: scripts/iso_town_traffic.lua
+    properties:
+    - name: map_size
+      type: float
+      value: 24
+    - name: fleet
+      type: string
+      value: "Car,0,3.2,13,8,11;Truck,8,2.3,6,12,23;CarB,0,2.7,18,12,37"
+  Visibility: {gameVisible: true}
+

@@ -1,8 +1,9 @@
--- Isometric town: the "build road" tool, the funds and the HUD of scenes/iso_town.owl.
+-- Isometric town: the "build road" tool, the funds and the HUD of scenes/iso_town.owl (and of its compact variant).
 -- Demonstrates: the `isometric` bindings (pick_cell under the mouse, get_cell / set_cell on the road layer,
 --               get_slope, get_height), an edit of the map at runtime (no undo), the mouse, the gamepad stick and the
 --               keyboard through input actions (`build`, `bulldoze`, `town_tool`, `cursor`), a HUD of its own
---               (huds/iso_town.owlhud) with tool buttons, ui.is_mouse_over_ui, gamestate.
+--               (huds/iso_town.owlhud) with tool buttons, ui.is_mouse_over_ui, gamestate, sound effects of the tool
+--               (`sound.play`, then `sound.set_volume` scaled by the `volume_sfx` setting).
 --
 -- The road layer (layer 1 of the tilemap) holds road overlays, 16 shapes (tiles 3, 11 and 12 to 25): a cell is tiled from
 -- the mask of its four road neighbours (straight along X or Y, corner, T, cross, dead end, alone), and building or
@@ -11,6 +12,11 @@
 -- by the player), `town_cursor_x` / `town_cursor_y` and `town_cursor_tile` (the road tile under the cursor) mirror the state for the other scripts and the scenario test.
 
 local GROUND_LAYER, ROAD_LAYER = 0, 1
+properties = {
+    { name = "map_size", type = "float", default = 24.0 },
+    { name = "target_trips", type = "float", default = 20.0 },
+}
+
 local ROAD_X, ROAD_Y = 3, 11
 -- Neighbour mask bits: north is -y, east +x, south +y, west -x.
 local NORTH, EAST, SOUTH, WEST = 1, 2, 4, 8
@@ -28,7 +34,8 @@ local BUILDABLE = { [0] = true, [1] = true, [4] = true, [6] = true, [7] = true }
 local SIZE = 24
 local FIRST_STEEP_SLOPE = 15
 local START_FUNDS, ROAD_COST, ROAD_REFUND = 1000, 10, 5
--- Victory objective: the town earns its keep once its vehicles have made this many trips (`town_trips`).
+-- Victory objective: the town earns its keep once its vehicles have made this many trips (`town_trips`), set by the
+-- scene (`target_trips`).
 local TARGET_TRIPS = 20
 local TOAST_SECONDS = 2.0
 local PAD_REPEAT = 0.16
@@ -51,6 +58,13 @@ local last_cell = nil
 local toast_left = 0
 local shown_funds, shown_roads = nil, nil
 local built = {}
+
+-- A sound effect of the tool: `volume` times the sound effects volume of the settings. `town_sounds` counts them.
+local function play(path, volume)
+    gamestate.set("town_sounds", gamestate.get("town_sounds", 0) + 1)
+    local handle = sound.play(path)
+    sound.set_volume(handle, volume * settings.get("volume_sfx", 1.0))
+end
 
 local function money()
     return gamestate.get("town_money", START_FUNDS)
@@ -121,6 +135,7 @@ local function build_road(x, y)
     local problem = build_problem(x, y)
     if problem then
         toast(problem)
+        play("sounds/town/error.wav", 0.5)
         return
     end
     isometric.set_cell(map_id, ROAD_LAYER, x, y, -1, ROAD_X) -- any road tile: refresh_around picks the shape
@@ -129,6 +144,7 @@ local function build_road(x, y)
     gamestate.set("town_money", money() - ROAD_COST)
     gamestate.set("town_roads", gamestate.get("town_roads", 0) + 1)
     toast("Road built")
+    play("sounds/town/click_build.wav", 0.7)
 end
 
 local function bulldoze(x, y)
@@ -143,6 +159,7 @@ local function bulldoze(x, y)
         gamestate.set("town_roads", gamestate.get("town_roads", 0) - 1)
     end
     toast("Road removed")
+    play("sounds/town/click_bulldoze.wav", 0.7)
 end
 
 local function set_tool(value)
@@ -253,12 +270,15 @@ local function update_hud(dt)
         leaving = true
         gamestate.set("level_iso_done", 1)
         gamestate.remove("iso_return")
-        sound.play("sounds/victory.wav")
+        play("sounds/victory.wav", 1.0)
         scene.transition_to("scenes/world_map.owl", "fade_out", 0.4)
     end
 end
 
 function on_create()
+    SIZE = math.floor(map_size or SIZE)
+    TARGET_TRIPS = math.floor(target_trips or TARGET_TRIPS)
+    cursor_x, cursor_y = SIZE // 2, SIZE // 2
     map_id = scene.find_entity("Ground")
     marker_id = scene.find_entity("Cursor")
     funds_id = ui.find("FundsText")
@@ -270,6 +290,7 @@ function on_create()
     gamestate.set("town_money", START_FUNDS)
     gamestate.set("town_roads", 0)
     gamestate.set("town_trips", 0)
+    gamestate.set("town_sounds", 0)
     ui.set_visible(toast_id, false)
     set_tool(TOOL_ROAD)
     ui.transition_fade_in(0.4)

@@ -1,4 +1,5 @@
--- Isometric town traffic: vehicles driving to destinations over the road graph of scenes/iso_town.owl.
+-- Isometric town traffic: vehicles driving to destinations over the road graph of scenes/iso_town.owl (and of its compact
+-- variant iso_town_small.owl). The scene gives the fleet, the size of the map and the longest trip as script properties.
 -- Demonstrates: tile-graph pathfinding (`path.find`, `path.poll`, `path.get`, `path.is_valid`, `path.get_version`,
 --               `path.get_edge_cost`, `path.is_walkable`, the tileset connections of the Ground tilemap), the debug
 --               overlay (`path.set_debug`, `path.show_route`: F3 draws the road graph and the route of each vehicle in
@@ -7,8 +8,8 @@
 --               sprite per vehicle whose frame follows its heading every 45 degrees (isometric.set_sprite_frame),
 --               gamestate.
 --
--- Each vehicle drives to a destination picked at random among the cells of the road (a generator seeded per vehicle, so a
--- run is repeatable), by the cheapest route that never turns back (`no_reverse` and the heading of the vehicle in
+-- Each vehicle drives to a destination picked at random among the cells of the road that are not a dead end (a generator
+-- seeded per vehicle, so a run is repeatable; not far away on a big map), by the cheapest route that never turns back (`no_reverse` and the heading of the vehicle in
 -- `path.find`): a vehicle goes on the way it was heading and reverses only at a dead end, a cell with a single exit. On
 -- arrival it picks another destination. A trip pays `TRIP_PAY` into `town_money` and counts in `town_trips`; a route that a
 -- bulldozed road cut counts in `town_reroutes`. A vehicle with no route waits and asks again when the graph changes.
@@ -25,10 +26,11 @@
 -- drives half of it turning left, through the far half of the cell, and comes back out by the other lane. The sheet holds eight frames per model, every 45 degrees from +x
 -- towards +y.
 --
--- The navigation exceptions of the Ground tilemap (per-cell overrides) shape the traffic: the north street of the ring is
--- one way to the east (no route goes west along it, `town_wrong_way` counts the moves that would) and the east side of the
--- ring costs three, so vehicles drive it three times slower (`town_slow_frames`) and prefer the other way when it is
--- not much longer. F3 shows both: one-way moves in orange with an arrow, the slow cells ringed in yellow.
+-- The navigation exceptions of the Ground tilemap (per-cell overrides) shape the traffic: a one-way street is never driven
+-- the wrong way (`town_wrong_way` counts the moves whose reverse the graph allows but they do not) and a costly
+-- road is driven slower in proportion (`town_slow_frames`), the vehicles preferring the other way when it is not much longer.
+-- F3 shows both: one-way moves in orange with an arrow, the slow cells ringed in yellow. A coin sounds at each arrival and a
+-- horn when it happens near the camera (`town_sounds` counts the sounds of the town).
 --
 -- The script counts what the scenario `iso_town.owltest` checks: `town_offroad` (updates a moving vehicle stood off the
 -- road), `town_frame_errors` (frame not matching the heading), `town_heading_errors` (moving away from its heading) and
@@ -43,19 +45,53 @@ local HEADINGS = 8
 local TURN = math.pi / 2
 local HEADING_STEP = math.pi / 4
 
--- One vehicle: its sprite, the first frame of its model in the sheet (8 frames per model), its speed (cells per
--- second), where it starts, its colour in the overlay and the seed of its destinations.
-local FLEET = {
-    { sprite = "Car", model = 0, speed = 3.2, start = { 13, 8 }, color = { 1.0, 0.35, 0.3 }, seed = 11 },
-    { sprite = "Truck", model = 8, speed = 2.3, start = { 6, 12 }, color = { 0.3, 0.6, 1.0 }, seed = 23 },
-    { sprite = "CarB", model = 0, speed = 2.7, start = { 18, 12 }, color = { 1.0, 0.9, 0.2 }, seed = 37 },
+properties = {
+    { name = "map_size", type = "float", default = 24.0 },
+    { name = "max_trip", type = "float", default = 0.0 },
+    { name = "fleet", type = "string", default = "" },
 }
 
+-- Colour of each vehicle in the overlay, by order in the fleet.
+local PALETTE = {
+    { 1.0, 0.35, 0.3 }, { 0.3, 0.6, 1.0 }, { 1.0, 0.9, 0.2 }, { 0.4, 1.0, 0.5 }, { 1.0, 0.6, 0.15 }, { 0.8, 0.45, 1.0 },
+    { 0.3, 1.0, 0.9 }, { 1.0, 0.5, 0.75 },
+}
+
+-- The vehicles are given by the scene as `fleet`, "sprite,model,speed,start_x,start_y,seed" separated by ";": the tag of
+-- its sprite, the first frame of its model in the sheet (8 frames per model), its speed (cells per second), the cell
+-- where it starts and the seed of its destinations.
+local FLEET = {}
+
+local function parse_fleet(text)
+    for entry in string.gmatch(text or "", "[^;]+") do
+        local sprite, model, speed, x, y, seed = string.match(entry, "^([^,]+),([^,]+),([^,]+),([^,]+),([^,]+),([^,]+)$")
+        if sprite ~= nil then
+            FLEET[#FLEET + 1] = {
+                sprite = sprite, model = tonumber(model), speed = tonumber(speed),
+                start = { math.floor(tonumber(x)), math.floor(tonumber(y)) },
+                color = PALETTE[(#FLEET % #PALETTE) + 1], seed = math.floor(tonumber(seed)),
+            }
+        end
+    end
+end
+
 local SIZE = 24
--- The one way street of the navigation exceptions of scenes/iso_town.owl.
-local ONE_WAY_ROW, ONE_WAY_FIRST, ONE_WAY_LAST = 8, 9, 18
+-- The longest trip asked of a vehicle (Manhattan distance in cells, 0 for no limit).
+local MAX_TRIP = 0
 local MIN_TRIP = 4
 local LOOP = 0.36
+
+-- Sound effects of the arrivals: a coin for each trip, a horn when it happens close to the camera. `town_sounds` counts
+-- every sound played by the scripts of the town.
+local CASH_GAP, HORN_GAP, HORN_RANGE = 0.3, 2.5, 7
+local cash_wait, horn_wait = 0, 0
+local camera_id = 0
+
+local function play(path, volume)
+    gamestate.set("town_sounds", gamestate.get("town_sounds", 0) + 1)
+    local handle = sound.play(path)
+    sound.set_volume(handle, volume * settings.get("volume_sfx", 1.0))
+end
 
 local map_id = 0
 
@@ -108,8 +144,9 @@ local function choose_destination(vehicle)
     local fallback = nil
     for _ = 1, 400 do
         local x, y = roll(vehicle, SIZE), roll(vehicle, SIZE)
-        if path.is_walkable(map_id, x, y) and (x ~= vehicle.cell_x or y ~= vehicle.cell_y) then
-            if math.abs(x - vehicle.cell_x) + math.abs(y - vehicle.cell_y) >= MIN_TRIP then
+        if path.is_walkable(map_id, x, y) and (x ~= vehicle.cell_x or y ~= vehicle.cell_y) and exits(x, y) > 1 then
+            local distance = math.abs(x - vehicle.cell_x) + math.abs(y - vehicle.cell_y)
+            if distance >= MIN_TRIP and (MAX_TRIP == 0 or distance <= MAX_TRIP) then
                 vehicle.dest = { x, y }
                 return
             end
@@ -170,7 +207,11 @@ local function publish(vehicle)
 end
 
 function on_create()
+    SIZE = math.floor(map_size or SIZE)
+    MAX_TRIP = math.floor(max_trip or 0)
+    parse_fleet(fleet)
     map_id = scene.find_entity("Ground")
+    camera_id = scene.find_entity("MainCamera")
     for _, vehicle in ipairs(FLEET) do
         vehicle.id = scene.find_entity(vehicle.sprite)
         vehicle.cell_x, vehicle.cell_y = vehicle.start[1], vehicle.start[2]
@@ -449,6 +490,15 @@ local function arrive(vehicle)
     publish(vehicle)
     gamestate.set("town_trips", gamestate.get("town_trips", 0) + 1)
     gamestate.set("town_money", gamestate.get("town_money", 0) + TRIP_PAY)
+    if cash_wait <= 0 then
+        cash_wait = CASH_GAP
+        play("sounds/town/cash.wav", 0.35)
+    end
+    local camera_x, camera_y = transform.get_position(camera_id)
+    if horn_wait <= 0 and math.abs(vehicle.x - camera_x) + math.abs(vehicle.y - camera_y) <= HORN_RANGE then
+        horn_wait = HORN_GAP
+        play("sounds/town/horn.wav", 0.3)
+    end
     vehicle.dest = nil
     ask(vehicle)
 end
@@ -499,9 +549,9 @@ local function drive(vehicle, dt)
         vehicle.prev_x, vehicle.prev_y = vehicle.cell_x, vehicle.cell_y
         vehicle.dir_x, vehicle.dir_y = direction(route, vehicle.index - 1)
         vehicle.cell_x, vehicle.cell_y = route[vehicle.index * 2 - 1], route[vehicle.index * 2]
-        -- The north street (row 8, x 8 to 18) is one way, to the east.
-        if vehicle.dir_x == -1 and vehicle.prev_y == ONE_WAY_ROW and vehicle.prev_x >= ONE_WAY_FIRST
-            and vehicle.prev_x <= ONE_WAY_LAST then
+        -- A move against a one-way edge (an allowed move whose reverse the graph refuses is one way): never taken.
+        if path.get_edge_cost(map_id, vehicle.prev_x, vehicle.prev_y, vehicle.cell_x, vehicle.cell_y) == nil
+            and path.get_edge_cost(map_id, vehicle.cell_x, vehicle.cell_y, vehicle.prev_x, vehicle.prev_y) ~= nil then
             count("town_wrong_way")
         end
         publish(vehicle)
@@ -540,6 +590,7 @@ local function update_debug()
 end
 
 function on_update(dt)
+    cash_wait, horn_wait = cash_wait - dt, horn_wait - dt
     update_debug()
     for _, vehicle in ipairs(FLEET) do
         check_route(vehicle)

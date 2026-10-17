@@ -2,10 +2,12 @@
 -- Demonstrates: the RendererIsometric layer following the scene camera in Play,
 --               panning along the screen axes of the 2:1 dimetric view.
 -- The `pan` action (arrows, WASD, left stick) pans, `pause` (Escape, Start) goes back to the main menu,
--- or to the world map when entered through its house (`iso_return` in gamestate).
+-- or to the world map when entered through its house (`iso_return` in gamestate). `limit` (the map size in cells, 0 for no
+-- limit) keeps the view over the map.
 
 properties = {
     { name = "speed", type = "float", default = 6.0 },
+    { name = "limit", type = "float", default = 0.0 },
 }
 
 local leaving = false
@@ -30,5 +32,9 @@ function on_update(dt)
     end
     local x, y, z = transform.get_position(entity_id)
     local step = speed * dt * 0.5
-    transform.set_position(entity_id, x + (right - up) * step, y + (-right - up) * step, z)
+    x, y = x + (right - up) * step, y + (-right - up) * step
+    if (limit or 0) > 0 then
+        x, y = math.max(0, math.min(limit, x)), math.max(0, math.min(limit, y))
+    end
+    transform.set_position(entity_id, x, y, z)
 end

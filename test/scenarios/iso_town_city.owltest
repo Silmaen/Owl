@@ -1,0 +1,48 @@
+# The full town (64x64, five districts, twelve vehicles, one-way streets, a slow road, smoke, glints, lights, gulls and a
+# day and night tint, with their sounds): the life is wired, the keyboard cursor builds a road, the fleet drives for a
+# while without leaving the road, turning back outside a dead end or driving a one-way street the wrong way, and the
+# night tint comes on at dusk.
+scene: ../../engine_demo/scenes/iso_town.owl
+steps:
+  - frames: 30
+  - expect: {entity: Ground, exists: true}
+  - expect: {entity: Vehicle12, exists: true}
+  - expect: {entity: Ambience, exists: true}
+  - expect: {gamestate: town_money, equals: 1000}
+  - expect: {gamestate: town_life_smoke, equals: 28}
+  - expect: {gamestate: town_life_birds, equals: 7}
+  - expect: {gamestate: town_life_sparkles, greater: 30}
+  - expect: {gamestate: town_life_lights, greater: 10}
+  - expect: {gamestate: town_daylight, equals: 0}
+  # The mouse picks the grass cell (35, 35), south of the plaza: at 1600x960 centred on the camera (32, 30), a ground point
+  # (wx, wy) is at pixel (800 + 32 * (wx - 32 - wy + 30), 480 + 16 * (wx - 32 + wy - 30)). A click builds a road there and
+  # the right button bulldozes it again.
+  - input: {mouse_pos: [736, 624], frames: 3}
+  - expect: {gamestate: town_cursor_x, equals: 35}
+  - expect: {gamestate: town_cursor_y, equals: 35}
+  - input: {mouse: Left, mouse_pos: [736, 624], frames: 4}
+  - expect: {gamestate: town_roads, equals: 1}
+  - expect: {gamestate: town_sounds, greater: 0}
+  - input: {mouse_pos: [736, 624], frames: 3}
+  - input: {mouse: Right, mouse_pos: [736, 624], frames: 4}
+  - expect: {gamestate: town_roads, equals: 0}
+  # The smoke of the first chimney climbs above the top of the stack and shrinks.
+  - expect: {entity: Smoke_1_1, translation.z: {greater: 4.9}}
+  - expect: {entity: Smoke_1_1, scale.x: {less: 0.7}}
+  # The fleet drives.
+  - frames: 3000
+  - expect: {gamestate: town_trips, greater: 25}
+  - expect: {gamestate: town_offroad, equals: 0}
+  - expect: {gamestate: town_bad_uturns, equals: 0}
+  - expect: {gamestate: town_wrong_way, equals: 0}
+  - expect: {gamestate: town_frame_errors, equals: 0}
+  - expect: {gamestate: town_heading_errors, equals: 0}
+  - expect: {gamestate: town_frames_seen, equals: 8}
+  - expect: {gamestate: town_slow_frames, greater: 0}
+  - expect: {gamestate: town_longest_wait, less: 4}
+  - expect: {gamestate: town_route_calls, greater: 100}
+  # A coin sounded for the trips (one at most every third of a second), the gulls chirped or the bell rang.
+  - expect: {gamestate: town_sounds, greater: 20}
+  # Dusk: the first layer of the night tint is on after the 100 seconds of daylight.
+  - frames: 3300
+  - expect: {gamestate: town_daylight, greater: 0}
