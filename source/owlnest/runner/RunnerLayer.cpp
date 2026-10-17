@@ -201,6 +201,8 @@ void RunnerLayer::onAttach() {
 		return;
 	}
 	if (m_scenario) {
+		for (const auto& assets: m_scenario->getAssets())
+			app::Application::get().addAssetDirectory({"Scenario assets", assets});
 		if (attachSourceScene(m_scenario->getProject(), m_scenario->getScene(), "Scenario"))
 			OWL_INFO("Scenario: {} step(s) on {}.", m_scenario->getSteps().size(),
 					 m_scenario->getScene().filename().string())

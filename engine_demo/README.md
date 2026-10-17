@@ -67,19 +67,12 @@ engine_demo/
   scripts/{hub,platformer,raycast,iso,voxel,ui}/
   textures/{tilemaps,atlases,sprites,items,iso,wolf3d,ui}/
   sounds/{hub,raycast,platformer,town,ui}/
-  fixtures/
 ```
 
 `textures/tilemaps/` holds the Kenney sheets, `atlases/` the textures the tilesets read, `wolf3d/` the Wolfenstein 3D
 walls and sprites (all kept), `items/` the inventory icons cropped from them. The scripts that draw the textures, the
 sounds, the hub and the minimap are in `tools/demo/`, outside the project, so that they are neither exported nor
 installed.
-
-## Test fixtures
-
-`fixtures/iso_town_small.owl` is the compact 24×24 variant of the iso town (ring road, two streets, a one-way north
-street, a slow east side), kept out of `scenes/` for the `iso_town*` scenarios and the `iso_town` image test; the game
-never loads it.
 
 ## Art
 

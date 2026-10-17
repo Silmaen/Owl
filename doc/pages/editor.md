@@ -1170,6 +1170,8 @@ the same result on any machine. It exits with 0 when every expectation holds and
 # test/scenarios/platformer_walk.owltest
 scene: ../../engine_demo/scenes/platformer_house.owl   # relative to the file; project found above it
 timestep_ms: 16.667                                       # optional
+# project: ../../engine_demo                              # optional: the project, when the scene is a test fixture
+# assets: assets                                          # optional: extra asset folder(s) of the fixture
 steps:
   - frames: 30                                            # play 30 frames, no input
   - input: {key: Right, frames: 20}                       # hold keys (or `keys: [...]`, `mouse: Left`,

@@ -184,14 +184,15 @@ def test_vehicle_headings_follow_the_ground_axes_on_screen() -> None:
 
 
 def test_generate_writes_the_expected_files(tmp_path: Path) -> None:
-    written = atlas.generate(tmp_path, SEED, ("1x",))
+    written = atlas.generate(tmp_path, SEED, ("1x",), tmp_path / "test")
     names = {p.relative_to(tmp_path).as_posix() for p in written}
     assert "textures/iso/tiles.png" in names
     assert "textures/iso/tiles_normal.png" in names
     assert "textures/iso/tiles_depth.png" in names
     assert "tilesets/iso_ground.owltileset" in names
-    assert "tilemaps/iso_test.owltilemap" in names
-    assert "tilemaps/iso_town_small.owltilemap" in names
+    assert "test/render_tests/assets/tilemaps/iso_test.owltilemap" in names
+    assert "test/render_tests/assets/tilemaps/iso_town_small.owltilemap" in names
+    assert "test/scenarios/assets/tilemaps/iso_town_small.owltilemap" in names
     assert "tilemaps/iso_town.owltilemap" in names
     assert "scenes/iso_town.owl" in names
     assert {"textures/iso/chimney.png", "textures/iso/lamp.png", "textures/iso/birds.png"} <= names

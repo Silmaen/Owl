@@ -104,6 +104,20 @@ steps:
 	EXPECT_EQ(steps[4].checks.front().text, std::optional<std::string>{"castle"});
 }
 
+TEST_F(ScenarioFile, TakesAProjectAndAssetFoldersForAFixture) {
+	const auto project = m_dir / "game";
+	std::filesystem::create_directories(project);
+	std::ofstream(project / "owl_project.yml") << "Project:\n  Name: game\n";
+	std::filesystem::create_directories(m_dir / "assets");
+	const auto scenario = ScenarioTest::load(write("project: game\nassets: [assets]\nsteps:\n  - frames: 1\n"));
+	ASSERT_TRUE(scenario.has_value()) << scenario.error();
+	EXPECT_EQ(scenario->getProject(), std::filesystem::weakly_canonical(project));
+	ASSERT_EQ(scenario->getAssets().size(), 1u);
+	EXPECT_EQ(scenario->getAssets().front(), std::filesystem::weakly_canonical(m_dir / "assets"));
+	EXPECT_FALSE(ScenarioTest::load(write("project: nowhere\nsteps:\n  - frames: 1\n")).has_value());
+	EXPECT_FALSE(ScenarioTest::load(write("assets: nowhere\nsteps:\n  - frames: 1\n")).has_value());
+}
+
 TEST_F(ScenarioFile, RejectsBrokenFiles) {
 	EXPECT_FALSE(ScenarioTest::load(m_dir / "missing.owltest").has_value());
 	EXPECT_FALSE(ScenarioTest::load(write("steps: []\n")).has_value());

@@ -131,10 +131,18 @@ public:
 
 	/**
 	 * @brief
-	 *  Get the project the scene belongs to.
+	 *  Get the project the scene belongs to: the `project` key of the file, else the folder above the scene that holds an
+	 *  `owl_project.yml`.
 	 * @return The project directory, empty when none was found.
 	 */
 	[[nodiscard]] auto getProject() const -> const std::filesystem::path& { return m_project; }
+
+	/**
+	 * @brief
+	 *  Get the extra asset folders of the scenario (`assets` key), searched besides the project, for test fixtures.
+	 * @return The folders (absolute).
+	 */
+	[[nodiscard]] auto getAssets() const -> const std::vector<std::filesystem::path>& { return m_assets; }
 
 	/**
 	 * @brief
@@ -198,6 +206,8 @@ private:
 	std::filesystem::path m_scene;
 	/// Project of the scene.
 	std::filesystem::path m_project;
+	/// Extra asset folders.
+	std::vector<std::filesystem::path> m_assets;
 	/// Fixed time step.
 	core::Timestep m_step;
 	/// Steps, in order.

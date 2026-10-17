@@ -247,15 +247,15 @@ def map_bytes(seed: int) -> bytes:
     return header.encode() + b"...\n" + payload
 
 
-def write_town_map(project: Path, seed: int) -> Path:
+def write_town_map(folder: Path, seed: int) -> Path:
     """
-    Write the compact town map.
+    Write the compact town map, a test fixture.
 
-    :param project: The project folder.
+    :param folder: The asset folder of the tests that use it (the map goes to its ``tilemaps``).
     :param seed: Seed of the run.
     :return: The written file.
     """
-    path = project / "tilemaps" / "iso_town_small.owltilemap"
+    path = folder / "tilemaps" / "iso_town_small.owltilemap"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_bytes(map_bytes(seed))
     return path
