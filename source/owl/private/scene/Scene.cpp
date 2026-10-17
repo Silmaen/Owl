@@ -1319,8 +1319,7 @@ void Scene::renderRaycastDynamicWalls(const bool iEditorMode) {
 }
 
 void Scene::detachSharedTilemapAssets() {
-	// A scene copy (Owl Nest Play) shares the tilemap assets of the edit scene: scripts edit the map at runtime, so the
-	// running scene works on its own copy and Stop finds the edit scene untouched.
+	// A Play copy shares the edit scene's tilemaps: the runtime edits its own copy so Stop finds the map untouched.
 	std::unordered_map<const TilemapAsset*, shared<TilemapAsset>> detached;
 	for (const auto view = registry.view<component::Tilemap>(); const auto entity: view) {
 		auto& tilemap = view.get<component::Tilemap>(entity);

@@ -9,6 +9,7 @@ import json
 import math
 from collections.abc import Callable
 from pathlib import Path
+from typing import Any, cast
 
 import pytest
 from PIL import Image, ImageStat
@@ -162,11 +163,12 @@ def test_vehicle_headings_follow_the_ground_axes_on_screen() -> None:
 
     def centroid(heading: int, wanted: Callable[[int, int, int], bool]) -> tuple[float, float]:
         cell = _vehicle_cell(sheet, truck, heading).convert("RGBA")
+        pixels = cast(Any, cell.load())
         points = [
             (x, y)
             for x in range(TILE_W)
             for y in range(atlas.VEHICLE_HEIGHT)
-            if cell.getpixel((x, y))[3] > 0 and wanted(*cell.getpixel((x, y))[:3])
+            if pixels[x, y][3] > 0 and wanted(*pixels[x, y][:3])
         ]
         assert points, heading
         return sum(p[0] for p in points) / len(points), sum(p[1] for p in points) / len(points)

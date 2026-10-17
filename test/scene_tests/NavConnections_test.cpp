@@ -19,9 +19,12 @@
 #include <scene/nav/NavProfile.h>
 
 #include <array>
+#include <cstddef>
 #include <cstdint>
+#include <optional>
 #include <random>
 #include <string>
+#include <tuple>
 #include <vector>
 
 using namespace owl;

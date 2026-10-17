@@ -61,12 +61,12 @@ auto toCostUnits(const float iCost) -> uint16_t {
 	return static_cast<uint16_t>(std::lround(clamped * 16.f));
 }
 
-/// Key of a cell in the table of exceptions.
+// Key of a cell in the table of exceptions.
 constexpr auto cellKey(const uint32_t iX, const uint32_t iY) -> uint64_t {
 	return (static_cast<uint64_t>(iY) << 32) | iX;
 }
 
-/// Hash of the connections of a tileset (one byte for the presence, one for the mask, per tile).
+// Hash of the connections of a tileset (one byte for the presence, one for the mask, per tile).
 auto connectionSignature(const Tileset* iTileset) -> uint64_t {
 	uint64_t hash = 0xcbf29ce484222325ull;
 	const auto mix = [&hash](const uint8_t iByte) -> void { hash = (hash ^ iByte) * 0x100000001b3ull; };
@@ -80,7 +80,7 @@ auto connectionSignature(const Tileset* iTileset) -> uint64_t {
 	return hash;
 }
 
-/// Directions of travel a cell with these connections can be entered in: the opposite of each connected side.
+// Directions of travel a cell with these connections can be entered in: the opposite of each connected side.
 constexpr auto entersOfConnections(const uint8_t iConnections) -> uint8_t {
 	uint8_t enters = 0;
 	for (const auto direction: directions) {

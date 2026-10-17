@@ -1235,12 +1235,12 @@ namespace {
 
 NavigationGraphSwitch g_navigationGraphSwitch;
 
-/// Name of a tile source in plain words.
+// Name of a tile source in plain words.
 auto navSourceLabel(const scene::nav::NavSource iSource) -> const char* {
 	return iSource == scene::nav::NavSource::Overlay ? "Overlay (roads, tracks)" : "Terrain (the ground itself)";
 }
 
-/// Name of a graph reading mode in plain words.
+// Name of a graph reading mode in plain words.
 auto navModeLabel(const scene::nav::NavMode iMode) -> const char* {
 	switch (iMode) {
 		case scene::nav::NavMode::Rules:

@@ -493,7 +493,7 @@ auto parseHexColor(const std::string& iText) -> std::optional<math::vec4> {
 	return color;
 }
 
-/// The navigation profile of the tilemap of an entity, or the failure when it has none.
+// The navigation profile of the tilemap of an entity, or the failure when it has none.
 auto navigationOf(const scene::Entity& iEntity) -> expected<scene::nav::NavProfile*, CommandFailure> {
 	if (!iEntity.hasComponent<scene::component::Tilemap>())
 		return fail(CommandError::InvalidArgument, "the entity has no Tilemap component");

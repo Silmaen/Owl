@@ -63,7 +63,7 @@ auto NavProfile::getSideState(const uint32_t iX, const uint32_t iY, const Direct
 
 namespace {
 
-/// The exception of a cell, created when absent.
+// The exception of a cell, created when absent.
 auto touchOverride(std::vector<NavCellOverride>& ioOverrides, const uint32_t iX, const uint32_t iY)
 		-> NavCellOverride& {
 	const auto found = std::ranges::find_if(ioOverrides, [iX, iY](const NavCellOverride& iOverride) -> bool {
@@ -75,12 +75,12 @@ auto touchOverride(std::vector<NavCellOverride>& ioOverrides, const uint32_t iX,
 	return ioOverrides.back();
 }
 
-/// Drop the neutral exceptions.
+// Drop the neutral exceptions.
 void pruneOverrides(std::vector<NavCellOverride>& ioOverrides) {
 	std::erase_if(ioOverrides, [](const NavCellOverride& iOverride) -> bool { return iOverride.isNeutral(); });
 }
 
-/// The state seen from the other end of an edge.
+// The state seen from the other end of an edge.
 constexpr auto mirrored(const SideState iState) -> SideState {
 	switch (iState) {
 		case SideState::ExitOnly:
