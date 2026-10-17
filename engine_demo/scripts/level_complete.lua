@@ -1,6 +1,5 @@
--- Victory zone of a platformer level — marks the matching house door as
--- explored and returns to the world map. When all houses are explored, the
--- world map's teleporter becomes visible (handled by world_player.lua).
+-- Victory zone of the platformer level (the door at the end of the house): marks the level done and returns to the
+-- hub. The world map counts the levels done (`level_<name>_done`) and wakes its victory portal when all are.
 
 -- Bound by Trigger.Type=LuaCallback with CallbackName=on_level_complete.
 function on_level_complete(player_id)
@@ -10,9 +9,8 @@ function on_level_complete(player_id)
         return  -- already counted, avoid double-fire
     end
     gamestate.set(key, 1)
-    local visited = gamestate.get("houses_visited", 0) + 1
-    gamestate.set("houses_visited", visited)
-    log.info("Level complete! Houses visited: " .. visited)
+    gamestate.set("level_platformer_done", 1)
+    log.info("Platformer level complete!")
     sound.play("sounds/victory.wav")
     scene.transition_to("scenes/world_map.owl", "fade_out", 0.4)
 end

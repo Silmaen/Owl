@@ -2,7 +2,8 @@
 """Build the Engine Demo atlases from the Kenney CC0 packs in ``kenney/``.
 
 * ``town_atlas.png``     16 px tiles, 12 columns: Tiny Town's packed sheet (rows 0-10), a row of extra tiles in the
-  same palette (water, lava, bridge; Tiny Town has none), then the Tiny Dungeon characters (rows 12-13).
+  same palette (water, lava, bridge; Tiny Town has none), then the Tiny Dungeon characters (rows 12-13) and the four
+  walk frames of the hero (row 14, tiles 168-171: the pack has none, they are drawn from the idle sprite).
 * ``platformer_atlas.png`` 360x288: Pixel Platformer's packed tiles (18 px grid, rows 0-8) and its characters
   (24 px grid, from row 9 of 24 px, i.e. y = 216). 288 is a multiple of 18 and of 24, so the one texture reads as an
   18 px tile grid (20x16) and as a 24 px sprite grid (15x12).
@@ -49,13 +50,44 @@ def _extra_tiles() -> Image.Image:
     return sheet
 
 
+HERO_TILE = (4, 12)  # column, row of the hero in the atlas
+WALK_ROW = 14
+
+
+def _hero_walk_frames(hero: Image.Image) -> list[Image.Image]:
+    """Four walk frames drawn from the idle hero: contact (body one pixel lower, feet apart), passing with the left
+    foot lifted, contact again, passing with the right foot lifted."""
+    width, height = hero.size
+
+    def blank() -> Image.Image:
+        return Image.new("RGBA", hero.size, (0, 0, 0, 0))
+
+    def contact() -> Image.Image:
+        frame = blank()
+        frame.paste(hero.crop((0, 0, width, 14)), (0, 1))  # the body without its legs, one pixel lower
+        for foot_x, shift in ((5, -1), (9, 1)):  # the feet, pushed apart
+            frame.paste(hero.crop((foot_x, 14, foot_x + 2, 16)), (foot_x + shift, 14))
+        return frame
+
+    def passing(lifted_x: int) -> Image.Image:
+        frame = hero.copy()
+        for x in range(lifted_x, lifted_x + 2):  # the lifted foot leaves the ground: its last row goes
+            frame.putpixel((x, 15), (0, 0, 0, 0))
+        return frame
+
+    return [contact(), passing(5), contact(), passing(9)]
+
+
 def build_town() -> None:
     town = Image.open(PACKS / "tiny-town/Tilemap/tilemap_packed.png").convert("RGBA")
     dungeon = Image.open(PACKS / "tiny-dungeon/Tilemap/tilemap_packed.png").convert("RGBA")
-    atlas = Image.new("RGBA", (192, 14 * 16), (0, 0, 0, 0))
+    atlas = Image.new("RGBA", (192, 15 * 16), (0, 0, 0, 0))
     atlas.paste(town, (0, 0))
     atlas.paste(_extra_tiles(), (0, 11 * 16))
     atlas.paste(dungeon.crop((0, 7 * 16, 192, 9 * 16)), (0, 12 * 16))
+    hero_x, hero_y = HERO_TILE[0] * 16, HERO_TILE[1] * 16
+    for index, frame in enumerate(_hero_walk_frames(atlas.crop((hero_x, hero_y, hero_x + 16, hero_y + 16)))):
+        atlas.paste(frame, (index * 16, WALK_ROW * 16))
     atlas.save(HERE / "town_atlas.png")
 
 

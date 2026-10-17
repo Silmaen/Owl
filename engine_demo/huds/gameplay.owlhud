@@ -256,3 +256,28 @@ Entities:
     text: "Drag the title bar to move the window.\nThe red button closes it."
     delay: 0.4
     fontSize: 16
+- Entity: 3000000000000000080
+  Tag:
+    tag: ObjectiveText
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 3000000000000000060
+  UiRect:
+    anchorMin: [0, 0]
+    anchorMax: [0, 0]
+    pivot: [0, 0]
+    size: [460, 22]
+    offset: [20, 46]
+  UiText:
+    text: "Objective: reach the door at the end of the level"
+    color: [1, 0.949999988, 0.550000012, 1]
+    fontSize: 18
+    horizontalAlignment: Left
+    verticalAlignment: Middle
+    kerning: 0
+    lineSpacing: 0

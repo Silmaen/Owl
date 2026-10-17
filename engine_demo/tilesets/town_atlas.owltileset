@@ -4,7 +4,7 @@ texture: nam:textures/town_atlas.png
 tileWidth: 16
 tileHeight: 16
 columns: 12
-rows: 14
+rows: 15
 filterMode: Nearest
 tiles:
   - index: 0

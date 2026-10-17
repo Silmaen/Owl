@@ -1,6 +1,6 @@
 -- House door — opens the platformer level when the player presses E nearby.
 -- Once the level has been completed, the door reports as already explored
--- and the gamestate flag `houses_visited` is bumped (handled by level_complete).
+-- and `level_platformer_done` is set (handled by level_complete).
 
 local door_index = 1  -- this is house #1 in the sample (only one for now)
 

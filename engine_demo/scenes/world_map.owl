@@ -307,7 +307,7 @@ Entities:
     - 1
     texture: nam:textures/town_atlas.png
     columns: 12
-    rows: 14
+    rows: 15
     firstFrame: 148
     lastFrame: 148
     frameDuration: 0.1

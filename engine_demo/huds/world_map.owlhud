@@ -68,3 +68,49 @@ Entities:
     pivot: [1, 0]
     size: [200, 22]
     offset: [-20, 20]
+- Entity: 2000000000000000064
+  Tag:
+    tag: LevelsPanel
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 2000000000000000060
+  UiRect:
+    anchorMin: [1, 0]
+    anchorMax: [1, 0]
+    pivot: [1, 0]
+    size: [250, 30]
+    offset: [-20, 48]
+  UiPanel:
+    backgroundColor: [0.08, 0.1, 0.15, 0.75]
+    borderColor: [0.4, 0.45, 0.55, 0.6]
+    borderWidth: 1
+- Entity: 2000000000000000063
+  Tag:
+    tag: LevelsText
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 2000000000000000060
+  UiRect:
+    anchorMin: [1, 0]
+    anchorMax: [1, 0]
+    pivot: [1, 0]
+    size: [240, 26]
+    offset: [-25, 50]
+  UiText:
+    text: "Levels completed: 0 / 4"
+    color: [1, 0.949999988, 0.550000012, 1]
+    fontSize: 18
+    horizontalAlignment: Right
+    verticalAlignment: Middle
+    kerning: 0
+    lineSpacing: 0
