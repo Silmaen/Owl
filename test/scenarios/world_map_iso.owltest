@@ -1,0 +1,15 @@
+# The world map's Iso Town house: walk the stone road east, press E in front of the door, land in the isometric town,
+# and Escape brings the player back to the world map (not the main menu).
+scene: ../../engine_demo/scenes/world_map.owl
+steps:
+  - frames: 30
+  - input: {key: D, frames: 150}
+  - expect: {player: true, translation.x: {greater: 20.0}}
+  - input: {key: W, frames: 24}
+  - input: {key: E, frames: 3}
+  - frames: 90
+  - expect: {entity: Ground, exists: true}
+  - expect: {entity: HouseDoorIso, exists: false}
+  - input: {key: Escape, frames: 3}
+  - frames: 90
+  - expect: {entity: HouseDoorIso, exists: true}

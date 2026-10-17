@@ -1,7 +1,8 @@
 -- Isometric test camera: the isometric layer looks at this entity's position.
 -- Demonstrates: the RendererIsometric layer following the scene camera in Play,
 --               panning along the screen axes of the 2:1 dimetric view.
--- The `pan` action (arrows, WASD, left stick) pans, `pause` (Escape, Start) goes back to the main menu.
+-- The `pan` action (arrows, WASD, left stick) pans, `pause` (Escape, Start) goes back to the main menu,
+-- or to the world map when entered through its house (`iso_return` in gamestate).
 
 properties = {
     { name = "speed", type = "float", default = 6.0 },
@@ -15,7 +16,10 @@ function on_update(dt)
     end
     if input.is_action_pressed("pause") then
         leaving = true
-        scene.transition_to("scenes/main_menu.owl", "fade", 0.3)
+        -- A house of the world map sets `iso_return`: Escape goes back there, else to the main menu.
+        local back = gamestate.get("iso_return", "")
+        gamestate.remove("iso_return")
+        scene.transition_to(back ~= "" and back or "scenes/main_menu.owl", "fade", 0.3)
         return
     end
     -- Screen right is world (+x, -y), screen up is world (-x, -y).

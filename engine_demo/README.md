@@ -16,7 +16,7 @@ The sample game has been rebuilt around the new tilemap system:
 1. **Main Menu** → press **Démarrer** to begin a new run, or **Continuer** if a
    pause snapshot exists. Press **I** to open the isometric layer test
    (`iso_test.owl`: arrows pan, Escape returns), or **O** (left bumper) for the isometric town
-   (`iso_town.owl`: build roads with the mouse, watch the traffic).
+   (`iso_town.owl`: build roads with the mouse, watch the traffic; also the third house of the world map, Escape goes back there).
 2. **World Map** (`world_map.owl`) — top-down tilemap view. WASD to move
    around a grass plain bordered by mountains. Hazards: lava patches and
    the water moat south of the house cause **instant death**.
@@ -27,7 +27,7 @@ The sample game has been rebuilt around the new tilemap system:
    Wolfenstein-style demo level.
 3. **Inside the House** (`platformer_house.owl`) — side-scroller platformer.
    A/D to run, W / Space / Up to jump; or a gamepad: left stick / D-pad to run, A to jump, Start to pause
-   (extra pad mappings in `input/gamecontrollerdb.txt`). Hazards: lava pits at floor level
+   (extra pad mappings in `input/gamecontrollerdb.txt`). Hazards: water pits at floor level
    (instant death), spike traps (lose ~1/3 of your health bar each contact).
    Reach the gold checkered **victory zone** at the top-right to clear the
    level.
@@ -56,8 +56,8 @@ The sample game has been rebuilt around the new tilemap system:
 | Scene                  | Purpose                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 |------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `main_menu.owl`        | Logo, dynamic Démarrer/Continuer button, Settings, Delete Save, Quit                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| `world_map.owl`        | Top-down 32×24 tilemap world: plain + mountains + central house + hazards (water = damage, lava = death) + hidden teleporter                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| `platformer_house.owl` | Side-scroller 60×16 inside the house: static platforms, kinematic moving platforms (h + v), lava pits (death), spike traps (damage), 8 collectible coins, victory portal                                                                                                                                                                                                                                                                                                                                                                             |
+| `world_map.owl`        | Top-down 48×24 town drawn with Tiny Town (Tiny Dungeon hero, camera at a pixel-exact 3×): four houses (platformer, raycast, isometric town, voxel), stone roads, a moat with a bridge (water = damage), a lava meadow (death) and a hidden teleporter                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `platformer_house.owl` | Side-scroller 60×16 in Pixel Platformer art (pixel-exact 3×, half-speed parallax backdrop): static platforms, kinematic moving platforms (h + v), water pits (death), spike traps (damage), 8 collectible coins, a door as the level end, an astronaut with idle / walk / jump frames                                                                                                                                                                                                                                                                                                                                                                             |
 | `settings_menu.owl`    | Volume + speed sliders, reset defaults, back button                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | `victory.owl`          | Win screen with score, menu button                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | `game_over.owl`        | Lose screen with score, retry (→ world map) + menu buttons                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
@@ -65,12 +65,30 @@ The sample game has been rebuilt around the new tilemap system:
 | `iso_town.owl`         | Isometric town (**O** / left bumper from the main menu): a 24×24 sloped map with a hill, an embankment, a ring road and two streets (road tiles from the neighbour mask: straights, corners, T, cross, dead ends), 23 buildings from `IsometricObject` slices, trees, three vehicles driving to their stops over the road graph and re-routing when a road is bulldozed (`navigation` rules of the Ground tilemap, `iso_town_traffic.lua`), a mouse / keyboard / gamepad build-road and bulldoze tool that re-tiles junctions (`iso_town.lua`, `huds/iso_town.owlhud`), and a 2D sky with drifting clouds behind the isometric layer |
 | `inventory_demo.owl`   | Inventory demo (**N** / Back from the main menu): a top-down room with pick-ups, a gold door, a vault switch opened by a key and the inventory window of `huds/inventory.owlhud` (Tab / Y)                                                                                                                                                                                                                                                                                                                                                           |
 
+## Art
+
+The sample uses the Kenney CC0 packs in `textures/kenney/` (see their `License.txt`); `textures/generate_kenney_atlases.py`
+builds the two atlases from them.
+
+| Where                                  | Pack                                                                                                                      |
+|----------------------------------------|---------------------------------------------------------------------------------------------------------------------------|
+| `world_map.owl` ground, houses, trees  | Tiny Town (`town_atlas.png`; Tiny Town has no liquid, so water, lava and bridge tiles are drawn in its palette)           |
+| `world_map.owl` player                 | Tiny Dungeon (the hero of the atlas; the pack has no walk frames, the sprite is mirrored toward the direction of motion)  |
+| `platformer_house.owl` tiles, props    | Pixel Platformer tiles (`platformer_atlas.png`)                                                                           |
+| `platformer_house.owl` player, door    | Pixel Platformer characters (idle, two walk frames, jump) and door tiles, picked from `platformer_player.lua`             |
+| `platformer_house.owl` backdrop        | Pixel Platformer backgrounds (`pixel_backdrop.owltileset`, parallax layer)                                                |
+
+The tilesets use the `Nearest` filter and the cameras show a whole number of screen pixels per art pixel
+(`orthographicSize` 15 for the 16 px hub, 13.33 for the 18 px platformer at 720p: 3×), so the pixels stay sharp. Sprites
+that share an atlas texture with a tileset share its filter.
+
 ## Tilesets
 
 | Tileset                     | Atlas size      | Tiles            | Notable collidables / hazards                                                                                                                                                                                                                                                              |
 |-----------------------------|-----------------|------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `world_topdown.owltileset`  | 4×4 / 64px      | 16               | mountain, tree, fence, sign, house wall/roof (collidable); water + lava (visual; hazard via separate trigger entities)                                                                                                                                                                     |
-| `world_platform.owltileset` | 4×2 / 64px      | 8                | floor, platform, brick (collidable); lava + spikes (visual; hazard triggers overlay)                                                                                                                                                                                                       |
+| `town_atlas.owltileset`     | 12×14 / 16px    | 168              | Tiny Town sheet (grass, dirt autotile, stepping stones, trees, houses, fences, sign; trees, houses and fences collidable) plus water, lava and bridge tiles drawn in its palette and the Tiny Dungeon characters; `Nearest` filter |
+| `platformer_atlas.owltileset` | 20×16 / 18px | 320              | Pixel Platformer packed sheet (grass, dirt, orange and snow tops, bricks, crates collidable; water, spikes, ladder, door, coin, props) with its 24 px characters at the bottom (read as a 15×12 grid by the sprites); `Nearest` filter |
+| `pixel_backdrop.owltileset` | 8×3 / 24px     | 24               | Pixel Platformer backgrounds (sky, clouds, hills, forest); the platformer parallax backdrop, scrolling at half speed; `Nearest` filter |
 | `raycast_walls.owltileset`  | 4×4 / 64px      | 8                | gray brick, blue stone, wood, red banded wall variants — all collidable, sampled by `RendererRaycast` for wall stripes                                                                                                                                                                     |
 | `iso_ground.owltileset`     | 16×31 / 64×48px | 26 flat + slopes | `kind: Isometric` diamond terrain (grass, sand, water, road, rock, snow, rail, …) with its slope table (18 sloped variants of 24 terrains, the 16 road shapes included) and the grass and road foundations, drawn by the isometric layer; generated by `tools/iso_atlas` (also `iso_ground_2x` and `iso_ground_half`) |
 
@@ -81,7 +99,7 @@ The sample game has been rebuilt around the new tilemap system:
   is done → Victory.
 - **Defeat condition**: HP bar depletes to 0 → Game Over.
 - **World hazards**: water = damage-over-time (-0.6 HP/s), lava = instant death.
-- **Platformer hazards**: lava pits = instant death, spike traps = -0.34 HP per touch.
+- **Platformer hazards**: water pits = instant death, spike traps = -0.34 HP per touch.
 - **Coins**: 8 collectibles inside the house, score persists across the run via gamestate.
 - **ESC pause + Continue**: ESC at any time saves a pause snapshot (`continue_*` keys
   in gamestate) and returns to the main menu; the primary button toggles between

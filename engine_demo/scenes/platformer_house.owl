@@ -10,7 +10,7 @@ Entities:
   Transform:
     translation:
     - 4.5
-    - -14.3999996
+    - -11.3999996
     - 5
     rotation:
     - 0
@@ -26,7 +26,7 @@ Entities:
       perspectiveFOV: 0.785398185
       perspectiveNear: 0.00999999978
       perspectiveFar: 1000
-      orthographicSize: 6
+      orthographicSize: 13.333333
       orthographicNear: -1
       orthographicFar: 10
     primary: true
@@ -55,14 +55,14 @@ Entities:
     mode: 0
     type: 0
     color:
-    - 0.100000001
-    - 0.0799999982
-    - 0.119999997
+    - 0.55
+    - 0.75
+    - 0.85
     - 1
     topColor:
-    - 0.150000006
-    - 0.100000001
-    - 0.180000007
+    - 0.78
+    - 0.92
+    - 0.95
     - 1
   Visibility:
     gameVisible: true
@@ -102,20 +102,12 @@ Entities:
     - 1.20000005
     - 1.20000005
     - 1
-  SpriteRenderer:
-    color:
-    - 1
-    - 1
-    - 1
-    - 1
-    tilingFactor: 1
-    texture: nam:textures/player.png
   PhysicBody:
     type: Dynamic
     fixedRotation: true
     colliderSize:
-    - 0.899999976
-    - 0.899999976
+    - 0.9
+    - 0.9
     - 1
     density: 1
     restitution: 0
@@ -149,16 +141,6 @@ Entities:
     - 5
     - 0.699999988
     - 1
-  SpriteRenderer:
-    color:
-    - 1
-    - 1
-    - 1
-    - 1
-    tilingFactor:
-    - 5
-    - 1
-    texture: nam:textures/lava_tile.png
   Trigger:
     Type: Death
     LevelName: scenes/game_over.owl
@@ -180,16 +162,6 @@ Entities:
     - 5
     - 0.699999988
     - 0.800000012
-  SpriteRenderer:
-    color:
-    - 1
-    - 1
-    - 1
-    - 1
-    tilingFactor:
-    - 5
-    - 1
-    texture: nam:textures/lava_tile.png
   Trigger:
     Type: Death
     LevelName: scenes/game_over.owl
@@ -211,16 +183,6 @@ Entities:
     - 4
     - 0.699999988
     - 1
-  SpriteRenderer:
-    color:
-    - 1
-    - 1
-    - 1
-    - 1
-    tilingFactor:
-    - 4
-    - 1
-    texture: nam:textures/lava_tile.png
   Trigger:
     Type: Death
     LevelName: scenes/game_over.owl
@@ -242,16 +204,6 @@ Entities:
     - 3
     - 0.699999988
     - 1
-  SpriteRenderer:
-    color:
-    - 0.850000024
-    - 0.649999976
-    - 0.400000006
-    - 1
-    tilingFactor:
-    - 3
-    - 1
-    texture: nam:textures/platform.png
   PhysicBody:
     type: Static
     fixedRotation: true
@@ -280,16 +232,6 @@ Entities:
     - 3
     - 0.699999988
     - 1
-  SpriteRenderer:
-    color:
-    - 0.850000024
-    - 0.649999976
-    - 0.400000006
-    - 1
-    tilingFactor:
-    - 3
-    - 1
-    texture: nam:textures/platform.png
   PhysicBody:
     type: Static
     fixedRotation: true
@@ -318,16 +260,6 @@ Entities:
     - 3
     - 0.699999988
     - 1
-  SpriteRenderer:
-    color:
-    - 0.850000024
-    - 0.649999976
-    - 0.400000006
-    - 1
-    tilingFactor:
-    - 3
-    - 1
-    texture: nam:textures/platform.png
   PhysicBody:
     type: Static
     fixedRotation: true
@@ -356,16 +288,6 @@ Entities:
     - 3
     - 0.699999988
     - 1
-  SpriteRenderer:
-    color:
-    - 0.850000024
-    - 0.649999976
-    - 0.400000006
-    - 1
-    tilingFactor:
-    - 3
-    - 1
-    texture: nam:textures/platform.png
   PhysicBody:
     type: Static
     fixedRotation: true
@@ -394,16 +316,6 @@ Entities:
     - 3
     - 0.699999988
     - 1
-  SpriteRenderer:
-    color:
-    - 0.850000024
-    - 0.649999976
-    - 0.400000006
-    - 1
-    tilingFactor:
-    - 3
-    - 1
-    texture: nam:textures/platform.png
   PhysicBody:
     type: Static
     fixedRotation: true
@@ -432,16 +344,6 @@ Entities:
     - 3
     - 0.699999988
     - 1
-  SpriteRenderer:
-    color:
-    - 0.850000024
-    - 0.649999976
-    - 0.400000006
-    - 1
-    tilingFactor:
-    - 3
-    - 1
-    texture: nam:textures/platform.png
   PhysicBody:
     type: Static
     fixedRotation: true
@@ -470,16 +372,6 @@ Entities:
     - 3
     - 0.699999988
     - 1
-  SpriteRenderer:
-    color:
-    - 0.850000024
-    - 0.649999976
-    - 0.400000006
-    - 1
-    tilingFactor:
-    - 3
-    - 1
-    texture: nam:textures/platform.png
   PhysicBody:
     type: Static
     fixedRotation: true
@@ -508,16 +400,6 @@ Entities:
     - 4
     - 0.699999988
     - 1
-  SpriteRenderer:
-    color:
-    - 0.850000024
-    - 0.649999976
-    - 0.400000006
-    - 1
-    tilingFactor:
-    - 4
-    - 1
-    texture: nam:textures/platform.png
   PhysicBody:
     type: Static
     fixedRotation: true
@@ -546,16 +428,6 @@ Entities:
     - 2
     - 0.699999988
     - 1
-  SpriteRenderer:
-    color:
-    - 0.449999988
-    - 0.850000024
-    - 0.949999988
-    - 1
-    tilingFactor:
-    - 2
-    - 1
-    texture: nam:textures/platform.png
   PhysicBody:
     type: Kinematic
     fixedRotation: true
@@ -593,16 +465,6 @@ Entities:
     - 2
     - 0.699999988
     - 1
-  SpriteRenderer:
-    color:
-    - 0.449999988
-    - 0.850000024
-    - 0.949999988
-    - 1
-    tilingFactor:
-    - 2
-    - 1
-    texture: nam:textures/platform.png
   PhysicBody:
     type: Kinematic
     fixedRotation: true
@@ -640,16 +502,6 @@ Entities:
     - 2
     - 0.699999988
     - 1
-  SpriteRenderer:
-    color:
-    - 0.449999988
-    - 0.850000024
-    - 0.949999988
-    - 1
-    tilingFactor:
-    - 2
-    - 1
-    texture: nam:textures/platform.png
   PhysicBody:
     type: Kinematic
     fixedRotation: true
@@ -687,14 +539,6 @@ Entities:
     - 1
     - 1
     - 1
-  SpriteRenderer:
-    color:
-    - 1
-    - 1
-    - 1
-    - 1
-    tilingFactor: 1
-    texture: nam:textures/hazard.png
   Trigger:
     Type: LuaCallback
     CallbackName: on_spike_hit
@@ -702,6 +546,19 @@ Entities:
     gameVisible: true
   LuaScript:
     scriptPath: scripts/spike_damage.lua
+  AnimatedSpriteRenderer:
+    color:
+    - 1
+    - 1
+    - 1
+    - 1
+    texture: nam:textures/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 68
+    lastFrame: 68
+    frameDuration: 0.1
+    loop: false
 - Entity: 300000000000000302
   Tag:
     tag: Spike2
@@ -718,14 +575,6 @@ Entities:
     - 1
     - 1
     - 1
-  SpriteRenderer:
-    color:
-    - 1
-    - 1
-    - 1
-    - 1
-    tilingFactor: 1
-    texture: nam:textures/hazard.png
   Trigger:
     Type: LuaCallback
     CallbackName: on_spike_hit
@@ -733,6 +582,19 @@ Entities:
     gameVisible: true
   LuaScript:
     scriptPath: scripts/spike_damage.lua
+  AnimatedSpriteRenderer:
+    color:
+    - 1
+    - 1
+    - 1
+    - 1
+    texture: nam:textures/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 68
+    lastFrame: 68
+    frameDuration: 0.1
+    loop: false
 - Entity: 300000000000000303
   Tag:
     tag: Spike3
@@ -749,14 +611,6 @@ Entities:
     - 1
     - 1
     - 1
-  SpriteRenderer:
-    color:
-    - 1
-    - 1
-    - 1
-    - 1
-    tilingFactor: 1
-    texture: nam:textures/hazard.png
   Trigger:
     Type: LuaCallback
     CallbackName: on_spike_hit
@@ -764,6 +618,19 @@ Entities:
     gameVisible: true
   LuaScript:
     scriptPath: scripts/spike_damage.lua
+  AnimatedSpriteRenderer:
+    color:
+    - 1
+    - 1
+    - 1
+    - 1
+    texture: nam:textures/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 68
+    lastFrame: 68
+    frameDuration: 0.1
+    loop: false
 - Entity: 300000000000000401
   Tag:
     tag: Coin1
@@ -777,8 +644,8 @@ Entities:
     - 0
     - 0
     scale:
-    - 0.699999988
-    - 0.699999988
+    - 1
+    - 1
     - 1
   AnimatedSpriteRenderer:
     color:
@@ -786,12 +653,12 @@ Entities:
     - 1
     - 1
     - 1
-    texture: nam:textures/animated_coin.png
-    columns: 6
-    rows: 3
-    firstFrame: 0
-    lastFrame: 17
-    frameDuration: 0.0799999982
+    texture: nam:textures/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
     loop: true
   Trigger:
     Type: LuaCallback
@@ -813,8 +680,8 @@ Entities:
     - 0
     - 0
     scale:
-    - 0.699999988
-    - 0.699999988
+    - 1
+    - 1
     - 1
   AnimatedSpriteRenderer:
     color:
@@ -822,12 +689,12 @@ Entities:
     - 1
     - 1
     - 1
-    texture: nam:textures/animated_coin.png
-    columns: 6
-    rows: 3
-    firstFrame: 0
-    lastFrame: 17
-    frameDuration: 0.0799999982
+    texture: nam:textures/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
     loop: true
   Trigger:
     Type: LuaCallback
@@ -849,8 +716,8 @@ Entities:
     - 0
     - 0
     scale:
-    - 0.699999988
-    - 0.699999988
+    - 1
+    - 1
     - 1
   AnimatedSpriteRenderer:
     color:
@@ -858,12 +725,12 @@ Entities:
     - 1
     - 1
     - 1
-    texture: nam:textures/animated_coin.png
-    columns: 6
-    rows: 3
-    firstFrame: 0
-    lastFrame: 17
-    frameDuration: 0.0799999982
+    texture: nam:textures/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
     loop: true
   Trigger:
     Type: LuaCallback
@@ -885,8 +752,8 @@ Entities:
     - 0
     - 0
     scale:
-    - 0.699999988
-    - 0.699999988
+    - 1
+    - 1
     - 1
   AnimatedSpriteRenderer:
     color:
@@ -894,12 +761,12 @@ Entities:
     - 1
     - 1
     - 1
-    texture: nam:textures/animated_coin.png
-    columns: 6
-    rows: 3
-    firstFrame: 0
-    lastFrame: 17
-    frameDuration: 0.0799999982
+    texture: nam:textures/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
     loop: true
   Trigger:
     Type: LuaCallback
@@ -921,8 +788,8 @@ Entities:
     - 0
     - 0
     scale:
-    - 0.699999988
-    - 0.699999988
+    - 1
+    - 1
     - 1
   AnimatedSpriteRenderer:
     color:
@@ -930,12 +797,12 @@ Entities:
     - 1
     - 1
     - 1
-    texture: nam:textures/animated_coin.png
-    columns: 6
-    rows: 3
-    firstFrame: 0
-    lastFrame: 17
-    frameDuration: 0.0799999982
+    texture: nam:textures/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
     loop: true
   Trigger:
     Type: LuaCallback
@@ -957,8 +824,8 @@ Entities:
     - 0
     - 0
     scale:
-    - 0.699999988
-    - 0.699999988
+    - 1
+    - 1
     - 1
   AnimatedSpriteRenderer:
     color:
@@ -966,12 +833,12 @@ Entities:
     - 1
     - 1
     - 1
-    texture: nam:textures/animated_coin.png
-    columns: 6
-    rows: 3
-    firstFrame: 0
-    lastFrame: 17
-    frameDuration: 0.0799999982
+    texture: nam:textures/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
     loop: true
   Trigger:
     Type: LuaCallback
@@ -993,8 +860,8 @@ Entities:
     - 0
     - 0
     scale:
-    - 0.699999988
-    - 0.699999988
+    - 1
+    - 1
     - 1
   AnimatedSpriteRenderer:
     color:
@@ -1002,12 +869,12 @@ Entities:
     - 1
     - 1
     - 1
-    texture: nam:textures/animated_coin.png
-    columns: 6
-    rows: 3
-    firstFrame: 0
-    lastFrame: 17
-    frameDuration: 0.0799999982
+    texture: nam:textures/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
     loop: true
   Trigger:
     Type: LuaCallback
@@ -1029,8 +896,8 @@ Entities:
     - 0
     - 0
     scale:
-    - 0.699999988
-    - 0.699999988
+    - 1
+    - 1
     - 1
   AnimatedSpriteRenderer:
     color:
@@ -1038,12 +905,12 @@ Entities:
     - 1
     - 1
     - 1
-    texture: nam:textures/animated_coin.png
-    columns: 6
-    rows: 3
-    firstFrame: 0
-    lastFrame: 17
-    frameDuration: 0.0799999982
+    texture: nam:textures/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
     loop: true
   Trigger:
     Type: LuaCallback
@@ -1094,8 +961,8 @@ Entities:
     - 0
     - 0
     scale:
-    - 0.699999988
-    - 0.699999988
+    - 1
+    - 1
     - 1
   AnimatedSpriteRenderer:
     color:
@@ -1103,12 +970,12 @@ Entities:
     - 1
     - 1
     - 1
-    texture: nam:textures/animated_coin.png
-    columns: 6
-    rows: 3
-    firstFrame: 0
-    lastFrame: 17
-    frameDuration: 0.0799999982
+    texture: nam:textures/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
     loop: true
   Trigger:
     Type: LuaCallback
@@ -1132,8 +999,8 @@ Entities:
     - 0
     - 0
     scale:
-    - 0.699999988
-    - 0.699999988
+    - 1
+    - 1
     - 1
   AnimatedSpriteRenderer:
     color:
@@ -1141,12 +1008,12 @@ Entities:
     - 1
     - 1
     - 1
-    texture: nam:textures/animated_coin.png
-    columns: 6
-    rows: 3
-    firstFrame: 0
-    lastFrame: 17
-    frameDuration: 0.0799999982
+    texture: nam:textures/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
     loop: true
   Trigger:
     Type: LuaCallback
@@ -1201,8 +1068,8 @@ Entities:
     - 0
     - 0
     scale:
-    - 0.699999988
-    - 0.699999988
+    - 1
+    - 1
     - 1
   AnimatedSpriteRenderer:
     color:
@@ -1210,12 +1077,12 @@ Entities:
     - 1
     - 1
     - 1
-    texture: nam:textures/animated_coin.png
-    columns: 6
-    rows: 3
-    firstFrame: 0
-    lastFrame: 17
-    frameDuration: 0.0799999982
+    texture: nam:textures/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
     loop: true
   Trigger:
     Type: LuaCallback
@@ -1239,21 +1106,21 @@ Entities:
     - 0
     - 0
     scale:
-    - 0.699999988
-    - 0.699999988
+    - 1
+    - 1
     - 1
   AnimatedSpriteRenderer:
     color:
     - 1
-    - 0.800000012
-    - 0.300000012
     - 1
-    texture: nam:textures/animated_coin.png
-    columns: 6
-    rows: 3
-    firstFrame: 0
-    lastFrame: 17
-    frameDuration: 0.0799999982
+    - 1
+    - 1
+    texture: nam:textures/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
     loop: true
   Trigger:
     Type: LuaCallback
@@ -1280,14 +1147,6 @@ Entities:
     - 2
     - 2
     - 1
-  SpriteRenderer:
-    color:
-    - 1
-    - 0.850000024
-    - 0.200000003
-    - 1
-    tilingFactor: 1
-    texture: nam:textures/portal.png
   Trigger:
     Type: LuaCallback
     CallbackName: on_level_complete
@@ -1295,3 +1154,1145 @@ Entities:
     gameVisible: true
   LuaScript:
     scriptPath: scripts/level_complete.lua
+- Entity: 3100000000000000001
+  Tag:
+    tag: Platform1Tile0
+  Transform:
+    translation:
+    - -0.3333333333333333
+    - 0.21428572653061248
+    - 0
+    rotation:
+    - 0
+    - 0
+    - 0
+    scale:
+    - 0.3333333333333333
+    - 1.428571453061225
+    - 1
+  AnimatedSpriteRenderer:
+    color:
+    - 1
+    - 1
+    - 1
+    - 1
+    texture: nam:textures/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 0
+    lastFrame: 0
+    frameDuration: 0.1
+    loop: false
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 300000000000000101
+- Entity: 3100000000000000002
+  Tag:
+    tag: Platform1Tile1
+  Transform:
+    translation:
+    - 0.0
+    - 0.21428572653061248
+    - 0
+    rotation:
+    - 0
+    - 0
+    - 0
+    scale:
+    - 0.3333333333333333
+    - 1.428571453061225
+    - 1
+  AnimatedSpriteRenderer:
+    color:
+    - 1
+    - 1
+    - 1
+    - 1
+    texture: nam:textures/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 1
+    lastFrame: 1
+    frameDuration: 0.1
+    loop: false
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 300000000000000101
+- Entity: 3100000000000000003
+  Tag:
+    tag: Platform1Tile2
+  Transform:
+    translation:
+    - 0.3333333333333333
+    - 0.21428572653061248
+    - 0
+    rotation:
+    - 0
+    - 0
+    - 0
+    scale:
+    - 0.3333333333333333
+    - 1.428571453061225
+    - 1
+  AnimatedSpriteRenderer:
+    color:
+    - 1
+    - 1
+    - 1
+    - 1
+    texture: nam:textures/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 3
+    lastFrame: 3
+    frameDuration: 0.1
+    loop: false
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 300000000000000101
+- Entity: 3100000000000000004
+  Tag:
+    tag: Platform2Tile0
+  Transform:
+    translation:
+    - -0.3333333333333333
+    - 0.21428572653061248
+    - 0
+    rotation:
+    - 0
+    - 0
+    - 0
+    scale:
+    - 0.3333333333333333
+    - 1.428571453061225
+    - 1
+  AnimatedSpriteRenderer:
+    color:
+    - 1
+    - 1
+    - 1
+    - 1
+    texture: nam:textures/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 0
+    lastFrame: 0
+    frameDuration: 0.1
+    loop: false
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 300000000000000102
+- Entity: 3100000000000000005
+  Tag:
+    tag: Platform2Tile1
+  Transform:
+    translation:
+    - 0.0
+    - 0.21428572653061248
+    - 0
+    rotation:
+    - 0
+    - 0
+    - 0
+    scale:
+    - 0.3333333333333333
+    - 1.428571453061225
+    - 1
+  AnimatedSpriteRenderer:
+    color:
+    - 1
+    - 1
+    - 1
+    - 1
+    texture: nam:textures/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 1
+    lastFrame: 1
+    frameDuration: 0.1
+    loop: false
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 300000000000000102
+- Entity: 3100000000000000006
+  Tag:
+    tag: Platform2Tile2
+  Transform:
+    translation:
+    - 0.3333333333333333
+    - 0.21428572653061248
+    - 0
+    rotation:
+    - 0
+    - 0
+    - 0
+    scale:
+    - 0.3333333333333333
+    - 1.428571453061225
+    - 1
+  AnimatedSpriteRenderer:
+    color:
+    - 1
+    - 1
+    - 1
+    - 1
+    texture: nam:textures/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 3
+    lastFrame: 3
+    frameDuration: 0.1
+    loop: false
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 300000000000000102
+- Entity: 3100000000000000007
+  Tag:
+    tag: Platform3Tile0
+  Transform:
+    translation:
+    - -0.3333333333333333
+    - 0.21428572653061248
+    - 0
+    rotation:
+    - 0
+    - 0
+    - 0
+    scale:
+    - 0.3333333333333333
+    - 1.428571453061225
+    - 1
+  AnimatedSpriteRenderer:
+    color:
+    - 1
+    - 1
+    - 1
+    - 1
+    texture: nam:textures/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 0
+    lastFrame: 0
+    frameDuration: 0.1
+    loop: false
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 300000000000000103
+- Entity: 3100000000000000008
+  Tag:
+    tag: Platform3Tile1
+  Transform:
+    translation:
+    - 0.0
+    - 0.21428572653061248
+    - 0
+    rotation:
+    - 0
+    - 0
+    - 0
+    scale:
+    - 0.3333333333333333
+    - 1.428571453061225
+    - 1
+  AnimatedSpriteRenderer:
+    color:
+    - 1
+    - 1
+    - 1
+    - 1
+    texture: nam:textures/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 1
+    lastFrame: 1
+    frameDuration: 0.1
+    loop: false
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 300000000000000103
+- Entity: 3100000000000000009
+  Tag:
+    tag: Platform3Tile2
+  Transform:
+    translation:
+    - 0.3333333333333333
+    - 0.21428572653061248
+    - 0
+    rotation:
+    - 0
+    - 0
+    - 0
+    scale:
+    - 0.3333333333333333
+    - 1.428571453061225
+    - 1
+  AnimatedSpriteRenderer:
+    color:
+    - 1
+    - 1
+    - 1
+    - 1
+    texture: nam:textures/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 3
+    lastFrame: 3
+    frameDuration: 0.1
+    loop: false
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 300000000000000103
+- Entity: 3100000000000000010
+  Tag:
+    tag: Platform4Tile0
+  Transform:
+    translation:
+    - -0.3333333333333333
+    - 0.21428572653061248
+    - 0
+    rotation:
+    - 0
+    - 0
+    - 0
+    scale:
+    - 0.3333333333333333
+    - 1.428571453061225
+    - 1
+  AnimatedSpriteRenderer:
+    color:
+    - 1
+    - 1
+    - 1
+    - 1
+    texture: nam:textures/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 0
+    lastFrame: 0
+    frameDuration: 0.1
+    loop: false
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 300000000000000104
+- Entity: 3100000000000000011
+  Tag:
+    tag: Platform4Tile1
+  Transform:
+    translation:
+    - 0.0
+    - 0.21428572653061248
+    - 0
+    rotation:
+    - 0
+    - 0
+    - 0
+    scale:
+    - 0.3333333333333333
+    - 1.428571453061225
+    - 1
+  AnimatedSpriteRenderer:
+    color:
+    - 1
+    - 1
+    - 1
+    - 1
+    texture: nam:textures/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 1
+    lastFrame: 1
+    frameDuration: 0.1
+    loop: false
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 300000000000000104
+- Entity: 3100000000000000012
+  Tag:
+    tag: Platform4Tile2
+  Transform:
+    translation:
+    - 0.3333333333333333
+    - 0.21428572653061248
+    - 0
+    rotation:
+    - 0
+    - 0
+    - 0
+    scale:
+    - 0.3333333333333333
+    - 1.428571453061225
+    - 1
+  AnimatedSpriteRenderer:
+    color:
+    - 1
+    - 1
+    - 1
+    - 1
+    texture: nam:textures/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 3
+    lastFrame: 3
+    frameDuration: 0.1
+    loop: false
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 300000000000000104
+- Entity: 3100000000000000013
+  Tag:
+    tag: Platform5Tile0
+  Transform:
+    translation:
+    - -0.3333333333333333
+    - 0.21428572653061248
+    - 0
+    rotation:
+    - 0
+    - 0
+    - 0
+    scale:
+    - 0.3333333333333333
+    - 1.428571453061225
+    - 1
+  AnimatedSpriteRenderer:
+    color:
+    - 1
+    - 1
+    - 1
+    - 1
+    texture: nam:textures/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 0
+    lastFrame: 0
+    frameDuration: 0.1
+    loop: false
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 300000000000000105
+- Entity: 3100000000000000014
+  Tag:
+    tag: Platform5Tile1
+  Transform:
+    translation:
+    - 0.0
+    - 0.21428572653061248
+    - 0
+    rotation:
+    - 0
+    - 0
+    - 0
+    scale:
+    - 0.3333333333333333
+    - 1.428571453061225
+    - 1
+  AnimatedSpriteRenderer:
+    color:
+    - 1
+    - 1
+    - 1
+    - 1
+    texture: nam:textures/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 1
+    lastFrame: 1
+    frameDuration: 0.1
+    loop: false
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 300000000000000105
+- Entity: 3100000000000000015
+  Tag:
+    tag: Platform5Tile2
+  Transform:
+    translation:
+    - 0.3333333333333333
+    - 0.21428572653061248
+    - 0
+    rotation:
+    - 0
+    - 0
+    - 0
+    scale:
+    - 0.3333333333333333
+    - 1.428571453061225
+    - 1
+  AnimatedSpriteRenderer:
+    color:
+    - 1
+    - 1
+    - 1
+    - 1
+    texture: nam:textures/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 3
+    lastFrame: 3
+    frameDuration: 0.1
+    loop: false
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 300000000000000105
+- Entity: 3100000000000000016
+  Tag:
+    tag: Platform6Tile0
+  Transform:
+    translation:
+    - -0.3333333333333333
+    - 0.21428572653061248
+    - 0
+    rotation:
+    - 0
+    - 0
+    - 0
+    scale:
+    - 0.3333333333333333
+    - 1.428571453061225
+    - 1
+  AnimatedSpriteRenderer:
+    color:
+    - 1
+    - 1
+    - 1
+    - 1
+    texture: nam:textures/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 0
+    lastFrame: 0
+    frameDuration: 0.1
+    loop: false
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 300000000000000106
+- Entity: 3100000000000000017
+  Tag:
+    tag: Platform6Tile1
+  Transform:
+    translation:
+    - 0.0
+    - 0.21428572653061248
+    - 0
+    rotation:
+    - 0
+    - 0
+    - 0
+    scale:
+    - 0.3333333333333333
+    - 1.428571453061225
+    - 1
+  AnimatedSpriteRenderer:
+    color:
+    - 1
+    - 1
+    - 1
+    - 1
+    texture: nam:textures/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 1
+    lastFrame: 1
+    frameDuration: 0.1
+    loop: false
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 300000000000000106
+- Entity: 3100000000000000018
+  Tag:
+    tag: Platform6Tile2
+  Transform:
+    translation:
+    - 0.3333333333333333
+    - 0.21428572653061248
+    - 0
+    rotation:
+    - 0
+    - 0
+    - 0
+    scale:
+    - 0.3333333333333333
+    - 1.428571453061225
+    - 1
+  AnimatedSpriteRenderer:
+    color:
+    - 1
+    - 1
+    - 1
+    - 1
+    texture: nam:textures/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 3
+    lastFrame: 3
+    frameDuration: 0.1
+    loop: false
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 300000000000000106
+- Entity: 3100000000000000019
+  Tag:
+    tag: Platform7Tile0
+  Transform:
+    translation:
+    - -0.3333333333333333
+    - 0.21428572653061248
+    - 0
+    rotation:
+    - 0
+    - 0
+    - 0
+    scale:
+    - 0.3333333333333333
+    - 1.428571453061225
+    - 1
+  AnimatedSpriteRenderer:
+    color:
+    - 1
+    - 1
+    - 1
+    - 1
+    texture: nam:textures/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 0
+    lastFrame: 0
+    frameDuration: 0.1
+    loop: false
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 300000000000000107
+- Entity: 3100000000000000020
+  Tag:
+    tag: Platform7Tile1
+  Transform:
+    translation:
+    - 0.0
+    - 0.21428572653061248
+    - 0
+    rotation:
+    - 0
+    - 0
+    - 0
+    scale:
+    - 0.3333333333333333
+    - 1.428571453061225
+    - 1
+  AnimatedSpriteRenderer:
+    color:
+    - 1
+    - 1
+    - 1
+    - 1
+    texture: nam:textures/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 1
+    lastFrame: 1
+    frameDuration: 0.1
+    loop: false
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 300000000000000107
+- Entity: 3100000000000000021
+  Tag:
+    tag: Platform7Tile2
+  Transform:
+    translation:
+    - 0.3333333333333333
+    - 0.21428572653061248
+    - 0
+    rotation:
+    - 0
+    - 0
+    - 0
+    scale:
+    - 0.3333333333333333
+    - 1.428571453061225
+    - 1
+  AnimatedSpriteRenderer:
+    color:
+    - 1
+    - 1
+    - 1
+    - 1
+    texture: nam:textures/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 3
+    lastFrame: 3
+    frameDuration: 0.1
+    loop: false
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 300000000000000107
+- Entity: 3100000000000000022
+  Tag:
+    tag: Platform8Tile0
+  Transform:
+    translation:
+    - -0.375
+    - 0.21428572653061248
+    - 0
+    rotation:
+    - 0
+    - 0
+    - 0
+    scale:
+    - 0.25
+    - 1.428571453061225
+    - 1
+  AnimatedSpriteRenderer:
+    color:
+    - 1
+    - 1
+    - 1
+    - 1
+    texture: nam:textures/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 0
+    lastFrame: 0
+    frameDuration: 0.1
+    loop: false
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 300000000000000108
+- Entity: 3100000000000000023
+  Tag:
+    tag: Platform8Tile1
+  Transform:
+    translation:
+    - -0.125
+    - 0.21428572653061248
+    - 0
+    rotation:
+    - 0
+    - 0
+    - 0
+    scale:
+    - 0.25
+    - 1.428571453061225
+    - 1
+  AnimatedSpriteRenderer:
+    color:
+    - 1
+    - 1
+    - 1
+    - 1
+    texture: nam:textures/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 1
+    lastFrame: 1
+    frameDuration: 0.1
+    loop: false
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 300000000000000108
+- Entity: 3100000000000000024
+  Tag:
+    tag: Platform8Tile2
+  Transform:
+    translation:
+    - 0.125
+    - 0.21428572653061248
+    - 0
+    rotation:
+    - 0
+    - 0
+    - 0
+    scale:
+    - 0.25
+    - 1.428571453061225
+    - 1
+  AnimatedSpriteRenderer:
+    color:
+    - 1
+    - 1
+    - 1
+    - 1
+    texture: nam:textures/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 2
+    lastFrame: 2
+    frameDuration: 0.1
+    loop: false
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 300000000000000108
+- Entity: 3100000000000000025
+  Tag:
+    tag: Platform8Tile3
+  Transform:
+    translation:
+    - 0.375
+    - 0.21428572653061248
+    - 0
+    rotation:
+    - 0
+    - 0
+    - 0
+    scale:
+    - 0.25
+    - 1.428571453061225
+    - 1
+  AnimatedSpriteRenderer:
+    color:
+    - 1
+    - 1
+    - 1
+    - 1
+    texture: nam:textures/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 3
+    lastFrame: 3
+    frameDuration: 0.1
+    loop: false
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 300000000000000108
+- Entity: 3100000000000000026
+  Tag:
+    tag: MovingPlatformH1Tile0
+  Transform:
+    translation:
+    - -0.25
+    - 0.21428572653061248
+    - 0
+    rotation:
+    - 0
+    - 0
+    - 0
+    scale:
+    - 0.5
+    - 1.428571453061225
+    - 1
+  AnimatedSpriteRenderer:
+    color:
+    - 1
+    - 1
+    - 1
+    - 1
+    texture: nam:textures/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 40
+    lastFrame: 40
+    frameDuration: 0.1
+    loop: false
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 300000000000000201
+- Entity: 3100000000000000027
+  Tag:
+    tag: MovingPlatformH1Tile1
+  Transform:
+    translation:
+    - 0.25
+    - 0.21428572653061248
+    - 0
+    rotation:
+    - 0
+    - 0
+    - 0
+    scale:
+    - 0.5
+    - 1.428571453061225
+    - 1
+  AnimatedSpriteRenderer:
+    color:
+    - 1
+    - 1
+    - 1
+    - 1
+    texture: nam:textures/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 43
+    lastFrame: 43
+    frameDuration: 0.1
+    loop: false
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 300000000000000201
+- Entity: 3100000000000000028
+  Tag:
+    tag: MovingPlatformV1Tile0
+  Transform:
+    translation:
+    - -0.25
+    - 0.21428572653061248
+    - 0
+    rotation:
+    - 0
+    - 0
+    - 0
+    scale:
+    - 0.5
+    - 1.428571453061225
+    - 1
+  AnimatedSpriteRenderer:
+    color:
+    - 1
+    - 1
+    - 1
+    - 1
+    texture: nam:textures/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 40
+    lastFrame: 40
+    frameDuration: 0.1
+    loop: false
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 300000000000000202
+- Entity: 3100000000000000029
+  Tag:
+    tag: MovingPlatformV1Tile1
+  Transform:
+    translation:
+    - 0.25
+    - 0.21428572653061248
+    - 0
+    rotation:
+    - 0
+    - 0
+    - 0
+    scale:
+    - 0.5
+    - 1.428571453061225
+    - 1
+  AnimatedSpriteRenderer:
+    color:
+    - 1
+    - 1
+    - 1
+    - 1
+    texture: nam:textures/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 43
+    lastFrame: 43
+    frameDuration: 0.1
+    loop: false
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 300000000000000202
+- Entity: 3100000000000000030
+  Tag:
+    tag: MovingPlatformH2Tile0
+  Transform:
+    translation:
+    - -0.25
+    - 0.21428572653061248
+    - 0
+    rotation:
+    - 0
+    - 0
+    - 0
+    scale:
+    - 0.5
+    - 1.428571453061225
+    - 1
+  AnimatedSpriteRenderer:
+    color:
+    - 1
+    - 1
+    - 1
+    - 1
+    texture: nam:textures/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 40
+    lastFrame: 40
+    frameDuration: 0.1
+    loop: false
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 300000000000000203
+- Entity: 3100000000000000031
+  Tag:
+    tag: MovingPlatformH2Tile1
+  Transform:
+    translation:
+    - 0.25
+    - 0.21428572653061248
+    - 0
+    rotation:
+    - 0
+    - 0
+    - 0
+    scale:
+    - 0.5
+    - 1.428571453061225
+    - 1
+  AnimatedSpriteRenderer:
+    color:
+    - 1
+    - 1
+    - 1
+    - 1
+    texture: nam:textures/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 43
+    lastFrame: 43
+    frameDuration: 0.1
+    loop: false
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 300000000000000203
+- Entity: 3100000000000000032
+  Tag:
+    tag: DoorTop
+  Transform:
+    translation:
+    - 0
+    - 0.25
+    - 0
+    rotation:
+    - 0
+    - 0
+    - 0
+    scale:
+    - 0.5
+    - 0.5
+    - 1
+  AnimatedSpriteRenderer:
+    color:
+    - 1
+    - 1
+    - 1
+    - 1
+    texture: nam:textures/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 130
+    lastFrame: 130
+    frameDuration: 0.1
+    loop: false
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 3000000000000000050
+- Entity: 3100000000000000033
+  Tag:
+    tag: DoorBottom
+  Transform:
+    translation:
+    - 0
+    - -0.25
+    - 0
+    rotation:
+    - 0
+    - 0
+    - 0
+    scale:
+    - 0.5
+    - 0.5
+    - 1
+  AnimatedSpriteRenderer:
+    color:
+    - 1
+    - 1
+    - 1
+    - 1
+    texture: nam:textures/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 150
+    lastFrame: 150
+    frameDuration: 0.1
+    loop: false
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 3000000000000000050
+- Entity: 3100000000000000500
+  Tag:
+    tag: PlayerSprite
+  Transform:
+    translation:
+    - 0
+    - 0.106
+    - 0
+    rotation:
+    - 0
+    - 0
+    - 0
+    scale:
+    - 1.1111111
+    - 1.1111111
+    - 1
+  AnimatedSpriteRenderer:
+    color:
+    - 1
+    - 1
+    - 1
+    - 1
+    texture: nam:textures/platformer_atlas.png
+    columns: 15
+    rows: 12
+    firstFrame: 150
+    lastFrame: 150
+    frameDuration: 0.1
+    loop: false
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 3000000000000000020
+- Entity: 3100000000000000600
+  Tag:
+    tag: BackdropTilemap
+  Transform:
+    translation:
+    - 16
+    - -12
+    - -3
+    rotation:
+    - 0
+    - 0
+    - 0
+    scale:
+    - 1
+    - 1
+    - 1
+  Tilemap:
+    tilemapPath: tilemaps/platformer_backdrop.owltilemap
+  Visibility:
+    gameVisible: true

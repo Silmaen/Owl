@@ -20,6 +20,7 @@ local k_coyote_time    = 0.18   -- s of grace after walking off a ledge
 local k_jump_buffer    = 0.15   -- s before landing that a jump press is remembered
 local k_rise_threshold = 3.0    -- vy above this = "rising" (jumped or rocketed up)
 local k_fall_threshold = 3.0    -- vy below -threshold = "falling" (or walked off)
+local k_camera_lift    = 3.0    -- camera height above the player (world units)
 local k_apex_threshold = 0.5    -- vy below this from rising = transition to falling
 local k_land_threshold = 0.5    -- vy above -this from falling = landed (grounded)
 
@@ -33,6 +34,14 @@ local camera_id = 0
 local jump_state = "grounded"   -- "grounded" | "rising" | "falling"
 local coyote_timer = 0.0
 local jump_buffer_timer = 0.0
+
+-- Sprite: frames of the Pixel Platformer characters (24 px grid of platformer_atlas.png).
+local k_frame_idle     = 150
+local k_frame_step     = 151    -- second pose: walk cycle (alternating with idle) and jump
+local k_step_time      = 0.12   -- s per walk frame
+local sprite_id = 0
+local sprite_scale = 1.0
+local walk_clock = 0.0
 
 function on_create()
     log.info("Platformer player created with speed=" .. speed)
@@ -55,6 +64,8 @@ function on_create()
 
     health_bar_id = scene.find_entity("HealthBar")
     camera_id = scene.find_entity("MainCamera")
+    sprite_id = scene.find_entity("PlayerSprite")
+    if sprite_id ~= 0 then sprite_scale = transform.get_scale(sprite_id) end
     tool_cursor_id = ui.find("BuildCursor")
     if health_bar_id ~= 0 then ui.set_progress(health_bar_id, health) end
     ui.transition_fade_in(0.3)
@@ -64,7 +75,7 @@ local function follow_camera()
     if camera_id == 0 then return end
     local px, py, _ = transform.get_position(entity_id)
     local _, _, cz = transform.get_position(camera_id)
-    transform.set_position(camera_id, px, py, cz)
+    transform.set_position(camera_id, px, py + k_camera_lift, cz)   -- the floor sits in the lower third of the view
 end
 
 local function update_jump_state(dt, vy)
@@ -90,6 +101,26 @@ local function update_jump_state(dt, vy)
     end
 end
 
+-- Idle / walk / jump frame and facing of the child sprite.
+local function animate(dt, vx)
+    if sprite_id == 0 then return end
+    local frame = k_frame_idle
+    if jump_state ~= "grounded" then
+        frame = k_frame_step
+    elseif math.abs(vx) > 0.5 then
+        walk_clock = walk_clock + dt
+        frame = (math.floor(walk_clock / k_step_time) % 2 == 0) and k_frame_idle or k_frame_step
+    else
+        walk_clock = 0.0
+    end
+    isometric.set_sprite_frame(sprite_id, frame)
+    if vx > 0.5 then
+        transform.set_scale(sprite_id, sprite_scale, sprite_scale, 1)
+    elseif vx < -0.5 then
+        transform.set_scale(sprite_id, -sprite_scale, sprite_scale, 1)
+    end
+end
+
 function on_update(dt)
     -- Engine drives scene-to-scene handoffs through `scene.transition_to`. We
     -- still gate input here so the player can't move during the out-anim /
@@ -102,6 +133,7 @@ function on_update(dt)
     update_jump_state(dt, vy)
 
     local can_jump_now = (jump_state == "grounded") or (coyote_timer > 0)
+    animate(dt, vx)
 
     -- Horizontal input: the `platformer_move` axis of input_actions.yml (A/D, arrows, left stick, D-pad).
     local moveX = input.get_action_value("platformer_move")

@@ -1,17 +1,9 @@
 -- Coin collectible
 -- Demonstrates: trigger callbacks (LuaCallback type), entity destruction,
---               gamestate, transform rotation animation, sound.play
-
-local spin_speed = 2.0
+--               gamestate, sound.play (the spin is the sprite animation: two frames of the platformer atlas)
 
 function on_create()
     log.trace("Coin spawned")
-end
-
-function on_update(dt)
-    -- Gentle spin animation
-    local rx, ry, rz = transform.get_rotation(entity_id)
-    transform.set_rotation(entity_id, rx, ry, rz + spin_speed * dt)
 end
 
 -- Called by the LuaCallback trigger when the player overlaps

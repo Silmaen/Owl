@@ -15,6 +15,8 @@ local teleporter_id = 0
 local teleporter_visible = false
 local health_bar_id = 0
 local camera_id = 0
+local sprite_id = 0   -- child sprite (Tiny Dungeon character): mirrored to face where the player walks
+local sprite_scale = 1.0
 
 function on_create()
     log.info("WorldPlayer created with speed=" .. speed)
@@ -54,6 +56,8 @@ function on_create()
     teleporter_id = scene.find_entity("Teleporter")
     health_bar_id = scene.find_entity("HealthBar")
     camera_id = scene.find_entity("MainCamera")
+    sprite_id = scene.find_entity("PlayerSprite")
+    if sprite_id ~= 0 then sprite_scale = transform.get_scale(sprite_id) end
     -- Initialise health for a fresh run.
     if gamestate.get("health", 0) <= 0 then
         gamestate.set("health", 1.0)
@@ -75,6 +79,9 @@ function on_update(dt)
     local mvx, mvy = dirx * speed, -diry * speed
 
     physics.set_velocity(entity_id, mvx, mvy)
+    if sprite_id ~= 0 and mvx ~= 0 then
+        transform.set_scale(sprite_id, mvx < 0 and -sprite_scale or sprite_scale, sprite_scale, 1)
+    end
 
     -- Camera always centred on the player. No clamping — if the player walks past the
     -- mountain border, we want to see the void rather than have the camera lag behind.

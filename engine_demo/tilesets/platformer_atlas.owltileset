@@ -1,0 +1,220 @@
+Tileset: platformer_atlas
+FormatVersion: 1
+texture: nam:textures/platformer_atlas.png
+tileWidth: 18
+tileHeight: 18
+columns: 20
+rows: 16
+filterMode: Nearest
+tiles:
+  - index: 0
+    collidable: true
+    name: grass_top
+  - index: 1
+    collidable: true
+    name: grass_top
+  - index: 2
+    collidable: true
+    name: grass_top
+  - index: 3
+    collidable: true
+    name: grass_top
+  - index: 4
+    collidable: true
+    name: dirt
+  - index: 5
+    collidable: true
+    name: dirt
+  - index: 6
+    collidable: true
+    name: brick
+  - index: 7
+    name: plank_a
+  - index: 8
+    name: plank_b
+  - index: 9
+    collidable: true
+    name: block
+  - index: 10
+    collidable: true
+    name: block
+  - index: 11
+    collidable: true
+    name: block
+  - index: 12
+    collidable: true
+    name: mushroom_cap
+  - index: 13
+    collidable: true
+    name: mushroom_cap
+  - index: 14
+    collidable: true
+    name: mushroom_cap
+  - index: 15
+    collidable: true
+    name: mushroom_cap
+  - index: 20
+    collidable: true
+    name: grass_dirt
+  - index: 21
+    collidable: true
+    name: grass_dirt
+  - index: 22
+    collidable: true
+    name: grass_dirt
+  - index: 23
+    collidable: true
+    name: grass_dirt
+  - index: 24
+    collidable: true
+    name: dirt
+  - index: 25
+    collidable: true
+    name: dirt
+  - index: 26
+    collidable: true
+    name: crate
+  - index: 27
+    name: key
+  - index: 28
+    collidable: true
+    name: lock
+  - index: 29
+    collidable: true
+    name: block
+  - index: 30
+    collidable: true
+    name: block
+  - index: 31
+    collidable: true
+    name: block
+  - index: 33
+    name: water
+  - index: 40
+    collidable: true
+    name: orange_top
+  - index: 41
+    collidable: true
+    name: orange_top
+  - index: 42
+    collidable: true
+    name: orange_top
+  - index: 43
+    collidable: true
+    name: orange_top
+  - index: 44
+    name: heart
+  - index: 45
+    name: heart_half
+  - index: 46
+    name: heart_empty
+  - index: 47
+    collidable: true
+    name: crate_top
+  - index: 51
+    name: ladder
+  - index: 53
+    name: water
+  - index: 60
+    collidable: true
+    name: orange_top
+  - index: 61
+    collidable: true
+    name: orange_top
+  - index: 62
+    collidable: true
+    name: orange_top
+  - index: 63
+    collidable: true
+    name: orange_top
+  - index: 67
+    name: gem
+  - index: 68
+    name: spikes_damage
+  - index: 71
+    name: ladder
+  - index: 80
+    collidable: true
+    name: snow_top
+  - index: 81
+    collidable: true
+    name: snow_top
+  - index: 82
+    collidable: true
+    name: snow_top
+  - index: 83
+    collidable: true
+    name: snow_top
+  - index: 84
+    name: sign_left
+  - index: 85
+    name: sign_right
+  - index: 86
+    name: sign
+  - index: 100
+    collidable: true
+    name: snow_top
+  - index: 101
+    collidable: true
+    name: snow_top
+  - index: 102
+    collidable: true
+    name: snow_top
+  - index: 103
+    collidable: true
+    name: snow_top
+  - index: 104
+    collidable: true
+    name: dirt
+  - index: 105
+    name: fence
+  - index: 106
+    name: fence_low
+  - index: 111
+    name: flag
+  - index: 112
+    name: flag_wave
+  - index: 120
+    collidable: true
+    name: dirt
+  - index: 121
+    collidable: true
+    name: dirt
+  - index: 122
+    collidable: true
+    name: dirt
+  - index: 123
+    collidable: true
+    name: dirt
+  - index: 124
+    name: sprout
+  - index: 125
+    name: sprouts
+  - index: 126
+    name: pine
+  - index: 127
+    name: cactus
+  - index: 128
+    name: mushroom
+  - index: 129
+    name: torch
+  - index: 130
+    name: door_top
+  - index: 140
+    collidable: true
+    name: dirt
+  - index: 141
+    collidable: true
+    name: dirt
+  - index: 142
+    collidable: true
+    name: dirt
+  - index: 143
+    collidable: true
+    name: dirt
+  - index: 150
+    name: door_bottom
+  - index: 151
+    name: coin
+  - index: 152
+    name: coin_edge
