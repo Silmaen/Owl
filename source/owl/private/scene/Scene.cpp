@@ -333,7 +333,9 @@ void Scene::onStartRuntime() {
 			auto& [soundComp] = view.get<component::SoundSource>(entity);
 			if (!soundComp.playOnStart || soundComp.soundAsset.empty())
 				continue;
-			const auto soundData = soundLibrary.get(soundComp.soundAsset);
+			// A source starts its sound even when no script played it before: load it on first use.
+			const auto soundData = soundLibrary.exists(soundComp.soundAsset) ? soundLibrary.get(soundComp.soundAsset)
+																			 : soundLibrary.load(soundComp.soundAsset);
 			if (!soundData)
 				continue;
 			const Entity ent{entity, this};
