@@ -184,7 +184,8 @@ TEST(LuaBindings, entityGetLink) {
 	ASSERT_TRUE(unlinked.createFromBuffer(data, "no_link_test", static_cast<uint64_t>(loose.getUUID())));
 	unlinked.onCreate();
 
-	EXPECT_EQ(linked.getPropertyInt("linked").value_or(-1), static_cast<int64_t>(static_cast<uint64_t>(target.getUUID())));
+	EXPECT_EQ(linked.getPropertyInt("linked").value_or(-1),
+			  static_cast<int64_t>(static_cast<uint64_t>(target.getUUID())));
 	EXPECT_EQ(unlinked.getPropertyInt("linked").value_or(-1), 0);
 
 	core::Log::invalidate();
