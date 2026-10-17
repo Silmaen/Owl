@@ -28,7 +28,6 @@
 
 using namespace owl;
 using scene::component::UiRect;
-using scene::ui::HudLayout;
 using scene::ui::HudNode;
 
 namespace {
@@ -152,7 +151,7 @@ INSTANTIATE_TEST_SUITE_P(
 						  DemoDocument{"huds/world_map.owlhud", true}, DemoDocument{"scenes/main_menu.owl", false},
 						  DemoDocument{"scenes/settings_menu.owl", false}, DemoDocument{"scenes/game_over.owl", false},
 						  DemoDocument{"scenes/victory.owl", false}),
-		[](const ::testing::TestParamInfo<DemoDocument>& iInfo) {
+		[](const ::testing::TestParamInfo<DemoDocument>& iInfo) -> std::string {
 			auto name = std::filesystem::path{iInfo.param.path}.stem().string();
 			return name;
 		});

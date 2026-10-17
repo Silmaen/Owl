@@ -95,13 +95,23 @@ void readStrings(const YAML::Node& iNode, std::vector<std::string>& oStrings) {
 
 }// namespace
 
+namespace {
+
+// Read `iKey` into `oValue` when the file has it, else leave the default.
+template<typename T>
+void readKey(const YAML::Node& iConfig, const char* iKey, T& oValue) {
+	if (iConfig[iKey])
+		oValue = iConfig[iKey].as<T>();
+}
+
+}// namespace
+
 void EditorSettings::loadFromFile(const std::filesystem::path& iFile) {
 	if (!exists(iFile))
 		return;
 	YAML::Node data = YAML::LoadFile(iFile.string());
 	if (auto config = data["EditorSettings"]; config) {
-		if (config["showStats"])
-			showStats = config["showStats"].as<bool>();
+		readKey(config, "showStats", showStats);
 		if (config["themePreset"]) {
 			const auto preset = gui::Theme::presetFromName(config["themePreset"].as<std::string>());
 			for (const auto& [candidate, name]: gui::Theme::getPresetNames()) {
@@ -115,48 +125,35 @@ void EditorSettings::loadFromFile(const std::filesystem::path& iFile) {
 			uiFontSize = std::clamp(config["uiFontSize"].as<int>(), 14, 24);
 		if (config["textScalePercent"])
 			textScalePercent = std::clamp(config["textScalePercent"].as<int>(), 75, 150);
-		if (config["snapEnabled"])
-			snapEnabled = config["snapEnabled"].as<bool>();
+		readKey(config, "snapEnabled", snapEnabled);
 		if (config["snapStep"])
 			snapStep = std::max(0.0001f, config["snapStep"].as<float>());
 		if (config["snapMultiplier"])
 			snapMultiplier = std::max(0.0001f, config["snapMultiplier"].as<float>());
-		if (config["snapAutoFromTilemap"])
-			snapAutoFromTilemap = config["snapAutoFromTilemap"].as<bool>();
-		if (config["showCameraGizmos"])
-			showCameraGizmos = config["showCameraGizmos"].as<bool>();
-		if (config["showFrameChip"])
-			showFrameChip = config["showFrameChip"].as<bool>();
-		if (config["showGrid"])
-			showGrid = config["showGrid"].as<bool>();
-		if (config["showNavGraph"])
-			showNavGraph = config["showNavGraph"].as<bool>();
-		if (config["showTriggerIcons"])
-			showTriggerIcons = config["showTriggerIcons"].as<bool>();
-		if (config["playControlsCollapsed"])
-			playControlsCollapsed = config["playControlsCollapsed"].as<bool>();
-		if (config["gizmoWorldSpace"])
-			gizmoWorldSpace = config["gizmoWorldSpace"].as<bool>();
+		readKey(config, "snapAutoFromTilemap", snapAutoFromTilemap);
+		readKey(config, "showCameraGizmos", showCameraGizmos);
+		readKey(config, "showFrameChip", showFrameChip);
+		readKey(config, "showGrid", showGrid);
+		readKey(config, "showNavGraph", showNavGraph);
+		readKey(config, "showTriggerIcons", showTriggerIcons);
+		readKey(config, "playControlsCollapsed", playControlsCollapsed);
+		readKey(config, "gizmoWorldSpace", gizmoWorldSpace);
 		if (config["cameraRotatePercent"])
 			cameraRotatePercent = std::clamp(config["cameraRotatePercent"].as<int>(), 10, 300);
 		if (config["cameraPanPercent"])
 			cameraPanPercent = std::clamp(config["cameraPanPercent"].as<int>(), 10, 300);
 		if (config["cameraZoomPercent"])
 			cameraZoomPercent = std::clamp(config["cameraZoomPercent"].as<int>(), 10, 300);
-		if (config["cameraInvertY"])
-			cameraInvertY = config["cameraInvertY"].as<bool>();
+		readKey(config, "cameraInvertY", cameraInvertY);
 		if (config["cameraDeadZone"])
 			cameraDeadZone = std::clamp(config["cameraDeadZone"].as<int>(), 0, 20);
 		if (config["autosaveIntervalSeconds"])
 			autosaveIntervalSeconds = std::clamp(config["autosaveIntervalSeconds"].as<int>(), 0, 3600);
-		if (config["mcpEnabled"])
-			mcpEnabled = config["mcpEnabled"].as<bool>();
+		readKey(config, "mcpEnabled", mcpEnabled);
 		if (config["mcpPort"])
 			mcpPort = std::clamp(config["mcpPort"].as<int>(), 1024, 65535);
-		if (config["layoutPreset"])
-			layoutPreset = config["layoutPreset"].as<std::string>();
-		if (config["layoutVersion"])
-			layoutVersion = config["layoutVersion"].as<int>();
+		readKey(config, "layoutPreset", layoutPreset);
+		readKey(config, "layoutVersion", layoutVersion);
 		if (const auto bindings = config["keybindings"]; bindings && bindings.IsMap()) {
 			keybindingOverrides.clear();
 			for (const auto& pair: bindings)

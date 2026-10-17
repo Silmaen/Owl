@@ -51,11 +51,14 @@ void drawCheckerboard(ImDrawList* iDraw, const ImVec2& iMin, const ImVec2& iMax)
 	constexpr auto dark = IM_COL32(100, 100, 100, 255);
 	iDraw->AddRectFilled(iMin, iMax, dark);
 	iDraw->PushClipRect(iMin, iMax, true);
-	int row = 0;
-	for (float y = iMin.y; y < iMax.y; y += g_checkerSize, ++row) {
-		int column = row % 2;
-		for (float x = iMin.x + static_cast<float>(column) * g_checkerSize; x < iMax.x; x += 2.f * g_checkerSize)
+	const auto rows = static_cast<int>(std::ceil((iMax.y - iMin.y) / g_checkerSize));
+	const auto columns = static_cast<int>(std::ceil((iMax.x - iMin.x) / g_checkerSize));
+	for (int row = 0; row < rows; ++row) {
+		const float y = iMin.y + static_cast<float>(row) * g_checkerSize;
+		for (int column = row % 2; column < columns; column += 2) {
+			const float x = iMin.x + static_cast<float>(column) * g_checkerSize;
 			iDraw->AddRectFilled({x, y}, {x + g_checkerSize, y + g_checkerSize}, light);
+		}
 	}
 	iDraw->PopClipRect();
 }
@@ -239,7 +242,8 @@ void ImageDocument::drawCanvas(const math::vec2& iSize) {
 			hoveredTile = viewer::tileIndexAt(*pixel, {grid.tileWidth, grid.tileHeight}, grid.columns, grid.rows);
 		if (hoveredTile.has_value()) {
 			const auto column = static_cast<float>(*hoveredTile % grid.columns);
-			const auto row = static_cast<float>(*hoveredTile / grid.columns);
+			const uint32_t rowIndex = *hoveredTile / grid.columns;
+			const auto row = static_cast<float>(rowIndex);
 			const auto tileMin = viewer::imageToView(m_view, {column * cellWidth, row * cellHeight});
 			const auto tileMax = viewer::imageToView(m_view, {(column + 1.f) * cellWidth, (row + 1.f) * cellHeight});
 			draw->AddRectFilled({origin.x + tileMin.x(), origin.y + tileMin.y()},

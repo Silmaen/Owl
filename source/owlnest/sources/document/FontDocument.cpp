@@ -399,8 +399,8 @@ void FontDocument::drawAtlasTab(const shared<data::fonts::Font>& iFont) {
 		const ImVec2 min{origin.x + box.min().x() * shown.x, origin.y + (1.f - box.max().y()) * shown.y};
 		const ImVec2 max{origin.x + box.max().x() * shown.x, origin.y + (1.f - box.min().y()) * shown.y};
 		ImGui::GetWindowDrawList()->AddRect(min, max, IM_COL32(255, 200, 60, 255));
-		ImGui::Text("U+%04X  %s  advance %.3f em", static_cast<uint32_t>(*hovered),
-					viewer::unicodeBlockName(*hovered).data(),
+		const std::string blockName{viewer::unicodeBlockName(*hovered)};
+		ImGui::Text("U+%04X  %s  advance %.3f em", static_cast<uint32_t>(*hovered), blockName.c_str(),
 					static_cast<double>(iFont->getAdvance(*hovered, *hovered)));
 	} else {
 		ImGui::TextDisabled("Hover a glyph for its code point and advance.");

@@ -356,6 +356,31 @@ void scanTileset(const std::string& iTilesetPath, const std::string& iSceneName,
 	}
 }
 
+// The fonts of the texts of an entity and the sound of its `SoundSource`.
+void scanFontsAndSounds(const YAML::Node& iEntity, const std::string& iSceneName, std::vector<AssetReference>& ioAssets,
+						std::vector<std::string>* ioWarnings) {
+	for (const char* component: {"TextRenderer", "UiText"})
+		if (auto text = iEntity[component]; text)
+			if (auto font = text["font"]; font) {
+				const auto name = font.as<std::string>();
+				if (auto ref = resolveFont(name); ref) {
+					if (!hasAsset(ioAssets, ref->packPath))
+						ioAssets.push_back(*ref);
+					addFontSidecar(ioAssets, *ref);
+				} else {
+					pushWarning(ioWarnings, "Font", name, iSceneName);
+				}
+			}
+	if (auto soundSrc = iEntity["SoundSource"]; soundSrc)
+		if (auto asset = soundSrc["soundAsset"]; asset) {
+			const auto name = asset.as<std::string>();
+			if (auto ref = resolveSound(name); ref && !hasAsset(ioAssets, ref->packPath))
+				ioAssets.push_back(*ref);
+			else if (!ref)
+				pushWarning(ioWarnings, "Sound", name, iSceneName);
+		}
+}
+
 void scanEntity(const YAML::Node& iEntity,// NOLINT(misc-no-recursion)
 				const std::string& iSceneName, std::set<std::string>& ioVisitedScenes,
 				std::vector<AssetReference>& ioAssets, std::vector<std::string>* ioWarnings) {
@@ -378,26 +403,7 @@ void scanEntity(const YAML::Node& iEntity,// NOLINT(misc-no-recursion)
 	for (const char* component: {"UiImage", "UiToolCursor"})
 		if (auto widget = iEntity[component]; widget)
 			addTextureField(widget);
-	for (const char* component: {"TextRenderer", "UiText"})
-		if (auto text = iEntity[component]; text)
-			if (auto font = text["font"]; font) {
-				const auto name = font.as<std::string>();
-				if (auto ref = resolveFont(name); ref) {
-					if (!hasAsset(ioAssets, ref->packPath))
-						ioAssets.push_back(*ref);
-					addFontSidecar(ioAssets, *ref);
-				} else {
-					pushWarning(ioWarnings, "Font", name, iSceneName);
-				}
-			}
-	if (auto soundSrc = iEntity["SoundSource"]; soundSrc)
-		if (auto asset = soundSrc["soundAsset"]; asset) {
-			const auto name = asset.as<std::string>();
-			if (auto ref = resolveSound(name); ref && !hasAsset(ioAssets, ref->packPath))
-				ioAssets.push_back(*ref);
-			else if (!ref)
-				pushWarning(ioWarnings, "Sound", name, iSceneName);
-		}
+	scanFontsAndSounds(iEntity, iSceneName, ioAssets, ioWarnings);
 	if (auto luaScript = iEntity["LuaScript"]; luaScript)
 		if (auto scriptPath = luaScript["scriptPath"]; scriptPath) {
 			const auto name = scriptPath.as<std::string>();
