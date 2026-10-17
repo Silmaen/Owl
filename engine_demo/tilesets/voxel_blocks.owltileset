@@ -1,6 +1,6 @@
 Tileset: voxel_blocks
 Version: 1
-texture: nam:textures/voxel_blocks.png
+texture: nam:textures/atlases/voxel_blocks.png
 tileWidth: 64
 tileHeight: 64
 columns: 4

@@ -37,7 +37,8 @@ TEST(CategoryName, TestName) {
 ## Test Helper
 
 - Include `"testHelper.h"` from `test/test_helper/` (auto-included via CMake)
-- `getRootPath()` returns the project root directory for locating test fixtures
+- `getRootPath()` returns the project root directory for locating test fixtures; fixtures that no shipped asset
+  provides live in `test/<cat>_tests/assets/` (the engine and the demo hold no test-only files)
 - **Warning**: `getRootPath()` infinite-loops if CWD is the project root; run via ctest, or run a test
   binary from the build directory
 

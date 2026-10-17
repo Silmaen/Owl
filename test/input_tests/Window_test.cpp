@@ -32,3 +32,19 @@ TEST(Window, creation) {
 	EXPECT_FALSE(wnd->isVSync());
 	owl::core::Log::invalidate();
 }
+
+TEST(Window, cursorModeCapturesOnRequestOnly) {
+	EXPECT_EQ(nextCursorMode(CursorMode::Normal, true, true, false), CursorMode::Disabled);
+	EXPECT_EQ(nextCursorMode(CursorMode::Normal, true, false, false), CursorMode::Normal);
+	EXPECT_EQ(nextCursorMode(CursorMode::Normal, false, true, false), CursorMode::Normal);
+}
+
+TEST(Window, cursorModeReleasedOnEscape) {
+	EXPECT_EQ(nextCursorMode(CursorMode::Disabled, true, false, false), CursorMode::Disabled);
+	EXPECT_EQ(nextCursorMode(CursorMode::Disabled, true, true, true), CursorMode::Normal);
+}
+
+TEST(Window, cursorModeReleasedWhenSceneStopsWantingCapture) {
+	EXPECT_EQ(nextCursorMode(CursorMode::Disabled, false, false, false), CursorMode::Normal);
+	EXPECT_EQ(nextCursorMode(CursorMode::Disabled, false, true, false), CursorMode::Normal);
+}

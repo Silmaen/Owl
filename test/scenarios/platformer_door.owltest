@@ -1,0 +1,8 @@
+# The door at the end of the tower completes the level: the flag is set, a fade leads back to the hub.
+scene: ../../engine_demo/scenes/platformer_house.owl
+steps:
+  - frames: 30
+  - {command: entity.set_transform, args: {entity: VictoryZone, translation: [4.5, -14.4, 0.4]}}
+  - frames: 90
+  - expect: {gamestate: level_platformer_done, equals: 1}
+  - expect: {entity: HouseDoorPlatform, exists: true}

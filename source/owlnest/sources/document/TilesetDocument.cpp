@@ -444,7 +444,7 @@ void TilesetDocument::renderConnectionsSection() {
 			  {scene::nav::Direction::East, gui::icon::arrowDownRight, "##east"}}},
 	}};
 	const float side = ImGui::GetFrameHeight() * 1.6f;
-	uint8_t mask = connections.value_or(0);
+	const uint8_t mask = connections.value_or(0);
 	std::optional<scene::nav::Direction> toggled;
 	for (const auto& row: layout) {
 		for (size_t column = 0; column < row.size(); ++column) {

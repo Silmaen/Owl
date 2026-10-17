@@ -1,0 +1,71 @@
+# The hub: four levels each give a victory objective; completing one marks it done in gamestate, returns to the world
+# map and bumps the "levels completed: n / 4" counter. The victory portal answers only when all four are done.
+# (Triggers test the box of their entity against the player: a trigger is brought next to the player instead of
+# walking the whole level.)
+scene: ../../engine_demo/scenes/world_map.owl
+steps:
+  - frames: 30
+  - expect: {gamestate: levels_done, equals: 0}
+  # The platformer: its house is the first west of the plaza, on the high street (north over the bridge, then west).
+  - input: {key: W, frames: 168}
+  - input: {key: A, frames: 276}
+  - input: {key: W, frames: 72}
+  - input: {key: E, frames: 3}
+  - frames: 90
+  - expect: {entity: VictoryZone, exists: true}
+  - {command: entity.set_transform, args: {entity: VictoryZone, translation: [4.5, -14.4, 0.4]}}
+  - frames: 90
+  - expect: {entity: HouseDoorPlatform, exists: true}
+  - expect: {gamestate: level_platformer_done, equals: 1}
+  - expect: {gamestate: levels_done, equals: 1}
+  # The raycast level: its house is east of the first one, the elevator is brought next to the player.
+  - input: {key: S, frames: 72}
+  - input: {key: D, frames: 132}
+  - input: {key: W, frames: 72}
+  - input: {key: E, frames: 3}
+  - frames: 90
+  - expect: {entity: ExitElevator, exists: true}
+  - {command: entity.set_transform, args: {entity: ExitElevator, translation: [-3.0, -25.5, 0]}}
+  - frames: 5
+  - input: {key: E, frames: 3}
+  - frames: 90
+  - expect: {gamestate: level_raycast_done, equals: 1}
+  - expect: {gamestate: levels_done, equals: 2}
+  # The isometric town: its house is east of the plaza; the vehicles must make the trips of the objective.
+  - input: {key: S, frames: 72}
+  - input: {key: D, frames: 288}
+  - input: {key: W, frames: 72}
+  - input: {key: E, frames: 3}
+  - frames: 90
+  - expect: {entity: Ground, exists: true}
+  - expect: {gamestate: town_trips, less: 99}
+  - frames: 9000
+  - expect: {gamestate: level_iso_done, equals: 1}
+  - expect: {gamestate: levels_done, equals: 3}
+  # The victory portal is asleep: brought next to the player (away from the house door), E does nothing while a
+  # level is missing.
+  - input: {key: S, frames: 25}
+  - {command: entity.set_transform, args: {entity: Teleporter, translation: [44.5, -19.5, 0.6]}}
+  - frames: 5
+  - input: {key: E, frames: 3}
+  - frames: 60
+  - expect: {entity: Teleporter, exists: true}
+  - expect: {entity: VictoryTitle, exists: false}
+  # The voxel level: its house is the last one; the explorer is carried away from the landing point.
+  - input: {key: D, frames: 120}
+  - input: {key: W, frames: 40}
+  - input: {key: E, frames: 3}
+  - frames: 120
+  - expect: {entity: TerrainPlayer, exists: true}
+  - {command: entity.set_transform, args: {entity: TerrainPlayer, translation: [130, 40, 8]}}
+  - frames: 90
+  - expect: {gamestate: level_voxel_done, equals: 1}
+  - expect: {gamestate: levels_done, equals: 4}
+  # Four levels done: the portal answers and leads to the victory screen.
+  - input: {key: S, frames: 25}
+  - {command: entity.set_transform, args: {entity: Teleporter, translation: [54.5, -19.0, 0.6]}}
+  - frames: 5
+  - expect: {gamestate: portal_hum, greater: 0}
+  - input: {key: E, frames: 3}
+  - frames: 90
+  - expect: {entity: VictoryTitle, exists: true}

@@ -233,6 +233,9 @@ void Viewport::onUpdate(const core::Timestep& iTimeStep) {
 
 	if (mp_document->state() == SceneDocument::State::Edit)
 		updateIsometricMode(activeScene);
+	if (m_parent != nullptr)
+		m_navTool.sync(m_parent->getSettings().showNavGraph,
+					   mp_document->state() == SceneDocument::State::Edit && m_isometric);
 	if (mp_document->state() == SceneDocument::State::Edit && m_isometric) {
 		if (isHovered())
 			handleIsometricInput();
@@ -288,15 +291,17 @@ void Viewport::onUpdate(const core::Timestep& iTimeStep) {
 			{
 				// Click to capture the cursor (hidden/locked), Esc to free; no focus/hover release (the captured cursor's unbounded virtual position would read as "left the viewport" and cancel capture every frame). NoMouseCursorChange stops ImGui from re-showing the cursor while captured.
 				auto& window = app::Application::get().getWindow();
-				if (window.getCursorMode() == window::CursorMode::Normal) {
-					if (m_hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left) &&
-						activeScene->wantsCursorCapture()) {
-						window.setCursorMode(window::CursorMode::Disabled);
+				const auto cursorMode = window.getCursorMode();
+				// A scene that stops wanting capture (level change, voxel player gone) gives the cursor back too.
+				const auto nextMode = window::nextCursorMode(cursorMode, activeScene->wantsCursorCapture(),
+															 m_hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left),
+															 input::Input::isKeyPressed(input::key::Escape));
+				if (nextMode != cursorMode) {
+					window.setCursorMode(nextMode);
+					if (nextMode == window::CursorMode::Disabled)
 						ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange;
-					}
-				} else if (input::Input::isKeyPressed(input::key::Escape)) {
-					window.setCursorMode(window::CursorMode::Normal);
-					ImGui::GetIO().ConfigFlags &= ~ImGuiConfigFlags_NoMouseCursorChange;
+					else
+						ImGui::GetIO().ConfigFlags &= ~ImGuiConfigFlags_NoMouseCursorChange;
 				}
 				// The HUD is Y-down from the top left: undo the OpenGL flip of the picking coordinates.
 				const bool flipped = renderer::gpu::RenderCommand::getApi() == renderer::gpu::RenderAPI::Type::OpenGL;
@@ -993,8 +998,10 @@ void Viewport::renderOverlayToolbar() {
 	} else
 		renderPlayBanner(collapsed);
 
-	// Frame time chip, bottom-left.
-	if (beginOverlay(std::format("##vpFps{:x}", id), {m_lower.x() + margin, m_upper.y() - margin}, {0.f, 1.f})) {
+	// Frame time chip, bottom-left (hidden from the Show menu or its own right-click menu).
+	const bool frameChip = settings.showFrameChip;
+	if (frameChip &&
+		beginOverlay(std::format("##vpFps{:x}", id), {m_lower.x() + margin, m_upper.y() - margin}, {0.f, 1.f})) {
 		const auto stats = renderer::Renderer2D::getStats();
 		const float fps = ImGui::GetIO().Framerate;
 		gui::UiLayer::pushTextStyle(gui::TextStyle::Value);
@@ -1007,10 +1014,18 @@ void Viewport::renderOverlayToolbar() {
 			settings.showStats = true;
 			ImGui::SetWindowFocus(panelWindow::stats);
 		}
-		gui::widgets::itemTooltip("Frame stats", nullptr, "Click to open the Stats panel.");
+		if (ImGui::BeginPopupContextItem("##fpsChipMenu")) {
+			if (gui::widgets::menuItem({.label = "Hide the frame stats"}))
+				settings.showFrameChip = false;
+			ImGui::EndPopup();
+		}
+		gui::widgets::itemTooltip(
+				"Frame stats", nullptr,
+				"Click to open the Stats panel, right-click to hide it (Show menu to bring it back).");
 		addOverlayRect(currentOverlayRect());
 	}
-	endOverlay();
+	if (frameChip)
+		endOverlay();
 
 	// While the scene runs, the navigation overlay (graph and routes of the vehicles) is one toggle, bottom-right.
 	if (!editing && m_isometric) {
@@ -1258,6 +1273,7 @@ void Viewport::renderViewOverlay() {
 			option("Grid", settings.showGrid);
 			option("Camera markers", settings.showCameraGizmos);
 			option("Trigger icons", settings.showTriggerIcons);
+			option("Frame stats", settings.showFrameChip);
 			if (m_isometric)
 				option("Navigation graph and routes", settings.showNavGraph);
 			ImGui::EndPopup();
@@ -1270,10 +1286,8 @@ void Viewport::renderViewOverlay() {
 							.description = "Edit one-way roads, closed sides and slower cells on the graph. Click an "
 										   "arrow of a cell edge to cycle two-way, exit only, enter only, closed; "
 										   "right-click a cell to set its cost.",
-							.selected = m_navTool})) {
-				m_navTool = !m_navTool;
-				if (m_navTool)
-					settings.showNavGraph = true;
+							.selected = m_navTool.active})) {
+				m_navTool.toggle(settings.showNavGraph);
 			}
 		}
 		ImGui::SameLine();
@@ -1407,7 +1421,7 @@ void Viewport::pickNavigationCells() {
 
 void Viewport::handleNavigationTool(const shared<scene::Scene>& iScene) {
 	m_navSide.reset();
-	if (!m_navTool || m_parent == nullptr || !m_parent->getSettings().showNavGraph || !m_hovered ||
+	if (!m_navTool.active || m_parent == nullptr || !m_parent->getSettings().showNavGraph || !m_hovered ||
 		!m_hoveredCell.has_value() || !m_isoCursor.has_value() || !iScene)
 		return;
 	const auto& io = ImGui::GetIO();
@@ -1440,9 +1454,9 @@ void Viewport::handleNavigationTool(const shared<scene::Scene>& iScene) {
 	// The side nearest to the cursor inside the cell.
 	const float fx = m_isoCursor->x() - m_hoveredMapOrigin.x() - static_cast<float>(cell.x()) - 0.5f;
 	const float fy = m_isoCursor->y() - m_hoveredMapOrigin.y() - static_cast<float>(cell.y()) - 0.5f;
-	const auto side = std::abs(fx) >= std::abs(fy)
-							  ? (fx > 0.f ? scene::nav::Direction::East : scene::nav::Direction::West)
-							  : (fy > 0.f ? scene::nav::Direction::South : scene::nav::Direction::North);
+	auto side = fy > 0.f ? scene::nav::Direction::South : scene::nav::Direction::North;
+	if (std::abs(fx) >= std::abs(fy))
+		side = fx > 0.f ? scene::nav::Direction::East : scene::nav::Direction::West;
 	const auto nx = static_cast<int64_t>(cell.x()) + scene::nav::offsetX(side);
 	const auto ny = static_cast<int64_t>(cell.y()) + scene::nav::offsetY(side);
 	if (nx < 0 || ny < 0)
@@ -1450,8 +1464,11 @@ void Viewport::handleNavigationTool(const shared<scene::Scene>& iScene) {
 	const auto neighbour = entry.map.getBaseCell(*tilemap.asset, static_cast<uint32_t>(nx), static_cast<uint32_t>(ny));
 	const auto bit = scene::nav::directionBit(side);
 	const auto back = scene::nav::directionBit(scene::nav::opposite(side));
-	if (!neighbour.has_value() || !(((base->exits & bit) != 0 && (neighbour->enters & bit) != 0) ||
-									((neighbour->exits & back) != 0 && (base->enters & back) != 0)))
+	if (!neighbour.has_value())
+		return;
+	const bool forward = (base->exits & bit) != 0 && (neighbour->enters & bit) != 0;
+	const bool backward = (neighbour->exits & back) != 0 && (base->enters & back) != 0;
+	if (!forward && !backward)
 		return;
 	m_navSide = side;
 	if (!ImGui::IsMouseClicked(ImGuiMouseButton_Left))
@@ -1507,7 +1524,7 @@ void Viewport::renderNavigationOverlay(const shared<scene::Scene>& iScene) const
 	constexpr math::vec4 pathColor{1.f, 0.95f, 0.20f, 1.f};
 	scene::nav::drawNavigationGraph(*iScene);
 	scene::nav::drawNavigationRoutes(*iScene);
-	if (m_navTool && m_hoveredCell.has_value() && m_isometric)
+	if (m_navTool.active && m_hoveredCell.has_value() && m_isometric)
 		scene::nav::drawNavigationCellEditor(*iScene, static_cast<uint64_t>(m_hoveredMapEntity), m_hoveredCell->x(),
 											 m_hoveredCell->y(), m_navSide);
 	bool pathDone = false;
@@ -1807,7 +1824,7 @@ auto Viewport::onMouseButtonPressed(const event::MouseButtonPressedEvent& ioEven
 	if (m_parent != nullptr && m_parent->getVoxelBrush().active)
 		return false;
 	// So does the navigation tool of the isometric view.
-	if (m_navTool && m_isometric && m_parent != nullptr && m_parent->getSettings().showNavGraph)
+	if (m_navTool.active && m_isometric && m_parent != nullptr && m_parent->getSettings().showNavGraph)
 		return false;
 	if (ioEvent.getMouseButton() == input::mouse::ButtonLeft) {
 		if (isHovered() && !gui::Guizmo::isOver() && !input::Input::isKeyPressed(input::key::LeftAlt))

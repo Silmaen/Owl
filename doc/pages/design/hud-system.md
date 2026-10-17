@@ -27,6 +27,10 @@ tooltips and construction tools at once, as in Transport Tycoon.
   em; the rectangle governs layout (wrap width, line height, alignment), never the glyph shape.
 - Horizontal (left / centre / right) and vertical (top / middle / bottom) alignment, optional word wrap, fit mode
   (clip / shrink to fit / overflow), on `UiText` and on world-space `Renderer2D::drawString`.
+- **Outline and background box** (default none, absent from the file): `outlineWidth` (reference pixels) and
+  `outlineColor` draw a contour around the glyphs in the same draw as the text, `backgroundColor` (zero alpha = none) and
+  `backgroundPadding` a box behind the measured text block. They keep white text readable on a light map. `Text` has the
+  same four fields, in text heights. Edited in the inspector, undoable like any component edit.
 
 ## HUD layer (HUD1, done)
 
@@ -56,6 +60,8 @@ tooltips and construction tools at once, as in Transport Tycoon.
   reference pixels whatever the units (window drag, `hud.move`).
 - `Canvas::referenceResolution` (1280×720 by default) with `Canvas::scaleMode`: `ConstantPixels`, `ScaleWithHeight`
   (default) or `MatchSmallerSide`; widgets are authored in reference pixels, fonts scale with them.
+- Player scale: the `ui_scale` setting (`SettingsManager`, 1 by default, clamped to 0.5 – 3) multiplies the canvas scale
+  of every HUD in game, never in the HUD editor (`HudLayout::getUserScale`).
 - Legibility floor: a scale mode that shrinks (scale under 1) never draws a text below 12 screen pixels of em height
   (a 16 px font at 640×360 draws at 12 px, not 8); the scale of that text is raised, never past 1, and its layout runs at
   that scale, so a box too small for it wraps or clips the text as for any other size. Authored sizes at scale 1 or
@@ -212,7 +218,7 @@ Keyboard and gamepad focus on buttons and sliders, driven by the built-in `ui_up
   `Ui*` component; a world entity tagged `ui` keeps its tag. Legacy fixture: `UiRendererTagMigration_test.cpp`.
 - The project templates (`empty_2d`, `mixed`, `raycast`) each ship a `huds/gameplay.owlhud`; in `engine_demo/` the
   platformer keeps `huds/gameplay.owlhud` and the world map, the raycast demo and the isometric test have their own HUD
-  (`world_map`, `raycast`, `iso_test`) because their hints and widgets differ; the menus keep their embedded canvas.
+  (`world_map`, `raycast`, `voxel`) because their hints and widgets differ; the menus keep their embedded canvas.
   No shipped `.owl` or `.owlhud` names the `ui` layer (`EngineSceneTemplates.NoShippedWidgetNamesTheUiLayer`).
 - The dead `UiPanel::layout`, `spacing` and `padding` are gone; old files keep loading (unknown keys are ignored).
 - The empty raycast hint of `raycast_demo.owl` is fixed: its HUD now carries the walk, turn and interact keys.
@@ -264,24 +270,40 @@ Implementation notes:
 
 ## Inventory demo (DEMO1)
 
-Done. Collectible objects, key-locked switches and an inventory window with slots in `engine_demo/`, in Lua only,
-navigable with the gamepad (`scenes/inventory_demo.owl`, **N** or Back from the main menu).
+Done. Collectible objects and an inventory window with slots in `engine_demo/`, in Lua only,
+navigable with the gamepad (now in the raycast level, `scenes/raycast_demo.owl`).
 
-- **Window.** `huds/inventory.owlhud` is the scene's `Hud:` (one HUD per scene): a closable `UiWindow` holding a grid of
-  six `UiButton` slots (a `UiImage` icon and a `UiText` count each, a `UiTooltip` with the item name) and an info
+- **Window.** `huds/raycast.owlhud` is the scene's `Hud:` (one HUD per scene): a closable `UiWindow` holding a grid of
+  nine `UiButton` slots (a `UiImage` icon and a `UiText` count each, a `UiTooltip` with the item name) and an info
   text. A slot exists per item; its icon and count show once the count is above zero (`ui.set_visible`, `ui.set_text`),
   so no image binding is needed.
 - **Opening.** The `inventory` action (Tab, gamepad Y) shows the window and `ui.set_focus` puts the focus on the first
   filled slot; the window then keeps the focus, `ui_*` walk the slots (no wrap), `ui_accept` inspects, `ui_cancel`
   closes (`onCloseCallback`), `onFocusCallback` updates the info text. The player is still while it is open.
-- **State.** The inventory is the gamestate keys `inv_<item>` (counts), so a save keeps it; `picked_<tag>` and
-  `unlocked_<tag>` keep taken items and opened locks, F6 / F9 quick-save and load slot 2.
+- **State.** The inventory is the gamestate keys `inv_<item>` (counts), so a save keeps it; `picked_<tag>` keeps taken items, F6 / F9 quick-save and load slot 2.
 - **Journal.** A `UiList` under the info text lists every message of the game (pick-ups, doors, saves), grown by
   `inventory.lua` with `ui.list_set_count`, scrolled to the newest, its rows bound on demand (`onBindCallback`); a
   selected line shows in full in the info text.
-- **Scripts.** `pickup.lua` (`Trigger.Type=LuaCallback`), `lock.lua` (`Trigger.Type=Interaction`, E / X, a `key` and a
-  `target` property), `inventory.lua` (window, toast, save keys), `inventory_player.lua`. Scenario
-  `test/scenarios/inventory_demo.owltest` picks a key, opens the window, navigates it and opens the door and the vault.
+- **Scripts.** `pickup.lua` (`Trigger.Type=LuaCallback`), `inventory.lua` (window, toast, save keys), `raycast_player.lua` (still while the window is open). Scenario
+  `test/scenarios/raycast_level.owltest` picks an ammo clip, opens the window, navigates it and takes the elevator.
+
+## Demo HUD rules (DemoHudLayout test)
+
+The Engine Demo HUDs and menu canvases follow one recipe, checked by `DemoHudLayout_test.cpp` for every viewport from
+640×360 to 3440×1440 (4:3 to 21:9) and every `ui_scale` from 0.75 to 2:
+
+- Authored for `ui_scale` 1: body text 24 to 30 reference pixels, titles 64 to 72; the player scales them up or down.
+- A corner holds one `UiLayout` column or row anchored to it, sized in `ScreenWidth` / `ScreenHeight` ratios, its
+  children sized in `ParentWidth` / `ParentHeight` ratios with wrapped `Shrink` text; pixels are kept to a few of
+  spacing and padding, so a group never needs more room than its ratio gives it. A square uses `ScreenHeight` for
+  both sizes.
+- A *top-level widget* is a direct child of a canvas (an entity without `UiRect` is transparent). Two top-level widgets
+  must not intersect, whatever they hold; with every hidden widget made visible, that is the worst case (toast, speech and
+  buttons shown at once).
+- What lives inside a group (a label in its panel, an icon under a count) may overlap on purpose, except the children
+  of a `UiLayout`, which must stay inside the content area of their container.
+- A popup (a window hidden at start: the information board, the inventory) is compared with the other popups only; every
+  top-level widget must fit in the viewport.
 
 ## Tests
 

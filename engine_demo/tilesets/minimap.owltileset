@@ -1,0 +1,13 @@
+Tileset: minimap
+FormatVersion: 1
+texture: nam:textures/atlases/minimap.png
+tileWidth: 8
+tileHeight: 8
+columns: 2
+rows: 1
+filterMode: Nearest
+tiles:
+- index: 0
+  name: wall
+- index: 1
+  name: floor

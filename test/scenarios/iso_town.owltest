@@ -3,7 +3,7 @@
 # looks for another way round the ring; a road laid beside a street makes a T. The headless view is 1600x960 centred
 # on the camera at (12, 12): the centre of cell (x, y) on the ground is at pixel (800 + 32 * (x - y), 480 + 16 * (x + y - 23)), 8
 # pixels higher per half unit of height.
-scene: ../../engine_demo/scenes/iso_town.owl
+scene: ../../engine_demo/fixtures/iso_town_small.owl
 steps:
   # The traffic runs from the first frame, the tool answers once the fade-in is over.
   - frames: 30
@@ -79,3 +79,7 @@ steps:
   - expect: {gamestate: town_frames_seen, greater: 4}
   # No vehicle waited long for a route: a road built or rebuilt is taken as soon as the graph changes.
   - expect: {gamestate: town_longest_wait, less: 6}
+  # The navigation exceptions of the Ground tilemap: nobody drove west along the one way north street, and the vehicles
+  # crossed the slow east side of the ring (cost 3) at a third of their speed.
+  - expect: {gamestate: town_wrong_way, equals: 0}
+  - expect: {gamestate: town_slow_frames, greater: 0}

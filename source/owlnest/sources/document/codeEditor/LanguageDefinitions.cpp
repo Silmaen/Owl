@@ -8,6 +8,7 @@
 
 #include "LanguageDefinitions.h"
 
+#include "SlangSyntax.h"
 #include "external/imgui_text_edit.h"
 
 #include <algorithm>
@@ -138,6 +139,25 @@ auto bashLanguage() -> const TextEditor::Language* {
 	return &lang;
 }
 
+auto slangLanguage() -> const TextEditor::Language* {
+	static bool inited = false;
+	static TextEditor::Language lang;
+	if (inited)
+		return &lang;
+	// Slang is close to HLSL: keep its comments, strings, preprocessor and tokenizers, add the Slang vocabulary.
+	lang = *TextEditor::Language::Hlsl();
+	lang.name = "Slang";
+	lang.keywords.clear();
+	lang.declarations.clear();
+	lang.identifiers.clear();
+	for (const auto& word: slangWords(SlangWordKind::Keyword)) lang.keywords.insert(word);
+	for (const auto& word: slangWords(SlangWordKind::Type)) lang.declarations.insert(word);
+	for (const auto& word: slangWords(SlangWordKind::Semantic)) lang.identifiers.insert(word);
+	for (const auto& word: slangWords(SlangWordKind::Builtin)) lang.identifiers.insert(word);
+	inited = true;
+	return &lang;
+}
+
 auto plainTextLanguage() -> const TextEditor::Language* {
 	static bool inited = false;
 	static TextEditor::Language lang;
@@ -171,6 +191,8 @@ auto detectLanguage(const std::filesystem::path& iPath) -> Language {
 		return Language::Markdown;
 	if (ext == ".svg" || ext == ".xml")
 		return Language::Xml;
+	if (ext == ".slang")
+		return Language::Slang;
 	return Language::PlainText;
 }
 
@@ -192,6 +214,8 @@ auto languageName(const Language iLanguage) -> const char* {
 			return "Markdown";
 		case Language::Xml:
 			return "XML";
+		case Language::Slang:
+			return "Slang";
 		case Language::Bash:
 			return "Bash";
 		case Language::PlainText:
@@ -225,6 +249,9 @@ void applyLanguage(TextEditor& ioEditor, const Language iLanguage) {
 			break;
 		case Language::Xml:
 			ioEditor.SetLanguage(xmlLanguage());
+			break;
+		case Language::Slang:
+			ioEditor.SetLanguage(slangLanguage());
 			break;
 		case Language::Bash:
 			ioEditor.SetLanguage(bashLanguage());

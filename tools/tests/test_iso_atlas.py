@@ -191,7 +191,10 @@ def test_generate_writes_the_expected_files(tmp_path: Path) -> None:
     assert "textures/iso/tiles_depth.png" in names
     assert "tilesets/iso_ground.owltileset" in names
     assert "tilemaps/iso_test.owltilemap" in names
+    assert "tilemaps/iso_town_small.owltilemap" in names
     assert "tilemaps/iso_town.owltilemap" in names
+    assert "scenes/iso_town.owl" in names
+    assert {"textures/iso/chimney.png", "textures/iso/lamp.png", "textures/iso/birds.png"} <= names
     assert "textures/iso/oak.png" in names
     assert "textures/iso/vehicles.png" in names
     sheet = json.loads((tmp_path / "textures/iso/buildings.json").read_text())
@@ -261,7 +264,7 @@ def test_town_trees_stand_on_free_grass() -> None:
 
 def test_town_map_file_is_deterministic() -> None:
     assert town_map.map_bytes(SEED) == town_map.map_bytes(SEED)
-    assert town_map.map_bytes(SEED).startswith(b"Tilemap: iso_town\n")
+    assert town_map.map_bytes(SEED).startswith(b"Tilemap: iso_town_small\n")
 
 
 def _tileset_connections(text: str) -> dict[int, list[str]]:

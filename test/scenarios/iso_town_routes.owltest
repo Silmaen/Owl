@@ -3,7 +3,7 @@
 # bypass that joins the spur (5, 12) to the ring corner (6, 16) and carries on, instead of waiting for the same cell to be
 # built again. F3 shows the road graph and the routes of the vehicles. The headless view is 1600x960 centred on the camera at
 # (12, 12): the centre of cell (x, y) is at pixel (800 + 32 * (x - y), 480 + 16 * (x + y - 23)).
-scene: ../../engine_demo/scenes/iso_town.owl
+scene: ../../engine_demo/fixtures/iso_town_small.owl
 steps:
   - frames: 41
   - expect: {gamestate: town_debug, equals: 0}

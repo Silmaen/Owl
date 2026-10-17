@@ -103,6 +103,7 @@ docker/run.sh --gui output/build/linux-clang-release/bin/OwlRunner \
 | `--backend <b>`     | vulkan   | `vulkan`, `opengl` or `null` (headless: null window, no GUI).                 |
 | `--out <file>`      | (none)   | JSON report: options, device, summary and one record per frame.               |
 | `--project <dir>`   | (auto)   | Project with `owl_project.yml`; found by walking up from the scene otherwise. |
+| `--assets <dir>`    | (none)   | Extra asset directory searched after the project, repeatable (fixtures).      |
 | `--size <WxH>`      | 1280x720 | Window size.                                                                  |
 | `--timestep-ms <t>` | 16.667   | Fixed simulation step fed to the scene, whatever the real frame time.         |
 | `--vsync`           | off      | Keep vertical synchronisation (the present mode is reported either way).      |

@@ -93,6 +93,8 @@ auto typeShortName(const DocumentType iType) -> const char* {
 			return "Font";
 		case DocumentType::ActionMap:
 			return "Actions";
+		case DocumentType::Image:
+			return "Image";
 	}
 	return "Doc";
 }

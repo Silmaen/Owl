@@ -12,6 +12,7 @@
 #include "document/AnimationDocument.h"
 #include "document/CodeEditorDocument.h"
 #include "document/FontDocument.h"
+#include "document/ImageDocument.h"
 #include "document/NodeGraphDocument.h"
 #include "document/SceneFlowDocument.h"
 #include "document/TilemapDocument.h"
@@ -21,6 +22,7 @@
 #include <platform/AtomicFile.h>
 #include <scene/HudLibrary.h>
 #include <scene/SceneSerializer.h>
+#include <scene/SettingsManager.h>
 
 #include <cstddef>
 #include <cstdint>
@@ -55,6 +57,9 @@ void EditorLayer::openAssetFile(const std::filesystem::path& iPath) {
 			return;
 		case AssetKind::Font:
 			openFontFile(iPath);
+			return;
+		case AssetKind::Image:
+			openImageFile(iPath);
 			return;
 		case AssetKind::Prefab:
 			instantiatePrefab(iPath);
@@ -368,6 +373,29 @@ void EditorLayer::openFontFile(const std::filesystem::path& iPath) {
 	syncActiveDocumentPanels();
 }
 
+void EditorLayer::openImageFile(const std::filesystem::path& iPath) {
+	if (iPath.empty() || !exists(iPath))
+		return;
+	for (const auto& docPtr: m_documents.list()) {
+		if (docPtr && docPtr->type() == DocumentType::Image && docPtr->filePath() == iPath) {
+			m_documents.setActive(docPtr.get());
+			docPtr->requestFocus();
+			syncActiveDocumentPanels();
+			return;
+		}
+	}
+	auto doc = mkUniq<ImageDocument>();
+	doc->onAttach(this);
+	if (!doc->loadFromFile(iPath)) {
+		OWL_CORE_WARN("Failed to open image file: {}.", iPath.string())
+		doc->onDetach();
+		return;
+	}
+	auto* raw = m_documents.add(std::move(doc));
+	m_documents.setActive(raw);
+	syncActiveDocumentPanels();
+}
+
 void EditorLayer::openActionMapFile(const std::filesystem::path& iPath) {
 	if (iPath.empty())
 		return;
@@ -421,6 +449,15 @@ void EditorLayer::newTilesetAsset() {
 }
 
 namespace {
+// The game's settings as Play sees them in the runner: the project defaults, then the player's overrides.
+void loadGameSettings(const std::string& iGameName, const std::filesystem::path& iProjectDirectory) {
+	auto& settings = app::Application::get().getEngineContext().getSettings();
+	settings.setGameName(iGameName);
+	if (const auto defaults = iProjectDirectory / "game_settings.yml"; exists(defaults))
+		settings.loadDefaults(defaults);
+	settings.loadUserSettings();
+}
+
 auto resolveAssetAbsolutePath(const std::filesystem::path& iRelative) -> std::filesystem::path {
 	if (iRelative.empty())
 		return {};
@@ -641,6 +678,7 @@ void EditorLayer::openProject(const std::filesystem::path& iDir) {
 	app::Application::get().getEngineContext().setSimulationSettings(m_project.simulation);
 	std::ignore = app::Application::get().getEngineContext().loadActionMap(m_project.projectDirectory);
 	app::Application::get().getEngineContext().setDefaultHud(m_project.defaultHud);
+	loadGameSettings(m_project.name, m_project.projectDirectory);
 	std::ignore = m_project.loadGamepadMappings();
 	m_contentBrowser.attach();
 	refreshWindowTitle();
@@ -710,6 +748,7 @@ void EditorLayer::closeProject() {
 	app::Application::get().getEngineContext().setSimulationSettings(m_project.simulation);
 	std::ignore = app::Application::get().getEngineContext().loadActionMap({});
 	app::Application::get().getEngineContext().setDefaultHud(m_project.defaultHud);
+	loadGameSettings(m_project.name, m_project.projectDirectory);
 	refreshWindowTitle();
 }
 

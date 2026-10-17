@@ -157,6 +157,15 @@ public:
 
 	/**
 	 * @brief
+	 *  Set a callback invoked when an image (`.png`, `.jpg`, ...) is double-clicked.
+	 * @param[in] iCallback Called with the image path.
+	 */
+	void setImageOpenCallback(std::function<void(const std::filesystem::path&)> iCallback) {
+		m_imageOpenCallback = std::move(iCallback);
+	}
+
+	/**
+	 * @brief
 	 *  Set a callback invoked when a font (`.ttf`, `.otf` or its `.owlfont` sidecar) is double-clicked.
 	 * @param[in] iCallback Function taking the font file path.
 	 */
@@ -323,6 +332,8 @@ private:
 	std::function<void(const std::filesystem::path&)> m_animationOpenCallback;
 	std::function<void(const std::filesystem::path&)> m_tilemapOpenCallback;
 	std::function<void(const std::filesystem::path&)> m_tilesetOpenCallback;
+	/// Called when an image is double-clicked.
+	std::function<void(const std::filesystem::path&)> m_imageOpenCallback;
 	/// Called when a font (`.ttf`, `.otf`, `.owlfont`) is double-clicked.
 	std::function<void(const std::filesystem::path&)> m_fontOpenCallback;
 	/// Called when the action map (`input_actions.yml`) is double-clicked.

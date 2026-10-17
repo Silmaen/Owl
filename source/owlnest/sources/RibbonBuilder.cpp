@@ -288,6 +288,9 @@ void RibbonBuilder::build() {
 		case DocumentType::ActionMap:
 			buildActionMapTab();
 			break;
+		case DocumentType::Image:
+			buildImageTab();
+			break;
 		case DocumentType::Scene:
 			buildSceneTab();
 			break;
@@ -736,6 +739,19 @@ void RibbonBuilder::buildFontTab() {
 							  .label = "Close",
 							  .tooltip = "Close the active document",
 							  .isEnabled = [activeFont]() -> bool { return activeFont() != nullptr; },
+							  .onClick = [this]() -> void { mp_editor->requestCloseActiveDocument(); },
+							  .size = Size::Small});
+}
+
+void RibbonBuilder::buildImageTab() {
+	using Button = gui::widgets::Ribbon::Button;
+	using Size = gui::widgets::Ribbon::ButtonSize;
+	const auto tab = m_ribbon.addTab("Image");
+	const auto gFile = m_ribbon.addGroup(tab, "File");
+	m_ribbon.addButton(tab, gFile,
+					   Button{.iconName = "ribbon_close",
+							  .label = "Close",
+							  .tooltip = "Close the active document",
 							  .onClick = [this]() -> void { mp_editor->requestCloseActiveDocument(); },
 							  .size = Size::Small});
 }

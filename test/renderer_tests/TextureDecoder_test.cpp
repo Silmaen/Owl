@@ -29,7 +29,7 @@ auto readFileAsBytes(const std::filesystem::path& iPath) -> std::vector<uint8_t>
 }
 
 auto getFixturePath() -> std::filesystem::path {
-	return owl::test::getRootPath() / "engine_assets" / "textures" / "mario.png";
+	return owl::test::getRootPath() / "test" / "renderer_tests" / "assets" / "textures" / "mario.png";
 }
 
 }// namespace

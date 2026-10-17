@@ -56,7 +56,7 @@ Entities:
     translation: [4.5, 1.5, 0]
     rotation: [0, 0, 0]
     scale: [2, 2, 1]
-  SpriteRenderer: {color: [1, 1, 1, 1], tilingFactor: 1, texture: 'nam:textures/portal.png'}
+  SpriteRenderer: {color: [1, 1, 1, 1], tilingFactor: 1, texture: 'nam:textures/sprites/portal.png'}
   Visibility: {gameVisible: true}
 - Entity: 9100000000000000007
   Tag: {tag: TiledLava}

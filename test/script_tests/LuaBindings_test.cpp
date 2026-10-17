@@ -89,6 +89,32 @@ TEST(LuaBindings, sceneFindEntity) {
 	core::Log::invalidate();
 }
 
+TEST(LuaBindings, sceneFindEntities) {
+	core::Log::init(core::Log::Level::Off);
+	auto scn = mkShared<scene::Scene>();
+	scn->createEntity("Tree");
+	scn->createEntity("Tree");
+	scn->createEntity("Rock");
+
+	const std::string script = "tree_count = 0\n"
+							   "none_count = -1\n"
+							   "function on_create()\n"
+							   "  tree_count = #scene.find_entities('Tree')\n"
+							   "  none_count = #scene.find_entities('Nothing')\n"
+							   "end\n";
+	const std::vector<uint8_t> data(script.begin(), script.end());
+
+	const ScriptInstance inst;
+	inst.setScene(scn.get());
+	ASSERT_TRUE(inst.createFromBuffer(data, "find_all_test", 1));
+	inst.onCreate();
+
+	EXPECT_EQ(inst.getPropertyInt("tree_count").value_or(-1), 2);
+	EXPECT_EQ(inst.getPropertyInt("none_count").value_or(-1), 0);
+
+	core::Log::invalidate();
+}
+
 TEST(LuaBindings, sceneFindEntityNotFound) {
 	core::Log::init(core::Log::Level::Off);
 	auto scn = mkShared<scene::Scene>();
@@ -157,6 +183,81 @@ TEST(LuaBindings, entityGetName) {
 	inst.onCreate();
 
 	EXPECT_EQ(inst.getPropertyString("ent_name").value_or(""), "NamedEntity");
+
+	core::Log::invalidate();
+}
+
+TEST(LuaBindings, entityGetLink) {
+	core::Log::init(core::Log::Level::Off);
+	auto scn = mkShared<scene::Scene>();
+	const auto target = scn->createEntity("Gate");
+	auto lever = scn->createEntity("Lever");
+	lever.addComponent<scene::component::EntityLink>().linkedEntityName = "Gate";
+	const auto loose = scn->createEntity("Loose");
+
+	const std::string script = "linked = -1\n"
+							   "function on_create()\n"
+							   "  linked = entity.get_link(entity_id)\n"
+							   "end\n";
+	const std::vector<uint8_t> data(script.begin(), script.end());
+
+	const ScriptInstance linked;
+	linked.setScene(scn.get());
+	ASSERT_TRUE(linked.createFromBuffer(data, "link_test", static_cast<uint64_t>(lever.getUUID())));
+	linked.onCreate();
+	const ScriptInstance unlinked;
+	unlinked.setScene(scn.get());
+	ASSERT_TRUE(unlinked.createFromBuffer(data, "no_link_test", static_cast<uint64_t>(loose.getUUID())));
+	unlinked.onCreate();
+
+	EXPECT_EQ(linked.getPropertyInt("linked").value_or(-1),
+			  static_cast<int64_t>(static_cast<uint64_t>(target.getUUID())));
+	EXPECT_EQ(unlinked.getPropertyInt("linked").value_or(-1), 0);
+	core::Log::invalidate();
+}
+
+TEST(LuaBindings, entityTintOfSprites) {
+	core::Log::init(core::Log::Level::Off);
+	auto scn = mkShared<scene::Scene>();
+	auto animated = scn->createEntity("Animated");
+	animated.addComponent<scene::component::AnimatedSpriteRenderer>();
+	auto plain = scn->createEntity("Plain");
+	plain.addComponent<scene::component::SpriteRenderer>();
+	auto bare = scn->createEntity("Bare");
+
+	const std::string script = std::format("function on_create()\n"
+										   "start_r, start_g, start_b, start_a = entity.get_tint({0})\n"
+										   "set_animated = entity.set_tint({0}, 1, 0.5, 0.25, 0.75)\n"
+										   "r, g, b, a = entity.get_tint({0})\n"
+										   "set_plain = entity.set_tint({1}, 0.1, 0.2, 0.3)\n"
+										   "pr, pg, pb, pa = entity.get_tint({1})\n"
+										   "set_bare = entity.set_tint({2}, 1, 1, 1)\n"
+										   "bare_has = entity.get_tint({2}) ~= nil\n"
+										   "missing = entity.set_tint(12345, 1, 1, 1)\n"
+										   "end\n",
+										   static_cast<int64_t>(static_cast<uint64_t>(animated.getUUID())),
+										   static_cast<int64_t>(static_cast<uint64_t>(plain.getUUID())),
+										   static_cast<int64_t>(static_cast<uint64_t>(bare.getUUID())));
+	const std::vector<uint8_t> data(script.begin(), script.end());
+	const ScriptInstance inst;
+	inst.setScene(scn.get());
+	ASSERT_TRUE(inst.createFromBuffer(data, "tint_test", static_cast<uint64_t>(bare.getUUID())));
+	inst.onCreate();
+
+	EXPECT_FLOAT_EQ(inst.getPropertyFloat("start_r").value_or(-1.f), 1.f);
+	EXPECT_FLOAT_EQ(inst.getPropertyFloat("start_a").value_or(-1.f), 1.f);
+	EXPECT_TRUE(inst.getPropertyBool("set_animated").value_or(false));
+	EXPECT_FLOAT_EQ(inst.getPropertyFloat("g").value_or(-1.f), 0.5f);
+	EXPECT_FLOAT_EQ(inst.getPropertyFloat("b").value_or(-1.f), 0.25f);
+	EXPECT_FLOAT_EQ(inst.getPropertyFloat("a").value_or(-1.f), 0.75f);
+	EXPECT_FLOAT_EQ(animated.getComponent<scene::component::AnimatedSpriteRenderer>().color.z(), 0.25f);
+	EXPECT_TRUE(inst.getPropertyBool("set_plain").value_or(false));
+	EXPECT_FLOAT_EQ(inst.getPropertyFloat("pb").value_or(-1.f), 0.3f);
+	EXPECT_FLOAT_EQ(inst.getPropertyFloat("pa").value_or(-1.f), 1.f) << "the alpha defaults to opaque";
+	EXPECT_FLOAT_EQ(plain.getComponent<scene::component::SpriteRenderer>().color.y(), 0.2f);
+	EXPECT_FALSE(inst.getPropertyBool("set_bare").value_or(true));
+	EXPECT_FALSE(inst.getPropertyBool("bare_has").value_or(true));
+	EXPECT_FALSE(inst.getPropertyBool("missing").value_or(true));
 
 	core::Log::invalidate();
 }

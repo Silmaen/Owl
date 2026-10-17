@@ -132,7 +132,7 @@ local request = path.find(map, x, y, to_x, to_y, { no_reverse = true, heading_x 
 ```
 
 Every function is in the [Lua API reference](lua-api.md#path). The `iso_town` vehicles of the Engine Demo
-(`scripts/iso_town_traffic.lua`) drive to a random road cell (seeded, another one on arrival) that way, never turning back except at a dead end where
+(`scripts/iso/iso_town_traffic.lua`) drive to a random road cell (seeded, another one on arrival) that way, never turning back except at a dead end where
 they loop round the middle of the cell, look for another way when a road of their route is bulldozed (scenario
 `iso_town`), plan their route again at the next cell when a road was built (a vehicle left standing on a bulldozed cell
 asks from the road cell it came from, without a heading), and wait when no route exists.

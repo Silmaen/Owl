@@ -92,6 +92,28 @@ auto isEdgeEdited(const NavProfile& iProfile, const uint32_t iX, const uint32_t 
 				   SideState::TwoWay;
 }
 
+// Whether a move crosses the side `iBit` of `iBase` (towards `iNeighbour`), in either direction.
+auto isLinked(const NavTileRule& iBase, const NavTileRule& iNeighbour, const uint8_t iBit, const uint8_t iBack)
+		-> bool {
+	const bool forward = (iBase.exits & iBit) != 0 && (iNeighbour.enters & iBit) != 0;
+	const bool backward = (iNeighbour.exits & iBack) != 0 && (iBase.enters & iBack) != 0;
+	return forward || backward;
+}
+
+// Colour of a side of a cell under the Navigation tool.
+auto sideColor(const SideState iState) -> math::vec4 {
+	switch (iState) {
+		case SideState::Closed:
+			return g_closed;
+		case SideState::TwoWay:
+			return g_twoWay;
+		case SideState::ExitOnly:
+		case SideState::EnterOnly:
+			return g_edited;
+	}
+	return g_edited;
+}
+
 }// namespace
 
 auto getCellCenter(const TilemapAsset& iAsset, const math::vec3& iOrigin, const uint32_t iX, const uint32_t iY)
@@ -104,118 +126,122 @@ auto getCellCenter(const TilemapAsset& iAsset, const math::vec3& iOrigin, const 
 
 void drawNavigationGraph(Scene& ioScene) {
 	size_t drawn = 0;
-	forEachNavigationMap(ioScene, [&](const TilemapAsset& iAsset, const math::vec3& iOrigin, NavWorld::Entry& iEntry) {
-		const auto& map = iEntry.map;
-		const auto& profile = map.getProfile();
-		const auto& size = map.getSize();
-		for (uint32_t y = 0; y < size.y() && drawn < g_maxEdges; ++y) {
-			for (uint32_t x = 0; x < size.x() && drawn < g_maxEdges; ++x) {
-				if (!map.isWalkable(x, y))
-					continue;
-				for (const auto direction: {Direction::East, Direction::South}) {
-					const uint32_t nx = x + static_cast<uint32_t>(offsetX(direction));
-					const uint32_t ny = y + static_cast<uint32_t>(offsetY(direction));
-					const bool forward = map.getEdgeCost(x, y, direction) != 0;
-					const bool backward = map.getEdgeCost(nx, ny, opposite(direction)) != 0;
-					const bool edited = isEdgeEdited(profile, x, y, direction);
-					if (!forward && !backward) {
-						// A side an exception closed: the tiles join, the cross says nobody goes through.
-						if (edited && map.isWalkable(nx, ny)) {
+	forEachNavigationMap(
+			ioScene, [&](const TilemapAsset& iAsset, const math::vec3& iOrigin, NavWorld::Entry& iEntry) -> void {
+				const auto& map = iEntry.map;
+				const auto& profile = map.getProfile();
+				const auto& size = map.getSize();
+				for (uint32_t y = 0; y < size.y() && drawn < g_maxEdges; ++y) {
+					for (uint32_t x = 0; x < size.x() && drawn < g_maxEdges; ++x) {
+						if (!map.isWalkable(x, y))
+							continue;
+						for (const auto direction: {Direction::East, Direction::South}) {
+							const uint32_t nx = x + static_cast<uint32_t>(offsetX(direction));
+							const uint32_t ny = y + static_cast<uint32_t>(offsetY(direction));
+							const bool forward = map.getEdgeCost(x, y, direction) != 0;
+							const bool backward = map.getEdgeCost(nx, ny, opposite(direction)) != 0;
+							const bool edited = isEdgeEdited(profile, x, y, direction);
+							if (!forward && !backward) {
+								// A side an exception closed: the tiles join, the cross says nobody goes through.
+								if (edited && map.isWalkable(nx, ny)) {
+									const auto from = getCellCenter(iAsset, iOrigin, x, y);
+									const auto to = getCellCenter(iAsset, iOrigin, nx, ny);
+									drawCross((from + to) * 0.5f, 0.12f, g_closed);
+								}
+								continue;
+							}
 							const auto from = getCellCenter(iAsset, iOrigin, x, y);
 							const auto to = getCellCenter(iAsset, iOrigin, nx, ny);
-							drawCross((from + to) * 0.5f, 0.12f, g_closed);
+							const auto& oneWayColor = edited ? g_edited : g_oneWay;
+							renderer::Renderer2D::drawLine({.point1 = from,
+															.point2 = to,
+															.color = forward && backward ? g_twoWay : oneWayColor});
+							if (forward != backward)
+								drawArrowHead(forward ? from : to, forward ? to : from, oneWayColor);
+							++drawn;
 						}
-						continue;
 					}
-					const auto from = getCellCenter(iAsset, iOrigin, x, y);
-					const auto to = getCellCenter(iAsset, iOrigin, nx, ny);
-					const auto& oneWayColor = edited ? g_edited : g_oneWay;
-					renderer::Renderer2D::drawLine(
-							{.point1 = from, .point2 = to, .color = forward && backward ? g_twoWay : oneWayColor});
-					if (forward != backward)
-						drawArrowHead(forward ? from : to, forward ? to : from, oneWayColor);
-					++drawn;
 				}
-			}
-		}
-		for (const auto& entry: profile.overrides) {
-			if (entry.cost > 0.f && map.isWalkable(entry.x, entry.y))
-				drawRing(getCellCenter(iAsset, iOrigin, entry.x, entry.y), 0.2f, g_cost);
-		}
-	});
+				for (const auto& entry: profile.overrides) {
+					if (entry.cost > 0.f && map.isWalkable(entry.x, entry.y))
+						drawRing(getCellCenter(iAsset, iOrigin, entry.x, entry.y), 0.2f, g_cost);
+				}
+			});
 }
 
 void drawNavigationCellEditor(Scene& ioScene, const uint64_t iEntityKey, const uint32_t iX, const uint32_t iY,
 							  const std::optional<Direction> iPicked) {
-	forEachNavigationMap(ioScene, [&](const TilemapAsset& iAsset, const math::vec3& iOrigin, NavWorld::Entry& iEntry) {
-		if (&iEntry != ioScene.getNavigation().find(iEntityKey))
-			return;
-		const auto& map = iEntry.map;
-		const auto& profile = map.getProfile();
-		const auto base = map.getBaseCell(iAsset, iX, iY);
-		if (!base.has_value())
-			return;
-		drawRing(getCellCenter(iAsset, iOrigin, iX, iY), 0.12f, g_picked);
-		const auto center = getCellCenter(iAsset, iOrigin, iX, iY);
-		for (const auto side: directions) {
-			const auto nx = static_cast<int64_t>(iX) + offsetX(side);
-			const auto ny = static_cast<int64_t>(iY) + offsetY(side);
-			if (nx < 0 || ny < 0)
-				continue;
-			const auto neighbour = map.getBaseCell(iAsset, static_cast<uint32_t>(nx), static_cast<uint32_t>(ny));
-			const uint8_t bit = directionBit(side);
-			const uint8_t back = directionBit(opposite(side));
-			if (!neighbour.has_value() || !(((base->exits & bit) != 0 && (neighbour->enters & bit) != 0) ||
-											((neighbour->exits & back) != 0 && (base->enters & back) != 0)))
-				continue;
-			const math::vec3 along{static_cast<float>(offsetX(side)), static_cast<float>(offsetY(side)), 0.f};
-			const auto inner = center + along * 0.15f;
-			const auto outer = center + along * 0.85f;
-			const auto state = profile.getSideState(iX, iY, side);
-			const bool picked = iPicked.has_value() && *iPicked == side;
-			const auto color =
-					picked ? g_picked
-						   : (state == SideState::Closed ? g_closed
-														 : (state == SideState::TwoWay ? g_twoWay : g_edited));
-			renderer::Renderer2D::drawLine({.point1 = inner, .point2 = outer, .color = color});
-			if (picked)
-				renderer::Renderer2D::drawLine({.point1 = inner + math::vec3{0.02f, 0.02f, 0.f},
-												.point2 = outer + math::vec3{0.02f, 0.02f, 0.f},
-												.color = color});
-			if (state == SideState::Closed) {
-				drawCross((inner + outer) * 0.5f, 0.1f, picked ? g_picked : g_closed);
-				continue;
-			}
-			if (state != SideState::EnterOnly)
-				drawArrowHead(inner, outer, color);
-			if (state != SideState::ExitOnly)
-				drawArrowHead(outer, inner, color);
-		}
-	});
+	forEachNavigationMap(
+			ioScene, [&](const TilemapAsset& iAsset, const math::vec3& iOrigin, NavWorld::Entry& iEntry) -> void {
+				if (&iEntry != ioScene.getNavigation().find(iEntityKey))
+					return;
+				const auto& map = iEntry.map;
+				const auto& profile = map.getProfile();
+				const auto base = map.getBaseCell(iAsset, iX, iY);
+				if (!base.has_value())
+					return;
+				drawRing(getCellCenter(iAsset, iOrigin, iX, iY), 0.12f, g_picked);
+				const auto center = getCellCenter(iAsset, iOrigin, iX, iY);
+				for (const auto side: directions) {
+					const auto nx = static_cast<int64_t>(iX) + offsetX(side);
+					const auto ny = static_cast<int64_t>(iY) + offsetY(side);
+					if (nx < 0 || ny < 0)
+						continue;
+					const auto neighbour =
+							map.getBaseCell(iAsset, static_cast<uint32_t>(nx), static_cast<uint32_t>(ny));
+					const uint8_t bit = directionBit(side);
+					const uint8_t back = directionBit(opposite(side));
+					if (!neighbour.has_value() || !isLinked(*base, *neighbour, bit, back))
+						continue;
+					const math::vec3 along{static_cast<float>(offsetX(side)), static_cast<float>(offsetY(side)), 0.f};
+					const auto inner = center + along * 0.15f;
+					const auto outer = center + along * 0.85f;
+					const auto state = profile.getSideState(iX, iY, side);
+					const bool picked = iPicked.has_value() && *iPicked == side;
+					const auto color = picked ? g_picked : sideColor(state);
+					renderer::Renderer2D::drawLine({.point1 = inner, .point2 = outer, .color = color});
+					if (picked)
+						renderer::Renderer2D::drawLine({.point1 = inner + math::vec3{0.02f, 0.02f, 0.f},
+														.point2 = outer + math::vec3{0.02f, 0.02f, 0.f},
+														.color = color});
+					if (state == SideState::Closed) {
+						drawCross((inner + outer) * 0.5f, 0.1f, picked ? g_picked : g_closed);
+						continue;
+					}
+					if (state != SideState::EnterOnly)
+						drawArrowHead(inner, outer, color);
+					if (state != SideState::ExitOnly)
+						drawArrowHead(outer, inner, color);
+				}
+			});
 }
 
 void drawNavigationRoutes(Scene& ioScene) {
-	forEachNavigationMap(ioScene, [&](const TilemapAsset& iAsset, const math::vec3& iOrigin, NavWorld::Entry& iEntry) {
-		for (const auto& [id, route]: iEntry.debugRoutes) {
-			const math::vec4 color{route.color.x(), route.color.y(), route.color.z(), 1.f};
-			// Routes of different vehicles that share a road run side by side instead of on top of each other.
-			const float shift = static_cast<float>(id % 5) * 0.05f - 0.1f;
-			const math::vec3 offset{shift, -shift, 0.02f};
-			for (size_t i = 1; i < route.cells.size(); ++i) {
-				const auto from = getCellCenter(iAsset, iOrigin, route.cells[i - 1].x(), route.cells[i - 1].y());
-				const auto to = getCellCenter(iAsset, iOrigin, route.cells[i].x(), route.cells[i].y());
-				renderer::Renderer2D::drawLine({.point1 = from + offset, .point2 = to + offset, .color = color});
-			}
-			// The stop: a diamond around the last cell.
-			const auto& last = route.cells.back();
-			const auto c = getCellCenter(iAsset, iOrigin, last.x(), last.y()) + offset;
-			const std::array<math::vec3, 4> ring{c + math::vec3{-0.3f, 0.f, 0.f}, c + math::vec3{0.f, -0.3f, 0.f},
-												 c + math::vec3{0.3f, 0.f, 0.f}, c + math::vec3{0.f, 0.3f, 0.f}};
-			for (size_t i = 0; i < ring.size(); ++i)
-				renderer::Renderer2D::drawLine(
-						{.point1 = ring[i], .point2 = ring[(i + 1) % ring.size()], .color = color});
-		}
-	});
+	forEachNavigationMap(
+			ioScene, [&](const TilemapAsset& iAsset, const math::vec3& iOrigin, NavWorld::Entry& iEntry) -> void {
+				for (const auto& [id, route]: iEntry.debugRoutes) {
+					const math::vec4 color{route.color.x(), route.color.y(), route.color.z(), 1.f};
+					// Routes of different vehicles that share a road run side by side instead of on top of each other.
+					const float shift = static_cast<float>(id % 5) * 0.05f - 0.1f;
+					const math::vec3 offset{shift, -shift, 0.02f};
+					for (size_t i = 1; i < route.cells.size(); ++i) {
+						const auto from =
+								getCellCenter(iAsset, iOrigin, route.cells[i - 1].x(), route.cells[i - 1].y());
+						const auto to = getCellCenter(iAsset, iOrigin, route.cells[i].x(), route.cells[i].y());
+						renderer::Renderer2D::drawLine(
+								{.point1 = from + offset, .point2 = to + offset, .color = color});
+					}
+					// The stop: a diamond around the last cell.
+					const auto& last = route.cells.back();
+					const auto c = getCellCenter(iAsset, iOrigin, last.x(), last.y()) + offset;
+					const std::array<math::vec3, 4> ring{
+							c + math::vec3{-0.3f, 0.f, 0.f}, c + math::vec3{0.f, -0.3f, 0.f},
+							c + math::vec3{0.3f, 0.f, 0.f}, c + math::vec3{0.f, 0.3f, 0.f}};
+					for (size_t i = 0; i < ring.size(); ++i)
+						renderer::Renderer2D::drawLine(
+								{.point1 = ring[i], .point2 = ring[(i + 1) % ring.size()], .color = color});
+				}
+			});
 }
 
 }// namespace owl::scene::nav

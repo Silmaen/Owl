@@ -333,7 +333,9 @@ void Scene::onStartRuntime() {
 			auto& [soundComp] = view.get<component::SoundSource>(entity);
 			if (!soundComp.playOnStart || soundComp.soundAsset.empty())
 				continue;
-			const auto soundData = soundLibrary.get(soundComp.soundAsset);
+			// A source starts its sound even when no script played it before: load it on first use.
+			const auto soundData = soundLibrary.exists(soundComp.soundAsset) ? soundLibrary.get(soundComp.soundAsset)
+																			 : soundLibrary.load(soundComp.soundAsset);
 			if (!soundData)
 				continue;
 			const Entity ent{entity, this};
@@ -887,7 +889,11 @@ void Scene::render() {
 										  .color = text.color,
 										  .layout = {.kerning = text.kerning, .lineSpacing = text.lineSpacing},
 										  .entityId = static_cast<int>(entity),
-										  .depth = worldTransform.translation().z()});
+										  .depth = worldTransform.translation().z(),
+										  .outlineColor = text.outlineColor,
+										  .outlineWidth = text.outlineWidth,
+										  .backgroundColor = text.backgroundColor,
+										  .backgroundPadding = text.backgroundPadding});
 	}
 	// Pushwall plates override the entity's scale to a 1-cell square, so the cached world matrix doesn't match.
 	for (const auto view = registry.view<component::Transform, component::RaycastPushWall>(); auto entity: view) {

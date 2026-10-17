@@ -1,0 +1,24 @@
+# The signposts and the villagers of the hub answer on E (hub_talker.lua): a signpost moved onto the hero speaks, the
+# trigger of a villager follows it, and the name tag of a villager grows in when the hero is near (no place labels).
+scene: ../../engine_demo/scenes/world_map.owl
+steps:
+  - frames: 30
+  - expect: {gamestate: hub_talk_count, equals: 0}
+  - expect: {gamestate: labels_shown, equals: 0}
+  # The trigger of the priest goes with the priest.
+  - expect: {entity: Talk_Priest, translation.y: {equals: -13.5, tolerance: 0.6}}
+  - expect: {entity: Tag_Priest, exists: true}
+  # A signpost under the hero's feet answers with a line of its own and shows it in the HUD.
+  - {command: entity.set_transform, args: {entity: Talk_Sign1, translation: [32.5, -36.5, 0.6]}}
+  - frames: 3
+  - input: {key: E, frames: 3}
+  - frames: 5
+  - expect: {gamestate: hub_talk_count, equals: 1}
+  - expect: {gamestate: hub_talk_who, equals: ""}
+  - input: {key: E, frames: 3}
+  - frames: 5
+  - expect: {gamestate: hub_talk_count, equals: 2}
+  # Walking north brings the name tag of the guard of the bridge in.
+  - input: {key: W, frames: 120}
+  - frames: 20
+  - expect: {gamestate: labels_shown, greater: 0}

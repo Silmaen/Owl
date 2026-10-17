@@ -253,11 +253,13 @@ void scanLuaScriptForSounds(const std::filesystem::path& iScriptPath, std::vecto
 		return;
 	std::ifstream scriptFile(iScriptPath);
 	const std::string scriptContent((std::istreambuf_iterator<char>(scriptFile)), std::istreambuf_iterator<char>());
-	static const std::regex soundPlayPattern(R"(sound\.play\s*\(\s*["']([^"']+)["']\s*\))");
+	// A `sound.play("…")` argument, or any quoted sound file (a table of variants picked at random).
+	static const std::regex soundPlayPattern(
+			R"((?:sound\.play\s*\(\s*["']([^"']+)["']\s*\))|["']([^"'\s]+\.(?:wav|ogg|mp3|flac))["'])");
 	auto begin = std::sregex_iterator(scriptContent.begin(), scriptContent.end(), soundPlayPattern);
 	const auto end = std::sregex_iterator();
 	for (auto it = begin; it != end; ++it) {
-		const auto soundName = (*it)[1].str();
+		const auto soundName = (*it)[1].matched ? (*it)[1].str() : (*it)[2].str();
 		if (auto ref = resolveSound(soundName); ref) {
 			if (!hasAsset(ioAssets, ref->packPath))
 				ioAssets.push_back(*ref);
@@ -356,27 +358,9 @@ void scanTileset(const std::string& iTilesetPath, const std::string& iSceneName,
 	}
 }
 
-void scanEntity(const YAML::Node& iEntity,// NOLINT(misc-no-recursion)
-				const std::string& iSceneName, std::set<std::string>& ioVisitedScenes,
-				std::vector<AssetReference>& ioAssets, std::vector<std::string>* ioWarnings) {
-	const auto addTextureField = [&](const YAML::Node& iComponent) -> void {
-		if (auto tex = iComponent["texture"]; tex) {
-			const auto val = tex.as<std::string>();
-			if (auto ref = resolveTexture(val); ref) {
-				if (!hasAsset(ioAssets, ref->packPath))
-					ioAssets.push_back(*ref);
-			} else
-				pushWarning(ioWarnings, "Texture", val, iSceneName);
-		}
-	};
-	if (auto sprite = iEntity["SpriteRenderer"]; sprite)
-		addTextureField(sprite);
-	if (auto anim = iEntity["AnimatedSpriteRenderer"]; anim)
-		addTextureField(anim);
-	if (auto bg = iEntity["BackgroundTexture"]; bg)
-		addTextureField(bg);
-	if (auto img = iEntity["UiImage"]; img)
-		addTextureField(img);
+// The fonts of the texts of an entity and the sound of its `SoundSource`.
+void scanFontsAndSounds(const YAML::Node& iEntity, const std::string& iSceneName, std::vector<AssetReference>& ioAssets,
+						std::vector<std::string>* ioWarnings) {
 	for (const char* component: {"TextRenderer", "UiText"})
 		if (auto text = iEntity[component]; text)
 			if (auto font = text["font"]; font) {
@@ -397,6 +381,31 @@ void scanEntity(const YAML::Node& iEntity,// NOLINT(misc-no-recursion)
 			else if (!ref)
 				pushWarning(ioWarnings, "Sound", name, iSceneName);
 		}
+}
+
+void scanEntity(const YAML::Node& iEntity,// NOLINT(misc-no-recursion)
+				const std::string& iSceneName, std::set<std::string>& ioVisitedScenes,
+				std::vector<AssetReference>& ioAssets, std::vector<std::string>* ioWarnings) {
+	const auto addTextureField = [&](const YAML::Node& iComponent) -> void {
+		if (auto tex = iComponent["texture"]; tex) {
+			const auto val = tex.as<std::string>();
+			if (auto ref = resolveTexture(val); ref) {
+				if (!hasAsset(ioAssets, ref->packPath))
+					ioAssets.push_back(*ref);
+			} else
+				pushWarning(ioWarnings, "Texture", val, iSceneName);
+		}
+	};
+	if (auto sprite = iEntity["SpriteRenderer"]; sprite)
+		addTextureField(sprite);
+	if (auto anim = iEntity["AnimatedSpriteRenderer"]; anim)
+		addTextureField(anim);
+	if (auto bg = iEntity["BackgroundTexture"]; bg)
+		addTextureField(bg);
+	for (const char* component: {"UiImage", "UiToolCursor"})
+		if (auto widget = iEntity[component]; widget)
+			addTextureField(widget);
+	scanFontsAndSounds(iEntity, iSceneName, ioAssets, ioWarnings);
 	if (auto luaScript = iEntity["LuaScript"]; luaScript)
 		if (auto scriptPath = luaScript["scriptPath"]; scriptPath) {
 			const auto name = scriptPath.as<std::string>();

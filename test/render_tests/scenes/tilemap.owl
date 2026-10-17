@@ -8,7 +8,7 @@ Entities:
     translation: [16, -12, 0]
     rotation: [0, 0, 0]
     scale: [1, 1, 1]
-  Tilemap: {tilemapPath: tilemaps/world_map.owltilemap}
+  Tilemap: {tilemapPath: tilemaps/hub_fixture.owltilemap}
   Visibility: {gameVisible: true}
 - Entity: 2000000000000000002
   Tag: {tag: SkyBackground}

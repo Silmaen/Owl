@@ -89,9 +89,10 @@ struct TextInstance {
 	std::array<math::vec2, 4> uv;
 	uint32_t texIndex;
 	int32_t entityId;
-	uint32_t _pad1[2];
+	math::vec2 outlineUv;
+	math::vec4 outlineColor;
 };
-static_assert(sizeof(TextInstance) == 80, "TextInstance must match shader std430 layout");
+static_assert(sizeof(TextInstance) == 96, "TextInstance must match shader std430 layout");
 
 template<typename InstanceT>
 struct BatchData {
@@ -171,6 +172,35 @@ auto allocateTransientWorld(const math::mat4& iMatrix, const uint32_t iBatchLimi
 
 inline auto resolveWorldIndex(const int32_t iRequested, const math::Transform& iTransform) -> int32_t {
 	return iRequested >= 0 ? iRequested : allocateTransientTransform(iTransform);
+}
+
+// The box behind a string: the measured text block grown by the padding, drawn as a quad of the quad batch.
+void drawTextBackground(const StringData& iString, const math::mat4& iStringMat) {
+	const auto box = data::fonts::measureTextLayout(*iString.font, iString.text, iString.layout);
+	const math::vec2 padding{iString.backgroundPadding, iString.backgroundPadding};
+	const math::vec2 low = box.min() - padding;
+	const math::vec2 size = box.max() + padding - low;
+	if (size.x() <= 0.f || size.y() <= 0.f)
+		return;
+	const math::vec2 center = low + size * 0.5f;
+	math::mat4 boxMat = iStringMat;
+	for (size_t row = 0; row < 4; ++row) {
+		boxMat(row, 3) = iStringMat(row, 0) * center.x() + iStringMat(row, 1) * center.y() + iStringMat(row, 3);
+		boxMat(row, 0) = iStringMat(row, 0) * size.x();
+		boxMat(row, 1) = iStringMat(row, 1) * size.y();
+	}
+	if (g_Data->quad.instances.size() >= utils::g_maxQuadsPerBatch || g_Data->runs.size() >= utils::g_maxRunsPerBatch)
+		Renderer2D::nextBatch();
+	const Quad2DData defaults;
+	g_Data->quad.instances.push_back(utils::QuadInstance{.worldIndex = allocateTransientWorld(boxMat),
+														 ._pad0 = {0u, 0u, 0u},
+														 .color = iString.backgroundColor,
+														 .uv = defaults.textureCoords,
+														 .texIndex = 0,
+														 .entityId = iString.entityId,
+														 .tilingFactor = defaults.tilingFactor});
+	g_Data->runs.note(utils::RunKind::Quad, iString.depth);
+	g_Data->stats.quadCount++;
 }
 
 // Uploads and draws `iCount` instances of a batch, from `iBegin`.
@@ -591,6 +621,9 @@ void Renderer2D::drawString(const StringData& iStringData) {
 	const auto& font = *iStringData.font;
 	const uint32_t textureIndex = textureSlotOf(font.getAtlasTexture());
 	const math::mat4 stringMat = iStringData.transform();
+	if (iStringData.backgroundColor.a() > 0.f && !iStringData.text.empty())
+		drawTextBackground(iStringData, stringMat);
+	const float outline = std::max(iStringData.outlineWidth, 0.f);
 	const auto emitGlyph = [&](const data::fonts::Font::GlyphMetrics& iGlyph) -> void {
 		const auto& [quad, uv] = iGlyph;
 		if (g_Data->text.instances.size() >= utils::g_maxTextGlyphsPerBatch ||
@@ -598,7 +631,7 @@ void Renderer2D::drawString(const StringData& iStringData) {
 			nextBatch();
 
 		const math::vec2 glyphCenter = (quad.min() + quad.max()) * 0.5f;
-		const math::vec2 glyphSize = quad.max() - quad.min();
+		const math::vec2 glyphSize = quad.max() - quad.min() + math::vec2{2.f * outline, 2.f * outline};
 		// stringMat * translate(center) * scale(size, 1), expanded: the glyph is an axis-aligned quad of its frame.
 		math::mat4 glyphMat = stringMat;
 		for (size_t row = 0; row < 4; ++row) {
@@ -608,9 +641,15 @@ void Renderer2D::drawString(const StringData& iStringData) {
 			glyphMat(row, 1) = stringMat(row, 1) * glyphSize.y();
 		}
 
-		const std::array<math::vec2, 4> glyphUv{
-				math::vec2{uv.min().x(), uv.min().y()}, math::vec2{uv.max().x(), uv.min().y()},
-				math::vec2{uv.max().x(), uv.max().y()}, math::vec2{uv.min().x(), uv.max().y()}};
+		// The outline grows the quad and its coordinates by the same fraction: the shader dilates inside that margin.
+		const math::vec2 quadSize = quad.max() - quad.min();
+		const math::vec2 uvSize = uv.max() - uv.min();
+		const math::vec2 uvGrow{quadSize.x() > 0.f ? outline * uvSize.x() / quadSize.x() : 0.f,
+								quadSize.y() > 0.f ? outline * uvSize.y() / quadSize.y() : 0.f};
+		const math::vec2 uvLow = uv.min() - uvGrow;
+		const math::vec2 uvHigh = uv.max() + uvGrow;
+		const std::array<math::vec2, 4> glyphUv{math::vec2{uvLow.x(), uvLow.y()}, math::vec2{uvHigh.x(), uvLow.y()},
+												math::vec2{uvHigh.x(), uvHigh.y()}, math::vec2{uvLow.x(), uvHigh.y()}};
 		const int32_t glyphWorldIndex = allocateTransientWorld(glyphMat);
 		g_Data->text.instances.push_back(utils::TextInstance{.worldIndex = glyphWorldIndex,
 															 ._pad0 = {0u, 0u, 0u},
@@ -618,7 +657,8 @@ void Renderer2D::drawString(const StringData& iStringData) {
 															 .uv = glyphUv,
 															 .texIndex = textureIndex,
 															 .entityId = iStringData.entityId,
-															 ._pad1 = {0u, 0u}});
+															 .outlineUv = uvGrow,
+															 .outlineColor = iStringData.outlineColor});
 		g_Data->runs.note(utils::RunKind::Text, iStringData.depth);
 		g_Data->stats.quadCount++;
 	};

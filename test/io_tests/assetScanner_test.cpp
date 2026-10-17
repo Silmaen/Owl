@@ -12,6 +12,8 @@
 #include <data/assets/pack/AssetScanner.h>
 #include <data/assets/pack/PackWriter.h>
 
+#include <algorithm>
+#include <cstddef>
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
@@ -254,6 +256,25 @@ TEST_F(AssetScannerTest, ScanSceneWithUIImage) {
 	EXPECT_TRUE(foundTexture);
 }
 
+TEST_F(AssetScannerTest, ScanSceneWithUIToolCursor) {
+	const auto texPath = m_tempDir / "textures" / "cursor.png";
+	writeDummyBinary(texPath);
+
+	const auto scenePath = m_tempDir / "test.owl";
+	writeFile(scenePath, "Scene: test\nEntities:\n"
+						 "  - Entity: 1\n"
+						 "    UiToolCursor:\n"
+						 "      tint: [1, 1, 1, 1]\n"
+						 "      texture: \"pat:" +
+								 texPath.generic_string() + "\"\n");
+
+	const auto assets = AssetScanner::scanScene(scenePath);
+	const bool foundTexture = std::ranges::any_of(assets, [&texPath](const AssetReference& iRef) -> bool {
+		return iRef.assetType == AssetType::Texture && iRef.diskPath == texPath;
+	});
+	EXPECT_TRUE(foundTexture);
+}
+
 TEST_F(AssetScannerTest, ScanSceneWithBackgroundTexture) {
 	const auto texPath = m_tempDir / "textures" / "sky.png";
 	writeDummyBinary(texPath);
@@ -381,6 +402,31 @@ TEST_F(AssetScannerTest, ScanLuaScriptWithSoundPlay) {
 			foundSound = true;
 	}
 	EXPECT_TRUE(foundSound);
+}
+
+TEST_F(AssetScannerTest, ScanLuaScriptFollowsQuotedSoundVariants) {
+	const auto first = m_tempDir / "sounds" / "birds_1.wav";
+	const auto second = m_tempDir / "sounds" / "birds_2.ogg";
+	writeDummyBinary(first);
+	writeDummyBinary(second);
+	// The variants sit in a table and `sound.play` gets a variable: the scanner still follows them.
+	const auto scriptPath = m_tempDir / "scripts" / "ambient.lua";
+	writeFile(scriptPath, "local BIRDS = { \"" + first.generic_string() + "\", '" + second.generic_string() +
+								  "' }\nfunction on_update()\n    sound.play(BIRDS[math.random(2)])\nend\n");
+	const auto scenePath = m_tempDir / "ambient.owl";
+	writeFile(scenePath, "Scene: ambient\nEntities:\n"
+						 "  - Entity: 1\n"
+						 "    LuaScript:\n"
+						 "      scriptPath: " +
+								 scriptPath.generic_string() + "\n");
+
+	const auto assets = AssetScanner::scanScene(scenePath);
+	size_t found = 0;
+	for (const auto& ref: assets) {
+		if (ref.assetType == AssetType::Sound && (ref.diskPath == first || ref.diskPath == second))
+			++found;
+	}
+	EXPECT_EQ(found, 2u);
 }
 
 TEST_F(AssetScannerTest, ScanSceneWithTeleportTrigger) {

@@ -76,14 +76,15 @@ Sound playback, by handle.
 
 Entities of the running level and level changes.
 
-| Function                                                                      | Returns             | Description                                                                                                   |
-|-------------------------------------------------------------------------------|---------------------|---------------------------------------------------------------------------------------------------------------|
-| `scene.find_entity(name: string)`                                             | `entity_id: entity` | First entity with this tag (0 when none), in the scene then in its HUD; scans every entity, cache the result. |
-| `scene.create_entity(name: string)`                                           | `entity_id: entity` | Create an empty entity.                                                                                       |
-| `scene.destroy_entity(entity_id: entity)`                                     |                     | Destroy an entity and its children at the end of the frame.                                                   |
-| `scene.load_scene(level: string)`                                             |                     | Load another level after this frame, keeping the game state (no transition).                                  |
-| `scene.transition_to(scene_path: string, [kind: string], [duration: number])` |                     | Load a level behind a screen transition (kind as in `ui.transition_play`, `fade` by default).                 |
-| `scene.quit()`                                                                |                     | Quit the game (stop Play in the editor) after this frame.                                                     |
+| Function                                                                      | Returns             | Description                                                                                                          |
+|-------------------------------------------------------------------------------|---------------------|----------------------------------------------------------------------------------------------------------------------|
+| `scene.find_entity(name: string)`                                             | `entity_id: entity` | First entity with this tag (0 when none), in the scene then in its HUD; scans every entity, cache the result.        |
+| `scene.find_entities(name: string)`                                           | `entity_ids: table` | Every entity of the scene with this tag, as an array of ids (empty when none); scans every entity, cache the result. |
+| `scene.create_entity(name: string)`                                           | `entity_id: entity` | Create an empty entity.                                                                                              |
+| `scene.destroy_entity(entity_id: entity)`                                     |                     | Destroy an entity and its children at the end of the frame.                                                          |
+| `scene.load_scene(level: string)`                                             |                     | Load another level after this frame, keeping the game state (no transition).                                         |
+| `scene.transition_to(scene_path: string, [kind: string], [duration: number])` |                     | Load a level behind a screen transition (kind as in `ui.transition_play`, `fade` by default).                        |
+| `scene.quit()`                                                                |                     | Quit the game (stop Play in the editor) after this frame.                                                            |
 
 ## `time`
 
@@ -109,10 +110,13 @@ Engine log.
 
 Entity queries.
 
-| Function                                                     | Returns        | Description                                                                                                                                      |
-|--------------------------------------------------------------|----------------|--------------------------------------------------------------------------------------------------------------------------------------------------|
-| `entity.has_component(entity_id: entity, component: string)` | `has: boolean` | Whether the entity has a component: `Transform`, `PhysicBody`, `SpriteRenderer`, `Camera`, `Text`, `SoundSource`, `Canvas` or a `Ui*` component. |
-| `entity.get_name(entity_id: entity)`                         | `name: string` | Tag of the entity (empty when unknown).                                                                                                          |
+| Function                                                                           | Returns                                            | Description                                                                                                                                                  |
+|------------------------------------------------------------------------------------|----------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `entity.has_component(entity_id: entity, component: string)`                       | `has: boolean`                                     | Whether the entity has a component: `Transform`, `PhysicBody`, `SpriteRenderer`, `Camera`, `Text`, `SoundSource`, `Canvas` or a `Ui*` component.             |
+| `entity.get_name(entity_id: entity)`                                               | `name: string`                                     | Tag of the entity (empty when unknown).                                                                                                                      |
+| `entity.get_link(entity_id: entity)`                                               | `linked_id: entity`                                | Entity an `EntityLink` of this entity points at (0 when it has none or the target is missing).                                                               |
+| `entity.set_tint(entity_id: entity, r: number, g: number, b: number, [a: number])` | `done: boolean`                                    | Set the colour multiplied into a `SpriteRenderer` or `AnimatedSpriteRenderer` (hit flash, fade); false when the entity has no sprite. `a` is 1 when omitted. |
+| `entity.get_tint(entity_id: entity)`                                               | `r: number`, `g: number`, `b: number`, `a: number` | Colour multiplied into a `SpriteRenderer` or `AnimatedSpriteRenderer`; nothing when the entity has no sprite.                                                |
 
 ## `ui`
 

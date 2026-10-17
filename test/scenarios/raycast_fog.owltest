@@ -1,0 +1,18 @@
+# The minimap of the raycast level only shows what the hero has seen: rays cast over the wall grid reveal the cells of
+# the field of view (raycast_level.lua counts them in `minimap_seen`). The start is a closed cell behind a door: a few
+# cells are known, the door opening reveals the corridor beyond, and turning on the spot reveals the cells beside.
+scene: ../../engine_demo/scenes/raycast_demo.owl
+steps:
+  - frames: 30
+  - expect: {gamestate: minimap_seen, greater: 10}
+  - expect: {gamestate: minimap_seen, less: 30}
+  # A closed door stops the rays: walking up to it reveals nothing more.
+  - actions: {walk: 1, frames: 60}
+  - expect: {gamestate: minimap_seen, less: 30}
+  - input: {key: E, frames: 3}
+  - frames: 60
+  - expect: {gamestate: minimap_seen, greater: 30}
+  - actions: {walk: 1, frames: 60}
+  - expect: {gamestate: minimap_seen, greater: 50}
+  - actions: {turn: 1, frames: 60}
+  - expect: {gamestate: minimap_seen, greater: 70}

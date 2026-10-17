@@ -1,0 +1,16 @@
+# The life of the village: the river and the fountain run on animated tiles (hub_water.lua edits them with
+# isometric.set_cell), the church bell rings on a timer (hub_ambient.lua, 12 seconds after the start) and the butterflies
+# flutter round their gardens (hub_critters.lua).
+scene: ../../engine_demo/scenes/world_map.owl
+steps:
+  - frames: 30
+  - expect: {gamestate: water_cells, greater: 100}
+  - expect: {entity: Butterfly_1, exists: true}
+  - expect: {entity: Sparrow_1, exists: true}
+  - expect: {entity: FountainSound, exists: true}
+  - {command: entity.set_transform, args: {entity: Butterfly_3, translation: [0, 0, 0.75]}}
+  - frames: 800
+  - expect: {gamestate: water_phase, greater: 20}
+  - expect: {gamestate: bell_rings, greater: 0}
+  # The butterfly went back to its garden round (46, -18).
+  - expect: {entity: Butterfly_3, translation.x: {greater: 40.0}}

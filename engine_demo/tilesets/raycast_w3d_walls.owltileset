@@ -1,6 +1,6 @@
 Tileset: raycast_w3d_walls
 Version: 1
-texture: nam:textures/wolf3d_walls_full.png
+texture: nam:textures/wolf3d/walls_full.png
 tileWidth: 128
 tileHeight: 128
 columns: 16

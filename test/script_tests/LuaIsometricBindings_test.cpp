@@ -124,7 +124,7 @@ TEST_F(LuaIsometric, aRuntimeEditLeavesTheAssetOfTheEditSceneUntouched) {
 			std::format("map = {}\nfunction on_create()\nisometric.set_cell(map, 1, 3, 3, -1, 3)\nend\n",
 						static_cast<int64_t>(static_cast<uint64_t>(m_map.getUUID())));
 	const std::vector<uint8_t> data(text.begin(), text.end());
-	ScriptInstance instance;
+	const ScriptInstance instance;
 	instance.setScene(running.get());
 	ASSERT_TRUE(instance.createFromBuffer(data, "iso_play", static_cast<uint64_t>(m_map.getUUID())));
 	instance.onCreate();

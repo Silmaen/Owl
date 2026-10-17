@@ -157,12 +157,13 @@ TEST_P(RenderImage, matchesReference) {
 	std::filesystem::remove(actualFile);
 	std::filesystem::remove(diffFile);
 
-	const auto command = std::format(R"(env -u OWL_OPENGL_SHADERS {} "{}" --frame-bench "{}" --project "{}" )"
-									 R"(--backend {} --frames 2 --warmup {} --size {}x{} --validation )"
-									 R"(--capture "{}" > "{}" 2>&1)",
-									 getDriverEnvironment(backend), OWL_RUNNER_EXECUTABLE, sceneFile.string(),
-									 (root / "engine_demo").string(), backend, g_warmupFrames, size.x(), size.y(),
-									 actualFile.string(), logFile.string());
+	const auto command =
+			std::format(R"(env -u OWL_OPENGL_SHADERS {} "{}" --frame-bench "{}" --project "{}" )"
+						R"(--assets "{}" --backend {} --frames 2 --warmup {} --size {}x{} --validation )"
+						R"(--capture "{}" > "{}" 2>&1)",
+						getDriverEnvironment(backend), OWL_RUNNER_EXECUTABLE, sceneFile.string(),
+						(root / "engine_demo").string(), (root / "test" / "render_tests" / "assets").string(), backend,
+						g_warmupFrames, size.x(), size.y(), actualFile.string(), logFile.string());
 	// NOLINTNEXTLINE(bugprone-command-processor) The runner must run in its own process (one GPU context).
 	const int status = std::system(command.c_str());
 	const auto log = readFile(logFile);
@@ -294,6 +295,25 @@ INSTANTIATE_TEST_SUITE_P(HudFocus, RenderImage,
 INSTANTIATE_TEST_SUITE_P(HudText, RenderImage,
 						 testing::Values(RenderCase{"hud_text", "vulkan", {480, 270}},
 										 RenderCase{"hud_text", "opengl", {480, 270}}),
+						 [](const testing::TestParamInfo<RenderCase>& iInfo) -> std::string {
+							 return std::format("{}_{}_{}x{}", iInfo.param.scene, iInfo.param.backend,
+												iInfo.param.size.x(), iInfo.param.size.y());
+						 });
+
+// Outlined and boxed HUD text on a light background: the outline is the glyph grown by its signed distance in the same
+// draw, the box a quad behind the text block.
+INSTANTIATE_TEST_SUITE_P(HudTextOutline, RenderImage,
+						 testing::Values(RenderCase{"hud_text_outline", "vulkan", {640, 360}},
+										 RenderCase{"hud_text_outline", "opengl", {640, 360}}),
+						 [](const testing::TestParamInfo<RenderCase>& iInfo) -> std::string {
+							 return std::format("{}_{}_{}x{}", iInfo.param.scene, iInfo.param.backend,
+												iInfo.param.size.x(), iInfo.param.size.y());
+						 });
+
+// Large outlined HUD text (48 and 64 px, 3 and 4 px outlines): smooth edges and a smooth outline band at any size.
+INSTANTIATE_TEST_SUITE_P(HudTextLarge, RenderImage,
+						 testing::Values(RenderCase{"hud_text_large", "vulkan", {640, 360}},
+										 RenderCase{"hud_text_large", "opengl", {640, 360}}),
 						 [](const testing::TestParamInfo<RenderCase>& iInfo) -> std::string {
 							 return std::format("{}_{}_{}x{}", iInfo.param.scene, iInfo.param.backend,
 												iInfo.param.size.x(), iInfo.param.size.y());

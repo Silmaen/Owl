@@ -487,6 +487,16 @@ void renderProps(Text& ioComponent) {
 	prop::ColorEdit4("Color", ioComponent.color.data());
 	prop::DragFloat("Kerning", &ioComponent.kerning, 0.025f);
 	prop::DragFloat("Line Spacing", &ioComponent.lineSpacing, 0.025f);
+	prop::DragFloat("Outline Width", &ioComponent.outlineWidth, 0.005f, 0.0f, 1.0f);
+	fieldTooltip("Outline around the glyphs, in text heights; 0 draws none.");
+	if (ioComponent.outlineWidth > 0.f)
+		prop::ColorEdit4("Outline Color", ioComponent.outlineColor.data());
+	prop::ColorEdit4("Background", ioComponent.backgroundColor.data());
+	fieldTooltip("Box behind the text block; a zero alpha draws none.");
+	if (ioComponent.backgroundColor.a() > 0.f) {
+		prop::DragFloat("Background Padding", &ioComponent.backgroundPadding, 0.01f, 0.0f, 5.0f);
+		fieldTooltip("Margin between the text block and the edge of its background box, in text heights.");
+	}
 }
 
 void renderProps(PhysicBody& ioComponent) {
@@ -843,9 +853,9 @@ auto unitFrameOf(const Entity& iOwner) -> std::optional<UiRect::Frame> {
 }
 
 // A number and its unit on one row: the value first, the unit selector at its right.
-auto unitField(const char* iLabel, float& ioValue, UiRect::Unit& ioUnit, UiRect::Unit& oNewUnit) -> bool {
+auto unitField(const char* iLabel, float& ioValue, UiRect::Unit& ioCurrent, UiRect::Unit& oPicked) -> bool {
 	static constexpr float unitWidth = 112.f;
-	const bool ratio = ioUnit != UiRect::Unit::Pixels;
+	const bool ratio = ioCurrent != UiRect::Unit::Pixels;
 	bool picked = false;
 	prop::row(iLabel, [&](const char* iId) -> bool {
 		ImGui::SetNextItemWidth(-(unitWidth + ImGui::GetStyle().ItemSpacing.x));
@@ -856,10 +866,10 @@ auto unitField(const char* iLabel, float& ioValue, UiRect::Unit& ioUnit, UiRect:
 		ImGui::SameLine();
 		ImGui::SetNextItemWidth(unitWidth);
 		const std::string unitId = std::string{"##unit"} + iLabel;
-		if (widgets::beginCombo(unitId.c_str(), std::string{magic_enum::enum_name(ioUnit)}.c_str())) {
+		if (widgets::beginCombo(unitId.c_str(), std::string{magic_enum::enum_name(ioCurrent)}.c_str())) {
 			for (const auto value: magic_enum::enum_values<UiRect::Unit>()) {
-				if (ImGui::Selectable(std::string{magic_enum::enum_name(value)}.c_str(), value == ioUnit)) {
-					oNewUnit = value;
+				if (ImGui::Selectable(std::string{magic_enum::enum_name(value)}.c_str(), value == ioCurrent)) {
+					oPicked = value;
 					picked = true;
 				}
 			}
@@ -935,6 +945,17 @@ void renderProps(UiText& ioComponent) {
 	}
 	prop::DragFloat("Kerning", &ioComponent.kerning, 0.01f);
 	prop::DragFloat("Line Spacing", &ioComponent.lineSpacing, 0.01f);
+	prop::DragFloat("Outline Width", &ioComponent.outlineWidth, 0.1f, 0.0f, 20.0f);
+	fieldTooltip("Outline around the glyphs, in reference pixels; 0 draws none. Keeps white text readable on a light "
+				 "background.");
+	if (ioComponent.outlineWidth > 0.f)
+		prop::ColorEdit4("Outline Color", reinterpret_cast<float*>(&ioComponent.outlineColor));
+	prop::ColorEdit4("Background", reinterpret_cast<float*>(&ioComponent.backgroundColor));
+	fieldTooltip("Box behind the text block; a zero alpha draws none.");
+	if (ioComponent.backgroundColor.a() > 0.f) {
+		prop::DragFloat("Background Padding", &ioComponent.backgroundPadding, 0.5f, 0.0f, 100.0f);
+		fieldTooltip("Margin between the text block and the edge of its background box, in reference pixels.");
+	}
 }
 
 void renderProps(UiImage& ioComponent) {
