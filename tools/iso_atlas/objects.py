@@ -11,7 +11,7 @@ import math
 from collections.abc import Callable
 from dataclasses import dataclass
 
-from PIL import Image
+from PIL import Image, ImageDraw
 
 from .common import RGB, TILE_W, Layers, Vec3, fbm, hash01, mix, scale_color, value_noise
 from .solids import Convex, Ellipsoid, Hit, Rendered, Shader, Solid, box, gable, pyramid, render
@@ -447,10 +447,26 @@ def _marker() -> list[Solid]:
     ]
 
 
+def _chimney() -> list[Solid]:
+    return [
+        box((0.38, 0.38, 0.0), (0.62, 0.62, 2.7), plain((150.0, 74.0, 58.0), 0.14)),
+        box((0.34, 0.34, 2.7), (0.66, 0.66, 2.85), plain((82.0, 78.0, 76.0))),
+    ]
+
+
+def _lamp() -> list[Solid]:
+    return [
+        box((0.47, 0.47, 0.0), (0.53, 0.53, 1.5), plain((58.0, 60.0, 66.0))),
+        box((0.4, 0.4, 1.5), (0.6, 0.6, 1.7), plain((252.0, 238.0, 170.0))),
+    ]
+
+
 PROPS: list[ObjectSpec] = [
     ObjectSpec("oak", (1, 1), 96, _oak, 201),
     ObjectSpec("pine", (1, 1), 96, _pine, 202),
     ObjectSpec("marker", (1, 1), 64, _marker, 203),
+    ObjectSpec("chimney", (1, 1), 96, _chimney, 204),
+    ObjectSpec("lamp", (1, 1), 96, _lamp, 205),
 ]
 """Single-sprite props."""
 
@@ -533,3 +549,28 @@ def smoke(scale: int, seed: int) -> Layers:
     layers.normal.putalpha(alpha_channel)
     layers.depth.putalpha(alpha_channel)
     return layers
+
+
+BIRD_FRAME = (24, 14)
+"""Size in pixels of one frame of the bird sheet."""
+
+
+def birds() -> Image.Image:
+    """
+    A gull seen from below, two frames side by side: wings up, wings down (an ``AnimatedSpriteRenderer`` of 2x1).
+
+    :return: The RGBA sheet, ``2 * BIRD_FRAME[0]`` pixels wide.
+    """
+    width, height = BIRD_FRAME
+    grow = 4
+    sheet = Image.new("RGBA", (2 * width * grow, height * grow), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(sheet)
+    ink = (34, 36, 44, 255)
+    for frame, tip in enumerate((3, 12)):
+        cx, cy = (frame * width + width / 2) * grow, 8.5 * grow
+        for side in (-1, 1):
+            tip_xy = (cx + side * 10.5 * grow, tip * grow)
+            mid_xy = (cx + side * 5.5 * grow, (cy / grow + tip) / 2 * grow - 1.5 * grow)
+            draw.line([(cx, cy), mid_xy, tip_xy], fill=ink, width=round(2.4 * grow), joint="curve")
+        draw.ellipse([cx - 2.2 * grow, cy - 2.4 * grow, cx + 2.2 * grow, cy + 2.4 * grow], fill=ink)
+    return sheet.resize((2 * width, height), Image.Resampling.LANCZOS)

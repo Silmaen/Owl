@@ -12,6 +12,8 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 
+from .city_map import write_city_map
+from .city_scene import write_city_scene
 from .common import TILE_H, TILE_W, Z_RANGE, Layers, Vec3
 from .objects import (
     BUILDINGS,
@@ -20,6 +22,7 @@ from .objects import (
     VEHICLE_HEADINGS,
     VEHICLE_MODELS,
     VEHICLES,
+    birds,
     render_object,
     slice_object,
     smoke,
@@ -283,9 +286,14 @@ def generate(project: Path, seed: int = 1, levels: tuple[str, ...] = LEVELS) -> 
     for spec in BUILDINGS + PROPS:
         written += _save(render_object(spec, seed, 1).layers, folder, spec.name, "1x")
     written += _save(smoke(1, seed), folder, "smoke", "1x")
+    birds_path = folder / "birds.png"
+    birds().save(birds_path, optimize=True)
+    written.append(birds_path)
     written += _save(build_vehicles(seed), folder, "vehicles", "1x")
     written.append(write_map(project, seed))
     written.append(write_town_map(project, seed))
+    written.append(write_city_map(project, seed))
+    written.append(write_city_scene(project, seed))
     return written
 
 
