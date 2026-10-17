@@ -9,8 +9,10 @@
 
 #include "scene/ui/HudLayout.h"
 
+#include "app/EngineContext.h"
 #include "scene/Entity.h"
 #include "scene/Scene.h"
+#include "scene/SettingsManager.h"
 #include "scene/component/Canvas.h"
 #include "scene/component/Hierarchy.h"
 #include "scene/component/UiList.h"
@@ -206,9 +208,17 @@ void HudLayout::pushChildren(Scene& iScene, const Pools& iPools, const entt::ent
 							 .slot = m_slots[i]});
 }
 
+auto HudLayout::getUserScale(const Scene& iScene) -> float {
+	auto* context = iScene.getEngineContext();
+	if (context == nullptr)
+		return 1.f;
+	const auto value = context->getSettings().getAs<float>("ui_scale");
+	return value.has_value() ? std::clamp(*value, 0.5f, 3.f) : 1.f;
+}
+
 void HudLayout::layoutCanvas(Scene& iScene, const Pools& iPools, const entt::entity iCanvas, const bool iEditorMode) {
 	const math::vec2 screen{static_cast<float>(m_viewport.x()), static_cast<float>(m_viewport.y())};
-	const float scale = iPools.canvas.get(iCanvas).getScale(screen);
+	const float scale = iPools.canvas.get(iCanvas).getScale(screen) * (iEditorMode ? 1.f : getUserScale(iScene));
 	const component::UiRect::Bounds root{.position = {0.f, 0.f}, .size = screen / scale};
 	m_screenReference = root.size;
 	m_pending.clear();

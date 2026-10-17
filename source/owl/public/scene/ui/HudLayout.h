@@ -195,6 +195,15 @@ public:
 
 	/**
 	 * @brief
+	 *  Player HUD scale of the scene's application: the `ui_scale` setting (1 by default, clamped to 0.5 – 3), applied
+	 *  on top of the canvas scale mode in game, never in the HUD editor.
+	 * @param[in] iScene The scene (1 when it has no engine context).
+	 * @return The scale factor.
+	 */
+	[[nodiscard]] static auto getUserScale(const Scene& iScene) -> float;
+
+	/**
+	 * @brief
 	 *  Forget the layout: the next `isComputedFor` returns false.
 	 */
 	void invalidate();

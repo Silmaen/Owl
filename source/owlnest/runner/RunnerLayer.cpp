@@ -483,6 +483,8 @@ void RunnerLayer::attachFrameBench() {
 		m_frameBench.reset();
 		return;
 	}
+	// Captures and frame benches measure the engine, not the player's interface size.
+	app::Application::get().getEngineContext().getSettings().set("ui_scale", 1.f);
 	if (!options.capture.empty()) {
 		using Format = renderer::gpu::AttachmentSpecification::Format;
 		using Tiling = renderer::gpu::AttachmentSpecification::Tiling;

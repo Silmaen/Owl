@@ -414,7 +414,7 @@ void drawCanvases(Scene& ioScene, const math::vec2ui& iViewport, const bool iEdi
 auto canvasScaleOf(const Scene& iScene, entt::entity iEntity, const math::vec2& iScreen) -> float {
 	while (iEntity != entt::null) {
 		if (const auto* canvas = iScene.registry.try_get<component::Canvas>(iEntity))
-			return canvas->getScale(iScreen);
+			return canvas->getScale(iScreen) * HudLayout::getUserScale(iScene);
 		const auto* hierarchy = iScene.registry.try_get<component::Hierarchy>(iEntity);
 		if (hierarchy == nullptr || hierarchy->parentId == core::UUID{0})
 			break;

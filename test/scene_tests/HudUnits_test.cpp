@@ -8,10 +8,12 @@
 
 #include "testHelper.h"
 
+#include <app/EngineContext.h>
 #include <core/Log.h>
 #include <scene/Entity.h>
 #include <scene/Scene.h>
 #include <scene/SceneSerializer.h>
+#include <scene/SettingsManager.h>
 #include <scene/component/components.h>
 #include <scene/ui/HudLayout.h>
 
@@ -275,4 +277,23 @@ TEST_F(HudUnitsTest, AnUnknownUnitNameFallsBackToPixels) {
 		EXPECT_EQ(rect.sizeUnit.x, Unit::Pixels);
 		EXPECT_EQ(rect.sizeUnit.y, Unit::ParentHeight);
 	}
+}
+
+TEST_F(HudUnitsTest, ThePlayerUiScaleGrowsTheHudInGameButNotInTheEditor) {
+	app::EngineContext context;
+	context.getSettings().set("ui_scale", 2.f);
+	scene::Scene scn;
+	scn.setEngineContext(&context);
+	const auto canvas = makeCanvas(scn, Canvas::ScaleMode::ConstantPixels);
+	const auto panel = makeWidget(scn, canvas, {100.f, 50.f}, Unit::Pixels, Unit::Pixels, {10.f, 20.f});
+	EXPECT_FLOAT_EQ(scene::ui::HudLayout::getUserScale(scn), 2.f);
+	auto& layout = scn.getHudLayout();
+	layout.compute(scn, {800u, 600u}, false);
+	expectBounds(boundsOf(layout, panel), {20.f, 40.f}, {200.f, 100.f});
+	layout.compute(scn, {800u, 600u}, true);
+	expectBounds(boundsOf(layout, panel), {10.f, 20.f}, {100.f, 50.f});
+	context.getSettings().set("ui_scale", 10.f);
+	EXPECT_FLOAT_EQ(scene::ui::HudLayout::getUserScale(scn), 3.f);
+	scn.setEngineContext(nullptr);
+	EXPECT_FLOAT_EQ(scene::ui::HudLayout::getUserScale(scn), 1.f);
 }

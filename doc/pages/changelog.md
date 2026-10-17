@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `ui_scale` player setting: every HUD grows by this factor in game (0.5 to 3, never in the HUD editor); the Engine Demo starts at 150 % with an Interface Size slider in its settings menu.
+- Owl Nest viewport: the frame stats chip can be hidden (right-click it, or Show > Frame stats).
 - Text outline and background box: `UiText` and `Text` take an optional `outlineWidth` / `outlineColor` (a dilated MSDF coverage in the same draw) and `backgroundColor` / `backgroundPadding` (a box behind the text), absent from the file when unset, with inspector fields; the Engine Demo hub text gets a black outline.
 - Engine Demo progression: each level of the hub has a victory objective in its HUD (platformer: reach the door; raycast: take the elevator of E1M1; Iso Town: 20 vehicle trips; voxel: walk 100 blocks from the landing point), completing it sets `level_<name>_done` and returns to the hub, whose HUD counts "Levels completed: n / 4" and wakes the victory portal only when all four are done.
 - Engine Demo hero walk cycle: four generated frames under the Tiny Dungeon characters of `town_atlas.png`, played while the hub player moves, idle when still.
@@ -154,6 +156,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Turning in the Engine Demo raycast level is smooth: the yaw is kept by the script instead of read back from a transform that only follows the body on the physics tick.
 - Owl Nest isometric Navigation tool and graph overlay stay linked: selecting the tool turns the graph on and leaving it restores it, switching the graph off from Show leaves the tool, and entering Play leaves the tool.
 - The export of a game packs the texture of a `UiToolCursor` (a packed game lacked the platformer cursor image).
 - The hub player comes back from a level at its door (the restore moved the transform, which the physics body overwrote).

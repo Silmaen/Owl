@@ -56,10 +56,62 @@ Entities:
       anchorMax: [0.5, 0.5]
       pivot: [0.5, 0.5]
       size: [200, 40]
-      offset: [0, 60]
+      offset: [0, 130]
     UiText:
       text: Reset Defaults
       color: [1, 1, 1, 1]
+      fontSize: 22
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+  - Entity: 6789012345678901240
+    Tag:
+      tag: UiScaleSlider
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 1234567890123456789
+    UiRect:
+      anchorMin: [0.5, 0.5]
+      anchorMax: [0.5, 0.5]
+      pivot: [0.5, 0.5]
+      size: [300, 20]
+      offset: [0, 70]
+    UiSlider:
+      value: 0.4
+      minValue: 0
+      maxValue: 1
+      trackColor: [0.2, 0.2, 0.2, 1]
+      fillColor: [0.95, 0.75, 0.25, 1]
+      handleColor: [1, 1, 1, 1]
+      onValueChangedCallback: on_ui_scale_changed
+    UiFocus:
+      onFocusCallback: on_slider_focused
+  - Entity: 5678901234567890130
+    Tag:
+      tag: UiScaleLabel
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 1234567890123456789
+    UiRect:
+      anchorMin: [0.5, 0.5]
+      anchorMax: [0.5, 0.5]
+      pivot: [0.5, 0.5]
+      size: [300, 30]
+      offset: [0, 40]
+    UiText:
+      text: "Interface Size: 150%"
+      color: [0.9, 0.9, 0.9, 1]
       fontSize: 22
       horizontalAlignment: Center
       verticalAlignment: Middle

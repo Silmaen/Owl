@@ -60,6 +60,8 @@ tooltips and construction tools at once, as in Transport Tycoon.
   reference pixels whatever the units (window drag, `hud.move`).
 - `Canvas::referenceResolution` (1280×720 by default) with `Canvas::scaleMode`: `ConstantPixels`, `ScaleWithHeight`
   (default) or `MatchSmallerSide`; widgets are authored in reference pixels, fonts scale with them.
+- Player scale: the `ui_scale` setting (`SettingsManager`, 1 by default, clamped to 0.5 – 3) multiplies the canvas scale
+  of every HUD in game, never in the HUD editor (`HudLayout::getUserScale`).
 - Legibility floor: a scale mode that shrinks (scale under 1) never draws a text below 12 screen pixels of em height
   (a 16 px font at 640×360 draws at 12 px, not 8); the scale of that text is raised, never past 1, and its layout runs at
   that scale, so a box too small for it wraps or clips the text as for any other size. Authored sizes at scale 1 or

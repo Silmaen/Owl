@@ -8,6 +8,11 @@ local vol_label_id = 0
 local speed_label_id = 0
 local vol_slider_id = 0
 local speed_slider_id = 0
+local ui_scale_label_id = 0
+local ui_scale_slider_id = 0
+
+-- Interface size: the `ui_scale` built-in setting scales every HUD in game, 0.75 to 2.5 times.
+local UI_SCALE_MIN, UI_SCALE_MAX = 0.75, 2.5
 
 function on_create()
     log.info("Settings menu loaded")
@@ -18,6 +23,12 @@ function on_create()
     speed_label_id = scene.find_entity("PlayerSpeedLabel")
     vol_slider_id = scene.find_entity("MasterVolSlider")
     speed_slider_id = scene.find_entity("PlayerSpeedSlider")
+    ui_scale_label_id = scene.find_entity("UiScaleLabel")
+    ui_scale_slider_id = scene.find_entity("UiScaleSlider")
+    if ui_scale_slider_id ~= 0 then
+        local scale = settings.get("ui_scale", 1.5)
+        ui.set_slider_value(ui_scale_slider_id, (scale - UI_SCALE_MIN) / (UI_SCALE_MAX - UI_SCALE_MIN))
+    end
 
     -- Initialize slider positions from current settings values.
     local vol = settings.get("volume_master", 1.0)
@@ -43,6 +54,9 @@ function update_labels()
     end
     if speed_label_id ~= 0 then
         ui.set_text(speed_label_id, string.format("Player Speed: %.1f", speed))
+    end
+    if ui_scale_label_id ~= 0 then
+        ui.set_text(ui_scale_label_id, string.format("Interface Size: %d%%", math.floor(settings.get("ui_scale", 1.5) * 100 + 0.5)))
     end
 end
 
@@ -83,6 +97,16 @@ function on_speed_changed()
     settings.set("player_speed", speed)
     if speed_label_id ~= 0 then
         ui.set_text(speed_label_id, string.format("Player Speed: %.1f", speed))
+    end
+end
+
+-- Slider callback: interface size changed (value 0..1, mapped to UI_SCALE_MIN..UI_SCALE_MAX), seen at once.
+function on_ui_scale_changed()
+    local value = _slider_value or 0.4
+    local scale = UI_SCALE_MIN + value * (UI_SCALE_MAX - UI_SCALE_MIN)
+    settings.set("ui_scale", scale)
+    if ui_scale_label_id ~= 0 then
+        ui.set_text(ui_scale_label_id, string.format("Interface Size: %d%%", math.floor(scale * 100 + 0.5)))
     end
 end
 

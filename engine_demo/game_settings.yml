@@ -20,6 +20,9 @@ GameSettings:
   - key: volume_sfx
     type: float
     value: 1.0
+  - key: ui_scale
+    type: float
+    value: 1.5
   - key: player_speed
     type: float
     value: 8.0
