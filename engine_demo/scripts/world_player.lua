@@ -33,7 +33,8 @@ local k_step_time = 0.11
 local walk_clock = 0
 local shown_frame = -1
 local shown_step = -1
-local step_sound = 1
+local STEP_VARIANTS = 4
+local step_sound = 0
 
 -- The camera follows the hero but stays inside the map: the view is as many cells high as the camera's orthographic
 -- size (15, a pixel-exact 3x at 720p), so k_view_half_height = 7.5, and a 16:9 window shows k_view_half_width cells on each side.
@@ -119,8 +120,9 @@ function on_update(dt)
         -- A footstep each time a foot lands: the contact frames of the cycle (the first and the third).
         local step = (frame - k_frame_walk) % k_walk_frames
         if frame >= k_frame_walk and step ~= shown_step and step % 2 == 0 then
-            sound.play("sounds/hub_step_" .. step_sound .. ".wav")
-            step_sound = 3 - step_sound
+            -- Four variants, never the same twice in a row, each a little louder or softer (no pitch control in Lua).
+            step_sound = (step_sound + math.random(STEP_VARIANTS - 1) - 1) % STEP_VARIANTS + 1
+            sound.set_volume(sound.play("sounds/hub_step_" .. step_sound .. ".wav"), 0.55 + math.random() * 0.4)
         end
         shown_step = frame >= k_frame_walk and step or -1
     end

@@ -5,7 +5,7 @@ Everything is built from sine / noise generators with the standard library only 
 mono 16-bit 22 050 Hz, seeded so that the files are reproducible. Run with ``python3 generate_sounds.py`` from anywhere;
 the files are written next to the script.
 
-Hub: ``hub_ambience`` (wind and birds, loops), ``hub_water`` (river / fountain, loops), ``hub_step_1`` / ``hub_step_2``,
+Hub: ``hub_ambience`` (a 48 s bed of wind, loops), ``hub_birds_1..4`` and ``hub_wind_1..3`` (scenes and gusts played at random gaps), ``hub_water`` (river / fountain, loops), ``hub_step_1..4``,
 ``hub_door``, ``hub_board``, ``hub_lever``, ``hub_gate``, ``hub_portal_hum`` (retriggered while the portal is awake),
 ``hub_portal_wake``, ``hub_bell``.
 Raycast: ``raycast_ambience`` (loops), ``raycast_door``, ``raycast_pushwall``, ``raycast_treasure``, ``raycast_food``,
@@ -122,14 +122,47 @@ def chirp(rng: random.Random, base: float) -> list[float]:
 
 
 def hub_ambience() -> None:
+    """A 48 s bed of wind that swells and drops at irregular times (no birds: ``hub_birds_*`` play at random gaps)."""
     rng = random.Random(11)
-    count = seconds(10.0)
+    count = seconds(48.0)
     wind = lowpass(noise(rng, count), 380)
-    wind = [w * (0.55 + 0.45 * math.sin(TAU * 2 * i / count + 1.0) * math.sin(TAU * 3 * i / count)) for i, w in enumerate(wind)]
-    track = scale(wind, 2.4)
-    for at, base in ((0.6, 3300), (1.9, 2700), (3.0, 3900), (4.4, 3100), (5.1, 3500), (6.8, 2900), (7.9, 3700), (8.8, 3200)):
-        place(track, at, scale(chirp(rng, base), 0.28 if base < 3600 else 0.2))
-    save("hub_ambience", loopable(track), 0.55)
+    # Slow irregular swell: a few sines of incommensurable periods in a whole number of cycles over the loop.
+    swell = [0.5 + 0.18 * math.sin(TAU * 3 * i / count + 1.0) + 0.14 * math.sin(TAU * 7 * i / count + 2.2)
+             + 0.1 * math.sin(TAU * 11 * i / count) for i in range(count)]
+    track = scale(shaped(wind, swell), 2.0)
+    # Soft gusts: a band of noise that rises and falls over four to eight seconds.
+    for at in (5.0, 14.5, 23.0, 31.5, 41.0):
+        length = seconds(rng.uniform(4.0, 8.0))
+        gust = bandpass(noise(rng, length), 200, 900)
+        place(track, at, scale(shaped(gust, [math.sin(math.pi * i / length) ** 2 for i in range(length)]), 1.4))
+    save("hub_ambience", loopable(track, 1.0), 0.35)
+
+
+def hub_birds(index: int) -> None:
+    """One variant of a bird scene (two to four calls over a few seconds), played now and then from ``hub_ambient.lua``."""
+    rng = random.Random(100 + index)
+    length = seconds(rng.uniform(2.5, 4.5))
+    track = [0.0] * (length + seconds(1.0))
+    bases = (3300, 2700, 3900, 3100, 3500, 2900)
+    base = rng.choice(bases)
+    at = 0.1
+    for _ in range(rng.randint(2, 4)):
+        base = rng.choice(bases) if rng.random() < 0.4 else base * rng.uniform(0.94, 1.06)
+        track = mix(track, [0.0] * seconds(at) + scale(chirp(rng, base), rng.uniform(0.2, 0.3)))
+        at += rng.uniform(0.5, 1.2)
+    track = track[: length + seconds(1.0)]
+    for i in range(seconds(0.05)):  # no click at either end
+        track[i] *= i / seconds(0.05)
+        track[-1 - i] *= i / seconds(0.05)
+    save(f"hub_birds_{index}", track, 0.5)
+
+
+def hub_wind(index: int) -> None:
+    """One gust of wind (three to five seconds, fading in and out), played now and then from ``hub_ambient.lua``."""
+    rng = random.Random(200 + index)
+    count = seconds(rng.uniform(3.0, 5.0))
+    gust = bandpass(noise(rng, count), 150 + 60 * index, 700 + 150 * index)
+    save(f"hub_wind_{index}", shaped(gust, [math.sin(math.pi * i / count) ** 2 for i in range(count)]), 0.4)
 
 
 def hub_water() -> None:
@@ -144,12 +177,13 @@ def hub_water() -> None:
     save("hub_water", loopable(mix(scale(burble, 1.0), drops), 0.3), 0.5)
 
 
-def step(seed: int, pitch: float) -> None:
-    rng = random.Random(seed)
+def step(index: int, pitch: float, hardness: float) -> None:
+    """One footstep: the four variants differ in pitch and in how much of the heel and of the scuff they carry."""
+    rng = random.Random(index)
     count = seconds(0.11)
     scuff = shaped(lowpass(noise(rng, count), 1600 * pitch), envelope(count, 0.003, 0.025))
     thud = shaped(tone(95 * pitch, count), envelope(count, 0.002, 0.03))
-    save(f"hub_step_{seed}", mix(scuff, scale(thud, 0.9)), 0.5)
+    save(f"hub_step_{index}", mix(scale(scuff, hardness), scale(thud, 0.9)), 0.5)
 
 
 def hub_door() -> None:
@@ -324,8 +358,17 @@ def raycast_elevator() -> None:
 def main() -> None:
     hub_ambience()
     hub_water()
-    step(1, 1.0)
-    step(2, 0.88)
+    hub_birds(1)
+    hub_birds(2)
+    hub_birds(3)
+    hub_birds(4)
+    hub_wind(1)
+    hub_wind(2)
+    hub_wind(3)
+    step(1, 1.0, 1.0)
+    step(2, 0.88, 1.0)
+    step(3, 0.94, 0.7)
+    step(4, 1.08, 1.3)
     hub_door()
     hub_board()
     hub_lever()

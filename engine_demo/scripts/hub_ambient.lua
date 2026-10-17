@@ -2,7 +2,9 @@
 -- Demonstrates: moving and scaling many entities from one script (`scene.find_entity` once, `transform.set_*` every
 --               frame), CircleRenderer shapes (translucent for the shadows; the smoke shrinks as it
 --               rises, the clouds wrap round the map), a one-shot sound on a timer (`sound.play`, the bell rings every
---               BELL_PERIOD seconds, `bell_rings` in gamestate counts it).
+--               a random gap, `bell_rings` in gamestate counts it), random variants and gaps for the birds and the gusts
+--               of wind (`math.random`, `sound.set_volume`): the wind bed of the scene is a long loop, the rest is
+--               scattered over it so that the ambience never repeats the same way.
 --
 -- Entities named `Smoke_<house>_<n>` (3 puffs per chimney, the first one's position is the chimney) and `Cloud_<n>`.
 
@@ -12,14 +14,28 @@ local RISE = 1.6        -- cells a puff climbs in its life
 local LIFE = 3.0        -- seconds
 local CLOUDS = { { speed = 0.35 }, { speed = 0.25 }, { speed = 0.45 }, { speed = 0.3 }, { speed = 0.4 }, { speed = 0.28 } }
 local MAP_LEFT, MAP_RIGHT = -14, 78
-local BELL_PERIOD = 45
+local BELL_GAP = { 100, 170 }       -- seconds between two rings
 local BELL_FIRST = 12
+local BIRD_VARIANTS, BIRD_GAP, BIRD_VOLUME = 4, { 7, 20 }, { 0.12, 0.3 }
+local WIND_VARIANTS, WIND_GAP, WIND_VOLUME = 3, { 18, 40 }, { 0.15, 0.35 }
 
 local puffs = {}
 local clouds = {}
 local clock = 0
 local next_bell = BELL_FIRST
 local rings = 0
+local next_bird = 3
+local next_wind = 9
+
+-- A random number of seconds of a { min, max } range.
+local function between(range)
+    return range[1] + math.random() * (range[2] - range[1])
+end
+
+-- One sound of a numbered family at a random variant and volume.
+local function scatter(name, variants, volume)
+    sound.set_volume(sound.play("sounds/" .. name .. "_" .. math.random(variants) .. ".wav"), between(volume))
+end
 
 function on_create()
     for h, house in ipairs(HOUSES) do
@@ -42,10 +58,19 @@ end
 function on_update(dt)
     clock = clock + dt
     if clock >= next_bell then
-        next_bell = clock + BELL_PERIOD
+        next_bell = clock + between(BELL_GAP)
         rings = rings + 1
         gamestate.set("bell_rings", rings)
-        sound.set_volume(sound.play("sounds/hub_bell.wav"), 0.6)
+        sound.set_volume(sound.play("sounds/hub_bell.wav"), 0.4)
+    end
+    if clock >= next_bird then
+        next_bird = clock + between(BIRD_GAP)
+        scatter("hub_birds", BIRD_VARIANTS, BIRD_VOLUME)
+        gamestate.set("bird_calls", gamestate.get("bird_calls", 0) + 1)
+    end
+    if clock >= next_wind then
+        next_wind = clock + between(WIND_GAP)
+        scatter("hub_wind", WIND_VARIANTS, WIND_VOLUME)
     end
     for _, puff in ipairs(puffs) do
         local age = (clock / LIFE + puff.phase) % 1
