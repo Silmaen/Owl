@@ -235,7 +235,8 @@ end
 ### `scene`
 
 `scene.find_entity` scans every entity: call it once (in `on_create`) and keep the id. It looks in the scene, then in the
-scene's HUD asset (`Hud:` key, see [Scene](scene.md#hud-asset)).
+scene's HUD asset (`Hud:` key, see [Scene](scene.md#hud-asset)). `scene.find_entities(tag)` returns every entity of
+the scene with the tag as an array (the iso town indexes its trees by cell with it).
 
 ### `ui`
 

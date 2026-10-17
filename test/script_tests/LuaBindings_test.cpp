@@ -89,6 +89,32 @@ TEST(LuaBindings, sceneFindEntity) {
 	core::Log::invalidate();
 }
 
+TEST(LuaBindings, sceneFindEntities) {
+	core::Log::init(core::Log::Level::Off);
+	auto scn = mkShared<scene::Scene>();
+	scn->createEntity("Tree");
+	scn->createEntity("Tree");
+	scn->createEntity("Rock");
+
+	const std::string script = "tree_count = 0\n"
+							   "none_count = -1\n"
+							   "function on_create()\n"
+							   "  tree_count = #scene.find_entities('Tree')\n"
+							   "  none_count = #scene.find_entities('Nothing')\n"
+							   "end\n";
+	const std::vector<uint8_t> data(script.begin(), script.end());
+
+	const ScriptInstance inst;
+	inst.setScene(scn.get());
+	ASSERT_TRUE(inst.createFromBuffer(data, "find_all_test", 1));
+	inst.onCreate();
+
+	EXPECT_EQ(inst.getPropertyInt("tree_count").value_or(-1), 2);
+	EXPECT_EQ(inst.getPropertyInt("none_count").value_or(-1), 0);
+
+	core::Log::invalidate();
+}
+
 TEST(LuaBindings, sceneFindEntityNotFound) {
 	core::Log::init(core::Log::Level::Off);
 	auto scn = mkShared<scene::Scene>();

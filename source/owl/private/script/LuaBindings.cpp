@@ -439,6 +439,22 @@ auto luaSceneFindEntity(lua_State* iState) -> int {
 	return 1;
 }
 
+auto luaSceneFindEntities(lua_State* iState) -> int {
+	lua_newtable(iState);
+	auto* activeScene = getBoundScene(iState);
+	if (activeScene == nullptr)
+		return 1;
+	const char* name = luaL_checkstring(iState, 1);
+	lua_Integer index = 0;
+	for (const auto view = activeScene->registry.view<scene::component::Tag>(); const auto entity: view) {
+		if (view.get<scene::component::Tag>(entity).tag != name)
+			continue;
+		lua_pushinteger(iState, static_cast<lua_Integer>(activeScene->registry.get<scene::component::ID>(entity).id));
+		lua_rawseti(iState, -2, ++index);
+	}
+	return 1;
+}
+
 auto luaUiFind(lua_State* iState) -> int {
 	auto* activeScene = getBoundScene(iState);
 	if (activeScene == nullptr) {
@@ -1805,6 +1821,10 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		 .description = "First entity with this tag (0 when none), in the scene then in its HUD; scans every entity, "
 						"cache the result.",
 		 .params = {{"name", String}}, .returns = {{"entity_id", Entity}}},
+		{.table = "scene", .name = "find_entities", .function = guarded<luaSceneFindEntities>,
+		 .description = "Every entity of the scene with this tag, as an array of ids (empty when none); scans every "
+						"entity, cache the result.",
+		 .params = {{"name", String}}, .returns = {{"entity_ids", Table}}},
 		{.table = "scene", .name = "create_entity", .function = guarded<luaSceneCreateEntity>,
 		 .description = "Create an empty entity.",
 		 .params = {{"name", String}}, .returns = {{"entity_id", Entity}}},

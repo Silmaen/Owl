@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Lua `scene.find_entities(tag)`: every entity with a tag; in the Engine Demo iso town a road built on a tree clears it and the bulldozer removes trees (3 funds).
 - Engine Demo hub redesigned as a 64×40 RPG village: plaza with an animated fountain, church, market, fields, forest edge, river with three bridges, a shrine for the victory portal, signposts, labels and flags on the four level houses, villagers with idle and walk frames (two on grid pathfinding), butterflies, sparrows and a church bell.
 - Engine Demo hub: the four level houses carry an outlined title, the villagers a name tag growing in near the hero (no other place label), and signposts and villagers answer on E with a line in the HUD.
 - Engine Demo raycast minimap is a fog of war: rays cast in Lua reveal the cells in the field of view, closed doors stop them, the seen cells survive saves, and a marker shows the facing.
@@ -111,6 +112,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Text stays smooth at any size: the font atlas distance range grows from 2 to 6 px (atlas cache version 2) and the outline is an antialiased band computed from the signed distance instead of a sampled dilation.
+- The cursor captured by a voxel player is given back when the scene stops wanting capture (level change, Stop in Owl Nest), not only on Escape.
 - Engine Demo HUD texts and menu canvases are about 25 % bigger, with the boxes widened where a line would overflow.
 - Show > Navigation graph of the isometric viewport is "Navigation graph and routes" and shares its drawing with the game (`scene::nav::drawNavigationGraph`).
 - `sample_project/` is renamed `engine_demo/`, the Engine Demo: an all-in-one showcase of the engine features, apart from the planned sample games.

@@ -9,7 +9,7 @@
 -- the mask of its four road neighbours (straight along X or Y, corner, T, cross, dead end, alone), and building or
 -- bulldozing re-tiles the cell and its four neighbours. The ground layer (layer 0) tells where one may build: grass, sand, dirt and flowers
 -- only, on a slope that is not steep, never on a pavement plot, water or rock. `town_money`, `town_roads` (roads built
--- by the player), `town_cursor_x` / `town_cursor_y` and `town_cursor_tile` (the road tile under the cursor) mirror the state for the other scripts and the scenario test.
+-- by the player), `town_trees` (trees cleared), `town_trees_left` (trees standing), `town_cursor_x` / `town_cursor_y` and `town_cursor_tile` (the road tile under the cursor) mirror the state for the other scripts and the scenario test.
 
 local GROUND_LAYER, ROAD_LAYER = 0, 1
 properties = {
@@ -33,7 +33,7 @@ local FIRST_ROAD_TILE, LAST_ROAD_TILE = 11, 25
 local BUILDABLE = { [0] = true, [1] = true, [4] = true, [6] = true, [7] = true }
 local SIZE = 24
 local FIRST_STEEP_SLOPE = 15
-local START_FUNDS, ROAD_COST, ROAD_REFUND = 1000, 10, 5
+local START_FUNDS, ROAD_COST, ROAD_REFUND, TREE_COST = 1000, 10, 5, 3
 -- Victory objective: the town earns its keep once its vehicles have made this many trips (`town_trips`), set by the
 -- scene (`target_trips`).
 local TARGET_TRIPS = 20
@@ -58,6 +58,8 @@ local last_cell = nil
 local toast_left = 0
 local shown_funds, shown_roads = nil, nil
 local built = {}
+-- Trees by cell (`y * SIZE + x`), lists of entity ids: a road clears the trees under it, the bulldozer removes them.
+local trees_at = {}
 
 -- A sound effect of the tool: `volume` times the sound effects volume of the settings. `town_sounds` counts them.
 local function play(path, volume)
@@ -74,6 +76,35 @@ local function toast(text)
     ui.set_text(toast_id, text)
     ui.set_visible(toast_id, true)
     toast_left = TOAST_SECONDS
+end
+
+-- The trees are sprites centred half a cell past the cell they stand in (see tools/iso_atlas/city_scene.py).
+local function index_trees()
+    trees_at = {}
+    local ids = scene.find_entities("Tree")
+    gamestate.set("town_trees_left", #ids)
+    for _, id in ipairs(ids) do
+        local x, y = transform.get_position(id)
+        local key = math.floor(y - 0.5) * SIZE + math.floor(x - 0.5)
+        trees_at[key] = trees_at[key] or {}
+        table.insert(trees_at[key], id)
+    end
+end
+
+-- Destroy every tree of a cell; returns how many.
+local function clear_trees(x, y)
+    local key = y * SIZE + x
+    local list = trees_at[key]
+    if not list then
+        return 0
+    end
+    for _, id in ipairs(list) do
+        scene.destroy_entity(id)
+    end
+    trees_at[key] = nil
+    gamestate.set("town_trees", gamestate.get("town_trees", 0) + #list)
+    gamestate.set("town_trees_left", gamestate.get("town_trees_left", 0) - #list)
+    return #list
 end
 
 local function is_road(tile)
@@ -143,12 +174,24 @@ local function build_road(x, y)
     built[y * SIZE + x] = true
     gamestate.set("town_money", money() - ROAD_COST)
     gamestate.set("town_roads", gamestate.get("town_roads", 0) + 1)
-    toast("Road built")
+    toast(clear_trees(x, y) > 0 and "Road built, tree cleared" or "Road built")
     play("sounds/town/click_build.wav", 0.7)
 end
 
 local function bulldoze(x, y)
     if not road_at(x, y) then
+        if not trees_at[y * SIZE + x] then
+            return
+        end
+        if money() < TREE_COST then
+            toast("Not enough funds")
+            play("sounds/town/error.wav", 0.5)
+            return
+        end
+        clear_trees(x, y)
+        gamestate.set("town_money", money() - TREE_COST)
+        toast("Tree removed (-" .. TREE_COST .. ")")
+        play("sounds/town/click_bulldoze.wav", 0.7)
         return
     end
     isometric.set_cell(map_id, ROAD_LAYER, x, y, -1, -1)
@@ -291,6 +334,8 @@ function on_create()
     gamestate.set("town_roads", 0)
     gamestate.set("town_trips", 0)
     gamestate.set("town_sounds", 0)
+    gamestate.set("town_trees", 0)
+    index_trees()
     ui.set_visible(toast_id, false)
     set_tool(TOOL_ROAD)
     ui.transition_fade_in(0.4)
