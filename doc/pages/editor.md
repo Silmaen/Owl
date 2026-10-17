@@ -278,7 +278,8 @@ off-screen `Framebuffer` with two colour attachments:
   isometric mode), **Show** (grid, camera
   markers, trigger icons, and in the isometric mode the navigation graph of the tilemaps with a Shift-click test path),
   in the isometric mode the **Navigation tool** that edits one-way roads, closed sides and slower cells on the map
-  (see [Pathfinding](pathfinding.md)), **Frame selection** (`F`), the **Camera** menu and the frame stats toggle;
+  (see [Pathfinding](pathfinding.md)); selecting the tool turns the graph on and leaving it puts the graph back, and
+  switching the graph off from **Show** leaves the tool, so the two never disagree, **Frame selection** (`F`), the **Camera** menu and the frame stats toggle;
 - bottom-left: frame rate, frame time and draw calls (a click opens the Stats panel);
 - bottom-right: the view-cube of the editor camera; in Play of an isometric scene, the eye button that draws the
   navigation graph and the routes of the vehicles (see [Pathfinding](pathfinding.md)).

@@ -233,6 +233,9 @@ void Viewport::onUpdate(const core::Timestep& iTimeStep) {
 
 	if (mp_document->state() == SceneDocument::State::Edit)
 		updateIsometricMode(activeScene);
+	if (m_parent != nullptr)
+		m_navTool.sync(m_parent->getSettings().showNavGraph,
+					   mp_document->state() == SceneDocument::State::Edit && m_isometric);
 	if (mp_document->state() == SceneDocument::State::Edit && m_isometric) {
 		if (isHovered())
 			handleIsometricInput();
@@ -1270,10 +1273,8 @@ void Viewport::renderViewOverlay() {
 							.description = "Edit one-way roads, closed sides and slower cells on the graph. Click an "
 										   "arrow of a cell edge to cycle two-way, exit only, enter only, closed; "
 										   "right-click a cell to set its cost.",
-							.selected = m_navTool})) {
-				m_navTool = !m_navTool;
-				if (m_navTool)
-					settings.showNavGraph = true;
+							.selected = m_navTool.active})) {
+				m_navTool.toggle(settings.showNavGraph);
 			}
 		}
 		ImGui::SameLine();
@@ -1407,7 +1408,7 @@ void Viewport::pickNavigationCells() {
 
 void Viewport::handleNavigationTool(const shared<scene::Scene>& iScene) {
 	m_navSide.reset();
-	if (!m_navTool || m_parent == nullptr || !m_parent->getSettings().showNavGraph || !m_hovered ||
+	if (!m_navTool.active || m_parent == nullptr || !m_parent->getSettings().showNavGraph || !m_hovered ||
 		!m_hoveredCell.has_value() || !m_isoCursor.has_value() || !iScene)
 		return;
 	const auto& io = ImGui::GetIO();
@@ -1510,7 +1511,7 @@ void Viewport::renderNavigationOverlay(const shared<scene::Scene>& iScene) const
 	constexpr math::vec4 pathColor{1.f, 0.95f, 0.20f, 1.f};
 	scene::nav::drawNavigationGraph(*iScene);
 	scene::nav::drawNavigationRoutes(*iScene);
-	if (m_navTool && m_hoveredCell.has_value() && m_isometric)
+	if (m_navTool.active && m_hoveredCell.has_value() && m_isometric)
 		scene::nav::drawNavigationCellEditor(*iScene, static_cast<uint64_t>(m_hoveredMapEntity), m_hoveredCell->x(),
 											 m_hoveredCell->y(), m_navSide);
 	bool pathDone = false;
@@ -1810,7 +1811,7 @@ auto Viewport::onMouseButtonPressed(const event::MouseButtonPressedEvent& ioEven
 	if (m_parent != nullptr && m_parent->getVoxelBrush().active)
 		return false;
 	// So does the navigation tool of the isometric view.
-	if (m_navTool && m_isometric && m_parent != nullptr && m_parent->getSettings().showNavGraph)
+	if (m_navTool.active && m_isometric && m_parent != nullptr && m_parent->getSettings().showNavGraph)
 		return false;
 	if (ioEvent.getMouseButton() == input::mouse::ButtonLeft) {
 		if (isHovered() && !gui::Guizmo::isOver() && !input::Input::isKeyPressed(input::key::LeftAlt))
