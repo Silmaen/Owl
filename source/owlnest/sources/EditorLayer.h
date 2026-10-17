@@ -232,6 +232,13 @@ public:
 
 	/**
 	 * @brief
+	 *  Open an image asset in a read-only `ImageDocument` (or switch to it).
+	 * @param[in] iPath The image file.
+	 */
+	void openImageFile(const std::filesystem::path& iPath);
+
+	/**
+	 * @brief
 	 *  Open an `input_actions.yml` in an `ActionMapDocument` (or switch to it); a missing file starts from the built-in
 	 *  actions and is created by the first save.
 	 * @param[in] iPath Absolute path to the file.

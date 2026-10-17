@@ -113,6 +113,9 @@ auto EditorLayer::openDocumentForRecovery(const RecoveryEntry& iEntry) -> Docume
 		case DocumentType::ActionMap:
 			openActionMapFile(path);
 			break;
+		case DocumentType::Image:
+			openImageFile(path);
+			break;
 		case DocumentType::Scene:
 			break;
 	}

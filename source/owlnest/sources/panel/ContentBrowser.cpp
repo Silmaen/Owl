@@ -8,6 +8,7 @@
 
 #include "ContentBrowser.h"
 
+#include "../AssetKind.h"
 #include "../DockLayout.h"
 
 #include <gui/IconBank.h>
@@ -549,16 +550,14 @@ void ContentBrowser::openEntry(const std::filesystem::directory_entry& iEntry) {
 	} else if ((path.extension() == ".ttf" || path.extension() == ".otf" || path.extension() == ".owlfont") &&
 			   m_fontOpenCallback) {
 		m_fontOpenCallback(path);
+	} else if (classifyAsset(path) == AssetKind::Image && m_imageOpenCallback) {
+		m_imageOpenCallback(path);
 	} else if (path.filename() == input::ActionMap::fileName && m_actionMapOpenCallback) {
 		m_actionMapOpenCallback(path);
 	} else if (path.extension() == ".owlmacro" && m_macroRunCallback) {
 		m_macroRunCallback(path);
-	} else if (m_codeOpenCallback) {
-		static const std::vector<std::string> codeExts = {".lua", ".py",       ".c",   ".cpp", ".cc",   ".cxx",
-														  ".h",   ".hpp",      ".hxx", ".yml", ".yaml", ".json",
-														  ".md",  ".markdown", ".svg", ".xml"};
-		if (std::ranges::find(codeExts, path.extension().string()) != codeExts.end())
-			m_codeOpenCallback(path);
+	} else if (m_codeOpenCallback && classifyAsset(path) == AssetKind::Code) {
+		m_codeOpenCallback(path);
 	}
 }
 
