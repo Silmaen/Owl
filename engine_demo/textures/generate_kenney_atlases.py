@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the Engine Demo atlases from the Kenney CC0 packs in ``kenney/``.
+"""Build the Engine Demo atlases from the Kenney CC0 tile sheets in ``tilemaps/``.
 
 * ``town_atlas.png``     16 px tiles, 12 columns: Tiny Town's packed sheet (rows 0-10), a row of extra tiles in the
   same palette (four phases of water, lava, bridge; Tiny Town has none), then the Tiny Dungeon characters (rows 12-13)
@@ -29,7 +29,7 @@ from generate_village_tiles import ROWS, build_village_tiles
 from PIL import Image
 
 HERE = Path(__file__).parent
-PACKS = HERE / "kenney"
+SHEETS = HERE / "tilemaps"
 
 
 def _extra_tiles() -> Image.Image:
@@ -93,8 +93,8 @@ def _hero_walk_frames(hero: Image.Image) -> list[Image.Image]:
 
 
 def build_town() -> None:
-    town = Image.open(PACKS / "tiny-town/Tilemap/tilemap_packed.png").convert("RGBA")
-    dungeon = Image.open(PACKS / "tiny-dungeon/Tilemap/tilemap_packed.png").convert("RGBA")
+    town = Image.open(SHEETS / "tiny_town.png").convert("RGBA")
+    dungeon = Image.open(SHEETS / "tiny_dungeon.png").convert("RGBA")
     atlas = Image.new("RGBA", (192, ROWS * 16), (0, 0, 0, 0))
     atlas.paste(town, (0, 0))
     atlas.paste(_extra_tiles(), (0, 11 * 16))
@@ -107,8 +107,8 @@ def build_town() -> None:
 
 
 def build_platformer() -> None:
-    tiles = Image.open(PACKS / "pixel-platformer/Tilemap/tilemap_packed.png").convert("RGBA")
-    chars = Image.open(PACKS / "pixel-platformer/Tilemap/tilemap-characters_packed.png").convert("RGBA")
+    tiles = Image.open(SHEETS / "pixel_platformer.png").convert("RGBA")
+    chars = Image.open(SHEETS / "pixel_platformer_characters.png").convert("RGBA")
     atlas = Image.new("RGBA", (360, 288), (0, 0, 0, 0))
     atlas.paste(tiles, (0, 0))
     atlas.paste(chars, (0, 216))
@@ -148,9 +148,9 @@ def _flag(cloth: tuple[tuple[int, ...], tuple[int, ...]], wave: int) -> Image.Im
 
 
 def build_platformer_ext() -> None:
-    farm = Image.open(PACKS / "pixel-platformer-farm-expansion/Tilemap/tilemap_packed.png").convert("RGBA")
-    industrial = Image.open(PACKS / "pixel-platformer-industrial-expansion/Tilemap/tilemap_packed.png").convert("RGBA")
-    base = Image.open(PACKS / "pixel-platformer/Tilemap/tilemap_packed.png").convert("RGBA")
+    farm = Image.open(SHEETS / "pixel_platformer_farm.png").convert("RGBA")
+    industrial = Image.open(SHEETS / "pixel_platformer_industrial.png").convert("RGBA")
+    base = Image.open(SHEETS / "pixel_platformer.png").convert("RGBA")
     atlas = Image.new("RGBA", (288, 288), (0, 0, 0, 0))
     atlas.paste(farm, (0, 0))
     atlas.paste(industrial, (0, 126))
@@ -178,7 +178,7 @@ def build_platformer_ext() -> None:
 
 
 def build_platformer_backdrop() -> None:
-    sheet = Image.open(PACKS / "pixel-platformer/Tilemap/tilemap-backgrounds_packed.png").convert("RGBA")
+    sheet = Image.open(SHEETS / "pixel_platformer_backgrounds.png").convert("RGBA")
     atlas = Image.new("RGBA", (192, 120), (0, 0, 0, 0))
     atlas.paste(sheet, (0, 0))
     for column in range(8):
