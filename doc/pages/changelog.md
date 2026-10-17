@@ -12,12 +12,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Engine Demo hub redesigned as a 64×40 RPG village: plaza with an animated fountain, church, market, fields, forest edge, river with three bridges, a shrine for the victory portal, signposts, labels and flags on the four level houses, villagers with idle and walk frames (two on grid pathfinding), butterflies, sparrows and a church bell.
-- Engine Demo hub: a label on every place (houses, church, square, well, stalls, fields, river, shrine, lava), minor ones growing in near the hero and name tags on the villagers, and signposts and villagers that answer on E with a line in the HUD.
+- Engine Demo hub: the four level houses carry an outlined title, the villagers a name tag growing in near the hero (no other place label), and signposts and villagers answer on E with a line in the HUD.
 - Engine Demo raycast minimap is a fog of war: rays cast in Lua reveal the cells in the field of view, closed doors stop them, the seen cells survive saves, and a marker shows the facing.
-- Engine Demo hub sound less repetitive: a 48 s wind loop, bird scenes and wind gusts at random gaps, four footsteps with random volume, a rarer bell, and river and fountain loops quieter and heard only near.
+- Engine Demo hub sound less repetitive: a 48 s wind loop, bird scenes and wind gusts at random gaps, four footsteps with random volume, a rarer bell, and a light babbling brook for the river and a distinct fountain loop, quiet and heard only within about 5 cells.
 - Engine Demo sounds: hub ambience, river and fountain loops, footsteps, doors, board, lever, gate, portal hum and bell; raycast ambience, doors, push-walls, treasure / food / ammo pick-ups and elevator, synthesised by `engine_demo/sounds/generate_sounds.py` (no download).
 - A `SoundSource` with `playOnStart` loads its sound file on first use, like `sound.play`, so ambience loops play in the runner.
-- `ui_scale` player setting: every HUD grows by this factor in game (0.5 to 3, never in the HUD editor); the Engine Demo starts at 150 % with an Interface Size slider in its settings menu.
+- `ui_scale` player setting: every HUD grows by this factor in game (0.5 to 3, never in the HUD editor); the Engine Demo starts at 100 % with an Interface Size slider (75 to 200 %) in its settings menu.
+- Engine Demo HUDs and menus authored at a large size and laid out in corner `UiLayout` groups with ratio sizes, so nothing overlaps from 75 to 200 % interface size and 4:3 to 21:9 (`DemoHudLayout_test.cpp`).
 - Owl Nest viewport: the frame stats chip can be hidden (right-click it, or Show > Frame stats).
 - `entity.get_link(entity_id)`: the entity an `EntityLink` points at, readable from Lua.
 - Engine Demo iso town grown to a 64×64 map written by `tools/iso_atlas` (hills, a river with bridges, a park with a pond, a town centre, industrial and harbour districts with a railway and a pier, 195 buildings, 277 trees), twelve vehicles on one-way and slow streets, factory smoke, glints on the water, blinking lights, gulls and a day and night tint, an objective of 100 trips, and its sounds (engine loops, ambience, surf, horn, coin, tool clicks, bell) synthesised by `engine_demo/sounds/generate_town_sounds.py`; the 24×24 town stays as `iso_town_small`, the fixture of the scenarios and the render test.

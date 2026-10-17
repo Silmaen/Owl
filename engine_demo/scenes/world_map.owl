@@ -1232,8 +1232,8 @@ Entities:
     rotation: [0, 0, 0]
     scale: [1.0, 1.0, 1.0]
   Visibility: {gameVisible: true}
-  SoundSource: {soundAsset: sounds/hub_water.wav, category: Ambient, volume: 0.5, pitch: 1.0, loop: true, spatial: true, playOnStart: true, maxDistance: 8.0,
-    rolloff: 1.0}
+  SoundSource: {soundAsset: sounds/hub_fountain.wav, category: Ambient, volume: 0.5, pitch: 1.0, loop: true, spatial: true, playOnStart: true, maxDistance: 5.0,
+    rolloff: 3.0}
 - Entity: 2000000000000000348
   Tag: {tag: RiverSound}
   Transform:
@@ -1241,8 +1241,8 @@ Entities:
     rotation: [0, 0, 0]
     scale: [1.0, 1.0, 1.0]
   Visibility: {gameVisible: true}
-  SoundSource: {soundAsset: sounds/hub_water.wav, category: Ambient, volume: 0.45, pitch: 1.0, loop: true, spatial: true, playOnStart: true, maxDistance: 9.0,
-    rolloff: 1.0}
+  SoundSource: {soundAsset: sounds/hub_water.wav, category: Ambient, volume: 0.5, pitch: 1.0, loop: true, spatial: true, playOnStart: true, maxDistance: 4.5,
+    rolloff: 3.0}
 - Entity: 2000000000000000349
   Tag: {tag: RiverSoundEast}
   Transform:
@@ -1250,8 +1250,35 @@ Entities:
     rotation: [0, 0, 0]
     scale: [1.0, 1.0, 1.0]
   Visibility: {gameVisible: true}
-  SoundSource: {soundAsset: sounds/hub_water.wav, category: Ambient, volume: 0.4, pitch: 1.0, loop: true, spatial: true, playOnStart: true, maxDistance: 8.0,
-    rolloff: 1.0}
+  SoundSource: {soundAsset: sounds/hub_water.wav, category: Ambient, volume: 0.5, pitch: 1.0, loop: true, spatial: true, playOnStart: true, maxDistance: 4.5,
+    rolloff: 3.0}
+- Entity: 2000000000000000350
+  Tag: {tag: RiverSoundWest}
+  Transform:
+    translation: [10.5, -31.5, 0.5]
+    rotation: [0, 0, 0]
+    scale: [1.0, 1.0, 1.0]
+  Visibility: {gameVisible: true}
+  SoundSource: {soundAsset: sounds/hub_water.wav, category: Ambient, volume: 0.5, pitch: 1.0, loop: true, spatial: true, playOnStart: true, maxDistance: 4.5,
+    rolloff: 3.0}
+- Entity: 2000000000000000351
+  Tag: {tag: RiverSoundWestBend}
+  Transform:
+    translation: [24.5, -30.5, 0.5]
+    rotation: [0, 0, 0]
+    scale: [1.0, 1.0, 1.0]
+  Visibility: {gameVisible: true}
+  SoundSource: {soundAsset: sounds/hub_water.wav, category: Ambient, volume: 0.5, pitch: 1.0, loop: true, spatial: true, playOnStart: true, maxDistance: 4.5,
+    rolloff: 3.0}
+- Entity: 2000000000000000352
+  Tag: {tag: RiverSoundEastEnd}
+  Transform:
+    translation: [58.5, -31.5, 0.5]
+    rotation: [0, 0, 0]
+    scale: [1.0, 1.0, 1.0]
+  Visibility: {gameVisible: true}
+  SoundSource: {soundAsset: sounds/hub_water.wav, category: Ambient, volume: 0.5, pitch: 1.0, loop: true, spatial: true, playOnStart: true, maxDistance: 4.5,
+    rolloff: 3.0}
 - Entity: 2000000000000000432
   Tag: {tag: Talk_Sign1}
   Transform:

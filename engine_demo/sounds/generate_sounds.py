@@ -5,7 +5,7 @@ Everything is built from sine / noise generators with the standard library only 
 mono 16-bit 22 050 Hz, seeded so that the files are reproducible. Run with ``python3 generate_sounds.py`` from anywhere;
 the files are written next to the script.
 
-Hub: ``hub_ambience`` (a 48 s bed of wind, loops), ``hub_birds_1..4`` and ``hub_wind_1..3`` (scenes and gusts played at random gaps), ``hub_water`` (river / fountain, loops), ``hub_step_1..4``,
+Hub: ``hub_ambience`` (a 48 s bed of wind, loops), ``hub_birds_1..4`` and ``hub_wind_1..3`` (scenes and gusts played at random gaps), ``hub_water`` (a light brook, loops), ``hub_fountain`` (jet and plops, loops), ``hub_step_1..4``,
 ``hub_door``, ``hub_board``, ``hub_lever``, ``hub_gate``, ``hub_portal_hum`` (retriggered while the portal is awake),
 ``hub_portal_wake``, ``hub_bell``.
 Raycast: ``raycast_ambience`` (loops), ``raycast_door``, ``raycast_pushwall``, ``raycast_treasure``, ``raycast_food``,
@@ -165,16 +165,43 @@ def hub_wind(index: int) -> None:
     save(f"hub_wind_{index}", shaped(gust, [math.sin(math.pi * i / count) ** 2 for i in range(count)]), 0.4)
 
 
+def bubble(rng: random.Random, freq: float, length: float) -> list[float]:
+    """One bubble of a brook: a short sine that rises in pitch while it fades, the sound of a trapped air pocket."""
+    count = seconds(length)
+    phase, out = 0.0, []
+    for i in range(count):
+        t = i / count
+        phase += TAU * freq * (1 + 1.6 * t) / RATE
+        out.append(math.sin(phase) * math.sin(math.pi * min(1.0, t * 1.3)) * math.exp(-3.0 * t))
+    return out
+
+
 def hub_water() -> None:
+    """A light babbling brook (river): many small rising bubbles over a thin, bright, filtered rustle; no low rumble."""
     rng = random.Random(21)
-    count = seconds(5.0)
-    flow = bandpass(noise(rng, count), 300, 2600)
-    burble = [f * (0.6 + 0.4 * math.sin(TAU * 7 * i / count) * math.sin(TAU * 11 * i / count + 2)) for i, f in enumerate(flow)]
-    drops = [0.0] * count
-    for _ in range(26):
-        freq = rng.uniform(900, 2200)
-        place(drops, rng.uniform(0, 5.0), scale(shaped(tone(freq, seconds(0.07)), envelope(seconds(0.07), 0.002, 0.02)), 0.35))
-    save("hub_water", loopable(mix(scale(burble, 1.0), drops), 0.3), 0.5)
+    duration = 6.0
+    count = seconds(duration)
+    bubbles = [0.0] * count
+    for _ in range(int(duration * 70)):
+        place(bubbles, rng.uniform(0, duration), scale(bubble(rng, rng.uniform(700, 2600), rng.uniform(0.012, 0.04)), rng.uniform(0.15, 1.0) ** 2))
+    rustle = bandpass(noise(rng, count), 1800, 4800)
+    rustle = [f * (0.5 + 0.5 * math.sin(TAU * 3 * i / count + 1) * math.sin(TAU * 5 * i / count)) for i, f in enumerate(rustle)]
+    save("hub_water", loopable(mix(bubbles, scale(rustle, 0.35)), 0.3), 0.3)
+
+
+def hub_fountain() -> None:
+    """A fountain: a steady jet hiss with a slow pulse, and the heavier plops of the drops falling back in the basin."""
+    rng = random.Random(22)
+    duration = 5.0
+    count = seconds(duration)
+    jet = bandpass(noise(rng, count), 2500, 6500)
+    jet = [f * (0.55 + 0.45 * math.sin(TAU * 4 * i / count)) for i, f in enumerate(jet)]
+    plops = [0.0] * count
+    for _ in range(int(duration * 9)):
+        freq = rng.uniform(380, 900)
+        plop = shaped(tone(freq, seconds(0.11)), envelope(seconds(0.11), 0.002, 0.03))
+        place(plops, rng.uniform(0, duration), scale(plop, rng.uniform(0.3, 0.8)))
+    save("hub_fountain", loopable(mix(scale(jet, 0.6), plops), 0.3), 0.3)
 
 
 def step(index: int, pitch: float, hardness: float) -> None:
@@ -358,6 +385,7 @@ def raycast_elevator() -> None:
 def main() -> None:
     hub_ambience()
     hub_water()
+    hub_fountain()
     hub_birds(1)
     hub_birds(2)
     hub_birds(3)
