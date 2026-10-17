@@ -57,10 +57,12 @@ TEST(SceneSerializer, SaveKeepsTheEntityOrderOfTheFile) {
 	EXPECT_EQ(order, (std::vector<uint64_t>{1, 2, 3, 4}));
 	const auto again = std::filesystem::temp_directory_path() / "tempOrder2.yml";
 	ASSERT_TRUE(SceneSerializer(sc2).serialize(again));
-	std::ifstream first(fs);
-	std::ifstream second(again);
-	EXPECT_EQ(std::string(std::istreambuf_iterator<char>(first), {}),
-			  std::string(std::istreambuf_iterator<char>(second), {}));
+	{
+		std::ifstream first(fs);
+		std::ifstream second(again);
+		EXPECT_EQ(std::string(std::istreambuf_iterator<char>(first), {}),
+				  std::string(std::istreambuf_iterator<char>(second), {}));
+	}
 	remove(fs);
 	remove(again);
 	owl::core::Log::invalidate();
