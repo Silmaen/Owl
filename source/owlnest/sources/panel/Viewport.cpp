@@ -996,8 +996,10 @@ void Viewport::renderOverlayToolbar() {
 	} else
 		renderPlayBanner(collapsed);
 
-	// Frame time chip, bottom-left.
-	if (beginOverlay(std::format("##vpFps{:x}", id), {m_lower.x() + margin, m_upper.y() - margin}, {0.f, 1.f})) {
+	// Frame time chip, bottom-left (hidden from the Show menu or its own right-click menu).
+	const bool frameChip = settings.showFrameChip;
+	if (frameChip &&
+		beginOverlay(std::format("##vpFps{:x}", id), {m_lower.x() + margin, m_upper.y() - margin}, {0.f, 1.f})) {
 		const auto stats = renderer::Renderer2D::getStats();
 		const float fps = ImGui::GetIO().Framerate;
 		gui::UiLayer::pushTextStyle(gui::TextStyle::Value);
@@ -1010,10 +1012,18 @@ void Viewport::renderOverlayToolbar() {
 			settings.showStats = true;
 			ImGui::SetWindowFocus(panelWindow::stats);
 		}
-		gui::widgets::itemTooltip("Frame stats", nullptr, "Click to open the Stats panel.");
+		if (ImGui::BeginPopupContextItem("##fpsChipMenu")) {
+			if (gui::widgets::menuItem({.label = "Hide the frame stats"}))
+				settings.showFrameChip = false;
+			ImGui::EndPopup();
+		}
+		gui::widgets::itemTooltip(
+				"Frame stats", nullptr,
+				"Click to open the Stats panel, right-click to hide it (Show menu to bring it back).");
 		addOverlayRect(currentOverlayRect());
 	}
-	endOverlay();
+	if (frameChip)
+		endOverlay();
 
 	// While the scene runs, the navigation overlay (graph and routes of the vehicles) is one toggle, bottom-right.
 	if (!editing && m_isometric) {
@@ -1261,6 +1271,7 @@ void Viewport::renderViewOverlay() {
 			option("Grid", settings.showGrid);
 			option("Camera markers", settings.showCameraGizmos);
 			option("Trigger icons", settings.showTriggerIcons);
+			option("Frame stats", settings.showFrameChip);
 			if (m_isometric)
 				option("Navigation graph and routes", settings.showNavGraph);
 			ImGui::EndPopup();

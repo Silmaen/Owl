@@ -125,6 +125,8 @@ void EditorSettings::loadFromFile(const std::filesystem::path& iFile) {
 			snapAutoFromTilemap = config["snapAutoFromTilemap"].as<bool>();
 		if (config["showCameraGizmos"])
 			showCameraGizmos = config["showCameraGizmos"].as<bool>();
+		if (config["showFrameChip"])
+			showFrameChip = config["showFrameChip"].as<bool>();
 		if (config["showGrid"])
 			showGrid = config["showGrid"].as<bool>();
 		if (config["showNavGraph"])
@@ -186,6 +188,7 @@ void EditorSettings::saveToFile(const std::filesystem::path& iFile) const {
 	out << YAML::Key << "snapMultiplier" << YAML::Value << snapMultiplier;
 	out << YAML::Key << "snapAutoFromTilemap" << YAML::Value << snapAutoFromTilemap;
 	out << YAML::Key << "showCameraGizmos" << YAML::Value << showCameraGizmos;
+	out << YAML::Key << "showFrameChip" << YAML::Value << showFrameChip;
 	out << YAML::Key << "showGrid" << YAML::Value << showGrid;
 	out << YAML::Key << "showNavGraph" << YAML::Value << showNavGraph;
 	out << YAML::Key << "showTriggerIcons" << YAML::Value << showTriggerIcons;
