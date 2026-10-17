@@ -216,7 +216,7 @@ Keyboard and gamepad focus on buttons and sliders, driven by the built-in `ui_up
   `Ui*` component; a world entity tagged `ui` keeps its tag. Legacy fixture: `UiRendererTagMigration_test.cpp`.
 - The project templates (`empty_2d`, `mixed`, `raycast`) each ship a `huds/gameplay.owlhud`; in `engine_demo/` the
   platformer keeps `huds/gameplay.owlhud` and the world map, the raycast demo and the isometric test have their own HUD
-  (`world_map`, `raycast`, `iso_test`) because their hints and widgets differ; the menus keep their embedded canvas.
+  (`world_map`, `raycast`, `voxel`) because their hints and widgets differ; the menus keep their embedded canvas.
   No shipped `.owl` or `.owlhud` names the `ui` layer (`EngineSceneTemplates.NoShippedWidgetNamesTheUiLayer`).
 - The dead `UiPanel::layout`, `spacing` and `padding` are gone; old files keep loading (unknown keys are ignored).
 - The empty raycast hint of `raycast_demo.owl` is fixed: its HUD now carries the walk, turn and interact keys.
@@ -268,24 +268,22 @@ Implementation notes:
 
 ## Inventory demo (DEMO1)
 
-Done. Collectible objects, key-locked switches and an inventory window with slots in `engine_demo/`, in Lua only,
-navigable with the gamepad (`scenes/inventory_demo.owl`, **N** or Back from the main menu).
+Done. Collectible objects and an inventory window with slots in `engine_demo/`, in Lua only,
+navigable with the gamepad (now in the raycast level, `scenes/raycast_demo.owl`).
 
-- **Window.** `huds/inventory.owlhud` is the scene's `Hud:` (one HUD per scene): a closable `UiWindow` holding a grid of
-  six `UiButton` slots (a `UiImage` icon and a `UiText` count each, a `UiTooltip` with the item name) and an info
+- **Window.** `huds/raycast.owlhud` is the scene's `Hud:` (one HUD per scene): a closable `UiWindow` holding a grid of
+  nine `UiButton` slots (a `UiImage` icon and a `UiText` count each, a `UiTooltip` with the item name) and an info
   text. A slot exists per item; its icon and count show once the count is above zero (`ui.set_visible`, `ui.set_text`),
   so no image binding is needed.
 - **Opening.** The `inventory` action (Tab, gamepad Y) shows the window and `ui.set_focus` puts the focus on the first
   filled slot; the window then keeps the focus, `ui_*` walk the slots (no wrap), `ui_accept` inspects, `ui_cancel`
   closes (`onCloseCallback`), `onFocusCallback` updates the info text. The player is still while it is open.
-- **State.** The inventory is the gamestate keys `inv_<item>` (counts), so a save keeps it; `picked_<tag>` and
-  `unlocked_<tag>` keep taken items and opened locks, F6 / F9 quick-save and load slot 2.
+- **State.** The inventory is the gamestate keys `inv_<item>` (counts), so a save keeps it; `picked_<tag>` keeps taken items, F6 / F9 quick-save and load slot 2.
 - **Journal.** A `UiList` under the info text lists every message of the game (pick-ups, doors, saves), grown by
   `inventory.lua` with `ui.list_set_count`, scrolled to the newest, its rows bound on demand (`onBindCallback`); a
   selected line shows in full in the info text.
-- **Scripts.** `pickup.lua` (`Trigger.Type=LuaCallback`), `lock.lua` (`Trigger.Type=Interaction`, E / X, a `key` and a
-  `target` property), `inventory.lua` (window, toast, save keys), `inventory_player.lua`. Scenario
-  `test/scenarios/inventory_demo.owltest` picks a key, opens the window, navigates it and opens the door and the vault.
+- **Scripts.** `pickup.lua` (`Trigger.Type=LuaCallback`), `inventory.lua` (window, toast, save keys), `raycast_player.lua` (still while the window is open). Scenario
+  `test/scenarios/raycast_level.owltest` picks an ammo clip, opens the window, navigates it and takes the elevator.
 
 ## Tests
 

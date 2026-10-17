@@ -7,21 +7,11 @@ actions:
     bindings:
       - {key: Escape}
       - {gamepad_button: Start}
-  - name: open_iso
-    type: button
-    bindings:
-      - {key: I}
-      - {gamepad_button: Y}
   - name: open_town
     type: button
     bindings:
       - {key: O}
       - {gamepad_button: LeftBumper}
-  - name: open_inventory_demo
-    type: button
-    bindings:
-      - {key: N}
-      - {gamepad_button: Back}
   - name: inventory
     type: button
     bindings:

@@ -175,3 +175,24 @@ Entities:
     verticalAlignment: Middle
     wrap: true
 
+
+- Entity: 4400000000000000009
+  Tag: {tag: ObjectiveText}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 4400000000000000001}
+  UiRect:
+    anchorMin: [0, 0]
+    anchorMax: [0, 0]
+    pivot: [0, 0]
+    size: [420, 26]
+    offset: [16, 86]
+  UiText:
+    text: "Objective: 0 / 20 trips made by the vehicles"
+    color: [1, 0.95, 0.55, 1]
+    fontSize: 18
+    horizontalAlignment: Left
+    verticalAlignment: Middle

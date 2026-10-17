@@ -28,6 +28,8 @@ local BUILDABLE = { [0] = true, [1] = true, [4] = true, [6] = true, [7] = true }
 local SIZE = 24
 local FIRST_STEEP_SLOPE = 15
 local START_FUNDS, ROAD_COST, ROAD_REFUND = 1000, 10, 5
+-- Victory objective: the town earns its keep once its vehicles have made this many trips (`town_trips`).
+local TARGET_TRIPS = 20
 local TOAST_SECONDS = 2.0
 local PAD_REPEAT = 0.16
 
@@ -35,7 +37,9 @@ local TOOL_ROAD, TOOL_BULLDOZE = 1, 2
 local TOOL_NAMES = { [TOOL_ROAD] = "Road", [TOOL_BULLDOZE] = "Bulldoze" }
 
 local map_id, marker_id = 0, 0
-local funds_id, roads_id, toast_id = 0, 0, 0
+local funds_id, roads_id, toast_id, objective_id = 0, 0, 0, 0
+local leaving = false
+local shown_trips = nil
 local tool_ids = {}
 local tool = TOOL_ROAD
 local cursor_x, cursor_y = 12, 12
@@ -238,6 +242,20 @@ local function update_hud(dt)
             ui.set_visible(toast_id, false)
         end
     end
+    local trips = gamestate.get("town_trips", 0)
+    if trips ~= shown_trips then
+        shown_trips = trips
+        ui.set_text(objective_id, "Objective: " .. math.min(trips, TARGET_TRIPS) .. " / " .. TARGET_TRIPS ..
+            " trips made by the vehicles")
+    end
+    if trips >= TARGET_TRIPS and not leaving then
+        -- The goal is reached: the level is done, back to the hub.
+        leaving = true
+        gamestate.set("level_iso_done", 1)
+        gamestate.remove("iso_return")
+        sound.play("sounds/victory.wav")
+        scene.transition_to("scenes/world_map.owl", "fade_out", 0.4)
+    end
 end
 
 function on_create()
@@ -245,6 +263,7 @@ function on_create()
     marker_id = scene.find_entity("Cursor")
     funds_id = ui.find("FundsText")
     roads_id = ui.find("RoadsText")
+    objective_id = ui.find("ObjectiveText")
     toast_id = ui.find("ToastText")
     tool_ids[TOOL_ROAD] = ui.find("ToolRoad")
     tool_ids[TOOL_BULLDOZE] = ui.find("ToolBulldoze")
@@ -257,7 +276,7 @@ function on_create()
 end
 
 function on_update(dt)
-    if ui.is_transition_active() then
+    if leaving or ui.is_transition_active() then
         return
     end
     update_hud(dt)

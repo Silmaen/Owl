@@ -18,29 +18,747 @@ Entities:
   Hierarchy:
     {}
 - Entity: 2100000000000000061
-  Tag:
-    tag: HUDHint
+  Tag: {tag: HUDHint}
   Transform:
     translation: [0, 0, 0]
     rotation: [0, 0, 0]
     scale: [1, 1, 1]
-  Visibility:
-    gameVisible: true
-  Hierarchy:
-    parentId: 2100000000000000060
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 2100000000000000060}
   UiRect:
     anchorMin: [0, 0]
     anchorMax: [0, 0]
     pivot: [0, 0]
-    size: [620, 24]
+    size: [700, 24]
     offset: [20, 20]
   UiText:
-    text: "E1L1 (Wolfenstein 3D inspired)  -  W/S = walk, A/D = turn, E = interact, ESC = pause"
-    color: [1, 1, 1, 0.850000024]
+    text: "E1M1 (Wolfenstein 3D inspired)  -  W/S = walk, A/D = turn, E = interact, Tab / Y = inventory, ESC = pause"
+    color: [1, 1, 1, 0.85]
     fontSize: 22
     horizontalAlignment: Left
     verticalAlignment: Middle
     fit: Shrink
     minFontSize: 12
-    kerning: 0
-    lineSpacing: 0
+- Entity: 2100000000000000062
+  Tag: {tag: ObjectiveText}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 2100000000000000060}
+  UiRect:
+    anchorMin: [0, 0]
+    anchorMax: [0, 0]
+    pivot: [0, 0]
+    size: [700, 26]
+    offset: [20, 48]
+  UiText:
+    text: "Objective: find the elevator that leaves E1M1"
+    color: [1, 0.95, 0.55, 1]
+    fontSize: 22
+    horizontalAlignment: Left
+    verticalAlignment: Middle
+- Entity: 2100000000000000063
+  Tag: {tag: TreasureText}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 2100000000000000060}
+  UiRect:
+    anchorMin: [0, 0]
+    anchorMax: [0, 0]
+    pivot: [0, 0]
+    size: [700, 24]
+    offset: [20, 76]
+  UiText:
+    text: "Treasure: 0 / 11    Secrets: 0 / 5"
+    color: [1, 1, 1, 0.85]
+    fontSize: 20
+    horizontalAlignment: Left
+    verticalAlignment: Middle
+- Entity: 5300000000000000005
+  Tag: {tag: InventoryToast}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 2100000000000000060}
+  UiRect:
+    anchorMin: [0.5, 1]
+    anchorMax: [0.5, 1]
+    pivot: [0.5, 1]
+    size: [640, 30]
+    offset: [0, -30]
+  UiText:
+    text: ""
+    color: [1, 0.95, 0.55, 1]
+    fontSize: 25
+    horizontalAlignment: Center
+    verticalAlignment: Middle
+- Entity: 5300000000000000002
+  Tag: {tag: InventoryWindow}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: false}
+  Hierarchy: {parentId: 2100000000000000060}
+  UiRect:
+    anchorMin: [1, 0.5]
+    anchorMax: [1, 0.5]
+    pivot: [1, 0.5]
+    size: [236, 450]
+    offset: [-30, 0]
+  UiWindow:
+    title: Inventory
+    titleBarHeight: 26
+    titleFontSize: 21
+    closable: true
+    draggable: true
+    onCloseCallback: on_inventory_closed
+  UiLayout:
+    arrangement: Column
+    crossAlign: Center
+    spacing: 8
+    padding: 10
+    columns: 2
+    cellSize: [0, 0]
+- Entity: 5300000000000000080
+  Tag: {tag: InventoryLog}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 5300000000000000002}
+  UiRect:
+    anchorMin: [0, 0]
+    anchorMax: [0, 0]
+    pivot: [0, 0]
+    size: [208, 96]
+    offset: [0, 0]
+  UiList:
+    itemCount: 0
+    rowHeight: 22
+    rowSpacing: 2
+    selectedIndex: -1
+    scrollOffset: 0
+    wheelStep: 44
+    fontSize: 20
+    onSelectCallback: on_log_selected
+    onBindCallback: on_log_bind
+  UiTooltip:
+    text: "Journal: what happened, newest last.\nWheel or ui_scroll to scroll."
+- Entity: 5300000000000000004
+  Tag: {tag: InventoryInfo}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 5300000000000000002}
+  UiRect:
+    anchorMin: [0, 0]
+    anchorMax: [0, 0]
+    pivot: [0, 0]
+    size: [208, 60]
+    offset: [0, 0]
+  UiText:
+    text: "Select a slot."
+    color: [1, 1, 1, 1]
+    fontSize: 20
+    horizontalAlignment: Left
+    verticalAlignment: Top
+    wrap: true
+- Entity: 5300000000000000003
+  Tag: {tag: InventorySlots}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 5300000000000000002}
+  UiRect:
+    anchorMin: [0, 0]
+    anchorMax: [0, 0]
+    pivot: [0, 0]
+    size: [208, 208]
+    offset: [0, 0]
+  UiLayout:
+    arrangement: Grid
+    crossAlign: Start
+    spacing: 8
+    padding: 0
+    columns: 3
+    cellSize: [64, 64]
+- Entity: 5300000000000000190
+  Tag: {tag: InvSlot9}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 5300000000000000003}
+  UiRect:
+    anchorMin: [0, 0]
+    anchorMax: [0, 0]
+    pivot: [0, 0]
+    size: [64, 64]
+    offset: [0, 0]
+  UiButton:
+    normalColor: [0.16, 0.18, 0.24, 1]
+    hoverColor: [0.26, 0.3, 0.4, 1]
+    pressedColor: [0.1, 0.12, 0.18, 1]
+    disabledColor: [0.15, 0.15, 0.15, 0.5]
+    onClickCallback: on_slot_clicked
+  UiFocus:
+    onFocusCallback: on_slot_focused
+  UiTooltip:
+    text: "Machine gun\nRattles the walls."
+    delay: 0.3
+    fontSize: 20
+- Entity: 5300000000000000192
+  Tag: {tag: InvCount9}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: false}
+  Hierarchy: {parentId: 5300000000000000190}
+  UiRect:
+    anchorMin: [1, 1]
+    anchorMax: [1, 1]
+    pivot: [1, 1]
+    size: [40, 20]
+    offset: [-4, -2]
+  UiText:
+    text: "x0"
+    color: [1, 1, 1, 1]
+    fontSize: 22
+    horizontalAlignment: Right
+    verticalAlignment: Bottom
+- Entity: 5300000000000000191
+  Tag: {tag: InvIcon9}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: false}
+  Hierarchy: {parentId: 5300000000000000190}
+  UiRect:
+    anchorMin: [0, 0]
+    anchorMax: [1, 1]
+    pivot: [0.5, 0.5]
+    size: [-12, -12]
+    offset: [0, 0]
+  UiImage:
+    tint: [1, 1, 1, 1]
+    texture: nam:textures/items/machine_gun.png
+- Entity: 5300000000000000180
+  Tag: {tag: InvSlot8}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 5300000000000000003}
+  UiRect:
+    anchorMin: [0, 0]
+    anchorMax: [0, 0]
+    pivot: [0, 0]
+    size: [64, 64]
+    offset: [0, 0]
+  UiButton:
+    normalColor: [0.16, 0.18, 0.24, 1]
+    hoverColor: [0.26, 0.3, 0.4, 1]
+    pressedColor: [0.1, 0.12, 0.18, 1]
+    disabledColor: [0.15, 0.15, 0.15, 0.5]
+    onClickCallback: on_slot_clicked
+  UiFocus:
+    onFocusCallback: on_slot_focused
+  UiTooltip:
+    text: "Ammo clip\nEight rounds."
+    delay: 0.3
+    fontSize: 20
+- Entity: 5300000000000000182
+  Tag: {tag: InvCount8}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: false}
+  Hierarchy: {parentId: 5300000000000000180}
+  UiRect:
+    anchorMin: [1, 1]
+    anchorMax: [1, 1]
+    pivot: [1, 1]
+    size: [40, 20]
+    offset: [-4, -2]
+  UiText:
+    text: "x0"
+    color: [1, 1, 1, 1]
+    fontSize: 22
+    horizontalAlignment: Right
+    verticalAlignment: Bottom
+- Entity: 5300000000000000181
+  Tag: {tag: InvIcon8}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: false}
+  Hierarchy: {parentId: 5300000000000000180}
+  UiRect:
+    anchorMin: [0, 0]
+    anchorMax: [1, 1]
+    pivot: [0.5, 0.5]
+    size: [-12, -12]
+    offset: [0, 0]
+  UiImage:
+    tint: [1, 1, 1, 1]
+    texture: nam:textures/items/ammo.png
+- Entity: 5300000000000000170
+  Tag: {tag: InvSlot7}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 5300000000000000003}
+  UiRect:
+    anchorMin: [0, 0]
+    anchorMax: [0, 0]
+    pivot: [0, 0]
+    size: [64, 64]
+    offset: [0, 0]
+  UiButton:
+    normalColor: [0.16, 0.18, 0.24, 1]
+    hoverColor: [0.26, 0.3, 0.4, 1]
+    pressedColor: [0.1, 0.12, 0.18, 1]
+    disabledColor: [0.15, 0.15, 0.15, 0.5]
+    onClickCallback: on_slot_clicked
+  UiFocus:
+    onFocusCallback: on_slot_focused
+  UiTooltip:
+    text: "First-aid kit\nPatches you up."
+    delay: 0.3
+    fontSize: 20
+- Entity: 5300000000000000172
+  Tag: {tag: InvCount7}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: false}
+  Hierarchy: {parentId: 5300000000000000170}
+  UiRect:
+    anchorMin: [1, 1]
+    anchorMax: [1, 1]
+    pivot: [1, 1]
+    size: [40, 20]
+    offset: [-4, -2]
+  UiText:
+    text: "x0"
+    color: [1, 1, 1, 1]
+    fontSize: 22
+    horizontalAlignment: Right
+    verticalAlignment: Bottom
+- Entity: 5300000000000000171
+  Tag: {tag: InvIcon7}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: false}
+  Hierarchy: {parentId: 5300000000000000170}
+  UiRect:
+    anchorMin: [0, 0]
+    anchorMax: [1, 1]
+    pivot: [0.5, 0.5]
+    size: [-12, -12]
+    offset: [0, 0]
+  UiImage:
+    tint: [1, 1, 1, 1]
+    texture: nam:textures/items/health.png
+- Entity: 5300000000000000160
+  Tag: {tag: InvSlot6}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 5300000000000000003}
+  UiRect:
+    anchorMin: [0, 0]
+    anchorMax: [0, 0]
+    pivot: [0, 0]
+    size: [64, 64]
+    offset: [0, 0]
+  UiButton:
+    normalColor: [0.16, 0.18, 0.24, 1]
+    hoverColor: [0.26, 0.3, 0.4, 1]
+    pressedColor: [0.1, 0.12, 0.18, 1]
+    disabledColor: [0.15, 0.15, 0.15, 0.5]
+    onClickCallback: on_slot_clicked
+  UiFocus:
+    onFocusCallback: on_slot_focused
+  UiTooltip:
+    text: "Dog food\nNot for you, but it fills a belly."
+    delay: 0.3
+    fontSize: 20
+- Entity: 5300000000000000162
+  Tag: {tag: InvCount6}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: false}
+  Hierarchy: {parentId: 5300000000000000160}
+  UiRect:
+    anchorMin: [1, 1]
+    anchorMax: [1, 1]
+    pivot: [1, 1]
+    size: [40, 20]
+    offset: [-4, -2]
+  UiText:
+    text: "x0"
+    color: [1, 1, 1, 1]
+    fontSize: 22
+    horizontalAlignment: Right
+    verticalAlignment: Bottom
+- Entity: 5300000000000000161
+  Tag: {tag: InvIcon6}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: false}
+  Hierarchy: {parentId: 5300000000000000160}
+  UiRect:
+    anchorMin: [0, 0]
+    anchorMax: [1, 1]
+    pivot: [0.5, 0.5]
+    size: [-12, -12]
+    offset: [0, 0]
+  UiImage:
+    tint: [1, 1, 1, 1]
+    texture: nam:textures/items/sausages.png
+- Entity: 5300000000000000150
+  Tag: {tag: InvSlot5}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 5300000000000000003}
+  UiRect:
+    anchorMin: [0, 0]
+    anchorMax: [0, 0]
+    pivot: [0, 0]
+    size: [64, 64]
+    offset: [0, 0]
+  UiButton:
+    normalColor: [0.16, 0.18, 0.24, 1]
+    hoverColor: [0.26, 0.3, 0.4, 1]
+    pressedColor: [0.1, 0.12, 0.18, 1]
+    disabledColor: [0.15, 0.15, 0.15, 0.5]
+    onClickCallback: on_slot_clicked
+  UiFocus:
+    onFocusCallback: on_slot_focused
+  UiTooltip:
+    text: "Roast dinner\nA warm meal."
+    delay: 0.3
+    fontSize: 20
+- Entity: 5300000000000000152
+  Tag: {tag: InvCount5}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: false}
+  Hierarchy: {parentId: 5300000000000000150}
+  UiRect:
+    anchorMin: [1, 1]
+    anchorMax: [1, 1]
+    pivot: [1, 1]
+    size: [40, 20]
+    offset: [-4, -2]
+  UiText:
+    text: "x0"
+    color: [1, 1, 1, 1]
+    fontSize: 22
+    horizontalAlignment: Right
+    verticalAlignment: Bottom
+- Entity: 5300000000000000151
+  Tag: {tag: InvIcon5}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: false}
+  Hierarchy: {parentId: 5300000000000000150}
+  UiRect:
+    anchorMin: [0, 0]
+    anchorMax: [1, 1]
+    pivot: [0.5, 0.5]
+    size: [-12, -12]
+    offset: [0, 0]
+  UiImage:
+    tint: [1, 1, 1, 1]
+    texture: nam:textures/items/food.png
+- Entity: 5300000000000000140
+  Tag: {tag: InvSlot4}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 5300000000000000003}
+  UiRect:
+    anchorMin: [0, 0]
+    anchorMax: [0, 0]
+    pivot: [0, 0]
+    size: [64, 64]
+    offset: [0, 0]
+  UiButton:
+    normalColor: [0.16, 0.18, 0.24, 1]
+    hoverColor: [0.26, 0.3, 0.4, 1]
+    pressedColor: [0.1, 0.12, 0.18, 1]
+    disabledColor: [0.15, 0.15, 0.15, 0.5]
+    onClickCallback: on_slot_clicked
+  UiFocus:
+    onFocusCallback: on_slot_focused
+  UiTooltip:
+    text: "Crown\nTreasure: the prize of a secret room."
+    delay: 0.3
+    fontSize: 20
+- Entity: 5300000000000000142
+  Tag: {tag: InvCount4}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: false}
+  Hierarchy: {parentId: 5300000000000000140}
+  UiRect:
+    anchorMin: [1, 1]
+    anchorMax: [1, 1]
+    pivot: [1, 1]
+    size: [40, 20]
+    offset: [-4, -2]
+  UiText:
+    text: "x0"
+    color: [1, 1, 1, 1]
+    fontSize: 22
+    horizontalAlignment: Right
+    verticalAlignment: Bottom
+- Entity: 5300000000000000141
+  Tag: {tag: InvIcon4}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: false}
+  Hierarchy: {parentId: 5300000000000000140}
+  UiRect:
+    anchorMin: [0, 0]
+    anchorMax: [1, 1]
+    pivot: [0.5, 0.5]
+    size: [-12, -12]
+    offset: [0, 0]
+  UiImage:
+    tint: [1, 1, 1, 1]
+    texture: nam:textures/items/treasure_crown.png
+- Entity: 5300000000000000130
+  Tag: {tag: InvSlot3}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 5300000000000000003}
+  UiRect:
+    anchorMin: [0, 0]
+    anchorMax: [0, 0]
+    pivot: [0, 0]
+    size: [64, 64]
+    offset: [0, 0]
+  UiButton:
+    normalColor: [0.16, 0.18, 0.24, 1]
+    hoverColor: [0.26, 0.3, 0.4, 1]
+    pressedColor: [0.1, 0.12, 0.18, 1]
+    disabledColor: [0.15, 0.15, 0.15, 0.5]
+    onClickCallback: on_slot_clicked
+  UiFocus:
+    onFocusCallback: on_slot_focused
+  UiTooltip:
+    text: "Treasure chest\nTreasure: shiny, and worth a lot."
+    delay: 0.3
+    fontSize: 20
+- Entity: 5300000000000000132
+  Tag: {tag: InvCount3}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: false}
+  Hierarchy: {parentId: 5300000000000000130}
+  UiRect:
+    anchorMin: [1, 1]
+    anchorMax: [1, 1]
+    pivot: [1, 1]
+    size: [40, 20]
+    offset: [-4, -2]
+  UiText:
+    text: "x0"
+    color: [1, 1, 1, 1]
+    fontSize: 22
+    horizontalAlignment: Right
+    verticalAlignment: Bottom
+- Entity: 5300000000000000131
+  Tag: {tag: InvIcon3}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: false}
+  Hierarchy: {parentId: 5300000000000000130}
+  UiRect:
+    anchorMin: [0, 0]
+    anchorMax: [1, 1]
+    pivot: [0.5, 0.5]
+    size: [-12, -12]
+    offset: [0, 0]
+  UiImage:
+    tint: [1, 1, 1, 1]
+    texture: nam:textures/items/treasure.png
+- Entity: 5300000000000000120
+  Tag: {tag: InvSlot2}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 5300000000000000003}
+  UiRect:
+    anchorMin: [0, 0]
+    anchorMax: [0, 0]
+    pivot: [0, 0]
+    size: [64, 64]
+    offset: [0, 0]
+  UiButton:
+    normalColor: [0.16, 0.18, 0.24, 1]
+    hoverColor: [0.26, 0.3, 0.4, 1]
+    pressedColor: [0.1, 0.12, 0.18, 1]
+    disabledColor: [0.15, 0.15, 0.15, 0.5]
+    onClickCallback: on_slot_clicked
+  UiFocus:
+    onFocusCallback: on_slot_focused
+  UiTooltip:
+    text: "Chalice\nTreasure: solid gold."
+    delay: 0.3
+    fontSize: 20
+- Entity: 5300000000000000122
+  Tag: {tag: InvCount2}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: false}
+  Hierarchy: {parentId: 5300000000000000120}
+  UiRect:
+    anchorMin: [1, 1]
+    anchorMax: [1, 1]
+    pivot: [1, 1]
+    size: [40, 20]
+    offset: [-4, -2]
+  UiText:
+    text: "x0"
+    color: [1, 1, 1, 1]
+    fontSize: 22
+    horizontalAlignment: Right
+    verticalAlignment: Bottom
+- Entity: 5300000000000000121
+  Tag: {tag: InvIcon2}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: false}
+  Hierarchy: {parentId: 5300000000000000120}
+  UiRect:
+    anchorMin: [0, 0]
+    anchorMax: [1, 1]
+    pivot: [0.5, 0.5]
+    size: [-12, -12]
+    offset: [0, 0]
+  UiImage:
+    tint: [1, 1, 1, 1]
+    texture: nam:textures/items/treasure_calice.png
+- Entity: 5300000000000000110
+  Tag: {tag: InvSlot1}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 5300000000000000003}
+  UiRect:
+    anchorMin: [0, 0]
+    anchorMax: [0, 0]
+    pivot: [0, 0]
+    size: [64, 64]
+    offset: [0, 0]
+  UiButton:
+    normalColor: [0.16, 0.18, 0.24, 1]
+    hoverColor: [0.26, 0.3, 0.4, 1]
+    pressedColor: [0.1, 0.12, 0.18, 1]
+    disabledColor: [0.15, 0.15, 0.15, 0.5]
+    onClickCallback: on_slot_clicked
+  UiFocus:
+    onFocusCallback: on_slot_focused
+  UiTooltip:
+    text: "Golden cross\nTreasure: a holy relic."
+    delay: 0.3
+    fontSize: 20
+- Entity: 5300000000000000112
+  Tag: {tag: InvCount1}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: false}
+  Hierarchy: {parentId: 5300000000000000110}
+  UiRect:
+    anchorMin: [1, 1]
+    anchorMax: [1, 1]
+    pivot: [1, 1]
+    size: [40, 20]
+    offset: [-4, -2]
+  UiText:
+    text: "x0"
+    color: [1, 1, 1, 1]
+    fontSize: 22
+    horizontalAlignment: Right
+    verticalAlignment: Bottom
+- Entity: 5300000000000000111
+  Tag: {tag: InvIcon1}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: false}
+  Hierarchy: {parentId: 5300000000000000110}
+  UiRect:
+    anchorMin: [0, 0]
+    anchorMax: [1, 1]
+    pivot: [0.5, 0.5]
+    size: [-12, -12]
+    offset: [0, 0]
+  UiImage:
+    tint: [1, 1, 1, 1]
+    texture: nam:textures/items/treasure_cross.png

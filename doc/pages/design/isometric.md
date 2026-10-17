@@ -156,7 +156,7 @@ It writes into `textures/iso/`, `tilesets/` and `tilemaps/` of the project:
 | `@2x`, `@0.5x` suffixes                | Atlases drawn natively at twice the size, and the mip at half the size, with their tilesets                                       |
 
 The same seed always gives the same pixels (pytest hash in `tools/tests/`); the sample map `iso_test.owltilemap` is
-written by the same run. Nothing reads the normal and depth atlases yet (v0.5.0 lights).
+written by the same run (the render tests keep it in `test/render_tests/assets`, the demo no longer has the scene). Nothing reads the normal and depth atlases yet (v0.5.0 lights).
 
 ISO4 (2026-10-15) added the objects: `IsometricObjectSet` and the `IsometricObject` component with its inspector, the
 compact `IsometricSprite` and `RendererIsometric::drawSprite` / `drawSprites` / `drawObject` (`sprite.slang`), pixel

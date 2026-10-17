@@ -1,0 +1,52 @@
+# The raycast level (Wolfenstein 3D E1M1): an ammo clip is picked up on contact, the inventory window opens (Tab / Y),
+# its slots follow the `ui_*` actions, Escape closes it without leaving the level, the player stays still while it is
+# open, and the elevator ends the level: back to the hub with the level marked done.
+scene: ../../engine_demo/scenes/raycast_demo.owl
+steps:
+  - frames: 40
+  - expect: {entity: PickupAmmo1, exists: true}
+  - expect: {gamestate: inv_window_open, equals: 0}
+  # The ammo clip is two cells ahead of the entrance.
+  - actions: {walk: 1, frames: 60}
+  - frames: 3
+  - expect: {entity: PickupAmmo1, exists: false}
+  - expect: {gamestate: inv_ammo, equals: 1}
+  # The inventory window opens on the filled slot (ammo is the eighth), the slots follow the ui actions.
+  - actions: {inventory: true, frames: 1}
+  - frames: 5
+  - expect: {gamestate: inv_window_open, equals: 1}
+  - expect: {gamestate: inv_focus, equals: 8}
+  - actions: {ui_left: true, frames: 1}
+  - frames: 2
+  - expect: {gamestate: inv_focus, equals: 7}
+  - actions: {ui_up: true, frames: 1}
+  - frames: 2
+  - expect: {gamestate: inv_focus, equals: 4}
+  - actions: {ui_accept: true, frames: 1}
+  - frames: 2
+  - expect: {gamestate: inv_selected, equals: 4}
+  # The player stays still while the window is open.
+  - expect: {player: true, translation.x: {greater: -1.9}}
+  - actions: {walk: -1, frames: 30}
+  - expect: {player: true, translation.x: {greater: -1.9}}
+  # Escape closes the window and does not pause the level.
+  - actions: {ui_cancel: true, frames: 1}
+  - frames: 3
+  - expect: {gamestate: inv_window_open, equals: 0}
+  - expect: {entity: ExitElevator, exists: true}
+  - input: {gamepad: {button: Y}, frames: 1}
+  - frames: 5
+  - expect: {gamestate: inv_window_open, equals: 1}
+  - actions: {inventory: true, frames: 1}
+  - frames: 3
+  - expect: {gamestate: inv_window_open, equals: 0}
+  # The elevator is far from the entrance: it is brought next to the player (a physics body cannot be teleported), and
+  # used with E; the level is done and the hub is back.
+  - {command: entity.set_transform, args: {entity: ExitElevator, translation: [-1.0, -25.5, 0]}}
+  - frames: 5
+  - input: {key: E, frames: 3}
+  - frames: 90
+  - expect: {entity: HouseDoorRayCast, exists: true}
+  - expect: {entity: ExitElevator, exists: false}
+  - expect: {gamestate: level_raycast_done, equals: 1}
+  - expect: {gamestate: levels_done, equals: 1}

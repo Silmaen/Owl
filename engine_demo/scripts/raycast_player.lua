@@ -15,7 +15,7 @@
 --   GLFW S (83)  = AZERTY 'S' = backward
 --   GLFW A (65)  = AZERTY 'Q' = turn left  (rotate CCW)
 --   GLFW D (68)  = AZERTY 'D' = turn right (rotate CW)
---   GLFW ESC (256) = exit raycast scene
+--   GLFW ESC (256) = back to the hub (pose kept); Tab / gamepad Y opens the inventory (inventory.lua)
 
 properties = {
     {name = "speed",      type = "float", default = 3.0},
@@ -42,6 +42,11 @@ function on_create()
 end
 
 function on_update(dt)
+    -- Still while the inventory window is open, and while a scene transition runs.
+    if gamestate.get("inv_window_open", 0) == 1 or ui.is_transition_active() then
+        physics.set_velocity(entity_id, 0, 0)
+        return
+    end
     local _, _, rz = transform.get_rotation(entity_id)
 
     -- A / D rotate the player in place (GLFW-A = AZERTY 'Q' = turn left;
@@ -67,7 +72,9 @@ function on_update(dt)
     physics.set_velocity(entity_id, mvx, mvy)
 
     -- ESC returns to the world map and stashes our pose so we land back here.
-    if input.is_action_just_pressed("pause") then
+    -- An Escape that has just closed the inventory window (ui_cancel) is not a pause.
+    local closing = gamestate.get("inv_frame", 0) - gamestate.get("inv_closed_frame", -100) <= 1
+    if input.is_action_just_pressed("pause") and not closing then
         local px, py, _ = transform.get_position(entity_id)
         gamestate.set("raycast_return_x", px)
         gamestate.set("raycast_return_y", py)

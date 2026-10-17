@@ -10,9 +10,7 @@ local save_info_id = 0
 local delete_save_id = 0
 local continue_id = 0
 local mouse_label_id = 0
-local iso_requested = false
 local town_requested = false
-local inventory_requested = false
 
 function on_create()
     log.info("Main Menu loaded")
@@ -98,24 +96,10 @@ function on_update(dt)
         return
     end
 
-    -- The `open_iso` action (I, Y) opens the isometric layer test scene.
-    if not iso_requested and input.is_action_pressed("open_iso") then
-        iso_requested = true
-        scene.transition_to("scenes/iso_test.owl", "fade", 0.3)
-        return
-    end
-
     -- The `open_town` action (O, left bumper) opens the isometric town: build roads, watch the traffic.
     if not town_requested and input.is_action_pressed("open_town") then
         town_requested = true
         scene.transition_to("scenes/iso_town.owl", "fade", 0.3)
-        return
-    end
-
-    -- The `open_inventory_demo` action (N, Back) opens the inventory demo scene.
-    if not inventory_requested and input.is_action_pressed("open_inventory_demo") then
-        inventory_requested = true
-        scene.transition_to("scenes/inventory_demo.owl", "fade", 0.3)
         return
     end
 

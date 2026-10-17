@@ -1,20 +1,24 @@
--- Inventory window of the inventory demo (huds/inventory.owlhud).
+-- Inventory window of the raycast level (the window of huds/raycast.owlhud).
 -- Demonstrates: an `.owlhud` of its own driven from Lua (slots, icons, counts, tooltips), a window opened by an input
 --               action, keyboard and gamepad focus (ui.set_focus, onFocusCallback, ui_* actions), onCloseCallback,
 --               gamestate as the inventory (kept in saves), save.save_game / save.load_game, scene.transition_to,
 --               a scrolling journal (UiList: ui.list_set_count, onBindCallback + ui.list_set_row, onSelectCallback).
 --
--- The inventory is the gamestate keys `inv_<item>` (counts), written by pickup.lua and lock.lua. One slot per item:
+-- The inventory is the gamestate keys `inv_<item>` (counts), written by pickup.lua. One slot per item:
 -- its icon and count show once the count is above zero. `inv_window_open` and `inv_focus` (slot index) mirror the UI
--- for the other scripts and the scenario test.
+-- for the other scripts and the scenario test; `inv_closed_frame` is the `inv_frame` at which ui_cancel closed it, so the
+-- player script does not take that Escape for a pause.
 
 local ITEMS = {
-    { id = "key_yellow", name = "Gold key", info = "Opens the gold door." },
-    { id = "key_blue", name = "Blue key", info = "Works the switch of the vault." },
-    { id = "treasure", name = "Treasure chest", info = "Shiny, and worth a lot." },
-    { id = "treasure_crown", name = "Crown", info = "The prize of the vault." },
+    { id = "cross", name = "Golden cross", info = "Treasure: a holy relic." },
+    { id = "chalice", name = "Chalice", info = "Treasure: solid gold." },
+    { id = "chest", name = "Treasure chest", info = "Treasure: shiny, and worth a lot." },
+    { id = "crown", name = "Crown", info = "Treasure: the prize of a secret room." },
+    { id = "food", name = "Roast dinner", info = "A warm meal." },
+    { id = "dogfood", name = "Dog food", info = "Not for you, but it fills a belly." },
     { id = "health", name = "First-aid kit", info = "Patches you up." },
-    { id = "food", name = "Roast", info = "A warm meal." },
+    { id = "ammo", name = "Ammo clip", info = "Eight rounds." },
+    { id = "gun", name = "Machine gun", info = "Rattles the walls." },
 }
 local SAVE_SLOT = 2
 local TOAST_SECONDS = 2.5
@@ -24,9 +28,8 @@ local slots, icons, counts = {}, {}, {}
 local slot_index = {}  -- slot entity id -> index in ITEMS
 local open = false
 local want_focus = false
-local just_closed = false
 local toast_left = 0
-local leaving = false
+local frame = 0
 
 local function count_of(i)
     return gamestate.get("inv_" .. ITEMS[i].id, 0)
@@ -103,8 +106,8 @@ end
 -- Called when the close button or ui_cancel (Escape, gamepad B) closes the window.
 function on_inventory_closed()
     open = false
-    just_closed = true
     gamestate.set("inv_window_open", 0)
+    gamestate.set("inv_closed_frame", gamestate.get("inv_frame", 0))
 end
 
 -- Called when a slot takes the focus (`_focused_entity`): the info text follows it.
@@ -139,9 +142,11 @@ function on_log_selected()
 end
 
 function on_update(dt)
-    if leaving or ui.is_transition_active() then
+    if ui.is_transition_active() then
         return
     end
+    frame = frame + 1
+    gamestate.set("inv_frame", frame)
 
     -- A save restores the list size but not the journal lines of this script: keep the two in step.
     if ui.list_get_count(log_id) ~= #log_lines then
@@ -171,15 +176,6 @@ function on_update(dt)
         if want_focus and ui.set_focus(slots[first_filled_slot()]) then
             want_focus = false
         end
-    end
-
-    -- Escape closes the window (ui_cancel) before it pauses; Start always pauses.
-    local closing = just_closed
-    just_closed = false
-    if input.is_action_just_pressed("pause") and not open and not closing then
-        leaving = true
-        scene.transition_to("scenes/main_menu.owl", "fade", 0.3)
-        return
     end
 
     if input.is_action_just_pressed("quick_save") then

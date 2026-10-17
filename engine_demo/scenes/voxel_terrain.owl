@@ -1,4 +1,5 @@
 Scene: VoxelTerrain
+Hud: huds/voxel.owlhud
 EnabledRenderers:
   - Name: world
     Enabled: false
@@ -37,6 +38,8 @@ Entities:
       LookSpeed: 1.5
       HalfExtents: [0.4, 0.9, 0.4]
       CaptureCursor: true
+    LuaScript:
+      scriptPath: scripts/voxel_explorer.lua
   - Entity: 3400000000000000002
     Tag:
       tag: ProceduralTerrain
