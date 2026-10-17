@@ -7,11 +7,11 @@ local k_pop_time = 0.3
 
 local taken = false
 local clock = 0.0
+local bob = 0.0
 local home_x, home_y, home_z = 0.0, 0.0, 0.0
 local base_scale = 1.0
 
 function on_create()
-    home_x, home_y, home_z = transform.get_position(entity_id)
     base_scale = transform.get_scale(entity_id)
 end
 
@@ -20,6 +20,8 @@ function on_heart_touched(player_id)
     local health = gamestate.get("health", 1.0)
     if health >= 1.0 then return end
     taken = true
+    home_x, home_y, home_z = transform.get_position(entity_id)
+    home_y = home_y - bob
     gamestate.set("health", math.min(1.0, health + k_heal))
     gamestate.set("platformer_banner", "Health restored")
     sound.play("sounds/coin_collect.wav")
@@ -29,7 +31,11 @@ end
 function on_update(dt)
     clock = clock + dt
     if not taken then
-        transform.set_position(entity_id, home_x, home_y + 0.08 * math.sin(clock * 3.0), home_z)
+        -- Bob around wherever the heart is (its position is only nudged, never restored).
+        local x, y, z = transform.get_position(entity_id)
+        local next_bob = 0.08 * math.sin(clock * 3.0)
+        transform.set_position(entity_id, x, y - bob + next_bob, z)
+        bob = next_bob
         return
     end
     local t = math.min(1.0, clock / k_pop_time)

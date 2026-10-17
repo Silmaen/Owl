@@ -14,7 +14,6 @@ local base_scale = 1.0
 
 function on_create()
     log.trace("Coin spawned")
-    home_x, home_y, home_z = transform.get_position(entity_id)
     base_scale = transform.get_scale(entity_id)
 end
 
@@ -22,6 +21,7 @@ end
 function on_coin_collected()
     if collected then return end
     collected = true
+    home_x, home_y, home_z = transform.get_position(entity_id)
 
     local current_score = gamestate.get("score", 0)
     current_score = current_score + 10
