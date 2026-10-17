@@ -2,8 +2,7 @@ Hud: world_map
 FormatVersion: 1
 Entities:
 - Entity: 2000000000000000060
-  Tag:
-    tag: HUDCanvas
+  Tag: {tag: HUDCanvas}
   Transform:
     translation: [0, 0, 0]
     rotation: [0, 0, 0]
@@ -13,136 +12,49 @@ Entities:
     sortOrder: 0
     referenceResolution: [1280, 720]
     scaleMode: ScaleWithHeight
-  Visibility:
-    gameVisible: true
-  Hierarchy:
-    {}
-- Entity: 2000000000000000062
-  Tag:
-    tag: HudHint
+  Visibility: {gameVisible: true}
+  Hierarchy: {}
+- Entity: 2000000000000000083
+  Tag: {tag: HudBottom}
   Transform:
     translation: [0, 0, 0]
     rotation: [0, 0, 0]
     scale: [1, 1, 1]
-  Visibility:
-    gameVisible: true
-  Hierarchy:
-    parentId: 2000000000000000060
-  UiRect:
-    anchorMin: [0, 0]
-    anchorMax: [0, 0]
-    pivot: [0, 0]
-    size: [500, 40]
-    offset: [20, 20]
-  UiText:
-    text: WASD = move, E = interact or talk, ESC = pause
-    color: [1, 1, 1, 0.850000024]
-    fontSize: 22
-    horizontalAlignment: Left
-    verticalAlignment: Top
-    wrap: true
-    fit: Shrink
-    minFontSize: 12
-    kerning: 0
-    lineSpacing: 0
-    outlineColor: [0, 0, 0, 1]
-    outlineWidth: 2
-- Entity: 2000000000000000061
-  Tag:
-    tag: HealthBar
-  Transform:
-    translation: [0, 0, 0]
-    rotation: [0, 0, 0]
-    scale: [1, 1, 1]
-  Visibility:
-    gameVisible: true
-  Hierarchy:
-    parentId: 2000000000000000060
-  UiProgressBar:
-    value: 1
-    backgroundColor: [0.400000006, 0.100000001, 0.100000001, 0.800000012]
-    fillColor: [0.200000003, 0.850000024, 0.200000003, 1]
-  UiRect:
-    anchorMin: [1, 0]
-    anchorMax: [1, 0]
-    pivot: [1, 0]
-    size: [200, 22]
-    offset: [-20, 20]
-- Entity: 2000000000000000064
-  Tag:
-    tag: LevelsPanel
-  Transform:
-    translation: [0, 0, 0]
-    rotation: [0, 0, 0]
-    scale: [1, 1, 1]
-  Visibility:
-    gameVisible: true
-  Hierarchy:
-    parentId: 2000000000000000060
-  UiRect:
-    anchorMin: [1, 0]
-    anchorMax: [1, 0]
-    pivot: [1, 0]
-    size: [0.22, 0.05]
-    sizeUnit: [ScreenWidth, ScreenHeight]
-    offset: [-0.0156, 0.0666]
-    offsetUnit: [ScreenWidth, ScreenHeight]
-  UiPanel:
-    backgroundColor: [0.08, 0.1, 0.15, 0.75]
-    borderColor: [0.4, 0.45, 0.55, 0.6]
-    borderWidth: 1
-- Entity: 2000000000000000063
-  Tag:
-    tag: LevelsText
-  Transform:
-    translation: [0, 0, 0]
-    rotation: [0, 0, 0]
-    scale: [1, 1, 1]
-  Visibility:
-    gameVisible: true
-  Hierarchy:
-    parentId: 2000000000000000064
-  UiRect:
-    anchorMin: [1, 0.5]
-    anchorMax: [1, 0.5]
-    pivot: [1, 0.5]
-    size: [0.96, 0.9]
-    sizeUnit: [ParentWidth, ParentHeight]
-    offset: [-0.02, 0]
-    offsetUnit: [ParentWidth, ParentHeight]
-  UiText:
-    text: "Levels completed: 0 / 4"
-    color: [1, 0.949999988, 0.550000012, 1]
-    fontSize: 22
-    horizontalAlignment: Right
-    verticalAlignment: Middle
-    fit: Shrink
-    minFontSize: 12
-    kerning: 0
-    lineSpacing: 0
-- Entity: 2000000000000000070
-  Tag:
-    tag: HubToast
-  Transform:
-    translation: [0, 0, 0]
-    rotation: [0, 0, 0]
-    scale: [1, 1, 1]
-  Visibility:
-    gameVisible: false
-  Hierarchy:
-    parentId: 2000000000000000060
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 2000000000000000060}
   UiRect:
     anchorMin: [0.5, 1]
     anchorMax: [0.5, 1]
     pivot: [0.5, 1]
-    size: [0.5, 0.06]
+    size: [0.6, 0.3]
     sizeUnit: [ScreenWidth, ScreenHeight]
-    offset: [0, -0.1]
-    offsetUnit: [ScreenWidth, ScreenHeight]
+    offset: [0, -16]
+  UiLayout:
+    arrangement: Column
+    crossAlign: Center
+    spacing: 6
+    padding: 0
+    columns: 1
+    cellSize: [0, 0]
+- Entity: 2000000000000000070
+  Tag: {tag: HubToast}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: false}
+  Hierarchy: {parentId: 2000000000000000083}
+  UiRect:
+    anchorMin: [0, 0]
+    anchorMax: [0, 0]
+    pivot: [0, 0]
+    size: [0.8, 0.28]
+    sizeUnit: [ParentWidth, ParentHeight]
+    offset: [0, 0]
   UiText:
-    text: ""
+    text: ''
     color: [1, 1, 1, 1]
-    fontSize: 22
+    fontSize: 28
     horizontalAlignment: Center
     verticalAlignment: Middle
     fit: Shrink
@@ -152,28 +64,24 @@ Entities:
     outlineColor: [0, 0, 0, 1]
     outlineWidth: 2
 - Entity: 2000000000000000075
-  Tag:
-    tag: HubSpeech
+  Tag: {tag: HubSpeech}
   Transform:
     translation: [0, 0, 0]
     rotation: [0, 0, 0]
     scale: [1, 1, 1]
-  Visibility:
-    gameVisible: false
-  Hierarchy:
-    parentId: 2000000000000000060
+  Visibility: {gameVisible: false}
+  Hierarchy: {parentId: 2000000000000000083}
   UiRect:
-    anchorMin: [0.5, 1]
-    anchorMax: [0.5, 1]
-    pivot: [0.5, 1]
-    size: [0.6, 0.12]
-    sizeUnit: [ScreenWidth, ScreenHeight]
-    offset: [0, -0.04]
-    offsetUnit: [ScreenWidth, ScreenHeight]
+    anchorMin: [0, 0]
+    anchorMax: [0, 0]
+    pivot: [0, 0]
+    size: [1, 0.6]
+    sizeUnit: [ParentWidth, ParentHeight]
+    offset: [0, 0]
   UiText:
-    text: ""
+    text: ''
     color: [1, 1, 1, 1]
-    fontSize: 24
+    fontSize: 28
     horizontalAlignment: Center
     verticalAlignment: Middle
     wrap: true
@@ -185,31 +93,158 @@ Entities:
     outlineWidth: 1.5
     backgroundColor: [0.05, 0.07, 0.12, 0.8]
     backgroundPadding: 10
-- Entity: 2000000000000000071
-  Tag:
-    tag: BoardWindow
+- Entity: 2000000000000000082
+  Tag: {tag: HudTopRight}
   Transform:
     translation: [0, 0, 0]
     rotation: [0, 0, 0]
     scale: [1, 1, 1]
-  Visibility:
-    gameVisible: false
-  Hierarchy:
-    parentId: 2000000000000000060
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 2000000000000000060}
+  UiRect:
+    anchorMin: [1, 0]
+    anchorMax: [1, 0]
+    pivot: [1, 0]
+    size: [0.24, 0.16]
+    sizeUnit: [ScreenWidth, ScreenHeight]
+    offset: [-16, 16]
+  UiLayout:
+    arrangement: Column
+    crossAlign: End
+    spacing: 6
+    padding: 0
+    columns: 1
+    cellSize: [0, 0]
+- Entity: 2000000000000000064
+  Tag: {tag: LevelsPanel}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 2000000000000000082}
+  UiRect:
+    anchorMin: [0, 0]
+    anchorMax: [0, 0]
+    pivot: [0, 0]
+    size: [1, 0.55]
+    sizeUnit: [ParentWidth, ParentHeight]
+    offset: [0, 0]
+  UiPanel:
+    backgroundColor: [0.08, 0.1, 0.15, 0.75]
+    borderColor: [0.4, 0.45, 0.55, 0.6]
+    borderWidth: 1
+- Entity: 2000000000000000063
+  Tag: {tag: LevelsText}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 2000000000000000064}
+  UiRect:
+    anchorMin: [1, 0.5]
+    anchorMax: [1, 0.5]
+    pivot: [1, 0.5]
+    size: [0.96, 0.9]
+    sizeUnit: [ParentWidth, ParentHeight]
+    offset: [-0.02, 0]
+    offsetUnit: [ParentWidth, ParentHeight]
+  UiText:
+    text: 'Levels completed: 0 / 4'
+    color: [1, 0.949999988, 0.550000012, 1]
+    fontSize: 28
+    horizontalAlignment: Right
+    verticalAlignment: Middle
+    fit: Shrink
+    minFontSize: 12
+    kerning: 0
+    lineSpacing: 0
+- Entity: 2000000000000000061
+  Tag: {tag: HealthBar}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 2000000000000000082}
+  UiProgressBar:
+    value: 1
+    backgroundColor: [0.400000006, 0.100000001, 0.100000001, 0.800000012]
+    fillColor: [0.200000003, 0.850000024, 0.200000003, 1]
+  UiRect:
+    anchorMin: [0, 0]
+    anchorMax: [0, 0]
+    pivot: [0, 0]
+    size: [0.85, 0.28]
+    sizeUnit: [ParentWidth, ParentHeight]
+    offset: [0, 0]
+- Entity: 2000000000000000081
+  Tag: {tag: HudTopLeft}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 2000000000000000060}
+  UiRect:
+    anchorMin: [0, 0]
+    anchorMax: [0, 0]
+    pivot: [0, 0]
+    size: [0.44, 0.16]
+    sizeUnit: [ScreenWidth, ScreenHeight]
+    offset: [16, 16]
+  UiLayout:
+    arrangement: Column
+    crossAlign: Start
+    spacing: 0
+    padding: 0
+    columns: 1
+    cellSize: [0, 0]
+- Entity: 2000000000000000062
+  Tag: {tag: HudHint}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 2000000000000000081}
+  UiRect:
+    anchorMin: [0, 0]
+    anchorMax: [0, 0]
+    pivot: [0, 0]
+    size: [1, 1]
+    sizeUnit: [ParentWidth, ParentHeight]
+    offset: [0, 0]
+  UiText:
+    text: WASD = move, E = interact or talk, ESC = pause
+    color: [1, 1, 1, 0.850000024]
+    fontSize: 26
+    horizontalAlignment: Left
+    verticalAlignment: Top
+    wrap: true
+    fit: Shrink
+    minFontSize: 12
+    kerning: 0
+    lineSpacing: 0
+    outlineColor: [0, 0, 0, 1]
+    outlineWidth: 2
+- Entity: 2000000000000000071
+  Tag: {tag: BoardWindow}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: false}
+  Hierarchy: {parentId: 2000000000000000060}
   UiRect:
     anchorMin: [0.5, 0.5]
     anchorMax: [0.5, 0.5]
     pivot: [0.5, 0.5]
-    size: [0.44, 0.78]
-    sizeUnit: [ScreenWidth, ScreenHeight]
+    size: [1.1, 0.86]
+    sizeUnit: [ScreenHeight, ScreenHeight]
     offset: [0, 0]
-  UiWindow:
-    title: Information board
-    titleBarHeight: 28
-    titleFontSize: 22
-    closable: true
-    draggable: true
-    onCloseCallback: on_board_closed
+  UiWindow: {title: Information board, titleBarHeight: 40, titleFontSize: 28, closable: true, draggable: true, onCloseCallback: on_board_closed}
   UiLayout:
     arrangement: Column
     crossAlign: Center
@@ -218,55 +253,105 @@ Entities:
     columns: 1
     cellSize: [0, 0]
 - Entity: 2000000000000000072
-  Tag:
-    tag: BoardScroll
+  Tag: {tag: BoardScroll}
   Transform:
     translation: [0, 0, 0]
     rotation: [0, 0, 0]
     scale: [1, 1, 1]
-  Visibility:
-    gameVisible: true
-  Hierarchy:
-    parentId: 2000000000000000071
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 2000000000000000071}
   UiRect:
     anchorMin: [0, 0]
     anchorMax: [0, 0]
     pivot: [0, 0]
-    size: [0.94, 0.88]
+    size: [0.94, 0.9]
     sizeUnit: [ParentWidth, ParentHeight]
     offset: [0, 0]
   UiScrollView:
     vertical: true
     horizontal: false
-    contentSize: [0, 780]
+    contentSize: [0, 0]
     scrollOffset: [0, 0]
-    wheelStep: 48
+    wheelStep: 64
     showScrollBar: true
-    scrollBarWidth: 10
-  UiTooltip:
-    text: "Wheel, W / S or the bar to scroll."
+    scrollBarWidth: 14
+  UiTooltip: {text: 'Wheel, W / S or the bar to scroll.', fontSize: 24}
+  UiLayout:
+    arrangement: Column
+    crossAlign: Start
+    spacing: 0
+    padding: 0
+    columns: 1
+    cellSize: [0, 0]
 - Entity: 2000000000000000073
-  Tag:
-    tag: BoardText
+  Tag: {tag: BoardText}
   Transform:
     translation: [0, 0, 0]
     rotation: [0, 0, 0]
     scale: [1, 1, 1]
-  Visibility:
-    gameVisible: true
-  Hierarchy:
-    parentId: 2000000000000000072
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 2000000000000000072}
   UiRect:
     anchorMin: [0, 0]
     anchorMax: [0, 0]
     pivot: [0, 0]
-    size: [1, 780]
-    sizeUnit: [ParentWidth, Pixels]
+    size: [1, 4.0]
+    sizeUnit: [ParentWidth, ParentHeight]
     offset: [0, 0]
   UiText:
-    text: "OWL ENGINE DEMO\nThe hub leads to four levels, one per house. Finish them all and the portal wakes up.\n\nCONTROLS\nWASD or left stick: move\nE: use a door, this board, the lever, or talk to a signpost or a villager\nW / S, the wheel or the bar: scroll this board\nEscape: close this board, or pause the game\nF3: road graph and routes in the Iso Town\nTab: inventory in the raycast level\n\nOBJECTIVES\nPlatformer: reach the door at the end of the house.\nRaycast: find an elevator in E1M1 (secrets hide a second one). The minimap in the corner is a 2D layer over the raycast view that only shows what you have seen.\nIso Town: the vehicles make 20 trips, keep the road graph connected. Right click bulldozes.\nVoxel: walk 100 blocks away from the landing point.\n\nIN THE VILLAGE\nThe four houses along the high street are the levels (signs and labels above the roofs): platformer, raycast, iso town, voxel. The shrine in the north east holds the victory portal, asleep until every level is done.\nThe lever in the east meadow, south of the river, opens the gate of the walled grove in the west meadow: the two are joined by an entity link.\nThe villager and the guard walk between points of the village on a grid profile of the ground tilemap (path.find, cells mode), around houses, stalls, trees and the river; the others pace a street or keep their post. The river and the fountain are animated tiles.\nWater drains health (use the bridges), lava is deadly.\nBirds and the wind in the village, footsteps, doors, the lever, the portal and the bell of the church are sounds played from Lua or by sound sources.\n\nCREDITS\nArt: Kenney CC0 packs (Tiny Town, Tiny Dungeon, Pixel Platformer with its farm and industrial expansions, Micro Roguelike), kenney.nl.\nRaycast level: the layout and sprites of Wolfenstein 3D episode 1 map 1 (id Software), used as a demonstration.\nEngine: Owl, by Silmaen."
+    text: 'OWL ENGINE DEMO
+
+      The hub leads to four levels, one per house. Finish them all and the portal wakes up.
+
+
+      CONTROLS
+
+      WASD or left stick: move
+
+      E: use a door, this board, the lever, or talk to a signpost or a villager
+
+      W / S, the wheel or the bar: scroll this board
+
+      Escape: close this board, or pause the game
+
+      F3: road graph and routes in the Iso Town
+
+      Tab: inventory in the raycast level
+
+
+      OBJECTIVES
+
+      Platformer: reach the door at the end of the house.
+
+      Raycast: find an elevator in E1M1 (secrets hide a second one). The minimap in the corner is a 2D layer over the raycast view that only shows what you have seen.
+
+      Iso Town: the vehicles make 20 trips, keep the road graph connected. Right click bulldozes.
+
+      Voxel: walk 100 blocks away from the landing point.
+
+
+      IN THE VILLAGE
+
+      The four houses along the high street are the levels (signs and labels above the roofs): platformer, raycast, iso town, voxel. The shrine in the north east holds the victory portal, asleep until every level is done.
+
+      The lever in the east meadow, south of the river, opens the gate of the walled grove in the west meadow: the two are joined by an entity link.
+
+      The villager and the guard walk between points of the village on a grid profile of the ground tilemap (path.find, cells mode), around houses, stalls, trees and the river; the others pace a street or keep their post. The river and the fountain are animated tiles.
+
+      Water drains health (use the bridges), lava is deadly.
+
+      Birds and the wind in the village, footsteps, doors, the lever, the portal and the bell of the church are sounds played from Lua or by sound sources.
+
+
+      CREDITS
+
+      Art: Kenney CC0 packs (Tiny Town, Tiny Dungeon, Pixel Platformer with its farm and industrial expansions, Micro Roguelike), kenney.nl.
+
+      Raycast level: the layout and sprites of Wolfenstein 3D episode 1 map 1 (id Software), used as a demonstration.
+
+      Engine: Owl, by Silmaen.'
     color: [1, 1, 1, 1]
-    fontSize: 20
+    fontSize: 26
     horizontalAlignment: Left
     verticalAlignment: Top
     wrap: true

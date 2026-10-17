@@ -287,6 +287,24 @@ navigable with the gamepad (now in the raycast level, `scenes/raycast_demo.owl`)
 - **Scripts.** `pickup.lua` (`Trigger.Type=LuaCallback`), `inventory.lua` (window, toast, save keys), `raycast_player.lua` (still while the window is open). Scenario
   `test/scenarios/raycast_level.owltest` picks an ammo clip, opens the window, navigates it and takes the elevator.
 
+## Demo HUD rules (DemoHudLayout test)
+
+The Engine Demo HUDs and menu canvases follow one recipe, checked by `DemoHudLayout_test.cpp` for every viewport from
+640×360 to 3440×1440 (4:3 to 21:9) and every `ui_scale` from 0.75 to 2:
+
+- Authored for `ui_scale` 1: body text 24 to 30 reference pixels, titles 64 to 72; the player scales them up or down.
+- A corner holds one `UiLayout` column or row anchored to it, sized in `ScreenWidth` / `ScreenHeight` ratios, its
+  children sized in `ParentWidth` / `ParentHeight` ratios with wrapped `Shrink` text; pixels are kept to a few of
+  spacing and padding, so a group never needs more room than its ratio gives it. A square uses `ScreenHeight` for
+  both sizes.
+- A *top-level widget* is a direct child of a canvas (an entity without `UiRect` is transparent). Two top-level widgets
+  must not intersect, whatever they hold; with every hidden widget made visible, that is the worst case (toast, speech and
+  buttons shown at once).
+- What lives inside a group (a label in its panel, an icon under a count) may overlap on purpose, except the children
+  of a `UiLayout`, which must stay inside the content area of their container.
+- A popup (a window hidden at start: the information board, the inventory) is compared with the other popups only; every
+  top-level widget must fit in the viewport.
+
 ## Tests
 
 Layout maths (anchors, pivot, nesting, scale modes), hit-testing and focus order, text layout (pen advance, wrap,

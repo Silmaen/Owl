@@ -11,8 +11,8 @@ local speed_slider_id = 0
 local ui_scale_label_id = 0
 local ui_scale_slider_id = 0
 
--- Interface size: the `ui_scale` built-in setting scales every HUD in game, 0.75 to 2.5 times.
-local UI_SCALE_MIN, UI_SCALE_MAX = 0.75, 2.5
+-- Interface size: the `ui_scale` built-in setting scales every HUD in game, 0.75 to 2 times.
+local UI_SCALE_MIN, UI_SCALE_MAX = 0.75, 2.0
 
 function on_create()
     log.info("Settings menu loaded")
@@ -26,7 +26,7 @@ function on_create()
     ui_scale_label_id = scene.find_entity("UiScaleLabel")
     ui_scale_slider_id = scene.find_entity("UiScaleSlider")
     if ui_scale_slider_id ~= 0 then
-        local scale = settings.get("ui_scale", 1.5)
+        local scale = settings.get("ui_scale", 1.0)
         ui.set_slider_value(ui_scale_slider_id, (scale - UI_SCALE_MIN) / (UI_SCALE_MAX - UI_SCALE_MIN))
     end
 
@@ -56,7 +56,7 @@ function update_labels()
         ui.set_text(speed_label_id, string.format("Player Speed: %.1f", speed))
     end
     if ui_scale_label_id ~= 0 then
-        ui.set_text(ui_scale_label_id, string.format("Interface Size: %d%%", math.floor(settings.get("ui_scale", 1.5) * 100 + 0.5)))
+        ui.set_text(ui_scale_label_id, string.format("Interface Size: %d%%", math.floor(settings.get("ui_scale", 1.0) * 100 + 0.5)))
     end
 end
 

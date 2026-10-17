@@ -55,100 +55,58 @@ Entities:
       {}
     LuaScript:
       scriptPath: scripts/game_over.lua
-  - Entity: 300000000000000004
-    Tag:
-      tag: GameOverTitle
+  - Entity: 300000000000000010
+    Tag: {tag: ResultGroup}
     Transform:
       translation: [0, 0, 0]
       rotation: [0, 0, 0]
       scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 300000000000000003
-    UiRect:
-      anchorMin: [0.5, 0]
-      anchorMax: [0.5, 0]
-      pivot: [0.5, 0]
-      size: [500, 80]
-      offset: [0, 80]
-    UiText:
-      text: Game Over
-      color: [1, 0.200000003, 0.200000003, 1]
-      fontSize: 60
-      horizontalAlignment: Center
-      verticalAlignment: Middle
-      kerning: 0
-      lineSpacing: 0
-  - Entity: 300000000000000005
-    Tag:
-      tag: ScoreLabel
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 300000000000000003
+    Visibility: {gameVisible: true}
+    Hierarchy: {parentId: 300000000000000003}
     UiRect:
       anchorMin: [0.5, 0.5]
       anchorMax: [0.5, 0.5]
       pivot: [0.5, 0.5]
-      size: [300, 40]
-      offset: [0, -30]
-    UiText:
-      text: "Score: 0"
-      color: [1, 1, 1, 1]
-      fontSize: 30
-      horizontalAlignment: Center
-      verticalAlignment: Middle
-      kerning: 0
-      lineSpacing: 0
-  - Entity: 300000000000000006
-    Tag:
-      tag: RetryButton
+      size: [0.7, 0.7]
+      sizeUnit: [ScreenWidth, ScreenHeight]
+      offset: [0, 0]
+    UiLayout:
+      arrangement: Column
+      crossAlign: Center
+      spacing: 8
+      padding: 0
+      columns: 1
+      cellSize: [0, 0]
+  - Entity: 300000000000000011
+    Tag: {tag: ButtonRow}
     Transform:
       translation: [0, 0, 0]
       rotation: [0, 0, 0]
       scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 300000000000000003
-    UiButton:
-      normalColor: [0.600000024, 0.300000012, 0.100000001, 1]
-      hoverColor: [0.75, 0.400000006, 0.200000003, 1]
-      pressedColor: [0.449999988, 0.200000003, 0.0500000007, 1]
-      disabledColor: [0.150000006, 0.150000006, 0.150000006, 0.5]
-      onClickCallback: on_retry_clicked
-    UiFocus:
-      initial: true
+    Visibility: {gameVisible: true}
+    Hierarchy: {parentId: 300000000000000010}
     UiRect:
-      anchorMin: [0.5, 0.5]
-      anchorMax: [0.5, 0.5]
-      pivot: [0.5, 0.5]
-      size: [160, 40]
-      offset: [-100, 40]
-    UiText:
-      text: Retry
-      color: [1, 1, 1, 1]
-      fontSize: 25
-      horizontalAlignment: Center
-      verticalAlignment: Middle
-      kerning: 0
-      lineSpacing: 0
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [1, 0.2]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiLayout:
+      arrangement: Row
+      crossAlign: Center
+      spacing: 8
+      padding: 0
+      columns: 1
+      cellSize: [0, 0]
   - Entity: 300000000000000007
-    Tag:
-      tag: MenuButton
+    Tag: {tag: MenuButton}
     Transform:
       translation: [0, 0, 0]
       rotation: [0, 0, 0]
       scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 300000000000000003
+    Visibility: {gameVisible: true}
+    Hierarchy: {parentId: 300000000000000011}
     UiButton:
       normalColor: [0.300000012, 0.300000012, 0.300000012, 1]
       hoverColor: [0.400000006, 0.400000006, 0.400000006, 1]
@@ -156,16 +114,101 @@ Entities:
       disabledColor: [0.150000006, 0.150000006, 0.150000006, 0.5]
       onClickCallback: on_menu_clicked
     UiRect:
-      anchorMin: [0.5, 0.5]
-      anchorMax: [0.5, 0.5]
-      pivot: [0.5, 0.5]
-      size: [160, 40]
-      offset: [100, 40]
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.44, 1]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
     UiText:
       text: Main Menu
       color: [1, 1, 1, 1]
-      fontSize: 25
+      fontSize: 32
       horizontalAlignment: Center
       verticalAlignment: Middle
       kerning: 0
       lineSpacing: 0
+      fit: Shrink
+      minFontSize: 12
+  - Entity: 300000000000000006
+    Tag: {tag: RetryButton}
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility: {gameVisible: true}
+    Hierarchy: {parentId: 300000000000000011}
+    UiButton:
+      normalColor: [0.600000024, 0.300000012, 0.100000001, 1]
+      hoverColor: [0.75, 0.400000006, 0.200000003, 1]
+      pressedColor: [0.449999988, 0.200000003, 0.0500000007, 1]
+      disabledColor: [0.150000006, 0.150000006, 0.150000006, 0.5]
+      onClickCallback: on_retry_clicked
+    UiFocus: {initial: true}
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.44, 1]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      text: Retry
+      color: [1, 1, 1, 1]
+      fontSize: 32
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      fit: Shrink
+      minFontSize: 12
+  - Entity: 300000000000000005
+    Tag: {tag: ScoreLabel}
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility: {gameVisible: true}
+    Hierarchy: {parentId: 300000000000000010}
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [1, 0.2]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      text: 'Score: 0'
+      color: [1, 1, 1, 1]
+      fontSize: 36
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      fit: Shrink
+      minFontSize: 12
+  - Entity: 300000000000000004
+    Tag: {tag: GameOverTitle}
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility: {gameVisible: true}
+    Hierarchy: {parentId: 300000000000000010}
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [1, 0.34]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      text: Game Over
+      color: [1, 0.200000003, 0.200000003, 1]
+      fontSize: 72
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      fit: Shrink
+      minFontSize: 12
