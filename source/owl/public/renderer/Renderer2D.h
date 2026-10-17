@@ -225,6 +225,14 @@ struct OWL_API StringData {
 	 *  order. Larger is nearer the viewer, as the view depth of the isometric layer. Default 0: the old type order.
 	 */
 	float depth = 0.f;
+	/// Colour of the outline drawn around the glyphs, in the same draw.
+	math::vec4 outlineColor = math::vec4{0.f, 0.f, 0.f, 1.f};
+	/// Reach of the outline outside the glyphs, in frame units (0 = no outline).
+	float outlineWidth = 0.f;
+	/// Colour of the box drawn behind the text (a zero alpha draws none).
+	math::vec4 backgroundColor = math::vec4{0.f, 0.f, 0.f, 0.f};
+	/// Margin between the text and its background box, in frame units.
+	float backgroundPadding = 0.f;
 };
 
 /**

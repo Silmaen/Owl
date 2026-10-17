@@ -27,6 +27,10 @@ tooltips and construction tools at once, as in Transport Tycoon.
   em; the rectangle governs layout (wrap width, line height, alignment), never the glyph shape.
 - Horizontal (left / centre / right) and vertical (top / middle / bottom) alignment, optional word wrap, fit mode
   (clip / shrink to fit / overflow), on `UiText` and on world-space `Renderer2D::drawString`.
+- **Outline and background box** (default none, absent from the file): `outlineWidth` (reference pixels) and
+  `outlineColor` draw a contour around the glyphs in the same draw as the text, `backgroundColor` (zero alpha = none) and
+  `backgroundPadding` a box behind the measured text block. They keep white text readable on a light map. `Text` has the
+  same four fields, in text heights. Edited in the inspector, undoable like any component edit.
 
 ## HUD layer (HUD1, done)
 

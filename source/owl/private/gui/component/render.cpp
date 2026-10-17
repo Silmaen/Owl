@@ -487,6 +487,16 @@ void renderProps(Text& ioComponent) {
 	prop::ColorEdit4("Color", ioComponent.color.data());
 	prop::DragFloat("Kerning", &ioComponent.kerning, 0.025f);
 	prop::DragFloat("Line Spacing", &ioComponent.lineSpacing, 0.025f);
+	prop::DragFloat("Outline Width", &ioComponent.outlineWidth, 0.005f, 0.0f, 1.0f);
+	fieldTooltip("Outline around the glyphs, in text heights; 0 draws none.");
+	if (ioComponent.outlineWidth > 0.f)
+		prop::ColorEdit4("Outline Color", ioComponent.outlineColor.data());
+	prop::ColorEdit4("Background", ioComponent.backgroundColor.data());
+	fieldTooltip("Box behind the text block; a zero alpha draws none.");
+	if (ioComponent.backgroundColor.a() > 0.f) {
+		prop::DragFloat("Background Padding", &ioComponent.backgroundPadding, 0.01f, 0.0f, 5.0f);
+		fieldTooltip("Margin between the text block and the edge of its background box, in text heights.");
+	}
 }
 
 void renderProps(PhysicBody& ioComponent) {
@@ -935,6 +945,17 @@ void renderProps(UiText& ioComponent) {
 	}
 	prop::DragFloat("Kerning", &ioComponent.kerning, 0.01f);
 	prop::DragFloat("Line Spacing", &ioComponent.lineSpacing, 0.01f);
+	prop::DragFloat("Outline Width", &ioComponent.outlineWidth, 0.1f, 0.0f, 20.0f);
+	fieldTooltip("Outline around the glyphs, in reference pixels; 0 draws none. Keeps white text readable on a light "
+				 "background.");
+	if (ioComponent.outlineWidth > 0.f)
+		prop::ColorEdit4("Outline Color", reinterpret_cast<float*>(&ioComponent.outlineColor));
+	prop::ColorEdit4("Background", reinterpret_cast<float*>(&ioComponent.backgroundColor));
+	fieldTooltip("Box behind the text block; a zero alpha draws none.");
+	if (ioComponent.backgroundColor.a() > 0.f) {
+		prop::DragFloat("Background Padding", &ioComponent.backgroundPadding, 0.5f, 0.0f, 100.0f);
+		fieldTooltip("Margin between the text block and the edge of its background box, in reference pixels.");
+	}
 }
 
 void renderProps(UiImage& ioComponent) {

@@ -104,6 +104,10 @@ TEST(ComponentRoundTrip, UiText) {
 				uiText.minFontSize = 10.f;
 				uiText.kerning = 1.5f;
 				uiText.lineSpacing = 2.f;
+				uiText.outlineColor = {0.2f, 0.3f, 0.4f, 0.5f};
+				uiText.outlineWidth = 2.5f;
+				uiText.backgroundColor = {0.6f, 0.7f, 0.8f, 0.9f};
+				uiText.backgroundPadding = 6.f;
 			},
 			[](const scene::Entity& iEnt) -> void {
 				const auto& t = iEnt.getComponent<scene::component::UiText>();
@@ -117,6 +121,40 @@ TEST(ComponentRoundTrip, UiText) {
 				EXPECT_NEAR(t.minFontSize, 10.f, 0.01f);
 				EXPECT_NEAR(t.kerning, 1.5f, 0.01f);
 				EXPECT_NEAR(t.lineSpacing, 2.f, 0.01f);
+				EXPECT_NEAR(t.outlineColor.y(), 0.3f, 0.01f);
+				EXPECT_NEAR(t.outlineWidth, 2.5f, 0.01f);
+				EXPECT_NEAR(t.backgroundColor.w(), 0.9f, 0.01f);
+				EXPECT_NEAR(t.backgroundPadding, 6.f, 0.01f);
+			});
+}
+
+TEST(ComponentRoundTrip, UiTextWithoutOutlineOrBox) {
+	roundTrip(
+			"UiText", [](scene::Entity& iEnt) -> void { iEnt.addComponent<scene::component::UiText>().text = "plain"; },
+			[](const scene::Entity& iEnt) -> void {
+				const auto& t = iEnt.getComponent<scene::component::UiText>();
+				EXPECT_FLOAT_EQ(t.outlineWidth, 0.f);
+				EXPECT_FLOAT_EQ(t.backgroundColor.w(), 0.f);
+			});
+}
+
+TEST(ComponentRoundTrip, TextRendererOutlineAndBox) {
+	roundTrip(
+			"TextRenderer",
+			[](scene::Entity& iEnt) -> void {
+				auto& text = iEnt.addComponent<scene::component::Text>();
+				text.text = "world";
+				text.outlineColor = {0.1f, 0.2f, 0.3f, 0.4f};
+				text.outlineWidth = 0.07f;
+				text.backgroundColor = {0.5f, 0.6f, 0.7f, 0.8f};
+				text.backgroundPadding = 0.3f;
+			},
+			[](const scene::Entity& iEnt) -> void {
+				const auto& t = iEnt.getComponent<scene::component::Text>();
+				EXPECT_NEAR(t.outlineColor.z(), 0.3f, 0.01f);
+				EXPECT_NEAR(t.outlineWidth, 0.07f, 0.001f);
+				EXPECT_NEAR(t.backgroundColor.y(), 0.6f, 0.01f);
+				EXPECT_NEAR(t.backgroundPadding, 0.3f, 0.001f);
 			});
 }
 

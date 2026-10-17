@@ -296,8 +296,12 @@ YAML key: `CircleRenderer`
 | `color`       | `vec4`   | `{1, 1, 1, 1}` | Text colour          |
 | `kerning`     | `float`  | `0.0`          | Extra letter spacing |
 | `lineSpacing` | `float`  | `0.0`          | Extra line spacing   |
+| `outlineWidth` | `float` | `0.0`          | Outline reach, in text heights (`0.05` is about a pixel at 20 px); `0`: none |
+| `outlineColor` | `vec4`  | `{0, 0, 0, 1}` | Outline colour       |
+| `backgroundColor` | `vec4` | `{0, 0, 0, 0}` | Box behind the text, alpha `0`: none |
+| `backgroundPadding` | `float` | `0.2`     | Margin of the box, in text heights |
 
-YAML key: `TextRenderer`
+The outline and background keys are written only when set. YAML key: `TextRenderer`
 
 #### Tilemap
 
@@ -571,6 +575,10 @@ canvases and widgets, since the HUD pass draws them whatever their tag.
 | `minFontSize`         | `float`  | Smallest size `Shrink` reaches (8 by default)                        |
 | `kerning`             | `float`  | Extra advance between glyphs, in font units                          |
 | `lineSpacing`         | `float`  | Extra space between lines, in font units                             |
+| `outlineWidth`        | `float`  | Outline reach in reference pixels; absent or `0`: none               |
+| `outlineColor`        | `vec4`   | Outline colour (black by default), written with the width            |
+| `backgroundColor`     | `vec4`   | Box behind the text block; absent or alpha `0`: none                 |
+| `backgroundPadding`   | `float`  | Margin of the box around the text block, in pixels (4 by default)    |
 
 Glyphs keep the aspect ratio of the font; the rectangle drives the wrap width, the alignment and the fit. Scene and
 prefab format 3 (TX2): a `UiText` of an older file, whose `alignment` key was never applied, migrates to `Center` /

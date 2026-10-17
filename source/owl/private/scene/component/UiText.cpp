@@ -59,6 +59,14 @@ void UiText::serialize(const core::Serializer& iOut) const {
 	emitter << YAML::Key << "minFontSize" << YAML::Value << minFontSize;
 	emitter << YAML::Key << "kerning" << YAML::Value << kerning;
 	emitter << YAML::Key << "lineSpacing" << YAML::Value << lineSpacing;
+	if (outlineWidth > 0.f) {
+		emitter << YAML::Key << "outlineColor" << YAML::Value << outlineColor;
+		emitter << YAML::Key << "outlineWidth" << YAML::Value << outlineWidth;
+	}
+	if (backgroundColor.a() > 0.f) {
+		emitter << YAML::Key << "backgroundColor" << YAML::Value << backgroundColor;
+		emitter << YAML::Key << "backgroundPadding" << YAML::Value << backgroundPadding;
+	}
 	if (font && !font->isDefault())
 		emitter << YAML::Key << "font" << YAML::Value << font->getName();
 	emitter << YAML::EndMap;
@@ -81,6 +89,10 @@ void UiText::deserialize(const core::Serializer& iNode) {
 	readValue(node, "minFontSize", minFontSize);
 	readValue(node, "kerning", kerning);
 	readValue(node, "lineSpacing", lineSpacing);
+	readValue(node, "outlineColor", outlineColor);
+	readValue(node, "outlineWidth", outlineWidth);
+	readValue(node, "backgroundColor", backgroundColor);
+	readValue(node, "backgroundPadding", backgroundPadding);
 	if (app::Application::instanced()) {
 		auto& lib = app::Application::get().getFontLibrary();
 		if (node["font"])

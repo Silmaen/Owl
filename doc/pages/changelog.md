@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Text outline and background box: `UiText` and `Text` take an optional `outlineWidth` / `outlineColor` (a dilated MSDF coverage in the same draw) and `backgroundColor` / `backgroundPadding` (a box behind the text), absent from the file when unset, with inspector fields; the Engine Demo hub text gets a black outline.
 - Engine Demo redrawn with the Kenney CC0 packs: the world map is a Tiny Town (48×24 tilemap, Tiny Dungeon hero, houses to the platformer, raycast, voxel and a new Iso Town house), the platformer uses Pixel Platformer tiles, an astronaut with idle / walk / jump frames and a parallax backdrop, both from `Nearest`-filtered tilesets built from the packs' sheets at a pixel-exact 3× camera.
 - Navigation authored from the tileset and the isometric view: tiles carry `connections` (sides a road joins, written by `tools/iso_atlas`, edited in the Tileset Editor with screen-oriented arrows), `NavProfile` gains `mode` (`connections`, `cells`, legacy `rules`) and per-cell `overrides`, the Tilemap inspector keeps global options only, the Navigation tool of the isometric view cycles a side two-way / exit only / enter only / closed and sets a cell cost (`nav.set_edge`, `nav.set_cell_cost`, `nav.clear_cell`, undoable), and `iso_town` drops its hand-written rules.
 - Pathfinding for vehicles that keep their heading: `PathOptions` (`noReverse`, `heading`) and `path.find` / `path.find_now` options forbid the move back to the cell just left except at a dead end (flat search over cell and entry direction), and `iso_town` vehicles drive to random road cells without U-turns, looping round the whole cell at a dead end.
@@ -93,6 +94,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Engine Demo HUD texts and menu canvases are about 25 % bigger, with the boxes widened where a line would overflow.
 - Show > Navigation graph of the isometric viewport is "Navigation graph and routes" and shares its drawing with the game (`scene::nav::drawNavigationGraph`).
 - `sample_project/` is renamed `engine_demo/`, the Engine Demo: an all-in-one showcase of the engine features, apart from the planned sample games.
 - Play overlay of the Owl Nest viewport: the controls fold into a corner handle (**F10**, kept in the settings), the "Playing" message fades after two seconds, and clicks on the overlay no longer reach the game.
@@ -148,6 +150,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Owl Nest isometric Navigation tool and graph overlay stay linked: selecting the tool turns the graph on and leaving it restores it, switching the graph off from Show leaves the tool, and entering Play leaves the tool.
 - HUD layout looks each component storage up once per pass instead of once per widget: `hud/layout/500_widgets` 39.7 to 34.2 µs, below its cost before the scroll views (37.0 µs).
 - Engine Demo vehicles whose cell is bulldozed under them drive off to the road cell they came from and find a way again (a bypass built beside the cut used to leave them stuck), and a U-turn goes through the middle of the cell, symmetric on the way in and out.
 - Engine Demo vehicles turn back through a half circle swinging left across to the opposite lane, and plan their route again at the next cell boundary when roads are built or bulldozed (`town_replans`).

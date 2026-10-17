@@ -817,6 +817,13 @@ The MSDF atlas is cached in `cache/font/<font>-<key>.owlatlas` under the working
 file, the charset and the atlas parameters, so a change of any of them regenerates it (and drops the stale file).
 Generation runs on as many threads as the task pool has workers (`Scheduler::getWorkerCount`).
 
+**Outline and box.** `StringData::outlineWidth` (frame units) and `outlineColor` outline the glyphs in the same text
+draw: each glyph quad and its UVs grow by the width (`outlineUv` is that growth in texture space, 0 = none and the
+old path untouched), and the fragment shader dilates the glyph by taking the widest MSDF coverage on two rings of taps
+around the pixel, clipped to the glyph cell so the neighbours in the atlas never bleed in; the fill is composited over
+the outline. The distance field itself only spans 2 px, so the outline does not read it. `backgroundColor` (zero alpha:
+none) and `backgroundPadding` add a quad of the quad batch behind the measured text block, at the text depth.
+
 **Small text.** The atlas em is 40 px with a 2 px distance range, and `text.slang` uses the same 2 px (keep both in
 step). Text under about 40 px on screen minifies the atlas, which has no mipmaps, so one linear sample per pixel
 aliases: the fragment shader then averages four taps of a rotated grid over the pixel footprint (`SampleGrad`), larger
@@ -842,7 +849,7 @@ and the same instanced draw for lines (2-vertex unit segment +
 | `QuadInstance`   | 128 B | `mat4 transform`, `vec4 color`, `vec2 uv[4]`, `uint texIndex`, `int entityId`, `vec2 tilingFactor`      |
 | `CircleInstance` | 96 B  | `mat4 transform`, `vec4 color`, `float thickness`, `float fade`, `int entityId`, `uint _pad`            |
 | `LineInstance`   | 64 B  | `vec3 point1`, `vec3 point2`, `vec4 color`, `int entityId` (with explicit pads to align fields to 16 B) |
-| `TextInstance`   | 128 B | Same as `QuadInstance` minus `tilingFactor`; fragment shader runs the MSDF screenPxRange path           |
+| `TextInstance`   | 96 B  | `int worldIndex`, `vec4 color`, `vec2 uv[4]`, `uint texIndex`, `int entityId`, `vec2 outlineUv`, `vec4 outlineColor`; MSDF screenPxRange path |
 
 The 4 explicit per-corner UVs (instead of a `uvRect`) preserve the
 non-rectangular UV trapezoids produced by the raycaster's floor /

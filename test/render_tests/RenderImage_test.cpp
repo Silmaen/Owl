@@ -298,3 +298,13 @@ INSTANTIATE_TEST_SUITE_P(HudText, RenderImage,
 							 return std::format("{}_{}_{}x{}", iInfo.param.scene, iInfo.param.backend,
 												iInfo.param.size.x(), iInfo.param.size.y());
 						 });
+
+// Outlined and boxed HUD text on a light background: the outline is the glyph dilated in the same draw, the box a
+// quad behind the text block.
+INSTANTIATE_TEST_SUITE_P(HudTextOutline, RenderImage,
+						 testing::Values(RenderCase{"hud_text_outline", "vulkan", {640, 360}},
+										 RenderCase{"hud_text_outline", "opengl", {640, 360}}),
+						 [](const testing::TestParamInfo<RenderCase>& iInfo) -> std::string {
+							 return std::format("{}_{}_{}x{}", iInfo.param.scene, iInfo.param.backend,
+												iInfo.param.size.x(), iInfo.param.size.y());
+						 });

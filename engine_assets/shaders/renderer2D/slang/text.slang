@@ -25,6 +25,9 @@ struct TextInstance {
 	float2 uv[4];
 	uint texIndex;
 	int entityId;
+	// Outline: reach in texture space per axis (0 = none, the glyph quad and its coordinates are already grown by it).
+	float2 outlineUv;
+	float4 outlineColor;
 };
 
 [[vk::binding(2)]]
@@ -54,6 +57,10 @@ struct FragmentInput {
 	[[vk::location(1)]] float2 texCoord : TEXCOORD0;
 	[[vk::location(2)]] nointerpolation int texIndex : TEXCOORD1;
 	[[vk::location(3)]] nointerpolation int entityID : TEXCOORD2;
+	[[vk::location(4)]] nointerpolation float2 outlineUv : TEXCOORD3;
+	[[vk::location(5)]] nointerpolation float4 outlineColor : COLOR1;
+	// Texture-space bounds of the glyph cell in the atlas: min.xy, max.xy.
+	[[vk::location(6)]] nointerpolation float4 cell : TEXCOORD4;
 };
 
 struct FragmentOutput {
@@ -88,6 +95,30 @@ float median(float r, float g, float b) {
 	return max(min(r, g), min(max(r, g), b));
 }
 
+// Coverage of the glyph at a texture coordinate; nothing outside the glyph cell, where the atlas holds other glyphs.
+float tapCoverage(Sampler2D iAtlas, float2 iUv, float2 iDx, float2 iDy, float iScreenPxRange, float4 iCell) {
+	if (any(iUv < iCell.xy) || any(iUv > iCell.zw))
+		return 0.0;
+	float3 msd = iAtlas.SampleGrad(iUv, iDx, iDy).rgb;
+	return clamp(iScreenPxRange * (median(msd.r, msd.g, msd.b) - 0.5) + 0.5, 0.0, 1.0);
+}
+
+// Widest coverage of the glyph within the outline reach: a dilation by sampling two rings around the pixel.
+float outlineCoverage(Sampler2D iAtlas, float2 iUv, float2 iDx, float2 iDy, float iScreenPxRange, float4 iCell,
+					  float2 iReach) {
+	float widest = 0.0;
+	for (int ring = 0; ring < 2; ++ring) {
+		const int taps = ring == 0 ? 8 : 16;
+		const float radius = ring == 0 ? 0.5 : 1.0;
+		for (int tap = 0; tap < taps; ++tap) {
+			const float angle = (float(tap) + 0.5 * float(ring)) * (6.2831853 / float(taps));
+			const float2 offset = float2(cos(angle), sin(angle)) * radius * iReach;
+			widest = max(widest, tapCoverage(iAtlas, iUv + offset, iDx, iDy, iScreenPxRange, iCell));
+		}
+	}
+	return widest;
+}
+
 float4x4 resolveWorldMatrix(int worldIndex) {
 	if (worldIndex < 0) {
 		return gTransientWorlds[-(worldIndex + 1)].world;
@@ -106,6 +137,11 @@ VertexOutput vertexMain(VertexInput input, uint iid : SV_InstanceID) {
 	output.frag.texCoord = inst.uv[input.cornerIndex];
 	output.frag.texIndex = int(inst.texIndex);
 	output.frag.entityID = inst.entityId;
+	output.frag.outlineUv = inst.outlineUv;
+	output.frag.outlineColor = inst.outlineColor;
+	float2 uvLow = min(inst.uv[0], inst.uv[2]);
+	float2 uvHigh = max(inst.uv[0], inst.uv[2]);
+	output.frag.cell = float4(uvLow + inst.outlineUv, uvHigh - inst.outlineUv);
 	return output;
 }
 
@@ -143,6 +179,21 @@ FragmentOutput fragmentMain(FragmentInput input) {
 			opacity += clamp(screenPxRange * (median(msd.r, msd.g, msd.b) - 0.5) + 0.5, 0.0, 1.0);
 		}
 		opacity *= 0.25;
+	}
+	const bool outlined = input.outlineUv.x > 0.0 || input.outlineUv.y > 0.0;
+	if (outlined) {
+		// The outline is the glyph dilated by its reach, drawn under the fill in the same pass.
+		float fillAlpha = texColor.a * opacity;
+		float reach = outlineCoverage(gTextures[texIndex], input.texCoord, dx, dy, screenPxRange, input.cell,
+									  input.outlineUv);
+		float outlineAlpha = input.outlineColor.a * max(reach, opacity);
+		float alpha = fillAlpha + outlineAlpha * (1.0 - fillAlpha);
+		if (alpha < 0.001)
+			discard;
+		float3 rgb = (texColor.rgb * fillAlpha + input.outlineColor.rgb * outlineAlpha * (1.0 - fillAlpha)) / alpha;
+		output.color = float4(rgb, alpha);
+		output.entityID = input.entityID;
+		return output;
 	}
 	if (opacity < 0.001)
 		discard;
