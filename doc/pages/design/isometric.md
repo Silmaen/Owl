@@ -201,7 +201,7 @@ to 494 tiles). `iso_town.lua` tiles a cell from its mask and re-tiles the four n
 bulldozed; the `navigation` rules of the scene list the arms of each tile (`exits` the arms, `enters` their opposites).
 
 ISO5 demo (2026-10-16): `engine_demo/scenes/iso_town.owl` (**O** from the main menu), the road along Y, a `marker`
-prop and `iso_town.owltilemap` from the generator, `scripts/iso_town.lua`, `iso_town_traffic.lua` and `iso_cloud.lua`,
+prop and `iso_town.owltilemap` from the generator, `scripts/iso/iso_town.lua`, `iso_town_traffic.lua` and `iso_cloud.lua`,
 `huds/iso_town.owlhud`, the `build`, `bulldoze`, `town_tool` and `cursor` actions, the Lua `isometric.*` functions and
 `ui.is_mouse_over_ui`, the `iso_town` and `iso_town_actions` scenarios and the `iso_town` image test (640 × 360, both
 backends).

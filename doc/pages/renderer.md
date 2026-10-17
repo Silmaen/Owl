@@ -531,7 +531,7 @@ Convention:
 - Rotation values are stored in **radians** in the `Transform` component
   (matching the rest of Owl's transform pipeline).
 
-The accompanying `scripts/raycast_player.lua` in the Engine Demo
+The accompanying `scripts/raycast/raycast_player.lua` in the Engine Demo
 implements WASD strafing + Q/E turning following this convention.
 
 ## 3D Forward Renderer {#renderer3d}

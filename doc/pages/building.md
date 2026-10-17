@@ -146,6 +146,10 @@ desktop has it): the Owl Nest file dialogues go through `xdg-desktop-portal` (na
 `portal` option, set in `conanfile.py`), so they need a running portal with a desktop backend (GNOME, KDE or GTK) and
 no GTK in the process. Without a portal, opening a dialogue logs an error and returns no path.
 
+A package holds `assets/` (fonts, shaders, project templates, logo, help and, for Owl Nest, the editor sounds and
+trigger icons), `assets_sources/icons/` (the editor SVG icons) and `engine_demo/`; generators and test fixtures are not
+installed.
+
 The binaries decide at run time where their assets are: `assets/` next to the working directory first, then, in a
 development tree, `engine_assets/` and the application's assets found above it. No build switch tells a package from
 a development build.

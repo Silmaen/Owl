@@ -522,4 +522,4 @@ To drive either object from a Lua script instead of the built-in key, set the co
 | `test/renderer_tests/RendererRaycast_test.cpp`                      | Renderer-level unit tests                             |
 | `test/scene_tests/RaycastDynamicWalls_test.cpp`                     | Door / pushwall state-machine + serializer tests      |
 | `engine_demo/scenes/raycast_demo.owl`                               | Wolfenstein-inspired demo scene                       |
-| `engine_demo/scripts/raycast_player.lua`                            | Player input matching the pose convention             |
+| `engine_demo/scripts/raycast/raycast_player.lua`                            | Player input matching the pose convention             |

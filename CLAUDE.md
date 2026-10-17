@@ -74,8 +74,9 @@ Python, never a bare `conan`. Inside the container the venv lives in `/fhome/.ca
 | `source/owl/private/`     | Implementation, mirrors `public/`; third-party header wrappers in `core/external/`.       |
 | `source/owlnest/`         | Editor (`sources/`: panels, documents, undo commands) and runner (`runner/`).             |
 | `test/<cat>_tests/`       | Google Test, 20 categories, helpers in `test/test_helper/`.                               |
-| `engine_assets/`          | Fonts, Slang shaders (`shaders/<renderer>/slang/`), textures, logo.                       |
-| `engine_demo/`            | Engine Demo: an all-in-one showcase of every engine feature (not a game).                 |
+| `engine_assets/`          | What the engine ships: `fonts/`, Slang `shaders/<renderer>/slang/`, `project_templates/`, `logo/`. |
+| `engine_demo/`            | Engine Demo, the all-in-one showcase (not a game): `scenes/ huds/ prefabs/ tilesets/ tilemaps/`, `scripts/` `sounds/` `textures/` by area. |
+| `tools/demo/`             | Generators of the demo textures, sounds, hub and minimap (not assets, not installed).      |
 | `ci/`, `ci_action.py`     | Python CI (`ci/actions/*` extend `BaseAction`, auto-discovered).                          |
 | `.teamcity/`              | TeamCity Kotlin DSL (validate with Maven in Docker).                                      |
 | `cmake/`, `CMakePresets*` | Build modules and presets; `conanfile.py` lists the dependencies, `conan.lock` pins them. |

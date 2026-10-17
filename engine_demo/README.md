@@ -58,6 +58,23 @@ completing it marks the level done (`level_<name>_done` in gamestate), returns t
 
 **HUDs and menus.** Every HUD (`huds/*.owlhud`) and menu canvas is authored at a comfortable size for `ui_scale` 1 (the default; the Interface Size slider goes from 75 to 200 %): body text 24 to 30 reference pixels, titles 64 to 72. The widgets of a corner live in a `UiLayout` column or row anchored to that corner, sized by ratios of the screen or of their parent, with `Shrink` text, so nothing overlaps at any interface size or aspect ratio (`DemoHudLayout_test.cpp` checks every HUD and menu from 640×360 to 3440×1440, 4:3 to 21:9, 75 to 200 %).
 
+## Layout
+
+```
+engine_demo/
+  owl_project.yml  game_settings.yml  input_actions.yml  input/
+  scenes/  huds/  prefabs/  tilesets/  tilemaps/
+  scripts/{hub,platformer,raycast,iso,voxel,ui}/
+  textures/{tilemaps,atlases,sprites,items,iso,wolf3d,ui}/
+  sounds/{hub,raycast,platformer,town,ui}/
+  fixtures/
+```
+
+`textures/tilemaps/` holds the Kenney sheets, `atlases/` the textures the tilesets read, `wolf3d/` the Wolfenstein 3D
+walls and sprites (all kept), `items/` the inventory icons cropped from them. The scripts that draw the textures, the
+sounds, the hub and the minimap are in `tools/demo/`, outside the project, so that they are neither exported nor
+installed.
+
 ## Test fixtures
 
 `fixtures/iso_town_small.owl` is the compact 24×24 variant of the iso town (ring road, two streets, a one-way north
@@ -66,8 +83,8 @@ never loads it.
 
 ## Art
 
-The sample uses the Kenney CC0 packs in `textures/kenney/` (see their `License.txt`); `textures/generate_kenney_atlases.py`
-builds the two atlases from them.
+The sample uses the Kenney CC0 tile sheets in `textures/tilemaps/` (pack names and licence in `CREDITS.md` there);
+`tools/demo/generate_kenney_atlases.py` builds the atlases of `textures/atlases/` from them.
 
 | Where                                  | Pack                                                                                                                      |
 |----------------------------------------|---------------------------------------------------------------------------------------------------------------------------|
@@ -83,10 +100,10 @@ that share an atlas texture with a tileset share its filter.
 
 ## Sounds
 
-`sounds/*.wav` are the platformer and menu effects. The hub ambience is a 48 s wind loop (a soft `SoundSource`), with `hub_birds_1..4` and `hub_wind_1..3` played by `hub_ambient.lua` at random gaps and volumes, four footsteps (`hub_step_1..4`, a random one at a random volume: Lua has no pitch control), a bell every 100 to 170 s, and two quiet loops heard only within about 5 cells of the water (a light babbling brook along the river, a jet and plops for the fountain). `sounds/generate_sounds.py` writes them. The iso town sounds are in `sounds/town/` (mono, 16 bit, 22.05 kHz):
+`sounds/platformer/` and `sounds/ui/` hold the platformer and menu effects. The hub ambience is a 48 s wind loop (a soft `SoundSource`), with `hub/birds_1..4` and `hub/wind_1..3` played by `hub_ambient.lua` at random gaps and volumes, four footsteps (`hub/step_1..4`, a random one at a random volume: Lua has no pitch control), a bell every 100 to 170 s, and two quiet loops heard only within about 5 cells of the water (a light babbling brook along the river, a jet and plops for the fountain). `tools/demo/generate_sounds.py` writes them (`sounds/hub/`, `sounds/raycast/`). The iso town sounds are in `sounds/town/` (mono, 16 bit, 22.05 kHz):
 `engine`, `ambience`, `waves` and `yard` loop, `horn`, `cash`, `click_build`, `click_bulldoze`, `error`, `bell` and
 `chirp` play once. The Kenney CC0 audio packs could not be fetched (kenney.nl answers 403 from the build machine), so
-`sounds/generate_town_sounds.py` synthesises them (sine, noise, seeded, standard library only): run it again to rewrite
+`tools/demo/generate_town_sounds.py` synthesises them (sine, noise, seeded, standard library only): run it again to rewrite
 the folder. The master volume applies to everything through the settings; the one-shot effects played from Lua are also
 scaled by `volume_sfx`, the loops of `SoundSource` components are not (no category mixing yet).
 
@@ -120,9 +137,9 @@ scaled by `volume_sfx`, the loops of `SoundSource` components are not (no catego
 ## Animation Clips
 
 The platformer's collectible coins are driven by an inline `AnimatedSpriteRenderer`
-component on the `platformer_atlas.png` tiles (`coin_pair.owlprefab`). `textures/animated_coin.png` (6×3 grid, 18
-frames) is only read by the reusable `engine_assets/animations/coin.owlanim` (Animation editor, regression-test
-fixture) and by the `mixed` render test scene; the sample itself does not reference it.
+component on the `platformer_atlas.png` tiles (`coin_pair.owlprefab`). The animation-clip
+regression fixture (`coin.owlanim` and its 6×3 sheet) lives with the tests, in `test/scene_tests/assets/` and
+`test/render_tests/assets/`.
 
 ## Lua Scripts
 
@@ -236,7 +253,7 @@ fixture) and by the `mixed` render test scene; the sample itself does not refere
 - [x] Sound effects (jump, coin pickup, victory, menu start) and the sounds of the iso town: spatial looping
       `SoundSource` components (an engine on each vehicle, the surf, the yard) with a `SoundListener` on the camera, a
       non-spatial ambience loop, one-shot effects from Lua scaled by `volume_sfx` (see *Sounds*)
-      Hub and raycast: the hub (ambience loops, footsteps, doors, board, lever, gate, portal hum, bell) and the raycast level (ambience loop, doors, push-walls, treasure / food / ammo pick-ups, elevator) use files synthesised by `sounds/generate_sounds.py` (stdlib only; the Kenney audio packs were not reachable); `SoundSource` with `loop` and `playOnStart` for the ambience
+      Hub and raycast: the hub (ambience loops, footsteps, doors, board, lever, gate, portal hum, bell) and the raycast level (ambience loop, doors, push-walls, treasure / food / ammo pick-ups, elevator) use files synthesised by `tools/demo/generate_sounds.py` (stdlib only; the Kenney audio packs were not reachable); `SoundSource` with `loop` and `playOnStart` for the ambience
 - [x] UiImage (owl logo), UiPanel, UiButton, UiSlider, UiProgressBar, UiText —
       all 8 widget types in use across menu / settings / HUD
 - [x] HUD windows — the platformer HUD holds a draggable, closable "Controls" window (column `UiLayout`, content

@@ -115,6 +115,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Asset trees reorganised: the Engine Demo sorts its textures (`tilemaps`, `atlases`, `sprites`, `items`, `iso`, `wolf3d`, `ui`), sounds (`hub`, `raycast`, `platformer`, `town`, `ui`) and scripts (`hub`, `platformer`, `raycast`, `iso`, `voxel`, `ui`) by area; Kenney sheets are gathered in `textures/tilemaps/` with one `CREDITS.md`.
+- The Engine Demo asset generators moved from the asset folders to `tools/demo/` and write into the new layout.
+- The editor icon rasterizer moved to `source/owlnest/assets_sources/generate_icons.py`.
 - Text stays smooth at any size: the font atlas distance range grows from 2 to 6 px (atlas cache version 2) and the outline is an antialiased band computed from the signed distance instead of a sampled dilation.
 - The cursor captured by a voxel player is given back when the scene stops wanting capture (level change, Stop in Owl Nest), not only on Escape.
 - Engine Demo HUD texts and menu canvases are about 25 % bigger, with the boxes widened where a line would overflow.
@@ -169,6 +172,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+- Engine sample content: `engine_assets/{scenes,templates,textures,animations,tilesets}` (the Engine Demo plays that role; the scene templates were not used by any feature), the old editor sample scenes of `source/owlnest/assets/scenes`, the unused Micro Roguelike licence and the unused `hazard` / `platform` / `player` / `lava_tile` sprites of the demo; the tests that read some of them keep their fixtures in `test/*/assets`.
 - Engine Demo unused assets: 1071 Kenney per-tile images, previews and sheets (only the packed sheets read by `generate_kenney_atlases.py` and the licences stay), the `@2x` / `@0.5x` isometric atlases and tilesets, and two unused atlases, 1089 files and 5.3 MB in all (`tools.iso_atlas` now writes the `1x` level by default).
 - Engine Demo scenes outside the hub, `iso_test.owl` and `inventory_demo.owl` (menu shortcuts **I** and **N** included), with their key lock, vehicle and player scripts; the isometric render fixtures moved to `test/render_tests/assets`.
 - `UiPanel::layout`, `spacing` and `padding`, which nothing read (a `UiLayout` arranges children); files that still
