@@ -21,6 +21,7 @@
 #include <platform/AtomicFile.h>
 #include <scene/HudLibrary.h>
 #include <scene/SceneSerializer.h>
+#include <scene/SettingsManager.h>
 
 #include <cstddef>
 #include <cstdint>
@@ -421,6 +422,15 @@ void EditorLayer::newTilesetAsset() {
 }
 
 namespace {
+// The game's settings as Play sees them in the runner: the project defaults, then the player's overrides.
+void loadGameSettings(const std::string& iGameName, const std::filesystem::path& iProjectDirectory) {
+	auto& settings = app::Application::get().getEngineContext().getSettings();
+	settings.setGameName(iGameName);
+	if (const auto defaults = iProjectDirectory / "game_settings.yml"; exists(defaults))
+		settings.loadDefaults(defaults);
+	settings.loadUserSettings();
+}
+
 auto resolveAssetAbsolutePath(const std::filesystem::path& iRelative) -> std::filesystem::path {
 	if (iRelative.empty())
 		return {};
@@ -641,6 +651,7 @@ void EditorLayer::openProject(const std::filesystem::path& iDir) {
 	app::Application::get().getEngineContext().setSimulationSettings(m_project.simulation);
 	std::ignore = app::Application::get().getEngineContext().loadActionMap(m_project.projectDirectory);
 	app::Application::get().getEngineContext().setDefaultHud(m_project.defaultHud);
+	loadGameSettings(m_project.name, m_project.projectDirectory);
 	std::ignore = m_project.loadGamepadMappings();
 	m_contentBrowser.attach();
 	refreshWindowTitle();
@@ -710,6 +721,7 @@ void EditorLayer::closeProject() {
 	app::Application::get().getEngineContext().setSimulationSettings(m_project.simulation);
 	std::ignore = app::Application::get().getEngineContext().loadActionMap({});
 	app::Application::get().getEngineContext().setDefaultHud(m_project.defaultHud);
+	loadGameSettings(m_project.name, m_project.projectDirectory);
 	refreshWindowTitle();
 }
 

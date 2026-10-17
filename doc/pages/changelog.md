@@ -164,6 +164,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Play in Owl Nest reads the game's settings like the runner: the project's `game_settings.yml` defaults and the player's overrides are loaded when a project opens (the Engine Demo HUD scale, player speed and volumes were ignored in the editor).
 - A `SoundSource` with `playOnStart` loads its sound asset on first use (it used to play only a sound a script had loaded before).
 - Turning in the Engine Demo raycast level is smooth: the yaw is kept by the script instead of read back from a transform that only follows the body on the physics tick.
 - Owl Nest isometric Navigation tool and graph overlay stay linked: selecting the tool turns the graph on and leaving it restores it, switching the graph off from Show leaves the tool, and entering Play leaves the tool.
