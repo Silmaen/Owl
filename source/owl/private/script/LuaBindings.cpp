@@ -651,6 +651,43 @@ auto luaEntityGetLink(lua_State* iState) -> int {
 	return 1;
 }
 
+auto luaEntitySetTint(lua_State* iState) -> int {
+	const auto red = static_cast<float>(luaL_checknumber(iState, 2));
+	const auto green = static_cast<float>(luaL_checknumber(iState, 3));
+	const auto blue = static_cast<float>(luaL_checknumber(iState, 4));
+	const auto alpha = static_cast<float>(luaL_optnumber(iState, 5, 1.0));
+	const auto entity = findEntity(iState);
+	const math::vec4 tint{red, green, blue, alpha};
+	if (entity && entity->hasComponent<scene::component::AnimatedSpriteRenderer>())
+		entity->getComponent<scene::component::AnimatedSpriteRenderer>().color = tint;
+	else if (entity && entity->hasComponent<scene::component::SpriteRenderer>())
+		entity->getComponent<scene::component::SpriteRenderer>().color = tint;
+	else {
+		lua_pushboolean(iState, 0);
+		return 1;
+	}
+	lua_pushboolean(iState, 1);
+	return 1;
+}
+
+auto luaEntityGetTint(lua_State* iState) -> int {
+	const auto entity = findEntity(iState);
+	if (!entity)
+		return 0;
+	math::vec4 tint;
+	if (entity->hasComponent<scene::component::AnimatedSpriteRenderer>())
+		tint = entity->getComponent<scene::component::AnimatedSpriteRenderer>().color;
+	else if (entity->hasComponent<scene::component::SpriteRenderer>())
+		tint = entity->getComponent<scene::component::SpriteRenderer>().color;
+	else
+		return 0;
+	lua_pushnumber(iState, static_cast<lua_Number>(tint.x()));
+	lua_pushnumber(iState, static_cast<lua_Number>(tint.y()));
+	lua_pushnumber(iState, static_cast<lua_Number>(tint.z()));
+	lua_pushnumber(iState, static_cast<lua_Number>(tint.w()));
+	return 4;
+}
+
 auto luaUiSetText(lua_State* iState) -> int {
 	if (const auto entity = findEntity(iState); entity && entity->hasComponent<scene::component::UiText>())
 		entity->getComponent<scene::component::UiText>().text = luaL_checkstring(iState, 2);
@@ -1804,6 +1841,16 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		{.table = "entity", .name = "get_link", .function = guarded<luaEntityGetLink>,
 		 .description = "Entity an `EntityLink` of this entity points at (0 when it has none or the target is missing).",
 		 .params = {entityId}, .returns = {{"linked_id", Entity}}},
+		{.table = "entity", .name = "set_tint", .function = guarded<luaEntitySetTint>,
+		 .description = "Set the colour multiplied into a `SpriteRenderer` or `AnimatedSpriteRenderer` (hit flash, fade); "
+						"false when the entity has no sprite. `a` is 1 when omitted.",
+		 .params = {entityId, {"r", Number}, {"g", Number}, {"b", Number}, {"a", Number, true}},
+		 .returns = {{"done", Boolean}}},
+		{.table = "entity", .name = "get_tint", .function = guarded<luaEntityGetTint>,
+		 .description = "Colour multiplied into a `SpriteRenderer` or `AnimatedSpriteRenderer`; nothing when the entity "
+						"has no sprite.",
+		 .params = {entityId},
+		 .returns = {{"r", Number}, {"g", Number}, {"b", Number}, {"a", Number}}},
 		{.table = "ui", .name = "find", .function = guarded<luaUiFind>,
 		 .description = "First widget with this tag, searched in the scene's HUD asset then in the scene (0 when none); "
 						"cache the result.",

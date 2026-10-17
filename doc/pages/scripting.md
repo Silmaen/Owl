@@ -301,6 +301,13 @@ ui.transition_play("fade_out", 0.5, 0.8, 0.1, 0.6, 1.0)
 as zero-allocation shorthands for scripts written before the wipe variants
 existed.
 
+### `entity`
+
+`entity.has_component(id, name)` and `entity.get_name(id)` query an entity; `entity.set_tint(id, r, g, b, [a])` and
+`entity.get_tint(id)` write and read the colour a `SpriteRenderer` or `AnimatedSpriteRenderer` multiplies into its
+texture, which is how a script flashes a sprite on a hit or fades a coin out (false / nothing for an entity without a
+sprite). See `engine_demo/scripts/platformer_player.lua` and `coin.lua`.
+
 ### `isometric`
 
 The `isometric` functions take the entity carrying the isometric `Tilemap` (`scene.find_entity("Ground")`, cached).

@@ -8,6 +8,13 @@
   (24 px grid, from row 9 of 24 px, i.e. y = 216). 288 is a multiple of 18 and of 24, so the one texture reads as an
   18 px tile grid (20x16) and as a 24 px sprite grid (15x12).
 
+* ``platformer_ext_atlas.png`` 288x288, 18 px tiles, 16 columns: the Pixel Platformer farm expansion (rows 0-6, tile
+  ``i``), the industrial expansion (rows 7-13, tile ``112 + i``), then row 14: the six phases of the water surface
+  (tiles 224-229, the wave of the base tile 33 rolled one pixel at a time) and non-collidable copies of dirt tiles
+  (230-235) that hide secret rooms.
+* ``platformer_backdrop.png`` 192x120, 24 px tiles, 8 columns: the Pixel Platformer backgrounds (rows 0-2) and a
+  keyed copy of row 1 (row 3, the sky colour made transparent) so the horizon bands can be stacked as parallax layers.
+
 Run with ``poetry run python`` from anywhere; the packs are read, never modified.
 """
 
@@ -100,6 +107,49 @@ def build_platformer() -> None:
     atlas.save(HERE / "platformer_atlas.png")
 
 
+FARM_DIRT_COPIES = (32, 33, 34, 48, 49, 50)
+
+
+def build_platformer_ext() -> None:
+    farm = Image.open(PACKS / "pixel-platformer-farm-expansion/Tilemap/tilemap_packed.png").convert("RGBA")
+    industrial = Image.open(PACKS / "pixel-platformer-industrial-expansion/Tilemap/tilemap_packed.png").convert("RGBA")
+    base = Image.open(PACKS / "pixel-platformer/Tilemap/tilemap_packed.png").convert("RGBA")
+    atlas = Image.new("RGBA", (288, 288), (0, 0, 0, 0))
+    atlas.paste(farm, (0, 0))
+    atlas.paste(industrial, (0, 126))
+    water = base.crop((13 * 18, 18, 14 * 18, 36))  # tile 33 of the base sheet: the wave repeats every 6 px
+    for phase in range(6):
+        frame = water.copy()
+        wave = water.crop((0, 0, 18, 8))
+        for y in range(8):
+            row = wave.crop((0, y, 18, y + 1))
+            frame.paste(row.crop((18 - phase, 0, 18, 1)), (0, y))
+            frame.paste(row.crop((0, 0, 18 - phase, 1)), (phase, y))
+        atlas.paste(frame, (phase * 18, 14 * 18))
+    for slot, tile in enumerate(FARM_DIRT_COPIES):
+        copy = farm.crop(((tile % 16) * 18, (tile // 16) * 18, (tile % 16) * 18 + 18, (tile // 16) * 18 + 18))
+        atlas.paste(copy, ((6 + slot) * 18, 14 * 18))
+    atlas.save(HERE / "platformer_ext_atlas.png")
+
+
+def build_platformer_backdrop() -> None:
+    sheet = Image.open(PACKS / "pixel-platformer/Tilemap/tilemap-backgrounds_packed.png").convert("RGBA")
+    atlas = Image.new("RGBA", (192, 120), (0, 0, 0, 0))
+    atlas.paste(sheet, (0, 0))
+    for column in range(8):
+        tile = sheet.crop((column * 24, 24, column * 24 + 24, 48)).copy()
+        sky = tile.getpixel((0, 0))
+        pixels = tile.load()
+        for y in range(24):
+            for x in range(24):
+                if pixels[x, y] == sky:
+                    pixels[x, y] = (0, 0, 0, 0)
+        atlas.paste(tile, (column * 24, 72))
+    atlas.save(HERE / "platformer_backdrop.png")
+
+
 if __name__ == "__main__":
     build_town()
     build_platformer()
+    build_platformer_ext()
+    build_platformer_backdrop()
