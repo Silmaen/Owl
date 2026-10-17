@@ -80,8 +80,14 @@ static const float2 kCorners[4] = {
 	float2(-0.5f,  0.5f),
 };
 
+// Distance range of the atlas in texels: must match `Font.cpp` (`g_pixelRange`).
+static const float kPxRange = 6.0;
+
 // Above this screen pixel range (about 40 px text for the 40 px atlas em) one sample per pixel is enough.
-static const float kSupersampleLimit = 2.0;
+static const float kSupersampleLimit = 6.0;
+
+// Screen pixels kept free at the saturated end of the field: an outline reads the distance only up to there.
+static const float kFieldMargin = 1.0;
 
 // Rotated-grid sample offsets inside a pixel, in pixels.
 static const float2 kTapOffsets[4] = {
@@ -95,25 +101,32 @@ float median(float r, float g, float b) {
 	return max(min(r, g), min(max(r, g), b));
 }
 
-// Coverage of the glyph at a texture coordinate; nothing outside the glyph cell, where the atlas holds other glyphs.
-float tapCoverage(Sampler2D iAtlas, float2 iUv, float2 iDx, float2 iDy, float iScreenPxRange, float4 iCell) {
+// Signed distance to the glyph edge in screen pixels (positive inside); far outside where the atlas holds another
+// glyph, i.e. outside the glyph cell (which holds half a distance range of field around the shape).
+float signedDistance(Sampler2D iAtlas, float2 iUv, float2 iDx, float2 iDy, float iScreenPxRange, float4 iCell) {
 	if (any(iUv < iCell.xy) || any(iUv > iCell.zw))
-		return 0.0;
+		return -iScreenPxRange - 1.0;
 	float3 msd = iAtlas.SampleGrad(iUv, iDx, iDy).rgb;
-	return clamp(iScreenPxRange * (median(msd.r, msd.g, msd.b) - 0.5) + 0.5, 0.0, 1.0);
+	return iScreenPxRange * (median(msd.r, msd.g, msd.b) - 0.5);
 }
 
-// Widest coverage of the glyph within the outline reach: a dilation by sampling two rings around the pixel.
+// Coverage of the glyph grown by an outline reach (screen pixels): the signed distance gives a smooth antialiased band
+// as long as the reach stays inside the field; the rest of a longer reach is a ring dilation of that band.
 float outlineCoverage(Sampler2D iAtlas, float2 iUv, float2 iDx, float2 iDy, float iScreenPxRange, float4 iCell,
-					  float2 iReach) {
-	float widest = 0.0;
+					  float iReachPx) {
+	const float fieldReach = max(0.5 * iScreenPxRange - kFieldMargin, 0.0);
+	const float inner = min(iReachPx, fieldReach);
+	const float rest = iReachPx - inner;
+	float widest = clamp(signedDistance(iAtlas, iUv, iDx, iDy, iScreenPxRange, iCell) + inner + 0.5, 0.0, 1.0);
+	if (rest <= 0.0)
+		return widest;
 	for (int ring = 0; ring < 2; ++ring) {
-		const int taps = ring == 0 ? 8 : 16;
-		const float radius = ring == 0 ? 0.5 : 1.0;
-		for (int tap = 0; tap < taps; ++tap) {
-			const float angle = (float(tap) + 0.5 * float(ring)) * (6.2831853 / float(taps));
-			const float2 offset = float2(cos(angle), sin(angle)) * radius * iReach;
-			widest = max(widest, tapCoverage(iAtlas, iUv + offset, iDx, iDy, iScreenPxRange, iCell));
+		const float radius = ring == 0 ? 0.5 * rest : rest;
+		for (int tap = 0; tap < 8; ++tap) {
+			const float angle = (float(tap) + 0.5 * float(ring)) * (6.2831853 / 8.0);
+			const float2 uv = iUv + (iDx * cos(angle) + iDy * sin(angle)) * radius;
+			const float dist = signedDistance(iAtlas, uv, iDx, iDy, iScreenPxRange, iCell);
+			widest = max(widest, clamp(dist + inner + 0.5, 0.0, 1.0));
 		}
 	}
 	return widest;
@@ -150,12 +163,10 @@ FragmentOutput fragmentMain(FragmentInput input) {
 	FragmentOutput output;
 	float4 texColor = input.color;
 	const int texIndex = NonUniformResourceIndex(input.texIndex);
-	// Must match the pixel range the atlas is generated with (`Font.cpp`, `g_pixelRange`).
-	const float pxRange = 2.0;
 	uint texW, texH;
 	gTextures[texIndex].GetDimensions(texW, texH);
 	float2 texDimensions = float2(texW, texH);
-	float2 unitRange = float2(pxRange) / texDimensions;
+	float2 unitRange = float2(kPxRange) / texDimensions;
 	float2 screenTexSize = float2(1.0) / fwidth(input.texCoord);
 	float screenPxRange = max(0.5 * dot(unitRange, screenTexSize), 1.0);
 
@@ -163,11 +174,14 @@ FragmentOutput fragmentMain(FragmentInput input) {
 	float2 dx = ddx(input.texCoord);
 	float2 dy = ddy(input.texCoord);
 
+	// The glyph's atlas cell already holds half a distance range of field around the shape.
+	const float4 cell = input.cell;
+
 	float opacity;
 	if (screenPxRange > kSupersampleLimit) {
 		// Large text: the distance ramp spans several pixels, one sample is smooth.
-		float3 msd = gTextures[texIndex].SampleGrad(input.texCoord, dx, dy).rgb;
-		opacity = clamp(screenPxRange * (median(msd.r, msd.g, msd.b) - 0.5) + 0.5, 0.0, 1.0);
+		float dist = signedDistance(gTextures[texIndex], input.texCoord, dx, dy, screenPxRange, cell);
+		opacity = clamp(dist + 0.5, 0.0, 1.0);
 	} else {
 		// Small text: the atlas is minified, so a single linear sample aliases. Four taps on a rotated grid over the
 		// pixel footprint give the glyph a smooth coverage instead of ragged edges.
@@ -175,17 +189,17 @@ FragmentOutput fragmentMain(FragmentInput input) {
 		for (int tap = 0; tap < 4; ++tap) {
 			float2 offset = kTapOffsets[tap];
 			float2 uv = input.texCoord + dx * offset.x + dy * offset.y;
-			float3 msd = gTextures[texIndex].SampleGrad(uv, dx, dy).rgb;
-			opacity += clamp(screenPxRange * (median(msd.r, msd.g, msd.b) - 0.5) + 0.5, 0.0, 1.0);
+			float dist = signedDistance(gTextures[texIndex], uv, dx, dy, screenPxRange, cell);
+			opacity += clamp(dist + 0.5, 0.0, 1.0);
 		}
 		opacity *= 0.25;
 	}
 	const bool outlined = input.outlineUv.x > 0.0 || input.outlineUv.y > 0.0;
 	if (outlined) {
-		// The outline is the glyph dilated by its reach, drawn under the fill in the same pass.
+		// The outline is the glyph grown by its reach (screen pixels), drawn under the fill in the same pass.
+		float reachPx = 0.5 * dot(input.outlineUv, screenTexSize);
 		float fillAlpha = texColor.a * opacity;
-		float reach = outlineCoverage(gTextures[texIndex], input.texCoord, dx, dy, screenPxRange, input.cell,
-									  input.outlineUv);
+		float reach = outlineCoverage(gTextures[texIndex], input.texCoord, dx, dy, screenPxRange, cell, reachPx);
 		float outlineAlpha = input.outlineColor.a * max(reach, opacity);
 		float alpha = fillAlpha + outlineAlpha * (1.0 - fillAlpha);
 		if (alpha < 0.001)

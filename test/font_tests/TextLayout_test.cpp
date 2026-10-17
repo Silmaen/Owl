@@ -134,8 +134,10 @@ TEST_F(TextLayoutTest, linesAreAlignedOneByOne) {
 	ASSERT_EQ(laid.size(), 5u);
 	const float iRight = laid.front().quad.max().x();
 	const float mRight = laid.back().quad.max().x();
-	EXPECT_LT(iRight, 20.f + g_eps);
-	EXPECT_LT(mRight, 20.f + g_eps);
+	// The glyph quads carry the distance-field padding, which may overshoot the aligned edge by a hair.
+	constexpr float quadPadding = 0.01f;
+	EXPECT_LT(iRight, 20.f + quadPadding);
+	EXPECT_LT(mRight, 20.f + quadPadding);
 	EXPECT_GT(iRight, 19.f);
 	EXPECT_GT(mRight, 19.f);
 }

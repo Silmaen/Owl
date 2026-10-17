@@ -300,11 +300,20 @@ INSTANTIATE_TEST_SUITE_P(HudText, RenderImage,
 												iInfo.param.size.x(), iInfo.param.size.y());
 						 });
 
-// Outlined and boxed HUD text on a light background: the outline is the glyph dilated in the same draw, the box a
-// quad behind the text block.
+// Outlined and boxed HUD text on a light background: the outline is the glyph grown by its signed distance in the same
+// draw, the box a quad behind the text block.
 INSTANTIATE_TEST_SUITE_P(HudTextOutline, RenderImage,
 						 testing::Values(RenderCase{"hud_text_outline", "vulkan", {640, 360}},
 										 RenderCase{"hud_text_outline", "opengl", {640, 360}}),
+						 [](const testing::TestParamInfo<RenderCase>& iInfo) -> std::string {
+							 return std::format("{}_{}_{}x{}", iInfo.param.scene, iInfo.param.backend,
+												iInfo.param.size.x(), iInfo.param.size.y());
+						 });
+
+// Large outlined HUD text (48 and 64 px, 3 and 4 px outlines): smooth edges and a smooth outline band at any size.
+INSTANTIATE_TEST_SUITE_P(HudTextLarge, RenderImage,
+						 testing::Values(RenderCase{"hud_text_large", "vulkan", {640, 360}},
+										 RenderCase{"hud_text_large", "opengl", {640, 360}}),
 						 [](const testing::TestParamInfo<RenderCase>& iInfo) -> std::string {
 							 return std::format("{}_{}_{}x{}", iInfo.param.scene, iInfo.param.backend,
 												iInfo.param.size.x(), iInfo.param.size.y());
