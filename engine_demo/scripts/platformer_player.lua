@@ -21,7 +21,7 @@
 properties = {
     { name = "speed", type = "float", default = 5.5 },
     { name = "bounds_min_x", type = "float", default = 12.0 },   -- limits of the camera centre (world units)
-    { name = "bounds_max_x", type = "float", default = 164.0 },
+    { name = "bounds_max_x", type = "float", default = 185.0 },
     { name = "bounds_min_y", type = "float", default = -13.2 },
     { name = "bounds_max_y", type = "float", default = 5.3 },
 }
@@ -80,7 +80,7 @@ local walk_clock = 0.0
 local k_zones = {
     { x = 0,   name = "Meadow" },
     { x = 56,  name = "Farm" },
-    { x = 112, name = "Factory" },
+    { x = 133, name = "Factory" },
 }
 local k_objective = "reach the door at the top of the factory tower"
 

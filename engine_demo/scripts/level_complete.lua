@@ -13,5 +13,5 @@ function on_level_complete(player_id)
     gamestate.set("platformer_banner", "Level complete!")
     log.info("Platformer level complete!")
     sound.play("sounds/victory.wav")
-    scene.transition_to("scenes/world_map.owl", "fade_out", 0.6)
+    scene.transition_to("scenes/world_map.owl", "fade_out", 0.4)
 end
