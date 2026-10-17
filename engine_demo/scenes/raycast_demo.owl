@@ -16,7 +16,7 @@ EnabledRenderers:
         - 0.173186138
         - 0.173745155
         - 1
-  - Name: ui
+  - Name: overlay
     Enabled: true
     Overrides:
       Space: Screen
@@ -2668,7 +2668,7 @@ Entities:
     Hierarchy:
       {}
     RendererTag:
-      Name: ui
+      Name: overlay
   - Entity: 5400000000000000071
     Tag:
       tag: MinimapPlayer
@@ -2685,4 +2685,4 @@ Entities:
     Hierarchy:
       {}
     RendererTag:
-      Name: ui
+      Name: overlay
