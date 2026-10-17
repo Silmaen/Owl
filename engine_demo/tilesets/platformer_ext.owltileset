@@ -1,0 +1,290 @@
+Tileset: platformer_ext
+FormatVersion: 1
+texture: nam:textures/platformer_ext_atlas.png
+tileWidth: 18
+tileHeight: 18
+columns: 16
+rows: 16
+filterMode: Nearest
+tiles:
+  - index: 0
+    collidable: true
+    name: farm_slab
+  - index: 1
+    collidable: true
+    name: farm_slab
+  - index: 2
+    collidable: true
+    name: farm_slab
+  - index: 3
+    collidable: true
+    name: farm_slab
+  - index: 6
+    collidable: true
+    name: plank
+  - index: 7
+    collidable: true
+    name: plank
+  - index: 8
+    collidable: true
+    name: plank
+  - index: 9
+    collidable: true
+    name: hay
+  - index: 10
+    collidable: true
+    name: hay
+  - index: 11
+    collidable: true
+    name: hay
+  - index: 12
+    collidable: true
+    name: clay_block
+  - index: 13
+    collidable: true
+    name: clay_block
+  - index: 14
+    collidable: true
+    name: clay_block
+  - index: 15
+    collidable: true
+    name: clay_block
+  - index: 16
+    collidable: true
+    name: farm_grass
+  - index: 17
+    collidable: true
+    name: farm_grass
+  - index: 18
+    collidable: true
+    name: farm_grass
+  - index: 19
+    collidable: true
+    name: farm_grass
+  - index: 28
+    collidable: true
+    name: clay_block
+  - index: 29
+    collidable: true
+    name: clay_block
+  - index: 30
+    collidable: true
+    name: clay_block
+  - index: 31
+    collidable: true
+    name: clay_block
+  - index: 32
+    collidable: true
+    name: farm_dirt
+  - index: 33
+    collidable: true
+    name: farm_dirt
+  - index: 34
+    collidable: true
+    name: farm_dirt
+  - index: 35
+    collidable: true
+    name: farm_dirt
+  - index: 44
+    collidable: true
+    name: clay_block
+  - index: 45
+    collidable: true
+    name: clay_block
+  - index: 46
+    collidable: true
+    name: clay_block
+  - index: 47
+    collidable: true
+    name: clay_block
+  - index: 48
+    collidable: true
+    name: farm_dirt
+  - index: 49
+    collidable: true
+    name: farm_dirt
+  - index: 50
+    collidable: true
+    name: farm_dirt
+  - index: 51
+    collidable: true
+    name: farm_dirt
+  - index: 60
+    collidable: true
+    name: clay_block
+  - index: 61
+    collidable: true
+    name: clay_block
+  - index: 62
+    collidable: true
+    name: clay_block
+  - index: 63
+    collidable: true
+    name: clay_block
+  - index: 112
+    collidable: true
+    name: metal_top
+  - index: 113
+    collidable: true
+    name: metal_top
+  - index: 114
+    collidable: true
+    name: metal_top
+  - index: 115
+    collidable: true
+    name: metal_top
+  - index: 116
+    collidable: true
+    name: girder
+  - index: 117
+    collidable: true
+    name: girder
+  - index: 118
+    collidable: true
+    name: girder
+  - index: 125
+    collidable: true
+    name: slime_block
+  - index: 126
+    collidable: true
+    name: slime_block
+  - index: 127
+    collidable: true
+    name: slime_block
+  - index: 128
+    collidable: true
+    name: metal_top
+  - index: 129
+    collidable: true
+    name: metal_top
+  - index: 130
+    collidable: true
+    name: metal_top
+  - index: 131
+    collidable: true
+    name: metal_top
+  - index: 132
+    collidable: true
+    name: girder
+  - index: 133
+    collidable: true
+    name: girder
+  - index: 134
+    collidable: true
+    name: girder
+  - index: 141
+    collidable: true
+    name: slime_block
+  - index: 142
+    collidable: true
+    name: slime_block
+  - index: 143
+    collidable: true
+    name: slime_block
+  - index: 144
+    collidable: true
+    name: metal_dirt
+  - index: 145
+    collidable: true
+    name: metal_dirt
+  - index: 146
+    collidable: true
+    name: metal_dirt
+  - index: 147
+    collidable: true
+    name: metal_dirt
+  - index: 157
+    collidable: true
+    name: slime_block
+  - index: 158
+    collidable: true
+    name: slime_block
+  - index: 159
+    collidable: true
+    name: slime_block
+  - index: 160
+    collidable: true
+    name: metal_dirt
+  - index: 161
+    collidable: true
+    name: metal_dirt
+  - index: 162
+    collidable: true
+    name: metal_dirt
+  - index: 163
+    collidable: true
+    name: metal_dirt
+  - index: 196
+    collidable: true
+    name: conveyor
+  - index: 197
+    collidable: true
+    name: conveyor
+  - index: 198
+    collidable: true
+    name: conveyor
+  - index: 199
+    collidable: true
+    name: hazard_strip
+  - index: 200
+    collidable: true
+    name: hazard_strip
+  - index: 201
+    collidable: true
+    name: hazard_strip
+  - index: 202
+    collidable: true
+    name: hazard_strip
+  - index: 212
+    collidable: true
+    name: conveyor
+  - index: 213
+    collidable: true
+    name: conveyor
+  - index: 214
+    collidable: true
+    name: conveyor
+  - index: 215
+    collidable: true
+    name: hazard_strip
+  - index: 216
+    collidable: true
+    name: hazard_strip
+  - index: 217
+    collidable: true
+    name: hazard_strip
+  - index: 218
+    collidable: true
+    name: hazard_strip
+  - index: 224
+    name: water_wave
+  - index: 225
+    name: water_wave
+  - index: 226
+    name: water_wave
+  - index: 227
+    name: water_wave
+  - index: 228
+    name: water_wave
+  - index: 229
+    name: water_wave
+  - index: 230
+    name: fake_dirt
+  - index: 231
+    name: fake_dirt
+  - index: 232
+    name: fake_dirt
+  - index: 233
+    name: fake_dirt
+  - index: 234
+    name: fake_dirt
+  - index: 235
+    name: fake_dirt
+  - index: 240
+    name: flag_idle
+  - index: 241
+    name: flag_raised
+  - index: 242
+    name: flag_raised
+  - index: 243
+    name: flag_raised

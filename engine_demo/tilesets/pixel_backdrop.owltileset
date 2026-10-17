@@ -1,10 +1,10 @@
 Tileset: pixel_backdrop
 FormatVersion: 1
-texture: nam:textures/kenney/pixel-platformer/Tilemap/tilemap-backgrounds_packed.png
+texture: nam:textures/platformer_backdrop.png
 tileWidth: 24
 tileHeight: 24
 columns: 8
-rows: 3
+rows: 5
 filterMode: Nearest
 tiles:
   - index: 0
@@ -55,3 +55,19 @@ tiles:
     name: forest_floor
   - index: 23
     name: forest_floor
+  - index: 24
+    name: sky_band
+  - index: 25
+    name: sky_band_trees
+  - index: 26
+    name: sky_band
+  - index: 27
+    name: sky_band_pines
+  - index: 28
+    name: dusk_hills
+  - index: 29
+    name: dusk_hills_palms
+  - index: 30
+    name: forest_band
+  - index: 31
+    name: forest_band_trees

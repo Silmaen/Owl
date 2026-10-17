@@ -10,8 +10,9 @@
 
 * ``platformer_ext_atlas.png`` 288x288, 18 px tiles, 16 columns: the Pixel Platformer farm expansion (rows 0-6, tile
   ``i``), the industrial expansion (rows 7-13, tile ``112 + i``), then row 14: the six phases of the water surface
-  (tiles 224-229, the wave of the base tile 33 rolled one pixel at a time) and non-collidable copies of dirt tiles
-  (230-235) that hide secret rooms.
+  (tiles 224-229, the wave of the base tile 33 rolled one pixel at a time), non-collidable copies of dirt tiles
+  (230-235) that hide secret rooms, the water body (236), the darkened dirt of a cave (237-239) and row 15: the
+  checkpoint flag, idle (240) then raised and waving (241-243).
 * ``platformer_backdrop.png`` 192x120, 24 px tiles, 8 columns: the Pixel Platformer backgrounds (rows 0-2) and a
   keyed copy of row 1 (row 3, the sky colour made transparent) so the horizon bands can be stacked as parallax layers.
 
@@ -107,7 +108,36 @@ def build_platformer() -> None:
     atlas.save(HERE / "platformer_atlas.png")
 
 
-FARM_DIRT_COPIES = (32, 33, 34, 48, 49, 50)
+FARM_DIRT_COPIES = (33, 34, 35, 49, 50, 51)
+CAVE_DIRT = (34, 33, 35)
+CHECKPOINT_OFF = ((150, 150, 160, 255), (110, 110, 125, 255))
+CHECKPOINT_ON = ((235, 70, 60, 255), (170, 40, 40, 255))
+
+
+def _flag(cloth: tuple[tuple[int, ...], tuple[int, ...]], wave: int) -> Image.Image:
+    """A checkpoint flag on its pole in the packs' palette: grey when idle, red and waving once reached."""
+    tile = Image.new("RGBA", (18, 18), (0, 0, 0, 0))
+    pixels = tile.load()
+    outline = (45, 40, 55, 255)
+    pole = (205, 170, 120, 255)
+    for y in range(2, 17):
+        for x in (4, 5):
+            pixels[x, y] = pole
+        pixels[3, y] = outline
+        pixels[6, y] = outline
+    for x in range(2, 8):
+        pixels[x, 16] = outline
+        pixels[x, 17] = outline
+    pixels[4, 1] = pixels[5, 1] = (240, 205, 90, 255)
+    light, dark = cloth
+    for row in range(6):
+        reach = 8 - row if row < 3 else 3 + row - 2
+        for step in range(max(reach, 1)):
+            x = 7 + step
+            y = 2 + row + (wave if step >= 4 else 0) % 3 - (1 if step >= 5 and wave == 2 else 0)
+            if 0 <= x < 18 and 0 <= y < 18:
+                pixels[x, y] = light if row < 3 else dark
+    return tile
 
 
 def build_platformer_ext() -> None:
@@ -129,6 +159,14 @@ def build_platformer_ext() -> None:
     for slot, tile in enumerate(FARM_DIRT_COPIES):
         copy = farm.crop(((tile % 16) * 18, (tile // 16) * 18, (tile % 16) * 18 + 18, (tile // 16) * 18 + 18))
         atlas.paste(copy, ((6 + slot) * 18, 14 * 18))
+    atlas.paste(base.crop((13 * 18, 54, 14 * 18, 72)), (12 * 18, 14 * 18))  # tile 53 of the base sheet: the water body
+    for slot, tile in enumerate(CAVE_DIRT):
+        copy = farm.crop(((tile % 16) * 18, (tile // 16) * 18, (tile % 16) * 18 + 18, (tile // 16) * 18 + 18))
+        dark = copy.point(lambda value: int(value * 0.55) if value < 256 else value)
+        dark.putalpha(copy.getchannel("A"))
+        atlas.paste(dark, ((13 + slot) * 18, 14 * 18))
+    for slot, (cloth, wave) in enumerate(((CHECKPOINT_OFF, 0), (CHECKPOINT_ON, 0), (CHECKPOINT_ON, 1), (CHECKPOINT_ON, 2))):
+        atlas.paste(_flag(cloth, wave), (slot * 18, 15 * 18))
     atlas.save(HERE / "platformer_ext_atlas.png")
 
 

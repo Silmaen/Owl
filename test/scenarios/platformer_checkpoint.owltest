@@ -1,0 +1,17 @@
+# A checkpoint stores the respawn point in the gamestate; falling into a pit costs health and brings the player back to
+# the last checkpoint instead of the start.
+scene: ../../engine_demo/scenes/platformer_house.owl
+steps:
+  - frames: 30
+  - expect: {gamestate: platformer_checkpoint_x, equals: 4.5, tolerance: 0.01}
+  - input: {key: Right, frames: 30}
+  - frames: 10
+  - {command: entity.set_transform, args: {entity: Checkpoint1, translation: [8.0, -14.0, 0.1], scale: [60, 60, 1]}}
+  - frames: 5
+  - expect: {gamestate: platformer_checkpoint_x, equals: 8.0, tolerance: 0.01}
+  - {command: entity.set_transform, args: {entity: Checkpoint1, translation: [8.0, -60, 0.1]}}
+  - input: {key: Right, frames: 150}
+  - frames: 100
+  - expect: {gamestate: health, less: 0.7}
+  - expect: {player: true, translation.x: {greater: 7.0}}
+  - expect: {player: true, translation.x: {less: 9.5}}

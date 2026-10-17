@@ -90,6 +90,7 @@ Entities:
     size: [200, 26]
     offset: [-20, 50]
   UiText:
+    outlineWidth: 2
     text: 'Score: 0'
     color:
     - 1
@@ -128,6 +129,7 @@ Entities:
     size: [630, 20]
     offset: [20, 20]
   UiText:
+    outlineWidth: 2
     text: A/D = move (only on ground), W/Space = jump, ESC = pause
     color:
     - 1
@@ -271,10 +273,11 @@ Entities:
     anchorMin: [0, 0]
     anchorMax: [0, 0]
     pivot: [0, 0]
-    size: [460, 22]
+    size: [760, 22]
     offset: [20, 46]
   UiText:
-    text: "Objective: reach the door at the end of the level"
+    outlineWidth: 2
+    text: "Meadow - Objective: reach the door at the top of the factory tower"
     color: [1, 0.949999988, 0.550000012, 1]
     fontSize: 18
     horizontalAlignment: Left
