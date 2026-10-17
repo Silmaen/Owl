@@ -148,6 +148,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- HUD layout looks each component storage up once per pass instead of once per widget: `hud/layout/500_widgets` 39.7 to 34.2 µs, below its cost before the scroll views (37.0 µs).
 - Engine Demo vehicles whose cell is bulldozed under them drive off to the road cell they came from and find a way again (a bypass built beside the cut used to leave them stuck), and a U-turn goes through the middle of the cell, symmetric on the way in and out.
 - Engine Demo vehicles turn back through a half circle swinging left across to the opposite lane, and plan their route again at the next cell boundary when roads are built or bulldozed (`town_replans`).
 - Play no longer leaves the runtime edits of `isometric.set_cell` in the edit scene: the running scene works on its own copy of the tilemap assets it shares with the edit scene, so Stop restores the map.

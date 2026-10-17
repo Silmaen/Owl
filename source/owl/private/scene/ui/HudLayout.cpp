@@ -26,6 +26,34 @@
 
 namespace owl::scene::ui {
 
+namespace {
+
+// A widget's component, or null: the storage is looked up by the caller once, not by type for every widget.
+template<typename Storage>
+auto findIn(Storage& iStorage, const entt::entity iEntity) {
+	return iStorage.contains(iEntity) ? &iStorage.get(iEntity) : nullptr;
+}
+
+}// namespace
+
+// The component storages of the scene, kept for the whole pass.
+struct HudLayout::Pools {
+	explicit Pools(entt::registry& iRegistry)
+		: canvas{iRegistry.storage<component::Canvas>()}, rect{iRegistry.storage<component::UiRect>()},
+		  hierarchy{iRegistry.storage<component::Hierarchy>()}, layout{iRegistry.storage<component::UiLayout>()},
+		  window{iRegistry.storage<component::UiWindow>()}, panel{iRegistry.storage<component::UiPanel>()},
+		  scrollView{iRegistry.storage<component::UiScrollView>()}, list{iRegistry.storage<component::UiList>()} {}
+
+	entt::storage_for_t<component::Canvas>& canvas;
+	entt::storage_for_t<component::UiRect>& rect;
+	entt::storage_for_t<component::Hierarchy>& hierarchy;
+	entt::storage_for_t<component::UiLayout>& layout;
+	entt::storage_for_t<component::UiWindow>& window;
+	entt::storage_for_t<component::UiPanel>& panel;
+	entt::storage_for_t<component::UiScrollView>& scrollView;
+	entt::storage_for_t<component::UiList>& list;
+};
+
 void HudLayout::compute(Scene& iScene, const math::vec2ui& iViewport, const bool iEditorMode) {
 	OWL_PROFILE_FUNCTION()
 
@@ -44,7 +72,8 @@ void HudLayout::compute(Scene& iScene, const math::vec2ui& iViewport, const bool
 	}
 	// The entity breaks the ties so the order does not depend on the storage order.
 	std::ranges::sort(m_canvases);
-	for (const auto& canvas: m_canvases | std::views::values) layoutCanvas(iScene, canvas, iEditorMode);
+	const Pools pools{iScene.registry};
+	for (const auto& canvas: m_canvases | std::views::values) layoutCanvas(iScene, pools, canvas, iEditorMode);
 }
 
 namespace {
@@ -122,12 +151,12 @@ auto HudLayout::arrange(const component::UiLayout& iLayout, const math::vec2& iC
 	return {extent.x() + pad, extent.y() + pad};
 }
 
-void HudLayout::collectLayoutChildren(Scene& iScene, const entt::entity iEntity, const math::vec2& iContent,
-									  const bool iEditorMode) {
+void HudLayout::collectLayoutChildren(Scene& iScene, const Pools& iPools, const entt::entity iEntity,
+									  const math::vec2& iContent, const bool iEditorMode) {
 	const component::UiRect::Frame frame{.parent = {.position = {0.f, 0.f}, .size = iContent},
 										 .screen = m_screenReference};
 	m_layoutChildren.clear();
-	const auto* hierarchy = iScene.registry.try_get<component::Hierarchy>(iEntity);
+	const auto* hierarchy = findIn(iPools.hierarchy, iEntity);
 	if (hierarchy == nullptr)
 		return;
 	for (const auto childId: hierarchy->childrenIds) {
@@ -135,29 +164,30 @@ void HudLayout::collectLayoutChildren(Scene& iScene, const entt::entity iEntity,
 		if (!child)
 			continue;
 		const auto entity = static_cast<entt::entity>(child);
-		const auto* rect = iScene.registry.try_get<component::UiRect>(entity);
-		const bool placed = rect != nullptr && !iScene.registry.all_of<component::Canvas>(entity) &&
-							iScene.isEffectivelyVisible(child, iEditorMode);
+		const auto* rect = findIn(iPools.rect, entity);
+		const bool placed =
+				rect != nullptr && !iPools.canvas.contains(entity) && iScene.isEffectivelyVisible(child, iEditorMode);
 		m_layoutChildren.push_back({.entity = entity,
 									.size = placed ? rect->getPixelSize(frame) : math::vec2{0.f, 0.f},
 									.placed = placed});
 	}
 }
 
-auto HudLayout::measureLayout(Scene& iScene, const entt::entity iEntity, const math::vec2& iContent,
-							  const bool iEditorMode) -> std::optional<math::vec2> {
-	const auto* layout = iScene.registry.try_get<component::UiLayout>(iEntity);
+auto HudLayout::measureLayout(Scene& iScene, const Pools& iPools, const entt::entity iEntity,
+							  const math::vec2& iContent, const bool iEditorMode) -> std::optional<math::vec2> {
+	const auto* layout = findIn(iPools.layout, iEntity);
 	if (layout == nullptr)
 		return std::nullopt;
-	collectLayoutChildren(iScene, iEntity, iContent, iEditorMode);
+	collectLayoutChildren(iScene, iPools, iEntity, iContent, iEditorMode);
 	return arrange(*layout, iContent);
 }
 
-void HudLayout::pushChildren(Scene& iScene, const entt::entity iEntity, const size_t iParent, const bool iEditorMode) {
-	const auto* hierarchy = iScene.registry.try_get<component::Hierarchy>(iEntity);
+void HudLayout::pushChildren(Scene& iScene, const Pools& iPools, const entt::entity iEntity, const size_t iParent,
+							 const bool iEditorMode) {
+	const auto* hierarchy = findIn(iPools.hierarchy, iEntity);
 	if (hierarchy == nullptr)
 		return;
-	const auto* layout = iParent == HudNode::noParent ? nullptr : iScene.registry.try_get<component::UiLayout>(iEntity);
+	const auto* layout = iParent == HudNode::noParent ? nullptr : findIn(iPools.layout, iEntity);
 	if (layout == nullptr) {
 		for (const auto childId: hierarchy->childrenIds | std::views::reverse) {
 			if (const Entity child = iScene.findEntityByUUID(childId); child)
@@ -167,7 +197,7 @@ void HudLayout::pushChildren(Scene& iScene, const entt::entity iEntity, const si
 	}
 	const auto& parent = m_nodes[iParent];
 	const math::vec2 content = parent.content.size / parent.scale;
-	collectLayoutChildren(iScene, iEntity, content, iEditorMode);
+	collectLayoutChildren(iScene, iPools, iEntity, content, iEditorMode);
 	std::ignore = arrange(*layout, content);
 	for (size_t i = m_layoutChildren.size(); i-- > 0;)
 		m_pending.push_back({.entity = m_layoutChildren[i].entity,
@@ -176,22 +206,21 @@ void HudLayout::pushChildren(Scene& iScene, const entt::entity iEntity, const si
 							 .slot = m_slots[i]});
 }
 
-void HudLayout::layoutCanvas(Scene& iScene, const entt::entity iCanvas, const bool iEditorMode) {
+void HudLayout::layoutCanvas(Scene& iScene, const Pools& iPools, const entt::entity iCanvas, const bool iEditorMode) {
 	const math::vec2 screen{static_cast<float>(m_viewport.x()), static_cast<float>(m_viewport.y())};
-	const float scale = iScene.registry.get<component::Canvas>(iCanvas).getScale(screen);
+	const float scale = iPools.canvas.get(iCanvas).getScale(screen);
 	const component::UiRect::Bounds root{.position = {0.f, 0.f}, .size = screen / scale};
 	m_screenReference = root.size;
 	m_pending.clear();
-	pushChildren(iScene, iCanvas, HudNode::noParent, iEditorMode);
+	pushChildren(iScene, iPools, iCanvas, HudNode::noParent, iEditorMode);
 	while (!m_pending.empty()) {
 		const auto [entity, parent, slotted, slot] = m_pending.back();
 		m_pending.pop_back();
-		if (iScene.registry.all_of<component::Canvas>(entity) ||
-			!iScene.isEffectivelyVisible(Entity{entity, &iScene}, iEditorMode))
+		if (iPools.canvas.contains(entity) || !iScene.isEffectivelyVisible(Entity{entity, &iScene}, iEditorMode))
 			continue;
-		const auto* rect = iScene.registry.try_get<component::UiRect>(entity);
+		const auto* rect = findIn(iPools.rect, entity);
 		if (rect == nullptr) {
-			pushChildren(iScene, entity, parent, iEditorMode);
+			pushChildren(iScene, iPools, entity, parent, iEditorMode);
 			continue;
 		}
 		// Laid out in reference pixels, the parent's content divided back by the scale.
@@ -215,7 +244,7 @@ void HudLayout::layoutCanvas(Scene& iScene, const entt::entity iCanvas, const bo
 					 .clipped = false,
 					 .clipsChildren = false,
 					 .window = HudNode::noParent};
-		const auto* window = iScene.registry.try_get<component::UiWindow>(entity);
+		const auto* window = findIn(iPools.window, entity);
 		if (window != nullptr)
 			clampToScreen(node.bounds, screen);
 		node.content = node.bounds;
@@ -224,11 +253,10 @@ void HudLayout::layoutCanvas(Scene& iScene, const entt::entity iCanvas, const bo
 			node.content.position.y() += bar;
 			node.content.size.y() -= bar;
 			node.clipsChildren = true;
-		} else if (const auto* panel = iScene.registry.try_get<component::UiPanel>(entity);
-				   panel != nullptr && panel->clipChildren) {
+		} else if (const auto* panel = findIn(iPools.panel, entity); panel != nullptr && panel->clipChildren) {
 			node.clipsChildren = true;
 		}
-		attachScroll(iScene, node, iEditorMode);
+		attachScroll(iScene, iPools, node, iEditorMode);
 		if (parent != HudNode::noParent) {
 			const auto& above = m_nodes[parent];
 			node.clipped = above.clipsChildren || above.clipped;
@@ -242,7 +270,7 @@ void HudLayout::layoutCanvas(Scene& iScene, const entt::entity iCanvas, const bo
 		if (window != nullptr)
 			node.window = m_nodes.size();
 		m_nodes.push_back(node);
-		pushChildren(iScene, entity, m_nodes.size() - 1, iEditorMode);
+		pushChildren(iScene, iPools, entity, m_nodes.size() - 1, iEditorMode);
 	}
 }
 
@@ -252,9 +280,9 @@ constexpr float g_minThumbReference = 16.f;
 
 }// namespace
 
-void HudLayout::attachScroll(Scene& iScene, HudNode& ioNode, const bool iEditorMode) {
-	const auto* view = iScene.registry.try_get<component::UiScrollView>(ioNode.entity);
-	auto* list = view == nullptr ? iScene.registry.try_get<component::UiList>(ioNode.entity) : nullptr;
+void HudLayout::attachScroll(Scene& iScene, const Pools& iPools, HudNode& ioNode, const bool iEditorMode) {
+	auto* view = findIn(iPools.scrollView, ioNode.entity);
+	auto* list = view == nullptr ? findIn(iPools.list, ioNode.entity) : nullptr;
 	if (view == nullptr && list == nullptr)
 		return;
 	const float scale = ioNode.scale;
@@ -278,7 +306,8 @@ void HudLayout::attachScroll(Scene& iScene, HudNode& ioNode, const bool iEditorM
 		wanted = view->scrollOffset * scale;
 		content = view->contentSize * scale;
 		if (content.x() <= 0.f || content.y() <= 0.f) {
-			if (const auto extent = measureLayout(iScene, ioNode.entity, ioNode.bounds.size / scale, iEditorMode)) {
+			if (const auto extent =
+						measureLayout(iScene, iPools, ioNode.entity, ioNode.bounds.size / scale, iEditorMode)) {
 				content.x() = content.x() > 0.f ? content.x() : extent->x() * scale;
 				content.y() = content.y() > 0.f ? content.y() : extent->y() * scale;
 			}
@@ -309,7 +338,7 @@ void HudLayout::attachScroll(Scene& iScene, HudNode& ioNode, const bool iEditorM
 		list->revealSelected = false;
 	}
 	if (view != nullptr)
-		iScene.registry.get<component::UiScrollView>(ioNode.entity).scrollOffset = scroll.offset / scale;
+		view->scrollOffset = scroll.offset / scale;
 	else
 		list->scrollOffset = scroll.offset.y() / scale;
 	ioNode.content = scroll.geometry.viewport;
