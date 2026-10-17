@@ -14,6 +14,7 @@
 
 #include <algorithm>
 #include <atomic>
+#include <chrono>
 #include <condition_variable>
 #include <cstddef>
 #include <cstdlib>
@@ -49,6 +50,11 @@ struct LuaEngine::Quota {
 	double deltaTime = 0.0;
 	// Registry references of the interned names of the functions the host calls, to skip hashing them per call.
 	std::vector<std::pair<std::string, int>> nameRefs;
+	// The last error logged in full, how many times it came back since the last report, and how many were left out.
+	std::string lastError;
+	uint32_t repeatsPending = 0;
+	size_t repeatsSuppressed = 0;
+	std::chrono::steady_clock::time_point lastReport;
 };
 
 auto fixHint(const LuaStatus iStatus) -> std::string_view {
@@ -593,11 +599,34 @@ auto LuaEngine::protectedCall(const int iHandler, const int iArgCount, const std
 	else
 		mp_quota->lastStatus = LuaStatus::RuntimeError;
 	const char* message = lua_tostring(mp_state, -1);
-	OWL_CORE_ERROR("LuaEngine: Error in {}{}: {}. Fix: {}.", iWhat, errorContextOf(*mp_quota),
-				   message != nullptr ? message : "(no message)", fixHint(mp_quota->lastStatus))
+	reportError(iWhat, message != nullptr ? message : "(no message)");
 	lua_settop(mp_state, iHandler - 1);
 	return false;
 }
+
+void LuaEngine::reportError(const std::string_view iWhat, const std::string_view iMessage) const {
+	// A callback failing every frame would flood the log: the same error is logged once, then a counter once a second.
+	const auto now = std::chrono::steady_clock::now();
+	const auto key = std::format("{}{}: {}", iWhat, errorContextOf(*mp_quota), iMessage);
+	if (key != mp_quota->lastError) {
+		mp_quota->lastError = key;
+		mp_quota->repeatsPending = 0;
+		mp_quota->lastReport = now;
+		OWL_CORE_ERROR("LuaEngine: Error in {}{}: {}. Fix: {}.", iWhat, errorContextOf(*mp_quota), iMessage,
+					   fixHint(mp_quota->lastStatus))
+		return;
+	}
+	++mp_quota->repeatsPending;
+	++mp_quota->repeatsSuppressed;
+	if (now - mp_quota->lastReport >= std::chrono::seconds{1}) {
+		OWL_CORE_ERROR("LuaEngine: Error in {}{} repeated {} more times.", iWhat, errorContextOf(*mp_quota),
+					   mp_quota->repeatsPending)
+		mp_quota->repeatsPending = 0;
+		mp_quota->lastReport = now;
+	}
+}
+
+auto LuaEngine::getSuppressedErrorCount() const -> size_t { return mp_quota->repeatsSuppressed; }
 
 void LuaEngine::setErrorContext(const std::function<std::string()>& iContext) const {
 	mp_quota->errorContext = iContext;

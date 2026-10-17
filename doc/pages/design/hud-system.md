@@ -41,12 +41,25 @@ tooltips and construction tools at once, as in Transport Tycoon.
   its parent on, a hidden entity hides its subtree.
 - Y-down pixels with the origin at the top left; scene and prefab format 4 converts every `UiRect` written before
   (preset point to both anchors, `pivot.y = 1 - pivotY`, `offset.y = -offsetY`) and gives the legacy canvases
-  `ConstantPixels`, so no widget moves; the sample project and the templates were rewritten and use
+  `ConstantPixels`, so no widget moves; the Engine Demo and the templates were rewritten and use
   `ScaleWithHeight`.
 - Anchors: `anchorMin` / `anchorMax` (normalised, a distinct pair stretches the widget, `size` is then added to the
   span) besides the 9 presets (`UiRect::setAnchor`, `getAnchor`), which stay as shortcuts in the inspector.
+- Relative units: each of `size.x`, `size.y`, `offset.x` and `offset.y` has a `UiRect::Unit`, `Pixels` (default,
+  reference pixels, scaled by the scale mode) or a ratio (0.25 = a quarter) of `ParentWidth`, `ParentHeight`,
+  `ScreenWidth` or `ScreenHeight` (the parent content area or the whole canvas). `HudLayout` resolves them in
+  reference pixels at layout time against the parent and the canvas (the scale is uniform, so this is the ratio of the
+  screen pixels too, in every scale mode); a square widget uses `ParentHeight` for both sizes, a child of a `UiLayout`
+  is measured the same way. Files write `sizeUnit: [X, Y]` / `offsetUnit: [X, Y]` only when a number leaves the pixels,
+  so older files and pixel widgets are unchanged (no format bump: absent means `Pixels`, an unknown name too).
+  `UiRect::convertSizeUnit` / `convertOffsetUnit` change a unit keeping the screen rectangle, `moveBy` moves in
+  reference pixels whatever the units (window drag, `hud.move`).
 - `Canvas::referenceResolution` (1280×720 by default) with `Canvas::scaleMode`: `ConstantPixels`, `ScaleWithHeight`
   (default) or `MatchSmallerSide`; widgets are authored in reference pixels, fonts scale with them.
+- Legibility floor: a scale mode that shrinks (scale under 1) never draws a text below 12 screen pixels of em height
+  (a 16 px font at 640×360 draws at 12 px, not 8); the scale of that text is raised, never past 1, and its layout runs at
+  that scale, so a box too small for it wraps or clips the text as for any other size. Authored sizes at scale 1 or
+  more, and boxes, are untouched.
 - Every new field is edited in the inspector, undoable through `component.set`; bench `hud/{layout,frame}/500_widgets`
   (budget in [Isometric worlds](isometric-worlds.md)); image tests `hud_raycast` and `hud_voxel` at 320×180, 480×270
   and 240×240.
@@ -148,7 +161,10 @@ Implementation notes:
 - `HudRectsCommand` records the `UiRect` of one or several widgets before and after and merges with the next change of
   the same widgets; `HudReparentCommand` adds the parent and the index. Creation and deletion reuse
   `CreateEntityCommand`, `DeleteSubtreeCommand` and `UndoGroupCommand`.
-- Positions in the commands are reference pixels; `keep_bounds` (default true on `hud.set_anchors`, `hud.set_pivot`
+- Positions in the commands are reference pixels, except the `size` and `offset` of `hud.add_widget` and `hud.set_rect`,
+  which are read in `size_unit` / `offset_unit` (one unit name for both axes or two separated by a comma, the
+  widget's own units when absent; the gizmo writes in each field's current unit through `solveHudRect`, and `hud.move`
+  moves a ratio offset by the equivalent ratio, the unit kept); `keep_bounds` (default true on `hud.set_anchors`, `hud.set_pivot`
   and `hud.reparent`) lays the HUD out at `resolution` (the reference resolution of the canvas when absent) to read
   the parent rectangle.
 - Tests: `HudDocument_test.cpp` (resolution, selection, hit-testing, gestures, snapping, creation by drop) and the
@@ -194,7 +210,7 @@ Keyboard and gamepad focus on buttons and sliders, driven by the built-in `ui_up
   stays after an undo.
 - Scene and prefab format 5 (`dropUiRendererTag`) removes `RendererTag: ui` from every entity carrying a `Canvas` or a
   `Ui*` component; a world entity tagged `ui` keeps its tag. Legacy fixture: `UiRendererTagMigration_test.cpp`.
-- The project templates (`empty_2d`, `mixed`, `raycast`) each ship a `huds/gameplay.owlhud`; in `sample_project/` the
+- The project templates (`empty_2d`, `mixed`, `raycast`) each ship a `huds/gameplay.owlhud`; in `engine_demo/` the
   platformer keeps `huds/gameplay.owlhud` and the world map, the raycast demo and the isometric test have their own HUD
   (`world_map`, `raycast`, `iso_test`) because their hints and widgets differ; the menus keep their embedded canvas.
   No shipped `.owl` or `.owlhud` names the `ui` layer (`EngineSceneTemplates.NoShippedWidgetNamesTheUiLayer`).
@@ -248,7 +264,7 @@ Implementation notes:
 
 ## Inventory demo (DEMO1)
 
-Done. Collectible objects, key-locked switches and an inventory window with slots in `sample_project/`, in Lua only,
+Done. Collectible objects, key-locked switches and an inventory window with slots in `engine_demo/`, in Lua only,
 navigable with the gamepad (`scenes/inventory_demo.owl`, **N** or Back from the main menu).
 
 - **Window.** `huds/inventory.owlhud` is the scene's `Hud:` (one HUD per scene): a closable `UiWindow` holding a grid of

@@ -57,7 +57,7 @@ _CODE_ROOTS: tuple[str, ...] = (
     "test/",
     "bench/",
     "engine_assets/",
-    "sample_project/",
+    "engine_demo/",
     "cmake/",
     "ci/",
     "conan/",

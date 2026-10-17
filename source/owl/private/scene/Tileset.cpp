@@ -198,7 +198,7 @@ auto Tileset::serializeToString(const std::string_view iName) const -> std::stri
 	const uint32_t total = tileCount();
 	const auto count = static_cast<std::vector<TileMeta>::difference_type>(std::min<size_t>(tiles.size(), total));
 	const auto isSpecial = [](const TileMeta& m) -> bool {
-		return m.collidable || !m.name.empty() || m.transparent || m.wallHeight != 1.f;
+		return m.collidable || !m.name.empty() || m.transparent || m.wallHeight != 1.f || m.connections.has_value();
 	};
 	if (std::any_of(tiles.begin(), tiles.begin() + count, isSpecial)) {
 		emitter << YAML::Key << "tiles" << YAML::Value << YAML::BeginSeq;
@@ -216,6 +216,14 @@ auto Tileset::serializeToString(const std::string_view iName) const -> std::stri
 				emitter << YAML::Key << "wallHeight" << YAML::Value << meta.wallHeight;
 			if (meta.transparent)
 				emitter << YAML::Key << "transparent" << YAML::Value << true;
+			if (meta.connections.has_value()) {
+				emitter << YAML::Key << "connections" << YAML::Value << YAML::Flow << YAML::BeginSeq;
+				for (const auto direction: nav::directions) {
+					if ((*meta.connections & nav::directionBit(direction)) != 0)
+						emitter << nav::directionNames[static_cast<size_t>(direction)];
+				}
+				emitter << YAML::EndSeq;
+			}
 			emitter << YAML::EndMap;
 		}
 		emitter << YAML::EndSeq;
@@ -281,6 +289,14 @@ auto Tileset::deserializeFromString(const std::string_view iYaml) -> bool {
 				meta.wallHeight = std::clamp(entry["wallHeight"].as<float>(), 0.f, 8.f);
 			if (entry["transparent"])
 				meta.transparent = entry["transparent"].as<bool>();
+			if (const auto connections = entry["connections"]; connections && connections.IsSequence()) {
+				uint8_t mask = 0;
+				for (const auto& side: connections) {
+					if (const auto direction = nav::parseDirection(side.as<std::string>()); direction.has_value())
+						mask = static_cast<uint8_t>(mask | nav::directionBit(*direction));
+				}
+				meta.connections = mask;
+			}
 			parsed.tiles[idx] = std::move(meta);
 		}
 	}

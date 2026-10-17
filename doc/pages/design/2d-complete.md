@@ -72,7 +72,7 @@ not a navigation mesh.
 A seeded noise / rule fill of a tilemap region, undoable — the first consumer and the seed of the v0.6.0
 [PCG graphs](pcg-graphs.md).
 
-## Sample project demos (moved out of the engine)
+## Engine Demo demos (moved out of the engine)
 
 - Inventory demo — moved to v0.4.0 as the showcase of the new HUD widgets ([HUD system](hud-system.md))
-- Enemies demo (v0.7.0) — patrol / chase enemies in Lua in `sample_project/`; engine-side AI arrives with v0.7.0
+- Enemies demo (v0.7.0) — patrol / chase enemies in Lua in `engine_demo/`; engine-side AI arrives with v0.7.0

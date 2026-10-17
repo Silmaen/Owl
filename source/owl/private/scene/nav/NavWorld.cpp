@@ -41,6 +41,29 @@ void NavWorld::setBudget(const uint32_t iBudget) { m_budget = std::max(iBudget, 
 
 void NavWorld::clear() { m_entries.clear(); }
 
+void NavWorld::setDebugVisible(const DebugSource iSource, const bool iVisible) {
+	const auto bit = static_cast<uint8_t>(iSource);
+	m_debugRequests =
+			iVisible ? static_cast<uint8_t>(m_debugRequests | bit) : static_cast<uint8_t>(m_debugRequests & ~bit);
+}
+
+void NavWorld::setDebugRoute(const uint64_t iKey, const uint64_t iRouteId, const std::span<const math::vec2ui> iCells,
+							 const math::vec3& iColor) {
+	const auto found = m_entries.find(iKey);
+	if (found == m_entries.end())
+		return;
+	if (iCells.size() < 2) {
+		found->second.debugRoutes.erase(iRouteId);
+		return;
+	}
+	found->second.debugRoutes[iRouteId] = DebugRoute{.cells = {iCells.begin(), iCells.end()}, .color = iColor};
+}
+
+void NavWorld::clearDebugRoutes(const uint64_t iKey) {
+	if (const auto found = m_entries.find(iKey); found != m_entries.end())
+		found->second.debugRoutes.clear();
+}
+
 void NavWorld::update(Scene& ioScene) {
 	OWL_PROFILE_FUNCTION()
 

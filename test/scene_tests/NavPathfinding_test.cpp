@@ -25,6 +25,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <functional>
+#include <optional>
 #include <queue>
 #include <random>
 #include <string>
@@ -708,4 +709,233 @@ TEST_F(NavPathfinding, theSceneSystemServesTheRequestsOfItsTilemaps) {
 	EXPECT_EQ(world.find(1234567), nullptr);
 	world.clear();
 	EXPECT_EQ(world.find(static_cast<uint64_t>(entity.getUUID())), nullptr);
+}
+
+TEST_F(NavPathfinding, theDebugOverlayKeepsTheRoutesScriptsGaveItPerKey) {
+	auto scene = mkShared<Scene>();
+	auto entity = scene->createEntity("Map");
+	auto asset = mkShared<TilemapAsset>(makeAsset(40, 10));
+	paintRow(*asset, 0, 30, 3);
+	auto& tilemap = entity.addComponent<component::Tilemap>();
+	tilemap.asset = asset;
+	tilemap.navigation = makeProfile();
+	auto& world = scene->getNavigation();
+	const auto key = static_cast<uint64_t>(entity.getUUID());
+	EXPECT_FALSE(world.isDebugVisible());
+	world.setDebugVisible(NavWorld::DebugSource::Editor, true);
+	world.setDebugVisible(NavWorld::DebugSource::Script, true);
+	world.setDebugVisible(NavWorld::DebugSource::Editor, false);
+	EXPECT_TRUE(world.isDebugVisible()) << "the script still asks";
+	world.setDebugVisible(NavWorld::DebugSource::Script, false);
+	EXPECT_FALSE(world.isDebugVisible());
+
+	const std::vector<math::vec2ui> cells{{0, 3}, {1, 3}, {2, 3}};
+	world.setDebugRoute(key, 7, cells, {1.f, 0.f, 0.f});
+	EXPECT_TRUE(world.getEntries().empty()) << "a map nobody searched has no entry to hold a route";
+	std::ignore = world.acquire(key, *asset, tilemap.navigation);
+	world.setDebugRoute(key, 7, cells, {1.f, 0.f, 0.f});
+	world.setDebugRoute(key, 8, cells, {0.f, 1.f, 0.f});
+	ASSERT_NE(world.find(key), nullptr);
+	EXPECT_EQ(world.find(key)->debugRoutes.size(), 2u);
+	world.setDebugRoute(key, 7, std::vector<math::vec2ui>{{4, 3}, {5, 3}}, {0.f, 0.f, 1.f});
+	EXPECT_EQ(world.find(key)->debugRoutes.size(), 2u) << "the same key replaces its route";
+	EXPECT_EQ(world.find(key)->debugRoutes.at(7).cells.size(), 2u);
+	EXPECT_FLOAT_EQ(world.find(key)->debugRoutes.at(7).color.z(), 1.f);
+	world.setDebugRoute(key, 8, {}, {});
+	EXPECT_EQ(world.find(key)->debugRoutes.size(), 1u) << "no cells removes the route";
+	world.clearDebugRoutes(key);
+	EXPECT_TRUE(world.find(key)->debugRoutes.empty());
+}
+
+namespace {
+
+/// Independent search for a mover that cannot reverse: Dijkstra over (cell, entry direction), 4 meaning no heading.
+auto referenceNoReverseCost(const NavMap& iMap, const math::vec2ui& iFrom, const math::vec2ui& iTo,
+							const std::optional<Direction>& iHeading) -> uint32_t {
+	const auto width = iMap.getSize().x();
+	const auto cells = static_cast<size_t>(width) * iMap.getSize().y();
+	std::vector<uint32_t> best(cells * 5, unreachable);
+	using Item = std::pair<uint32_t, uint32_t>;
+	std::priority_queue<Item, std::vector<Item>, std::greater<>> open;
+	const uint32_t start = (iFrom.y() * width + iFrom.x()) * 5 + (iHeading ? static_cast<uint32_t>(*iHeading) : 4u);
+	best[start] = 0;
+	open.emplace(0, start);
+	while (!open.empty()) {
+		const auto [cost, state] = open.top();
+		open.pop();
+		if (cost != best[state])
+			continue;
+		const uint32_t cell = state / 5;
+		const uint32_t entry = state % 5;
+		const uint32_t x = cell % width;
+		const uint32_t y = cell / width;
+		if (x == iTo.x() && y == iTo.y())
+			return cost;
+		const auto exits = std::ranges::count_if(
+				directions, [&](const Direction iD) -> bool { return iMap.getEdgeCost(x, y, iD) != 0; });
+		for (const auto direction: directions) {
+			const auto edge = iMap.getEdgeCost(x, y, direction);
+			if (edge == 0 || (entry < 4 && exits > 1 && static_cast<uint32_t>(opposite(direction)) == entry))
+				continue;
+			const auto next = (static_cast<uint32_t>(static_cast<int32_t>(y) + offsetY(direction)) * width +
+							   static_cast<uint32_t>(static_cast<int32_t>(x) + offsetX(direction))) *
+									  5 +
+							  static_cast<uint32_t>(direction);
+			if (cost + edge < best[next]) {
+				best[next] = cost + edge;
+				open.emplace(best[next], next);
+			}
+		}
+	}
+	return unreachable;
+}
+
+/// Number of moves of a path that go back to the cell just left from a cell with more than one exit.
+auto countForbiddenReversals(const NavMap& iMap, const PathResult& iPath) -> size_t {
+	size_t count = 0;
+	for (size_t i = 2; i < iPath.cells.size(); ++i) {
+		if (iPath.cells[i] != iPath.cells[i - 2])
+			continue;
+		const auto& cell = iPath.cells[i - 1];
+		const auto exits = std::ranges::count_if(
+				directions, [&](const Direction iD) -> bool { return iMap.getEdgeCost(cell.x(), cell.y(), iD) != 0; });
+		if (exits > 1)
+			++count;
+	}
+	return count;
+}
+
+}// namespace
+
+TEST_F(NavPathfinding, noReverseDrivesOnToTheDeadEndAndBack) {
+	auto asset = makeAsset(8, 3);
+	paintRow(asset, 0, 5, 1);
+	const auto map = makeMap(asset, makeProfile());
+	Pathfinder finder;
+	PathResult plain;
+	ASSERT_TRUE(finder.find(map, {2, 1}, {0, 1}, PathMode::Flat, plain));
+	EXPECT_EQ(plain.cells.size(), 3u) << "without the option the shortest path turns back at once";
+	PathResult path;
+	ASSERT_TRUE(
+			finder.find(map, {2, 1}, {0, 1}, PathMode::Auto, path, {.noReverse = true, .heading = Direction::East}));
+	const std::vector<math::vec2ui> expected{{2, 1}, {3, 1}, {4, 1}, {5, 1}, {4, 1}, {3, 1}, {2, 1}, {1, 1}, {0, 1}};
+	EXPECT_EQ(path.cells, expected) << "on to the dead end, round, and back";
+	EXPECT_EQ(path.cost, 8 * edgeUnit);
+}
+
+TEST_F(NavPathfinding, noReverseWithoutHeadingMayStartEitherWay) {
+	auto asset = makeAsset(8, 3);
+	paintRow(asset, 0, 5, 1);
+	const auto map = makeMap(asset, makeProfile());
+	Pathfinder finder;
+	PathResult path;
+	ASSERT_TRUE(finder.find(map, {2, 1}, {0, 1}, PathMode::Flat, path, {.noReverse = true, .heading = std::nullopt}));
+	EXPECT_EQ(path.cells.size(), 3u);
+}
+
+TEST_F(NavPathfinding, noReverseFindsTheRoundAboutWayOnARing) {
+	auto asset = makeAsset(6, 6);
+	paintRow(asset, 1, 4, 1);
+	paintRow(asset, 1, 4, 4);
+	paintColumn(asset, 1, 1, 4);
+	paintColumn(asset, 4, 1, 4);
+	const auto map = makeMap(asset, makeProfile());
+	Pathfinder finder;
+	PathResult path;
+	// On the north side heading East, the goal is the cell just behind: round the whole ring (11 moves).
+	ASSERT_TRUE(
+			finder.find(map, {2, 1}, {1, 1}, PathMode::Flat, path, {.noReverse = true, .heading = Direction::East}));
+	EXPECT_EQ(path.cost, 11 * edgeUnit);
+	EXPECT_EQ(countForbiddenReversals(map, path), 0u);
+	EXPECT_TRUE(isPathValid(map, path.cells));
+}
+
+TEST_F(NavPathfinding, noReverseIsUnreachableWhenOnlyAUTurnLeadsBack) {
+	auto asset = makeAsset(8, 4);
+	paintRow(asset, 0, 2, 1);
+	paint(asset, 2, 2, eastOnly);
+	paint(asset, 3, 2, road);
+	const auto map = makeMap(asset, makeProfile());
+	Pathfinder finder;
+	PathResult path;
+	// The south spur of (2, 1) is a one-way trap: turning back there is a forbidden U-turn on a cell with two exits.
+	ASSERT_TRUE(finder.find(map, {1, 1}, {0, 1}, PathMode::Flat, path));
+	EXPECT_FALSE(
+			finder.find(map, {1, 1}, {0, 1}, PathMode::Flat, path, {.noReverse = true, .heading = Direction::East}));
+	EXPECT_EQ(finder.getState(), PathState::NotFound);
+	EXPECT_TRUE(
+			finder.find(map, {1, 1}, {0, 1}, PathMode::Flat, path, {.noReverse = true, .heading = Direction::West}));
+}
+
+TEST_F(NavPathfinding, noReverseMatchesAnIndependentSearchOnRandomMaps) {
+	Pathfinder finder;
+	for (uint32_t seed = 1; seed <= 12; ++seed) {
+		auto asset = makeRandomAsset(24, 24, seed);
+		const auto map = makeMap(asset, makeProfile());
+		auto random = makeRandom(seed * 7919);
+		for (int query = 0; query < 40; ++query) {
+			const math::vec2ui from{roll(random, 24), roll(random, 24)};
+			const math::vec2ui to{roll(random, 24), roll(random, 24)};
+			if (!map.isWalkable(from.x(), from.y()) || !map.isWalkable(to.x(), to.y()))
+				continue;
+			const std::optional<Direction> heading =
+					roll(random, 3) == 0 ? std::nullopt : std::optional{static_cast<Direction>(roll(random, 4))};
+			const auto expected = referenceNoReverseCost(map, from, to, heading);
+			PathResult path;
+			const bool found =
+					finder.find(map, from, to, PathMode::Hierarchical, path, {.noReverse = true, .heading = heading});
+			ASSERT_EQ(found, expected != unreachable) << "seed " << seed << " query " << query;
+			if (!found)
+				continue;
+			EXPECT_EQ(path.cost, expected) << "seed " << seed << " query " << query;
+			EXPECT_EQ(pathCost(map, path), expected);
+			EXPECT_EQ(countForbiddenReversals(map, path), 0u);
+		}
+	}
+}
+
+TEST_F(NavPathfinding, noReverseSearchResumesAfterSmallSlices) {
+	auto asset = makeRandomAsset(30, 30, 5);
+	const auto map = makeMap(asset, makeProfile());
+	Pathfinder whole;
+	Pathfinder sliced;
+	auto random = makeRandom(11);
+	int checked = 0;
+	for (int query = 0; query < 60 && checked < 10; ++query) {
+		const math::vec2ui from{roll(random, 30), roll(random, 30)};
+		const math::vec2ui to{roll(random, 30), roll(random, 30)};
+		if (!map.isWalkable(from.x(), from.y()) || !map.isWalkable(to.x(), to.y()))
+			continue;
+		const PathOptions options{.noReverse = true, .heading = Direction::South};
+		PathResult expected;
+		const bool found = whole.find(map, from, to, PathMode::Flat, expected, options);
+		std::ignore = sliced.begin(map, from, to, PathMode::Flat, options);
+		int slices = 0;
+		while (sliced.getState() == PathState::Searching && slices < 100000) {
+			std::ignore = sliced.step(3);
+			++slices;
+		}
+		PathResult result;
+		ASSERT_EQ(sliced.takeResult(result), found);
+		if (found) {
+			EXPECT_EQ(result.cost, expected.cost);
+			++checked;
+		}
+	}
+	EXPECT_GT(checked, 0);
+}
+
+TEST_F(NavPathfinding, aRequestKeepsItsOptions) {
+	auto asset = makeAsset(8, 3);
+	paintRow(asset, 0, 5, 1);
+	const auto map = makeMap(asset, makeProfile());
+	PathQueue queue;
+	const auto plain = queue.request({2, 1}, {0, 1});
+	const auto constrained =
+			queue.request({2, 1}, {0, 1}, PathMode::Auto, {.noReverse = true, .heading = Direction::East});
+	queue.update(map, 1000);
+	ASSERT_NE(queue.getResult(plain), nullptr);
+	ASSERT_NE(queue.getResult(constrained), nullptr);
+	EXPECT_EQ(queue.getResult(plain)->cells.size(), 3u);
+	EXPECT_EQ(queue.getResult(constrained)->cells.size(), 9u);
 }

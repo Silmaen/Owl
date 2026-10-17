@@ -313,13 +313,13 @@ auto TilemapLayer::hasSameContent(const TilemapLayer& iOther) const -> bool {
 
 namespace {
 
-constexpr std::array<const char*, nav::directionCount> g_directionNames{"east", "south", "west", "north"};
+constexpr std::array<const char*, 3> g_modeNames{"rules", "connections", "cells"};
 
 void emitDirections(YAML::Emitter& iEmitter, const uint8_t iMask) {
 	iEmitter << YAML::Flow << YAML::BeginSeq;
 	for (const auto direction: nav::directions) {
 		if ((iMask & nav::directionBit(direction)) != 0)
-			iEmitter << g_directionNames[static_cast<size_t>(direction)];
+			iEmitter << nav::directionNames[static_cast<size_t>(direction)];
 	}
 	iEmitter << YAML::EndSeq;
 }
@@ -331,7 +331,7 @@ auto readDirections(const core::YamlNode& iNode, const uint8_t iDefault) -> uint
 	for (const auto entry: iNode) {
 		const auto name = entry.as<std::string>();
 		for (const auto direction: nav::directions) {
-			if (name == g_directionNames[static_cast<size_t>(direction)])
+			if (name == nav::directionNames[static_cast<size_t>(direction)])
 				mask = static_cast<uint8_t>(mask | nav::directionBit(direction));
 		}
 	}
@@ -340,30 +340,62 @@ auto readDirections(const core::YamlNode& iNode, const uint8_t iDefault) -> uint
 
 void emitNavigation(YAML::Emitter& iEmitter, const nav::NavProfile& iProfile) {
 	iEmitter << YAML::Key << "navigation" << YAML::Value << YAML::BeginMap;
+	iEmitter << YAML::Key << "mode" << YAML::Value << g_modeNames[static_cast<size_t>(iProfile.mode)];
 	iEmitter << YAML::Key << "layer" << YAML::Value << iProfile.layer;
 	iEmitter << YAML::Key << "source" << YAML::Value
 			 << (iProfile.source == nav::NavSource::Overlay ? "overlay" : "terrain");
 	iEmitter << YAML::Key << "maxRise" << YAML::Value << static_cast<uint32_t>(iProfile.maxRise);
 	iEmitter << YAML::Key << "climbCost" << YAML::Value << iProfile.climbCost;
 	iEmitter << YAML::Key << "allowSteep" << YAML::Value << iProfile.allowSteep;
-	iEmitter << YAML::Key << "rules" << YAML::Value << YAML::BeginSeq;
-	for (const auto& rule: iProfile.rules) {
-		iEmitter << YAML::BeginMap << YAML::Flow;
-		iEmitter << YAML::Key << "tile" << YAML::Value << rule.tile;
-		iEmitter << YAML::Key << "cost" << YAML::Value << rule.cost;
-		iEmitter << YAML::Key << "exits" << YAML::Value;
-		emitDirections(iEmitter, rule.exits);
-		iEmitter << YAML::Key << "enters" << YAML::Value;
-		emitDirections(iEmitter, rule.enters);
-		iEmitter << YAML::EndMap;
+	if (!iProfile.rules.empty()) {
+		iEmitter << YAML::Key << "rules" << YAML::Value << YAML::BeginSeq;
+		for (const auto& rule: iProfile.rules) {
+			iEmitter << YAML::BeginMap << YAML::Flow;
+			iEmitter << YAML::Key << "tile" << YAML::Value << rule.tile;
+			iEmitter << YAML::Key << "cost" << YAML::Value << rule.cost;
+			iEmitter << YAML::Key << "exits" << YAML::Value;
+			emitDirections(iEmitter, rule.exits);
+			iEmitter << YAML::Key << "enters" << YAML::Value;
+			emitDirections(iEmitter, rule.enters);
+			iEmitter << YAML::EndMap;
+		}
+		iEmitter << YAML::EndSeq;
 	}
-	iEmitter << YAML::EndSeq << YAML::EndMap;
+	if (!iProfile.overrides.empty()) {
+		iEmitter << YAML::Key << "overrides" << YAML::Value << YAML::BeginSeq;
+		for (const auto& entry: iProfile.overrides) {
+			iEmitter << YAML::BeginMap << YAML::Flow;
+			iEmitter << YAML::Key << "cell" << YAML::Value << YAML::Flow << YAML::BeginSeq << entry.x << entry.y
+					 << YAML::EndSeq;
+			if (entry.noExit != 0) {
+				iEmitter << YAML::Key << "noExit" << YAML::Value;
+				emitDirections(iEmitter, entry.noExit);
+			}
+			if (entry.noEnter != 0) {
+				iEmitter << YAML::Key << "noEnter" << YAML::Value;
+				emitDirections(iEmitter, entry.noEnter);
+			}
+			if (entry.cost > 0.f)
+				iEmitter << YAML::Key << "cost" << YAML::Value << entry.cost;
+			iEmitter << YAML::EndMap;
+		}
+		iEmitter << YAML::EndSeq;
+	}
+	iEmitter << YAML::EndMap;
 }
 
 auto readNavigation(const core::YamlNode& iNode) -> nav::NavProfile {
 	nav::NavProfile profile;
 	if (!iNode || !iNode.isMap())
 		return profile;
+	if (iNode["mode"]) {
+		// A file without `mode` is a legacy profile: explicit rules.
+		const auto name = iNode["mode"].as<std::string>();
+		for (size_t i = 0; i < g_modeNames.size(); ++i) {
+			if (name == g_modeNames[i])
+				profile.mode = static_cast<nav::NavMode>(i);
+		}
+	}
 	if (iNode["layer"])
 		profile.layer = iNode["layer"].as<uint32_t>();
 	if (iNode["source"])
@@ -387,6 +419,20 @@ auto readNavigation(const core::YamlNode& iNode) -> nav::NavProfile {
 			rule.exits = readDirections(ruleNode["exits"], nav::allDirections);
 			rule.enters = readDirections(ruleNode["enters"], nav::allDirections);
 			profile.rules.push_back(rule);
+		}
+	}
+	if (const auto overrides = iNode["overrides"]; overrides && overrides.isSequence()) {
+		for (const auto entryNode: overrides) {
+			const auto cell = entryNode["cell"];
+			if (!cell || !cell.isSequence() || cell.size() < 2)
+				continue;
+			nav::NavCellOverride entry{.x = cell[0].as<uint32_t>(), .y = cell[1].as<uint32_t>()};
+			entry.noExit = readDirections(entryNode["noExit"], 0);
+			entry.noEnter = readDirections(entryNode["noEnter"], 0);
+			if (entryNode["cost"])
+				entry.cost = std::clamp(entryNode["cost"].as<float>(), 0.f, 64.f);
+			if (!entry.isNeutral())
+				profile.overrides.push_back(entry);
 		}
 	}
 	return profile;

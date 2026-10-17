@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import math
 from collections.abc import Callable
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 
 from .common import RGB, STEP, TILE_H, TILE_W, Z_PX, Layers, Vec3, fbm, hash01, light, mix, normalize, scale_color
 
@@ -98,19 +98,91 @@ def _water(s: Sample) -> RGB:
     return color
 
 
-def _road(s: Sample) -> RGB:
-    color = scale_color(
-        (96.0, 96.0, 104.0), 0.88 + 0.2 * hash01(s.seed, s.ix, s.iy) + 0.1 * fbm(s.seed, s.wx * 6, s.wy * 6)
-    )
-    if s.wy < 0.07 or s.wy > 0.93:
-        color = mix(color, (206.0, 206.0, 200.0), 0.75)
-    elif abs(s.wy - 0.5) < 0.035 and math.floor(s.wx * 8.0) % 2 == 0:
-        color = (236.0, 206.0, 70.0)
-    return color
+NORTH, EAST, SOUTH, WEST = 1, 2, 4, 8
+"""Bits of a road neighbour mask: -y, +x, +y and -x of the cell in the world."""
+ROAD_X_MASK = EAST | WEST
+"""Mask of the straight road along X (terrain id 3)."""
+ROAD_Y_MASK = NORTH | SOUTH
+"""Mask of the straight road along Y (terrain id 11)."""
+ROAD_MASK_ORDER = (
+    0,
+    NORTH,
+    EAST,
+    SOUTH,
+    WEST,
+    NORTH | EAST,
+    EAST | SOUTH,
+    SOUTH | WEST,
+    WEST | NORTH,
+    NORTH | EAST | SOUTH,
+    EAST | SOUTH | WEST,
+    SOUTH | WEST | NORTH,
+    WEST | NORTH | EAST,
+    NORTH | EAST | SOUTH | WEST,
+)
+"""The masks beyond the straights, in id order: isolated, 4 dead ends, 4 corners, 4 T, cross."""
+ROAD_MASK_NAMES: dict[int, str] = {
+    0: "road alone",
+    NORTH: "road end n",
+    EAST: "road end e",
+    SOUTH: "road end s",
+    WEST: "road end w",
+    NORTH | EAST: "road corner ne",
+    EAST | SOUTH: "road corner es",
+    SOUTH | WEST: "road corner sw",
+    WEST | NORTH: "road corner wn",
+    NORTH | EAST | SOUTH: "road t nes",
+    EAST | SOUTH | WEST: "road t esw",
+    SOUTH | WEST | NORTH: "road t swn",
+    WEST | NORTH | EAST: "road t wne",
+    NORTH | EAST | SOUTH | WEST: "road cross",
+}
+"""Editor name of each of those masks."""
+
+CONNECTION_NAMES = ((NORTH, "north"), (EAST, "east"), (SOUTH, "south"), (WEST, "west"))
+"""File name of each bit of a connections mask (the same sides as the engine's ``nav::Direction``)."""
+FIRST_JUNCTION_ID = 12
+"""Terrain id of the first road variant beyond the two straights."""
+ROAD_MASKS: dict[int, int] = {
+    ROAD_X_MASK: 3,
+    ROAD_Y_MASK: 11,
+    **{mask: FIRST_JUNCTION_ID + offset for offset, mask in enumerate(ROAD_MASK_ORDER)},
+}
+"""Overlay tile id of each of the 16 road neighbour masks."""
 
 
-def _road_y(s: Sample) -> RGB:
-    return _road(replace(s, wx=s.wy, wy=s.wx))
+def _road_mask(mask: int) -> Material:
+    """
+    Material of a road cell joined to the neighbours of ``mask``.
+
+    The asphalt fills the cell; a white edge line runs along every side that leads nowhere and the dashed centre line
+    runs out to every side that is joined, so a straight road is the plain road of its axis.
+    """
+
+    def material(s: Sample) -> RGB:
+        color = scale_color(
+            (96.0, 96.0, 104.0), 0.88 + 0.2 * hash01(s.seed, s.ix, s.iy) + 0.1 * fbm(s.seed, s.wx * 6, s.wy * 6)
+        )
+        sides = (
+            (s.wy < 0.07, NORTH),
+            (s.wx > 0.93, EAST),
+            (s.wy > 0.93, SOUTH),
+            (s.wx < 0.07, WEST),
+        )
+        if any(inside and not mask & bit for inside, bit in sides):
+            return mix(color, (206.0, 206.0, 200.0), 0.75)
+        along_x = abs(s.wy - 0.5) < 0.035 and math.floor(s.wx * 8.0) % 2 == 0
+        along_y = abs(s.wx - 0.5) < 0.035 and math.floor(s.wy * 8.0) % 2 == 0
+        if (along_x and ((mask & EAST and s.wx >= 0.5) or (mask & WEST and s.wx <= 0.5))) or (
+            along_y and ((mask & SOUTH and s.wy >= 0.5) or (mask & NORTH and s.wy <= 0.5))
+        ):
+            return (236.0, 206.0, 70.0)
+        return color
+
+    return material
+
+
+_road = _road_mask(ROAD_X_MASK)
 
 
 def _dirt(s: Sample) -> RGB:
@@ -174,13 +246,15 @@ class Terrain:
     """Colour of a pixel."""
     sloped: bool
     """Whether the atlas holds its 18 sloped variants."""
+    connections: int | None = None
+    """Sides the tile joins on the road graph (``NORTH`` | ``EAST`` ...), ``None`` off the graph."""
 
 
 TERRAINS: list[Terrain] = [
     Terrain(0, "grass", _grass((88.0, 156.0, 64.0)), True),
     Terrain(1, "sand", _sand, True),
     Terrain(2, "water", _water, False),
-    Terrain(3, "road", _road, True),
+    Terrain(3, "road", _road, True, ROAD_X_MASK),
     Terrain(4, "dirt", _dirt, True),
     Terrain(5, "pavement", _pavement, False),
     Terrain(6, "dark grass", _grass((60.0, 120.0, 52.0)), True),
@@ -193,9 +267,14 @@ TERRAINS: list[Terrain] = [
     Terrain(8, "rock", _rock, True),
     Terrain(9, "snow", _snow, True),
     Terrain(10, "rail", _rail, True),
-    Terrain(11, "road y", _road_y, True),
+    Terrain(11, "road y", _road_mask(ROAD_Y_MASK), True, ROAD_Y_MASK),
+    *(Terrain(ROAD_MASKS[mask], ROAD_MASK_NAMES[mask], _road_mask(mask), True, mask) for mask in ROAD_MASK_ORDER),
 ]
-"""The terrains, grass first; ids 3 (road along X), 11 (road along Y) and 10 (rail) are meant for the overlay layer."""
+"""
+The terrains, grass first; ids 3 (road along X), 11 (road along Y), 12 to 25 (the other road shapes) and 10 (rail) are
+meant for the overlay layer. Road variants are sloped too, on every slope: the pattern is drawn in world coordinates,
+so a junction on a ramp is as well defined as a straight piece.
+"""
 
 FOUNDATION_TOPS: list[tuple[int, Material]] = [
     (0, _grass((92.0, 150.0, 66.0))),

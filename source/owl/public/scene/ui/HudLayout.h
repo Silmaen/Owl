@@ -239,6 +239,13 @@ public:
 
 	/**
 	 * @brief
+	 *  Get the viewport of the last `compute`.
+	 * @return The viewport size in pixels.
+	 */
+	[[nodiscard]] auto getViewport() const -> const math::vec2ui& { return m_viewport; }
+
+	/**
+	 * @brief
 	 *  Get the number of layout passes run since the creation (a spy for the once-per-frame contract).
 	 * @return The number of `compute` calls.
 	 */
@@ -299,9 +306,10 @@ private:
 	 *  List the children of a widget that a `UiLayout` of it would place, in `m_layoutChildren`.
 	 * @param[in] iScene The scene.
 	 * @param[in] iEntity The widget entity.
+	 * @param[in] iContent Size of the content area, in reference pixels (the parent of the ratio units).
 	 * @param[in] iEditorMode Use the editor visibility.
 	 */
-	void collectLayoutChildren(Scene& iScene, entt::entity iEntity, bool iEditorMode);
+	void collectLayoutChildren(Scene& iScene, entt::entity iEntity, const math::vec2& iContent, bool iEditorMode);
 
 	/**
 	 * @brief
@@ -347,6 +355,8 @@ private:
 	std::vector<HudScroll> m_scrolls;
 	/// Viewport of the last `compute`.
 	math::vec2ui m_viewport{0, 0};
+	/// Size of the canvas being laid out, in reference pixels (what the `Screen*` units are relative to).
+	math::vec2 m_screenReference{0.f, 0.f};
 	/// Whether the layout matches `m_viewport` (cleared by `invalidate`).
 	bool m_valid = false;
 	/// Number of `compute` calls.

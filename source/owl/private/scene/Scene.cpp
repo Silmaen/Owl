@@ -18,6 +18,7 @@
 #include "renderer/Renderer2D.h"
 #include "renderer/Renderer2DLayer.h"
 #include "renderer/RendererIsometric.h"
+#include "renderer/RendererIsometricLayer.h"
 #include "renderer/RendererRaycast.h"
 #include "renderer/RendererRaycastLayer.h"
 #include "renderer/RendererTilemap.h"
@@ -27,6 +28,7 @@
 #include "scene/Entity.h"
 #include "scene/TilemapAsset.h"
 #include "scene/Tileset.h"
+#include "scene/nav/NavDebugDraw.h"
 #include "scene/nav/NavWorld.h"
 
 #include "ScriptLoader.h"
@@ -294,6 +296,7 @@ void Scene::onStartRuntime() {
 
 	const auto tilesetStart = clk::now();
 	resolveAllTilemapAssets();
+	detachSharedTilemapAssets();
 	OWL_CORE_INFO("Scene::onStartRuntime: tileset resolve {:.1f} ms.", ms(clk::now() - tilesetStart))
 
 	const auto linksStart = clk::now();
@@ -1090,6 +1093,22 @@ void Scene::showToast(const std::string& iMessage, const float iSeconds) {
 void Scene::renderOverlays(const renderer::Camera& iCamera) {
 	OWL_PROFILE_FUNCTION()
 
+	const bool navigationDebug = m_navigation != nullptr && m_navigation->isDebugVisible();
+	if (navigationDebug) {
+		// The graph lies on the ground of the isometric view: the lines go through the camera the isometric layer draws with.
+		std::optional<renderer::IsometricCamera> isometricCamera;
+		for (const auto& layer: renderer::Renderer::getRenderStack().getLayers()) {
+			if (const auto* isometric = dynamic_cast<const renderer::RendererIsometricLayer*>(layer.get());
+				isometric != nullptr) {
+				isometricCamera = isometric->makeCamera(iCamera);
+				break;
+			}
+		}
+		renderer::Renderer2D::beginScene(isometricCamera.has_value() ? *isometricCamera : iCamera);
+		nav::drawNavigationGraph(*this);
+		nav::drawNavigationRoutes(*this);
+		renderer::Renderer2D::endScene();
+	}
 	if (!m_hasVoxelHighlight && !m_showCrosshair)
 		return;
 	const math::vec4 cameraPos4 = inverse(iCamera.getView()) * math::vec4{0.f, 0.f, 0.f, 1.f};
@@ -1297,6 +1316,25 @@ void Scene::renderRaycastDynamicWalls(const bool iEditorMode) {
 	}
 	renderer::RendererRaycast::drawDoors(doors);
 	doors.clear();
+}
+
+void Scene::detachSharedTilemapAssets() {
+	// A scene copy (Owl Nest Play) shares the tilemap assets of the edit scene: scripts edit the map at runtime, so the
+	// running scene works on its own copy and Stop finds the edit scene untouched.
+	std::unordered_map<const TilemapAsset*, shared<TilemapAsset>> detached;
+	for (const auto view = registry.view<component::Tilemap>(); const auto entity: view) {
+		auto& tilemap = view.get<component::Tilemap>(entity);
+		if (!tilemap.asset)
+			continue;
+		const auto* original = tilemap.asset.get();
+		if (const auto known = detached.find(original); known != detached.end()) {
+			tilemap.asset = known->second;
+		} else if (tilemap.asset.use_count() > 1) {
+			auto copy = mkShared<TilemapAsset>(*tilemap.asset);
+			detached.emplace(original, copy);
+			tilemap.asset = std::move(copy);
+		}
+	}
 }
 
 void Scene::resolveAllTilemapAssets() {
@@ -1545,6 +1583,8 @@ void Scene::onViewportResize(const math::vec2ui& iSize) {
 auto Scene::getAllEntities() const -> std::vector<Entity> {
 	std::vector<Entity> entities;
 	for (auto&& [e]: registry.storage<entt::entity>()->each()) { entities.emplace_back(e, const_cast<Scene*>(this)); }
+	// EnTT walks its storage from the newest entity: creation order keeps a saved file in the order it was loaded.
+	std::ranges::reverse(entities);
 	return entities;
 }
 

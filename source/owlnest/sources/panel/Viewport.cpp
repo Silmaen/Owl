@@ -8,6 +8,8 @@
 
 #include "Viewport.h"
 
+#include "PlayOverlay.h"
+
 #include "../DockLayout.h"
 
 #include "EditorLayer.h"
@@ -41,6 +43,7 @@
 #include <scene/component/RendererTag.h>
 #include <scene/component/Tilemap.h>
 #include <scene/component/Visibility.h>
+#include <scene/nav/NavDebugDraw.h>
 #include <scene/nav/NavWorld.h>
 
 OWL_DIAG_PUSH
@@ -235,6 +238,7 @@ void Viewport::onUpdate(const core::Timestep& iTimeStep) {
 			handleIsometricInput();
 		updateIsometricCursor(activeScene);
 		pickNavigationCells();
+		handleNavigationTool(activeScene);
 	} else if (mp_document->state() == SceneDocument::State::Edit) {
 		if (m_parent != nullptr) {
 			const auto& settings = m_parent->getSettings();
@@ -297,7 +301,12 @@ void Viewport::onUpdate(const core::Timestep& iTimeStep) {
 				// The HUD is Y-down from the top left: undo the OpenGL flip of the picking coordinates.
 				const bool flipped = renderer::gpu::RenderCommand::getApi() == renderer::gpu::RenderAPI::Type::OpenGL;
 				const math::vec2 vpMouse = {mx, flipped ? viewportSizeInternal.y() - my : my};
-				const bool mousePressed = ImGui::IsMouseDown(ImGuiMouseButton_Left);
+				// A press reaches the game only when it starts on the game: not on an overlay control, not on another panel.
+				const bool captured = window.getCursorMode() == window::CursorMode::Disabled;
+				const bool overOverlay =
+						anyContains(m_overlayRects, m_overlayCount, ImGui::GetMousePos().x, ImGui::GetMousePos().y);
+				const bool mousePressed = m_playGate.filter(ImGui::IsMouseDown(ImGuiMouseButton_Left),
+															captured || m_hovered, !captured && overOverlay);
 				const math::vec2 wheel = m_hovered ? math::vec2{ImGui::GetIO().MouseWheelH, ImGui::GetIO().MouseWheel}
 												   : math::vec2{0.f, 0.f};
 				scene::UiInputSystem::update(activeScene.get(), m_framebuffer->getSpecification().size, vpMouse,
@@ -339,6 +348,7 @@ void Viewport::onUpdate(const core::Timestep& iTimeStep) {
 		m_hoveredEntity = pixelData == -1 || !activeScene->registry.valid(handle)
 								  ? scene::Entity()
 								  : scene::Entity(handle, activeScene.get());
+		mp_hoveredScene = activeScene.get();
 	}
 	renderOverlay();
 
@@ -375,7 +385,7 @@ void Viewport::renderContextMenu() {
 	const bool click = io.MouseDragMaxDistanceSqr[ImGuiMouseButton_Right] < clickTravel * clickTravel;
 	if (m_hovered && click && ImGui::IsMouseReleased(ImGuiMouseButton_Right) && !io.KeyCtrl && !io.KeyAlt &&
 		!m_parent->getVoxelBrush().active && !gui::Guizmo::isOver()) {
-		m_parent->setSelectedEntity(m_hoveredEntity);
+		m_parent->setSelectedEntity(getHoveredEntity());
 		ImGui::OpenPopup("##viewportMenu");
 	}
 	if (!ImGui::BeginPopup("##viewportMenu"))
@@ -568,6 +578,9 @@ void Viewport::renderOverlay() const {
 		return;
 
 	if (mp_document->state() != SceneDocument::State::Edit) {
+		// The running scene draws the overlay itself, with its own camera, once asked.
+		activeScene->getNavigation().setDebugVisible(scene::nav::NavWorld::DebugSource::Editor,
+													 m_parent != nullptr && m_parent->getSettings().showNavGraph);
 		const scene::Entity camera = activeScene->getPrimaryCamera();
 		auto& cam = camera.getComponent<scene::component::Camera>().camera;
 		cam.setTransform(activeScene->getWorldTransform(camera)());
@@ -777,14 +790,17 @@ void Viewport::renderOverlay() const {
 namespace {
 
 // Translucent pill holding one cluster of viewport controls, anchored at a corner of the viewport.
-auto beginOverlay(const std::string& iId, const ImVec2& iPos, const ImVec2& iPivot) -> bool {
+auto beginOverlay(const std::string& iId, const ImVec2& iPos, const ImVec2& iPivot, const bool iNoInputs = false)
+		-> bool {
 	const auto& theme = gui::UiLayer::getTheme();
 	ImGui::SetNextWindowPos(iPos, ImGuiCond_Always, iPivot);
-	constexpr ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
-									   ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse |
-									   ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoFocusOnAppearing |
-									   ImGuiWindowFlags_NoNav | ImGuiWindowFlags_AlwaysAutoResize |
-									   ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoDocking;
+	ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
+							 ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar |
+							 ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav |
+							 ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings |
+							 ImGuiWindowFlags_NoDocking;
+	if (iNoInputs)
+		flags |= ImGuiWindowFlags_NoInputs;
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{3.f, 3.f});
 	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{2.f, 2.f});
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 7.f);
@@ -792,6 +808,25 @@ auto beginOverlay(const std::string& iId, const ImVec2& iPos, const ImVec2& iPiv
 	ImGui::PushStyleColor(ImGuiCol_WindowBg, gui::vec(gui::Theme::withAlpha(theme.surface1, 0.9f)));
 	ImGui::PushStyleColor(ImGuiCol_Border, gui::vec(gui::Theme::withAlpha(theme.line, 0.8f)));
 	return ImGui::Begin(iId.c_str(), nullptr, flags);
+}
+
+auto toPhase(const SceneDocument::State iState) -> PlayPhase {
+	switch (iState) {
+		case SceneDocument::State::Play:
+			return PlayPhase::Play;
+		case SceneDocument::State::Pause:
+			return PlayPhase::Pause;
+		case SceneDocument::State::Edit:
+			break;
+	}
+	return PlayPhase::Edit;
+}
+
+// Screen rectangle of the current overlay window, to keep the game from seeing the clicks it takes.
+auto currentOverlayRect() -> OverlayRect {
+	const auto pos = ImGui::GetWindowPos();
+	const auto size = ImGui::GetWindowSize();
+	return {pos.x, pos.y, pos.x + size.x, pos.y + size.y};
 }
 
 void endOverlay() {
@@ -882,6 +917,8 @@ void Viewport::renderOverlayToolbar() {
 	auto& settings = m_parent->getSettings();
 	const auto shortcut = [this](const char* iAction) -> std::string { return m_parent->getActionShortcut(iAction); };
 
+	m_overlayCount = 0;
+	m_playBanner.update(toPhase(state), ImGui::GetIO().DeltaTime);
 	if (!editing)
 		ImGui::GetWindowDrawList()->AddRect({m_lower.x() + 1.f, m_lower.y() + 1.f},
 											{m_upper.x() - 1.f, m_upper.y() - 1.f},
@@ -945,9 +982,80 @@ void Viewport::renderOverlayToolbar() {
 		endOverlay();
 	}
 
-	// Playback, centred.
-	if (beginOverlay(std::format("##vpPlay{:x}", id), {(m_lower.x() + m_upper.x()) * 0.5f, m_lower.y() + margin},
-					 {0.5f, 0.f})) {
+	// Playback, centred; while the scene runs it folds into a handle in the top-right corner.
+	const bool collapsed = !editing && settings.playControlsCollapsed;
+	renderPlayControls(collapsed);
+
+	// View options, top-right.
+	if (editing) {
+		renderViewOverlay();
+		renderNavigationPopup();
+	} else
+		renderPlayBanner(collapsed);
+
+	// Frame time chip, bottom-left.
+	if (beginOverlay(std::format("##vpFps{:x}", id), {m_lower.x() + margin, m_upper.y() - margin}, {0.f, 1.f})) {
+		const auto stats = renderer::Renderer2D::getStats();
+		const float fps = ImGui::GetIO().Framerate;
+		gui::UiLayer::pushTextStyle(gui::TextStyle::Value);
+		const auto text =
+				std::format("{:.0f} fps  {:.2f} ms  {} draws", fps, fps > 0.f ? 1000.f / fps : 0.f, stats.drawCalls);
+		ImGui::AlignTextToFramePadding();
+		ImGui::TextColored(gui::vec(theme.textMuted), " %s ", text.c_str());
+		gui::UiLayer::popTextStyle();
+		if (ImGui::IsItemClicked()) {
+			settings.showStats = true;
+			ImGui::SetWindowFocus(panelWindow::stats);
+		}
+		gui::widgets::itemTooltip("Frame stats", nullptr, "Click to open the Stats panel.");
+		addOverlayRect(currentOverlayRect());
+	}
+	endOverlay();
+
+	// While the scene runs, the navigation overlay (graph and routes of the vehicles) is one toggle, bottom-right.
+	if (!editing && m_isometric) {
+		if (beginOverlay(std::format("##vpPlayShow{:x}", id), {m_upper.x() - margin, m_upper.y() - margin},
+						 {1.f, 1.f})) {
+			if (gui::widgets::iconButton("playShow", {.glyph = gui::icon::eye,
+													  .tooltip = "Navigation graph and routes",
+													  .description = "Draw the road graph and the route of each "
+																	 "vehicle over the running scene.",
+													  .selected = settings.showNavGraph}))
+				settings.showNavGraph = !settings.showNavGraph;
+			addOverlayRect(currentOverlayRect());
+		}
+		endOverlay();
+	}
+}
+
+void Viewport::renderPlayControls(const bool iCollapsed) {
+	using gui::widgets::iconButton;
+	const auto& theme = gui::UiLayer::getTheme();
+	const auto state = mp_document->state();
+	const bool editing = state == SceneDocument::State::Edit;
+	const auto id = static_cast<uint64_t>(mp_document->id());
+	const float margin = 8.f;
+	auto& settings = m_parent->getSettings();
+	const auto shortcut = [this](const char* iAction) -> std::string { return m_parent->getActionShortcut(iAction); };
+	const bool collapsed = iCollapsed;
+	if (collapsed) {
+		if (beginOverlay(std::format("##vpPlayHandle{:x}", id), {m_upper.x() - margin, m_lower.y() + margin},
+						 {1.f, 0.f})) {
+			const bool paused = state == SceneDocument::State::Pause;
+			const auto key = shortcut("scene.play_controls");
+			ImGui::PushStyleColor(ImGuiCol_Text, gui::vec(paused ? theme.textMuted : theme.play));
+			if (iconButton("handle",
+						   {.glyph = paused ? gui::icon::pause : gui::icon::play,
+							.tooltip = paused ? "Paused: show the play controls" : "Playing: show the play controls",
+							.shortcut = key.c_str(),
+							.description = "Click to bring back Play, Pause, Step and Stop over the game."}))
+				settings.playControlsCollapsed = false;
+			ImGui::PopStyleColor();
+			addOverlayRect(currentOverlayRect());
+		}
+		endOverlay();
+	} else if (beginOverlay(std::format("##vpPlay{:x}", id), {(m_lower.x() + m_upper.x()) * 0.5f, m_lower.y() + margin},
+							{0.5f, 0.f})) {
 		const bool playing = state == SceneDocument::State::Play;
 		const bool paused = state == SceneDocument::State::Pause;
 		const auto playKey = shortcut("scene.play");
@@ -982,47 +1090,50 @@ void Viewport::renderOverlayToolbar() {
 								.description = "Leave the play mode and restore the scene.",
 								.disabled = editing}))
 			std::ignore = m_parent->runAction("scene.stop");
-	}
-	endOverlay();
-
-	// View options, top-right.
-	if (editing)
-		renderViewOverlay();
-	else if (beginOverlay(
-					 std::format("##vpPlaying{:x}", id),
-					 {(m_lower.x() + m_upper.x()) * 0.5f, m_lower.y() + margin * 2.f + ImGui::GetFrameHeight() + 6.f},
-					 {0.5f, 0.f})) {
-		ImGui::AlignTextToFramePadding();
-		ImGui::TextColored(gui::vec(theme.play), " %s ", gui::icon::play);
-		ImGui::SameLine();
-		gui::UiLayer::pushTextStyle(gui::TextStyle::Label);
-		ImGui::AlignTextToFramePadding();
-		ImGui::TextUnformatted(state == SceneDocument::State::Pause ? "Paused" : "Playing");
-		ImGui::SameLine();
-		ImGui::AlignTextToFramePadding();
-		ImGui::TextColored(gui::vec(theme.textMuted), "%s", "— changes are reverted on Stop ");
-		gui::UiLayer::popTextStyle();
-	}
-	if (!editing)
-		endOverlay();
-
-	// Frame time chip, bottom-left.
-	if (beginOverlay(std::format("##vpFps{:x}", id), {m_lower.x() + margin, m_upper.y() - margin}, {0.f, 1.f})) {
-		const auto stats = renderer::Renderer2D::getStats();
-		const float fps = ImGui::GetIO().Framerate;
-		gui::UiLayer::pushTextStyle(gui::TextStyle::Value);
-		const auto text =
-				std::format("{:.0f} fps  {:.2f} ms  {} draws", fps, fps > 0.f ? 1000.f / fps : 0.f, stats.drawCalls);
-		ImGui::AlignTextToFramePadding();
-		ImGui::TextColored(gui::vec(theme.textMuted), " %s ", text.c_str());
-		gui::UiLayer::popTextStyle();
-		if (ImGui::IsItemClicked()) {
-			settings.showStats = true;
-			ImGui::SetWindowFocus(panelWindow::stats);
+		if (!editing) {
+			overlaySeparator();
+			const auto key = shortcut("scene.play_controls");
+			if (iconButton("fold", {.glyph = gui::icon::chevronUp,
+									.tooltip = "Hide the play controls",
+									.shortcut = key.c_str(),
+									.description = "Folds the controls into a small handle in the corner, so they "
+												   "never cover the game."}))
+				settings.playControlsCollapsed = true;
 		}
-		gui::widgets::itemTooltip("Frame stats", nullptr, "Click to open the Stats panel.");
+		addOverlayRect(currentOverlayRect());
 	}
-	endOverlay();
+	if (!collapsed)
+		endOverlay();
+}
+
+void Viewport::renderPlayBanner(const bool iCollapsed) {
+	const auto& theme = gui::UiLayer::getTheme();
+	const auto state = mp_document->state();
+	const auto id = static_cast<uint64_t>(mp_document->id());
+	const float margin = 8.f;
+	const bool collapsed = iCollapsed;
+	if (!m_playBanner.visible())
+		return;
+	{
+		// Brief, non-interactive message when Play or Pause starts; the state stays readable on the handle.
+		const float y = collapsed ? margin : margin * 2.f + ImGui::GetFrameHeight() + 6.f;
+		ImGui::PushStyleVar(ImGuiStyleVar_Alpha, m_playBanner.alpha());
+		if (beginOverlay(std::format("##vpPlaying{:x}", id), {(m_lower.x() + m_upper.x()) * 0.5f, m_lower.y() + y},
+						 {0.5f, 0.f}, true)) {
+			ImGui::AlignTextToFramePadding();
+			ImGui::TextColored(gui::vec(theme.play), " %s ", gui::icon::play);
+			ImGui::SameLine();
+			gui::UiLayer::pushTextStyle(gui::TextStyle::Label);
+			ImGui::AlignTextToFramePadding();
+			ImGui::TextUnformatted(state == SceneDocument::State::Pause ? "Paused" : "Playing");
+			ImGui::SameLine();
+			ImGui::AlignTextToFramePadding();
+			ImGui::TextColored(gui::vec(theme.textMuted), "%s", "— changes are reverted on Stop ");
+			gui::UiLayer::popTextStyle();
+		}
+		endOverlay();
+		ImGui::PopStyleVar();
+	}
 }
 
 void Viewport::frameScene() {
@@ -1148,8 +1259,22 @@ void Viewport::renderViewOverlay() {
 			option("Camera markers", settings.showCameraGizmos);
 			option("Trigger icons", settings.showTriggerIcons);
 			if (m_isometric)
-				option("Navigation graph", settings.showNavGraph);
+				option("Navigation graph and routes", settings.showNavGraph);
 			ImGui::EndPopup();
+		}
+		if (m_isometric) {
+			ImGui::SameLine();
+			if (iconButton("navTool",
+						   {.glyph = gui::icon::signpost,
+							.tooltip = "Navigation tool",
+							.description = "Edit one-way roads, closed sides and slower cells on the graph. Click an "
+										   "arrow of a cell edge to cycle two-way, exit only, enter only, closed; "
+										   "right-click a cell to set its cost.",
+							.selected = m_navTool})) {
+				m_navTool = !m_navTool;
+				if (m_navTool)
+					settings.showNavGraph = true;
+			}
 		}
 		ImGui::SameLine();
 		const auto frameKey = m_parent->getActionShortcut("view.frameSelection");
@@ -1245,6 +1370,7 @@ void Viewport::updateIsometricCursor(const shared<scene::Scene>& iScene) {
 		const math::vec3 origin = iScene->getWorldTransform(scene::Entity{entity, iScene.get()}).translation();
 		height = origin.z();
 		m_hoveredMapOrigin = origin;
+		m_hoveredMapEntity = scene::Entity{entity, iScene.get()}.getUUID();
 		if (const auto hit = scene::terrain::pickTerrain(*asset, m_isoCamera, pixel, origin); hit.has_value()) {
 			m_hoveredCell = hit->cell;
 			const auto corners = asset->getCellCorners(hit->cell.x(), hit->cell.y());
@@ -1279,14 +1405,111 @@ void Viewport::pickNavigationCells() {
 	}
 }
 
+void Viewport::handleNavigationTool(const shared<scene::Scene>& iScene) {
+	m_navSide.reset();
+	if (!m_navTool || m_parent == nullptr || !m_parent->getSettings().showNavGraph || !m_hovered ||
+		!m_hoveredCell.has_value() || !m_isoCursor.has_value() || !iScene)
+		return;
+	const auto& io = ImGui::GetIO();
+	if (io.KeyShift || io.KeyAlt)
+		return;
+	const auto entity = iScene->findEntityByUUID(m_hoveredMapEntity);
+	if (!entity || !entity.hasComponent<scene::component::Tilemap>())
+		return;
+	const auto& tilemap = entity.getComponent<scene::component::Tilemap>();
+	if (!tilemap.asset || tilemap.navigation.isEmpty())
+		return;
+	auto& entry = iScene->getNavigation().acquire(static_cast<uint64_t>(entity.getUUID()), *tilemap.asset,
+												  tilemap.navigation);
+	const auto cell = *m_hoveredCell;
+	const auto base = entry.map.getBaseCell(*tilemap.asset, cell.x(), cell.y());
+	if (!base.has_value())
+		return;
+	const commands::CommandTarget target{.registry = &m_parent->getRegistry(), .scene = iScene, .undo = mp_undoManager};
+	const auto id = static_cast<int64_t>(static_cast<uint64_t>(entity.getUUID()));
+	if (ImGui::IsMouseReleased(ImGuiMouseButton_Right)) {
+		const auto drag = ImGui::GetMouseDragDelta(ImGuiMouseButton_Right, 0.f);
+		if (drag.x * drag.x + drag.y * drag.y < 16.f) {
+			m_navPopupCell = cell;
+			m_navPopupEntity = entity.getUUID();
+			m_navOpenPopup = true;
+			const auto* exception = tilemap.navigation.findOverride(cell.x(), cell.y());
+			m_navCostEdit = exception != nullptr ? exception->cost : 0.f;
+		}
+	}
+	// The side nearest to the cursor inside the cell.
+	const float fx = m_isoCursor->x() - m_hoveredMapOrigin.x() - static_cast<float>(cell.x()) - 0.5f;
+	const float fy = m_isoCursor->y() - m_hoveredMapOrigin.y() - static_cast<float>(cell.y()) - 0.5f;
+	const auto side = std::abs(fx) >= std::abs(fy)
+							  ? (fx > 0.f ? scene::nav::Direction::East : scene::nav::Direction::West)
+							  : (fy > 0.f ? scene::nav::Direction::South : scene::nav::Direction::North);
+	const auto nx = static_cast<int64_t>(cell.x()) + scene::nav::offsetX(side);
+	const auto ny = static_cast<int64_t>(cell.y()) + scene::nav::offsetY(side);
+	if (nx < 0 || ny < 0)
+		return;
+	const auto neighbour = entry.map.getBaseCell(*tilemap.asset, static_cast<uint32_t>(nx), static_cast<uint32_t>(ny));
+	const auto bit = scene::nav::directionBit(side);
+	const auto back = scene::nav::directionBit(scene::nav::opposite(side));
+	if (!neighbour.has_value() || !(((base->exits & bit) != 0 && (neighbour->enters & bit) != 0) ||
+									((neighbour->exits & back) != 0 && (base->enters & back) != 0)))
+		return;
+	m_navSide = side;
+	if (!ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+		return;
+	const auto next = scene::nav::nextSideState(tilemap.navigation.getSideState(cell.x(), cell.y(), side));
+	std::ignore = target.execute("nav.set_edge",
+								 {{"entity", id},
+								  {"x", static_cast<int64_t>(cell.x())},
+								  {"y", static_cast<int64_t>(cell.y())},
+								  {"side", std::string{scene::nav::directionNames[static_cast<size_t>(side)]}},
+								  {"state", std::string{scene::nav::sideStateNames[static_cast<size_t>(next)]}}});
+}
+
+void Viewport::renderNavigationPopup() {
+	if (m_navOpenPopup) {
+		ImGui::OpenPopup("##navCell");
+		m_navOpenPopup = false;
+	}
+	if (!ImGui::BeginPopup("##navCell"))
+		return;
+	const auto& scene = mp_document->getActiveScene();
+	if (!m_navPopupCell.has_value() || !scene || m_parent == nullptr) {
+		ImGui::EndPopup();
+		return;
+	}
+	const auto cell = *m_navPopupCell;
+	const commands::CommandTarget target{.registry = &m_parent->getRegistry(), .scene = scene, .undo = mp_undoManager};
+	const auto id = static_cast<int64_t>(static_cast<uint64_t>(m_navPopupEntity));
+	ImGui::TextUnformatted(std::format("Road cell ({}, {})", cell.x(), cell.y()).c_str());
+	ImGui::SetNextItemWidth(120.f);
+	ImGui::DragFloat("Cost", &m_navCostEdit, 0.05f, 0.f, 64.f, m_navCostEdit > 0.f ? "%.2f" : "tile default");
+	if (ImGui::IsItemDeactivatedAfterEdit()) {
+		std::ignore = target.execute("nav.set_cell_cost", {{"entity", id},
+														   {"x", static_cast<int64_t>(cell.x())},
+														   {"y", static_cast<int64_t>(cell.y())},
+														   {"cost", static_cast<double>(m_navCostEdit)}});
+	}
+	ImGui::SetItemTooltip("%s",
+						  "Cost of crossing the cell, in cells (1 is a normal road, 3 three times slower). 0 keeps "
+						  "the cost of its tile.");
+	if (ImGui::Button("Clear exceptions")) {
+		std::ignore = target.execute(
+				"nav.clear_cell",
+				{{"entity", id}, {"x", static_cast<int64_t>(cell.x())}, {"y", static_cast<int64_t>(cell.y())}});
+		ImGui::CloseCurrentPopup();
+	}
+	ImGui::EndPopup();
+}
+
 void Viewport::renderNavigationOverlay(const shared<scene::Scene>& iScene) const {
 	if (m_parent == nullptr || !m_parent->getSettings().showNavGraph || !iScene)
 		return;
-	constexpr math::vec4 twoWay{0.30f, 0.90f, 0.40f, 0.9f};
-	constexpr math::vec4 oneWay{1.f, 0.60f, 0.10f, 1.f};
 	constexpr math::vec4 pathColor{1.f, 0.95f, 0.20f, 1.f};
-	constexpr size_t maxEdges = 40000;
-	size_t drawn = 0;
+	scene::nav::drawNavigationGraph(*iScene);
+	scene::nav::drawNavigationRoutes(*iScene);
+	if (m_navTool && m_hoveredCell.has_value() && m_isometric)
+		scene::nav::drawNavigationCellEditor(*iScene, static_cast<uint64_t>(m_hoveredMapEntity), m_hoveredCell->x(),
+											 m_hoveredCell->y(), m_navSide);
 	bool pathDone = false;
 	for (const auto view = iScene->registry.view<scene::component::Tilemap>(); const auto entity: view) {
 		const auto& tilemap = view.get<scene::component::Tilemap>(entity);
@@ -1299,41 +1522,8 @@ void Viewport::renderNavigationOverlay(const shared<scene::Scene>& iScene) const
 													  tilemap.navigation);
 		const auto& map = entry.map;
 		const auto center = [&](const uint32_t iX, const uint32_t iY) -> math::vec3 {
-			const auto corners = asset.getCellCorners(iX, iY);
-			const float height = static_cast<float>(corners[0] + corners[1] + corners[2] + corners[3]) * 0.25f *
-								 scene::terrain::heightStep;
-			return origin + math::vec3{static_cast<float>(iX) + 0.5f, static_cast<float>(iY) + 0.5f, height + 0.03f};
+			return scene::nav::getCellCenter(asset, origin, iX, iY);
 		};
-		const auto& size = map.getSize();
-		for (uint32_t y = 0; y < size.y() && drawn < maxEdges; ++y) {
-			for (uint32_t x = 0; x < size.x() && drawn < maxEdges; ++x) {
-				if (!map.isWalkable(x, y))
-					continue;
-				for (const auto direction: {scene::nav::Direction::East, scene::nav::Direction::South}) {
-					const uint32_t nx = x + static_cast<uint32_t>(scene::nav::offsetX(direction));
-					const uint32_t ny = y + static_cast<uint32_t>(scene::nav::offsetY(direction));
-					const bool forward = map.getEdgeCost(x, y, direction) != 0;
-					const bool backward = map.getEdgeCost(nx, ny, scene::nav::opposite(direction)) != 0;
-					if (!forward && !backward)
-						continue;
-					const auto from = center(x, y);
-					const auto to = center(nx, ny);
-					renderer::Renderer2D::drawLine(
-							{.point1 = from, .point2 = to, .color = forward && backward ? twoWay : oneWay});
-					if (forward != backward) {
-						const auto tip = forward ? to : from;
-						const auto tail = forward ? from : to;
-						const auto along = (tail - tip) * 0.3f;
-						const math::vec3 side{-along.y(), along.x(), 0.f};
-						renderer::Renderer2D::drawLine(
-								{.point1 = tip, .point2 = tip + along + side * 0.5f, .color = oneWay});
-						renderer::Renderer2D::drawLine(
-								{.point1 = tip, .point2 = tip + along - side * 0.5f, .color = oneWay});
-					}
-					++drawn;
-				}
-			}
-		}
 		if (pathDone || !m_navFrom.has_value() || !m_navTo.has_value())
 			continue;
 		pathDone = true;
@@ -1616,12 +1806,21 @@ auto Viewport::onMouseButtonPressed(const event::MouseButtonPressedEvent& ioEven
 	// The voxel brush owns clicks when active; don't also change the entity selection.
 	if (m_parent != nullptr && m_parent->getVoxelBrush().active)
 		return false;
+	// So does the navigation tool of the isometric view.
+	if (m_navTool && m_isometric && m_parent != nullptr && m_parent->getSettings().showNavGraph)
+		return false;
 	if (ioEvent.getMouseButton() == input::mouse::ButtonLeft) {
 		if (isHovered() && !gui::Guizmo::isOver() && !input::Input::isKeyPressed(input::key::LeftAlt))
 			if (m_parent != nullptr)
 				m_parent->setSelectedEntity(getHoveredEntity());
 	}
 	return false;
+}
+
+auto Viewport::getHoveredEntity() const -> scene::Entity {
+	if (mp_document == nullptr || mp_document->getActiveScene().get() != mp_hoveredScene)
+		return {};
+	return m_hoveredEntity;
 }
 
 }// namespace owl::nest::panel

@@ -93,6 +93,8 @@ struct EditorSettings {
 	bool showTriggerIcons = true;
 	/// Whether the gizmo moves along the world axes instead of the axes of the selection.
 	bool gizmoWorldSpace = false;
+	/// Whether the Play controls of the viewport are folded into a corner handle while the scene runs.
+	bool playControlsCollapsed = false;
 	/// Speed of the orbit and look-around drags of the editor camera, in percent (10 to 300).
 	int cameraRotatePercent = 100;
 	/// Speed of the pan drags of the editor camera, in percent (10 to 300).

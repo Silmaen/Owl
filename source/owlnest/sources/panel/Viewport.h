@@ -11,11 +11,13 @@
 #include <owlgui.h>
 
 #include "../UndoManager.h"
+#include "PlayOverlay.h"
 
 #include <renderer/RendererIsometric.h>
 #include <scene/nav/Pathfinder.h>
 
 #include <array>
+#include <cstddef>
 #include <cstdint>
 #include <optional>
 #include <string>
@@ -124,10 +126,11 @@ public:
 
 	/**
 	 * @brief
-	 *  Get the hovered entity.
-	 * @return The hovered entity.
+	 *  Get the hovered entity of the scene the document shows now.
+	 * @return The hovered entity, or an empty one when the scene it was picked in has been replaced since (Stop,
+	 * scene transition).
 	 */
-	[[nodiscard]] auto getHoveredEntity() const -> scene::Entity { return m_hoveredEntity; }
+	[[nodiscard]] auto getHoveredEntity() const -> scene::Entity;
 
 	/**
 	 * @brief
@@ -307,6 +310,21 @@ private:
 
 	/**
 	 * @brief
+	 *  Navigation tool: with the graph shown, hovering a road cell of the isometric view picks the side of the cell
+	 *  nearest to the cursor and a left click cycles its state (two-way, exit only, enter only, closed) through the
+	 *  `nav.set_edge` command; a right click opens the cost popup of the cell.
+	 * @param[in] iScene The edited scene.
+	 */
+	void handleNavigationTool(const shared<scene::Scene>& iScene);
+
+	/**
+	 * @brief
+	 *  Popup of one cell of the navigation tool: its own cost and a button clearing its exceptions.
+	 */
+	void renderNavigationPopup();
+
+	/**
+	 * @brief
 	 *  Camera the edited scene is drawn with: the isometric one in the isometric mode, else the editor camera.
 	 * @return The active editor camera.
 	 */
@@ -364,6 +382,30 @@ private:
 
 	/**
 	 * @brief
+	 *  Draw the Play, Pause, Step and Stop controls, or the corner handle that stands for them when folded.
+	 * @param[in] iCollapsed Whether the controls are folded into the handle.
+	 */
+	void renderPlayControls(bool iCollapsed);
+
+	/**
+	 * @brief
+	 *  Draw the "Playing" / "Paused" message while its timer runs.
+	 * @param[in] iCollapsed Whether the controls are folded, which moves the message to the top.
+	 */
+	void renderPlayBanner(bool iCollapsed);
+
+	/**
+	 * @brief
+	 *  Remember the screen rectangle of an overlay control, so the game does not see the clicks it takes.
+	 * @param[in] iRect Rectangle of the overlay window.
+	 */
+	void addOverlayRect(const OverlayRect& iRect) {
+		if (m_overlayCount < m_overlayRects.size())
+			m_overlayRects[m_overlayCount++] = iRect;
+	}
+
+	/**
+	 * @brief
 	 *  Draw the view-cube in the viewport corner: the six axis ends show the camera orientation, a click on one looks
 	 *  from that side, a click on the centre resets the view.
 	 */
@@ -400,6 +442,8 @@ private:
 	SceneDocument* mp_document = nullptr;
 	/// The hovered entity
 	scene::Entity m_hoveredEntity;
+	/// Scene the hovered entity was picked in: a handle of a replaced scene points at freed memory.
+	const scene::Scene* mp_hoveredScene = nullptr;
 	/// The Gizmo type
 	gui::Guizmo::Type m_gizmoType = gui::Guizmo::Type::None;
 	/// The editor camera
@@ -416,6 +460,20 @@ private:
 	std::array<float, 4> m_hoveredCornerZ{};
 	/// Hovered tile of the first isometric map.
 	std::optional<math::vec2ui> m_hoveredCell;
+	/// Tilemap entity of the hovered isometric map.
+	core::UUID m_hoveredMapEntity{0};
+	/// Whether the navigation tool is on.
+	bool m_navTool = false;
+	/// Side of the hovered cell the navigation tool would change.
+	std::optional<scene::nav::Direction> m_navSide;
+	/// Cell the navigation popup is about.
+	std::optional<math::vec2ui> m_navPopupCell;
+	/// Tilemap entity the navigation popup is about.
+	core::UUID m_navPopupEntity{0};
+	/// The popup was asked for this frame.
+	bool m_navOpenPopup = false;
+	/// Cost typed in the navigation popup.
+	float m_navCostEdit = 0.f;
 	/// Start of the navigation test path.
 	std::optional<math::vec2ui> m_navFrom;
 	/// Goal of the navigation test path.
@@ -432,6 +490,14 @@ private:
 	bool m_gizmoWasUsing = false;
 	/// Entity YAML snapshot captured when gizmo manipulation began.
 	std::string m_gizmoBeforeYaml;
+	/// Message shown for a moment when Play or Pause starts.
+	PlayBanner m_playBanner;
+	/// Keeps the clicks on the overlay controls away from the game.
+	PlayInputGate m_playGate;
+	/// Screen rectangles of the overlay controls drawn last frame.
+	std::array<OverlayRect, 8> m_overlayRects{};
+	/// Number of rectangles in use.
+	std::size_t m_overlayCount = 0;
 	/// Whether the window was focused last frame (used to detect a focus transition).
 	bool m_wasFocused = false;
 	/// ImGui close state — set to false by ImGui when the tab's close X is clicked.

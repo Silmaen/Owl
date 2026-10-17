@@ -164,10 +164,12 @@ OWL_API void renderProps(scene::component::Canvas& ioComponent);
 
 /**
  * @brief
- *  Render a Gui for editing the component.
+ *  Render a Gui for editing the component; changing the unit of a size or offset number converts its value so the
+ *  widget does not move on screen (from the HUD layout of the owner's scene).
  * @param ioComponent The component to edit.
+ * @param[in] iOwner The entity holding the component.
  */
-OWL_API void renderProps(scene::component::UiRect& ioComponent);
+OWL_API void renderProps(scene::component::UiRect& ioComponent, const scene::Entity& iOwner);
 
 /**
  * @brief
@@ -274,6 +276,25 @@ OWL_API void renderProps(scene::component::PrefabLink& ioComponent);
  * @param ioComponent The component to edit.
  */
 OWL_API void renderProps(scene::component::Tilemap& ioComponent);
+
+/**
+ * @brief
+ *  The switch of the navigation graph overlay of the viewport, drawn as the "Show graph" button of the Tilemap
+ *  inspector.
+ */
+struct NavigationGraphSwitch {
+	/// Whether the overlay is shown.
+	std::function<bool()> isShown;
+	/// Show or hide the overlay.
+	std::function<void(bool)> setShown;
+};
+
+/**
+ * @brief
+ *  Give the Tilemap inspector the switch of the graph overlay (the button is hidden without it).
+ * @param[in] iSwitch The switch, empty functions to remove it.
+ */
+OWL_API void setNavigationGraphSwitch(NavigationGraphSwitch iSwitch);
 
 /**
  * @brief

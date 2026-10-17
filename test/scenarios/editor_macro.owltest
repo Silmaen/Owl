@@ -1,5 +1,5 @@
 # A macro replayed in the running world builds a crate and its lid, then one undo removes the whole replay.
-scene: ../../sample_project/scenes/platformer_house.owl
+scene: ../../engine_demo/scenes/platformer_house.owl
 steps:
   - frames: 5
   - macro: macros/crate_stack.owlmacro

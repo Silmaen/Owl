@@ -1,0 +1,530 @@
+Hud: inventory
+FormatVersion: 1
+Entities:
+- Entity: 5300000000000000001
+  Tag: {tag: InventoryCanvas}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Canvas:
+    space: ScreenOverlay
+    sortOrder: 0
+    referenceResolution: [1280, 720]
+    scaleMode: ScaleWithHeight
+  Visibility: {gameVisible: true}
+  Hierarchy: {}
+- Entity: 5300000000000000006
+  Tag: {tag: InventoryHint}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 5300000000000000001}
+  UiRect:
+    anchorMin: [0, 0]
+    anchorMax: [0, 0]
+    pivot: [0, 0]
+    size: [640, 22]
+    offset: [20, 20]
+  UiText:
+    text: "Move: WASD / left stick    Interact: E / X    Inventory: Tab / Y"
+    color: [1, 1, 1, 0.85]
+    fontSize: 16
+    horizontalAlignment: Left
+    verticalAlignment: Middle
+- Entity: 5300000000000000005
+  Tag: {tag: InventoryToast}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 5300000000000000001}
+  UiRect:
+    anchorMin: [0.5, 1]
+    anchorMax: [0.5, 1]
+    pivot: [0.5, 1]
+    size: [640, 30]
+    offset: [0, -30]
+  UiText:
+    text: ""
+    color: [1, 0.95, 0.55, 1]
+    fontSize: 20
+    horizontalAlignment: Center
+    verticalAlignment: Middle
+- Entity: 5300000000000000002
+  Tag: {tag: InventoryWindow}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: false}
+  Hierarchy: {parentId: 5300000000000000001}
+  UiRect:
+    anchorMin: [1, 0.5]
+    anchorMax: [1, 0.5]
+    pivot: [1, 0.5]
+    size: [236, 372]
+    offset: [-30, 0]
+  UiWindow:
+    title: Inventory
+    titleBarHeight: 26
+    titleFontSize: 17
+    closable: true
+    draggable: true
+    onCloseCallback: on_inventory_closed
+  UiLayout:
+    arrangement: Column
+    crossAlign: Center
+    spacing: 8
+    padding: 10
+    columns: 2
+    cellSize: [0, 0]
+- Entity: 5300000000000000080
+  Tag: {tag: InventoryLog}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 5300000000000000002}
+  UiRect:
+    anchorMin: [0, 0]
+    anchorMax: [0, 0]
+    pivot: [0, 0]
+    size: [208, 96]
+    offset: [0, 0]
+  UiList:
+    itemCount: 0
+    rowHeight: 22
+    rowSpacing: 2
+    selectedIndex: -1
+    scrollOffset: 0
+    wheelStep: 44
+    fontSize: 16
+    onSelectCallback: on_log_selected
+    onBindCallback: on_log_bind
+  UiTooltip:
+    text: "Journal: what happened, newest last.\nWheel or ui_scroll to scroll."
+- Entity: 5300000000000000004
+  Tag: {tag: InventoryInfo}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 5300000000000000002}
+  UiRect:
+    anchorMin: [0, 0]
+    anchorMax: [0, 0]
+    pivot: [0, 0]
+    size: [208, 60]
+    offset: [0, 0]
+  UiText:
+    text: Select a slot.
+    color: [1, 1, 1, 1]
+    fontSize: 16
+    horizontalAlignment: Left
+    verticalAlignment: Top
+    wrap: true
+- Entity: 5300000000000000003
+  Tag: {tag: InventorySlots}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 5300000000000000002}
+  UiRect:
+    anchorMin: [0, 0]
+    anchorMax: [0, 0]
+    pivot: [0, 0]
+    size: [208, 136]
+    offset: [0, 0]
+  UiLayout:
+    arrangement: Grid
+    crossAlign: Start
+    spacing: 8
+    padding: 0
+    columns: 3
+    cellSize: [64, 64]
+- Entity: 5300000000000000060
+  Tag: {tag: InvSlot6}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 5300000000000000003}
+  UiRect:
+    anchorMin: [0, 0]
+    anchorMax: [0, 0]
+    pivot: [0, 0]
+    size: [64, 64]
+    offset: [0, 0]
+  UiButton:
+    normalColor: [0.16, 0.18, 0.24, 1]
+    hoverColor: [0.26, 0.3, 0.4, 1]
+    pressedColor: [0.1, 0.12, 0.18, 1]
+    disabledColor: [0.15, 0.15, 0.15, 0.5]
+    onClickCallback: on_slot_clicked
+  UiFocus:
+    onFocusCallback: on_slot_focused
+  UiTooltip:
+    text: "Roast\nA warm meal."
+    delay: 0.3
+    fontSize: 16
+- Entity: 5300000000000000062
+  Tag: {tag: InvCount6}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: false}
+  Hierarchy: {parentId: 5300000000000000060}
+  UiRect:
+    anchorMin: [1, 1]
+    anchorMax: [1, 1]
+    pivot: [1, 1]
+    size: [40, 20]
+    offset: [-4, -2]
+  UiText:
+    text: x0
+    color: [1, 1, 1, 1]
+    fontSize: 18
+    horizontalAlignment: Right
+    verticalAlignment: Bottom
+- Entity: 5300000000000000061
+  Tag: {tag: InvIcon6}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: false}
+  Hierarchy: {parentId: 5300000000000000060}
+  UiRect:
+    anchorMin: [0, 0]
+    anchorMax: [1, 1]
+    pivot: [0.5, 0.5]
+    size: [-12, -12]
+    offset: [0, 0]
+  UiImage:
+    tint: [1, 1, 1, 1]
+    texture: nam:textures/items/food.png
+- Entity: 5300000000000000050
+  Tag: {tag: InvSlot5}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 5300000000000000003}
+  UiRect:
+    anchorMin: [0, 0]
+    anchorMax: [0, 0]
+    pivot: [0, 0]
+    size: [64, 64]
+    offset: [0, 0]
+  UiButton:
+    normalColor: [0.16, 0.18, 0.24, 1]
+    hoverColor: [0.26, 0.3, 0.4, 1]
+    pressedColor: [0.1, 0.12, 0.18, 1]
+    disabledColor: [0.15, 0.15, 0.15, 0.5]
+    onClickCallback: on_slot_clicked
+  UiFocus:
+    onFocusCallback: on_slot_focused
+  UiTooltip:
+    text: "First-aid kit\nPatches you up."
+    delay: 0.3
+    fontSize: 16
+- Entity: 5300000000000000052
+  Tag: {tag: InvCount5}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: false}
+  Hierarchy: {parentId: 5300000000000000050}
+  UiRect:
+    anchorMin: [1, 1]
+    anchorMax: [1, 1]
+    pivot: [1, 1]
+    size: [40, 20]
+    offset: [-4, -2]
+  UiText:
+    text: x0
+    color: [1, 1, 1, 1]
+    fontSize: 18
+    horizontalAlignment: Right
+    verticalAlignment: Bottom
+- Entity: 5300000000000000051
+  Tag: {tag: InvIcon5}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: false}
+  Hierarchy: {parentId: 5300000000000000050}
+  UiRect:
+    anchorMin: [0, 0]
+    anchorMax: [1, 1]
+    pivot: [0.5, 0.5]
+    size: [-12, -12]
+    offset: [0, 0]
+  UiImage:
+    tint: [1, 1, 1, 1]
+    texture: nam:textures/items/health.png
+- Entity: 5300000000000000040
+  Tag: {tag: InvSlot4}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 5300000000000000003}
+  UiRect:
+    anchorMin: [0, 0]
+    anchorMax: [0, 0]
+    pivot: [0, 0]
+    size: [64, 64]
+    offset: [0, 0]
+  UiButton:
+    normalColor: [0.16, 0.18, 0.24, 1]
+    hoverColor: [0.26, 0.3, 0.4, 1]
+    pressedColor: [0.1, 0.12, 0.18, 1]
+    disabledColor: [0.15, 0.15, 0.15, 0.5]
+    onClickCallback: on_slot_clicked
+  UiFocus:
+    onFocusCallback: on_slot_focused
+  UiTooltip:
+    text: "Crown\nThe prize of the vault."
+    delay: 0.3
+    fontSize: 16
+- Entity: 5300000000000000042
+  Tag: {tag: InvCount4}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: false}
+  Hierarchy: {parentId: 5300000000000000040}
+  UiRect:
+    anchorMin: [1, 1]
+    anchorMax: [1, 1]
+    pivot: [1, 1]
+    size: [40, 20]
+    offset: [-4, -2]
+  UiText:
+    text: x0
+    color: [1, 1, 1, 1]
+    fontSize: 18
+    horizontalAlignment: Right
+    verticalAlignment: Bottom
+- Entity: 5300000000000000041
+  Tag: {tag: InvIcon4}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: false}
+  Hierarchy: {parentId: 5300000000000000040}
+  UiRect:
+    anchorMin: [0, 0]
+    anchorMax: [1, 1]
+    pivot: [0.5, 0.5]
+    size: [-12, -12]
+    offset: [0, 0]
+  UiImage:
+    tint: [1, 1, 1, 1]
+    texture: nam:textures/items/treasure_crown.png
+- Entity: 5300000000000000030
+  Tag: {tag: InvSlot3}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 5300000000000000003}
+  UiRect:
+    anchorMin: [0, 0]
+    anchorMax: [0, 0]
+    pivot: [0, 0]
+    size: [64, 64]
+    offset: [0, 0]
+  UiButton:
+    normalColor: [0.16, 0.18, 0.24, 1]
+    hoverColor: [0.26, 0.3, 0.4, 1]
+    pressedColor: [0.1, 0.12, 0.18, 1]
+    disabledColor: [0.15, 0.15, 0.15, 0.5]
+    onClickCallback: on_slot_clicked
+  UiFocus:
+    onFocusCallback: on_slot_focused
+  UiTooltip:
+    text: "Treasure chest\nShiny, and worth a lot."
+    delay: 0.3
+    fontSize: 16
+- Entity: 5300000000000000032
+  Tag: {tag: InvCount3}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: false}
+  Hierarchy: {parentId: 5300000000000000030}
+  UiRect:
+    anchorMin: [1, 1]
+    anchorMax: [1, 1]
+    pivot: [1, 1]
+    size: [40, 20]
+    offset: [-4, -2]
+  UiText:
+    text: x0
+    color: [1, 1, 1, 1]
+    fontSize: 18
+    horizontalAlignment: Right
+    verticalAlignment: Bottom
+- Entity: 5300000000000000031
+  Tag: {tag: InvIcon3}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: false}
+  Hierarchy: {parentId: 5300000000000000030}
+  UiRect:
+    anchorMin: [0, 0]
+    anchorMax: [1, 1]
+    pivot: [0.5, 0.5]
+    size: [-12, -12]
+    offset: [0, 0]
+  UiImage:
+    tint: [1, 1, 1, 1]
+    texture: nam:textures/items/treasure.png
+- Entity: 5300000000000000020
+  Tag: {tag: InvSlot2}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 5300000000000000003}
+  UiRect:
+    anchorMin: [0, 0]
+    anchorMax: [0, 0]
+    pivot: [0, 0]
+    size: [64, 64]
+    offset: [0, 0]
+  UiButton:
+    normalColor: [0.16, 0.18, 0.24, 1]
+    hoverColor: [0.26, 0.3, 0.4, 1]
+    pressedColor: [0.1, 0.12, 0.18, 1]
+    disabledColor: [0.15, 0.15, 0.15, 0.5]
+    onClickCallback: on_slot_clicked
+  UiFocus:
+    onFocusCallback: on_slot_focused
+  UiTooltip:
+    text: "Blue key\nWorks the switch of the vault."
+    delay: 0.3
+    fontSize: 16
+- Entity: 5300000000000000022
+  Tag: {tag: InvCount2}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: false}
+  Hierarchy: {parentId: 5300000000000000020}
+  UiRect:
+    anchorMin: [1, 1]
+    anchorMax: [1, 1]
+    pivot: [1, 1]
+    size: [40, 20]
+    offset: [-4, -2]
+  UiText:
+    text: x0
+    color: [1, 1, 1, 1]
+    fontSize: 18
+    horizontalAlignment: Right
+    verticalAlignment: Bottom
+- Entity: 5300000000000000021
+  Tag: {tag: InvIcon2}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: false}
+  Hierarchy: {parentId: 5300000000000000020}
+  UiRect:
+    anchorMin: [0, 0]
+    anchorMax: [1, 1]
+    pivot: [0.5, 0.5]
+    size: [-12, -12]
+    offset: [0, 0]
+  UiImage:
+    tint: [1, 1, 1, 1]
+    texture: nam:textures/items/key_blue.png
+- Entity: 5300000000000000010
+  Tag: {tag: InvSlot1}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 5300000000000000003}
+  UiRect:
+    anchorMin: [0, 0]
+    anchorMax: [0, 0]
+    pivot: [0, 0]
+    size: [64, 64]
+    offset: [0, 0]
+  UiButton:
+    normalColor: [0.16, 0.18, 0.24, 1]
+    hoverColor: [0.26, 0.3, 0.4, 1]
+    pressedColor: [0.1, 0.12, 0.18, 1]
+    disabledColor: [0.15, 0.15, 0.15, 0.5]
+    onClickCallback: on_slot_clicked
+  UiFocus:
+    onFocusCallback: on_slot_focused
+  UiTooltip:
+    text: "Gold key\nOpens the gold door."
+    delay: 0.3
+    fontSize: 16
+- Entity: 5300000000000000012
+  Tag: {tag: InvCount1}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: false}
+  Hierarchy: {parentId: 5300000000000000010}
+  UiRect:
+    anchorMin: [1, 1]
+    anchorMax: [1, 1]
+    pivot: [1, 1]
+    size: [40, 20]
+    offset: [-4, -2]
+  UiText:
+    text: x0
+    color: [1, 1, 1, 1]
+    fontSize: 18
+    horizontalAlignment: Right
+    verticalAlignment: Bottom
+- Entity: 5300000000000000011
+  Tag: {tag: InvIcon1}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: false}
+  Hierarchy: {parentId: 5300000000000000010}
+  UiRect:
+    anchorMin: [0, 0]
+    anchorMax: [1, 1]
+    pivot: [0.5, 0.5]
+    size: [-12, -12]
+    offset: [0, 0]
+  UiImage:
+    tint: [1, 1, 1, 1]
+    texture: nam:textures/items/key_yellow.png

@@ -18,6 +18,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
+#include <iterator>
 #include <string>
 #include <vector>
 
@@ -40,6 +41,28 @@ TEST(SceneSerializer, SaveLoad) {
 	EXPECT_EQ(sc2->getEntityCount(), 1u);
 	remove(fs);
 	EXPECT_FALSE(exists(fs));
+	owl::core::Log::invalidate();
+}
+
+TEST(SceneSerializer, SaveKeepsTheEntityOrderOfTheFile) {
+	owl::core::Log::init(owl::core::Log::Level::Off);
+	const auto sc = owl::mkShared<Scene>();
+	for (uint64_t id = 1; id <= 4; ++id) sc->createEntityWithUUID(id, "entity" + std::to_string(id));
+	const auto fs = std::filesystem::temp_directory_path() / "tempOrder.yml";
+	ASSERT_TRUE(SceneSerializer(sc).serialize(fs));
+	const auto sc2 = owl::mkShared<Scene>();
+	ASSERT_TRUE(SceneSerializer(sc2).deserialize(fs));
+	std::vector<uint64_t> order;
+	for (const auto& entity: sc2->getAllEntities()) order.push_back(entity.getUUID());
+	EXPECT_EQ(order, (std::vector<uint64_t>{1, 2, 3, 4}));
+	const auto again = std::filesystem::temp_directory_path() / "tempOrder2.yml";
+	ASSERT_TRUE(SceneSerializer(sc2).serialize(again));
+	std::ifstream first(fs);
+	std::ifstream second(again);
+	EXPECT_EQ(std::string(std::istreambuf_iterator<char>(first), {}),
+			  std::string(std::istreambuf_iterator<char>(second), {}));
+	remove(fs);
+	remove(again);
 	owl::core::Log::invalidate();
 }
 

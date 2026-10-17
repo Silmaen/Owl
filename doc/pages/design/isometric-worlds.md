@@ -14,7 +14,7 @@ Owl must be able to carry a **Transport Tycoon-like game** — not a remake, an 
 rendering included. v0.4.0 lays the ground for it: an isometric renderer sized for large tile maps, terrain with
 slopes, thousands of moving sprites, a HUD able to hold a management game's windows and toolbars, input actions with
 a gamepad, a fixed simulation tick, and a local MCP server so tools can drive Owl Nest. Game rules (economy, vehicles,
-towns) stay in `sample_project/`, never in the engine.
+towns) stay in `engine_demo/`, never in the engine.
 
 ## State at kickoff
 
@@ -83,7 +83,7 @@ HUD scroll views and lists.
 ## Pull requests
 
 One branch `Feature/*` per pull request. **R** rendering, **TM** tilemaps, **ISO** isometric, **TX** text, **HUD**,
-**SIM** simulation tick, **IN** input, **MCP**, **NEST** editor, **PATH** pathfinding, **DEMO** sample project. Sizes:
+**SIM** simulation tick, **IN** input, **MCP**, **NEST** editor, **PATH** pathfinding, **DEMO** Engine Demo. Sizes:
 S < 1 day of review, M a few days, L a week.
 
 ### Rendering foundations
@@ -152,14 +152,14 @@ S < 1 day of review, M a few days, L a week.
   widget in the direction pressed from the shared layout, `UiFocus` (focusable, initial, neighbours by UUID, focus
   callback, highlight), confirm and cancel, sliders adjusted with left / right, restricted to the top window, mouse
   hover moves the focus, Lua `ui.set_focus` / `ui.get_focus`; the sample menus play with a gamepad alone.
-- ![Done][done] **HUD6 — Migration, M.** "Extract canvas to `.owlhud`" command; sample project and project
+- ![Done][done] **HUD6 — Migration, M.** "Extract canvas to `.owlhud`" command; Engine Demo and project
   templates moved to a shared `huds/gameplay.owlhud`, no `RendererTag: ui` left; empty raycast hint fixed.
 - ![Done][done] **HUD7 — Scroll views and lists (from v0.5.0), M.** `UiScrollView` (clip, wheel, draggable bars,
   `ui_scroll`, focus scrolled into view) and `UiList` (a model of any size, only the rows in view drawn and bound from
   Lua, selection by mouse and keys), Lua `ui.scroll_*` / `ui.list_*`, HUD editor palette and `hud.add_widget` kinds,
   bench with a 1000-row list.
 - ![Done][done] **DEMO1 — Inventory demo (from v0.5.0), S/M.** Collectible objects, key-locked switches and an
-  inventory window with slots in `sample_project/`, in Lua only, navigable with the gamepad: the showcase of the HUD
+  inventory window with slots in `engine_demo/`, in Lua only, navigable with the gamepad: the showcase of the HUD
   widgets, the shared HUD and focus navigation.
 - ![Planned][planned] **DEMO2 — Sample overhaul, M/L.** The isometric renderer in the sample's flow, the new HUD,
   text and input in every scene (voxel text no longer stretched), the hub map and the platformer redrawn with versioned
@@ -279,7 +279,7 @@ The release ships when these hold, whatever the date:
   type; a HUD list of 1 000 rows draws only its visible rows
 - Tile picking correct on the 19 slopes; the gizmo follows the isometric axes
 - One `.owlhud` draws the same over 2D, raycast, voxel and isometric scenes at three resolutions; no
-  `RendererTag: ui` left in `sample_project/`; windows drag, close and stack
+  `RendererTag: ui` left in `engine_demo/`; windows drag, close and stack
 - Text never stretched; text beyond U+00FF renders
 - Menus and the sample games playable with a gamepad only; every action map edit undoable
 - The inventory demo plays with a gamepad only; Owl Nest file dialogues go through the desktop portal, no GTK

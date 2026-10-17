@@ -77,9 +77,11 @@ public:
 	 * @param[in] iFrom The start cell.
 	 * @param[in] iTo The goal cell.
 	 * @param[in] iMode The algorithm.
+	 * @param[in] iOptions Constraints on the moves (heading, no reverse).
 	 * @return The handle of the request.
 	 */
-	auto request(const math::vec2ui& iFrom, const math::vec2ui& iTo, PathMode iMode = PathMode::Auto) -> PathRequestId;
+	auto request(const math::vec2ui& iFrom, const math::vec2ui& iTo, PathMode iMode = PathMode::Auto,
+				 const PathOptions& iOptions = {}) -> PathRequestId;
 
 	/**
 	 * @brief
@@ -133,6 +135,7 @@ private:
 		PathRequestId id = 0;
 		PathStatus status = PathStatus::Unknown;
 		PathMode mode = PathMode::Auto;
+		PathOptions options;
 		math::vec2ui from{0, 0};
 		math::vec2ui to{0, 0};
 		PathResult result;

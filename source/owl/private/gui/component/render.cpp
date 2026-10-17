@@ -29,6 +29,7 @@
 #include "renderer/Renderer.h"
 #include "scene/TilemapAsset.h"
 #include "scene/Tileset.h"
+#include "scene/ui/HudLayout.h"
 #include "script/ScriptEngine.h"
 #include "sound/SoundCommand.h"
 #include "sound/SoundSystem.h"
@@ -819,7 +820,59 @@ void renderProps(Canvas& ioComponent) {
 	fieldTooltip("The keyboard and gamepad focus jumps to the opposite end of the menu when nothing lies ahead.");
 }
 
-void renderProps(UiRect& ioComponent) {
+namespace {
+
+// Frame of the ratio units in reference pixels, from the last HUD layout (nothing when not laid out).
+auto unitFrameOf(const Entity& iOwner) -> std::optional<UiRect::Frame> {
+	const Scene* const scene = iOwner.getScene();
+	if (scene == nullptr)
+		return std::nullopt;
+	const auto& layout = scene->getHudLayout();
+	const auto* node = layout.findNode(static_cast<entt::entity>(iOwner));
+	if (node == nullptr || node->scale <= 0.f)
+		return std::nullopt;
+	const math::vec2 screen =
+			math::vec2{static_cast<float>(layout.getViewport().x()), static_cast<float>(layout.getViewport().y())} /
+			node->scale;
+	UiRect::Frame frame{.parent = {.position = {0.f, 0.f}, .size = screen}, .screen = screen};
+	if (node->parent != scene::ui::HudNode::noParent) {
+		const auto area = layout.getNodes()[node->parent].childArea();
+		frame.parent = {.position = area.position / node->scale, .size = area.size / node->scale};
+	}
+	return frame;
+}
+
+// A number and its unit on one row: the value first, the unit selector at its right.
+auto unitField(const char* iLabel, float& ioValue, UiRect::Unit& ioUnit, UiRect::Unit& oNewUnit) -> bool {
+	static constexpr float unitWidth = 112.f;
+	const bool ratio = ioUnit != UiRect::Unit::Pixels;
+	bool picked = false;
+	prop::row(iLabel, [&](const char* iId) -> bool {
+		ImGui::SetNextItemWidth(-(unitWidth + ImGui::GetStyle().ItemSpacing.x));
+		if (ratio)
+			ImGui::DragFloat(iId, &ioValue, 0.005f, -10.f, 10.f, "%.3f");
+		else
+			ImGui::DragFloat(iId, &ioValue, 1.0f, -10000.f, 10000.f, "%.3f");
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(unitWidth);
+		const std::string unitId = std::string{"##unit"} + iLabel;
+		if (widgets::beginCombo(unitId.c_str(), std::string{magic_enum::enum_name(ioUnit)}.c_str())) {
+			for (const auto value: magic_enum::enum_values<UiRect::Unit>()) {
+				if (ImGui::Selectable(std::string{magic_enum::enum_name(value)}.c_str(), value == ioUnit)) {
+					oNewUnit = value;
+					picked = true;
+				}
+			}
+			ImGui::EndCombo();
+		}
+		return picked;
+	});
+	return picked;
+}
+
+}// namespace
+
+void renderProps(UiRect& ioComponent, const Entity& iOwner) {
 	const auto preset = ioComponent.getAnchor();
 	const std::string currentAnchor = preset ? std::string{magic_enum::enum_name(*preset)} : std::string{"Custom"};
 	if (prop::BeginCombo("Anchor Preset", currentAnchor.c_str())) {
@@ -836,10 +889,30 @@ void renderProps(UiRect& ioComponent) {
 	fieldTooltip("Anchor of the bottom-right corner; distinct from Anchor Min, the widget stretches with its parent.");
 	prop::DragFloat2("Pivot", ioComponent.pivot.data(), 0.01f, 0.0f, 1.0f);
 	fieldTooltip("Point of the widget placed at the anchors plus the offset: (0,0) = top-left, (1,1) = bottom-right.");
-	prop::DragFloat2("Size", ioComponent.size.data(), 1.0f, -10000.0f, 10000.0f);
-	fieldTooltip("Size in reference pixels, added to the span of the anchors (the whole size for a fixed anchor).");
-	prop::DragFloat2("Offset", ioComponent.anchorOffset.data(), 1.0f, -10000.0f, 10000.0f);
-	fieldTooltip("Offset of the pivot from its anchor, in reference pixels. Positive X goes right, positive Y down.");
+	// Changing a unit converts the value, so the widget keeps its place and size.
+	const auto frame = unitFrameOf(iOwner);
+	UiRect::Unit unit = UiRect::Unit::Pixels;
+	const auto field = [&](const char* iLabel, float& ioValue, UiRect::Units& ioUnits, const UiRect::Axis iAxis,
+						   const bool iSize) -> void {
+		auto current = ioUnits.get(iAxis);
+		if (!unitField(iLabel, ioValue, current, unit))
+			return;
+		if (frame && iSize)
+			ioComponent.convertSizeUnit(iAxis, unit, *frame);
+		else if (frame)
+			ioComponent.convertOffsetUnit(iAxis, unit, *frame);
+		else
+			ioUnits.set(iAxis, unit);
+	};
+	field("Width", ioComponent.size.x(), ioComponent.sizeUnit, UiRect::Axis::X, true);
+	fieldTooltip("Width added to the span of the anchors. Pixels (reference) or a ratio of the parent or screen width "
+				 "or height (0.25 = a quarter).");
+	field("Height", ioComponent.size.y(), ioComponent.sizeUnit, UiRect::Axis::Y, true);
+	fieldTooltip("Height added to the span of the anchors. Use ParentHeight for both to keep a square.");
+	field("Offset X", ioComponent.anchorOffset.x(), ioComponent.offsetUnit, UiRect::Axis::X, false);
+	fieldTooltip("Offset of the pivot from its anchor, to the right. Pixels or a ratio, as the size.");
+	field("Offset Y", ioComponent.anchorOffset.y(), ioComponent.offsetUnit, UiRect::Axis::Y, false);
+	fieldTooltip("Offset of the pivot from its anchor, downwards. Pixels or a ratio, as the size.");
 }
 
 void renderProps(UiText& ioComponent) {
@@ -1160,78 +1233,113 @@ void renderProps(IsometricObject& ioComponent) {
 
 namespace {
 
-void renderDirectionMask(const char* iId, uint8_t& ioMask) {
-	constexpr std::array<const char*, 4> labels{"E", "S", "W", "N"};
-	ImGui::PushID(iId);
-	for (uint32_t i = 0; i < labels.size(); ++i) {
-		if (i != 0)
-			ImGui::SameLine();
-		bool on = (ioMask & (1u << i)) != 0;
-		if (ImGui::Checkbox(labels[i], &on))
-			ioMask = static_cast<uint8_t>(on ? (ioMask | (1u << i)) : (ioMask & ~(1u << i)));
-	}
-	ImGui::PopID();
+NavigationGraphSwitch g_navigationGraphSwitch;
+
+/// Name of a tile source in plain words.
+auto navSourceLabel(const scene::nav::NavSource iSource) -> const char* {
+	return iSource == scene::nav::NavSource::Overlay ? "Overlay (roads, tracks)" : "Terrain (the ground itself)";
 }
 
-void renderNavigation(scene::nav::NavProfile& ioProfile) {
+/// Name of a graph reading mode in plain words.
+auto navModeLabel(const scene::nav::NavMode iMode) -> const char* {
+	switch (iMode) {
+		case scene::nav::NavMode::Rules:
+			return "Explicit rules (legacy)";
+		case scene::nav::NavMode::Connections:
+			return "Tileset connections";
+		case scene::nav::NavMode::AnyCell:
+			return "Any non-empty cell";
+	}
+	return "";
+}
+
+void renderNavigation(scene::nav::NavProfile& ioProfile, const scene::TilemapAsset* const iAsset) {
 	ImGui::Separator();
 	if (!ImGui::TreeNodeEx("Navigation", ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_SpanAvailWidth))
 		return;
-	ImGui::TextDisabled("Rules turning the tilemap into a graph for the pathfinding (no rule: no graph).");
-	auto layer = static_cast<int>(ioProfile.layer);
-	if (prop::DragInt("Layer", &layer, 1.f, 0, 255))
-		ioProfile.layer = static_cast<uint32_t>(std::max(layer, 0));
-	fieldTooltip("Layer of the tilemap the graph is read from.");
-	const bool overlay = ioProfile.source == scene::nav::NavSource::Overlay;
-	if (prop::BeginCombo("Source", overlay ? "Overlay" : "Terrain")) {
-		if (ImGui::Selectable("Overlay", overlay))
-			ioProfile.source = scene::nav::NavSource::Overlay;
-		if (ImGui::Selectable("Terrain", !overlay))
-			ioProfile.source = scene::nav::NavSource::Terrain;
+	using scene::nav::NavMode;
+	const bool legacy = ioProfile.mode == NavMode::Rules;
+	if (legacy && ioProfile.rules.empty()) {
+		ImGui::TextDisabled("No navigation graph: vehicles and characters cannot look for a path on this tilemap.");
+		if (ImGui::Button("Enable navigation"))
+			ioProfile.mode = NavMode::Connections;
+		fieldTooltip("Build a graph from the roads of the tilemap, as the tileset describes them (Tileset Editor, "
+					 "tile connections).");
+		ImGui::TreePop();
+		return;
+	}
+	// --- Where the graph is read from ------------------------------------------------------
+	const char* layerName = "(no such layer)";
+	if (iAsset != nullptr && ioProfile.layer < iAsset->layers.size())
+		layerName = iAsset->layers[ioProfile.layer].name.c_str();
+	if (prop::BeginCombo("Graph read from layer", layerName)) {
+		if (iAsset != nullptr) {
+			for (uint32_t i = 0; i < iAsset->layers.size(); ++i) {
+				const auto& name = iAsset->layers[i].name;
+				ImGui::PushID(static_cast<int>(i));
+				if (ImGui::Selectable(name.empty() ? "(unnamed)" : name.c_str(), i == ioProfile.layer))
+					ioProfile.layer = i;
+				ImGui::PopID();
+			}
+		}
 		ImGui::EndCombo();
 	}
-	fieldTooltip("Overlay: roads and tracks. Terrain: the ground tile itself (walking on a grid).");
+	fieldTooltip("The layer of the tilemap whose cells make the graph (the roads).");
+	if (prop::BeginCombo("Tile read", navSourceLabel(ioProfile.source))) {
+		for (const auto source: {scene::nav::NavSource::Overlay, scene::nav::NavSource::Terrain}) {
+			if (ImGui::Selectable(navSourceLabel(source), ioProfile.source == source))
+				ioProfile.source = source;
+		}
+		ImGui::EndCombo();
+	}
+	fieldTooltip("Which tile of a cell the graph reads: the overlay (roads, tracks) or the ground tile.");
+	if (prop::BeginCombo("Read mode", navModeLabel(ioProfile.mode))) {
+		for (const auto mode: {NavMode::Connections, NavMode::AnyCell}) {
+			if (ImGui::Selectable(navModeLabel(mode), ioProfile.mode == mode))
+				ioProfile.mode = mode;
+		}
+		ImGui::EndCombo();
+	}
+	fieldTooltip("Tileset connections: a tile is a road when the tileset gives it connections. Any non-empty cell: "
+				 "every cell with a tile can be walked on, in the four directions.");
+	if (legacy) {
+		ImGui::TextWrapped("This profile still lists explicit rules for %zu tile(s).", ioProfile.rules.size());
+		if (ImGui::Button("Use the tileset connections instead")) {
+			ioProfile.mode = NavMode::Connections;
+			ioProfile.rules.clear();
+		}
+		fieldTooltip("Drops the rules: the roads are read from the connections of the tileset.");
+	}
+	// --- Slopes ---------------------------------------------------------------------------
 	auto rise = static_cast<int>(ioProfile.maxRise);
-	if (prop::DragInt("Max Rise", &rise, 1.f, 0, scene::nav::NavProfile::maxRiseLimit))
+	if (prop::DragInt("Max slope rise", &rise, 1.f, 0, scene::nav::NavProfile::maxRiseLimit))
 		ioProfile.maxRise = static_cast<uint8_t>(std::clamp(rise, 0, int{scene::nav::NavProfile::maxRiseLimit}));
 	fieldTooltip("Highest rise, in height steps, a move may cross over one cell.");
-	prop::DragFloat("Climb Cost", &ioProfile.climbCost, 0.05f, 0.f, 20.f, "%.2f");
+	prop::DragFloat("Climb cost", &ioProfile.climbCost, 0.05f, 0.f, 20.f, "%.2f");
 	fieldTooltip("Extra cost, in cells, of climbing one height step.");
-	prop::Checkbox("Allow Steep", &ioProfile.allowSteep);
-	fieldTooltip("Whether a cell on a steep slope can be crossed.");
-	ImGui::TextUnformatted("Rules (tile, cost, exits, enters)");
-	std::optional<size_t> removed;
-	for (size_t i = 0; i < ioProfile.rules.size(); ++i) {
-		auto& rule = ioProfile.rules[i];
-		ImGui::PushID(static_cast<int>(i));
-		auto tile = static_cast<int>(rule.tile);
-		ImGui::SetNextItemWidth(70.f);
-		if (ImGui::DragInt("##tile", &tile, 1.f, 0, scene::component::g_MaxTileIndex))
-			rule.tile = tile;
-		ImGui::SameLine();
-		ImGui::SetNextItemWidth(70.f);
-		ImGui::DragFloat("##cost", &rule.cost, 0.05f, 0.0625f, 64.f, "%.2f");
-		ImGui::SameLine();
-		if (ImGui::SmallButton("Remove"))
-			removed = i;
-		renderDirectionMask("exits", rule.exits);
-		ImGui::SameLine();
-		ImGui::TextDisabled("|");
-		ImGui::SameLine();
-		renderDirectionMask("enters", rule.enters);
-		ImGui::PopID();
+	prop::Checkbox("Allow steep slopes", &ioProfile.allowSteep);
+	fieldTooltip("Whether a cell on a steep slope (a corner two steps above the lowest) can be crossed.");
+	// --- Overlay and exceptions -----------------------------------------------------------
+	if (g_navigationGraphSwitch.isShown && g_navigationGraphSwitch.setShown) {
+		const bool shown = g_navigationGraphSwitch.isShown();
+		if (ImGui::Button(shown ? "Hide graph" : "Show graph"))
+			g_navigationGraphSwitch.setShown(!shown);
+		fieldTooltip("Draw the graph on the viewport: green two-way roads, orange one-way roads.");
 	}
-	if (removed)
-		ioProfile.rules.erase(ioProfile.rules.begin() + static_cast<std::ptrdiff_t>(*removed));
-	if (ImGui::Button("Add rule"))
-		ioProfile.rules.push_back({});
-	fieldTooltip("A tile of the layer that is part of the graph. Exits: directions it can be left in. Enters: "
-				 "directions of travel it can be entered in. Leave one-way roads with a single exit.");
-	ImGui::TextDisabled("Show the graph and test a path: Show > Navigation graph in the viewport, Shift + click.");
+	if (!ioProfile.overrides.empty()) {
+		ImGui::TextDisabled("%zu cell(s) with an exception (one-way, closed side or own cost).",
+							ioProfile.overrides.size());
+		ImGui::SameLine();
+		if (ImGui::SmallButton("Clear exceptions"))
+			ioProfile.overrides.clear();
+	}
+	ImGui::TextDisabled("One-way roads and slower cells: Navigation tool of the isometric view.");
 	ImGui::TreePop();
 }
 
 }// namespace
+
+void setNavigationGraphSwitch(NavigationGraphSwitch iSwitch) { g_navigationGraphSwitch = std::move(iSwitch); }
 
 void renderProps(Tilemap& ioComponent) {
 	// --- Tilemap asset slot (path drop target) --------------------------------------------
@@ -1274,7 +1382,7 @@ void renderProps(Tilemap& ioComponent) {
 	} else {
 		ImGui::TextDisabled("(no tilemap assigned)");
 	}
-	renderNavigation(ioComponent.navigation);
+	renderNavigation(ioComponent.navigation, ioComponent.asset.get());
 }
 
 namespace {

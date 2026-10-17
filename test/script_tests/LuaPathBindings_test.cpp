@@ -96,6 +96,28 @@ TEST_F(LuaPath, findNowReturnsTheCellsAndTheCost) {
 	EXPECT_NEAR(instance->getPropertyFloat("cost").value_or(-1.f), 4.f, 1e-4f);
 }
 
+TEST_F(LuaPath, noReverseKeepsTheHeadingAndGoesRoundTheLoop) {
+	// From (45, 5) heading East, the goal (40, 5) lies behind: the route goes round the loop of the two rows (45 + 4 +
+	// 90 + 4 + 40 moves) where the plain one steps back 5 cells.
+	const auto instance =
+			run("plain = path.find_now(map, 45, 5, 40, 5)\nplain_count = #plain\n"
+				"round = path.find_now(map, 45, 5, 40, 5, {no_reverse = true, heading_x = 1, heading_y = 0})\n"
+				"round_count = #round\nsecond_x = round[3]\n"
+				"with_mode = path.find_now(map, 45, 5, 40, 5, 'flat', {no_reverse = true, heading_x = -1})\n"
+				"west_count = #with_mode\n"
+				"request = path.find(map, 45, 5, 40, 5, {no_reverse = true, heading_x = 1})",
+				"status = path.poll(map, request)\nif status == 'found' then cells, cost = path.get(map, request)\n"
+				"request_count = #cells\nend");
+	m_scene->getNavigation().update(*m_scene);
+	instance->onUpdate(0.016f);
+	EXPECT_EQ(instance->getPropertyInt("plain_count").value_or(0), 2 * 6);
+	EXPECT_EQ(instance->getPropertyInt("round_count").value_or(0), 2 * (45 + 4 + 90 + 4 + 40 + 1));
+	EXPECT_EQ(instance->getPropertyInt("second_x").value_or(0), 46) << "the route goes on East first";
+	EXPECT_EQ(instance->getPropertyInt("west_count").value_or(0), 2 * 6) << "heading West the plain way is allowed";
+	EXPECT_EQ(instance->getPropertyString("status").value_or(""), "found");
+	EXPECT_EQ(instance->getPropertyInt("request_count").value_or(0), 2 * (45 + 4 + 90 + 4 + 40 + 1));
+}
+
 TEST_F(LuaPath, aRequestIsServedOverTheNextFrames) {
 	m_scene->getNavigation().setBudget(40);
 	const auto instance =
@@ -137,6 +159,67 @@ TEST_F(LuaPath, aBulldozedRoadInvalidatesTheFoundPathAndChangesTheVersion) {
 	EXPECT_NE(instance->getPropertyInt("version_now").value_or(version), version);
 	const auto rerouted = run("cells, cost = path.find_now(map, 0, 5, 90, 5)\ncount = #cells");
 	EXPECT_EQ(rerouted->getPropertyInt("count").value_or(0), 2 * (91 + 8));
+}
+
+TEST_F(LuaPath, aRoadAddedLaterShortensTheNextSearchInEveryMode) {
+	for (const char* mode: {"auto", "flat", "hierarchical"}) {
+		for (uint32_t y = 6; y <= 8; ++y)
+			std::ignore = m_asset->layers[0].setCell(40, y, {.terrain = -1, .overlay = -1, .flags = 0});
+		const std::string search = std::format("cells, cost = path.find_now(map, 40, 5, 40, 9, '{}')\n"
+											   "count = #cells\nversion = path.get_version(map)",
+											   mode);
+		const auto before = run(search);
+		EXPECT_EQ(before->getPropertyInt("count").value_or(0), 2 * 85) << mode << " goes round by the ends";
+		const auto version = before->getPropertyInt("version").value_or(0);
+		for (uint32_t y = 6; y <= 8; ++y)
+			std::ignore = m_asset->layers[0].setCell(40, y, {.terrain = -1, .overlay = 1, .flags = 0});
+		const auto after = run(search);
+		EXPECT_NE(after->getPropertyInt("version").value_or(version), version) << mode;
+		EXPECT_EQ(after->getPropertyInt("count").value_or(0), 2 * 5) << mode << " takes the new road";
+	}
+}
+
+TEST_F(LuaPath, aRoadAddedInARunningCopyOfTheSceneIsUsed) {
+	// Owl Nest Play: the running scene is a copy sharing the tilemap asset of the edit scene.
+	for (uint32_t y = 6; y <= 8; ++y)
+		std::ignore = m_asset->layers[0].setCell(40, y, {.terrain = -1, .overlay = -1, .flags = 0});
+	const auto running = scene::Scene::copy(m_scene);
+	running->onStartRuntime();
+	const std::string text =
+			std::format("map = {}\nfunction on_create()\ncells = path.find_now(map, 40, 5, 40, 9)\nbefore = #cells\n"
+						"for y = 6, 8 do isometric.set_cell(map, 0, 40, y, -1, 1) end\n"
+						"cells = path.find_now(map, 40, 5, 40, 9)\nafter = #cells\nend\n",
+						static_cast<int64_t>(static_cast<uint64_t>(m_map.getUUID())));
+	const std::vector<uint8_t> data(text.begin(), text.end());
+	ScriptInstance instance;
+	instance.setScene(running.get());
+	ASSERT_TRUE(instance.createFromBuffer(data, "path_play", static_cast<uint64_t>(m_map.getUUID())));
+	instance.onCreate();
+	EXPECT_EQ(instance.getPropertyInt("before").value_or(0), 2 * 85);
+	EXPECT_EQ(instance.getPropertyInt("after").value_or(0), 2 * 5);
+	running->onEndRuntime();
+}
+
+TEST_F(LuaPath, theDebugOverlayIsSwitchedAndFedByScripts) {
+	const auto instance = run("before = path.get_debug()\n"
+							  "path.set_debug(true)\nduring = path.get_debug()\n"
+							  "path.show_route(map, 1, {0, 5, 1, 5, 2, 5}, 1, 0.5, 0)\n"
+							  "path.show_route(map, 2, {0, 9, 1, 9}, 0, 1, 0)\n"
+							  "path.show_route(map, 2, nil)\n"
+							  "path.show_route(bare, 1, {0, 0, 1, 0})\n"
+							  "path.set_debug(false)\nafter = path.get_debug()");
+	EXPECT_FALSE(instance->getPropertyBool("before").value_or(true));
+	EXPECT_TRUE(instance->getPropertyBool("during").value_or(false));
+	EXPECT_FALSE(instance->getPropertyBool("after").value_or(true));
+	const auto* entry = m_scene->getNavigation().find(static_cast<uint64_t>(m_map.getUUID()));
+	ASSERT_NE(entry, nullptr);
+	ASSERT_EQ(entry->debugRoutes.size(), 1u) << "route 2 was removed, the map without rules keeps none";
+	const auto& route = entry->debugRoutes.at(1);
+	ASSERT_EQ(route.cells.size(), 3u);
+	EXPECT_EQ(route.cells[2], (math::vec2ui{2, 5}));
+	EXPECT_FLOAT_EQ(route.color.y(), 0.5f);
+	std::ignore = run("path.clear_routes(map)");
+	EXPECT_TRUE(m_scene->getNavigation().find(static_cast<uint64_t>(m_map.getUUID()))->debugRoutes.empty());
 }
 
 TEST_F(LuaPath, edgesAndNodesAreQueryable) {

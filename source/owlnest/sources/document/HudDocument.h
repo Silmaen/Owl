@@ -488,8 +488,8 @@ private:
 		scene::component::UiRect rect;
 		/// Screen rectangle when the gesture began.
 		scene::component::UiRect::Bounds bounds;
-		/// Area its parent lays it in, in reference pixels.
-		scene::component::UiRect::Bounds parent;
+		/// Area its parent lays it in and the canvas size, in reference pixels.
+		scene::component::UiRect::Frame frame;
 		/// Screen pixels per reference pixel.
 		float scale{1.f};
 	};
@@ -511,6 +511,8 @@ private:
 		std::vector<float> candidatesY;
 		/// Rectangle the primary widget has now.
 		scene::component::UiRect current;
+		/// Distance a `Body` gesture moved the widgets, in reference pixels.
+		math::vec2 movedBy{0.f, 0.f};
 		/// Whether the mouse moved since the start.
 		bool moved{false};
 	};

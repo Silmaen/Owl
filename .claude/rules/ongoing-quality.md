@@ -10,7 +10,7 @@ Mirrors the *Ongoing across all releases* section of `doc/pages/roadmap.md`; kee
 
 - Owl's positioning: the engine that mixes rendering styles (2D, raycast, voxel, isometric, 3D) in one game
 - Every new rendering mode ships as a renderer-stack layer composing with the others and the HUD, in editor and Play
-- The sample project keeps at least one scene mixing two or more rendering styles
+- The Engine Demo keeps at least one scene mixing two or more rendering styles
 
 ## Code Quality
 

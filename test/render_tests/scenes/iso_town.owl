@@ -672,110 +672,56 @@ Entities:
   RendererTag: {Name: iso_world}
 
 - Entity: 4300000000000000052
-  Tag: {tag: CarX}
+  Tag: {tag: Car}
   Transform:
-    translation: [13, 9.2, 0.5]
+    translation: [14, 9.2, 0.5]
     rotation: [0, 0, 0]
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
     texture: nam:textures/iso/vehicles.png
-    columns: 4
-    rows: 1
+    columns: 8
+    rows: 2
     firstFrame: 0
     lastFrame: 0
     frameDuration: 0.1
     loop: true
   Visibility: {gameVisible: true}
-  RendererTag: {Name: iso_world}
-
-- Entity: 4300000000000000053
-  Tag: {tag: CarY}
-  Transform:
-    translation: [13, 9.2, 0.5]
-    rotation: [0, 0, 0]
-    scale: [1, 1, 1]
-  AnimatedSpriteRenderer:
-    color: [1, 1, 1, 1]
-    texture: nam:textures/iso/vehicles.png
-    columns: 4
-    rows: 1
-    firstFrame: 1
-    lastFrame: 1
-    frameDuration: 0.1
-    loop: true
-  Visibility: {gameVisible: false}
   RendererTag: {Name: iso_world}
 
 - Entity: 4300000000000000054
-  Tag: {tag: TruckX}
+  Tag: {tag: Truck}
   Transform:
-    translation: [19.2, 13, 0]
+    translation: [7.2, 13, 0]
     rotation: [0, 0, 0]
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
     texture: nam:textures/iso/vehicles.png
-    columns: 4
-    rows: 1
-    firstFrame: 2
-    lastFrame: 2
+    columns: 8
+    rows: 2
+    firstFrame: 14
+    lastFrame: 14
     frameDuration: 0.1
     loop: true
   Visibility: {gameVisible: true}
-  RendererTag: {Name: iso_world}
-
-- Entity: 4300000000000000055
-  Tag: {tag: TruckY}
-  Transform:
-    translation: [19.2, 13, 0]
-    rotation: [0, 0, 0]
-    scale: [1, 1, 1]
-  AnimatedSpriteRenderer:
-    color: [1, 1, 1, 1]
-    texture: nam:textures/iso/vehicles.png
-    columns: 4
-    rows: 1
-    firstFrame: 3
-    lastFrame: 3
-    frameDuration: 0.1
-    loop: true
-  Visibility: {gameVisible: false}
   RendererTag: {Name: iso_world}
 
 - Entity: 4300000000000000056
-  Tag: {tag: CarBX}
+  Tag: {tag: CarB}
   Transform:
-    translation: [10, 16.8, 0]
+    translation: [12, 16.8, 0]
     rotation: [0, 0, 0]
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [0.45, 0.9, 0.55, 1]
     texture: nam:textures/iso/vehicles.png
-    columns: 4
-    rows: 1
-    firstFrame: 0
-    lastFrame: 0
+    columns: 8
+    rows: 2
+    firstFrame: 4
+    lastFrame: 4
     frameDuration: 0.1
     loop: true
   Visibility: {gameVisible: true}
-  RendererTag: {Name: iso_world}
-
-- Entity: 4300000000000000057
-  Tag: {tag: CarBY}
-  Transform:
-    translation: [10, 16.8, 0]
-    rotation: [0, 0, 0]
-    scale: [1, 1, 1]
-  AnimatedSpriteRenderer:
-    color: [0.45, 0.9, 0.55, 1]
-    texture: nam:textures/iso/vehicles.png
-    columns: 4
-    rows: 1
-    firstFrame: 1
-    lastFrame: 1
-    frameDuration: 0.1
-    loop: true
-  Visibility: {gameVisible: false}
   RendererTag: {Name: iso_world}
 

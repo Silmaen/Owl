@@ -299,7 +299,7 @@ TEST(GameExportEndToEnd, SampleProjectPlaysFromItsExportFolder) {
 	const auto binDir = std::filesystem::canonical("/proc/self/exe", ec).parent_path();
 	if (ec || !exists(binDir / "OwlNest") || !exists(binDir / "OwlRunner"))
 		GTEST_SKIP() << "OwlNest / OwlRunner not built next to the test.";
-	const auto sample = test::getRootPath() / "sample_project";
+	const auto sample = test::getRootPath() / "engine_demo";
 	const auto root = makeTempDir("e2e");
 	const auto workDir = root / "cwd";
 	std::filesystem::create_directories(workDir);

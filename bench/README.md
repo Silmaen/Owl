@@ -17,7 +17,7 @@ docker/run.sh cmake --build output/build/linux-clang-release-bench --target owl_
 
 ## Run
 
-Run from the `bin/` directory (the dummy application looks up `engine_assets/` and `sample_project/` from
+Run from the `bin/` directory (the dummy application looks up `engine_assets/` and `engine_demo/` from
 its working directory). Pin it to one performance core to cut the noise (CPUs 0-15 are P-cores on the
 reference i9-13950HX):
 
@@ -91,7 +91,7 @@ and end is printed: a loaded machine makes the numbers unreliable.
 
 ```bash
 docker/run.sh --gui output/build/linux-clang-release/bin/OwlRunner \
-    --frame-bench sample_project/scenes/raycast_demo.owl --backend vulkan --frames 1000 --warmup 120 \
+    --frame-bench engine_demo/scenes/raycast_demo.owl --backend vulkan --frames 1000 --warmup 120 \
     --out output/frame-bench/raycast_demo.vulkan.json
 ```
 

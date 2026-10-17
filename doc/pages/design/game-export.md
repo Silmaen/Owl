@@ -7,7 +7,7 @@ Design page for exporting a game authored in Owl Nest, summarised in the [Roadma
 ## v0.3.0 — export that works end to end (correctness)
 
 Phase A of [Foundations](foundations.md). **Done**: the export has one implementation, a command line, and a test
-that plays the exported sample project.
+that plays the exported Engine Demo.
 
 ### One export path
 
@@ -48,7 +48,7 @@ flowchart LR
 
 - unit tests of `GameExporter` on a synthetic project: file layout, `runner.yml` round trip with `:` in the name,
   `pat:` relocation, stale library replacement, every `ExportError`;
-- end to end: `OwlNest --export sample_project`, check that every scene, tileset, tilemap and script is in the
+- end to end: `OwlNest --export engine_demo`, check that every scene, tileset, tilemap and script is in the
   pack without absolute path, move the game folder elsewhere, run `launch.sh --headless --smoke-test 60` from
   another directory, and fail on a non-zero exit code or any warning / error in `Owl.log`.
 

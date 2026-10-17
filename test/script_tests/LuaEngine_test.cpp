@@ -266,3 +266,23 @@ TEST(LuaEngine, loadNonexistentFile) {
 
 	owl::core::Log::invalidate();
 }
+
+TEST(LuaEngine, repeatedErrorIsLoggedOnce) {
+	owl::core::Log::init(owl::core::Log::Level::Off);
+	const LuaEngine engine;
+	ASSERT_TRUE(engine.isValid());
+
+	const std::string script =
+			"function crashMe()\n  error('boom')\nend\nfunction crashOther()\n  error('bang')\nend\n";
+	const std::vector<uint8_t> data(script.begin(), script.end());
+	ASSERT_TRUE(engine.loadBuffer(data, "repeated_error"));
+
+	for (int i = 0; i < 50; ++i) EXPECT_FALSE(engine.callFunction("crashMe"));
+	EXPECT_EQ(engine.getSuppressedErrorCount(), 49u);
+	EXPECT_EQ(engine.getLastStatus(), LuaStatus::RuntimeError);
+	// Another error is logged in full again, and the callback keeps being called.
+	EXPECT_FALSE(engine.callFunction("crashOther"));
+	EXPECT_EQ(engine.getSuppressedErrorCount(), 49u);
+
+	owl::core::Log::invalidate();
+}

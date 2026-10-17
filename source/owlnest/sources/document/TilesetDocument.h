@@ -298,6 +298,12 @@ private:
 
 	/**
 	 * @brief
+	 *  Navigation section of the Tile Properties: the road connections of the inspected tile, one arrow per side.
+	 */
+	void renderConnectionsSection();
+
+	/**
+	 * @brief
 	 *  Render the atlas preview canvas (full texture + grid overlay + click-to-select).
 	 */
 	void renderCanvas();

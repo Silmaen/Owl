@@ -531,7 +531,7 @@ Convention:
 - Rotation values are stored in **radians** in the `Transform` component
   (matching the rest of Owl's transform pipeline).
 
-The accompanying `scripts/raycast_player.lua` in the sample project
+The accompanying `scripts/raycast_player.lua` in the Engine Demo
 implements WASD strafing + Q/E turning following this convention.
 
 ## 3D Forward Renderer {#renderer3d}
@@ -692,7 +692,7 @@ Each case runs `OwlRunner --frame-bench <scene> --capture <png>` (320 x 180, 60 
 validation on) in its own process, then compares RGB per pixel: a pixel differs above 24 / 255 on a channel, the test
 fails above 0.25 % of differing pixels. Software rasterisers are deterministic run to run; the tolerance absorbs a
 Mesa update, not a missing sprite. On failure the capture, a diff (differing pixels in red) and the runner log are left
-in `<build>/render_tests/`. The scenes live in `test/render_tests/scenes/` and use the sample project's assets.
+in `<build>/render_tests/`. The scenes live in `test/render_tests/scenes/` and use the Engine Demo's assets.
 
 ```bash
 docker/run.sh ctest --test-dir output/build/linux-clang-release -L render --output-on-failure
@@ -816,6 +816,12 @@ extraRanges:
 The MSDF atlas is cached in `cache/font/<font>-<key>.owlatlas` under the working directory: the key hashes the font
 file, the charset and the atlas parameters, so a change of any of them regenerates it (and drops the stale file).
 Generation runs on as many threads as the task pool has workers (`Scheduler::getWorkerCount`).
+
+**Small text.** The atlas em is 40 px with a 2 px distance range, and `text.slang` uses the same 2 px (keep both in
+step). Text under about 40 px on screen minifies the atlas, which has no mipmaps, so one linear sample per pixel
+aliases: the fragment shader then averages four taps of a rotated grid over the pixel footprint (`SampleGrad`), larger
+text keeps the single sample. HUD text is also kept legible by the scale modes
+([HUD system](design/hud-system.md)).
 
 ### Batching Internals
 

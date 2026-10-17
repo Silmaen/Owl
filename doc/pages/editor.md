@@ -223,14 +223,25 @@ neighbouring corners follow so every cell keeps one of the 19 slopes. A click or
 four corner heights of the clicked cell. The `TilemapDocument` keeps its own undo stack, so these edits are not
 registry commands.
 
+The **Node** tool edits single corners (nodes): a click selects the hovered corner (the nearest one to the cursor is
+highlighted; Shift + click adds or removes one, a click in the void clears the selection), dragging up or down raises
+or lowers every selected node by one step per `zStep` of mouse travel, and **+** / **-** (or the keypad) move them by
+one step. Neighbouring corners follow with the same rule as the other terraform tools (`TilemapAsset::setCornerHeight`),
+so each of the four cells around a node keeps one of the 19 slopes. The four corner heights of the selected cell are
+also drag fields in Cell Properties (back, right, front, left) next to the derived slope, with the same neighbour
+adaptation. A drag, a key press or a field edit is one undo step (`commands::ModifyTerrainHeightsCommand`). On a flat
+(non-isometric) tilemap there are no heights: the Node tool is not offered and Cell Properties says so.
+
 ### Tileset document
 
 A `.owltileset` opens in a `TilesetDocument`: the Atlas section sets the texture, the grid, the tile size, the filter
 and the **Kind** (`Orthogonal` square tiles of the 2D tilemaps, `Isometric` 2:1 diamond tiles drawn by the isometric
 layer, written `kind: Isometric`); the properties panel edits the clicked tile. For an isometric tileset the **Slopes**
 section holds one table per terrain or overlay id with the tile of each of the 19 slopes and the foundation tile of
-each slope (`-1` falls back on the flat tile); the cells of a map find their tile through it. Every edit is one undo
-step of the tileset document.
+each slope (`-1` falls back on the flat tile); the cells of a map find their tile through it. The **Navigation** section
+of a tile makes it part of a road graph and lights the sides it joins with four arrows oriented as on the screen of the
+isometric view (the pathfinding reads them, see [Pathfinding](pathfinding.md)). Every edit is one undo step of the
+tileset document.
 
 ### Scene Flow view
 
@@ -258,13 +269,22 @@ off-screen `Framebuffer` with two colour attachments:
 - top-left (Edit mode): Select / Move / Rotate / Scale, the Local / World axes of the gizmo, then Snap and the
   current snap step (a click opens its presets);
 - top-centre: Play (or Resume), Pause, Step and Stop, with their shortcuts in the tooltips; while the scene plays,
-  a banner under them recalls that the changes are reverted on Stop;
+  a chevron at their end (or **F10**, "Fold Play Controls") folds them into a small handle in the top-right corner, so
+  nothing but the handle covers the game; the handle shows the state (blue play glyph while playing, grey pause glyph
+  while paused) and a click unfolds the controls again; the choice is kept in the editor settings
+  (`playControlsCollapsed`); in Edit mode the controls always show;
+- a "Playing" / "Paused" message appears under them for about two seconds when Play or Pause starts, fades and goes;
 - top-right (Edit mode): the view (**2D** orthographic front view, **3D** perspective, or **Iso** locked in the
   isometric mode), **Show** (grid, camera
-  markers, trigger icons, and in the isometric mode the navigation graph of the tilemaps with a Shift-click test path,
-  see [Pathfinding](pathfinding.md)), **Frame selection** (`F`), the **Camera** menu and the frame stats toggle;
+  markers, trigger icons, and in the isometric mode the navigation graph of the tilemaps with a Shift-click test path),
+  in the isometric mode the **Navigation tool** that edits one-way roads, closed sides and slower cells on the map
+  (see [Pathfinding](pathfinding.md)), **Frame selection** (`F`), the **Camera** menu and the frame stats toggle;
 - bottom-left: frame rate, frame time and draw calls (a click opens the Stats panel);
-- bottom-right: the view-cube of the editor camera.
+- bottom-right: the view-cube of the editor camera; in Play of an isometric scene, the eye button that draws the
+  navigation graph and the routes of the vehicles (see [Pathfinding](pathfinding.md)).
+
+In Play the overlay controls take their own clicks: a click that starts on them, or on another panel, never reaches the
+game, and a drag started in the game keeps going when the cursor leaves the viewport.
 
 While the scene plays or is paused, a frame in the play colour outlines the viewport and the status bar turns blue.
 
@@ -444,8 +464,9 @@ each component marked by a thin axis colour, with a reset button that appears wh
 - **Lua Script** -- Script asset path, editable property list
 - **Canvas** -- HUD root: sort order, reference resolution and scale mode (`ConstantPixels`, `ScaleWithHeight`,
   `MatchSmallerSide`)
-- **UI Rect** -- Anchor preset (Custom when the anchors stretch), Anchor Min / Max, Pivot, Size and Offset, in
-  Y-down reference pixels of the parent rectangle; the HUD is drawn in pixels over the viewport, a click on a widget
+- **UI Rect** -- Anchor preset (Custom when the anchors stretch), Anchor Min / Max, Pivot, Width, Height, Offset X and
+  Offset Y, in Y-down reference pixels of the parent rectangle or, with the unit selector at the right of each field,
+  a ratio of the parent or screen width or height (changing the unit converts the value, the widget does not move); the HUD is drawn in pixels over the viewport, a click on a widget
   selects it
 - **UI Text / Image / Panel / Button / Slider / Progress Bar** -- In-game UI elements
 - **UI Window / Layout / Tooltip / Tool Cursor** -- Management-game widgets: a window with a title bar (draggable,
@@ -1030,8 +1051,8 @@ The workflow commands live in the **File** screen (project), the **Home** tab (e
 | Pack Scene     | Scene > Scene > Pack Scene | Pack the current scene's assets into `.owlpack` (async) |
 
 **File screen at start-up.** When the editor starts without a loaded project, the File screen opens with **New
-project**, **Open project**, **Getting started**, **Sample project** and the recent projects. The sample card shows
-when a `sample_project/` sits next to `bin/` in the archive, or at the root of the sources
+project**, **Open project**, **Getting started**, **Engine Demo** and the recent projects. The sample card shows
+when a `engine_demo/` sits next to `bin/` in the archive, or at the root of the sources
 (`panel::findSampleProject`, from the asset folders upwards).
 
 **Async operations.** Pack Game, Pack Scene, Open Scene, and Save Scene all run off the
@@ -1115,7 +1136,7 @@ the same result on any machine. It exits with 0 when every expectation holds and
 
 ```yaml
 # test/scenarios/platformer_walk.owltest
-scene: ../../sample_project/scenes/platformer_house.owl   # relative to the file; project found above it
+scene: ../../engine_demo/scenes/platformer_house.owl   # relative to the file; project found above it
 timestep_ms: 16.667                                       # optional
 steps:
   - frames: 30                                            # play 30 frames, no input
@@ -1189,11 +1210,11 @@ description and structured data (`entity` UUID, plus the fields listed below).
 | `edit.undo`            | none; returns `can_undo`, `can_redo` and the entity to select                |
 | `edit.redo`            | none; same result as `edit.undo`                                             |
 | `macro.run`            | `path` (`.owlmacro`, absolute or in an asset folder); returns `commands`     |
-| `hud.add_widget`       | `kind` (`panel`, `label`...), `name`, `parent`, `size`, `anchor`, `offset`   |
-| `hud.set_rect`         | `entity`, `anchor_min`, `anchor_max`, `pivot`, `size`, `offset` (as given)   |
+| `hud.add_widget`       | `kind` (`panel`, `label`...), `name`, `parent`, `size`, `anchor`, `offset`, `size_unit`, `offset_unit` |
+| `hud.set_rect`         | `entity`, `anchor_min`, `anchor_max`, `pivot`, `size`, `offset`, `size_unit`, `offset_unit` (as given) |
 | `hud.set_anchors`      | `entity`, `anchor_min`, `anchor_max`, `keep_bounds`, `resolution`            |
 | `hud.set_pivot`        | `entity`, `pivot`, `keep_bounds`, `resolution`                               |
-| `hud.move`             | `entities` (UUIDs or tags, comma separated), `delta` (reference pixels)      |
+| `hud.move`             | `entities` (UUIDs or tags, comma separated), `delta` (reference pixels), `resolution` |
 | `hud.delete`           | `entities`: the widgets and their children, one step                         |
 | `hud.reparent`         | `entity`, `parent`, `index`, `keep_bounds`, `resolution`                     |
 | `hud.extract_canvas`   | `entity` (root canvas), `path` (`.owlhud`), `asset_path`; returns `hud`      |
@@ -1351,7 +1372,7 @@ re-creating the prefab), instances can be updated in place, keeping their hierar
 - **Unlink Prefab** -- Removes the `PrefabLink` component, turning the instance into a
   standalone entity subtree with no connection to the source file.
 
-All prefab operations are fully undoable, Unlink included. The sample project's
+All prefab operations are fully undoable, Unlink included. The Engine Demo's
 `platformer_house.owl` holds two instances of `prefabs/coin_pair.owlprefab`; the second one overrides
 the colour of its right coin.
 

@@ -1,6 +1,6 @@
 # The sample menus with actions only (a gamepad has the same `ui_*` actions): the Play button holds the focus from the
 # start, `ui_down` reaches Settings, `ui_accept` opens it, the sliders answer `ui_down` / `ui_right`, `ui_cancel` goes back.
-scene: ../../sample_project/scenes/main_menu.owl
+scene: ../../engine_demo/scenes/main_menu.owl
 steps:
   - frames: 10
   - expect: {entity: PlayButton, exists: true}

@@ -354,7 +354,7 @@ public:
 
 	/**
 	 * @brief
-	 *  Get the list of all entities.
+	 *  Get the list of all entities, in creation order (the order of a loaded file).
 	 * @return List of all entities.
 	 */
 	[[nodiscard]] auto getAllEntities() const -> std::vector<Entity>;
@@ -1156,6 +1156,13 @@ private:
 	 * like "edit tilemap path").
 	 */
 	void resolveAllTilemapAssets();
+
+	/**
+	 * @brief
+	 *  Give the scene its own copy of every tilemap asset another scene still holds (a `copy()` shares them), so
+	 *  runtime edits never reach the edit scene.
+	 */
+	void detachSharedTilemapAssets();
 
 	/**
 	 * @brief

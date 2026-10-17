@@ -12,10 +12,12 @@
 #include "math/vectors.h"
 #include "renderer/gpu/Texture.h"
 #include "scene/TilemapTerrain.h"
+#include "scene/nav/NavProfile.h"
 
 #include <array>
 #include <cstdint>
 #include <filesystem>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -59,6 +61,15 @@ struct OWL_API TileMeta {
 	 * intentionally not supported.
 	 */
 	bool transparent = false;
+	/**
+	 * @brief
+	 *  Sides of the cell this tile opens on the navigation graph (`nav::directionBit` mask), absent when the tile is not
+	 *  part of a road graph.
+	 *
+	 * A road tile lists the neighbours it joins: a straight road along x is `east | west`, a dead end a single side, an
+	 * isolated road tile an empty mask. Read by `nav::NavMode::Connections`. In the file: `connections: [east, west]`.
+	 */
+	std::optional<uint8_t> connections = std::nullopt;
 };
 
 /**
@@ -112,6 +123,7 @@ struct OWL_API SlopeSet {
  * tiles:                                  # optional, only entries that differ from default
  *   - { index: 5, collidable: true, name: "wall" }
  *   - { index: 12, collidable: true }
+ *   - { index: 3, connections: [east, west] }   # road tile: the sides it joins for the pathfinding
  * ```.
  *
  * Default `TileMeta` (every flag false, empty name) is implied for any slot

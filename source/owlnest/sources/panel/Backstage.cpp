@@ -107,7 +107,7 @@ auto findSampleProject(const std::vector<std::filesystem::path>& iStartDirectori
 		std::filesystem::path dir = start;
 		for (uint32_t depth = 0; depth <= iMaxDepth && !dir.empty(); ++depth) {
 			std::error_code error;
-			if (const auto candidate = dir / "sample_project"; exists(candidate / "owl_project.yml", error))
+			if (const auto candidate = dir / "engine_demo"; exists(candidate / "owl_project.yml", error))
 				return candidate.lexically_normal();
 			if (dir == dir.parent_path())
 				break;
@@ -229,7 +229,7 @@ void Backstage::onImGuiRender(const BackstageContext& iContext) {
 		}
 		if (!iContext.sampleProject.empty()) {
 			ImGui::SameLine(0.f, spacing);
-			if (card("ribbon_play", "Sample project", "Every engine feature in a game.", cardWidth) &&
+			if (card("ribbon_play", "Engine Demo", "Every engine feature in one demo.", cardWidth) &&
 				iContext.openRecent) {
 				iContext.openRecent(iContext.sampleProject);
 				act = true;

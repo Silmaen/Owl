@@ -27,6 +27,7 @@
 #include <functional>
 #include <ranges>
 #include <utility>
+#include <vector>
 
 namespace owl::nest::commands {
 
@@ -43,7 +44,8 @@ auto sameVec(const math::vec2& iA, const math::vec2& iB) -> bool { return iA == 
 
 auto sameRect(const UiRect& iA, const UiRect& iB) -> bool {
 	return sameVec(iA.anchorMin, iB.anchorMin) && sameVec(iA.anchorMax, iB.anchorMax) && sameVec(iA.pivot, iB.pivot) &&
-		   sameVec(iA.size, iB.size) && sameVec(iA.anchorOffset, iB.anchorOffset);
+		   sameVec(iA.size, iB.size) && sameVec(iA.anchorOffset, iB.anchorOffset) && iA.sizeUnit == iB.sizeUnit &&
+		   iA.offsetUnit == iB.offsetUnit;
 }
 
 auto entityArg(const scene::Scene& iScene, const CommandArgs& iArgs, const std::string& iName)
@@ -139,8 +141,8 @@ auto resolutionOf(const scene::Scene& iScene, const scene::Entity& iEntity, cons
 }
 
 struct LaidOut {
-	UiRect::Bounds parent;
-	UiRect::Bounds self;
+	UiRect::Frame frame;// parent area and canvas size, in reference pixels
+	UiRect::Bounds self;// rectangle of the widget, in reference pixels
 };
 
 auto layOut(scene::Scene& ioScene, const scene::Entity& iEntity, const math::vec2ui& iResolution)
@@ -153,13 +155,13 @@ auto layOut(scene::Scene& ioScene, const scene::Entity& iEntity, const math::vec
 	const auto inReference = [&node](const UiRect::Bounds& iBounds) -> UiRect::Bounds {
 		return {.position = iBounds.position / node->scale, .size = iBounds.size / node->scale};
 	};
-	LaidOut result{.parent = {}, .self = inReference(node->bounds)};
-	if (node->parent == scene::ui::HudNode::noParent) {
-		const math::vec2 screen{static_cast<float>(iResolution.x()), static_cast<float>(iResolution.y())};
-		result.parent = {.position = {0.f, 0.f}, .size = screen / node->scale};
-	} else {
-		result.parent = inReference(layout.getNodes()[node->parent].childArea());
-	}
+	LaidOut result{.frame = {}, .self = inReference(node->bounds)};
+	const math::vec2 screen{static_cast<float>(iResolution.x()), static_cast<float>(iResolution.y())};
+	result.frame.screen = screen / node->scale;
+	if (node->parent == scene::ui::HudNode::noParent)
+		result.frame.parent = {.position = {0.f, 0.f}, .size = result.frame.screen};
+	else
+		result.frame.parent = inReference(layout.getNodes()[node->parent].childArea());
 	layout.invalidate();
 	return result;
 }
@@ -173,7 +175,7 @@ auto keepBounds(const shared<scene::Scene>& ioScene, const scene::Entity& iEntit
 	if (!placed)
 		return fail(CommandError::NotApplicable,
 					std::format("`{}` is not laid out (hidden?), pass `keep_bounds` false", iEntity.getName()));
-	return solveHudRect(iNew, placed->parent, placed->self);
+	return solveHudRect(iNew, placed->frame, placed->self);
 }
 
 auto describeRects(const std::vector<scene::Entity>& iEntities, const std::string_view iVerb) -> std::string {
@@ -189,6 +191,28 @@ auto rectsCommand(const scene::Entity& iEntity, const UiRect& iAfter, std::strin
 	return PreparedCommand{.command = mkUniq<HudRectsCommand>(std::vector{change}, std::move(iDescription)),
 						   .applied = false,
 						   .entity = iEntity.getUUID()};
+}
+
+// One unit name for both axes, or two separated by a comma ("Pixels,ParentHeight").
+auto parseUnits(const CommandArgs& iArgs, const char* iName) -> expected<std::optional<UiRect::Units>, CommandFailure> {
+	if (!iArgs.has(iName))
+		return std::optional<UiRect::Units>{};
+	std::vector<UiRect::Unit> units;
+	for (const auto word: std::views::split(iArgs.getText(iName), ',')) {
+		std::string token{std::string_view{word.begin(), word.end()}};
+		std::erase_if(token, [](const char iChar) -> bool { return std::isspace(static_cast<unsigned char>(iChar)); });
+		const auto unit = UiRect::parseUnit(token);
+		if (!unit)
+			return fail(CommandError::InvalidArgument,
+						std::format("`{}`: `{}` is not a unit (Pixels, ParentWidth, ParentHeight, ScreenWidth, "
+									"ScreenHeight)",
+									iName, token));
+		units.push_back(*unit);
+	}
+	if (units.empty() || units.size() > 2)
+		return fail(CommandError::InvalidArgument,
+					std::format("`{}` takes one unit or two separated by a comma", iName));
+	return std::optional<UiRect::Units>{UiRect::Units{.x = units.front(), .y = units.back()}};
 }
 
 auto setRect(const shared<scene::Scene>& ioScene, const CommandArgs& iArgs) -> Prepared {
@@ -208,8 +232,23 @@ auto setRect(const shared<scene::Scene>& ioScene, const CommandArgs& iArgs) -> P
 	assign("pivot", rect.pivot);
 	assign("size", rect.size);
 	assign("offset", rect.anchorOffset);
+	const auto sizeUnit = parseUnits(iArgs, "size_unit");
+	if (!sizeUnit)
+		return unexpected<CommandFailure>{sizeUnit.error()};
+	const auto offsetUnit = parseUnits(iArgs, "offset_unit");
+	if (!offsetUnit)
+		return unexpected<CommandFailure>{offsetUnit.error()};
+	if (*sizeUnit) {
+		rect.sizeUnit = **sizeUnit;
+		given = true;
+	}
+	if (*offsetUnit) {
+		rect.offsetUnit = **offsetUnit;
+		given = true;
+	}
 	if (!given)
-		return fail(CommandError::MissingArgument, "give `anchor_min`, `anchor_max`, `pivot`, `size` or `offset`");
+		return fail(CommandError::MissingArgument,
+					"give `anchor_min`, `anchor_max`, `pivot`, `size`, `offset`, `size_unit` or `offset_unit`");
 	return rectsCommand(*entity, rect, std::format("Edit rect of '{}'", entity->getName()));
 }
 
@@ -271,7 +310,20 @@ auto moveWidgets(const shared<scene::Scene>& ioScene, const CommandArgs& iArgs) 
 		HudRectChange change{.entity = entity.getUUID(),
 							 .before = entity.getComponent<UiRect>(),
 							 .after = entity.getComponent<UiRect>()};
-		change.after.anchorOffset += *delta;
+		if (change.after.offsetUnit.isPixels()) {
+			change.after.anchorOffset += *delta;
+		} else {
+			// A ratio offset moves by the equivalent ratio, the unit kept.
+			const auto resolution = resolutionOf(*ioScene, entity, iArgs);
+			if (!resolution)
+				return unexpected<CommandFailure>{resolution.error()};
+			const auto placed = layOut(*ioScene, entity, *resolution);
+			if (!placed)
+				return fail(
+						CommandError::NotApplicable,
+						std::format("`{}` is not laid out (hidden?), cannot move a ratio offset", entity.getName()));
+			change.after.moveBy(*delta, placed->frame);
+		}
 		changes.push_back(change);
 	}
 	if (*delta == math::vec2{0.f, 0.f})
@@ -333,7 +385,7 @@ auto reparentWidget(const shared<scene::Scene>& ioScene, const CommandArgs& iArg
 		oldSlot.restore(*entity, *ioScene);
 		if (!landed)
 			return fail(CommandError::NotApplicable, "the new parent is not laid out (hidden?)");
-		after = solveHudRect(before, landed->parent, placed->self);
+		after = solveHudRect(before, landed->frame, placed->self);
 	}
 	if (oldSlot.parentUuid == newSlot.parentUuid && oldSlot.siblingIndex == newSlot.siblingIndex &&
 		sameRect(before, after))
@@ -414,6 +466,12 @@ auto addWidget(const shared<scene::Scene>& ioScene, const CommandArgs& iArgs) ->
 	const auto kind = iArgs.getText("kind");
 	const auto* const defaults = std::ranges::find(kindDefaults, kind, &KindDefaults::name);
 	const auto name = iArgs.getText("name", kind);
+	const auto sizeUnit = parseUnits(iArgs, "size_unit");
+	if (!sizeUnit)
+		return unexpected<CommandFailure>{sizeUnit.error()};
+	const auto offsetUnit = parseUnits(iArgs, "offset_unit");
+	if (!offsetUnit)
+		return unexpected<CommandFailure>{offsetUnit.error()};
 	std::vector<uniq<SceneUndoCommand>> commands;
 	if (kind == "canvas") {
 		auto canvas = ioScene->createEntity(name);
@@ -448,6 +506,8 @@ auto addWidget(const shared<scene::Scene>& ioScene, const CommandArgs& iArgs) ->
 		rect.anchorMax = *anchor;
 	}
 	rect.anchorOffset = iArgs.get<math::vec2>("offset").value_or(math::vec2{0.f, 0.f});
+	rect.sizeUnit = sizeUnit->value_or(UiRect::Units{});
+	rect.offsetUnit = offsetUnit->value_or(UiRect::Units{});
 	addKindComponents(widget, kind, iArgs.getText("texture"));
 	commands.push_back(mkUniq<CreateEntityCommand>(widget));
 	if (commands.size() == 1)
@@ -471,6 +531,15 @@ auto keepBoundsSpec() -> ArgSpec {
 			.type = ArgType::Bool,
 			.description = "Change the offset and the size so the widget stays where it is on screen.",
 			.defaultValue = true};
+}
+
+auto unitSpec(std::string iName, const std::string_view iNumbers) -> ArgSpec {
+	return {.name = std::move(iName),
+			.type = ArgType::Text,
+			.description =
+					std::format("Unit of the {} numbers: Pixels, ParentWidth, ParentHeight, ScreenWidth or "
+								"ScreenHeight (ratios, 0.25 = a quarter); two separated by a comma for X then Y.",
+								iNumbers)};
 }
 
 auto resolutionSpec() -> ArgSpec {
@@ -564,24 +633,26 @@ auto getHudWidgetKinds() -> const std::vector<std::string>& {
 	return kinds;
 }
 
-auto solveHudRect(const UiRect& iBase, const UiRect::Bounds& iParent, const UiRect::Bounds& iTarget) -> UiRect {
+auto solveHudRect(const UiRect& iBase, const UiRect::Frame& iFrame, const UiRect::Bounds& iTarget) -> UiRect {
 	const auto scaled = [](const math::vec2& iA, const math::vec2& iB) -> math::vec2 {
 		return {iA.x() * iB.x(), iA.y() * iB.y()};
 	};
 	UiRect rect = iBase;
-	const math::vec2 cornerMin = iParent.position + scaled(iParent.size, iBase.anchorMin);
-	const math::vec2 cornerMax = iParent.position + scaled(iParent.size, iBase.anchorMax);
+	const auto& parent = iFrame.parent;
+	const math::vec2 cornerMin = parent.position + scaled(parent.size, iBase.anchorMin);
+	const math::vec2 cornerMax = parent.position + scaled(parent.size, iBase.anchorMax);
 	const math::vec2 span = cornerMax - cornerMin;
-	rect.size = iTarget.size - span;
+	// The solution is in reference pixels, written back in the units the widget uses.
+	rect.setPixelSize(iTarget.size - span, iFrame);
 	const math::vec2 pivotPoint = iTarget.position + scaled(iTarget.size, iBase.pivot);
-	rect.anchorOffset = pivotPoint - (cornerMin + scaled(span, iBase.pivot));
+	rect.setPixelOffset(pivotPoint - (cornerMin + scaled(span, iBase.pivot)), iFrame);
 	return rect;
 }
 
 auto getHudParentBounds(scene::Scene& ioScene, const scene::Entity& iEntity, const math::vec2ui& iResolution)
 		-> std::optional<UiRect::Bounds> {
 	if (const auto placed = layOut(ioScene, iEntity, iResolution); placed)
-		return placed->parent;
+		return placed->frame.parent;
 	return std::nullopt;
 }
 
@@ -593,41 +664,52 @@ auto getHudReferenceResolution(const scene::Scene& iScene, const scene::Entity& 
 }
 
 void addHudCommands(CommandRegistry& ioRegistry) {
-	ioRegistry.add({.name = "hud.add_widget",
-					.description = "Add a HUD widget (or a canvas) under a canvas or a widget; the first canvas is "
-								   "used, and created, when `parent` is absent.",
-					.args = {{.name = "kind",
-							  .type = ArgType::Enum,
-							  .required = true,
-							  .description = "Kind of widget.",
-							  .choices = getHudWidgetKinds()},
-							 {.name = "name", .type = ArgType::Text, .description = "Tag (the kind when absent)."},
-							 {.name = "parent",
-							  .type = ArgType::Entity,
-							  .description = "Canvas or widget it goes under (the first canvas when absent)."},
-							 {.name = "size",
-							  .type = ArgType::Vec2,
-							  .description = "Size in reference pixels (a default per kind when absent)."},
-							 {.name = "anchor",
-							  .type = ArgType::Vec2,
-							  .description = "Anchor point in the parent, (0, 0) top-left to (1, 1) bottom-right "
-											 "(the centre when absent)."},
-							 {.name = "offset",
-							  .type = ArgType::Vec2,
-							  .description = "Offset of the pivot from the anchor, in reference pixels."},
-							 {.name = "texture",
-							  .type = ArgType::Text,
-							  .description = "Texture of an `image`, relative to an asset folder.",
-							  .projectPath = true}},
-					.factory = addWidget});
+	ioRegistry.add(
+			{.name = "hud.add_widget",
+			 .description = "Add a HUD widget (or a canvas) under a canvas or a widget; the first canvas is "
+							"used, and created, when `parent` is absent.",
+			 .args = {{.name = "kind",
+					   .type = ArgType::Enum,
+					   .required = true,
+					   .description = "Kind of widget.",
+					   .choices = getHudWidgetKinds()},
+					  {.name = "name", .type = ArgType::Text, .description = "Tag (the kind when absent)."},
+					  {.name = "parent",
+					   .type = ArgType::Entity,
+					   .description = "Canvas or widget it goes under (the first canvas when absent)."},
+					  {.name = "size",
+					   .type = ArgType::Vec2,
+					   .description = "Size in `size_unit` (reference pixels by default; a default per kind when "
+									  "absent)."},
+					  {.name = "anchor",
+					   .type = ArgType::Vec2,
+					   .description = "Anchor point in the parent, (0, 0) top-left to (1, 1) bottom-right "
+									  "(the centre when absent)."},
+					  {.name = "offset",
+					   .type = ArgType::Vec2,
+					   .description = "Offset of the pivot from the anchor, in `offset_unit` (reference pixels "
+									  "by default)."},
+					  unitSpec("size_unit", "size"),
+					  unitSpec("offset_unit", "offset"),
+					  {.name = "texture",
+					   .type = ArgType::Text,
+					   .description = "Texture of an `image`, relative to an asset folder.",
+					   .projectPath = true}},
+			 .factory = addWidget});
 	ioRegistry.add({.name = "hud.set_rect",
-					.description = "Set the anchors, pivot, size or offset of a widget, as given; nothing else moves.",
+					.description =
+							"Set the anchors, pivot, size, offset or their units of a widget, as given (the numbers "
+							"are read in the units the widget ends with); nothing else moves.",
 					.args = {entitySpec("Widget changed."),
 							 {.name = "anchor_min", .type = ArgType::Vec2, .description = "Top-left anchor."},
 							 {.name = "anchor_max", .type = ArgType::Vec2, .description = "Bottom-right anchor."},
 							 {.name = "pivot", .type = ArgType::Vec2, .description = "Pivot in the widget."},
-							 {.name = "size", .type = ArgType::Vec2, .description = "Size in reference pixels."},
-							 {.name = "offset", .type = ArgType::Vec2, .description = "Offset of the pivot."}},
+							 {.name = "size", .type = ArgType::Vec2, .description = "Size, in `size_unit`."},
+							 {.name = "offset",
+							  .type = ArgType::Vec2,
+							  .description = "Offset of the pivot, in `offset_unit`."},
+							 unitSpec("size_unit", "size"),
+							 unitSpec("offset_unit", "offset")},
 					.factory = setRect});
 	ioRegistry.add({.name = "hud.set_anchors",
 					.description = "Move the anchors of a widget; by default the widget stays where it is on screen.",
@@ -650,13 +732,15 @@ void addHudCommands(CommandRegistry& ioRegistry) {
 							 resolutionSpec()},
 					.factory = setPivot});
 	ioRegistry.add({.name = "hud.move",
-					.description = "Move widgets by a distance in reference pixels, as one step; a widget under "
-								   "another moved one follows it.",
+					.description = "Move widgets by a distance in reference pixels, as one step (the offset of a "
+								   "widget in ratio units moves by the equivalent ratio); a widget under another "
+								   "moved one follows it.",
 					.args = {entitiesSpec("UUIDs or tags of the widgets, separated by commas."),
 							 {.name = "delta",
 							  .type = ArgType::Vec2,
 							  .required = true,
-							  .description = "Distance in reference pixels (positive Y goes down)."}},
+							  .description = "Distance in reference pixels (positive Y goes down)."},
+							 resolutionSpec()},
 					.factory = moveWidgets});
 	ioRegistry.add({.name = "hud.delete",
 					.description = "Delete widgets and their children, as one step.",

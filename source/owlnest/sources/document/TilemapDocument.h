@@ -17,10 +17,13 @@
 #include <scene/TilemapAsset.h>
 #include <scene/TilemapTerrain.h>
 
+#include <cstddef>
 #include <cstdint>
 #include <filesystem>
 #include <optional>
+#include <span>
 #include <string>
+#include <vector>
 
 struct ImDrawList;
 struct ImVec2;
@@ -42,6 +45,7 @@ enum struct IsometricTool : uint8_t {
 	Lower,///< Left lowers a corner (or an area), right raises it.
 	Level,///< Bring a corner (or an area) to the level height.
 	Overlay,///< Paint the overlay layer (tracks, roads) with the palette brush.
+	Node,///< Select corners (nodes) and move them up or down by dragging or with the + / - keys.
 };
 
 /**
@@ -306,7 +310,107 @@ public:
 	 */
 	void setOpen(const bool iOpen) { m_pOpen = iOpen; }
 
+	// --- Node (corner) height editing ----------------------------------------
+	/**
+	 * @brief
+	 *  Corner of the grid at one corner of a cell.
+	 * @param[in] iCellX Cell x.
+	 * @param[in] iCellY Cell y.
+	 * @param[in] iIndex Corner of the cell: 0 back, 1 right, 2 front, 3 left (as `TilemapAsset::getCellCorners`).
+	 * @return The corner coordinates in the corner grid.
+	 */
+	[[nodiscard]] static auto getCellCornerNode(uint32_t iCellX, uint32_t iCellY, size_t iIndex) -> math::vec2ui;
+
+	/**
+	 * @brief
+	 *  Nodes (corners) selected for height editing.
+	 * @return The selected corners, in selection order.
+	 */
+	[[nodiscard]] auto getSelectedNodes() const -> const std::vector<math::vec2ui>& { return m_selectedNodes; }
+
+	/**
+	 * @brief
+	 *  Select a node.
+	 * @param[in] iNode Corner coordinates, ignored outside the corner grid.
+	 * @param[in] iAdditive True to toggle it in the selection, false to select it alone.
+	 */
+	void selectNode(const math::vec2ui& iNode, bool iAdditive);
+
+	/**
+	 * @brief
+	 *  Empty the node selection.
+	 */
+	void clearNodeSelection() { m_selectedNodes.clear(); }
+
+	/**
+	 * @brief
+	 *  Set the height of a node without closing the undo step; the neighbours follow as the terraform tools do.
+	 *
+	 * Successive calls are merged by `commitTerrainEdit` into one command.
+	 * @param[in] iX Corner x.
+	 * @param[in] iY Corner y.
+	 * @param[in] iHeight New height in steps.
+	 * @return True when a corner moved.
+	 */
+	auto previewNodeHeight(uint32_t iX, uint32_t iY, uint8_t iHeight) -> bool;
+
+	/**
+	 * @brief
+	 *  Close the pending terrain edits (node previews) into one undo step.
+	 * @param[in] iDescription Description for the Edit menu.
+	 * @return True when a command was pushed.
+	 */
+	auto commitTerrainEdit(const std::string& iDescription) -> bool;
+
+	/**
+	 * @brief
+	 *  Set the height of a node as one undo step.
+	 * @param[in] iX Corner x.
+	 * @param[in] iY Corner y.
+	 * @param[in] iHeight New height in steps.
+	 * @return True when a corner moved.
+	 */
+	auto setNodeHeight(uint32_t iX, uint32_t iY, uint8_t iHeight) -> bool;
+
+	/**
+	 * @brief
+	 *  Raise or lower every selected node by the same number of steps, as one undo step.
+	 * @param[in] iDelta Steps (negative to lower); heights stay within `[0, maxCornerHeight]`.
+	 * @return True when a corner moved.
+	 */
+	auto moveSelectedNodes(int iDelta) -> bool;
+
 private:
+	/**
+	 * @brief
+	 *  Start height of a selected node when a drag began.
+	 */
+	struct NodeDragStart {
+		/// Corner coordinates.
+		math::vec2ui node{0, 0};
+		/// Height when the drag began.
+		uint8_t height = 0;
+	};
+
+	/**
+	 * @brief
+	 *  Preview a node drag: put the previous preview back and apply `iDelta` steps to the nodes held at the start.
+	 * @param[in] iDelta Steps from the drag start.
+	 */
+	void previewNodeDrag(int iDelta);
+
+	/**
+	 * @brief
+	 *  Hover highlight, selection, drag and keys of the Node tool.
+	 */
+	void handleNodeInput(ImDrawList* iDrawList, const ImVec2& iOrigin);
+
+	/**
+	 * @brief
+	 *  Corner rows of the cell panel: the four heights, editable, and the derived slope.
+	 */
+	void renderCellCornerRows(uint32_t iX, uint32_t iY);
+
 	/**
 	 * @brief
 	 *  Render the canvas (zoom/pan grid, click-to-paint) — the entire document tab.
@@ -461,6 +565,18 @@ private:
 	int m_terrainBrushSize = 1;
 	/// Height the level tool brings its area to, in corner steps.
 	int m_levelHeight = 0;
+	/// Nodes selected with the Node tool.
+	std::vector<math::vec2ui> m_selectedNodes;
+	/// Heights of the selected nodes when the current drag began (empty when no drag).
+	std::vector<NodeDragStart> m_nodeDragStart;
+	/// Corner changes the drag has applied so far, put back before each new preview.
+	std::vector<scene::CornerHeightChange> m_nodeDragChanges;
+	/// Mouse y when the drag began.
+	float m_nodeDragMouseY = 0.f;
+	/// Steps the drag currently applies.
+	int m_nodeDragDelta = 0;
+	/// Whether a press on the Node tool may still turn into a click on the node (no drag yet).
+	bool m_nodeClickPending = false;
 	/// Corner the terrain tool acted on last, so a drag acts once per corner.
 	std::optional<math::vec2ui> m_lastTerrainCorner;
 	/// Corner and cell under the cursor in the isometric preview.

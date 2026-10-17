@@ -389,6 +389,9 @@ void EditorLayer::onAttach() {
 	utils::applyTheme(gui::Theme::fromPreset(gui::Theme::presetFromName(m_settings.themePreset)));
 
 	m_dockLayout.setPreset(DockLayout::presetFromName(m_settings.layoutPreset));
+	gui::component::setNavigationGraphSwitch(
+			{.isShown = [this]() -> bool { return m_settings.showNavGraph; },
+			 .setShown = [this](const bool iShown) -> void { m_settings.showNavGraph = iShown; }});
 
 	// Create the initial scene document. Its onAttach() initialises its own Viewport.
 	auto& initialDoc = ensureActiveSceneDocument();
@@ -487,13 +490,18 @@ void EditorLayer::onAttach() {
 			onScenePause();
 	});
 	m_actionRegistry.registerAction("scene.stop", "Stop", {input::key::F7, Modifiers::None}, [this]() -> void {
+		// Deferred to the next update: the button and the shortcut fire while the running scene is still being drawn.
 		if (getState() == State::Play || getState() == State::Pause)
-			onSceneStop();
+			requestStop();
 	});
 	m_actionRegistry.registerAction("scene.step", "Step Frame", {input::key::F8, Modifiers::None}, [this]() -> void {
 		if (getState() == State::Pause)
 			onSceneStep();
 	});
+	m_actionRegistry.registerAction("scene.play_controls", "Fold Play Controls", {input::key::F10, Modifiers::None},
+									[this]() -> void {
+										m_settings.playControlsCollapsed = !m_settings.playControlsCollapsed;
+									});
 	// Entity actions
 	m_actionRegistry.registerAction("entity.delete", "Delete Entity", {input::key::Delete, Modifiers::None},
 									[this]() -> void {
@@ -606,6 +614,7 @@ void EditorLayer::onDetach() {
 	OWL_PROFILE_FUNCTION()
 
 	app::Application::get().getHotReload().removeListener(m_hotReloadListener);
+	gui::component::setNavigationGraphSwitch({});
 
 	saveProjectSession();
 	// Sync keybinding overrides before saving

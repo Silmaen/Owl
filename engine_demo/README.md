@@ -1,0 +1,205 @@
+# Owl Feature Demo
+
+Engine Demo exercising all Owl engine features. This project serves as a
+living showcase — it must be updated whenever new features are added to the engine.
+
+## How to Open
+
+1. Launch **Owl Nest**
+2. **Open project** in the File screen and select `engine_demo/owl_project.yml`
+3. The Main Menu scene loads automatically
+
+## How to Play
+
+The sample game has been rebuilt around the new tilemap system:
+
+1. **Main Menu** → press **Démarrer** to begin a new run, or **Continuer** if a
+   pause snapshot exists. Press **I** to open the isometric layer test
+   (`iso_test.owl`: arrows pan, Escape returns), or **O** (left bumper) for the isometric town
+   (`iso_town.owl`: build roads with the mouse, watch the traffic).
+2. **World Map** (`world_map.owl`) — top-down tilemap view. WASD to move
+   around a grass plain bordered by mountains. Hazards: lava patches and
+   the water moat south of the house cause **instant death**.
+   Cross the bridge to reach the central house and press **E** in front of
+   its door to enter the platformer. **A second house** sits to the east
+   (a wider 7×4 building, reached by following the stone path east from the
+   first house) — press **E** in front of its door to enter the first-person
+   Wolfenstein-style demo level.
+3. **Inside the House** (`platformer_house.owl`) — side-scroller platformer.
+   A/D to run, W / Space / Up to jump; or a gamepad: left stick / D-pad to run, A to jump, Start to pause
+   (extra pad mappings in `input/gamecontrollerdb.txt`). Hazards: lava pits at floor level
+   (instant death), spike traps (lose ~1/3 of your health bar each contact).
+   Reach the gold checkered **victory zone** at the top-right to clear the
+   level.
+4. **Raycast Demo** (`raycast_demo.owl`) — first-person view of a 16×16
+   Wolfenstein-inspired tilemap. **W/A/S/D** strafe, **Q/E** turn,
+   **ESC** returns to the world map. The same `Tilemap` component drives
+   both the 2D world view and this raycast view — only the active
+   `RenderLayer` changes.
+4. **Inventory demo** (`inventory_demo.owl`) — press **N** (gamepad Back) in the main menu. WASD / left stick to
+   move, walk over the items to pick them up, **E** (gamepad X) at the gold door or the blue vault switch to open it
+   with the matching key, **Tab** (gamepad Y) to open the inventory window: the D-pad or arrows move between the
+   slots, **Enter** / A inspects one, **Escape** / B closes it. **F6** / **F9** quick-save and load slot 2; the inventory
+   comes back with the save.
+5. Clearing the level closes the house door (the door entity reports as
+   already explored on subsequent visits) and bumps `houses_visited` in
+   gamestate. When `houses_visited == houses_total`, a **purple teleporter**
+   appears in the upper-left of the world map — walk over it to teleport
+   to the **Victory** screen.
+6. **ESC** at any point in gameplay pauses the run and returns to the Main
+   Menu, where the **Démarrer** button label switches to **Continuer** and
+   resumes you exactly where you left off (same scene, same position,
+   same health).
+
+## Scenes
+
+| Scene                  | Purpose                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+|------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `main_menu.owl`        | Logo, dynamic Démarrer/Continuer button, Settings, Delete Save, Quit                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `world_map.owl`        | Top-down 32×24 tilemap world: plain + mountains + central house + hazards (water = damage, lava = death) + hidden teleporter                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `platformer_house.owl` | Side-scroller 60×16 inside the house: static platforms, kinematic moving platforms (h + v), lava pits (death), spike traps (damage), 8 collectible coins, victory portal                                                                                                                                                                                                                                                                                                                                                                             |
+| `settings_menu.owl`    | Volume + speed sliders, reset defaults, back button                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| `victory.owl`          | Win screen with score, menu button                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `game_over.owl`        | Lose screen with score, retry (→ world map) + menu buttons                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| `iso_test.owl`         | Isometric layer test (**I** from the main menu): an 8×8 diamond map with slopes (a hump with a foundation under the house, a ridge, a road climbing a ramp), depth-tested trees, buildings from `IsometricObject` slices (cottage, townhouse, station, tower), three vehicles driven by `iso_vehicle.lua` as compact sprites, translucent smoke sorted back to front, a 2D sky behind and a HUD on top                                                                                                                                               |
+| `iso_town.owl`         | Isometric town (**O** / left bumper from the main menu): a 24×24 sloped map with a hill, an embankment, a ring road and two streets (road tiles from the neighbour mask: straights, corners, T, cross, dead ends), 23 buildings from `IsometricObject` slices, trees, three vehicles driving to their stops over the road graph and re-routing when a road is bulldozed (`navigation` rules of the Ground tilemap, `iso_town_traffic.lua`), a mouse / keyboard / gamepad build-road and bulldoze tool that re-tiles junctions (`iso_town.lua`, `huds/iso_town.owlhud`), and a 2D sky with drifting clouds behind the isometric layer |
+| `inventory_demo.owl`   | Inventory demo (**N** / Back from the main menu): a top-down room with pick-ups, a gold door, a vault switch opened by a key and the inventory window of `huds/inventory.owlhud` (Tab / Y)                                                                                                                                                                                                                                                                                                                                                           |
+
+## Tilesets
+
+| Tileset                     | Atlas size      | Tiles            | Notable collidables / hazards                                                                                                                                                                                                                                                              |
+|-----------------------------|-----------------|------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `world_topdown.owltileset`  | 4×4 / 64px      | 16               | mountain, tree, fence, sign, house wall/roof (collidable); water + lava (visual; hazard via separate trigger entities)                                                                                                                                                                     |
+| `world_platform.owltileset` | 4×2 / 64px      | 8                | floor, platform, brick (collidable); lava + spikes (visual; hazard triggers overlay)                                                                                                                                                                                                       |
+| `raycast_walls.owltileset`  | 4×4 / 64px      | 8                | gray brick, blue stone, wood, red banded wall variants — all collidable, sampled by `RendererRaycast` for wall stripes                                                                                                                                                                     |
+| `iso_ground.owltileset`     | 16×31 / 64×48px | 26 flat + slopes | `kind: Isometric` diamond terrain (grass, sand, water, road, rock, snow, rail, …) with its slope table (18 sloped variants of 24 terrains, the 16 road shapes included) and the grass and road foundations, drawn by the isometric layer; generated by `tools/iso_atlas` (also `iso_ground_2x` and `iso_ground_half`) |
+
+## Gameplay Features
+
+- **Win condition**: clear the platformer level inside the house, return to the world
+  map (door reports as explored), step on the teleporter that appears once every house
+  is done → Victory.
+- **Defeat condition**: HP bar depletes to 0 → Game Over.
+- **World hazards**: water = damage-over-time (-0.6 HP/s), lava = instant death.
+- **Platformer hazards**: lava pits = instant death, spike traps = -0.34 HP per touch.
+- **Coins**: 8 collectibles inside the house, score persists across the run via gamestate.
+- **ESC pause + Continue**: ESC at any time saves a pause snapshot (`continue_*` keys
+  in gamestate) and returns to the main menu; the primary button toggles between
+  Démarrer (fresh run) and Continuer (resume exact scene + position + health).
+- **Save system**: quick-save with F5 (legacy), slot 1 + slot 2 by `SaveManager`,
+  Continue from menu re-loads slot 1.
+- **Settings persistence**: master volume + player speed editable in-game, persisted
+  across launches via `SettingsManager`.
+
+## Animation Clips
+
+The platformer's collectible coins are driven by an inline `AnimatedSpriteRenderer`
+component (texture `animated_coin.png`, 6×3 grid, 18 frames). A reusable `.owlanim`
+asset is bundled under `engine_assets/animations/coin.owlanim` for the Animation
+editor and as a regression-test fixture, but the sample itself does not reference
+it directly.
+
+## Lua Scripts
+
+| Script                   | Features exercised                                                                                                                                                                                        |
+|--------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `main_menu.lua`          | Dynamic Démarrer/Continuer button, save slot info, settings dispatch, fade transitions, `gamestate` continue snapshot, `save.has_save/list/delete`, `scene.load_scene`                                    |
+| `world_player.lua`       | Top-down 4-direction movement (gravity scale = 0 + `set_velocity`), camera-follow, ESC pause, teleporter visibility gate, world-return position restore                                                   |
+| `platformer_player.lua`  | Tight side-scroller controls (state machine grounded / rising / falling, coyote time, jump buffer), no air control, camera-follow, HUD update, ESC pause, `on_collision` trace                            |
+| `house_door.lua`         | `Trigger.Type=Interaction`, gates entry on `house_<n>_done` flag, saves world-return position, loads platformer scene                                                                                     |
+| `level_complete.lua`     | Marks the visited house as done, increments `houses_visited`, returns to the world map                                                                                                                    |
+| `teleporter.lua`         | `Trigger.Type=Interaction`, loads the victory scene (visibility currently controlled by `world_player.lua`)                                                                                               |
+| `lava_damage.lua`        | `Trigger.Type=LuaCallback`, continuous health drain via `time.delta()` (used by the world-map water trigger boxes)                                                                                        |
+| `spike_damage.lua`       | `Trigger.Type=LuaCallback`, instantaneous HP step on each entry (platformer spikes)                                                                                                                       |
+| `coin.lua`               | `Trigger.Type=LuaCallback`, score increment, sprite spin, sound + entity destroy                                                                                                                          |
+| `moving_platform_h.lua`  | Kinematic body driven by `physics.set_velocity` along X from `on_tick` (fixed simulation tick) — pushes the player                                                                                        |
+| `moving_platform_v.lua`  | Same idea on Y — pushes the player vertically                                                                                                                                                             |
+| `settings_menu.lua`      | `settings.get/set/save/load/apply/reset_all`, slider handling, fade transitions                                                                                                                           |
+| `victory.lua`            | `gamestate.get`, fade transitions                                                                                                                                                                         |
+| `game_over.lua`          | Retry → world map, Menu → main menu, gamestate clear                                                                                                                                                      |
+| `raycast_house_door.lua` | `Trigger.Type=Interaction`, saves world-return position, loads `raycast_demo.owl`                                                                                                                         |
+| `raycast_player.lua`     | First-person controls (Q/E rotate yaw, WASD strafe relative to facing), gravity scale 0, ESC returns to world with pose persisted via `raycast_return_*` gamestate keys                                   |
+| `pickup.lua`             | `Trigger.Type=LuaCallback`, string properties, gamestate as the inventory (`inv_<item>`), entity destruction, sound                                                                                       |
+| `lock.lua`               | `Trigger.Type=Interaction`, a key-locked door or switch: opens only when `inv_<key>` is in the inventory, uses the key up, remembers it in gamestate                                                      |
+| `inventory.lua`          | An `.owlhud` of its own driven from Lua: slots (icon, count, tooltip), window opened by the `inventory` action, `ui.set_focus`, `onFocusCallback`, `onCloseCallback`, quick save / load (F6 / F9)         |
+| `iso_town.lua`           | Build-road and bulldoze tool: `isometric.pick_cell` / `get_cell` / `set_cell` / `get_slope` / `get_height`, actions `build`, `bulldoze`, `town_tool`, `cursor`, `ui.is_mouse_over_ui`, funds in gamestate |
+| `iso_town_traffic.lua`   | Vehicles driving from stop to stop over the road graph (`path.find`, `poll`, `get`, `get_edge_cost`, `get_version`), re-routing when a road is bulldozed, on the terrain, one sprite per vehicle with eight headings, right-hand lanes and quarter-circle turns             |
+| `iso_cloud.lua`          | Parallax cloud of the 2D layer behind the isometric one                                                                                                                                                   |
+| `inventory_player.lua`   | Top-down movement of the inventory demo, still while the inventory window is open                                                                                                                         |
+
+## Engine Features Covered
+
+### Components Used
+- [x] Transform, Camera, Canvas, SpriteRenderer, CircleRenderer, AnimatedSpriteRenderer, TextRenderer
+- [x] PhysicBody (dynamic + static), Player
+- [x] Trigger (Death, Victory, Teleport, Timer, Interaction, LuaCallback, Target)
+- [x] Hierarchy (parent-child), Visibility, Tag, ID
+- [x] LuaScript (with properties)
+- [x] SoundListener, BackgroundTexture
+- [x] UiRect, UiText, UiButton, UiSlider, UiProgressBar, UiImage, UiPanel
+- [x] UiWindow, UiLayout, UiTooltip, UiToolCursor (the "Controls" window of `huds/gameplay.owlhud`)
+- [x] UiFocus (slots of the inventory window, `onFocusCallback`) and a window with a grid `UiLayout` (`huds/inventory.owlhud`)
+- [x] UiList (the journal of the inventory window: a model grown by the script, only the rows in view bound with `onBindCallback` and `ui.list_set_row`, `onSelectCallback`, wheel and bar)
+
+### Lua API Coverage
+- [x] `transform` (get/set position, rotation, scale)
+- [x] `physics` (impulse, get_velocity, set_velocity, set_transform, set_gravity_scale)
+- [x] `input` (action map: is_action_pressed, is_action_just_pressed, get_action_value, get_action_vector; get_mouse_x, get_mouse_y)
+- [x] `scene` (find_entity, destroy_entity, create_entity, load_scene)
+- [x] `entity` (has_component, get_name)
+- [x] `ui` (set_text, get_text, set_visible, set_progress, set_slider_value, get_slider_value, set_button_enabled, transition_fade_in/out, is_transition_active)
+- [x] `gamestate` (set, get, remove, clear)
+- [x] `save` (save_game, load_game, has_save, list_saves, delete_save)
+- [x] `settings` (get, set, save, load, apply, reset, reset_all)
+- [x] `sound` (play, stop, pause, resume, set_volume)
+- [x] `log` (trace, info, warn, error)
+- [x] `trigger` (start_timer, stop_timer, reset_timer)
+- [x] Trigger callbacks (on_trigger_enter/exit, on_timer, on_interact, custom)
+- [x] Collision callback (`on_collision(other_id)` from Box2D contacts)
+- [x] Gamepad (`input.get_gamepad_stick`, `is_gamepad_button_just_pressed`) in the platformer, project mapping file
+- [x] Action map (`input_actions.yml`: axis, button and vector actions on keys, mouse and gamepad, overriding the built-in ones)
+
+### Gameplay Systems
+- [x] Scene transitions (menu / world map / platformer / victory / game-over / settings)
+      with fade effects
+- [x] Victory / defeat flow with Victory and Death trigger zones (lava death, water
+      damage tick, spike damage tick)
+- [x] Health system with HUD (UiProgressBar + ScoreText)
+- [x] Save system (quick-save F5, slot 1, list / delete saves from menu)
+- [x] Continue from menu — restores `continue_scene` + position + health from gamestate
+      after an ESC pause, so the user resumes exactly where they left off
+- [x] Settings persistence (game defaults + user overrides + reset to defaults)
+- [x] Trigger zones (Death, LuaCallback, Interaction, Teleport)
+- [x] Tilemap system — world map (32×24, top-down), platformer (60×16, side-view)
+      and raycast demo (16×16, first-person via `RendererRaycast`) all use the
+      same `Tilemap` component; per-renderer dispatch comes from the active
+      `RenderLayer` type. Per-tile collidable flags from the matching
+      `.owltileset` drive both the visual rendering and the static colliders.
+- [x] Renderer stack — three project layers `[Renderer2D(world),
+      RendererRaycast(raycast_world), Renderer2D(ui)]`. Most scenes use the
+      2D world; the raycast demo flips `world` off and `raycast_world` on
+      via `EnabledRenderers`. Every HUD canvas is drawn by the HUD pass, in
+      pixels on top of the layers, at 1280×720 reference pixels scaled with
+      the window height; the gameplay scenes name their HUD with `Hud:`
+      (`huds/gameplay.owlhud` for the platformer, `world_map`, `raycast` and
+      `iso_test` and `iso_town` have their own), the menus keep their canvas.
+- [x] Static + Kinematic platforms — `PhysicBody Static` for jumpable ledges,
+      `PhysicBody Kinematic` driven by `physics.set_velocity` for moving platforms
+      that push the player
+- [x] AnimatedSpriteRenderer — 8 collectible coins on the platformer use the
+      `animated_coin.png` 6×3 spritesheet (18 frames at 0.08 s, loop)
+- [x] Sound effects (jump, coin pickup, victory, menu start)
+- [x] UiImage (owl logo), UiPanel, UiButton, UiSlider, UiProgressBar, UiText —
+      all 8 widget types in use across menu / settings / HUD
+- [x] HUD windows — the platformer HUD holds a draggable, closable "Controls" window (column `UiLayout`, content
+      clipped to the window, tooltip on hover); T (or gamepad X) toggles a `UiToolCursor` sprite following the mouse
+- [x] Inventory — pick-ups, key-locked door and switch, a slotted inventory window driven by the keyboard or the
+      gamepad through the HUD focus, state in gamestate (kept in saves); scenario `test/scenarios/inventory_demo.owltest`
+- [x] BackgroundTexture (sky gradient on world map, dark gradient inside the house)
+- [x] Mouse input tracking — mouse coordinates displayed on the main menu
+
+### Not Yet Demonstrated
+- [ ] NativeScript (C++ scripting, only Lua exercised)
+- [ ] EntityLink component
+- [ ] Timer triggers (the original `hazard_timer.lua` was retired with the legacy
+      gameplay scenes)

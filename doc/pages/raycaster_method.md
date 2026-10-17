@@ -521,5 +521,5 @@ To drive either object from a Lua script instead of the built-in key, set the co
 | `source/owl/private/script/LuaBindings.cpp` (`door` + `pushwall`)   | Lua API tables                                        |
 | `test/renderer_tests/RendererRaycast_test.cpp`                      | Renderer-level unit tests                             |
 | `test/scene_tests/RaycastDynamicWalls_test.cpp`                     | Door / pushwall state-machine + serializer tests      |
-| `sample_project/scenes/raycast_demo.owl`                            | Wolfenstein-inspired demo scene                       |
-| `sample_project/scripts/raycast_player.lua`                         | Player input matching the pose convention             |
+| `engine_demo/scenes/raycast_demo.owl`                               | Wolfenstein-inspired demo scene                       |
+| `engine_demo/scripts/raycast_player.lua`                            | Player input matching the pose convention             |

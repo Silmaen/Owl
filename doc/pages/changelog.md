@@ -11,9 +11,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Navigation authored from the tileset and the isometric view: tiles carry `connections` (sides a road joins, written by `tools/iso_atlas`, edited in the Tileset Editor with screen-oriented arrows), `NavProfile` gains `mode` (`connections`, `cells`, legacy `rules`) and per-cell `overrides`, the Tilemap inspector keeps global options only, the Navigation tool of the isometric view cycles a side two-way / exit only / enter only / closed and sets a cell cost (`nav.set_edge`, `nav.set_cell_cost`, `nav.clear_cell`, undoable), and `iso_town` drops its hand-written rules.
+- Pathfinding for vehicles that keep their heading: `PathOptions` (`noReverse`, `heading`) and `path.find` / `path.find_now` options forbid the move back to the cell just left except at a dead end (flat search over cell and entry direction), and `iso_town` vehicles drive to random road cells without U-turns, looping round the whole cell at a dead end.
+- Navigation overlay in the game and in Owl Nest Play: `path.set_debug`, `path.show_route` and `path.clear_routes` draw the graph and the route of each vehicle, F3 in the Engine Demo and the eye button of the Play view.
+- Engine Demo vehicles with eight headings: `vehicles.png` is an 8 × 2 sheet (a frame every 45° per model, lights on the front), one sprite per vehicle in `iso_town` picks its frame from its heading with the new Lua `isometric.set_sprite_frame` / `get_sprite_frame`, vehicles keep to the right as seen on screen on their lane and turn corners along a quarter circle.
+- Tilemap editor node tool: select corners of the isometric terrain (Shift for several), drag or press +/- to change their height with the neighbours adapting, and edit the four corner heights of a cell in Cell Properties, each one undo step.
+- Relative HUD units: the size and the offset of a `UiRect` can be a ratio of the parent or screen width or height (`size_unit`, `offset_unit`, per number), with a unit selector in the inspector that converts the value, the gizmo and `hud.set_rect` / `hud.move` / `hud.add_widget` keeping the units; older files are unchanged.
+- Engine Demo art: six Kenney CC0 packs (Tiny Town, Tiny Dungeon, Pixel Platformer and its farm and industrial expansions, Micro Roguelike) under `engine_demo/textures/kenney/`.
 - Tile-graph pathfinding (`scene::nav`): a graph read from the overlay (roads, tracks) or the terrain of a tilemap through its `navigation` rules (cost per tile, one-way moves, slope limits), exact A* and a hierarchical search over the 32 x 32 chunks, chunk-by-chunk incremental update, requests spread over frames by the `owl.navigation` system, Lua `path.*`, an inspector section and a graph and test-path overlay in the viewport, `path/*` benches, and the `iso_town` vehicles driving to destinations over the road graph and re-routing when a road is bulldozed ([Pathfinding](pathfinding.md)).
 - Draw-order sort key: every 2D primitive carries a `depth` (larger is nearer, as in the isometric layer) and draws by increasing depth, then by type (quads, circles, lines, text), then in submission order, one instanced draw per type and depth; sprites, circles and text take their world z, HUD windows no longer need a batch each (B-10).
 - Persistent isometric chunk buffers: tilemaps of the isometric layer keep one GPU instance buffer per 32 x 32 chunk and layer (`tile.slang`), uploaded in the prepare phase only for the chunks whose cells, corner heights (`TilemapAsset::getChunkHeightGeneration`) or tileset changed (a static frame uploads 0 byte, a one-cell edit one chunk), on OpenGL and Vulkan; the 512² frame drops from 218 to 16 µs and the zoomed-out one from 1.43 ms to 17 µs.
+- Road junctions in the Engine Demo: 14 more road overlay tiles (corners, T, cross, dead ends, isolated, all on every slope) drawn by `tools/iso_atlas`, the build and bulldoze tool re-tiles a cell and its four neighbours from the mask of its road neighbours, and the `iso_town` navigation rules follow the arms of each tile.
 - Isometric town demo (`scenes/iso_town.owl`, **O** from the main menu): a sloped 24×24 map with roads along both axes, buildings, vehicles looping on a ring road and a mouse, keyboard and gamepad build-road tool in Lua, with Lua `isometric.pick_cell`, `get_cell`, `set_cell`, `get_slope`, `get_height` and `ui.is_mouse_over_ui`, a road tile along Y in the atlas generator, scenarios and image tests.
 - HUD scroll views and virtualised lists: `UiScrollView` (clipped content larger than the view, vertical and horizontal, bars drawn and draggable, mouse wheel, `ui_scroll` action, focus scrolled into view) and `UiList` (a model of any number of rows of which only those in view are drawn and bound from Lua, selection by mouse and keys), Lua `ui.scroll_get` / `ui.scroll_set` / `ui.list_*`, Scroll View and List in the HUD editor palette and `hud.add_widget`, inspector support, a scrolling list in the sample inventory and a 1000-row list in the `hud` bench.
 - `hud.extract_canvas` command (Scene Hierarchy context menu "Extract Canvas to .owlhud..."): writes a root canvas and
@@ -84,6 +92,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Show > Navigation graph of the isometric viewport is "Navigation graph and routes" and shares its drawing with the game (`scene::nav::drawNavigationGraph`).
+- `sample_project/` is renamed `engine_demo/`, the Engine Demo: an all-in-one showcase of the engine features, apart from the planned sample games.
+- Play overlay of the Owl Nest viewport: the controls fold into a corner handle (**F10**, kept in the settings), the "Playing" message fades after two seconds, and clicks on the overlay no longer reach the game.
 - The sample project and the project templates draw their HUD from `.owlhud` files (`huds/gameplay.owlhud` for the
   templates and the platformer, one each for the world map, the raycast demo and the isometric test) and no widget
   names the `ui` layer any more; scene and prefab format 5 drops `RendererTag: ui` from canvases and widgets.
@@ -117,6 +128,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   scroll views and lists; the rest of the old v0.5.0 is spread over the later releases, which merge into four (v0.5.0
   3D core and lighting, v0.6.0 content and scripting, v0.7.0 gameplay and simulation, v0.8.0 opening and release
   candidate), 1.0 expected 2027-10-31.
+- Sample games planned beside the Engine Demo: small real games (Breakout, Sokoban, Mini Transport Tycoon, …), one or
+  two per release from v0.5.0, in `design/sample-games.md`.
 - Clang-Tidy and Static Analyzer configurations no longer run the unit tests: `vendor.silmaen.run_tests` turns off a
   preset's Test step.
 - Owl Nest file dialogues on Linux go through `xdg-desktop-portal` over D-Bus, parented to the editor window, instead
@@ -134,7 +147,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Engine Demo vehicles whose cell is bulldozed under them drive off to the road cell they came from and find a way again (a bypass built beside the cut used to leave them stuck), and a U-turn goes through the middle of the cell, symmetric on the way in and out.
+- Engine Demo vehicles turn back through a half circle swinging left across to the opposite lane, and plan their route again at the next cell boundary when roads are built or bulldozed (`town_replans`).
+- Play no longer leaves the runtime edits of `isometric.set_cell` in the edit scene: the running scene works on its own copy of the tilemap assets it shares with the edit scene, so Stop restores the map.
+- A Lua callback failing on every frame logs its error once, then a repeat counter at most once per second, instead of flooding the log.
+- `isometric.pick_cell` reads the mouse in viewport pixels, so the cell under the cursor is right when the game plays inside an Owl Nest viewport.
+- Owl Nest no longer crashes in the Stats panel after a Stop or a scene transition: the hovered entity of a replaced scene is dropped instead of read.
+- Owl Nest no longer crashes when Play is stopped from the viewport button or F7: the stop runs at the start of the next frame, not while the running scene is still being drawn.
+- Saving a scene or a HUD keeps the entity order of its file instead of reversing it on every save (`Scene::getAllEntities` returns the creation order).
 - The HUD Editor button of the ribbon has its own dual-colour ribbon icon instead of the `.owlhud` asset icon.
+- HUD and 2D text legibility at low resolution: the text shader averages four taps over the pixel footprint of small text (no more ragged aliased glyphs), and a shrinking HUD scale mode keeps text at 12 screen pixels at least (never past its authored size); image test `hud_text`.
 - The raycast demo hint shows its text again (the `HUDHint` widget had no rectangle nor text).
 - The inspector reads a script's properties from its file in the asset folders and keeps them when the script does
   not load, instead of emptying them (scripts then ran with `nil` properties in Play).

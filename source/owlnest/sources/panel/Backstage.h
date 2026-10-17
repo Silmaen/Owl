@@ -28,7 +28,7 @@ struct BackstageContext {
 	std::filesystem::path projectDirectory;
 	/// Recently opened project folders, most recent first.
 	std::vector<std::string> recentProjects;
-	/// Folder of the sample project shipped with the editor; empty when it is not found.
+	/// Folder of the Engine Demo shipped with the editor; empty when it is not found.
 	std::filesystem::path sampleProject;
 	/// Create a project.
 	std::function<void()> newProject;
@@ -60,11 +60,11 @@ struct BackstageContext {
 
 /**
  * @brief
- *  Find the sample project shipped with the editor: a `sample_project/owl_project.yml` in a start directory or one
+ *  Find the Engine Demo shipped with the editor: an `engine_demo/owl_project.yml` in a start directory or one
  *  of its first parents (the asset folder of a package or of the source tree).
  * @param[in] iStartDirectories Directories to search from, in priority order.
  * @param[in] iMaxDepth How many parents of each directory are searched.
- * @return The folder of the sample project, or nothing when none is found.
+ * @return The folder of the Engine Demo, or nothing when none is found.
  */
 [[nodiscard]] auto findSampleProject(const std::vector<std::filesystem::path>& iStartDirectories,
 									 uint32_t iMaxDepth = 4) -> std::optional<std::filesystem::path>;

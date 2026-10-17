@@ -67,8 +67,11 @@ The first step on the unmerged `Feature/KickoffIsometricRenderer` branch (2026-0
   are undoable, and the entity is picked in the viewport through the entity id the slices write. A pack includes the
   sheet and the `.png` beside it.
 - Vehicles are plain `SpriteRenderer` / `AnimatedSpriteRenderer` entities: opaque ones leave the layer as compact
-  sprites. `tools/iso_atlas` writes `vehicles.png`, a 4 × 1 sheet of 64 × 64 cells (car and truck, heading along x and
-  along y); the bottom centre of a cell is the front ground corner of the vehicle.
+  sprites. `tools/iso_atlas` writes `vehicles.png`, an 8 × 2 sheet of 64 × 64 cells (car and truck, one frame every 45° from +x
+  towards +y, so the front and the back are drawn right); the vehicle is centred on its tile, whose front corner is the
+  bottom centre of the cell and where the entity sits (`body + 0.5`). On screen +x runs to the lower right and +y to
+  the lower left, so the right hand of a heading `(dx, dy)` is `(-dy, dx)`: `iso_town_traffic.lua` keeps to the right with
+  that lane offset and turns corners on a quarter circle, picking the frame with `isometric.set_sprite_frame`.
 
 ### Terrain
 
@@ -113,10 +116,10 @@ The first step on the unmerged `Feature/KickoffIsometricRenderer` branch (2026-0
 - Procedural Python generator under `tools/` (Poetry, Pillow), seeded and deterministic, output committed: terrain ×
   19 slopes, foundations, tracks and roads, a few sliced buildings, vehicles. It writes albedo plus normal and depth
   atlases on the same grid, one set per zoom level or mips.
-- `sample_project/scenes/iso_town.owl`: a Transport Tycoon-style town on a 24×24 sloped map (a hill, a one-step embankment under the north street), a ring
+- `engine_demo/scenes/iso_town.owl`: a Transport Tycoon-style town on a 24×24 sloped map (a hill, a one-step embankment under the north street), a ring
   road and two streets along both axes, buildings from the generated sheet, three vehicles looping on the ring, a mouse
   / keyboard / gamepad "build road" and bulldoze tool in Lua, its own `.owlhud`, and a 2D sky with clouds behind the
-  isometric layer. Game rules stay in Lua in the sample project; the Lua `isometric` table (pick, cells, slope,
+  isometric layer. Game rules stay in Lua in the Engine Demo; the Lua `isometric` table (pick, cells, slope,
   height) is the only engine support. A raycast or voxel layer cannot join the stack of this scene: both cast from a
   first-person camera, the town has an orthographic one.
 
@@ -129,7 +132,7 @@ migrations, image tests on lavapipe and llvmpipe with zero validation message, a
 ## Status
 
 ISO1 (2026-10-14) shipped the layer, the camera, the billboards with depth and cutout, the translucent sort, the
-ported projection helpers, `Tileset::kind`, the isometric viewport mode of Owl Nest, `sample_project/scenes/iso_test.owl`
+ported projection helpers, `Tileset::kind`, the isometric viewport mode of Owl Nest, `engine_demo/scenes/iso_test.owl`
 and the `isometric` image test on both backends. Isometric tilemaps keep one persistent GPU instance buffer per 32 x 32
 chunk and layer, uploaded in the prepare phase only when a chunk changed (see the ISO5 chunk buffers below).
 
@@ -140,12 +143,12 @@ and the terraforming tools of `TilemapDocument`, the slope table of `TilesetDocu
 references changed because the sample map is no longer flat.
 
 ISO3 (2026-10-15) added the atlas generator `tools/iso_atlas`, run from the repository root with
-`docker/run.sh poetry run python -m tools.iso_atlas [--project sample_project] [--seed 1] [--levels 1x,2x,half]`.
+`docker/run.sh poetry run python -m tools.iso_atlas [--project engine_demo] [--seed 1] [--levels 1x,2x,half]`.
 It writes into `textures/iso/`, `tilesets/` and `tilemaps/` of the project:
 
 | Output                                 | Content                                                                                                                           |
 |----------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------|
-| `tiles.png`                            | 16-column atlas of 64×48 tiles: 12 flat terrains, 18 slopes of 10 terrains, 2 foundation sets (road along Y included)                                      |
+| `tiles.png`                            | 16-column atlas of 64×48 tiles: 26 flat terrains (road shapes included), 18 slopes of 24 terrains, 2 foundation sets                                      |
 | `buildings.png`, `buildings.json`      | Per-footprint-tile slices (64×128) of five buildings, with each slice's 3D box and rectangle                                      |
 | `cottage`, `tower`, `oak`, `pine`, `…` | Whole sprites, bottom centre on the front corner of the footprint                                                                 |
 | `smoke.png`                            | Translucent puff                                                                                                                  |
@@ -189,7 +192,15 @@ Same Null-backend measures as above:
 | Frame, zoom 1, 5 000 vehicles in view            | 308 µs  | 178 µs  | < 2 ms |
 | Frame, zoomed out ×4 (51 200 cells in 3 chunks)  | 1.43 ms | 17 µs   | < 4 ms |
 
-ISO5 demo (2026-10-16): `sample_project/scenes/iso_town.owl` (**O** from the main menu), the road along Y, a `marker`
+Road junctions (Experiment/RoadJunctions): the road overlay has 16 shapes, one per neighbour mask (bits N = -y, E = +x,
+S = +y, W = -x): ids 3 (E+W) and 11 (N+S) as before, then 12 alone, 13-16 dead ends N/E/S/W, 17-20 corners NE/ES/SW/WN,
+21-24 T missing W/N/E/S (NES, ESW, SWN, WNE), 25 cross. The asphalt fills the cell, an edge line closes every side that
+leads nowhere and the dashed centre line runs to every joined side. All of them exist on every slope: the pattern is
+drawn in world coordinates, so a junction on a ramp is as well defined as a straight piece (the tileset grows from 228
+to 494 tiles). `iso_town.lua` tiles a cell from its mask and re-tiles the four neighbours when a road is built or
+bulldozed; the `navigation` rules of the scene list the arms of each tile (`exits` the arms, `enters` their opposites).
+
+ISO5 demo (2026-10-16): `engine_demo/scenes/iso_town.owl` (**O** from the main menu), the road along Y, a `marker`
 prop and `iso_town.owltilemap` from the generator, `scripts/iso_town.lua`, `iso_town_traffic.lua` and `iso_cloud.lua`,
 `huds/iso_town.owlhud`, the `build`, `bulldoze`, `town_tool` and `cursor` actions, the Lua `isometric.*` functions and
 `ui.is_mouse_over_ui`, the `iso_town` and `iso_town_actions` scenarios and the `iso_town` image test (640 × 360, both

@@ -122,7 +122,7 @@ foreach (child ${children})
                 ${child} STREQUAL "sound_tests" OR ${child} STREQUAL "script_tests")
                 set_tests_properties(${PROJECT_PREFIX_LOWER}_${child}_UTests PROPERTIES RESOURCE_LOCK owl_engine_globals)
             endif ()
-            # export_tests exports sample_project with OwlNest and plays it with the exported OwlRunner.
+            # export_tests exports engine_demo with OwlNest and plays it with the exported OwlRunner.
             if (${child} STREQUAL "export_tests")
                 set_tests_properties(${PROJECT_PREFIX_LOWER}_${child}_UTests PROPERTIES LABELS "export")
                 foreach (app_target ${CMAKE_PROJECT_NAME}Nest ${CMAKE_PROJECT_NAME}Runner)

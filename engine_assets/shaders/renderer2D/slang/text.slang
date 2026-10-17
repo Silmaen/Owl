@@ -73,6 +73,17 @@ static const float2 kCorners[4] = {
 	float2(-0.5f,  0.5f),
 };
 
+// Above this screen pixel range (about 40 px text for the 40 px atlas em) one sample per pixel is enough.
+static const float kSupersampleLimit = 2.0;
+
+// Rotated-grid sample offsets inside a pixel, in pixels.
+static const float2 kTapOffsets[4] = {
+	float2(-0.375f, -0.125f),
+	float2( 0.125f, -0.375f),
+	float2( 0.375f,  0.125f),
+	float2(-0.125f,  0.375f),
+};
+
 float median(float r, float g, float b) {
 	return max(min(r, g), min(max(r, g), b));
 }
@@ -102,20 +113,37 @@ VertexOutput vertexMain(VertexInput input, uint iid : SV_InstanceID) {
 FragmentOutput fragmentMain(FragmentInput input) {
 	FragmentOutput output;
 	float4 texColor = input.color;
-
-	float3 msd = gTextures[NonUniformResourceIndex(input.texIndex)].Sample(input.texCoord).rgb;
-	float sd = median(msd.r, msd.g, msd.b);
-
+	const int texIndex = NonUniformResourceIndex(input.texIndex);
+	// Must match the pixel range the atlas is generated with (`Font.cpp`, `g_pixelRange`).
 	const float pxRange = 2.0;
 	uint texW, texH;
-	gTextures[NonUniformResourceIndex(input.texIndex)].GetDimensions(texW, texH);
+	gTextures[texIndex].GetDimensions(texW, texH);
 	float2 texDimensions = float2(texW, texH);
 	float2 unitRange = float2(pxRange) / texDimensions;
 	float2 screenTexSize = float2(1.0) / fwidth(input.texCoord);
 	float screenPxRange = max(0.5 * dot(unitRange, screenTexSize), 1.0);
 
-	float screenPxDistance = screenPxRange * (sd - 0.5);
-	float opacity = clamp(screenPxDistance + 0.5, 0.0, 1.0);
+	// Texture-space size of one screen pixel: the footprint that small text is supersampled over.
+	float2 dx = ddx(input.texCoord);
+	float2 dy = ddy(input.texCoord);
+
+	float opacity;
+	if (screenPxRange > kSupersampleLimit) {
+		// Large text: the distance ramp spans several pixels, one sample is smooth.
+		float3 msd = gTextures[texIndex].SampleGrad(input.texCoord, dx, dy).rgb;
+		opacity = clamp(screenPxRange * (median(msd.r, msd.g, msd.b) - 0.5) + 0.5, 0.0, 1.0);
+	} else {
+		// Small text: the atlas is minified, so a single linear sample aliases. Four taps on a rotated grid over the
+		// pixel footprint give the glyph a smooth coverage instead of ragged edges.
+		opacity = 0.0;
+		for (int tap = 0; tap < 4; ++tap) {
+			float2 offset = kTapOffsets[tap];
+			float2 uv = input.texCoord + dx * offset.x + dy * offset.y;
+			float3 msd = gTextures[texIndex].SampleGrad(uv, dx, dy).rgb;
+			opacity += clamp(screenPxRange * (median(msd.r, msd.g, msd.b) - 0.5) + 0.5, 0.0, 1.0);
+		}
+		opacity *= 0.25;
+	}
 	if (opacity < 0.001)
 		discard;
 

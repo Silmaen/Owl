@@ -45,7 +45,7 @@ TEST(FrameBenchStats, SummarizeUnsortedSeries) {
 }
 
 TEST(FrameBenchOptions, ParseAndReject) {
-	const auto scene = owl::test::getRootPath() / "sample_project" / "scenes" / "main_menu.owl";
+	const auto scene = owl::test::getRootPath() / "engine_demo" / "scenes" / "main_menu.owl";
 	const std::string sceneArg = scene.string();
 	std::array<std::string, 12> storage{"OwlRunner", "--frame-bench", sceneArg, "--frames", "42",      "--warmup",
 										"3",         "--backend",     "null",   "--size",   "640x480", "--vsync"};
@@ -60,7 +60,7 @@ TEST(FrameBenchOptions, ParseAndReject) {
 	EXPECT_EQ(options->size.x(), 640u);
 	EXPECT_EQ(options->size.y(), 480u);
 	EXPECT_TRUE(options->vSync);
-	EXPECT_EQ(options->project, owl::test::getRootPath() / "sample_project");
+	EXPECT_EQ(options->project, owl::test::getRootPath() / "engine_demo");
 
 	storage[8] = "metal";
 	EXPECT_FALSE(parseFrameBenchOptions(static_cast<int>(argv.size()), argv.data(), scene.parent_path()).has_value());
@@ -84,7 +84,7 @@ TEST(FrameBenchRun, NullBackendWritesReport) {
 #ifndef OWL_RUNNER_EXECUTABLE
 	GTEST_SKIP() << "OwlRunner is not built (OWL_BUILD_NEST=OFF).";
 #else
-	const auto scene = owl::test::getRootPath() / "sample_project" / "scenes" / "platformer_house.owl";
+	const auto scene = owl::test::getRootPath() / "engine_demo" / "scenes" / "platformer_house.owl";
 	const auto out = std::filesystem::temp_directory_path() / "owl_frame_bench_test.json";
 	std::filesystem::remove(out);
 	auto command = std::format(R"("{}" --frame-bench "{}" --backend null --frames 8 --warmup 2 --out "{}")",

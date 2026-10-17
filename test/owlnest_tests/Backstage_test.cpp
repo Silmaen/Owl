@@ -113,11 +113,11 @@ TEST(Backstage, FindsTheSampleProjectAboveTheAssets) {
 	std::filesystem::create_directories(assets);
 	// Nothing to find yet.
 	EXPECT_FALSE(findSampleProject({assets}).has_value());
-	std::filesystem::create_directories(root / "sample_project");
-	std::ofstream{root / "sample_project" / "owl_project.yml"} << "name: Sample\n";
+	std::filesystem::create_directories(root / "engine_demo");
+	std::ofstream{root / "engine_demo" / "owl_project.yml"} << "name: Sample\n";
 	const auto found = findSampleProject({root / "missing", assets});
 	ASSERT_TRUE(found.has_value());
-	EXPECT_EQ(*found, (root / "sample_project").lexically_normal());
+	EXPECT_EQ(*found, (root / "engine_demo").lexically_normal());
 	// Too deep for the depth allowed.
 	EXPECT_FALSE(findSampleProject({assets}, 1).has_value());
 	std::filesystem::remove_all(root);

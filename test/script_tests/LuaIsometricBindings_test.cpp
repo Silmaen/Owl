@@ -108,6 +108,31 @@ TEST_F(LuaIsometric, cellsAreReadAndWrittenPerLayer) {
 	EXPECT_EQ(m_asset->layers[1].getCell(3, 3).overlay, 3);
 }
 
+TEST_F(LuaIsometric, setCellStampsTheChunkGeneration) {
+	const auto before = m_asset->layers[1].getChunkGeneration({0, 0});
+	std::ignore = run("isometric.set_cell(map, 1, 3, 3, -1, 3)");
+	EXPECT_NE(m_asset->layers[1].getChunkGeneration({0, 0}), before);
+}
+
+TEST_F(LuaIsometric, aRuntimeEditLeavesTheAssetOfTheEditSceneUntouched) {
+	// Owl Nest Play: the running scene is a copy sharing the tilemap asset of the edit scene.
+	const auto running = scene::Scene::copy(m_scene);
+	running->onStartRuntime();
+	const auto copy = running->findEntityByUUID(m_map.getUUID());
+	ASSERT_TRUE(copy);
+	const std::string text =
+			std::format("map = {}\nfunction on_create()\nisometric.set_cell(map, 1, 3, 3, -1, 3)\nend\n",
+						static_cast<int64_t>(static_cast<uint64_t>(m_map.getUUID())));
+	const std::vector<uint8_t> data(text.begin(), text.end());
+	ScriptInstance instance;
+	instance.setScene(running.get());
+	ASSERT_TRUE(instance.createFromBuffer(data, "iso_play", static_cast<uint64_t>(m_map.getUUID())));
+	instance.onCreate();
+	EXPECT_EQ(m_asset->layers[1].getCell(3, 3).overlay, -1) << "the edit scene keeps its map";
+	EXPECT_EQ(copy.getComponent<scene::component::Tilemap>().asset->layers[1].getCell(3, 3).overlay, 3);
+	running->onEndRuntime();
+}
+
 TEST_F(LuaIsometric, slopeAndHeightFollowTheCorners) {
 	const auto instance = run("flat = isometric.get_slope(map, 0, 0)\n"
 							  "plateau = isometric.get_slope(map, 2, 2)\n"
@@ -130,6 +155,37 @@ TEST_F(LuaIsometric, entitiesWithoutATilemapAreIgnored) {
 	EXPECT_FALSE(instance->getPropertyBool("done").value_or(true));
 	EXPECT_EQ(instance->getPropertyInt("slope").value_or(-1), 0);
 	EXPECT_NEAR(instance->getPropertyFloat("z").value_or(-1.f), 0.f, 1e-3f);
+}
+
+TEST_F(LuaIsometric, spriteFrameIsPickedFromTheSheet) {
+	auto vehicle = m_scene->createEntity("Vehicle");
+	auto& sprite = vehicle.addComponent<scene::component::AnimatedSpriteRenderer>();
+	sprite.columns = 8;
+	sprite.rows = 2;
+	const auto id = static_cast<int64_t>(static_cast<uint64_t>(vehicle.getUUID()));
+	const auto instance = run(std::format("start = isometric.get_sprite_frame({0})\n"
+										  "done = isometric.set_sprite_frame({0}, 5)\n"
+										  "shown = isometric.get_sprite_frame({0})\n"
+										  "far = isometric.set_sprite_frame({0}, 99)\n"
+										  "last = isometric.get_sprite_frame({0})\n"
+										  "negative = isometric.set_sprite_frame({0}, -3)\n"
+										  "first = isometric.get_sprite_frame({0})",
+										  id));
+	EXPECT_EQ(instance->getPropertyInt("start").value_or(-1), 0);
+	EXPECT_TRUE(instance->getPropertyBool("done").value_or(false));
+	EXPECT_EQ(instance->getPropertyInt("shown").value_or(-1), 5);
+	EXPECT_TRUE(instance->getPropertyBool("far").value_or(false));
+	EXPECT_EQ(instance->getPropertyInt("last").value_or(-1), 15) << "a frame past the sheet shows the last one";
+	EXPECT_TRUE(instance->getPropertyBool("negative").value_or(false));
+	EXPECT_EQ(instance->getPropertyInt("first").value_or(-1), 0);
+	EXPECT_EQ(sprite.firstFrame, 0u);
+	EXPECT_EQ(sprite.lastFrame, 0u) << "the animation is pinned on the frame";
+}
+
+TEST_F(LuaIsometric, spriteFrameIgnoresEntitiesWithoutASheet) {
+	const auto instance = run("done = isometric.set_sprite_frame(map, 3)\nframe = isometric.get_sprite_frame(map)");
+	EXPECT_FALSE(instance->getPropertyBool("done").value_or(true));
+	EXPECT_EQ(instance->getPropertyInt("frame").value_or(-1), -1);
 }
 
 TEST_F(LuaIsometric, mouseOverUiFollowsTheHudState) {

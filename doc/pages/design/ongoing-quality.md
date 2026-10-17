@@ -11,7 +11,7 @@ baseline on these axes; each release is expected to move the needle forward. The
 
 - Every new rendering mode ships as a renderer-stack layer that composes with the existing ones (2D, raycast, voxel,
   isometric, 3D) and with the HUD, in the editor and in Play
-- The sample project keeps at least one scene mixing two or more rendering styles
+- The Engine Demo keeps at least one scene mixing two or more rendering styles
 
 ## Code quality
 

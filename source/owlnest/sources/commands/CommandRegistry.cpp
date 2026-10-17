@@ -29,14 +29,17 @@
 #include <yaml-cpp/yaml.h>
 
 #include <algorithm>
+#include <array>
 #include <cctype>
 #include <charconv>
 #include <cstddef>
 #include <exception>
 #include <filesystem>
 #include <format>
+#include <iterator>
 #include <sstream>
 #include <tuple>
+#include <utility>
 
 namespace owl::nest::commands {
 
@@ -490,6 +493,82 @@ auto parseHexColor(const std::string& iText) -> std::optional<math::vec4> {
 	return color;
 }
 
+/// The navigation profile of the tilemap of an entity, or the failure when it has none.
+auto navigationOf(const scene::Entity& iEntity) -> expected<scene::nav::NavProfile*, CommandFailure> {
+	if (!iEntity.hasComponent<scene::component::Tilemap>())
+		return fail(CommandError::InvalidArgument, "the entity has no Tilemap component");
+	auto& profile = iEntity.getComponent<scene::component::Tilemap>().navigation;
+	if (profile.isEmpty())
+		return fail(CommandError::NotApplicable, "navigation is not enabled on this tilemap");
+	return &profile;
+}
+
+auto cellOf(const CommandArgs& iArgs) -> std::optional<std::pair<uint32_t, uint32_t>> {
+	const auto x = iArgs.get<int64_t>("x");
+	const auto y = iArgs.get<int64_t>("y");
+	if (!x || !y || *x < 0 || *y < 0)
+		return std::nullopt;
+	return std::pair{static_cast<uint32_t>(*x), static_cast<uint32_t>(*y)};
+}
+
+auto setNavEdge(const shared<scene::Scene>& ioScene, const CommandArgs& iArgs) -> Prepared {
+	const auto entity = entityArg(*ioScene, iArgs, "entity");
+	if (!entity)
+		return unexpected<CommandFailure>{entity.error()};
+	const auto cell = cellOf(iArgs);
+	const auto side = scene::nav::parseDirection(iArgs.getText("side"));
+	const auto stateName = iArgs.getText("state");
+	const auto state = std::ranges::find(scene::nav::sideStateNames, stateName);
+	if (!cell || !side || state == scene::nav::sideStateNames.end())
+		return fail(CommandError::InvalidArgument, "give a cell (`x`, `y`), a `side` and a `state`");
+	const auto profile = navigationOf(*entity);
+	if (!profile)
+		return unexpected<CommandFailure>{profile.error()};
+	const auto value = static_cast<scene::nav::SideState>(std::distance(scene::nav::sideStateNames.begin(), state));
+	return modifyEntity(ioScene, *entity, std::format("Set side of cell ({}, {})", cell->first, cell->second),
+						[&](scene::Entity& ioEntity) -> void {
+							ioEntity.getComponent<scene::component::Tilemap>().navigation.setEdgeState(
+									cell->first, cell->second, *side, value);
+						});
+}
+
+auto setNavCellCost(const shared<scene::Scene>& ioScene, const CommandArgs& iArgs) -> Prepared {
+	const auto entity = entityArg(*ioScene, iArgs, "entity");
+	if (!entity)
+		return unexpected<CommandFailure>{entity.error()};
+	const auto cell = cellOf(iArgs);
+	if (!cell)
+		return fail(CommandError::InvalidArgument, "give a cell (`x`, `y`)");
+	const auto profile = navigationOf(*entity);
+	if (!profile)
+		return unexpected<CommandFailure>{profile.error()};
+	const double cost = iArgs.get<double>("cost").value_or(static_cast<double>(iArgs.get<int64_t>("cost").value_or(0)));
+	return modifyEntity(ioScene, *entity, std::format("Set cost of cell ({}, {})", cell->first, cell->second),
+						[&](scene::Entity& ioEntity) -> void {
+							ioEntity.getComponent<scene::component::Tilemap>().navigation.setCellCost(
+									cell->first, cell->second, static_cast<float>(cost));
+						});
+}
+
+auto clearNavCell(const shared<scene::Scene>& ioScene, const CommandArgs& iArgs) -> Prepared {
+	const auto entity = entityArg(*ioScene, iArgs, "entity");
+	if (!entity)
+		return unexpected<CommandFailure>{entity.error()};
+	const auto cell = cellOf(iArgs);
+	if (!cell)
+		return fail(CommandError::InvalidArgument, "give a cell (`x`, `y`)");
+	const auto profile = navigationOf(*entity);
+	if (!profile)
+		return unexpected<CommandFailure>{profile.error()};
+	return modifyEntity(ioScene, *entity, std::format("Clear cell ({}, {})", cell->first, cell->second),
+						[&](scene::Entity& ioEntity) -> void {
+							auto& navigation = ioEntity.getComponent<scene::component::Tilemap>().navigation;
+							for (const auto side: scene::nav::directions)
+								navigation.setEdgeState(cell->first, cell->second, side, scene::nav::SideState::TwoWay);
+							navigation.setCellCost(cell->first, cell->second, 0.f);
+						});
+}
+
 auto entitySpec(std::string iDescription) -> ArgSpec {
 	return {.name = "entity", .type = ArgType::Entity, .required = true, .description = std::move(iDescription)};
 }
@@ -581,6 +660,37 @@ CommandRegistry::CommandRegistry() {
 				  {.name = "rotation", .type = ArgType::Vec3, .description = "Local rotation, in radians."},
 				  {.name = "scale", .type = ArgType::Vec3, .description = "Local scale."}},
 		 .factory = setTransform});
+	add({.name = "nav.set_edge",
+		 .description = "Set how one side of a road cell can be crossed (the edge to its neighbour): two ways, exit "
+						"only, enter only or closed. The neighbour cell is updated to agree.",
+		 .args = {entitySpec("Tilemap entity."),
+				  {.name = "x", .type = ArgType::Integer, .required = true, .description = "Cell column."},
+				  {.name = "y", .type = ArgType::Integer, .required = true, .description = "Cell row."},
+				  {.name = "side",
+				   .type = ArgType::Enum,
+				   .required = true,
+				   .description = "Side of the cell, towards its neighbour.",
+				   .choices = {"east", "south", "west", "north"}},
+				  {.name = "state",
+				   .type = ArgType::Enum,
+				   .required = true,
+				   .description = "Movers leave and enter (two_way), only leave (exit_only), only enter "
+								  "(enter_only) or neither (closed) the cell by this side.",
+				   .choices = {"two_way", "exit_only", "enter_only", "closed"}}},
+		 .factory = setNavEdge});
+	add({.name = "nav.set_cell_cost",
+		 .description = "Give a cell of the navigation graph its own crossing cost (0 keeps the cost of its tile).",
+		 .args = {entitySpec("Tilemap entity."),
+				  {.name = "x", .type = ArgType::Integer, .required = true, .description = "Cell column."},
+				  {.name = "y", .type = ArgType::Integer, .required = true, .description = "Cell row."},
+				  {.name = "cost", .type = ArgType::Number, .required = true, .description = "Cost in cells."}},
+		 .factory = setNavCellCost});
+	add({.name = "nav.clear_cell",
+		 .description = "Remove the navigation exceptions of a cell: its closed sides and its own cost.",
+		 .args = {entitySpec("Tilemap entity."),
+				  {.name = "x", .type = ArgType::Integer, .required = true, .description = "Cell column."},
+				  {.name = "y", .type = ArgType::Integer, .required = true, .description = "Cell row."}},
+		 .factory = clearNavCell});
 	add({.name = "component.add",
 		 .description = "Add an optional component, with its default values, to an entity.",
 		 .args = {entitySpec("Entity changed."),

@@ -161,7 +161,7 @@ TEST_P(RenderImage, matchesReference) {
 									 R"(--backend {} --frames 2 --warmup {} --size {}x{} --validation )"
 									 R"(--capture "{}" > "{}" 2>&1)",
 									 getDriverEnvironment(backend), OWL_RUNNER_EXECUTABLE, sceneFile.string(),
-									 (root / "sample_project").string(), backend, g_warmupFrames, size.x(), size.y(),
+									 (root / "engine_demo").string(), backend, g_warmupFrames, size.x(), size.y(),
 									 actualFile.string(), logFile.string());
 	// NOLINTNEXTLINE(bugprone-command-processor) The runner must run in its own process (one GPU context).
 	const int status = std::system(command.c_str());
@@ -221,7 +221,7 @@ INSTANTIATE_TEST_SUITE_P(IsometricObjects, RenderImage,
 												iInfo.param.size.x(), iInfo.param.size.y());
 						 });
 
-// The isometric town of the sample project: sloped terrain, roads along both axes, buildings, trees, vehicles and the
+// The isometric town of the Engine Demo: sloped terrain, roads along both axes, buildings, trees, vehicles and the
 // 2D sky behind, under the town HUD.
 INSTANTIATE_TEST_SUITE_P(IsometricTown, RenderImage,
 						 testing::Values(RenderCase{"iso_town", "vulkan", {640, 360}},
@@ -284,6 +284,16 @@ INSTANTIATE_TEST_SUITE_P(HudFocus, RenderImage,
 						 testing::Values(RenderCase{"hud_focus", "vulkan"}, RenderCase{"hud_focus", "opengl"},
 										 RenderCase{"hud_focus", "vulkan", {480, 270}},
 										 RenderCase{"hud_focus", "opengl", {480, 270}}),
+						 [](const testing::TestParamInfo<RenderCase>& iInfo) -> std::string {
+							 return std::format("{}_{}_{}x{}", iInfo.param.scene, iInfo.param.backend,
+												iInfo.param.size.x(), iInfo.param.size.y());
+						 });
+
+// HUD text under a shrinking scale mode (reference 1280x720 shown at 480x270): the glyphs keep a legible height (the
+// text scale floor) and are smoothed by the supersampled MSDF coverage.
+INSTANTIATE_TEST_SUITE_P(HudText, RenderImage,
+						 testing::Values(RenderCase{"hud_text", "vulkan", {480, 270}},
+										 RenderCase{"hud_text", "opengl", {480, 270}}),
 						 [](const testing::TestParamInfo<RenderCase>& iInfo) -> std::string {
 							 return std::format("{}_{}_{}x{}", iInfo.param.scene, iInfo.param.backend,
 												iInfo.param.size.x(), iInfo.param.size.y());

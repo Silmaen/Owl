@@ -53,6 +53,11 @@ auto uuidOf(const scene::Scene& iScene, const entt::entity iEntity) -> core::UUI
 	return iScene.registry.get<scene::component::ID>(iEntity).id;
 }
 
+// "X,Y" units as `hud.set_rect` reads them.
+auto unitsText(const UiRect::Units& iUnits) -> std::string {
+	return std::format("{},{}", UiRect::getUnitName(iUnits.x), UiRect::getUnitName(iUnits.y));
+}
+
 auto toArg(const core::UUID iUuid) -> int64_t { return static_cast<int64_t>(static_cast<uint64_t>(iUuid)); }
 
 auto parentArea(const scene::ui::HudLayout& iLayout, const HudNode& iNode, const math::vec2ui& iScreen)
@@ -347,7 +352,10 @@ auto HudDocument::beginDrag(scene::Scene& ioScene, const HudHandle iHandle, cons
 		drag.items.push_back({.entity = uuid,
 							  .rect = entity.getComponent<UiRect>(),
 							  .bounds = node->bounds,
-							  .parent = toReference(parentArea(layout, *node, m_resolution), node->scale),
+							  .frame = {.parent = toReference(parentArea(layout, *node, m_resolution), node->scale),
+										.screen = math::vec2{static_cast<float>(m_resolution.x()),
+															 static_cast<float>(m_resolution.y())} /
+												  node->scale},
 							  .scale = node->scale});
 	}
 	if (drag.items.empty())
@@ -379,7 +387,7 @@ auto HudDocument::computeRect(const math::vec2& iPoint, const bool iSnap) -> UiR
 	const auto& b = item.bounds;
 	const math::vec2 delta = iPoint - drag.start;
 	const auto fit = [&item](const UiRect& iRect, const UiRect::Bounds& iScreen) -> UiRect {
-		return commands::solveHudRect(iRect, item.parent, toReference(iScreen, item.scale));
+		return commands::solveHudRect(iRect, item.frame, toReference(iScreen, item.scale));
 	};
 	switch (drag.handle) {
 		case HudHandle::Pivot:
@@ -398,8 +406,8 @@ auto HudDocument::computeRect(const math::vec2& iPoint, const bool iSnap) -> UiR
 		case HudHandle::AnchorMax:
 		case HudHandle::AnchorBoth:
 			{
-				const auto area = UiRect::Bounds{.position = item.parent.position * item.scale,
-												 .size = item.parent.size * item.scale};
+				const auto area = UiRect::Bounds{.position = item.frame.parent.position * item.scale,
+												 .size = item.frame.parent.size * item.scale};
 				math::vec2 anchor{
 						std::clamp((iPoint.x() - area.position.x()) / std::max(1.f, area.size.x()), 0.f, 1.f),
 						std::clamp((iPoint.y() - area.position.y()) / std::max(1.f, area.size.y()), 0.f, 1.f)};
@@ -476,11 +484,12 @@ void HudDocument::applyPreview(scene::Scene& ioScene, const math::vec2& iPoint, 
 			if (const auto entity = ioScene.findEntityByUUID(item.entity); entity) {
 				auto& rect = entity.getComponent<UiRect>();
 				rect = item.rect;
-				rect.anchorOffset += delta / item.scale;
+				rect.moveBy(delta / item.scale, item.frame);
 			}
 		}
 		drag.current = primary.rect;
-		drag.current.anchorOffset += delta / primary.scale;
+		drag.current.moveBy(delta / primary.scale, primary.frame);
+		drag.movedBy = delta / primary.scale;
 		return;
 	}
 	drag.current = computeRect(iPoint, iSnap);
@@ -523,9 +532,7 @@ auto HudDocument::endDrag(scene::Scene& ioScene, const commands::CommandTarget& 
 		std::string entities;
 		for (const auto& item: drag.items)
 			entities += std::format("{}{}", entities.empty() ? "" : ",", static_cast<uint64_t>(item.entity));
-		const auto& primary = drag.items.back();
-		const math::vec2 delta = (drag.current.anchorOffset - primary.rect.anchorOffset);
-		return iTarget.execute("hud.move", {{"entities", entities}, {"delta", delta}}).has_value();
+		return iTarget.execute("hud.move", {{"entities", entities}, {"delta", drag.movedBy}}).has_value();
 	}
 	const auto& rect = drag.current;
 	return iTarget
@@ -534,7 +541,9 @@ auto HudDocument::endDrag(scene::Scene& ioScene, const commands::CommandTarget& 
 									  {"anchor_max", rect.anchorMax},
 									  {"pivot", rect.pivot},
 									  {"size", rect.size},
-									  {"offset", rect.anchorOffset}})
+									  {"offset", rect.anchorOffset},
+									  {"size_unit", unitsText(rect.sizeUnit)},
+									  {"offset_unit", unitsText(rect.offsetUnit)}})
 			.has_value();
 }
 

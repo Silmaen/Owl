@@ -41,6 +41,7 @@ void Pathfinder::newStamp() {
 	++m_stamp;
 	if (m_stamp == 0) {
 		std::ranges::fill(m_visit, 0u);
+		std::ranges::fill(m_stateVisit, 0u);
 		m_stamp = 1;
 	}
 }
@@ -62,8 +63,8 @@ void Pathfinder::relax(const uint32_t iNode, const uint32_t iCost, const uint32_
 	std::ranges::push_heap(m_open, [](const OpenNode& iL, const OpenNode& iR) -> bool { return openLess(iL, iR); });
 }
 
-auto Pathfinder::begin(const NavMap& iMap, const math::vec2ui& iFrom, const math::vec2ui& iTo, const PathMode iMode)
-		-> PathState {
+auto Pathfinder::begin(const NavMap& iMap, const math::vec2ui& iFrom, const math::vec2ui& iTo, const PathMode iMode,
+					   const PathOptions& iOptions) -> PathState {
 	mp_map = &iMap;
 	m_mapVersion = iMap.getVersion();
 	m_work = 0;
@@ -90,6 +91,19 @@ auto Pathfinder::begin(const NavMap& iMap, const math::vec2ui& iFrom, const math
 	m_toX = iTo.x();
 	m_toY = iTo.y();
 	newStamp();
+	if (iOptions.noReverse) {
+		const size_t count = static_cast<size_t>(m_goalNode) * (noHeading + 1);
+		if (m_stateVisit.size() < count) {
+			m_stateVisit.assign(count, 0);
+			m_stateCost.assign(count, 0);
+			m_stateParent.assign(count, 0);
+		}
+		m_phase = Phase::Heading;
+		m_state = PathState::Searching;
+		const uint32_t entry = iOptions.heading ? static_cast<uint32_t>(*iOptions.heading) : noHeading;
+		relaxState(m_from * (noHeading + 1) + entry, 0, m_from * (noHeading + 1) + entry);
+		return m_state;
+	}
 	auto mode = iMode;
 	if (mode == PathMode::Auto) {
 		const auto chunkDistance = absDiff(iFrom.x() / chunkSide, iTo.x() / chunkSide) +
@@ -145,7 +159,9 @@ auto Pathfinder::step(const uint32_t iBudget) -> PathState {
 		}
 		m_phase = Phase::Abstract;
 	}
-	if (m_phase == Phase::Flat)
+	if (m_phase == Phase::Heading)
+		stepHeading(static_cast<uint32_t>(std::min<uint64_t>(limit - m_work, 0xFFFFFFFFu)));
+	else if (m_phase == Phase::Flat)
 		stepFlat(static_cast<uint32_t>(std::min<uint64_t>(limit - m_work, 0xFFFFFFFFu)));
 	else if (m_phase == Phase::Abstract)
 		stepAbstract(static_cast<uint32_t>(std::min<uint64_t>(limit > m_work ? limit - m_work : 0, 0xFFFFFFFFu)));
@@ -176,6 +192,61 @@ void Pathfinder::stepFlat(const uint32_t iBudget) {
 			const auto nx = static_cast<uint32_t>(static_cast<int32_t>(x) + offsetX(direction));
 			const auto ny = static_cast<uint32_t>(static_cast<int32_t>(y) + offsetY(direction));
 			relax(ny * m_width + nx, current.g + edge, current.node, Kind::Step);
+		}
+	}
+	if (m_open.empty() && m_state == PathState::Searching)
+		m_state = PathState::NotFound;
+}
+
+void Pathfinder::relaxState(const uint32_t iState, const uint32_t iCost, const uint32_t iParent) {
+	if (m_stateVisit[iState] == m_stamp && m_stateCost[iState] <= iCost)
+		return;
+	m_stateVisit[iState] = m_stamp;
+	m_stateCost[iState] = iCost;
+	m_stateParent[iState] = iParent;
+	m_open.push_back({.f = iCost + heuristic(iState / (noHeading + 1)), .g = iCost, .node = iState});
+	std::ranges::push_heap(m_open, [](const OpenNode& iL, const OpenNode& iR) -> bool { return openLess(iL, iR); });
+}
+
+void Pathfinder::stepHeading(const uint32_t iBudget) {
+	const NavMap& map = *mp_map;
+	const uint64_t limit = m_work + iBudget;
+	constexpr uint32_t states = noHeading + 1;
+	while (!m_open.empty() && m_work < limit) {
+		std::ranges::pop_heap(m_open, [](const OpenNode& iL, const OpenNode& iR) -> bool { return openLess(iL, iR); });
+		const OpenNode current = m_open.back();
+		m_open.pop_back();
+		if (current.g != m_stateCost[current.node])
+			continue;
+		++m_work;
+		const uint32_t cell = current.node / states;
+		const uint32_t entry = current.node % states;
+		if (cell == m_to) {
+			m_total = current.g;
+			uint32_t state = current.node;
+			while (true) {
+				m_cells.emplace_back((state / states) % m_width, (state / states) / m_width);
+				if (m_stateParent[state] == state)
+					break;
+				state = m_stateParent[state];
+			}
+			std::ranges::reverse(m_cells);
+			m_state = PathState::Found;
+			return;
+		}
+		const uint32_t x = cell % m_width;
+		const uint32_t y = cell / m_width;
+		uint32_t exits = 0;
+		for (const auto direction: directions) exits += map.getEdgeCost(x, y, direction) != 0 ? 1u : 0u;
+		for (const auto direction: directions) {
+			const uint32_t edge = map.getEdgeCost(x, y, direction);
+			if (edge == 0)
+				continue;
+			if (entry != noHeading && exits > 1 && direction == opposite(static_cast<Direction>(entry)))
+				continue;
+			const auto nx = static_cast<uint32_t>(static_cast<int32_t>(x) + offsetX(direction));
+			const auto ny = static_cast<uint32_t>(static_cast<int32_t>(y) + offsetY(direction));
+			relaxState((ny * m_width + nx) * states + static_cast<uint32_t>(direction), current.g + edge, current.node);
 		}
 	}
 	if (m_open.empty() && m_state == PathState::Searching)
@@ -442,8 +513,8 @@ auto isPathValid(const NavMap& iMap, const std::span<const math::vec2ui> iCells)
 }
 
 auto Pathfinder::find(const NavMap& iMap, const math::vec2ui& iFrom, const math::vec2ui& iTo, const PathMode iMode,
-					  PathResult& oResult) -> bool {
-	begin(iMap, iFrom, iTo, iMode);
+					  PathResult& oResult, const PathOptions& iOptions) -> bool {
+	begin(iMap, iFrom, iTo, iMode, iOptions);
 	step(0xFFFFFFFFu);
 	return takeResult(oResult);
 }

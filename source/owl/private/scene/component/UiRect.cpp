@@ -26,6 +26,28 @@ auto scaled(const math::vec2& iValue, const math::vec2& iFactor) -> math::vec2 {
 	return {iValue.x() * iFactor.x(), iValue.y() * iFactor.y()};
 }
 
+// Written only when a number leaves the pixels, so a file without ratios stays as it was.
+void emitUnits(YAML::Emitter& ioEmitter, const char* iKey, const UiRect::Units& iUnits) {
+	if (iUnits.isPixels())
+		return;
+	ioEmitter << YAML::Key << iKey << YAML::Value << YAML::Flow << YAML::BeginSeq
+			  << std::string{UiRect::getUnitName(iUnits.x)} << std::string{UiRect::getUnitName(iUnits.y)}
+			  << YAML::EndSeq;
+}
+
+// An absent key, a wrong shape or an unknown name leaves pixels.
+void readUnits(const core::YamlNode& iNode, const char* iKey, UiRect::Units& oUnits) {
+	oUnits = {};
+	const auto seq = iNode[iKey];
+	if (!seq.isSequence() || seq.size() < 2)
+		return;
+	const auto unitOf = [](const core::YamlNode& iItem) -> UiRect::Unit {
+		return magic_enum::enum_cast<UiRect::Unit>(iItem.as<std::string>(std::string{})).value_or(UiRect::Unit::Pixels);
+	};
+	oUnits.x = unitOf(seq[0]);
+	oUnits.y = unitOf(seq[1]);
+}
+
 }// namespace
 
 auto UiRect::Bounds::contains(const math::vec2& iPoint) const -> bool {
@@ -86,11 +108,85 @@ auto UiRect::getAnchor() const -> std::optional<Anchor> {
 	return std::nullopt;
 }
 
-auto UiRect::computeBounds(const Bounds& iParent) const -> Bounds {
+auto UiRect::getUnitName(const Unit iUnit) -> std::string_view { return magic_enum::enum_name(iUnit); }
+
+auto UiRect::parseUnit(const std::string_view iName) -> std::optional<Unit> {
+	return magic_enum::enum_cast<Unit>(iName);
+}
+
+auto UiRect::getUnitExtent(const Unit iUnit, const Frame& iFrame) -> float {
+	switch (iUnit) {
+		case Unit::Pixels:
+			return 1.f;
+		case Unit::ParentWidth:
+			return iFrame.parent.size.x();
+		case Unit::ParentHeight:
+			return iFrame.parent.size.y();
+		case Unit::ScreenWidth:
+			return iFrame.screen.x();
+		case Unit::ScreenHeight:
+			return iFrame.screen.y();
+	}
+	return 1.f;
+}
+
+namespace {
+
+auto toPixels(const math::vec2& iValue, const UiRect::Units& iUnits, const UiRect::Frame& iFrame) -> math::vec2 {
+	return {iValue.x() * UiRect::getUnitExtent(iUnits.x, iFrame), iValue.y() * UiRect::getUnitExtent(iUnits.y, iFrame)};
+}
+
+// An empty extent (a collapsed parent) cannot hold a ratio: the value falls back to 0.
+auto fromPixels(const float iPixels, const UiRect::Unit iUnit, const UiRect::Frame& iFrame) -> float {
+	const float extent = UiRect::getUnitExtent(iUnit, iFrame);
+	return extent > 0.f ? iPixels / extent : 0.f;
+}
+
+void convertNumber(float& ioValue, UiRect::Units& ioUnits, const UiRect::Axis iAxis, const UiRect::Unit iUnit,
+				   const UiRect::Frame& iFrame) {
+	const float pixels = ioValue * UiRect::getUnitExtent(ioUnits.get(iAxis), iFrame);
+	ioUnits.set(iAxis, iUnit);
+	ioValue = fromPixels(pixels, iUnit, iFrame);
+}
+
+}// namespace
+
+auto UiRect::getPixelSize(const Frame& iFrame) const -> math::vec2 { return toPixels(size, sizeUnit, iFrame); }
+
+auto UiRect::getPixelOffset(const Frame& iFrame) const -> math::vec2 {
+	return toPixels(anchorOffset, offsetUnit, iFrame);
+}
+
+void UiRect::setPixelSize(const math::vec2& iPixels, const Frame& iFrame) {
+	size = {fromPixels(iPixels.x(), sizeUnit.x, iFrame), fromPixels(iPixels.y(), sizeUnit.y, iFrame)};
+}
+
+void UiRect::setPixelOffset(const math::vec2& iPixels, const Frame& iFrame) {
+	anchorOffset = {fromPixels(iPixels.x(), offsetUnit.x, iFrame), fromPixels(iPixels.y(), offsetUnit.y, iFrame)};
+}
+
+void UiRect::convertSizeUnit(const Axis iAxis, const Unit iUnit, const Frame& iFrame) {
+	convertNumber(iAxis == Axis::X ? size.x() : size.y(), sizeUnit, iAxis, iUnit, iFrame);
+}
+
+void UiRect::convertOffsetUnit(const Axis iAxis, const Unit iUnit, const Frame& iFrame) {
+	convertNumber(iAxis == Axis::X ? anchorOffset.x() : anchorOffset.y(), offsetUnit, iAxis, iUnit, iFrame);
+}
+
+void UiRect::moveBy(const math::vec2& iDelta, const Frame& iFrame) {
+	setPixelOffset(getPixelOffset(iFrame) + iDelta, iFrame);
+}
+
+auto UiRect::computeBounds(const Bounds& iParent) const -> Bounds { return computeBounds(iParent, iParent.size); }
+
+auto UiRect::computeBounds(const Bounds& iParent, const math::vec2& iScreen) const -> Bounds {
+	const Frame frame{.parent = iParent, .screen = iScreen};
+	const math::vec2 pixelSize = getPixelSize(frame);
+	const math::vec2 pixelOffset = getPixelOffset(frame);
 	const math::vec2 cornerMin = iParent.position + scaled(iParent.size, anchorMin);
 	const math::vec2 cornerMax = iParent.position + scaled(iParent.size, anchorMax);
-	const math::vec2 extent = cornerMax - cornerMin + size;
-	const math::vec2 pivotPoint = cornerMin + scaled(cornerMax - cornerMin, pivot) + anchorOffset;
+	const math::vec2 extent = cornerMax - cornerMin + pixelSize;
+	const math::vec2 pivotPoint = cornerMin + scaled(cornerMax - cornerMin, pivot) + pixelOffset;
 	return {.position = pivotPoint - scaled(extent, pivot), .size = extent};
 }
 
@@ -103,6 +199,8 @@ void UiRect::serialize(const core::Serializer& iOut) const {
 	emitVec2(emitter, "pivot", pivot);
 	emitVec2(emitter, "size", size);
 	emitVec2(emitter, "offset", anchorOffset);
+	emitUnits(emitter, "sizeUnit", sizeUnit);
+	emitUnits(emitter, "offsetUnit", offsetUnit);
 	emitter << YAML::EndMap;
 }
 
@@ -113,6 +211,8 @@ void UiRect::deserialize(const core::Serializer& iNode) {
 	readVec2(node, "pivot", pivot);
 	readVec2(node, "size", size);
 	readVec2(node, "offset", anchorOffset);
+	readUnits(node, "sizeUnit", sizeUnit);
+	readUnits(node, "offsetUnit", offsetUnit);
 }
 
 }// namespace owl::scene::component

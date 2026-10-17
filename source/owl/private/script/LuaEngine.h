@@ -127,6 +127,13 @@ public:
 
 	/**
 	 * @brief
+	 *  Get how many repeats of an error already logged were left out of the log.
+	 * @return The number of failed calls whose error was the same as the previous one.
+	 */
+	[[nodiscard]] auto getSuppressedErrorCount() const -> size_t;
+
+	/**
+	 * @brief
 	 *  Name the owner of this state in every error message (e.g. the script and its entity).
 	 * @param[in] iContext Called on error only, returns the text inserted after the failing callback name;
 	 * empty to drop it.
@@ -323,6 +330,14 @@ public:
 	struct Quota;
 
 private:
+	/**
+	 * @brief
+	 *  Log a failed call: in full the first time, then only a counter at most once a second while it repeats.
+	 * @param[in] iWhat Description of the call.
+	 * @param[in] iMessage Error message of Lua.
+	 */
+	void reportError(std::string_view iWhat, std::string_view iMessage) const;
+
 	/**
 	 * @brief
 	 *  Call the function under its arguments on top of the stack, in protected mode and under the quotas.

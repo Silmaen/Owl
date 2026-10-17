@@ -472,16 +472,25 @@ private:
  *   tilemapPath: assets/tilemaps/dungeon_l1.owltilemap
  * ```.
  *
- * A `navigation` map next to the path holds the pathfinding rules (`scene/nav/NavProfile.h`):
+ * A `navigation` map next to the path holds the pathfinding options (`scene/nav/NavProfile.h`). The roads come from the
+ * `connections` the tileset gives to its tiles; `overrides` hold the exceptions edited on the isometric view (sides
+ * closed to leaving or entering, a cell's own cost):
  * ```yaml
  * Tilemap:
  *   tilemapPath: assets/tilemaps/town.owltilemap
  *   navigation:
+ *     mode: connections        # connections | cells | rules (a file without `mode` is read as `rules`)
  *     layer: 1
  *     source: overlay
  *     maxRise: 1
  *     climbCost: 0.5
  *     allowSteep: false
+ *     overrides:
+ *       - {cell: [12, 7], noExit: [north], noEnter: [south], cost: 2}
+ * ```.
+ *
+ * The legacy `rules` list (`mode: rules`) still loads:
+ * ```yaml
  *     rules:
  *       - {tile: 3, cost: 1.0, exits: [east, south, west, north], enters: [east, south, west, north]}
  * ```.
@@ -503,7 +512,7 @@ struct OWL_API Tilemap {
 	std::filesystem::path tilemapPath;
 	/// Resolved asset (runtime only — built from the path or from inline data on load).
 	shared<scene::TilemapAsset> asset;
-	/// Rules turning the tilemap into a graph for the pathfinding (no rule: no graph).
+	/// Options turning the tilemap into a graph for the pathfinding (rules mode without rule: no graph).
 	scene::nav::NavProfile navigation;
 
 	/**

@@ -1273,7 +1273,9 @@ auto makeIsometricCamera(const scene::Scene& iScene) -> renderer::IsometricCamer
 }
 
 auto luaIsometricPickCell(lua_State* iState) -> int {
-	const auto mouse = input::Input::getMousePos();
+	// The viewport mouse of the last HUD update: in Owl Nest the game is drawn inside a panel, not at the window origin.
+	const auto& uiState = getBoundScene(iState)->getUiInputState();
+	const auto mouse = uiState.hasMouse ? uiState.mousePosition : input::Input::getMousePos();
 	const auto windowX = static_cast<float>(luaL_optnumber(iState, 2, static_cast<lua_Number>(mouse.x())));
 	const auto windowY = static_cast<float>(luaL_optnumber(iState, 3, static_cast<lua_Number>(mouse.y())));
 	const auto map = findIsometricMap(iState);
@@ -1355,6 +1357,32 @@ auto luaIsometricGetHeight(lua_State* iState) -> int {
 	return 1;
 }
 
+auto luaIsometricSetSpriteFrame(lua_State* iState) -> int {
+	const auto frame = luaL_checkinteger(iState, 2);
+	const auto entity = findEntity(iState);
+	if (!entity || !entity->hasComponent<scene::component::AnimatedSpriteRenderer>()) {
+		lua_pushboolean(iState, 0);
+		return 1;
+	}
+	auto& sprite = entity->getComponent<scene::component::AnimatedSpriteRenderer>();
+	const auto count = static_cast<int64_t>(sprite.columns) * static_cast<int64_t>(sprite.rows);
+	const auto index = static_cast<uint32_t>(std::clamp<int64_t>(frame, 0, std::max<int64_t>(count - 1, 0)));
+	sprite.firstFrame = index;
+	sprite.lastFrame = index;
+	sprite.m_currentFrame = index;
+	sprite.m_elapsedTime = 0.f;
+	lua_pushboolean(iState, 1);
+	return 1;
+}
+
+auto luaIsometricGetSpriteFrame(lua_State* iState) -> int {
+	const auto entity = findEntity(iState);
+	if (!entity || !entity->hasComponent<scene::component::AnimatedSpriteRenderer>())
+		return 0;
+	lua_pushinteger(iState, entity->getComponent<scene::component::AnimatedSpriteRenderer>().m_currentFrame);
+	return 1;
+}
+
 // The navigation entry of the tilemap entity at argument 1: its graph, synchronised, and its request queue.
 auto findNavigation(lua_State* iState) -> scene::nav::NavWorld::Entry* {
 	const auto entity = findEntity(iState);
@@ -1368,12 +1396,38 @@ auto findNavigation(lua_State* iState) -> scene::nav::NavWorld::Entry* {
 }
 
 auto readNavMode(lua_State* iState, const int iIndex) -> scene::nav::PathMode {
+	if (lua_istable(iState, iIndex))
+		return scene::nav::PathMode::Auto;
 	const std::string_view mode = luaL_optstring(iState, iIndex, "auto");
 	if (mode == "flat")
 		return scene::nav::PathMode::Flat;
 	if (mode == "hierarchical")
 		return scene::nav::PathMode::Hierarchical;
 	return scene::nav::PathMode::Auto;
+}
+
+// The optional table at `iIndex` (the mode may be left out, the table then comes in its place): `{heading_x = dx, heading_y = dy, no_reverse = true}` (a heading is one of the four
+// axis directions; without `no_reverse` the search is the usual one).
+auto readNavOptions(lua_State* iState, const int iIndex) -> scene::nav::PathOptions {
+	scene::nav::PathOptions options;
+	if (!lua_istable(iState, iIndex))
+		return options;
+	lua_getfield(iState, iIndex, "no_reverse");
+	options.noReverse = lua_toboolean(iState, -1) != 0;
+	lua_getfield(iState, iIndex, "heading_x");
+	lua_getfield(iState, iIndex, "heading_y");
+	const auto headingX = lua_tointeger(iState, -2);
+	const auto headingY = lua_tointeger(iState, -1);
+	lua_pop(iState, 3);
+	if (headingX > 0 && headingY == 0)
+		options.heading = scene::nav::Direction::East;
+	else if (headingX < 0 && headingY == 0)
+		options.heading = scene::nav::Direction::West;
+	else if (headingX == 0 && headingY > 0)
+		options.heading = scene::nav::Direction::South;
+	else if (headingX == 0 && headingY < 0)
+		options.heading = scene::nav::Direction::North;
+	return options;
 }
 
 // A cell from two Lua integers; false when one is negative.
@@ -1403,8 +1457,10 @@ auto luaPathFind(lua_State* iState) -> int {
 	const auto from = readNavCell(iState, 2);
 	const auto to = readNavCell(iState, 4);
 	const auto mode = readNavMode(iState, 6);
+	const auto options = readNavOptions(iState, lua_istable(iState, 6) ? 6 : 7);
 	auto* navigation = findNavigation(iState);
-	lua_pushinteger(iState, navigation != nullptr && from && to ? navigation->queue.request(*from, *to, mode) : 0);
+	lua_pushinteger(iState,
+					navigation != nullptr && from && to ? navigation->queue.request(*from, *to, mode, options) : 0);
 	return 1;
 }
 
@@ -1412,6 +1468,7 @@ auto luaPathFindNow(lua_State* iState) -> int {
 	const auto from = readNavCell(iState, 2);
 	const auto to = readNavCell(iState, 4);
 	const auto mode = readNavMode(iState, 6);
+	const auto options = readNavOptions(iState, lua_istable(iState, 6) ? 6 : 7);
 	auto* navigation = findNavigation(iState);
 	if (navigation == nullptr || !from || !to) {
 		lua_pushnil(iState);
@@ -1419,7 +1476,7 @@ auto luaPathFindNow(lua_State* iState) -> int {
 	}
 	scene::nav::Pathfinder finder;
 	scene::nav::PathResult path;
-	if (!finder.find(navigation->map, *from, *to, mode, path)) {
+	if (!finder.find(navigation->map, *from, *to, mode, path, options)) {
 		lua_pushnil(iState);
 		return 1;
 	}
@@ -1520,6 +1577,51 @@ auto luaPathSetBudget(lua_State* iState) -> int {
 	getBoundScene(iState)->getNavigation().setBudget(
 			static_cast<uint32_t>(std::clamp<lua_Integer>(budget, 1, 1000000)));
 	return 0;
+}
+
+// Draw (or stop drawing, with no cells) a route of the map in the debug overlay: `path.show_route(map, id, cells, r, g, b)`.
+auto luaPathShowRoute(lua_State* iState) -> int {
+	luaL_checkinteger(iState, 1);
+	const auto routeId = static_cast<uint64_t>(luaL_checkinteger(iState, 2));
+	const bool hasCells = lua_istable(iState, 3);
+	const auto red = static_cast<float>(luaL_optnumber(iState, 4, 1.));
+	const auto green = static_cast<float>(luaL_optnumber(iState, 5, 1.));
+	const auto blue = static_cast<float>(luaL_optnumber(iState, 6, 1.));
+	std::vector<math::vec2ui> cells;
+	if (hasCells) {
+		const auto count = static_cast<lua_Integer>(lua_rawlen(iState, 3)) / 2;
+		cells.reserve(static_cast<size_t>(count));
+		for (lua_Integer i = 1; i <= count; ++i) {
+			lua_rawgeti(iState, 3, i * 2 - 1);
+			lua_rawgeti(iState, 3, i * 2);
+			cells.emplace_back(static_cast<uint32_t>(std::max<lua_Integer>(lua_tointeger(iState, -2), 0)),
+							   static_cast<uint32_t>(std::max<lua_Integer>(lua_tointeger(iState, -1), 0)));
+			lua_pop(iState, 2);
+		}
+	}
+	if (const auto entity = findEntity(iState); entity && findNavigation(iState) != nullptr)
+		getBoundScene(iState)->getNavigation().setDebugRoute(static_cast<uint64_t>(entity->getUUID()), routeId, cells,
+															 math::vec3{red, green, blue});
+	return 0;
+}
+
+auto luaPathClearRoutes(lua_State* iState) -> int {
+	luaL_checkinteger(iState, 1);
+	if (const auto entity = findEntity(iState); entity && findNavigation(iState) != nullptr)
+		getBoundScene(iState)->getNavigation().clearDebugRoutes(static_cast<uint64_t>(entity->getUUID()));
+	return 0;
+}
+
+auto luaPathSetDebug(lua_State* iState) -> int {
+	luaL_checkany(iState, 1);
+	getBoundScene(iState)->getNavigation().setDebugVisible(scene::nav::NavWorld::DebugSource::Script,
+														   lua_toboolean(iState, 1) != 0);
+	return 0;
+}
+
+auto luaPathGetDebug(lua_State* iState) -> int {
+	lua_pushboolean(iState, getBoundScene(iState)->getNavigation().isDebugVisible() ? 1 : 0);
+	return 1;
 }
 
 using enum LuaType;
@@ -1826,7 +1928,7 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		 .description = "State of the push-wall: `idle`, `moving` or `final`.",
 		 .params = {entityId}, .returns = {{"state", String}}},
 		{.table = "isometric", .name = "pick_cell", .function = guarded<luaIsometricPickCell>,
-		 .description = "Terrain cell under a window pixel (the mouse by default), slope-aware; nothing when it is off the map.",
+		 .description = "Terrain cell under a viewport pixel (the mouse by default), slope-aware; nothing when it is off the map.",
 		 .params = {entityId, {"x", Number, true}, {"y", Number, true}}, .returns = {{"cell_x", Integer}, {"cell_y", Integer}}},
 		{.table = "isometric", .name = "get_cell", .function = guarded<luaIsometricGetCell>,
 		 .description = "Terrain and overlay tile of a cell of a layer of the tilemap (layers from 0, -1 for none or outside).",
@@ -1842,13 +1944,19 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		{.table = "isometric", .name = "get_height", .function = guarded<luaIsometricGetHeight>,
 		 .description = "World height of the terrain surface at a world position (the map's own height outside the map).",
 		 .params = {entityId, {"x", Number}, {"y", Number}}, .returns = {{"z", Number}}},
+		{.table = "isometric", .name = "set_sprite_frame", .function = guarded<luaIsometricSetSpriteFrame>,
+		 .description = "Show one frame (from 0, row by row) of the sheet of an `AnimatedSpriteRenderer` and stop its animation there, so one entity picks its picture from its heading; false when the entity has no such sprite.",
+		 .params = {entityId, {"frame", Integer}}, .returns = {{"done", Boolean}}},
+		{.table = "isometric", .name = "get_sprite_frame", .function = guarded<luaIsometricGetSpriteFrame>,
+		 .description = "Frame an `AnimatedSpriteRenderer` shows now; nothing when the entity has no such sprite.",
+		 .params = {entityId}, .returns = {{"frame", Integer}}},
 		{.table = "path", .name = "find", .function = guarded<luaPathFind>,
-		 .description = "Queue a shortest-path query between two cells of the tilemap's graph (its `navigation` rules); 0 when the entity has no graph. The path is searched over the next frames, `mode` is `auto`, `flat` or `hierarchical`.",
-		 .params = {entityId, {"from_x", Integer}, {"from_y", Integer}, {"to_x", Integer}, {"to_y", Integer}, {"mode", String, true}},
+		 .description = "Queue a shortest-path query between two cells of the tilemap's graph (its `navigation` rules); 0 when the entity has no graph. The path is searched over the next frames, `mode` is `auto`, `flat` or `hierarchical`. `options` (a table, which may replace `mode`) is `{no_reverse = true, heading_x = dx, heading_y = dy}`: the route never goes back to the cell it just left, except from a dead end (a cell with a single exit), and its first move goes on in the heading (an axis direction) when there is one; the search is then always flat.",
+		 .params = {entityId, {"from_x", Integer}, {"from_y", Integer}, {"to_x", Integer}, {"to_y", Integer}, {"mode", String, true}, {"options", Table, true}},
 		 .returns = {{"request", Integer}}},
 		{.table = "path", .name = "find_now", .function = guarded<luaPathFindNow>,
-		 .description = "Search a shortest path at once (a long query on a big map costs frame time, prefer `path.find`): the cells as `{x1, y1, x2, y2, ...}` and the cost in cells, nothing when no path joins the cells.",
-		 .params = {entityId, {"from_x", Integer}, {"from_y", Integer}, {"to_x", Integer}, {"to_y", Integer}, {"mode", String, true}},
+		 .description = "Search a shortest path at once (a long query on a big map costs frame time, prefer `path.find`): the cells as `{x1, y1, x2, y2, ...}` and the cost in cells, nothing when no path joins the cells. `options` as in `path.find`.",
+		 .params = {entityId, {"from_x", Integer}, {"from_y", Integer}, {"to_x", Integer}, {"to_y", Integer}, {"mode", String, true}, {"options", Table, true}},
 		 .returns = {{"cells", Table}, {"cost", Number}}},
 		{.table = "path", .name = "poll", .function = guarded<luaPathPoll>,
 		 .description = "State of a request: `pending`, `found`, `not_found` or `unknown` (released or never made).",
@@ -1874,6 +1982,18 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		{.table = "path", .name = "set_budget", .function = guarded<luaPathSetBudget>,
 		 .description = "Node expansions the scene spends on path requests each frame (4000 by default).",
 		 .params = {{"nodes", Integer}}},
+		{.table = "path", .name = "set_debug", .function = guarded<luaPathSetDebug>,
+		 .description = "Show or hide the navigation overlay over the scene: the graph of every tilemap (green two-way moves, orange one-way moves with an arrow) and the routes given to `path.show_route`. Drawn in the editor's Play view and in the game.",
+		 .params = {{"visible", Boolean}}},
+		{.table = "path", .name = "get_debug", .function = guarded<luaPathGetDebug>,
+		 .description = "Whether the navigation overlay is shown, by a script or by the editor.",
+		 .returns = {{"visible", Boolean}}},
+		{.table = "path", .name = "show_route", .function = guarded<luaPathShowRoute>,
+		 .description = "Give the overlay a route to draw over the tilemap, from its first cell to its last, in a colour (components 0 to 1, white by default): `route_id` names it (a vehicle), a new route with the same id replaces the old one and no cells removes it. Cells are `{x1, y1, x2, y2, ...}` as `path.get` returns them.",
+		 .params = {entityId, {"route_id", Integer}, {"cells", Table, true}, {"r", Number, true}, {"g", Number, true}, {"b", Number, true}}},
+		{.table = "path", .name = "clear_routes", .function = guarded<luaPathClearRoutes>,
+		 .description = "Remove every route given to `path.show_route` for the tilemap.",
+		 .params = {entityId}},
 	};
 	// clang-format on
 }

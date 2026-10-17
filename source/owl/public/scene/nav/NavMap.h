@@ -15,10 +15,13 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <optional>
+#include <unordered_map>
 #include <vector>
 
 namespace owl::scene {
 
+class Tileset;
 class TilemapAsset;
 }// namespace owl::scene
 
@@ -181,6 +184,19 @@ public:
 
 	/**
 	 * @brief
+	 *  What the tile of a cell opens, before the slopes and the exceptions of the profile.
+	 *
+	 * Usable once `sync` has run on the asset: it follows the mode of the profile (rules, tileset connections, any cell).
+	 * @param[in] iAsset The tilemap.
+	 * @param[in] iX Cell x.
+	 * @param[in] iY Cell y.
+	 * @return The cost and the sides of the cell (`tile` is the id read), nothing when the cell is not a node.
+	 */
+	[[nodiscard]] auto getBaseCell(const TilemapAsset& iAsset, uint32_t iX, uint32_t iY) const
+			-> std::optional<NavTileRule>;
+
+	/**
+	 * @brief
 	 *  Whether a cell is a node of the graph.
 	 * @param[in] iX Cell x.
 	 * @param[in] iY Cell y.
@@ -277,6 +293,21 @@ private:
 
 	/**
 	 * @brief
+	 *  What a tile id opens in the current mode.
+	 * @param[in] iId Id stored in the cell (not empty).
+	 * @return The rule of the id, nothing when it is not part of the graph.
+	 */
+	[[nodiscard]] auto resolveId(uint16_t iId) const -> std::optional<NavTileRule>;
+
+	/**
+	 * @brief
+	 *  Read the connections of the tileset into `m_connectionOfTile`.
+	 * @param[in] iTileset The tileset, may be null.
+	 */
+	void readConnections(const Tileset* iTileset);
+
+	/**
+	 * @brief
 	 *  Forget everything built (size or rules changed).
 	 */
 	void reset();
@@ -296,6 +327,12 @@ private:
 	NavProfile m_profile;
 	/// Index into `m_profile.rules` plus one, per tile index; 0 for a tile without rule.
 	std::vector<uint16_t> m_ruleOfTile;
+	/// Connections mask of each tile index of the tileset, -1 for a tile without connections.
+	std::vector<int16_t> m_connectionOfTile;
+	/// Signature of the connections the table was read from.
+	uint64_t m_connectionSignature = 0;
+	/// Index into `m_profile.overrides` of the exception of each cell, by `y << 32 | x`.
+	std::unordered_map<uint64_t, size_t> m_overrideOfCell;
 	/// Grid size in cells.
 	math::vec2ui m_size{0, 0};
 	/// Chunk grid size.

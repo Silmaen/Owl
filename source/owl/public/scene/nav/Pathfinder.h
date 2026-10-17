@@ -15,6 +15,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <optional>
 #include <span>
 #include <vector>
 
@@ -25,6 +26,21 @@ enum struct PathMode : uint8_t {
 	Auto = 0,///< Flat A*, except hierarchical for cells 3 chunks apart or more on a sparse graph (at most 1/5 of the cells).
 	Flat = 1,///< A* over the cells.
 	Hierarchical = 2,///< A* over the border cells of the chunks, then each chunk crossed is refined.
+};
+
+/**
+ * @brief
+ *  Constraints on the moves of a search, for a vehicle that keeps its heading.
+ *
+ * With `noReverse` the search is heading-aware (its state is the cell and the direction it was entered by): a move back
+ * to the cell just left is forbidden, except from a dead end (a cell with a single exit). The search is always flat:
+ * `PathMode::Hierarchical` and `Auto` fall back to the flat algorithm. Without `noReverse` the options are ignored.
+ */
+struct PathOptions {
+	/// Forbid the move back to the cell just left, except from a dead end.
+	bool noReverse = false;
+	/// Direction the mover already goes in at the start cell: its first move cannot reverse it (unless a dead end).
+	std::optional<Direction> heading;
 };
 
 /// Where a search stands.
@@ -107,10 +123,11 @@ public:
 	 * @param[in] iFrom The start cell.
 	 * @param[in] iTo The goal cell.
 	 * @param[in] iMode The algorithm.
+	 * @param[in] iOptions Constraints on the moves (`noReverse` makes the search flat and heading-aware).
 	 * @return The state after the start: `Searching`, or `NotFound` right away for a cell that is not a node.
 	 */
-	auto begin(const NavMap& iMap, const math::vec2ui& iFrom, const math::vec2ui& iTo, PathMode iMode = PathMode::Auto)
-			-> PathState;
+	auto begin(const NavMap& iMap, const math::vec2ui& iFrom, const math::vec2ui& iTo, PathMode iMode = PathMode::Auto,
+			   const PathOptions& iOptions = {}) -> PathState;
 
 	/**
 	 * @brief
@@ -146,10 +163,11 @@ public:
 	 * @param[in] iTo The goal cell.
 	 * @param[in] iMode The algorithm.
 	 * @param[out] oResult The path when found.
+	 * @param[in] iOptions Constraints on the moves.
 	 * @return True when a path was found.
 	 */
 	auto find(const NavMap& iMap, const math::vec2ui& iFrom, const math::vec2ui& iTo, PathMode iMode,
-			  PathResult& oResult) -> bool;
+			  PathResult& oResult, const PathOptions& iOptions = {}) -> bool;
 
 	/**
 	 * @brief
@@ -182,8 +200,11 @@ private:
 	/// How an abstract node was reached.
 	enum struct Kind : uint8_t { Seed, Intra, Cross, Goal, Direct, Step };
 
-	/// Steps of a hierarchical search.
-	enum struct Phase : uint8_t { Flat, StartChunk, GoalChunk, Abstract, Refine };
+	/// Steps of a hierarchical search (`Heading`: the flat search of a mover that cannot reverse).
+	enum struct Phase : uint8_t { Flat, StartChunk, GoalChunk, Abstract, Refine, Heading };
+
+	/// Entry direction of the start state of a heading search with no heading, and number of entry states per cell.
+	static constexpr uint32_t noHeading = directionCount;
 
 	/**
 	 * @brief
@@ -209,6 +230,22 @@ private:
 	 * @param[in] iBudget Expansions to spend.
 	 */
 	void stepFlat(uint32_t iBudget);
+
+	/**
+	 * @brief
+	 *  Expand states of the heading-aware search (state = cell * 5 + the direction of the move into it).
+	 * @param[in] iBudget Expansions to spend.
+	 */
+	void stepHeading(uint32_t iBudget);
+
+	/**
+	 * @brief
+	 *  Record a better way to a state of the heading-aware search and queue it.
+	 * @param[in] iState State.
+	 * @param[in] iCost Cost of the way.
+	 * @param[in] iParent Previous state.
+	 */
+	void relaxState(uint32_t iState, uint32_t iCost, uint32_t iParent);
 
 	/**
 	 * @brief
@@ -332,6 +369,12 @@ private:
 	std::vector<uint32_t> m_parent;
 	/// How each node was reached (a `Kind`, or the direction of the move in a flat search).
 	std::vector<uint8_t> m_kind;
+	/// Stamp of each state of the heading-aware search.
+	std::vector<uint32_t> m_stateVisit;
+	/// Best cost to each state of the heading-aware search.
+	std::vector<uint32_t> m_stateCost;
+	/// Previous state of each state of the heading-aware search.
+	std::vector<uint32_t> m_stateParent;
 	/// Open list.
 	std::vector<OpenNode> m_open;
 	/// Open list of the searches inside a chunk.

@@ -283,7 +283,7 @@ TEST_F(PrefabInPlace, RevertComponent) {
 
 TEST(PrefabSample, CoinPairInstancesUpdateInPlace) {
 	core::Log::init(core::Log::Level::Off);
-	const auto sample = owl::test::getRootPath() / "sample_project";
+	const auto sample = owl::test::getRootPath() / "engine_demo";
 	auto scene = mkShared<Scene>();
 	ASSERT_TRUE(SceneSerializer(scene).deserialize(sample / "scenes" / "platformer_house.owl"));
 	const auto count = scene->getEntityCount();
