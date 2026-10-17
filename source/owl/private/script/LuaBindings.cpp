@@ -1406,8 +1406,7 @@ auto readNavMode(lua_State* iState, const int iIndex) -> scene::nav::PathMode {
 	return scene::nav::PathMode::Auto;
 }
 
-// The optional table at `iIndex` (the mode may be left out, the table then comes in its place): `{heading_x = dx, heading_y = dy, no_reverse = true}` (a heading is one of the four
-// axis directions; without `no_reverse` the search is the usual one).
+// Options table at `iIndex` (or in place of the mode): `{heading_x = dx, heading_y = dy, no_reverse = true}`.
 auto readNavOptions(lua_State* iState, const int iIndex) -> scene::nav::PathOptions {
 	scene::nav::PathOptions options;
 	if (!lua_istable(iState, iIndex))

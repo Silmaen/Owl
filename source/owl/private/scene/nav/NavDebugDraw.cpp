@@ -20,16 +20,17 @@
 
 #include <array>
 #include <cstddef>
+#include <cstdint>
 #include <optional>
 
 namespace owl::scene::nav {
 
 namespace {
 
-/// Edges drawn at most, to keep a huge map from flooding the line batch.
+// Edges drawn at most, to keep a huge map from flooding the line batch.
 constexpr size_t g_maxEdges = 40000;
 
-/// The tilemap entities with a navigation profile, whose graph is up to date, handed to `iDraw`.
+// The tilemap entities with a navigation profile, whose graph is up to date, handed to `iDraw`.
 template<typename Draw>
 void forEachNavigationMap(Scene& ioScene, Draw&& iDraw) {
 	for (const auto view = ioScene.registry.view<component::Tilemap>(); const auto entity: view) {
@@ -50,7 +51,7 @@ constexpr math::vec4 g_closed{0.95f, 0.20f, 0.20f, 1.f};
 constexpr math::vec4 g_cost{1.f, 0.90f, 0.20f, 1.f};
 constexpr math::vec4 g_picked{1.f, 1.f, 1.f, 1.f};
 
-/// Arrow head at `iTip`, the shaft coming from `iTail`.
+// Arrow head at `iTip`, the shaft coming from `iTail`.
 void drawArrowHead(const math::vec3& iTail, const math::vec3& iTip, const math::vec4& iColor) {
 	const auto along = (iTail - iTip) * 0.3f;
 	const math::vec3 side{-along.y(), along.x(), 0.f};
@@ -58,7 +59,7 @@ void drawArrowHead(const math::vec3& iTail, const math::vec3& iTip, const math::
 	renderer::Renderer2D::drawLine({.point1 = iTip, .point2 = iTip + along - side * 0.5f, .color = iColor});
 }
 
-/// Red cross centred on `iCenter`.
+// Red cross centred on `iCenter`.
 void drawCross(const math::vec3& iCenter, const float iHalf, const math::vec4& iColor) {
 	renderer::Renderer2D::drawLine({.point1 = iCenter + math::vec3{-iHalf, -iHalf, 0.f},
 									.point2 = iCenter + math::vec3{iHalf, iHalf, 0.f},
@@ -68,7 +69,7 @@ void drawCross(const math::vec3& iCenter, const float iHalf, const math::vec4& i
 									.color = iColor});
 }
 
-/// Diamond around `iCenter`.
+// Diamond around `iCenter`.
 void drawRing(const math::vec3& iCenter, const float iRadius, const math::vec4& iColor) {
 	const std::array<math::vec3, 4> ring{
 			iCenter + math::vec3{-iRadius, 0.f, 0.f}, iCenter + math::vec3{0.f, -iRadius, 0.f},
@@ -77,7 +78,7 @@ void drawRing(const math::vec3& iCenter, const float iRadius, const math::vec4& 
 		renderer::Renderer2D::drawLine({.point1 = ring[i], .point2 = ring[(i + 1) % ring.size()], .color = iColor});
 }
 
-/// Whether the profile cuts the side of a cell (any exception on it, seen from either end of the edge).
+// Whether the profile cuts the side of a cell (any exception on it, seen from either end of the edge).
 auto isEdgeEdited(const NavProfile& iProfile, const uint32_t iX, const uint32_t iY, const Direction iDirection)
 		-> bool {
 	if (iProfile.overrides.empty())

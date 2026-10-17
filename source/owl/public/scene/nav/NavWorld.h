@@ -45,7 +45,7 @@ public:
 	};
 
 	/// Who asks for the debug overlay: a script (a key of the game) or the editor (Show menu of the viewport).
-	enum class DebugSource : uint8_t {
+	enum struct DebugSource : uint8_t {
 		/// A script, through `path.set_debug`.
 		Script = 1,
 		/// The editor viewport.

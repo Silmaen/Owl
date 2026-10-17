@@ -190,7 +190,7 @@ def build_vehicles(seed: int) -> Layers:
     Render the vehicles into a spritesheet of 64x64 cells, at zoom 1.
 
     One row per vehicle model, one column per heading (every 45 degrees from +x towards +y). The cell is centred on the
-    vehicle, its bottom centre being the front corner of the tile the vehicle stands on, where the engine puts the entity.
+    vehicle, its bottom centre on the front corner of the tile the vehicle stands on, where the engine puts the entity.
 
     :param seed: Seed of the run.
     :return: The sheet.

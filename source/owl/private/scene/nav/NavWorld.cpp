@@ -17,6 +17,7 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <span>
 
 namespace owl::scene::nav {
 
