@@ -33,8 +33,8 @@ completing it marks the level done (`level_<name>_done` in gamestate), returns t
    more. **Objective: find an elevator** (the main one at the end of the west corridor, or the secret one behind
    the pushwalls) and press **E**. F6 / F9 quick-save and load slot 2 (the inventory comes back with the save).
 5. **Isometric town** (`iso_town.owl`) — build roads with the mouse (left click, right click bulldozes, Q switches
-   tool, WASD pans; keyboard cursor I J K L; pad: sticks, RB), watch the traffic. **Objective: the vehicles make 20
-   trips**; keep the road graph connected.
+   tool, WASD pans; keyboard cursor I J K L; pad: sticks, RB), watch the traffic. **Objective: the vehicles make 100
+   trips** (about two minutes); keep the road graph connected.
 6. **Voxel terrain** (`voxel_terrain.owl`) — WASD walk, mouse look, Space jump, Shift run (double-tap Space flies).
    **Objective: walk 100 blocks away from the landing point** (the HUD shows the distance). Escape returns to the
    hub without completing.
@@ -49,7 +49,8 @@ completing it marks the level done (`level_<name>_done` in gamestate), returns t
 | `world_map.owl`        | Hub: top-down 48×24 town drawn with Tiny Town (Tiny Dungeon hero with a walk cycle, camera at a pixel-exact 3×): four houses (platformer, raycast, isometric town, voxel), stone roads, a moat with a bridge (water = damage), a lava meadow (death), the HUD counter of levels completed and the victory portal that wakes when all four are done Also an information board (E: a window with a scroll view of help text), a lever that opens a gate through an `EntityLink`, a villager walking over a grid navigation layer, two more villagers on Lua loops, drifting cloud shadows and chimney smoke. |
 | `platformer_house.owl` | Level 1: side-scroller 197×32 in Pixel Platformer art with its farm and industrial expansions (pixel-exact 3×): meadow (x 0-55), farm (56-132, a stair of slabs up to a plateau, a chasm, a secret cave at the foot of the cliff) and factory (133-196, acid pits, a lift, a spiked catwalk, a tower of slabs and a last lift to the door), 90 coins (two `coin_pair` prefab instances, 8 in the secret cave), 4 hearts, 16 spikes, 7 water pits, 6 kinematic moving platforms (4 h, 2 v), 5 checkpoint flags, animated water, 5 torches and 4 beacons, a 3-layer parallax backdrop, a camera that leads and shakes, a hit flash with invulnerability, coin pops and fades, a door at the top of the tower as the objective, an astronaut with idle / walk / jump frames |
 | `raycast_demo.owl`     | Level 2: Wolfenstein 3D E1M1 (64×64, `RendererRaycast`): doors, five secret pushwalls, decorations, 20 pick-ups (11 treasures, food, first aid, ammo, a machine gun), two elevators (`ExitElevator`, the secret `SecretElevator`) and the inventory window of `huds/raycast.owlhud` A minimap (a 2D `ui` layer over the raycast one) shows the walls and the player. |
-| `iso_town.owl`         | Level 3: isometric town (also **O** from the main menu): a 24×24 sloped map with a hill, an embankment, a ring road and two streets (road tiles from the neighbour mask), 23 buildings from `IsometricObject` slices, trees, three vehicles driving to their stops over the road graph and re-routing when a road is bulldozed (`navigation` rules of the Ground tilemap, `iso_town_traffic.lua`), a mouse / keyboard / gamepad build-road and bulldoze tool (`iso_town.lua`, `huds/iso_town.owlhud`), a 2D sky with drifting clouds, and the trips objective A one-way north street and a slow east side of the ring are navigation exceptions of the Ground tilemap. |
+| `iso_town.owl`         | Level 3: isometric town (also **O** from the main menu), a generated 64×64 map (`tools/iso_atlas`, `city_map.py`) in five districts: sloped hills with cottages in the north-west, a park with a pond in the north-east, a river down to the sea crossed by three bridges, a town centre around a paved plaza, and the industrial yards and the harbour (quay, pier) in the south with a railway between them. A street grid with junctions, dead ends, a one-way centre street, a one-way avenue and a one-way industrial street and two slow roads (navigation exceptions of the Ground tilemap), 195 buildings from `IsometricObject` slices, 277 trees, twelve cars and trucks driving to random road cells over the road graph (`iso_town_traffic.lua`), and a mouse / keyboard / gamepad build-road and bulldoze tool (`iso_town.lua`, `huds/iso_town.owlhud`). Life (`iso_town_life.lua`): smoke from seven chimneys, glints on the water, street lamps and tower beacons that blink, gulls and a day and night tint in the 2D `overlay` layer, clouds of the 2D sky. Sounds: a town ambience and the surf and yard loops, an engine loop on each vehicle (spatial `SoundSource`, heard near the camera), a coin on each trip, a horn near the camera, tool clicks and a bell. The trips objective is 100. |
+| `iso_town_small.owl`   | The compact 24×24 variant of the town (a ring road, two streets, a one-way north street, a slow east side, three vehicles, 20 trips): the fixture of the `iso_town*` scenarios and of the isometric render test, not reachable from the game. |
 | `voxel_terrain.owl`    | Level 4: procedural voxel terrain (`RendererVoxel`, `VoxelPlayer`) with a HUD showing the distance objective (`huds/voxel.owlhud`, `voxel_explorer.lua`)                                                                                                                                                                                                                                                                                                                                                                                            |
 | `settings_menu.owl`    | Volume + speed sliders, reset defaults, back button                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | `victory.owl`          | Win screen with score, menu button                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
@@ -72,6 +73,15 @@ The tilesets use the `Nearest` filter and the cameras show a whole number of scr
 (`orthographicSize` 15 for the 16 px hub, 13.33 for the 18 px platformer at 720p: 3×), so the pixels stay sharp. Sprites
 that share an atlas texture with a tileset share its filter.
 
+## Sounds
+
+`sounds/*.wav` are the platformer and menu effects. The iso town sounds are in `sounds/town/` (mono, 16 bit, 22.05 kHz):
+`engine`, `ambience`, `waves` and `yard` loop, `horn`, `cash`, `click_build`, `click_bulldoze`, `error`, `bell` and
+`chirp` play once. The Kenney CC0 audio packs could not be fetched (kenney.nl answers 403 from the build machine), so
+`sounds/generate_town_sounds.py` synthesises them (sine, noise, seeded, standard library only): run it again to rewrite
+the folder. The master volume applies to everything through the settings; the one-shot effects played from Lua are also
+scaled by `volume_sfx`, the loops of `SoundSource` components are not (no category mixing yet).
+
 ## Tilesets
 
 | Tileset                     | Atlas size      | Tiles            | Notable collidables / hazards                                                                                                                                                                                                                                                              |
@@ -85,7 +95,7 @@ that share an atlas texture with a tileset share its filter.
 
 ## Gameplay Features
 
-- **Win condition**: complete the objective of the four levels (platformer door, E1M1 elevator, 20 town trips,
+- **Win condition**: complete the objective of the four levels (platformer door, E1M1 elevator, 100 town trips,
   100 voxel blocks), return to the hub each time, step on the victory portal that appears once all four are done → Victory.
 - **Defeat condition**: HP bar depletes to 0 → Game Over.
 - **World hazards**: water = damage-over-time (-0.6 HP/s), lava = instant death.
@@ -136,8 +146,9 @@ it directly.
 | `raycast_exit.lua`       | `Trigger.Type=Interaction` on an elevator set in a wall (`kind` property: main or secret), sets `level_raycast_done`, returns to the hub                                                                                    |
 | `raycast_level.lua`      | `pushwall.get_state` polled on the five secret walls, treasure and secret counters of the HUD from the `inv_<item>` keys The minimap dot follows the player. |
 | `voxel_explorer.lua`     | Script on a `VoxelPlayer` entity: distance from the landing point as objective, `level_voxel_done`, Escape back to the hub                                                                                                 |
-| `iso_town.lua`           | Trips objective (`town_trips` to `level_iso_done`) and build-road and bulldoze tool: `isometric.pick_cell` / `get_cell` / `set_cell` / `get_slope` / `get_height`, actions `build`, `bulldoze`, `town_tool`, `cursor`, `ui.is_mouse_over_ui`, funds in gamestate |
-| `iso_town_traffic.lua`   | Vehicles driving from stop to stop over the road graph (`path.find`, `poll`, `get`, `get_edge_cost`, `get_version`), re-routing when a road is bulldozed, on the terrain, one sprite per vehicle with eight headings, right-hand lanes and quarter-circle turns Drives slower on costly cells (`path.get_edge_cost`), never west along the one-way street. |
+| `iso_town.lua`           | Trips objective (`town_trips` to `level_iso_done`) and build-road and bulldoze tool: `isometric.pick_cell` / `get_cell` / `set_cell` / `get_slope` / `get_height`, actions `build`, `bulldoze`, `town_tool`, `cursor`, `ui.is_mouse_over_ui`, funds in gamestate, sound effects of the tool (`sound.play`, `sound.set_volume` scaled by `volume_sfx`) |
+| `iso_town_traffic.lua`   | Vehicles driving from stop to stop over the road graph (`path.find`, `poll`, `get`, `get_edge_cost`, `get_version`), re-routing when a road is bulldozed, on the terrain, one sprite per vehicle with eight headings, right-hand lanes and quarter-circle turns Drives slower on costly cells (`path.get_edge_cost`), never west along the one-way street.. The fleet, the map size and the longest trip come from script properties of the scene (`fleet` string), a destination is never a dead end, coin and horn sounds on arrival |
+| `iso_town_life.lua`      | Life of the town from one script: smoke that rises and shrinks, glints, blinking lights, gulls and a night tint in the `overlay` layer (`transform.set_*`, `ui.set_visible`), a bell and chirps (`sound.play`) |
 | `iso_cloud.lua`          | Parallax cloud of the 2D layer behind the isometric one                                                                                                                                                   |
 | `info_board.lua`         | Interaction trigger opening a window of the hub HUD: `ui.set_visible`, `ui.raise_window`, `onCloseCallback`, `UiScrollView` scrolled by `ui.scroll_get` / `ui.scroll_set` |
 | `hub_lever.lua`          | `entity.get_link` on a hidden `EntityLink` entity, `scene.destroy_entity`, `transform.set_rotation`, `isometric.set_sprite_frame`, toast |
@@ -211,7 +222,9 @@ it directly.
       that push the player
 - [x] AnimatedSpriteRenderer — 8 collectible coins on the platformer use the
       `animated_coin.png` 6×3 spritesheet (18 frames at 0.08 s, loop)
-- [x] Sound effects (jump, coin pickup, victory, menu start)
+- [x] Sound effects (jump, coin pickup, victory, menu start) and the sounds of the iso town: spatial looping
+      `SoundSource` components (an engine on each vehicle, the surf, the yard) with a `SoundListener` on the camera, a
+      non-spatial ambience loop, one-shot effects from Lua scaled by `volume_sfx` (see *Sounds*)
 - [x] UiImage (owl logo), UiPanel, UiButton, UiSlider, UiProgressBar, UiText —
       all 8 widget types in use across menu / settings / HUD
 - [x] HUD windows — the platformer HUD holds a draggable, closable "Controls" window (column `UiLayout`, content
