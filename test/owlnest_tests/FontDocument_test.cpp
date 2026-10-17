@@ -127,3 +127,29 @@ TEST_F(FontDocumentTest, recoverySnapshotRoundTrip) {
 	EXPECT_TRUE(restored.isDirty());
 	EXPECT_FALSE(restored.restoreRecoverySnapshot("garbage: ["));
 }
+
+TEST_F(FontDocumentTest, summarizesTheCharsetWithTheExtraRanges) {
+	ASSERT_TRUE(m_document.loadFromFile(m_font));
+	const auto base = m_document.charsetSummary();
+	EXPECT_GT(base.codePoints, 0u);
+	m_document.addRange({.first = 0x0400, .last = 0x04FF});
+	const auto summary = m_document.charsetSummary();
+	EXPECT_EQ(summary.codePoints, base.codePoints + 256);
+	m_document.performUndo();
+	EXPECT_EQ(m_document.charsetSummary().codePoints, base.codePoints);
+}
+
+TEST_F(FontDocumentTest, samplesAreViewOptionsNotEdits) {
+	ASSERT_TRUE(m_document.loadFromFile(m_font));
+	EXPECT_EQ(FontDocument::sampleSizes().size(), 5u);
+	EXPECT_FLOAT_EQ(FontDocument::sampleSizes().front(), 12.f);
+	EXPECT_FLOAT_EQ(FontDocument::sampleSizes().back(), 64.f);
+	m_document.setSampleText("Hello");
+	m_document.setOutlineShown(true);
+	m_document.setBoxShown(true);
+	EXPECT_EQ(m_document.sampleText(), "Hello");
+	EXPECT_TRUE(m_document.isOutlineShown());
+	EXPECT_TRUE(m_document.isBoxShown());
+	EXPECT_FALSE(m_document.isDirty());
+	EXPECT_FALSE(m_document.canUndo());
+}

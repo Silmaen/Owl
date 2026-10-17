@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Lua `scene.find_entities(tag)`: every entity with a tag; in the Engine Demo iso town a road built on a tree clears it and the bulldozer removes trees (3 funds).
+- Owl Nest opens images (`.png`, `.jpg`, `.jpeg`, `.bmp`, `.tga`) in a read-only viewer: wheel zoom to 3200 %, pan, fit and 1:1, pixel grid, checkerboard, file information and the tile grid of the tilesets that use the image.
+- Owl Nest font documents show the font even when no text uses it: sample text at five sizes drawn by the engine's text renderer with outline and box toggles, the MSDF atlas with a glyph readout, and the charset coverage by Unicode block.
+- Owl Nest opens `.slang` shaders in the code editor with Slang syntax highlighting (keywords, types, semantics, intrinsics, comments, preprocessor).
 - Engine Demo hub redesigned as a 64×40 RPG village: plaza with an animated fountain, church, market, fields, forest edge, river with three bridges, a shrine for the victory portal, signposts, labels and flags on the four level houses, villagers with idle and walk frames (two on grid pathfinding), butterflies, sparrows and a church bell.
 - Engine Demo hub: the four level houses carry an outlined title, the villagers a name tag growing in near the hero (no other place label), and signposts and villagers answer on E with a line in the HUD.
 - Engine Demo raycast minimap is a fog of war: rays cast in Lua reveal the cells in the field of view, closed doors stop them, the seen cells survive saves, and a marker shows the facing.

@@ -20,6 +20,10 @@
 #include <gui/widgets/PropertyGrid.h>
 #include <gui/widgets/SectionHeader.h>
 #include <gui/widgets/Tooltip.h>
+#include <imgui_stdlib.h>
+#include <renderer/CameraOrtho.h>
+#include <renderer/Renderer2D.h>
+#include <renderer/gpu/RenderCommand.h>
 #include <renderer/gpu/Texture.h>
 
 OWL_DIAG_PUSH
@@ -30,6 +34,7 @@ OWL_DIAG_POP
 
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <format>
@@ -59,6 +64,15 @@ constexpr std::array<FontRangePreset, 10> g_presets{{
 		{.name = "Box Drawing", .range = {.first = 0x2500, .last = 0x257F}},
 		{.name = "Geometric Shapes", .range = {.first = 0x25A0, .last = 0x25FF}},
 }};
+
+constexpr std::array<float, 5> g_sampleSizes{12.f, 18.f, 24.f, 36.f, 64.f};
+
+// Margin of a sample line around its text, in font sizes (outline and box room).
+constexpr float g_sampleMargin = 0.18f;
+// Space between two sample lines, in pixels.
+constexpr float g_sampleGap = 8.f;
+// Left margin of the sample lines, in pixels.
+constexpr float g_sampleLeft = 12.f;
 
 constexpr size_t g_editRangeTypeId = 0x466f6e7452616e67;// "FontRang"
 
@@ -119,6 +133,8 @@ FontDocument::FontDocument() = default;
 
 FontDocument::~FontDocument() = default;
 
+auto FontDocument::sampleSizes() -> std::span<const float> { return g_sampleSizes; }
+
 auto FontDocument::rangePresets() -> std::span<const FontRangePreset> { return g_presets; }
 
 auto FontDocument::title() const -> std::string {
@@ -129,7 +145,13 @@ void FontDocument::onAttach(EditorLayer* iEditor) { mp_editorLayer = iEditor; }
 
 void FontDocument::onDetach() { mp_editorLayer = nullptr; }
 
-void FontDocument::onUpdate([[maybe_unused]] const core::Timestep& iTimeStep) {}
+void FontDocument::onUpdate([[maybe_unused]] const core::Timestep& iTimeStep) {
+	if (!m_samplesVisible || m_sampleSize.x() == 0 || m_sampleSize.y() == 0 || !app::Application::instanced())
+		return;
+	m_samplesVisible = false;
+	if (const auto font = viewedFont(); font != nullptr)
+		renderSamples(font);
+}
 
 void FontDocument::onEvent([[maybe_unused]] event::Event& ioEvent) {}
 
@@ -185,6 +207,8 @@ auto FontDocument::saveAs(const std::filesystem::path& iPath) -> bool {
 			gui::FontPreviewCache::get().clear();
 		}
 	}
+	if (m_ownFont != nullptr)
+		m_ownFont->reload(m_settings);
 	return true;
 }
 
@@ -253,6 +277,136 @@ auto FontDocument::loadedFont() const -> shared<data::fonts::Font> {
 	return library.getFont(m_path.stem().string());
 }
 
+auto FontDocument::viewedFont() -> shared<data::fonts::Font> {
+	if (auto library = loadedFont(); library != nullptr)
+		return library;
+	if (m_ownFont == nullptr && !m_ownFontFailed && !m_path.empty()) {
+		m_ownFont = mkShared<data::fonts::Font>(m_path, false, m_savedSettings);
+		m_ownFontFailed = m_ownFont->getAtlasTexture() == nullptr;
+		if (m_ownFontFailed)
+			m_ownFont.reset();
+	}
+	return m_ownFont;
+}
+
+void FontDocument::renderSamples(const shared<data::fonts::Font>& iFont) {
+	using Format = renderer::gpu::AttachmentSpecification::Format;
+	using Tiling = renderer::gpu::AttachmentSpecification::Tiling;
+	if (m_sampleFramebuffer == nullptr) {
+		// Same attachments as the viewport: the 2D pipelines are built for them.
+		m_sampleFramebuffer = renderer::gpu::Framebuffer::create(
+				{.size = m_sampleSize,
+				 .attachments = {{.format = Format::Surface, .tiling = Tiling::Optimal},
+								 {.format = Format::RedInteger, .tiling = Tiling::Optimal},
+								 {.format = Format::Depth24Stencil8, .tiling = Tiling::Optimal}},
+				 .samples = 1,
+				 .swapChainTarget = false,
+				 .debugName = "fontSamples"});
+	} else if (m_sampleFramebuffer->getSpecification().size != m_sampleSize) {
+		m_sampleFramebuffer->resize(m_sampleSize);
+	}
+	const auto width = static_cast<float>(m_sampleSize.x());
+	const auto height = static_cast<float>(m_sampleSize.y());
+	m_sampleFramebuffer->bind();
+	renderer::gpu::RenderCommand::setClearColor({0.12f, 0.12f, 0.14f, 1.f});
+	renderer::gpu::RenderCommand::clear();
+	m_sampleFramebuffer->clearAttachment(1, -1);
+	renderer::Renderer2D::beginScene(renderer::CameraOrtho{0.f, width, 0.f, height});
+	for (const auto& row:
+		 viewer::layoutSampleRows(g_sampleSizes, iFont->getScaledLineHeight(), g_sampleMargin, g_sampleGap)) {
+		renderer::StringData data;
+		// The layout origin is the text top-left: the picture is y-up, the rows count from its top.
+		data.transform.translation() = {g_sampleLeft + row.fontSize * g_sampleMargin,
+										height - row.top - row.fontSize * g_sampleMargin, 0.f};
+		data.text = m_sampleText;
+		data.font = iFont;
+		data.layout = {.fontSize = row.fontSize,
+					   .horizontal = data::fonts::HorizontalAlignment::Left,
+					   .vertical = data::fonts::VerticalAlignment::Top};
+		if (m_showOutline) {
+			data.outlineColor = {1.f, 0.55f, 0.1f, 1.f};
+			data.outlineWidth = row.fontSize * 0.07f;
+		}
+		if (m_showBox) {
+			data.backgroundColor = {0.2f, 0.3f, 0.55f, 1.f};
+			data.backgroundPadding = row.fontSize * g_sampleMargin * 0.8f;
+		}
+		renderer::Renderer2D::drawString(data);
+	}
+	renderer::Renderer2D::endScene();
+	m_sampleFramebuffer->unbind();
+}
+
+void FontDocument::drawSamplesTab(const shared<data::fonts::Font>& iFont) {
+	ImGui::SetNextItemWidth(std::max(ImGui::GetContentRegionAvail().x - ImGui::GetFontSize() * 16.f, 120.f));
+	std::ignore = ImGui::InputText("##sampleText", &m_sampleText);
+	gui::widgets::itemTooltip("Sample text", nullptr, "Drawn at every size below with the engine's text renderer.");
+	ImGui::SameLine();
+	std::ignore = ImGui::Checkbox("Outline", &m_showOutline);
+	ImGui::SameLine();
+	std::ignore = ImGui::Checkbox("Box", &m_showBox);
+	const auto rows =
+			viewer::layoutSampleRows(g_sampleSizes, iFont->getScaledLineHeight(), g_sampleMargin, g_sampleGap);
+	const auto contentHeight = rows.empty() ? 1.f : rows.back().top + rows.back().height + g_sampleGap;
+	ImGui::BeginChild("##samples", {0.f, 0.f}, ImGuiChildFlags_None);
+	const auto width = std::max(ImGui::GetContentRegionAvail().x, 1.f);
+	m_sampleSize = {static_cast<uint32_t>(width), static_cast<uint32_t>(std::ceil(contentHeight))};
+	m_samplesVisible = true;
+	if (const auto picture = gui::imTexture(m_sampleFramebuffer, 0); picture.has_value()) {
+		const auto uv0 = gui::vec(m_sampleFramebuffer->getLowerData());
+		const auto uv1 = gui::vec(m_sampleFramebuffer->getUpperData());
+		const auto origin = ImGui::GetCursorScreenPos();
+		ImGui::Image(picture.value(), {static_cast<float>(m_sampleSize.x()), contentHeight}, uv0, uv1);
+		auto* draw = ImGui::GetWindowDrawList();
+		for (const auto& row: rows) {
+			const auto label = std::format("{:.0f} px", row.fontSize);
+			draw->AddText({origin.x + width - ImGui::CalcTextSize(label.c_str()).x - 8.f, origin.y + row.top},
+						  ImGui::GetColorU32(ImGuiCol_TextDisabled), label.c_str());
+		}
+	}
+	ImGui::EndChild();
+}
+
+void FontDocument::drawAtlasTab(const shared<data::fonts::Font>& iFont) {
+	const auto atlas = gui::imTexture(iFont->getAtlasTexture());
+	if (!atlas.has_value())
+		return;
+	const auto size = iFont->getAtlasTexture()->getSize();
+	const auto avail = ImGui::GetContentRegionAvail();
+	const float scale = std::min(avail.x / static_cast<float>(std::max(size.x(), 1u)),
+								 std::max(avail.y - ImGui::GetFrameHeightWithSpacing(), 1.f) /
+										 static_cast<float>(std::max(size.y(), 1u)));
+	const ImVec2 shown{static_cast<float>(size.x()) * scale, static_cast<float>(size.y()) * scale};
+	const auto origin = ImGui::GetCursorScreenPos();
+	ImGui::Image(atlas.value(), shown, {0, 1}, {1, 0});
+	std::optional<char32_t> hovered;
+	if (ImGui::IsItemHovered()) {
+		// The atlas is drawn flipped: the top of the picture is v = 1.
+		const math::vec2 uv{(ImGui::GetIO().MousePos.x - origin.x) / shown.x,
+							1.f - (ImGui::GetIO().MousePos.y - origin.y) / shown.y};
+		for (const auto& block: viewer::summarizeCharset(m_settings).blocks) {
+			for (auto codePoint = block.range.first; codePoint <= block.range.last && !hovered.has_value();
+				 ++codePoint) {
+				if (iFont->hasGlyph(codePoint) && iFont->getGlyphBox(codePoint).uv.contains(uv))
+					hovered = codePoint;
+			}
+			if (hovered.has_value())
+				break;
+		}
+	}
+	if (hovered.has_value()) {
+		const auto box = iFont->getGlyphBox(*hovered).uv;
+		const ImVec2 min{origin.x + box.min().x() * shown.x, origin.y + (1.f - box.max().y()) * shown.y};
+		const ImVec2 max{origin.x + box.max().x() * shown.x, origin.y + (1.f - box.min().y()) * shown.y};
+		ImGui::GetWindowDrawList()->AddRect(min, max, IM_COL32(255, 200, 60, 255));
+		ImGui::Text("U+%04X  %s  advance %.3f em", static_cast<uint32_t>(*hovered),
+					viewer::unicodeBlockName(*hovered).data(),
+					static_cast<double>(iFont->getAdvance(*hovered, *hovered)));
+	} else {
+		ImGui::TextDisabled("Hover a glyph for its code point and advance.");
+	}
+}
+
 void FontDocument::onImGuiRender() {
 	const auto display =
 			(mp_editorLayer != nullptr) ? mp_editorLayer->getDocumentManager().displayTitleFor(this) : title();
@@ -281,20 +435,23 @@ void FontDocument::onImGuiRender() {
 		m_wasFocused = windowFocused;
 		if (windowFocused && ImGui::GetIO().KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_S, false))
 			std::ignore = save();
-		const auto font = loadedFont();
-		const auto atlas = font != nullptr ? gui::imTexture(font->getAtlasTexture()) : std::nullopt;
-		if (!atlas.has_value()) {
+		if (const auto font = viewedFont(); font == nullptr || !font->getAtlasTexture()) {
 			std::ignore = gui::widgets::emptyState(gui::icon::type, "Font not loaded",
-												   "Use the font in a Text component to load its atlas here.");
+												   "The file could not be read as a font.");
 		} else {
 			if (isDirty())
 				ImGui::TextDisabled("Unsaved charset: save (Ctrl+S) to rebuild the atlas.");
-			const auto size = font->getAtlasTexture()->getSize();
-			const auto avail = ImGui::GetContentRegionAvail();
-			const float scale = std::min(avail.x / static_cast<float>(std::max(size.x(), 1u)),
-										 avail.y / static_cast<float>(std::max(size.y(), 1u)));
-			ImGui::Image(atlas.value(), {static_cast<float>(size.x()) * scale, static_cast<float>(size.y()) * scale},
-						 {0, 1}, {1, 0});
+			if (ImGui::BeginTabBar("##fontTabs")) {
+				if (ImGui::BeginTabItem("Samples")) {
+					drawSamplesTab(font);
+					ImGui::EndTabItem();
+				}
+				if (ImGui::BeginTabItem("Atlas")) {
+					drawAtlasTab(font);
+					ImGui::EndTabItem();
+				}
+				ImGui::EndTabBar();
+			}
 		}
 	}
 	ImGui::End();
@@ -314,6 +471,9 @@ void FontDocument::renderHierarchyPanel() {
 		else
 			ImGui::TextDisabled("not loaded");
 		std::ignore = gui::widgets::propertyReset(false);
+		gui::widgets::propertyLabel("Code points", "Code points of the charset (default and extra ranges).");
+		ImGui::Text("%zu", viewer::summarizeCharset(m_settings).codePoints);
+		std::ignore = gui::widgets::propertyReset(false);
 		if (font != nullptr && font->getAtlasTexture()) {
 			const auto size = font->getAtlasTexture()->getSize();
 			gui::widgets::propertyLabel("Atlas", "Size of the MSDF atlas; it is cached on disk.");
@@ -329,6 +489,16 @@ void FontDocument::renderPropertiesPanel() {
 	if (gui::widgets::sectionHeader("Default Charset", gui::icon::lock, false).open) {
 		ImGui::TextDisabled("Every font loads these ranges.");
 		for (const auto& range: FontSettings::defaultRanges()) ImGui::BulletText("%s", formatRange(range).c_str());
+		gui::widgets::endSection();
+	}
+	if (gui::widgets::sectionHeader("Coverage", gui::icon::list, false).open) {
+		const auto summary = viewer::summarizeCharset(m_settings);
+		ImGui::TextDisabled("%zu code points", summary.codePoints);
+		for (const auto& block: summary.blocks) {
+			const std::string name{block.name};
+			ImGui::BulletText("%s: %u (U+%04X to U+%04X)", name.c_str(), block.count,
+							  static_cast<uint32_t>(block.range.first), static_cast<uint32_t>(block.range.last));
+		}
 		gui::widgets::endSection();
 	}
 	if (!gui::widgets::sectionHeader("Extra Ranges", gui::icon::list, false).open)

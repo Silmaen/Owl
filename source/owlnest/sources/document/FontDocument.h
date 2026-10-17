@@ -11,8 +11,12 @@
 #include "Document.h"
 #include "UndoManager.h"
 
+#include "viewer/FontCharset.h"
+
 #include <data/fonts/Font.h>
 #include <data/fonts/FontSettings.h>
+#include <math/vectors.h>
+#include <renderer/gpu/Framebuffer.h>
 
 #include <cstddef>
 #include <filesystem>
@@ -43,8 +47,12 @@ struct FontRangePreset {
 
 /**
  * @brief
- *  Document editing the import settings of a font asset (`.ttf` / `.otf`): the code-point ranges loaded on top of
- *  the default Latin charset, saved in the `.owlfont` sidecar next to the font.
+ *  Document viewing a font asset (`.ttf` / `.otf`) and editing its import settings: the code-point ranges loaded on
+ *  top of the default Latin charset, saved in the `.owlfont` sidecar next to the font.
+ *
+ * The "Samples" tab draws an editable text at several sizes with the engine's own text path (`Renderer2D`, outline
+ * and box included), so it shows what a game draws; the "Atlas" tab shows the MSDF atlas with a glyph readout under
+ * the cursor. The font is the one of the font library when loaded, else the document loads its own.
  *
  * Saving rebuilds the glyph atlas of the loaded font in place, so every text using it shows the new glyphs.
  */
@@ -113,7 +121,7 @@ public:
 
 	/**
 	 * @brief
-	 *  Per-frame update (nothing to do).
+	 *  Per-frame update: draw the sample lines into their framebuffer while the tab is visible.
 	 * @param[in] iTimeStep The frame time.
 	 */
 	void onUpdate(const core::Timestep& iTimeStep) override;
@@ -127,7 +135,7 @@ public:
 
 	/**
 	 * @brief
-	 *  Draw the document window: the glyph atlas of the loaded font.
+	 *  Draw the document window: the samples and the glyph atlas of the font.
 	 */
 	void onImGuiRender() override;
 
@@ -294,6 +302,62 @@ public:
 
 	/**
 	 * @brief
+	 *  Font sizes of the sample lines.
+	 * @return The sizes in pixels.
+	 */
+	[[nodiscard]] static auto sampleSizes() -> std::span<const float>;
+
+	/**
+	 * @brief
+	 *  Charset of the font told by Unicode block, with the settings being edited.
+	 * @return The summary.
+	 */
+	[[nodiscard]] auto charsetSummary() const -> viewer::CharsetSummary { return viewer::summarizeCharset(m_settings); }
+
+	/**
+	 * @brief
+	 *  Text drawn in the sample lines.
+	 * @return The text.
+	 */
+	[[nodiscard]] auto sampleText() const -> const std::string& { return m_sampleText; }
+
+	/**
+	 * @brief
+	 *  Change the text drawn in the sample lines (a view option, not an asset edit).
+	 * @param[in] iText The text.
+	 */
+	void setSampleText(const std::string& iText) { m_sampleText = iText; }
+
+	/**
+	 * @brief
+	 *  Check whether the sample lines are drawn with an outline.
+	 * @return True when outlined.
+	 */
+	[[nodiscard]] auto isOutlineShown() const -> bool { return m_showOutline; }
+
+	/**
+	 * @brief
+	 *  Draw the sample lines with an outline or not.
+	 * @param[in] iShown The state.
+	 */
+	void setOutlineShown(const bool iShown) { m_showOutline = iShown; }
+
+	/**
+	 * @brief
+	 *  Check whether the sample lines are drawn on a box.
+	 * @return True when boxed.
+	 */
+	[[nodiscard]] auto isBoxShown() const -> bool { return m_showBox; }
+
+	/**
+	 * @brief
+	 *  Draw the sample lines on a box or not.
+	 * @param[in] iShown The state.
+	 */
+	void setBoxShown(const bool iShown) { m_showBox = iShown; }
+
+	/**
+	 * @brief
 	 *  Check whether the document tab is open.
 	 * @return True while open.
 	 */
@@ -323,6 +387,34 @@ private:
 	 */
 	[[nodiscard]] auto loadedFont() const -> shared<data::fonts::Font>;
 
+	/**
+	 * @brief
+	 *  The font to show: the library one, else one loaded by the document (null when the file is not a font).
+	 * @return The font.
+	 */
+	[[nodiscard]] auto viewedFont() -> shared<data::fonts::Font>;
+
+	/**
+	 * @brief
+	 *  Draw the sample lines into the sample framebuffer (size from the last frame).
+	 * @param[in] iFont The font.
+	 */
+	void renderSamples(const shared<data::fonts::Font>& iFont);
+
+	/**
+	 * @brief
+	 *  Draw the "Samples" tab: options, then the sample picture.
+	 * @param[in] iFont The font.
+	 */
+	void drawSamplesTab(const shared<data::fonts::Font>& iFont);
+
+	/**
+	 * @brief
+	 *  Draw the "Atlas" tab: the MSDF atlas and the glyph under the cursor.
+	 * @param[in] iFont The font.
+	 */
+	void drawAtlasTab(const shared<data::fonts::Font>& iFont);
+
 	/// Path of the font file.
 	std::filesystem::path m_path;
 	/// Settings being edited.
@@ -333,6 +425,22 @@ private:
 	FontUndoManager m_undoManager;
 	/// Selected range indices.
 	std::set<size_t> m_selection;
+	/// Font loaded by the document when the library does not hold it.
+	shared<data::fonts::Font> m_ownFont;
+	/// True when the document could not load the font itself.
+	bool m_ownFontFailed{false};
+	/// Picture of the sample lines.
+	shared<renderer::gpu::Framebuffer> m_sampleFramebuffer;
+	/// Size the sample picture should have (from the last drawn frame).
+	math::vec2ui m_sampleSize{0, 0};
+	/// Text of the sample lines.
+	std::string m_sampleText{"Sphinx of black quartz, judge my vow 0123456789 \u00E9\u00E0\u00FC\u00C7 !?"};
+	/// Draw an outline around the sample glyphs.
+	bool m_showOutline{false};
+	/// Draw a box behind the sample lines.
+	bool m_showBox{false};
+	/// True when the samples tab was drawn last frame, so it needs its picture.
+	bool m_samplesVisible{false};
 	/// Editor back-pointer.
 	EditorLayer* mp_editorLayer{nullptr};
 	/// ImGui open state of the tab.
