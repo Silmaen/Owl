@@ -2,8 +2,10 @@
 """Build the Engine Demo atlases from the Kenney CC0 packs in ``kenney/``.
 
 * ``town_atlas.png``     16 px tiles, 12 columns: Tiny Town's packed sheet (rows 0-10), a row of extra tiles in the
-  same palette (water, lava, bridge; Tiny Town has none), then the Tiny Dungeon characters (rows 12-13) and the four
-  walk frames of the hero (row 14, tiles 168-171: the pack has none, they are drawn from the idle sprite).
+  same palette (four phases of water, lava, bridge; Tiny Town has none), then the Tiny Dungeon characters (rows 12-13)
+  and the four walk frames of the hero (row 14, tiles 168-171: the pack has none, they are drawn from the idle sprite),
+  then the village tiles of ``generate_village_tiles.py`` (rows 15-20: plaza, crops, fountain, flags, butterflies, a
+  sparrow, a hen, idle and walk frames of ten characters).
 * ``platformer_atlas.png`` 360x288: Pixel Platformer's packed tiles (18 px grid, rows 0-8) and its characters
   (24 px grid, from row 9 of 24 px, i.e. y = 216). 288 is a multiple of 18 and of 24, so the one texture reads as an
   18 px tile grid (20x16) and as a 24 px sprite grid (15x12).
@@ -23,6 +25,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from generate_village_tiles import ROWS, build_village_tiles
 from PIL import Image
 
 HERE = Path(__file__).parent
@@ -55,6 +58,9 @@ def _extra_tiles() -> Image.Image:
     wood = {"d": (74, 44, 40, 255), "b": (200, 126, 84, 255), "l": (226, 160, 108, 255)}
     plank = ["d" + "b" * 14 + "d", "d" + "l" * 14 + "d", "d" + "b" * 14 + "d", "d" * 16] * 4
     put(4, plank, wood)
+    # Two more phases of the water (the ripples of the two first, rolled), so that the river runs on four frames.
+    put(5, [row[5:] + row[:5] for row in water_a[8:] + water_a[:8]], water)
+    put(6, [row[11:] + row[:11] for row in water_b[4:] + water_b[:4]], water)
     return sheet
 
 
@@ -89,13 +95,14 @@ def _hero_walk_frames(hero: Image.Image) -> list[Image.Image]:
 def build_town() -> None:
     town = Image.open(PACKS / "tiny-town/Tilemap/tilemap_packed.png").convert("RGBA")
     dungeon = Image.open(PACKS / "tiny-dungeon/Tilemap/tilemap_packed.png").convert("RGBA")
-    atlas = Image.new("RGBA", (192, 15 * 16), (0, 0, 0, 0))
+    atlas = Image.new("RGBA", (192, ROWS * 16), (0, 0, 0, 0))
     atlas.paste(town, (0, 0))
     atlas.paste(_extra_tiles(), (0, 11 * 16))
     atlas.paste(dungeon.crop((0, 7 * 16, 192, 9 * 16)), (0, 12 * 16))
     hero_x, hero_y = HERO_TILE[0] * 16, HERO_TILE[1] * 16
     for index, frame in enumerate(_hero_walk_frames(atlas.crop((hero_x, hero_y, hero_x + 16, hero_y + 16)))):
         atlas.paste(frame, (index * 16, WALK_ROW * 16))
+    build_village_tiles(atlas)
     atlas.save(HERE / "town_atlas.png")
 
 

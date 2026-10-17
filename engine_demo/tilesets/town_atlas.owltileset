@@ -4,7 +4,7 @@ texture: nam:textures/town_atlas.png
 tileWidth: 16
 tileHeight: 16
 columns: 12
-rows: 15
+rows: 21
 filterMode: Nearest
 tiles:
   - index: 0
@@ -313,3 +313,153 @@ tiles:
     name: character_22
   - index: 167
     name: character_23
+  - index: 137
+    name: water
+  - index: 138
+    name: water
+  - index: 180
+    name: cobble
+  - index: 181
+    name: cobble
+  - index: 182
+    name: shrine_floor
+  - index: 183
+    name: wheat
+  - index: 184
+    name: cabbage
+  - index: 185
+    name: carrots
+  - index: 186
+    name: flower_bed_red
+  - index: 187
+    name: flower_bed_blue
+  - index: 188
+    name: tilled_soil
+  - index: 191
+    name: flower_bed_pink
+  - index: 189
+    collidable: true
+    name: hay_bale
+  - index: 190
+    collidable: true
+    name: lamp_post
+  - index: 192
+    collidable: true
+    name: fountain
+  - index: 193
+    collidable: true
+    name: fountain
+  - index: 194
+    collidable: true
+    name: fountain
+  - index: 195
+    collidable: true
+    name: fountain
+  - index: 196
+    collidable: true
+    name: fountain
+  - index: 197
+    collidable: true
+    name: fountain
+  - index: 198
+    collidable: true
+    name: fountain
+  - index: 199
+    collidable: true
+    name: fountain
+  - index: 200
+    name: flag_red
+  - index: 201
+    name: flag_red
+  - index: 202
+    name: flag_blue
+  - index: 203
+    name: flag_blue
+  - index: 204
+    name: flag_yellow
+  - index: 205
+    name: flag_yellow
+  - index: 206
+    name: butterfly_yellow
+  - index: 207
+    name: butterfly_yellow
+  - index: 208
+    name: butterfly_pink
+  - index: 209
+    name: butterfly_pink
+  - index: 210
+    name: butterfly_blue
+  - index: 211
+    name: butterfly_blue
+  - index: 212
+    name: butterfly_white
+  - index: 213
+    name: butterfly_white
+  - index: 214
+    name: sparrow
+  - index: 215
+    name: sparrow
+  - index: 216
+    name: hen
+  - index: 217
+    name: hen
+  - index: 218
+    name: character_extra_0
+  - index: 219
+    name: character_extra_1
+  - index: 220
+    name: character_extra_2
+  - index: 221
+    name: character_extra_3
+  - index: 222
+    name: character_extra_4
+  - index: 223
+    name: character_extra_5
+  - index: 224
+    name: character_extra_6
+  - index: 225
+    name: character_extra_7
+  - index: 226
+    name: character_extra_8
+  - index: 227
+    name: character_extra_9
+  - index: 228
+    name: character_extra_10
+  - index: 229
+    name: character_extra_11
+  - index: 230
+    name: character_extra_12
+  - index: 231
+    name: character_extra_13
+  - index: 232
+    name: character_extra_14
+  - index: 233
+    name: character_extra_15
+  - index: 234
+    name: character_extra_16
+  - index: 235
+    name: character_extra_17
+  - index: 236
+    name: character_extra_18
+  - index: 237
+    name: character_extra_19
+  - index: 238
+    name: character_extra_20
+  - index: 239
+    name: character_extra_21
+  - index: 240
+    name: character_extra_22
+  - index: 241
+    name: character_extra_23
+  - index: 242
+    name: character_extra_24
+  - index: 243
+    name: character_extra_25
+  - index: 244
+    name: character_extra_26
+  - index: 245
+    name: character_extra_27
+  - index: 246
+    name: character_extra_28
+  - index: 247
+    name: character_extra_29
