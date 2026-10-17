@@ -386,14 +386,17 @@ TEST_F(FormatVersioningTest, ProjectSimulationTickRoundTrip) {
 TEST_F(FormatVersioningTest, EngineSampleAssetsStillLoad) {
 	const auto root = owl::test::getRootPath();
 	size_t scenes = 0;
-	for (const auto& entry: std::filesystem::recursive_directory_iterator(root / "engine_assets")) {
-		if (entry.path().extension() == ".owl") {
-			EXPECT_TRUE(SceneSerializer(mkShared<Scene>()).deserialize(entry.path())) << entry.path();
-			++scenes;
-		} else if (entry.path().extension() == Tileset::fileExtension()) {
-			EXPECT_TRUE(Tileset{}.loadFromFile(entry.path())) << entry.path();
-		} else if (entry.path().extension() == AnimationClip::fileExtension()) {
-			EXPECT_TRUE(AnimationClip{}.loadFromFile(entry.path())) << entry.path();
+	// The scenes of the project templates and the scene, tileset and animation fixtures.
+	for (const auto& folder: {root / "engine_assets", root / "test" / "scene_tests" / "assets"}) {
+		for (const auto& entry: std::filesystem::recursive_directory_iterator(folder)) {
+			if (entry.path().extension() == ".owl") {
+				EXPECT_TRUE(SceneSerializer(mkShared<Scene>()).deserialize(entry.path())) << entry.path();
+				++scenes;
+			} else if (entry.path().extension() == Tileset::fileExtension()) {
+				EXPECT_TRUE(Tileset{}.loadFromFile(entry.path())) << entry.path();
+			} else if (entry.path().extension() == AnimationClip::fileExtension()) {
+				EXPECT_TRUE(AnimationClip{}.loadFromFile(entry.path())) << entry.path();
+			}
 		}
 	}
 	EXPECT_GT(scenes, 0u);

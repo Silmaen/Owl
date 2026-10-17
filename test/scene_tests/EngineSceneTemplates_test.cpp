@@ -29,14 +29,14 @@ using namespace owl;
 
 namespace {
 
-// Scenes shipped in engine_assets: the scene templates and the first scenes of the project templates.
+// Scenes shipped in engine_assets: the first scenes of the project templates.
 auto shippedScenes() -> std::vector<std::filesystem::path> {
 	const auto root = test::getRootPath() / "engine_assets";
 	std::vector<std::filesystem::path> scenes;
 	for (const auto& entry: std::filesystem::recursive_directory_iterator(root)) {
 		const auto& path = entry.path();
 		const auto rel = path.lexically_relative(root).generic_string();
-		if (path.extension() == ".owl" && (rel.starts_with("templates/") || rel.starts_with("project_templates/")))
+		if (path.extension() == ".owl" && rel.starts_with("project_templates/"))
 			scenes.push_back(path);
 	}
 	return scenes;

@@ -20,7 +20,11 @@ using namespace owl::app;
 TEST(TextureLibrary, creation) {
 	Log::init(Log::Level::Off);
 	RenderCommand::create(RenderAPI::Type::Null);
-	const AppParams params{.name = "super boby", .renderer = RenderAPI::Type::Null, .hasGui = false, .isDummy = true};
+	const AppParams params{.name = "super boby",
+						   .assetsPattern = "test/renderer_tests/assets",
+						   .renderer = RenderAPI::Type::Null,
+						   .hasGui = false,
+						   .isDummy = true};
 	auto app = owl::mkShared<Application>(params);
 	auto lib = Renderer::TextureLibrary();
 	{
