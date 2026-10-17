@@ -27,6 +27,7 @@ enum struct AssetKind : uint8_t {
 	Tilemap,///< `.owltilemap`: opened in a tilemap document.
 	Tileset,///< `.owltileset`: opened in a tileset document.
 	Font,///< `.ttf`, `.otf` or the `.owlfont` sidecar: opened in a font document.
+	Image,///< `.png`, `.jpg`, `.jpeg`, `.bmp`, `.tga`: opened in a read-only image viewer.
 	Prefab,///< `.owlprefab`: instantiated in the active scene.
 	Hud,///< `.owlhud`: opened in a scene document (the HUD is a scene of widgets).
 	Macro,///< `.owlmacro`: replayed on the active scene (one undo step).
