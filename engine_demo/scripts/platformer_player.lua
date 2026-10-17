@@ -92,15 +92,17 @@ local function clamp(value, low, high)
     return math.max(low, math.min(high, value))
 end
 
-local function show_zone(x)
+-- Objective text of the HUD: the zone the player is in, unless a banner is showing.
+local function show_zone(x, force)
     local name = k_zones[1].name
     for _, zone in ipairs(k_zones) do
         if x >= zone.x then name = zone.name end
     end
-    if name ~= zone_name then
+    if name ~= zone_name or force then
         zone_name = name
-        banner_left = 0.0
-        if objective_id ~= 0 then ui.set_text(objective_id, name .. " - Objective: " .. k_objective) end
+        if objective_id ~= 0 and (banner_left <= 0 or force) then
+            ui.set_text(objective_id, name .. " - Objective: " .. k_objective)
+        end
     end
 end
 
@@ -326,12 +328,9 @@ local function update_effects(dt)
     end
     if banner_left > 0 then
         banner_left = banner_left - dt
-        if banner_left <= 0 and objective_id ~= 0 then
-            local name = zone_name
-            zone_name = ""
+        if banner_left <= 0 then
             local px, _, _ = transform.get_position(entity_id)
-            show_zone(px)
-            if zone_name == "" then zone_name = name end
+            show_zone(px, true)
         end
     end
     if respawn_state == "out" and not ui.is_transition_active() then

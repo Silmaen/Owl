@@ -4700,7 +4700,7 @@ Entities:
   Tag:
     tag: Coin71
   Transform:
-    translation: [180.5, -2.5, 0.3]
+    translation: [180.5, -0.5, 0.3]
     rotation: [0, 0, 0]
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
@@ -4724,7 +4724,7 @@ Entities:
   Tag:
     tag: Coin72
   Transform:
-    translation: [181.5, -2.5, 0.3]
+    translation: [181.5, -0.5, 0.3]
     rotation: [0, 0, 0]
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
