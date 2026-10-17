@@ -375,8 +375,9 @@ void scanEntity(const YAML::Node& iEntity,// NOLINT(misc-no-recursion)
 		addTextureField(anim);
 	if (auto bg = iEntity["BackgroundTexture"]; bg)
 		addTextureField(bg);
-	if (auto img = iEntity["UiImage"]; img)
-		addTextureField(img);
+	for (const char* component: {"UiImage", "UiToolCursor"})
+		if (auto widget = iEntity[component]; widget)
+			addTextureField(widget);
 	for (const char* component: {"TextRenderer", "UiText"})
 		if (auto text = iEntity[component]; text)
 			if (auto font = text["font"]; font) {

@@ -157,12 +157,13 @@ TEST_P(RenderImage, matchesReference) {
 	std::filesystem::remove(actualFile);
 	std::filesystem::remove(diffFile);
 
-	const auto command = std::format(R"(env -u OWL_OPENGL_SHADERS {} "{}" --frame-bench "{}" --project "{}" )"
-									 R"(--backend {} --frames 2 --warmup {} --size {}x{} --validation )"
-									 R"(--capture "{}" > "{}" 2>&1)",
-									 getDriverEnvironment(backend), OWL_RUNNER_EXECUTABLE, sceneFile.string(),
-									 (root / "engine_demo").string(), backend, g_warmupFrames, size.x(), size.y(),
-									 actualFile.string(), logFile.string());
+	const auto command =
+			std::format(R"(env -u OWL_OPENGL_SHADERS {} "{}" --frame-bench "{}" --project "{}" )"
+						R"(--assets "{}" --backend {} --frames 2 --warmup {} --size {}x{} --validation )"
+						R"(--capture "{}" > "{}" 2>&1)",
+						getDriverEnvironment(backend), OWL_RUNNER_EXECUTABLE, sceneFile.string(),
+						(root / "engine_demo").string(), (root / "test" / "render_tests" / "assets").string(), backend,
+						g_warmupFrames, size.x(), size.y(), actualFile.string(), logFile.string());
 	// NOLINTNEXTLINE(bugprone-command-processor) The runner must run in its own process (one GPU context).
 	const int status = std::system(command.c_str());
 	const auto log = readFile(logFile);

@@ -75,6 +75,15 @@ TEST(FrameBenchOptions, ParseAndReject) {
 	ASSERT_TRUE(withCapture.has_value());
 	EXPECT_EQ(withCapture->capture, scene.parent_path() / "shots" / "frame.png");
 	EXPECT_TRUE(options->capture.empty());
+	std::array<std::string, 5> extra{"OwlRunner", "--frame-bench", sceneArg, "--assets", "fixtures"};
+	std::vector<char*> extraArgv;
+	for (auto& arg: extra) extraArgv.push_back(arg.data());
+	const auto withAssets =
+			parseFrameBenchOptions(static_cast<int>(extraArgv.size()), extraArgv.data(), scene.parent_path());
+	ASSERT_TRUE(withAssets.has_value());
+	ASSERT_EQ(withAssets->assets.size(), 1u);
+	EXPECT_EQ(withAssets->assets.front(), scene.parent_path() / "fixtures");
+	EXPECT_TRUE(options->assets.empty());
 	std::array<std::string, 1> plain{"OwlRunner"};
 	std::vector<char*> plainArgv{plain[0].data()};
 	EXPECT_FALSE(hasFrameBenchFlag(1, plainArgv.data()));

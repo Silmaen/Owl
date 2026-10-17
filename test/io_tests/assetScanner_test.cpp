@@ -12,6 +12,7 @@
 #include <data/assets/pack/AssetScanner.h>
 #include <data/assets/pack/PackWriter.h>
 
+#include <algorithm>
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
@@ -251,6 +252,25 @@ TEST_F(AssetScannerTest, ScanSceneWithUIImage) {
 		if (ref.assetType == AssetType::Texture && ref.diskPath == texPath)
 			foundTexture = true;
 	}
+	EXPECT_TRUE(foundTexture);
+}
+
+TEST_F(AssetScannerTest, ScanSceneWithUIToolCursor) {
+	const auto texPath = m_tempDir / "textures" / "cursor.png";
+	writeDummyBinary(texPath);
+
+	const auto scenePath = m_tempDir / "test.owl";
+	writeFile(scenePath, "Scene: test\nEntities:\n"
+						 "  - Entity: 1\n"
+						 "    UiToolCursor:\n"
+						 "      tint: [1, 1, 1, 1]\n"
+						 "      texture: \"pat:" +
+								 texPath.generic_string() + "\"\n");
+
+	const auto assets = AssetScanner::scanScene(scenePath);
+	const bool foundTexture = std::ranges::any_of(assets, [&texPath](const AssetReference& iRef) -> bool {
+		return iRef.assetType == AssetType::Texture && iRef.diskPath == texPath;
+	});
 	EXPECT_TRUE(foundTexture);
 }
 

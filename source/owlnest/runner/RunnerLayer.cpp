@@ -477,6 +477,8 @@ auto RunnerLayer::attachSourceScene(const std::filesystem::path& iProject, const
 void RunnerLayer::attachFrameBench() {
 	m_frameBench->onEngineReady();
 	const auto& options = m_frameBench->getOptions();
+	// Before the scene loads (its textures resolve at load); the project's own directory ends up in front of them.
+	for (const auto& assets: options.assets) app::Application::get().addAssetDirectory({"FrameBench assets", assets});
 	if (!attachSourceScene(options.project, options.scene, "FrameBench")) {
 		m_frameBench.reset();
 		return;

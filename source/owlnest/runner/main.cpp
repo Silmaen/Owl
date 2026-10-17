@@ -141,10 +141,11 @@ auto createFrameBenchApplication(const int iArgc, char** iArgv, const std::files
 	if (!options.has_value()) {
 		std::fputs("OwlRunner --frame-bench: ", stderr);
 		std::fputs(options.error().c_str(), stderr);
-		std::fputs(".\nUsage: OwlRunner --frame-bench <scene.owl> [--frames N] [--warmup M] "
-				   "[--backend vulkan|opengl|null] [--out results.json] [--project <dir>] [--size WxH] "
-				   "[--timestep-ms T] [--vsync] [--validation] [--hot-reload] [--capture frame.png]\n",
-				   stderr);
+		std::fputs(
+				".\nUsage: OwlRunner --frame-bench <scene.owl> [--frames N] [--warmup M] "
+				"[--backend vulkan|opengl|null] [--out results.json] [--project <dir>] [--assets <dir>] [--size WxH] "
+				"[--timestep-ms T] [--vsync] [--validation] [--hot-reload] [--capture frame.png]\n",
+				stderr);
 		std::exit(2);
 	}
 	options->processStart = iProcessStart;
