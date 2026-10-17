@@ -223,7 +223,7 @@ and **Left-Shift** descends, and motion is still resolved against voxel collisio
 
 Mouse-look capture is **opt-in**: the `VoxelPlayer` has a **Capture Cursor** flag (off by default) — only a player
 that enables it lets clicking the viewport hide / lock the cursor (the editor and runner check
-`Scene::wantsCursorCapture()`), so non-voxel scenes keep a normal cursor. With capture off, block break / place is
+`Scene::wantsCursorCapture()`), so non-voxel scenes keep a normal cursor. The cursor is given back as soon as the scene stops wanting capture (level change, Stop in Owl Nest) or on Escape (`window::nextCursorMode`). With capture off, block break / place is
 disabled too (it is gated on the captured cursor).
 
 The player can also **edit the world** (when cursor capture is enabled). A centre-screen **crosshair** marks the aim point; a ray

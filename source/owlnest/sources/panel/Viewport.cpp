@@ -291,15 +291,17 @@ void Viewport::onUpdate(const core::Timestep& iTimeStep) {
 			{
 				// Click to capture the cursor (hidden/locked), Esc to free; no focus/hover release (the captured cursor's unbounded virtual position would read as "left the viewport" and cancel capture every frame). NoMouseCursorChange stops ImGui from re-showing the cursor while captured.
 				auto& window = app::Application::get().getWindow();
-				if (window.getCursorMode() == window::CursorMode::Normal) {
-					if (m_hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left) &&
-						activeScene->wantsCursorCapture()) {
-						window.setCursorMode(window::CursorMode::Disabled);
+				const auto cursorMode = window.getCursorMode();
+				// A scene that stops wanting capture (level change, voxel player gone) gives the cursor back too.
+				const auto nextMode = window::nextCursorMode(cursorMode, activeScene->wantsCursorCapture(),
+															 m_hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left),
+															 input::Input::isKeyPressed(input::key::Escape));
+				if (nextMode != cursorMode) {
+					window.setCursorMode(nextMode);
+					if (nextMode == window::CursorMode::Disabled)
 						ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange;
-					}
-				} else if (input::Input::isKeyPressed(input::key::Escape)) {
-					window.setCursorMode(window::CursorMode::Normal);
-					ImGui::GetIO().ConfigFlags &= ~ImGuiConfigFlags_NoMouseCursorChange;
+					else
+						ImGui::GetIO().ConfigFlags &= ~ImGuiConfigFlags_NoMouseCursorChange;
 				}
 				// The HUD is Y-down from the top left: undo the OpenGL flip of the picking coordinates.
 				const bool flipped = renderer::gpu::RenderCommand::getApi() == renderer::gpu::RenderAPI::Type::OpenGL;

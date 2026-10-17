@@ -92,12 +92,12 @@ auto isSubdir(const std::filesystem::path& iFile, const std::filesystem::path& i
 
 void updateCursorCapture(const bool iAllowed) {
 	auto& window = app::Application::get().getWindow();
-	if (window.getCursorMode() == window::CursorMode::Normal) {
-		if (iAllowed && input::Input::isMouseButtonPressed(input::mouse::ButtonLeft))
-			window.setCursorMode(window::CursorMode::Disabled);
-	} else if (input::Input::isKeyPressed(input::key::Escape)) {
-		window.setCursorMode(window::CursorMode::Normal);
-	}
+	const auto current = window.getCursorMode();
+	const auto next =
+			window::nextCursorMode(current, iAllowed, input::Input::isMouseButtonPressed(input::mouse::ButtonLeft),
+								   input::Input::isKeyPressed(input::key::Escape));
+	if (next != current)
+		window.setCursorMode(next);
 }
 }// namespace
 
