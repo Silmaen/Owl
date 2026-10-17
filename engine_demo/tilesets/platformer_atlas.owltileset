@@ -1,6 +1,6 @@
 Tileset: platformer_atlas
 FormatVersion: 1
-texture: nam:textures/platformer_atlas.png
+texture: nam:textures/atlases/platformer_atlas.png
 tileWidth: 18
 tileHeight: 18
 columns: 20

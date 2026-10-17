@@ -20,7 +20,7 @@ Entities:
     Hierarchy:
       {}
     LuaScript:
-      scriptPath: scripts/settings_menu.lua
+      scriptPath: scripts/ui/settings_menu.lua
   - Entity: 8901234567890123456
     Tag:
       tag: Background

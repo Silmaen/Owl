@@ -325,8 +325,8 @@ TEST(GameExportEndToEnd, SampleProjectPlaysFromItsExportFolder) {
 		EXPECT_EQ(std::string(data->begin(), data->end()).find("pat:/"), std::string::npos) << packPath;
 	}
 	for (const auto* entry:
-		 {"tilesets/voxel_blocks.owltileset", "textures/voxel_blocks.png", "tilesets/raycast_w3d_walls.owltileset",
-		  "tilemaps/world_map.owltilemap", "scripts/main_menu.lua", "game_settings.yml", "input_actions.yml"})
+		 {"tilesets/voxel_blocks.owltileset", "textures/atlases/voxel_blocks.png", "tilesets/raycast_w3d_walls.owltileset",
+		  "tilemaps/world_map.owltilemap", "scripts/ui/main_menu.lua", "game_settings.yml", "input_actions.yml"})
 		EXPECT_TRUE(reader.contains(entry)) << entry;
 	reader.close();
 

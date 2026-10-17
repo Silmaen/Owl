@@ -92,7 +92,7 @@ def _sprite(texture: str, color: tuple[float, ...] = (1, 1, 1, 1)) -> str:
 
 
 def _script(path: str, properties: dict[str, tuple[str, object]] | None = None) -> str:
-    text = f"  LuaScript:\n    scriptPath: scripts/{path}\n"
+    text = f"  LuaScript:\n    scriptPath: scripts/iso/{path}\n"
     if properties:
         text += "    properties:\n"
         for name, (kind, value) in properties.items():

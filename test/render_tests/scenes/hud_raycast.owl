@@ -153,7 +153,7 @@ Entities:
   SpriteRenderer:
     color: [1, 1, 1, 1]
     tilingFactor: 1
-    texture: nam:textures/wolf3d_sprites/tree_pot.png
+    texture: nam:textures/wolf3d/sprites/tree_pot.png
   Visibility: {gameVisible: true}
   Hierarchy: {parentId: 13926010408478971264}
   RendererTag: {Name: raycast_world}
@@ -166,7 +166,7 @@ Entities:
   SpriteRenderer:
     color: [1, 1, 1, 1]
     tilingFactor: 1
-    texture: nam:textures/wolf3d_sprites/tree_pot.png
+    texture: nam:textures/wolf3d/sprites/tree_pot.png
   Visibility: {gameVisible: true}
   Hierarchy: {parentId: 13926010408478971264}
   RendererTag: {Name: raycast_world}
@@ -179,7 +179,7 @@ Entities:
   SpriteRenderer:
     color: [1, 1, 1, 1]
     tilingFactor: 1
-    texture: nam:textures/wolf3d_sprites/lamp_pilar.png
+    texture: nam:textures/wolf3d/sprites/lamp_pilar.png
   Visibility: {gameVisible: true}
   Hierarchy: {parentId: 10638330045607190015}
   RendererTag: {Name: raycast_world}
@@ -192,7 +192,7 @@ Entities:
   SpriteRenderer:
     color: [1, 1, 1, 1]
     tilingFactor: 1
-    texture: nam:textures/wolf3d_sprites/lamp_pilar.png
+    texture: nam:textures/wolf3d/sprites/lamp_pilar.png
   Visibility: {gameVisible: true}
   Hierarchy: {parentId: 10638330045607190015}
   RendererTag: {Name: raycast_world}
@@ -205,7 +205,7 @@ Entities:
   SpriteRenderer:
     color: [1, 1, 1, 1]
     tilingFactor: 1
-    texture: nam:textures/wolf3d_sprites/lamp_pilar.png
+    texture: nam:textures/wolf3d/sprites/lamp_pilar.png
   Visibility: {gameVisible: true}
   Hierarchy: {parentId: 10638330045607190015}
   RendererTag: {Name: raycast_world}
@@ -218,7 +218,7 @@ Entities:
   SpriteRenderer:
     color: [1, 1, 1, 1]
     tilingFactor: 1
-    texture: nam:textures/wolf3d_sprites/lamp_pilar.png
+    texture: nam:textures/wolf3d/sprites/lamp_pilar.png
   Visibility: {gameVisible: true}
   Hierarchy: {parentId: 10638330045607190015}
   RendererTag: {Name: raycast_world}
@@ -231,7 +231,7 @@ Entities:
   SpriteRenderer:
     color: [1, 1, 1, 1]
     tilingFactor: 1
-    texture: nam:textures/wolf3d_sprites/table_chairs.png
+    texture: nam:textures/wolf3d/sprites/table_chairs.png
   Visibility: {gameVisible: true}
   Hierarchy: {parentId: 9489512124427895568}
   RendererTag: {Name: raycast_world}
@@ -244,7 +244,7 @@ Entities:
   SpriteRenderer:
     color: [1, 1, 1, 1]
     tilingFactor: 1
-    texture: nam:textures/wolf3d_sprites/flag.png
+    texture: nam:textures/wolf3d/sprites/flag.png
   Visibility: {gameVisible: true}
   Hierarchy: {parentId: 7103139458259188987}
   RendererTag: {Name: raycast_world}
@@ -257,7 +257,7 @@ Entities:
   SpriteRenderer:
     color: [1, 1, 1, 1]
     tilingFactor: 1
-    texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
+    texture: nam:textures/wolf3d/sprites/lamp_ceiling.png
   Visibility: {gameVisible: true}
   Hierarchy: {parentId: 10638330045607190015}
 - Entity: 10077246775617947355
@@ -269,7 +269,7 @@ Entities:
   SpriteRenderer:
     color: [1, 1, 1, 1]
     tilingFactor: 1
-    texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
+    texture: nam:textures/wolf3d/sprites/lamp_ceiling.png
   Visibility: {gameVisible: true}
   Hierarchy: {parentId: 10638330045607190015}
 - Entity: 10556412148911099773
@@ -281,7 +281,7 @@ Entities:
   SpriteRenderer:
     color: [1, 1, 1, 1]
     tilingFactor: 1
-    texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
+    texture: nam:textures/wolf3d/sprites/lamp_ceiling.png
   Visibility: {gameVisible: true}
   Hierarchy: {parentId: 10638330045607190015}
 - Entity: 7584174730375495585
@@ -293,7 +293,7 @@ Entities:
   SpriteRenderer:
     color: [1, 1, 1, 1]
     tilingFactor: 1
-    texture: nam:textures/wolf3d_sprites/blue_pot.png
+    texture: nam:textures/wolf3d/sprites/blue_pot.png
   Visibility: {gameVisible: true}
   Hierarchy: {parentId: 7103139458259188987}
   RendererTag: {Name: raycast_world}
@@ -306,7 +306,7 @@ Entities:
   SpriteRenderer:
     color: [1, 1, 1, 1]
     tilingFactor: 1
-    texture: nam:textures/wolf3d_sprites/blue_pot.png
+    texture: nam:textures/wolf3d/sprites/blue_pot.png
   Visibility: {gameVisible: true}
   Hierarchy: {parentId: 7103139458259188987}
   RendererTag: {Name: raycast_world}
@@ -319,7 +319,7 @@ Entities:
   SpriteRenderer:
     color: [1, 1, 1, 1]
     tilingFactor: 1
-    texture: nam:textures/wolf3d_sprites/lamp_ceiling_candle.png
+    texture: nam:textures/wolf3d/sprites/lamp_ceiling_candle.png
   Visibility: {gameVisible: true}
   Hierarchy: {parentId: 10638330045607190015}
 - Entity: 15512632895051033731
@@ -331,7 +331,7 @@ Entities:
   SpriteRenderer:
     color: [1, 1, 1, 1]
     tilingFactor: 1
-    texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
+    texture: nam:textures/wolf3d/sprites/lamp_ceiling.png
   Visibility: {gameVisible: true}
   Hierarchy: {parentId: 10638330045607190015}
 - Entity: 4501687471864431966
@@ -343,7 +343,7 @@ Entities:
   SpriteRenderer:
     color: [1, 1, 1, 1]
     tilingFactor: 1
-    texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
+    texture: nam:textures/wolf3d/sprites/lamp_ceiling.png
   Visibility: {gameVisible: true}
   Hierarchy: {parentId: 10638330045607190015}
 - Entity: 14002182771463197956
@@ -355,7 +355,7 @@ Entities:
   SpriteRenderer:
     color: [1, 1, 1, 1]
     tilingFactor: 1
-    texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
+    texture: nam:textures/wolf3d/sprites/lamp_ceiling.png
   Visibility: {gameVisible: true}
   Hierarchy: {parentId: 10638330045607190015}
 - Entity: 12208344180293546568
@@ -367,7 +367,7 @@ Entities:
   SpriteRenderer:
     color: [1, 1, 1, 1]
     tilingFactor: 1
-    texture: nam:textures/wolf3d_sprites/armor.png
+    texture: nam:textures/wolf3d/sprites/armor.png
   Visibility: {gameVisible: true}
   Hierarchy: {parentId: 7103139458259188987}
   RendererTag: {Name: raycast_world}
@@ -380,7 +380,7 @@ Entities:
   SpriteRenderer:
     color: [1, 1, 1, 1]
     tilingFactor: 1
-    texture: nam:textures/wolf3d_sprites/sausages.png
+    texture: nam:textures/wolf3d/sprites/sausages.png
   Visibility: {gameVisible: true}
   Hierarchy: {parentId: 7103139458259188987}
 - Entity: 161424663807070942
@@ -392,7 +392,7 @@ Entities:
   SpriteRenderer:
     color: [1, 1, 1, 1]
     tilingFactor: 1
-    texture: nam:textures/wolf3d_sprites/tree_pot_dead.png
+    texture: nam:textures/wolf3d/sprites/tree_pot_dead.png
   Visibility: {gameVisible: true}
   Hierarchy: {parentId: 13926010408478971264}
   RendererTag: {Name: raycast_world}
@@ -405,7 +405,7 @@ Entities:
   SpriteRenderer:
     color: [1, 1, 1, 1]
     tilingFactor: 1
-    texture: nam:textures/wolf3d_sprites/tree_pot_dead.png
+    texture: nam:textures/wolf3d/sprites/tree_pot_dead.png
   Visibility: {gameVisible: true}
   Hierarchy: {parentId: 13926010408478971264}
   RendererTag: {Name: raycast_world}
@@ -418,7 +418,7 @@ Entities:
   SpriteRenderer:
     color: [1, 1, 1, 1]
     tilingFactor: 1
-    texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
+    texture: nam:textures/wolf3d/sprites/lamp_ceiling.png
   Visibility: {gameVisible: true}
   Hierarchy: {parentId: 10638330045607190015}
 - Entity: 3973117033922211742
@@ -438,7 +438,7 @@ Entities:
   SpriteRenderer:
     color: [1, 1, 1, 1]
     tilingFactor: 1
-    texture: nam:textures/wolf3d_sprites/lamp_ceiling_candle.png
+    texture: nam:textures/wolf3d/sprites/lamp_ceiling_candle.png
   Visibility: {gameVisible: true}
   Hierarchy: {parentId: 10638330045607190015}
 - Entity: 14810404726591993268
@@ -450,7 +450,7 @@ Entities:
   SpriteRenderer:
     color: [1, 1, 1, 1]
     tilingFactor: 1
-    texture: nam:textures/wolf3d_sprites/lamp_ceiling_candle.png
+    texture: nam:textures/wolf3d/sprites/lamp_ceiling_candle.png
   Visibility: {gameVisible: true}
   Hierarchy: {parentId: 10638330045607190015}
 - Entity: 2456421408860607571
@@ -462,7 +462,7 @@ Entities:
   SpriteRenderer:
     color: [1, 1, 1, 1]
     tilingFactor: 1
-    texture: nam:textures/wolf3d_sprites/tree_pot_dead.png
+    texture: nam:textures/wolf3d/sprites/tree_pot_dead.png
   Visibility: {gameVisible: true}
   Hierarchy: {parentId: 13926010408478971264}
   RendererTag: {Name: raycast_world}
@@ -475,7 +475,7 @@ Entities:
   SpriteRenderer:
     color: [1, 1, 1, 1]
     tilingFactor: 1
-    texture: nam:textures/wolf3d_sprites/tree_pot_dead.png
+    texture: nam:textures/wolf3d/sprites/tree_pot_dead.png
   Visibility: {gameVisible: true}
   Hierarchy: {parentId: 13926010408478971264}
   RendererTag: {Name: raycast_world}
@@ -488,7 +488,7 @@ Entities:
   SpriteRenderer:
     color: [1, 1, 1, 1]
     tilingFactor: 1
-    texture: nam:textures/wolf3d_sprites/tree_pot_dead.png
+    texture: nam:textures/wolf3d/sprites/tree_pot_dead.png
   Visibility: {gameVisible: true}
   Hierarchy: {parentId: 13926010408478971264}
   RendererTag: {Name: raycast_world}
@@ -501,7 +501,7 @@ Entities:
   SpriteRenderer:
     color: [1, 1, 1, 1]
     tilingFactor: 1
-    texture: nam:textures/wolf3d_sprites/table.png
+    texture: nam:textures/wolf3d/sprites/table.png
   Visibility: {gameVisible: true}
   Hierarchy: {parentId: 9489512124427895568}
   RendererTag: {Name: raycast_world}
@@ -514,7 +514,7 @@ Entities:
   SpriteRenderer:
     color: [1, 1, 1, 1]
     tilingFactor: 1
-    texture: nam:textures/wolf3d_sprites/puddle.png
+    texture: nam:textures/wolf3d/sprites/puddle.png
   Visibility: {gameVisible: true}
   Hierarchy: {parentId: 7103139458259188987}
 - Entity: 880776251672220823
@@ -526,7 +526,7 @@ Entities:
   SpriteRenderer:
     color: [1, 1, 1, 1]
     tilingFactor: 1
-    texture: nam:textures/wolf3d_sprites/basket.png
+    texture: nam:textures/wolf3d/sprites/basket.png
   Visibility: {gameVisible: true}
   Hierarchy: {parentId: 7103139458259188987}
 - Entity: 5214242960048568462
@@ -538,7 +538,7 @@ Entities:
   SpriteRenderer:
     color: [1, 1, 1, 1]
     tilingFactor: 1
-    texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
+    texture: nam:textures/wolf3d/sprites/lamp_ceiling.png
   Visibility: {gameVisible: true}
   Hierarchy: {parentId: 10638330045607190015}
 - Entity: 10672876466255339759
@@ -550,7 +550,7 @@ Entities:
   SpriteRenderer:
     color: [1, 1, 1, 1]
     tilingFactor: 1
-    texture: nam:textures/wolf3d_sprites/tree_pot_dead.png
+    texture: nam:textures/wolf3d/sprites/tree_pot_dead.png
   Visibility: {gameVisible: true}
   Hierarchy: {parentId: 13926010408478971264}
   RendererTag: {Name: raycast_world}
@@ -563,7 +563,7 @@ Entities:
   SpriteRenderer:
     color: [1, 1, 1, 1]
     tilingFactor: 1
-    texture: nam:textures/wolf3d_sprites/table_chairs.png
+    texture: nam:textures/wolf3d/sprites/table_chairs.png
   Visibility: {gameVisible: true}
   Hierarchy: {parentId: 9489512124427895568}
   RendererTag: {Name: raycast_world}
@@ -576,7 +576,7 @@ Entities:
   SpriteRenderer:
     color: [1, 1, 1, 1]
     tilingFactor: 1
-    texture: nam:textures/wolf3d_sprites/table.png
+    texture: nam:textures/wolf3d/sprites/table.png
   Visibility: {gameVisible: true}
   Hierarchy: {parentId: 9489512124427895568}
   RendererTag: {Name: raycast_world}
@@ -589,7 +589,7 @@ Entities:
   SpriteRenderer:
     color: [1, 1, 1, 1]
     tilingFactor: 1
-    texture: nam:textures/wolf3d_sprites/barrel_wood.png
+    texture: nam:textures/wolf3d/sprites/barrel_wood.png
   Visibility: {gameVisible: true}
   Hierarchy: {parentId: 7570686549718889332}
   RendererTag: {Name: raycast_world}
@@ -602,7 +602,7 @@ Entities:
   SpriteRenderer:
     color: [1, 1, 1, 1]
     tilingFactor: 1
-    texture: nam:textures/wolf3d_sprites/barrel_wood.png
+    texture: nam:textures/wolf3d/sprites/barrel_wood.png
   Visibility: {gameVisible: true}
   Hierarchy: {parentId: 7570686549718889332}
   RendererTag: {Name: raycast_world}
@@ -615,7 +615,7 @@ Entities:
   SpriteRenderer:
     color: [1, 1, 1, 1]
     tilingFactor: 1
-    texture: nam:textures/wolf3d_sprites/barrel_wood.png
+    texture: nam:textures/wolf3d/sprites/barrel_wood.png
   Visibility: {gameVisible: true}
   Hierarchy: {parentId: 7570686549718889332}
   RendererTag: {Name: raycast_world}
@@ -637,7 +637,7 @@ Entities:
   SpriteRenderer:
     color: [1, 1, 1, 1]
     tilingFactor: 1
-    texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
+    texture: nam:textures/wolf3d/sprites/lamp_ceiling.png
   Visibility: {gameVisible: true}
   Hierarchy: {parentId: 10638330045607190015}
 - Entity: 7448479228372063673
@@ -649,7 +649,7 @@ Entities:
   SpriteRenderer:
     color: [1, 1, 1, 1]
     tilingFactor: 1
-    texture: nam:textures/wolf3d_sprites/lamp_ceiling_candle.png
+    texture: nam:textures/wolf3d/sprites/lamp_ceiling_candle.png
   Visibility: {gameVisible: true}
   Hierarchy: {parentId: 10638330045607190015}
 - Entity: 7871170412065769316
@@ -661,7 +661,7 @@ Entities:
   SpriteRenderer:
     color: [1, 1, 1, 1]
     tilingFactor: 1
-    texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
+    texture: nam:textures/wolf3d/sprites/lamp_ceiling.png
   Visibility: {gameVisible: true}
   Hierarchy: {parentId: 10638330045607190015}
 - Entity: 11725008055632833023
@@ -673,7 +673,7 @@ Entities:
   SpriteRenderer:
     color: [1, 1, 1, 1]
     tilingFactor: 1
-    texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
+    texture: nam:textures/wolf3d/sprites/lamp_ceiling.png
   Visibility: {gameVisible: true}
   Hierarchy: {parentId: 10638330045607190015}
 - Entity: 3300351824610864905
@@ -685,7 +685,7 @@ Entities:
   SpriteRenderer:
     color: [1, 1, 1, 1]
     tilingFactor: 1
-    texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
+    texture: nam:textures/wolf3d/sprites/lamp_ceiling.png
   Visibility: {gameVisible: true}
   Hierarchy: {parentId: 10638330045607190015}
 - Entity: 6583937215403861796
@@ -697,7 +697,7 @@ Entities:
   SpriteRenderer:
     color: [1, 1, 1, 1]
     tilingFactor: 1
-    texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
+    texture: nam:textures/wolf3d/sprites/lamp_ceiling.png
   Visibility: {gameVisible: true}
   Hierarchy: {parentId: 10638330045607190015}
 - Entity: 18248389905682178093
@@ -709,7 +709,7 @@ Entities:
   SpriteRenderer:
     color: [1, 1, 1, 1]
     tilingFactor: 1
-    texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
+    texture: nam:textures/wolf3d/sprites/lamp_ceiling.png
   Visibility: {gameVisible: true}
   Hierarchy: {parentId: 10638330045607190015}
 - Entity: 10638330045607190015
@@ -751,7 +751,7 @@ Entities:
   SpriteRenderer:
     color: [1, 1, 1, 1]
     tilingFactor: 1
-    texture: nam:textures/wolf3d_sprites/barrel_wood.png
+    texture: nam:textures/wolf3d/sprites/barrel_wood.png
   Visibility: {gameVisible: true}
   Hierarchy: {parentId: 7570686549718889332}
   RendererTag: {Name: raycast_world}
@@ -764,7 +764,7 @@ Entities:
   SpriteRenderer:
     color: [1, 1, 1, 1]
     tilingFactor: 1
-    texture: nam:textures/wolf3d_sprites/table_chairs.png
+    texture: nam:textures/wolf3d/sprites/table_chairs.png
   Visibility: {gameVisible: true}
   Hierarchy: {parentId: 9489512124427895568}
   RendererTag: {Name: raycast_world}
@@ -777,7 +777,7 @@ Entities:
   SpriteRenderer:
     color: [1, 1, 1, 1]
     tilingFactor: 1
-    texture: nam:textures/wolf3d_sprites/pit_water.png
+    texture: nam:textures/wolf3d/sprites/pit_water.png
   Visibility: {gameVisible: true}
   Hierarchy: {parentId: 7103139458259188987}
   RendererTag: {Name: raycast_world}
@@ -790,7 +790,7 @@ Entities:
   SpriteRenderer:
     color: [1, 1, 1, 1]
     tilingFactor: 1
-    texture: nam:textures/wolf3d_sprites/pit.png
+    texture: nam:textures/wolf3d/sprites/pit.png
   Visibility: {gameVisible: true}
   Hierarchy: {parentId: 7103139458259188987}
   RendererTag: {Name: raycast_world}
@@ -803,7 +803,7 @@ Entities:
   SpriteRenderer:
     color: [1, 1, 1, 1]
     tilingFactor: 1
-    texture: nam:textures/wolf3d_sprites/table_chairs.png
+    texture: nam:textures/wolf3d/sprites/table_chairs.png
   Visibility: {gameVisible: true}
   Hierarchy: {parentId: 9489512124427895568}
   RendererTag: {Name: raycast_world}
@@ -840,7 +840,7 @@ Entities:
   SpriteRenderer:
     color: [1, 1, 1, 1]
     tilingFactor: 1
-    texture: nam:textures/wolf3d_sprites/tree_pot_dead.png
+    texture: nam:textures/wolf3d/sprites/tree_pot_dead.png
   Visibility: {gameVisible: true}
   Hierarchy: {parentId: 13926010408478971264}
   RendererTag: {Name: raycast_world}
@@ -853,7 +853,7 @@ Entities:
   SpriteRenderer:
     color: [1, 1, 1, 1]
     tilingFactor: 1
-    texture: nam:textures/wolf3d_sprites/tree_pot_dead.png
+    texture: nam:textures/wolf3d/sprites/tree_pot_dead.png
   Visibility: {gameVisible: true}
   Hierarchy: {parentId: 13926010408478971264}
   RendererTag: {Name: raycast_world}
@@ -866,7 +866,7 @@ Entities:
   SpriteRenderer:
     color: [1, 1, 1, 1]
     tilingFactor: 1
-    texture: nam:textures/wolf3d_sprites/tree_pot_dead.png
+    texture: nam:textures/wolf3d/sprites/tree_pot_dead.png
   Visibility: {gameVisible: true}
   Hierarchy: {parentId: 13926010408478971264}
   RendererTag: {Name: raycast_world}
@@ -879,7 +879,7 @@ Entities:
   SpriteRenderer:
     color: [1, 1, 1, 1]
     tilingFactor: 1
-    texture: nam:textures/wolf3d_sprites/tree_pot_dead.png
+    texture: nam:textures/wolf3d/sprites/tree_pot_dead.png
   Visibility: {gameVisible: true}
   Hierarchy: {parentId: 13926010408478971264}
   RendererTag: {Name: raycast_world}
@@ -892,7 +892,7 @@ Entities:
   SpriteRenderer:
     color: [1, 1, 1, 1]
     tilingFactor: 1
-    texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
+    texture: nam:textures/wolf3d/sprites/lamp_ceiling.png
   Visibility: {gameVisible: true}
   Hierarchy: {parentId: 10638330045607190015}
 - Entity: 13600248057625773866
@@ -904,7 +904,7 @@ Entities:
   SpriteRenderer:
     color: [1, 1, 1, 1]
     tilingFactor: 1
-    texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
+    texture: nam:textures/wolf3d/sprites/lamp_ceiling.png
   Visibility: {gameVisible: true}
   Hierarchy: {parentId: 10638330045607190015}
 - Entity: 13769489005121019321
@@ -916,7 +916,7 @@ Entities:
   SpriteRenderer:
     color: [1, 1, 1, 1]
     tilingFactor: 1
-    texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
+    texture: nam:textures/wolf3d/sprites/lamp_ceiling.png
   Visibility: {gameVisible: true}
   Hierarchy: {parentId: 10638330045607190015}
 - Entity: 6992925051227484541
@@ -928,7 +928,7 @@ Entities:
   SpriteRenderer:
     color: [1, 1, 1, 1]
     tilingFactor: 1
-    texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
+    texture: nam:textures/wolf3d/sprites/lamp_ceiling.png
   Visibility: {gameVisible: true}
   Hierarchy: {parentId: 10638330045607190015}
 - Entity: 16591457154769591942
@@ -940,7 +940,7 @@ Entities:
   SpriteRenderer:
     color: [1, 1, 1, 1]
     tilingFactor: 1
-    texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
+    texture: nam:textures/wolf3d/sprites/lamp_ceiling.png
   Visibility: {gameVisible: true}
   Hierarchy: {parentId: 10638330045607190015}
 - Entity: 282765520093261733
@@ -952,7 +952,7 @@ Entities:
   SpriteRenderer:
     color: [1, 1, 1, 1]
     tilingFactor: 1
-    texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
+    texture: nam:textures/wolf3d/sprites/lamp_ceiling.png
   Visibility: {gameVisible: true}
   Hierarchy: {parentId: 10638330045607190015}
 - Entity: 3076490161748360826
@@ -964,7 +964,7 @@ Entities:
   SpriteRenderer:
     color: [1, 1, 1, 1]
     tilingFactor: 1
-    texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
+    texture: nam:textures/wolf3d/sprites/lamp_ceiling.png
   Visibility: {gameVisible: true}
   Hierarchy: {parentId: 10638330045607190015}
 - Entity: 16403133044842316897
@@ -976,7 +976,7 @@ Entities:
   SpriteRenderer:
     color: [1, 1, 1, 1]
     tilingFactor: 1
-    texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
+    texture: nam:textures/wolf3d/sprites/lamp_ceiling.png
   Visibility: {gameVisible: true}
   Hierarchy: {parentId: 10638330045607190015}
 - Entity: 8774771653062084688
@@ -988,7 +988,7 @@ Entities:
   SpriteRenderer:
     color: [1, 1, 1, 1]
     tilingFactor: 1
-    texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
+    texture: nam:textures/wolf3d/sprites/lamp_ceiling.png
   Visibility: {gameVisible: true}
   Hierarchy: {parentId: 10638330045607190015}
 - Entity: 10286766516491778034
@@ -1000,7 +1000,7 @@ Entities:
   SpriteRenderer:
     color: [1, 1, 1, 1]
     tilingFactor: 1
-    texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
+    texture: nam:textures/wolf3d/sprites/lamp_ceiling.png
   Visibility: {gameVisible: true}
   Hierarchy: {parentId: 10638330045607190015}
 - Entity: 4318809323118943487
@@ -1012,7 +1012,7 @@ Entities:
   SpriteRenderer:
     color: [1, 1, 1, 1]
     tilingFactor: 1
-    texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
+    texture: nam:textures/wolf3d/sprites/lamp_ceiling.png
   Visibility: {gameVisible: true}
   Hierarchy: {parentId: 10638330045607190015}
 - Entity: 16771517873031031004
@@ -1024,7 +1024,7 @@ Entities:
   SpriteRenderer:
     color: [1, 1, 1, 1]
     tilingFactor: 1
-    texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
+    texture: nam:textures/wolf3d/sprites/lamp_ceiling.png
   Visibility: {gameVisible: true}
   Hierarchy: {parentId: 10638330045607190015}
 - Entity: 8892864715420281323
@@ -1036,7 +1036,7 @@ Entities:
   SpriteRenderer:
     color: [1, 1, 1, 1]
     tilingFactor: 1
-    texture: nam:textures/wolf3d_sprites/barrel_wood.png
+    texture: nam:textures/wolf3d/sprites/barrel_wood.png
   Visibility: {gameVisible: true}
   Hierarchy: {parentId: 7570686549718889332}
   RendererTag: {Name: raycast_world}
@@ -1049,7 +1049,7 @@ Entities:
   SpriteRenderer:
     color: [1, 1, 1, 1]
     tilingFactor: 1
-    texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
+    texture: nam:textures/wolf3d/sprites/lamp_ceiling.png
   Visibility: {gameVisible: true}
   Hierarchy: {parentId: 10638330045607190015}
 - Entity: 2040792712630989511
@@ -1061,7 +1061,7 @@ Entities:
   SpriteRenderer:
     color: [1, 1, 1, 1]
     tilingFactor: 1
-    texture: nam:textures/wolf3d_sprites/green_barrel.png
+    texture: nam:textures/wolf3d/sprites/green_barrel.png
   Visibility: {gameVisible: true}
   Hierarchy: {parentId: 7570686549718889332}
   RendererTag: {Name: raycast_world}
@@ -1074,7 +1074,7 @@ Entities:
   SpriteRenderer:
     color: [1, 1, 1, 1]
     tilingFactor: 1
-    texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
+    texture: nam:textures/wolf3d/sprites/lamp_ceiling.png
   Visibility: {gameVisible: true}
   Hierarchy: {parentId: 10638330045607190015}
 - Entity: 17967318655472178219
@@ -1086,7 +1086,7 @@ Entities:
   SpriteRenderer:
     color: [1, 1, 1, 1]
     tilingFactor: 1
-    texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
+    texture: nam:textures/wolf3d/sprites/lamp_ceiling.png
   Visibility: {gameVisible: true}
   Hierarchy: {parentId: 10638330045607190015}
 - Entity: 4108556761038822059
@@ -1098,7 +1098,7 @@ Entities:
   SpriteRenderer:
     color: [1, 1, 1, 1]
     tilingFactor: 1
-    texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
+    texture: nam:textures/wolf3d/sprites/lamp_ceiling.png
   Visibility: {gameVisible: true}
   Hierarchy: {parentId: 10638330045607190015}
 - Entity: 5773698084679061435

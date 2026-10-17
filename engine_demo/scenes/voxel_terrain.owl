@@ -39,7 +39,7 @@ Entities:
       HalfExtents: [0.4, 0.9, 0.4]
       CaptureCursor: true
     LuaScript:
-      scriptPath: scripts/voxel_explorer.lua
+      scriptPath: scripts/voxel/voxel_explorer.lua
   - Entity: 3400000000000000002
     Tag:
       tag: ProceduralTerrain

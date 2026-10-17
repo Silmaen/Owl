@@ -369,7 +369,7 @@ Entities:
   SpriteRenderer:
     color: [1, 0.850000024, 0.200000003, 1]
     tilingFactor: 1
-    texture: nam:textures/portal.png
+    texture: nam:textures/sprites/portal.png
   Visibility: {gameVisible: true}
 - Entity: 3000000000000000060
   Tag: {tag: HUDCanvas}

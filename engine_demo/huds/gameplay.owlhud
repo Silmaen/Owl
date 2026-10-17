@@ -166,7 +166,7 @@ Entities:
   Visibility: {gameVisible: true}
   Hierarchy: {parentId: 3000000000000000060}
   UiToolCursor:
-    texture: nam:textures/portal.png
+    texture: nam:textures/sprites/portal.png
     tint: [1, 1, 1, 0.9]
     size: [28, 28]
     hotspot: [0.5, 0.5]

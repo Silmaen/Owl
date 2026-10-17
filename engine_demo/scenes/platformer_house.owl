@@ -105,7 +105,7 @@ Entities:
   Visibility:
     gameVisible: true
   LuaScript:
-    scriptPath: scripts/platformer_player.lua
+    scriptPath: scripts/platformer/platformer_player.lua
     properties:
     - name: speed
       type: float
@@ -144,7 +144,7 @@ Entities:
     - 1
     - 1
     - 1
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 15
     rows: 12
     firstFrame: 150
@@ -206,7 +206,7 @@ Entities:
     - 1
     - 1
     - 1
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -221,7 +221,7 @@ Entities:
   Hierarchy:
     parentId: 3000000000000000501
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
 - Entity: 3000000000000000503
   Tag:
     tag: CoinRight
@@ -244,7 +244,7 @@ Entities:
     - 1
     - 1
     - 1
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -259,7 +259,7 @@ Entities:
   Hierarchy:
     parentId: 3000000000000000501
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
 - Entity: 3000000000000000511
   Tag:
     tag: CoinPairB
@@ -313,7 +313,7 @@ Entities:
     - 1
     - 1
     - 1
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -328,7 +328,7 @@ Entities:
   Hierarchy:
     parentId: 3000000000000000511
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
 - Entity: 3000000000000000513
   Tag:
     tag: CoinRight
@@ -351,7 +351,7 @@ Entities:
     - 1
     - 0.3
     - 1
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -366,7 +366,7 @@ Entities:
   Hierarchy:
     parentId: 3000000000000000511
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
 - Entity: 3000000000000000050
   Tag:
     tag: VictoryZone
@@ -389,7 +389,7 @@ Entities:
   Visibility:
     gameVisible: true
   LuaScript:
-    scriptPath: scripts/level_complete.lua
+    scriptPath: scripts/platformer/level_complete.lua
 - Entity: 3100000000000000032
   Tag:
     tag: DoorTop
@@ -412,7 +412,7 @@ Entities:
     - 1
     - 1
     - 1
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 130
@@ -445,7 +445,7 @@ Entities:
     - 1
     - 1
     - 1
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 150
@@ -465,7 +465,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_ext_atlas.png
+    texture: nam:textures/atlases/platformer_ext_atlas.png
     columns: 16
     rows: 16
     firstFrame: 224
@@ -484,7 +484,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_ext_atlas.png
+    texture: nam:textures/atlases/platformer_ext_atlas.png
     columns: 16
     rows: 16
     firstFrame: 224
@@ -503,7 +503,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_ext_atlas.png
+    texture: nam:textures/atlases/platformer_ext_atlas.png
     columns: 16
     rows: 16
     firstFrame: 224
@@ -523,7 +523,7 @@ Entities:
   Trigger:
     Type: Target
   LuaScript:
-    scriptPath: scripts/hazard.lua
+    scriptPath: scripts/platformer/hazard.lua
     properties:
     - name: kind
       type: string
@@ -540,7 +540,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_ext_atlas.png
+    texture: nam:textures/atlases/platformer_ext_atlas.png
     columns: 16
     rows: 16
     firstFrame: 224
@@ -559,7 +559,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_ext_atlas.png
+    texture: nam:textures/atlases/platformer_ext_atlas.png
     columns: 16
     rows: 16
     firstFrame: 224
@@ -578,7 +578,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_ext_atlas.png
+    texture: nam:textures/atlases/platformer_ext_atlas.png
     columns: 16
     rows: 16
     firstFrame: 224
@@ -597,7 +597,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_ext_atlas.png
+    texture: nam:textures/atlases/platformer_ext_atlas.png
     columns: 16
     rows: 16
     firstFrame: 224
@@ -616,7 +616,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_ext_atlas.png
+    texture: nam:textures/atlases/platformer_ext_atlas.png
     columns: 16
     rows: 16
     firstFrame: 224
@@ -635,7 +635,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_ext_atlas.png
+    texture: nam:textures/atlases/platformer_ext_atlas.png
     columns: 16
     rows: 16
     firstFrame: 224
@@ -655,7 +655,7 @@ Entities:
   Trigger:
     Type: Target
   LuaScript:
-    scriptPath: scripts/hazard.lua
+    scriptPath: scripts/platformer/hazard.lua
     properties:
     - name: kind
       type: string
@@ -672,7 +672,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_ext_atlas.png
+    texture: nam:textures/atlases/platformer_ext_atlas.png
     columns: 16
     rows: 16
     firstFrame: 224
@@ -691,7 +691,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_ext_atlas.png
+    texture: nam:textures/atlases/platformer_ext_atlas.png
     columns: 16
     rows: 16
     firstFrame: 224
@@ -710,7 +710,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_ext_atlas.png
+    texture: nam:textures/atlases/platformer_ext_atlas.png
     columns: 16
     rows: 16
     firstFrame: 224
@@ -730,7 +730,7 @@ Entities:
   Trigger:
     Type: Target
   LuaScript:
-    scriptPath: scripts/hazard.lua
+    scriptPath: scripts/platformer/hazard.lua
     properties:
     - name: kind
       type: string
@@ -747,7 +747,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_ext_atlas.png
+    texture: nam:textures/atlases/platformer_ext_atlas.png
     columns: 16
     rows: 16
     firstFrame: 224
@@ -766,7 +766,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_ext_atlas.png
+    texture: nam:textures/atlases/platformer_ext_atlas.png
     columns: 16
     rows: 16
     firstFrame: 224
@@ -785,7 +785,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_ext_atlas.png
+    texture: nam:textures/atlases/platformer_ext_atlas.png
     columns: 16
     rows: 16
     firstFrame: 224
@@ -804,7 +804,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_ext_atlas.png
+    texture: nam:textures/atlases/platformer_ext_atlas.png
     columns: 16
     rows: 16
     firstFrame: 224
@@ -824,7 +824,7 @@ Entities:
   Trigger:
     Type: Target
   LuaScript:
-    scriptPath: scripts/hazard.lua
+    scriptPath: scripts/platformer/hazard.lua
     properties:
     - name: kind
       type: string
@@ -841,7 +841,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_ext_atlas.png
+    texture: nam:textures/atlases/platformer_ext_atlas.png
     columns: 16
     rows: 16
     firstFrame: 224
@@ -860,7 +860,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_ext_atlas.png
+    texture: nam:textures/atlases/platformer_ext_atlas.png
     columns: 16
     rows: 16
     firstFrame: 224
@@ -879,7 +879,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_ext_atlas.png
+    texture: nam:textures/atlases/platformer_ext_atlas.png
     columns: 16
     rows: 16
     firstFrame: 224
@@ -899,7 +899,7 @@ Entities:
   Trigger:
     Type: Target
   LuaScript:
-    scriptPath: scripts/hazard.lua
+    scriptPath: scripts/platformer/hazard.lua
     properties:
     - name: kind
       type: string
@@ -916,7 +916,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_ext_atlas.png
+    texture: nam:textures/atlases/platformer_ext_atlas.png
     columns: 16
     rows: 16
     firstFrame: 224
@@ -935,7 +935,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_ext_atlas.png
+    texture: nam:textures/atlases/platformer_ext_atlas.png
     columns: 16
     rows: 16
     firstFrame: 224
@@ -954,7 +954,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_ext_atlas.png
+    texture: nam:textures/atlases/platformer_ext_atlas.png
     columns: 16
     rows: 16
     firstFrame: 224
@@ -973,7 +973,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_ext_atlas.png
+    texture: nam:textures/atlases/platformer_ext_atlas.png
     columns: 16
     rows: 16
     firstFrame: 224
@@ -992,7 +992,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_ext_atlas.png
+    texture: nam:textures/atlases/platformer_ext_atlas.png
     columns: 16
     rows: 16
     firstFrame: 224
@@ -1011,7 +1011,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_ext_atlas.png
+    texture: nam:textures/atlases/platformer_ext_atlas.png
     columns: 16
     rows: 16
     firstFrame: 224
@@ -1031,7 +1031,7 @@ Entities:
   Trigger:
     Type: Target
   LuaScript:
-    scriptPath: scripts/hazard.lua
+    scriptPath: scripts/platformer/hazard.lua
     properties:
     - name: kind
       type: string
@@ -1048,7 +1048,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_ext_atlas.png
+    texture: nam:textures/atlases/platformer_ext_atlas.png
     columns: 16
     rows: 16
     firstFrame: 224
@@ -1067,7 +1067,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_ext_atlas.png
+    texture: nam:textures/atlases/platformer_ext_atlas.png
     columns: 16
     rows: 16
     firstFrame: 224
@@ -1086,7 +1086,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_ext_atlas.png
+    texture: nam:textures/atlases/platformer_ext_atlas.png
     columns: 16
     rows: 16
     firstFrame: 224
@@ -1105,7 +1105,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_ext_atlas.png
+    texture: nam:textures/atlases/platformer_ext_atlas.png
     columns: 16
     rows: 16
     firstFrame: 224
@@ -1124,7 +1124,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_ext_atlas.png
+    texture: nam:textures/atlases/platformer_ext_atlas.png
     columns: 16
     rows: 16
     firstFrame: 224
@@ -1143,7 +1143,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_ext_atlas.png
+    texture: nam:textures/atlases/platformer_ext_atlas.png
     columns: 16
     rows: 16
     firstFrame: 224
@@ -1162,7 +1162,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_ext_atlas.png
+    texture: nam:textures/atlases/platformer_ext_atlas.png
     columns: 16
     rows: 16
     firstFrame: 224
@@ -1181,7 +1181,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_ext_atlas.png
+    texture: nam:textures/atlases/platformer_ext_atlas.png
     columns: 16
     rows: 16
     firstFrame: 224
@@ -1200,7 +1200,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_ext_atlas.png
+    texture: nam:textures/atlases/platformer_ext_atlas.png
     columns: 16
     rows: 16
     firstFrame: 224
@@ -1219,7 +1219,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_ext_atlas.png
+    texture: nam:textures/atlases/platformer_ext_atlas.png
     columns: 16
     rows: 16
     firstFrame: 224
@@ -1238,7 +1238,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_ext_atlas.png
+    texture: nam:textures/atlases/platformer_ext_atlas.png
     columns: 16
     rows: 16
     firstFrame: 224
@@ -1257,7 +1257,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_ext_atlas.png
+    texture: nam:textures/atlases/platformer_ext_atlas.png
     columns: 16
     rows: 16
     firstFrame: 224
@@ -1276,7 +1276,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_ext_atlas.png
+    texture: nam:textures/atlases/platformer_ext_atlas.png
     columns: 16
     rows: 16
     firstFrame: 224
@@ -1295,7 +1295,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_ext_atlas.png
+    texture: nam:textures/atlases/platformer_ext_atlas.png
     columns: 16
     rows: 16
     firstFrame: 224
@@ -1314,7 +1314,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_ext_atlas.png
+    texture: nam:textures/atlases/platformer_ext_atlas.png
     columns: 16
     rows: 16
     firstFrame: 224
@@ -1333,7 +1333,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_ext_atlas.png
+    texture: nam:textures/atlases/platformer_ext_atlas.png
     columns: 16
     rows: 16
     firstFrame: 224
@@ -1352,7 +1352,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_ext_atlas.png
+    texture: nam:textures/atlases/platformer_ext_atlas.png
     columns: 16
     rows: 16
     firstFrame: 224
@@ -1371,7 +1371,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_ext_atlas.png
+    texture: nam:textures/atlases/platformer_ext_atlas.png
     columns: 16
     rows: 16
     firstFrame: 224
@@ -1390,7 +1390,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_ext_atlas.png
+    texture: nam:textures/atlases/platformer_ext_atlas.png
     columns: 16
     rows: 16
     firstFrame: 224
@@ -1409,7 +1409,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_ext_atlas.png
+    texture: nam:textures/atlases/platformer_ext_atlas.png
     columns: 16
     rows: 16
     firstFrame: 224
@@ -1429,7 +1429,7 @@ Entities:
   Trigger:
     Type: Target
   LuaScript:
-    scriptPath: scripts/hazard.lua
+    scriptPath: scripts/platformer/hazard.lua
     properties:
     - name: kind
       type: string
@@ -1446,7 +1446,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 129
@@ -1454,7 +1454,7 @@ Entities:
     frameDuration: 0.1
     loop: false
   LuaScript:
-    scriptPath: scripts/flicker.lua
+    scriptPath: scripts/platformer/flicker.lua
     properties:
     - name: rate
       type: float
@@ -1474,7 +1474,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -1485,7 +1485,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -1498,7 +1498,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -1509,7 +1509,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -1522,7 +1522,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -1533,7 +1533,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -1547,7 +1547,7 @@ Entities:
   Trigger:
     Type: Target
   LuaScript:
-    scriptPath: scripts/hazard.lua
+    scriptPath: scripts/platformer/hazard.lua
     properties:
     - name: kind
       type: string
@@ -1567,7 +1567,7 @@ Entities:
     scale: [1.25, 2, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 68
@@ -1587,7 +1587,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -1598,7 +1598,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -1611,7 +1611,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -1622,7 +1622,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -1635,7 +1635,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -1646,7 +1646,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -1659,7 +1659,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -1670,7 +1670,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -1683,7 +1683,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -1694,7 +1694,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -1713,7 +1713,7 @@ Entities:
     restitution: 0
     friction: 0.9
   LuaScript:
-    scriptPath: scripts/moving_platform_h.lua
+    scriptPath: scripts/platformer/moving_platform_h.lua
     properties:
     - name: speed
       type: float
@@ -1733,7 +1733,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 1
@@ -1753,7 +1753,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 3
@@ -1773,7 +1773,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -1784,7 +1784,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -1797,7 +1797,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -1808,7 +1808,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -1821,7 +1821,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -1832,7 +1832,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -1845,7 +1845,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -1856,7 +1856,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -1869,7 +1869,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -1880,7 +1880,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -1893,7 +1893,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -1904,7 +1904,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -1918,7 +1918,7 @@ Entities:
   Trigger:
     Type: Target
   LuaScript:
-    scriptPath: scripts/hazard.lua
+    scriptPath: scripts/platformer/hazard.lua
     properties:
     - name: kind
       type: string
@@ -1938,7 +1938,7 @@ Entities:
     scale: [1.25, 2, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 68
@@ -1959,7 +1959,7 @@ Entities:
   Trigger:
     Type: Target
   LuaScript:
-    scriptPath: scripts/hazard.lua
+    scriptPath: scripts/platformer/hazard.lua
     properties:
     - name: kind
       type: string
@@ -1979,7 +1979,7 @@ Entities:
     scale: [1.25, 2, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 68
@@ -1999,7 +1999,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -2010,7 +2010,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -2023,7 +2023,7 @@ Entities:
     scale: [0.9, 0.9, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 44
@@ -2034,7 +2034,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_heart_touched
   LuaScript:
-    scriptPath: scripts/heart.lua
+    scriptPath: scripts/platformer/heart.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -2047,7 +2047,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_ext_atlas.png
+    texture: nam:textures/atlases/platformer_ext_atlas.png
     columns: 16
     rows: 16
     firstFrame: 240
@@ -2067,7 +2067,7 @@ Entities:
   Trigger:
     Type: Target
   LuaScript:
-    scriptPath: scripts/checkpoint.lua
+    scriptPath: scripts/platformer/checkpoint.lua
     properties:
     - name: flag
       type: string
@@ -2084,7 +2084,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 129
@@ -2092,7 +2092,7 @@ Entities:
     frameDuration: 0.1
     loop: false
   LuaScript:
-    scriptPath: scripts/flicker.lua
+    scriptPath: scripts/platformer/flicker.lua
     properties:
     - name: rate
       type: float
@@ -2112,7 +2112,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 129
@@ -2120,7 +2120,7 @@ Entities:
     frameDuration: 0.1
     loop: false
   LuaScript:
-    scriptPath: scripts/flicker.lua
+    scriptPath: scripts/platformer/flicker.lua
     properties:
     - name: rate
       type: float
@@ -2141,7 +2141,7 @@ Entities:
   Trigger:
     Type: Target
   LuaScript:
-    scriptPath: scripts/hazard.lua
+    scriptPath: scripts/platformer/hazard.lua
     properties:
     - name: kind
       type: string
@@ -2161,7 +2161,7 @@ Entities:
     scale: [1.25, 2, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 68
@@ -2182,7 +2182,7 @@ Entities:
   Trigger:
     Type: Target
   LuaScript:
-    scriptPath: scripts/hazard.lua
+    scriptPath: scripts/platformer/hazard.lua
     properties:
     - name: kind
       type: string
@@ -2202,7 +2202,7 @@ Entities:
     scale: [1.25, 2, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 68
@@ -2223,7 +2223,7 @@ Entities:
   Trigger:
     Type: Target
   LuaScript:
-    scriptPath: scripts/hazard.lua
+    scriptPath: scripts/platformer/hazard.lua
     properties:
     - name: kind
       type: string
@@ -2243,7 +2243,7 @@ Entities:
     scale: [1.25, 2, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 68
@@ -2263,7 +2263,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -2274,7 +2274,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -2287,7 +2287,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -2298,7 +2298,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -2311,7 +2311,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -2322,7 +2322,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -2335,7 +2335,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -2346,7 +2346,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -2359,7 +2359,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -2370,7 +2370,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -2383,7 +2383,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -2394,7 +2394,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -2407,7 +2407,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -2418,7 +2418,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -2431,7 +2431,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -2442,7 +2442,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -2455,7 +2455,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -2466,7 +2466,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -2479,7 +2479,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -2490,7 +2490,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -2503,7 +2503,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -2514,7 +2514,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -2527,7 +2527,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -2538,7 +2538,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -2551,7 +2551,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -2562,7 +2562,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -2575,7 +2575,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -2586,7 +2586,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -2599,7 +2599,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -2610,7 +2610,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -2623,7 +2623,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -2634,7 +2634,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -2647,7 +2647,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -2658,7 +2658,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -2671,7 +2671,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -2682,7 +2682,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -2695,7 +2695,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -2706,7 +2706,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -2719,7 +2719,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -2730,7 +2730,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -2743,7 +2743,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -2754,7 +2754,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -2767,7 +2767,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -2778,7 +2778,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -2791,7 +2791,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -2802,7 +2802,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -2815,7 +2815,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -2826,7 +2826,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -2839,7 +2839,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -2850,7 +2850,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -2863,7 +2863,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -2874,7 +2874,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -2887,7 +2887,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -2898,7 +2898,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -2911,7 +2911,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -2922,7 +2922,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -2935,7 +2935,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -2946,7 +2946,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -2959,7 +2959,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_ext_atlas.png
+    texture: nam:textures/atlases/platformer_ext_atlas.png
     columns: 16
     rows: 16
     firstFrame: 240
@@ -2979,7 +2979,7 @@ Entities:
   Trigger:
     Type: Target
   LuaScript:
-    scriptPath: scripts/checkpoint.lua
+    scriptPath: scripts/platformer/checkpoint.lua
     properties:
     - name: flag
       type: string
@@ -2997,7 +2997,7 @@ Entities:
   Trigger:
     Type: Target
   LuaScript:
-    scriptPath: scripts/hazard.lua
+    scriptPath: scripts/platformer/hazard.lua
     properties:
     - name: kind
       type: string
@@ -3017,7 +3017,7 @@ Entities:
     scale: [1.25, 2, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 68
@@ -3038,7 +3038,7 @@ Entities:
   Trigger:
     Type: Target
   LuaScript:
-    scriptPath: scripts/hazard.lua
+    scriptPath: scripts/platformer/hazard.lua
     properties:
     - name: kind
       type: string
@@ -3058,7 +3058,7 @@ Entities:
     scale: [1.25, 2, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 68
@@ -3078,7 +3078,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -3089,7 +3089,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -3108,7 +3108,7 @@ Entities:
     restitution: 0
     friction: 0.9
   LuaScript:
-    scriptPath: scripts/moving_platform_h.lua
+    scriptPath: scripts/platformer/moving_platform_h.lua
     properties:
     - name: speed
       type: float
@@ -3128,7 +3128,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_ext_atlas.png
+    texture: nam:textures/atlases/platformer_ext_atlas.png
     columns: 16
     rows: 16
     firstFrame: 1
@@ -3148,7 +3148,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_ext_atlas.png
+    texture: nam:textures/atlases/platformer_ext_atlas.png
     columns: 16
     rows: 16
     firstFrame: 3
@@ -3168,7 +3168,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -3179,7 +3179,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -3192,7 +3192,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -3203,7 +3203,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -3216,7 +3216,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -3227,7 +3227,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -3240,7 +3240,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -3251,7 +3251,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -3264,7 +3264,7 @@ Entities:
     scale: [0.9, 0.9, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 44
@@ -3275,7 +3275,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_heart_touched
   LuaScript:
-    scriptPath: scripts/heart.lua
+    scriptPath: scripts/platformer/heart.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -3288,7 +3288,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 129
@@ -3296,7 +3296,7 @@ Entities:
     frameDuration: 0.1
     loop: false
   LuaScript:
-    scriptPath: scripts/flicker.lua
+    scriptPath: scripts/platformer/flicker.lua
     properties:
     - name: rate
       type: float
@@ -3317,7 +3317,7 @@ Entities:
   Trigger:
     Type: Target
   LuaScript:
-    scriptPath: scripts/secret_room.lua
+    scriptPath: scripts/platformer/secret_room.lua
     properties:
     - name: map
       type: string
@@ -3361,7 +3361,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -3372,7 +3372,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: false
   Hierarchy: {}
@@ -3385,7 +3385,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -3396,7 +3396,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: false
   Hierarchy: {}
@@ -3409,7 +3409,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -3420,7 +3420,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: false
   Hierarchy: {}
@@ -3433,7 +3433,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -3444,7 +3444,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: false
   Hierarchy: {}
@@ -3457,7 +3457,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -3468,7 +3468,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: false
   Hierarchy: {}
@@ -3481,7 +3481,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -3492,7 +3492,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: false
   Hierarchy: {}
@@ -3505,7 +3505,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -3516,7 +3516,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: false
   Hierarchy: {}
@@ -3529,7 +3529,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -3540,7 +3540,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: false
   Hierarchy: {}
@@ -3553,7 +3553,7 @@ Entities:
     scale: [0.9, 0.9, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 44
@@ -3564,7 +3564,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_heart_touched
   LuaScript:
-    scriptPath: scripts/heart.lua
+    scriptPath: scripts/platformer/heart.lua
   Visibility:
     gameVisible: false
   Hierarchy: {}
@@ -3577,7 +3577,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 129
@@ -3585,7 +3585,7 @@ Entities:
     frameDuration: 0.1
     loop: false
   LuaScript:
-    scriptPath: scripts/flicker.lua
+    scriptPath: scripts/platformer/flicker.lua
     properties:
     - name: rate
       type: float
@@ -3605,7 +3605,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_ext_atlas.png
+    texture: nam:textures/atlases/platformer_ext_atlas.png
     columns: 16
     rows: 16
     firstFrame: 240
@@ -3625,7 +3625,7 @@ Entities:
   Trigger:
     Type: Target
   LuaScript:
-    scriptPath: scripts/checkpoint.lua
+    scriptPath: scripts/platformer/checkpoint.lua
     properties:
     - name: flag
       type: string
@@ -3643,7 +3643,7 @@ Entities:
   Trigger:
     Type: Target
   LuaScript:
-    scriptPath: scripts/hazard.lua
+    scriptPath: scripts/platformer/hazard.lua
     properties:
     - name: kind
       type: string
@@ -3663,7 +3663,7 @@ Entities:
     scale: [1.25, 2, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 68
@@ -3683,7 +3683,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -3694,7 +3694,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -3707,7 +3707,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -3718,7 +3718,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -3731,7 +3731,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -3742,7 +3742,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -3755,7 +3755,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -3766,7 +3766,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -3779,7 +3779,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -3790,7 +3790,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -3803,7 +3803,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -3814,7 +3814,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -3827,7 +3827,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -3838,7 +3838,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -3851,7 +3851,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -3862,7 +3862,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -3876,7 +3876,7 @@ Entities:
   Trigger:
     Type: Target
   LuaScript:
-    scriptPath: scripts/hazard.lua
+    scriptPath: scripts/platformer/hazard.lua
     properties:
     - name: kind
       type: string
@@ -3896,7 +3896,7 @@ Entities:
     scale: [1.25, 2, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 68
@@ -3917,7 +3917,7 @@ Entities:
   Trigger:
     Type: Target
   LuaScript:
-    scriptPath: scripts/hazard.lua
+    scriptPath: scripts/platformer/hazard.lua
     properties:
     - name: kind
       type: string
@@ -3937,7 +3937,7 @@ Entities:
     scale: [1.25, 2, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 68
@@ -3957,7 +3957,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -3968,7 +3968,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -3987,7 +3987,7 @@ Entities:
     restitution: 0
     friction: 0.9
   LuaScript:
-    scriptPath: scripts/moving_platform_h.lua
+    scriptPath: scripts/platformer/moving_platform_h.lua
     properties:
     - name: speed
       type: float
@@ -4007,7 +4007,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_ext_atlas.png
+    texture: nam:textures/atlases/platformer_ext_atlas.png
     columns: 16
     rows: 16
     firstFrame: 113
@@ -4027,7 +4027,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_ext_atlas.png
+    texture: nam:textures/atlases/platformer_ext_atlas.png
     columns: 16
     rows: 16
     firstFrame: 115
@@ -4047,7 +4047,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -4058,7 +4058,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -4071,7 +4071,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -4082,7 +4082,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -4095,7 +4095,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -4106,7 +4106,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -4119,7 +4119,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -4130,7 +4130,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -4144,7 +4144,7 @@ Entities:
   Trigger:
     Type: Target
   LuaScript:
-    scriptPath: scripts/hazard.lua
+    scriptPath: scripts/platformer/hazard.lua
     properties:
     - name: kind
       type: string
@@ -4164,7 +4164,7 @@ Entities:
     scale: [1.25, 2, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 68
@@ -4185,7 +4185,7 @@ Entities:
   Trigger:
     Type: Target
   LuaScript:
-    scriptPath: scripts/hazard.lua
+    scriptPath: scripts/platformer/hazard.lua
     properties:
     - name: kind
       type: string
@@ -4205,7 +4205,7 @@ Entities:
     scale: [1.25, 2, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 68
@@ -4226,7 +4226,7 @@ Entities:
   Trigger:
     Type: Target
   LuaScript:
-    scriptPath: scripts/hazard.lua
+    scriptPath: scripts/platformer/hazard.lua
     properties:
     - name: kind
       type: string
@@ -4246,7 +4246,7 @@ Entities:
     scale: [1.25, 2, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 68
@@ -4266,7 +4266,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -4277,7 +4277,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -4290,7 +4290,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -4301,7 +4301,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -4314,7 +4314,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -4325,7 +4325,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -4344,7 +4344,7 @@ Entities:
     restitution: 0
     friction: 0.9
   LuaScript:
-    scriptPath: scripts/moving_platform_v.lua
+    scriptPath: scripts/platformer/moving_platform_v.lua
     properties:
     - name: speed
       type: float
@@ -4364,7 +4364,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_ext_atlas.png
+    texture: nam:textures/atlases/platformer_ext_atlas.png
     columns: 16
     rows: 16
     firstFrame: 113
@@ -4384,7 +4384,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_ext_atlas.png
+    texture: nam:textures/atlases/platformer_ext_atlas.png
     columns: 16
     rows: 16
     firstFrame: 115
@@ -4404,7 +4404,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -4415,7 +4415,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -4428,7 +4428,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -4439,7 +4439,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -4452,7 +4452,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_ext_atlas.png
+    texture: nam:textures/atlases/platformer_ext_atlas.png
     columns: 16
     rows: 16
     firstFrame: 240
@@ -4472,7 +4472,7 @@ Entities:
   Trigger:
     Type: Target
   LuaScript:
-    scriptPath: scripts/checkpoint.lua
+    scriptPath: scripts/platformer/checkpoint.lua
     properties:
     - name: flag
       type: string
@@ -4489,7 +4489,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_ext_atlas.png
+    texture: nam:textures/atlases/platformer_ext_atlas.png
     columns: 16
     rows: 16
     firstFrame: 176
@@ -4509,7 +4509,7 @@ Entities:
   Trigger:
     Type: Target
   LuaScript:
-    scriptPath: scripts/hazard.lua
+    scriptPath: scripts/platformer/hazard.lua
     properties:
     - name: kind
       type: string
@@ -4529,7 +4529,7 @@ Entities:
     scale: [1.25, 2, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 68
@@ -4550,7 +4550,7 @@ Entities:
   Trigger:
     Type: Target
   LuaScript:
-    scriptPath: scripts/hazard.lua
+    scriptPath: scripts/platformer/hazard.lua
     properties:
     - name: kind
       type: string
@@ -4570,7 +4570,7 @@ Entities:
     scale: [1.25, 2, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 68
@@ -4590,7 +4590,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -4601,7 +4601,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -4614,7 +4614,7 @@ Entities:
     scale: [0.9, 0.9, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 44
@@ -4625,7 +4625,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_heart_touched
   LuaScript:
-    scriptPath: scripts/heart.lua
+    scriptPath: scripts/platformer/heart.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -4638,7 +4638,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_ext_atlas.png
+    texture: nam:textures/atlases/platformer_ext_atlas.png
     columns: 16
     rows: 16
     firstFrame: 176
@@ -4657,7 +4657,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -4668,7 +4668,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -4681,7 +4681,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -4692,7 +4692,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -4705,7 +4705,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -4716,7 +4716,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -4729,7 +4729,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -4740,7 +4740,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -4759,7 +4759,7 @@ Entities:
     restitution: 0
     friction: 0.9
   LuaScript:
-    scriptPath: scripts/moving_platform_h.lua
+    scriptPath: scripts/platformer/moving_platform_h.lua
     properties:
     - name: speed
       type: float
@@ -4779,7 +4779,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_ext_atlas.png
+    texture: nam:textures/atlases/platformer_ext_atlas.png
     columns: 16
     rows: 16
     firstFrame: 113
@@ -4799,7 +4799,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_ext_atlas.png
+    texture: nam:textures/atlases/platformer_ext_atlas.png
     columns: 16
     rows: 16
     firstFrame: 115
@@ -4819,7 +4819,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -4830,7 +4830,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -4843,7 +4843,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -4854,7 +4854,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -4867,7 +4867,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -4878,7 +4878,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -4891,7 +4891,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_ext_atlas.png
+    texture: nam:textures/atlases/platformer_ext_atlas.png
     columns: 16
     rows: 16
     firstFrame: 240
@@ -4911,7 +4911,7 @@ Entities:
   Trigger:
     Type: Target
   LuaScript:
-    scriptPath: scripts/checkpoint.lua
+    scriptPath: scripts/platformer/checkpoint.lua
     properties:
     - name: flag
       type: string
@@ -4934,7 +4934,7 @@ Entities:
     restitution: 0
     friction: 0.9
   LuaScript:
-    scriptPath: scripts/moving_platform_v.lua
+    scriptPath: scripts/platformer/moving_platform_v.lua
     properties:
     - name: speed
       type: float
@@ -4954,7 +4954,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_ext_atlas.png
+    texture: nam:textures/atlases/platformer_ext_atlas.png
     columns: 16
     rows: 16
     firstFrame: 113
@@ -4974,7 +4974,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_ext_atlas.png
+    texture: nam:textures/atlases/platformer_ext_atlas.png
     columns: 16
     rows: 16
     firstFrame: 115
@@ -4994,7 +4994,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -5005,7 +5005,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -5018,7 +5018,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -5029,7 +5029,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -5042,7 +5042,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_ext_atlas.png
+    texture: nam:textures/atlases/platformer_ext_atlas.png
     columns: 16
     rows: 16
     firstFrame: 176
@@ -5061,7 +5061,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_atlas.png
+    texture: nam:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -5072,7 +5072,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -5085,7 +5085,7 @@ Entities:
     scale: [1, 1, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/platformer_ext_atlas.png
+    texture: nam:textures/atlases/platformer_ext_atlas.png
     columns: 16
     rows: 16
     firstFrame: 176

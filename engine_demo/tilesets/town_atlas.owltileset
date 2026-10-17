@@ -1,6 +1,6 @@
 Tileset: town_atlas
 FormatVersion: 1
-texture: nam:textures/town_atlas.png
+texture: nam:textures/atlases/town_atlas.png
 tileWidth: 16
 tileHeight: 16
 columns: 12

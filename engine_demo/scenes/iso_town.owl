@@ -26,7 +26,7 @@ Entities:
   SoundListener:
     primary: true
   LuaScript:
-    scriptPath: scripts/iso_camera.lua
+    scriptPath: scripts/iso/iso_camera.lua
     properties:
     - name: speed
       type: float
@@ -61,7 +61,7 @@ Entities:
     texture: nam:textures/iso/smoke.png
     tilingFactor: 1
   LuaScript:
-    scriptPath: scripts/iso_cloud.lua
+    scriptPath: scripts/iso/iso_cloud.lua
     properties:
     - name: offset_x
       type: float
@@ -89,7 +89,7 @@ Entities:
     texture: nam:textures/iso/smoke.png
     tilingFactor: 1
   LuaScript:
-    scriptPath: scripts/iso_cloud.lua
+    scriptPath: scripts/iso/iso_cloud.lua
     properties:
     - name: offset_x
       type: float
@@ -117,7 +117,7 @@ Entities:
     texture: nam:textures/iso/smoke.png
     tilingFactor: 1
   LuaScript:
-    scriptPath: scripts/iso_cloud.lua
+    scriptPath: scripts/iso/iso_cloud.lua
     properties:
     - name: offset_x
       type: float
@@ -145,7 +145,7 @@ Entities:
     texture: nam:textures/iso/smoke.png
     tilingFactor: 1
   LuaScript:
-    scriptPath: scripts/iso_cloud.lua
+    scriptPath: scripts/iso/iso_cloud.lua
     properties:
     - name: offset_x
       type: float
@@ -173,7 +173,7 @@ Entities:
     texture: nam:textures/iso/smoke.png
     tilingFactor: 1
   LuaScript:
-    scriptPath: scripts/iso_cloud.lua
+    scriptPath: scripts/iso/iso_cloud.lua
     properties:
     - name: offset_x
       type: float
@@ -201,7 +201,7 @@ Entities:
     texture: nam:textures/iso/smoke.png
     tilingFactor: 1
   LuaScript:
-    scriptPath: scripts/iso_cloud.lua
+    scriptPath: scripts/iso/iso_cloud.lua
     properties:
     - name: offset_x
       type: float
@@ -8634,7 +8634,7 @@ Entities:
     rotation: [0, 0, 0]
     scale: [1, 1, 1]
   LuaScript:
-    scriptPath: scripts/iso_town.lua
+    scriptPath: scripts/iso/iso_town.lua
     properties:
     - name: map_size
       type: float
@@ -8651,7 +8651,7 @@ Entities:
     rotation: [0, 0, 0]
     scale: [1, 1, 1]
   LuaScript:
-    scriptPath: scripts/iso_town_traffic.lua
+    scriptPath: scripts/iso/iso_town_traffic.lua
     properties:
     - name: map_size
       type: float
@@ -8671,7 +8671,7 @@ Entities:
     rotation: [0, 0, 0]
     scale: [1, 1, 1]
   LuaScript:
-    scriptPath: scripts/iso_town_life.lua
+    scriptPath: scripts/iso/iso_town_life.lua
   Visibility: {gameVisible: true}
 
 - Entity: 4300000000000000634

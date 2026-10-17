@@ -28,6 +28,8 @@ pytest = "^9.1.1"
 line-length = 120
 target-version = "py312"
 include = ["ci/**/*.py", "ci_action.py", "tools/**/*.py"]
+# The asset generators of the Engine Demo are stand-alone scripts, not part of the CI package.
+extend-exclude = ["tools/demo"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "UP", "B", "SIM"]
@@ -43,6 +45,7 @@ python_version = "3.12"
 files = ["ci", "ci_action.py", "tools"]
 ignore_missing_imports = true
 check_untyped_defs = true
+exclude = ["tools/demo"]
 
 [tool.pytest.ini_options]
 testpaths = ["ci/tests", "tools/tests"]

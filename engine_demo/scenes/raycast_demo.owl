@@ -254,7 +254,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/tree_pot.png
+      texture: nam:textures/wolf3d/sprites/tree_pot.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -278,7 +278,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/tree_pot.png
+      texture: nam:textures/wolf3d/sprites/tree_pot.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -302,7 +302,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/lamp_pilar.png
+      texture: nam:textures/wolf3d/sprites/lamp_pilar.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -326,7 +326,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/lamp_pilar.png
+      texture: nam:textures/wolf3d/sprites/lamp_pilar.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -350,7 +350,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/lamp_pilar.png
+      texture: nam:textures/wolf3d/sprites/lamp_pilar.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -374,7 +374,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/lamp_pilar.png
+      texture: nam:textures/wolf3d/sprites/lamp_pilar.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -398,7 +398,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/table_chairs.png
+      texture: nam:textures/wolf3d/sprites/table_chairs.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -422,7 +422,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/flag.png
+      texture: nam:textures/wolf3d/sprites/flag.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -446,7 +446,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
+      texture: nam:textures/wolf3d/sprites/lamp_ceiling.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -461,7 +461,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
+      texture: nam:textures/wolf3d/sprites/lamp_ceiling.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -476,7 +476,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
+      texture: nam:textures/wolf3d/sprites/lamp_ceiling.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -491,7 +491,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/blue_pot.png
+      texture: nam:textures/wolf3d/sprites/blue_pot.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -515,7 +515,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/blue_pot.png
+      texture: nam:textures/wolf3d/sprites/blue_pot.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -539,7 +539,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/lamp_ceiling_candle.png
+      texture: nam:textures/wolf3d/sprites/lamp_ceiling_candle.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -554,7 +554,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
+      texture: nam:textures/wolf3d/sprites/lamp_ceiling.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -569,7 +569,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
+      texture: nam:textures/wolf3d/sprites/lamp_ceiling.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -584,7 +584,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
+      texture: nam:textures/wolf3d/sprites/lamp_ceiling.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -599,7 +599,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/armor.png
+      texture: nam:textures/wolf3d/sprites/armor.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -623,7 +623,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/sausages.png
+      texture: nam:textures/wolf3d/sprites/sausages.png
     Trigger:
       Type: LuaCallback
       CallbackName: on_pickup
@@ -632,7 +632,7 @@ Entities:
     Hierarchy:
       parentId: 7103139458259188987
     LuaScript:
-      scriptPath: scripts/pickup.lua
+      scriptPath: scripts/raycast/pickup.lua
       properties:
         - name: item
           type: string
@@ -650,7 +650,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/tree_pot_dead.png
+      texture: nam:textures/wolf3d/sprites/tree_pot_dead.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -674,7 +674,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/tree_pot_dead.png
+      texture: nam:textures/wolf3d/sprites/tree_pot_dead.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -698,7 +698,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
+      texture: nam:textures/wolf3d/sprites/lamp_ceiling.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -724,7 +724,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/lamp_ceiling_candle.png
+      texture: nam:textures/wolf3d/sprites/lamp_ceiling_candle.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -739,7 +739,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/lamp_ceiling_candle.png
+      texture: nam:textures/wolf3d/sprites/lamp_ceiling_candle.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -754,7 +754,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/tree_pot_dead.png
+      texture: nam:textures/wolf3d/sprites/tree_pot_dead.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -778,7 +778,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/tree_pot_dead.png
+      texture: nam:textures/wolf3d/sprites/tree_pot_dead.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -802,7 +802,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/tree_pot_dead.png
+      texture: nam:textures/wolf3d/sprites/tree_pot_dead.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -826,7 +826,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/table.png
+      texture: nam:textures/wolf3d/sprites/table.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -850,7 +850,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/puddle.png
+      texture: nam:textures/wolf3d/sprites/puddle.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -865,7 +865,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/basket.png
+      texture: nam:textures/wolf3d/sprites/basket.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -880,7 +880,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
+      texture: nam:textures/wolf3d/sprites/lamp_ceiling.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -895,7 +895,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/tree_pot_dead.png
+      texture: nam:textures/wolf3d/sprites/tree_pot_dead.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -919,7 +919,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/table_chairs.png
+      texture: nam:textures/wolf3d/sprites/table_chairs.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -943,7 +943,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/table.png
+      texture: nam:textures/wolf3d/sprites/table.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -967,7 +967,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/barrel_wood.png
+      texture: nam:textures/wolf3d/sprites/barrel_wood.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -991,7 +991,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/barrel_wood.png
+      texture: nam:textures/wolf3d/sprites/barrel_wood.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -1015,7 +1015,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/barrel_wood.png
+      texture: nam:textures/wolf3d/sprites/barrel_wood.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -1052,7 +1052,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
+      texture: nam:textures/wolf3d/sprites/lamp_ceiling.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -1067,7 +1067,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/lamp_ceiling_candle.png
+      texture: nam:textures/wolf3d/sprites/lamp_ceiling_candle.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -1082,7 +1082,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
+      texture: nam:textures/wolf3d/sprites/lamp_ceiling.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -1097,7 +1097,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
+      texture: nam:textures/wolf3d/sprites/lamp_ceiling.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -1112,7 +1112,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
+      texture: nam:textures/wolf3d/sprites/lamp_ceiling.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -1127,7 +1127,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
+      texture: nam:textures/wolf3d/sprites/lamp_ceiling.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -1142,7 +1142,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
+      texture: nam:textures/wolf3d/sprites/lamp_ceiling.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -1195,7 +1195,7 @@ Entities:
     SoundListener:
       primary: true
     LuaScript:
-      scriptPath: scripts/raycast_player.lua
+      scriptPath: scripts/raycast/raycast_player.lua
       properties:
         - name: speed
           type: float
@@ -1226,7 +1226,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/barrel_wood.png
+      texture: nam:textures/wolf3d/sprites/barrel_wood.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -1250,7 +1250,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/table_chairs.png
+      texture: nam:textures/wolf3d/sprites/table_chairs.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -1274,7 +1274,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/pit_water.png
+      texture: nam:textures/wolf3d/sprites/pit_water.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -1298,7 +1298,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/pit.png
+      texture: nam:textures/wolf3d/sprites/pit.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -1322,7 +1322,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/table_chairs.png
+      texture: nam:textures/wolf3d/sprites/table_chairs.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -1379,7 +1379,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/tree_pot_dead.png
+      texture: nam:textures/wolf3d/sprites/tree_pot_dead.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -1403,7 +1403,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/tree_pot_dead.png
+      texture: nam:textures/wolf3d/sprites/tree_pot_dead.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -1427,7 +1427,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/tree_pot_dead.png
+      texture: nam:textures/wolf3d/sprites/tree_pot_dead.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -1451,7 +1451,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/tree_pot_dead.png
+      texture: nam:textures/wolf3d/sprites/tree_pot_dead.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -1475,7 +1475,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
+      texture: nam:textures/wolf3d/sprites/lamp_ceiling.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -1490,7 +1490,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
+      texture: nam:textures/wolf3d/sprites/lamp_ceiling.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -1505,7 +1505,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
+      texture: nam:textures/wolf3d/sprites/lamp_ceiling.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -1520,7 +1520,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
+      texture: nam:textures/wolf3d/sprites/lamp_ceiling.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -1535,7 +1535,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
+      texture: nam:textures/wolf3d/sprites/lamp_ceiling.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -1550,7 +1550,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
+      texture: nam:textures/wolf3d/sprites/lamp_ceiling.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -1565,7 +1565,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
+      texture: nam:textures/wolf3d/sprites/lamp_ceiling.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -1580,7 +1580,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
+      texture: nam:textures/wolf3d/sprites/lamp_ceiling.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -1595,7 +1595,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
+      texture: nam:textures/wolf3d/sprites/lamp_ceiling.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -1610,7 +1610,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
+      texture: nam:textures/wolf3d/sprites/lamp_ceiling.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -1625,7 +1625,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
+      texture: nam:textures/wolf3d/sprites/lamp_ceiling.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -1640,7 +1640,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
+      texture: nam:textures/wolf3d/sprites/lamp_ceiling.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -1655,7 +1655,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/barrel_wood.png
+      texture: nam:textures/wolf3d/sprites/barrel_wood.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -1679,7 +1679,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
+      texture: nam:textures/wolf3d/sprites/lamp_ceiling.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -1694,7 +1694,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/green_barrel.png
+      texture: nam:textures/wolf3d/sprites/green_barrel.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -1718,7 +1718,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
+      texture: nam:textures/wolf3d/sprites/lamp_ceiling.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -1733,7 +1733,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
+      texture: nam:textures/wolf3d/sprites/lamp_ceiling.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -1748,7 +1748,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
+      texture: nam:textures/wolf3d/sprites/lamp_ceiling.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -2129,14 +2129,14 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/treasure_crown.png
+      texture: nam:textures/wolf3d/sprites/treasure_crown.png
     Trigger:
       Type: LuaCallback
       CallbackName: on_pickup
     Visibility:
       gameVisible: true
     LuaScript:
-      scriptPath: scripts/pickup.lua
+      scriptPath: scripts/raycast/pickup.lua
       properties:
         - name: item
           type: string
@@ -2154,14 +2154,14 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/treasure.png
+      texture: nam:textures/wolf3d/sprites/treasure.png
     Trigger:
       Type: LuaCallback
       CallbackName: on_pickup
     Visibility:
       gameVisible: true
     LuaScript:
-      scriptPath: scripts/pickup.lua
+      scriptPath: scripts/raycast/pickup.lua
       properties:
         - name: item
           type: string
@@ -2179,14 +2179,14 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/treasure_cross.png
+      texture: nam:textures/wolf3d/sprites/treasure_cross.png
     Trigger:
       Type: LuaCallback
       CallbackName: on_pickup
     Visibility:
       gameVisible: true
     LuaScript:
-      scriptPath: scripts/pickup.lua
+      scriptPath: scripts/raycast/pickup.lua
       properties:
         - name: item
           type: string
@@ -2204,14 +2204,14 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/treasure_calice.png
+      texture: nam:textures/wolf3d/sprites/treasure_calice.png
     Trigger:
       Type: LuaCallback
       CallbackName: on_pickup
     Visibility:
       gameVisible: true
     LuaScript:
-      scriptPath: scripts/pickup.lua
+      scriptPath: scripts/raycast/pickup.lua
       properties:
         - name: item
           type: string
@@ -2229,14 +2229,14 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/treasure_cross.png
+      texture: nam:textures/wolf3d/sprites/treasure_cross.png
     Trigger:
       Type: LuaCallback
       CallbackName: on_pickup
     Visibility:
       gameVisible: true
     LuaScript:
-      scriptPath: scripts/pickup.lua
+      scriptPath: scripts/raycast/pickup.lua
       properties:
         - name: item
           type: string
@@ -2254,14 +2254,14 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/treasure_calice.png
+      texture: nam:textures/wolf3d/sprites/treasure_calice.png
     Trigger:
       Type: LuaCallback
       CallbackName: on_pickup
     Visibility:
       gameVisible: true
     LuaScript:
-      scriptPath: scripts/pickup.lua
+      scriptPath: scripts/raycast/pickup.lua
       properties:
         - name: item
           type: string
@@ -2279,14 +2279,14 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/treasure_calice.png
+      texture: nam:textures/wolf3d/sprites/treasure_calice.png
     Trigger:
       Type: LuaCallback
       CallbackName: on_pickup
     Visibility:
       gameVisible: true
     LuaScript:
-      scriptPath: scripts/pickup.lua
+      scriptPath: scripts/raycast/pickup.lua
       properties:
         - name: item
           type: string
@@ -2304,14 +2304,14 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/treasure.png
+      texture: nam:textures/wolf3d/sprites/treasure.png
     Trigger:
       Type: LuaCallback
       CallbackName: on_pickup
     Visibility:
       gameVisible: true
     LuaScript:
-      scriptPath: scripts/pickup.lua
+      scriptPath: scripts/raycast/pickup.lua
       properties:
         - name: item
           type: string
@@ -2329,14 +2329,14 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/treasure.png
+      texture: nam:textures/wolf3d/sprites/treasure.png
     Trigger:
       Type: LuaCallback
       CallbackName: on_pickup
     Visibility:
       gameVisible: true
     LuaScript:
-      scriptPath: scripts/pickup.lua
+      scriptPath: scripts/raycast/pickup.lua
       properties:
         - name: item
           type: string
@@ -2354,14 +2354,14 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/treasure_cross.png
+      texture: nam:textures/wolf3d/sprites/treasure_cross.png
     Trigger:
       Type: LuaCallback
       CallbackName: on_pickup
     Visibility:
       gameVisible: true
     LuaScript:
-      scriptPath: scripts/pickup.lua
+      scriptPath: scripts/raycast/pickup.lua
       properties:
         - name: item
           type: string
@@ -2379,14 +2379,14 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/treasure_cross.png
+      texture: nam:textures/wolf3d/sprites/treasure_cross.png
     Trigger:
       Type: LuaCallback
       CallbackName: on_pickup
     Visibility:
       gameVisible: true
     LuaScript:
-      scriptPath: scripts/pickup.lua
+      scriptPath: scripts/raycast/pickup.lua
       properties:
         - name: item
           type: string
@@ -2404,14 +2404,14 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/food.png
+      texture: nam:textures/wolf3d/sprites/food.png
     Trigger:
       Type: LuaCallback
       CallbackName: on_pickup
     Visibility:
       gameVisible: true
     LuaScript:
-      scriptPath: scripts/pickup.lua
+      scriptPath: scripts/raycast/pickup.lua
       properties:
         - name: item
           type: string
@@ -2429,14 +2429,14 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/food.png
+      texture: nam:textures/wolf3d/sprites/food.png
     Trigger:
       Type: LuaCallback
       CallbackName: on_pickup
     Visibility:
       gameVisible: true
     LuaScript:
-      scriptPath: scripts/pickup.lua
+      scriptPath: scripts/raycast/pickup.lua
       properties:
         - name: item
           type: string
@@ -2454,14 +2454,14 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/health.png
+      texture: nam:textures/wolf3d/sprites/health.png
     Trigger:
       Type: LuaCallback
       CallbackName: on_pickup
     Visibility:
       gameVisible: true
     LuaScript:
-      scriptPath: scripts/pickup.lua
+      scriptPath: scripts/raycast/pickup.lua
       properties:
         - name: item
           type: string
@@ -2479,14 +2479,14 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/health.png
+      texture: nam:textures/wolf3d/sprites/health.png
     Trigger:
       Type: LuaCallback
       CallbackName: on_pickup
     Visibility:
       gameVisible: true
     LuaScript:
-      scriptPath: scripts/pickup.lua
+      scriptPath: scripts/raycast/pickup.lua
       properties:
         - name: item
           type: string
@@ -2504,14 +2504,14 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/ammo.png
+      texture: nam:textures/wolf3d/sprites/ammo.png
     Trigger:
       Type: LuaCallback
       CallbackName: on_pickup
     Visibility:
       gameVisible: true
     LuaScript:
-      scriptPath: scripts/pickup.lua
+      scriptPath: scripts/raycast/pickup.lua
       properties:
         - name: item
           type: string
@@ -2529,14 +2529,14 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/ammo.png
+      texture: nam:textures/wolf3d/sprites/ammo.png
     Trigger:
       Type: LuaCallback
       CallbackName: on_pickup
     Visibility:
       gameVisible: true
     LuaScript:
-      scriptPath: scripts/pickup.lua
+      scriptPath: scripts/raycast/pickup.lua
       properties:
         - name: item
           type: string
@@ -2554,14 +2554,14 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/ammo.png
+      texture: nam:textures/wolf3d/sprites/ammo.png
     Trigger:
       Type: LuaCallback
       CallbackName: on_pickup
     Visibility:
       gameVisible: true
     LuaScript:
-      scriptPath: scripts/pickup.lua
+      scriptPath: scripts/raycast/pickup.lua
       properties:
         - name: item
           type: string
@@ -2579,14 +2579,14 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d_sprites/machine_gun.png
+      texture: nam:textures/wolf3d/sprites/machine_gun.png
     Trigger:
       Type: LuaCallback
       CallbackName: on_pickup
     Visibility:
       gameVisible: true
     LuaScript:
-      scriptPath: scripts/pickup.lua
+      scriptPath: scripts/raycast/pickup.lua
       properties:
         - name: item
           type: string
@@ -2608,7 +2608,7 @@ Entities:
     Visibility:
       gameVisible: true
     LuaScript:
-      scriptPath: scripts/raycast_exit.lua
+      scriptPath: scripts/raycast/raycast_exit.lua
       properties:
         - name: kind
           type: string
@@ -2627,7 +2627,7 @@ Entities:
     Visibility:
       gameVisible: true
     LuaScript:
-      scriptPath: scripts/raycast_exit.lua
+      scriptPath: scripts/raycast/raycast_exit.lua
       properties:
         - name: kind
           type: string
@@ -2642,7 +2642,7 @@ Entities:
     Visibility:
       gameVisible: true
     LuaScript:
-      scriptPath: scripts/raycast_level.lua
+      scriptPath: scripts/raycast/raycast_level.lua
   - Entity: 5400000000000000061
     Tag:
       tag: InventoryLogic
@@ -2653,7 +2653,7 @@ Entities:
     Visibility:
       gameVisible: true
     LuaScript:
-      scriptPath: scripts/inventory.lua
+      scriptPath: scripts/raycast/inventory.lua
   - Entity: 5400000000000000070
     Tag:
       tag: Minimap
@@ -2715,7 +2715,7 @@ Entities:
     Hierarchy:
       {}
     SoundSource:
-      soundAsset: sounds/raycast_ambience.wav
+      soundAsset: sounds/raycast/ambience.wav
       category: Ambient
       volume: 0.5
       pitch: 1

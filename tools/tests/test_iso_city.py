@@ -155,7 +155,7 @@ def test_city_scene_is_valid_yaml_with_its_life_and_sounds() -> None:
 
 
 def test_town_sounds_are_mono_16_bit_and_the_loops_close(tmp_path: Path) -> None:
-    path = Path(__file__).resolve().parents[2] / "engine_demo" / "sounds" / "generate_town_sounds.py"
+    path = Path(__file__).resolve().parents[2] / "tools" / "demo" / "generate_town_sounds.py"
     spec = importlib.util.spec_from_file_location("generate_town_sounds", path)
     assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)
