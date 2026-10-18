@@ -143,7 +143,7 @@ and the terraforming tools of `TilemapDocument`, the slope table of `TilesetDocu
 references changed because the sample map is no longer flat.
 
 ISO3 (2026-10-15) added the atlas generator `tools/iso_atlas`, run from the repository root with
-`docker/run.sh poetry run python -m tools.iso_atlas [--project engine_demo] [--seed 1] [--levels 1x,2x,half]` (default `1x`).
+`./docker_run.sh poetry run python -m tools.iso_atlas [--project engine_demo] [--seed 1] [--levels 1x,2x,half]` (default `1x`).
 It writes into `textures/iso/`, `tilesets/` and `tilemaps/` of the project:
 
 | Output                                 | Content                                                                                                                           |

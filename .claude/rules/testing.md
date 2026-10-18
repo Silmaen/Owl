@@ -56,7 +56,7 @@ and clean up. Fixtures that need GPU or audio must degrade to the Null backend i
   Captures, diffs and logs of failures go to `<build>/render_tests/`.
 - Scenes have no Lua script, no physics and no input: the capture must not depend on timing.
 - A deliberate visual change regenerates the references, reviewed image by image before committing:
-  `docker/run.sh env OWL_RENDER_TESTS_UPDATE=1 ctest --test-dir output/build/linux-clang-release -L render`.
+  `./docker_run.sh env OWL_RENDER_TESTS_UPDATE=1 ctest --test-dir output/build/linux-clang-release -L render`.
   This is the only command that writes into the source tree.
 - CTest wraps the binary in `xvfb-run`; without a display or lavapipe the cases skip. About 8 s: run them in a
   CI stage of their own (`ctest -L render`, `-LE render` for the rest).
@@ -95,9 +95,9 @@ TEST_F(MyFixture, TestName) { ... }
 
 Inside Docker (see root `CLAUDE.md`), Clang presets only:
 ```bash
-docker/run.sh ctest --test-dir output/build/linux-clang-release --output-on-failure -j8
-docker/run.sh output/build/linux-clang-release/bin/owl_scene_tests_unit_test --gtest_filter='SceneHierarchy.*'
-docker/run.sh poetry run python ci_action.py Test linux-clang-release
+./docker_run.sh ctest --test-dir output/build/linux-clang-release --output-on-failure -j8
+./docker_run.sh output/build/linux-clang-release/bin/owl_scene_tests_unit_test --gtest_filter='SceneHierarchy.*'
+./docker_run.sh poetry run python ci_action.py Test linux-clang-release
 ```
 The whole suite runs in a few seconds once built (Release; debug + coverage is slower).
 
@@ -109,8 +109,8 @@ The whole suite runs in a few seconds once built (Release; debug + coverage is s
 - The seed is random and printed at the top of the binary's output (`Note: Randomizing tests' orders with a
   seed of N .`). Reproduce a failing order with the same seed:
   ```bash
-  docker/run.sh env GTEST_RANDOM_SEED=N ctest --test-dir output/build/linux-sanitizer-address -R physics --output-on-failure
-  docker/run.sh output/build/linux-sanitizer-address/bin/owl_physics_tests_unit_test --gtest_shuffle --gtest_random_seed=N
+  ./docker_run.sh env GTEST_RANDOM_SEED=N ctest --test-dir output/build/linux-sanitizer-address -R physics --output-on-failure
+  ./docker_run.sh output/build/linux-sanitizer-address/bin/owl_physics_tests_unit_test --gtest_shuffle --gtest_random_seed=N
   ```
 - ctest sets `ASAN_OPTIONS` / `UBSAN_OPTIONS` / `TSAN_OPTIONS` with `halt_on_error=1` (`test/CMakeLists.txt`), and
   the code is built with `-fno-sanitize-recover=all`: any sanitizer report fails the test. When running a binary
@@ -118,7 +118,7 @@ The whole suite runs in a few seconds once built (Release; debug + coverage is s
 - `test/tsan.supp` silences TSan only inside uninstrumented GPU code (lavapipe, llvmpipe, LLVM, the validation layer);
   never add an Owl symbol there.
 - `test/lsan.supp` silences LeakSanitizer only inside the uninstrumented GTK stack libdecor loads under weston (GTK,
-  GDK, Pango, fontconfig, GLib); never add an Owl symbol there. Locally TSan needs ASLR off: `docker/run.sh --perf setarch -R ctest …`.
+  GDK, Pango, fontconfig, GLib); never add an Owl symbol there. Locally TSan needs ASLR off: `./docker_run.sh --perf setarch -R ctest …`.
 
 ## Conventions
 

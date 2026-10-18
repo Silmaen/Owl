@@ -695,9 +695,9 @@ Mesa update, not a missing sprite. On failure the capture, a diff (differing pix
 in `<build>/render_tests/`. The scenes live in `test/test_helper/assets/render_tests/scenes/` and use the Engine Demo's assets.
 
 ```bash
-docker/run.sh ctest --test-dir output/build/linux-clang-release -L render --output-on-failure
+./docker_run.sh ctest --test-dir output/build/linux-clang-release -L render --output-on-failure
 # Regenerate the references (writes test/test_helper/assets/render_tests/references/<backend>/<scene>.png):
-docker/run.sh env OWL_RENDER_TESTS_UPDATE=1 ctest --test-dir output/build/linux-clang-release -L render
+./docker_run.sh env OWL_RENDER_TESTS_UPDATE=1 ctest --test-dir output/build/linux-clang-release -L render
 ```
 
 CTest starts the binary under `xvfb-run` when it is installed; without a display or without lavapipe

@@ -381,7 +381,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Conan profiles for Windows MinGW (`windows-clang`, `windows-gcc`), DLLs deployed next to the binaries.
 - `Clang Static Analyzer` CI configuration (`ClangTidy -- --tool=analyzer`); both analyses close the TeamCity chain and
   are the checks to require on `main`.
-- `docker/run.sh` runs any build, test or CI command in the Docker build image (`--gui`, `--perf`).
+- `./docker_run.sh` runs any build, test or CI command in the Docker build image (`--gui`, `--perf`).
 - Versioned file formats: scenes, prefabs, saves, tilesets, tilemaps, animation clips, voxel structures, node graphs,
   settings and `owl_project.yml` carry a `FormatVersion`; files without it load as version 1, newer files are refused
   with a clear error, older ones go through a registered migration chain (`core::DocumentFormat`).
@@ -520,7 +520,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `PR Ready`).
 - CI: Windows builds compute the coverage on `main` only, no longer on pull requests.
 - CI on Conan everywhere and on a single Ubuntu 26.04 image (`builder-ubuntu2604`: GCC 15, Clang 22) for every Linux
-  preset and `docker/run.sh`.
+  preset and `./docker_run.sh`.
 - CI: release build and tests on `main` only; arm64 builds and every package nightly (they held the agents for hours and
   packages publish to the site).
 - CI in two levels: Code Style and Include Check in parallel, then every build, sanitizer and analysis after Code Style
@@ -537,7 +537,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Wayland compositors show the Owl icon.
 - `SIGINT` / `SIGTERM` close the application cleanly; `Window::getPresentedFrames()` and an exit log report the
   presented frame count.
-- `docker/run.sh --gpu=intel|nvidia` (PRIME offload) and `--platform=wayland|x11`, with a warning when the desktop
+- `./docker_run.sh --gpu=intel|nvidia` (PRIME offload) and `--platform=wayland|x11`, with a warning when the desktop
   session is locked.
 - GLFW `FEATURE_UNAVAILABLE` errors (window position / icon under Wayland) logged at trace level instead of error.
 - The memory tracker is no longer on by default in Debug (it doubled the live allocations and skewed Debug timings): opt
@@ -644,7 +644,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   a newly opened document comes to the front of its dock.
 - Owl Nest: pressing `Shift` twice opens the command palette (the Shift modifier key reported with it cancelled the
   tap), the main window no longer shows a scroll bar, and the ribbon drop-down carets are chevrons.
-- `docker/run.sh --gui` lends the host cursor themes, so Owl Nest shows the desktop cursor instead of Adwaita.
+- `./docker_run.sh --gui` lends the host cursor themes, so Owl Nest shows the desktop cursor instead of Adwaita.
 - Owl Nest node canvas (Scene Flow): the GraphEditor minimap no longer covers the canvas with white triangles, node
   titles stay readable when zoomed out, and the canvas follows the theme.
 - Editor icons drawn with the `white` keyword (components, panels...) follow the theme text colour, so they no longer
@@ -742,7 +742,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   uploaded by `Renderer2D` (the `world_transform` compute pass, which recomposed them on the GPU with the same 64-level
   cap, is removed).
 - Pack extraction and the texture / font pack caches now detect and log failed writes instead of failing silently.
-- `docker/run.sh` works from a git worktree: it mounts the main git directory and finds the shared `fake_home`.
+- `./docker_run.sh` works from a git worktree: it mounts the main git directory and finds the shared `fake_home`.
 - TeamCity: `triggerOnPrDraft` is written explicitly on every configuration (the plugin defaults to `true`, so draft PRs
   ran the whole matrix).
 - Conan on Windows: host settings and options go through a generated profile (cmd.exe split `&:shared=…` at `&`), and

@@ -11,8 +11,8 @@ CSV / JSON output. It is off by default (`OWL_BENCHMARK=OFF`); the CI compiles i
 Use a build directory of its own, inside the Docker image:
 
 ```bash
-docker/run.sh cmake --preset linux-clang-release -S . -B output/build/linux-clang-release-bench -DOWL_BENCHMARK=ON
-docker/run.sh cmake --build output/build/linux-clang-release-bench --target owl_bench
+./docker_run.sh cmake --preset linux-clang-release -S . -B output/build/linux-clang-release-bench -DOWL_BENCHMARK=ON
+./docker_run.sh cmake --build output/build/linux-clang-release-bench --target owl_bench
 ```
 
 ## Run
@@ -23,7 +23,7 @@ reference i9-13950HX):
 
 ```bash
 cd output/build/linux-clang-release-bench/bin
-../../../../docker/run.sh taskset -c 6 ./owl_bench --csv=bench.csv --json=bench.json
+../../../../docker_run.sh taskset -c 6 ./owl_bench --csv=bench.csv --json=bench.json
 ```
 
 | Option              | Default | Meaning                                                      |
@@ -64,8 +64,8 @@ estimates, a local run scaled by the ratio of the `renderer2d/quads_color` cases
 another agent do not compare (artemis is 20 % faster but varies 10.7 % between runs, against 1.7 % here).
 
 ```bash
-docker/run.sh poetry run python ci_action.py Build linux-bench
-docker/run.sh poetry run python ci_action.py Bench linux-bench -- --threshold=0.15
+./docker_run.sh poetry run python ci_action.py Build linux-bench
+./docker_run.sh poetry run python ci_action.py Bench linux-bench -- --threshold=0.15
 ```
 
 ## Reading the output
@@ -80,7 +80,7 @@ and end is printed: a loaded machine makes the numbers unreliable.
 `perf` is not usable in the image yet; use callgrind on one filtered case:
 
 ```bash
-../../../../docker/run.sh valgrind --tool=callgrind --toggle-collect='*Scene::onUpdateEditor*' \
+../../../../docker_run.sh valgrind --tool=callgrind --toggle-collect='*Scene::onUpdateEditor*' \
     ./owl_bench --samples=1 --warmup=0 --min-sample-ms=1 --filter=frame/editor_update/flat10000
 ```
 
@@ -90,7 +90,7 @@ and end is printed: a loaded machine makes the numbers unreliable.
 `--frame-bench` mode (built with the default presets, no `OWL_BENCHMARK` needed):
 
 ```bash
-docker/run.sh --gui output/build/linux-clang-release/bin/OwlRunner \
+./docker_run.sh --gui output/build/linux-clang-release/bin/OwlRunner \
     --frame-bench engine_demo/scenes/raycast_demo.owl --backend vulkan --frames 1000 --warmup 120 \
     --out output/frame-bench/raycast_demo.vulkan.json
 ```

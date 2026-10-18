@@ -36,9 +36,9 @@ TEST(<Category>, <TestName>) {
 4. No CMakeLists.txt changes needed — the test file is auto-discovered.
 5. Re-run configure (new file, GLOB), build and run the test to verify:
    ```bash
-   docker/run.sh cmake --preset linux-clang-release -S .
-   docker/run.sh cmake --build output/build/linux-clang-release --target owl_<category>_tests_unit_test
-   docker/run.sh bash -c 'cd output/build/linux-clang-release && bin/owl_<category>_tests_unit_test --gtest_filter="<Category>.<TestName>"'
+   ./docker_run.sh cmake --preset linux-clang-release -S .
+   ./docker_run.sh cmake --build output/build/linux-clang-release --target owl_<category>_tests_unit_test
+   ./docker_run.sh bash -c 'cd output/build/linux-clang-release && bin/owl_<category>_tests_unit_test --gtest_filter="<Category>.<TestName>"'
    ```
    Tests write only to a temp directory, never into the source tree.
 6. Report the test result.

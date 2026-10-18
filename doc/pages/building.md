@@ -8,13 +8,13 @@ This page explains how to configure, build, and test the Owl engine.
 
 ### Build image
 
-The reference environment is the CI build image, driven by `docker/run.sh`: it runs any command in the image with
+The reference environment is the CI build image, driven by `./docker_run.sh`: it runs any command in the image with
 your user, the repository mounted at its own path and a persistent home (Poetry venv, Conan cache, ccache) next to
 the checkout. Every command of this page works prefixed with it, which is how the project is developed:
 
 ```bash
-docker/run.sh cmake --preset linux-clang-release -S .
-docker/run.sh cmake --build output/build/linux-clang-release
+./docker_run.sh cmake --preset linux-clang-release -S .
+./docker_run.sh cmake --build output/build/linux-clang-release
 ```
 
 ### Software
@@ -137,8 +137,8 @@ tested (`linux-clang-release`, `windows-clang-release`), so the archive holds th
 tree.
 
 ```bash
-docker/run.sh cmake --build output/build/linux-clang-release
-cd output/build/linux-clang-release && ../../../docker/run.sh cpack
+./docker_run.sh cmake --build output/build/linux-clang-release
+cd output/build/linux-clang-release && ../../../docker_run.sh cpack
 ```
 
 On Linux the archives rely on the system's graphics, audio and windowing libraries, plus D-Bus (`libdbus-1-3`, any
@@ -183,9 +183,9 @@ docker export "$container" | tar -x -C "$sysroot" --anchored --exclude='dev/*' -
 docker rm "$container"
 find "$sysroot" -type l -lname '/*' -exec sh -c \
     'ln -sfn "$(realpath -m --relative-to="$(dirname "$1")" "$2$(readlink "$1")")" "$1"' _ {} "$sysroot" \;
-docker/run.sh cmake --preset linux-cross-arm64 -DOWL_SYSROOT="$sysroot"
-docker/run.sh cmake --build output/build/linux-cross-arm64
-docker/run.sh ctest --test-dir output/build/linux-cross-arm64 --output-on-failure -j8
+./docker_run.sh cmake --preset linux-cross-arm64 -DOWL_SYSROOT="$sysroot"
+./docker_run.sh cmake --build output/build/linux-cross-arm64
+./docker_run.sh ctest --test-dir output/build/linux-cross-arm64 --output-on-failure -j8
 ```
 
 A sysroot outside the repository is mounted with `OWL_DOCKER_MOUNTS`. `linux-emulated` keeps the former build, the
@@ -211,7 +211,7 @@ with a fixed time step and no user input, and reports the CPU time per phase and
 (Vulkan and OpenGL), plus the queue drains per frame:
 
 ```bash
-docker/run.sh --gui output/build/linux-clang-release/bin/OwlRunner \
+./docker_run.sh --gui output/build/linux-clang-release/bin/OwlRunner \
     --frame-bench engine_demo/scenes/platformer_house.owl --backend opengl --frames 1000 --out fb.json
 ```
 
@@ -277,10 +277,10 @@ On Linux the editor and the runner use GLFW with both display backends. By defau
 ```bash
 OWL_WINDOW_PLATFORM=wayland output/build/linux-clang-release/bin/OwlNest   # native Wayland
 OWL_WINDOW_PLATFORM=x11 output/build/linux-clang-release/bin/OwlNest       # X11 / XWayland: detached editor windows
-docker/run.sh --platform=x11 --gpu=nvidia output/build/linux-clang-release/bin/OwlRunner
+./docker_run.sh --platform=x11 --gpu=nvidia output/build/linux-clang-release/bin/OwlRunner
 ```
 
-- `docker/run.sh --gui` mounts the Wayland socket, the X11 socket and `/dev/dri`; `--gpu=intel|nvidia` pins Vulkan,
+- `./docker_run.sh --gui` mounts the Wayland socket, the X11 socket and `/dev/dri`; `--gpu=intel|nvidia` pins Vulkan,
   EGL and GLX to one GPU of a hybrid laptop (`nvidia` turns PRIME render offload on), `--platform=` sets
   `OWL_WINDOW_PLATFORM`. It also lends the host cursor themes (read-only) with `XCURSOR_THEME` / `XCURSOR_SIZE`, so
   the window shows the desktop cursor.
@@ -289,7 +289,7 @@ docker/run.sh --platform=x11 --gpu=nvidia output/build/linux-clang-release/bin/O
 - Under Wayland the icon comes from a hidden desktop entry written to `~/.local/share/applications/<app_id>.desktop`
   (`installDesktopEntry: false` in `config.yml` to opt out).
 - A locked or hidden session presents no frame: X11 windows that wait for presentation (vsync on, or any NVIDIA
-  PRIME window) crawl at about one frame per second until shown again (`docker/run.sh` warns when the session is
+  PRIME window) crawl at about one frame per second until shown again (`./docker_run.sh` warns when the session is
   locked).
 
 See [Windowing and input](design/windowing-input.md) for the details and the GLFW limits.

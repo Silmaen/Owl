@@ -295,8 +295,8 @@ timeout fails the build; its input lands in `output/fuzz/<fuzzer>/artifacts/`, p
 replays with `bin/<fuzzer> <input>`.
 
 ```bash
-docker/run.sh poetry run python ci_action.py Build linux-fuzz
-docker/run.sh poetry run python ci_action.py Fuzz linux-fuzz -- --time=60
+./docker_run.sh poetry run python ci_action.py Build linux-fuzz
+./docker_run.sh poetry run python ci_action.py Fuzz linux-fuzz -- --time=60
 ```
 
 ## Dependency report
@@ -317,7 +317,7 @@ is logged as a warning, the list written to `output/dependency_report.json` and 
 `OutdatedDependencies` statistic (`-- --no-upstream` skips the tags).
 
 ```bash
-docker/run.sh poetry run python ci_action.py DependencyReport linux-clang-release
+./docker_run.sh poetry run python ci_action.py DependencyReport linux-clang-release
 ```
 
 ## Include check
@@ -342,8 +342,8 @@ on Linux:
 Run it locally (the build image ships libc++):
 
 ```bash
-docker/run.sh poetry run python ci_action.py IncludeCheck linux-include-check
-docker/run.sh cmake --build output/build/linux-include-check --target owl_header_check   # headers only
+./docker_run.sh poetry run python ci_action.py IncludeCheck linux-include-check
+./docker_run.sh cmake --build output/build/linux-include-check --target owl_header_check   # headers only
 ```
 
 The compile check catches project headers that are not self-contained too (a missing `core/Macros.h`), which

@@ -61,7 +61,7 @@ _CODE_ROOTS: tuple[str, ...] = (
     "cmake/",
     "ci/",
     "conan/",
-    "docker/",
+    "docker_run.sh",
     ".teamcity/",
     "CMakeLists.txt",
     "CMakePresets",

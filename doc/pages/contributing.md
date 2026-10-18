@@ -8,14 +8,14 @@ This page is the contributor guide: setup, conventions and the checks a change m
 ## Getting started
 
 1. Fork the repository and clone your fork
-2. Build it once (see [Building](building.md)): every command runs inside the build image through `docker/run.sh`
+2. Build it once (see [Building](building.md)): every command runs inside the build image through `./docker_run.sh`
 3. Create a branch from `main`: `Feature/<topic>` for a change meant to merge, `Experiment/<topic>` for a trial
 
 ```bash
 git switch -c Feature/my-feature main
-docker/run.sh cmake --preset linux-clang-release -S .
-docker/run.sh cmake --build output/build/linux-clang-release
-docker/run.sh ctest --test-dir output/build/linux-clang-release --output-on-failure
+./docker_run.sh cmake --preset linux-clang-release -S .
+./docker_run.sh cmake --build output/build/linux-clang-release
+./docker_run.sh ctest --test-dir output/build/linux-clang-release --output-on-failure
 ```
 
 ## Code Style
@@ -119,12 +119,12 @@ Use the engine logging macros:
 
 1. The build has no warning (`-Werror` is on) and the whole test suite passes
 2. The Code Style gate passes:
-   `docker/run.sh poetry run python ci_action.py CodeStyle linux-clang-release`
+   `./docker_run.sh poetry run python ci_action.py CodeStyle linux-clang-release`
 3. When C++ changed, clang-tidy passes on what the branch touches (the `linux-clang-tidy` preset only exports the
    compile commands; the CI action runs clang-tidy):
    ```bash
-   docker/run.sh poetry run python ci_action.py Build linux-clang-tidy
-   docker/run.sh poetry run python ci_action.py ClangTidy linux-clang-tidy -- --diff_base=main
+   ./docker_run.sh poetry run python ci_action.py Build linux-clang-tidy
+   ./docker_run.sh poetry run python ci_action.py ClangTidy linux-clang-tidy -- --diff_base=main
    ```
 4. Commits are short and focused; the pull request targets `main` and says what changes and why
 

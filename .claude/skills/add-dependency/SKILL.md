@@ -10,7 +10,7 @@ Arguments: `<package-name>` and optionally `<version>` and `<linkage>` (static/s
 ## Steps
 
 1. Check if the package is already in `conanfile.py`, then on ConanCenter:
-   `docker/run.sh poetry run conan search <name> -r conancenter`. Never vendor sources. A package missing there
+   `./docker_run.sh poetry run conan search <name> -r conancenter`. Never vendor sources. A package missing there
    gets a minimal local recipe in `conan/recipes/<name>/` (see `.claude/rules/dependencies.md`).
 2. Add `self.requires("<name>/<version>")` in `conanfile.py` (`requirements()`; editor-only under
    `if self.options.nest`), and its linkage in `default_options` (`"<name>/*:shared": True|False`) when it is not
@@ -30,7 +30,7 @@ Arguments: `<package-name>` and optionally `<version>` and `<linkage>` (static/s
      `OWL_CONAN_TARGET_<Module>` entry in `cmake/Conan.cmake`.
 5. Test the configure step:
    ```bash
-   docker/run.sh cmake --preset linux-clang-release -S .
+   ./docker_run.sh cmake --preset linux-clang-release -S .
    ```
    Third-party headers that raise warnings get a wrapper in `source/owl/private/core/external/`.
 6. Add the dependency to the inventory of `doc/pages/design/conan-migration.md`, then report success/failure.

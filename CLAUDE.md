@@ -14,18 +14,18 @@ changing a subsystem. The repository audit of 2026-10-05 lives in `doc/audit/` (
 ## Build, test, run — Docker only
 
 Every compiler, CMake, CTest, Poetry, clang-tidy or clang-format call runs **inside the build image**
-through `docker/run.sh`, which mirrors CLion's *Docker Owl* toolchain (image
+through `./docker_run.sh`, which mirrors CLion's *Docker Owl* toolchain (image
 `registry.argawaen.net/builder/devel-ubuntu2604:latest`, your UID/GID, repo mounted at its host path,
 `$HOME` = `../fake_home` → `/fhome` holding the Poetry venv, the Conan cache and ccache). Never build
 natively, never install a tool on the host; if a tool is missing from the image, say so.
 
 ```bash
-docker/run.sh cmake --preset linux-clang-release -S .          # configure (fetches deps)
-docker/run.sh cmake --build output/build/linux-clang-release   # ~1 min full build on 32 cores
-docker/run.sh ctest --test-dir output/build/linux-clang-release --output-on-failure -j8
-docker/run.sh output/build/linux-clang-release/bin/owl_<cat>_tests_unit_test --gtest_filter='Suite.*'
-docker/run.sh --gui output/build/linux-clang-release/bin/OwlNest   # GPU + display + audio
-docker/run.sh --perf perf ...                                      # ptrace / perf events
+./docker_run.sh cmake --preset linux-clang-release -S .          # configure (fetches deps)
+./docker_run.sh cmake --build output/build/linux-clang-release   # ~1 min full build on 32 cores
+./docker_run.sh ctest --test-dir output/build/linux-clang-release --output-on-failure -j8
+./docker_run.sh output/build/linux-clang-release/bin/owl_<cat>_tests_unit_test --gtest_filter='Suite.*'
+./docker_run.sh --gui output/build/linux-clang-release/bin/OwlNest   # GPU + display + audio
+./docker_run.sh --perf perf ...                                      # ptrace / perf events
 ```
 
 - **Clang presets only** for dev, tests and coverage: `linux-clang-release` (default),
@@ -42,7 +42,7 @@ docker/run.sh --perf perf ...                                      # ptrace / pe
 
 ## CI actions (`ci_action.py`)
 
-`docker/run.sh poetry run python ci_action.py <Action> <preset> [-- --opt=value]`
+`./docker_run.sh poetry run python ci_action.py <Action> <preset> [-- --opt=value]`
 
 | Action                                             | What it does                                                                                   |
 |----------------------------------------------------|------------------------------------------------------------------------------------------------|
