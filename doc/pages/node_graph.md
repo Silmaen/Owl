@@ -175,6 +175,8 @@ Integration surface:
 
 First consumer of the framework. Specializes `NodeGraphDocument` by populating the canvas from the active project.
 
+![The Scene Flow of the Engine Demo: one node per scene, the unreachable ones titled in red](../images/nest/scene_flow.png)
+
 ```mermaid
 flowchart LR
     scan[listAllScenes] --> parse[extractTeleports per file]

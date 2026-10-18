@@ -17,6 +17,8 @@ and accessible from the **Help** ribbon button or by pressing `F1`.
    docked around a central area. All panels are detachable — drag the title bar to
    tear them out into a floating window.
 
+![Owl Nest with the Engine Demo open](../images/nest/main_window.png)
+
 On Linux, Owl Engine runs natively under Wayland or under X11. Wayland is picked when available;
 set `OWL_WINDOW_PLATFORM=x11` to use X11 instead (needed for panels torn out into separate
 desktop windows, which GLFW cannot place under Wayland). See [Building](building.md).
@@ -66,3 +68,5 @@ showcase and a reference for your own projects.
 
 Beside it, `samples/` holds small complete games, one project each (Breakout first), listed under **Sample games**
 on the File screen: a game of a readable size to start a project from.
+
+![The File screen: the Engine Demo card, the sample games and the recent projects](../images/nest/file_screen.png)
