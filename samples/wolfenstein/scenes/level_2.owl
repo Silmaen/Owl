@@ -13,6 +13,7 @@ EnabledRenderers:
     Enabled: true
     Overrides:
       Space: Screen
+      ReferenceHeight: 720
 Entities:
   - Entity: 5494361375484207096
     Tag:
@@ -519,7 +520,7 @@ Entities:
     Tag:
       tag: Crown
     Transform:
-      translation: [-6.5, 13.5, 0]
+      translation: [-6.5, 12.5, 0]
       rotation: [0, 0, 0]
       scale: [1, 1, 1]
     SpriteRenderer:
@@ -545,7 +546,7 @@ Entities:
     Tag:
       tag: Chalice
     Transform:
-      translation: [-4.5, 12.5, 0]
+      translation: [-4.5, 11.5, 0]
       rotation: [0, 0, 0]
       scale: [1, 1, 1]
     SpriteRenderer:

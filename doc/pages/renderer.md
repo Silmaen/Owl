@@ -112,6 +112,17 @@ A scene with no `EnabledRenderers:` activates **every** project layer with its
 project default config. `Overrides` is deep-merged on top of `DefaultConfig`
 (override wins on key collision).
 
+A `Renderer2D` layer reads two keys (editable in the Scene Settings panel):
+
+| Key               | Default | Effect                                                                                         |
+|-------------------|---------|------------------------------------------------------------------------------------------------|
+| `Space`           | `World` | `World` draws with the scene camera; `Screen` in screen units, origin bottom left, Y up        |
+| `ReferenceHeight` | `0`     | `Screen` only: the screen is this many units high, its width follows the aspect ratio; 0 = px  |
+
+With `ReferenceHeight: 720` an overlay authored at 1280×720 (the minimaps of the Engine Demo raycast level and of
+Wolfenstein mini) keeps its share of the screen at 1080p or 1440p, like a `ScaleWithHeight` HUD canvas; the
+`ui_scale` setting applies to HUD canvases only.
+
 **Entity component** (`RendererTag`):
 
 ```yaml

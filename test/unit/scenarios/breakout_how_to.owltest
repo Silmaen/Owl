@@ -1,0 +1,15 @@
+# Breakout: the How to play window of the title (title.lua) opens from its button with the keyboard focus, takes the
+# focus on its Back button, and accept closes it again.
+scene: ../../../samples/breakout/scenes/title.owl
+steps:
+  - frames: 30
+  - actions: {ui_down: true, frames: 1}
+  - frames: 2
+  - actions: {ui_down: true, frames: 1}
+  - frames: 2
+  - actions: {ui_accept: true, frames: 1}
+  - frames: 4
+  - expect: {gamestate: breakout_how_to, equals: true}
+  - actions: {ui_accept: true, frames: 1}
+  - frames: 4
+  - expect: {gamestate: breakout_how_to, equals: false}

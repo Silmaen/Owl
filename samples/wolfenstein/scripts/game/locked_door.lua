@@ -14,7 +14,8 @@ function on_create()
 end
 
 function on_update(dt)
-    if player_id == 0 or not input.is_action_just_pressed("interact") or door.get_state(entity_id) ~= "idle" then
+    if player_id == 0 or gamestate.get("wolf_paused", false) or not input.is_action_just_pressed("interact")
+            or door.get_state(entity_id) ~= "idle" then
         return
     end
     local px, py = transform.get_position(player_id)

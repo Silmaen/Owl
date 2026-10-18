@@ -47,13 +47,17 @@ without combat ship with v0.4.0; Mini Transport Tycoon stays in v0.5.0, Mini Min
 
 Common to every game:
 
-- Title, settings, victory and game over scenes copied from the Engine Demo (`scenes/main_menu.owl`,
+- Title, settings, victory and game over scenes started from the Engine Demo (`scenes/main_menu.owl`,
   `scenes/settings_menu.owl`, `scenes/victory.owl`, `scenes/game_over.owl`, `scripts/ui/*.lua`): the menus already
-  work with keyboard, mouse and gamepad (`UiFocus`, scenario `main_menu_focus.owltest`).
+  work with keyboard, mouse and gamepad (`UiFocus`, scenario `main_menu_focus.owltest`). Since the first playthrough,
+  each game has menus of its own, written by `tools/samples/<game>/generate_menus.py`: its look, its title art, its
+  buttons, its transitions (`scene.transition_to` in a colour) and an animated background; a How to play window on
+  the title and the pause window are the only places that show the controls.
 - `input_actions.yml` on the built-in actions (`move`, `look`, `jump`, `interact`, `primary`, `secondary`, `ui_*`)
   plus the game's own; `input/gamecontrollerdb.txt` copied.
 - Sounds written by a generator in `tools/samples/<game>/`, like `tools/demo/generate_town_sounds.py` (the Kenney
-  audio packs cannot be fetched from the build machine); `sounds/ui/start.wav` and `sounds/ui/victory.wav` copied.
+  audio packs cannot be fetched from the build machine), a start jingle of its own per game;
+  `sounds/ui/victory.wav` copied.
 - The game state mirrored into `gamestate` keys (`<game>_score`, ...) for the scenarios.
 
 ### Breakout
@@ -65,23 +69,25 @@ Done in v0.4.0: `samples/breakout/` (how to play: its `README.md`).
 | Play     | One screen, 5 levels, 3 lives; bricks of 1 to 3 hits; 2 power-ups (wide paddle 15 s, slow ball 12 s)             |
 | Win/lose | Every brick of the 5 levels / no life left; best score kept; the ball serves by itself after 5 s                 |
 | Controls | `paddle` axis (A / D, arrows, left stick, D-pad) or the mouse; `serve` (Space, pad A, left click); `pause`       |
-| Scenes   | `title`, `level_1` to `level_5` (one scene each, `scene.transition_to`), `settings`, `victory`, `game_over`      |
+| Scenes   | `title`, `level_select`, `level_1` to `level_5` (one scene each), `settings`, `victory`, `game_over`             |
+| Menus    | Arcade neon (`generate_menus.py`): a brick wall lit in a wave, an attract ball, neon buttons, magenta wipes      |
 | Entities | `Paddle` and `PaddleWide` (Kinematic), `Ball` (Dynamic, restitution 1, friction 0), three `Wall` (Static)        |
 | Bricks   | Instances of `prefabs/brick.owlprefab` (Static body, `SpriteRenderer`, `brick.lua` with its properties)          |
 | Lua      | `game.lua` (rules, pools, pause), `paddle.lua`, `ball.lua` (speed kept with `physics.set_velocity`), `brick.lua` |
-| HUD      | `huds/play.owlhud`: score, level, lives, a message line, the pause window (Resume, Restart level, Quit)          |
+| HUD      | `huds/play.owlhud`: score, level, lives, a message line, the pause window (Resume, Restart, Quit, controls)      |
 | Art      | Home-made bricks, paddle, ball, capsules, walls and backdrop, chip sounds and music (`tools/samples/breakout/`)  |
-| Saves    | No slot; best score through `settings.set` and `settings.save` (`breakout_best`)                                 |
-
-- Reuse: the four menus and their scripts copied from the Engine Demo; the hit flash of `scripts/platformer/flicker.lua`.
-  A broken brick is destroyed at once (a popping brick would keep its body), its burst shown from a pool instead of
-  the pop of `coin.lua`.
+| Saves    | No slot; best score and levels cleared with their best through `settings.save` (`breakout_best`, `_done_N`)      |
+- Reuse: the hit flash of `scripts/platformer/flicker.lua`; the menus started as copies of the Engine Demo ones and
+  now have a look of their own (feedback of the first playthrough). A broken brick is destroyed at once (a popping brick
+  would keep its body), its burst shown from a pool instead of the pop of `coin.lua`.
 - Gaps met: G5 (the paddle follows the mouse motion, `breakout_mouse_speed` setting), G1 (pools of hidden entities:
   power-ups, bursts, and a second paddle for the wide one, a body cannot be resized from Lua), G14 (one scene per
   level), G9 (master volume only), G8 (the pause stops the bodies from Lua). Each level names the next one in the
   `next_scene` property of its `Game` script (G16 fixed): a new level is a duplicated scene in Owl Nest.
 - Scenarios: `breakout_serve` (serve, 300 frames, `breakout_bricks` below 40), `breakout_lose` (no input at all:
-  the automatic serve, `breakout_lives` below 3), `breakout_gamepad` (dead zone, the stick moves the paddle, A serves).
+  the automatic serve, `breakout_lives` below 3), `breakout_gamepad` (dead zone, the stick moves the paddle, A serves),
+  `breakout_level_select` (down selects level 2, accept starts a fresh run there), `breakout_how_to` (the How to play
+  window opens and closes with the keyboard focus).
 - The levels were first laid out by `tools/samples/breakout/generate_levels.py` (text grids) and are edited in Owl Nest
   from then on; `tools/tests/test_breakout_levels.py` checks the grids.
 
@@ -97,7 +103,8 @@ Done in v0.4.0: `samples/breakout/` (how to play: its `README.md`).
 | Tilemap  | One `.owltilemap` per level: layer 0 floor and walls, 1 goals, 2 crates and the hero tile of the start        |
 | Entities | `Level` (`Tilemap`), player (`AnimatedSpriteRenderer`, `isometric.set_sprite_frame`), `MovingBox`, music      |
 | Lua      | `sokoban.lua` (rules on `isometric.get_cell`, undo stack in a Lua table, win), `level_select.lua`, menus      |
-| HUD      | `huds/level.owlhud`: level, moves and pushes, best, hints, Undo / Restart / Menu buttons, pause window        |
+| HUD      | `huds/level.owlhud`: level, moves and pushes, best, Undo / Restart / Menu buttons, pause window with controls |
+| Menus    | Wooden warehouse (`generate_menus.py`): crate letters, plank buttons, a progress log, an animated corridor    |
 | Art      | `sokoban_tiles.png`: Tiny Dungeon floor, wall and hero (walk and push frames), home-made goal mark and crates |
 | Saves    | No slot: `sokoban_done_NN` and `sokoban_best_NN` settings saved at once; Continue starts the first level left |
 
@@ -110,7 +117,8 @@ Done in v0.4.0: `samples/breakout/` (how to play: its `README.md`).
   tilemaps, level scenes, HUD, from the texts of `levels.py`), `generate_menus.py`; `tools/tests/test_sokoban_levels.py`
   replays a stored solution of each level text.
 - Reuse: the walk frames of `tools/demo/generate_kenney_atlases.py`, `scripts/hub/hub_water.lua` (`get_cell` /
-  `set_cell` on a 2D tilemap), the journal list of `scripts/raycast/inventory.lua`, the Engine Demo menus.
+  `set_cell` on a 2D tilemap), the journal list of `scripts/raycast/inventory.lua`; the menus, first copied from the
+  Engine Demo, have a look of their own since the first playthrough.
 - Gaps: G6 (tile bindings named `isometric`), G14 (one scene per level), G9 (master volume only). Lua had no way to
   read the size of a tilemap: `isometric.get_size` was added for it (width, height, cell size).
 - Scenarios: `sokoban_push` (`sokoban_on_goal` grows), `sokoban_undo` (undo and restart put back crate and counters),
@@ -152,26 +160,33 @@ and the combat come in a later release, once their art exists.
 | Item     | As shipped                                                                                                                                                              |
 |----------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Play     | 3 floors of 32×32 (cellars, prison, headquarters): treasure, food, gold and blue keys with their locked doors, 3 secret walls each, an exit elevator                    |
-| Win      | The elevator of floor 3; after each floor a tally of the floor score, items found, secrets found and map explored, in %, with 10 points per percent as a bonus          |
+| Win      | The elevator of floor 3; after each floor a tally counted up line by line (skippable): items, secrets and map explored in %, 10 points per percent as a bonus           |
 | Controls | `walk`, `turn`, `run`, `interact` (doors, secret walls, elevator), `map` (Tab, pad Y: large map); keyboard, mouse (right button turns, left opens) and gamepad          |
 | Scenes   | `title`, `level_1` to `level_3` (`RendererRaycast` + a `Space: Screen` `Renderer2D` for the minimap), `tally`, `settings`, `victory`                                    |
 | Entities | Player (`PhysicBody`, `Camera`), wall `Tilemap`, `RaycastDoor` (locked: empty `interactionAction`, `door.activate` with the key), `RaycastPushWall`, pick-ups, props    |
 | Lua      | `player.lua`, `pickup.lua`, `locked_door.lua`, `secret.lua` (counts each wall once), `explore.lua` (fog, minimap, cells seen over floor cells), `level.lua`, `exit.lua` |
-| HUD      | `huds/play.owlhud`: floor, score, items %, secrets %, explored %, keys, messages; the minimap is a tilemap of the overlay layer; the tally is a scene                   |
+| HUD      | `huds/play.owlhud`: floor, score, keys, messages, a pause window with the controls (no ratio during play); the minimap is a tilemap of the overlay layer                |
+| Menus    | Dark stone and steel (`generate_menus.py`): a raycast view turning behind the title, steel plate title and buttons, red fades                                           |
 | Art      | The walls and props of `textures/wolf3d/`, reworked by the maintainer; the sounds of `sounds/raycast/` of the Engine Demo; guards and the weapon view later (G11)       |
 | Saves    | Autosave in slot 1 at each floor start, F6 / F9 in slot 2, Continue loads the newer; best ratios per floor and best score in the settings                               |
 
 - Floors carved by `tools/samples/wolfenstein/generate_levels.py`, which refuses a floor with a cell out of reach (so
-  100 % is always possible), then written as Owl Nest saves them: editable in Owl Nest, a pick-up counted by its tag.
+  100 % is always possible; a slid secret wall counts as a wall where it stops, which cut off a room of floors 2 and
+  3 until the first playthrough), then written as Owl Nest saves them: editable in Owl Nest, a pick-up counted by
+  its tag.
 - Map explored: the fog of `raycast_level.lua` on a 32×32 minimap, set up 8 rows per frame (a single `on_create` loop
-  overruns the script time quota on emulated arm64), kept in the gamestate across saves.
+  overruns the script time quota on emulated arm64), kept in the gamestate across saves. A slid secret wall shows,
+  and stops the fog, in the cell where it stopped (it showed as floor there and the fog saw the room behind it).
 - Reuse: `scripts/raycast/raycast_player.lua`, `scripts/raycast/raycast_level.lua`, `scripts/raycast/pickup.lua`,
   `scripts/raycast/raycast_exit.lua`, `tilesets/raycast_w3d_walls.owltileset`, `tilesets/minimap.owltileset`,
-  `sounds/raycast/`, the menus of the Engine Demo.
+  `sounds/raycast/`; the menus, first copied from the Engine Demo, have a look of their own since the first
+  playthrough, and the ratios moved from the play HUD to the tally.
 - Gaps: G9, G17 (the `next_scene` property of `exit.lua` names the next floor, G16 fixed); later, with combat: G11 (art), G10 (line of sight), G7 (weapon view frames), G1 (dropped ammo).
 - Scenarios: `wolf_pickup` (walk onto a cross, `wolf_items` and `wolf_score` rise), `wolf_locked_door` (closed without
   the key, opens with it), `wolf_secret` (push a secret wall, `wolf_secrets` equals 1), `wolf_explore` (`wolf_seen`
-  and `wolf_explored` rise while turning, Tab enlarges the map), `wolf_exit` (the tally scene opens, then floor 2).
+  and `wolf_explored` rise while turning, Tab enlarges the map), `wolf_exit` (the tally scene opens, counts up,
+  then floor 2), `wolf_tally` (accept during the count shows every line at once, the next accept leaves), `wolf_pause`
+  (Escape opens the pause window, the player stands still, a door in reach stays closed, Resume closes it).
 
 ### Mini Minecraft
 
@@ -245,7 +260,7 @@ test/unit/scenarios/*.owltest         scenario tests
 | G5  | No screen-to-world conversion nor viewport size in Lua for a 2D camera                                              | S    | Breakout                                 | No: the paddle follows the mouse delta                           |
 | G6  | Tile and sprite-frame bindings live in `isometric` although they work on any tilemap                                | S    | Sokoban, Wolfenstein                     | No: naming only (a `tilemap` alias)                              |
 | G7  | No `ui.set_image` (texture or frame of a `UiImage`) in Lua                                                          | S    | Wolfenstein, Minecraft, Tycoon           | No: several `UiImage` toggled visible                            |
-| G8  | No pause nor time scale in Lua (scene clock, physics)                                                               | S    | Tycoon, all (pause)                      | No: Lua scales its own delta, bodies stopped by hand             |
+| G8  | No pause nor time scale in Lua (scene clock, physics); a shown `UiWindow` holds world interactions back             | S    | Tycoon, all (pause)                      | No: Lua scales its own delta, bodies stopped by hand             |
 | G9  | No music and effects mixing: `SoundSource` loops ignore `volume_music` and have no Lua volume                       | S    | All                                      | No: master volume only                                           |
 | G10 | No line-of-sight or ray query in Lua                                                                                | S    | Wolfenstein                              | No: grid DDA in Lua, as in `raycast_level.lua`                   |
 | G11 | No guard nor weapon-view sprites                                                                                    | M    | Wolfenstein                              | No: exploration first, combat later                              |

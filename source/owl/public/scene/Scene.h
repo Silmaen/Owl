@@ -816,6 +816,8 @@ public:
 		uint8_t repeatDirection = 0;
 		/// Seconds `repeatDirection` has been held.
 		float repeatTime = 0.f;
+		/// Whether a `UiWindow` was shown when the UI input of the frame started (a click closing it stays in the UI).
+		bool windowShown = false;
 	};
 
 	/**

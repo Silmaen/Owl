@@ -193,6 +193,10 @@ Keyboard and gamepad focus on buttons and sliders, driven by the built-in `ui_up
 - **Who can take it.** A `UiButton` not disabled or a `UiSlider`, unless its `UiFocus` has `focusable` off. While a
   `UiWindow` is open the focus stays in the window drawn last (the HUD's over the scene's), and goes to the widgets
   behind when it closes.
+- **The world waits.** While a `UiWindow` of the scene or of its HUD is shown (a pause menu, an inventory), and on the
+  frame whose click closes it, the engine fires no world interaction: no `RaycastDoor` / `RaycastPushWall` built-in
+  activation, no `Interaction` trigger callback (`UiInputSystem::isWorldInteractionBlocked`). Scripts reading
+  `input.is_action_just_pressed` still see the press.
 - **Starting.** Nothing is focused until a `ui_*` direction or `ui_accept` is pressed: the first press only shows the
   focus, on the widget flagged `UiFocus::initial`, else the first one in hierarchy order. A widget flagged `initial`
   takes the focus, shown, as soon as the scene plays: a menu a gamepad can drive from the first frame.

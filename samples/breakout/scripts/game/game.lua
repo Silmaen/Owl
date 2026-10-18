@@ -7,9 +7,10 @@
 --   `PowerWide1..`, `PowerSlow1..`.
 -- - Power-ups caught with the paddle: wide paddle (`breakout_wide`) or slow ball (`breakout_speed_factor`), for a time.
 -- - No brick left: the scene of the `next_scene` property (the next level, the victory after the last one), kept in
---   `breakout_scene` for the restart of the pause window. No life left: game over. The `pause` action (Esc, P, Start)
---   stops the ball and the paddle (gap G8: Lua stops the bodies by hand) and opens the pause window of
---   `huds/play.owlhud`.
+--   `breakout_scene` for the restart of the pause window (the menus set it for the first level played); the level is
+--   marked cleared, with its best score, for the level select. No life left: game over.
+-- - The `pause` action (Esc, P, Start) stops the ball and the paddle (gap G8: Lua stops the bodies by hand) and opens
+--   the pause window of `huds/play.owlhud`, which shows the controls (never shown during play).
 
 properties = {
     { name = "level", type = "int", default = 1 },
@@ -17,6 +18,7 @@ properties = {
 }
 
 local FIRST_LEVEL = "scenes/level_1.owl"
+local WIPE = { 0.45, 0.05, 0.55 } -- the magenta of every Breakout screen change
 
 local PADDLE_Y = -6.8
 local PADDLE_HALF_HEIGHT = 0.18
@@ -64,7 +66,7 @@ local function show_message(text, seconds)
 end
 
 function on_create()
-    ui.transition_fade_in(0.4)
+    if not ui.is_transition_active() then ui.transition_fade_in(0.4) end
     hud.score = ui.find("ScoreText")
     hud.level = ui.find("LevelText")
     hud.lives = ui.find("LivesText")
@@ -87,7 +89,7 @@ function on_create()
     gamestate.set("breakout_wide", false)
     gamestate.set("breakout_speed_factor", 1.0)
     if hud.pause ~= 0 then ui.set_visible(hud.pause, false) end
-    show_message("Level " .. level .. "\nSpace, A or click to serve", 2.5)
+    show_message("Level " .. level .. "\nGet ready", 2.0)
 end
 
 -- Bursts and power-ups ----------------------------------------------------------------------------------------------
@@ -194,6 +196,11 @@ local function set_paused(value)
     paused = value
     gamestate.set("breakout_paused", value)
     if hud.pause ~= 0 then ui.set_visible(hud.pause, value) end
+    if value and hud.pause ~= 0 then
+        ui.raise_window(hud.pause)
+        ui.set_visible(hud.message, false)
+        message_clock = 0.0
+    end
     if value and hud.resume ~= 0 then ui.set_focus(hud.resume) end
 end
 
@@ -205,22 +212,34 @@ function on_pause_restart()
     set_paused(false)
     ending = "restart"
     gamestate.set("breakout_score", gamestate.get("breakout_level_score", 0))
-    scene.transition_to(gamestate.get("breakout_scene", FIRST_LEVEL), "fade_out", 0.3)
+    scene.transition_to(gamestate.get("breakout_scene", FIRST_LEVEL), "wipe_up", 0.3, WIPE[1], WIPE[2], WIPE[3])
 end
 
 function on_pause_quit()
     set_paused(false)
     ending = "quit"
     gamestate.clear()
-    scene.transition_to("scenes/title.owl", "fade_out", 0.3)
+    scene.transition_to("scenes/title.owl", "wipe_up", 0.3, WIPE[1], WIPE[2], WIPE[3])
 end
 
 -- Frame -------------------------------------------------------------------------------------------------------------
 
 local function update_hud()
-    set_text("score", "Score " .. gamestate.get("breakout_score", 0))
-    set_text("level", "Level " .. level)
-    set_text("lives", "Lives " .. math.max(0, gamestate.get("breakout_lives", 0)))
+    set_text("score", string.format("SCORE %06d", gamestate.get("breakout_score", 0)))
+    set_text("level", "LEVEL " .. level)
+    set_text("lives", "LIVES " .. math.max(0, gamestate.get("breakout_lives", 0)))
+end
+
+-- A cleared level is marked for the level select, with the best score made in it (`breakout_done_N`,
+-- `breakout_best_N` settings, saved at once).
+local function save_progress()
+    local points = gamestate.get("breakout_score", 0) - gamestate.get("breakout_level_score", 0)
+    settings.set("breakout_done_" .. level, true)
+    if points > settings.get("breakout_best_" .. level, 0) then
+        settings.set("breakout_best_" .. level, points)
+    end
+    settings.save()
+    gamestate.set("breakout_level_points", points)
 end
 
 local function check_end(dt)
@@ -230,6 +249,7 @@ local function check_end(dt)
             gamestate.set("breakout_frozen", true)
             sound.play("sounds/game/level_clear.wav")
             show_message("Level clear!")
+            save_progress()
         elseif gamestate.get("breakout_lives", 1) <= 0 then
             ending = "over"
             show_message("Game over")
@@ -241,10 +261,10 @@ local function check_end(dt)
         ending = "leaving"
         local target = (next_scene ~= nil and next_scene ~= "") and next_scene or "scenes/victory.owl"
         gamestate.set("breakout_scene", target)
-        scene.transition_to(target, "fade_out", 0.4)
+        scene.transition_to(target, "wipe_up", 0.4, WIPE[1], WIPE[2], WIPE[3])
     elseif ending == "over" and end_clock >= OVER_DELAY then
         ending = "leaving"
-        scene.transition_to("scenes/game_over.owl", "fade_out", 0.4)
+        scene.transition_to("scenes/game_over.owl", "wipe_up", 0.4, WIPE[1], WIPE[2], WIPE[3])
     end
 end
 

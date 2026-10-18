@@ -26,7 +26,7 @@ function on_create()
 end
 
 function on_update(dt)
-    if ui.is_transition_active() or gamestate.get("wolf_leaving", 0) == 1 then
+    if ui.is_transition_active() or gamestate.get("wolf_leaving", 0) == 1 or gamestate.get("wolf_paused", false) then
         physics.set_velocity(entity_id, 0, 0)
         return
     end

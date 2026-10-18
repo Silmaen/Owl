@@ -42,7 +42,7 @@ local function show_info()
 end
 
 function on_create()
-    ui.transition_fade_in(0.4)
+    if not ui.is_transition_active() then ui.transition_play("wipe_left", 0.4, 0.2, 0.12, 0.05) end
     list_id = scene.find_entity("LevelList")
     info_id = scene.find_entity("LevelInfo")
     -- Open on the first level not done yet.
@@ -81,13 +81,13 @@ function on_play_clicked()
     leaving = true
     sound.play("sounds/ui/start.wav")
     gamestate.set("sokoban_level", selected)
-    scene.transition_to(LEVEL_SCENES[selected], "fade_out", 0.3)
+    scene.transition_to(LEVEL_SCENES[selected], "wipe_left", 0.3, 0.2, 0.12, 0.05)
 end
 
 function go_back()
     if leaving then return end
     leaving = true
-    scene.transition_to("scenes/title.owl", "fade_out", 0.3)
+    scene.transition_to("scenes/title.owl", "wipe_left", 0.3, 0.2, 0.12, 0.05)
 end
 
 function on_update(dt)

@@ -1,265 +1,405 @@
-Scene: untitled
+Scene: tally
 FormatVersion: 5
-EnabledRenderers:
-  - Name: raycast_world
-    Enabled: false
 Entities:
-  - Entity: 4200000000000000001
+  - Entity: 3320000000000000001
     Tag:
       tag: MainCamera
     Transform:
       translation: [0, 0, 5]
       rotation: [0, 0, 0]
       scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
     Camera:
       camera:
         projectionType: Orthographic
-        perspectiveFOV: 0.785398185
-        perspectiveNear: 0.00999999978
+        perspectiveFOV: 0.7853982
+        perspectiveNear: 0.01
         perspectiveFar: 1000
         orthographicSize: 10
         orthographicNear: -1
         orthographicFar: 10
       primary: true
       fixedAspectRatio: false
-    Visibility:
-      gameVisible: true
-  - Entity: 4200000000000000002
+  - Entity: 3320000000000000002
     Tag:
       tag: Background
     Transform:
       translation: [0, 0, -1]
       rotation: [0, 0, 0]
-      scale: [20, 15, 1]
+      scale: [60, 30, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
     BackgroundTexture:
       mode: 0
       type: 0
-      color: [0.03, 0.05, 0.12, 1]
+      color: [0.035, 0.035, 0.04, 1]
       topColor: [0.8, 0.9, 1, 1]
-    Visibility:
-      gameVisible: true
-  - Entity: 4200000000000000003
+  - Entity: 3320000000000000003
     Tag:
       tag: TallyCanvas
     Transform:
       translation: [0, 0, 0]
       rotation: [0, 0, 0]
       scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
     Canvas:
       space: ScreenOverlay
       sortOrder: 0
       referenceResolution: [1280, 720]
       scaleMode: ScaleWithHeight
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      {}
     LuaScript:
       scriptPath: scripts/ui/tally.lua
-  - Entity: 4200000000000000010
-    Tag: {tag: TallyGroup}
+  - Entity: 3320000000000000004
+    Tag:
+      tag: TallyGroup
     Transform:
       translation: [0, 0, 0]
       rotation: [0, 0, 0]
       scale: [1, 1, 1]
-    Visibility: {gameVisible: true}
-    Hierarchy: {parentId: 4200000000000000003}
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 3320000000000000003
     UiRect:
       anchorMin: [0.5, 0.5]
       anchorMax: [0.5, 0.5]
       pivot: [0.5, 0.5]
-      size: [0.8, 0.86]
-      sizeUnit: [ScreenWidth, ScreenHeight]
+      size: [1.1, 0.9]
+      sizeUnit: [ScreenHeight, ScreenHeight]
       offset: [0, 0]
+    UiPanel:
+      backgroundColor: [0.05, 0.05, 0.06, 0.88]
+      borderColor: [0.45, 0.46, 0.46, 0.9]
+      borderWidth: 2
+      clipChildren: false
     UiLayout:
       arrangement: Column
       crossAlign: Center
       spacing: 6
-      padding: 0
+      padding: 14
       columns: 1
       cellSize: [0, 0]
-  - Entity: 4200000000000000011
-    Tag: {tag: ButtonRow}
+  - Entity: 3320000000000000005
+    Tag:
+      tag: NextButton
     Transform:
       translation: [0, 0, 0]
       rotation: [0, 0, 0]
       scale: [1, 1, 1]
-    Visibility: {gameVisible: true}
-    Hierarchy: {parentId: 4200000000000000010}
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 3320000000000000004
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [1, 0.13]
+      size: [0.48, 0.1]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
-  - Entity: 4200000000000000012
-    Tag: {tag: NextButton}
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility: {gameVisible: true}
-    Hierarchy: {parentId: 4200000000000000011}
     UiButton:
-      normalColor: [0.15, 0.35, 0.65, 1]
-      hoverColor: [0.25, 0.45, 0.75, 1]
-      pressedColor: [0.1, 0.25, 0.5, 1]
-      disabledColor: [0.15, 0.15, 0.15, 0.5]
+      normalColor: [0.2, 0.21, 0.22, 1]
+      hoverColor: [0.62, 0.1, 0.07, 1]
+      pressedColor: [0.35, 0.05, 0.04, 1]
+      disabledColor: [0.06, 0.06, 0.07, 1]
       onClickCallback: on_next_clicked
-    UiFocus: {initial: true}
-    UiRect:
-      anchorMin: [0.5, 0.5]
-      anchorMax: [0.5, 0.5]
-      pivot: [0.5, 0.5]
-      size: [0.4, 1]
-      sizeUnit: [ParentWidth, ParentHeight]
-      offset: [0, 0]
     UiText:
-      text: Next floor
-      color: [1, 1, 1, 1]
-      fontSize: 30
-      horizontalAlignment: Center
-      verticalAlignment: Middle
-      fit: Shrink
-      minFontSize: 12
-  - Entity: 4200000000000000020
-    Tag: {tag: BestLabel}
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility: {gameVisible: true}
-    Hierarchy: {parentId: 4200000000000000010}
-    UiRect:
-      anchorMin: [0, 0]
-      anchorMax: [0, 0]
-      pivot: [0, 0]
-      size: [1, 0.1]
-      sizeUnit: [ParentWidth, ParentHeight]
-      offset: [0, 0]
-    UiText:
-      text: 'Best on this floor: items 0%, secrets 0%, map 0%'
-      color: [0.7, 0.8, 0.9, 0.9]
-      fontSize: 24
-      horizontalAlignment: Center
-      verticalAlignment: Middle
-      wrap: true
-      fit: Shrink
-      minFontSize: 12
-  - Entity: 4200000000000000021
-    Tag: {tag: ScoreLabel}
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility: {gameVisible: true}
-    Hierarchy: {parentId: 4200000000000000010}
-    UiRect:
-      anchorMin: [0, 0]
-      anchorMax: [0, 0]
-      pivot: [0, 0]
-      size: [1, 0.1]
-      sizeUnit: [ParentWidth, ParentHeight]
-      offset: [0, 0]
-    UiText:
-      text: Floor score 0  (bonus 0)    Total 0
-      color: [1, 1, 1, 1]
+      outlineWidth: 2
+      outlineColor: [0.04, 0.04, 0.05, 1]
+      text: 'NEXT FLOOR'
+      color: [0.86, 0.87, 0.84, 1]
       fontSize: 28
       horizontalAlignment: Center
       verticalAlignment: Middle
-      wrap: true
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
       fit: Shrink
       minFontSize: 12
-  - Entity: 4200000000000000022
-    Tag: {tag: MapLabel}
+      font: OpenSans-ExtraBold
+    UiFocus:
+      focusable: true
+      initial: true
+      onFocusCallback: ''
+      highlightColor: [0.82, 0.16, 0.12, 1]
+      highlightThickness: 3
+  - Entity: 3320000000000000006
+    Tag:
+      tag: NextButtonPlate
     Transform:
       translation: [0, 0, 0]
       rotation: [0, 0, 0]
       scale: [1, 1, 1]
-    Visibility: {gameVisible: true}
-    Hierarchy: {parentId: 4200000000000000010}
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 3320000000000000005
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [1, 0.1]
+      size: [1, 1]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiImage:
+      tint: [1, 1, 1, 1]
+      texture: nam:textures/ui/plate.png
+  - Entity: 3320000000000000007
+    Tag:
+      tag: SkipHint
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 3320000000000000004
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.95, 0.05]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
-      text: Map explored       0%
-      color: [0.75, 0.9, 1, 1]
+      outlineWidth: 2
+      outlineColor: [0.04, 0.04, 0.05, 1]
+      text: 'Enter, Space or pad A skips the count'
+      color: [0.68, 0.7, 0.68, 0.95]
+      fontSize: 20
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+  - Entity: 3320000000000000008
+    Tag:
+      tag: BestLabel
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 3320000000000000004
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.95, 0.06]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.04, 0.04, 0.05, 1]
+      text: ''
+      color: [0.68, 0.7, 0.68, 0.95]
+      fontSize: 22
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+  - Entity: 3320000000000000009
+    Tag:
+      tag: ScoreLabel
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 3320000000000000004
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.95, 0.09]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.04, 0.04, 0.05, 1]
+      text: ''
+      color: [0.86, 0.87, 0.84, 1]
       fontSize: 30
       horizontalAlignment: Center
       verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
       fit: Shrink
       minFontSize: 12
-  - Entity: 4200000000000000023
-    Tag: {tag: SecretsLabel}
+      font: JetBrainsMono-Regular
+  - Entity: 3320000000000000010
+    Tag:
+      tag: BonusLabel
     Transform:
       translation: [0, 0, 0]
       rotation: [0, 0, 0]
       scale: [1, 1, 1]
-    Visibility: {gameVisible: true}
-    Hierarchy: {parentId: 4200000000000000010}
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 3320000000000000004
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [1, 0.1]
+      size: [0.7, 0.085]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
-      text: Secrets found      0%
-      color: [0.85, 0.75, 1, 1]
-      fontSize: 30
-      horizontalAlignment: Center
+      outlineWidth: 2
+      outlineColor: [0.04, 0.04, 0.05, 1]
+      text: ''
+      color: [0.86, 0.87, 0.84, 1]
+      fontSize: 34
+      horizontalAlignment: Left
       verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
       fit: Shrink
       minFontSize: 12
-  - Entity: 4200000000000000024
-    Tag: {tag: ItemsLabel}
+      font: JetBrainsMono-Regular
+  - Entity: 3320000000000000011
+    Tag:
+      tag: MapLabel
     Transform:
       translation: [0, 0, 0]
       rotation: [0, 0, 0]
       scale: [1, 1, 1]
-    Visibility: {gameVisible: true}
-    Hierarchy: {parentId: 4200000000000000010}
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 3320000000000000004
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [1, 0.1]
+      size: [0.7, 0.085]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
-      text: Items found        0%
-      color: [1, 0.9, 0.6, 1]
-      fontSize: 30
-      horizontalAlignment: Center
+      outlineWidth: 2
+      outlineColor: [0.04, 0.04, 0.05, 1]
+      text: ''
+      color: [0.86, 0.87, 0.84, 1]
+      fontSize: 34
+      horizontalAlignment: Left
       verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
       fit: Shrink
       minFontSize: 12
-  - Entity: 4200000000000000025
-    Tag: {tag: TallyTitle}
+      font: JetBrainsMono-Regular
+  - Entity: 3320000000000000012
+    Tag:
+      tag: SecretsLabel
     Transform:
       translation: [0, 0, 0]
       rotation: [0, 0, 0]
       scale: [1, 1, 1]
-    Visibility: {gameVisible: true}
-    Hierarchy: {parentId: 4200000000000000010}
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 3320000000000000004
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [1, 0.2]
+      size: [0.7, 0.085]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
-      text: Floor 1 completed
-      color: [1, 0.85, 0.2, 1]
-      fontSize: 64
-      horizontalAlignment: Center
+      outlineWidth: 2
+      outlineColor: [0.04, 0.04, 0.05, 1]
+      text: ''
+      color: [0.86, 0.87, 0.84, 1]
+      fontSize: 34
+      horizontalAlignment: Left
       verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
       fit: Shrink
       minFontSize: 12
+      font: JetBrainsMono-Regular
+  - Entity: 3320000000000000013
+    Tag:
+      tag: ItemsLabel
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 3320000000000000004
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.7, 0.085]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.04, 0.04, 0.05, 1]
+      text: ''
+      color: [0.86, 0.87, 0.84, 1]
+      fontSize: 34
+      horizontalAlignment: Left
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: JetBrainsMono-Regular
+  - Entity: 3320000000000000014
+    Tag:
+      tag: TallyTitle
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 3320000000000000004
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.95, 0.12]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.04, 0.04, 0.05, 1]
+      text: 'FLOOR 1 COMPLETED'
+      color: [0.82, 0.16, 0.12, 1]
+      fontSize: 52
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: OpenSans-ExtraBold

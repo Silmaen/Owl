@@ -291,6 +291,7 @@ local function set_paused(value)
     paused = value
     gamestate.set("sokoban_paused", value)
     if hud.pause ~= 0 then ui.set_visible(hud.pause, value) end
+    if value and hud.pause ~= 0 then ui.raise_window(hud.pause) end
     if value and hud.resume ~= 0 then ui.set_focus(hud.resume) end
     held, queued = nil, nil
 end
@@ -298,7 +299,8 @@ end
 local function leave(path)
     if leaving then return end
     leaving = true
-    scene.transition_to(path, "fade_out", 0.3)
+    -- A wipe in the brown of the crates, as every change of screen of Sokoban.
+    scene.transition_to(path, "wipe_left", 0.3, 0.2, 0.12, 0.05)
 end
 
 function on_pause_resume() set_paused(false) end
@@ -333,7 +335,7 @@ end
 -- Lifecycle -----------------------------------------------------------------------------------------------------------
 
 function on_create()
-    ui.transition_fade_in(0.4)
+    if not ui.is_transition_active() then ui.transition_fade_in(0.4) end
     map_id = scene.find_entity("Level")
     player_id = scene.find_entity("Player")
     box_id = scene.find_entity("MovingBox")

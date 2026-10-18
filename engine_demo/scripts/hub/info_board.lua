@@ -12,12 +12,14 @@ local SCROLL_SPEED = 420
 local window_id, scroll_id = 0, 0
 local open = false
 local frame = 0
+local opened_frame = -1
 
 local function set_open(value)
     open = value
     ui.set_visible(window_id, value)
     if value then
         ui.raise_window(window_id)
+        opened_frame = frame
     end
     sound.play("sounds/hub/board.wav")
     gamestate.set("board_open", value and 1 or 0)
@@ -35,9 +37,12 @@ function on_create()
     gamestate.set("board_closed_frame", -100)
 end
 
--- Bound by Trigger.Type=Interaction with CallbackName=on_board_interact: E toggles the window.
+-- Bound by Trigger.Type=Interaction with CallbackName=on_board_interact: E opens the window. While it is shown the
+-- engine holds the interaction triggers back, so on_update closes it on the next press of `interact`.
 function on_board_interact(player_id)
-    set_open(not open)
+    if not open then
+        set_open(true)
+    end
 end
 
 -- Called when the close button or ui_cancel (Escape) closes the window.
@@ -54,7 +59,8 @@ function on_update(dt)
     if not open then
         return
     end
-    if input.is_action_just_pressed("ui_cancel") then
+    if input.is_action_just_pressed("ui_cancel")
+            or (input.is_action_just_pressed("interact") and frame ~= opened_frame) then
         set_open(false)
         return
     end

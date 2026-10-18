@@ -422,6 +422,30 @@ TEST(LuaBindings, sceneTransitionToParsesTypes) {
 	core::Log::invalidate();
 }
 
+TEST(LuaBindings, sceneTransitionToTakesAColour) {
+	core::Log::init(core::Log::Level::Off);
+	auto scn = mkShared<scene::Scene>();
+	app::EngineContext context;
+	scn->setEngineContext(&context);
+	const std::string script = "function on_create()\n"
+							   "  scene.transition_to('next.scene', 'wipe_up', 0.4, 0.9, 0.1, 0.6)\n"
+							   "end\n";
+	const std::vector<uint8_t> data(script.begin(), script.end());
+	const ScriptInstance inst;
+	inst.setScene(scn.get());
+	ASSERT_TRUE(inst.createFromBuffer(data, "transition_colour_test", 1));
+	inst.onCreate();
+	const auto& transition = context.getScreenTransition();
+	EXPECT_TRUE(transition.isActive());
+	EXPECT_EQ(transition.getType(), scene::ScreenTransition::Type::WipeUp);
+	EXPECT_NEAR(transition.getColor().r(), 0.9f, 1e-5f);
+	EXPECT_NEAR(transition.getColor().g(), 0.1f, 1e-5f);
+	EXPECT_NEAR(transition.getColor().b(), 0.6f, 1e-5f);
+	EXPECT_NEAR(transition.getColor().a(), 1.f, 1e-5f);
+	scn->setEngineContext(nullptr);
+	core::Log::invalidate();
+}
+
 TEST(LuaBindings, uiTextSetGetAndVisibility) {
 	core::Log::init(core::Log::Level::Off);
 	auto scn = mkShared<scene::Scene>();

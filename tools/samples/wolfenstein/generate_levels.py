@@ -9,7 +9,8 @@ minimap with its hidden wall layer and its empty fog layer (``tilemaps/level_N_m
 afterwards (move a prop, add a treasure, retexture a door); running this script again overwrites those edits.
 
 Every floor is checked before anything is written: each floor cell, pick-up, door and the exit can be reached from the
-start (through the doors and the secret walls), a door stands between two walls, a secret wall has room to slide.
+start (through the doors and the secret walls, a slid secret wall standing as a wall where it stopped), a door stands
+between two walls, a secret wall has room to slide.
 
 Run from the repository root: ``./docker_run.sh poetry run python tools/samples/wolfenstein/generate_levels.py``.
 """
@@ -217,6 +218,10 @@ def check(level: Level) -> None:
         if level.grid[y][x] in PROPS and PROPS[level.grid[y][x]][2]
     }
     walkable = {(x, y) for y in range(SIZE) for x in range(SIZE) if level.grid[y][x] in FLOOR_CHARS}
+    # A slid secret wall stands where it stopped: that cell is a wall from then on, and nothing may lie behind it.
+    for x, y in [cell for char in PUSHWALLS for cell in level.find(char)]:
+        dx, dy = PUSHWALLS[level.grid[y][x]]
+        walkable.discard((x + dx * PUSH_DISTANCE, y + dy * PUSH_DISTANCE))
     seen = {starts[0]}
     queue = deque(seen)
     while queue:
@@ -406,6 +411,7 @@ def scene(level: Level) -> None:
         "    Enabled: true",
         "    Overrides:",
         "      Space: Screen",
+        "      ReferenceHeight: 720",
         "Entities:",
     ]
     ((sx, sy),) = level.find("@")
@@ -677,9 +683,9 @@ def level_2() -> Level:
     lv.put("a", (20, 12), (11, 12))
     lv.put("^", (14, 5))  # secret treasury north of the guard room
     lv.room(14, 3, 14, 4)
-    lv.room(9, 2, 13, 3)
-    lv.put("k", (9, 2))
-    lv.put("h", (11, 3))
+    lv.room(9, 3, 13, 4)  # opens on the corridor beside the slid wall, which stops in (14, 3)
+    lv.put("k", (9, 3))
+    lv.put("h", (11, 4))
     lv.put("Q", (10, 9))
     lv.room(6, 9, 9, 9)
     lv.put("E", (5, 9))  # elevator
@@ -782,7 +788,7 @@ def level_3() -> Level:
     lv.put("L", (15, 23), (16, 26))
     lv.put("<", (10, 25))  # secret chapel west of the great hall
     lv.room(8, 25, 9, 25)
-    lv.room(3, 26, 8, 29)
+    lv.room(3, 26, 9, 29)  # opens beside the slid wall, which stops in (8, 25)
     lv.walls("#", 2, 24, 9, 30)
     lv.put("t", (3, 29))
     lv.put("c", (5, 27))

@@ -1,196 +1,245 @@
-Scene: untitled
+Scene: victory
 FormatVersion: 5
-EnabledRenderers:
-  - Name: raycast_world
-    Enabled: false
 Entities:
-  - Entity: 4300000000000000001
+  - Entity: 3330000000000000001
     Tag:
       tag: MainCamera
     Transform:
       translation: [0, 0, 5]
       rotation: [0, 0, 0]
       scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
     Camera:
       camera:
         projectionType: Orthographic
-        perspectiveFOV: 0.785398185
-        perspectiveNear: 0.00999999978
+        perspectiveFOV: 0.7853982
+        perspectiveNear: 0.01
         perspectiveFar: 1000
         orthographicSize: 10
         orthographicNear: -1
         orthographicFar: 10
       primary: true
       fixedAspectRatio: false
-    Visibility:
-      gameVisible: true
-  - Entity: 4300000000000000002
+  - Entity: 3330000000000000002
     Tag:
       tag: Background
     Transform:
       translation: [0, 0, -1]
       rotation: [0, 0, 0]
-      scale: [20, 15, 1]
+      scale: [60, 30, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
     BackgroundTexture:
       mode: 0
       type: 0
-      color: [0.05, 0.1, 0.05, 1]
+      color: [0.035, 0.035, 0.04, 1]
       topColor: [0.8, 0.9, 1, 1]
-    Visibility:
-      gameVisible: true
-  - Entity: 4300000000000000003
+  - Entity: 3330000000000000003
     Tag:
       tag: VictoryCanvas
     Transform:
       translation: [0, 0, 0]
       rotation: [0, 0, 0]
       scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
     Canvas:
       space: ScreenOverlay
       sortOrder: 0
       referenceResolution: [1280, 720]
       scaleMode: ScaleWithHeight
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      {}
     LuaScript:
       scriptPath: scripts/ui/victory.lua
-  - Entity: 4300000000000000010
-    Tag: {tag: ResultGroup}
+  - Entity: 3330000000000000004
+    Tag:
+      tag: ResultGroup
     Transform:
       translation: [0, 0, 0]
       rotation: [0, 0, 0]
       scale: [1, 1, 1]
-    Visibility: {gameVisible: true}
-    Hierarchy: {parentId: 4300000000000000003}
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 3330000000000000003
     UiRect:
       anchorMin: [0.5, 0.5]
       anchorMax: [0.5, 0.5]
       pivot: [0.5, 0.5]
-      size: [0.7, 0.7]
-      sizeUnit: [ScreenWidth, ScreenHeight]
+      size: [1.1, 0.7]
+      sizeUnit: [ScreenHeight, ScreenHeight]
       offset: [0, 0]
+    UiPanel:
+      backgroundColor: [0.05, 0.05, 0.06, 0.88]
+      borderColor: [0.45, 0.46, 0.46, 0.9]
+      borderWidth: 2
+      clipChildren: false
     UiLayout:
       arrangement: Column
       crossAlign: Center
       spacing: 8
-      padding: 0
+      padding: 14
       columns: 1
       cellSize: [0, 0]
-  - Entity: 4300000000000000011
-    Tag: {tag: ButtonRow}
+  - Entity: 3330000000000000005
+    Tag:
+      tag: MenuButton
     Transform:
       translation: [0, 0, 0]
       rotation: [0, 0, 0]
       scale: [1, 1, 1]
-    Visibility: {gameVisible: true}
-    Hierarchy: {parentId: 4300000000000000010}
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 3330000000000000004
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [1, 0.2]
+      size: [0.48, 0.14]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
-  - Entity: 4300000000000000012
-    Tag: {tag: MenuButton}
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility: {gameVisible: true}
-    Hierarchy: {parentId: 4300000000000000011}
     UiButton:
-      normalColor: [0.15, 0.35, 0.65, 1]
-      hoverColor: [0.25, 0.45, 0.75, 1]
-      pressedColor: [0.1, 0.25, 0.5, 1]
-      disabledColor: [0.15, 0.15, 0.15, 0.5]
+      normalColor: [0.2, 0.21, 0.22, 1]
+      hoverColor: [0.62, 0.1, 0.07, 1]
+      pressedColor: [0.35, 0.05, 0.04, 1]
+      disabledColor: [0.06, 0.06, 0.07, 1]
       onClickCallback: on_menu_clicked
-    UiFocus: {initial: true}
-    UiRect:
-      anchorMin: [0.5, 0.5]
-      anchorMax: [0.5, 0.5]
-      pivot: [0.5, 0.5]
-      size: [0.5, 1]
-      sizeUnit: [ParentWidth, ParentHeight]
-      offset: [0, 0]
     UiText:
-      text: Title screen
-      color: [1, 1, 1, 1]
-      fontSize: 30
+      outlineWidth: 2
+      outlineColor: [0.04, 0.04, 0.05, 1]
+      text: 'TITLE SCREEN'
+      color: [0.86, 0.87, 0.84, 1]
+      fontSize: 28
       horizontalAlignment: Center
       verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
       fit: Shrink
       minFontSize: 12
-  - Entity: 4300000000000000013
-    Tag: {tag: ScoreLabel}
+      font: OpenSans-ExtraBold
+    UiFocus:
+      focusable: true
+      initial: true
+      onFocusCallback: ''
+      highlightColor: [0.82, 0.16, 0.12, 1]
+      highlightThickness: 3
+  - Entity: 3330000000000000006
+    Tag:
+      tag: MenuButtonPlate
     Transform:
       translation: [0, 0, 0]
       rotation: [0, 0, 0]
       scale: [1, 1, 1]
-    Visibility: {gameVisible: true}
-    Hierarchy: {parentId: 4300000000000000010}
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 3330000000000000005
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [1, 0.2]
+      size: [1, 1]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
-    UiText:
-      text: Final score 0    Best 0
-      color: [1, 1, 1, 1]
-      fontSize: 30
-      horizontalAlignment: Center
-      verticalAlignment: Middle
-      wrap: true
-      fit: Shrink
-      minFontSize: 12
-  - Entity: 4300000000000000014
-    Tag: {tag: StoryLabel}
+    UiImage:
+      tint: [1, 1, 1, 1]
+      texture: nam:textures/ui/plate.png
+  - Entity: 3330000000000000007
+    Tag:
+      tag: ScoreLabel
     Transform:
       translation: [0, 0, 0]
       rotation: [0, 0, 0]
       scale: [1, 1, 1]
-    Visibility: {gameVisible: true}
-    Hierarchy: {parentId: 4300000000000000010}
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 3330000000000000004
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [1, 0.2]
+      size: [0.95, 0.14]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
-      text: The elevator of the headquarters takes you out. Every floor can be explored again for a better tally.
-      color: [0.85, 0.9, 0.85, 0.9]
+      outlineWidth: 2
+      outlineColor: [0.04, 0.04, 0.05, 1]
+      text: ''
+      color: [0.86, 0.87, 0.84, 1]
+      fontSize: 32
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: JetBrainsMono-Regular
+  - Entity: 3330000000000000008
+    Tag:
+      tag: StoryLabel
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 3330000000000000004
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.95, 0.25]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 2
+      text: 'The elevator of the headquarters takes you out. Every floor can be explored again for a better tally.'
+      color: [0.68, 0.7, 0.68, 0.95]
       fontSize: 26
       horizontalAlignment: Center
       verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
       wrap: true
       fit: Shrink
       minFontSize: 12
-  - Entity: 4300000000000000015
-    Tag: {tag: VictoryTitle}
+  - Entity: 3330000000000000009
+    Tag:
+      tag: VictoryTitle
     Transform:
       translation: [0, 0, 0]
       rotation: [0, 0, 0]
       scale: [1, 1, 1]
-    Visibility: {gameVisible: true}
-    Hierarchy: {parentId: 4300000000000000010}
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 3330000000000000004
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [1, 0.3]
+      size: [0.95, 0.24]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
-      text: You escaped!
-      color: [0.3, 1, 0.3, 1]
-      fontSize: 72
+      outlineWidth: 2
+      outlineColor: [0.04, 0.04, 0.05, 1]
+      text: 'YOU ESCAPED!'
+      color: [0.82, 0.16, 0.12, 1]
+      fontSize: 76
       horizontalAlignment: Center
       verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
       fit: Shrink
       minFontSize: 12
+      font: OpenSans-ExtraBold

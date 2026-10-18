@@ -1,0 +1,15 @@
+# Breakout: the level select lists the five levels (level_select.lua); the list holds the focus, down selects level 2
+# and accept starts a fresh run there.
+scene: ../../../samples/breakout/scenes/level_select.owl
+steps:
+  - frames: 10
+  - expect: {gamestate: breakout_selected, equals: 1}
+  - actions: {ui_down: true, frames: 1}
+  - frames: 4
+  - expect: {gamestate: breakout_selected, equals: 2}
+  - actions: {ui_accept: true, frames: 1}
+  - frames: 90
+  - expect: {entity: Paddle, exists: true}
+  - expect: {gamestate: breakout_level, equals: 2}
+  - expect: {gamestate: breakout_lives, equals: 3}
+  - expect: {gamestate: breakout_score, equals: 0}

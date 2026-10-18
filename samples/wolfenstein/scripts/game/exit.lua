@@ -29,7 +29,7 @@ local function keep_best(key, value)
 end
 
 function on_elevator_use()
-    if leaving then
+    if leaving or gamestate.get("wolf_paused", false) then
         return
     end
     leaving = true
@@ -54,5 +54,5 @@ function on_elevator_use()
     keep_best(best .. "explored", explored)
     settings.save()
     sound.play("sounds/game/elevator.wav")
-    scene.transition_to("scenes/tally.owl", "fade", 0.6)
+    scene.transition_to("scenes/tally.owl", "fade_out", 0.6, 0.22, 0.02, 0.02)
 end

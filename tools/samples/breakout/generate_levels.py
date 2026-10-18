@@ -232,7 +232,7 @@ def script(path: str, properties: list[tuple[str, str, object]]) -> str:
             if kind == "bool":
                 text = "true" if value else "false"
             elif kind == "string":
-                text = f"'{value}'"
+                text = str(value) if "/" in str(value) else f"'{value}'"  # a path as Owl Nest writes it
             elif kind == "float":
                 text = _num(float(value))  # type: ignore[arg-type]
             else:
@@ -409,20 +409,24 @@ def hud() -> str:
         ],
     )
     gold = (1, 0.92, 0.5, 1)
-    entities.add("ScoreText", [_rect((0, 0), (0.42, 0.07), (16, 6)), _text("Score 0", 34, "Left", gold)], parent=canvas)
-    entities.add("LevelText", [_rect((0.5, 0), (0.36, 0.07), (0, 6)), _text("Level 1", 34)], parent=canvas)
-    entities.add(
-        "LivesText", [_rect((1, 0), (0.36, 0.07), (-16, 6)), _text("Lives 3", 34, "Right", gold)], parent=canvas
-    )
-    message = _text("Level 1", 44).replace("wrap: false", "wrap: true")
+    cyan = (0.6, 0.97, 1, 1)
+    mono = "  font: JetBrainsMono-Regular\n"
+    score = _text("SCORE 000000", 34, "Left", gold) + mono
+    entities.add("ScoreText", [_rect((0, 0), (0.42, 0.07), (16, 6)), score], parent=canvas)
+    level_text = _text("LEVEL 1", 34, colour=cyan) + mono
+    entities.add("LevelText", [_rect((0.5, 0), (0.36, 0.07), (0, 6)), level_text], parent=canvas)
+    lives = _text("LIVES 3", 34, "Right", gold) + mono
+    entities.add("LivesText", [_rect((1, 0), (0.36, 0.07), (-16, 6)), lives], parent=canvas)
+    message = _text("Level 1", 44, colour=cyan).replace("wrap: false", "wrap: true")
+    message += "  font: OpenSans-ExtraBoldItalic\n"
     entities.add("MessageText", [_rect((0.5, 0.6), (0.9, 0.16)), message], parent=canvas)
     window = entities.add(
         "PauseWindow",
         [
-            _rect((0.5, 0.5), (0.62, 0.5)),
-            "UiWindow:\n  title: Paused\n  titleBarHeight: 34\n  titleFontSize: 26\n"
-            "  bodyColor: [0.08, 0.09, 0.16, 0.95]\n  titleColor: [0.2, 0.25, 0.45, 1]\n"
-            "  titleTextColor: [1, 1, 1, 1]\n"
+            _rect((0.5, 0.5), (0.9, 0.66)),
+            "UiWindow:\n  title: PAUSED\n  titleBarHeight: 38\n  titleFontSize: 28\n"
+            "  bodyColor: [0.04, 0.02, 0.1, 0.96]\n  titleColor: [0.35, 0.05, 0.45, 1]\n"
+            "  titleTextColor: [0.6, 0.97, 1, 1]\n"
             "  draggable: false\n  closable: false\n  onCloseCallback: ''\n",
             "UiLayout:\n  arrangement: Column\n  crossAlign: Center\n  spacing: 8\n  padding: 10\n  columns: 1\n"
             "  cellSize: [0, 0]\n",
@@ -430,21 +434,55 @@ def hud() -> str:
         parent=canvas,
         visible=False,
     )
+    # The controls are shown here and in the How to play window of the title only, never during play.
+    controls = (
+        f"UiText:\n  outlineWidth: 2\n  text: {_quote_block(CONTROLS)}\n  color: [1, 0.88, 0.3, 1]\n  fontSize: 22\n"
+        "  horizontalAlignment: Left\n  verticalAlignment: Middle\n  kerning: 0\n  lineSpacing: 0.25\n"
+        "  wrap: true\n  fit: Shrink\n  minFontSize: 12\n  font: JetBrainsMono-Regular\n"
+    )
+    controls_rect = _rect((0, 0), (0.92, 0.3), units=("ParentWidth", "ParentHeight"))
+    entities.add("ControlsText", [controls_rect, controls], parent=window)
     rows = [
-        ("QuitButton", "Quit to title", "on_pause_quit", (0.45, 0.16, 0.16), False),
-        ("RestartButton", "Restart level", "on_pause_restart", (0.3, 0.3, 0.3), False),
-        ("ResumeButton", "Resume", "on_pause_resume", (0.15, 0.35, 0.65), True),
+        ("QuitButton", "QUIT TO TITLE", "on_pause_quit", False),
+        ("RestartButton", "RESTART LEVEL", "on_pause_restart", False),
+        ("ResumeButton", "RESUME", "on_pause_resume", True),
     ]
-    for tag, label, callback, colour, initial in rows:
+    for tag, label, callback, initial in rows:
         focus = "UiFocus:\n  focusable: true\n  initial: " + ("true" if initial else "false")
-        focus += "\n  highlightColor: [1, 0.82, 0.2, 1]\n  highlightThickness: 2\n"
+        focus += "\n  highlightColor: [1, 0.3, 0.8, 1]\n  highlightThickness: 3\n"
         parent_units = ("ParentWidth", "ParentHeight")
-        entities.add(
+        label_text = _text(label, 30, colour=(0.6, 0.97, 1, 1)) + "  font: OpenSans-ExtraBoldItalic\n"
+        uuid = entities.add(
             tag,
-            [_rect((0, 0), (0.9, 0.24), units=parent_units), _button(callback, colour), _text(label, 30), focus],
+            [
+                _rect((0, 0), (0.55, 0.16), units=parent_units),
+                NEON_BUTTON.replace("CALLBACK", callback),
+                label_text,
+                focus,
+            ],
             parent=window,
         )
+        frame = "UiImage:\n  tint: [1, 1, 1, 1]\n  texture: nam:textures/ui/button_frame.png\n"
+        entities.add(f"{tag}Frame", [_rect((0, 0), (1, 1), units=parent_units), frame], parent=uuid)
     return "Hud: untitled\nFormatVersion: 1\nEntities:\n" + entities.text()
+
+
+CONTROLS = (
+    "MOVE    A / D, arrows, mouse, left stick, D-pad\n"
+    "SERVE   Space, Up, left click, pad A\n"
+    "PAUSE   Escape, P, pad Start"
+)
+"""The controls, shown in the pause window."""
+NEON_BUTTON = (
+    "UiButton:\n  normalColor: [0.07, 0.02, 0.14, 1]\n  hoverColor: [0.32, 0.05, 0.42, 1]\n"
+    "  pressedColor: [0.55, 0.1, 0.6, 1]\n  disabledColor: [0.06, 0.04, 0.08, 0.6]\n  onClickCallback: CALLBACK\n"
+)
+"""A button of the neon menus (``generate_menus.py``)."""
+
+
+def _quote_block(text: str) -> str:
+    """A double-quoted YAML string, line breaks escaped."""
+    return '"' + text.replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n") + '"'
 
 
 def main() -> None:

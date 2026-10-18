@@ -3,8 +3,9 @@
 Draw the art and synthesise the sounds of the Breakout sample game into ``samples/breakout/`` (deterministic).
 
 Textures: a grey brick tinted per row by the game, the paddle in two widths, the ball, the two power-up capsules, the
-walls and a dark backdrop tile. Sounds: mono 16 bit at 22.05 kHz, sine, square and noise only; the music loops without
-a click.
+walls and a dark backdrop tile; for the menus (``textures/ui/``), the neon title, its halo alone (the part the title
+flickers) and the neon outline of a button, from the fonts of the engine. Sounds: mono 16 bit at 22.05 kHz, sine,
+square and noise only; the music loops without a click; ``sounds/ui/start.wav`` is the start jingle of the game.
 
 Run from the repository root: ``./docker_run.sh poetry run python tools/samples/breakout/generate_assets.py``.
 """
@@ -18,7 +19,7 @@ import wave
 from collections.abc import Callable
 from pathlib import Path
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 ROOT = Path(__file__).resolve().parents[3] / "samples" / "breakout"
 """The sample project."""
@@ -28,6 +29,8 @@ SOUNDS = ROOT / "sounds"
 """Folder of the written sounds."""
 RATE = 22050
 """Samples per second."""
+FONTS = Path(__file__).resolve().parents[3] / "engine_assets" / "fonts"
+"""The fonts of the engine, for the title art."""
 
 Rgba = tuple[int, int, int, int]
 
@@ -136,6 +139,54 @@ def backdrop() -> Image.Image:
     return img
 
 
+def _neon(
+    size: tuple[int, int], draw_shape: Callable[[ImageDraw.ImageDraw, int, tuple[int, ...]], None]
+) -> Image.Image:
+    """A neon tube: a magenta halo, a cyan tube and a white core, each drawn by ``draw_shape(draw, width, fill)``."""
+    out = Image.new("RGBA", size, (0, 0, 0, 0))
+    for width, fill, blur in (
+        (34, (255, 40, 200, 230), 14),
+        (12, (40, 230, 255, 255), 4),
+        (5, (225, 255, 255, 255), 1),
+    ):
+        layer = Image.new("RGBA", size, (0, 0, 0, 0))
+        draw_shape(ImageDraw.Draw(layer), width, fill)
+        out = Image.alpha_composite(out, layer.filter(ImageFilter.GaussianBlur(blur)))
+    return out
+
+
+def title_art(glow_only: bool) -> Image.Image:
+    """The neon "BREAKOUT" of the title (1200 x 300) with a bar under it; ``glow_only`` keeps the halo, the part the
+    title screen flickers."""
+    size = (1200, 300)
+    font = ImageFont.truetype(str(FONTS / "OpenSans-ExtraBoldItalic.ttf"), 170)
+
+    def shape(draw: ImageDraw.ImageDraw, width: int, fill: tuple[int, ...]) -> None:
+        box = draw.textbbox((0, 0), "BREAKOUT", font=font)
+        x = (size[0] - (box[2] - box[0])) / 2 - box[0]
+        draw.text((x, 40 - box[1]), "BREAKOUT", font=font, fill=(0, 0, 0, 0), stroke_width=width // 2, stroke_fill=fill)
+        draw.line([(170, 262), (1030, 262)], fill=fill, width=max(2, width // 2))
+
+    art = _neon(size, shape)
+    if glow_only:
+        return art.filter(ImageFilter.GaussianBlur(10))
+    face = Image.new("RGBA", size, (0, 0, 0, 0))
+    draw = ImageDraw.Draw(face)
+    box = draw.textbbox((0, 0), "BREAKOUT", font=font)
+    draw.text(((size[0] - (box[2] - box[0])) / 2 - box[0], 40 - box[1]), "BREAKOUT", font=font, fill=(70, 12, 90, 215))
+    return Image.alpha_composite(face, art)
+
+
+def button_frame() -> Image.Image:
+    """The neon outline of a menu button (640 x 100), its middle left clear for the button colour."""
+    size = (640, 100)
+
+    def shape(draw: ImageDraw.ImageDraw, width: int, fill: tuple[int, ...]) -> None:
+        draw.rounded_rectangle([9, 9, size[0] - 10, size[1] - 10], radius=24, outline=fill, width=max(3, width // 2))
+
+    return _neon(size, shape)
+
+
 def _write(name: str, samples: list[float], peak: float = 0.8) -> None:
     """Write the samples, scaled so that the loudest one reaches ``peak`` of the full scale."""
     path = SOUNDS / name
@@ -197,6 +248,14 @@ def sounds() -> None:
     _write("game/lose.wav", _tone(0.7, lambda t: 620.0 * math.exp(-t * 2.4), 3.0, square=0.4))
     _write("game/level_clear.wav", _notes([(523.3, 1.0), (659.3, 1.0), (784.0, 1.0), (1046.5, 1.2)], 0.12, 6.0))
     _write("music/loop.wav", music(), peak=0.5)
+    _write("ui/start.wav", jingle(), peak=0.5)
+
+
+def jingle() -> list[float]:
+    """The start jingle, 0.9 second: a quick rising arpeggio in soft square, then its chord dying away."""
+    notes = _notes([(392.0, 0.7), (523.3, 0.8), (659.3, 0.9)], 0.07, 16.0)
+    chord = _mix(*(_tone(0.7, _constant(f), 5.0, square=0.2) for f in (523.3, 659.3, 784.0)))
+    return notes + [s * 0.5 for s in chord]
 
 
 def music() -> list[float]:
@@ -224,6 +283,10 @@ def textures() -> None:
     power_up((50, 110, 210), "S").save(TEXTURES / "power_slow.png")
     wall().save(TEXTURES / "wall.png")
     backdrop().save(TEXTURES / "backdrop.png")
+    (TEXTURES / "ui").mkdir(exist_ok=True)
+    title_art(False).save(TEXTURES / "ui" / "title.png")
+    title_art(True).save(TEXTURES / "ui" / "title_glow.png")
+    button_frame().save(TEXTURES / "ui" / "button_frame.png")
 
 
 if __name__ == "__main__":

@@ -32,10 +32,14 @@ namespace owl::renderer {
  *   (origin at bottom-left, X right, Y up) land at the matching screen pixels
  *   regardless of the scene camera's rotation / zoom. Used by HUD / menu
  *   layers so the overlay stays upright when the player camera is rotated
- *   (e.g. the raycast scene).
+ *   (e.g. the raycast scene). With a `ReferenceHeight` above 0 the units are
+ *   reference pixels instead: the screen is `ReferenceHeight` units high (its
+ *   width follows the aspect ratio), so an overlay keeps its share of the
+ *   screen at any resolution, like a `ScaleWithHeight` HUD canvas.
  *
  * The active mode is read from `applyConfig` via the YAML key `Space`
- * (`World` / `Screen`, case-insensitive). Default is `World` for backwards
+ * (`World` / `Screen`, case-insensitive), the reference height from `ReferenceHeight` (0, the default, keeps one unit
+ * per screen pixel). Default is `World` for backwards
  * compatibility with projects that don't declare it.
  *
  * `onRender` iterates entities tagged with this layer's name (or untagged
@@ -150,6 +154,13 @@ public:
 	 */
 	[[nodiscard]] auto getSpace() const -> Space { return m_space; }
 
+	/**
+	 * @brief
+	 *  Height of the screen in `Space::Screen` units.
+	 * @return The configured `ReferenceHeight`, 0 when the units are screen pixels.
+	 */
+	[[nodiscard]] auto getReferenceHeight() const -> float { return m_referenceHeight; }
+
 private:
 	/**
 	 * @brief
@@ -162,6 +173,8 @@ private:
 	std::string m_name;
 	/// Coordinate space the layer binds for `Renderer2D` (set by `applyConfig`).
 	Space m_space = Space::World;
+	/// Screen height in `Space::Screen` units (0: one unit per pixel), set by `applyConfig`.
+	float m_referenceHeight = 0.f;
 	/// Viewport size in pixels (latched by `setViewport`, used for screen-space ortho).
 	math::vec2ui m_viewport{1280, 720};
 };

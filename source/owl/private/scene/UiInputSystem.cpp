@@ -961,6 +961,21 @@ void bindVisibleRows(Scene& ioSurface, const Scene* iActive, const ui::HudLayout
 	}
 }
 
+auto hasShownWindow(Scene& ioSurface) -> bool {
+	for (const auto entity: ioSurface.registry.view<component::UiWindow>()) {
+		if (ioSurface.isEffectivelyVisible(Entity{entity, &ioSurface}, false))
+			return true;
+	}
+	return false;
+}
+
+auto isWindowShown(Scene& ioScene) -> bool {
+	if (hasShownWindow(ioScene))
+		return true;
+	const auto hud = ioScene.getHud();
+	return hud && hud.get() != &ioScene && hasShownWindow(*hud);
+}
+
 // The mouse takes the focus where it moves or clicks, and hides its highlight.
 void focusUnderMouse(Scene& ioActive, const Candidate& iHovered) {
 	if (isFocusable(*iHovered.surface, iHovered.node->entity))
@@ -977,8 +992,10 @@ void UiInputSystem::update(Scene* iScene, const math::vec2ui& iViewportSize, con
 		return;
 	auto& state = iScene->getUiInputState();
 	state.consuming = false;
+	state.windowShown = false;
 	if (iScene->status != Scene::Status::Playing)
 		return;
+	state.windowShown = isWindowShown(*iScene);
 
 	const bool clicked = !state.wasPressed && iMousePressed;
 	const bool mouseMoved = state.hasMouse && (std::abs(iMousePos.x() - state.mousePosition.x()) > 0.5f ||
@@ -1089,6 +1106,10 @@ void UiInputSystem::clearFocus(Scene& ioScene) {
 }
 
 auto UiInputSystem::isUIConsuming(const Scene& iScene) -> bool { return iScene.getUiInputState().consuming; }
+
+auto UiInputSystem::isWorldInteractionBlocked(Scene& ioScene) -> bool {
+	return ioScene.getUiInputState().windowShown || isWindowShown(ioScene);
+}
 
 void UiInputSystem::reset(Scene& ioScene) { ioScene.getUiInputState() = {}; }
 

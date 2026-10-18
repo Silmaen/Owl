@@ -16,8 +16,11 @@
 #include <scene/Entity.h>
 #include <scene/Scene.h>
 #include <scene/SceneSerializer.h>
+#include <scene/UiInputSystem.h>
 #include <scene/component/RaycastDoor.h>
 #include <scene/component/RaycastPushWall.h>
+#include <scene/component/UiWindow.h>
+#include <scene/component/Visibility.h>
 #include <scene/component/components.h>
 #include <scene/systems/EngineSystems.h>
 #include <window/Window.h>
@@ -279,6 +282,47 @@ TEST_F(RaycastDynamicWallsTest, DoorOpensWhenItsActionGoesDownInRange) {
 	input::Input::injectKey(input::key::E);
 	scn.onUpdateRuntime(core::Timestep{}, false);
 	EXPECT_NE(entity.getComponent<scene::component::RaycastDoor>().state, scene::component::RaycastDoor::State::Idle);
+	scn.onEndRuntime();
+	input::Input::invalidate();
+}
+
+TEST_F(RaycastDynamicWallsTest, ShownWindowHoldsTheInteractionBack) {
+	input::Input::init(window::Type::Null);
+	scene::Scene scn;
+	auto door = scn.createEntity("Door");
+	door.addComponent<scene::component::RaycastDoor>().interactionAction = "interact";
+	auto push = scn.createEntity("PushWall");
+	push.addComponent<scene::component::RaycastPushWall>().interactionAction = "interact";
+	auto player = scn.createEntity("Player");
+	player.addComponent<scene::component::Player>();
+	auto window = scn.createEntity("PauseWindow");
+	window.addComponent<scene::component::UiWindow>();
+	scn.onStartRuntime();
+	EXPECT_TRUE(scene::UiInputSystem::isWorldInteractionBlocked(scn));
+	input::Input::injectKey(input::key::E);
+	scn.onUpdateRuntime(core::Timestep{}, false);
+	EXPECT_EQ(door.getComponent<scene::component::RaycastDoor>().state, scene::component::RaycastDoor::State::Idle);
+	EXPECT_EQ(push.getComponent<scene::component::RaycastPushWall>().state,
+			  scene::component::RaycastPushWall::State::Idle);
+
+	// The window closed by the click of this frame (Resume) still holds that frame back.
+	input::Input::injectKey(input::key::E);
+	window.getComponent<scene::component::Visibility>().gameVisible = false;
+	scn.onUpdateRuntime(core::Timestep{}, false);
+	scn.getUiInputState().windowShown = true;
+	input::Input::injectKey(input::key::E);
+	scn.onUpdateRuntime(core::Timestep{}, false);
+	EXPECT_EQ(door.getComponent<scene::component::RaycastDoor>().state, scene::component::RaycastDoor::State::Idle);
+
+	input::Input::injectKey(input::key::E);
+	scn.getUiInputState().windowShown = false;
+	EXPECT_FALSE(scene::UiInputSystem::isWorldInteractionBlocked(scn));
+	scn.onUpdateRuntime(core::Timestep{}, false);
+	input::Input::injectKey(input::key::E);
+	scn.onUpdateRuntime(core::Timestep{}, false);
+	EXPECT_NE(door.getComponent<scene::component::RaycastDoor>().state, scene::component::RaycastDoor::State::Idle);
+	EXPECT_NE(push.getComponent<scene::component::RaycastPushWall>().state,
+			  scene::component::RaycastPushWall::State::Idle);
 	scn.onEndRuntime();
 	input::Input::invalidate();
 }

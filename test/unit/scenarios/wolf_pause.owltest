@@ -1,0 +1,27 @@
+# Wolfenstein mini: Escape opens the pause window of the floor (level.lua) and the player stands still while it is
+# open; Resume (accept on its focused button) goes back to the game. While the window is shown the engine opens no door
+# (`UiInputSystem::isWorldInteractionBlocked`), not even with the press that resumes.
+scene: ../../../samples/wolfenstein/scenes/level_1.owl
+project: ../../../samples/wolfenstein
+steps:
+  - frames: 40
+  # A door is brought in front of the player (one cell east), in reach of `interact`.
+  - {command: entity.set_transform, args: {entity: Door, translation: [-12.5, -11.5, 0]}}
+  - frames: 3
+  - input: {key: Escape, frames: 1}
+  - frames: 3
+  - expect: {gamestate: wolf_paused, equals: true}
+  - actions: {walk: 1, frames: 30}
+  - expect: {player: true, translation.x: {equals: -13.5, tolerance: 0.05}}
+  - expect: {player: true, translation.y: {equals: -11.5, tolerance: 0.05}}
+  - input: {key: E, frames: 3}
+  - frames: 10
+  - expect: {gamestate: wolf_doors_opened, equals: 0}
+  - actions: {ui_accept: true, interact: true, frames: 1}
+  - frames: 10
+  - expect: {gamestate: wolf_paused, equals: false}
+  - expect: {gamestate: wolf_doors_opened, equals: 0}
+  # Back in the game, the same press opens the door.
+  - input: {key: E, frames: 3}
+  - frames: 10
+  - expect: {gamestate: wolf_doors_opened, equals: 1}

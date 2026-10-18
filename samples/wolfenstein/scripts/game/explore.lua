@@ -2,14 +2,15 @@
 -- Reused from the raycast level of the Engine Demo (`scripts/raycast/raycast_level.lua`).
 --
 -- The minimap is a second rendering style over the raycast view: the `overlay` layer of the stack (a `Renderer2D` with
--- `Space: Screen`) draws this entity's `Tilemap` (`tilemaps/level_N_minimap.owltilemap`) and two dots this script moves:
--- the player and where it looks. The map is centred on its entity, `scale` screen pixels per cell; `map` (Tab, pad Y)
--- switches between the corner minimap and a large map.
+-- `Space: Screen` and `ReferenceHeight: 720`: the screen is 720 units high at any resolution) draws this entity's
+-- `Tilemap` (`tilemaps/level_N_minimap.owltilemap`) and two dots this script moves: the player and where it looks. The
+-- map is centred on its entity, `scale` units per cell; `map` (Tab, pad Y) switches between the corner minimap and a
+-- large map.
 --
 -- The tilemap has two layers: `walls` (hidden, the whole floor, read once) and `seen` (empty at first). Every frame
 -- FOG_RAYS rays are cast over the wall grid across the field of view up to FOG_RANGE cells (a DDA over the cells, no
 -- allocation); the cells a ray crosses and the wall it stops at are copied into `seen` with `isometric.set_cell`. A
--- closed door and a secret wall that has not moved stop a ray and show as walls.
+-- closed door and a secret wall stop a ray and show as walls, a slid secret wall in the cell where it stopped.
 --
 -- Map explored = floor cells seen / floor cells of the floor (`wolf_explored`, in %; `wolf_seen`, the count). The seen
 -- cells are kept as a string of 0 and 1 in `wolf_seen_map` of the gamestate (written at most twice a second) so that a
@@ -25,7 +26,7 @@ local FOG_RAYS, FOG_FOV, FOG_RANGE = 41, math.rad(80), 14
 local FOG_ROWS_PER_FRAME = 8
 local SAVE_PERIOD = 0.5
 local HEARING = 12 -- cells beyond which a door is not heard
--- Corner minimap and large map: cell size in screen pixels and centre (from the lower left corner of the screen).
+-- Corner minimap and large map: cell size in units (1/720 of the screen height) and centre (from the lower left corner of the screen).
 local SMALL = { scale = 5, x = 96, y = 96 }
 local LARGE = { scale = 11, x = 192, y = 192 }
 local DOOR_TAGS = { "Door", "GoldDoor", "BlueDoor", "ElevatorDoor" }
@@ -216,17 +217,34 @@ local function play_near(path, id)
     end
 end
 
--- A door or a secret wall that changed state: its cell opens or closes on the map.
+-- A secret wall that reached the end of its slide stands in another cell: that cell becomes a wall of the map, which
+-- stops the fog and shows as a wall (it showed as floor, and the fog saw through the wall into the room behind it).
+local function settle(d)
+    local x, y = transform.get_position(d.id)
+    local c, r = cell_of(x, y)
+    local key = key_of(c, r)
+    blockers[key] = { closed = true }
+    if seen[key] then
+        show(c, r)
+    end
+end
+
+-- A door or a secret wall that changed state: its cell opens or closes on the map; an opening door is heard and counted
+-- (`wolf_doors_opened`).
 local function follow(list, state_of)
     for _, d in ipairs(list) do
         local state = state_of(d.id)
         if state ~= d.state then
             if state == "opening" and list == doors and player_id ~= 0 then
                 play_near("sounds/game/door.wav", d.id)
+                gamestate.set("wolf_doors_opened", gamestate.get("wolf_doors_opened", 0) + 1)
             end
             d.blocker.closed = state == "idle"
             if seen[key_of(d.c, d.r)] then
                 show(d.c, d.r)
+            end
+            if state == "final" and list == secrets then
+                settle(d)
             end
             d.state = state
         end

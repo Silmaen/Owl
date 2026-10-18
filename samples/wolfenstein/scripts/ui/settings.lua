@@ -20,7 +20,7 @@ local function update_sliders()
 end
 
 function on_create()
-    ui.transition_fade_in(0.4)
+    if not ui.is_transition_active() then ui.transition_play("fade_in", 0.5, 0.22, 0.02, 0.02) end
     for _, name in ipairs({ "MasterVolLabel", "MasterVolSlider", "MouseLabel", "MouseSlider", "UiScaleLabel",
                             "UiScaleSlider" }) do
         ids[name] = scene.find_entity(name)
@@ -66,5 +66,5 @@ function go_back()
     end
     leaving = true
     settings.save()
-    scene.transition_to("scenes/title.owl", "fade", 0.3)
+    scene.transition_to("scenes/title.owl", "fade_out", 0.4, 0.22, 0.02, 0.02)
 end

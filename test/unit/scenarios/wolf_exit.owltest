@@ -1,5 +1,5 @@
 # Wolfenstein mini: the elevator ends floor 1 (exit.lua): the tally screen opens with the ratios of the floor and its
-# bonus, and its button leads to floor 2, which starts with fresh counters.
+# bonus, counted up, and its button leads to floor 2, which starts with fresh counters.
 scene: ../../../samples/wolfenstein/scenes/level_1.owl
 project: ../../../samples/wolfenstein
 steps:
@@ -15,6 +15,9 @@ steps:
   - expect: {gamestate: wolf_tally_items, equals: 0}
   - expect: {gamestate: wolf_tally_explored, greater: 0}
   - expect: {gamestate: wolf_score, greater: 0}
+  # The count of the tally ends by itself, then Next is enabled and focused.
+  - frames: 360
+  - expect: {gamestate: wolf_tally_done, equals: true}
   - actions: {ui_accept: true, frames: 1}
   - frames: 90
   - expect: {entity: Player, exists: true}
