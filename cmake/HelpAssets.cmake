@@ -11,7 +11,8 @@
 # pages render cleanly in the in-editor `HelpPanel` (md4c-based renderer).
 #
 # Image references are normalised to point at `<build>/help_bundle/images/`:
-#  * `../images/foo.svg` (Doxygen INPUT convention) -> `images/foo.svg`
+#  * `../images/foo.svg` (Doxygen INPUT convention) -> `images/foo.svg`, and
+#    `doc/images/foo.png` (README) -> `images/foo.png`; sub-folders of `doc/images/` are kept
 #  * `engine_assets/<dir>/foo.png` (project-relative paths used in the README,
 #    such as `engine_assets/logo/logo_owl.png`) -> `images/foo.png`
 #  * `https://...` images are read from the cache `images/badges/<sha1>.svg`
@@ -63,6 +64,8 @@ function(_owl_help_scrub_markdown IN_FILE OUT_FILE BADGE_CACHE_DIR)
     string(REGEX REPLACE "(^|\r?\n)[ \t]*\\[TOC\\][ \t]*(\r?\n|$)" "\\1" CONTENT "${CONTENT}")
     # Rewrite "../images/foo.svg" (doc/pages convention) -> "images/foo.svg".
     string(REGEX REPLACE "\\]\\(\\.\\./images/" "](images/" CONTENT "${CONTENT}")
+    # Rewrite "doc/images/foo.png" (README convention) -> "images/foo.png".
+    string(REGEX REPLACE "\\]\\(doc/images/" "](images/" CONTENT "${CONTENT}")
     # Rewrite project-relative "engine_assets/<x>/foo.svg" (used by README for the logo) ->
     # "images/foo.svg" so the file lives next to the rest of the bundled images.
     string(REGEX REPLACE "\\]\\(engine_assets/[^/)]+/([^)]+)\\)" "](images/\\1)" CONTENT "${CONTENT}")
@@ -143,7 +146,9 @@ function(owl_bundle_help_assets)
         list(APPEND _OWL_HELP_ROOT_KEPT "${HELP_FILE}")
     endforeach ()
     set(OWL_HELP_ROOT_FILES ${_OWL_HELP_ROOT_KEPT})
-    file(GLOB OWL_HELP_IMAGES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/doc/images/*")
+    # Sub-folders (`nest/` screenshots, `showcase/`) keep their place under `images/`.
+    file(GLOB_RECURSE OWL_HELP_IMAGES CONFIGURE_DEPENDS RELATIVE "${CMAKE_SOURCE_DIR}/doc/images"
+            "${CMAKE_SOURCE_DIR}/doc/images/*")
     # Project-relative images referenced from the README (logo, etc.) — copy them into
     # `images/` alongside `doc/images/` so the rewritten markdown can find them.
     file(GLOB OWL_HELP_LOGO_IMAGES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/engine_assets/logo/*")
@@ -163,7 +168,11 @@ function(owl_bundle_help_assets)
     endforeach ()
 
     # ---- Copy images verbatim (SVG / PNG / JPG …) ----
-    foreach (IMG IN LISTS OWL_HELP_IMAGES OWL_HELP_LOGO_IMAGES)
+    foreach (IMG IN LISTS OWL_HELP_IMAGES)
+        get_filename_component(IMG_DIR "${IMG}" DIRECTORY)
+        file(COPY "${CMAKE_SOURCE_DIR}/doc/images/${IMG}" DESTINATION "${IMG_OUT_DIR}/${IMG_DIR}")
+    endforeach ()
+    foreach (IMG IN LISTS OWL_HELP_LOGO_IMAGES)
         if (NOT IS_DIRECTORY "${IMG}")
             file(COPY "${IMG}" DESTINATION "${IMG_OUT_DIR}")
         endif ()

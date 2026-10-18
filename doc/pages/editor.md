@@ -43,7 +43,7 @@ stateDiagram-v2
 
 ## Panel Layout
 
-![Editor Panels](../images/editor_panels.svg)
+![Owl Nest with the Iso Town scene of the Engine Demo: ribbon, viewport, Scene Hierarchy, Properties and Content Browser](../images/nest/main_window.png)
 
 The default arrangement uses ImGui docking:
 
@@ -85,6 +85,8 @@ Every button has a tooltip with its shortcut; a greyed button is not applicable 
   save, save as, package the game, editor / project / engine settings, help, close project and exit, with the open
   project and the recent ones on the right. It opens by itself at start-up when no project is open. `Escape` or
   **Back to the editor** closes it.
+
+  ![The File screen with the Engine Demo open, the sample games and the recent projects](../images/nest/file_screen.png)
 - **Home** — Edit (Undo, Redo, Duplicate), Create (New scene / animation / tilemap / tileset), Project (Scene Flow,
   project Settings, Pack Game).
 - **View** — Layout (Hierarchy Left, Reset Layout), Camera (Reset View, Axis Views, Frame Scene, Camera Viewpoint),
@@ -230,6 +232,8 @@ neighbouring corners follow so every cell keeps one of the 19 slopes. A click or
 four corner heights of the clicked cell. The `TilemapDocument` keeps its own undo stack, so these edits are not
 registry commands.
 
+![The isometric tilemap of the Iso Town in the tilemap editor, with its layers and the Tile Palette](../images/nest/tilemap_editor.png)
+
 The **Node** tool edits single corners (nodes): a click selects the hovered corner (the nearest one to the cursor is
 highlighted; Shift + click adds or removes one, a click in the void clears the selection), dragging up or down raises
 or lowers every selected node by one step per `zStep` of mouse travel, and **+** / **-** (or the keypad) move them by
@@ -258,6 +262,8 @@ drawn as output pins wired to the destination scene's entry pin. Scenes
 unreachable from `Project::firstScene` are drawn with a red title (via BFS).
 **Double-click** a node to navigate to that scene. Link create/delete is
 planned as a follow-up — see [Node Graph](node_graph.md) for details.
+
+![The Scene Flow of the Engine Demo](../images/nest/scene_flow.png)
 
 ## Panels Reference
 
@@ -643,6 +649,8 @@ Double-click `input_actions.yml` in the Content Browser, press **Home > Project 
 in the Input section of Project Settings to open the action map of the project in an action map document. A project
 without the file starts from the built-in actions, and the first save creates it.
 
+![The action map of the Engine Demo: actions on the left, the details of `pause` on the right](../images/nest/action_map.png)
+
 - The left list holds the actions with a live bar of their reading; **+** adds an action (a free name, `Button`), the trash
   removes the selected one, the circular arrow puts the built-in actions back. The built-in actions the file leaves out
   are listed below, dimmed, and **+** copies one with its default bindings into the file to edit it.
@@ -670,6 +678,8 @@ the editor.
 
 The tab shows the **HUD editor** instead of the 3D viewport; a scene with canvases gets it too with **HUD Editor**
 (Scene ribbon tab; *Scene View* in its toolbar goes back; Play always shows the scene). It has three parts:
+
+![The HUD editor on the gameplay HUD of the Engine Demo, the score label selected](../images/nest/hud_editor.png)
 
 - **Toolbar**: preview resolution (presets or a custom size), fit / 1:1 zoom (mouse wheel zooms, middle button pans,
   `F` fits), widget outlines and the reference resolution frame, backdrop (colour, or an image dropped from the
@@ -770,6 +780,8 @@ boom. Fix: fix the script at the first line of the traceback; the callback runs 
 
 The Console panel (Ctrl+&#96;, action `view.console`) is a command line over the
 [editor commands](#editor-commands) and the journal of every command run in the session.
+
+![The Console: commands sent over MCP in the journal, then `help entity.rename` typed in the command line](../images/nest/console.png)
 
 **Command line.** One [command line](#editor-command-line) per input, run with `Enter` on the active scene; the
 result shows as `$n  description  (data)`, an error with its column, a command refused while the scene plays as
@@ -983,6 +995,8 @@ Entered by pressing Play (or the configured shortcut). The editor:
 
 Each frame calls `onUpdateRuntime()` which steps the physics simulation, updates
 spatial sound positions, and invokes native scripts.
+
+![The platformer of the Engine Demo in Play: the viewport framed in blue, the Play controls on top](../images/nest/play_mode.png)
 
 ### Pause
 

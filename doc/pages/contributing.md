@@ -78,6 +78,13 @@ The user documentation lives in `doc/pages/` and changes in the same pull reques
   output. The in-editor help panel does **not** execute JavaScript: mermaid blocks render as plain code blocks
   there. Prefer mermaid for architecture / flow / sequence diagrams; the SVGs in `doc/images/` remain valid for
   static figures.
+- The Owl Nest screenshots in `doc/images/nest/` are made by `tools/doc/capture_nest.py`, headless inside the build
+  image: a private Xvfb display, Owl Nest on lavapipe with the Engine Demo, one editor start per shot, set up through
+  the reopened session, synthetic clicks and keys (XTest) and the MCP server, then grabbed, cropped and written as PNG
+  of at most 400 KB. After a build, refresh them all, or some, with
+  `./docker_run.sh poetry run python tools/doc/capture_nest.py [--only main_window,console]`; `--raw` and a folder keep the
+  full frames. The shots, their gestures and their crops are listed at the top of the script: a moved button means
+  new coordinates there. Look at every image before committing it.
 - Every symbol, file or `OWL_*` option a page cites between backticks must exist: the Code Style gate checks it
   (see [Continuous Integration](continuous_integration.md)).
 - `doc/pages/changelog.md` gets one line under `[Unreleased]` per change, and `doc/pages/roadmap.md` the badge of

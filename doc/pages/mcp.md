@@ -76,11 +76,14 @@ the agent can: `entity.create`, `entity.delete`, `entity.duplicate`, `entity.rep
 `edit.undo`, `edit.redo`, `macro.run`, and the commands of the open documents. Each tool declares its arguments (type,
 default, choices) in its input schema. Entities are named by their UUID or their tag.
 
-- A command runs as one undo step and is recorded in the command journal with the `mcp` source.
+- A command runs as one undo step and is recorded in the command journal with the `mcp` source (see the
+  [Console](editor.md)).
 - Editing tools are refused while the scene plays (`RefusedDuringPlay`): stop it first.
 - A file argument (`prefab.instantiate`, `scene.save`, `macro.run`) is resolved inside the open project and refused
   outside it. No tool evaluates Lua or runs a shell command.
 - A failure is a tool result with `isError: true` and a `structuredContent.error` name, not a protocol error.
+
+![Four tools called over MCP, as the editor's Console journal shows them](../images/nest/console.png)
 
 ### `play.run`
 
