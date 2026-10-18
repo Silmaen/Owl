@@ -6,6 +6,7 @@ add_subdirectory(owl)
 if (${PROJECT_PREFIX}_MODULE_RENDER)
     add_subdirectory(tools)
 endif ()
-if (${PROJECT_PREFIX}_BUILD_NEST)
+# The benchmarks drive the MCP server of the editor libraries (built without the editor when OWL_BUILD_NEST is off).
+if (${PROJECT_PREFIX}_BUILD_NEST OR ${PROJECT_PREFIX}_BENCHMARK)
     add_subdirectory(owlnest)
 endif ()

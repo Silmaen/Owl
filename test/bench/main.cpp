@@ -112,6 +112,7 @@ auto main(const int iArgc, char** iArgv) -> int {
 		owl::bench::runPhysicsBenches(runner);
 		owl::bench::runSampleBenches(runner);
 		owl::bench::runSlangBenches(runner);
+		owl::bench::runMcpBenches(runner);
 		runner.writeReports();
 		owl::app::Application::invalidate();
 		application.reset();

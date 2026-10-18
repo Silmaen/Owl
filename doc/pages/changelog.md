@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `owl_bench` group `mcp`: `tools/call` and `ping` round trips over loopback HTTP into a headless editor session, the MCP and command libraries of Owl Nest now built with `OWL_BENCHMARK` even without the editor.
 - Scenario files take an optional `project` (the project of the scene, else found above it) and `assets` (extra asset folders), so a test fixture scene can live beside the tests and use a game project.
 - Lua `scene.find_entities(tag)`: every entity with a tag; in the Engine Demo iso town a road built on a tree clears it and the bulldozer removes trees (3 funds).
 - Owl Nest opens images (`.png`, `.jpg`, `.jpeg`, `.bmp`, `.tga`) in a read-only viewer: wheel zoom to 3200 %, pan, fit and 1:1, pixel grid, checkerboard, file information and the tile grid of the tilesets that use the image.
@@ -103,8 +104,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (Content Browser, `macro.run`, scenario `macro:` steps), and the inspector edits and gizmo drags as registry commands.
 - MCP Streamable HTTP transport on `127.0.0.1` (`cpp-httplib`, no TLS), off by default: requests queued for the main
   loop and held during a gesture or a modal, a 256-bit bearer token in a `0600` file, `Host` / `Origin` / content
-  type / body size / queue checks, file arguments kept inside the project, and its settings tab and status bar
-  indicator.
+  type / body size / queue checks, `TCP_NODELAY` on its sockets, file arguments kept inside the project, and its
+  settings tab and status bar indicator.
 - MCP `play.run` tool: plays the scene for N frames or ticks with held input actions and returns the viewport as a PNG
   image with the phase timings; `session::resolveActionHolds` is shared with the scenario `actions:` steps, and the
   [MCP server guide](mcp.md) gives the client setup.

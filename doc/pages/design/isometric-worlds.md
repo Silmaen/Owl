@@ -309,15 +309,16 @@ Checked on 2026-10-18 against `main` at 41de054d (release, Vulkan on lavapipe, `
 
 Also green: every ctest of `linux-clang-debug` (53), `IncludeCheck linux-include-check`.
 
-Budget rows without a baseline entry: `MCP tools/call round trip` (no bench case), `hud/frame/1000_row_list` (documented in
-`test/bench/README.md`, absent from the baseline), `path/*` (absent from the baseline). Every other row has a case and an
-entry, and the stored medians are inside their budgets (zoom ×4 frame 3.3 ms for 4 ms).
+Budget rows without a baseline entry: `MCP tools/call round trip` (`mcp/tools_call/entity_rename`, 64 µs locally without
+the frame wait, absent from the baseline), `hud/frame/1000_row_list` (documented in `test/bench/README.md`, absent from the
+baseline), `path/*` (absent from the baseline). Every other row has a case and an entry, and the stored medians are inside
+their budgets (zoom ×4 frame 3.3 ms for 4 ms).
 
 Left to the maintainer:
 
 - Manual tests: Owl Nest GUI session (`iso_town`, HUD editor, action map editor, MCP on), gamepad on the menus and the
   samples, file dialogues on GNOME and KDE, gizmo on the isometric axes.
-- Refresh the bench baseline from five runs on hephaistos and add the missing entries (and an MCP round-trip case).
+- Refresh the bench baseline from five runs on hephaistos and add the missing entries (`mcp/*` included).
 - Version, date and the changelog sections of the release.
 
 [done]: https://img.shields.io/badge/-Done-2ea043?style=flat-square

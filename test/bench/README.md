@@ -38,10 +38,17 @@ cd output/build/linux-clang-release-bench/bin
 | `--verbose`         | off     | Keep engine warnings and errors in the output.               |
 
 Groups (name prefixes): `scene`, `serialize`, `prefab`, `renderer2d`, `hud`, `tilemap`, `frame`, `voxel`,
-`script`, `physics`, `sample`, `slang`, `iso`. The first Slang compilation is only "cold" when `slang` is the first group to
+`script`, `physics`, `sample`, `slang`, `iso`, `mcp`. The first Slang compilation is only "cold" when `slang` is the first group to
 compile a shader in the process, which is the case for a full run. `voxel/streaming` streams a procedural world
 through a real `RendererVoxel` layer with frames paced at 60 Hz (about 12 s) and reports the main-thread CPU time per
 frame (p50, p99, peak), the meshing work and the chunk appearance latency.
+`mcp/*` posts JSON-RPC messages to a real `McpServer` on `127.0.0.1` (kept-alive connection with `TCP_NODELAY`, bearer
+token) from a client thread while the bench thread plays the editor main loop, calling `McpServer::onUpdate` without
+pause: `mcp/ping` is the transport and dispatcher alone, `mcp/tools_call/entity_rename` a full `tools/call` of a
+registry command on a headless session. The wait for the next frame of a real editor is excluded, so the median is the
+"+5 ms" part of the v0.4.0 budget "≤ one frame + 5 ms". Both ends set `TCP_NODELAY`: without it, Nagle's algorithm and the
+delayed ACK add 40 ms to every call. The libraries of the server are built with `OWL_BENCHMARK` even when
+`OWL_BUILD_NEST` is off (never the editor).
 
 
 ## In CI
@@ -59,7 +66,7 @@ The configuration is pinned to the agent `linux-build-hephaistos` (8 cores): the
 median of its 5 runs of 2026-10-15 on the v0.4.0 performance fixes (builds 36879 to 36887, listed in
 `context.baseline_runs`), the code `main` gets with them; the runs agree within 2 % (median), the multi-threaded
 physics of 100 bodies and `sample/load/game_over` within 30 %. `hud/frame/1000_row_list` (a list of a thousand rows,
-scrolled to the middle; the quads of one frame as a metric) is new and not in the baseline yet. The `hud/{layout,frame}/500_widgets` and `iso/*` entries are
+scrolled to the middle; the quads of one frame as a metric) is new and not in the baseline yet, nor is the `mcp` group. The `hud/{layout,frame}/500_widgets` and `iso/*` entries are
 estimates, a local run scaled by the ratio of the `renderer2d/quads_color` cases, until the next refresh. Timings from
 another agent do not compare (artemis is 20 % faster but varies 10.7 % between runs, against 1.7 % here).
 
