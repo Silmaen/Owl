@@ -38,9 +38,9 @@ there yet: z is the only way to order a scene.
 The 2D lights also light isometric sprites through the normal and depth atlases produced by the v0.4.0 generator; a
 global ambient tint gives day / night.
 
-## Tile-graph pathfinding (v0.4.0)
+## Tile-graph pathfinding (v0.4.0, done)
 
-Moved from the v0.8.0 navigation work: vehicles of a Transport Tycoon-like game follow a graph of tiles and tracks,
+Shipped as PATH1, user guide in [Pathfinding](../pathfinding.md). Moved from the later navigation work: vehicles of a Transport Tycoon-like game follow a graph of tiles and tracks,
 not a navigation mesh.
 
 - A* on a tile grid or on a graph built from tilemap overlays (tracks, roads), with per-edge costs and one-way edges
@@ -74,5 +74,5 @@ A seeded noise / rule fill of a tilemap region, undoable — the first consumer 
 
 ## Engine Demo demos (moved out of the engine)
 
-- Inventory demo — moved to v0.4.0 as the showcase of the new HUD widgets ([HUD system](hud-system.md))
+- Inventory demo — done in v0.4.0 as the showcase of the new HUD widgets ([HUD system](hud-system.md))
 - Enemies demo (v0.7.0) — patrol / chase enemies in Lua in `engine_demo/`; engine-side AI arrives with v0.7.0

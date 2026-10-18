@@ -210,7 +210,7 @@ S < 1 day of review, M a few days, L a week.
 
 ### Order
 
-Four tracks run in parallel; arrows are hard dependencies.
+The tracks run in parallel; arrows are hard dependencies.
 
 ```mermaid
 flowchart LR
