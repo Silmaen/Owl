@@ -16,6 +16,7 @@
 #include <cstdint>
 #include <string>
 #include <tuple>
+#include <variant>
 #include <vector>
 
 using namespace owl;
@@ -80,6 +81,32 @@ TEST(GameStateLua, setAndGetString) {
 	const auto val = scn->getGameState().get("name");
 	ASSERT_TRUE(val.has_value());
 	EXPECT_EQ(std::get<std::string>(val.value()), "hero");
+
+	core::Log::invalidate();
+}
+
+TEST(GameStateLua, aStringReadingAsANumberStaysAString) {
+	core::Log::init(core::Log::Level::Off);
+	auto scn = mkShared<scene::Scene>();
+
+	const std::string script = "function on_create()\n"
+							   "  gamestate.set('cells', '0110')\n"
+							   "  gamestate.set('count', 12)\n"
+							   "end\n";
+	const std::vector<uint8_t> data(script.begin(), script.end());
+
+	const ScriptInstance inst;
+	inst.setScene(scn.get());
+	ASSERT_TRUE(inst.createFromBuffer(data, "gs_digits", 1));
+	inst.onCreate();
+
+	const auto cells = scn->getGameState().get("cells");
+	ASSERT_TRUE(cells.has_value());
+	ASSERT_TRUE(std::holds_alternative<std::string>(cells.value()));
+	EXPECT_EQ(std::get<std::string>(cells.value()), "0110");
+	const auto count = scn->getGameState().get("count");
+	ASSERT_TRUE(count.has_value());
+	EXPECT_TRUE(std::holds_alternative<int64_t>(count.value()));
 
 	core::Log::invalidate();
 }

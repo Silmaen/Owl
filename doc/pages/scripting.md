@@ -333,7 +333,9 @@ returns the cells as `{x1, y1, x2, y2, ...}` and the cost in cells, `path.releas
 
 ### `gamestate`
 
-The game state persists across scene transitions and is included in save files.
+The game state persists across scene transitions and is included in save files. A value keeps its Lua type
+(integer, number, string, boolean): a string that reads as a number, such as `"0110"`, stays a string, in the game
+state as in `settings.set`.
 
 ### `save`
 
