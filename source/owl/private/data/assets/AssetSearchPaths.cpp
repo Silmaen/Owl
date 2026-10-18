@@ -25,4 +25,13 @@ auto getAssetSearchPaths() -> std::vector<std::filesystem::path> {
 	return paths;
 }
 
+auto isInDirectory(const std::filesystem::path& iPath, const std::filesystem::path& iDirectory) -> bool {
+	if (iPath.empty() || iDirectory.empty())
+		return false;
+	const auto file = std::filesystem::absolute(iPath).lexically_normal();
+	const auto directory = std::filesystem::absolute(iDirectory).lexically_normal();
+	const auto relative = file.lexically_relative(directory);
+	return !relative.empty() && *relative.begin() != "..";
+}
+
 }// namespace owl::data::assets

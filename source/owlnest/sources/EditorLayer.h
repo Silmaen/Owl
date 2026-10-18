@@ -406,9 +406,17 @@ public:
 
 	/**
 	 * @brief
-	 *  Close project.
+	 *  Close the project: its documents close (unsaved changes go to recovery), its asset directory leaves the
+	 *  search paths and everything loaded from it is unloaded (textures, sounds, fonts, HUDs, previews).
 	 */
 	void closeProject();
+
+	/**
+	 * @brief
+	 *  Switch project at the start of the next frame, when no widget of the current one draws a texture any more.
+	 * @param[in] iDir The project directory to open, empty to close the project only.
+	 */
+	void requestProjectSwitch(const std::filesystem::path& iDir);
 
 	/**
 	 * @brief
@@ -930,6 +938,8 @@ private:
 	 * queue at the start of `onImGuiRender` before any panel is rendered.
 	 */
 	std::vector<std::filesystem::path> m_deferredOpenPaths;
+	/// Project to switch to at the start of the next frame (empty path: close only), set by `requestProjectSwitch`.
+	std::optional<std::filesystem::path> m_pendingProjectSwitch;
 	/// The currently loaded project (or empty when no project is open).
 	Project m_project;
 	/// Persistent editor preferences (window layout, recent projects, etc.).

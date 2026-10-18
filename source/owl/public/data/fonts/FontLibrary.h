@@ -9,6 +9,8 @@
 #pragma once
 
 #include "data/fonts/Font.h"
+#include <cstddef>
+#include <filesystem>
 #include <list>
 #include <string>
 #include <unordered_map>
@@ -79,6 +81,14 @@ public:
 	 * @return True when the font was loaded and has been rebuilt.
 	 */
 	auto reloadFont(const std::string& iName, const FontSettings& iSettings) -> bool;
+
+	/**
+	 * @brief
+	 *  Forget every loaded font whose file lies in a directory (a project being closed); the default font stays.
+	 * @param[in] iDirectory The directory.
+	 * @return The number of fonts forgotten.
+	 */
+	auto unloadFontsFrom(const std::filesystem::path& iDirectory) -> size_t;
 
 	/**
 	 * @brief

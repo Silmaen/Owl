@@ -13,14 +13,21 @@
 
 #include <app/Application.h>
 #include <input/KeyCodes.h>
+#include <renderer/Renderer.h>
 #include <renderer/TextureDecoder.h>
+#include <renderer/gpu/Texture.h>
 #include <scene/Entity.h>
+#include <scene/component/SpriteRenderer.h>
 #include <scene/component/Transform.h>
 
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
+#include <format>
+#include <fstream>
 #include <string>
+#include <tuple>
+#include <vector>
 
 using namespace owl;
 using namespace owl::nest;
@@ -269,6 +276,45 @@ TEST(SessionStatistics, AveragesTheFrames) {
 	EXPECT_DOUBLE_EQ(statistics.lastFrameMs, 4.0);
 	EXPECT_EQ(statistics.lastDrawCalls, 5u);
 	EXPECT_DOUBLE_EQ(PlayReport{}.getMeanFrameMs(), 0.0);
+}
+
+TEST_F(HeadlessSessionTest, ProjectSwitchDrawsTheTexturesOfTheNewProject) {
+	const auto root = std::filesystem::temp_directory_path() / "owl_session_project_switch";
+	std::filesystem::remove_all(root);
+	const auto makeProject = [&root](const std::string& iName, const uint32_t iSide) -> std::filesystem::path {
+		const auto dir = root / iName;
+		std::filesystem::create_directories(dir / "textures");
+		std::filesystem::create_directories(dir / "scenes");
+		std::ofstream{dir / "owl_project.yml"} << std::format("OwlProject:\n  name: {}\n", iName);
+		std::ofstream{dir / "scenes" / "main.owl"}
+				<< "Scene: main\nEntities:\n  - Entity: 42\n    Tag:\n      tag: Crate\n"
+				   "    Transform:\n      translation: [0, 0, 0]\n"
+				   "    SpriteRenderer:\n      color: [1, 1, 1, 1]\n"
+				   "      texture: nam:textures/crate.png\n";
+		const std::vector<uint8_t> pixels(static_cast<size_t>(iSide) * iSide * 4, 0xff);
+		std::ignore = renderer::writeImagePng(dir / "textures" / "crate.png", {iSide, iSide}, pixels);
+		return dir;
+	};
+	const auto spriteSide = [](const EditorSession& iSession) -> uint32_t {
+		const auto scene = iSession.getSessionScene();
+		for (const auto entity: scene->registry.view<scene::component::SpriteRenderer>()) {
+			if (const auto& texture = scene->registry.get<scene::component::SpriteRenderer>(entity).texture; texture)
+				return texture->getSize().x();
+		}
+		return 0;
+	};
+	const auto first = makeProject("first", 2);
+	const auto second = makeProject("second", 4);
+	{
+		HeadlessSession session;
+		ASSERT_TRUE(session.loadScene(first / "scenes" / "main.owl").has_value());
+		EXPECT_EQ(spriteSide(session), 2u);
+		ASSERT_TRUE(session.loadScene(second / "scenes" / "main.owl").has_value());
+		EXPECT_EQ(session.getProjectDirectory(), std::filesystem::weakly_canonical(second));
+		EXPECT_EQ(spriteSide(session), 4u);
+	}
+	EXPECT_FALSE(renderer::Renderer::getTextureLibrary().exists("nam:textures/crate.png"));
+	std::filesystem::remove_all(root);
 }
 
 TEST(SessionProject, FindsTheProjectOfAScene) {

@@ -19,9 +19,11 @@
 #include "document/TilesetDocument.h"
 
 #include <app/EngineContext.h>
+#include <gui/FontPreviewCache.h>
 #include <platform/AtomicFile.h>
 #include <scene/HudLibrary.h>
 #include <scene/SceneSerializer.h>
+#include <scene/ScreenTransition.h>
 #include <scene/SettingsManager.h>
 
 #include <cstddef>
@@ -657,8 +659,10 @@ void EditorLayer::newProject() {
 void EditorLayer::openProject() {
 	const auto dir = platform::FileDialog::pickFolder();
 	if (!dir.empty())
-		openProject(dir);
+		requestProjectSwitch(dir);
 }
+
+void EditorLayer::requestProjectSwitch(const std::filesystem::path& iDir) { m_pendingProjectSwitch = iDir; }
 
 void EditorLayer::openProject(const std::filesystem::path& iDir) {
 	const auto configFile = iDir / "owl_project.yml";
@@ -732,23 +736,37 @@ void EditorLayer::saveProjectAs() {
 		OWL_CORE_ERROR("Save Project As: copy failed — {}.", ec.message())
 		return;
 	}
-	closeProject();
-	openProject(dest);
+	requestProjectSwitch(dest);
 }
 
 void EditorLayer::closeProject() {
 	if (!m_project.isLoaded())
 		return;
-	app::Application::get().removeAssetDirectory(m_project.projectDirectory);
-	m_contentBrowser.attach();
 	saveProjectSession();
+	if (auto* playing = findPlayingSceneDocument(); playing != nullptr) {
+		if (m_playDriver.isActive() && playing == mp_playDocument)
+			finishBoundedPlay(/*iInterrupted=*/true);
+		playing->onSceneStop();
+	}
 	m_recovery.autosave(m_documents);
 	m_recovery.setDirectory({});
+	// The documents hold the project's scenes, textures and framebuffers: none may outlive the project.
+	m_pendingCloseDocId = core::UUID{0};
+	m_deferredCloseIds.clear();
+	m_deferredOpenPaths.clear();
+	m_documents.clear();
+	m_contentBrowser.detach();
+	gui::FontPreviewCache::get().clear();
+	auto& app = app::Application::get();
+	app.getEngineContext().getScreenTransition().reset();
+	app.removeAssetDirectory(m_project.projectDirectory);
 	m_project = {};
-	app::Application::get().getEngineContext().setSimulationSettings(m_project.simulation);
-	std::ignore = app::Application::get().getEngineContext().loadActionMap({});
-	app::Application::get().getEngineContext().setDefaultHud(m_project.defaultHud);
+	app.getEngineContext().setSimulationSettings(m_project.simulation);
+	std::ignore = app.getEngineContext().loadActionMap({});
+	app.getEngineContext().setDefaultHud(m_project.defaultHud);
 	loadGameSettings(m_project.name, m_project.projectDirectory);
+	newScene();
+	m_contentBrowser.attach();
 	refreshWindowTitle();
 }
 
