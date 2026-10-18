@@ -42,8 +42,8 @@ argument. The two v1.0 showcase games (one 2D, one 3D) are picked from this list
 Feasibility checked against `main` on 2026-10-18 (the bindings of `LuaBindings.cpp`, the components of
 `source/owl/public/scene/component/`, the Engine Demo). All five can be made with the v0.4.0 engine: Breakout,
 Sokoban and Mini Transport Tycoon need no engine change, Wolfenstein mini needs art, Mini Minecraft two small engine
-fixes (see [Gaps](#sample-games-gaps)). The roadmap keeps the first three in v0.5.0 and the other two in v0.6.0;
-pulling them forward is the maintainer's call.
+fixes (see [Gaps](#sample-games-gaps)). Breakout, Sokoban and a Wolfenstein mini without
+combat ship with v0.4.0; Mini Transport Tycoon stays in v0.5.0, Mini Minecraft in v0.6.0.
 
 Common to every game:
 
@@ -130,26 +130,29 @@ Common to every game:
 
 ### Wolfenstein mini
 
-| Item     | Plan                                                                                                                                                                                                                                |
-|----------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Play     | 3 levels of 32×32; guards that patrol, chase and shoot; pistol and machine gun; keys, treasure, food, ammo                                                                                                                          |
-| Win/lose | The elevator of level 3 / health 0 with no life left; score, kills and secrets per level                                                                                                                                            |
-| Controls | `move` (walk, turn), Ctrl, left click or pad RT fires, `interact` opens doors and pushwalls, 1, 2 or pad X weapon                                                                                                                   |
-| Scenes   | `title`, `level_1` to `level_3` (`RendererRaycast`), `settings`, `victory`, `game_over`                                                                                                                                             |
-| Entities | Player (`PhysicBody`), wall `Tilemap`, `RaycastDoor` (locked: empty `interactionAction`, `door.activate` with the key), `RaycastPushWall`, pick-ups, guards (`AnimatedSpriteRenderer` billboards, `PhysicBody`)                     |
-| Lua      | `player.lua`, `weapon.lua` (hitscan: grid DDA to the first wall, nearest guard in a cone), `guard.lua` (states, 8 view frames through `isometric.set_sprite_frame`, sight by DDA, chase with `path.find`), `pickup.lua`, `exit.lua` |
-| HUD      | `huds/play.owlhud`: health, ammo, lives, score, keys, weapon view, face                                                                                                                                                             |
-| Art      | Guards and the weapon view to draw (G11); the walls and props of `textures/wolf3d/`, reworked by the maintainer, are kept                                                                                                           |
-| Saves    | F6 / F9 slot as in the demo, autosave at each level start                                                                                                                                                                           |
+An exploration game first: the guards, the weapons and the combat come in a later release, once their art exists.
+
+| Item     | Plan                                                                                                                                                                  |
+|----------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Play     | 3 levels of 32×32 to explore, no guards nor weapon yet (they come later): treasure, food, keys, secret pushwalls                                                      |
+| Win/lose | The elevator of level 3; per level a tally of score, items found, secrets found and map explored, in %                                                                |
+| Controls | `move` (walk, turn), `interact` opens doors and pushwalls, Tab the full map; keyboard, mouse and gamepad                                                              |
+| Scenes   | `title`, `level_1` to `level_3` (`RendererRaycast`), `tally` (end of level), `settings`, `victory`                                                                    |
+| Entities | Player (`PhysicBody`), wall `Tilemap`, `RaycastDoor` (locked: empty `interactionAction`, `door.activate` with the key), `RaycastPushWall`, pick-ups                   |
+| Lua      | `player.lua`, `pickup.lua`, `secret.lua` (counts each pushwall once), `explore.lua` (cells seen over walkable cells, from the fog of `raycast_level.lua`), `exit.lua` |
+| HUD      | `huds/play.owlhud`: score, keys, items %, secrets %, explored %, minimap; `huds/tally.owlhud`                                                                         |
+| Art      | The walls and props of `textures/wolf3d/`, reworked by the maintainer; guards and the weapon view later (G11)                                                         |
+| Saves    | F6 / F9 slot as in the demo, autosave at each level start, best tally per level                                                                                       |
 
 - Reuse: `scripts/raycast/raycast_player.lua`, `scripts/raycast/raycast_level.lua` (DDA over the wall grid, fog
   minimap), `scripts/raycast/pickup.lua`, `scripts/raycast/inventory.lua`, `scripts/raycast/raycast_exit.lua`,
   `huds/raycast.owlhud`, `tilesets/raycast_w3d_walls.owltileset`, `sounds/raycast/`, scenario
   `raycast_level.owltest`.
-- Gaps: G11 (art, blocking), G10 (line of sight), G7 (weapon view frames), G1 (dropped ammo from a pool), G9.
-- Scenarios: `wolf_shoot` (face a guard, fire, `wolf_kills` equals 1), `wolf_locked_door` (closed without the key,
-  opens with it), `wolf_hurt` (in a guard's sight, `wolf_health` drops), `wolf_exit`.
-- Size: **M**, about 2 weeks plus the art.
+- Gaps: G9; later, with combat: G11 (art), G10 (line of sight), G7 (weapon view frames), G1 (dropped ammo).
+- Scenarios: `wolf_pickup` (walk onto treasure, `wolf_items` rises), `wolf_locked_door` (closed without the key,
+  opens with it), `wolf_secret` (push a secret wall, `wolf_secrets` equals 1), `wolf_explore` (`wolf_explored` rises
+  while walking), `wolf_exit` (the tally scene opens).
+- Size: **M**, about 1 week without combat.
 
 ### Mini Minecraft
 
@@ -176,13 +179,13 @@ Common to every game:
 
 ### Order
 
-| Step | Game                  | Why                                                                                             |
-|------|-----------------------|-------------------------------------------------------------------------------------------------|
-| 1    | Breakout              | Smallest, no blocking gap; sets up `samples/`, the scenarios and the export test for the others |
-| 2    | Sokoban               | No blocking gap; proves level editing in Owl Nest, undo and saves                               |
-| 3    | Mini Transport Tycoon | Owl's main argument; cleaner once G1, G3 and G8 are fixed                                       |
-| 4    | Mini Minecraft        | After a small engine PR for G2 and G13                                                          |
-| 5    | Wolfenstein mini      | Waits for its art (G11)                                                                         |
+| Step | Game                  | Release | Why                                                                                                |
+|------|-----------------------|---------|----------------------------------------------------------------------------------------------------|
+| 1    | Breakout              | v0.4.0  | Smallest, no blocking gap; sets up `samples/`, the scenarios and the export test for the others    |
+| 2    | Wolfenstein mini      | v0.4.0  | Exploration without combat (score, items, secrets, map explored); combat once its art exists (G11) |
+| 3    | Sokoban               | v0.4.0  | No blocking gap; proves level editing in Owl Nest, undo and saves                                  |
+| 4    | Mini Transport Tycoon | v0.5.0  | Owl's main argument; cleaner once G1, G3 and G8 are fixed                                          |
+| 5    | Mini Minecraft        | v0.6.0  | After a small engine PR for G2 and G13                                                             |
 
 ## Layout
 
@@ -225,7 +228,7 @@ test/unit/scenarios/<game>_*.owltest  scenario tests
 | G8  | No pause nor time scale in Lua (scene clock, physics)                                                               | S    | Tycoon, all (pause)                      | No: Lua scales its own delta, bodies stopped by hand             |
 | G9  | No music and effects mixing: `SoundSource` loops ignore `volume_music` and have no Lua volume                       | S    | All                                      | No: master volume only                                           |
 | G10 | No line-of-sight or ray query in Lua                                                                                | S    | Wolfenstein                              | No: grid DDA in Lua, as in `raycast_level.lua`                   |
-| G11 | No guard nor weapon-view sprites                                                                                    | M    | Wolfenstein                              | **Yes** (content): draw them                                     |
+| G11 | No guard nor weapon-view sprites                                                                                    | M    | Wolfenstein                              | No: exploration first, combat later                              |
 | G12 | Owl Nest finds `engine_demo` only, and only `engine_demo/` is installed                                             | S    | All                                      | No: File > Open project                                          |
 | G13 | `VoxelPlayer` edits fire only with a captured cursor: a gamepad player and headless scenarios cannot break or place | S    | Minecraft                                | **Yes**: gamepad rule and CI scenario                            |
 | G14 | Lua cannot switch the tilemap asset of an entity: one scene per level                                               | S    | Sokoban, Breakout                        | No: duplicate the level scene                                    |
