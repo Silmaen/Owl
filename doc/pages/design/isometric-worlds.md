@@ -288,6 +288,39 @@ The release ships when these hold, whatever the date:
 - Every authored object of this release has full editor support; budgets above in `test/bench/baseline/`; coverage not
   lower than at v0.3.0
 
+## Release status
+
+Checked on 2026-10-18 against `main` at 41de054d (release, Vulkan on lavapipe, `linux-clang-debug`, `linux-include-check`).
+
+| Exit criterion                                                                    | Status       | Evidence                                                                                                                                                 |
+|-----------------------------------------------------------------------------------|--------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Tilemaps without truncation, 0 byte uploaded when static, 1024² load              | Met          | `tilemap/static/*`, `tilemap/load/1024x1024` (11.8 ms) in the baseline                                                                                   |
+| `iso_town` in editor and runner, zero VUID on lavapipe, image tests green         | Met (runner) | 0 VUID on the nine Engine Demo scenes (`--frame-bench --backend vulkan --validation`); `owl_render_tests_UTests` and `iso_town*` scenarios pass; editor play to check by hand |
+| Vehicles on the road graph, sort-key order, 1 000-row list draws visible rows     | Met          | `iso_town_routes` scenario, `path/*` benches, `hud` bench with a 1000-row list                                                                           |
+| Picking on the 19 slopes, gizmo on the isometric axes                             | Not verified | `iso/pick/256x256_hills` bench and unit tests exist; gizmo needs a manual look                                                                           |
+| One `.owlhud` over 2D, raycast, voxel, isometric at three resolutions             | Met          | no `RendererTag: ui` in `engine_demo/`, `DemoHudLayout_test`, HUD image tests; window drag, close and stack by hand                                       |
+| Text never stretched, text beyond U+00FF                                          | Met          | `FontUnicode_test`, `hud_text` render test                                                                                                               |
+| Menus and games with a gamepad only, action map edits undoable                    | Not verified | `main_menu_focus`, `platformer_gamepad` scenarios pass; real gamepad test is manual                                                                       |
+| Inventory demo with a gamepad, file dialogues through the portal                  | Not verified | `portal = True` in `conanfile.py`; GNOME and KDE check is manual                                                                                         |
+| MCP: every command a tool, create then undo, 401 / 403 / 413, off by default, TSan | Met (TSan not run) | `McpHttp_test`, `McpDispatcher_test`; the thread sanitizer run belongs to CI                                                                       |
+| Editor support for every authored object                                          | Not verified | manual pre-merge check of `ongoing-quality.md`                                                                                                           |
+| Budgets in `test/bench/baseline/`                                                 | Partly met   | see below                                                                                                                                                |
+| Coverage not lower than v0.3.0                                                    | Not verified | 86.2 % lines, 50.3 % branches (engine without backends, `gcovr.cfg`); no v0.3.0 figure is recorded, the TeamCity history is the reference                 |
+
+Also green: every ctest of `linux-clang-debug` (53), `IncludeCheck linux-include-check`.
+
+Budget rows without a baseline entry: `MCP tools/call round trip` (no bench case), `hud/frame/1000_row_list` (documented in
+`test/bench/README.md`, absent from the baseline), `path/*` (absent from the baseline). Every other row has a case and an
+entry, and the stored medians are inside their budgets (zoom ×4 frame 3.3 ms for 4 ms).
+
+Left to the maintainer:
+
+- Manual tests: Owl Nest GUI session (`iso_town`, HUD editor, action map editor, MCP on), gamepad on the menus and the
+  samples, file dialogues on GNOME and KDE, gizmo on the isometric axes.
+- Refresh the bench baseline from five runs on hephaistos and add the missing entries (and an MCP round-trip case).
+- Read the v0.3.0 coverage figure on TeamCity and compare with 86.2 %.
+- Version, date and the changelog sections of the release.
+
 [done]: https://img.shields.io/badge/-Done-2ea043?style=flat-square
 
 [progress]: https://img.shields.io/badge/-In_Progress-d29922?style=flat-square
