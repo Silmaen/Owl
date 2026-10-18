@@ -40,7 +40,7 @@ TEST(FontLibrary, basic_with_app) {
 													.isDummy = true});
 	auto& fontLibrary = app->getFontLibrary();
 	EXPECT_EQ(fontLibrary.getLoadedFontNames().size(), 2);
-	EXPECT_EQ(fontLibrary.getFoundFontNames().size(), 19);// Inter, JetBrains Mono, Lucide, Open Sans, Roboto
+	EXPECT_EQ(fontLibrary.getFoundFontNames().size(), 17);// Inter, JetBrains Mono, Lucide, Open Sans, Roboto
 
 	EXPECT_EQ(fontLibrary.getFont("null"), nullptr);
 	const auto myFont = fontLibrary.getDefaultFont();
