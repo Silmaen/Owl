@@ -22,7 +22,7 @@ function on_create()
     mouse_label_id = scene.find_entity("MousePosLabel")
 
     -- Hide the legacy ContinueButton — the primary PlayButton now toggles
-    -- between "Démarrer" and "Continuer" depending on whether an in-game
+    -- between "Start" and "Continue" depending on whether an in-game
     -- pause snapshot exists in gamestate.
     if continue_id ~= 0 then
         ui.set_visible(continue_id, false)
@@ -33,9 +33,9 @@ function on_create()
     if play_id ~= 0 then
         local has_resume = gamestate.get("has_continue", false)
         if has_resume then
-            ui.set_text(play_id, "Continuer")
+            ui.set_text(play_id, "Continue")
         else
-            ui.set_text(play_id, "Démarrer")
+            ui.set_text(play_id, "Start")
         end
     end
 
@@ -114,7 +114,7 @@ function on_update(dt)
 end
 
 function on_play_clicked()
-    -- Either resume a paused session ("Continuer") or start a fresh run ("Démarrer").
+    -- Either resume a paused session ("Continue") or start a fresh run ("Start").
     local has_resume = gamestate.get("has_continue", false)
     if has_resume then
         local target = gamestate.get("continue_scene", "scenes/world_map.owl")

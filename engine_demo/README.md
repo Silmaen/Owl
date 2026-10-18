@@ -15,7 +15,7 @@ The hub is a small top-down RPG village with four houses, one per level (labels 
 completing it marks the level done (`level_<name>_done` in gamestate), returns to the hub and bumps the hub counter
 "Levels completed: n / 4". When all four are done the **victory portal** (a purple teleporter) appears and answers.
 
-1. **Main Menu** → press **Démarrer** to begin a new run, or **Continuer** if a pause snapshot exists. **O** (left
+1. **Main Menu** → press **Start** to begin a new run, or **Continue** if a pause snapshot exists. **O** (left
    bumper) opens the isometric town directly.
 2. **Hub** (`world_map.owl`) — WASD to move (the hero has a walk cycle and mirrors toward the direction of motion),
    **E** at a door to enter a level. Hazards: the lava crater in the north west forest is **instant death**, the river
@@ -39,8 +39,8 @@ completing it marks the level done (`level_<name>_done` in gamestate), returns t
 6. **Voxel terrain** (`voxel_terrain.owl`) — WASD walk, mouse look, Space jump, Shift run (double-tap Space flies).
    **Objective: walk 100 blocks away from the landing point** (the HUD shows the distance). Escape returns to the
    hub without completing.
-7. **ESC** in the hub or the platformer pauses the run and returns to the Main Menu, where **Démarrer** becomes
-   **Continuer** and resumes exactly where you left off.
+7. **ESC** in the hub or the platformer pauses the run and returns to the Main Menu, where **Start** becomes
+   **Continue** and resumes exactly where you left off.
 
 ## Scenes
 

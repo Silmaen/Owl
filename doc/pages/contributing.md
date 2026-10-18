@@ -5,6 +5,12 @@
 This page is the contributor guide: setup, conventions and the checks a change must pass. The root
 `CONTRIBUTING.md` only points here.
 
+## How Owl Engine is developed
+
+Owl Engine is developed by one maintainer with Claude Code as a development tool, used under supervision: every
+change is reviewed and owned by the maintainer, and goes through the same strict CI as any contribution (unit and
+scenario tests on Linux x64/arm64 and Windows, sanitizers, clang-tidy, include checks and performance budgets).
+
 ## Getting started
 
 1. Fork the repository and clone your fork

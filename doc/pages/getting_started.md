@@ -2,8 +2,8 @@
 
 [TOC]
 
-Welcome to **Owl**, a C++23 game engine with a scene editor (Owl Nest), Lua scripting,
-2D rendering, physics, audio, packaging, and more.
+Welcome to **Owl Engine**, a C++23 game engine with a scene editor (Owl Nest), Lua scripting,
+rendering styles mixed in one game (2D, raycast, voxel, isometric, 3D), physics, audio, packaging, and more.
 
 This page is your entry point. It points to the in-depth guides bundled with the editor
 and accessible from the **Help** ribbon button or by pressing `F1`.
@@ -17,7 +17,7 @@ and accessible from the **Help** ribbon button or by pressing `F1`.
    docked around a central area. All panels are detachable — drag the title bar to
    tear them out into a floating window.
 
-On Linux, Owl runs natively under Wayland or under X11. Wayland is picked when available;
+On Linux, Owl Engine runs natively under Wayland or under X11. Wayland is picked when available;
 set `OWL_WINDOW_PLATFORM=x11` to use X11 instead (needed for panels torn out into separate
 desktop windows, which GLFW cannot place under Wayland). See [Building](building.md).
 
