@@ -211,7 +211,7 @@ void EditorLayer::createProject(const panel::NewProjectRequest& iRequest) {
 			return;
 		}
 	}
-	openProject(dir);
+	requestProjectSwitch(dir);
 }
 
 auto EditorLayer::findDocument(const DocumentType iType, const std::filesystem::path& iPath) const -> Document* {

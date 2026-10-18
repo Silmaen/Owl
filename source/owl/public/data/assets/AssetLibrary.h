@@ -14,6 +14,7 @@
 
 #include <algorithm>
 #include <concepts>
+#include <cstddef>
 #include <filesystem>
 #include <optional>
 #include <string>
@@ -205,6 +206,41 @@ public:
 	void forEach(const Visitor& iVisitor) const {
 		for (const auto& [name, asset]: m_assets) iVisitor(name, asset.get());
 	}
+
+	/**
+	 * @brief
+	 *  Forget the asset of the given name; holders keep their own reference, the library loads it again next time.
+	 * @param[in] iName Name of the asset.
+	 * @return True when the asset was in the library.
+	 */
+	auto remove(const std::string& iName) -> bool { return m_assets.erase(iName) > 0; }
+
+	/**
+	 * @brief
+	 *  Forget every asset matching a predicate.
+	 * @tparam Predicate Callable taking `(const std::string& name, const shared<DataType>& asset)`, returning bool.
+	 * @param[in] iPredicate True for the assets to forget.
+	 * @return The number of assets forgotten.
+	 */
+	template<typename Predicate>
+	auto removeIf(const Predicate& iPredicate) -> size_t {
+		return static_cast<size_t>(std::erase_if(m_assets, [&iPredicate](const auto& iEntry) -> bool {
+			return iPredicate(iEntry.first, iEntry.second.get());
+		}));
+	}
+
+	/**
+	 * @brief
+	 *  Forget every asset.
+	 */
+	void clear() { m_assets.clear(); }
+
+	/**
+	 * @brief
+	 *  Get the number of assets in the library.
+	 * @return The asset count.
+	 */
+	[[nodiscard]] auto size() const -> size_t { return m_assets.size(); }
 
 	/**
 	 * @brief

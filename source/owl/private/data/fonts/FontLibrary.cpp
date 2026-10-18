@@ -10,8 +10,11 @@
 #include "data/fonts/FontLibrary.h"
 
 #include "app/Application.h"
+#include "data/assets/AssetSearchPaths.h"
 #include "data/assets/pack/PackExtractor.h"
 
+#include <cstddef>
+#include <filesystem>
 #include <string>
 #include <string_view>
 
@@ -126,6 +129,13 @@ auto FontLibrary::reloadFont(const std::string& iName, const FontSettings& iSett
 	}
 	it->second->reload(iSettings);
 	return true;
+}
+
+auto FontLibrary::unloadFontsFrom(const std::filesystem::path& iDirectory) -> size_t {
+	return static_cast<size_t>(std::erase_if(m_fonts, [this, &iDirectory](const auto& iEntry) -> bool {
+		const auto& [name, font] = iEntry;
+		return name != m_defaultFontName && font != nullptr && assets::isInDirectory(font->getPath(), iDirectory);
+	}));
 }
 
 auto FontLibrary::getLoadedFontNames() const -> std::list<std::string> {

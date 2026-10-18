@@ -1071,7 +1071,7 @@ The workflow commands live in the **File** screen (project), the **Home** tab (e
 | Save Project     | Save project, as...       | Write the project settings to YAML                     |
 | Package the game | Package the game          | Scan and pack all project assets (async, see below)    |
 | Settings         | Editor / Project / Engine | Editor settings, project metadata, engine parameters   |
-| Close Project    | Close project             | Unload the project and clear the asset browser         |
+| Close Project    | Close project             | Close its documents and unload all its assets          |
 | Recent projects  | Right column              | The recently opened projects (up to 10), click to open |
 
 **Home** — edit, create and project:
@@ -1102,6 +1102,21 @@ project**, **Open project**, **Getting started**, **Engine Demo**, the sample ga
 sample card shows when a `engine_demo/` sits next to `bin/` in the archive, or at the root of the sources
 (`panel::findSampleProject`, from the asset folders upwards); the sample games are the `samples/<game>/` projects
 beside it (`panel::findSampleGames`), one row each.
+
+**Switching project.** Opening a project closes the current one first, and closing a project unloads everything
+of it, so two projects that use the same asset names (`nam:textures/…`, `huds/…`, a font name) never show each
+other's files. The switch runs at the start of the next frame, once no widget draws the old textures. Closing a
+project:
+
+- stops Play, saves the session (open tabs), puts unsaved changes in recovery (offered when the project opens
+  again) and closes every document, leaving one empty scene;
+- removes the project folder from the asset folders (`Application::removeAssetDirectory`), which unloads what was
+  read from it (`Application::unloadAssetsFrom`): textures, sounds and fonts whose file lies in it leave their
+  libraries, the loaded HUDs and the voxel meshes are dropped;
+- clears the content browser previews, the font previews and any screen transition in progress.
+
+Editor resources and engine assets stay loaded. GPU resources go when their last holder does, through the Vulkan
+deferred release.
 
 **Async operations.** Pack Game, Pack Scene, Open Scene, and Save Scene all run off the
 main thread via a progress modal (`AsyncProgressModal`). Pack Game additionally runs a

@@ -43,9 +43,11 @@
 #include <chrono>
 #include <cstdint>
 #include <cstdlib>
+#include <filesystem>
 #include <format>
 #include <fstream>
 #include <functional>
+#include <optional>
 #include <sstream>
 #include <string_view>
 #include <tuple>
@@ -743,6 +745,13 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 
 	std::ignore = m_actionRegistry.dispatchImGuiChords();
 
+	if (auto project = std::exchange(m_pendingProjectSwitch, std::nullopt); project.has_value()) {
+		if (project->empty())
+			closeProject();
+		else
+			openProject(*project);
+	}
+
 	if (!m_deferredCloseIds.empty()) {
 		auto ids = std::move(m_deferredCloseIds);
 		m_deferredCloseIds.clear();
@@ -974,7 +983,7 @@ void EditorLayer::renderBackstage() {
 			.sampleGames = m_sampleGames,
 			.newProject = [this]() -> void { newProject(); },
 			.openProject = [this]() -> void { openProject(); },
-			.openRecent = [this](const std::filesystem::path& iPath) -> void { openProject(iPath); },
+			.openRecent = [this](const std::filesystem::path& iPath) -> void { requestProjectSwitch(iPath); },
 			.forgetRecent = [this](const std::filesystem::path& iPath) -> void {
 				m_settings.removeRecentProject(iPath);
 			},
@@ -990,7 +999,7 @@ void EditorLayer::renderBackstage() {
 				else
 					m_helpPanel.open(iPage);
 			},
-			.closeProject = [this]() -> void { closeProject(); },
+			.closeProject = [this]() -> void { requestProjectSwitch({}); },
 			.exit = []() -> void { app::Application::get().close(); }};
 	m_backstage.onImGuiRender(context);
 }

@@ -22,6 +22,7 @@
 #include "sound/SoundAPI.h"
 #include "window/Window.h"
 
+#include <cstddef>
 #include <cstdint>
 #include <filesystem>
 #include <list>
@@ -296,10 +297,21 @@ public:
 
 	/**
 	 * @brief
-	 *  Remove an asset directory by path.
+	 *  Remove an asset directory by path, and unload what was loaded from it (see `unloadAssetsFrom`).
 	 * @param[in] iPath The path of the asset directory to remove.
 	 */
 	void removeAssetDirectory(const std::filesystem::path& iPath);
+
+	/**
+	 * @brief
+	 *  Forget the assets loaded from a directory, so another one serving the same names is read afresh.
+	 * The textures, sounds and fonts whose file lies in the directory leave their libraries; the loaded HUDs and the
+	 * voxel meshes, keyed by relative paths and entity ids, are dropped whole. Holders keep their own references;
+	 * GPU resources go when the last one does, through the backend's deferred release.
+	 * @param[in] iDirectory The asset directory.
+	 * @return The number of textures, sounds and fonts forgotten.
+	 */
+	auto unloadAssetsFrom(const std::filesystem::path& iDirectory) -> size_t;
 
 	/**
 	 * @brief

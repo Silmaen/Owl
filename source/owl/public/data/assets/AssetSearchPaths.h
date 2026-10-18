@@ -28,4 +28,14 @@ namespace owl::data::assets {
  */
 [[nodiscard]] OWL_API auto getAssetSearchPaths() -> std::vector<std::filesystem::path>;
 
+/**
+ * @brief
+ *  Check whether a file lies inside a directory, at any depth (paths compared absolute and lexically normalized).
+ * @param[in] iPath The file.
+ * @param[in] iDirectory The directory.
+ * @return True when the file is the directory or below it; false for an empty path or directory.
+ */
+[[nodiscard]] OWL_API auto isInDirectory(const std::filesystem::path& iPath, const std::filesystem::path& iDirectory)
+		-> bool;
+
 }// namespace owl::data::assets

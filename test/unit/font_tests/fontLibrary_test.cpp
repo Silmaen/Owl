@@ -11,6 +11,12 @@
 #include <app/Application.h>
 #include <data/fonts/FontLibrary.h>
 
+#include <algorithm>
+#include <cstddef>
+#include <filesystem>
+#include <string>
+#include <tuple>
+
 using namespace owl::data::fonts;
 using namespace owl;
 using namespace owl::core;
@@ -61,6 +67,40 @@ TEST(FontLibrary, basic_with_app) {
 	EXPECT_NEAR(uv.max().y(), 0.71436, 0.001);
 	EXPECT_NEAR(myFont->getAdvance('a', 'b'), 0.408, 0.001);
 
+	Application::invalidate();
+	app.reset();
+	Log::invalidate();
+}
+
+TEST(FontLibrary, UnloadFontsFromAProjectDirectory) {
+	Log::init(Log::Level::Off);
+	auto app = owl::mkShared<Application>(AppParams{.name = "fontUnload",
+													.renderer = renderer::gpu::RenderAPI::Type::Null,
+													.hasGui = false,
+													.isDummy = true});
+	const auto project = std::filesystem::temp_directory_path() / "owl_font_unload_test";
+	std::filesystem::remove_all(project);
+	std::filesystem::create_directories(project / "fonts");
+	std::filesystem::copy_file(owl::test::getRootPath() / "engine_assets" / "fonts" / "Inter-Regular.ttf",
+							   project / "fonts" / "ProjectOnlyFont.ttf");
+	app->addAssetDirectory({.title = "project", .assetsPath = project});
+	auto& fontLibrary = app->getFontLibrary();
+	ASSERT_NE(fontLibrary.getFont("ProjectOnlyFont"), nullptr);
+	const auto countOf = [&fontLibrary](const std::string& iName) -> size_t {
+		return static_cast<size_t>(std::ranges::count(fontLibrary.getLoadedFontNames(), iName));
+	};
+	EXPECT_EQ(countOf("ProjectOnlyFont"), 1);
+
+	EXPECT_EQ(fontLibrary.unloadFontsFrom(project), 1);
+	EXPECT_EQ(countOf("ProjectOnlyFont"), 0);
+	EXPECT_EQ(fontLibrary.unloadFontsFrom(project), 0);
+	ASSERT_NE(fontLibrary.getDefaultFont(), nullptr);
+
+	std::ignore = fontLibrary.getFont("ProjectOnlyFont");
+	app->removeAssetDirectory(project);
+	EXPECT_EQ(countOf("ProjectOnlyFont"), 0);
+
+	std::filesystem::remove_all(project);
 	Application::invalidate();
 	app.reset();
 	Log::invalidate();

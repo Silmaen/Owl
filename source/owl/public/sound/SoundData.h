@@ -85,6 +85,13 @@ public:
 
 	/**
 	 * @brief
+	 *  Get the file the sound was read from.
+	 * @return The file, empty for a sound made in memory.
+	 */
+	[[nodiscard]] auto getFile() const -> const std::filesystem::path& { return m_specification.file; }
+
+	/**
+	 * @brief
 	 *  Create a new sound data buffer base on specifications.
 	 * @param[in] iSpec The specifications of the sound.
 	 * @return Pointer to the created buffer.

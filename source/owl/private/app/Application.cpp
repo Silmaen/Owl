@@ -13,11 +13,14 @@
 #include "core/Environment.h"
 #include "core/external/yaml.h"
 #include "core/utils/StringUtils.h"
+#include "data/assets/AssetSearchPaths.h"
 #include "data/assets/pack/PackExtractor.h"
 #include "event/GamepadEvent.h"
 #include "event/MouseEvent.h"
 #include "input/Input.h"
 #include "renderer/Renderer.h"
+#include "renderer/RendererVoxel.h"
+#include "scene/HudLibrary.h"
 #include "sound/SoundSystem.h"
 #if OWL_WITH_GUI
 #include "gui/UiLayer.h"
@@ -31,7 +34,11 @@ OWL_DIAG_POP
 
 #include <atomic>
 #include <csignal>
+#include <cstddef>
 #include <cstdint>
+#include <filesystem>
+#include <string>
+#include <tuple>
 
 namespace owl::app {
 
@@ -358,6 +365,29 @@ void Application::addAssetDirectory(const AssetDirectory& iDir) {
 void Application::removeAssetDirectory(const std::filesystem::path& iPath) {
 	m_assetDirectories.remove_if([&iPath](const AssetDirectory& iDir) -> bool { return iDir.assetsPath == iPath; });
 	m_hotReload.unwatchDirectory(iPath);
+	std::ignore = unloadAssetsFrom(iPath);
+}
+
+auto Application::unloadAssetsFrom(const std::filesystem::path& iDirectory) -> size_t {
+	OWL_PROFILE_FUNCTION()
+
+	if (iDirectory.empty())
+		return 0;
+	size_t count = renderer::Renderer::getTextureLibrary().removeIf(
+			[&iDirectory](const std::string&, const shared<renderer::gpu::Texture2D>& iTexture) -> bool {
+				return iTexture != nullptr && data::assets::isInDirectory(iTexture->getPath(), iDirectory);
+			});
+	count += sound::SoundSystem::getSoundLibrary().removeIf(
+			[&iDirectory](const std::string&, const shared<sound::SoundData>& iSound) -> bool {
+				return iSound != nullptr && data::assets::isInDirectory(iSound->getFile(), iDirectory);
+			});
+	count += m_fontLibrary.unloadFontsFrom(iDirectory);
+	if (mp_engineContext) {
+		mp_engineContext->getHudLibrary().clear();
+		mp_engineContext->getVoxelMeshCache().clear();
+	}
+	OWL_CORE_INFO("Application: Unloaded {} asset(s) of {}.", count, iDirectory.string())
+	return count;
 }
 
 void Application::setHotReloadEnabled(const bool iEnabled) {
