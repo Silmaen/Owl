@@ -29,6 +29,7 @@ class TestWithParam : public ::testing::Test, public ::testing::WithParamInterfa
 #include <list>
 #include <queue>
 #include <stdexcept>
+#include <string_view>
 
 #include <entt/entt.hpp>
 
@@ -48,12 +49,15 @@ inline auto getRootPath() -> std::filesystem::path {
 	throw std::runtime_error("Unable to find source root path.");
 }
 
-inline auto getTestFilesDir() -> std::filesystem::path {
-	const std::filesystem::path rootPath = getRootPath();
-	std::filesystem::path testFilesDir = rootPath / "test" / "test_helper" / "files";
-	if (std::filesystem::exists(testFilesDir) && std::filesystem::is_directory(testFilesDir)) {
-		return testFilesDir;
+// Every fixture file of the tests lives in `test/test_helper/assets/<category>/` (category = test folder name).
+inline auto getTestAssetsPath(const std::string_view iCategory = {}) -> std::filesystem::path {
+	std::filesystem::path assetsDir = getRootPath() / "test" / "test_helper" / "assets";
+	if (!iCategory.empty()) {
+		assetsDir /= iCategory;
 	}
-	throw std::runtime_error(std::format("Test files directory not found at {}.", testFilesDir.string()));
+	if (std::filesystem::is_directory(assetsDir)) {
+		return assetsDir;
+	}
+	throw std::runtime_error(std::format("Test assets directory not found at {}.", assetsDir.string()));
 }
 }// namespace owl::test

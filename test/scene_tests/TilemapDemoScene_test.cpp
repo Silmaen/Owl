@@ -26,10 +26,10 @@ using namespace owl::scene;
 TEST(TilemapDemoScene, loadsAndExposesExpectedShape) {
 	core::Log::init(core::Log::Level::Off);
 
-	// Fixtures live under test/scene_tests/assets/ — tests must not depend on engine_demo/.
-	const auto root = owl::test::getRootPath();
-	const auto scenePath = root / "test" / "scene_tests" / "assets" / "scenes" / "tilemap_demo.owl";
-	const auto tilesetPath = root / "test" / "scene_tests" / "assets" / "tilesets" / "demo.owltileset";
+	// Fixtures live under test/test_helper/assets/scene_tests/ — tests must not depend on engine_demo/.
+	const auto fixtures = owl::test::getTestAssetsPath("scene_tests");
+	const auto scenePath = fixtures / "scenes" / "tilemap_demo.owl";
+	const auto tilesetPath = fixtures / "tilesets" / "demo.owltileset";
 	ASSERT_TRUE(std::filesystem::exists(scenePath)) << scenePath;
 	ASSERT_TRUE(std::filesystem::exists(tilesetPath)) << tilesetPath;
 

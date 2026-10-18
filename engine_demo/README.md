@@ -131,8 +131,8 @@ scaled by `volume_sfx`, the loops of `SoundSource` components are not (no catego
 
 The platformer's collectible coins are driven by an inline `AnimatedSpriteRenderer`
 component on the `platformer_atlas.png` tiles (`coin_pair.owlprefab`). The animation-clip
-regression fixture (`coin.owlanim` and its 6×3 sheet) lives with the tests, in `test/scene_tests/assets/` and
-`test/render_tests/assets/`.
+regression fixture (`coin.owlanim` and its 6×3 sheet) lives with the tests, in `test/test_helper/assets/scene_tests/` and
+`test/test_helper/assets/render_tests/`.
 
 ## Lua Scripts
 

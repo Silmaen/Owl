@@ -2,9 +2,9 @@
 # for a small fee. The headless view is 1600x960 centred on the camera at (12, 12): the centre of cell (x, y) is at pixel
 # (800 + 32 * (x - y), 480 + 16 * (x + y - 23)), 8 pixels higher per half unit of height. The trees of the fixture stand
 # in cell (8, 2) at height 0 and in cell (1, 4) at height 0.5.
-scene: assets/iso_town_small.owl
+scene: ../test_helper/assets/scenarios/iso_town_small.owl
 project: ../../engine_demo
-assets: assets
+assets: ../test_helper/assets/scenarios
 steps:
   - frames: 30
   - expect: {gamestate: town_trees_left, equals: 21}

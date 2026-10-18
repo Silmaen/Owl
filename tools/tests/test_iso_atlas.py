@@ -190,9 +190,9 @@ def test_generate_writes_the_expected_files(tmp_path: Path) -> None:
     assert "textures/iso/tiles_normal.png" in names
     assert "textures/iso/tiles_depth.png" in names
     assert "tilesets/iso_ground.owltileset" in names
-    assert "test/render_tests/assets/tilemaps/iso_test.owltilemap" in names
-    assert "test/render_tests/assets/tilemaps/iso_town_small.owltilemap" in names
-    assert "test/scenarios/assets/tilemaps/iso_town_small.owltilemap" in names
+    assert "test/render_tests/tilemaps/iso_test.owltilemap" in names
+    assert "test/render_tests/tilemaps/iso_town_small.owltilemap" in names
+    assert "test/scenarios/tilemaps/iso_town_small.owltilemap" in names
     assert "tilemaps/iso_town.owltilemap" in names
     assert "scenes/iso_town.owl" in names
     assert {"textures/iso/chimney.png", "textures/iso/lamp.png", "textures/iso/birds.png"} <= names

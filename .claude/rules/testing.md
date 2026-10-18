@@ -37,8 +37,9 @@ TEST(CategoryName, TestName) {
 ## Test Helper
 
 - Include `"testHelper.h"` from `test/test_helper/` (auto-included via CMake)
-- `getRootPath()` returns the project root directory for locating test fixtures; fixtures that no shipped asset
-  provides live in `test/<cat>_tests/assets/` (the engine and the demo hold no test-only files)
+- `getRootPath()` returns the project root directory; `getTestAssetsPath("<cat>_tests")` returns the fixture folder of
+  a category. Every fixture no shipped asset provides lives in ONE place, `test/test_helper/assets/<cat>_tests/`
+  (`scenarios/` for the scenario fixtures); the engine and the demo hold no test-only files
 - **Warning**: `getRootPath()` infinite-loops if CWD is the project root; run via ctest, or run a test
   binary from the build directory
 
@@ -49,9 +50,10 @@ and clean up. Fixtures that need GPU or audio must degrade to the Null backend i
 
 ## Image tests (`test/render_tests`, label `render`)
 
-- One case = one scene of `test/render_tests/scenes/` rendered by `OwlRunner --frame-bench --capture` on lavapipe
-  (Vulkan) or llvmpipe (OpenGL), compared to `test/render_tests/references/<backend>/<scene>.png` (RGB, 24 / 255
-  per channel, 0.25 % of pixels). Captures, diffs and logs of failures go to `<build>/render_tests/`.
+- One case = one scene of `test/test_helper/assets/render_tests/scenes/` rendered by `OwlRunner --frame-bench --capture`
+  on lavapipe (Vulkan) or llvmpipe (OpenGL), compared to
+  `test/test_helper/assets/render_tests/references/<backend>/<scene>.png` (RGB, 24 / 255 per channel, 0.25 % of pixels).
+  Captures, diffs and logs of failures go to `<build>/render_tests/`.
 - Scenes have no Lua script, no physics and no input: the capture must not depend on timing.
 - A deliberate visual change regenerates the references, reviewed image by image before committing:
   `docker/run.sh env OWL_RENDER_TESTS_UPDATE=1 ctest --test-dir output/build/linux-clang-release -L render`.
@@ -69,6 +71,7 @@ launch the runner).
 
 - `OwlRunner --scenario <file>` plays a sample scene headless with injected inputs and checks the world (format:
   `doc/pages/editor.md#scripted-headless-runs-scenario`). Each file is a CTest case, no CMake edit needed.
+- `scene:` / `project:` / `assets:` are relative to the `.owltest`; fixtures sit in `test/test_helper/assets/scenarios/`.
 - Pin thresholds loosely (a gameplay tweak should not break them) and check one behaviour per file.
 
 ## Expensive Test Fixtures

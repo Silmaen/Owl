@@ -127,8 +127,8 @@ TEST_F(AnimationClipFixture, FileRoundTripInTempDir) {
 }
 
 TEST_F(AnimationClipFixture, BundledCoinClipLoads) {
-	// Fixture lives under test/scene_tests/assets/ — tests must not depend on engine_demo/.
-	const auto path = owl::test::getRootPath() / "test" / "scene_tests" / "assets" / "animations" / "coin.owlanim";
+	// Fixture lives under test/test_helper/assets/scene_tests/ — tests must not depend on engine_demo/.
+	const auto path = owl::test::getTestAssetsPath("scene_tests") / "animations" / "coin.owlanim";
 	if (!std::filesystem::exists(path))
 		GTEST_SKIP() << "Fixture missing: " << path;
 

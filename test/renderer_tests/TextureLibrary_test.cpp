@@ -21,7 +21,7 @@ TEST(TextureLibrary, creation) {
 	Log::init(Log::Level::Off);
 	RenderCommand::create(RenderAPI::Type::Null);
 	const AppParams params{.name = "super boby",
-						   .assetsPattern = "test/renderer_tests/assets",
+						   .assetsPattern = "test/test_helper/assets/renderer_tests",
 						   .renderer = RenderAPI::Type::Null,
 						   .hasGui = false,
 						   .isDummy = true};

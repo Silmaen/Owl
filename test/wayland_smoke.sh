@@ -46,7 +46,7 @@ for backend in vulkan opengl; do
 	else
 		driver=(LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe __EGL_VENDOR_LIBRARY_FILENAMES=/usr/share/glvnd/egl_vendor.d/50_mesa.json)
 	fi
-	(cd "${work}" && env "${driver[@]}" "${runner}" --frame-bench "${root}/test/render_tests/scenes/sprites.owl" \
+	(cd "${work}" && env "${driver[@]}" "${runner}" --frame-bench "${root}/test/test_helper/assets/render_tests/scenes/sprites.owl" \
 		--project "${root}/engine_demo" --backend "${backend}" --frames 30 --warmup 5 --size 640x360 \
 		--out "${work}/wayland_${backend}.json") >"${log}" 2>&1
 	code=$?

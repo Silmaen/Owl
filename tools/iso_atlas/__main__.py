@@ -20,7 +20,7 @@ def main() -> int:
     parser.add_argument("--project", type=Path, default=Path("engine_demo"), help="project folder to write into")
     parser.add_argument("--seed", type=int, default=1, help="seed; the same seed always gives the same pixels")
     parser.add_argument("--levels", default="1x", help="comma separated zoom levels: 1x, 2x, half")
-    parser.add_argument("--tests", type=Path, default=Path("test"), help="test folder for the test-only maps")
+    parser.add_argument("--tests", type=Path, default=Path("test/test_helper/assets"), help="test assets folder for the test-only maps")
     args = parser.parse_args()
     levels = tuple(level for level in args.levels.split(",") if level)
     unknown = [level for level in levels if level not in LEVELS]

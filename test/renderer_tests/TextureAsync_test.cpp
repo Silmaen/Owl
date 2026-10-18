@@ -19,7 +19,7 @@ using namespace owl::renderer::gpu;
 
 namespace {
 auto getFixturePathStr() -> std::string {
-	return (owl::test::getRootPath() / "test" / "renderer_tests" / "assets" / "textures" / "mario.png").string();
+	return (owl::test::getTestAssetsPath("renderer_tests") / "textures" / "mario.png").string();
 }
 
 class TextureAsyncFixture : public ::testing::Test {

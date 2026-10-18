@@ -35,7 +35,7 @@ constexpr math::vec2ui g_captureSize{320, 180};
 
 // One reference image: a scene rendered by one backend on its software driver.
 struct RenderCase {
-	// Scene file stem in `test/render_tests/scenes`.
+	// Scene file stem in `test/test_helper/assets/render_tests/scenes`.
 	std::string scene;
 	// Backend name passed to `OwlRunner --backend`.
 	std::string backend;
@@ -146,8 +146,9 @@ TEST_P(RenderImage, matchesReference) {
 		GTEST_SKIP() << "No display: run the render tests under xvfb-run (ctest does it when xvfb-run exists).";
 
 	const auto root = test::getRootPath();
-	const auto sceneFile = root / "test" / "render_tests" / "scenes" / (scene + ".owl");
-	const auto reference = root / "test" / "render_tests" / "references" / backend / (getCaseStem(GetParam()) + ".png");
+	const auto fixtures = test::getTestAssetsPath("render_tests");
+	const auto sceneFile = fixtures / "scenes" / (scene + ".owl");
+	const auto reference = fixtures / "references" / backend / (getCaseStem(GetParam()) + ".png");
 	const auto outDir = getOutputDir();
 	std::filesystem::create_directories(outDir);
 	const auto stem = std::format("{}.{}", getCaseStem(GetParam()), backend);
@@ -162,7 +163,7 @@ TEST_P(RenderImage, matchesReference) {
 						R"(--assets "{}" --backend {} --frames 2 --warmup {} --size {}x{} --validation )"
 						R"(--capture "{}" > "{}" 2>&1)",
 						getDriverEnvironment(backend), OWL_RUNNER_EXECUTABLE, sceneFile.string(),
-						(root / "engine_demo").string(), (root / "test" / "render_tests" / "assets").string(), backend,
+						(root / "engine_demo").string(), fixtures.string(), backend,
 						g_warmupFrames, size.x(), size.y(), actualFile.string(), logFile.string());
 	// NOLINTNEXTLINE(bugprone-command-processor) The runner must run in its own process (one GPU context).
 	const int status = std::system(command.c_str());

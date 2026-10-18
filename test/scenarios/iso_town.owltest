@@ -3,9 +3,9 @@
 # looks for another way round the ring; a road laid beside a street makes a T. The headless view is 1600x960 centred
 # on the camera at (12, 12): the centre of cell (x, y) on the ground is at pixel (800 + 32 * (x - y), 480 + 16 * (x + y - 23)), 8
 # pixels higher per half unit of height.
-scene: assets/iso_town_small.owl
+scene: ../test_helper/assets/scenarios/iso_town_small.owl
 project: ../../engine_demo
-assets: assets
+assets: ../test_helper/assets/scenarios
 steps:
   # The traffic runs from the first frame, the tool answers once the fade-in is over.
   - frames: 30

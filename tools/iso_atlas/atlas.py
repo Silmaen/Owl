@@ -257,7 +257,7 @@ def generate(
     :param project: The project folder (``engine_demo``); textures go to ``textures/iso``, tilesets to ``tilesets``.
     :param seed: Seed of the run; the same seed always gives the same pixels.
     :param levels: The zoom levels to write.
-    :param tests: The ``test`` folder of the repository, for the test-only maps (skipped when absent).
+    :param tests: The ``test/test_helper/assets`` folder of the repository, for the test-only maps (skipped when absent).
     :return: Every written file.
     """
     folder = project / "textures" / "iso"
@@ -294,9 +294,9 @@ def generate(
     written.append(birds_path)
     written += _save(build_vehicles(seed), folder, "vehicles", "1x")
     if tests is not None:
-        written.append(write_map(tests / "render_tests" / "assets", seed))
-        written.append(write_town_map(tests / "render_tests" / "assets", seed))
-        written.append(write_town_map(tests / "scenarios" / "assets", seed))
+        written.append(write_map(tests / "render_tests", seed))
+        written.append(write_town_map(tests / "render_tests", seed))
+        written.append(write_town_map(tests / "scenarios", seed))
     written.append(write_city_map(project, seed))
     written.append(write_city_scene(project, seed))
     return written

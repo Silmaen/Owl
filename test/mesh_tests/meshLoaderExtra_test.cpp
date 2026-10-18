@@ -62,7 +62,7 @@ TEST(MeshLoader, UnsupportedExtension) {
 
 TEST(MeshLoader, ObjVertexPositions) {
 	Log::init(Log::Level::Off);
-	const auto mesh = MeshLoader::loadStaticMesh(owl::test::getTestFilesDir() / "simple_triangle.obj");
+	const auto mesh = MeshLoader::loadStaticMesh(owl::test::getTestAssetsPath("mesh_tests") / "simple_triangle.obj");
 	ASSERT_NE(mesh, nullptr);
 	EXPECT_EQ(mesh->getVertexCount(), 3u);
 	const auto& vertices = mesh->getVertices();
@@ -72,7 +72,7 @@ TEST(MeshLoader, ObjVertexPositions) {
 
 TEST(MeshLoader, MeshIsNotEmpty) {
 	Log::init(Log::Level::Off);
-	const auto mesh = MeshLoader::loadStaticMesh(owl::test::getTestFilesDir() / "multiple_triangle.obj");
+	const auto mesh = MeshLoader::loadStaticMesh(owl::test::getTestAssetsPath("mesh_tests") / "multiple_triangle.obj");
 	ASSERT_NE(mesh, nullptr);
 	EXPECT_FALSE(mesh->isEmpty());
 	Log::invalidate();

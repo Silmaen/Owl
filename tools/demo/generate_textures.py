@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Generate the procedural textures: the portal of the Engine Demo and the sprites of the render tests (``test/render_tests/assets``)."""
+"""Generate the procedural textures: the portal of the Engine Demo and the sprites of the render tests (``test/test_helper/assets/render_tests``)."""
 
 from PIL import Image, ImageDraw
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "engine_demo" / "textures" / "sprites"
-TEST_OUT = ROOT / "test" / "render_tests" / "assets" / "textures"
+TEST_OUT = ROOT / "test" / "test_helper" / "assets" / "render_tests" / "textures"
 SIZE = 64  # tile size
 
 

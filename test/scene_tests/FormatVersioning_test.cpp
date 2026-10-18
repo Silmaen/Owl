@@ -387,7 +387,7 @@ TEST_F(FormatVersioningTest, EngineSampleAssetsStillLoad) {
 	const auto root = owl::test::getRootPath();
 	size_t scenes = 0;
 	// The scenes of the project templates and the scene, tileset and animation fixtures.
-	for (const auto& folder: {root / "engine_assets", root / "test" / "scene_tests" / "assets"}) {
+	for (const auto& folder: {root / "engine_assets", owl::test::getTestAssetsPath("scene_tests")}) {
 		for (const auto& entry: std::filesystem::recursive_directory_iterator(folder)) {
 			if (entry.path().extension() == ".owl") {
 				EXPECT_TRUE(SceneSerializer(mkShared<Scene>()).deserialize(entry.path())) << entry.path();

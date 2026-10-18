@@ -112,7 +112,7 @@ GNOME (Mutter) passes the same checks.
 ### CI smoke test
 
 `test/wayland_smoke.sh` (CTest `owl_wayland_smoke`, labels `render` and `wayland`) starts a headless weston (pixman
-renderer, private `XDG_RUNTIME_DIR`), then plays 30 frames of `test/render_tests/scenes/sprites.owl` with
+renderer, private `XDG_RUNTIME_DIR`), then plays 30 frames of `test/test_helper/assets/render_tests/scenes/sprites.owl` with
 `OwlRunner --frame-bench` on the Wayland platform, Vulkan on lavapipe then OpenGL on llvmpipe; it fails when the
 runner crashes, logs an error or did not pick Wayland. Without `weston` it reports *Skipped*. It found that GLFW 3.4
 dereferenced a missing `wl_seat` (a compositor without input devices): the local recipe patched it until GLFW 3.5.1
