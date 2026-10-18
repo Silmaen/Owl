@@ -63,7 +63,7 @@ and clean up. Fixtures that need GPU or audio must degrade to the Null backend i
 
 ## Static analysis of the tests
 
-clang-tidy and the static analyzer run on `test/` too. `test/.clang-tidy` relaxes the checks a test is right to
+clang-tidy and the static analyzer run on `test/` too. `test/unit/.clang-tidy` relaxes the checks a test is right to
 trip; anything else is fixed like engine code, or carries a `NOLINT(check)` with the reason (e.g. `std::system` to
 launch the runner).
 
