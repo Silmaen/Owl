@@ -597,6 +597,12 @@ The scanner parses scene YAML files, reads the `LuaScript.scriptPath` field, and
 resolves the file path through the project's asset directories. Discovered scripts are
 included in the `.owlpack` binary archive with `AssetType::Script`.
 
+The scanner then follows what a script names: the scene paths (ending in `.owl`), the sound files (`.wav`, `.ogg`,
+`.mp3`, `.flac`, or any argument of `sound.play`) and the serialized textures (`nam:` / `pat:`) quoted in the script,
+and the same values given as `string` properties in the scene. A level can thus name the next one in a property
+(`next_scene: scenes/level_2.owl`) edited in the inspector: the export packs it and scans it in turn. A path built at
+run time (`"scenes/level_" .. n .. ".owl"`) is not seen; write it out or give it as a property.
+
 At runtime, the game runner loads scripts transparently from the pack file, falling
 back to the filesystem if not found in the pack.
 
