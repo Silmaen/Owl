@@ -548,6 +548,10 @@ when a call overruns, it signals the script thread, which arms a hook that raise
 The hook keeps firing until the call returns, so a script cannot swallow the error with
 `pcall` and loop on.
 
+The environment variable `OWL_SCRIPT_TIME_SCALE` (a whole factor) multiplies the default time budget of the
+process; the scenario and export tests of the emulated arm64 presets set it to 8 (CMake `OWL_SCRIPT_TIME_SCALE`),
+where every call runs many times slower than natively.
+
 ### What happens on failure
 
 | Failure                                              | Effect                                                       |
