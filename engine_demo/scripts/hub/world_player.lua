@@ -37,6 +37,14 @@ local STEP_VARIANTS = 4
 -- Spelt out so the game export finds and packs every footstep.
 local STEP_SOUNDS = { "sounds/hub/step_1.wav", "sounds/hub/step_2.wav", "sounds/hub/step_3.wav", "sounds/hub/step_4.wav" }
 local step_sound = 0
+-- In the river the hero wades: much slower, and a splash instead of a footstep. The water tiles of the ground layer
+-- (four animation phases, hub_water.lua) tell where it is; the bridges are not water.
+local WADE_SOUNDS = { "sounds/hub/wade_1.wav", "sounds/hub/wade_2.wav", "sounds/hub/wade_3.wav", "sounds/hub/wade_4.wav" }
+local WATER_TILES = { [132] = true, [133] = true, [137] = true, [138] = true }
+local k_wade_factor = 0.4
+local k_wade_step_time = 0.2
+local map_id = 0
+local wading = false
 
 -- The camera follows the hero but stays inside the map: the view is as many cells high as the camera's orthographic
 -- size (15, a pixel-exact 3x at 720p), so k_view_half_height = 7.5, and a 16:9 window shows k_view_half_width cells on each side.
@@ -74,6 +82,8 @@ function on_create()
     health_bar_id = scene.find_entity("HealthBar")
     levels_id = ui.find("LevelsText")
     camera_id = scene.find_entity("MainCamera")
+    map_id = scene.find_entity("WorldTilemap")
+    gamestate.set("hub_wading", false)
     sprite_id = scene.find_entity("PlayerSprite")
     if sprite_id ~= 0 then sprite_scale = transform.get_scale(sprite_id) end
     -- Initialise health for a fresh run.
@@ -98,9 +108,16 @@ function on_update(dt)
         return
     end
 
-    -- Movement: the built-in `move` vector (WASD or left stick; y points down).
+    -- Movement: the built-in `move` vector (WASD or left stick; y points down), slowed down in the river.
+    local px, py, _ = transform.get_position(entity_id)
+    local in_water = map_id ~= 0 and WATER_TILES[isometric.get_cell(map_id, 0, math.floor(px), math.floor(-py))] == true
+    if in_water ~= wading then
+        wading = in_water
+        gamestate.set("hub_wading", wading)
+    end
+    local pace = wading and speed * k_wade_factor or speed
     local dirx, diry = input.get_action_vector("move")
-    local mvx, mvy = dirx * speed, -diry * speed
+    local mvx, mvy = dirx * pace, -diry * pace
 
     physics.set_velocity(entity_id, mvx, mvy)
     if sprite_id ~= 0 then
@@ -111,7 +128,7 @@ function on_update(dt)
         local frame = k_frame_idle
         if mvx ~= 0 or mvy ~= 0 then
             walk_clock = walk_clock + dt
-            frame = k_frame_walk + math.floor(walk_clock / k_step_time) % k_walk_frames
+            frame = k_frame_walk + math.floor(walk_clock / (wading and k_wade_step_time or k_step_time)) % k_walk_frames
         else
             walk_clock = 0
         end
@@ -124,7 +141,8 @@ function on_update(dt)
         if frame >= k_frame_walk and step ~= shown_step and step % 2 == 0 then
             -- Four variants, never the same twice in a row, each a little louder or softer (no pitch control in Lua).
             step_sound = (step_sound + math.random(STEP_VARIANTS - 1) - 1) % STEP_VARIANTS + 1
-            sound.set_volume(sound.play(STEP_SOUNDS[step_sound]), 0.55 + math.random() * 0.4)
+            local sounds = wading and WADE_SOUNDS or STEP_SOUNDS
+            sound.set_volume(sound.play(sounds[step_sound]), 0.55 + math.random() * 0.4)
         end
         shown_step = frame >= k_frame_walk and step or -1
     end

@@ -4,6 +4,18 @@ EnabledRenderers:
 - Name: raycast_world
   Enabled: false
 Entities:
+- Entity: 9100000000000000002
+  Tag: {tag: ControlsHint}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  LuaScript:
+    scriptPath: scripts/ui/controls_hint.lua
+    properties:
+    - {name: hint, type: string, value: HudHint}
+    - {name: duration, type: float, value: 4.5}
 - Entity: 3000000000000000001
   Tag:
     tag: MainCamera

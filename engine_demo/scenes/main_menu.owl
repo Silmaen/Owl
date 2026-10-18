@@ -444,6 +444,86 @@ Entities:
       onFocusCallback: ''
       highlightColor: [1, 0.82, 0.2, 1]
       highlightThickness: 2
+  - Entity: 700000000000000030
+    Tag: {tag: ControlsPanel}
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility: {gameVisible: true}
+    Hierarchy: {parentId: 827593881302582438}
+    UiPanel:
+      backgroundColor: [0.1, 0.1, 0.15, 0.6]
+      borderColor: [0.4, 0.4, 0.5, 0.4]
+      borderWidth: 1
+      clipChildren: false
+    UiRect:
+      anchorMin: [1, 0]
+      anchorMax: [1, 0]
+      pivot: [1, 0]
+      size: [0.28, 0.46]
+      sizeUnit: [ScreenWidth, ScreenHeight]
+      offset: [-16, 0.4]
+      offsetUnit: [Pixels, ScreenHeight]
+    UiLayout:
+      arrangement: Column
+      crossAlign: Start
+      spacing: 2
+      padding: 4
+      columns: 1
+      cellSize: [0, 0]
+  - Entity: 700000000000000032
+    Tag: {tag: ControlsText}
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility: {gameVisible: true}
+    Hierarchy: {parentId: 700000000000000030}
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.9, 0.8]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      text: "Hub: WASD move, E use or talk\nPlatformer: A / D run, W / Space jump\nRaycast: W / S walk, A / D turn, E open, Tab inventory\nIso town: click builds, right click bulldozes, Q tool, WASD pan\nVoxel: WASD walk, mouse look, Space jump, Shift run\nEsc pauses and comes back here: Continue resumes"
+      color: [0.85, 0.85, 0.9, 0.9]
+      fontSize: 24
+      horizontalAlignment: Left
+      verticalAlignment: Top
+      wrap: true
+      fit: Shrink
+      minFontSize: 12
+      kerning: 0
+      lineSpacing: 0
+  - Entity: 700000000000000031
+    Tag: {tag: ControlsTitle}
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility: {gameVisible: true}
+    Hierarchy: {parentId: 700000000000000030}
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.9, 0.11]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      text: Controls
+      color: [1, 0.85, 0.2, 1]
+      fontSize: 30
+      horizontalAlignment: Left
+      verticalAlignment: Middle
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      kerning: 0
+      lineSpacing: 0
   - Entity: 16128583253515789582
     Tag: {tag: VersionLabel}
     Transform:

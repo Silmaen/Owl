@@ -21,6 +21,18 @@ EnabledRenderers:
     Overrides:
       Space: Screen
 Entities:
+  - Entity: 9100000000000000003
+    Tag: {tag: ControlsHint}
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility: {gameVisible: true}
+    LuaScript:
+      scriptPath: scripts/ui/controls_hint.lua
+      properties:
+      - {name: hint, type: string, value: HUDHint}
+      - {name: duration, type: float, value: 4.5}
   - Entity: 1109273511855769907
     Tag:
       tag: Door_N_14

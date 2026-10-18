@@ -103,6 +103,33 @@ Entities:
     padding: 0
     columns: 1
     cellSize: [0, 0]
+- Entity: 3000000000000000063
+  Tag: {tag: HudHint}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 3000000000000000090}
+  UiRect:
+    anchorMin: [0, 0]
+    anchorMax: [0, 0]
+    pivot: [0, 0]
+    size: [1, 0.5]
+    sizeUnit: [ParentWidth, ParentHeight]
+    offset: [0, 0]
+  UiText:
+    outlineWidth: 2
+    text: 'A / D: run    W / Space: jump    T: tool cursor    Esc: pause'
+    color: [1, 1, 1, 0.850000024]
+    fontSize: 24
+    horizontalAlignment: Left
+    verticalAlignment: Top
+    kerning: 0
+    lineSpacing: 0
+    wrap: true
+    fit: Shrink
+    minFontSize: 12
 - Entity: 3000000000000000080
   Tag: {tag: ObjectiveText}
   Transform:
@@ -130,33 +157,6 @@ Entities:
     wrap: true
     fit: Shrink
     minFontSize: 12
-- Entity: 3000000000000000063
-  Tag: {tag: HudHint}
-  Transform:
-    translation: [0, 0, 0]
-    rotation: [0, 0, 0]
-    scale: [1, 1, 1]
-  Visibility: {gameVisible: true}
-  Hierarchy: {parentId: 3000000000000000090}
-  UiRect:
-    anchorMin: [0, 0]
-    anchorMax: [0, 0]
-    pivot: [0, 0]
-    size: [1, 0.5]
-    sizeUnit: [ParentWidth, ParentHeight]
-    offset: [0, 0]
-  UiText:
-    outlineWidth: 2
-    text: A/D = move (only on ground), W/Space = jump, ESC = pause
-    color: [1, 1, 1, 0.850000024]
-    fontSize: 24
-    horizontalAlignment: Left
-    verticalAlignment: Top
-    kerning: 0
-    lineSpacing: 0
-    wrap: true
-    fit: Shrink
-    minFontSize: 12
 - Entity: 3000000000000000074
   Tag: {tag: BuildCursor}
   Transform:
@@ -171,77 +171,3 @@ Entities:
     size: [28, 28]
     hotspot: [0.5, 0.5]
     active: false
-- Entity: 3000000000000000070
-  Tag: {tag: ControlsWindow}
-  Transform:
-    translation: [0, 0, 0]
-    rotation: [0, 0, 0]
-    scale: [1, 1, 1]
-  Visibility: {gameVisible: true}
-  Hierarchy: {parentId: 3000000000000000060}
-  UiRect:
-    anchorMin: [0, 1]
-    anchorMax: [0, 1]
-    pivot: [0, 1]
-    size: [0.32, 0.27]
-    sizeUnit: [ScreenWidth, ScreenHeight]
-    offset: [16, -16]
-  UiWindow: {title: Controls, titleBarHeight: 30, titleFontSize: 22, closable: true, draggable: true}
-  UiLayout:
-    arrangement: Column
-    crossAlign: Start
-    spacing: 2
-    padding: 4
-    columns: 1
-    cellSize: [0, 0]
-  UiTooltip: {text: 'Drag the title bar to move the window.
-
-      The red button closes it.', delay: 0.4, fontSize: 22}
-- Entity: 3000000000000000073
-  Tag: {tag: ControlsTool}
-  Transform:
-    translation: [0, 0, 0]
-    rotation: [0, 0, 0]
-    scale: [1, 1, 1]
-  Visibility: {gameVisible: true}
-  Hierarchy: {parentId: 3000000000000000070}
-  UiRect:
-    anchorMin: [0, 0]
-    anchorMax: [0, 0]
-    pivot: [0, 0]
-    size: [0.94, 0.29]
-    sizeUnit: [ParentWidth, ParentHeight]
-    offset: [0, 0]
-  UiText: {text: T   tool cursor on / off, fontSize: 24, horizontalAlignment: Left, verticalAlignment: Middle, fit: Shrink, minFontSize: 12}
-- Entity: 3000000000000000072
-  Tag: {tag: ControlsJump}
-  Transform:
-    translation: [0, 0, 0]
-    rotation: [0, 0, 0]
-    scale: [1, 1, 1]
-  Visibility: {gameVisible: true}
-  Hierarchy: {parentId: 3000000000000000070}
-  UiRect:
-    anchorMin: [0, 0]
-    anchorMax: [0, 0]
-    pivot: [0, 0]
-    size: [0.94, 0.29]
-    sizeUnit: [ParentWidth, ParentHeight]
-    offset: [0, 0]
-  UiText: {text: W / Space   jump, fontSize: 24, horizontalAlignment: Left, verticalAlignment: Middle, fit: Shrink, minFontSize: 12}
-- Entity: 3000000000000000071
-  Tag: {tag: ControlsMove}
-  Transform:
-    translation: [0, 0, 0]
-    rotation: [0, 0, 0]
-    scale: [1, 1, 1]
-  Visibility: {gameVisible: true}
-  Hierarchy: {parentId: 3000000000000000070}
-  UiRect:
-    anchorMin: [0, 0]
-    anchorMax: [0, 0]
-    pivot: [0, 0]
-    size: [0.94, 0.29]
-    sizeUnit: [ParentWidth, ParentHeight]
-    offset: [0, 0]
-  UiText: {text: A / D   move, fontSize: 24, horizontalAlignment: Left, verticalAlignment: Middle, fit: Shrink, minFontSize: 12}

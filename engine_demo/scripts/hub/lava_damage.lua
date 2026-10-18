@@ -3,7 +3,7 @@
 -- LuaCallback fires every frame the player is inside, which is the rate we
 -- want for a continuous "burning" effect.
 
-local damage_per_second = 0.6  -- ~1.6 seconds to die from full health
+local damage_per_second = 0.3  -- the hero wades slowly (world_player.lua): a crossing costs about a third of the bar
 
 function on_lava_tick(other_id)
     local dt = time.delta()

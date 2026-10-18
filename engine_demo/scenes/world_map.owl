@@ -3,6 +3,18 @@ Hud: huds/world_map.owlhud
 EnabledRenderers:
 - {Name: raycast_world, Enabled: false}
 Entities:
+- Entity: 9100000000000000001
+  Tag: {tag: ControlsHint}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  LuaScript:
+    scriptPath: scripts/ui/controls_hint.lua
+    properties:
+    - {name: hint, type: string, value: HudHint}
+    - {name: duration, type: float, value: 4.5}
 - Entity: 2000000000000000010
   Tag: {tag: WorldTilemap}
   Transform:
@@ -12,6 +24,38 @@ Entities:
   Tilemap:
     tilemapPath: tilemaps/world_map.owltilemap
     navigation: {mode: cells, layer: 2, source: terrain, maxRise: 0, climbCost: 0, allowSteep: false}
+  Visibility: {gameVisible: true}
+- Entity: 9100000000000000011
+  Tag: {tag: MapEdge_North}
+  Transform:
+    translation: [32.0, 0.5, 0.0]
+    rotation: [0, 0, 0]
+    scale: [66.0, 1.0, 1]
+  PhysicBody: {type: Static, fixedRotation: true, colliderSize: [1, 1, 1], density: 0, restitution: 0, friction: 0.2}
+  Visibility: {gameVisible: true}
+- Entity: 9100000000000000012
+  Tag: {tag: MapEdge_South}
+  Transform:
+    translation: [32.0, -40.5, 0.0]
+    rotation: [0, 0, 0]
+    scale: [66.0, 1.0, 1]
+  PhysicBody: {type: Static, fixedRotation: true, colliderSize: [1, 1, 1], density: 0, restitution: 0, friction: 0.2}
+  Visibility: {gameVisible: true}
+- Entity: 9100000000000000013
+  Tag: {tag: MapEdge_West}
+  Transform:
+    translation: [-0.5, -20.0, 0.0]
+    rotation: [0, 0, 0]
+    scale: [1.0, 42.0, 1]
+  PhysicBody: {type: Static, fixedRotation: true, colliderSize: [1, 1, 1], density: 0, restitution: 0, friction: 0.2}
+  Visibility: {gameVisible: true}
+- Entity: 9100000000000000014
+  Tag: {tag: MapEdge_East}
+  Transform:
+    translation: [64.5, -20.0, 0.0]
+    rotation: [0, 0, 0]
+    scale: [1.0, 42.0, 1]
+  PhysicBody: {type: Static, fixedRotation: true, colliderSize: [1, 1, 1], density: 0, restitution: 0, friction: 0.2}
   Visibility: {gameVisible: true}
 - Entity: 2000000000000000002
   Tag: {tag: SkyBackground}

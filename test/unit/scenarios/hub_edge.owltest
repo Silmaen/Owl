@@ -1,0 +1,8 @@
+# The hub is closed all round (generate_hub_village.py checks it): walking south from the start, the hero stops at the
+# fence of the village gate on the last row instead of leaving the map.
+scene: ../../../engine_demo/scenes/world_map.owl
+steps:
+  - frames: 30
+  - input: {key: S, frames: 120}
+  - expect: {player: true, translation.y: {greater: -39.2}}
+  - expect: {player: true, translation.x: {equals: 32.5, tolerance: 0.3}}
