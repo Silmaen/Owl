@@ -46,7 +46,7 @@ frame (p50, p99, peak), the meshing work and the chunk appearance latency.
 token) from a client thread while the bench thread plays the editor main loop, calling `McpServer::onUpdate` without
 pause: `mcp/ping` is the transport and dispatcher alone, `mcp/tools_call/entity_rename` a full `tools/call` of a
 registry command on a headless session. The wait for the next frame of a real editor is excluded, so the median is the
-"+5 ms" part of the v0.4.0 budget "≤ one frame + 5 ms". Without `TCP_NODELAY` on the client, Nagle's algorithm and the
+"+5 ms" part of the v0.4.0 budget "≤ one frame + 5 ms". Both ends set `TCP_NODELAY`: without it, Nagle's algorithm and the
 delayed ACK add 40 ms to every call. The libraries of the server are built with `OWL_BENCHMARK` even when
 `OWL_BUILD_NEST` is off (never the editor).
 

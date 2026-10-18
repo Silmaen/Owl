@@ -104,8 +104,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (Content Browser, `macro.run`, scenario `macro:` steps), and the inspector edits and gizmo drags as registry commands.
 - MCP Streamable HTTP transport on `127.0.0.1` (`cpp-httplib`, no TLS), off by default: requests queued for the main
   loop and held during a gesture or a modal, a 256-bit bearer token in a `0600` file, `Host` / `Origin` / content
-  type / body size / queue checks, file arguments kept inside the project, and its settings tab and status bar
-  indicator.
+  type / body size / queue checks, `TCP_NODELAY` on its sockets, file arguments kept inside the project, and its
+  settings tab and status bar indicator.
 - MCP `play.run` tool: plays the scene for N frames or ticks with held input actions and returns the viewport as a PNG
   image with the phase timings; `session::resolveActionHolds` is shared with the scenario `actions:` steps, and the
   [MCP server guide](mcp.md) gives the client setup.

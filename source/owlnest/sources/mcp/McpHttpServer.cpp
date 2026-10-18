@@ -242,6 +242,8 @@ void McpHttpServer::Impl::configure() {
 		std::ignore = httplib::set_socket_opt(iSocket, SOL_SOCKET, SO_REUSEADDR, 1);
 #endif
 	});
+	// Without it, Nagle and the client's delayed ACK hold every answer about 40 ms.
+	server->set_tcp_nodelay(true);
 	server->set_payload_max_length(options.maxBodyBytes);
 	server->set_keep_alive_timeout(2);
 	server->set_read_timeout(5);
