@@ -1,0 +1,15 @@
+# Wolfenstein mini: Escape opens the pause window of the floor (level.lua) and the player stands still while it is
+# open; Resume (accept on its focused button) goes back to the game.
+scene: ../../../samples/wolfenstein/scenes/level_1.owl
+project: ../../../samples/wolfenstein
+steps:
+  - frames: 40
+  - input: {key: Escape, frames: 1}
+  - frames: 3
+  - expect: {gamestate: wolf_paused, equals: true}
+  - actions: {walk: 1, frames: 30}
+  - expect: {player: true, translation.x: {equals: -13.5, tolerance: 0.05}}
+  - expect: {player: true, translation.y: {equals: -11.5, tolerance: 0.05}}
+  - actions: {ui_accept: true, frames: 1}
+  - frames: 3
+  - expect: {gamestate: wolf_paused, equals: false}

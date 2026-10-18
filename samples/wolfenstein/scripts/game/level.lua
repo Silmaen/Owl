@@ -1,4 +1,4 @@
--- Rules of a Wolfenstein mini floor (script of the `LevelLogic` entity): start, HUD, messages and saves.
+-- Rules of a Wolfenstein mini floor (script of the `LevelLogic` entity): start, HUD, messages, pause and saves.
 --
 -- A floor starts when `wolf_floor_started` differs from `level`: the counters of the floor are reset, the totals counted
 -- (the pick-ups by their tags, the secret walls tagged `Secret`) and the game saved in slot 1 (the autosave the title's
@@ -6,7 +6,8 @@
 --
 -- Game state: `wolf_score` (whole run), `wolf_items` / `wolf_items_total`, `wolf_secrets` / `wolf_secrets_total`,
 -- `wolf_key_gold` / `wolf_key_blue` (0 or 1) and `wolf_explored` (explore.lua); `wolf_toast` is a message shown a few
--- seconds. F6 saves in slot 2, F9 loads it; Escape (pad Start) goes back to the title.
+-- seconds. The HUD shows the floor, the score and the keys only: the ratios wait for the tally of the floor. F6 saves in
+-- slot 2, F9 loads it; Escape (pad Start) pauses (`wolf_paused`): the pause window holds the controls, Resume and Quit.
 
 properties = {
     { name = "level", type = "int", default = 1 },
@@ -16,12 +17,14 @@ properties = {
 local ITEM_TAGS = { "Cross", "Chalice", "Chest", "Crown", "Food", "DogFood", "GoldKey", "BlueKey" }
 local AUTOSAVE_SLOT, QUICK_SLOT = 1, 2
 local TOAST_SECONDS = 2.5
+local FADE = { 0.22, 0.02, 0.02 }
 
 local ids = {}
 local shown = {}
 local toast_left = 0
 local autosave = false
 local leaving = false
+local paused = false
 
 local function set_text(name, text)
     if ids[name] ~= 0 and shown[name] ~= text then
@@ -58,19 +61,34 @@ local function start_floor()
     autosave = true
 end
 
+local function set_paused(value)
+    paused = value
+    gamestate.set("wolf_paused", value)
+    if ids.PauseWindow ~= 0 then
+        ui.set_visible(ids.PauseWindow, value)
+        if value then ui.raise_window(ids.PauseWindow) end
+    end
+    if value and ids.ResumeButton ~= 0 then
+        ui.set_focus(ids.ResumeButton)
+    end
+end
+
 function on_create()
-    for _, name in ipairs({ "FloorText", "ScoreText", "ItemsText", "SecretsText", "MapText", "GoldKeyIcon",
-                            "BlueKeyIcon", "ToastText" }) do
+    for _, name in ipairs({ "FloorText", "ScoreText", "GoldKeyIcon", "BlueKeyIcon", "ToastText", "PauseWindow",
+                            "ResumeButton" }) do
         ids[name] = ui.find(name)
     end
     if gamestate.get("wolf_floor_started", 0) ~= level then
         start_floor()
     end
-    set_text("FloorText", title)
+    set_text("FloorText", string.upper(title))
     if ids.ToastText ~= 0 then
         ui.set_visible(ids.ToastText, false)
     end
-    ui.transition_fade_in(0.4)
+    set_paused(false)
+    if not ui.is_transition_active() then
+        ui.transition_play("fade_in", 0.5, FADE[1], FADE[2], FADE[3])
+    end
 end
 
 local function refresh_hud()
@@ -78,11 +96,7 @@ local function refresh_hud()
     local secrets, secrets_total = gamestate.get("wolf_secrets", 0), gamestate.get("wolf_secrets_total", 0)
     gamestate.set("wolf_items_pct", ratio(items, items_total))
     gamestate.set("wolf_secrets_pct", ratio(secrets, secrets_total))
-    set_text("ScoreText", "Score " .. gamestate.get("wolf_score", 0))
-    set_text("ItemsText", string.format("Items %d / %d  (%d%%)", items, items_total, ratio(items, items_total)))
-    set_text("SecretsText", string.format("Secrets %d / %d  (%d%%)", secrets, secrets_total,
-            ratio(secrets, secrets_total)))
-    set_text("MapText", string.format("Map explored %d%%", gamestate.get("wolf_explored", 0)))
+    set_text("ScoreText", "SCORE " .. gamestate.get("wolf_score", 0))
     for name, key in pairs({ GoldKeyIcon = "wolf_key_gold", BlueKeyIcon = "wolf_key_blue" }) do
         local has = gamestate.get(key, 0) == 1
         if ids[name] ~= 0 and shown[name] ~= has then
@@ -98,6 +112,20 @@ local function toast(text)
         ui.set_visible(ids.ToastText, true)
     end
     toast_left = TOAST_SECONDS
+end
+
+function on_pause_resume()
+    set_paused(false)
+end
+
+function on_pause_quit()
+    if leaving then
+        return
+    end
+    leaving = true
+    set_paused(false)
+    gamestate.set("wolf_leaving", 1)
+    scene.transition_to("scenes/title.owl", "fade_out", 0.5, FADE[1], FADE[2], FADE[3])
 end
 
 function on_update(dt)
@@ -121,13 +149,16 @@ function on_update(dt)
         autosave = false
         save.save_game(AUTOSAVE_SLOT)
     end
-    if input.is_action_just_pressed("quick_save") then
+    if input.is_action_just_pressed("pause") then
+        set_paused(not paused)
+    elseif paused then
+        if input.is_action_just_pressed("ui_cancel") then
+            set_paused(false)
+        end
+    elseif input.is_action_just_pressed("quick_save") then
         save.save_game(QUICK_SLOT)
         toast("Game saved (F9 loads it)")
     elseif input.is_action_just_pressed("quick_load") and save.has_save(QUICK_SLOT) then
         save.load_game(QUICK_SLOT)
-    elseif input.is_action_just_pressed("pause") then
-        leaving = true
-        scene.transition_to("scenes/title.owl", "fade", 0.3)
     end
 end

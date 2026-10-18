@@ -1,10 +1,14 @@
--- Title screen of Wolfenstein mini: new game, continue, settings, quit, and the best tally of each floor.
--- Continue loads the newest of the autosave (slot 1, written when a floor starts) and the quick save (slot 2, F6).
+-- Title screen of Wolfenstein mini: new game, continue, How to play (the rules and the controls in a window),
+-- settings, quit, and the service record: the best score and the best tally of each floor (the `wolf_best_*`
+-- settings). Continue loads the newest of the autosave (slot 1, written when a floor starts) and the quick save
+-- (slot 2, F6). Every change of screen is a fade through dark red (`scene.transition_to` with a colour).
 
 local FLOORS = 3
+local FADE = { 0.22, 0.02, 0.02 }
 
 local pending_slot = 0
 local leaving = false
+local window_id, back_id, how_to_id = 0, 0, 0
 
 -- The newest save slot, 0 when there is none.
 local function newest_slot()
@@ -18,15 +22,20 @@ local function newest_slot()
 end
 
 function on_create()
-    ui.transition_fade_in(0.5)
+    if not ui.is_transition_active() then
+        ui.transition_play("fade_in", 0.6, FADE[1], FADE[2], FADE[3])
+    end
+    window_id = scene.find_entity("HowToWindow")
+    back_id = scene.find_entity("HowToBackButton")
+    how_to_id = scene.find_entity("HowToButton")
     local continue_id = scene.find_entity("ContinueButton")
     if continue_id ~= 0 then
         ui.set_button_enabled(continue_id, newest_slot() ~= 0)
     end
-    local lines = { "Best score " .. settings.get("wolf_best_score", 0) }
+    local lines = { string.format("BEST SCORE  %d", settings.get("wolf_best_score", 0)) }
     for floor = 1, FLOORS do
         local best = "wolf_best_" .. floor .. "_"
-        lines[#lines + 1] = string.format("Floor %d: items %d%%, secrets %d%%, map %d%%", floor,
+        lines[#lines + 1] = string.format("FLOOR %d\n  items %d%%  secrets %d%%  map %d%%", floor,
                 settings.get(best .. "items", 0), settings.get(best .. "secrets", 0), settings.get(best .. "explored", 0))
     end
     local best_id = scene.find_entity("BestText")
@@ -41,17 +50,29 @@ function on_update(dt)
         save.load_game(pending_slot)
         pending_slot = 0
     end
+    if gamestate.get("wolf_how_to", false) and input.is_action_just_pressed("ui_cancel") then
+        on_how_to_closed()
+    end
+end
+
+local function leave(path, jingle)
+    if leaving then
+        return
+    end
+    leaving = true
+    if jingle then
+        sound.play("sounds/ui/start.wav")
+    end
+    scene.transition_to(path, "fade_out", 0.5, FADE[1], FADE[2], FADE[3])
 end
 
 function on_new_game_clicked()
     if leaving then
         return
     end
-    leaving = true
-    sound.play("sounds/ui/start.wav")
     gamestate.clear()
     gamestate.set("wolf_score", 0)
-    scene.transition_to("scenes/level_1.owl", "fade", 0.4)
+    leave("scenes/level_1.owl", true)
 end
 
 function on_continue_clicked()
@@ -62,14 +83,30 @@ function on_continue_clicked()
     leaving = true
     sound.play("sounds/ui/start.wav")
     pending_slot = slot
-    ui.transition_fade_out(0.3)
+    ui.transition_play("fade_out", 0.4, FADE[1], FADE[2], FADE[3])
+end
+
+function on_how_to_clicked()
+    if leaving or window_id == 0 then
+        return
+    end
+    ui.set_visible(window_id, true)
+    ui.raise_window(window_id)
+    ui.set_focus(back_id)
+    gamestate.set("wolf_how_to", true)
+end
+
+function on_how_to_closed()
+    if window_id == 0 then
+        return
+    end
+    ui.set_visible(window_id, false)
+    ui.set_focus(how_to_id)
+    gamestate.set("wolf_how_to", false)
 end
 
 function on_settings_clicked()
-    if not leaving then
-        leaving = true
-        scene.transition_to("scenes/settings.owl", "fade", 0.3)
-    end
+    leave("scenes/settings.owl", false)
 end
 
 function on_quit_clicked()
