@@ -198,7 +198,7 @@ Entities:
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
-      text: Démo des fonctionnalités v0.1.1 — caractères éàüÇ œ € “…”
+      text: Every rendering style of Owl Engine in one project
       color: [0.85, 0.85, 0.85, 0.85]
       fontSize: 26
       horizontalAlignment: Center
@@ -224,7 +224,7 @@ Entities:
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
-      text: Owl Feature Demo
+      text: Owl Engine Demo
       color: [1, 0.85, 0.2, 1]
       fontSize: 72
       horizontalAlignment: Center
@@ -258,7 +258,7 @@ Entities:
       translation: [0, 0, 0]
       rotation: [0, 0, 0]
       scale: [1, 1, 1]
-    Visibility: {gameVisible: true}
+    Visibility: {gameVisible: false}
     Hierarchy: {parentId: 827593881302582438}
     UiRect:
       anchorMin: [0, 0]
@@ -460,7 +460,7 @@ Entities:
       sizeUnit: [ScreenWidth, ScreenHeight]
       offset: [-16, -16]
     UiText:
-      text: v0.1.1
+      text: v0.4.0
       color: [0.5, 0.5, 0.5, 0.7]
       fontSize: 24
       horizontalAlignment: Right
