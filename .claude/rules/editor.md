@@ -59,7 +59,7 @@ same PR (see `ongoing-quality.md`, *Editor Coverage*).
 - Action glyphs: Lucide font, `gui::icon::*` (`gui/IconFont.h`) inside labels; add a name there from the
   `lucide-static` `info.json` when one is missing.
 - Scene trigger overlays (512×512 PNG) are pre-rasterized by
-  `poetry run python source/owlnest/assets_sources/generate_icons.py`.
+  `poetry run python tools/editor/generate_icons.py`.
 - New icon: add the SVG in the right category, register it in `utils::buildIconBank()` (`EditorResources.cpp`).
 
 ## Panels

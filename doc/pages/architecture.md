@@ -331,7 +331,7 @@ Trigger overlay icons are also rendered in the viewport via `Renderer2D` and req
 pre-rasterized from the same SVG sources:
 
 ```bash
-poetry run python source/owlnest/assets_sources/generate_icons.py
+poetry run python tools/editor/generate_icons.py
 ```
 
 This script only rasterizes the `triggers/` category using `cairosvg`.

@@ -4,8 +4,8 @@
 Only icons that need PNG files for Renderer2D (scene overlays) are rasterized.
 All other icons are loaded as SVG at runtime by the engine via lunasvg.
 
-SVG sources live in assets_sources/icons/<subdir>/.
-PNGs are written to ../assets/icons/<subdir>/.
+SVG sources live in source/owlnest/assets_sources/icons/<subdir>/.
+PNGs are written to source/owlnest/assets/icons/<subdir>/.
 """
 
 from __future__ import annotations
@@ -17,9 +17,9 @@ import cairosvg
 # ---------------------------------------------------------------------------
 # Directories
 # ---------------------------------------------------------------------------
-SCRIPT_DIR = Path(__file__).resolve().parent  # assets_sources/
-SVG_BASE = SCRIPT_DIR / "icons"  # assets_sources/icons/
-PNG_BASE = SCRIPT_DIR.parent / "assets" / "icons"  # assets/icons/
+ROOT = Path(__file__).resolve().parents[2]
+SVG_BASE = ROOT / "source" / "owlnest" / "assets_sources" / "icons"  # source/owlnest/assets_sources/icons/
+PNG_BASE = ROOT / "source" / "owlnest" / "assets" / "icons"  # source/owlnest/assets/icons/
 
 # ---------------------------------------------------------------------------
 # Only these subdirectories need PNG rasterization (for Renderer2D scene use).
