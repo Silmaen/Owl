@@ -64,7 +64,7 @@ project {
         param("teamcity.github.bridge.labelRules", """
             documentation <= paths +:doc/**, +:**/*.md, +:.claude/**
             documentation <= title ^doc
-            ci            <= paths +:.teamcity/**, +:ci/**, +:ci_action.py, +:docker/**, +:cmake/CMakePresets*.json
+            ci            <= paths +:.teamcity/**, +:ci/**, +:ci_action.py, +:docker_run.sh, +:cmake/CMakePresets*.json
             dependencies  <= paths +:conanfile.py, +:conan/**, +:conan.lock
             engine        <= paths +:source/owl/**
             editor        <= paths +:source/owlnest/**
