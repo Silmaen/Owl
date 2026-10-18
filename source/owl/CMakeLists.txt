@@ -127,6 +127,8 @@ owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE Taskflow REQUIRED MODU
 owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE yaml-cpp REQUIRED)
 # rapidyaml: read side of scenes, prefabs and entity snapshots (core/YamlNode.h); writing stays on yaml-cpp
 owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE ryml REQUIRED MODULE_TARGET "ryml::ryml")
+# fast_float: included by the c4core headers of rapidyaml; the arm64 build does not get it through ryml::ryml
+owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE FastFloat REQUIRED MODULE_TARGET "FastFloat::fast_float")
 # Tracy client (OWL_PROFILER=tracy): private, the OWL_PROFILE_* macros of the public headers never include it
 if (${PROJECT_PREFIX}_PROFILER_BACKEND STREQUAL "tracy")
     owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE Tracy CONFIG REQUIRED MODULE_TARGET "Tracy::TracyClient")

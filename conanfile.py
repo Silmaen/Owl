@@ -132,6 +132,8 @@ class OwlEngineConan(ConanFile):
         self.requires("tinyobjloader/2.0.0-rc13")
         self.requires("ufbx/0.23.1")
         self.requires("rapidyaml/0.15.2")
+        # c4core (rapidyaml) includes fast_float in its headers; linked directly so every target finds them (arm64).
+        self.requires("fast_float/8.2.10")
         self.requires("yaml-cpp/0.9.0")
         self.requires("zstd/1.5.7")
         if self.options.render:
