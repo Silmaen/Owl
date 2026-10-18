@@ -293,8 +293,8 @@ void NavMap::rebuildChunk(const TilemapAsset& iAsset, const uint32_t iChunkX, co
 											   ~(directionBit(Direction::South) | directionBit(Direction::North)));
 			if (built == nullptr)
 				built = mkUniq<NavChunk>();
-			uint8_t exits = static_cast<uint8_t>(rule.exits & slopeOk & allDirections);
-			uint8_t enters = static_cast<uint8_t>(rule.enters & slopeOk & allDirections);
+			auto exits = static_cast<uint8_t>(rule.exits & slopeOk & allDirections);
+			auto enters = static_cast<uint8_t>(rule.enters & slopeOk & allDirections);
 			float cost = rule.cost;
 			if (!m_overrideOfCell.empty()) {
 				if (const auto entry = m_overrideOfCell.find(cellKey(x, y)); entry != m_overrideOfCell.end()) {

@@ -44,7 +44,7 @@ falls back to `auto` with a warning instead of aborting. The platform in use is 
 
 1. `platform::installDesktopEntry` writes `$XDG_DATA_HOME/applications/<app_id>.desktop` (`NoDisplay=true`, so no
    menu entry) and only rewrites it when its content changes; opt out with `installDesktopEntry: false` in
-   `config.yml`. The compositor reads the host's data directories: inside `docker/run.sh` the entry lands in the
+   `config.yml`. The compositor reads the host's data directories: inside `./docker_run.sh` the entry lands in the
    container's `$HOME` and the icon stays generic. KDE may need a second launch (or `kbuildsycoca6`) to notice a new
    entry.
 2. `eglSwapInterval(1)` waits for the compositor frame callback, which never comes while the surface is not shown
@@ -54,7 +54,7 @@ falls back to `auto` with a warning instead of aborting. The platform in use is 
 
 ### Diagnosis of the "frozen first frame" (October 2026)
 
-Reported as `OwlRunner` freezing at the first frame in `docker/run.sh --gui`. Measured on a KDE Plasma 6.6 session
+Reported as `OwlRunner` freezing at the first frame in `./docker_run.sh --gui`. Measured on a KDE Plasma 6.6 session
 (Intel RPL-S + NVIDIA RTX 5000 Ada, PRIME offload), **with the session locked**, frames presented in 15 s:
 
 | Run (OwlRunner, vsync on)            | Before the fix                     | After the fix       |
@@ -76,7 +76,7 @@ whose PRIME presents wait for the X server whatever the swap interval.
 - **Engine part (fixed):** OpenGL under Wayland now paces itself instead of blocking in `eglSwapBuffers`;
   `SIGINT` / `SIGTERM` request a clean shutdown (a second signal kills), so a throttled loop still exits; the window
   logs `GLFW: Window closed after N presented frames.` and `Window::getPresentedFrames()` exposes the count.
-- **Docker part:** the socket, `WAYLAND_DISPLAY`, `XAUTHORITY` and `/dev/dri` were already right. `docker/run.sh`
+- **Docker part:** the socket, `WAYLAND_DISPLAY`, `XAUTHORITY` and `/dev/dri` were already right. `./docker_run.sh`
   gained `--gpu=intel|nvidia` (Vulkan ICD, EGL and GLX vendor, PRIME offload), `--platform=wayland|x11`, and warns
   when the desktop session is locked.
 - **Not fixed:** X11 + vsync still crawls at ~1 Hz while the window is hidden — that is the X server's throttling.
@@ -85,7 +85,7 @@ whose PRIME presents wait for the X server whatever the swap interval.
 
 ### Manual check on a visible desktop (October 2026)
 
-Owl Nest on KDE Plasma 6.6 (Wayland session, Intel + NVIDIA), native and in `docker/run.sh`, in five combinations:
+Owl Nest on KDE Plasma 6.6 (Wayland session, Intel + NVIDIA), native and in `./docker_run.sh`, in five combinations:
 Wayland / X11 (XWayland) × Vulkan / OpenGL × Intel / NVIDIA. Platform selection, fractional scales (125 %, 150 %, text
 blurry as expected until the DPI work), fullscreen, cursor capture, hidden / locked window, clean close (button,
 Alt+F4, `SIGTERM`), detached panels (inside the window on Wayland, native windows on X11), keyboard (AZERTY, accents,
@@ -111,8 +111,8 @@ GNOME (Mutter) passes the same checks.
 
 ### CI smoke test
 
-`test/wayland_smoke.sh` (CTest `owl_wayland_smoke`, labels `render` and `wayland`) starts a headless weston (pixman
-renderer, private `XDG_RUNTIME_DIR`), then plays 30 frames of `test/render_tests/scenes/sprites.owl` with
+`test/unit/wayland_smoke.sh` (CTest `owl_wayland_smoke`, labels `render` and `wayland`) starts a headless weston (pixman
+renderer, private `XDG_RUNTIME_DIR`), then plays 30 frames of `test/unit/test_helper/assets/render_tests/scenes/sprites.owl` with
 `OwlRunner --frame-bench` on the Wayland platform, Vulkan on lavapipe then OpenGL on llvmpipe; it fails when the
 runner crashes, logs an error or did not pick Wayland. Without `weston` it reports *Skipped*. It found that GLFW 3.4
 dereferenced a missing `wl_seat` (a compositor without input devices): the local recipe patched it until GLFW 3.5.1

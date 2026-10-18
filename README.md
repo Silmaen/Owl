@@ -74,20 +74,20 @@ The full generated documentation is available online:
 
 ## Quick Start
 
-Every command runs inside the build image through `docker/run.sh` (drop the prefix to build with a local
+Every command runs inside the build image through `./docker_run.sh` (drop the prefix to build with a local
 toolchain, see [Building](doc/pages/building.md#prerequisites)). The first configure installs the Python tools and
 builds the Conan dependencies; no server needs to be set up.
 
 ```bash
 # Configure and build
-docker/run.sh cmake --preset linux-clang-release -S .
-docker/run.sh cmake --build output/build/linux-clang-release
+./docker_run.sh cmake --preset linux-clang-release -S .
+./docker_run.sh cmake --build output/build/linux-clang-release
 
 # Run tests
-docker/run.sh ctest --test-dir output/build/linux-clang-release --output-on-failure
+./docker_run.sh ctest --test-dir output/build/linux-clang-release --output-on-failure
 
 # Run the editor
-docker/run.sh --gui output/build/linux-clang-release/bin/OwlNest
+./docker_run.sh --gui output/build/linux-clang-release/bin/OwlNest
 ```
 
 See [Building](doc/pages/building.md) for the full build guide and all available presets.

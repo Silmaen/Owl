@@ -1,10 +1,10 @@
 ---
 paths:
   - "source/owl/*/data/**"
-  - "test/io_tests/**"
-  - "test/mesh_tests/**"
-  - "test/font_tests/**"
-  - "test/voxel_tests/**"
+  - "test/unit/io_tests/**"
+  - "test/unit/mesh_tests/**"
+  - "test/unit/font_tests/**"
+  - "test/unit/voxel_tests/**"
 ---
 
 # Data, assets & `.owlpack`
@@ -14,7 +14,7 @@ User-facing reference: `doc/pages/architecture.md`, `doc/pages/voxel.md`.
 - `data::assets::pack` (`PackFormat`, `PackWriter`, `PackReader`, `PackExtractor`, `AssetScanner`) — not `io/`.
 - A pack is untrusted input: `tryOpen` bounds offsets/sizes by the file size and `g_maxTocSize` /
   `g_maxEntrySize`, rejects unsafe paths (`isSafeEntryPath`), never throws; extraction goes through
-  `extractPack` / `writeEntryFile` (confined, write failures reported). Fuzz target: `fuzz/` (`OWL_FUZZING`).
+  `extractPack` / `writeEntryFile` (confined, write failures reported). Fuzz target: `test/fuzz/` (`OWL_FUZZING`).
 - Format: 40-byte header (magic `OWLP`), zstd-compressed blocks, XOR-obfuscated TOC at the end.
 - `AssetScanner` walks scene YAML for `nam:` / `pat:` textures, fonts and teleport scene references
   (recursive).

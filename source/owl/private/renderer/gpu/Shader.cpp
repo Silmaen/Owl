@@ -28,7 +28,6 @@ auto Shader::create(const Specification& iShaderName) -> shared<Shader> {
 	if (!iShaderName.shaderName.renderer.empty()) {
 		shaderDir /= iShaderName.shaderName.renderer;
 	}
-	shaderDir /= "slang";
 	shaderDir /= iShaderName.shaderName.name;
 	if (RenderCommand::requireInit()) {
 		const auto result = Renderer::getTextureLibrary().find(std::format("{}.slang", shaderDir.string()));
@@ -45,7 +44,7 @@ auto Shader::create(const Specification& iShaderName) -> shared<Shader> {
 auto Shader::create(const std::filesystem::path& iFile) -> shared<Shader> {
 	std::vector<std::filesystem::path> sources;
 	auto name = iFile.stem().string();
-	auto renderer = iFile.parent_path().parent_path().filename().string();
+	auto renderer = iFile.parent_path().filename().string();
 	auto shad = composeName({.name = name, .renderer = renderer});
 	if (RenderCommand::requireInit()) {
 		// Try to find as a .slang file first

@@ -1,7 +1,7 @@
 ---
 paths:
   - "source/owl/*/renderer/**"
-  - "test/renderer_tests/**"
+  - "test/unit/renderer_tests/**"
   - "engine_assets/shaders/**"
 ---
 
@@ -60,6 +60,9 @@ get confirmation. A passing headless (Null backend) test is evidence the path wo
 - **Vulkan descriptors are written at draw time** (`RendererDescriptors::getDescriptorSet`, from
   `bindPipeline`), after the draw's SSBO binds; every declared binding is written, unbound ones with a default
   resource. Never write a set when the textures are bound: the storage buffers are bound after them.
+- **Text outline is a dilation, not the distance field.** The MSDF only spans 2 px: `text.slang` takes the widest coverage on two
+  tap rings inside the glyph cell (never outside it, the atlas neighbours would bleed in), the glyph quad and its UVs grown by the
+  width by `Renderer2D::drawString`; `outlineUv == 0` keeps the plain path, so existing text stays pixel-identical.
 - **Colour samplers never enable depth comparison**: NVIDIA ignores it, lavapipe returns the compare result.
 - **OpenGL `glClear` honours the depth mask**: `RenderAPI::clear` turns it back on and forgets the applied state.
 - **Vertices given in NDC** (background quad) need the Vulkan Y flip in the shader, like the projections.

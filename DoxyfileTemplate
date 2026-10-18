@@ -1124,7 +1124,7 @@ IMAGE_PATH             = @PROJECT_SOURCE_DIR@/doc/images
 # need to set EXTENSION_MAPPING for the extension otherwise the files are not
 # properly processed by doxygen.
 
-INPUT_FILTER           = "@OWL_PYTHON_INTERPRETER@ @PROJECT_SOURCE_DIR@/doc/fix_md_links.py"
+INPUT_FILTER           = "@OWL_PYTHON_INTERPRETER@ @PROJECT_SOURCE_DIR@/tools/doc/fix_md_links.py"
 
 # The FILTER_PATTERNS tag can be used to specify filters on a per file pattern
 # basis. Doxygen will compare the file name with each pattern and apply the

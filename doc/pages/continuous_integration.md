@@ -288,15 +288,15 @@ actually fail on it.
 
 ## Fuzzing
 
-`linux-fuzz` builds every `fuzz/*_fuzzer.cpp` (libFuzzer, `OWL_FUZZING=ON`) with AddressSanitizer. The `Fuzz` action
+`linux-fuzz` builds every `test/fuzz/*_fuzzer.cpp` (libFuzzer, `OWL_FUZZING=ON`) with AddressSanitizer. The `Fuzz` action
 runs each `owl_*_fuzzer` for five minutes (`-- --time=<seconds>`, `-- --fuzzer=<name>` for one) on
-`output/fuzz/<fuzzer>/corpus`, seeded from `fuzz/corpus/<name>/` when that folder exists. A crash, a leak or a
+`output/fuzz/<fuzzer>/corpus`, seeded from `test/fuzz/corpus/<name>/` when that folder exists. A crash, a leak or a
 timeout fails the build; its input lands in `output/fuzz/<fuzzer>/artifacts/`, published as `fuzz-artifacts`, and
 replays with `bin/<fuzzer> <input>`.
 
 ```bash
-docker/run.sh poetry run python ci_action.py Build linux-fuzz
-docker/run.sh poetry run python ci_action.py Fuzz linux-fuzz -- --time=60
+./docker_run.sh poetry run python ci_action.py Build linux-fuzz
+./docker_run.sh poetry run python ci_action.py Fuzz linux-fuzz -- --time=60
 ```
 
 ## Dependency report
@@ -317,7 +317,7 @@ is logged as a warning, the list written to `output/dependency_report.json` and 
 `OutdatedDependencies` statistic (`-- --no-upstream` skips the tags).
 
 ```bash
-docker/run.sh poetry run python ci_action.py DependencyReport linux-clang-release
+./docker_run.sh poetry run python ci_action.py DependencyReport linux-clang-release
 ```
 
 ## Include check
@@ -328,12 +328,12 @@ configuration stays green — the precompiled header `owlpch.h` hides the gap. T
 on Linux:
 
 - **`std-includes` (Code Style)** — a lexical audit (`ci/utils/std_includes.py`): every file under `source/`,
-  `test/` and `bench/` must include the standard header of each `std::` symbol, `uint*_t` and `size_t` it names.
+  `test/unit/` and `test/bench/` must include the standard header of each `std::` symbol, `uint*_t` and `size_t` it names.
   A `.cpp` may rely on its own header and on `owlpch.h`. Fast, runs on every PR, any platform.
 - **Include Check (`linux-include-check`)** — `ci_action.py IncludeCheck` configures the preset (it sets
   `OWL_INCLUDE_CHECK=ON`) and builds `owl_include_check`, defined in `cmake/IncludeCheck.cmake`:
   - `owl_header_check` compiles every header of `source/owl/{public,private}`, `source/owlnest/{sources,runner}`,
-    `test/test_helper` and `bench/` alone in a generated translation unit;
+    `test/unit/test_helper` and `test/bench/` alone in a generated translation unit;
   - `owl_source_check` compiles every `.cpp` of the engine, the editor, the runner, the tests and the bench again;
   - both with the flags of the real target, **without the PCH**, against libc++ with
     `_LIBCPP_REMOVE_TRANSITIVE_INCLUDES` (`-Wno-everything`: only the hard errors matter). Nothing is linked, so
@@ -342,8 +342,8 @@ on Linux:
 Run it locally (the build image ships libc++):
 
 ```bash
-docker/run.sh poetry run python ci_action.py IncludeCheck linux-include-check
-docker/run.sh cmake --build output/build/linux-include-check --target owl_header_check   # headers only
+./docker_run.sh poetry run python ci_action.py IncludeCheck linux-include-check
+./docker_run.sh cmake --build output/build/linux-include-check --target owl_header_check   # headers only
 ```
 
 The compile check catches project headers that are not self-contained too (a missing `core/Macros.h`), which
@@ -456,7 +456,7 @@ Two consequences for this repository:
 
 `linux-clang-tidy` builds the tests too (`OWL_TESTING=ON`) but never runs them (`run_tests: false` in its
 `vendor.silmaen` block, which wins over `OWL_TESTING`), so both analyses cover `test/` (about 510 translation
-units): `test/.clang-tidy` inherits the root configuration minus the checks whose pattern is the point of a test
+units): `test/unit/.clang-tidy` inherits the root configuration minus the checks whose pattern is the point of a test
 (suspicious argument order, copies and moves under test, float loop counters, …), and the analyzer mode drops
 `EnumCastOutOfRange` and `FloatLoopCounter` on test files (`TEST_ANALYZER_EXCLUSIONS`).
 

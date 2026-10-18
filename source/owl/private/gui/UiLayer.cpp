@@ -178,9 +178,9 @@ auto loadFont(const char* iRelative, const float iSize) -> ImFont* {
 
 // Merge the Lucide glyphs (`gui::icon`) into the font loaded last.
 void mergeIconFont(const float iSize) {
-	const auto path = resolveAssetFile("fonts/lucide/lucide.ttf");
+	const auto path = resolveAssetFile("fonts/lucide.ttf");
 	if (path.empty()) {
-		OWL_CORE_WARN("UiLayer: could not load lucide.ttf from engine_assets/fonts/lucide/, icons render as boxes.")
+		OWL_CORE_WARN("UiLayer: could not load lucide.ttf from engine_assets/fonts/, icons render as boxes.")
 		return;
 	}
 	ImFontConfig config;
@@ -287,17 +287,17 @@ void UiLayer::onAttach() {
 	g_strongFont = nullptr;
 	g_monoFont = nullptr;
 	if (m_withApp) {
-		g_bodyFont = loadFont("fonts/inter/Inter-Regular.ttf", uiSize);
+		g_bodyFont = loadFont("fonts/Inter-Regular.ttf", uiSize);
 		if (g_bodyFont == nullptr) {
-			OWL_CORE_ERROR("UiLayer: could not load Inter-Regular.ttf from engine_assets/fonts/inter/, using Roboto.")
-			g_bodyFont = loadFont("fonts/roboto/Roboto-Regular.ttf", uiSize);
+			OWL_CORE_ERROR("UiLayer: could not load Inter-Regular.ttf from engine_assets/fonts/, using Roboto.")
+			g_bodyFont = loadFont("fonts/Roboto-Regular.ttf", uiSize);
 		}
 		if (g_bodyFont != nullptr)
 			mergeIconFont(uiSize);
-		g_strongFont = loadFont("fonts/inter/Inter-SemiBold.ttf", uiSize);
+		g_strongFont = loadFont("fonts/Inter-SemiBold.ttf", uiSize);
 		if (g_strongFont != nullptr)
 			mergeIconFont(uiSize);
-		g_monoFont = loadFont("fonts/jetbrainsmono/JetBrainsMono-Regular.ttf", g_codeFontSize);
+		g_monoFont = loadFont("fonts/JetBrainsMono-Regular.ttf", g_codeFontSize);
 		if (g_monoFont == nullptr)
 			OWL_CORE_ERROR("UiLayer: could not load JetBrainsMono-Regular.ttf — code editor will fall back to UI font.")
 	}

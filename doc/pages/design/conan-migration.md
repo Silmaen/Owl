@@ -25,7 +25,7 @@ shared through the `owl-cache` server, table below); DepManager, `depmanager.yml
 and `owl_engine.py` are gone.
 
 ```bash
-docker/run.sh cmake --preset <preset>
+./docker_run.sh cmake --preset <preset>
 ```
 
 - `conanfile.py` (root) is both the dependency list and the OwlEngine package recipe. `cmake/Conan.cmake` runs
@@ -95,8 +95,8 @@ to `conan install`, so a ConanCenter recipe update never changes a build silentl
 `conanfile.py` or of a local recipe, or to pick newer revisions:
 
 ```bash
-docker/run.sh poetry run conan lock create . --profile:all conan/profiles/linux-clang -o "&:testing=True" -o "&:nest=True" -o "&:tracy=True" --lockfile="" --lockfile-out conan.lock --update
-docker/run.sh poetry run conan lock create . --profile:all conan/profiles/linux-gcc -o "&:testing=True" -o "&:nest=True" -o "&:tracy=True" --lockfile conan.lock --lockfile-out conan.lock
+./docker_run.sh poetry run conan lock create . --profile:all conan/profiles/linux-clang -o "&:testing=True" -o "&:nest=True" -o "&:tracy=True" --lockfile="" --lockfile-out conan.lock --update
+./docker_run.sh poetry run conan lock create . --profile:all conan/profiles/linux-gcc -o "&:testing=True" -o "&:nest=True" -o "&:tracy=True" --lockfile conan.lock --lockfile-out conan.lock
 ```
 
 The first command re-resolves from scratch (`--lockfile=""`: Conan otherwise reads the `conan.lock` of the current folder; `--update`: the newest version of each range on the remotes, not the cached one); the second adds what the GCC profile resolves differently. A new profile
@@ -131,7 +131,7 @@ with it.
 ### OwlEngine package (`conan create`)
 
 ```bash
-docker/run.sh poetry run conan create . --profile:all conan/profiles/linux-clang --lockfile conan.lock --lockfile-partial --build=missing
+./docker_run.sh poetry run conan create . --profile:all conan/profiles/linux-clang --lockfile conan.lock --lockfile-partial --build=missing
 ```
 
 - `owlengine/<version>`, version read from `project(VERSION)` in `CMakeLists.txt` (single source, as in
@@ -140,7 +140,7 @@ docker/run.sh poetry run conan create . --profile:all conan/profiles/linux-clang
 - Consumers use the CMake config the engine installs (`lib/cmake/OwlEngine/`, `Owl::OwlEngine`, the one OwlDrone and
   the CPack archives use): the recipe sets `cmake_find_mode` to `none`, so `test_package` checks that file and not a
   Conan-generated one.
-- `test_package/`: `find_package(OwlEngine CONFIG REQUIRED)`, a program including `<owl.h>`, linked to
+- `test/package/`: `find_package(OwlEngine CONFIG REQUIRED)`, a program including `<owl.h>`, linked to
   `Owl::OwlEngine`, compiled without any Owl flag and run (audit G-03).
 - Install tree fixes it needed (audit PR-08): headers installed under `include/` and not `include/public/` (G-02);
   `Owl_Base` (`-Werror -Weverything`, internal definitions) linked as `$<BUILD_INTERFACE:…>` and no longer installed,

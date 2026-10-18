@@ -11,6 +11,7 @@
 #include <owlgui.h>
 
 #include "../UndoManager.h"
+#include "NavigationToolState.h"
 #include "PlayOverlay.h"
 
 #include <renderer/RendererIsometric.h>
@@ -463,7 +464,7 @@ private:
 	/// Tilemap entity of the hovered isometric map.
 	core::UUID m_hoveredMapEntity{0};
 	/// Whether the navigation tool is on.
-	bool m_navTool = false;
+	NavigationToolState m_navTool;
 	/// Side of the hovered cell the navigation tool would change.
 	std::optional<scene::nav::Direction> m_navSide;
 	/// Cell the navigation popup is about.

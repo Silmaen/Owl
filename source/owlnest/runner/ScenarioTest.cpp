@@ -344,7 +344,28 @@ auto ScenarioTest::load(const std::filesystem::path& iFile) -> expected<Scenario
 		scenario.m_scene = weakly_canonical(absolute(iFile).parent_path() / sceneNode.as<std::string>());
 		if (!exists(scenario.m_scene))
 			return unexpected<std::string>{std::format("scene {} not found", scenario.m_scene.string())};
-		scenario.m_project = session::findProjectDirectory(scenario.m_scene);
+		const auto folder = absolute(iFile).parent_path();
+		if (const auto projectNode = root["project"]; projectNode) {
+			scenario.m_project = weakly_canonical(folder / projectNode.as<std::string>());
+			if (!exists(scenario.m_project / "owl_project.yml"))
+				return unexpected<std::string>{std::format("project {} not found", scenario.m_project.string())};
+		} else {
+			scenario.m_project = session::findProjectDirectory(scenario.m_scene);
+		}
+		if (const auto assetsNode = root["assets"]; assetsNode) {
+			const auto addFolder = [&](const std::string& iFolder) -> bool {
+				scenario.m_assets.push_back(weakly_canonical(folder / iFolder));
+				return exists(scenario.m_assets.back());
+			};
+			const bool found = assetsNode.IsSequence() ? std::all_of(assetsNode.begin(), assetsNode.end(),
+																	 [&](const YAML::Node& iNode) -> bool {
+																		 return addFolder(iNode.as<std::string>());
+																	 })
+													   : addFolder(assetsNode.as<std::string>());
+			if (!found)
+				return unexpected<std::string>{
+						std::format("assets folder {} not found", scenario.m_assets.back().string())};
+		}
 		const double stepMs = root["timestep_ms"] ? root["timestep_ms"].as<double>() : 1000.0 / 60.0;
 		scenario.m_step.forceUpdate(std::chrono::duration_cast<core::Timestep::duration>(
 				std::chrono::duration<double, std::milli>{stepMs}));

@@ -1,0 +1,73 @@
+Tileset: pixel_backdrop
+FormatVersion: 1
+texture: nam:textures/atlases/platformer_backdrop.png
+tileWidth: 24
+tileHeight: 24
+columns: 8
+rows: 5
+filterMode: Nearest
+tiles:
+  - index: 0
+    name: sky
+  - index: 1
+    name: sky
+  - index: 2
+    name: sky
+  - index: 3
+    name: sky
+  - index: 4
+    name: dusk
+  - index: 5
+    name: dusk
+  - index: 6
+    name: mint
+  - index: 7
+    name: mint
+  - index: 8
+    name: clouds
+  - index: 9
+    name: clouds_trees
+  - index: 10
+    name: clouds
+  - index: 11
+    name: clouds_pines
+  - index: 12
+    name: hills
+  - index: 13
+    name: hills_palms
+  - index: 14
+    name: forest
+  - index: 15
+    name: forest_trees
+  - index: 16
+    name: mist
+  - index: 17
+    name: mist
+  - index: 18
+    name: mist
+  - index: 19
+    name: mist
+  - index: 20
+    name: clay
+  - index: 21
+    name: clay
+  - index: 22
+    name: forest_floor
+  - index: 23
+    name: forest_floor
+  - index: 24
+    name: sky_band
+  - index: 25
+    name: sky_band_trees
+  - index: 26
+    name: sky_band
+  - index: 27
+    name: sky_band_pines
+  - index: 28
+    name: dusk_hills
+  - index: 29
+    name: dusk_hills_palms
+  - index: 30
+    name: forest_band
+  - index: 31
+    name: forest_band_trees

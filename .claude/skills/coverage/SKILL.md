@@ -8,7 +8,7 @@ description: Run code coverage analysis for the Owl project (Clang debug preset,
 1. Use `linux-clang-debug` (coverage flags are on in debug presets).
 2. Run:
    ```bash
-   docker/run.sh poetry run python ci_action.py Coverage linux-clang-debug
+   ./docker_run.sh poetry run python ci_action.py Coverage linux-clang-debug
    ```
 3. Manual gcovr runs **always** use the project config: `poetry run gcovr --config gcovr.cfg …` — never pass
    filters on the command line. With Clang, add `--gcov-executable "llvm-cov gcov"`.

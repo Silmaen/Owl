@@ -1,5 +1,7 @@
 """
-The 24x24 map of the isometric town demo (``iso_town``), in the chunked tilemap format 3.
+The compact 24x24 map of the isometric town (``iso_town_small``), in the chunked tilemap format 3.
+
+It is the fixture of the town scenarios and of the render test, the full town being ``city_map``.
 
 A ring road with two straight streets, a plaza, buildings on pavement plots, a hill, a raised embankment on the north
 street, a shore and a railway; the same data places the buildings and trees of the scene.
@@ -201,7 +203,7 @@ def plot_cells(plot: Plot) -> list[tuple[int, int]]:
 
 def map_bytes(seed: int) -> bytes:
     """
-    Build the ``iso_town`` tilemap file.
+    Build the ``iso_town_small`` tilemap file.
 
     :param seed: Seed of the run, shuffling the grass variants.
     :return: The file content.
@@ -238,22 +240,22 @@ def map_bytes(seed: int) -> bytes:
     body += b"\x01" + bytes(heights)
     payload = body + struct.pack("<I", _fnv1a(body))
     header = (
-        "Tilemap: iso_town\nFormatVersion: 3\ntilesetPath: tilesets/iso_ground.owltileset\n"
+        "Tilemap: iso_town_small\nFormatVersion: 3\ntilesetPath: tilesets/iso_ground.owltileset\n"
         f"width: {SIZE}\nheight: {SIZE}\ncellSize: 1\nlayers:\n  - name: ground\n  - name: roads\n"
         f"payloadBytes: {len(payload)}\n"
     )
     return header.encode() + b"...\n" + payload
 
 
-def write_town_map(project: Path, seed: int) -> Path:
+def write_town_map(folder: Path, seed: int) -> Path:
     """
-    Write the town map.
+    Write the compact town map, a test fixture.
 
-    :param project: The project folder.
+    :param folder: The asset folder of the tests that use it (the map goes to its ``tilemaps``).
     :param seed: Seed of the run.
     :return: The written file.
     """
-    path = project / "tilemaps" / "iso_town.owltilemap"
+    path = folder / "tilemaps" / "iso_town_small.owltilemap"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_bytes(map_bytes(seed))
     return path

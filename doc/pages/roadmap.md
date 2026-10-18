@@ -15,7 +15,7 @@ Development is heavily AI-assisted (the AI writes the code, the maintainer tests
 - ![Ongoing][ongoing] Render-style mixing — every new mode is a renderer-stack layer that composes with the others
 - ![Ongoing][ongoing] Code quality — clang-tidy / clang-format clean, conventions of `.claude/rules/cpp-style.md`
 - ![Ongoing][ongoing] Test coverage — no public API without tests, every bug fix with its regression test
-- ![Ongoing][ongoing] Performance — measure first (Tracy, frame bench, `bench/`), no per-frame allocations
+- ![Ongoing][ongoing] Performance — measure first (Tracy, frame bench, `test/bench/`), no per-frame allocations
 - ![Ongoing][ongoing] Performance budgets enforced in CI — benchmark regression threshold fails the build
 - ![Ongoing][ongoing] Documentation quality — public API documented, `doc/pages` updated in the same PR
 - ![Ongoing][ongoing] Editor coverage for every authored object — selection, inspection, editing, bulk ops, discovery
@@ -94,6 +94,7 @@ procedural graphs, tile tools, Lua editor scripts, and Blueprints-style visual s
 - ![Planned][planned] Lua editor scripts and interactive Lua console ([Editor scripting](design/editor-scripting.md))
 - ![Planned][planned] Procedural generation graphs on `NodeCanvas`, first brick on tilemaps ([PCG graphs](design/pcg-graphs.md))
 - ![Planned][planned] Tileset editor: compose the atlas from source images ([2D](design/2d-complete.md))
+- ![Planned][planned] Sound editor in Owl Nest: preview, trim, loop points, volume and pitch, random variants of one sound
 - ![To evaluate][evaluate] Hot reload of a C++ game module
 - ![Planned][planned] Sample games: a Wolfenstein mini and a Mini Minecraft ([Sample games](design/sample-games.md))
 

@@ -1,0 +1,87 @@
+# The isometric town with the mouse only: the build-road tool lays a road on a free cell and drags along the street,
+# the right button bulldozes, a pavement plot refuses a road, and a vehicle whose route was cut by a bulldozed cell
+# looks for another way round the ring; a road laid beside a street makes a T. The headless view is 1600x960 centred
+# on the camera at (12, 12): the centre of cell (x, y) on the ground is at pixel (800 + 32 * (x - y), 480 + 16 * (x + y - 23)), 8
+# pixels higher per half unit of height.
+scene: ../test_helper/assets/scenarios/iso_town_small.owl
+project: ../../../engine_demo
+assets: ../test_helper/assets/scenarios
+steps:
+  # The traffic runs from the first frame, the tool answers once the fade-in is over.
+  - frames: 30
+  - expect: {entity: Ground, exists: true}
+  - expect: {gamestate: town_money, equals: 1000}
+  - expect: {gamestate: town_roads, equals: 0}
+  # Every vehicle was given a route to draw, the debug overlay or not.
+  - expect: {gamestate: town_route_calls, greater: 2}
+  # The cursor follows the mouse: cell (1, 12), west of the street.
+  - input: {mouse_pos: [448, 320], frames: 3}
+  - expect: {gamestate: town_cursor_x, equals: 1}
+  - expect: {gamestate: town_cursor_y, equals: 12}
+  # A click lays a road, a drag on to the next cell another one; a held button never pays twice for a cell.
+  - input: {mouse: Left, mouse_pos: [448, 320], frames: 4}
+  - expect: {gamestate: town_roads, equals: 1}
+  - expect: {gamestate: town_money, greater: 985}
+  - input: {mouse: Left, mouse_pos: [416, 304], frames: 4}
+  - expect: {gamestate: town_roads, equals: 2}
+  - input: {mouse_pos: [448, 320], frames: 3}
+  # The right button bulldozes: the cell is refunded, the count follows.
+  - input: {mouse: Right, mouse_pos: [448, 320], frames: 3}
+  - expect: {gamestate: town_roads, equals: 1}
+  # Every vehicle plans its route again at its next cell boundary once the road graph changed.
+  - frames: 30
+  - expect: {gamestate: town_replans, greater: 0}
+  # Building on a pavement plot is refused.
+  - input: {mouse_pos: [704, 416], frames: 3}
+  - expect: {gamestate: town_cursor_x, equals: 8}
+  - input: {mouse: Left, mouse_pos: [704, 416], frames: 3}
+  - expect: {gamestate: town_roads, equals: 1}
+  # A road laid beside a straight one makes a junction: (3, 11) north of the western street's cell (3, 12) turns it
+  # into a T (tile 24, no south arm); the bulldozer turns it back into the straight road along X (tile 3).
+  - input: {mouse_pos: [512, 352], frames: 3}
+  - expect: {gamestate: town_cursor_tile, equals: 3}
+  - input: {mouse: Left, mouse_pos: [544, 336], frames: 4}
+  - expect: {gamestate: town_roads, equals: 2}
+  - expect: {gamestate: town_cursor_tile, equals: 15}
+  - input: {mouse_pos: [512, 352], frames: 3}
+  - expect: {gamestate: town_cursor_tile, equals: 24}
+  - input: {mouse: Right, mouse_pos: [544, 336], frames: 3}
+  - expect: {gamestate: town_roads, equals: 1}
+  - input: {mouse_pos: [512, 352], frames: 3}
+  - expect: {gamestate: town_cursor_tile, equals: 3}
+  # Bulldoze a cell of the south row of the ring, ahead of the truck bound for the south street: it looks for another
+  # way, round the ring.
+  - input: {mouse_pos: [544, 496], frames: 3}
+  - expect: {gamestate: town_cursor_x, equals: 8}
+  - expect: {gamestate: town_cursor_y, equals: 16}
+  - input: {mouse: Right, mouse_pos: [544, 496], frames: 3}
+  - frames: 20
+  - expect: {gamestate: town_reroutes, greater: 0}
+  # A bypass built inside the ring, beside the cut: (7, 15), (8, 15), (9, 15) join the cells (7, 16) and (9, 16). The vehicles
+  # that took the long way round plan their route again and find the shorter one over the new road.
+  - input: {mouse: Left, mouse_pos: [544, 464], frames: 3}
+  - input: {mouse: Left, mouse_pos: [576, 480], frames: 3}
+  - input: {mouse: Left, mouse_pos: [608, 496], frames: 3}
+  - expect: {gamestate: town_roads, equals: 4}
+  - frames: 120
+  - expect: {gamestate: town_shortcuts, greater: 0}
+  # The road is rebuilt (the default tool is the road); the vehicles keep driving from stop to stop.
+  - input: {mouse: Left, mouse_pos: [544, 496], frames: 3}
+  - frames: 1500
+  - expect: {gamestate: town_trips, greater: 1}
+  # Every vehicle kept to the road cells, its frame matched its heading and it never drove away from it; the ring and
+  # the streets have shown more than the four axis headings.
+  - expect: {gamestate: town_offroad, equals: 0}
+  # Nobody turned back outside a dead end.
+  - expect: {gamestate: town_bad_uturns, equals: 0}
+  - expect: {gamestate: town_dead_end_loops, greater: 0}
+  - expect: {gamestate: town_route_calls, greater: 20}
+  - expect: {gamestate: town_frame_errors, equals: 0}
+  - expect: {gamestate: town_heading_errors, equals: 0}
+  - expect: {gamestate: town_frames_seen, greater: 4}
+  # No vehicle waited long for a route: a road built or rebuilt is taken as soon as the graph changes.
+  - expect: {gamestate: town_longest_wait, less: 6}
+  # The navigation exceptions of the Ground tilemap: nobody drove west along the one way north street, and the vehicles
+  # crossed the slow east side of the ring (cost 3) at a third of their speed.
+  - expect: {gamestate: town_wrong_way, equals: 0}
+  - expect: {gamestate: town_slow_frames, greater: 0}

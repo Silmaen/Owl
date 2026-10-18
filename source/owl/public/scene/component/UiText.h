@@ -46,6 +46,14 @@ struct OWL_API UiText {
 	float kerning = 0.f;
 	/// Line spacing adjustment, in font units.
 	float lineSpacing = 0.f;
+	/// Colour of the outline around the glyphs.
+	math::vec4 outlineColor{0.f, 0.f, 0.f, 1.f};
+	/// Reach of the outline outside the glyphs, in reference pixels (0 = no outline).
+	float outlineWidth = 0.f;
+	/// Colour of the box behind the text; a zero alpha draws no box.
+	math::vec4 backgroundColor{0.f, 0.f, 0.f, 0.f};
+	/// Margin between the text block and its background box, in reference pixels.
+	float backgroundPadding = 4.f;
 
 	/**
 	 * @brief

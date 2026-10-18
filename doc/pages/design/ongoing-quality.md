@@ -31,7 +31,7 @@ baseline on these axes; each release is expected to move the needle forward. The
 
 ## Performance
 
-- Profile before optimizing — measure with Tracy, the frame bench or the `bench/` harness
+- Profile before optimizing — measure with Tracy, the frame bench or the `test/bench/` harness
 - Watch for regressions in hot paths (renderer, physics step, scene update, script tick)
 - Prefer algorithmic wins over micro-optimizations; document non-obvious perf tradeoffs
 - Memory: avoid per-frame allocations, reuse buffers, stream large assets

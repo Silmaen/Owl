@@ -34,7 +34,7 @@ def test_spans_are_classified_by_shape() -> None:
     assert classify("CameraOrtho::setPosition()") == "symbol"
     assert classify("scene.find_entity") == "call"
     assert classify(".owl") is None
-    assert classify("docker/run.sh cmake --build") is None
+    assert classify("./docker_run.sh cmake --build") is None
     assert classify("true") is None
     assert classify("output/build/<preset>") is None
     assert classify("tracy/0.13.1") is None

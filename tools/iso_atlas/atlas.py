@@ -12,6 +12,8 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 
+from .city_map import write_city_map
+from .city_scene import write_city_scene
 from .common import TILE_H, TILE_W, Z_RANGE, Layers, Vec3
 from .objects import (
     BUILDINGS,
@@ -20,6 +22,7 @@ from .objects import (
     VEHICLE_HEADINGS,
     VEHICLE_MODELS,
     VEHICLES,
+    birds,
     render_object,
     slice_object,
     smoke,
@@ -245,13 +248,16 @@ def _save(layers: Layers, folder: Path, stem: str, level: str) -> list[Path]:
     return written
 
 
-def generate(project: Path, seed: int = 1, levels: tuple[str, ...] = LEVELS) -> list[Path]:
+def generate(
+    project: Path, seed: int = 1, levels: tuple[str, ...] = LEVELS, tests: Path | None = None
+) -> list[Path]:
     """
-    Generate every atlas, the tilesets, the sprites and the sample map into a project folder.
+    Generate every atlas, the tilesets, the sprites and the town map into a project folder, and the test maps.
 
     :param project: The project folder (``engine_demo``); textures go to ``textures/iso``, tilesets to ``tilesets``.
     :param seed: Seed of the run; the same seed always gives the same pixels.
     :param levels: The zoom levels to write.
+    :param tests: The ``test/unit/test_helper/assets`` folder, for the test-only maps (skipped when absent).
     :return: Every written file.
     """
     folder = project / "textures" / "iso"
@@ -283,9 +289,16 @@ def generate(project: Path, seed: int = 1, levels: tuple[str, ...] = LEVELS) -> 
     for spec in BUILDINGS + PROPS:
         written += _save(render_object(spec, seed, 1).layers, folder, spec.name, "1x")
     written += _save(smoke(1, seed), folder, "smoke", "1x")
+    birds_path = folder / "birds.png"
+    birds().save(birds_path, optimize=True)
+    written.append(birds_path)
     written += _save(build_vehicles(seed), folder, "vehicles", "1x")
-    written.append(write_map(project, seed))
-    written.append(write_town_map(project, seed))
+    if tests is not None:
+        written.append(write_map(tests / "render_tests", seed))
+        written.append(write_town_map(tests / "render_tests", seed))
+        written.append(write_town_map(tests / "scenarios", seed))
+    written.append(write_city_map(project, seed))
+    written.append(write_city_scene(project, seed))
     return written
 
 

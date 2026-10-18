@@ -118,6 +118,12 @@ private:
 
 	/**
 	 * @brief
+	 *  Ribbon tab of an image document (close only: the viewer edits nothing).
+	 */
+	void buildImageTab();
+
+	/**
+	 * @brief
 	 *  Build the contextual tab of an action map document (Save / Save As / Reset / Close).
 	 */
 	void buildActionMapTab();

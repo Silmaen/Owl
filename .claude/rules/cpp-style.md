@@ -61,7 +61,7 @@ Every file starts with a Doxygen header:
 the project header of each macro or type it uses (`core/Macros.h` for `OWL_DIAG_PUSH`, `core/Core.h` for
 `OWL_API`). Never count on a transitive include of the standard library: a recent libstdc++ (MSYS2) drops them and
 `owlpch.h` hides the gap everywhere else. A `.cpp` may rely on its own header and on `owlpch.h`. Two gates:
-`CodeStyle` (`std-includes` sub-check) and `docker/run.sh poetry run python ci_action.py IncludeCheck
+`CodeStyle` (`std-includes` sub-check) and `./docker_run.sh poetry run python ci_action.py IncludeCheck
 linux-include-check` (every header and source compiled alone, no PCH, strict libc++).
 
 ## Naming Conventions

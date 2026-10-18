@@ -82,7 +82,7 @@ public:
 	/**
 	 * @brief
 	 *  Factory entry. Loads the Slang source at
-	 *  `engine_assets/shaders/<renderer>/slang/<name>.slang`, compiles it to
+	 *  `engine_assets/shaders/<renderer>/<name>.slang`, compiles it to
 	 *  SPIR-V (compute stage), builds the backend-specific pipeline.
 	 * @param[in] iShaderName Shader file name (without `.slang`).
 	 * @param[in] iRenderer Owning renderer name (directory under

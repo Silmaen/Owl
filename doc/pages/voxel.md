@@ -223,7 +223,7 @@ and **Left-Shift** descends, and motion is still resolved against voxel collisio
 
 Mouse-look capture is **opt-in**: the `VoxelPlayer` has a **Capture Cursor** flag (off by default) — only a player
 that enables it lets clicking the viewport hide / lock the cursor (the editor and runner check
-`Scene::wantsCursorCapture()`), so non-voxel scenes keep a normal cursor. With capture off, block break / place is
+`Scene::wantsCursorCapture()`), so non-voxel scenes keep a normal cursor. The cursor is given back as soon as the scene stops wanting capture (level change, Stop in Owl Nest) or on Escape (`window::nextCursorMode`). With capture off, block break / place is
 disabled too (it is gated on the captured cursor).
 
 The player can also **edit the world** (when cursor capture is enabled). A centre-screen **crosshair** marks the aim point; a ray
@@ -242,7 +242,7 @@ terrain streaming does not pay for it). `reach` and
 
 Meshing a surface chunk costs about 350 µs, so a streaming frame that meshed every new chunk on the main thread
 spiked to 9-14 ms. The main thread now only captures, uploads and draws, and stays under 0.6 ms per frame while
-terrain streams in (`bench/` group `voxel/streaming`, numbers in `doc/audit/20-mesures.md` §3.10):
+terrain streams in (`test/bench/` group `voxel/streaming`, numbers in `doc/audit/20-mesures.md` §3.10):
 
 ```mermaid
 sequenceDiagram

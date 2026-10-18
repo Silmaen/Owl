@@ -49,13 +49,14 @@ struct MsdfData {
 
 namespace {
 constexpr double g_emSize = 40.0;
-constexpr double g_pixelRange = 2.0;
+// Distance range in atlas texels; the text shader (`text.slang`, `kPxRange`) must use the same value.
+constexpr double g_pixelRange = 6.0;
 constexpr double g_miterLimit = 1.0;
 constexpr double g_angleThreshold = 3.0;
 constexpr uint64_t g_lcgMultiplier = 6364136223846793005;
 constexpr uint32_t g_channels = 3;
 // Bumped whenever the generation or the cache layout changes, so old cache files stop matching.
-constexpr uint32_t g_atlasCacheVersion = 1;
+constexpr uint32_t g_atlasCacheVersion = 2;
 constexpr std::array<char, 8> g_atlasCacheMagic{'O', 'W', 'L', 'A', 'T', 'L', 'A', 'S'};
 
 struct AtlasBitmap {

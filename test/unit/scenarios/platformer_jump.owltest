@@ -1,0 +1,9 @@
+# Pressing Space makes the platformer player jump once (`input.is_key_just_pressed`): holding it does not jump again.
+scene: ../../../engine_demo/scenes/platformer_house.owl
+steps:
+  - frames: 30
+  - expect: {player: true, translation.y: {less: -14.0}}
+  - input: {key: Space, frames: 10}
+  - expect: {player: true, translation.y: {greater: -13.9}}
+  - input: {key: Space, frames: 120}
+  - expect: {player: true, translation.y: {less: -14.0}}

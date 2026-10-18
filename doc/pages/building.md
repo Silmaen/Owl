@@ -8,13 +8,13 @@ This page explains how to configure, build, and test the Owl engine.
 
 ### Build image
 
-The reference environment is the CI build image, driven by `docker/run.sh`: it runs any command in the image with
+The reference environment is the CI build image, driven by `./docker_run.sh`: it runs any command in the image with
 your user, the repository mounted at its own path and a persistent home (Poetry venv, Conan cache, ccache) next to
 the checkout. Every command of this page works prefixed with it, which is how the project is developed:
 
 ```bash
-docker/run.sh cmake --preset linux-clang-release -S .
-docker/run.sh cmake --build output/build/linux-clang-release
+./docker_run.sh cmake --preset linux-clang-release -S .
+./docker_run.sh cmake --build output/build/linux-clang-release
 ```
 
 ### Software
@@ -61,7 +61,7 @@ come from their local cache (`-DOWL_HELP_FETCH_BADGES=ON`, set by the packaged p
 `windows-clang-release` and `package-linux`, downloads the missing ones), and the `documentation` target exists only
 when Doxygen is found (`-DOWL_ENABLE_DOCUMENTATION=ON` requires it). The `Doxyfile` is generated in the build tree.
 
-The engine is also a Conan package, checked by `test_package/` (two programs built on `find_package(OwlEngine)`);
+The engine is also a Conan package, checked by `test/package/` (two programs built on `find_package(OwlEngine)`);
 publishing it is a v1.0.0 item, until then other projects use the packaged `OwlEngine` archive (see
 [Packaging](#packaging)). `Owl::OwlEngine` (`<owl.h>`) exposes EnTT as its only dependency; the headers that include
 imgui (`<owlgui.h>`, `gui/utils.h`, `gui/widgets/AssetField.h`, `gui/widgets/CurveEditor.h`) come with the optional
@@ -137,14 +137,18 @@ tested (`linux-clang-release`, `windows-clang-release`), so the archive holds th
 tree.
 
 ```bash
-docker/run.sh cmake --build output/build/linux-clang-release
-cd output/build/linux-clang-release && ../../../docker/run.sh cpack
+./docker_run.sh cmake --build output/build/linux-clang-release
+cd output/build/linux-clang-release && ../../../docker_run.sh cpack
 ```
 
 On Linux the archives rely on the system's graphics, audio and windowing libraries, plus D-Bus (`libdbus-1-3`, any
 desktop has it): the Owl Nest file dialogues go through `xdg-desktop-portal` (nativefiledialog-extended built with its
 `portal` option, set in `conanfile.py`), so they need a running portal with a desktop backend (GNOME, KDE or GTK) and
 no GTK in the process. Without a portal, opening a dialogue logs an error and returns no path.
+
+A package holds `assets/` (fonts, shaders, project templates, logo, help and, for Owl Nest, the editor sounds and
+trigger icons), `assets_sources/icons/` (the editor SVG icons) and `engine_demo/`; generators and test fixtures are not
+installed.
 
 The binaries decide at run time where their assets are: `assets/` next to the working directory first, then, in a
 development tree, `engine_assets/` and the application's assets found above it. No build switch tells a package from
@@ -179,9 +183,9 @@ docker export "$container" | tar -x -C "$sysroot" --anchored --exclude='dev/*' -
 docker rm "$container"
 find "$sysroot" -type l -lname '/*' -exec sh -c \
     'ln -sfn "$(realpath -m --relative-to="$(dirname "$1")" "$2$(readlink "$1")")" "$1"' _ {} "$sysroot" \;
-docker/run.sh cmake --preset linux-cross-arm64 -DOWL_SYSROOT="$sysroot"
-docker/run.sh cmake --build output/build/linux-cross-arm64
-docker/run.sh ctest --test-dir output/build/linux-cross-arm64 --output-on-failure -j8
+./docker_run.sh cmake --preset linux-cross-arm64 -DOWL_SYSROOT="$sysroot"
+./docker_run.sh cmake --build output/build/linux-cross-arm64
+./docker_run.sh ctest --test-dir output/build/linux-cross-arm64 --output-on-failure -j8
 ```
 
 A sysroot outside the repository is mounted with `OWL_DOCKER_MOUNTS`. `linux-emulated` keeps the former build, the
@@ -207,11 +211,11 @@ with a fixed time step and no user input, and reports the CPU time per phase and
 (Vulkan and OpenGL), plus the queue drains per frame:
 
 ```bash
-docker/run.sh --gui output/build/linux-clang-release/bin/OwlRunner \
+./docker_run.sh --gui output/build/linux-clang-release/bin/OwlRunner \
     --frame-bench engine_demo/scenes/platformer_house.owl --backend opengl --frames 1000 --out fb.json
 ```
 
-Options, output format and device selection: `bench/README.md`. The v0.3.0 baseline lives in
+Options, output format and device selection: `test/bench/README.md`. The v0.3.0 baseline lives in
 `doc/audit/20-mesures.md`.
 
 ## CI System
@@ -273,10 +277,10 @@ On Linux the editor and the runner use GLFW with both display backends. By defau
 ```bash
 OWL_WINDOW_PLATFORM=wayland output/build/linux-clang-release/bin/OwlNest   # native Wayland
 OWL_WINDOW_PLATFORM=x11 output/build/linux-clang-release/bin/OwlNest       # X11 / XWayland: detached editor windows
-docker/run.sh --platform=x11 --gpu=nvidia output/build/linux-clang-release/bin/OwlRunner
+./docker_run.sh --platform=x11 --gpu=nvidia output/build/linux-clang-release/bin/OwlRunner
 ```
 
-- `docker/run.sh --gui` mounts the Wayland socket, the X11 socket and `/dev/dri`; `--gpu=intel|nvidia` pins Vulkan,
+- `./docker_run.sh --gui` mounts the Wayland socket, the X11 socket and `/dev/dri`; `--gpu=intel|nvidia` pins Vulkan,
   EGL and GLX to one GPU of a hybrid laptop (`nvidia` turns PRIME render offload on), `--platform=` sets
   `OWL_WINDOW_PLATFORM`. It also lends the host cursor themes (read-only) with `XCURSOR_THEME` / `XCURSOR_SIZE`, so
   the window shows the desktop cursor.
@@ -285,7 +289,7 @@ docker/run.sh --platform=x11 --gpu=nvidia output/build/linux-clang-release/bin/O
 - Under Wayland the icon comes from a hidden desktop entry written to `~/.local/share/applications/<app_id>.desktop`
   (`installDesktopEntry: false` in `config.yml` to opt out).
 - A locked or hidden session presents no frame: X11 windows that wait for presentation (vsync on, or any NVIDIA
-  PRIME window) crawl at about one frame per second until shown again (`docker/run.sh` warns when the session is
+  PRIME window) crawl at about one frame per second until shown again (`./docker_run.sh` warns when the session is
   locked).
 
 See [Windowing and input](design/windowing-input.md) for the details and the GLFW limits.
@@ -320,17 +324,17 @@ See [Windowing and input](design/windowing-input.md) for the details and the GLF
 | `OWL_ENABLE_RENDERER_VERBOSE_CAPABILITIES` | OFF     | Log every capability of the graphics device at start-up                          |
 | `OWL_ENABLE_SHADER_REFLECT_RESOURCES`      | OFF     | Log the resources reflected from every compiled shader                           |
 | `OWL_USE_CCACHE`                           | ON      | ccache (or sccache) as compiler launcher when available                          |
-| `OWL_BENCHMARK`                            | OFF     | `owl_bench` micro-benchmark harness (`bench/`)                                   |
+| `OWL_BENCHMARK`                            | OFF     | `owl_bench` micro-benchmark harness (`test/bench/`)                                   |
 | `OWL_INCLUDE_CHECK`                        | OFF     | `owl_include_check`: every header and source compiled alone (Clang only)         |
 | `OWL_TEST_SHUFFLE`                         | OFF     | Run every test binary with `--gtest_shuffle`                                     |
-| `OWL_RENDER_TESTS`                         | ON      | Image tests (`test/render_tests`, label `render`)                                |
+| `OWL_RENDER_TESTS`                         | ON      | Image tests (`test/unit/render_tests`, label `render`)                                |
 | `OWL_TEST_TIMEOUT`                         | 600     | Per test binary CTest timeout, in seconds                                        |
 | `OWL_CONAN_PROFILE`                        | (auto)  | Conan host profile, default `conan/profiles/<os>-<compiler>[-<arch>]`            |
 | `OWL_CONAN_BUILD_PROFILE`                  | (auto)  | Conan build profile, default `conan/profiles/<os>-<compiler>`                    |
 | `OWL_SYSROOT`                              | (auto)  | arm64 sysroot of the cross toolchain, default `/opt/sysroot/aarch64-linux-gnu`   |
 | `OWL_CONAN_HOME`                           | (empty) | `CONAN_HOME` for the install (empty: Conan's default)                            |
 | `OWL_CONAN_BUILD`                          | missing | Value of `conan install --build`                                                 |
-| `OWL_FUZZING`                              | OFF     | libFuzzer targets in `fuzz/` (Clang-only)                                        |
+| `OWL_FUZZING`                              | OFF     | libFuzzer targets in `test/fuzz/` (Clang-only)                                        |
 | `OWL_ENABLE_MEMORY_TRACKER`                | OFF     | Allocation tracker, opt-in in every build type (Debug included)                  |
 | `OWL_PROFILER`                             | none    | `OWL_PROFILE_*` backend: `none`, `tracy` or `chrome` ([Profiling](profiling.md)) |
 | `OWL_LOG_LEVEL`                            | trace   | Lowest log level compiled in (`trace` to `off`)                                  |

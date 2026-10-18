@@ -45,7 +45,7 @@ Conan package is the one exception: it moves to v1.0.0 ([Stable release](stable-
 - ![Done][done] Install tree fixed: headers under `include/`, no build flag imposed on consumers, preset prefix
   honoured (PR-08: G-01, G-02, G-06, A-19, G-19)
 - ![Planned][planned] OwlEngine Conan package (PR-09: F-06, G-03) — moved to v1.0.0. `conan create .` already
-  packages `owlengine` (shared) and `test_package/` builds on `find_package(OwlEngine)`; the CI runs neither
+  packages `owlengine` (shared) and `test/package/` builds on `find_package(OwlEngine)`; the CI runs neither
 - ![Done][done] DepManager, `depmanager.yml`, `cmake/Depmanager.cmake` and `owl_engine.py` removed; until the
   v1.0.0 package, consumers (OwlDrone) use the packaged archive: the CPack install tree and `find_package(OwlEngine)`
 
@@ -90,7 +90,7 @@ Every fix lands with its regression test.
 
 ## Phase B — Safety nets
 
-- ![Done][done] Engine benchmark harness `bench/` behind `OWL_BENCHMARK` (scene, frame, Renderer2D, YAML, voxel,
+- ![Done][done] Engine benchmark harness `test/bench/` behind `OWL_BENCHMARK` (scene, frame, Renderer2D, YAML, voxel,
   Lua, physics, Slang, startup); the real runner's cold start in `OwlRunner --frame-bench` (`startup_ms`)
 - ![Done][done] `owlnest_tests` category: undo, commands, snapshots; the empty round-trip assertions fixed
   (PR-02: E-03, F-02, C-07, P-14)
@@ -234,7 +234,7 @@ reorganised, made discoverable and consistent. See [Owl Nest UI](nest-ui.md).
 
 ## Performance targets {#performance-targets}
 
-Measured on the `bench/` harness, Null backend unless stated (source: `doc/audit/20-mesures.md`).
+Measured on the `test/bench/` harness, Null backend unless stated (source: `doc/audit/20-mesures.md`).
 
 | Indicator                               | Measured today                                   | v0.3.0 target                         | Status                                                                         |
 |-----------------------------------------|--------------------------------------------------|---------------------------------------|--------------------------------------------------------------------------------|

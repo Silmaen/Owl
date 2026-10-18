@@ -195,6 +195,15 @@ public:
 
 	/**
 	 * @brief
+	 *  Player HUD scale of the scene's application: the `ui_scale` setting (1 by default, clamped to 0.5 – 3), applied
+	 *  on top of the canvas scale mode in game, never in the HUD editor.
+	 * @param[in] iScene The scene (1 when it has no engine context).
+	 * @return The scale factor.
+	 */
+	[[nodiscard]] static auto getUserScale(const Scene& iScene) -> float;
+
+	/**
+	 * @brief
 	 *  Forget the layout: the next `isComputedFor` returns false.
 	 */
 	void invalidate();
@@ -252,6 +261,9 @@ public:
 	[[nodiscard]] auto getComputeCount() const -> uint64_t { return m_computeCount; }
 
 private:
+	/// The component storages of a scene, looked up once per `compute` instead of once per widget.
+	struct Pools;
+
 	/**
 	 * @brief
 	 *  One entity waiting in the depth-first walk.
@@ -284,11 +296,12 @@ private:
 	 * @brief
 	 *  Queue the children of a widget for the walk, placed by its `UiLayout` when it has one.
 	 * @param[in] iScene The scene.
+	 * @param[in] iPools The component storages of the scene.
 	 * @param[in] iEntity The widget (or canvas) entity.
 	 * @param[in] iParent Index of the widget in the layout (`HudNode::noParent` for a canvas).
 	 * @param[in] iEditorMode Use the editor visibility.
 	 */
-	void pushChildren(Scene& iScene, entt::entity iEntity, size_t iParent, bool iEditorMode);
+	void pushChildren(Scene& iScene, const Pools& iPools, entt::entity iEntity, size_t iParent, bool iEditorMode);
 
 	/**
 	 * @brief
@@ -305,41 +318,46 @@ private:
 	 * @brief
 	 *  List the children of a widget that a `UiLayout` of it would place, in `m_layoutChildren`.
 	 * @param[in] iScene The scene.
+	 * @param[in] iPools The component storages of the scene.
 	 * @param[in] iEntity The widget entity.
 	 * @param[in] iContent Size of the content area, in reference pixels (the parent of the ratio units).
 	 * @param[in] iEditorMode Use the editor visibility.
 	 */
-	void collectLayoutChildren(Scene& iScene, entt::entity iEntity, const math::vec2& iContent, bool iEditorMode);
+	void collectLayoutChildren(Scene& iScene, const Pools& iPools, entt::entity iEntity, const math::vec2& iContent,
+							   bool iEditorMode);
 
 	/**
 	 * @brief
 	 *  Measure the children a `UiLayout` of a widget places.
 	 * @param[in] iScene The scene.
+	 * @param[in] iPools The component storages of the scene.
 	 * @param[in] iEntity The widget entity.
 	 * @param[in] iContent Size of the content area, in reference pixels.
 	 * @param[in] iEditorMode Use the editor visibility.
 	 * @return The extent in reference pixels, nothing when the widget has no `UiLayout`.
 	 */
-	auto measureLayout(Scene& iScene, entt::entity iEntity, const math::vec2& iContent, bool iEditorMode)
-			-> std::optional<math::vec2>;
+	auto measureLayout(Scene& iScene, const Pools& iPools, entt::entity iEntity, const math::vec2& iContent,
+					   bool iEditorMode) -> std::optional<math::vec2>;
 
 	/**
 	 * @brief
 	 *  Turn a widget into a scroll container when it carries a `UiScrollView` or a `UiList`.
 	 * @param[in] iScene The scene.
+	 * @param[in] iPools The component storages of the scene.
 	 * @param[in,out] ioNode The widget, its content area and clipping completed.
 	 * @param[in] iEditorMode Use the editor visibility.
 	 */
-	void attachScroll(Scene& iScene, HudNode& ioNode, bool iEditorMode);
+	void attachScroll(Scene& iScene, const Pools& iPools, HudNode& ioNode, bool iEditorMode);
 
 	/**
 	 * @brief
 	 *  Lay out the widgets of one canvas.
 	 * @param[in] iScene The scene.
+	 * @param[in] iPools The component storages of the scene.
 	 * @param[in] iCanvas The canvas entity.
 	 * @param[in] iEditorMode Use the editor visibility.
 	 */
-	void layoutCanvas(Scene& iScene, entt::entity iCanvas, bool iEditorMode);
+	void layoutCanvas(Scene& iScene, const Pools& iPools, entt::entity iCanvas, bool iEditorMode);
 
 	/// Laid out widgets, in draw order.
 	std::vector<HudNode> m_nodes;

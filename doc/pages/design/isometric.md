@@ -143,7 +143,7 @@ and the terraforming tools of `TilemapDocument`, the slope table of `TilesetDocu
 references changed because the sample map is no longer flat.
 
 ISO3 (2026-10-15) added the atlas generator `tools/iso_atlas`, run from the repository root with
-`docker/run.sh poetry run python -m tools.iso_atlas [--project engine_demo] [--seed 1] [--levels 1x,2x,half]`.
+`./docker_run.sh poetry run python -m tools.iso_atlas [--project engine_demo] [--seed 1] [--levels 1x,2x,half]` (default `1x`).
 It writes into `textures/iso/`, `tilesets/` and `tilemaps/` of the project:
 
 | Output                                 | Content                                                                                                                           |
@@ -153,10 +153,10 @@ It writes into `textures/iso/`, `tilesets/` and `tilemaps/` of the project:
 | `cottage`, `tower`, `oak`, `pine`, `…` | Whole sprites, bottom centre on the front corner of the footprint                                                                 |
 | `smoke.png`                            | Translucent puff                                                                                                                  |
 | `*_normal.png`, `*_depth.png`          | Same grid as the albedo; normals are world space (`n * 0.5 + 0.5`), depth is the height above the sprite's ground (`z / 8 * 255`) |
-| `@2x`, `@0.5x` suffixes                | Atlases drawn natively at twice the size, and the mip at half the size, with their tilesets                                       |
+| `@2x`, `@0.5x` suffixes                | `--levels 2x,half`: atlases drawn natively at twice the size, and the mip at half the size, with their tilesets (the demo keeps `1x` only) |
 
 The same seed always gives the same pixels (pytest hash in `tools/tests/`); the sample map `iso_test.owltilemap` is
-written by the same run. Nothing reads the normal and depth atlases yet (v0.5.0 lights).
+written by the same run (the render tests keep it in `test/unit/test_helper/assets/render_tests`, the demo no longer has the scene). Nothing reads the normal and depth atlases yet (v0.5.0 lights).
 
 ISO4 (2026-10-15) added the objects: `IsometricObjectSet` and the `IsometricObject` component with its inspector, the
 compact `IsometricSprite` and `RendererIsometric::drawSprite` / `drawSprites` / `drawObject` (`sprite.slang`), pixel
@@ -172,7 +172,7 @@ and three vehicles driven by `iso_vehicle.lua`, and the `isometric_objects` imag
 | Frame, zoomed out ×4 (51 200 cells in 3 chunks)  | 1.42 ms | < 4 ms |
 | 1 000 buildings of 3 slices (3 000 sprites)      | 63 µs   | -      |
 
-The baseline of these entries in `bench/baseline/linux-bench.json` is an estimate (this run scaled by the agent ratio
+The baseline of these entries in `test/bench/baseline/linux-bench.json` is an estimate (this run scaled by the agent ratio
 of `renderer2d/quads_color`) until a nightly run replaces it.
 
 ISO5 chunk buffers (2026-10-16): a tilemap of the isometric layer keeps, per layer and 32 x 32 chunk, a persistent
@@ -201,7 +201,7 @@ to 494 tiles). `iso_town.lua` tiles a cell from its mask and re-tiles the four n
 bulldozed; the `navigation` rules of the scene list the arms of each tile (`exits` the arms, `enters` their opposites).
 
 ISO5 demo (2026-10-16): `engine_demo/scenes/iso_town.owl` (**O** from the main menu), the road along Y, a `marker`
-prop and `iso_town.owltilemap` from the generator, `scripts/iso_town.lua`, `iso_town_traffic.lua` and `iso_cloud.lua`,
+prop and `iso_town.owltilemap` from the generator, `scripts/iso/iso_town.lua`, `iso_town_traffic.lua` and `iso_cloud.lua`,
 `huds/iso_town.owlhud`, the `build`, `bulldoze`, `town_tool` and `cursor` actions, the Lua `isometric.*` functions and
 `ui.is_mouse_over_ui`, the `iso_town` and `iso_town_actions` scenarios and the `iso_town` image test (640 × 360, both
 backends).

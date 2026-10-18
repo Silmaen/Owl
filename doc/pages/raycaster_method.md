@@ -519,7 +519,7 @@ To drive either object from a Lua script instead of the built-in key, set the co
 | `source/owl/private/scene/component/RaycastPushWall.cpp`            | Pushwall YAML serialize / deserialize                 |
 | `source/owl/private/scene/Scene.cpp` (`Scene::render` tilemap loop) | Dispatch by active-layer type key + dynamic-wall tick |
 | `source/owl/private/script/LuaBindings.cpp` (`door` + `pushwall`)   | Lua API tables                                        |
-| `test/renderer_tests/RendererRaycast_test.cpp`                      | Renderer-level unit tests                             |
-| `test/scene_tests/RaycastDynamicWalls_test.cpp`                     | Door / pushwall state-machine + serializer tests      |
+| `test/unit/renderer_tests/RendererRaycast_test.cpp`                      | Renderer-level unit tests                             |
+| `test/unit/scene_tests/RaycastDynamicWalls_test.cpp`                     | Door / pushwall state-machine + serializer tests      |
 | `engine_demo/scenes/raycast_demo.owl`                               | Wolfenstein-inspired demo scene                       |
-| `engine_demo/scripts/raycast_player.lua`                            | Player input matching the pose convention             |
+| `engine_demo/scripts/raycast/raycast_player.lua`                            | Player input matching the pose convention             |

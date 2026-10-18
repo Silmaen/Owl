@@ -235,7 +235,8 @@ end
 ### `scene`
 
 `scene.find_entity` scans every entity: call it once (in `on_create`) and keep the id. It looks in the scene, then in the
-scene's HUD asset (`Hud:` key, see [Scene](scene.md#hud-asset)).
+scene's HUD asset (`Hud:` key, see [Scene](scene.md#hud-asset)). `scene.find_entities(tag)` returns every entity of
+the scene with the tag as an array (the iso town indexes its trees by cell with it).
 
 ### `ui`
 
@@ -301,6 +302,13 @@ ui.transition_play("fade_out", 0.5, 0.8, 0.1, 0.6, 1.0)
 as zero-allocation shorthands for scripts written before the wipe variants
 existed.
 
+### `entity`
+
+`entity.has_component(id, name)` and `entity.get_name(id)` query an entity; `entity.set_tint(id, r, g, b, [a])` and
+`entity.get_tint(id)` write and read the colour a `SpriteRenderer` or `AnimatedSpriteRenderer` multiplies into its
+texture, which is how a script flashes a sprite on a hit or fades a coin out (false / nothing for an entity without a
+sprite). See `engine_demo/scripts/platformer/platformer_player.lua` and `coin.lua`.
+
 ### `isometric`
 
 The `isometric` functions take the entity carrying the isometric `Tilemap` (`scene.find_entity("Ground")`, cached).
@@ -311,7 +319,7 @@ read and write a cell of a layer (layers from 0, -1 for none) without undo, whic
 the surface under a world position, to stand vehicles on the terrain. `isometric.set_sprite_frame(sprite, frame)` pins an
 `AnimatedSpriteRenderer` on one frame of its sheet (`isometric.get_sprite_frame(sprite)` reads it), so one entity shows
 the picture of its heading. `ui.is_mouse_over_ui()` tells a click on the HUD
-from a click on the map. See `engine_demo/scripts/iso_town.lua` and `iso_town_traffic.lua`.
+from a click on the map. See `engine_demo/scripts/iso/iso_town.lua` and `iso_town_traffic.lua`.
 
 ### `path`
 
@@ -321,7 +329,7 @@ next frames, `path.poll(map, request)` answers `pending`, `found`, `not_found` o
 returns the cells as `{x1, y1, x2, y2, ...}` and the cost in cells, `path.release(map, request)` frees the request.
 `path.find_now` searches at once, `path.get_version(map)` changes when a road is built or bulldozed,
 `path.is_valid(map, request, from_cell)` tells whether the rest of a path still exists and `path.get_edge_cost` and
-`path.is_walkable` read the graph. See `engine_demo/scripts/iso_town_traffic.lua`.
+`path.is_walkable` read the graph. See `engine_demo/scripts/iso/iso_town_traffic.lua`.
 
 ### `gamestate`
 
@@ -464,19 +472,11 @@ function on_update(dt)
 end
 ```
 
-## Scene Templates
+## Menu Scenes
 
-The engine includes template scenes in `engine_assets/templates/` that provide
-starting points for common game screens:
-
-| Template         | Description                                     |
-|------------------|-------------------------------------------------|
-| `main_menu.owl`  | Title text, Start and Quit buttons              |
-| `pause_menu.owl` | Semi-transparent panel, Resume and Quit buttons |
-| `game_over.owl`  | Game Over text, Retry and Main Menu buttons     |
-
-Copy a template into your project's assets and customize the text, colours, and
-Lua callbacks to match your game.
+The Engine Demo (`engine_demo/scenes/`) holds ready-made screens to copy into a project and adapt (text, colours, Lua
+callbacks): `main_menu.owl` (Play, Continue, Settings and Quit buttons), `settings_menu.owl`, `game_over.owl` (Retry and
+Main Menu buttons) and `victory.owl`, driven by `engine_demo/scripts/ui/`.
 
 ## Scene Lifecycle Integration
 

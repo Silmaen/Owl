@@ -45,6 +45,23 @@ enum struct CursorMode : uint8_t {
 
 /**
  * @brief
+ *  Next cursor mode of a scene that may capture the cursor: a captured cursor is given back as soon as the scene no
+ *  longer wants capture (scene change, system stopped) or the user asks for it; a free one is captured only on request.
+ * @param[in] iCurrent Current cursor mode.
+ * @param[in] iWantsCapture Whether the active scene wants the cursor captured.
+ * @param[in] iCaptureRequested Whether the user asked to capture (a click on the game).
+ * @param[in] iReleaseRequested Whether the user asked to release (Escape).
+ * @return The cursor mode to apply.
+ */
+[[nodiscard]] constexpr auto nextCursorMode(const CursorMode iCurrent, const bool iWantsCapture,
+											const bool iCaptureRequested, const bool iReleaseRequested) -> CursorMode {
+	if (iCurrent == CursorMode::Disabled)
+		return iWantsCapture && !iReleaseRequested ? CursorMode::Disabled : CursorMode::Normal;
+	return iWantsCapture && iCaptureRequested ? CursorMode::Disabled : CursorMode::Normal;
+}
+
+/**
+ * @brief
  *  Native windowing platform (display server) used by the window manager.
  */
 enum struct Platform : uint8_t {

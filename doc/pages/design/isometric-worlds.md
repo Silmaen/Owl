@@ -244,7 +244,7 @@ and ISO1: they merge in that order. `Scene.cpp` is touched by TM1, ISO1 and HUD1
 
 ## Performance budgets
 
-New `bench/` cases, Null backend CPU unless stated; each one enters `bench/baseline/` with its PR.
+New `test/bench/` cases, Null backend CPU unless stated; each one enters `test/bench/baseline/` with its PR.
 
 | Case                                                     | Budget                      |
 |----------------------------------------------------------|-----------------------------|
@@ -285,7 +285,7 @@ The release ships when these hold, whatever the date:
 - The inventory demo plays with a gamepad only; Owl Nest file dialogues go through the desktop portal, no GTK
 - MCP: every registered command exposed as a tool; a create through HTTP then undone restores the scene; 401, 403
   and 413 cases tested; no socket open by default; end-to-end test clean under the thread sanitizer
-- Every authored object of this release has full editor support; budgets above in `bench/baseline/`; coverage not
+- Every authored object of this release has full editor support; budgets above in `test/bench/baseline/`; coverage not
   lower than at v0.3.0
 
 [done]: https://img.shields.io/badge/-Done-2ea043?style=flat-square

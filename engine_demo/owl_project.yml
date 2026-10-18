@@ -35,3 +35,5 @@ OwlProject:
         Zoom: 0
     - Type: Renderer2D
       Name: ui
+    - Type: Renderer2D
+      Name: overlay

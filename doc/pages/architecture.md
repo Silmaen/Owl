@@ -197,7 +197,7 @@ sequenceDiagram
 
 Shaders are written in **Slang** (`.slang` files), a single-source shading language:
 
-1. **Source**: `engine_assets/shaders/<renderer>/slang/<name>.slang`
+1. **Source**: `engine_assets/shaders/<renderer>/<name>.slang`
 2. **Compilation**: `compileSlangToSpirv()` compiles Slang to SPIR-V at runtime using the Slang C++ API, with
    `BACKEND_VULKAN` or `BACKEND_OPENGL` preprocessor defines
 3. **Reflection**: `shaderReflect()` uses spirv-cross to extract uniform buffers and sampled images from the SPIR-V
@@ -312,7 +312,7 @@ icon at several sizes: 16, 24 and 32 px times the monitor content scale, plus th
 `IconBank::getIcon(name, size)` returns the smallest tier at least as large as the drawn size, so an icon is drawn at
 its own resolution instead of a scaled-down bitmap; `getIcon(name)` returns the 64 px one.
 
-Action glyphs come from the **Lucide** icon font (`engine_assets/fonts/lucide/`, ISC licence), merged into every UI
+Action glyphs come from the **Lucide** icon font (`engine_assets/fonts/`, ISC licence), merged into every UI
 font: the constants of `gui/IconFont.h` (save, play, trash...) are UTF-8 strings used inside any label, at the size
 and colour of the text around them. The text fonts exclude the private-use area so their own glyphs there never
 shadow an icon.
@@ -331,7 +331,7 @@ Trigger overlay icons are also rendered in the viewport via `Renderer2D` and req
 pre-rasterized from the same SVG sources:
 
 ```bash
-poetry run python source/owlnest/assets/icons/generate_icons.py
+poetry run python tools/editor/generate_icons.py
 ```
 
 This script only rasterizes the `triggers/` category using `cairosvg`.

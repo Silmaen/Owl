@@ -46,8 +46,8 @@ can stay on for a whole session and be attached to when a problem shows up. `OWL
 and means `chrome`.
 
 ```bash
-docker/run.sh cmake --preset linux-clang-release -S . -B output/build/linux-clang-release-tracy -DOWL_PROFILER=tracy
-docker/run.sh cmake --build output/build/linux-clang-release-tracy
+./docker_run.sh cmake --preset linux-clang-release -S . -B output/build/linux-clang-release-tracy -DOWL_PROFILER=tracy
+./docker_run.sh cmake --build output/build/linux-clang-release-tracy
 ```
 
 Tracy comes from ConanCenter (`tracy/0.13.1`, conanfile option `tracy`, set by `cmake/Conan.cmake` from
@@ -59,7 +59,7 @@ Tracy comes from ConanCenter (`tracy/0.13.1`, conanfile option `tracy`, set by `
    listens on TCP port 8086.
 2. Connect a Tracy profiler **of the same version** (0.13.x): the GUI (`tracy-profiler`) or the command-line
    `tracy-capture -o capture.tracy -a 127.0.0.1`, from a host build or a release of
-   <https://github.com/wolfpld/tracy>. From the Docker image, run the program with `docker/run.sh --gui` (host network
+   <https://github.com/wolfpld/tracy>. From the Docker image, run the program with `./docker_run.sh --gui` (host network
    is not shared: publish the port, or run the profiler in the same container).
 3. The Owl Nest *Stats* panel shows `Profiler: Tracy (connected)` once attached.
 

@@ -10,8 +10,8 @@ from ci.actions.code_style import API_DOC_ROOTS, SOURCE_ROOTS, _iter_sources
 
 def test_every_declared_root_exists() -> None:
     assert all(r.is_dir() for r in SOURCE_ROOTS)
-    assert root / "test" in SOURCE_ROOTS
-    assert root / "test" not in API_DOC_ROOTS
+    assert root / "test" / "unit" in SOURCE_ROOTS
+    assert root / "test" / "unit" not in API_DOC_ROOTS
 
 
 def test_a_missing_root_is_an_error(tmp_path: Path) -> None:

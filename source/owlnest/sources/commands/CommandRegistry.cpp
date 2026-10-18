@@ -518,7 +518,7 @@ auto setNavEdge(const shared<scene::Scene>& ioScene, const CommandArgs& iArgs) -
 	const auto cell = cellOf(iArgs);
 	const auto side = scene::nav::parseDirection(iArgs.getText("side"));
 	const auto stateName = iArgs.getText("state");
-	const auto state = std::ranges::find(scene::nav::sideStateNames, stateName);
+	const auto* const state = std::ranges::find(scene::nav::sideStateNames, stateName);
 	if (!cell || !side || state == scene::nav::sideStateNames.end())
 		return fail(CommandError::InvalidArgument, "give a cell (`x`, `y`), a `side` and a `state`");
 	const auto profile = navigationOf(*entity);

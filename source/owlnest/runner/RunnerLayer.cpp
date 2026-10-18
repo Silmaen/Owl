@@ -92,12 +92,12 @@ auto isSubdir(const std::filesystem::path& iFile, const std::filesystem::path& i
 
 void updateCursorCapture(const bool iAllowed) {
 	auto& window = app::Application::get().getWindow();
-	if (window.getCursorMode() == window::CursorMode::Normal) {
-		if (iAllowed && input::Input::isMouseButtonPressed(input::mouse::ButtonLeft))
-			window.setCursorMode(window::CursorMode::Disabled);
-	} else if (input::Input::isKeyPressed(input::key::Escape)) {
-		window.setCursorMode(window::CursorMode::Normal);
-	}
+	const auto current = window.getCursorMode();
+	const auto next =
+			window::nextCursorMode(current, iAllowed, input::Input::isMouseButtonPressed(input::mouse::ButtonLeft),
+								   input::Input::isKeyPressed(input::key::Escape));
+	if (next != current)
+		window.setCursorMode(next);
 }
 }// namespace
 
@@ -201,6 +201,8 @@ void RunnerLayer::onAttach() {
 		return;
 	}
 	if (m_scenario) {
+		for (const auto& assets: m_scenario->getAssets())
+			app::Application::get().addAssetDirectory({"Scenario assets", assets});
 		if (attachSourceScene(m_scenario->getProject(), m_scenario->getScene(), "Scenario"))
 			OWL_INFO("Scenario: {} step(s) on {}.", m_scenario->getSteps().size(),
 					 m_scenario->getScene().filename().string())
@@ -477,10 +479,14 @@ auto RunnerLayer::attachSourceScene(const std::filesystem::path& iProject, const
 void RunnerLayer::attachFrameBench() {
 	m_frameBench->onEngineReady();
 	const auto& options = m_frameBench->getOptions();
+	// Before the scene loads (its textures resolve at load); the project's own directory ends up in front of them.
+	for (const auto& assets: options.assets) app::Application::get().addAssetDirectory({"FrameBench assets", assets});
 	if (!attachSourceScene(options.project, options.scene, "FrameBench")) {
 		m_frameBench.reset();
 		return;
 	}
+	// Captures and frame benches measure the engine, not the player's interface size.
+	app::Application::get().getEngineContext().getSettings().set("ui_scale", 1.f);
 	if (!options.capture.empty()) {
 		using Format = renderer::gpu::AttachmentSpecification::Format;
 		using Tiling = renderer::gpu::AttachmentSpecification::Tiling;

@@ -14,6 +14,7 @@
 #include "document/AnimationDocument.h"
 #include "document/CodeEditorDocument.h"
 #include "document/FontDocument.h"
+#include "document/ImageDocument.h"
 #include "document/NodeGraphDocument.h"
 #include "document/SceneFlowDocument.h"
 #include "document/TilemapDocument.h"
@@ -596,6 +597,7 @@ void EditorLayer::onAttach() {
 	m_contentBrowser.setActionMapOpenCallback(
 			[this](const std::filesystem::path& iPath) -> void { openActionMapFile(iPath); });
 	m_contentBrowser.setFontOpenCallback([this](const std::filesystem::path& iPath) -> void { openFontFile(iPath); });
+	m_contentBrowser.setImageOpenCallback([this](const std::filesystem::path& iPath) -> void { openImageFile(iPath); });
 	m_contentBrowser.setMacroRunCallback([this](const std::filesystem::path& iPath) -> void {
 		runCommandFromUi("macro.run", {{"path", iPath.string()}}, commands::CommandSource::Gesture);
 	});
@@ -808,6 +810,12 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 			if (!font->isOpen()) {
 				toClose.push_back(font->id());
 				font->setOpen(true);
+			}
+		} else if (doc->type() == DocumentType::Image) {
+			auto* image = static_cast<ImageDocument*>(doc);
+			if (!image->isOpen()) {
+				toClose.push_back(image->id());
+				image->setOpen(true);
 			}
 		} else if (doc->type() == DocumentType::ActionMap) {
 			auto* actions = static_cast<ActionMapDocument*>(doc);

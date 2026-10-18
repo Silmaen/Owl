@@ -33,8 +33,8 @@ Entities:
     - 0
     - 0
     scale:
-    - 0.699999988
-    - 0.699999988
+    - 1
+    - 1
     - 1
   AnimatedSpriteRenderer:
     color:
@@ -42,12 +42,12 @@ Entities:
     - 1
     - 1
     - 1
-    texture: nam:textures/animated_coin.png
-    columns: 6
-    rows: 3
-    firstFrame: 0
-    lastFrame: 17
-    frameDuration: 0.0799999982
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
     loop: true
   Trigger:
     Type: LuaCallback
@@ -57,7 +57,7 @@ Entities:
   Hierarchy:
     parentId: 5100000000000000001
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
 - Entity: 5100000000000000003
   Tag:
     tag: CoinRight
@@ -71,8 +71,8 @@ Entities:
     - 0
     - 0
     scale:
-    - 0.699999988
-    - 0.699999988
+    - 1
+    - 1
     - 1
   AnimatedSpriteRenderer:
     color:
@@ -80,12 +80,12 @@ Entities:
     - 1
     - 1
     - 1
-    texture: nam:textures/animated_coin.png
-    columns: 6
-    rows: 3
-    firstFrame: 0
-    lastFrame: 17
-    frameDuration: 0.0799999982
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
     loop: true
   Trigger:
     Type: LuaCallback
@@ -95,4 +95,4 @@ Entities:
   Hierarchy:
     parentId: 5100000000000000001
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua

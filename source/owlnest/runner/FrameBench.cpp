@@ -195,6 +195,8 @@ auto parseFrameBenchOptions(const int iArgc, char** iArgv, const std::filesystem
 			options.scene = resolve(value);
 		} else if (arg == "--project") {
 			options.project = resolve(value);
+		} else if (arg == "--assets") {
+			options.assets.push_back(resolve(value));
 		} else if (arg == "--out") {
 			options.out = resolve(value);
 		} else if (arg == "--capture") {

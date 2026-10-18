@@ -1,0 +1,12 @@
+# A macro replayed in the running world builds a crate and its lid, then one undo removes the whole replay.
+scene: ../../../engine_demo/scenes/platformer_house.owl
+steps:
+  - frames: 5
+  - macro: macros/crate_stack.owlmacro
+  - frames: 1
+  - expect: {entity: Crate, translation.x: {equals: 2.0, tolerance: 0.01}}
+  - expect: {entity: Lid, translation.y: {equals: 4.0, tolerance: 0.01}}
+  - undo: 1
+  - frames: 1
+  - expect: {entity: Crate, exists: false}
+  - expect: {entity: Lid, exists: false}

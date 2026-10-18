@@ -37,7 +37,7 @@ public:
 	/**
 	 * @brief
 	 *  Compile the Slang compute shader at
-	 *  `engine_assets/shaders/<iRenderer>/slang/<iShaderName>.slang` and
+	 *  `engine_assets/shaders/<iRenderer>/<iShaderName>.slang` and
 	 *  link it into a GL program.
 	 * @param[in] iShaderName Shader file name (without extension).
 	 * @param[in] iRenderer Owning renderer name (directory).

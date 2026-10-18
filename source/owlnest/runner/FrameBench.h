@@ -31,6 +31,8 @@ struct FrameBenchOptions {
 	std::filesystem::path scene;
 	/// Project directory (holds `owl_project.yml`); empty when none was found.
 	std::filesystem::path project;
+	/// Extra asset directories searched after the project's (test fixtures kept out of the project).
+	std::vector<std::filesystem::path> assets;
 	/// JSON output file; empty for the text summary only.
 	std::filesystem::path out;
 	/// PNG of the last measured frame, rendered offscreen; empty to render to the window only.

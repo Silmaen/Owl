@@ -11,6 +11,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Scenario files take an optional `project` (the project of the scene, else found above it) and `assets` (extra asset folders), so a test fixture scene can live beside the tests and use a game project.
+- Lua `scene.find_entities(tag)`: every entity with a tag; in the Engine Demo iso town a road built on a tree clears it and the bulldozer removes trees (3 funds).
+- Owl Nest opens images (`.png`, `.jpg`, `.jpeg`, `.bmp`, `.tga`) in a read-only viewer: wheel zoom to 3200 %, pan, fit and 1:1, pixel grid, checkerboard, file information and the tile grid of the tilesets that use the image.
+- Owl Nest font documents show the font even when no text uses it: sample text at five sizes drawn by the engine's text renderer with outline and box toggles, the MSDF atlas with a glyph readout, and the charset coverage by Unicode block.
+- Owl Nest opens `.slang` shaders in the code editor with Slang syntax highlighting (keywords, types, semantics, intrinsics, comments, preprocessor).
+- Engine Demo hub redesigned as a 64×40 RPG village: plaza with an animated fountain, church, market, fields, forest edge, river with three bridges, a shrine for the victory portal, signposts, labels and flags on the four level houses, villagers with idle and walk frames (two on grid pathfinding), butterflies, sparrows and a church bell.
+- Engine Demo hub: the four level houses carry an outlined title, the villagers a name tag growing in near the hero (no other place label), and signposts and villagers answer on E with a line in the HUD.
+- Engine Demo raycast minimap is a fog of war: rays cast in Lua reveal the cells in the field of view, closed doors stop them, the seen cells survive saves, and a marker shows the facing.
+- Engine Demo hub sound less repetitive: a 48 s wind loop, bird scenes and wind gusts at random gaps, four footsteps with random volume, a rarer bell, and a light babbling brook for the river and a distinct fountain loop, quiet and heard only within about 5 cells.
+- Engine Demo sounds: hub ambience, river and fountain loops, footsteps, doors, board, lever, gate, portal hum and bell; raycast ambience, doors, push-walls, treasure / food / ammo pick-ups and elevator, synthesised by `engine_demo/sounds/generate_sounds.py` (no download).
+- A `SoundSource` with `playOnStart` loads its sound file on first use, like `sound.play`, so ambience loops play in the runner.
+- `ui_scale` player setting: every HUD grows by this factor in game (0.5 to 3, never in the HUD editor); the Engine Demo starts at 100 % with an Interface Size slider (75 to 200 %) in its settings menu.
+- Engine Demo HUDs and menus authored at a large size and laid out in corner `UiLayout` groups with ratio sizes, so nothing overlaps from 75 to 200 % interface size and 4:3 to 21:9 (`DemoHudLayout_test.cpp`).
+- Owl Nest viewport: the frame stats chip can be hidden (right-click it, or Show > Frame stats).
+- `entity.get_link(entity_id)`: the entity an `EntityLink` points at, readable from Lua.
+- Engine Demo iso town grown to a 64×64 map written by `tools/iso_atlas` (hills, a river with bridges, a park with a pond, a town centre, industrial and harbour districts with a railway and a pier, 195 buildings, 277 trees), twelve vehicles on one-way and slow streets, factory smoke, glints on the water, blinking lights, gulls and a day and night tint, an objective of 100 trips, and its sounds (engine loops, ambience, surf, horn, coin, tool clicks, bell) synthesised by `engine_demo/sounds/generate_town_sounds.py`; the 24×24 town stays as `iso_town_small`, a test fixture in `test/unit/test_helper/assets/scenarios` and `test/unit/test_helper/assets/render_tests`.
+- Engine Demo coverage: the iso town gets a one-way street and a slow road (navigation exceptions, vehicles slow down on costly cells), the hub an information board (`UiScrollView`), relative HUD units, a lever opening a gate through an `EntityLink`, a villager walking a `cells` navigation layer, wandering villagers, cloud shadows and chimney smoke, and the raycast level a 2D minimap layer.
+- Engine Demo platformer rebuilt as a 197×32 level in three zones (meadow, farm and factory from the Pixel Platformer expansions: 90 coins, hearts, spikes, water pits, moving platforms and lifts, a climb to a plateau, a secret cave and a tower to the door), with five checkpoints (respawn point in the gamestate), three parallax layers, animated water, flags and beacons, a camera that leads, snaps to pixels and shakes, a hit flash with invulnerability, coin pops and fades.
+- Lua `entity.set_tint` / `entity.get_tint`: read and write the colour of a sprite, for hit flashes and fades.
+- Text outline and background box: `UiText` and `Text` take an optional `outlineWidth` / `outlineColor` (a dilated MSDF coverage in the same draw) and `backgroundColor` / `backgroundPadding` (a box behind the text), absent from the file when unset, with inspector fields; the Engine Demo hub text gets a black outline.
+- Engine Demo progression: each level of the hub has a victory objective in its HUD (platformer: reach the door; raycast: take the elevator of E1M1; Iso Town: 100 vehicle trips; voxel: walk 100 blocks from the landing point), completing it sets `level_<name>_done` and returns to the hub, whose HUD counts "Levels completed: n / 4" and wakes the victory portal only when all four are done.
+- Engine Demo hero walk cycle: four generated frames under the Tiny Dungeon characters of `town_atlas.png`, played while the hub player moves, idle when still.
+- `OwlRunner --frame-bench --assets <dir>` adds an asset directory (the isometric render test fixtures now live in `test/unit/test_helper/assets/render_tests`).
+- Engine Demo redrawn with the Kenney CC0 packs: the world map is a Tiny Town (48×24 tilemap, Tiny Dungeon hero, houses to the platformer, raycast, voxel and a new Iso Town house), the platformer uses Pixel Platformer tiles, an astronaut with idle / walk / jump frames and a parallax backdrop, both from `Nearest`-filtered tilesets built from the packs' sheets at a pixel-exact 3× camera.
 - Navigation authored from the tileset and the isometric view: tiles carry `connections` (sides a road joins, written by `tools/iso_atlas`, edited in the Tileset Editor with screen-oriented arrows), `NavProfile` gains `mode` (`connections`, `cells`, legacy `rules`) and per-cell `overrides`, the Tilemap inspector keeps global options only, the Navigation tool of the isometric view cycles a side two-way / exit only / enter only / closed and sets a cell cost (`nav.set_edge`, `nav.set_cell_cost`, `nav.clear_cell`, undoable), and `iso_town` drops its hand-written rules.
 - Pathfinding for vehicles that keep their heading: `PathOptions` (`noReverse`, `heading`) and `path.find` / `path.find_now` options forbid the move back to the cell just left except at a dead end (flat search over cell and entry direction), and `iso_town` vehicles drive to random road cells without U-turns, looping round the whole cell at a dead end.
 - Navigation overlay in the game and in Owl Nest Play: `path.set_debug`, `path.show_route` and `path.clear_routes` draw the graph and the route of each vehicle, F3 in the Engine Demo and the eye button of the Play view.
@@ -26,7 +50,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - HUD scroll views and virtualised lists: `UiScrollView` (clipped content larger than the view, vertical and horizontal, bars drawn and draggable, mouse wheel, `ui_scroll` action, focus scrolled into view) and `UiList` (a model of any number of rows of which only those in view are drawn and bound from Lua, selection by mouse and keys), Lua `ui.scroll_get` / `ui.scroll_set` / `ui.list_*`, Scroll View and List in the HUD editor palette and `hud.add_widget`, inspector support, a scrolling list in the sample inventory and a 1000-row list in the `hud` bench.
 - `hud.extract_canvas` command (Scene Hierarchy context menu "Extract Canvas to .owlhud..."): writes a root canvas and
   its widgets to an `.owlhud`, removes them from the scene and sets the scene's `Hud:` key, as one undo step.
-- Sample inventory demo (`scenes/inventory_demo.owl`, **N** or Back from the main menu): pick-ups, a gold door and a vault switch that open only with their key, and an inventory window (`huds/inventory.owlhud`, **Tab** or Y) with icon, count and tooltip slots, driven with the gamepad through the HUD focus, kept in saves, played by the `inventory_demo` scenario.
+- Raycast level of the Engine Demo: Wolfenstein 3D E1M1 with treasure, food, health and ammo picked up on contact, the inventory window of the former inventory demo (**Tab** or Y, slots, tooltips, journal list, gamepad focus), the five secret pushwalls counted through the Lua `pushwall` table and an elevator that ends the level.
 - HUD editor in Owl Nest: an `.owlhud` (and, from the Scene ribbon, the canvases of a scene) opens in a pixel viewport with resolution presets and a custom size, a colour or image backdrop, the reference resolution framed, a rect gizmo (move, edges, anchors, pivot) snapped to pixels and to the edges of siblings, parent and screen, a widget palette (click, drag and drop, texture drop), box and Ctrl-click multi-select with group move and delete, and `hud.add_widget`, `hud.set_rect`, `hud.set_anchors`, `hud.set_pivot`, `hud.move`, `hud.delete` and `hud.reparent` commands (undoable, journaled, reachable through MCP); `Scene::renderHud` draws a HUD at any size.
 - Keyboard and gamepad focus for the HUD: the `ui_*` actions move it to the nearest button or slider (held, they repeat), `ui_accept` clicks, left and right adjust a slider (`UiSlider.step`), `ui_cancel` closes the top window, the focus stays in the top window, the mouse takes it where it moves, a gold frame shows it; `UiFocus` (focusable, initial, neighbours by entity UUID, focus callback, highlight; `Canvas.wrapFocus` wraps the focus at the ends of a menu) with inspector support (entity pickers), Lua `ui.set_focus` / `ui.get_focus`, and the sample menus playable with a gamepad alone (scenario `main_menu_focus`).
 - Isometric objects and vehicles: the `IsometricObject` component draws a building of a generated sheet as one depth-correct slice per footprint tile (inspector with sheet drop and building list, undoable, picked in the viewport), the layer sends every opaque sprite as a 64-byte matrix-free `IsometricSprite` (`drawSprites` for thousands of vehicles, off-screen ones dropped on the CPU), the foot snaps to whole pixels at integer zoom, `tools/iso_atlas` writes a vehicle sheet, and `iso/*` benches enter the baseline.
@@ -92,6 +116,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Repository layout: `docker_run.sh` at the root, unit tests, `bench/`, `fuzz/` and the Conan package test under `test/`, the icon and Doxygen filter scripts under `tools/`.
+- Every test fixture (scene, renderer, render references, scenario and mesh files) lives in `test/unit/test_helper/assets/<category>/`, found through `test::getTestAssetsPath()`.
+- Engine shaders live in `engine_assets/shaders/<renderer>/<name>.slang` (the `slang` folder level is gone) and engine fonts in `engine_assets/fonts/` (one flat folder, licences as `LICENSE-<family>.txt`).
+- Asset trees reorganised: the Engine Demo sorts its textures (`tilemaps`, `atlases`, `sprites`, `items`, `iso`, `wolf3d`, `ui`), sounds (`hub`, `raycast`, `platformer`, `town`, `ui`) and scripts (`hub`, `platformer`, `raycast`, `iso`, `voxel`, `ui`) by area; Kenney sheets are gathered in `textures/tilemaps/`.
+- The Engine Demo asset generators moved from the asset folders to `tools/demo/` and write into the new layout.
+- The editor icon rasterizer moved to `source/owlnest/assets_sources/generate_icons.py`.
+- Text stays smooth at any size: the font atlas distance range grows from 2 to 6 px (atlas cache version 2) and the outline is an antialiased band computed from the signed distance instead of a sampled dilation.
+- The cursor captured by a voxel player is given back when the scene stops wanting capture (level change, Stop in Owl Nest), not only on Escape.
+- Engine Demo HUD texts and menu canvases are about 25 % bigger, with the boxes widened where a line would overflow.
 - Show > Navigation graph of the isometric viewport is "Navigation graph and routes" and shares its drawing with the game (`scene::nav::drawNavigationGraph`).
 - `sample_project/` is renamed `engine_demo/`, the Engine Demo: an all-in-one showcase of the engine features, apart from the planned sample games.
 - Play overlay of the Owl Nest viewport: the controls fold into a corner handle (**F10**, kept in the settings), the "Playing" message fades after two seconds, and clicks on the overlay no longer reach the game.
@@ -128,6 +161,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   scroll views and lists; the rest of the old v0.5.0 is spread over the later releases, which merge into four (v0.5.0
   3D core and lighting, v0.6.0 content and scripting, v0.7.0 gameplay and simulation, v0.8.0 opening and release
   candidate), 1.0 expected 2027-10-31.
+- Sound editor for Owl Nest planned in v0.6.0 (preview, trim, loop points, volume, pitch, variants).
 - Sample games planned beside the Engine Demo: small real games (Breakout, Sokoban, Mini Transport Tycoon, …), one or
   two per release from v0.5.0, in `design/sample-games.md`.
 - Clang-Tidy and Static Analyzer configurations no longer run the unit tests: `vendor.silmaen.run_tests` turns off a
@@ -142,11 +176,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+- The unused `Roboto-Bold` and `Roboto-Italic` engine fonts (Roboto Regular stays, the UI fallback font).
+- Engine sample content: `engine_assets/{scenes,templates,textures,animations,tilesets}` (the Engine Demo plays that role; the scene templates were not used by any feature), the old editor sample scenes of `source/owlnest/assets/scenes`, the unused Micro Roguelike licence and the unused `hazard` / `platform` / `player` / `lava_tile` sprites of the demo; the tests that read some of them keep their fixtures in `test/*/assets`.
+- Engine Demo unused assets: 1071 Kenney per-tile images, previews and sheets (only the packed sheets read by `generate_kenney_atlases.py` and the licences stay), the `@2x` / `@0.5x` isometric atlases and tilesets, and two unused atlases, 1089 files and 5.3 MB in all (`tools.iso_atlas` now writes the `1x` level by default).
+- Engine Demo scenes outside the hub, `iso_test.owl` and `inventory_demo.owl` (menu shortcuts **I** and **N** included), with their key lock, vehicle and player scripts; the isometric render fixtures moved to `test/unit/test_helper/assets/render_tests`.
 - `UiPanel::layout`, `spacing` and `padding`, which nothing read (a `UiLayout` arranges children); files that still
   carry the keys load without complaint and no longer write them.
 
 ### Fixed
 
+- Game export packs every sound file a script names in quotes, not only literal `sound.play("…")` arguments (random variants of the Engine Demo hub ambience and footsteps were missing from exported games).
+- Play in Owl Nest reads the game's settings like the runner: the project's `game_settings.yml` defaults and the player's overrides are loaded when a project opens (the Engine Demo HUD scale, player speed and volumes were ignored in the editor).
+- A `SoundSource` with `playOnStart` loads its sound asset on first use (it used to play only a sound a script had loaded before).
+- Turning in the Engine Demo raycast level is smooth: the yaw is kept by the script instead of read back from a transform that only follows the body on the physics tick.
+- Owl Nest isometric Navigation tool and graph overlay stay linked: selecting the tool turns the graph on and leaving it restores it, switching the graph off from Show leaves the tool, and entering Play leaves the tool.
+- The export of a game packs the texture of a `UiToolCursor` (a packed game lacked the platformer cursor image).
+- The hub player comes back from a level at its door (the restore moved the transform, which the physics body overwrote).
+- HUD layout looks each component storage up once per pass instead of once per widget: `hud/layout/500_widgets` 39.7 to 34.2 µs, below its cost before the scroll views (37.0 µs).
 - Engine Demo vehicles whose cell is bulldozed under them drive off to the road cell they came from and find a way again (a bypass built beside the cut used to leave them stuck), and a U-turn goes through the middle of the cell, symmetric on the way in and out.
 - Engine Demo vehicles turn back through a half circle swinging left across to the opposite lane, and plan their route again at the next cell boundary when roads are built or bulldozed (`town_replans`).
 - Play no longer leaves the runtime edits of `isometric.set_cell` in the edit scene: the running scene works on its own copy of the tilemap assets it shares with the edit scene, so Stop restores the map.
@@ -336,7 +382,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Conan profiles for Windows MinGW (`windows-clang`, `windows-gcc`), DLLs deployed next to the binaries.
 - `Clang Static Analyzer` CI configuration (`ClangTidy -- --tool=analyzer`); both analyses close the TeamCity chain and
   are the checks to require on `main`.
-- `docker/run.sh` runs any build, test or CI command in the Docker build image (`--gui`, `--perf`).
+- `./docker_run.sh` runs any build, test or CI command in the Docker build image (`--gui`, `--perf`).
 - Versioned file formats: scenes, prefabs, saves, tilesets, tilemaps, animation clips, voxel structures, node graphs,
   settings and `owl_project.yml` carry a `FormatVersion`; files without it load as version 1, newer files are refused
   with a clear error, older ones go through a registered migration chain (`core::DocumentFormat`).
@@ -475,7 +521,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `PR Ready`).
 - CI: Windows builds compute the coverage on `main` only, no longer on pull requests.
 - CI on Conan everywhere and on a single Ubuntu 26.04 image (`builder-ubuntu2604`: GCC 15, Clang 22) for every Linux
-  preset and `docker/run.sh`.
+  preset and `./docker_run.sh`.
 - CI: release build and tests on `main` only; arm64 builds and every package nightly (they held the agents for hours and
   packages publish to the site).
 - CI in two levels: Code Style and Include Check in parallel, then every build, sanitizer and analysis after Code Style
@@ -492,7 +538,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Wayland compositors show the Owl icon.
 - `SIGINT` / `SIGTERM` close the application cleanly; `Window::getPresentedFrames()` and an exit log report the
   presented frame count.
-- `docker/run.sh --gpu=intel|nvidia` (PRIME offload) and `--platform=wayland|x11`, with a warning when the desktop
+- `./docker_run.sh --gpu=intel|nvidia` (PRIME offload) and `--platform=wayland|x11`, with a warning when the desktop
   session is locked.
 - GLFW `FEATURE_UNAVAILABLE` errors (window position / icon under Wayland) logged at trace level instead of error.
 - The memory tracker is no longer on by default in Debug (it doubled the live allocations and skewed Debug timings): opt
@@ -599,7 +645,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   a newly opened document comes to the front of its dock.
 - Owl Nest: pressing `Shift` twice opens the command palette (the Shift modifier key reported with it cancelled the
   tap), the main window no longer shows a scroll bar, and the ribbon drop-down carets are chevrons.
-- `docker/run.sh --gui` lends the host cursor themes, so Owl Nest shows the desktop cursor instead of Adwaita.
+- `./docker_run.sh --gui` lends the host cursor themes, so Owl Nest shows the desktop cursor instead of Adwaita.
 - Owl Nest node canvas (Scene Flow): the GraphEditor minimap no longer covers the canvas with white triangles, node
   titles stay readable when zoomed out, and the canvas follows the theme.
 - Editor icons drawn with the `white` keyword (components, panels...) follow the theme text colour, so they no longer
@@ -614,7 +660,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `DependencyReport` sees every package of the graph (flac, libalsa: resolved through `owl-local` whatever the cache
   holds), finds the update a `cci.*` snapshot hid (plutovg 1.3.3) and checks the local recipes' sources upstream (glfw,
   wayland-protocols); run on the tree before the dependency round, it lists the nine updates made.
-- Nightly sanitizers: TSan ignores the GLib / Pango races of the GTK stack GLFW loads (`test/tsan.supp`), and the static
+- Nightly sanitizers: TSan ignores the GLib / Pango races of the GTK stack GLFW loads (`test/unit/tsan.supp`), and the static
   analyzer no longer reports a false leak in `SystemSchedule_test.cpp`.
 - Sanitizer Thread on `main`: the races inside the glycin image loader, GIO and the Vulkan validation layer
   (uninstrumented system libraries) are suppressed, so `owl_wayland_smoke` and the Vulkan image tests pass again.
@@ -628,7 +674,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (Vulkan module or pipeline, OpenGL compilation, GLSL translation) is compiled again from the Slang source and cached,
   with a log naming the file and the reason, instead of failing the shader or reaching the driver.
 - Sanitizers: `SceneComponent.name` compares the component names as strings, not pointers, and LeakSanitizer ignores the
-  GTK caches libdecor leaves in the Wayland smoke test (`test/lsan.supp`).
+  GTK caches libdecor leaves in the Wayland smoke test (`test/unit/lsan.supp`).
 - `main` builds again: the conflict marker left in `VulkanHandler.h` is resolved and the `MemoryAllocator` singleton
   lives in its source file, so hidden visibility no longer duplicates it (`-Wunique-object-duplication`);
   `linux-clang-minimal` builds and passes again (Null shader reload without Slang, hot-reload tests skipped without the
@@ -677,7 +723,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - TSan builds: the Lua time quota fires again, the watchdog setting the hook from its own thread because TSan holds back
   the interrupt signal.
 - TSan: the Vulkan image tests no longer fail on races inside lavapipe and the validation layer, suppressed by library
-  in `test/tsan.supp`.
+  in `test/unit/tsan.supp`.
 - Windows: packed assets keep `/` in their pack paths (`AssetScanner` wrote `scenes\level.owl`), so an exported game
   finds its scenes, fonts and textures.
 - Image tests cap llvmpipe at SSE4.1 with Mesa's shader cache off, so a CI agent without AVX no longer fails the tilemap
@@ -697,7 +743,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   uploaded by `Renderer2D` (the `world_transform` compute pass, which recomposed them on the GPU with the same 64-level
   cap, is removed).
 - Pack extraction and the texture / font pack caches now detect and log failed writes instead of failing silently.
-- `docker/run.sh` works from a git worktree: it mounts the main git directory and finds the shared `fake_home`.
+- `./docker_run.sh` works from a git worktree: it mounts the main git directory and finds the shared `fake_home`.
 - TeamCity: `triggerOnPrDraft` is written explicitly on every configuration (the plugin defaults to `true`, so draft PRs
   ran the whole matrix).
 - Conan on Windows: host settings and options go through a generated profile (cmd.exe split `&:shared=…` at `&`), and
@@ -1059,7 +1105,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - New reusable `.owlanim` asset (`scene::AnimationClip` —
       `source/owl/public/scene/AnimationClip.h`): texture, grid, frame range, frame
       duration, loop, optional speed curve, with YAML round-trip and unit tests in
-      `test/scene_tests/AnimationClip_test.cpp`.
+      `test/unit/scene_tests/AnimationClip_test.cpp`.
     - `nest::AnimationDocument` opens as a 4th document type (alongside Scene, Code,
       NodeGraph). Three-panel layout: live spritesheet preview, properties (texture
       drop target, columns / rows / first / last frame, frame duration, loop, speed
@@ -1203,9 +1249,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
       a new "Views → Scene Flow" button. Link create/delete and per-pin target editing (writing
       new trigger entities back into the source scene) are deferred — they require composite
       `SceneUndo + NodeGraphUndo` commands and stay out of this first slice
-    - 16 new unit tests: `test/gui_tests/NodeCanvas_test.cpp` (topology, link validator veto,
+    - 16 new unit tests: `test/unit/gui_tests/NodeCanvas_test.cpp` (topology, link validator veto,
       cascaded link removal, selection round-trip, pin→node lookup, clear) and
-      `test/gui_tests/NodeCanvasSerializer_test.cpp` (empty/full canvas round-trip, custom data
+      `test/unit/gui_tests/NodeCanvasSerializer_test.cpp` (empty/full canvas round-trip, custom data
       preservation, malformed YAML rejection, subset serialize, paste with fresh UUIDs)
 - **Undo system templatized over its target type**
     - Templatized `UndoCommand` + `UndoManager` (parameterized over the edited `Target`) in

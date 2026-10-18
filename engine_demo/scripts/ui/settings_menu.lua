@@ -1,0 +1,143 @@
+-- Settings menu controller.
+-- Demonstrates: settings.get/set/save/load/apply/reset/reset_all,
+--               ui.set_text, ui.set_slider_value, ui.get_slider_value,
+--               ui.get_focus, UiFocus callback, input.is_action_just_pressed("ui_cancel"),
+--               scene.transition_to (engine-driven scene-load orchestration).
+
+local vol_label_id = 0
+local speed_label_id = 0
+local vol_slider_id = 0
+local speed_slider_id = 0
+local ui_scale_label_id = 0
+local ui_scale_slider_id = 0
+
+-- Interface size: the `ui_scale` built-in setting scales every HUD in game, 0.75 to 2 times.
+local UI_SCALE_MIN, UI_SCALE_MAX = 0.75, 2.0
+
+function on_create()
+    log.info("Settings menu loaded")
+    ui.transition_fade_in(0.5)
+
+    -- Find UI entities.
+    vol_label_id = scene.find_entity("MasterVolLabel")
+    speed_label_id = scene.find_entity("PlayerSpeedLabel")
+    vol_slider_id = scene.find_entity("MasterVolSlider")
+    speed_slider_id = scene.find_entity("PlayerSpeedSlider")
+    ui_scale_label_id = scene.find_entity("UiScaleLabel")
+    ui_scale_slider_id = scene.find_entity("UiScaleSlider")
+    if ui_scale_slider_id ~= 0 then
+        local scale = settings.get("ui_scale", 1.0)
+        ui.set_slider_value(ui_scale_slider_id, (scale - UI_SCALE_MIN) / (UI_SCALE_MAX - UI_SCALE_MIN))
+    end
+
+    -- Initialize slider positions from current settings values.
+    local vol = settings.get("volume_master", 1.0)
+    local speed = settings.get("player_speed", 8.0)
+
+    if vol_slider_id ~= 0 then
+        ui.set_slider_value(vol_slider_id, vol)
+    end
+    if speed_slider_id ~= 0 then
+        -- Speed range 2..20 mapped to 0..1
+        ui.set_slider_value(speed_slider_id, (speed - 2.0) / 18.0)
+    end
+
+    update_labels()
+end
+
+function update_labels()
+    local vol = settings.get("volume_master", 1.0)
+    local speed = settings.get("player_speed", 8.0)
+
+    if vol_label_id ~= 0 then
+        ui.set_text(vol_label_id, string.format("Master Volume: %d%%", math.floor(vol * 100)))
+    end
+    if speed_label_id ~= 0 then
+        ui.set_text(speed_label_id, string.format("Player Speed: %.1f", speed))
+    end
+    if ui_scale_label_id ~= 0 then
+        ui.set_text(ui_scale_label_id, string.format("Interface Size: %d%%", math.floor(settings.get("ui_scale", 1.0) * 100 + 0.5)))
+    end
+end
+
+local leaving = false
+
+function on_update(dt)
+    -- Scene-to-scene handoffs are driven by `scene.transition_to`; the only
+    -- per-frame work is the gamepad / keyboard "back": ui_cancel (Esc, B).
+    if not leaving and input.is_action_just_pressed("ui_cancel") then
+        leaving = true
+        go_back()
+    end
+end
+
+-- Focus callback (UiFocus.onFocusCallback): the keyboard / gamepad focus moved
+-- onto a slider; `_focused_entity` is its id, ui.get_focus() the current one.
+function on_slider_focused()
+    log.trace("Slider focused: " .. ui.get_focus() .. " (" .. entity.get_name(_focused_entity) .. ")")
+end
+
+function on_destroy()
+end
+
+-- Slider callback: master volume changed (value 0..1).
+function on_master_vol_changed()
+    local value = _slider_value or 1.0
+    settings.set("volume_master", value)
+    settings.apply()
+    if vol_label_id ~= 0 then
+        ui.set_text(vol_label_id, string.format("Master Volume: %d%%", math.floor(value * 100)))
+    end
+end
+
+-- Slider callback: player speed changed (value 0..1, mapped to 2..20).
+function on_speed_changed()
+    local value = _slider_value or 0.5
+    local speed = 2.0 + value * 18.0
+    settings.set("player_speed", speed)
+    if speed_label_id ~= 0 then
+        ui.set_text(speed_label_id, string.format("Player Speed: %.1f", speed))
+    end
+end
+
+-- Slider callback: interface size changed (value 0..1, mapped to UI_SCALE_MIN..UI_SCALE_MAX), seen at once.
+function on_ui_scale_changed()
+    local value = _slider_value or 0.4
+    local scale = UI_SCALE_MIN + value * (UI_SCALE_MAX - UI_SCALE_MIN)
+    settings.set("ui_scale", scale)
+    if ui_scale_label_id ~= 0 then
+        ui.set_text(ui_scale_label_id, string.format("Interface Size: %d%%", math.floor(scale * 100 + 0.5)))
+    end
+end
+
+-- Reset button: restore all settings to game_settings.yml defaults.
+function on_reset_clicked()
+    log.info("Resetting all settings to defaults")
+    -- Reset individual keys first (demonstrates settings.reset per-key)
+    settings.reset("volume_master")
+    settings.reset("player_speed")
+    -- Then full reset for any remaining keys
+    settings.reset_all()
+    settings.load()
+    settings.apply()
+
+    -- Re-read values and update sliders + labels.
+    local vol = settings.get("volume_master", 1.0)
+    local speed = settings.get("player_speed", 8.0)
+
+    if vol_slider_id ~= 0 then
+        ui.set_slider_value(vol_slider_id, vol)
+    end
+    if speed_slider_id ~= 0 then
+        ui.set_slider_value(speed_slider_id, (speed - 2.0) / 18.0)
+    end
+
+    update_labels()
+end
+
+-- Back button: save and return to main menu.
+function go_back()
+    settings.save()
+    log.info("Settings saved")
+    scene.transition_to("scenes/main_menu.owl", "fade_out", 0.3)
+end

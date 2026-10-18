@@ -13,14 +13,14 @@
 #include <cstdio>
 #include <exception>
 #include <filesystem>
-#include <fstream>
 #include <format>
-#include <utility>
+#include <fstream>
 #include <span>
 #include <sstream>
 #include <string>
+#include <utility>
 
-// Build-time compilation of the engine shaders: every `shaders/<renderer>/slang/<name>.slang`, for Vulkan and
+// Build-time compilation of the engine shaders: every `shaders/<renderer>/<name>.slang`, for Vulkan and
 // OpenGL, written where `loadOrCompileSpirv` looks first (`getPrecompiledShaderPath` under the output folder).
 
 namespace {
@@ -41,7 +41,7 @@ auto readText(const std::filesystem::path& iPath) -> std::string {
 auto bakeShader(const std::filesystem::path& iSourceFile, const std::filesystem::path& iAssetsDir) -> int {
 	using namespace owl::renderer::utils;
 	const std::string name = iSourceFile.stem().string();
-	const std::string renderer = iSourceFile.parent_path().parent_path().filename().string();
+	const std::string renderer = iSourceFile.parent_path().filename().string();
 	const std::string source = readText(iSourceFile);
 	int stages = 0;
 	for (const bool forVulkan: {true, false}) {
@@ -80,8 +80,7 @@ auto bake(const int iArgc, char** iArgv) -> int {
 	int stages = 0;
 	int failures = 0;
 	for (const auto& entry: std::filesystem::recursive_directory_iterator(shadersDir)) {
-		if (!entry.is_regular_file() || entry.path().extension() != ".slang" ||
-			entry.path().parent_path().filename() != "slang")
+		if (!entry.is_regular_file() || entry.path().extension() != ".slang")
 			continue;
 		if (const int baked = bakeShader(entry.path(), assetsDir); baked < 0) {
 			++failures;
@@ -92,7 +91,7 @@ auto bake(const int iArgc, char** iArgv) -> int {
 	}
 	const auto elapsed = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - start);
 	printLine(stdout, "OwlShaderBake: {} shaders, {} SPIR-V stages in {:.0f} ms, {} failures.", shaders, stages,
-				 elapsed.count(), failures);
+			  elapsed.count(), failures);
 	owl::core::Log::invalidate();
 	return failures == 0 ? 0 : 1;
 }
@@ -106,8 +105,6 @@ auto main(const int iArgc, char** iArgv) -> int {
 		std::fputs("OwlShaderBake: ", stderr);
 		std::fputs(iError.what(), stderr);
 		std::fputs("\n", stderr);
-	} catch (...) {
-		std::fputs("OwlShaderBake: unknown error.\n", stderr);
-	}
+	} catch (...) { std::fputs("OwlShaderBake: unknown error.\n", stderr); }
 	return 1;
 }

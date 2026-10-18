@@ -1,230 +1,1639 @@
 Scene: untitled
 Hud: huds/world_map.owlhud
 EnabledRenderers:
-  - Name: raycast_world
-    Enabled: false
+- {Name: raycast_world, Enabled: false}
 Entities:
-  - Entity: 1287632016040279254
-    Tag:
-      tag: PannelVoxel
-    Transform:
-      translation: [32.4971504, -14.6821537, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 0.489893466, 1]
-    TextRenderer:
-      color: [1, 1, 1, 1]
-      kerning: 0
-      lineSpacing: 0
-      text: "Demo\nVoxel"
-    Visibility:
-      gameVisible: true
-  - Entity: 15412943634275657565
-    Tag:
-      tag: PannelPlatfom
-    Transform:
-      translation: [8.52675438, -12.6526165, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 0.574022651, 1]
-    TextRenderer:
-      color: [1, 1, 1, 1]
-      kerning: 0
-      lineSpacing: 0
-      text: "Demo\nPlatform"
-    Visibility:
-      gameVisible: true
-  - Entity: 15322000123099125026
-    Tag:
-      tag: PannelRayCasting
-    Transform:
-      translation: [14.5505962, -12.6526155, 6.10351562e-05]
-      rotation: [0, 0, 0]
-      scale: [1, 0.422631741, 1]
-    TextRenderer:
-      color: [1, 1, 1, 1]
-      kerning: 0
-      lineSpacing: 0
-      text: "Demo\nRayCasting"
-    Visibility:
-      gameVisible: true
-  - Entity: 2000000000000000031
-    Tag:
-      tag: HouseDoorRayCast
-    Transform:
-      translation: [14.2850657, -13.5588608, 0.600000024]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Trigger:
-      Type: Interaction
-      InteractionRange: 1.5
-      CallbackName: on_raycast_door_interact
-    Visibility:
-      gameVisible: true
-    LuaScript:
-      scriptPath: scripts/raycast_house_door.lua
-  - Entity: 2000000000000000050
-    Tag:
-      tag: Teleporter
-    Transform:
-      translation: [21.102108, -2.53384733, 0.599938989]
-      rotation: [0, 0, 0]
-      scale: [1.20000005, 1.20000005, 1]
-    CircleRenderer:
-      color: [0.850000024, 0.300000012, 0.949999988, 1]
-      thickness: 1
-      fade: 0.0500000007
-    Trigger:
-      Type: Interaction
-      InteractionRange: 1.20000005
-      CallbackName: on_teleporter_enter
-    Visibility:
-      gameVisible: false
-    LuaScript:
-      scriptPath: scripts/teleporter.lua
-  - Entity: 2000000000000000042
-    Tag:
-      tag: LavaHazard
-    Transform:
-      translation: [-1.48693967, -6.02043724, 0.400000006]
-      rotation: [0, 0, 0]
-      scale: [2.78060198, 1.82617307, 1]
-    Trigger:
-      Type: Death
-      LevelName: scenes/game_over.owl
-    Visibility:
-      gameVisible: true
-  - Entity: 2000000000000000041
-    Tag:
-      tag: WaterHazardEast
-    Transform:
-      translation: [11.3740911, -19.5, 0.400000006]
-      rotation: [0, 0, 0]
-      scale: [4, 2, 1]
-    Trigger:
-      Type: LuaCallback
-      CallbackName: on_lava_tick
-    Visibility:
-      gameVisible: true
-    LuaScript:
-      scriptPath: scripts/lava_damage.lua
-  - Entity: 2000000000000000040
-    Tag:
-      tag: WaterHazardWest
-    Transform:
-      translation: [6.06026459, -20.0335159, 0.400000006]
-      rotation: [0, 0, 0]
-      scale: [3.40081072, 3.08064675, 1]
-    Trigger:
-      Type: LuaCallback
-      CallbackName: on_lava_tick
-    Visibility:
-      gameVisible: true
-    LuaScript:
-      scriptPath: scripts/lava_damage.lua
-  - Entity: 2000000000000000030
-    Tag:
-      tag: HouseDoorPlatform
-    Transform:
-      translation: [8.51946068, -13.4881134, 0.600000024]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Trigger:
-      Type: Interaction
-      InteractionRange: 1.5
-      CallbackName: on_door_interact
-    Visibility:
-      gameVisible: true
-    LuaScript:
-      scriptPath: scripts/house_door.lua
-  - Entity: 2000000000000000020
-    Tag:
-      tag: Player
-    Transform:
-      translation: [8.42847157, -16.5, 0.5]
-      rotation: [0, 0, 0]
-      scale: [0.899999976, 0.899999976, 1]
-    SpriteRenderer:
-      color: [1, 1, 1, 1]
-      tilingFactor: 1
-      texture: nam:textures/player.png
-    PhysicBody:
-      type: Dynamic
-      fixedRotation: true
-      colliderSize: [1, 1, 1]
-      density: 1
-      restitution: 0
-      friction: 0.200000003
-    Player:
-      primary: true
-      linearImpulse: 0
-      jumpImpulse: 0
-      canJump: false
-    Visibility:
-      gameVisible: true
-    LuaScript:
-      scriptPath: scripts/world_player.lua
-      properties:
-        - name: speed
-          type: float
-          value: 5
-  - Entity: 2000000000000000010
-    Tag:
-      tag: WorldTilemap
-    Transform:
-      translation: [16, -12, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Tilemap:
-      tilemapPath: tilemaps/world_map.owltilemap
-    Visibility:
-      gameVisible: true
-  - Entity: 2000000000000000002
-    Tag:
-      tag: SkyBackground
-    Transform:
-      translation: [16, -12, -5]
-      rotation: [0, 0, 0]
-      scale: [50, 50, 1]
-    BackgroundTexture:
-      mode: 0
-      type: 1
-      color: [0.180000007, 0.300000012, 0.550000012, 1]
-      topColor: [0.5, 0.699999988, 0.949999988, 1]
-    Visibility:
-      gameVisible: true
-  - Entity: 2000000000000000001
-    Tag:
-      tag: MainCamera
-    Transform:
-      translation: [8.4090519, -16.5, 5]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Camera:
-      camera:
-        projectionType: Orthographic
-        perspectiveFOV: 0.785398185
-        perspectiveNear: 0.00999999978
-        perspectiveFar: 1000
-        orthographicSize: 8
-        orthographicNear: -1
-        orthographicFar: 10
-      primary: true
-      fixedAspectRatio: false
-    Visibility:
-      gameVisible: true
-    SoundListener:
-      primary: true
-  - Entity: 2000000000000000099
-    Tag:
-      tag: HouseDoorVoxel
-    Transform:
-      translation: [32.3166809, -15.5, 0.600000024]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Trigger:
-      Type: Interaction
-      InteractionRange: 1.5
-      CallbackName: on_voxel_door_interact
-    Visibility:
-      gameVisible: true
-    LuaScript:
-      scriptPath: scripts/voxel_house_door.lua
+- Entity: 2000000000000000010
+  Tag: {tag: WorldTilemap}
+  Transform:
+    translation: [32.0, -20.0, 0.0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Tilemap:
+    tilemapPath: tilemaps/world_map.owltilemap
+    navigation: {mode: cells, layer: 2, source: terrain, maxRise: 0, climbCost: 0, allowSteep: false}
+  Visibility: {gameVisible: true}
+- Entity: 2000000000000000002
+  Tag: {tag: SkyBackground}
+  Transform:
+    translation: [32.0, -20.0, -5.0]
+    rotation: [0, 0, 0]
+    scale: [140.0, 140.0, 1.0]
+  BackgroundTexture:
+    mode: 0
+    type: 1
+    color: [0.1, 0.26, 0.17, 1]
+    topColor: [0.16, 0.36, 0.22, 1]
+  Visibility: {gameVisible: true}
+- Entity: 2000000000000000001
+  Tag: {tag: MainCamera}
+  Transform:
+    translation: [32.5, -36.5, 5.0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Camera:
+    camera: {projectionType: Orthographic, perspectiveFOV: 0.785398185, perspectiveNear: 0.00999999978, perspectiveFar: 1000, orthographicSize: 15.0,
+      orthographicNear: -1, orthographicFar: 10}
+    primary: true
+    fixedAspectRatio: false
+  Visibility: {gameVisible: true}
+  SoundListener: {primary: true}
+- Entity: 2000000000000000020
+  Tag: {tag: Player}
+  Transform:
+    translation: [32.5, -36.5, 0.5]
+    rotation: [0, 0, 0]
+    scale: [0.899999976, 0.899999976, 1]
+  PhysicBody:
+    type: Dynamic
+    fixedRotation: true
+    colliderSize: [1, 1, 1]
+    density: 1
+    restitution: 0
+    friction: 0.200000003
+  Player: {primary: true, linearImpulse: 0, jumpImpulse: 0, canJump: false}
+  Visibility: {gameVisible: true}
+  LuaScript:
+    scriptPath: scripts/hub/world_player.lua
+    properties:
+    - {name: speed, type: float, value: 5}
+- Entity: 2000000000000000021
+  Tag: {tag: PlayerSprite}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1.1111111, 1.1111111, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/town_atlas.png
+    columns: 12
+    rows: 21
+    firstFrame: 148
+    lastFrame: 148
+    frameDuration: 0.1
+    loop: false
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 2000000000000000020}
+- Entity: 2000000000000000030
+  Tag: {tag: HouseDoorPlatform}
+  Transform:
+    translation: [9.5, -15.5, 0.6]
+    rotation: [0, 0, 0]
+    scale: [1.6, 1.6, 1]
+  Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_door_interact}
+  Visibility: {gameVisible: true}
+  LuaScript: {scriptPath: scripts/hub/house_door.lua}
+- Entity: 15412943634275657565
+  Tag: {tag: PannelPlatfom}
+  Transform:
+    translation: [9.5, -10.9, 0.6]
+    rotation: [0, 0, 0]
+    scale: [1.4, 0.6, 1.0]
+  TextRenderer:
+    color: [1, 1, 1, 1]
+    kerning: 0
+    lineSpacing: 0
+    outlineColor: [0, 0, 0, 1]
+    outlineWidth: 0.08
+    text: 'Demo
+
+      Platform'
+  Visibility: {gameVisible: true}
+- Entity: 2000000000000000301
+  Tag: {tag: Flag_House1}
+  Transform:
+    translation: [8.72, -12.5, 0.7]
+    rotation: [0, 0, 0]
+    scale: [1.0, 1.0, 1.0]
+  Visibility: {gameVisible: true}
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    columns: 12
+    rows: 21
+    firstFrame: 200
+    lastFrame: 201
+    frameDuration: 0.4
+    loop: true
+    texture: nam:textures/atlases/town_atlas.png
+- Entity: 2000000000000000200
+  Tag: {tag: Smoke_1_1}
+  Transform:
+    translation: [9.5, -13.2, 0.8]
+    rotation: [0, 0, 0]
+    scale: [0.3, 0.3, 1]
+  CircleRenderer:
+    color: [0.92, 0.92, 0.95, 0.75]
+    thickness: 1
+    fade: 0.9
+  Visibility: {gameVisible: true}
+- Entity: 2000000000000000201
+  Tag: {tag: Smoke_1_2}
+  Transform:
+    translation: [9.5, -13.2, 0.8]
+    rotation: [0, 0, 0]
+    scale: [0.3, 0.3, 1]
+  CircleRenderer:
+    color: [0.92, 0.92, 0.95, 0.75]
+    thickness: 1
+    fade: 0.9
+  Visibility: {gameVisible: true}
+- Entity: 2000000000000000202
+  Tag: {tag: Smoke_1_3}
+  Transform:
+    translation: [9.5, -13.2, 0.8]
+    rotation: [0, 0, 0]
+    scale: [0.3, 0.3, 1]
+  CircleRenderer:
+    color: [0.92, 0.92, 0.95, 0.75]
+    thickness: 1
+    fade: 0.9
+  Visibility: {gameVisible: true}
+- Entity: 2000000000000000031
+  Tag: {tag: HouseDoorRayCast}
+  Transform:
+    translation: [20.5, -15.5, 0.6]
+    rotation: [0, 0, 0]
+    scale: [1.6, 1.6, 1]
+  Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_raycast_door_interact}
+  Visibility: {gameVisible: true}
+  LuaScript: {scriptPath: scripts/hub/raycast_house_door.lua}
+- Entity: 15322000123099125026
+  Tag: {tag: PannelRayCasting}
+  Transform:
+    translation: [20.5, -10.9, 0.6]
+    rotation: [0, 0, 0]
+    scale: [1.4, 0.6, 1.0]
+  TextRenderer:
+    color: [1, 1, 1, 1]
+    kerning: 0
+    lineSpacing: 0
+    outlineColor: [0, 0, 0, 1]
+    outlineWidth: 0.08
+    text: 'Demo
+
+      RayCasting'
+  Visibility: {gameVisible: true}
+- Entity: 2000000000000000302
+  Tag: {tag: Flag_House2}
+  Transform:
+    translation: [19.72, -12.5, 0.7]
+    rotation: [0, 0, 0]
+    scale: [1.0, 1.0, 1.0]
+  Visibility: {gameVisible: true}
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    columns: 12
+    rows: 21
+    firstFrame: 202
+    lastFrame: 203
+    frameDuration: 0.4
+    loop: true
+    texture: nam:textures/atlases/town_atlas.png
+- Entity: 2000000000000000203
+  Tag: {tag: Smoke_2_1}
+  Transform:
+    translation: [20.5, -13.2, 0.8]
+    rotation: [0, 0, 0]
+    scale: [0.3, 0.3, 1]
+  CircleRenderer:
+    color: [0.92, 0.92, 0.95, 0.75]
+    thickness: 1
+    fade: 0.9
+  Visibility: {gameVisible: true}
+- Entity: 2000000000000000204
+  Tag: {tag: Smoke_2_2}
+  Transform:
+    translation: [20.5, -13.2, 0.8]
+    rotation: [0, 0, 0]
+    scale: [0.3, 0.3, 1]
+  CircleRenderer:
+    color: [0.92, 0.92, 0.95, 0.75]
+    thickness: 1
+    fade: 0.9
+  Visibility: {gameVisible: true}
+- Entity: 2000000000000000205
+  Tag: {tag: Smoke_2_3}
+  Transform:
+    translation: [20.5, -13.2, 0.8]
+    rotation: [0, 0, 0]
+    scale: [0.3, 0.3, 1]
+  CircleRenderer:
+    color: [0.92, 0.92, 0.95, 0.75]
+    thickness: 1
+    fade: 0.9
+  Visibility: {gameVisible: true}
+- Entity: 2000000000000000100
+  Tag: {tag: HouseDoorIso}
+  Transform:
+    translation: [44.5, -15.5, 0.6]
+    rotation: [0, 0, 0]
+    scale: [1.6, 1.6, 1]
+  Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_iso_door_interact}
+  Visibility: {gameVisible: true}
+  LuaScript: {scriptPath: scripts/hub/iso_house_door.lua}
+- Entity: 2000000000000000101
+  Tag: {tag: PannelIsoTown}
+  Transform:
+    translation: [44.5, -10.9, 0.6]
+    rotation: [0, 0, 0]
+    scale: [1.4, 0.6, 1.0]
+  TextRenderer:
+    color: [1, 1, 1, 1]
+    kerning: 0
+    lineSpacing: 0
+    outlineColor: [0, 0, 0, 1]
+    outlineWidth: 0.08
+    text: 'Demo
+
+      Iso Town'
+  Visibility: {gameVisible: true}
+- Entity: 2000000000000000303
+  Tag: {tag: Flag_House3}
+  Transform:
+    translation: [43.72, -12.5, 0.7]
+    rotation: [0, 0, 0]
+    scale: [1.0, 1.0, 1.0]
+  Visibility: {gameVisible: true}
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    columns: 12
+    rows: 21
+    firstFrame: 204
+    lastFrame: 205
+    frameDuration: 0.4
+    loop: true
+    texture: nam:textures/atlases/town_atlas.png
+- Entity: 2000000000000000206
+  Tag: {tag: Smoke_3_1}
+  Transform:
+    translation: [44.5, -13.2, 0.8]
+    rotation: [0, 0, 0]
+    scale: [0.3, 0.3, 1]
+  CircleRenderer:
+    color: [0.92, 0.92, 0.95, 0.75]
+    thickness: 1
+    fade: 0.9
+  Visibility: {gameVisible: true}
+- Entity: 2000000000000000207
+  Tag: {tag: Smoke_3_2}
+  Transform:
+    translation: [44.5, -13.2, 0.8]
+    rotation: [0, 0, 0]
+    scale: [0.3, 0.3, 1]
+  CircleRenderer:
+    color: [0.92, 0.92, 0.95, 0.75]
+    thickness: 1
+    fade: 0.9
+  Visibility: {gameVisible: true}
+- Entity: 2000000000000000208
+  Tag: {tag: Smoke_3_3}
+  Transform:
+    translation: [44.5, -13.2, 0.8]
+    rotation: [0, 0, 0]
+    scale: [0.3, 0.3, 1]
+  CircleRenderer:
+    color: [0.92, 0.92, 0.95, 0.75]
+    thickness: 1
+    fade: 0.9
+  Visibility: {gameVisible: true}
+- Entity: 2000000000000000099
+  Tag: {tag: HouseDoorVoxel}
+  Transform:
+    translation: [54.5, -15.5, 0.6]
+    rotation: [0, 0, 0]
+    scale: [1.6, 1.6, 1]
+  Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_voxel_door_interact}
+  Visibility: {gameVisible: true}
+  LuaScript: {scriptPath: scripts/hub/voxel_house_door.lua}
+- Entity: 1287632016040279254
+  Tag: {tag: PannelVoxel}
+  Transform:
+    translation: [54.5, -10.9, 0.6]
+    rotation: [0, 0, 0]
+    scale: [1.4, 0.6, 1.0]
+  TextRenderer:
+    color: [1, 1, 1, 1]
+    kerning: 0
+    lineSpacing: 0
+    outlineColor: [0, 0, 0, 1]
+    outlineWidth: 0.08
+    text: 'Demo
+
+      Voxel'
+  Visibility: {gameVisible: true}
+- Entity: 2000000000000000304
+  Tag: {tag: Flag_House4}
+  Transform:
+    translation: [53.72, -12.5, 0.7]
+    rotation: [0, 0, 0]
+    scale: [1.0, 1.0, 1.0]
+  Visibility: {gameVisible: true}
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    columns: 12
+    rows: 21
+    firstFrame: 202
+    lastFrame: 203
+    frameDuration: 0.4
+    loop: true
+    texture: nam:textures/atlases/town_atlas.png
+- Entity: 2000000000000000209
+  Tag: {tag: Smoke_4_1}
+  Transform:
+    translation: [54.5, -13.2, 0.8]
+    rotation: [0, 0, 0]
+    scale: [0.3, 0.3, 1]
+  CircleRenderer:
+    color: [0.92, 0.92, 0.95, 0.75]
+    thickness: 1
+    fade: 0.9
+  Visibility: {gameVisible: true}
+- Entity: 2000000000000000210
+  Tag: {tag: Smoke_4_2}
+  Transform:
+    translation: [54.5, -13.2, 0.8]
+    rotation: [0, 0, 0]
+    scale: [0.3, 0.3, 1]
+  CircleRenderer:
+    color: [0.92, 0.92, 0.95, 0.75]
+    thickness: 1
+    fade: 0.9
+  Visibility: {gameVisible: true}
+- Entity: 2000000000000000211
+  Tag: {tag: Smoke_4_3}
+  Transform:
+    translation: [54.5, -13.2, 0.8]
+    rotation: [0, 0, 0]
+    scale: [0.3, 0.3, 1]
+  CircleRenderer:
+    color: [0.92, 0.92, 0.95, 0.75]
+    thickness: 1
+    fade: 0.9
+  Visibility: {gameVisible: true}
+- Entity: 2000000000000000305
+  Tag: {tag: Flag_Church}
+  Transform:
+    translation: [32.72, -4.5, 0.7]
+    rotation: [0, 0, 0]
+    scale: [1.0, 1.0, 1.0]
+  Visibility: {gameVisible: true}
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    columns: 12
+    rows: 21
+    firstFrame: 204
+    lastFrame: 205
+    frameDuration: 0.4
+    loop: true
+    texture: nam:textures/atlases/town_atlas.png
+- Entity: 2000000000000000306
+  Tag: {tag: Flag_ShrineW}
+  Transform:
+    translation: [53.72, -1.5, 0.7]
+    rotation: [0, 0, 0]
+    scale: [1.0, 1.0, 1.0]
+  Visibility: {gameVisible: true}
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    columns: 12
+    rows: 21
+    firstFrame: 200
+    lastFrame: 201
+    frameDuration: 0.4
+    loop: true
+    texture: nam:textures/atlases/town_atlas.png
+- Entity: 2000000000000000307
+  Tag: {tag: Flag_ShrineE}
+  Transform:
+    translation: [59.72, -1.5, 0.7]
+    rotation: [0, 0, 0]
+    scale: [1.0, 1.0, 1.0]
+  Visibility: {gameVisible: true}
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    columns: 12
+    rows: 21
+    firstFrame: 202
+    lastFrame: 203
+    frameDuration: 0.4
+    loop: true
+    texture: nam:textures/atlases/town_atlas.png
+- Entity: 2000000000000000050
+  Tag: {tag: Teleporter}
+  Transform:
+    translation: [56.5, -4.5, 0.6]
+    rotation: [0, 0, 0]
+    scale: [1.20000005, 1.20000005, 1]
+  CircleRenderer:
+    color: [0.850000024, 0.300000012, 0.949999988, 1]
+    thickness: 1
+    fade: 0.0500000007
+  Trigger: {Type: Interaction, InteractionRange: 1.20000005, CallbackName: on_teleporter_enter}
+  Visibility: {gameVisible: false}
+  LuaScript: {scriptPath: scripts/hub/teleporter.lua}
+- Entity: 2000000000000000042
+  Tag: {tag: LavaHazard}
+  Transform:
+    translation: [6.5, -4.5, 0.4]
+    rotation: [0, 0, 0]
+    scale: [3.0, 3.0, 1.0]
+  Trigger: {Type: Death, LevelName: scenes/game_over.owl}
+  Visibility: {gameVisible: true}
+- Entity: 2000000000000000308
+  Tag: {tag: River_1}
+  Transform:
+    translation: [6.0, -32.0, 0.4]
+    rotation: [0, 0, 0]
+    scale: [12.0, 2.0, 1]
+  Trigger: {Type: LuaCallback, CallbackName: on_lava_tick}
+  Visibility: {gameVisible: true}
+  LuaScript: {scriptPath: scripts/hub/lava_damage.lua}
+- Entity: 2000000000000000309
+  Tag: {tag: River_2}
+  Transform:
+    translation: [20.0, -32.0, 0.4]
+    rotation: [0, 0, 0]
+    scale: [12.0, 2.0, 1]
+  Trigger: {Type: LuaCallback, CallbackName: on_lava_tick}
+  Visibility: {gameVisible: true}
+  LuaScript: {scriptPath: scripts/hub/lava_damage.lua}
+- Entity: 2000000000000000310
+  Tag: {tag: River_3}
+  Transform:
+    translation: [27.5, -30.0, 0.4]
+    rotation: [0, 0, 0]
+    scale: [7.0, 2.0, 1]
+  Trigger: {Type: LuaCallback, CallbackName: on_lava_tick}
+  Visibility: {gameVisible: true}
+  LuaScript: {scriptPath: scripts/hub/lava_damage.lua}
+- Entity: 2000000000000000311
+  Tag: {tag: River_4}
+  Transform:
+    translation: [39.5, -30.0, 0.4]
+    rotation: [0, 0, 0]
+    scale: [11.0, 2.0, 1]
+  Trigger: {Type: LuaCallback, CallbackName: on_lava_tick}
+  Visibility: {gameVisible: true}
+  LuaScript: {scriptPath: scripts/hub/lava_damage.lua}
+- Entity: 2000000000000000312
+  Tag: {tag: River_5}
+  Transform:
+    translation: [47.0, -32.0, 0.4]
+    rotation: [0, 0, 0]
+    scale: [8.0, 2.0, 1]
+  Trigger: {Type: LuaCallback, CallbackName: on_lava_tick}
+  Visibility: {gameVisible: true}
+  LuaScript: {scriptPath: scripts/hub/lava_damage.lua}
+- Entity: 2000000000000000313
+  Tag: {tag: River_6}
+  Transform:
+    translation: [58.5, -32.0, 0.4]
+    rotation: [0, 0, 0]
+    scale: [11.0, 2.0, 1]
+  Trigger: {Type: LuaCallback, CallbackName: on_lava_tick}
+  Visibility: {gameVisible: true}
+  LuaScript: {scriptPath: scripts/hub/lava_damage.lua}
+- Entity: 2000000000000000110
+  Tag: {tag: InfoBoard}
+  Transform:
+    translation: [28.5, -36.5, 0.6]
+    rotation: [0, 0, 0]
+    scale: [1.2, 1.2, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/town_atlas.png
+    columns: 12
+    rows: 21
+    firstFrame: 83
+    lastFrame: 83
+    frameDuration: 0.1
+    loop: false
+  Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_board_interact}
+  LuaScript: {scriptPath: scripts/hub/info_board.lua}
+  Visibility: {gameVisible: true}
+- Entity: 2000000000000000120
+  Tag: {tag: Lever}
+  Transform:
+    translation: [50.5, -36.5, 0.6]
+    rotation: [0, 0, 0]
+    scale: [1.3, 1.3, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/town_atlas.png
+    columns: 12
+    rows: 21
+    firstFrame: 116
+    lastFrame: 116
+    frameDuration: 0.1
+    loop: false
+  Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_lever_interact}
+  LuaScript: {scriptPath: scripts/hub/hub_lever.lua}
+  Visibility: {gameVisible: true}
+- Entity: 2000000000000000121
+  Tag: {tag: LeverLink}
+  Transform:
+    translation: [50.5, -36.5, 0.0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  EntityLink: {linkedEntityId: 2000000000000000122, linkedEntityName: Gate}
+  Visibility: {gameVisible: false}
+- Entity: 2000000000000000122
+  Tag: {tag: Gate}
+  Transform:
+    translation: [8.5, -34.5, 0.6]
+    rotation: [0, 0, 0]
+    scale: [1.0, 1.0, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/town_atlas.png
+    columns: 12
+    rows: 21
+    firstFrame: 81
+    lastFrame: 81
+    frameDuration: 0.1
+    loop: false
+  PhysicBody:
+    type: Static
+    fixedRotation: true
+    colliderSize: [1, 1, 1]
+    density: 0
+    restitution: 0
+    friction: 0.2
+  Visibility: {gameVisible: true}
+- Entity: 2000000000000000123
+  Tag: {tag: GateChest}
+  Transform:
+    translation: [8.5, -35.5, 0.55]
+    rotation: [0, 0, 0]
+    scale: [1.0, 1.0, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/town_atlas.png
+    columns: 12
+    rows: 21
+    firstFrame: 149
+    lastFrame: 149
+    frameDuration: 0.1
+    loop: false
+  Visibility: {gameVisible: true}
+- Entity: 2000000000000000314
+  Tag: {tag: Villager}
+  Transform:
+    translation: [13.5, -22.5, 0.5]
+    rotation: [0, 0, 0]
+    scale: [1.1111111, 1.1111111, 1.0]
+  Visibility: {gameVisible: true}
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    columns: 12
+    rows: 21
+    firstFrame: 159
+    lastFrame: 159
+    frameDuration: 0.1
+    loop: false
+    texture: nam:textures/atlases/town_atlas.png
+  LuaScript:
+    scriptPath: scripts/hub/hub_villager.lua
+    properties:
+    - {name: idle_a, type: float, value: 159.0}
+    - {name: idle_b, type: float, value: 242.0}
+    - {name: walk_a, type: float, value: 243.0}
+    - {name: walk_b, type: float, value: 244.0}
+    - {name: route, type: string, value: '13,22;29,23;45,22;32,14;20,19'}
+    - {name: speed, type: float, value: 1.9}
+    - {name: key, type: string, value: villager}
+- Entity: 2000000000000000315
+  Tag: {tag: Guard}
+  Transform:
+    translation: [32.5, -27.5, 0.5]
+    rotation: [0, 0, 0]
+    scale: [1.1111111, 1.1111111, 1.0]
+  Visibility: {gameVisible: true}
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    columns: 12
+    rows: 21
+    firstFrame: 156
+    lastFrame: 156
+    frameDuration: 0.1
+    loop: false
+    texture: nam:textures/atlases/town_atlas.png
+  LuaScript:
+    scriptPath: scripts/hub/hub_villager.lua
+    properties:
+    - {name: idle_a, type: float, value: 156.0}
+    - {name: idle_b, type: float, value: 233.0}
+    - {name: walk_a, type: float, value: 234.0}
+    - {name: walk_b, type: float, value: 235.0}
+    - {name: route, type: string, value: '32,27;25,22;32,15;39,22'}
+    - {name: speed, type: float, value: 1.5}
+    - {name: key, type: string, value: guard}
+- Entity: 2000000000000000316
+  Tag: {tag: Wizard}
+  Transform:
+    translation: [29.5, -14.5, 0.5]
+    rotation: [0, 0, 0]
+    scale: [1.1111111, 1.1111111, 1.0]
+  Visibility: {gameVisible: true}
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    columns: 12
+    rows: 21
+    firstFrame: 144
+    lastFrame: 144
+    frameDuration: 0.1
+    loop: false
+    texture: nam:textures/atlases/town_atlas.png
+  LuaScript:
+    scriptPath: scripts/hub/hub_wanderer.lua
+    properties:
+    - {name: idle_a, type: float, value: 144.0}
+    - {name: idle_b, type: float, value: 218.0}
+    - {name: walk_a, type: float, value: 219.0}
+    - {name: walk_b, type: float, value: 220.0}
+    - {name: ax, type: float, value: 29.5}
+    - {name: ay, type: float, value: -14.5}
+    - {name: bx, type: float, value: 35.5}
+    - {name: by, type: float, value: -14.5}
+    - {name: speed, type: float, value: 0.9}
+    - {name: wait, type: float, value: 1.5}
+- Entity: 2000000000000000317
+  Tag: {tag: Knight}
+  Transform:
+    translation: [39.5, -21.5, 0.5]
+    rotation: [0, 0, 0]
+    scale: [1.1111111, 1.1111111, 1.0]
+  Visibility: {gameVisible: true}
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    columns: 12
+    rows: 21
+    firstFrame: 157
+    lastFrame: 157
+    frameDuration: 0.1
+    loop: false
+    texture: nam:textures/atlases/town_atlas.png
+  LuaScript:
+    scriptPath: scripts/hub/hub_wanderer.lua
+    properties:
+    - {name: idle_a, type: float, value: 157.0}
+    - {name: idle_b, type: float, value: 236.0}
+    - {name: walk_a, type: float, value: 237.0}
+    - {name: walk_b, type: float, value: 238.0}
+    - {name: ax, type: float, value: 39.5}
+    - {name: ay, type: float, value: -21.5}
+    - {name: bx, type: float, value: 52.5}
+    - {name: by, type: float, value: -21.5}
+    - {name: speed, type: float, value: 1.1}
+    - {name: wait, type: float, value: 1.5}
+- Entity: 2000000000000000318
+  Tag: {tag: Farmer}
+  Transform:
+    translation: [8.5, -28.5, 0.5]
+    rotation: [0, 0, 0]
+    scale: [1.1111111, 1.1111111, 1.0]
+  Visibility: {gameVisible: true}
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    columns: 12
+    rows: 21
+    firstFrame: 145
+    lastFrame: 145
+    frameDuration: 0.1
+    loop: false
+    texture: nam:textures/atlases/town_atlas.png
+  LuaScript:
+    scriptPath: scripts/hub/hub_wanderer.lua
+    properties:
+    - {name: idle_a, type: float, value: 145.0}
+    - {name: idle_b, type: float, value: 221.0}
+    - {name: walk_a, type: float, value: 222.0}
+    - {name: walk_b, type: float, value: 223.0}
+    - {name: ax, type: float, value: 8.5}
+    - {name: ay, type: float, value: -28.5}
+    - {name: bx, type: float, value: 19.5}
+    - {name: by, type: float, value: -28.5}
+    - {name: speed, type: float, value: 0.7}
+    - {name: wait, type: float, value: 1.5}
+- Entity: 2000000000000000319
+  Tag: {tag: Merchant1}
+  Transform:
+    translation: [42.5, -23.5, 0.5]
+    rotation: [0, 0, 0]
+    scale: [1.1111111, 1.1111111, 1.0]
+  Visibility: {gameVisible: true}
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    columns: 12
+    rows: 21
+    firstFrame: 146
+    lastFrame: 146
+    frameDuration: 0.1
+    loop: false
+    texture: nam:textures/atlases/town_atlas.png
+  LuaScript:
+    scriptPath: scripts/hub/hub_wanderer.lua
+    properties:
+    - {name: idle_a, type: float, value: 146.0}
+    - {name: idle_b, type: float, value: 224.0}
+    - {name: walk_a, type: float, value: 225.0}
+    - {name: walk_b, type: float, value: 226.0}
+    - {name: ax, type: float, value: 42.5}
+    - {name: ay, type: float, value: -23.5}
+    - {name: bx, type: float, value: 42.5}
+    - {name: by, type: float, value: -23.5}
+    - {name: speed, type: float, value: 0.0}
+    - {name: wait, type: float, value: 1.5}
+- Entity: 2000000000000000320
+  Tag: {tag: Merchant2}
+  Transform:
+    translation: [46.5, -23.5, 0.5]
+    rotation: [0, 0, 0]
+    scale: [1.1111111, 1.1111111, 1.0]
+  Visibility: {gameVisible: true}
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    columns: 12
+    rows: 21
+    firstFrame: 160
+    lastFrame: 160
+    frameDuration: 0.1
+    loop: false
+    texture: nam:textures/atlases/town_atlas.png
+  LuaScript:
+    scriptPath: scripts/hub/hub_wanderer.lua
+    properties:
+    - {name: idle_a, type: float, value: 160.0}
+    - {name: idle_b, type: float, value: 245.0}
+    - {name: walk_a, type: float, value: 246.0}
+    - {name: walk_b, type: float, value: 247.0}
+    - {name: ax, type: float, value: 46.5}
+    - {name: ay, type: float, value: -23.5}
+    - {name: bx, type: float, value: 46.5}
+    - {name: by, type: float, value: -23.5}
+    - {name: speed, type: float, value: 0.0}
+    - {name: wait, type: float, value: 1.5}
+- Entity: 2000000000000000321
+  Tag: {tag: Merchant3}
+  Transform:
+    translation: [50.5, -23.5, 0.5]
+    rotation: [0, 0, 0]
+    scale: [1.1111111, 1.1111111, 1.0]
+  Visibility: {gameVisible: true}
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    columns: 12
+    rows: 21
+    firstFrame: 147
+    lastFrame: 147
+    frameDuration: 0.1
+    loop: false
+    texture: nam:textures/atlases/town_atlas.png
+  LuaScript:
+    scriptPath: scripts/hub/hub_wanderer.lua
+    properties:
+    - {name: idle_a, type: float, value: 147.0}
+    - {name: idle_b, type: float, value: 227.0}
+    - {name: walk_a, type: float, value: 228.0}
+    - {name: walk_b, type: float, value: 229.0}
+    - {name: ax, type: float, value: 50.5}
+    - {name: ay, type: float, value: -23.5}
+    - {name: bx, type: float, value: 50.5}
+    - {name: by, type: float, value: -23.5}
+    - {name: speed, type: float, value: 0.0}
+    - {name: wait, type: float, value: 1.5}
+- Entity: 2000000000000000322
+  Tag: {tag: Priest}
+  Transform:
+    translation: [30.5, -13.5, 0.5]
+    rotation: [0, 0, 0]
+    scale: [1.1111111, 1.1111111, 1.0]
+  Visibility: {gameVisible: true}
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    columns: 12
+    rows: 21
+    firstFrame: 158
+    lastFrame: 158
+    frameDuration: 0.1
+    loop: false
+    texture: nam:textures/atlases/town_atlas.png
+  LuaScript:
+    scriptPath: scripts/hub/hub_wanderer.lua
+    properties:
+    - {name: idle_a, type: float, value: 158.0}
+    - {name: idle_b, type: float, value: 239.0}
+    - {name: walk_a, type: float, value: 240.0}
+    - {name: walk_b, type: float, value: 241.0}
+    - {name: ax, type: float, value: 30.5}
+    - {name: ay, type: float, value: -13.5}
+    - {name: bx, type: float, value: 30.5}
+    - {name: by, type: float, value: -13.5}
+    - {name: speed, type: float, value: 0.0}
+    - {name: wait, type: float, value: 1.5}
+- Entity: 2000000000000000323
+  Tag: {tag: Woodcutter}
+  Transform:
+    translation: [6.5, -9.5, 0.5]
+    rotation: [0, 0, 0]
+    scale: [1.1111111, 1.1111111, 1.0]
+  Visibility: {gameVisible: true}
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    columns: 12
+    rows: 21
+    firstFrame: 146
+    lastFrame: 146
+    frameDuration: 0.1
+    loop: false
+    texture: nam:textures/atlases/town_atlas.png
+  LuaScript:
+    scriptPath: scripts/hub/hub_wanderer.lua
+    properties:
+    - {name: idle_a, type: float, value: 146.0}
+    - {name: idle_b, type: float, value: 224.0}
+    - {name: walk_a, type: float, value: 225.0}
+    - {name: walk_b, type: float, value: 226.0}
+    - {name: ax, type: float, value: 6.5}
+    - {name: ay, type: float, value: -9.5}
+    - {name: bx, type: float, value: 6.5}
+    - {name: by, type: float, value: -9.5}
+    - {name: speed, type: float, value: 0.0}
+    - {name: wait, type: float, value: 1.5}
+- Entity: 2000000000000000324
+  Tag: {tag: Hen_1}
+  Transform:
+    translation: [10.5, -28.5, 0.5]
+    rotation: [0, 0, 0]
+    scale: [1.0, 1.0, 1.0]
+  Visibility: {gameVisible: true}
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    columns: 12
+    rows: 21
+    firstFrame: 216
+    lastFrame: 216
+    frameDuration: 0.1
+    loop: false
+    texture: nam:textures/atlases/town_atlas.png
+  LuaScript:
+    scriptPath: scripts/hub/hub_wanderer.lua
+    properties:
+    - {name: ax, type: float, value: 10.5}
+    - {name: ay, type: float, value: -28.5}
+    - {name: bx, type: float, value: 12.5}
+    - {name: by, type: float, value: -28.5}
+    - {name: speed, type: float, value: 0.35}
+    - {name: wait, type: float, value: 3.2}
+    - {name: idle_a, type: float, value: 216.0}
+    - {name: idle_b, type: float, value: 217.0}
+    - {name: walk_a, type: float, value: 216.0}
+    - {name: walk_b, type: float, value: 217.0}
+    - {name: idle_period, type: float, value: 1.3}
+- Entity: 2000000000000000325
+  Tag: {tag: Hen_2}
+  Transform:
+    translation: [16.5, -28.5, 0.5]
+    rotation: [0, 0, 0]
+    scale: [1.0, 1.0, 1.0]
+  Visibility: {gameVisible: true}
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    columns: 12
+    rows: 21
+    firstFrame: 216
+    lastFrame: 216
+    frameDuration: 0.1
+    loop: false
+    texture: nam:textures/atlases/town_atlas.png
+  LuaScript:
+    scriptPath: scripts/hub/hub_wanderer.lua
+    properties:
+    - {name: ax, type: float, value: 16.5}
+    - {name: ay, type: float, value: -28.5}
+    - {name: bx, type: float, value: 17.5}
+    - {name: by, type: float, value: -28.5}
+    - {name: speed, type: float, value: 0.35}
+    - {name: wait, type: float, value: 4.2}
+    - {name: idle_a, type: float, value: 216.0}
+    - {name: idle_b, type: float, value: 217.0}
+    - {name: walk_a, type: float, value: 216.0}
+    - {name: walk_b, type: float, value: 217.0}
+    - {name: idle_period, type: float, value: 1.3}
+- Entity: 2000000000000000326
+  Tag: {tag: Hen_3}
+  Transform:
+    translation: [47.5, -27.5, 0.5]
+    rotation: [0, 0, 0]
+    scale: [1.0, 1.0, 1.0]
+  Visibility: {gameVisible: true}
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    columns: 12
+    rows: 21
+    firstFrame: 216
+    lastFrame: 216
+    frameDuration: 0.1
+    loop: false
+    texture: nam:textures/atlases/town_atlas.png
+  LuaScript:
+    scriptPath: scripts/hub/hub_wanderer.lua
+    properties:
+    - {name: ax, type: float, value: 47.5}
+    - {name: ay, type: float, value: -27.5}
+    - {name: bx, type: float, value: 49.5}
+    - {name: by, type: float, value: -27.5}
+    - {name: speed, type: float, value: 0.35}
+    - {name: wait, type: float, value: 5.2}
+    - {name: idle_a, type: float, value: 216.0}
+    - {name: idle_b, type: float, value: 217.0}
+    - {name: walk_a, type: float, value: 216.0}
+    - {name: walk_b, type: float, value: 217.0}
+    - {name: idle_period, type: float, value: 1.3}
+- Entity: 2000000000000000327
+  Tag: {tag: Butterfly_1}
+  Transform:
+    translation: [9.5, -18.5, 0.75]
+    rotation: [0, 0, 0]
+    scale: [0.8, 0.8, 1.0]
+  Visibility: {gameVisible: true}
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    columns: 12
+    rows: 21
+    firstFrame: 206
+    lastFrame: 207
+    frameDuration: 0.11
+    loop: true
+    texture: nam:textures/atlases/town_atlas.png
+- Entity: 2000000000000000328
+  Tag: {tag: Butterfly_2}
+  Transform:
+    translation: [15.0, -26.5, 0.75]
+    rotation: [0, 0, 0]
+    scale: [0.8, 0.8, 1.0]
+  Visibility: {gameVisible: true}
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    columns: 12
+    rows: 21
+    firstFrame: 208
+    lastFrame: 209
+    frameDuration: 0.11
+    loop: true
+    texture: nam:textures/atlases/town_atlas.png
+- Entity: 2000000000000000329
+  Tag: {tag: Butterfly_3}
+  Transform:
+    translation: [46.0, -18.0, 0.75]
+    rotation: [0, 0, 0]
+    scale: [0.8, 0.8, 1.0]
+  Visibility: {gameVisible: true}
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    columns: 12
+    rows: 21
+    firstFrame: 210
+    lastFrame: 211
+    frameDuration: 0.11
+    loop: true
+    texture: nam:textures/atlases/town_atlas.png
+- Entity: 2000000000000000330
+  Tag: {tag: Butterfly_4}
+  Transform:
+    translation: [20.5, -19.0, 0.75]
+    rotation: [0, 0, 0]
+    scale: [0.8, 0.8, 1.0]
+  Visibility: {gameVisible: true}
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    columns: 12
+    rows: 21
+    firstFrame: 212
+    lastFrame: 213
+    frameDuration: 0.11
+    loop: true
+    texture: nam:textures/atlases/town_atlas.png
+- Entity: 2000000000000000331
+  Tag: {tag: Butterfly_5}
+  Transform:
+    translation: [36.0, -27.5, 0.75]
+    rotation: [0, 0, 0]
+    scale: [0.8, 0.8, 1.0]
+  Visibility: {gameVisible: true}
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    columns: 12
+    rows: 21
+    firstFrame: 206
+    lastFrame: 207
+    frameDuration: 0.11
+    loop: true
+    texture: nam:textures/atlases/town_atlas.png
+- Entity: 2000000000000000332
+  Tag: {tag: Butterfly_6}
+  Transform:
+    translation: [55.0, -19.5, 0.75]
+    rotation: [0, 0, 0]
+    scale: [0.8, 0.8, 1.0]
+  Visibility: {gameVisible: true}
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    columns: 12
+    rows: 21
+    firstFrame: 208
+    lastFrame: 209
+    frameDuration: 0.11
+    loop: true
+    texture: nam:textures/atlases/town_atlas.png
+- Entity: 2000000000000000333
+  Tag: {tag: Butterfly_7}
+  Transform:
+    translation: [12.0, -27.5, 0.75]
+    rotation: [0, 0, 0]
+    scale: [0.8, 0.8, 1.0]
+  Visibility: {gameVisible: true}
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    columns: 12
+    rows: 21
+    firstFrame: 210
+    lastFrame: 211
+    frameDuration: 0.11
+    loop: true
+    texture: nam:textures/atlases/town_atlas.png
+- Entity: 2000000000000000334
+  Tag: {tag: Butterfly_8}
+  Transform:
+    translation: [30.0, -9.0, 0.75]
+    rotation: [0, 0, 0]
+    scale: [0.8, 0.8, 1.0]
+  Visibility: {gameVisible: true}
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    columns: 12
+    rows: 21
+    firstFrame: 212
+    lastFrame: 213
+    frameDuration: 0.11
+    loop: true
+    texture: nam:textures/atlases/town_atlas.png
+- Entity: 2000000000000000335
+  Tag: {tag: Sparrow_1}
+  Transform:
+    translation: [-10.0, -10.0, 0.85]
+    rotation: [0, 0, 0]
+    scale: [1.0, 1.0, 1.0]
+  Visibility: {gameVisible: true}
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    columns: 12
+    rows: 21
+    firstFrame: 214
+    lastFrame: 215
+    frameDuration: 0.09
+    loop: true
+    texture: nam:textures/atlases/town_atlas.png
+- Entity: 2000000000000000336
+  Tag: {tag: Sparrow_2}
+  Transform:
+    translation: [-10.0, -10.0, 0.85]
+    rotation: [0, 0, 0]
+    scale: [1.0, 1.0, 1.0]
+  Visibility: {gameVisible: true}
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    columns: 12
+    rows: 21
+    firstFrame: 214
+    lastFrame: 215
+    frameDuration: 0.09
+    loop: true
+    texture: nam:textures/atlases/town_atlas.png
+- Entity: 2000000000000000337
+  Tag: {tag: Sparrow_3}
+  Transform:
+    translation: [-10.0, -10.0, 0.85]
+    rotation: [0, 0, 0]
+    scale: [1.0, 1.0, 1.0]
+  Visibility: {gameVisible: true}
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    columns: 12
+    rows: 21
+    firstFrame: 214
+    lastFrame: 215
+    frameDuration: 0.09
+    loop: true
+    texture: nam:textures/atlases/town_atlas.png
+- Entity: 2000000000000000338
+  Tag: {tag: Cloud_1}
+  Transform:
+    translation: [-6, -8, 0.9]
+    rotation: [0, 0, 0]
+    scale: [9, 4.5, 1]
+  CircleRenderer:
+    color: [0.05, 0.08, 0.2, 0.16]
+    thickness: 1
+    fade: 0.6
+  Visibility: {gameVisible: true}
+- Entity: 2000000000000000339
+  Tag: {tag: Cloud_2}
+  Transform:
+    translation: [14, -18, 0.9]
+    rotation: [0, 0, 0]
+    scale: [11, 5, 1]
+  CircleRenderer:
+    color: [0.05, 0.08, 0.2, 0.16]
+    thickness: 1
+    fade: 0.6
+  Visibility: {gameVisible: true}
+- Entity: 2000000000000000340
+  Tag: {tag: Cloud_3}
+  Transform:
+    translation: [28, -30, 0.9]
+    rotation: [0, 0, 0]
+    scale: [8, 4, 1]
+  CircleRenderer:
+    color: [0.05, 0.08, 0.2, 0.16]
+    thickness: 1
+    fade: 0.6
+  Visibility: {gameVisible: true}
+- Entity: 2000000000000000341
+  Tag: {tag: Cloud_4}
+  Transform:
+    translation: [44, -12, 0.9]
+    rotation: [0, 0, 0]
+    scale: [10, 4.5, 1]
+  CircleRenderer:
+    color: [0.05, 0.08, 0.2, 0.16]
+    thickness: 1
+    fade: 0.6
+  Visibility: {gameVisible: true}
+- Entity: 2000000000000000342
+  Tag: {tag: Cloud_5}
+  Transform:
+    translation: [56, -26, 0.9]
+    rotation: [0, 0, 0]
+    scale: [9, 4, 1]
+  CircleRenderer:
+    color: [0.05, 0.08, 0.2, 0.16]
+    thickness: 1
+    fade: 0.6
+  Visibility: {gameVisible: true}
+- Entity: 2000000000000000343
+  Tag: {tag: Cloud_6}
+  Transform:
+    translation: [20, -36, 0.9]
+    rotation: [0, 0, 0]
+    scale: [10, 4.5, 1]
+  CircleRenderer:
+    color: [0.05, 0.08, 0.2, 0.16]
+    thickness: 1
+    fade: 0.6
+  Visibility: {gameVisible: true}
+- Entity: 2000000000000000250
+  Tag: {tag: HubAmbient}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  LuaScript: {scriptPath: scripts/hub/hub_ambient.lua}
+- Entity: 2000000000000000344
+  Tag: {tag: HubWater}
+  Transform:
+    translation: [0.0, 0.0, 0.0]
+    rotation: [0, 0, 0]
+    scale: [1.0, 1.0, 1.0]
+  Visibility: {gameVisible: true}
+  LuaScript: {scriptPath: scripts/hub/hub_water.lua}
+- Entity: 2000000000000000345
+  Tag: {tag: HubCritters}
+  Transform:
+    translation: [0.0, 0.0, 0.0]
+    rotation: [0, 0, 0]
+    scale: [1.0, 1.0, 1.0]
+  Visibility: {gameVisible: true}
+  LuaScript: {scriptPath: scripts/hub/hub_critters.lua}
+- Entity: 2000000000000000346
+  Tag: {tag: HubAmbience}
+  Transform:
+    translation: [32.5, -20.5, 0.0]
+    rotation: [0, 0, 0]
+    scale: [1.0, 1.0, 1.0]
+  Visibility: {gameVisible: true}
+  SoundSource: {soundAsset: sounds/hub/ambience.wav, category: Ambient, volume: 0.35, pitch: 1.0, loop: true, spatial: false, playOnStart: true,
+    maxDistance: 20.0, rolloff: 0.4}
+- Entity: 2000000000000000347
+  Tag: {tag: FountainSound}
+  Transform:
+    translation: [32.0, -21.0, 0.5]
+    rotation: [0, 0, 0]
+    scale: [1.0, 1.0, 1.0]
+  Visibility: {gameVisible: true}
+  SoundSource: {soundAsset: sounds/hub/fountain.wav, category: Ambient, volume: 0.5, pitch: 1.0, loop: true, spatial: true, playOnStart: true, maxDistance: 5.0,
+    rolloff: 3.0}
+- Entity: 2000000000000000348
+  Tag: {tag: RiverSound}
+  Transform:
+    translation: [32.5, -29.5, 0.5]
+    rotation: [0, 0, 0]
+    scale: [1.0, 1.0, 1.0]
+  Visibility: {gameVisible: true}
+  SoundSource: {soundAsset: sounds/hub/water.wav, category: Ambient, volume: 0.5, pitch: 1.0, loop: true, spatial: true, playOnStart: true, maxDistance: 4.5,
+    rolloff: 3.0}
+- Entity: 2000000000000000349
+  Tag: {tag: RiverSoundEast}
+  Transform:
+    translation: [47.5, -31.5, 0.5]
+    rotation: [0, 0, 0]
+    scale: [1.0, 1.0, 1.0]
+  Visibility: {gameVisible: true}
+  SoundSource: {soundAsset: sounds/hub/water.wav, category: Ambient, volume: 0.5, pitch: 1.0, loop: true, spatial: true, playOnStart: true, maxDistance: 4.5,
+    rolloff: 3.0}
+- Entity: 2000000000000000350
+  Tag: {tag: RiverSoundWest}
+  Transform:
+    translation: [10.5, -31.5, 0.5]
+    rotation: [0, 0, 0]
+    scale: [1.0, 1.0, 1.0]
+  Visibility: {gameVisible: true}
+  SoundSource: {soundAsset: sounds/hub/water.wav, category: Ambient, volume: 0.5, pitch: 1.0, loop: true, spatial: true, playOnStart: true, maxDistance: 4.5,
+    rolloff: 3.0}
+- Entity: 2000000000000000351
+  Tag: {tag: RiverSoundWestBend}
+  Transform:
+    translation: [24.5, -30.5, 0.5]
+    rotation: [0, 0, 0]
+    scale: [1.0, 1.0, 1.0]
+  Visibility: {gameVisible: true}
+  SoundSource: {soundAsset: sounds/hub/water.wav, category: Ambient, volume: 0.5, pitch: 1.0, loop: true, spatial: true, playOnStart: true, maxDistance: 4.5,
+    rolloff: 3.0}
+- Entity: 2000000000000000352
+  Tag: {tag: RiverSoundEastEnd}
+  Transform:
+    translation: [58.5, -31.5, 0.5]
+    rotation: [0, 0, 0]
+    scale: [1.0, 1.0, 1.0]
+  Visibility: {gameVisible: true}
+  SoundSource: {soundAsset: sounds/hub/water.wav, category: Ambient, volume: 0.5, pitch: 1.0, loop: true, spatial: true, playOnStart: true, maxDistance: 4.5,
+    rolloff: 3.0}
+- Entity: 2000000000000000432
+  Tag: {tag: Talk_Sign1}
+  Transform:
+    translation: [11.5, -16.5, 0.6]
+    rotation: [0, 0, 0]
+    scale: [1.6, 1.6, 1]
+  Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_talk}
+  Visibility: {gameVisible: true}
+  LuaScript:
+    scriptPath: scripts/hub/hub_talker.lua
+    properties:
+    - {name: speaker, type: string, value: ""}
+    - {name: lines, type: string, value: "Level 1, the platformer: run and jump over spikes and water, then reach the door at the top of the factory tower.|Platformer house. Keep an eye out for the secret cave behind the farm cliff."}
+    - {name: follow, type: string, value: ""}
+- Entity: 2000000000000000433
+  Tag: {tag: Talk_Sign2}
+  Transform:
+    translation: [22.5, -16.5, 0.6]
+    rotation: [0, 0, 0]
+    scale: [1.6, 1.6, 1]
+  Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_talk}
+  Visibility: {gameVisible: true}
+  LuaScript:
+    scriptPath: scripts/hub/hub_talker.lua
+    properties:
+    - {name: speaker, type: string, value: ""}
+    - {name: lines, type: string, value: "Level 2, the raycast house: Wolfenstein in first person. Find an elevator, the secrets hide a second one.|Raycast house. Open the doors with E, and the minimap only shows what you have seen."}
+    - {name: follow, type: string, value: ""}
+- Entity: 2000000000000000434
+  Tag: {tag: Talk_Sign3}
+  Transform:
+    translation: [46.5, -16.5, 0.6]
+    rotation: [0, 0, 0]
+    scale: [1.6, 1.6, 1]
+  Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_talk}
+  Visibility: {gameVisible: true}
+  LuaScript:
+    scriptPath: scripts/hub/hub_talker.lua
+    properties:
+    - {name: speaker, type: string, value: ""}
+    - {name: lines, type: string, value: "Level 3, the isometric town: build roads with the mouse and make the cars drive 100 trips.|Iso Town. Right click bulldozes, the cars follow the road graph."}
+    - {name: follow, type: string, value: ""}
+- Entity: 2000000000000000435
+  Tag: {tag: Talk_Sign4}
+  Transform:
+    translation: [56.5, -16.5, 0.6]
+    rotation: [0, 0, 0]
+    scale: [1.6, 1.6, 1]
+  Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_talk}
+  Visibility: {gameVisible: true}
+  LuaScript:
+    scriptPath: scripts/hub/hub_talker.lua
+    properties:
+    - {name: speaker, type: string, value: ""}
+    - {name: lines, type: string, value: "Level 4, the voxel terrain: walk 100 blocks away from where you land. Space jumps, double tap flies.|Voxel house. The terrain is generated as you walk."}
+    - {name: follow, type: string, value: ""}
+- Entity: 2000000000000000436
+  Tag: {tag: Talk_Danger}
+  Transform:
+    translation: [8.5, -6.5, 0.6]
+    rotation: [0, 0, 0]
+    scale: [1.6, 1.6, 1]
+  Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_talk}
+  Visibility: {gameVisible: true}
+  LuaScript:
+    scriptPath: scripts/hub/hub_talker.lua
+    properties:
+    - {name: speaker, type: string, value: ""}
+    - {name: lines, type: string, value: "Danger! The lava crater is deadly. Keep away from it.|Crater of lava ahead: one step and it is over."}
+    - {name: follow, type: string, value: ""}
+- Entity: 2000000000000000437
+  Tag: {tag: Talk_Villager}
+  Transform:
+    translation: [0, 0, 0.6]
+    rotation: [0, 0, 0]
+    scale: [2.2, 2.2, 1]
+  Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_talk}
+  Visibility: {gameVisible: true}
+  LuaScript:
+    scriptPath: scripts/hub/hub_talker.lua
+    properties:
+    - {name: speaker, type: string, value: "Villager"}
+    - {name: lines, type: string, value: "Nice day for a walk. The four houses along the high street are the levels.|I cross the village every day. Mind the fountain, the stones are slippery.|Have you seen the lever in the east meadow? It opens the old gate in the west grove."}
+    - {name: follow, type: string, value: "Villager"}
+- Entity: 2000000000000000438
+  Tag: {tag: Talk_Guard}
+  Transform:
+    translation: [0, 0, 0.6]
+    rotation: [0, 0, 0]
+    scale: [2.2, 2.2, 1]
+  Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_talk}
+  Visibility: {gameVisible: true}
+  LuaScript:
+    scriptPath: scripts/hub/hub_talker.lua
+    properties:
+    - {name: speaker, type: string, value: "Guard"}
+    - {name: lines, type: string, value: "Halt! Ah, it is only you. Mind the lava in the north west forest, it is deadly.|All quiet on the square. When the four levels are done, the shrine will wake up.|The river stings. Cross it by the bridges."}
+    - {name: follow, type: string, value: "Guard"}
+- Entity: 2000000000000000439
+  Tag: {tag: Talk_Wizard}
+  Transform:
+    translation: [0, 0, 0.6]
+    rotation: [0, 0, 0]
+    scale: [2.2, 2.2, 1]
+  Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_talk}
+  Visibility: {gameVisible: true}
+  LuaScript:
+    scriptPath: scripts/hub/hub_talker.lua
+    properties:
+    - {name: speaker, type: string, value: "Wizard"}
+    - {name: lines, type: string, value: "The portal in the shrine sleeps until you have finished the four levels.|Platformer, raycast, isometric town, voxels: four houses, four worlds.|My spells are only a little Lua. The bell is not mine, though."}
+    - {name: follow, type: string, value: "Wizard"}
+- Entity: 2000000000000000440
+  Tag: {tag: Talk_Knight}
+  Transform:
+    translation: [0, 0, 0.6]
+    rotation: [0, 0, 0]
+    scale: [2.2, 2.2, 1]
+  Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_talk}
+  Visibility: {gameVisible: true}
+  LuaScript:
+    scriptPath: scripts/hub/hub_talker.lua
+    properties:
+    - {name: speaker, type: string, value: "Knight"}
+    - {name: lines, type: string, value: "I guard the high street. The raycast house is on the left, the iso town on the right.|A hero walks the village! Try the board near the entrance.|Finish every level and come back: the portal will answer."}
+    - {name: follow, type: string, value: "Knight"}
+- Entity: 2000000000000000441
+  Tag: {tag: Talk_Farmer}
+  Transform:
+    translation: [0, 0, 0.6]
+    rotation: [0, 0, 0]
+    scale: [2.2, 2.2, 1]
+  Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_talk}
+  Visibility: {gameVisible: true}
+  LuaScript:
+    scriptPath: scripts/hub/hub_talker.lua
+    properties:
+    - {name: speaker, type: string, value: "Farmer"}
+    - {name: lines, type: string, value: "Wheat, cabbages and carrots. The hens are not for sale.|Rain is late this year. The river is full, though.|Do not step on my beds, friend."}
+    - {name: follow, type: string, value: "Farmer"}
+- Entity: 2000000000000000442
+  Tag: {tag: Talk_Merchant1}
+  Transform:
+    translation: [0, 0, 0.6]
+    rotation: [0, 0, 0]
+    scale: [2.2, 2.2, 1]
+  Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_talk}
+  Visibility: {gameVisible: true}
+  LuaScript:
+    scriptPath: scripts/hub/hub_talker.lua
+    properties:
+    - {name: speaker, type: string, value: "Merchant1"}
+    - {name: lines, type: string, value: "Fresh bread! Nothing for sale today, but the smell is free.|The bakery opens before the bell. Come early next time."}
+    - {name: follow, type: string, value: "Merchant1"}
+- Entity: 2000000000000000443
+  Tag: {tag: Talk_Merchant2}
+  Transform:
+    translation: [0, 0, 0.6]
+    rotation: [0, 0, 0]
+    scale: [2.2, 2.2, 1]
+  Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_talk}
+  Visibility: {gameVisible: true}
+  LuaScript:
+    scriptPath: scripts/hub/hub_talker.lua
+    properties:
+    - {name: speaker, type: string, value: "Merchant2"}
+    - {name: lines, type: string, value: "Milk and cheese. The best of the valley.|The market is quiet. Everybody is busy with the levels."}
+    - {name: follow, type: string, value: "Merchant2"}
+- Entity: 2000000000000000444
+  Tag: {tag: Talk_Merchant3}
+  Transform:
+    translation: [0, 0, 0.6]
+    rotation: [0, 0, 0]
+    scale: [2.2, 2.2, 1]
+  Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_talk}
+  Visibility: {gameVisible: true}
+  LuaScript:
+    scriptPath: scripts/hub/hub_talker.lua
+    properties:
+    - {name: speaker, type: string, value: "Merchant3"}
+    - {name: lines, type: string, value: "Cider of the village, stored since the last harvest.|They say the portal glows when the four levels are done."}
+    - {name: follow, type: string, value: "Merchant3"}
+- Entity: 2000000000000000445
+  Tag: {tag: Talk_Priest}
+  Transform:
+    translation: [0, 0, 0.6]
+    rotation: [0, 0, 0]
+    scale: [2.2, 2.2, 1]
+  Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_talk}
+  Visibility: {gameVisible: true}
+  LuaScript:
+    scriptPath: scripts/hub/hub_talker.lua
+    properties:
+    - {name: speaker, type: string, value: "Priest"}
+    - {name: lines, type: string, value: "Peace be with you. The bell rings now and then, do not mind it.|The shrine in the north east keeps the portal. Only the finished levels wake it.|The church stands here since before the village."}
+    - {name: follow, type: string, value: "Priest"}
+- Entity: 2000000000000000446
+  Tag: {tag: Talk_Woodcutter}
+  Transform:
+    translation: [0, 0, 0.6]
+    rotation: [0, 0, 0]
+    scale: [2.2, 2.2, 1]
+  Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_talk}
+  Visibility: {gameVisible: true}
+  LuaScript:
+    scriptPath: scripts/hub/hub_talker.lua
+    properties:
+    - {name: speaker, type: string, value: "Woodcutter"}
+    - {name: lines, type: string, value: "I fell trees all day. The crater to the north is none of my business.|The forest is dense here. Stay on the footpath.|A bench of logs, a few mushrooms. That is all I need."}
+    - {name: follow, type: string, value: "Woodcutter"}
+- Entity: 2000000000000000447
+  Tag: {tag: Tag_Villager}
+  Transform:
+    translation: [0, 0, 0.9]
+    rotation: [0, 0, 0]
+    scale: [1, 0.4, 1]
+  TextRenderer:
+    color: [0.85, 0.95, 1, 1]
+    kerning: 0
+    lineSpacing: 0
+    outlineColor: [0, 0, 0, 1]
+    outlineWidth: 0.12
+    text: "Villager"
+  Visibility: {gameVisible: true}
+- Entity: 2000000000000000448
+  Tag: {tag: Tag_Guard}
+  Transform:
+    translation: [0, 0, 0.9]
+    rotation: [0, 0, 0]
+    scale: [1, 0.4, 1]
+  TextRenderer:
+    color: [0.85, 0.95, 1, 1]
+    kerning: 0
+    lineSpacing: 0
+    outlineColor: [0, 0, 0, 1]
+    outlineWidth: 0.12
+    text: "Guard"
+  Visibility: {gameVisible: true}
+- Entity: 2000000000000000449
+  Tag: {tag: Tag_Wizard}
+  Transform:
+    translation: [0, 0, 0.9]
+    rotation: [0, 0, 0]
+    scale: [1, 0.4, 1]
+  TextRenderer:
+    color: [0.85, 0.95, 1, 1]
+    kerning: 0
+    lineSpacing: 0
+    outlineColor: [0, 0, 0, 1]
+    outlineWidth: 0.12
+    text: "Wizard"
+  Visibility: {gameVisible: true}
+- Entity: 2000000000000000450
+  Tag: {tag: Tag_Knight}
+  Transform:
+    translation: [0, 0, 0.9]
+    rotation: [0, 0, 0]
+    scale: [1, 0.4, 1]
+  TextRenderer:
+    color: [0.85, 0.95, 1, 1]
+    kerning: 0
+    lineSpacing: 0
+    outlineColor: [0, 0, 0, 1]
+    outlineWidth: 0.12
+    text: "Knight"
+  Visibility: {gameVisible: true}
+- Entity: 2000000000000000451
+  Tag: {tag: Tag_Farmer}
+  Transform:
+    translation: [0, 0, 0.9]
+    rotation: [0, 0, 0]
+    scale: [1, 0.4, 1]
+  TextRenderer:
+    color: [0.85, 0.95, 1, 1]
+    kerning: 0
+    lineSpacing: 0
+    outlineColor: [0, 0, 0, 1]
+    outlineWidth: 0.12
+    text: "Farmer"
+  Visibility: {gameVisible: true}
+- Entity: 2000000000000000452
+  Tag: {tag: Tag_Merchant1}
+  Transform:
+    translation: [0, 0, 0.9]
+    rotation: [0, 0, 0]
+    scale: [1, 0.4, 1]
+  TextRenderer:
+    color: [0.85, 0.95, 1, 1]
+    kerning: 0
+    lineSpacing: 0
+    outlineColor: [0, 0, 0, 1]
+    outlineWidth: 0.12
+    text: "Merchant1"
+  Visibility: {gameVisible: true}
+- Entity: 2000000000000000453
+  Tag: {tag: Tag_Merchant2}
+  Transform:
+    translation: [0, 0, 0.9]
+    rotation: [0, 0, 0]
+    scale: [1, 0.4, 1]
+  TextRenderer:
+    color: [0.85, 0.95, 1, 1]
+    kerning: 0
+    lineSpacing: 0
+    outlineColor: [0, 0, 0, 1]
+    outlineWidth: 0.12
+    text: "Merchant2"
+  Visibility: {gameVisible: true}
+- Entity: 2000000000000000454
+  Tag: {tag: Tag_Merchant3}
+  Transform:
+    translation: [0, 0, 0.9]
+    rotation: [0, 0, 0]
+    scale: [1, 0.4, 1]
+  TextRenderer:
+    color: [0.85, 0.95, 1, 1]
+    kerning: 0
+    lineSpacing: 0
+    outlineColor: [0, 0, 0, 1]
+    outlineWidth: 0.12
+    text: "Merchant3"
+  Visibility: {gameVisible: true}
+- Entity: 2000000000000000455
+  Tag: {tag: Tag_Priest}
+  Transform:
+    translation: [0, 0, 0.9]
+    rotation: [0, 0, 0]
+    scale: [1, 0.4, 1]
+  TextRenderer:
+    color: [0.85, 0.95, 1, 1]
+    kerning: 0
+    lineSpacing: 0
+    outlineColor: [0, 0, 0, 1]
+    outlineWidth: 0.12
+    text: "Priest"
+  Visibility: {gameVisible: true}
+- Entity: 2000000000000000456
+  Tag: {tag: Tag_Woodcutter}
+  Transform:
+    translation: [0, 0, 0.9]
+    rotation: [0, 0, 0]
+    scale: [1, 0.4, 1]
+  TextRenderer:
+    color: [0.85, 0.95, 1, 1]
+    kerning: 0
+    lineSpacing: 0
+    outlineColor: [0, 0, 0, 1]
+    outlineWidth: 0.12
+    text: "Woodcutter"
+  Visibility: {gameVisible: true}
+- Entity: 2000000000000000499
+  Tag: {tag: HubLabels}
+  Transform:
+    translation: [0.0, 0.0, 0.0]
+    rotation: [0, 0, 0]
+    scale: [1.0, 1.0, 1.0]
+  Visibility: {gameVisible: true}
+  LuaScript: {scriptPath: scripts/hub/hub_labels.lua}

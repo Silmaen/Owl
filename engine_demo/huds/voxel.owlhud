@@ -1,0 +1,86 @@
+Hud: voxel
+FormatVersion: 1
+Entities:
+- Entity: 3500000000000000001
+  Tag: {tag: HUDCanvas}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Canvas:
+    space: ScreenOverlay
+    sortOrder: 0
+    referenceResolution: [1280, 720]
+    scaleMode: ScaleWithHeight
+  Visibility: {gameVisible: true}
+  Hierarchy: {}
+- Entity: 3500000000000000010
+  Tag: {tag: HudTopLeft}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 3500000000000000001}
+  UiRect:
+    anchorMin: [0, 0]
+    anchorMax: [0, 0]
+    pivot: [0, 0]
+    size: [0.62, 0.22]
+    sizeUnit: [ScreenWidth, ScreenHeight]
+    offset: [16, 16]
+  UiLayout:
+    arrangement: Column
+    crossAlign: Start
+    spacing: 0
+    padding: 0
+    columns: 1
+    cellSize: [0, 0]
+- Entity: 3500000000000000003
+  Tag: {tag: ObjectiveText}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 3500000000000000010}
+  UiRect:
+    anchorMin: [0, 0]
+    anchorMax: [0, 0]
+    pivot: [0, 0]
+    size: [1, 0.45]
+    sizeUnit: [ParentWidth, ParentHeight]
+    offset: [0, 0]
+  UiText:
+    text: 'Objective: explore the terrain, 0 / 100 blocks from the landing point'
+    color: [1, 0.95, 0.55, 1]
+    fontSize: 26
+    horizontalAlignment: Left
+    verticalAlignment: Top
+    wrap: true
+    fit: Shrink
+    minFontSize: 12
+- Entity: 3500000000000000002
+  Tag: {tag: HudHint}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 3500000000000000010}
+  UiRect:
+    anchorMin: [0, 0]
+    anchorMax: [0, 0]
+    pivot: [0, 0]
+    size: [1, 0.5]
+    sizeUnit: [ParentWidth, ParentHeight]
+    offset: [0, 0]
+  UiText:
+    text: Voxel terrain  -  WASD = walk, mouse = look, Space = jump, Shift = run, ESC = back to the hub
+    color: [1, 1, 1, 0.85]
+    fontSize: 24
+    horizontalAlignment: Left
+    verticalAlignment: Top
+    wrap: true
+    fit: Shrink
+    minFontSize: 12

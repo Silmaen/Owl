@@ -30,7 +30,8 @@ auto SoundHelper::playEntitySound(const scene::Entity& iEntity) -> SoundHandle {
 		return invalidSoundHandle;
 
 	auto& soundLibrary = SoundSystem::getSoundLibrary();
-	const auto soundData = soundLibrary.get(soundComp.soundAsset);
+	const auto soundData = soundLibrary.exists(soundComp.soundAsset) ? soundLibrary.get(soundComp.soundAsset)
+																	 : soundLibrary.load(soundComp.soundAsset);
 	if (!soundData)
 		return invalidSoundHandle;
 

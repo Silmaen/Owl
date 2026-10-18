@@ -14,18 +14,18 @@ changing a subsystem. The repository audit of 2026-10-05 lives in `doc/audit/` (
 ## Build, test, run — Docker only
 
 Every compiler, CMake, CTest, Poetry, clang-tidy or clang-format call runs **inside the build image**
-through `docker/run.sh`, which mirrors CLion's *Docker Owl* toolchain (image
+through `./docker_run.sh`, which mirrors CLion's *Docker Owl* toolchain (image
 `registry.argawaen.net/builder/devel-ubuntu2604:latest`, your UID/GID, repo mounted at its host path,
 `$HOME` = `../fake_home` → `/fhome` holding the Poetry venv, the Conan cache and ccache). Never build
 natively, never install a tool on the host; if a tool is missing from the image, say so.
 
 ```bash
-docker/run.sh cmake --preset linux-clang-release -S .          # configure (fetches deps)
-docker/run.sh cmake --build output/build/linux-clang-release   # ~1 min full build on 32 cores
-docker/run.sh ctest --test-dir output/build/linux-clang-release --output-on-failure -j8
-docker/run.sh output/build/linux-clang-release/bin/owl_<cat>_tests_unit_test --gtest_filter='Suite.*'
-docker/run.sh --gui output/build/linux-clang-release/bin/OwlNest   # GPU + display + audio
-docker/run.sh --perf perf ...                                      # ptrace / perf events
+./docker_run.sh cmake --preset linux-clang-release -S .          # configure (fetches deps)
+./docker_run.sh cmake --build output/build/linux-clang-release   # ~1 min full build on 32 cores
+./docker_run.sh ctest --test-dir output/build/linux-clang-release --output-on-failure -j8
+./docker_run.sh output/build/linux-clang-release/bin/owl_<cat>_tests_unit_test --gtest_filter='Suite.*'
+./docker_run.sh --gui output/build/linux-clang-release/bin/OwlNest   # GPU + display + audio
+./docker_run.sh --perf perf ...                                      # ptrace / perf events
 ```
 
 - **Clang presets only** for dev, tests and coverage: `linux-clang-release` (default),
@@ -38,11 +38,11 @@ docker/run.sh --perf perf ...                                      # ptrace / pe
 - Output: `output/build/<preset>/{bin,lib}`, install in `output/install/<preset>/`.
 - If a build dir ends up root-owned, chown it back through a throwaway root container.
 - Test binaries are `owl_<folder>_unit_test` (e.g. `owl_scene_tests_unit_test`); new `.cpp` files in
-  `test/<cat>_tests/` and anywhere in `source/` are picked up by `GLOB_RECURSE` (re-run configure).
+  `test/unit/<cat>_tests/` and anywhere in `source/` are picked up by `GLOB_RECURSE` (re-run configure).
 
 ## CI actions (`ci_action.py`)
 
-`docker/run.sh poetry run python ci_action.py <Action> <preset> [-- --opt=value]`
+`./docker_run.sh poetry run python ci_action.py <Action> <preset> [-- --opt=value]`
 
 | Action                                             | What it does                                                                                   |
 |----------------------------------------------------|------------------------------------------------------------------------------------------------|
@@ -52,7 +52,7 @@ docker/run.sh --perf perf ...                                      # ptrace / pe
 | `CodeStyle`                                        | Read-only gate: clang-format, codespell, comment quality, docs, cpp-style, headers, ruff/mypy. |
 | `ClangTidy`                                        | clang-tidy (or `--tool=analyzer`) over `compile_commands.json`; PR = diff-scoped.              |
 | `Documentation`                                    | Doxygen with `WARN_AS_ERROR=YES`.                                                              |
-| `Bench`                                            | `owl_bench` against `bench/baseline/<preset>.json` (e.g. `linux-bench`).                       |
+| `Bench`                                            | `owl_bench` against `test/bench/baseline/<preset>.json` (e.g. `linux-bench`).                       |
 | `Fuzz`                                             | libFuzzer targets for a fixed time each (`linux-fuzz`).                                        |
 | `IncludeCheck`                                     | Every header and source compiled alone on strict libc++, no PCH (`linux-include-check`).       |
 | `DependencyReport`                                 | Informative list of dependencies with a newer version.                                         |
@@ -73,9 +73,12 @@ Python, never a bare `conan`. Inside the container the venv lives in `/fhome/.ca
 | `source/owl/public/`      | Public API, one folder per module = one namespace (see `.claude/rules/module-layout.md`). |
 | `source/owl/private/`     | Implementation, mirrors `public/`; third-party header wrappers in `core/external/`.       |
 | `source/owlnest/`         | Editor (`sources/`: panels, documents, undo commands) and runner (`runner/`).             |
-| `test/<cat>_tests/`       | Google Test, 20 categories, helpers in `test/test_helper/`.                               |
-| `engine_assets/`          | Fonts, Slang shaders (`shaders/<renderer>/slang/`), textures, logo.                       |
-| `engine_demo/`            | Engine Demo: an all-in-one showcase of every engine feature (not a game).                 |
+| `test/unit/<cat>_tests/`  | Google Test, 20 categories, helpers and all fixtures in `test/unit/test_helper/`.          |
+| `test/{bench,fuzz,package}/` | `owl_bench` + baseline, libFuzzer targets, Conan package test (`test_package_folder`).  |
+| `engine_assets/`          | What the engine ships: `fonts/`, Slang `shaders/<renderer>/`, `project_templates/`, `logo/`. |
+| `engine_demo/`            | Engine Demo, the all-in-one showcase (not a game): `scenes/ huds/ prefabs/ tilesets/ tilemaps/`, `scripts/` `sounds/` `textures/` by area. |
+| `tools/`                  | Python tools, not installed: `demo/`, `iso_atlas/` (demo assets), `editor/` (icons), `doc/` (Doxygen filter). |
+| `docker_run.sh`           | Runs any command in the build image (all builds go through it).                           |
 | `ci/`, `ci_action.py`     | Python CI (`ci/actions/*` extend `BaseAction`, auto-discovered).                          |
 | `.teamcity/`              | TeamCity Kotlin DSL (validate with Maven in Docker).                                      |
 | `cmake/`, `CMakePresets*` | Build modules and presets; `conanfile.py` lists the dependencies, `conan.lock` pins them. |
@@ -101,7 +104,7 @@ Python, never a bare `conan`. Inside the container the venv lives in `/fhome/.ca
 - `math::mat4{1.f}` is **not** identity (positional fill). Use `math::identity<float, 4>()`.
 - Slang matrices default to row-major: declare `column_major float4x4` for C++ uploads.
 - `getRootPath()` (test helper) loops forever when CWD is the project root.
-- Slang 2026.19: ~165 ms cold and 21–35 ms per shader in Release (`bench/`, 2026-10); engine shaders are
+- Slang 2026.19: ~165 ms cold and 21–35 ms per shader in Release (`test/bench/`, 2026-10); engine shaders are
   precompiled at build time (`OwlShaderBake`), still share the session across tests with `SetUpTestSuite`. Debug + coverage builds are much slower (not measured yet).
 - After changing the layout of a widely included public header (`Scene.h`, components), an incremental
   build can keep a stale object → heap corruption in an unrelated test. Rebuild with `--clean-first`

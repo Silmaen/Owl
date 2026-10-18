@@ -9,12 +9,12 @@ description: Run Owl unit tests (all, one category or one gtest filter) inside t
    if `output/build/<preset>/bin` is missing or sources changed).
 2. All tests:
    ```bash
-   docker/run.sh ctest --test-dir output/build/<preset> --output-on-failure -j8
+   ./docker_run.sh ctest --test-dir output/build/<preset> --output-on-failure -j8
    ```
 3. One category or filter (run from the build dir: `getRootPath()` loops when CWD is the repo root):
    ```bash
-   docker/run.sh bash -c 'cd output/build/<preset> && bin/owl_<category>_tests_unit_test --gtest_filter="<Suite>.<Test>"'
+   ./docker_run.sh bash -c 'cd output/build/<preset> && bin/owl_<category>_tests_unit_test --gtest_filter="<Suite>.<Test>"'
    ```
-4. Tests that need a GPU or audio: prefix with `docker/run.sh --gui`.
+4. Tests that need a GPU or audio: prefix with `./docker_run.sh --gui`.
 5. Report passed / failed / skipped with failing test names and the assertion output; do not call a failure
    "flaky" without rerunning it.

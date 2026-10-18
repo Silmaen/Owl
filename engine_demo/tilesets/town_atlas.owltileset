@@ -1,0 +1,465 @@
+Tileset: town_atlas
+FormatVersion: 1
+texture: nam:textures/atlases/town_atlas.png
+tileWidth: 16
+tileHeight: 16
+columns: 12
+rows: 21
+filterMode: Nearest
+tiles:
+  - index: 0
+    name: grass
+  - index: 1
+    name: grass_tufts
+  - index: 2
+    name: grass_flowers
+  - index: 3
+    collidable: true
+    name: pine_orange_top
+  - index: 4
+    collidable: true
+    name: pine_green_top
+  - index: 5
+    collidable: true
+    name: bush
+  - index: 12
+    name: dirt_nw
+  - index: 13
+    name: dirt_n
+  - index: 14
+    name: dirt_ne
+  - index: 15
+    collidable: true
+    name: pine_orange_base
+  - index: 16
+    collidable: true
+    name: pine_green_base
+  - index: 17
+    name: sprout
+  - index: 24
+    name: dirt_w
+  - index: 25
+    name: dirt
+  - index: 26
+    name: dirt_e
+  - index: 27
+    collidable: true
+    name: pine_orange
+  - index: 28
+    collidable: true
+    name: pine_green
+  - index: 29
+    name: mushrooms
+  - index: 36
+    name: dirt_sw
+  - index: 37
+    name: dirt_s
+  - index: 38
+    name: dirt_se
+  - index: 39
+    name: dirt_plain
+  - index: 40
+    name: dirt_plain
+  - index: 41
+    name: dirt_plain
+  - index: 42
+    name: dirt_plain
+  - index: 43
+    name: stepping_stones
+  - index: 44
+    collidable: true
+    name: fence_frame
+  - index: 45
+    collidable: true
+    name: fence_frame
+  - index: 46
+    collidable: true
+    name: fence_frame
+  - index: 48
+    collidable: true
+    name: roof_slate
+  - index: 49
+    collidable: true
+    name: roof_slate
+  - index: 50
+    collidable: true
+    name: roof_slate
+  - index: 51
+    collidable: true
+    name: roof_slate_chimney
+  - index: 52
+    collidable: true
+    name: roof_red
+  - index: 53
+    collidable: true
+    name: roof_red
+  - index: 54
+    collidable: true
+    name: roof_red
+  - index: 55
+    collidable: true
+    name: roof_red_chimney
+  - index: 60
+    collidable: true
+    name: roof_slate_low
+  - index: 61
+    collidable: true
+    name: roof_slate_low
+  - index: 62
+    collidable: true
+    name: roof_slate_low
+  - index: 63
+    collidable: true
+    name: roof_slate_gable
+  - index: 64
+    collidable: true
+    name: roof_red_low
+  - index: 65
+    collidable: true
+    name: roof_red_low
+  - index: 66
+    collidable: true
+    name: roof_red_low
+  - index: 67
+    collidable: true
+    name: roof_red_gable
+  - index: 72
+    collidable: true
+    name: wall_brick
+  - index: 73
+    collidable: true
+    name: wall_brick
+  - index: 74
+    collidable: true
+    name: wall_brick
+  - index: 75
+    collidable: true
+    name: wall_brick
+  - index: 76
+    collidable: true
+    name: wall_stone
+  - index: 77
+    collidable: true
+    name: wall_stone
+  - index: 78
+    collidable: true
+    name: wall_stone
+  - index: 79
+    collidable: true
+    name: wall_stone
+  - index: 80
+    collidable: true
+    name: fence
+  - index: 81
+    collidable: true
+    name: fence
+  - index: 82
+    collidable: true
+    name: fence
+  - index: 83
+    collidable: true
+    name: sign
+  - index: 84
+    collidable: true
+    name: window_brick
+  - index: 85
+    collidable: true
+    name: door_brick
+  - index: 86
+    collidable: true
+    name: door_brick_wide_l
+  - index: 87
+    collidable: true
+    name: door_brick_wide_r
+  - index: 88
+    collidable: true
+    name: window_stone
+  - index: 89
+    collidable: true
+    name: door_stone
+  - index: 90
+    collidable: true
+    name: door_stone_wide_l
+  - index: 91
+    collidable: true
+    name: door_stone_wide_r
+  - index: 93
+    collidable: true
+    name: prop
+  - index: 94
+    collidable: true
+    name: prop
+  - index: 95
+    collidable: true
+    name: prop
+  - index: 96
+    collidable: true
+    name: castle_floor
+  - index: 97
+    collidable: true
+    name: castle_floor
+  - index: 98
+    collidable: true
+    name: castle_floor
+  - index: 99
+    collidable: true
+    name: castle_wall
+  - index: 100
+    collidable: true
+    name: castle_wall
+  - index: 101
+    collidable: true
+    name: castle_wall
+  - index: 102
+    collidable: true
+    name: castle_wall
+  - index: 108
+    collidable: true
+    name: castle_floor
+  - index: 109
+    collidable: true
+    name: castle_floor
+  - index: 110
+    collidable: true
+    name: castle_floor
+  - index: 111
+    collidable: true
+    name: castle_gate
+  - index: 112
+    collidable: true
+    name: castle_gate
+  - index: 113
+    collidable: true
+    name: castle_gate
+  - index: 114
+    collidable: true
+    name: castle_gate
+  - index: 120
+    collidable: true
+    name: castle_floor
+  - index: 121
+    collidable: true
+    name: castle_floor
+  - index: 122
+    collidable: true
+    name: castle_floor
+  - index: 123
+    collidable: true
+    name: castle_base
+  - index: 124
+    collidable: true
+    name: castle_base
+  - index: 125
+    collidable: true
+    name: castle_base
+  - index: 126
+    collidable: true
+    name: castle_base
+  - index: 132
+    name: water
+  - index: 133
+    name: water_wave
+  - index: 134
+    name: lava_deadly
+  - index: 135
+    name: lava_wave_deadly
+  - index: 136
+    name: bridge
+  - index: 144
+    name: character_0
+  - index: 145
+    name: character_1
+  - index: 146
+    name: character_2
+  - index: 147
+    name: character_3
+  - index: 148
+    name: character_4
+  - index: 149
+    name: character_5
+  - index: 150
+    name: character_6
+  - index: 151
+    name: character_7
+  - index: 152
+    name: character_8
+  - index: 153
+    name: character_9
+  - index: 154
+    name: character_10
+  - index: 155
+    name: character_11
+  - index: 156
+    name: character_12
+  - index: 157
+    name: character_13
+  - index: 158
+    name: character_14
+  - index: 159
+    name: character_15
+  - index: 160
+    name: character_16
+  - index: 161
+    name: character_17
+  - index: 162
+    name: character_18
+  - index: 163
+    name: character_19
+  - index: 164
+    name: character_20
+  - index: 165
+    name: character_21
+  - index: 166
+    name: character_22
+  - index: 167
+    name: character_23
+  - index: 137
+    name: water
+  - index: 138
+    name: water
+  - index: 180
+    name: cobble
+  - index: 181
+    name: cobble
+  - index: 182
+    name: shrine_floor
+  - index: 183
+    name: wheat
+  - index: 184
+    name: cabbage
+  - index: 185
+    name: carrots
+  - index: 186
+    name: flower_bed_red
+  - index: 187
+    name: flower_bed_blue
+  - index: 188
+    name: tilled_soil
+  - index: 191
+    name: flower_bed_pink
+  - index: 189
+    collidable: true
+    name: hay_bale
+  - index: 190
+    collidable: true
+    name: lamp_post
+  - index: 192
+    collidable: true
+    name: fountain
+  - index: 193
+    collidable: true
+    name: fountain
+  - index: 194
+    collidable: true
+    name: fountain
+  - index: 195
+    collidable: true
+    name: fountain
+  - index: 196
+    collidable: true
+    name: fountain
+  - index: 197
+    collidable: true
+    name: fountain
+  - index: 198
+    collidable: true
+    name: fountain
+  - index: 199
+    collidable: true
+    name: fountain
+  - index: 200
+    name: flag_red
+  - index: 201
+    name: flag_red
+  - index: 202
+    name: flag_blue
+  - index: 203
+    name: flag_blue
+  - index: 204
+    name: flag_yellow
+  - index: 205
+    name: flag_yellow
+  - index: 206
+    name: butterfly_yellow
+  - index: 207
+    name: butterfly_yellow
+  - index: 208
+    name: butterfly_pink
+  - index: 209
+    name: butterfly_pink
+  - index: 210
+    name: butterfly_blue
+  - index: 211
+    name: butterfly_blue
+  - index: 212
+    name: butterfly_white
+  - index: 213
+    name: butterfly_white
+  - index: 214
+    name: sparrow
+  - index: 215
+    name: sparrow
+  - index: 216
+    name: hen
+  - index: 217
+    name: hen
+  - index: 218
+    name: character_extra_0
+  - index: 219
+    name: character_extra_1
+  - index: 220
+    name: character_extra_2
+  - index: 221
+    name: character_extra_3
+  - index: 222
+    name: character_extra_4
+  - index: 223
+    name: character_extra_5
+  - index: 224
+    name: character_extra_6
+  - index: 225
+    name: character_extra_7
+  - index: 226
+    name: character_extra_8
+  - index: 227
+    name: character_extra_9
+  - index: 228
+    name: character_extra_10
+  - index: 229
+    name: character_extra_11
+  - index: 230
+    name: character_extra_12
+  - index: 231
+    name: character_extra_13
+  - index: 232
+    name: character_extra_14
+  - index: 233
+    name: character_extra_15
+  - index: 234
+    name: character_extra_16
+  - index: 235
+    name: character_extra_17
+  - index: 236
+    name: character_extra_18
+  - index: 237
+    name: character_extra_19
+  - index: 238
+    name: character_extra_20
+  - index: 239
+    name: character_extra_21
+  - index: 240
+    name: character_extra_22
+  - index: 241
+    name: character_extra_23
+  - index: 242
+    name: character_extra_24
+  - index: 243
+    name: character_extra_25
+  - index: 244
+    name: character_extra_26
+  - index: 245
+    name: character_extra_27
+  - index: 246
+    name: character_extra_28
+  - index: 247
+    name: character_extra_29

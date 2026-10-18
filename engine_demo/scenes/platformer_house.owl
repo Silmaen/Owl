@@ -9,8 +9,8 @@ Entities:
     tag: MainCamera
   Transform:
     translation:
-    - 4.5
-    - -14.3999996
+    - 12
+    - -11.4
     - 5
     rotation:
     - 0
@@ -26,7 +26,7 @@ Entities:
       perspectiveFOV: 0.785398185
       perspectiveNear: 0.00999999978
       perspectiveFar: 1000
-      orthographicSize: 6
+      orthographicSize: 13.333333
       orthographicNear: -1
       orthographicFar: 10
     primary: true
@@ -35,57 +35,42 @@ Entities:
     gameVisible: true
   SoundListener:
     primary: true
-- Entity: 3000000000000000002
-  Tag:
-    tag: SkyBackground
-  Transform:
-    translation:
-    - 30
-    - -8
-    - -5
-    rotation:
-    - 0
-    - 0
-    - 0
-    scale:
-    - 80
-    - 30
-    - 1
-  BackgroundTexture:
-    mode: 0
-    type: 0
-    color:
-    - 0.100000001
-    - 0.0799999982
-    - 0.119999997
-    - 1
-    topColor:
-    - 0.150000006
-    - 0.100000001
-    - 0.180000007
-    - 1
-  Visibility:
-    gameVisible: true
 - Entity: 3000000000000000010
   Tag:
     tag: PlatformerTilemap
   Transform:
-    translation:
-    - 30
-    - -8
-    - 0
-    rotation:
-    - 0
-    - 0
-    - 0
-    scale:
-    - 1
-    - 1
-    - 1
+    translation: [98.5, -4, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
   Tilemap:
     tilemapPath: tilemaps/platformer_house.owltilemap
   Visibility:
     gameVisible: true
+  Hierarchy: {}
+- Entity: 3000000000000000011
+  Tag:
+    tag: ExtTilemap
+  Transform:
+    translation: [98.5, -4, 0.001]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Tilemap:
+    tilemapPath: tilemaps/platformer_ext.owltilemap
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3100000000000000600
+  Tag:
+    tag: BackdropTilemap
+  Transform:
+    translation: [64, -8.8, -3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Tilemap:
+    tilemapPath: tilemaps/platformer_backdrop.owltilemap
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
 - Entity: 3000000000000000020
   Tag:
     tag: Player
@@ -102,20 +87,12 @@ Entities:
     - 1.20000005
     - 1.20000005
     - 1
-  SpriteRenderer:
-    color:
-    - 1
-    - 1
-    - 1
-    - 1
-    tilingFactor: 1
-    texture: nam:textures/player.png
   PhysicBody:
     type: Dynamic
     fixedRotation: true
     colliderSize:
-    - 0.899999976
-    - 0.899999976
+    - 0.9
+    - 0.9
     - 1
     density: 1
     restitution: 0
@@ -128,657 +105,38 @@ Entities:
   Visibility:
     gameVisible: true
   LuaScript:
-    scriptPath: scripts/platformer_player.lua
+    scriptPath: scripts/platformer/platformer_player.lua
     properties:
     - name: speed
       type: float
       value: 5.5
-- Entity: 300000000000000031
-  Tag:
-    tag: Lava1
-  Transform:
-    translation:
-    - 12.5943098
-    - -15.5993776
-    - 0.300061047
-    rotation:
-    - 0
-    - 0
-    - 0
-    scale:
-    - 5
-    - 0.699999988
-    - 1
-  SpriteRenderer:
-    color:
-    - 1
-    - 1
-    - 1
-    - 1
-    tilingFactor:
-    - 5
-    - 1
-    texture: nam:textures/lava_tile.png
-  Trigger:
-    Type: Death
-    LevelName: scenes/game_over.owl
-  Visibility:
-    gameVisible: true
-- Entity: 300000000000000032
-  Tag:
-    tag: Lava2
-  Transform:
-    translation:
-    - 30.473629
-    - -15.6233025
-    - 0.300000012
-    rotation:
-    - 0
-    - 0
-    - 0
-    scale:
-    - 5
-    - 0.699999988
-    - 0.800000012
-  SpriteRenderer:
-    color:
-    - 1
-    - 1
-    - 1
-    - 1
-    tilingFactor:
-    - 5
-    - 1
-    texture: nam:textures/lava_tile.png
-  Trigger:
-    Type: Death
-    LevelName: scenes/game_over.owl
-  Visibility:
-    gameVisible: true
-- Entity: 300000000000000033
-  Tag:
-    tag: Lava3
-  Transform:
-    translation:
-    - 47.9249878
-    - -15.5745239
-    - 0.300000012
-    rotation:
-    - 0
-    - 0
-    - 0
-    scale:
-    - 4
-    - 0.699999988
-    - 1
-  SpriteRenderer:
-    color:
-    - 1
-    - 1
-    - 1
-    - 1
-    tilingFactor:
-    - 4
-    - 1
-    texture: nam:textures/lava_tile.png
-  Trigger:
-    Type: Death
-    LevelName: scenes/game_over.owl
-  Visibility:
-    gameVisible: true
-- Entity: 300000000000000101
-  Tag:
-    tag: Platform1
-  Transform:
-    translation:
-    - 12.5
-    - -13.5
-    - 0
-    rotation:
-    - 0
-    - 0
-    - 0
-    scale:
-    - 3
-    - 0.699999988
-    - 1
-  SpriteRenderer:
-    color:
-    - 0.850000024
-    - 0.649999976
-    - 0.400000006
-    - 1
-    tilingFactor:
-    - 3
-    - 1
-    texture: nam:textures/platform.png
-  PhysicBody:
-    type: Static
-    fixedRotation: true
-    colliderSize:
-    - 1
-    - 1
-    - 1
-    density: 0
-    restitution: 0
-    friction: 0.699999988
-  Visibility:
-    gameVisible: true
-- Entity: 300000000000000102
-  Tag:
-    tag: Platform2
-  Transform:
-    translation:
-    - 21.5
-    - -12.5
-    - 0
-    rotation:
-    - 0
-    - 0
-    - 0
-    scale:
-    - 3
-    - 0.699999988
-    - 1
-  SpriteRenderer:
-    color:
-    - 0.850000024
-    - 0.649999976
-    - 0.400000006
-    - 1
-    tilingFactor:
-    - 3
-    - 1
-    texture: nam:textures/platform.png
-  PhysicBody:
-    type: Static
-    fixedRotation: true
-    colliderSize:
-    - 1
-    - 1
-    - 1
-    density: 0
-    restitution: 0
-    friction: 0.699999988
-  Visibility:
-    gameVisible: true
-- Entity: 300000000000000103
-  Tag:
-    tag: Platform3
-  Transform:
-    translation:
-    - 27.5
-    - -13.5
-    - 0
-    rotation:
-    - 0
-    - 0
-    - 0
-    scale:
-    - 3
-    - 0.699999988
-    - 1
-  SpriteRenderer:
-    color:
-    - 0.850000024
-    - 0.649999976
-    - 0.400000006
-    - 1
-    tilingFactor:
-    - 3
-    - 1
-    texture: nam:textures/platform.png
-  PhysicBody:
-    type: Static
-    fixedRotation: true
-    colliderSize:
-    - 1
-    - 1
-    - 1
-    density: 0
-    restitution: 0
-    friction: 0.699999988
-  Visibility:
-    gameVisible: true
-- Entity: 300000000000000104
-  Tag:
-    tag: Platform4
-  Transform:
-    translation:
-    - 31.5
-    - -11.5
-    - 0
-    rotation:
-    - 0
-    - 0
-    - 0
-    scale:
-    - 3
-    - 0.699999988
-    - 1
-  SpriteRenderer:
-    color:
-    - 0.850000024
-    - 0.649999976
-    - 0.400000006
-    - 1
-    tilingFactor:
-    - 3
-    - 1
-    texture: nam:textures/platform.png
-  PhysicBody:
-    type: Static
-    fixedRotation: true
-    colliderSize:
-    - 1
-    - 1
-    - 1
-    density: 0
-    restitution: 0
-    friction: 0.699999988
-  Visibility:
-    gameVisible: true
-- Entity: 300000000000000105
-  Tag:
-    tag: Platform5
-  Transform:
-    translation:
-    - 35.5
-    - -12.5
-    - 0
-    rotation:
-    - 0
-    - 0
-    - 0
-    scale:
-    - 3
-    - 0.699999988
-    - 1
-  SpriteRenderer:
-    color:
-    - 0.850000024
-    - 0.649999976
-    - 0.400000006
-    - 1
-    tilingFactor:
-    - 3
-    - 1
-    texture: nam:textures/platform.png
-  PhysicBody:
-    type: Static
-    fixedRotation: true
-    colliderSize:
-    - 1
-    - 1
-    - 1
-    density: 0
-    restitution: 0
-    friction: 0.699999988
-  Visibility:
-    gameVisible: true
-- Entity: 300000000000000106
-  Tag:
-    tag: Platform6
-  Transform:
-    translation:
-    - 46.5
-    - -13.5
-    - 0
-    rotation:
-    - 0
-    - 0
-    - 0
-    scale:
-    - 3
-    - 0.699999988
-    - 1
-  SpriteRenderer:
-    color:
-    - 0.850000024
-    - 0.649999976
-    - 0.400000006
-    - 1
-    tilingFactor:
-    - 3
-    - 1
-    texture: nam:textures/platform.png
-  PhysicBody:
-    type: Static
-    fixedRotation: true
-    colliderSize:
-    - 1
-    - 1
-    - 1
-    density: 0
-    restitution: 0
-    friction: 0.699999988
-  Visibility:
-    gameVisible: true
-- Entity: 300000000000000107
-  Tag:
-    tag: Platform7
-  Transform:
-    translation:
-    - 51.5
-    - -12.5
-    - 0
-    rotation:
-    - 0
-    - 0
-    - 0
-    scale:
-    - 3
-    - 0.699999988
-    - 1
-  SpriteRenderer:
-    color:
-    - 0.850000024
-    - 0.649999976
-    - 0.400000006
-    - 1
-    tilingFactor:
-    - 3
-    - 1
-    texture: nam:textures/platform.png
-  PhysicBody:
-    type: Static
-    fixedRotation: true
-    colliderSize:
-    - 1
-    - 1
-    - 1
-    density: 0
-    restitution: 0
-    friction: 0.699999988
-  Visibility:
-    gameVisible: true
-- Entity: 300000000000000108
-  Tag:
-    tag: Platform8
-  Transform:
-    translation:
-    - 56
-    - -10.0592957
-    - 0
-    rotation:
-    - 0
-    - 0
-    - 0
-    scale:
-    - 4
-    - 0.699999988
-    - 1
-  SpriteRenderer:
-    color:
-    - 0.850000024
-    - 0.649999976
-    - 0.400000006
-    - 1
-    tilingFactor:
-    - 4
-    - 1
-    texture: nam:textures/platform.png
-  PhysicBody:
-    type: Static
-    fixedRotation: true
-    colliderSize:
-    - 1
-    - 1
-    - 1
-    density: 0
-    restitution: 0
-    friction: 0.699999988
-  Visibility:
-    gameVisible: true
-- Entity: 300000000000000201
-  Tag:
-    tag: MovingPlatformH1
-  Transform:
-    translation:
-    - 16.5
-    - -10.5
-    - 0
-    rotation:
-    - 0
-    - 0
-    - 0
-    scale:
-    - 2
-    - 0.699999988
-    - 1
-  SpriteRenderer:
-    color:
-    - 0.449999988
-    - 0.850000024
-    - 0.949999988
-    - 1
-    tilingFactor:
-    - 2
-    - 1
-    texture: nam:textures/platform.png
-  PhysicBody:
-    type: Kinematic
-    fixedRotation: true
-    colliderSize:
-    - 1
-    - 1
-    - 1
-    density: 0
-    restitution: 0
-    friction: 0.899999976
-  Visibility:
-    gameVisible: true
-  LuaScript:
-    scriptPath: scripts/moving_platform_h.lua
-    properties:
-    - name: speed
+    - name: bounds_min_x
       type: float
-      value: 1.79999995
-    - name: distance
+      value: 12
+    - name: bounds_max_x
       type: float
-      value: 4
-- Entity: 300000000000000202
-  Tag:
-    tag: MovingPlatformV1
-  Transform:
-    translation:
-    - 38.5
-    - -11.5
-    - 0
-    rotation:
-    - 0
-    - 0
-    - 0
-    scale:
-    - 2
-    - 0.699999988
-    - 1
-  SpriteRenderer:
-    color:
-    - 0.449999988
-    - 0.850000024
-    - 0.949999988
-    - 1
-    tilingFactor:
-    - 2
-    - 1
-    texture: nam:textures/platform.png
-  PhysicBody:
-    type: Kinematic
-    fixedRotation: true
-    colliderSize:
-    - 1
-    - 1
-    - 1
-    density: 0
-    restitution: 0
-    friction: 0.899999976
-  Visibility:
-    gameVisible: true
-  LuaScript:
-    scriptPath: scripts/moving_platform_v.lua
-    properties:
-    - name: speed
+      value: 185
+    - name: bounds_min_y
       type: float
-      value: 1.5
-    - name: distance
+      value: -13.2
+    - name: bounds_max_y
       type: float
-      value: 3
-- Entity: 300000000000000203
+      value: 5.3
+- Entity: 3100000000000000500
   Tag:
-    tag: MovingPlatformH2
+    tag: PlayerSprite
   Transform:
     translation:
-    - 41.5
-    - -9.5
+    - 0
+    - 0.106
     - 0
     rotation:
     - 0
     - 0
     - 0
     scale:
-    - 2
-    - 0.699999988
-    - 1
-  SpriteRenderer:
-    color:
-    - 0.449999988
-    - 0.850000024
-    - 0.949999988
-    - 1
-    tilingFactor:
-    - 2
-    - 1
-    texture: nam:textures/platform.png
-  PhysicBody:
-    type: Kinematic
-    fixedRotation: true
-    colliderSize:
-    - 1
-    - 1
-    - 1
-    density: 0
-    restitution: 0
-    friction: 0.899999976
-  Visibility:
-    gameVisible: true
-  LuaScript:
-    scriptPath: scripts/moving_platform_h.lua
-    properties:
-    - name: speed
-      type: float
-      value: 1.60000002
-    - name: distance
-      type: float
-      value: 4
-- Entity: 300000000000000301
-  Tag:
-    tag: Spike1
-  Transform:
-    translation:
-    - 7.5
-    - -14.5
-    - 0.400000006
-    rotation:
-    - 0
-    - 0
-    - 0
-    scale:
-    - 1
-    - 1
-    - 1
-  SpriteRenderer:
-    color:
-    - 1
-    - 1
-    - 1
-    - 1
-    tilingFactor: 1
-    texture: nam:textures/hazard.png
-  Trigger:
-    Type: LuaCallback
-    CallbackName: on_spike_hit
-  Visibility:
-    gameVisible: true
-  LuaScript:
-    scriptPath: scripts/spike_damage.lua
-- Entity: 300000000000000302
-  Tag:
-    tag: Spike2
-  Transform:
-    translation:
-    - 24.5
-    - -14.5
-    - 0.400000006
-    rotation:
-    - 0
-    - 0
-    - 0
-    scale:
-    - 1
-    - 1
-    - 1
-  SpriteRenderer:
-    color:
-    - 1
-    - 1
-    - 1
-    - 1
-    tilingFactor: 1
-    texture: nam:textures/hazard.png
-  Trigger:
-    Type: LuaCallback
-    CallbackName: on_spike_hit
-  Visibility:
-    gameVisible: true
-  LuaScript:
-    scriptPath: scripts/spike_damage.lua
-- Entity: 300000000000000303
-  Tag:
-    tag: Spike3
-  Transform:
-    translation:
-    - 44.5
-    - -14.5
-    - 0.400000006
-    rotation:
-    - 0
-    - 0
-    - 0
-    scale:
-    - 1
-    - 1
-    - 1
-  SpriteRenderer:
-    color:
-    - 1
-    - 1
-    - 1
-    - 1
-    tilingFactor: 1
-    texture: nam:textures/hazard.png
-  Trigger:
-    Type: LuaCallback
-    CallbackName: on_spike_hit
-  Visibility:
-    gameVisible: true
-  LuaScript:
-    scriptPath: scripts/spike_damage.lua
-- Entity: 300000000000000401
-  Tag:
-    tag: Coin1
-  Transform:
-    translation:
-    - 5.47137785
-    - -14.5359545
-    - 0
-    rotation:
-    - 0
-    - 0
-    - 0
-    scale:
-    - 0.699999988
-    - 0.699999988
+    - 1.1111111
+    - 1.1111111
     - 1
   AnimatedSpriteRenderer:
     color:
@@ -786,279 +144,24 @@ Entities:
     - 1
     - 1
     - 1
-    texture: nam:textures/animated_coin.png
-    columns: 6
-    rows: 3
-    firstFrame: 0
-    lastFrame: 17
-    frameDuration: 0.0799999982
-    loop: true
-  Trigger:
-    Type: LuaCallback
-    CallbackName: on_coin_collected
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 15
+    rows: 12
+    firstFrame: 150
+    lastFrame: 150
+    frameDuration: 0.1
+    loop: false
   Visibility:
     gameVisible: true
-  LuaScript:
-    scriptPath: scripts/coin.lua
-- Entity: 300000000000000402
-  Tag:
-    tag: Coin2
-  Transform:
-    translation:
-    - 12.4999676
-    - -12.4846745
-    - 0
-    rotation:
-    - 0
-    - 0
-    - 0
-    scale:
-    - 0.699999988
-    - 0.699999988
-    - 1
-  AnimatedSpriteRenderer:
-    color:
-    - 1
-    - 1
-    - 1
-    - 1
-    texture: nam:textures/animated_coin.png
-    columns: 6
-    rows: 3
-    firstFrame: 0
-    lastFrame: 17
-    frameDuration: 0.0799999982
-    loop: true
-  Trigger:
-    Type: LuaCallback
-    CallbackName: on_coin_collected
-  Visibility:
-    gameVisible: true
-  LuaScript:
-    scriptPath: scripts/coin.lua
-- Entity: 300000000000000403
-  Tag:
-    tag: Coin3
-  Transform:
-    translation:
-    - 16.7170391
-    - -9.44870949
-    - 0
-    rotation:
-    - 0
-    - 0
-    - 0
-    scale:
-    - 0.699999988
-    - 0.699999988
-    - 1
-  AnimatedSpriteRenderer:
-    color:
-    - 1
-    - 1
-    - 1
-    - 1
-    texture: nam:textures/animated_coin.png
-    columns: 6
-    rows: 3
-    firstFrame: 0
-    lastFrame: 17
-    frameDuration: 0.0799999982
-    loop: true
-  Trigger:
-    Type: LuaCallback
-    CallbackName: on_coin_collected
-  Visibility:
-    gameVisible: true
-  LuaScript:
-    scriptPath: scripts/coin.lua
-- Entity: 300000000000000404
-  Tag:
-    tag: Coin4
-  Transform:
-    translation:
-    - 26.7443371
-    - -12.4846535
-    - 0
-    rotation:
-    - 0
-    - 0
-    - 0
-    scale:
-    - 0.699999988
-    - 0.699999988
-    - 1
-  AnimatedSpriteRenderer:
-    color:
-    - 1
-    - 1
-    - 1
-    - 1
-    texture: nam:textures/animated_coin.png
-    columns: 6
-    rows: 3
-    firstFrame: 0
-    lastFrame: 17
-    frameDuration: 0.0799999982
-    loop: true
-  Trigger:
-    Type: LuaCallback
-    CallbackName: on_coin_collected
-  Visibility:
-    gameVisible: true
-  LuaScript:
-    scriptPath: scripts/coin.lua
-- Entity: 300000000000000405
-  Tag:
-    tag: Coin5
-  Transform:
-    translation:
-    - 31.9314194
-    - -10.4487114
-    - 0
-    rotation:
-    - 0
-    - 0
-    - 0
-    scale:
-    - 0.699999988
-    - 0.699999988
-    - 1
-  AnimatedSpriteRenderer:
-    color:
-    - 1
-    - 1
-    - 1
-    - 1
-    texture: nam:textures/animated_coin.png
-    columns: 6
-    rows: 3
-    firstFrame: 0
-    lastFrame: 17
-    frameDuration: 0.0799999982
-    loop: true
-  Trigger:
-    Type: LuaCallback
-    CallbackName: on_coin_collected
-  Visibility:
-    gameVisible: true
-  LuaScript:
-    scriptPath: scripts/coin.lua
-- Entity: 300000000000000406
-  Tag:
-    tag: Coin6
-  Transform:
-    translation:
-    - 35.5
-    - -13.5
-    - 0
-    rotation:
-    - 0
-    - 0
-    - 0
-    scale:
-    - 0.699999988
-    - 0.699999988
-    - 1
-  AnimatedSpriteRenderer:
-    color:
-    - 1
-    - 1
-    - 1
-    - 1
-    texture: nam:textures/animated_coin.png
-    columns: 6
-    rows: 3
-    firstFrame: 0
-    lastFrame: 17
-    frameDuration: 0.0799999982
-    loop: true
-  Trigger:
-    Type: LuaCallback
-    CallbackName: on_coin_collected
-  Visibility:
-    gameVisible: true
-  LuaScript:
-    scriptPath: scripts/coin.lua
-- Entity: 300000000000000407
-  Tag:
-    tag: Coin7
-  Transform:
-    translation:
-    - 51.5
-    - -13.5
-    - 0
-    rotation:
-    - 0
-    - 0
-    - 0
-    scale:
-    - 0.699999988
-    - 0.699999988
-    - 1
-  AnimatedSpriteRenderer:
-    color:
-    - 1
-    - 1
-    - 1
-    - 1
-    texture: nam:textures/animated_coin.png
-    columns: 6
-    rows: 3
-    firstFrame: 0
-    lastFrame: 17
-    frameDuration: 0.0799999982
-    loop: true
-  Trigger:
-    Type: LuaCallback
-    CallbackName: on_coin_collected
-  Visibility:
-    gameVisible: true
-  LuaScript:
-    scriptPath: scripts/coin.lua
-- Entity: 300000000000000408
-  Tag:
-    tag: Coin8
-  Transform:
-    translation:
-    - 54.8457909
-    - -9.27446842
-    - -6.10351562e-05
-    rotation:
-    - 0
-    - 0
-    - 0
-    scale:
-    - 0.699999988
-    - 0.699999988
-    - 1
-  AnimatedSpriteRenderer:
-    color:
-    - 1
-    - 1
-    - 1
-    - 1
-    texture: nam:textures/animated_coin.png
-    columns: 6
-    rows: 3
-    firstFrame: 0
-    lastFrame: 17
-    frameDuration: 0.0799999982
-    loop: true
-  Trigger:
-    Type: LuaCallback
-    CallbackName: on_coin_collected
-  Visibility:
-    gameVisible: true
-  LuaScript:
-    scriptPath: scripts/coin.lua
+  Hierarchy:
+    parentId: 3000000000000000020
 - Entity: 3000000000000000501
   Tag:
     tag: CoinPairA
   Transform:
     translation:
-    - 12.5
-    - -11.0
+    - 14.5
+    - -11.8
     - 0
     rotation:
     - 0
@@ -1094,8 +197,8 @@ Entities:
     - 0
     - 0
     scale:
-    - 0.699999988
-    - 0.699999988
+    - 1
+    - 1
     - 1
   AnimatedSpriteRenderer:
     color:
@@ -1103,12 +206,12 @@ Entities:
     - 1
     - 1
     - 1
-    texture: nam:textures/animated_coin.png
-    columns: 6
-    rows: 3
-    firstFrame: 0
-    lastFrame: 17
-    frameDuration: 0.0799999982
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
     loop: true
   Trigger:
     Type: LuaCallback
@@ -1118,7 +221,7 @@ Entities:
   Hierarchy:
     parentId: 3000000000000000501
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
 - Entity: 3000000000000000503
   Tag:
     tag: CoinRight
@@ -1132,8 +235,8 @@ Entities:
     - 0
     - 0
     scale:
-    - 0.699999988
-    - 0.699999988
+    - 1
+    - 1
     - 1
   AnimatedSpriteRenderer:
     color:
@@ -1141,12 +244,12 @@ Entities:
     - 1
     - 1
     - 1
-    texture: nam:textures/animated_coin.png
-    columns: 6
-    rows: 3
-    firstFrame: 0
-    lastFrame: 17
-    frameDuration: 0.0799999982
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
     loop: true
   Trigger:
     Type: LuaCallback
@@ -1156,14 +259,14 @@ Entities:
   Hierarchy:
     parentId: 3000000000000000501
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
 - Entity: 3000000000000000511
   Tag:
     tag: CoinPairB
   Transform:
     translation:
-    - 35.5
-    - -12.0
+    - 126.0
+    - 0.2
     - 0
     rotation:
     - 0
@@ -1201,8 +304,8 @@ Entities:
     - 0
     - 0
     scale:
-    - 0.699999988
-    - 0.699999988
+    - 1
+    - 1
     - 1
   AnimatedSpriteRenderer:
     color:
@@ -1210,12 +313,12 @@ Entities:
     - 1
     - 1
     - 1
-    texture: nam:textures/animated_coin.png
-    columns: 6
-    rows: 3
-    firstFrame: 0
-    lastFrame: 17
-    frameDuration: 0.0799999982
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
     loop: true
   Trigger:
     Type: LuaCallback
@@ -1225,7 +328,7 @@ Entities:
   Hierarchy:
     parentId: 3000000000000000511
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
 - Entity: 3000000000000000513
   Tag:
     tag: CoinRight
@@ -1239,21 +342,21 @@ Entities:
     - 0
     - 0
     scale:
-    - 0.699999988
-    - 0.699999988
+    - 1
+    - 1
     - 1
   AnimatedSpriteRenderer:
     color:
     - 1
-    - 0.800000012
-    - 0.300000012
     - 1
-    texture: nam:textures/animated_coin.png
-    columns: 6
-    rows: 3
-    firstFrame: 0
-    lastFrame: 17
-    frameDuration: 0.0799999982
+    - 0.3
+    - 1
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
     loop: true
   Trigger:
     Type: LuaCallback
@@ -1263,15 +366,15 @@ Entities:
   Hierarchy:
     parentId: 3000000000000000511
   LuaScript:
-    scriptPath: scripts/coin.lua
+    scriptPath: scripts/platformer/coin.lua
 - Entity: 3000000000000000050
   Tag:
     tag: VictoryZone
   Transform:
     translation:
-    - 57
-    - -8.76983643
-    - 0.400000006
+    - 195
+    - 8
+    - 0.4
     rotation:
     - 0
     - 0
@@ -1280,18 +383,4715 @@ Entities:
     - 2
     - 2
     - 1
-  SpriteRenderer:
-    color:
-    - 1
-    - 0.850000024
-    - 0.200000003
-    - 1
-    tilingFactor: 1
-    texture: nam:textures/portal.png
   Trigger:
     Type: LuaCallback
     CallbackName: on_level_complete
   Visibility:
     gameVisible: true
   LuaScript:
-    scriptPath: scripts/level_complete.lua
+    scriptPath: scripts/platformer/level_complete.lua
+- Entity: 3100000000000000032
+  Tag:
+    tag: DoorTop
+  Transform:
+    translation:
+    - 0
+    - 0.25
+    - 0
+    rotation:
+    - 0
+    - 0
+    - 0
+    scale:
+    - 0.5
+    - 0.5
+    - 1
+  AnimatedSpriteRenderer:
+    color:
+    - 1
+    - 1
+    - 1
+    - 1
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 130
+    lastFrame: 130
+    frameDuration: 0.1
+    loop: false
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 3000000000000000050
+- Entity: 3100000000000000033
+  Tag:
+    tag: DoorBottom
+  Transform:
+    translation:
+    - 0
+    - -0.25
+    - 0
+    rotation:
+    - 0
+    - 0
+    - 0
+    scale:
+    - 0.5
+    - 0.5
+    - 1
+  AnimatedSpriteRenderer:
+    color:
+    - 1
+    - 1
+    - 1
+    - 1
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 150
+    lastFrame: 150
+    frameDuration: 0.1
+    loop: false
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 3000000000000000050
+- Entity: 3200000000000000001
+  Tag:
+    tag: Water1
+  Transform:
+    translation: [13.5, -16.5, 0.05]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_ext_atlas.png
+    columns: 16
+    rows: 16
+    firstFrame: 224
+    lastFrame: 229
+    frameDuration: 0.14
+    loop: true
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000002
+  Tag:
+    tag: Water2
+  Transform:
+    translation: [14.5, -16.5, 0.05]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_ext_atlas.png
+    columns: 16
+    rows: 16
+    firstFrame: 224
+    lastFrame: 229
+    frameDuration: 0.14
+    loop: true
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000003
+  Tag:
+    tag: Water3
+  Transform:
+    translation: [15.5, -16.5, 0.05]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_ext_atlas.png
+    columns: 16
+    rows: 16
+    firstFrame: 224
+    lastFrame: 229
+    frameDuration: 0.14
+    loop: true
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000004
+  Tag:
+    tag: PitMeadow1
+  Transform:
+    translation: [14.5, -16.5, 0.1]
+    rotation: [0, 0, 0]
+    scale: [3, 1, 1]
+  Trigger:
+    Type: Target
+  LuaScript:
+    scriptPath: scripts/platformer/hazard.lua
+    properties:
+    - name: kind
+      type: string
+      value: pit
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000005
+  Tag:
+    tag: Water4
+  Transform:
+    translation: [36.5, -16.5, 0.05]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_ext_atlas.png
+    columns: 16
+    rows: 16
+    firstFrame: 224
+    lastFrame: 229
+    frameDuration: 0.14
+    loop: true
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000006
+  Tag:
+    tag: Water5
+  Transform:
+    translation: [37.5, -16.5, 0.05]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_ext_atlas.png
+    columns: 16
+    rows: 16
+    firstFrame: 224
+    lastFrame: 229
+    frameDuration: 0.14
+    loop: true
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000007
+  Tag:
+    tag: Water6
+  Transform:
+    translation: [38.5, -16.5, 0.05]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_ext_atlas.png
+    columns: 16
+    rows: 16
+    firstFrame: 224
+    lastFrame: 229
+    frameDuration: 0.14
+    loop: true
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000008
+  Tag:
+    tag: Water7
+  Transform:
+    translation: [39.5, -16.5, 0.05]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_ext_atlas.png
+    columns: 16
+    rows: 16
+    firstFrame: 224
+    lastFrame: 229
+    frameDuration: 0.14
+    loop: true
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000009
+  Tag:
+    tag: Water8
+  Transform:
+    translation: [40.5, -16.5, 0.05]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_ext_atlas.png
+    columns: 16
+    rows: 16
+    firstFrame: 224
+    lastFrame: 229
+    frameDuration: 0.14
+    loop: true
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000010
+  Tag:
+    tag: Water9
+  Transform:
+    translation: [41.5, -16.5, 0.05]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_ext_atlas.png
+    columns: 16
+    rows: 16
+    firstFrame: 224
+    lastFrame: 229
+    frameDuration: 0.14
+    loop: true
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000011
+  Tag:
+    tag: PitMeadow2
+  Transform:
+    translation: [39, -16.5, 0.1]
+    rotation: [0, 0, 0]
+    scale: [6, 1, 1]
+  Trigger:
+    Type: Target
+  LuaScript:
+    scriptPath: scripts/platformer/hazard.lua
+    properties:
+    - name: kind
+      type: string
+      value: pit
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000012
+  Tag:
+    tag: Water10
+  Transform:
+    translation: [73.5, -16.5, 0.05]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_ext_atlas.png
+    columns: 16
+    rows: 16
+    firstFrame: 224
+    lastFrame: 229
+    frameDuration: 0.14
+    loop: true
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000013
+  Tag:
+    tag: Water11
+  Transform:
+    translation: [74.5, -16.5, 0.05]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_ext_atlas.png
+    columns: 16
+    rows: 16
+    firstFrame: 224
+    lastFrame: 229
+    frameDuration: 0.14
+    loop: true
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000014
+  Tag:
+    tag: Water12
+  Transform:
+    translation: [75.5, -16.5, 0.05]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_ext_atlas.png
+    columns: 16
+    rows: 16
+    firstFrame: 224
+    lastFrame: 229
+    frameDuration: 0.14
+    loop: true
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000015
+  Tag:
+    tag: PitFarm1
+  Transform:
+    translation: [74.5, -16.5, 0.1]
+    rotation: [0, 0, 0]
+    scale: [3, 1, 1]
+  Trigger:
+    Type: Target
+  LuaScript:
+    scriptPath: scripts/platformer/hazard.lua
+    properties:
+    - name: kind
+      type: string
+      value: pit
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000016
+  Tag:
+    tag: Water13
+  Transform:
+    translation: [124.5, -16.5, 0.05]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_ext_atlas.png
+    columns: 16
+    rows: 16
+    firstFrame: 224
+    lastFrame: 229
+    frameDuration: 0.14
+    loop: true
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000017
+  Tag:
+    tag: Water14
+  Transform:
+    translation: [125.5, -16.5, 0.05]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_ext_atlas.png
+    columns: 16
+    rows: 16
+    firstFrame: 224
+    lastFrame: 229
+    frameDuration: 0.14
+    loop: true
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000018
+  Tag:
+    tag: Water15
+  Transform:
+    translation: [126.5, -16.5, 0.05]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_ext_atlas.png
+    columns: 16
+    rows: 16
+    firstFrame: 224
+    lastFrame: 229
+    frameDuration: 0.14
+    loop: true
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000019
+  Tag:
+    tag: Water16
+  Transform:
+    translation: [127.5, -16.5, 0.05]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_ext_atlas.png
+    columns: 16
+    rows: 16
+    firstFrame: 224
+    lastFrame: 229
+    frameDuration: 0.14
+    loop: true
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000020
+  Tag:
+    tag: PitChasm
+  Transform:
+    translation: [126, -16.5, 0.1]
+    rotation: [0, 0, 0]
+    scale: [4, 1, 1]
+  Trigger:
+    Type: Target
+  LuaScript:
+    scriptPath: scripts/platformer/hazard.lua
+    properties:
+    - name: kind
+      type: string
+      value: pit
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000021
+  Tag:
+    tag: Water17
+  Transform:
+    translation: [142.5, -16.5, 0.05]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_ext_atlas.png
+    columns: 16
+    rows: 16
+    firstFrame: 224
+    lastFrame: 229
+    frameDuration: 0.14
+    loop: true
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000022
+  Tag:
+    tag: Water18
+  Transform:
+    translation: [143.5, -16.5, 0.05]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_ext_atlas.png
+    columns: 16
+    rows: 16
+    firstFrame: 224
+    lastFrame: 229
+    frameDuration: 0.14
+    loop: true
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000023
+  Tag:
+    tag: Water19
+  Transform:
+    translation: [144.5, -16.5, 0.05]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_ext_atlas.png
+    columns: 16
+    rows: 16
+    firstFrame: 224
+    lastFrame: 229
+    frameDuration: 0.14
+    loop: true
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000024
+  Tag:
+    tag: PitFactory1
+  Transform:
+    translation: [143.5, -16.5, 0.1]
+    rotation: [0, 0, 0]
+    scale: [3, 1, 1]
+  Trigger:
+    Type: Target
+  LuaScript:
+    scriptPath: scripts/platformer/hazard.lua
+    properties:
+    - name: kind
+      type: string
+      value: pit
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000025
+  Tag:
+    tag: Water20
+  Transform:
+    translation: [150.5, -16.5, 0.05]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_ext_atlas.png
+    columns: 16
+    rows: 16
+    firstFrame: 224
+    lastFrame: 229
+    frameDuration: 0.14
+    loop: true
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000026
+  Tag:
+    tag: Water21
+  Transform:
+    translation: [151.5, -16.5, 0.05]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_ext_atlas.png
+    columns: 16
+    rows: 16
+    firstFrame: 224
+    lastFrame: 229
+    frameDuration: 0.14
+    loop: true
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000027
+  Tag:
+    tag: Water22
+  Transform:
+    translation: [152.5, -16.5, 0.05]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_ext_atlas.png
+    columns: 16
+    rows: 16
+    firstFrame: 224
+    lastFrame: 229
+    frameDuration: 0.14
+    loop: true
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000028
+  Tag:
+    tag: Water23
+  Transform:
+    translation: [153.5, -16.5, 0.05]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_ext_atlas.png
+    columns: 16
+    rows: 16
+    firstFrame: 224
+    lastFrame: 229
+    frameDuration: 0.14
+    loop: true
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000029
+  Tag:
+    tag: Water24
+  Transform:
+    translation: [154.5, -16.5, 0.05]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_ext_atlas.png
+    columns: 16
+    rows: 16
+    firstFrame: 224
+    lastFrame: 229
+    frameDuration: 0.14
+    loop: true
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000030
+  Tag:
+    tag: Water25
+  Transform:
+    translation: [155.5, -16.5, 0.05]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_ext_atlas.png
+    columns: 16
+    rows: 16
+    firstFrame: 224
+    lastFrame: 229
+    frameDuration: 0.14
+    loop: true
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000031
+  Tag:
+    tag: PitFactory2
+  Transform:
+    translation: [153, -16.5, 0.1]
+    rotation: [0, 0, 0]
+    scale: [6, 1, 1]
+  Trigger:
+    Type: Target
+  LuaScript:
+    scriptPath: scripts/platformer/hazard.lua
+    properties:
+    - name: kind
+      type: string
+      value: pit
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000032
+  Tag:
+    tag: Water26
+  Transform:
+    translation: [173.5, -16.5, 0.05]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_ext_atlas.png
+    columns: 16
+    rows: 16
+    firstFrame: 224
+    lastFrame: 229
+    frameDuration: 0.14
+    loop: true
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000033
+  Tag:
+    tag: Water27
+  Transform:
+    translation: [174.5, -16.5, 0.05]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_ext_atlas.png
+    columns: 16
+    rows: 16
+    firstFrame: 224
+    lastFrame: 229
+    frameDuration: 0.14
+    loop: true
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000034
+  Tag:
+    tag: Water28
+  Transform:
+    translation: [175.5, -16.5, 0.05]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_ext_atlas.png
+    columns: 16
+    rows: 16
+    firstFrame: 224
+    lastFrame: 229
+    frameDuration: 0.14
+    loop: true
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000035
+  Tag:
+    tag: Water29
+  Transform:
+    translation: [176.5, -16.5, 0.05]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_ext_atlas.png
+    columns: 16
+    rows: 16
+    firstFrame: 224
+    lastFrame: 229
+    frameDuration: 0.14
+    loop: true
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000036
+  Tag:
+    tag: Water30
+  Transform:
+    translation: [177.5, -16.5, 0.05]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_ext_atlas.png
+    columns: 16
+    rows: 16
+    firstFrame: 224
+    lastFrame: 229
+    frameDuration: 0.14
+    loop: true
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000037
+  Tag:
+    tag: Water31
+  Transform:
+    translation: [178.5, -16.5, 0.05]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_ext_atlas.png
+    columns: 16
+    rows: 16
+    firstFrame: 224
+    lastFrame: 229
+    frameDuration: 0.14
+    loop: true
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000038
+  Tag:
+    tag: Water32
+  Transform:
+    translation: [179.5, -16.5, 0.05]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_ext_atlas.png
+    columns: 16
+    rows: 16
+    firstFrame: 224
+    lastFrame: 229
+    frameDuration: 0.14
+    loop: true
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000039
+  Tag:
+    tag: Water33
+  Transform:
+    translation: [180.5, -16.5, 0.05]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_ext_atlas.png
+    columns: 16
+    rows: 16
+    firstFrame: 224
+    lastFrame: 229
+    frameDuration: 0.14
+    loop: true
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000040
+  Tag:
+    tag: Water34
+  Transform:
+    translation: [181.5, -16.5, 0.05]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_ext_atlas.png
+    columns: 16
+    rows: 16
+    firstFrame: 224
+    lastFrame: 229
+    frameDuration: 0.14
+    loop: true
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000041
+  Tag:
+    tag: Water35
+  Transform:
+    translation: [182.5, -16.5, 0.05]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_ext_atlas.png
+    columns: 16
+    rows: 16
+    firstFrame: 224
+    lastFrame: 229
+    frameDuration: 0.14
+    loop: true
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000042
+  Tag:
+    tag: Water36
+  Transform:
+    translation: [183.5, -16.5, 0.05]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_ext_atlas.png
+    columns: 16
+    rows: 16
+    firstFrame: 224
+    lastFrame: 229
+    frameDuration: 0.14
+    loop: true
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000043
+  Tag:
+    tag: Water37
+  Transform:
+    translation: [184.5, -16.5, 0.05]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_ext_atlas.png
+    columns: 16
+    rows: 16
+    firstFrame: 224
+    lastFrame: 229
+    frameDuration: 0.14
+    loop: true
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000044
+  Tag:
+    tag: Water38
+  Transform:
+    translation: [185.5, -16.5, 0.05]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_ext_atlas.png
+    columns: 16
+    rows: 16
+    firstFrame: 224
+    lastFrame: 229
+    frameDuration: 0.14
+    loop: true
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000045
+  Tag:
+    tag: Water39
+  Transform:
+    translation: [186.5, -16.5, 0.05]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_ext_atlas.png
+    columns: 16
+    rows: 16
+    firstFrame: 224
+    lastFrame: 229
+    frameDuration: 0.14
+    loop: true
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000046
+  Tag:
+    tag: Water40
+  Transform:
+    translation: [187.5, -16.5, 0.05]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_ext_atlas.png
+    columns: 16
+    rows: 16
+    firstFrame: 224
+    lastFrame: 229
+    frameDuration: 0.14
+    loop: true
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000047
+  Tag:
+    tag: Water41
+  Transform:
+    translation: [188.5, -16.5, 0.05]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_ext_atlas.png
+    columns: 16
+    rows: 16
+    firstFrame: 224
+    lastFrame: 229
+    frameDuration: 0.14
+    loop: true
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000048
+  Tag:
+    tag: Water42
+  Transform:
+    translation: [189.5, -16.5, 0.05]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_ext_atlas.png
+    columns: 16
+    rows: 16
+    firstFrame: 224
+    lastFrame: 229
+    frameDuration: 0.14
+    loop: true
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000049
+  Tag:
+    tag: Water43
+  Transform:
+    translation: [190.5, -16.5, 0.05]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_ext_atlas.png
+    columns: 16
+    rows: 16
+    firstFrame: 224
+    lastFrame: 229
+    frameDuration: 0.14
+    loop: true
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000050
+  Tag:
+    tag: Water44
+  Transform:
+    translation: [191.5, -16.5, 0.05]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_ext_atlas.png
+    columns: 16
+    rows: 16
+    firstFrame: 224
+    lastFrame: 229
+    frameDuration: 0.14
+    loop: true
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000051
+  Tag:
+    tag: Water45
+  Transform:
+    translation: [192.5, -16.5, 0.05]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_ext_atlas.png
+    columns: 16
+    rows: 16
+    firstFrame: 224
+    lastFrame: 229
+    frameDuration: 0.14
+    loop: true
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000052
+  Tag:
+    tag: PitTower
+  Transform:
+    translation: [183, -16.5, 0.1]
+    rotation: [0, 0, 0]
+    scale: [20, 1, 1]
+  Trigger:
+    Type: Target
+  LuaScript:
+    scriptPath: scripts/platformer/hazard.lua
+    properties:
+    - name: kind
+      type: string
+      value: pit
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000053
+  Tag:
+    tag: Torch1
+  Transform:
+    translation: [2.5, -14.5, -0.05]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 129
+    lastFrame: 129
+    frameDuration: 0.1
+    loop: false
+  LuaScript:
+    scriptPath: scripts/platformer/flicker.lua
+    properties:
+    - name: rate
+      type: float
+      value: 7
+    - name: phase
+      type: float
+      value: 0
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000054
+  Tag:
+    tag: Coin1
+  Transform:
+    translation: [6.5, -14.5, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000055
+  Tag:
+    tag: Coin2
+  Transform:
+    translation: [7.5, -14.5, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000056
+  Tag:
+    tag: Coin3
+  Transform:
+    translation: [8.5, -14.5, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000057
+  Tag:
+    tag: Spike1
+  Transform:
+    translation: [21.5, -13.75, 0.1]
+    rotation: [0, 0, 0]
+    scale: [0.8, 0.5, 1]
+  Trigger:
+    Type: Target
+  LuaScript:
+    scriptPath: scripts/platformer/hazard.lua
+    properties:
+    - name: kind
+      type: string
+      value: spike
+    - name: damage
+      type: float
+      value: 0.34
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000058
+  Tag:
+    tag: SpikeSprite3200000000000000057
+  Transform:
+    translation: [0, 0.5, 0.05]
+    rotation: [0, 0, 0]
+    scale: [1.25, 2, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 68
+    lastFrame: 68
+    frameDuration: 0.1
+    loop: false
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 3200000000000000057
+- Entity: 3200000000000000059
+  Tag:
+    tag: Coin4
+  Transform:
+    translation: [23, -14.5, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000060
+  Tag:
+    tag: Coin5
+  Transform:
+    translation: [24, -14.5, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000061
+  Tag:
+    tag: Coin6
+  Transform:
+    translation: [25, -14.5, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000062
+  Tag:
+    tag: Coin7
+  Transform:
+    translation: [31, -12.5, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000063
+  Tag:
+    tag: Coin8
+  Transform:
+    translation: [32, -12.5, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000064
+  Tag:
+    tag: MovingPlatformH1
+  Transform:
+    translation: [37, -15.5, 0.1]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  PhysicBody:
+    type: Kinematic
+    fixedRotation: true
+    colliderSize: [2, 1, 1]
+    density: 0
+    restitution: 0
+    friction: 0.9
+  LuaScript:
+    scriptPath: scripts/platformer/moving_platform_h.lua
+    properties:
+    - name: speed
+      type: float
+      value: 1.8
+    - name: distance
+      type: float
+      value: 4
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000065
+  Tag:
+    tag: MovingPlatformH1Tile0
+  Transform:
+    translation: [-0.5, 0, 0.01]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 1
+    lastFrame: 1
+    frameDuration: 0.1
+    loop: false
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 3200000000000000064
+- Entity: 3200000000000000066
+  Tag:
+    tag: MovingPlatformH1Tile1
+  Transform:
+    translation: [0.5, 0, 0.01]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 3
+    lastFrame: 3
+    frameDuration: 0.1
+    loop: false
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 3200000000000000064
+- Entity: 3200000000000000067
+  Tag:
+    tag: Coin9
+  Transform:
+    translation: [37.5, -14.5, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000068
+  Tag:
+    tag: Coin10
+  Transform:
+    translation: [39, -12.3, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000069
+  Tag:
+    tag: Coin11
+  Transform:
+    translation: [40.5, -14.5, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000070
+  Tag:
+    tag: Coin12
+  Transform:
+    translation: [44.5, -12.5, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000071
+  Tag:
+    tag: Coin13
+  Transform:
+    translation: [45.5, -12.5, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000072
+  Tag:
+    tag: Coin14
+  Transform:
+    translation: [46.5, -12.5, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000073
+  Tag:
+    tag: Spike2
+  Transform:
+    translation: [47.5, -13.75, 0.1]
+    rotation: [0, 0, 0]
+    scale: [0.8, 0.5, 1]
+  Trigger:
+    Type: Target
+  LuaScript:
+    scriptPath: scripts/platformer/hazard.lua
+    properties:
+    - name: kind
+      type: string
+      value: spike
+    - name: damage
+      type: float
+      value: 0.34
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000074
+  Tag:
+    tag: SpikeSprite3200000000000000073
+  Transform:
+    translation: [0, 0.5, 0.05]
+    rotation: [0, 0, 0]
+    scale: [1.25, 2, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 68
+    lastFrame: 68
+    frameDuration: 0.1
+    loop: false
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 3200000000000000073
+- Entity: 3200000000000000075
+  Tag:
+    tag: Spike3
+  Transform:
+    translation: [48.5, -13.75, 0.1]
+    rotation: [0, 0, 0]
+    scale: [0.8, 0.5, 1]
+  Trigger:
+    Type: Target
+  LuaScript:
+    scriptPath: scripts/platformer/hazard.lua
+    properties:
+    - name: kind
+      type: string
+      value: spike
+    - name: damage
+      type: float
+      value: 0.34
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000076
+  Tag:
+    tag: SpikeSprite3200000000000000075
+  Transform:
+    translation: [0, 0.5, 0.05]
+    rotation: [0, 0, 0]
+    scale: [1.25, 2, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 68
+    lastFrame: 68
+    frameDuration: 0.1
+    loop: false
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 3200000000000000075
+- Entity: 3200000000000000077
+  Tag:
+    tag: Coin15
+  Transform:
+    translation: [47.5, -12.1, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000078
+  Tag:
+    tag: Heart1
+  Transform:
+    translation: [50.5, -14.5, 0.3]
+    rotation: [0, 0, 0]
+    scale: [0.9, 0.9, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 44
+    lastFrame: 44
+    frameDuration: 0.1
+    loop: false
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_heart_touched
+  LuaScript:
+    scriptPath: scripts/platformer/heart.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000079
+  Tag:
+    tag: Checkpoint1Flag
+  Transform:
+    translation: [52.5, -14.5, 0.2]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_ext_atlas.png
+    columns: 16
+    rows: 16
+    firstFrame: 240
+    lastFrame: 240
+    frameDuration: 0.1
+    loop: false
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000080
+  Tag:
+    tag: Checkpoint1
+  Transform:
+    translation: [52.5, -14, 0.1]
+    rotation: [0, 0, 0]
+    scale: [1.2, 2.2, 1]
+  Trigger:
+    Type: Target
+  LuaScript:
+    scriptPath: scripts/platformer/checkpoint.lua
+    properties:
+    - name: flag
+      type: string
+      value: Checkpoint1Flag
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000081
+  Tag:
+    tag: Torch2
+  Transform:
+    translation: [54.5, -14.5, -0.05]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 129
+    lastFrame: 129
+    frameDuration: 0.1
+    loop: false
+  LuaScript:
+    scriptPath: scripts/platformer/flicker.lua
+    properties:
+    - name: rate
+      type: float
+      value: 7
+    - name: phase
+      type: float
+      value: 1.3
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000082
+  Tag:
+    tag: Torch3
+  Transform:
+    translation: [57.5, -14.5, -0.05]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 129
+    lastFrame: 129
+    frameDuration: 0.1
+    loop: false
+  LuaScript:
+    scriptPath: scripts/platformer/flicker.lua
+    properties:
+    - name: rate
+      type: float
+      value: 7
+    - name: phase
+      type: float
+      value: 2.1
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000083
+  Tag:
+    tag: Spike4
+  Transform:
+    translation: [68.5, -13.75, 0.1]
+    rotation: [0, 0, 0]
+    scale: [0.8, 0.5, 1]
+  Trigger:
+    Type: Target
+  LuaScript:
+    scriptPath: scripts/platformer/hazard.lua
+    properties:
+    - name: kind
+      type: string
+      value: spike
+    - name: damage
+      type: float
+      value: 0.34
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000084
+  Tag:
+    tag: SpikeSprite3200000000000000083
+  Transform:
+    translation: [0, 0.5, 0.05]
+    rotation: [0, 0, 0]
+    scale: [1.25, 2, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 68
+    lastFrame: 68
+    frameDuration: 0.1
+    loop: false
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 3200000000000000083
+- Entity: 3200000000000000085
+  Tag:
+    tag: Spike5
+  Transform:
+    translation: [69.5, -13.75, 0.1]
+    rotation: [0, 0, 0]
+    scale: [0.8, 0.5, 1]
+  Trigger:
+    Type: Target
+  LuaScript:
+    scriptPath: scripts/platformer/hazard.lua
+    properties:
+    - name: kind
+      type: string
+      value: spike
+    - name: damage
+      type: float
+      value: 0.34
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000086
+  Tag:
+    tag: SpikeSprite3200000000000000085
+  Transform:
+    translation: [0, 0.5, 0.05]
+    rotation: [0, 0, 0]
+    scale: [1.25, 2, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 68
+    lastFrame: 68
+    frameDuration: 0.1
+    loop: false
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 3200000000000000085
+- Entity: 3200000000000000087
+  Tag:
+    tag: Spike6
+  Transform:
+    translation: [70.5, -13.75, 0.1]
+    rotation: [0, 0, 0]
+    scale: [0.8, 0.5, 1]
+  Trigger:
+    Type: Target
+  LuaScript:
+    scriptPath: scripts/platformer/hazard.lua
+    properties:
+    - name: kind
+      type: string
+      value: spike
+    - name: damage
+      type: float
+      value: 0.34
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000088
+  Tag:
+    tag: SpikeSprite3200000000000000087
+  Transform:
+    translation: [0, 0.5, 0.05]
+    rotation: [0, 0, 0]
+    scale: [1.25, 2, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 68
+    lastFrame: 68
+    frameDuration: 0.1
+    loop: false
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 3200000000000000087
+- Entity: 3200000000000000089
+  Tag:
+    tag: Coin16
+  Transform:
+    translation: [58.5, -14.5, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000090
+  Tag:
+    tag: Coin17
+  Transform:
+    translation: [60.1667, -14.5, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000091
+  Tag:
+    tag: Coin18
+  Transform:
+    translation: [61.8333, -14.5, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000092
+  Tag:
+    tag: Coin19
+  Transform:
+    translation: [63.5, -14.5, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000093
+  Tag:
+    tag: Coin20
+  Transform:
+    translation: [64.75, -13.5, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000094
+  Tag:
+    tag: Coin21
+  Transform:
+    translation: [66, -13.5, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000095
+  Tag:
+    tag: Coin22
+  Transform:
+    translation: [67.25, -13.5, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000096
+  Tag:
+    tag: Coin23
+  Transform:
+    translation: [73, -13.5, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000097
+  Tag:
+    tag: Coin24
+  Transform:
+    translation: [74, -11.9, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000098
+  Tag:
+    tag: Coin25
+  Transform:
+    translation: [75, -11.9, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000099
+  Tag:
+    tag: Coin26
+  Transform:
+    translation: [76, -13.5, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000100
+  Tag:
+    tag: Coin27
+  Transform:
+    translation: [77.5, -14.5, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000101
+  Tag:
+    tag: Coin28
+  Transform:
+    translation: [78.5, -14.5, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000102
+  Tag:
+    tag: Coin29
+  Transform:
+    translation: [79.5, -14.5, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000103
+  Tag:
+    tag: Coin30
+  Transform:
+    translation: [86.5, -11.5, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000104
+  Tag:
+    tag: Coin31
+  Transform:
+    translation: [88.5, -11.5, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000105
+  Tag:
+    tag: Coin32
+  Transform:
+    translation: [91.5, -9.5, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000106
+  Tag:
+    tag: Coin33
+  Transform:
+    translation: [92.5, -9.5, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000107
+  Tag:
+    tag: Coin34
+  Transform:
+    translation: [93.5, -9.5, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000108
+  Tag:
+    tag: Coin35
+  Transform:
+    translation: [96.5, -7.5, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000109
+  Tag:
+    tag: Coin36
+  Transform:
+    translation: [98.5, -7.5, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000110
+  Tag:
+    tag: Coin37
+  Transform:
+    translation: [101.5, -5.5, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000111
+  Tag:
+    tag: Coin38
+  Transform:
+    translation: [102.5, -5.5, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000112
+  Tag:
+    tag: Coin39
+  Transform:
+    translation: [103.5, -5.5, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000113
+  Tag:
+    tag: Coin40
+  Transform:
+    translation: [106.5, -3.5, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000114
+  Tag:
+    tag: Coin41
+  Transform:
+    translation: [108.5, -3.5, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000115
+  Tag:
+    tag: Coin42
+  Transform:
+    translation: [111.5, -1.5, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000116
+  Tag:
+    tag: Coin43
+  Transform:
+    translation: [112.5, -1.5, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000117
+  Tag:
+    tag: Coin44
+  Transform:
+    translation: [113.5, -1.5, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000118
+  Tag:
+    tag: Checkpoint2Flag
+  Transform:
+    translation: [118.5, -1.5, 0.2]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_ext_atlas.png
+    columns: 16
+    rows: 16
+    firstFrame: 240
+    lastFrame: 240
+    frameDuration: 0.1
+    loop: false
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000119
+  Tag:
+    tag: Checkpoint2
+  Transform:
+    translation: [118.5, -1, 0.1]
+    rotation: [0, 0, 0]
+    scale: [1.2, 2.2, 1]
+  Trigger:
+    Type: Target
+  LuaScript:
+    scriptPath: scripts/platformer/checkpoint.lua
+    properties:
+    - name: flag
+      type: string
+      value: Checkpoint2Flag
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000120
+  Tag:
+    tag: Spike7
+  Transform:
+    translation: [122.5, -0.75, 0.1]
+    rotation: [0, 0, 0]
+    scale: [0.8, 0.5, 1]
+  Trigger:
+    Type: Target
+  LuaScript:
+    scriptPath: scripts/platformer/hazard.lua
+    properties:
+    - name: kind
+      type: string
+      value: spike
+    - name: damage
+      type: float
+      value: 0.34
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000121
+  Tag:
+    tag: SpikeSprite3200000000000000120
+  Transform:
+    translation: [0, 0.5, 0.05]
+    rotation: [0, 0, 0]
+    scale: [1.25, 2, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 68
+    lastFrame: 68
+    frameDuration: 0.1
+    loop: false
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 3200000000000000120
+- Entity: 3200000000000000122
+  Tag:
+    tag: Spike8
+  Transform:
+    translation: [123.5, -0.75, 0.1]
+    rotation: [0, 0, 0]
+    scale: [0.8, 0.5, 1]
+  Trigger:
+    Type: Target
+  LuaScript:
+    scriptPath: scripts/platformer/hazard.lua
+    properties:
+    - name: kind
+      type: string
+      value: spike
+    - name: damage
+      type: float
+      value: 0.34
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000123
+  Tag:
+    tag: SpikeSprite3200000000000000122
+  Transform:
+    translation: [0, 0.5, 0.05]
+    rotation: [0, 0, 0]
+    scale: [1.25, 2, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 68
+    lastFrame: 68
+    frameDuration: 0.1
+    loop: false
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 3200000000000000122
+- Entity: 3200000000000000124
+  Tag:
+    tag: Coin45
+  Transform:
+    translation: [122.5, 0.5, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000125
+  Tag:
+    tag: MovingPlatformH2
+  Transform:
+    translation: [124, -2.5, 0.1]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  PhysicBody:
+    type: Kinematic
+    fixedRotation: true
+    colliderSize: [2, 1, 1]
+    density: 0
+    restitution: 0
+    friction: 0.9
+  LuaScript:
+    scriptPath: scripts/platformer/moving_platform_h.lua
+    properties:
+    - name: speed
+      type: float
+      value: 1.6
+    - name: distance
+      type: float
+      value: 4
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000126
+  Tag:
+    tag: MovingPlatformH2Tile0
+  Transform:
+    translation: [-0.5, 0, 0.01]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_ext_atlas.png
+    columns: 16
+    rows: 16
+    firstFrame: 1
+    lastFrame: 1
+    frameDuration: 0.1
+    loop: false
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 3200000000000000125
+- Entity: 3200000000000000127
+  Tag:
+    tag: MovingPlatformH2Tile1
+  Transform:
+    translation: [0.5, 0, 0.01]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_ext_atlas.png
+    columns: 16
+    rows: 16
+    firstFrame: 3
+    lastFrame: 3
+    frameDuration: 0.1
+    loop: false
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 3200000000000000125
+- Entity: 3200000000000000128
+  Tag:
+    tag: Coin46
+  Transform:
+    translation: [124.5, -0.5, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000129
+  Tag:
+    tag: Coin47
+  Transform:
+    translation: [125.5, 0.9222, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000130
+  Tag:
+    tag: Coin48
+  Transform:
+    translation: [126.5, 0.9222, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000131
+  Tag:
+    tag: Coin49
+  Transform:
+    translation: [127.5, -0.5, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000132
+  Tag:
+    tag: Heart2
+  Transform:
+    translation: [131.5, -1.5, 0.3]
+    rotation: [0, 0, 0]
+    scale: [0.9, 0.9, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 44
+    lastFrame: 44
+    frameDuration: 0.1
+    loop: false
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_heart_touched
+  LuaScript:
+    scriptPath: scripts/platformer/heart.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000133
+  Tag:
+    tag: Torch4
+  Transform:
+    translation: [132.5, -1.5, -0.05]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 129
+    lastFrame: 129
+    frameDuration: 0.1
+    loop: false
+  LuaScript:
+    scriptPath: scripts/platformer/flicker.lua
+    properties:
+    - name: rate
+      type: float
+      value: 7
+    - name: phase
+      type: float
+      value: 0.7
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000134
+  Tag:
+    tag: SecretRoom
+  Transform:
+    translation: [132.5, -13.5, 0.1]
+    rotation: [0, 0, 0]
+    scale: [2, 3, 1]
+  Trigger:
+    Type: Target
+  LuaScript:
+    scriptPath: scripts/platformer/secret_room.lua
+    properties:
+    - name: map
+      type: string
+      value: ExtTilemap
+    - name: layer
+      type: float
+      value: 1
+    - name: items
+      type: float
+      value: 12
+    - name: tile_a
+      type: float
+      value: 237
+    - name: tile_b
+      type: float
+      value: 238
+    - name: tile_c
+      type: float
+      value: 239
+    - name: x0
+      type: float
+      value: 129
+    - name: y0
+      type: float
+      value: 24
+    - name: x1
+      type: float
+      value: 132
+    - name: y1
+      type: float
+      value: 26
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000135
+  Tag:
+    tag: SecretItem1
+  Transform:
+    translation: [129.5, -14.5, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: false
+  Hierarchy: {}
+- Entity: 3200000000000000136
+  Tag:
+    tag: SecretItem2
+  Transform:
+    translation: [130.5, -14.5, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: false
+  Hierarchy: {}
+- Entity: 3200000000000000137
+  Tag:
+    tag: SecretItem3
+  Transform:
+    translation: [131.5, -14.5, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: false
+  Hierarchy: {}
+- Entity: 3200000000000000138
+  Tag:
+    tag: SecretItem4
+  Transform:
+    translation: [132.5, -14.5, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: false
+  Hierarchy: {}
+- Entity: 3200000000000000139
+  Tag:
+    tag: SecretItem5
+  Transform:
+    translation: [129.5, -13.35, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: false
+  Hierarchy: {}
+- Entity: 3200000000000000140
+  Tag:
+    tag: SecretItem6
+  Transform:
+    translation: [130.5, -13.35, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: false
+  Hierarchy: {}
+- Entity: 3200000000000000141
+  Tag:
+    tag: SecretItem7
+  Transform:
+    translation: [131.5, -13.35, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: false
+  Hierarchy: {}
+- Entity: 3200000000000000142
+  Tag:
+    tag: SecretItem8
+  Transform:
+    translation: [132.5, -13.35, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: false
+  Hierarchy: {}
+- Entity: 3200000000000000143
+  Tag:
+    tag: SecretItem9
+  Transform:
+    translation: [131, -12.5, 0.3]
+    rotation: [0, 0, 0]
+    scale: [0.9, 0.9, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 44
+    lastFrame: 44
+    frameDuration: 0.1
+    loop: false
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_heart_touched
+  LuaScript:
+    scriptPath: scripts/platformer/heart.lua
+  Visibility:
+    gameVisible: false
+  Hierarchy: {}
+- Entity: 3200000000000000144
+  Tag:
+    tag: Torch5
+  Transform:
+    translation: [134.5, -14.5, -0.05]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 129
+    lastFrame: 129
+    frameDuration: 0.1
+    loop: false
+  LuaScript:
+    scriptPath: scripts/platformer/flicker.lua
+    properties:
+    - name: rate
+      type: float
+      value: 7
+    - name: phase
+      type: float
+      value: 1.9
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000145
+  Tag:
+    tag: Checkpoint3Flag
+  Transform:
+    translation: [136.5, -14.5, 0.2]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_ext_atlas.png
+    columns: 16
+    rows: 16
+    firstFrame: 240
+    lastFrame: 240
+    frameDuration: 0.1
+    loop: false
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000146
+  Tag:
+    tag: Checkpoint3
+  Transform:
+    translation: [136.5, -14, 0.1]
+    rotation: [0, 0, 0]
+    scale: [1.2, 2.2, 1]
+  Trigger:
+    Type: Target
+  LuaScript:
+    scriptPath: scripts/platformer/checkpoint.lua
+    properties:
+    - name: flag
+      type: string
+      value: Checkpoint3Flag
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000147
+  Tag:
+    tag: Spike9
+  Transform:
+    translation: [139.5, -13.75, 0.1]
+    rotation: [0, 0, 0]
+    scale: [0.8, 0.5, 1]
+  Trigger:
+    Type: Target
+  LuaScript:
+    scriptPath: scripts/platformer/hazard.lua
+    properties:
+    - name: kind
+      type: string
+      value: spike
+    - name: damage
+      type: float
+      value: 0.34
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000148
+  Tag:
+    tag: SpikeSprite3200000000000000147
+  Transform:
+    translation: [0, 0.5, 0.05]
+    rotation: [0, 0, 0]
+    scale: [1.25, 2, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 68
+    lastFrame: 68
+    frameDuration: 0.1
+    loop: false
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 3200000000000000147
+- Entity: 3200000000000000149
+  Tag:
+    tag: Coin50
+  Transform:
+    translation: [134.5, -14.5, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000150
+  Tag:
+    tag: Coin51
+  Transform:
+    translation: [136.5, -14.5, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000151
+  Tag:
+    tag: Coin52
+  Transform:
+    translation: [138.5, -14.5, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000152
+  Tag:
+    tag: Coin53
+  Transform:
+    translation: [140.5, -14.5, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000153
+  Tag:
+    tag: Coin54
+  Transform:
+    translation: [142, -13.5, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000154
+  Tag:
+    tag: Coin55
+  Transform:
+    translation: [143, -11.7222, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000155
+  Tag:
+    tag: Coin56
+  Transform:
+    translation: [144, -11.7222, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000156
+  Tag:
+    tag: Coin57
+  Transform:
+    translation: [145, -13.5, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000157
+  Tag:
+    tag: Spike10
+  Transform:
+    translation: [147.5, -13.75, 0.1]
+    rotation: [0, 0, 0]
+    scale: [0.8, 0.5, 1]
+  Trigger:
+    Type: Target
+  LuaScript:
+    scriptPath: scripts/platformer/hazard.lua
+    properties:
+    - name: kind
+      type: string
+      value: spike
+    - name: damage
+      type: float
+      value: 0.34
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000158
+  Tag:
+    tag: SpikeSprite3200000000000000157
+  Transform:
+    translation: [0, 0.5, 0.05]
+    rotation: [0, 0, 0]
+    scale: [1.25, 2, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 68
+    lastFrame: 68
+    frameDuration: 0.1
+    loop: false
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 3200000000000000157
+- Entity: 3200000000000000159
+  Tag:
+    tag: Spike11
+  Transform:
+    translation: [148.5, -13.75, 0.1]
+    rotation: [0, 0, 0]
+    scale: [0.8, 0.5, 1]
+  Trigger:
+    Type: Target
+  LuaScript:
+    scriptPath: scripts/platformer/hazard.lua
+    properties:
+    - name: kind
+      type: string
+      value: spike
+    - name: damage
+      type: float
+      value: 0.34
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000160
+  Tag:
+    tag: SpikeSprite3200000000000000159
+  Transform:
+    translation: [0, 0.5, 0.05]
+    rotation: [0, 0, 0]
+    scale: [1.25, 2, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 68
+    lastFrame: 68
+    frameDuration: 0.1
+    loop: false
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 3200000000000000159
+- Entity: 3200000000000000161
+  Tag:
+    tag: Coin58
+  Transform:
+    translation: [147.5, -12.2, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000162
+  Tag:
+    tag: MovingPlatformH3
+  Transform:
+    translation: [151, -15.5, 0.1]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  PhysicBody:
+    type: Kinematic
+    fixedRotation: true
+    colliderSize: [2, 1, 1]
+    density: 0
+    restitution: 0
+    friction: 0.9
+  LuaScript:
+    scriptPath: scripts/platformer/moving_platform_h.lua
+    properties:
+    - name: speed
+      type: float
+      value: 2
+    - name: distance
+      type: float
+      value: 4
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000163
+  Tag:
+    tag: MovingPlatformH3Tile0
+  Transform:
+    translation: [-0.5, 0, 0.01]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_ext_atlas.png
+    columns: 16
+    rows: 16
+    firstFrame: 113
+    lastFrame: 113
+    frameDuration: 0.1
+    loop: false
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 3200000000000000162
+- Entity: 3200000000000000164
+  Tag:
+    tag: MovingPlatformH3Tile1
+  Transform:
+    translation: [0.5, 0, 0.01]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_ext_atlas.png
+    columns: 16
+    rows: 16
+    firstFrame: 115
+    lastFrame: 115
+    frameDuration: 0.1
+    loop: false
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 3200000000000000162
+- Entity: 3200000000000000165
+  Tag:
+    tag: Coin59
+  Transform:
+    translation: [151, -13.5, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000166
+  Tag:
+    tag: Coin60
+  Transform:
+    translation: [152.3333, -12.0778, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000167
+  Tag:
+    tag: Coin61
+  Transform:
+    translation: [153.6667, -12.0778, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000168
+  Tag:
+    tag: Coin62
+  Transform:
+    translation: [155, -13.5, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000169
+  Tag:
+    tag: Spike12
+  Transform:
+    translation: [158.5, -13.75, 0.1]
+    rotation: [0, 0, 0]
+    scale: [0.8, 0.5, 1]
+  Trigger:
+    Type: Target
+  LuaScript:
+    scriptPath: scripts/platformer/hazard.lua
+    properties:
+    - name: kind
+      type: string
+      value: spike
+    - name: damage
+      type: float
+      value: 0.34
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000170
+  Tag:
+    tag: SpikeSprite3200000000000000169
+  Transform:
+    translation: [0, 0.5, 0.05]
+    rotation: [0, 0, 0]
+    scale: [1.25, 2, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 68
+    lastFrame: 68
+    frameDuration: 0.1
+    loop: false
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 3200000000000000169
+- Entity: 3200000000000000171
+  Tag:
+    tag: Spike13
+  Transform:
+    translation: [159.5, -13.75, 0.1]
+    rotation: [0, 0, 0]
+    scale: [0.8, 0.5, 1]
+  Trigger:
+    Type: Target
+  LuaScript:
+    scriptPath: scripts/platformer/hazard.lua
+    properties:
+    - name: kind
+      type: string
+      value: spike
+    - name: damage
+      type: float
+      value: 0.34
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000172
+  Tag:
+    tag: SpikeSprite3200000000000000171
+  Transform:
+    translation: [0, 0.5, 0.05]
+    rotation: [0, 0, 0]
+    scale: [1.25, 2, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 68
+    lastFrame: 68
+    frameDuration: 0.1
+    loop: false
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 3200000000000000171
+- Entity: 3200000000000000173
+  Tag:
+    tag: Spike14
+  Transform:
+    translation: [160.5, -13.75, 0.1]
+    rotation: [0, 0, 0]
+    scale: [0.8, 0.5, 1]
+  Trigger:
+    Type: Target
+  LuaScript:
+    scriptPath: scripts/platformer/hazard.lua
+    properties:
+    - name: kind
+      type: string
+      value: spike
+    - name: damage
+      type: float
+      value: 0.34
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000174
+  Tag:
+    tag: SpikeSprite3200000000000000173
+  Transform:
+    translation: [0, 0.5, 0.05]
+    rotation: [0, 0, 0]
+    scale: [1.25, 2, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 68
+    lastFrame: 68
+    frameDuration: 0.1
+    loop: false
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 3200000000000000173
+- Entity: 3200000000000000175
+  Tag:
+    tag: Coin63
+  Transform:
+    translation: [158, -13.5, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000176
+  Tag:
+    tag: Coin64
+  Transform:
+    translation: [159.5, -11.5, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000177
+  Tag:
+    tag: Coin65
+  Transform:
+    translation: [161, -13.5, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000178
+  Tag:
+    tag: MovingPlatformV1
+  Transform:
+    translation: [163.5, -15.5, 0.1]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  PhysicBody:
+    type: Kinematic
+    fixedRotation: true
+    colliderSize: [2, 1, 1]
+    density: 0
+    restitution: 0
+    friction: 0.9
+  LuaScript:
+    scriptPath: scripts/platformer/moving_platform_v.lua
+    properties:
+    - name: speed
+      type: float
+      value: 2.2
+    - name: distance
+      type: float
+      value: 8
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000179
+  Tag:
+    tag: MovingPlatformV1Tile0
+  Transform:
+    translation: [-0.5, 0, 0.01]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_ext_atlas.png
+    columns: 16
+    rows: 16
+    firstFrame: 113
+    lastFrame: 113
+    frameDuration: 0.1
+    loop: false
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 3200000000000000178
+- Entity: 3200000000000000180
+  Tag:
+    tag: MovingPlatformV1Tile1
+  Transform:
+    translation: [0.5, 0, 0.01]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_ext_atlas.png
+    columns: 16
+    rows: 16
+    firstFrame: 115
+    lastFrame: 115
+    frameDuration: 0.1
+    loop: false
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 3200000000000000178
+- Entity: 3200000000000000181
+  Tag:
+    tag: Coin66
+  Transform:
+    translation: [163, -10.5, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000182
+  Tag:
+    tag: Coin67
+  Transform:
+    translation: [164, -10.5, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000183
+  Tag:
+    tag: Checkpoint4Flag
+  Transform:
+    translation: [166.5, -6.5, 0.2]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_ext_atlas.png
+    columns: 16
+    rows: 16
+    firstFrame: 240
+    lastFrame: 240
+    frameDuration: 0.1
+    loop: false
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000184
+  Tag:
+    tag: Checkpoint4
+  Transform:
+    translation: [166.5, -6, 0.1]
+    rotation: [0, 0, 0]
+    scale: [1.2, 2.2, 1]
+  Trigger:
+    Type: Target
+  LuaScript:
+    scriptPath: scripts/platformer/checkpoint.lua
+    properties:
+    - name: flag
+      type: string
+      value: Checkpoint4Flag
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000185
+  Tag:
+    tag: Beacon1
+  Transform:
+    translation: [165.5, -6.5, -0.05]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_ext_atlas.png
+    columns: 16
+    rows: 16
+    firstFrame: 176
+    lastFrame: 177
+    frameDuration: 0.45
+    loop: true
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000186
+  Tag:
+    tag: Spike15
+  Transform:
+    translation: [168.5, -5.75, 0.1]
+    rotation: [0, 0, 0]
+    scale: [0.8, 0.5, 1]
+  Trigger:
+    Type: Target
+  LuaScript:
+    scriptPath: scripts/platformer/hazard.lua
+    properties:
+    - name: kind
+      type: string
+      value: spike
+    - name: damage
+      type: float
+      value: 0.34
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000187
+  Tag:
+    tag: SpikeSprite3200000000000000186
+  Transform:
+    translation: [0, 0.5, 0.05]
+    rotation: [0, 0, 0]
+    scale: [1.25, 2, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 68
+    lastFrame: 68
+    frameDuration: 0.1
+    loop: false
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 3200000000000000186
+- Entity: 3200000000000000188
+  Tag:
+    tag: Spike16
+  Transform:
+    translation: [169.5, -5.75, 0.1]
+    rotation: [0, 0, 0]
+    scale: [0.8, 0.5, 1]
+  Trigger:
+    Type: Target
+  LuaScript:
+    scriptPath: scripts/platformer/hazard.lua
+    properties:
+    - name: kind
+      type: string
+      value: spike
+    - name: damage
+      type: float
+      value: 0.34
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000189
+  Tag:
+    tag: SpikeSprite3200000000000000188
+  Transform:
+    translation: [0, 0.5, 0.05]
+    rotation: [0, 0, 0]
+    scale: [1.25, 2, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 68
+    lastFrame: 68
+    frameDuration: 0.1
+    loop: false
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 3200000000000000188
+- Entity: 3200000000000000190
+  Tag:
+    tag: Coin68
+  Transform:
+    translation: [168.5, -4.5, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000191
+  Tag:
+    tag: Heart3
+  Transform:
+    translation: [171.5, -6.5, 0.3]
+    rotation: [0, 0, 0]
+    scale: [0.9, 0.9, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 44
+    lastFrame: 44
+    frameDuration: 0.1
+    loop: false
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_heart_touched
+  LuaScript:
+    scriptPath: scripts/platformer/heart.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000192
+  Tag:
+    tag: Beacon2
+  Transform:
+    translation: [172.5, -6.5, -0.05]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_ext_atlas.png
+    columns: 16
+    rows: 16
+    firstFrame: 176
+    lastFrame: 177
+    frameDuration: 0.45
+    loop: true
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000193
+  Tag:
+    tag: Coin69
+  Transform:
+    translation: [175.5, -4.5, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000194
+  Tag:
+    tag: Coin70
+  Transform:
+    translation: [176.5, -4.5, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000195
+  Tag:
+    tag: Coin71
+  Transform:
+    translation: [180.5, -0.5, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000196
+  Tag:
+    tag: Coin72
+  Transform:
+    translation: [181.5, -0.5, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000197
+  Tag:
+    tag: MovingPlatformH4
+  Transform:
+    translation: [185, -1.5, 0.1]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  PhysicBody:
+    type: Kinematic
+    fixedRotation: true
+    colliderSize: [2, 1, 1]
+    density: 0
+    restitution: 0
+    friction: 0.9
+  LuaScript:
+    scriptPath: scripts/platformer/moving_platform_h.lua
+    properties:
+    - name: speed
+      type: float
+      value: 1.8
+    - name: distance
+      type: float
+      value: 4
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000198
+  Tag:
+    tag: MovingPlatformH4Tile0
+  Transform:
+    translation: [-0.5, 0, 0.01]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_ext_atlas.png
+    columns: 16
+    rows: 16
+    firstFrame: 113
+    lastFrame: 113
+    frameDuration: 0.1
+    loop: false
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 3200000000000000197
+- Entity: 3200000000000000199
+  Tag:
+    tag: MovingPlatformH4Tile1
+  Transform:
+    translation: [0.5, 0, 0.01]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_ext_atlas.png
+    columns: 16
+    rows: 16
+    firstFrame: 115
+    lastFrame: 115
+    frameDuration: 0.1
+    loop: false
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 3200000000000000197
+- Entity: 3200000000000000200
+  Tag:
+    tag: Coin73
+  Transform:
+    translation: [185, 0.5, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000201
+  Tag:
+    tag: Coin74
+  Transform:
+    translation: [187, 1.5, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000202
+  Tag:
+    tag: Coin75
+  Transform:
+    translation: [189, 0.5, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000203
+  Tag:
+    tag: Checkpoint5Flag
+  Transform:
+    translation: [181.5, -2.5, 0.2]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_ext_atlas.png
+    columns: 16
+    rows: 16
+    firstFrame: 240
+    lastFrame: 240
+    frameDuration: 0.1
+    loop: false
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000204
+  Tag:
+    tag: Checkpoint5
+  Transform:
+    translation: [181.5, -2, 0.1]
+    rotation: [0, 0, 0]
+    scale: [1.2, 2.2, 1]
+  Trigger:
+    Type: Target
+  LuaScript:
+    scriptPath: scripts/platformer/checkpoint.lua
+    properties:
+    - name: flag
+      type: string
+      value: Checkpoint5Flag
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000205
+  Tag:
+    tag: MovingPlatformV2
+  Transform:
+    translation: [192, -1.5, 0.1]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  PhysicBody:
+    type: Kinematic
+    fixedRotation: true
+    colliderSize: [2, 1, 1]
+    density: 0
+    restitution: 0
+    friction: 0.9
+  LuaScript:
+    scriptPath: scripts/platformer/moving_platform_v.lua
+    properties:
+    - name: speed
+      type: float
+      value: 2
+    - name: distance
+      type: float
+      value: 8
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000206
+  Tag:
+    tag: MovingPlatformV2Tile0
+  Transform:
+    translation: [-0.5, 0, 0.01]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_ext_atlas.png
+    columns: 16
+    rows: 16
+    firstFrame: 113
+    lastFrame: 113
+    frameDuration: 0.1
+    loop: false
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 3200000000000000205
+- Entity: 3200000000000000207
+  Tag:
+    tag: MovingPlatformV2Tile1
+  Transform:
+    translation: [0.5, 0, 0.01]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_ext_atlas.png
+    columns: 16
+    rows: 16
+    firstFrame: 115
+    lastFrame: 115
+    frameDuration: 0.1
+    loop: false
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 3200000000000000205
+- Entity: 3200000000000000208
+  Tag:
+    tag: Coin76
+  Transform:
+    translation: [191.5, 3.5, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000209
+  Tag:
+    tag: Coin77
+  Transform:
+    translation: [192.5, 3.5, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000210
+  Tag:
+    tag: Beacon3
+  Transform:
+    translation: [194.5, 7.5, -0.05]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_ext_atlas.png
+    columns: 16
+    rows: 16
+    firstFrame: 176
+    lastFrame: 177
+    frameDuration: 0.45
+    loop: true
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000211
+  Tag:
+    tag: Coin78
+  Transform:
+    translation: [194.5, 9.5, 0.3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  LuaScript:
+    scriptPath: scripts/platformer/coin.lua
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 3200000000000000212
+  Tag:
+    tag: Beacon4
+  Transform:
+    translation: [195.5, 7.5, -0.05]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: nam:textures/atlases/platformer_ext_atlas.png
+    columns: 16
+    rows: 16
+    firstFrame: 176
+    lastFrame: 177
+    frameDuration: 0.45
+    loop: true
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}

@@ -1,0 +1,18 @@
+# Editor commands drive the running world: a crate created, moved, edited, deleted, then the deletion undone.
+scene: ../../../engine_demo/scenes/platformer_house.owl
+steps:
+  - frames: 5
+  - {command: entity.create, args: {name: Crate}}
+  - expect: {entity: Crate, exists: true}
+  - {command: entity.set_transform, args: {entity: Crate, translation: [2.0, 3.0, 0.0]}}
+  - frames: 1
+  - expect: {entity: Crate, translation.x: {equals: 2.0, tolerance: 0.01}}
+  - {command: component.set, args: {entity: Crate, component: Transform, values: {translation: [4.0, 3.0, 0.0]}}}
+  - frames: 1
+  - expect: {entity: Crate, translation.x: {equals: 4.0, tolerance: 0.01}}
+  - {command: entity.delete, args: {entity: Crate}}
+  - frames: 1
+  - expect: {entity: Crate, exists: false}
+  - undo: 1
+  - frames: 1
+  - expect: {entity: Crate, translation.y: {equals: 3.0, tolerance: 0.01}}

@@ -7,11 +7,171 @@ Entities:
     translation: [0, 0, 0]
     rotation: [0, 0, 0]
     scale: [1, 1, 1]
-  Canvas: {space: ScreenOverlay, sortOrder: 0, referenceResolution: [1280, 720], scaleMode: ScaleWithHeight}
+  Canvas:
+    space: ScreenOverlay
+    sortOrder: 0
+    referenceResolution: [1280, 720]
+    scaleMode: ScaleWithHeight
   Visibility: {gameVisible: true}
   Hierarchy: {}
-- Entity: 4400000000000000002
-  Tag: {tag: FundsPanel}
+- Entity: 4400000000000000022
+  Tag: {tag: HudBottom}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 4400000000000000001}
+  UiRect:
+    anchorMin: [0, 1]
+    anchorMax: [0, 1]
+    pivot: [0, 1]
+    size: [0.72, 0.24]
+    sizeUnit: [ScreenWidth, ScreenHeight]
+    offset: [16, -16]
+  UiLayout:
+    arrangement: Column
+    crossAlign: Start
+    spacing: 6
+    padding: 0
+    columns: 1
+    cellSize: [0, 0]
+- Entity: 4400000000000000008
+  Tag: {tag: HintText}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 4400000000000000022}
+  UiRect:
+    anchorMin: [0, 0]
+    anchorMax: [0, 0]
+    pivot: [0, 0]
+    size: [1, 0.62]
+    sizeUnit: [ParentWidth, ParentHeight]
+    offset: [0, 0]
+  UiPanel:
+    backgroundColor: [0.05, 0.07, 0.12, 0.78]
+    borderColor: [0.45, 0.5, 0.6, 0.6]
+    borderWidth: 1
+    clipChildren: false
+  UiText:
+    text: "  Click: build road (hold to drag)    Right click: bulldoze    Q: switch tool    WASD / arrows: pan    Esc: menu\n  Keyboard cursor: I J K L, then B / X    Pad: left stick pans, right stick + A / X, RB switches tool"
+    color: [1, 1, 1, 0.95]
+    fontSize: 24
+    horizontalAlignment: Left
+    verticalAlignment: Middle
+    wrap: true
+    fit: Shrink
+    minFontSize: 12
+- Entity: 4400000000000000007
+  Tag: {tag: ToastText}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 4400000000000000022}
+  UiRect:
+    anchorMin: [0, 0]
+    anchorMax: [0, 0]
+    pivot: [0, 0]
+    size: [1, 0.28]
+    sizeUnit: [ParentWidth, ParentHeight]
+    offset: [0, 0]
+  UiText:
+    text: ''
+    color: [1, 0.95, 0.55, 1]
+    fontSize: 28
+    horizontalAlignment: Center
+    verticalAlignment: Middle
+    fit: Shrink
+    minFontSize: 12
+- Entity: 4400000000000000021
+  Tag: {tag: HudToolbar}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 4400000000000000001}
+  UiRect:
+    anchorMin: [0.5, 0]
+    anchorMax: [0.5, 0]
+    pivot: [0.5, 0]
+    size: [0.3, 0.075]
+    sizeUnit: [ScreenWidth, ScreenHeight]
+    offset: [0, 16]
+  UiLayout:
+    arrangement: Row
+    crossAlign: Center
+    spacing: 8
+    padding: 0
+    columns: 1
+    cellSize: [0, 0]
+- Entity: 4400000000000000006
+  Tag: {tag: ToolBulldoze}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 4400000000000000021}
+  UiRect:
+    anchorMin: [0, 0]
+    anchorMax: [0, 0]
+    pivot: [0, 0]
+    size: [0.47, 1]
+    sizeUnit: [ParentWidth, ParentHeight]
+    offset: [0, 0]
+  UiButton:
+    normalColor: [0.16, 0.2, 0.3, 0.92]
+    hoverColor: [0.26, 0.34, 0.5, 0.95]
+    pressedColor: [0.1, 0.13, 0.2, 1]
+    disabledColor: [0.15, 0.15, 0.15, 0.5]
+    onClickCallback: on_tool_bulldoze
+  UiFocus: {focusable: false}
+  UiText:
+    text: Bulldoze
+    color: [1, 1, 1, 1]
+    fontSize: 30
+    horizontalAlignment: Center
+    verticalAlignment: Middle
+    fit: Shrink
+    minFontSize: 12
+- Entity: 4400000000000000005
+  Tag: {tag: ToolRoad}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 4400000000000000021}
+  UiRect:
+    anchorMin: [0, 0]
+    anchorMax: [0, 0]
+    pivot: [0, 0]
+    size: [0.47, 1]
+    sizeUnit: [ParentWidth, ParentHeight]
+    offset: [0, 0]
+  UiButton:
+    normalColor: [0.16, 0.2, 0.3, 0.92]
+    hoverColor: [0.26, 0.34, 0.5, 0.95]
+    pressedColor: [0.1, 0.13, 0.2, 1]
+    disabledColor: [0.15, 0.15, 0.15, 0.5]
+    onClickCallback: on_tool_road
+  UiFocus: {focusable: false}
+  UiText:
+    text: '[Road]'
+    color: [1, 1, 1, 1]
+    fontSize: 30
+    horizontalAlignment: Center
+    verticalAlignment: Middle
+    fit: Shrink
+    minFontSize: 12
+- Entity: 4400000000000000020
+  Tag: {tag: HudTopLeft}
   Transform:
     translation: [0, 0, 0]
     rotation: [0, 0, 0]
@@ -22,34 +182,66 @@ Entities:
     anchorMin: [0, 0]
     anchorMax: [0, 0]
     pivot: [0, 0]
-    size: [250, 64]
+    size: [0.28, 0.24]
+    sizeUnit: [ScreenWidth, ScreenHeight]
     offset: [16, 16]
-  UiPanel:
-    backgroundColor: [0.08, 0.1, 0.15, 0.7]
-    borderColor: [0.4, 0.45, 0.55, 0.5]
-    borderWidth: 1
-
-- Entity: 4400000000000000003
-  Tag: {tag: FundsText}
+  UiLayout:
+    arrangement: Column
+    crossAlign: Start
+    spacing: 4
+    padding: 0
+    columns: 1
+    cellSize: [0, 0]
+- Entity: 4400000000000000009
+  Tag: {tag: ObjectiveText}
   Transform:
     translation: [0, 0, 0]
     rotation: [0, 0, 0]
     scale: [1, 1, 1]
   Visibility: {gameVisible: true}
-  Hierarchy: {parentId: 4400000000000000002}
+  Hierarchy: {parentId: 4400000000000000020}
   UiRect:
     anchorMin: [0, 0]
     anchorMax: [0, 0]
     pivot: [0, 0]
-    size: [230, 28]
-    offset: [10, 6]
+    size: [1, 0.3]
+    sizeUnit: [ParentWidth, ParentHeight]
+    offset: [0, 0]
   UiText:
-    text: "Funds: 1000"
-    color: [1, 0.92, 0.5, 1]
+    text: 'Objective: 0 / 20 trips made by the vehicles'
+    color: [1, 0.95, 0.55, 1]
     fontSize: 24
     horizontalAlignment: Left
-    verticalAlignment: Middle
-
+    verticalAlignment: Top
+    wrap: true
+    fit: Shrink
+    minFontSize: 12
+- Entity: 4400000000000000002
+  Tag: {tag: FundsPanel}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 4400000000000000020}
+  UiRect:
+    anchorMin: [0, 0]
+    anchorMax: [0, 0]
+    pivot: [0, 0]
+    size: [1, 0.62]
+    sizeUnit: [ParentWidth, ParentHeight]
+    offset: [0, 0]
+  UiPanel:
+    backgroundColor: [0.08, 0.1, 0.15, 0.7]
+    borderColor: [0.4, 0.45, 0.55, 0.5]
+    borderWidth: 1
+  UiLayout:
+    arrangement: Column
+    crossAlign: Start
+    spacing: 0
+    padding: 3
+    columns: 1
+    cellSize: [0, 0]
 - Entity: 4400000000000000004
   Tag: {tag: RoadsText}
   Transform:
@@ -62,116 +254,37 @@ Entities:
     anchorMin: [0, 0]
     anchorMax: [0, 0]
     pivot: [0, 0]
-    size: [230, 22]
-    offset: [10, 36]
+    size: [0.94, 0.38]
+    sizeUnit: [ParentWidth, ParentHeight]
+    offset: [0, 0]
   UiText:
-    text: "Roads built: 0"
+    text: 'Roads built: 0'
     color: [0.85, 0.9, 1, 1]
-    fontSize: 18
+    fontSize: 26
     horizontalAlignment: Left
     verticalAlignment: Middle
-
-- Entity: 4400000000000000005
-  Tag: {tag: ToolRoad}
+    fit: Shrink
+    minFontSize: 12
+- Entity: 4400000000000000003
+  Tag: {tag: FundsText}
   Transform:
     translation: [0, 0, 0]
     rotation: [0, 0, 0]
     scale: [1, 1, 1]
   Visibility: {gameVisible: true}
-  Hierarchy: {parentId: 4400000000000000001}
+  Hierarchy: {parentId: 4400000000000000002}
   UiRect:
-    anchorMin: [0.5, 0]
-    anchorMax: [0.5, 0]
-    pivot: [0.5, 0]
-    size: [130, 40]
-    offset: [-70, 16]
-  UiButton:
-    normalColor: [0.16, 0.2, 0.3, 0.92]
-    hoverColor: [0.26, 0.34, 0.5, 0.95]
-    pressedColor: [0.1, 0.13, 0.2, 1]
-    disabledColor: [0.15, 0.15, 0.15, 0.5]
-    onClickCallback: on_tool_road
-  UiFocus: {focusable: false}
+    anchorMin: [0, 0]
+    anchorMax: [0, 0]
+    pivot: [0, 0]
+    size: [0.94, 0.5]
+    sizeUnit: [ParentWidth, ParentHeight]
+    offset: [0, 0]
   UiText:
-    text: "[Road]"
-    color: [1, 1, 1, 1]
-    fontSize: 20
-    horizontalAlignment: Center
-    verticalAlignment: Middle
-
-- Entity: 4400000000000000006
-  Tag: {tag: ToolBulldoze}
-  Transform:
-    translation: [0, 0, 0]
-    rotation: [0, 0, 0]
-    scale: [1, 1, 1]
-  Visibility: {gameVisible: true}
-  Hierarchy: {parentId: 4400000000000000001}
-  UiRect:
-    anchorMin: [0.5, 0]
-    anchorMax: [0.5, 0]
-    pivot: [0.5, 0]
-    size: [130, 40]
-    offset: [70, 16]
-  UiButton:
-    normalColor: [0.16, 0.2, 0.3, 0.92]
-    hoverColor: [0.26, 0.34, 0.5, 0.95]
-    pressedColor: [0.1, 0.13, 0.2, 1]
-    disabledColor: [0.15, 0.15, 0.15, 0.5]
-    onClickCallback: on_tool_bulldoze
-  UiFocus: {focusable: false}
-  UiText:
-    text: "Bulldoze"
-    color: [1, 1, 1, 1]
-    fontSize: 20
-    horizontalAlignment: Center
-    verticalAlignment: Middle
-
-- Entity: 4400000000000000007
-  Tag: {tag: ToastText}
-  Transform:
-    translation: [0, 0, 0]
-    rotation: [0, 0, 0]
-    scale: [1, 1, 1]
-  Visibility: {gameVisible: true}
-  Hierarchy: {parentId: 4400000000000000001}
-  UiRect:
-    anchorMin: [0.5, 1]
-    anchorMax: [0.5, 1]
-    pivot: [0.5, 1]
-    size: [500, 30]
-    offset: [0, -64]
-  UiText:
-    text: ""
-    color: [1, 0.95, 0.55, 1]
-    fontSize: 22
-    horizontalAlignment: Center
-    verticalAlignment: Middle
-
-- Entity: 4400000000000000008
-  Tag: {tag: HintText}
-  Transform:
-    translation: [0, 0, 0]
-    rotation: [0, 0, 0]
-    scale: [1, 1, 1]
-  Visibility: {gameVisible: true}
-  Hierarchy: {parentId: 4400000000000000001}
-  UiRect:
-    anchorMin: [0, 1]
-    anchorMax: [0, 1]
-    pivot: [0, 1]
-    size: [900, 60]
-    offset: [12, -12]
-  UiPanel:
-    backgroundColor: [0.05, 0.07, 0.12, 0.78]
-    borderColor: [0.45, 0.5, 0.6, 0.6]
-    borderWidth: 1
-    clipChildren: false
-  UiText:
-    text: "  Click: build road (hold to drag)    Right click: bulldoze    Q: switch tool    WASD / arrows: pan    Esc: menu\n  Keyboard cursor: I J K L, then B / X    Pad: left stick pans, right stick + A / X, RB switches tool"
-    color: [1, 1, 1, 0.95]
-    fontSize: 17
+    text: 'Funds: 1000'
+    color: [1, 0.92, 0.5, 1]
+    fontSize: 34
     horizontalAlignment: Left
     verticalAlignment: Middle
-    wrap: true
-
+    fit: Shrink
+    minFontSize: 12

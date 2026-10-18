@@ -28,7 +28,7 @@ plan d'action en PR, décisions ouvertes), puis [`40-avenir.md`](doc/audit/40-av
 | [`90-synthese.md`](doc/audit/90-synthese.md)                                   | Synthèse : verdict, comptes, plan d'action en PR, décisions, usage de l'IA. | v1, à arbitrer             |
 
 Pour un agent qui reprend l'audit : lire `00-cadrage.md` en entier (§8 règles d'engagement, §9 format),
-puis lancer toute commande via `docker/run.sh`.
+puis lancer toute commande via `./docker_run.sh`.
 
 L'audit a été mené sur `main` plus le commit « Upgrade clang-tidy on diff » de `Feature/TidyDiff`, retiré depuis
 de cette branche : H-03 (action `ClangTidy` mono-processus) et F-06 (test de version figé sur 0.2.2) portent sur

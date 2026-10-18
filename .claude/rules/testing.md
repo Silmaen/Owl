@@ -8,7 +8,7 @@ paths:
 
 ## Adding a New Test
 
-1. Place `.cpp` file in `test/<category>_tests/` (e.g., `test/scene_tests/mytest.cpp`)
+1. Place `.cpp` file in `test/unit/<category>_tests/` (e.g., `test/unit/scene_tests/mytest.cpp`)
 2. **No CMakeLists.txt edits required** — tests are auto-discovered by `file(GLOB_RECURSE ...)`
 3. The test executable is automatically named `owl_<folder>_unit_test` (e.g., `owl_scene_tests_unit_test`)
 
@@ -36,8 +36,10 @@ TEST(CategoryName, TestName) {
 
 ## Test Helper
 
-- Include `"testHelper.h"` from `test/test_helper/` (auto-included via CMake)
-- `getRootPath()` returns the project root directory for locating test fixtures
+- Include `"testHelper.h"` from `test/unit/test_helper/` (auto-included via CMake)
+- `getRootPath()` returns the project root directory; `getTestAssetsPath("<cat>_tests")` returns the fixture folder of
+  a category. Every fixture no shipped asset provides lives in ONE place, `test/unit/test_helper/assets/<cat>_tests/`
+  (`scenarios/` for the scenario fixtures); the engine and the demo hold no test-only files
 - **Warning**: `getRootPath()` infinite-loops if CWD is the project root; run via ctest, or run a test
   binary from the build directory
 
@@ -46,28 +48,30 @@ TEST(CategoryName, TestName) {
 Tests **never write into the source tree**: use a temp directory (`std::filesystem::temp_directory_path()`)
 and clean up. Fixtures that need GPU or audio must degrade to the Null backend in CI.
 
-## Image tests (`test/render_tests`, label `render`)
+## Image tests (`test/unit/render_tests`, label `render`)
 
-- One case = one scene of `test/render_tests/scenes/` rendered by `OwlRunner --frame-bench --capture` on lavapipe
-  (Vulkan) or llvmpipe (OpenGL), compared to `test/render_tests/references/<backend>/<scene>.png` (RGB, 24 / 255
-  per channel, 0.25 % of pixels). Captures, diffs and logs of failures go to `<build>/render_tests/`.
+- One case = one scene of `test/unit/test_helper/assets/render_tests/scenes/` rendered by `OwlRunner --frame-bench --capture`
+  on lavapipe (Vulkan) or llvmpipe (OpenGL), compared to
+  `test/unit/test_helper/assets/render_tests/references/<backend>/<scene>.png` (RGB, 24 / 255 per channel, 0.25 % of pixels).
+  Captures, diffs and logs of failures go to `<build>/render_tests/`.
 - Scenes have no Lua script, no physics and no input: the capture must not depend on timing.
 - A deliberate visual change regenerates the references, reviewed image by image before committing:
-  `docker/run.sh env OWL_RENDER_TESTS_UPDATE=1 ctest --test-dir output/build/linux-clang-release -L render`.
+  `./docker_run.sh env OWL_RENDER_TESTS_UPDATE=1 ctest --test-dir output/build/linux-clang-release -L render`.
   This is the only command that writes into the source tree.
 - CTest wraps the binary in `xvfb-run`; without a display or lavapipe the cases skip. About 8 s: run them in a
   CI stage of their own (`ctest -L render`, `-LE render` for the rest).
 
 ## Static analysis of the tests
 
-clang-tidy and the static analyzer run on `test/` too. `test/.clang-tidy` relaxes the checks a test is right to
+clang-tidy and the static analyzer run on `test/` too. `test/unit/.clang-tidy` relaxes the checks a test is right to
 trip; anything else is fixed like engine code, or carries a `NOLINT(check)` with the reason (e.g. `std::system` to
 launch the runner).
 
-## Scenario tests (`test/scenarios/*.owltest`, label `scenario`)
+## Scenario tests (`test/unit/scenarios/*.owltest`, label `scenario`)
 
 - `OwlRunner --scenario <file>` plays a sample scene headless with injected inputs and checks the world (format:
   `doc/pages/editor.md#scripted-headless-runs-scenario`). Each file is a CTest case, no CMake edit needed.
+- `scene:` / `project:` / `assets:` are relative to the `.owltest`; fixtures sit in `test/unit/test_helper/assets/scenarios/`.
 - Pin thresholds loosely (a gameplay tweak should not break them) and check one behaviour per file.
 
 ## Expensive Test Fixtures
@@ -91,9 +95,9 @@ TEST_F(MyFixture, TestName) { ... }
 
 Inside Docker (see root `CLAUDE.md`), Clang presets only:
 ```bash
-docker/run.sh ctest --test-dir output/build/linux-clang-release --output-on-failure -j8
-docker/run.sh output/build/linux-clang-release/bin/owl_scene_tests_unit_test --gtest_filter='SceneHierarchy.*'
-docker/run.sh poetry run python ci_action.py Test linux-clang-release
+./docker_run.sh ctest --test-dir output/build/linux-clang-release --output-on-failure -j8
+./docker_run.sh output/build/linux-clang-release/bin/owl_scene_tests_unit_test --gtest_filter='SceneHierarchy.*'
+./docker_run.sh poetry run python ci_action.py Test linux-clang-release
 ```
 The whole suite runs in a few seconds once built (Release; debug + coverage is slower).
 
@@ -105,16 +109,16 @@ The whole suite runs in a few seconds once built (Release; debug + coverage is s
 - The seed is random and printed at the top of the binary's output (`Note: Randomizing tests' orders with a
   seed of N .`). Reproduce a failing order with the same seed:
   ```bash
-  docker/run.sh env GTEST_RANDOM_SEED=N ctest --test-dir output/build/linux-sanitizer-address -R physics --output-on-failure
-  docker/run.sh output/build/linux-sanitizer-address/bin/owl_physics_tests_unit_test --gtest_shuffle --gtest_random_seed=N
+  ./docker_run.sh env GTEST_RANDOM_SEED=N ctest --test-dir output/build/linux-sanitizer-address -R physics --output-on-failure
+  ./docker_run.sh output/build/linux-sanitizer-address/bin/owl_physics_tests_unit_test --gtest_shuffle --gtest_random_seed=N
   ```
-- ctest sets `ASAN_OPTIONS` / `UBSAN_OPTIONS` / `TSAN_OPTIONS` with `halt_on_error=1` (`test/CMakeLists.txt`), and
+- ctest sets `ASAN_OPTIONS` / `UBSAN_OPTIONS` / `TSAN_OPTIONS` with `halt_on_error=1` (`test/unit/CMakeLists.txt`), and
   the code is built with `-fno-sanitize-recover=all`: any sanitizer report fails the test. When running a binary
   by hand outside ctest, UBSan still aborts (no recovery compiled in).
-- `test/tsan.supp` silences TSan only inside uninstrumented GPU code (lavapipe, llvmpipe, LLVM, the validation layer);
+- `test/unit/tsan.supp` silences TSan only inside uninstrumented GPU code (lavapipe, llvmpipe, LLVM, the validation layer);
   never add an Owl symbol there.
-- `test/lsan.supp` silences LeakSanitizer only inside the uninstrumented GTK stack libdecor loads under weston (GTK,
-  GDK, Pango, fontconfig, GLib); never add an Owl symbol there. Locally TSan needs ASLR off: `docker/run.sh --perf setarch -R ctest …`.
+- `test/unit/lsan.supp` silences LeakSanitizer only inside the uninstrumented GTK stack libdecor loads under weston (GTK,
+  GDK, Pango, fontconfig, GLib); never add an Owl symbol there. Locally TSan needs ASLR off: `./docker_run.sh --perf setarch -R ctest …`.
 
 ## Conventions
 

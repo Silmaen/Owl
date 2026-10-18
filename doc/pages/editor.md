@@ -103,9 +103,9 @@ plugged into the dockspace through `UiLayer::setTopBarCallback`.
 
 The editor uses two font families, shipped as loose TTFs under `engine_assets/fonts/` (SIL Open Font License):
 
-- **Inter** (Regular, SemiBold) in `engine_assets/fonts/inter/` — the UI font at `EditorSettings::uiFontSize`
+- **Inter** (Regular, SemiBold) in `engine_assets/fonts/` — the UI font at `EditorSettings::uiFontSize`
   (default 16 px, range 14–24).
-- **JetBrains Mono** Regular in `engine_assets/fonts/jetbrainsmono/` — code documents at
+- **JetBrains Mono** Regular in `engine_assets/fonts/` — code documents at
   `EditorSettings::codeEditorFontSize` (default 17 px, range 8–48), and numbers aligned in columns.
 
 Text roles (`gui::TextStyle`) pick a font and a size relative to the UI size: `Body`, `Strong`, `Title` (1.15×),
@@ -134,6 +134,12 @@ appears next to the scene tabs.
 | JSON     | `.json`                                         | built-in    |
 | Markdown | `.md`, `.markdown`                              | built-in    |
 | XML/SVG  | `.xml`, `.svg`                                  | custom      |
+| Slang    | `.slang`                                        | custom      |
+
+Slang shaders colour the HLSL-like comments, strings, numbers and `#` preprocessor lines, plus the Slang keywords
+(`struct`, `import`, `uniform`...), types (`float4`, `float4x4`, `Texture2D`...), semantics (`SV_Position`,
+`TEXCOORD0`...) and intrinsics (`mul`, `saturate`, `Sample`...). There is no compile on save: the shader errors still
+show in the log when the engine loads the shader.
 
 - Powered by the **imgui_color_text_edit** widget (MIT), from a local Conan recipe
   (`imgui-color-text-edit` in `conan/recipes/`, see [Conan migration](design/conan-migration.md)).
@@ -179,7 +185,8 @@ the open documents and tracks which one is **active**. Global panels
 | Code        | `.lua`, `.py`, `.json`, `.md`, `.svg`...    | Syntax-highlighted text editor (ImGuiColorTextEdit)                 |
 | Node Graph  | `.owlflow` (or derived like **Scene Flow**) | Generic node canvas — see [Node Graph](node_graph.md)               |
 | Animation   | `.owlanim`                                  | Spritesheet animation clip editor (timeline + preview + properties) |
-| Font        | `.ttf`, `.otf`, `.owlfont`                  | Charset of a font: extra code-point ranges, glyph atlas             |
+| Font        | `.ttf`, `.otf`, `.owlfont`                  | Font viewer (samples, atlas) and its charset: extra code-point ranges |
+| Image       | `.png`, `.jpg`, `.jpeg`, `.bmp`, `.tga`     | Read-only image viewer: zoom, pan, pixel grid, tileset tile overlay |
 
 - **Document tabs** — each open scene has its own `Viewport` window (stable
   `##scene_<uuid>` id). ImGui's docking groups viewports in the same dock node
@@ -200,7 +207,7 @@ the open documents and tracks which one is **active**. Global panels
 
 Key types live in `source/owlnest/sources/document/`: `Document` (interface),
 `DocumentManager`, `SceneDocument`, `CodeEditorDocument`, `NodeGraphDocument`,
-`SceneFlowDocument`, `AnimationDocument`, `TilemapDocument`, `TilesetDocument`, `FontDocument`.
+`SceneFlowDocument`, `AnimationDocument`, `TilemapDocument`, `TilesetDocument`, `FontDocument`, `ImageDocument`.
 
 ### Tilemap document
 
@@ -278,7 +285,8 @@ off-screen `Framebuffer` with two colour attachments:
   isometric mode), **Show** (grid, camera
   markers, trigger icons, and in the isometric mode the navigation graph of the tilemaps with a Shift-click test path),
   in the isometric mode the **Navigation tool** that edits one-way roads, closed sides and slower cells on the map
-  (see [Pathfinding](pathfinding.md)), **Frame selection** (`F`), the **Camera** menu and the frame stats toggle;
+  (see [Pathfinding](pathfinding.md)); selecting the tool turns the graph on and leaving it puts the graph back, and
+  switching the graph off from **Show** leaves the tool, so the two never disagree, **Frame selection** (`F`), the **Camera** menu and the frame stats toggle;
 - bottom-left: frame rate, frame time and draw calls (a click opens the Stats panel);
 - bottom-right: the view-cube of the editor camera; in Play of an isometric scene, the eye button that draws the
   navigation graph and the routes of the vehicles (see [Pathfinding](pathfinding.md)).
@@ -590,11 +598,33 @@ speedCurve:
 The schema mirrors the corresponding fields of `AnimatedSpriteRenderer` 1:1, so a future
 "Source clip" reference on the component can be added without a YAML migration.
 
-### Font Editor (`.ttf`, `.otf`)
+### Image Viewer (`.png`, `.jpg`, `.jpeg`, `.bmp`, `.tga`)
 
-Double-click a font (or its `.owlfont` sidecar) in the Content Browser to open its charset in a font document. The
-window shows the glyph atlas of the loaded font; the **Font** panel gives its file, glyph count and atlas size (marked
-*cached* when read from the disk cache).
+Double-click an image (or **Open** in its context menu) in the Content Browser to see it in a read-only tab; it has no
+undo stack and is never dirty.
+
+- **Zoom** with the wheel around the cursor (5 % to 3200 %), **pan** by dragging with the left or middle button.
+  **Fit** (button, `F` or double-click) shows the whole image, **1:1** (button or `1`) shows it at its pixel size.
+  An enlarged image is sampled by the nearest texel, a reduced one smoothed.
+- A **checkerboard** shows through the transparent pixels; from 800 % a **pixel grid** is drawn (toggle in the *Image
+  View* panel). The status line gives the zoom, the size and the pixel under the cursor.
+- The **Image** panel gives the size, the channels (3 opaque, 4 with alpha), the file size and the sampling filter of
+  the tilesets using the image (Nearest for pixel art).
+- The *Image View* panel lists the tilesets of the project that use the image as their atlas; pick one to draw its tile
+  grid over the image, and hover a tile to see its index.
+
+### Font Viewer and Editor (`.ttf`, `.otf`)
+
+Double-click a font (or its `.owlfont` sidecar) in the Content Browser to open a font document, even when no text uses
+the font yet (the document then loads it itself). Two tabs:
+
+- **Samples**: an editable text drawn at 12, 18, 24, 36 and 64 px by the engine's own text renderer, so it is what a
+  game draws. **Outline** and **Box** toggle the text outline and background box.
+- **Atlas**: the MSDF glyph atlas; hover a glyph for its code point, Unicode block and advance.
+
+The **Font** panel gives its file, glyph count, number of code points of the charset and atlas size (marked *cached*
+when read from the disk cache); the **Font Charset** panel adds a **Coverage** list of the Unicode blocks the charset
+spans, with their code point counts.
 
 The **Font Charset** panel lists the default Latin charset, read only, then the **extra ranges**:
 
@@ -699,7 +729,9 @@ name and its kind (`gui::widgets::dragPreview`); drop targets light up in the ac
 |-------------------------------|-----------------------------------------------|
 | Double-click folder           | Navigate into the folder                      |
 | Double-click `.owl` file      | Open the scene in the editor                  |
-| Double-click a font           | Open its charset in a font document           |
+| Double-click a font           | Open the font viewer and its charset          |
+| Double-click an image         | Open it in the read-only image viewer         |
+| Double-click `.slang` file    | Open the shader in the code editor            |
 | Drag `.owlprefab` to Viewport | Instantiate the prefab into the scene         |
 | Drag texture to Properties    | Assign the texture to a Sprite Renderer field |
 | Drag sound to Properties      | Assign the sound to a Sound Source field      |
@@ -1135,9 +1167,11 @@ the same result on any machine. It exits with 0 when every expectation holds and
 2 on a file it cannot read.
 
 ```yaml
-# test/scenarios/platformer_walk.owltest
+# test/unit/scenarios/platformer_walk.owltest
 scene: ../../engine_demo/scenes/platformer_house.owl   # relative to the file; project found above it
 timestep_ms: 16.667                                       # optional
+# project: ../../engine_demo                              # optional: the project, when the scene is a test fixture
+# assets: assets                                          # optional: extra asset folder(s) of the fixture
 steps:
   - frames: 30                                            # play 30 frames, no input
   - input: {key: Right, frames: 20}                       # hold keys (or `keys: [...]`, `mouse: Left`,
@@ -1172,12 +1206,12 @@ steps:
 
 Inputs go through the injection of the input layer (`input::Input::injectKey`, …), which works on any window
 back-end: a key held over two consecutive `input` steps stays held, so `input.is_key_just_pressed` fires once
-(`test/scenarios/platformer_jump.owltest`); a `gamepad` drives a pad on the Null back-end
-(`test/scenarios/platformer_gamepad.owltest`); an `actions` step resolves the names against the project's action map
-when the file is read, so it stays valid when a binding changes (`test/scenarios/platformer_actions.owltest`). Expectations due at a step see the world left by the frames before it; positions are world-space. Commands run on
-the playing scene with an undo history of their own (`test/scenarios/editor_commands.owltest`, macros in
-`test/scenarios/editor_macro.owltest`). Every
-`test/scenarios/*.owltest` is a CTest case (label `scenario`).
+(`test/unit/scenarios/platformer_jump.owltest`); a `gamepad` drives a pad on the Null back-end
+(`test/unit/scenarios/platformer_gamepad.owltest`); an `actions` step resolves the names against the project's action map
+when the file is read, so it stays valid when a binding changes (`test/unit/scenarios/platformer_actions.owltest`). Expectations due at a step see the world left by the frames before it; positions are world-space. Commands run on
+the playing scene with an undo history of their own (`test/unit/scenarios/editor_commands.owltest`, macros in
+`test/unit/scenarios/editor_macro.owltest`). Every
+`test/unit/scenarios/*.owltest` is a CTest case (label `scenario`).
 
 ### Editor commands
 

@@ -1,7 +1,7 @@
 ---
 paths:
   - "source/owl/*/script/**"
-  - "test/script_tests/**"
+  - "test/unit/script_tests/**"
   - "**/*.lua"
 ---
 

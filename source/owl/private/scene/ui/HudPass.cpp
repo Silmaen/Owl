@@ -146,7 +146,11 @@ void drawText(const Entity& iEntity, const HudNode& iNode, const math::Transform
 									  .color = uiText.color,
 									  .layout = uiText.getLayout(iNode.bounds.size / scale),
 									  .entityId = iEntityId,
-									  .depth = hudDepth(iRank, HudLayer::Text)});
+									  .depth = hudDepth(iRank, HudLayer::Text),
+									  .outlineColor = uiText.outlineColor,
+									  .outlineWidth = uiText.outlineWidth * iNode.scale / scale,
+									  .backgroundColor = uiText.backgroundColor,
+									  .backgroundPadding = uiText.backgroundPadding * iNode.scale / scale});
 }
 
 void drawSlider(const component::UiSlider& iSlider, const math::Transform& iTransform, const int iEntityId,
@@ -264,14 +268,18 @@ void drawWidget(const Entity& iEntity, const HudNode& iNode, const math::Transfo
 										.depth = hudDepth(iRank, HudLayer::Shape)});
 	}
 	if (iEntity.hasComponent<component::Text>()) {
-		const auto& [text, font, color, kerning, lineSpacing] = iEntity.getComponent<component::Text>();
+		const auto& text = iEntity.getComponent<component::Text>();
 		renderer::Renderer2D::drawString({.transform = uniformTextTransform(iTransform),
-										  .text = text,
-										  .font = font,
-										  .color = color,
-										  .layout = {.kerning = kerning, .lineSpacing = lineSpacing},
+										  .text = text.text,
+										  .font = text.font,
+										  .color = text.color,
+										  .layout = {.kerning = text.kerning, .lineSpacing = text.lineSpacing},
 										  .entityId = entityId,
-										  .depth = hudDepth(iRank, HudLayer::Text)});
+										  .depth = hudDepth(iRank, HudLayer::Text),
+										  .outlineColor = text.outlineColor,
+										  .outlineWidth = text.outlineWidth,
+										  .backgroundColor = text.backgroundColor,
+										  .backgroundPadding = text.backgroundPadding});
 	}
 	if (iEntity.hasComponent<component::CircleRenderer>()) {
 		const auto& [color, thickness, fade] = iEntity.getComponent<component::CircleRenderer>();
@@ -406,7 +414,7 @@ void drawCanvases(Scene& ioScene, const math::vec2ui& iViewport, const bool iEdi
 auto canvasScaleOf(const Scene& iScene, entt::entity iEntity, const math::vec2& iScreen) -> float {
 	while (iEntity != entt::null) {
 		if (const auto* canvas = iScene.registry.try_get<component::Canvas>(iEntity))
-			return canvas->getScale(iScreen);
+			return canvas->getScale(iScreen) * HudLayout::getUserScale(iScene);
 		const auto* hierarchy = iScene.registry.try_get<component::Hierarchy>(iEntity);
 		if (hierarchy == nullptr || hierarchy->parentId == core::UUID{0})
 			break;

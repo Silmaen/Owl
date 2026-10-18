@@ -6,6 +6,7 @@
 *.lo
 *.o
 *.obj
+!test/unit/test_helper/assets/**/*.obj
 
 # Precompiled Headers
 *.gch
@@ -56,5 +57,5 @@ agent-*
 # Help bundle left by a configure older than <build>/help (cmake/HelpAssets.cmake)
 /engine_assets/help/
 
-# Conan test_package build folder
-test_package/build/
+# Conan package test build folder
+test/package/build/

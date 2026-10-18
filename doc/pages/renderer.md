@@ -393,7 +393,7 @@ flowchart LR
   their painter's order (each visible layer is `1e-4` in front of the previous one); there is no cell cap.
 - **Parallax.** A layer is shifted by `cameraPosition × (1 − parallax)`: `(1, 1)` moves with the world, `(0, 0)`
   stays locked to the camera.
-- **Budgets** (`bench/`, Null backend, `tilemap/*`): a static 256² map of 4 layers costs a few microseconds and uploads
+- **Budgets** (`test/bench/`, Null backend, `tilemap/*`): a static 256² map of 4 layers costs a few microseconds and uploads
   0 byte per frame, a one-cell edit uploads one chunk, building one 32² chunk takes about 1 µs.
 
 ## Isometric layer {#renderer-isometric}
@@ -446,7 +446,7 @@ RendererStack:
   chunk in view; cell `(cx, cy)` covers the world square from the entity translation plus
   `(cx, cy)` to plus `(cx + 1, cy + 1)`, its sprite bottom centre on the front corner. `pickIsometricCell` finds the
   tile under a viewport pixel (flat maps; slopes come with ISO2).
-- **Shader.** `engine_assets/shaders/isometric/slang/billboard.slang`: one instanced draw per pass from a storage
+- **Shader.** `engine_assets/shaders/isometric/billboard.slang`: one instanced draw per pass from a storage
   buffer of 96-byte instances (foot, size, depth slope, UVs, tint, texture slot, entity id), 20 000 per batch;
   `sprite.slang` draws the 64-byte sprite instances, 40 000 per batch, between the opaque and the translucent pass, and
   `tile.slang` the tilemap chunks (per-instance vertex attributes) before the opaque billboards.
@@ -531,7 +531,7 @@ Convention:
 - Rotation values are stored in **radians** in the `Transform` component
   (matching the rest of Owl's transform pipeline).
 
-The accompanying `scripts/raycast_player.lua` in the Engine Demo
+The accompanying `scripts/raycast/raycast_player.lua` in the Engine Demo
 implements WASD strafing + Q/E turning following this convention.
 
 ## 3D Forward Renderer {#renderer3d}
@@ -543,7 +543,7 @@ single directional light. It is the reusable base for `RendererVoxel` (and futur
 - **Vertex** (`renderer::Mesh3DVertex`, 56 bytes, tightly packed): object-space `position`, `normal`, `uv`, a
   `textureIndex` selecting a slot in the bound texture array, and the `tileRect` atlas sub-rect and `ao` factor
   read by the voxel shader only.
-- **Shader** (`engine_assets/shaders/renderer3D/slang/mesh3d.slang`): vertex transforms position by a per-draw model
+- **Shader** (`engine_assets/shaders/renderer3D/mesh3d.slang`): vertex transforms position by a per-draw model
   matrix then the per-frame view-projection (both `column_major`, supplied through one scene UBO at binding 0);
   fragment samples `gTextures[texIndex]` (binding 1) and applies `ambient + max(dot(N, -sunDir), 0)`. Outputs colour
   + entity id to match the scene framebuffer.
@@ -673,7 +673,7 @@ sequenceDiagram
 
 ## Image tests {#render-image-tests}
 
-`test/render_tests` (`owl_render_tests_unit_test`, CTest label `render`) renders the reference scenes on lavapipe
+`test/unit/render_tests` (`owl_render_tests_unit_test`, CTest label `render`) renders the reference scenes on lavapipe
 (Vulkan) and llvmpipe (OpenGL) and compares each capture to a versioned PNG:
 
 | Scene       | Covers                                                                         |
@@ -692,12 +692,12 @@ Each case runs `OwlRunner --frame-bench <scene> --capture <png>` (320 x 180, 60 
 validation on) in its own process, then compares RGB per pixel: a pixel differs above 24 / 255 on a channel, the test
 fails above 0.25 % of differing pixels. Software rasterisers are deterministic run to run; the tolerance absorbs a
 Mesa update, not a missing sprite. On failure the capture, a diff (differing pixels in red) and the runner log are left
-in `<build>/render_tests/`. The scenes live in `test/render_tests/scenes/` and use the Engine Demo's assets.
+in `<build>/render_tests/`. The scenes live in `test/unit/test_helper/assets/render_tests/scenes/` and use the Engine Demo's assets.
 
 ```bash
-docker/run.sh ctest --test-dir output/build/linux-clang-release -L render --output-on-failure
-# Regenerate the references (writes test/render_tests/references/<backend>/<scene>.png):
-docker/run.sh env OWL_RENDER_TESTS_UPDATE=1 ctest --test-dir output/build/linux-clang-release -L render
+./docker_run.sh ctest --test-dir output/build/linux-clang-release -L render --output-on-failure
+# Regenerate the references (writes test/unit/test_helper/assets/render_tests/references/<backend>/<scene>.png):
+./docker_run.sh env OWL_RENDER_TESTS_UPDATE=1 ctest --test-dir output/build/linux-clang-release -L render
 ```
 
 CTest starts the binary under `xvfb-run` when it is installed; without a display or without lavapipe
@@ -817,8 +817,15 @@ The MSDF atlas is cached in `cache/font/<font>-<key>.owlatlas` under the working
 file, the charset and the atlas parameters, so a change of any of them regenerates it (and drops the stale file).
 Generation runs on as many threads as the task pool has workers (`Scheduler::getWorkerCount`).
 
-**Small text.** The atlas em is 40 px with a 2 px distance range, and `text.slang` uses the same 2 px (keep both in
-step). Text under about 40 px on screen minifies the atlas, which has no mipmaps, so one linear sample per pixel
+**Outline and box.** `StringData::outlineWidth` (frame units) and `outlineColor` outline the glyphs in the same text
+draw: each glyph quad and its UVs grow by the width (`outlineUv` is that growth in texture space, 0 = none and the
+old path untouched), and the fragment shader grows the glyph by its signed distance (an antialiased band of the width in
+screen pixels, read up to 1 px short of the field's half range and completed by a ring dilation beyond), clipped to the glyph
+cell (it holds the field margin) so the neighbours in the atlas never bleed in; the fill is composited over the outline. `backgroundColor` (zero alpha:
+none) and `backgroundPadding` add a quad of the quad batch behind the measured text block, at the text depth.
+
+**Small text.** The atlas em is 40 px with a 6 px distance range (`g_pixelRange`, atlas cache version 2), and `text.slang` uses the same 6 px
+(`kPxRange`, keep both in step); the wide range keeps large and outlined text smooth. Text under about 40 px on screen minifies the atlas, which has no mipmaps, so one linear sample per pixel
 aliases: the fragment shader then averages four taps of a rotated grid over the pixel footprint (`SampleGrad`), larger
 text keeps the single sample. HUD text is also kept legible by the scale modes
 ([HUD system](design/hud-system.md)).
@@ -842,7 +849,7 @@ and the same instanced draw for lines (2-vertex unit segment +
 | `QuadInstance`   | 128 B | `mat4 transform`, `vec4 color`, `vec2 uv[4]`, `uint texIndex`, `int entityId`, `vec2 tilingFactor`      |
 | `CircleInstance` | 96 B  | `mat4 transform`, `vec4 color`, `float thickness`, `float fade`, `int entityId`, `uint _pad`            |
 | `LineInstance`   | 64 B  | `vec3 point1`, `vec3 point2`, `vec4 color`, `int entityId` (with explicit pads to align fields to 16 B) |
-| `TextInstance`   | 128 B | Same as `QuadInstance` minus `tilingFactor`; fragment shader runs the MSDF screenPxRange path           |
+| `TextInstance`   | 96 B  | `int worldIndex`, `vec4 color`, `vec2 uv[4]`, `uint texIndex`, `int entityId`, `vec2 outlineUv`, `vec4 outlineColor`; MSDF screenPxRange path |
 
 The 4 explicit per-corner UVs (instead of a `uvRect`) preserve the
 non-rectangular UV trapezoids produced by the raycaster's floor /

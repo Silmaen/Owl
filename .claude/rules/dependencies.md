@@ -16,7 +16,7 @@ external sources into the repo. Check ConanCenter and `conan/recipes/` before as
 
 - `conanfile.py` (root) lists the dependencies; `cmake/Conan.cmake` runs `conan install` at configure time
   into `output/build/<preset>/conan/` and puts the CMakeDeps files on `CMAKE_PREFIX_PATH`.
-- Conan comes from Poetry (dev group): `docker/run.sh poetry run conan …`, never a host install.
+- Conan comes from Poetry (dev group): `./docker_run.sh poetry run conan …`, never a host install.
 - ConanCenter first. A recipe missing there goes in `conan/recipes/<name>/` (CCI layout: `config.yml` +
   `all/conanfile.py` + `all/conandata.yml`), served as the `owl-local` local-recipes-index remote. Keep it
   minimal and list it in `doc/pages/design/conan-migration.md`.
@@ -43,9 +43,9 @@ external sources into the repo. Check ConanCenter and `conan/recipes/` before as
 ## Commands
 
 ```bash
-docker/run.sh cmake --preset linux-clang-release -DOWL_CONAN_HOME=/fhome/.conan2-owl
-docker/run.sh poetry run conan search <name> -r conancenter
-docker/run.sh poetry run conan create . --profile:all conan/profiles/linux-clang --lockfile conan.lock --lockfile-partial --build=missing
+./docker_run.sh cmake --preset linux-clang-release -DOWL_CONAN_HOME=/fhome/.conan2-owl
+./docker_run.sh poetry run conan search <name> -r conancenter
+./docker_run.sh poetry run conan create . --profile:all conan/profiles/linux-clang --lockfile conan.lock --lockfile-partial --build=missing
 ```
 
 ## OwlEngine for other projects
@@ -55,6 +55,6 @@ docker/run.sh poetry run conan create . --profile:all conan/profiles/linux-clang
   REQUIRED)` + `Owl::OwlEngine`. Moving a public header breaks them.
 - Public dependencies: EnTT only; imgui comes with the optional `Owl::Gui` (`COMPONENTS Gui`, `<owlgui.h>`). No
   public header includes another third-party header (yaml-cpp crosses the API as YAML text).
-- `conan create` already packages OwlEngine (`owlengine/<version>`, shared only) and builds `test_package/` against
+- `conan create` already packages OwlEngine (`owlengine/<version>`, shared only) and builds `test/package/` against
   the installed CMake config: a public header that includes an undeclared dependency, or a build flag leaking into
   the export, breaks it. Publishing it is a v1.0.0 item.
