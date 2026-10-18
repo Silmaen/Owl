@@ -124,3 +124,9 @@ Entities:
         - name: level
           type: int
           value: 5
+        - name: level_name
+          type: string
+          value: Cellar
+        - name: next_scene
+          type: string
+          value: scenes/level_06.owl

@@ -3,6 +3,7 @@
 -- (`on_level_bind`). A click or the up / down keys (D-pad) select a level; Play, Enter or pad A on the list start it;
 -- Back, Escape or pad B return to the title.
 
+-- Every level, for the list (a level names the next one in `next_scene`, its name in `level_name`).
 local LEVEL_SCENES = {
     "scenes/level_01.owl",
     "scenes/level_02.owl",

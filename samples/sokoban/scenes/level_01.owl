@@ -124,3 +124,9 @@ Entities:
         - name: level
           type: int
           value: 1
+        - name: level_name
+          type: string
+          value: First push
+        - name: next_scene
+          type: string
+          value: scenes/level_02.owl

@@ -36,3 +36,5 @@ The mouse moves the paddle by its motion; its speed is a setting, with the maste
 
 The art, the sounds and the first layout of the levels come from `tools/samples/breakout/` (`generate_assets.py`,
 `generate_levels.py`); edit the levels in Owl Nest afterwards (move, add or delete bricks, change their properties).
+The `next_scene` property of the `Game` entity names the level that follows (`scenes/victory.owl` after the last one):
+to add a level, duplicate a level scene, set its `level` and `next_scene`, and point the level before at it.

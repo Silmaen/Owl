@@ -327,7 +327,10 @@ def level_scene(level: int) -> str:
         position=(0, PADDLE_Y + 0.36, 0.1),
         scale=(0.3, 0.3, 1),
     )
-    entities.add("Game", [script("scripts/game/game.lua", [("level", "int", level + 1)])])
+    next_scene = f"scenes/level_{level + 2}.owl" if level + 1 < len(LEVELS) else "scenes/victory.owl"
+    entities.add(
+        "Game", [script("scripts/game/game.lua", [("level", "int", level + 1), ("next_scene", "string", next_scene)])]
+    )
     entities.add(
         "Music",
         [
@@ -407,7 +410,7 @@ def hud() -> str:
     )
     gold = (1, 0.92, 0.5, 1)
     entities.add("ScoreText", [_rect((0, 0), (0.42, 0.07), (16, 6)), _text("Score 0", 34, "Left", gold)], parent=canvas)
-    entities.add("LevelText", [_rect((0.5, 0), (0.36, 0.07), (0, 6)), _text("Level 1 / 5", 34)], parent=canvas)
+    entities.add("LevelText", [_rect((0.5, 0), (0.36, 0.07), (0, 6)), _text("Level 1", 34)], parent=canvas)
     entities.add(
         "LivesText", [_rect((1, 0), (0.36, 0.07), (-16, 6)), _text("Lives 3", 34, "Right", gold)], parent=canvas
     )

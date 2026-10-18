@@ -388,6 +388,7 @@ def static_body(size: float) -> str:
 def scene(level: Level) -> None:
     """Write the scene of a floor."""
     out = SceneWriter(1000 + level.number)
+    next_scene = f"scenes/level_{level.number + 1}.owl" if level.number < len(LEVELS) else "scenes/victory.owl"
     fc, cc = level.floor_color, level.ceiling_color
     head = [
         "Scene: untitled",
@@ -558,7 +559,7 @@ def scene(level: Level) -> None:
         [
             "Trigger:\n  Type: Interaction\n  InteractionRange: 1.5\n  CallbackName: on_elevator_use",
             visible(),
-            script("scripts/game/exit.lua"),
+            script("scripts/game/exit.lua", [("next_scene", "string", next_scene)]),
         ],
         x=wx,
         y=wy,

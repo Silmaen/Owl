@@ -2,6 +2,7 @@
 -- Continue starts the first level not done yet (disabled when there is none to continue), Settings, Quit.
 -- The progress is the `sokoban_done_NN` settings written by sokoban.lua.
 
+-- Every level, to count the progress and find the level to continue (a level names the next one in `next_scene`).
 local LEVEL_SCENES = {
     "scenes/level_01.owl",
     "scenes/level_02.owl",

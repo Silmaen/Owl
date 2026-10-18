@@ -1638,3 +1638,7 @@ Entities:
       gameVisible: true
     LuaScript:
       scriptPath: scripts/game/exit.lua
+      properties:
+        - name: next_scene
+          type: string
+          value: scenes/victory.owl
