@@ -194,54 +194,35 @@ A voxel world reaches the screen through two pieces:
   drawn mesh counts and the meshing counters of a `VoxelMeshCache` (one per engine context, see
   [Architecture](architecture.md#engine-context)).
 
-The Engine Demo ships a `voxel_terrain.owl` scene — an endless seeded procedural landscape (see *Procedural
-Terrain* below), textured from the dedicated `voxel_blocks` tileset (16 block faces: grass, dirt, stone, sand, wood,
-leaves, … with room for future block types) — under a perspective camera, reachable from a **Voxel House** on the
-world map. Voxels render in both **Play** and the **editor viewport** (the world streams around the editor camera too).
+The Engine Demo's `voxel_terrain.owl` (see [Procedural Terrain](#procedural-terrain)) is textured from the
+`voxel_blocks` tileset (16 block faces) under a perspective camera. Voxels render in **Play** and in the **editor
+viewport** (the world streams around the editor camera too).
 
-Two camera components drive a voxel world in Play. A `scene::component::FlyCamera` is a free-fly camera (no
-collision): **WASD** moves in the facing plane, **Space / E** rises, **Left-Shift / Q** descends, **arrow keys** look
-— handy for inspecting a world. A `scene::component::VoxelPlayer` is a grounded first-person character: **WASD** walks
-on the horizontal plane, **arrow keys** look, **Left-Shift** runs and **Space** jumps, with gravity and
-**AABB-vs-voxel collision** against every `VoxelWorld` (it does not edit the world). The collision is a pure,
-headless-tested `data::voxel::moveAabb` (per-axis resolution + sub-stepping for wall-sliding and no tunnelling); the
-player holds still until the chunk it stands in has streamed in. Both components serialize and are fully editable in
-the inspector; the same `Camera3DController` is designed to back the editor viewport once the 3D editor camera
-overhaul lands.
+Two camera components drive a voxel world in Play (both saved and editable in the inspector):
 
-The player also supports **mouse-look** and **flying**. Left-click the viewport (in the editor) or the window (in the
-runner) to capture the cursor and steer the view with the mouse — this calls `window::Window::setCursorMode` with
-`CursorMode::Disabled` to grab and hide the OS cursor (the GLFW backend also enables raw motion when available). Press
-**Escape** to release the cursor back to `CursorMode::Normal`; the editor additionally releases it when the viewport
-loses focus or when leaving Play. Per-player `mouseSensitivity` scales the rotation.
-
-**Double-tap Space** toggles **fly mode**: WASD then translate horizontally without changing altitude, **Space** rises
-and **Left-Shift** descends, and motion is still resolved against voxel collisions. While flying, **J** toggles a
-**super-speed** multiplier. A transient on-screen toast (about three seconds) confirms each toggle ("Fly mode ON/OFF",
-"Super speed ON/OFF").
-
-Mouse-look capture is **opt-in**: the `VoxelPlayer` has a **Capture Cursor** flag (off by default) — only a player
-that enables it lets clicking the viewport hide / lock the cursor (the editor and runner check
-`Scene::wantsCursorCapture()`), so non-voxel scenes keep a normal cursor. The cursor is given back as soon as the scene stops wanting capture (level change, Stop in Owl Nest) or on Escape (`window::nextCursorMode`). With capture off, block break / place is
-disabled too (it is gated on the captured cursor).
-
-The player can also **edit the world** (when cursor capture is enabled). A centre-screen **crosshair** marks the aim point; a ray
-(`data::voxel::raycastVoxel`, Amanatides & Woo grid traversal) is cast from the eye through it (along the look
-direction) up to `reach` blocks. The targeted block is outlined with a wireframe **highlight** that draws only the
-edges of its camera-facing faces (the hidden back edges stay invisible). **Left-click breaks** it (replaced with
-air), **right-click places** the player's `placeBlock` in the empty cell against the face the ray hit — unless that
-cell would intersect the player's body. Edits only fire while the cursor
-is captured (so the click that captures the cursor never doubles as an edit). Because an edit near a chunk border also
-affects the neighbour chunks' visible faces and ambient occlusion, the edit calls `VoxelWorld::markNeighborChunksDirty`,
-which re-meshes the face, edge and corner neighbours it touches (this is kept off `VoxelWorld::setBlock` so bulk
-terrain streaming does not pay for it). `reach` and
-`placeBlock` are authored on the `VoxelPlayer` component.
+- **`scene::component::FlyCamera`**: free fly without collision. **WASD** moves in the facing plane, **Space / E**
+  rises, **Left-Shift / Q** descends, **arrow keys** look.
+- **`scene::component::VoxelPlayer`**: grounded first person. **WASD** walks, **arrow keys** look, **Left-Shift**
+  runs, **Space** jumps, with gravity and AABB-vs-voxel collision against every `VoxelWorld` (the pure, headless-tested
+  `data::voxel::moveAabb`: per-axis resolution and sub-steps, wall sliding, no tunnelling); it holds still until its
+  chunk streamed in. `Camera3DController` is meant to back the editor viewport once the 3D editor camera lands.
+- **Mouse-look** is opt-in (**Capture Cursor**, off by default): a click on the viewport or the window grabs the
+  cursor (`window::Window::setCursorMode`, `CursorMode::Disabled`, raw motion on GLFW; the editor and runner check
+  `Scene::wantsCursorCapture()`), `mouseSensitivity` scales it. Escape (`window::nextCursorMode`), a level change, Stop
+  or a lost viewport focus give it back.
+- **Fly mode**: double-tap Space; WASD keeps the altitude, Space rises, Left-Shift descends, still with collision; **J**
+  toggles super speed. A toast of about three seconds confirms each toggle.
+- **World edits** (cursor captured only, so the capturing click is never an edit): a crosshair marks the aim, a ray
+  (`data::voxel::raycastVoxel`, Amanatides & Woo) goes up to `reach` blocks and outlines the camera-facing edges of the
+  target. **Left-click breaks** it, **right-click places** `placeBlock` against the hit face unless it would
+  intersect the player. Edits call `VoxelWorld::markNeighborChunksDirty` (kept off `VoxelWorld::setBlock` so bulk
+  streaming does not pay for it) to re-mesh the touched neighbours.
 
 ### Asynchronous Meshing
 
-Meshing a surface chunk costs about 350 µs, so a streaming frame that meshed every new chunk on the main thread
-spiked to 9-14 ms. The main thread now only captures, uploads and draws, and stays under 0.6 ms per frame while
-terrain streams in (`test/bench/` group `voxel/streaming`, numbers in `doc/audit/20-mesures.md` §3.10):
+Meshing a surface chunk costs about 350 µs (a frame meshing every new chunk spiked to 9-14 ms): the main thread only
+captures, uploads and draws, under 0.6 ms per frame while terrain streams in (`test/bench/` group `voxel/streaming`,
+`doc/audit/20-mesures.md` §3.10):
 
 ```mermaid
 sequenceDiagram
@@ -296,17 +277,25 @@ data still loads and all-default chunks serialize byte-for-byte as before.
 ## Procedural Terrain
 
 A `VoxelWorld` can generate its blocks instead of storing them: tick **Procedural Terrain** in the inspector (or set
-`ProceduralTerrain: true` in the scene) and the world is filled from a seed. `data::voxel::TerrainGenerator` builds a
-2D fractal-Perlin (`math::PerlinNoise`) height field — stone with a dirt sub-layer and a grass surface, sand along the
-shoreline, optional water up to a sea level — and carves caves from a 3D Perlin field; the same seed always yields the
-same world. An optional low-frequency **biome** field varies the surface block (desert sand, grassy plains, snowy,
-rocky mountain tops). `Scene::updateVoxelStreaming` loads chunks in and unloads them out around the camera within the
-configurable radius/height; generation runs **asynchronously on the task `Scheduler`** (workers fill chunks, the main
-thread installs the finished ones with `VoxelWorld::insertChunk`, see *Asynchronous Meshing*), and `RendererVoxel`
-drops the meshes of unloaded chunks. All parameters (seed,
-frequency, octaves, amplitude, sea level, cave threshold, biomes, block ids, …) are editable in the inspector with a
-**Regenerate** button. The `scenes/voxel_terrain.owl` demo is an endless seeded landscape you explore as a grounded
-`VoxelPlayer` (walk / run / jump with collision), reachable from the world-map voxel house.
+`ProceduralTerrain: true`) and the world comes from a seed, the same seed always giving the same world.
+`data::voxel::TerrainGenerator` builds a 2D fractal-Perlin (`math::PerlinNoise`) height field (stone, a dirt
+sub-layer, grass, sand along the shore, optional water up to a sea level), carves caves from a 3D Perlin field, and
+varies the surface with an optional low-frequency **biome** field (desert, plains, snow, rocky tops). Every parameter
+(seed, frequency, octaves, amplitude, sea level, cave threshold, biomes, block ids, …) is editable in the inspector,
+with a **Regenerate** button.
+
+```mermaid
+flowchart LR
+    Cam["camera position"] --> St["Scene::updateVoxelStreaming<br/>radius / height around it"]
+    St -->|missing chunk| Gen["TerrainGenerator<br/>task Scheduler worker"]
+    Gen --> Ins["VoxelWorld::insertChunk<br/>main thread, dirties neighbours"]
+    Ins --> Mesh["asynchronous meshing<br/>(above)"]
+    Mesh --> Up["RendererVoxel::prepareWorld<br/>upload within the budget"]
+    St -->|out of range| Drop["chunk unloaded,<br/>its meshes dropped"]
+```
+
+The `scenes/voxel_terrain.owl` demo is an endless seeded landscape explored as a `VoxelPlayer`, from the world-map
+voxel house.
 
 ## Editing in Owl Nest
 

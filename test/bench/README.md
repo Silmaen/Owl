@@ -54,21 +54,31 @@ delayed ACK add 40 ms to every call. The libraries of the server are built with 
 ## In CI
 
 The nightly *Benchmarks* configuration builds the `linux-bench` preset (release, no tests, no editor) and runs
-`ci_action.py Bench linux-bench`: `owl_bench` writes `output/bench/linux-bench.json` (published as an artifact),
-compared to `test/bench/baseline/linux-bench.json`. A benchmark whose median exceeds its baseline by more than 15 %
-is measured again alone, and the faster of the two medians is kept; one still beyond the threshold fails the
-build. `test/bench/thresholds.json` widens the threshold of the benchmarks matching a name pattern (the
-multi-threaded physics steps of 100 bodies, about 1 ms and dominated by the worker wake-up, get 40 %); it is not
-part of the baseline, so a refresh keeps it. Without a baseline the run only reports: commit the artifact of a nightly run as the baseline (or run the
-action with `-- --update-baseline` on the same agent), and refresh it when a change is deliberately slower or
-the agent changes.
-The configuration is pinned to the agent `linux-build-hephaistos` (8 cores): the committed baseline is the
-median of its 5 runs of 2026-10-15 on the v0.4.0 performance fixes (builds 36879 to 36887, listed in
-`context.baseline_runs`), the code `main` gets with them; the runs agree within 2 % (median), the multi-threaded
-physics of 100 bodies and `sample/load/game_over` within 30 %. `hud/frame/1000_row_list` (a list of a thousand rows,
-scrolled to the middle; the quads of one frame as a metric) is new and not in the baseline yet, nor are the `mcp` and `path` groups. The `hud/{layout,frame}/500_widgets` and `iso/*` entries are
-estimates, a local run scaled by the ratio of the `renderer2d/quads_color` cases, until the next refresh. Timings from
-another agent do not compare (artemis is 20 % faster but varies 10.7 % between runs, against 1.7 % here).
+`ci_action.py Bench linux-bench`:
+
+```mermaid
+flowchart LR
+    B[owl_bench] --> J[output/bench/linux-bench.json<br/>artifact]
+    J --> C{median over baseline<br/>by more than 15 %?}
+    C -->|no| OK[pass]
+    C -->|yes| A[measure that case again alone,<br/>keep the faster median]
+    A --> C2{still over?}
+    C2 -->|no| OK
+    C2 -->|yes| F[build fails]
+```
+
+- Baseline: `test/bench/baseline/linux-bench.json`; without one the run only reports. Commit the artifact of a
+  nightly run (or run the action with `-- --update-baseline` on the same agent) and refresh it when a change is
+  deliberately slower or the agent changes.
+- `test/bench/thresholds.json` widens the threshold by name pattern (the multi-threaded physics steps of 100 bodies,
+  about 1 ms and dominated by the worker wake-up, get 40 %); it is not part of the baseline, so a refresh keeps it.
+- Agent: pinned to `linux-build-hephaistos` (8 cores). The committed baseline is the median of its 5 runs of
+  2026-10-15 on the v0.4.0 performance fixes (builds 36879 to 36887, in `context.baseline_runs`); the runs agree
+  within 2 % (median), the multi-threaded physics of 100 bodies and `sample/load/game_over` within 30 %. Timings from
+  another agent do not compare (artemis is 20 % faster but varies 10.7 % between runs, against 1.7 % here).
+- Not in the baseline yet: `hud/frame/1000_row_list` (a thousand rows scrolled to the middle, the quads of one frame
+  as a metric) and the `mcp` and `path` groups. The `hud/{layout,frame}/500_widgets` and `iso/*` entries are
+  estimates (a local run scaled by the ratio of the `renderer2d/quads_color` cases) until the next refresh.
 
 ```bash
 ./docker_run.sh poetry run python ci_action.py Build linux-bench

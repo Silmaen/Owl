@@ -2,25 +2,20 @@
 
 [TOC]
 
-This page describes the Owl Engine physics system: how rigid bodies work, how the
-simulation integrates with the scene lifecycle, and how to drive physics from
-gameplay code.
+This page describes the Owl Engine physics system: rigid bodies, the scene lifecycle and gameplay code.
 
 ## Overview
 
-Owl Engine provides 2D rigid-body physics via [Box2D](https://box2d.org/), controlled
-through the `PhysicCommand` static facade and the `PhysicBody` ECS component. Each scene owns its own
-Box2D world, so several scenes simulate side by side.
-All physics simulation operates in **world space**, independent of the scene
-hierarchy (see [Physics and Hierarchy](#hierarchy) below). Physics is only
-active during **Play mode** -- entities are not simulated while editing.
+Owl Engine provides 2D rigid-body physics with [Box2D](https://box2d.org/), through the `PhysicCommand` static
+facade and the `PhysicBody` component. Each scene owns its Box2D world, so several scenes simulate side by side. The
+simulation works in **world space**, independent of the hierarchy ([Physics and Hierarchy](#hierarchy)), and only in
+**Play mode**.
 
 ## Architecture
 
 ![Physics Integration](../images/physics_integration.svg)
 
-The physics module follows the same facade + pimpl pattern used by the sound and
-renderer modules (see [Architecture](architecture.md)):
+The module follows the facade + pimpl pattern of the sound and renderer modules ([Architecture](architecture.md)):
 
 ```mermaid
 flowchart LR
@@ -40,16 +35,13 @@ flowchart LR
 | `SceneBody`             | Data class holding physics properties (type, density, friction, ...)               |
 | `component::PhysicBody` | ECS component wrapping a single `SceneBody` instance                               |
 
-`PhysicCommand` holds no state. `init(scene)` creates the scene's `PhysicsWorld`, which the scene keeps
-(`Scene::getPhysicsWorld()`) until `destroy(scene)`, `onEndRuntime()` or its destructor. The scene-level calls
-(`frame`, `takeCollisionEvents`, `getSettings`...) take the scene; the body calls (`impulse`, `getVelocity`...)
-take an entity and act on the world of its scene. A scene destroyed while simulated takes its world with it,
-so nothing dangles.
+`PhysicCommand` holds no state: `init(scene)` creates the `PhysicsWorld` the scene keeps (`Scene::getPhysicsWorld()`)
+until `destroy(scene)`, `onEndRuntime()` or its destructor, so nothing dangles. Scene-level calls (`frame`,
+`takeCollisionEvents`, `getSettings`...) take the scene, body calls (`impulse`, `getVelocity`...) an entity.
 
 ## PhysicBody Component
 
-The `PhysicBody` component wraps a `SceneBody` data class with the following
-fields:
+`PhysicBody` wraps a `SceneBody` (YAML key `PhysicBody`):
 
 | Field         | Type       | Default     | Description                                         |
 |---------------|------------|-------------|-----------------------------------------------------|
@@ -61,8 +53,7 @@ fields:
 | friction      | `float`    | `0.5`       | Surface friction coefficient                        |
 | bodyId        | `uint64_t` | `0`         | Runtime-only internal id (not serialized)           |
 
-The `bodyId` field is assigned during `PhysicCommand::init()` and maps to the
-corresponding `b2BodyId` in the implementation's body table.
+`bodyId` is assigned by `PhysicCommand::init()` and maps to the `b2BodyId` of the body table.
 
 ### BodyType
 
@@ -72,46 +63,34 @@ corresponding `b2BodyId` in the implementation's body table.
 | `Dynamic`   | Fully simulated body, affected by forces, impulses, and gravity    |
 | `Kinematic` | Moved programmatically, not affected by forces but can push others |
 
-The resulting scene YAML looks like:
-
-```yaml
-PhysicBody:
-  type: Dynamic
-  fixedRotation: false
-  colliderSize: [1.0, 1.0, 1.0]
-  density: 1.0
-  restitution: 0.0
-  friction: 0.5
-```
-
 ## Physics Lifecycle
 
-The physics system hooks into the three scene lifecycle methods. The full
-lifecycle is shown in the diagram above.
+```mermaid
+stateDiagram-v2
+    [*] --> NoWorld
+    NoWorld --> Running : init(scene) from onStartRuntime
+    Running --> Running : step() per tick, transforms per frame
+    Running --> NoWorld : destroy() from onEndRuntime
+    state Running {
+        [*] --> Body : at init, or at the next step for a PhysicBody added while running
+        Body --> [*] : component or entity removed
+    }
+```
 
 ### init(scene)
 
-Called from `Scene::onStartRuntime()`. Reads the scene's [physics settings](#fixed-step), creates the Box2D
-world with default gravity `(0, -9.81)` and, when several solver threads are used, the task callbacks of the
-[multi-threaded solver](#multi-threaded-solver), then iterates every entity that has both a `PhysicBody` and a
-`Transform` component. For each entity:
+Called from `Scene::onStartRuntime()`: reads the scene's [physics settings](#fixed-step), creates the Box2D world
+(gravity `(0, -9.81)`, plus the task callbacks of the [multi-threaded solver](#multi-threaded-solver) when several
+threads are used), then for each entity with a `PhysicBody` and a `Transform`:
 
-1. Reads the **world transform** via `Scene::getWorldTransform()` (not the
-   local transform) to compute the initial body position and rotation.
-2. Creates a `b2BodyId` with the appropriate body type, position, rotation,
-   and `fixedRotation` flag.
-3. Creates a box-shaped polygon collider scaled by `colliderSize * worldScale`.
-4. Applies the `density`, `friction`, and `restitution` material properties, and enables Box2D contact events
-   on the shape.
-5. Stores the mapping from an internal `bodyId` to the Box2D `b2BodyId`, and from the Box2D body to the owning
-   entity's UUID.
+1. a `b2BodyId` at the **world** transform (`Scene::getWorldTransform()`), with its type and `fixedRotation`;
+2. a box collider scaled by `colliderSize * worldScale`, with `density`, `friction`, `restitution` and contact events;
+3. the maps `bodyId` → `b2BodyId` and Box2D body → entity UUID.
 
-Collidable tilemaps, raycast doors and pushwalls get their bodies the same way, owned by their entity.
-
-From then on the bodies follow their components: a `PhysicBody` added while running gets its body at the next
-`step()` (once its transform and parent are set), a copied one never shares the source's body, and removing a
-`PhysicBody`, `Tilemap`, door or pushwall component, or its entity, destroys the body. A door or pushwall added
-while running gets no body.
+Collidable tilemaps, raycast doors and pushwalls get bodies the same way, owned by their entity. Then bodies follow
+their components: a `PhysicBody` added while running gets its body at the next `step()`, a copied one never shares
+the source's body, and removing the component (or a `Tilemap`, door, pushwall) or its entity destroys the body; a
+door or pushwall added while running gets none.
 
 ### step() and writeFrameTransforms() {#step}
 
@@ -130,14 +109,11 @@ fixed tick of the scene's simulation clock, and writes the transforms once per f
    without a tick, in the `Physics` update. If the entity has a parent in the hierarchy, the world position is
    converted back to **local space** using the inverse of the parent's world transform.
 
-`frame(scene, timestep)` does the same for a scene driven outside its systems (benchmarks, physics tests): it
-advances the scene's clock by the frame duration, runs the steps it holds, then writes the transforms.
+`frame(scene, timestep)` does the same outside the systems (benchmarks, tests): advance the clock, step, write.
 
 ### destroy()
 
-Called from `Scene::onEndRuntime()`. Destroys the Box2D world, clears the
-body-id map, and resets the `Impl` pointer and scene pointer. After this call,
-`isInitialized()` returns `false`.
+Called from `Scene::onEndRuntime()`: destroys the world and the body map; `isInitialized()` is then `false`.
 
 ## Fixed Step {#fixed-step}
 
@@ -261,9 +237,8 @@ Measured on the 5 000-box pile of `test/bench/` (`physics/step_settled*`, i9-139
 | `setVelocity(entity, vec2f)`               | Override the entity's linear velocity         |
 | `setTransform(entity, position, rotation)` | Teleport the body to a new position and angle |
 
-All methods silently return if the physics world is not initialized or if the
-entity does not have a `PhysicBody` component. `impulse`, `getVelocity`, and
-`setVelocity` also skip static bodies, which cannot move.
+Every method returns silently without a world or a `PhysicBody`; `impulse`, `getVelocity` and `setVelocity` skip
+static bodies.
 
 ### Example: applying an impulse from a NativeScript
 
@@ -320,11 +295,8 @@ sequenceDiagram
 
 ## Player Integration
 
-The `Player` component provides a built-in input handler that drives physics
-through `ScenePlayer::parseInputs()`. Each frame during runtime the scene
-finds the primary `Player` entity and calls `parseInputs`, which reads
-the `move` (horizontal) and `jump` actions of the [action map](event_input.md#actions) and applies impulses via
-`PhysicCommand`:
+Each frame the primary `Player` entity runs `ScenePlayer::parseInputs()`: the `move` (horizontal) and `jump`
+actions of the [action map](event_input.md#actions) become `PhysicCommand` impulses:
 
 | Field         | Type    | Default | Description                           |
 |---------------|---------|---------|---------------------------------------|
@@ -332,18 +304,12 @@ the `move` (horizontal) and `jump` actions of the [action map](event_input.md#ac
 | jumpImpulse   | `float` | `0.2`   | Vertical impulse applied on Space     |
 | canJump       | `bool`  | `true`  | Whether jumping is allowed            |
 
-Jump is only applied when the entity's vertical velocity is near zero (i.e. the
-player is on the ground). The `Player` component requires a `PhysicBody` on the
-same entity.
-
-See [Scene System](scene.md) for more details on the entity component model.
+A jump applies only when the vertical velocity is near zero (on the ground); `Player` needs a `PhysicBody`.
 
 ## Trigger Collision
 
-Triggers are special entities that react when the player overlaps them.
-Trigger detection runs after the physics step (`owl.triggers` system, phase `PostPhysics`): for each
-entity with a `Trigger` component, the scene computes the axis-aligned bounding
-boxes of both the trigger and the primary player and checks for intersection.
+Triggers react when the primary player overlaps them: after the physics step (`owl.triggers`, phase
+`PostPhysics`) the scene intersects the axis-aligned boxes of each `Trigger` and of the player.
 
 | Trigger Type | Effect                                                   |
 |--------------|----------------------------------------------------------|
@@ -352,15 +318,12 @@ boxes of both the trigger and the primary player and checks for intersection.
 | `Teleport`   | Queues a level load (optionally cross-level) to a target |
 | `Target`     | Passive position marker, no action on collision          |
 
-Teleport triggers use `levelName` (scene file to load, empty = same level) and
-`targetName` (entity to teleport to). The player's velocity is preserved across
-the teleport.
+A teleport keeps the player's velocity ([Teleport System](scene.md#teleport-system)); the other types and the Lua
+callbacks are in [Lua Scripting](scripting.md).
 
 ## Physics and Hierarchy {#hierarchy}
 
-Physics bodies operate in **world space** and are independent of the scene
-hierarchy. The table below summarizes the interaction between parent-child
-relationships and physics:
+Bodies live in **world space**, independent of the hierarchy:
 
 | Parent      | Child       | Behaviour                                                                                                  |
 |-------------|-------------|------------------------------------------------------------------------------------------------------------|
@@ -368,10 +331,5 @@ relationships and physics:
 | Physics     | Physics     | Both bodies move **independently** -- Box2D simulates each body on its own regardless of parent-child link |
 | Physics     | Non-physics | The non-physics child **follows** the parent via the normal hierarchy transform chain                      |
 
-When the transforms are written, world positions read from Box2D are converted back to local
-space when the entity has a parent, using the inverse of the parent's world
-transform. This ensures the local `Transform` component stays consistent with
-the hierarchy while Box2D remains the authority on world position.
-
-See [Scene System](scene.md) for details on the hierarchy system, world
-transform computation, and reparenting behaviour.
+Written back, a world pose is converted to local space through the parent's inverse world transform, so `Transform`
+stays consistent while Box2D keeps the authority. Hierarchy rules: [Scene System](scene.md#transform-hierarchy).

@@ -2,23 +2,18 @@
 
 [TOC]
 
-This page describes the Owl Engine sound system: how to add audio to scenes, configure
-spatial sound, and trigger sounds from gameplay code.
+This page describes the Owl Engine sound system: audio in scenes, spatial sound, sounds from gameplay code.
 
 ## Overview
 
-Owl Engine provides a component-based sound system with 3D spatial audio, built on an
-abstract backend layer (OpenAL or Null). Audio files are loaded into memory as
-`SoundData` buffers, and playback is controlled through opaque `SoundHandle` values.
-
-**Supported formats:** `.wav`, `.ogg` (Vorbis), `.flac`, `.mp3`
+A component-based sound system with 3D spatial audio on an OpenAL or Null backend: files load into `SoundData`
+buffers, playback is driven through opaque `SoundHandle` values ([Supported Formats](#supported-formats)).
 
 ![Sound Architecture](../images/sound_architecture.svg)
 
 ## Architecture
 
-The sound system follows the same backend abstraction pattern as the renderer and
-input modules (see [Architecture](architecture.md)):
+The same backend abstraction as the renderer and input modules ([Architecture](architecture.md)):
 
 ```mermaid
 flowchart TD
@@ -51,24 +46,11 @@ flowchart TD
 5. Configure volume, pitch, loop, and other properties as needed
 6. For spatial audio, also add a **Sound Listener** component to the camera or player entity
 
-The resulting scene YAML looks like:
-
-```yaml
-SoundSource:
-  soundAsset: "sounds/explosion.wav"
-  category: "SFX"
-  volume: 1.0
-  pitch: 1.0
-  loop: false
-  spatial: true
-  playOnStart: false
-  maxDistance: 50.0
-  rolloff: 1.0
-```
+The scene then holds a `SoundSource:` block with the fields below.
 
 ## SoundSource Component
 
-The `SoundSource` component wraps a `SceneSound` data class with the following fields:
+`SoundSource` wraps a `SceneSound` (YAML key `SoundSource`):
 
 | Field       | Type     | Default | Description                                       |
 |-------------|----------|---------|---------------------------------------------------|
@@ -82,26 +64,21 @@ The `SoundSource` component wraps a `SceneSound` data class with the following f
 | maxDistance | float    | 50.0    | Maximum audible distance (spatial only)           |
 | rolloff     | float    | 1.0     | Distance attenuation factor (spatial only)        |
 
-The `runtimeHandle` field is internal (not serialized) and holds the active `SoundHandle`
-during playback.
+The internal `runtimeHandle` (not saved) holds the active `SoundHandle` during playback.
 
 ## SoundListener Component
 
-The `SoundListener` component marks an entity as the "ear" for spatial audio.
+`SoundListener` marks the "ear" of spatial audio.
 
 | Field   | Type | Default | Description                         |
 |---------|------|---------|-------------------------------------|
 | primary | bool | true    | Whether this is the active listener |
 
-Only one primary listener should be active at a time. Attach it to the camera or
-player entity. Each frame during runtime, the listener's position and orientation
-are derived from the entity's world transform.
+Keep one primary listener, on the camera or the player; it follows the entity's world transform every frame.
 
 ## Sound Categories
 
-Categories help organize sounds by their typical use case. The category field is
-stored for future per-category volume mixing but does not currently affect playback
-behaviour.
+The category is stored for a future per-category mixer and does not change playback yet.
 
 | Category | Typical Use                | Typical Settings                                  |
 |----------|----------------------------|---------------------------------------------------|
@@ -109,8 +86,7 @@ behaviour.
 | Music    | Background music           | `spatial=false`, `loop=true`, `playOnStart=true`  |
 | Ambient  | Wind, rain, fire crackling | `spatial=true/false`, `loop=true`                 |
 
-**Tip:** Background music is simply a `SoundSource` with `loop=true` and `spatial=false`.
-There is no separate music subsystem.
+Background music is a `SoundSource` with `loop=true` and `spatial=false`: there is no music subsystem.
 
 ## Spatial Audio
 
@@ -132,8 +108,7 @@ Where `referenceDistance = 1.0` and `distance` is clamped to `[0, maxDistance]`.
 
 ## Gameplay Triggers (SoundHelper)
 
-For one-shot sounds triggered by gameplay code (e.g. from a `NativeScript`), use
-the `SoundHelper` utility:
+One-shot sounds from gameplay code (a `NativeScript`) go through `SoundHelper`:
 
 ```c++
 #include <sound/SoundHelper.h>
@@ -145,10 +120,8 @@ auto handle = owl::sound::SoundHelper::playEntitySound(entity);
 owl::sound::SoundHelper::stopEntitySound(entity);
 ```
 
-`SoundHelper` reads the entity's `SoundSource` fields, loads the sound data from the
-`SoundLibrary`, and calls `SoundCommand::play()` with the appropriate parameters.
-
-For more control, use `SoundCommand` directly:
+It reads the entity's `SoundSource`, loads the data from the `SoundLibrary` and calls `SoundCommand::play()`. For
+more control, use `SoundCommand` directly:
 
 ```c++
 #include <sound/SoundCommand.h>
@@ -180,26 +153,17 @@ returns an empty vector, with a warning, when the file cannot be read or the aud
 
 ## Scene Lifecycle Integration
 
-![Scene Lifecycle](../images/scene_lifecycle.svg)
-
-The sound system hooks into the three scene lifecycle methods:
-
-### onStartRuntime
-
-- Finds the primary `SoundListener` entity and sets the OpenAL listener position/orientation
-  from its world transform
-- Iterates all `SoundSource` components with `playOnStart=true`, loads their sound data
-  from the `SoundLibrary`, and starts playback with `SoundCommand::play()`
-
-### onUpdateRuntime (each frame)
-
-- Updates the listener position/orientation from the primary `SoundListener` entity
-- For each spatial `SoundSource` with an active handle, syncs the 3D position from the
-  entity's world transform via `SoundCommand::setPosition()`
-
-### onEndRuntime
-
-- Stops all active sounds via `SoundCommand::stop()` and resets all `runtimeHandle` fields
+```mermaid
+sequenceDiagram
+    participant S as Scene
+    participant C as SoundCommand
+    S->>C: onStartRuntime: listener pose from the primary SoundListener
+    S->>C: play() every SoundSource with playOnStart (sound loaded on first use)
+    loop every frame
+        S->>C: listener pose, then setPosition() of each spatial source with a handle
+    end
+    S->>C: onEndRuntime: stop() every sound, runtimeHandle reset
+```
 
 ## Supported Formats
 
@@ -210,20 +174,11 @@ The sound system hooks into the three scene lifecycle methods:
 | FLAC   | `.flac`   | Lossless compressed, larger than Ogg          |
 | MP3    | `.mp3`    | Lossy compressed, widely available            |
 
-Audio loading is handled by **libsndfile**, which also supports additional sub-formats
-(IMA ADPCM, MS ADPCM, ALAC, Opus) through the WAV container. The OpenAL backend
-automatically detects the format and configures the appropriate buffer type.
+**libsndfile** loads them, with more sub-formats (IMA ADPCM, MS ADPCM, ALAC, Opus) in the WAV container; the OpenAL
+backend picks the buffer type.
 
 ## Asset Packing
 
-Sound files referenced by `SoundSource` components are automatically discovered by
-the `AssetScanner` during game export (**Project > Pack Game** in Owl Nest).
-
-The scanner parses scene YAML files, reads the `SoundSource.soundAsset` field, and
-resolves the file path through the project's asset directories. Discovered sound
-assets are included in the `.owlpack` binary archive alongside textures, fonts,
-and scene files.
-
-At runtime, the game runner loads sound assets transparently from the pack file.
-
-See [Architecture](architecture.md) for more details on the asset packing pipeline.
+The game export (**Project > Pack Game**) packs every `SoundSource.soundAsset` of the scenes, resolved through the
+asset directories by `AssetScanner`, into the `.owlpack`; the runner reads them from the pack. Packing pipeline:
+[Architecture](architecture.md).

@@ -6,11 +6,22 @@ This page covers the Owl Engine event system, input polling, and editor keybindi
 
 ## Overview
 
-Owl Engine uses a synchronous event model. GLFW callbacks generate `owl::event::Event`
-objects which are dispatched through `Application::onEvent()` to the layer stack
-in reverse order (overlays first, then regular layers). Each layer can mark an
-event as handled to stop further propagation. In parallel, the `Input` class
-provides frame-by-frame polling for key and mouse state.
+Two paths leave the devices. **Events** are synchronous: GLFW callbacks build `owl::event::Event` objects that
+`Application::onEvent()` hands to the layer stack in reverse order (overlays first); a layer marks one handled to stop
+it. **Polling** feeds gameplay: the `Input` state, merged with injected input, is sampled per tick into an
+`InputFrame`, which the action map turns into an `ActionFrame` read by the systems and Lua.
+
+```mermaid
+flowchart LR
+    Dev[GLFW / Null devices] --> CB[Callbacks] --> Ev[Event] --> App[Application::onEvent] --> Layers[Layer stack<br/>overlays first]
+    Dev --> In[Input state]
+    Inj[inject*: scenarios, tests, MCP] --> In
+    In -->|sampled per tick and per frame| IF[InputFrame<br/>previous + current, edges]
+    IF --> AM[ActionMap, evaluateAction<br/>input_actions.yml + built-ins]
+    AM --> AF[ActionFrame]
+    IF --> Sys[Systems, Lua input.*]
+    AF --> Sys
+```
 
 ## Event System
 
@@ -33,7 +44,7 @@ dispatch callback to prevent layers below from seeing the event.
 
 ### Event Types
 
-The `event::Type` enum lists all 19 event types:
+The `event::Type` enum lists 18 event types besides `None`:
 
 | Group       | Type                  | Class                      |
 |-------------|-----------------------|----------------------------|

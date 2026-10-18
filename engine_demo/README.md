@@ -11,9 +11,23 @@ The small complete games live beside it in `samples/`.
 
 ## How to Play
 
-The hub is a small top-down RPG village with four houses, one per level (labels above the roofs, a signpost at each door). Each level has a **victory objective** shown in its HUD;
-completing it marks the level done (`level_<name>_done` in gamestate), returns to the hub and bumps the hub counter
-"Levels completed: n / 4". When all four are done the **victory portal** (a purple teleporter) appears and answers.
+The hub is a small top-down RPG village with four houses, one per level. Each level has a **victory objective** shown
+in its HUD; completing it marks the level done (`level_<name>_done` in gamestate), returns to the hub and bumps the
+counter "Levels completed: n / 4". When all four are done the **victory portal** appears and answers.
+
+```mermaid
+flowchart LR
+    M[main_menu] -->|Start / Continue| H[world_map hub]
+    M -->|O| I
+    M --> S[settings_menu]
+    H -->|E at a door| P[platformer_house<br/>reach the door]
+    H --> R[raycast_demo<br/>take an elevator]
+    H --> I[iso_town<br/>100 trips]
+    H --> V[voxel_terrain<br/>walk 100 blocks]
+    P & R & I & V -->|objective met| H
+    H -->|portal, 4 / 4 done| W[victory]
+    H & P -->|health 0| G[game_over]
+```
 
 1. **Main Menu** → press **Start** to begin a new run, or **Continue** if a pause snapshot exists. **O** (left
    bumper) opens the isometric town directly. The **Controls** panel lists the keys of every level: in game they are

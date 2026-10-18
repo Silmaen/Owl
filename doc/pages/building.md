@@ -246,30 +246,22 @@ includes a touched header); elsewhere, all of them. See
 
 ### Multi-architecture CI (ARM64 + x86_64)
 
-CI agents running different architectures on a shared `$HOME` (or bind-mounted workspace) would
-otherwise collide on a single Poetry venv path and load wheels compiled for the wrong arch —
-observed as `ImportError: cryptography/_rust.abi3.so: cannot open shared object file` on ARM64
-after an x86_64 run.
+Agents of both architectures can share one `$HOME`, hence one Poetry venv path, and an arm64 run would then load
+x86_64 wheels (`ImportError: cryptography/_rust.abi3.so`). `ci_action.py` checks on every call
+(`ci.utils.venv.needs_refresh()`), cheapest first:
 
-`ci_action.py` runs `ci.utils.venv.needs_refresh()` on every invocation (not gated on TeamCity
-— TC's Docker jobs don't propagate `TEAMCITY_VERSION` into the container, so an env-var gate
-silently skips the protection). The check uses three stacked signals, cheapest first:
+```mermaid
+flowchart LR
+    A{venv exists?} -->|no| K[nothing to do:<br/>poetry sync creates it]
+    A -->|yes| B{platform marker<br/>arch-os-impl-pyver matches?}
+    B -->|yes| Keep[keep the venv]
+    B -->|no or missing| C{cryptography.fernet<br/>imports?}
+    C -->|yes| Keep
+    C -->|no| R[OWL_CI_REFRESH_VENV=1:<br/>cmake/Poetry.cmake removes the venv,<br/>syncs, writes the marker]
+```
 
-1. **No venv yet** → nothing to refresh (`poetry sync` will create one).
-2. **Platform signature matches** — `<arch>-<os>-<impl>-<pyver>` read from a marker file inside
-   the venv, written by `cmake/Poetry.cmake` after each successful sync. Match → keep venv.
-3. **Functional import test** — signature missing/mismatched, so
-   `poetry run python -c "from cryptography.fernet import Fernet"` is run. If it fails,
-   `OWL_CI_REFRESH_VENV=1` is exported; otherwise the venv is kept (covers legacy venvs that
-   predate the marker).
-
-`cmake/Poetry.cmake` consumes `OWL_CI_REFRESH_VENV` by running `poetry env remove --all` before
-`poetry sync`, then re-writes the platform marker with the current signature. Happy-path
-reruns pay a single file read; an arch switch pays the cost of one recreate (~30–60 s) and
-self-heals.
-
-To force a refresh manually (e.g. after a corrupt wheel): prepend `OWL_CI_REFRESH_VENV=1` to
-the `poetry run python ci_action.py …` invocation, or to a direct `cmake --preset …` call.
+A rerun pays one file read, an architecture switch one venv rebuild (30 to 60 s). Prefix any `ci_action.py` or
+`cmake --preset` call with `OWL_CI_REFRESH_VENV=1` to force a refresh (a corrupt wheel).
 
 ## Running under Wayland or X11
 

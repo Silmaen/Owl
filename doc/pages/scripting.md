@@ -21,7 +21,7 @@ system access, source chunks only, and a memory and time quota per instance (see
 
 | Class            | Role                                                                  |
 |------------------|-----------------------------------------------------------------------|
-| `ScriptEngine`   | Singleton manager: init/shutdown, script loading, property extraction |
+| `ScriptEngine`   | Static: default quotas, property extraction (no scene, no Lua state)  |
 | `ScriptInstance` | Per-entity isolated Lua state with lifecycle callbacks                |
 | `LuaEngine`      | Private low-level wrapper around `lua_State*` (not public)            |
 | `LuaBindings`    | Registers engine API tables into Lua states (not public)              |
@@ -44,10 +44,10 @@ flowchart LR
         LS[LuaScript Component]
     end
     LS -->|owns| SI
-    SE -->|manages| SI
+    SE -->|quotas, properties| SI
     SI -->|wraps| LE
     LE -->|registers| LB
-    LB -->|exposes| API[transform, physics, input, sound, scene, entity, ui, gamestate, save, settings, log, trigger, time]
+    LB -->|exposes| API["17 tables: transform, physics, input, sound, scene, time, log, entity, ui,<br/>gamestate, save, settings, trigger, door, pushwall, isometric, path"]
 ```
 
 ## Adding a Script to an Entity
@@ -485,21 +485,25 @@ Main Menu buttons) and `victory.owl`, driven by `engine_demo/scripts/ui/`.
 
 ## Scene Lifecycle Integration
 
-### onStartRuntime
+```mermaid
+sequenceDiagram
+    participant S as Scene
+    participant I as ScriptInstance (one Lua state per entity)
+    S->>I: onStartRuntime: create, bind to the scene (setScene), load from file or .owlpack
+    S->>I: properties of the component set as globals, then on_create()
+    loop every frame
+        S->>I: on_update(dt)
+        loop every fixed tick of the frame
+            S->>I: on_tick(dt), physics step, on_collision(other_id) for each contact begun
+        end
+        S->>I: triggers: on_trigger_enter / on_trigger_exit / callbacks
+        S->>S: deferred destructions flushed
+    end
+    S->>I: onEndRuntime: on_destroy(), instances reset
+```
 
-1. For each entity with a `LuaScript` component:
-   - Creates a `ScriptInstance` (isolated Lua state) bound to the scene (`ScriptInstance::setScene`): its
-     bindings act on that scene only, so the scripts of several scenes run side by side
-   - Loads the script from file or `.owlpack`
-   - Applies property values from the component to the Lua globals
-   - Calls `on_create()`
-
-### onUpdateRuntime (each frame)
-
-- For each `LuaScript` with a valid instance, calls `on_update(dt)`
-- For each fixed tick the frame holds: calls `on_tick(dt)`, steps the physics, then calls `on_collision(other_id)`
-  for every collision begun during the step
-- Runs the triggers (`on_trigger_enter` / `on_trigger_exit` / primary callbacks)
+The scene binding (`ScriptInstance::setScene`) makes the bindings act on that scene only, so the scripts of several
+scenes run side by side.
 
 ### Entity destruction {#entity-destruction}
 
@@ -507,11 +511,6 @@ Main Menu buttons) and `victory.owl`, driven by `engine_demo/scripts/ui/`.
 until the end of the current `onUpdateRuntime()`, after scripts, physics and triggers have run. A script
 may therefore destroy its own entity and keep running. At that point the entity and all its children are
 destroyed; each of them gets `on_destroy()` once, loses its Box2D body and stops its `SoundSource`.
-
-### onEndRuntime
-
-- For each `LuaScript` with a valid instance, calls `on_destroy()`
-- Resets all instances
 
 ## Sandbox and quotas {#sandbox-and-quotas}
 

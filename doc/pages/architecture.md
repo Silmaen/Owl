@@ -145,25 +145,36 @@ See [Sound System](sound.md) for the full user guide covering components, spatia
 
 The project produces several executables built on top of the `OwlEngine` shared library:
 
-| Application | Directory         | Description                                                        |
-|-------------|-------------------|--------------------------------------------------------------------|
-| Owl Nest    | `source/owlnest/` | Scene editor with project management (editor + runner executables) |
+| Application   | Directory                | Description                                                      |
+|---------------|--------------------------|------------------------------------------------------------------|
+| Owl Nest      | `source/owlnest/`        | Scene editor with project management (`OwlNest`)                 |
+| OwlRunner     | `source/owlnest/runner/` | Game runner: plays an exported game, scenarios and frame benches |
+| OwlShaderBake | `source/tools/`          | Build tool precompiling the engine shaders to SPIR-V             |
 
 ## Project System
 
-Owl Nest supports a project-based workflow. A project is a directory containing an
-`owl_project.yml` configuration file:
+A project is a directory holding an `owl_project.yml` (name, first scene, window, renderer stack, gamepad mappings)
+beside its assets; opening it in Owl Nest adds the directory as a high-priority asset directory (content browser,
+`nam:` lookups) and titles the window. **Scene > Document > Import** copies an external scene into it. The same
+folder is what the export packs and the runner plays:
+
+```mermaid
+flowchart LR
+    subgraph Project[Project folder]
+        Y[owl_project.yml] --- Sc[scenes/*.owl]
+        Sc --- As[scripts, huds, tilesets, tilemaps, textures, sounds]
+        As --- Cfg[game_settings.yml, input_actions.yml]
+    end
+    Project -->|open| Nest[Owl Nest: edit, Play]
+    Project -->|Pack Game / OwlNest --export| Pack[.owlpack + runner.yml + OwlRunner]
+    Pack --> Game[Exported game]
+```
 
 ```yaml
 OwlProject:
   name: "My Project"
   firstScene: "scenes/Example.owl"
 ```
-
-When a project is opened, its directory is added as a high-priority asset directory, making its contents visible in the
-content browser. The editor window title reflects the active project name. Scenes can be imported into the project via
-the **Scene > Document > Import**
-ribbon button.
 
 ### Async Packaging Flow
 

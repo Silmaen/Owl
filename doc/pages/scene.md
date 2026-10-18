@@ -7,7 +7,7 @@ reference, and serialization.
 
 ## Overview
 
-Owl uses an ECS built on [EnTT](https://github.com/skypjack/entt). A `Scene` owns an
+Owl Engine uses an ECS built on [EnTT](https://github.com/skypjack/entt). A `Scene` owns an
 `entt::registry` containing all entities and their components. Entities are lightweight
 handles (`Entity` wraps `entt::entity` + `Scene*`). Each entity automatically receives
 five mandatory components: `ID`, `Tag`, `Transform`, `Visibility`, and `Hierarchy`.
@@ -31,16 +31,14 @@ Scenes are serialized to and from YAML files (`.owl` extension).
 | `Scene::destroyEntityWithChildren(entity)` | Cascade delete of entire subtree                                                 |
 | `Scene::destroyEntityDeferred(entity)`     | Runtime path: subtree queued, destroyed by `flushPendingDestructions()`          |
 
-The first two are immediate and meant for the editor. Runtime code (Lua `scene.destroy_entity`, trigger
-callbacks) uses the deferred form: the queue is flushed at the end of `onUpdateRuntime()` and at the start
-of `onEndRuntime()`. All three give each destroyed entity `on_destroy`, Box2D body removal and sound stop,
-the whole subtree being still intact when the scripts run.
+The first two are immediate (editor). Runtime code (Lua `scene.destroy_entity`, trigger callbacks) uses the deferred
+form, flushed at the end of `onUpdateRuntime()` and at the start of `onEndRuntime()`. All three run `on_destroy`,
+remove the Box2D bodies and stop the sounds while the whole subtree is still intact.
 
-While the scene runs, the runtime resources also follow their components (EnTT `on_construct` / `on_destroy`
-hooks, connected by `onStartRuntime()` and disconnected by `onEndRuntime()`): removing a `LuaScript` or
-`NativeScript` calls its `on_destroy`, removing a `SoundSource` stops it, removing a `PhysicBody`, `Tilemap`,
-raycast door or pushwall destroys its body, and a `PhysicBody` added (or duplicated) gets a body of its own at
-the next physics frame.
+While the scene runs, runtime resources follow their components through EnTT `on_construct` / `on_destroy` hooks
+(connected by `onStartRuntime()`, disconnected by `onEndRuntime()`): removing a `LuaScript` or `NativeScript` calls
+its `on_destroy`, a `SoundSource` stops, a `PhysicBody`, `Tilemap`, raycast door or pushwall loses its body, and an
+added (or duplicated) `PhysicBody` gets a body at the next physics frame.
 
 ### Component API
 
@@ -85,14 +83,7 @@ stateDiagram-v2
     Death --> Editing : onEndRuntime()
 ```
 
-### Status
-
-| Status    | Description                         |
-|-----------|-------------------------------------|
-| `Editing` | Editor mode, no simulation          |
-| `Playing` | Runtime: physics, scripts, triggers |
-| `Victory` | Victory overlay displayed           |
-| `Death`   | Death overlay displayed             |
+`Editing` runs no simulation, `Playing` runs physics, scripts and triggers, `Victory` and `Death` show their overlay.
 
 ### Lifecycle Methods
 
@@ -115,9 +106,12 @@ runs.
 A system has an `update` function, run once per frame, and an optional `tick` function, run once per fixed
 simulation tick (see [Fixed simulation tick](#fixed-tick)); either may be empty. A frame runs:
 
-1. the `update` of `Scripts`, then of `PrePhysics`;
-2. the ticks the clock holds: each tick runs the `tick` of `Scripts`, `PrePhysics`, `Physics`, then `PostPhysics`;
-3. the `update` of `Physics`, `PostPhysics`, then `Late`.
+```mermaid
+flowchart LR
+    U1["update: Scripts, PrePhysics"] --> T{"tick left<br/>in the clock?"}
+    T -->|yes| TK["tick: Scripts, PrePhysics,<br/>Physics, PostPhysics"] --> T
+    T -->|no| U2["update: Physics,<br/>PostPhysics, Late"] --> R["world transforms,<br/>render"]
+```
 
 | Phase         | Engine systems                                                                  | Contract                                  |
 |---------------|---------------------------------------------------------------------------------|-------------------------------------------|
@@ -196,10 +190,10 @@ scene::ComponentRegistry::registerComponent<Score>(/* optional inspector body: *
 });
 ```
 
-It is then written in scenes and prefabs, copied by duplication and the Play copy, offered by "Add Component" and
-the `component.add` / `component.remove` editor commands, and drawn in the inspector (its body, or a note when
-none is registered), undoable like the engine components. `ComponentRegistry::describe<T>()` builds the descriptor
-for finer control (not optional, not copied) through `registerDescriptor`.
+It is then saved in scenes and prefabs, copied (duplication, Play), offered by "Add Component" and the
+`component.add` / `component.remove` commands, and drawn in the inspector (its body, or a note), undoable like any
+engine component. `ComponentRegistry::describe<T>()` + `registerDescriptor` give finer control (not optional, not
+copied).
 
 ### Mandatory Components
 
@@ -225,11 +219,8 @@ Serialized directly as the entity key in YAML (`Entity: <uuid>`).
 |-------------|-------------------|-------------|-------------------------------------|
 | `transform` | `math::Transform` | `Transform` | Local position, rotation, and scale |
 
-Stores the **local** transform relative to the parent. World transform is computed
-on demand via `Scene::getWorldTransform(entity)`, through a persistent per-entity world
-cache (see [Transform Hierarchy](#transform-hierarchy)): an entity whose local transform and ancestors did not
-change is not recomposed, and within an update tick the matrices checked by
-`prepareWorldTransforms()` are reused without walking the chain again.
+The **local** transform; `Scene::getWorldTransform(entity)` gives the world one through a persistent cache
+([Transform Hierarchy](#transform-hierarchy)).
 
 #### Visibility
 
@@ -259,23 +250,10 @@ YAML key: `SpriteRenderer`
 
 #### AnimatedSpriteRenderer
 
-| Field           | Type          | Default | Description                                         |
-|-----------------|---------------|---------|-----------------------------------------------------|
-| `color`         | `vec4`        | white   | Tint colour                                         |
-| `texture`       | `Texture2D`   | null    | Spritesheet                                         |
-| `columns`       | `uint32_t`    | `1`     | Grid columns                                        |
-| `rows`          | `uint32_t`    | `1`     | Grid rows                                           |
-| `firstFrame`    | `uint32_t`    | `0`     | Start frame                                         |
-| `lastFrame`     | `uint32_t`    | `0`     | End frame                                           |
-| `frameDuration` | `float`       | `0.1`   | Seconds per frame                                   |
-| `loop`          | `bool`        | `true`  | Loop animation                                      |
-| `speedCurve`    | `math::Curve` | empty   | Optional speed remap sampled by normalized progress |
-
-YAML key: `AnimatedSpriteRenderer`. When `speedCurve` is empty (default) the field is
-omitted from serialized scenes — older `.owl` files round-trip byte-identical. When set,
-each frame's `dt` is multiplied by `speedCurve.evaluate(progress)` where `progress` is the
-normalized position inside `[firstFrame, lastFrame]`. See
-[Renderer > Animated Sprites](renderer.md) for UV computation details.
+YAML key: `AnimatedSpriteRenderer`: a spritesheet of `columns × rows` frames played from `firstFrame` to `lastFrame`
+every `frameDuration` seconds, looping or not, tinted by `color`. The optional `speedCurve` multiplies each frame's
+`dt` by its value at the normalized progress inside `[firstFrame, lastFrame]` (omitted from the file when empty). Field
+table, UVs and runtime behaviour: [Renderer > Animated Sprites](renderer.md#animated-sprites).
 
 #### CircleRenderer
 
@@ -322,22 +300,21 @@ Each layer carries its own grid + parallax:
 | `parallax`  | `vec2`          | `{1, 1}` | Per-axis camera multiplier (1 = world, 0 = camera-locked)               |
 | cells       | `TileCell` grid | empty    | Terrain tile, overlay tile (`-1` = none, at most 65534) and 8-bit flags |
 
-YAML key: `Tilemap`. The grid is centred on the entity origin (rows extend downward
-along Y) and follows the full entity world transform (translation, rotation, scale). The renderer draws the terrain
-tile; the overlay and the flags are stored and saved for the isometric tracks and roads and for games. In memory the
-cells of a layer are only reachable through `TilemapLayer::getTile` / `setTile` / `getCell` / `setCell` / `getChunk` /
-`setChunk` / `resize` / `assign` / `fill`, which keep one generation per 32 × 32 chunk for the renderer cache
-([Chunked tilemaps](renderer.md)). Tiles index the asset's atlas in
-row-major order; collidable tiles
-(declared in the tileset) emit one static Box2D fixture per occurrence at
-`onStartRuntime`. The tileset is lazily resolved against
-`Application::getAssetDirectories()` on first render.
+YAML key: `Tilemap`.
 
-The companion **`Tileset`** asset (`.owltileset`) holds the atlas texture +
-`tileWidth`/`tileHeight` + `columns × rows` + sparse per-tile metadata
-(`collidable`, `name`) and its `kind`: `Orthogonal` (default, omitted) for the 2D tilemaps, `Isometric` for 2:1
-diamond tiles drawn by the isometric layer ([Isometric layer](renderer.md)). See `scene::Tileset` and the Tile Palette
-panel for authoring.
+- The grid is centred on the entity origin (rows extend down along Y) and follows the full world transform.
+- The renderer draws the terrain tile; the overlay and the flags are saved for the isometric tracks and roads and for
+  games.
+- Cells are reached only through `TilemapLayer::getTile` / `setTile` / `getCell` / `setCell` / `getChunk` /
+  `setChunk` / `resize` / `assign` / `fill`, which keep one generation per 32 × 32 chunk for the renderer cache
+  ([Chunked tilemaps](renderer.md)).
+- Tiles index the atlas in row-major order; each collidable tile (declared in the tileset) becomes one static Box2D
+  fixture at `onStartRuntime`. The tileset resolves lazily against `Application::getAssetDirectories()`.
+
+The **`Tileset`** asset (`.owltileset`, `scene::Tileset`, authored in the Tile Palette) holds the atlas texture,
+`tileWidth` / `tileHeight`, `columns × rows`, sparse per-tile metadata (`collidable`, `name`) and its `kind`:
+`Orthogonal` (default, omitted) or `Isometric` for the 2:1 diamond tiles of the isometric layer
+([Isometric layer](renderer.md)).
 
 ##### Tilemap storage and the `.owltilemap` file {#tilemap-storage}
 
@@ -379,15 +356,14 @@ The payload holds only the non-empty chunks, **little-endian whatever the host**
 | corner heights   | `u8`, then `u8` × (w + 1)(h + 1) | `0` for a flat map, else `1` and the corner heights, row by row |
 | checksum         | `u32`                            | FNV-1a 32 of every payload byte before it                       |
 
-A file whose payload is missing, shorter or longer than `payloadBytes`, has a wrong magic, chunk side or layer count,
-a chunk outside its layer or given twice, or a checksum mismatch is refused with a log, and the asset keeps its
-content. Format 1 files (pure YAML, one comma-separated `tiles` string per layer) load through the 1 → 2 migration
-and are written back as format 2; the `inline:` tilemaps of scenes keep that text form (terrain only). A full 1024²
-layer loads in about 9 ms (bench `tilemap/load/1024x1024`).
+A payload missing, shorter or longer than `payloadBytes`, a wrong magic, chunk side or layer count, a chunk outside
+its layer or given twice, or a checksum mismatch is refused with a log, and the asset keeps its content. Format 1
+files (one comma-separated `tiles` string per layer) migrate to 2, format 2 files load flat through the 2 → 3
+migration; both are written back as format 3, while the `inline:` tilemaps of scenes keep the text form (terrain
+only). A full 1024² layer loads in about 9 ms (bench `tilemap/load/1024x1024`).
 
 Format 3 adds the **corner heights** of the isometric terrain, `(width + 1) × (height + 1)` bytes after the layers (one
-flag byte when the map is flat). Format 2 files load flat through the 2 → 3 migration (the header does not change) and
-are written back as format 3. In memory the grid is private to `TilemapAsset`, empty while flat: `getCornerHeight`,
+flag byte when the map is flat). In memory the grid is private to `TilemapAsset`, empty while flat: `getCornerHeight`,
 `getCellCorners`, `getCellSlope` and `getCellBaseHeight` read it, `setCornerHeight`, `raiseCorner`, `lowerCorner`,
 `raiseArea`, `lowerArea` and `levelArea` edit it and return the `CornerHeightChange` list (undo / redo with
 `applyCornerChanges`), `setCornerHeights` replaces it. The invariant is that corners next to each other differ by at
@@ -446,16 +422,8 @@ YAML key: `Player`. Input is read each frame from the `move` and `jump` actions 
 
 #### PhysicBody
 
-| Field           | Type       | Default   | Description                      |
-|-----------------|------------|-----------|----------------------------------|
-| `type`          | `BodyType` | `Dynamic` | `Static`, `Dynamic`, `Kinematic` |
-| `fixedRotation` | `bool`     | `false`   | Prevent body rotation            |
-| `colliderSize`  | `vec3f`    | `{1,1,1}` | Box collider dimensions          |
-| `density`       | `float`    | `1.0`     | Material density                 |
-| `restitution`   | `float`    | `0.0`     | Bounciness (0–1)                 |
-| `friction`      | `float`    | `0.5`     | Surface friction                 |
-
-YAML key: `PhysicBody`. See [Physics](physics.md) for the full physics guide.
+`type` (`Static`, `Dynamic`, `Kinematic`), `fixedRotation`, `colliderSize`, `density`, `restitution`, `friction`.
+YAML key: `PhysicBody`; fields, defaults and lifecycle in [Physics](physics.md#physicbody-component).
 
 #### Trigger
 
@@ -513,17 +481,24 @@ See [Scripting](scripting.md) for the full Lua API reference.
 | `scriptPath` | `string`                 | `LuaScript` | Relative path to the `.lua` script file        |
 | `properties` | `vector<ScriptProperty>` | —           | Typed property list declared in the Lua script |
 
-Each script instance runs in an isolated `lua_State`. Lifecycle callbacks: `on_create`,
-`on_update(dt)`, `on_destroy`. Properties are parsed from the Lua `properties` table and
-injected as globals before `on_create`.
+One isolated `lua_State` per instance; callbacks, properties and lifecycle are in [Lua Scripting](scripting.md).
 
 ### UI Components
 
-UI elements are drawn by the **HUD pass**, the implicit last pass of the frame, in pixels on top of every render
-layer (`RendererTag` does not route them). A HUD is a tree under an entity carrying a `Canvas`; each `UiRect` lives in
-its parent's rectangle (the nearest ancestor with a `UiRect`, or the whole screen), in Y-down pixels with the origin at
-the top left. `HudLayout` (`Scene::getHudLayout`) lays the HUD out once per frame; `UiInputSystem`
-hit-tests that same layout. Design: [HUD system](design/hud-system.md).
+UI elements are drawn by the **HUD pass**, the implicit last pass of the frame, in pixels over every render layer
+(`RendererTag` does not route them). A HUD is a tree under a `Canvas` entity; each `UiRect` lives in its parent's
+rectangle (nearest ancestor with a `UiRect`, or the screen), in Y-down pixels from the top left. `HudLayout`
+(`Scene::getHudLayout`) lays it out once per frame and `UiInputSystem` hit-tests that same layout:
+
+```mermaid
+flowchart LR
+    S["scene canvases"] --> L["HudLayout<br/>once per frame"]
+    H[".owlhud of the scene<br/>HudLibrary, shared"] --> L
+    L --> D["HudPass: draw<br/>scene canvases, then the HUD"]
+    L --> I["UiInputSystem: hit-test<br/>the HUD first"]
+```
+
+Design: [HUD system](design/hud-system.md).
 
 #### HUD asset (`.owlhud`) {#hud-asset}
 
@@ -555,11 +530,8 @@ its widget values. Design: [HUD system](design/hud-system.md).
 | `size`         | `vec2` | `size`      | Reference pixels, added to the span of the anchors                                |
 | `anchorOffset` | `vec2` | `offset`    | Offset of the pivot from its anchor, positive Y down                              |
 
-The 9 presets (`UiRect::Anchor`, `setAnchor`, `getAnchor`) put both anchors on one point of the parent. Scene and
-prefab format 4 (HUD1): a `UiRect` written in the old Y-up layout (`anchor`, `pivotX`, `sizeX`, `offsetX` keys) gets
-the preset point as both anchors, `pivot.y = 1 - pivotY` and `offset.y = -offsetY`, and a `Canvas` without
-`scaleMode` gets `ConstantPixels`: every widget stays where it was drawn. Format 5 (HUD6) drops `RendererTag: ui` from
-canvases and widgets, since the HUD pass draws them whatever their tag.
+The 9 presets (`UiRect::Anchor`, `setAnchor`, `getAnchor`) put both anchors on one point of the parent. Older files
+migrate without moving a widget ([Format versions](#format-versions-and-migrations)).
 
 #### UiText
 
@@ -581,10 +553,8 @@ canvases and widgets, since the HUD pass draws them whatever their tag.
 | `backgroundColor`     | `vec4`   | Box behind the text block; absent or alpha `0`: none                |
 | `backgroundPadding`   | `float`  | Margin of the box around the text block, in pixels (4 by default)   |
 
-Glyphs keep the aspect ratio of the font; the rectangle drives the wrap width, the alignment and the fit. Scene and
-prefab format 3 (TX2): a `UiText` of an older file, whose `alignment` key was never applied, migrates to `Center` /
-`Middle`, the way it was drawn. Its glyphs are smaller than before for the same `fontSize`: the size used to fill the
-ink height of the string, it is now the ascender-to-descender height of the font, whatever the text.
+Glyphs keep the font aspect; the rectangle drives wrap, alignment and fit. `fontSize` is the ascender-to-descender
+height of the font (before format 3 it filled the ink height of the string, so older texts draw smaller).
 
 #### UiImage
 
@@ -768,8 +738,8 @@ in the file.
 | `uuidMapping`          | `vector<UuidMapEntry>` | —            | Instance UUID ↔ canonical UUID pairs            |
 | `overriddenComponents` | `vector<string>`       | `overrides`  | Per-component override keys preserved on update |
 
-Placed only on the root entity of a prefab instance. Children are tracked via the
-`uuidMapping`. See [Editor Prefab Workflow](editor.md) for usage details.
+On the root entity of a prefab instance only; children are tracked through `uuidMapping`
+([Editor prefab workflow](editor.md)).
 
 An override key is `canonicalUUID:ComponentKey` (e.g. `5100000000000000003:AnimatedSpriteRenderer`).
 A listed component keeps its instance state on update, whether it was modified, added or removed.
@@ -802,37 +772,26 @@ Entities support parent-child relationships via the `Hierarchy` component.
 
 ### World Transform
 
-Each entity's `Transform` stores a **local** transform. The world transform is computed
-by walking the parent chain:
+`Transform` is **local**; the world transform walks the parent chain:
 
 ```
 worldTransform = parentWorldTransform * localTransform
 ```
 
-Root entities (`parentId == 0`) have local = world (no overhead). There is no depth
-limit: `getWorldTransform()` walks the whole chain, and a chain longer than the number
-of entities (a loop in corrupted data) is reported and falls back to the local transform.
-
-World matrices live in a dense per-entity cache that survives frames. It needs no write hook:
-an entry is reused while the local transform it was composed from, its parent and the parent's
-world are unchanged, which the walk up the chain checks with a few compares per level; a changed
-entry is recomposed (no matrix decomposition) and its descendants follow. Writing
-`Transform` directly, reparenting or destroying an entity is therefore always seen.
-
-Once per frame, `Scene::prepareWorldTransforms()` checks every entity once (parents before
-children, only changed matrices recomposed) and computes the inherited visibility in the same
-pass. The result (`getWorldMatrices()`, indexed by `getWorldIndex()`) is uploaded by `Renderer2D`
-as its `sceneWorlds[]` buffer; the GPU never recomposes the hierarchy.
+- Roots (`parentId == 0`) have local = world. No depth limit; a chain longer than the entity count (a loop in
+  corrupted data) is reported and falls back to the local transform.
+- World matrices live in a dense per-entity cache with no write hook: an entry is reused while its local transform,
+  its parent and the parent's world are unchanged (a few compares per level), else recomposed with its descendants.
+  Direct `Transform` writes, reparenting and destruction are therefore always seen.
+- Once per frame `Scene::prepareWorldTransforms()` checks every entity (parents first) and computes the inherited
+  visibility in the same pass; `Renderer2D` uploads the result (`getWorldMatrices()`, indexed by `getWorldIndex()`)
+  as `sceneWorlds[]` ([Renderer](renderer.md#renderer2d)).
 
 ### Visibility Inheritance
 
-If any ancestor is hidden, the entity is effectively hidden.
-`Scene::isEffectivelyVisible()` walks the parent chain to check, at any depth. During an
-update tick it reads the visibility that `prepareWorldTransforms()` computed for both modes
-when the tick armed its caches, so a deep chain costs one walk in total, not one per
-entity. Outside the
-tick (tests, inspector inspection) the cache is bypassed, so callers always
-see fresh `Visibility` state.
+An entity with a hidden ancestor is hidden: `Scene::isEffectivelyVisible()` walks the chain. During an update tick
+it reads what `prepareWorldTransforms()` computed for both modes (one walk in total); outside it (tests, inspector)
+the cache is bypassed and the state is always fresh.
 
 ### Hierarchy Operations
 
@@ -862,8 +821,18 @@ See [Physics > Hierarchy Interaction](physics.md) for details.
 | `parseBuffer(data, name)`           | Parse YAML only (worker thread)              |
 | `applyParsed(parsed)`               | Create the entities of a parsed scene (main) |
 
-The three loading calls return a `SceneLoadResult` (`owl::expected<void, SceneLoadError>`);
-`describe(error)` gives a readable reason for the editor or the log.
+```mermaid
+flowchart LR
+    F[".owl file or pack entry"] --> P["parseBuffer<br/>worker thread"]
+    P --> V["upgradeDocument<br/>FormatVersion, migrations"]
+    V --> A["applyParsed<br/>main thread: entities, components"]
+    A --> R["rebuildHierarchyChildren<br/>repairs: UUIDs, parents, cycles"]
+    V -->|error| X["SceneLoadError,<br/>scene left as it was"]
+    A -->|error| X
+```
+
+The loading calls return a `SceneLoadResult` (`owl::expected<void, SceneLoadError>`); `describe(error)` gives a
+readable reason.
 
 | `SceneLoadError`       | Cause                                                             |
 |------------------------|-------------------------------------------------------------------|
@@ -911,10 +880,8 @@ Entities:
       parentId: 0
 ```
 
-Components are serialized in the order defined by `SerializableComponents`. The
-`Hierarchy` component only stores `parentId`; children lists are rebuilt after
-deserialization via `Scene::rebuildHierarchyChildren()`, which also performs the parent and
-cycle repairs above.
+Components are written in the order of `SerializableComponents`. `Hierarchy` stores only `parentId`; children are
+rebuilt by `Scene::rebuildHierarchyChildren()`, which also performs the repairs above.
 
 ### Format versions and migrations
 
@@ -933,14 +900,18 @@ Every file the engine writes carries a root `FormatVersion` integer:
 | `settings.yml`, `game_settings.yml` | `SettingsManager::format()`                    |
 | `owl_project.yml` (Owl Nest)        | `nest::Project::format()`                      |
 
-Scenes and prefabs are at version 4: the 1 → 2 migration (`bindEntityLinksByName`) gives each name-only
-`EntityLink` the UUID of the first entity of the document with that tag, the 2 → 3 one (`centreLegacyUiText`) gives
-each `UiText` without `horizontalAlignment` the centred layout it was drawn with, the 3 → 4 one
-(`convertLegacyHudLayout`) moves each `UiRect` to the Y-down layout and each older `Canvas` to `ConstantPixels`
-([UI components](#ui-components)). Tilemaps are at version 2 too: their
-1 → 2 migration turns the dense `tiles` string of each layer into a terrain plane, saved back as binary chunks
-([Tilemap storage](#tilemap-storage)). The prefab `Version` key is something else: it counts the edits of one prefab and feeds
-`PrefabLink::syncedVersion`. A save embeds its scene with the scene's own `FormatVersion`.
+Scenes and prefabs are at version 5:
+
+| Step  | Migration                | Effect                                                                                  |
+|-------|--------------------------|-----------------------------------------------------------------------------------------|
+| 1 → 2 | `bindEntityLinksByName`  | A name-only `EntityLink` gets the UUID of the first entity with that tag                |
+| 2 → 3 | `centreLegacyUiText`     | A `UiText` without `horizontalAlignment` gets the centred layout it was drawn with      |
+| 3 → 4 | `convertLegacyHudLayout` | A Y-up `UiRect` moves to the Y-down layout, an older `Canvas` to `ConstantPixels`       |
+| 4 → 5 | `dropUiRendererTag`      | `RendererTag: ui` leaves canvases and widgets, drawn by the HUD pass whatever their tag |
+
+Tilemaps are at version 3 ([Tilemap storage](#tilemap-storage)). The prefab `Version` key is something else: it
+counts the edits of one prefab and feeds `PrefabLink::syncedVersion`. A save embeds its scene with the scene's own
+`FormatVersion`.
 
 On load, `core::upgradeDocument` (or `upgradeYamlDocument` inside the engine) reads the version:
 
@@ -955,8 +926,7 @@ flowchart LR
     M --> OK[document at the current version]
 ```
 
-Files written before versioning have no key and load as version 1. A refused file is never
-partially loaded: the scene, prefab instance, project or settings stay as they were.
+A refused file is never partially loaded: the scene, prefab instance, project or settings stay as they were.
 
 A `core::DocumentFormat` is a name plus an ordered list of `core::MigrationStep`:
 `migrations[i]` upgrades version `i + 1` to `i + 2`, so the current version is always
@@ -976,30 +946,34 @@ shortcut (`canReadWithoutMigration`). Components read their value from `getImpl(
 
 ### Atomic writes
 
-Every one of these files is written with `platform::writeFileAtomic(path, content)`: the content goes
-to a temporary file in the same folder, is flushed to disk (`fsync`, `_commit` on Windows), then
-renamed over the target. A crash, a full disk or any failed step removes the temporary file, leaves
-the previous file intact, logs the cause and returns a `platform::WriteError`; the serializers turn
-it into `false`.
+Every one of these files is written by `platform::writeFileAtomic(path, content)`: a temporary file in the same
+folder, flushed (`fsync`, `_commit` on Windows), renamed over the target. Any failure removes the temporary file,
+keeps the previous one, logs and returns a `platform::WriteError` (`false` from the serializers).
 
 ### Play copy
 
-Pressing Play runs `Scene::copy()` of the editor scene. Components are copied by value and
-`VoxelWorld` chunks are deep-copied, so blocks broken or placed in Play never reach the editor
-scene; voxel chunks still being generated for the editor are re-queued by the copy.
+Play runs on `Scene::copy()` of the editor scene: components by value, `VoxelWorld` chunks deep-copied (Play edits
+never reach the editor scene; chunks still generating are re-queued).
 
 ## Teleport System
 
-Cross-scene teleportation uses a `TeleportRequest` on the Scene:
+Cross-scene teleportation goes through a `TeleportRequest` on the scene:
 
-1. Player collides with a Teleport trigger
-2. `SceneTrigger::onTriggered()` fills the `TeleportRequest` with `levelName`, `targetName`, and player velocity
-3. The editor/runner detects the request and loads the target scene; the current level is only
-   stopped once the target loaded, so a missing or corrupted level logs an error and play goes on
-4. The next frame, the target scene starts runtime and applies the initial velocity to the player at the target entity position
+```mermaid
+sequenceDiagram
+    participant P as Player
+    participant T as SceneTrigger (Teleport)
+    participant H as Editor / runner
+    participant N as Target scene
+    P->>T: collides
+    T->>T: onTriggered(): TeleportRequest (levelName, targetName, velocity)
+    H->>N: load the target scene
+    Note over H: the current level stops only once the target loaded,<br/>a missing level logs an error and play goes on
+    H->>N: next frame: start runtime, player at the target entity with its velocity
+```
 
-The `levelName` field accepts `victory`, `victory.owl`, or `scenes/victory.owl` —
-the engine auto-appends `.owl` and searches asset directories including a `scenes/` subdirectory.
+`levelName` accepts `victory`, `victory.owl` or `scenes/victory.owl`: `.owl` is appended and the asset directories
+are searched, `scenes/` included.
 
 ## Render Pipeline
 
@@ -1015,15 +989,12 @@ Every primitive carries its world z as sort key (depth first, then type, then su
 sprite (lower z) draws under it, whatever the group (`Renderer2D` draw order, see
 [Renderer](renderer.md#renderer2d)).
 
-Each entity is checked for visibility via `isEffectivelyVisible()` and rendered
-using its world transform from `getWorldTransform()`. Both calls hit a per-pass
-cache during the render tick, so duplicated reads across the renderable
-component groups don't repeat the parent-chain walk.
+`isEffectivelyVisible()` and `getWorldTransform()` hit the per-pass caches below, so the component groups do not
+repeat the parent-chain walk.
 
 ### Per-pass Caches
 
-`Scene` maintains several per-update-tick caches to avoid recomputing stable
-values across the multiple component-group scans of a render frame:
+Per-update-tick caches shared by the component-group scans of a frame:
 
 | Cache                            | Key                      | Gated by                                                      | Cleared at                   |
 |----------------------------------|--------------------------|---------------------------------------------------------------|------------------------------|
@@ -1033,11 +1004,6 @@ values across the multiple component-group scans of a render frame:
 | World matrices in `m_worldNodes` | entity index             | checked per read, trusted while `m_worldTransformCacheActive` | Never (recomposed on change) |
 | `m_tilemapAssetsDirty` flag      | scene-wide               | (own gate)                                                    | After resolve                |
 
-In `onUpdateRuntime` every cache is armed only once the mutating phases are done —
-scripts, physics, entity links and trigger callbacks (which can hide entities or
-teleport the player) — so a change made by any of them shows in the same frame.
-
-The dirty flag on `resolveAllTilemapAssets` is set true by
-`onComponentAdded<Tilemap | RaycastDoor | RaycastPushWall>` and by the public
-`Scene::invalidateTilemapAssets()` (which inspector path-edit code can call to
-force a re-resolve).
+`onUpdateRuntime` arms them only after the mutating phases (scripts, physics, entity links, triggers), so their
+changes show in the same frame. `onComponentAdded<Tilemap | RaycastDoor | RaycastPushWall>` and the public
+`Scene::invalidateTilemapAssets()` (inspector path edits) set the `resolveAllTilemapAssets` dirty flag.
