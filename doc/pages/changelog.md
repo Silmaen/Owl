@@ -118,7 +118,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Every test fixture (scene, renderer, render references, scenario and mesh files) lives in `test/test_helper/assets/<category>/`, found through `test::getTestAssetsPath()`.
 - Engine shaders live in `engine_assets/shaders/<renderer>/<name>.slang` (the `slang` folder level is gone) and engine fonts in `engine_assets/fonts/` (one flat folder, licences as `LICENSE-<family>.txt`).
-- Asset trees reorganised: the Engine Demo sorts its textures (`tilemaps`, `atlases`, `sprites`, `items`, `iso`, `wolf3d`, `ui`), sounds (`hub`, `raycast`, `platformer`, `town`, `ui`) and scripts (`hub`, `platformer`, `raycast`, `iso`, `voxel`, `ui`) by area; Kenney sheets are gathered in `textures/tilemaps/` with one `CREDITS.md`.
+- Asset trees reorganised: the Engine Demo sorts its textures (`tilemaps`, `atlases`, `sprites`, `items`, `iso`, `wolf3d`, `ui`), sounds (`hub`, `raycast`, `platformer`, `town`, `ui`) and scripts (`hub`, `platformer`, `raycast`, `iso`, `voxel`, `ui`) by area; Kenney sheets are gathered in `textures/tilemaps/`.
 - The Engine Demo asset generators moved from the asset folders to `tools/demo/` and write into the new layout.
 - The editor icon rasterizer moved to `source/owlnest/assets_sources/generate_icons.py`.
 - Text stays smooth at any size: the font atlas distance range grows from 2 to 6 px (atlas cache version 2) and the outline is an antialiased band computed from the signed distance instead of a sampled dilation.

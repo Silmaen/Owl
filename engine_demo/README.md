@@ -76,7 +76,7 @@ installed.
 
 ## Art
 
-The sample uses the Kenney CC0 tile sheets in `textures/tilemaps/` (pack names and licence in `CREDITS.md` there);
+The sample uses the Kenney CC0 tile sheets in `textures/tilemaps/`;
 `tools/demo/generate_kenney_atlases.py` builds the atlases of `textures/atlases/` from them.
 
 | Where                                  | Pack                                                                                                                      |
