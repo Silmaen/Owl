@@ -43,7 +43,10 @@ clang-tidy, include checks and performance budgets.
 
 The **Engine Demo** (`engine_demo/`, see its `README.md`) is the all-in-one showcase: an RPG hub
 leading to a platformer, a raycast level, an isometric town and a voxel terrain. Small real games live as sample
-games (`samples/`, from v0.4.0).
+games in `samples/`, each a project of its own: Breakout, Sokoban and a Wolfenstein mini.
+
+| ![Breakout](doc/images/showcase/breakout.png) | ![Sokoban](doc/images/showcase/sokoban.png) | ![Wolfenstein mini](doc/images/showcase/wolfenstein.png) |
+|-----------------------------------------------|---------------------------------------------|----------------------------------------------------------|
 
 ## Features
 
