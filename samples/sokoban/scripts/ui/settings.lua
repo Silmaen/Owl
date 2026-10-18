@@ -43,7 +43,7 @@ local function update_sliders()
 end
 
 function on_create()
-    ui.transition_fade_in(0.5)
+    if not ui.is_transition_active() then ui.transition_play("wipe_left", 0.4, 0.2, 0.12, 0.05) end
     vol_label_id = scene.find_entity("MasterVolLabel")
     vol_slider_id = scene.find_entity("MasterVolSlider")
     ui_scale_label_id = scene.find_entity("UiScaleLabel")
@@ -97,5 +97,5 @@ function go_back()
     if leaving then return end
     leaving = true
     settings.save()
-    scene.transition_to("scenes/title.owl", "fade_out", 0.3)
+    scene.transition_to("scenes/title.owl", "wipe_left", 0.3, 0.2, 0.12, 0.05)
 end

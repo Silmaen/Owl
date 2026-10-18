@@ -18,6 +18,7 @@ import struct
 from pathlib import Path
 
 from tools.samples import scene_yaml as y
+from tools.samples.sokoban import generate_menus as menus
 from tools.samples.sokoban import levels as lv
 from tools.samples.sokoban.generate_assets import COLUMNS, ROWS, TILE, TILES
 
@@ -134,49 +135,45 @@ def level_scene(index: int) -> str:
 
 
 def level_hud() -> str:
-    """The HUD of a level: level, moves and best across the top, the hints and three buttons at the bottom, a message
-    in the middle and the pause window."""
+    """The HUD of a level: level, moves and best across the top, three plank buttons at the bottom, a message in the
+    middle and the pause window, the only place of a level that shows the controls."""
     entities = y.Entities(7290000000000000000)
     root = entities.add("HUDCanvas", [y.canvas()])
-    gold = (1, 0.88, 0.5, 1)
-    entities.add("LevelText", [y.rect((0, 0), (0.3, 0.07), (16, 6)), y.text("Level 1", 34, "Left", gold)], parent=root)
-    entities.add("MovesText", [y.rect((0.5, 0), (0.5, 0.07), (0, 6)), y.text("Moves 0   Pushes 0", 34)], parent=root)
-    entities.add("BestText", [y.rect((1, 0), (0.3, 0.07), (-16, 6)), y.text("Best -", 34, "Right", gold)], parent=root)
-    hint = "Move: arrows, WASD, D-pad   Undo: Z, pad B   Restart: R, pad Y   Menu: Esc, Start"
-    entities.add(
-        "HintText",
-        [y.rect((0, 1), (0.62, 0.05), (16, -12)), y.text(hint, 22, "Left", (0.85, 0.8, 0.75, 0.85))],
-        parent=root,
-    )
+    amber, cream = menus.AMBER, menus.CREAM
+    level_text = menus.label("Level 1", 34, amber, "Left", menus.HEADING)
+    entities.add("LevelText", [y.rect((0, 0), (0.3, 0.07), (16, 6)), level_text], parent=root)
+    moves_text = menus.label("Moves 0   Pushes 0", 34, cream)
+    entities.add("MovesText", [y.rect((0.5, 0), (0.5, 0.07), (0, 6)), moves_text], parent=root)
+    best_text = menus.label("Best -", 34, amber, "Right")
+    entities.add("BestText", [y.rect((1, 0), (0.3, 0.07), (-16, 6)), best_text], parent=root)
     bar = entities.add("ButtonBar", [y.rect((1, 1), (0.6, 0.08), (-16, -8)), y.layout("Row", 6)], parent=root)
-    for tag, label, callback, colour in (
-        ("MenuButton", "Menu", "on_menu_clicked", (0.3, 0.3, 0.3)),
-        ("RestartButton", "Restart", "on_restart_clicked", (0.45, 0.3, 0.12)),
-        ("UndoButton", "Undo", "on_undo_clicked", (0.15, 0.35, 0.6)),
+    for tag, label, callback in (
+        ("MenuButton", "Menu", "on_menu_clicked"),
+        ("RestartButton", "Restart", "on_restart_clicked"),
+        ("UndoButton", "Undo", "on_undo_clicked"),
     ):
-        components = [
-            y.child_rect((0.31, 0.9)),
-            y.button(callback, colour),
-            y.text(label, 28),
-            y.focus(focusable=False),
-        ]
-        entities.add(tag, components, parent=bar)
-    message = y.text("Level 1", 44, wrap=True)
+        menus.button(entities, bar, tag, label, callback, (0.31, 0.9), focusable=False)
+    message = menus.label("Level 1", 44, cream, font=menus.HEADING).replace("wrap: false", "wrap: true")
     entities.add("MessageText", [y.rect((0.5, 0.55), (0.9, 0.2)), message], parent=root, visible=False)
     window = entities.add(
         "PauseWindow",
-        [y.rect((0.5, 0.5), (0.62, 0.62)), y.window("Paused"), y.layout("Column", 8, 10)],
+        [
+            y.rect((0.5, 0.5), (0.9, 0.86)),
+            y.window("Paused", (0.14, 0.09, 0.05, 0.98), (0.45, 0.28, 0.12, 1), cream, 40, 28),
+            y.layout("Column", 8, 10),
+        ],
         parent=root,
         visible=False,
     )
-    for tag, label, callback, colour, initial in (
-        ("QuitButton", "Quit to title", "on_pause_quit", (0.45, 0.16, 0.16), False),
-        ("LevelsButton", "Level select", "on_pause_levels", (0.3, 0.3, 0.3), False),
-        ("PauseRestartButton", "Restart level", "on_pause_restart", (0.45, 0.3, 0.12), False),
-        ("ResumeButton", "Resume", "on_pause_resume", (0.15, 0.35, 0.65), True),
+    controls = y.text(menus.CONTROLS, 22, "Left", amber, wrap=True, font="JetBrainsMono-Regular", line_spacing=0.25)
+    entities.add("ControlsText", [y.child_rect((0.94, 0.26)), controls], parent=window)
+    for tag, label, callback, initial in (
+        ("QuitButton", "Quit to title", "on_pause_quit", False),
+        ("LevelsButton", "Level select", "on_pause_levels", False),
+        ("PauseRestartButton", "Restart level", "on_pause_restart", False),
+        ("ResumeButton", "Resume", "on_pause_resume", True),
     ):
-        components = [y.child_rect((0.9, 0.19)), y.button(callback, colour), y.text(label, 30), y.focus(initial)]
-        entities.add(tag, components, parent=window)
+        menus.button(entities, window, tag, label, callback, (0.6, 0.14), initial)
     return y.hud_file("level", entities)
 
 

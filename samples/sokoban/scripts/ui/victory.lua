@@ -4,7 +4,7 @@
 local LEVEL_COUNT = 10
 
 function on_create()
-    ui.transition_fade_in(0.5)
+    if not ui.is_transition_active() then ui.transition_play("wipe_left", 0.4, 0.2, 0.12, 0.05) end
     sound.play("sounds/ui/victory.wav")
     local done, total = 0, 0
     for i = 1, LEVEL_COUNT do
@@ -24,9 +24,9 @@ function on_create()
 end
 
 function on_levels_clicked()
-    scene.transition_to("scenes/level_select.owl", "fade_out", 0.3)
+    scene.transition_to("scenes/level_select.owl", "wipe_left", 0.3, 0.2, 0.12, 0.05)
 end
 
 function on_title_clicked()
-    scene.transition_to("scenes/title.owl", "fade_out", 0.3)
+    scene.transition_to("scenes/title.owl", "wipe_left", 0.3, 0.2, 0.12, 0.05)
 end

@@ -6,8 +6,9 @@ Tile sheet (``textures/sokoban_tiles.png``, 8 x 2 tiles of 16 pixels): the floor
 Kenney Tiny Dungeon sheet of the Engine Demo (CC0), the goal mark and the crates are drawn here in its palette. The
 order of the tiles is the one ``sokoban.lua`` and ``tilesets/sokoban.owltileset`` expect (``TILES``).
 
-Sounds: mono 16 bit at 22.05 kHz, sine, square and noise only; the music loops without a click. The two menu jingles
-are copied from the Engine Demo (``sounds/ui/``).
+Menus (``textures/ui/``): the title, a wooden crate per letter, and the plank of a button. Sounds: mono 16 bit at
+22.05 kHz, sine, square and noise only; the music loops without a click; ``sounds/ui/start.wav`` is a mallet jingle of
+the game, the victory jingle is copied from the Engine Demo (``sounds/ui/``).
 
 Run from the repository root: ``./docker_run.sh poetry run python -m tools.samples.sokoban.generate_assets``.
 """
@@ -22,14 +23,16 @@ import wave
 from collections.abc import Callable
 from pathlib import Path
 
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 REPOSITORY = Path(__file__).resolve().parents[3]
 """The repository root."""
 ROOT = REPOSITORY / "samples" / "sokoban"
 """The sample project."""
 DEMO = REPOSITORY / "engine_demo"
-"""The Engine Demo, source of the Kenney sheet and of the menu jingles."""
+"""The Engine Demo, source of the Kenney sheet and of the victory jingle."""
+FONTS = REPOSITORY / "engine_assets" / "fonts"
+"""The fonts of the engine, for the title art."""
 TEXTURES = ROOT / "textures"
 """Folder of the written images."""
 SOUNDS = ROOT / "sounds"
@@ -169,6 +172,68 @@ def tile_sheet() -> Image.Image:
     return sheet
 
 
+WOOD = (168, 108, 58)
+"""Base colour of the planks of the menus."""
+WOOD_DARK = (92, 54, 26)
+"""Grain, joints and burnt letters."""
+
+
+def _wood(size: tuple[int, int], seed: int, alpha: int = 255) -> Image.Image:
+    """Planks along x: a base colour, wavy grain lines darker and lighter, deterministic."""
+    width, height = size
+    rng = random.Random(seed)
+    img = Image.new("RGBA", size, (*WOOD, alpha))
+    draw = ImageDraw.Draw(img)
+    for _ in range(height // 3):
+        y0 = rng.uniform(0, height)
+        phase, amplitude, tone = rng.uniform(0, 6.3), rng.uniform(0.5, 3.0), rng.uniform(-38, 22)
+        colour = tuple(max(0, min(255, int(c + tone))) for c in WOOD)
+        points = [(x, y0 + amplitude * math.sin(x / 37.0 + phase)) for x in range(0, width + 8, 8)]
+        draw.line(points, fill=(*colour, alpha), width=rng.choice((1, 1, 2)))
+    return img.filter(ImageFilter.GaussianBlur(0.6))
+
+
+def plank() -> Image.Image:
+    """A menu button (640 x 100): a plank with bevelled edges and two nails, a quarter see-through so that the button
+    colour (lighter when hovered) shows in it."""
+    size = (640, 100)
+    img = _wood(size, 3, 190)
+    draw = ImageDraw.Draw(img)
+    draw.rectangle([0, 0, size[0] - 1, size[1] - 1], outline=(*WOOD_DARK, 230), width=5)
+    draw.line([(5, 6), (size[0] - 6, 6)], fill=(214, 160, 100, 200), width=3)
+    draw.line([(5, size[1] - 7), (size[0] - 6, size[1] - 7)], fill=(70, 40, 18, 210), width=3)
+    for x in (26, size[0] - 27):
+        draw.ellipse([x - 6, size[1] // 2 - 6, x + 6, size[1] // 2 + 6], fill=(70, 66, 70, 255))
+        draw.ellipse([x - 3, size[1] // 2 - 4, x + 2, size[1] // 2 + 1], fill=(170, 170, 176, 255))
+    return img
+
+
+def title_art() -> Image.Image:
+    """The title (1400 x 220): one wooden crate per letter of SOKOBAN, the letter burnt into its face."""
+    letters = "SOKOBAN"
+    side, gap = 180, 20
+    width = len(letters) * side + (len(letters) - 1) * gap
+    img = Image.new("RGBA", (width + 20, side + 40), (0, 0, 0, 0))
+    font = ImageFont.truetype(str(FONTS / "OpenSans-ExtraBold.ttf"), 132)
+    for index, letter in enumerate(letters):
+        x0, y0 = 10 + index * (side + gap), 14 + (6 if index % 2 else 0)
+        shadow = Image.new("RGBA", img.size, (0, 0, 0, 0))
+        ImageDraw.Draw(shadow).rectangle([x0 + 8, y0 + 12, x0 + side + 8, y0 + side + 12], fill=(0, 0, 0, 140))
+        img = Image.alpha_composite(img, shadow.filter(ImageFilter.GaussianBlur(6)))
+        face = _wood((side, side), 10 + index)
+        draw = ImageDraw.Draw(face)
+        draw.rectangle([0, 0, side - 1, side - 1], outline=(*WOOD_DARK, 255), width=14)
+        draw.rectangle([14, 14, side - 15, side - 15], outline=(205, 150, 92, 255), width=3)
+        box = draw.textbbox((0, 0), letter, font=font)
+        position = ((side - (box[2] - box[0])) / 2 - box[0], (side - (box[3] - box[1])) / 2 - box[1])
+        draw.text((position[0] + 3, position[1] + 3), letter, font=font, fill=(230, 180, 110, 255))
+        draw.text(position, letter, font=font, fill=(*WOOD_DARK, 255))
+        for cx, cy in ((7, 7), (side - 8, 7), (7, side - 8), (side - 8, side - 8)):
+            draw.ellipse([cx - 4, cy - 4, cx + 4, cy + 4], fill=(150, 150, 156, 255))
+        img.paste(face, (x0, y0), face)
+    return img
+
+
 def _write(name: str, samples: list[float], peak: float = 0.8) -> None:
     """Write the samples, scaled so that the loudest one reaches ``peak`` of the full scale."""
     path = SOUNDS / name
@@ -257,15 +322,37 @@ def sounds() -> None:
     clear = _notes([(523.3, 1.0), (659.3, 1.0), (784.0, 1.0), (1046.5, 1.0), (0.0, 0.0), (1046.5, 1.2)], 0.1, 6.0)
     _write("game/level_clear.wav", clear)
     _write("music/loop.wav", music(), peak=0.45)
-    for name in ("start.wav", "victory.wav"):
-        (SOUNDS / "ui").mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(DEMO / "sounds" / "ui" / name, SOUNDS / "ui" / name)
+    _write("ui/start.wav", jingle(), peak=0.45)
+    shutil.copyfile(DEMO / "sounds" / "ui" / "victory.wav", SOUNDS / "ui" / "victory.wav")
+
+
+def _marimba(seconds: float, frequency: float) -> list[float]:
+    """A wooden mallet: a sine and its fourth harmonic, a quick knock then a soft ring."""
+    out = []
+    for i in range(round(seconds * RATE)):
+        t = i / RATE
+        attack = min(1.0, t / 0.003)
+        body = math.sin(2 * math.pi * frequency * t) * math.exp(-t * 7.0)
+        knock = 0.35 * math.sin(2 * math.pi * frequency * 4.0 * t) * math.exp(-t * 40.0)
+        out.append(attack * (body + knock))
+    return out
+
+
+def jingle() -> list[float]:
+    """The start jingle, 1.1 seconds: three mallet notes going up, the last one held, as calm as the music."""
+    out: list[float] = []
+    for frequency, step in ((392.0, 0.14), (493.9, 0.14), (587.3, 0.82)):
+        out += _marimba(step, frequency)
+    return _mix(out, [s * 0.4 for s in [0.0] * round(0.28 * RATE) + _marimba(0.82, 392.0)])
 
 
 def textures() -> None:
     """Every image of the game."""
     TEXTURES.mkdir(parents=True, exist_ok=True)
     tile_sheet().save(TEXTURES / "sokoban_tiles.png")
+    (TEXTURES / "ui").mkdir(exist_ok=True)
+    title_art().save(TEXTURES / "ui" / "title.png")
+    plank().save(TEXTURES / "ui" / "plank.png")
 
 
 if __name__ == "__main__":

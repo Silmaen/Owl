@@ -20,8 +20,9 @@ moves of each level are kept, with the levels done, between sessions (the settin
 | Pause   | Escape, P                     | **Menu**        | Start             |
 | Menus   | Arrows, Enter, Escape         | Point, click    | D-pad, A, B       |
 
-The title opens the level select (every level is open, the done ones are marked) or continues with the first level
-left; the settings hold the master volume, the interface size and a reset of the progress.
+The title opens the level select (every level is open, the done ones are marked), continues with the first level left
+or shows the rules and the controls in its **How to play** window; the controls are shown there and in the pause
+window, never during play. The settings hold the master volume, the interface size and a reset of the progress.
 
 ## Inside
 
@@ -31,8 +32,8 @@ left; the settings hold the master volume, the interface size and a reset of the
 | `tilemaps/level_NN.owltilemap` | A level: layer `floor` (floor, walls), `goals`, `boxes` (crates, the hero where he starts) |
 | `tilesets/sokoban.owltileset`  | The tiles of `textures/sokoban_tiles.png`                                                  |
 | `scripts/game/sokoban.lua`     | The rules: steps and pushes on the tilemap cells, the undo stack, the win, the pause       |
-| `scripts/ui/`                  | The menus, after the Engine Demo ones; `level_select.lua` fills the list of levels         |
-| `huds/level.owlhud`            | Level, moves, best, hints, Undo / Restart / Menu buttons and the pause window              |
+| `scripts/ui/`                  | The wooden menus; `level_select.lua` fills the list, `warehouse.lua` animates the corridor |
+| `huds/level.owlhud`            | Level, moves, best, Undo / Restart / Menu buttons, the pause window (with the controls)    |
 
 ## Editing a level
 
@@ -46,3 +47,7 @@ level before it), then add the scene to `LEVEL_SCENES` (and its name to `LEVEL_N
 The art, the sounds, the first version of the levels and the menus come from `tools/samples/sokoban/`
 (`generate_assets.py`, `generate_levels.py`, `generate_menus.py`): running a generator again overwrites the edits made
 in Owl Nest.
+
+The menus look like a warehouse: a crate per letter of the title, plank buttons, the progress in a warehouse log, a
+corridor at the bottom where the hero pushes a crate onto its goal, and wipes in the brown of the crates between the
+screens.

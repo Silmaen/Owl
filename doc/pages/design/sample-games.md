@@ -98,7 +98,8 @@ Done in v0.4.0: `samples/breakout/` (how to play: its `README.md`).
 | Tilemap  | One `.owltilemap` per level: layer 0 floor and walls, 1 goals, 2 crates and the hero tile of the start        |
 | Entities | `Level` (`Tilemap`), player (`AnimatedSpriteRenderer`, `isometric.set_sprite_frame`), `MovingBox`, music      |
 | Lua      | `sokoban.lua` (rules on `isometric.get_cell`, undo stack in a Lua table, win), `level_select.lua`, menus      |
-| HUD      | `huds/level.owlhud`: level, moves and pushes, best, hints, Undo / Restart / Menu buttons, pause window        |
+| HUD      | `huds/level.owlhud`: level, moves and pushes, best, Undo / Restart / Menu buttons, pause window with controls |
+| Menus    | Wooden warehouse (`generate_menus.py`): crate letters, plank buttons, a progress log, an animated corridor    |
 | Art      | `sokoban_tiles.png`: Tiny Dungeon floor, wall and hero (walk and push frames), home-made goal mark and crates |
 | Saves    | No slot: `sokoban_done_NN` and `sokoban_best_NN` settings saved at once; Continue starts the first level left |
 
@@ -111,7 +112,8 @@ Done in v0.4.0: `samples/breakout/` (how to play: its `README.md`).
   tilemaps, level scenes, HUD, from the texts of `levels.py`), `generate_menus.py`; `tools/tests/test_sokoban_levels.py`
   replays a stored solution of each level text.
 - Reuse: the walk frames of `tools/demo/generate_kenney_atlases.py`, `scripts/hub/hub_water.lua` (`get_cell` /
-  `set_cell` on a 2D tilemap), the journal list of `scripts/raycast/inventory.lua`, the Engine Demo menus.
+  `set_cell` on a 2D tilemap), the journal list of `scripts/raycast/inventory.lua`; the menus, first copied from the
+  Engine Demo, have a look of their own since the first playthrough.
 - Gaps: G6 (tile bindings named `isometric`), G14 (one scene per level), G9 (master volume only). Lua had no way to
   read the size of a tilemap: `isometric.get_size` was added for it (width, height, cell size).
 - Scenarios: `sokoban_push` (`sokoban_on_goal` grows), `sokoban_undo` (undo and restart put back crate and counters),
