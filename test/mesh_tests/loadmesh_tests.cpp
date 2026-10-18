@@ -48,7 +48,8 @@ TEST(LoadOBJMesh, MultipleTriangles) {
 TEST(LoadOBJMesh, TriangleWithUVs) {
 	Log::init(Log::Level::Off);
 
-	const auto mesh = MeshLoader::loadStaticMesh(owl::test::getTestAssetsPath("mesh_tests") / "multiple_triangle_uv.obj");
+	const auto mesh =
+			MeshLoader::loadStaticMesh(owl::test::getTestAssetsPath("mesh_tests") / "multiple_triangle_uv.obj");
 	ASSERT_NE(mesh, nullptr);
 	EXPECT_EQ(mesh->getVertexCount(), 4u);
 	EXPECT_EQ(mesh->getTriangleCount(), 2u);
@@ -62,7 +63,8 @@ TEST(LoadOBJMesh, TriangleWithUVs) {
 TEST(LoadOBJMesh, TriangleWithNormals) {
 	Log::init(Log::Level::Off);
 
-	const auto mesh = MeshLoader::loadStaticMesh(owl::test::getTestAssetsPath("mesh_tests") / "multiple_triangle_normal.obj");
+	const auto mesh =
+			MeshLoader::loadStaticMesh(owl::test::getTestAssetsPath("mesh_tests") / "multiple_triangle_normal.obj");
 	ASSERT_NE(mesh, nullptr);
 	EXPECT_EQ(mesh->getVertexCount(), 4u);
 	EXPECT_EQ(mesh->getTriangleCount(), 2u);
@@ -76,7 +78,8 @@ TEST(LoadOBJMesh, TriangleWithNormals) {
 TEST(LoadOBJMesh, TriangleWithUVsAndNormals) {
 	Log::init(Log::Level::Off);
 
-	const auto mesh = MeshLoader::loadStaticMesh(owl::test::getTestAssetsPath("mesh_tests") / "multiple_triangle_uvnormal.obj");
+	const auto mesh =
+			MeshLoader::loadStaticMesh(owl::test::getTestAssetsPath("mesh_tests") / "multiple_triangle_uvnormal.obj");
 	ASSERT_NE(mesh, nullptr);
 	EXPECT_EQ(mesh->getVertexCount(), 4u);
 	EXPECT_EQ(mesh->getTriangleCount(), 2u);
@@ -120,7 +123,8 @@ TEST(LoadGLTFMesh, MultipleTriangles) {
 TEST(LoadGLTFMesh, TriangleWithUVs) {
 	Log::init(Log::Level::Off);
 
-	const auto mesh = MeshLoader::loadStaticMesh(owl::test::getTestAssetsPath("mesh_tests") / "multiple_triangle_uv.gltf");
+	const auto mesh =
+			MeshLoader::loadStaticMesh(owl::test::getTestAssetsPath("mesh_tests") / "multiple_triangle_uv.gltf");
 	ASSERT_NE(mesh, nullptr);
 	EXPECT_EQ(mesh->getVertexCount(), 4u);
 	EXPECT_EQ(mesh->getTriangleCount(), 2u);
@@ -134,7 +138,8 @@ TEST(LoadGLTFMesh, TriangleWithUVs) {
 TEST(LoadGLTFMesh, TriangleWithNormals) {
 	Log::init(Log::Level::Off);
 
-	const auto mesh = MeshLoader::loadStaticMesh(owl::test::getTestAssetsPath("mesh_tests") / "multiple_triangle_normal.gltf");
+	const auto mesh =
+			MeshLoader::loadStaticMesh(owl::test::getTestAssetsPath("mesh_tests") / "multiple_triangle_normal.gltf");
 	ASSERT_NE(mesh, nullptr);
 	EXPECT_EQ(mesh->getVertexCount(), 4u);
 	EXPECT_EQ(mesh->getTriangleCount(), 2u);
@@ -148,7 +153,8 @@ TEST(LoadGLTFMesh, TriangleWithNormals) {
 TEST(LoadGLTFMesh, TriangleWithUVsAndNormals) {
 	Log::init(Log::Level::Off);
 
-	const auto mesh = MeshLoader::loadStaticMesh(owl::test::getTestAssetsPath("mesh_tests") / "multiple_triangle_uvnormal.gltf");
+	const auto mesh =
+			MeshLoader::loadStaticMesh(owl::test::getTestAssetsPath("mesh_tests") / "multiple_triangle_uvnormal.gltf");
 	ASSERT_NE(mesh, nullptr);
 	EXPECT_EQ(mesh->getVertexCount(), 4u);
 	EXPECT_EQ(mesh->getTriangleCount(), 2u);
@@ -192,7 +198,8 @@ TEST(LoadGLBMesh, MultipleTriangles) {
 TEST(LoadGLBMesh, TriangleWithUVs) {
 	Log::init(Log::Level::Off);
 
-	const auto mesh = MeshLoader::loadStaticMesh(owl::test::getTestAssetsPath("mesh_tests") / "multiple_triangle_uv.glb");
+	const auto mesh =
+			MeshLoader::loadStaticMesh(owl::test::getTestAssetsPath("mesh_tests") / "multiple_triangle_uv.glb");
 	ASSERT_NE(mesh, nullptr);
 	EXPECT_EQ(mesh->getVertexCount(), 4u);
 	EXPECT_EQ(mesh->getTriangleCount(), 2u);
@@ -206,7 +213,8 @@ TEST(LoadGLBMesh, TriangleWithUVs) {
 TEST(LoadGLBMesh, TriangleWithNormals) {
 	Log::init(Log::Level::Off);
 
-	const auto mesh = MeshLoader::loadStaticMesh(owl::test::getTestAssetsPath("mesh_tests") / "multiple_triangle_normal.glb");
+	const auto mesh =
+			MeshLoader::loadStaticMesh(owl::test::getTestAssetsPath("mesh_tests") / "multiple_triangle_normal.glb");
 	ASSERT_NE(mesh, nullptr);
 	EXPECT_EQ(mesh->getVertexCount(), 4u);
 	EXPECT_EQ(mesh->getTriangleCount(), 2u);
@@ -220,7 +228,8 @@ TEST(LoadGLBMesh, TriangleWithNormals) {
 TEST(LoadGLBMesh, TriangleWithUVsAndNormals) {
 	Log::init(Log::Level::Off);
 
-	const auto mesh = MeshLoader::loadStaticMesh(owl::test::getTestAssetsPath("mesh_tests") / "multiple_triangle_uvnormal.glb");
+	const auto mesh =
+			MeshLoader::loadStaticMesh(owl::test::getTestAssetsPath("mesh_tests") / "multiple_triangle_uvnormal.glb");
 	ASSERT_NE(mesh, nullptr);
 	EXPECT_EQ(mesh->getVertexCount(), 4u);
 	EXPECT_EQ(mesh->getTriangleCount(), 2u);
@@ -234,7 +243,8 @@ TEST(LoadGLBMesh, TriangleWithUVsAndNormals) {
 TEST(LoadFBXMesh, TriangleWithNormals) {
 	Log::init(Log::Level::Off);
 
-	const auto mesh = MeshLoader::loadStaticMesh(owl::test::getTestAssetsPath("mesh_tests") / "multiple_triangle_normal.fbx");
+	const auto mesh =
+			MeshLoader::loadStaticMesh(owl::test::getTestAssetsPath("mesh_tests") / "multiple_triangle_normal.fbx");
 	ASSERT_NE(mesh, nullptr);
 	EXPECT_EQ(mesh->getVertexCount(), 4u);
 	EXPECT_EQ(mesh->getTriangleCount(), 2u);
@@ -248,7 +258,8 @@ TEST(LoadFBXMesh, TriangleWithNormals) {
 TEST(LoadFBXMesh, TriangleWithUVsAndNormals) {
 	Log::init(Log::Level::Off);
 
-	const auto mesh = MeshLoader::loadStaticMesh(owl::test::getTestAssetsPath("mesh_tests") / "multiple_triangle_uvnormal.fbx");
+	const auto mesh =
+			MeshLoader::loadStaticMesh(owl::test::getTestAssetsPath("mesh_tests") / "multiple_triangle_uvnormal.fbx");
 	ASSERT_NE(mesh, nullptr);
 	EXPECT_EQ(mesh->getVertexCount(), 4u);
 	EXPECT_EQ(mesh->getTriangleCount(), 2u);

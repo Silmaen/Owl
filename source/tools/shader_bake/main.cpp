@@ -13,12 +13,12 @@
 #include <cstdio>
 #include <exception>
 #include <filesystem>
-#include <fstream>
 #include <format>
-#include <utility>
+#include <fstream>
 #include <span>
 #include <sstream>
 #include <string>
+#include <utility>
 
 // Build-time compilation of the engine shaders: every `shaders/<renderer>/<name>.slang`, for Vulkan and
 // OpenGL, written where `loadOrCompileSpirv` looks first (`getPrecompiledShaderPath` under the output folder).
@@ -91,7 +91,7 @@ auto bake(const int iArgc, char** iArgv) -> int {
 	}
 	const auto elapsed = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - start);
 	printLine(stdout, "OwlShaderBake: {} shaders, {} SPIR-V stages in {:.0f} ms, {} failures.", shaders, stages,
-				 elapsed.count(), failures);
+			  elapsed.count(), failures);
 	owl::core::Log::invalidate();
 	return failures == 0 ? 0 : 1;
 }
@@ -105,8 +105,6 @@ auto main(const int iArgc, char** iArgv) -> int {
 		std::fputs("OwlShaderBake: ", stderr);
 		std::fputs(iError.what(), stderr);
 		std::fputs("\n", stderr);
-	} catch (...) {
-		std::fputs("OwlShaderBake: unknown error.\n", stderr);
-	}
+	} catch (...) { std::fputs("OwlShaderBake: unknown error.\n", stderr); }
 	return 1;
 }

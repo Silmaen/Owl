@@ -73,7 +73,7 @@ Python, never a bare `conan`. Inside the container the venv lives in `/fhome/.ca
 | `source/owl/public/`      | Public API, one folder per module = one namespace (see `.claude/rules/module-layout.md`). |
 | `source/owl/private/`     | Implementation, mirrors `public/`; third-party header wrappers in `core/external/`.       |
 | `source/owlnest/`         | Editor (`sources/`: panels, documents, undo commands) and runner (`runner/`).             |
-| `test/<cat>_tests/`       | Google Test, 20 categories, helpers and all fixtures in `test/test_helper/`.            |
+| `test/<cat>_tests/`       | Google Test, 20 categories, helpers and all fixtures in `test/test_helper/`.              |
 | `engine_assets/`          | What the engine ships: `fonts/`, Slang `shaders/<renderer>/`, `project_templates/`, `logo/`. |
 | `engine_demo/`            | Engine Demo, the all-in-one showcase (not a game): `scenes/ huds/ prefabs/ tilesets/ tilemaps/`, `scripts/` `sounds/` `textures/` by area. |
 | `tools/demo/`             | Generators of the demo textures, sounds, hub and minimap (not assets, not installed).      |

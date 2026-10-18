@@ -22,8 +22,7 @@ namespace owl::renderer::gpu::opengl {
 namespace {
 auto loadSlangSource(const std::string& iShaderName, const std::string& iRenderer) -> std::string {
 	// Slang sources live at `shaders/<renderer>/<name>.slang` (getShaderPath builds the wrong GLSL-style path).
-	const auto relative =
-			std::filesystem::path("shaders") / iRenderer / (iShaderName + std::string(".slang"));
+	const auto relative = std::filesystem::path("shaders") / iRenderer / (iShaderName + std::string(".slang"));
 	const auto sourcePath =
 			Renderer::getTextureLibrary().find(relative.generic_string()).value_or(std::filesystem::path{});
 	if (sourcePath.empty() || !exists(sourcePath)) {
