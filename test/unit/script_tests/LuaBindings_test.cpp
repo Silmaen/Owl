@@ -24,6 +24,7 @@
 #include <format>
 #include <optional>
 #include <string>
+#include <variant>
 #include <vector>
 
 using namespace owl;
@@ -703,6 +704,33 @@ TEST(LuaBindings, settingsBindings) {
 	EXPECT_EQ(inst.getPropertyInt("vint").value_or(0), 7);
 	EXPECT_EQ(inst.getPropertyString("vstr").value_or(""), "arthur");
 	EXPECT_EQ(inst.getPropertyString("vmiss").value_or(""), "def");
+	core::Log::invalidate();
+}
+
+TEST(LuaBindings, settingsKeepAStringReadingAsANumber) {
+	core::Log::init(core::Log::Level::Off);
+	auto scn = mkShared<scene::Scene>();
+	app::EngineContext context;
+	scn->setEngineContext(&context);
+	context.getSettings().resetAllToDefaults();
+	const std::string script = "function on_create()\n"
+							   "  settings.set('code', '007')\n"
+							   "  settings.set('ratio', 0.5)\n"
+							   "end\n";
+	const std::vector<uint8_t> data(script.begin(), script.end());
+	const ScriptInstance inst;
+	inst.setScene(scn.get());
+	ASSERT_TRUE(inst.createFromBuffer(data, "settings_digits_test", 1));
+	inst.onCreate();
+	const auto code = context.getSettings().get("code");
+	ASSERT_TRUE(code.has_value());
+	ASSERT_TRUE(std::holds_alternative<std::string>(code.value()));
+	EXPECT_EQ(std::get<std::string>(code.value()), "007");
+	const auto ratio = context.getSettings().get("ratio");
+	ASSERT_TRUE(ratio.has_value());
+	EXPECT_TRUE(std::holds_alternative<float>(ratio.value()));
+	context.getSettings().resetAllToDefaults();
+	scn->setEngineContext(nullptr);
 	core::Log::invalidate();
 }
 

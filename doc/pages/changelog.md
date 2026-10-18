@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Sample game Breakout (`samples/breakout/`), the first of `samples/`: five levels, three lives, bricks of one to three hits, wide-paddle and slow-ball power-ups, pause, settings and best score, played with keyboard, mouse or gamepad; its art, sounds and levels come from `tools/samples/breakout/`.
 - `samples/` ships beside the Engine Demo: installed in the Owl Nest package, listed under **Sample games** on the File screen (`panel::findSampleGames`), each sample exported and played headless by the end-to-end export test, its HUDs checked like the demo's.
+- Sample game Wolfenstein mini (`samples/wolfenstein/`): three raycast floors to explore with treasure, keys and locked doors, secret walls, a fog-of-war minimap and an exit elevator, a tally of items, secrets and map explored in % per floor, best tally kept, saves, keyboard, mouse and gamepad, game rules in Lua only.
 - `owl_bench` group `mcp`: `tools/call` and `ping` round trips over loopback HTTP into a headless editor session, the MCP and command libraries of Owl Nest now built with `OWL_BENCHMARK` even without the editor.
 - Scenario files take an optional `project` (the project of the scene, else found above it) and `assets` (extra asset folders), so a test fixture scene can live beside the tests and use a game project.
 - Lua `scene.find_entities(tag)`: every entity with a tag; in the Engine Demo iso town a road built on a tree clears it and the bulldozer removes trees (3 funds).
@@ -190,6 +191,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Lua `gamestate.set` and `settings.set` keep a string that reads as a number (`"0110"`) a string instead of storing a float, so a string of digits survives a save (the fog of the Engine Demo raycast minimap came back broken after a load).
 - The emulated arm64 build finds the `fast_float` headers that the c4core headers of rapidyaml include: the engine requires and links `fast_float` directly.
 - The arm64 build (Debug under qemu) passes the Engine Demo scenarios: the raycast level sets its minimap fog up over a few frames instead of overrunning the script time quota, and scenarios take the `OWL_TEST_TIMEOUT` of their preset (3600 s on the arm64 presets) instead of a fixed 300 s.
 - Game export packs every sound file a script names in quotes, not only literal `sound.play("…")` arguments (random variants of the Engine Demo hub ambience and footsteps were missing from exported games).

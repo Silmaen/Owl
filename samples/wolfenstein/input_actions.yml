@@ -1,0 +1,61 @@
+FormatVersion: 1
+# Actions of Wolfenstein mini. The built-in ones (`ui_*` for the menus...) are always there; an action defined here
+# replaces the built-in one of the same name (`interact` gains Space, the left mouse button and the pad A button).
+actions:
+  - name: walk
+    type: axis
+    bindings:
+      - {key: W}
+      - {key: Up}
+      - {key: S, scale: -1}
+      - {key: Down, scale: -1}
+      - {gamepad_axis: left_y, scale: -1}
+      - {gamepad_button: DpadUp}
+      - {gamepad_button: DpadDown, scale: -1}
+  - name: turn
+    type: axis
+    bindings:
+      - {key: A}
+      - {key: Left}
+      - {key: D, scale: -1}
+      - {key: Right, scale: -1}
+      - {gamepad_axis: right_x, scale: -1}
+      - {gamepad_axis: left_x, scale: -1}
+      - {gamepad_button: DpadLeft}
+      - {gamepad_button: DpadRight, scale: -1}
+  - name: interact
+    type: button
+    bindings:
+      - {key: E}
+      - {key: Space}
+      - {mouse_button: Left}
+      - {gamepad_button: A}
+      - {gamepad_button: X}
+  - name: run
+    type: button
+    bindings:
+      - {key: LeftShift}
+      - {gamepad_button: LeftThumb}
+      - {gamepad_button: RightBumper}
+  - name: mouse_look
+    type: button
+    bindings:
+      - {mouse_button: Right}
+  - name: map
+    type: button
+    bindings:
+      - {key: Tab}
+      - {gamepad_button: Y}
+  - name: pause
+    type: button
+    bindings:
+      - {key: Escape}
+      - {gamepad_button: Start}
+  - name: quick_save
+    type: button
+    bindings:
+      - {key: F6}
+  - name: quick_load
+    type: button
+    bindings:
+      - {key: F9}

@@ -956,13 +956,14 @@ auto luaGamestateSet(lua_State* iState) -> int {
 	if (activeScene == nullptr)
 		return 0;
 	const char* key = luaL_checkstring(iState, 1);
+	// A string stays a string even when it reads as a number ("0101" would become a float).
 	if (lua_isboolean(iState, 2) != 0)
 		activeScene->getGameState().set(key, lua_toboolean(iState, 2) != 0);
 	else if (lua_isinteger(iState, 2) != 0)
 		activeScene->getGameState().set(key, static_cast<int64_t>(lua_tointeger(iState, 2)));
-	else if (lua_isnumber(iState, 2) != 0)
+	else if (lua_type(iState, 2) == LUA_TNUMBER)
 		activeScene->getGameState().set(key, static_cast<float>(lua_tonumber(iState, 2)));
-	else if (lua_isstring(iState, 2) != 0)
+	else if (lua_type(iState, 2) == LUA_TSTRING)
 		activeScene->getGameState().set(key, std::string(lua_tostring(iState, 2)));
 	return 0;
 }
@@ -1208,13 +1209,14 @@ auto luaSettingsSet(lua_State* iState) -> int {
 	auto* settings = settingsOf(iState);
 	if (settings == nullptr)
 		return 0;
+	// A string stays a string even when it reads as a number ("0101" would become a float).
 	if (lua_isboolean(iState, 2) != 0)
 		settings->set(key, lua_toboolean(iState, 2) != 0);
 	else if (lua_isinteger(iState, 2) != 0)
 		settings->set(key, static_cast<int64_t>(lua_tointeger(iState, 2)));
-	else if (lua_isnumber(iState, 2) != 0)
+	else if (lua_type(iState, 2) == LUA_TNUMBER)
 		settings->set(key, static_cast<float>(lua_tonumber(iState, 2)));
-	else if (lua_isstring(iState, 2) != 0)
+	else if (lua_type(iState, 2) == LUA_TSTRING)
 		settings->set(key, std::string(lua_tostring(iState, 2)));
 	return 0;
 }

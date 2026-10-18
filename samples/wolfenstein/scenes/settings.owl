@@ -1,0 +1,303 @@
+Scene: untitled
+FormatVersion: 5
+EnabledRenderers:
+  - Name: raycast_world
+    Enabled: false
+Entities:
+  - Entity: 4400000000000000001
+    Tag:
+      tag: MainCamera
+    Transform:
+      translation: [0, 0, 5]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Camera:
+      camera:
+        projectionType: Orthographic
+        perspectiveFOV: 0.785398185
+        perspectiveNear: 0.00999999978
+        perspectiveFar: 1000
+        orthographicSize: 10
+        orthographicNear: -1
+        orthographicFar: 10
+      primary: true
+      fixedAspectRatio: false
+    Visibility:
+      gameVisible: true
+  - Entity: 4400000000000000002
+    Tag:
+      tag: Background
+    Transform:
+      translation: [0, 0, -1]
+      rotation: [0, 0, 0]
+      scale: [20, 15, 1]
+    BackgroundTexture:
+      mode: 0
+      type: 0
+      color: [0.06, 0.06, 0.12, 1]
+      topColor: [0.8, 0.9, 1, 1]
+    Visibility:
+      gameVisible: true
+  - Entity: 4400000000000000003
+    Tag:
+      tag: SettingsCanvas
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Canvas:
+      space: ScreenOverlay
+      sortOrder: 0
+      referenceResolution: [1280, 720]
+      scaleMode: ScaleWithHeight
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      {}
+    LuaScript:
+      scriptPath: scripts/ui/settings.lua
+  - Entity: 4400000000000000010
+    Tag: {tag: SettingsList}
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility: {gameVisible: true}
+    Hierarchy: {parentId: 4400000000000000003}
+    UiRect:
+      anchorMin: [0.5, 0]
+      anchorMax: [0.5, 0]
+      pivot: [0.5, 0]
+      size: [0.9, 0.78]
+      sizeUnit: [ScreenHeight, ScreenHeight]
+      offset: [0, 0.15]
+      offsetUnit: [Pixels, ScreenHeight]
+    UiLayout:
+      arrangement: Column
+      crossAlign: Center
+      spacing: 4
+      padding: 4
+      columns: 1
+      cellSize: [0, 0]
+  - Entity: 4400000000000000011
+    Tag: {tag: BackButton}
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility: {gameVisible: true}
+    Hierarchy: {parentId: 4400000000000000010}
+    UiButton:
+      normalColor: [0.4, 0.2, 0.2, 1]
+      hoverColor: [0.55, 0.3, 0.3, 1]
+      pressedColor: [0.3, 0.15, 0.15, 1]
+      disabledColor: [0.15, 0.15, 0.15, 0.5]
+      onClickCallback: go_back
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.5, 0.11]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      text: Back
+      color: [1, 1, 1, 1]
+      fontSize: 30
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      fit: Shrink
+      minFontSize: 12
+  - Entity: 4400000000000000012
+    Tag: {tag: ResetButton}
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility: {gameVisible: true}
+    Hierarchy: {parentId: 4400000000000000010}
+    UiButton:
+      normalColor: [0.45, 0.35, 0.1, 1]
+      hoverColor: [0.6, 0.45, 0.15, 1]
+      pressedColor: [0.35, 0.25, 0.05, 1]
+      disabledColor: [0.15, 0.15, 0.15, 0.5]
+      onClickCallback: on_reset_clicked
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.5, 0.11]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      text: Reset defaults
+      color: [1, 1, 1, 1]
+      fontSize: 30
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      fit: Shrink
+      minFontSize: 12
+  - Entity: 4400000000000000013
+    Tag: {tag: UiScaleSlider}
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility: {gameVisible: true}
+    Hierarchy: {parentId: 4400000000000000010}
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.9, 0.055]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiSlider:
+      value: 0.2
+      minValue: 0
+      maxValue: 1
+      trackColor: [0.2, 0.2, 0.2, 1]
+      fillColor: [0.95, 0.75, 0.25, 1]
+      handleColor: [1, 1, 1, 1]
+      onValueChangedCallback: on_ui_scale_changed
+    UiFocus: {}
+  - Entity: 4400000000000000014
+    Tag: {tag: UiScaleLabel}
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility: {gameVisible: true}
+    Hierarchy: {parentId: 4400000000000000010}
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.9, 0.095]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      text: 'Interface size: 100%'
+      color: [0.9, 0.9, 0.9, 1]
+      fontSize: 28
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      fit: Shrink
+      minFontSize: 12
+  - Entity: 4400000000000000015
+    Tag: {tag: MouseSlider}
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility: {gameVisible: true}
+    Hierarchy: {parentId: 4400000000000000010}
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.9, 0.055]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiSlider:
+      value: 0.27
+      minValue: 0
+      maxValue: 1
+      trackColor: [0.2, 0.2, 0.2, 1]
+      fillColor: [0.2, 0.8, 0.3, 1]
+      handleColor: [1, 1, 1, 1]
+      onValueChangedCallback: on_mouse_changed
+    UiFocus: {}
+  - Entity: 4400000000000000016
+    Tag: {tag: MouseLabel}
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility: {gameVisible: true}
+    Hierarchy: {parentId: 4400000000000000010}
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.9, 0.095]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      text: 'Mouse turn: 1.00'
+      color: [0.9, 0.9, 0.9, 1]
+      fontSize: 28
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      fit: Shrink
+      minFontSize: 12
+  - Entity: 4400000000000000017
+    Tag: {tag: MasterVolSlider}
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility: {gameVisible: true}
+    Hierarchy: {parentId: 4400000000000000010}
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.9, 0.055]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiSlider:
+      value: 1
+      minValue: 0
+      maxValue: 1
+      trackColor: [0.2, 0.2, 0.2, 1]
+      fillColor: [0.3, 0.6, 0.9, 1]
+      handleColor: [1, 1, 1, 1]
+      onValueChangedCallback: on_master_vol_changed
+    UiFocus: {initial: true}
+  - Entity: 4400000000000000018
+    Tag: {tag: MasterVolLabel}
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility: {gameVisible: true}
+    Hierarchy: {parentId: 4400000000000000010}
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.9, 0.095]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      text: 'Master volume: 100%'
+      color: [0.9, 0.9, 0.9, 1]
+      fontSize: 28
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      fit: Shrink
+      minFontSize: 12
+  - Entity: 4400000000000000019
+    Tag: {tag: TitleText}
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility: {gameVisible: true}
+    Hierarchy: {parentId: 4400000000000000003}
+    UiRect:
+      anchorMin: [0.5, 0]
+      anchorMax: [0.5, 0]
+      pivot: [0.5, 0]
+      size: [0.7, 0.1]
+      sizeUnit: [ScreenWidth, ScreenHeight]
+      offset: [0, 12]
+    UiText:
+      text: Settings
+      color: [1, 0.85, 0.2, 1]
+      fontSize: 64
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      fit: Shrink
+      minFontSize: 12

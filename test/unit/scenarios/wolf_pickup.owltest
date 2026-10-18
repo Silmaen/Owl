@@ -1,0 +1,14 @@
+# Wolfenstein mini: a cross lies two cells ahead of the start of floor 1; walking onto it takes it (pickup.lua), the
+# items found and the score grow.
+scene: ../../../samples/wolfenstein/scenes/level_1.owl
+project: ../../../samples/wolfenstein
+steps:
+  - frames: 20
+  - expect: {gamestate: wolf_items, equals: 0}
+  - expect: {gamestate: wolf_items_total, greater: 10}
+  - expect: {gamestate: wolf_score, equals: 0}
+  - actions: {walk: 1, frames: 40}
+  - frames: 3
+  - expect: {gamestate: wolf_items, equals: 1}
+  - expect: {gamestate: wolf_score, equals: 100}
+  - expect: {gamestate: wolf_items_pct, greater: 0}

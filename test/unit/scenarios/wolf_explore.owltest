@@ -1,0 +1,16 @@
+# Wolfenstein mini: the map explored ratio of floor 1 (explore.lua, the fog of the minimap) starts low in the closed
+# start room, and grows as the player looks around; Tab switches to the large map.
+scene: ../../../samples/wolfenstein/scenes/level_1.owl
+project: ../../../samples/wolfenstein
+steps:
+  - frames: 30
+  - expect: {gamestate: wolf_seen, greater: 5}
+  - expect: {gamestate: wolf_seen, less: 36}
+  - expect: {gamestate: wolf_explored, less: 10}
+  - actions: {turn: 1, frames: 220}
+  - expect: {gamestate: wolf_seen, greater: 34}
+  - expect: {gamestate: wolf_explored, greater: 4}
+  - actions: {map: true, frames: 1}
+  - frames: 2
+  - expect: {gamestate: wolf_large_map, equals: 1}
+  - expect: {entity: Minimap, scale.x: {equals: 11, tolerance: 0.01}}
