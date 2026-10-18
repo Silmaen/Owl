@@ -20,6 +20,7 @@ EnabledRenderers:
     Enabled: true
     Overrides:
       Space: Screen
+      ReferenceHeight: 720
 Entities:
   - Entity: 9100000000000000003
     Tag: {tag: ControlsHint}

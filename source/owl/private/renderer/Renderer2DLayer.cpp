@@ -45,7 +45,9 @@ Renderer2DLayer::Renderer2DLayer(std::string iName) : m_name{std::move(iName)} {
 auto Renderer2DLayer::buildPixelOrtho() const -> CameraOrtho {
 	const auto vw = static_cast<float>(m_viewport.x());
 	const auto vh = static_cast<float>(m_viewport.y());
-	return CameraOrtho{0.f, vw, 0.f, vh};
+	if (m_referenceHeight <= 0.f)
+		return CameraOrtho{0.f, vw, 0.f, vh};
+	return CameraOrtho{0.f, vw * m_referenceHeight / vh, 0.f, m_referenceHeight};
 }
 
 void Renderer2DLayer::onBeginFrame(const Camera& iCamera) {
@@ -76,6 +78,8 @@ void Renderer2DLayer::applyConfig(const std::string& iConfig) {
 		return;
 	if (const auto v = config["Space"]; v && v.IsScalar())
 		m_space = parseSpace(v.as<std::string>());
+	if (const auto v = config["ReferenceHeight"]; v && v.IsScalar())
+		m_referenceHeight = std::max(0.f, v.as<float>(0.f));
 }
 
 void Renderer2DLayer::setViewport(const math::vec2ui& iViewport) {

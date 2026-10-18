@@ -133,6 +133,14 @@ auto SceneSettings::renderLayerOverridesEditor(const std::string& iTypeKey, YAML
 			ImGui::EndCombo();
 		}
 		std::ignore = gui::widgets::propertyReset(false);
+		float referenceHeight = ioOverrides["ReferenceHeight"] ? ioOverrides["ReferenceHeight"].as<float>(0.f) : 0.f;
+		if (gui::widgets::propertyFloat("Reference Height", referenceHeight, 0.f, 1.f,
+										referenceHeight <= 0.f ? "pixels" : "%.0f units",
+										"Screen space: height of the screen in units, so the overlay scales with the "
+										"resolution (720 for a 1280x720 layout); 0 keeps one unit per pixel.")) {
+			ioOverrides["ReferenceHeight"] = std::clamp(referenceHeight, 0.f, 16384.f);
+			changed = true;
+		}
 	} else if (iTypeKey == "RendererIsometric") {
 		changed = renderIsometricOverrides(ioOverrides);
 	} else {

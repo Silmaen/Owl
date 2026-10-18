@@ -411,6 +411,7 @@ def scene(level: Level) -> None:
         "    Enabled: true",
         "    Overrides:",
         "      Space: Screen",
+        "      ReferenceHeight: 720",
         "Entities:",
     ]
     ((sx, sy),) = level.find("@")

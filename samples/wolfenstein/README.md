@@ -14,7 +14,8 @@ the score and the keys only; when the floor is done, the tally counts up what yo
 
 - **Items**: every pick-up taken (treasure, food, keys), over the pick-ups of the floor.
 - **Secrets**: the secret walls found. A secret wall looks like the others: press **E** against the walls.
-- **Map explored**: the floor cells you have seen, over all the floor cells (the minimap fills as you look around).
+- **Map explored**: the floor cells you have seen, over all the floor cells (the minimap fills as you look around; it
+  keeps its share of the screen at any resolution).
 
 Each percent of the three ratios adds 10 points to the score. The best ratios of each floor and the best final score
 are kept and shown on the service record of the title screen, beside its **How to play** window; the controls are

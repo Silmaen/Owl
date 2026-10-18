@@ -2,9 +2,10 @@
 -- Reused from the raycast level of the Engine Demo (`scripts/raycast/raycast_level.lua`).
 --
 -- The minimap is a second rendering style over the raycast view: the `overlay` layer of the stack (a `Renderer2D` with
--- `Space: Screen`) draws this entity's `Tilemap` (`tilemaps/level_N_minimap.owltilemap`) and two dots this script moves:
--- the player and where it looks. The map is centred on its entity, `scale` screen pixels per cell; `map` (Tab, pad Y)
--- switches between the corner minimap and a large map.
+-- `Space: Screen` and `ReferenceHeight: 720`: the screen is 720 units high at any resolution) draws this entity's
+-- `Tilemap` (`tilemaps/level_N_minimap.owltilemap`) and two dots this script moves: the player and where it looks. The
+-- map is centred on its entity, `scale` units per cell; `map` (Tab, pad Y) switches between the corner minimap and a
+-- large map.
 --
 -- The tilemap has two layers: `walls` (hidden, the whole floor, read once) and `seen` (empty at first). Every frame
 -- FOG_RAYS rays are cast over the wall grid across the field of view up to FOG_RANGE cells (a DDA over the cells, no
@@ -25,7 +26,7 @@ local FOG_RAYS, FOG_FOV, FOG_RANGE = 41, math.rad(80), 14
 local FOG_ROWS_PER_FRAME = 8
 local SAVE_PERIOD = 0.5
 local HEARING = 12 -- cells beyond which a door is not heard
--- Corner minimap and large map: cell size in screen pixels and centre (from the lower left corner of the screen).
+-- Corner minimap and large map: cell size in units (1/720 of the screen height) and centre (from the lower left corner of the screen).
 local SMALL = { scale = 5, x = 96, y = 96 }
 local LARGE = { scale = 11, x = 192, y = 192 }
 local DOOR_TAGS = { "Door", "GoldDoor", "BlueDoor", "ElevatorDoor" }

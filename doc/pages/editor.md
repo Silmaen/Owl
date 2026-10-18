@@ -962,7 +962,8 @@ The renderer-stack section mirrors `renderer::EnabledRenderersConfig`:
 The `Overrides` collapsible exposes typed widgets per layer type:
 
 - **`Renderer2D`** — `Space` combo (`World` for sprite layers, `Screen` for
-  HUD / pixel-overlay layers immune to camera rotation).
+  HUD / pixel-overlay layers immune to camera rotation) and Reference Height (key `ReferenceHeight`: the screen
+  height in `Screen` units, 0 for pixels, 720 for an overlay that scales with the resolution).
 - **`RendererRaycast`** — Field of View, Max Distance and Rays numeric drags (keys `Fov`, `MaxDistance`,
   `NumRays`); Ceiling / Floor colour pickers (`CeilingColor` / `FloorColor`).
 - **`RendererIsometric`** — Tile Width, Tile Height, Height Step and Zoom (keys `TileWidth`, `TileHeight`, `ZStep`,

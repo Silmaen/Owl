@@ -3,9 +3,10 @@
 --               text refreshed when its value changes, the inventory counters of gamestate (`inv_<item>`).
 --
 -- The minimap in the lower left corner is a second rendering style composed with the raycast view: the `ui` layer of the
--- stack (a `Renderer2D` with `Space: Screen`, enabled with `raycast_world` in `EnabledRenderers`) draws a `Tilemap`
+-- stack (a `Renderer2D` with `Space: Screen` and `ReferenceHeight: 720`, enabled with `raycast_world` in
+-- `EnabledRenderers`, so its units scale with the screen height) draws a `Tilemap`
 -- (`tilemaps/minimap.owltilemap`, the walls of the level reduced to two tiles, built by `tools/demo/generate_minimap.py`)
--- and a dot this script moves to the player. The map is centred on its entity, three screen pixels per cell, and the
+-- and a dot this script moves to the player. The map is centred on its entity, three units per cell, and the
 -- world row is the map row seen from the top: tile = (x + 32, 32 - y).
 --
 -- Sounds of the level: a door that starts to open and a push-wall that starts to slide make their noise (`door.get_state`
@@ -43,7 +44,7 @@ local player_id, map_id, dot_id, facing_id = 0, 0, 0, 0
 local WALL_LAYER, SEEN_LAYER = 0, 1
 local TILE_WALL, TILE_FLOOR = 0, 1
 local FOG_RAYS, FOG_FOV, FOG_RANGE = 41, math.rad(80), 14
-local FACING_OFFSET = 7   -- screen pixels from the dot to the facing marker
+local FACING_OFFSET = 7   -- units (1/720 of the screen height) from the dot to the facing marker
 local SAVE_PERIOD = 0.5
 local solid = {}          -- cell key -> true for a wall of the level
 local blockers = {}       -- cell key -> {closed = boolean} for a door or a secret wall (an entity, not a tile)
