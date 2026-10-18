@@ -94,6 +94,48 @@ auto card(const char* iIcon, const char* iTitle, const char* iDescription, const
 	return clicked;
 }
 
+// What a click on a project row asks for.
+enum struct RowAction : uint8_t { None, Open, Forget };
+
+// Project row: a name over its folder, with a button to forget it when `iForgettable`.
+auto projectRow(const std::string& iName, const std::string& iDetail, const float iWidth, const bool iForgettable)
+		-> RowAction {
+	const auto& theme = gui::UiLayer::getTheme();
+	RowAction action = RowAction::None;
+	ImGui::PushID(iDetail.c_str());
+	const float rowHeight = ImGui::GetTextLineHeight() * 2.f + 12.f;
+	const auto origin = ImGui::GetCursorScreenPos();
+	ImGui::SetNextItemAllowOverlap();
+	if (ImGui::InvisibleButton("##row", {iWidth, rowHeight}))
+		action = RowAction::Open;
+	auto* draw = ImGui::GetWindowDrawList();
+	if (ImGui::IsItemHovered())
+		draw->AddRectFilled(origin, {origin.x + iWidth, origin.y + rowHeight}, toU32(theme.surface2),
+							theme.frameRounding);
+	gui::UiLayer::pushTextStyle(gui::TextStyle::Strong);
+	draw->AddText({origin.x + 10.f, origin.y + 6.f}, toU32(theme.text), iName.c_str());
+	gui::UiLayer::popTextStyle();
+	draw->AddText({origin.x + 10.f, origin.y + 8.f + ImGui::GetTextLineHeight()}, toU32(theme.textDisabled),
+				  iDetail.c_str());
+	if (iForgettable) {
+		ImGui::SetCursorScreenPos({origin.x + iWidth - ImGui::GetFrameHeight() - 6.f,
+								   origin.y + (rowHeight - ImGui::GetFrameHeight()) * 0.5f});
+		if (gui::widgets::iconButton("forget", {.glyph = gui::icon::x, .tooltip = "Remove from the list"}))
+			action = RowAction::Forget;
+	}
+	ImGui::SetCursorScreenPos({origin.x, origin.y + rowHeight});
+	ImGui::Dummy({0.f, 0.f});
+	ImGui::PopID();
+	return action;
+}
+
+void sectionTitle(const char* iTitle) {
+	ImGui::Dummy({0.f, ImGui::GetFontSize()});
+	gui::UiLayer::pushTextStyle(gui::TextStyle::Caption);
+	ImGui::TextColored(gui::vec(gui::UiLayer::getTheme().textDisabled), "%s", iTitle);
+	gui::UiLayer::popTextStyle();
+}
+
 void call(const std::function<void()>& iAction) {
 	if (iAction)
 		iAction();
@@ -115,6 +157,21 @@ auto findSampleProject(const std::vector<std::filesystem::path>& iStartDirectori
 		}
 	}
 	return std::nullopt;
+}
+
+auto findSampleGames(const std::filesystem::path& iSampleProject) -> std::vector<std::filesystem::path> {
+	std::vector<std::filesystem::path> games;
+	if (iSampleProject.empty())
+		return games;
+	std::error_code error;
+	const auto samples = iSampleProject.parent_path() / "samples";
+	for (const auto& entry: std::filesystem::directory_iterator(samples, error)) {
+		std::error_code fileError;
+		if (entry.is_directory(fileError) && exists(entry.path() / "owl_project.yml", fileError))
+			games.push_back(entry.path().lexically_normal());
+	}
+	std::ranges::sort(games);
+	return games;
 }
 
 void Backstage::onImGuiRender(const BackstageContext& iContext) {
@@ -236,42 +293,39 @@ void Backstage::onImGuiRender(const BackstageContext& iContext) {
 			}
 		}
 
-		ImGui::Dummy({0.f, ImGui::GetFontSize()});
-		gui::UiLayer::pushTextStyle(gui::TextStyle::Caption);
-		ImGui::TextColored(gui::vec(theme.textDisabled), "RECENT PROJECTS");
-		gui::UiLayer::popTextStyle();
+		if (!iContext.sampleGames.empty()) {
+			sectionTitle("SAMPLE GAMES");
+			// A sample game may also be a recent project: each list gets its own ID scope.
+			ImGui::PushID("sample_games");
+			for (const auto& game: iContext.sampleGames) {
+				if (projectRow(game.filename().string(), game.string(), maxWidth, false) == RowAction::Open) {
+					if (iContext.openRecent)
+						iContext.openRecent(game);
+					act = true;
+				}
+			}
+			ImGui::PopID();
+		}
+
+		sectionTitle("RECENT PROJECTS");
 		if (iContext.recentProjects.empty()) {
 			ImGui::TextColored(gui::vec(theme.textMuted), "No recent project yet.");
 		} else {
 			std::filesystem::path toForget;
-			const float rowHeight = ImGui::GetTextLineHeight() * 2.f + 12.f;
 			for (const auto& recent: iContext.recentProjects) {
 				const std::filesystem::path path{recent};
-				ImGui::PushID(recent.c_str());
-				const auto origin = ImGui::GetCursorScreenPos();
-				ImGui::SetNextItemAllowOverlap();
-				if (ImGui::InvisibleButton("##recent", {maxWidth, rowHeight})) {
-					if (iContext.openRecent)
-						iContext.openRecent(path);
-					act = true;
+				switch (projectRow(path.filename().string(), recent, maxWidth, true)) {
+					case RowAction::Open:
+						if (iContext.openRecent)
+							iContext.openRecent(path);
+						act = true;
+						break;
+					case RowAction::Forget:
+						toForget = path;
+						break;
+					case RowAction::None:
+						break;
 				}
-				const bool hovered = ImGui::IsItemHovered();
-				auto* draw = ImGui::GetWindowDrawList();
-				if (hovered)
-					draw->AddRectFilled(origin, {origin.x + maxWidth, origin.y + rowHeight}, toU32(theme.surface2),
-										theme.frameRounding);
-				gui::UiLayer::pushTextStyle(gui::TextStyle::Strong);
-				draw->AddText({origin.x + 10.f, origin.y + 6.f}, toU32(theme.text), path.filename().string().c_str());
-				gui::UiLayer::popTextStyle();
-				draw->AddText({origin.x + 10.f, origin.y + 8.f + ImGui::GetTextLineHeight()}, toU32(theme.textDisabled),
-							  recent.c_str());
-				ImGui::SetCursorScreenPos({origin.x + maxWidth - ImGui::GetFrameHeight() - 6.f,
-										   origin.y + (rowHeight - ImGui::GetFrameHeight()) * 0.5f});
-				if (gui::widgets::iconButton("forget", {.glyph = gui::icon::x, .tooltip = "Remove from the list"}))
-					toForget = path;
-				ImGui::SetCursorScreenPos({origin.x, origin.y + rowHeight});
-				ImGui::Dummy({0.f, 0.f});
-				ImGui::PopID();
 			}
 			if (!toForget.empty() && iContext.forgetRecent)
 				iContext.forgetRecent(toForget);

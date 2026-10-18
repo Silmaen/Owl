@@ -24,6 +24,7 @@
 #include <ostream>
 #include <set>
 #include <string>
+#include <system_error>
 #include <vector>
 
 using namespace owl;
@@ -79,17 +80,9 @@ protected:
 	void TearDown() override { core::Log::invalidate(); }
 };
 
-}// namespace
-
 // Rules of the overlap check: doc/pages/design/hud-system.md, "Demo HUD rules".
-TEST_P(DemoHudLayoutTest, noTwoTopLevelWidgetsOverlapAtAnyScaleOrAspect) {
-	const auto& document = GetParam();
-	const auto file = owl::test::getRootPath() / "engine_demo" / document.path;
-	ASSERT_TRUE(std::filesystem::exists(file)) << file;
-	auto scn = mkShared<scene::Scene>();
-	const auto kind = document.isHud ? scene::DocumentKind::Hud : scene::DocumentKind::Scene;
-	ASSERT_TRUE(scene::SceneSerializer(scn, kind).deserialize(file).has_value()) << file;
-
+void checkLayout(const shared<scene::Scene>& iScene, const std::string& iName) {
+	const auto& scn = iScene;
 	std::set<entt::entity> popups;
 	for (const auto entity: scn->registry.view<scene::component::Visibility>()) {
 		auto& visibility = scn->registry.get<scene::component::Visibility>(entity);
@@ -105,7 +98,7 @@ TEST_P(DemoHudLayoutTest, noTwoTopLevelWidgetsOverlapAtAnyScaleOrAspect) {
 		context.getSettings().set("ui_scale", uiScale);
 		for (const auto& viewport: g_viewports) {
 			const std::string where =
-					std::format("{} at {}x{}, ui_scale {}", document.path, viewport.x(), viewport.y(), uiScale);
+					std::format("{} at {}x{}, ui_scale {}", iName, viewport.x(), viewport.y(), uiScale);
 			auto& layout = scn->getHudLayout();
 			layout.compute(*scn, viewport, false);
 			const auto nodes = layout.getNodes();
@@ -140,9 +133,47 @@ TEST_P(DemoHudLayoutTest, noTwoTopLevelWidgetsOverlapAtAnyScaleOrAspect) {
 			}
 		}
 	}
-	EXPECT_GT(topLevelSeen, 0u) << "nothing was laid out for " << document.path;
+	EXPECT_GT(topLevelSeen, 0u) << "nothing was laid out for " << iName;
 	scn->setEngineContext(nullptr);
 }
+
+auto loadDocument(const std::filesystem::path& iFile) -> shared<scene::Scene> {
+	auto scn = mkShared<scene::Scene>();
+	const auto kind = iFile.extension() == ".owlhud" ? scene::DocumentKind::Hud : scene::DocumentKind::Scene;
+	if (!scene::SceneSerializer(scn, kind).deserialize(iFile).has_value())
+		return nullptr;
+	return scn;
+}
+
+}// namespace
+
+TEST_P(DemoHudLayoutTest, noTwoTopLevelWidgetsOverlapAtAnyScaleOrAspect) {
+	const auto& document = GetParam();
+	const auto file = owl::test::getRootPath() / "engine_demo" / document.path;
+	ASSERT_TRUE(std::filesystem::exists(file)) << file;
+	const auto scn = loadDocument(file);
+	ASSERT_NE(scn, nullptr) << file;
+	checkLayout(scn, document.path);
+}
+
+// Every HUD of a sample game, and every scene of it holding a canvas (its menus), follows the demo rules.
+TEST(SampleHudLayout, noTwoTopLevelWidgetsOverlapInAnySampleGame) {
+	core::Log::init(core::Log::Level::Off);
+	const auto samples = owl::test::getRootPath() / "samples";
+	std::error_code ec;
+	for (const auto& entry: std::filesystem::recursive_directory_iterator(samples, ec)) {
+		const auto& file = entry.path();
+		if (file.extension() != ".owlhud" && file.extension() != ".owl")
+			continue;
+		const auto scn = loadDocument(file);
+		ASSERT_NE(scn, nullptr) << file;
+		if (file.extension() == ".owl" && scn->registry.view<scene::component::Canvas>().empty())
+			continue;
+		checkLayout(scn, file.lexically_relative(samples).generic_string());
+	}
+	core::Log::invalidate();
+}
+
 
 INSTANTIATE_TEST_SUITE_P(
 		DemoHuds, DemoHudLayoutTest,

@@ -122,3 +122,30 @@ TEST(Backstage, FindsTheSampleProjectAboveTheAssets) {
 	EXPECT_FALSE(findSampleProject({assets}, 1).has_value());
 	std::filesystem::remove_all(root);
 }
+
+TEST_F(BackstageTest, SampleGamesAreListedWithoutRunningAnything) {
+	m_context.sampleProject = "/games/engine_demo";
+	m_context.sampleGames = {"/games/samples/breakout", "/games/samples/sokoban"};
+	m_backstage.open();
+	for (int i = 0; i < 4; ++i) frame();
+	EXPECT_EQ(m_actions, 0);
+	EXPECT_TRUE(m_backstage.isOpen());
+}
+
+TEST(Backstage, FindsTheSampleGamesBesideTheEngineDemo) {
+	const auto root = std::filesystem::temp_directory_path() / "owl_backstage_games_test";
+	std::filesystem::remove_all(root);
+	std::filesystem::create_directories(root / "engine_demo");
+	EXPECT_TRUE(findSampleGames({}).empty());
+	EXPECT_TRUE(findSampleGames(root / "engine_demo").empty());
+	for (const auto* game: {"zeta", "alpha", "not_a_game"})
+		std::filesystem::create_directories(root / "samples" / game);
+	std::ofstream{root / "samples" / "zeta" / "owl_project.yml"} << "name: Zeta\n";
+	std::ofstream{root / "samples" / "alpha" / "owl_project.yml"} << "name: Alpha\n";
+	std::ofstream{root / "samples" / "loose_file.yml"} << "name: Loose\n";
+	const auto games = findSampleGames(root / "engine_demo");
+	ASSERT_EQ(games.size(), 2u);
+	EXPECT_EQ(games[0], (root / "samples" / "alpha").lexically_normal());
+	EXPECT_EQ(games[1], (root / "samples" / "zeta").lexically_normal());
+	std::filesystem::remove_all(root);
+}

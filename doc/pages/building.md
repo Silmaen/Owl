@@ -130,8 +130,8 @@ cmake --build output/build/<preset>
 `cpack` works in any build tree and writes one archive per component: `OwlEngine-<version>-<hash>-<platform>` (the
 SDK: `lib/`, `include/`, `assets/`, `lib/cmake/OwlEngine/`) and, when the editor is built, `OwlNest-…` (Owl Nest, the
 runner, their shared libraries and assets in `bin/<platform>_<arch>/`, the SVG icons in
-`bin/<platform>_<arch>/assets_sources/icons/`, and the Engine Demo in `engine_demo/`). The SDK ships the Release
-library only: build the engine in Debug from the sources for a Debug one. The CI packages the release tree it has just
+`bin/<platform>_<arch>/assets_sources/icons/`, the Engine Demo in `engine_demo/` and the sample games in
+`samples/`). The SDK ships the Release library only: build the engine in Debug from the sources for a Debug one. The CI packages the release tree it has just
 tested (`linux-clang-release`, `windows-clang-release`), so the archive holds the tested binaries;
 `package-linux-cross-arm64` (the arm64 cross build without the tests) packages arm64, which has no tested release
 tree.
@@ -147,8 +147,8 @@ desktop has it): the Owl Nest file dialogues go through `xdg-desktop-portal` (na
 no GTK in the process. Without a portal, opening a dialogue logs an error and returns no path.
 
 A package holds `assets/` (fonts, shaders, project templates, logo, help and, for Owl Nest, the editor sounds and
-trigger icons), `assets_sources/icons/` (the editor SVG icons) and `engine_demo/`; generators and test fixtures are not
-installed.
+trigger icons), `assets_sources/icons/` (the editor SVG icons), `engine_demo/` and `samples/`; generators and test
+fixtures are not installed.
 
 The binaries decide at run time where their assets are: `assets/` next to the working directory first, then, in a
 development tree, `engine_assets/` and the application's assets found above it. No build switch tells a package from

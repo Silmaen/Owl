@@ -1083,9 +1083,10 @@ The workflow commands live in the **File** screen (project), the **Home** tab (e
 | Pack Scene     | Scene > Scene > Pack Scene | Pack the current scene's assets into `.owlpack` (async) |
 
 **File screen at start-up.** When the editor starts without a loaded project, the File screen opens with **New
-project**, **Open project**, **Getting started**, **Engine Demo** and the recent projects. The sample card shows
-when a `engine_demo/` sits next to `bin/` in the archive, or at the root of the sources
-(`panel::findSampleProject`, from the asset folders upwards).
+project**, **Open project**, **Getting started**, **Engine Demo**, the sample games and the recent projects. The
+sample card shows when a `engine_demo/` sits next to `bin/` in the archive, or at the root of the sources
+(`panel::findSampleProject`, from the asset folders upwards); the sample games are the `samples/<game>/` projects
+beside it (`panel::findSampleGames`), one row each.
 
 **Async operations.** Pack Game, Pack Scene, Open Scene, and Save Scene all run off the
 main thread via a progress modal (`AsyncProgressModal`). Pack Game additionally runs a

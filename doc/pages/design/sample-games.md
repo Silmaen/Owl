@@ -202,17 +202,18 @@ test/unit/scenarios/<game>_*.owltest  scenario tests
   what it reuses from the Engine Demo (the Kenney sheets weigh about 50 KB) rather than pointing at it. Each
   `owl_project.yml` has its own `name` (the save folder) and a title scene as `firstScene`.
 - Scenarios stay in `test/unit/scenarios/`, already globbed by `test/unit/CMakeLists.txt` (one CTest each, label
-  `scenario`), with `scene: ../../../samples/<game>/scenes/<scene>.owl` and `project: ../../../samples/<game>`; no
-  test file is exported.
-- Export: `GameExportEndToEnd.SampleProjectPlaysFromItsExportFolder` (`test/unit/export_tests/GameExport_test.cpp`)
-  exports `engine_demo` only; make it a parameterised test over `engine_demo` and every `samples/*/owl_project.yml`
-  (`OwlNest --export`, then `launch.sh --headless --smoke-test 60`).
-- Install: `source/owlnest/CMakeLists.txt` installs `engine_demo/` (component `Nest`); the same rule for `samples/`
-  ships them in the packages.
-- Owl Nest: `findSampleProject` (`Backstage.cpp`) looks for `engine_demo` only; the File screen lists the samples too
-  (G12).
-- CI checks: `samples/` added to `_CODE_ROOTS` of `ci/utils/doc_identifiers.py`; `DemoHudLayout_test.cpp` run over
-  the HUDs of the samples too.
+  `scenario`), named `<game>_<behaviour>.owltest` after the sample folder, with
+  `scene: ../../../samples/<game>/scenes/<scene>.owl`; no test file is exported.
+  `GameExportEndToEnd.EverySampleGameHasAScenario` fails for a sample without one.
+- Export: `GameExportEndToEnd.EveryShippedProjectPlaysFromItsExportFolder` (`test/unit/export_tests/GameExport_test.cpp`)
+  exports `engine_demo` and every `samples/*/owl_project.yml` (`OwlNest --export`, then
+  `launch.sh --headless --smoke-test 60`): every scene and script is packed, and no warning is logged.
+- Install: `source/owlnest/CMakeLists.txt` installs `engine_demo/` and `samples/` (component `Nest`) side by side.
+- Owl Nest: the File screen lists the sample games under **Sample games** (`panel::findSampleGames`, the
+  `samples/<game>/` folders beside the Engine Demo found by `findSampleProject`), one row each (G12).
+- CI checks: `samples/` is in `_CODE_ROOTS` of `ci/utils/doc_identifiers.py`; `SampleHudLayout`
+  (`DemoHudLayout_test.cpp`) applies the demo HUD rules to every `.owlhud` of `samples/` and to every sample scene
+  holding a `Canvas` (its menus).
 
 ## Gaps {#sample-games-gaps}
 

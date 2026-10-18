@@ -407,6 +407,7 @@ void EditorLayer::onAttach() {
 		for (const auto& [title, assetsPath]: app::Application::get().getAssetDirectories())
 			assetDirectories.push_back(assetsPath);
 		m_sampleProject = panel::findSampleProject(assetDirectories).value_or(std::filesystem::path{});
+		m_sampleGames = panel::findSampleGames(m_sampleProject);
 	}
 
 	utils::loadTriggerTextures();
@@ -970,6 +971,7 @@ void EditorLayer::renderBackstage() {
 			.projectDirectory = m_project.projectDirectory,
 			.recentProjects = m_settings.recentProjects,
 			.sampleProject = m_sampleProject,
+			.sampleGames = m_sampleGames,
 			.newProject = [this]() -> void { newProject(); },
 			.openProject = [this]() -> void { openProject(); },
 			.openRecent = [this](const std::filesystem::path& iPath) -> void { openProject(iPath); },

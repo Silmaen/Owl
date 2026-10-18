@@ -904,6 +904,8 @@ private:
 	panel::Backstage m_backstage;
 	/// Folder of the Engine Demo shipped with the editor, offered by the File screen; empty when not found.
 	std::filesystem::path m_sampleProject;
+	/// Folders of the sample games shipped beside the Engine Demo, offered by the File screen.
+	std::vector<std::filesystem::path> m_sampleGames;
 	/// Project opened at attach time; empty to show the File screen instead.
 	std::filesystem::path m_startupProject;
 	/// Pending document id to close (awaits dirty-confirmation modal). 0 when idle.
