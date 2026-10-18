@@ -7,5 +7,5 @@ of the samples are in [Sample games](../doc/pages/design/sample-games.md).
 - One self-contained project per folder (`owl_project.yml`, its own `name` and a title scene as `firstScene`): what a
   sample reuses from the Engine Demo is copied, never pointed at.
 - Game rules in Lua only; CC0 or home-made art and sounds, the generators in `tools/samples/<game>/`.
-- At least one scenario test per game, `test/unit/scenarios/<game>_*.owltest`; every sample is exported and played
-  headless by `GameExportEndToEnd.EveryShippedProjectPlaysFromItsExportFolder`.
+- At least one scenario test per game in `test/unit/scenarios/`, playing a scene of `samples/<game>/scenes/`; every
+  sample is exported and played headless by `GameExportEndToEnd.EveryShippedProjectPlaysFromItsExportFolder`.

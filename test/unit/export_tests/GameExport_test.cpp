@@ -412,13 +412,14 @@ TEST(GameExportEndToEnd, EverySampleGameHasAScenario) {
 	for (const auto& project: shippedProjects()) {
 		if (project.filename() == "engine_demo")
 			continue;
-		const auto prefix = project.filename().string() + "_";
+		// A scenario of the game plays one of its scenes (`scene: ../../../samples/<game>/scenes/...`).
+		const auto scenes = std::format("samples/{}/scenes/", project.filename().string());
 		bool found = false;
 		for (const auto& entry: std::filesystem::directory_iterator(root / "test" / "unit" / "scenarios")) {
-			if (entry.path().extension() == ".owltest" && entry.path().filename().string().starts_with(prefix))
+			if (entry.path().extension() == ".owltest" && readFile(entry.path()).find(scenes) != std::string::npos)
 				found = true;
 		}
-		EXPECT_TRUE(found) << "no test/unit/scenarios/" << prefix << "*.owltest for " << project;
+		EXPECT_TRUE(found) << "no test/unit/scenarios/*.owltest plays a scene of " << project;
 	}
 }
 #endif

@@ -1,0 +1,31 @@
+GameSettings:
+  - key: resolution_width
+    type: int
+    value: 1280
+  - key: resolution_height
+    type: int
+    value: 720
+  - key: fullscreen
+    type: bool
+    value: false
+  - key: resizable
+    type: bool
+    value: true
+  - key: volume_master
+    type: float
+    value: 1.0
+  - key: volume_music
+    type: float
+    value: 0.8
+  - key: volume_sfx
+    type: float
+    value: 1.0
+  - key: ui_scale
+    type: float
+    value: 1.0
+  - key: mouse_sensitivity
+    type: float
+    value: 1.0
+  - key: wolf_best_score
+    type: int
+    value: 0

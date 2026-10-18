@@ -137,29 +137,32 @@ Done in v0.4.0: `samples/breakout/` (how to play: its `README.md`).
 
 ### Wolfenstein mini
 
-An exploration game first: the guards, the weapons and the combat come in a later release, once their art exists.
+Shipped in `samples/wolfenstein/` (how to play: its `README.md`). An exploration game first: the guards, the weapons
+and the combat come in a later release, once their art exists.
 
-| Item     | Plan                                                                                                                                                                  |
-|----------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Play     | 3 levels of 32×32 to explore, no guards nor weapon yet (they come later): treasure, food, keys, secret pushwalls                                                      |
-| Win/lose | The elevator of level 3; per level a tally of score, items found, secrets found and map explored, in %                                                                |
-| Controls | `move` (walk, turn), `interact` opens doors and pushwalls, Tab the full map; keyboard, mouse and gamepad                                                              |
-| Scenes   | `title`, `level_1` to `level_3` (`RendererRaycast`), `tally` (end of level), `settings`, `victory`                                                                    |
-| Entities | Player (`PhysicBody`), wall `Tilemap`, `RaycastDoor` (locked: empty `interactionAction`, `door.activate` with the key), `RaycastPushWall`, pick-ups                   |
-| Lua      | `player.lua`, `pickup.lua`, `secret.lua` (counts each pushwall once), `explore.lua` (cells seen over walkable cells, from the fog of `raycast_level.lua`), `exit.lua` |
-| HUD      | `huds/play.owlhud`: score, keys, items %, secrets %, explored %, minimap; `huds/tally.owlhud`                                                                         |
-| Art      | The walls and props of `textures/wolf3d/`, reworked by the maintainer; guards and the weapon view later (G11)                                                         |
-| Saves    | F6 / F9 slot as in the demo, autosave at each level start, best tally per level                                                                                       |
+| Item     | As shipped                                                                                                                                                              |
+|----------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Play     | 3 floors of 32×32 (cellars, prison, headquarters): treasure, food, gold and blue keys with their locked doors, 3 secret walls each, an exit elevator                    |
+| Win      | The elevator of floor 3; after each floor a tally of the floor score, items found, secrets found and map explored, in %, with 10 points per percent as a bonus          |
+| Controls | `walk`, `turn`, `run`, `interact` (doors, secret walls, elevator), `map` (Tab, pad Y: large map); keyboard, mouse (right button turns, left opens) and gamepad          |
+| Scenes   | `title`, `level_1` to `level_3` (`RendererRaycast` + a `Space: Screen` `Renderer2D` for the minimap), `tally`, `settings`, `victory`                                    |
+| Entities | Player (`PhysicBody`, `Camera`), wall `Tilemap`, `RaycastDoor` (locked: empty `interactionAction`, `door.activate` with the key), `RaycastPushWall`, pick-ups, props    |
+| Lua      | `player.lua`, `pickup.lua`, `locked_door.lua`, `secret.lua` (counts each wall once), `explore.lua` (fog, minimap, cells seen over floor cells), `level.lua`, `exit.lua` |
+| HUD      | `huds/play.owlhud`: floor, score, items %, secrets %, explored %, keys, messages; the minimap is a tilemap of the overlay layer; the tally is a scene                   |
+| Art      | The walls and props of `textures/wolf3d/`, reworked by the maintainer; the sounds of `sounds/raycast/` of the Engine Demo; guards and the weapon view later (G11)       |
+| Saves    | Autosave in slot 1 at each floor start, F6 / F9 in slot 2, Continue loads the newer; best ratios per floor and best score in the settings                               |
 
-- Reuse: `scripts/raycast/raycast_player.lua`, `scripts/raycast/raycast_level.lua` (DDA over the wall grid, fog
-  minimap), `scripts/raycast/pickup.lua`, `scripts/raycast/inventory.lua`, `scripts/raycast/raycast_exit.lua`,
-  `huds/raycast.owlhud`, `tilesets/raycast_w3d_walls.owltileset`, `sounds/raycast/`, scenario
-  `raycast_level.owltest`.
-- Gaps: G9; later, with combat: G11 (art), G10 (line of sight), G7 (weapon view frames), G1 (dropped ammo).
-- Scenarios: `wolf_pickup` (walk onto treasure, `wolf_items` rises), `wolf_locked_door` (closed without the key,
-  opens with it), `wolf_secret` (push a secret wall, `wolf_secrets` equals 1), `wolf_explore` (`wolf_explored` rises
-  while walking), `wolf_exit` (the tally scene opens).
-- Size: **M**, about 1 week without combat.
+- Floors carved by `tools/samples/wolfenstein/generate_levels.py`, which refuses a floor with a cell out of reach (so
+  100 % is always possible), then written as Owl Nest saves them: editable in Owl Nest, a pick-up counted by its tag.
+- Map explored: the fog of `raycast_level.lua` on a 32×32 minimap, set up 8 rows per frame (a single `on_create` loop
+  overruns the script time quota on emulated arm64), kept in the gamestate across saves.
+- Reuse: `scripts/raycast/raycast_player.lua`, `scripts/raycast/raycast_level.lua`, `scripts/raycast/pickup.lua`,
+  `scripts/raycast/raycast_exit.lua`, `tilesets/raycast_w3d_walls.owltileset`, `tilesets/minimap.owltileset`,
+  `sounds/raycast/`, the menus of the Engine Demo.
+- Gaps: G9, G16, G17; later, with combat: G11 (art), G10 (line of sight), G7 (weapon view frames), G1 (dropped ammo).
+- Scenarios: `wolf_pickup` (walk onto a cross, `wolf_items` and `wolf_score` rise), `wolf_locked_door` (closed without
+  the key, opens with it), `wolf_secret` (push a secret wall, `wolf_secrets` equals 1), `wolf_explore` (`wolf_seen`
+  and `wolf_explored` rise while turning, Tab enlarges the map), `wolf_exit` (the tally scene opens, then floor 2).
 
 ### Mini Minecraft
 
@@ -202,16 +205,16 @@ samples/
     owl_project.yml  game_settings.yml  input_actions.yml  input/gamecontrollerdb.txt
     scenes/  huds/  prefabs/  tilesets/  tilemaps/  scripts/  textures/  sounds/
 tools/samples/<game>/                 art and sound generators (neither exported nor installed)
-test/unit/scenarios/<game>_*.owltest  scenario tests
+test/unit/scenarios/*.owltest         scenario tests
 ```
 
 - One self-contained project per game beside `engine_demo/`: the export packs one project folder, so a sample copies
   what it reuses from the Engine Demo (the Kenney sheets weigh about 50 KB) rather than pointing at it. Each
   `owl_project.yml` has its own `name` (the save folder) and a title scene as `firstScene`.
 - Scenarios stay in `test/unit/scenarios/`, already globbed by `test/unit/CMakeLists.txt` (one CTest each, label
-  `scenario`), named `<game>_<behaviour>.owltest` after the sample folder, with
+  `scenario`), named `<game>_<behaviour>.owltest` (`breakout_serve`, `wolf_pickup`), with
   `scene: ../../../samples/<game>/scenes/<scene>.owl`; no test file is exported.
-  `GameExportEndToEnd.EverySampleGameHasAScenario` fails for a sample without one.
+  `GameExportEndToEnd.EverySampleGameHasAScenario` fails for a sample whose scenes no scenario plays.
 - Export: `GameExportEndToEnd.EveryShippedProjectPlaysFromItsExportFolder` (`test/unit/export_tests/GameExport_test.cpp`)
   exports `engine_demo` and every `samples/*/owl_project.yml` (`OwlNest --export`, then
   `launch.sh --headless --smoke-test 60`): every scene and script is packed, and no warning is logged.
@@ -241,4 +244,5 @@ test/unit/scenarios/<game>_*.owltest  scenario tests
 | G13 | `VoxelPlayer` edits fire only with a captured cursor: a gamepad player and headless scenarios cannot break or place | S    | Minecraft                                | **Yes**: gamepad rule and CI scenario                            |
 | G14 | Lua cannot switch the tilemap asset of an entity: one scene per level                                               | S    | Sokoban, Breakout                        | No: duplicate the level scene                                    |
 | G15 | No Lua pick of the entity under the mouse                                                                           | S    | Tycoon                                   | No: compare `isometric.pick_cell` with the vehicle cells         |
-| G16 | The export follows scene paths quoted in scripts, not those in script properties (a `next_scene` string)            | S    | Breakout                                 | No: list the scenes in the script                                |
+| G16 | The export follows scene paths quoted in scripts, not those in script properties (a `next_scene` string)            | S    | Breakout, Wolfenstein                    | No: list the scenes in the script                                |
+| G17 | A save keeps neither a slid `RaycastPushWall` nor an open door: after a load they are back in place                 | S    | Wolfenstein                              | No: pushed again, a secret counts once                           |

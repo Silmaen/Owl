@@ -1,0 +1,67 @@
+Tileset: wolf_walls
+FormatVersion: 1
+texture: nam:textures/wolf3d/walls_full.png
+tileWidth: 128
+tileHeight: 128
+columns: 16
+rows: 7
+filterMode: Nearest
+tiles:
+  - index: 0
+    collidable: true
+    name: GreyStone1_a
+  - index: 1
+    collidable: true
+    name: GreyStone1_b
+  - index: 8
+    collidable: true
+    name: BlueStone1_a_grid
+  - index: 9
+    collidable: true
+    name: BlueStone1_b_grid
+  - index: 14
+    collidable: true
+    name: BlueStone1_a
+  - index: 15
+    collidable: true
+    name: BlueStone1_b
+  - index: 22
+    collidable: true
+    name: wood_a
+  - index: 23
+    collidable: true
+    name: wood_b
+  - index: 32
+    collidable: true
+    name: RedBrick_a
+  - index: 33
+    collidable: true
+    name: RedBrick_b
+  - index: 40
+    collidable: true
+    name: Elevator
+  - index: 41
+    collidable: true
+    name: Elevator_switch
+  - index: 50
+    collidable: true
+    name: GreyStone1_a_mossy
+  - index: 51
+    collidable: true
+    name: GreyStone1_b_mossy
+  - index: 52
+    collidable: true
+    name: GreyStone3_a
+  - index: 53
+    collidable: true
+    name: GreyStone3_b
+  - index: 98
+    name: Door
+  - index: 100
+    name: Door_side
+  - index: 102
+    name: Door_elevator
+  - index: 104
+    name: Door_gold
+  - index: 105
+    name: Door_blue

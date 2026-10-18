@@ -1,0 +1,25 @@
+OwlProject:
+  name: OwlWolfMini
+  firstScene: scenes/title.owl
+  version: 0.4.0
+  author: Silmaen
+  description: Wolfenstein mini, an exploration sample game of the Owl Engine
+  icon: logo/logo_owl.png
+  gamepadMappings: input/gamecontrollerdb.txt
+  window:
+    width: 1280
+    height: 720
+    fullscreen: false
+    resizable: true
+  RendererStack:
+    - Type: Renderer2D
+      Name: world
+    - Type: RendererRaycast
+      Name: raycast_world
+      DefaultConfig:
+        Fov: 75.0
+        MaxDistance: 32.0
+        CeilingColor: [0.2, 0.2, 0.21, 1.0]
+        FloorColor: [0.44, 0.44, 0.42, 1.0]
+    - Type: Renderer2D
+      Name: overlay

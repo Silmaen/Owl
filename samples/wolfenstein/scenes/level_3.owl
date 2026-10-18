@@ -1,0 +1,1640 @@
+Scene: untitled
+FormatVersion: 5
+Hud: huds/play.owlhud
+EnabledRenderers:
+  - Name: world
+    Enabled: false
+  - Name: raycast_world
+    Enabled: true
+    Overrides:
+      FloorColor: [0.42, 0.36, 0.3, 1]
+      CeilingColor: [0.22, 0.18, 0.16, 1]
+  - Name: overlay
+    Enabled: true
+    Overrides:
+      Space: Screen
+Entities:
+  - Entity: 5154315650483733614
+    Tag:
+      tag: Player
+    Transform:
+      translation: [-11.5, 12.5, 0.5]
+      rotation: [0, 0, 3.1415927]
+      scale: [1, 1, 1]
+    Camera:
+      camera:
+        projectionType: Orthographic
+        perspectiveFOV: 0.7853982
+        perspectiveNear: 0.01
+        perspectiveFar: 1000
+        orthographicSize: 8
+        orthographicNear: -1
+        orthographicFar: 10
+      primary: true
+      fixedAspectRatio: false
+    PhysicBody:
+      type: Dynamic
+      fixedRotation: true
+      colliderSize: [0.4, 0.4, 1]
+      density: 1
+      restitution: 0
+      friction: 0.2
+    Player:
+      primary: true
+      linearImpulse: 0
+      jumpImpulse: 0
+      canJump: false
+    Visibility:
+      gameVisible: true
+    SoundListener:
+      primary: true
+    LuaScript:
+      scriptPath: scripts/game/player.lua
+      properties:
+        - name: speed
+          type: float
+          value: 3
+        - name: turn_speed
+          type: float
+          value: 1.8
+        - name: mouse_turn
+          type: float
+          value: 0.006
+  - Entity: 2042660407137031610
+    Tag:
+      tag: Walls
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Tilemap:
+      tilemapPath: tilemaps/level_3.owltilemap
+    Visibility:
+      gameVisible: true
+    RendererTag:
+      Name: raycast_world
+  - Entity: 4271768767691295259
+    Tag:
+      tag: LevelLogic
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    LuaScript:
+      scriptPath: scripts/game/level.lua
+      properties:
+        - name: level
+          type: int
+          value: 3
+        - name: title
+          type: string
+          value: "Floor 3: the headquarters"
+  - Entity: 4973760696930816824
+    Tag:
+      tag: Ambience
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    SoundSource:
+      soundAsset: sounds/game/ambience.wav
+      category: Ambient
+      volume: 0.4
+      pitch: 1
+      loop: true
+      spatial: false
+      playOnStart: true
+      maxDistance: 50
+      rolloff: 1
+  - Entity: 3727410695748149449
+    Tag:
+      tag: Minimap
+    Transform:
+      translation: [96, 96, 0]
+      rotation: [0, 0, 0]
+      scale: [5, 5, 1]
+    Tilemap:
+      tilemapPath: tilemaps/level_3_minimap.owltilemap
+    Visibility:
+      gameVisible: true
+    LuaScript:
+      scriptPath: scripts/game/explore.lua
+    RendererTag:
+      Name: overlay
+  - Entity: 6355307140007268520
+    Tag:
+      tag: MinimapPlayer
+    Transform:
+      translation: [96, 96, 0.1]
+      rotation: [0, 0, 0]
+      scale: [6, 6, 1]
+    CircleRenderer:
+      color: [1, 0.85, 0.1, 1]
+      thickness: 1
+      fade: 0.05
+    Visibility:
+      gameVisible: true
+    RendererTag:
+      Name: overlay
+  - Entity: 609220973274337445
+    Tag:
+      tag: MinimapFacing
+    Transform:
+      translation: [102, 96, 0.2]
+      rotation: [0, 0, 0]
+      scale: [3, 3, 1]
+    CircleRenderer:
+      color: [1, 0.45, 0.1, 1]
+      thickness: 1
+      fade: 0.05
+    Visibility:
+      gameVisible: true
+    RendererTag:
+      Name: overlay
+  - Entity: 4630150604566380763
+    Tag:
+      tag: Doors
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      {}
+  - Entity: 4635510375755411688
+    Tag:
+      tag: Door
+    Transform:
+      translation: [-6.5, 11.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 4630150604566380763
+    RaycastDoor:
+      tilesetPath: tilesets/wolf_walls.owltileset
+      faceTileIndex: 98
+      lateralTileIndex: 100
+      openingDirection: North
+      slideSpeed: 2
+      holdTime: 4
+      closeSpeed: 2
+      interactionAction: interact
+      interactionRange: 1.5
+  - Entity: 8269589062126399790
+    Tag:
+      tag: Door
+    Transform:
+      translation: [-10.5, 8.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 4630150604566380763
+    RaycastDoor:
+      tilesetPath: tilesets/wolf_walls.owltileset
+      faceTileIndex: 98
+      lateralTileIndex: 100
+      openingDirection: East
+      slideSpeed: 2
+      holdTime: 4
+      closeSpeed: 2
+      interactionAction: interact
+      interactionRange: 1.5
+  - Entity: 8054526684567401800
+    Tag:
+      tag: GoldDoor
+    Transform:
+      translation: [10.5, 6.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 4630150604566380763
+    LuaScript:
+      scriptPath: scripts/game/locked_door.lua
+      properties:
+        - name: key
+          type: string
+          value: gold
+    RaycastDoor:
+      tilesetPath: tilesets/wolf_walls.owltileset
+      faceTileIndex: 104
+      lateralTileIndex: 100
+      openingDirection: East
+      slideSpeed: 2
+      holdTime: 4
+      closeSpeed: 2
+      interactionAction: ""
+      interactionRange: 1.5
+  - Entity: 5362145170180578282
+    Tag:
+      tag: Door
+    Transform:
+      translation: [-0.5, 5.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 4630150604566380763
+    RaycastDoor:
+      tilesetPath: tilesets/wolf_walls.owltileset
+      faceTileIndex: 98
+      lateralTileIndex: 100
+      openingDirection: East
+      slideSpeed: 2
+      holdTime: 4
+      closeSpeed: 2
+      interactionAction: interact
+      interactionRange: 1.5
+  - Entity: 4666265397252571591
+    Tag:
+      tag: Door
+    Transform:
+      translation: [-10.5, 0.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 4630150604566380763
+    RaycastDoor:
+      tilesetPath: tilesets/wolf_walls.owltileset
+      faceTileIndex: 98
+      lateralTileIndex: 100
+      openingDirection: East
+      slideSpeed: 2
+      holdTime: 4
+      closeSpeed: 2
+      interactionAction: interact
+      interactionRange: 1.5
+  - Entity: 6183113004908024788
+    Tag:
+      tag: Door
+    Transform:
+      translation: [5.5, 0.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 4630150604566380763
+    RaycastDoor:
+      tilesetPath: tilesets/wolf_walls.owltileset
+      faceTileIndex: 98
+      lateralTileIndex: 100
+      openingDirection: North
+      slideSpeed: 2
+      holdTime: 4
+      closeSpeed: 2
+      interactionAction: interact
+      interactionRange: 1.5
+  - Entity: 6396549700359270725
+    Tag:
+      tag: Door
+    Transform:
+      translation: [-5.5, -2.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 4630150604566380763
+    RaycastDoor:
+      tilesetPath: tilesets/wolf_walls.owltileset
+      faceTileIndex: 98
+      lateralTileIndex: 100
+      openingDirection: North
+      slideSpeed: 2
+      holdTime: 4
+      closeSpeed: 2
+      interactionAction: interact
+      interactionRange: 1.5
+  - Entity: 5934936429962625165
+    Tag:
+      tag: BlueDoor
+    Transform:
+      translation: [-0.5, -5.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 4630150604566380763
+    LuaScript:
+      scriptPath: scripts/game/locked_door.lua
+      properties:
+        - name: key
+          type: string
+          value: blue
+    RaycastDoor:
+      tilesetPath: tilesets/wolf_walls.owltileset
+      faceTileIndex: 105
+      lateralTileIndex: 100
+      openingDirection: East
+      slideSpeed: 2
+      holdTime: 4
+      closeSpeed: 2
+      interactionAction: ""
+      interactionRange: 1.5
+  - Entity: 6297136468892378244
+    Tag:
+      tag: ElevatorDoor
+    Transform:
+      translation: [5.5, -11.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 4630150604566380763
+    RaycastDoor:
+      tilesetPath: tilesets/wolf_walls.owltileset
+      faceTileIndex: 102
+      lateralTileIndex: 100
+      openingDirection: North
+      slideSpeed: 2
+      holdTime: 4
+      closeSpeed: 2
+      interactionAction: interact
+      interactionRange: 1.5
+  - Entity: 5041530827373281673
+    Tag:
+      tag: Secrets
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      {}
+  - Entity: 2948307487745358254
+    Tag:
+      tag: Secret
+    Transform:
+      translation: [2.5, 12.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 5041530827373281673
+    LuaScript:
+      scriptPath: scripts/game/secret.lua
+    RaycastPushWall:
+      tilesetPath: tilesets/wolf_walls.owltileset
+      tileIndex: 33
+      slideDirection: [0, 1]
+      slideDistance: 2
+      slideSpeed: 1
+      interactionAction: interact
+      interactionRange: 1.5
+  - Entity: 6314399978273312113
+    Tag:
+      tag: Secret
+    Transform:
+      translation: [9.5, -5.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 5041530827373281673
+    LuaScript:
+      scriptPath: scripts/game/secret.lua
+    RaycastPushWall:
+      tilesetPath: tilesets/wolf_walls.owltileset
+      tileIndex: 52
+      slideDirection: [0, -1]
+      slideDistance: 2
+      slideSpeed: 1
+      interactionAction: interact
+      interactionRange: 1.5
+  - Entity: 5095879717292088777
+    Tag:
+      tag: Secret
+    Transform:
+      translation: [-5.5, -9.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 5041530827373281673
+    LuaScript:
+      scriptPath: scripts/game/secret.lua
+    RaycastPushWall:
+      tilesetPath: tilesets/wolf_walls.owltileset
+      tileIndex: 33
+      slideDirection: [-1, 0]
+      slideDistance: 2
+      slideSpeed: 1
+      interactionAction: interact
+      interactionRange: 1.5
+  - Entity: 1292174708102890823
+    Tag:
+      tag: Items
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      {}
+  - Entity: 3161941193988533387
+    Tag:
+      tag: Crown
+    Transform:
+      translation: [-3.5, 14.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/wolf3d/sprites/treasure_crown.png
+    Trigger:
+      Type: LuaCallback
+      CallbackName: on_pickup
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 1292174708102890823
+    LuaScript:
+      scriptPath: scripts/game/pickup.lua
+      properties:
+        - name: item
+          type: string
+          value: Crown
+    RendererTag:
+      Name: raycast_world
+  - Entity: 4987540659629299204
+    Tag:
+      tag: Chalice
+    Transform:
+      translation: [-0.5, 13.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/wolf3d/sprites/treasure_calice.png
+    Trigger:
+      Type: LuaCallback
+      CallbackName: on_pickup
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 1292174708102890823
+    LuaScript:
+      scriptPath: scripts/game/pickup.lua
+      properties:
+        - name: item
+          type: string
+          value: Chalice
+    RendererTag:
+      Name: raycast_world
+  - Entity: 6448550279629891850
+    Tag:
+      tag: Chest
+    Transform:
+      translation: [10.5, 12.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/wolf3d/sprites/treasure.png
+    Trigger:
+      Type: LuaCallback
+      CallbackName: on_pickup
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 1292174708102890823
+    LuaScript:
+      scriptPath: scripts/game/pickup.lua
+      properties:
+        - name: item
+          type: string
+          value: Chest
+    RendererTag:
+      Name: raycast_world
+  - Entity: 7105239318732966730
+    Tag:
+      tag: Food
+    Transform:
+      translation: [-8.5, 10.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/wolf3d/sprites/food.png
+    Trigger:
+      Type: LuaCallback
+      CallbackName: on_pickup
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 1292174708102890823
+    LuaScript:
+      scriptPath: scripts/game/pickup.lua
+      properties:
+        - name: item
+          type: string
+          value: Food
+    RendererTag:
+      Name: raycast_world
+  - Entity: 559827367828913608
+    Tag:
+      tag: Cross
+    Transform:
+      translation: [-13.5, 9.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/wolf3d/sprites/treasure_cross.png
+    Trigger:
+      Type: LuaCallback
+      CallbackName: on_pickup
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 1292174708102890823
+    LuaScript:
+      scriptPath: scripts/game/pickup.lua
+      properties:
+        - name: item
+          type: string
+          value: Cross
+    RendererTag:
+      Name: raycast_world
+  - Entity: 3729482887822720368
+    Tag:
+      tag: Cross
+    Transform:
+      translation: [8.5, 8.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/wolf3d/sprites/treasure_cross.png
+    Trigger:
+      Type: LuaCallback
+      CallbackName: on_pickup
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 1292174708102890823
+    LuaScript:
+      scriptPath: scripts/game/pickup.lua
+      properties:
+        - name: item
+          type: string
+          value: Cross
+    RendererTag:
+      Name: raycast_world
+  - Entity: 1213165180831096255
+    Tag:
+      tag: DogFood
+    Transform:
+      translation: [1.5, 2.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/wolf3d/sprites/sausages.png
+    Trigger:
+      Type: LuaCallback
+      CallbackName: on_pickup
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 1292174708102890823
+    LuaScript:
+      scriptPath: scripts/game/pickup.lua
+      properties:
+        - name: item
+          type: string
+          value: DogFood
+    RendererTag:
+      Name: raycast_world
+  - Entity: 8840870456537768742
+    Tag:
+      tag: Food
+    Transform:
+      translation: [7.5, 2.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/wolf3d/sprites/food.png
+    Trigger:
+      Type: LuaCallback
+      CallbackName: on_pickup
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 1292174708102890823
+    LuaScript:
+      scriptPath: scripts/game/pickup.lua
+      properties:
+        - name: item
+          type: string
+          value: Food
+    RendererTag:
+      Name: raycast_world
+  - Entity: 3481959670480812804
+    Tag:
+      tag: Cross
+    Transform:
+      translation: [-2.5, -1.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/wolf3d/sprites/treasure_cross.png
+    Trigger:
+      Type: LuaCallback
+      CallbackName: on_pickup
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 1292174708102890823
+    LuaScript:
+      scriptPath: scripts/game/pickup.lua
+      properties:
+        - name: item
+          type: string
+          value: Cross
+    RendererTag:
+      Name: raycast_world
+  - Entity: 8476190412294034123
+    Tag:
+      tag: Chest
+    Transform:
+      translation: [9.5, -1.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/wolf3d/sprites/treasure.png
+    Trigger:
+      Type: LuaCallback
+      CallbackName: on_pickup
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 1292174708102890823
+    LuaScript:
+      scriptPath: scripts/game/pickup.lua
+      properties:
+        - name: item
+          type: string
+          value: Chest
+    RendererTag:
+      Name: raycast_world
+  - Entity: 1831972048452934612
+    Tag:
+      tag: BlueKey
+    Transform:
+      translation: [12.5, -3.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/wolf3d/sprites/key_blue.png
+    Trigger:
+      Type: LuaCallback
+      CallbackName: on_pickup
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 1292174708102890823
+    LuaScript:
+      scriptPath: scripts/game/pickup.lua
+      properties:
+        - name: item
+          type: string
+          value: BlueKey
+    RendererTag:
+      Name: raycast_world
+  - Entity: 2364765982363554455
+    Tag:
+      tag: Chalice
+    Transform:
+      translation: [-7.5, -6.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/wolf3d/sprites/treasure_calice.png
+    Trigger:
+      Type: LuaCallback
+      CallbackName: on_pickup
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 1292174708102890823
+    LuaScript:
+      scriptPath: scripts/game/pickup.lua
+      properties:
+        - name: item
+          type: string
+          value: Chalice
+    RendererTag:
+      Name: raycast_world
+  - Entity: 7618132925368181875
+    Tag:
+      tag: Chalice
+    Transform:
+      translation: [12.5, -6.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/wolf3d/sprites/treasure_calice.png
+    Trigger:
+      Type: LuaCallback
+      CallbackName: on_pickup
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 1292174708102890823
+    LuaScript:
+      scriptPath: scripts/game/pickup.lua
+      properties:
+        - name: item
+          type: string
+          value: Chalice
+    RendererTag:
+      Name: raycast_world
+  - Entity: 1830947340436384866
+    Tag:
+      tag: GoldKey
+    Transform:
+      translation: [-12.5, -7.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/wolf3d/sprites/key_yellow.png
+    Trigger:
+      Type: LuaCallback
+      CallbackName: on_pickup
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 1292174708102890823
+    LuaScript:
+      scriptPath: scripts/game/pickup.lua
+      properties:
+        - name: item
+          type: string
+          value: GoldKey
+    RendererTag:
+      Name: raycast_world
+  - Entity: 6245705741020602663
+    Tag:
+      tag: Crown
+    Transform:
+      translation: [14.5, -8.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/wolf3d/sprites/treasure_crown.png
+    Trigger:
+      Type: LuaCallback
+      CallbackName: on_pickup
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 1292174708102890823
+    LuaScript:
+      scriptPath: scripts/game/pickup.lua
+      properties:
+        - name: item
+          type: string
+          value: Crown
+    RendererTag:
+      Name: raycast_world
+  - Entity: 7897794853269416242
+    Tag:
+      tag: Chest
+    Transform:
+      translation: [-0.5, -9.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/wolf3d/sprites/treasure.png
+    Trigger:
+      Type: LuaCallback
+      CallbackName: on_pickup
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 1292174708102890823
+    LuaScript:
+      scriptPath: scripts/game/pickup.lua
+      properties:
+        - name: item
+          type: string
+          value: Chest
+    RendererTag:
+      Name: raycast_world
+  - Entity: 5371262306843257012
+    Tag:
+      tag: Cross
+    Transform:
+      translation: [-10.5, -11.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/wolf3d/sprites/treasure_cross.png
+    Trigger:
+      Type: LuaCallback
+      CallbackName: on_pickup
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 1292174708102890823
+    LuaScript:
+      scriptPath: scripts/game/pickup.lua
+      properties:
+        - name: item
+          type: string
+          value: Cross
+    RendererTag:
+      Name: raycast_world
+  - Entity: 5728573399148578327
+    Tag:
+      tag: Chalice
+    Transform:
+      translation: [0.5, -12.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/wolf3d/sprites/treasure_calice.png
+    Trigger:
+      Type: LuaCallback
+      CallbackName: on_pickup
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 1292174708102890823
+    LuaScript:
+      scriptPath: scripts/game/pickup.lua
+      properties:
+        - name: item
+          type: string
+          value: Chalice
+    RendererTag:
+      Name: raycast_world
+  - Entity: 2311981277134982581
+    Tag:
+      tag: Chest
+    Transform:
+      translation: [-12.5, -13.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/wolf3d/sprites/treasure.png
+    Trigger:
+      Type: LuaCallback
+      CallbackName: on_pickup
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 1292174708102890823
+    LuaScript:
+      scriptPath: scripts/game/pickup.lua
+      properties:
+        - name: item
+          type: string
+          value: Chest
+    RendererTag:
+      Name: raycast_world
+  - Entity: 233088838004762895
+    Tag:
+      tag: Food
+    Transform:
+      translation: [-4.5, -13.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/wolf3d/sprites/food.png
+    Trigger:
+      Type: LuaCallback
+      CallbackName: on_pickup
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 1292174708102890823
+    LuaScript:
+      scriptPath: scripts/game/pickup.lua
+      properties:
+        - name: item
+          type: string
+          value: Food
+    RendererTag:
+      Name: raycast_world
+  - Entity: 3512396719024251391
+    Tag:
+      tag: Props
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      {}
+  - Entity: 6703380352815536014
+    Tag:
+      tag: Table
+    Transform:
+      translation: [-7.5, 13.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/wolf3d/sprites/table.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [0.7, 0.7, 1]
+      density: 1
+      restitution: 0
+      friction: 0.5
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 3512396719024251391
+    RendererTag:
+      Name: raycast_world
+  - Entity: 4123289839666572927
+    Tag:
+      tag: Spears
+    Transform:
+      translation: [7.5, 13.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/wolf3d/sprites/spears.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [0.7, 0.7, 1]
+      density: 1
+      restitution: 0
+      friction: 0.5
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 3512396719024251391
+    RendererTag:
+      Name: raycast_world
+  - Entity: 3364539986419479001
+    Tag:
+      tag: Spears
+    Transform:
+      translation: [13.5, 13.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/wolf3d/sprites/spears.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [0.7, 0.7, 1]
+      density: 1
+      restitution: 0
+      friction: 0.5
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 3512396719024251391
+    RendererTag:
+      Name: raycast_world
+  - Entity: 5068552281732436558
+    Tag:
+      tag: Chandelier
+    Transform:
+      translation: [-10.5, 11.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/wolf3d/sprites/lamp_ceiling_candle.png
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 3512396719024251391
+    RendererTag:
+      Name: raycast_world
+  - Entity: 7815294769429151567
+    Tag:
+      tag: Lamp
+    Transform:
+      translation: [-2.5, 11.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/wolf3d/sprites/lamp_ceiling.png
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 3512396719024251391
+    RendererTag:
+      Name: raycast_world
+  - Entity: 3568531888227180374
+    Tag:
+      tag: Lamp
+    Transform:
+      translation: [4.5, 11.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/wolf3d/sprites/lamp_ceiling.png
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 3512396719024251391
+    RendererTag:
+      Name: raycast_world
+  - Entity: 1836685594243943205
+    Tag:
+      tag: Chandelier
+    Transform:
+      translation: [10.5, 10.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/wolf3d/sprites/lamp_ceiling_candle.png
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 3512396719024251391
+    RendererTag:
+      Name: raycast_world
+  - Entity: 6348711148421257834
+    Tag:
+      tag: Spears
+    Transform:
+      translation: [6.5, 5.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/wolf3d/sprites/spears.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [0.7, 0.7, 1]
+      density: 1
+      restitution: 0
+      friction: 0.5
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 3512396719024251391
+    RendererTag:
+      Name: raycast_world
+  - Entity: 1660085658677779164
+    Tag:
+      tag: Spears
+    Transform:
+      translation: [13.5, 5.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/wolf3d/sprites/spears.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [0.7, 0.7, 1]
+      density: 1
+      restitution: 0
+      friction: 0.5
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 3512396719024251391
+    RendererTag:
+      Name: raycast_world
+  - Entity: 2489575175354546494
+    Tag:
+      tag: Plant
+    Transform:
+      translation: [-3.5, 3.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/wolf3d/sprites/tree_pot.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [0.7, 0.7, 1]
+      density: 1
+      restitution: 0
+      friction: 0.5
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 3512396719024251391
+    RendererTag:
+      Name: raycast_world
+  - Entity: 2209912198124964002
+    Tag:
+      tag: Plant
+    Transform:
+      translation: [3.5, 3.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/wolf3d/sprites/tree_pot.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [0.7, 0.7, 1]
+      density: 1
+      restitution: 0
+      friction: 0.5
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 3512396719024251391
+    RendererTag:
+      Name: raycast_world
+  - Entity: 4163644320398105822
+    Tag:
+      tag: Chandelier
+    Transform:
+      translation: [10.5, 1.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/wolf3d/sprites/lamp_ceiling_candle.png
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 3512396719024251391
+    RendererTag:
+      Name: raycast_world
+  - Entity: 3923007943016155494
+    Tag:
+      tag: Armor
+    Transform:
+      translation: [13.5, 1.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/wolf3d/sprites/armor.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [0.7, 0.7, 1]
+      density: 1
+      restitution: 0
+      friction: 0.5
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 3512396719024251391
+    RendererTag:
+      Name: raycast_world
+  - Entity: 5804199923041116394
+    Tag:
+      tag: Well
+    Transform:
+      translation: [-0.5, 0.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/wolf3d/sprites/pit_water.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [0.7, 0.7, 1]
+      density: 1
+      restitution: 0
+      friction: 0.5
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 3512396719024251391
+    RendererTag:
+      Name: raycast_world
+  - Entity: 9049083083069326512
+    Tag:
+      tag: Vase
+    Transform:
+      translation: [-13.5, -0.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/wolf3d/sprites/blue_pot.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [0.7, 0.7, 1]
+      density: 1
+      restitution: 0
+      friction: 0.5
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 3512396719024251391
+    RendererTag:
+      Name: raycast_world
+  - Entity: 6900508670637591023
+    Tag:
+      tag: Vase
+    Transform:
+      translation: [-6.5, -0.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/wolf3d/sprites/blue_pot.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [0.7, 0.7, 1]
+      density: 1
+      restitution: 0
+      friction: 0.5
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 3512396719024251391
+    RendererTag:
+      Name: raycast_world
+  - Entity: 8211477525858133635
+    Tag:
+      tag: TableChairs
+    Transform:
+      translation: [-11.5, -2.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/wolf3d/sprites/table_chairs.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [0.7, 0.7, 1]
+      density: 1
+      restitution: 0
+      friction: 0.5
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 3512396719024251391
+    RendererTag:
+      Name: raycast_world
+  - Entity: 5585121700428552764
+    Tag:
+      tag: TableChairs
+    Transform:
+      translation: [-8.5, -2.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/wolf3d/sprites/table_chairs.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [0.7, 0.7, 1]
+      density: 1
+      restitution: 0
+      friction: 0.5
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 3512396719024251391
+    RendererTag:
+      Name: raycast_world
+  - Entity: 8259281593659081262
+    Tag:
+      tag: Plant
+    Transform:
+      translation: [-3.5, -3.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/wolf3d/sprites/tree_pot.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [0.7, 0.7, 1]
+      density: 1
+      restitution: 0
+      friction: 0.5
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 3512396719024251391
+    RendererTag:
+      Name: raycast_world
+  - Entity: 5085697829739703512
+    Tag:
+      tag: Plant
+    Transform:
+      translation: [3.5, -3.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/wolf3d/sprites/tree_pot.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [0.7, 0.7, 1]
+      density: 1
+      restitution: 0
+      friction: 0.5
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 3512396719024251391
+    RendererTag:
+      Name: raycast_world
+  - Entity: 6676207979363105073
+    Tag:
+      tag: Lamp
+    Transform:
+      translation: [-10.5, -4.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/wolf3d/sprites/lamp_ceiling.png
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 3512396719024251391
+    RendererTag:
+      Name: raycast_world
+  - Entity: 4723887321908190331
+    Tag:
+      tag: Armor
+    Transform:
+      translation: [6.5, -4.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/wolf3d/sprites/armor.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [0.7, 0.7, 1]
+      density: 1
+      restitution: 0
+      friction: 0.5
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 3512396719024251391
+    RendererTag:
+      Name: raycast_world
+  - Entity: 113821033370707887
+    Tag:
+      tag: Chandelier
+    Transform:
+      translation: [-0.5, -7.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/wolf3d/sprites/lamp_ceiling_candle.png
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 3512396719024251391
+    RendererTag:
+      Name: raycast_world
+  - Entity: 3152129550179709649
+    Tag:
+      tag: Pillar
+    Transform:
+      translation: [-2.5, -8.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/wolf3d/sprites/pilar.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [0.7, 0.7, 1]
+      density: 1
+      restitution: 0
+      friction: 0.5
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 3512396719024251391
+    RendererTag:
+      Name: raycast_world
+  - Entity: 8504488876229178982
+    Tag:
+      tag: Pillar
+    Transform:
+      translation: [2.5, -8.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/wolf3d/sprites/pilar.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [0.7, 0.7, 1]
+      density: 1
+      restitution: 0
+      friction: 0.5
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 3512396719024251391
+    RendererTag:
+      Name: raycast_world
+  - Entity: 1447630888863800773
+    Tag:
+      tag: FloorLamp
+    Transform:
+      translation: [-12.5, -10.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/wolf3d/sprites/lamp_pilar.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [0.7, 0.7, 1]
+      density: 1
+      restitution: 0
+      friction: 0.5
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 3512396719024251391
+    RendererTag:
+      Name: raycast_world
+  - Entity: 3542146314129109449
+    Tag:
+      tag: Chandelier
+    Transform:
+      translation: [0.5, -10.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/wolf3d/sprites/lamp_ceiling_candle.png
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 3512396719024251391
+    RendererTag:
+      Name: raycast_world
+  - Entity: 3716010139070606409
+    Tag:
+      tag: Pillar
+    Transform:
+      translation: [-2.5, -11.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/wolf3d/sprites/pilar.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [0.7, 0.7, 1]
+      density: 1
+      restitution: 0
+      friction: 0.5
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 3512396719024251391
+    RendererTag:
+      Name: raycast_world
+  - Entity: 6526017971512349494
+    Tag:
+      tag: Pillar
+    Transform:
+      translation: [2.5, -11.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/wolf3d/sprites/pilar.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [0.7, 0.7, 1]
+      density: 1
+      restitution: 0
+      friction: 0.5
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 3512396719024251391
+    RendererTag:
+      Name: raycast_world
+  - Entity: 4943502021110318457
+    Tag:
+      tag: ExitElevator
+    Transform:
+      translation: [9.5, -11.5, 0]
+      rotation: [0, 0, 0]
+      scale: [3, 3, 1]
+    Trigger:
+      Type: Interaction
+      InteractionRange: 1.5
+      CallbackName: on_elevator_use
+    Visibility:
+      gameVisible: true
+    LuaScript:
+      scriptPath: scripts/game/exit.lua
