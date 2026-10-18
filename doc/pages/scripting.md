@@ -314,8 +314,9 @@ sprite). See `engine_demo/scripts/platformer/platformer_player.lua` and `coin.lu
 The `isometric` functions take the entity carrying the isometric `Tilemap` (`scene.find_entity("Ground")`, cached).
 `isometric.pick_cell(map)` returns the cell under the mouse (or under a window pixel), slope-aware, nothing when the
 pixel is off the map; `isometric.get_cell(map, layer, x, y)` and `isometric.set_cell(map, layer, x, y, terrain, overlay)`
-read and write a cell of a layer (layers from 0, -1 for none) without undo, which is how the sample town lays roads;
-`isometric.get_slope(map, x, y)` and `isometric.get_height(map, x, y)` give the slope of a cell and the world height of
+read and write a cell of a layer (layers from 0, -1 for none) without undo, which is how the sample town lays roads,
+and `isometric.get_size(map)` gives the grid width, height and cell size; they work on a 2D tilemap too (the Sokoban
+sample keeps its crates in a layer). `isometric.get_slope(map, x, y)` and `isometric.get_height(map, x, y)` give the slope of a cell and the world height of
 the surface under a world position, to stand vehicles on the terrain. `isometric.set_sprite_frame(sprite, frame)` pins an
 `AnimatedSpriteRenderer` on one frame of its sheet (`isometric.get_sprite_frame(sprite)` reads it), so one entity shows
 the picture of its heading. `ui.is_mouse_over_ui()` tells a click on the HUD

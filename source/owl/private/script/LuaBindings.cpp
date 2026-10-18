@@ -1399,6 +1399,18 @@ auto luaIsometricSetCell(lua_State* iState) -> int {
 	return 1;
 }
 
+auto luaIsometricGetSize(lua_State* iState) -> int {
+	const auto map = findIsometricMap(iState);
+	if (!map) {
+		lua_pushnil(iState);
+		return 1;
+	}
+	lua_pushinteger(iState, static_cast<lua_Integer>(map->asset->width));
+	lua_pushinteger(iState, static_cast<lua_Integer>(map->asset->height));
+	lua_pushnumber(iState, static_cast<lua_Number>(map->asset->cellSize));
+	return 3;
+}
+
 auto luaIsometricGetSlope(lua_State* iState) -> int {
 	const auto cellX = luaL_checkinteger(iState, 2);
 	const auto cellY = luaL_checkinteger(iState, 3);
@@ -2019,9 +2031,12 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		 .params = {entityId, {"layer", Integer}, {"cell_x", Integer}, {"cell_y", Integer}},
 		 .returns = {{"terrain", Integer}, {"overlay", Integer}}},
 		{.table = "isometric", .name = "set_cell", .function = guarded<luaIsometricSetCell>,
-		 .description = "Set the terrain and overlay tile of a cell of a layer (-1 for none), without undo; false outside the grid.",
+		 .description = "Set the terrain and overlay tile of a cell of a layer (-1 for none), without undo; false outside the grid or when the cell already held them.",
 		 .params = {entityId, {"layer", Integer}, {"cell_x", Integer}, {"cell_y", Integer}, {"terrain", Integer}, {"overlay", Integer}},
 		 .returns = {{"done", Boolean}}},
+		{.table = "isometric", .name = "get_size", .function = guarded<luaIsometricGetSize>,
+		 .description = "Grid size of the tilemap of an entity, in cells, and the world size of a cell; nothing when the entity has no tilemap.",
+		 .params = {entityId}, .returns = {{"width", Integer}, {"height", Integer}, {"cell_size", Number}}},
 		{.table = "isometric", .name = "get_slope", .function = guarded<luaIsometricGetSlope>,
 		 .description = "Slope of a cell, from its corner heights (0 is flat, 1 to 18 are the other slopes of the tileset).",
 		 .params = {entityId, {"cell_x", Integer}, {"cell_y", Integer}}, .returns = {{"slope", Integer}}},
