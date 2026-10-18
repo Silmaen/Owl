@@ -122,7 +122,7 @@ render graph, essential post-processing — with full 3D editing ([details](desi
 - ![Planned][planned] Help panel: mermaid diagrams and rendering polish
 - ![Planned][planned] Sample game: a Mini Transport Tycoon ([Sample games](design/sample-games.md))
 
-## v0.4.0 -- Expected 2026-11-01
+## v0.4.0 -- 2026-10-20
 
 **Goal:** An engine able to carry a Transport Tycoon-like game: an isometric renderer on large chunked tile maps with
 slopes, vehicles finding their way on a tile graph, a HUD for management games and its editor, input actions with a gamepad, a fixed simulation tick, and a local

@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-10-20
+
 ### Added
 
 - Sample game Breakout (`samples/breakout/`), the first of `samples/`: five levels, three lives, bricks of one to three hits, wide-paddle and slow-ball power-ups, pause, settings and best score, played with keyboard, mouse or gamepad; its art, sounds and levels come from `tools/samples/breakout/`.

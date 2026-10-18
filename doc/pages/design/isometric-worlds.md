@@ -296,7 +296,7 @@ Checked on 2026-10-18 against `main` at 41de054d, the budgets on 2026-10-19 (rel
 | Tilemaps without truncation, 0 byte uploaded when static, 1024² load               | Met                | `tilemap/static/*`, `tilemap/load/1024x1024` (11.8 ms) in the baseline                                                                                                        |
 | `iso_town` in editor and runner, zero VUID on lavapipe, image tests green          | Met (runner)       | 0 VUID on the nine Engine Demo scenes (`--frame-bench --backend vulkan --validation`); `owl_render_tests_UTests` and `iso_town*` scenarios pass; editor play to check by hand |
 | Vehicles on the road graph, sort-key order, 1 000-row list draws visible rows      | Met                | `iso_town_routes` scenario, `path/*` benches, `hud` bench with a 1000-row list                                                                                                |
-| Picking on the 19 slopes, gizmo on the isometric axes                              | Not verified       | `iso/pick/256x256_hills` bench and unit tests exist; gizmo needs a manual look                                                                                                |
+| Picking on the 19 slopes, gizmo on the isometric axes                              | Met                | `iso/pick/256x256_hills` bench and unit tests; gizmo checked by the maintainer on 2026-10-19                                                                                  |
 | One `.owlhud` over 2D, raycast, voxel, isometric at three resolutions              | Met                | no `RendererTag: ui` in `engine_demo/`, `DemoHudLayout_test`, HUD image tests; window drag, close and stack by hand                                                           |
 | Text never stretched, text beyond U+00FF                                           | Met                | `FontUnicode_test`, `hud_text` render test                                                                                                                                    |
 | Menus and games with a gamepad only, action map edits undoable                     | Met (manual)       | `main_menu_focus`, `platformer_gamepad` scenarios pass; real gamepad test is manual                                                                                           |
@@ -312,8 +312,7 @@ Baseline of 2026-10-19 (median of five runs on hephaistos, release code): MCP `t
 the frame wait (budget one frame + 5 ms), 1 000-row list 18 µs and 162 quads, HUD of 500 widgets 212 µs and 2 draw
 calls, isometric 512² frames 19 µs to 212 µs of CPU with 5 000 vehicles, slope picking 0.2 µs, 1024² map load 11.8 ms.
 
-Not verified by hand: picking on the slopes and the gizmo on the isometric axes (unit tests and
-the `iso/pick` bench only). The three sample games joined v0.4.0 after the check above: Breakout, Sokoban and a
+The three sample games joined v0.4.0 after the check above: Breakout, Sokoban and a
 Wolfenstein mini without combat ([Sample games](sample-games.md)), each played by the maintainer with a gamepad.
 
 [done]: https://img.shields.io/badge/-Done-2ea043?style=flat-square

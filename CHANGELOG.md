@@ -5,6 +5,7 @@ One line per release. The detailed history (Keep a Changelog, one line per chang
 
 | Version     | Date       | Summary                                                                                                             |
 |-------------|------------|---------------------------------------------------------------------------------------------------------------------|
+| 0.4.0       | 2026-10-20 | Isometric worlds: 1024² isometric maps, pathfinding, HUD editor, gamepad, MCP server, Engine Demo, 3 sample games   |
 | 0.3.0       | 2026-10-11 | Foundations: Conan 2, bug sweep, Vulkan-first Owl RHI, CI safety nets, hot reload, ergonomic Owl Nest               |
 | 0.2.1       | 2026-06-27 | Voxel engine: chunks, greedy meshing, terrain, player, block editing, Vulkan / OpenGL hardening                     |
 | 0.2.0       | 2026-06-02 | Renderer stack, raycasting renderer, tilemaps, scene transitions, GPU-driven instanced Renderer2D                   |
