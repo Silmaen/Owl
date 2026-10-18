@@ -520,6 +520,12 @@ auto luaSceneTransitionTo(lua_State* iState) -> int {
 	if (top >= 3 && lua_isnumber(iState, 3) != 0) {
 		req.outDuration = req.inDuration = static_cast<float>(lua_tonumber(iState, 3));
 	}
+	if (top >= 6) {
+		req.color = math::vec4{static_cast<float>(luaL_checknumber(iState, 4)),
+							   static_cast<float>(luaL_checknumber(iState, 5)),
+							   static_cast<float>(luaL_checknumber(iState, 6)),
+							   top >= 7 ? static_cast<float>(luaL_checknumber(iState, 7)) : 1.f};
+	}
 	req.outType = parseTransitionType(typeName);
 	if (req.outType == scene::ScreenTransition::Type::None)
 		req.outType = scene::ScreenTransition::Type::FadeOut;
@@ -1848,8 +1854,15 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		 .description = "Load another level after this frame, keeping the game state (no transition).",
 		 .params = {{"level", String}}},
 		{.table = "scene", .name = "transition_to", .function = guarded<luaSceneTransitionTo>,
-		 .description = "Load a level behind a screen transition (kind as in `ui.transition_play`, `fade` by default).",
-		 .params = {{"scene_path", String}, {"kind", String, true}, {"duration", Number, true}}},
+		 .description = "Load a level behind a screen transition (kind as in `ui.transition_play`, `fade` by default), "
+						"in a colour (opaque black by default).",
+		 .params = {{"scene_path", String},
+					{"kind", String, true},
+					{"duration", Number, true},
+					{"r", Number, true},
+					{"g", Number, true},
+					{"b", Number, true},
+					{"a", Number, true}}},
 		{.table = "scene", .name = "quit", .function = guarded<luaSceneQuit>,
 		 .description = "Quit the game (stop Play in the editor) after this frame."},
 		{.table = "time", .name = "delta", .function = guarded<luaTimeDelta>,

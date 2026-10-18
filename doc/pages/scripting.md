@@ -287,7 +287,8 @@ and scrolls without running the callback.
 
 The colour arguments are optional — passing only `type` and `duration`
 defaults to opaque black, matching the legacy fade calls. With three-colour
-arguments, alpha defaults to `1`.
+arguments, alpha defaults to `1`. `scene.transition_to(path, type, duration, [r, g, b, a])` takes the same colour
+for its cover, its loading screen and the reveal of the next scene (the sample games give each its own).
 
 ```lua
 -- Cinematic exit before loading the raycast level: 0.3 s wipe-left in black.
