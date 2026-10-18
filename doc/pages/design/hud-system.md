@@ -304,6 +304,9 @@ The Engine Demo HUDs and menu canvases follow one recipe, checked by `DemoHudLay
   of a `UiLayout`, which must stay inside the content area of their container.
 - A popup (a window hidden at start: the information board, the inventory) is compared with the other popups only; every
   top-level widget must fit in the viewport.
+- Controls are never on screen for good in game: the main menu lists them (the pause leads there), and a level shows
+  its own keys in a hint that `controls_hint.lua` hides after a few seconds, last in its corner group so that hiding
+  it moves nothing.
 
 ## Tests
 

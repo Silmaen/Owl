@@ -1,0 +1,8 @@
+# Controls are never shown for good in game (controls_hint.lua): the hint of the hub shows the keys when the scene
+# starts, then hides itself after a few seconds; the main menu keeps the full list.
+scene: ../../../engine_demo/scenes/world_map.owl
+steps:
+  - frames: 30
+  - expect: {gamestate: controls_hint_shown, equals: true}
+  - frames: 300
+  - expect: {gamestate: controls_hint_shown, equals: false}

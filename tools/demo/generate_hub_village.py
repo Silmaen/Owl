@@ -71,6 +71,8 @@ LEVER_CELL = (50, 36)
 GATE_CELL = (8, 34)
 CHEST_CELL = (8, 35)
 LAVA_RECT = (5, 3, 7, 5)
+FENCE = (80, 81, 82)  # left end, middle, right end of a fence (collidable)
+GATE_FENCE = (30, 34)  # first and last column of the fence closing the entrance, on the last row
 
 
 class Grid:
@@ -270,6 +272,11 @@ def build() -> tuple[Grid, Grid, Grid]:
         for c in range(30, 35):
             if (c, r) not in ((28, 36),) and objects.get(c, r) in TREES:
                 objects.put(c, r, EMPTY)
+    # ... closed by the village gate: a fence across the end of the avenue, a lamp on each side.
+    for c in range(GATE_FENCE[0], GATE_FENCE[1] + 1):
+        objects.put(c, HEIGHT - 1, FENCE[0] if c == GATE_FENCE[0] else FENCE[2] if c == GATE_FENCE[1] else FENCE[1])
+    for c in GATE_FENCE:
+        objects.put(c, HEIGHT - 2, LAMP)
 
     walkable = Grid(EMPTY)
     return ground, objects, walkable
@@ -340,6 +347,16 @@ def main() -> None:
               "church": (32, 14), "market": (47, 27), "well": (24, 25), "field": (14, 27), "woodcutter": (5, 10)}
     for name, cell in goals.items():
         print(f"{name:16} {cell}: {'ok' if cell in flood else 'UNREACHABLE'}")
+    # The hero must never walk off the map: every edge cell is blocked, or water (the river runs off both sides, the
+    # scene closes them with the colliders of the `MapEdge_*` entities, invisible walls round the map).
+    passable = Grid(EMPTY)
+    for r in range(HEIGHT):
+        for c in range(WIDTH):
+            if objects.get(c, r) == EMPTY or objects.get(c, r) not in solid:
+                passable.put(c, r, 0)
+    edges = {(c, r) for c in range(WIDTH) for r in (0, HEIGHT - 1)} | {(c, r) for r in range(HEIGHT) for c in (0, WIDTH - 1)}
+    open_edges = sorted(cell for cell in edges & reachable(passable, START_CELL) if ground.get(*cell) not in WATER)
+    print(f"open map edges   {open_edges if open_edges else 'none'}")
     write(ground, objects, walkable)
 
 

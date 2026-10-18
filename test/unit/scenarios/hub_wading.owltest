@@ -1,0 +1,12 @@
+# The hero wades through the river of the hub (world_player.lua): up the avenue onto the south bridge, then west off
+# it into the water, where the walk is much slower than on the ground.
+scene: ../../../engine_demo/scenes/world_map.owl
+steps:
+  - frames: 30
+  - input: {key: W, frames: 78}
+  - expect: {player: true, translation.y: {greater: -31.0, less: -29.0}}
+  - expect: {gamestate: hub_wading, equals: false}
+  - input: {key: A, frames: 20}
+  - expect: {gamestate: hub_wading, equals: true}
+  - input: {key: A, frames: 30}
+  - expect: {player: true, translation.x: {greater: 29.3}}

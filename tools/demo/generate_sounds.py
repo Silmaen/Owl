@@ -6,8 +6,10 @@ mono 16-bit 22 050 Hz, seeded so that the files are reproducible. Run with ``pyt
 ``hub_x`` is written to ``sounds/hub/x.wav`` and ``raycast_x`` to ``sounds/raycast/x.wav``.
 
 Hub: ``hub_ambience`` (a 48 s bed of wind, loops), ``hub_birds_1..4`` and ``hub_wind_1..3`` (scenes and gusts played at random gaps), ``hub_water`` (a light brook, loops), ``hub_fountain`` (jet and plops, loops), ``hub_step_1..4``,
+``hub_wade_1..4`` (the steps of the hero wading through the river),
 ``hub_door``, ``hub_board``, ``hub_lever``, ``hub_gate``, ``hub_portal_hum`` (retriggered while the portal is awake),
 ``hub_portal_wake``, ``hub_bell``.
+Menus: ``ui_start`` (the soft three-note chime of the Start and Continue buttons; the sample games copy it).
 Raycast: ``raycast_ambience`` (loops), ``raycast_door``, ``raycast_pushwall``, ``raycast_treasure``, ``raycast_food``,
 ``raycast_ammo``, ``raycast_elevator``.
 """
@@ -215,6 +217,33 @@ def step(index: int, pitch: float, hardness: float) -> None:
     save(f"hub_step_{index}", mix(scale(scuff, hardness), scale(thud, 0.9)), 0.5)
 
 
+def wade(index: int, pitch: float) -> None:
+    """One step in the river: a slow swish of water pushed aside, a few bubbles and a soft low slosh, no heel."""
+    rng = random.Random(40 + index)
+    count = seconds(0.34)
+    swish = shaped(bandpass(noise(rng, count), 260 * pitch, 1500 * pitch), envelope(count, 0.045, 0.08))
+    slosh = shaped(lowpass(noise(rng, count), 380 * pitch), envelope(count, 0.02, 0.12))
+    bubbles = [0.0] * count
+    for _ in range(4 + index % 3):
+        clip = bubble(rng, rng.uniform(450, 1300) * pitch, rng.uniform(0.02, 0.05))
+        place(bubbles, rng.uniform(0.05, 0.22), scale(clip, rng.uniform(0.25, 0.7)))
+    save(f"hub_wade_{index}", mix(swish, scale(slosh, 1.4), scale(bubbles, 0.5)), 0.5)
+
+
+def ui_start() -> None:
+    """The Start chime: three soft mallet notes rising on a major chord (C5 E5 G5), left to ring together; no melody."""
+    count = seconds(1.3)
+    track = [0.0] * count
+    for at, freq, gain in ((0.0, 523.25, 0.75), (0.09, 659.25, 0.7), (0.18, 783.99, 0.85)):
+        length = count - seconds(at)
+        body = shaped(tone(freq, length, (1.0, 0.0, 0.0, 0.12)), envelope(length, 0.006, 0.38))
+        place(track, at, scale(body, gain))
+    fade = seconds(0.15)
+    for i in range(fade):
+        track[count - fade + i] *= 1 - i / fade
+    save("ui_start", lowpass(track, 3200), 0.45)
+
+
 def hub_door() -> None:
     rng = random.Random(31)
     creak_len = seconds(0.35)
@@ -399,6 +428,10 @@ def main() -> None:
     step(2, 0.88, 1.0)
     step(3, 0.94, 0.7)
     step(4, 1.08, 1.3)
+    wade(1, 1.0)
+    wade(2, 0.9)
+    wade(3, 1.1)
+    wade(4, 0.95)
     hub_door()
     hub_board()
     hub_lever()
@@ -413,6 +446,7 @@ def main() -> None:
     raycast_food()
     raycast_ammo()
     raycast_elevator()
+    ui_start()
 
 
 if __name__ == "__main__":

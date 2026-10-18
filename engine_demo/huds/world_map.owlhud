@@ -217,7 +217,7 @@ Entities:
     sizeUnit: [ParentWidth, ParentHeight]
     offset: [0, 0]
   UiText:
-    text: WASD = move, E = interact or talk, ESC = pause
+    text: 'WASD: move    E: use or talk    Esc: pause'
     color: [1, 1, 1, 0.850000024]
     fontSize: 26
     horizontalAlignment: Left

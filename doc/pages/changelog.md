@@ -121,6 +121,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Engine Demo controls are never shown for good in game: each level shows its keys in a hint that hides after a few seconds (`controls_hint.lua`), the main menu lists them all, and the platformer's Controls window is gone.
+- Engine Demo hub: a fence closes the south entrance and invisible walls the map edges, the river slows the hero to 40 % with splashing steps (`hub/wade_1..4`, less damage), and a soft home-made chime replaces `sounds/ui/start.wav` (`tools/demo/generate_sounds.py`).
 - README showcase: the product is named Owl Engine, with its pitch, Engine Demo screenshots (`doc/images/showcase/`), a GitHub social preview and how it is built with Claude Code under the maintainer's review.
 - Engine Demo main menu titled Owl Engine Demo, in English, with the current version and without the mouse readout.
 - Repository layout: `docker_run.sh` at the root, unit tests, `bench/`, `fuzz/` and the Conan package test under `test/`, the icon and Doxygen filter scripts under `tools/`.
