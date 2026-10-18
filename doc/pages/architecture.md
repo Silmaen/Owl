@@ -197,7 +197,7 @@ sequenceDiagram
 
 Shaders are written in **Slang** (`.slang` files), a single-source shading language:
 
-1. **Source**: `engine_assets/shaders/<renderer>/slang/<name>.slang`
+1. **Source**: `engine_assets/shaders/<renderer>/<name>.slang`
 2. **Compilation**: `compileSlangToSpirv()` compiles Slang to SPIR-V at runtime using the Slang C++ API, with
    `BACKEND_VULKAN` or `BACKEND_OPENGL` preprocessor defines
 3. **Reflection**: `shaderReflect()` uses spirv-cross to extract uniform buffers and sampled images from the SPIR-V

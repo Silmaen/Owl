@@ -446,7 +446,7 @@ RendererStack:
   chunk in view; cell `(cx, cy)` covers the world square from the entity translation plus
   `(cx, cy)` to plus `(cx + 1, cy + 1)`, its sprite bottom centre on the front corner. `pickIsometricCell` finds the
   tile under a viewport pixel (flat maps; slopes come with ISO2).
-- **Shader.** `engine_assets/shaders/isometric/slang/billboard.slang`: one instanced draw per pass from a storage
+- **Shader.** `engine_assets/shaders/isometric/billboard.slang`: one instanced draw per pass from a storage
   buffer of 96-byte instances (foot, size, depth slope, UVs, tint, texture slot, entity id), 20 000 per batch;
   `sprite.slang` draws the 64-byte sprite instances, 40 000 per batch, between the opaque and the translucent pass, and
   `tile.slang` the tilemap chunks (per-instance vertex attributes) before the opaque billboards.
@@ -543,7 +543,7 @@ single directional light. It is the reusable base for `RendererVoxel` (and futur
 - **Vertex** (`renderer::Mesh3DVertex`, 56 bytes, tightly packed): object-space `position`, `normal`, `uv`, a
   `textureIndex` selecting a slot in the bound texture array, and the `tileRect` atlas sub-rect and `ao` factor
   read by the voxel shader only.
-- **Shader** (`engine_assets/shaders/renderer3D/slang/mesh3d.slang`): vertex transforms position by a per-draw model
+- **Shader** (`engine_assets/shaders/renderer3D/mesh3d.slang`): vertex transforms position by a per-draw model
   matrix then the per-frame view-projection (both `column_major`, supplied through one scene UBO at binding 0);
   fragment samples `gTextures[texIndex]` (binding 1) and applies `ambient + max(dot(N, -sunDir), 0)`. Outputs colour
   + entity id to match the scene framebuffer.

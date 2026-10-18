@@ -50,7 +50,7 @@ auto findRoot() -> std::filesystem::path {
 }
 
 auto loadMesh3d() -> std::string {
-	const auto path = findRoot() / "engine_assets" / "shaders" / "renderer3D" / "slang" / "mesh3d.slang";
+	const auto path = findRoot() / "engine_assets" / "shaders" / "renderer3D" / "mesh3d.slang";
 	std::ifstream in(path, std::ios::binary);
 	if (!in.is_open())
 		return {};

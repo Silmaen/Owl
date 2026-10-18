@@ -135,7 +135,7 @@ auto findRoot() -> std::filesystem::path {
 }
 
 auto loadShipped(const std::string& iRenderer, const std::string& iShaderName) -> std::string {
-	const auto path = findRoot() / "engine_assets" / "shaders" / iRenderer / "slang" / (iShaderName + ".slang");
+	const auto path = findRoot() / "engine_assets" / "shaders" / iRenderer / (iShaderName + ".slang");
 	std::ifstream in(path, std::ios::binary);
 	if (!in.is_open())
 		return {};

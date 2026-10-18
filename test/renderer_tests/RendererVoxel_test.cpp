@@ -33,7 +33,7 @@ auto findRoot() -> std::filesystem::path {
 }
 
 auto loadVoxelShader() -> std::string {
-	const auto path = findRoot() / "engine_assets" / "shaders" / "renderer3D" / "slang" / "voxel.slang";
+	const auto path = findRoot() / "engine_assets" / "shaders" / "renderer3D" / "voxel.slang";
 	std::ifstream in(path, std::ios::binary);
 	if (!in.is_open())
 		return {};

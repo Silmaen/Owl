@@ -53,7 +53,7 @@ TEST(SlangSyntax, everyListedWordClassifiesBackToItsKind) {
 }
 
 TEST(SlangSyntax, detectsSlangFiles) {
-	EXPECT_EQ(detectLanguage("engine_assets/shaders/opengl/slang/text.slang"), Language::Slang);
+	EXPECT_EQ(detectLanguage("engine_assets/shaders/opengl/text.slang"), Language::Slang);
 	EXPECT_EQ(detectLanguage("A.SLANG"), Language::Slang);
 	EXPECT_STREQ(languageName(Language::Slang), "Slang");
 }

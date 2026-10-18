@@ -65,7 +65,7 @@ TEST(GlslFallback, everyShippedShaderTranslatesToGlsl450) {
 
 TEST(GlslFallback, openGlSpirvUsesOpenGlInstanceBuiltin) {
 	core::Log::init(core::Log::Level::Off);
-	const auto source = readFile(findRoot() / "engine_assets" / "shaders" / "renderer2D" / "slang" / "quad.slang");
+	const auto source = readFile(findRoot() / "engine_assets" / "shaders" / "renderer2D" / "quad.slang");
 	auto compiled = renderer::utils::compileSlangToSpirv(source, "quad_builtins", /*iForVulkan=*/false);
 	ASSERT_TRUE(compiled.success);
 	auto& vertex = compiled.spirvData[ShaderType::Vertex];

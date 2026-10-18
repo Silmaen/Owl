@@ -59,7 +59,7 @@ float4 texColor = u_Textures[NonUniformResourceIndex(texIndex)].Sample(u_Sampler
 
 ## Compilation Pipeline
 
-- Source: `engine_assets/shaders/<renderer>/slang/<name>.slang`
+- Source: `engine_assets/shaders/<renderer>/<name>.slang`
 - Compiled at build time by `OwlShaderBake` (`source/tools/`) into `bin/assets/shaders/<renderer>/spirv/<api>/`;
   at runtime `loadOrCompileSpirv()` reads the `.spv` cache, then that output, and calls `compileSlangToSpirv()` only
   when neither matches the cache key (hash-based invalidation): never put Slang back on the startup path

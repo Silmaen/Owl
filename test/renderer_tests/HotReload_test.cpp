@@ -68,7 +68,7 @@ protected:
 		RenderCommand::create(RenderAPI::Type::Null);
 		m_dir = std::filesystem::temp_directory_path() / "owl_hotreload_test";
 		std::filesystem::remove_all(m_dir);
-		std::filesystem::create_directories(m_dir / "shaders" / "hot" / "slang");
+		std::filesystem::create_directories(m_dir / "shaders" / "hot");
 	}
 
 	void TearDown() override {
@@ -103,9 +103,9 @@ TEST_F(HotReloadTest, TextureTakesTheNewPixelsAndKeepsThemOnError) {
 
 TEST_F(HotReloadTest, ShaderRecompilesAndKeepsThePreviousVersionOnError) {
 	OWL_REQUIRE_MODULE(RENDER);
-	const auto file = m_dir / "shaders" / "hot" / "slang" / "flat.slang";
+	const auto file = m_dir / "shaders" / "hot" / "flat.slang";
 	writeText(file, shaderSource("1.0"));
-	const auto shader = Shader::create(m_dir / "shaders" / "hot" / "slang" / "flat");
+	const auto shader = Shader::create(m_dir / "shaders" / "hot" / "flat");
 	ASSERT_NE(shader, nullptr);
 	EXPECT_TRUE(platform::isSameFile(shader->getSourcePath(), file));
 	EXPECT_EQ(shader->getGeneration(), 0u);
@@ -129,9 +129,9 @@ TEST_F(HotReloadTest, WatchedFileIsDispatchedToTheLibrariesAndListeners) {
 	auto texture = Texture2D::create(image);
 	ASSERT_NE(texture, nullptr);
 	Renderer::getTextureLibrary().add("sprite", texture);
-	const auto source = m_dir / "shaders" / "hot" / "slang" / "flat.slang";
+	const auto source = m_dir / "shaders" / "hot" / "flat.slang";
 	writeText(source, shaderSource("1.0"));
-	auto shader = Shader::create(m_dir / "shaders" / "hot" / "slang" / "flat");
+	auto shader = Shader::create(m_dir / "shaders" / "hot" / "flat");
 	ASSERT_NE(shader, nullptr);
 	Renderer::getShaderLibrary().add("hot#flat", shader);
 

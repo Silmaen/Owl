@@ -36,8 +36,8 @@ void runSlangBenches(Runner& ioRunner) {
 	if (!ioRunner.wants("slang"))
 		return;
 	const std::filesystem::path shaders = std::filesystem::path(OWL_BENCH_SOURCE_DIR) / "engine_assets" / "shaders";
-	const std::string quad = readText(shaders / "renderer2D" / "slang" / "quad.slang");
-	const std::string voxel = readText(shaders / "renderer3D" / "slang" / "voxel.slang");
+	const std::string quad = readText(shaders / "renderer2D" / "quad.slang");
+	const std::string voxel = readText(shaders / "renderer3D" / "voxel.slang");
 	if (quad.empty() || voxel.empty())
 		return;
 	renderer::utils::SlangCompilationResult first;
