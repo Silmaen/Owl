@@ -63,3 +63,6 @@ A complete demonstrator covering all major engine features lives in
 screen (or **Open project**) and play any scene to see
 how Lua scripts, UI, sound and triggers fit together. Treat the sample as both a
 showcase and a reference for your own projects.
+
+Beside it, `samples/` holds small complete games, one project each (Breakout first), listed under **Sample games**
+on the File screen: a game of a readable size to start a project from.

@@ -23,16 +23,16 @@ Owl ships two kinds of example content:
 
 ## Short list
 
-| Game                             | Inspired by           | Exercises                                                   | Possible from |
-|----------------------------------|-----------------------|-------------------------------------------------------------|---------------|
-| Breakout                         | Breakout / Arkanoid   | 2D, physics, HUD, sound, gamepad                            | v0.4.0        |
-| Sokoban                          | Sokoban               | tilemap, undo, saves, level editing in Owl Nest             | v0.4.0        |
-| Mini Transport Tycoon            | Mini Motorways / TTD  | isometric, roads, pathfinding, management HUD               | v0.4.0        |
-| Wolfenstein mini                 | Wolfenstein 3D        | raycast, doors, pick-ups, HUD                               | v0.4.0        |
-| Mini Minecraft                   | Minecraft             | voxel, build and break, inventory                           | v0.4.0        |
-| One-room Zelda-like              | The Legend of Zelda   | top-down, dialogue, enemy AI, 2D lights                     | v0.7.0        |
-| Marble or mini kart              | Marble Madness / Kart | 3D, Jolt physics, shadows                                   | v0.7.0        |
-| Networked Bomberman              | Bomberman             | tilemap, deterministic simulation, multiplayer              | v0.8.0        |
+| Game                  | Inspired by           | Exercises                                       | Possible from |
+|-----------------------|-----------------------|-------------------------------------------------|---------------|
+| Breakout              | Breakout / Arkanoid   | 2D, physics, HUD, sound, gamepad                | v0.4.0        |
+| Sokoban               | Sokoban               | tilemap, undo, saves, level editing in Owl Nest | v0.4.0        |
+| Mini Transport Tycoon | Mini Motorways / TTD  | isometric, roads, pathfinding, management HUD   | v0.4.0        |
+| Wolfenstein mini      | Wolfenstein 3D        | raycast, doors, pick-ups, HUD                   | v0.4.0        |
+| Mini Minecraft        | Minecraft             | voxel, build and break, inventory               | v0.4.0        |
+| One-room Zelda-like   | The Legend of Zelda   | top-down, dialogue, enemy AI, 2D lights         | v0.7.0        |
+| Marble or mini kart   | Marble Madness / Kart | 3D, Jolt physics, shadows                       | v0.7.0        |
+| Networked Bomberman   | Bomberman             | tilemap, deterministic simulation, multiplayer  | v0.8.0        |
 
 Breakout or Sokoban comes first (simple, quick to finish), then Mini Transport Tycoon, which carries Owl's main
 argument. The two v1.0 showcase games (one 2D, one 3D) are picked from this list.
@@ -58,25 +58,32 @@ Common to every game:
 
 ### Breakout
 
-| Item     | Plan                                                                                                            |
-|----------|-----------------------------------------------------------------------------------------------------------------|
-| Play     | One screen, 5 levels, 3 lives; bricks of 1 to 3 hits; 2 power-ups (wide paddle, slow ball)                      |
-| Win/lose | Every brick of the 5 levels / no life left; best score kept                                                     |
-| Controls | `move` axis (keys, stick, D-pad) or the mouse; Space, pad A or left click serves                                |
-| Scenes   | `title`, `level_1` to `level_5` (one scene each, `scene.transition_to`), `settings`, `victory`, `game_over`     |
-| Entities | Paddle (`PhysicBody` Kinematic), ball (Dynamic, restitution 1, friction 0, gravity scale 0), walls (Static)     |
-| Bricks   | Instances of a `brick.owlprefab` (Static body, `SpriteRenderer`), laid out in Owl Nest                          |
-| Lua      | `paddle.lua`, `ball.lua` (`on_collision`, speed kept with `physics.set_velocity`), `brick.lua`, `game.lua`      |
-| HUD      | `huds/play.owlhud`: score, lives, level, pause window                                                           |
-| Art      | Home-made bricks, paddle and ball (`tools/samples/breakout/`); backdrop from `pixel_platformer_backgrounds.png` |
-| Saves    | No slot; best score through `settings.set` and `settings.save`                                                  |
+Done in v0.4.0: `samples/breakout/` (how to play: its `README.md`).
 
-- Reuse: `scripts/platformer/flicker.lua` (hit flash), `scripts/platformer/coin.lua` (pop and fade before destroy),
-  `huds/gameplay.owlhud` (corner layout of score and lives), `prefabs/coin_pair.owlprefab` (prefab pattern).
-- Gaps: G5 (mouse to world), G1 (power-ups from a pool), G14 (one scene per level), G9 (music volume).
-- Scenarios: `breakout_serve` (serve, 300 frames, `breakout_bricks` below its start value), `breakout_lose` (no
-  input, `breakout_lives` drops by one), `breakout_gamepad` (the stick moves the paddle).
-- Size: **S**, about 4 days.
+| Item     | Made                                                                                                             |
+|----------|------------------------------------------------------------------------------------------------------------------|
+| Play     | One screen, 5 levels, 3 lives; bricks of 1 to 3 hits; 2 power-ups (wide paddle 15 s, slow ball 12 s)             |
+| Win/lose | Every brick of the 5 levels / no life left; best score kept; the ball serves by itself after 5 s                 |
+| Controls | `paddle` axis (A / D, arrows, left stick, D-pad) or the mouse; `serve` (Space, pad A, left click); `pause`       |
+| Scenes   | `title`, `level_1` to `level_5` (one scene each, `scene.transition_to`), `settings`, `victory`, `game_over`      |
+| Entities | `Paddle` and `PaddleWide` (Kinematic), `Ball` (Dynamic, restitution 1, friction 0), three `Wall` (Static)        |
+| Bricks   | Instances of `prefabs/brick.owlprefab` (Static body, `SpriteRenderer`, `brick.lua` with its properties)          |
+| Lua      | `game.lua` (rules, pools, pause), `paddle.lua`, `ball.lua` (speed kept with `physics.set_velocity`), `brick.lua` |
+| HUD      | `huds/play.owlhud`: score, level, lives, a message line, the pause window (Resume, Restart level, Quit)          |
+| Art      | Home-made bricks, paddle, ball, capsules, walls and backdrop, chip sounds and music (`tools/samples/breakout/`)  |
+| Saves    | No slot; best score through `settings.set` and `settings.save` (`breakout_best`)                                 |
+
+- Reuse: the four menus and their scripts copied from the Engine Demo; the hit flash of `scripts/platformer/flicker.lua`.
+  A broken brick is destroyed at once (a popping brick would keep its body), its burst shown from a pool instead of
+  the pop of `coin.lua`.
+- Gaps met: G5 (the paddle follows the mouse motion, `breakout_mouse_speed` setting), G1 (pools of hidden entities:
+  power-ups, bursts, and a second paddle for the wide one, a body cannot be resized from Lua), G14 (one scene per
+  level), G9 (master volume only), G8 (the pause stops the bodies from Lua), G16 (the level scenes listed in
+  `game.lua`).
+- Scenarios: `breakout_serve` (serve, 300 frames, `breakout_bricks` below 40), `breakout_lose` (no input at all:
+  the automatic serve, `breakout_lives` below 3), `breakout_gamepad` (dead zone, the stick moves the paddle, A serves).
+- The levels were first laid out by `tools/samples/breakout/generate_levels.py` (text grids) and are edited in Owl Nest
+  from then on; `tools/tests/test_breakout_levels.py` checks the grids.
 
 ### Sokoban
 
@@ -230,7 +237,8 @@ test/unit/scenarios/<game>_*.owltest  scenario tests
 | G9  | No music and effects mixing: `SoundSource` loops ignore `volume_music` and have no Lua volume                       | S    | All                                      | No: master volume only                                           |
 | G10 | No line-of-sight or ray query in Lua                                                                                | S    | Wolfenstein                              | No: grid DDA in Lua, as in `raycast_level.lua`                   |
 | G11 | No guard nor weapon-view sprites                                                                                    | M    | Wolfenstein                              | No: exploration first, combat later                              |
-| G12 | Owl Nest finds `engine_demo` only, and only `engine_demo/` is installed                                             | S    | All                                      | No: File > Open project                                          |
+| G12 | Owl Nest finds `engine_demo` only, and only `engine_demo/` is installed (fixed in v0.4.0: `samples/`, File screen)  | S    | All                                      | No: File > Open project                                          |
 | G13 | `VoxelPlayer` edits fire only with a captured cursor: a gamepad player and headless scenarios cannot break or place | S    | Minecraft                                | **Yes**: gamepad rule and CI scenario                            |
 | G14 | Lua cannot switch the tilemap asset of an entity: one scene per level                                               | S    | Sokoban, Breakout                        | No: duplicate the level scene                                    |
 | G15 | No Lua pick of the entity under the mouse                                                                           | S    | Tycoon                                   | No: compare `isometric.pick_cell` with the vehicle cells         |
+| G16 | The export follows scene paths quoted in scripts, not those in script properties (a `next_scene` string)            | S    | Breakout                                 | No: list the scenes in the script                                |

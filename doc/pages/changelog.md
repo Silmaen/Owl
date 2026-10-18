@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Sample game Breakout (`samples/breakout/`), the first of `samples/`: five levels, three lives, bricks of one to three hits, wide-paddle and slow-ball power-ups, pause, settings and best score, played with keyboard, mouse or gamepad; its art, sounds and levels come from `tools/samples/breakout/`.
+- `samples/` ships beside the Engine Demo: installed in the Owl Nest package, listed under **Sample games** on the File screen (`panel::findSampleGames`), each sample exported and played headless by the end-to-end export test, its HUDs checked like the demo's.
 - `owl_bench` group `mcp`: `tools/call` and `ping` round trips over loopback HTTP into a headless editor session, the MCP and command libraries of Owl Nest now built with `OWL_BENCHMARK` even without the editor.
 - Scenario files take an optional `project` (the project of the scene, else found above it) and `assets` (extra asset folders), so a test fixture scene can live beside the tests and use a game project.
 - Lua `scene.find_entities(tag)`: every entity with a tag; in the Engine Demo iso town a road built on a tree clears it and the bulldozer removes trees (3 funds).
