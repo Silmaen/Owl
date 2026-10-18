@@ -191,6 +191,19 @@ TEST_F(HudLibraryTest, twoScenesShareTheHudAndItsValuesSurviveATransition) {
 	EXPECT_EQ(context.getHudLibrary().getLoadCount(), 1u);
 }
 
+TEST_F(HudLibraryTest, startingTheRuntimeLoadsTheHudBeforeTheScripts) {
+	app::EngineContext context;
+	const auto path = writeHud();
+	context.setDefaultHud(path);
+	scene::Scene sc;
+	sc.setEngineContext(&context);
+	EXPECT_FALSE(context.getHudLibrary().isLoaded(path));
+	sc.onStartRuntime();
+	EXPECT_TRUE(context.getHudLibrary().isLoaded(path));
+	EXPECT_EQ(context.getHudLibrary().getLoadCount(), 1u);
+	sc.onEndRuntime();
+}
+
 TEST_F(HudLibraryTest, sceneHudPathOverridesTheDefaultAndEmptyMeansNone) {
 	app::EngineContext context;
 	const auto defaultHud = writeHud("default.owlhud");

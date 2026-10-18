@@ -198,6 +198,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Starting a scene loads its HUD before the scripts run: the first `scene.find_entity` or `ui.find` of an `on_create` no longer pays for the HUD fonts, which overran the 250 ms Lua time quota of the sample games under AddressSanitizer and qemu.
 - The emulated arm64 runs of the scenario and export tests multiply the Lua time quota by 8 (`OWL_SCRIPT_TIME_SCALE`): a save listing or a settings write under qemu overran the 250 ms of a native call.
 - The minimaps of Wolfenstein mini and of the Engine Demo raycast level keep their share of the screen at 1080p and above: a `Space: Screen` `Renderer2D` layer takes a `ReferenceHeight` (screen height in units, its width following the aspect ratio, editable in Scene Settings), 720 for both.
 - A shown `UiWindow` (a pause menu, an inventory) holds the world interactions back: the press of `interact` that opens a raycast door, slides a secret wall or calls `on_interact` waits until the window is closed, the click on Resume included (Wolfenstein mini could open a door from its pause window).

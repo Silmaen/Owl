@@ -530,7 +530,8 @@ hit-tests that same layout. Design: [HUD system](design/hud-system.md).
 A HUD can live in its own file instead of in each scene: `.owlhud` holds the same entities as a scene under a root
 `Hud:` key with its own `FormatVersion`. A scene names it with `Hud: huds/gameplay.owlhud` (nothing: the project's
 `DefaultHud`; an empty value: no HUD). `app::EngineContext::getHudLibrary()` loads each file once into a scene shared by
-every scene asking for it, so its widget values survive a scene transition. The HUD is drawn after, and clicked before,
+every scene asking for it, so its widget values survive a scene transition; `Scene::onStartRuntime` loads it before the
+scripts start, so no `on_create` pays for its fonts against its time quota. The HUD is drawn after, and clicked before,
 the scene's own canvases; Lua `ui.find(name)` searches it first and `scene.find_entity` falls back to it. Saves keep
 its widget values. Design: [HUD system](design/hud-system.md).
 
