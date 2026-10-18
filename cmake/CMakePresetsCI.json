@@ -99,7 +99,8 @@
         "OWL_ENABLE_DOCUMENTATION": "OFF",
         "OWL_BENCHMARK": "OFF",
         "OWL_RENDER_TESTS": "OFF",
-        "OWL_TEST_TIMEOUT": "3600"
+        "OWL_TEST_TIMEOUT": "3600",
+        "OWL_SCRIPT_TIME_SCALE": "8"
       },
       "vendor": {
         "silmaen": {
@@ -113,6 +114,7 @@
       "toolchainFile": "${sourceDir}/cmake/toolchains/linux-aarch64-clang.cmake",
       "cacheVariables": {
         "OWL_TEST_TIMEOUT": "3600",
+        "OWL_SCRIPT_TIME_SCALE": "8",
         "OWL_ENABLE_COVERAGE": "OFF",
         "OWL_ENABLE_DOCUMENTATION": "OFF",
         "OWL_BENCHMARK": "OFF",

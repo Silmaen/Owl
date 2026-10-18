@@ -19,6 +19,11 @@ set(${PROJECT_PREFIX}_TEST_ENVIRONMENT
 if (CMAKE_CROSSCOMPILING AND CMAKE_SYSROOT)
     list(APPEND ${PROJECT_PREFIX}_TEST_ENVIRONMENT "QEMU_LD_PREFIX=${CMAKE_SYSROOT}")
 endif ()
+# Lua time quota multiplier for the runs that play games (scenarios, export): emulated builds run scripts many times
+# slower, a host call (a save listing, a settings write) then overruns the 250 ms of a native run.
+set(${PROJECT_PREFIX}_SCRIPT_TIME_SCALE 1 CACHE STRING "Lua time quota multiplier for the scenario and export tests")
+set(${PROJECT_PREFIX}_GAME_TEST_ENVIRONMENT ${${PROJECT_PREFIX}_TEST_ENVIRONMENT}
+        "OWL_SCRIPT_TIME_SCALE=${${PROJECT_PREFIX}_SCRIPT_TIME_SCALE}")
 
 add_custom_target(All_Tests)
 # googletest
@@ -111,6 +116,10 @@ foreach (child ${children})
             if (${child} STREQUAL "render_tests")
                 set_tests_properties(${PROJECT_PREFIX_LOWER}_${child}_UTests PROPERTIES LABELS render)
             endif ()
+            if (${child} STREQUAL "export_tests")
+                set_tests_properties(${PROJECT_PREFIX_LOWER}_${child}_UTests PROPERTIES
+                        ENVIRONMENT "${${PROJECT_PREFIX}_GAME_TEST_ENVIRONMENT}")
+            endif ()
             if (${child} STREQUAL "script_tests")
                 # Hostile-script tests rely on the Lua quotas: a quota that never fires must fail, not hang.
                 set_tests_properties(${PROJECT_PREFIX_LOWER}_${child}_UTests PROPERTIES TIMEOUT 300)
@@ -165,7 +174,7 @@ if (TARGET ${CMAKE_PROJECT_NAME}Runner)
         add_test(NAME ${PROJECT_PREFIX_LOWER}_scenario_${scenarioName}
                 COMMAND $<TARGET_FILE:${CMAKE_PROJECT_NAME}Runner> --scenario ${scenario})
         set_tests_properties(${PROJECT_PREFIX_LOWER}_scenario_${scenarioName} PROPERTIES LABELS scenario TIMEOUT ${${PROJECT_PREFIX}_TEST_TIMEOUT}
-                ENVIRONMENT "${${PROJECT_PREFIX}_TEST_ENVIRONMENT}")
+                ENVIRONMENT "${${PROJECT_PREFIX}_GAME_TEST_ENVIRONMENT}")
     endforeach ()
 endif ()
 

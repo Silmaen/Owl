@@ -13,13 +13,34 @@
 #include "core/external/lua.h"
 #include "script/LuaEngine.h"
 
+#include <charconv>
 #include <cstdint>
+#include <cstdlib>
+#include <string_view>
+#include <system_error>
 
 namespace owl::script {
 namespace {
 
+// `OWL_SCRIPT_TIME_SCALE` multiplies the time quota: tests under an emulator run every call many times slower.
+auto scaledTimeQuota(const uint32_t iTimeMs) -> uint32_t {
+	const char* scale = std::getenv("OWL_SCRIPT_TIME_SCALE");
+	if (scale == nullptr)
+		return iTimeMs;
+	uint32_t factor = 1;
+	const std::string_view text{scale};
+	if (const auto [end, error] = std::from_chars(text.data(), text.data() + text.size(), factor);
+		error != std::errc{} || factor == 0)
+		return iTimeMs;
+	return iTimeMs * factor;
+}
+
 auto defaultQuotas() -> ScriptQuotas& {
-	static ScriptQuotas quotas;
+	static ScriptQuotas quotas = [] -> ScriptQuotas {
+		ScriptQuotas initial;
+		initial.timePerCallMs = scaledTimeQuota(initial.timePerCallMs);
+		return initial;
+	}();
 	return quotas;
 }
 
