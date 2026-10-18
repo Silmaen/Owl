@@ -116,6 +116,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Engine shaders live in `engine_assets/shaders/<renderer>/<name>.slang` (the `slang` folder level is gone) and engine fonts in `engine_assets/fonts/` (one flat folder, licences as `LICENSE-<family>.txt`).
 - Asset trees reorganised: the Engine Demo sorts its textures (`tilemaps`, `atlases`, `sprites`, `items`, `iso`, `wolf3d`, `ui`), sounds (`hub`, `raycast`, `platformer`, `town`, `ui`) and scripts (`hub`, `platformer`, `raycast`, `iso`, `voxel`, `ui`) by area; Kenney sheets are gathered in `textures/tilemaps/` with one `CREDITS.md`.
 - The Engine Demo asset generators moved from the asset folders to `tools/demo/` and write into the new layout.
 - The editor icon rasterizer moved to `source/owlnest/assets_sources/generate_icons.py`.

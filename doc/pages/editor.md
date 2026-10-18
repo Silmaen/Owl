@@ -103,9 +103,9 @@ plugged into the dockspace through `UiLayer::setTopBarCallback`.
 
 The editor uses two font families, shipped as loose TTFs under `engine_assets/fonts/` (SIL Open Font License):
 
-- **Inter** (Regular, SemiBold) in `engine_assets/fonts/inter/` — the UI font at `EditorSettings::uiFontSize`
+- **Inter** (Regular, SemiBold) in `engine_assets/fonts/` — the UI font at `EditorSettings::uiFontSize`
   (default 16 px, range 14–24).
-- **JetBrains Mono** Regular in `engine_assets/fonts/jetbrainsmono/` — code documents at
+- **JetBrains Mono** Regular in `engine_assets/fonts/` — code documents at
   `EditorSettings::codeEditorFontSize` (default 17 px, range 8–48), and numbers aligned in columns.
 
 Text roles (`gui::TextStyle`) pick a font and a size relative to the UI size: `Body`, `Strong`, `Title` (1.15×),

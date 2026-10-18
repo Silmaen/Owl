@@ -312,7 +312,7 @@ icon at several sizes: 16, 24 and 32 px times the monitor content scale, plus th
 `IconBank::getIcon(name, size)` returns the smallest tier at least as large as the drawn size, so an icon is drawn at
 its own resolution instead of a scaled-down bitmap; `getIcon(name)` returns the 64 px one.
 
-Action glyphs come from the **Lucide** icon font (`engine_assets/fonts/lucide/`, ISC licence), merged into every UI
+Action glyphs come from the **Lucide** icon font (`engine_assets/fonts/`, ISC licence), merged into every UI
 font: the constants of `gui/IconFont.h` (save, play, trash...) are UTF-8 strings used inside any label, at the size
 and colour of the text around them. The text fonts exclude the private-use area so their own glyphs there never
 shadow an icon.

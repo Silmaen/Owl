@@ -36,7 +36,7 @@ protected:
 		std::filesystem::create_directories(m_dir);
 		m_font = m_dir / "OwlUnicodeTest.ttf";
 		std::filesystem::copy_file(
-				test::getRootPath() / "engine_assets" / "fonts" / "opensans" / "OpenSans-Regular.ttf", m_font);
+				test::getRootPath() / "engine_assets" / "fonts" / "OpenSans-Regular.ttf", m_font);
 		clearCache();
 	}
 

@@ -13,7 +13,7 @@
  *  UTF-8 glyphs of the Lucide icon font (0.460.0, ISC licence), merged into every UI font by `UiLayer`.
  *
  * Use them inside any ImGui label, e.g. `ImGui::Button(icon::save)` or `std::format("{} Save", icon::save)`; the
- * glyph takes the size and colour of the text around it. Font in `engine_assets/fonts/lucide/`, code points from the
+ * glyph takes the size and colour of the text around it. Font in `engine_assets/fonts/`, code points from the
  * `info.json` of the `lucide-static` package.
  */
 namespace owl::gui::icon {
