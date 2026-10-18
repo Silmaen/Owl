@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from tools.samples.sokoban import scene_yaml as y
+from tools.samples import scene_yaml as y
 
 ROOT = Path(__file__).resolve().parents[3] / "samples" / "sokoban"
 """The sample project."""

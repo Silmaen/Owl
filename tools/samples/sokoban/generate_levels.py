@@ -17,8 +17,8 @@ from __future__ import annotations
 import struct
 from pathlib import Path
 
+from tools.samples import scene_yaml as y
 from tools.samples.sokoban import levels as lv
-from tools.samples.sokoban import scene_yaml as y
 from tools.samples.sokoban.generate_assets import COLUMNS, ROWS, TILE, TILES
 
 ROOT = Path(__file__).resolve().parents[3] / "samples" / "sokoban"
