@@ -1,5 +1,6 @@
--- Settings of Breakout, copied from the Engine Demo settings menu (scripts/ui/settings_menu.lua): master volume,
--- mouse speed of the paddle and interface size; Back (or Esc, pad B) saves them and returns to the title.
+-- Settings of Breakout, after the Engine Demo settings menu (scripts/ui/settings_menu.lua): master volume,
+-- mouse speed of the paddle and interface size; Back (or Esc, pad B) saves them and returns to the title (a magenta
+-- wipe, like every Breakout screen).
 -- Music and effects share the master volume: a looping SoundSource has no volume of its own yet (gap G9).
 
 local vol_label_id = 0
@@ -43,7 +44,7 @@ local function update_sliders()
 end
 
 function on_create()
-    ui.transition_fade_in(0.5)
+    if not ui.is_transition_active() then ui.transition_play("wipe_up", 0.4, 0.45, 0.05, 0.55) end
     vol_label_id = scene.find_entity("MasterVolLabel")
     vol_slider_id = scene.find_entity("MasterVolSlider")
     mouse_label_id = scene.find_entity("MouseSpeedLabel")
@@ -81,11 +82,11 @@ function on_ui_scale_changed()
     update_labels()
 end
 
--- Reset: every setting back to game_settings.yml, the best score kept.
+-- Reset: volume, mouse speed and interface size back to game_settings.yml, the scores and the levels cleared kept.
 function on_reset_clicked()
-    local best = settings.get("breakout_best", 0)
-    settings.reset_all()
-    settings.set("breakout_best", best)
+    settings.reset("volume_master")
+    settings.reset("breakout_mouse_speed")
+    settings.reset("ui_scale")
     settings.apply()
     update_sliders()
     update_labels()
@@ -95,5 +96,5 @@ function go_back()
     if leaving then return end
     leaving = true
     settings.save()
-    scene.transition_to("scenes/title.owl", "fade_out", 0.3)
+    scene.transition_to("scenes/title.owl", "wipe_up", 0.3, 0.45, 0.05, 0.55)
 end

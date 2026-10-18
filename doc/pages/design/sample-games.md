@@ -65,23 +65,24 @@ Done in v0.4.0: `samples/breakout/` (how to play: its `README.md`).
 | Play     | One screen, 5 levels, 3 lives; bricks of 1 to 3 hits; 2 power-ups (wide paddle 15 s, slow ball 12 s)             |
 | Win/lose | Every brick of the 5 levels / no life left; best score kept; the ball serves by itself after 5 s                 |
 | Controls | `paddle` axis (A / D, arrows, left stick, D-pad) or the mouse; `serve` (Space, pad A, left click); `pause`       |
-| Scenes   | `title`, `level_1` to `level_5` (one scene each, `scene.transition_to`), `settings`, `victory`, `game_over`      |
+| Scenes   | `title`, `level_select`, `level_1` to `level_5` (one scene each), `settings`, `victory`, `game_over`             |
+| Menus    | Arcade neon (`generate_menus.py`): a brick wall lit in a wave, an attract ball, neon buttons, magenta wipes      |
 | Entities | `Paddle` and `PaddleWide` (Kinematic), `Ball` (Dynamic, restitution 1, friction 0), three `Wall` (Static)        |
 | Bricks   | Instances of `prefabs/brick.owlprefab` (Static body, `SpriteRenderer`, `brick.lua` with its properties)          |
 | Lua      | `game.lua` (rules, pools, pause), `paddle.lua`, `ball.lua` (speed kept with `physics.set_velocity`), `brick.lua` |
-| HUD      | `huds/play.owlhud`: score, level, lives, a message line, the pause window (Resume, Restart level, Quit)          |
+| HUD      | `huds/play.owlhud`: score, level, lives, a message line, the pause window (Resume, Restart, Quit, controls)      |
 | Art      | Home-made bricks, paddle, ball, capsules, walls and backdrop, chip sounds and music (`tools/samples/breakout/`)  |
-| Saves    | No slot; best score through `settings.set` and `settings.save` (`breakout_best`)                                 |
-
-- Reuse: the four menus and their scripts copied from the Engine Demo; the hit flash of `scripts/platformer/flicker.lua`.
-  A broken brick is destroyed at once (a popping brick would keep its body), its burst shown from a pool instead of
-  the pop of `coin.lua`.
+| Saves    | No slot; best score and levels cleared with their best through `settings.save` (`breakout_best`, `_done_N`)      |
+- Reuse: the hit flash of `scripts/platformer/flicker.lua`; the menus started as copies of the Engine Demo ones and
+  now have a look of their own (feedback of the first playthrough). A broken brick is destroyed at once (a popping brick
+  would keep its body), its burst shown from a pool instead of the pop of `coin.lua`.
 - Gaps met: G5 (the paddle follows the mouse motion, `breakout_mouse_speed` setting), G1 (pools of hidden entities:
   power-ups, bursts, and a second paddle for the wide one, a body cannot be resized from Lua), G14 (one scene per
   level), G9 (master volume only), G8 (the pause stops the bodies from Lua). Each level names the next one in the
   `next_scene` property of its `Game` script (G16 fixed): a new level is a duplicated scene in Owl Nest.
 - Scenarios: `breakout_serve` (serve, 300 frames, `breakout_bricks` below 40), `breakout_lose` (no input at all:
-  the automatic serve, `breakout_lives` below 3), `breakout_gamepad` (dead zone, the stick moves the paddle, A serves).
+  the automatic serve, `breakout_lives` below 3), `breakout_gamepad` (dead zone, the stick moves the paddle, A serves),
+  `breakout_level_select` (down selects level 2, accept starts a fresh run there).
 - The levels were first laid out by `tools/samples/breakout/generate_levels.py` (text grids) and are edited in Owl Nest
   from then on; `tools/tests/test_breakout_levels.py` checks the grids.
 

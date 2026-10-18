@@ -36,7 +36,7 @@ Entities:
       offset: [16, 6]
     UiText:
       outlineWidth: 2
-      text: 'Score 0'
+      text: 'SCORE 000000'
       color: [1, 0.92, 0.5, 1]
       fontSize: 34
       horizontalAlignment: Left
@@ -46,6 +46,7 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
+      font: JetBrainsMono-Regular
   - Entity: 7090000000000000003
     Tag:
       tag: LevelText
@@ -66,8 +67,8 @@ Entities:
       offset: [0, 6]
     UiText:
       outlineWidth: 2
-      text: 'Level 1'
-      color: [1, 1, 1, 1]
+      text: 'LEVEL 1'
+      color: [0.6, 0.97, 1, 1]
       fontSize: 34
       horizontalAlignment: Center
       verticalAlignment: Middle
@@ -76,6 +77,7 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
+      font: JetBrainsMono-Regular
   - Entity: 7090000000000000004
     Tag:
       tag: LivesText
@@ -96,7 +98,7 @@ Entities:
       offset: [-16, 6]
     UiText:
       outlineWidth: 2
-      text: 'Lives 3'
+      text: 'LIVES 3'
       color: [1, 0.92, 0.5, 1]
       fontSize: 34
       horizontalAlignment: Right
@@ -106,6 +108,7 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
+      font: JetBrainsMono-Regular
   - Entity: 7090000000000000005
     Tag:
       tag: MessageText
@@ -127,7 +130,7 @@ Entities:
     UiText:
       outlineWidth: 2
       text: 'Level 1'
-      color: [1, 1, 1, 1]
+      color: [0.6, 0.97, 1, 1]
       fontSize: 44
       horizontalAlignment: Center
       verticalAlignment: Middle
@@ -136,6 +139,7 @@ Entities:
       wrap: true
       fit: Shrink
       minFontSize: 12
+      font: OpenSans-ExtraBoldItalic
   - Entity: 7090000000000000006
     Tag:
       tag: PauseWindow
@@ -151,16 +155,16 @@ Entities:
       anchorMin: [0.5, 0.5]
       anchorMax: [0.5, 0.5]
       pivot: [0.5, 0.5]
-      size: [0.62, 0.5]
+      size: [0.9, 0.66]
       sizeUnit: [ScreenHeight, ScreenHeight]
       offset: [0, 0]
     UiWindow:
-      title: Paused
-      titleBarHeight: 34
-      titleFontSize: 26
-      bodyColor: [0.08, 0.09, 0.16, 0.95]
-      titleColor: [0.2, 0.25, 0.45, 1]
-      titleTextColor: [1, 1, 1, 1]
+      title: PAUSED
+      titleBarHeight: 38
+      titleFontSize: 28
+      bodyColor: [0.04, 0.02, 0.1, 0.96]
+      titleColor: [0.35, 0.05, 0.45, 1]
+      titleTextColor: [0.6, 0.97, 1, 1]
       draggable: false
       closable: false
       onCloseCallback: ''
@@ -172,6 +176,37 @@ Entities:
       columns: 1
       cellSize: [0, 0]
   - Entity: 7090000000000000007
+    Tag:
+      tag: ControlsText
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7090000000000000006
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.92, 0.3]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 2
+      text: "MOVE    A / D, arrows, mouse, left stick, D-pad\nSERVE   Space, Up, left click, pad A\nPAUSE   Escape, P, pad Start"
+      color: [1, 0.88, 0.3, 1]
+      fontSize: 22
+      horizontalAlignment: Left
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0.25
+      wrap: true
+      fit: Shrink
+      minFontSize: 12
+      font: JetBrainsMono-Regular
+  - Entity: 7090000000000000008
     Tag:
       tag: QuitButton
     Transform:
@@ -186,19 +221,19 @@ Entities:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.9, 0.24]
+      size: [0.55, 0.16]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiButton:
-      normalColor: [0.45, 0.16, 0.16, 1]
-      hoverColor: [0.55, 0.26, 0.26, 1]
-      pressedColor: [0.4, 0.11, 0.11, 1]
-      disabledColor: [0.15, 0.15, 0.15, 0.5]
+      normalColor: [0.07, 0.02, 0.14, 1]
+      hoverColor: [0.32, 0.05, 0.42, 1]
+      pressedColor: [0.55, 0.1, 0.6, 1]
+      disabledColor: [0.06, 0.04, 0.08, 0.6]
       onClickCallback: on_pause_quit
     UiText:
       outlineWidth: 2
-      text: 'Quit to title'
-      color: [1, 1, 1, 1]
+      text: 'QUIT TO TITLE'
+      color: [0.6, 0.97, 1, 1]
       fontSize: 30
       horizontalAlignment: Center
       verticalAlignment: Middle
@@ -207,12 +242,34 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
+      font: OpenSans-ExtraBoldItalic
     UiFocus:
       focusable: true
       initial: false
-      highlightColor: [1, 0.82, 0.2, 1]
-      highlightThickness: 2
-  - Entity: 7090000000000000008
+      highlightColor: [1, 0.3, 0.8, 1]
+      highlightThickness: 3
+  - Entity: 7090000000000000009
+    Tag:
+      tag: QuitButtonFrame
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7090000000000000008
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [1, 1]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiImage:
+      tint: [1, 1, 1, 1]
+      texture: nam:textures/ui/button_frame.png
+  - Entity: 7090000000000000010
     Tag:
       tag: RestartButton
     Transform:
@@ -227,19 +284,19 @@ Entities:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.9, 0.24]
+      size: [0.55, 0.16]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiButton:
-      normalColor: [0.3, 0.3, 0.3, 1]
-      hoverColor: [0.4, 0.4, 0.4, 1]
-      pressedColor: [0.25, 0.25, 0.25, 1]
-      disabledColor: [0.15, 0.15, 0.15, 0.5]
+      normalColor: [0.07, 0.02, 0.14, 1]
+      hoverColor: [0.32, 0.05, 0.42, 1]
+      pressedColor: [0.55, 0.1, 0.6, 1]
+      disabledColor: [0.06, 0.04, 0.08, 0.6]
       onClickCallback: on_pause_restart
     UiText:
       outlineWidth: 2
-      text: 'Restart level'
-      color: [1, 1, 1, 1]
+      text: 'RESTART LEVEL'
+      color: [0.6, 0.97, 1, 1]
       fontSize: 30
       horizontalAlignment: Center
       verticalAlignment: Middle
@@ -248,12 +305,34 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
+      font: OpenSans-ExtraBoldItalic
     UiFocus:
       focusable: true
       initial: false
-      highlightColor: [1, 0.82, 0.2, 1]
-      highlightThickness: 2
-  - Entity: 7090000000000000009
+      highlightColor: [1, 0.3, 0.8, 1]
+      highlightThickness: 3
+  - Entity: 7090000000000000011
+    Tag:
+      tag: RestartButtonFrame
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7090000000000000010
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [1, 1]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiImage:
+      tint: [1, 1, 1, 1]
+      texture: nam:textures/ui/button_frame.png
+  - Entity: 7090000000000000012
     Tag:
       tag: ResumeButton
     Transform:
@@ -268,19 +347,19 @@ Entities:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.9, 0.24]
+      size: [0.55, 0.16]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiButton:
-      normalColor: [0.15, 0.35, 0.65, 1]
-      hoverColor: [0.25, 0.45, 0.75, 1]
-      pressedColor: [0.1, 0.3, 0.6, 1]
-      disabledColor: [0.15, 0.15, 0.15, 0.5]
+      normalColor: [0.07, 0.02, 0.14, 1]
+      hoverColor: [0.32, 0.05, 0.42, 1]
+      pressedColor: [0.55, 0.1, 0.6, 1]
+      disabledColor: [0.06, 0.04, 0.08, 0.6]
       onClickCallback: on_pause_resume
     UiText:
       outlineWidth: 2
-      text: 'Resume'
-      color: [1, 1, 1, 1]
+      text: 'RESUME'
+      color: [0.6, 0.97, 1, 1]
       fontSize: 30
       horizontalAlignment: Center
       verticalAlignment: Middle
@@ -289,8 +368,30 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
+      font: OpenSans-ExtraBoldItalic
     UiFocus:
       focusable: true
       initial: true
-      highlightColor: [1, 0.82, 0.2, 1]
-      highlightThickness: 2
+      highlightColor: [1, 0.3, 0.8, 1]
+      highlightThickness: 3
+  - Entity: 7090000000000000013
+    Tag:
+      tag: ResumeButtonFrame
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7090000000000000012
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [1, 1]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiImage:
+      tint: [1, 1, 1, 1]
+      texture: nam:textures/ui/button_frame.png

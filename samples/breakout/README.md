@@ -13,6 +13,10 @@ costs a life. Where the ball lands on the paddle sets its angle, and it speeds u
 - Some bricks drop a capsule: **W** widens the paddle for 15 seconds, **S** slows the ball for 12 (50 points each).
 - The ball serves by itself after five seconds. The best score is kept between sessions.
 
+The title starts a fresh run at level 1, opens the level select (every level is open; a cleared one is marked with the
+best score made in it, kept in the settings) or the **How to play** window. The controls are shown there and in the
+pause window, never during play.
+
 ## Controls
 
 | Action | Keyboard              | Mouse        | Gamepad           |
@@ -26,15 +30,17 @@ The mouse moves the paddle by its motion; its speed is a setting, with the maste
 
 ## Inside
 
-| Path                      | Content                                                                     |
-|---------------------------|-----------------------------------------------------------------------------|
-| `scenes/`                 | `title`, `level_1` to `level_5`, `settings`, `victory`, `game_over`         |
-| `scripts/game/`           | `game.lua` (rules, power-ups, pause), `paddle.lua`, `ball.lua`, `brick.lua` |
-| `scripts/ui/`             | The menus, copied from the Engine Demo                                      |
-| `prefabs/brick.owlprefab` | A brick: static body, sprite, script; the levels hold its instances         |
-| `huds/play.owlhud`        | Score, level, lives, messages and the pause window                          |
+| Path                      | Content                                                                              |
+|---------------------------|--------------------------------------------------------------------------------------|
+| `scenes/`                 | `title`, `level_select`, `level_1` to `level_5`, `settings`, `victory`, `game_over`  |
+| `scripts/game/`           | `game.lua` (rules, power-ups, pause, saves), `paddle.lua`, `ball.lua`, `brick.lua`   |
+| `scripts/ui/`             | The neon menus; `neon_bricks.lua` lights the brick wall behind them                  |
+| `prefabs/brick.owlprefab` | A brick: static body, sprite, script; the levels hold its instances                  |
+| `huds/play.owlhud`        | Score, level, lives, messages and the pause window (with the controls)               |
 
 The art, the sounds and the first layout of the levels come from `tools/samples/breakout/` (`generate_assets.py`,
-`generate_levels.py`); edit the levels in Owl Nest afterwards (move, add or delete bricks, change their properties).
+`generate_levels.py`, `generate_menus.py`); edit the levels in Owl Nest afterwards (move, add or delete bricks, change
+their properties). The menus are arcade neon: a wall of bricks lit in a wave, a ball and a paddle playing by themselves
+on the title, neon buttons and magenta wipes between the screens.
 The `next_scene` property of the `Game` entity names the level that follows (`scenes/victory.owl` after the last one):
 to add a level, duplicate a level scene, set its `level` and `next_scene`, and point the level before at it.
