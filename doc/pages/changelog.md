@@ -186,6 +186,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - The emulated arm64 build finds the `fast_float` headers that the c4core headers of rapidyaml include: the engine requires and links `fast_float` directly.
+- The arm64 build (Debug under qemu) passes the Engine Demo scenarios: the raycast level sets its minimap fog up over a few frames instead of overrunning the script time quota, and scenarios take the `OWL_TEST_TIMEOUT` of their preset (3600 s on the arm64 presets) instead of a fixed 300 s.
 - Game export packs every sound file a script names in quotes, not only literal `sound.play("…")` arguments (random variants of the Engine Demo hub ambience and footsteps were missing from exported games).
 - Play in Owl Nest reads the game's settings like the runner: the project's `game_settings.yml` defaults and the player's overrides are loaded when a project opens (the Engine Demo HUD scale, player speed and volumes were ignored in the editor).
 - A `SoundSource` with `playOnStart` loads its sound asset on first use (it used to play only a sound a script had loaded before).

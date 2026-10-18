@@ -148,9 +148,14 @@ end
 
 -- Reads the walls of the hidden layer, clears the seen one (the tilemap asset may be shared with an earlier visit) and
 -- restores the cells of the gamestate.
-local function setup_fog()
-    local saved = gamestate.get("raycast_seen", "")
-    for r = 0, MAP_SIZE - 1 do
+-- The fog is set up a few rows per frame: reading and clearing every cell at once overruns the script time quota on
+-- slow machines (emulated arm64).
+local FOG_ROWS_PER_FRAME = 8
+local fog_row = 0
+
+local function setup_fog_rows()
+    local last = math.min(fog_row + FOG_ROWS_PER_FRAME, MAP_SIZE) - 1
+    for r = fog_row, last do
         for c = 0, MAP_SIZE - 1 do
             local key = key_of(c, r)
             solid[key] = isometric.get_cell(map_id, WALL_LAYER, c, r) == TILE_WALL
@@ -160,6 +165,12 @@ local function setup_fog()
             end
         end
     end
+    fog_row = last + 1
+    return fog_row >= MAP_SIZE
+end
+
+local function restore_seen()
+    local saved = gamestate.get("raycast_seen", "")
     for key = 0, MAP_SIZE * MAP_SIZE - 1 do
         if saved:byte(key + 1) == 49 then
             seen[key] = true
@@ -182,7 +193,6 @@ function on_create()
     map_id = scene.find_entity("Minimap")
     dot_id = scene.find_entity("MinimapPlayer")
     facing_id = scene.find_entity("MinimapFacing")
-    setup_fog()
     for i = 1, DOORS_NORTH + DOORS_WEST do
         local name = i <= DOORS_NORTH and ("Door_N_" .. i) or ("Door_W_" .. (i - DOORS_NORTH))
         local id = scene.find_entity(name)
@@ -205,7 +215,6 @@ function on_create()
             wall_blockers[i] = { blocker = blocker, c = c, r = r }
         end
     end
-    draw_restored()
 end
 
 -- Plays a sound of the level at the position of an entity, softer the farther the player is.
@@ -236,7 +245,12 @@ function on_update(dt)
         end
         d.state = state
     end
-    if player_id ~= 0 and map_id ~= 0 then
+    if map_id ~= 0 and fog_row < MAP_SIZE then
+        if setup_fog_rows() then
+            restore_seen()
+            draw_restored()
+        end
+    elseif player_id ~= 0 and map_id ~= 0 then
         update_fog(dt)
     end
     if player_id ~= 0 and dot_id ~= 0 then

@@ -112,6 +112,7 @@
       "inherits": "linux-clang-debug",
       "toolchainFile": "${sourceDir}/cmake/toolchains/linux-aarch64-clang.cmake",
       "cacheVariables": {
+        "OWL_TEST_TIMEOUT": "3600",
         "OWL_ENABLE_COVERAGE": "OFF",
         "OWL_ENABLE_DOCUMENTATION": "OFF",
         "OWL_BENCHMARK": "OFF",

@@ -164,7 +164,7 @@ if (TARGET ${CMAKE_PROJECT_NAME}Runner)
         get_filename_component(scenarioName ${scenario} NAME_WE)
         add_test(NAME ${PROJECT_PREFIX_LOWER}_scenario_${scenarioName}
                 COMMAND $<TARGET_FILE:${CMAKE_PROJECT_NAME}Runner> --scenario ${scenario})
-        set_tests_properties(${PROJECT_PREFIX_LOWER}_scenario_${scenarioName} PROPERTIES LABELS scenario TIMEOUT 300
+        set_tests_properties(${PROJECT_PREFIX_LOWER}_scenario_${scenarioName} PROPERTIES LABELS scenario TIMEOUT ${${PROJECT_PREFIX}_TEST_TIMEOUT}
                 ENVIRONMENT "${${PROJECT_PREFIX}_TEST_ENVIRONMENT}")
     endforeach ()
 endif ()
