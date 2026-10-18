@@ -30,6 +30,8 @@ struct BackstageContext {
 	std::vector<std::string> recentProjects;
 	/// Folder of the Engine Demo shipped with the editor; empty when it is not found.
 	std::filesystem::path sampleProject;
+	/// Folders of the sample games shipped with the editor (`samples/<game>/`), in name order.
+	std::vector<std::filesystem::path> sampleGames;
 	/// Create a project.
 	std::function<void()> newProject;
 	/// Pick and open a project.
@@ -71,8 +73,16 @@ struct BackstageContext {
 
 /**
  * @brief
+ *  Find the sample games shipped beside the Engine Demo: every `samples/<game>/owl_project.yml` next to its folder.
+ * @param[in] iSampleProject Folder of the Engine Demo (from findSampleProject); empty finds nothing.
+ * @return The folders of the sample games, sorted by name.
+ */
+[[nodiscard]] auto findSampleGames(const std::filesystem::path& iSampleProject) -> std::vector<std::filesystem::path>;
+
+/**
+ * @brief
  *  The File screen: covers the editor with the project actions on the left (new, open, save, package, settings,
- *  help, close, exit) and, on the right, the open project and the recent ones.
+ *  help, close, exit) and, on the right, the open project, the sample games and the recent ones.
  *
  * It replaces the former welcome window: the editor opens it at start-up when no project is open. `Escape` or the
  * back button returns to the editor.

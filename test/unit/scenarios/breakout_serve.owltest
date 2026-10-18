@@ -1,0 +1,12 @@
+# Breakout: the ball rides on the paddle until the serve (Space, pad A or a click), then breaks bricks of level 1.
+scene: ../../../samples/breakout/scenes/level_1.owl
+steps:
+  - frames: 30
+  - expect: {gamestate: breakout_bricks, equals: 40}
+  - expect: {gamestate: breakout_serves, equals: 0}
+  - expect: {entity: Ball, translation.y: {less: -6.0}}
+  - actions: {serve: true, frames: 1}
+  - frames: 300
+  - expect: {gamestate: breakout_serves, equals: 1}
+  - expect: {gamestate: breakout_bricks, less: 40}
+  - expect: {gamestate: breakout_score, greater: 0}

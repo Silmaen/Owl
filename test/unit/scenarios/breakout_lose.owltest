@@ -1,0 +1,9 @@
+# Breakout: nobody plays: the ball serves by itself after five seconds, the paddle never moves and a life is lost.
+scene: ../../../samples/breakout/scenes/level_1.owl
+steps:
+  - frames: 30
+  - expect: {gamestate: breakout_lives, equals: 3}
+  - frames: 300
+  - expect: {gamestate: breakout_serves, equals: 1}
+  - frames: 900
+  - expect: {gamestate: breakout_lives, less: 3}

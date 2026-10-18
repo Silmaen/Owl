@@ -1,0 +1,26 @@
+FormatVersion: 1
+# Actions of Breakout, on top of the built-in ones (the `ui_*` actions drive the menus).
+actions:
+  - name: paddle
+    type: axis
+    bindings:
+      - {key: A, scale: -1}
+      - {key: Left, scale: -1}
+      - {key: D}
+      - {key: Right}
+      - {gamepad_axis: left_x}
+      - {gamepad_button: DpadLeft, scale: -1}
+      - {gamepad_button: DpadRight}
+  - name: serve
+    type: button
+    bindings:
+      - {key: Space}
+      - {key: Up}
+      - {gamepad_button: A}
+      - {mouse_button: Left}
+  - name: pause
+    type: button
+    bindings:
+      - {key: Escape}
+      - {key: P}
+      - {gamepad_button: Start}

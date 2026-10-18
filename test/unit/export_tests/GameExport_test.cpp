@@ -14,7 +14,9 @@
 #include <data/assets/pack/PackReader.h>
 #include <renderer/gpu/Texture.h>
 
+#include <algorithm>
 #include <chrono>
+#include <cstddef>
 #include <cstdint>
 #include <cstdlib>
 #include <filesystem>
@@ -294,27 +296,63 @@ TEST_F(GameExporterFixture, ExportFailures) {
 }
 
 #ifdef OWL_PLATFORM_LINUX
-TEST(GameExportEndToEnd, SampleProjectPlaysFromItsExportFolder) {
+namespace {
+
+// The projects shipped with the editor: the Engine Demo, then every `samples/<game>/owl_project.yml`.
+auto shippedProjects() -> std::vector<std::filesystem::path> {
+	const auto root = test::getRootPath();
+	std::vector<std::filesystem::path> projects{root / "engine_demo"};
+	std::vector<std::filesystem::path> samples;
 	std::error_code ec;
-	const auto binDir = std::filesystem::canonical("/proc/self/exe", ec).parent_path();
-	if (ec || !exists(binDir / "OwlNest") || !exists(binDir / "OwlRunner"))
-		GTEST_SKIP() << "OwlNest / OwlRunner not built next to the test.";
-	const auto sample = test::getRootPath() / "engine_demo";
-	const auto root = makeTempDir("e2e");
+	for (const auto& entry: std::filesystem::directory_iterator(root / "samples", ec)) {
+		if (exists(entry.path() / "owl_project.yml"))
+			samples.push_back(entry.path());
+	}
+	std::ranges::sort(samples);
+	projects.insert(projects.end(), samples.begin(), samples.end());
+	return projects;
+}
+
+// The single game folder an export wrote into `iOut`, empty when there is not exactly one.
+auto exportedGameFolder(const std::filesystem::path& iOut) -> std::filesystem::path {
+	std::vector<std::filesystem::path> folders;
+	std::error_code ec;
+	for (const auto& entry: std::filesystem::directory_iterator(iOut, ec)) {
+		if (entry.is_directory())
+			folders.push_back(entry.path());
+	}
+	return folders.size() == 1 ? folders.front() : std::filesystem::path{};
+}
+
+// Every file of a project sub-folder (`scenes`, `scripts`...), as pack paths.
+auto packPathsUnder(const std::filesystem::path& iProject, const std::string& iFolder) -> std::vector<std::string> {
+	std::vector<std::string> paths;
+	std::error_code ec;
+	for (const auto& entry: std::filesystem::recursive_directory_iterator(iProject / iFolder, ec)) {
+		if (entry.is_regular_file())
+			paths.push_back(entry.path().lexically_relative(iProject).generic_string());
+	}
+	return paths;
+}
+
+void checkProjectPlaysFromItsExportFolder(const std::filesystem::path& iBinDir, const std::filesystem::path& iProject) {
+	const auto root = makeTempDir("e2e_" + iProject.filename().string());
 	const auto workDir = root / "cwd";
 	std::filesystem::create_directories(workDir);
 
 	ASSERT_EQ(runCommand(std::format("cd '{}' && '{}' --export '{}' '{}' > export.txt 2>&1", workDir.string(),
-									 (binDir / "OwlNest").string(), sample.string(), (root / "out").string())),
+									 (iBinDir / "OwlNest").string(), iProject.string(), (root / "out").string())),
 			  0)
 			<< readFile(workDir / "export.txt");
-	const auto exported = root / "out" / "OwlFeatureDemo";
-	ASSERT_TRUE(exists(exported / "OwlFeatureDemo.owlpack"));
+	const auto exported = exportedGameFolder(root / "out");
+	ASSERT_FALSE(exported.empty()) << readFile(workDir / "export.txt");
+	const auto pack = exported / (exported.filename().string() + ".owlpack");
+	ASSERT_TRUE(exists(pack));
 
 	PackReader reader;
-	ASSERT_TRUE(reader.open(exported / "OwlFeatureDemo.owlpack"));
+	ASSERT_TRUE(reader.open(pack));
 	size_t sceneCount = 0;
-	for (const auto& entry: std::filesystem::directory_iterator(sample / "scenes")) {
+	for (const auto& entry: std::filesystem::directory_iterator(iProject / "scenes")) {
 		if (entry.path().extension() != ".owl")
 			continue;
 		++sceneCount;
@@ -324,15 +362,22 @@ TEST(GameExportEndToEnd, SampleProjectPlaysFromItsExportFolder) {
 		ASSERT_TRUE(data.has_value());
 		EXPECT_EQ(std::string(data->begin(), data->end()).find("pat:/"), std::string::npos) << packPath;
 	}
-	for (const auto* entry: {"tilesets/voxel_blocks.owltileset", "textures/atlases/voxel_blocks.png",
-							 "tilesets/raycast_w3d_walls.owltileset", "tilemaps/world_map.owltilemap",
-							 "scripts/ui/main_menu.lua", "game_settings.yml", "input_actions.yml",
-							 "sounds/hub/birds_4.wav", "sounds/hub/wind_3.wav", "sounds/hub/step_2.wav"})
-		EXPECT_TRUE(reader.contains(entry)) << entry;
+	for (const auto& script: packPathsUnder(iProject, "scripts")) EXPECT_TRUE(reader.contains(script)) << script;
+	for (const auto* entry: {"game_settings.yml", "input_actions.yml"}) {
+		if (exists(iProject / entry)) {
+			EXPECT_TRUE(reader.contains(entry)) << entry;
+		}
+	}
+	if (iProject.filename() == "engine_demo") {
+		for (const auto* entry: {"tilesets/voxel_blocks.owltileset", "textures/atlases/voxel_blocks.png",
+								 "tilesets/raycast_w3d_walls.owltileset", "tilemaps/world_map.owltilemap",
+								 "sounds/hub/birds_4.wav", "sounds/hub/wind_3.wav", "sounds/hub/step_2.wav"})
+			EXPECT_TRUE(reader.contains(entry)) << entry;
+	}
 	reader.close();
 
 	// Move the game away from its export folder to prove it carries everything it needs.
-	const auto moved = root / "moved" / "OwlFeatureDemo";
+	const auto moved = root / "moved" / exported.filename();
 	std::filesystem::create_directories(moved.parent_path());
 	std::filesystem::rename(exported, moved);
 	const int exitCode = runCommand(std::format("cd '{}' && '{}' --headless --smoke-test 60 > runner.txt 2>&1",
@@ -345,6 +390,35 @@ TEST(GameExportEndToEnd, SampleProjectPlaysFromItsExportFolder) {
 	EXPECT_EQ(exitCode, 0) << readFile(workDir / "runner.txt");
 	EXPECT_TRUE(problems.empty()) << problems;
 	EXPECT_NE(log.find(std::format("Smoke test passed on {} scene(s)", sceneCount)), std::string::npos) << log;
+	std::error_code ec;
 	std::filesystem::remove_all(root, ec);
+}
+
+}// namespace
+
+TEST(GameExportEndToEnd, EveryShippedProjectPlaysFromItsExportFolder) {
+	std::error_code ec;
+	const auto binDir = std::filesystem::canonical("/proc/self/exe", ec).parent_path();
+	if (ec || !exists(binDir / "OwlNest") || !exists(binDir / "OwlRunner"))
+		GTEST_SKIP() << "OwlNest / OwlRunner not built next to the test.";
+	for (const auto& project: shippedProjects()) {
+		SCOPED_TRACE(project.string());
+		checkProjectPlaysFromItsExportFolder(binDir, project);
+	}
+}
+
+TEST(GameExportEndToEnd, EverySampleGameHasAScenario) {
+	const auto root = test::getRootPath();
+	for (const auto& project: shippedProjects()) {
+		if (project.filename() == "engine_demo")
+			continue;
+		const auto prefix = project.filename().string() + "_";
+		bool found = false;
+		for (const auto& entry: std::filesystem::directory_iterator(root / "test" / "unit" / "scenarios")) {
+			if (entry.path().extension() == ".owltest" && entry.path().filename().string().starts_with(prefix))
+				found = true;
+		}
+		EXPECT_TRUE(found) << "no test/unit/scenarios/" << prefix << "*.owltest for " << project;
+	}
 }
 #endif

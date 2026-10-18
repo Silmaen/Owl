@@ -156,3 +156,10 @@ install(DIRECTORY ${CMAKE_SOURCE_DIR}/engine_demo/
         DESTINATION engine_demo
         COMPONENT Nest
 )
+# The sample games, beside the Engine Demo (one project folder each), listed by the File screen.
+if (EXISTS ${CMAKE_SOURCE_DIR}/samples)
+    install(DIRECTORY ${CMAKE_SOURCE_DIR}/samples/
+            DESTINATION samples
+            COMPONENT Nest
+    )
+endif ()

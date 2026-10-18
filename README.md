@@ -76,6 +76,7 @@ The full generated documentation is on [owl.argawaen.net](https://owl.argawaen.n
 - [Roadmap](doc/pages/roadmap.md) -- Planned and completed features by version (one-glance summary: `ROADMAP.md`)
 - [Changelog](doc/pages/changelog.md) -- Detailed version history (one line per release: `CHANGELOG.md`)
 - [Contributing](doc/pages/contributing.md) -- How to contribute (code style, checks, PRs, issues)
+- [Sample games](samples/README.md) -- Small complete games made with Owl, beside the Engine Demo (Breakout)
 
 ## Supported Platforms
 

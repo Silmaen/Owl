@@ -144,7 +144,7 @@ MCP server in Owl Nest ([plan](design/isometric-worlds.md)).
 - ![Done][done] Editor console and command journal, macros replayable as `.owlmacro` ([Editor scripting](design/editor-scripting.md))
 - ![Done][done] Engine Demo: inventory demo on the new HUD widgets, playable with a gamepad
 - ![Done][done] Engine Demo overhaul: the isometric town, the new HUD everywhere, hub and platformer redrawn with CC0 art
-- ![In Progress][progress] Sample game Breakout, the first project of `samples/` (moved from v0.5.0) ([Sample games](design/sample-games.md))
+- ![Done][done] Sample game Breakout, the first project of `samples/` (moved from v0.5.0) ([Sample games](design/sample-games.md))
 - ![Planned][planned] Sample game Sokoban: level editing in Owl Nest, undo and saves (moved from v0.5.0) ([Sample games](design/sample-games.md))
 - ![Planned][planned] Sample game Wolfenstein mini: exploration with score, items, secrets and map explored, combat later (moved from v0.6.0) ([Sample games](design/sample-games.md))
 

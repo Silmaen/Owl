@@ -1,0 +1,20 @@
+OwlProject:
+  name: OwlBreakout
+  firstScene: scenes/title.owl
+  version: 0.4.0
+  author: Silmaen
+  description: Breakout, a sample game of the Owl Engine
+  icon: logo/logo_owl.png
+  gamepadMappings: input/gamecontrollerdb.txt
+  window:
+    width: 1280
+    height: 720
+    fullscreen: false
+    resizable: true
+  RendererStack:
+    - Type: Renderer2D
+      Name: world
+    - Type: Renderer2D
+      Name: ui
+    - Type: Renderer2D
+      Name: overlay

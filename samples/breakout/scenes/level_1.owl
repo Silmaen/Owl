@@ -1,0 +1,2420 @@
+Scene: untitled
+FormatVersion: 5
+Hud: huds/play.owlhud
+Entities:
+  - Entity: 7100000000001000001
+    Tag:
+      tag: MainCamera
+    Transform:
+      translation: [0, 0, 5]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    Camera:
+      camera:
+        projectionType: Orthographic
+        perspectiveFOV: 0.7853982
+        perspectiveNear: 0.01
+        perspectiveFar: 1000
+        orthographicSize: 16
+        orthographicNear: -1
+        orthographicFar: 10
+      primary: true
+      fixedAspectRatio: false
+  - Entity: 7100000000001000002
+    Tag:
+      tag: Background
+    Transform:
+      translation: [0, 0, -1]
+      rotation: [0, 0, 0]
+      scale: [20, 15, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    BackgroundTexture:
+      mode: 0
+      type: 0
+      color: [0.04, 0.04, 0.09, 1]
+      topColor: [0.8, 0.9, 1, 1]
+  - Entity: 7100000000001000003
+    Tag:
+      tag: Backdrop
+    Transform:
+      translation: [0, -1, -0.5]
+      rotation: [0, 0, 0]
+      scale: [16, 14, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: [4, 3.5]
+      texture: nam:textures/backdrop.png
+  - Entity: 7100000000001000004
+    Tag:
+      tag: Wall
+    Transform:
+      translation: [-8.25, -0.75, 0]
+      rotation: [0, 0, 0]
+      scale: [0.5, 14.5, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: [1, 29]
+      texture: nam:textures/wall.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 0
+      restitution: 1
+      friction: 0
+  - Entity: 7100000000001000005
+    Tag:
+      tag: Wall
+    Transform:
+      translation: [8.25, -0.75, 0]
+      rotation: [0, 0, 0]
+      scale: [0.5, 14.5, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: [1, 29]
+      texture: nam:textures/wall.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 0
+      restitution: 1
+      friction: 0
+  - Entity: 7100000000001000006
+    Tag:
+      tag: Wall
+    Transform:
+      translation: [0, 6.25, 0]
+      rotation: [0, 0, 0]
+      scale: [17, 0.5, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: [34, 1]
+      texture: nam:textures/wall.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 0
+      restitution: 1
+      friction: 0
+  - Entity: 7100000000001000007
+    Tag:
+      tag: Paddle
+    Transform:
+      translation: [0, -6.8, 0]
+      rotation: [0, 0, 0]
+      scale: [2.4, 0.36, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/paddle.png
+    PhysicBody:
+      type: Kinematic
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 0
+      restitution: 0
+      friction: 0
+    LuaScript:
+      scriptPath: scripts/game/paddle.lua
+      properties:
+        - name: speed
+          type: float
+          value: 13
+        - name: half_width
+          type: float
+          value: 1.2
+        - name: wide_half_width
+          type: float
+          value: 1.8
+  - Entity: 7100000000001000008
+    Tag:
+      tag: PaddleWide
+    Transform:
+      translation: [0, -30, 0]
+      rotation: [0, 0, 0]
+      scale: [3.6, 0.36, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/paddle_wide.png
+    PhysicBody:
+      type: Kinematic
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 0
+      restitution: 0
+      friction: 0
+  - Entity: 7100000000001000009
+    Tag:
+      tag: Ball
+    Transform:
+      translation: [0, -6.44, 0.1]
+      rotation: [0, 0, 0]
+      scale: [0.3, 0.3, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/ball.png
+    PhysicBody:
+      type: Dynamic
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 1
+      restitution: 1
+      friction: 0
+    LuaScript:
+      scriptPath: scripts/game/ball.lua
+      properties:
+        - name: speed
+          type: float
+          value: 7
+        - name: max_speed
+          type: float
+          value: 10.5
+        - name: auto_serve
+          type: float
+          value: 5
+  - Entity: 7100000000001000010
+    Tag:
+      tag: Game
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    LuaScript:
+      scriptPath: scripts/game/game.lua
+      properties:
+        - name: level
+          type: int
+          value: 1
+  - Entity: 7100000000001000011
+    Tag:
+      tag: Music
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SoundSource:
+      soundAsset: sounds/music/loop.wav
+      category: Music
+      volume: 0.35
+      pitch: 1
+      loop: true
+      spatial: false
+      playOnStart: true
+      maxDistance: 50
+      rolloff: 1
+  - Entity: 7100000000001000012
+    Tag:
+      tag: PowerWide1
+    Transform:
+      translation: [0, -30, 0.2]
+      rotation: [0, 0, 0]
+      scale: [1.2, 0.525, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/power_wide.png
+  - Entity: 7100000000001000013
+    Tag:
+      tag: PowerWide2
+    Transform:
+      translation: [0, -30, 0.2]
+      rotation: [0, 0, 0]
+      scale: [1.2, 0.525, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/power_wide.png
+  - Entity: 7100000000001000014
+    Tag:
+      tag: PowerSlow1
+    Transform:
+      translation: [0, -30, 0.2]
+      rotation: [0, 0, 0]
+      scale: [1.2, 0.525, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/power_slow.png
+  - Entity: 7100000000001000015
+    Tag:
+      tag: PowerSlow2
+    Transform:
+      translation: [0, -30, 0.2]
+      rotation: [0, 0, 0]
+      scale: [1.2, 0.525, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/power_slow.png
+  - Entity: 7100000000001000016
+    Tag:
+      tag: BreakFx1
+    Transform:
+      translation: [0, -30, 0.2]
+      rotation: [0, 0, 0]
+      scale: [1.5, 0.5, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/brick.png
+  - Entity: 7100000000001000017
+    Tag:
+      tag: BreakFx2
+    Transform:
+      translation: [0, -30, 0.2]
+      rotation: [0, 0, 0]
+      scale: [1.5, 0.5, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/brick.png
+  - Entity: 7100000000001000018
+    Tag:
+      tag: BreakFx3
+    Transform:
+      translation: [0, -30, 0.2]
+      rotation: [0, 0, 0]
+      scale: [1.5, 0.5, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/brick.png
+  - Entity: 7100000000001000019
+    Tag:
+      tag: BreakFx4
+    Transform:
+      translation: [0, -30, 0.2]
+      rotation: [0, 0, 0]
+      scale: [1.5, 0.5, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/brick.png
+  - Entity: 7100000000001000020
+    Tag:
+      tag: BreakFx5
+    Transform:
+      translation: [0, -30, 0.2]
+      rotation: [0, 0, 0]
+      scale: [1.5, 0.5, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/brick.png
+  - Entity: 7100000000001000021
+    Tag:
+      tag: BreakFx6
+    Transform:
+      translation: [0, -30, 0.2]
+      rotation: [0, 0, 0]
+      scale: [1.5, 0.5, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/brick.png
+  - Entity: 7100000000001000022
+    Tag:
+      tag: Brick
+    Transform:
+      translation: [-7.2, 4.6, 0]
+      rotation: [0, 0, 0]
+      scale: [1.5, 0.5, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [0.95, 0.58, 0.22, 1]
+      tilingFactor: 1
+      texture: nam:textures/brick.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 0
+      restitution: 1
+      friction: 0
+    LuaScript:
+      scriptPath: scripts/game/brick.lua
+      properties:
+        - name: hits
+          type: int
+          value: 1
+        - name: points
+          type: int
+          value: 10
+        - name: drop
+          type: string
+          value: ''
+        - name: r
+          type: float
+          value: 0.95
+        - name: g
+          type: float
+          value: 0.58
+        - name: b
+          type: float
+          value: 0.22
+    PrefabLink:
+      prefabAssetPath: prefabs/brick.owlprefab
+      syncedVersion: 1
+      uuidMapping:
+        - inst: 7100000000001000022
+          canon: 7000000000000000001
+      overrides:
+        - 7000000000000000001:SpriteRenderer
+        - 7000000000000000001:LuaScript
+  - Entity: 7100000000001000023
+    Tag:
+      tag: Brick
+    Transform:
+      translation: [-5.6, 4.6, 0]
+      rotation: [0, 0, 0]
+      scale: [1.5, 0.5, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [0.95, 0.58, 0.22, 1]
+      tilingFactor: 1
+      texture: nam:textures/brick.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 0
+      restitution: 1
+      friction: 0
+    LuaScript:
+      scriptPath: scripts/game/brick.lua
+      properties:
+        - name: hits
+          type: int
+          value: 1
+        - name: points
+          type: int
+          value: 10
+        - name: drop
+          type: string
+          value: ''
+        - name: r
+          type: float
+          value: 0.95
+        - name: g
+          type: float
+          value: 0.58
+        - name: b
+          type: float
+          value: 0.22
+    PrefabLink:
+      prefabAssetPath: prefabs/brick.owlprefab
+      syncedVersion: 1
+      uuidMapping:
+        - inst: 7100000000001000023
+          canon: 7000000000000000001
+      overrides:
+        - 7000000000000000001:SpriteRenderer
+        - 7000000000000000001:LuaScript
+  - Entity: 7100000000001000024
+    Tag:
+      tag: Brick
+    Transform:
+      translation: [-4, 4.6, 0]
+      rotation: [0, 0, 0]
+      scale: [1.5, 0.5, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [0.95, 0.58, 0.22, 1]
+      tilingFactor: 1
+      texture: nam:textures/brick.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 0
+      restitution: 1
+      friction: 0
+    LuaScript:
+      scriptPath: scripts/game/brick.lua
+      properties:
+        - name: hits
+          type: int
+          value: 1
+        - name: points
+          type: int
+          value: 10
+        - name: drop
+          type: string
+          value: ''
+        - name: r
+          type: float
+          value: 0.95
+        - name: g
+          type: float
+          value: 0.58
+        - name: b
+          type: float
+          value: 0.22
+    PrefabLink:
+      prefabAssetPath: prefabs/brick.owlprefab
+      syncedVersion: 1
+      uuidMapping:
+        - inst: 7100000000001000024
+          canon: 7000000000000000001
+      overrides:
+        - 7000000000000000001:SpriteRenderer
+        - 7000000000000000001:LuaScript
+  - Entity: 7100000000001000025
+    Tag:
+      tag: Brick
+    Transform:
+      translation: [-2.4, 4.6, 0]
+      rotation: [0, 0, 0]
+      scale: [1.5, 0.5, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [0.95, 0.58, 0.22, 1]
+      tilingFactor: 1
+      texture: nam:textures/brick.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 0
+      restitution: 1
+      friction: 0
+    LuaScript:
+      scriptPath: scripts/game/brick.lua
+      properties:
+        - name: hits
+          type: int
+          value: 1
+        - name: points
+          type: int
+          value: 10
+        - name: drop
+          type: string
+          value: ''
+        - name: r
+          type: float
+          value: 0.95
+        - name: g
+          type: float
+          value: 0.58
+        - name: b
+          type: float
+          value: 0.22
+    PrefabLink:
+      prefabAssetPath: prefabs/brick.owlprefab
+      syncedVersion: 1
+      uuidMapping:
+        - inst: 7100000000001000025
+          canon: 7000000000000000001
+      overrides:
+        - 7000000000000000001:SpriteRenderer
+        - 7000000000000000001:LuaScript
+  - Entity: 7100000000001000026
+    Tag:
+      tag: Brick
+    Transform:
+      translation: [-0.8, 4.6, 0]
+      rotation: [0, 0, 0]
+      scale: [1.5, 0.5, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [0.95, 0.58, 0.22, 1]
+      tilingFactor: 1
+      texture: nam:textures/brick.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 0
+      restitution: 1
+      friction: 0
+    LuaScript:
+      scriptPath: scripts/game/brick.lua
+      properties:
+        - name: hits
+          type: int
+          value: 1
+        - name: points
+          type: int
+          value: 10
+        - name: drop
+          type: string
+          value: ''
+        - name: r
+          type: float
+          value: 0.95
+        - name: g
+          type: float
+          value: 0.58
+        - name: b
+          type: float
+          value: 0.22
+    PrefabLink:
+      prefabAssetPath: prefabs/brick.owlprefab
+      syncedVersion: 1
+      uuidMapping:
+        - inst: 7100000000001000026
+          canon: 7000000000000000001
+      overrides:
+        - 7000000000000000001:SpriteRenderer
+        - 7000000000000000001:LuaScript
+  - Entity: 7100000000001000027
+    Tag:
+      tag: Brick
+    Transform:
+      translation: [0.8, 4.6, 0]
+      rotation: [0, 0, 0]
+      scale: [1.5, 0.5, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [0.95, 0.58, 0.22, 1]
+      tilingFactor: 1
+      texture: nam:textures/brick.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 0
+      restitution: 1
+      friction: 0
+    LuaScript:
+      scriptPath: scripts/game/brick.lua
+      properties:
+        - name: hits
+          type: int
+          value: 1
+        - name: points
+          type: int
+          value: 10
+        - name: drop
+          type: string
+          value: ''
+        - name: r
+          type: float
+          value: 0.95
+        - name: g
+          type: float
+          value: 0.58
+        - name: b
+          type: float
+          value: 0.22
+    PrefabLink:
+      prefabAssetPath: prefabs/brick.owlprefab
+      syncedVersion: 1
+      uuidMapping:
+        - inst: 7100000000001000027
+          canon: 7000000000000000001
+      overrides:
+        - 7000000000000000001:SpriteRenderer
+        - 7000000000000000001:LuaScript
+  - Entity: 7100000000001000028
+    Tag:
+      tag: Brick
+    Transform:
+      translation: [2.4, 4.6, 0]
+      rotation: [0, 0, 0]
+      scale: [1.5, 0.5, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [0.95, 0.58, 0.22, 1]
+      tilingFactor: 1
+      texture: nam:textures/brick.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 0
+      restitution: 1
+      friction: 0
+    LuaScript:
+      scriptPath: scripts/game/brick.lua
+      properties:
+        - name: hits
+          type: int
+          value: 1
+        - name: points
+          type: int
+          value: 10
+        - name: drop
+          type: string
+          value: ''
+        - name: r
+          type: float
+          value: 0.95
+        - name: g
+          type: float
+          value: 0.58
+        - name: b
+          type: float
+          value: 0.22
+    PrefabLink:
+      prefabAssetPath: prefabs/brick.owlprefab
+      syncedVersion: 1
+      uuidMapping:
+        - inst: 7100000000001000028
+          canon: 7000000000000000001
+      overrides:
+        - 7000000000000000001:SpriteRenderer
+        - 7000000000000000001:LuaScript
+  - Entity: 7100000000001000029
+    Tag:
+      tag: Brick
+    Transform:
+      translation: [4, 4.6, 0]
+      rotation: [0, 0, 0]
+      scale: [1.5, 0.5, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [0.95, 0.58, 0.22, 1]
+      tilingFactor: 1
+      texture: nam:textures/brick.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 0
+      restitution: 1
+      friction: 0
+    LuaScript:
+      scriptPath: scripts/game/brick.lua
+      properties:
+        - name: hits
+          type: int
+          value: 1
+        - name: points
+          type: int
+          value: 10
+        - name: drop
+          type: string
+          value: ''
+        - name: r
+          type: float
+          value: 0.95
+        - name: g
+          type: float
+          value: 0.58
+        - name: b
+          type: float
+          value: 0.22
+    PrefabLink:
+      prefabAssetPath: prefabs/brick.owlprefab
+      syncedVersion: 1
+      uuidMapping:
+        - inst: 7100000000001000029
+          canon: 7000000000000000001
+      overrides:
+        - 7000000000000000001:SpriteRenderer
+        - 7000000000000000001:LuaScript
+  - Entity: 7100000000001000030
+    Tag:
+      tag: Brick
+    Transform:
+      translation: [5.6, 4.6, 0]
+      rotation: [0, 0, 0]
+      scale: [1.5, 0.5, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [0.95, 0.58, 0.22, 1]
+      tilingFactor: 1
+      texture: nam:textures/brick.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 0
+      restitution: 1
+      friction: 0
+    LuaScript:
+      scriptPath: scripts/game/brick.lua
+      properties:
+        - name: hits
+          type: int
+          value: 1
+        - name: points
+          type: int
+          value: 10
+        - name: drop
+          type: string
+          value: ''
+        - name: r
+          type: float
+          value: 0.95
+        - name: g
+          type: float
+          value: 0.58
+        - name: b
+          type: float
+          value: 0.22
+    PrefabLink:
+      prefabAssetPath: prefabs/brick.owlprefab
+      syncedVersion: 1
+      uuidMapping:
+        - inst: 7100000000001000030
+          canon: 7000000000000000001
+      overrides:
+        - 7000000000000000001:SpriteRenderer
+        - 7000000000000000001:LuaScript
+  - Entity: 7100000000001000031
+    Tag:
+      tag: Brick
+    Transform:
+      translation: [7.2, 4.6, 0]
+      rotation: [0, 0, 0]
+      scale: [1.5, 0.5, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [0.95, 0.58, 0.22, 1]
+      tilingFactor: 1
+      texture: nam:textures/brick.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 0
+      restitution: 1
+      friction: 0
+    LuaScript:
+      scriptPath: scripts/game/brick.lua
+      properties:
+        - name: hits
+          type: int
+          value: 1
+        - name: points
+          type: int
+          value: 10
+        - name: drop
+          type: string
+          value: ''
+        - name: r
+          type: float
+          value: 0.95
+        - name: g
+          type: float
+          value: 0.58
+        - name: b
+          type: float
+          value: 0.22
+    PrefabLink:
+      prefabAssetPath: prefabs/brick.owlprefab
+      syncedVersion: 1
+      uuidMapping:
+        - inst: 7100000000001000031
+          canon: 7000000000000000001
+      overrides:
+        - 7000000000000000001:SpriteRenderer
+        - 7000000000000000001:LuaScript
+  - Entity: 7100000000001000032
+    Tag:
+      tag: Brick
+    Transform:
+      translation: [-7.2, 4, 0]
+      rotation: [0, 0, 0]
+      scale: [1.5, 0.5, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [0.95, 0.85, 0.25, 1]
+      tilingFactor: 1
+      texture: nam:textures/brick.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 0
+      restitution: 1
+      friction: 0
+    LuaScript:
+      scriptPath: scripts/game/brick.lua
+      properties:
+        - name: hits
+          type: int
+          value: 1
+        - name: points
+          type: int
+          value: 10
+        - name: drop
+          type: string
+          value: ''
+        - name: r
+          type: float
+          value: 0.95
+        - name: g
+          type: float
+          value: 0.85
+        - name: b
+          type: float
+          value: 0.25
+    PrefabLink:
+      prefabAssetPath: prefabs/brick.owlprefab
+      syncedVersion: 1
+      uuidMapping:
+        - inst: 7100000000001000032
+          canon: 7000000000000000001
+      overrides:
+        - 7000000000000000001:SpriteRenderer
+        - 7000000000000000001:LuaScript
+  - Entity: 7100000000001000033
+    Tag:
+      tag: Brick
+    Transform:
+      translation: [-5.6, 4, 0]
+      rotation: [0, 0, 0]
+      scale: [1.5, 0.5, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [0.95, 0.85, 0.25, 1]
+      tilingFactor: 1
+      texture: nam:textures/brick.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 0
+      restitution: 1
+      friction: 0
+    LuaScript:
+      scriptPath: scripts/game/brick.lua
+      properties:
+        - name: hits
+          type: int
+          value: 1
+        - name: points
+          type: int
+          value: 10
+        - name: drop
+          type: string
+          value: ''
+        - name: r
+          type: float
+          value: 0.95
+        - name: g
+          type: float
+          value: 0.85
+        - name: b
+          type: float
+          value: 0.25
+    PrefabLink:
+      prefabAssetPath: prefabs/brick.owlprefab
+      syncedVersion: 1
+      uuidMapping:
+        - inst: 7100000000001000033
+          canon: 7000000000000000001
+      overrides:
+        - 7000000000000000001:SpriteRenderer
+        - 7000000000000000001:LuaScript
+  - Entity: 7100000000001000034
+    Tag:
+      tag: Brick
+    Transform:
+      translation: [-4, 4, 0]
+      rotation: [0, 0, 0]
+      scale: [1.5, 0.5, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [0.95, 0.85, 0.25, 1]
+      tilingFactor: 1
+      texture: nam:textures/brick.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 0
+      restitution: 1
+      friction: 0
+    LuaScript:
+      scriptPath: scripts/game/brick.lua
+      properties:
+        - name: hits
+          type: int
+          value: 1
+        - name: points
+          type: int
+          value: 10
+        - name: drop
+          type: string
+          value: ''
+        - name: r
+          type: float
+          value: 0.95
+        - name: g
+          type: float
+          value: 0.85
+        - name: b
+          type: float
+          value: 0.25
+    PrefabLink:
+      prefabAssetPath: prefabs/brick.owlprefab
+      syncedVersion: 1
+      uuidMapping:
+        - inst: 7100000000001000034
+          canon: 7000000000000000001
+      overrides:
+        - 7000000000000000001:SpriteRenderer
+        - 7000000000000000001:LuaScript
+  - Entity: 7100000000001000035
+    Tag:
+      tag: Brick
+    Transform:
+      translation: [-2.4, 4, 0]
+      rotation: [0, 0, 0]
+      scale: [1.5, 0.5, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [0.95, 0.85, 0.25, 1]
+      tilingFactor: 1
+      texture: nam:textures/brick.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 0
+      restitution: 1
+      friction: 0
+    LuaScript:
+      scriptPath: scripts/game/brick.lua
+      properties:
+        - name: hits
+          type: int
+          value: 1
+        - name: points
+          type: int
+          value: 10
+        - name: drop
+          type: string
+          value: ''
+        - name: r
+          type: float
+          value: 0.95
+        - name: g
+          type: float
+          value: 0.85
+        - name: b
+          type: float
+          value: 0.25
+    PrefabLink:
+      prefabAssetPath: prefabs/brick.owlprefab
+      syncedVersion: 1
+      uuidMapping:
+        - inst: 7100000000001000035
+          canon: 7000000000000000001
+      overrides:
+        - 7000000000000000001:SpriteRenderer
+        - 7000000000000000001:LuaScript
+  - Entity: 7100000000001000036
+    Tag:
+      tag: Brick
+    Transform:
+      translation: [-0.8, 4, 0]
+      rotation: [0, 0, 0]
+      scale: [1.5, 0.5, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [0.95, 0.85, 0.25, 1]
+      tilingFactor: 1
+      texture: nam:textures/brick.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 0
+      restitution: 1
+      friction: 0
+    LuaScript:
+      scriptPath: scripts/game/brick.lua
+      properties:
+        - name: hits
+          type: int
+          value: 1
+        - name: points
+          type: int
+          value: 10
+        - name: drop
+          type: string
+          value: 'wide'
+        - name: r
+          type: float
+          value: 0.95
+        - name: g
+          type: float
+          value: 0.85
+        - name: b
+          type: float
+          value: 0.25
+    PrefabLink:
+      prefabAssetPath: prefabs/brick.owlprefab
+      syncedVersion: 1
+      uuidMapping:
+        - inst: 7100000000001000036
+          canon: 7000000000000000001
+      overrides:
+        - 7000000000000000001:SpriteRenderer
+        - 7000000000000000001:LuaScript
+  - Entity: 7100000000001000037
+    Tag:
+      tag: Brick
+    Transform:
+      translation: [0.8, 4, 0]
+      rotation: [0, 0, 0]
+      scale: [1.5, 0.5, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [0.95, 0.85, 0.25, 1]
+      tilingFactor: 1
+      texture: nam:textures/brick.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 0
+      restitution: 1
+      friction: 0
+    LuaScript:
+      scriptPath: scripts/game/brick.lua
+      properties:
+        - name: hits
+          type: int
+          value: 1
+        - name: points
+          type: int
+          value: 10
+        - name: drop
+          type: string
+          value: ''
+        - name: r
+          type: float
+          value: 0.95
+        - name: g
+          type: float
+          value: 0.85
+        - name: b
+          type: float
+          value: 0.25
+    PrefabLink:
+      prefabAssetPath: prefabs/brick.owlprefab
+      syncedVersion: 1
+      uuidMapping:
+        - inst: 7100000000001000037
+          canon: 7000000000000000001
+      overrides:
+        - 7000000000000000001:SpriteRenderer
+        - 7000000000000000001:LuaScript
+  - Entity: 7100000000001000038
+    Tag:
+      tag: Brick
+    Transform:
+      translation: [2.4, 4, 0]
+      rotation: [0, 0, 0]
+      scale: [1.5, 0.5, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [0.95, 0.85, 0.25, 1]
+      tilingFactor: 1
+      texture: nam:textures/brick.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 0
+      restitution: 1
+      friction: 0
+    LuaScript:
+      scriptPath: scripts/game/brick.lua
+      properties:
+        - name: hits
+          type: int
+          value: 1
+        - name: points
+          type: int
+          value: 10
+        - name: drop
+          type: string
+          value: ''
+        - name: r
+          type: float
+          value: 0.95
+        - name: g
+          type: float
+          value: 0.85
+        - name: b
+          type: float
+          value: 0.25
+    PrefabLink:
+      prefabAssetPath: prefabs/brick.owlprefab
+      syncedVersion: 1
+      uuidMapping:
+        - inst: 7100000000001000038
+          canon: 7000000000000000001
+      overrides:
+        - 7000000000000000001:SpriteRenderer
+        - 7000000000000000001:LuaScript
+  - Entity: 7100000000001000039
+    Tag:
+      tag: Brick
+    Transform:
+      translation: [4, 4, 0]
+      rotation: [0, 0, 0]
+      scale: [1.5, 0.5, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [0.95, 0.85, 0.25, 1]
+      tilingFactor: 1
+      texture: nam:textures/brick.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 0
+      restitution: 1
+      friction: 0
+    LuaScript:
+      scriptPath: scripts/game/brick.lua
+      properties:
+        - name: hits
+          type: int
+          value: 1
+        - name: points
+          type: int
+          value: 10
+        - name: drop
+          type: string
+          value: ''
+        - name: r
+          type: float
+          value: 0.95
+        - name: g
+          type: float
+          value: 0.85
+        - name: b
+          type: float
+          value: 0.25
+    PrefabLink:
+      prefabAssetPath: prefabs/brick.owlprefab
+      syncedVersion: 1
+      uuidMapping:
+        - inst: 7100000000001000039
+          canon: 7000000000000000001
+      overrides:
+        - 7000000000000000001:SpriteRenderer
+        - 7000000000000000001:LuaScript
+  - Entity: 7100000000001000040
+    Tag:
+      tag: Brick
+    Transform:
+      translation: [5.6, 4, 0]
+      rotation: [0, 0, 0]
+      scale: [1.5, 0.5, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [0.95, 0.85, 0.25, 1]
+      tilingFactor: 1
+      texture: nam:textures/brick.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 0
+      restitution: 1
+      friction: 0
+    LuaScript:
+      scriptPath: scripts/game/brick.lua
+      properties:
+        - name: hits
+          type: int
+          value: 1
+        - name: points
+          type: int
+          value: 10
+        - name: drop
+          type: string
+          value: ''
+        - name: r
+          type: float
+          value: 0.95
+        - name: g
+          type: float
+          value: 0.85
+        - name: b
+          type: float
+          value: 0.25
+    PrefabLink:
+      prefabAssetPath: prefabs/brick.owlprefab
+      syncedVersion: 1
+      uuidMapping:
+        - inst: 7100000000001000040
+          canon: 7000000000000000001
+      overrides:
+        - 7000000000000000001:SpriteRenderer
+        - 7000000000000000001:LuaScript
+  - Entity: 7100000000001000041
+    Tag:
+      tag: Brick
+    Transform:
+      translation: [7.2, 4, 0]
+      rotation: [0, 0, 0]
+      scale: [1.5, 0.5, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [0.95, 0.85, 0.25, 1]
+      tilingFactor: 1
+      texture: nam:textures/brick.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 0
+      restitution: 1
+      friction: 0
+    LuaScript:
+      scriptPath: scripts/game/brick.lua
+      properties:
+        - name: hits
+          type: int
+          value: 1
+        - name: points
+          type: int
+          value: 10
+        - name: drop
+          type: string
+          value: ''
+        - name: r
+          type: float
+          value: 0.95
+        - name: g
+          type: float
+          value: 0.85
+        - name: b
+          type: float
+          value: 0.25
+    PrefabLink:
+      prefabAssetPath: prefabs/brick.owlprefab
+      syncedVersion: 1
+      uuidMapping:
+        - inst: 7100000000001000041
+          canon: 7000000000000000001
+      overrides:
+        - 7000000000000000001:SpriteRenderer
+        - 7000000000000000001:LuaScript
+  - Entity: 7100000000001000042
+    Tag:
+      tag: Brick
+    Transform:
+      translation: [-7.2, 3.4, 0]
+      rotation: [0, 0, 0]
+      scale: [1.5, 0.5, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [0.4, 0.85, 0.35, 1]
+      tilingFactor: 1
+      texture: nam:textures/brick.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 0
+      restitution: 1
+      friction: 0
+    LuaScript:
+      scriptPath: scripts/game/brick.lua
+      properties:
+        - name: hits
+          type: int
+          value: 1
+        - name: points
+          type: int
+          value: 10
+        - name: drop
+          type: string
+          value: ''
+        - name: r
+          type: float
+          value: 0.4
+        - name: g
+          type: float
+          value: 0.85
+        - name: b
+          type: float
+          value: 0.35
+    PrefabLink:
+      prefabAssetPath: prefabs/brick.owlprefab
+      syncedVersion: 1
+      uuidMapping:
+        - inst: 7100000000001000042
+          canon: 7000000000000000001
+      overrides:
+        - 7000000000000000001:SpriteRenderer
+        - 7000000000000000001:LuaScript
+  - Entity: 7100000000001000043
+    Tag:
+      tag: Brick
+    Transform:
+      translation: [-5.6, 3.4, 0]
+      rotation: [0, 0, 0]
+      scale: [1.5, 0.5, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [0.4, 0.85, 0.35, 1]
+      tilingFactor: 1
+      texture: nam:textures/brick.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 0
+      restitution: 1
+      friction: 0
+    LuaScript:
+      scriptPath: scripts/game/brick.lua
+      properties:
+        - name: hits
+          type: int
+          value: 1
+        - name: points
+          type: int
+          value: 10
+        - name: drop
+          type: string
+          value: ''
+        - name: r
+          type: float
+          value: 0.4
+        - name: g
+          type: float
+          value: 0.85
+        - name: b
+          type: float
+          value: 0.35
+    PrefabLink:
+      prefabAssetPath: prefabs/brick.owlprefab
+      syncedVersion: 1
+      uuidMapping:
+        - inst: 7100000000001000043
+          canon: 7000000000000000001
+      overrides:
+        - 7000000000000000001:SpriteRenderer
+        - 7000000000000000001:LuaScript
+  - Entity: 7100000000001000044
+    Tag:
+      tag: Brick
+    Transform:
+      translation: [-4, 3.4, 0]
+      rotation: [0, 0, 0]
+      scale: [1.5, 0.5, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [0.4, 0.85, 0.35, 1]
+      tilingFactor: 1
+      texture: nam:textures/brick.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 0
+      restitution: 1
+      friction: 0
+    LuaScript:
+      scriptPath: scripts/game/brick.lua
+      properties:
+        - name: hits
+          type: int
+          value: 1
+        - name: points
+          type: int
+          value: 10
+        - name: drop
+          type: string
+          value: ''
+        - name: r
+          type: float
+          value: 0.4
+        - name: g
+          type: float
+          value: 0.85
+        - name: b
+          type: float
+          value: 0.35
+    PrefabLink:
+      prefabAssetPath: prefabs/brick.owlprefab
+      syncedVersion: 1
+      uuidMapping:
+        - inst: 7100000000001000044
+          canon: 7000000000000000001
+      overrides:
+        - 7000000000000000001:SpriteRenderer
+        - 7000000000000000001:LuaScript
+  - Entity: 7100000000001000045
+    Tag:
+      tag: Brick
+    Transform:
+      translation: [-2.4, 3.4, 0]
+      rotation: [0, 0, 0]
+      scale: [1.5, 0.5, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [0.4, 0.85, 0.35, 1]
+      tilingFactor: 1
+      texture: nam:textures/brick.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 0
+      restitution: 1
+      friction: 0
+    LuaScript:
+      scriptPath: scripts/game/brick.lua
+      properties:
+        - name: hits
+          type: int
+          value: 1
+        - name: points
+          type: int
+          value: 10
+        - name: drop
+          type: string
+          value: ''
+        - name: r
+          type: float
+          value: 0.4
+        - name: g
+          type: float
+          value: 0.85
+        - name: b
+          type: float
+          value: 0.35
+    PrefabLink:
+      prefabAssetPath: prefabs/brick.owlprefab
+      syncedVersion: 1
+      uuidMapping:
+        - inst: 7100000000001000045
+          canon: 7000000000000000001
+      overrides:
+        - 7000000000000000001:SpriteRenderer
+        - 7000000000000000001:LuaScript
+  - Entity: 7100000000001000046
+    Tag:
+      tag: Brick
+    Transform:
+      translation: [-0.8, 3.4, 0]
+      rotation: [0, 0, 0]
+      scale: [1.5, 0.5, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [0.4, 0.85, 0.35, 1]
+      tilingFactor: 1
+      texture: nam:textures/brick.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 0
+      restitution: 1
+      friction: 0
+    LuaScript:
+      scriptPath: scripts/game/brick.lua
+      properties:
+        - name: hits
+          type: int
+          value: 1
+        - name: points
+          type: int
+          value: 10
+        - name: drop
+          type: string
+          value: ''
+        - name: r
+          type: float
+          value: 0.4
+        - name: g
+          type: float
+          value: 0.85
+        - name: b
+          type: float
+          value: 0.35
+    PrefabLink:
+      prefabAssetPath: prefabs/brick.owlprefab
+      syncedVersion: 1
+      uuidMapping:
+        - inst: 7100000000001000046
+          canon: 7000000000000000001
+      overrides:
+        - 7000000000000000001:SpriteRenderer
+        - 7000000000000000001:LuaScript
+  - Entity: 7100000000001000047
+    Tag:
+      tag: Brick
+    Transform:
+      translation: [0.8, 3.4, 0]
+      rotation: [0, 0, 0]
+      scale: [1.5, 0.5, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [0.4, 0.85, 0.35, 1]
+      tilingFactor: 1
+      texture: nam:textures/brick.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 0
+      restitution: 1
+      friction: 0
+    LuaScript:
+      scriptPath: scripts/game/brick.lua
+      properties:
+        - name: hits
+          type: int
+          value: 1
+        - name: points
+          type: int
+          value: 10
+        - name: drop
+          type: string
+          value: ''
+        - name: r
+          type: float
+          value: 0.4
+        - name: g
+          type: float
+          value: 0.85
+        - name: b
+          type: float
+          value: 0.35
+    PrefabLink:
+      prefabAssetPath: prefabs/brick.owlprefab
+      syncedVersion: 1
+      uuidMapping:
+        - inst: 7100000000001000047
+          canon: 7000000000000000001
+      overrides:
+        - 7000000000000000001:SpriteRenderer
+        - 7000000000000000001:LuaScript
+  - Entity: 7100000000001000048
+    Tag:
+      tag: Brick
+    Transform:
+      translation: [2.4, 3.4, 0]
+      rotation: [0, 0, 0]
+      scale: [1.5, 0.5, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [0.4, 0.85, 0.35, 1]
+      tilingFactor: 1
+      texture: nam:textures/brick.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 0
+      restitution: 1
+      friction: 0
+    LuaScript:
+      scriptPath: scripts/game/brick.lua
+      properties:
+        - name: hits
+          type: int
+          value: 1
+        - name: points
+          type: int
+          value: 10
+        - name: drop
+          type: string
+          value: ''
+        - name: r
+          type: float
+          value: 0.4
+        - name: g
+          type: float
+          value: 0.85
+        - name: b
+          type: float
+          value: 0.35
+    PrefabLink:
+      prefabAssetPath: prefabs/brick.owlprefab
+      syncedVersion: 1
+      uuidMapping:
+        - inst: 7100000000001000048
+          canon: 7000000000000000001
+      overrides:
+        - 7000000000000000001:SpriteRenderer
+        - 7000000000000000001:LuaScript
+  - Entity: 7100000000001000049
+    Tag:
+      tag: Brick
+    Transform:
+      translation: [4, 3.4, 0]
+      rotation: [0, 0, 0]
+      scale: [1.5, 0.5, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [0.4, 0.85, 0.35, 1]
+      tilingFactor: 1
+      texture: nam:textures/brick.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 0
+      restitution: 1
+      friction: 0
+    LuaScript:
+      scriptPath: scripts/game/brick.lua
+      properties:
+        - name: hits
+          type: int
+          value: 1
+        - name: points
+          type: int
+          value: 10
+        - name: drop
+          type: string
+          value: ''
+        - name: r
+          type: float
+          value: 0.4
+        - name: g
+          type: float
+          value: 0.85
+        - name: b
+          type: float
+          value: 0.35
+    PrefabLink:
+      prefabAssetPath: prefabs/brick.owlprefab
+      syncedVersion: 1
+      uuidMapping:
+        - inst: 7100000000001000049
+          canon: 7000000000000000001
+      overrides:
+        - 7000000000000000001:SpriteRenderer
+        - 7000000000000000001:LuaScript
+  - Entity: 7100000000001000050
+    Tag:
+      tag: Brick
+    Transform:
+      translation: [5.6, 3.4, 0]
+      rotation: [0, 0, 0]
+      scale: [1.5, 0.5, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [0.4, 0.85, 0.35, 1]
+      tilingFactor: 1
+      texture: nam:textures/brick.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 0
+      restitution: 1
+      friction: 0
+    LuaScript:
+      scriptPath: scripts/game/brick.lua
+      properties:
+        - name: hits
+          type: int
+          value: 1
+        - name: points
+          type: int
+          value: 10
+        - name: drop
+          type: string
+          value: ''
+        - name: r
+          type: float
+          value: 0.4
+        - name: g
+          type: float
+          value: 0.85
+        - name: b
+          type: float
+          value: 0.35
+    PrefabLink:
+      prefabAssetPath: prefabs/brick.owlprefab
+      syncedVersion: 1
+      uuidMapping:
+        - inst: 7100000000001000050
+          canon: 7000000000000000001
+      overrides:
+        - 7000000000000000001:SpriteRenderer
+        - 7000000000000000001:LuaScript
+  - Entity: 7100000000001000051
+    Tag:
+      tag: Brick
+    Transform:
+      translation: [7.2, 3.4, 0]
+      rotation: [0, 0, 0]
+      scale: [1.5, 0.5, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [0.4, 0.85, 0.35, 1]
+      tilingFactor: 1
+      texture: nam:textures/brick.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 0
+      restitution: 1
+      friction: 0
+    LuaScript:
+      scriptPath: scripts/game/brick.lua
+      properties:
+        - name: hits
+          type: int
+          value: 1
+        - name: points
+          type: int
+          value: 10
+        - name: drop
+          type: string
+          value: ''
+        - name: r
+          type: float
+          value: 0.4
+        - name: g
+          type: float
+          value: 0.85
+        - name: b
+          type: float
+          value: 0.35
+    PrefabLink:
+      prefabAssetPath: prefabs/brick.owlprefab
+      syncedVersion: 1
+      uuidMapping:
+        - inst: 7100000000001000051
+          canon: 7000000000000000001
+      overrides:
+        - 7000000000000000001:SpriteRenderer
+        - 7000000000000000001:LuaScript
+  - Entity: 7100000000001000052
+    Tag:
+      tag: Brick
+    Transform:
+      translation: [-7.2, 2.8, 0]
+      rotation: [0, 0, 0]
+      scale: [1.5, 0.5, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [0.3, 0.75, 0.9, 1]
+      tilingFactor: 1
+      texture: nam:textures/brick.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 0
+      restitution: 1
+      friction: 0
+    LuaScript:
+      scriptPath: scripts/game/brick.lua
+      properties:
+        - name: hits
+          type: int
+          value: 1
+        - name: points
+          type: int
+          value: 10
+        - name: drop
+          type: string
+          value: ''
+        - name: r
+          type: float
+          value: 0.3
+        - name: g
+          type: float
+          value: 0.75
+        - name: b
+          type: float
+          value: 0.9
+    PrefabLink:
+      prefabAssetPath: prefabs/brick.owlprefab
+      syncedVersion: 1
+      uuidMapping:
+        - inst: 7100000000001000052
+          canon: 7000000000000000001
+      overrides:
+        - 7000000000000000001:SpriteRenderer
+        - 7000000000000000001:LuaScript
+  - Entity: 7100000000001000053
+    Tag:
+      tag: Brick
+    Transform:
+      translation: [-5.6, 2.8, 0]
+      rotation: [0, 0, 0]
+      scale: [1.5, 0.5, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [0.3, 0.75, 0.9, 1]
+      tilingFactor: 1
+      texture: nam:textures/brick.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 0
+      restitution: 1
+      friction: 0
+    LuaScript:
+      scriptPath: scripts/game/brick.lua
+      properties:
+        - name: hits
+          type: int
+          value: 1
+        - name: points
+          type: int
+          value: 10
+        - name: drop
+          type: string
+          value: ''
+        - name: r
+          type: float
+          value: 0.3
+        - name: g
+          type: float
+          value: 0.75
+        - name: b
+          type: float
+          value: 0.9
+    PrefabLink:
+      prefabAssetPath: prefabs/brick.owlprefab
+      syncedVersion: 1
+      uuidMapping:
+        - inst: 7100000000001000053
+          canon: 7000000000000000001
+      overrides:
+        - 7000000000000000001:SpriteRenderer
+        - 7000000000000000001:LuaScript
+  - Entity: 7100000000001000054
+    Tag:
+      tag: Brick
+    Transform:
+      translation: [-4, 2.8, 0]
+      rotation: [0, 0, 0]
+      scale: [1.5, 0.5, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [0.3, 0.75, 0.9, 1]
+      tilingFactor: 1
+      texture: nam:textures/brick.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 0
+      restitution: 1
+      friction: 0
+    LuaScript:
+      scriptPath: scripts/game/brick.lua
+      properties:
+        - name: hits
+          type: int
+          value: 1
+        - name: points
+          type: int
+          value: 10
+        - name: drop
+          type: string
+          value: ''
+        - name: r
+          type: float
+          value: 0.3
+        - name: g
+          type: float
+          value: 0.75
+        - name: b
+          type: float
+          value: 0.9
+    PrefabLink:
+      prefabAssetPath: prefabs/brick.owlprefab
+      syncedVersion: 1
+      uuidMapping:
+        - inst: 7100000000001000054
+          canon: 7000000000000000001
+      overrides:
+        - 7000000000000000001:SpriteRenderer
+        - 7000000000000000001:LuaScript
+  - Entity: 7100000000001000055
+    Tag:
+      tag: Brick
+    Transform:
+      translation: [-2.4, 2.8, 0]
+      rotation: [0, 0, 0]
+      scale: [1.5, 0.5, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [0.3, 0.75, 0.9, 1]
+      tilingFactor: 1
+      texture: nam:textures/brick.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 0
+      restitution: 1
+      friction: 0
+    LuaScript:
+      scriptPath: scripts/game/brick.lua
+      properties:
+        - name: hits
+          type: int
+          value: 1
+        - name: points
+          type: int
+          value: 10
+        - name: drop
+          type: string
+          value: ''
+        - name: r
+          type: float
+          value: 0.3
+        - name: g
+          type: float
+          value: 0.75
+        - name: b
+          type: float
+          value: 0.9
+    PrefabLink:
+      prefabAssetPath: prefabs/brick.owlprefab
+      syncedVersion: 1
+      uuidMapping:
+        - inst: 7100000000001000055
+          canon: 7000000000000000001
+      overrides:
+        - 7000000000000000001:SpriteRenderer
+        - 7000000000000000001:LuaScript
+  - Entity: 7100000000001000056
+    Tag:
+      tag: Brick
+    Transform:
+      translation: [-0.8, 2.8, 0]
+      rotation: [0, 0, 0]
+      scale: [1.5, 0.5, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [0.3, 0.75, 0.9, 1]
+      tilingFactor: 1
+      texture: nam:textures/brick.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 0
+      restitution: 1
+      friction: 0
+    LuaScript:
+      scriptPath: scripts/game/brick.lua
+      properties:
+        - name: hits
+          type: int
+          value: 1
+        - name: points
+          type: int
+          value: 10
+        - name: drop
+          type: string
+          value: ''
+        - name: r
+          type: float
+          value: 0.3
+        - name: g
+          type: float
+          value: 0.75
+        - name: b
+          type: float
+          value: 0.9
+    PrefabLink:
+      prefabAssetPath: prefabs/brick.owlprefab
+      syncedVersion: 1
+      uuidMapping:
+        - inst: 7100000000001000056
+          canon: 7000000000000000001
+      overrides:
+        - 7000000000000000001:SpriteRenderer
+        - 7000000000000000001:LuaScript
+  - Entity: 7100000000001000057
+    Tag:
+      tag: Brick
+    Transform:
+      translation: [0.8, 2.8, 0]
+      rotation: [0, 0, 0]
+      scale: [1.5, 0.5, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [0.3, 0.75, 0.9, 1]
+      tilingFactor: 1
+      texture: nam:textures/brick.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 0
+      restitution: 1
+      friction: 0
+    LuaScript:
+      scriptPath: scripts/game/brick.lua
+      properties:
+        - name: hits
+          type: int
+          value: 1
+        - name: points
+          type: int
+          value: 10
+        - name: drop
+          type: string
+          value: 'slow'
+        - name: r
+          type: float
+          value: 0.3
+        - name: g
+          type: float
+          value: 0.75
+        - name: b
+          type: float
+          value: 0.9
+    PrefabLink:
+      prefabAssetPath: prefabs/brick.owlprefab
+      syncedVersion: 1
+      uuidMapping:
+        - inst: 7100000000001000057
+          canon: 7000000000000000001
+      overrides:
+        - 7000000000000000001:SpriteRenderer
+        - 7000000000000000001:LuaScript
+  - Entity: 7100000000001000058
+    Tag:
+      tag: Brick
+    Transform:
+      translation: [2.4, 2.8, 0]
+      rotation: [0, 0, 0]
+      scale: [1.5, 0.5, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [0.3, 0.75, 0.9, 1]
+      tilingFactor: 1
+      texture: nam:textures/brick.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 0
+      restitution: 1
+      friction: 0
+    LuaScript:
+      scriptPath: scripts/game/brick.lua
+      properties:
+        - name: hits
+          type: int
+          value: 1
+        - name: points
+          type: int
+          value: 10
+        - name: drop
+          type: string
+          value: ''
+        - name: r
+          type: float
+          value: 0.3
+        - name: g
+          type: float
+          value: 0.75
+        - name: b
+          type: float
+          value: 0.9
+    PrefabLink:
+      prefabAssetPath: prefabs/brick.owlprefab
+      syncedVersion: 1
+      uuidMapping:
+        - inst: 7100000000001000058
+          canon: 7000000000000000001
+      overrides:
+        - 7000000000000000001:SpriteRenderer
+        - 7000000000000000001:LuaScript
+  - Entity: 7100000000001000059
+    Tag:
+      tag: Brick
+    Transform:
+      translation: [4, 2.8, 0]
+      rotation: [0, 0, 0]
+      scale: [1.5, 0.5, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [0.3, 0.75, 0.9, 1]
+      tilingFactor: 1
+      texture: nam:textures/brick.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 0
+      restitution: 1
+      friction: 0
+    LuaScript:
+      scriptPath: scripts/game/brick.lua
+      properties:
+        - name: hits
+          type: int
+          value: 1
+        - name: points
+          type: int
+          value: 10
+        - name: drop
+          type: string
+          value: ''
+        - name: r
+          type: float
+          value: 0.3
+        - name: g
+          type: float
+          value: 0.75
+        - name: b
+          type: float
+          value: 0.9
+    PrefabLink:
+      prefabAssetPath: prefabs/brick.owlprefab
+      syncedVersion: 1
+      uuidMapping:
+        - inst: 7100000000001000059
+          canon: 7000000000000000001
+      overrides:
+        - 7000000000000000001:SpriteRenderer
+        - 7000000000000000001:LuaScript
+  - Entity: 7100000000001000060
+    Tag:
+      tag: Brick
+    Transform:
+      translation: [5.6, 2.8, 0]
+      rotation: [0, 0, 0]
+      scale: [1.5, 0.5, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [0.3, 0.75, 0.9, 1]
+      tilingFactor: 1
+      texture: nam:textures/brick.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 0
+      restitution: 1
+      friction: 0
+    LuaScript:
+      scriptPath: scripts/game/brick.lua
+      properties:
+        - name: hits
+          type: int
+          value: 1
+        - name: points
+          type: int
+          value: 10
+        - name: drop
+          type: string
+          value: ''
+        - name: r
+          type: float
+          value: 0.3
+        - name: g
+          type: float
+          value: 0.75
+        - name: b
+          type: float
+          value: 0.9
+    PrefabLink:
+      prefabAssetPath: prefabs/brick.owlprefab
+      syncedVersion: 1
+      uuidMapping:
+        - inst: 7100000000001000060
+          canon: 7000000000000000001
+      overrides:
+        - 7000000000000000001:SpriteRenderer
+        - 7000000000000000001:LuaScript
+  - Entity: 7100000000001000061
+    Tag:
+      tag: Brick
+    Transform:
+      translation: [7.2, 2.8, 0]
+      rotation: [0, 0, 0]
+      scale: [1.5, 0.5, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [0.3, 0.75, 0.9, 1]
+      tilingFactor: 1
+      texture: nam:textures/brick.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 0
+      restitution: 1
+      friction: 0
+    LuaScript:
+      scriptPath: scripts/game/brick.lua
+      properties:
+        - name: hits
+          type: int
+          value: 1
+        - name: points
+          type: int
+          value: 10
+        - name: drop
+          type: string
+          value: ''
+        - name: r
+          type: float
+          value: 0.3
+        - name: g
+          type: float
+          value: 0.75
+        - name: b
+          type: float
+          value: 0.9
+    PrefabLink:
+      prefabAssetPath: prefabs/brick.owlprefab
+      syncedVersion: 1
+      uuidMapping:
+        - inst: 7100000000001000061
+          canon: 7000000000000000001
+      overrides:
+        - 7000000000000000001:SpriteRenderer
+        - 7000000000000000001:LuaScript
