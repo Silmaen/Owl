@@ -87,7 +87,8 @@ foreach (child ${children})
                 target_sources(${PROJECT_PREFIX_LOWER}_${child}_unit_test PRIVATE
                         ${CMAKE_SOURCE_DIR}/source/owlnest/runner/FrameBench.cpp
                         ${CMAKE_SOURCE_DIR}/source/owlnest/runner/FrameBenchStats.cpp
-                        ${CMAKE_SOURCE_DIR}/source/owlnest/runner/ScenarioTest.cpp)
+                        ${CMAKE_SOURCE_DIR}/source/owlnest/runner/ScenarioTest.cpp
+                        ${CMAKE_SOURCE_DIR}/source/owlnest/runner/ScenarioWatchdog.cpp)
                 if (TARGET ${CMAKE_PROJECT_NAME}Runner)
                     add_dependencies(${PROJECT_PREFIX_LOWER}_${child}_unit_test ${CMAKE_PROJECT_NAME}Runner)
                     target_compile_definitions(${PROJECT_PREFIX_LOWER}_${child}_unit_test PRIVATE

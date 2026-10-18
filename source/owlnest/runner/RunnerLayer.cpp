@@ -7,6 +7,7 @@
  */
 
 #include "RunnerLayer.h"
+#include "ScenarioWatchdog.h"
 
 #include <app/EngineContext.h>
 #include <debug/LogSink.h>
@@ -201,6 +202,7 @@ void RunnerLayer::onAttach() {
 		return;
 	}
 	if (m_scenario) {
+		ScenarioWatchdog::start(m_scenario->getSteps().size());
 		for (const auto& assets: m_scenario->getAssets())
 			app::Application::get().addAssetDirectory({"Scenario assets", assets});
 		if (attachSourceScene(m_scenario->getProject(), m_scenario->getScene(), "Scenario"))
@@ -535,6 +537,8 @@ void RunnerLayer::finishFrameBench(const bool iInterrupted) {
 auto RunnerLayer::stepScenario() -> bool {
 	if (!m_scenario || !m_activeScene)
 		return true;
+	if (auto* watchdog = ScenarioWatchdog::get(); watchdog != nullptr)
+		watchdog->onFrame(m_scenario->getStepIndex());
 	// Frames count, not seconds: finish the async work (scene transitions, texture decodes) before each one.
 	app::Application::get().getTaskScheduler().waitEmptyQueue();
 	if (!m_scenario->beginFrame(m_activeScene))
@@ -552,6 +556,8 @@ auto RunnerLayer::stepScenario() -> bool {
 		m_activeScene->onEndRuntime();
 	m_scenario.reset();
 	m_activeScene.reset();
+	if (auto* watchdog = ScenarioWatchdog::get(); watchdog != nullptr)
+		watchdog->onShutdown();
 	app.close();
 	return false;
 }

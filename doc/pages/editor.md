@@ -1195,7 +1195,8 @@ file (saved after the autosave) is never offered. A snapshot that cannot be rest
 input) and plays steps that inject inputs and check the world, at a fixed time step. Asynchronous work (scene
 transitions, texture decodes) is finished before every frame, so a scenario counts frames, not seconds, and gives
 the same result on any machine. It exits with 0 when every expectation holds and no error was logged, 1 otherwise,
-2 on a file it cannot read.
+2 on a file it cannot read. A watchdog ends a run that plays no frame for 120 s (times `OWL_SCRIPT_TIME_SCALE`), or that
+does not exit as long after its verdict, with code 7 and the phase, step and frame where it stalled.
 
 ```yaml
 # test/unit/scenarios/platformer_walk.owltest
