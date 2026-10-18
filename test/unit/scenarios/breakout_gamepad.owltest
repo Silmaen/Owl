@@ -1,0 +1,12 @@
+# Breakout: gamepad 0 drives the paddle: a stick inside the dead zone does nothing, a full push moves it, A serves.
+scene: ../../../samples/breakout/scenes/level_1.owl
+steps:
+  - frames: 30
+  - expect: {entity: Paddle, translation.x: {equals: 0.0, tolerance: 0.01}}
+  - input: {gamepad: {left_x: 0.1}, frames: 20}
+  - expect: {entity: Paddle, translation.x: {equals: 0.0, tolerance: 0.01}}
+  - input: {gamepad: {left_x: 1.0}, frames: 30}
+  - expect: {entity: Paddle, translation.x: {greater: 3.0}}
+  - input: {gamepad: {button: A}, frames: 2}
+  - frames: 10
+  - expect: {gamestate: breakout_serves, equals: 1}

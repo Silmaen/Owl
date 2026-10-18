@@ -1,0 +1,45 @@
+Prefab: Brick
+Version: 1
+Entities:
+  - Entity: 7000000000000000001
+    Tag:
+      tag: Brick
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1.5, 0.5, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [0.92, 0.3, 0.3, 1]
+      tilingFactor: 1
+      texture: nam:textures/brick.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 0
+      restitution: 1
+      friction: 0
+    LuaScript:
+      scriptPath: scripts/game/brick.lua
+      properties:
+        - name: hits
+          type: int
+          value: 1
+        - name: points
+          type: int
+          value: 10
+        - name: drop
+          type: string
+          value: ''
+        - name: r
+          type: float
+          value: 0.92
+        - name: g
+          type: float
+          value: 0.3
+        - name: b
+          type: float
+          value: 0.3

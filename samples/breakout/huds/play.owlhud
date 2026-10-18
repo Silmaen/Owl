@@ -1,0 +1,296 @@
+Hud: untitled
+FormatVersion: 1
+Entities:
+  - Entity: 7090000000000000001
+    Tag:
+      tag: HUDCanvas
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    Canvas:
+      space: ScreenOverlay
+      sortOrder: 0
+      referenceResolution: [1280, 720]
+      scaleMode: ScaleWithHeight
+  - Entity: 7090000000000000002
+    Tag:
+      tag: ScoreText
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7090000000000000001
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.42, 0.07]
+      sizeUnit: [ScreenHeight, ScreenHeight]
+      offset: [16, 6]
+    UiText:
+      outlineWidth: 2
+      text: 'Score 0'
+      color: [1, 0.92, 0.5, 1]
+      fontSize: 34
+      horizontalAlignment: Left
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+  - Entity: 7090000000000000003
+    Tag:
+      tag: LevelText
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7090000000000000001
+    UiRect:
+      anchorMin: [0.5, 0]
+      anchorMax: [0.5, 0]
+      pivot: [0.5, 0]
+      size: [0.36, 0.07]
+      sizeUnit: [ScreenHeight, ScreenHeight]
+      offset: [0, 6]
+    UiText:
+      outlineWidth: 2
+      text: 'Level 1 / 5'
+      color: [1, 1, 1, 1]
+      fontSize: 34
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+  - Entity: 7090000000000000004
+    Tag:
+      tag: LivesText
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7090000000000000001
+    UiRect:
+      anchorMin: [1, 0]
+      anchorMax: [1, 0]
+      pivot: [1, 0]
+      size: [0.36, 0.07]
+      sizeUnit: [ScreenHeight, ScreenHeight]
+      offset: [-16, 6]
+    UiText:
+      outlineWidth: 2
+      text: 'Lives 3'
+      color: [1, 0.92, 0.5, 1]
+      fontSize: 34
+      horizontalAlignment: Right
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+  - Entity: 7090000000000000005
+    Tag:
+      tag: MessageText
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7090000000000000001
+    UiRect:
+      anchorMin: [0.5, 0.6]
+      anchorMax: [0.5, 0.6]
+      pivot: [0.5, 0.6]
+      size: [0.9, 0.16]
+      sizeUnit: [ScreenHeight, ScreenHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 2
+      text: 'Level 1'
+      color: [1, 1, 1, 1]
+      fontSize: 44
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: true
+      fit: Shrink
+      minFontSize: 12
+  - Entity: 7090000000000000006
+    Tag:
+      tag: PauseWindow
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy:
+      parentId: 7090000000000000001
+    UiRect:
+      anchorMin: [0.5, 0.5]
+      anchorMax: [0.5, 0.5]
+      pivot: [0.5, 0.5]
+      size: [0.62, 0.5]
+      sizeUnit: [ScreenHeight, ScreenHeight]
+      offset: [0, 0]
+    UiWindow:
+      title: Paused
+      titleBarHeight: 34
+      titleFontSize: 26
+      bodyColor: [0.08, 0.09, 0.16, 0.95]
+      titleColor: [0.2, 0.25, 0.45, 1]
+      titleTextColor: [1, 1, 1, 1]
+      draggable: false
+      closable: false
+      onCloseCallback: ''
+    UiLayout:
+      arrangement: Column
+      crossAlign: Center
+      spacing: 8
+      padding: 10
+      columns: 1
+      cellSize: [0, 0]
+  - Entity: 7090000000000000007
+    Tag:
+      tag: QuitButton
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7090000000000000006
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.9, 0.24]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiButton:
+      normalColor: [0.45, 0.16, 0.16, 1]
+      hoverColor: [0.55, 0.26, 0.26, 1]
+      pressedColor: [0.4, 0.11, 0.11, 1]
+      disabledColor: [0.15, 0.15, 0.15, 0.5]
+      onClickCallback: on_pause_quit
+    UiText:
+      outlineWidth: 2
+      text: 'Quit to title'
+      color: [1, 1, 1, 1]
+      fontSize: 30
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+    UiFocus:
+      focusable: true
+      initial: false
+      highlightColor: [1, 0.82, 0.2, 1]
+      highlightThickness: 2
+  - Entity: 7090000000000000008
+    Tag:
+      tag: RestartButton
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7090000000000000006
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.9, 0.24]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiButton:
+      normalColor: [0.3, 0.3, 0.3, 1]
+      hoverColor: [0.4, 0.4, 0.4, 1]
+      pressedColor: [0.25, 0.25, 0.25, 1]
+      disabledColor: [0.15, 0.15, 0.15, 0.5]
+      onClickCallback: on_pause_restart
+    UiText:
+      outlineWidth: 2
+      text: 'Restart level'
+      color: [1, 1, 1, 1]
+      fontSize: 30
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+    UiFocus:
+      focusable: true
+      initial: false
+      highlightColor: [1, 0.82, 0.2, 1]
+      highlightThickness: 2
+  - Entity: 7090000000000000009
+    Tag:
+      tag: ResumeButton
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7090000000000000006
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.9, 0.24]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiButton:
+      normalColor: [0.15, 0.35, 0.65, 1]
+      hoverColor: [0.25, 0.45, 0.75, 1]
+      pressedColor: [0.1, 0.3, 0.6, 1]
+      disabledColor: [0.15, 0.15, 0.15, 0.5]
+      onClickCallback: on_pause_resume
+    UiText:
+      outlineWidth: 2
+      text: 'Resume'
+      color: [1, 1, 1, 1]
+      fontSize: 30
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+    UiFocus:
+      focusable: true
+      initial: true
+      highlightColor: [1, 0.82, 0.2, 1]
+      highlightThickness: 2
