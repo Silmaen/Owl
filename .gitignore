@@ -6,6 +6,7 @@
 *.lo
 *.o
 *.obj
+!test/unit/test_helper/assets/**/*.obj
 
 # Precompiled Headers
 *.gch
