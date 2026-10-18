@@ -218,6 +218,9 @@ Entities:
         - name: level
           type: int
           value: 3
+        - name: next_scene
+          type: string
+          value: scenes/level_4.owl
   - Entity: 7100000000003000011
     Tag:
       tag: Music

@@ -124,3 +124,9 @@ Entities:
         - name: level
           type: int
           value: 10
+        - name: level_name
+          type: string
+          value: Warehouse
+        - name: next_scene
+          type: string
+          value: scenes/victory.owl

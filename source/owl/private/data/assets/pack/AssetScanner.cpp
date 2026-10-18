@@ -226,47 +226,84 @@ auto resolveScene(const std::string& iLevelName) -> std::optional<std::filesyste
 	return std::nullopt;
 }
 
-void scanLuaScriptForScenes(const std::filesystem::path& iScriptPath,// NOLINT(misc-no-recursion)
-							std::set<std::string>& ioVisitedScenes, std::vector<AssetReference>& ioAssets,
-							std::vector<std::string>* ioWarnings) {
-	if (!exists(iScriptPath))
-		return;
-	std::ifstream scriptFile(iScriptPath);
-	const std::string scriptContent((std::istreambuf_iterator<char>(scriptFile)), std::istreambuf_iterator<char>());
-	// Match any quoted string that looks like a scene path (contains "scenes/" or ends with ".owl").
-	static const std::regex sceneStringPattern(R"(["']((?:scenes/)?[^"']+\.owl)["'])");
-	auto begin = std::sregex_iterator(scriptContent.begin(), scriptContent.end(), sceneStringPattern);
-	const auto end = std::sregex_iterator();
-	for (auto it = begin; it != end; ++it) {
-		const auto sceneName = (*it)[1].str();
-		if (auto scenePath = resolveScene(sceneName); scenePath)
-			scanSceneRecursive(*scenePath, ioVisitedScenes, ioAssets, ioWarnings);
-		else if (ioWarnings != nullptr)
-			ioWarnings->push_back(
-					std::format("Scene '{}' referenced by {} not found", sceneName, iScriptPath.filename().string()));
-	}
+void followScene(const std::string& iName, const std::string& iSource,// NOLINT(misc-no-recursion)
+				 std::set<std::string>& ioVisitedScenes, std::vector<AssetReference>& ioAssets,
+				 std::vector<std::string>* ioWarnings) {
+	if (auto scenePath = resolveScene(iName); scenePath)
+		scanSceneRecursive(*scenePath, ioVisitedScenes, ioAssets, ioWarnings);
+	else
+		pushWarning(ioWarnings, "Scene", iName, iSource);
 }
 
-void scanLuaScriptForSounds(const std::filesystem::path& iScriptPath, std::vector<AssetReference>& ioAssets,
-							std::vector<std::string>* ioWarnings) {
+void followSound(const std::string& iName, const std::string& iSource, std::vector<AssetReference>& ioAssets,
+				 std::vector<std::string>* ioWarnings) {
+	if (auto ref = resolveSound(iName); ref) {
+		if (!hasAsset(ioAssets, ref->packPath))
+			ioAssets.push_back(*ref);
+	} else
+		pushWarning(ioWarnings, "Sound", iName, iSource);
+}
+
+void followTexture(const std::string& iSerialized, const std::string& iSource, std::vector<AssetReference>& ioAssets,
+				   std::vector<std::string>* ioWarnings) {
+	if (auto ref = resolveTexture(iSerialized); ref) {
+		if (!hasAsset(ioAssets, ref->packPath))
+			ioAssets.push_back(*ref);
+	} else
+		pushWarning(ioWarnings, "Texture", iSerialized, iSource);
+}
+
+auto isSoundFile(const std::string& iName) -> bool {
+	const auto ext = std::filesystem::path(iName).extension();
+	return ext == ".wav" || ext == ".ogg" || ext == ".mp3" || ext == ".flac";
+}
+
+auto isSerializedTexture(const std::string& iValue) -> bool {
+	return iValue.starts_with("nam:") || iValue.starts_with("pat:");
+}
+
+void scanLuaScript(const std::filesystem::path& iScriptPath,// NOLINT(misc-no-recursion)
+				   std::set<std::string>& ioVisitedScenes, std::vector<AssetReference>& ioAssets,
+				   std::vector<std::string>* ioWarnings) {
 	if (!exists(iScriptPath))
 		return;
 	std::ifstream scriptFile(iScriptPath);
 	const std::string scriptContent((std::istreambuf_iterator<char>(scriptFile)), std::istreambuf_iterator<char>());
-	// A `sound.play("…")` argument, or any quoted sound file (a table of variants picked at random).
-	static const std::regex soundPlayPattern(
+	const auto source = iScriptPath.filename().string();
+	// Any quoted scene path, the argument of `sound.play` or any quoted sound file, any quoted serialized texture.
+	static const std::regex scenePattern(R"(["']((?:scenes/)?[^"']+\.owl)["'])");
+	static const std::regex soundPattern(
 			R"((?:sound\.play\s*\(\s*["']([^"']+)["']\s*\))|["']([^"'\s]+\.(?:wav|ogg|mp3|flac))["'])");
-	auto begin = std::sregex_iterator(scriptContent.begin(), scriptContent.end(), soundPlayPattern);
+	static const std::regex texturePattern(R"(["']((?:nam|pat):[^"']+)["'])");
 	const auto end = std::sregex_iterator();
-	for (auto it = begin; it != end; ++it) {
-		const auto soundName = (*it)[1].matched ? (*it)[1].str() : (*it)[2].str();
-		if (auto ref = resolveSound(soundName); ref) {
-			if (!hasAsset(ioAssets, ref->packPath))
-				ioAssets.push_back(*ref);
-		} else if (ioWarnings != nullptr) {
-			ioWarnings->push_back(
-					std::format("Sound '{}' referenced by {} not found", soundName, iScriptPath.filename().string()));
-		}
+	for (auto it = std::sregex_iterator(scriptContent.begin(), scriptContent.end(), scenePattern); it != end; ++it)
+		followScene((*it)[1].str(), source, ioVisitedScenes, ioAssets, ioWarnings);
+	for (auto it = std::sregex_iterator(scriptContent.begin(), scriptContent.end(), soundPattern); it != end; ++it)
+		followSound((*it)[1].matched ? (*it)[1].str() : (*it)[2].str(), source, ioAssets, ioWarnings);
+	for (auto it = std::sregex_iterator(scriptContent.begin(), scriptContent.end(), texturePattern); it != end; ++it)
+		followTexture((*it)[1].str(), source, ioAssets, ioWarnings);
+}
+
+// The string properties of a `LuaScript` follow the rules of the strings quoted in its script.
+void scanScriptProperties(const YAML::Node& iProperties,// NOLINT(misc-no-recursion)
+						  const std::string& iSceneName, std::set<std::string>& ioVisitedScenes,
+						  std::vector<AssetReference>& ioAssets, std::vector<std::string>* ioWarnings) {
+	if (!iProperties || !iProperties.IsSequence())
+		return;
+	for (const auto property: iProperties) {
+		const auto type = property["type"];
+		const auto value = property["value"];
+		if (!type || !type.IsScalar() || type.as<std::string>() != "string" || !value || !value.IsScalar())
+			continue;
+		const auto text = value.as<std::string>();
+		const auto name = property["name"] ? property["name"].as<std::string>() : std::string{};
+		const auto source = std::format("the '{}' script property in {}", name, iSceneName);
+		if (isSerializedTexture(text))
+			followTexture(text, source, ioAssets, ioWarnings);
+		else if (std::filesystem::path(text).extension() == ".owl")
+			followScene(text, source, ioVisitedScenes, ioAssets, ioWarnings);
+		else if (isSoundFile(text))
+			followSound(text, source, ioAssets, ioWarnings);
 	}
 }
 
@@ -406,17 +443,18 @@ void scanEntity(const YAML::Node& iEntity,// NOLINT(misc-no-recursion)
 		if (auto widget = iEntity[component]; widget)
 			addTextureField(widget);
 	scanFontsAndSounds(iEntity, iSceneName, ioAssets, ioWarnings);
-	if (auto luaScript = iEntity["LuaScript"]; luaScript)
+	if (auto luaScript = iEntity["LuaScript"]; luaScript) {
 		if (auto scriptPath = luaScript["scriptPath"]; scriptPath) {
 			const auto name = scriptPath.as<std::string>();
 			if (auto ref = resolveScript(name); ref) {
 				if (!hasAsset(ioAssets, ref->packPath))
 					ioAssets.push_back(*ref);
-				scanLuaScriptForScenes(ref->diskPath, ioVisitedScenes, ioAssets, ioWarnings);
-				scanLuaScriptForSounds(ref->diskPath, ioAssets, ioWarnings);
+				scanLuaScript(ref->diskPath, ioVisitedScenes, ioAssets, ioWarnings);
 			} else
 				pushWarning(ioWarnings, "Script", name, iSceneName);
 		}
+		scanScriptProperties(luaScript["properties"], iSceneName, ioVisitedScenes, ioAssets, ioWarnings);
+	}
 	if (auto trigger = iEntity["Trigger"]; trigger)
 		if (auto level = trigger["LevelName"]; level) {
 			const auto name = level.as<std::string>();

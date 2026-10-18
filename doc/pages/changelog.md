@@ -192,6 +192,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- The game export follows the scene paths, sound files and `nam:` / `pat:` textures given as string properties of a `LuaScript` (a `next_scene` property), like those quoted in its script; Breakout, Wolfenstein and Sokoban name their next level that way instead of listing the level scenes in Lua (gap G16).
 - Lua `gamestate.set` and `settings.set` keep a string that reads as a number (`"0110"`) a string instead of storing a float, so a string of digits survives a save (the fog of the Engine Demo raycast minimap came back broken after a load).
 - The emulated arm64 build finds the `fast_float` headers that the c4core headers of rapidyaml include: the engine requires and links `fast_float` directly.
 - The arm64 build (Debug under qemu) passes the Engine Demo scenarios: the raycast level sets its minimap fog up over a few frames instead of overrunning the script time quota, and scenarios take the `OWL_TEST_TIMEOUT` of their preset (3600 s on the arm64 presets) instead of a fixed 300 s.

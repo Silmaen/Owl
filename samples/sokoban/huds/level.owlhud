@@ -36,7 +36,7 @@ Entities:
       offset: [16, 6]
     UiText:
       outlineWidth: 2
-      text: 'Level 1 / 10'
+      text: 'Level 1'
       color: [1, 0.88, 0.5, 1]
       fontSize: 34
       horizontalAlignment: Left

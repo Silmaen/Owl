@@ -53,4 +53,6 @@ two. The menus work with the mouse, the arrows and Enter, or the D-pad and A / B
 The floors are carved by `tools/samples/wolfenstein/generate_levels.py` (it checks that every cell can be reached), then
 edited in Owl Nest like any scene: a pick-up is counted by its tag (`Cross`, `Chalice`, `Chest`, `Crown`, `Food`,
 `DogFood`, `GoldKey`, `BlueKey`), a secret wall by the tag `Secret`, so duplicating one in the editor adds it to the
-tally. Running the generator again overwrites such edits.
+tally. The `next_scene` property of the `ExitElevator` script names the floor that follows (`scenes/victory.owl` after
+the last one): a new floor is a duplicated scene whose previous floor points at it. Running the generator again
+overwrites such edits.

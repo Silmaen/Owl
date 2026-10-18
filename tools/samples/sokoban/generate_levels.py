@@ -127,7 +127,9 @@ def level_scene(index: int) -> str:
     )
     entities.add("MovingBox", [y.frames(sheet, COLUMNS, ROWS, TILES["box"])], position=(0, 0, 0.05), visible=False)
     entities.add("Music", [y.music("sounds/music/loop.wav", 0.3)])
-    entities.add("Game", [y.script("scripts/game/sokoban.lua", [("level", "int", number)])])
+    next_scene = f"scenes/level_{number + 1:02d}.owl" if number < len(lv.LEVELS) else "scenes/victory.owl"
+    properties = [("level", "int", number), ("level_name", "string", lvl.name), ("next_scene", "string", next_scene)]
+    entities.add("Game", [y.script("scripts/game/sokoban.lua", properties)])
     return y.scene(f"level_{number:02d}", entities, hud="huds/level.owlhud")
 
 
@@ -137,9 +139,7 @@ def level_hud() -> str:
     entities = y.Entities(7290000000000000000)
     root = entities.add("HUDCanvas", [y.canvas()])
     gold = (1, 0.88, 0.5, 1)
-    entities.add(
-        "LevelText", [y.rect((0, 0), (0.3, 0.07), (16, 6)), y.text("Level 1 / 10", 34, "Left", gold)], parent=root
-    )
+    entities.add("LevelText", [y.rect((0, 0), (0.3, 0.07), (16, 6)), y.text("Level 1", 34, "Left", gold)], parent=root)
     entities.add("MovesText", [y.rect((0.5, 0), (0.5, 0.07), (0, 6)), y.text("Moves 0   Pushes 0", 34)], parent=root)
     entities.add("BestText", [y.rect((1, 0), (0.3, 0.07), (-16, 6)), y.text("Best -", 34, "Right", gold)], parent=root)
     hint = "Move: arrows, WASD, D-pad   Undo: Z, pad B   Restart: R, pad Y   Menu: Esc, Start"

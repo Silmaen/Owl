@@ -39,8 +39,9 @@ left; the settings hold the master volume, the interface size and a reset of the
 Open a level scene in Owl Nest, select the `Level` entity and paint its tilemap in the tilemap editor: walls and floor
 in layer `floor`, goal marks in `goals`, crates and the hero tile (where the player starts) in `boxes`. Keep as many
 crates as goals; the game warns in the log otherwise. To add a level, duplicate a level scene, point its `Level` at a
-new tilemap, and add the scene to `LEVEL_SCENES` (and its name to `LEVEL_NAMES`) in `sokoban.lua`, `title.lua` and
-`level_select.lua`.
+new tilemap, set the `level`, `level_name` and `next_scene` properties of its `Game` entity (and `next_scene` of the
+level before it), then add the scene to `LEVEL_SCENES` (and its name to `LEVEL_NAMES`) in `title.lua` and
+`level_select.lua`, which list every level.
 
 The art, the sounds, the first version of the levels and the menus come from `tools/samples/sokoban/`
 (`generate_assets.py`, `generate_levels.py`, `generate_menus.py`): running a generator again overwrites the edits made

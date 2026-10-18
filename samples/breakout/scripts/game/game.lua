@@ -6,21 +6,17 @@
 --   and the falling power-ups are authored entities shown and hidden from pools (gap G1): `BreakFx1..`,
 --   `PowerWide1..`, `PowerSlow1..`.
 -- - Power-ups caught with the paddle: wide paddle (`breakout_wide`) or slow ball (`breakout_speed_factor`), for a time.
--- - No brick left: next level (`LEVEL_SCENES`, written out so that the export packs every level: it follows the scene
---   paths quoted in scripts, not script properties). No life left: game over. The `pause` action (Esc, P, Start) stops the
---   ball and the paddle (gap G8: Lua stops the bodies by hand) and opens the pause window of `huds/play.owlhud`.
+-- - No brick left: the scene of the `next_scene` property (the next level, the victory after the last one), kept in
+--   `breakout_scene` for the restart of the pause window. No life left: game over. The `pause` action (Esc, P, Start)
+--   stops the ball and the paddle (gap G8: Lua stops the bodies by hand) and opens the pause window of
+--   `huds/play.owlhud`.
 
 properties = {
     { name = "level", type = "int", default = 1 },
+    { name = "next_scene", type = "string", default = "scenes/victory.owl" },
 }
 
-local LEVEL_SCENES = {
-    "scenes/level_1.owl",
-    "scenes/level_2.owl",
-    "scenes/level_3.owl",
-    "scenes/level_4.owl",
-    "scenes/level_5.owl",
-}
+local FIRST_LEVEL = "scenes/level_1.owl"
 
 local PADDLE_Y = -6.8
 local PADDLE_HALF_HEIGHT = 0.18
@@ -209,7 +205,7 @@ function on_pause_restart()
     set_paused(false)
     ending = "restart"
     gamestate.set("breakout_score", gamestate.get("breakout_level_score", 0))
-    scene.transition_to(LEVEL_SCENES[level] or LEVEL_SCENES[1], "fade_out", 0.3)
+    scene.transition_to(gamestate.get("breakout_scene", FIRST_LEVEL), "fade_out", 0.3)
 end
 
 function on_pause_quit()
@@ -223,7 +219,7 @@ end
 
 local function update_hud()
     set_text("score", "Score " .. gamestate.get("breakout_score", 0))
-    set_text("level", "Level " .. level .. " / 5")
+    set_text("level", "Level " .. level)
     set_text("lives", "Lives " .. math.max(0, gamestate.get("breakout_lives", 0)))
 end
 
@@ -243,7 +239,9 @@ local function check_end(dt)
     end_clock = end_clock + dt
     if ending == "clear" and end_clock >= CLEAR_DELAY then
         ending = "leaving"
-        scene.transition_to(LEVEL_SCENES[level + 1] or "scenes/victory.owl", "fade_out", 0.4)
+        local target = (next_scene ~= nil and next_scene ~= "") and next_scene or "scenes/victory.owl"
+        gamestate.set("breakout_scene", target)
+        scene.transition_to(target, "fade_out", 0.4)
     elseif ending == "over" and end_clock >= OVER_DELAY then
         ending = "leaving"
         scene.transition_to("scenes/game_over.owl", "fade_out", 0.4)

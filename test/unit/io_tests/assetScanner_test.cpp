@@ -429,6 +429,125 @@ TEST_F(AssetScannerTest, ScanLuaScriptFollowsQuotedSoundVariants) {
 	EXPECT_EQ(found, 2u);
 }
 
+TEST_F(AssetScannerTest, ScanLuaScriptFollowsQuotedSerializedTexture) {
+	const auto texturePath = m_tempDir / "textures" / "icon.png";
+	writeDummyBinary(texturePath);
+	const auto scriptPath = m_tempDir / "scripts" / "list.lua";
+	writeFile(scriptPath, "local ICON = \"pat:" + texturePath.generic_string() + "\"\n");
+	const auto scenePath = m_tempDir / "list.owl";
+	writeFile(scenePath, "Scene: list\nEntities:\n"
+						 "  - Entity: 1\n"
+						 "    LuaScript:\n"
+						 "      scriptPath: " +
+								 scriptPath.generic_string() + "\n");
+
+	const auto assets = AssetScanner::scanScene(scenePath);
+	EXPECT_TRUE(std::ranges::any_of(assets, [&texturePath](const AssetReference& iRef) -> bool {
+		return iRef.assetType == AssetType::Texture && iRef.diskPath == texturePath;
+	}));
+}
+
+TEST_F(AssetScannerTest, ScanScriptPropertiesFollowsScenesRecursively) {
+	const auto lastPath = m_tempDir / "scenes" / "level_3.owl";
+	writeFile(lastPath, "Scene: level_3\n");
+	const auto secondPath = m_tempDir / "scenes" / "level_2.owl";
+	writeFile(secondPath, "Scene: level_2\nEntities:\n"
+						  "  - Entity: 2\n"
+						  "    LuaScript:\n"
+						  "      scriptPath: \"\"\n"
+						  "      properties:\n"
+						  "        - name: next_scene\n"
+						  "          type: string\n"
+						  "          value: " +
+								  lastPath.generic_string() + "\n");
+	const auto scenePath = m_tempDir / "scenes" / "level_1.owl";
+	writeFile(scenePath, "Scene: level_1\nEntities:\n"
+						 "  - Entity: 1\n"
+						 "    LuaScript:\n"
+						 "      scriptPath: \"\"\n"
+						 "      properties:\n"
+						 "        - name: level\n"
+						 "          type: int\n"
+						 "          value: 1\n"
+						 "        - name: next_scene\n"
+						 "          type: string\n"
+						 "          value: " +
+								 secondPath.generic_string() + "\n");
+
+	std::vector<std::string> warnings;
+	const auto assets = AssetScanner::scanScene(scenePath, &warnings);
+	const auto hasScene = [&assets](const std::filesystem::path& iPath) -> bool {
+		return std::ranges::any_of(assets, [&iPath](const AssetReference& iRef) -> bool {
+			return iRef.assetType == AssetType::Scene && iRef.diskPath == iPath;
+		});
+	};
+	EXPECT_TRUE(hasScene(secondPath));
+	EXPECT_TRUE(hasScene(lastPath));
+	EXPECT_TRUE(warnings.empty());
+}
+
+TEST_F(AssetScannerTest, ScanScriptPropertiesFollowsSoundsAndTextures) {
+	const auto soundPath = m_tempDir / "sounds" / "win.ogg";
+	writeDummyBinary(soundPath);
+	const auto texturePath = m_tempDir / "textures" / "badge.png";
+	writeDummyBinary(texturePath);
+	const auto scenePath = m_tempDir / "props.owl";
+	writeFile(scenePath, "Scene: props\nEntities:\n"
+						 "  - Entity: 1\n"
+						 "    LuaScript:\n"
+						 "      scriptPath: \"\"\n"
+						 "      properties:\n"
+						 "        - name: win_sound\n"
+						 "          type: string\n"
+						 "          value: " +
+								 soundPath.generic_string() +
+								 "\n"
+								 "        - name: badge\n"
+								 "          type: string\n"
+								 "          value: \"pat:" +
+								 texturePath.generic_string() + "\"\n");
+
+	const auto assets = AssetScanner::scanScene(scenePath);
+	const auto has = [&assets](const std::filesystem::path& iPath, const AssetType iType) -> bool {
+		return std::ranges::any_of(assets, [&iPath, iType](const AssetReference& iRef) -> bool {
+			return iRef.assetType == iType && iRef.diskPath == iPath;
+		});
+	};
+	EXPECT_TRUE(has(soundPath, AssetType::Sound));
+	EXPECT_TRUE(has(texturePath, AssetType::Texture));
+}
+
+TEST_F(AssetScannerTest, ScanScriptPropertiesIgnoresPlainValuesAndWarnsOnMissingScene) {
+	const auto scenePath = m_tempDir / "plain.owl";
+	writeFile(scenePath, "Scene: plain\nEntities:\n"
+						 "  - Entity: 1\n"
+						 "    LuaScript:\n"
+						 "      scriptPath: \"\"\n"
+						 "      properties:\n"
+						 "        - name: title\n"
+						 "          type: string\n"
+						 "          value: Cellar\n"
+						 "        - name: speed\n"
+						 "          type: float\n"
+						 "          value: 2.5\n");
+	std::vector<std::string> warnings;
+	EXPECT_EQ(AssetScanner::scanScene(scenePath, &warnings).size(), 1u);
+	EXPECT_TRUE(warnings.empty());
+
+	writeFile(scenePath, "Scene: plain\nEntities:\n"
+						 "  - Entity: 1\n"
+						 "    LuaScript:\n"
+						 "      scriptPath: \"\"\n"
+						 "      properties:\n"
+						 "        - name: next_scene\n"
+						 "          type: string\n"
+						 "          value: scenes/no_such_level.owl\n");
+	warnings.clear();
+	(void) AssetScanner::scanScene(scenePath, &warnings);
+	ASSERT_EQ(warnings.size(), 1u);
+	EXPECT_NE(warnings.front().find("next_scene"), std::string::npos);
+}
+
 TEST_F(AssetScannerTest, ScanSceneWithTeleportTrigger) {
 	// Create a target scene.
 	const auto scene2Path = m_tempDir / "level2.owl";

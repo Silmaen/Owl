@@ -10,7 +10,8 @@
 -- - Every step goes on an undo stack (a Lua table): `undo` (Z, U, Backspace, pad B) takes back the last one, `restart`
 --   (R, pad Y) takes them all back. Moves and pushes count in the HUD.
 -- - Every crate on a goal: the level is done. `sokoban_done_NN` and `sokoban_best_NN` (fewest moves) are kept as
---   settings (saved at once), then the next level, or the victory screen after the last one.
+--   settings (saved at once), then the scene of the `next_scene` property: the next level, or the victory screen after
+--   the last one. `level_name` is shown when the level opens; the level select keeps its own list of the levels.
 -- - `pause` (Esc, P, Start) opens the pause window of `huds/level.owlhud`; the HUD buttons Undo / Restart / Menu do the
 --   same with the mouse.
 -- - The state is mirrored into `gamestate` for the scenarios: `sokoban_level`, `sokoban_moves`, `sokoban_pushes`,
@@ -18,23 +19,9 @@
 
 properties = {
     { name = "level", type = "int", default = 1 },
+    { name = "level_name", type = "string", default = "" },
+    { name = "next_scene", type = "string", default = "scenes/victory.owl" },
 }
-
--- Written out so that the export packs every level: it follows the scene paths quoted in scripts.
-local LEVEL_SCENES = {
-    "scenes/level_01.owl",
-    "scenes/level_02.owl",
-    "scenes/level_03.owl",
-    "scenes/level_04.owl",
-    "scenes/level_05.owl",
-    "scenes/level_06.owl",
-    "scenes/level_07.owl",
-    "scenes/level_08.owl",
-    "scenes/level_09.owl",
-    "scenes/level_10.owl",
-}
-local LEVEL_NAMES = { "First push", "Two by two", "Side door", "Back room", "Cellar", "Four corners", "Pantry",
-                      "Columns", "Loading bay", "Warehouse" }
 
 local FLOOR, GOALS, BOXES = 0, 1, 2
 local EMPTY = -1
@@ -145,7 +132,7 @@ local function done_key()
 end
 
 local function update_hud()
-    set_text("level", "Level " .. level .. " / " .. #LEVEL_SCENES)
+    set_text("level", "Level " .. level)
     set_text("moves", "Moves " .. moves .. "   Pushes " .. pushes)
     local best = settings.get(best_key(), 0)
     set_text("best", best > 0 and ("Best " .. best) or "Best -")
@@ -392,7 +379,7 @@ function on_create()
     gamestate.set("sokoban_paused", false)
     gamestate.set(done_key(), settings.get(done_key(), false))
     publish()
-    show_message("Level " .. level .. ": " .. (LEVEL_NAMES[level] or ""), 1.8)
+    show_message("Level " .. level .. ": " .. (level_name or ""), 1.8)
 end
 
 local function read_direction()
@@ -467,7 +454,7 @@ function on_update(dt)
     if won then
         win_clock = win_clock + dt
         if win_clock >= WIN_DELAY then
-            leave(LEVEL_SCENES[level + 1] or "scenes/victory.owl")
+            leave((next_scene ~= nil and next_scene ~= "") and next_scene or "scenes/victory.owl")
         end
         return
     end

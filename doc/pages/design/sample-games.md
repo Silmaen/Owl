@@ -78,8 +78,8 @@ Done in v0.4.0: `samples/breakout/` (how to play: its `README.md`).
   the pop of `coin.lua`.
 - Gaps met: G5 (the paddle follows the mouse motion, `breakout_mouse_speed` setting), G1 (pools of hidden entities:
   power-ups, bursts, and a second paddle for the wide one, a body cannot be resized from Lua), G14 (one scene per
-  level), G9 (master volume only), G8 (the pause stops the bodies from Lua), G16 (the level scenes listed in
-  `game.lua`).
+  level), G9 (master volume only), G8 (the pause stops the bodies from Lua). Each level names the next one in the
+  `next_scene` property of its `Game` script (G16 fixed): a new level is a duplicated scene in Owl Nest.
 - Scenarios: `breakout_serve` (serve, 300 frames, `breakout_bricks` below 40), `breakout_lose` (no input at all:
   the automatic serve, `breakout_lives` below 3), `breakout_gamepad` (dead zone, the stick moves the paddle, A serves).
 - The levels were first laid out by `tools/samples/breakout/generate_levels.py` (text grids) and are edited in Owl Nest
@@ -102,8 +102,10 @@ Done in v0.4.0: `samples/breakout/` (how to play: its `README.md`).
 | Saves    | No slot: `sokoban_done_NN` and `sokoban_best_NN` settings saved at once; Continue starts the first level left |
 
 - Level editing in Owl Nest: paint the three layers in the tilemap editor (the hero tile of layer 2 places the player);
-  for a new level, duplicate a level scene, point its `Level` at a new tilemap and add the scene to `LEVEL_SCENES` of
-  `sokoban.lua`, `title.lua` and `level_select.lua`. `sokoban.lua` warns when crates and goals do not match.
+  for a new level, duplicate a level scene, point its `Level` at a new tilemap, set the `level`, `level_name` and
+  `next_scene` properties of its `Game` script (and `next_scene` of the level before), then add the scene to
+  `LEVEL_SCENES` of `title.lua` and `level_select.lua`, which list every level for the progress and the level select.
+  `sokoban.lua` warns when crates and goals do not match.
 - Generators in `tools/samples/sokoban/`: `generate_assets.py` (tile sheet, sounds), `generate_levels.py` (tileset,
   tilemaps, level scenes, HUD, from the texts of `levels.py`), `generate_menus.py`; `tools/tests/test_sokoban_levels.py`
   replays a stored solution of each level text.
@@ -166,7 +168,7 @@ and the combat come in a later release, once their art exists.
 - Reuse: `scripts/raycast/raycast_player.lua`, `scripts/raycast/raycast_level.lua`, `scripts/raycast/pickup.lua`,
   `scripts/raycast/raycast_exit.lua`, `tilesets/raycast_w3d_walls.owltileset`, `tilesets/minimap.owltileset`,
   `sounds/raycast/`, the menus of the Engine Demo.
-- Gaps: G9, G16, G17; later, with combat: G11 (art), G10 (line of sight), G7 (weapon view frames), G1 (dropped ammo).
+- Gaps: G9, G17 (the `next_scene` property of `exit.lua` names the next floor, G16 fixed); later, with combat: G11 (art), G10 (line of sight), G7 (weapon view frames), G1 (dropped ammo).
 - Scenarios: `wolf_pickup` (walk onto a cross, `wolf_items` and `wolf_score` rise), `wolf_locked_door` (closed without
   the key, opens with it), `wolf_secret` (push a secret wall, `wolf_secrets` equals 1), `wolf_explore` (`wolf_seen`
   and `wolf_explored` rise while turning, Tab enlarges the map), `wolf_exit` (the tally scene opens, then floor 2).
@@ -251,5 +253,5 @@ test/unit/scenarios/*.owltest         scenario tests
 | G13 | `VoxelPlayer` edits fire only with a captured cursor: a gamepad player and headless scenarios cannot break or place | S    | Minecraft                                | **Yes**: gamepad rule and CI scenario                            |
 | G14 | Lua cannot switch the tilemap asset of an entity: one scene per level                                               | S    | Sokoban, Breakout                        | No: duplicate the level scene                                    |
 | G15 | No Lua pick of the entity under the mouse                                                                           | S    | Tycoon                                   | No: compare `isometric.pick_cell` with the vehicle cells         |
-| G16 | The export follows scene paths quoted in scripts, not those in script properties (a `next_scene` string)            | S    | Breakout, Wolfenstein                    | No: list the scenes in the script                                |
+| G16 | The export follows scene paths quoted in scripts, not those in script properties (fixed in v0.4.0: both followed)   | S    | Breakout, Wolfenstein                    | No: list the scenes in the script                                |
 | G17 | A save keeps neither a slid `RaycastPushWall` nor an open door: after a load they are back in place                 | S    | Wolfenstein                              | No: pushed again, a secret counts once                           |
