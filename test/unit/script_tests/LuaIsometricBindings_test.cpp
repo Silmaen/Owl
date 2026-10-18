@@ -108,6 +108,23 @@ TEST_F(LuaIsometric, cellsAreReadAndWrittenPerLayer) {
 	EXPECT_EQ(m_asset->layers[1].getCell(3, 3).overlay, 3);
 }
 
+TEST_F(LuaIsometric, setCellIsFalseWhenTheCellAlreadyHoldsTheTiles) {
+	const auto instance = run("first = isometric.set_cell(map, 0, 2, 2, 4, -1)\n"
+							  "again = isometric.set_cell(map, 0, 2, 2, 4, -1)");
+	EXPECT_TRUE(instance->getPropertyBool("first").value_or(false));
+	EXPECT_FALSE(instance->getPropertyBool("again").value_or(true));
+}
+
+TEST_F(LuaIsometric, sizeGivesTheGridAndTheCellOfTheTilemap) {
+	m_asset->resize(12, 5);
+	m_asset->cellSize = 2.f;
+	const auto instance = run("w, h, cell = isometric.get_size(map)\nnone = isometric.get_size(0) == nil");
+	EXPECT_EQ(instance->getPropertyInt("w").value_or(0), 12);
+	EXPECT_EQ(instance->getPropertyInt("h").value_or(0), 5);
+	EXPECT_NEAR(instance->getPropertyFloat("cell").value_or(0.f), 2.f, 1e-6f);
+	EXPECT_TRUE(instance->getPropertyBool("none").value_or(false));
+}
+
 TEST_F(LuaIsometric, setCellStampsTheChunkGeneration) {
 	const auto before = m_asset->layers[1].getChunkGeneration({0, 0});
 	std::ignore = run("isometric.set_cell(map, 1, 3, 3, -1, 3)");

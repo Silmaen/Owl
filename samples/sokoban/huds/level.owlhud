@@ -1,0 +1,522 @@
+Hud: level
+FormatVersion: 1
+Entities:
+  - Entity: 7290000000000000001
+    Tag:
+      tag: HUDCanvas
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    Canvas:
+      space: ScreenOverlay
+      sortOrder: 0
+      referenceResolution: [1280, 720]
+      scaleMode: ScaleWithHeight
+  - Entity: 7290000000000000002
+    Tag:
+      tag: LevelText
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7290000000000000001
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.3, 0.07]
+      sizeUnit: [ScreenHeight, ScreenHeight]
+      offset: [16, 6]
+    UiText:
+      outlineWidth: 2
+      text: 'Level 1 / 10'
+      color: [1, 0.88, 0.5, 1]
+      fontSize: 34
+      horizontalAlignment: Left
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+  - Entity: 7290000000000000003
+    Tag:
+      tag: MovesText
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7290000000000000001
+    UiRect:
+      anchorMin: [0.5, 0]
+      anchorMax: [0.5, 0]
+      pivot: [0.5, 0]
+      size: [0.5, 0.07]
+      sizeUnit: [ScreenHeight, ScreenHeight]
+      offset: [0, 6]
+    UiText:
+      outlineWidth: 2
+      text: 'Moves 0   Pushes 0'
+      color: [1, 1, 1, 1]
+      fontSize: 34
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+  - Entity: 7290000000000000004
+    Tag:
+      tag: BestText
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7290000000000000001
+    UiRect:
+      anchorMin: [1, 0]
+      anchorMax: [1, 0]
+      pivot: [1, 0]
+      size: [0.3, 0.07]
+      sizeUnit: [ScreenHeight, ScreenHeight]
+      offset: [-16, 6]
+    UiText:
+      outlineWidth: 2
+      text: 'Best -'
+      color: [1, 0.88, 0.5, 1]
+      fontSize: 34
+      horizontalAlignment: Right
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+  - Entity: 7290000000000000005
+    Tag:
+      tag: HintText
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7290000000000000001
+    UiRect:
+      anchorMin: [0, 1]
+      anchorMax: [0, 1]
+      pivot: [0, 1]
+      size: [0.62, 0.05]
+      sizeUnit: [ScreenHeight, ScreenHeight]
+      offset: [16, -12]
+    UiText:
+      outlineWidth: 2
+      text: 'Move: arrows, WASD, D-pad   Undo: Z, pad B   Restart: R, pad Y   Menu: Esc, Start'
+      color: [0.85, 0.8, 0.75, 0.85]
+      fontSize: 22
+      horizontalAlignment: Left
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+  - Entity: 7290000000000000006
+    Tag:
+      tag: ButtonBar
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7290000000000000001
+    UiRect:
+      anchorMin: [1, 1]
+      anchorMax: [1, 1]
+      pivot: [1, 1]
+      size: [0.6, 0.08]
+      sizeUnit: [ScreenHeight, ScreenHeight]
+      offset: [-16, -8]
+    UiLayout:
+      arrangement: Row
+      crossAlign: Center
+      spacing: 6
+      padding: 0
+      columns: 1
+      cellSize: [0, 0]
+  - Entity: 7290000000000000007
+    Tag:
+      tag: MenuButton
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7290000000000000006
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.31, 0.9]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiButton:
+      normalColor: [0.3, 0.3, 0.3, 1]
+      hoverColor: [0.4, 0.4, 0.4, 1]
+      pressedColor: [0.25, 0.25, 0.25, 1]
+      disabledColor: [0.15, 0.15, 0.15, 0.5]
+      onClickCallback: on_menu_clicked
+    UiText:
+      outlineWidth: 2
+      text: 'Menu'
+      color: [1, 1, 1, 1]
+      fontSize: 28
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+    UiFocus:
+      focusable: false
+      initial: false
+      onFocusCallback: ''
+      highlightColor: [1, 0.82, 0.2, 1]
+      highlightThickness: 2
+  - Entity: 7290000000000000008
+    Tag:
+      tag: RestartButton
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7290000000000000006
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.31, 0.9]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiButton:
+      normalColor: [0.45, 0.3, 0.12, 1]
+      hoverColor: [0.55, 0.4, 0.22, 1]
+      pressedColor: [0.4, 0.25, 0.07, 1]
+      disabledColor: [0.15, 0.15, 0.15, 0.5]
+      onClickCallback: on_restart_clicked
+    UiText:
+      outlineWidth: 2
+      text: 'Restart'
+      color: [1, 1, 1, 1]
+      fontSize: 28
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+    UiFocus:
+      focusable: false
+      initial: false
+      onFocusCallback: ''
+      highlightColor: [1, 0.82, 0.2, 1]
+      highlightThickness: 2
+  - Entity: 7290000000000000009
+    Tag:
+      tag: UndoButton
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7290000000000000006
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.31, 0.9]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiButton:
+      normalColor: [0.15, 0.35, 0.6, 1]
+      hoverColor: [0.25, 0.45, 0.7, 1]
+      pressedColor: [0.1, 0.3, 0.55, 1]
+      disabledColor: [0.15, 0.15, 0.15, 0.5]
+      onClickCallback: on_undo_clicked
+    UiText:
+      outlineWidth: 2
+      text: 'Undo'
+      color: [1, 1, 1, 1]
+      fontSize: 28
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+    UiFocus:
+      focusable: false
+      initial: false
+      onFocusCallback: ''
+      highlightColor: [1, 0.82, 0.2, 1]
+      highlightThickness: 2
+  - Entity: 7290000000000000010
+    Tag:
+      tag: MessageText
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy:
+      parentId: 7290000000000000001
+    UiRect:
+      anchorMin: [0.5, 0.55]
+      anchorMax: [0.5, 0.55]
+      pivot: [0.5, 0.55]
+      size: [0.9, 0.2]
+      sizeUnit: [ScreenHeight, ScreenHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 2
+      text: 'Level 1'
+      color: [1, 1, 1, 1]
+      fontSize: 44
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: true
+      fit: Shrink
+      minFontSize: 12
+  - Entity: 7290000000000000011
+    Tag:
+      tag: PauseWindow
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy:
+      parentId: 7290000000000000001
+    UiRect:
+      anchorMin: [0.5, 0.5]
+      anchorMax: [0.5, 0.5]
+      pivot: [0.5, 0.5]
+      size: [0.62, 0.62]
+      sizeUnit: [ScreenHeight, ScreenHeight]
+      offset: [0, 0]
+    UiWindow:
+      title: 'Paused'
+      titleBarHeight: 34
+      titleFontSize: 26
+      bodyColor: [0.1, 0.08, 0.07, 0.95]
+      titleColor: [0.42, 0.28, 0.16, 1]
+      titleTextColor: [1, 1, 1, 1]
+      draggable: false
+      closable: false
+      onCloseCallback: ''
+    UiLayout:
+      arrangement: Column
+      crossAlign: Center
+      spacing: 8
+      padding: 10
+      columns: 1
+      cellSize: [0, 0]
+  - Entity: 7290000000000000012
+    Tag:
+      tag: QuitButton
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7290000000000000011
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.9, 0.19]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiButton:
+      normalColor: [0.45, 0.16, 0.16, 1]
+      hoverColor: [0.55, 0.26, 0.26, 1]
+      pressedColor: [0.4, 0.11, 0.11, 1]
+      disabledColor: [0.15, 0.15, 0.15, 0.5]
+      onClickCallback: on_pause_quit
+    UiText:
+      outlineWidth: 2
+      text: 'Quit to title'
+      color: [1, 1, 1, 1]
+      fontSize: 30
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+    UiFocus:
+      focusable: true
+      initial: false
+      onFocusCallback: ''
+      highlightColor: [1, 0.82, 0.2, 1]
+      highlightThickness: 2
+  - Entity: 7290000000000000013
+    Tag:
+      tag: LevelsButton
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7290000000000000011
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.9, 0.19]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiButton:
+      normalColor: [0.3, 0.3, 0.3, 1]
+      hoverColor: [0.4, 0.4, 0.4, 1]
+      pressedColor: [0.25, 0.25, 0.25, 1]
+      disabledColor: [0.15, 0.15, 0.15, 0.5]
+      onClickCallback: on_pause_levels
+    UiText:
+      outlineWidth: 2
+      text: 'Level select'
+      color: [1, 1, 1, 1]
+      fontSize: 30
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+    UiFocus:
+      focusable: true
+      initial: false
+      onFocusCallback: ''
+      highlightColor: [1, 0.82, 0.2, 1]
+      highlightThickness: 2
+  - Entity: 7290000000000000014
+    Tag:
+      tag: PauseRestartButton
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7290000000000000011
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.9, 0.19]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiButton:
+      normalColor: [0.45, 0.3, 0.12, 1]
+      hoverColor: [0.55, 0.4, 0.22, 1]
+      pressedColor: [0.4, 0.25, 0.07, 1]
+      disabledColor: [0.15, 0.15, 0.15, 0.5]
+      onClickCallback: on_pause_restart
+    UiText:
+      outlineWidth: 2
+      text: 'Restart level'
+      color: [1, 1, 1, 1]
+      fontSize: 30
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+    UiFocus:
+      focusable: true
+      initial: false
+      onFocusCallback: ''
+      highlightColor: [1, 0.82, 0.2, 1]
+      highlightThickness: 2
+  - Entity: 7290000000000000015
+    Tag:
+      tag: ResumeButton
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7290000000000000011
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.9, 0.19]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiButton:
+      normalColor: [0.15, 0.35, 0.65, 1]
+      hoverColor: [0.25, 0.45, 0.75, 1]
+      pressedColor: [0.1, 0.3, 0.6, 1]
+      disabledColor: [0.15, 0.15, 0.15, 0.5]
+      onClickCallback: on_pause_resume
+    UiText:
+      outlineWidth: 2
+      text: 'Resume'
+      color: [1, 1, 1, 1]
+      fontSize: 30
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+    UiFocus:
+      focusable: true
+      initial: true
+      onFocusCallback: ''
+      highlightColor: [1, 0.82, 0.2, 1]
+      highlightThickness: 2

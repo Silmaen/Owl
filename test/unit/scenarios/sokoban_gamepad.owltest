@@ -1,0 +1,18 @@
+# Sokoban: gamepad 0 plays level 1: the D-pad pushes the crate, B takes the push back, a light stick does nothing and
+# a full push of the stick steps once (not once per frame).
+scene: ../../../samples/sokoban/scenes/level_01.owl
+steps:
+  - frames: 30
+  - input: {gamepad: {button: DpadRight}, frames: 2}
+  - frames: 12
+  - expect: {gamestate: sokoban_pushes, equals: 1}
+  - input: {gamepad: {button: B}, frames: 2}
+  - frames: 4
+  - expect: {gamestate: sokoban_moves, equals: 0}
+  - expect: {gamestate: sokoban_player_x, equals: 2}
+  - input: {gamepad: {left_x: 0.2}, frames: 10}
+  - expect: {gamestate: sokoban_moves, equals: 0}
+  - input: {gamepad: {left_x: 1.0}, frames: 8}
+  - frames: 12
+  - expect: {gamestate: sokoban_moves, equals: 1}
+  - expect: {gamestate: sokoban_player_x, equals: 3}

@@ -1,0 +1,13 @@
+# Sokoban: the level select opens on level 1 with the list focused; down selects level 2 and accept (Enter, pad A)
+# starts it.
+scene: ../../../samples/sokoban/scenes/level_select.owl
+steps:
+  - frames: 10
+  - expect: {gamestate: sokoban_selected, equals: 1}
+  - actions: {ui_down: true, frames: 1}
+  - frames: 4
+  - expect: {gamestate: sokoban_selected, equals: 2}
+  - actions: {ui_accept: true, frames: 1}
+  - frames: 90
+  - expect: {entity: Level, exists: true}
+  - expect: {gamestate: sokoban_level, equals: 2}

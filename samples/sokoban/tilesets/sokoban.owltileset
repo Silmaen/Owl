@@ -1,0 +1,33 @@
+Tileset: sokoban
+FormatVersion: 1
+texture: nam:textures/sokoban_tiles.png
+tileWidth: 16
+tileHeight: 16
+columns: 8
+rows: 2
+filterMode: Nearest
+tiles:
+  - index: 0
+    name: floor
+  - index: 1
+    name: floor_worn
+  - index: 2
+    collidable: true
+    name: wall
+  - index: 3
+    collidable: true
+    name: wall_mossy
+  - index: 4
+    name: goal
+  - index: 5
+    name: box
+  - index: 6
+    name: box_on_goal
+  - index: 7
+    name: start
+  - index: 8
+    name: hero_idle
+  - index: 9
+    name: hero_walk
+  - index: 13
+    name: hero_push
