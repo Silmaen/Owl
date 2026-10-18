@@ -12,6 +12,7 @@
 #include "physics/PhysicCommand.h"
 #include "scene/Entity.h"
 #include "scene/Scene.h"
+#include "scene/UiInputSystem.h"
 #include "scene/component/components.h"
 
 #include <cmath>
@@ -76,7 +77,8 @@ void SceneTrigger::onTriggered(const Entity& ioPlayer, const Entity& iTriggerEnt
 			break;
 		case TriggerType::Interaction:
 			{
-				if (scene->getActions().isJustPressed("interact")) {
+				if (scene->getActions().isJustPressed("interact") &&
+					!UiInputSystem::isWorldInteractionBlocked(*scene)) {
 					const auto& func = callbackName.empty() ? std::string("on_interact") : callbackName;
 
 					dispatchLuaCallbackNoArg(iTriggerEntity, func);

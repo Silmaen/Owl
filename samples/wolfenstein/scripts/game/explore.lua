@@ -228,13 +228,15 @@ local function settle(d)
     end
 end
 
--- A door or a secret wall that changed state: its cell opens or closes on the map.
+-- A door or a secret wall that changed state: its cell opens or closes on the map; an opening door is heard and counted
+-- (`wolf_doors_opened`).
 local function follow(list, state_of)
     for _, d in ipairs(list) do
         local state = state_of(d.id)
         if state ~= d.state then
             if state == "opening" and list == doors and player_id ~= 0 then
                 play_near("sounds/game/door.wav", d.id)
+                gamestate.set("wolf_doors_opened", gamestate.get("wolf_doors_opened", 0) + 1)
             end
             d.blocker.closed = state == "idle"
             if seen[key_of(d.c, d.r)] then

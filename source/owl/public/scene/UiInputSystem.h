@@ -109,6 +109,19 @@ public:
 
 	/**
 	 * @brief
+	 *  Check whether the UI holds the world interactions of the frame back: a `UiWindow` of the scene or of its HUD
+	 *  asset is shown (a pause menu, an inventory), or was when the frame's `update` started.
+	 *
+	 * While it is true the engine fires no world interaction: no `RaycastDoor` / `RaycastPushWall` built-in
+	 * activation, no `Interaction` trigger callback. The click that closes the window (Resume) belongs to that frame,
+	 * so it does not open the door in front of the player either.
+	 * @param[in,out] ioScene The active scene.
+	 * @return True when the world interactions are held back.
+	 */
+	[[nodiscard]] static auto isWorldInteractionBlocked(Scene& ioScene) -> bool;
+
+	/**
+	 * @brief
 	 *  Reset the UI input state of a scene.
 	 * @param[in,out] ioScene The scene.
 	 */

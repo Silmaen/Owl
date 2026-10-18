@@ -5,9 +5,10 @@
 -- Continue falls back to). A loaded save keeps `wolf_floor_started`, so its counters stay as they were saved.
 --
 -- Game state: `wolf_score` (whole run), `wolf_items` / `wolf_items_total`, `wolf_secrets` / `wolf_secrets_total`,
--- `wolf_key_gold` / `wolf_key_blue` (0 or 1) and `wolf_explored` (explore.lua); `wolf_toast` is a message shown a few
--- seconds. The HUD shows the floor, the score and the keys only: the ratios wait for the tally of the floor. F6 saves in
--- slot 2, F9 loads it; Escape (pad Start) pauses (`wolf_paused`): the pause window holds the controls, Resume and Quit.
+-- `wolf_key_gold` / `wolf_key_blue` (0 or 1), `wolf_explored` and `wolf_doors_opened` (explore.lua); `wolf_toast` is a
+-- message shown a few seconds. The HUD shows the floor, the score and the keys only: the ratios wait for the tally of
+-- the floor. F6 saves in slot 2, F9 loads it; Escape (pad Start) pauses (`wolf_paused`): the pause window holds the
+-- controls, Resume and Quit. While it is shown the engine opens no door and slides no secret wall.
 
 properties = {
     { name = "level", type = "int", default = 1 },
@@ -53,6 +54,7 @@ local function start_floor()
     gamestate.set("wolf_secrets", 0)
     gamestate.set("wolf_secrets_total", #scene.find_entities("Secret"))
     gamestate.set("wolf_explored", 0)
+    gamestate.set("wolf_doors_opened", 0)
     gamestate.set("wolf_key_gold", 0)
     gamestate.set("wolf_key_blue", 0)
     gamestate.set("wolf_floor_score", gamestate.get("wolf_score", 0))

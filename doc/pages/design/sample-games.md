@@ -186,7 +186,7 @@ and the combat come in a later release, once their art exists.
   the key, opens with it), `wolf_secret` (push a secret wall, `wolf_secrets` equals 1), `wolf_explore` (`wolf_seen`
   and `wolf_explored` rise while turning, Tab enlarges the map), `wolf_exit` (the tally scene opens, counts up,
   then floor 2), `wolf_tally` (accept during the count shows every line at once, the next accept leaves), `wolf_pause`
-  (Escape opens the pause window, the player stands still, Resume closes it).
+  (Escape opens the pause window, the player stands still, a door in reach stays closed, Resume closes it).
 
 ### Mini Minecraft
 
@@ -260,7 +260,7 @@ test/unit/scenarios/*.owltest         scenario tests
 | G5  | No screen-to-world conversion nor viewport size in Lua for a 2D camera                                              | S    | Breakout                                 | No: the paddle follows the mouse delta                           |
 | G6  | Tile and sprite-frame bindings live in `isometric` although they work on any tilemap                                | S    | Sokoban, Wolfenstein                     | No: naming only (a `tilemap` alias)                              |
 | G7  | No `ui.set_image` (texture or frame of a `UiImage`) in Lua                                                          | S    | Wolfenstein, Minecraft, Tycoon           | No: several `UiImage` toggled visible                            |
-| G8  | No pause nor time scale in Lua (scene clock, physics)                                                               | S    | Tycoon, all (pause)                      | No: Lua scales its own delta, bodies stopped by hand             |
+| G8  | No pause nor time scale in Lua (scene clock, physics); a shown `UiWindow` holds world interactions back             | S    | Tycoon, all (pause)                      | No: Lua scales its own delta, bodies stopped by hand             |
 | G9  | No music and effects mixing: `SoundSource` loops ignore `volume_music` and have no Lua volume                       | S    | All                                      | No: master volume only                                           |
 | G10 | No line-of-sight or ray query in Lua                                                                                | S    | Wolfenstein                              | No: grid DDA in Lua, as in `raycast_level.lua`                   |
 | G11 | No guard nor weapon-view sprites                                                                                    | M    | Wolfenstein                              | No: exploration first, combat later                              |

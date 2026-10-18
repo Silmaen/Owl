@@ -18,7 +18,8 @@ the score and the keys only; when the floor is done, the tally counts up what yo
 
 Each percent of the three ratios adds 10 points to the score. The best ratios of each floor and the best final score
 are kept and shown on the service record of the title screen, beside its **How to play** window; the controls are
-shown there and in the pause window (Escape), never during play.
+shown there and in the pause window (Escape), never during play. While the pause window is open you stand still and
+no door nor secret wall moves, whatever you press or click.
 
 | Action            | Keyboard            | Mouse                           | Gamepad                     |
 |-------------------|---------------------|---------------------------------|-----------------------------|

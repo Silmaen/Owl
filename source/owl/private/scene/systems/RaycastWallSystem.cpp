@@ -13,6 +13,7 @@
 #include "physics/PhysicCommand.h"
 #include "scene/Entity.h"
 #include "scene/Scene.h"
+#include "scene/UiInputSystem.h"
 #include "scene/component/components.h"
 
 #include <algorithm>
@@ -24,13 +25,14 @@ void updateRaycastDynamicWalls(Scene& ioScene, const float iTimeStep) {
 	OWL_PROFILE_FUNCTION()
 
 	const auto& actions = ioScene.getActions();
-	// Find primary player position once (used for built-in proximity activation).
+	// The primary player activates doors and pushwalls in range, unless a shown window holds the world back.
 	math::vec2 playerWorldXY{0.f, 0.f};
-	bool hasPlayer = false;
-	if (const Entity player = ioScene.getPrimaryPlayer()) {
+	bool canInteract = false;
+	if (const Entity player = ioScene.getPrimaryPlayer();
+		player && !UiInputSystem::isWorldInteractionBlocked(ioScene)) {
 		const auto wt = ioScene.getWorldTransform(player);
 		playerWorldXY = {wt.translation().x(), wt.translation().y()};
-		hasPlayer = true;
+		canInteract = true;
 	}
 
 	for (const auto view = ioScene.registry.view<component::Transform, component::RaycastDoor>();
@@ -40,7 +42,7 @@ void updateRaycastDynamicWalls(Scene& ioScene, const float iTimeStep) {
 		auto& [transform] = view.get<component::Transform>(entity);
 
 		// Built-in activation (proximity + action edge). An empty `interactionAction` disables.
-		if (door.state == component::RaycastDoor::State::Idle && !door.interactionAction.empty() && hasPlayer) {
+		if (door.state == component::RaycastDoor::State::Idle && !door.interactionAction.empty() && canInteract) {
 			const float dx = playerWorldXY.x() - transform.translation().x();
 			const float dy = playerWorldXY.y() - transform.translation().y();
 			const float distSq = dx * dx + dy * dy;
@@ -107,7 +109,7 @@ void updateRaycastDynamicWalls(Scene& ioScene, const float iTimeStep) {
 		auto& push = view.get<component::RaycastPushWall>(entity);
 		auto& [transform] = view.get<component::Transform>(entity);
 
-		if (push.state == component::RaycastPushWall::State::Idle && !push.interactionAction.empty() && hasPlayer) {
+		if (push.state == component::RaycastPushWall::State::Idle && !push.interactionAction.empty() && canInteract) {
 			const float dx = playerWorldXY.x() - transform.translation().x();
 			const float dy = playerWorldXY.y() - transform.translation().y();
 			const float distSq = dx * dx + dy * dy;

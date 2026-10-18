@@ -198,6 +198,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - The emulated arm64 runs of the scenario and export tests multiply the Lua time quota by 8 (`OWL_SCRIPT_TIME_SCALE`): a save listing or a settings write under qemu overran the 250 ms of a native call.
+- A shown `UiWindow` (a pause menu, an inventory) holds the world interactions back: the press of `interact` that opens a raycast door, slides a secret wall or calls `on_interact` waits until the window is closed, the click on Resume included (Wolfenstein mini could open a door from its pause window).
 - Wolfenstein mini minimap: a slid secret wall shows and stops the fog in the cell where it stopped, instead of reading as floor and letting the fog see the room behind it; that cell is now a wall for the reach check of `generate_levels.py`, which reopens a room of floors 2 and 3 a slid wall had cut off.
 - The game export follows the scene paths, sound files and `nam:` / `pat:` textures given as string properties of a `LuaScript` (a `next_scene` property), like those quoted in its script; Breakout, Wolfenstein and Sokoban name their next level that way instead of listing the level scenes in Lua (gap G16).
 - Lua `gamestate.set` and `settings.set` keep a string that reads as a number (`"0110"`) a string instead of storing a float, so a string of digits survives a save (the fog of the Engine Demo raycast minimap came back broken after a load).

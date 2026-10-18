@@ -429,7 +429,8 @@ inspector (the **Callback** field); if left empty, the default name is used:
 | **LuaCallback** | `on_triggered`   | Every frame while the player overlaps |
 
 `on_triggered` receives the player's UUID as its only argument (`on_triggered(other_id)`); `on_timer` and
-`on_interact` take no argument.
+`on_interact` take no argument. `on_interact` does not fire while a `UiWindow` is shown (a pause menu, an inventory),
+nor on the frame whose click closes it; the built-in activation of a raycast door or secret wall waits the same way.
 
 ### Timer Example
 
