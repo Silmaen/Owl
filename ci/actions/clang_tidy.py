@@ -67,7 +67,7 @@ TOOL_ARGS: dict[str, list[str]] = {
 TOOL_LABELS: dict[str, str] = {"tidy": "clang-tidy", "analyzer": "clang static analyzer"}
 
 # Analyzer checks a test is right to trip: it casts out-of-range values to test enum validation, and samples
-# curves with float loop counters. `test/.clang-tidy` relaxes the tidy set; the analyzer set is given on the
+# curves with float loop counters. `test/unit/.clang-tidy` relaxes the tidy set; the analyzer set is given on the
 # command line, which overrides any configuration file, so the test exclusions are added here.
 TEST_ANALYZER_EXCLUSIONS: tuple[str, ...] = (
     "clang-analyzer-optin.core.EnumCastOutOfRange",
@@ -84,7 +84,7 @@ def tool_arguments(tool: str, source: Path) -> list[str]:
     :return: The arguments; analyzer runs on a test file also exclude `TEST_ANALYZER_EXCLUSIONS`.
     """
     arguments = list(TOOL_ARGS[tool])
-    if tool == "analyzer" and (root / "test") in source.parents:
+    if tool == "analyzer" and (root / "test" / "unit") in source.parents:
         arguments[0] += "".join(f",-{check}" for check in TEST_ANALYZER_EXCLUSIONS)
     return arguments
 

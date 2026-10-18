@@ -5,7 +5,7 @@ Two uses:
 
 - `cmake/Conan.cmake` runs `conan install` on it at configure time and finds the packages through the generated
   `CMakeDeps` files;
-- `conan create .` builds and packages OwlEngine (`owlengine/<version>`), then builds `test_package/`
+- `conan create .` builds and packages OwlEngine (`owlengine/<version>`), then builds `test/package/`
   against it: `find_package(OwlEngine)` on the installed CMake config and a program linked to `Owl::OwlEngine`.
 
 Recipes come from ConanCenter; the few that are missing there live in `conan/recipes/` (a local-recipes-index
@@ -34,6 +34,7 @@ class OwlEngineConan(ConanFile):
     url = "https://github.com/Silmaen/Owl"
     topics = ("game-engine", "ecs", "vulkan", "opengl")
     package_type = "library"
+    test_package_folder = "test/package"
     settings = "os", "arch", "compiler", "build_type"
     options = {
         "shared": [True, False],

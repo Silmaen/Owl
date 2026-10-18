@@ -44,8 +44,8 @@ to the full run is the only acceptable direction. Details:
 `doc/pages/continuous_integration.md#clang-tidy-scoping`.
 
 `CodeStyle` is the project's read-only style/doc gate. It **only inspects** —
-it never rewrites sources. It walks `source/owl/{public,private}`, `source/owlnest/{sources,runner}`, `test/` and
-`bench/` (a missing root fails the gate); `comment-quality` skips `test/`, whose comments are not API documentation.
+it never rewrites sources. It walks `source/owl/{public,private}`, `source/owlnest/{sources,runner}`, `test/unit/` and
+`test/bench/` (a missing root fails the gate); `comment-quality` skips `test/unit/`, whose comments are not API documentation.
 Sub-checks (all on by default):
 
 1. **clang-format** dry-run on every C++ source.
@@ -71,7 +71,7 @@ Sub-checks (all on by default):
    (`Subsystem: capitalized message ending with .`).
 6. **structural** — file headers (`@file` + `Copyright (c) YYYY`), `OWL_API`
    warnings for free functions declared in `source/owl/{public,private}`.
-7. **std-includes** — every file under `source/`, `test/`, `bench/` includes the
+7. **std-includes** — every file under `source/` and `test/{unit,bench}/` includes the
    standard header of each `std::` symbol / `uint*_t` / `size_t` it names
    (`ci/utils/std_includes.py`; a `.cpp` may rely on its own header and `owlpch.h`).
 8. **test-assertions** — every gtest `TEST*` body asserts something (a gtest macro, or an `expect…` /

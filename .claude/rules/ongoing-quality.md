@@ -49,7 +49,7 @@ Mirrors the *Ongoing across all releases* section of `doc/pages/roadmap.md`; kee
 
 ## Performance Budgets
 
-- `bench/` runs in CI against a stored baseline; a regression beyond the threshold fails the build
+- `test/bench/` runs in CI against a stored baseline; a regression beyond the threshold fails the build
 - A release that adds a hot path adds its benchmark and its budget
 
 ## Documentation Quality

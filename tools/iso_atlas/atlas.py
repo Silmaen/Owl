@@ -257,7 +257,7 @@ def generate(
     :param project: The project folder (``engine_demo``); textures go to ``textures/iso``, tilesets to ``tilesets``.
     :param seed: Seed of the run; the same seed always gives the same pixels.
     :param levels: The zoom levels to write.
-    :param tests: The ``test/test_helper/assets`` folder, for the test-only maps (skipped when absent).
+    :param tests: The ``test/unit/test_helper/assets`` folder, for the test-only maps (skipped when absent).
     :return: Every written file.
     """
     folder = project / "textures" / "iso"

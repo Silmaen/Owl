@@ -55,7 +55,6 @@ EXCEPTIONS: dict[str, str] = {
 _CODE_ROOTS: tuple[str, ...] = (
     "source/",
     "test/",
-    "bench/",
     "engine_assets/",
     "engine_demo/",
     "cmake/",

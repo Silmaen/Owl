@@ -61,7 +61,7 @@ come from their local cache (`-DOWL_HELP_FETCH_BADGES=ON`, set by the packaged p
 `windows-clang-release` and `package-linux`, downloads the missing ones), and the `documentation` target exists only
 when Doxygen is found (`-DOWL_ENABLE_DOCUMENTATION=ON` requires it). The `Doxyfile` is generated in the build tree.
 
-The engine is also a Conan package, checked by `test_package/` (two programs built on `find_package(OwlEngine)`);
+The engine is also a Conan package, checked by `test/package/` (two programs built on `find_package(OwlEngine)`);
 publishing it is a v1.0.0 item, until then other projects use the packaged `OwlEngine` archive (see
 [Packaging](#packaging)). `Owl::OwlEngine` (`<owl.h>`) exposes EnTT as its only dependency; the headers that include
 imgui (`<owlgui.h>`, `gui/utils.h`, `gui/widgets/AssetField.h`, `gui/widgets/CurveEditor.h`) come with the optional
@@ -215,7 +215,7 @@ with a fixed time step and no user input, and reports the CPU time per phase and
     --frame-bench engine_demo/scenes/platformer_house.owl --backend opengl --frames 1000 --out fb.json
 ```
 
-Options, output format and device selection: `bench/README.md`. The v0.3.0 baseline lives in
+Options, output format and device selection: `test/bench/README.md`. The v0.3.0 baseline lives in
 `doc/audit/20-mesures.md`.
 
 ## CI System
@@ -324,17 +324,17 @@ See [Windowing and input](design/windowing-input.md) for the details and the GLF
 | `OWL_ENABLE_RENDERER_VERBOSE_CAPABILITIES` | OFF     | Log every capability of the graphics device at start-up                          |
 | `OWL_ENABLE_SHADER_REFLECT_RESOURCES`      | OFF     | Log the resources reflected from every compiled shader                           |
 | `OWL_USE_CCACHE`                           | ON      | ccache (or sccache) as compiler launcher when available                          |
-| `OWL_BENCHMARK`                            | OFF     | `owl_bench` micro-benchmark harness (`bench/`)                                   |
+| `OWL_BENCHMARK`                            | OFF     | `owl_bench` micro-benchmark harness (`test/bench/`)                                   |
 | `OWL_INCLUDE_CHECK`                        | OFF     | `owl_include_check`: every header and source compiled alone (Clang only)         |
 | `OWL_TEST_SHUFFLE`                         | OFF     | Run every test binary with `--gtest_shuffle`                                     |
-| `OWL_RENDER_TESTS`                         | ON      | Image tests (`test/render_tests`, label `render`)                                |
+| `OWL_RENDER_TESTS`                         | ON      | Image tests (`test/unit/render_tests`, label `render`)                                |
 | `OWL_TEST_TIMEOUT`                         | 600     | Per test binary CTest timeout, in seconds                                        |
 | `OWL_CONAN_PROFILE`                        | (auto)  | Conan host profile, default `conan/profiles/<os>-<compiler>[-<arch>]`            |
 | `OWL_CONAN_BUILD_PROFILE`                  | (auto)  | Conan build profile, default `conan/profiles/<os>-<compiler>`                    |
 | `OWL_SYSROOT`                              | (auto)  | arm64 sysroot of the cross toolchain, default `/opt/sysroot/aarch64-linux-gnu`   |
 | `OWL_CONAN_HOME`                           | (empty) | `CONAN_HOME` for the install (empty: Conan's default)                            |
 | `OWL_CONAN_BUILD`                          | missing | Value of `conan install --build`                                                 |
-| `OWL_FUZZING`                              | OFF     | libFuzzer targets in `fuzz/` (Clang-only)                                        |
+| `OWL_FUZZING`                              | OFF     | libFuzzer targets in `test/fuzz/` (Clang-only)                                        |
 | `OWL_ENABLE_MEMORY_TRACKER`                | OFF     | Allocation tracker, opt-in in every build type (Debug included)                  |
 | `OWL_PROFILER`                             | none    | `OWL_PROFILE_*` backend: `none`, `tracy` or `chrome` ([Profiling](profiling.md)) |
 | `OWL_LOG_LEVEL`                            | trace   | Lowest log level compiled in (`trace` to `off`)                                  |

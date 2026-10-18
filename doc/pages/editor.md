@@ -1167,7 +1167,7 @@ the same result on any machine. It exits with 0 when every expectation holds and
 2 on a file it cannot read.
 
 ```yaml
-# test/scenarios/platformer_walk.owltest
+# test/unit/scenarios/platformer_walk.owltest
 scene: ../../engine_demo/scenes/platformer_house.owl   # relative to the file; project found above it
 timestep_ms: 16.667                                       # optional
 # project: ../../engine_demo                              # optional: the project, when the scene is a test fixture
@@ -1206,12 +1206,12 @@ steps:
 
 Inputs go through the injection of the input layer (`input::Input::injectKey`, …), which works on any window
 back-end: a key held over two consecutive `input` steps stays held, so `input.is_key_just_pressed` fires once
-(`test/scenarios/platformer_jump.owltest`); a `gamepad` drives a pad on the Null back-end
-(`test/scenarios/platformer_gamepad.owltest`); an `actions` step resolves the names against the project's action map
-when the file is read, so it stays valid when a binding changes (`test/scenarios/platformer_actions.owltest`). Expectations due at a step see the world left by the frames before it; positions are world-space. Commands run on
-the playing scene with an undo history of their own (`test/scenarios/editor_commands.owltest`, macros in
-`test/scenarios/editor_macro.owltest`). Every
-`test/scenarios/*.owltest` is a CTest case (label `scenario`).
+(`test/unit/scenarios/platformer_jump.owltest`); a `gamepad` drives a pad on the Null back-end
+(`test/unit/scenarios/platformer_gamepad.owltest`); an `actions` step resolves the names against the project's action map
+when the file is read, so it stays valid when a binding changes (`test/unit/scenarios/platformer_actions.owltest`). Expectations due at a step see the world left by the frames before it; positions are world-space. Commands run on
+the playing scene with an undo history of their own (`test/unit/scenarios/editor_commands.owltest`, macros in
+`test/unit/scenarios/editor_macro.owltest`). Every
+`test/unit/scenarios/*.owltest` is a CTest case (label `scenario`).
 
 ### Editor commands
 

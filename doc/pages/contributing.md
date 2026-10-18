@@ -79,10 +79,10 @@ The user documentation lives in `doc/pages/` and changes in the same pull reques
 
 ## Adding Tests
 
-Tests use Google Test. Test files are auto-discovered from `test/<category>_tests/` directories.
+Tests use Google Test. Test files are auto-discovered from `test/unit/<category>_tests/` directories.
 To add a new test:
 
-1. Create a `.cpp` file in the appropriate `test/<category>_tests/` directory
+1. Create a `.cpp` file in the appropriate `test/unit/<category>_tests/` directory
 2. Include `<gtest/gtest.h>` and the headers under test
 3. Write `TEST` or `TEST_F` cases
 4. Configure again (the sources are globbed) and build -- no CMakeLists.txt changes needed

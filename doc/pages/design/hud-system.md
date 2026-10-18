@@ -285,7 +285,7 @@ navigable with the gamepad (now in the raycast level, `scenes/raycast_demo.owl`)
   `inventory.lua` with `ui.list_set_count`, scrolled to the newest, its rows bound on demand (`onBindCallback`); a
   selected line shows in full in the info text.
 - **Scripts.** `pickup.lua` (`Trigger.Type=LuaCallback`), `inventory.lua` (window, toast, save keys), `raycast_player.lua` (still while the window is open). Scenario
-  `test/scenarios/raycast_level.owltest` picks an ammo clip, opens the window, navigates it and takes the elevator.
+  `test/unit/scenarios/raycast_level.owltest` picks an ammo clip, opens the window, navigates it and takes the elevator.
 
 ## Demo HUD rules (DemoHudLayout test)
 

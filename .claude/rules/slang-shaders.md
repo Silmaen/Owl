@@ -67,7 +67,7 @@ float4 texColor = u_Textures[NonUniformResourceIndex(texIndex)].Sample(u_Sampler
   with SIGFPE on the next compute pipeline). A refusal by the driver goes through `recompileSpirv()` once (Vulkan
   `Shader::recoverRejectedSpirv`, `DrawData::buildPipeline`, compute shaders; OpenGL `Shader::buildProgram`)
 - Reflection via spirv-cross extracts uniform buffers and sampled images
-- Measured in Release (`bench/`, Slang 2026.19): ~165 ms cold session, 21–35 ms per shader, 270 ms for all 12
+- Measured in Release (`test/bench/`, Slang 2026.19): ~165 ms cold session, 21–35 ms per shader, 270 ms for all 12
   (2026.1 was ~95 ms, 16–20 ms, 176 ms: the slowdown is inside Slang's IR linking, not Owl).
   Share the session across tests with `SetUpTestSuite`. Headless compilation tests need no GPU.
 - Slang warning 41012 (capability auto-upgrade) is filtered from the logs on purpose.

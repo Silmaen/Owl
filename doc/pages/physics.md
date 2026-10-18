@@ -234,7 +234,7 @@ the engine), owned by each multi-threaded world and destroyed with it.
   entities over the executor; children of a hierarchy are written afterwards, on the calling thread, since they
   read their parent's world transform.
 
-Measured on the 5 000-box pile of `bench/` (`physics/step_settled*`, i9-13950HX, `taskset -c 0-15`), per step:
+Measured on the 5 000-box pile of `test/bench/` (`physics/step_settled*`, i9-13950HX, `taskset -c 0-15`), per step:
 4.5 ms single-threaded, 3.3 ms with 2 workers, 2.0 ms with 4, 1.44 ms with 8.
 
 ## Physics API

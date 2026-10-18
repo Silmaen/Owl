@@ -1,0 +1,21 @@
+# A spike costs a third of the health bar, then the player is invulnerable for a moment: a second touch right after does
+# nothing, one after the blink does. (The trigger is made huge so that it covers the player wherever the knock-back
+# sends him; it leaves the player between the touches to enter again.)
+scene: ../../../engine_demo/scenes/platformer_house.owl
+steps:
+  - frames: 30
+  - expect: {gamestate: health, equals: 1}
+  - {command: entity.set_transform, args: {entity: Spike1, translation: [4.5, -14.4, 0.1], scale: [60, 60, 1]}}
+  - frames: 5
+  - expect: {gamestate: health, equals: 0.66, tolerance: 0.01}
+  - {command: entity.set_transform, args: {entity: Spike1, translation: [4.5, -60, 0.1]}}
+  - frames: 3
+  - {command: entity.set_transform, args: {entity: Spike1, translation: [4.5, -14.4, 0.1]}}
+  - frames: 5
+  - expect: {gamestate: health, equals: 0.66, tolerance: 0.01}
+  - frames: 100
+  - {command: entity.set_transform, args: {entity: Spike1, translation: [4.5, -60, 0.1]}}
+  - frames: 3
+  - {command: entity.set_transform, args: {entity: Spike1, translation: [4.5, -14.4, 0.1]}}
+  - frames: 5
+  - expect: {gamestate: health, equals: 0.32, tolerance: 0.01}

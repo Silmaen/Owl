@@ -2,9 +2,9 @@
 Action to run the engine benchmarks (`owl_bench`) and compare them to a stored baseline.
 
 The preset must build `owl_bench` (`OWL_BENCHMARK=ON`, e.g. `linux-bench`). The results are written to
-`output/bench/<preset>.json`; the baseline lives in `bench/baseline/<preset>.json`. A benchmark whose median
+`output/bench/<preset>.json`; the baseline lives in `test/bench/baseline/<preset>.json`. A benchmark whose median
 exceeds its baseline median by more than the threshold, in the full run and again when measured alone, fails the
-action. `bench/thresholds.json` gives a wider threshold to the benchmarks matching a pattern, kept apart from the
+action. `test/bench/thresholds.json` gives a wider threshold to the benchmarks matching a pattern, kept apart from the
 baseline so a refresh does not lose it. Without a baseline the action only reports, so the first nightly run
 produces the file to commit.
 """
@@ -128,7 +128,7 @@ class Bench(BaseAction):
             log.error("Bench: owl_bench failed.")
             return status or 1
         current = json.loads(result_file.read_text(encoding="utf-8"))
-        baseline_file = root / "bench" / "baseline" / f"{preset.cmake_preset}.json"
+        baseline_file = root / "test" / "bench" / "baseline" / f"{preset.cmake_preset}.json"
         if "update-baseline" in args:
             baseline_file.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(result_file, baseline_file)
@@ -138,7 +138,7 @@ class Bench(BaseAction):
             log.warning(f"Bench: no baseline {baseline_file.relative_to(root)}; commit {result_file.name} as it.")
             return 0
         baseline = json.loads(baseline_file.read_text(encoding="utf-8"))
-        overrides_file = root / "bench" / "thresholds.json"
+        overrides_file = root / "test" / "bench" / "thresholds.json"
         overrides: dict[str, float] = {}
         if overrides_file.is_file():
             overrides = json.loads(overrides_file.read_text(encoding="utf-8")).get("thresholds", {})

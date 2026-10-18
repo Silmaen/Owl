@@ -1,7 +1,7 @@
 ---
 paths:
   - "source/owl/*/scene/**"
-  - "test/scene_tests/**"
+  - "test/unit/scene_tests/**"
   - "engine_demo/**"
 ---
 

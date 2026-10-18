@@ -1,9 +1,0 @@
-# The top-down player walks north (W) over the bridge of the entrance avenue then east (D); keys follow the sample's
-# QWERTY codes. The hero starts at the south of the village, at (32.5, -36.5).
-scene: ../../engine_demo/scenes/world_map.owl
-steps:
-  - frames: 30
-  - input: {key: W, frames: 60}
-  - expect: {player: true, translation.y: {greater: -33.0}}
-  - input: {key: D, frames: 12}
-  - expect: {player: true, translation.x: {greater: 33.0}}

@@ -1,0 +1,13 @@
+# Gamepad 0 drives the platformer player: a stick inside the dead zone does nothing, a full push walks, A jumps once.
+scene: ../../../engine_demo/scenes/platformer_house.owl
+steps:
+  - frames: 30
+  - expect: {player: true, translation.x: {equals: 4.5, tolerance: 0.01}}
+  - input: {gamepad: {left_x: 0.1}, frames: 20}
+  - expect: {player: true, translation.x: {equals: 4.5, tolerance: 0.01}}
+  - input: {gamepad: {left_x: 1.0}, frames: 20}
+  - expect: {player: true, translation.x: {greater: 5.0}}
+  - input: {gamepad: {button: A}, frames: 10}
+  - expect: {player: true, translation.y: {greater: -13.9}}
+  - input: {gamepad: {button: A}, frames: 120}
+  - expect: {player: true, translation.y: {less: -14.0}}

@@ -55,6 +55,6 @@ external sources into the repo. Check ConanCenter and `conan/recipes/` before as
   REQUIRED)` + `Owl::OwlEngine`. Moving a public header breaks them.
 - Public dependencies: EnTT only; imgui comes with the optional `Owl::Gui` (`COMPONENTS Gui`, `<owlgui.h>`). No
   public header includes another third-party header (yaml-cpp crosses the API as YAML text).
-- `conan create` already packages OwlEngine (`owlengine/<version>`, shared only) and builds `test_package/` against
+- `conan create` already packages OwlEngine (`owlengine/<version>`, shared only) and builds `test/package/` against
   the installed CMake config: a public header that includes an undeclared dependency, or a build flag leaking into
   the export, breaks it. Publishing it is a v1.0.0 item.

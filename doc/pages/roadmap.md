@@ -15,7 +15,7 @@ Development is heavily AI-assisted (the AI writes the code, the maintainer tests
 - ![Ongoing][ongoing] Render-style mixing — every new mode is a renderer-stack layer that composes with the others
 - ![Ongoing][ongoing] Code quality — clang-tidy / clang-format clean, conventions of `.claude/rules/cpp-style.md`
 - ![Ongoing][ongoing] Test coverage — no public API without tests, every bug fix with its regression test
-- ![Ongoing][ongoing] Performance — measure first (Tracy, frame bench, `bench/`), no per-frame allocations
+- ![Ongoing][ongoing] Performance — measure first (Tracy, frame bench, `test/bench/`), no per-frame allocations
 - ![Ongoing][ongoing] Performance budgets enforced in CI — benchmark regression threshold fails the build
 - ![Ongoing][ongoing] Documentation quality — public API documented, `doc/pages` updated in the same PR
 - ![Ongoing][ongoing] Editor coverage for every authored object — selection, inspection, editing, bulk ops, discovery

@@ -1,9 +1,0 @@
-# The camera stays on the left limit of the level at the start, then leads the player in the running direction.
-scene: ../../engine_demo/scenes/platformer_house.owl
-steps:
-  - frames: 30
-  - expect: {entity: MainCamera, translation.x: {equals: 12.0, tolerance: 0.05}}
-  - expect: {entity: MainCamera, translation.y: {equals: -11.4, tolerance: 0.2}}
-  - input: {key: Right, frames: 80}
-  - expect: {player: true, translation.x: {greater: 11.0}}
-  - expect: {entity: MainCamera, translation.x: {greater: 13.0}}

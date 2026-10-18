@@ -131,8 +131,8 @@ scaled by `volume_sfx`, the loops of `SoundSource` components are not (no catego
 
 The platformer's collectible coins are driven by an inline `AnimatedSpriteRenderer`
 component on the `platformer_atlas.png` tiles (`coin_pair.owlprefab`). The animation-clip
-regression fixture (`coin.owlanim` and its 6×3 sheet) lives with the tests, in `test/test_helper/assets/scene_tests/` and
-`test/test_helper/assets/render_tests/`.
+regression fixture (`coin.owlanim` and its 6×3 sheet) lives with the tests, in `test/unit/test_helper/assets/scene_tests/` and
+`test/unit/test_helper/assets/render_tests/`.
 
 ## Lua Scripts
 
@@ -252,9 +252,9 @@ regression fixture (`coin.owlanim` and its 6×3 sheet) lives with the tests, in 
 - [x] HUD windows — the platformer HUD holds a draggable, closable "Controls" window (column `UiLayout`, content
       clipped to the window, tooltip on hover); T (or gamepad X) toggles a `UiToolCursor` sprite following the mouse
 - [x] Inventory — pick-ups of the raycast level, a slotted inventory window driven by the keyboard or the
-      gamepad through the HUD focus, state in gamestate (kept in saves); scenario `test/scenarios/raycast_level.owltest`
+      gamepad through the HUD focus, state in gamestate (kept in saves); scenario `test/unit/scenarios/raycast_level.owltest`
 - [x] Level progression — victory objectives, `level_<name>_done` flags, hub counter and gated victory portal;
-      scenario `test/scenarios/hub_progress.owltest`
+      scenario `test/unit/scenarios/hub_progress.owltest`
 - [x] BackgroundTexture (sky gradient on world map, dark gradient inside the house)
 - [x] Mouse input tracking — mouse coordinates displayed on the main menu
 

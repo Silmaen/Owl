@@ -156,7 +156,7 @@ It writes into `textures/iso/`, `tilesets/` and `tilemaps/` of the project:
 | `@2x`, `@0.5x` suffixes                | `--levels 2x,half`: atlases drawn natively at twice the size, and the mip at half the size, with their tilesets (the demo keeps `1x` only) |
 
 The same seed always gives the same pixels (pytest hash in `tools/tests/`); the sample map `iso_test.owltilemap` is
-written by the same run (the render tests keep it in `test/test_helper/assets/render_tests`, the demo no longer has the scene). Nothing reads the normal and depth atlases yet (v0.5.0 lights).
+written by the same run (the render tests keep it in `test/unit/test_helper/assets/render_tests`, the demo no longer has the scene). Nothing reads the normal and depth atlases yet (v0.5.0 lights).
 
 ISO4 (2026-10-15) added the objects: `IsometricObjectSet` and the `IsometricObject` component with its inspector, the
 compact `IsometricSprite` and `RendererIsometric::drawSprite` / `drawSprites` / `drawObject` (`sprite.slang`), pixel
@@ -172,7 +172,7 @@ and three vehicles driven by `iso_vehicle.lua`, and the `isometric_objects` imag
 | Frame, zoomed out ×4 (51 200 cells in 3 chunks)  | 1.42 ms | < 4 ms |
 | 1 000 buildings of 3 slices (3 000 sprites)      | 63 µs   | -      |
 
-The baseline of these entries in `bench/baseline/linux-bench.json` is an estimate (this run scaled by the agent ratio
+The baseline of these entries in `test/bench/baseline/linux-bench.json` is an estimate (this run scaled by the agent ratio
 of `renderer2d/quads_color`) until a nightly run replaces it.
 
 ISO5 chunk buffers (2026-10-16): a tilemap of the isometric layer keeps, per layer and 32 x 32 chunk, a persistent

@@ -140,7 +140,7 @@ with it.
 - Consumers use the CMake config the engine installs (`lib/cmake/OwlEngine/`, `Owl::OwlEngine`, the one OwlDrone and
   the CPack archives use): the recipe sets `cmake_find_mode` to `none`, so `test_package` checks that file and not a
   Conan-generated one.
-- `test_package/`: `find_package(OwlEngine CONFIG REQUIRED)`, a program including `<owl.h>`, linked to
+- `test/package/`: `find_package(OwlEngine CONFIG REQUIRED)`, a program including `<owl.h>`, linked to
   `Owl::OwlEngine`, compiled without any Owl flag and run (audit G-03).
 - Install tree fixes it needed (audit PR-08): headers installed under `include/` and not `include/public/` (G-02);
   `Owl_Base` (`-Werror -Weverything`, internal definitions) linked as `$<BUILD_INTERFACE:…>` and no longer installed,

@@ -288,9 +288,9 @@ actually fail on it.
 
 ## Fuzzing
 
-`linux-fuzz` builds every `fuzz/*_fuzzer.cpp` (libFuzzer, `OWL_FUZZING=ON`) with AddressSanitizer. The `Fuzz` action
+`linux-fuzz` builds every `test/fuzz/*_fuzzer.cpp` (libFuzzer, `OWL_FUZZING=ON`) with AddressSanitizer. The `Fuzz` action
 runs each `owl_*_fuzzer` for five minutes (`-- --time=<seconds>`, `-- --fuzzer=<name>` for one) on
-`output/fuzz/<fuzzer>/corpus`, seeded from `fuzz/corpus/<name>/` when that folder exists. A crash, a leak or a
+`output/fuzz/<fuzzer>/corpus`, seeded from `test/fuzz/corpus/<name>/` when that folder exists. A crash, a leak or a
 timeout fails the build; its input lands in `output/fuzz/<fuzzer>/artifacts/`, published as `fuzz-artifacts`, and
 replays with `bin/<fuzzer> <input>`.
 
@@ -328,12 +328,12 @@ configuration stays green — the precompiled header `owlpch.h` hides the gap. T
 on Linux:
 
 - **`std-includes` (Code Style)** — a lexical audit (`ci/utils/std_includes.py`): every file under `source/`,
-  `test/` and `bench/` must include the standard header of each `std::` symbol, `uint*_t` and `size_t` it names.
+  `test/unit/` and `test/bench/` must include the standard header of each `std::` symbol, `uint*_t` and `size_t` it names.
   A `.cpp` may rely on its own header and on `owlpch.h`. Fast, runs on every PR, any platform.
 - **Include Check (`linux-include-check`)** — `ci_action.py IncludeCheck` configures the preset (it sets
   `OWL_INCLUDE_CHECK=ON`) and builds `owl_include_check`, defined in `cmake/IncludeCheck.cmake`:
   - `owl_header_check` compiles every header of `source/owl/{public,private}`, `source/owlnest/{sources,runner}`,
-    `test/test_helper` and `bench/` alone in a generated translation unit;
+    `test/unit/test_helper` and `test/bench/` alone in a generated translation unit;
   - `owl_source_check` compiles every `.cpp` of the engine, the editor, the runner, the tests and the bench again;
   - both with the flags of the real target, **without the PCH**, against libc++ with
     `_LIBCPP_REMOVE_TRANSITIVE_INCLUDES` (`-Wno-everything`: only the hard errors matter). Nothing is linked, so

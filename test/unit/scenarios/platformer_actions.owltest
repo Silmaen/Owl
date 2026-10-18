@@ -1,0 +1,11 @@
+# The Engine Demo's actions drive the platformer player: `platformer_move` walks, `platformer_jump` jumps once.
+scene: ../../../engine_demo/scenes/platformer_house.owl
+steps:
+  - frames: 30
+  - expect: {player: true, translation.x: {equals: 4.5, tolerance: 0.01}}
+  - actions: {platformer_move: 1.0, frames: 20}
+  - expect: {player: true, translation.x: {greater: 5.0}}
+  - actions: {platformer_jump: true, frames: 10}
+  - expect: {player: true, translation.y: {greater: -13.9}}
+  - actions: {platformer_jump: true, frames: 120}
+  - expect: {player: true, translation.y: {less: -14.0}}

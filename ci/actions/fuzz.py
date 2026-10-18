@@ -2,7 +2,7 @@
 Action to run the libFuzzer targets (`owl_*_fuzzer`) for a fixed time each.
 
 The preset must build them (`OWL_FUZZING=ON` with AddressSanitizer, e.g. `linux-fuzz`). Each fuzzer runs on
-`output/fuzz/<fuzzer>/corpus`, kept between runs on the same agent, seeded from `fuzz/corpus/<fuzzer>/` when that
+`output/fuzz/<fuzzer>/corpus`, kept between runs on the same agent, seeded from `test/fuzz/corpus/<fuzzer>/` when that
 folder exists. A crash, a leak or a timeout leaves its input in `output/fuzz/<fuzzer>/artifacts/` and fails the
 action; replay it with `bin/<fuzzer> <input>`.
 """
@@ -85,7 +85,7 @@ class Fuzz(BaseAction):
             (work_dir / "artifacts").mkdir(parents=True, exist_ok=True)
             log.info(f"Fuzz: {binary.name} for {seconds} s.")
             if (
-                run_command(fuzzer_command(binary, work_dir, root / "fuzz" / "corpus" / name, seconds), cwd=work_dir)
+                run_command(fuzzer_command(binary, work_dir, root / "test" / "fuzz" / "corpus" / name, seconds), cwd=work_dir)
                 != 0
             ):
                 log.error(f"Fuzz: {binary.name} found a failing input, see {work_dir.relative_to(root)}/artifacts.")

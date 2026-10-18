@@ -9,9 +9,9 @@ Arguments: `<category>` (e.g., scene, renderer, core) and `<test-name>`.
 
 ## Steps
 
-1. Determine the test directory: `test/<category>_tests/`
+1. Determine the test directory: `test/unit/<category>_tests/`
 2. If the directory doesn't exist, this is a new test category — create it.
-3. Create the test file `test/<category>_tests/<test-name>_test.cpp` with this template:
+3. Create the test file `test/unit/<category>_tests/<test-name>_test.cpp` with this template:
 
 ```c++
 /**

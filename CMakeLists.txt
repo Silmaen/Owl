@@ -25,9 +25,9 @@ option(${PROJECT_PREFIX}_ENABLE_PROFILING "Deprecated: same as OWL_PROFILER=chro
 set(${PROJECT_PREFIX}_LOG_LEVEL "trace" CACHE STRING "Lowest log level compiled in: trace, debug, info, warning, error, critical or off")
 set_property(CACHE ${PROJECT_PREFIX}_LOG_LEVEL PROPERTY STRINGS trace debug info warning error critical off)
 option(${PROJECT_PREFIX}_USE_CCACHE "Use ccache (or sccache) as a compiler launcher when available" ON)
-option(${PROJECT_PREFIX}_BENCHMARK "Build the micro-benchmark harness in bench/" OFF)
+option(${PROJECT_PREFIX}_BENCHMARK "Build the micro-benchmark harness in test/bench/" OFF)
 option(${PROJECT_PREFIX}_INCLUDE_CHECK "Add the owl_include_check target: every header and source compiled alone against strict libc++, without PCH (Clang only)" OFF)
-option(${PROJECT_PREFIX}_FUZZING "Build the libFuzzer targets in fuzz/ (Clang only, instruments the engine)" OFF)
+option(${PROJECT_PREFIX}_FUZZING "Build the libFuzzer targets in test/fuzz/ (Clang only, instruments the engine)" OFF)
 option(${PROJECT_PREFIX}_ENABLE_DOCUMENTATION "Require Doxygen (otherwise the documentation target exists only when Doxygen is found)" OFF)
 option(${PROJECT_PREFIX}_HELP_FETCH_BADGES "Download the remote badge images of the help pages missing from the local cache (network)" OFF)
 option(${PROJECT_PREFIX}_ENABLE_RENDERER_VERBOSE_CAPABILITIES "Log every capability of the graphics device at start-up" OFF)
@@ -103,14 +103,14 @@ add_subdirectory(source)
 #
 if (${PROJECT_PREFIX}_TESTING)
     enable_testing()
-    add_subdirectory(test)
+    add_subdirectory(test/unit test)
 endif ()
 
 #
 # ---=== BENCHMARKS ===---
 #
 if (${PROJECT_PREFIX}_BENCHMARK)
-    add_subdirectory(bench)
+    add_subdirectory(test/bench bench)
 endif ()
 
 #
@@ -125,7 +125,7 @@ endif ()
 # ---=== FUZZING ===---
 #
 if (${PROJECT_PREFIX}_FUZZING)
-    add_subdirectory(fuzz)
+    add_subdirectory(test/fuzz fuzz)
 endif ()
 
 #

@@ -1,7 +1,7 @@
 ---
 paths:
   - "source/owl/*/renderer/**"
-  - "test/renderer_tests/**"
+  - "test/unit/renderer_tests/**"
   - "engine_assets/shaders/**"
 ---
 

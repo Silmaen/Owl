@@ -2,7 +2,7 @@
 paths:
   - "source/owl/*/core/task/**"
   - "source/owl/private/core/external/**"
-  - "test/core_tests/**"
+  - "test/unit/core_tests/**"
 ---
 
 # Task system (Taskflow 4.1)

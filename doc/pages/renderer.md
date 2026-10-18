@@ -393,7 +393,7 @@ flowchart LR
   their painter's order (each visible layer is `1e-4` in front of the previous one); there is no cell cap.
 - **Parallax.** A layer is shifted by `cameraPosition × (1 − parallax)`: `(1, 1)` moves with the world, `(0, 0)`
   stays locked to the camera.
-- **Budgets** (`bench/`, Null backend, `tilemap/*`): a static 256² map of 4 layers costs a few microseconds and uploads
+- **Budgets** (`test/bench/`, Null backend, `tilemap/*`): a static 256² map of 4 layers costs a few microseconds and uploads
   0 byte per frame, a one-cell edit uploads one chunk, building one 32² chunk takes about 1 µs.
 
 ## Isometric layer {#renderer-isometric}
@@ -673,7 +673,7 @@ sequenceDiagram
 
 ## Image tests {#render-image-tests}
 
-`test/render_tests` (`owl_render_tests_unit_test`, CTest label `render`) renders the reference scenes on lavapipe
+`test/unit/render_tests` (`owl_render_tests_unit_test`, CTest label `render`) renders the reference scenes on lavapipe
 (Vulkan) and llvmpipe (OpenGL) and compares each capture to a versioned PNG:
 
 | Scene       | Covers                                                                         |
@@ -692,11 +692,11 @@ Each case runs `OwlRunner --frame-bench <scene> --capture <png>` (320 x 180, 60 
 validation on) in its own process, then compares RGB per pixel: a pixel differs above 24 / 255 on a channel, the test
 fails above 0.25 % of differing pixels. Software rasterisers are deterministic run to run; the tolerance absorbs a
 Mesa update, not a missing sprite. On failure the capture, a diff (differing pixels in red) and the runner log are left
-in `<build>/render_tests/`. The scenes live in `test/test_helper/assets/render_tests/scenes/` and use the Engine Demo's assets.
+in `<build>/render_tests/`. The scenes live in `test/unit/test_helper/assets/render_tests/scenes/` and use the Engine Demo's assets.
 
 ```bash
 ./docker_run.sh ctest --test-dir output/build/linux-clang-release -L render --output-on-failure
-# Regenerate the references (writes test/test_helper/assets/render_tests/references/<backend>/<scene>.png):
+# Regenerate the references (writes test/unit/test_helper/assets/render_tests/references/<backend>/<scene>.png):
 ./docker_run.sh env OWL_RENDER_TESTS_UPDATE=1 ctest --test-dir output/build/linux-clang-release -L render
 ```
 

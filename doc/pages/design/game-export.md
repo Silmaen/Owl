@@ -44,7 +44,7 @@ flowchart LR
 
 ### Automated test
 
-`test/export_tests` (CTest label `export`, about one second):
+`test/unit/export_tests` (CTest label `export`, about one second):
 
 - unit tests of `GameExporter` on a synthetic project: file layout, `runner.yml` round trip with `:` in the name,
   `pat:` relocation, stale library replacement, every `ExportError`;

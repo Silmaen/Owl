@@ -81,12 +81,12 @@ SOURCE_ROOTS: tuple[Path, ...] = (
     root / "source" / "owl" / "private",
     root / "source" / "owlnest" / "sources",
     root / "source" / "owlnest" / "runner",
-    root / "test",
-    root / "bench",
+    root / "test" / "unit",
+    root / "test" / "bench",
 )
 """Directories scanned by every sub-check that walks the tree."""
 
-API_DOC_ROOTS: tuple[Path, ...] = tuple(r for r in SOURCE_ROOTS if r != root / "test")
+API_DOC_ROOTS: tuple[Path, ...] = tuple(r for r in SOURCE_ROOTS if r != root / "test" / "unit")
 """Directories whose comments are API documentation (comment-quality): every source root but the tests."""
 
 CXX_EXTENSIONS: tuple[str, ...] = (".h", ".hpp", ".cpp", ".cc", ".cxx", ".inl")
@@ -97,8 +97,8 @@ HEADER_EXTENSIONS: tuple[str, ...] = (".h", ".hpp")
 
 STD_INCLUDE_ROOTS: tuple[Path, ...] = (
     root / "source",
-    root / "test",
-    root / "bench",
+    root / "test" / "unit",
+    root / "test" / "bench",
 )
 """Directories scanned by the std-includes audit (tests and the runner included)."""
 
@@ -1391,7 +1391,7 @@ def _check_test_assertions() -> int:
     from ci.utils.test_assertions import empty_tests
 
     log.info("code-style: test-assertion audit...")
-    empty = empty_tests(_iter_sources([root / "test"], (".cpp",)))
+    empty = empty_tests(_iter_sources([root / "test" / "unit"], (".cpp",)))
     for test in empty:
         _diag(
             test.path,

@@ -242,7 +242,7 @@ terrain streaming does not pay for it). `reach` and
 
 Meshing a surface chunk costs about 350 µs, so a streaming frame that meshed every new chunk on the main thread
 spiked to 9-14 ms. The main thread now only captures, uploads and draws, and stays under 0.6 ms per frame while
-terrain streams in (`bench/` group `voxel/streaming`, numbers in `doc/audit/20-mesures.md` §3.10):
+terrain streams in (`test/bench/` group `voxel/streaming`, numbers in `doc/audit/20-mesures.md` §3.10):
 
 ```mermaid
 sequenceDiagram

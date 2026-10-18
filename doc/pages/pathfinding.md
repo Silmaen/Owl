@@ -166,7 +166,7 @@ undone with Ctrl+Z (clicks within a second merge into one step).
 
 ## Measures
 
-`owl_bench --filter=path/` on a 1024 x 1024 map (`bench/cases/PathBench.cpp`, reference i9-13950HX, one core):
+`owl_bench --filter=path/` on a 1024 x 1024 map (`test/bench/cases/PathBench.cpp`, reference i9-13950HX, one core):
 
 | Case                           | Flat    | Hierarchical (warm) | Hierarchical (cold) |
 |--------------------------------|---------|---------------------|---------------------|

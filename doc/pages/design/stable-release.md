@@ -16,7 +16,7 @@ criteria, each verified by CI or by a shipped artefact.
       load through tested migration steps
 - Consumable SDK
     - `find_package(OwlEngine)` pulls one or two public dependencies (EnTT, and imgui only through `Owl::Gui`)
-    - OwlEngine published as a Conan package (`conan create`, `test_package/`, started in v0.3.0): it replaces the
+    - OwlEngine published as a Conan package (`conan create`, `test/package/`, started in v0.3.0): it replaces the
       packaged archive consumers use since DepManager left in v0.3.0
     - A consumer test project builds and runs against the installed Conan package in CI
 - Two showcase games authored only in the editor
