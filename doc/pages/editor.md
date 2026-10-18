@@ -2,12 +2,12 @@
 
 [TOC]
 
-This page describes Owl Nest, the scene editor for the Owl engine: its panel layout,
+This page describes Owl Nest, the scene editor for the Owl Engine: its panel layout,
 project management workflow, and playback controls.
 
 ## Overview
 
-Owl Nest is the primary development tool for the Owl engine. It provides a fully
+Owl Nest is the primary development tool for the Owl Engine. It provides a fully
 dockable panel interface built on ImGui and ImGuizmo, allowing developers to compose
 scenes, inspect entities, browse project assets, and test gameplay in real time. Its colours, fonts, icons and
 widgets follow the [Owl Nest style guide](design/nest-style-guide.md).
@@ -126,17 +126,17 @@ Owl Nest opens text / source files as their own tab (`DocumentType::Code`).
 Double-click a supported file in the Content Browser and a code editor tab
 appears next to the scene tabs.
 
-| Language | Extensions                                      | Highlighter |
-|----------|-------------------------------------------------|-------------|
-| Lua      | `.lua`                                          | built-in    |
-| C        | `.c`                                            | built-in    |
-| C++      | `.cpp`, `.cc`, `.cxx`, `.h`, `.hpp`, `.hxx`     | built-in    |
-| Python   | `.py`                                           | built-in    |
-| YAML     | `.yml`, `.yaml`                                 | custom      |
-| JSON     | `.json`                                         | built-in    |
-| Markdown | `.md`, `.markdown`                              | built-in    |
-| XML/SVG  | `.xml`, `.svg`                                  | custom      |
-| Slang    | `.slang`                                        | custom      |
+| Language | Extensions                                  | Highlighter |
+|----------|---------------------------------------------|-------------|
+| Lua      | `.lua`                                      | built-in    |
+| C        | `.c`                                        | built-in    |
+| C++      | `.cpp`, `.cc`, `.cxx`, `.h`, `.hpp`, `.hxx` | built-in    |
+| Python   | `.py`                                       | built-in    |
+| YAML     | `.yml`, `.yaml`                             | custom      |
+| JSON     | `.json`                                     | built-in    |
+| Markdown | `.md`, `.markdown`                          | built-in    |
+| XML/SVG  | `.xml`, `.svg`                              | custom      |
+| Slang    | `.slang`                                    | custom      |
 
 Slang shaders colour the HLSL-like comments, strings, numbers and `#` preprocessor lines, plus the Slang keywords
 (`struct`, `import`, `uniform`...), types (`float4`, `float4x4`, `Texture2D`...), semantics (`SV_Position`,
@@ -181,14 +181,14 @@ in its own tab. Internally the editor owns a `DocumentManager` that holds
 the open documents and tracks which one is **active**. Global panels
 (Scene Hierarchy, Properties, Viewport) always reflect the active document.
 
-| Kind        | File                                        | Description                                                         |
-|-------------|---------------------------------------------|---------------------------------------------------------------------|
-| Scene       | `.owl`                                      | Scene graph editor with viewport, per-document undo/redo stack      |
-| Code        | `.lua`, `.py`, `.json`, `.md`, `.svg`...    | Syntax-highlighted text editor (ImGuiColorTextEdit)                 |
-| Node Graph  | `.owlflow` (or derived like **Scene Flow**) | Generic node canvas — see [Node Graph](node_graph.md)               |
-| Animation   | `.owlanim`                                  | Spritesheet animation clip editor (timeline + preview + properties) |
-| Font        | `.ttf`, `.otf`, `.owlfont`                  | Font viewer (samples, atlas) and its charset: extra code-point ranges |
-| Image       | `.png`, `.jpg`, `.jpeg`, `.bmp`, `.tga`     | Read-only image viewer: zoom, pan, pixel grid, tileset tile overlay |
+| Kind       | File                                        | Description                                                           |
+|------------|---------------------------------------------|-----------------------------------------------------------------------|
+| Scene      | `.owl`                                      | Scene graph editor with viewport, per-document undo/redo stack        |
+| Code       | `.lua`, `.py`, `.json`, `.md`, `.svg`...    | Syntax-highlighted text editor (ImGuiColorTextEdit)                   |
+| Node Graph | `.owlflow` (or derived like **Scene Flow**) | Generic node canvas — see [Node Graph](node_graph.md)                 |
+| Animation  | `.owlanim`                                  | Spritesheet animation clip editor (timeline + preview + properties)   |
+| Font       | `.ttf`, `.otf`, `.owlfont`                  | Font viewer (samples, atlas) and its charset: extra code-point ranges |
+| Image      | `.png`, `.jpg`, `.jpeg`, `.bmp`, `.tga`     | Read-only image viewer: zoom, pan, pixel grid, tileset tile overlay   |
 
 - **Document tabs** — each open scene has its own `Viewport` window (stable
   `##scene_<uuid>` id). ImGui's docking groups viewports in the same dock node
@@ -576,11 +576,11 @@ component.
 
 **Ribbon `Animation` tab.** Shown only when an `AnimationDocument` is active.
 
-| Group    | Buttons                                          |
-| -------- | ------------------------------------------------ |
-| Playback | Play, Pause, Stop                                |
-| Frame    | Previous, Next                                   |
-| File     | Save, Save As, Close                             |
+| Group    | Buttons              |
+|----------|----------------------|
+| Playback | Play, Pause, Stop    |
+| Frame    | Previous, Next       |
+| File     | Save, Save As, Close |
 
 **On-disk format.**
 
@@ -690,16 +690,16 @@ The tab shows the **HUD editor** instead of the 3D viewport; a scene with canvas
 - **Preview**: the HUD at the chosen resolution over the backdrop. Click selects, Ctrl-click adds or removes, dragging
   on empty space draws a selection box; the selection is the one of the Scene Hierarchy and the Properties panel.
 
-| Gesture                                    | Effect                                                    |
-|--------------------------------------------|-----------------------------------------------------------|
-| Drag the body                              | Move the selected widgets together                        |
-| Drag an edge or a corner handle            | Resize; the opposite edge stays                           |
-| Alt + drag the circle                      | Move the pivot; the widget stays where it is              |
-| Drag a diamond (Ctrl+Alt when under pivot) | Move the anchors; the widget stays where it is            |
-| Arrow keys (Shift: 10 pixels)              | Nudge the selection                                       |
-| Delete                                     | Delete the selection and its children                     |
-| Shift while dragging                       | Snap nothing                                              |
-| Right click                                | Add a widget here, bring to front, send to back, delete   |
+| Gesture                                    | Effect                                                  |
+|--------------------------------------------|---------------------------------------------------------|
+| Drag the body                              | Move the selected widgets together                      |
+| Drag an edge or a corner handle            | Resize; the opposite edge stays                         |
+| Alt + drag the circle                      | Move the pivot; the widget stays where it is            |
+| Drag a diamond (Ctrl+Alt when under pivot) | Move the anchors; the widget stays where it is          |
+| Arrow keys (Shift: 10 pixels)              | Nudge the selection                                     |
+| Delete                                     | Delete the selection and its children                   |
+| Shift while dragging                       | Snap nothing                                            |
+| Right click                                | Add a widget here, bring to front, send to back, delete |
 
 Positions snap to whole reference pixels and stick to the edges and centres of the siblings, the parent and the
 screen (red guides). Every gesture is one undo step and runs a `hud.*` command (see
@@ -950,14 +950,14 @@ undo).
 
 The renderer-stack section mirrors `renderer::EnabledRenderersConfig`:
 
-| Control                                  | Effect                                                                                               |
-|------------------------------------------|------------------------------------------------------------------------------------------------------|
-| Layer row (per scene-listed entry)       | The layer name and its type (`Renderer2D`, `RendererRaycast`, …).                                    |
-| Enabled switch                           | Toggle the scene-level enable flag. Disabled layers are skipped without affecting the order.         |
-| Up / Down chevrons                       | Reorder the scene listing. Listed layers run in this order; unlisted layers append in project order. |
-| Detach button                            | Remove the scene-level entry — the layer reverts to the project's default config.                    |
-| `Overrides` sub-section                  | Per-layer-type override editor for known keys (see below).                                           |
-| Add layer slot (`+` next to a name)      | Add a project layer absent from the scene listing — equivalent to declaring a new override.          |
+| Control                             | Effect                                                                                               |
+|-------------------------------------|------------------------------------------------------------------------------------------------------|
+| Layer row (per scene-listed entry)  | The layer name and its type (`Renderer2D`, `RendererRaycast`, …).                                    |
+| Enabled switch                      | Toggle the scene-level enable flag. Disabled layers are skipped without affecting the order.         |
+| Up / Down chevrons                  | Reorder the scene listing. Listed layers run in this order; unlisted layers append in project order. |
+| Detach button                       | Remove the scene-level entry — the layer reverts to the project's default config.                    |
+| `Overrides` sub-section             | Per-layer-type override editor for known keys (see below).                                           |
+| Add layer slot (`+` next to a name) | Add a project layer absent from the scene listing — equivalent to declaring a new override.          |
 
 The `Overrides` collapsible exposes typed widgets per layer type:
 
@@ -1099,7 +1099,7 @@ The workflow commands live in the **File** screen (project), the **Home** tab (e
 
 **File screen at start-up.** When the editor starts without a loaded project, the File screen opens with **New
 project**, **Open project**, **Getting started**, **Engine Demo**, the sample games and the recent projects. The
-sample card shows when a `engine_demo/` sits next to `bin/` in the archive, or at the root of the sources
+**Engine Demo** card shows when an `engine_demo/` sits next to `bin/` in the archive, or at the root of the sources
 (`panel::findSampleProject`, from the asset folders upwards); the sample games are the `samples/<game>/` projects
 beside it (`panel::findSampleGames`), one row each.
 
@@ -1259,31 +1259,31 @@ spaces), `Color` (three or four numbers in [0, 1], or `#rrggbb[aa]`) and `Enum` 
 argument may declare a default value, given to the command when the caller omits it. A command returns its undo
 description and structured data (`entity` UUID, plus the fields listed below).
 
-| Command                | Arguments                                                                    |
-|------------------------|------------------------------------------------------------------------------|
-| `entity.create`        | `name` (text, `Empty Entity`), `parent` (entity, root when absent)           |
-| `entity.delete`        | `entity`, `children` (bool: delete the subtree, else children move up)       |
-| `entity.duplicate`     | `entity`, `children` (bool: duplicate the subtree)                           |
-| `entity.reparent`      | `entity`, `parent` (root when absent); the world position is kept            |
-| `entity.rename`        | `entity`, `name`                                                             |
-| `entity.set_transform` | `entity`, `translation` / `rotation` (radians) / `scale` (three numbers)     |
-| `component.add`        | `entity`, `component` (display name `Circle Renderer` or file key)           |
-| `component.remove`     | `entity`, `component`                                                        |
-| `prefab.instantiate`   | `path` (prefab file), `asset_path` (link recorded, found from the folders)   |
-| `component.set`        | `entity`, `component`, `values` (YAML / JSON map merged into the component), |
-|                        | `replace` (bool: `values` replaces every field, used by the inspector)       |
-| `scene.save`           | `path` (the scene file when absent); returns `path`                          |
-| `edit.undo`            | none; returns `can_undo`, `can_redo` and the entity to select                |
-| `edit.redo`            | none; same result as `edit.undo`                                             |
-| `macro.run`            | `path` (`.owlmacro`, absolute or in an asset folder); returns `commands`     |
+| Command                | Arguments                                                                                              |
+|------------------------|--------------------------------------------------------------------------------------------------------|
+| `entity.create`        | `name` (text, `Empty Entity`), `parent` (entity, root when absent)                                     |
+| `entity.delete`        | `entity`, `children` (bool: delete the subtree, else children move up)                                 |
+| `entity.duplicate`     | `entity`, `children` (bool: duplicate the subtree)                                                     |
+| `entity.reparent`      | `entity`, `parent` (root when absent); the world position is kept                                      |
+| `entity.rename`        | `entity`, `name`                                                                                       |
+| `entity.set_transform` | `entity`, `translation` / `rotation` (radians) / `scale` (three numbers)                               |
+| `component.add`        | `entity`, `component` (display name `Circle Renderer` or file key)                                     |
+| `component.remove`     | `entity`, `component`                                                                                  |
+| `prefab.instantiate`   | `path` (prefab file), `asset_path` (link recorded, found from the folders)                             |
+| `component.set`        | `entity`, `component`, `values` (YAML / JSON map merged into the component),                           |
+|                        | `replace` (bool: `values` replaces every field, used by the inspector)                                 |
+| `scene.save`           | `path` (the scene file when absent); returns `path`                                                    |
+| `edit.undo`            | none; returns `can_undo`, `can_redo` and the entity to select                                          |
+| `edit.redo`            | none; same result as `edit.undo`                                                                       |
+| `macro.run`            | `path` (`.owlmacro`, absolute or in an asset folder); returns `commands`                               |
 | `hud.add_widget`       | `kind` (`panel`, `label`...), `name`, `parent`, `size`, `anchor`, `offset`, `size_unit`, `offset_unit` |
 | `hud.set_rect`         | `entity`, `anchor_min`, `anchor_max`, `pivot`, `size`, `offset`, `size_unit`, `offset_unit` (as given) |
-| `hud.set_anchors`      | `entity`, `anchor_min`, `anchor_max`, `keep_bounds`, `resolution`            |
-| `hud.set_pivot`        | `entity`, `pivot`, `keep_bounds`, `resolution`                               |
-| `hud.move`             | `entities` (UUIDs or tags, comma separated), `delta` (reference pixels), `resolution` |
-| `hud.delete`           | `entities`: the widgets and their children, one step                         |
-| `hud.reparent`         | `entity`, `parent`, `index`, `keep_bounds`, `resolution`                     |
-| `hud.extract_canvas`   | `entity` (root canvas), `path` (`.owlhud`), `asset_path`; returns `hud`      |
+| `hud.set_anchors`      | `entity`, `anchor_min`, `anchor_max`, `keep_bounds`, `resolution`                                      |
+| `hud.set_pivot`        | `entity`, `pivot`, `keep_bounds`, `resolution`                                                         |
+| `hud.move`             | `entities` (UUIDs or tags, comma separated), `delta` (reference pixels), `resolution`                  |
+| `hud.delete`           | `entities`: the widgets and their children, one step                                                   |
+| `hud.reparent`         | `entity`, `parent`, `index`, `keep_bounds`, `resolution`                                               |
+| `hud.extract_canvas`   | `entity` (root canvas), `path` (`.owlhud`), `asset_path`; returns `hud`                                |
 
 An entity argument is a UUID (integer) or a tag (first match). Continuous edits previewed live (voxel brush strokes,
 tile painting, node moves) are recorded as one command when the gesture ends. An inspector field edit and a gizmo drag
@@ -1362,17 +1362,17 @@ and undoable; the design is in [MCP server](design/mcp-server.md).
   `Authorization: Bearer <token>`.
 - **Refusals**, checked before the body is read:
 
-| Case                                                           | Answer |
-|----------------------------------------------------------------|--------|
-| `Host` other than `127.0.0.1:<port>` / `localhost:<port>`      | 403    |
-| `Origin` present and not `http(s)://127.0.0.1` or `localhost`  | 403    |
-| Missing or wrong bearer token                                  | 401    |
-| `Content-Type` other than `application/json`                   | 415    |
-| `Mcp-Session-Id` other than the one of this run                | 404    |
-| `MCP-Protocol-Version` not supported                           | 400    |
-| Body over 1 MiB                                                | 413    |
-| 4 messages already queued, or the server stopping              | 503    |
-| `GET` (no event stream) or `DELETE`                            | 405    |
+| Case                                                          | Answer |
+|---------------------------------------------------------------|--------|
+| `Host` other than `127.0.0.1:<port>` / `localhost:<port>`     | 403    |
+| `Origin` present and not `http(s)://127.0.0.1` or `localhost` | 403    |
+| Missing or wrong bearer token                                 | 401    |
+| `Content-Type` other than `application/json`                  | 415    |
+| `Mcp-Session-Id` other than the one of this run               | 404    |
+| `MCP-Protocol-Version` not supported                          | 400    |
+| Body over 1 MiB                                               | 413    |
+| 4 messages already queued, or the server stopping             | 503    |
+| `GET` (no event stream) or `DELETE`                           | 405    |
 
 - **Files.** A file argument (`ArgSpec::projectPath`: `prefab.instantiate`, `scene.save`, `macro.run`) is resolved
   relative to the project, symbolic links followed, and refused outside it or without a project. No tool evaluates
@@ -1475,11 +1475,11 @@ at configure time:
 
 ### Opening Help
 
-| Action                              | How                                              |
-|-------------------------------------|--------------------------------------------------|
-| Default landing page (`Owl` README) | **File → Help** ribbon button                    |
-| Contextual help                     | `F1` (`help.context` action)                     |
-| Getting Started guide               | **Getting started** card of the File screen      |
+| Action                              | How                                         |
+|-------------------------------------|---------------------------------------------|
+| Default landing page (`Owl` README) | **File → Help** ribbon button               |
+| Contextual help                     | `F1` (`help.context` action)                |
+| Getting Started guide               | **Getting started** card of the File screen |
 
 `F1` reads the component header most recently hovered in the SceneHierarchy
 inspector (`SceneHierarchy::lastHoveredComponentName`) and routes to the page

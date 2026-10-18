@@ -2,12 +2,12 @@
 
 [TOC]
 
-This page describes the Owl Lua scripting system: how to attach scripts to entities,
+This page describes the Owl Engine Lua scripting system: how to attach scripts to entities,
 write Lua callbacks, use the engine API from Lua, and manage script properties.
 
 ## Overview
 
-Owl embeds Lua 5.5 as its gameplay scripting language. Scripts are attached to entities
+Owl Engine embeds Lua 5.5 as its gameplay scripting language. Scripts are attached to entities
 via the `LuaScript` component, which provides lifecycle callbacks (`on_create`,
 `on_update`, `on_destroy`, `on_collision`) and a property system for exposing
 configurable values in the editor inspector.
@@ -275,15 +275,15 @@ and scrolls without running the callback.
 
 `ui.transition_play(type, duration, [r, g, b, a])` accepts:
 
-| `type`         | Effect                                                              |
-|----------------|---------------------------------------------------------------------|
-| `"fade"`       | Cross-fade *to* the configured colour (alias of `"fade_in"`).       |
-| `"fade_in"`    | Cross-fade from opaque colour to transparent.                       |
-| `"fade_out"`   | Cross-fade from transparent to opaque colour.                       |
-| `"wipe_left"`  | Coloured bar slides off-screen towards the left.                    |
-| `"wipe_right"` | Bar slides off-screen towards the right.                            |
-| `"wipe_up"`    | Bar slides off-screen towards the top.                              |
-| `"wipe_down"`  | Bar slides off-screen towards the bottom.                           |
+| `type`         | Effect                                                        |
+|----------------|---------------------------------------------------------------|
+| `"fade"`       | Cross-fade *to* the configured colour (alias of `"fade_in"`). |
+| `"fade_in"`    | Cross-fade from opaque colour to transparent.                 |
+| `"fade_out"`   | Cross-fade from transparent to opaque colour.                 |
+| `"wipe_left"`  | Coloured bar slides off-screen towards the left.              |
+| `"wipe_right"` | Bar slides off-screen towards the right.                      |
+| `"wipe_up"`    | Bar slides off-screen towards the top.                        |
+| `"wipe_down"`  | Bar slides off-screen towards the bottom.                     |
 
 The colour arguments are optional — passing only `type` and `duration`
 defaults to opaque black, matching the legacy fade calls. With three-colour
@@ -351,15 +351,15 @@ project assets) overlaid with user overrides (`settings.yml` in user directory).
 
 **Built-in keys** (auto-applied by `settings.apply()`):
 
-| Key                 | Type  | Description                |
-|---------------------|-------|----------------------------|
-| `resolution_width`  | int   | Window width in pixels     |
-| `resolution_height` | int   | Window height in pixels    |
-| `fullscreen`        | bool  | Fullscreen mode            |
-| `resizable`         | bool  | Window resizable           |
-| `volume_master`     | float | Master volume (0.0–1.0)    |
-| `volume_music`      | float | Read by scripts only       |
-| `volume_sfx`        | float | Read by scripts only       |
+| Key                 | Type  | Description             |
+|---------------------|-------|-------------------------|
+| `resolution_width`  | int   | Window width in pixels  |
+| `resolution_height` | int   | Window height in pixels |
+| `fullscreen`        | bool  | Fullscreen mode         |
+| `resizable`         | bool  | Window resizable        |
+| `volume_master`     | float | Master volume (0.0–1.0) |
+| `volume_music`      | float | Read by scripts only    |
+| `volume_sfx`        | float | Read by scripts only    |
 
 `volume_music` and `volume_sfx` are stored and returned, but the engine applies only `volume_master`: there is
 no per-category mixing yet (`SoundSource` categories are not read at run time).

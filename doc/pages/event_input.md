@@ -2,11 +2,11 @@
 
 [TOC]
 
-This page covers the Owl event system, input polling, and editor keybindings.
+This page covers the Owl Engine event system, input polling, and editor keybindings.
 
 ## Overview
 
-Owl uses a synchronous event model. GLFW callbacks generate `owl::event::Event`
+Owl Engine uses a synchronous event model. GLFW callbacks generate `owl::event::Event`
 objects which are dispatched through `Application::onEvent()` to the layer stack
 in reverse order (overlays first, then regular layers). Each layer can mark an
 event as handled to stop further propagation. In parallel, the `Input` class

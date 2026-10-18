@@ -2,13 +2,13 @@
 
 [TOC]
 
-This page describes the Owl physics system: how rigid bodies work, how the
+This page describes the Owl Engine physics system: how rigid bodies work, how the
 simulation integrates with the scene lifecycle, and how to drive physics from
 gameplay code.
 
 ## Overview
 
-Owl provides 2D rigid-body physics via [Box2D](https://box2d.org/), controlled
+Owl Engine provides 2D rigid-body physics via [Box2D](https://box2d.org/), controlled
 through the `PhysicCommand` static facade and the `PhysicBody` ECS component. Each scene owns its own
 Box2D world, so several scenes simulate side by side.
 All physics simulation operates in **world space**, independent of the scene
@@ -204,7 +204,7 @@ sequenceDiagram
 ## Multi-threaded Solver {#multi-threaded-solver}
 
 Box2D 3 runs its collision, solver and body-finalisation passes as parallel tasks handed to the host through
-`b2WorldDef.enqueueTask` / `finishTask`. Owl backs them with a Taskflow executor (`SolverTaskPool`, private to
+`b2WorldDef.enqueueTask` / `finishTask`. Owl Engine backs them with a Taskflow executor (`SolverTaskPool`, private to
 the engine), owned by each multi-threaded world and destroyed with it.
 
 - **Worker count.** `workerCount = 1` keeps Box2D's single-threaded path (no task pool). `0` (automatic) uses
@@ -286,7 +286,7 @@ void MyScript::onUpdate(const owl::core::Timestep& iTimeStep) {
 ## Collision Events {#collision-events}
 
 `step()` turns Box2D contact events into entity-level collisions. Each begin-touch event is resolved to the two
-owning entities; Owl counts the touching shape pairs of every entity pair and records a `CollisionEvent`
+owning entities; Owl Engine counts the touching shape pairs of every entity pair and records a `CollisionEvent`
 (`entityA`, `entityB` UUIDs) only when the count goes from 0 to 1. The events gathered since the last
 `takeCollisionEvents()` record a pair at most once (with `frame()`, once per frame even if it touches, separates and
 touches again within that frame's steps). End-touch events decrement the count, so a body
@@ -326,11 +326,11 @@ finds the primary `Player` entity and calls `parseInputs`, which reads
 the `move` (horizontal) and `jump` actions of the [action map](event_input.md#actions) and applies impulses via
 `PhysicCommand`:
 
-| Field         | Type    | Default | Description                            |
-|---------------|---------|---------|----------------------------------------|
-| linearImpulse | `float` | `0.1`   | Horizontal impulse scaled by `move.x`  |
-| jumpImpulse   | `float` | `0.2`   | Vertical impulse applied on Space      |
-| canJump       | `bool`  | `true`  | Whether jumping is allowed             |
+| Field         | Type    | Default | Description                           |
+|---------------|---------|---------|---------------------------------------|
+| linearImpulse | `float` | `0.1`   | Horizontal impulse scaled by `move.x` |
+| jumpImpulse   | `float` | `0.2`   | Vertical impulse applied on Space     |
+| canJump       | `bool`  | `true`  | Whether jumping is allowed            |
 
 Jump is only applied when the entity's vertical velocity is near zero (i.e. the
 player is on the ground). The `Player` component requires a `PhysicBody` on the

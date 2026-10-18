@@ -2,15 +2,15 @@
 
 [TOC]
 
-This page documents the Owl Continuous Integration pipeline: how TeamCity is
+This page documents the Owl Engine Continuous Integration pipeline: how TeamCity is
 configured, how builds get triggered, how the Kotlin DSL is structured, and
 how to extend or validate it. For local build instructions see
-[Building Owl](building.md); for contribution conventions see
+[Building Owl Engine](building.md); for contribution conventions see
 [Contributing](contributing.md).
 
 ## Overview
 
-Owl is built and tested by a self-hosted **TeamCity 2026.1+** server at
+Owl Engine is built and tested by a self-hosted **TeamCity 2026.1+** server at
 [builder.argawaen.net](https://builder.argawaen.net). The full server
 configuration lives in the repository under `.teamcity/`
 as a **Kotlin DSL** — every project, build configuration, template, trigger,
@@ -373,7 +373,7 @@ The pipeline relies on a custom server-side plugin —
 — that closes the gaps between TeamCity 2026.1's bundled GitHub
 integration and what a real pipeline needs.
 
-Owl tracks the plugin's **1.11.0** line. What it provides, in roles relevant
+Owl Engine tracks the plugin's **1.11.0** line. What it provides, in roles relevant
 to Owl:
 
 | Role                  | Mechanism                                                                                          |
@@ -411,7 +411,7 @@ actually reads on a pull request. All are plugin defaults except where noted:
 
 - **the verdict, with test counts** — *"Build failed — 3 of 1046 tests failed
   (2 new)"*, then the failing tests in the body, new ones first. Read from
-  TeamCity's own statistics, which Owl feeds through the `xmlReport` feature on
+  TeamCity's own statistics, which Owl Engine feeds through the `xmlReport` feature on
   both templates (Google Test XML at `output/build/**/test/*_Report.xml`).
 - **timings** — total, working time and the wait split (dependencies / free
   agent / other). The Code Style snapshot dependency shows up as the dependency
@@ -635,7 +635,7 @@ from VCS" override, but the default workflow is push-to-`main`.
 
 ## Cross-references
 
-- [Building Owl](building.md) — local CMake invocations and CI action wrappers
+- [Building Owl Engine](building.md) — local CMake invocations and CI action wrappers
 - [Contributing](contributing.md) — coding conventions and PR workflow
 - [Roadmap](roadmap.md) — ongoing-quality priorities and per-release goals
 - [teamcity-github-bridge](https://github.com/dlachouette/teamcity-github-bridge)

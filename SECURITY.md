@@ -4,25 +4,25 @@
 
 Only the latest minor release gets fixes; nothing is backported to older lines.
 
-| Version                  | Supported |
-|--------------------------|-----------|
-| 0.3.x (latest release)   | Yes       |
-| older                    | No        |
+| Version                | Supported |
+|------------------------|-----------|
+| 0.3.x (latest release) | Yes       |
+| older                  | No        |
 
 ## Reporting a Vulnerability
 
-If you discover a security vulnerability in Owl, please report it privately:
+If you discover a security vulnerability in Owl Engine, please report it privately:
 
 1. **Do not** open a public GitHub issue for security vulnerabilities
 2. Use GitHub's private vulnerability reporting (*Security* tab of the repository, *Report a vulnerability*)
 3. Include steps to reproduce, potential impact, and any suggested fixes
 
-Owl is maintained on spare time: a report is answered as soon as possible, without a guaranteed delay, and the fix
+Owl Engine is maintained on spare time: a report is answered as soon as possible, without a guaranteed delay, and the fix
 ships in the next release of the supported line.
 
 ## Scope
 
-Owl is a game engine intended for offline/local use. The primary security concerns are:
+Owl Engine is a game engine intended for offline/local use. The primary security concerns are:
 
 - **Asset pack integrity**: `.owlpack` files use obfuscation but not cryptographic
   security -- they should not be relied upon for DRM

@@ -2,12 +2,12 @@
 
 [TOC]
 
-This page describes the Owl sound system: how to add audio to scenes, configure
+This page describes the Owl Engine sound system: how to add audio to scenes, configure
 spatial sound, and trigger sounds from gameplay code.
 
 ## Overview
 
-Owl provides a component-based sound system with 3D spatial audio, built on an
+Owl Engine provides a component-based sound system with 3D spatial audio, built on an
 abstract backend layer (OpenAL or Null). Audio files are loaded into memory as
 `SoundData` buffers, and playback is controlled through opaque `SoundHandle` values.
 

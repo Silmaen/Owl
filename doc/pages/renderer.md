@@ -2,12 +2,12 @@
 
 [TOC]
 
-This page documents Owl's rendering system: the 2D batch renderer, texture and shader
+This page documents Owl Engine's rendering system: the 2D batch renderer, texture and shader
 management, cameras, framebuffers, and backend abstraction.
 
 ## Overview
 
-Owl provides a 2D batch renderer built on the [Owl RHI](#renderer-owl-rhi) (Vulkan 1.4 reference, OpenGL 4.5
+Owl Engine provides a 2D batch renderer built on the [Owl RHI](#renderer-owl-rhi) (Vulkan 1.4 reference, OpenGL 4.5
 fallback, or Null for headless). All rendering goes through static facade classes:
 `RenderCommand` for low-level GPU operations, `Renderer2D` for batched 2D primitives
 (quads, circles, lines, text), and `BackgroundRenderer` for fullscreen backgrounds.
@@ -28,29 +28,29 @@ Every renderer kind, the render stack and the base building blocks (`Camera`, `T
 in `source/owl/private/renderer/`. Only the GPU objects and their backends sit one level down, in
 `owl::renderer::gpu` (`gpu::opengl`, `gpu::vulkan`, `gpu::null`).
 
-| Class                                            | Role                                                                       |
-|--------------------------------------------------|----------------------------------------------------------------------------|
-| `Renderer`                                       | Lifecycle (init/shutdown/reset), owns `ShaderLibrary` and `TextureLibrary` |
-| `RenderStack`                                    | Ordered list of active `RenderLayer` instances for the current scene       |
-| `RenderLayer`                                    | Abstract interface for one renderer in the stack (begin/render/end)        |
-| `RenderLayerFactory`                             | String-keyed registry of layer constructors (`"Renderer2D"`, ...)          |
-| `Renderer2D`                                     | Static 2D batch renderer: quads, circles, lines, text                      |
-| `Renderer2DLayer`                                | `RenderLayer` adapter wrapping `Renderer2D` (registered at engine init)    |
-| `RendererRaycast`                                | Static facade for the CPU-DDA raycaster                                    |
-| `RendererRaycastLayer`                           | `RenderLayer` adapter for the raycaster (factory key `"RendererRaycast"`)  |
-| `BackgroundRenderer`                             | Deferred fullscreen background/skybox rendering                            |
-| `RenderCommand`                                  | Static facade delegating to the active `RenderAPI`                         |
-| `RenderAPI`                                      | Owl RHI backend interface (Vulkan, OpenGL, Null)                           |
-| `GraphContext`                                   | Graphics context abstraction (init, buffer swapping)                       |
-| `Camera`                                         | Base class: projection, view, viewProjection matrices                      |
-| `CameraOrtho`                                    | Standalone orthographic camera with position/rotation                      |
-| `CameraEditor`                                   | Editor orbit camera (focal point, pan, zoom, rotate)                       |
-| `SceneCamera`                                    | Scene camera supporting both orthographic and perspective                  |
-| `Framebuffer`                                    | Off-screen render target with typed attachments                            |
-| `DrawData`                                       | Vertex/index buffers, shader and `PipelineState` of a draw                 |
-| `Shader`                                         | Abstract shader (Slang source, SPIR-V compiled)                            |
-| `Texture` / `Texture2D`                          | Abstract texture, 2D texture with file/spec creation                       |
-| `UniformBuffer`                                  | GPU-side uniform data block                                                |
+| Class                   | Role                                                                       |
+|-------------------------|----------------------------------------------------------------------------|
+| `Renderer`              | Lifecycle (init/shutdown/reset), owns `ShaderLibrary` and `TextureLibrary` |
+| `RenderStack`           | Ordered list of active `RenderLayer` instances for the current scene       |
+| `RenderLayer`           | Abstract interface for one renderer in the stack (begin/render/end)        |
+| `RenderLayerFactory`    | String-keyed registry of layer constructors (`"Renderer2D"`, ...)          |
+| `Renderer2D`            | Static 2D batch renderer: quads, circles, lines, text                      |
+| `Renderer2DLayer`       | `RenderLayer` adapter wrapping `Renderer2D` (registered at engine init)    |
+| `RendererRaycast`       | Static facade for the CPU-DDA raycaster                                    |
+| `RendererRaycastLayer`  | `RenderLayer` adapter for the raycaster (factory key `"RendererRaycast"`)  |
+| `BackgroundRenderer`    | Deferred fullscreen background/skybox rendering                            |
+| `RenderCommand`         | Static facade delegating to the active `RenderAPI`                         |
+| `RenderAPI`             | Owl RHI backend interface (Vulkan, OpenGL, Null)                           |
+| `GraphContext`          | Graphics context abstraction (init, buffer swapping)                       |
+| `Camera`                | Base class: projection, view, viewProjection matrices                      |
+| `CameraOrtho`           | Standalone orthographic camera with position/rotation                      |
+| `CameraEditor`          | Editor orbit camera (focal point, pan, zoom, rotate)                       |
+| `SceneCamera`           | Scene camera supporting both orthographic and perspective                  |
+| `Framebuffer`           | Off-screen render target with typed attachments                            |
+| `DrawData`              | Vertex/index buffers, shader and `PipelineState` of a draw                 |
+| `Shader`                | Abstract shader (Slang source, SPIR-V compiled)                            |
+| `Texture` / `Texture2D` | Abstract texture, 2D texture with file/spec creation                       |
+| `UniformBuffer`         | GPU-side uniform data block                                                |
 
 ## Renderer Stack {#renderer-stack}
 
@@ -60,7 +60,7 @@ into the same frame — for example a raycasting layer for the world plus a
 (in `owl_project.yml`), filtered and configured per scene (in `.owl` files),
 and routed per entity via the optional `RendererTag` component.
 
-In v0.2.0 the foundation ships with the runtime now wired end-to-end:
+The runtime is wired end to end:
 `EditorLayer::syncActiveDocumentPanels` (and the runner equivalent) builds the
 `RenderStack` from `Project::rendererStack` + `Scene::getEnabledRenderers()` and
 installs it via `Renderer::setRenderStack`. `Scene::renderWithStack` then runs
@@ -114,10 +114,10 @@ project default config. `Overrides` is deep-merged on top of `DefaultConfig`
 
 A `Renderer2D` layer reads two keys (editable in the Scene Settings panel):
 
-| Key               | Default | Effect                                                                                         |
-|-------------------|---------|------------------------------------------------------------------------------------------------|
-| `Space`           | `World` | `World` draws with the scene camera; `Screen` in screen units, origin bottom left, Y up        |
-| `ReferenceHeight` | `0`     | `Screen` only: the screen is this many units high, its width follows the aspect ratio; 0 = px  |
+| Key               | Default | Effect                                                                                        |
+|-------------------|---------|-----------------------------------------------------------------------------------------------|
+| `Space`           | `World` | `World` draws with the scene camera; `Screen` in screen units, origin bottom left, Y up       |
+| `ReferenceHeight` | `0`     | `Screen` only: the screen is this many units high, its width follows the aspect ratio; 0 = px |
 
 With `ReferenceHeight: 720` an overlay authored at 1280×720 (the minimaps of the Engine Demo raycast level and of
 Wolfenstein mini) keeps its share of the screen at 1080p or 1440p, like a `ScaleWithHeight` HUD canvas; the
@@ -134,11 +134,11 @@ Wolfenstein mini) keeps its share of the screen at 1080p or 1440p, like a `Scale
         ...
 ```
 
-| Tag state                                    | Routing                                                  |
-|----------------------------------------------|----------------------------------------------------------|
-| Component absent                             | First layer of the active stack (legacy `Renderer2D`)    |
-| Component present, name matches a layer      | That layer renders the entity                            |
-| Component present, name unknown to the stack | Entity skipped, one-shot warning per scene activation    |
+| Tag state                                    | Routing                                               |
+|----------------------------------------------|-------------------------------------------------------|
+| Component absent                             | First layer of the active stack (legacy `Renderer2D`) |
+| Component present, name matches a layer      | That layer renders the entity                         |
+| Component present, name unknown to the stack | Entity skipped, one-shot warning per scene activation |
 
 This is fully backward compatible: existing `.owl` files and `owl_project.yml`
 load unchanged — none of these blocks are required.
@@ -321,7 +321,7 @@ The SSBO-indexed instanced pattern proven by Phases 1–3 is the **canonical
 draw path** for every renderer going forward — a compute pre-pass writes an
 SSBO, the graphics pass is instanced and indexes into the SSBO via the
 instance id, and the CPU performs zero per-vertex transform. New renderers
-(the v0.3.0 mesh / 3D pipeline, the deferred GPU sprite stripes) build on
+(the v0.5.0 3D pipeline, the deferred GPU sprite stripes) build on
 this same shape rather than the retired Hazel-style CPU-vertex batch.
 
 Clean-ups in Phase 5:
@@ -529,18 +529,18 @@ to the raycaster.
 The raycaster extracts the camera's 2D pose from the inverse view matrix
 (i.e. the camera entity's world transform):
 
-| 2D quantity   | Source                                                                          |
-|---------------|---------------------------------------------------------------------------------|
-| Position      | `inverseView * (0, 0, 0, 1)` — the entity's world `(x, y)`                      |
-| Forward       | `inverseView * (0, 1, 0, 0)` — the entity's local +Y mapped to world XY         |
-| Right (× FOV) | `inverseView * (1, 0, 0, 0)` scaled by `tan(fov/2) * aspect` — the FOV "plane"  |
+| 2D quantity   | Source                                                                         |
+|---------------|--------------------------------------------------------------------------------|
+| Position      | `inverseView * (0, 0, 0, 1)` — the entity's world `(x, y)`                     |
+| Forward       | `inverseView * (0, 1, 0, 0)` — the entity's local +Y mapped to world XY        |
+| Right (× FOV) | `inverseView * (1, 0, 0, 0)` scaled by `tan(fov/2) * aspect` — the FOV "plane" |
 
 Convention:
 - An entity with `rotation: [0, 0, 0]` faces world **+Y** (forward = `(0, 1)`).
 - Increasing the entity's Z rotation rotates the facing **counter-clockwise**
   in world XY — `rotation: [0, 0, π/2]` faces world **−X** (forward = `(−1, 0)`).
 - Rotation values are stored in **radians** in the `Transform` component
-  (matching the rest of Owl's transform pipeline).
+  (matching the rest of Owl Engine's transform pipeline).
 
 The accompanying `scripts/raycast/raycast_player.lua` in the Engine Demo
 implements WASD strafing + Q/E turning following this convention.
@@ -597,18 +597,18 @@ A draw is fully described by two explicit objects, so no draw inherits state fro
   below), and each draw uses the bindings of the block active when it is issued. `RenderCommand::bindTextures(span)`
   sets the sampled textures of the block in slot order; `Texture2D::bind(slot)` changes one slot.
 
-| `RenderAPI` method                  | Role                                                                     |
-|-------------------------------------|--------------------------------------------------------------------------|
-| `init()`                            | Bring the backend up                                                     |
-| `setViewport` / `setClearColor`     | Viewport and clear colour                                                |
-| `clear()`                           | Clear the bound framebuffer (colour and depth)                           |
-| `drawData` / `drawDataInstanced`    | Draw a `DrawData` with its pipeline state and the active block bindings  |
-| `drawIndexedIndirect`               | GPU-driven draws (Vulkan, OpenGL 4.6)                                    |
-| `bindTextures(span)`                | Sampled textures of the active block                                     |
-| `storageBufferMemoryBarrier()`      | Compute writes visible to the next draws                                 |
-| `beginFrame()` / `endFrame()`       | Frame lifecycle (Vulkan: frame slot, swap chain image, one submission)   |
-| `beginBatch()` / `endBatch()`       | Render pass scope on the bound framebuffer (opened lazily by any draw)   |
-| `getRenderCounters`, GPU timestamps | Profiling (`OwlRunner --frame-bench`)                                    |
+| `RenderAPI` method                  | Role                                                                    |
+|-------------------------------------|-------------------------------------------------------------------------|
+| `init()`                            | Bring the backend up                                                    |
+| `setViewport` / `setClearColor`     | Viewport and clear colour                                               |
+| `clear()`                           | Clear the bound framebuffer (colour and depth)                          |
+| `drawData` / `drawDataInstanced`    | Draw a `DrawData` with its pipeline state and the active block bindings |
+| `drawIndexedIndirect`               | GPU-driven draws (Vulkan, OpenGL 4.6)                                   |
+| `bindTextures(span)`                | Sampled textures of the active block                                    |
+| `storageBufferMemoryBarrier()`      | Compute writes visible to the next draws                                |
+| `beginFrame()` / `endFrame()`       | Frame lifecycle (Vulkan: frame slot, swap chain image, one submission)  |
+| `beginBatch()` / `endBatch()`       | Render pass scope on the bound framebuffer (opened lazily by any draw)  |
+| `getRenderCounters`, GPU timestamps | Profiling (`OwlRunner --frame-bench`)                                   |
 
 **Adding a backend** (WebGPU is planned for v0.8.0): implement under `private/renderer/gpu/<backend>/` the classes
 `RenderAPI`, `GraphContext`, `DrawData`, `Shader`, `ComputeShader`, `Texture2D`, `Framebuffer`, `UniformBuffer`,
@@ -814,7 +814,7 @@ scale (the X scale no longer squeezes the glyphs); a `UiText` lays out in its `U
 
 **Charset and atlas.** Every font loads Basic Latin, Latin-1, Latin Extended-A, General Punctuation and `€`
 (`FontSettings::defaultRanges()`: `œ`, `Œ`, `’`, `“ ”`, `…` included). More code-point ranges are import settings of
-the font, in a `.owlfont` sidecar next to the `.ttf` / `.otf` (packed with it), edited in the font document of Owl
+the font, in a `.owlfont` sidecar next to the `.ttf` / `.otf` (packed with it), edited in the font document of Owl Engine
 Nest:
 
 ```yaml
@@ -855,11 +855,11 @@ and the same instanced draw for lines (2-vertex unit segment +
 
 **Instance layouts (std430):**
 
-| Struct           | Size  | Members                                                                                                 |
-|------------------|-------|---------------------------------------------------------------------------------------------------------|
-| `QuadInstance`   | 128 B | `mat4 transform`, `vec4 color`, `vec2 uv[4]`, `uint texIndex`, `int entityId`, `vec2 tilingFactor`      |
-| `CircleInstance` | 96 B  | `mat4 transform`, `vec4 color`, `float thickness`, `float fade`, `int entityId`, `uint _pad`            |
-| `LineInstance`   | 64 B  | `vec3 point1`, `vec3 point2`, `vec4 color`, `int entityId` (with explicit pads to align fields to 16 B) |
+| Struct           | Size  | Members                                                                                                                                       |
+|------------------|-------|-----------------------------------------------------------------------------------------------------------------------------------------------|
+| `QuadInstance`   | 128 B | `mat4 transform`, `vec4 color`, `vec2 uv[4]`, `uint texIndex`, `int entityId`, `vec2 tilingFactor`                                            |
+| `CircleInstance` | 96 B  | `mat4 transform`, `vec4 color`, `float thickness`, `float fade`, `int entityId`, `uint _pad`                                                  |
+| `LineInstance`   | 64 B  | `vec3 point1`, `vec3 point2`, `vec4 color`, `int entityId` (with explicit pads to align fields to 16 B)                                       |
 | `TextInstance`   | 96 B  | `int worldIndex`, `vec4 color`, `vec2 uv[4]`, `uint texIndex`, `int entityId`, `vec2 outlineUv`, `vec4 outlineColor`; MSDF screenPxRange path |
 
 The 4 explicit per-corner UVs (instead of a `uvRect`) preserve the
@@ -868,13 +868,13 @@ ceiling / wall stripe paths.
 
 **Capacity limits:**
 
-| Constant                    | Value         | Description                                  |
-|-----------------------------|---------------|----------------------------------------------|
-| `g_maxQuadsPerBatch`        | 20,000        | `nextBatch()` rolls over when reached        |
-| `g_maxCirclesPerBatch`      | 20,000        | Same trigger                                 |
-| `g_maxLinesPerBatch`        | 20,000        | Same trigger                                 |
-| `g_maxTextGlyphsPerBatch`   | 20,000        | Counted per glyph, not per `drawString` call |
-| `g_MaxTextureSlots`         | GPU-dependent | Queried via `getMaxTextureSlots()`           |
+| Constant                  | Value         | Description                                  |
+|---------------------------|---------------|----------------------------------------------|
+| `g_maxQuadsPerBatch`      | 20,000        | `nextBatch()` rolls over when reached        |
+| `g_maxCirclesPerBatch`    | 20,000        | Same trigger                                 |
+| `g_maxLinesPerBatch`      | 20,000        | Same trigger                                 |
+| `g_maxTextGlyphsPerBatch` | 20,000        | Counted per glyph, not per `drawString` call |
+| `g_MaxTextureSlots`       | GPU-dependent | Queried via `getMaxTextureSlots()`           |
 
 **Texture slot management** is unchanged from the legacy path: slot 0
 is the 1×1 white texture, slots 1..N hold unique textures; rolling
@@ -909,11 +909,11 @@ the end of each flush, so a draw inherits nothing. The HUD pass uses it for wind
 
 **Per-batch descriptor layout** declared in `Renderer2D::init`:
 
-| Binding | Type                   | Stage         |
-|---------|------------------------|---------------|
-| 0       | UBO (`Camera`)         | Vertex        |
-| 1       | `Sampler2D[32]`        | Fragment      |
-| 2       | SSBO (`XxxInstance[]`) | Vertex        |
+| Binding | Type                   | Stage    |
+|---------|------------------------|----------|
+| 0       | UBO (`Camera`)         | Vertex   |
+| 1       | `Sampler2D[32]`        | Fragment |
+| 2       | SSBO (`XxxInstance[]`) | Vertex   |
 
 The SSBO at binding 2 is swapped before each instanced drawcall via
 `gpu::StorageBuffer::bind()` — on OpenGL this calls
@@ -957,13 +957,13 @@ render pass (critical for Vulkan's `DONT_CARE` loadOp).
 
 `Texture2D` represents a 2D image on the GPU. Factory methods dispatch to the active backend.
 
-| Factory Method                              | Description                                                              |
-|---------------------------------------------|--------------------------------------------------------------------------|
-| `create(path)`                              | Load from image file (`.png`, `.jpg`), blocking                          |
-| `create(spec)`                              | Create from `Specification` (size, format)                               |
-| `createFromSerialized(string)`              | Deserialize from scene YAML string, blocking                             |
-| `createFromSerializedAsync(string, sched)`  | Same, but decodes on a worker; placeholder visible while state `Pending` |
-| `createFromSerializedForDeserialize(str)`   | Wrapper used by scene components: async when an `Application` is alive   |
+| Factory Method                             | Description                                                              |
+|--------------------------------------------|--------------------------------------------------------------------------|
+| `create(path)`                             | Load from image file (`.png`, `.jpg`), blocking                          |
+| `create(spec)`                             | Create from `Specification` (size, format)                               |
+| `createFromSerialized(string)`             | Deserialize from scene YAML string, blocking                             |
+| `createFromSerializedAsync(string, sched)` | Same, but decodes on a worker; placeholder visible while state `Pending` |
+| `createFromSerializedForDeserialize(str)`  | Wrapper used by scene components: async when an `Application` is alive   |
 
 ### Specification
 

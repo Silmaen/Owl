@@ -289,38 +289,38 @@ YAML key: `CircleRenderer`
 
 #### Text
 
-| Field         | Type     | Default        | Description          |
-|---------------|----------|----------------|----------------------|
-| `text`        | `string` | `""`           | Text content         |
-| `font`        | `Font`   | default font   | MSDF font            |
-| `color`       | `vec4`   | `{1, 1, 1, 1}` | Text colour          |
-| `kerning`     | `float`  | `0.0`          | Extra letter spacing |
-| `lineSpacing` | `float`  | `0.0`          | Extra line spacing   |
-| `outlineWidth` | `float` | `0.0`          | Outline reach, in text heights (`0.05` is about a pixel at 20 px); `0`: none |
-| `outlineColor` | `vec4`  | `{0, 0, 0, 1}` | Outline colour       |
-| `backgroundColor` | `vec4` | `{0, 0, 0, 0}` | Box behind the text, alpha `0`: none |
-| `backgroundPadding` | `float` | `0.2`     | Margin of the box, in text heights |
+| Field               | Type     | Default        | Description                                                                  |
+|---------------------|----------|----------------|------------------------------------------------------------------------------|
+| `text`              | `string` | `""`           | Text content                                                                 |
+| `font`              | `Font`   | default font   | MSDF font                                                                    |
+| `color`             | `vec4`   | `{1, 1, 1, 1}` | Text colour                                                                  |
+| `kerning`           | `float`  | `0.0`          | Extra letter spacing                                                         |
+| `lineSpacing`       | `float`  | `0.0`          | Extra line spacing                                                           |
+| `outlineWidth`      | `float`  | `0.0`          | Outline reach, in text heights (`0.05` is about a pixel at 20 px); `0`: none |
+| `outlineColor`      | `vec4`   | `{0, 0, 0, 1}` | Outline colour                                                               |
+| `backgroundColor`   | `vec4`   | `{0, 0, 0, 0}` | Box behind the text, alpha `0`: none                                         |
+| `backgroundPadding` | `float`  | `0.2`          | Margin of the box, in text heights                                           |
 
 The outline and background keys are written only when set. YAML key: `TextRenderer`
 
 #### Tilemap
 
-| Field          | Type             | Default      | Description                                                |
-|----------------|------------------|--------------|------------------------------------------------------------|
-| `tilesetPath`  | `path`           | `""`         | Relative path (project root) to a `.owltileset` asset      |
-| `width`        | `uint32`         | `16`         | Grid width in cells                                        |
-| `height`       | `uint32`         | `16`         | Grid height in cells                                       |
-| `cellSize`     | `float`          | `1.0`        | World-space size of one cell                               |
-| `layers`       | `vector<Layer>`  | `[]`         | Ordered back-to-front layers (see below)                   |
+| Field         | Type            | Default | Description                                           |
+|---------------|-----------------|---------|-------------------------------------------------------|
+| `tilesetPath` | `path`          | `""`    | Relative path (project root) to a `.owltileset` asset |
+| `width`       | `uint32`        | `16`    | Grid width in cells                                   |
+| `height`      | `uint32`        | `16`    | Grid height in cells                                  |
+| `cellSize`    | `float`         | `1.0`   | World-space size of one cell                          |
+| `layers`      | `vector<Layer>` | `[]`    | Ordered back-to-front layers (see below)              |
 
 Each layer carries its own grid + parallax:
 
-| Layer field | Type             | Default  | Description                                                             |
-|-------------|------------------|----------|-------------------------------------------------------------------------|
-| `name`      | `string`         | `""`     | Designer-friendly layer name                                            |
-| `visible`   | `bool`           | `true`   | Whether the layer is rendered                                           |
-| `parallax`  | `vec2`           | `{1, 1}` | Per-axis camera multiplier (1 = world, 0 = camera-locked)               |
-| cells       | `TileCell` grid  | empty    | Terrain tile, overlay tile (`-1` = none, at most 65534) and 8-bit flags |
+| Layer field | Type            | Default  | Description                                                             |
+|-------------|-----------------|----------|-------------------------------------------------------------------------|
+| `name`      | `string`        | `""`     | Designer-friendly layer name                                            |
+| `visible`   | `bool`          | `true`   | Whether the layer is rendered                                           |
+| `parallax`  | `vec2`          | `{1, 1}` | Per-axis camera multiplier (1 = world, 0 = camera-locked)               |
+| cells       | `TileCell` grid | empty    | Terrain tile, overlay tile (`-1` = none, at most 65534) and 8-bit flags |
 
 YAML key: `Tilemap`. The grid is centred on the entity origin (rows extend downward
 along Y) and follows the full entity world transform (translation, rotation, scale). The renderer draws the terrain
@@ -368,16 +368,16 @@ payloadBytes: 10280
 
 The payload holds only the non-empty chunks, **little-endian whatever the host**:
 
-| Field            | Type                         | Content                                                     |
-|------------------|------------------------------|-------------------------------------------------------------|
-| magic            | 8 bytes                      | `OWLTCHNK`                                                  |
-| chunk side       | `u32`                        | 32                                                          |
-| layer count      | `u32`                        | the number of layers of the header                          |
-| per layer: count | `u32`                        | its stored chunks                                           |
-| per chunk: x, y  | `u32`, `u32`                 | chunk coordinates, inside the layer's chunk grid            |
-| per chunk: cells | 1 024 × (`u16`, `u16`, `u8`) | terrain ids, then overlay ids (`0xFFFF` = none), then flags |
+| Field            | Type                             | Content                                                         |
+|------------------|----------------------------------|-----------------------------------------------------------------|
+| magic            | 8 bytes                          | `OWLTCHNK`                                                      |
+| chunk side       | `u32`                            | 32                                                              |
+| layer count      | `u32`                            | the number of layers of the header                              |
+| per layer: count | `u32`                            | its stored chunks                                               |
+| per chunk: x, y  | `u32`, `u32`                     | chunk coordinates, inside the layer's chunk grid                |
+| per chunk: cells | 1 024 × (`u16`, `u16`, `u8`)     | terrain ids, then overlay ids (`0xFFFF` = none), then flags     |
 | corner heights   | `u8`, then `u8` × (w + 1)(h + 1) | `0` for a flat map, else `1` and the corner heights, row by row |
-| checksum         | `u32`                        | FNV-1a 32 of every payload byte before it                   |
+| checksum         | `u32`                            | FNV-1a 32 of every payload byte before it                       |
 
 A file whose payload is missing, shorter or longer than `payloadBytes`, has a wrong magic, chunk side or layer count,
 a chunk outside its layer or given twice, or a checksum mismatch is refused with a log, and the asset keeps its
@@ -563,23 +563,23 @@ canvases and widgets, since the HUD pass draws them whatever their tag.
 
 #### UiText
 
-| Field                 | Type     | Description                                                          |
-|-----------------------|----------|----------------------------------------------------------------------|
-| `text`                | `string` | Display text (UTF-8)                                                 |
-| `font`                | `string` | Font name (default font when absent)                                 |
-| `fontSize`            | `float`  | Ascender-to-descender height, in pixels                              |
-| `color`               | `vec4`   | Text colour (RGBA)                                                   |
-| `horizontalAlignment` | `enum`   | `Left` (default), `Center`, `Right` in the `UiRect`                  |
-| `verticalAlignment`   | `enum`   | `Top`, `Middle` (default), `Bottom`, `Baseline` (first one centred)  |
-| `wrap`                | `bool`   | Break the lines on spaces within the rectangle width                 |
-| `fit`                 | `enum`   | `Overflow` (default), `Clip` at the rectangle, `Shrink` the font     |
-| `minFontSize`         | `float`  | Smallest size `Shrink` reaches (8 by default)                        |
-| `kerning`             | `float`  | Extra advance between glyphs, in font units                          |
-| `lineSpacing`         | `float`  | Extra space between lines, in font units                             |
-| `outlineWidth`        | `float`  | Outline reach in reference pixels; absent or `0`: none               |
-| `outlineColor`        | `vec4`   | Outline colour (black by default), written with the width            |
-| `backgroundColor`     | `vec4`   | Box behind the text block; absent or alpha `0`: none                 |
-| `backgroundPadding`   | `float`  | Margin of the box around the text block, in pixels (4 by default)    |
+| Field                 | Type     | Description                                                         |
+|-----------------------|----------|---------------------------------------------------------------------|
+| `text`                | `string` | Display text (UTF-8)                                                |
+| `font`                | `string` | Font name (default font when absent)                                |
+| `fontSize`            | `float`  | Ascender-to-descender height, in pixels                             |
+| `color`               | `vec4`   | Text colour (RGBA)                                                  |
+| `horizontalAlignment` | `enum`   | `Left` (default), `Center`, `Right` in the `UiRect`                 |
+| `verticalAlignment`   | `enum`   | `Top`, `Middle` (default), `Bottom`, `Baseline` (first one centred) |
+| `wrap`                | `bool`   | Break the lines on spaces within the rectangle width                |
+| `fit`                 | `enum`   | `Overflow` (default), `Clip` at the rectangle, `Shrink` the font    |
+| `minFontSize`         | `float`  | Smallest size `Shrink` reaches (8 by default)                       |
+| `kerning`             | `float`  | Extra advance between glyphs, in font units                         |
+| `lineSpacing`         | `float`  | Extra space between lines, in font units                            |
+| `outlineWidth`        | `float`  | Outline reach in reference pixels; absent or `0`: none              |
+| `outlineColor`        | `vec4`   | Outline colour (black by default), written with the width           |
+| `backgroundColor`     | `vec4`   | Box behind the text block; absent or alpha `0`: none                |
+| `backgroundPadding`   | `float`  | Margin of the box around the text block, in pixels (4 by default)   |
 
 Glyphs keep the aspect ratio of the font; the rectangle drives the wrap width, the alignment and the fit. Scene and
 prefab format 3 (TX2): a `UiText` of an older file, whose `alignment` key was never applied, migrates to `Center` /
@@ -780,14 +780,14 @@ A listed component keeps its instance state on update, whether it was modified, 
 `uuidMapping` and rewritten with `SceneSerializer::applyEntityFromString()`, so handles, UUIDs and the
 instance hierarchy survive.
 
-| Element                                  | On update                                             |
-|------------------------------------------|-------------------------------------------------------|
-| Transform of the instance root           | Always kept: the placement is an implicit override    |
-| Overridden component                     | Kept as on the instance (modified, added or removed)  |
-| Any other component (incl. `Tag`)        | Taken from the prefab, added or removed to match it   |
-| Entity new in the prefab                 | Created under its mapped parent, added to the mapping |
-| Mapped entity gone from the prefab       | Destroyed; its children move to the grandparent       |
-| Entity added to the instance only        | Kept where it is                                      |
+| Element                            | On update                                             |
+|------------------------------------|-------------------------------------------------------|
+| Transform of the instance root     | Always kept: the placement is an implicit override    |
+| Overridden component               | Kept as on the instance (modified, added or removed)  |
+| Any other component (incl. `Tag`)  | Taken from the prefab, added or removed to match it   |
+| Entity new in the prefab           | Created under its mapped parent, added to the mapping |
+| Mapped entity gone from the prefab | Destroyed; its children move to the grandparent       |
+| Entity added to the instance only  | Kept where it is                                      |
 
 `revertInstance()` clears every override then updates: only the root placement and the entities added to
 the instance only are kept. `revertComponent()` reverts a single component and clears its override.
@@ -854,26 +854,26 @@ See [Physics > Hierarchy Interaction](physics.md) for details.
 
 `SceneSerializer` handles YAML I/O:
 
-| Method                              | Description                                     |
-|-------------------------------------|-------------------------------------------------|
-| `serialize(path)`                   | Write scene to `.owl` file, atomically          |
-| `deserialize(path)`                 | Read scene from file                            |
-| `deserializeFromBuffer(data, name)` | Read from memory (pack file)                    |
-| `parseBuffer(data, name)`           | Parse YAML only (worker thread)                 |
-| `applyParsed(parsed)`               | Create the entities of a parsed scene (main)    |
+| Method                              | Description                                  |
+|-------------------------------------|----------------------------------------------|
+| `serialize(path)`                   | Write scene to `.owl` file, atomically       |
+| `deserialize(path)`                 | Read scene from file                         |
+| `deserializeFromBuffer(data, name)` | Read from memory (pack file)                 |
+| `parseBuffer(data, name)`           | Parse YAML only (worker thread)              |
+| `applyParsed(parsed)`               | Create the entities of a parsed scene (main) |
 
 The three loading calls return a `SceneLoadResult` (`owl::expected<void, SceneLoadError>`);
 `describe(error)` gives a readable reason for the editor or the log.
 
-| `SceneLoadError`       | Cause                                                              |
-|------------------------|--------------------------------------------------------------------|
-| `FileUnreadable`       | The file does not exist or cannot be read                          |
-| `InvalidYaml`          | The data is not YAML                                               |
-| `NotAScene`            | No `Scene` key, or `Entities` is not a list                        |
-| `InvalidEntity`        | An entity has no scalar `Entity` id, or a field of the wrong type  |
-| `InvalidFormatVersion` | `FormatVersion` is not a positive integer                          |
-| `NewerFormatVersion`   | The file was created by a newer version of Owl                     |
-| `MigrationFailed`      | A migration step could not convert the file to the current format  |
+| `SceneLoadError`       | Cause                                                             |
+|------------------------|-------------------------------------------------------------------|
+| `FileUnreadable`       | The file does not exist or cannot be read                         |
+| `InvalidYaml`          | The data is not YAML                                              |
+| `NotAScene`            | No `Scene` key, or `Entities` is not a list                       |
+| `InvalidEntity`        | An entity has no scalar `Entity` id, or a field of the wrong type |
+| `InvalidFormatVersion` | `FormatVersion` is not a positive integer                         |
+| `NewerFormatVersion`   | The file was created by a newer version of Owl Engine             |
+| `MigrationFailed`      | A migration step could not convert the file to the current format |
 
 A failed load removes the entities it had already created: the target scene is left as it was.
 Recoverable corruption is repaired with a warning instead of failing the load:
@@ -948,7 +948,7 @@ On load, `core::upgradeDocument` (or `upgradeYamlDocument` inside the engine) re
 flowchart LR
     A[FormatVersion] -->|absent| B[version 1]
     A -->|not a positive integer| E1[InvalidVersion]
-    A -->|greater than current| E2[NewerVersion: created by a newer Owl]
+    A -->|greater than current| E2[NewerVersion: created by a newer Owl Engine]
     A -->|lower than current| M[migrations v to v+1 ... current]
     B --> M
     M -->|a step fails or throws| E3[MigrationFailed]
@@ -1025,13 +1025,13 @@ component groups don't repeat the parent-chain walk.
 `Scene` maintains several per-update-tick caches to avoid recomputing stable
 values across the multiple component-group scans of a render frame:
 
-| Cache                            | Key                            | Gated by                       | Cleared at      |
-|----------------------------------|--------------------------------|--------------------------------|-----------------|
-| Visibility in `m_worldNodes`     | entity index, both modes       | `m_inUpdatePass`               | After mutators  |
-| `m_layerContentCacheFirst`       | layer name                     | `m_inUpdatePass`               | After mutators  |
-| `m_layerContentCacheNotFirst`    | layer name                     | `m_inUpdatePass`               | After mutators  |
-| World matrices in `m_worldNodes` | entity index                   | checked per read, trusted while `m_worldTransformCacheActive` | Never (recomposed on change) |
-| `m_tilemapAssetsDirty` flag      | scene-wide                     | (own gate)                     | After resolve   |
+| Cache                            | Key                      | Gated by                                                      | Cleared at                   |
+|----------------------------------|--------------------------|---------------------------------------------------------------|------------------------------|
+| Visibility in `m_worldNodes`     | entity index, both modes | `m_inUpdatePass`                                              | After mutators               |
+| `m_layerContentCacheFirst`       | layer name               | `m_inUpdatePass`                                              | After mutators               |
+| `m_layerContentCacheNotFirst`    | layer name               | `m_inUpdatePass`                                              | After mutators               |
+| World matrices in `m_worldNodes` | entity index             | checked per read, trusted while `m_worldTransformCacheActive` | Never (recomposed on change) |
+| `m_tilemapAssetsDirty` flag      | scene-wide               | (own gate)                                                    | After resolve                |
 
 In `onUpdateRuntime` every cache is armed only once the mutating phases are done —
 scripts, physics, entity links and trigger callbacks (which can hide entities or

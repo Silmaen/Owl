@@ -3,9 +3,8 @@
 [TOC]
 
 The voxel engine (introduced in v0.2.1) is a block-based world subsystem in the `owl::data::voxel` module. This page
-documents the **data model** — block types, chunks, and the world store. Meshing, the 3D voxel renderer, terrain
-generation, block interaction, and the in-editor authoring tools are layered on top of this foundation in later
-v0.2.1 work and are documented as they land.
+documents the data model (block types, chunks, the world store), then the meshing, the renderer, the procedural terrain
+and the editing tools built on it.
 
 ## Overview
 
@@ -19,11 +18,11 @@ flowchart LR
     Ids -.->|resolved through| Registry
 ```
 
-| Type            | Responsibility                                                              |
-|-----------------|-----------------------------------------------------------------------------|
-| `BlockRegistry` | Ordered table of block types addressed by `BlockId`; resolves metadata.     |
-| `Chunk`         | A fixed `16³` cube of `BlockId` values with dirty tracking.                 |
-| `VoxelWorld`    | A sparse, unbounded map of chunks keyed by chunk coordinate.                |
+| Type            | Responsibility                                                          |
+|-----------------|-------------------------------------------------------------------------|
+| `BlockRegistry` | Ordered table of block types addressed by `BlockId`; resolves metadata. |
+| `Chunk`         | A fixed `16³` cube of `BlockId` values with dirty tracking.             |
+| `VoxelWorld`    | A sparse, unbounded map of chunks keyed by chunk coordinate.            |
 
 A chunk stores only bare `BlockId` values; everything else (textures, opacity, collision) is looked up in the shared
 `BlockRegistry`. This keeps chunk storage compact and lets the same world be re-skinned by swapping registries.
@@ -59,12 +58,12 @@ The six faces follow a fixed order, used by per-face texture arrays and (later) 
 
 The render kind drives face culling and (later) which mesh pass a block lands in:
 
-| `BlockRenderKind` | Meaning                                                        |
-|-------------------|----------------------------------------------------------------|
-| `Air`             | Empty space (id `0`): never meshed, never culls a neighbour.   |
-| `Opaque`          | Fully opaque: culls the shared face of an adjacent block.      |
-| `Transparent`     | Alpha-blended (leaves, glass): does not cull opaque neighbours.|
-| `Water`           | Translucent volume rendered with its own sorting rules.        |
+| `BlockRenderKind` | Meaning                                                         |
+|-------------------|-----------------------------------------------------------------|
+| `Air`             | Empty space (id `0`): never meshed, never culls a neighbour.    |
+| `Opaque`          | Fully opaque: culls the shared face of an adjacent block.       |
+| `Transparent`     | Alpha-blended (leaves, glass): does not cull opaque neighbours. |
+| `Water`           | Translucent volume rendered with its own sorting rules.         |
 
 Block id `0` is always the built-in air block (`data::voxel::g_AirBlock`); it is implicit and never written to disk.
 
@@ -335,5 +334,6 @@ to zoom); a corner XYZ gizmo shows the current orientation.
 
 ## What's Next
 
-A Lua block API, and the GPU indirect-draw adoption of the frustum-culling pre-pass (currently culled per chunk on the
-CPU) — slated for the v0.3.0 3D pipeline.
+A Lua block API (gap G2 of the [Sample games](design/sample-games.md), for the Mini Minecraft of v0.6.0), and the
+GPU indirect-draw adoption of the frustum-culling pre-pass (culled per chunk on the CPU today), with the compute-driven
+culling of v0.5.0.

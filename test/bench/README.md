@@ -1,4 +1,4 @@
-# Owl benchmarks
+# Owl Engine benchmarks
 
 `owl_bench` is a single executable of CPU micro-benchmarks for the engine, run headless on the Null render
 backend. It uses a small in-house harness
@@ -26,19 +26,19 @@ cd output/build/linux-clang-release-bench/bin
 ../../../../docker_run.sh taskset -c 6 ./owl_bench --csv=bench.csv --json=bench.json
 ```
 
-| Option              | Default | Meaning                                                      |
-|---------------------|---------|--------------------------------------------------------------|
-| `--filter=<text>`   | (all)   | Run only the benchmarks whose name contains `<text>`.        |
-| `--exclude=<text>`  | (none)  | Skip the benchmarks whose name contains `<text>`.            |
-| `--samples=<n>`     | 15      | Timed samples per benchmark.                                 |
-| `--warmup=<n>`      | 2       | Untimed samples before the timed ones.                       |
-| `--min-sample-ms=x` | 10      | Minimum duration of one sample (sets the batch size).        |
-| `--csv=<file>`      | (none)  | Write the results as CSV.                                    |
-| `--json=<file>`     | (none)  | Write the results, metrics and load average as JSON.         |
-| `--verbose`         | off     | Keep engine warnings and errors in the output.               |
+| Option              | Default | Meaning                                               |
+|---------------------|---------|-------------------------------------------------------|
+| `--filter=<text>`   | (all)   | Run only the benchmarks whose name contains `<text>`. |
+| `--exclude=<text>`  | (none)  | Skip the benchmarks whose name contains `<text>`.     |
+| `--samples=<n>`     | 15      | Timed samples per benchmark.                          |
+| `--warmup=<n>`      | 2       | Untimed samples before the timed ones.                |
+| `--min-sample-ms=x` | 10      | Minimum duration of one sample (sets the batch size). |
+| `--csv=<file>`      | (none)  | Write the results as CSV.                             |
+| `--json=<file>`     | (none)  | Write the results, metrics and load average as JSON.  |
+| `--verbose`         | off     | Keep engine warnings and errors in the output.        |
 
 Groups (name prefixes): `scene`, `serialize`, `prefab`, `renderer2d`, `hud`, `tilemap`, `frame`, `voxel`,
-`script`, `physics`, `sample`, `slang`, `iso`, `mcp`. The first Slang compilation is only "cold" when `slang` is the first group to
+`script`, `physics`, `sample` (the Engine Demo scenes), `slang`, `iso`, `path`, `mcp`. The first Slang compilation is only "cold" when `slang` is the first group to
 compile a shader in the process, which is the case for a full run. `voxel/streaming` streams a procedural world
 through a real `RendererVoxel` layer with frames paced at 60 Hz (about 12 s) and reports the main-thread CPU time per
 frame (p50, p99, peak), the meshing work and the chunk appearance latency.
@@ -66,7 +66,7 @@ The configuration is pinned to the agent `linux-build-hephaistos` (8 cores): the
 median of its 5 runs of 2026-10-15 on the v0.4.0 performance fixes (builds 36879 to 36887, listed in
 `context.baseline_runs`), the code `main` gets with them; the runs agree within 2 % (median), the multi-threaded
 physics of 100 bodies and `sample/load/game_over` within 30 %. `hud/frame/1000_row_list` (a list of a thousand rows,
-scrolled to the middle; the quads of one frame as a metric) is new and not in the baseline yet, nor is the `mcp` group. The `hud/{layout,frame}/500_widgets` and `iso/*` entries are
+scrolled to the middle; the quads of one frame as a metric) is new and not in the baseline yet, nor are the `mcp` and `path` groups. The `hud/{layout,frame}/500_widgets` and `iso/*` entries are
 estimates, a local run scaled by the ratio of the `renderer2d/quads_color` cases, until the next refresh. Timings from
 another agent do not compare (artemis is 20 % faster but varies 10.7 % between runs, against 1.7 % here).
 

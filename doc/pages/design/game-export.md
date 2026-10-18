@@ -50,7 +50,8 @@ flowchart LR
   `pat:` relocation, stale library replacement, every `ExportError`;
 - end to end: `OwlNest --export engine_demo`, check that every scene, tileset, tilemap and script is in the
   pack without absolute path, move the game folder elsewhere, run `launch.sh --headless --smoke-test 60` from
-  another directory, and fail on a non-zero exit code or any warning / error in `Owl.log`.
+  another directory, and fail on a non-zero exit code or any warning / error in `Owl.log`; since v0.4.0 the same
+  run covers every `samples/*/owl_project.yml` (`EveryShippedProjectPlaysFromItsExportFolder`).
 
 ### Defects found by the first real export
 
@@ -65,12 +66,10 @@ flowchart LR
 | `launch.sh` added the current directory to `LD_LIBRARY_PATH` when it was empty                  | Separator only when the variable is set                   |
 | Runner returned 0 on a fatal error; missing tilemap / tileset silently ignored                  | Exit code 1, warning on missing tilemap / tileset         |
 
-### Still open
+### Left after v0.3.0
 
-- Headless runs prove that every asset is found and loaded, not that it renders: image tests come with Phase B
-  (lavapipe / llvmpipe). A manual Vulkan run in Docker played seven scenes, then lost the device on
-  `world_map.owl` (GPU in a container, to be confirmed on a host).
-- Shaders are compiled at first run from the packed `.slang` sources; precompiled SPIR-V in the pack is still to do.
+- Rendering of the exported game: covered since Phase B by the image tests on lavapipe / llvmpipe.
+- Shaders: precompiled at build time and embedded in the pack (v0.3.0), no Slang compile at first run.
 - The exported binaries keep the build-tree RPATH after `$ORIGIN`; harmless (`$ORIGIN` comes first) but not clean.
 
 ## v0.8.0 — cross-platform packaging

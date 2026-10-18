@@ -1,8 +1,8 @@
-# Building Owl {#page-building}
+# Building Owl Engine {#page-building}
 
 [TOC]
 
-This page explains how to configure, build, and test the Owl engine.
+This page explains how to configure, build, and test Owl Engine.
 
 ## Prerequisites
 
@@ -21,15 +21,15 @@ the checkout. Every command of this page works prefixed with it, which is how th
 
 To build without the image, install:
 
-| Tool    | Version | Notes                                                                  |
-|---------|---------|------------------------------------------------------------------------|
-| CMake   | 3.24+   | Build system generator                                                 |
-| Ninja   |         | Recommended build backend                                              |
-| Clang   | 22+     | Or GCC 14+ (tested versions; CMake warns below Clang 18 / GCC 13)      |
-| Python  | 3.12+   | For CI tooling and Conan                                               |
-| Poetry  |         | Python dependency manager                                              |
-| Conan   | 2       | C++ dependency manager (installed via Poetry)                          |
-| Doxygen | 1.9.1+  | Optional: API documentation (with Graphviz), `documentation` target    |
+| Tool    | Version | Notes                                                               |
+|---------|---------|---------------------------------------------------------------------|
+| CMake   | 3.24+   | Build system generator                                              |
+| Ninja   |         | Recommended build backend                                           |
+| Clang   | 22+     | Or GCC 14+ (tested versions; CMake warns below Clang 18 / GCC 13)   |
+| Python  | 3.12+   | For CI tooling and Conan                                            |
+| Poetry  |         | Python dependency manager                                           |
+| Conan   | 2       | C++ dependency manager (installed via Poetry)                       |
+| Doxygen | 1.9.1+  | Optional: API documentation (with Graphviz), `documentation` target |
 
 Install Python dependencies:
 
@@ -89,7 +89,7 @@ build failure of a third party on a new compiler is fixed in its profile or in a
 
 ## Configure and Build
 
-Owl uses CMake presets. To configure and build:
+Owl Engine uses CMake presets. To configure and build:
 
 ```bash
 cmake --preset <preset> -S .
@@ -124,6 +124,8 @@ cmake --build output/build/<preset>
 | `linux-clang-minimal`                | Every optional module off    |
 | `linux-cross-arm64`                  | arm64 cross build (Debug)    |
 | `linux-emulated`                     | arm64 build under QEMU       |
+| `linux-bench`                        | `owl_bench` harness          |
+| `linux-fuzz`                         | libFuzzer targets            |
 
 #### Packaging
 
@@ -199,10 +201,11 @@ Tests use Google Test and are enabled by default (`OWL_TESTING=ON`):
 ctest --test-dir output/build/<preset> --output-on-failure
 ```
 
-Test executables are named `owl_<category>_unit_test` with 17 categories: core, debug,
-event, font, gui, input, io, layer, math, mesh, owlnest, physics, renderer, scene, script, sound, voxel.
-`owlnest_tests` links the editor sources through the `OwlNestCore` static library and is skipped when
-`OWL_BUILD_NEST` is off.
+Each of the 20 folders of `test/unit/` (`<category>_tests`: core, debug, event, export, font, gui, input, io, layer,
+math, mesh, owlnest, physics, render, renderer, runner, scene, script, sound, voxel) builds one executable
+`owl_<category>_tests_unit_test`; each `test/unit/scenarios/*.owltest` is one more CTest (label `scenario`) played by
+`OwlRunner --scenario`. `owlnest_tests` links the editor sources through the `OwlNestCore` static library and is
+skipped when `OWL_BUILD_NEST` is off.
 
 ## Measuring frames on the GPU
 
@@ -327,7 +330,7 @@ See [Windowing and input](design/windowing-input.md) for the details and the GLF
 | `OWL_BENCHMARK`                            | OFF     | `owl_bench` harness (`test/bench/`), with the Owl Nest MCP libraries             |
 | `OWL_INCLUDE_CHECK`                        | OFF     | `owl_include_check`: every header and source compiled alone (Clang only)         |
 | `OWL_TEST_SHUFFLE`                         | OFF     | Run every test binary with `--gtest_shuffle`                                     |
-| `OWL_RENDER_TESTS`                         | ON      | Image tests (`test/unit/render_tests`, label `render`)                                |
+| `OWL_RENDER_TESTS`                         | ON      | Image tests (`test/unit/render_tests`, label `render`)                           |
 | `OWL_TEST_TIMEOUT`                         | 600     | Per test binary CTest timeout, in seconds                                        |
 | `OWL_SCRIPT_TIME_SCALE`                    | 1       | Lua time quota multiplier of the scenario and export tests (8 when emulated)     |
 | `OWL_CONAN_PROFILE`                        | (auto)  | Conan host profile, default `conan/profiles/<os>-<compiler>[-<arch>]`            |
@@ -335,7 +338,7 @@ See [Windowing and input](design/windowing-input.md) for the details and the GLF
 | `OWL_SYSROOT`                              | (auto)  | arm64 sysroot of the cross toolchain, default `/opt/sysroot/aarch64-linux-gnu`   |
 | `OWL_CONAN_HOME`                           | (empty) | `CONAN_HOME` for the install (empty: Conan's default)                            |
 | `OWL_CONAN_BUILD`                          | missing | Value of `conan install --build`                                                 |
-| `OWL_FUZZING`                              | OFF     | libFuzzer targets in `test/fuzz/` (Clang-only)                                        |
+| `OWL_FUZZING`                              | OFF     | libFuzzer targets in `test/fuzz/` (Clang-only)                                   |
 | `OWL_ENABLE_MEMORY_TRACKER`                | OFF     | Allocation tracker, opt-in in every build type (Debug included)                  |
 | `OWL_PROFILER`                             | none    | `OWL_PROFILE_*` backend: `none`, `tracy` or `chrome` ([Profiling](profiling.md)) |
 | `OWL_LOG_LEVEL`                            | trace   | Lowest log level compiled in (`trace` to `off`)                                  |
@@ -352,13 +355,13 @@ The core (ECS, scene, data, assets, renderer front end, Null backends) is always
 CMake option and a recipe option of the same name: turned off, it leaves out its sources and its third parties, and
 its public API stays, backed by the Null backend or a no-op, so a game compiles against the same headers.
 
-| Option               | Conan option | Third parties left out                                     | Without it                                                  |
-|----------------------|--------------|------------------------------------------------------------|-------------------------------------------------------------|
-| `OWL_MODULE_RENDER`  | `render`     | glad, GLFW, lunasvg, Vulkan, SPIRV-Cross, Slang            | Null window, input and graphics: the engine runs headless   |
-| `OWL_MODULE_PHYSICS` | `physics`    | Box2D                                                      | `PhysicCommand` does nothing, bodies stay where they are    |
-| `OWL_MODULE_AUDIO`   | `audio`      | OpenAL Soft, libsndfile                                    | Null sound backend                                          |
-| `OWL_MODULE_SCRIPT`  | `script`     | Lua                                                        | `ScriptInstance` never loads, scripts are skipped           |
-| `OWL_MODULE_GUI`     | `gui`        | imgui, ImGuizmo                                            | No `UiLayer`, no `gui/` headers, no `Owl::Gui` target       |
+| Option               | Conan option | Third parties left out                          | Without it                                                |
+|----------------------|--------------|-------------------------------------------------|-----------------------------------------------------------|
+| `OWL_MODULE_RENDER`  | `render`     | glad, GLFW, lunasvg, Vulkan, SPIRV-Cross, Slang | Null window, input and graphics: the engine runs headless |
+| `OWL_MODULE_PHYSICS` | `physics`    | Box2D                                           | `PhysicCommand` does nothing, bodies stay where they are  |
+| `OWL_MODULE_AUDIO`   | `audio`      | OpenAL Soft, libsndfile                         | Null sound backend                                        |
+| `OWL_MODULE_SCRIPT`  | `script`     | Lua                                             | `ScriptInstance` never loads, scripts are skipped         |
+| `OWL_MODULE_GUI`     | `gui`        | imgui, ImGuizmo                                 | No `UiLayer`, no `gui/` headers, no `Owl::Gui` target     |
 
 - The code sees `OWL_WITH_<MODULE>` (`0` or `1`), a public definition of `Owl::OwlEngine`; a consumer checks a module
   with `find_package(OwlEngine COMPONENTS Physics)` (components `Render`, `Physics`, `Audio`, `Script`, `Gui`).

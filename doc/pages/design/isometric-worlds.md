@@ -10,11 +10,11 @@ specification: [Isometric renderer](isometric.md), [HUD system](hud-system.md),
 
 ## Goal
 
-Owl must be able to carry a **Transport Tycoon-like game** — not a remake, an engine able to make one, modern
+Owl Engine must be able to carry a **Transport Tycoon-like game** — not a remake, an engine able to make one, modern
 rendering included. v0.4.0 lays the ground for it: an isometric renderer sized for large tile maps, terrain with
 slopes, thousands of moving sprites, a HUD able to hold a management game's windows and toolbars, input actions with
 a gamepad, a fixed simulation tick, and a local MCP server so tools can drive Owl Nest. Game rules (economy, vehicles,
-towns) stay in `engine_demo/`, never in the engine.
+towns) stay in the projects (`engine_demo/`, `samples/`), never in the engine.
 
 ## State at kickoff
 
@@ -72,13 +72,12 @@ scale; two of them change.
   256-bit bearer token per session in a `0600` file, 1 MiB body, bounded queue, paths kept inside the project, no Lua
   eval nor shell.
 
-Pulled into v0.4.0 from later releases: aspect-correct text with alignment and fit modes (v0.5.0), management-game
-widgets — windows, layout, clipping, tooltips (new), the fixed simulation tick (part of v0.9.0), gamepad dead zones
-and response curves (v0.10.0), file dialogues through the desktop portal (v0.5.0), the inventory demo (v0.5.0).
-Moved earlier: tile-graph pathfinding, from the v0.8.0 navigation work to v0.5.0. Moved later: node-based editing of
-other assets, folded into the v0.7.0 visual scripting. The 2026-10-16 replan, which dropped the old v0.5.0 and merged
-the later releases into four, pulled three more items in: tile-graph pathfinding, the draw-order sort key (B-10), and
-HUD scroll views and lists.
+Pulled into v0.4.0 at kickoff (from the later releases of the roadmap of that time): aspect-correct text with
+alignment and fit modes, management-game widgets (windows, layout, clipping, tooltips), the fixed simulation tick,
+gamepad dead zones and response curves, file dialogues through the desktop portal, the inventory demo. The
+2026-10-16 replan, which dropped the old v0.5.0 and merged the later releases into four, pulled three more items in:
+tile-graph pathfinding, the draw-order sort key (B-10), and HUD scroll views and lists; node-based editing of other
+assets went to the visual scripting of v0.6.0.
 
 ## Pull requests
 
@@ -161,9 +160,9 @@ S < 1 day of review, M a few days, L a week.
 - ![Done][done] **DEMO1 — Inventory demo (from v0.5.0), S/M.** Collectible objects, key-locked switches and an
   inventory window with slots in `engine_demo/`, in Lua only, navigable with the gamepad: the showcase of the HUD
   widgets, the shared HUD and focus navigation.
-- ![Done][done] **DEMO2 — Sample overhaul, M/L.** The isometric renderer in the sample's flow, the new HUD,
-  text and input in every scene (voxel text no longer stretched), the hub map and the platformer redrawn with versioned
-  CC0 packs (Kenney-style, licences kept beside them) and the isometric art from `tools/iso_atlas`; closes the release.
+- ![Done][done] **DEMO2 — Engine Demo overhaul, M/L.** The isometric town in the demo's flow, the new HUD,
+  text and input in every scene (voxel text no longer stretched), the hub map and the platformer redrawn with the
+  Kenney CC0 packs and the isometric art from `tools/iso_atlas`; closes the release.
 
 ### Pathfinding
 
@@ -180,9 +179,9 @@ S < 1 day of review, M a few days, L a week.
 - ![Done][done] **IN1 — Input frames and edges, M.** D10: `InputFrame` per tick, `isKeyJustPressed` /
   `JustReleased`, injection moved out of the backends so it works on GLFW too; hand-written edge code removed.
 - ![Done][done] **IN2 — Gamepad, M.** GLFW `glfwGetGamepadState`, connect / disconnect events, optional
-  project mapping file, Null backend injection, per-binding radial dead zone and response curve (from v0.10.0).
+  project mapping file, Null backend injection, per-binding radial dead zone and response curve.
 - ![Done][done] **IN3 — Action map, M.** `input_actions.yml` packed with the game, Lua `input.is_action_*`,
-  `get_action_value`, `get_action_vector`; scenarios gain an `actions:` step; engine systems and sample scripts move
+  `get_action_value`, `get_action_vector`; scenarios gain an `actions:` step; engine systems and Engine Demo scripts move
   to actions (`is_key_pressed` kept, deprecated).
 - ![Done][done] **IN4 — Action map editor, M.** Document with its own undo stack, "press a key" capture,
   default maps in the project templates, live action monitor in Play.
@@ -307,7 +306,7 @@ Checked on 2026-10-18 against `main` at 41de054d (release, Vulkan on lavapipe, `
 | Budgets in `test/bench/baseline/`                                                  | Partly met         | see below                                                                                                                                                                     |
 | Coverage not lower than v0.3.0                                                     | Met                | 86.2 % lines here, 85.8 % on CI (TeamCity Linux Clang #435) against 83.98 % at the v0.3.0 release (#390)                                                                      |
 
-Also green: every ctest of `linux-clang-debug` (53), `IncludeCheck linux-include-check`.
+Also green: every CTest of `linux-clang-debug`, `IncludeCheck linux-include-check`.
 
 Budget rows without a baseline entry: `MCP tools/call round trip` (`mcp/tools_call/entity_rename`, 64 µs locally without
 the frame wait, absent from the baseline), `hud/frame/1000_row_list` (documented in `test/bench/README.md`, absent from the
@@ -318,7 +317,7 @@ Left to the maintainer:
 
 - Manual tests left: picking on the slopes and the gizmo on the isometric axes (gamepad, file dialogues and editor
   support checked by the maintainer on 2026-10-18).
-- Three sample games moved into v0.4.0: Breakout, Sokoban and a Wolfenstein mini without combat
+- Three sample games joined v0.4.0 after this check: Breakout, Sokoban and a Wolfenstein mini without combat
   ([Sample games](sample-games.md)), each checked with a gamepad.
 - Refresh the bench baseline from five runs on hephaistos and add the missing entries (`mcp/*` included).
 - Version, date and the changelog sections of the release.

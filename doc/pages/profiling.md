@@ -2,7 +2,7 @@
 
 [TOC]
 
-How to profile Owl: the `OWL_PROFILE_*` macros, the Tracy backend behind them, GPU zones, allocations and logs.
+How to profile Owl Engine: the `OWL_PROFILE_*` macros, the Tracy backend behind them, GPU zones, allocations and logs.
 
 ## The macros are the only API
 
@@ -33,11 +33,11 @@ declares a static source location, so names must be string literals.
 
 ## Choosing the backend: `OWL_PROFILER`
 
-| Value            | What the macros do                                                       | When                         |
-|------------------|--------------------------------------------------------------------------|------------------------------|
-| `none` (default) | Nothing: compiled out                                                    | Every build, CI, releases    |
-| `tracy`          | Tracy client: CPU zones, frames, thread names, GPU zones, allocations    | Any performance work         |
-| `chrome`         | Legacy JSON files (`OwlProfile-*.json`, `chrome://tracing`), one per run | No Tracy profiler at hand    |
+| Value            | What the macros do                                                       | When                      |
+|------------------|--------------------------------------------------------------------------|---------------------------|
+| `none` (default) | Nothing: compiled out                                                    | Every build, CI, releases |
+| `tracy`          | Tracy client: CPU zones, frames, thread names, GPU zones, allocations    | Any performance work      |
+| `chrome`         | Legacy JSON files (`OwlProfile-*.json`, `chrome://tracing`), one per run | No Tracy profiler at hand |
 
 The default stays `none` in every build type: the macros cost nothing and nothing listens on the network. Tracy is
 meant for a **Release** build (the Debug build has coverage flags and measures something else). Its client is built

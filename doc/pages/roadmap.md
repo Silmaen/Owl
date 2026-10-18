@@ -2,7 +2,7 @@
 
 [TOC]
 
-**Owl is the engine that mixes rendering styles** — 2D, raycast, voxel, isometric and 3D in one game, through the
+**Owl Engine is the engine that mixes rendering styles** — 2D, raycast, voxel, isometric and 3D in one game, through the
 renderer stack. Each version below has a short goal and one line per item; the detail lives in the design pages under
 `doc/pages/design/`. A one-glance summary is in the root `ROADMAP.md`; shipped changes are in the
 [Changelog](changelog.md).
@@ -37,7 +37,7 @@ Development is heavily AI-assisted (the AI writes the code, the maintainer tests
 
 ## v0.8.0 -- Expected 2027-09-15
 
-**Goal:** Open Owl to other players, modders and the browser, then freeze the API: networked multiplayer on the
+**Goal:** Open Owl Engine to other players, modders and the browser, then freeze the API: networked multiplayer on the
 v0.7.0 deterministic simulation, mods, the Web; this release is the 1.0 release candidate
 ([networking](design/simulation-networking.md), [modding and platforms](design/modding-platforms.md)).
 
@@ -161,7 +161,7 @@ Owl Nest made ergonomic. No new gameplay feature ([details](design/foundations.m
   lavapipe / llvmpipe, headless `OwlRunner --scenario`, editor tests, two-level CI with a `PR Ready` gate, Tracy
   ([Profiling](profiling.md))
 - ![Done][done] Phase C — Vulkan first behind Owl RHI, OpenGL frozen as fallback, ABI clean-up, world per scene,
-  optional engine modules, editor command API, typed Lua bindings ([Lua API](lua-api.md)), Owl stays on GLFW
+  optional engine modules, editor command API, typed Lua bindings ([Lua API](lua-api.md)), Owl Engine stays on GLFW
 - ![Done][done] Phase D — public dependencies reduced to EnTT, hot reload of assets, shaders and scripts, autosave,
   crash recovery, session restore, project templates, documentation checked in CI
 - ![Done][done] Phase E — Owl Nest ergonomics revamp: default layout, ribbon and File screen, command palette, context

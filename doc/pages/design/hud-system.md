@@ -11,7 +11,7 @@ A HUD authored once and drawn on top of any rendering style (2D, raycast, voxel,
 resolution, edited in its own document in Owl Nest — and rich enough for a management game: several windows, toolbars,
 tooltips and construction tools at once, as in Transport Tycoon.
 
-## Today (v0.3.0)
+## Before v0.4.0
 
 - The HUD is a second `Renderer2D` layer named `ui`, in world space, and every UI entity carries `RendererTag: ui` by
   hand; in the editor it floats at world coordinates over the level.
