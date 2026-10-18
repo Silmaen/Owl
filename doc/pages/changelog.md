@@ -116,6 +116,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Repository layout: `docker_run.sh` at the root, unit tests, `bench/`, `fuzz/` and the Conan package test under `test/`, the icon and Doxygen filter scripts under `tools/`.
 - Every test fixture (scene, renderer, render references, scenario and mesh files) lives in `test/unit/test_helper/assets/<category>/`, found through `test::getTestAssetsPath()`.
 - Engine shaders live in `engine_assets/shaders/<renderer>/<name>.slang` (the `slang` folder level is gone) and engine fonts in `engine_assets/fonts/` (one flat folder, licences as `LICENSE-<family>.txt`).
 - Asset trees reorganised: the Engine Demo sorts its textures (`tilemaps`, `atlases`, `sprites`, `items`, `iso`, `wolf3d`, `ui`), sounds (`hub`, `raycast`, `platformer`, `town`, `ui`) and scripts (`hub`, `platformer`, `raycast`, `iso`, `voxel`, `ui`) by area; Kenney sheets are gathered in `textures/tilemaps/`.
