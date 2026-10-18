@@ -96,7 +96,7 @@ procedural graphs, tile tools, Lua editor scripts, and Blueprints-style visual s
 - ![Planned][planned] Tileset editor: compose the atlas from source images ([2D](design/2d-complete.md))
 - ![Planned][planned] Sound editor in Owl Nest: preview, trim, loop points, volume and pitch, random variants of one sound
 - ![To evaluate][evaluate] Hot reload of a C++ game module
-- ![Planned][planned] Sample games: a Wolfenstein mini and a Mini Minecraft ([Sample games](design/sample-games.md))
+- ![Planned][planned] Sample games: a Mini Minecraft, and combat (guards, weapons) in the Wolfenstein mini ([Sample games](design/sample-games.md))
 
 ## v0.5.0 -- Expected 2027-01-31
 
@@ -116,7 +116,7 @@ render graph, essential post-processing — with full 3D editing ([details](desi
 - ![Planned][planned] HUD minimap on a render target ([HUD system](design/hud-system.md))
 - ![Planned][planned] 3D scene editing in Owl Nest (3D gizmos, snapping, mesh preview), "look through scene camera" mode
 - ![Planned][planned] Help panel: mermaid diagrams and rendering polish
-- ![Planned][planned] Sample games: Breakout, Sokoban and a Mini Transport Tycoon, small real games ([Sample games](design/sample-games.md))
+- ![Planned][planned] Sample game: a Mini Transport Tycoon ([Sample games](design/sample-games.md))
 
 ## v0.4.0 -- Expected 2026-11-01
 
@@ -144,6 +144,9 @@ MCP server in Owl Nest ([plan](design/isometric-worlds.md)).
 - ![Done][done] Editor console and command journal, macros replayable as `.owlmacro` ([Editor scripting](design/editor-scripting.md))
 - ![Done][done] Engine Demo: inventory demo on the new HUD widgets, playable with a gamepad
 - ![Done][done] Engine Demo overhaul: the isometric town, the new HUD everywhere, hub and platformer redrawn with CC0 art
+- ![In Progress][progress] Sample game Breakout, the first project of `samples/` (moved from v0.5.0) ([Sample games](design/sample-games.md))
+- ![Planned][planned] Sample game Sokoban: level editing in Owl Nest, undo and saves (moved from v0.5.0) ([Sample games](design/sample-games.md))
+- ![Planned][planned] Sample game Wolfenstein mini: exploration with score, items, secrets and map explored, combat later (moved from v0.6.0) ([Sample games](design/sample-games.md))
 
 ## v0.3.0 -- 2026-10-11
 

@@ -300,10 +300,10 @@ Checked on 2026-10-18 against `main` at 41de054d (release, Vulkan on lavapipe, `
 | Picking on the 19 slopes, gizmo on the isometric axes                              | Not verified       | `iso/pick/256x256_hills` bench and unit tests exist; gizmo needs a manual look                                                                                                |
 | One `.owlhud` over 2D, raycast, voxel, isometric at three resolutions              | Met                | no `RendererTag: ui` in `engine_demo/`, `DemoHudLayout_test`, HUD image tests; window drag, close and stack by hand                                                           |
 | Text never stretched, text beyond U+00FF                                           | Met                | `FontUnicode_test`, `hud_text` render test                                                                                                                                    |
-| Menus and games with a gamepad only, action map edits undoable                     | Not verified       | `main_menu_focus`, `platformer_gamepad` scenarios pass; real gamepad test is manual                                                                                           |
-| Inventory demo with a gamepad, file dialogues through the portal                   | Not verified       | `portal = True` in `conanfile.py`; GNOME and KDE check is manual                                                                                                              |
+| Menus and games with a gamepad only, action map edits undoable                     | Met (manual)       | `main_menu_focus`, `platformer_gamepad` scenarios pass; real gamepad test is manual                                                                                           |
+| Inventory demo with a gamepad, file dialogues through the portal                   | Met (manual)       | `portal = True` in `conanfile.py`; GNOME and KDE check is manual                                                                                                              |
 | MCP: every command a tool, create then undo, 401 / 403 / 413, off by default, TSan | Met (TSan not run) | `McpHttp_test`, `McpDispatcher_test`; the thread sanitizer run belongs to CI                                                                                                  |
-| Editor support for every authored object                                           | Not verified       | manual pre-merge check of `ongoing-quality.md`                                                                                                                                |
+| Editor support for every authored object                                           | Met (manual)       | manual pre-merge check of `ongoing-quality.md`                                                                                                                                |
 | Budgets in `test/bench/baseline/`                                                  | Partly met         | see below                                                                                                                                                                     |
 | Coverage not lower than v0.3.0                                                     | Met                | 86.2 % lines here, 85.8 % on CI (TeamCity Linux Clang #435) against 83.98 % at the v0.3.0 release (#390)                                                                      |
 
@@ -316,8 +316,10 @@ their budgets (zoom ×4 frame 3.3 ms for 4 ms).
 
 Left to the maintainer:
 
-- Manual tests: Owl Nest GUI session (`iso_town`, HUD editor, action map editor, MCP on), gamepad on the menus and the
-  samples, file dialogues on GNOME and KDE, gizmo on the isometric axes.
+- Manual tests left: picking on the slopes and the gizmo on the isometric axes (gamepad, file dialogues and editor
+  support checked by the maintainer on 2026-10-18).
+- Three sample games moved into v0.4.0: Breakout, Sokoban and a Wolfenstein mini without combat
+  ([Sample games](sample-games.md)), each checked with a gamepad.
 - Refresh the bench baseline from five runs on hephaistos and add the missing entries (`mcp/*` included).
 - Version, date and the changelog sections of the release.
 
