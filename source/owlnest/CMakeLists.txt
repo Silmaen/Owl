@@ -49,6 +49,11 @@ if (WIN32)
     target_compile_definitions(${OWL_NEST_MCP} PUBLIC _WIN32_WINNT=0x0A00)
 endif ()
 
+# Benchmarks without the editor: the command and MCP libraries only.
+if (NOT ${PROJECT_PREFIX}_BUILD_NEST)
+    return()
+endif ()
+
 set(RUNNER_NAME ${CMAKE_PROJECT_NAME}Runner)
 add_executable(${RUNNER_NAME} ${SRCS_RUNNER} ${HDRS_RUNNER})
 set_target_properties(${RUNNER_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")

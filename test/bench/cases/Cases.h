@@ -139,4 +139,11 @@ void runSampleBenches(Runner& ioRunner);
  */
 void runSlangBenches(Runner& ioRunner);
 
+/**
+ * @brief
+ *  MCP round trips over loopback HTTP into a headless editor session, the main loop pumping the server.
+ * @param[in,out] ioRunner The runner.
+ */
+void runMcpBenches(Runner& ioRunner);
+
 }// namespace owl::bench
