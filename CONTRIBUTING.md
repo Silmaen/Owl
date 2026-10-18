@@ -1,6 +1,6 @@
-# Contributing to Owl
+# Contributing to Owl Engine
 
-Thank you for your interest in contributing to Owl!
+Thank you for your interest in contributing to Owl Engine!
 
 The contributor guide is [doc/pages/contributing.md](doc/pages/contributing.md): setup, code style, documentation,
 tests, dependencies and the checks to run before a pull request. In short:
@@ -15,5 +15,9 @@ tests, dependencies and the checks to run before a pull request. In short:
 3. Pass the Code Style gate (`./docker_run.sh poetry run python ci_action.py CodeStyle linux-clang-release`) and,
    when C++ changed, the `ClangTidy` action
 4. Open a pull request against `main` that says what changes and why
+
+Owl Engine is developed by one maintainer with Claude Code as a development tool, used under supervision: every
+change is reviewed and owned by the maintainer, and goes through the same strict CI as any contribution (unit and
+scenario tests on Linux x64/arm64 and Windows, sanitizers, clang-tidy, include checks and performance budgets).
 
 Security issues follow `SECURITY.md`. Contributions are licensed under the [MIT License](LICENSE).

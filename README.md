@@ -1,4 +1,4 @@
-# Owl
+# Owl Engine
 
 ![Version](https://img.shields.io/badge/version-0.4.0-blue)
 ![C++23](https://img.shields.io/badge/C%2B%2B-23-blue?logo=cplusplus)
@@ -7,47 +7,75 @@
 ![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/Silmaen/Owl)
 ![GitHub top language](https://img.shields.io/github/languages/top/Silmaen/Owl)
 ![GitHub Repo stars](https://img.shields.io/github/stars/Silmaen/Owl)
+[![Website](https://img.shields.io/website?url=https%3A%2F%2Fowl.argawaen.net&label=owl.argawaen.net)](https://owl.argawaen.net)
 
-![](engine_assets/logo/logo_owl.png)
+![Owl Engine logo](engine_assets/logo/logo_owl.png)
 
-Owl is a C++23 game engine built for learning game engine development. It features multiple
-graphics, input, and sound backends, an Entity-Component-System architecture, and a scene
-editor.
+**Owl Engine is the C++ engine that mixes rendering styles in one game: 2D, raycast, voxel, isometric and 3D,
+stacked under one HUD, in the editor and in game.**
 
-The full generated documentation is available online:
-[![Website](https://img.shields.io/website?url=https%3A%2F%2Fowl.argawaen.net&label=owl%20site&link=https%3A%2F%2Fowl.argawaen.net)](https://owl.argawaen.net)
+| ![2D RPG hub](doc/images/showcase/hub.png)            | ![Raycast level](doc/images/showcase/raycast.png)     |
+|-------------------------------------------------------|-------------------------------------------------------|
+| ![Voxel terrain](doc/images/showcase/voxel.png)       | ![Isometric town](doc/images/showcase/iso_town.png)   |
+| ![2D platformer](doc/images/showcase/platformer.png)  | ![Main menu](doc/images/showcase/main_menu.png)       |
 
-**Documentation pages** ([browse on GitHub](doc/pages)):
+*Scenes of the Engine Demo (`engine_demo/`), rendered headless by the game runner on Vulkan.*
 
+Documentation and downloads: [owl.argawaen.net](https://owl.argawaen.net). The name is a nod to the maintainer's
+surname, Lachouette.
+
+## Why Owl Engine
+
+- **Render-style mixing**: 2D batches, tilemaps, a raycaster, voxel terrain, isometric maps and 3D meshes are
+  renderer-stack layers that compose with each other and the HUD, in the editor viewport and in Play.
+- **Owl Nest editor**: scenes, tilemaps, node graphs, animations, HUDs and prefabs with undo/redo and hot reload,
+  plus an [MCP server](doc/pages/mcp.md) an AI agent can drive through the same editor commands as the user.
+- **Engineering rigour**: unit and scenario tests, CI on Linux x64/arm64 and Windows, sanitizers, Vulkan validation
+  clean and performance budgets checked against a baseline.
+
+## How it is built
+
+Owl Engine is developed by one maintainer with Claude Code as a development tool. Every change is reviewed and owned
+by the maintainer, and goes through a strict CI: unit and scenario tests on Linux x64/arm64 and Windows, sanitizers,
+clang-tidy, include checks and performance budgets.
+
+## Engine Demo and samples
+
+The **Engine Demo** (`engine_demo/`, see its `README.md`) is the all-in-one showcase: an RPG hub
+leading to a platformer, a raycast level, an isometric town and a voxel terrain. Small real games live as sample
+games (`samples/`, from v0.4.0).
+
+## Features
+
+- ![OpenGL](https://img.shields.io/badge/OpenGL-4.5-5586A4?logo=opengl) ![Vulkan](https://img.shields.io/badge/Vulkan-1.4%2B-AC162C?logo=vulkan)
+  **Rendering** with Slang shaders compiled to SPIR-V, precompiled at build time
+- ![EnTT](https://img.shields.io/badge/ECS-EnTT-green) **Entity-Component-System** with parent-child hierarchy,
+  prefabs and Lua 5.5 scripting
+- ![Box2D](https://img.shields.io/badge/Physics-Box2D-orange) 2D physics,
+  ![OpenAL](https://img.shields.io/badge/Audio-OpenAL-8B0000) spatial sound
+- ![Mesh](https://img.shields.io/badge/Mesh-OBJ%20%7C%20glTF%20%7C%20FBX-purple) 3D model loading, asset packs and a
+  game runner
+
+## Documentation
+
+The full generated documentation is on [owl.argawaen.net](https://owl.argawaen.net); the pages also read on GitHub
+([doc/pages](doc/pages)):
+
+- [Getting Started](doc/pages/getting_started.md) -- First run of Owl Nest and where to go next
 - [Architecture](doc/pages/architecture.md) -- Engine modules, backends, and shader pipeline
 - [Editor](doc/pages/editor.md) -- Owl Nest editor: panels, prefabs, icons, undo/redo
+- [MCP server](doc/pages/mcp.md) -- Drive Owl Nest from an AI agent
 - [Scene System](doc/pages/scene.md) -- Hierarchy, components, serialization, triggers
-- [Renderer](doc/pages/renderer.md) -- 2D renderer, shaders, textures, backgrounds
+- [Renderer](doc/pages/renderer.md) -- Renderer stack, shaders, textures, backgrounds
 - [Physics](doc/pages/physics.md) -- Box2D integration, collisions, triggers
-- [Sound System](doc/pages/sound.md) -- Sound system: components, spatial audio, and gameplay triggers
-- [Events & Input](doc/pages/event_input.md) -- Event system, keyboard and mouse
-- [Lua Scripting](doc/pages/scripting.md) -- Lua scripting: API, lifecycle, sandboxing
+- [Sound System](doc/pages/sound.md) -- Components, spatial audio, and gameplay triggers
+- [Events & Input](doc/pages/event_input.md) -- Event system, keyboard, mouse and gamepad
+- [Lua Scripting](doc/pages/scripting.md) -- API, lifecycle, sandboxing
 - [Lua API reference](doc/pages/lua-api.md) -- Every Lua binding, generated from the binding registry
 - [Building](doc/pages/building.md) -- Prerequisites, presets, testing, and CMake options
 - [Roadmap](doc/pages/roadmap.md) -- Planned and completed features by version (one-glance summary: `ROADMAP.md`)
 - [Changelog](doc/pages/changelog.md) -- Detailed version history (one line per release: `CHANGELOG.md`)
 - [Contributing](doc/pages/contributing.md) -- How to contribute (code style, checks, PRs, issues)
-
-## Features
-
-- ![OpenGL](https://img.shields.io/badge/OpenGL-4.5-5586A4?logo=opengl) ![Vulkan](https://img.shields.io/badge/Vulkan-1.4%2B-AC162C?logo=vulkan)
-  **Rendering** with Slang shaders compiled to SPIR-V
-- **Mixed render styles** in one game: 2D batches, tilemaps, raycaster, voxel terrain and 3D meshes stacked as
-  layers under the HUD
-- ![EnTT](https://img.shields.io/badge/ECS-EnTT-green) **Entity-Component-System** architecture with
-  parent-child hierarchy, prefabs and Lua scripting
-- ![Box2D](https://img.shields.io/badge/Physics-Box2D-orange) 2D physics simulation
-- ![OpenAL](https://img.shields.io/badge/Audio-OpenAL-8B0000) Sound playback backend
-- ![ImGui](https://img.shields.io/badge/Editor-ImGui-blue) Owl Nest editor (scenes, tilemaps, node graphs,
-  animations) with hot reload and a game runner
-- ![Mesh](https://img.shields.io/badge/Mesh-OBJ%20%7C%20glTF%20%7C%20FBX-purple) 3D model loading
-- ![Linux](https://img.shields.io/badge/Linux-x64%20%7C%20arm64-FCC624?logo=linux&logoColor=black) ![Windows](https://img.shields.io/badge/Windows-x64-0078D4?logo=windows&logoColor=white)
-  Cross-platform
 
 ## Supported Platforms
 

@@ -117,6 +117,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- README showcase: the product is named Owl Engine, with its pitch, Engine Demo screenshots (`doc/images/showcase/`), a GitHub social preview and how it is built with Claude Code under the maintainer's review.
 - Repository layout: `docker_run.sh` at the root, unit tests, `bench/`, `fuzz/` and the Conan package test under `test/`, the icon and Doxygen filter scripts under `tools/`.
 - Every test fixture (scene, renderer, render references, scenario and mesh files) lives in `test/unit/test_helper/assets/<category>/`, found through `test::getTestAssetsPath()`.
 - Engine shaders live in `engine_assets/shaders/<renderer>/<name>.slang` (the `slang` folder level is gone) and engine fonts in `engine_assets/fonts/` (one flat folder, licences as `LICENSE-<family>.txt`).
