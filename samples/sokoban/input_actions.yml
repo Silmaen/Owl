@@ -1,0 +1,50 @@
+FormatVersion: 1
+# Actions of Sokoban, on top of the built-in ones (the `ui_*` actions drive the menus). One step per press of a
+# `step_*` action; `step_stick` reads the left stick as four directions (scripts/game/sokoban.lua).
+actions:
+  - name: step_left
+    type: button
+    bindings:
+      - {key: A}
+      - {key: Left}
+      - {gamepad_button: DpadLeft}
+  - name: step_right
+    type: button
+    bindings:
+      - {key: D}
+      - {key: Right}
+      - {gamepad_button: DpadRight}
+  - name: step_up
+    type: button
+    bindings:
+      - {key: W}
+      - {key: Up}
+      - {gamepad_button: DpadUp}
+  - name: step_down
+    type: button
+    bindings:
+      - {key: S}
+      - {key: Down}
+      - {gamepad_button: DpadDown}
+  - name: step_stick
+    type: vector
+    bindings:
+      - {gamepad_stick: left}
+  - name: undo
+    type: button
+    bindings:
+      - {key: Z}
+      - {key: U}
+      - {key: Backspace}
+      - {gamepad_button: B}
+  - name: restart
+    type: button
+    bindings:
+      - {key: R}
+      - {gamepad_button: Y}
+  - name: pause
+    type: button
+    bindings:
+      - {key: Escape}
+      - {key: P}
+      - {gamepad_button: Start}

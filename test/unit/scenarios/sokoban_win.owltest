@@ -1,0 +1,14 @@
+# Sokoban: level 1 solved with two pushes: the level is marked done, then the next level opens by itself.
+scene: ../../../samples/sokoban/scenes/level_01.owl
+steps:
+  - frames: 30
+  - expect: {gamestate: sokoban_won, equals: false}
+  - input: {key: Right, frames: 2}
+  - frames: 12
+  - input: {key: Right, frames: 2}
+  - frames: 12
+  - expect: {gamestate: sokoban_won, equals: true}
+  - expect: {gamestate: sokoban_done_01, equals: true}
+  - frames: 200
+  - expect: {gamestate: sokoban_level, equals: 2}
+  - expect: {gamestate: sokoban_moves, equals: 0}

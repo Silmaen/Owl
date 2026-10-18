@@ -1,0 +1,34 @@
+# Sokoban: a wall stops the player (no step counted), and so does a crate with a wall behind it.
+scene: ../../../samples/sokoban/scenes/level_02.owl
+steps:
+  - frames: 30
+  - expect: {gamestate: sokoban_player_x, equals: 1}
+  - expect: {gamestate: sokoban_player_y, equals: 3}
+  - input: {key: Left, frames: 2}
+  - frames: 12
+  - expect: {gamestate: sokoban_moves, equals: 0}
+  - expect: {gamestate: sokoban_player_x, equals: 1}
+  - input: {key: Up, frames: 2}
+  - frames: 12
+  - input: {key: Up, frames: 2}
+  - frames: 12
+  - expect: {gamestate: sokoban_player_y, equals: 1}
+  - input: {key: Up, frames: 2}
+  - frames: 12
+  - expect: {gamestate: sokoban_moves, equals: 2}
+  - expect: {gamestate: sokoban_player_y, equals: 1}
+  - input: {key: Down, frames: 2}
+  - frames: 12
+  - input: {key: Down, frames: 2}
+  - frames: 12
+  - input: {key: Right, frames: 2}
+  - frames: 12
+  - input: {key: Up, frames: 2}
+  - frames: 12
+  - expect: {gamestate: sokoban_pushes, equals: 1}
+  - expect: {gamestate: sokoban_player_y, equals: 2}
+  - input: {key: Up, frames: 2}
+  - frames: 12
+  - expect: {gamestate: sokoban_pushes, equals: 1}
+  - expect: {gamestate: sokoban_moves, equals: 6}
+  - expect: {gamestate: sokoban_player_y, equals: 2}

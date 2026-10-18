@@ -1,0 +1,20 @@
+# Sokoban: on level 1 the player stands left of a crate, three cells from its goal; each Right pushes it one cell,
+# the moves and pushes count, and the second push brings the crate onto its goal.
+scene: ../../../samples/sokoban/scenes/level_01.owl
+steps:
+  - frames: 30
+  - expect: {gamestate: sokoban_boxes, equals: 1}
+  - expect: {gamestate: sokoban_goals, equals: 1}
+  - expect: {gamestate: sokoban_on_goal, equals: 0}
+  - expect: {gamestate: sokoban_player_x, equals: 2}
+  - input: {key: Right, frames: 2}
+  - frames: 12
+  - expect: {gamestate: sokoban_moves, equals: 1}
+  - expect: {gamestate: sokoban_pushes, equals: 1}
+  - expect: {gamestate: sokoban_player_x, equals: 3}
+  - expect: {gamestate: sokoban_on_goal, equals: 0}
+  - expect: {entity: Player, translation.x: {equals: 0.0, tolerance: 0.01}}
+  - input: {key: Right, frames: 2}
+  - frames: 12
+  - expect: {gamestate: sokoban_pushes, equals: 2}
+  - expect: {gamestate: sokoban_on_goal, equals: 1}

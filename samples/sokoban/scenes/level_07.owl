@@ -1,0 +1,126 @@
+Scene: level_07
+FormatVersion: 5
+Hud: huds/level.owlhud
+Entities:
+  - Entity: 7200000000007000001
+    Tag:
+      tag: MainCamera
+    Transform:
+      translation: [0, 0, 5]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    Camera:
+      camera:
+        projectionType: Orthographic
+        perspectiveFOV: 0.7853982
+        perspectiveNear: 0.01
+        perspectiveFar: 1000
+        orthographicSize: 11
+        orthographicNear: -1
+        orthographicFar: 10
+      primary: true
+      fixedAspectRatio: false
+  - Entity: 7200000000007000002
+    Tag:
+      tag: Background
+    Transform:
+      translation: [0, 0, -1]
+      rotation: [0, 0, 0]
+      scale: [26.4, 26.4, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    BackgroundTexture:
+      mode: 0
+      type: 0
+      color: [0.07, 0.05, 0.06, 1]
+      topColor: [0.8, 0.9, 1, 1]
+  - Entity: 7200000000007000003
+    Tag:
+      tag: Level
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    Tilemap:
+      tilemapPath: tilemaps/level_07.owltilemap
+  - Entity: 7200000000007000004
+    Tag:
+      tag: Player
+    Transform:
+      translation: [-3.5, -0.5, 0.1]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/sokoban_tiles.png
+      columns: 8
+      rows: 2
+      firstFrame: 8
+      lastFrame: 8
+      frameDuration: 0.1
+      loop: false
+  - Entity: 7200000000007000005
+    Tag:
+      tag: MovingBox
+    Transform:
+      translation: [0, 0, 0.05]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/sokoban_tiles.png
+      columns: 8
+      rows: 2
+      firstFrame: 5
+      lastFrame: 5
+      frameDuration: 0.1
+      loop: false
+  - Entity: 7200000000007000006
+    Tag:
+      tag: Music
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SoundSource:
+      soundAsset: sounds/music/loop.wav
+      category: Music
+      volume: 0.3
+      pitch: 1
+      loop: true
+      spatial: false
+      playOnStart: true
+      maxDistance: 50
+      rolloff: 1
+  - Entity: 7200000000007000007
+    Tag:
+      tag: Game
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    LuaScript:
+      scriptPath: scripts/game/sokoban.lua
+      properties:
+        - name: level
+          type: int
+          value: 7

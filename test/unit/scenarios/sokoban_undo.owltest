@@ -1,0 +1,30 @@
+# Sokoban: Z takes back a push (the crate, the player and both counters go back), R takes back every step; the crate
+# is where it started, since two pushes still bring it onto its goal.
+scene: ../../../samples/sokoban/scenes/level_01.owl
+steps:
+  - frames: 30
+  - input: {key: Right, frames: 2}
+  - frames: 12
+  - expect: {gamestate: sokoban_pushes, equals: 1}
+  - input: {key: Z, frames: 2}
+  - frames: 4
+  - expect: {gamestate: sokoban_moves, equals: 0}
+  - expect: {gamestate: sokoban_pushes, equals: 0}
+  - expect: {gamestate: sokoban_player_x, equals: 2}
+  - input: {key: Up, frames: 2}
+  - frames: 12
+  - input: {key: Right, frames: 2}
+  - frames: 12
+  - input: {key: Down, frames: 2}
+  - frames: 12
+  - expect: {gamestate: sokoban_moves, equals: 3}
+  - input: {key: R, frames: 2}
+  - frames: 4
+  - expect: {gamestate: sokoban_moves, equals: 0}
+  - expect: {gamestate: sokoban_player_x, equals: 2}
+  - expect: {gamestate: sokoban_player_y, equals: 2}
+  - input: {key: Right, frames: 2}
+  - frames: 12
+  - input: {key: Right, frames: 2}
+  - frames: 12
+  - expect: {gamestate: sokoban_on_goal, equals: 1}
