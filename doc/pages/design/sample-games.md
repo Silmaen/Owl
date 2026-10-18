@@ -40,10 +40,10 @@ argument. The two v1.0 showcase games (one 2D, one 3D) are picked from this list
 ## v0.4.0 games
 
 Feasibility checked against `main` on 2026-10-18 (the bindings of `LuaBindings.cpp`, the components of
-`source/owl/public/scene/component/`, the Engine Demo). All five can be made with the v0.4.0 engine: Breakout,
-Sokoban and Mini Transport Tycoon need no engine change, Wolfenstein mini needs art, Mini Minecraft two small engine
-fixes (see [Gaps](#sample-games-gaps)). Breakout, Sokoban and a Wolfenstein mini without
-combat ship with v0.4.0; Mini Transport Tycoon stays in v0.5.0, Mini Minecraft in v0.6.0.
+`source/owl/public/scene/component/`, the Engine Demo). All five can be made with the v0.4.0 engine: Breakout and
+Mini Transport Tycoon need no engine change, Sokoban one Lua binding (`isometric.get_size`), Wolfenstein mini needs
+art, Mini Minecraft two small engine fixes (see [Gaps](#sample-games-gaps)). Breakout, Sokoban and a Wolfenstein mini
+without combat ship with v0.4.0; Mini Transport Tycoon stays in v0.5.0, Mini Minecraft in v0.6.0.
 
 Common to every game:
 
@@ -87,27 +87,34 @@ Done in v0.4.0: `samples/breakout/` (how to play: its `README.md`).
 
 ### Sokoban
 
-| Item     | Plan                                                                                                                   |
-|----------|------------------------------------------------------------------------------------------------------------------------|
-| Play     | 10 levels; push the boxes onto the goals; undo, restart, move counter                                                  |
-| Win/lose | Every box on a goal; no lose, the best move count of each level is kept                                                |
-| Controls | `move` (keys, D-pad, stick: one cell per press); Z, Backspace or pad B undo; R or pad Y restart                        |
-| Scenes   | `title`, `level_select` (`UiList` with done marks), `level_01` to `level_10`, `settings`, `victory`                    |
-| Tilemap  | One `.owltilemap` per level: layer 0 floor and walls, 1 goals, 2 boxes (moved with `isometric.set_cell`)               |
-| Entities | Player (`AnimatedSpriteRenderer`, frames through `isometric.set_sprite_frame`), camera, music `SoundSource`            |
-| Lua      | `sokoban.lua` (rules on `isometric.get_cell`, undo stack in a Lua table, win check), `level_select.lua`                |
-| HUD      | `huds/level.owlhud`: level, moves, best, undo and restart hints                                                        |
-| Art      | Tiny Dungeon (`tiny_dungeon.png`: walls, floor, hero), a Pixel Platformer crate; the Kenney Sokoban pack if downloaded |
-| Saves    | Slot 1 written when a level is done (`sokoban_done_NN`, `sokoban_best_NN`); Continue on the title loads it             |
+| Item     | Done                                                                                                          |
+|----------|---------------------------------------------------------------------------------------------------------------|
+| Play     | 10 levels of 1 to 5 crates (2 to 38 pushes); push the crates onto the goals; undo, restart, moves and pushes  |
+| Win/lose | Every crate on a goal; no lose; each level done and its fewest moves are kept                                 |
+| Controls | `step_*` (WASD, arrows, D-pad) one cell per press, repeated when held; the left stick as four directions      |
+|          | Z, U, Backspace or pad B undo; R or pad Y restart; Esc, P or Start pause; the mouse in menus and HUD buttons  |
+| Scenes   | `title`, `level_select` (`UiList` with done marks), `level_01` to `level_10`, `settings`, `victory`           |
+| Tilemap  | One `.owltilemap` per level: layer 0 floor and walls, 1 goals, 2 crates and the hero tile of the start        |
+| Entities | `Level` (`Tilemap`), player (`AnimatedSpriteRenderer`, `isometric.set_sprite_frame`), `MovingBox`, music      |
+| Lua      | `sokoban.lua` (rules on `isometric.get_cell`, undo stack in a Lua table, win), `level_select.lua`, menus      |
+| HUD      | `huds/level.owlhud`: level, moves and pushes, best, hints, Undo / Restart / Menu buttons, pause window        |
+| Art      | `sokoban_tiles.png`: Tiny Dungeon floor, wall and hero (walk and push frames), home-made goal mark and crates |
+| Saves    | No slot: `sokoban_done_NN` and `sokoban_best_NN` settings saved at once; Continue starts the first level left |
 
-- Level editing in Owl Nest: paint the three layers in the tilemap editor, duplicate a level scene and point its
-  `Tilemap` at the new file; `sokoban.lua` checks at start that boxes and goals match.
-- Reuse: `scripts/hub/world_player.lua` (walk cycle, mirrored sprite), `scripts/hub/hub_water.lua` (`get_cell` /
-  `set_cell` on a 2D tilemap), `scripts/raycast/inventory.lua` (`UiList` with gamepad focus).
-- Gaps: G6 (tile bindings named `isometric`), G14 (one scene per level).
-- Scenarios: `sokoban_push` (moves, `sokoban_on_goal` grows), `sokoban_undo` (undo puts back the box and the move
-  count), `sokoban_wall` (no move into a wall), `sokoban_win` (level 1 solved, `sokoban_done_01` set).
-- Size: **S**, about 5 days with the levels.
+- Level editing in Owl Nest: paint the three layers in the tilemap editor (the hero tile of layer 2 places the player);
+  for a new level, duplicate a level scene, point its `Level` at a new tilemap and add the scene to `LEVEL_SCENES` of
+  `sokoban.lua`, `title.lua` and `level_select.lua`. `sokoban.lua` warns when crates and goals do not match.
+- Generators in `tools/samples/sokoban/`: `generate_assets.py` (tile sheet, sounds), `generate_levels.py` (tileset,
+  tilemaps, level scenes, HUD, from the texts of `levels.py`), `generate_menus.py`; `tools/tests/test_sokoban_levels.py`
+  replays a stored solution of each level text.
+- Reuse: the walk frames of `tools/demo/generate_kenney_atlases.py`, `scripts/hub/hub_water.lua` (`get_cell` /
+  `set_cell` on a 2D tilemap), the journal list of `scripts/raycast/inventory.lua`, the Engine Demo menus.
+- Gaps: G6 (tile bindings named `isometric`), G14 (one scene per level), G9 (master volume only). Lua had no way to
+  read the size of a tilemap: `isometric.get_size` was added for it (width, height, cell size).
+- Scenarios: `sokoban_push` (`sokoban_on_goal` grows), `sokoban_undo` (undo and restart put back crate and counters),
+  `sokoban_wall` (no step into a wall nor a blocked crate), `sokoban_win` (level 1 solved, `sokoban_done_01` set, level 2
+  opens), `sokoban_gamepad` (D-pad, B, stick dead zone), `sokoban_level_select` (`ui_down`, `ui_accept`).
+- Size: **S**, done.
 
 ### Mini Transport Tycoon
 
