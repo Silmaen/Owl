@@ -6,11 +6,11 @@ Design page of the sample games, summarised in the [Roadmap](../roadmap.md).
 
 ## Goal
 
-Owl ships two kinds of example content:
+Owl Engine ships two kinds of example content:
 
 - **Engine Demo** (today's `engine_demo/`): an all-in-one showcase of every engine feature, not a game in itself.
 - **Sample games**: small but real games, each one built on only what it needs, most of them mini remakes of known
-  games. They prove that Owl makes games, give a newcomer a project of a readable size to start from, and feed the
+  games. They prove that Owl Engine makes games, give a newcomer a project of a readable size to start from, and feed the
   two showcase games of v1.0.
 
 ## Rules
@@ -34,16 +34,17 @@ Owl ships two kinds of example content:
 | Marble or mini kart   | Marble Madness / Kart | 3D, Jolt physics, shadows                       | v0.7.0        |
 | Networked Bomberman   | Bomberman             | tilemap, deterministic simulation, multiplayer  | v0.8.0        |
 
-Breakout or Sokoban comes first (simple, quick to finish), then Mini Transport Tycoon, which carries Owl's main
-argument. The two v1.0 showcase games (one 2D, one 3D) are picked from this list.
+Breakout, Wolfenstein mini and Sokoban shipped in v0.4.0; Mini Transport Tycoon, which carries Owl Engine's main
+argument, comes next ([Order](#sample-games-order)). The two v1.0 showcase games (one 2D, one 3D) are picked from this
+list.
 
 ## v0.4.0 games
 
-Feasibility checked against `main` on 2026-10-18 (the bindings of `LuaBindings.cpp`, the components of
-`source/owl/public/scene/component/`, the Engine Demo). All five can be made with the v0.4.0 engine: Breakout and
-Mini Transport Tycoon need no engine change, Sokoban one Lua binding (`isometric.get_size`), Wolfenstein mini needs
-art, Mini Minecraft two small engine fixes (see [Gaps](#sample-games-gaps)). Breakout, Sokoban and a Wolfenstein mini
-without combat ship with v0.4.0; Mini Transport Tycoon stays in v0.5.0, Mini Minecraft in v0.6.0.
+Feasibility checked against `main` on 2026-10-18 (Lua bindings, components, Engine Demo): all five games fit the
+v0.4.0 engine. Breakout and Mini Transport Tycoon need no engine change, Sokoban one Lua binding
+(`isometric.get_size`, added), Wolfenstein mini art, Mini Minecraft two small engine fixes ([Gaps](#sample-games-gaps)).
+Breakout, Sokoban and a Wolfenstein mini without combat shipped with v0.4.0; Mini Transport Tycoon is planned in
+v0.5.0, Mini Minecraft in v0.6.0.
 
 Common to every game:
 
@@ -77,6 +78,7 @@ Done in v0.4.0: `samples/breakout/` (how to play: its `README.md`).
 | HUD      | `huds/play.owlhud`: score, level, lives, a message line, the pause window (Resume, Restart, Quit, controls)      |
 | Art      | Home-made bricks, paddle, ball, capsules, walls and backdrop, chip sounds and music (`tools/samples/breakout/`)  |
 | Saves    | No slot; best score and levels cleared with their best through `settings.save` (`breakout_best`, `_done_N`)      |
+
 - Reuse: the hit flash of `scripts/platformer/flicker.lua`; the menus started as copies of the Engine Demo ones and
   now have a look of their own (feedback of the first playthrough). A broken brick is destroyed at once (a popping brick
   would keep its body), its burst shown from a pool instead of the pop of `coin.lua`.
@@ -181,7 +183,8 @@ and the combat come in a later release, once their art exists.
   `scripts/raycast/raycast_exit.lua`, `tilesets/raycast_w3d_walls.owltileset`, `tilesets/minimap.owltileset`,
   `sounds/raycast/`; the menus, first copied from the Engine Demo, have a look of their own since the first
   playthrough, and the ratios moved from the play HUD to the tally.
-- Gaps: G9, G17 (the `next_scene` property of `exit.lua` names the next floor, G16 fixed); later, with combat: G11 (art), G10 (line of sight), G7 (weapon view frames), G1 (dropped ammo).
+- Gaps: G9, G17; G16 fixed (the `next_scene` property of `exit.lua` names the next floor). Later, with combat: G11
+  (art), G10 (line of sight), G7 (weapon view frames), G1 (dropped ammo).
 - Scenarios: `wolf_pickup` (walk onto a cross, `wolf_items` and `wolf_score` rise), `wolf_locked_door` (closed without
   the key, opens with it), `wolf_secret` (push a secret wall, `wolf_secrets` equals 1), `wolf_explore` (`wolf_seen`
   and `wolf_explored` rise while turning, Tab enlarges the map), `wolf_exit` (the tally scene opens, counts up,
@@ -211,21 +214,21 @@ and the combat come in a later release, once their art exists.
   (`secondary`, back to 0), `minecraft_hotbar` (bumpers change `minecraft_slot`), `minecraft_win`.
 - Size: **M**, about 1.5 weeks, after G2 and G13 (about 4 days of engine work).
 
-### Order
+### Order {#sample-games-order}
 
 | Step | Game                  | Release | Why                                                                                                |
 |------|-----------------------|---------|----------------------------------------------------------------------------------------------------|
 | 1    | Breakout              | v0.4.0  | Smallest, no blocking gap; sets up `samples/`, the scenarios and the export test for the others    |
 | 2    | Wolfenstein mini      | v0.4.0  | Exploration without combat (score, items, secrets, map explored); combat once its art exists (G11) |
 | 3    | Sokoban               | v0.4.0  | No blocking gap; proves level editing in Owl Nest, undo and saves                                  |
-| 4    | Mini Transport Tycoon | v0.5.0  | Owl's main argument; cleaner once G1, G3 and G8 are fixed                                          |
+| 4    | Mini Transport Tycoon | v0.5.0  | Owl Engine's main argument; cleaner once G1, G3 and G8 are fixed                                   |
 | 5    | Mini Minecraft        | v0.6.0  | After a small engine PR for G2 and G13                                                             |
 
 ## Layout
 
 ```
 samples/
-  breakout/  sokoban/  tycoon/  wolfenstein/  minecraft/
+  breakout/  sokoban/  wolfenstein/       (tycoon/ and minecraft/ to come)
     owl_project.yml  game_settings.yml  input_actions.yml  input/gamecontrollerdb.txt
     scenes/  huds/  prefabs/  tilesets/  tilemaps/  scripts/  textures/  sounds/
 tools/samples/<game>/                 art and sound generators (neither exported nor installed)
@@ -251,22 +254,22 @@ test/unit/scenarios/*.owltest         scenario tests
 
 ## Gaps {#sample-games-gaps}
 
-| Id  | Gap                                                                                                                 | Size | Games                                    | Blocking?                                                        |
-|-----|---------------------------------------------------------------------------------------------------------------------|------|------------------------------------------|------------------------------------------------------------------|
-| G1  | No Lua call to spawn a prefab or add a component (`scene.create_entity` makes an empty entity)                      | M    | Breakout, Tycoon, Wolfenstein, Minecraft | No: pools of authored entities hidden with `ui.set_visible`      |
-| G2  | No Lua `voxel` table: get and set a block, aimed block, `placeBlock`, break and place events                        | M    | Minecraft                                | **Yes**: no hotbar, no inventory                                 |
-| G3  | A save keeps the `tilemapPath` of a tilemap, not its cells: runtime `set_cell` edits are lost on load               | M    | Tycoon                                   | No: replay the edits from a `gamestate` string                   |
-| G4  | A procedural `VoxelWorld` does not serialise its chunks: player edits are lost on save                              | M    | Minecraft                                | No: a finite, non-procedural world                               |
-| G5  | No screen-to-world conversion nor viewport size in Lua for a 2D camera                                              | S    | Breakout                                 | No: the paddle follows the mouse delta                           |
-| G6  | Tile and sprite-frame bindings live in `isometric` although they work on any tilemap                                | S    | Sokoban, Wolfenstein                     | No: naming only (a `tilemap` alias)                              |
-| G7  | No `ui.set_image` (texture or frame of a `UiImage`) in Lua                                                          | S    | Wolfenstein, Minecraft, Tycoon           | No: several `UiImage` toggled visible                            |
-| G8  | No pause nor time scale in Lua (scene clock, physics); a shown `UiWindow` holds world interactions back             | S    | Tycoon, all (pause)                      | No: Lua scales its own delta, bodies stopped by hand             |
-| G9  | No music and effects mixing: `SoundSource` loops ignore `volume_music` and have no Lua volume                       | S    | All                                      | No: master volume only                                           |
-| G10 | No line-of-sight or ray query in Lua                                                                                | S    | Wolfenstein                              | No: grid DDA in Lua, as in `raycast_level.lua`                   |
-| G11 | No guard nor weapon-view sprites                                                                                    | M    | Wolfenstein                              | No: exploration first, combat later                              |
-| G12 | Owl Nest finds `engine_demo` only, and only `engine_demo/` is installed (fixed in v0.4.0: `samples/`, File screen)  | S    | All                                      | No: File > Open project                                          |
-| G13 | `VoxelPlayer` edits fire only with a captured cursor: a gamepad player and headless scenarios cannot break or place | S    | Minecraft                                | **Yes**: gamepad rule and CI scenario                            |
-| G14 | Lua cannot switch the tilemap asset of an entity: one scene per level                                               | S    | Sokoban, Breakout                        | No: duplicate the level scene                                    |
-| G15 | No Lua pick of the entity under the mouse                                                                           | S    | Tycoon                                   | No: compare `isometric.pick_cell` with the vehicle cells         |
-| G16 | The export follows scene paths quoted in scripts, not those in script properties (fixed in v0.4.0: both followed)   | S    | Breakout, Wolfenstein                    | No: list the scenes in the script                                |
-| G17 | A save keeps neither a slid `RaycastPushWall` nor an open door: after a load they are back in place                 | S    | Wolfenstein                              | No: pushed again, a secret counts once                           |
+| Id  | Gap                                                                                                                 | Size | Games                                    | Blocking?                                                   |
+|-----|---------------------------------------------------------------------------------------------------------------------|------|------------------------------------------|-------------------------------------------------------------|
+| G1  | No Lua call to spawn a prefab or add a component (`scene.create_entity` makes an empty entity)                      | M    | Breakout, Tycoon, Wolfenstein, Minecraft | No: pools of authored entities hidden with `ui.set_visible` |
+| G2  | No Lua `voxel` table: get and set a block, aimed block, `placeBlock`, break and place events                        | M    | Minecraft                                | **Yes**: no hotbar, no inventory                            |
+| G3  | A save keeps the `tilemapPath` of a tilemap, not its cells: runtime `set_cell` edits are lost on load               | M    | Tycoon                                   | No: replay the edits from a `gamestate` string              |
+| G4  | A procedural `VoxelWorld` does not serialise its chunks: player edits are lost on save                              | M    | Minecraft                                | No: a finite, non-procedural world                          |
+| G5  | No screen-to-world conversion nor viewport size in Lua for a 2D camera                                              | S    | Breakout                                 | No: the paddle follows the mouse delta                      |
+| G6  | Tile and sprite-frame bindings live in `isometric` although they work on any tilemap                                | S    | Sokoban, Wolfenstein                     | No: naming only (a `tilemap` alias)                         |
+| G7  | No `ui.set_image` (texture or frame of a `UiImage`) in Lua                                                          | S    | Wolfenstein, Minecraft, Tycoon           | No: several `UiImage` toggled visible                       |
+| G8  | No pause nor time scale in Lua (scene clock, physics); a shown `UiWindow` holds world interactions back             | S    | Tycoon, all (pause)                      | No: Lua scales its own delta, bodies stopped by hand        |
+| G9  | No music and effects mixing: `SoundSource` loops ignore `volume_music` and have no Lua volume                       | S    | All                                      | No: master volume only                                      |
+| G10 | No line-of-sight or ray query in Lua                                                                                | S    | Wolfenstein                              | No: grid DDA in Lua, as in `raycast_level.lua`              |
+| G11 | No guard nor weapon-view sprites                                                                                    | M    | Wolfenstein                              | No: exploration first, combat later                         |
+| G12 | Owl Nest finds `engine_demo` only, and only `engine_demo/` is installed (fixed in v0.4.0: `samples/`, File screen)  | S    | All                                      | No: File > Open project                                     |
+| G13 | `VoxelPlayer` edits fire only with a captured cursor: a gamepad player and headless scenarios cannot break or place | S    | Minecraft                                | **Yes**: gamepad rule and CI scenario                       |
+| G14 | Lua cannot switch the tilemap asset of an entity: one scene per level                                               | S    | Sokoban, Breakout                        | No: duplicate the level scene                               |
+| G15 | No Lua pick of the entity under the mouse                                                                           | S    | Tycoon                                   | No: compare `isometric.pick_cell` with the vehicle cells    |
+| G16 | The export follows scene paths quoted in scripts, not those in script properties (fixed in v0.4.0: both followed)   | S    | Breakout, Wolfenstein                    | No: list the scenes in the script                           |
+| G17 | A save keeps neither a slid `RaycastPushWall` nor an open door: after a load they are back in place                 | S    | Wolfenstein                              | No: pushed again, a secret counts once                      |

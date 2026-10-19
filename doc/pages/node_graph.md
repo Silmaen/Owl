@@ -2,7 +2,7 @@
 
 [TOC]
 
-This page documents Owl's generic node-graph widget and the editor subsystems built on top of it. The framework is
+This page documents Owl Engine's generic node-graph widget and the editor subsystems built on top of it. The framework is
 designed to be **reusable**: the Scene Flow view is the first consumer; future releases reuse the same canvas for
 animation graphs, behaviour trees and dialogue trees.
 

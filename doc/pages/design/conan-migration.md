@@ -7,7 +7,7 @@ Design page for the v0.3.0 dependency work, summarised in the [Roadmap](../roadm
 
 ## Goal
 
-Anyone can build Owl from public infrastructure. DepManager (packages served by the maintainer's server) is replaced by
+Anyone can build Owl Engine from public infrastructure. DepManager (packages served by the maintainer's server) is replaced by
 **Conan 2**, preferring **ConanCenter** recipes; in-house recipes are avoided and listed honestly when they remain.
 DepManager and `owl_engine.py` are removed in phase 0; consumers use the packaged archive (CPack) until v1.0.0
 publishes the engine as a Conan package (`conan create .` already works, see below).
@@ -78,12 +78,12 @@ refuses a `cmake_minimum_required` below 3.5, still declared by a few upstream p
 
 ### Sanitizers: dependencies not instrumented
 
-Decision: the dependencies are **not** built with the sanitizers; only Owl's code is (`Owl_Base` flags).
+Decision: the dependencies are **not** built with the sanitizers; only Owl Engine's code is (`Owl_Base` flags).
 
-- ASan, UBSan and LSan work with uninstrumented libraries: allocation interception covers every heap, and Owl's own
+- ASan, UBSan and LSan work with uninstrumented libraries: allocation interception covers every heap, and Owl Engine's own
   code, where the bugs are looked for, is instrumented. This is what the DepManager presets already did.
 - Instrumented dependencies would need a `compiler.sanitizer` settings extension and one full binary set per sanitizer
-  (four times about 50 packages from source) for findings inside third-party code, outside Owl's scope.
+  (four times about 50 packages from source) for findings inside third-party code, outside Owl Engine's scope.
 - ThreadSanitizer is the exception to keep in mind: races inside an uninstrumented library (OpenAL's mixer thread,
   spdlog) go unseen and may show as false positives at the boundary; a suppression file is the remedy if it happens.
   MemorySanitizer (not a preset) would require instrumented dependencies and libc++: out of scope.
@@ -179,7 +179,7 @@ symbols). With Conan every dependency is built by the agent's own compiler.
 
 ## Inventory
 
-Checked on 2026-10-09 with `conan search -r conancenter` (Conan 2.33). "Owl (Conan)" is the version Owl uses;
+Checked on 2026-10-09 with `conan search -r conancenter` (Conan 2.33). "Owl (Conan)" is the version Owl Engine uses;
 "DepManager" the one `depmanager.yml` pinned when it was removed.
 
 | Dependency            | DepManager     | Owl (Conan)     | Source                | Linkage | Note                                                                           |
@@ -253,22 +253,22 @@ refreshed (`--update=<name>`) by `cmake/Conan.cmake`. Each downloads the
 public upstream archive (sha256 pinned) and adds at most a few-line `CMakeLists.txt`, so each can be proposed to
 ConanCenter as is.
 
-| Recipe                               | Why it is local                                                                                                 |
-|--------------------------------------|-----------------------------------------------------------------------------------------------------------------|
-| `slang` 2026.19                      | Absent; building it pulls LLVM-sized dependencies, so the recipe repackages the upstream release binaries       |
-| `ufbx` 0.23.1                        | Absent; one `.c` file, upstream ships no build system                                                           |
-| `imgui-color-text-edit` 1.92.9       | Absent (goossens fork); the upstream release tag                                                                |
-| `imguizmo` 1.10                      | ConanCenter's only recent version (cci.20231114) calls `BeginChildFrame`, removed in imgui 1.92; the recipe also puts the thickness before the flags in the AddRect / AddPolyline calls of ImCurveEdit, GraphEditor and ImGradient (imgui 1.92.8 order) |
-| `nativefiledialog-extended` 1.4.1    | Absent; the GitHub archive lacks the `wayland-protocols` submodule, fetched as a second source                  |
-| `msdf-atlas-gen` 1.4                 | ConanCenter's recipe packages the command-line tool only; this one builds the library on ConanCenter's msdfgen  |
-| `libmp3lame` 3.100                   | ConanCenter's recipe, except MinGW Clang builds with autotools: upstream takes every Windows Clang for clang-cl |
-| `entt` 4.0.0                         | ConanCenter stops at 3.16.0: its recipe, requiring C++20 from 4.x                                               |
-| `taskflow` 4.1.0                     | ConanCenter stops at 4.0.0: its recipe, unchanged                                                               |
-| `openal-soft` 1.25.2                 | ConanCenter stops at 1.24.3: its recipe on libalsa 1.2.16.1, `-Werror=function-effects` off (libstdc++)         |
-| `msdfgen` 1.13                       | ConanCenter stops at 1.12 (needed by msdf-atlas-gen 1.4): its recipe, on freetype 2.14.3 and tinyxml2 11.0.0    |
-| `tinyobjloader` 2.0.0-rc13           | ConanCenter stops at rc10: its recipe, unchanged                                                                |
-| `box2d` 3.1.1                        | ConanCenter's recipe has no AVX2 switch: its recipe plus `avx2` (default on, x86_64 only, `BOX2D_AVX2`)         |
-| `glfw` 3.5.1                         | ConanCenter stops at 3.4 and builds Wayland on its own libwayland: both backends, system libraries dlopened     |
+| Recipe                            | Why it is local                                                                                                                                                                                                                                         |
+|-----------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `slang` 2026.19                   | Absent; building it pulls LLVM-sized dependencies, so the recipe repackages the upstream release binaries                                                                                                                                               |
+| `ufbx` 0.23.1                     | Absent; one `.c` file, upstream ships no build system                                                                                                                                                                                                   |
+| `imgui-color-text-edit` 1.92.9    | Absent (goossens fork); the upstream release tag                                                                                                                                                                                                        |
+| `imguizmo` 1.10                   | ConanCenter's only recent version (cci.20231114) calls `BeginChildFrame`, removed in imgui 1.92; the recipe also puts the thickness before the flags in the AddRect / AddPolyline calls of ImCurveEdit, GraphEditor and ImGradient (imgui 1.92.8 order) |
+| `nativefiledialog-extended` 1.4.1 | Absent; the GitHub archive lacks the `wayland-protocols` submodule, fetched as a second source                                                                                                                                                          |
+| `msdf-atlas-gen` 1.4              | ConanCenter's recipe packages the command-line tool only; this one builds the library on ConanCenter's msdfgen                                                                                                                                          |
+| `libmp3lame` 3.100                | ConanCenter's recipe, except MinGW Clang builds with autotools: upstream takes every Windows Clang for clang-cl                                                                                                                                         |
+| `entt` 4.0.0                      | ConanCenter stops at 3.16.0: its recipe, requiring C++20 from 4.x                                                                                                                                                                                       |
+| `taskflow` 4.1.0                  | ConanCenter stops at 4.0.0: its recipe, unchanged                                                                                                                                                                                                       |
+| `openal-soft` 1.25.2              | ConanCenter stops at 1.24.3: its recipe on libalsa 1.2.16.1, `-Werror=function-effects` off (libstdc++)                                                                                                                                                 |
+| `msdfgen` 1.13                    | ConanCenter stops at 1.12 (needed by msdf-atlas-gen 1.4): its recipe, on freetype 2.14.3 and tinyxml2 11.0.0                                                                                                                                            |
+| `tinyobjloader` 2.0.0-rc13        | ConanCenter stops at rc10: its recipe, unchanged                                                                                                                                                                                                        |
+| `box2d` 3.1.1                     | ConanCenter's recipe has no AVX2 switch: its recipe plus `avx2` (default on, x86_64 only, `BOX2D_AVX2`)                                                                                                                                                 |
+| `glfw` 3.5.1                      | ConanCenter stops at 3.4 and builds Wayland on its own libwayland: both backends, system libraries dlopened                                                                                                                                             |
 
 ## What remains
 

@@ -354,6 +354,11 @@ void Scene::onStartRuntime() {
 
 	OWL_CORE_INFO("Scene::onStartRuntime: sound init {:.1f} ms.", ms(clk::now() - soundStart))
 
+	const auto hudStart = clk::now();
+	// Loaded before the scripts: its fonts would otherwise count against the time quota of the first one reaching it.
+	if (const auto hud = getHud(); hud)
+		OWL_CORE_INFO("Scene::onStartRuntime: hud load {:.1f} ms.", ms(clk::now() - hudStart))
+
 	const auto luaStart = clk::now();
 	size_t luaCount = 0;
 	// Initialize Lua scripting

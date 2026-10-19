@@ -2,266 +2,183 @@
 
 [TOC]
 
-This page describes Owl Nest, the scene editor for the Owl engine: its panel layout,
-project management workflow, and playback controls.
+Owl Nest is the scene editor of Owl Engine: a dockable ImGui / ImGuizmo workspace to compose scenes, inspect
+entities, browse assets and play the game in place. Its colours, fonts, icons and widgets follow the
+[Owl Nest style guide](design/nest-style-guide.md).
 
 ## Overview
 
-Owl Nest is the primary development tool for the Owl engine. It provides a fully
-dockable panel interface built on ImGui and ImGuizmo, allowing developers to compose
-scenes, inspect entities, browse project assets, and test gameplay in real time. Its colours, fonts, icons and
-widgets follow the [Owl Nest style guide](design/nest-style-guide.md).
+| Executable  | Purpose                                                                 |
+|-------------|-------------------------------------------------------------------------|
+| `OwlNest`   | The editor: docking UI, gizmos, project tools, export                   |
+| `OwlRunner` | The game runner: plays a packed or unpacked project, scenarios, benches |
 
-The editor ships as two executables:
-
-| Executable   | Purpose                                                        |
-|--------------|----------------------------------------------------------------|
-| `owl_nest`   | Scene editor with full docking UI, gizmos, and project tools   |
-| `owl_runner` | Standalone game runner that loads a packed or unpacked project |
-
-Both executables share the same scene runtime. The editor adds the editing chrome
-(panels, gizmos, toolbar) while the runner provides a clean playback environment.
-
-The editor operates as a state machine with three states:
-
-```mermaid
-stateDiagram-v2
-    [*] --> Edit
-    Edit --> Play : F5 (Play)
-    Play --> Pause : F6 (Pause)
-    Pause --> Play : F6 (Resume)
-    Play --> Edit : F7 (Stop)
-    Pause --> Edit : F7 (Stop)
-    Pause --> Pause : F8 (Step Frame)
-```
-
-| State     | Description                                                     |
-|-----------|-----------------------------------------------------------------|
-| **Edit**  | Editor camera active, no simulation, scene is directly editable |
-| **Play**  | Scene copy is simulated, runtime camera active, physics running |
-| **Pause** | Simulation frozen, render-only mode with step-frame support     |
+Both share the scene runtime; the editor adds the chrome (panels, gizmos, overlays) and plays a copy of the scene
+(see [Editor State Machine](#editor-state-machine)).
 
 ## Panel Layout
 
 ![Owl Nest with the Iso Town scene of the Engine Demo: ribbon, viewport, Scene Hierarchy, Properties and Content Browser](../images/nest/main_window.png)
 
-The default arrangement uses ImGui docking:
-
-- **Centre** -- the open documents (scenes, scripts, graphs, tilemaps...) as tabs, the viewport with its overlaid
-  toolbar; the Help pages open there too, or float
+- **Centre** -- the open documents as tabs (scenes, scripts, graphs, tilemaps...), the viewport and its overlays; the
+  Help pages open there too, or float
 - **Right column** -- Scene Hierarchy (top) and Properties (bottom); Tile Palette, Voxel Palette and Scene Settings
   join Properties as tabs
-- **Bottom strip** -- Content Browser, Log, Console and Stats as tabs under the documents
-- **Status bar** -- one line under everything: the simulation mode (`EDIT`, `PLAYING`, `PAUSED`, the bar turns blue
-  while the scene runs), the active document and its entity count, the last autosave, the graphics backend, and the
-  warnings and errors logged since you last looked (clicking a counter opens the Log), the graphics device, the
-  Content Browser previews still to make, a bell holding the last 30 notifications (the toasts), with the count
-  of unread ones, and the MCP indicator (`MCP off`, `MCP listening`, `MCP client active` for 10 s after a request;
-  its tooltip gives the endpoint and the token file, a click opens its settings tab)
+- **Bottom strip** -- Content Browser, Log, Console and Stats
+- **Status bar** -- the mode (`EDIT`, `PLAYING`, `PAUSED`; blue while the scene runs), the active document and its
+  entity count, the last autosave, the graphics backend and device, the warnings and errors since you last looked (a
+  click opens the Log), the previews still to make, a bell with the last 30 notifications, and the MCP indicator
+  (`MCP off`, `MCP listening`, `MCP client active` for 10 s after a request; a click opens its settings)
 
-Two presets are available from **View > Layout** and the shortcuts: **Default** (`Alt+1`) and **Hierarchy Left**
-(`Alt+2`), which moves the Scene Hierarchy to its own column left of the documents. **Reset Layout** puts every panel
-back in the place of the current preset. The preset is saved in `OwlNest_settings.yml` (`layoutPreset`).
+**View > Layout** offers two presets, **Default** (`Alt+1`) and **Hierarchy Left** (`Alt+2`, the hierarchy in its own
+left column); **Reset Layout** puts every panel back. The preset is saved in `OwlNest_settings.yml` (`layoutPreset`),
+the free arrangement in `OwlNest_imgui.ini`; the default layout is rebuilt on the first launch, when the saved one has
+no split, and once after an editor update changes it (`layoutVersion`).
 
-Panels tied to a document only show with it: the Tile Palette with the active tilemap, the Voxel Palette when the
-active document is a scene holding a `VoxelWorld`, in Edit mode. Both palettes, like the tilemap and tileset editors'
-panels, use the inspector layout: collapsible sections, property grids, swatches of the tiles or blocks
-(`gui::widgets::imageTile`) with their name in the tooltip. Document tabs carry the glyph of their type, and a
-document opened from the Content Browser, by a drop or by an inspector **Open** button comes to the front. Asset
-fields of the inspector (tilemap, tileset, script) show a swatch of their atlas when they have one, their path,
-**Open** (in its editor) and **Clear**.
-
-All panels can still be rearranged, resized and tabbed together freely; the arrangement persists in
-`OwlNest_imgui.ini`. The default layout is built on the first launch, when the saved one has no split, and once
-after an editor update changes it (`layoutVersion`).
+Document-bound panels show only with their document: the Tile Palette with the active tilemap, the Voxel Palette with
+a scene holding a `VoxelWorld`, in Edit. They use the inspector layout (collapsible sections, property grids, tile
+swatches from `gui::widgets::imageTile`). Document tabs carry the glyph of their type; a document opened from the
+Content Browser, a drop or an inspector **Open** button comes to the front. Asset fields of the inspector show a
+swatch of their atlas, their path, **Open** and **Clear**.
 
 ## Ribbon Menu
 
-The menu is an Office-style **ribbon** between the window title and the dockspace: tabs hold groups of buttons,
-one **large** button (icon above the label) at most per group and columns of three **small** ones (icon then label).
-Every button has a tooltip with its shortcut; a greyed button is not applicable right now.
+An Office-style **ribbon** sits between the window title and the dockspace: groups of buttons, at most one **large**
+one per group and columns of three **small** ones, each with a tooltip and its shortcut (greyed when not applicable).
 
-- **File** — the amber button on the left opens the **File screen**, which covers the editor: new / open project,
-  save, save as, package the game, editor / project / engine settings, help, close project and exit, with the open
-  project and the recent ones on the right. It opens by itself at start-up when no project is open. `Escape` or
-  **Back to the editor** closes it.
+- **File** — the amber button opens the **File screen** over the editor: new / open project, save, save as, package
+  the game, editor / project / engine settings, help, close project and exit, with the open and recent projects on
+  the right. It opens by itself when no project is open; `Escape` or **Back to the editor** closes it.
 
   ![The File screen with the Engine Demo open, the sample games and the recent projects](../images/nest/file_screen.png)
 - **Home** — Edit (Undo, Redo, Duplicate), Create (New scene / animation / tilemap / tileset), Project (Scene Flow,
   project Settings, Pack Game).
-- **View** — Layout (Hierarchy Left, Reset Layout), Camera (Reset View, Axis Views, Frame Scene, Camera Viewpoint),
-  Panels (Frame Stats, Help), Appearance (Owl Dark, Owl Light), Settings (Editor, Engine).
-- **Document tab** — the last tab, in the accent colour, follows the active document and is selected when its type
-  changes: **Scene** (Document, Scene; playback and gizmo tools sit on the viewport), **Text**, **Graph**, **Animation**, **Tilemap** or
-  **Tileset**.
+- **View** — Layout, Camera (Reset View, Axis Views, Frame Scene, Camera Viewpoint), Panels (Frame Stats, Help),
+  Appearance (Owl Dark, Owl Light), Settings (Editor, Engine).
+- **Document tab** — the last tab, in the accent colour, follows the active document: **Scene**, **Text**,
+  **Graph**, **Animation**, **Tilemap** or **Tileset**.
 
-The right end of the tab row holds the quick access buttons (Save, Undo, Redo) and the collapse toggle:
-**Ctrl+F1**, or a click on the selected tab, keeps only the tab row.
-
-The widget is `gui::widgets::Ribbon` (`source/owl/public/gui/widgets/Ribbon.h`), filled by `RibbonBuilder` and
+The right end of the tab row holds Save, Undo, Redo and the collapse toggle (**Ctrl+F1**, or a click on the selected
+tab). The widget is `gui::widgets::Ribbon` (`source/owl/public/gui/widgets/Ribbon.h`), filled by `RibbonBuilder` and
 plugged into the dockspace through `UiLayer::setTopBarCallback`.
 
 ## Fonts
 
-The editor uses two font families, shipped as loose TTFs under `engine_assets/fonts/` (SIL Open Font License):
+Two families, loose TTFs in `engine_assets/fonts/` (SIL Open Font License):
 
-- **Inter** (Regular, SemiBold) in `engine_assets/fonts/` — the UI font at `EditorSettings::uiFontSize`
-  (default 16 px, range 14–24).
-- **JetBrains Mono** Regular in `engine_assets/fonts/` — code documents at
-  `EditorSettings::codeEditorFontSize` (default 17 px, range 8–48), and numbers aligned in columns.
+- **Inter** (Regular, SemiBold): the UI, at `EditorSettings::uiFontSize` (16 px, 14–24);
+- **JetBrains Mono** Regular: code documents at `EditorSettings::codeEditorFontSize` (17 px, 8–48) and numbers in
+  columns.
 
-Text roles (`gui::TextStyle`) pick a font and a size relative to the UI size: `Body`, `Strong`, `Title` (1.15×),
-`Section` (0.96×), `Label` (0.92×), `Caption` (0.8×), `Value` (mono, 0.92×) and `Code`, pushed with
-`UiLayer::pushTextStyle` / `popTextStyle`. The style sizes and the fonts follow the content scale of the primary
-monitor (`UiLayer::getDpiScale`; under Wayland the framebuffer scale already covers it).
-
-Both sizes are applied when the atlas is built in `UiLayer::onAttach`, so
-changing them from the Editor Settings panel takes effect on the **next startup**.
-`main.cpp` reads the persisted settings before constructing the `Application` and
-pushes the values via `UiLayer::setUiFontSize` / `setCodeFontSize`.
+Text roles (`gui::TextStyle`: `Body`, `Strong`, `Title` 1.15×, `Section` 0.96×, `Label` 0.92×, `Caption` 0.8×,
+`Value` mono 0.92×, `Code`) are pushed with `UiLayer::pushTextStyle` / `popTextStyle` and follow the content scale of
+the primary monitor (`UiLayer::getDpiScale`; under Wayland the framebuffer scale covers it). The font sizes are read
+by `main.cpp` before the `Application` exists and applied when `UiLayer::onAttach` builds the atlas
+(`UiLayer::setUiFontSize` / `setCodeFontSize`): a change takes effect on the **next start**.
 
 ## Code Documents
 
-Owl Nest opens text / source files as their own tab (`DocumentType::Code`).
-Double-click a supported file in the Content Browser and a code editor tab
-appears next to the scene tabs.
+Text and source files open in their own tab (`DocumentType::Code`), from a double-click in the Content Browser.
 
-| Language | Extensions                                      | Highlighter |
-|----------|-------------------------------------------------|-------------|
-| Lua      | `.lua`                                          | built-in    |
-| C        | `.c`                                            | built-in    |
-| C++      | `.cpp`, `.cc`, `.cxx`, `.h`, `.hpp`, `.hxx`     | built-in    |
-| Python   | `.py`                                           | built-in    |
-| YAML     | `.yml`, `.yaml`                                 | custom      |
-| JSON     | `.json`                                         | built-in    |
-| Markdown | `.md`, `.markdown`                              | built-in    |
-| XML/SVG  | `.xml`, `.svg`                                  | custom      |
-| Slang    | `.slang`                                        | custom      |
+| Language | Extensions                                  | Highlighter |
+|----------|---------------------------------------------|-------------|
+| Lua      | `.lua`                                      | built-in    |
+| C        | `.c`                                        | built-in    |
+| C++      | `.cpp`, `.cc`, `.cxx`, `.h`, `.hpp`, `.hxx` | built-in    |
+| Python   | `.py`                                       | built-in    |
+| YAML     | `.yml`, `.yaml`                             | custom      |
+| JSON     | `.json`                                     | built-in    |
+| Markdown | `.md`, `.markdown`                          | built-in    |
+| XML/SVG  | `.xml`, `.svg`                              | custom      |
+| Slang    | `.slang`                                    | custom      |
 
-Slang shaders colour the HLSL-like comments, strings, numbers and `#` preprocessor lines, plus the Slang keywords
-(`struct`, `import`, `uniform`...), types (`float4`, `float4x4`, `Texture2D`...), semantics (`SV_Position`,
-`TEXCOORD0`...) and intrinsics (`mul`, `saturate`, `Sample`...). There is no compile on save: the shader errors still
-show in the log when the engine loads the shader.
-
-- Powered by the **imgui_color_text_edit** widget (MIT), from a local Conan recipe
-  (`imgui-color-text-edit` in `conan/recipes/`, see [Conan migration](design/conan-migration.md)).
-- Ctrl+S saves in place; `Scene > Close` (or Ctrl+W) closes with a
-  discard/cancel prompt when the buffer is dirty.
-- The footer status line shows the detected language, cursor line/column, and
-  INS/OVR insert mode.
+- The widget is **imgui_color_text_edit** (MIT), from a local Conan recipe (`imgui-color-text-edit` in
+  `conan/recipes/`, see [Conan migration](design/conan-migration.md)).
+- Slang colours comments, strings, numbers, `#` lines, keywords (`struct`, `import`, `uniform`...), types (`float4`,
+  `Texture2D`...), semantics (`SV_Position`...) and intrinsics (`mul`, `Sample`...); there is no compile on save, the
+  errors show in the log when the engine loads the shader.
+- `Ctrl+S` saves in place, `Ctrl+W` closes (discard / cancel prompt when dirty); the footer gives the language, the
+  cursor line / column and INS / OVR.
 
 ### Live Preview (Markdown, SVG)
 
-When the active document is Markdown or XML/SVG the editor splits horizontally
-into the source buffer (left) and a live preview pane (right). A draggable
-splitter sets the per-document ratio; the **Text → Preview** ribbon button
-toggles the preview off when more horizontal room is needed.
+Markdown and XML / SVG documents split into the source and a live preview, with a draggable splitter per document;
+**Text → Preview** hides the preview.
 
-- Markdown is parsed by `md4c` (CommonMark + GFM tables / strikethrough /
-  autolinks, Conan package) into a typed block list — `MdHeading`,
-  `MdParagraph`, `MdCodeBlock`, `MdImage`, `MdTable`, `MdList`, `MdBlockQuote`,
-  `MdHRule` (`MarkdownDocument.h`). The renderer walks the list and emits
-  ImGui calls directly: scaled headings via `PushFont(font, baseSize × ratio)`,
-  inline emphasis / strong / strikethrough / inline code / links, GFM tables
-  through `BeginTable`, code blocks through cached read-only `TextEditor`
-  widgets with full syntax highlighting (Lua, C, C++, Python, YAML, JSON,
-  Markdown, XML, **Bash**), local images via `lunasvg` (SVG) or `stb_image`
-  (raster), and external `https://` links / images that open in the user's
-  default browser via `platform::openExternalUrl`.
-- SVG is rasterised by `lunasvg` into a `Texture2D` capped at 2048 px per side;
-  parse failures render a "Failed to parse SVG" message in place of the image.
-- Both renderers are debounced (~250 ms) so editing doesn't re-rasterise on
-  every keystroke. The same `MarkdownPreview` widget is also used by the in-
-  editor help browser (see **Help & Documentation** below).
+- Markdown is parsed by `md4c` (CommonMark + GFM tables, strikethrough, autolinks) into typed blocks (`MdHeading`,
+  `MdParagraph`, `MdCodeBlock`, `MdImage`, `MdTable`, `MdList`, `MdBlockQuote`, `MdHRule`, in `MarkdownDocument.h`)
+  drawn as ImGui calls: scaled headings, inline styles and links, tables, highlighted code blocks (read-only
+  `TextEditor`, **Bash** included), local images through `lunasvg` or `stb_image`, external links and images opened
+  in the browser (`platform::openExternalUrl`).
+- SVG is rasterised by `lunasvg` into a `Texture2D` of at most 2048 px per side; a parse failure shows "Failed to parse
+  SVG".
+- Both previews are debounced (~250 ms). The same `MarkdownPreview` widget draws the help browser (below).
 
 ## Documents
 
-Owl Nest is multi-document: each open scene, code file or node graph lives
-in its own tab. Internally the editor owns a `DocumentManager` that holds
-the open documents and tracks which one is **active**. Global panels
-(Scene Hierarchy, Properties, Viewport) always reflect the active document.
+Owl Nest is multi-document: a `DocumentManager` holds the open documents and the **active** one, which the Scene
+Hierarchy, Properties and Viewport always reflect.
 
-| Kind        | File                                        | Description                                                         |
-|-------------|---------------------------------------------|---------------------------------------------------------------------|
-| Scene       | `.owl`                                      | Scene graph editor with viewport, per-document undo/redo stack      |
-| Code        | `.lua`, `.py`, `.json`, `.md`, `.svg`...    | Syntax-highlighted text editor (ImGuiColorTextEdit)                 |
-| Node Graph  | `.owlflow` (or derived like **Scene Flow**) | Generic node canvas — see [Node Graph](node_graph.md)               |
-| Animation   | `.owlanim`                                  | Spritesheet animation clip editor (timeline + preview + properties) |
-| Font        | `.ttf`, `.otf`, `.owlfont`                  | Font viewer (samples, atlas) and its charset: extra code-point ranges |
-| Image       | `.png`, `.jpg`, `.jpeg`, `.bmp`, `.tga`     | Read-only image viewer: zoom, pan, pixel grid, tileset tile overlay |
+| Kind       | File                                        | Description                                                           |
+|------------|---------------------------------------------|-----------------------------------------------------------------------|
+| Scene      | `.owl`                                      | Scene graph editor with viewport, per-document undo/redo stack        |
+| Code       | `.lua`, `.py`, `.json`, `.md`, `.svg`...    | Syntax-highlighted text editor (ImGuiColorTextEdit)                   |
+| Node Graph | `.owlflow` (or derived like **Scene Flow**) | Generic node canvas — see [Node Graph](node_graph.md)                 |
+| Animation  | `.owlanim`                                  | Spritesheet animation clip editor (timeline + preview + properties)   |
+| Font       | `.ttf`, `.otf`, `.owlfont`                  | Font viewer (samples, atlas) and its charset: extra code-point ranges |
+| Image      | `.png`, `.jpg`, `.jpeg`, `.bmp`, `.tga`     | Read-only image viewer: zoom, pan, pixel grid, tileset tile overlay   |
 
-- **Document tabs** — each open scene has its own `Viewport` window (stable
-  `##scene_<uuid>` id). ImGui's docking groups viewports in the same dock node
-  as tabs automatically; drag a tab out to float it or dock it somewhere else
-  and see several scenes side-by-side. The unsaved-document flag
-  (`ImGuiWindowFlags_UnsavedDocument`) renders a dot on the tab when dirty.
-- **Close** — the tab's `x` closes it immediately when clean; a "Discard
-  changes / Cancel" modal appears if the document has unsaved edits.
-- **Shortcuts** — `Ctrl+W` close active document, `Ctrl+Tab` / `Ctrl+Shift+Tab`
-  cycle forward/backward.
-- **Play scope** — only one document can run at a time. When a document is in
-  Play or Pause and the user switches to a different tab, the toolbar
-  (Play/Pause/Stop/Step) and gizmo controls are hidden; the playing document
-  keeps running in the background (physics/scripts advance without rendering)
-  and its tab badge makes its state visible.
-- **Per-document state** — each document owns its own undo stack, dirty flag,
-  selection, and playback state.
+- Each document owns its undo stack, dirty flag, selection and play state; each scene has its own viewport window
+  (`##scene_<uuid>`), tabbed by ImGui docking and detachable to see scenes side by side. A dirty document shows a dot
+  (`ImGuiWindowFlags_UnsavedDocument`); closing it asks to discard or cancel.
+- `Ctrl+W` closes, `Ctrl+Tab` / `Ctrl+Shift+Tab` cycle.
+- One document plays at a time; switched away from, it keeps running in the background (no rendering), its tab badge
+  shows its state and the play and gizmo controls hide.
 
-Key types live in `source/owlnest/sources/document/`: `Document` (interface),
-`DocumentManager`, `SceneDocument`, `CodeEditorDocument`, `NodeGraphDocument`,
-`SceneFlowDocument`, `AnimationDocument`, `TilemapDocument`, `TilesetDocument`, `FontDocument`, `ImageDocument`.
+The types live in `source/owlnest/sources/document/`: `Document`, `DocumentManager`, `SceneDocument`,
+`CodeEditorDocument`, `NodeGraphDocument`, `SceneFlowDocument`, `AnimationDocument`, `TilemapDocument`,
+`TilesetDocument`, `FontDocument`, `ImageDocument`.
 
 ### Tilemap document
 
-A `.owltilemap` opens in a `TilemapDocument`: the canvas paints the selected tile of the Tile Palette into the active
-layer (left button) or erases (right button); the hierarchy panel holds the tileset, the grid size and the layers; the
-properties panel shows the clicked cell (position, layer, tile, collision) and edits its overlay tile and its flags.
-A paint stroke or a cell edit is one undo step recording only the 32 × 32 chunks it changed
-(`commands::ModifyTilemapChunksCommand`, one chunk for a one-cell edit, whatever the map size); a layout edit (tileset,
-size, layers) keeps the asset before and after, whose layers share their chunks. A resize drag previews from the grid
-of its start, so shrinking then growing back in one drag loses nothing.
+A `.owltilemap` opens in a `TilemapDocument`: the left button paints the Tile Palette tile into the active layer, the
+right one erases; the hierarchy panel holds the tileset, the grid size and the layers; the properties panel shows the
+clicked cell and edits its overlay tile and flags. A stroke or a cell edit is one undo step holding only the 32 × 32
+chunks it changed (`commands::ModifyTilemapChunksCommand`); a layout edit (tileset, size, layers) keeps the asset
+before and after. A resize drag previews from the grid of its start, so shrinking then growing back loses nothing.
 
-When the tileset is `kind: Isometric` the canvas is an isometric preview (middle drag pans, the wheel zooms) drawn back
-to front with the slope tiles, the foundations and the overlays; a toolbar picks the tool. **Paint** uses the Tile
-Palette brushes on the cell under the cursor (picked on the sloped surface, not on a flat grid), **Raise** and **Lower**
-move the corner nearest to the cursor by one step (left button; right button does the opposite) or an area of 1 to 16
-corners, **Level** brings the area to the level height (Ctrl + click reads the height of a corner), **Overlay** paints
-the overlay (tracks, roads) of the active layer with the primary brush and clears it with the right button. The
-neighbouring corners follow so every cell keeps one of the 19 slopes. A click or a drag is one undo step
-(`commands::ModifyTerrainHeightsCommand`, only the corners that moved); the properties panel shows the slope and the
-four corner heights of the clicked cell. The `TilemapDocument` keeps its own undo stack, so these edits are not
-registry commands.
+With a `kind: Isometric` tileset the canvas is an isometric preview (middle drag pans, wheel zooms) with slopes,
+foundations and overlays, and a toolbar picks the tool:
+
+| Tool        | Effect                                                                                                    |
+|-------------|-----------------------------------------------------------------------------------------------------------|
+| **Paint**   | Tile Palette brushes on the cell under the cursor, picked on the sloped surface                           |
+| **Raise**   | Raise the nearest corner, or an area of 1 to 16 corners, by one step (right button: lower)                |
+| **Lower**   | The opposite of Raise                                                                                     |
+| **Level**   | Bring the area to the level height (Ctrl + click reads a corner)                                          |
+| **Overlay** | Paint the overlay (tracks, roads) of the active layer; right button clears                                |
+| **Node**    | Select corners (Shift adds or removes), drag up / down or **+** / **-** to move them one step per `zStep` |
+
+Neighbouring corners follow (`TilemapAsset::setCornerHeight`) so every cell keeps one of the 19 slopes; a click, a
+drag or a key press is one undo step (`commands::ModifyTerrainHeightsCommand`, only the corners that moved). Cell
+Properties shows the slope and edits the four corner heights with the same rule. A flat tilemap has no heights and no
+Node tool. The document keeps its own undo stack: these edits are not registry commands.
 
 ![The isometric tilemap of the Iso Town in the tilemap editor, with its layers and the Tile Palette](../images/nest/tilemap_editor.png)
 
-The **Node** tool edits single corners (nodes): a click selects the hovered corner (the nearest one to the cursor is
-highlighted; Shift + click adds or removes one, a click in the void clears the selection), dragging up or down raises
-or lowers every selected node by one step per `zStep` of mouse travel, and **+** / **-** (or the keypad) move them by
-one step. Neighbouring corners follow with the same rule as the other terraform tools (`TilemapAsset::setCornerHeight`),
-so each of the four cells around a node keeps one of the 19 slopes. The four corner heights of the selected cell are
-also drag fields in Cell Properties (back, right, front, left) next to the derived slope, with the same neighbour
-adaptation. A drag, a key press or a field edit is one undo step (`commands::ModifyTerrainHeightsCommand`). On a flat
-(non-isometric) tilemap there are no heights: the Node tool is not offered and Cell Properties says so.
-
 ### Tileset document
 
-A `.owltileset` opens in a `TilesetDocument`: the Atlas section sets the texture, the grid, the tile size, the filter
-and the **Kind** (`Orthogonal` square tiles of the 2D tilemaps, `Isometric` 2:1 diamond tiles drawn by the isometric
-layer, written `kind: Isometric`); the properties panel edits the clicked tile. For an isometric tileset the **Slopes**
-section holds one table per terrain or overlay id with the tile of each of the 19 slopes and the foundation tile of
-each slope (`-1` falls back on the flat tile); the cells of a map find their tile through it. The **Navigation** section
-of a tile makes it part of a road graph and lights the sides it joins with four arrows oriented as on the screen of the
-isometric view (the pathfinding reads them, see [Pathfinding](pathfinding.md)). Every edit is one undo step of the
-tileset document.
+A `.owltileset` opens in a `TilesetDocument`: **Atlas** sets the texture, grid, tile size, filter and **Kind**
+(`Orthogonal` square tiles, `Isometric` 2:1 diamonds written `kind: Isometric`); the properties panel edits the
+clicked tile. An isometric tileset adds **Slopes**: per terrain or overlay id, the tile of each of the 19 slopes and
+its foundation (`-1` falls back on the flat tile). A tile's **Navigation** section puts it in a road graph, its joined
+sides shown as four arrows as on screen ([Pathfinding](pathfinding.md)). Every edit is one undo step of the document.
 
 ### Scene Flow view
 
-Opens from **Home > Project > Scene Flow** in the ribbon. Presents every `.owl`
-scene in the current project as a node on a canvas, with Teleport triggers
-drawn as output pins wired to the destination scene's entry pin. Scenes
-unreachable from `Project::firstScene` are drawn with a red title (via BFS).
-**Double-click** a node to navigate to that scene. Link create/delete is
-planned as a follow-up — see [Node Graph](node_graph.md) for details.
+**Home > Project > Scene Flow** shows every `.owl` scene of the project as a node, Teleport triggers wired to the
+scene they lead to; scenes unreachable from `Project::firstScene` get a red title. A double-click opens the scene.
+Details in [Node Graph](node_graph.md).
 
 ![The Scene Flow of the Engine Demo](../images/nest/scene_flow.png)
 
@@ -269,46 +186,35 @@ planned as a follow-up — see [Node Graph](node_graph.md) for details.
 
 ### Viewport
 
-The viewport is the main rendering surface. It draws the active scene into an
-off-screen `Framebuffer` with two colour attachments:
+The viewport draws the active scene into an off-screen `Framebuffer`:
 
 | Attachment | Format          | Purpose                     |
 |------------|-----------------|-----------------------------|
 | 0          | Surface (RGBA8) | Visible colour output       |
 | 1          | RedInteger      | Entity ID for mouse picking |
 
-**Overlays.** Controls float over the scene in translucent pills, so the view stays visible:
+A click reads attachment 1 under the mouse and selects that entity (-1: none) in the hierarchy and the inspector.
 
-- top-left (Edit mode): Select / Move / Rotate / Scale, the Local / World axes of the gizmo, then Snap and the
-  current snap step (a click opens its presets);
-- top-centre: Play (or Resume), Pause, Step and Stop, with their shortcuts in the tooltips; while the scene plays,
-  a chevron at their end (or **F10**, "Fold Play Controls") folds them into a small handle in the top-right corner, so
-  nothing but the handle covers the game; the handle shows the state (blue play glyph while playing, grey pause glyph
-  while paused) and a click unfolds the controls again; the choice is kept in the editor settings
-  (`playControlsCollapsed`); in Edit mode the controls always show;
-- a "Playing" / "Paused" message appears under them for about two seconds when Play or Pause starts, fades and goes;
-- top-right (Edit mode): the view (**2D** orthographic front view, **3D** perspective, or **Iso** locked in the
-  isometric mode), **Show** (grid, camera
-  markers, trigger icons, and in the isometric mode the navigation graph of the tilemaps with a Shift-click test path),
-  in the isometric mode the **Navigation tool** that edits one-way roads, closed sides and slower cells on the map
-  (see [Pathfinding](pathfinding.md)); selecting the tool turns the graph on and leaving it puts the graph back, and
-  switching the graph off from **Show** leaves the tool, so the two never disagree, **Frame selection** (`F`), the **Camera** menu and the frame stats toggle;
-- bottom-left: frame rate, frame time and draw calls (a click opens the Stats panel);
-- bottom-right: the view-cube of the editor camera; in Play of an isometric scene, the eye button that draws the
-  navigation graph and the routes of the vehicles (see [Pathfinding](pathfinding.md)).
+**Overlays**, in translucent pills over the scene:
 
-In Play the overlay controls take their own clicks: a click that starts on them, or on another panel, never reaches the
-game, and a drag started in the game keeps going when the cursor leaves the viewport.
+- top-left (Edit): Select / Move / Rotate / Scale, Local / World, Snap and its step (a click opens the presets);
+- top-centre: Play (Resume), Pause, Step, Stop; while playing, a chevron (or **F10**) folds them into a handle in the
+  top-right corner showing the state (kept as `playControlsCollapsed`); a "Playing" / "Paused" message fades after
+  about two seconds;
+- top-right (Edit): the view (**2D**, **3D**, or **Iso** locked in the isometric mode), **Show** (grid, camera
+  markers, trigger icons, in isometric mode the navigation graph with a Shift-click test path), the isometric
+  **Navigation tool** (one-way roads, closed sides, slower cells, [Pathfinding](pathfinding.md); it turns the graph on
+  and off with it), **Frame selection** (`F`), the **Camera** menu and the frame stats toggle;
+- bottom-left: frame rate, frame time and draw calls (a click opens Stats);
+- bottom-right: the view-cube; in Play of an isometric scene, the eye that draws the graph and the vehicle routes.
 
-While the scene plays or is paused, a frame in the play colour outlines the viewport and the status bar turns blue.
+Edit mode also draws collider wireframes, the frustum of non-primary cameras and the trigger icons. In Play a click
+that starts on an overlay or another panel never reaches the game, a drag started in the game survives leaving the
+viewport, and a frame in the play colour outlines the viewport.
 
-**Editor camera.** In Edit mode the viewport uses a `CameraEditor` (orbit
-camera) controlled by mouse drag and scroll. The camera updates only when the
-viewport is hovered, preventing accidental movement while interacting with other
-panels. Its 2D view (`CameraEditor::Projection::Orthographic`) faces the XY plane, keeps the framing of the 3D
-view at the reference point and ignores rotations; the wheel zooms both. `CameraEditor::frame` centres the view on
-the selection. The grid follows the snap step (doubled while the lines would be too dense), the X and Y axes in
-their colours.
+**Editor camera.** In Edit a `CameraEditor` (orbit camera) moves only while the viewport is hovered. Its 2D view
+(`CameraEditor::Projection::Orthographic`) faces the XY plane with the framing of the 3D view; `CameraEditor::frame`
+centres the selection. The grid follows the snap step (doubled while too dense), the X and Y axes in their colours.
 
 | Gesture                     | Effect                                       |
 |-----------------------------|----------------------------------------------|
@@ -319,118 +225,52 @@ their colours.
 | Alt + middle drag           | Dolly (the eye and the reference point move) |
 | Wheel                       | Zoom towards the reference point             |
 
+The **Camera** tab of the Editor Settings scales orbit, pan and zoom (10 to 300 %), inverts the vertical drag and sets
+a dead zone (`CameraEditor::Navigation`).
+
 **Isometric mode.** When the scene's stack holds an isometric layer with content (`Scene::getSelfDrawnLayer`), the
-viewport switches to the isometric mode: the scene is drawn layer by layer as in Play, through the viewport's own
-`IsometricCamera` built from the layer's tile size and height step, and the dimetric projection stays locked (the view
-button reads **Iso**, the view-cube is hidden). The middle or right drag (or Alt + left drag) pans, the wheel zooms by
-powers of two around the cursor; **Reset View**, **Frame Selection**, **Frame Scene** and **Selected Camera
-Viewpoint** move the target. A world-axis cursor (X red, Y green, Z blue, one tile long) follows the ground under the
-mouse and the cell of the first isometric tilemap under it is outlined along its slope (`pickTerrain`); the grid lies on the
-ground plane. The gizmo receives the isometric view and projection, so it moves the selection along the world axes of
-the map; picking reads the entity id the billboards write, so the slices of an `IsometricObject` select their entity.
-The **Isometric Object** component of the inspector takes the sheet (`.json`) from the Content Browser, lists its
-buildings and shows the footprint, slice count and height; every edit is a component command, so it is undoable.
+viewport draws layer by layer as in Play through its own `IsometricCamera`, the projection locked (**Iso**, no
+view-cube): middle or right drag (or Alt + left) pans, the wheel zooms by powers of two around the cursor. A world-axis
+cursor follows the ground and the cell under it is outlined along its slope (`pickTerrain`); the gizmo moves along the
+map axes, and picking reads the id the billboards write, so the slices of an `IsometricObject` select their entity.
+The **Isometric Object** inspector takes the sheet (`.json`), lists its buildings and shows footprint, slices and
+height; every edit is undoable.
 
-**Camera presets.** The **Camera** menu of the overlay, the **View > Camera** ribbon group and the command palette
-offer:
+**Camera presets** (overlay **Camera** menu, **View > Camera**, command palette):
 
-- **Reset View** (`Home`): face the XY plane from +Z, ten units from the origin (`CameraEditor::resetView`);
-- **Frame Selection** (`F`) and **Frame Scene** (`Shift+F`): back off until the selection, or every entity of the
-  scene, fits the view;
-- **Selected Camera Viewpoint**: move the view onto the selected camera entity, the 2D view framing its orthographic
-  size or the 3D view from its eye; disabled for a camera of a `RendererRaycast` layer, whose scene the editor draws
-  flat;
-- the six axis views (**Front** XY, **Back**, **Top** XZ, **Bottom**, **Right** YZ, **Left**) around the same
-  reference point (`CameraEditor::viewAlong`); in the 2D view they give the orthographic views of each plane.
+- **Reset View** (`Home`): the XY plane from +Z, ten units away (`CameraEditor::resetView`);
+- **Frame Selection** (`F`), **Frame Scene** (`Shift+F`);
+- **Selected Camera Viewpoint**: the view of the selected camera (disabled for a `RendererRaycast` camera, drawn flat);
+- six axis views (**Front** XY, **Back**, **Top** XZ, **Bottom**, **Right** YZ, **Left**) around the reference point
+  (`CameraEditor::viewAlong`). The view-cube does the same: a click on an axis end looks from it, on the centre resets.
 
-**View-cube.** The bottom-right gizmo shows the six axis ends of the scene as the camera sees them, the positive
-ones labelled. A click on an end looks from that side, a click on the centre resets the view.
+**Context menus.** A right click without drag offers, on an entity, Frame, Duplicate, Hide in the Editor, Delete
+(plus **Camera Viewpoint** on a camera); on the empty scene, 2D / 3D, grid, **Reset View**, **Frame Scene**; on a
+document tab, Save, Close, Close Others, Reveal in Content Browser, Copy Path; on a node graph, delete the node or fit
+the view. Menus have a title, Lucide icons, shortcuts and destructive entries in red (`gui::widgets::menuHeader`,
+`menuItem`).
 
-**Camera settings.** The **Camera** tab of the Editor Settings scales the orbit, pan and zoom speeds (10 to 300 %),
-inverts the vertical drag and sets a dead zone: the pixels the cursor travels before a drag moves the view
-(`CameraEditor::Navigation`).
+**Gizmos.** ImGuizmo draws the manipulator of the selection: None (Q), Translation (W), Rotation (E), Scale (R), All
+(T); see [Gizmo Modes](#gizmo-modes).
 
-**Context menus.** A right click that does not drag opens a menu on the entity under the cursor (Frame, Duplicate,
-Hide in the Editor, Delete) or, on the empty scene, the view options (2D / 3D, grid). A right click on a document tab
-offers Save, Close, Close Others, Reveal in Content Browser and Copy Path; on a node graph it deletes the node under
-the cursor or fits the view to the graph. A camera entity adds **Camera Viewpoint**, the empty scene **Reset View** and
-**Frame Scene**. Every menu has a title, Lucide icons, the shortcuts and its destructive
-entries in red (`gui::widgets::menuHeader`, `menuItem`).
-
-**Gizmos.** When an entity is selected, ImGuizmo renders a manipulator gizmo in
-the viewport. The gizmo type is controlled by the overlay buttons or keyboard
-shortcuts (Q/W/E/R/T):
-
-| Type        | Key | Description                         |
-|-------------|-----|-------------------------------------|
-| None        | Q   | No gizmo, click-to-select only      |
-| Translation | W   | Move the entity along axes          |
-| Rotation    | E   | Rotate the entity around axes       |
-| Scale       | R   | Scale the entity along axes         |
-| All         | T   | Combined translate + rotate + scale |
-
-**Snap to grid.** The **Snap** toggle of the viewport toolbar enables a
-grid-aligned mode for translation gizmos. When enabled, dragging a translation
-handle clamps the result to multiples of the configured snap step. Holding
-`Ctrl` during a drag also forces snap on the same step (works whether the
-toggle is on or off, matching the legacy behaviour).
-
-The **Step** small button next to Snap opens a preset dropdown with
-context-aware values:
-
-- when a `Tilemap` exists in the active scene and *Auto step from tilemap* is
-  on, the choices are `1/4 cell`, `1/2 cell`, `1 cell`, `2 cells`, `5 cells`,
-  `10 cells` — they update `snapMultiplier`;
-- otherwise the choices are raw world units `0.25`, `0.5`, `1`, `5`, `10` —
-  they update `snapStep`.
-
-The snap step is resolved every frame:
-
-- when **Auto step from tilemap** is on (default) and the active scene has at
-  least one `Tilemap` component, the step is `cellSize × snapMultiplier` and
-  the entity's final position on drag-end is realigned to the nearest
-  cell-center grid point (with a half-cell offset for even-sized tilemaps),
-  so newly placed entities visually align with cell centers;
-- otherwise the manual `snapStep` value (in world units) is used.
-
-All four knobs (`snapEnabled`, `snapStep`, `snapMultiplier`,
-`snapAutoFromTilemap`) live in the **Gizmo Snap** tab of the Editor Settings.
-Rotation snap remains fixed at 45° and Scale snap at 0.5.
-
-**Entity picking.** Clicking in the viewport reads the RedInteger attachment at the
-mouse position. If the value is a valid entity ID (not -1), the corresponding entity
-is selected in the Scene Hierarchy and Properties panels.
-
-**Overlays.** During Edit mode the viewport renders additional debug overlays:
-
-- Physics collider wireframes (box and circle shapes)
-- Camera frustum visualization for non-primary cameras
-- Trigger zone icons (victory, death, target, teleport, timer, interaction, lua callback), hidden from **Show**
+**Snap.** The **Snap** toggle (or `Ctrl` held during a drag) clamps translations to the snap step; rotation snaps at
+45°, scale at 0.5. With **Auto step from tilemap** (default) and a `Tilemap` in the scene, the step is
+`cellSize × snapMultiplier` (**Step** presets `1/4 cell` to `10 cells`) and a dropped entity is realigned to the
+nearest cell centre; otherwise the step is `snapStep` in world units (presets `0.25` to `10`). The four settings
+(`snapEnabled`, `snapStep`, `snapMultiplier`, `snapAutoFromTilemap`) are in the **Gizmo Snap** tab.
 
 ### Scene Hierarchy
 
-The Scene Hierarchy panel displays all entities in the active scene as a tree view.
-Entities with children (via the `Hierarchy` component) expand to show nested items.
-Root entities have `parentId == 0` and appear at the top level.
+The active scene as a tree (roots have `parentId == 0`; see [Transform Hierarchy](scene.md#transform-hierarchy)).
 
-**Toolbar.** The **Add** button creates an empty entity or a child of the selection; the search field filters the
-entities by name (every word, case-insensitive) and shows the matches as a flat list.
-
-**Rows.** A thin chevron folds the children, the glyph of the main component comes in the colour of its kind
-(camera blue, sprite pink, text violet, UI teal, world gold...), and a parent shows its child count. The eye and
-camera switches (visible in the editor, in the game) show when the row is hovered, and stay while the entity is
-hidden. Prefab instances are drawn in the info colour, entities hidden in the editor greyed out; the selection has
-an accent bar on its left.
-
-**Selection.** Clicking an entity selects it. The selection is shared with the
-Properties panel and the viewport gizmo; with nothing selected, Properties says how to select one.
-
-**Drag-drop reparenting.** Drag an entity node onto another entity to make it a
-child. The engine calls `Scene::setParent()` which checks for circular references
-and recomputes the local transform to preserve the entity's world position.
-
-**Context menu.** Right-clicking an entity (or the panel background) opens a context
-menu with the following actions:
+- **Toolbar**: **Add** creates an empty entity or a child of the selection; the search field filters by name (every
+  word, case-insensitive) as a flat list.
+- **Rows**: a chevron folds the children, the glyph of the main component in its kind colour, the child count, the
+  eye and camera switches (editor, game) on hover or while hidden; prefab instances in the info colour, entities
+  hidden in the editor greyed, the selection with an accent bar. The selection is shared with Properties and the
+  gizmo.
+- **Drag and drop** onto another entity reparents it (`Scene::setParent()`: cycle check, world position kept).
+- **Context menu** (on an entity or the background):
 
 | Action               | Description                                               |
 |----------------------|-----------------------------------------------------------|
@@ -446,64 +286,36 @@ menu with the following actions:
 | Delete               | Remove the entity, reparenting children to grandparent    |
 | Delete with Children | Cascade-delete the entity and all descendants             |
 
-Prefab-related actions only appear when the selected entity is a prefab instance (has a
-`PrefabLink` component). Prefab instance entities are displayed with a blue text tint in
-the hierarchy tree.
+The prefab entries show only on a prefab instance (a `PrefabLink`), see [Prefab Workflow](#prefab-workflow).
 
 ### Properties
 
-The Properties panel shows all components attached to the currently selected entity.
-Each component has a collapsible header (its icon, its name and a **⋮** menu: revert to the prefab, remove) and a
-dedicated editor widget. Vector fields (position, rotation, scale, sizes, directions) sit in a label / value grid,
-each component marked by a thin axis colour, with a reset button that appears when the value leaves its default.
+The components of the selection, each under a collapsible header (icon, name, **⋮** menu: revert to the prefab,
+remove) with its own editor; vectors sit in a label / value grid with axis colours and a reset button once off their
+default. **Add Component** lists the optional components the entity lacks; mandatory ones (Transform, Hierarchy) cannot
+be removed. Every edit is a registry command ([Editor commands](#editor-commands)).
 
-- **Transform** -- Position, rotation, and scale drag-float fields (local space)
-- **Sprite Renderer** -- Colour picker, texture picker (drag from Content Browser)
-- **Animated Sprite** -- Sprite sheet configuration with frame timing
-- **Circle Renderer** -- Colour, thickness, and fade controls
-- **Text Renderer** -- Text content, font selection, colour, line spacing
-- **Camera** -- Projection type dropdown, field-of-view / ortho size sliders
-- **Rigidbody 2D** -- Body type dropdown (static / dynamic / kinematic)
-- **Box Collider 2D** -- Size, offset, density, friction, restitution
-- **Circle Collider 2D** -- Radius, offset, density, friction, restitution
-- **Native Script** -- Script class name
-- **Sound Source** -- Sound asset picker, volume, pitch, loop, spatial, play-on-start
-- **Sound Listener** -- Primary listener toggle
-- **Trigger** -- Trigger type dropdown (Victory, Death, Target, Teleport, Timer, Interaction,
-  LuaCallback), configurable callback name, type-specific fields (duration, range, level name)
-- **Player** -- Player tag configuration
-- **Link** -- External entity reference
-- **Background** -- Background layer settings
-- **Visibility** -- Per-entity visibility toggle (inherited by children)
-- **Lua Script** -- Script asset path, editable property list
-- **Canvas** -- HUD root: sort order, reference resolution and scale mode (`ConstantPixels`, `ScaleWithHeight`,
+- **Transform** (local), **Sprite Renderer**, **Animated Sprite**, **Circle Renderer**, **Text Renderer**, **Camera**,
+  **Rigidbody 2D**, **Box / Circle Collider 2D**, **Native Script**, **Sound Source**, **Sound Listener**, **Player**,
+  **Link**, **Background**, **Visibility** (inherited), **Lua Script** (path and property list): their fields, see
+  [Scene components](scene.md#components)
+- **Trigger** -- type (Victory, Death, Target, Teleport, Timer, Interaction, LuaCallback), callback name and the
+  fields of the type
+- **Canvas** -- HUD root: sort order, reference resolution, scale mode (`ConstantPixels`, `ScaleWithHeight`,
   `MatchSmallerSide`)
-- **UI Rect** -- Anchor preset (Custom when the anchors stretch), Anchor Min / Max, Pivot, Width, Height, Offset X and
-  Offset Y, in Y-down reference pixels of the parent rectangle or, with the unit selector at the right of each field,
-  a ratio of the parent or screen width or height (changing the unit converts the value, the widget does not move); the HUD is drawn in pixels over the viewport, a click on a widget
-  selects it
-- **UI Text / Image / Panel / Button / Slider / Progress Bar** -- In-game UI elements
-- **UI Window / Layout / Tooltip / Tool Cursor** -- Management-game widgets: a window with a title bar (draggable,
-  closable, clipped content), a row, column or grid arrangement of the children, a hover tooltip and a sprite following
-  the mouse; every field is edited in the inspector, undoable through `component.set`, and a click on a window in the
-  viewport selects it
-- **UI Focus** -- Keyboard and gamepad navigation of a button or a slider: focusable, initial focus, neighbours picked by name in
-  the scene (stored as UUIDs), focus callback and frame colour; a Canvas option wraps the focus at the ends of a menu; edited in the inspector like the other widgets, undoable through `component.set`;
-  in Play (editor or runner) the `ui_*` actions move the focus over the widgets
-- **Prefab Link** -- Read-only display: source asset path, synced version, mapped entity count,
-  override count
-
-**Add Component.** The "Add Component" button at the bottom opens a dropdown listing
-all optional component types that the entity does not already have.
-
-**Remove Component.** Right-clicking a component header shows a "Remove Component"
-option (except for mandatory components like Transform and Hierarchy).
+- **UI Rect** -- anchor preset (Custom when stretched), Anchor Min / Max, Pivot, Width, Height, Offset X / Y in Y-down
+  reference pixels or, with the unit selector, a ratio of the parent or screen width or height (changing the unit
+  converts, the widget does not move); a click on a widget in the viewport selects it
+- **UI Text / Image / Panel / Button / Slider / Progress Bar**, **UI Window / Layout / Tooltip / Tool Cursor**
+  (draggable closable window, row / column / grid, hover tooltip, sprite following the mouse) and **UI Focus**
+  (focusable, initial, neighbours by name stored as UUIDs, callback, frame colour; the Canvas can wrap the focus) --
+  see [HUD documents](#editor-hud)
+- **Prefab Link** -- read only: source path, synced version, mapped entities, overrides
 
 #### Inspector field interactions
 
-Asset fields in the Properties panel accept drag-drops from the Content Browser via the
-shared `gui::widgets::assetDropTarget` helper. The drop is filtered by extension; payloads
-that do not match the field's `AssetKind` are silently rejected.
+Asset fields take drops from the Content Browser (`gui::widgets::assetDropTarget`), filtered by extension; a payload of
+another `AssetKind` is ignored.
 
 | Field                                                       | Accepted extensions                             |
 |-------------------------------------------------------------|-------------------------------------------------|
@@ -515,22 +327,11 @@ that do not match the field's `AssetKind` are silently rejected.
 | `SoundSource.soundAsset`                                    | `.wav`, `.mp3`, `.ogg`, `.flac`                 |
 | `LuaScript.scriptPath`                                      | `.lua`                                          |
 
-**Texture preview.** Texture fields render a 100x100 thumbnail of the loaded image. While an
-async-loaded texture is still decoding, a `(loading...)` overlay is drawn over the bottom of
-the thumbnail; failed loads show a red `(failed)` overlay and keep the placeholder visible.
-
-**Font preview.** Selecting a non-default font in a Text component displays a 220x44 strip
-showing the sample string `Aa Bb 1!? éàüÇœ€` rendered with the selected font (lower/upper
-case, digits, punctuation, accented Latin, `œ` and `€` beyond Latin-1). Previews are produced by `gui::FontPreviewCache`
-on first request and cached for subsequent frames; the cache is pumped from
-`EditorLayer::onUpdate` and freed on editor shutdown. While the first frame's render is
-in flight, the panel temporarily falls back to the font's MSDF atlas thumbnail.
-
-**Curve editor.** `AnimatedSpriteRenderer` exposes an optional `Speed Curve` collapsible
-section powered by ImCurveEdit. Drag points to adjust the curve, double-click to add a key,
-right-click to remove. The interpolation combo selects between Constant, Linear, and Smooth
-modes. An empty curve (the default) keeps playback at constant speed and is omitted from the
-serialized YAML, so existing scenes are byte-identical.
+- **Texture preview**: a 100x100 thumbnail, `(loading...)` while it decodes, `(failed)` in red on an error.
+- **Font preview**: a 220x44 strip of `Aa Bb 1!? éàüÇœ€` in the selected font, made by `gui::FontPreviewCache`
+  (pumped from `EditorLayer::onUpdate`), the MSDF atlas shown until it is ready.
+- **Curve editor**: the optional **Speed Curve** of `AnimatedSpriteRenderer` (ImCurveEdit: drag points, double-click
+  adds, right-click removes; Constant, Linear or Smooth). An empty curve keeps a constant speed and is not written:
 
 ```yaml
 AnimatedSpriteRenderer:
@@ -550,39 +351,15 @@ AnimatedSpriteRenderer:
 
 ### Animation Editor (`.owlanim`)
 
-`.owlanim` files are reusable spritesheet animation clips, edited in their own document
-tab (the fourth `DocumentType` after Scene, Code, and NodeGraph). Behind the scenes the
-clip is `scene::AnimationClip` — the same playback parameters as
-`AnimatedSpriteRenderer` minus the per-instance tint, which stays on the consuming
-component.
+An `.owlanim` is a reusable spritesheet clip (`scene::AnimationClip`: the playback fields of `AnimatedSpriteRenderer`
+without the tint). Double-click or drop one to open it; **Home > Create > New** (animation) starts an untitled clip
+written by the first Save.
 
-**Opening / creating.**
-
-- Double-click any `.owlanim` in the Content Browser, or drag-drop one onto the editor.
-- **Home > Create > New** (animation) spawns an empty untitled clip; the first `Save` /
-  `Save As` writes it to disk.
-
-**Layout.** Collapsible sections with an icon, like the inspector:
-
-- **Preview** — live spritesheet thumbnail at the current frame (an empty state without a texture), with the
-  Previous / Play-Pause / Stop / Next icon buttons and the current frame underneath.
-- **Spritesheet** — texture drop target, columns and rows in a property grid; **Show Current Frame** outlines the
-  current frame on the thumbnail (frames run row by row from the top left).
-- **Playback** — first frame, last frame, frame duration and loop, each with its reset button and tooltip.
-- **Speed Curve** — the optional speed curve (embedded `curveEditor`).
-- **Timeline** — `gui::widgets::sequencer()` bar in the accent colour; drag the handles to move
-  `firstFrame` / `lastFrame`, click the ruler to scrub the playhead (which pauses
-  playback so the user sees the picked frame).
-
-**Ribbon `Animation` tab.** Shown only when an `AnimationDocument` is active.
-
-| Group    | Buttons                                          |
-| -------- | ------------------------------------------------ |
-| Playback | Play, Pause, Stop                                |
-| Frame    | Previous, Next                                   |
-| File     | Save, Save As, Close                             |
-
-**On-disk format.**
+Sections, like the inspector: **Preview** (current frame, Previous / Play-Pause / Stop / Next), **Spritesheet**
+(texture, columns, rows; **Show Current Frame** outlines it, frames run row by row from the top left), **Playback**
+(first and last frame, duration, loop), **Speed Curve** and **Timeline** (`gui::widgets::sequencer()`: drag the
+handles to move `firstFrame` / `lastFrame`, click the ruler to scrub, which pauses). The **Animation** ribbon tab
+(active document only) holds Play, Pause, Stop, Previous, Next, Save, Save As and Close.
 
 ```yaml
 AnimationClip: walk
@@ -601,139 +378,100 @@ speedCurve:
     - [1.0, 1.0]
 ```
 
-The schema mirrors the corresponding fields of `AnimatedSpriteRenderer` 1:1, so a future
-"Source clip" reference on the component can be added without a YAML migration.
-
 ### Image Viewer (`.png`, `.jpg`, `.jpeg`, `.bmp`, `.tga`)
 
-Double-click an image (or **Open** in its context menu) in the Content Browser to see it in a read-only tab; it has no
-undo stack and is never dirty.
+A read-only tab (no undo, never dirty), opened by a double-click or **Open** in the Content Browser.
 
-- **Zoom** with the wheel around the cursor (5 % to 3200 %), **pan** by dragging with the left or middle button.
-  **Fit** (button, `F` or double-click) shows the whole image, **1:1** (button or `1`) shows it at its pixel size.
-  An enlarged image is sampled by the nearest texel, a reduced one smoothed.
-- A **checkerboard** shows through the transparent pixels; from 800 % a **pixel grid** is drawn (toggle in the *Image
-  View* panel). The status line gives the zoom, the size and the pixel under the cursor.
-- The **Image** panel gives the size, the channels (3 opaque, 4 with alpha), the file size and the sampling filter of
-  the tilesets using the image (Nearest for pixel art).
-- The *Image View* panel lists the tilesets of the project that use the image as their atlas; pick one to draw its tile
-  grid over the image, and hover a tile to see its index.
+- Wheel zoom around the cursor (5 % to 3200 %), left or middle drag pans; **Fit** (`F`, double-click) and **1:1**
+  (`1`). Enlarged images use the nearest texel, reduced ones are smoothed.
+- A checkerboard behind transparent pixels, a pixel grid from 800 % (toggle in *Image View*); the status line gives
+  zoom, size and the pixel under the cursor.
+- The **Image** panel gives size, channels, file size and the filter of the tilesets using it; *Image View* lists those
+  tilesets and draws the tile grid of the one picked, with the index of the hovered tile.
 
 ### Font Viewer and Editor (`.ttf`, `.otf`)
 
-Double-click a font (or its `.owlfont` sidecar) in the Content Browser to open a font document, even when no text uses
-the font yet (the document then loads it itself). Two tabs:
+A font (or its `.owlfont` sidecar) opens in a font document, loaded by the document if no text uses it yet:
 
-- **Samples**: an editable text drawn at 12, 18, 24, 36 and 64 px by the engine's own text renderer, so it is what a
-  game draws. **Outline** and **Box** toggle the text outline and background box.
-- **Atlas**: the MSDF glyph atlas; hover a glyph for its code point, Unicode block and advance.
+- **Samples**: an editable text at 12, 18, 24, 36 and 64 px drawn by the engine's text renderer, with **Outline** and
+  **Box** toggles;
+- **Atlas**: the MSDF atlas; hover a glyph for its code point, Unicode block and advance.
 
-The **Font** panel gives its file, glyph count, number of code points of the charset and atlas size (marked *cached*
-when read from the disk cache); the **Font Charset** panel adds a **Coverage** list of the Unicode blocks the charset
-spans, with their code point counts.
-
-The **Font Charset** panel lists the default Latin charset, read only, then the **extra ranges**:
-
-- **Add** (`+`) offers Unicode blocks (Latin Extended-B, Greek, Cyrillic, arrows, box drawing...) or a custom range.
-- Each range has its first and last code point in hexadecimal; a range matching a block shows its name.
-- Click a range to select it, Ctrl+click to select several; the trash button or `Delete` removes the selection, the
-  eraser removes every range.
-
-Every edit is undoable (`Ctrl+Z` / `Ctrl+Y`; consecutive edits of one bound merge). **Save** (`Ctrl+S` or the Font
-ribbon tab) writes the `.owlfont` sidecar, or deletes it when no extra range is left, and rebuilds the atlas of the
-loaded font in place: every text using it shows the new glyphs at once.
+The **Font** panel gives file, glyph count, charset size and atlas size (*cached* when read from the disk cache). The
+**Font Charset** panel lists the default Latin charset, read only, its **Coverage** per Unicode block, and the
+**extra ranges**: **+** adds a block (Latin Extended-B, Greek, Cyrillic, arrows, box drawing...) or a custom range,
+each range edits its first and last code point in hexadecimal, click / Ctrl+click selects, the trash or `Delete`
+removes the selection, the eraser every range. Edits are undoable (consecutive edits of one bound merge); **Save**
+writes the `.owlfont` (or deletes it when no range is left) and rebuilds the loaded atlas in place.
 
 ### Action Map Editor (`input_actions.yml`) {#editor-action-map}
 
-Double-click `input_actions.yml` in the Content Browser, press **Home > Project > Input Actions** or **Edit Input Actions**
-in the Input section of Project Settings to open the action map of the project in an action map document. A project
-without the file starts from the built-in actions, and the first save creates it.
+`input_actions.yml` opens from the Content Browser, **Home > Project > Input Actions** or **Edit Input Actions** in
+Project Settings. Without the file the document starts from the built-in actions and the first save creates it. The
+format is in [Actions](event_input.md#actions).
 
 ![The action map of the Engine Demo: actions on the left, the details of `pause` on the right](../images/nest/action_map.png)
 
-- The left list holds the actions with a live bar of their reading; **+** adds an action (a free name, `Button`), the trash
-  removes the selected one, the circular arrow puts the built-in actions back. The built-in actions the file leaves out
-  are listed below, dimmed, and **+** copies one with its default bindings into the file to edit it.
-- The details give the **Name** (applied on Enter, refused when empty or taken) and the **Kind** (`Button`, `Axis`,
-  `Vector`), the **Live reading** (held, just pressed, value or vector) and the **Bindings**: source (key, mouse button,
-  gamepad button, axis or stick), the key or button, the gamepad slot (-1 for any), the vector component, the scale and,
-  for an axis or a stick, the dead zone, curve and exponent.
-- **Add by pressing an input** waits for the next key, mouse button, gamepad button or axis push and adds it as a binding
-  (a `Vector` action takes a whole stick); the keyboard button of a binding rebinds it and keeps its scale and
-  component. What is held when the capture starts is ignored until released, **Esc** cancels (bind Escape itself from the
-  Input list), and the editor shortcuts are suspended meanwhile.
-- The live reading evaluates the edited map on the real devices every frame, in Edit and in Play alike, so a binding
-  can be tried before it is saved.
-- Every edit is an undo step (`Ctrl+Z` / `Ctrl+Y`; a slider drag is one step) and the tab shows the unsaved mark.
-  **Save** (`Ctrl+S`) writes the file atomically and reloads it in the engine context: the editor, and a Play running
-  meanwhile, read the new bindings from their next frame.
+- **Left list**: the actions with a live bar; **+** adds one (`Button`), the trash removes, the circular arrow restores
+  the built-in ones; built-in actions left out of the file are listed dimmed, **+** copies one into the file.
+- **Details**: **Name** (applied on Enter, refused when empty or taken), **Kind** (`Button`, `Axis`, `Vector`), the
+  **Live reading** and the **Bindings** (source, key or button, gamepad slot, -1 for any, vector component, scale and,
+  for an axis or a stick, dead zone, curve and exponent).
+- **Add by pressing an input** binds the next key, button or axis push (a `Vector` takes a whole stick); a binding's
+  key button rebinds it. Inputs held at the start are ignored until released, **Esc** cancels, the editor shortcuts
+  wait meanwhile.
+- The live reading evaluates the edited map on the real devices, in Edit and Play, before it is saved.
+- Every edit is an undo step (a slider drag one step); **Save** writes atomically and reloads the map in the engine
+  context, so the editor and a running Play read it from the next frame.
 
 ### HUD documents {#editor-hud}
 
-An `.owlhud` opens (double click in the Content Browser) in a scene document: the hierarchy, the inspector and the
-undo history work as for a scene, and Save writes the `Hud:` file atomically. **New > HUD** (Home ribbon) creates an
-untitled one holding a full-screen canvas, saved as `.owlhud`. The scenes drawing a HUD read it again once it is
-saved; Play starts and ends with the HUD files read again, so the widget values changed by the game never stay in
-the editor.
+An `.owlhud` opens in a scene document (hierarchy, inspector and undo as for a scene; Save writes the `Hud:` file
+atomically); **New > HUD** creates one holding a full-screen canvas. The scenes drawing a HUD read it again once
+saved, and Play starts and ends with the HUD files read again, so values changed by the game never stay. The format is
+in [HUD system](design/hud-system.md).
 
-The tab shows the **HUD editor** instead of the 3D viewport; a scene with canvases gets it too with **HUD Editor**
-(Scene ribbon tab; *Scene View* in its toolbar goes back; Play always shows the scene). It has three parts:
+The tab shows the **HUD editor** instead of the 3D viewport; a scene with canvases gets it with **HUD Editor** (Scene
+ribbon; *Scene View* goes back; Play always shows the scene):
 
 ![The HUD editor on the gameplay HUD of the Engine Demo, the score label selected](../images/nest/hud_editor.png)
 
-- **Toolbar**: preview resolution (presets or a custom size), fit / 1:1 zoom (mouse wheel zooms, middle button pans,
-  `F` fits), widget outlines and the reference resolution frame, backdrop (colour, or an image dropped from the
-  Content Browser), snapping (pixel grid and its step, edges), draw order (later / earlier) and delete.
-- **Palette** (left): Canvas, Panel, Label, Image, Button, Slider, Progress Bar, Window, Layout, Scroll View, List. Click one to add it at
-  the centre, or drag it into the preview: it goes into the panel, window or scroll view under the mouse, else under the canvas
-  (created when the scene has none). A texture dragged from the Content Browser makes an Image.
-- **Preview**: the HUD at the chosen resolution over the backdrop. Click selects, Ctrl-click adds or removes, dragging
-  on empty space draws a selection box; the selection is the one of the Scene Hierarchy and the Properties panel.
+- **Toolbar**: preview resolution (presets or custom), fit / 1:1 (wheel zooms, middle drag pans, `F` fits), outlines
+  and reference frame, backdrop (colour or a dropped image), snapping (pixel grid, edges), draw order and delete.
+- **Palette**: Canvas, Panel, Label, Image, Button, Slider, Progress Bar, Window, Layout, Scroll View, List; a click
+  adds at the centre, a drag drops into the panel, window or scroll view under the mouse, else the canvas (created when
+  missing). A dragged texture makes an Image.
+- **Preview**: click selects, Ctrl-click toggles, a drag on empty space draws a box; the selection is the hierarchy's.
 
-| Gesture                                    | Effect                                                    |
-|--------------------------------------------|-----------------------------------------------------------|
-| Drag the body                              | Move the selected widgets together                        |
-| Drag an edge or a corner handle            | Resize; the opposite edge stays                           |
-| Alt + drag the circle                      | Move the pivot; the widget stays where it is              |
-| Drag a diamond (Ctrl+Alt when under pivot) | Move the anchors; the widget stays where it is            |
-| Arrow keys (Shift: 10 pixels)              | Nudge the selection                                       |
-| Delete                                     | Delete the selection and its children                     |
-| Shift while dragging                       | Snap nothing                                              |
-| Right click                                | Add a widget here, bring to front, send to back, delete   |
+| Gesture                                    | Effect                                                  |
+|--------------------------------------------|---------------------------------------------------------|
+| Drag the body                              | Move the selected widgets together                      |
+| Drag an edge or a corner handle            | Resize; the opposite edge stays                         |
+| Alt + drag the circle                      | Move the pivot; the widget stays where it is            |
+| Drag a diamond (Ctrl+Alt when under pivot) | Move the anchors; the widget stays where it is          |
+| Arrow keys (Shift: 10 pixels)              | Nudge the selection                                     |
+| Delete                                     | Delete the selection and its children                   |
+| Shift while dragging                       | Snap nothing                                            |
+| Right click                                | Add a widget here, bring to front, send to back, delete |
 
-Positions snap to whole reference pixels and stick to the edges and centres of the siblings, the parent and the
-screen (red guides). Every gesture is one undo step and runs a `hud.*` command (see
-[Editor commands](#editor-commands)), so it is journaled and available from the console and the MCP server.
-Details in [HUD system](design/hud-system.md).
+Positions snap to whole reference pixels and to the edges and centres of siblings, parent and screen (red guides).
+Every gesture is one undo step running a `hud.*` [command](#editor-commands).
 
 ### Content Browser
 
-The Content Browser provides a file grid view of the project's asset directory. It
-supports navigation, file operations, and drag-drop integration with other panels.
+A file grid of the asset directories, with navigation, file operations and drag and drop.
 
-**Folder tree.** The left column lists the asset roots (project, application, engine) and their folders; a click
-opens a folder, the chevrons fold them, and the tree unfolds down to the folder shown. Drag its right edge to resize
-it.
-
-**Toolbar.** The parent folder button, a clickable breadcrumb from the root (named after it) to the current folder, a
-search field filtering the folder by name, the grid / list toggle and the thumbnail size. The browser never goes
-above the selected root. Below, one chip per family present in the folder (`All 14`, `Texture 11`...) shows that
-family alone; the chips hide when the folder holds a single family.
-
-**Tiles.** Images (`.png`, `.jpg`) show their own thumbnail, filling the tile and cropped to its square; tilesets
-show their atlas; HUDs are rendered in pixels on a dark backdrop; scenes are rendered through their primary camera, prefabs framed whole by an orthographic camera;
-3D models (`.obj`, `.fbx`, `.gltf`, `.glb`) show their faces in an isometric view, shaded and sorted back to front
-(`AssetThumbnails::projectMesh`, at most 6000 triangles); sounds show their waveform (`sound::readWaveform`).
-`AssetThumbnails` reads a few images, sounds and tilesets per frame (a mesh takes the frame) and renders one scene or
-prefab at a time, for 0.75 s so its textures finish loading, into a pool of 48 framebuffers it reuses; the status bar
-shows the previews still to make with a progress bar. A preview is made again when its file changes. Other files show
-the duotone icon of their kind, centred. A bar under the tile carries the colour of the family (scene, prefab,
-texture, tileset, tilemap, sound, script, code, shader, font, animation, node graph, 3D model, data, folder), the kind
-is written in capitals under the name, and a badge in the corner gives a short extension. An empty folder, or a search
-with no match, says so and how to go on. A dragged tile, like a dragged entity, follows the cursor as its glyph, its
-name and its kind (`gui::widgets::dragPreview`); drop targets light up in the accent.
-
-**Interactions:**
+- **Folder tree** (left, resizable): the asset roots (project, application, engine) and their folders, unfolded down
+  to the folder shown.
+- **Toolbar**: parent folder, a clickable breadcrumb (never above the root), a name filter, grid / list, thumbnail
+  size; below, one chip per family present (`All 14`, `Texture 11`...) filters it, hidden when there is one family.
+- **Tiles**: images show themselves (cropped square), tilesets their atlas, HUDs a pixel render, scenes their primary
+  camera, prefabs an orthographic framing, 3D models (`.obj`, `.fbx`, `.gltf`, `.glb`) shaded faces in an isometric
+  view (`AssetThumbnails::projectMesh`, at most 6000 triangles), sounds their waveform (`sound::readWaveform`); other
+  files the duotone icon of their kind. `AssetThumbnails` reads a few files per frame and renders one scene or prefab
+  at a time for 0.75 s into a pool of 48 framebuffers; a preview is redone when its file changes. Each tile has a
+  family colour bar, the kind in capitals and an extension badge; an empty folder or search says so. A dragged tile
+  follows the cursor (`gui::widgets::dragPreview`) and drop targets light up.
 
 | Action                        | Effect                                        |
 |-------------------------------|-----------------------------------------------|
@@ -751,22 +489,12 @@ name and its kind (`gui::widgets::dragPreview`); drop targets light up in the ac
 
 ### Log Panel
 
-The Log panel displays a scrolling view of engine and application log messages. It
-supports filtering by log level and logger source.
+Engine and game messages. Chips filter by level (Trace, Debug, Info, Warning, Error, Critical, with their counts) and
+by logger (Engine `OWL`, Game `APP`); a search field filters by substring; **Clear** empties; the tab title counts the
+warnings and errors. Auto-scroll follows the newest line until you scroll up.
 
-**Level filters.** One chip per severity level, with its message count: Trace, Debug, Info, Warning, Error,
-Critical. A level whose chip is off is hidden from the output. The tab title adds the count of warnings and errors.
-The search field and the **Clear** button sit on the right of the toolbar.
-
-**Logger filters.** Two more chips: Engine (the `OWL` logger) and Game (the `APP` logger).
-
-**Text search.** A search field filters visible messages by substring match.
-
-**Auto-scroll.** Enabled by default, the panel automatically scrolls to the newest
-message. Scrolling up manually disables auto-scroll until re-enabled.
-
-**Actionable errors.** A failed scene load, Lua script or pack names the file, the entity
-(tag, id, line) and ends with a `Fix:` hint; the runner prints the same messages:
+A failed scene load, Lua script or pack names the file, the entity (tag, id, line) and ends with a `Fix:` hint; the
+runner prints the same messages:
 
 ```
 SceneSerializer: Cannot load scene 'scenes/level.owl': entity #1 (id 42) 'Broken' at line 5 is malformed
@@ -778,34 +506,25 @@ boom. Fix: fix the script at the first line of the traceback; the callback runs 
 
 ### Console {#editor-console}
 
-The Console panel (Ctrl+&#96;, action `view.console`) is a command line over the
-[editor commands](#editor-commands) and the journal of every command run in the session.
+The Console panel (Ctrl+&#96;, `view.console`) is a command line over the [editor commands](#editor-commands) and the
+journal of every command of the session.
 
 ![The Console: commands sent over MCP in the journal, then `help entity.rename` typed in the command line](../images/nest/console.png)
 
-**Command line.** One [command line](#editor-command-line) per input, run with `Enter` on the active scene; the
-result shows as `$n  description  (data)`, an error with its column, a command refused while the scene plays as
-*refused during Play*. `help` lists the commands, `help <command>` prints its arguments, types, defaults and choices.
-`Tab` completes the command name, then the argument names not given yet, then the choices of an enum or a bool;
-`↑` / `↓` browse the history, kept in `OwlNest_settings.yml` (`consoleHistory`, 100 lines).
-
-**Journal.** Every command executed in the session appears as one line, whatever asked for it: a gesture (hierarchy,
-inspector, gizmo, menus, shortcuts, Content Browser), the console, the palette, an external tool (MCP), a macro
-replay or a scenario step. Each line shows its number `$n`, its source and the command in the command syntax, then
-its undo description or its error. The source chips filter the lines; **Clear** empties the view (the numbers go on).
-
-**Macros.** Click journal lines to select them, then **Save as Macro** writes them to a `.owlmacro` file: the
-commands that ran, in order, the entities they created replaced by `$n` references (`commands::Macro::fromJournal`).
-A macro is replayed by a double-click in the Content Browser (its context menu also offers **Edit as Text**), by
-`macro.run path=...` in the console or from MCP. A replay is one undo step (one `Ctrl+Z` cancels it); the first line
-that fails stops it, undoes what it did and reports its line number.
+- **Command line**: one [command line](#editor-command-line) per input, run on the active scene with `Enter`; the
+  result shows as `$n  description  (data)`, an error with its column, an edit during Play as *refused during Play*.
+  `help` lists the commands, `help <command>` its arguments; `Tab` completes the command, then argument names, then
+  choices; `↑` / `↓` browse the history (`consoleHistory` in `OwlNest_settings.yml`, 100 lines).
+- **Journal**: one line per command run, whatever its source, with `$n`, the source, the command and its undo
+  description or error; source chips filter, **Clear** empties the view (numbers go on).
+- **Macros**: select journal lines, **Save as Macro** writes a `.owlmacro` with the created entities as `$n`
+  references (`commands::Macro::fromJournal`). A replay (double-click in the Content Browser, which also offers
+  **Edit as Text**, `macro.run path=...`, MCP, a scenario step) is one undo step; the first failing line stops it,
+  undoes it and reports its line.
 
 ### Stats
 
-The Stats panel, a tab of the bottom strip, displays real-time performance
-information. It can be toggled via the **Stats Panel** switch in the **General** tab of the Editor Settings.
-
-Displayed metrics:
+Real-time metrics, a tab of the bottom strip (the **Stats Panel** switch of the **General** settings):
 
 | Metric               | Source                                  |
 |----------------------|-----------------------------------------|
@@ -824,57 +543,44 @@ Displayed metrics:
 | Vulkan fence waits   | `RenderCounters::fenceWaits`, per frame |
 | Vulkan pace wait     | `RenderCounters::paceWaitMs`, per frame |
 
-The Vulkan rows show each counter of `RenderCommand::getRenderCounters()` as the delta of the last frame and
-the maximum over the last 2 s, so a one-off queue drain stays readable; they are greyed out on another backend.
+The Vulkan rows show each counter of `RenderCommand::getRenderCounters()` for the last frame and its maximum over the
+last 2 s; they are greyed on another backend.
 
 ### Settings
 
-The Settings panel is a dockable window opened via **View > Settings > Editor**, with one tab per topic, each tab
-with its icon; each row has its label on the left and a reset button once it differs from the default. The engine
-parameters dialog (Window, Backends, Debug), Project Settings and Scene Settings use the same grids under
-collapsible sections with an icon:
+**View > Settings > Editor** opens a dockable window, one tab per topic, each row with a reset button once off its
+default. The engine parameters (Window, Backends, Debug), Project Settings and Scene Settings use the same grids.
 
-**General.** The Stats Panel switch, the text size (75 to 150 %, applied at once, `UiLayer::setTextScale`; also
-`Ctrl+=`, `Ctrl+-` and `Ctrl+0`), the UI and code font sizes (next startup), and the autosave interval
-(see [Autosave and crash recovery](#autosave-and-crash-recovery)).
+- **General**: the Stats Panel switch, the text size (75 to 150 %, at once, `UiLayer::setTextScale`; `Ctrl+=`,
+  `Ctrl+-`, `Ctrl+0`), the UI and code font sizes (next start) and the [autosave](#autosave-and-crash-recovery)
+  interval.
+- **Gizmo Snap**: see [Viewport](#viewport). **Camera**: navigation speeds, inversion, dead zone.
+- **Shortcuts**: every action and its binding, see [Rebinding](#rebinding).
+- **MCP Server**: off by default; **Enabled** starts the [MCP server](#editor-mcp-server) on `127.0.0.1`, **Port**
+  (47800, 1024 to 65535) applies on release, status / endpoint / token file are shown (a click copies), **Regenerate
+  Token** refuses the old token at once.
+- **Appearance**: **Owl Dark** (default) or **Owl Light**. A theme is a few tokens (`gui::Theme`: five surfaces, the
+  input well, lines, three text levels, the amber accent, the play blue, the status colours, the three axis colours)
+  from which `UiLayer::setTheme` derives every ImGui colour; `IconBank::rebuild` re-tints the SVG icons (`#ffffff` the
+  text colour, `#ff00ff` the accent). Settings of a retired preset (Dark, Dark Blue, Nord, Solarized, Custom) open in
+  Owl Dark, Light in Owl Light.
 
-**Gizmo Snap.** Snap to grid, step from the tilemap, manual step and cell multiplier.
-
-**Camera.** Orbit, pan and zoom speeds, vertical inversion and dead zone of the viewport navigation, see
-[Viewport](#viewport).
-
-**Shortcuts.** The keyboard shortcuts, see [Rebinding](#rebinding).
-
-**MCP Server.** Off by default (no socket is opened): **Enabled** starts the [MCP server](#editor-mcp-server) on
-`127.0.0.1`, **Port** (47800 by default, 1024 to 65535) moves it once the field is released, the status, the endpoint
-and the token file are shown (click one to copy it), and **Regenerate Token** draws a new token, the old one being
-refused from then on.
-
-**Appearance.** **Owl Dark** (default) or **Owl Light**. A theme is a small set of tokens (`gui::Theme`:
-five surfaces from the ground to the pressed state, the input well, lines, three text levels, one amber accent,
-the play-mode blue, success / warning / error / info and the three axis colours); `UiLayer::setTheme` derives every
-ImGui colour and state from them, so a hovered or pressed control is always one step brighter. Changing the theme
-also re-tints the SVG icons (`IconBank::rebuild`): `#ffffff` becomes the text colour, `#ff00ff` the accent.
-Settings saved with a retired preset (Dark, Dark Blue, Nord, Solarized, Custom) open in Owl Dark, Light in
-Owl Light.
-
-**Buttons.** Dialog and panel buttons are `gui::widgets::button` (Lucide glyph, label, tooltip, optional width;
-the main action of a dialog in the accent colour) and `gui::widgets::iconButton` for glyph-only ones; menus use
-`gui::widgets::menuItem`.
-
-**Keybinding editor.** A table listing all registered actions with their current
-shortcuts. Each row shows the action name, default shortcut, and current binding.
-Click a binding cell to enter key-capture mode: press any key combination to rebind.
-The panel detects conflicts (two actions sharing the same shortcut) and displays a
-warning. A "Reset to Defaults" button restores all factory bindings.
-
-Keybinding overrides and recent projects are persisted in `OwlNest_settings.yml`
-alongside other editor settings.
+Dialog buttons are `gui::widgets::button` (glyph, label, tooltip; the main action in the accent),
+`gui::widgets::iconButton` for glyph-only ones, menus `gui::widgets::menuItem`. Settings, keybinding overrides and the
+recent projects live in `OwlNest_settings.yml`.
 
 ### Hot reload {#editor-hot-reload}
 
-Owl Nest and the development runner watch the asset directories (project and engine assets) and reload what changes
-on disk, at the start of the next frame:
+Owl Nest and the development runner watch the asset directories (project and engine) and reload what changes, at the
+start of the next frame:
+
+```mermaid
+flowchart LR
+    W["watcher thread<br/>mtimes every 500 ms"] -->|change| F[atomic flag]
+    F -->|next frame| R{reload}
+    R -->|ok| N[new version in use]
+    R -->|error| K["previous version kept<br/>error in the Log"]
+```
 
 | File                         | What reloads                                                                             |
 |------------------------------|------------------------------------------------------------------------------------------|
@@ -884,23 +590,18 @@ on disk, at the start of the next frame:
 | `.lua`                       | Every running instance of the script, see [Scripting](scripting.md#scripting-hot-reload) |
 | `.owl`                       | The scene document of that file, when it is not playing and has no unsaved edit          |
 
-- **A failed reload keeps the previous version**: an unreadable image keeps its pixels, a shader that does not compile
-  keeps its binaries, a script that does not load keeps running. The error goes to the Log panel with the file, and
-  the Slang or Lua diagnostic (file, line, message).
-- A scene with unsaved edits is never replaced: a warning says the file changed on disk. The editor's own saves are
-  recognised (the file holds what the editor would write) and reload nothing.
-- **Cost**: a background thread compares modification times every 500 ms and the frame reads one atomic flag; the
-  frame bench measures it with `OwlRunner --frame-bench <scene> --hot-reload`.
-- **Turn it off**: the *Hot Reload* switch of the *Debug* section of the *Parameters* dialog (`hotReload` in `config.yml`), `OwlRunner
-  --no-hot-reload`. A packaged game never watches: the hot reload stays off whenever an asset pack is open.
-- Not reloaded: colliders built when the play started (a tilemap's collision flags apply at the next play), new
-  bindings in a shader (restart), C++ game code (a v0.6.0 evaluation).
+- A failed reload keeps the previous version (pixels, shader binaries, running script) and logs the file and the Slang
+  or Lua diagnostic.
+- A scene with unsaved edits is never replaced (a warning says the file changed); the editor's own saves reload nothing.
+- The frame reads one atomic flag; `OwlRunner --frame-bench <scene> --hot-reload` measures it.
+- Off with *Hot Reload* in *Parameters > Debug* (`hotReload` in `config.yml`) or `OwlRunner --no-hot-reload`; a game
+  with an open asset pack never watches.
+- Not reloaded: colliders built at Play start (tilemap collision flags apply at the next Play), new shader bindings
+  (restart), C++ game code (a v0.6.0 evaluation).
 
 ### Project Settings
 
-The Project Settings dialog is opened via **Project > Project Settings**. It edits the
-active project's configuration in five sections (General, Window, Input, Simulation, Renderer Stack) laid out as property
-grids, like the inspector:
+**Home > Project > Settings** edits the project in five sections (General, Window, Input, Simulation, Renderer Stack):
 
 | Field               | Description                                                                       |
 |---------------------|-----------------------------------------------------------------------------------|
@@ -920,147 +621,86 @@ grids, like the inspector:
 | Tick Rate           | Fixed simulation ticks per second (1–1000, 60 by default): `on_tick`, physics     |
 | Max Ticks per Frame | Ticks one frame runs at most (1–64, 8 by default); the time beyond is dropped     |
 
-Changes are applied on confirmation (**Cancel** drops them, every field reverts to its default with its reset
-button) and saved to `owl_project.yml`; the project settings are not on the scene undo stack. The window and
-simulation settings are also written to `runner.yml` during game export (`Project > Pack Game`) and applied by the
-Runner at startup; the tick rate applies from the next Play (see [Fixed simulation tick](scene.md#fixed-tick)). A
-new gamepad mapping file is loaded on confirmation (see [Gamepads](event_input.md)).
+Changes apply on confirmation (**Cancel** drops them) and go to `owl_project.yml`, outside the scene undo stack. Window
+and simulation settings are also written to `runner.yml` by the export; the tick rate applies from the next Play
+([Fixed simulation tick](scene.md#fixed-tick)); a new gamepad mapping file loads on confirmation
+([Gamepads](event_input.md#gamepads)).
 
 ### Scene Settings
 
-The Scene Settings panel is a dockable window opened via the ribbon
-(**Scene > Scene > Settings**). It edits the active scene's *global* settings —
-the `EnabledRenderers` and `Physics` blocks in the `.owl` file — without requiring the user
-to hand-edit YAML.
+**Scene > Scene > Settings** edits the scene's global blocks (`EnabledRenderers`, `Physics`, `Hud:`), each change an
+undoable command:
 
-The **Physics** section edits the scene's `physics::PhysicsSettings`: solver sub-steps, solver threads (`auto` = 0)
-and transform interpolation (see [Physics](physics.md)); the world steps once per simulation tick, whose rate is a
-project setting. Each change pushes an undoable
-`ModifyPhysicsSettingsCommand`; the settings are read when Play starts. It is shown even when the project
-declares no renderer stack.
+- **Physics**: `physics::PhysicsSettings` (sub-steps, solver threads, `auto` = 0, interpolation, see
+  [Physics](physics.md)), `ModifyPhysicsSettingsCommand`, read at Play start; shown even without a renderer stack.
+- **HUD**: *Project default*, *None*, a project file or a dropped one, through `scene.set_hud` (`path` or
+  `use_default`). **Extract Canvas to .owlhud...** (Scene Hierarchy menu of a root canvas) writes the canvas to a
+  `.owlhud`, removes it from the scene and points `Hud:` at the file (`hud.extract_canvas`, one undo step; the file
+  stays after an undo).
+- **Renderer stack**, mirroring `renderer::EnabledRenderersConfig`:
 
-The **HUD** section chooses the `.owlhud` the scene draws (its `Hud:` key): *Project default*, *None*, a file listed
-from the project, or a file dropped from the Content Browser. The choice runs the undoable `scene.set_hud` command
-(`path`, or `use_default`), so the console, macros and MCP issue it too.
+| Control                             | Effect                                                                                               |
+|-------------------------------------|------------------------------------------------------------------------------------------------------|
+| Layer row (per scene-listed entry)  | The layer name and its type (`Renderer2D`, `RendererRaycast`, …).                                    |
+| Enabled switch                      | Toggle the scene-level enable flag. Disabled layers are skipped without affecting the order.         |
+| Up / Down chevrons                  | Reorder the scene listing. Listed layers run in this order; unlisted layers append in project order. |
+| Detach button                       | Remove the scene-level entry — the layer reverts to the project's default config.                    |
+| `Overrides` sub-section             | Per-layer-type override editor for known keys (see below).                                           |
+| Add layer slot (`+` next to a name) | Add a project layer absent from the scene listing — equivalent to declaring a new override.          |
 
-A root canvas of a scene moves to a shared HUD with **Extract Canvas to .owlhud...** in its Scene Hierarchy context
-menu: the canvas and its widgets are written to the chosen `.owlhud` (inside an asset folder), removed from the scene,
-and the scene's `Hud:` key points at the file (`hud.extract_canvas`, one undo step; the file stays on disk after an
-undo).
-
-The renderer-stack section mirrors `renderer::EnabledRenderersConfig`:
-
-| Control                                  | Effect                                                                                               |
-|------------------------------------------|------------------------------------------------------------------------------------------------------|
-| Layer row (per scene-listed entry)       | The layer name and its type (`Renderer2D`, `RendererRaycast`, …).                                    |
-| Enabled switch                           | Toggle the scene-level enable flag. Disabled layers are skipped without affecting the order.         |
-| Up / Down chevrons                       | Reorder the scene listing. Listed layers run in this order; unlisted layers append in project order. |
-| Detach button                            | Remove the scene-level entry — the layer reverts to the project's default config.                    |
-| `Overrides` sub-section                  | Per-layer-type override editor for known keys (see below).                                           |
-| Add layer slot (`+` next to a name)      | Add a project layer absent from the scene listing — equivalent to declaring a new override.          |
-
-The `Overrides` collapsible exposes typed widgets per layer type:
-
-- **`Renderer2D`** — `Space` combo (`World` for sprite layers, `Screen` for
-  HUD / pixel-overlay layers immune to camera rotation) and Reference Height (key `ReferenceHeight`: the screen
-  height in `Screen` units, 0 for pixels, 720 for an overlay that scales with the resolution).
-- **`RendererRaycast`** — Field of View, Max Distance and Rays numeric drags (keys `Fov`, `MaxDistance`,
-  `NumRays`); Ceiling / Floor colour pickers (`CeilingColor` / `FloorColor`).
-- **`RendererIsometric`** — Tile Width, Tile Height, Height Step and Zoom (keys `TileWidth`, `TileHeight`, `ZStep`,
-  `Zoom`, the zoom level used in Play).
-
-Every change pushes a `ModifyEnabledRenderersCommand` onto the active scene's
-undo manager and rebuilds the live `RenderStack` so the visual effect is
-immediate. Successive edits within 1 s coalesce into a single undo step
-(matches the inspector's slider-coalescing behaviour).
+`Overrides` per layer type: **`Renderer2D`** `Space` (`World`, or `Screen` for overlays immune to the camera) and
+`ReferenceHeight` (0 for pixels, 720 to scale with the resolution); **`RendererRaycast`** `Fov`, `MaxDistance`,
+`NumRays`, `CeilingColor`, `FloorColor`; **`RendererIsometric`** `TileWidth`, `TileHeight`, `ZStep`, `Zoom` (the
+zoom level of Play). Each change pushes a `ModifyEnabledRenderersCommand` and rebuilds the live `RenderStack`; edits
+within 1 s coalesce into one undo step.
 
 ## Editor State Machine
 
-The editor maintains a `State` enum (`Edit`, `Play`, `Pause`) that governs which
-systems are active and how the scene is presented.
+The editor's `State` (`Edit`, `Play`, `Pause`) decides what runs and what is shown:
 
-### Edit
+```mermaid
+stateDiagram-v2
+    [*] --> Edit
+    Edit --> Play : F5 Play
+    Play --> Pause : F6 Pause
+    Pause --> Play : F6 Resume
+    Play --> Edit : F7 Stop
+    Pause --> Edit : F7 Stop
+    Pause --> Pause : F8 Step (one tick)
+```
 
-The default state. The editor camera is active, physics and scripts are not running,
-and the scene can be freely modified. All editing operations (entity creation, deletion,
-reparenting, component editing, gizmo manipulation) are available.
+| State     | Description                                                     | Play controls            |
+|-----------|-----------------------------------------------------------------|--------------------------|
+| **Edit**  | Editor camera active, no simulation, scene is directly editable | Play                     |
+| **Play**  | Scene copy is simulated, runtime camera active, physics running | Pause, Stop              |
+| **Pause** | Simulation frozen, render-only mode with step-frame support     | Resume, Stop, Step Frame |
 
-### Play
-
-Entered by pressing Play (or the configured shortcut). The editor:
-
-1. Copies the current scene (`m_editorScene`) into `m_activeScene`
-2. Calls `onStartRuntime()` on the copy, which initializes physics bodies and starts
-   sounds with `playOnStart=true`
-3. Switches to the runtime camera (the scene's primary camera entity)
-
-Each frame calls `onUpdateRuntime()` which steps the physics simulation, updates
-spatial sound positions, and invokes native scripts.
+```mermaid
+sequenceDiagram
+    participant E as Editor
+    participant S as m_editorScene
+    participant A as m_activeScene (copy)
+    E->>A: Play: copy S, onStartRuntime() (bodies, playOnStart sounds), primary camera
+    loop each frame
+        E->>A: onUpdateRuntime() (skipped in Pause, rendered anyway)
+    end
+    A-->>E: Teleport trigger: target scene loaded, in Editing status
+    E->>A: next frame: onStartRuntime() on it, player velocity applied at the spawn point
+    E->>A: Stop: onEndRuntime() (bodies, sounds), copy dropped
+    E->>S: back to Edit on the untouched scene
+```
 
 ![The platformer of the Engine Demo in Play: the viewport framed in blue, the Play controls on top](../images/nest/play_mode.png)
 
-### Pause
-
-Entered by pressing Pause during Play. The simulation freezes: `onUpdateRuntime()` is
-skipped, but the scene continues to render. The Step Frame action advances the
-simulation by exactly one simulation tick, useful for debugging physics or animation timing.
-
-### Stop
-
-Pressing Stop discards the runtime copy and restores the original `m_editorScene`.
-All runtime handles (physics bodies, sound sources) are cleaned up by `onEndRuntime()`.
-The editor returns to Edit state.
-
-**Cross-level teleport.** When a teleport trigger fires during Play, the editor loads
-the target scene into `m_activeScene` (which enters Editing status). On the next frame
-the editor detects this state mismatch, calls `onStartRuntime()` on the new scene, and
-applies the pending velocity to the player at the target spawn point. Stopping always
-restores the original `m_editorScene`.
-
 ## Project Workflow
 
-Owl Nest organizes assets and scenes through a project system. A project is a directory
-containing an `owl_project.yml` configuration file and asset subdirectories.
-
-### Project Structure
-
-```
-my_game/
-  owl_project.yml
-  game_settings.yml
-  scenes/
-    main.owl
-    level_2.owl
-  textures/
-    player.png
-  sounds/
-    jump.wav
-  fonts/
-    main.ttf
-  scripts/
-    player.lua
-```
-
-The optional `game_settings.yml` file defines default game settings (player speed, volumes,
-etc.) as key-value pairs. These defaults are loaded by the Runner at startup and can be
-overridden by the player via the Lua `settings` API. See
-[Lua Scripting > settings](scripting.md) for details.
-
-### owl_project.yml
-
-```yaml
-name: "My Game"
-firstScene: "scenes/main.owl"
-```
-
-The `Project` class (`source/owlnest/sources/Project.h`) holds three fields: `name`,
-`firstScene`, and `projectDirectory`. The configuration is loaded and saved via
-`loadFromFile()` / `saveToFile()`.
+A project is a folder holding an `owl_project.yml` and its assets; its layout, the export flow and the
+`owl_project.yml` keys are in [Architecture > Project System](architecture.md#project-system). The optional
+`game_settings.yml` holds the default game settings, overridden by the player through the Lua `settings` API
+([Lua Scripting](scripting.md)). The `Project` class (`source/owlnest/sources/Project.h`) loads and saves it
+(`loadFromFile()` / `saveToFile()`).
 
 ### Workflow Operations
-
-The workflow commands live in the **File** screen (project), the **Home** tab (edit, create, project) and the
-**Scene** tab (active scene, shown while a scene document is active).
 
 **File screen** — project operations:
 
@@ -1097,34 +737,24 @@ The workflow commands live in the **File** screen (project), the **Home** tab (e
 | Scene Settings | Scene > Scene > Settings   | Enabled renderers and physics of the scene              |
 | Pack Scene     | Scene > Scene > Pack Scene | Pack the current scene's assets into `.owlpack` (async) |
 
-**File screen at start-up.** When the editor starts without a loaded project, the File screen opens with **New
-project**, **Open project**, **Getting started**, **Engine Demo**, the sample games and the recent projects. The
-sample card shows when a `engine_demo/` sits next to `bin/` in the archive, or at the root of the sources
-(`panel::findSampleProject`, from the asset folders upwards); the sample games are the `samples/<game>/` projects
-beside it (`panel::findSampleGames`), one row each.
+**File screen at start-up.** Without a project the File screen opens with **New project**, **Open project**,
+**Getting started**, **Engine Demo**, the sample games and the recent projects. The **Engine Demo** card shows when an
+`engine_demo/` sits next to `bin/` in the archive or at the root of the sources (`panel::findSampleProject`, from the
+asset folders upwards); the sample games are the `samples/<game>/` projects beside it (`panel::findSampleGames`).
+`OwlNest --project <project dir or owl_project.yml>` opens a project, its last session included, instead.
 
-**Switching project.** Opening a project closes the current one first, and closing a project unloads everything
-of it, so two projects that use the same asset names (`nam:textures/…`, `huds/…`, a font name) never show each
-other's files. The switch runs at the start of the next frame, once no widget draws the old textures. Closing a
-project:
+**Switching project.** Opening a project closes the current one first, at the start of the next frame, so two projects
+using the same asset names (`nam:textures/…`, `huds/…`, a font name) never show each other's files. Closing stops
+Play, saves the session, puts unsaved changes in recovery and closes every document (one empty scene stays), then
+removes the project folder from the asset folders (`Application::removeAssetDirectory`, which unloads what was read
+from it through `Application::unloadAssetsFrom`: textures, sounds, fonts, HUDs, voxel meshes) and clears the
+previews and any transition. Editor resources and engine assets stay; GPU resources go with their last holder,
+through the Vulkan deferred release.
 
-- stops Play, saves the session (open tabs), puts unsaved changes in recovery (offered when the project opens
-  again) and closes every document, leaving one empty scene;
-- removes the project folder from the asset folders (`Application::removeAssetDirectory`), which unloads what was
-  read from it (`Application::unloadAssetsFrom`): textures, sounds and fonts whose file lies in it leave their
-  libraries, the loaded HUDs and the voxel meshes are dropped;
-- clears the content browser previews, the font previews and any screen transition in progress.
-
-Editor resources and engine assets stay loaded. GPU resources go when their last holder does, through the Vulkan
-deferred release.
-
-**Async operations.** Pack Game, Pack Scene, Open Scene, and Save Scene all run off the
-main thread via a progress modal (`AsyncProgressModal`). Pack Game additionally runs a
-**pre-packaging validation** step that lists missing references (textures, sounds,
-scripts, scenes) before proceeding — the user can either cancel or confirm to pack anyway.
-
-**Exporting a game.** Pack Game writes `<output>/<GameName>/` (the name with spaces and reserved characters
-turned into `_`):
+**Exporting a game.** Pack Game, Pack Scene, Open Scene and Save Scene run off the main thread behind a progress modal
+(`AsyncProgressModal`, see [Async Packaging Flow](architecture.md#async-packaging-flow)); Pack Game first lists the
+missing references (textures, sounds, scripts, scenes), to cancel or pack anyway. It writes `<output>/<GameName>/`
+(spaces and reserved characters turned into `_`):
 
 | File                       | Content                                                            |
 |----------------------------|--------------------------------------------------------------------|
@@ -1137,23 +767,20 @@ turned into `_`):
 | `<GameName>.zip` (Windows) | Archive of the game folder, next to it                             |
 | icon                       | The project icon, at its project-relative path                     |
 
-`OwlNest --project <project dir or owl_project.yml>` opens a project at start-up, its last session included, instead
-of showing the File screen. The same export runs without a window from the command line, which CI uses:
+The same export runs without a window, as the CI does; `--headless` uses the Null backends and `--smoke-test [frames]`
+plays every scene of the pack, exiting with 1 on any logged error ([Game export](design/game-export.md)):
 
 ```bash
 OwlNest --export <project dir or owl_project.yml> <output dir>
 <output dir>/<GameName>/launch.sh --headless --smoke-test 60
 ```
 
-`--headless` uses the Null window, renderer and sound backends; `--smoke-test [frames]` plays every scene of the
-pack for that many frames and exits with code 1 if any error was logged. See [Game export](design/game-export.md).
-
 ### Project templates
 
-**New Project** asks for a name, a location and a template; the project is created in `<location>/<name>`, which
-must be new or empty, and opened on its first scene. The templates are folders of
-`engine_assets/project_templates/`, each holding a `template.yml` (name, description, order), an `owl_project.yml`
-(renamed to the chosen name) and the scenes and assets copied into the project:
+**New Project** asks for a name, a location and a template, creates `<location>/<name>` (new or empty) and opens its
+first scene. Templates are the folders of `engine_assets/project_templates/`, each with a `template.yml` (name,
+description, order), an `owl_project.yml` (renamed) and the files to copy; a new folder with these two files is a
+template too, and without any the project starts empty (`owl_project.yml` and `scenes/`).
 
 | Template     | Renderer stack           | Content                                                    |
 |--------------|--------------------------|------------------------------------------------------------|
@@ -1162,32 +789,36 @@ must be new or empty, and opened on its first scene. The templates are folders o
 | Voxel        | `voxel_world`            | Procedural streamed terrain, `VoxelPlayer` (WASD, space)   |
 | Mixed styles | 2D, raycast, voxel, `ui` | Raycast room under a 2D HUD, voxel `terrain.owl`           |
 
-Every template ships an `input_actions.yml` holding the built-in actions, ready to edit (see the
-[action map editor](#editor-action-map)). A new folder in `project_templates/` with these two files is offered as a
-template too. Without any template
-installed, the project starts empty (an `owl_project.yml` and a `scenes/` folder).
+Every template ships an `input_actions.yml` with the built-in actions ([action map editor](#editor-action-map)).
 
 ### Session restore
 
-Closing a project or quitting the editor records its session in `OwlNest_settings.yml`: the files of the open tabs
-(relative to the project), the active tab and the entity selected in the active scene. Opening the project again
-reopens them instead of `firstScene`; a file that no longer exists is skipped with a warning. Only the projects of
-the recent list keep a session. The dock layout is shared by all projects (`OwlNest_imgui.ini`).
+Closing a project or quitting records its session in `OwlNest_settings.yml`: the open tabs (relative paths), the active
+tab and the selected entity. Reopening the project restores them instead of `firstScene` (a missing file is skipped
+with a warning). Only recent projects keep a session; the dock layout (`OwlNest_imgui.ini`) is shared.
 
 ### Autosave and crash recovery
 
-While a project is open, every modified document (scene, script or text file, tilemap, tileset, animation clip,
-node graph) is copied aside every 60 seconds (*Settings > General > Autosave every*, 0 disables it), and once more
-when the editor quits or the project closes. The copies live outside the project, in
-`OwlNest_recovery/<project>-<hash>/` next to `OwlNest_settings.yml`: one snapshot per document and a
-`recovery.yml` manifest. Saving a document drops its snapshot; the Scene Flow view is not autosaved (it is rebuilt
-from the scenes).
+Every modified document of the open project (scene, script or text, tilemap, tileset, animation clip, node graph; not
+the Scene Flow, rebuilt from the scenes) is copied aside every 60 s (*Settings > General > Autosave every*, 0
+disables) and once more when the editor quits or the project closes, into `OwlNest_recovery/<project>-<hash>/` next
+to `OwlNest_settings.yml` (one snapshot per document and a `recovery.yml` manifest):
 
-When a project is opened and snapshots are left (crash, or quit without saving), the *Recover Unsaved Work?* modal
-lists them with their file and time. **Recover** reopens each document with the autosaved content, marked as
-modified so that nothing is written until you save; **Discard** deletes the snapshots. A snapshot older than its
-file (saved after the autosave) is never offered. A snapshot that cannot be restored is kept in a
-`<folder>-kept-<time>` folder named in the log.
+```mermaid
+stateDiagram-v2
+    [*] --> Clean
+    Clean --> Dirty : edit
+    Dirty --> Snapshot : autosave timer, quit, project closed
+    Snapshot --> Dirty : more edits
+    Dirty --> Clean : save (snapshot dropped)
+    Snapshot --> Clean : save (snapshot dropped)
+    Snapshot --> Offered : project opened again (crash, quit unsaved)
+    Offered --> Dirty : Recover (reopened, marked modified)
+    Offered --> Clean : Discard (snapshot deleted)
+```
+
+A snapshot older than its file is never offered; one that cannot be restored is kept in a `<folder>-kept-<time>`
+folder named in the log (`RecoveryManager`).
 
 ### Scripted headless runs (`--scenario`)
 
@@ -1195,7 +826,8 @@ file (saved after the autosave) is never offered. A snapshot that cannot be rest
 input) and plays steps that inject inputs and check the world, at a fixed time step. Asynchronous work (scene
 transitions, texture decodes) is finished before every frame, so a scenario counts frames, not seconds, and gives
 the same result on any machine. It exits with 0 when every expectation holds and no error was logged, 1 otherwise,
-2 on a file it cannot read.
+2 on a file it cannot read. A watchdog ends a run that plays no frame for 120 s (times `OWL_SCRIPT_TIME_SCALE`), or that
+does not exit as long after its verdict, with code 7 and the phase, step and frame where it stalled.
 
 ```yaml
 # test/unit/scenarios/platformer_walk.owltest
@@ -1235,64 +867,82 @@ steps:
 | `undo`    | Number of commands to undo                                                                    |
 | `redo`    | Number of commands to redo                                                                    |
 
-Inputs go through the injection of the input layer (`input::Input::injectKey`, …), which works on any window
-back-end: a key held over two consecutive `input` steps stays held, so `input.is_key_just_pressed` fires once
-(`test/unit/scenarios/platformer_jump.owltest`); a `gamepad` drives a pad on the Null back-end
-(`test/unit/scenarios/platformer_gamepad.owltest`); an `actions` step resolves the names against the project's action map
-when the file is read, so it stays valid when a binding changes (`test/unit/scenarios/platformer_actions.owltest`). Expectations due at a step see the world left by the frames before it; positions are world-space. Commands run on
-the playing scene with an undo history of their own (`test/unit/scenarios/editor_commands.owltest`, macros in
-`test/unit/scenarios/editor_macro.owltest`). Every
-`test/unit/scenarios/*.owltest` is a CTest case (label `scenario`).
+- Inputs go through the input layer's injection (`input::Input::injectKey`, …), on any window back-end: a key held
+  over two consecutive `input` steps stays held, so `input.is_key_just_pressed` fires once
+  (`test/unit/scenarios/platformer_jump.owltest`); a `gamepad` drives a pad on the Null back-end
+  (`test/unit/scenarios/platformer_gamepad.owltest`).
+- An `actions` step resolves its names against the action map when the file is read, so it survives a rebinding
+  (`test/unit/scenarios/platformer_actions.owltest`).
+- An expectation sees the world left by the frames before it, positions in world space.
+- Commands run on the playing scene with an undo history of their own (`test/unit/scenarios/editor_commands.owltest`,
+  macros in `test/unit/scenarios/editor_macro.owltest`).
+- Every `test/unit/scenarios/*.owltest` is a CTest case (label `scenario`).
 
 ### Editor commands
 
-Every discrete change of a scene in Owl Nest (creating, deleting, duplicating, moving in the hierarchy, adding or
-removing a component, editing its fields, instantiating a prefab) is a named command of `commands::CommandRegistry`,
-run through the scene's undo manager: the hierarchy menus, the drag and drop, the Delete / Ctrl+D shortcuts, the
-scenario runner and the tests call the same commands with typed arguments, so every change is undoable whoever asked
-for it. A command that cannot run (unknown entity, wrong argument type, value outside the choices, missing file)
-changes nothing and logs why; while the scene plays, commands that edit it are refused.
+Every discrete change of a scene (create, delete, duplicate, reparent, add or remove a component, edit its fields,
+instantiate a prefab) is a named command of `commands::CommandRegistry`, run through the scene's `UndoManager`,
+whoever asks for it:
 
-Argument types: bool, integer, number, text, entity, `Vec2` / `Vec3` / `Vec4` (numbers separated by commas or
-spaces), `Color` (three or four numbers in [0, 1], or `#rrggbb[aa]`) and `Enum` (one of the declared choices). An
-argument may declare a default value, given to the command when the caller omits it. A command returns its undo
-description and structured data (`entity` UUID, plus the fields listed below).
+```mermaid
+flowchart LR
+    G["gestures: hierarchy, inspector,<br/>gizmo, shortcuts, drops"] --> R
+    C[Console] --> R
+    P[Command palette] --> R
+    M[MCP tools] --> R
+    S[Scenario command steps] --> R
+    X[Macro replay] --> R
+    R[CommandRegistry<br/>typed arguments] -->|refused: bad argument,<br/>edit during Play| L[Log]
+    R --> U[UndoManager<br/>one undo step]
+    R --> J[CommandJournal<br/>number, source, result]
+    J -->|Save as Macro| O[.owlmacro]
+    O --> X
+```
 
-| Command                | Arguments                                                                    |
-|------------------------|------------------------------------------------------------------------------|
-| `entity.create`        | `name` (text, `Empty Entity`), `parent` (entity, root when absent)           |
-| `entity.delete`        | `entity`, `children` (bool: delete the subtree, else children move up)       |
-| `entity.duplicate`     | `entity`, `children` (bool: duplicate the subtree)                           |
-| `entity.reparent`      | `entity`, `parent` (root when absent); the world position is kept            |
-| `entity.rename`        | `entity`, `name`                                                             |
-| `entity.set_transform` | `entity`, `translation` / `rotation` (radians) / `scale` (three numbers)     |
-| `component.add`        | `entity`, `component` (display name `Circle Renderer` or file key)           |
-| `component.remove`     | `entity`, `component`                                                        |
-| `prefab.instantiate`   | `path` (prefab file), `asset_path` (link recorded, found from the folders)   |
-| `component.set`        | `entity`, `component`, `values` (YAML / JSON map merged into the component), |
-|                        | `replace` (bool: `values` replaces every field, used by the inspector)       |
-| `scene.save`           | `path` (the scene file when absent); returns `path`                          |
-| `edit.undo`            | none; returns `can_undo`, `can_redo` and the entity to select                |
-| `edit.redo`            | none; same result as `edit.undo`                                             |
-| `macro.run`            | `path` (`.owlmacro`, absolute or in an asset folder); returns `commands`     |
+A refused command changes nothing and logs why. Arguments: bool, integer, number, text, entity (a UUID or a tag,
+first match), `Vec2` / `Vec3` / `Vec4`, `Color` (three or four numbers in [0, 1], or `#rrggbb[aa]`) and `Enum` (a
+declared choice), each with an optional default. A command returns its undo description and structured data (`entity`
+UUID, plus the fields below).
+
+| Command                | Arguments                                                                                              |
+|------------------------|--------------------------------------------------------------------------------------------------------|
+| `entity.create`        | `name` (text, `Empty Entity`), `parent` (entity, root when absent)                                     |
+| `entity.delete`        | `entity`, `children` (bool: delete the subtree, else children move up)                                 |
+| `entity.duplicate`     | `entity`, `children` (bool: duplicate the subtree)                                                     |
+| `entity.reparent`      | `entity`, `parent` (root when absent); the world position is kept                                      |
+| `entity.rename`        | `entity`, `name`                                                                                       |
+| `entity.set_transform` | `entity`, `translation` / `rotation` (radians) / `scale` (three numbers)                               |
+| `component.add`        | `entity`, `component` (display name `Circle Renderer` or file key)                                     |
+| `component.remove`     | `entity`, `component`                                                                                  |
+| `prefab.instantiate`   | `path` (prefab file), `asset_path` (link recorded, found from the folders)                             |
+| `component.set`        | `entity`, `component`, `values` (YAML / JSON map merged into the component),                           |
+|                        | `replace` (bool: `values` replaces every field, used by the inspector)                                 |
+| `scene.save`           | `path` (the scene file when absent); returns `path`                                                    |
+| `edit.undo`            | none; returns `can_undo`, `can_redo` and the entity to select                                          |
+| `edit.redo`            | none; same result as `edit.undo`                                                                       |
+| `macro.run`            | `path` (`.owlmacro`, absolute or in an asset folder); returns `commands`                               |
 | `hud.add_widget`       | `kind` (`panel`, `label`...), `name`, `parent`, `size`, `anchor`, `offset`, `size_unit`, `offset_unit` |
 | `hud.set_rect`         | `entity`, `anchor_min`, `anchor_max`, `pivot`, `size`, `offset`, `size_unit`, `offset_unit` (as given) |
-| `hud.set_anchors`      | `entity`, `anchor_min`, `anchor_max`, `keep_bounds`, `resolution`            |
-| `hud.set_pivot`        | `entity`, `pivot`, `keep_bounds`, `resolution`                               |
-| `hud.move`             | `entities` (UUIDs or tags, comma separated), `delta` (reference pixels), `resolution` |
-| `hud.delete`           | `entities`: the widgets and their children, one step                         |
-| `hud.reparent`         | `entity`, `parent`, `index`, `keep_bounds`, `resolution`                     |
-| `hud.extract_canvas`   | `entity` (root canvas), `path` (`.owlhud`), `asset_path`; returns `hud`      |
+| `hud.set_anchors`      | `entity`, `anchor_min`, `anchor_max`, `keep_bounds`, `resolution`                                      |
+| `hud.set_pivot`        | `entity`, `pivot`, `keep_bounds`, `resolution`                                                         |
+| `hud.move`             | `entities` (UUIDs or tags, comma separated), `delta` (reference pixels), `resolution`                  |
+| `hud.delete`           | `entities`: the widgets and their children, one step                                                   |
+| `hud.reparent`         | `entity`, `parent`, `index`, `keep_bounds`, `resolution`                                               |
+| `hud.extract_canvas`   | `entity` (root canvas), `path` (`.owlhud`), `asset_path`; returns `hud`                                |
 
-An entity argument is a UUID (integer) or a tag (first match). Continuous edits previewed live (voxel brush strokes,
-tile painting, node moves) are recorded as one command when the gesture ends. An inspector field edit and a gizmo drag
-end as a registry command: the panel puts the entity back as it was before the gesture and runs `component.set`
-(`replace=true`) or `entity.set_transform` with the final values, so the console journal and the macros see them.
-
-Every command run through a registry bound to a journal (`CommandRegistry::setJournal`; the editor and the headless
-session bind theirs to `EditorSession::getJournal()`) is appended to `commands::CommandJournal` with its source
-(`CommandContext::source`: gesture, console, palette, MCP, replay, scenario) and its result or failure, numbered from
-1 for the whole session.
+- **Gestures.** A live-previewed edit (voxel brush, tile painting, node moves) becomes one command when the gesture
+  ends. An inspector field or a gizmo drag puts the entity back as it was and runs `component.set` (`replace=true`) or
+  `entity.set_transform` with the final values. An inspector edit is recorded when it ends (drag released, text
+  validated, checkbox clicked, combo chosen, asset dropped); nothing is serialized while the panel is only drawn, and
+  rapid edits of one property coalesce into one step.
+- **Undo** restores an entity in place (UUID, children, hierarchy slot, selection); undoing a parent's deletion puts
+  its children back in order. The Edit labels name the next step ("Undo Delete 'Player'").
+- **Dirty flag.** The window title (`refreshWindowTitle()`) shows the project, the scene and `*` when the undo state
+  differs from the saved one: undoing back to the save point clears it, any other state sets it and makes closing ask
+  to save.
+- **Journal.** A registry bound to a journal (`CommandRegistry::setJournal`, the editor and headless sessions bind
+  `EditorSession::getJournal()`) appends every command to `commands::CommandJournal` with its source
+  (`CommandContext::source`: gesture, console, palette, MCP, replay, scenario) and result, numbered from 1 per session.
 
 #### Command line {#editor-command-line}
 
@@ -1316,204 +966,97 @@ component.set entity=$1 component=Transform values="{translation: [4, 3, 0]}"
 | colour  | `#rrggbb`, `#rrggbbaa` or `(r, g, b[, a])`                                               |
 | enum    | the choice, bare or quoted                                                               |
 
-In the console `$n` counts the commands of the session journal; in a macro it counts the commands of the macro, so a
-recorded sequence refers to the entities it creates without hard-coded ids. `commands::parseCommandLine` reads a line
-(errors give their column) and `commands::printCommandLine` writes one back; every value printed reads back to the
-same value.
+`$n` counts the session journal in the console and the macro's own commands in a macro, so a recording needs no
+hard-coded id. `commands::parseCommandLine` reads a line (errors give their column), `commands::printCommandLine`
+writes one back; every printed value reads back the same.
 
 ### Editor session
 
-`session::EditorSession` (`sources/session/`, in the commands library shared with the runner) is what tools drive the editor through: the
-scene shown and its file, its undo history, the command registry (`execute` builds the `CommandContext`), bounded
-plays, frame captures and statistics. Two implementations:
+`session::EditorSession` (`sources/session/`, in the commands library shared with the runner) is what tools drive: the
+scene and its file, its undo history, the command registry (`execute` builds the `CommandContext`, recording an
+external source by default), bounded plays, captures, statistics and the journal (`getJournal()`); `replay` runs a
+`commands::Macro` as one undo step (refused during Play), and `session::Console` is the console without UI.
 
-- `EditorLayer`, on the active scene document: a bounded play runs over the next frames of the main loop, at its fixed
-  step, then stops (or pauses); the capture reads the viewport back.
-- `HeadlessSession`, without window nor ImGui (tests, tools): loads a scene with its project (asset folder, renderer
-  stack, simulation settings), plays synchronously into an offscreen frame, switches a windowless application to the
-  Null input. On the Null renderer a capture is a blank image of the session size; scene transitions are not followed.
+- `EditorLayer`, on the active scene document: a bounded play runs over the next frames of the main loop at its fixed
+  step, then stops or pauses; the capture reads the viewport back.
+- `HeadlessSession` (tests, tools): no window nor ImGui; loads a scene with its project (asset folder, renderer stack,
+  simulation settings), plays synchronously offscreen with the Null input. On the Null renderer a capture is blank and
+  scene transitions are not followed.
 
-The session owns the journal of its commands (`getJournal()`); `execute` takes the source to record (an external tool
-by default), `replay` runs a `commands::Macro` as one undo step, refused while the scene plays. `session::Console` is
-the console without UI (parse, run, `help`, completion, history), so it works on a headless session too.
-
-A `PlayRequest` gives `frames` and / or `ticks` (the first bound reached ends the play), `timestepMs` (0: one simulation
-tick per frame, so N frames run exactly N ticks), held `keys`, `mouseButtons` and `gamepad` (through the input
-injection, any window type), `stopAtEnd` and `capture`. Its `PlayReport` holds the frames and ticks played, the CPU time (total, longest),
-the draw calls, the phase timings of the last frame, the entity count and the optional capture
-(`FrameCapture::encodePng`). `getStatistics()` reports the frame count, the last and mean frame times, the draw calls
-of the last frame, the entity count and the ticks since Play started.
+A `PlayRequest` gives `frames` and / or `ticks` (first bound wins), `timestepMs` (0: one tick per frame), held `keys`,
+`mouseButtons` and `gamepad` (input injection), `stopAtEnd` and `capture`; its `PlayReport` holds frames and ticks
+played, CPU time (total, longest), draw calls, last-frame phase timings, entity count and the optional capture
+(`FrameCapture::encodePng`). `getStatistics()` gives frame count, last and mean frame times, draw calls, entity count
+and ticks since Play.
 
 ### MCP server {#editor-mcp-server}
 
-`mcp::McpServer` (`sources/mcp/`) serves the editor session to a local AI agent over the MCP Streamable HTTP
-transport (JSON responses, no event stream), at `http://127.0.0.1:<port>/mcp`. It is off until the **MCP Server**
-setting enables it, and lives and dies with the editor. Every tool is an editor command, journaled with the MCP source
-and undoable; the design is in [MCP server](design/mcp-server.md).
+`mcp::McpServer` (`sources/mcp/`) serves the editor session over MCP Streamable HTTP (JSON responses, no event stream)
+at `http://127.0.0.1:<port>/mcp`, off until the **MCP Server** setting enables it. Every tool is an editor command,
+journaled with the MCP source and undoable. Client setup, tools, `play.run` and the refusals: [MCP server](mcp.md);
+design and security: [MCP server design](design/mcp-server.md).
 
-- **Main thread only.** The server threads check a request and queue it (`McpHttpServer`); the editor loop runs up to
-  8 queued messages per frame through the dispatcher, before the scene updates. While a gizmo drag, an inspector
-  edit, a held widget or a popup or modal is in progress the messages wait; after 30 s the client gets a JSON-RPC
-  error `-32001` and the message is dropped unrun. Stopping the server answers the queued ones with 503.
+- **Main thread only.** Server threads check and queue (`McpHttpServer`); the editor loop runs up to 8 queued messages
+  per frame, before the scene updates, unless a gesture, held widget, popup or modal is in progress; after 30 s unrun
+  the client gets `-32001`. Stopping answers the queued messages with 503.
 - **Token.** 256 bits from the system generator (`getrandom`, `BCryptGenRandom`), drawn at the first start of the
-  editor run, written to `$XDG_RUNTIME_DIR/owlnest/mcp_token` (else `~/.config/owlnest/`, `%LOCALAPPDATA%\OwlNest`
-  on Windows) with mode `0600`, removed when the server stops, never logged. Clients send
-  `Authorization: Bearer <token>`.
-- **Refusals**, checked before the body is read:
-
-| Case                                                           | Answer |
-|----------------------------------------------------------------|--------|
-| `Host` other than `127.0.0.1:<port>` / `localhost:<port>`      | 403    |
-| `Origin` present and not `http(s)://127.0.0.1` or `localhost`  | 403    |
-| Missing or wrong bearer token                                  | 401    |
-| `Content-Type` other than `application/json`                   | 415    |
-| `Mcp-Session-Id` other than the one of this run                | 404    |
-| `MCP-Protocol-Version` not supported                           | 400    |
-| Body over 1 MiB                                                | 413    |
-| 4 messages already queued, or the server stopping              | 503    |
-| `GET` (no event stream) or `DELETE`                            | 405    |
-
-- **Files.** A file argument (`ArgSpec::projectPath`: `prefab.instantiate`, `scene.save`, `macro.run`) is resolved
-  relative to the project, symbolic links followed, and refused outside it or without a project. No tool evaluates
-  Lua or runs a shell.
-
-- **`play.run`.** The one tool that is not a command: it plays the scene for N frames or ticks with held input actions
-  (`session::resolveActionHolds`, shared with the scenario `actions:` steps) and returns the viewport as an `image`
-  content with the phase timings. The editor plays it over the next frames of its main loop, so the dispatcher
-  answers later (`handleDeferrable`: the HTTP server keeps the request and polls it every frame; a stopped server or a
-  play over 10 minutes cancels it).
-
-Client setup, tools and `play.run` arguments: [MCP server (user guide)](mcp.md).
-
-The Edit menu labels dynamically show the description of the next undo/redo action
-(e.g., "Undo Delete 'Player'").
-
-**Window title.** The editor window title reflects the active project name and current
-scene, refreshed by `refreshWindowTitle()`. An asterisk (`*`) suffix indicates unsaved
-changes. The flag compares the current undo state with the one that was saved, so undoing
-back to the save point clears it, and any other state (an edit after an undo, an edit merged
-into the saved step) sets it and makes closing the document ask to save.
+  editor run, in a `0600` file (`$XDG_RUNTIME_DIR/owlnest/mcp_token`, else `~/.config/owlnest/`, `%LOCALAPPDATA%\OwlNest`
+  on Windows), removed when the server stops, never logged.
+- **Refusals** are checked before the body is read; besides those of the user guide, another `Mcp-Session-Id` gets
+  404, an unsupported `MCP-Protocol-Version` 400, `GET` and `DELETE` 405.
+- **Files.** A file argument (`ArgSpec::projectPath`) is resolved in the project, links followed, refused outside it.
+- **`play.run`** is not a command: it resolves held actions (`session::resolveActionHolds`, shared with the scenario
+  `actions:` steps) and plays over the next frames, so the dispatcher answers later (`handleDeferrable`: the HTTP
+  server polls it every frame; a stopped server or a play over 10 minutes cancels it).
 
 ## Prefab Workflow
 
-Prefabs are reusable entity subtree templates stored as `.owlprefab` files. They allow
-creating complex entity hierarchies once and reusing them across scenes.
+A prefab is an entity subtree saved as `.owlprefab` and reused across scenes (format: [Scene](scene.md)).
 
-### Creating a Prefab
+- **Create**: **Create Prefab...** in the Scene Hierarchy menu saves the entity and its descendants; their UUIDs become
+  the canonical ones.
+- **Instantiate**: drag the file from the Content Browser into the viewport: new UUIDs, and a `PrefabLink` on the root
+  with the source path and the instance-to-canonical UUID mapping.
+- **Override**: editing an instance entity (inspector, gizmo, rename, add or remove a component, layer routing) marks
+  the component overridden, except the Transform of the root (the placement belongs to the instance). An accent bar
+  marks it in Properties; **Revert this component** (its **+** menu) or **Revert name** takes the prefab state back,
+  and undoing an edit removes its override.
+- **Update from Prefab** refreshes every non-overridden component in place (new prefab entities appear, removed ones go,
+  instance-only ones stay); **Revert to Prefab** clears every override except the root placement; **Unlink Prefab**
+  removes the `PrefabLink`. All are undoable.
 
-Right-click any entity in the Scene Hierarchy and select **Create Prefab...**. A file save
-dialog opens; the entity and all its descendants are serialized to the chosen `.owlprefab`
-file. The current entity UUIDs become the canonical UUIDs for the prefab.
-
-### Instantiating a Prefab
-
-Drag a `.owlprefab` file from the Content Browser into the Viewport. The engine creates
-new entities with fresh UUIDs and adds a `PrefabLink` component to the root entity. The
-link stores the source asset path and a UUID mapping connecting each instance entity to its
-canonical prefab counterpart.
-
-### Overrides
-
-Editing an entity of a prefab instance marks the edited component as an **override** of the prefab:
-an inspector edit, a gizmo move, a rename, adding or removing a component, routing to a layer. The
-Transform of the instance root is never an override: the placement of an instance always belongs to
-the instance.
-
-An overridden component shows an accent bar on its header in the Properties panel (hover it for a
-tooltip). Its **+** menu offers **Revert this component**, which takes the prefab state back and clears
-the override; an overridden name shows a **Revert name** button. Undoing an edit also removes the
-override it created.
-
-### Updating Instances
-
-When the source `.owlprefab` file is edited (e.g., by modifying the original entity and
-re-creating the prefab), instances can be updated in place, keeping their hierarchy and placement:
-
-- **Update from Prefab** -- Refreshes every component that is not overridden. Entities added to
-  the prefab appear under their parent, entities removed from it are deleted, and entities added
-  to the instance only stay.
-- **Revert to Prefab** -- Clears all overrides and makes the instance match the prefab, except for
-  the placement of its root.
-- **Unlink Prefab** -- Removes the `PrefabLink` component, turning the instance into a
-  standalone entity subtree with no connection to the source file.
-
-All prefab operations are fully undoable, Unlink included. The Engine Demo's
-`platformer_house.owl` holds two instances of `prefabs/coin_pair.owlprefab`; the second one overrides
-the colour of its right coin.
-
-## Toolbar
-
-The toolbar is rendered as a frameless overlay window centred at the top of the viewport.
-Its contents change depending on the editor state.
-
-### Playback Controls
-
-| State | Buttons Available        |
-|-------|--------------------------|
-| Edit  | Play                     |
-| Play  | Pause, Stop              |
-| Pause | Resume, Stop, Step Frame |
-
-### Gizmo Controls
-
-In Edit mode a secondary button bar appears in the top-right corner of the viewport.
-It contains toggle buttons for Translation, Rotation, and Scale gizmo modes. Clicking
-an active gizmo button deactivates it (returning to None mode).
+The Engine Demo's `platformer_house.owl` holds two instances of `prefabs/coin_pair.owlprefab`; the second overrides the
+colour of its right coin.
 
 ## Help & Documentation
 
-Owl Nest ships a built-in help browser that mirrors the Doxygen documentation
-maintained in `doc/pages/`. The bundle is produced by `cmake/HelpAssets.cmake`
-at configure time:
+The help browser shows the documentation of `doc/pages/`, bundled by `cmake/HelpAssets.cmake` at configure time:
+`doc/pages/*.md`, `doc/pages/design/*.md` (flattened), the root `README.md` and `CONTRIBUTING.md` are copied into
+`<build>/help_bundle/` with an `index.yml` (id, title, category, path of every page); both CPack components install it
+as `assets/help/`, and `panel::HelpPanel` looks for `help/` in the asset directories, then its build tree.
 
-- `doc/pages/*.md`, `doc/pages/design/*.md` (flattened) plus the root `README.md` and `CONTRIBUTING.md` are
-  copied into `<build>/help_bundle/` (the configure writes nothing in the sources); both CPack components install it as
-  `assets/help/`. `panel::HelpPanel` looks for `help/` in the asset directories first, then in its build tree.
-- An `index.yml` describing every page (id, title, category, path) is generated
-  alongside; `panel::HelpPanel` reads it on first open.
+| Action                              | How                                         |
+|-------------------------------------|---------------------------------------------|
+| Default landing page (`Owl` README) | **File → Help** ribbon button               |
+| Contextual help                     | `F1` (`help.context` action)                |
+| Getting Started guide               | **Getting started** card of the File screen |
 
-### Opening Help
+`F1` opens the page of the component header last hovered in the inspector (`SceneHierarchy::lastHoveredComponentName`:
+`LuaScript` opens `scripting.md`, `PhysicBody` `physics.md`), else the editor overview.
 
-| Action                              | How                                              |
-|-------------------------------------|--------------------------------------------------|
-| Default landing page (`Owl` README) | **File → Help** ribbon button                    |
-| Contextual help                     | `F1` (`help.context` action)                     |
-| Getting Started guide               | **Getting started** card of the File screen      |
+- A page tree by category with a search filter on the left (at least 120 px, splitter), the page on the right through
+  the same `MarkdownPreview` as code documents, Back / Forward history over internal links.
+- `http(s)://` and `mailto:` links open in the browser (`platform::openExternalUrl`: `xdg-open`, `ShellExecuteW`);
+  other schemes are refused with a warning.
+- HTTPS images (shields.io badges) are cached as `<build>/help_bundle/images/badges/<sha1>.svg` and rewritten to local
+  files; a configure downloads the missing ones only with `OWL_HELP_FETCH_BADGES=ON` (packaged presets).
 
-`F1` reads the component header most recently hovered in the SceneHierarchy
-inspector (`SceneHierarchy::lastHoveredComponentName`) and routes to the page
-that documents that area — e.g. hovering `LuaScript` opens `scripting.md`,
-hovering `PhysicBody` opens `physics.md`. When nothing is hovered the help
-panel opens on the editor overview.
-
-### Inside the Panel
-
-- **Left side** — tree of pages grouped by category, with a search filter.
-- **Right side** — Markdown content rendered through the same
-  `MarkdownPreview` widget that powers the live preview pane in code documents.
-- **Splitter** — a draggable handle between the two panes adjusts the tree
-  width; both sides are clamped to a minimum of 120 px.
-- **Back / Forward** — navigation history; clicking an internal link
-  (`[scripting](scripting.md)`) pushes the current page onto the back stack.
-- External `http(s)://` and `mailto:` links open in the user's default browser
-  via `platform::openExternalUrl` (Linux: `xdg-open`; Windows:
-  `ShellExecuteW`). Other schemes are rejected and logged at warn level.
-- HTTPS images referenced from the markdown (e.g. shields.io badges in the
-  README) are cached under `<build>/help_bundle/images/badges/<sha1>.svg` and rewritten
-  in the bundled markdown so the runtime renders them as ordinary local SVGs; a
-  configure downloads the missing ones only with `OWL_HELP_FETCH_BADGES=ON`
-  (set by the packaged presets).
-
-To add a new page: create the `.md` under `doc/pages/`, start with the
-`# Title {#page-name}` / `[TOC]` header pair (Doxygen anchor), and re-run
-`cmake --preset ...` so the bundle is regenerated. The bundle step strips
-`{#page-name}` and `[TOC]` lines from the in-editor copy so the rendered
-view stays clean.
+A new page goes in `doc/pages/` with the `# Title {#page-name}` / `[TOC]` header; configure again to bundle it (the
+bundle strips both lines).
 
 ## Keyboard Shortcuts
 
-All shortcuts are managed by the `ActionRegistry` class and can be rebound via the
-Settings panel. The table below lists factory defaults.
+Shortcuts are actions of the `ActionRegistry`; factory defaults below, rebinding in [Rebinding](#rebinding).
 
 ### Scene Operations
 
@@ -1531,18 +1074,7 @@ Settings panel. The table below lists factory defaults.
 | Undo   | Ctrl+Z           | `edit.undo` |
 | Redo   | Ctrl+Y           | `edit.redo` |
 
-All entity, component, hierarchy, and gizmo editing operations are undoable. Rapid
-consecutive edits on the same property (e.g. dragging a slider) are automatically
-coalesced into a single undo step.
-
-An inspector edit is recorded when it ends — on release of a drag, on validation of a text
-field, on the click of a checkbox, on the choice in a combo or on a drop into an asset slot.
-Nothing is serialized while the inspector is only displayed: the edited component is captured
-when the interaction starts, so the panel costs no more than drawing its widgets.
-
-Undo and redo restore an entity **in place**: it keeps its UUID, its children and its slot
-in the hierarchy, and the selection stays on it. Undoing the deletion of a parent puts its
-children back under it, at their original position and in their original order.
+What undo covers and how edits coalesce: [Editor commands](#editor-commands).
 
 ### Entity Operations
 
@@ -1595,31 +1127,24 @@ gizmo manipulation is in progress.
 
 ### Command palette
 
-Pressing `Shift` twice (within 0.4 s, outside a text field), or a click on the search box in the middle of the
-ribbon tab row, opens a search box at the top of the editor listing every action of the registry, with its category
-and its shortcut, then the entities of the active scene and the files of the asset folders. Type a few letters in
-order (`svdoc` finds *Save Document*), move with the arrows, run with `Enter`, close with `Escape` or a click
-elsewhere. Choosing an entity selects it, choosing an asset opens it. The action `view.commandPalette` has no key of
-its own and can be given one in the Shortcuts tab. Matches at the start of a word and runs of contiguous letters rank first (`CommandPalette::score`).
+`Shift` twice (within 0.4 s, outside a text field), or a click on the search box of the ribbon tab row, opens a search
+over every registry action (category and shortcut), the entities of the active scene and the asset files. Letters in
+order match (`svdoc` finds *Save Document*), word starts and contiguous runs first (`CommandPalette::score`); arrows
+move, `Enter` runs, `Escape` closes. An entity is selected, an asset opened. `view.commandPalette` has no key of its
+own and can get one in the Shortcuts tab.
 
-The palette also lists every [editor command](#editor-commands) (category *Command*, e.g. `component.set`). A
-command without arguments runs at once; otherwise an argument form opens in place of the palette, one row per
-argument: a field for a text or a number, a checkbox for a bool, drag fields for a vector, a colour picker, a list for
-an enum (its choices) or an entity (the entities of the scene, the selection given by default). The rows start from
-the declared defaults; an optional argument has a checkbox to give it or not. **Run** (or `Ctrl+Enter`) stays
-disabled, with the reason shown, until the form is valid (`commands::CommandForm`). The result shows in a toast: the
-undo description and the result data, or the error. While the scene plays, the commands that edit it are greyed out.
+Every [editor command](#editor-commands) is listed too (category *Command*). One without arguments runs at once;
+otherwise an argument form replaces the palette (text and number fields, checkboxes, vector drags, colour picker, a
+list for an enum or an entity, the selection by default; optional arguments have a checkbox). **Run** (`Ctrl+Enter`)
+stays disabled with the reason until the form is valid (`commands::CommandForm`); the result shows in a toast. Commands
+that edit the scene are greyed during Play.
 
 ### Rebinding
 
-All shortcuts can be rebound through the **Editor Settings** panel (Settings >
-Editor Settings). The `ActionRegistry` stores factory defaults alongside current
-bindings. Non-default overrides are persisted in `OwlNest_settings.yml` under the
-`keybindingOverrides` key.
+The **Shortcuts** tab of the Editor Settings lists every action with its default and current binding: click a binding
+and press the new combination. A conflict with another action shows a warning naming it; **Reset to Defaults**
+restores the factory bindings. The `ActionRegistry` keeps defaults and current bindings, saves the overrides in
+`OwlNest_settings.yml` (`keybindingOverrides`) and can suspend dispatch during a capture
+(`ActionRegistry::setSuspended()`).
 
-The registry provides conflict detection: when a new binding collides with an existing
-action, a warning is displayed showing the conflicting action name. Dispatch can be
-temporarily suspended (e.g. during key capture) via `ActionRegistry::setSuspended()`.
-
-See [Architecture](architecture.md) for the overall engine structure and
-[Sound](sound.md) for the audio system integrated with the editor.
+See [Architecture](architecture.md) for the engine structure and [Sound](sound.md) for the audio used by the editor.

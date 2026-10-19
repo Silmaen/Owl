@@ -1,6 +1,9 @@
 {
-  "comment": "Allowed median growth per benchmark name pattern, over the default --threshold. A multi-threaded physics step of 100 bodies lasts about 1 ms, dominated by waking the workers: it varies up to 30 % between nightly runs on the bench agent.",
+  "comment": "Allowed median growth per benchmark name pattern, over the default --threshold (first match wins). Measured on the bench agent over the five v0.4.0 baseline runs: the multi-threaded physics steps of 100 bodies vary up to 40 % (waking the workers), the physics world creation of 100 bodies up to 90 %, the MCP loopback round trips and the game-over scene load about 25 to 33 %.",
   "thresholds": {
-    "physics/step_*_mt*/100_bodies": 0.4
+    "physics/step_*_mt*/100_bodies": 0.4,
+    "physics/init/100_bodies": 0.6,
+    "mcp/*": 0.3,
+    "sample/load/game_over": 0.3
   }
 }

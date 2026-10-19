@@ -1,8 +1,8 @@
-# Raycaster Method (v0.2.0) {#page-raycaster-method}
+# Raycaster Method {#page-raycaster-method}
 
 [TOC]
 
-This page describes **exactly** the algorithm used by `RendererRaycast` in v0.2.0 — math, data flow, conventions, and
+This page describes **exactly** the algorithm used by `RendererRaycast` (since v0.2.0) — math, data flow, conventions, and
 the known limitations of the current implementation. It is intentionally low-level so the rendering path can be reasoned
 about, debugged, and replaced piece by piece.
 
@@ -58,9 +58,9 @@ Convention chosen so that an entity with `rotation: [0, 0, 0]` produces a sensib
 | right           | `inverseView * (1, 0, 0, 0)` → `.xy`, normalise | World-frame right axis                                       |
 | `cameraPlane2D` | `right * tan(fov/2)`                            | Encodes FOV. Aspect is **not** folded in — see "Ray formula" |
 
-`inverseView` is the entity's world transform mat4 (because Owl's `Camera`
+`inverseView` is the entity's world transform mat4 (because Owl Engine's `Camera`
 class stores `m_view = inverse(transform)`). Local +Y is used (rather than local –Z which 3D engines usually pick)
-because Owl's 2D ortho cameras have no meaningful –Z axis in the XY plane.
+because Owl Engine's 2D ortho cameras have no meaningful –Z axis in the XY plane.
 
 For an entity with rotation = (0, 0, θ) in **radians**:
 
@@ -267,7 +267,7 @@ pixel directly below it converge to the same colour at `fogEnd` — no visible s
 The user-facing API and the algorithm are both "Wolfenstein-style" in the classical sense (per-column DDA, vertical
 textured stripes, no fish-eye via perpendicular distance). Relative to a pixel-perfect 1992 Wolfenstein 3D port:
 
-1. **Drawing path** — Wolfenstein 3D wrote pixels directly to a 320×200 VGA buffer. Owl emits textured stripes through
+1. **Drawing path** — Wolfenstein 3D wrote pixels directly to a 320×200 VGA buffer. Owl Engine emits textured stripes through
    the GPU: the per-column DDA runs as a compute pre-pass (`RaycastDDAPass` / `raycast_dda.slang`) and every wall stripe
    is drawn in a single instanced call (`raycast_stripe.slang`). The Null backend keeps a CPU walk + per-column
    `Renderer2D::drawQuad` fallback so the headless test suite stays green.
@@ -277,7 +277,7 @@ textured stripes, no fish-eye via perpendicular distance). Relative to a pixel-p
 4. **Doors, pushwalls, transparent walls** — shipped (see *Dynamic walls* below and the `TileMeta.transparent` flag).
    Thin walls were dropped from scope.
 5. **Still deferred** — point lights (only global distance fog ships today), and moving the raycast **sprite** stripes
-   onto the GPU so the `BitonicSortPass` depth sort can feed them without a CPU readback (planned for v0.3.0).
+   onto the GPU so the `BitonicSortPass` depth sort can feed them without a CPU readback (planned for v0.5.0).
 
 ## Dynamic walls (doors + pushwalls)
 
@@ -519,7 +519,7 @@ To drive either object from a Lua script instead of the built-in key, set the co
 | `source/owl/private/scene/component/RaycastPushWall.cpp`            | Pushwall YAML serialize / deserialize                 |
 | `source/owl/private/scene/Scene.cpp` (`Scene::render` tilemap loop) | Dispatch by active-layer type key + dynamic-wall tick |
 | `source/owl/private/script/LuaBindings.cpp` (`door` + `pushwall`)   | Lua API tables                                        |
-| `test/unit/renderer_tests/RendererRaycast_test.cpp`                      | Renderer-level unit tests                             |
-| `test/unit/scene_tests/RaycastDynamicWalls_test.cpp`                     | Door / pushwall state-machine + serializer tests      |
+| `test/unit/renderer_tests/RendererRaycast_test.cpp`                 | Renderer-level unit tests                             |
+| `test/unit/scene_tests/RaycastDynamicWalls_test.cpp`                | Door / pushwall state-machine + serializer tests      |
 | `engine_demo/scenes/raycast_demo.owl`                               | Wolfenstein-inspired demo scene                       |
-| `engine_demo/scripts/raycast/raycast_player.lua`                            | Player input matching the pose convention             |
+| `engine_demo/scripts/raycast/raycast_player.lua`                    | Player input matching the pose convention             |

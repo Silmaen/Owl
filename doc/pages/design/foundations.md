@@ -82,7 +82,7 @@ Every fix lands with its regression test.
   with the entity it collided with (D-07, I-02); the rest of the 2D physics API is v0.7.0, see
   [Physics API](physics-api.md)
 - ![Done][done] Game export works end to end — packaging, pack, runner, assets, voxel in the runner (D-03),
-  window icon; an automated test exports the sample project and runs it headless. See [Game export](game-export.md)
+  window icon; an automated test exports the Engine Demo and runs it headless. See [Game export](game-export.md)
 - ![Done][done] Full Wayland support — Owl icon, editor multi-window (detached ImGui windows), X11 kept as an
   option. See [Windowing and input](windowing-input.md)
 - ![Done][done] OpenGL backend fixed and tested as the compatibility backend: honest version check, asynchronous
@@ -106,7 +106,7 @@ Every fix lands with its regression test.
 - ![Done][done] Runner `--frame-bench` mode with GPU timestamps — first OpenGL vs Vulkan numbers
   (PR-17: 20-mesures §7, B-01; baseline in `doc/audit/20-mesures.md` §8)
 - ![Done][done] Image-comparison render tests on lavapipe (Vulkan) and llvmpipe (OpenGL): six reference scenes per
-  backend, Vulkan validation clean on the sample, OpenGL GLSL fallback for drivers without `GL_ARB_gl_spirv`
+  backend, Vulkan validation clean on the Engine Demo, OpenGL GLSL fallback for drivers without `GL_ARB_gl_spirv`
   (PR-18: F-01, B-06, B-20)
 - ![Done][done] Tests without a window: headless runner driven by scripted inputs (load scene, play N frames,
   assert on the world)
@@ -225,8 +225,9 @@ reorganised, made discoverable and consistent. See [Owl Nest UI](nest-ui.md).
 - ![Done][done] Inspector serializes only the edited component, only on edit (PR-23: E-04)
 - ![Done][done] Voxel meshing on workers with a per-frame budget, neighbours invalidated; streaming frame peak
   14.3 → 0.35 ms (PR-24: D-08, P-09, B-15)
-- ![Planned][planned] Renderer2D per-frame transients, 2D sort order, UTF-8 text (PR-30: B-09, B-10, D-18) — carried over: transients and UTF-8 to v0.4.0, 2D sort to v0.4.0
-- ![Planned][planned] Persistent, chunked and culled tilemap (PR-31: B-13) — carried over to v0.4.0
+- ![Done][done] Renderer2D per-frame transients, 2D sort order, UTF-8 text (PR-30: B-09, B-10, D-18) — carried over and
+  shipped in v0.4.0 ([Isometric worlds](isometric-worlds.md): R1, R2, TX1)
+- ![Done][done] Persistent, chunked and culled tilemap (PR-31: B-13) — carried over and shipped in v0.4.0 (TM1)
 - ![Done][done] Faster scene loading: rapidyaml reads scenes, prefabs and snapshots, prefab instantiation copies
   through the component registry (10 000 entities: 1.21 s → 73 ms)
 - ![Done][done] Shaders precompiled at build time (both CPack components, embedded in a game pack), so the runner
@@ -258,7 +259,7 @@ The release ships when these hold, whatever the date:
 - At least one image-comparison render test per backend (Vulkan, OpenGL)
 - UBSan and ASan blocking in CI
 - Editor coverage above 50 %
-- Exported sample project runs headless in CI
+- Exported Engine Demo runs headless in CI
 - Owl Nest ergonomics revamp shipped, with no new feature
 - Performance targets above reached and protected by the CI regression threshold
 

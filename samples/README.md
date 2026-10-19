@@ -1,6 +1,6 @@
 # Sample games
 
-Small but complete games made with Owl, one project folder each, beside the [Engine Demo](../engine_demo/README.md).
+Small but complete games made with Owl Engine, one project folder each, beside the [Engine Demo](../engine_demo/README.md).
 Open one from the **Sample games** list of the Owl Nest File screen, or with **Open project**. The plan and the rules
 of the samples are in [Sample games](../doc/pages/design/sample-games.md).
 

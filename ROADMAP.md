@@ -1,6 +1,6 @@
 # Roadmap at a glance
 
-Owl is the engine that mixes rendering styles (2D, raycast, voxel, isometric, 3D) in one game.
+Owl Engine is the engine that mixes rendering styles (2D, raycast, voxel, isometric, 3D) in one game.
 
 | Version | Date                | Status      | Theme                                                                        |
 |---------|---------------------|-------------|------------------------------------------------------------------------------|

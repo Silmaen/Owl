@@ -1,6 +1,6 @@
 # Sokoban
 
-A sample game of Owl after Sokoban: ten levels of rising difficulty, from one crate to five. Open `samples/sokoban` in
+A sample game of Owl Engine after Sokoban: ten levels of rising difficulty, from one crate to five. Open `samples/sokoban` in
 Owl Nest (the **Sample games** list of the File screen) and play `scenes/title.owl`, or package it with **Package the
 game**.
 

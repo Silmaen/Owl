@@ -14,10 +14,10 @@
 **Owl Engine is the C++ engine that mixes rendering styles in one game: 2D, raycast, voxel, isometric and 3D,
 stacked under one HUD, in the editor and in game.**
 
-| ![2D RPG hub](doc/images/showcase/hub.png)            | ![Raycast level](doc/images/showcase/raycast.png)     |
-|-------------------------------------------------------|-------------------------------------------------------|
-| ![Voxel terrain](doc/images/showcase/voxel.png)       | ![Isometric town](doc/images/showcase/iso_town.png)   |
-| ![2D platformer](doc/images/showcase/platformer.png)  | ![Main menu](doc/images/showcase/main_menu.png)       |
+| ![2D RPG hub](doc/images/showcase/hub.png)           | ![Raycast level](doc/images/showcase/raycast.png)   |
+|------------------------------------------------------|-----------------------------------------------------|
+| ![Voxel terrain](doc/images/showcase/voxel.png)      | ![Isometric town](doc/images/showcase/iso_town.png) |
+| ![2D platformer](doc/images/showcase/platformer.png) | ![Main menu](doc/images/showcase/main_menu.png)     |
 
 *Scenes of the Engine Demo (`engine_demo/`), rendered headless by the game runner on Vulkan.*
 
@@ -35,15 +35,14 @@ surname, Lachouette.
 
 ## How it is built
 
-Owl Engine is developed by one maintainer with Claude Code as a development tool. Every change is reviewed and owned
-by the maintainer, and goes through a strict CI: unit and scenario tests on Linux x64/arm64 and Windows, sanitizers,
-clang-tidy, include checks and performance budgets.
+Owl Engine is developed by one maintainer with Claude Code as a development tool: every change is reviewed and owned
+by the maintainer and goes through the CI above ([Contributing](doc/pages/contributing.md)).
 
-## Engine Demo and samples
+## Engine Demo and sample games
 
-The **Engine Demo** (`engine_demo/`, see its `README.md`) is the all-in-one showcase: an RPG hub
-leading to a platformer, a raycast level, an isometric town and a voxel terrain. Small real games live as sample
-games in `samples/`, each a project of its own: Breakout, Sokoban and a Wolfenstein mini.
+The **Engine Demo** (`engine_demo/`, see its `README.md`) is the all-in-one showcase: an RPG hub leading to a
+platformer, a raycast level, an isometric town and a voxel terrain. The **sample games**
+(`samples/`, see its `README.md`) are small real games, one project each: Breakout, Sokoban and a Wolfenstein mini.
 
 | ![Breakout](doc/images/showcase/breakout.png) | ![Sokoban](doc/images/showcase/sokoban.png) | ![Wolfenstein mini](doc/images/showcase/wolfenstein.png) |
 |-----------------------------------------------|---------------------------------------------|----------------------------------------------------------|
@@ -66,20 +65,24 @@ The full generated documentation is on [owl.argawaen.net](https://owl.argawaen.n
 
 - [Getting Started](doc/pages/getting_started.md) -- First run of Owl Nest and where to go next
 - [Architecture](doc/pages/architecture.md) -- Engine modules, backends, and shader pipeline
-- [Editor](doc/pages/editor.md) -- Owl Nest editor: panels, prefabs, icons, undo/redo
+- [Editor](doc/pages/editor.md) -- Owl Nest editor: panels, documents, prefabs, undo/redo, export
 - [MCP server](doc/pages/mcp.md) -- Drive Owl Nest from an AI agent
-- [Scene System](doc/pages/scene.md) -- Hierarchy, components, serialization, triggers
-- [Renderer](doc/pages/renderer.md) -- Renderer stack, shaders, textures, backgrounds
+- [Scene System](doc/pages/scene.md) -- Hierarchy, components, serialization, triggers, HUD
+- [Renderer](doc/pages/renderer.md) -- Renderer stack, shaders, textures, text, tilemaps, isometric
+- [Voxel](doc/pages/voxel.md) and [Raycaster](doc/pages/raycaster_method.md) -- The voxel and raycast renderers
 - [Physics](doc/pages/physics.md) -- Box2D integration, collisions, triggers
+- [Pathfinding](doc/pages/pathfinding.md) -- Tile-graph navigation on tilemaps
 - [Sound System](doc/pages/sound.md) -- Components, spatial audio, and gameplay triggers
-- [Events & Input](doc/pages/event_input.md) -- Event system, keyboard, mouse and gamepad
+- [Events & Input](doc/pages/event_input.md) -- Events, keyboard, mouse, gamepad and input actions
 - [Lua Scripting](doc/pages/scripting.md) -- API, lifecycle, sandboxing
 - [Lua API reference](doc/pages/lua-api.md) -- Every Lua binding, generated from the binding registry
+- [Node graph](doc/pages/node_graph.md) -- The node-graph widget and the Scene Flow view
 - [Building](doc/pages/building.md) -- Prerequisites, presets, testing, and CMake options
+- [Profiling](doc/pages/profiling.md) and [Continuous Integration](doc/pages/continuous_integration.md) -- Tracy,
+  benchmarks and the TeamCity pipeline
 - [Roadmap](doc/pages/roadmap.md) -- Planned and completed features by version (one-glance summary: `ROADMAP.md`)
 - [Changelog](doc/pages/changelog.md) -- Detailed version history (one line per release: `CHANGELOG.md`)
-- [Contributing](doc/pages/contributing.md) -- How to contribute (code style, checks, PRs, issues)
-- **Sample games** (`samples/`, see its `README.md`) -- Small complete games made with Owl, beside the Engine Demo (Breakout)
+- [Contributing](doc/pages/contributing.md) -- How to contribute and how Owl Engine is developed
 
 ## Supported Platforms
 

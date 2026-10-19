@@ -100,7 +100,8 @@ To add a new test:
 3. Write `TEST` or `TEST_F` cases
 4. Configure again (the sources are globbed) and build -- no CMakeLists.txt changes needed
 
-Test executables follow the naming pattern `owl_<folder>_unit_test`.
+Each folder builds one executable, `owl_<folder>_unit_test` (`owl_scene_tests_unit_test`); scenario tests are
+`test/unit/scenarios/*.owltest` files played headless by `OwlRunner --scenario` (see [Building](building.md#running-tests)).
 
 ## Adding Dependencies
 

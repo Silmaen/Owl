@@ -73,15 +73,15 @@ Done. `mcp::McpDispatcher` (`source/owlnest/sources/mcp/`, library `OwlNestMcp`,
   `prefab.instantiate`, `component.set`, `scene.save`, `edit.undo`, `edit.redo`, plus what a document registers). The
   input schema is an object of the `ArgSpec`s, `additionalProperties: false`, `required`, `default` and `description`:
 
-| `ArgType`                | JSON Schema                                                       |
-|--------------------------|-------------------------------------------------------------------|
-| `Bool`                   | `boolean`                                                         |
-| `Integer` / `Number`     | `integer` / `number`                                              |
-| `Text`                   | `string`                                                          |
-| `Entity`                 | `["integer", "string"]`: UUID or tag                              |
-| `Vec2` / `Vec3` / `Vec4` | array of exactly 2 / 3 / 4 numbers                                |
-| `Color`                  | `anyOf`: array of 3 or 4 numbers, or `#rrggbb` / `#rrggbbaa`      |
-| `Enum`                   | `string` with `enum` = the choices                                |
+| `ArgType`                | JSON Schema                                                  |
+|--------------------------|--------------------------------------------------------------|
+| `Bool`                   | `boolean`                                                    |
+| `Integer` / `Number`     | `integer` / `number`                                         |
+| `Text`                   | `string`                                                     |
+| `Entity`                 | `["integer", "string"]`: UUID or tag                         |
+| `Vec2` / `Vec3` / `Vec4` | array of exactly 2 / 3 / 4 numbers                           |
+| `Color`                  | `anyOf`: array of 3 or 4 numbers, or `#rrggbb` / `#rrggbbaa` |
+| `Enum`                   | `string` with `enum` = the choices                           |
 
 - `tools/call` runs the command through `EditorSession::execute` (hence undoable); `structuredContent` is
   `CommandResult::data` plus `description`, entity ids as the unsigned UUIDs of the scene files, also serialised as the
@@ -92,21 +92,21 @@ Done. `mcp::McpDispatcher` (`source/owlnest/sources/mcp/`, library `OwlNestMcp`,
 |---------------------------|---------------------------------------------------------------------------------|
 | `owl://scene`             | JSON: open, path, playing, entity count, entity tree (`id`, `name`, `children`) |
 | `owl://scene/entity/{id}` | YAML: the entity and its components, as in the scene file (template)            |
-| `owl://assets`            | JSON: files of the asset directories (`path`, `directory`, `file`), 2000 max   |
+| `owl://assets`            | JSON: files of the asset directories (`path`, `directory`, `file`), 2000 max    |
 | `owl://prefabs`           | JSON: the `.owlprefab` files of the asset directories                           |
 | `owl://statistics`        | JSON: `SessionStatistics` and the last phase timings                            |
 | `owl://help/{page}`       | Markdown: a page of the help bundle (`McpOptions::helpRoot`), case-insensitive  |
 
 Error mapping:
 
-| Case                                                                        | Answer                                  |
-|-----------------------------------------------------------------------------|-----------------------------------------|
-| Not JSON                                                                    | `-32700` Parse error, `id: null`        |
-| Not a JSON-RPC 2.0 object (missing `jsonrpc`, bad `id` or `method`), batch  | `-32600` Invalid Request                |
-| Unknown method                                                              | `-32601` Method not found               |
-| `params` not an object, missing `protocolVersion` / `name` / `uri`, unknown tool, `arguments` not an object | `-32602` Invalid params |
-| Unknown resource                                                            | `-32002` Resource not found, `data.uri` |
-| Exception inside a method                                                   | `-32603` Internal error                 |
+| Case                                                                                                            | Answer                                                                                      |
+|-----------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------|
+| Not JSON                                                                                                        | `-32700` Parse error, `id: null`                                                            |
+| Not a JSON-RPC 2.0 object (missing `jsonrpc`, bad `id` or `method`), batch                                      | `-32600` Invalid Request                                                                    |
+| Unknown method                                                                                                  | `-32601` Method not found                                                                   |
+| `params` not an object, missing `protocolVersion` / `name` / `uri`, unknown tool, `arguments` not an object     | `-32602` Invalid params                                                                     |
+| Unknown resource                                                                                                | `-32002` Resource not found, `data.uri`                                                     |
+| Exception inside a method                                                                                       | `-32603` Internal error                                                                     |
 | Argument not declared, of the wrong type, missing; any `CommandError` (`UnknownEntity`, `RefusedDuringPlay`...) | tool result `isError: true`, `structuredContent.error` = the `CommandError` name, `message` |
 
 ### Transport (MCP3)

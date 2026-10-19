@@ -201,6 +201,13 @@ public:
 	 */
 	[[nodiscard]] auto getCheckCount() const -> uint32_t { return m_checks; }
 
+	/**
+	 * @brief
+	 *  Get the index of the current step.
+	 * @return The index, the step count once the scenario is over.
+	 */
+	[[nodiscard]] auto getStepIndex() const -> size_t { return m_index; }
+
 private:
 	/// Scene to load.
 	std::filesystem::path m_scene;

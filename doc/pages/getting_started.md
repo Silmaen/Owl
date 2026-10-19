@@ -30,8 +30,10 @@ desktop windows, which GLFW cannot place under Wayland). See [Building](building
 | Editor panels, ribbon, shortcuts  | [editor.md](editor.md)             |
 | Scene system and components       | [scene.md](scene.md)               |
 | Lua scripting (gameplay)          | [scripting.md](scripting.md)       |
-| 2D renderer, sprites, fonts       | [renderer.md](renderer.md)         |
+| Renderers, sprites, text, tiles   | [renderer.md](renderer.md)         |
 | Voxel engine (blocks, chunks)     | [voxel.md](voxel.md)               |
+| Tile-graph pathfinding            | [pathfinding.md](pathfinding.md)   |
+| Input actions and gamepad         | [event_input.md](event_input.md)   |
 | Physics (Box2D bodies, triggers)  | [physics.md](physics.md)           |
 | Sound (effects, music, listeners) | [sound.md](sound.md)               |
 | Node graph editor                 | [node_graph.md](node_graph.md)     |
@@ -42,10 +44,22 @@ desktop windows, which GLFW cannot place under Wayland). See [Building](building
 
 ## Shipping Your Game
 
-**Home > Project > Pack Game** (or **Package the game** in the File screen) exports the open project to a folder you can copy anywhere: the game executable, its
-shared libraries, one `.owlpack` holding every asset, `runner.yml` and a `launch.sh` on Linux. Start the game
-with `launch.sh` (Linux) or the `.exe` (Windows). Fix the validation warnings before shipping: a reference listed
-there is missing from the pack. Details in [editor.md](editor.md) and [Game export](design/game-export.md).
+**Home > Project > Pack Game** (or **Package the game** in the File screen) exports the open project to a folder you
+can copy anywhere; fix the validation warnings first (a reference listed there is missing from the pack). Details in
+[editor.md](editor.md) and [Game export](design/game-export.md).
+
+```mermaid
+flowchart LR
+    P[Project folder<br/>owl_project.yml, scenes, scripts, assets] --> E[Pack Game<br/>validation]
+    E --> F[Export folder]
+    F --> X[Game executable<br/>OwlRunner + shared libraries]
+    F --> K[One .owlpack<br/>every asset]
+    F --> R[runner.yml]
+    F --> L[launch.sh on Linux]
+    L --> X
+    X -->|reads| K
+    X -->|reads| R
+```
 
 ## Useful Shortcuts
 
@@ -58,15 +72,14 @@ there is missing from the pack. Details in [editor.md](editor.md) and [Game expo
 | `Ctrl+Tab`          | Cycle to the next document |
 | `F5` / `F6` / `F7`  | Play / Pause / Stop        |
 
-## Engine Demo
+## Engine Demo and sample games
 
-A complete demonstrator covering all major engine features lives in
-`engine_demo/`, next to `bin/` in the Owl Nest archive. Open it from the **Engine Demo** card of the File
-screen (or **Open project**) and play any scene to see
-how Lua scripts, UI, sound and triggers fit together. Treat the sample as both a
-showcase and a reference for your own projects.
+Both ship next to `bin/` in the Owl Nest archive and open from the File screen:
 
-Beside it, `samples/` holds small complete games, one project each (Breakout first), listed under **Sample games**
-on the File screen: a game of a readable size to start a project from.
+- **Engine Demo** (`engine_demo/`, the **Engine Demo** card): the all-in-one showcase, an RPG hub leading to a
+  platformer, a raycast level, an isometric town and a voxel terrain. Play any scene to see how Lua scripts, HUDs,
+  sound and triggers fit together.
+- **Sample games** (`samples/`, the **Sample games** list): Breakout, Sokoban and a Wolfenstein mini, small complete
+  games of a readable size to start a project from.
 
 ![The File screen: the Engine Demo card, the sample games and the recent projects](../images/nest/file_screen.png)

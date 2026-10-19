@@ -1,8 +1,8 @@
-# Building Owl {#page-building}
+# Building Owl Engine {#page-building}
 
 [TOC]
 
-This page explains how to configure, build, and test the Owl engine.
+This page explains how to configure, build, and test Owl Engine.
 
 ## Prerequisites
 
@@ -21,15 +21,15 @@ the checkout. Every command of this page works prefixed with it, which is how th
 
 To build without the image, install:
 
-| Tool    | Version | Notes                                                                  |
-|---------|---------|------------------------------------------------------------------------|
-| CMake   | 3.24+   | Build system generator                                                 |
-| Ninja   |         | Recommended build backend                                              |
-| Clang   | 22+     | Or GCC 14+ (tested versions; CMake warns below Clang 18 / GCC 13)      |
-| Python  | 3.12+   | For CI tooling and Conan                                               |
-| Poetry  |         | Python dependency manager                                              |
-| Conan   | 2       | C++ dependency manager (installed via Poetry)                          |
-| Doxygen | 1.9.1+  | Optional: API documentation (with Graphviz), `documentation` target    |
+| Tool    | Version | Notes                                                               |
+|---------|---------|---------------------------------------------------------------------|
+| CMake   | 3.24+   | Build system generator                                              |
+| Ninja   |         | Recommended build backend                                           |
+| Clang   | 22+     | Or GCC 14+ (tested versions; CMake warns below Clang 18 / GCC 13)   |
+| Python  | 3.12+   | For CI tooling and Conan                                            |
+| Poetry  |         | Python dependency manager                                           |
+| Conan   | 2       | C++ dependency manager (installed via Poetry)                       |
+| Doxygen | 1.9.1+  | Optional: API documentation (with Graphviz), `documentation` target |
 
 Install Python dependencies:
 
@@ -89,7 +89,7 @@ build failure of a third party on a new compiler is fixed in its profile or in a
 
 ## Configure and Build
 
-Owl uses CMake presets. To configure and build:
+Owl Engine uses CMake presets. To configure and build:
 
 ```bash
 cmake --preset <preset> -S .
@@ -124,6 +124,8 @@ cmake --build output/build/<preset>
 | `linux-clang-minimal`                | Every optional module off    |
 | `linux-cross-arm64`                  | arm64 cross build (Debug)    |
 | `linux-emulated`                     | arm64 build under QEMU       |
+| `linux-bench`                        | `owl_bench` harness          |
+| `linux-fuzz`                         | libFuzzer targets            |
 
 #### Packaging
 
@@ -199,10 +201,11 @@ Tests use Google Test and are enabled by default (`OWL_TESTING=ON`):
 ctest --test-dir output/build/<preset> --output-on-failure
 ```
 
-Test executables are named `owl_<category>_unit_test` with 17 categories: core, debug,
-event, font, gui, input, io, layer, math, mesh, owlnest, physics, renderer, scene, script, sound, voxel.
-`owlnest_tests` links the editor sources through the `OwlNestCore` static library and is skipped when
-`OWL_BUILD_NEST` is off.
+Each of the 20 folders of `test/unit/` (`<category>_tests`: core, debug, event, export, font, gui, input, io, layer,
+math, mesh, owlnest, physics, render, renderer, runner, scene, script, sound, voxel) builds one executable
+`owl_<category>_tests_unit_test`; each `test/unit/scenarios/*.owltest` is one more CTest (label `scenario`) played by
+`OwlRunner --scenario`. `owlnest_tests` links the editor sources through the `OwlNestCore` static library and is
+skipped when `OWL_BUILD_NEST` is off.
 
 ## Measuring frames on the GPU
 
@@ -243,30 +246,22 @@ includes a touched header); elsewhere, all of them. See
 
 ### Multi-architecture CI (ARM64 + x86_64)
 
-CI agents running different architectures on a shared `$HOME` (or bind-mounted workspace) would
-otherwise collide on a single Poetry venv path and load wheels compiled for the wrong arch —
-observed as `ImportError: cryptography/_rust.abi3.so: cannot open shared object file` on ARM64
-after an x86_64 run.
+Agents of both architectures can share one `$HOME`, hence one Poetry venv path, and an arm64 run would then load
+x86_64 wheels (`ImportError: cryptography/_rust.abi3.so`). `ci_action.py` checks on every call
+(`ci.utils.venv.needs_refresh()`), cheapest first:
 
-`ci_action.py` runs `ci.utils.venv.needs_refresh()` on every invocation (not gated on TeamCity
-— TC's Docker jobs don't propagate `TEAMCITY_VERSION` into the container, so an env-var gate
-silently skips the protection). The check uses three stacked signals, cheapest first:
+```mermaid
+flowchart LR
+    A{venv exists?} -->|no| K[nothing to do:<br/>poetry sync creates it]
+    A -->|yes| B{platform marker<br/>arch-os-impl-pyver matches?}
+    B -->|yes| Keep[keep the venv]
+    B -->|no or missing| C{cryptography.fernet<br/>imports?}
+    C -->|yes| Keep
+    C -->|no| R[OWL_CI_REFRESH_VENV=1:<br/>cmake/Poetry.cmake removes the venv,<br/>syncs, writes the marker]
+```
 
-1. **No venv yet** → nothing to refresh (`poetry sync` will create one).
-2. **Platform signature matches** — `<arch>-<os>-<impl>-<pyver>` read from a marker file inside
-   the venv, written by `cmake/Poetry.cmake` after each successful sync. Match → keep venv.
-3. **Functional import test** — signature missing/mismatched, so
-   `poetry run python -c "from cryptography.fernet import Fernet"` is run. If it fails,
-   `OWL_CI_REFRESH_VENV=1` is exported; otherwise the venv is kept (covers legacy venvs that
-   predate the marker).
-
-`cmake/Poetry.cmake` consumes `OWL_CI_REFRESH_VENV` by running `poetry env remove --all` before
-`poetry sync`, then re-writes the platform marker with the current signature. Happy-path
-reruns pay a single file read; an arch switch pays the cost of one recreate (~30–60 s) and
-self-heals.
-
-To force a refresh manually (e.g. after a corrupt wheel): prepend `OWL_CI_REFRESH_VENV=1` to
-the `poetry run python ci_action.py …` invocation, or to a direct `cmake --preset …` call.
+A rerun pays one file read, an architecture switch one venv rebuild (30 to 60 s). Prefix any `ci_action.py` or
+`cmake --preset` call with `OWL_CI_REFRESH_VENV=1` to force a refresh (a corrupt wheel).
 
 ## Running under Wayland or X11
 
@@ -327,15 +322,15 @@ See [Windowing and input](design/windowing-input.md) for the details and the GLF
 | `OWL_BENCHMARK`                            | OFF     | `owl_bench` harness (`test/bench/`), with the Owl Nest MCP libraries             |
 | `OWL_INCLUDE_CHECK`                        | OFF     | `owl_include_check`: every header and source compiled alone (Clang only)         |
 | `OWL_TEST_SHUFFLE`                         | OFF     | Run every test binary with `--gtest_shuffle`                                     |
-| `OWL_RENDER_TESTS`                         | ON      | Image tests (`test/unit/render_tests`, label `render`)                                |
+| `OWL_RENDER_TESTS`                         | ON      | Image tests (`test/unit/render_tests`, label `render`)                           |
 | `OWL_TEST_TIMEOUT`                         | 600     | Per test binary CTest timeout, in seconds                                        |
-| `OWL_SCRIPT_TIME_SCALE`                    | 1       | Lua time quota multiplier of the scenario and export tests (8 when emulated)     |
+| `OWL_SCRIPT_TIME_SCALE`                    | 1       | Lua quota multiplier, scenario and export tests (8 emulated, 4 sanitizers)       |
 | `OWL_CONAN_PROFILE`                        | (auto)  | Conan host profile, default `conan/profiles/<os>-<compiler>[-<arch>]`            |
 | `OWL_CONAN_BUILD_PROFILE`                  | (auto)  | Conan build profile, default `conan/profiles/<os>-<compiler>`                    |
 | `OWL_SYSROOT`                              | (auto)  | arm64 sysroot of the cross toolchain, default `/opt/sysroot/aarch64-linux-gnu`   |
 | `OWL_CONAN_HOME`                           | (empty) | `CONAN_HOME` for the install (empty: Conan's default)                            |
 | `OWL_CONAN_BUILD`                          | missing | Value of `conan install --build`                                                 |
-| `OWL_FUZZING`                              | OFF     | libFuzzer targets in `test/fuzz/` (Clang-only)                                        |
+| `OWL_FUZZING`                              | OFF     | libFuzzer targets in `test/fuzz/` (Clang-only)                                   |
 | `OWL_ENABLE_MEMORY_TRACKER`                | OFF     | Allocation tracker, opt-in in every build type (Debug included)                  |
 | `OWL_PROFILER`                             | none    | `OWL_PROFILE_*` backend: `none`, `tracy` or `chrome` ([Profiling](profiling.md)) |
 | `OWL_LOG_LEVEL`                            | trace   | Lowest log level compiled in (`trace` to `off`)                                  |
@@ -352,13 +347,13 @@ The core (ECS, scene, data, assets, renderer front end, Null backends) is always
 CMake option and a recipe option of the same name: turned off, it leaves out its sources and its third parties, and
 its public API stays, backed by the Null backend or a no-op, so a game compiles against the same headers.
 
-| Option               | Conan option | Third parties left out                                     | Without it                                                  |
-|----------------------|--------------|------------------------------------------------------------|-------------------------------------------------------------|
-| `OWL_MODULE_RENDER`  | `render`     | glad, GLFW, lunasvg, Vulkan, SPIRV-Cross, Slang            | Null window, input and graphics: the engine runs headless   |
-| `OWL_MODULE_PHYSICS` | `physics`    | Box2D                                                      | `PhysicCommand` does nothing, bodies stay where they are    |
-| `OWL_MODULE_AUDIO`   | `audio`      | OpenAL Soft, libsndfile                                    | Null sound backend                                          |
-| `OWL_MODULE_SCRIPT`  | `script`     | Lua                                                        | `ScriptInstance` never loads, scripts are skipped           |
-| `OWL_MODULE_GUI`     | `gui`        | imgui, ImGuizmo                                            | No `UiLayer`, no `gui/` headers, no `Owl::Gui` target       |
+| Option               | Conan option | Third parties left out                          | Without it                                                |
+|----------------------|--------------|-------------------------------------------------|-----------------------------------------------------------|
+| `OWL_MODULE_RENDER`  | `render`     | glad, GLFW, lunasvg, Vulkan, SPIRV-Cross, Slang | Null window, input and graphics: the engine runs headless |
+| `OWL_MODULE_PHYSICS` | `physics`    | Box2D                                           | `PhysicCommand` does nothing, bodies stay where they are  |
+| `OWL_MODULE_AUDIO`   | `audio`      | OpenAL Soft, libsndfile                         | Null sound backend                                        |
+| `OWL_MODULE_SCRIPT`  | `script`     | Lua                                             | `ScriptInstance` never loads, scripts are skipped         |
+| `OWL_MODULE_GUI`     | `gui`        | imgui, ImGuizmo                                 | No `UiLayer`, no `gui/` headers, no `Owl::Gui` target     |
 
 - The code sees `OWL_WITH_<MODULE>` (`0` or `1`), a public definition of `Owl::OwlEngine`; a consumer checks a module
   with `find_package(OwlEngine COMPONENTS Physics)` (components `Render`, `Physics`, `Audio`, `Script`, `Gui`).

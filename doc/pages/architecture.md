@@ -2,7 +2,7 @@
 
 [TOC]
 
-This page describes the high-level architecture of the Owl engine.
+This page describes the high-level architecture of the Owl Engine.
 
 ## Engine Modules
 
@@ -10,24 +10,24 @@ This page describes the high-level architecture of the Owl engine.
 
 The engine library (`source/owl/`) is organized into the following modules:
 
-| Module     | Description                                                                  |
-|------------|------------------------------------------------------------------------------|
-| `app`      | Application lifecycle: `Application`, `EntryPoint`, the layer stack           |
-| `core`     | Foundation primitives: logging, assertions, smart pointers, `UUID`, tasks    |
-| `platform` | OS / native-platform services: file dialogs, `fileToString`, open-URL         |
-| `renderer` | Rendering abstraction, buffers, shaders, framebuffers, camera controllers    |
-| `scene`    | Entity-Component-System (EnTT), scene graph, components, save/load            |
-| `script`   | Lua 5.5 embedded scripting (sandboxed `LuaEngine` per entity)                |
-| `physics`  | 2D physics (Box2D integration)                                               |
-| `sound`    | Audio playback and device management                                         |
-| `input`    | Keyboard, mouse, and gamepad input abstraction                               |
-| `window`   | Window creation and management                                               |
-| `gui`      | ImGui/ImGuizmo integration for editor UI                                     |
+| Module     | Description                                                                       |
+|------------|-----------------------------------------------------------------------------------|
+| `app`      | Application lifecycle: `Application`, `EntryPoint`, the layer stack               |
+| `core`     | Foundation primitives: logging, assertions, smart pointers, `UUID`, tasks         |
+| `platform` | OS / native-platform services: file dialogs, `fileToString`, open-URL             |
+| `renderer` | Rendering abstraction, buffers, shaders, framebuffers, camera controllers         |
+| `scene`    | Entity-Component-System (EnTT), scene graph, components, save/load                |
+| `script`   | Lua 5.5 embedded scripting (sandboxed `LuaEngine` per entity)                     |
+| `physics`  | 2D physics (Box2D integration)                                                    |
+| `sound`    | Audio playback and device management                                              |
+| `input`    | Keyboard, mouse, and gamepad input abstraction                                    |
+| `window`   | Window creation and management                                                    |
+| `gui`      | ImGui/ImGuizmo integration for editor UI                                          |
 | `data`     | Data structures + their loaders: geometry/mesh, fonts, assets (+ `pack`), `voxel` |
-| `math`     | Math utilities (vectors, matrices, quaternions, transforms)                  |
-| `debug`    | Profiling, memory tracking, stack traces (cpptrace)                          |
-| `event`    | Event system (application, input, window events)                             |
-| `io`       | External device / peripheral channels: serial, video                         |
+| `math`     | Math utilities (vectors, matrices, quaternions, transforms)                       |
+| `debug`    | Profiling, memory tracking, stack traces (cpptrace)                               |
+| `event`    | Event system (application, input, window events)                                  |
+| `io`       | External device / peripheral channels: serial, video                              |
 
 Public headers live in `source/owl/public/` and implementation files in `source/owl/private/`, both mirroring the module
 structure. **The folder path maps 1:1 to the namespace** (`data/geometry/` is `owl::data::geometry`). The rules for
@@ -61,29 +61,29 @@ A game specialises the engine at build time with five CMake options (`OWL_MODULE
 implementation behind a public API of its layer, never removes a type a lower layer names, so no public header of the
 core depends on whether it is built.
 
-| CMake module | Engine modules it backs              | Implementation built in                                       | When off                            |
-|--------------|--------------------------------------|---------------------------------------------------------------|-------------------------------------|
-| core         | every module                         | ECS, scene, data, assets, renderer front end, Null backends   | always built                        |
-| render       | `renderer`, `window`, `input`        | `gpu/opengl`, `gpu/vulkan`, `window/glfw`, `input/glfw`       | Null backends: headless             |
-| physics      | `physics`                            | `physics/PhysicCommand.cpp` (Box2D)                           | `physics/disabled/`: no-op          |
-| audio        | `sound`                              | `sound/openal`                                                | Null sound backend                  |
-| script       | `script`                             | `script/` (Lua)                                               | `script/disabled/`: scripts skipped |
-| Gui          | `gui`, the ImGui overlay of `app`    | `gui/`, `Owl::Gui`                                            | no `gui/` headers, no overlay       |
+| CMake module | Engine modules it backs           | Implementation built in                                     | When off                            |
+|--------------|-----------------------------------|-------------------------------------------------------------|-------------------------------------|
+| core         | every module                      | ECS, scene, data, assets, renderer front end, Null backends | always built                        |
+| render       | `renderer`, `window`, `input`     | `gpu/opengl`, `gpu/vulkan`, `window/glfw`, `input/glfw`     | Null backends: headless             |
+| physics      | `physics`                         | `physics/PhysicCommand.cpp` (Box2D)                         | `physics/disabled/`: no-op          |
+| audio        | `sound`                           | `sound/openal`                                              | Null sound backend                  |
+| script       | `script`                          | `script/` (Lua)                                             | `script/disabled/`: scripts skipped |
+| Gui          | `gui`, the ImGui overlay of `app` | `gui/`, `Owl::Gui`                                          | no `gui/` headers, no overlay       |
 
 `OWL_WITH_<MODULE>` (`0` or `1`, a public definition of `Owl::OwlEngine`) guards the few call sites that reach a
 backend: the backend factories, the ImGui overlay of `Application`, the ImGui init data of the Vulkan backend.
 
 ### Extension points
 
-What a game plugs in without patching the engine, and what the architecture work of v0.3.0 adds:
+What a game plugs in without patching the engine:
 
-| Extension point       | Today                                                                                                                                                                                      | Coming                                                |
-|-----------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------|
-| Renderer-stack layers | `renderer::RenderLayerFactory::registerType()`: a layer type by name, created from the stack                                                                                               | —                                                     |
-| Application layers    | `app::Application::pushLayer()` / `pushOverlay()`: per-frame update, events, ImGui render                                                                                                  | —                                                     |
-| Extra data            | `data::extradata::ExtraDataRegistry`: typed extra data per mesh vertex, face or mesh                                                                                                       | —                                                     |
-| Components            | `scene::ComponentRegistry::registerComponent<T>()`: saved, loaded, copied, added and inspected in the editor like an engine component (see [Game components](scene.md#component-registry)) | —                                                     |
-| Systems               | `scene::SystemSchedule`: named systems in fixed phases, added, replaced or removed per game or per scene (see [Systems and phases](scene.md#systems))                                      | —                                                     |
+| Extension point       | How                                                                                                                                                                                        |
+|-----------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Renderer-stack layers | `renderer::RenderLayerFactory::registerType()`: a layer type by name, created from the stack                                                                                               |
+| Application layers    | `app::Application::pushLayer()` / `pushOverlay()`: per-frame update, events, ImGui render                                                                                                  |
+| Extra data            | `data::extradata::ExtraDataRegistry`: typed extra data per mesh vertex, face or mesh                                                                                                       |
+| Components            | `scene::ComponentRegistry::registerComponent<T>()`: saved, loaded, copied, added and inspected in the editor like an engine component (see [Game components](scene.md#component-registry)) |
+| Systems               | `scene::SystemSchedule`: named systems in fixed phases, added, replaced or removed per game or per scene (see [Systems and phases](scene.md#systems))                                      |
 
 **Dedicated guides:** [Renderer](renderer.md) · [Scene & Components](scene.md) ·
 [Events & Input](event_input.md) · [Physics](physics.md) · [Sound](sound.md) ·
@@ -92,7 +92,7 @@ What a game plugs in without patching the engine, and what the architecture work
 
 ## Backend System
 
-Owl uses a backend abstraction so that different platform APIs can be swapped at runtime.
+Owl Engine uses a backend abstraction so that different platform APIs can be swapped at runtime.
 
 ![Backend Abstraction](../images/backend_abstraction.svg)
 
@@ -108,7 +108,7 @@ Every renderer follows one **GPU-driven instanced pipeline** (since the
 v0.2.0 renderer modernisation): a compute pre-pass writes an SSBO, the
 graphics pass is instanced and indexes into the SSBO via the instance id, and
 the CPU does zero per-vertex transform. `Renderer2D`, `RendererTilemap`, and
-the raycaster wall stripes all share this shape; the v0.3.0 3D / mesh pipeline
+the raycaster wall stripes all share this shape; the v0.5.0 3D pipeline
 builds on it rather than reintroducing CPU-vertex batching.
 
 See [Renderer](renderer.md) for the full rendering pipeline, batch system, and camera details.
@@ -145,25 +145,36 @@ See [Sound System](sound.md) for the full user guide covering components, spatia
 
 The project produces several executables built on top of the `OwlEngine` shared library:
 
-| Application | Directory         | Description                                                        |
-|-------------|-------------------|--------------------------------------------------------------------|
-| Owl Nest    | `source/owlnest/` | Scene editor with project management (editor + runner executables) |
+| Application   | Directory                | Description                                                      |
+|---------------|--------------------------|------------------------------------------------------------------|
+| Owl Nest      | `source/owlnest/`        | Scene editor with project management (`OwlNest`)                 |
+| OwlRunner     | `source/owlnest/runner/` | Game runner: plays an exported game, scenarios and frame benches |
+| OwlShaderBake | `source/tools/`          | Build tool precompiling the engine shaders to SPIR-V             |
 
 ## Project System
 
-Owl Nest supports a project-based workflow. A project is a directory containing an
-`owl_project.yml` configuration file:
+A project is a directory holding an `owl_project.yml` (name, first scene, window, renderer stack, gamepad mappings)
+beside its assets; opening it in Owl Nest adds the directory as a high-priority asset directory (content browser,
+`nam:` lookups) and titles the window. **Scene > Document > Import** copies an external scene into it. The same
+folder is what the export packs and the runner plays:
+
+```mermaid
+flowchart LR
+    subgraph Project[Project folder]
+        Y[owl_project.yml] --- Sc[scenes/*.owl]
+        Sc --- As[scripts, huds, tilesets, tilemaps, textures, sounds]
+        As --- Cfg[game_settings.yml, input_actions.yml]
+    end
+    Project -->|open| Nest[Owl Nest: edit, Play]
+    Project -->|Pack Game / OwlNest --export| Pack[.owlpack + runner.yml + OwlRunner]
+    Pack --> Game[Exported game]
+```
 
 ```yaml
 OwlProject:
   name: "My Project"
   firstScene: "scenes/Example.owl"
 ```
-
-When a project is opened, its directory is added as a high-priority asset directory, making its contents visible in the
-content browser. The editor window title reflects the active project name. Scenes can be imported into the project via
-the **Scene > Document > Import**
-ribbon button.
 
 ### Async Packaging Flow
 
@@ -229,61 +240,11 @@ Key conventions:
 
 ![ECS Pipeline](../images/ecs_pipeline.svg)
 
-Entities support parent-child relationships via the **Hierarchy** component (mandatory on every entity).
-See [Scene & Components](scene.md) for the full component reference and entity lifecycle.
-
-### Transform Inheritance
-
-Each entity's `Transform` component stores a **local** transform (relative to its parent). The world-space transform is
-computed on demand by walking the parent chain:
-
-```
-worldTransform = parentWorldTransform * localTransform
-```
-
-For root entities (`parentId == 0`), local equals world (zero overhead).
-
-### Visibility Inheritance
-
-If any ancestor is hidden (editor or game mode), the entity is effectively hidden.
-`Scene::isEffectivelyVisible()` walks the parent chain to check; during a tick it reads the visibility computed once
-per entity by `prepareWorldTransforms()`, so sibling entities sharing the same root chain only pay the walk once.
-
-### Hierarchy Operations
-
-| Operation                | Behaviour                                                                       |
-|--------------------------|---------------------------------------------------------------------------------|
-| **Set parent**           | Circular reference check, local transform recomputed to preserve world position |
-| **Unparent**             | Entity becomes root, world transform stored as new local                        |
-| **Delete entity**        | Children reparented to grandparent (or root); world position preserved          |
-| **Delete with children** | Cascade delete of entire subtree                                                |
-| **Duplicate entity**     | Duplicate is a root entity with no children                                     |
-| **Duplicate subtree**    | Recursive duplicate with new UUIDs and correct parent references                |
-
-### Physics and Hierarchy
-
-Physics bodies (Box2D) operate in **world space** independently of the scene hierarchy. The hierarchy does **not**
-create physical constraints between entities.
-
-| Situation                                | Behaviour                                                                                                                                   |
-|------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------|
-| Non-physics parent moves → physics child | Child **stays in place** (Box2D controls its world position). Its local transform is recalculated each frame relative to the moving parent. |
-| Physics parent falls → physics child     | Each body moves **independently** according to Box2D simulation. No physical link.                                                          |
-| Physics parent moves → non-physics child | Child **follows** the parent via transform inheritance (normal hierarchy behaviour).                                                        |
-
-Joints between bodies (weld, revolute...) are not exposed yet: they are planned with the physics API
-([Physics API](design/physics-api.md)). The hierarchy never links two bodies physically.
-
-### Serialization
-
-The `Hierarchy` component serializes the `parentId` (UUID). Children lists are rebuilt from parent references after
-deserialization (`Scene::rebuildHierarchyChildren()`). Old scenes without hierarchy data load correctly (all entities
-default to root).
-
-### Editor (Owl Nest)
-
-The Scene Hierarchy panel displays entities as a tree. Drag-and-drop reparents entities. Right-click context menu
-provides: Create Root/Child Entity, Duplicate/Duplicate Subtree, Unparent, Delete Entity Only, Delete with Children.
+Entities support parent-child relationships via the **Hierarchy** component (mandatory on every entity): `Transform`
+is local, the world transform and the visibility are inherited from the parents, only `parentId` is saved. The
+operations, the world-transform cache and serialization are in [Scene & Components](scene.md#transform-hierarchy), the
+interaction with Box2D bodies in [Physics and Hierarchy](physics.md#hierarchy), the hierarchy panel in
+[Editor](editor.md).
 
 ## Icon System
 

@@ -23,16 +23,16 @@ flowchart LR
 
 The `navigation` key of the `Tilemap` component (inspector section **Navigation**) holds a `NavProfile`:
 
-| Field        | Meaning                                                                                                          |
-|--------------|------------------------------------------------------------------------------------------------------------------|
+| Field        | Meaning                                                                                                                                                                           |
+|--------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `mode`       | How the graph is read: `connections` (the tileset says which tiles are roads), `cells` (any non-empty cell), `rules` (legacy, explicit rules; the mode of a file without `mode`). |
-| `layer`      | Layer of the tilemap the graph is read from.                                                                     |
-| `source`     | `overlay` (roads, tracks) or `terrain` (walking on the ground tile).                                             |
-| `maxRise`    | Highest rise, in height steps, a move may cross over one cell (0 to 4).                                          |
-| `climbCost`  | Extra cost, in cells, of climbing one height step.                                                               |
-| `allowSteep` | Whether a cell on a steep slope can be crossed.                                                                  |
-| `overrides`  | Exceptions of single cells: `cell: [x, y]`, `noExit` / `noEnter` (sides closed to leaving or entering) and `cost`. |
-| `rules`      | Legacy, `mode: rules` only: one rule per tile (`tile`, `cost`, `exits`, `enters`).                                |
+| `layer`      | Layer of the tilemap the graph is read from.                                                                                                                                      |
+| `source`     | `overlay` (roads, tracks) or `terrain` (walking on the ground tile).                                                                                                              |
+| `maxRise`    | Highest rise, in height steps, a move may cross over one cell (0 to 4).                                                                                                           |
+| `climbCost`  | Extra cost, in cells, of climbing one height step.                                                                                                                                |
+| `allowSteep` | Whether a cell on a steep slope can be crossed.                                                                                                                                   |
+| `overrides`  | Exceptions of single cells: `cell: [x, y]`, `noExit` / `noEnter` (sides closed to leaving or entering) and `cost`.                                                                |
+| `rules`      | Legacy, `mode: rules` only: one rule per tile (`tile`, `cost`, `exits`, `enters`).                                                                                                |
 
 ```yaml
 Tilemap:

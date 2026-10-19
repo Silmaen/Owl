@@ -16,8 +16,7 @@ tests, dependencies and the checks to run before a pull request. In short:
    when C++ changed, the `ClangTidy` action
 4. Open a pull request against `main` that says what changes and why
 
-Owl Engine is developed by one maintainer with Claude Code as a development tool, used under supervision: every
-change is reviewed and owned by the maintainer, and goes through the same strict CI as any contribution (unit and
-scenario tests on Linux x64/arm64 and Windows, sanitizers, clang-tidy, include checks and performance budgets).
+How the project is developed (one maintainer, Claude Code under supervision, the same strict CI for every change)
+is in the same guide.
 
 Security issues follow `SECURITY.md`. Contributions are licensed under the [MIT License](LICENSE).

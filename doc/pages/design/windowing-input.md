@@ -128,14 +128,14 @@ fixed it upstream.
   detached viewports (the ImGui GLFW backend itself refuses viewports under Wayland). Detached panels stay inside the
   main window; X11 (`OWL_WINDOW_PLATFORM=x11`, XWayland) keeps native detached windows. This is a protocol limit, not
   a GLFW one: SDL3 has the same.
-- **Fractional scaling is there, Owl does not use it yet.** Since 3.4 GLFW implements `wp_fractional_scale_v1` with
-  `wp_viewporter` when `GLFW_SCALE_FRAMEBUFFER` is on (its default). Owl turns that hint off because the swapchain,
+- **Fractional scaling is there, Owl Engine does not use it yet.** Since 3.4 GLFW implements `wp_fractional_scale_v1` with
+  `wp_viewporter` when `GLFW_SCALE_FRAMEBUFFER` is on (its default). Owl Engine turns that hint off because the swapchain,
   the viewports and ImGui are sized from the window size: the buffer stays at 1× and the compositor upscales it
   (correct size, slightly soft at 125 % or 150 %). Turning it on needs framebuffer-size resize events, ImGui's
   `DisplayFramebufferScale` and picking in framebuffer pixels: engine work, not a GLFW gap, done with the Phase E
   text scale / DPI item.
 - **Vsync on hidden surfaces.** GLFW 3.5.1 no longer blocks: under Wayland it drives the swap interval itself, waiting
-  for the frame callback with a 20 ms timeout. Owl still paces OpenGL itself: on the headless weston of the smoke
+  for the frame callback with a 20 ms timeout. Owl Engine still paces OpenGL itself: on the headless weston of the smoke
   test, interval 1 gives irregular frames (median 13.3 ms, p95 20.8 ms, the timeout firing every other frame) where
   the pacer holds 16.67 ms ± 0.1 ms. To be measured again on a visible desktop before switching.
 - **libdecor loads GTK.** With libdecor, `glfwInit` loads its GTK plugin (GTK, Pango, the glycin image loader and its
@@ -147,31 +147,31 @@ fixed it upstream.
 ## SDL3 evaluation (v0.3.0, Done): rejected
 
 - ![Done][done] Evaluation of SDL3 for windowing, input, dialogues and audio, possibly SDL GPU as an Owl RHI backend
-- **Decision (October 2026): Owl stays on GLFW. SDL3 is rejected for the window, the input, the dialogues and the
+- **Decision (October 2026): Owl Engine stays on GLFW. SDL3 is rejected for the window, the input, the dialogues and the
   gamepads alike; OpenAL Soft is kept; SDL GPU is rejected.** Another alternative may be looked at later, not SDL3.
 
 Why:
 
-- GLFW 3.5.1 closes most of the Wayland gaps the evaluation started from: fractional scaling exists (Owl's choice to
+- GLFW 3.5.1 closes most of the Wayland gaps the evaluation started from: fractional scaling exists (Owl Engine's choice to
   turn it off, see above), vsync no longer hangs on hidden surfaces. The remaining ones (window icon, global
   positions) are protocol limits SDL3 shares or depends on the compositor for.
 - The native modal file dialogues of NFD (portal, GTK, Win32) are preferred over SDL's asynchronous
   `SDL_Show*Dialog`, which would change the editor's Open / Save As flow.
 - Gamepads stay on GLFW too (`glfwGetGamepadState`, SDL-compatible mapping database through
   `glfwUpdateGamepadMappings`); rumble and hot-plug details are not worth a second windowing library.
-- A backend swap of about 12 files plus a release with two backends to test, for no feature Owl lacks.
+- A backend swap of about 12 files plus a release with two backends to test, for no feature Owl Engine lacks.
 
 ### What SDL3 would have brought
 
-| Owl pain (GLFW)                 | SDL 3.4                                                                                        | GLFW 3.5.1                                     |
-|---------------------------------|------------------------------------------------------------------------------------------------|------------------------------------------------|
-| No Wayland window icon          | `SDL_SetWindowIcon` uses `xdg-toplevel-icon-v1` (needs a compositor that has it: KWin, Mutter) | Not supported: desktop entry                   |
-| Fractional scaling              | `wp_fractional_scale_v1` + `wp_viewporter`; `SDL_GetWindowPixelDensity` / `DisplayScale`       | Same protocols with `GLFW_SCALE_FRAMEBUFFER`   |
-| Blocking vsync on hidden window | frame-callback swap with a timeout                                                             | Same since 3.5.1 (20 ms timeout)               |
-| Window placement                | Same protocol limit: no global position under Wayland (`SDL_GetWindowPosition` is relative)    | Same limit                                     |
-| Gamepad (I-03, D-25)            | Joystick / gamepad API, mapping database, rumble and hot-plug built in                         | Gamepad API and mapping database, no rumble    |
-| File dialogs                    | `SDL_ShowOpenFileDialog` / `SaveFileDialog` / `OpenFolderDialog`, asynchronous                 | None: NFD, modal (kept)                        |
-| Text input, IME, clipboard      | Built in (IME and composition are better than GLFW)                                            | Char callback and clipboard                    |
+| Owl pain (GLFW)                 | SDL 3.4                                                                                        | GLFW 3.5.1                                   |
+|---------------------------------|------------------------------------------------------------------------------------------------|----------------------------------------------|
+| No Wayland window icon          | `SDL_SetWindowIcon` uses `xdg-toplevel-icon-v1` (needs a compositor that has it: KWin, Mutter) | Not supported: desktop entry                 |
+| Fractional scaling              | `wp_fractional_scale_v1` + `wp_viewporter`; `SDL_GetWindowPixelDensity` / `DisplayScale`       | Same protocols with `GLFW_SCALE_FRAMEBUFFER` |
+| Blocking vsync on hidden window | frame-callback swap with a timeout                                                             | Same since 3.5.1 (20 ms timeout)             |
+| Window placement                | Same protocol limit: no global position under Wayland (`SDL_GetWindowPosition` is relative)    | Same limit                                   |
+| Gamepad (I-03, D-25)            | Joystick / gamepad API, mapping database, rumble and hot-plug built in                         | Gamepad API and mapping database, no rumble  |
+| File dialogs                    | `SDL_ShowOpenFileDialog` / `SaveFileDialog` / `OpenFolderDialog`, asynchronous                 | None: NFD, modal (kept)                      |
+| Text input, IME, clipboard      | Built in (IME and composition are better than GLFW)                                            | Char callback and clipboard                  |
 
 SDL audio is a stream API without 3D positioning, EFX or HRTF: it never was a replacement for OpenAL Soft.
 
@@ -193,16 +193,16 @@ xdg_toplevel_icon_v1 protocol not supported*: weston 14 lacks the protocol.
 ### SDL GPU: rejected
 
 SDL GPU has no OpenGL backend and its own shader and resource model: it would be a third RHI path next to the
-existing OpenGL and Vulkan ones, for no feature Owl lacks. The Owl RHI work (Phase C) stays on Vulkan and OpenGL.
+existing OpenGL and Vulkan ones, for no feature Owl Engine lacks. The Owl RHI work (Phase C) stays on Vulkan and OpenGL.
 
-## Input actions and basic gamepad (v0.4.0)
+## Input actions and basic gamepad (v0.4.0) — Done
 
 Pull requests SIM1 and IN1 to IN4 of [Isometric worlds](isometric-worlds.md). Before them input was polling only,
-without "just pressed" edges nor gamepad, and injection worked on the Null backend only (both fixed by IN1); keys are
-were hard-coded in engine systems (`ScenePlayer`, `VoxelPlayerSystem`, doors and push-walls) and Lua read raw key
+without "just pressed" edges nor gamepad, and injection worked on the Null backend only (both fixed by IN1); keys were
+hard-coded in engine systems (`ScenePlayer`, `VoxelPlayerSystem`, doors and push-walls) and Lua read raw key
 codes until IN3.
 
-- **Fixed simulation tick** (SIM1): systems and Lua get an `on_tick` at a fixed step set in the project (60 Hz by
+- **Fixed simulation tick** (SIM1, Done): systems and Lua get an `on_tick` at a fixed step set in the project (60 Hz by
   default), beside the variable `on_update`; physics always runs on this fixed clock. Input is sampled per tick, so
   edges are not lost when the frame rate and the tick differ
 - **Input frames** (IN1, Done): a plain-data `InputFrame` (previous and current `InputState`: keys, mouse buttons,
@@ -213,7 +213,7 @@ codes until IN3.
   project mapping file passed to `glfwUpdateGamepadMappings`, Null backend injection for tests, Lua
   `input.is_gamepad_connected` / `get_gamepad_name`; the gamepad of the README becomes true (I-03, D-25). Details
   below
-- **Dead zone and curve** (IN2, Done, from v0.10.0): radial dead zone per binding (0.15 by default) and a
+- **Dead zone and curve** (IN2, Done): radial dead zone per binding (0.15 by default) and a
   response-curve exponent
 - **Action map** (IN3, Done, details below): actions are buttons, 1D axes or 2D axes; a binding is a device (key, mouse button, gamepad
   button, gamepad axis), a code and a scale, 2D actions also take key composites; `evaluate(map, previous, current)`
@@ -221,7 +221,7 @@ codes until IN3.
 - The map lives in `input_actions.yml` with its `DocumentFormat`, packed with the game like `game_settings.yml`, with
   room for a user override layer; Lua `input.is_action_pressed`, `is_action_just_pressed`, `is_action_just_released`,
   `get_action_value`, `get_action_vector`; `input.is_key_pressed` kept and deprecated; scenarios gain an `actions:`
-  step; engine systems and sample scripts move to actions
+  step; engine systems and the Engine Demo scripts move to actions
 - **Editor** (IN4, Done): an action map document with its own undo stack, opened from the Content Browser, the ribbon
   or Project Settings; "press a key" capture; the built-in map in every project template; a live action monitor
   ([Action map editor](../editor.md#editor-action-map))

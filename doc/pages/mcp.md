@@ -145,8 +145,24 @@ reported as interrupted. Only the editor viewport is captured: the image is what
 | Body over 1 MiB                                           | 413    |
 | 4 messages already waiting for the editor                 | 503    |
 
-While a gizmo drag, an inspector edit, a menu or a dialogue is in progress the messages wait for the editor; after
-30 seconds the client gets the JSON-RPC error `-32001` and the message is dropped unrun.
+A message is checked and queued by the server threads, then run by the editor's main loop, which waits while a gizmo
+drag, an inspector edit, a menu or a dialogue is in progress; after 30 seconds unrun the client gets the JSON-RPC
+error `-32001` and the message is dropped.
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant S as Server thread
+    participant Q as Queue (4 messages)
+    participant E as Editor main loop
+    C->>S: POST /mcp, Bearer token
+    S->>S: Host, Origin, token, type, size (403, 401, 415, 413)
+    S->>Q: queue (503 when full)
+    E->>Q: take the messages once no gesture or modal is in progress
+    E->>E: run the editor command (one undo step, journal source mcp)
+    E-->>S: JSON-RPC response
+    S-->>C: 200 JSON (or -32001 after 30 s unrun)
+```
 
 ## See also
 

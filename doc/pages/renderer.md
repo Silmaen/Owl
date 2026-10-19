@@ -2,21 +2,19 @@
 
 [TOC]
 
-This page documents Owl's rendering system: the 2D batch renderer, texture and shader
+This page documents Owl Engine's rendering system: the 2D batch renderer, texture and shader
 management, cameras, framebuffers, and backend abstraction.
 
 ## Overview
 
-Owl provides a 2D batch renderer built on the [Owl RHI](#renderer-owl-rhi) (Vulkan 1.4 reference, OpenGL 4.5
-fallback, or Null for headless). All rendering goes through static facade classes:
-`RenderCommand` for low-level GPU operations, `Renderer2D` for batched 2D primitives
-(quads, circles, lines, text), and `BackgroundRenderer` for fullscreen backgrounds.
+Every renderer draws through the [Owl RHI](#renderer-owl-rhi) (Vulkan 1.4 reference, OpenGL 4.5 fallback, Null for
+headless) behind static facades: `RenderCommand` for low-level GPU operations, `Renderer2D` for batched 2D primitives
+(quads, circles, lines, text), `BackgroundRenderer` for fullscreen backgrounds.
 
-The renderer supports up to **20,000 quads per batch** with automatic batch splitting
-and GPU-managed texture slot allocation. Quads, circles and glyphs drawn with an explicit transform share
-20,000 transient matrices per batch, a batch finds a texture's slot by its backend identity
-(`Texture::getBackendId`, a hashed table instead of a scan), and a frame allocates nothing once the batches reached
-their size (`Renderer2D.transientFrameDoesNotAllocate`).
+- Up to **20,000 instances per batch**, split automatically; quads, circles and glyphs drawn with an explicit
+  transform share 20,000 transient matrices per batch.
+- A batch finds a texture's slot by its backend identity (`Texture::getBackendId`, a hashed table, no scan).
+- A frame allocates nothing once the batches reached their size (`Renderer2D.transientFrameDoesNotAllocate`).
 
 ## Architecture
 
@@ -28,50 +26,52 @@ Every renderer kind, the render stack and the base building blocks (`Camera`, `T
 in `source/owl/private/renderer/`. Only the GPU objects and their backends sit one level down, in
 `owl::renderer::gpu` (`gpu::opengl`, `gpu::vulkan`, `gpu::null`).
 
-| Class                                            | Role                                                                       |
-|--------------------------------------------------|----------------------------------------------------------------------------|
-| `Renderer`                                       | Lifecycle (init/shutdown/reset), owns `ShaderLibrary` and `TextureLibrary` |
-| `RenderStack`                                    | Ordered list of active `RenderLayer` instances for the current scene       |
-| `RenderLayer`                                    | Abstract interface for one renderer in the stack (begin/render/end)        |
-| `RenderLayerFactory`                             | String-keyed registry of layer constructors (`"Renderer2D"`, ...)          |
-| `Renderer2D`                                     | Static 2D batch renderer: quads, circles, lines, text                      |
-| `Renderer2DLayer`                                | `RenderLayer` adapter wrapping `Renderer2D` (registered at engine init)    |
-| `RendererRaycast`                                | Static facade for the CPU-DDA raycaster                                    |
-| `RendererRaycastLayer`                           | `RenderLayer` adapter for the raycaster (factory key `"RendererRaycast"`)  |
-| `BackgroundRenderer`                             | Deferred fullscreen background/skybox rendering                            |
-| `RenderCommand`                                  | Static facade delegating to the active `RenderAPI`                         |
-| `RenderAPI`                                      | Owl RHI backend interface (Vulkan, OpenGL, Null)                           |
-| `GraphContext`                                   | Graphics context abstraction (init, buffer swapping)                       |
-| `Camera`                                         | Base class: projection, view, viewProjection matrices                      |
-| `CameraOrtho`                                    | Standalone orthographic camera with position/rotation                      |
-| `CameraEditor`                                   | Editor orbit camera (focal point, pan, zoom, rotate)                       |
-| `SceneCamera`                                    | Scene camera supporting both orthographic and perspective                  |
-| `Framebuffer`                                    | Off-screen render target with typed attachments                            |
-| `DrawData`                                       | Vertex/index buffers, shader and `PipelineState` of a draw                 |
-| `Shader`                                         | Abstract shader (Slang source, SPIR-V compiled)                            |
-| `Texture` / `Texture2D`                          | Abstract texture, 2D texture with file/spec creation                       |
-| `UniformBuffer`                                  | GPU-side uniform data block                                                |
+| Class                   | Role                                                                       |
+|-------------------------|----------------------------------------------------------------------------|
+| `Renderer`              | Lifecycle (init/shutdown/reset), owns `ShaderLibrary` and `TextureLibrary` |
+| `RenderStack`           | Ordered list of active `RenderLayer` instances for the current scene       |
+| `RenderLayer`           | Abstract interface for one renderer in the stack (begin/render/end)        |
+| `RenderLayerFactory`    | String-keyed registry of layer constructors (`"Renderer2D"`, ...)          |
+| `Renderer2D`            | Static 2D batch renderer: quads, circles, lines, text                      |
+| `Renderer2DLayer`       | `RenderLayer` adapter wrapping `Renderer2D` (registered at engine init)    |
+| `RendererRaycast`       | Static facade for the CPU-DDA raycaster                                    |
+| `RendererRaycastLayer`  | `RenderLayer` adapter for the raycaster (factory key `"RendererRaycast"`)  |
+| `BackgroundRenderer`    | Deferred fullscreen background/skybox rendering                            |
+| `RenderCommand`         | Static facade delegating to the active `RenderAPI`                         |
+| `RenderAPI`             | Owl RHI backend interface (Vulkan, OpenGL, Null)                           |
+| `GraphContext`          | Graphics context abstraction (init, buffer swapping)                       |
+| `Camera`                | Base class: projection, view, viewProjection matrices                      |
+| `CameraOrtho`           | Standalone orthographic camera with position/rotation                      |
+| `CameraEditor`          | Editor orbit camera (focal point, pan, zoom, rotate)                       |
+| `SceneCamera`           | Scene camera supporting both orthographic and perspective                  |
+| `Framebuffer`           | Off-screen render target with typed attachments                            |
+| `DrawData`              | Vertex/index buffers, shader and `PipelineState` of a draw                 |
+| `Shader`                | Abstract shader (Slang source, SPIR-V compiled)                            |
+| `Texture` / `Texture2D` | Abstract texture, 2D texture with file/spec creation                       |
+| `UniformBuffer`         | GPU-side uniform data block                                                |
 
 ## Renderer Stack {#renderer-stack}
 
-The renderer stack lets a single scene compose **multiple ordered renderers**
-into the same frame — for example a raycasting layer for the world plus a
-`Renderer2D` layer on top for a HUD. The stack is defined at the project level
-(in `owl_project.yml`), filtered and configured per scene (in `.owl` files),
-and routed per entity via the optional `RendererTag` component.
+The renderer stack composes **several ordered renderers** in one frame (a raycast world under a 2D minimap, a 2D sky
+behind an isometric map). The stack is declared in `owl_project.yml`, filtered and configured per scene (`.owl`), and
+each entity is routed to a layer by its optional `RendererTag`.
 
-In v0.2.0 the foundation ships with the runtime now wired end-to-end:
-`EditorLayer::syncActiveDocumentPanels` (and the runner equivalent) builds the
-`RenderStack` from `Project::rendererStack` + `Scene::getEnabledRenderers()` and
-installs it via `Renderer::setRenderStack`. `Scene::renderWithStack` then runs
-one pass per layer (`onBeginFrame` → `render` → `onEndFrame`),
-filtering entities by their `RendererTag` so each layer only sees the entities
-that opt into it. Untagged entities default to the first layer and backgrounds
-draw only on the first pass to preserve the legacy z-order. After the last layer come the world-space overlays
-(`Scene::renderOverlays`: voxel block highlight and crosshair), then the HUD pass (`HudPass`, every
-`Canvas` in pixels whatever its `RendererTag`, see [Scene](scene.md#ui-components)), then the toasts. A project with no
-`RendererStack:` entry falls back to a single implicit `Renderer2D` and behaves
-identically to the legacy single-pass path.
+`EditorLayer::syncActiveDocumentPanels` (and the runner equivalent) builds the `RenderStack` from
+`Project::rendererStack` + `Scene::getEnabledRenderers()` and installs it with `Renderer::setRenderStack`;
+`Scene::renderWithStack` then draws one frame:
+
+```mermaid
+flowchart LR
+    Prep["prepare phase<br/>tilemap chunks, world matrices"] --> L1["layer 1<br/>+ backgrounds"]
+    L1 --> Ln["layers 2..n<br/>entities whose RendererTag names them"]
+    Ln --> Ov["Scene::renderOverlays<br/>voxel highlight, crosshair"]
+    Ov --> Hud["HudPass<br/>every Canvas, in pixels"]
+    Hud --> T["toasts"]
+```
+
+Untagged entities go to the first layer, and backgrounds draw on the first pass only. The HUD pass takes every
+`Canvas` whatever its `RendererTag` (see [Scene](scene.md#ui-components)). A project without `RendererStack:` gets a
+single implicit `Renderer2D`, the legacy single-pass path.
 
 ### Configuration model
 
@@ -94,8 +94,7 @@ RendererStack:
     Name: hud
 ```
 
-The list order is the back-to-front render order. A project with no
-`RendererStack:` entry is treated as `[{Type: Renderer2D, Name: default}]`.
+The list order is the back-to-front render order; no entry means `[{Type: Renderer2D, Name: default}]`.
 
 **Scene YAML** (`.owl`):
 
@@ -108,16 +107,15 @@ EnabledRenderers:
     Enabled: true
 ```
 
-A scene with no `EnabledRenderers:` activates **every** project layer with its
-project default config. `Overrides` is deep-merged on top of `DefaultConfig`
-(override wins on key collision).
+A scene with no `EnabledRenderers:` activates **every** project layer with its default config; `Overrides` is
+deep-merged on top of `DefaultConfig` (the override wins).
 
 A `Renderer2D` layer reads two keys (editable in the Scene Settings panel):
 
-| Key               | Default | Effect                                                                                         |
-|-------------------|---------|------------------------------------------------------------------------------------------------|
-| `Space`           | `World` | `World` draws with the scene camera; `Screen` in screen units, origin bottom left, Y up        |
-| `ReferenceHeight` | `0`     | `Screen` only: the screen is this many units high, its width follows the aspect ratio; 0 = px  |
+| Key               | Default | Effect                                                                                        |
+|-------------------|---------|-----------------------------------------------------------------------------------------------|
+| `Space`           | `World` | `World` draws with the scene camera; `Screen` in screen units, origin bottom left, Y up       |
+| `ReferenceHeight` | `0`     | `Screen` only: the screen is this many units high, its width follows the aspect ratio; 0 = px |
 
 With `ReferenceHeight: 720` an overlay authored at 1280×720 (the minimaps of the Engine Demo raycast level and of
 Wolfenstein mini) keeps its share of the screen at 1080p or 1440p, like a `ScaleWithHeight` HUD canvas; the
@@ -134,14 +132,13 @@ Wolfenstein mini) keeps its share of the screen at 1080p or 1440p, like a `Scale
         ...
 ```
 
-| Tag state                                    | Routing                                                  |
-|----------------------------------------------|----------------------------------------------------------|
-| Component absent                             | First layer of the active stack (legacy `Renderer2D`)    |
-| Component present, name matches a layer      | That layer renders the entity                            |
-| Component present, name unknown to the stack | Entity skipped, one-shot warning per scene activation    |
+| Tag state                                    | Routing                                               |
+|----------------------------------------------|-------------------------------------------------------|
+| Component absent                             | First layer of the active stack (legacy `Renderer2D`) |
+| Component present, name matches a layer      | That layer renders the entity                         |
+| Component present, name unknown to the stack | Entity skipped, one-shot warning per scene activation |
 
-This is fully backward compatible: existing `.owl` files and `owl_project.yml`
-load unchanged — none of these blocks are required.
+None of these blocks is required: older `.owl` and `owl_project.yml` files load unchanged.
 
 ### Frame flow
 
@@ -163,35 +160,32 @@ sequenceDiagram
     RenderStack->>LayerA: onEndFrame()
 ```
 
-`onBeginFrame` and `onRender` walk the stack in declaration order; `onEndFrame`
-walks in reverse so layers can flush nested resources cleanly.
+`onEndFrame` walks the stack in reverse so layers can flush nested resources cleanly.
 
 ### Adding a new layer type
 
-1. Subclass `RenderLayer` and implement the four virtuals
-   (`onBeginFrame`, `onRender`, `onEndFrame`, `applyConfig`).
-2. Provide a `static void registerWithFactory()` that calls
-   `RenderLayerFactory::registerType("MyType", ...)` exactly once.
-3. Invoke your layer's `registerWithFactory()` from `Renderer::initShaders` so the
-   type is available before any project loads.
-4. Bump the project YAML to reference the new `Type: MyType` and any
-   `DefaultConfig` keys your `applyConfig` consumes. `applyConfig` receives the
-   merged `DefaultConfig` + scene `Overrides` map as YAML text (`{}` when empty),
-   and `RendererStackEntry::defaultConfig` / `EnabledRenderersConfig::Entry::overrides`
-   hold YAML text too: the public headers never expose yaml-cpp.
+1. Subclass `RenderLayer` and implement `onBeginFrame`, `onRender`, `onEndFrame` and `applyConfig`.
+2. Give it a `static void registerWithFactory()` calling `RenderLayerFactory::registerType("MyType", ...)` once, and
+   call it from `Renderer::initShaders` so the type exists before any project loads.
+3. Reference `Type: MyType` in the project YAML. `applyConfig` receives the merged `DefaultConfig` + scene
+   `Overrides` as YAML text (`{}` when empty), like `RendererStackEntry::defaultConfig` and
+   `EnabledRenderersConfig::Entry::overrides`: the public headers never expose yaml-cpp.
 
-The factory pattern keeps the engine extensible: third-party code (mods, tests)
-can register layer types without touching engine sources.
+Third-party code (mods, tests) registers layer types without touching engine sources.
 
 ### Per-renderer binding blocks {#renderer-blocks}
 
-Each high-level renderer (`Renderer2D`, `RendererTilemap`, `Renderer3D`, `RendererRaycast`) owns a binding block:
-the explicit bindings of the Owl RHI. On Vulkan it is a `VkDescriptorSetLayout` plus a `DescriptorRing` that hands
-every draw a distinct descriptor set from pools owned by each frame in flight (reset in one call when the frame slot
-comes back), matching exactly the bindings its shaders declare. On OpenGL it is an `opengl::BindingTable`: the
-uniform buffers and textures bound while the block is active are recorded, and a draw binds them again when another
-block changed the global GL bindings since (all renderers share uniform binding 0 and texture units from 0), so no
-renderer re-binds its UBO "just in case". Null ignores the blocks. The API is backend-neutral:
+Each high-level renderer (`Renderer2D`, `RendererTilemap`, `Renderer3D`, `RendererRaycast`) owns a binding block,
+the explicit bindings of the Owl RHI, matching exactly what its shaders declare:
+
+- Vulkan: a `VkDescriptorSetLayout` and a `DescriptorRing` handing every draw its own descriptor set, from pools of
+  each frame in flight reset in one call when the slot comes back.
+- OpenGL: an `opengl::BindingTable` recording the uniform buffers and textures bound while the block is active; a
+  draw binds them again only when another block changed the global GL bindings (all renderers share uniform binding
+  0 and texture units from 0).
+- Null ignores the blocks.
+
+The API is backend-neutral:
 
 ```c++
 // In MyRenderer::init(), declare the bindings the shaders use:
@@ -215,76 +209,22 @@ const gpu::RendererDescriptors::ScopedActive scoped{myBlock};
 gpu::RendererDescriptors::release("MyRenderer");
 ```
 
-The identifier of a name never changes (before `declare`, after `release`), and `ScopedActive` reads the backend
-block cached for it: activating a block builds no string and does no lookup.
+The identifier of a name never changes (before `declare`, after `release`) and `ScopedActive` reads the block cached
+for it: no string built, no lookup. While one is alive, `vulkan::UniformBuffer`, `RenderCommand::bindTextures`,
+`vulkan::Texture2D::bind`, `VulkanHandler::pushPipeline` and `VulkanHandler::bindPipeline` route through the block;
+outside any scope they fall back to the legacy global `Descriptors` singleton (the `Texture2D` storage table and a few
+older call sites). Blocks also hold `BindingType::StorageBuffer` slots: `Renderer2D` declares binding 2 as an SSBO and
+attaches its `vulkan::StorageBuffer` with `bindStorageBuffer`.
 
-While a `ScopedActive` is alive, `vulkan::UniformBuffer`, `RenderCommand::bindTextures`,
-`vulkan::Texture2D::bind`, `VulkanHandler::pushPipeline` and
-`VulkanHandler::bindPipeline` all route through the matching descriptor
-block. Outside any scope they fall back to the legacy global `Descriptors`
-singleton, which is still used by the `Texture2D` storage table and a
-handful of pre-modernization call sites — that path will retire as the
-remaining renderers migrate.
+The blocks fixed the NVIDIA `vkCmdBindPipeline` crash of the instanced tilemap path (the shared global layout
+declared bindings the shader did not sample) and the flicker of two `Renderer2D` layers with different view
+projections in one frame (uniform blocks are now copied into the frame ring at each change).
 
-This pattern fixes two pre-existing pathologies:
+### Scene world matrices on the GPU
 
-- **NVIDIA `vkCmdBindPipeline` crash on the instanced-tilemap path.** The
-  shared global layout previously declared bindings the calling shader
-  didn't sample, which NVIDIA's strict validation rejects.
-- **Per-pass UBO race.** Two `Renderer2D` layers using different VPs in the
-  same frame used to memcpy into the same `VkBuffer` for binding 0,
-  producing visible flicker. Uniform blocks are now copied into the frame ring
-  at each change, so every draw reads the block set before it.
-
-The same machinery also supports `BindingType::StorageBuffer` slots —
-the instanced `Renderer2D` rewrite (v0.2.0 Phase 1) declares binding 2
-as an SSBO and attaches its `vulkan::StorageBuffer` via
-`bindStorageBuffer` so each draw's descriptor set picks up the
-correct `VkBuffer` automatically.
-
-### Raycast wall stripes on the GPU (Phase 3)
-
-`RendererRaycast::drawTilemapWalls` runs the per-column DDA on the GPU and
-emits every wall stripe in a single instanced drawcall:
-
-```mermaid
-flowchart LR
-    Tilemap["Tilemap grid +<br/>tile metadata"] -->|cache miss| DDA["RaycastDDAPass<br/>(raycast_dda.slang)"]
-    Camera["Camera params<br/>(cell-space)"] --> DDA
-    DDA -->|hitCount[]<br/>columnHits[]<br/>zBuffer[]| Stripe["raycast_stripe.slang<br/>(vertex + fragment)"]
-    Tileset["Tileset atlas +<br/>per-tile UV rects"] --> Stripe
-    Stripe -->|drawDataInstanced<br/>numRays × kMaxHits| FB["Framebuffer"]
-```
-
-- The DDA compute pass writes `hitCount[col]` + `columnHits[col × maxHits + k]`
-  + `zBuffer[col]` once per frame (one thread per screen column).
-- The stripe shader fires `numRays × kMaxHits` instances. Each vertex
-  unpacks `(col, localK)` from `SV_InstanceID`, indexes the hit array
-  back-to-front so painter's order is implicit, computes the stripe
-  rectangle from `perpDist` + `wallHeight` + the cached pixel-space
-  viewProjection, fetches `tileUvRects[tileIndex]` for the atlas UV strip,
-  and emits the corner. Slots past `hitCount[col]` emit a zero-area
-  off-screen quad — the rasteriser drops them cheaply.
-- Per-tile UV rects + tilemap grid + tile meta upload only on cache miss
-  (`(tilemap, tileset, layer)` key) — static scenes pay zero per-frame
-  upload cost.
-- The CPU sprite / door / pushwall occlusion paths need each column's
-  opaque depth: the renderer walks the same DDA on the CPU (`cpuWalkColumn`,
-  no stripe emission) to fill its `zBuffer` mirror and the stats, which costs
-  less than reading `zBuffer[]` back (a read-back drains the frame mid-way).
-- The Null backend keeps a CPU walk fallback so headless tests stay green
-  and the visual output is byte-identical.
-
-### Scene world matrices on the GPU (Phase 2)
-
-Phase 2 of the renderer modernisation moved per-entity world matrices
-from per-instance CPU upload to one SSBO per frame. `Scene::prepareWorldTransforms`
-composes every world matrix on the CPU in a pre-order pass (no depth limit) and
-hands them to `Renderer2D::setSceneWorlds`, which uploads them once at the next
-`flush()`, after the batch is open. Each instance record in the quad / circle /
-text batches carries a small `int32_t worldIndex` instead of a 64-byte
-`mat4 transform`. (A compute pass used to recompose the hierarchy on the GPU from
-the local matrices; it duplicated the CPU work and capped the depth at 64.)
+Per-entity world matrices reach the GPU as one SSBO per frame. `Scene::prepareWorldTransforms` composes every world
+matrix on the CPU in a pre-order pass (no depth limit) and hands them to `Renderer2D::setSceneWorlds`, uploaded at
+the next `flush()`; each quad / circle / text instance carries an `int32_t worldIndex` instead of a 64-byte matrix.
 
 ```mermaid
 flowchart LR
@@ -297,89 +237,35 @@ flowchart LR
     VS --> Draw["Instanced drawcall"]
 ```
 
-- Entity draws (sprites, animated sprites, circles, text entities in
-  `Scene::render`) pass `Scene::getWorldIndex(entity)` — a positive slot
-  into the GPU `sceneWorlds[]` SSBO.
-- Non-entity draws (UI canvas widgets, gizmo / debug overlays, the
-  per-glyph layout in `drawString`) leave `worldIndex` at its default `-1`.
-  Renderer2D appends each requested `math::Transform` to a per-batch
-  `transientWorlds[]` SSBO (20 000 matrices, the instance capacity) and emits a negative `worldIndex` that
-  points into it. Quads and circles start a new batch every 4 096 transient matrices (a bigger batch leaves the CPU
-  cache, about 30 % slower per quad); glyphs fill the 20 000, so a long text stays one draw call.
-- `gpu::StorageBuffer::bind(uint32_t iBinding)` lets the same SSBO be
-  bound at different slot numbers across descriptor blocks.
-- Per-instance footprint dropped: `QuadInstance` 128 → 80 bytes,
-  `CircleInstance` 96 → 48 bytes, `TextInstance` 128 → 80 bytes. `Scene`
-  keeps the world matrices in a persistent per-entity cache so the CPU
-  consumers that genuinely need a world matrix (raycast DDA, physics sync,
-  `EntityLink`, the editor inspector / gizmo) read them without a GPU
-  readback and without recomposing an unchanged entity.
+- Entity draws (sprites, animated sprites, circles, text in `Scene::render`) pass `Scene::getWorldIndex(entity)`, a
+  positive slot of `sceneWorlds[]`; the CPU `math::Transform` is then never computed (`getWorldTransform()` only runs
+  on the transient fallback path and for the CPU consumers below).
+- Non-entity draws (UI widgets, gizmo and debug overlays, the glyphs of `drawString`) leave `worldIndex` at `-1`:
+  `Renderer2D` appends their `math::Transform` to the per-batch `transientWorlds[]` SSBO (20 000 matrices) and emits
+  a negative index into it. Quads and circles start a new batch every 4 096 transient matrices (a bigger batch leaves
+  the CPU cache, about 30 % slower per quad); glyphs fill the 20 000, so a long text stays one draw call.
+- `gpu::StorageBuffer::bind(uint32_t iBinding)` binds one SSBO at different slots across blocks.
+- Instances: `QuadInstance` 80 bytes, `CircleInstance` 48, `TextInstance` 80 (128, 96, 128 with a matrix).
+- `Scene` keeps the world matrices in a persistent per-entity cache, so the CPU consumers (raycast DDA, physics sync,
+  `EntityLink`, the inspector and gizmo) read them without a read-back nor recomposition.
 
-### Canonical instanced pipeline & clean-up (Phase 5)
+### Canonical instanced pipeline
 
-The SSBO-indexed instanced pattern proven by Phases 1–3 is the **canonical
-draw path** for every renderer going forward — a compute pre-pass writes an
-SSBO, the graphics pass is instanced and indexes into the SSBO via the
-instance id, and the CPU performs zero per-vertex transform. New renderers
-(the v0.3.0 mesh / 3D pipeline, the deferred GPU sprite stripes) build on
-this same shape rather than the retired Hazel-style CPU-vertex batch.
-
-Clean-ups in Phase 5:
-
-- **Tilemap rendering routes through the instanced `RendererTilemap`.**
-  `Scene::render` queued each non-raycast 2D tilemap via
-  `RendererTilemap::drawTilemap`; the draw is **deferred**, not immediate.
-  `Renderer2D::flush` drains the queue with `RendererTilemap::flushPending`
-  from inside its own `beginBatch`/`endBatch` render pass — after the
-  background, before the sprites — so the tilemap composites in the same
-  painter's order as the retired per-cell `Renderer2D::drawQuad` path.
-  Issuing the draw immediately (mid-`Scene::render`, before the batch opens)
-  recorded a `vkCmdDrawIndexed` with no active render pass and hung the GPU;
-  deferring into the active batch fixes it. The whole scene's tilemaps — every
-  entity, every layer — combine into **one instanced drawcall**
-  (`tilemap_instanced.slang`): `layerZ`, `cellSize`, the atlas grid, the
-  half-texel inset and a `textureSlot` are all per-instance attributes, and
-  distinct tilesets bind to distinct slots of the shader's `gTextures[32]`
-  array. There is no per-draw UBO: that was the thing that could not be pooled
-  (one descriptor set per frame per block, undefined to update between
-  recorded draws), so folding every per-draw datum into the instance stream —
-  the same pattern `Renderer2D` uses for its 32-texture batch — sidesteps the
-  descriptor race entirely. Cap: 32 distinct tilesets per batch. v0.4.0 replaced
-  this single draw by persistent chunks, see [Chunked tilemaps](#chunked-tilemaps).
-- **No redundant `getWorldTransform` on the 2D entity draws.** The quad /
-  circle / animated-sprite loops in `Scene::render` pass
-  `Scene::getWorldIndex(entity)`; when that slot is valid (the normal case
-  after `prepareWorldTransforms`) the vertex shader reads `sceneWorlds[]` and
-  the CPU `math::Transform` is never used, so it is no longer computed.
-  `getWorldTransform()` is only evaluated on the transient fallback path
-  (sentinel index) and for the consumers listed above.
-
-### Measuring the instanced pipeline
-
-The modernisation targets throughput, so validate changes against the three
-reference scenes rather than micro-benchmarks:
-
-- a **5 000-quad** flat scene (Renderer2D instanced batch),
-- a **deep-hierarchy** scene (exercises the pre-order world pass + the
-  `sceneWorlds[]` SSBO), and
-- the **`raycast_demo`** scene (DDA compute pre-pass + wall stripe shader).
-
-Capture frame time with the in-editor profiler (`Window > Profiler`) or an
-`OWL_PROFILE_SCOPE` around the render pass, on a real GL / Vulkan backend —
-the Null backend executes no GPU work and is only an API-contract oracle (see
-*Testing*). Compare a release build before/after the change on the same GPU;
-record the GPU model alongside the numbers, since the instanced path is
-bandwidth- rather than CPU-bound. There is no automated perf gate in CI —
-the headless suite asserts correctness (stats, SSBO round-trip), not timing.
+Every renderer follows one shape: a compute pre-pass writes an SSBO, the graphics pass is instanced and indexes it
+by instance id, the CPU does no per-vertex transform. New renderers (the v0.5.0 3D pipeline, the GPU sprite
+stripes) build on it. Tilemaps went from one deferred instanced draw per scene (`tilemap_instanced.slang`, every
+per-draw datum in the instance stream, 32 tilesets per batch) to persistent chunks in v0.4.0
+([Chunked tilemaps](#chunked-tilemaps)). Validate a change on a real GL or Vulkan backend (the Null backend runs no
+GPU work) with the frame bench or `OWL_PROFILE_SCOPE`, on a 5 000-quad scene, a deep hierarchy and `raycast_demo`,
+recording the GPU model: the path is bandwidth-bound, and CI checks correctness, not GPU timing.
 
 ## Chunked tilemaps {#chunked-tilemaps}
 
-`RendererTilemap` keeps the cells of a tilemap on the GPU between frames. Each layer of a `TilemapAsset` is cut into
-`TilemapLayer::chunkSize`² (32 × 32) chunks, the unit of storage too ([Tilemap storage](scene.md)); every write to a
-layer (`setTile`, `setCell`, `setChunk`, `resize`, `assign`, `fill`) stamps the touched chunks with a fresh
-generation taken from one process-wide counter. The renderer reads the terrain plane of each chunk, caches, per asset, one
-persistent instance buffer per non-empty chunk (packed cell coordinates and tile index, 8 bytes per non-empty cell)
-and rebuilds a chunk only when its generation changed.
+`RendererTilemap` keeps tilemap cells on the GPU between frames. Each layer of a `TilemapAsset` is cut into
+`TilemapLayer::chunkSize`² (32 × 32) chunks, also the storage unit ([Tilemap storage](scene.md)); every write
+(`setTile`, `setCell`, `setChunk`, `resize`, `assign`, `fill`) stamps the touched chunks with a fresh process-wide
+generation. The renderer caches per asset one instance buffer per non-empty chunk (8 bytes per non-empty cell) and
+rebuilds a chunk only when its generation changed.
 
 ```mermaid
 flowchart LR
@@ -395,9 +281,8 @@ flowchart LR
   a one-cell edit uploads its chunk. An asset drawn without a prepare is built inside `flushPending` and counted in
   `PrepareStatistics::lateBuiltChunkCount`. An asset neither prepared nor drawn for
   `RendererTilemap::cacheEvictionPrepares` prepare phases leaves the cache.
-- **Layers draw from `onRender`.** `Renderer2DLayer::onRender` queues the tilemaps routed to it,
-  `RendererRaycastLayer::onRender` casts their walls; `Scene::render` no longer handles tilemaps. The editor
-  composite draws through a `Renderer2DLayer` too.
+- **Layers draw from `onRender`.** `Renderer2DLayer::onRender` queues its tilemaps, `RendererRaycastLayer::onRender`
+  casts their walls; `Scene::render` no longer handles tilemaps, and the editor composite uses a `Renderer2DLayer`.
 - **Draw.** For each queued entity and each visible layer, one update of the per-draw uniform block (camera, entity
   world transform with rotation and scale, grid origin, cell size, layer depth, parallax offset, atlas grid, entity id,
   texture slot), then one instanced draw per non-empty chunk whose transformed bounds touch the view. Layers keep
@@ -450,13 +335,13 @@ RendererStack:
   depth tested and written; a tint alpha below 1 makes a billboard translucent: those draw afterwards, sorted back to
   front on the CPU (`getBackToFrontOrder`), depth tested, not written. Tilemap layers sit `tilemapLayerBias` apart,
   upright sprites `spriteBias` above the ground they stand on.
-- **Tilemaps.** A tilemap routed to the layer (its tileset `kind: Isometric`) keeps one persistent GPU instance buffer
-  per layer and 32 × 32 chunk (`tile.slang`, 32 bytes per non-empty cell and overlay), built by
-  `RendererIsometric::prepareTilemap` in the prepare phase when its cell generation, corner-height generation or
-  tileset changed (a static frame uploads nothing, a one-cell edit one chunk) and drawn as one instanced call per
-  chunk in view; cell `(cx, cy)` covers the world square from the entity translation plus
-  `(cx, cy)` to plus `(cx + 1, cy + 1)`, its sprite bottom centre on the front corner. `pickIsometricCell` finds the
-  tile under a viewport pixel (flat maps; slopes come with ISO2).
+- **Tilemaps.** A tilemap routed to the layer (tileset `kind: Isometric`) is chunked like the 2D ones
+  ([Chunked tilemaps](#chunked-tilemaps)): one buffer per layer and 32 × 32 chunk (`tile.slang`, 32 bytes per
+  non-empty cell and overlay), rebuilt by `RendererIsometric::prepareTilemap` when the cell generation, the
+  corner-height generation or the tileset changed, one instanced call per chunk in view. Cell `(cx, cy)` covers the
+  world square from the entity translation plus `(cx, cy)` to `(cx + 1, cy + 1)`, its sprite bottom centre on the
+  front corner. `pickIsometricCell` finds the tile under a viewport pixel on flat maps
+  (`scene::terrain::pickTerrain` handles slopes).
 - **Shader.** `engine_assets/shaders/isometric/billboard.slang`: one instanced draw per pass from a storage
   buffer of 96-byte instances (foot, size, depth slope, UVs, tint, texture slot, entity id), 20 000 per batch;
   `sprite.slang` draws the 64-byte sprite instances, 40 000 per batch, between the opaque and the translucent pass, and
@@ -464,30 +349,34 @@ RendererStack:
 
 ## Raycaster {#renderer-raycaster}
 
-`RendererRaycast` (`renderer/RendererRaycast.h`) is the first non-2D
-renderer to ride on the stack. It synthesises a Wolfenstein-style first-person
-view from a top-down 2D `scene::component::Tilemap`: each non-empty cell is a
-wall, each empty cell is walkable space.
+`RendererRaycast` (`renderer/RendererRaycast.h`) draws a Wolfenstein-style first-person view of a top-down
+`scene::component::Tilemap`: a non-empty cell is a wall, an empty one walkable. Algorithm details:
+[Raycaster method](raycaster_method.md).
 
-### Pipeline (v0.2.0)
+### Pipeline
+
+The layer switches `Renderer2D` to a pixel-space ortho camera in `onBeginFrame`, draws every tilemap routed to it with
+`RendererRaycast::drawTilemapWalls` from `onRender` (the sky / floor backdrop comes with the first wall, so an empty
+pass is a no-op), and closes the batch in `onEndFrame`. The per-column DDA runs on the GPU and every wall stripe is one
+instance of a single draw:
 
 ```mermaid
 flowchart LR
-    Player["Player Entity<br/>(Transform + Camera)"] -->|inverseView pos+yaw| RC["RendererRaycast::beginScene"]
-    Tilemap["Tilemap entity<br/>(walls layer)"] -->|cell grid| RC
-    Atlas["Tileset atlas<br/>(wall textures)"] -->|sampled UVs| RC
-    RC -->|backdrop quads| R2D["Renderer2D batch<br/>(pixel-space ortho)"]
-    RC -->|per-column DDA<br/>→ stripe quads| R2D
-    R2D -->|GPU draw calls| FB["Framebuffer"]
+    Tilemap["Tilemap grid +<br/>tile metadata"] -->|cache miss| DDA["RaycastDDAPass<br/>(raycast_dda.slang)"]
+    Camera["Camera params<br/>(cell-space)"] --> DDA
+    DDA -->|hitCount[]<br/>columnHits[]<br/>zBuffer[]| Stripe["raycast_stripe.slang<br/>(vertex + fragment)"]
+    Tileset["Tileset atlas +<br/>per-tile UV rects"] --> Stripe
+    Stripe -->|drawDataInstanced<br/>numRays × kMaxHits| FB["Framebuffer"]
 ```
 
-The raycaster's `RenderLayer` switches `Renderer2D` to a pixel-space ortho
-camera in `onBeginFrame`, dispatches every accepted tilemap into
-`RendererRaycast::drawTilemapWalls` from its own `onRender`, then closes the
-`Renderer2D` batch in `onEndFrame`. The DDA traversal runs on the CPU per
-screen column, producing one textured `Renderer2D::drawQuad` per stripe; the
-sky / floor backdrop is emitted lazily on the first wall draw so empty
-passes (no tilemap routed) stay genuinely no-op.
+- The compute pass writes `hitCount[col]`, `columnHits[col × maxHits + k]` and `zBuffer[col]`, one thread per column.
+- The stripe shader runs `numRays × kMaxHits` instances: each unpacks `(col, localK)` from `SV_InstanceID`, reads the
+  hits back to front (painter's order), builds the stripe from `perpDist`, `wallHeight` and the pixel-space view
+  projection, and samples `tileUvRects[tileIndex]`; slots past `hitCount[col]` emit an off-screen zero-area quad.
+- UV rects, grid and tile metadata upload on a cache miss only (key `(tilemap, tileset, layer)`).
+- Sprites, doors and pushwalls need each column's opaque depth: the CPU walks the same DDA (`cpuWalkColumn`, no
+  stripes), cheaper than reading `zBuffer[]` back mid-frame. The Null backend keeps a CPU fallback with the same
+  output.
 
 ### Configuration
 
@@ -521,35 +410,33 @@ EnabledRenderers:
     Enabled: true
 ```
 
-Tag the wall tilemap with `RendererTag: { Name: raycast_world }` to route it
-to the raycaster.
+Tag the wall tilemap with `RendererTag: { Name: raycast_world }` to route it to the raycaster.
 
 ### Player pose convention
 
 The raycaster extracts the camera's 2D pose from the inverse view matrix
 (i.e. the camera entity's world transform):
 
-| 2D quantity   | Source                                                                          |
-|---------------|---------------------------------------------------------------------------------|
-| Position      | `inverseView * (0, 0, 0, 1)` — the entity's world `(x, y)`                      |
-| Forward       | `inverseView * (0, 1, 0, 0)` — the entity's local +Y mapped to world XY         |
-| Right (× FOV) | `inverseView * (1, 0, 0, 0)` scaled by `tan(fov/2) * aspect` — the FOV "plane"  |
+| 2D quantity   | Source                                                                         |
+|---------------|--------------------------------------------------------------------------------|
+| Position      | `inverseView * (0, 0, 0, 1)` — the entity's world `(x, y)`                     |
+| Forward       | `inverseView * (0, 1, 0, 0)` — the entity's local +Y mapped to world XY        |
+| Right (× FOV) | `inverseView * (1, 0, 0, 0)` scaled by `tan(fov/2) * aspect` — the FOV "plane" |
 
 Convention:
+
 - An entity with `rotation: [0, 0, 0]` faces world **+Y** (forward = `(0, 1)`).
 - Increasing the entity's Z rotation rotates the facing **counter-clockwise**
   in world XY — `rotation: [0, 0, π/2]` faces world **−X** (forward = `(−1, 0)`).
 - Rotation values are stored in **radians** in the `Transform` component
-  (matching the rest of Owl's transform pipeline).
+  (matching the rest of Owl Engine's transform pipeline).
 
-The accompanying `scripts/raycast/raycast_player.lua` in the Engine Demo
-implements WASD strafing + Q/E turning following this convention.
+`scripts/raycast/raycast_player.lua` of the Engine Demo follows this convention.
 
 ## 3D Forward Renderer {#renderer3d}
 
-`Renderer3D` is the engine's first true 3D draw path — a generic, depth-tested, textured forward renderer with a
-single directional light. It is the reusable base for `RendererVoxel` (and future static-mesh renderers); unlike
-`Renderer2D` (a unit quad + per-instance SSBO) it draws **real per-vertex geometry**.
+`Renderer3D` is a generic depth-tested, textured forward renderer with one directional light, the base of
+`RendererVoxel` (and future mesh renderers); unlike `Renderer2D` it draws **real per-vertex geometry**.
 
 - **Vertex** (`renderer::Mesh3DVertex`, 56 bytes, tightly packed): object-space `position`, `normal`, `uv`, a
   `textureIndex` selecting a slot in the bound texture array, and the `tileRect` atlas sub-rect and `ao` factor
@@ -569,8 +456,7 @@ renderer::Renderer3D::drawMesh(mesh, modelMatrix, {atlasTexture});
 renderer::Renderer3D::endScene();
 ```
 
-It owns its own per-renderer descriptor block (`RendererDescriptors`) like the other
-renderers, so Vulkan per-draw descriptor selection routes correctly.
+It owns a binding block (`RendererDescriptors`) like the other renderers.
 
 ## Owl RHI {#renderer-owl-rhi}
 
@@ -597,27 +483,25 @@ A draw is fully described by two explicit objects, so no draw inherits state fro
   below), and each draw uses the bindings of the block active when it is issued. `RenderCommand::bindTextures(span)`
   sets the sampled textures of the block in slot order; `Texture2D::bind(slot)` changes one slot.
 
-| `RenderAPI` method                  | Role                                                                     |
-|-------------------------------------|--------------------------------------------------------------------------|
-| `init()`                            | Bring the backend up                                                     |
-| `setViewport` / `setClearColor`     | Viewport and clear colour                                                |
-| `clear()`                           | Clear the bound framebuffer (colour and depth)                           |
-| `drawData` / `drawDataInstanced`    | Draw a `DrawData` with its pipeline state and the active block bindings  |
-| `drawIndexedIndirect`               | GPU-driven draws (Vulkan, OpenGL 4.6)                                    |
-| `bindTextures(span)`                | Sampled textures of the active block                                     |
-| `storageBufferMemoryBarrier()`      | Compute writes visible to the next draws                                 |
-| `beginFrame()` / `endFrame()`       | Frame lifecycle (Vulkan: frame slot, swap chain image, one submission)   |
-| `beginBatch()` / `endBatch()`       | Render pass scope on the bound framebuffer (opened lazily by any draw)   |
-| `getRenderCounters`, GPU timestamps | Profiling (`OwlRunner --frame-bench`)                                    |
+| `RenderAPI` method                  | Role                                                                    |
+|-------------------------------------|-------------------------------------------------------------------------|
+| `init()`                            | Bring the backend up                                                    |
+| `setViewport` / `setClearColor`     | Viewport and clear colour                                               |
+| `clear()`                           | Clear the bound framebuffer (colour and depth)                          |
+| `drawData` / `drawDataInstanced`    | Draw a `DrawData` with its pipeline state and the active block bindings |
+| `drawIndexedIndirect`               | GPU-driven draws (Vulkan, OpenGL 4.6)                                   |
+| `bindTextures(span)`                | Sampled textures of the active block                                    |
+| `storageBufferMemoryBarrier()`      | Compute writes visible to the next draws                                |
+| `beginFrame()` / `endFrame()`       | Frame lifecycle (Vulkan: frame slot, swap chain image, one submission)  |
+| `beginBatch()` / `endBatch()`       | Render pass scope on the bound framebuffer (opened lazily by any draw)  |
+| `getRenderCounters`, GPU timestamps | Profiling (`OwlRunner --frame-bench`)                                   |
 
-**Adding a backend** (WebGPU is planned for v0.8.0): implement under `private/renderer/gpu/<backend>/` the classes
-`RenderAPI`, `GraphContext`, `DrawData`, `Shader`, `ComputeShader`, `Texture2D`, `Framebuffer`, `UniformBuffer`,
-`StorageBuffer`, `VertexBuffer` / `IndexBuffer`, add the enumerator to `RenderAPI::Type` and a case to each `create`
-factory (`private/renderer/gpu/*.cpp`), and give `RendererDescriptors` a branch for the backend's binding model. The
-renderers do not change: they only see `DrawData`, `PipelineState`, the renderer blocks and `RenderCommand`. Shaders
-are Slang, compiled to SPIR-V (`renderer::utils::compileSlangToSpirv`), which also targets WGSL and Metal.
-
-See [Architecture](architecture.md) for the backend selection and application startup flow.
+**Adding a backend** (WebGPU is planned for v0.8.0): implement `RenderAPI`, `GraphContext`, `DrawData`, `Shader`,
+`ComputeShader`, `Texture2D`, `Framebuffer`, `UniformBuffer`, `StorageBuffer`, `VertexBuffer` / `IndexBuffer` under
+`private/renderer/gpu/<backend>/`, add the `RenderAPI::Type` enumerator, a case to each `create` factory and a
+`RendererDescriptors` branch. Renderers only see `DrawData`, `PipelineState`, the blocks and `RenderCommand`; Slang
+(`renderer::utils::compileSlangToSpirv`) also targets WGSL and Metal. Backend selection at startup:
+[Architecture](architecture.md).
 
 ### OpenGL shader path {#renderer-opengl-shaders}
 
@@ -699,11 +583,11 @@ sequenceDiagram
 | `isometric` | Isometric map, depth-tested trees and houses, sorted translucent smoke, HUD    |
 | `draworder` | Quads, circles and text at interleaved world z, a quad stored last but lowest  |
 
-Each case runs `OwlRunner --frame-bench <scene> --capture <png>` (320 x 180, 60 warm-up frames, fixed time step, Vulkan
-validation on) in its own process, then compares RGB per pixel: a pixel differs above 24 / 255 on a channel, the test
-fails above 0.25 % of differing pixels. Software rasterisers are deterministic run to run; the tolerance absorbs a
-Mesa update, not a missing sprite. On failure the capture, a diff (differing pixels in red) and the runner log are left
-in `<build>/render_tests/`. The scenes live in `test/unit/test_helper/assets/render_tests/scenes/` and use the Engine Demo's assets.
+Each case runs `OwlRunner --frame-bench <scene> --capture <png>` (320 x 180, 60 warm-up frames, fixed time step,
+Vulkan validation on) in its own process and compares RGB per pixel: a pixel differs above 24 / 255 on a channel, the
+test fails above 0.25 % of differing pixels (a Mesa update passes, a missing sprite does not). A failure leaves the
+capture, a red diff and the runner log in `<build>/render_tests/`. The scenes live in
+`test/unit/test_helper/assets/render_tests/scenes/` and use the Engine Demo's assets.
 
 ```bash
 ./docker_run.sh ctest --test-dir output/build/linux-clang-release -L render --output-on-failure
@@ -711,10 +595,10 @@ in `<build>/render_tests/`. The scenes live in `test/unit/test_helper/assets/ren
 ./docker_run.sh env OWL_RENDER_TESTS_UPDATE=1 ctest --test-dir output/build/linux-clang-release -L render
 ```
 
-CTest starts the binary under `xvfb-run` when it is installed; without a display or without lavapipe
-(`OWL_RENDER_TESTS_VK_ICD` overrides `/usr/share/vulkan/icd.d/lvp_icd.json`) the cases are skipped. The whole label
-takes about 8 s (25 s with a cold shader cache). The runs cap llvmpipe at SSE4.1 (`GALLIUM_OVERRIDE_CPU_CAPS`) with Mesa's shader
-cache off, so the captures do not depend on whether the CPU has AVX.
+CTest starts the binary under `xvfb-run` when installed; without a display or lavapipe (`OWL_RENDER_TESTS_VK_ICD`
+overrides `/usr/share/vulkan/icd.d/lvp_icd.json`) the cases are skipped. The label takes about 8 s (25 s with a cold
+shader cache); llvmpipe is capped at SSE4.1 (`GALLIUM_OVERRIDE_CPU_CAPS`) with Mesa's shader cache off, so the
+captures do not depend on AVX.
 
 ## Renderer2D: The Batch Renderer {#renderer2d}
 
@@ -786,15 +670,22 @@ The `textureCoords` field defaults to full-texture UVs. Custom UVs are used by t
 | `layout`    | `data::fonts::TextLayout` | see below      | Size, alignment, wrap, fit, spacing |
 | `entityId`  | `int`                     | `-1`           | Entity ID                           |
 
-**Text encoding.** `text` is UTF-8, decoded to code points while it is laid out (`core::utils::decodeNextCodePoint`,
-no conversion buffer); an invalid sequence becomes U+FFFD, drawn as `?` like any code point missing from the atlas.
-`Font::forEachGlyph` lays the glyphs out on raw baselines and `Font::measureText` gives their box.
+```mermaid
+flowchart LR
+    U["UTF-8 text"] -->|decodeNextCodePoint<br/>invalid: U+FFFD| CP["code points"]
+    CP --> L["forEachLaidOutGlyph<br/>TextLayout: size, align, wrap, fit"]
+    F["Font: MSDF atlas<br/>cached .owlatlas"] --> L
+    L -->|one instance per glyph,<br/>spaces skipped| B["Renderer2D text batch"]
+    B --> S["text.slang<br/>MSDF, outline, small-text taps"]
+```
 
-**Layout.** `drawString` lays the text out with `data::fonts::forEachLaidOutGlyph` (`data/fonts/TextLayout.h`) in a
-frame whose origin is the centre of the layout box, then applies `transform`. Glyphs keep the aspect ratio of the
-font: one scale per em, the box only drives the wrap width, the alignment and the fit (a non-uniform `transform` scale
-still stretches, so give it a uniform one). The font unit is the ascender-to-descender height (`Font::getAscender()`
-minus `Font::getDescender()` is 1); spaces draw no quad. Nothing is allocated.
+- **Encoding.** `text` is UTF-8, decoded while it is laid out (`core::utils::decodeNextCodePoint`, no conversion
+  buffer); an invalid sequence becomes U+FFFD, drawn as `?` like any code point missing from the atlas.
+  `Font::forEachGlyph` lays glyphs on raw baselines and `Font::measureText` gives their box.
+- **Layout.** `drawString` lays the text out with `data::fonts::forEachLaidOutGlyph` (`data/fonts/TextLayout.h`) in a
+  frame centred on the layout box, then applies `transform`. Glyphs keep the font aspect (one scale per em; the box
+  only drives wrap, alignment and fit; a non-uniform `transform` scale still stretches). The font unit is the
+  ascender-to-descender height (`Font::getAscender()` minus `Font::getDescender()` is 1). Nothing is allocated.
 
 | `TextLayout` field | Default    | Meaning                                                                        |
 |--------------------|------------|--------------------------------------------------------------------------------|
@@ -808,9 +699,9 @@ minus `Font::getDescender()` is 1); spaces draw no quad. Nothing is allocated.
 | `kerning`          | `0`        | Extra advance between glyphs, in font units                                    |
 | `lineSpacing`      | `0`        | Extra space between lines, in font units                                       |
 
-`computeTextLayout` resolves the shrunk size, the line count and the block placement, `measureTextLayout` the box of
-the line boxes, `LineBreaker` the lines (byte ranges). A world-space `Text` takes its em height from the entity's Y
-scale (the X scale no longer squeezes the glyphs); a `UiText` lays out in its `UiRect`, in pixels.
+`computeTextLayout` resolves the shrunk size, line count and placement, `measureTextLayout` the box of the lines,
+`LineBreaker` the lines (byte ranges). A world-space `Text` takes its em height from the entity's Y scale; a `UiText`
+lays out in its `UiRect`, in pixels.
 
 **Charset and atlas.** Every font loads Basic Latin, Latin-1, Latin Extended-A, General Punctuation and `€`
 (`FontSettings::defaultRanges()`: `œ`, `Œ`, `’`, `“ ”`, `…` included). More code-point ranges are import settings of
@@ -824,68 +715,60 @@ extraRanges:
   - [1024, 1279]  # Cyrillic, U+0400 to U+04FF
 ```
 
-The MSDF atlas is cached in `cache/font/<font>-<key>.owlatlas` under the working directory: the key hashes the font
-file, the charset and the atlas parameters, so a change of any of them regenerates it (and drops the stale file).
-Generation runs on as many threads as the task pool has workers (`Scheduler::getWorkerCount`).
+The MSDF atlas is cached in `cache/font/<font>-<key>.owlatlas` under the working directory, keyed by the font file,
+the charset and the atlas parameters (a change regenerates it and drops the stale file), and generated on the task
+pool's workers (`Scheduler::getWorkerCount`).
 
-**Outline and box.** `StringData::outlineWidth` (frame units) and `outlineColor` outline the glyphs in the same text
-draw: each glyph quad and its UVs grow by the width (`outlineUv` is that growth in texture space, 0 = none and the
-old path untouched), and the fragment shader grows the glyph by its signed distance (an antialiased band of the width in
-screen pixels, read up to 1 px short of the field's half range and completed by a ring dilation beyond), clipped to the glyph
-cell (it holds the field margin) so the neighbours in the atlas never bleed in; the fill is composited over the outline. `backgroundColor` (zero alpha:
-none) and `backgroundPadding` add a quad of the quad batch behind the measured text block, at the text depth.
+**Outline and box.** `StringData::outlineWidth` (frame units) and `outlineColor` outline the glyphs in the same draw:
+each glyph quad and its UVs grow by the width (`outlineUv`, 0 = none), and the fragment shader grows the glyph by its
+signed distance (an antialiased band, completed by a ring dilation beyond the field's half range), clipped to the glyph
+cell so atlas neighbours never bleed in; the fill is composited over it. `backgroundColor` (zero alpha: none) and
+`backgroundPadding` add a quad behind the measured text block, at the text depth.
 
-**Small text.** The atlas em is 40 px with a 6 px distance range (`g_pixelRange`, atlas cache version 2), and `text.slang` uses the same 6 px
-(`kPxRange`, keep both in step); the wide range keeps large and outlined text smooth. Text under about 40 px on screen minifies the atlas, which has no mipmaps, so one linear sample per pixel
-aliases: the fragment shader then averages four taps of a rotated grid over the pixel footprint (`SampleGrad`), larger
-text keeps the single sample. HUD text is also kept legible by the scale modes
-([HUD system](design/hud-system.md)).
+**Small text.** The atlas em is 40 px with a 6 px distance range (`g_pixelRange`, atlas cache version 2), matched by
+`kPxRange` in `text.slang` (keep both in step). Under about 40 px on screen the atlas (no mipmaps) is minified, so the
+fragment shader averages four rotated-grid taps over the pixel footprint (`SampleGrad`); larger text keeps one sample.
+HUD scale modes keep text legible too ([HUD system](design/hud-system.md)).
 
 ### Batching Internals
 
-Each draw primitive emits one instance struct (`QuadInstance`, `CircleInstance`, `LineInstance`,
-`TextInstance`) into a CPU-side `std::vector`. At `flush()` the vector is uploaded to a per-batch
-`StorageBuffer` and the renderer issues a single instanced drawcall —
-`glDrawElementsInstanced` / `vkCmdDrawIndexed` for quads / circles /
-text (shared 4-vertex unit quad VBO + `{0,1,2, 2,3,0}` index buffer)
-and the same instanced draw for lines (2-vertex unit segment +
-`{0, 1}` index buffer, the line `DrawData` created with
-`PipelineState::topology = Lines`). The vertex shader transforms the unit quad / line by
-`gInstances[gl_InstanceID].transform`; no CPU vertex math.
+Each primitive appends one instance struct (`QuadInstance`, `CircleInstance`, `LineInstance`, `TextInstance`) to a
+CPU vector; `flush()` uploads it to a per-batch `StorageBuffer` and issues one instanced draw (a shared unit quad, or a
+unit segment with `PipelineState::topology = Lines` for lines); the vertex shader places the unit shape from the
+instance, with no CPU vertex math.
 
 **Instance layouts (std430):**
 
-| Struct           | Size  | Members                                                                                                 |
-|------------------|-------|---------------------------------------------------------------------------------------------------------|
-| `QuadInstance`   | 128 B | `mat4 transform`, `vec4 color`, `vec2 uv[4]`, `uint texIndex`, `int entityId`, `vec2 tilingFactor`      |
-| `CircleInstance` | 96 B  | `mat4 transform`, `vec4 color`, `float thickness`, `float fade`, `int entityId`, `uint _pad`            |
-| `LineInstance`   | 64 B  | `vec3 point1`, `vec3 point2`, `vec4 color`, `int entityId` (with explicit pads to align fields to 16 B) |
+| Struct           | Size  | Members                                                                                                                                       |
+|------------------|-------|-----------------------------------------------------------------------------------------------------------------------------------------------|
+| `QuadInstance`   | 128 B | `mat4 transform`, `vec4 color`, `vec2 uv[4]`, `uint texIndex`, `int entityId`, `vec2 tilingFactor`                                            |
+| `CircleInstance` | 96 B  | `mat4 transform`, `vec4 color`, `float thickness`, `float fade`, `int entityId`, `uint _pad`                                                  |
+| `LineInstance`   | 64 B  | `vec3 point1`, `vec3 point2`, `vec4 color`, `int entityId` (with explicit pads to align fields to 16 B)                                       |
 | `TextInstance`   | 96 B  | `int worldIndex`, `vec4 color`, `vec2 uv[4]`, `uint texIndex`, `int entityId`, `vec2 outlineUv`, `vec4 outlineColor`; MSDF screenPxRange path |
 
-The 4 explicit per-corner UVs (instead of a `uvRect`) preserve the
-non-rectangular UV trapezoids produced by the raycaster's floor /
-ceiling / wall stripe paths.
+The four per-corner UVs (not a `uvRect`) keep the UV trapezoids of the raycaster's floor, ceiling and stripes.
 
 **Capacity limits:**
 
-| Constant                    | Value         | Description                                  |
-|-----------------------------|---------------|----------------------------------------------|
-| `g_maxQuadsPerBatch`        | 20,000        | `nextBatch()` rolls over when reached        |
-| `g_maxCirclesPerBatch`      | 20,000        | Same trigger                                 |
-| `g_maxLinesPerBatch`        | 20,000        | Same trigger                                 |
-| `g_maxTextGlyphsPerBatch`   | 20,000        | Counted per glyph, not per `drawString` call |
-| `g_MaxTextureSlots`         | GPU-dependent | Queried via `getMaxTextureSlots()`           |
+| Constant                  | Value         | Description                                  |
+|---------------------------|---------------|----------------------------------------------|
+| `g_maxQuadsPerBatch`      | 20,000        | `nextBatch()` rolls over when reached        |
+| `g_maxCirclesPerBatch`    | 20,000        | Same trigger                                 |
+| `g_maxLinesPerBatch`      | 20,000        | Same trigger                                 |
+| `g_maxTextGlyphsPerBatch` | 20,000        | Counted per glyph, not per `drawString` call |
+| `g_MaxTextureSlots`       | GPU-dependent | Queried via `getMaxTextureSlots()`           |
 
-**Texture slot management** is unchanged from the legacy path: slot 0
-is the 1×1 white texture, slots 1..N hold unique textures; rolling
-over when full triggers `nextBatch()` (flush + restart).
+**Texture slots**: slot 0 is the 1×1 white texture, slots 1..N the unique textures; a full table triggers
+`nextBatch()` (flush + restart).
 
-**Flush order** (within a single render pass):
+**Flush order**, within one render pass:
 
-1. Bind all texture slots (`RenderCommand::bindTextures`)
-2. Background (via `BackgroundRenderer::flushPending()`), then the tilemaps
-3. The runs of primitives, in draw order (see below): each one uploads its instances and issues one
-   `RenderCommand::drawDataInstanced` (6 indices per quad, circle and glyph, 2 per line)
+```mermaid
+flowchart LR
+    T["bind texture slots<br/>RenderCommand::bindTextures"] --> Bg["background<br/>BackgroundRenderer::flushPending"]
+    Bg --> Tm["tilemaps<br/>RendererTilemap::flushPending"]
+    Tm --> R["primitive runs, sorted by depth, type, rank<br/>one drawDataInstanced each"]
+```
 
 **Draw order** (`DrawRuns`, B-10). Every primitive carries a sort key, the `depth` field of its data struct (default 0;
 larger is nearer the viewer, the convention of the isometric layer). The rule is *depth first, then type, then
@@ -909,17 +792,15 @@ the end of each flush, so a draw inherits nothing. The HUD pass uses it for wind
 
 **Per-batch descriptor layout** declared in `Renderer2D::init`:
 
-| Binding | Type                   | Stage         |
-|---------|------------------------|---------------|
-| 0       | UBO (`Camera`)         | Vertex        |
-| 1       | `Sampler2D[32]`        | Fragment      |
-| 2       | SSBO (`XxxInstance[]`) | Vertex        |
+| Binding | Type                   | Stage    |
+|---------|------------------------|----------|
+| 0       | UBO (`Camera`)         | Vertex   |
+| 1       | `Sampler2D[32]`        | Fragment |
+| 2       | SSBO (`XxxInstance[]`) | Vertex   |
 
-The SSBO at binding 2 is swapped before each instanced drawcall via
-`gpu::StorageBuffer::bind()` — on OpenGL this calls
-`glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, ...)`; on Vulkan it
-calls `internal::RendererDescriptors::bindStorageBuffer`, recorded into
-each draw's descriptor set acquired from the `DescriptorRing`.
+Four `StorageBuffer`s (quad, circle, line, text) take binding 2 in turn: `gpu::StorageBuffer::bind()` before each
+instanced draw (`glBindBufferBase` on OpenGL, `internal::RendererDescriptors::bindStorageBuffer` into the draw's
+descriptor set on Vulkan).
 
 ### Statistics
 
@@ -937,9 +818,8 @@ Reset with `Renderer2D::resetStats()` at the start of each frame.
 
 ## Background and Skybox Rendering
 
-The `BackgroundRenderer` is **deferred**: `drawBackground(data)` stores a pending draw
-command; the actual GPU draw happens during `Renderer2D::flush()` to share the same
-render pass (critical for Vulkan's `DONT_CARE` loadOp).
+`BackgroundRenderer` is **deferred**: `drawBackground(data)` stores a pending draw, drawn in `Renderer2D::flush()` inside
+the same render pass (needed by Vulkan's `DONT_CARE` load op).
 
 ### BackgroundData
 
@@ -957,13 +837,13 @@ render pass (critical for Vulkan's `DONT_CARE` loadOp).
 
 `Texture2D` represents a 2D image on the GPU. Factory methods dispatch to the active backend.
 
-| Factory Method                              | Description                                                              |
-|---------------------------------------------|--------------------------------------------------------------------------|
-| `create(path)`                              | Load from image file (`.png`, `.jpg`), blocking                          |
-| `create(spec)`                              | Create from `Specification` (size, format)                               |
-| `createFromSerialized(string)`              | Deserialize from scene YAML string, blocking                             |
-| `createFromSerializedAsync(string, sched)`  | Same, but decodes on a worker; placeholder visible while state `Pending` |
-| `createFromSerializedForDeserialize(str)`   | Wrapper used by scene components: async when an `Application` is alive   |
+| Factory Method                             | Description                                                              |
+|--------------------------------------------|--------------------------------------------------------------------------|
+| `create(path)`                             | Load from image file (`.png`, `.jpg`), blocking                          |
+| `create(spec)`                             | Create from `Specification` (size, format)                               |
+| `createFromSerialized(string)`             | Deserialize from scene YAML string, blocking                             |
+| `createFromSerializedAsync(string, sched)` | Same, but decodes on a worker; placeholder visible while state `Pending` |
+| `createFromSerializedForDeserialize(str)`  | Wrapper used by scene components: async when an `Application` is alive   |
 
 ### Specification
 
@@ -1005,11 +885,8 @@ asset directories (or pack file if one is open).
 
 ### Async Texture Loading
 
-For `nam:`/`pat:` references, `createFromSerializedAsync()` decodes image bytes on a
-worker thread instead of blocking the caller. It keeps the runtime smooth during scene
-transitions that pull many textures at once (no frame hitch on decode).
-
-The flow:
+For `nam:`/`pat:` references, `createFromSerializedAsync()` decodes the image on a worker, so a scene transition
+pulling many textures does not hitch:
 
 ```mermaid
 sequenceDiagram
@@ -1030,27 +907,17 @@ sequenceDiagram
     Note over GPU: state → Ready (or Failed; placeholder stays visible)
 ```
 
-Key properties:
-
-- **Placeholder-sized, not 1×1:** the texture is created at the real image dimensions
-  (peeked from the PNG/JPG header, microseconds) so binding code, UV coords, and atlas
-  math are correct from frame 0.
-- **Always `Rgba8`:** the worker decodes with `desired_channels = 4`, so the placeholder
-  size and the final `setData` size always match.
-- **Thread-safe decode:** `stbi_set_flip_vertically_on_load_thread()` ensures per-thread
-  flip state; multiple textures can decode concurrently.
-- **Fallback paths:** `emp:`/`siz:` and unresolvable `nam:` delegate to the synchronous
-  factory. Unit tests and `PackWriter` that run without an `Application` still use the
-  blocking path.
-
-Query `Texture2D::getLoadState()` to distinguish `Pending` / `Ready` / `Failed`. The
-runner logs the number of still-pending textures after each scene transition as a
-diagnostic aid.
+- The placeholder has the real size (peeked from the PNG/JPG header), so bindings, UVs and atlas maths are right
+  from frame 0; decoding is always `Rgba8` (`desired_channels = 4`), so the final `setData` size matches.
+- Decodes run concurrently (`stbi_set_flip_vertically_on_load_thread()` keeps the flip state per thread).
+- `emp:`/`siz:`, an unresolvable `nam:`, and callers without an `Application` (unit tests, `PackWriter`) use the
+  blocking factory.
+- `Texture2D::getLoadState()` tells `Pending` / `Ready` / `Failed`; the runner logs the textures still pending after
+  each scene transition.
 
 ### Texture Library
 
-`Renderer::getTextureLibrary()` returns an `AssetLibrary<Texture2D>` that caches
-loaded textures by name, avoiding duplicate GPU uploads.
+`Renderer::getTextureLibrary()` is an `AssetLibrary<Texture2D>` caching loaded textures by name.
 
 ## Framebuffer
 
@@ -1086,10 +953,9 @@ A `Framebuffer` represents an off-screen render target with one or more typed at
 | `clearAttachment(index, v)`  | Clear an attachment to a value             |
 | `isUpsideDown()`             | Backend-specific Y-flip (Vulkan vs OpenGL) |
 
-The editor viewport uses a framebuffer with `Rgba8` + `RedInteger` + `Depth24Stencil8`
-to render the scene and support mouse-based entity picking. `readPixel` never stalls: OpenGL queues the read into a
-pixel pack buffer behind a fence, Vulkan records a copy into a per-frame read-back slot; both return the latest
-completed value, a frame or two late, so the viewport checks that the entity still exists.
+The editor viewport renders into `Rgba8` + `RedInteger` + `Depth24Stencil8` for entity picking. `readPixel` never
+stalls (a fenced pixel pack buffer on OpenGL, a per-frame read-back slot on Vulkan) and returns the value of a frame
+or two ago, so the viewport checks that the entity still exists.
 
 ## Shader System
 
@@ -1135,19 +1001,7 @@ the format `"renderer/name"` (e.g., `"renderer2D/quad"`), composed and decompose
 | `Int4`   | 16           | 4          |
 | `Bool`   | 1            | 1          |
 
-A `BufferLayout` is an initializer list of `BufferElement{name, type}` entries. Offsets
-and stride are computed automatically. For example, the quad vertex layout:
-
-```c++
-BufferLayout{{
-    {"i_Position", ShaderDataType::Float3},
-    {"i_Color", ShaderDataType::Float4},
-    {"i_TexCoord", ShaderDataType::Float2},
-    {"i_TexIndex", ShaderDataType::Float},
-    {"i_TilingFactor", ShaderDataType::Float},
-    {"i_EntityID", ShaderDataType::Int}
-}}
-```
+A `BufferLayout` is an initializer list of `BufferElement{name, type}` entries; offsets and stride are computed.
 
 ## Camera System {#camera-system}
 
@@ -1155,14 +1009,12 @@ BufferLayout{{
 
 ### Camera (base class)
 
-Stores `projection`, `view`, and `viewProjection` matrices. The view matrix is computed
-as the inverse of the transform set via `setTransform(mat4)`.
+Stores `projection`, `view` and `viewProjection`; the view is the inverse of `setTransform(mat4)`.
 
 ### CameraOrtho
 
-Standalone orthographic camera with explicit bounds (left, right, bottom, top, near, far)
-and position/rotation. Used by `CameraOrthoController` which adds WASD movement,
-scroll-wheel zoom, and optional rotation via Q/E keys.
+Orthographic camera with explicit bounds and a position / rotation, driven by `CameraOrthoController` (WASD, wheel
+zoom, optional Q/E rotation).
 
 ### CameraEditor
 
@@ -1200,18 +1052,15 @@ Attached to entities via the `Camera` component. Supports switchable projection:
 | `nearClip`    | `0.01`   | Near clip              |
 | `farClip`     | `1000.0` | Far clip               |
 
-`setViewportSize(size)` recalculates the projection with the correct aspect ratio.
-Only the entity with `Camera::primary = true` is used for rendering.
+`setViewportSize(size)` recomputes the projection for the aspect ratio; only the `Camera::primary` entity renders.
 
 ## Animated Sprite Rendering {#animated-sprites}
 
-The `AnimatedSpriteRenderer` component renders a single frame from a spritesheet texture
-atlas, advancing frames over time to produce animation.
+The `AnimatedSpriteRenderer` component draws one frame of a spritesheet, advancing over time.
 
 ### Spritesheet Layout
 
-The spritesheet is a texture divided into a regular grid of `columns × rows` cells.
-Frames are numbered in **row-major order** starting from the top-left (frame 0).
+A grid of `columns × rows` cells, frames numbered in **row-major order** from the top left (frame 0).
 
 ### Properties
 
@@ -1241,26 +1090,25 @@ uMin = col / columns          uMax = (col + 1) / columns
 vMin = 1 - (row + 1) / rows   vMax = 1 - row / rows
 ```
 
-The resulting UV rect is passed as `textureCoords` to `Renderer2D::drawQuad()`.
-This formula is purely UV-based and does not depend on pixel dimensions.
+The UV rect goes to `Renderer2D::drawQuad()` as `textureCoords`, independent of the pixel size.
 
 ### Runtime Behaviour
 
-- **On Play:** `m_currentFrame` resets to `firstFrame`, `m_elapsedTime` to 0
-- **Each frame:** accumulate `iTimeStep.getSeconds()`, advance frame(s) when threshold met
-- **Loop mode:** modular wrap-around within `[firstFrame, lastFrame]`
-- **Non-loop:** clamp to `lastFrame`, set `m_playing = false`
-- **Editor mode:** animation does not advance (consistent with physics/scripts)
+```mermaid
+stateDiagram-v2
+    [*] --> Playing : Play (frame = firstFrame, elapsed = 0)
+    Playing --> Playing : elapsed over frameDuration, next frame (loop wraps in firstFrame..lastFrame)
+    Playing --> Stopped : lastFrame reached, loop off
+    Stopped --> [*]
+```
+
+In Edit mode the animation does not advance, like physics and scripts.
 
 ## Uniform Buffer
 
-`UniformBuffer::create(size, binding, renderer)` allocates a GPU-side constant buffer
-at the specified binding point. `setData(ptr, size, offset)` streams data each frame.
-
-Renderer2D uses a single uniform buffer at binding 0 for the camera view-projection
-matrix, and four `StorageBuffer`s at binding 2 (one per batch family — quad / circle /
-line / text). Each `flush()` swaps the right SSBO into binding 2 before issuing its
-instanced drawcall (see [Batching Internals](#renderer2d) above).
+`UniformBuffer::create(size, binding, renderer)` allocates a GPU constant buffer at a binding point and
+`setData(ptr, size, offset)` streams it; `Renderer2D` keeps the camera view projection at binding 0 (see
+[Batching Internals](#renderer2d)).
 
 ## Code Example
 

@@ -132,8 +132,8 @@ migrations, image tests on lavapipe and llvmpipe with zero validation message, a
 ## Status
 
 ISO1 (2026-10-14) shipped the layer, the camera, the billboards with depth and cutout, the translucent sort, the
-ported projection helpers, `Tileset::kind`, the isometric viewport mode of Owl Nest, `engine_demo/scenes/iso_test.owl`
-and the `isometric` image test on both backends. Isometric tilemaps keep one persistent GPU instance buffer per 32 x 32
+ported projection helpers, `Tileset::kind`, the isometric viewport mode of Owl Nest, an `iso_test.owl` demo scene (removed
+since, its map kept by the render tests) and the `isometric` image test on both backends. Isometric tilemaps keep one persistent GPU instance buffer per 32 x 32
 chunk and layer, uploaded in the prepare phase only when a chunk changed (see the ISO5 chunk buffers below).
 
 ISO2 (2026-10-15) added the corner heights (tilemap format 3), the 19 slopes, terraforming, the (terrain, slope) table
@@ -146,13 +146,13 @@ ISO3 (2026-10-15) added the atlas generator `tools/iso_atlas`, run from the repo
 `./docker_run.sh poetry run python -m tools.iso_atlas [--project engine_demo] [--seed 1] [--levels 1x,2x,half]` (default `1x`).
 It writes into `textures/iso/`, `tilesets/` and `tilemaps/` of the project:
 
-| Output                                 | Content                                                                                                                           |
-|----------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------|
-| `tiles.png`                            | 16-column atlas of 64×48 tiles: 26 flat terrains (road shapes included), 18 slopes of 24 terrains, 2 foundation sets                                      |
-| `buildings.png`, `buildings.json`      | Per-footprint-tile slices (64×128) of five buildings, with each slice's 3D box and rectangle                                      |
-| `cottage`, `tower`, `oak`, `pine`, `…` | Whole sprites, bottom centre on the front corner of the footprint                                                                 |
-| `smoke.png`                            | Translucent puff                                                                                                                  |
-| `*_normal.png`, `*_depth.png`          | Same grid as the albedo; normals are world space (`n * 0.5 + 0.5`), depth is the height above the sprite's ground (`z / 8 * 255`) |
+| Output                                 | Content                                                                                                                                    |
+|----------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------|
+| `tiles.png`                            | 16-column atlas of 64×48 tiles: 26 flat terrains (road shapes included), 18 slopes of 24 terrains, 2 foundation sets                       |
+| `buildings.png`, `buildings.json`      | Per-footprint-tile slices (64×128) of five buildings, with each slice's 3D box and rectangle                                               |
+| `cottage`, `tower`, `oak`, `pine`, `…` | Whole sprites, bottom centre on the front corner of the footprint                                                                          |
+| `smoke.png`                            | Translucent puff                                                                                                                           |
+| `*_normal.png`, `*_depth.png`          | Same grid as the albedo; normals are world space (`n * 0.5 + 0.5`), depth is the height above the sprite's ground (`z / 8 * 255`)          |
 | `@2x`, `@0.5x` suffixes                | `--levels 2x,half`: atlases drawn natively at twice the size, and the mip at half the size, with their tilesets (the demo keeps `1x` only) |
 
 The same seed always gives the same pixels (pytest hash in `tools/tests/`); the sample map `iso_test.owltilemap` is
@@ -172,8 +172,8 @@ and three vehicles driven by `iso_vehicle.lua`, and the `isometric_objects` imag
 | Frame, zoomed out ×4 (51 200 cells in 3 chunks)  | 1.42 ms | < 4 ms |
 | 1 000 buildings of 3 slices (3 000 sprites)      | 63 µs   | -      |
 
-The baseline of these entries in `test/bench/baseline/linux-bench.json` is an estimate (this run scaled by the agent ratio
-of `renderer2d/quads_color`) until a nightly run replaces it.
+These entries entered `test/bench/baseline/linux-bench.json` as an estimate (this run scaled by the agent ratio of
+`renderer2d/quads_color`); the state of the baseline is kept in `test/bench/README.md`.
 
 ISO5 chunk buffers (2026-10-16): a tilemap of the isometric layer keeps, per layer and 32 x 32 chunk, a persistent
 instance buffer of 32 bytes per tile (foot in map space, height of the lowest corner, depth bias, texture rectangle;
@@ -185,12 +185,12 @@ and uploads, before any layer draws, the chunks whose cell generation, corner-he
 instanced call per chunk in view. A map drawn without a prepare is built at draw time and counted as a late build.
 Same Null-backend measures as above:
 
-| Case                                             | Before  | After   | Budget |
-|--------------------------------------------------|---------|---------|--------|
-| Frame, zoom 1, no vehicle                        | 218 µs  | 16 µs   | < 1 ms |
-| Frame, zoom 1, 5 000 vehicles over the whole map | 267 µs  | 125 µs  | < 2 ms |
-| Frame, zoom 1, 5 000 vehicles in view            | 308 µs  | 178 µs  | < 2 ms |
-| Frame, zoomed out ×4 (51 200 cells in 3 chunks)  | 1.43 ms | 17 µs   | < 4 ms |
+| Case                                             | Before  | After  | Budget |
+|--------------------------------------------------|---------|--------|--------|
+| Frame, zoom 1, no vehicle                        | 218 µs  | 16 µs  | < 1 ms |
+| Frame, zoom 1, 5 000 vehicles over the whole map | 267 µs  | 125 µs | < 2 ms |
+| Frame, zoom 1, 5 000 vehicles in view            | 308 µs  | 178 µs | < 2 ms |
+| Frame, zoomed out ×4 (51 200 cells in 3 chunks)  | 1.43 ms | 17 µs  | < 4 ms |
 
 Road junctions (Experiment/RoadJunctions): the road overlay has 16 shapes, one per neighbour mask (bits N = -y, E = +x,
 S = +y, W = -x): ids 3 (E+W) and 11 (N+S) as before, then 12 alone, 13-16 dead ends N/E/S/W, 17-20 corners NE/ES/SW/WN,
@@ -209,7 +209,7 @@ backends).
 ## Later
 
 - v0.5.0: normal-mapped isometric sprites under the 2D lights, from the generator's normal atlas; day / night as an
-  ambient tint; tile-graph pathfinding for vehicles on the chunked map.
+  ambient tint (tile-graph pathfinding shipped in v0.4.0, see [Pathfinding](../pathfinding.md)).
 - v0.5.0: 3D meshes drawn under the same camera into the same depth buffer; shadows from the depth atlas or from
   shadow maps.
 - v0.6.0: 4096² maps from the content pipeline; procedural terrain heights from the [PCG graphs](pcg-graphs.md).

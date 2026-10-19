@@ -1,6 +1,6 @@
 # Breakout
 
-A sample game of Owl after Breakout and Arkanoid: five levels on one screen, three lives, bricks of one to three hits
+A sample game of Owl Engine after Breakout and Arkanoid: five levels on one screen, three lives, bricks of one to three hits
 and two power-ups. Open `samples/breakout` in Owl Nest (the **Sample games** list of the File screen) and play
 `scenes/title.owl`, or package it with **Package the game**.
 
@@ -30,13 +30,13 @@ The mouse moves the paddle by its motion; its speed is a setting, with the maste
 
 ## Inside
 
-| Path                      | Content                                                                              |
-|---------------------------|--------------------------------------------------------------------------------------|
-| `scenes/`                 | `title`, `level_select`, `level_1` to `level_5`, `settings`, `victory`, `game_over`  |
-| `scripts/game/`           | `game.lua` (rules, power-ups, pause, saves), `paddle.lua`, `ball.lua`, `brick.lua`   |
-| `scripts/ui/`             | The neon menus; `neon_bricks.lua` lights the brick wall behind them                  |
-| `prefabs/brick.owlprefab` | A brick: static body, sprite, script; the levels hold its instances                  |
-| `huds/play.owlhud`        | Score, level, lives, messages and the pause window (with the controls)               |
+| Path                      | Content                                                                             |
+|---------------------------|-------------------------------------------------------------------------------------|
+| `scenes/`                 | `title`, `level_select`, `level_1` to `level_5`, `settings`, `victory`, `game_over` |
+| `scripts/game/`           | `game.lua` (rules, power-ups, pause, saves), `paddle.lua`, `ball.lua`, `brick.lua`  |
+| `scripts/ui/`             | The neon menus; `neon_bricks.lua` lights the brick wall behind them                 |
+| `prefabs/brick.owlprefab` | A brick: static body, sprite, script; the levels hold its instances                 |
+| `huds/play.owlhud`        | Score, level, lives, messages and the pause window (with the controls)              |
 
 The art, the sounds and the first layout of the levels come from `tools/samples/breakout/` (`generate_assets.py`,
 `generate_levels.py`, `generate_menus.py`); edit the levels in Owl Nest afterwards (move, add or delete bricks, change

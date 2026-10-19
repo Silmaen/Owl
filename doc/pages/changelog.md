@@ -121,6 +121,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Bench baseline refreshed from five runs on the bench agent on the v0.4.0 code, with the `mcp`, `path` and `hud/frame/1000_row_list` cases; wider thresholds for the noisy physics, MCP and game-over load cases.
 - README and `doc/images/showcase/`: a title and a play screenshot of each sample game (Breakout, Sokoban, Wolfenstein mini).
 - Engine Demo controls are never shown for good in game: each level shows its keys in a hint that hides after a few seconds (`controls_hint.lua`), the main menu lists them all, and the platformer's Controls window is gone.
 - Engine Demo hub: a fence closes the south entrance and invisible walls the map edges, the river slows the hero to 40 % with splashing steps (`hub/wade_1..4`, less damage), and a soft home-made chime replaces `sounds/ui/start.wav` (`tools/demo/generate_sounds.py`).
@@ -198,6 +199,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- The sanitizer presets multiply the Lua time quota of the scenario and export tests by 4 (`OWL_SCRIPT_TIME_SCALE`), as the emulated arm64 ones do by 8.
+- A stalled `OwlRunner --scenario` run (a Windows run once hung 600 s after its verdict) ends after 120 s with code 7 and says where it stalled (starting, the step and frame playing, or the shutdown) instead of waiting for the CTest timeout.
+- Starting a scene loads its HUD before the scripts run: the first `scene.find_entity` or `ui.find` of an `on_create` no longer pays for the HUD fonts, which overran the 250 ms Lua time quota of the sample games under AddressSanitizer and qemu.
 - The emulated arm64 runs of the scenario and export tests multiply the Lua time quota by 8 (`OWL_SCRIPT_TIME_SCALE`): a save listing or a settings write under qemu overran the 250 ms of a native call.
 - The minimaps of Wolfenstein mini and of the Engine Demo raycast level keep their share of the screen at 1080p and above: a `Space: Screen` `Renderer2D` layer takes a `ReferenceHeight` (screen height in units, its width following the aspect ratio, editable in Scene Settings), 720 for both.
 - A shown `UiWindow` (a pause menu, an inventory) holds the world interactions back: the press of `interact` that opens a raycast door, slides a secret wall or calls `on_interact` waits until the window is closed, the click on Resume included (Wolfenstein mini could open a door from its pause window).
@@ -242,7 +246,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The bundled `coin.owlanim` spins at a steady speed: its speed curve, which made it speed up and slow down, is gone.
 - The Animation editor preview reads the sheet from the top left, like the game, instead of from the bottom row.
 
-## [0.3.0] - 2026-10-12
+## [0.3.0] - 2026-10-11
 
 ### Added
 

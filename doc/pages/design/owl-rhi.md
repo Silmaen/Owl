@@ -6,17 +6,17 @@ Design page for the engine's render hardware interface, summarised in the [Roadm
 
 ## Decision
 
-Owl keeps its own render layer, **named and presented as the Owl RHI**: the interfaces of `owl::renderer::gpu` and their
+Owl Engine keeps its own render layer, **named and presented as the Owl RHI**: the interfaces of `owl::renderer::gpu` and their
 backends in `source/owl/private/renderer/gpu/{vulkan,opengl,null}` (user documentation: the *Owl RHI* section of
 [Renderer](../renderer.md)). Third-party RHIs (SDL GPU, NVRHI, Diligent, bgfx, wgpu) were
 compared in the audit (`doc/audit/30-etat-de-l-art.md`, fiche 2); the maintainer keeps the in-house layer for control
 and because it already carries the renderer stack.
 
-| Backend | Role                                                         | From    |
-|---------|--------------------------------------------------------------|---------|
-| Vulkan  | Reference backend: every feature lands here first            | v0.3.0  |
-| OpenGL  | Compatibility / fallback backend, frozen in features, tested | v0.3.0  |
-| Null    | Headless tests and benchmarks                                | today   |
+| Backend | Role                                                         | From   |
+|---------|--------------------------------------------------------------|--------|
+| Vulkan  | Reference backend: every feature lands here first            | v0.3.0 |
+| OpenGL  | Compatibility / fallback backend, frozen in features, tested | v0.3.0 |
+| Null    | Headless tests and benchmarks                                | today  |
 | WebGPU  | Browser target, so a game is playable on the Web             | v0.8.0 |
 
 ## v0.3.0 — repair and name the RHI
@@ -53,13 +53,13 @@ path, cannot show it, so the image tests do not cover it.
 
 B-07 listed the global state and the conventions of the old layer. What replaces each:
 
-| Before                                                                          | Owl RHI                                                                   |
-|---------------------------------------------------------------------------------|---------------------------------------------------------------------------|
-| `setDepthTest` / `setDepthMask` toggles, left on by the raycast layer           | `PipelineState` given to `DrawData::init`, applied by every draw          |
-| Line topology chosen by the shader name `"line"`, `drawLine*` entry points      | `PipelineState::topology`, one `drawData` / `drawDataInstanced`           |
-| Blending hard-coded, culling never set (`iDoubleSided = true`)                  | `PipelineState::blendMode` and `cullMode` in the Vulkan pipeline key      |
-| `beginTextureLoad` / `bind` in order / `endTextureLoad`, Vulkan ignoring slots  | `RenderCommand::bindTextures(span)` per block; `Texture2D::bind(slot)`    |
-| OpenGL: each renderer re-binds its UBO and textures before drawing (binding 0)  | `opengl::BindingTable` per block, re-applied when another block drew      |
+| Before                                                                         | Owl RHI                                                                |
+|--------------------------------------------------------------------------------|------------------------------------------------------------------------|
+| `setDepthTest` / `setDepthMask` toggles, left on by the raycast layer          | `PipelineState` given to `DrawData::init`, applied by every draw       |
+| Line topology chosen by the shader name `"line"`, `drawLine*` entry points     | `PipelineState::topology`, one `drawData` / `drawDataInstanced`        |
+| Blending hard-coded, culling never set (`iDoubleSided = true`)                 | `PipelineState::blendMode` and `cullMode` in the Vulkan pipeline key   |
+| `beginTextureLoad` / `bind` in order / `endTextureLoad`, Vulkan ignoring slots | `RenderCommand::bindTextures(span)` per block; `Texture2D::bind(slot)` |
+| OpenGL: each renderer re-binds its UBO and textures before drawing (binding 0) | `opengl::BindingTable` per block, re-applied when another block drew   |
 
 The renderer block (`RendererDescriptors` + `ScopedActive`) is the bind group: Vulkan writes it into a descriptor set
 per draw, OpenGL records its uniform buffers and textures. Storage buffers are still bound right before each draw, on

@@ -1,6 +1,6 @@
 # Wolfenstein mini
 
-An exploration game in the spirit of Wolfenstein 3D, made with Owl: three floors of 32×32 cells drawn by the raycast
+An exploration game in the spirit of Wolfenstein 3D, made with Owl Engine: three floors of 32×32 cells drawn by the raycast
 renderer, with treasure, food, keys and locked doors, secret walls and an exit elevator on each floor. There are no
 guards nor weapons yet: they come once their art exists. The plan of the game is in
 [Sample games](../../doc/pages/design/sample-games.md).

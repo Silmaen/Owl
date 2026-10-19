@@ -11,7 +11,7 @@ A HUD authored once and drawn on top of any rendering style (2D, raycast, voxel,
 resolution, edited in its own document in Owl Nest — and rich enough for a management game: several windows, toolbars,
 tooltips and construction tools at once, as in Transport Tycoon.
 
-## Today (v0.3.0)
+## Before v0.4.0
 
 - The HUD is a second `Renderer2D` layer named `ui`, in world space, and every UI entity carries `RendererTag: ui` by
   hand; in the editor it floats at world coordinates over the level.
@@ -33,6 +33,15 @@ tooltips and construction tools at once, as in Transport Tycoon.
   same four fields, in text heights. Edited in the inspector, undoable like any component edit.
 
 ## HUD layer (HUD1, done)
+
+```mermaid
+flowchart LR
+    L["Renderer-stack layers<br/>2D, raycast, voxel, isometric"] --> O["renderOverlays<br/>voxel highlight, crosshair"]
+    O --> H["HudPass, in pixels<br/>scene canvases, then the .owlhud"]
+    H --> T[Toasts] --> X[Screen transition]
+    HL["HudLayout, once per frame"] --> H
+    HL --> I["UiInputSystem hit-test"]
+```
 
 - An implicit last pass of the frame, in pixel space, after the renderer stack and the overlays, before the toasts and
   the screen transition (`HudPass`); it cannot be misordered, whatever the layers underneath draw, in Play
