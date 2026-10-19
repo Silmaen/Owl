@@ -310,13 +310,15 @@ auto Application::fallBackRenderer() -> bool {
 				  magic_enum::enum_name(*fallback))
 	input::Input::invalidate();
 	renderer::gpu::RenderCommand::invalidate();
-	mp_appWindow.reset();
+	// Closed after the new window exists: closing the last window ends GLFW, and a new glfwInit leaks X11 tables.
+	auto failedWindow = std::move(mp_appWindow);
 	renderer::gpu::RenderCommand::create(*fallback);
 	if (renderer::gpu::RenderCommand::getState() != renderer::gpu::RenderAPI::State::Created) {
 		OWL_CORE_ERROR("Application: The {} fallback renderer could not be created.", magic_enum::enum_name(*fallback))
 		return false;
 	}
 	createMainWindow();
+	failedWindow.reset();
 	renderer::Renderer::initContext();
 	if (renderer::gpu::RenderCommand::getState() != renderer::gpu::RenderAPI::State::Ready) {
 		OWL_CORE_ERROR("Application: The {} fallback renderer could not start either.",
