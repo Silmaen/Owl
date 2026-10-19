@@ -319,4 +319,16 @@ flowchart LR
 - Controller remapping UI, on the v0.4.0 HUD widgets and action map
 - Haptic feedback / vibration API (GLFW has none: to study)
 
+## Touch screen input (v0.8.0)
+
+Found on 2026-10-19 on a Raspberry Pi with a touch screen: the arm64 package works with keyboard and mouse, touch is
+unusable (never tried before). Needed by the Web target of the same release.
+
+- Touch points as pointer events: a tap clicks, a drag moves, under GLFW (which reports touch as an emulated mouse at
+  best: to study, else a native path per platform)
+- Gestures: pinch to zoom and two-finger pan for the cameras (isometric, 2D, editor viewport)
+- HUD: buttons, sliders, lists and windows usable by touch (larger hit areas, no hover-only state)
+- Owl Nest usable on a touch screen for the common gestures (select, move, pan, zoom)
+- Scenario support: injected touch points in `.owltest` files, a scenario per gesture
+
 [done]: https://img.shields.io/badge/-Done-2ea043?style=flat-square

@@ -58,6 +58,7 @@ v0.7.0 deterministic simulation, mods, the Web; this release is the 1.0 release 
 - ![Planned][planned] Web export through a WebGPU Owl RHI backend ([Owl RHI](design/owl-rhi.md))
 - ![Planned][planned] Cross-compile packaging and target platform selector ([Game export](design/game-export.md))
 - ![Planned][planned] Gamepad improvements: remapping UI, haptics ([Input](design/windowing-input.md))
+- ![Planned][planned] Touch screen input: taps and drags as pointer events, pinch and two-finger pan, the HUD and Owl Nest usable by touch ([Input](design/windowing-input.md))
 - ![Planned][planned] Sample game: a networked Bomberman ([Sample games](design/sample-games.md))
 - ![To evaluate][evaluate] macOS (Metal) and Android — after 1.0
 
