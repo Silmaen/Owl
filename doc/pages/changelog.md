@@ -118,6 +118,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   axes and sticks with dead zone and curve) packed with the game, built-in `move` / `jump` / `interact` / `ui_*`
   actions, `Scene::getActions` per tick and per frame, Lua `input.is_action_*` / `get_action_value` /
   `get_action_vector`, and scenario `actions:` steps.
+- Windows: `OwlNest.exe` and `OwlRunner.exe` (so every exported game) carry the Owl icon and version information, from `source/owlnest/resources/` (`owl.ico` built by `tools/editor/generate_app_icon.py`).
+- Optional code signing of the Windows binaries in the `Package` action (`ci/utils/signing.py`): `signtool` with a certificate of the agent's store (`OWL_SIGN_THUMBPRINT`) or `osslsigncode` with a `.pfx` (`OWL_SIGN_CERTIFICATE`, password in `OWL_SIGN_PASSWORD`), off when none is set.
 
 ### Changed
 
@@ -183,6 +185,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   preset's Test step.
 - Owl Nest file dialogues on Linux go through `xdg-desktop-portal` over D-Bus, parented to the editor window, instead
   of GTK, whose start-up froze the UI; D-Bus joins the Linux runtime dependencies.
+- Windows: Owl Nest and the runner are GUI programs, no console window opens with them; started from cmd or PowerShell they write their output (`--export`, `--scenario`, `--smoke-test`, `--frame-bench`, the log) to that console (`platform::attachParentConsole`), and a redirected output (CTest, `> file`) stays redirected.
+- The Owl Nest package installs the editor SVG icons in `assets/icons/` with the other editor icons (rasterized at run time in the theme's colours), no `assets_sources/` folder any more; a development tree still reads them from `source/owlnest/assets_sources/icons/`.
 
 ### Deprecated
 
@@ -200,6 +204,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `PublishDoc` and `PublishPackage` send only the filled fields: the site refused the empty `hash` of a documentation upload since its API checks every path field.
 - The sanitizer presets multiply the Lua time quota of the scenario and export tests by 4 (`OWL_SCRIPT_TIME_SCALE`), as the emulated arm64 ones do by 8.
 - A stalled `OwlRunner --scenario` run (a Windows run once hung 600 s after its verdict) ends after 120 s with code 7 and says where it stalled (starting, the step and frame playing, or the shutdown) instead of waiting for the CTest timeout.
 - Starting a scene loads its HUD before the scripts run: the first `scene.find_entity` or `ui.find` of an `on_create` no longer pays for the HUD fonts, which overran the 250 ms Lua time quota of the sample games under AddressSanitizer and qemu.
@@ -246,6 +251,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `FileDialog` no longer reads past the end of a filter, leaks the saved path, or asserts when no dialogue can open.
 - The bundled `coin.owlanim` spins at a steady speed: its speed curve, which made it speed up and slow down, is gone.
 - The Animation editor preview reads the sheet from the top left, like the game, instead of from the bottom row.
+- Packages no longer carry what the tested tree's runs wrote next to the binaries (`OwlNest_recovery/`, logs, settings, ImGui layouts, caches, even as empty folders): `cmake/InstallRuntime.cmake` installs only the third-party libraries and the Slang modules.
+- Windows: the Slang standard modules (`slang-standard-module-<version>/`) are packaged by the slang recipe and copied next to the binaries (`cmake/Vulkan.cmake`), as on Linux; `slang-llvm.dll` (CPU targets, about 80 MB, never used) is no longer shipped.
 
 ## [0.3.0] - 2026-10-11
 

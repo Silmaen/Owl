@@ -23,6 +23,12 @@ criteria, each verified by CI or by a shipped artefact.
     - One 2D game and one 3D game, built in Owl Nest without engine-side C++ (Lua and visual scripting only), each
       mixing at least two rendering styles
 - Platforms: Linux and Windows flawless (build, editor, runner, packaging), plus the Web as third platform
+    - Windows executables signed by the `Package` action (`ci/utils/signing.py`, off without a certificate): the
+      provider is chosen before 1.0.0 (SignPath Foundation for open source, Azure Trusted Signing or an OV
+      certificate)
+    - An exported Windows game carries its project icon in its executable (resource rewritten at export)
+    - Settings, logs and caches stay in the application folder on every OS (nothing scattered in the user
+      profile); a new version can import the settings of a previous one
 - Zero known crash: no open crash or data-loss bug; fuzzers on every file loader run in CI
 - Performance budgets verified in CI on every target platform
 - Complete user documentation

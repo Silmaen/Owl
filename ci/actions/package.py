@@ -5,6 +5,7 @@ Action to deploy the project using CPack for a given preset.
 from ci import log
 from ci.actions.base.action import BaseAction, PresetConfig
 from ci.utils.run import MODE_BY_COLOR, run_command
+from ci.utils.signing import sign_binaries
 
 
 class Package(BaseAction):
@@ -28,6 +29,11 @@ class Package(BaseAction):
         if not build_dir.exists():
             log.error(f"Build directory does not exist: {build_dir}")
             return 1
+        # Signed in the tree, before CPack copies them: off without a certificate (ci/utils/signing.py).
+        sign_result = sign_binaries(build_dir / "bin")
+        if sign_result != 0:
+            log.error("Code signing failed.")
+            return sign_result
         cwd = curdir
         chdir(build_dir)
         build_result = run_command(["cpack"], detection_mode=MODE_BY_COLOR)

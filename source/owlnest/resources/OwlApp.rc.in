@@ -1,0 +1,33 @@
+// Windows resources of @OWL_RC_NAME@.exe, configured by owl_windows_application() (cmake/OwlUtils.cmake).
+#include <windows.h>
+
+1 ICON "@OWL_RC_ICON@"
+
+VS_VERSION_INFO VERSIONINFO
+FILEVERSION @PROJECT_VERSION_MAJOR@,@PROJECT_VERSION_MINOR@,@PROJECT_VERSION_PATCH@,0
+PRODUCTVERSION @PROJECT_VERSION_MAJOR@,@PROJECT_VERSION_MINOR@,@PROJECT_VERSION_PATCH@,0
+FILEFLAGSMASK VS_FFI_FILEFLAGSMASK
+FILEFLAGS 0
+FILEOS VOS_NT_WINDOWS32
+FILETYPE VFT_APP
+FILESUBTYPE VFT2_UNKNOWN
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904B0"
+        BEGIN
+            VALUE "CompanyName", "Silmaen"
+            VALUE "FileDescription", "@OWL_RC_DESCRIPTION@"
+            VALUE "FileVersion", "@PROJECT_VERSION@"
+            VALUE "InternalName", "@OWL_RC_NAME@"
+            VALUE "LegalCopyright", "Copyright (c) Silmaen"
+            VALUE "OriginalFilename", "@OWL_RC_NAME@.exe"
+            VALUE "ProductName", "Owl Engine"
+            VALUE "ProductVersion", "@PROJECT_VERSION@"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1200
+    END
+END

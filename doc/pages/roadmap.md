@@ -32,6 +32,9 @@ strict CI, hence the cadence below.
 - ![Planned][planned] Consumable SDK: OwlEngine Conan package, `find_package(OwlEngine)` with 1–2 public dependencies, consumer test in CI
 - ![Planned][planned] Two showcase games (2D and 3D) authored only in the editor, each mixing rendering styles, picked from the sample games
 - ![Planned][planned] Linux and Windows flawless, the Web as third platform
+- ![Planned][planned] Windows executables signed (provider to choose: SignPath Foundation, Azure Trusted Signing or an OV certificate), so SmartScreen trusts the downloads
+- ![Planned][planned] Exported Windows games carry their project icon in the executable, not only on the window
+- ![Planned][planned] Settings, logs and caches stay in the application folder, with an import of the settings of a previous version
 - ![Planned][planned] Zero known crash; fuzzers on every file loader
 - ![Planned][planned] Performance budgets verified in CI on every target platform
 - ![Planned][planned] Complete user documentation: tutorials, Lua and visual-scripting references

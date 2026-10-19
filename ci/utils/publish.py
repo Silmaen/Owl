@@ -11,6 +11,7 @@ import os
 import tarfile
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 from ci import log, root
 from ci.utils.secrets import redact
@@ -105,18 +106,19 @@ def push_revision(server_url: str, login: str, password: str, revision: Revision
     endpoint = "api" if upload.stat().st_size < LARGE_FILE_THRESHOLD else "upload"
     try:
         with open(upload, "rb") as stream:
-            encoder = MultipartEncoder(
-                fields={
-                    "action": "push_doc" if revision.rev_type == "d" else "push",
-                    "hash": revision.hash,
-                    "branch": revision.branch,
-                    "name": revision.name,
-                    "flavor_name": revision.flavor_name,
-                    "date": revision.date,
-                    "rev_type": revision.rev_type,
-                    "package": (upload.name, stream, "application/octet-stream"),
-                }
-            )
+            text_fields = {
+                "action": "push_doc" if revision.rev_type == "d" else "push",
+                "hash": revision.hash,
+                "branch": revision.branch,
+                "name": revision.name,
+                "flavor_name": revision.flavor_name,
+                "date": revision.date,
+                "rev_type": revision.rev_type,
+            }
+            # The server refuses an empty path field (a documentation has no hash): send only the filled ones.
+            fields: dict[str, Any] = {key: value for key, value in text_fields.items() if value}
+            fields["package"] = (upload.name, stream, "application/octet-stream")
+            encoder = MultipartEncoder(fields=fields)
             response = requests.post(
                 f"{destination}/{endpoint}",
                 auth=HTTPBasicAuth(login, password),

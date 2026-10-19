@@ -19,6 +19,10 @@ and accessible from the **Help** ribbon button or by pressing `F1`.
 
 ![Owl Nest with the Engine Demo open](../images/nest/main_window.png)
 
+On Windows, the downloaded `OwlNest.exe` is not signed yet: SmartScreen may show "Windows protected your PC" at the
+first start. Click **More info**, then **Run anyway** (once per downloaded version). An exported game shows the same
+warning on the players' computers.
+
 On Linux, Owl Engine runs natively under Wayland or under X11. Wayland is picked when available;
 set `OWL_WINDOW_PLATFORM=x11` to use X11 instead (needed for panels torn out into separate
 desktop windows, which GLFW cannot place under Wayland). See [Building](building.md).

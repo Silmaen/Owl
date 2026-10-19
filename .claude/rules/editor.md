@@ -51,7 +51,8 @@ same PR (see `ongoing-quality.md`, *Editor Coverage*).
 ## Icons
 
 - SVG sources in `assets_sources/icons/<category>/` (`toolbar`, `browser`, `visibility`, `triggers`,
-  `components`, `panels`, `actions`, `ribbon`; `templates` is not rendered). **Never modify an SVG
+  `components`, `panels`, `actions`, `ribbon`; `templates` is not rendered), installed in `assets/icons/` (looked up
+  there first, then in `assets_sources/`). **Never modify an SVG
   programmatically.**
 - `IconBank::build()` substitutes `#ffffff` / `white` → theme text colour and `#ff00ff` → theme accent, rasterizes
   with lunasvg at 16 / 24 / 32 px × DPI and the 64 px cell; draw with `getIcon(name, size)` at a whole-pixel position.
