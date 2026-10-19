@@ -341,6 +341,22 @@ public:
 
 	/**
 	 * @brief
+	 *  Get the renderer that could not start and was replaced by its fallback (Vulkan by OpenGL).
+	 * @return The failed renderer, nothing when the configured one runs.
+	 */
+	[[nodiscard]] auto getRendererFallback() const -> std::optional<renderer::gpu::RenderAPI::Type> {
+		return m_rendererFallback;
+	}
+
+	/**
+	 * @brief
+	 *  Get why the replaced renderer could not start, worded for a player.
+	 * @return The reason, empty when no fallback happened or the backend gave none.
+	 */
+	[[nodiscard]] auto getRendererFallbackReason() const -> const std::string& { return m_rendererFallbackReason; }
+
+	/**
+	 * @brief
 	 *  State of the application.
 	 */
 	enum struct State : uint8_t {
@@ -484,6 +500,19 @@ private:
 
 	/**
 	 * @brief
+	 *  Create the main window for the current renderer and initialise the input for it.
+	 */
+	void createMainWindow();
+
+	/**
+	 * @brief
+	 *  Replace a renderer that could not start by its fallback: the window is created again for it.
+	 * @return True when the fallback renderer is ready.
+	 */
+	auto fallBackRenderer() -> bool;
+
+	/**
+	 * @brief
 	 *  Runs the application.
 	 */
 	void run();
@@ -528,6 +557,10 @@ private:
 	core::Timestep m_stepper;
 	/// Initialization parameters.
 	AppParams m_initParams;
+	/// The renderer that could not start and was replaced by its fallback.
+	std::optional<renderer::gpu::RenderAPI::Type> m_rendererFallback;
+	/// Why that renderer could not start, worded for a player (empty when it gave no reason).
+	std::string m_rendererFallbackReason;
 	/// The font library.
 	data::fonts::FontLibrary m_fontLibrary;
 	/// The application Instance.

@@ -956,6 +956,8 @@ private:
 	panel::StatusBar m_statusBar;
 	/// Short notifications in the bottom-right corner (saves, exports, failures).
 	gui::widgets::ToastQueue m_toasts;
+	/// True once the renderer fallback (Vulkan replaced by OpenGL) has been told in a toast.
+	bool m_fallbackNotified = false;
 	/// Search over the actions, the entities and the assets, opened by pressing Shift twice.
 	panel::CommandPalette m_commandPalette;
 	/// Argument form of the registry command chosen in the palette.

@@ -12,6 +12,7 @@
 #include "math/vectors.h"
 
 #include <cstdint>
+#include <optional>
 #include <span>
 #include <string>
 #include <vector>
@@ -191,6 +192,14 @@ public:
 
 	/**
 	 * @brief
+	 *  Get the backend to try when a backend cannot start.
+	 * @param[in] iType The backend that failed.
+	 * @return OpenGL for Vulkan, nothing for OpenGL and Null (no further fallback).
+	 */
+	[[nodiscard]] static auto getFallback(Type iType) -> std::optional<Type>;
+
+	/**
+	 * @brief
 	 *  Get the actual API state.
 	 * @return API State.
 	 */
@@ -343,6 +352,13 @@ public:
 	 */
 	[[nodiscard]] virtual auto getDeviceName() const -> std::string { return "none"; }
 
+	/**
+	 * @brief
+	 *  Get why the backend could not start, worded for a player.
+	 * @return The reason, empty when the backend started or gave none.
+	 */
+	[[nodiscard]] auto getFailureReason() const -> const std::string& { return m_failureReason; }
+
 protected:
 	/**
 	 * @brief
@@ -351,11 +367,20 @@ protected:
 	 */
 	void setState(const State& iState) { m_state = iState; }
 
+	/**
+	 * @brief
+	 *  Define why the backend could not start.
+	 * @param[in] iReason The reason, worded for a player.
+	 */
+	void setFailureReason(const std::string& iReason) { m_failureReason = iReason; }
+
 private:
 	/// Type of Renderer API.
 	Type m_type = Type::Null;
 	/// The current state of the API.
 	State m_state = State::Created;
+	/// Why the backend could not start, empty otherwise.
+	std::string m_failureReason;
 };
 
 }// namespace owl::renderer::gpu

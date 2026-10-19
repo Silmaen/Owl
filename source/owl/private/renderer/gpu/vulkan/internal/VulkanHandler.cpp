@@ -60,8 +60,13 @@ void VulkanHandler::release() {
 	auto& core = VulkanCore::get();
 	if (core.getInstance() == nullptr)
 		return;// nothing can exist without instance.
-	if (core.getLogicalDevice() != nullptr)
-		vkDeviceWaitIdle(core.getLogicalDevice());
+	if (core.getLogicalDevice() == nullptr) {
+		// Device selection or creation failed: only the instance, the surface and the debug messenger exist.
+		core.release();
+		m_state = State::Uninitialized;
+		return;
+	}
+	vkDeviceWaitIdle(core.getLogicalDevice());
 	m_releasing = true;
 	m_completedSerial = m_frameSerial;
 	runReleases();

@@ -16,6 +16,7 @@
 #include "internal/Descriptors.h"
 #include "internal/FrameProfiler.h"
 #include "internal/RendererDescriptors.h"
+#include "internal/VulkanCore.h"
 #include "internal/VulkanHandler.h"
 
 namespace owl::renderer::gpu::vulkan {
@@ -41,6 +42,7 @@ void RenderAPI::init() {
 	}
 	vkh.initVulkan();
 	if (vkh.getState() != internal::VulkanHandler::State::Running) {
+		setFailureReason(internal::VulkanCore::get().getFailureReason());
 		setState(State::Error);
 		return;
 	}
@@ -142,6 +144,13 @@ void RenderAPI::drawIndexedIndirect(const shared<DrawData>& iData, const shared<
 									const shared<gpu::StorageBuffer>& iCountBuffer, const uint32_t iMaxDrawCount) {
 	if (!iData || !iCommandBuffer || !iCountBuffer || iMaxDrawCount == 0)
 		return;
+	if (!internal::VulkanCore::get().hasDrawIndirectCount()) {
+		static bool warned = false;
+		if (!warned)
+			OWL_CORE_WARN("Vulkan: drawIndexedIndirect needs the drawIndirectCount feature, skipped.")
+		warned = true;
+		return;
+	}
 	auto& vkh = internal::VulkanHandler::get();
 	auto* const cmdSsbo = dynamic_cast<StorageBuffer*>(iCommandBuffer.get());
 	auto* const countSsbo = dynamic_cast<StorageBuffer*>(iCountBuffer.get());

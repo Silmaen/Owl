@@ -14,6 +14,8 @@
 #include "vulkan/RenderAPI.h"
 #endif
 
+#include <optional>
+
 namespace owl::renderer::gpu {
 
 auto RenderAPI::create(const Type& iType) -> uniq<RenderAPI> {
@@ -37,6 +39,12 @@ auto RenderAPI::create(const Type& iType) -> uniq<RenderAPI> {
 
 	OWL_CORE_ERROR("Unknown RendererAPI!")
 	return nullptr;
+}
+
+auto RenderAPI::getFallback(const Type iType) -> std::optional<Type> {
+	if (iType == Type::Vulkan)
+		return Type::OpenGL;
+	return std::nullopt;
 }
 
 RenderAPI::~RenderAPI() = default;

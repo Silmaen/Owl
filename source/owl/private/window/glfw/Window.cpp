@@ -162,9 +162,8 @@ void Window::init(const Properties& iProps) {
 
 			glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
 #endif
-		if (api == renderer::gpu::RenderAPI::Type::Vulkan)
-
-			glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+		// Hints persist across windows: a window recreated for the OpenGL fallback must not keep GLFW_NO_API.
+		glfwWindowHint(GLFW_CLIENT_API, api == renderer::gpu::RenderAPI::Type::Vulkan ? GLFW_NO_API : GLFW_OPENGL_API);
 		glfwWindowHintString(GLFW_WAYLAND_APP_ID, m_appId.c_str());
 		glfwWindowHintString(GLFW_X11_CLASS_NAME, m_appId.c_str());
 		glfwWindowHintString(GLFW_X11_INSTANCE_NAME, m_appId.c_str());

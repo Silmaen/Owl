@@ -150,34 +150,13 @@ Application::Application(AppParams iAppParams)// NOLINT(readability-function-cog
 		m_scheduler.waitEmptyQueue();
 	}
 
-	// create main window
-	{
-		mp_appWindow = window::Window::create({
-				.winType = m_initParams.isDummy ? window::Type::Null : window::Type::Glfw,
-				.title = m_initParams.name,
-				.iconPath =
-						m_initParams.icon.empty()
-								? ""
-								: renderer::Renderer::getTextureLibrary().find(m_initParams.icon).value_or("").string(),
-				.width = m_initParams.width,
-				.height = m_initParams.height,
-				.platform = requestedWindowPlatform(m_initParams.windowPlatform),
-				.appId = m_initParams.appId,
-				.installDesktopEntry = m_initParams.installDesktopEntry,
-		});
-
-		input::Input::init(mp_appWindow->getType());
-		if (!m_initParams.vSync)
-			mp_appWindow->setVSync(false);
-
-		OWL_CORE_INFO("Window Created.")
-	}
+	createMainWindow();
 
 	// initialize the renderer context (no shader compilation yet)
 	{
 		renderer::Renderer::initContext();
 		// check renderer initialization
-		if (renderer::gpu::RenderCommand::getState() != renderer::gpu::RenderAPI::State::Ready) {
+		if (renderer::gpu::RenderCommand::getState() != renderer::gpu::RenderAPI::State::Ready && !fallBackRenderer()) {
 			OWL_CORE_ERROR("ERROR while Initializing Renderer.")
 			m_state = State::Error;
 			return;
@@ -294,6 +273,58 @@ Application::Application(AppParams iAppParams)// NOLINT(readability-function-cog
 	setHotReloadEnabled(m_initParams.hotReload);
 
 	OWL_CORE_TRACE("Application creation done.")
+}
+
+void Application::createMainWindow() {
+	mp_appWindow = window::Window::create({
+			.winType = m_initParams.isDummy ? window::Type::Null : window::Type::Glfw,
+			.title = m_initParams.name,
+			.iconPath = m_initParams.icon.empty()
+								? ""
+								: renderer::Renderer::getTextureLibrary().find(m_initParams.icon).value_or("").string(),
+			.width = m_initParams.width,
+			.height = m_initParams.height,
+			.platform = requestedWindowPlatform(m_initParams.windowPlatform),
+			.appId = m_initParams.appId,
+			.installDesktopEntry = m_initParams.installDesktopEntry,
+	});
+
+	input::Input::init(mp_appWindow->getType());
+	if (!m_initParams.vSync)
+		mp_appWindow->setVSync(false);
+
+	OWL_CORE_INFO("Window Created.")
+}
+
+auto Application::fallBackRenderer() -> bool {
+	const auto failed = renderer::gpu::RenderCommand::getApi();
+	const auto fallback = renderer::gpu::RenderAPI::getFallback(failed);
+	if (m_initParams.isDummy || !fallback.has_value())
+		return false;
+	m_rendererFallbackReason = renderer::gpu::RenderCommand::getFailureReason();
+	if (!m_rendererFallbackReason.empty())
+		OWL_CORE_WARN("Application: {}", m_rendererFallbackReason)
+	OWL_CORE_WARN("Application: The {} renderer could not start, falling back to {}.", magic_enum::enum_name(failed),
+				  magic_enum::enum_name(*fallback))
+	OWL_CORE_WARN("Application: Set `renderer: {}` in config.yml to skip the attempt.",
+				  magic_enum::enum_name(*fallback))
+	input::Input::invalidate();
+	renderer::gpu::RenderCommand::invalidate();
+	mp_appWindow.reset();
+	renderer::gpu::RenderCommand::create(*fallback);
+	if (renderer::gpu::RenderCommand::getState() != renderer::gpu::RenderAPI::State::Created) {
+		OWL_CORE_ERROR("Application: The {} fallback renderer could not be created.", magic_enum::enum_name(*fallback))
+		return false;
+	}
+	createMainWindow();
+	renderer::Renderer::initContext();
+	if (renderer::gpu::RenderCommand::getState() != renderer::gpu::RenderAPI::State::Ready) {
+		OWL_CORE_ERROR("Application: The {} fallback renderer could not start either.",
+					   magic_enum::enum_name(*fallback))
+		return false;
+	}
+	m_rendererFallback = failed;
+	return true;
 }
 
 void Application::enableDocking() const {

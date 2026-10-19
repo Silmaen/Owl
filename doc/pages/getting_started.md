@@ -27,6 +27,10 @@ On Linux, Owl Engine runs natively under Wayland or under X11. Wayland is picked
 set `OWL_WINDOW_PLATFORM=x11` to use X11 instead (needed for panels torn out into separate
 desktop windows, which GLFW cannot place under Wayland). See [Building](building.md).
 
+If the graphics driver does not offer a Vulkan 1.3 device, Owl Nest and exported games start on OpenGL instead and
+say so in the log (and in a toast in the editor); update the driver, or set `renderer: OpenGL` in the `config.yml` of
+the working directory to skip the Vulkan attempt ([requirements](renderer.md#renderer-vulkan-requirements)).
+
 ## Where to Go Next
 
 | Topic                             | Page                               |

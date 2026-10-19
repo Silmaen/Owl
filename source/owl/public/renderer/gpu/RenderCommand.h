@@ -130,6 +130,17 @@ public:
 
 	/**
 	 * @brief
+	 *  Get why the backend could not start, worded for a player.
+	 * @return The reason, empty when the backend started, gave none or does not exist.
+	 */
+	[[nodiscard]] static auto getFailureReason() -> std::string {
+		if (m_renderAPI)
+			return m_renderAPI->getFailureReason();
+		return {};
+	}
+
+	/**
+	 * @brief
 	 *  Get the actual API type.
 	 * @return API Type.
 	 */

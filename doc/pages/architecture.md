@@ -101,7 +101,7 @@ Owl Engine uses a backend abstraction so that different platform APIs can be swa
 | Backend  | API         | Notes                                         |
 |----------|-------------|-----------------------------------------------|
 | `OpenGL` | OpenGL 4.5  | Widely supported on desktop; limited on ARM64 |
-| `Vulkan` | Vulkan 1.4+ | Modern low-level API; full desktop support    |
+| `Vulkan` | Vulkan 1.3+ | Modern low-level API; full desktop support    |
 | `Null`   | None        | Headless mode for servers or testing          |
 
 Every renderer follows one **GPU-driven instanced pipeline** (since the

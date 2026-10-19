@@ -49,7 +49,7 @@ platformer, a raycast level, an isometric town and a voxel terrain. The **sample
 
 ## Features
 
-- ![OpenGL](https://img.shields.io/badge/OpenGL-4.5-5586A4?logo=opengl) ![Vulkan](https://img.shields.io/badge/Vulkan-1.4%2B-AC162C?logo=vulkan)
+- ![OpenGL](https://img.shields.io/badge/OpenGL-4.5-5586A4?logo=opengl) ![Vulkan](https://img.shields.io/badge/Vulkan-1.3%2B-AC162C?logo=vulkan)
   **Rendering** with Slang shaders compiled to SPIR-V, precompiled at build time
 - ![EnTT](https://img.shields.io/badge/ECS-EnTT-green) **Entity-Component-System** with parent-child hierarchy,
   prefabs and Lua 5.5 scripting
@@ -100,13 +100,13 @@ unit and scenario tests on every change. A new platform comes with its test mach
 ## Backends
 
 ![OpenGL](https://img.shields.io/badge/OpenGL-4.5-5586A4?logo=opengl)
-![Vulkan](https://img.shields.io/badge/Vulkan-1.4%2B-AC162C?logo=vulkan)
+![Vulkan](https://img.shields.io/badge/Vulkan-1.3%2B-AC162C?logo=vulkan)
 ![GLFW](https://img.shields.io/badge/GLFW-Input-yellow)
 ![OpenAL](https://img.shields.io/badge/OpenAL-Audio-8B0000)
 
 | Category | Backends                      |
 |----------|-------------------------------|
-| Graphics | OpenGL 4.5, Vulkan 1.4+, Null |
+| Graphics | OpenGL 4.5, Vulkan 1.3+, Null |
 | Input    | GLFW, Null                    |
 | Sound    | OpenAL, Null                  |
 

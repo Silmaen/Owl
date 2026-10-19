@@ -58,6 +58,7 @@ v0.7.0 deterministic simulation, mods, the Web; this release is the 1.0 release 
 - ![Planned][planned] Web export through a WebGPU Owl RHI backend ([Owl RHI](design/owl-rhi.md))
 - ![Planned][planned] Cross-compile packaging and target platform selector ([Game export](design/game-export.md))
 - ![Planned][planned] Gamepad improvements: remapping UI, haptics ([Input](design/windowing-input.md))
+- ![Planned][planned] Touch screen input: taps and drags as pointer events, pinch and two-finger pan, the HUD and Owl Nest usable by touch ([Input](design/windowing-input.md))
 - ![Planned][planned] Sample game: a networked Bomberman ([Sample games](design/sample-games.md))
 - ![To evaluate][evaluate] macOS (Metal) and Android — after 1.0
 
@@ -107,6 +108,7 @@ procedural graphs, tile tools, Lua editor scripts, and Blueprints-style visual s
 **Goal:** A focused 3D core on the repaired Owl RHI — static meshes, PBR, lights and shadows for 2D, isometric and 3D,
 render graph, essential post-processing — with full 3D editing ([details](design/3d-core.md)).
 
+- ![Planned][planned] Faster CI, first work of the cycle: `-j` everywhere, lighter PR builds, full tests nightly only, shorter build and test times ([CI](continuous_integration.md#ci-speed-plan))
 - ![Planned][planned] 3D render pipeline (forward, depth, perspective camera)
 - ![Planned][planned] Render graph hosting the renderer-stack layers
 - ![Planned][planned] Lighting: directional, point and spot lights, directional shadow maps
@@ -122,7 +124,7 @@ render graph, essential post-processing — with full 3D editing ([details](desi
 - ![Planned][planned] Help panel: mermaid diagrams and rendering polish
 - ![Planned][planned] Sample game: a Mini Transport Tycoon ([Sample games](design/sample-games.md))
 
-## v0.4.0 -- Expected 2026-11-01
+## v0.4.0 -- 2026-10-20
 
 **Goal:** An engine able to carry a Transport Tycoon-like game: an isometric renderer on large chunked tile maps with
 slopes, vehicles finding their way on a tile graph, a HUD for management games and its editor, input actions with a gamepad, a fixed simulation tick, and a local
