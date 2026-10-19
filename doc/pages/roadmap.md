@@ -7,8 +7,8 @@ renderer stack. Each version below has a short goal and one line per item; the d
 `doc/pages/design/`. A one-glance summary is in the root `ROADMAP.md`; shipped changes are in the
 [Changelog](changelog.md).
 
-Development is heavily AI-assisted (Claude Code writes the code, the maintainer reviews, tests and steers), hence the
-cadence below.
+Development uses Claude Code as a supervised tool: every change is reviewed and owned by the maintainer, behind a
+strict CI, hence the cadence below.
 **Exit criteria take precedence over dates**: a version ships when its criteria hold.
 
 **Ongoing across all releases** ([details](design/ongoing-quality.md)):

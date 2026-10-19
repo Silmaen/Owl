@@ -244,7 +244,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The bundled `coin.owlanim` spins at a steady speed: its speed curve, which made it speed up and slow down, is gone.
 - The Animation editor preview reads the sheet from the top left, like the game, instead of from the bottom row.
 
-## [0.3.0] - 2026-10-12
+## [0.3.0] - 2026-10-11
 
 ### Added
 
