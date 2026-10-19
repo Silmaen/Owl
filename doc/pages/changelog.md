@@ -121,6 +121,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Bench baseline refreshed from five runs on the bench agent on the v0.4.0 code, with the `mcp`, `path` and `hud/frame/1000_row_list` cases; wider thresholds for the noisy physics, MCP and game-over load cases.
 - README and `doc/images/showcase/`: a title and a play screenshot of each sample game (Breakout, Sokoban, Wolfenstein mini).
 - Engine Demo controls are never shown for good in game: each level shows its keys in a hint that hides after a few seconds (`controls_hint.lua`), the main menu lists them all, and the platformer's Controls window is gone.
 - Engine Demo hub: a fence closes the south entrance and invisible walls the map edges, the river slows the hero to 40 % with splashing steps (`hub/wade_1..4`, less damage), and a soft home-made chime replaces `sounds/ui/start.wav` (`tools/demo/generate_sounds.py`).

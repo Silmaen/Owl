@@ -70,15 +70,15 @@ flowchart LR
 - Baseline: `test/bench/baseline/linux-bench.json`; without one the run only reports. Commit the artifact of a
   nightly run (or run the action with `-- --update-baseline` on the same agent) and refresh it when a change is
   deliberately slower or the agent changes.
-- `test/bench/thresholds.json` widens the threshold by name pattern (the multi-threaded physics steps of 100 bodies,
-  about 1 ms and dominated by the worker wake-up, get 40 %); it is not part of the baseline, so a refresh keeps it.
+- `test/bench/thresholds.json` widens the threshold by name pattern (multi-threaded physics steps and world creation
+  of 100 bodies, the `mcp` round trips, `sample/load/game_over`); it is not part of the baseline, so a refresh keeps it.
 - Agent: pinned to `linux-build-hephaistos` (8 cores). The committed baseline is the median of its 5 runs of
-  2026-10-15 on the v0.4.0 performance fixes (builds 36879 to 36887, in `context.baseline_runs`); the runs agree
-  within 2 % (median), the multi-threaded physics of 100 bodies and `sample/load/game_over` within 30 %. Timings from
-  another agent do not compare (artemis is 20 % faster but varies 10.7 % between runs, against 1.7 % here).
-- Not in the baseline yet: `hud/frame/1000_row_list` (a thousand rows scrolled to the middle, the quads of one frame
-  as a metric) and the `mcp` and `path` groups. The `hud/{layout,frame}/500_widgets` and `iso/*` entries are
-  estimates (a local run scaled by the ratio of the `renderer2d/quads_color` cases) until the next refresh.
+  2026-10-19 on the v0.4.0 release code (builds 38655 to 38682, in `context.baseline_runs`); the runs agree within 2 %
+  (median, 9 % for nine benchmarks in ten). Timings from another agent do not compare (artemis is 20 % faster but
+  varies 10.7 % between runs, against 1.7 % here).
+- Every group is in the baseline, `mcp`, `path` and `hud/frame/1000_row_list` included. Against the v0.3.0-era
+  baseline the Engine Demo scenes (`sample/*`) are slower because they grew (the 64×40 hub, the 197×32 platformer),
+  and the warm Slang compilation of the engine shaders by 24 % (more shaders).
 
 ```bash
 ./docker_run.sh poetry run python ci_action.py Build linux-bench

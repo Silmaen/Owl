@@ -289,7 +289,7 @@ The release ships when these hold, whatever the date:
 
 ## Release status
 
-Checked on 2026-10-18 against `main` at 41de054d (release, Vulkan on lavapipe, `linux-clang-debug`, `linux-include-check`).
+Checked on 2026-10-18 against `main` at 41de054d, the budgets on 2026-10-19 (release, Vulkan on lavapipe, `linux-clang-debug`, `linux-include-check`).
 
 | Exit criterion                                                                     | Status             | Evidence                                                                                                                                                                      |
 |------------------------------------------------------------------------------------|--------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -303,24 +303,18 @@ Checked on 2026-10-18 against `main` at 41de054d (release, Vulkan on lavapipe, `
 | Inventory demo with a gamepad, file dialogues through the portal                   | Met (manual)       | `portal = True` in `conanfile.py`; GNOME and KDE check is manual                                                                                                              |
 | MCP: every command a tool, create then undo, 401 / 403 / 413, off by default, TSan | Met (TSan not run) | `McpHttp_test`, `McpDispatcher_test`; the thread sanitizer run belongs to CI                                                                                                  |
 | Editor support for every authored object                                           | Met (manual)       | manual pre-merge check of `ongoing-quality.md`                                                                                                                                |
-| Budgets in `test/bench/baseline/`                                                  | Partly met         | see below                                                                                                                                                                     |
+| Budgets in `test/bench/baseline/`                                                  | Met                | every budget row has a case and an entry, every stored median inside its budget (below)                                                                                       |
 | Coverage not lower than v0.3.0                                                     | Met                | 86.2 % lines here, 85.8 % on CI (TeamCity Linux Clang #435) against 83.98 % at the v0.3.0 release (#390)                                                                      |
 
 Also green: every CTest of `linux-clang-debug`, `IncludeCheck linux-include-check`.
 
-Budget rows without a baseline entry: `MCP tools/call round trip` (`mcp/tools_call/entity_rename`, 64 µs locally without
-the frame wait, absent from the baseline), `hud/frame/1000_row_list` (documented in `test/bench/README.md`, absent from the
-baseline), `path/*` (absent from the baseline). Every other row has a case and an entry, and the stored medians are inside
-their budgets (zoom ×4 frame 3.3 ms for 4 ms).
+Baseline of 2026-10-19 (median of five runs on hephaistos, release code): MCP `tools/call` round trip 194 µs without
+the frame wait (budget one frame + 5 ms), 1 000-row list 18 µs and 162 quads, HUD of 500 widgets 212 µs and 2 draw
+calls, isometric 512² frames 19 µs to 212 µs of CPU with 5 000 vehicles, slope picking 0.2 µs, 1024² map load 11.8 ms.
 
-Left to the maintainer:
-
-- Manual tests left: picking on the slopes and the gizmo on the isometric axes (gamepad, file dialogues and editor
-  support checked by the maintainer on 2026-10-18).
-- Three sample games joined v0.4.0 after this check: Breakout, Sokoban and a Wolfenstein mini without combat
-  ([Sample games](sample-games.md)), each checked with a gamepad.
-- Refresh the bench baseline from five runs on hephaistos and add the missing entries (`mcp/*` included).
-- Version, date and the changelog sections of the release.
+Not verified by hand: picking on the slopes and the gizmo on the isometric axes (unit tests and
+the `iso/pick` bench only). The three sample games joined v0.4.0 after the check above: Breakout, Sokoban and a
+Wolfenstein mini without combat ([Sample games](sample-games.md)), each played by the maintainer with a gamepad.
 
 [done]: https://img.shields.io/badge/-Done-2ea043?style=flat-square
 
