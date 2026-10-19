@@ -2,7 +2,7 @@
 
 Owl is a C++23 game engine (`OwlEngine`) with an editor (Owl Nest), a game runner, a Python CI wrapper and
 TeamCity pipelines. Version: see `project(... VERSION ...)` in `CMakeLists.txt` (0.4.0 in development, plan in
-`doc/pages/design/isometric-worlds.md`; 0.3.0, released 2026-10-11, is the last release). Backends: graphics OpenGL 4.5 / Vulkan 1.4 / Null, input
+`doc/pages/design/isometric-worlds.md`; 0.3.0, released 2026-10-11, is the last release). Backends: graphics OpenGL 4.5 / Vulkan 1.3+ / Null, input
 GLFW / Null, sound OpenAL / Null. ECS on EnTT with parent-child hierarchy. Platforms: Linux x64/arm64,
 Windows x64 (MinGW).
 
