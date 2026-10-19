@@ -6,6 +6,10 @@ set(PROJECT_PREFIX OWL)
 set(PROJECT_PREFIX_LOWER owl)
 set(ENGINE_NAME OwlEngine)
 project(Owl VERSION 0.4.0 LANGUAGES C CXX)
+if (WIN32)
+    # Icon and version information of the executables (owl_windows_application).
+    enable_language(RC)
+endif ()
 #
 # ---=== Options ===---
 #

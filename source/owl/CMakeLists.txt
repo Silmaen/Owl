@@ -261,18 +261,12 @@ if (${PROJECT_PREFIX}_BUILD_NEST)
             RUNTIME DESTINATION ${${PROJECT_PREFIX}_INSTALL_BIN}
             FRAMEWORK DESTINATION ${${PROJECT_PREFIX}_INSTALL_BIN}
     )
-    # The tested tree also holds the tests and what their runs wrote (logs, configs, caches): copy only what ships.
-    install(DIRECTORY ${CMAKE_BINARY_DIR}/bin/
-            DESTINATION ${${PROJECT_PREFIX}_INSTALL_BIN}
+    # The tested tree also holds the tests and what their runs wrote (logs, settings, recovery, caches): the third-party
+    # runtime is listed when installing (its names come from the build), never the whole bin/ folder.
+    install(CODE "set(OWL_RUNTIME_FROM \"${CMAKE_BINARY_DIR}/bin\")\nset(OWL_RUNTIME_TO \"${${PROJECT_PREFIX}_INSTALL_BIN}\")"
             COMPONENT Nest
-            FILES_MATCHING
-            PATTERN "*.so*"
-            PATTERN "*.dll"
-            REGEX "/slang-standard-module[^/]*/"
-            PATTERN "owl_*" EXCLUDE
-            PATTERN "cache" EXCLUDE
-            PATTERN "render_tests" EXCLUDE
     )
+    install(SCRIPT ${CMAKE_SOURCE_DIR}/cmake/InstallRuntime.cmake COMPONENT Nest)
     install(DIRECTORY ${CMAKE_SOURCE_DIR}/engine_assets/
             DESTINATION ${${PROJECT_PREFIX}_INSTALL_BIN}/assets
             COMPONENT Nest

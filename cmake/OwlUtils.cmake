@@ -18,6 +18,21 @@ function(target_import_so_files TARGET)
     endif ()
 endfunction()
 
+# A windowed application on Windows: GUI subsystem (no console window, see platform::attachParentConsole), the Owl
+# icon and the version information Explorer shows. No-op on the other platforms.
+function(owl_windows_application TARGET DESCRIPTION)
+    if (NOT ${PROJECT_PREFIX}_PLATFORM_WINDOWS)
+        return()
+    endif ()
+    set_target_properties(${TARGET} PROPERTIES WIN32_EXECUTABLE ON)
+    set(OWL_RC_NAME ${TARGET})
+    set(OWL_RC_DESCRIPTION "${DESCRIPTION}")
+    set(OWL_RC_ICON "${PROJECT_SOURCE_DIR}/source/owlnest/resources/owl.ico")
+    configure_file(${PROJECT_SOURCE_DIR}/source/owlnest/resources/OwlApp.rc.in
+            ${CMAKE_CURRENT_BINARY_DIR}/${TARGET}.rc @ONLY)
+    target_sources(${TARGET} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/${TARGET}.rc)
+endfunction()
+
 function(pretty_platform_str INVAR OUTVAR)
     string(REPLACE "Darwin" "MacOS" TMP "${INVAR}")
     string(TOLOWER "${TMP}" TMP)

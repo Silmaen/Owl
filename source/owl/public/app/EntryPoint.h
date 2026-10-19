@@ -11,6 +11,7 @@
 #include "core/utils/StringUtils.h"
 #include "debug/Profiler.h"
 #include "debug/TrackerClient.h"
+#include "platform/Console.h"
 
 #include <cstddef>
 #include <string>
@@ -25,6 +26,8 @@
  */
 // NOLINTBEGIN(misc-definitions-in-headers)
 auto main(int iArgc, char* iArgv[]) -> int {
+	// A GUI program on Windows: its command-line output goes to the console it was started from, if any.
+	owl::platform::attachParentConsole();
 	owl::core::Log::init();
 	int exitCode = 0;
 	{

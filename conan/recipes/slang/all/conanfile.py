@@ -54,8 +54,11 @@ class SlangConan(ConanFile):
             copy(self, "*.dll", os.path.join(self.build_folder, "bin"), os.path.join(self.package_folder, "bin"))
         else:
             copy(self, "*.so*", os.path.join(self.build_folder, "lib"), os.path.join(self.package_folder, "lib"))
-        copy(self, "*", os.path.join(self.build_folder, "lib", f"slang-standard-module-{self.version}"),
-             os.path.join(self.package_folder, "lib", f"slang-standard-module-{self.version}"))
+        # The standard modules sit in lib/ of the Linux archives and in bin/ of the Windows one: packaged in lib/.
+        modules = f"slang-standard-module-{self.version}"
+        modules_from = "bin" if self.settings.os == "Windows" else "lib"
+        copy(self, "*", os.path.join(self.build_folder, modules_from, modules),
+             os.path.join(self.package_folder, "lib", modules))
 
     def package_info(self):
         self.cpp_info.set_property("cmake_file_name", "slang")

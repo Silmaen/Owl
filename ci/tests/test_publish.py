@@ -93,6 +93,9 @@ def test_push_documentation_is_compacted(tmp_path: Path, fake_post: _FakePost) -
     (html / "index.html").write_text("<html/>")
     assert push_revision("https://h", "bob", FAKE_PASSWORD, Revision("d", "0.3.0", html)) == 0
     assert fake_post.calls[0]["fields"]["action"] == "push_doc"
+    # The server refuses an empty hash: a documentation sends no empty field.
+    assert "hash" not in fake_post.calls[0]["fields"]
+    assert all(value for value in fake_post.calls[0]["fields"].values())
     with tarfile.open(tmp_path / "Archive_0.3.0.tgz") as tar:
         assert tar.getnames() == ["index.html"]
 

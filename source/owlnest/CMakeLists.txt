@@ -62,6 +62,7 @@ target_compile_definitions(${RUNNER_NAME} PRIVATE OWL_ASSETS_LOCATION="source/ow
 target_link_libraries(${RUNNER_NAME} PRIVATE ${ENGINE_NAME} ${OWL_NEST_COMMANDS})
 set_target_properties(${RUNNER_NAME} PROPERTIES FOLDER "App")
 target_import_so_files(${RUNNER_NAME})
+owl_windows_application(${RUNNER_NAME} "Owl Runner, the game player of Owl Engine")
 
 # yaml
 owl_target_link_libraries(${RUNNER_NAME} PRIVATE yaml-cpp REQUIRED)
@@ -125,6 +126,7 @@ set_target_properties(${OWL_PROJECT} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAK
 set_target_properties(${OWL_PROJECT} PROPERTIES FOLDER "App")
 target_link_libraries(${OWL_PROJECT} PRIVATE ${OWL_NEST_CORE})
 add_dependencies(${OWL_PROJECT} ${CMAKE_PROJECT_NAME}Runner)
+owl_windows_application(${OWL_PROJECT} "Owl Nest, the editor of Owl Engine")
 
 target_import_so_files(${OWL_PROJECT})
 
@@ -145,10 +147,12 @@ install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/assets/
         DESTINATION ${${PROJECT_PREFIX}_INSTALL_BIN}/assets
         COMPONENT Nest
 )
-# The editor rasterizes its icons from the SVG sources, looked up in assets_sources/ next to assets/.
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/assets_sources/icons
-        DESTINATION ${${PROJECT_PREFIX}_INSTALL_BIN}/assets_sources
+# The editor rasterizes its icons from the SVG sources at run time (theme colours): installed with the other icons.
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/assets_sources/icons/
+        DESTINATION ${${PROJECT_PREFIX}_INSTALL_BIN}/assets/icons
         COMPONENT Nest
+        FILES_MATCHING
+        PATTERN "*.svg"
         PATTERN "templates" EXCLUDE
 )
 # The feature showcase, opened from the File screen.

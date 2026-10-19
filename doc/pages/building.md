@@ -131,8 +131,8 @@ cmake --build output/build/<preset>
 
 `cpack` works in any build tree and writes one archive per component: `OwlEngine-<version>-<hash>-<platform>` (the
 SDK: `lib/`, `include/`, `assets/`, `lib/cmake/OwlEngine/`) and, when the editor is built, `OwlNest-…` (Owl Nest, the
-runner, their shared libraries and assets in `bin/<platform>_<arch>/`, the SVG icons in
-`bin/<platform>_<arch>/assets_sources/icons/`, the Engine Demo in `engine_demo/` and the sample games in
+runner, their shared libraries and assets in `bin/<platform>_<arch>/`, the editor SVG icons in
+`bin/<platform>_<arch>/assets/icons/`, the Engine Demo in `engine_demo/` and the sample games in
 `samples/`). The SDK ships the Release library only: build the engine in Debug from the sources for a Debug one. The CI packages the release tree it has just
 tested (`linux-clang-release`, `windows-clang-release`), so the archive holds the tested binaries;
 `package-linux-cross-arm64` (the arm64 cross build without the tests) packages arm64, which has no tested release
@@ -148,13 +148,59 @@ desktop has it): the Owl Nest file dialogues go through `xdg-desktop-portal` (na
 `portal` option, set in `conanfile.py`), so they need a running portal with a desktop backend (GNOME, KDE or GTK) and
 no GTK in the process. Without a portal, opening a dialogue logs an error and returns no path.
 
-A package holds `assets/` (fonts, shaders, project templates, logo, help and, for Owl Nest, the editor sounds and
-trigger icons), `assets_sources/icons/` (the editor SVG icons), `engine_demo/` and `samples/`; generators and test
-fixtures are not installed.
+On Windows `OwlNest.exe` and `OwlRunner.exe` carry the Owl icon and the version information of the project
+(`owl_windows_application` in `cmake/OwlUtils.cmake`, resource script `source/owlnest/resources/OwlApp.rc.in`). The
+icon `source/owlnest/resources/owl.ico` (16 to 256 px) is generated from `engine_assets/logo/logo_owl.png` by
+`./docker_run.sh poetry run python tools/editor/generate_app_icon.py`. An exported game is a copy of `OwlRunner.exe`:
+it shows the Owl icon in the Explorer, the project icon on its window and task bar button.
+
+Both are GUI programs on Windows: no console window opens with them. Started from cmd or PowerShell they write their
+output to that console (`platform::attachParentConsole`, called by the entry point), a redirected output (CTest, a pipe,
+`> log.txt`) stays where it is. The shell does not wait for a GUI program: to get the exit code of a command-line run,
+wait for it (`start /wait OwlRunner.exe --smoke-test` in cmd, `Start-Process -Wait` in PowerShell) or pipe its output
+(`.\OwlRunner.exe --smoke-test | Out-Host`).
+
+Windows has no RPATH: Conan's runtime deployer copies every DLL of the dependencies next to the binaries at configure
+time, `cmake/Vulkan.cmake` adds the Slang standard modules, and the package leaves out `slang-llvm.dll` (CPU targets,
+never loaded by the engine).
+
+A package holds `assets/` (fonts, shaders, project templates, logo, help and, for Owl Nest, the editor sounds, trigger
+icons and SVG icons, rasterized at run time in the theme's colours), `engine_demo/` and `samples/`; generators and test
+fixtures are not installed. Nor is anything the tested tree's runs wrote next to the binaries (logs, settings, ImGui
+layouts, caches, recovery autosaves): `cmake/InstallRuntime.cmake` installs only the third-party shared libraries and
+the Slang standard modules found in the build's `bin/`.
 
 The binaries decide at run time where their assets are: `assets/` next to the working directory first, then, in a
 development tree, `engine_assets/` and the application's assets found above it. No build switch tells a package from
 a development build.
+
+#### Code signing
+
+Windows SmartScreen warns about a downloaded program that is not signed, or signed by a publisher it does not know
+yet ("Windows protected your PC"). The `Package` action signs `OwlNest.exe`, `OwlRunner.exe` and `OwlEngine.dll` in
+the build tree before `cpack` when a certificate is configured, through the agent's environment (never the command
+line), and does nothing otherwise (`ci/utils/signing.py`):
+
+| Variable                 | Meaning                                                                                |
+|--------------------------|----------------------------------------------------------------------------------------|
+| `OWL_SIGN_THUMBPRINT`    | SHA-1 thumbprint of a certificate in the agent's Windows store, signed with `signtool` |
+| `OWL_SIGN_CERTIFICATE`   | Path to a PKCS#12 (`.pfx`) file, signed with `osslsigncode`                            |
+| `OWL_SIGN_PASSWORD`      | Password of the `.pfx` (a secret, handed to `osslsigncode` in a private file)          |
+| `OWL_SIGN_TIMESTAMP_URL` | RFC 3161 timestamp server, `http://timestamp.digicert.com` by default                  |
+
+Ways to get a certificate:
+
+- **OV code signing certificate** (a commercial certificate authority, about 200 to 400 € a year, the key on a
+  hardware token or a cloud HSM since 2023): signed, but SmartScreen still warns until the publisher has built a
+  reputation from downloads.
+- **EV code signing certificate** (dearer, a company is required): the same, the reputation is no longer granted at
+  once since 2024.
+- **Azure Trusted Signing** (Microsoft, about 10 $ a month, identity validation of an organisation or, in some
+  countries, an individual): `signtool` with its dlib, no key to keep; reputation as for OV.
+- **SignPath Foundation** (free for open-source projects that qualify): signs in their cloud from the CI artefact.
+
+Until then a user starts the unsigned program through **More info** > **Run anyway** (see
+[Getting Started](getting_started.md)).
 
 ### arm64 cross compilation
 

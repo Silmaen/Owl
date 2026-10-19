@@ -25,13 +25,13 @@ namespace owl::nest::utils {
 void buildIconBank() {
 	auto& iconBank = gui::IconBank::instance();
 
-	// Resolve icon file paths: try SVG in assets_sources first, then PNG in assets.
+	// Resolve icon file paths: SVG in assets (installed tree), then in assets_sources (source tree), then PNG.
 	const auto& assetDirs = app::Application::get().getAssetDirectories();
 	const auto resolve = [&](const std::string& iName) -> std::filesystem::path {
 		for (const auto& dir: assetDirs) {
-			// SVG sources in assets_sources/ (parallel to the assets/ directory).
-			const auto svgDir = dir.assetsPath.parent_path() / "assets_sources";
-			if (const auto p = svgDir / (iName + ".svg"); exists(p))
+			if (const auto p = dir.assetsPath / (iName + ".svg"); exists(p))
+				return p;
+			if (const auto p = dir.assetsPath.parent_path() / "assets_sources" / (iName + ".svg"); exists(p))
 				return p;
 			// PNG fallback in assets/.
 			if (const auto p = dir.assetsPath / (iName + ".png"); exists(p))
