@@ -108,6 +108,7 @@ procedural graphs, tile tools, Lua editor scripts, and Blueprints-style visual s
 **Goal:** A focused 3D core on the repaired Owl RHI — static meshes, PBR, lights and shadows for 2D, isometric and 3D,
 render graph, essential post-processing — with full 3D editing ([details](design/3d-core.md)).
 
+- ![Planned][planned] Faster CI, first work of the cycle: `-j` everywhere, lighter PR builds, full tests nightly only, shorter build and test times ([CI](continuous_integration.md#ci-speed-plan))
 - ![Planned][planned] 3D render pipeline (forward, depth, perspective camera)
 - ![Planned][planned] Render graph hosting the renderer-stack layers
 - ![Planned][planned] Lighting: directional, point and spot lights, directional shadow maps
