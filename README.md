@@ -94,6 +94,9 @@ The full generated documentation is on [owl.argawaen.net](https://owl.argawaen.n
 | Linux   | x64, arm64   | Clang 22+, GCC 14+             |
 | Windows | x64          | MinGW Clang 22+, MinGW GCC 15+ |
 
+Owl Engine ships only what it tests: every platform listed has its machine in the CI, which builds it and runs the
+unit and scenario tests on every change. A new platform comes with its test machine (the Web is planned for v0.8).
+
 ## Backends
 
 ![OpenGL](https://img.shields.io/badge/OpenGL-4.5-5586A4?logo=opengl)
