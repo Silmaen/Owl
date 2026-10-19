@@ -199,6 +199,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- The sanitizer presets multiply the Lua time quota of the scenario and export tests by 4 (`OWL_SCRIPT_TIME_SCALE`), as the emulated arm64 ones do by 8.
 - A stalled `OwlRunner --scenario` run (a Windows run once hung 600 s after its verdict) ends after 120 s with code 7 and says where it stalled (starting, the step and frame playing, or the shutdown) instead of waiting for the CTest timeout.
 - Starting a scene loads its HUD before the scripts run: the first `scene.find_entity` or `ui.find` of an `on_create` no longer pays for the HUD fonts, which overran the 250 ms Lua time quota of the sample games under AddressSanitizer and qemu.
 - The emulated arm64 runs of the scenario and export tests multiply the Lua time quota by 8 (`OWL_SCRIPT_TIME_SCALE`): a save listing or a settings write under qemu overran the 250 ms of a native call.
