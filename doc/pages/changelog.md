@@ -204,6 +204,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Vulkan no longer crashes on a driver older than Vulkan 1.3: device selection requires a Vulkan 1.3 device with every feature the backend uses, logs each skipped device with what it lacks and the selected one with its driver, and the editor and the runner fall back to OpenGL (a toast in Owl Nest) when Vulkan cannot start.
+- `GraphContext::getVersion` on Vulkan reports the minor version instead of repeating the major one.
+- Vulkan `drawIndexedIndirect` enables the `drawIndirectCount` feature it needs, and is skipped with a warning on a device without it.
 - `PublishDoc` and `PublishPackage` send only the filled fields: the site refused the empty `hash` of a documentation upload since its API checks every path field.
 - The sanitizer presets multiply the Lua time quota of the scenario and export tests by 4 (`OWL_SCRIPT_TIME_SCALE`), as the emulated arm64 ones do by 8.
 - A stalled `OwlRunner --scenario` run (a Windows run once hung 600 s after its verdict) ends after 120 s with code 7 and says where it stalled (starting, the step and frame playing, or the shutdown) instead of waiting for the CTest timeout.

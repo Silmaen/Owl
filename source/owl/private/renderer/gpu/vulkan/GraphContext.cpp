@@ -31,7 +31,7 @@ void GraphContext::init() {}
 auto GraphContext::getVersion() const -> Version {
 	const uint32_t version = internal::VulkanCore::get().getApiVersion();
 	return {.major = static_cast<int32_t>(VK_API_VERSION_MAJOR(version)),
-			.minor = static_cast<int32_t>(VK_API_VERSION_MAJOR(version))};
+			.minor = static_cast<int32_t>(VK_API_VERSION_MINOR(version))};
 }
 
 auto GraphContext::createSurface(const VkInstance& iInstance) -> VkResult {

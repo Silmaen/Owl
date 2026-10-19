@@ -8,6 +8,8 @@
 
 #pragma once
 
+#include "DeviceRequirements.h"
+
 #include <vulkan/vulkan.h>
 
 #include <cstddef>
@@ -133,6 +135,20 @@ public:
 	 */
 	[[nodiscard]] auto getTotalMemory() const -> size_t;
 
+	/**
+	 * @brief
+	 *  Summarize what the device offers among the backend requirements.
+	 * @return The device support, to check with getMissingRequirements().
+	 */
+	[[nodiscard]] auto getSupport() const -> DeviceSupport;
+
+	/**
+	 * @brief
+	 *  Get the one-line description logged for the selected device.
+	 * @return The device name, driver and Vulkan version.
+	 */
+	[[nodiscard]] auto getVersionString() const -> std::string;
+
 	/// The physical device.
 	VkPhysicalDevice device = nullptr;
 	/// Available layers.
@@ -143,6 +159,14 @@ public:
 	VkPhysicalDeviceProperties properties{};
 	/// Features available on the selected physical device (for e.g. checking if a feature is available).
 	VkPhysicalDeviceFeatures features{};
+	/// Vulkan 1.1 features, queried only on a Vulkan 1.3 device (pNext cleared).
+	VkPhysicalDeviceVulkan11Features features11{};
+	/// Vulkan 1.2 features, queried only on a Vulkan 1.3 device (pNext cleared).
+	VkPhysicalDeviceVulkan12Features features12{};
+	/// Vulkan 1.3 features, queried only on a Vulkan 1.3 device (pNext cleared).
+	VkPhysicalDeviceVulkan13Features features13{};
+	/// Driver name and information (Vulkan 1.2 driver properties), empty below Vulkan 1.2.
+	std::string driverName;
 	/// Available memory (type) properties for the physical device
 	VkPhysicalDeviceMemoryProperties memoryProperties{};
 	/// List of queue families.
@@ -158,6 +182,13 @@ public:
 	uint32_t graphicQueueIndex = std::numeric_limits<uint32_t>::max();
 	/// Index of the present queue.
 	uint32_t presentQueueIndex = std::numeric_limits<uint32_t>::max();
+
+private:
+	/**
+	 * @brief
+	 *  Query the Vulkan 1.1 to 1.3 features and the driver properties of a Vulkan 1.3 device.
+	 */
+	void queryExtendedProperties();
 };
 
 /**

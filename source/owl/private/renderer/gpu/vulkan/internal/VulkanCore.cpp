@@ -10,6 +10,7 @@
 
 #include "VulkanCore.h"
 
+#include "DeviceRequirements.h"
 #include "FrameProfiler.h"
 #include "MemoryAllocator.h"
 #include "VulkanHandler.h"
@@ -18,7 +19,10 @@
 #include "utils.h"
 
 #include <algorithm>
+#include <format>
 #include <limits>
+#include <string>
+#include <vector>
 
 namespace owl::renderer::gpu::vulkan::internal {
 
@@ -64,6 +68,16 @@ VkDebugUtilsMessengerCreateInfoEXT g_DebugUtilsMessagerCi{
 		.pUserData = nullptr};
 PFN_vkCreateDebugUtilsMessengerEXT g_VkCreateDebugUtilsMessengerExt;
 PFN_vkDestroyDebugUtilsMessengerEXT g_VkDestroyDebugUtilsMessengerExt;
+
+auto joinList(const std::vector<std::string>& iItems) -> std::string {
+	std::string result;
+	for (const auto& item: iItems) {
+		if (!result.empty())
+			result += ", ";
+		result += item;
+	}
+	return result;
+}
 }// namespace
 
 // ============= VulkanCore =====================
@@ -73,8 +87,12 @@ VulkanCore::~VulkanCore() = default;
 
 void VulkanCore::init(const VulkanConfiguration& iConfiguration) {
 	m_config = iConfiguration;
+	m_failureReason.clear();
 	m_instanceInfo = mkUniq<InstanceInformations>();
 	if (!m_instanceInfo->hasMinimalVersion(1, 3)) {
+		m_failureReason = std::format("The Vulkan loader offers Vulkan {} only, 1.3 is needed: update the graphics "
+									  "driver. Owl Engine uses OpenGL meanwhile.",
+									  formatApiVersion(m_instanceInfo->version));
 		OWL_CORE_ERROR("Vulkan: cannot initialize du to insufficient instance version. Require 1.3.")
 		m_state = State::Error;
 		return;
@@ -106,7 +124,8 @@ void VulkanCore::init(const VulkanConfiguration& iConfiguration) {
 }
 
 void VulkanCore::release() {
-	FrameProfiler::get().deviceWaitIdle(m_logicalDevice);
+	if (m_logicalDevice != nullptr)
+		FrameProfiler::get().deviceWaitIdle(m_logicalDevice);
 	FrameProfiler::get().release();
 	MemoryAllocator::get().release();
 	if (m_commandPool != nullptr) {
@@ -238,18 +257,34 @@ auto VulkanCore::isHealthy() const -> bool {
 
 void VulkanCore::selectPhysicalDevice() {
 	const auto devices = enumerateDevices(m_instance);
-	if (devices.empty()) {
-		OWL_CORE_ERROR("Vulkan: No suitable physical device found.")
-		m_state = State::Error;
-		return;
+	for (const auto& device: devices) {
+		if (const auto missing = getMissingRequirements(device.getSupport()); !missing.empty()) {
+			OWL_CORE_WARN("Vulkan: Device {} (Vulkan {}) skipped, missing: {}.", device.properties.deviceName,
+						  formatApiVersion(device.properties.apiVersion), joinList(missing))
+			continue;
+		}
+		m_phyProps = mkUniq<PhysicalDeviceCapabilities>(device);
+		break;
 	}
-	m_phyProps = mkUniq<PhysicalDeviceCapabilities>(devices.front());
-	if (m_phyProps->getScore() == 0) {
-		OWL_CORE_ERROR("Vulkan: No suitable physical device found, scores 0.")
+	if (!m_phyProps) {
+		if (devices.empty()) {
+			m_failureReason = "No Vulkan graphics device found: update the graphics driver. Owl Engine uses OpenGL "
+							  "meanwhile.";
+		} else {
+			const auto& device = devices.front();
+			m_failureReason = getUnsuitableDeviceNotice({.name = device.properties.deviceName,
+														 .vendorId = device.properties.vendorID,
+														 .driverVersion = device.properties.driverVersion,
+														 .apiVersion = device.properties.apiVersion},
+														getMissingRequirements(device.getSupport()));
+		}
+		OWL_CORE_ERROR("Vulkan: No suitable device among {} (Vulkan {} and the features of renderer.md needed).",
+					   devices.size(), formatApiVersion(g_RequiredDeviceApiVersion))
 		m_state = State::Error;
 		return;
 	}
 	m_physicalDevice = m_phyProps->device;
+	OWL_CORE_INFO("Vulkan: Using {}.", m_phyProps->getVersionString())
 }
 
 void VulkanCore::createLogicalDevice() {
@@ -278,6 +313,8 @@ void VulkanCore::createLogicalDevice() {
 	features12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
 	features12.pNext = &features13;
 	features12.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
+	m_drawIndirectCount = m_phyProps->features12.drawIndirectCount == VK_TRUE;
+	features12.drawIndirectCount = m_drawIndirectCount ? VK_TRUE : VK_FALSE;
 	constexpr VkPhysicalDeviceFeatures features = {.robustBufferAccess = VK_FALSE,
 												   .fullDrawIndexUint32 = VK_FALSE,
 												   .imageCubeArray = VK_FALSE,

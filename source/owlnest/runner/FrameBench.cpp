@@ -254,6 +254,8 @@ void FrameBench::start() {
 	renderer::gpu::RenderCommand::setGpuTimestampsEnabled(true);
 	m_gpuTimed = renderer::gpu::RenderCommand::hasGpuTimestamps();
 	m_device = renderer::gpu::RenderCommand::getDeviceName();
+	// The backend that runs, which differs from the requested one after a fallback (Vulkan to OpenGL).
+	m_options.backend = renderer::gpu::RenderCommand::getApi();
 	m_presentMode = renderer::gpu::RenderCommand::getPresentMode();
 	m_windowSize = app.getWindow().getSize();
 	// A capture is compared to a reference image: mesh every voxel chunk in its frame, as a fixed frame count needs.

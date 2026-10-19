@@ -19,6 +19,9 @@
 
 #include <format>
 #include <iterator>
+#include <limits>
+#include <string>
+#include <string_view>
 
 namespace owl::renderer::gpu::vulkan::internal {
 
@@ -27,6 +30,7 @@ PhysicalDeviceCapabilities::PhysicalDeviceCapabilities(const VkPhysicalDevice& i
 		return;
 	vkGetPhysicalDeviceProperties(device, &properties);
 	vkGetPhysicalDeviceFeatures(device, &features);
+	queryExtendedProperties();
 	vkGetPhysicalDeviceMemoryProperties(device, &memoryProperties);
 	{
 		uint32_t count = 0;
@@ -66,6 +70,59 @@ PhysicalDeviceCapabilities::PhysicalDeviceCapabilities(const VkPhysicalDevice& i
 
 PhysicalDeviceCapabilities::~PhysicalDeviceCapabilities() = default;
 
+void PhysicalDeviceCapabilities::queryExtendedProperties() {
+	// The 1.1 to 1.3 feature structures are only valid on a device of that version.
+	if (properties.apiVersion < g_RequiredDeviceApiVersion)
+		return;
+	features11 = {};
+	features11.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
+	features12 = {};
+	features12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+	features12.pNext = &features11;
+	features13 = {};
+	features13.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
+	features13.pNext = &features12;
+	VkPhysicalDeviceFeatures2 features2{.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
+										.pNext = &features13,
+										.features = {}};
+	vkGetPhysicalDeviceFeatures2(device, &features2);
+	features11.pNext = nullptr;
+	features12.pNext = nullptr;
+	features13.pNext = nullptr;
+	// NOLINTNEXTLINE(bugprone-invalid-enum-default-initialization) Zeroed before the driver fills it.
+	VkPhysicalDeviceVulkan12Properties properties12{};
+	properties12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_PROPERTIES;
+	VkPhysicalDeviceProperties2 properties2{.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2,
+											.pNext = &properties12,
+											.properties = {}};
+	vkGetPhysicalDeviceProperties2(device, &properties2);
+	driverName =
+			std::format("{} {}", std::string_view{properties12.driverName}, std::string_view{properties12.driverInfo});
+}
+
+auto PhysicalDeviceCapabilities::getSupport() const -> DeviceSupport {
+	return {.apiVersion = properties.apiVersion,
+			.swapchain = hasExtension(VK_KHR_SWAPCHAIN_EXTENSION_NAME),
+			.graphicsQueue = graphicQueueIndex != std::numeric_limits<uint32_t>::max(),
+			.presentQueue = presentQueueIndex != std::numeric_limits<uint32_t>::max(),
+			.surfaceFormat = !surfaceFormats.empty(),
+			.presentMode = !presentModes.empty(),
+			.samplerAnisotropy = features.samplerAnisotropy == VK_TRUE,
+			.independentBlend = features.independentBlend == VK_TRUE,
+			.wideLines = features.wideLines == VK_TRUE,
+			.shaderDrawParameters = features11.shaderDrawParameters == VK_TRUE,
+			.shaderSampledImageArrayNonUniformIndexing =
+					features12.shaderSampledImageArrayNonUniformIndexing == VK_TRUE,
+			.shaderDemoteToHelperInvocation = features13.shaderDemoteToHelperInvocation == VK_TRUE};
+}
+
+auto PhysicalDeviceCapabilities::getVersionString() const -> std::string {
+	return std::format("{}, driver {} ({}), Vulkan {}", getSimpleName(),
+					   formatDriverVersion(properties.vendorID, properties.driverVersion),
+					   driverName.empty() ? std::string{"unknown"} : driverName,
+					   formatApiVersion(properties.apiVersion));
+}
+
 auto PhysicalDeviceCapabilities::hasLayer(const std::string& iLayer) const -> bool {
 	return std::ranges::find_if(supportedLayers.begin(), supportedLayers.end(),
 								[&iLayer](const VkLayerProperties& iLayerProp) -> bool {
@@ -91,9 +148,7 @@ auto PhysicalDeviceCapabilities::hasExtensions(const std::vector<std::string>& i
 }
 
 auto PhysicalDeviceCapabilities::getScore() const -> uint32_t {
-	if (features.geometryShader == 0u)
-		return 0;
-	if (surfaceFormats.empty() || presentModes.empty())
+	if (!getMissingRequirements(getSupport()).empty())
 		return 0;
 	uint32_t score = 0;
 	if (properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_MAX_ENUM ||
@@ -106,9 +161,6 @@ auto PhysicalDeviceCapabilities::getScore() const -> uint32_t {
 		score += 100;// favour graphic card over CPU
 	score += properties.limits.maxImageDimension2D;
 	score += getTotalMemory() / 1024 / 1024 / 1024;
-	// checking the queue families
-	if (graphicQueueIndex == std::numeric_limits<uint32_t>::max() || (features.samplerAnisotropy == 0u))
-		score *= 0;
 	return score;
 }
 

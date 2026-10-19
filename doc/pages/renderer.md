@@ -467,7 +467,7 @@ Design and roadmap: [Owl RHI](design/owl-rhi.md).
 
 | Backend  | API         | Role                                                                  |
 |----------|-------------|-----------------------------------------------------------------------|
-| `Vulkan` | Vulkan 1.4+ | Reference backend: every feature lands here first                     |
+| `Vulkan` | Vulkan 1.3+ | Reference backend: every feature lands here first                     |
 | `OpenGL` | OpenGL 4.5  | Fallback, frozen in features; SPIR-V shaders, GLSL without `gl_spirv` |
 | `Null`   | None        | Headless tests and benchmarks; records the state of each draw         |
 
@@ -489,7 +489,7 @@ A draw is fully described by two explicit objects, so no draw inherits state fro
 | `setViewport` / `setClearColor`     | Viewport and clear colour                                               |
 | `clear()`                           | Clear the bound framebuffer (colour and depth)                          |
 | `drawData` / `drawDataInstanced`    | Draw a `DrawData` with its pipeline state and the active block bindings |
-| `drawIndexedIndirect`               | GPU-driven draws (Vulkan, OpenGL 4.6)                                   |
+| `drawIndexedIndirect`               | GPU-driven draws (Vulkan `drawIndirectCount`, OpenGL 4.6)               |
 | `bindTextures(span)`                | Sampled textures of the active block                                    |
 | `storageBufferMemoryBarrier()`      | Compute writes visible to the next draws                                |
 | `beginFrame()` / `endFrame()`       | Frame lifecycle (Vulkan: frame slot, swap chain image, one submission)  |
@@ -502,6 +502,30 @@ A draw is fully described by two explicit objects, so no draw inherits state fro
 `RendererDescriptors` branch. Renderers only see `DrawData`, `PipelineState`, the blocks and `RenderCommand`; Slang
 (`renderer::utils::compileSlangToSpirv`) also targets WGSL and Metal. Backend selection at startup:
 [Architecture](architecture.md).
+
+### Vulkan device requirements and OpenGL fallback {#renderer-vulkan-requirements}
+
+The Vulkan backend picks the best physical device that offers everything it uses, and skips the others with a warning
+naming the device, its Vulkan version and what it lacks:
+
+- a device of **Vulkan 1.3** or newer (`apiVersion`; the backend calls 1.3 core entry points such as
+  `vkCmdSetDepthTestEnable` / `vkCmdSetDepthWriteEnable`), whatever the loader version;
+- `VK_KHR_swapchain`, a graphics queue, a queue presenting to the window surface, a surface format and a present mode;
+- Vulkan 1.0 features `samplerAnisotropy`, `independentBlend` and `wideLines`;
+- Vulkan 1.1 `shaderDrawParameters`, Vulkan 1.2 `shaderSampledImageArrayNonUniformIndexing`, Vulkan 1.3
+  `shaderDemoteToHelperInvocation`.
+
+`drawIndirectCount` (Vulkan 1.2) is optional: without it `drawIndexedIndirect` is skipped with a warning. The selected
+device is logged once at startup: `Vulkan: Using <device> (<type>), driver <version> (<driver name>), Vulkan <version>.`
+
+When Vulkan cannot start (no device meets the requirements, no driver, instance or device creation failure), the
+application falls back to **OpenGL** before any draw: the window is created again for OpenGL, the log says
+`The Vulkan renderer could not start, falling back to OpenGL` after a line telling the player what to do (for a
+driver without Vulkan 1.3: `Vulkan 1.3 is not available on <GPU> (driver <version>, Vulkan <x.y>): update the graphics
+driver. Owl Engine uses OpenGL meanwhile.`, NVIDIA versions shown as its drivers are named, e.g. `456.71`), and Owl
+Nest shows that line once in a toast. The editor and
+the runner both do it; the frame bench reports the backend that runs. The Null backend never falls back. Set
+`renderer: OpenGL` in `config.yml` (or in Owl Nest *Parameters*) to skip the Vulkan attempt on such a machine.
 
 ### OpenGL shader path {#renderer-opengl-shaders}
 

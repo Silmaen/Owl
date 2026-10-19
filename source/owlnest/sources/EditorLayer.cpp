@@ -655,6 +655,15 @@ void EditorLayer::onUpdate(const core::Timestep& iTimeStep) {
 
 	m_recovery.setInterval(static_cast<float>(m_settings.autosaveIntervalSeconds));
 	m_toasts.update(iTimeStep.getSeconds());
+	if (const auto failed = app::Application::get().getRendererFallback(); failed.has_value() && !m_fallbackNotified) {
+		m_fallbackNotified = true;
+		m_toasts.push(gui::widgets::ToastKind::Warning,
+					  std::format("{} unavailable, using {}", magic_enum::enum_name(*failed),
+								  magic_enum::enum_name(renderer::gpu::RenderCommand::getApi())),
+					  app::Application::get().getRendererFallbackReason().empty()
+							  ? std::string{"The log tells why. Set the renderer in Parameters to skip the attempt."}
+							  : app::Application::get().getRendererFallbackReason());
+	}
 	gui::UiLayer::setTextScale(static_cast<float>(m_settings.textScalePercent) / 100.f);
 	// Before the viewports: a preview render resets the 2D stats they show.
 	if (getState() == State::Edit)

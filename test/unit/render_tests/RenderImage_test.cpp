@@ -170,6 +170,11 @@ TEST_P(RenderImage, matchesReference) {
 	ASSERT_EQ(status, 0) << "OwlRunner failed, log: " << logFile;
 	EXPECT_NE(log.find("llvmpipe"), std::string::npos) << "Not rendered by a software driver, log: " << logFile;
 	EXPECT_EQ(log.find("VUID-"), std::string::npos) << "Vulkan validation messages, log: " << logFile;
+	EXPECT_EQ(log.find("could not start, falling back"), std::string::npos)
+			<< "The requested backend did not start, log: " << logFile;
+	if (backend == "vulkan") {
+		EXPECT_NE(log.find("Vulkan: Using llvmpipe"), std::string::npos) << "lavapipe not selected, log: " << logFile;
+	}
 
 	const auto actual = renderer::decodeImageFile(actualFile, 4);
 	ASSERT_TRUE(actual.valid) << "No capture written, log: " << logFile;
@@ -318,3 +323,41 @@ INSTANTIATE_TEST_SUITE_P(HudTextLarge, RenderImage,
 							 return std::format("{}_{}_{}x{}", iInfo.param.scene, iInfo.param.backend,
 												iInfo.param.size.x(), iInfo.param.size.y());
 						 });
+
+// A Vulkan run without any usable device falls back to OpenGL and renders the OpenGL reference.
+TEST(RenderFallback, vulkanWithoutDeviceRendersWithOpenGl) {
+#ifndef OWL_RUNNER_EXECUTABLE
+	GTEST_SKIP() << "OwlRunner is not built (OWL_BUILD_NEST=OFF).";
+#else
+	if (getEnv("DISPLAY").empty() && getEnv("WAYLAND_DISPLAY").empty())
+		GTEST_SKIP() << "No display: run the render tests under xvfb-run (ctest does it when xvfb-run exists).";
+	const auto fixtures = test::getTestAssetsPath("render_tests");
+	const auto outDir = getOutputDir();
+	std::filesystem::create_directories(outDir);
+	const auto actualFile = outDir / "fallback.actual.png";
+	const auto logFile = outDir / "fallback.log";
+	std::filesystem::remove(actualFile);
+	// An ICD file that does not exist leaves the Vulkan loader without any device.
+	const auto command = std::format(R"(env -u OWL_OPENGL_SHADERS {} VK_ICD_FILENAMES="{}" "{}" --frame-bench "{}" )"
+									 R"(--project "{}" --assets "{}" --backend vulkan --frames 2 --warmup {} )"
+									 R"(--size {}x{} --capture "{}" > "{}" 2>&1)",
+									 getDriverEnvironment("opengl"), (outDir / "no_icd.json").string(),
+									 OWL_RUNNER_EXECUTABLE, (fixtures / "scenes" / "sprites.owl").string(),
+									 (test::getRootPath() / "engine_demo").string(), fixtures.string(), g_warmupFrames,
+									 g_captureSize.x(), g_captureSize.y(), actualFile.string(), logFile.string());
+	// NOLINTNEXTLINE(bugprone-command-processor) The runner must run in its own process (one GPU context).
+	const int status = std::system(command.c_str());
+	const auto log = readFile(logFile);
+	ASSERT_EQ(status, 0) << "OwlRunner failed, log: " << logFile;
+	EXPECT_NE(log.find("The Vulkan renderer could not start, falling back to OpenGL"), std::string::npos)
+			<< "No fallback logged, log: " << logFile;
+	const auto actual = renderer::decodeImageFile(actualFile, 4);
+	ASSERT_TRUE(actual.valid) << "No capture written, log: " << logFile;
+	const auto expected = renderer::decodeImageFile(fixtures / "references" / "opengl" / "sprites.png", 4);
+	ASSERT_TRUE(expected.valid);
+	ASSERT_TRUE(expected.size.x() == actual.size.x() && expected.size.y() == actual.size.y());
+	EXPECT_TRUE(compareImages(actual.size, actual.pixels, expected.pixels, ImageTolerance{}).match)
+			<< "The fallback capture differs from the OpenGL reference: " << actualFile;
+	std::filesystem::remove(actualFile);
+#endif
+}
