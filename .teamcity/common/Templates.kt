@@ -126,9 +126,9 @@ val globalBuild = Template {
         }
 
         script {
-            // Elsewhere the release is built only for the documentation, its tests stay on `main`.
-            ciAction("Build", "Build_Release_Doc", displayName = "Build Release",
-                preset = "%release_preset%")
+            // Elsewhere the release tree only serves Doxygen, which reads the sources: configured, not compiled.
+            ciAction("Build", "Build_Release_Doc", displayName = "Configure Release",
+                preset = "%release_preset%", extraArgs = "-- --configure_only")
             conditions {
                 doesNotMatch("release_preset", "^${'$'}")
                 doesNotEqual("teamcity.build.branch.is_default", "true")

@@ -9,16 +9,21 @@ from ci.utils.run import MODE_BY_COLOR, MODE_FOR_NINJA, run_command
 
 
 class Build(BaseAction):
-    """Build the project using CMake and Ninja for a given preset."""
+    """Build the project using CMake and Ninja for a given preset.
+
+    Extra arguments (after ``--``):
+      * ``--configure_only`` — configure the tree and stop, for the steps that need no compiled file (Doxygen).
+    """
 
     def run(self, preset: PresetConfig, extra_args=None) -> int:
         """Compile the project for the given preset.
 
         :param preset: The preset to check.
-        :param extra_args: Optional extra arguments (unused).
+        :param extra_args: Optional extra arguments, see the class docstring.
         :return: Exit code indicating success or failure.
         """
-        log.info(f"Building project with preset: {preset}")
+        configure_only = self.parse_extra_args(extra_args).get("configure_only") == "true"
+        log.info(f"{'Configuring' if configure_only else 'Building'} project with preset: {preset}")
         # run cmake configure, capture output in real-time, and print it using logging
         cmd = ["cmake", "--preset", preset.cmake_preset, "-S", str(root)]
         if preset.cmake_generator not in [None, ""]:
@@ -31,6 +36,8 @@ class Build(BaseAction):
         if not build_dir.exists():
             log.error(f"Build directory does not exist: {build_dir}")
             return 1
+        if configure_only:
+            return 0
         build_detection_mode = MODE_BY_COLOR
         if preset.cmake_generator and "Ninja" in preset.cmake_generator:
             build_detection_mode = MODE_FOR_NINJA

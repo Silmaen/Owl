@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - The version is written only in `CMakeLists.txt`: the engine exposes its commit (`getVersionFullString()`), Owl Nest shows it in the title bar and on the File screen, Lua `engine.version()` fills the Engine Demo menu, the shipped projects export the engine version and the README badge reads the latest release.
+- CI: CTest runs the tests in parallel (`Test -- --jobs=<n>`, default the processors available).
+- CI: off `main`, the release tree is only configured for Doxygen (`Build -- --configure_only`), no longer compiled, which saves 10 to 14 min per Linux x64 Clang pull request.
+- CI: Sanitizer Address leaves the pull requests for every `main` push; `PR Ready` waits for four checks.
+- CI: the artifacts keep the test reports (`TestReports.zip`), the coverage, the documentation and the packages, no longer the binaries nor the libraries.
 - Bench threshold of the flat `path/long_query` cases widened to 30 %: on the bench agent they switch between two modes about 15 % apart.
 
 ### Fixed
