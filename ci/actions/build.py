@@ -14,14 +14,15 @@ def compiler_launcher(build_dir: Path) -> str | None:
     """Return the C++ compiler launcher a configured tree uses.
 
     :param build_dir: The configured build directory.
-    :return: The `CMAKE_CXX_COMPILER_LAUNCHER` value, or None when the tree has none.
+    :return: The program of `CMAKE_CXX_COMPILER_LAUNCHER`, or None when the tree has none.
     """
     cache = build_dir / "CMakeCache.txt"
     if not cache.is_file():
         return None
     for line in cache.read_text(encoding="utf-8", errors="replace").splitlines():
         if line.startswith("CMAKE_CXX_COMPILER_LAUNCHER:"):
-            return line.partition("=")[2].strip() or None
+            # A launcher with arguments is a CMake list: the program comes first.
+            return line.partition("=")[2].split(";")[0].strip() or None
     return None
 
 

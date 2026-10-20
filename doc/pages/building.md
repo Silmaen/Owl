@@ -366,7 +366,7 @@ See [Windowing and input](design/windowing-input.md) for the details and the GLF
 | `OWL_HELP_FETCH_BADGES`                    | OFF     | Download the help badges missing from the cache (ON in the packaged presets)     |
 | `OWL_ENABLE_RENDERER_VERBOSE_CAPABILITIES` | OFF     | Log every capability of the graphics device at start-up                          |
 | `OWL_ENABLE_SHADER_REFLECT_RESOURCES`      | OFF     | Log the resources reflected from every compiled shader                           |
-| `OWL_USE_CCACHE`                           | ON      | ccache (or sccache) as compiler launcher when available                          |
+| `OWL_USE_CCACHE`                           | ON      | ccache (PCH sloppiness set) or sccache as launcher                               |
 | `OWL_BENCHMARK`                            | OFF     | `owl_bench` harness (`test/bench/`), with the Owl Nest MCP libraries             |
 | `OWL_INCLUDE_CHECK`                        | OFF     | `owl_include_check`: every header and source compiled alone (Clang only)         |
 | `OWL_TEST_SHUFFLE`                         | OFF     | Run every test binary with `--gtest_shuffle`                                     |

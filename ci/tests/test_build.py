@@ -38,6 +38,7 @@ def test_the_compiler_launcher_is_read_from_the_cache(tmp_path: Path) -> None:
 
     assert compiler_launcher(tmp_path) is None
     (tmp_path / "CMakeCache.txt").write_text(
-        "CMAKE_BUILD_TYPE:STRING=Debug\nCMAKE_CXX_COMPILER_LAUNCHER:STRING=/usr/bin/ccache\n", encoding="utf-8"
+        "CMAKE_BUILD_TYPE:STRING=Debug\nCMAKE_CXX_COMPILER_LAUNCHER:STRING=/usr/bin/ccache;sloppiness=pch_defines\n",
+        encoding="utf-8",
     )
     assert compiler_launcher(tmp_path) == "/usr/bin/ccache"
