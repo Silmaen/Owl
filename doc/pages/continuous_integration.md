@@ -467,11 +467,14 @@ presets have no precompiled header nor C++ module scan whose build outputs a com
 flowchart TD
     MB["mergeBase..HEAD<br/>(git diff)"] --> CPP[".cpp touched"]
     MB --> HDR["headers touched"]
-    MB --> CFG["CMakeLists / *.cmake<br/>.clang-tidy / conanfile.py / conan.lock"]
+    MB --> CMK["CMakeLists / *.cmake / presets"]
+    CMK --> CMP["merge base configured too:<br/>units whose compile command moved"]
+    MB --> CFG[".clang-tidy / conanfile.py<br/>conan.lock / conan/"]
     HDR --> DEPS["clang-scan-deps or ninja -t deps<br/>reverse include closure"]
     DEPS --> TU["every .cpp that includes them,<br/>directly or transitively"]
     CPP --> RUN["clang-tidy -p build_dir"]
     TU --> RUN
+    CMP --> RUN
     CFG --> FULL["full scope<br/>(flags or check list moved)"]
 ```
 
@@ -483,6 +486,11 @@ over the compilation database (preprocessing only, about 5 s for the whole tree 
 four cores); in a built tree, from ninja's own dependency database. In practice a change to a core header
 (`math/matrices.h`) selects nearly every unit, and a change confined to an
 editor panel selects a handful.
+
+A CMake input (`CMakeLists.txt`, `*.cmake`, a preset file) does not widen to everything: the merge base is checked
+out in a temporary worktree and configured with the same preset beside the build folder (about 15 s, its Conan
+binaries are cached), and the units whose compile command differs between the two databases join the scope. A
+change that moves no flag adds nothing; one that moves a global flag adds every unit.
 
 ### Diff base
 
@@ -505,9 +513,10 @@ mode. Any of these analyses everything:
 | not a pull request (`main`, manual run)                                         | nothing to narrow against              |
 | no usable diff base                                                             | the range would be a guess             |
 | the diff is empty against the base                                              | a real PR changes something — bad base |
-| `CMakeLists.txt`, `*.cmake`, `CMakePresets*.json`, `conanfile.py`, `conan.lock` | compiler flags or dependencies moved   |
+| `conanfile.py`, `conan.lock`, `conan/` (recipes, profiles)                      | dependencies moved                     |
 | `.clang-tidy`                                                                   | the check list itself changed          |
 | git, `clang-scan-deps` (or ninja) unavailable, or a scan error                  | the mapping cannot be built            |
+| a CMake input changed and the merge base does not configure                     | the moved commands cannot be compared  |
 
 Every fallback is logged with its reason, so a run that looks unexpectedly long
 says why in the build log.

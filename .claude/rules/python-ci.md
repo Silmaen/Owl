@@ -37,7 +37,8 @@ clang-tidy from the preset's `compile_commands.json` — the compiler hook (`CMA
 unset, because it cannot skip a file. Requires the preset to be configured (`Build -- --configure_only`; the CI never
 compiles it). On a pull request it analyses only the translation units the diff can affect (touched `.cpp` files plus
 every `.cpp` whose include closure, from `clang-scan-deps`, or `ninja -t deps` in a built tree, contains a touched
-header); anywhere else, or whenever the narrowing is not trustworthy, it analyses all of them. Never make a doubtful
+header, plus, when a CMake input changed, every unit whose compile command differs from the merge base's, configured
+in a temporary worktree); anywhere else, or whenever the narrowing is not trustworthy, it analyses all of them. Never make a doubtful
 case narrow the scope — falling back to the full run is the only acceptable direction. Details:
 `doc/pages/continuous_integration.md#clang-tidy-scoping`.
 

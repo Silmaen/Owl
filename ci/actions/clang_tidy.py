@@ -23,9 +23,12 @@ that landed on `main` since the branch started, and report other people's
 findings on this pull request.
 
 Anything that makes the narrowing untrustworthy — no pull request, no merge
-base, no git, no include closure, or a change to the build system or
-to `.clang-tidy` itself — degrades to the full scope. Narrowing is an
-optimisation; missing a finding is not an acceptable failure mode.
+base, no git, no include closure, a merge base that does not configure, or a
+change to the dependencies or to `.clang-tidy` itself — degrades to the full
+scope. A CMake change adds the translation units whose compile command it
+moves: the merge base is configured too and the two databases compared.
+Narrowing is an optimisation; missing a finding is not an acceptable failure
+mode.
 """
 
 from __future__ import annotations
@@ -42,6 +45,7 @@ from pathlib import Path
 
 from ci import log, root
 from ci.actions.base.action import BaseAction, PresetConfig
+from ci.utils.run import MODE_BY_COLOR, run_command
 
 # Suffixes clang-tidy is invoked on. Mirrors what `CMAKE_CXX_CLANG_TIDY` used
 # to cover: C++ translation units only.
@@ -91,8 +95,8 @@ def tool_arguments(tool: str, source: Path) -> list[str]:
     return arguments
 
 
-# Repo-relative paths whose change invalidates the file-level mapping: compiler
-# flags, dependency versions or the check list itself moved, so every
+# Repo-relative paths whose change invalidates the file-level mapping: dependency
+# versions, their recipes and profiles, or the check list itself moved, so every
 # translation unit needs re-analysing regardless of what else the diff touches.
 FULL_SCOPE_FILES: tuple[str, ...] = (
     ".clang-tidy",
@@ -100,8 +104,12 @@ FULL_SCOPE_FILES: tuple[str, ...] = (
     "conan.lock",
 )
 
-# Same, as patterns: any CMake input.
-FULL_SCOPE_PATTERNS: tuple[re.Pattern[str], ...] = (
+# Same, as patterns: the local Conan recipes and profiles.
+FULL_SCOPE_PATTERNS: tuple[re.Pattern[str], ...] = (re.compile(r"^conan/"),)
+
+# The CMake inputs: their change reaches the translation units whose compile command it moves, found by
+# configuring the merge base too and comparing the two compilation databases.
+BUILD_INPUT_PATTERNS: tuple[re.Pattern[str], ...] = (
     re.compile(r"(?:^|/)CMakeLists\.txt$"),
     re.compile(r"\.cmake$"),
     re.compile(r"(?:^|/)CMakePresets[^/]*\.json$"),
@@ -465,17 +473,96 @@ def _resolve_base(parsed: dict[str, str]) -> str | None:
     return None
 
 
+def _is_build_input(path: str) -> bool:
+    """
+    Tell whether a changed file is a CMake input, whose effect is measured on the compile commands.
+
+    :param path: Repo-relative path of a changed file.
+    :return: True for a `CMakeLists.txt`, a `*.cmake` module or a preset file.
+    """
+    return any(pattern.search(path) for pattern in BUILD_INPUT_PATTERNS)
+
+
+def _compile_commands(build_dir: Path, replacements: list[tuple[str, str]]) -> dict[str, str] | None:
+    """
+    Read a compilation database as source → command, with paths rewritten so two trees compare.
+
+    :param build_dir: Configured build directory.
+    :param replacements: (old, new) prefixes applied in order to every source path and command.
+    :return: Normalised source path → command line, or None when the database cannot be read.
+    """
+    try:
+        entries = json.loads((build_dir / "compile_commands.json").read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as err:
+        log.warning(f"clang-tidy: cannot read the compilation database of {_rel(build_dir)}: {err}")
+        return None
+
+    def rewrite(text: str) -> str:
+        for old, new in replacements:
+            text = text.replace(old, new)
+        return text
+
+    commands: dict[str, str] = {}
+    for entry in entries:
+        command = entry.get("command") or " ".join(entry.get("arguments", []))
+        source = rewrite(_norm(entry.get("file", ""), Path(entry.get("directory", str(build_dir)))))
+        commands[source] = rewrite(command)
+    return commands
+
+
+def _units_with_moved_commands(build_dir: Path, base: str, preset: PresetConfig) -> set[Path] | None:
+    """
+    Find the translation units whose compile command differs between the merge base and this tree.
+
+    The merge base is checked out in a temporary worktree and configured with the same preset beside this build
+    directory (`<build>.base`, so the paths derived from the build folder compare too); both are removed afterwards.
+
+    :param build_dir: This tree's configured build directory.
+    :param base: The merge base commit.
+    :param preset: The analysed preset.
+    :return: The sources whose command moved or that are new, or None when the base tree could not be configured
+        (caller must then fall back to the full scope).
+    """
+    sources = build_dir.parent / "merge-base-sources"
+    base_build = build_dir.with_name(f"{build_dir.name}.base")
+    shutil.rmtree(base_build, ignore_errors=True)
+    if sources.exists():
+        _git("worktree", "remove", "--force", str(sources), quiet=True)
+        shutil.rmtree(sources, ignore_errors=True)
+    if _git("worktree", "add", "--detach", str(sources), base) is None:
+        return None
+    try:
+        command = ["cmake", "--preset", preset.cmake_preset, "-S", str(sources), "-B", str(base_build)]
+        if preset.cmake_generator:
+            command += ["-G", preset.cmake_generator]
+        log.info(f"clang-tidy: configuring the merge base {base[:12]} to compare the compile commands.")
+        if run_command(command, detection_mode=MODE_BY_COLOR) != 0:
+            log.warning("clang-tidy: the merge base does not configure.")
+            return None
+        before = _compile_commands(base_build, [(str(sources), str(root)), (str(base_build), str(build_dir))])
+        after = _compile_commands(build_dir, [])
+        if before is None or after is None:
+            return None
+    finally:
+        _git("worktree", "remove", "--force", str(sources), quiet=True)
+        shutil.rmtree(sources, ignore_errors=True)
+        shutil.rmtree(base_build, ignore_errors=True)
+    return {Path(source) for source, line in after.items() if before.get(source) != line}
+
+
 def _select(
     units: dict[str, Path],
     base: str,
     build_dir: Path,
+    preset: PresetConfig,
 ) -> set[Path] | None:
     """
     Narrow the translation units to those the diff can change the verdict of.
 
     :param units: Object path → source path, from the compilation database.
     :param base: Commit the diff is computed against.
-    :param build_dir: Build directory (for the ninja dependency database).
+    :param build_dir: Configured build directory (compilation database, include closures).
+    :param preset: The analysed preset (to configure the merge base when a CMake input changed).
     :return: The selected sources, or None when the narrowing is not
         trustworthy and the caller must analyse everything.
     """
@@ -495,13 +582,22 @@ def _select(
     forcing = [path for path in changed if _forces_full_scope(path)]
     if forcing:
         log.info(
-            "clang-tidy: build configuration changed "
+            "clang-tidy: dependencies or check list changed "
             f"({', '.join(sorted(forcing))}) — analysing every translation unit."
         )
         return None
 
     sources = set(units.values())
     selected = {path for path in (root / entry for entry in changed) if path.suffix in TU_SUFFIXES and path in sources}
+    build_inputs = sorted(path for path in changed if _is_build_input(path))
+    if build_inputs:
+        moved = _units_with_moved_commands(build_dir, base, preset)
+        if moved is None:
+            log.info(f"clang-tidy: build configuration changed ({', '.join(build_inputs)}) — analysing every unit.")
+            return None
+        moved &= sources
+        log.info(f"clang-tidy: {', '.join(build_inputs)} changed the compile command of {len(moved)} unit(s).")
+        selected |= moved
     headers = {_norm(str(root / entry), root) for entry in changed if Path(entry).suffix in HEADER_SUFFIXES}
     if not headers:
         return selected
@@ -656,7 +752,7 @@ class ClangTidy(BaseAction):
         base = _resolve_base(parsed)
         selected: set[Path] | None = None
         if base is not None:
-            selected = _select(units, base, build_dir)
+            selected = _select(units, base, build_dir, preset)
         if selected is None:
             selected = set(units.values())
             log.info(f"clang-tidy: full scope, {len(selected)} translation unit(s).")

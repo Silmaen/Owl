@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - The version is written only in `CMakeLists.txt`: the engine exposes its commit (`getVersionFullString()`), Owl Nest shows it in the title bar and on the File screen, Lua `engine.version()` fills the Engine Demo menu, the shipped projects export the engine version and the README badge reads the latest release.
+- CI: a pull request changing a CMake file no longer runs the whole Clang-Tidy: the merge base is configured too and only the units whose compile command moved join the diff scope.
 - CI: Clang-Tidy and the Static Analyzer configure `linux-clang-tidy` without compiling it and scope a pull request with `clang-scan-deps`, which removes a 26 min build from the slowest pull-request check.
 - Build: ccache gets the sloppiness precompiled headers need, so a warm rebuild hits every unit (4 s instead of 108 s for `linux-clang-release`).
 - CI: the Windows agents get the ccache directory, size and compression of the Linux ones (`env.CCACHE_*`).
