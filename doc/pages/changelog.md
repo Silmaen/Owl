@@ -19,6 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Tests: the image tests run as six parallel CTest shards, and the voxel HUD is captured at one resolution instead of three.
 - Tests: scenarios starting with `# slow` are labelled `slow`, left out of pull requests and `main` pushes and run by arm64 and a nightly Linux x64 Clang run.
 - Tests: scenario `voxel_explore` plays the voxel terrain alone (landing, block targeting, chunk eviction, objective), the lines only `hub_progress` covered.
+- Tests: the export end-to-end test is one case per shipped project in four parallel shards, the deep reparenting test walks 256 links instead of 1000, and the Unicode font tests add only the glyph they check.
+- CI: the test reports reach `TestReports.zip` (they are written under `test/test/`).
 - Coverage: Clang builds instrument for gcov only, dropping the unused source-based counters (same lines measured, about 5 % faster tests).
 - CI: the artifacts keep the test reports (`TestReports.zip`), the coverage, the documentation and the packages, no longer the binaries nor the libraries.
 - Bench threshold of the flat `path/long_query` cases widened to 30 %: on the bench agent they switch between two modes about 15 % apart.

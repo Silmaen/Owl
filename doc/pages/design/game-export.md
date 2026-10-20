@@ -51,7 +51,7 @@ flowchart LR
 - end to end: `OwlNest --export engine_demo`, check that every scene, tileset, tilemap and script is in the
   pack without absolute path, move the game folder elsewhere, run `launch.sh --headless --smoke-test 60` from
   another directory, and fail on a non-zero exit code or any warning / error in `Owl.log`; since v0.4.0 the same
-  run covers every `samples/*/owl_project.yml` (`EveryShippedProjectPlaysFromItsExportFolder`).
+  run covers every `samples/*/owl_project.yml` (`GameExportEndToEnd.PlaysFromItsExportFolder`, one case per project, run in parallel).
 
 ### Defects found by the first real export
 

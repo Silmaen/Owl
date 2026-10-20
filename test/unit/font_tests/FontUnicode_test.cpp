@@ -108,7 +108,8 @@ TEST_F(FontUnicode, measureTextDecodesUtf8) {
 }
 
 TEST_F(FontUnicode, extraRangesAddGlyphs) {
-	const Font font(m_font, false, FontSettings{.extraRanges = {{.first = 0x0400, .last = 0x04FF}}});
+	// One code point per range: each extra glyph costs its MSDF in the atlas build.
+	const Font font(m_font, false, FontSettings{.extraRanges = {{.first = 0x0416, .last = 0x0416}}});
 	EXPECT_TRUE(font.hasGlyph(U'Ж'));
 	EXPECT_TRUE(font.hasGlyph(U'€'));
 	const Font plain(m_font);
@@ -127,7 +128,7 @@ TEST_F(FontUnicode, atlasIsCachedAndInvalidatedByRanges) {
 		EXPECT_NE(second.getAtlasTexture(), nullptr);
 	}
 	{
-		const Font greek(m_font, false, FontSettings{.extraRanges = {{.first = 0x0370, .last = 0x03FF}}});
+		const Font greek(m_font, false, FontSettings{.extraRanges = {{.first = 0x03A9, .last = 0x03A9}}});
 		EXPECT_FALSE(greek.isAtlasFromCache());
 		EXPECT_TRUE(greek.hasGlyph(U'Ω'));
 		// The atlas of the previous charset is dropped.
@@ -143,7 +144,7 @@ TEST_F(FontUnicode, reloadRebuildsInPlace) {
 	auto font = mkShared<Font>(m_font);
 	const auto holder = font;
 	EXPECT_FALSE(holder->hasGlyph(U'Ж'));
-	font->reload(FontSettings{.extraRanges = {{.first = 0x0410, .last = 0x044F}}});
+	font->reload(FontSettings{.extraRanges = {{.first = 0x0416, .last = 0x0416}}});
 	EXPECT_TRUE(holder->hasGlyph(U'Ж'));
 	EXPECT_EQ(holder->getSettings().extraRanges.size(), 1u);
 	EXPECT_EQ(holder->getPath(), m_font);

@@ -68,13 +68,13 @@ class DefineTeamCityVariables(BaseAction):
             set_teamcity_parameter("publish_doc", str(preset.publish_doc).lower())
         # Nothing downstream reads the binaries nor the libraries (the package configurations take the archives): the
         # artifacts keep the test reports, the coverage, the documentation and the packages.
-        artifact_path = "+:output/build/%cmake_preset%/test/*.xml => TestReports.zip!debug/"
+        artifact_path = "+:output/build/%cmake_preset%/test/test/*.xml => TestReports.zip!debug/"
         if preset.run_coverage:
             artifact_path += """
 +:output/build/%cmake_preset%/Coverage => Coverage.zip"""
         if preset.release_preset not in [None, ""]:
             artifact_path += """
-+:output/build/%release_preset%/test/*.xml => TestReports.zip!release/
++:output/build/%release_preset%/test/test/*.xml => TestReports.zip!release/
 +:output/build/%release_preset%/Documentation/html => Documentation.zip
 +:output/build/%release_preset%/*.zip
 +:output/build/%release_preset%/*.tar.gz"""

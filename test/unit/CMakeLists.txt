@@ -98,7 +98,6 @@ foreach (child ${children})
             endif ()
             # render_tests run OwlRunner on lavapipe / llvmpipe and compare its captures to reference images; they need
             # a display, so ctest starts them under xvfb-run when it exists. Label `render` to run or skip them alone.
-            set(TEST_LAUNCHER "")
             if (${child} STREQUAL "render_tests")
                 target_compile_definitions(${PROJECT_PREFIX_LOWER}_${child}_unit_test PRIVATE
                         OWL_RENDER_TEST_OUTPUT_DIR="${CMAKE_BINARY_DIR}/render_tests")
@@ -109,44 +108,58 @@ foreach (child ${children})
                 endif ()
                 find_program(XVFB_RUN_PROGRAM xvfb-run)
             endif ()
+            # A category whose cases each start their own process (OwlRunner, OwlNest) is split into gtest shards: parallel
+            # ctest entries named `<test>_<n>`. The image tests get a fixed X server number per shard (`xvfb-run -a` picks
+            # a free one with a race between shards).
+            set(shardCount 1)
+            set(testLabels "")
+            set(testEnvironment "${${PROJECT_PREFIX}_TEST_ENVIRONMENT}")
             if (${child} STREQUAL "render_tests")
-                # Each image case starts its own OwlRunner: gtest shards spread them over parallel ctest entries, each
-                # with its own fixed X server number (`xvfb-run -a` picks a free one with a race between shards).
-                foreach (shard RANGE 1 ${${PROJECT_PREFIX}_RENDER_TEST_SHARDS})
+                set(shardCount ${${PROJECT_PREFIX}_RENDER_TEST_SHARDS})
+                set(testLabels render)
+            elseif (${child} STREQUAL "export_tests")
+                # One case per shipped project (the Engine Demo and the three sample games).
+                set(shardCount 4)
+                set(testLabels export)
+                set(testEnvironment "${${PROJECT_PREFIX}_GAME_TEST_ENVIRONMENT}")
+            endif ()
+            set(testNames "")
+            foreach (shard RANGE 1 ${shardCount})
+                set(testName ${PROJECT_PREFIX_LOWER}_${child}_UTests)
+                set(reportName ${child})
+                set(shardEnvironment "")
+                if (shardCount GREATER 1)
                     math(EXPR shardIndex "${shard} - 1")
-                    set(shardName ${PROJECT_PREFIX_LOWER}_${child}_UTests_${shard})
-                    set(TEST_LAUNCHER "")
-                    if (XVFB_RUN_PROGRAM)
-                        math(EXPR serverNumber "90 + ${shard}")
-                        set(TEST_LAUNCHER ${XVFB_RUN_PROGRAM} -n ${serverNumber} -s "-screen 0 1280x1024x24")
-                    endif ()
-                    add_test(NAME ${shardName} COMMAND ${TEST_LAUNCHER} ${CMAKE_BINARY_DIR}/bin/${PROJECT_PREFIX_LOWER}_${child}_unit_test --gtest_output=xml:test/${child}_${shard}_UTest_Report.xml ${${PROJECT_PREFIX}_TEST_EXTRA_ARGS})
-                    set_tests_properties(${shardName} PROPERTIES TIMEOUT ${${PROJECT_PREFIX}_TEST_TIMEOUT} LABELS render
-                            ENVIRONMENT "${${PROJECT_PREFIX}_TEST_ENVIRONMENT};GTEST_TOTAL_SHARDS=${${PROJECT_PREFIX}_RENDER_TEST_SHARDS};GTEST_SHARD_INDEX=${shardIndex}")
-                endforeach ()
-            else ()
-                add_test(NAME ${PROJECT_PREFIX_LOWER}_${child}_UTests COMMAND ${CMAKE_BINARY_DIR}/bin/${PROJECT_PREFIX_LOWER}_${child}_unit_test --gtest_output=xml:test/${child}_UTest_Report.xml ${${PROJECT_PREFIX}_TEST_EXTRA_ARGS})
-                set_tests_properties(${PROJECT_PREFIX_LOWER}_${child}_UTests PROPERTIES TIMEOUT ${${PROJECT_PREFIX}_TEST_TIMEOUT}
-                        ENVIRONMENT "${${PROJECT_PREFIX}_TEST_ENVIRONMENT}")
-            endif ()
-            if (${child} STREQUAL "export_tests")
-                set_tests_properties(${PROJECT_PREFIX_LOWER}_${child}_UTests PROPERTIES
-                        ENVIRONMENT "${${PROJECT_PREFIX}_GAME_TEST_ENVIRONMENT}")
-            endif ()
+                    string(APPEND testName _${shard})
+                    string(APPEND reportName _${shard})
+                    set(shardEnvironment "GTEST_TOTAL_SHARDS=${shardCount};GTEST_SHARD_INDEX=${shardIndex}")
+                endif ()
+                set(TEST_LAUNCHER "")
+                if (${child} STREQUAL "render_tests" AND XVFB_RUN_PROGRAM)
+                    math(EXPR serverNumber "90 + ${shard}")
+                    set(TEST_LAUNCHER ${XVFB_RUN_PROGRAM} -n ${serverNumber} -s "-screen 0 1280x1024x24")
+                endif ()
+                add_test(NAME ${testName} COMMAND ${TEST_LAUNCHER} ${CMAKE_BINARY_DIR}/bin/${PROJECT_PREFIX_LOWER}_${child}_unit_test --gtest_output=xml:test/${reportName}_UTest_Report.xml ${${PROJECT_PREFIX}_TEST_EXTRA_ARGS})
+                set_tests_properties(${testName} PROPERTIES TIMEOUT ${${PROJECT_PREFIX}_TEST_TIMEOUT}
+                        ENVIRONMENT "${testEnvironment};${shardEnvironment}")
+                if (testLabels)
+                    set_tests_properties(${testName} PROPERTIES LABELS "${testLabels}")
+                endif ()
+                list(APPEND testNames ${testName})
+            endforeach ()
             if (${child} STREQUAL "script_tests")
                 # Hostile-script tests rely on the Lua quotas: a quota that never fires must fail, not hang.
-                set_tests_properties(${PROJECT_PREFIX_LOWER}_${child}_UTests PROPERTIES TIMEOUT 300)
+                set_tests_properties(${testNames} PROPERTIES TIMEOUT 300)
             endif ()
             # Tests that touch shared process-level resources (freetype, GLFW init, OpenAL, msdfgen globals)
             # are serialized via RESOURCE_LOCK to avoid sporadic SEGFAULTs in parallel ctest runs.
             if (${child} STREQUAL "font_tests" OR ${child} STREQUAL "core_tests" OR
                 ${child} STREQUAL "gui_tests" OR ${child} STREQUAL "renderer_tests" OR
                 ${child} STREQUAL "sound_tests" OR ${child} STREQUAL "script_tests")
-                set_tests_properties(${PROJECT_PREFIX_LOWER}_${child}_UTests PROPERTIES RESOURCE_LOCK owl_engine_globals)
+                set_tests_properties(${testNames} PROPERTIES RESOURCE_LOCK owl_engine_globals)
             endif ()
-            # export_tests exports engine_demo with OwlNest and plays it with the exported OwlRunner.
+            # export_tests exports each shipped project with OwlNest and plays it with the exported OwlRunner.
             if (${child} STREQUAL "export_tests")
-                set_tests_properties(${PROJECT_PREFIX_LOWER}_${child}_UTests PROPERTIES LABELS "export")
                 foreach (app_target ${CMAKE_PROJECT_NAME}Nest ${CMAKE_PROJECT_NAME}Runner)
                     if (TARGET ${app_target})
                         add_dependencies(${PROJECT_PREFIX_LOWER}_${child}_unit_test ${app_target})

@@ -241,8 +241,8 @@ test/unit/scenarios/*.owltest         scenario tests
 - Scenarios stay in `test/unit/scenarios/`, already globbed by `test/unit/CMakeLists.txt` (one CTest each, label
   `scenario`), named `<game>_<behaviour>.owltest` (`breakout_serve`, `wolf_pickup`), with
   `scene: ../../../samples/<game>/scenes/<scene>.owl`; no test file is exported.
-  `GameExportEndToEnd.EverySampleGameHasAScenario` fails for a sample whose scenes no scenario plays.
-- Export: `GameExportEndToEnd.EveryShippedProjectPlaysFromItsExportFolder` (`test/unit/export_tests/GameExport_test.cpp`)
+  `GameExportCoverage.EverySampleGameHasAScenario` fails for a sample whose scenes no scenario plays.
+- Export: `GameExportEndToEnd.PlaysFromItsExportFolder` (one case per project) (`test/unit/export_tests/GameExport_test.cpp`)
   exports `engine_demo` and every `samples/*/owl_project.yml` (`OwlNest --export`, then
   `launch.sh --headless --smoke-test 60`): every scene and script is packed, and no warning is logged.
 - Install: `source/owlnest/CMakeLists.txt` installs `engine_demo/` and `samples/` (component `Nest`) side by side.

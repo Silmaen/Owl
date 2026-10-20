@@ -396,18 +396,25 @@ void checkProjectPlaysFromItsExportFolder(const std::filesystem::path& iBinDir, 
 
 }// namespace
 
-TEST(GameExportEndToEnd, EveryShippedProjectPlaysFromItsExportFolder) {
+namespace {
+// One case per shipped project: ctest runs them in parallel shards, each in its own temporary folder.
+class GameExportEndToEnd : public testing::TestWithParam<std::filesystem::path> {};
+}// namespace
+
+TEST_P(GameExportEndToEnd, PlaysFromItsExportFolder) {
 	std::error_code ec;
 	const auto binDir = std::filesystem::canonical("/proc/self/exe", ec).parent_path();
 	if (ec || !exists(binDir / "OwlNest") || !exists(binDir / "OwlRunner"))
 		GTEST_SKIP() << "OwlNest / OwlRunner not built next to the test.";
-	for (const auto& project: shippedProjects()) {
-		SCOPED_TRACE(project.string());
-		checkProjectPlaysFromItsExportFolder(binDir, project);
-	}
+	checkProjectPlaysFromItsExportFolder(binDir, GetParam());
 }
 
-TEST(GameExportEndToEnd, EverySampleGameHasAScenario) {
+INSTANTIATE_TEST_SUITE_P(Shipped, GameExportEndToEnd, testing::ValuesIn(shippedProjects()),
+						 [](const testing::TestParamInfo<std::filesystem::path>& iInfo) -> std::string {
+							 return iInfo.param.filename().string();
+						 });
+
+TEST(GameExportCoverage, EverySampleGameHasAScenario) {
 	const auto root = test::getRootPath();
 	for (const auto& project: shippedProjects()) {
 		if (project.filename() == "engine_demo")
