@@ -21,7 +21,7 @@ struct Project;
 
 /**
  * @brief
- *  Read-only (for now) node-graph view of the project's scenes and their teleport links.
+ *  Node-graph view of the project's scenes and their teleport links.
  *
  * The first consumer of the `NodeCanvas` framework. Specialises `NodeGraphDocument` by:
  * - scanning the project directory for every `.owl` scene,

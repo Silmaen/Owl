@@ -1,9 +1,10 @@
 {
-  "comment": "Allowed median growth per benchmark name pattern, over the default --threshold (first match wins). Measured on the bench agent over the five v0.4.0 baseline runs: the multi-threaded physics steps of 100 bodies vary up to 40 % (waking the workers), the physics world creation of 100 bodies up to 90 %, the MCP loopback round trips and the game-over scene load about 25 to 33 %.",
+  "comment": "Allowed median growth per benchmark name pattern, over the default --threshold (first match wins). Measured on the bench agent over the five v0.4.0 baseline runs: the multi-threaded physics steps of 100 bodies vary up to 40 % (waking the workers), the physics world creation of 100 bodies up to 90 %, the MCP loopback round trips and the game-over scene load about 25 to 33 %; the flat path queries of 1024² maps switch between two modes about 15 % apart (296 µs or 340 µs on the streets map).",
   "thresholds": {
     "physics/step_*_mt*/100_bodies": 0.4,
     "physics/init/100_bodies": 0.6,
     "mcp/*": 0.3,
-    "sample/load/game_over": 0.3
+    "sample/load/game_over": 0.3,
+    "path/long_query/flat/*": 0.3
   }
 }

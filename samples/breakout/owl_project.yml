@@ -1,7 +1,6 @@
 OwlProject:
   name: OwlBreakout
   firstScene: scenes/title.owl
-  version: 0.4.0
   author: Silmaen
   description: Breakout, a sample game of the Owl Engine
   icon: logo/logo_owl.png

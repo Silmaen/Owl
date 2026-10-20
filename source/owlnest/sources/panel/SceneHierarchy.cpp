@@ -350,7 +350,7 @@ void SceneHierarchy::renderRootEntities() {
 	const auto& stack = renderer::Renderer::getRenderStack();
 	const auto& layers = stack.getLayers();
 	const auto roots = m_context->getRootEntities();
-	// 0 or 1 layer → flat list (legacy behaviour, no extra nesting).
+	// 0 or 1 layer → flat list, no extra nesting.
 	if (layers.size() < 2) {
 		for (auto entity: roots) drawEntityNode(entity);
 		return;

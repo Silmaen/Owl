@@ -26,7 +26,7 @@ baseline on these axes; each release is expected to move the needle forward. The
 - Grow coverage alongside every new feature (no new public API without tests)
 - Maintain coverage trend upward, never downward — use `poetry run python ci_action.py Coverage <preset>` to measure
 - Unit tests for pure logic, integration tests for systems that cross module boundaries
-- Fill gaps in existing modules opportunistically (backfill tests for untested legacy paths)
+- Fill gaps in existing modules opportunistically (backfill tests for untested paths)
 - Every bug fix lands with its regression test
 
 ## Performance

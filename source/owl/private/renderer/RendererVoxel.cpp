@@ -121,7 +121,7 @@ auto frameData() -> FrameData& {
 
 VoxelMeshingConfig g_Config;
 
-// Enabled now that the viewport framebuffer carries a depth attachment and Renderer3D depth-tests its draws.
+// Needs the depth attachment of the viewport framebuffer: Renderer3D depth-tests its draws.
 bool g_GpuDrawEnabled = true;
 
 // Voxel meshes bind the atlas as the single texture (slot 1); slot 0 is Renderer3D's default white texture.

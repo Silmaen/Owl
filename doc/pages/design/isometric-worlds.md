@@ -92,7 +92,7 @@ S < 1 day of review, M a few days, L a week.
   transient path at 10 000 and 100 000 quads, zero allocation per frame in `renderer/`.
 - ![Done][done] **R2 — Draw-order sort key (PR-30: B-10, from v0.5.0), M.** A sort key on every 2D
   primitive instead of the primitive type and the storage order, on the depth convention of D2, so 2D, isometric and
-  HUD primitives order the same way; HUD windows no longer need one batch each. Changes a shipped render path: the
+  HUD primitives order the same way; HUD windows do not need one batch each. Changes a shipped render path: the
   image tests stay pixel-identical, the maintainer confirms before merge.
 - ![Done][done] **TM1 — Persistent, chunked, culled tilemap (PR-31: B-13), L.** D6 and D7 for tilemaps:
   encapsulated cells with generation counters, chunk cache per asset, culling, full entity transform, no cap,
@@ -161,7 +161,7 @@ S < 1 day of review, M a few days, L a week.
   inventory window with slots in `engine_demo/`, in Lua only, navigable with the gamepad: the showcase of the HUD
   widgets, the shared HUD and focus navigation.
 - ![Done][done] **DEMO2 — Engine Demo overhaul, M/L.** The isometric town in the demo's flow, the new HUD,
-  text and input in every scene (voxel text no longer stretched), the hub map and the platformer redrawn with the
+  text and input in every scene (voxel text not stretched), the hub map and the platformer redrawn with the
   Kenney CC0 packs and the isometric art from `tools/iso_atlas`; closes the release.
 
 ### Pathfinding

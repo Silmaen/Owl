@@ -284,7 +284,7 @@ replays with `bin/<fuzzer> <input>`.
 
 ## Dependency report
 
-On `main`, Build Linux x64 / Clang ends with the `DependencyReport` action. It never fails the build (audit G-08).
+On `main`, Build Linux x64 / Clang ends with the `DependencyReport` action. It never fails the build.
 
 - ConanCenter: `conan graph outdated` on `conanfile.py` (every option on) resolves the whole graph, transitive
   packages and build tools included, the local recipes through the `owl-local` remote (registered as
@@ -305,7 +305,7 @@ is logged as a warning, the list written to `output/dependency_report.json` and 
 
 ## Include check
 
-A recent libstdc++ (MSYS2 MinGW) no longer includes `<cstdint>`, `<mutex>`, … transitively, so a file that
+A recent libstdc++ (MSYS2 MinGW) does not include `<cstdint>`, `<mutex>`, … transitively, so a file that
 names `uint32_t` or `std::mutex` without including the header breaks the Windows build while every Linux
 configuration stays green — the precompiled header `owlpch.h` hides the gap. Two complementary gates catch it
 on Linux:
@@ -369,7 +369,7 @@ to Owl:
 | Visual pill tagging   | `PrPromotionTagger` + `SimplePageExtension` — `draft` / `ready` pills in TC UI                     |
 | PR context on a build | A *Pull request* tab on the build page, and 16 published `…pullRequest.*` parameters               |
 | Webhook endpoint      | `/app/teamcity-github-bridge/webhook` with HMAC-SHA256 verification                                |
-| Stable check name     | `checkName` on PR Ready: moving it in the project tree no longer renames the required check        |
+| Stable check name     | `checkName` on PR Ready: moving it in the project tree does not rename the required check          |
 | Labels and assignee   | `labelRules` add `documentation` / `ci` / `dependencies` / `engine` / `editor`; `autoAssignAuthor` |
 | Superseded build      | A build stopped by a newer push concludes `skipped` ("Superseded by …"), not a red `cancelled`     |
 
@@ -615,23 +615,6 @@ affected project's main page.
 For draft / WIP DSL changes that aren't ready to merge, the server can
 optionally apply the DSL from a feature branch via the "Use settings
 from VCS" override, but the default workflow is push-to-`main`.
-
-## CI speed plan {#ci-speed-plan}
-
-Planned for the start of v0.5.0. Measured on 2026-10-19: the build steps stay at 10 to 14 min, the test steps grew with
-the content of v0.4.0 (Linux arm64: 7.6 min on 2026-10-17, 47.7 min on 2026-10-19, for 53 scenarios against 14, CTest
-run serially; Linux x64 Clang 30 to 38 min).
-
-- `-j` wherever it applies: CTest on every preset (the arm64 run is serial today), builds, Conan, the Python checks.
-- Pull requests build less: Release only, or the Release tests only; the Debug and coverage builds, the sanitizers
-  and the other platforms run on `main` and at night.
-- Full test suites (every scenario, the export of every project, sanitizers, emulated arm64) run in the nightly
-  configurations only; a pull request runs a fast subset that still covers every feature.
-- Shorter tests: scenarios play the fewest frames that prove their behaviour on small fixture maps (today
-  `hub_progress` takes 917 s and `iso_town_city` 649 s under qemu), heavy ones labelled `slow`, the end-to-end export
-  split into one CTest case per project so it runs in parallel.
-- Shorter builds: measure first (ninja `.ninja_log`, ccache hit rate, the share of the coverage build), then
-  precompiled headers, unity builds or less template code where the measure points.
 
 ## Cross-references
 

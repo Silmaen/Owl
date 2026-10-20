@@ -8,10 +8,12 @@
 
 #include "owlpch.h"
 
+#include "core/BuildInfo.h"
 #include "core/Core.h"
 
 #include <cstdint>
 #include <format>
+#include <string>
 
 namespace owl {
 
@@ -28,6 +30,13 @@ auto getVersionPatch() -> uint8_t { return OWL_PATCH; }
 
 auto getVersionString() -> std::string {
 	return std::format("{}.{}.{}", getVersionMajor(), getVersionMinor(), getVersionPatch());
+}
+
+auto getVersionCommit() -> std::string { return OWL_GIT_COMMIT; }
+
+auto getVersionFullString() -> std::string {
+	const auto commit = getVersionCommit();
+	return commit == "unknown" ? getVersionString() : std::format("{}-{}", getVersionString(), commit);
 }
 
 }// namespace owl

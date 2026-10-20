@@ -146,8 +146,8 @@ public:
 	 *
 	 * Cached entity handles can outlive the entity itself (Lua scripts, event
 	 * deferrals, ``EntityLink`` targets…); the registry-validity check here
-	 * prevents callers from dereferencing a stale handle, which previously
-	 * crashed deep inside EnTT's component storage on shutdown / scene swap.
+	 * prevents callers from dereferencing a stale handle, which would
+	 * crash deep inside EnTT's component storage on shutdown / scene swap.
 	 * @return True if the entity is currently usable.
 	 */
 	explicit operator bool() const {

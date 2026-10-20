@@ -63,7 +63,7 @@ constexpr auto g_legacyScene =
 		"      sizeY: 32\n      offsetX: 0\n      offsetY: 16\n"
 		"  - Entity: 4\n    Tag: {tag: Defaults}\n    Hierarchy: {parentId: 1}\n    UiRect: {}\n";
 
-// Legacy screen rectangle (Y-up centre, pivot and offset from the bottom left) turned into a Y-down top-left corner.
+// Format-3 screen rectangle (Y-up centre, pivot and offset from the bottom left) turned into a Y-down top-left corner.
 auto legacyTopLeft(const math::vec2& iAnchorUp, const math::vec2& iPivot, const math::vec2& iSize,
 				   const math::vec2& iOffset, const math::vec2& iScreen) -> math::vec2 {
 	const float centerX = iAnchorUp.x() + iOffset.x() + iSize.x() * (0.5f - iPivot.x());

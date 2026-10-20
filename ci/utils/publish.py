@@ -1,10 +1,9 @@
 """
 Utility functions for publishing packages and documentation to a remote server.
 
-The upload client lives here, in the repository. It used to be an ``api.py``
-downloaded from the target server at each publication and executed with the
-credentials on its command line; it is now reviewed code, run in process, and
-the password comes from the environment (``OWL_DEPLOY_PASSWORD``).
+The upload client lives here, in the repository: reviewed code, run in process, never
+downloaded from the target server, and the password comes from the environment
+(``OWL_DEPLOY_PASSWORD``), never from a command line.
 """
 
 import os

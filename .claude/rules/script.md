@@ -18,7 +18,7 @@ User-facing reference: `doc/pages/scripting.md` (guide) and `doc/pages/lua-api.m
   declaration, then copy the page the failing `LuaBindingRegistry.ReferencePageMatchesTheRegistry` test writes to
   the temporary folder over `doc/pages/lua-api.md`. Every `table.fn(` in `scripting.md` must be bound (tested).
 - Tables (`getLuaTables()`): `transform`, `physics`, `input`, `sound`, `scene`, `time`, `log`, `entity`, `ui`,
-  `gamestate`, `save`, `settings`, `trigger`, `door`, `pushwall`, `isometric`.
+  `gamestate`, `save`, `settings`, `trigger`, `door`, `pushwall`, `isometric`, `path`, `engine`.
 - Sandbox: only `base`, `table`, `string`, `math`, `utf8`, `coroutine`; `io`, `os`, `dofile`, `loadfile`,
   `string.dump` are removed, `load` is text-only, `setmetatable` refuses `__gc`, `collectgarbage` keeps
   `count` / `isrunning`. Never re-open them. Chunks load in mode `"t"` only (no bytecode).

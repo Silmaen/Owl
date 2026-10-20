@@ -39,14 +39,13 @@ namespace owl::renderer {
  *
  * The active mode is read from `applyConfig` via the YAML key `Space`
  * (`World` / `Screen`, case-insensitive), the reference height from `ReferenceHeight` (0, the default, keeps one unit
- * per screen pixel). Default is `World` for backwards
- * compatibility with projects that don't declare it.
+ * per screen pixel). Default is `World`, for
+ * projects that don't declare it.
  *
  * `onRender` iterates entities tagged with this layer's name (or untagged
  * entities when this is the first layer in the stack) — `Scene::layerAccepts`
  * does the routing. The tilemaps are drawn here (queued to `RendererTilemap`);
- * the other 2D entity types are still drawn by `Scene::render`, until their
- * dispatch moves into this layer too.
+ * the other 2D entity types are drawn by `Scene::render`.
  */
 class OWL_API Renderer2DLayer final : public RenderLayer {
 public:

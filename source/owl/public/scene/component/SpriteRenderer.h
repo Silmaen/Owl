@@ -41,8 +41,7 @@ struct OWL_API SpriteRenderer {
 	 * Added on top of `Transform.translation.z` when the raycast renderer
 	 * computes the on-screen vertical centre. Positive values raise the
 	 * sprite (lamps, ceiling decals); negative values lower it (floor
-	 * stains, half-buried props). `0` is "use the entity's `translation.z`"
-	 * as before — backward-compatible with scenes authored against PR2.
+	 * stains, half-buried props). `0` (default) is "use the entity's `translation.z`" only.
 	 */
 	float raycastZOffset = 0.0f;
 

@@ -1,4 +1,4 @@
-// Single-workgroup bitonic sort for sprite Z-sort (#32). Sorts an SSBO of
+// Single-workgroup bitonic sort for sprite Z-sort. Sorts an SSBO of
 // `{key, value}` pairs ascending by `key` using groupshared memory. Caller
 // pads up to `kSortSize` (1024) — tail slots filled with `+INF` keys so they
 // land at the end and downstream consumers can ignore them via the

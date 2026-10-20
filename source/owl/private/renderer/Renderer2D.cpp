@@ -41,7 +41,7 @@ constexpr uint32_t g_maxTextGlyphsPerBatch = 20000;
 constexpr uint32_t g_maxTransientWorldsPerBatch = 20000;
 // A run costs a draw: a batch with this many runs is drawn before it grows more.
 constexpr uint32_t g_maxRunsPerBatch = 4096;
-// Shapes flush earlier than glyphs: 20000 matrices plus their instances leave the cache (+30 % per quad, #246).
+// Shapes flush earlier than glyphs: 20000 matrices plus their instances leave the cache (+30 % per quad).
 constexpr uint32_t g_maxShapeTransientsPerBatch = 4096;
 
 constexpr std::array g_quadVertexPositions = {math::vec4{-0.5f, -0.5f, 0.0f, 1.0f}, math::vec4{0.5f, -0.5f, 0.0f, 1.0f},

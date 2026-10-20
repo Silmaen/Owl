@@ -389,7 +389,7 @@ auto readNavigation(const core::YamlNode& iNode) -> nav::NavProfile {
 	if (!iNode || !iNode.isMap())
 		return profile;
 	if (iNode["mode"]) {
-		// A file without `mode` is a legacy profile: explicit rules.
+		// A file without `mode` reads as explicit rules.
 		const auto name = iNode["mode"].as<std::string>();
 		for (size_t i = 0; i < g_modeNames.size(); ++i) {
 			if (name == g_modeNames[i])

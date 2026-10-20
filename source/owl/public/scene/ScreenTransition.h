@@ -24,7 +24,7 @@ namespace owl::scene {
  * Acts as both:
  *
  * - A primitive overlay renderer — call `play(type, duration, colour)` (or
- *   the legacy `start(type, duration)`) to draw a one-shot fade or wipe over
+ *   `start(type, duration)`) to draw a one-shot fade or wipe over
  *   the current frame; `update(dt)` advances it.
  * - A full **scene-load orchestrator** — call `requestSceneLoad(...)` to
  *   chain *out-anim → loading screen (spinner + "Loading" text) → scene
@@ -178,7 +178,7 @@ public:
 	/**
 	 * @brief
 	 *  Active overlay kind — only meaningful while `OutAnim` /
-	 * `InAnim` (and for legacy primitive overlays). `Idle` and `Loading`
+	 * `InAnim` (and for primitive overlays). `Idle` and `Loading`
 	 *  both report `Type::None`.
 	 * @return The active transition type.
 	 */

@@ -129,6 +129,23 @@ Use the engine logging macros:
 | Error    | `OWL_CORE_ERROR`    | `OWL_ERROR`    |
 | Critical | `OWL_CORE_CRITICAL` | `OWL_CRITICAL` |
 
+## Bumping the version
+
+The version is written once, in `project(Owl VERSION x.y.z)` of the root `CMakeLists.txt`. Everything else follows
+at the next configure:
+
+- the engine API `getVersionString()`, `getVersionCommit()` and `getVersionFullString()` (`core/Core.h`, the commit
+  is the one the tree was configured from), hence the Owl Nest title bar and File screen, the start-up log of every
+  application, the MCP server info, `game_info.yml` and the frame-bench reports
+- Lua `engine.version()`, which fills the version label of the Engine Demo main menu
+- the Engine Demo and the sample games, whose `owl_project.yml` has no `version`: a project without one exports the
+  engine version (a game of its own keeps its `version`)
+- the package names (`OwlNest-x.y.z-<commit>-…`), the Conan package version, the Windows version resources, the
+  Doxygen `PROJECT_NUMBER` and the version the CI publishes
+- the README badge, which shows the latest GitHub release
+
+The changelog, the roadmap and the design pages are history: a release dates them by hand.
+
 ## Before a pull request
 
 1. The build has no warning (`-Werror` is on) and the whole test suite passes

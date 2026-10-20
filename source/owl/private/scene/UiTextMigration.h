@@ -16,8 +16,8 @@ namespace owl::scene {
 
 /**
  * @brief
- *  Migration step of the scene and prefab formats (2 to 3): every `UiText` written before the text layout gets the
- *  alignment it was drawn with, centred on both axes, in place of its legacy `alignment` key (never applied).
+ *  Migration step of the scene and prefab formats (2 to 3): every `UiText` without `horizontalAlignment` is centred on both
+ *  axes, in place of its `alignment` key, which format 2 does not apply.
  * @param[in] ioDocument The document root (with an `Entities` sequence).
  * @return Always true: a document without `UiText` has nothing to convert.
  */

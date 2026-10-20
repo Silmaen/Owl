@@ -62,7 +62,7 @@ come from their local cache (`-DOWL_HELP_FETCH_BADGES=ON`, set by the packaged p
 when Doxygen is found (`-DOWL_ENABLE_DOCUMENTATION=ON` requires it). The `Doxyfile` is generated in the build tree.
 
 The engine is also a Conan package, checked by `test/package/` (two programs built on `find_package(OwlEngine)`);
-publishing it is a v1.0.0 item, until then other projects use the packaged `OwlEngine` archive (see
+it is not published (see the [roadmap](roadmap.md)): other projects use the packaged `OwlEngine` archive (see
 [Packaging](#packaging)). `Owl::OwlEngine` (`<owl.h>`) exposes EnTT as its only dependency; the headers that include
 imgui (`<owlgui.h>`, `gui/utils.h`, `gui/widgets/AssetField.h`, `gui/widgets/CurveEditor.h`) come with the optional
 `Owl::Gui` target:
@@ -193,8 +193,8 @@ Ways to get a certificate:
 - **OV code signing certificate** (a commercial certificate authority, about 200 to 400 € a year, the key on a
   hardware token or a cloud HSM since 2023): signed, but SmartScreen still warns until the publisher has built a
   reputation from downloads.
-- **EV code signing certificate** (dearer, a company is required): the same, the reputation is no longer granted at
-  once since 2024.
+- **EV code signing certificate** (dearer, a company is required): the same, the reputation is not granted at
+  once either.
 - **Azure Trusted Signing** (Microsoft, about 10 $ a month, identity validation of an organisation or, in some
   countries, an individual): `signtool` with its dlib, no key to keep; reputation as for OV.
 - **SignPath Foundation** (free for open-source projects that qualify): signs in their cloud from the CI artefact.
@@ -264,7 +264,7 @@ with a fixed time step and no user input, and reports the CPU time per phase and
     --frame-bench engine_demo/scenes/platformer_house.owl --backend opengl --frames 1000 --out fb.json
 ```
 
-Options, output format and device selection: `test/bench/README.md`. The v0.3.0 baseline lives in
+Options, output format and device selection: `test/bench/README.md`. The measurement protocol of the audit lives in
 `doc/audit/20-mesures.md`.
 
 ## CI System

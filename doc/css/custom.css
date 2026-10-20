@@ -469,3 +469,22 @@ pre.mermaid svg {
 	max-width: 100%;
 	height: auto;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+ * Screenshots keep their colours in dark mode: doxygen-awesome inverts every image of a table or an image block
+ * (meant for the white Doxygen graphs), which washes the PNG and JPEG captures out.
+ * ═══════════════════════════════════════════════════════════════════════ */
+
+@media (prefers-color-scheme: dark) {
+	html:not(.light-mode) div.contents img[src$=".png"],
+	html:not(.light-mode) div.contents img[src$=".jpg"],
+	html:not(.light-mode) div.contents img[src$=".jpeg"] {
+		filter: none;
+	}
+}
+
+html.dark-mode div.contents img[src$=".png"],
+html.dark-mode div.contents img[src$=".jpg"],
+html.dark-mode div.contents img[src$=".jpeg"] {
+	filter: none;
+}

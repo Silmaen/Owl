@@ -41,9 +41,8 @@ protected:
 
 // Build a default Scene with a single door entity sitting at the origin, ready
 // to be ticked. Returns the entity and exposes the underlying scene by reference.
-// `iSlideDistance` is kept as a parameter for compatibility but a `RaycastDoor`
-// always slides exactly one cell — callers passing a different value just see
-// the same one-cell behaviour with the speed knob shaping the timing.
+// The slide distance parameter is ignored: a `RaycastDoor` always slides exactly
+// one cell, the speed knob shaping the timing.
 auto makeDoorScene(scene::Scene& oScene, const float = 1.0f, const float iSlideSpeed = 4.0f,
 				   const float iHoldTime = 0.5f) -> scene::Entity {
 	auto entity = oScene.createEntity("Door");

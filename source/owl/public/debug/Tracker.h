@@ -169,9 +169,9 @@ struct OWL_API AllocationState {
 	std::list<AllocationInfo> allocs;
 	/**
 	 * @brief
-	 *  O(1) `location → list iterator` index. Without this, `freeMemory` was an O(N) linear
+	 *  O(1) `location → list iterator` index. Without it, `freeMemory` would be an O(N) linear
 	 *  scan of `allocs`, turning bursts of allocations (YAML parse, scene deserialization)
-	 *  into an O(N²) wall stall — the editor blocked for ~20 s on a 100-entity scene.
+	 *  into an O(N²) stall.
 	 */
 	std::unordered_map<void*, std::list<AllocationInfo>::iterator> index;
 

@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- The version is written only in `CMakeLists.txt`: the engine exposes its commit (`getVersionFullString()`), Owl Nest shows it in the title bar and on the File screen, Lua `engine.version()` fills the Engine Demo menu, the shipped projects export the engine version and the README badge reads the latest release.
+- Bench threshold of the flat `path/long_query` cases widened to 30 %: on the bench agent they switch between two modes about 15 % apart.
+
+### Fixed
+
+- Documentation site: screenshots keep their colours in dark mode (the theme inverted every image of a table or an image block).
+
 ## [0.4.0] - 2026-10-20
 
 ### Added

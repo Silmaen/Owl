@@ -25,7 +25,7 @@ namespace owl::script {
 
 /**
  * @brief
- *  Type of a value a binding takes or returns, as documented (and, later, as a visual-scripting pin).
+ *  Type of a value a binding takes or returns, as documented.
  */
 enum struct LuaType : uint8_t {
 	Boolean,///< `true` / `false`.

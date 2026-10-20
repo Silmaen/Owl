@@ -77,7 +77,7 @@ void UiText::deserialize(const core::Serializer& iNode) {
 	readValue(node, "text", text);
 	readValue(node, "color", color);
 	readValue(node, "fontSize", fontSize);
-	// The legacy `alignment` key was never applied: such text was drawn centred, as the scene migration keeps it.
+	// A text with the unapplied `alignment` key and no `horizontalAlignment` is centred, as the scene migration does.
 	if (node["alignment"] && !node["horizontalAlignment"]) {
 		horizontalAlignment = data::fonts::HorizontalAlignment::Center;
 		verticalAlignment = data::fonts::VerticalAlignment::Middle;

@@ -11,6 +11,7 @@
 #include "FrameBenchStats.h"
 #include "session/HeadlessSession.h"
 
+#include <core/Core.h>
 #include <renderer/RendererVoxel.h>
 #include <renderer/gpu/RenderCommand.h>
 
@@ -362,9 +363,7 @@ auto FrameBench::finish(const bool iInterrupted) -> int {
 auto FrameBench::toJson() const -> std::string {
 	std::string json = "{\n";
 	json += std::format("  \"tool\": \"OwlRunner --frame-bench\",\n");
-#if defined(OWL_MAJOR) && defined(OWL_MINOR) && defined(OWL_PATCH)
-	json += std::format("  \"engine_version\": \"{}.{}.{}\",\n", OWL_MAJOR, OWL_MINOR, OWL_PATCH);
-#endif
+	json += std::format("  \"engine_version\": \"{}\",\n", getVersionFullString());
 #if defined(NDEBUG)
 	json += "  \"build\": \"release\",\n";
 #else

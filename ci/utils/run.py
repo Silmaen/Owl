@@ -65,7 +65,7 @@ def _determine_log_level(line: str, mode: int = MODE_BY_CONTENT) -> int:
     elif mode == MODE_FOR_NINJA:
         return _ninja_level(line)
     else:
-        # old content-based detection (may trigger false positives)
+        # content-based detection (may trigger false positives)
         line_lower = line.lower()
         if re.search(r"\b0\s+(tests?|errors?)\s+(failed|error)", line_lower):
             return INFO

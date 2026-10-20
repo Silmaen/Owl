@@ -27,7 +27,7 @@ flowchart LR
 ## Prerequisite: every edit gesture is a command
 
 The journal only records what goes through `CommandRegistry`. At v0.4.0 kickoff the registry holds 13 commands while the
-inspector, the viewport gizmo and several panels still push `UndoCommand`s directly. From now on every new edit gesture
+inspector, the viewport gizmo and several panels still push `UndoCommand`s directly. Every new edit gesture
 is a registry command (ongoing rule, see [Ongoing quality](ongoing-quality.md)); existing gestures move over in the PRs
 that touch them, the inspector field edit (`component.set`) and the gizmo transform first (done in NEST2).
 

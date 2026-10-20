@@ -20,7 +20,7 @@ namespace owl::scene::component {
  *
  * The children carrying a `UiRect` are placed one after the other, in hierarchy order, inside the content area of the
  * widget (the whole rectangle, or the area under the title bar of a `UiWindow`), minus the padding. Each keeps the
- * `size` of its own `UiRect`; its anchors and offset no longer apply. Hidden children take no room. The widget itself
+ * `size` of its own `UiRect`; its anchors and offset do not apply. Hidden children take no room. The widget itself
  * is not resized.
  */
 struct OWL_API UiLayout {

@@ -45,7 +45,7 @@ struct OWL_API TileMeta {
 	 * extend the wall **upward** (taller pillars, towers); values below 1 keep the
 	 * wall on the floor but shorten its height (low half-walls). Walls are always
 	 * bottom-anchored at floor level so a tall wall pokes into the sky and a
-	 * short wall doesn't lift off the ground. Ignored by the legacy 2D path.
+	 * short wall doesn't lift off the ground. Ignored by the 2D path.
 	 */
 	float wallHeight = 1.f;
 	/**

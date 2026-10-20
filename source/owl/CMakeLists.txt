@@ -84,6 +84,10 @@ target_include_directories(${ENGINE_NAME}
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/public>
         $<INSTALL_INTERFACE:include>
 )
+# Commit of the configured tree, in a generated header only Core.cpp includes: a new commit rebuilds one file.
+file(CONFIGURE OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/generated/core/BuildInfo.h
+        CONTENT "#pragma once\n#define ${PROJECT_PREFIX}_GIT_COMMIT \"${${PROJECT_PREFIX}_GIT_HASH}\"\n" @ONLY)
+target_include_directories(${ENGINE_NAME} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/generated)
 # Owl_Base carries the project's own warnings (-Werror -Weverything...) and build settings: in-tree consumers
 # (editor, tests) inherit them, the installed package does not. It only exports what the public headers need.
 target_link_libraries(${ENGINE_NAME} PUBLIC $<BUILD_INTERFACE:${CMAKE_PROJECT_NAME}_Base>)
@@ -123,7 +127,7 @@ owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE ufbx REQUIRED)
 owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE spdlog REQUIRED)
 owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE zstd REQUIRED MODULE_TARGET "zstd::libzstd_static")
 owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE Taskflow REQUIRED MODULE_TARGET "Taskflow::Taskflow")
-# yaml-cpp: the public headers carry YAML as text (renderer/RenderStack.h), never yaml-cpp types (audit G-07)
+# yaml-cpp: the public headers carry YAML as text (renderer/RenderStack.h), never yaml-cpp types
 owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE yaml-cpp REQUIRED)
 # rapidyaml: read side of scenes, prefabs and entity snapshots (core/YamlNode.h); writing stays on yaml-cpp
 owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE ryml REQUIRED MODULE_TARGET "ryml::ryml")

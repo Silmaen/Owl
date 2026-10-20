@@ -175,7 +175,7 @@ public:
 	/**
 	 * @brief
 	 *  `vkCmdDrawIndexedIndirectCount` consuming the compute-culling
-	 *  draw-command SSBO + counter SSBO (#34).
+	 *  draw-command SSBO + counter SSBO.
 	 */
 	void drawIndexedIndirect(const shared<DrawData>& iData, const shared<renderer::gpu::StorageBuffer>& iCommandBuffer,
 							 const shared<renderer::gpu::StorageBuffer>& iCountBuffer, uint32_t iMaxDrawCount) override;

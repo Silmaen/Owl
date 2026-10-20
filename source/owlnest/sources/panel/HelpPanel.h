@@ -29,7 +29,7 @@ namespace owl::nest::panel {
  * - `open(id)` shows the panel and navigates to a specific page id (the
  *   basename of the source file without extension, e.g. `editor`).
  * - Internal links of the form `[text](other.md)` navigate within the
- *   panel; external links (http(s)://) are logged via `OWL_INFO` for now.
+ *   panel; external links (http(s)://) are logged via `OWL_INFO`.
  */
 class HelpPanel final {
 public:

@@ -40,7 +40,7 @@ if (POETRY_CHECK_RESULT EQUAL 0 AND EXISTS "${CMAKE_SOURCE_DIR}/pyproject.toml")
     endif ()
 
     # Sync only when the venv is missing or the lock changed since this build tree last synced: a configure
-    # of an up-to-date tree touches neither the network nor the venv (audit G-09).
+    # of an up-to-date tree touches neither the network nor the venv.
     set(_owl_poetry_lock_hash "no-lock")
     if (EXISTS "${CMAKE_SOURCE_DIR}/poetry.lock")
         file(SHA256 "${CMAKE_SOURCE_DIR}/poetry.lock" _owl_poetry_lock_hash)

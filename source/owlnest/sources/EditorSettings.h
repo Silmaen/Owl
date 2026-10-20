@@ -69,8 +69,7 @@ struct EditorSettings {
 	int codeEditorFontSize = 17;
 	/**
 	 * Pixel size of the main UI font.  Applied at the next startup (atlas is built once in
-	 * `UiLayer::onAttach`).  Default 18 — the previous default was 20 but 18 leaves more room
-	 * for docked panels on dense layouts.
+	 * `UiLayer::onAttach`).
 	 */
 	int uiFontSize = 16;
 	/// Scale of every text of the editor, in percent (75 to 150), applied at once.

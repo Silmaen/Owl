@@ -92,7 +92,7 @@ The first step on the unmerged `Feature/KickoffIsometricRenderer` branch (2026-0
   (the sample uses 64×48, two steps of headroom).
 - Track and road overlays are the overlay ids of the tilemap cells (TM2): drawn right after the terrain of the same
   cell, half a sub-layer above it, through the same (id, slope) table, so they follow the slope.
-- Map storage is the chunked format of TM2 (structure of arrays, binary chunks), now version 3 with the corner heights
+- Map storage is the chunked format of TM2 (structure of arrays, binary chunks), version 3 with the corner heights
   after the chunks, up to 1024² in v0.4.0; 4096² maps wait for the v0.6.0 content pipeline on the same storage interface.
 
 ### Picking
@@ -140,7 +140,7 @@ ISO2 (2026-10-15) added the corner heights (tilemap format 3), the 19 slopes, te
 and foundations of the tileset, overlays drawn along the slope, `pickTerrain` (bench `iso/pick`), the isometric preview
 and the terraforming tools of `TilemapDocument`, the slope table of `TilesetDocument`, and the sloped `iso_test.owl`
 (an 8×8 map with a hump under the house on a foundation, a ridge and a road climbing a ramp); the `isometric` image
-references changed because the sample map is no longer flat.
+references show the sloped sample map.
 
 ISO3 (2026-10-15) added the atlas generator `tools/iso_atlas`, run from the repository root with
 `./docker_run.sh poetry run python -m tools.iso_atlas [--project engine_demo] [--seed 1] [--levels 1x,2x,half]` (default `1x`).

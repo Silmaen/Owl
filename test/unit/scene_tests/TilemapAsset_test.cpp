@@ -229,8 +229,7 @@ TEST_F(TilemapAssetFixture, SaveToUnopenablePathFails) {
 }
 
 TEST_F(TilemapAssetFixture, LoadsMigratedSampleTilemaps) {
-	// Smoke-test the YAML produced by `tools/migrate_inline_tilemaps.py` (PyYAML
-	// safe_dump output with unquoted comma-separated tile strings) — every sample
+	// Smoke-test the shipped YAML (unquoted comma-separated tile strings) — every sample
 	// scene tilemap must round-trip through `loadFromFile` without falling back
 	// to the empty-buffer path.
 	const auto root = owl::test::getRootPath();

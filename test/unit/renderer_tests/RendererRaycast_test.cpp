@@ -344,8 +344,7 @@ TEST(RendererRaycast, transparentBudgetCapsTheStack) {
 
 TEST(RendererRaycast, opaqueWallStopsRayLikeBeforePR3) {
 	bootRendererStack();
-	// Sanity check: with no transparent tiles the new multi-hit path collapses to
-	// the legacy single-hit behaviour (one stripe per ray that hit).
+	// With no transparent tiles the multi-hit path gives one stripe per ray that hit.
 	const CameraOrtho cam(0, 800, 0, 600);
 	const TilemapAsset tm = makeCorridorTilemap();// row 5 fully opaque
 	const RaycastConfig config = makeTestConfig(60.f, 16.f, 64);

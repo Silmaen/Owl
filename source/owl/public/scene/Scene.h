@@ -1178,7 +1178,7 @@ private:
 	 * @brief
 	 *  Orchestrate per-layer rendering using the engine's active `RenderStack`.
 	 *
-	 * Falls back to a single legacy pass when the stack is empty. Centralises the
+	 * Falls back to a single pass when the stack is empty. Centralises the
 	 * `Renderer2D::resetStats / beginScene / endScene` book-keeping.
 	 * @param[in] iCamera The camera used for the rendering passes.
 	 */
@@ -1254,7 +1254,7 @@ private:
 	 * @brief
 	 *  Name of the `RenderLayer` currently being filled.
 	 *
-	 * Empty during the legacy single-pass path. Set by `renderWithStack` before each `render()` call so per-layer
+	 * Empty during the single pass of an empty stack. Set by `renderWithStack` before each `render()` call so per-layer
 	 * entity filtering can run.
 	 */
 	std::string m_currentLayerName;
@@ -1264,7 +1264,7 @@ private:
 	 * @brief
 	 *  Active layer driving the current `render()` pass.
 	 *
-	 * May be null on the legacy single-pass path. Used by `render()` to dispatch type-specific
+	 * May be null during the single pass of an empty stack. Used by `render()` to dispatch type-specific
 	 * entity rendering (e.g. send tilemap walls to `RendererRaycast` instead of the per-cell
 	 * `Renderer2D` quad loop).
 	 */

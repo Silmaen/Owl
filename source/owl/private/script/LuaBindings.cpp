@@ -11,6 +11,7 @@
 #include "LuaBindings.h"
 
 #include "app/EngineContext.h"
+#include "core/Core.h"
 #include "core/Macros.h"
 #include "core/external/lua.h"
 #include "input/ActionFrame.h"
@@ -557,6 +558,12 @@ auto luaSceneQuit([[maybe_unused]] lua_State* iState) -> int {
 	if (activeScene != nullptr)
 		activeScene->quitRequested = true;
 	return 0;
+}
+
+auto luaEngineVersion(lua_State* iState) -> int {
+	static const std::string s_version = getVersionString();
+	lua_pushlstring(iState, s_version.data(), s_version.size());
+	return 1;
 }
 
 auto luaTimeDelta(lua_State* iState) -> int {
@@ -1865,6 +1872,9 @@ auto declareBindings() -> std::vector<LuaBinding> {
 					{"a", Number, true}}},
 		{.table = "scene", .name = "quit", .function = guarded<luaSceneQuit>,
 		 .description = "Quit the game (stop Play in the editor) after this frame."},
+		{.table = "engine", .name = "version", .function = guarded<luaEngineVersion>,
+		 .description = "Version of the engine running the game, as `major.minor.patch`.",
+		 .returns = {{"version", String}}},
 		{.table = "time", .name = "delta", .function = guarded<luaTimeDelta>,
 		 .description = "Duration of the current frame, or of the fixed tick inside `on_tick`, in seconds.",
 		 .returns = {{"seconds", Number}}},
@@ -2187,6 +2197,7 @@ auto getLuaTables() -> const std::vector<LuaTable>& {
 			 .description = "Actions of the game's input map, then the raw keyboard, mouse and gamepad state."},
 			{.name = "sound", .description = "Sound playback, by handle."},
 			{.name = "scene", .description = "Entities of the running level and level changes."},
+			{.name = "engine", .description = "The engine running the game."},
 			{.name = "time", .description = "Frame and fixed-tick time."},
 			{.name = "log", .description = "Engine log."},
 			{.name = "entity", .description = "Entity queries."},

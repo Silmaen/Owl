@@ -21,7 +21,7 @@ and because it already carries the renderer stack.
 
 ## v0.3.0 — repair and name the RHI
 
-- Done (PR-28): real frames in flight, no `vkQueueWaitIdle` on the hot path (≥ 10 queue drains per frame before, B-01)
+- Done (PR-28): real frames in flight, no `vkQueueWaitIdle` on the hot path (B-01)
 - Done (PR-28): image transitions recorded inside the frame, correct `loadOp` between batches (B-02), swapchain
   image written only after its acquire semaphore (B-19), versioned UBO / SSBO (B-04)
 - Done (PR-29): per-frame uniform ring, so several `drawMesh` and several cameras per frame are correct (B-03), VMA

@@ -186,13 +186,7 @@ TEST(RenderStack, buildAppliesSceneOverrides) {
 }
 
 TEST(RenderStack, sceneOverrideAppliedWhenProjectHasNoDefault) {
-	// Regression: when a project layer has no `DefaultConfig`, the merged YAML
-	// passed to `applyConfig` would arrive as an Undefined node and silently
-	// drop every scene-level override. yaml-cpp's auto-vivify on
-	// `node[key] = ...` updates the local node pointer but does not propagate
-	// back through the caller's reference, so passing an Undefined `merged`
-	// to `mergeYaml` lost the override. `buildFromConfig` now pre-vivifies
-	// `merged` to an empty Map.
+	// A project layer without `DefaultConfig` still gets the scene override: `buildFromConfig` starts `merged` as an empty Map.
 	owl::core::Log::init(owl::core::Log::Level::Off);
 	RenderLayerFactory::clear();
 	registerTrackingFactory();

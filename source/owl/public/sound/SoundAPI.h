@@ -93,7 +93,7 @@ public:
 
 	/**
 	 * @brief
-	 *  Play a sound (fire-and-forget, backward compatibility).
+	 *  Play a sound (fire-and-forget).
 	 * @param[in] iData The Sound to play.
 	 */
 	virtual void playSound(const shared<SoundData>& iData) = 0;

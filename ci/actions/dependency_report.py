@@ -1,5 +1,5 @@
 """
-Action reporting the dependencies that have a newer version (audit G-08).
+Action reporting the dependencies that have a newer version.
 
 Informative only: it never fails the build. Two sources:
 

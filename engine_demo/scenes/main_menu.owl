@@ -540,7 +540,7 @@ Entities:
       sizeUnit: [ScreenWidth, ScreenHeight]
       offset: [-16, -16]
     UiText:
-      text: v0.4.0
+      text: v
       color: [0.5, 0.5, 0.5, 0.7]
       fontSize: 24
       horizontalAlignment: Right

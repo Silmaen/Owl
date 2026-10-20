@@ -1,7 +1,7 @@
 #
 # IncludeCheck.cmake — "include what you use" gate for the standard library.
 #
-# A recent libstdc++ (MSYS2 MinGW) no longer drags <cstdint>, <mutex>, … in transitively, so a file
+# A recent libstdc++ (MSYS2 MinGW) does not drag <cstdint>, <mutex>, … in transitively, so a file
 # that relies on such an accidental include compiles on Linux and breaks on Windows. The precompiled
 # header hides the problem everywhere. This module reproduces the strict behaviour on Linux: every
 # header is compiled alone in a generated translation unit, and every source file is compiled again,

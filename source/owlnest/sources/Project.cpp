@@ -8,6 +8,7 @@
 
 #include "Project.h"
 
+#include <core/Core.h>
 #include <input/Input.h>
 #include <platform/AtomicFile.h>
 
@@ -104,6 +105,8 @@ auto Project::loadFromFile(const std::filesystem::path& iFile) -> bool {
 	return true;
 }
 
+auto Project::getGameVersion() const -> std::string { return version.empty() ? getVersionString() : version; }
+
 auto Project::loadGamepadMappings() const -> bool {
 	if (gamepadMappings.empty())
 		return true;
@@ -114,7 +117,7 @@ auto Project::makeExportSettings(const std::filesystem::path& iOutputDir, const 
 		-> data::assets::pack::ExportSettings {
 	return {.gameName = name,
 			.firstScene = firstScene,
-			.version = version,
+			.version = getGameVersion(),
 			.author = author,
 			.description = description,
 			.icon = icon,

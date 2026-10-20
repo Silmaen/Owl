@@ -3,7 +3,8 @@
 --               settings, log, entity visibility, UiImage, UiPanel,
 --               save.load_game, save.list_saves, save.delete_save,
 --               ui.transition_fade_in/out, ui.set_button_enabled, ui.set_visible,
---               input.get_mouse_x, input.get_mouse_y, input.is_action_pressed, ui.get_text
+--               input.get_mouse_x, input.get_mouse_y, input.is_action_pressed, ui.get_text,
+--               engine.version
 
 local pending_load_save = false
 local save_info_id = 0
@@ -21,7 +22,13 @@ function on_create()
     delete_save_id = scene.find_entity("DeleteSaveButton")
     mouse_label_id = scene.find_entity("MousePosLabel")
 
-    -- Hide the legacy ContinueButton — the primary PlayButton now toggles
+    -- The version label follows the engine, never a number written in the scene.
+    local version_id = scene.find_entity("VersionLabel")
+    if version_id ~= 0 then
+        ui.set_text(version_id, "v" .. engine.version())
+    end
+
+    -- Hide the ContinueButton — the primary PlayButton toggles
     -- between "Start" and "Continue" depending on whether an in-game
     -- pause snapshot exists in gamestate.
     if continue_id ~= 0 then

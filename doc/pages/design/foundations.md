@@ -56,7 +56,7 @@ DepManager removed.
 
 Every fix lands with its regression test.
 
-- ![Done][done] Deferred entity destruction; `destroy_entity(self)` no longer frees the running Lua VM
+- ![Done][done] Deferred entity destruction; `destroy_entity(self)` does not free the running Lua VM
   (PR-01: C-01, D-01)
 - ![Done][done] Undo restores entities in place; dirty flag driven by a generation counter, so closing never
   loses edits silently (PR-03: E-01, E-02, C-05, E-05)
@@ -123,8 +123,8 @@ Every fix lands with its regression test.
 
 ### Packages without a rebuild
 
-![Done][done] Each platform used to build its two packages (Engine SDK, Owl Nest) in their own trees, apart from the
-tested builds, with `OWL_DEVELOPMENT` / `OWL_PACKAGE_ENGINE` telling a package from a development build. Now:
+![Done][done] The two packages of each platform (Engine SDK, Owl Nest) come from the tested trees, with no package
+build switch:
 
 - the asset lookup is a run-time decision: `assets/` next to the working directory, then `engine_assets/` and the
   application's assets found above it (a development tree); no build switch is left;
@@ -135,7 +135,7 @@ tested builds, with `OWL_DEVELOPMENT` / `OWL_PACKAGE_ENGINE` telling a package f
   package configurations publish those archives and the documentation without building; arm64, which has no tested
   release tree, builds `package-linux` (the release build without tests).
 
-The SDK is now Release only (it was Debug + Release): a Debug consumer links the Release library through CMake's
+The SDK is Release only: a Debug consumer links the Release library through CMake's
 imported-configuration fallback.
 
 ## Phase D — Usability & dependency reduction

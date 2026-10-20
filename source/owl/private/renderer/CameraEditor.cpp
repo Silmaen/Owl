@@ -91,7 +91,7 @@ auto CameraEditor::getForwardDirection() const -> math::vec3 {
 }
 
 auto CameraEditor::getOrientation() const -> math::quat {
-	// Proper Euler->quat (yaw about world Y, pitch about local X): a real unit rotation, so a full 360deg turn works and the view never shears (the old `{1,-pitch,-yaw,0}` could not pass ~180deg, w fixed at 1).
+	// Proper Euler->quat (yaw about world Y, pitch about local X): a real unit rotation, so a full 360deg turn works and the view never shears.
 	return math::quat{math::vec3{-m_pitch, -m_yaw, 0.0f}};
 }
 

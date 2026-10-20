@@ -46,7 +46,7 @@ frame (p50, p99, peak), the meshing work and the chunk appearance latency.
 token) from a client thread while the bench thread plays the editor main loop, calling `McpServer::onUpdate` without
 pause: `mcp/ping` is the transport and dispatcher alone, `mcp/tools_call/entity_rename` a full `tools/call` of a
 registry command on a headless session. The wait for the next frame of a real editor is excluded, so the median is the
-"+5 ms" part of the v0.4.0 budget "≤ one frame + 5 ms". Both ends set `TCP_NODELAY`: without it, Nagle's algorithm and the
+"+5 ms" part of the MCP budget "≤ one frame + 5 ms". Both ends set `TCP_NODELAY`: without it, Nagle's algorithm and the
 delayed ACK add 40 ms to every call. The libraries of the server are built with `OWL_BENCHMARK` even when
 `OWL_BUILD_NEST` is off (never the editor).
 
@@ -71,14 +71,12 @@ flowchart LR
   nightly run (or run the action with `-- --update-baseline` on the same agent) and refresh it when a change is
   deliberately slower or the agent changes.
 - `test/bench/thresholds.json` widens the threshold by name pattern (multi-threaded physics steps and world creation
-  of 100 bodies, the `mcp` round trips, `sample/load/game_over`); it is not part of the baseline, so a refresh keeps it.
+  of 100 bodies, the `mcp` round trips, `sample/load/game_over`, the flat `path/long_query` cases); it is not part of the baseline, so a refresh keeps it.
 - Agent: pinned to `linux-build-hephaistos` (8 cores). The committed baseline is the median of its 5 runs of
   2026-10-19 on the v0.4.0 release code (builds 38655 to 38682, in `context.baseline_runs`); the runs agree within 2 %
   (median, 9 % for nine benchmarks in ten). Timings from another agent do not compare (artemis is 20 % faster but
   varies 10.7 % between runs, against 1.7 % here).
-- Every group is in the baseline, `mcp`, `path` and `hud/frame/1000_row_list` included. Against the v0.3.0-era
-  baseline the Engine Demo scenes (`sample/*`) are slower because they grew (the 64×40 hub, the 197×32 platformer),
-  and the warm Slang compilation of the engine shaders by 24 % (more shaders).
+- Every group is in the baseline, `mcp`, `path` and `hud/frame/1000_row_list` included.
 
 ```bash
 ./docker_run.sh poetry run python ci_action.py Build linux-bench

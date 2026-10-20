@@ -221,7 +221,7 @@ auto makeHudScene() -> shared<scene::Scene> {
 	auto cam = sc->createEntity("Camera");
 	cam.addComponent<scene::component::Camera>().primary = true;
 	auto canvas = makeCanvas(*sc, Canvas::ScaleMode::ScaleWithHeight);
-	// The legacy routing tag no longer matters: the HUD pass draws every canvas.
+	// A `ui` routing tag does not matter: the HUD pass draws every canvas.
 	canvas.addComponent<scene::component::RendererTag>().rendererName = "ui";
 	auto panel = makeWidget(*sc, canvas, UiRect::Anchor::TopLeft, {0.f, 0.f}, {200.f, 100.f}, {10.f, 10.f});
 	panel.addComponent<scene::component::UiPanel>();

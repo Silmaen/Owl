@@ -215,7 +215,7 @@ void VulkanCore::createInstance() {
 		m_state = State::Error;
 		return;
 	}
-	// now creation.
+	// Creation.
 	std::vector<const char*> layers;
 	layers.reserve(requestedLayers.size());
 	for (const auto& layer: requestedLayers) layers.emplace_back(layer.c_str());

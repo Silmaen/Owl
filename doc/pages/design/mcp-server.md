@@ -30,8 +30,8 @@ Pull requests MCP0 to MCP4 of [Isometric worlds](isometric-worlds.md).
 
 ### Command API v2 (MCP0)
 
-Done. At v0.3.0 the registry had 9 commands, arguments without defaults nor choices, and results limited to an
-entity id; it now has 13 (see [Editor](../editor.md), Editor commands).
+Done: the registry has 13 commands, with defaults, choices and structured results (see [Editor](../editor.md),
+Editor commands).
 
 - Argument types `Vec2`, `Vec4`, `Color` and `Enum`; `ArgSpec::defaultValue` (filled in before the command runs)
   and `ArgSpec::choices` (checked), so tool schemas are precise
@@ -55,7 +55,7 @@ capture, statistics — implemented by `EditorLayer` (delegation to the active s
 - `PlayReport`: frames, ticks, CPU time, draw calls, last phase timings, entity count, optional `FrameCapture`
   (`encodePng` through the engine's `encodeImagePng`); the Null renderer reads back a blank image of the right size
 - Held keys, mouse buttons and a gamepad go through the input injection (any window type); input actions come with MCP4
-- `EditorLayer::runCommand` is gone: the editor runs commands through `EditorSession::execute`; the scenario runner keeps
+- The editor runs commands through `EditorSession::execute`; the scenario runner keeps
   its own registry and undo history (it edits the playing scene on purpose) and shares `findProjectDirectory`
 
 ### Dispatcher (MCP2)

@@ -19,15 +19,14 @@ namespace owl::renderer::utils {
 
 /**
  * @brief
- *  Per-column raycast DDA compute pass (#35). Replaces the CPU per-column
- *  walk in `RendererRaycast::drawTilemapWalls` with one thread per screen
- *  column on the GPU. Outputs the same per-column hit data the CPU walk
- *  used to build (tile index, perpendicular distance, texture-U fraction,
+ *  Per-column raycast DDA compute pass: the GPU counterpart of the CPU per-column
+ *  walk in `RendererRaycast::drawTilemapWalls`, one thread per screen
+ *  column. Outputs the same per-column hit data as the CPU walk
+ *  (tile index, perpendicular distance, texture-U fraction,
  *  wall height, side, transparency flag) into `getColumnHitBuffer()` plus
  *  a per-column hit-count SSBO and an opaque-depth zBuffer SSBO.
  *
- *  The biggest single CPU → GPU win on the v0.2.0 roadmap; 1280 screen
- *  columns × ~30 DDA steps per column moves off the main thread into a
+ *  1280 screen columns × ~30 DDA steps per column run off the main thread in a
  *  ~20-workgroup compute dispatch.
  *
  *  Caller responsibilities:

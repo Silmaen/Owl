@@ -71,7 +71,7 @@ flowchart LR
 
 Untagged entities go to the first layer, and backgrounds draw on the first pass only. The HUD pass takes every
 `Canvas` whatever its `RendererTag` (see [Scene](scene.md#ui-components)). A project without `RendererStack:` gets a
-single implicit `Renderer2D`, the legacy single-pass path.
+single implicit `Renderer2D`, drawn in a single pass.
 
 ### Configuration model
 
@@ -134,7 +134,7 @@ Wolfenstein mini) keeps its share of the screen at 1080p or 1440p, like a `Scale
 
 | Tag state                                    | Routing                                               |
 |----------------------------------------------|-------------------------------------------------------|
-| Component absent                             | First layer of the active stack (legacy `Renderer2D`) |
+| Component absent                             | First layer of the active stack                       |
 | Component present, name matches a layer      | That layer renders the entity                         |
 | Component present, name unknown to the stack | Entity skipped, one-shot warning per scene activation |
 
@@ -212,13 +212,13 @@ gpu::RendererDescriptors::release("MyRenderer");
 The identifier of a name never changes (before `declare`, after `release`) and `ScopedActive` reads the block cached
 for it: no string built, no lookup. While one is alive, `vulkan::UniformBuffer`, `RenderCommand::bindTextures`,
 `vulkan::Texture2D::bind`, `VulkanHandler::pushPipeline` and `VulkanHandler::bindPipeline` route through the block;
-outside any scope they fall back to the legacy global `Descriptors` singleton (the `Texture2D` storage table and a few
-older call sites). Blocks also hold `BindingType::StorageBuffer` slots: `Renderer2D` declares binding 2 as an SSBO and
+outside any scope they fall back to the global `Descriptors` singleton (the `Texture2D` storage table and the call sites
+without a block). Blocks also hold `BindingType::StorageBuffer` slots: `Renderer2D` declares binding 2 as an SSBO and
 attaches its `vulkan::StorageBuffer` with `bindStorageBuffer`.
 
-The blocks fixed the NVIDIA `vkCmdBindPipeline` crash of the instanced tilemap path (the shared global layout
-declared bindings the shader did not sample) and the flicker of two `Renderer2D` layers with different view
-projections in one frame (uniform blocks are now copied into the frame ring at each change).
+Per-renderer blocks keep a layout to the bindings its shaders sample (a shared global layout crashes NVIDIA's
+`vkCmdBindPipeline` on the instanced tilemap path), and uniform blocks are copied into the frame ring at each change,
+so two `Renderer2D` layers with different view projections in one frame do not flicker.
 
 ### Scene world matrices on the GPU
 
@@ -252,9 +252,7 @@ flowchart LR
 ### Canonical instanced pipeline
 
 Every renderer follows one shape: a compute pre-pass writes an SSBO, the graphics pass is instanced and indexes it
-by instance id, the CPU does no per-vertex transform. New renderers (the v0.5.0 3D pipeline, the GPU sprite
-stripes) build on it. Tilemaps went from one deferred instanced draw per scene (`tilemap_instanced.slang`, every
-per-draw datum in the instance stream, 32 tilesets per batch) to persistent chunks in v0.4.0
+by instance id, the CPU does no per-vertex transform. New renderers build on it. Tilemaps draw persistent chunks
 ([Chunked tilemaps](#chunked-tilemaps)). Validate a change on a real GL or Vulkan backend (the Null backend runs no
 GPU work) with the frame bench or `OWL_PROFILE_SCOPE`, on a 5 000-quad scene, a deep hierarchy and `raycast_demo`,
 recording the GPU model: the path is bandwidth-bound, and CI checks correctness, not GPU timing.
@@ -282,7 +280,7 @@ flowchart LR
   `PrepareStatistics::lateBuiltChunkCount`. An asset neither prepared nor drawn for
   `RendererTilemap::cacheEvictionPrepares` prepare phases leaves the cache.
 - **Layers draw from `onRender`.** `Renderer2DLayer::onRender` queues its tilemaps, `RendererRaycastLayer::onRender`
-  casts their walls; `Scene::render` no longer handles tilemaps, and the editor composite uses a `Renderer2DLayer`.
+  casts their walls; `Scene::render` does not handle tilemaps, and the editor composite uses a `Renderer2DLayer`.
 - **Draw.** For each queued entity and each visible layer, one update of the per-draw uniform block (camera, entity
   world transform with rotation and scale, grid origin, cell size, layer depth, parallax offset, atlas grid, entity id,
   texture slot), then one instanced draw per non-empty chunk whose transformed bounds touch the view. Layers keep
@@ -496,7 +494,7 @@ A draw is fully described by two explicit objects, so no draw inherits state fro
 | `beginBatch()` / `endBatch()`       | Render pass scope on the bound framebuffer (opened lazily by any draw)  |
 | `getRenderCounters`, GPU timestamps | Profiling (`OwlRunner --frame-bench`)                                   |
 
-**Adding a backend** (WebGPU is planned for v0.8.0): implement `RenderAPI`, `GraphContext`, `DrawData`, `Shader`,
+**Adding a backend** (WebGPU is on the [roadmap](roadmap.md)): implement `RenderAPI`, `GraphContext`, `DrawData`, `Shader`,
 `ComputeShader`, `Texture2D`, `Framebuffer`, `UniformBuffer`, `StorageBuffer`, `VertexBuffer` / `IndexBuffer` under
 `private/renderer/gpu/<backend>/`, add the `RenderAPI::Type` enumerator, a case to each `create` factory and a
 `RendererDescriptors` branch. Renderers only see `DrawData`, `PipelineState`, the blocks and `RenderCommand`; Slang
@@ -794,10 +792,10 @@ flowchart LR
     Tm --> R["primitive runs, sorted by depth, type, rank<br/>one drawDataInstanced each"]
 ```
 
-**Draw order** (`DrawRuns`, B-10). Every primitive carries a sort key, the `depth` field of its data struct (default 0;
+**Draw order** (`DrawRuns`). Every primitive carries a sort key, the `depth` field of its data struct (default 0;
 larger is nearer the viewer, the convention of the isometric layer). The rule is *depth first, then type, then
 submission order*: primitives draw by increasing depth; at one depth quads (and sprites) come first, then circles,
-lines (rects, polylines), then text, as before; within one type the submission order holds. A batch whose primitives
+lines (rects, polylines), then text; within one type the submission order holds. A batch whose primitives
 share one depth keeps one counter per type and draws one range per type. When a second depth appears, consecutive
 primitives of one type and depth become *runs*, sorted at `flush()` by depth, type and submission rank (`std::sort` on a
 vector reserved at `init`, no allocation); runs of one type that touch in their instance buffer merge into a single

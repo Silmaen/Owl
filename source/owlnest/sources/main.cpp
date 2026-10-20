@@ -11,12 +11,14 @@
 #include "EditorSettings.h"
 #include "Project.h"
 #include <app/EntryPoint.h>
+#include <core/Core.h>
 #include <gui/UiLayer.h>
 
 #include <cstdio>
 #include <filesystem>
 #include <optional>
 #include <span>
+#include <string>
 #include <string_view>
 #include <vector>
 
@@ -152,7 +154,7 @@ auto app::createApplication(int iArgc, char** iArgv) -> shared<Application> {
 	gui::UiLayer::setCodeFontSize(static_cast<float>(preSettings.codeEditorFontSize));
 	return mkShared<OwlNest>(AppParams{
 			.args = iArgv,
-			.name = "Owl Nest - Owl Engine Editor",
+			.name = "Owl Nest " + getVersionString() + " - Owl Engine Editor",
 #ifdef OWL_ASSETS_LOCATION
 			.assetsPattern = OWL_ASSETS_LOCATION,
 #endif

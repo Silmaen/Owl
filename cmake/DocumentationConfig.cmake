@@ -13,7 +13,7 @@ if (NOT DOXYGEN_FOUND)
     return()
 endif ()
 message(STATUS "found doxygen version: ${DOXYGEN_VERSION}")
-# Generated in the build tree: two presets configured in parallel no longer write the same file.
+# Generated in the build tree, so two presets configured in parallel do not write the same file.
 configure_file(${CMAKE_SOURCE_DIR}/DoxyfileTemplate ${CMAKE_BINARY_DIR}/Doxyfile @ONLY)
 add_custom_target(documentation
         COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_BINARY_DIR}/Doxyfile

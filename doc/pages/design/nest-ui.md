@@ -72,9 +72,8 @@ Browser (`AssetThumbnails`), atlas swatches in the asset fields of the inspector
 - **DCC-style navigation** — ![Done][done] (landed early, v0.2.1): Alt+LMB rotate-in-place, Alt+RMB pan, Alt+MMB
   dolly; Ctrl+LMB orbit, Ctrl+MMB/RMB pan, wheel zoom — shared by every scene viewport. A corner XYZ orientation gizmo
   shows the camera facing.
-- **Orientation math reworked** — ![Done][done]: `CameraEditor` now builds its orientation from a proper Euler
-  quaternion, so a full 360° turn works and the view no longer shears (the old `{1,-pitch,-yaw,0}` convention warped
-  past ~180°).
+- **Orientation math** — ![Done][done]: `CameraEditor` builds its orientation from a proper Euler
+  quaternion, so a full 360° turn works and the view never shears.
 - **Navigation settings** — ![Done][done]: orbit, pan and zoom speeds, vertical inversion and a dead zone under
   `Settings > Editor > Camera` (`CameraEditor::Navigation`).
 - **Interactive view-cube** — ![Done][done]: the corner gizmo shows the six axis ends; a click on one looks from that
@@ -113,7 +112,7 @@ context menu or a viewport overlay dropdown. Reverts to the editor camera on dem
   Markdown rewriter swapping each fence for an `![alt](images/mermaid/<sha>.svg)` reference. No runtime JS/Node
   dependency — pre-rendering can run with a packaged tool or a custom subset renderer in C++
 - Update `cmake/HelpAssets.cmake` to invoke the pre-renderer and surface the cache files
-- Tests: assert each bundled `help/*.md` no longer contains ` ```mermaid ` after the bundle step and
+- Tests: assert each bundled `help/*.md` does not contain ` ```mermaid ` after the bundle step and
   that the rasterized diagram files exist
 
 ### Help-panel rendering polish (V2)

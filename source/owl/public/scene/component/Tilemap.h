@@ -452,7 +452,7 @@ private:
  * @brief
  *  Reference to a `TilemapAsset` (`.owltilemap`) attached to an entity.
  *
- * Since v0.2.0 the grid data (width / height / layers / tileset) lives in a
+ * The grid data (width / height / layers / tileset) lives in a
  * standalone `scene::TilemapAsset` so the same level can be reused across
  * scenes and authored in a dedicated tilemap document. This component is the
  * scene-side handle: a relative path on disk plus the runtime-resolved
@@ -461,10 +461,9 @@ private:
  * `SpriteRenderer`).
  *
  * When the path is empty but `asset` is non-null (e.g. an in-memory tilemap
- * built programmatically by tests, or a legacy inline tilemap that has not
+ * built programmatically by tests, or an inline tilemap read from a scene that has not
  * yet been saved through the editor), the asset's data is serialized inline
- * under the `inline:` key for back-compat. The supported path is the
- * preferred form for new scenes.
+ * under the `inline:` key. The path is the preferred form.
  *
  * On-disk form (preferred):
  * ```yaml
@@ -489,13 +488,13 @@ private:
  *       - {cell: [12, 7], noExit: [north], noEnter: [south], cost: 2}
  * ```.
  *
- * The legacy `rules` list (`mode: rules`) still loads:
+ * The explicit `rules` list (`mode: rules`) is read too:
  * ```yaml
  *     rules:
  *       - {tile: 3, cost: 1.0, exits: [east, south, west, north], enters: [east, south, west, north]}
  * ```.
  *
- * On-disk form (legacy / in-memory fallback, terrain tiles only):
+ * On-disk form (inline / in-memory fallback, terrain tiles only):
  * ```yaml
  * Tilemap:
  *   inline:
@@ -540,7 +539,7 @@ struct OWL_API Tilemap {
 	 * @brief
 	 *  Read this component from a YAML node.
 	 *
-	 * Accepts both the preferred `tilemapPath`-only form and the legacy inline
+	 * Accepts both the preferred `tilemapPath`-only form and the inline
 	 * form (either flat or nested under `inline:`). Inline data is moved into
 	 * a fresh in-memory `TilemapAsset`; the path is left empty and the asset
 	 * is considered "unsaved" until the user gives it a path through the

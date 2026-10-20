@@ -31,7 +31,7 @@ namespace owl::scene::ui {
 
 namespace {
 
-// A world-space string takes its em height from the Y scale: the X scale no longer squeezes the glyphs.
+// A world-space string takes its em height from the Y scale: the X scale does not squeeze the glyphs.
 auto uniformTextTransform(math::Transform iTransform) -> math::Transform {
 	iTransform.scale().x() = std::copysign(iTransform.scale().y(), iTransform.scale().x());
 	return iTransform;

@@ -9,6 +9,7 @@
 #include "testHelper.h"
 
 #include <app/EngineContext.h>
+#include <core/Core.h>
 #include <core/Log.h>
 #include <scene/Entity.h>
 #include <scene/GameState.h>
@@ -301,6 +302,22 @@ TEST(LuaBindings, timeDelta) {
 	const auto dt = inst.getPropertyFloat("dt_val");
 	ASSERT_TRUE(dt.has_value());
 	EXPECT_NEAR(dt.value(), 0.033f, 0.001f);
+
+	core::Log::invalidate();
+}
+
+TEST(LuaBindings, engineVersion) {
+	core::Log::init(core::Log::Level::Off);
+	const std::string script = "version = ''\n"
+							   "function on_create()\n"
+							   "  version = engine.version()\n"
+							   "end\n";
+	const std::vector<uint8_t> data(script.begin(), script.end());
+
+	const ScriptInstance inst;
+	ASSERT_TRUE(inst.createFromBuffer(data, "engine_version_test", 1));
+	inst.onCreate();
+	EXPECT_EQ(inst.getPropertyString("version").value_or(""), getVersionString());
 
 	core::Log::invalidate();
 }

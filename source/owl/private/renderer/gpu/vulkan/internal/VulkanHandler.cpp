@@ -197,7 +197,7 @@ void VulkanHandler::createSwapChain() {
 							 .tiling = AttachmentSpecification::Tiling::Optimal},
 							{.format = AttachmentSpecification::Format::RedInteger,
 							 .tiling = AttachmentSpecification::Tiling::Optimal},
-							// Matches the editor FB depth so 2D + voxel pipelines are RP-compatible (fixes 02684).
+							// Matches the editor FB depth so 2D + voxel pipelines are RP-compatible (VUID 02684).
 							{.format = AttachmentSpecification::Format::Depth24Stencil8,
 							 .tiling = AttachmentSpecification::Tiling::Optimal},
 					},

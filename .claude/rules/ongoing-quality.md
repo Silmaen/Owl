@@ -33,7 +33,7 @@ Mirrors the *Ongoing across all releases* section of `doc/pages/roadmap.md`; kee
   line coverage (engine without backends, `gcovr.cfg`) drops more than one point below its last successful build
 - Unit tests for pure logic; integration tests for anything crossing module boundaries (scene +
   renderer, script + physics, pack + loader, etc.)
-- Opportunistically backfill tests for untested legacy paths when you touch them
+- Opportunistically backfill tests for untested paths when you touch them
 - Follow `.claude/rules/testing.md` for placement and naming conventions
 
 ## Performance

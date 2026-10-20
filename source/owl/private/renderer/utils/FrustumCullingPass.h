@@ -21,7 +21,7 @@ namespace owl::renderer::utils {
 
 /**
  * @brief
- *  GPU frustum-culling compute pre-pass (#34). One thread per entity AABB.
+ *  GPU frustum-culling compute pre-pass. One thread per entity AABB.
  *  Visible entities atomically append a `VkDrawIndexedIndirectCommand` /
  *  `glMultiDrawElementsIndirect` entry to a draw-command SSBO. The graphics
  *  pass then issues a single

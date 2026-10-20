@@ -10,6 +10,7 @@
 
 #include "../AssetKind.h"
 
+#include <core/Core.h>
 #include <gui/IconBank.h>
 #include <gui/IconFont.h>
 #include <gui/widgets/Combo.h>
@@ -204,7 +205,9 @@ void ProjectSettings::onImGuiRender() {
 				}
 				std::ignore = gui::widgets::propertyReset(false);
 				drawDefaultHud(m_localProject.defaultHud, m_availableHuds);
-				std::ignore = gui::widgets::propertyText("Version", m_versionBuffer, "1.0.0");
+				const auto engineVersion = getVersionString();
+				std::ignore = gui::widgets::propertyText("Version", m_versionBuffer, engineVersion.c_str(),
+														 "Version of the game; empty, it follows the engine version.");
 				std::ignore = gui::widgets::propertyText("Author", m_authorBuffer);
 				std::ignore = gui::widgets::propertyText("Description", m_descriptionBuffer);
 				std::ignore = gui::widgets::propertyText("Icon", m_iconBuffer, "icon.png",
