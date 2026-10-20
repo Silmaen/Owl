@@ -119,6 +119,13 @@ elseif (${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
                 -Wno-nrvo
         )
     endif ()
+    if (${CMAKE_CXX_COMPILER_VERSION} VERSION_GREATER_EQUAL 23)
+        # Suggestions to mark every getter returning a member reference `[[clang::lifetimebound]]`.
+        target_compile_options(${CMAKE_PROJECT_NAME}_Base INTERFACE
+                -Wno-lifetime-safety-intra-tu-suggestions
+                -Wno-lifetime-safety-intra-tu-constructor-suggestions
+        )
+    endif ()
     set(${PROJECT_PREFIX}_COMPILER_CLANG ON)
     set(${PROJECT_PREFIX}_COMPILER_STR "clang")
 else ()
