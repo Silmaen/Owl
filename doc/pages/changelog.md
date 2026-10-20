@@ -34,7 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Clang 23 builds: its `[[clang::lifetimebound]]` suggestion warnings are off, like the other opinionated `-Weverything` groups.
+- Clang 23 builds: its `[[clang::lifetimebound]]` suggestions and the strict-only lifetime-safety checks (false positives on `push_back`) are off.
 - Documentation site: screenshots keep their colours in dark mode (the theme inverted every image of a table or an image block).
 
 ## [0.4.0] - 2026-10-20

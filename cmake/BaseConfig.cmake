@@ -121,9 +121,15 @@ elseif (${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
     endif ()
     if (${CMAKE_CXX_COMPILER_VERSION} VERSION_GREATER_EQUAL 23)
         # Suggestions to mark every getter returning a member reference `[[clang::lifetimebound]]` (intra- and
-        # cross-TU); the lifetime-safety bug detectors stay on.
+        # cross-TU). Of the bug detectors, only the permissive set stays on: the strict-only members report a
+        # `std::vector&` parameter as invalidated by its own `push_back`.
         target_compile_options(${CMAKE_PROJECT_NAME}_Base INTERFACE
                 -Wno-lifetime-safety-suggestions
+                -Wno-lifetime-safety-invalidation
+                -Wno-lifetime-safety-use-after-scope-moved
+                -Wno-lifetime-safety-return-stack-addr-moved
+                -Wno-lifetime-safety-dangling-field-moved
+                -Wno-lifetime-safety-dangling-global-moved
         )
     endif ()
     set(${PROJECT_PREFIX}_COMPILER_CLANG ON)
