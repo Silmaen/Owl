@@ -67,7 +67,9 @@ foreach (child ${children})
         if ("${SRCS} " STREQUAL " ")
             message(STATUS "Test folder '${child}' is empty, skipping")
         else ()
-            add_executable(${PROJECT_PREFIX_LOWER}_${child}_unit_test ${SRCS})
+            # TestTempDirectory.cpp gives each test process a temporary directory of its own.
+            add_executable(${PROJECT_PREFIX_LOWER}_${child}_unit_test ${SRCS}
+                    ${CMAKE_CURRENT_SOURCE_DIR}/test_helper/TestTempDirectory.cpp)
             set_target_properties(${PROJECT_PREFIX_LOWER}_${child}_unit_test PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
             set_target_properties(${PROJECT_PREFIX_LOWER}_${child}_unit_test PROPERTIES FOLDER "UnitTests")
             target_include_directories(${PROJECT_PREFIX_LOWER}_${child}_unit_test PUBLIC test_helper)
