@@ -120,10 +120,10 @@ elseif (${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
         )
     endif ()
     if (${CMAKE_CXX_COMPILER_VERSION} VERSION_GREATER_EQUAL 23)
-        # Suggestions to mark every getter returning a member reference `[[clang::lifetimebound]]`.
+        # Suggestions to mark every getter returning a member reference `[[clang::lifetimebound]]` (intra- and
+        # cross-TU); the lifetime-safety bug detectors stay on.
         target_compile_options(${CMAKE_PROJECT_NAME}_Base INTERFACE
-                -Wno-lifetime-safety-intra-tu-suggestions
-                -Wno-lifetime-safety-intra-tu-constructor-suggestions
+                -Wno-lifetime-safety-suggestions
         )
     endif ()
     set(${PROJECT_PREFIX}_COMPILER_CLANG ON)
