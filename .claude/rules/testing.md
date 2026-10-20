@@ -96,7 +96,7 @@ TEST_F(MyFixture, TestName) { ... }
 Inside Docker (see root `CLAUDE.md`), Clang presets only:
 ```bash
 ./docker_run.sh ctest --test-dir output/build/linux-clang-release --output-on-failure -j8
-./docker_run.sh output/build/linux-clang-release/bin/owl_scene_tests_unit_test --gtest_filter='SceneHierarchy.*'
+./docker_run.sh bash -c 'cd output/build/linux-clang-release && bin/owl_scene_tests_unit_test --gtest_filter="SceneHierarchy.*"'
 ./docker_run.sh poetry run python ci_action.py Test linux-clang-release
 ```
 The whole suite runs in a few seconds once built (Release; debug + coverage is slower).
@@ -110,7 +110,7 @@ The whole suite runs in a few seconds once built (Release; debug + coverage is s
   seed of N .`). Reproduce a failing order with the same seed:
   ```bash
   ./docker_run.sh env GTEST_RANDOM_SEED=N ctest --test-dir output/build/linux-sanitizer-address -R physics --output-on-failure
-  ./docker_run.sh output/build/linux-sanitizer-address/bin/owl_physics_tests_unit_test --gtest_shuffle --gtest_random_seed=N
+  ./docker_run.sh bash -c 'cd output/build/linux-sanitizer-address && bin/owl_physics_tests_unit_test --gtest_shuffle --gtest_random_seed=N'
   ```
 - ctest sets `ASAN_OPTIONS` / `UBSAN_OPTIONS` / `TSAN_OPTIONS` with `halt_on_error=1` (`test/unit/CMakeLists.txt`), and
   the code is built with `-fno-sanitize-recover=all`: any sanitizer report fails the test. When running a binary
@@ -123,9 +123,9 @@ The whole suite runs in a few seconds once built (Release; debug + coverage is s
 ## Conventions
 
 - Test names: `TEST(Module, Behavior)` — e.g., `TEST(Scene, CopyCreatesIndependentScene)`
-- Existing categories (one folder each): core, debug, event, font, gui, input, io, layer, math, mesh, physics, render,
-  renderer, runner, scene, script, sound, voxel, owlnest (editor: links the `OwlNestCore` static library, skipped when
-  `OWL_BUILD_NEST` is off)
+- Existing categories (one folder each): core, debug, event, export, font, gui, input, io, layer, math, mesh, physics,
+  render, renderer, runner, scene, script, sound, voxel, owlnest (editor: links the `OwlNestCore` static library,
+  skipped when `OWL_BUILD_NEST` is off)
 - Optional modules: `physics_tests`, `script_tests`, `gui_tests` are skipped with their module (`OWL_MODULE_*`); a test
   elsewhere that needs a module starts with `OWL_REQUIRE_MODULE(PHYSICS)` (at the end of a fixture's `SetUp` for
   the whole fixture), and code reaching a private backend header sits under `#if OWL_WITH_RENDER`.

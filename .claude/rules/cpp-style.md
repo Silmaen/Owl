@@ -123,13 +123,13 @@ Treat acronyms as words (PascalCase capitalises only the first letter); the firs
 |--------------|--------------------------------|-----------------|
 | UI           | `UiPanel`, `UiText`, `UiLayer` | `m_uiLayer`     |
 | ID           | `EntityId`, `LinkId`           | `m_entityId`    |
-| UUID         | `Uuid`                         | `m_uuid`        |
 | API          | `RenderApi`, `SoundApi`        | `m_renderApi`   |
 | GLFW / GPU   | `GpuFramebuffer`, `GlfwInput`  | `m_gpuContext`  |
 | YAML         | `YamlSerializer`               | `m_yamlNode`    |
 | HTTP / URL   | `HttpClient`, `UrlBuilder`     | `m_httpHeaders` |
 
-The only exception is `OWL_API` (a macro export tag), which keeps the all-caps spelling because macros use SCREAMING_SNAKE_CASE.
+Two exceptions keep the all-caps spelling: `OWL_API` (macros use SCREAMING_SNAKE_CASE) and the `core::UUID` type with
+the names built on it (`findEntityByUUID`); a UUID member or parameter is still `m_uuid` / `iUuid`.
 
 ## Return Types
 

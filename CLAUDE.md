@@ -1,8 +1,8 @@
 # CLAUDE.md
 
 Owl is a C++23 game engine (`OwlEngine`) with an editor (Owl Nest), a game runner, a Python CI wrapper and
-TeamCity pipelines. Version: see `project(... VERSION ...)` in `CMakeLists.txt` (0.5.0 in development, plan in
-`doc/pages/roadmap.md`; 0.4.0, released 2026-10-20, is the last release). Backends: graphics OpenGL 4.5 / Vulkan 1.3+ / Null, input
+TeamCity pipelines. Version: see `project(... VERSION ...)` in `CMakeLists.txt`; plan and released versions in
+`doc/pages/roadmap.md`. Backends: graphics OpenGL 4.5 / Vulkan 1.3+ / Null, input
 GLFW / Null, sound OpenAL / Null. ECS on EnTT with parent-child hierarchy. Platforms: Linux x64/arm64,
 Windows x64 (MinGW).
 
@@ -23,7 +23,7 @@ natively, never install a tool on the host; if a tool is missing from the image,
 ./docker_run.sh cmake --preset linux-clang-release -S .          # configure (fetches deps)
 ./docker_run.sh cmake --build output/build/linux-clang-release   # ~1 min full build on 32 cores
 ./docker_run.sh ctest --test-dir output/build/linux-clang-release --output-on-failure -j8
-./docker_run.sh output/build/linux-clang-release/bin/owl_<cat>_tests_unit_test --gtest_filter='Suite.*'
+./docker_run.sh bash -c 'cd output/build/linux-clang-release && bin/owl_<cat>_tests_unit_test --gtest_filter="Suite.*"'
 ./docker_run.sh --gui output/build/linux-clang-release/bin/OwlNest   # GPU + display + audio
 ./docker_run.sh --perf perf ...                                      # ptrace / perf events
 ```
@@ -106,7 +106,7 @@ Python, never a bare `conan`. Inside the container the venv lives in `/fhome/.ca
 - Slang matrices default to row-major: declare `column_major float4x4` for C++ uploads.
 - `getRootPath()` (test helper) loops forever when CWD is the project root.
 - Slang 2026.19: ~165 ms cold and 21–35 ms per shader in Release (`test/bench/`, 2026-10); engine shaders are
-  precompiled at build time (`OwlShaderBake`), still share the session across tests with `SetUpTestSuite`. Debug + coverage builds are much slower (not measured yet).
+  precompiled at build time (`OwlShaderBake`), still share the session across tests with `SetUpTestSuite`. Debug + coverage builds are much slower (not measured).
 - After changing the layout of a widely included public header (`Scene.h`, components), an incremental
   build can keep a stale object → heap corruption in an unrelated test. Rebuild with `--clean-first`
   before trusting the results.

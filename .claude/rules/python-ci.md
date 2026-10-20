@@ -74,18 +74,20 @@ Sub-checks (all on by default):
 7. **std-includes** — every file under `source/` and `test/{unit,bench}/` includes the
    standard header of each `std::` symbol / `uint*_t` / `size_t` it names
    (`ci/utils/std_includes.py`; a `.cpp` may rely on its own header and `owlpch.h`).
-8. **test-assertions** — every gtest `TEST*` body asserts something (a gtest macro, or an `expect…` /
+8. **module-deps** — a public header includes only its own module and lower layers (`ci/utils/module_deps.py`),
+   and no third-party header but EnTT (imgui in `gui/`), reported as `public-deps`.
+9. **test-assertions** — every gtest `TEST*` body asserts something (a gtest macro, or an `expect…` /
    `assert…` / `check…` helper); a smoke test uses `EXPECT_NO_THROW`.
-9. **nolint** — a `NOLINT(...)` naming a check `.clang-tidy` does not enable is dead: it fails the gate
+10. **nolint** — a `NOLINT(...)` naming a check `.clang-tidy` does not enable is dead: it fails the gate
    (`clang-tidy --list-checks`; `clang-analyzer-*` always counts).
-10. **doc-identifiers** — every symbol, file or `OWL_*` option cited between backticks in `doc/pages` exists in
+11. **doc-identifiers** — every symbol, file or `OWL_*` option cited between backticks in `doc/pages` exists in
    the repository (`ci/utils/doc_identifiers.py`); the changelog, the roadmap and the design pages are skipped, and
    `EXCEPTIONS` keeps the few names that live elsewhere, each with its reason. Fix the page, never widen the list
    for a renamed symbol.
-11. **python** — `ruff check`, `ruff format --check`, `mypy` and `pytest ci/tests` on `ci/` and `ci_action.py` (configuration in
+12. **python** — `ruff check`, `ruff format --check`, `mypy` and `pytest ci/tests` on `ci/` and `ci_action.py` (configuration in
    `pyproject.toml`: 120 columns, rules `E F W I UP B SIM`); fix with `poetry run ruff check --fix` and
    `poetry run ruff format`.
-12. **secrets** — git-tracked files scanned for private keys, GitHub / AWS /
+13. **secrets** — git-tracked files scanned for private keys, GitHub / AWS /
    Slack tokens and passwords in URLs; a tracked `.env` fails. Prints the kind
    and position only, never the match.
 
@@ -94,7 +96,7 @@ separate `Documentation` action that builds doxygen with `WARN_AS_ERROR=YES`.
 
 Each sub-check can be disabled with `-- --no-<name>=true`:
 `--no-format`, `--no-typos`, `--no-comment-quality`, `--no-doc-audit`,
-`--no-cpp-style`, `--no-structural`, `--no-std-includes`, `--no-test-assertions`, `--no-nolint`,
+`--no-cpp-style`, `--no-structural`, `--no-std-includes`, `--no-module-deps`, `--no-test-assertions`, `--no-nolint`,
 `--no-doc-identifiers`, `--no-python`, `--no-secrets`.
 
 **Report findings through `_diag()`**, never `log.error()` directly. It prints
@@ -137,7 +139,7 @@ class MyAction(BaseAction):
 
 - **Never a secret in argv or in a log.** A password, token or key is read from an environment variable
   with `ci.utils.secrets.get_secret()` (which registers it for masking), never from an extra argument;
-  refuse the old argument with `reject_secret_args()`. TeamCity provides it as an `env.*`
+  refuse one passed as an argument with `reject_secret_args()`. TeamCity provides it as an `env.*`
   parameter of the Global Build template (`common/Templates.kt`), referencing a server password parameter.
 - Never hand a secret to a child process on its command line: call the library in process (`requests`) or pass it through the child's environment.
 - Log commands only through `run_command` / `redact_command()`, never `' '.join(cmd)`; anything else that
