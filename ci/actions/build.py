@@ -7,7 +7,7 @@ from pathlib import Path
 from ci import log, root
 from ci.actions.base.action import BaseAction, PresetConfig
 from ci.utils.preset import get_build_dir
-from ci.utils.run import MODE_BY_COLOR, MODE_FOR_NINJA, run_command
+from ci.utils.run import MODE_BY_COLOR, MODE_FOR_NINJA, run_command, run_command_capture_output
 
 
 def compiler_launcher(build_dir: Path) -> str | None:
@@ -73,6 +73,13 @@ class Build(BaseAction):
             build_result = run_command(cmd, detection_mode=build_detection_mode)
         if launcher is not None and Path(launcher).stem == "ccache":
             run_command([launcher, "--show-stats"])
+            # The detailed counters name the reason of each miss (a moved precompiled header, an uncacheable call…).
+            status, counters = run_command_capture_output([launcher, "--print-stats"])
+            if status == 0:
+                for line in counters.splitlines():
+                    name, _, value = line.partition("\t")
+                    if value.strip() not in ("", "0") and not name.endswith("timestamp"):
+                        log.info(f"ccache {name}: {value.strip()}")
         if build_result != 0:
             log.error("CMake build failed.")
             return build_result

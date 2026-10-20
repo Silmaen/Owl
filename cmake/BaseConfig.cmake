@@ -102,6 +102,9 @@ elseif (${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
             -Wno-padded
             -Wno-exit-time-destructors
             -Wno-global-constructors # Only in gtest -> only for tests
+            # No header mtime in the precompiled header: a fresh checkout would change it, and with it the ccache key
+            # of every unit using it (ninja's dependencies already rebuild it when a header changes).
+            "SHELL:-Xclang -fno-pch-timestamp"
     )
     if (${CMAKE_CXX_COMPILER_VERSION} VERSION_GREATER_EQUAL 18)
         target_compile_options(${CMAKE_PROJECT_NAME}_Base INTERFACE
