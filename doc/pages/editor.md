@@ -829,6 +829,9 @@ the same result on any machine. It exits with 0 when every expectation holds and
 2 on a file it cannot read. A watchdog ends a run that plays no frame for 120 s (times `OWL_SCRIPT_TIME_SCALE`), or that
 does not exit as long after its verdict, with code 7 and the phase, step and frame where it stalled.
 
+In `test/unit/scenarios/`, a first line `# slow` labels the scenario `slow`: it plays minutes of game time and runs in the
+nightly suite only.
+
 ```yaml
 # test/unit/scenarios/platformer_walk.owltest
 scene: ../../engine_demo/scenes/platformer_house.owl   # relative to the file; project found above it

@@ -108,6 +108,8 @@ flowchart LR
 ```
 
 - **Yellow**: also run on draft pull requests (fast feedback subset).
+- **Slow tests**: the Test steps pass `-- --label_exclude=slow` (`test_args`); arm64 and a nightly run of Linux x64
+  Clang on `main` (`nightlyFullSuite` trigger, 1 am) run every test.
 - **Blue**: `main` only: GCC (release preset only) and Sanitizer Address on every push; nightly for arm64, Include
   Check, the packages (they publish to the site), the Thread and UB sanitizers and the Static Analyzer, which are not
   pull-request checks.

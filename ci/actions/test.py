@@ -21,15 +21,19 @@ def default_jobs() -> int:
     return max(1, os.cpu_count() or 1)
 
 
-def ctest_command(build_dir: Path, jobs: int) -> list[str]:
+def ctest_command(build_dir: Path, jobs: int, label_exclude: str = "") -> list[str]:
     """
     CTest command line of a build tree.
 
     :param build_dir: The build tree to test.
     :param jobs: Number of tests run at once.
+    :param label_exclude: Regular expression of the labels left out, empty for every test.
     :return: The command; the `RESOURCE_LOCK` of a test keeps it apart from the ones sharing its resource.
     """
-    return ["ctest", "--test-dir", str(build_dir), "--output-on-failure", "--parallel", str(jobs)]
+    command = ["ctest", "--test-dir", str(build_dir), "--output-on-failure", "--parallel", str(jobs)]
+    if label_exclude:
+        command += ["--label-exclude", label_exclude]
+    return command
 
 
 class Test(BaseAction):
@@ -38,6 +42,7 @@ class Test(BaseAction):
 
     Extra arguments (after ``--``):
       * ``--jobs=<n>`` — number of tests run at once, default the processors available.
+      * ``--label_exclude=<regex>`` — leave out the tests of these labels (``slow``: the nightly-only ones).
     """
 
     def run(self, preset: PresetConfig, extra_args=None) -> int:
@@ -49,12 +54,16 @@ class Test(BaseAction):
         """
         args = self.parse_extra_args(extra_args)
         jobs = max(1, int(args.get("jobs", default_jobs())))
-        log.info(f"Running tests with preset: {preset}, {jobs} at once")
+        label_exclude = args.get("label_exclude", "")
+        log.info(
+            f"Running tests with preset: {preset}, {jobs} at once"
+            + (f", without {label_exclude}" if label_exclude else "")
+        )
         build_dir = preset.get_build_dir()
         if not build_dir.exists():
             log.error(f"Build directory does not exist: {build_dir}")
             return 1
-        test = run_command(ctest_command(build_dir, jobs))
+        test = run_command(ctest_command(build_dir, jobs, label_exclude))
         if test != 0:
             log.error("Tests failed.")
             return test

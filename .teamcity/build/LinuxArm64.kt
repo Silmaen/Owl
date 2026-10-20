@@ -8,6 +8,7 @@ val arm64Clang = presetBuild("Build_LinuxArm64_Clang", "Clang", "linux-cross-arm
         nightly = true) {
     params {
         param("docker_build_platform", "linux/amd64")
+        fullSuite()
     }
 }
 
@@ -18,6 +19,7 @@ val arm64Emulated = presetBuild("Build_LinuxArm64_Emulated", "Clang (emulated)",
     params {
         param("docker_build_platform", "linux/arm64")
         param("extra_tc_vars", "-- --emulated")
+        fullSuite()
     }
     weeklyOnMain()
 }

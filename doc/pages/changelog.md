@@ -16,6 +16,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CI: off `main`, the release tree is only configured for Doxygen (`Build -- --configure_only`), no longer compiled, which saves 10 to 14 min per Linux x64 Clang pull request.
 - CI: Sanitizer Address leaves the pull requests for every `main` push; `PR Ready` waits for four checks.
 - CI: a `main` push builds GCC on its release preset only, and runs arm64, the whole-tree Clang-Tidy and Include Check nightly, which cuts about 2 h of Linux agents and 40 min of the Windows agent per merge.
+- Tests: the image tests run as six parallel CTest shards, and the voxel HUD is captured at one resolution instead of three.
+- Tests: scenarios starting with `# slow` are labelled `slow`, left out of pull requests and `main` pushes and run by arm64 and a nightly Linux x64 Clang run.
+- Tests: scenario `voxel_explore` plays the voxel terrain alone (landing, block targeting, chunk eviction, objective), the lines only `hub_progress` covered.
+- Coverage: Clang builds instrument for gcov only, dropping the unused source-based counters (same lines measured, about 5 % faster tests).
 - CI: the artifacts keep the test reports (`TestReports.zip`), the coverage, the documentation and the packages, no longer the binaries nor the libraries.
 - Bench threshold of the flat `path/long_query` cases widened to 30 %: on the bench agent they switch between two modes about 15 % apart.
 

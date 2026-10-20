@@ -237,18 +237,15 @@ INSTANTIATE_TEST_SUITE_P(IsometricTown, RenderImage,
 												iInfo.param.size.x(), iInfo.param.size.y());
 						 });
 
-// The same HUD over a raycast and a voxel scene at three resolutions: anchors, stretch and scale modes on screen.
+// The same HUD at three resolutions over a raycast scene (anchors, stretch and scale modes on screen), and over a voxel
+// scene at the default one (the HUD composes with a 3D layer; the voxel frame is the slowest under llvmpipe).
 INSTANTIATE_TEST_SUITE_P(Hud, RenderImage,
 						 testing::Values(RenderCase{"hud_raycast", "vulkan"}, RenderCase{"hud_raycast", "opengl"},
 										 RenderCase{"hud_raycast", "vulkan", {480, 270}},
 										 RenderCase{"hud_raycast", "opengl", {480, 270}},
 										 RenderCase{"hud_raycast", "vulkan", {240, 240}},
 										 RenderCase{"hud_raycast", "opengl", {240, 240}},
-										 RenderCase{"hud_voxel", "vulkan"}, RenderCase{"hud_voxel", "opengl"},
-										 RenderCase{"hud_voxel", "vulkan", {480, 270}},
-										 RenderCase{"hud_voxel", "opengl", {480, 270}},
-										 RenderCase{"hud_voxel", "vulkan", {240, 240}},
-										 RenderCase{"hud_voxel", "opengl", {240, 240}}),
+										 RenderCase{"hud_voxel", "vulkan"}, RenderCase{"hud_voxel", "opengl"}),
 						 [](const testing::TestParamInfo<RenderCase>& iInfo) -> std::string {
 							 return std::format("{}_{}_{}x{}", iInfo.param.scene, iInfo.param.backend,
 												iInfo.param.size.x(), iInfo.param.size.y());

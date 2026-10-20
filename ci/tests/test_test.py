@@ -18,3 +18,7 @@ def test_ctest_runs_in_parallel(tmp_path: Path) -> None:
 
 def test_default_jobs_is_at_least_one() -> None:
     assert default_jobs() >= 1
+
+
+def test_ctest_leaves_out_labels(tmp_path: Path) -> None:
+    assert ctest_command(tmp_path, 4, "slow")[-2:] == ["--label-exclude", "slow"]

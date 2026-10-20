@@ -3,6 +3,7 @@ file(GLOB children CONFIGURE_DEPENDS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAK
 
 option(${PROJECT_PREFIX}_TEST_SHUFFLE "Run every gtest binary with --gtest_shuffle (seed from GTEST_RANDOM_SEED, else random and logged)" OFF)
 option(${PROJECT_PREFIX}_RENDER_TESTS "Build the image tests (OwlRunner on lavapipe / llvmpipe, label render)" ON)
+set(${PROJECT_PREFIX}_RENDER_TEST_SHARDS 6 CACHE STRING "Parallel ctest entries the image tests are split into")
 set(${PROJECT_PREFIX}_TEST_TIMEOUT 600 CACHE STRING "Per test binary ctest timeout in seconds (a hung binary costs this much)")
 set(${PROJECT_PREFIX}_TEST_EXTRA_ARGS)
 if (${PROJECT_PREFIX}_TEST_SHUFFLE)
@@ -107,15 +108,26 @@ foreach (child ${children})
                             OWL_RUNNER_EXECUTABLE="$<TARGET_FILE:${CMAKE_PROJECT_NAME}Runner>")
                 endif ()
                 find_program(XVFB_RUN_PROGRAM xvfb-run)
-                if (XVFB_RUN_PROGRAM)
-                    set(TEST_LAUNCHER ${XVFB_RUN_PROGRAM} -a -s "-screen 0 1280x1024x24")
-                endif ()
             endif ()
-            add_test(NAME ${PROJECT_PREFIX_LOWER}_${child}_UTests COMMAND ${TEST_LAUNCHER} ${CMAKE_BINARY_DIR}/bin/${PROJECT_PREFIX_LOWER}_${child}_unit_test --gtest_output=xml:test/${child}_UTest_Report.xml ${${PROJECT_PREFIX}_TEST_EXTRA_ARGS})
-            set_tests_properties(${PROJECT_PREFIX_LOWER}_${child}_UTests PROPERTIES TIMEOUT ${${PROJECT_PREFIX}_TEST_TIMEOUT}
-                    ENVIRONMENT "${${PROJECT_PREFIX}_TEST_ENVIRONMENT}")
             if (${child} STREQUAL "render_tests")
-                set_tests_properties(${PROJECT_PREFIX_LOWER}_${child}_UTests PROPERTIES LABELS render)
+                # Each image case starts its own OwlRunner: gtest shards spread them over parallel ctest entries, each
+                # with its own fixed X server number (`xvfb-run -a` picks a free one with a race between shards).
+                foreach (shard RANGE 1 ${${PROJECT_PREFIX}_RENDER_TEST_SHARDS})
+                    math(EXPR shardIndex "${shard} - 1")
+                    set(shardName ${PROJECT_PREFIX_LOWER}_${child}_UTests_${shard})
+                    set(TEST_LAUNCHER "")
+                    if (XVFB_RUN_PROGRAM)
+                        math(EXPR serverNumber "90 + ${shard}")
+                        set(TEST_LAUNCHER ${XVFB_RUN_PROGRAM} -n ${serverNumber} -s "-screen 0 1280x1024x24")
+                    endif ()
+                    add_test(NAME ${shardName} COMMAND ${TEST_LAUNCHER} ${CMAKE_BINARY_DIR}/bin/${PROJECT_PREFIX_LOWER}_${child}_unit_test --gtest_output=xml:test/${child}_${shard}_UTest_Report.xml ${${PROJECT_PREFIX}_TEST_EXTRA_ARGS})
+                    set_tests_properties(${shardName} PROPERTIES TIMEOUT ${${PROJECT_PREFIX}_TEST_TIMEOUT} LABELS render
+                            ENVIRONMENT "${${PROJECT_PREFIX}_TEST_ENVIRONMENT};GTEST_TOTAL_SHARDS=${${PROJECT_PREFIX}_RENDER_TEST_SHARDS};GTEST_SHARD_INDEX=${shardIndex}")
+                endforeach ()
+            else ()
+                add_test(NAME ${PROJECT_PREFIX_LOWER}_${child}_UTests COMMAND ${CMAKE_BINARY_DIR}/bin/${PROJECT_PREFIX_LOWER}_${child}_unit_test --gtest_output=xml:test/${child}_UTest_Report.xml ${${PROJECT_PREFIX}_TEST_EXTRA_ARGS})
+                set_tests_properties(${PROJECT_PREFIX_LOWER}_${child}_UTests PROPERTIES TIMEOUT ${${PROJECT_PREFIX}_TEST_TIMEOUT}
+                        ENVIRONMENT "${${PROJECT_PREFIX}_TEST_ENVIRONMENT}")
             endif ()
             if (${child} STREQUAL "export_tests")
                 set_tests_properties(${PROJECT_PREFIX_LOWER}_${child}_UTests PROPERTIES
@@ -174,8 +186,14 @@ if (TARGET ${CMAKE_PROJECT_NAME}Runner)
         get_filename_component(scenarioName ${scenario} NAME_WE)
         add_test(NAME ${PROJECT_PREFIX_LOWER}_scenario_${scenarioName}
                 COMMAND $<TARGET_FILE:${CMAKE_PROJECT_NAME}Runner> --scenario ${scenario})
-        set_tests_properties(${PROJECT_PREFIX_LOWER}_scenario_${scenarioName} PROPERTIES LABELS scenario TIMEOUT ${${PROJECT_PREFIX}_TEST_TIMEOUT}
-                ENVIRONMENT "${${PROJECT_PREFIX}_GAME_TEST_ENVIRONMENT}")
+        # A scenario whose first line is `# slow` plays minutes of game time: labelled `slow`, it runs at night only.
+        file(STRINGS ${scenario} scenarioHead LIMIT_COUNT 1)
+        set(scenarioLabels scenario)
+        if (scenarioHead STREQUAL "# slow")
+            list(APPEND scenarioLabels slow)
+        endif ()
+        set_tests_properties(${PROJECT_PREFIX_LOWER}_scenario_${scenarioName} PROPERTIES LABELS "${scenarioLabels}"
+                TIMEOUT ${${PROJECT_PREFIX}_TEST_TIMEOUT} ENVIRONMENT "${${PROJECT_PREFIX}_GAME_TEST_ENVIRONMENT}")
     endforeach ()
 endif ()
 

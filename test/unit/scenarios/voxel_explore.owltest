@@ -1,0 +1,13 @@
+# The voxel terrain: the explorer drops onto the streamed ground, looks down at a block (the targeted face is
+# outlined), walks away from the landing point, and once carried far off the chunks left behind are dropped and the
+# exploration objective is met.
+scene: ../../../engine_demo/scenes/voxel_terrain.owl
+steps:
+  - frames: 90
+  - expect: {entity: TerrainPlayer, translation.y: {less: 39.5}}
+  - input: {key: Down, frames: 40}
+  - input: {key: W, frames: 20}
+  - expect: {gamestate: voxel_distance, greater: 0}
+  - {command: entity.set_transform, args: {entity: TerrainPlayer, translation: [110, 40, 8]}}
+  - frames: 5
+  - expect: {gamestate: level_voxel_done, equals: 1}
