@@ -1,22 +1,18 @@
 # Audit Owl — confrontation à l'état de l'art
 
-> **Statut : v1, 2026-10-05.** Livrable du §6 de [`00-cadrage.md`](00-cadrage.md).
-> **Règle** : chiffres externes **publiés uniquement**, chacun avec source et date ; aucun moteur tiers n'a
-> été construit. Les métadonnées de dépôts (version, licence, dernière activité) proviennent de l'API
-> GitHub interrogée le 2026-10-05 (`gh api repos/<owner>/<repo>` et `.../releases/latest`).
+> **Revu le 2026-10-20 sur `main` 4e1a6a10.** Livrable du §6 de [`00-cadrage.md`](00-cadrage.md).
+> **Règle** : chiffres externes **publiés uniquement**, avec source et date ; aucun moteur tiers construit.
+> Métadonnées de dépôts (version, licence, activité) : API GitHub du 2026-10-05 (`gh api repos/<owner>/<repo>`).
 > **Légende** : **[F]** fait sourcé, **[C]** constaté dans le dépôt Owl (`chemin`), **[O]** opinion de l'auditeur.
-> Les chiffres externes ne sont **pas** comparables aux mesures Owl de `20-mesures.md` (machines,
-> scènes et protocoles différents) : ils situent des ordres de grandeur, rien de plus.
+> Les chiffres externes ne se comparent pas aux mesures de [`20-mesures.md`](20-mesures.md) (machines, scènes et
+> protocoles différents) : ils situent des ordres de grandeur.
 
 [TOC]
 
 ## Fiche 1 — ECS : EnTT
 
-**Choix Owl** [C] : EnTT 3.15.0 (`depmanager.yml`), registre unique par `Scene`, vues à la volée ; un seul
+**Choix Owl** [C] : EnTT 4.0.0 (`conanfile.py`), registre unique par `Scene`, vues à la volée ; un seul
 usage de `group` dans `source/`, 89 appels `view<`/`group<` dans les `.cpp`.
-
-**Alternatives** : flecs (C/C++, archétypes + relations), ECS de Bevy (Rust, archétypes + tables sparse),
-ECS maison.
 
 | Projet   | Dernière version    | Licence    | Modèle de stockage              | Étoiles GitHub  |
 |----------|---------------------|------------|---------------------------------|-----------------|
@@ -42,10 +38,7 @@ EnTT est favorable.
 **Critères** [O] : perf adaptée au profil Owl ; maturité forte (Minecraft Bedrock, cité par le README
 d'EnTT) ; mainteneur quasi unique (bus factor) ; MIT ; header-only, portable ; coût d'intégration déjà payé.
 
-**Point d'attention** [F] : EnTT **v4.0.0** est sortie le 2026-07-23 avec des ruptures d'API (macros de
-config renommées, `entt::identity`/`to_address` retirés, refonte de `meta`). Owl est sur 3.15.0.
-
-**Verdict : GARDER**, et planifier la montée en v4 (effort S–M, surtout `meta` si utilisé). Exploiter
+**Verdict : GARDER.** Exploiter
 davantage les `group` sur les chemins chauds (rendu, transforms) avant toute idée de changement d'ECS.
 
 Sources : <https://github.com/abeimler/ecs_benchmark> ; <https://github.com/skypjack/entt/releases/tag/v4.0.0> ;
@@ -53,9 +46,8 @@ Sources : <https://github.com/abeimler/ecs_benchmark> ; <https://github.com/skyp
 
 ## Fiche 2 — RHI : double backend maison OpenGL 4.5 + Vulkan 1.4
 
-**Choix Owl** [C] : abstraction maison `source/owl/private/renderer/gpu/{opengl,vulkan,null}`, Vulkan SDK
-1.4.341. Limites connues consignées en mémoire IA : UBO partagé « last-write-wins » sur Vulkan, descriptor
-set unique (voir constats axe B).
+**Choix Owl** [C] : abstraction maison `source/owl/private/renderer/gpu/{opengl,vulkan,null}`, `vulkan-headers` / `vulkan-loader` 1.4.357.0 (Conan, instance créée en API 1.3).
+OpenGL est gelé, Vulkan est le backend de référence.
 
 **Alternatives** [F] (métadonnées GitHub au 2026-10-05) :
 
@@ -84,11 +76,10 @@ donc **OpenGL 4.5 n'existe pas sur macOS** ; Khronos ne fait plus évoluer OpenG
 | Portabilité | Linux/Windows ; pas de macOS ni Web                 | macOS (Metal) et Web selon la RHI                      |
 | Intégration | déjà faite                                          | L : réécriture du bas du renderer + shaders            |
 
-**Verdict : SURVEILLER.** La valeur pédagogique et la maîtrise sont réelles, mais OpenGL ne mène nulle
-part au-delà de Linux/Windows et double le coût de chaque fonctionnalité. Recommandation [O] : geler
-OpenGL en « backend de repli » (pas de nouvelle fonctionnalité exclusive), concentrer l'effort sur Vulkan,
-et réévaluer à l'arrivée du rendu 3D moderne (v0.3+) une RHI tierce ou une cible WebGPU si le Web/macOS
-devient un objectif. Coût d'une migration complète : **L** (plusieurs mois homme).
+**Verdict : SURVEILLER.** Valeur pédagogique et maîtrise réelles, mais OpenGL ne mène nulle part au-delà de
+Linux/Windows et double le coût de chaque fonctionnalité. [O] Garder OpenGL en « backend de repli » (aucune
+fonctionnalité exclusive), concentrer l'effort sur Vulkan, réévaluer une RHI tierce ou une cible WebGPU au rendu 3D
+moderne (v0.5.0) si le Web ou macOS devient un objectif. Migration complète : **L**.
 
 Sources : <https://www.osnews.com/story/30449/apple-deprecates-opengl-opencl-in-macos-mojave/> (2018-06) ;
 <https://wiki.libsdl.org/SDL3/SDL_GPUShaderFormat> ; <https://www.phoronix.com/news/SDL3-Official-Release> (2025-01) ;
@@ -98,13 +89,13 @@ Sources : <https://www.osnews.com/story/30449/apple-deprecates-opengl-opencl-in-
 ## Fiche 3 — Shaders : Slang compilé au runtime
 
 **Choix Owl** [C] : `compileSlangToSpirv()` (`source/owl/private/renderer/utils/shaderFileUtils.cpp`),
-Slang fourni par le Vulkan SDK 1.4.341 (`cmake/Vulkan.cmake:47`), cache `.spv` validé par hash,
-réflexion spirv-cross. Premier lancement ~50 s (compilation du module cœur de Slang) — chiffre issu de la
-mémoire IA du projet, **à confirmer par `20-mesures.md`**.
+Slang 2026.19 fourni par Conan (`cmake/Vulkan.cmake`, recette `conan/recipes/slang`), cache `.spv` validé par
+hash, réflexion spirv-cross. Les shaders du moteur sont précompilés au build par `OwlShaderBake` ; Slang ne
+compile à l'exécution que les shaders modifiés ou de jeu. Première compilation mesurée : ~165 ms
+(`20-mesures.md`, §3.9).
 
-**Alternatives** : compilation hors-ligne en étape de build (glslang 16.6.0 du 2026-09-11, DXC
-v1.9.2609 du 2026-09-29, ou `slangc` lui-même), `.spv` livrés avec les assets ; SDL_shadercross pour une
-chaîne multi-cible.
+**Alternatives** : compilation hors-ligne seule (glslang 16.6.0 du 2026-09-11, DXC v1.9.2609 du 2026-09-29 ou `slangc`),
+`.spv` livrés avec les assets ; SDL_shadercross pour une chaîne multi-cible.
 
 **Faits** [F] :
 
@@ -112,26 +103,22 @@ chaîne multi-cible.
   cibles D3D12, Vulkan, Metal, D3D11, OpenGL, CUDA, CPU.
 - Rythme de release élevé : v2026.19 le 2026-09-29 (versions calendaires, plusieurs par mois).
 - Licence Apache-2.0 avec exception LLVM.
-- Aucune mesure publiée et sourçable du temps de création de session Slang n'a été trouvée lors de cette
-  passe (recherche web et issues GitHub du 2026-10-05) : pas de chiffre externe à opposer aux ~50 s.
+- Aucune mesure publiée et sourçable du temps de création de session Slang n'a été trouvée (recherche web et
+  issues GitHub du 2026-10-05) : pas de chiffre externe à opposer aux mesures Owl.
 
-**Critères** [O] : le langage est le bon choix (portabilité Vulkan/GL/Metal future, modules, standard
-Khronos). Le problème est le *moment* de la compilation : un coût de démarrage de l'ordre de la minute est
-inacceptable pour un joueur, et le runtime embarque un compilateur complet (taille binaire, surface de
-crash). La pratique dominante (Unreal, Unity, Godot pour ses variantes) est de compiler hors-ligne et de
-ne garder au runtime que le chargement de binaires.
+**Critères** [O] : le langage est le bon choix (portabilité Vulkan/GL/Metal, modules, standard Khronos). La pratique
+dominante (Unreal, Unity, Godot pour ses variantes) est de compiler hors-ligne et de ne charger que des binaires au
+runtime ; Owl fait de même pour ses shaders et garde le compilateur pour l'éditeur (hot reload) et les shaders de jeu.
 
-**Verdict : GARDER Slang, REMPLACER la compilation au runtime dans le runner.** Compiler les `.slang` en
-`.spv` au build (ou dans le « Pack Game ») et ne garder le compilateur que dans l'éditeur (hot reload).
-Effort **M** (cible CMake + intégration au pack + chemin de repli).
+**Verdict : GARDER.** Slang comme langage, précompilation au build, compilation au besoin.
 
 Sources : <https://www.khronos.org/news/press/khronos-group-launches-slang-initiative-hosting-open-source-compiler-contributed-by-nvidia> (2024-11-21) ;
 <https://github.com/shader-slang/slang/releases> ; <https://moonside.games/posts/introducing-sdl-shadercross/>.
 
 ## Fiche 4 — Script : Lua 5.5 avec bindings manuels
 
-**Choix Owl** [C] : Lua 5.5.0 (`depmanager.yml`), API C directe (`source/owl/private/script/LuaBindings.cpp`,
-992 lignes, pas de sol2), un `lua_State` par `ScriptInstance`, bac à sable.
+**Choix Owl** [C] : Lua 5.5.0 (`conanfile.py`), API C directe (`source/owl/private/script/LuaBindings.cpp`,
+2 277 lignes, pas de sol2), un `lua_State` par `ScriptInstance`, bac à sable.
 
 **Faits** [F] :
 
@@ -155,9 +142,9 @@ Sources : <https://www.khronos.org/news/press/khronos-group-launches-slang-initi
 | C# (.NET)          | JIT/AOT                                             | fort     | Microsoft + Coral        | L : nouvelle chaîne, hot reload  |
 | Wren / AngelScript | —                                                   | — / fort | faible                   | L, non recommandé                |
 
-**Verdict : GARDER Lua 5.5 ; SURVEILLER Luau.** Lua 5.5 est à jour et le binding manuel évite une
-dépendance (sol2) dont la maintenance ralentit. Luau devient intéressant si l'axe « script typé +
-débogueur + perf » du §5 est priorisé (effort M). Ne pas viser LuaJIT (5.1 figé) [O].
+**Verdict : GARDER Lua 5.5 ; SURVEILLER Luau.** Lua 5.5 est à jour ; le binding manuel évite sol2, dont la maintenance
+ralentit. Luau devient intéressant si l'axe « script typé + débogueur + perf » du §5 est priorisé (effort M). [O] Ne pas
+viser LuaJIT (5.1 figé).
 
 Sources : <https://www.lua.org/work/> et <https://www.lua.org/manual/5.5/readme.html> ;
 <https://luajit.org/status.html> ; <https://luau.org/performance> ; <https://github.com/ThePhD/sol2> ;
@@ -165,12 +152,13 @@ Sources : <https://www.lua.org/work/> et <https://www.lua.org/manual/5.5/readme.
 
 ## Fiche 5 — Sérialisation : yaml-cpp
 
-**Choix Owl** [C] : yaml-cpp **0.8.0** pour scènes, prefabs, sauvegardes, réglages **et** snapshots undo
-(`EntitySnapshot` via `serializeEntityToString`) ; 56 fichiers de `source/owl/private` utilisent `YAML::`.
+**Choix Owl** [C] : yaml-cpp **0.9.0** pour l'écriture des scènes, prefabs, sauvegardes, réglages **et**
+snapshots undo (`EntitySnapshot` via `serializeEntityToString`) ; rapidyaml 0.15.2 pour leur lecture
+(`core::YamlNode`, `core/external/ryml.h`) ; 71 fichiers de `source/owl/private` utilisent `YAML::`.
 
 **Faits** [F] :
 
-- yaml-cpp 0.9.0 est sortie le 2026-02-04 ; Owl est en retard d'une version.
+- yaml-cpp 0.9.0 est sortie le 2026-02-04.
 - rapidyaml (doc « Is it rapid? ») : « generally 30x (parse) / 150x (emit) faster than yaml-cpp » ;
   ~150 Mo/s en YAML complet ; sur `appveyor.yml` en Release (VS2017) 101,5 Mo/s contre 5,3 Mo/s ; en JSON
   sous Linux (clang, Release) 453,5 Mo/s contre 15,1 Mo/s. rapidyaml v0.16.0 (2026-07-22), MIT.
@@ -179,16 +167,13 @@ Sources : <https://www.lua.org/work/> et <https://www.lua.org/manual/5.5/readme.
 - Binaire : cereal v1.3.2 (2022-02-28, peu actif), FlatBuffers (2026-02, Apache-2.0, zéro-copie, schéma),
   bitsery (MIT, dernier push 2025-10).
 
-**Critères** [O] : YAML est le bon format **source** (lisible, diffable, éditable à la main). Il est un
-mauvais format **interne** : l'undo par aller-retour YAML, la duplication et l'instanciation de prefab
-paient parsing + allocations de `YAML::Node` à chaque opération. yaml-cpp est connu comme l'un des
-parseurs YAML C++ les plus lents.
+**Critères** [O] : YAML est un bon format **source** (lisible, diffable, éditable à la main) et un mauvais format
+**interne** : l'undo par aller-retour YAML paie parsing et allocations à chaque opération. La lecture par rapidyaml
+coûte 7,3 µs par entité (`20-mesures.md`, §9.7) ; l'écriture, en yaml-cpp, 23 µs.
 
-**Verdict : SURVEILLER (format) / REMPLACER (bibliothèque et usage interne).**
-1. Court terme : mesurer (`20-mesures.md`) le coût d'un snapshot undo et d'une instanciation de prefab.
-2. Moyen terme : migrer vers rapidyaml (même format de fichier, API différente : effort **M**, 56 fichiers).
-3. Long terme : snapshot undo et copie de scène en binaire (glaze/BEVE ou bitsery), YAML réservé aux
-   fichiers ; format « cooké » binaire dans `.owlpack`. Effort **M–L**.
+**Verdict : SURVEILLER.**
+1. Écriture : migrer vers rapidyaml ou un émetteur maison si le coût des snapshots d'undo devient gênant. Effort **M**.
+2. Long terme : format « cooké » binaire dans `.owlpack` (v0.6.0), YAML réservé aux fichiers d'édition. Effort **M–L**.
 
 Sources : <https://rapidyaml.readthedocs.io/latest/sphinx_is_it_rapid.html> ;
 <https://github.com/jbeder/yaml-cpp/releases> ; <https://github.com/simdjson/simdjson> ;
@@ -196,8 +181,8 @@ Sources : <https://rapidyaml.readthedocs.io/latest/sphinx_is_it_rapid.html> ;
 
 ## Fiche 6 — Physique : Box2D v3 (et la 3D future)
 
-**Choix Owl** [C] : Box2D **3.1.1** (`depmanager.yml`) — c'est la dernière release (2025-06-04) [F] ; Owl
-est à jour.
+**Choix Owl** [C] : Box2D **3.1.1**, dernière release (2025-06-04) [F] (recette locale `conan/recipes/box2d`, option
+`avx2`) ; solveur multi-thread (`SolverTaskPool`, `workerCount`).
 
 **Chiffres publiés** [F] — Erin Catto, « SIMD Matters » (2024-08-19), scène *large pyramid* (5 050 corps,
 14 950 paires de contact), 4 workers, AMD 7950X / Apple M2 :
@@ -210,8 +195,8 @@ est à jour.
 | Scalaire (7950X)   | 524  | 1,91     |
 | Scalaire (M2)      | 679  | 1,47     |
 
-Conséquence [O] : vérifier que le paquet DepManager de Box2D est compilé avec AVX2 (`BOX2D_AVX2`) sur
-x64 ; sinon on laisse ~×1,1 à ×2 sur la table.
+[O] AVX2 est opt-in (`OWL_PHYSICS_AVX2`, x64 uniquement) ; sans lui, ~×1,1 est laissé sur la table
+(`20-mesures.md`, §9.4).
 
 **3D future** [F] :
 
@@ -220,9 +205,8 @@ x64 ; sinon on laisse ~×1,1 à ×2 sur la table.
 | Jolt   | v5.6.0 (2026-07-11) | MIT     | Horizon Forbidden West, Death Stranding 2 ; Godot 4.4+ en option  |
 | Box3D  | v0.1.0 (2026-06-30) | MIT     | annoncé 2026-07 par Erin Catto ; s&box ; C17, API proche de Box2D |
 
-[O] Box3D est séduisant pour Owl (même auteur, même API C, même modèle mental que Box2D v3), mais il est
-en 0.1. Jolt est le choix sûr et documenté (`Docs/PerformanceTest.md` du dépôt Jolt publie des courbes de
-passage à l'échelle multicœur).
+[O] Box3D séduit (même auteur, même API C, même modèle mental que Box2D v3) mais est en 0.1. Jolt est le choix sûr et
+documenté (`Docs/PerformanceTest.md` publie des courbes de passage à l'échelle multicœur).
 
 **Verdict : GARDER Box2D v3 ; pour la 3D, SURVEILLER Box3D et partir sur Jolt si la 3D arrive avant
 qu'il n'atteigne une 1.0.** Coût d'intégration 3D : **M** (nouveau module, synchronisation transforms).
@@ -233,7 +217,7 @@ Sources : <https://box2d.org/posts/2024/08/simd-matters/> ; <https://github.com/
 
 ## Fiche 7 — Tâches : Taskflow
 
-**Choix Owl** [C] : Taskflow 4.0.0, privé derrière `Scheduler` (pimpl), pont `std::promise`/`std::future`,
+**Choix Owl** [C] : Taskflow 4.1.0, privé derrière `Scheduler` (pimpl), pont `std::promise`/`std::future`,
 `parallelForEach` interne. Taskflow 4.1.0 est sortie le 2026-06-20 [F].
 
 **Alternatives** :
@@ -249,48 +233,38 @@ Sources : <https://box2d.org/posts/2024/08/simd-matters/> ; <https://github.com/
 tâche 61 ns contre 99 ns (oneTBB) et 259 ns (StarPU). Aucun benchmark publié comparant directement
 Taskflow et enkiTS n'a été trouvé.
 
-**Critères** [O] : Taskflow est solide et bien maintenu ; son point faible pour un moteur est l'absence de
-priorités et d'affinité de thread (thread de rendu, I/O), que enkiTS fournit. Le pont `std::future` ajoute
-une allocation partagée par tâche. `std::execution` n'est pas encore livré par libstdc++/libc++ de façon
-complète : prématuré.
+**Critères** [O] : Taskflow est solide et bien maintenu ; son point faible pour un moteur est l'absence de priorités et
+d'affinité de thread (rendu, I/O), que fournit enkiTS. Le pont `std::future` ajoute une allocation partagée par tâche.
+`std::execution` n'est pas livré complet par libstdc++/libc++ : prématuré.
 
-**Verdict : GARDER**, monter en 4.1 (effort S). Réévaluer (enkiTS ou fibres) seulement quand le chantier
-« job system au niveau frame / rendu sur thread séparé » du §5 démarre ; la façade `Scheduler` rend le
-changement local (effort **M**).
+**Verdict : GARDER.** Réévaluer (enkiTS ou fibres) au démarrage du chantier « job system au niveau frame / rendu sur
+thread séparé » du §5 ; la façade `Scheduler` rend le changement local (effort **M**).
 
 Sources : <https://arxiv.org/abs/2004.10908> ; <https://github.com/taskflow/taskflow/releases> ;
 <https://github.com/dougbinks/enkiTS> ; <https://www.gdcvault.com/play/1022186/Parallelizing-the-Naughty-Dog-Engine> (GDC 2015) ;
 <https://www.think-cell.com/en/career/devblog/trip-report-summer-iso-cpp-meeting-in-st-louis-usa> (2024-06).
 
-## Fiche 8 — Dépendances : DepManager maison
+## Fiche 8 — Dépendances : Conan 2
 
-**Choix Owl** [C] : DepManager (`Silmaen/DepManager`, MIT, 0.5.5 du 2026-04-19, 0 étoile) — 34 paquets
-précompilés servis par un serveur du mainteneur, recettes dans le projet OwlDependencies.
+**Choix Owl** [C] : Conan 2 seul fournisseur (`conanfile.py`, `conan.lock`), ~40 `requires`, ConanCenter
+d'abord, recettes locales dans `conan/recipes/` (box2d, entt, glfw, imgui-color-text-edit, imguizmo, libmp3lame,
+msdf-atlas-gen, msdfgen, nativefiledialog-extended, openal-soft, slang, taskflow, tinyobjloader, ufbx).
 
-| Outil      | Version (2026-10-05) | Licence | Modèle                                              | Étoiles |
-|------------|----------------------|---------|-----------------------------------------------------|---------|
-| DepManager | 0.5.5 (2026-04-19)   | MIT     | binaires précompilés, serveur privé                 | 0       |
-| vcpkg      | 2026.07.29           | MIT     | manifest `vcpkg.json`, build source + cache binaire | 27,5 k  |
-| Conan 2    | 2.33.0 (2026-09-29)  | MIT     | recettes Python, binaires, ConanCenter              | 9,5 k   |
-| CPM.cmake  | v0.43.2 (2026-09-24) | MIT     | `FetchContent` amélioré, sources                    | 4,1 k   |
+| Outil     | Version (2026-10-05) | Licence | Modèle                                              | Étoiles |
+|-----------|----------------------|---------|-----------------------------------------------------|---------|
+| vcpkg     | 2026.07.29           | MIT     | manifest `vcpkg.json`, build source + cache binaire | 27,5 k  |
+| Conan 2   | 2.33.0 (2026-09-29)  | MIT     | recettes Python, binaires, ConanCenter              | 9,5 k   |
+| CPM.cmake | v0.43.2 (2026-09-24) | MIT     | `FetchContent` amélioré, sources                    | 4,1 k   |
 
 **Critères** [O] :
-- Perf : binaires précompilés = configure rapide (comparable à Conan avec cache, meilleur que vcpkg sans
-  cache binaire).
-- Maturité / bus factor : **le point faible majeur** — un seul utilisateur connu, un seul mainteneur, un
-  serveur de paquets privé. Un contributeur externe ne peut pas construire Owl sans ce serveur.
-- Portabilité : couvre Linux x64/arm64 et MinGW, ce que vcpkg/Conan font aussi (MinGW est moins bien
-  servi par ConanCenter et vcpkg, triplets communautaires).
-- Intégration : recettes au format proche de Conan (`owl_engine.py`), donc migration vers Conan 2
-  plausible.
+- Portabilité : Linux x64/arm64 et MinGW, moins bien servi par ConanCenter, d'où des recettes locales.
+- Reproductibilité : `conan.lock` fige les versions ; tout tiers passe par Conan, jamais vendoré.
+- Coût : recettes locales à maintenir (Slang, Box2D, OpenAL Soft).
 
-**Verdict : SURVEILLER.** Pour un projet solo qui contrôle aussi sa chaîne, DepManager est rationnel et
-déjà payé. Mais pour un moteur open source, il bloque toute contribution extérieure. Mesure minimale [O] :
-documenter un chemin de repli public (serveur de paquets accessible en lecture, ou manifest vcpkg/Conan
-parallèle). Migration complète vers Conan 2 : **M–L** (34 recettes, dont Vulkan SDK et Slang).
+**Verdict : GARDER.** Un contributeur externe construit Owl avec ConanCenter et les recettes du dépôt.
 
-Sources : <https://github.com/Silmaen/DepManager> ; <https://github.com/microsoft/vcpkg> ;
-<https://github.com/conan-io/conan> ; <https://github.com/cpm-cmake/CPM.cmake>.
+Sources : <https://github.com/microsoft/vcpkg> ; <https://github.com/conan-io/conan> ;
+<https://github.com/cpm-cmake/CPM.cmake>.
 
 ## Fiche 9 — CI : TeamCity + wrapper Python
 
@@ -312,10 +286,9 @@ aucun `.github/workflows`. Le dépôt GitHub `Silmaen/Owl` est public (MIT).
 | Puissance                | DSL Kotlin, chaînes de builds, cache local | YAML, matrice, cache distant limité              |
 | Bus factor               | serveur et plugin maison                   | aucun service à maintenir                        |
 
-**Verdict : SURVEILLER.** [O] TeamCity se justifie par l'accès à du matériel réel (GPU, sanitizers lourds)
-et par l'investissement existant. Le wrapper Python est un bon choix (portable vers n'importe quel CI).
-Option à faible coût : un workflow GitHub Actions minimal (build + tests Null backend + CodeStyle) pour
-la visibilité publique, TeamCity gardant les jobs lourds. Effort **S**.
+**Verdict : SURVEILLER.** [O] TeamCity se justifie par le matériel réel (GPU, sanitizers lourds) et l'investissement
+existant ; le wrapper Python est portable vers tout CI. Option à faible coût : un workflow GitHub Actions minimal
+(build + tests backend Null + CodeStyle) pour la visibilité publique, TeamCity gardant les jobs lourds. Effort **S**.
 
 Sources : <https://www.jetbrains.com/help/teamcity/licensing-policy.html> ;
 <https://www.jetbrains.com/legal/docs/teamcity/license/> ;
@@ -324,7 +297,7 @@ Sources : <https://www.jetbrains.com/help/teamcity/licensing-policy.html> ;
 
 ## Fiche 10 — Audio : OpenAL Soft
 
-**Choix Owl** [C] : OpenAL Soft 1.24.3 en **partagé** (`depmanager.yml`), libsndfile pour le décodage.
+**Choix Owl** [C] : OpenAL Soft 1.25.2 en **partagé** (recette locale `conan/recipes/openal-soft`), libsndfile pour le décodage.
 
 | Option      | Licence                                                               | Version (2026-10-05) | Remarques                                               |
 |-------------|-----------------------------------------------------------------------|----------------------|---------------------------------------------------------|
@@ -334,35 +307,32 @@ Sources : <https://www.jetbrains.com/help/teamcity/licensing-policy.html> ;
 | FMOD        | propriétaire, gratuit < 200 k$ de revenu annuel et < 500 k$ de budget | —                    | outil auteur, standard industriel                       |
 | Wwise       | propriétaire, gratuit < 250 k$ de budget                              | —                    | outil auteur, pas de source en Indie                    |
 
-**Critères** [O] : OpenAL Soft est mature et à jour d'une version près, mais la LGPL contraint la
-distribution (l'utilisateur doit pouvoir remplacer la bibliothèque : lien dynamique en pratique) et elle n'apporte ni décodage ni mixage par bus.
-miniaudio couvre lecture, décodage (remplaçant possible de libsndfile), bus, spatialisation simple, sans
-contrainte de licence. FMOD/Wwise sont hors sujet pour un moteur open source (non redistribuables).
+**Critères** [O] : OpenAL Soft est mature et à jour, mais la LGPL contraint la distribution (bibliothèque remplaçable
+par l'utilisateur : lien dynamique) et il n'apporte ni décodage ni mixage par bus. miniaudio couvre lecture, décodage
+(remplaçant possible de libsndfile), bus et spatialisation simple, sans contrainte de licence. FMOD et Wwise sont hors
+sujet pour un moteur open source (non redistribuables).
 
-**Verdict : SURVEILLER**, avec miniaudio comme remplaçant naturel quand le chantier « audio : mixage, bus,
-streaming » du §5 démarre (supprime aussi libsndfile). Effort **S–M** (backend `sound` isolé + Null).
+**Verdict : SURVEILLER**, miniaudio étant le remplaçant naturel au chantier « audio : mixage, bus, streaming » du §5
+(supprime aussi libsndfile). Effort **S–M** (backend `sound` isolé + Null).
 
 Sources : <https://github.com/kcat/openal-soft> (fichier COPYING) ; <https://github.com/mackron/miniaudio> ;
 <https://github.com/jarikomppa/soloud> ; <https://www.gamedeveloper.com/audio/small-developers-and-creators-can-now-use-fmod-studio-for-free> ;
 <https://www.audiokinetic.com/pricing/for-games>.
 
-## Fiche 11 — Profilage : macros maison
+## Fiche 11 — Profilage : macros `OWL_PROFILE_*` et Tracy
 
-**Choix Owl** [C] : `OWL_PROFILE_SCOPE/FUNCTION` (`source/owl/public/debug/Profiler.h`), écriture d'un JSON
-« Chrome tracing » (`source/owl/private/debug/Profiler.cpp:69`) — même conception que Hazel ; profiler
-in-editor ; `TrackerAPI` pour la mémoire.
+**Choix Owl** [C] : `OWL_PROFILE_SCOPE/FUNCTION` (`source/owl/public/debug/Profiler.h`) devant un backend choisi
+par `OWL_PROFILER=none|tracy|chrome` : Tracy 0.13.1 (option Conan `tracy`) ou un JSON « Chrome tracing » ;
+profiler in-editor ; `TrackerAPI` pour la mémoire.
 
 | Outil        | Licence                                 | État (2026-10-05)                | Points forts                                                               |
 |--------------|-----------------------------------------|----------------------------------|----------------------------------------------------------------------------|
 | Tracy        | BSD-3                                   | v0.14.1 (2026-08-22), très actif | temps réel, ~15 ns par zone (manuel), GPU Vulkan/GL, mémoire, verrous, Lua |
 | Optick       | MIT                                     | release 2022-05, push 2024-05    | quasi abandonné                                                            |
 | Superluminal | propriétaire, 59 € perso / 289 €/an pro | actif                            | échantillonnage sans instrumentation                                       |
-| Maison       | —                                       | —                                | zéro dépendance, mais JSON écrit à chaud, pas de GPU, pas de temps réel    |
+| Chrome JSON  | —                                       | —                                | zéro dépendance, mais JSON écrit à chaud, pas de GPU, pas de temps réel    |
 
-**Verdict : REMPLACER par Tracy** (en gardant les macros `OWL_PROFILE_*` comme façade, qui deviennent des
-`ZoneScoped`). Gain : profilage GPU Vulkan/GL, allocations, contention, zones Lua, sans écrire d'outil.
-Effort **S** (paquet DepManager + macros + option CMake), compatible avec la règle « mesurer avant
-d'optimiser » du projet.
+**Verdict : GARDER** la façade `OWL_PROFILE_*` avec Tracy comme backend de mesure.
 
 Sources : <https://github.com/wolfpld/tracy> (manuel `tracy.pdf`, section « Features / overhead ») ;
 <https://github.com/bombomby/optick> ; <https://superluminal.eu/pricing/>.
@@ -373,7 +343,7 @@ Sources : <https://github.com/wolfpld/tracy> (manuel `tracy.pdf`, section « Fea
 
 | Moteur        | Langage | Licence          | Dernière version                        | Taille d'équipe publiée                          | Architecture notable                              |
 |---------------|---------|------------------|-----------------------------------------|--------------------------------------------------|---------------------------------------------------|
-| Owl           | C++23   | MIT              | 0.2.1                                   | 1 auteur (245 commits, `git log`)                | EnTT, GL+Vulkan maison, Slang, Lua 5.5            |
+| Owl           | C++23   | MIT              | 0.4.0 (0.5.0 en développement)          | 1 auteur (420 commits, `git log`)                | EnTT, GL+Vulkan maison, Slang, Lua 5.5            |
 | Hazel         | C++     | Apache-2.0       | public figé (dernier commit 2023-10-27) | Cherno + équipe Patreon (version privée)         | EnTT, Vulkan, C# ; ADN visible dans Owl           |
 | Godot 4       | C++     | MIT              | 4.7.2 (2026-08-18)                      | « well over 300 contributors », > 1 600 PR (4.7) | nœuds/scène, RD (Vulkan/D3D12/Metal), GDScript/C# |
 | Bevy          | Rust    | MIT/Apache-2.0   | 0.19.1 (2026-08-13)                     | 261 contributeurs, 1 185 PR (0.19, 2026-06-19)   | ECS archétypes, wgpu, pas d'éditeur complet       |
@@ -386,9 +356,9 @@ Sources : <https://github.com/wolfpld/tracy> (manuel `tracy.pdf`, section « Fea
 - Plateformes : Godot, Bevy, Defold, raylib ciblent le Web ; Owl ne cible ni Web ni macOS.
 - Rendu : Wicked Engine (solo aussi) montre qu'un auteur seul peut porter un rendu GPU-driven moderne en
   abandonnant OpenGL et en n'ayant qu'une abstraction mince sur D3D12/Vulkan.
-- Assets : Godot/O3DE importent et « cookent » hors-ligne, références par UID/GUID ; Owl référence par
-  chemin et compile les shaders au runtime.
-- Outils : les moteurs établis s'appuient sur des profileurs externes temps réel (Tracy, Superluminal) ; Owl a un profiler JSON maison.
+- Assets : Godot/O3DE importent et « cookent » hors-ligne, références par UID/GUID ; Owl référence ses
+  assets par chemin (GUID prévu en v0.6.0).
+- Outils : les moteurs établis s'appuient sur des profileurs externes temps réel (Tracy, Superluminal) ; Owl dispose du backend Tracy.
 
 **Ce qu'Owl fait différemment (et défendable)** [O] :
 - Éditeur avec undo/redo, prefabs, voxel, raycast et tilemap dans un seul moteur solo — rare hors Godot.
@@ -404,26 +374,16 @@ Sources : <https://godotengine.org/releases/4.7/> ; <https://bevy.org/news/bevy-
 
 | Fiche              | Verdict                                                   | Coût estimé si action     |
 |--------------------|-----------------------------------------------------------|---------------------------|
-| 1 ECS EnTT         | Garder (montée v4 à planifier)                            | S–M                       |
-| 2 RHI GL+Vulkan    | Surveiller (geler OpenGL, Vulkan prioritaire)             | L pour une RHI tierce     |
-| 3 Shaders Slang    | Garder Slang, remplacer la compilation runtime            | M                         |
+| 1 ECS EnTT         | Garder                                                    | —                         |
+| 2 RHI GL+Vulkan    | Surveiller (OpenGL gelé, Vulkan prioritaire)              | L pour une RHI tierce     |
+| 3 Shaders Slang    | Garder (précompilé au build, compilé au besoin)           | —                         |
 | 4 Script Lua 5.5   | Garder ; surveiller Luau                                  | M si Luau                 |
-| 5 yaml-cpp         | Remplacer la lib (rapidyaml) et l'usage interne (binaire) | M puis M–L                |
+| 5 Sérialisation    | Surveiller (écriture yaml-cpp, binaire cuit en v0.6.0)    | M puis M–L                |
 | 6 Box2D v3         | Garder ; Jolt/Box3D pour la 3D                            | M (3D)                    |
-| 7 Taskflow         | Garder (monter en 4.1)                                    | S ; M si job system frame |
-| 8 DepManager       | Surveiller (bus factor, contribution externe)             | M–L vers Conan 2          |
+| 7 Taskflow         | Garder                                                    | M si job system frame     |
+| 8 Conan 2          | Garder                                                    | —                         |
 | 9 TeamCity         | Surveiller ; ajouter un GitHub Actions minimal            | S                         |
 | 10 OpenAL Soft     | Surveiller ; miniaudio au chantier audio                  | S–M                       |
-| 11 Profiler maison | Remplacer par Tracy (façade conservée)                    | S                         |
+| 11 Profileur       | Garder (façade `OWL_PROFILE_*`, backend Tracy)            | —                         |
 
-**À garder sans hésiter** : EnTT, Box2D v3, Slang (le langage).
-
-**À surveiller** : le double backend OpenGL + Vulkan, DepManager, Lua (face à Luau) — ainsi qu'OpenAL Soft
-et TeamCity à moindre enjeu.
-
-**À remplacer** :
-- Profiler maison → Tracy : **S**, gain immédiat pour toutes les campagnes de mesure de l'audit.
-- Compilation Slang au runtime (runner) → hors-ligne au build/pack : **M**, supprime un démarrage de l'ordre
-  de la minute.
-- yaml-cpp → rapidyaml pour les fichiers, binaire pour undo/copie de scène : **M** puis **M–L**, à
-  déclencher après mesure du coût des snapshots (`20-mesures.md`).
+À garder sans hésiter : EnTT, Box2D v3, Slang (le langage), Conan 2.

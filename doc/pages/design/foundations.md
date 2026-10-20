@@ -104,7 +104,7 @@ Every fix lands with its regression test.
     - Left for later: per-pass GPU zones (`OWL_PROFILE_GPU_SCOPE`, with the Owl RHI), Lua zones, memory usage by
       asset type, entity / component counts, `tracy-capture` in the build image
 - ![Done][done] Runner `--frame-bench` mode with GPU timestamps — first OpenGL vs Vulkan numbers
-  (PR-17: 20-mesures §7, B-01; baseline in `doc/audit/20-mesures.md` §8)
+  (PR-17; protocol and results in `doc/audit/20-mesures.md` §8)
 - ![Done][done] Image-comparison render tests on lavapipe (Vulkan) and llvmpipe (OpenGL): six reference scenes per
   backend, Vulkan validation clean on the Engine Demo, OpenGL GLSL fallback for drivers without `GL_ARB_gl_spirv`
   (PR-18: F-01, B-06, B-20)

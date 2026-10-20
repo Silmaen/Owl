@@ -63,7 +63,7 @@ Tracy comes from ConanCenter (`tracy/0.13.1`, conanfile option `tracy`, set by `
    is not shared: publish the port, or run the profiler in the same container).
 3. The Owl Nest *Stats* panel shows `Profiler: Tracy (connected)` once attached.
 
-The build image has neither `tracy-profiler` nor `tracy-capture` (see `doc/audit/01-environnement.md`): the CI
+The build image has neither `tracy-profiler` nor `tracy-capture` (see `doc/audit/00-cadrage.md`, section 11.3): the CI
 checks that the client builds and answers a capture handshake, not a full capture.
 
 ## What the timeline shows
