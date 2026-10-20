@@ -74,20 +74,22 @@ TEST_F(DeepHierarchyFixture, WorldTransformOfDeepChainLeaf) {
 }
 
 TEST_F(DeepHierarchyFixture, SetParentOnDeepChainPreservesWorldPosition) {
+	// Each reparenting walks the parent chain (quadratic): 256 links cross the 64-deep boundaries in a tenth of the time.
+	constexpr uint32_t chainLength = 256;
 	scene::Scene sc;
 	std::vector<scene::Entity> ents;
-	for (uint32_t i = 0; i < g_chainLength; ++i) {
+	for (uint32_t i = 0; i < chainLength; ++i) {
 		ents.push_back(sc.createEntity("e"));
 		ents.back().getComponent<scene::component::Transform>().transform.translation().x() = static_cast<float>(i);
 	}
-	for (uint32_t i = 1; i < g_chainLength; ++i) sc.setParent(ents[i], ents[i - 1]);
+	for (uint32_t i = 1; i < chainLength; ++i) sc.setParent(ents[i], ents[i - 1]);
 	uint32_t misplaced = 0;
-	for (uint32_t i = 0; i < g_chainLength; ++i) {
+	for (uint32_t i = 0; i < chainLength; ++i) {
 		if (std::abs(referenceWorld(sc, ents[i])(0, 3) - static_cast<float>(i)) > 1e-2f)
 			++misplaced;
 	}
 	EXPECT_EQ(misplaced, 0u);
-	EXPECT_NEAR(sc.getWorldTransform(ents.back()).translation().x(), static_cast<float>(g_chainLength - 1), 1e-2f);
+	EXPECT_NEAR(sc.getWorldTransform(ents.back()).translation().x(), static_cast<float>(chainLength - 1), 1e-2f);
 }
 
 TEST_F(DeepHierarchyFixture, OffFrameAndFrameWorldsMatchReference) {

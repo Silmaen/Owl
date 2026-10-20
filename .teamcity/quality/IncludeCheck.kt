@@ -36,5 +36,8 @@ val includeCheck = BuildType {
         githubBridge(triggerOnPrReady = false)
     }
 
+    // Nightly: up to 26 min of a Linux agent for a check that rarely fails.
+    nightlyOnMain()
+
     // Level 1, in parallel with Code Style: it waits for nothing.
 }

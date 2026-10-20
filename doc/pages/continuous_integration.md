@@ -108,8 +108,11 @@ flowchart LR
 ```
 
 - **Yellow**: also run on draft pull requests (fast feedback subset).
-- **Blue**: `main` only: arm64 on every push, nightly for the packages (they publish to the site), the Thread and
-  UB sanitizers and the Static Analyzer, which are not pull-request checks.
+- **Slow tests**: the Test steps pass `-- --label_exclude=slow` (`test_args`); arm64 and a nightly run of Linux x64
+  Clang on `main` (`nightlyFullSuite` trigger, 1 am) run every test.
+- **Blue**: `main` only: GCC (release preset only) and Sanitizer Address on every push; nightly for arm64, Include
+  Check, the packages (they publish to the site), the Thread and UB sanitizers and the Static Analyzer, which are not
+  pull-request checks.
 - arm64 cross compiles the `linux-cross-arm64` preset on an x64 agent (Clang, lld, the image's arm64 sysroot) and
   runs only the tests under qemu-user: Debug without coverage, benchmarks or image tests (`OWL_RENDER_TESTS=OFF`,
   lavapipe's output depends on the CPU). The former fully emulated `linux-emulated` build stays as
@@ -154,7 +157,7 @@ The build-and-test template of every configuration of the build and packaging su
 | Test                      | `run_tests == true`                                            |
 | Code Coverage             | `run_coverage == true`; on Windows, default branch only        |
 | Build Release             | `release_preset` non-empty + default branch                    |
-| Build Release (docs)      | `release_preset` + `run_documentation`, off the default branch |
+| Configure Release (docs)  | `release_preset` + `run_documentation`, off the default branch |
 | Test Release              | `release_preset` non-empty + default branch + `run_tests`      |
 | Package Release           | `release_preset` + default branch + `package_release`          |
 | Documentation             | `run_documentation == true`                                    |
@@ -177,22 +180,23 @@ The build-and-test template of every configuration of the build and packaging su
 | Code Style                                 | ✅           | —                | ✅        | ✅        | ✅                 | ✅           | ❌           |
 | Build Linux x64 / Clang (Doxygen)          | ✅           | —                | ✅        | ✅        | ✅                 | ✅           | ❌           |
 | Build Windows x64 / Clang                  | ✅           | —                | ✅        | ✅        | ✅                 | ⏭           | ❌           |
-| Build Linux x64 / GCC, Windows x64 / GCC   | ✅           | —                | ❌        | ❌        | ❌                 | ❌           | ❌           |
-| Build Linux arm64 / Clang (cross compiled) | ✅           | —                | ❌        | ❌        | ❌                 | ❌           | ❌           |
+| Build Linux x64 / GCC, Windows x64 / GCC (release) | ✅           | —                | ❌        | ❌        | ❌                 | ❌           | ❌           |
+| Build Linux arm64 / Clang (cross compiled) | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
 | Build Linux arm64 / Clang (emulated)       | ❌           | weekly           | ❌        | ❌        | ❌                 | ❌           | ❌           |
 | Benchmarks (`linux-bench`)                 | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
 | Fuzzing (`linux-fuzz`)                     | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
-| Sanitizer Address (+ LSan)                 | ✅           | —                | ✅        | ✅        | ✅                 | ⏭           | ❌           |
+| Sanitizer Address (+ LSan)                 | ✅           | —                | ❌        | ❌        | ❌                 | ❌           | ❌           |
 | Sanitizer Thread, Sanitizer UB             | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
-| Clang-Tidy                                 | ✅           | —                | ❌        | ✅        | ⏭                 | ⏭           | ❌           |
+| Clang-Tidy                                 | ❌           | ✅                | ❌        | ✅        | ⏭                 | ⏭           | ❌           |
 | Static Analyzer                            | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
-| Include Check                              | ✅           | —                | ❌        | ❌        | ❌                 | ❌           | ❌           |
+| Include Check                              | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
 | PR Ready (merge gate, no agent)            | ✅           | —                | ❌        | ✅        | ⏭                 | ⏭           | ❌           |
 | Packages (one per platform, × 3)           | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
 
-A ready pull request runs five checks (Code Style, Linux Clang, Windows Clang, Sanitizer Address, Clang-Tidy), the
-ones `PR Ready` requires: enough to catch most errors in under an hour of agents. GCC and Include Check run on every
-`main` push, the Thread and Undefined Behavior sanitizers and the Static Analyzer nightly.
+A ready pull request runs four checks (Code Style, Linux Clang, Windows Clang, Clang-Tidy), the ones `PR Ready`
+requires: after Code Style, the three builds take one agent each and start together. A `main` push runs Linux and
+Windows Clang, GCC on its release preset and Sanitizer Address; arm64, the whole-tree Clang-Tidy, Include Check, the
+Thread and Undefined Behavior sanitizers and the Static Analyzer run nightly.
 
 ✅ runs · ❌ not run · ⏭ a "Skipped" check is published, which GitHub counts as passing. A manual run, and *Re-run* in
 GitHub, always run a configuration.
@@ -241,8 +245,8 @@ verdict is republished when the PR turns ready) and `skipPhrase = [skip ci]`.
 ### Required checks
 
 Require **one** check in the branch protection of `main`: **`PR Ready`**. It is a composite configuration
-(`quality/PrReady.kt`): it uses no agent, depends on the five configurations a ready pull request runs (Code Style,
-Linux x64 Clang, Windows x64 Clang, Sanitizer Address, Clang-Tidy) and turns red, naming the failed dependency, as
+(`quality/PrReady.kt`): it uses no agent, depends on the four configurations a ready pull request runs (Code Style,
+Linux x64 Clang, Windows x64 Clang, Clang-Tidy) and turns red, naming the failed dependency, as
 soon as one of them is red. Like them it is not run for drafts nor `Experiment/…` pull requests (the PR
 cannot be merged until it is ready), and it skips documentation-only pull requests rather than pulling the whole
 matrix in. GitHub shows a check by the tail of its name (`checkName.stripPrefix = "TeamCity / Owl / "`).

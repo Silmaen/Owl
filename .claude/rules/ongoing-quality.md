@@ -89,8 +89,8 @@ Minimum bar for every authored object:
 - **Discoverability** — context-menu, drag-drop, or keyboard shortcut consistent with
   comparable objects that already have one
 
-Pre-merge check: pick a fresh user, ask them to author the new object end-to-end with
-no docs and no shell access. If they can't, the PR isn't done.
+Pre-merge check: the new object can be authored end-to-end in Owl Nest alone, without docs, YAML, Lua
+or a shell. If it can't, the PR isn't done.
 
 ## Every Edit Gesture Is an Editor Command
 

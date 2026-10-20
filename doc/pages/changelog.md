@@ -12,6 +12,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - The version is written only in `CMakeLists.txt`: the engine exposes its commit (`getVersionFullString()`), Owl Nest shows it in the title bar and on the File screen, Lua `engine.version()` fills the Engine Demo menu, the shipped projects export the engine version and the README badge reads the latest release.
+- CI: CTest runs the tests in parallel (`Test -- --jobs=<n>`, default the processors available).
+- CI: off `main`, the release tree is only configured for Doxygen (`Build -- --configure_only`), no longer compiled, which saves 10 to 14 min per Linux x64 Clang pull request.
+- CI: Sanitizer Address leaves the pull requests for every `main` push; `PR Ready` waits for four checks.
+- CI: a `main` push builds GCC on its release preset only, and runs arm64, the whole-tree Clang-Tidy and Include Check nightly, which cuts about 2 h of Linux agents and 40 min of the Windows agent per merge.
+- Tests: the image tests run as six parallel CTest shards, and the voxel HUD is captured at one resolution instead of three.
+- Tests: scenarios starting with `# slow` are labelled `slow`, left out of pull requests and `main` pushes and run by arm64 and a nightly Linux x64 Clang run.
+- Tests: scenario `voxel_explore` plays the voxel terrain alone (landing, block targeting, chunk eviction, objective), the lines only `hub_progress` covered.
+- Tests: the export end-to-end test is one case per shipped project in four parallel shards, the deep reparenting test walks 256 links instead of 1000, and the Unicode font tests add only the glyph they check.
+- CI: the test reports reach `TestReports.zip` (they are written under `test/test/`).
+- Tests: the font, core, gui, renderer, sound and script binaries no longer wait for one another (`RESOURCE_LOCK` removed: 40 rounds of the six at once and 15 parallel suite runs under ASan, no failure).
+- Tests: each test process gets a temporary directory of its own (`TMPDIR` / `TMP` / `TEMP`, removed at exit), so two processes never write the same temporary file.
+- Coverage: Clang builds instrument for gcov only, dropping the unused source-based counters (same lines measured, about 5 % faster tests).
+- CI: the artifacts keep the test reports (`TestReports.zip`), the coverage, the documentation and the packages, no longer the binaries nor the libraries.
 - Bench threshold of the flat `path/long_query` cases widened to 30 %: on the bench agent they switch between two modes about 15 % apart.
 
 ### Fixed

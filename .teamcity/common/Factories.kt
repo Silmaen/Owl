@@ -105,10 +105,11 @@ fun BuildType.weeklyOnMain() {
  * @param buildName The configuration name.
  * @param tool `tidy` or `analyzer`.
  * @param gates What must be green first.
- * @param nightly Analyse `main` once a night instead of every pull request and push.
+ * @param nightly Analyse `main` once a night instead of on every push.
+ * @param onPullRequest Analyse the pull requests (their diff only).
  */
 fun analysisBuild(idValue: String, buildName: String, tool: String, gates: List<BuildType>,
-                  nightly: Boolean = false) = BuildType {
+                  nightly: Boolean = false, onPullRequest: Boolean = !nightly) = BuildType {
     id = RelativeId(idValue)
     name = buildName
     templates(globalBuild)
@@ -128,7 +129,7 @@ fun analysisBuild(idValue: String, buildName: String, tool: String, gates: List<
     }
 
     features {
-        githubBridge(triggerOnPrReady = !nightly)
+        githubBridge(triggerOnPrReady = onPullRequest)
     }
 
     dependencies {

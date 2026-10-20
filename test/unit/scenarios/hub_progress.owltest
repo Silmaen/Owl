@@ -1,3 +1,4 @@
+# slow
 # The hub: four levels each give a victory objective; completing one marks it done in gamestate, returns to the world
 # map and bumps the "levels completed: n / 4" counter. The victory portal answers only when all four are done.
 # (Triggers test the box of their entity against the player: a trigger is brought next to the player instead of

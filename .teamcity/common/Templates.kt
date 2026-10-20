@@ -29,6 +29,8 @@ val globalBuild = Template {
         param("cmake_preset", "")
         checkbox("run_coverage", "false", checked = "true", unchecked = "false")
         checkbox("run_tests", "true", checked = "true", unchecked = "false")
+        // The tests labelled `slow` are left out, except by arm64 and the nightly Linux x64 Clang run (`fullSuite`).
+        param("test_args", "-- --label_exclude=slow")
         param("artifact_path", "")
         param("docker_parameters", "")
         param("extra_tc_vars", "")
@@ -90,7 +92,7 @@ val globalBuild = Template {
         }
 
         script {
-            ciAction("Test", "Test_Preset", displayName = "Test")
+            ciAction("Test", "Test_Preset", displayName = "Test", extraArgs = "%test_args%")
             conditions {
                 equals("run_tests", "true")
             }
@@ -126,9 +128,9 @@ val globalBuild = Template {
         }
 
         script {
-            // Elsewhere the release is built only for the documentation, its tests stay on `main`.
-            ciAction("Build", "Build_Release_Doc", displayName = "Build Release",
-                preset = "%release_preset%")
+            // Elsewhere the release tree only serves Doxygen, which reads the sources: configured, not compiled.
+            ciAction("Build", "Build_Release_Doc", displayName = "Configure Release",
+                preset = "%release_preset%", extraArgs = "-- --configure_only")
             conditions {
                 doesNotMatch("release_preset", "^${'$'}")
                 doesNotEqual("teamcity.build.branch.is_default", "true")
@@ -138,7 +140,7 @@ val globalBuild = Template {
 
         script {
             ciAction("Test", "Test_Release_Main", displayName = "Test Release",
-                preset = "%release_preset%")
+                preset = "%release_preset%", extraArgs = "%test_args%")
             conditions {
                 doesNotMatch("release_preset", "^${'$'}")
                 // The release build and its tests run on `main` only: a pull request

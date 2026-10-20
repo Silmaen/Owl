@@ -250,8 +250,10 @@ ctest --test-dir output/build/<preset> --output-on-failure
 Each of the 20 folders of `test/unit/` (`<category>_tests`: core, debug, event, export, font, gui, input, io, layer,
 math, mesh, owlnest, physics, render, renderer, runner, scene, script, sound, voxel) builds one executable
 `owl_<category>_tests_unit_test`; each `test/unit/scenarios/*.owltest` is one more CTest (label `scenario`) played by
-`OwlRunner --scenario`. `owlnest_tests` links the editor sources through the `OwlNestCore` static library and is
-skipped when `OWL_BUILD_NEST` is off.
+`OwlRunner --scenario`; a scenario whose first line is `# slow` is labelled `slow` too (`ctest -LE slow` leaves those
+out). The image tests are split into `OWL_RENDER_TEST_SHARDS` CTest entries (gtest shards, one X server each) that run
+in parallel. `owlnest_tests` links the editor sources through the `OwlNestCore` static library and is skipped when
+`OWL_BUILD_NEST` is off.
 
 ## Measuring frames on the GPU
 
@@ -369,6 +371,7 @@ See [Windowing and input](design/windowing-input.md) for the details and the GLF
 | `OWL_INCLUDE_CHECK`                        | OFF     | `owl_include_check`: every header and source compiled alone (Clang only)         |
 | `OWL_TEST_SHUFFLE`                         | OFF     | Run every test binary with `--gtest_shuffle`                                     |
 | `OWL_RENDER_TESTS`                         | ON      | Image tests (`test/unit/render_tests`, label `render`)                           |
+| `OWL_RENDER_TEST_SHARDS`                   | 6       | Parallel CTest entries the image tests are split into                            |
 | `OWL_TEST_TIMEOUT`                         | 600     | Per test binary CTest timeout, in seconds                                        |
 | `OWL_SCRIPT_TIME_SCALE`                    | 1       | Lua quota multiplier, scenario and export tests (8 emulated, 4 sanitizers)       |
 | `OWL_CONAN_PROFILE`                        | (auto)  | Conan host profile, default `conan/profiles/<os>-<compiler>[-<arch>]`            |

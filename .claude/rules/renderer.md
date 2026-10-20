@@ -50,7 +50,7 @@ get confirmation. A passing headless (Null backend) test is evidence the path wo
   teardown (`EditorLayer::onDetach()`), or they leak at `vkDestroyDevice`.
 - **Transparency** is alpha blending with depth test but no depth write (`Renderer3D::transparentMeshState`), the
   geometry sorted back-to-front in its own pass. Front faces are counter-clockwise on both backends (Vulkan pipelines
-  use `COUNTER_CLOCKWISE` with the flipped projection); no renderer culls yet.
+  use `COUNTER_CLOCKWISE` with the flipped projection); no renderer culls.
 - **Vulkan flips projection Y** (`proj(1,1) *= -1`): any screen→NDC ray or picking math is backend
   dependent (`isOpenGl ? -y : y`). Iso / gizmo projections must follow the same convention.
 - **Tiling an atlas cell with `frac(uv)`** needs all three: half-texel inset of the cell, self-tileable

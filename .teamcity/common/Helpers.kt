@@ -2,6 +2,7 @@ import jetbrains.buildServer.configs.kotlin.BuildFeatures
 import jetbrains.buildServer.configs.kotlin.BuildType
 import jetbrains.buildServer.configs.kotlin.Dependencies
 import jetbrains.buildServer.configs.kotlin.FailureAction
+import jetbrains.buildServer.configs.kotlin.ParametrizedWithType
 import jetbrains.buildServer.configs.kotlin.ReuseBuilds
 import jetbrains.buildServer.configs.kotlin.Triggers
 import jetbrains.buildServer.configs.kotlin.buildSteps.ScriptBuildStep
@@ -128,4 +129,11 @@ fun ScriptBuildStep.ciAction(action: String,
     dockerImagePlatform = ScriptBuildStep.ImagePlatform.Linux
     dockerPull = true
     dockerRunParameters = "%docker_parameters%"
+}
+
+/**
+ * Runs every test, the ones labelled `slow` included.
+ */
+fun ParametrizedWithType.fullSuite() {
+    param("test_args", "")
 }

@@ -4,9 +4,10 @@ import jetbrains.buildServer.configs.kotlin.*
 // preset). No LeakSanitizer job: on Linux LSan is part of ASan (`detect_leaks=1`).
 
 
+// Address runs on every push to `main`, off pull requests (two Linux agents: it held one for 25 min per pull
+// request); Thread and Undefined Behavior run nightly on `main`.
 val sanitizerAddress = presetBuild("Build_Quality_SanitizerAddress", "Sanitizer Address",
-        "linux-sanitizer-address", onDraft = true)
-// Address is the pull-request sanitizer; Thread and Undefined Behavior run nightly on `main`.
+        "linux-sanitizer-address", onPullRequest = false)
 val sanitizerThread = presetBuild("Build_Quality_SanitizerThread", "Sanitizer Thread",
         "linux-sanitizer-thread", onPullRequest = false, nightly = true)
 val sanitizerUndefinedBehavior = presetBuild("Build_Quality_SanitizerUndefinedBehavior",

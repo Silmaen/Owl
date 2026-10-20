@@ -8,4 +8,4 @@ of the samples are in [Sample games](../doc/pages/design/sample-games.md).
   sample reuses from the Engine Demo is copied, never pointed at.
 - Game rules in Lua only; CC0 or home-made art and sounds, the generators in `tools/samples/<game>/`.
 - At least one scenario test per game in `test/unit/scenarios/`, playing a scene of `samples/<game>/scenes/`; every
-  sample is exported and played headless by `GameExportEndToEnd.EveryShippedProjectPlaysFromItsExportFolder`.
+  sample is exported and played headless by `GameExportEndToEnd.PlaysFromItsExportFolder` (one case per project).
