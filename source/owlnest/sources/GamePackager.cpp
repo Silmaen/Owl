@@ -120,7 +120,7 @@ void GamePackager::renderWizardModal() {
 		ImGui::TextColored(gui::vec(gui::UiLayer::getTheme().accent), "Pack Game");
 		gui::UiLayer::popTextStyle();
 		ImGui::TextWrapped("Project: %s  (version: %s)", mp_project->name.c_str(),
-						   mp_project->version.empty() ? "-" : mp_project->version.c_str());
+						   mp_project->getGameVersion().c_str());
 		ImGui::Spacing();
 		ImGui::Separator();
 

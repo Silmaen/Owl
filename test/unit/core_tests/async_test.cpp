@@ -194,7 +194,7 @@ TEST(core_task, SchedulerConcurrency) {
 	}
 	scheduler.waitEmptyQueue();
 	EXPECT_EQ(completed, hwThreads);
-	// Should achieve more concurrency than the old hardcoded limit of 5.
+	// More than 5 tasks run at once on this machine.
 	EXPECT_GT(maxConcurrent, 5u);
 }
 

@@ -94,7 +94,7 @@ TEST_F(TilemapComponentFixture, SerializeInlineFallbackForUnsavedAsset) {
 	const auto sc = mkShared<Scene>();
 	auto entity = sc->createEntityWithUUID(0xBEE2, "InlineTilemapEntity");
 	auto& map = entity.addComponent<component::Tilemap>();
-	// In-memory asset with no `tilemapPath` mimics a legacy inline tilemap or a freshly
+	// In-memory asset with no `tilemapPath` mimics an inline tilemap or a freshly
 	// authored asset that has not been saved through the editor yet.
 	map.asset = mkShared<TilemapAsset>();
 	map.asset->tilesetPath = "tilesets/dungeon.owltileset";
@@ -130,9 +130,8 @@ TEST_F(TilemapComponentFixture, SerializeInlineFallbackForUnsavedAsset) {
 }
 
 TEST_F(TilemapComponentFixture, DeserializeAcceptsLegacyFlatLayout) {
-	// Legacy form (pre-asset-extraction) wrote the inline grid data flat under the
-	// `Tilemap:` key — without the `inline:` indirection. The component-level
-	// deserializer keeps the old layout readable so existing scenes can still load.
+	// The flat form holds the inline grid data directly under the `Tilemap:` key,
+	// without the `inline:` indirection: the component-level deserializer reads it too.
 	const std::string yaml = R"(tilesetPath: legacy/tileset.owltileset
 width: 2
 height: 2

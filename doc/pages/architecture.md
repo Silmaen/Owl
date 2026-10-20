@@ -104,11 +104,10 @@ Owl Engine uses a backend abstraction so that different platform APIs can be swa
 | `Vulkan` | Vulkan 1.3+ | Modern low-level API; full desktop support    |
 | `Null`   | None        | Headless mode for servers or testing          |
 
-Every renderer follows one **GPU-driven instanced pipeline** (since the
-v0.2.0 renderer modernisation): a compute pre-pass writes an SSBO, the
+Every renderer follows one **GPU-driven instanced pipeline**: a compute pre-pass writes an SSBO, the
 graphics pass is instanced and indexes into the SSBO via the instance id, and
 the CPU does zero per-vertex transform. `Renderer2D`, `RendererTilemap`, and
-the raycaster wall stripes all share this shape; the v0.5.0 3D pipeline
+the raycaster wall stripes all share this shape; a new renderer
 builds on it rather than reintroducing CPU-vertex batching.
 
 See [Renderer](renderer.md) for the full rendering pipeline, batch system, and camera details.
@@ -307,7 +306,7 @@ The engine includes a task scheduler backed by [Taskflow](https://github.com/tas
 
 ## Engine Context
 
-`app::EngineContext` holds the engine state the scenes of one application share, which used to be static:
+`app::EngineContext` holds the engine state the scenes of one application share, rather than static state:
 the screen transition (`scene::ScreenTransition`), the game settings (`scene::SettingsManager`) and the voxel mesh
 cache (`renderer::VoxelMeshCache`). `Application` owns it (`getEngineContext()`) and releases it right after its
 layers, before the renderer shuts down, since the voxel meshes are GPU buffers. Every scene created while an

@@ -19,7 +19,7 @@ namespace owl::renderer::utils {
 
 /**
  * @brief
- *  GPU sprite Z-sort (#32) — wraps a single-workgroup bitonic-sort compute
+ *  GPU sprite Z-sort — wraps a single-workgroup bitonic-sort compute
  *  shader. The shader sorts an SSBO of `(float key, uint value)` pairs
  *  ascending by `key`. Painter's-order callers (back-to-front) negate
  *  their distance before submitting.

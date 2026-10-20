@@ -25,14 +25,14 @@ The `navigation` key of the `Tilemap` component (inspector section **Navigation*
 
 | Field        | Meaning                                                                                                                                                                           |
 |--------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `mode`       | How the graph is read: `connections` (the tileset says which tiles are roads), `cells` (any non-empty cell), `rules` (legacy, explicit rules; the mode of a file without `mode`). |
+| `mode`       | How the graph is read: `connections` (the tileset says which tiles are roads), `cells` (any non-empty cell), `rules` (explicit rules; the mode of a file without `mode`).         |
 | `layer`      | Layer of the tilemap the graph is read from.                                                                                                                                      |
 | `source`     | `overlay` (roads, tracks) or `terrain` (walking on the ground tile).                                                                                                              |
 | `maxRise`    | Highest rise, in height steps, a move may cross over one cell (0 to 4).                                                                                                           |
 | `climbCost`  | Extra cost, in cells, of climbing one height step.                                                                                                                                |
 | `allowSteep` | Whether a cell on a steep slope can be crossed.                                                                                                                                   |
 | `overrides`  | Exceptions of single cells: `cell: [x, y]`, `noExit` / `noEnter` (sides closed to leaving or entering) and `cost`.                                                                |
-| `rules`      | Legacy, `mode: rules` only: one rule per tile (`tile`, `cost`, `exits`, `enters`).                                                                                                |
+| `rules`      | `mode: rules` only: one rule per tile (`tile`, `cost`, `exits`, `enters`).                                                                                                        |
 
 ```yaml
 Tilemap:
@@ -76,9 +76,9 @@ neighbour cell is updated to agree, so a one-way road is one click. A cell can a
 road, 3 three times slower; absent keeps the cost of its tile). They are edited with the Navigation tool of the
 isometric view, through the `nav.set_edge`, `nav.set_cell_cost` and `nav.clear_cell` commands (undoable, journaled).
 
-### Legacy rules
+### Explicit rules
 
-A profile with `rules` and no `mode` still loads as `mode: rules` and builds the graph as before: a move exists when both
+A profile with `rules` and no `mode` loads as `mode: rules` and builds the graph from the rules: a move exists when both
 cells have a rule, the first one lets the mover leave in that direction (`exits`) and the second one lets it enter
 heading that way (`enters`). The inspector offers **Use the tileset connections instead** to drop them.
 

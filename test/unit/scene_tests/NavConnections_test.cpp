@@ -38,7 +38,7 @@ constexpr uint8_t S = 1u << 1u;
 constexpr uint8_t W = 1u << 2u;
 constexpr uint8_t N = 1u << 3u;
 
-/// One road shape of iso_town: its tile, the sides it joins and the old hand-written rule (exits / enters).
+/// One road shape of iso_town: its tile, the sides it joins and the equivalent explicit rule (exits / enters).
 struct RoadShape {
 	int32_t tile;
 	uint8_t joins;

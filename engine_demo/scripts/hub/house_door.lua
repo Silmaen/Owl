@@ -2,7 +2,7 @@
 -- Once the level has been completed, the door reports as already explored
 -- and `level_platformer_done` is set (handled by level_complete).
 
-local door_index = 1  -- this is house #1 in the sample (only one for now)
+local door_index = 1  -- this is house #1 in the sample
 
 function on_create()
     log.trace("HouseDoor #" .. door_index .. " ready")

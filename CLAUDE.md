@@ -1,15 +1,15 @@
 # CLAUDE.md
 
 Owl is a C++23 game engine (`OwlEngine`) with an editor (Owl Nest), a game runner, a Python CI wrapper and
-TeamCity pipelines. Version: see `project(... VERSION ...)` in `CMakeLists.txt` (0.4.0, released 2026-10-20, is the last release; 0.5.0 opens with its kickoff PR, plan in
-`doc/pages/roadmap.md`). Backends: graphics OpenGL 4.5 / Vulkan 1.3+ / Null, input
+TeamCity pipelines. Version: see `project(... VERSION ...)` in `CMakeLists.txt` (0.5.0 in development, plan in
+`doc/pages/roadmap.md`; 0.4.0, released 2026-10-20, is the last release). Backends: graphics OpenGL 4.5 / Vulkan 1.3+ / Null, input
 GLFW / Null, sound OpenAL / Null. ECS on EnTT with parent-child hierarchy. Platforms: Linux x64/arm64,
 Windows x64 (MinGW).
 
 Detailed, path-scoped rules load automatically from `.claude/rules/` when you touch matching files
 (C++ style, CMake, tests, renderer, Slang, scene, editor, script, task system, dependencies, Python CI,
 docs, module layout). User documentation lives in `doc/pages/*.md` — read the relevant page before
-changing a subsystem. The repository audit of 2026-10-05 lives in `doc/audit/` (entry point: `AUDIT.md`, closed with v0.3.0).
+changing a subsystem. The repository audit of 2026-10-05 is archived in `doc/audit/` (entry point: `AUDIT.md`).
 
 ## Build, test, run — Docker only
 
@@ -93,6 +93,7 @@ Python, never a bare `conan`. Inside the container the venv lives in `/fhome/.ca
 - Every PR updates `doc/pages/changelog.md` (`[Unreleased]`, one line per change), the `doc/pages/roadmap.md` badges
   and the relevant `doc/pages/*.md` / `doc/pages/design/*.md`; root
   `CHANGELOG.md` / `ROADMAP.md` change at release. Moving items between release sections is the user's call.
+- Comments and docs describe what exists, never its history; only the roadmap and the changelog carry history.
 - A release cycle starts with a kickoff PR (version bump + roadmap reorg) before any feature code.
 - No new public API without tests; every authored object ships full editor support in the same PR
   (`.claude/rules/ongoing-quality.md`).

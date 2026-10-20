@@ -155,7 +155,7 @@ public:
 	 * @brief
 	 *  `glMultiDrawElementsIndirectCount` against an SSBO bound to
 	 *  `GL_DRAW_INDIRECT_BUFFER` + a parameter buffer bound to
-	 *  `GL_PARAMETER_BUFFER`. Used by the compute-culling pipeline (#34).
+	 *  `GL_PARAMETER_BUFFER`. Used by the compute-culling pipeline.
 	 */
 	void drawIndexedIndirect(const shared<DrawData>& iData, const shared<renderer::gpu::StorageBuffer>& iCommandBuffer,
 							 const shared<renderer::gpu::StorageBuffer>& iCountBuffer, uint32_t iMaxDrawCount) override;

@@ -103,7 +103,7 @@ enum struct NavSource : uint8_t {
 
 /// How the graph is read from the tilemap.
 enum struct NavMode : uint8_t {
-	Rules = 0,///< Explicit per-tile rules (the legacy way: no rule, no graph).
+	Rules = 0,///< Explicit per-tile rules (no rule, no graph).
 	Connections = 1,///< The `connections` the tileset gives to each tile (roads), the way to author a graph.
 	AnyCell = 2,///< Every cell with a tile is a node open on its four sides (walking on a grid).
 };

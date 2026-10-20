@@ -73,7 +73,7 @@ whose PRIME presents wait for the X server whatever the swap interval.
 - **Cause: presentation, not Docker.** The compositor does not present hidden surfaces: native Wayland stops frame
   callbacks altogether, XWayland completes presents at about 1 Hz. Any vsync'ed swap then blocks; `vkcube` shows the
   same throttling on XWayland. Without vsync nothing blocks, which matches the frame-bench observations.
-- **Engine part (fixed):** OpenGL under Wayland now paces itself instead of blocking in `eglSwapBuffers`;
+- **Engine part (fixed):** OpenGL under Wayland paces itself instead of blocking in `eglSwapBuffers`;
   `SIGINT` / `SIGTERM` request a clean shutdown (a second signal kills), so a throttled loop still exits; the window
   logs `GLFW: Window closed after N presented frames.` and `Window::getPresentedFrames()` exposes the count.
 - **Docker part:** the socket, `WAYLAND_DISPLAY`, `XAUTHORITY` and `/dev/dri` were already right. `./docker_run.sh`
@@ -134,7 +134,7 @@ fixed it upstream.
   (correct size, slightly soft at 125 % or 150 %). Turning it on needs framebuffer-size resize events, ImGui's
   `DisplayFramebufferScale` and picking in framebuffer pixels: engine work, not a GLFW gap, done with the Phase E
   text scale / DPI item.
-- **Vsync on hidden surfaces.** GLFW 3.5.1 no longer blocks: under Wayland it drives the swap interval itself, waiting
+- **Vsync on hidden surfaces.** GLFW 3.5.1 does not block: under Wayland it drives the swap interval itself, waiting
   for the frame callback with a 20 ms timeout. Owl Engine still paces OpenGL itself: on the headless weston of the smoke
   test, interval 1 gives irregular frames (median 13.3 ms, p95 20.8 ms, the timeout firing every other frame) where
   the pacer holds 16.67 ms ± 0.1 ms. To be measured again on a visible desktop before switching.
@@ -153,7 +153,7 @@ fixed it upstream.
 Why:
 
 - GLFW 3.5.1 closes most of the Wayland gaps the evaluation started from: fractional scaling exists (Owl Engine's choice to
-  turn it off, see above), vsync no longer hangs on hidden surfaces. The remaining ones (window icon, global
+  turn it off, see above), vsync does not hang on hidden surfaces. The remaining ones (window icon, global
   positions) are protocol limits SDL3 shares or depends on the compositor for.
 - The native modal file dialogues of NFD (portal, GTK, Win32) are preferred over SDL's asynchronous
   `SDL_Show*Dialog`, which would change the editor's Open / Save As flow.
@@ -312,7 +312,7 @@ flowchart LR
   that can produce the value (right sign, right component) and injects it through the same path as an `input` step,
   with the inverse of the dead zone and curve for an analog binding.
 - **Doors and pushwalls** carry `interactionAction` (a button action name, empty to disable) instead of a key code;
-  an old `interactionKey: 0` still disables the built-in path.
+  an `interactionKey: 0` read from a file disables the built-in path.
 
 ## Gamepad improvements (v0.8.0)
 

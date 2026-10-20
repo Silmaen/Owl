@@ -137,7 +137,7 @@ constexpr PackedMeta g_DefaultMeta = 0;
  * Drives face culling (an opaque neighbour hides the shared face) and which
  * mesh pass a block lands in (opaque blocks are batched in the depth-tested
  * solid pass; transparent / water blocks are emitted into a separate
- * back-to-front pass in a later release).
+ * back-to-front pass).
  */
 enum struct BlockRenderKind : uint8_t {
 	Air = 0,///< Empty space: never meshed, never culls a neighbour face.

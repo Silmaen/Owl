@@ -1,4 +1,4 @@
-// Per-column DDA raycast compute pass (#35). One thread per screen column.
+// Per-column DDA raycast compute pass. One thread per screen column.
 // Each thread walks the 2D tilemap grid from the camera in the direction of
 // its column's ray, recording every wall hit (opaque or transparent) into a
 // per-column slot range of `columnHits[]`. Transparent hits keep the ray

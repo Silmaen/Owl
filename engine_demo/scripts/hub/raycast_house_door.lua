@@ -3,8 +3,7 @@
 -- back on the same spot when they exit the raycast scene.
 --
 -- Single-call transition: `scene.transition_to(path, type, duration)` lets the
--- engine drive the out-anim → loading screen → in-anim flow. No manual
--- `pending_scene` pump anymore.
+-- engine drive the out-anim → loading screen → in-anim flow.
 
 function on_create()
     log.trace("RaycastHouseDoor ready")

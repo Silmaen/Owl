@@ -1251,7 +1251,7 @@ def _check_structural() -> int:
 def _check_std_includes() -> int:
     """
     Every file must include the standard header of each `std` symbol it names:
-    a recent libstdc++ no longer provides `<cstdint>`, `<mutex>`, … transitively,
+    a recent libstdc++ does not provide `<cstdint>`, `<mutex>`, … transitively,
     so relying on another header breaks the Windows (MSYS2) build.
     """
     log.info("code-style: std-includes audit...")
@@ -1324,7 +1324,7 @@ def scan_text_for_secrets(text: str) -> list[tuple[int, int, str]]:
 
 def _check_secrets() -> int:
     """
-    Fail on any tracked file that looks like it holds a credential (H-12).
+    Fail on any tracked file that looks like it holds a credential.
 
     The matched text is never printed — only its kind and position — so a real
     leak is not copied a second time into the build log.

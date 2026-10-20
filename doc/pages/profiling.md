@@ -37,7 +37,7 @@ declares a static source location, so names must be string literals.
 |------------------|--------------------------------------------------------------------------|---------------------------|
 | `none` (default) | Nothing: compiled out                                                    | Every build, CI, releases |
 | `tracy`          | Tracy client: CPU zones, frames, thread names, GPU zones, allocations    | Any performance work      |
-| `chrome`         | Legacy JSON files (`OwlProfile-*.json`, `chrome://tracing`), one per run | No Tracy profiler at hand |
+| `chrome`         | JSON trace files (`OwlProfile-*.json`, `chrome://tracing`), one per run  | No Tracy profiler at hand |
 
 The default stays `none` in every build type: the macros cost nothing and nothing listens on the network. Tracy is
 meant for a **Release** build (the Debug build has coverage flags and measures something else). Its client is built
@@ -63,7 +63,7 @@ Tracy comes from ConanCenter (`tracy/0.13.1`, conanfile option `tracy`, set by `
    is not shared: publish the port, or run the profiler in the same container).
 3. The Owl Nest *Stats* panel shows `Profiler: Tracy (connected)` once attached.
 
-The build image has neither `tracy-profiler` nor `tracy-capture` yet (see `doc/audit/01-environnement.md`): the CI
+The build image has neither `tracy-profiler` nor `tracy-capture` (see `doc/audit/01-environnement.md`): the CI
 checks that the client builds and answers a capture handshake, not a full capture.
 
 ## What the timeline shows
@@ -88,7 +88,7 @@ Not covered yet: Lua zones (`TracyLua`), lock contention (`LockableBase`), log m
 
 `OWL_ENABLE_MEMORY_TRACKER` is **off in every build type**, Debug included: it takes a global mutex and records two
 list nodes and two map entries per live allocation, which doubles the live allocation set and skews any Debug
-timing (audit D-11). Turn it on for a leak report at exit, the Owl Nest memory readout, or Tracy's memory view;
+timing. Turn it on for a leak report at exit, the Owl Nest memory readout, or Tracy's memory view;
 `OWL_ENABLE_STACKTRACE` implies it.
 
 ## Logs on hot paths
@@ -98,7 +98,7 @@ timing (audit D-11). Turn it on for a leak report at exit, the Owl Nest memory r
   `OWL_*_TRACE` at compile time, arguments included.
 - `OWL_CORE_FRAME_TRACE` is a trace sampled once every `Log::setFrameFrequency` frames (100 by default): the only
   log allowed in a per-frame path.
-- The log file is flushed on warnings and errors only, no longer on every displayed message.
+- The log file is flushed on warnings and errors only, not on every displayed message.
 - Client macros (`OWL_INFO`...) always go to the `APP` logger, engine macros (`OWL_CORE_INFO`...) to `OWL`.
 
 ## Measured cost

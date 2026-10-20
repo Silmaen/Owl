@@ -85,9 +85,23 @@ OWL_API auto getVersionPatch() -> uint8_t;
 /**
  * @brief
  *  Gets the engine version as a string x.y.z.
- * @return The current engin version.
+ * @return The current engine version.
  */
 OWL_API auto getVersionString() -> std::string;
+
+/**
+ * @brief
+ *  Gets the abbreviated commit the engine was configured from.
+ * @return The short commit hash, or `unknown` when it could not be read at configure time.
+ */
+OWL_API auto getVersionCommit() -> std::string;
+
+/**
+ * @brief
+ *  Gets the engine version followed by its commit, as the packages name it.
+ * @return `x.y.z-<commit>`, or `x.y.z` when the commit is unknown.
+ */
+OWL_API auto getVersionFullString() -> std::string;
 
 /// Wrap to unique pointer.
 template<typename T, typename D = std::default_delete<T>>

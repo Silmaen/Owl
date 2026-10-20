@@ -1,6 +1,6 @@
 # Owl Engine
 
-![Version](https://img.shields.io/badge/version-0.4.0-blue)
+![Release](https://img.shields.io/github/v/release/Silmaen/Owl?label=release)
 ![C++23](https://img.shields.io/badge/C%2B%2B-23-blue?logo=cplusplus)
 ![CMake 3.24+](https://img.shields.io/badge/CMake-3.24%2B-blue?logo=cmake)
 ![GitHub License](https://img.shields.io/github/license/Silmaen/Owl)
@@ -95,7 +95,7 @@ The full generated documentation is on [owl.argawaen.net](https://owl.argawaen.n
 | Windows | x64          | MinGW Clang 22+, MinGW GCC 15+ |
 
 Owl Engine ships only what it tests: every platform listed has its machine in the CI, which builds it and runs the
-unit and scenario tests on every change. A new platform comes with its test machine (the Web is planned for v0.8).
+unit and scenario tests on every change. A new platform comes with its test machine (the Web is on the [roadmap](doc/pages/roadmap.md)).
 
 ## Backends
 

@@ -35,9 +35,8 @@ class Transform;
  * `scene::TilemapAsset` to produce a pseudo-3D first-person view)
  * and its `RenderLayer` adapter `RendererRaycastLayer`. Configuration is
  * driven by `RaycastConfig` (FOV, max distance, sky / floor colours, ray
- * count). The implementation in v0.2.0 emits textured wall stripes via the
- * `owl::renderer::Renderer2D` batch — a future PR can move the
- * inner loop into a dedicated full-screen Slang shader.
+ * count). Wall stripes come from a GPU DDA pass and the `raycast_stripe`
+ * shader, with a CPU walk feeding the `owl::renderer::Renderer2D` batch as fallback.
  */
 namespace owl::renderer {
 /**
@@ -256,12 +255,10 @@ struct OWL_API RaycastSpriteData {
  *  Static facade for a CPU-DDA, GPU-textured raycasting renderer.
  *
  * Mirrors the `Renderer2D` shape: a single static class with `init`/`shutdown`
- * book-keeping plus `beginScene` / `draw...` / `endScene` per frame. Internally
- * this v0.2.0 implementation rasterises wall stripes by emitting textured
- * `Renderer2D::drawQuad` calls — the heavy lifting (DDA traversal, perspective
- * stripe height, atlas UV slicing) happens on the CPU, drawing happens through
- * the existing 2D pipeline. A future revision will move the inner loop to a
- * dedicated full-screen Slang shader.
+ * book-keeping plus `beginScene` / `draw...` / `endScene` per frame. Wall stripes
+ * come from the GPU DDA compute pass and the `raycast_stripe` shader; the CPU
+ * fallback walks the DDA itself and emits textured `Renderer2D::drawQuad` calls.
+ * Column depths (sprite occlusion) and stats always come from the CPU walk.
  *
  * Thread-safety: main thread only.
  */

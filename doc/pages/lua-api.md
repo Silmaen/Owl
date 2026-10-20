@@ -86,6 +86,14 @@ Entities of the running level and level changes.
 | `scene.transition_to(scene_path: string, [kind: string], [duration: number], [r: number], [g: number], [b: number], [a: number])` |                     | Load a level behind a screen transition (kind as in `ui.transition_play`, `fade` by default), in a colour (opaque black by default). |
 | `scene.quit()`                                                                                                                    |                     | Quit the game (stop Play in the editor) after this frame.                                                                            |
 
+## `engine`
+
+The engine running the game.
+
+| Function           | Returns           | Description                                                     |
+|--------------------|-------------------|-----------------------------------------------------------------|
+| `engine.version()` | `version: string` | Version of the engine running the game, as `major.minor.patch`. |
+
 ## `time`
 
 Frame and fixed-tick time.

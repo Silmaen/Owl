@@ -88,7 +88,7 @@ struct OWL_API Quad2DData {
 	/**
 	 * @brief
 	 *  Sort key: primitives draw by increasing depth, then by type (quads, circles, lines, text), then in submission
-	 *  order. Larger is nearer the viewer, as the view depth of the isometric layer. Default 0: the old type order.
+	 *  order. Larger is nearer the viewer, as the view depth of the isometric layer. Default 0: type order only.
 	 */
 	float depth = 0.f;
 };
@@ -121,7 +121,7 @@ struct OWL_API CircleData {
 	/**
 	 * @brief
 	 *  Sort key: primitives draw by increasing depth, then by type (quads, circles, lines, text), then in submission
-	 *  order. Larger is nearer the viewer, as the view depth of the isometric layer. Default 0: the old type order.
+	 *  order. Larger is nearer the viewer, as the view depth of the isometric layer. Default 0: type order only.
 	 */
 	float depth = 0.f;
 };
@@ -142,7 +142,7 @@ struct OWL_API LineData {
 	/**
 	 * @brief
 	 *  Sort key: primitives draw by increasing depth, then by type (quads, circles, lines, text), then in submission
-	 *  order. Larger is nearer the viewer, as the view depth of the isometric layer. Default 0: the old type order.
+	 *  order. Larger is nearer the viewer, as the view depth of the isometric layer. Default 0: type order only.
 	 */
 	float depth = 0.f;
 };
@@ -161,7 +161,7 @@ struct OWL_API RectData {
 	/**
 	 * @brief
 	 *  Sort key: primitives draw by increasing depth, then by type (quads, circles, lines, text), then in submission
-	 *  order. Larger is nearer the viewer, as the view depth of the isometric layer. Default 0: the old type order.
+	 *  order. Larger is nearer the viewer, as the view depth of the isometric layer. Default 0: type order only.
 	 */
 	float depth = 0.f;
 };
@@ -184,7 +184,7 @@ struct OWL_API PolyLineData {
 	/**
 	 * @brief
 	 *  Sort key: primitives draw by increasing depth, then by type (quads, circles, lines, text), then in submission
-	 *  order. Larger is nearer the viewer, as the view depth of the isometric layer. Default 0: the old type order.
+	 *  order. Larger is nearer the viewer, as the view depth of the isometric layer. Default 0: type order only.
 	 */
 	float depth = 0.f;
 };
@@ -222,7 +222,7 @@ struct OWL_API StringData {
 	/**
 	 * @brief
 	 *  Sort key: primitives draw by increasing depth, then by type (quads, circles, lines, text), then in submission
-	 *  order. Larger is nearer the viewer, as the view depth of the isometric layer. Default 0: the old type order.
+	 *  order. Larger is nearer the viewer, as the view depth of the isometric layer. Default 0: type order only.
 	 */
 	float depth = 0.f;
 	/// Colour of the outline drawn around the glyphs, in the same draw.

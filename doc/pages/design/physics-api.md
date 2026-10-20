@@ -9,8 +9,8 @@ Design page for the physics work, summarised in the [Roadmap](../roadmap.md). Cu
 
 The physics API is designed once for 2D and 3D: a **backend-independent physics world interface** (bodies, shapes,
 queries, joints, contact events, layers) with **Box2D** behind it for 2D and **Jolt** added later for 3D. Gameplay
-code, Lua bindings and the editor only see the interface. One physics world per scene (PR-33) replaces the global
-`PhysicCommand`.
+code, Lua bindings and the editor only see the interface. Each scene owns its physics world (PR-33),
+reached through `PhysicCommand` with the scene.
 
 ## v0.3.0 — correctness
 

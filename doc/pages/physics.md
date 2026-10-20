@@ -141,7 +141,7 @@ Physics:
 Entities: ...
 ```
 
-The `tickRate` and `maxStepsPerFrame` keys of scenes written before v0.4.0 are ignored with a warning: the project's
+The `tickRate` and `maxStepsPerFrame` keys a scene may still carry are ignored with a warning: the project's
 tick rate and tick bound replace them. In Owl Nest the settings are edited in the **Physics** section of the *Scene
 Settings* panel (undoable), the tick rate in *Project Settings*; they are read when Play starts.
 

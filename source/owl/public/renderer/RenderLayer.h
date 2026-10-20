@@ -131,7 +131,7 @@ public:
 	 * mapping (e.g. `Renderer2DLayer`) ignore it; layers that build a
 	 * pixel-accurate ortho projection (e.g. `RendererRaycastLayer`) override
 	 * this hook to capture the size. Default implementation is a no-op so
-	 * adding new layer types remains backwards-compatible.
+	 * a layer type overrides it only when it needs the size.
 	 * @param[in] iViewport The viewport size in pixels.
 	 */
 	virtual void setViewport([[maybe_unused]] const math::vec2ui& iViewport) {}

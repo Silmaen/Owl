@@ -12,6 +12,7 @@
 
 #include <cstdint>
 #include <format>
+#include <string>
 
 using namespace owl;
 
@@ -22,4 +23,15 @@ TEST(Core_Version, base) {
 	EXPECT_EQ(OWL_MAJOR, getVersionMajor());
 	EXPECT_EQ(OWL_MINOR, getVersionMinor());
 	EXPECT_EQ(OWL_PATCH, getVersionPatch());
+}
+
+TEST(Core_Version, fullStringEndsWithTheCommit) {
+	const auto commit = getVersionCommit();
+	ASSERT_FALSE(commit.empty());
+	if (commit == "unknown") {
+		EXPECT_EQ(getVersionFullString(), getVersionString());
+	} else {
+		EXPECT_LE(commit.size(), 7u);
+		EXPECT_EQ(getVersionFullString(), std::format("{}-{}", getVersionString(), commit));
+	}
 }

@@ -332,7 +332,7 @@ void Device::fillFrame(shared<renderer::gpu::Texture>& iFrame) {
 			iFrame.reset();
 		iFrame = renderer::gpu::Texture2D::create({m_size, renderer::gpu::ImageFormat::Rgb8});
 	}
-	// For now only fill with black
+	// Only fills with black
 	WPointer<IMFSample> sample;
 	int64_t timestamp = 0;
 	u_long actualIndex = 0;

@@ -40,7 +40,7 @@ global ambient tint gives day / night.
 
 ## Tile-graph pathfinding (v0.4.0, done)
 
-Shipped as PATH1, user guide in [Pathfinding](../pathfinding.md). Moved from the later navigation work: vehicles of a Transport Tycoon-like game follow a graph of tiles and tracks,
+Shipped as PATH1, user guide in [Pathfinding](../pathfinding.md). Vehicles of a Transport Tycoon-like game follow a graph of tiles and tracks,
 not a navigation mesh.
 
 - A* on a tile grid or on a graph built from tilemap overlays (tracks, roads), with per-edge costs and one-way edges

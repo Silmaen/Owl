@@ -21,7 +21,7 @@ namespace owl::nest {
  *
  * The active document is the one that global panels (scene hierarchy,
  * inspector, toolbar) target. It is updated from the viewport focus change
- * (Phase 2) or from the last `open()` call (Phase 1).
+ * or from the last `open()` call.
  */
 class DocumentManager final {
 public:

@@ -2,7 +2,7 @@
 
 [TOC]
 
-This page describes **exactly** the algorithm used by `RendererRaycast` (since v0.2.0) — math, data flow, conventions, and
+This page describes **exactly** the algorithm used by `RendererRaycast` — math, data flow, conventions, and
 the known limitations of the current implementation. It is intentionally low-level so the rendering path can be reasoned
 about, debugged, and replaced piece by piece.
 
@@ -223,7 +223,7 @@ genuine no-op. Two paths:
 
 - **Solid colour (default)** — one full-height quad per half of the viewport, tinted with
   `RaycastConfig::ceilingColor` /
-  `floorColor`. Same shape as the v0.2.0 first cut.
+  `floorColor`.
 - **Textured per-scanline** — when `RaycastConfig::floorTexture` /
   `ceilingTexture` are populated (via the layer's `FloorTileset` /
   `FloorTileIndex` / `CeilingTileset` / `CeilingTileIndex` YAML keys), the renderer emits one 1-pixel-tall quad per
@@ -256,7 +256,7 @@ t        = clamp((perpDist − fogStart) / (fogEnd − fogStart), 0, 1)
 finalRgb = lerp(naturalRgb, fogColor.rgb, t)
 ```
 
-Set `fogEnd ≤ fogStart` (the default) to disable fog entirely — scenes authored before v0.2.0's lighting PR keep their
+Set `fogEnd ≤ fogStart` (the default) to disable fog entirely — a scene without fog settings keeps its
 natural tint. A black
 `fogColor` plus a finite range gives classical Wolf3D distance darkening; pointing it at the ceiling colour fakes a
 cheap sky-bleed haze. The single `applyFog` helper is shared across every stripe emitter so a wall pixel and the floor
@@ -275,9 +275,9 @@ textured stripes, no fish-eye via perpendicular distance). Relative to a pixel-p
    fallback when no floor / ceiling tileset is configured.
 3. **Sprites / billboards** — shipped: entities render as camera-facing strips, occluded by the per-column wall z-buffer.
 4. **Doors, pushwalls, transparent walls** — shipped (see *Dynamic walls* below and the `TileMeta.transparent` flag).
-   Thin walls were dropped from scope.
-5. **Still deferred** — point lights (only global distance fog ships today), and moving the raycast **sprite** stripes
-   onto the GPU so the `BitonicSortPass` depth sort can feed them without a CPU readback (planned for v0.5.0).
+   Thin walls are out of scope.
+5. **Not done** — point lights (only global distance fog ships), and moving the raycast **sprite** stripes
+   onto the GPU so the `BitonicSortPass` depth sort can feed them without a CPU readback (see the [roadmap](roadmap.md)).
 
 ## Dynamic walls (doors + pushwalls)
 

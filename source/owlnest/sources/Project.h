@@ -28,7 +28,7 @@ struct Project {
 	std::string name;
 	/// Relative path to the first scene.
 	std::string firstScene;
-	/// Project version string (freeform, e.g., "1.0.0").
+	/// Game version string (freeform, e.g., "1.0.0"); empty: the game follows the engine version.
 	std::string version;
 	/// Author or studio name.
 	std::string author;
@@ -94,6 +94,14 @@ struct Project {
 	 * @return True if a project directory is set.
 	 */
 	[[nodiscard]] auto isLoaded() const -> bool { return !projectDirectory.empty(); }
+
+	/**
+	 * @brief
+	 *  Version of the game: its own `version`, or the engine version when it has none (the Engine Demo and the
+	 *  sample games, which follow the engine).
+	 * @return The version written in the exported game.
+	 */
+	[[nodiscard]] auto getGameVersion() const -> std::string;
 
 	/**
 	 * @brief

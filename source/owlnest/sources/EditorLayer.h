@@ -814,7 +814,7 @@ private:
 
 	/**
 	 * @brief
-	 *  Access (or create) the single SceneDocument during Phase 1.
+	 *  Access the active SceneDocument, creating an empty one when none is active.
 	 * @return The SceneDocument.
 	 */
 	auto ensureActiveSceneDocument() -> SceneDocument&;
@@ -968,7 +968,7 @@ private:
 	std::optional<std::chrono::steady_clock::time_point> m_lastAutosave;
 	/// Per-frame Vulkan counter deltas and their 2 s maxima, for the Stats panel.
 	panel::GpuCounterMonitor m_gpuCounters;
-	/// Open documents (scenes for now; later also Lua scripts, node graphs...).
+	/// Open documents (scenes, HUDs, assets, scripts, node graphs...).
 	DocumentManager m_documents;
 	/// Id of the hot reload listener registered at attach.
 	uint32_t m_hotReloadListener = 0;

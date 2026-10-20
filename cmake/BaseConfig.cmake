@@ -149,7 +149,7 @@ else ()
     set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 endif ()
 
-# Only a default: a preset, -DCMAKE_INSTALL_PREFIX or a package manager keeps its own prefix (audit G-06).
+# Only a default: a preset, -DCMAKE_INSTALL_PREFIX or a package manager keeps its own prefix.
 if (CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
     set(CMAKE_INSTALL_PREFIX ${PROJECT_SOURCE_DIR}/output/install CACHE PATH "Install prefix" FORCE)
 endif ()
@@ -176,7 +176,7 @@ if (${PROJECT_PREFIX}_PLATFORM_WINDOWS)
         endforeach ()
         target_compile_options(${CMAKE_PROJECT_NAME}_Base INTERFACE -U_GLIBCXX_DEBUG)
         # PE/COFF section table is 16-bit by default (max 65535 sections). Heavy template
-        # instantiations in Scene.cpp / SceneSerializer.cpp now exceed that limit on
+        # instantiations in Scene.cpp / SceneSerializer.cpp exceed that limit on
         # mingw-gcc 15+ and the linker reports "relocation truncated to fit" against
         # `.text$<symbol>` / `.pdata$<symbol>` / `.xdata$<symbol>`. The big-obj COFF
         # variant lifts the limit to ~4 billion sections; required to keep the project
@@ -193,6 +193,36 @@ elseif (${PROJECT_PREFIX}_PLATFORM_LINUX)
 endif ()
 add_dependencies(${CMAKE_PROJECT_NAME}_Base ${CMAKE_PROJECT_NAME}_SuperBase)
 
+# The version is project(VERSION) in CMakeLists.txt, the one place to edit: the engine reads it through
+# getVersion*() (core/Core.h), CPack, Conan, Doxygen and the CI from there.
+#
+# OWL_GIT_HASH: abbreviated commit of the configured tree (package names, getVersionCommit()).
+#
+#
+# Git may legitimately fail here (shallow clones, out-of-tree builds, and — the case that
+# motivated this fallback — a checkout made on a Windows agent mounted into a Linux container,
+# where `.git/objects/info/alternates` points to a Windows path that can't be resolved).  When
+# that happens we fall back to TeamCity's `BUILD_VCS_NUMBER` environment variable; if that is
+# also unavailable we settle for a literal so the downstream `SUBSTRING` stays well-formed.
+if (NOT ${PROJECT_PREFIX}_GIT_HASH)
+    execute_process(
+            COMMAND git log -1 --format=%h
+            WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+            OUTPUT_VARIABLE ${PROJECT_PREFIX}_GIT_HASH
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+            RESULT_VARIABLE _owl_git_hash_result
+            ERROR_QUIET
+    )
+    if (NOT _owl_git_hash_result EQUAL 0 OR "${${PROJECT_PREFIX}_GIT_HASH}" STREQUAL "")
+        if (DEFINED ENV{BUILD_VCS_NUMBER} AND NOT "$ENV{BUILD_VCS_NUMBER}" STREQUAL "")
+            set(${PROJECT_PREFIX}_GIT_HASH "$ENV{BUILD_VCS_NUMBER}")
+        else ()
+            set(${PROJECT_PREFIX}_GIT_HASH "unknown")
+        endif ()
+    endif ()
+endif ()
+# Quoting the expansion guards against an empty value collapsing into zero arguments.
+string(SUBSTRING "${${PROJECT_PREFIX}_GIT_HASH}" 0 7 ${PROJECT_PREFIX}_GIT_HASH)
 target_compile_definitions(${CMAKE_PROJECT_NAME}_Base INTERFACE "${PROJECT_PREFIX}_MAJOR=${CMAKE_PROJECT_VERSION_MAJOR}")
 target_compile_definitions(${CMAKE_PROJECT_NAME}_Base INTERFACE "${PROJECT_PREFIX}_MINOR=${CMAKE_PROJECT_VERSION_MINOR}")
 target_compile_definitions(${CMAKE_PROJECT_NAME}_Base INTERFACE "${PROJECT_PREFIX}_PATCH=${CMAKE_PROJECT_VERSION_PATCH}")

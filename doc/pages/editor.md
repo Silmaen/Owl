@@ -597,7 +597,7 @@ flowchart LR
 - Off with *Hot Reload* in *Parameters > Debug* (`hotReload` in `config.yml`) or `OwlRunner --no-hot-reload`; a game
   with an open asset pack never watches.
 - Not reloaded: colliders built at Play start (tilemap collision flags apply at the next Play), new shader bindings
-  (restart), C++ game code (a v0.6.0 evaluation).
+  (restart), C++ game code.
 
 ### Project Settings
 
@@ -608,7 +608,7 @@ flowchart LR
 | Project Name        | Display name shown in the window title bar                                        |
 | First Scene         | Dropdown of `.owl` files found in the project directory                           |
 | Default HUD         | Dropdown of `.owlhud` files: the HUD of the scenes that name none (`DefaultHud`)  |
-| Version             | Freeform version string (e.g., "1.0.0")                                           |
+| Version             | Game version (e.g., "1.0.0"); empty, the game follows the engine version          |
 | Author              | Author or studio name                                                             |
 | Description         | Short project description                                                         |
 | Icon                | Relative path to a PNG icon for the game window                                   |

@@ -33,13 +33,12 @@ namespace owl::renderer::gpu::vulkan::internal {
  *  `RendererTilemap`, future `RendererRaycast` stripe-emission pipeline, …)
  *  constructs one instance with the exact set of bindings its shaders declare.
  *
- *  Splits the responsibilities that used to live in the global `Descriptors`
- *  singleton: layout + descriptor pool + per-frame sets + per-binding UBO
- *  storage + per-renderer texture-slot array. Removes the binding-slot
- *  collisions that caused the NVIDIA `vkCmdBindPipeline` crash on the
- *  `RendererTilemap` instanced path (one shared layout couldn't honour both
+ *  Holds, per renderer, what the global `Descriptors` singleton would otherwise share:
+ *  layout + descriptor pool + per-frame sets + per-binding UBO
+ *  storage + texture-slot array. One shared layout cannot honour both
  *  `Renderer2D`'s `{0:UBO, 1:texArray}` and `RendererTilemap`'s
- *  `{0:UBO, 1:texArray, 2:UBO}` correctly).
+ *  `{0:UBO, 1:texArray, 2:UBO}`: their binding slots would collide (NVIDIA
+ *  crashes in `vkCmdBindPipeline` on the `RendererTilemap` instanced path).
  *
  *  A static registry indexed by renderer name lets `UniformBuffer::create`
  *  and `Texture2D` route their per-instance work back to the right
@@ -200,7 +199,7 @@ public:
 	 * @brief
 	 *  Set the active descriptor block for the current thread. Texture
 	 *  binds and per-draw descriptor-set selection route through this
-	 *  pointer until cleared. Pass `nullptr` to fall back to the legacy
+	 *  pointer until cleared. Pass `nullptr` to fall back to the
 	 *  global `Descriptors` path.
 	 * @param[in] iActive Active block, or nullptr.
 	 */

@@ -269,7 +269,7 @@ auto emitWallStripesGpu(const WallStripeContext& iCtx) -> bool {
 	ubo.entityId = iCtx.entityId;
 	ubo._pad = 0u;
 
-	// Column depths (occlusion) and stats from a CPU walk: a read-back of the GPU pass drains the frame (B-01).
+	// Column depths (occlusion) and stats from a CPU walk: a read-back of the GPU pass drains the frame.
 	thread_local std::vector<CpuColumnHit> hits;
 	g_state->zBufferPerColumn.resize(iCtx.numRays);
 	for (uint32_t col = 0; col < iCtx.numRays; ++col) {

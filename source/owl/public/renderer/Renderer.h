@@ -31,7 +31,7 @@
  *     `Buffer`, `gpu::RenderAPI`, `gpu::RenderCommand`, …) and their per-API impls.
  *   - `owl::renderer`   — render-stack orchestration (`RenderLayer`,
  *     `RenderLayerFactory`, `RenderStack`).
- *   - `owl::renderer` (formerly `owl::renderer::draw`)    — concrete draw-type renderers, split by
+ *   - `owl::renderer`   — concrete draw-type renderers, split by
  *     family in sub-namespaces (`r2d` for the 2D batch renderer, `raycast`
  *     for the Wolfenstein-style raycaster).
  */
@@ -165,9 +165,9 @@ public:
 	 * @brief
 	 *  Install the active renderer stack (called when scenes activate).
 	 *
-	 * The stack is consulted by future per-layer dispatch code. Passing an empty
-	 * stack clears the active configuration; callers fall back to the legacy
-	 * direct `Renderer2D` path (current default for v0.2.0).
+	 * The stack drives the per-layer dispatch. Passing an empty
+	 * stack clears the active configuration; callers fall back to the
+	 * direct `Renderer2D` path.
 	 * @param[in] iStack The new active stack (moved in).
 	 */
 	static void setRenderStack(RenderStack iStack);
@@ -198,7 +198,7 @@ private:
 	static shared<ShaderLibrary> m_shaderLibrary;
 	/// Actual library of textures.
 	static shared<TextureLibrary> m_textureLibrary;
-	/// Active renderer stack (may be empty — legacy `Renderer2D` path is then used).
+	/// Active renderer stack (may be empty — the direct `Renderer2D` path is then used).
 	static RenderStack m_renderStack;
 };
 

@@ -79,8 +79,8 @@ Done in v0.4.0: `samples/breakout/` (how to play: its `README.md`).
 | Art      | Home-made bricks, paddle, ball, capsules, walls and backdrop, chip sounds and music (`tools/samples/breakout/`)  |
 | Saves    | No slot; best score and levels cleared with their best through `settings.save` (`breakout_best`, `_done_N`)      |
 
-- Reuse: the hit flash of `scripts/platformer/flicker.lua`; the menus started as copies of the Engine Demo ones and
-  now have a look of their own (feedback of the first playthrough). A broken brick is destroyed at once (a popping brick
+- Reuse: the hit flash of `scripts/platformer/flicker.lua`; the menus, built from the Engine Demo ones, have a
+  look of their own. A broken brick is destroyed at once (a popping brick
   would keep its body), its burst shown from a pool instead of the pop of `coin.lua`.
 - Gaps met: G5 (the paddle follows the mouse motion, `breakout_mouse_speed` setting), G1 (pools of hidden entities:
   power-ups, bursts, and a second paddle for the wide one, a body cannot be resized from Lua), G14 (one scene per
@@ -181,8 +181,8 @@ and the combat come in a later release, once their art exists.
   and stops the fog, in the cell where it stopped (it showed as floor there and the fog saw the room behind it).
 - Reuse: `scripts/raycast/raycast_player.lua`, `scripts/raycast/raycast_level.lua`, `scripts/raycast/pickup.lua`,
   `scripts/raycast/raycast_exit.lua`, `tilesets/raycast_w3d_walls.owltileset`, `tilesets/minimap.owltileset`,
-  `sounds/raycast/`; the menus, first copied from the Engine Demo, have a look of their own since the first
-  playthrough, and the ratios moved from the play HUD to the tally.
+  `sounds/raycast/`; the menus, built from the Engine Demo ones, have a look of their own, and the ratios show
+  on the tally, not on the play HUD.
 - Gaps: G9, G17; G16 fixed (the `next_scene` property of `exit.lua` names the next floor). Later, with combat: G11
   (art), G10 (line of sight), G7 (weapon view frames), G1 (dropped ammo).
 - Scenarios: `wolf_pickup` (walk onto a cross, `wolf_items` and `wolf_score` rise), `wolf_locked_door` (closed without

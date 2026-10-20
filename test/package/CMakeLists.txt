@@ -1,5 +1,5 @@
 #
-# Consumer of the installed OwlEngine package (audit G-03): no Owl build setting may leak into this project.
+# Consumer of the installed OwlEngine package: no Owl build setting may leak into this project.
 #
 cmake_minimum_required(VERSION 3.24)
 project(OwlTestPackage LANGUAGES CXX)

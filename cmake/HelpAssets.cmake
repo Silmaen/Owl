@@ -97,7 +97,7 @@ function(_owl_help_extract_title IN_FILE OUT_VAR)
 endfunction()
 
 function(owl_bundle_help_assets)
-    # In the build tree: the configure writes nothing in the sources (audit G-09). Not `help/`: the Ninja generator
+    # In the build tree: the configure writes nothing in the sources. Not `help/`: the Ninja generator
     # declares a `help` target at the build root, and `clean` fails on a directory of that name.
     set(HELP_DIR "${CMAKE_BINARY_DIR}/help_bundle")
     # A build tree configured before keeps its bundle (and its badge cache) under the new name.

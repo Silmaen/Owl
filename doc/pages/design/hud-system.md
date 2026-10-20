@@ -45,8 +45,8 @@ flowchart LR
 
 - An implicit last pass of the frame, in pixel space, after the renderer stack and the overlays, before the toasts and
   the screen transition (`HudPass`); it cannot be misordered, whatever the layers underneath draw, in Play
-  as in the editor viewport (where a click on a widget selects it). `Scene::renderHud` (voxel highlight and crosshair)
-  became `renderOverlays`; `RendererTag` no longer routes a canvas, so the `ui` layer of the templates stays empty.
+  as in the editor viewport (where a click on a widget selects it). The voxel highlight and crosshair are
+  `Scene::renderOverlays`; `RendererTag` does not route a canvas, so the `ui` layer of the templates stays empty.
 - The code left `Scene.cpp`: `HudLayout` lays the canvases out once per frame (in ascending `sortOrder`,
   depth first, a parent before its children) and `UiInputSystem` hit-tests that same layout, so a click lands on the
   rectangle that was drawn; the topmost button or slider under the mouse takes it, labels and panels over it do not.
@@ -116,7 +116,7 @@ Implementation notes:
   (`UiInputSystem::isUIConsuming`); so does a drag in progress.
 - `UiLayout`: row, column and grid arrangement of the children that carry a `UiRect`, with spacing, padding, a cross
   alignment and, for a grid, a column count and an optional cell size. The children keep their `size`; their anchors
-  and offset no longer apply.
+  and offset do not apply.
 - Clipping by scissor for windows and for `UiPanel::clipChildren`: the layout gives every node the clip rectangle of
   its ancestors (`HudNode::clip`), the pass sets it on `Renderer2D` and hit-testing stops at it too.
 - `UiTooltip`: text after a hover delay, sized to the text, kept inside the screen, drawn over every window; it

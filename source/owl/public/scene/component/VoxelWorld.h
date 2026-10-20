@@ -32,7 +32,7 @@ namespace owl::scene::component {
  * the renderer maps it to the tile's UV sub-rect. The entity must carry a
  * `RendererTag` routing it to a `RendererVoxel` layer for the world to appear. The
  * data is serialized inline in the scene (registry as a nested YAML string, chunks
- * run-length encoded); a standalone `.owlvoxel` asset format is a later refinement.
+ * run-length encoded).
  */
 struct OWL_API VoxelWorld {
 	/// Block palette resolving ids to render kind, collision and per-face atlas tile index.

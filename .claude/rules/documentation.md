@@ -60,6 +60,11 @@ If an SVG already exists, keep it alongside the mermaid version for Doxygen comp
 | Concise | `doc/pages/roadmap.md` (`page-roadmap`) | `doc/pages/changelog.md` (`page-changelog`) | Every PR              |
 | Detail  | `doc/pages/design/<topic>.md`           | — (detail goes to the work log / `TODO.md`) | With the feature work |
 
+- **Only the roadmap and the changelog carry history.** Every other page (`doc/pages/*.md`, README, CONTRIBUTING,
+  SECURITY, the sample READMEs, `.claude/rules/`, `CLAUDE.md`) describes the current state: no "since v0.x",
+  "formerly", "(new)"; a future version is a link to the roadmap or a design page. Design pages keep their plan,
+  status and decision tables, without narrative; `doc/audit/` is a dated archive, left as is.
+
 ### Root files (`ROADMAP.md`, `CHANGELOG.md`)
 
 - Ultra-short, readable at a glance: positioning in one sentence, then a table

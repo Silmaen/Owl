@@ -143,8 +143,8 @@ TEST(SceneSerializer, VisibilityRoundTrip) {
 // `parseBuffer` is the CPU-only half of the async scene-load skeleton:
 // it walks the YAML on a worker thread without touching scene / GPU
 // state. `applyParsed` then materialises the parsed tree onto a real
-// scene from the main thread. End-to-end behaviour must match the
-// legacy `deserializeFromBuffer`.
+// scene from the main thread. End-to-end behaviour must match
+// `deserializeFromBuffer`.
 TEST(SceneSerializer, ParseAndApplyMatchesDeserialize) {
 	owl::core::Log::init(owl::core::Log::Level::Off);
 	const auto source = owl::mkShared<Scene>();

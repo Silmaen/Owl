@@ -10,7 +10,7 @@
 // `worldIndex` reads `gTransientWorlds[-(worldIndex + 1)]` (the per-batch
 // scratch buffer Renderer2D uploads for non-entity callers like UI builders
 // or gizmos). The split lets entity draws skip the per-instance mat4 upload
-// while keeping the transient path drop-in compatible with legacy calls.
+// while non-entity callers keep a plain per-instance matrix.
 
 struct Camera {
 	column_major float4x4 viewProjection;

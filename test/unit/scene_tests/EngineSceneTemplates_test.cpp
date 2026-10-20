@@ -79,7 +79,7 @@ TEST(EngineSceneTemplates, EveryKeySurvivesALoadSaveRoundTrip) {
 	core::Log::invalidate();
 }
 
-// The HUD pass draws every canvas whatever its tag: no shipped scene or HUD names the `ui` layer on a widget any more.
+// The HUD pass draws every canvas whatever its tag: no shipped scene or HUD names the `ui` layer on a widget.
 TEST(EngineSceneTemplates, NoShippedWidgetNamesTheUiLayer) {
 	const auto root = test::getRootPath();
 	const std::regex uiTag{R"(RendererTag:\s*(\{\s*Name:\s*ui\s*\}|\n\s+Name:\s*ui\b))"};

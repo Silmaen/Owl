@@ -1,4 +1,4 @@
-// Frustum culling compute pre-pass (#34). One thread per entity AABB.
+// Frustum culling compute pre-pass. One thread per entity AABB.
 // Visible AABBs append themselves (via atomic counter) to a draw-command
 // SSBO that the graphics pass consumes via
 // `vkCmdDrawIndexedIndirect` / `glMultiDrawElementsIndirect`.

@@ -8,6 +8,7 @@
 
 #include "Backstage.h"
 
+#include <core/Core.h>
 #include <gui/IconBank.h>
 #include <gui/IconFont.h>
 #include <gui/UiLayer.h>
@@ -245,6 +246,11 @@ void Backstage::onImGuiRender(const BackstageContext& iContext) {
 			run(iContext.closeProject);
 		if (navItem("ribbon_exit", "Exit"))
 			run(iContext.exit);
+		const auto version = std::format("Owl Engine {}", getVersionFullString());
+		const float lineHeight = ImGui::GetTextLineHeightWithSpacing();
+		if (ImGui::GetContentRegionAvail().y > lineHeight)
+			ImGui::SetCursorPosY(ImGui::GetCursorPosY() + ImGui::GetContentRegionAvail().y - lineHeight);
+		ImGui::TextColored(gui::vec(theme.textDisabled), "%s", version.c_str());
 	}
 	ImGui::EndChild();
 	ImGui::PopStyleVar();

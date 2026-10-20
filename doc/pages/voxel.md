@@ -2,7 +2,7 @@
 
 [TOC]
 
-The voxel engine (introduced in v0.2.1) is a block-based world subsystem in the `owl::data::voxel` module. This page
+The voxel engine is a block-based world subsystem in the `owl::data::voxel` module. This page
 documents the data model (block types, chunks, the world store), then the meshing, the renderer, the procedural terrain
 and the editing tools built on it.
 
@@ -271,8 +271,8 @@ a free gameplay/editor `state` byte. The chunk keeps a metadata array parallel t
 remaps which per-face texture appears on each world face (`orientedFace`), so a single block type can read as a pillar
 laid along any axis (`AxisX` / `AxisZ`) or a horizontally-facing block (`YawCw90` / `Yaw180` / `YawCcw90`). The greedy
 mesher includes orientation in its merge key, so adjacent blocks textured differently never merge into one quad. The
-run-length encoding writes `<count>x<id>` for default metadata and `<count>x<id>:<meta>` otherwise, so legacy id-only
-data still loads and all-default chunks serialize byte-for-byte as before.
+run-length encoding writes `<count>x<id>` for default metadata and `<count>x<id>:<meta>` otherwise, so id-only
+data loads too and an all-default chunk serializes as id-only runs.
 
 ## Procedural Terrain
 
@@ -323,6 +323,5 @@ to zoom); a corner XYZ gizmo shows the current orientation.
 
 ## What's Next
 
-A Lua block API (gap G2 of the [Sample games](design/sample-games.md), for the Mini Minecraft of v0.6.0), and the
-GPU indirect-draw adoption of the frustum-culling pre-pass (culled per chunk on the CPU today), with the compute-driven
-culling of v0.5.0.
+Chunks are culled on the CPU. A Lua block API (gap G2 of the [Sample games](design/sample-games.md)) and GPU-driven
+culling are on the [roadmap](roadmap.md).

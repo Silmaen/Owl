@@ -156,7 +156,7 @@ TEST_F(ChunkFixture, EncodeDecodeCarriesMeta) {
 }
 
 TEST_F(ChunkFixture, LegacyEncodingDecodesToDefaultMeta) {
-	// A legacy id-only run string (no ":meta" suffix) must still decode, with default metadata everywhere.
+	// An id-only run string (no ":meta" suffix) decodes, with default metadata everywhere.
 	Chunk chunk;
 	const std::string legacy = std::to_string(g_ChunkVolume - 1) + "x0 1x5";
 	ASSERT_TRUE(chunk.decode(legacy));
@@ -165,7 +165,7 @@ TEST_F(ChunkFixture, LegacyEncodingDecodesToDefaultMeta) {
 }
 
 TEST_F(ChunkFixture, EncodeOmitsMetaSuffixWhenDefault) {
-	// All-default metadata must produce byte-identical output to the legacy id-only format.
+	// All-default metadata must produce byte-identical output to the id-only form.
 	Chunk chunk;
 	chunk.setBlock(0, 0, 0, 7);
 	EXPECT_EQ(chunk.encode().find(':'), std::string::npos);

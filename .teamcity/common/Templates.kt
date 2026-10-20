@@ -207,8 +207,7 @@ val globalBuild = Template {
         // ready PRs, but not on draft ones and not on a PR that changes only
         // documentation. The draft-friendly BTs and the two that annotate the
         // diff override it via bridgeOverride() — see BridgeHelpers.kt.
-        // Everything PR-related (commitStatusPublisher, pullRequests
-        // bundled feature) was retired in earlier passes; the plugin's
+        // No commitStatusPublisher nor pullRequests bundled feature: the plugin's
         // Check Runs + PrParameterProvider are the single sources of truth.
         githubBridge()
         xmlReport {
@@ -235,9 +234,8 @@ val globalBuild = Template {
 
 val toolBuild = Template {
     id = RelativeId("CodeSylingCheck")
-    // Keep the original (typo'd) ID so existing build history and references
-    // in TeamCity storage stay bound. The Kotlin object name is fixed for
-    // hygiene; the display name was also corrected.
+    // The ID keeps its typo so the build history and references in TeamCity
+    // storage stay bound; the Kotlin object and display names are spelled right.
     name = "Code Styling Check"
     description = "Check the code Style"
 

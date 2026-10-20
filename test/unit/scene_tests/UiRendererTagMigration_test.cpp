@@ -48,7 +48,7 @@ auto findByTag(const Scene& iScene, const std::string& iTag) -> Entity {
 	return {};
 }
 
-// A version 4 scene as the v0.3.0 tooling wrote it: the canvas and its widgets name the `ui` layer, a world sprite too.
+// A version 4 scene: the canvas and its widgets name the `ui` layer, a world sprite too.
 constexpr auto g_legacyScene =
 		"Scene: legacy\nFormatVersion: 4\nEntities:\n"
 		"  - Entity: 1\n    Tag: {tag: Hud}\n    Canvas: {space: ScreenOverlay, sortOrder: 0, referenceResolution: "

@@ -249,7 +249,7 @@ TEST(PhysicCommand, SnapshotRoundTrip) {
 		body.type = SceneBody::BodyType::Dynamic;
 	}
 
-	// Before init: default snapshot (awake was only false when an earlier test left a dangling world).
+	// Before init: default snapshot, awake whatever the earlier tests left.
 	ASSERT_FALSE(PhysicCommand::isInitialized(scene));
 	auto snap0 = PhysicCommand::getSnapshot(dyn);
 	EXPECT_EQ(snap0.linearVelocity, owl::math::vec2f(0, 0));
@@ -350,7 +350,7 @@ TEST(PhysicCommand, FrameBeforeInitIsNoOp) {
 	Log::invalidate();
 }
 
-// Each scene owns its world: two scenes simulate side by side, and destroying one leaves the other (audit A-04, F-05).
+// Each scene owns its world: two scenes simulate side by side, and destroying one leaves the other.
 TEST(PhysicCommand, EachSceneOwnsItsWorld) {
 	Log::init(Log::Level::Off);
 	Scene kept;

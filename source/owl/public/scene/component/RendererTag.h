@@ -24,9 +24,7 @@ namespace owl::scene::component {
  * unknown name causes the entity to be skipped with a one-shot warning per
  * scene activation.
  *
- * Per-entity routing is wired progressively as additional layer types land
- * (raycasting in v0.2.0, voxel in v0.2.1). For projects that use only
- * `Renderer2D` the component has no observable effect.
+ * For projects that use only `Renderer2D` the component has no observable effect.
  */
 struct OWL_API RendererTag {
 	/// Name of the renderer instance from the project stack.

@@ -10,6 +10,7 @@
 
 #include "app/Application.h"
 
+#include "core/Core.h"
 #include "core/Environment.h"
 #include "core/external/yaml.h"
 #include "core/utils/StringUtils.h"
@@ -83,6 +84,7 @@ Application::Application(AppParams iAppParams)// NOLINT(readability-function-cog
 	{
 		m_workingDirectory = absolute(std::filesystem::current_path());
 
+		OWL_CORE_INFO("Application: {} on Owl Engine {}.", m_initParams.name, getVersionFullString())
 		OWL_CORE_INFO("Working directory: {}.", m_workingDirectory.string())
 
 		// load config file if any

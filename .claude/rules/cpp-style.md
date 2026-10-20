@@ -262,6 +262,12 @@ The Doxygen format used across the codebase:
   ```
 - Copyright header in every file uses `Copyright (c) YYYY All rights reserved.` (the parenthesised `(c)`, never the `©` glyph).
 
+### Comments describe what exists
+
+- A comment (C++, CMake, Python, Lua, Slang, Kotlin, YAML) states the current behaviour and, when it matters, the
+  constraint behind it, never its history: no "used to", "no longer", "now does", "replaced by", "since v0.x", PR
+  numbers, audit ids or change dates. Migration code says what it converts ("reads a format-2 file as format 3").
+
 ### Comments in `.cpp` files
 
 - **Doxygen lives in headers only** (`.h` — both public and private). Implementation

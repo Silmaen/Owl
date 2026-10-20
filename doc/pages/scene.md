@@ -620,7 +620,7 @@ with its title bar and hides itself with the close button (`Visibility`; `ui.set
 
 Arranges the children that carry a `UiRect` in hierarchy order, inside the content area of the widget (under the
 title bar for a `UiWindow`) minus `padding`. Each child keeps the `size` of its own `UiRect`; its anchors and offset
-no longer apply, and a hidden child takes no room.
+do not apply, and a hidden child takes no room.
 
 | Field         | Type    | Description                                                              |
 |---------------|---------|--------------------------------------------------------------------------|

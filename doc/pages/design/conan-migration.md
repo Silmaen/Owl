@@ -67,7 +67,7 @@ Windows agents):
 - `conan/profiles/linux-clang` and `conan/profiles/linux-gcc`: compiler detected from the toolchain, libstdc++,
   C++23, Ninja. The compiler picks the profile; there is no profile per build type or per sanitizer.
 - Third parties are always Release (`OWL_USE_RELEASE_THIRD_PARTY`, ON by default), as with DepManager: a Debug preset
-  maps them through `CMAKE_MAP_IMPORTED_CONFIG_DEBUG`, which now keeps an empty entry so CMake's configuration-less
+  maps them through `CMAKE_MAP_IMPORTED_CONFIG_DEBUG`, which keeps an empty entry so CMake's configuration-less
   targets (FindOpenGL) still resolve. With the option OFF, `conan install` asks for the preset's build type.
 - One binary set per compiler: Release, Debug, coverage, clang-tidy and the sanitizers of one compiler share it.
 
@@ -134,8 +134,8 @@ with it.
 ./docker_run.sh poetry run conan create . --profile:all conan/profiles/linux-clang --lockfile conan.lock --lockfile-partial --build=missing
 ```
 
-- `owlengine/<version>`, version read from `project(VERSION)` in `CMakeLists.txt` (single source, as in
-  `owl_engine.py` and `version_test.cpp` now). Engine only: no editor, no tests (the `Engine` install
+- `owlengine/<version>`, version read from `project(VERSION)` in `CMakeLists.txt` (single source, also for
+  `owl_engine.py` and `version_test.cpp`). Engine only: no editor, no tests (the `Engine` install
   component), Conan drives CMake (`OWL_CONAN_INSTALL=OFF`, `conan_toolchain.cmake`).
 - Consumers use the CMake config the engine installs (`lib/cmake/OwlEngine/`, `Owl::OwlEngine`, the one OwlDrone and
   the CPack archives use): the recipe sets `cmake_find_mode` to `none`, so `test_package` checks that file and not a
@@ -143,9 +143,9 @@ with it.
 - `test/package/`: `find_package(OwlEngine CONFIG REQUIRED)`, a program including `<owl.h>`, linked to
   `Owl::OwlEngine`, compiled without any Owl flag and run (audit G-03).
 - Install tree fixes it needed (audit PR-08): headers installed under `include/` and not `include/public/` (G-02);
-  `Owl_Base` (`-Werror -Weverything`, internal definitions) linked as `$<BUILD_INTERFACE:…>` and no longer installed,
+  `Owl_Base` (`-Werror -Weverything`, internal definitions) linked as `$<BUILD_INTERFACE:…>` and not installed,
   the export keeping only `OWL_BUILD_SHARED`, `OWL_PLATFORM_<OS>` and `cxx_std_23` (G-01); `CMAKE_INSTALL_PREFIX` of
-  the presets no longer overridden (G-06); `core/external/spdlog.h` moved to `private/` (A-19); version read from
+  the presets not overridden (G-06); `core/external/spdlog.h` moved to `private/` (A-19); version read from
   `CMakeLists.txt` by both recipes and the version test (G-19, F-06).
 - Public dependencies (phase D): EnTT only for `Owl::OwlEngine`; imgui only through the optional `Owl::Gui` target
   (`find_package(OwlEngine COMPONENTS Gui)`, its own `OwlEngineGuiTargets.cmake`), for `<owlgui.h>` and the three
@@ -295,6 +295,6 @@ Done: `find_package(OwlEngine)` exposes **EnTT** only, plus **imgui** through th
 - spdlog was already private: the log macros of `core/Log.h` never include it
 - yaml-cpp left the public headers (A-03, G-07): the render-stack configuration is YAML text in the public structures,
   converted by the private `renderer/RenderStackYaml.h`; rapidyaml as a private replacement to evaluate (fiche 5)
-- imgui: `<owl.h>` no longer includes `gui/utils.h`; `<owlgui.h>` adds it with `gui/widgets/AssetField.h` and
+- imgui: `<owl.h>` does not include `gui/utils.h`; `<owlgui.h>` adds it with `gui/widgets/AssetField.h` and
   `gui/widgets/CurveEditor.h`, for `Owl::Gui` consumers (the editor)
 - To evaluate: miniaudio instead of OpenAL Soft + libsndfile; a single image loader instead of stb_image + libpng

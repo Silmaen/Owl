@@ -91,7 +91,7 @@ void copyCopiableComponents(Entity& oDst, const Entity& iSrc) {
 			desc.copy(oDst, iSrc);
 }
 
-// A world-space string takes its em height from the Y scale: the X scale no longer squeezes the glyphs.
+// A world-space string takes its em height from the Y scale: the X scale does not squeeze the glyphs.
 auto uniformTextTransform(math::Transform iTransform) -> math::Transform {
 	iTransform.scale().x() = std::copysign(iTransform.scale().y(), iTransform.scale().x());
 	return iTransform;
@@ -635,7 +635,7 @@ void Scene::onUpdateEditor(const core::Timestep& iTimeStep, const renderer::Came
 
 auto Scene::layerAccepts(const Entity& iEntity) const -> bool {
 	if (m_currentLayerName.empty())
-		return true;// legacy single-pass — every entity is drawn.
+		return true;// single pass without a stack — every entity is drawn.
 	if (!iEntity.hasComponent<component::RendererTag>())
 		return m_currentLayerIsFirst;// untagged entities default to the first layer.
 	return iEntity.getComponent<component::RendererTag>().rendererName == m_currentLayerName;

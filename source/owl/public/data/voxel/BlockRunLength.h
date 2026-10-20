@@ -24,7 +24,7 @@ namespace owl::data::voxel {
  * Consecutive cells sharing both id and metadata collapse to one run. A run with
  * default metadata is written as `<count>x<id>`; a run with non-default metadata
  * as `<count>x<id>:<meta>`. The metadata suffix is therefore only paid for when
- * present, and the output is byte-identical to the legacy id-only format whenever
+ * present, and the output is byte-identical to the id-only form whenever
  * every cell uses default metadata.
  * @param[in] iBlocks The block ids (the authoritative length).
  * @param[in] iMeta The packed metadata, one per block (treated as all-default when shorter).
@@ -37,7 +37,7 @@ namespace owl::data::voxel {
  * @brief
  *  Decode a run string produced by `encodeBlockRuns` into parallel id / metadata grids.
  *
- * Backward compatible with the legacy id-only format: a run without a `:<meta>`
+ * Reads the id-only form too: a run without a `:<meta>`
  * suffix decodes to default metadata. Both output vectors are sized to `iVolume`
  * (filled with air / default metadata first), so a short or malformed string
  * still leaves well-formed grids.

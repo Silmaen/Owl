@@ -1,5 +1,5 @@
 """
-Tests of the CodeStyle committed-secret scan (H-12).
+Tests of the CodeStyle committed-secret scan.
 
 Fake secrets are assembled at run time so this file never matches the scan itself.
 """

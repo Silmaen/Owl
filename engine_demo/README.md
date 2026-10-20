@@ -283,4 +283,4 @@ regression fixture (`coin.owlanim` and its 6×3 sheet) lives with the tests, in 
 
 ### Not Yet Demonstrated
 - [ ] NativeScript (C++ scripting, only Lua exercised)
-- [ ] Timer triggers (retired with the legacy gameplay scenes)
+- [ ] Timer triggers

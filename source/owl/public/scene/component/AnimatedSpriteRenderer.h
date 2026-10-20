@@ -54,8 +54,7 @@ struct OWL_API AnimatedSpriteRenderer {
 	 *  Additional world Z-offset applied to the billboard in raycast view (cells).
 	 *
 	 * Added on top of `Transform.translation.z`. Positive raises the sprite,
-	 * negative lowers it. `0` (default) means "use only `translation.z`",
-	 * preserving the PR2 behaviour.
+	 * negative lowers it. `0` (default) means "use only `translation.z`".
 	 */
 	float raycastZOffset = 0.0f;
 	/**

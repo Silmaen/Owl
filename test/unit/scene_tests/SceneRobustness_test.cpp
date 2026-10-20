@@ -68,7 +68,7 @@ auto load(const shared<Scene>& ioScene, const std::string& iYaml) -> SceneLoadRe
 
 }// namespace
 
-// C-04: a link to a missing entity is ignored instead of crashing the frame.
+// A link to a missing entity is ignored instead of crashing the frame.
 TEST_F(SceneRobustnessTest, EntityLinkToMissingTargetIsIgnored) {
 	Scene scn;
 	auto follower = scn.createEntity("Follower");
@@ -94,7 +94,7 @@ TEST_F(SceneRobustnessTest, EntityLinkToMissingTargetIsIgnored) {
 	scn.onEndRuntime();
 }
 
-// C-04: an empty link name is a no-op.
+// An empty link name is a no-op.
 TEST_F(SceneRobustnessTest, EntityLinkWithEmptyNameIsIgnored) {
 	Scene scn;
 	auto follower = scn.createEntity("Follower");
@@ -105,7 +105,7 @@ TEST_F(SceneRobustnessTest, EntityLinkWithEmptyNameIsIgnored) {
 	scn.onEndRuntime();
 }
 
-// C-03: blocks edited in the Play copy do not leak into the editor scene.
+// Blocks edited in the Play copy do not leak into the editor scene.
 TEST_F(SceneRobustnessTest, PlayCopyDoesNotShareVoxelChunks) {
 	const auto editor = mkShared<Scene>();
 	auto world = editor->createEntity("World");
@@ -121,7 +121,7 @@ TEST_F(SceneRobustnessTest, PlayCopyDoesNotShareVoxelChunks) {
 	EXPECT_EQ(world.getComponent<component::VoxelWorld>().world.chunkCount(), 1u);
 }
 
-// C-06: a two-entity parent cycle is cut at load, so subtree walks terminate.
+// A two-entity parent cycle is cut at load, so subtree walks terminate.
 TEST_F(SceneRobustnessTest, LoadBreaksHierarchyCycle) {
 	const auto scn = mkShared<Scene>();
 	ASSERT_TRUE(load(scn, "Scene: x\nEntities:\n"
@@ -141,7 +141,7 @@ TEST_F(SceneRobustnessTest, LoadBreaksHierarchyCycle) {
 	EXPECT_EQ(scn->getAllEntities().size(), 5u);
 }
 
-// C-06: a duplicated UUID gets a fresh one instead of shadowing the first entity.
+// A duplicated UUID gets a fresh one instead of shadowing the first entity.
 TEST_F(SceneRobustnessTest, LoadRenamesDuplicatedUuid) {
 	const auto scn = mkShared<Scene>();
 	ASSERT_TRUE(load(scn, "Scene: x\nEntities:\n"
@@ -153,14 +153,14 @@ TEST_F(SceneRobustnessTest, LoadRenamesDuplicatedUuid) {
 	for (const auto& entity: scn->getAllEntities()) EXPECT_NE(entity.getUUID(), core::UUID{0});
 }
 
-// C-06: a dangling parent reference moves the entity to the root.
+// A dangling parent reference moves the entity to the root.
 TEST_F(SceneRobustnessTest, LoadOrphansMissingParent) {
 	const auto scn = mkShared<Scene>();
 	ASSERT_TRUE(load(scn, "Scene: x\nEntities:\n  - Entity: 5\n    Tag: {tag: A}\n    Hierarchy: {parentId: 99}\n"));
 	EXPECT_EQ(scn->findEntityByUUID(core::UUID{5}).getComponent<component::Hierarchy>().parentId, core::UUID{0});
 }
 
-// C-06: corrupted data fails with a typed error and leaves the scene as it was.
+// Corrupted data fails with a typed error and leaves the scene as it was.
 TEST_F(SceneRobustnessTest, CorruptedSceneFailsWithTypedErrorAndRollsBack) {
 	const auto scn = mkShared<Scene>();
 	scn->createEntityWithUUID(core::UUID{1000}, "Existing");
@@ -184,7 +184,7 @@ TEST_F(SceneRobustnessTest, CorruptedSceneFailsWithTypedErrorAndRollsBack) {
 	expectError("Scene: x\nEntities:\n  - Entity: notanumber\n", SceneLoadError::InvalidEntity);
 }
 
-// Phase D: a load error names the file, the entity and the fix.
+// A load error names the file, the entity and the fix.
 TEST_F(SceneRobustnessTest, LoadErrorNamesFileEntityAndFix) {
 	core::Log::setVerbosityLevel(core::Log::Level::Error);
 	core::Log::getLogBuffer().clear();
@@ -207,7 +207,7 @@ TEST_F(SceneRobustnessTest, LoadErrorNamesFileEntityAndFix) {
 	EXPECT_TRUE(found);
 }
 
-// Phase D: every load error has a fix hint.
+// Every load error has a fix hint.
 TEST(SceneLoadErrorHint, EveryErrorHasAFix) {
 	for (const auto error: {SceneLoadError::FileUnreadable, SceneLoadError::InvalidYaml, SceneLoadError::NotAScene,
 							SceneLoadError::InvalidEntity, SceneLoadError::InvalidFormatVersion,
@@ -217,7 +217,7 @@ TEST(SceneLoadErrorHint, EveryErrorHasAFix) {
 	}
 }
 
-// C-06: a missing file reports FileUnreadable.
+// A missing file reports FileUnreadable.
 TEST_F(SceneRobustnessTest, MissingFileIsUnreadable) {
 	const auto scn = mkShared<Scene>();
 	const SceneSerializer serializer(scn);
@@ -229,7 +229,7 @@ TEST_F(SceneRobustnessTest, MissingFileIsUnreadable) {
 	EXPECT_EQ(scn->findEntityByUUID(core::UUID{7}).getName(), "Good");
 }
 
-// C-17: a script hiding a trigger in on_update stops it in the same frame (the visibility cache is armed later).
+// A script hiding a trigger in on_update stops it in the same frame (the visibility cache is armed later).
 TEST_F(SceneRobustnessTest, TriggerHiddenByScriptDoesNotFireSameFrame) {
 	OWL_REQUIRE_MODULE(SCRIPT);
 	const auto script = writeFile("hide.lua", "function on_update(dt)\n    ui.set_visible(entity_id, false)\nend\n");
