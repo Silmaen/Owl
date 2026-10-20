@@ -108,8 +108,9 @@ flowchart LR
 ```
 
 - **Yellow**: also run on draft pull requests (fast feedback subset).
-- **Blue**: `main` only: arm64 on every push, nightly for the packages (they publish to the site), the Thread and
-  UB sanitizers and the Static Analyzer, which are not pull-request checks.
+- **Blue**: `main` only: GCC (release preset only) and Sanitizer Address on every push; nightly for arm64, Include
+  Check, the packages (they publish to the site), the Thread and UB sanitizers and the Static Analyzer, which are not
+  pull-request checks.
 - arm64 cross compiles the `linux-cross-arm64` preset on an x64 agent (Clang, lld, the image's arm64 sysroot) and
   runs only the tests under qemu-user: Debug without coverage, benchmarks or image tests (`OWL_RENDER_TESTS=OFF`,
   lavapipe's output depends on the CPU). The former fully emulated `linux-emulated` build stays as
@@ -177,22 +178,23 @@ The build-and-test template of every configuration of the build and packaging su
 | Code Style                                 | ✅           | —                | ✅        | ✅        | ✅                 | ✅           | ❌           |
 | Build Linux x64 / Clang (Doxygen)          | ✅           | —                | ✅        | ✅        | ✅                 | ✅           | ❌           |
 | Build Windows x64 / Clang                  | ✅           | —                | ✅        | ✅        | ✅                 | ⏭           | ❌           |
-| Build Linux x64 / GCC, Windows x64 / GCC   | ✅           | —                | ❌        | ❌        | ❌                 | ❌           | ❌           |
-| Build Linux arm64 / Clang (cross compiled) | ✅           | —                | ❌        | ❌        | ❌                 | ❌           | ❌           |
+| Build Linux x64 / GCC, Windows x64 / GCC (release) | ✅           | —                | ❌        | ❌        | ❌                 | ❌           | ❌           |
+| Build Linux arm64 / Clang (cross compiled) | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
 | Build Linux arm64 / Clang (emulated)       | ❌           | weekly           | ❌        | ❌        | ❌                 | ❌           | ❌           |
 | Benchmarks (`linux-bench`)                 | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
 | Fuzzing (`linux-fuzz`)                     | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
 | Sanitizer Address (+ LSan)                 | ✅           | —                | ❌        | ❌        | ❌                 | ❌           | ❌           |
 | Sanitizer Thread, Sanitizer UB             | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
-| Clang-Tidy                                 | ✅           | —                | ❌        | ✅        | ⏭                 | ⏭           | ❌           |
+| Clang-Tidy                                 | ❌           | ✅                | ❌        | ✅        | ⏭                 | ⏭           | ❌           |
 | Static Analyzer                            | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
-| Include Check                              | ✅           | —                | ❌        | ❌        | ❌                 | ❌           | ❌           |
+| Include Check                              | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
 | PR Ready (merge gate, no agent)            | ✅           | —                | ❌        | ✅        | ⏭                 | ⏭           | ❌           |
 | Packages (one per platform, × 3)           | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
 
 A ready pull request runs four checks (Code Style, Linux Clang, Windows Clang, Clang-Tidy), the ones `PR Ready`
-requires: after Code Style, the three builds take one agent each and start together. GCC, Sanitizer Address and Include Check run on every `main` push,
-the Thread and Undefined Behavior sanitizers and the Static Analyzer nightly.
+requires: after Code Style, the three builds take one agent each and start together. A `main` push runs Linux and
+Windows Clang, GCC on its release preset and Sanitizer Address; arm64, the whole-tree Clang-Tidy, Include Check, the
+Thread and Undefined Behavior sanitizers and the Static Analyzer run nightly.
 
 ✅ runs · ❌ not run · ⏭ a "Skipped" check is published, which GitHub counts as passing. A manual run, and *Re-run* in
 GitHub, always run a configuration.

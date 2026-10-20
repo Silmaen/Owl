@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CI: CTest runs the tests in parallel (`Test -- --jobs=<n>`, default the processors available).
 - CI: off `main`, the release tree is only configured for Doxygen (`Build -- --configure_only`), no longer compiled, which saves 10 to 14 min per Linux x64 Clang pull request.
 - CI: Sanitizer Address leaves the pull requests for every `main` push; `PR Ready` waits for four checks.
+- CI: a `main` push builds GCC on its release preset only, and runs arm64, the whole-tree Clang-Tidy and Include Check nightly, which cuts about 2 h of Linux agents and 40 min of the Windows agent per merge.
 - CI: the artifacts keep the test reports (`TestReports.zip`), the coverage, the documentation and the packages, no longer the binaries nor the libraries.
 - Bench threshold of the flat `path/long_query` cases widened to 30 %: on the bench agent they switch between two modes about 15 % apart.
 

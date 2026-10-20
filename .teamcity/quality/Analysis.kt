@@ -4,7 +4,9 @@ import jetbrains.buildServer.configs.kotlin.*
 // builds its own preset).
 private val analysisGates = listOf(codeStyle)
 
-val clangTidy = analysisBuild("Build_Quality_ClangTidy", "Clang-Tidy", "tidy", analysisGates)
+// Every pull request checks its diff; the whole tree is analysed once a night (45 min on every push otherwise).
+val clangTidy = analysisBuild("Build_Quality_ClangTidy", "Clang-Tidy", "tidy", analysisGates, nightly = true,
+        onPullRequest = true)
 val staticAnalyzer = analysisBuild("Build_Quality_ClangAnalyzer", "Static Analyzer", "analyzer", analysisGates,
         nightly = true)
 
