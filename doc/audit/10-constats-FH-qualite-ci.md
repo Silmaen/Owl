@@ -9,10 +9,9 @@
 - Tests de logique réels (~2 392 `TEST`/`TEST_F`), tests d'image GPU et tests de l'éditeur présents (F-13, F-01, F-02).
 - Couverture officielle 70,9 % contre 57,6 % brute : `gcovr.cfg:41` exclut vulkan, opengl, openal, glfw, io (F-01, F-04).
 - clang-tidy propre mais sans `clang-analyzer-*`, complexité à 75, tests non analysés (F-07).
-- `RESOURCE_LOCK` sur 6 catégories : état global partagé masqué (F-10).
 - CI reproductible en local, ciblage clang-tidy sûr, aucun secret dans le dépôt (H-10, H-11, H-12).
 - Ruleset GitHub de `main` non vérifiable ; deux images distinctes CI / local (H-06, H-09).
-- 16 constats : 0 haut, 6 moyens, 10 bas ; 4 forces.
+- 15 constats : 0 haut, 6 moyens, 9 bas ; 4 forces.
 
 ## Mesures portant un constat
 
@@ -84,15 +83,6 @@ Constat        : une minorité de tests (25 mesurés) ne vérifie que « ça ne 
                  affirment en majorité de vrais comportements.
 Preuve         : mesure du 2026-10-05, recomptage non fait.
 Recommandation : surveiller, effort S (recompter, exiger une assertion dans CodeStyle, renommer par comportement).
-```
-
-```text
-ID             : F-10 — étrangeté, basse, plausible (qualité)
-Constat        : un `RESOURCE_LOCK` sur 6 suites (font, core, gui, renderer, sound, script) évite des segfaults sporadiques
-                 entre processus distincts : état partagé (freetype, GLFW, OpenAL, msdfgen) masqué, un seul ctest par
-                 catégorie. Cause non reproduite.
-Preuve         : test/unit/CMakeLists.txt:6, 129-133.
-Recommandation : corriger, effort S (`gtest_discover_tests`, retirer le verrou une fois la cause trouvée).
 ```
 
 ```text

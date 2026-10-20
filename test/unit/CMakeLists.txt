@@ -151,13 +151,6 @@ foreach (child ${children})
                 # Hostile-script tests rely on the Lua quotas: a quota that never fires must fail, not hang.
                 set_tests_properties(${testNames} PROPERTIES TIMEOUT 300)
             endif ()
-            # Tests that touch shared process-level resources (freetype, GLFW init, OpenAL, msdfgen globals)
-            # are serialized via RESOURCE_LOCK to avoid sporadic SEGFAULTs in parallel ctest runs.
-            if (${child} STREQUAL "font_tests" OR ${child} STREQUAL "core_tests" OR
-                ${child} STREQUAL "gui_tests" OR ${child} STREQUAL "renderer_tests" OR
-                ${child} STREQUAL "sound_tests" OR ${child} STREQUAL "script_tests")
-                set_tests_properties(${testNames} PROPERTIES RESOURCE_LOCK owl_engine_globals)
-            endif ()
             # export_tests exports each shipped project with OwlNest and plays it with the exported OwlRunner.
             if (${child} STREQUAL "export_tests")
                 foreach (app_target ${CMAKE_PROJECT_NAME}Nest ${CMAKE_PROJECT_NAME}Runner)

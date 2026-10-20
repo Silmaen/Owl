@@ -28,7 +28,7 @@ def ctest_command(build_dir: Path, jobs: int, label_exclude: str = "") -> list[s
     :param build_dir: The build tree to test.
     :param jobs: Number of tests run at once.
     :param label_exclude: Regular expression of the labels left out, empty for every test.
-    :return: The command; the `RESOURCE_LOCK` of a test keeps it apart from the ones sharing its resource.
+    :return: The command.
     """
     command = ["ctest", "--test-dir", str(build_dir), "--output-on-failure", "--parallel", str(jobs)]
     if label_exclude:

@@ -101,7 +101,7 @@ L'axe P regroupe les constats de `20-mesures.md` ; l'axe J (configuration IA) es
 Lecture :
 
 - Les deux constats de gravité haute sont A-02 (faiblesse) et A-06 (force).
-- Les constats dont le statut n'est pas « confirmé » : A-21, D-09, D-16, F-02, F-09, F-10, H-04, H-05, G-16, G-17,
+- Les constats dont le statut n'est pas « confirmé » : A-21, D-09, D-16, F-02, F-09, H-04, H-05, G-16, G-17,
   I-01, I-02 (plausibles) et H-06 (non vérifiable depuis le dépôt).
 - **Doublons à traiter ensemble** : A-02 ≈ C-14 ; A-08 ≈ D-15 ; A-09 ≈ B-07 ; D-07 ≈ I-02 ; C-10 ≈ P-07. Une fois
   fusionnés, il reste environ 92 constats distincts.
