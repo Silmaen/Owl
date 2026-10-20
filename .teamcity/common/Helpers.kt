@@ -12,8 +12,8 @@ import jetbrains.buildServer.configs.kotlin.triggers.vcs
 /**
  * Paths that cannot change the outcome of a C++ build: a pull request touching only these
  * is dropped by a configuration carrying this filter ("Skipped: paths out of scope").
- * Not applied to Code Style (codespell and markdown are its job) nor to Windows x64 Clang
- * (the only pull-request configuration building Doxygen).
+ * Not applied to Code Style (codespell and markdown are its job) nor to Linux x64 Clang
+ * (it builds Doxygen).
  */
 val CODE_ONLY_PATHS: String = """
     -:doc/*

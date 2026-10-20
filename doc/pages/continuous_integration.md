@@ -102,26 +102,24 @@ flowchart LR
     classDef draft fill:#fff3cd,stroke:#856404,color:#856404
     classDef mainOnly fill:#d1ecf1,stroke:#0c5460,color:#0c5460
     classDef afterMerge fill:#e2e3e5,stroke:#383d41,color:#383d41
-    class CS,LxC,WxC,SA draft
-    class LaC,LaG,PL,PW,PA,ST,SU,AN mainOnly
-    class IC,LxG,WxG afterMerge
+    class CS,LxC,WxC draft
+    class IC,LaC,PL,PW,PA,ST,SU,AN mainOnly
+    class LxG,WxG,SA afterMerge
 ```
 
 - **Yellow**: also run on draft pull requests (fast feedback subset).
 - **Slow tests**: the Test steps pass `-- --label_exclude=slow` (`test_args`); arm64 and a nightly run of Linux x64
   Clang on `main` (`nightlyFullSuite` trigger, 1 am) run every test.
-- **Blue**: `main` only: GCC (release preset only) and Sanitizer Address on every push; nightly for arm64, Include
-  Check, the packages (they publish to the site), the Thread and UB sanitizers and the Static Analyzer, which are not
-  pull-request checks.
+- **Blue**: nightly on `main`, when it changed: arm64, Include Check, the packages (they publish to the site), the
+  Thread and UB sanitizers and the Static Analyzer, which are not pull-request checks.
 - arm64 cross compiles the `linux-cross-arm64` preset on an x64 agent (Clang, lld, the image's arm64 sysroot) and
   runs only the tests under qemu-user: Debug without coverage, benchmarks or image tests (`OWL_RENDER_TESTS=OFF`,
   lavapipe's output depends on the CPU). The former fully emulated `linux-emulated` build stays as
   *Clang (emulated)*, once a week, during the transition.
-- **Grey**: every `main` push, never on a pull request (GCC parity, Include Check).
-- Uncoloured: run on every ready pull request and on `main` (Clang-Tidy).
+- **Grey**: every `main` push, never on a pull request: GCC parity (release preset only) and Sanitizer Address.
+- Uncoloured: Clang-Tidy, on every ready pull request (its diff) and nightly on `main` (the whole tree).
 
-A reviewer can still ask for a `main`-only configuration on a pull request with the `/ci full` comment, and manual
-triggers always work. Orthogonal to the colours, a pull request that changes **only** documentation (`doc/`, `*.md`,
+Manual triggers always work. Orthogonal to the colours, a pull request that changes **only** documentation (`doc/`, `*.md`,
 `.claude/`, `LICENSE`) runs just Code Style and Linux x64 Clang, see [Doc-only pull requests](#doc-only-pull-requests).
 
 ## VCS root
@@ -175,23 +173,23 @@ The build-and-test template of every configuration of the build and packaging su
 
 ## What runs when
 
-| Configuration                              | `main` push | Nightly (`main`) | Draft PR | Ready PR | `Experiment/*` PR | Doc-only PR | `[skip ci]` |
-|--------------------------------------------|-------------|------------------|----------|----------|-------------------|-------------|-------------|
-| Code Style                                 | ✅           | —                | ✅        | ✅        | ✅                 | ✅           | ❌           |
-| Build Linux x64 / Clang (Doxygen)          | ✅           | —                | ✅        | ✅        | ✅                 | ✅           | ❌           |
-| Build Windows x64 / Clang                  | ✅           | —                | ✅        | ✅        | ✅                 | ⏭           | ❌           |
+| Configuration                                      | `main` push | Nightly (`main`) | Draft PR | Ready PR | `Experiment/*` PR | Doc-only PR | `[skip ci]` |
+|----------------------------------------------------|-------------|------------------|----------|----------|-------------------|-------------|-------------|
+| Code Style                                         | ✅           | —                | ✅        | ✅        | ✅                 | ✅           | ❌           |
+| Build Linux x64 / Clang (Doxygen)                  | ✅           | —                | ✅        | ✅        | ✅                 | ✅           | ❌           |
+| Build Windows x64 / Clang                          | ✅           | —                | ✅        | ✅        | ✅                 | ⏭           | ❌           |
 | Build Linux x64 / GCC, Windows x64 / GCC (release) | ✅           | —                | ❌        | ❌        | ❌                 | ❌           | ❌           |
-| Build Linux arm64 / Clang (cross compiled) | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
-| Build Linux arm64 / Clang (emulated)       | ❌           | weekly           | ❌        | ❌        | ❌                 | ❌           | ❌           |
-| Benchmarks (`linux-bench`)                 | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
-| Fuzzing (`linux-fuzz`)                     | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
-| Sanitizer Address (+ LSan)                 | ✅           | —                | ❌        | ❌        | ❌                 | ❌           | ❌           |
-| Sanitizer Thread, Sanitizer UB             | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
-| Clang-Tidy                                 | ❌           | ✅                | ❌        | ✅        | ⏭                 | ⏭           | ❌           |
-| Static Analyzer                            | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
-| Include Check                              | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
-| PR Ready (merge gate, no agent)            | ✅           | —                | ❌        | ✅        | ⏭                 | ⏭           | ❌           |
-| Packages (one per platform, × 3)           | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
+| Build Linux arm64 / Clang (cross compiled)         | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
+| Build Linux arm64 / Clang (emulated)               | ❌           | weekly           | ❌        | ❌        | ❌                 | ❌           | ❌           |
+| Benchmarks (`linux-bench`)                         | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
+| Fuzzing (`linux-fuzz`)                             | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
+| Sanitizer Address (+ LSan)                         | ✅           | —                | ❌        | ❌        | ❌                 | ❌           | ❌           |
+| Sanitizer Thread, Sanitizer UB                     | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
+| Clang-Tidy                                         | ❌           | ✅                | ❌        | ✅        | ⏭                 | ⏭           | ❌           |
+| Static Analyzer                                    | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
+| Include Check                                      | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
+| PR Ready (merge gate, no agent)                    | ✅           | —                | ❌        | ✅        | ⏭                 | ⏭           | ❌           |
+| Packages (one per platform, × 3)                   | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
 
 A ready pull request runs four checks (Code Style, Linux Clang, Windows Clang, Clang-Tidy), the ones `PR Ready`
 requires: after Code Style, the three builds take one agent each and start together. A `main` push runs Linux and
