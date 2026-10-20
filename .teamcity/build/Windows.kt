@@ -29,5 +29,9 @@ val windowsX64 = Project {
     params {
         param("platform", "Windows")
         param("architecture", "amd64")
+        // The agent builds natively (no image): its ccache, when installed, gets the settings Linux passes to Docker.
+        param("env.CCACHE_DIR", "%teamcity.agent.home.dir%/user/cache_dir/ccache")
+        param("env.CCACHE_MAXSIZE", "20G")
+        param("env.CCACHE_COMPRESS", "1")
     }
 }
