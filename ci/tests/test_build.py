@@ -31,3 +31,13 @@ def test_configure_only_stops_after_configure(commands: list[list[str]]) -> None
 def test_default_configures_then_builds(commands: list[list[str]]) -> None:
     assert Build().run(PresetConfig("linux-clang-release")) == 0
     assert [cmd[:2] for cmd in commands] == [["cmake", "--preset"], ["cmake", "--build"]]
+
+
+def test_the_compiler_launcher_is_read_from_the_cache(tmp_path: Path) -> None:
+    from ci.actions.build import compiler_launcher
+
+    assert compiler_launcher(tmp_path) is None
+    (tmp_path / "CMakeCache.txt").write_text(
+        "CMAKE_BUILD_TYPE:STRING=Debug\nCMAKE_CXX_COMPILER_LAUNCHER:STRING=/usr/bin/ccache\n", encoding="utf-8"
+    )
+    assert compiler_launcher(tmp_path) == "/usr/bin/ccache"

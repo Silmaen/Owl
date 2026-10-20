@@ -2,10 +2,27 @@
 Action to build the project using CMake and Ninja for a given preset.
 """
 
+from pathlib import Path
+
 from ci import log, root
 from ci.actions.base.action import BaseAction, PresetConfig
 from ci.utils.preset import get_build_dir
 from ci.utils.run import MODE_BY_COLOR, MODE_FOR_NINJA, run_command
+
+
+def compiler_launcher(build_dir: Path) -> str | None:
+    """Return the C++ compiler launcher a configured tree uses.
+
+    :param build_dir: The configured build directory.
+    :return: The `CMAKE_CXX_COMPILER_LAUNCHER` value, or None when the tree has none.
+    """
+    cache = build_dir / "CMakeCache.txt"
+    if not cache.is_file():
+        return None
+    for line in cache.read_text(encoding="utf-8", errors="replace").splitlines():
+        if line.startswith("CMAKE_CXX_COMPILER_LAUNCHER:"):
+            return line.partition("=")[2].strip() or None
+    return None
 
 
 class Build(BaseAction):
@@ -41,6 +58,10 @@ class Build(BaseAction):
         build_detection_mode = MODE_BY_COLOR
         if preset.cmake_generator and "Ninja" in preset.cmake_generator:
             build_detection_mode = MODE_FOR_NINJA
+        # The ccache statistics of this build alone, in the log: the hit rate is what decides whether a cache pays.
+        launcher = compiler_launcher(build_dir)
+        if launcher is not None and Path(launcher).stem == "ccache":
+            run_command([launcher, "--zero-stats"])
         cmd = ["cmake", "--build", str(build_dir)]
         build_result = 0
         if len(preset.cmake_build_types) > 0:
@@ -49,6 +70,8 @@ class Build(BaseAction):
                 build_result = run_command(cmd_d, detection_mode=build_detection_mode)
         else:
             build_result = run_command(cmd, detection_mode=build_detection_mode)
+        if launcher is not None and Path(launcher).stem == "ccache":
+            run_command([launcher, "--show-stats"])
         if build_result != 0:
             log.error("CMake build failed.")
             return build_result
