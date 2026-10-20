@@ -1,7 +1,7 @@
 """
 Action running clang-tidy over the project's translation units.
 
-The analysis is driven from `compile_commands.json` **after** the build rather
+The analysis is driven from `compile_commands.json` of a configured tree rather
 than hooked into the compiler through `CMAKE_CXX_CLANG_TIDY`, because that is
 what makes the set of analysed translation units selectable. Two scopes:
 
@@ -10,9 +10,10 @@ what makes the set of analysed translation units selectable. Two scopes:
   with certainty.
 * **diff** — only the translation units a pull request can change the verdict
   of: the `.cpp` files it touches, plus every `.cpp` that includes — directly
-  or transitively — a header it touches. That closure comes from ninja's own
-  dependency database (`ninja -t deps`), which records the complete include
-  set of each object file as the compiler saw it, so a header edit is never
+  or transitively — a header it touches. That closure is the complete include
+  set of each object file: ninja's dependency database (`ninja -t deps`) when
+  the tree was built, else `clang-scan-deps` over the compilation database
+  (preprocessing only, seconds instead of a build), so a header edit is never
   missed because the `.cpp` consuming it lies outside the diff.
 
 The diff base is the pull request's **merge base**, published by
@@ -22,7 +23,7 @@ that landed on `main` since the branch started, and report other people's
 findings on this pull request.
 
 Anything that makes the narrowing untrustworthy — no pull request, no merge
-base, no git, no ninja dependency database, or a change to the build system or
+base, no git, no include closure, or a change to the build system or
 to `.clang-tidy` itself — degrades to the full scope. Narrowing is an
 optimisation; missing a finding is not an acceptable failure mode.
 """
@@ -34,6 +35,7 @@ import os
 import re
 import shutil
 import subprocess
+from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
 from logging import ERROR, INFO, WARNING
 from pathlib import Path
@@ -125,7 +127,7 @@ def _norm(path: str, base: Path) -> str:
     Absolute, `..`-free form of a path from a dependency file.
 
     `os.path.normpath` and not `Path.resolve()` on purpose: this runs on every
-    line of `ninja -t deps` (six figures on this project) and `resolve()` would
+    line of a dependency dump (six figures on this project) and `resolve()` would
     make a `realpath` syscall for each. Both ends of every comparison go
     through this same function, so the two agree without needing symlinks
     expanded.
@@ -212,7 +214,7 @@ def _load_translation_units(build_dir: Path) -> dict[str, Path] | None:
     database = build_dir / "compile_commands.json"
     if not database.is_file():
         log.error(
-            f"clang-tidy: {_rel(database)} not found — configure and build the "
+            f"clang-tidy: {_rel(database)} not found — configure the "
             "preset first (the compilation database is what drives the analysis)."
         )
         return None
@@ -240,30 +242,16 @@ def _load_translation_units(build_dir: Path) -> dict[str, Path] | None:
     return units
 
 
-def _dependent_objects(build_dir: Path, headers: set[str]) -> set[str] | None:
+def _ninja_dependencies(build_dir: Path) -> str | None:
     """
-    Find the object files whose recorded include closure contains one of
-    `headers`.
-
-    Reads ninja's dependency database, which holds the full transitive include
-    list the compiler reported for every object built in this directory. This
-    is what catches a header change reaching a `.cpp` that the diff does not
-    touch, including through several intermediate headers.
+    Dump ninja's dependency database: the include list the compiler reported for every object built here.
 
     :param build_dir: Build directory holding `.ninja_deps`.
-    :param headers: Normalised absolute paths of the changed headers.
-    :return: Normalised absolute object paths, or None when the database could
-        not be read (caller must then fall back to the full scope).
+    :return: The `ninja -t deps` output, or None when it could not be produced.
     """
     ninja = shutil.which("ninja")
     if ninja is None:
         log.warning("clang-tidy: ninja not found in PATH.")
-        return None
-    if not (build_dir / ".ninja_deps").is_file():
-        log.warning(
-            f"clang-tidy: {_rel(build_dir / '.ninja_deps')} not found — the "
-            "preset must have been built before the analysis is scoped."
-        )
         return None
     try:
         proc = subprocess.run(
@@ -277,20 +265,135 @@ def _dependent_objects(build_dir: Path, headers: set[str]) -> set[str] | None:
     if proc.returncode != 0:
         log.warning(f"clang-tidy: `ninja -t deps` exited {proc.returncode}: {proc.stderr.strip()}")
         return None
+    return proc.stdout
 
-    objects: set[str] = set()
+
+def _scan_deps_executable() -> str | None:
+    """
+    Locate `clang-scan-deps`: in PATH, else beside the real clang-tidy (the LLVM `bin/` folder).
+
+    :return: The executable, or None when the image has none.
+    """
+    found = shutil.which("clang-scan-deps")
+    if found is not None:
+        return found
+    tidy = shutil.which("clang-tidy")
+    if tidy is None:
+        return None
+    sibling = Path(tidy).resolve().parent / "clang-scan-deps"
+    return str(sibling) if sibling.is_file() else None
+
+
+def _scanned_dependencies(build_dir: Path) -> str | None:
+    """
+    Compute every translation unit's include closure from the compilation database, without compiling.
+
+    `clang-scan-deps` only preprocesses: a few seconds for the whole tree, where the build that fills
+    `.ninja_deps` takes tens of minutes on a CI agent.
+
+    :param build_dir: Configured build directory holding `compile_commands.json`.
+    :return: The closures in Makefile form, or None when they could not be computed.
+    """
+    scanner = _scan_deps_executable()
+    if scanner is None:
+        log.warning("clang-tidy: clang-scan-deps not found beside clang-tidy.")
+        return None
+    try:
+        proc = subprocess.run(
+            [
+                scanner,
+                f"-compilation-database={build_dir / 'compile_commands.json'}",
+                "-format=make",
+                "-j",
+                str(_available_cores()),
+            ],
+            capture_output=True,
+            text=True,
+        )
+    except OSError as err:
+        log.warning(f"clang-tidy: cannot run clang-scan-deps ({err}).")
+        return None
+    if proc.returncode != 0:
+        log.warning(f"clang-tidy: clang-scan-deps exited {proc.returncode}: {proc.stderr.strip()[:2000]}")
+        return None
+    return proc.stdout
+
+
+def _ninja_closures(text: str, build_dir: Path) -> Iterator[tuple[str, list[str]]]:
+    """
+    Split `ninja -t deps` output into (object, dependencies) pairs.
+
+    :param text: The `ninja -t deps` output: an unindented object line, then one indented dependency per line.
+    :param build_dir: Directory the relative paths are relative to.
+    :return: Normalised object path and its raw dependency paths, per object.
+    """
     current: str | None = None
-    for line in proc.stdout.splitlines():
+    dependencies: list[str] = []
+    for line in text.splitlines():
         if not line:
             continue
         if line[0] in " \t":
-            if current is None or current in objects:
-                continue
-            if _norm(line.strip(), build_dir) in headers:
-                objects.add(current)
+            dependencies.append(line.strip())
             continue
+        if current is not None:
+            yield current, dependencies
         current = _norm(line.split(":", 1)[0], build_dir)
-    return objects
+        dependencies = []
+    if current is not None:
+        yield current, dependencies
+
+
+def _make_closures(text: str, build_dir: Path) -> Iterator[tuple[str, list[str]]]:
+    """
+    Split Makefile dependency rules (`clang-scan-deps -format=make`) into (object, dependencies) pairs.
+
+    :param text: Rules `object: dep dep \\` continued on indented lines; no path of the project holds a space.
+    :param build_dir: Directory the relative paths are relative to.
+    :return: Normalised object path and its raw dependency paths, per object.
+    """
+    current: str | None = None
+    dependencies: list[str] = []
+    for line in text.splitlines():
+        if not line.strip():
+            continue
+        if line[0] not in " \t":
+            if current is not None:
+                yield current, dependencies
+            target, _, line = line.partition(":")
+            current = _norm(target.strip(), build_dir)
+            dependencies = []
+        dependencies.extend(token for token in line.split() if token != "\\")
+    if current is not None:
+        yield current, dependencies
+
+
+def _dependent_objects(build_dir: Path, headers: set[str]) -> set[str] | None:
+    """
+    Find the object files whose include closure contains one of `headers`.
+
+    The closure is the full transitive include list of every object: from ninja's dependency database when the
+    preset was built, else from `clang-scan-deps` over the compilation database (a configured tree is enough).
+    This is what catches a header change reaching a `.cpp` that the diff does not touch, including through
+    several intermediate headers.
+
+    :param build_dir: Configured (or built) build directory.
+    :param headers: Normalised absolute paths of the changed headers.
+    :return: Normalised absolute object paths, or None when no closure could be read (caller must then fall back
+        to the full scope).
+    """
+    closures: Iterator[tuple[str, list[str]]]
+    if (build_dir / ".ninja_deps").is_file():
+        text = _ninja_dependencies(build_dir)
+        if text is None:
+            return None
+        closures = _ninja_closures(text, build_dir)
+    else:
+        log.info("clang-tidy: no ninja dependency database, scanning the includes with clang-scan-deps.")
+        text = _scanned_dependencies(build_dir)
+        if text is None:
+            return None
+        closures = _make_closures(text, build_dir)
+    return {obj for obj, dependencies in closures if any(_norm(path, build_dir) in headers for path in dependencies)}
 
 
 # ────────────────────────────────────────────────────────────────────────────
@@ -529,9 +632,9 @@ class ClangTidy(BaseAction):
     def run(self, preset: PresetConfig, extra_args=None) -> int:
         """Analyse the preset's translation units with clang-tidy.
 
-        :param preset: The preset to analyse. Must have been configured and
-            built: the compilation database and ninja's dependency database are
-            the inputs.
+        :param preset: The preset to analyse. Must have been configured: the
+            compilation database is the input (a built tree also brings ninja's
+            dependency database, used for the diff scope instead of a scan).
         :param extra_args: Optional extra arguments. See the class docstring.
         :return: Exit code indicating success or failure.
         """

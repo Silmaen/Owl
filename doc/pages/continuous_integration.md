@@ -441,7 +441,7 @@ Two consequences for this repository:
 
 ## Clang-tidy scoping
 
-`linux-clang-tidy` builds the tests too (`OWL_TESTING=ON`) but never runs them (`run_tests: false` in its
+`linux-clang-tidy` configures the tests too (`OWL_TESTING=ON`) but never runs them (`run_tests: false` in its
 `vendor.silmaen` block, which wins over `OWL_TESTING`), so both analyses cover `test/` (about 510 translation
 units): `test/unit/.clang-tidy` inherits the root configuration minus the checks whose pattern is the point of a test
 (suspicious argument order, copies and moves under test, float loop counters, …), and the analyzer mode drops
@@ -456,9 +456,12 @@ The analysis is **not** hooked into the compiler. `cmake/Sanitizers.cmake`
 deliberately leaves `CMAKE_CXX_CLANG_TIDY` unset (for the two `*-clang-tidy`
 presets, the only ones that set `OWL_ENABLE_CLANG_TIDY`) and only turns on
 `CMAKE_EXPORT_COMPILE_COMMANDS`; the BT's own `ClangTidy` step then drives
-clang-tidy from `compile_commands.json` once Build is done. The compiler hook
-has no way to skip a file, so selecting a subset is only possible from outside
-it.
+clang-tidy from `compile_commands.json`. The compiler hook has no way to skip a
+file, so selecting a subset is only possible from outside it.
+
+The tree is **configured, not compiled** (`build_args` = `-- --configure_only`): clang-tidy needs the compilation
+database and the headers, all of them in the sources or staged by the configure (imgui bindings), and the tidy
+presets have no precompiled header nor C++ module scan whose build outputs a command would point at.
 
 ### How the subset is built
 
@@ -467,7 +470,7 @@ flowchart TD
     MB["mergeBase..HEAD<br/>(git diff)"] --> CPP[".cpp touched"]
     MB --> HDR["headers touched"]
     MB --> CFG["CMakeLists / *.cmake<br/>.clang-tidy / conanfile.py / conan.lock"]
-    HDR --> DEPS["ninja -t deps<br/>reverse include closure"]
+    HDR --> DEPS["clang-scan-deps or ninja -t deps<br/>reverse include closure"]
     DEPS --> TU["every .cpp that includes them,<br/>directly or transitively"]
     CPP --> RUN["clang-tidy -p build_dir"]
     TU --> RUN
@@ -475,10 +478,11 @@ flowchart TD
 ```
 
 The header step is the one that matters: a `.cpp` outside the diff still gets
-analysed when it includes a header the pull request touched. The closure comes
-from ninja's own dependency database, which holds the complete include list the
-compiler recorded for every object file — so an indirect include, several
-headers deep, is covered too. In practice a change to a core header
+analysed when it includes a header the pull request touched. The closure is the
+complete include list of every object file — so an indirect include, several
+headers deep, is covered too. In a configured tree it comes from `clang-scan-deps`
+over the compilation database (preprocessing only, about 5 s for the whole tree on
+four cores); in a built tree, from ninja's own dependency database. In practice a change to a core header
 (`math/matrices.h`) selects nearly every unit, and a change confined to an
 editor panel selects a handful.
 
@@ -505,7 +509,7 @@ mode. Any of these analyses everything:
 | the diff is empty against the base                                              | a real PR changes something — bad base |
 | `CMakeLists.txt`, `*.cmake`, `CMakePresets*.json`, `conanfile.py`, `conan.lock` | compiler flags or dependencies moved   |
 | `.clang-tidy`                                                                   | the check list itself changed          |
-| git, ninja or `.ninja_deps` unavailable                                         | the mapping cannot be built            |
+| git, `clang-scan-deps` (or ninja) unavailable, or a scan error                  | the mapping cannot be built            |
 
 Every fallback is logged with its reason, so a run that looks unexpectedly long
 says why in the build log.
@@ -513,7 +517,7 @@ says why in the build log.
 ### Running it locally
 
 ```bash
-poetry run python ci_action.py Build linux-clang-tidy      # produces the two databases
+poetry run python ci_action.py Build linux-clang-tidy -- --configure_only  # the compilation database
 poetry run python ci_action.py ClangTidy linux-clang-tidy  # full scope
 
 # What would a PR against main analyse? (--dry_run stops before the analysis)

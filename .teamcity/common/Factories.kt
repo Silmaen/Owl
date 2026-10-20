@@ -96,8 +96,8 @@ fun BuildType.weeklyOnMain() {
  * configuration per tool. The scope is decided at run time by the `ClangTidy` action from
  * the pull request context the bridge publishes: inside a pull request, only the
  * translation units the diff can change the verdict of, from the PR's merge base;
- * anywhere else, everything. They build the `linux-clang-tidy` preset first (the
- * compilation database and ninja's dependency database are their inputs).
+ * anywhere else, everything. They only configure the `linux-clang-tidy` preset: the
+ * compilation database is their input, `clang-scan-deps` gives the include closures.
  *
  * They run after Code Style only, in parallel with the builds and the sanitizers.
  *
@@ -116,6 +116,7 @@ fun analysisBuild(idValue: String, buildName: String, tool: String, gates: List<
 
     params {
         param("cmake_preset", "linux-clang-tidy")
+        param("build_args", "-- --configure_only")
     }
 
     steps {

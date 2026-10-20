@@ -31,6 +31,8 @@ val globalBuild = Template {
         checkbox("run_tests", "true", checked = "true", unchecked = "false")
         // The tests labelled `slow` are left out, except by arm64 and the nightly Linux x64 Clang run (`fullSuite`).
         param("test_args", "-- --label_exclude=slow")
+        // Arguments of the Build step: the analyses only configure (`-- --configure_only`).
+        param("build_args", "")
         param("artifact_path", "")
         param("docker_parameters", "")
         param("extra_tc_vars", "")
@@ -88,7 +90,7 @@ val globalBuild = Template {
         }
 
         script {
-            ciAction("Build", "Build_Preset", displayName = "Build")
+            ciAction("Build", "Build_Preset", displayName = "Build", extraArgs = "%build_args%")
         }
 
         script {

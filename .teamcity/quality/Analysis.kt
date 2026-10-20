@@ -1,7 +1,7 @@
 import jetbrains.buildServer.configs.kotlin.*
 
 // Level 2: after Code Style only, in parallel with the builds and the sanitizers (each analysis
-// builds its own preset).
+// configures its own preset).
 private val analysisGates = listOf(codeStyle)
 
 // Every pull request checks its diff; the whole tree is analysed once a night (45 min on every push otherwise).
