@@ -10,12 +10,16 @@
 
 #include "app/Application.h"
 #include "data/fonts/FontSettings.h"
+#include "data/geometry/MeshLoader.h"
 
+#include <filesystem>
 #include <fstream>
 #include <optional>
 #include <regex>
 #include <set>
 #include <sstream>
+#include <string>
+#include <vector>
 
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG("-Wreserved-identifier")
@@ -395,6 +399,42 @@ void scanTileset(const std::string& iTilesetPath, const std::string& iSceneName,
 	}
 }
 
+// The mesh file of a `MeshRenderer` (with the buffers and images a `.gltf` names) and its texture override.
+void scanMeshRenderer(const YAML::Node& iMeshRenderer, const std::string& iSceneName,
+					  std::vector<AssetReference>& ioAssets, std::vector<std::string>* ioWarnings) {
+	if (auto texture = iMeshRenderer["texture"]; texture) {
+		const auto serialized = texture.as<std::string>();
+		if (auto ref = resolveTexture(serialized); ref) {
+			if (!hasAsset(ioAssets, ref->packPath))
+				ioAssets.push_back(*ref);
+		} else
+			pushWarning(ioWarnings, "Texture", serialized, iSceneName);
+	}
+	const auto path = iMeshRenderer["mesh"] ? iMeshRenderer["mesh"].as<std::string>() : std::string{};
+	if (path.empty())
+		return;
+	auto meshRef = resolveDataAsset(path);
+	if (!meshRef) {
+		pushWarning(ioWarnings, "Mesh", path, iSceneName);
+		return;
+	}
+	meshRef->assetType = AssetType::Mesh;
+	if (!hasAsset(ioAssets, meshRef->packPath))
+		ioAssets.push_back(*meshRef);
+	const auto packFolder = std::filesystem::path{meshRef->packPath}.parent_path();
+	const auto diskFolder = meshRef->diskPath.parent_path();
+	for (const auto& uri: data::geometry::MeshLoader::getExternalFiles(meshRef->diskPath)) {
+		const auto diskPath = (diskFolder / uri).lexically_normal();
+		if (!exists(diskPath)) {
+			pushWarning(ioWarnings, "Mesh file", uri, path);
+			continue;
+		}
+		const auto packPath = (packFolder / uri).lexically_normal().generic_string();
+		if (!hasAsset(ioAssets, packPath))
+			ioAssets.push_back({.packPath = packPath, .diskPath = diskPath, .assetType = AssetType::Other});
+	}
+}
+
 // The fonts of the texts of an entity and the sound of its `SoundSource`.
 void scanFontsAndSounds(const YAML::Node& iEntity, const std::string& iSceneName, std::vector<AssetReference>& ioAssets,
 						std::vector<std::string>* ioWarnings) {
@@ -443,6 +483,8 @@ void scanEntity(const YAML::Node& iEntity,// NOLINT(misc-no-recursion)
 		if (auto widget = iEntity[component]; widget)
 			addTextureField(widget);
 	scanFontsAndSounds(iEntity, iSceneName, ioAssets, ioWarnings);
+	if (auto meshRenderer = iEntity["MeshRenderer"]; meshRenderer)
+		scanMeshRenderer(meshRenderer, iSceneName, ioAssets, ioWarnings);
 	if (auto luaScript = iEntity["LuaScript"]; luaScript) {
 		if (auto scriptPath = luaScript["scriptPath"]; scriptPath) {
 			const auto name = scriptPath.as<std::string>();

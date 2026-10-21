@@ -21,6 +21,7 @@
 #include "../commands/VoxelCommands.h"
 
 #include <data/voxel/VoxelRaycast.h>
+#include <scene/component/MeshRenderer.h>
 #include <scene/component/VoxelWorld.h>
 
 #include <gui/IconBank.h>
@@ -30,6 +31,7 @@
 #include <gui/widgets/Menu.h>
 #include <gui/widgets/Tooltip.h>
 #include <owlgui.h>
+#include <renderer/MeshCache.h>
 #include <renderer/RenderLayer.h>
 #include <renderer/RenderStack.h>
 #include <renderer/Renderer.h>
@@ -370,7 +372,9 @@ void Viewport::onRenderInternal() {
 		if (ImGui::BeginDragDropTarget()) {
 			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM")) {
 				const auto* path = static_cast<const char*>(payload->Data);
-				m_parent->handleContentBrowserDrop(std::filesystem::path{path});
+				m_parent->handleContentBrowserDrop(std::filesystem::path{path},
+												   mp_document != nullptr ? getDropPoint(mp_document->getActiveScene())
+																		  : std::nullopt);
 			}
 			ImGui::EndDragDropTarget();
 		}
@@ -1633,7 +1637,7 @@ void Viewport::renderGizmo() {
 		const auto tilemapInfo = findFirstTilemapInfo(activeScene.get());
 		float snapValue = 0.5f;
 		if (gui::Guizmo::isRotate(m_gizmoType)) {
-			snapValue = 45.0f;
+			snapValue = m_parent->getSettings().snapRotationDegrees;
 		} else if (m_parent != nullptr) {
 			snapValue = resolveTranslationSnapStep(m_parent->getSettings(), tilemapInfo);
 		}
@@ -1716,6 +1720,73 @@ void Viewport::onEvent(event::Event& ioEvent) {
 	event::EventDispatcher dispatcher(ioEvent);
 	dispatcher.dispatch<event::MouseButtonPressedEvent>(
 			[this]<typename T0>(T0&& ioPh1) -> auto { return onMouseButtonPressed(std::forward<T0>(ioPh1)); });
+}
+
+auto Viewport::getCursorRay() const -> std::optional<std::pair<math::vec3, math::vec3>> {
+	const math::vec2 vpSize = m_upper - m_lower;
+	if (vpSize.x() <= 0.f || vpSize.y() <= 0.f)
+		return std::nullopt;
+	const auto mousePos = ImGui::GetMousePos();
+	const float ndcX = 2.f * (mousePos.x - m_lower.x()) / vpSize.x() - 1.f;
+	const float screenY = 2.f * (mousePos.y - m_lower.y()) / vpSize.y() - 1.f;
+	const bool isOpenGl = renderer::gpu::RenderCommand::getApi() == renderer::gpu::RenderAPI::Type::OpenGL;
+	const float ndcY = isOpenGl ? -screenY : screenY;
+	const auto& camera = getActiveCamera();
+	const math::mat4 vpInv = inverse(camera.getProjection() * camera.getView());
+	const auto unproject = [&](const float iDepth) -> std::optional<math::vec3> {
+		const math::vec4 point = vpInv * math::vec4{ndcX, ndcY, iDepth, 1.f};
+		if (std::abs(point.w()) < 1e-6f)
+			return std::nullopt;
+		return math::vec3{point.x() / point.w(), point.y() / point.w(), point.z() / point.w()};
+	};
+	// Both depths lie in the clip range of OpenGL ([-1, 1]) and of Vulkan ([0, 1]).
+	const auto nearPoint = unproject(0.f);
+	const auto farPoint = unproject(0.5f);
+	if (!nearPoint || !farPoint || (*farPoint - *nearPoint).normSq() < 1e-12f)
+		return std::nullopt;
+	return std::pair{*nearPoint, (*farPoint - *nearPoint).normalized()};
+}
+
+auto Viewport::getDropPoint(const shared<scene::Scene>& iScene) const -> std::optional<math::vec3> {
+	const auto ray = getCursorRay();
+	if (!ray || !iScene)
+		return std::nullopt;
+	const auto& [origin, direction] = *ray;
+	if (const auto hovered = getHoveredEntity(); hovered && hovered.hasComponent<scene::component::MeshRenderer>()) {
+		if (const auto& mesh = hovered.getComponent<scene::component::MeshRenderer>().mesh; mesh) {
+			const math::mat4 model = iScene->getWorldTransform(hovered)();
+			const math::mat4 toObject = inverse(model);
+			const math::vec4 localOrigin = toObject * math::vec4{origin.x(), origin.y(), origin.z(), 1.f};
+			const math::vec4 localDirection = toObject * math::vec4{direction.x(), direction.y(), direction.z(), 0.f};
+			if (const auto hit =
+						mesh->getGeometry().raycast({localOrigin.x(), localOrigin.y(), localOrigin.z()},
+													{localDirection.x(), localDirection.y(), localDirection.z()});
+				hit) {
+				const math::vec4 world = model * math::vec4{hit->x(), hit->y(), hit->z(), 1.f};
+				return math::vec3{world.x(), world.y(), world.z()};
+			}
+		}
+	}
+	if (const auto hovered = getHoveredEntity(); hovered && hovered.hasComponent<scene::component::VoxelWorld>()) {
+		const auto& voxel = hovered.getComponent<scene::component::VoxelWorld>();
+		const auto targetable = [&voxel](const int32_t iX, const int32_t iY, const int32_t iZ) -> bool {
+			return !voxel.registry.isAir(voxel.world.getBlock(math::vec3i{iX, iY, iZ}));
+		};
+		if (const auto hit = data::voxel::raycastVoxel(targetable, origin, direction, 256.f); hit)
+			return math::vec3{static_cast<float>(hit->block.x()) + 0.5f + 0.5f * static_cast<float>(hit->normal.x()),
+							  static_cast<float>(hit->block.y()) + 0.5f + 0.5f * static_cast<float>(hit->normal.y()),
+							  static_cast<float>(hit->block.z()) + 0.5f + 0.5f * static_cast<float>(hit->normal.z())};
+	}
+	for (const size_t axis: {size_t{1}, size_t{2}}) {
+		if (std::abs(direction[axis]) < 1e-4f)
+			continue;
+		if (const float distance = -origin[axis] / direction[axis]; distance > 0.f) {
+			math::vec3 point = origin + direction * distance;
+			point[axis] = 0.f;
+			return point;
+		}
+	}
+	return std::nullopt;
 }
 
 void Viewport::handleVoxelBrush(const shared<scene::Scene>& iScene) {

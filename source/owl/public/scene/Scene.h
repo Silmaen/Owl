@@ -69,6 +69,7 @@ struct FlyCamera;
 struct Hierarchy;
 struct ID;
 struct LuaScript;
+struct MeshRenderer;
 struct NativeScript;
 struct PhysicBody;
 struct Player;
@@ -1103,6 +1104,22 @@ private:
 
 	/**
 	 * @brief
+	 *  Resolve the mesh of every `MeshRenderer` through the engine context's mesh cache and upload its GPU mesh.
+	 *
+	 *  Called by `renderWithStack` before the first layer records a draw, so no mesh upload splits a render pass; a
+	 *  mesh whose file changed (hot reload) is fetched again.
+	 */
+	void prepareMeshRenderData();
+
+	/**
+	 * @brief
+	 *  Draw every visible `MeshRenderer` entity accepted by the current mesh layer through `RendererMesh`.
+	 * @param[in] iEditorMode True if the scene is being drawn for the editor view.
+	 */
+	void renderMeshes(bool iEditorMode);
+
+	/**
+	 * @brief
 	 *  Draw every visible `VoxelWorld` entity accepted by the current voxel layer
 	 *  through `RendererVoxel`.
 	 * @param[in] iEditorMode True if the scene is being drawn for the editor view.
@@ -1315,6 +1332,10 @@ OWL_API void Scene::onComponentAdded<component::AnimatedSpriteRenderer>(const En
 template<>
 OWL_API void Scene::onComponentAdded<component::CircleRenderer>(const Entity& iEntity,
 																component::CircleRenderer& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::MeshRenderer>(const Entity& iEntity,
+															  component::MeshRenderer& ioComponent);
 
 template<>
 OWL_API void Scene::onComponentAdded<component::NativeScript>(const Entity& iEntity,

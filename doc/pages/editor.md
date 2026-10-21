@@ -194,6 +194,7 @@ The viewport draws the active scene into an off-screen `Framebuffer`:
 | 1          | RedInteger      | Entity ID for mouse picking |
 
 A click reads attachment 1 under the mouse and selects that entity (-1: none) in the hierarchy and the inspector.
+Every layer writes it: sprites, tilemaps, isometric billboards, voxel worlds and static meshes (`MeshRenderer`).
 
 **Overlays**, in translucent pills over the scene:
 
@@ -253,11 +254,21 @@ the view. Menus have a title, Lucide icons, shortcuts and destructive entries in
 **Gizmos.** ImGuizmo draws the manipulator of the selection: None (Q), Translation (W), Rotation (E), Scale (R), All
 (T); see [Gizmo Modes](#gizmo-modes).
 
-**Snap.** The **Snap** toggle (or `Ctrl` held during a drag) clamps translations to the snap step; rotation snaps at
-45°, scale at 0.5. With **Auto step from tilemap** (default) and a `Tilemap` in the scene, the step is
-`cellSize × snapMultiplier` (**Step** presets `1/4 cell` to `10 cells`) and a dropped entity is realigned to the
-nearest cell centre; otherwise the step is `snapStep` in world units (presets `0.25` to `10`). The four settings
-(`snapEnabled`, `snapStep`, `snapMultiplier`, `snapAutoFromTilemap`) are in the **Gizmo Snap** tab.
+**Snap.** The **Snap** toggle (or `Ctrl` held during a drag) clamps translations to the snap step; rotation snaps by
+the **Rotation Step** (`snapRotationDegrees`, 45° by default, 0.1° to 180°). With **Auto step from tilemap** (default)
+and a `Tilemap` in the scene, the step is `cellSize × snapMultiplier` (**Step** presets `1/4 cell` to `10 cells`) and a
+dropped entity is realigned to the nearest cell centre; otherwise the step is `snapStep` in world units (presets `0.25`
+to `10`). The five settings (`snapEnabled`, `snapStep`, `snapMultiplier`, `snapAutoFromTilemap`,
+`snapRotationDegrees`) are in the **Gizmo Snap** tab.
+
+**Placing meshes.** A `.gltf`, `.glb` or `.obj` dragged from the Content Browser onto the viewport becomes an entity
+with a `MeshRenderer` at the point under the cursor: on the hovered mesh or voxel world, else on the ground plane
+(`y = 0`), else on the `z = 0` plane of the 2D view. It runs `mesh.create`, one undo step; the entity is tagged for the
+first `RendererMesh` layer of the render stack when that layer is not the first one. Without such a layer, a modal
+offers to add one (`mesh_world`, after the first layer of the project stack, through `project.add_render_layer`, which
+saves the project), to place the mesh anyway (not drawn), or to cancel; when the project has a mesh layer that the
+scene disables, it points to the Scene Settings instead of adding one. A double-click on the file places it at the origin. The gizmos
+move, rotate and scale it in 3D like any entity.
 
 ### Scene Hierarchy
 
@@ -295,7 +306,9 @@ remove) with its own editor; vectors sit in a label / value grid with axis colou
 default. **Add Component** lists the optional components the entity lacks; mandatory ones (Transform, Hierarchy) cannot
 be removed. Every edit is a registry command ([Editor commands](#editor-commands)).
 
-- **Transform** (local), **Sprite Renderer**, **Animated Sprite**, **Circle Renderer**, **Text Renderer**, **Camera**,
+- **Transform** (local), **Sprite Renderer**, **Animated Sprite**, **Circle Renderer**, **Mesh Renderer** (mesh file
+  drop field with the base-colour preview, tint, texture override, transparency, vertex and triangle counts),
+  **Text Renderer**, **Camera**,
   **Rigidbody 2D**, **Box / Circle Collider 2D**, **Native Script**, **Sound Source**, **Sound Listener**, **Player**,
   **Link**, **Background**, **Visibility** (inherited), **Lua Script** (path and property list): their fields, see
   [Scene components](scene.md#components)
@@ -481,6 +494,8 @@ A file grid of the asset directories, with navigation, file operations and drag 
 | Double-click an image         | Open it in the read-only image viewer         |
 | Double-click `.slang` file    | Open the shader in the code editor            |
 | Drag `.owlprefab` to Viewport | Instantiate the prefab into the scene         |
+| Drag a mesh to Viewport       | Place a `MeshRenderer` entity under the mouse |
+| Double-click a mesh           | Place a `MeshRenderer` entity at the origin   |
 | Drag texture to Properties    | Assign the texture to a Sprite Renderer field |
 | Drag sound to Properties      | Assign the sound to a Sound Source field      |
 | Right-click background        | Context menu: New Folder, Import File/Folder  |
@@ -918,6 +933,7 @@ UUID, plus the fields below).
 | `component.add`        | `entity`, `component` (display name `Circle Renderer` or file key)                                     |
 | `component.remove`     | `entity`, `component`                                                                                  |
 | `prefab.instantiate`   | `path` (prefab file), `asset_path` (link recorded, found from the folders)                             |
+| `mesh.create`          | `path` (mesh file), `asset_path`, `name`, `translation` (world), `parent`, `layer` (RendererTag)       |
 | `component.set`        | `entity`, `component`, `values` (YAML / JSON map merged into the component),                           |
 |                        | `replace` (bool: `values` replaces every field, used by the inspector)                                 |
 | `scene.save`           | `path` (the scene file when absent); returns `path`                                                    |

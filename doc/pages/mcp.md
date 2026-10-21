@@ -72,15 +72,15 @@ curl -s http://127.0.0.1:47800/mcp \
 
 `tools/list` gives one tool per editor command, so whatever the console, the command palette and the macros can do,
 the agent can: `entity.create`, `entity.delete`, `entity.duplicate`, `entity.reparent`, `entity.rename`,
-`entity.set_transform`, `component.add`, `component.remove`, `component.set`, `prefab.instantiate`, `scene.save`,
-`edit.undo`, `edit.redo`, `macro.run`, and the commands of the open documents. Each tool declares its arguments (type,
+`entity.set_transform`, `component.add`, `component.remove`, `component.set`, `prefab.instantiate`, `mesh.create`,
+`scene.save`, `project.add_render_layer`, `edit.undo`, `edit.redo`, `macro.run`, and the commands of the open documents. Each tool declares its arguments (type,
 default, choices) in its input schema. Entities are named by their UUID or their tag.
 
 - A command runs as one undo step and is recorded in the command journal with the `mcp` source (see the
   [Console](editor.md)).
 - Editing tools are refused while the scene plays (`RefusedDuringPlay`): stop it first.
-- A file argument (`prefab.instantiate`, `scene.save`, `macro.run`) is resolved inside the open project and refused
-  outside it. No tool evaluates Lua or runs a shell command.
+- A file argument (`prefab.instantiate`, `mesh.create`, `scene.save`, `macro.run`) is resolved inside the open project
+  and refused outside it. No tool evaluates Lua or runs a shell command.
 - A failure is a tool result with `isError: true` and a `structuredContent.error` name, not a protocol error.
 
 ![Four tools called over MCP, as the editor's Console journal shows them](../images/nest/console.png)

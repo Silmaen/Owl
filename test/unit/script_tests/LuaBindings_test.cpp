@@ -264,6 +264,45 @@ TEST(LuaBindings, entityTintOfSprites) {
 	core::Log::invalidate();
 }
 
+TEST(LuaBindings, entityMeshRenderer) {
+	core::Log::init(core::Log::Level::Off);
+	auto scn = mkShared<scene::Scene>();
+	auto crate = scn->createEntity("Crate");
+	crate.addComponent<scene::component::MeshRenderer>().setMeshPath("meshes/crate.glb");
+	auto bare = scn->createEntity("Bare");
+
+	const std::string script = std::format("function on_create()\n"
+										   "has = entity.has_component({0}, 'MeshRenderer')\n"
+										   "bare_has = entity.has_component({1}, 'MeshRenderer')\n"
+										   "path = entity.get_mesh({0})\n"
+										   "swapped = entity.set_mesh({0}, 'meshes/barrel.gltf')\n"
+										   "bare_swapped = entity.set_mesh({1}, 'meshes/barrel.gltf')\n"
+										   "bare_path = entity.get_mesh({1}) ~= nil\n"
+										   "tinted = entity.set_tint({0}, 1, 0, 0, 0.5)\n"
+										   "r, g, b, a = entity.get_tint({0})\n"
+										   "end\n",
+										   static_cast<int64_t>(static_cast<uint64_t>(crate.getUUID())),
+										   static_cast<int64_t>(static_cast<uint64_t>(bare.getUUID())));
+	const std::vector<uint8_t> data(script.begin(), script.end());
+	const ScriptInstance inst;
+	inst.setScene(scn.get());
+	ASSERT_TRUE(inst.createFromBuffer(data, "mesh_test", static_cast<uint64_t>(bare.getUUID())));
+	inst.onCreate();
+
+	EXPECT_TRUE(inst.getPropertyBool("has").value_or(false));
+	EXPECT_FALSE(inst.getPropertyBool("bare_has").value_or(true));
+	EXPECT_EQ(inst.getPropertyString("path").value_or(""), "meshes/crate.glb");
+	EXPECT_TRUE(inst.getPropertyBool("swapped").value_or(false));
+	EXPECT_EQ(crate.getComponent<scene::component::MeshRenderer>().meshPath.generic_string(), "meshes/barrel.gltf");
+	EXPECT_FALSE(inst.getPropertyBool("bare_swapped").value_or(true));
+	EXPECT_FALSE(inst.getPropertyBool("bare_path").value_or(true));
+	EXPECT_TRUE(inst.getPropertyBool("tinted").value_or(false));
+	EXPECT_FLOAT_EQ(inst.getPropertyFloat("a").value_or(-1.f), 0.5f);
+	EXPECT_FLOAT_EQ(crate.getComponent<scene::component::MeshRenderer>().color.g(), 0.f);
+
+	core::Log::invalidate();
+}
+
 TEST(LuaBindings, logDoesNotCrash) {
 	core::Log::init(core::Log::Level::Off);
 	auto scn = mkShared<scene::Scene>();

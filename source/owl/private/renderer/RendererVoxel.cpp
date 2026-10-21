@@ -474,14 +474,15 @@ void RendererVoxel::drawVoxelWorld(VoxelMeshCache& ioCache, scene::component::Vo
 		}
 	}
 	frameData().drawnMeshCount += static_cast<uint32_t>(opaque.size() + transparent.size());
-	Renderer3D::drawMeshes(opaque, worldMat, textures);
+	const MeshDrawParams params{.entityId = iEntityId};
+	Renderer3D::drawMeshes(opaque, worldMat, textures, params);
 	if (!transparent.empty()) {
 		// Back-to-front so alpha-over compositing is correct without per-fragment sorting.
 		std::ranges::sort(transparent, [](const auto& iA, const auto& iB) -> bool { return iA.first > iB.first; });
 		auto& sorted = frameData().sortedTransparent;
 		sorted.clear();
 		for (auto& mesh: transparent | std::views::values) sorted.push_back(std::move(mesh));
-		Renderer3D::drawMeshes(sorted, worldMat, textures);
+		Renderer3D::drawMeshes(sorted, worldMat, textures, params);
 		sorted.clear();
 	}
 	opaque.clear();

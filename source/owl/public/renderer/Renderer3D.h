@@ -25,8 +25,8 @@ namespace owl::renderer {
  *
  * The layout mirrors the `mesh3d.slang` vertex input: object-space position,
  * normal (for the directional-light term), texture coordinate, the index of the
- * texture slot to sample from the bound array, an atlas sub-rect used by
- * frac-tiling shaders, and a per-vertex ambient-occlusion term. The struct is
+ * texture slot to sample from the bound array, an atlas sub-rect, and a
+ * per-vertex ambient-occlusion term. The struct is
  * tightly packed (56 bytes) so it can be uploaded straight into a vertex buffer.
  */
 struct Mesh3DVertex {
@@ -38,10 +38,21 @@ struct Mesh3DVertex {
 	math::vec2 uv;
 	/// Index into the bound texture array (`0` is the default white texture).
 	uint32_t textureIndex = 0;
-	/// Atlas sub-rect `(uMin, vMin, uSize, vSize)` for frac-tiling shaders (`voxel`); `{0,0,1,1}` = full texture, ignored by `mesh3d`.
+	/// Atlas sub-rect `(uMin, vMin, uSize, vSize)` the UV maps into (`mesh3d`), or tiled into with `frac` (`voxel`); `{0,0,1,1}` = full texture.
 	math::vec4 tileRect{0.f, 0.f, 1.f, 1.f};
-	/// Per-vertex ambient-occlusion multiplier in `[0, 1]` (`1` = unoccluded); used by `voxel`, ignored by `mesh3d`.
+	/// Per-vertex ambient-occlusion multiplier of the lighting in `[0, 1]` (`1` = unoccluded).
 	float ao = 1.f;
+};
+
+/**
+ * @brief
+ *  Per-draw parameters of a mesh, written to the model uniform buffer next to the model matrix.
+ */
+struct MeshDrawParams {
+	/// Colour multiplied with the sampled texture by `mesh3d` (ignored by `voxel`).
+	math::vec4 tint{1.f, 1.f, 1.f, 1.f};
+	/// Value written to the entity-id attachment for picking; `-1` for none.
+	int32_t entityId = -1;
 };
 
 /**
@@ -102,6 +113,13 @@ public:
 
 	/**
 	 * @brief
+	 *  Get the default white texture bound to slot `0`, to bind where a mesh samples slot `1` without a texture.
+	 * @return The texture, null before `init`.
+	 */
+	[[nodiscard]] static auto getWhiteTexture() -> shared<gpu::Texture2D>;
+
+	/**
+	 * @brief
 	 *  Upload a mesh to the GPU and return a handle for later drawing.
 	 *
 	 * The mesh is static once created; rebuild it (create a new handle) when the
@@ -126,9 +144,10 @@ public:
 	 * @param[in] iMesh The mesh handle from `createMesh`.
 	 * @param[in] iModel The model (object-to-world) matrix.
 	 * @param[in] iTextures Textures bound to slots `1..N` in order.
+	 * @param[in] iParams Tint and entity id of the draw.
 	 */
 	static void drawMesh(const MeshHandle& iMesh, const math::mat4& iModel,
-						 std::span<const shared<gpu::Texture2D>> iTextures = {});
+						 std::span<const shared<gpu::Texture2D>> iTextures = {}, const MeshDrawParams& iParams = {});
 
 	/**
 	 * @brief
@@ -140,9 +159,10 @@ public:
 	 * @param[in] iMeshes The mesh handles to draw.
 	 * @param[in] iModel The shared model (object-to-world) matrix.
 	 * @param[in] iTextures Textures bound to slots `1..N` in order.
+	 * @param[in] iParams Tint and entity id shared by the draws.
 	 */
 	static void drawMeshes(std::span<const MeshHandle> iMeshes, const math::mat4& iModel,
-						   std::span<const shared<gpu::Texture2D>> iTextures = {});
+						   std::span<const shared<gpu::Texture2D>> iTextures = {}, const MeshDrawParams& iParams = {});
 };
 
 }// namespace owl::renderer

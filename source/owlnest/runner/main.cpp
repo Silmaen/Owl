@@ -144,7 +144,7 @@ auto createFrameBenchApplication(const int iArgc, char** iArgv, const std::files
 		std::fputs(
 				".\nUsage: OwlRunner --frame-bench <scene.owl> [--frames N] [--warmup M] "
 				"[--backend vulkan|opengl|null] [--out results.json] [--project <dir>] [--assets <dir>] [--size WxH] "
-				"[--timestep-ms T] [--vsync] [--validation] [--hot-reload] [--capture frame.png]\n",
+				"[--timestep-ms T] [--vsync] [--validation] [--hot-reload] [--capture frame.png [--pick X,Y]...]\n",
 				stderr);
 		std::exit(2);
 	}

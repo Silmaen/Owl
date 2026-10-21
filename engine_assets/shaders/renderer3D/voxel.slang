@@ -13,6 +13,8 @@ struct Scene3D {
 	column_major float4x4 model;
 	float4 sunDirection;
 	float4 ambient;
+	float4 tint;// unused: the atlas colours are drawn as they are.
+	int4 ids;   // x: entity id written to the picking attachment (-1 for none); yzw unused.
 };
 
 [[vk::binding(0)]]
@@ -80,6 +82,6 @@ FragmentOutput fragmentMain(FragmentInput input) {
 	float ndl = max(dot(normalize(input.normal), normalize(-gScene.sunDirection.xyz)), 0.0f);
 	float3 lit = texColor.rgb * (gScene.ambient.rgb + ndl) * input.ao;
 	output.color = float4(lit, texColor.a);
-	output.entityID = -1;
+	output.entityID = gScene.ids.x;
 	return output;
 }

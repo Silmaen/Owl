@@ -9,7 +9,11 @@
 
 #include "app/HotReload.h"
 
+#include "app/Application.h"
+#include "app/EngineContext.h"
+#include "data/geometry/MeshLoader.h"
 #include "debug/Profiler.h"
+#include "renderer/MeshCache.h"
 #include "renderer/Renderer.h"
 
 #include <algorithm>
@@ -90,6 +94,8 @@ auto HotReload::reloadFile(const std::filesystem::path& iFile) -> Report {
 						platform::isSameFile(iShader->getSourcePath(), iFile))
 						count(iShader->reload());
 				});
+	} else if (data::geometry::MeshLoader::isMeshAsset(iFile) && Application::instanced()) {
+		report.reloaded += Application::get().getEngineContext().getMeshCache().invalidate(iFile);
 	}
 	if (report.reloaded + report.failed > 0)
 		OWL_CORE_INFO("Hot reload: {} -> {} reloaded, {} kept the previous version.", iFile.string(), report.reloaded,

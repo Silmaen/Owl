@@ -36,6 +36,7 @@ enum struct AssetKind : uint8_t {
 	Tileset,///< Tileset asset (`.owltileset`).
 	Tilemap,///< Tilemap asset (`.owltilemap`).
 	ObjectSheet,///< Isometric object sheet description (`.json`).
+	Mesh,///< Static mesh file (`.gltf`, `.glb`, `.obj`).
 	Any,///< Accepts any extension.
 };
 

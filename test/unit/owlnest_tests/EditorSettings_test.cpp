@@ -121,3 +121,22 @@ TEST(EditorSettings, McpServerIsOffByDefaultAndRoundTrips) {
 	EXPECT_EQ(loaded.mcpPort, 1024);
 	std::filesystem::remove_all(dir);
 }
+
+TEST(EditorSettings, RotationSnapStepRoundTripsAndClamps) {
+	const auto dir = std::filesystem::temp_directory_path() / "owl_editor_settings_rotation_snap_test";
+	std::filesystem::remove_all(dir);
+	std::filesystem::create_directories(dir);
+	EditorSettings settings;
+	EXPECT_FLOAT_EQ(settings.snapRotationDegrees, 45.f);
+	settings.snapRotationDegrees = 15.f;
+	settings.saveToFile(dir / "settings.yml");
+	EditorSettings loaded;
+	loaded.loadFromFile(dir / "settings.yml");
+	EXPECT_FLOAT_EQ(loaded.snapRotationDegrees, 15.f);
+
+	settings.snapRotationDegrees = 720.f;// out of range: clamped when read back
+	settings.saveToFile(dir / "settings.yml");
+	loaded.loadFromFile(dir / "settings.yml");
+	EXPECT_FLOAT_EQ(loaded.snapRotationDegrees, 180.f);
+	std::filesystem::remove_all(dir);
+}

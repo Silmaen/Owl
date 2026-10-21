@@ -505,6 +505,25 @@ void RunnerLayer::attachFrameBench() {
 	m_frameBench->start();
 }
 
+void RunnerLayer::samplePicks() {
+	if (!m_frameBench || !m_captureTarget)
+		return;
+	const auto& picks = m_frameBench->getOptions().picks;
+	if (picks.empty())
+		return;
+	// A pick answers a frame or two late, one request per frame: each pixel is read on a few frames in a row.
+	constexpr uint32_t framesPerPick = 4;
+	m_pickedIds.resize(picks.size(), -1);
+	const size_t index = (m_pickFrame++ / framesPerPick) % picks.size();
+	const bool isOpenGl = renderer::gpu::RenderCommand::getApi() == renderer::gpu::RenderAPI::Type::OpenGL;
+	const auto height = static_cast<int>(m_captureTarget->getSpecification().size.y());
+	const auto x = static_cast<int>(picks[index].x());
+	const auto y = static_cast<int>(picks[index].y());
+	const int picked = m_captureTarget->readPixel(1, x, isOpenGl ? height - 1 - y : y);
+	if (m_pickFrame % framesPerPick == 0)
+		m_pickedIds[index] = picked;
+}
+
 auto RunnerLayer::writeCapture() const -> bool {
 	const auto& path = m_frameBench->getOptions().capture;
 	if (!m_captureTarget) {
@@ -515,6 +534,13 @@ auto RunnerLayer::writeCapture() const -> bool {
 	if (pixels.empty()) {
 		OWL_ERROR("FrameBench: Cannot read the capture target back for {}.", path.string())
 		return false;
+	}
+	const auto& picks = m_frameBench->getOptions().picks;
+	for (size_t index = 0; index < picks.size() && index < m_pickedIds.size(); ++index) {
+		const auto handle = static_cast<entt::entity>(m_pickedIds[index]);
+		const bool found = m_pickedIds[index] >= 0 && m_activeScene && m_activeScene->registry.valid(handle);
+		OWL_INFO("FrameBench: Pick {},{} -> {}.", picks[index].x(), picks[index].y(),
+				 found ? scene::Entity{handle, m_activeScene.get()}.getName() : std::string{"none"})
 	}
 	// The window shows colours only: make the capture opaque so it reads the same in any viewer.
 	for (size_t i = 3; i < pixels.size(); i += 4) pixels[i] = 255;
@@ -639,6 +665,8 @@ void RunnerLayer::onUpdate(const core::Timestep& iTimeStep) {
 			renderer::gpu::RenderCommand::setClearColor({0.1f, 0.1f, 0.1f, 1});
 
 			renderer::gpu::RenderCommand::clear();
+			if (m_captureTarget && m_frameBench && !m_frameBench->getOptions().picks.empty())
+				m_captureTarget->clearAttachment(1, -1);
 			m_activeScene->onViewportResize(m_viewportSize);
 			if (m_activeScene->status == scene::Scene::Status::Editing) {
 				m_activeScene->onStartRuntime();
@@ -655,6 +683,7 @@ void RunnerLayer::onUpdate(const core::Timestep& iTimeStep) {
 												 input::Input::isMouseButtonPressed(input::mouse::ButtonLeft),
 												 timeStep.getSeconds(), input::Input::readState().wheel);
 					updateSceneRuntime(timeStep);
+					samplePicks();
 					// Handle quit request from Lua (scene.quit()).
 					if (m_activeScene->quitRequested) {
 						m_activeScene->onEndRuntime();

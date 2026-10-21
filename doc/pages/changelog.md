@@ -11,7 +11,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- CI: `Bench -- --calibrate=true --rounds=<n>` runs the benchmarks several times and writes a proposed baseline and the thresholds the measured spread calls for.
+- `MeshRenderer` component: a `.gltf`, `.glb` or `.obj` file drawn in 3D with its glTF base colour, a tint, a texture override and alpha blending, in YAML, the inspector and Lua (`entity.set_mesh`, `get_mesh`, tint).
+- `RendererMesh` render-stack layer: opaque meshes, then the blended ones back-to-front, lit like the voxel layer; the Engine Demo stack has one (`mesh_world`).
+- `renderer::MeshCache` in `EngineContext`: one shared `MeshResource` per file (geometry, GPU meshes, material texture), read from the pack or the asset folders and reloaded when the file changes.
+- `MeshLoader::loadMesh` / `loadMeshFromMemory` return the glTF base-colour material with the mesh and read a `.gltf` from a pack, whose mesh files `AssetScanner` now packs.
+- Owl Nest: a mesh dropped from the Content Browser on the viewport becomes a `MeshRenderer` entity under the cursor (`mesh.create` command), and the rotation snap step is an editor setting.
+- Owl Nest: dropping a mesh in a project without a `RendererMesh` layer offers to add one, through the new `project.add_render_layer` command.
+- Picking in 3D: `Renderer3D` writes the entity id of every draw (`MeshDrawParams`), so meshes and voxel worlds are selected by a click.
+- `OwlRunner --frame-bench --pick X,Y` logs the entity under a pixel of the capture; image tests `mesh` and `RenderPick` check meshes and picking on both backends.
+ runs the benchmarks several times and writes a proposed baseline and the thresholds the measured spread calls for.
 
 ### Changed
 
@@ -41,6 +49,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `MeshLoader`: a glTF mesh of several primitives indexes the vertices of each one, the OBJ loader keeps the third UV of a face, and glTF UVs follow the engine convention.
+- `mesh3d.slang` reads every attribute of `Mesh3DVertex` (atlas sub-rect, ambient occlusion), which removes two Vulkan validation warnings.
 - Clang 23 builds: its `[[clang::lifetimebound]]` suggestions and the strict-only lifetime-safety checks (false positives on `push_back`) are off, and `MeshVertexCoordinate` declares its explicit instantiations (`extern template`) for the exported class deriving from it; the null window drops its write-only window counter.
 - Documentation site: screenshots keep their colours in dark mode (the theme inverted every image of a table or an image block).
 

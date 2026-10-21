@@ -171,7 +171,8 @@ void EditorLayer::syncActiveDocumentPanels() {
 	m_ribbonBuilder.refresh();
 }
 
-void EditorLayer::handleContentBrowserDrop(const std::filesystem::path& iRelativePath) {
+void EditorLayer::handleContentBrowserDrop(const std::filesystem::path& iRelativePath,
+										   const std::optional<math::vec3>& iDropPoint) {
 	const auto relString = iRelativePath.generic_string();
 	const auto kind = classifyAsset(iRelativePath);
 	if (kind == AssetKind::Unsupported) {
@@ -194,6 +195,8 @@ void EditorLayer::handleContentBrowserDrop(const std::filesystem::path& iRelativ
 	}
 	if (kind == AssetKind::Prefab)
 		instantiatePrefab(full, relString);
+	else if (kind == AssetKind::Mesh)
+		placeMesh(full, {}, iDropPoint);
 	else
 		requestDeferredOpen(full);
 }
@@ -850,6 +853,7 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 	for (const auto id: toClose) requestCloseDocument(id);
 
 	renderCloseDocumentModal();
+	renderMeshLayerModal();
 	handleRecoveryChoice(m_recoveryPrompt.onImGuiRender());
 	if (const auto request = m_newProjectDialog.onImGuiRender(); request)
 		createProject(*request);
@@ -1272,6 +1276,95 @@ void EditorLayer::instantiatePrefab(const std::filesystem::path& iPrefabPath, co
 		setSelectedEntity(doc->getActiveScene()->findEntityByUUID(result->entity));
 }
 
+void EditorLayer::placeMesh(const std::filesystem::path& iMeshPath, const std::string& iAssetRelativePath,
+							const std::optional<math::vec3>& iPosition) {
+	auto* doc = activeSceneDocument();
+	if (doc == nullptr || doc->state() != SceneDocument::State::Edit || !doc->getActiveScene())
+		return;
+	const auto& layers = renderer::Renderer::getRenderStack().getLayers();
+	const auto meshLayer = std::ranges::find_if(layers, [](const shared<renderer::RenderLayer>& iLayer) -> bool {
+		return std::string_view{iLayer->getTypeKey()} == "RendererMesh";
+	});
+	if (meshLayer == layers.end()) {
+		m_pendingMesh = PendingMesh{.path = iMeshPath, .assetPath = iAssetRelativePath, .position = iPosition};
+		m_openMeshLayerModal = true;
+		return;
+	}
+	createMeshEntity(iMeshPath, iAssetRelativePath, iPosition,
+					 meshLayer == layers.begin() ? std::string{} : (*meshLayer)->getName());
+}
+
+void EditorLayer::createMeshEntity(const std::filesystem::path& iMeshPath, const std::string& iAssetRelativePath,
+								   const std::optional<math::vec3>& iPosition, const std::string& iLayer) {
+	auto* doc = activeSceneDocument();
+	if (doc == nullptr || doc->state() != SceneDocument::State::Edit || !doc->getActiveScene())
+		return;
+	commands::CommandArgs args{{"path", iMeshPath.string()}};
+	if (!iAssetRelativePath.empty())
+		args.set("asset_path", iAssetRelativePath);
+	if (iPosition)
+		args.set("translation", *iPosition);
+	if (!iLayer.empty())
+		args.set("layer", iLayer);
+	if (const auto result = execute("mesh.create", args, commands::CommandSource::Gesture); result)
+		setSelectedEntity(doc->getActiveScene()->findEntityByUUID(result->entity));
+}
+
+void EditorLayer::renderMeshLayerModal() {
+	static constexpr auto kTitle = "No Mesh Layer";
+	static constexpr auto kLayerName = "mesh_world";
+	if (m_openMeshLayerModal) {
+		ImGui::OpenPopup(kTitle);
+		m_openMeshLayerModal = false;
+	}
+	if (!ImGui::BeginPopupModal(kTitle, nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+		return;
+	if (!m_pendingMesh) {
+		ImGui::CloseCurrentPopup();
+		ImGui::EndPopup();
+		return;
+	}
+	ImGui::Text("No RendererMesh layer of the render stack draws '%s'.",
+				m_pendingMesh->path.filename().string().c_str());
+	const auto projectLayer = std::ranges::find_if(m_project.rendererStack.entries, [](const auto& iEntry) -> bool {
+		return iEntry.typeKey == "RendererMesh";
+	});
+	const bool disabledInScene = projectLayer != m_project.rendererStack.entries.end();
+	if (disabledInScene)
+		ImGui::TextDisabled("The project layer '%s' is disabled in this scene (Scene Settings).",
+							projectLayer->name.c_str());
+	else
+		ImGui::TextDisabled("The layer is added to the project settings, after the first layer.");
+	ImGui::Spacing();
+	const float width = ImGui::GetFontSize() * 9.f;
+	if (!disabledInScene &&
+		gui::widgets::button("Add the layer", {.glyph = gui::icon::layers, .label = "Add the layer", .width = width})) {
+		const auto pending = *m_pendingMesh;
+		m_pendingMesh.reset();
+		ImGui::CloseCurrentPopup();
+		const commands::CommandArgs args{{"type", std::string{"RendererMesh"}}, {"name", std::string{kLayerName}}};
+		if (const auto added = execute("project.add_render_layer", args, commands::CommandSource::Gesture); added)
+			createMeshEntity(pending.path, pending.assetPath, pending.position, kLayerName);
+		else
+			m_toasts.push(gui::widgets::ToastKind::Error, "Mesh layer not added", added.error().message);
+	}
+	if (!disabledInScene)
+		ImGui::SameLine();
+	if (gui::widgets::button("Place anyway", {.glyph = gui::icon::plus, .label = "Place anyway", .width = width})) {
+		const auto pending = *m_pendingMesh;
+		m_pendingMesh.reset();
+		ImGui::CloseCurrentPopup();
+		createMeshEntity(pending.path, pending.assetPath, pending.position, {});
+	}
+	ImGui::SameLine();
+	if (gui::widgets::button("Cancel",
+							 {.glyph = gui::icon::x, .label = "Cancel", .width = ImGui::GetFontSize() * 7.f})) {
+		m_pendingMesh.reset();
+		ImGui::CloseCurrentPopup();
+	}
+	ImGui::EndPopup();
+}
+
 void EditorLayer::onContextualHelp() {
 	static const std::unordered_map<std::string, std::string> kComponentToPage = {
 			{"Transform", "scene"},
@@ -1289,6 +1382,7 @@ void EditorLayer::onContextualHelp() {
 			{"AnimatedSpriteRenderer", "renderer"},
 			{"Isometric Object", "renderer"},
 			{"CircleRenderer", "renderer"},
+			{"MeshRenderer", "renderer"},
 			{"BackgroundTexture", "renderer"},
 			{"Text", "renderer"},
 			{"Player", "scene"},

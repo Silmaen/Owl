@@ -828,3 +828,39 @@ TEST_F(AssetScannerTest, PackWriterCancelCheck) {
 	EXPECT_FALSE(ok);// Should fail due to cancellation.
 	EXPECT_EQ(callCount, 2);
 }
+
+TEST_F(AssetScannerTest, ScanSceneFollowsTheMeshFilesOfAMeshRenderer) {
+	const auto gltf = m_tempDir / "meshes" / "crate.gltf";
+	writeFile(gltf, R"({"asset": {"version": "2.0"}, "buffers": [{"uri": "crate.bin", "byteLength": 5}, )"
+					R"({"uri": "data:application/octet-stream;base64,AAAA", "byteLength": 3}], )"
+					R"("images": [{"uri": "crate.png"}, {"uri": "missing.png"}]})");
+	writeDummyBinary(m_tempDir / "meshes" / "crate.bin");
+	writeDummyBinary(m_tempDir / "meshes" / "crate.png");
+	const auto scenePath = m_tempDir / "meshes.owl";
+	writeFile(scenePath, "Scene: meshes\nEntities:\n"
+						 "  - Entity: 1\n"
+						 "    MeshRenderer:\n"
+						 "      mesh: \"" +
+								 gltf.generic_string() +
+								 "\"\n"
+								 "  - Entity: 2\n"
+								 "    MeshRenderer:\n"
+								 "      mesh: \"" +
+								 (m_tempDir / "meshes" / "barrel.glb").generic_string() + "\"\n");
+	std::vector<std::string> warnings;
+	const auto assets = AssetScanner::scanScene(scenePath, &warnings);
+	const auto find = [&assets](const std::filesystem::path& iDisk) -> const AssetReference* {
+		const auto found = std::ranges::find_if(assets, [&iDisk](const AssetReference& iRef) -> bool {
+			return iRef.diskPath.lexically_normal() == iDisk.lexically_normal();
+		});
+		return found == assets.end() ? nullptr : &*found;
+	};
+	const auto* mesh = find(gltf);
+	ASSERT_NE(mesh, nullptr);
+	EXPECT_EQ(mesh->assetType, AssetType::Mesh);
+	EXPECT_NE(find(m_tempDir / "meshes" / "crate.bin"), nullptr);
+	EXPECT_NE(find(m_tempDir / "meshes" / "crate.png"), nullptr);
+	EXPECT_EQ(assets.size(), 4u);// the scene, the glTF and its two external files
+	// The missing image of the glTF and the missing GLB are reported.
+	EXPECT_EQ(warnings.size(), 2u);
+}

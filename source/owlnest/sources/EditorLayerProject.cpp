@@ -66,6 +66,9 @@ void EditorLayer::openAssetFile(const std::filesystem::path& iPath) {
 		case AssetKind::Prefab:
 			instantiatePrefab(iPath);
 			return;
+		case AssetKind::Mesh:
+			placeMesh(iPath);
+			return;
 		case AssetKind::ActionMap:
 			openActionMapFile(iPath);
 			return;

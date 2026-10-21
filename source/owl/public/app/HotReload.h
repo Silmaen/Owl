@@ -28,6 +28,7 @@ namespace owl::app {
  * atomic flag until a file changed. A changed file is then dispatched on the main thread, at the start of the frame:
  *  - images (`.png`, `.jpg`): every texture of the renderer's library loaded from that file gets the new pixels;
  *  - Slang shaders (`.slang`): every shader compiled from that file is recompiled and swapped, its pipelines rebuilt;
+ *  - meshes (`.obj`, `.gltf`, `.glb`): the application's mesh cache forgets them, the entities reload them when drawn;
  *  - anything else (scenes, tilesets, tilemaps, Lua scripts): handed to the listeners, which own the scenes.
  *
  * A failed reload keeps the previous version and logs an error naming the file (with the Slang or Lua diagnostic).

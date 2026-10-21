@@ -61,6 +61,18 @@ auto parseSize(const std::string_view iText, math::vec2ui& oSize) -> bool {
 	return true;
 }
 
+auto parsePoint(const std::string_view iText, math::vec2ui& oPoint) -> bool {
+	const auto sep = iText.find(',');
+	if (sep == std::string_view::npos)
+		return false;
+	uint32_t x = 0;
+	uint32_t y = 0;
+	if (!parseUnsigned(iText.substr(0, sep), x) || !parseUnsigned(iText.substr(sep + 1), y))
+		return false;
+	oPoint = {x, y};
+	return true;
+}
+
 auto backendName(const renderer::gpu::RenderAPI::Type iType) -> std::string_view {
 	switch (iType) {
 		case renderer::gpu::RenderAPI::Type::Null:
@@ -202,6 +214,11 @@ auto parseFrameBenchOptions(const int iArgc, char** iArgv, const std::filesystem
 			options.out = resolve(value);
 		} else if (arg == "--capture") {
 			options.capture = resolve(value);
+		} else if (arg == "--pick") {
+			if (math::vec2ui point; parsePoint(value, point))
+				options.picks.push_back(point);
+			else
+				return badValue();
 		} else if (arg == "--frames") {
 			if (!parseUnsigned(value, options.frames) || options.frames == 0)
 				return badValue();

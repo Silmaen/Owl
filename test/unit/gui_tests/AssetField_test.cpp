@@ -25,6 +25,10 @@ TEST(AssetField, IsPathOfKindObjectSheetIsJsonOnly) {
 	EXPECT_TRUE(isPathOfKind("buildings.json", AssetKind::ObjectSheet));
 	EXPECT_TRUE(isPathOfKind("buildings.JSON", AssetKind::ObjectSheet));
 	EXPECT_FALSE(isPathOfKind("buildings.png", AssetKind::ObjectSheet));
+	EXPECT_TRUE(isPathOfKind("meshes/crate.glb", AssetKind::Mesh));
+	EXPECT_TRUE(isPathOfKind("crate.GLTF", AssetKind::Mesh));
+	EXPECT_TRUE(isPathOfKind("crate.obj", AssetKind::Mesh));
+	EXPECT_FALSE(isPathOfKind("crate.fbx", AssetKind::Mesh));
 }
 
 TEST(AssetField, IsPathOfKindAcceptsFontExtensions) {

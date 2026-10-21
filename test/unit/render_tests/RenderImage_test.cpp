@@ -22,6 +22,7 @@
 #include <ostream>
 #include <sstream>
 #include <string>
+#include <utility>
 #include <vector>
 
 using namespace owl;
@@ -320,6 +321,92 @@ INSTANTIATE_TEST_SUITE_P(HudTextLarge, RenderImage,
 							 return std::format("{}_{}_{}x{}", iInfo.param.scene, iInfo.param.backend,
 												iInfo.param.size.x(), iInfo.param.size.y());
 						 });
+
+// Static meshes of the mesh layer: a glTF cube with its embedded base-colour texture, the same cube tinted, a ground slab
+// and a blended cube drawn after them.
+INSTANTIATE_TEST_SUITE_P(Mesh, RenderImage, testing::Values(RenderCase{"mesh", "vulkan"}, RenderCase{"mesh", "opengl"}),
+						 [](const testing::TestParamInfo<RenderCase>& iInfo) -> std::string {
+							 return iInfo.param.scene + "_" + iInfo.param.backend;
+						 });
+
+namespace {
+
+// One picking check: a scene, a backend and the entity expected under each pixel of the capture.
+struct PickCase {
+	// Scene file stem in `test/unit/test_helper/assets/render_tests/scenes`.
+	std::string scene;
+	// Backend name passed to `OwlRunner --backend`.
+	std::string backend;
+	// Pixels from the top left of the capture, with the tag of the entity drawn there (`none` for the background).
+	std::vector<std::pair<math::vec2ui, std::string>> picks;
+};
+
+[[maybe_unused]] void PrintTo(const PickCase& iCase, std::ostream* oStream) {
+	*oStream << iCase.scene << " on " << iCase.backend;
+}
+
+class RenderPick : public testing::TestWithParam<PickCase> {};
+
+}// namespace
+
+// The entity-id attachment the editor picks in: the 3D layers write the id of every mesh and voxel world they draw.
+TEST_P(RenderPick, entityUnderEachPixel) {
+#ifndef OWL_RUNNER_EXECUTABLE
+	GTEST_SKIP() << "OwlRunner is not built (OWL_BUILD_NEST=OFF).";
+#else
+	const auto& [scene, backend, picks] = GetParam();
+	if (backend == "vulkan" && !exists(getVulkanIcd()))
+		GTEST_SKIP() << "lavapipe not found (" << getVulkanIcd() << "); set OWL_RENDER_TESTS_VK_ICD.";
+	if (getEnv("DISPLAY").empty() && getEnv("WAYLAND_DISPLAY").empty())
+		GTEST_SKIP() << "No display: run the render tests under xvfb-run (ctest does it when xvfb-run exists).";
+	const auto fixtures = test::getTestAssetsPath("render_tests");
+	const auto outDir = getOutputDir();
+	std::filesystem::create_directories(outDir);
+	const auto stem = std::format("{}.{}.pick", scene, backend);
+	const auto captureFile = outDir / (stem + ".png");
+	const auto logFile = outDir / (stem + ".log");
+	std::string pickArgs;
+	for (const auto& [pixel, tag]: picks) pickArgs += std::format(" --pick {},{}", pixel.x(), pixel.y());
+	const auto command = std::format(
+			R"(env -u OWL_OPENGL_SHADERS {} "{}" --frame-bench "{}" --project "{}" )"
+			R"(--assets "{}" --backend {} --frames 2 --warmup {} --size {}x{} --validation )"
+			R"(--capture "{}"{} > "{}" 2>&1)",
+			getDriverEnvironment(backend), OWL_RUNNER_EXECUTABLE, (fixtures / "scenes" / (scene + ".owl")).string(),
+			(test::getRootPath() / "engine_demo").string(), fixtures.string(), backend, g_warmupFrames,
+			g_captureSize.x(), g_captureSize.y(), captureFile.string(), pickArgs, logFile.string());
+	// NOLINTNEXTLINE(bugprone-command-processor) The runner must run in its own process (one GPU context).
+	const int status = std::system(command.c_str());
+	const auto log = readFile(logFile);
+	ASSERT_EQ(status, 0) << "OwlRunner failed, log: " << logFile;
+	EXPECT_EQ(log.find("VUID-"), std::string::npos) << "Vulkan validation messages, log: " << logFile;
+	for (const auto& [pixel, tag]: picks)
+		EXPECT_NE(log.find(std::format("FrameBench: Pick {},{} -> {}.", pixel.x(), pixel.y(), tag)), std::string::npos)
+				<< "Pixel " << pixel.x() << "," << pixel.y() << " should pick " << tag << ", log: " << logFile;
+	std::filesystem::remove(captureFile);
+#endif
+}
+
+INSTANTIATE_TEST_SUITE_P(
+		Picking, RenderPick,
+		testing::Values(PickCase{"mesh",
+								 "vulkan",
+								 {{{95, 80}, "TexturedCrate"},
+								  {{160, 95}, "GlassCrate"},
+								  {{215, 85}, "TintedCrate"},
+								  {{40, 165}, "Ground"},
+								  {{160, 10}, "none"}}},
+						PickCase{"mesh",
+								 "opengl",
+								 {{{95, 80}, "TexturedCrate"},
+								  {{160, 95}, "GlassCrate"},
+								  {{215, 85}, "TintedCrate"},
+								  {{40, 165}, "Ground"},
+								  {{160, 10}, "none"}}},
+						PickCase{"voxel", "vulkan", {{{160, 150}, "ProceduralTerrain"}, {{160, 5}, "none"}}},
+						PickCase{"voxel", "opengl", {{{160, 150}, "ProceduralTerrain"}, {{160, 5}, "none"}}}),
+		[](const testing::TestParamInfo<PickCase>& iInfo) -> std::string {
+			return iInfo.param.scene + "_" + iInfo.param.backend;
+		});
 
 // A Vulkan run without any usable device falls back to OpenGL and renders the OpenGL reference.
 TEST(RenderFallback, vulkanWithoutDeviceRendersWithOpenGl) {

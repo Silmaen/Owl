@@ -20,6 +20,9 @@
 #include "SceneSettingsCommands.h"
 
 #include <app/EngineContext.h>
+#include <data/geometry/MeshLoader.h>
+#include <renderer/RenderLayerFactory.h>
+#include <renderer/RenderStack.h>
 #include <scene/ComponentRegistry.h>
 #include <scene/HudLibrary.h>
 #include <scene/PrefabSerializer.h>
@@ -37,6 +40,7 @@
 #include <filesystem>
 #include <format>
 #include <iterator>
+#include <optional>
 #include <sstream>
 #include <tuple>
 #include <utility>
@@ -297,6 +301,33 @@ auto instantiatePrefab(const shared<scene::Scene>& ioScene, const CommandArgs& i
 						   .entity = root.getUUID()};
 }
 
+auto createMesh(const shared<scene::Scene>& ioScene, const CommandArgs& iArgs) -> Prepared {
+	const std::filesystem::path path = iArgs.getText("path");
+	if (!data::geometry::MeshLoader::isMeshAsset(path))
+		return fail(CommandError::InvalidArgument,
+					std::format("`{}` is not a mesh file (.gltf, .glb, .obj)", path.string()));
+	if (!exists(path))
+		return fail(CommandError::InvalidArgument, std::format("mesh {} not found", path.string()));
+	std::optional<scene::Entity> parent;
+	if (iArgs.has("parent")) {
+		auto found = entityArg(*ioScene, iArgs, "parent");
+		if (!found)
+			return unexpected<CommandFailure>{found.error()};
+		parent = *found;
+	}
+	const auto assetPath = iArgs.has("asset_path") ? iArgs.getText("asset_path") : assetRelativePath(path);
+	auto entity = ioScene->createEntity(iArgs.getText("name", path.stem().string()));
+	if (const auto translation = iArgs.getVec3("translation"); translation)
+		entity.getComponent<scene::component::Transform>().transform.translation() = *translation;
+	entity.addComponent<scene::component::MeshRenderer>().setMeshPath(
+			assetPath.empty() ? path : std::filesystem::path{assetPath});
+	if (const auto layer = iArgs.getText("layer"); !layer.empty())
+		entity.addComponent<scene::component::RendererTag>().rendererName = layer;
+	if (parent)
+		ioScene->setParent(entity, *parent);
+	return PreparedCommand{.command = mkUniq<CreateEntityCommand>(entity), .applied = true, .entity = entity.getUUID()};
+}
+
 auto setSceneHud(const shared<scene::Scene>& ioScene, const CommandArgs& iArgs) -> Prepared {
 	std::optional<std::string> path;
 	if (!iArgs.getBool("use_default"))
@@ -421,6 +452,30 @@ auto setComponent(const shared<scene::Scene>& ioScene, const CommandArgs& iArgs)
 						   .applied = true,
 						   .entity = entity->getUUID(),
 						   .data = {{"component", desc->key}}};
+}
+
+auto addRenderLayer(const CommandContext& iContext, const CommandArgs& iArgs)
+		-> expected<CommandResult, CommandFailure> {
+	if (iContext.projectStack == nullptr)
+		return fail(CommandError::NotApplicable, "no project is open");
+	const auto type = iArgs.getText("type");
+	if (!renderer::RenderLayerFactory::hasType(type))
+		return fail(CommandError::InvalidArgument, std::format("unknown layer type `{}`", type));
+	const auto name = iArgs.getText("name", type);
+	auto& stack = *iContext.projectStack;
+	// An empty project stack stands for the default one: keep its layer when the first entry is added.
+	if (stack.isEmpty())
+		stack = renderer::RendererStackConfig::makeDefault();
+	if (stack.find(name) != nullptr)
+		return fail(CommandError::InvalidArgument, std::format("the project stack already has a layer `{}`", name));
+	const auto position = std::clamp<int64_t>(iArgs.get<int64_t>("position").value_or(1), 0,
+											  static_cast<int64_t>(stack.entries.size()));
+	stack.entries.insert(stack.entries.begin() + position, {.typeKey = type, .name = name, .defaultConfig = {}});
+	if (iContext.onProjectStackChanged)
+		iContext.onProjectStackChanged();
+	return CommandResult{.entity = core::UUID{0},
+						 .description = std::format("Add the {} layer {} to the project", type, name),
+						 .data = {{"name", name}, {"position", position}}};
 }
 
 auto saveScene(const CommandContext& iContext, const CommandArgs& iArgs) -> expected<CommandResult, CommandFailure> {
@@ -719,6 +774,26 @@ CommandRegistry::CommandRegistry() {
 				   .description = "Path recorded in the instance link (relative to the asset folder holding the "
 								  "file when absent)."}},
 		 .factory = instantiatePrefab});
+	add({.name = "mesh.create",
+		 .description = "Create an entity drawing a mesh file (`.gltf`, `.glb`, `.obj`) with a `MeshRenderer`.",
+		 .args = {{.name = "path",
+				   .type = ArgType::Text,
+				   .required = true,
+				   .description = "Mesh file.",
+				   .projectPath = true},
+				  {.name = "asset_path",
+				   .type = ArgType::Text,
+				   .description = "Path recorded in the component (relative to the asset folder holding the file when "
+								  "absent)."},
+				  {.name = "name",
+				   .type = ArgType::Text,
+				   .description = "Tag of the entity (the file name when absent)."},
+				  {.name = "translation", .type = ArgType::Vec3, .description = "World position of the entity."},
+				  {.name = "parent", .type = ArgType::Entity, .description = "Parent entity (root when absent)."},
+				  {.name = "layer",
+				   .type = ArgType::Text,
+				   .description = "Render-stack layer of the entity, recorded in a `RendererTag` (none when empty)."}},
+		 .factory = createMesh});
 	add({.name = "component.set",
 		 .description = "Change fields of a component of an entity: the values are merged into its current state.",
 		 .args = {entitySpec("Entity changed."),
@@ -770,6 +845,18 @@ CommandRegistry::CommandRegistry() {
 				   .projectPath = true}},
 		 .factory = {},
 		 .run = saveScene});
+	add({.name = "project.add_render_layer",
+		 .description = "Add a layer to the render stack of the project and save the project (not an undo entry).",
+		 .args = {{.name = "type",
+				   .type = ArgType::Text,
+				   .required = true,
+				   .description = "Layer type (`RendererMesh`, `RendererVoxel`...)."},
+				  {.name = "name", .type = ArgType::Text, .description = "Layer name (the type when absent)."},
+				  {.name = "position",
+				   .type = ArgType::Integer,
+				   .description = "Index in the stack (after the first layer when absent, clamped to the stack)."}},
+		 .factory = {},
+		 .run = addRenderLayer});
 	add({.name = "edit.undo",
 		 .description = "Undo the last change of the scene.",
 		 .args = {},

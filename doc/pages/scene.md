@@ -265,6 +265,19 @@ table, UVs and runtime behaviour: [Renderer > Animated Sprites](renderer.md#anim
 
 YAML key: `CircleRenderer`
 
+#### MeshRenderer
+
+| Field         | Type        | Default        | Description                                                                            |
+|---------------|-------------|----------------|----------------------------------------------------------------------------------------|
+| `mesh`        | path        | empty          | Asset path of a `.gltf`, `.glb` or `.obj` file                                         |
+| `color`       | `vec4`      | `{1, 1, 1, 1}` | Tint multiplied with the base colour of the file's material                            |
+| `texture`     | `Texture2D` | none           | Replaces the material's base-colour texture                                            |
+| `transparent` | `bool`      | `false`        | Alpha blending (the colour alpha), drawn after the opaque meshes, sorted back-to-front |
+
+YAML key: `MeshRenderer`. Drawn in 3D by a `RendererMesh` layer of the render stack; the file is loaded once per
+engine context and shared by every entity drawing it ([Renderer > Static meshes](renderer.md#renderer-meshes)). Lua:
+`entity.set_mesh` / `get_mesh`, `entity.set_tint` / `get_tint`.
+
 #### Text
 
 | Field               | Type     | Default        | Description                                                                  |
@@ -984,6 +997,8 @@ are searched, `scenes/` included.
 3. **AnimatedSpriteRenderer** — `drawQuad()` with computed UV coordinates
 4. **CircleRenderer** — `drawCircle()` with thickness/fade
 5. **Text** — `drawString()` with font/colour/kerning, em height from the Y scale
+
+A `RendererVoxel` layer draws the `VoxelWorld` entities instead, a `RendererMesh` layer the `MeshRenderer` ones.
 
 Every primitive carries its world z as sort key (depth first, then type, then submission order), so a circle under a
 sprite (lower z) draws under it, whatever the group (`Renderer2D` draw order, see

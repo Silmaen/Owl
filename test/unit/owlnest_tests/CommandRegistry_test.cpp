@@ -12,6 +12,8 @@
 #include "testHelper.h"
 
 #include <core/SerializerImpl.h>
+#include <renderer/RenderLayerFactory.h>
+#include <renderer/RenderStack.h>
 #include <scene/ComponentRegistry.h>
 #include <scene/Entity.h>
 #include <scene/Scene.h>
@@ -80,21 +82,23 @@ OWL_DIAG_POP
 }// namespace
 
 TEST_F(CommandRegistryTest, DeclaresTheBuiltinCommands) {
-	for (const auto* name: {"entity.create", "entity.delete", "entity.duplicate", "entity.reparent", "entity.rename",
-							"entity.set_transform", "component.add", "component.remove", "prefab.instantiate"}) {
+	for (const auto* name:
+		 {"entity.create", "entity.delete", "entity.duplicate", "entity.reparent", "entity.rename",
+		  "entity.set_transform", "component.add", "component.remove", "prefab.instantiate", "mesh.create"}) {
 		const auto* spec = m_registry.find(name);
 		ASSERT_NE(spec, nullptr) << name;
 		EXPECT_FALSE(spec->description.empty()) << name;
 		EXPECT_TRUE(spec->factory) << name;
 	}
-	for (const auto* name: {"component.set", "scene.save", "edit.undo", "edit.redo", "macro.run"}) {
+	for (const auto* name:
+		 {"component.set", "scene.save", "project.add_render_layer", "edit.undo", "edit.redo", "macro.run"}) {
 		const auto* spec = m_registry.find(name);
 		ASSERT_NE(spec, nullptr) << name;
 		EXPECT_TRUE(spec->factory || spec->run) << name;
 		EXPECT_FALSE(spec->allowedInPlay) << name;
 	}
 	EXPECT_EQ(m_registry.find("entity.explode"), nullptr);
-	EXPECT_EQ(m_registry.getCommands().size(), 26u);
+	EXPECT_EQ(m_registry.getCommands().size(), 28u);
 }
 
 TEST_F(CommandRegistryTest, CreateUnderAParentThenUndoRedo) {
@@ -237,7 +241,7 @@ TEST_F(CommandRegistryTest, IncompleteTargetRefusesCommands) {
 TEST_F(CommandRegistryTest, AddReplacesACommandOfTheSameName) {
 	m_registry.add({.name = "entity.create", .description = "Replaced.", .args = {}, .factory = {}});
 	EXPECT_EQ(m_registry.find("entity.create")->description, "Replaced.");
-	EXPECT_EQ(m_registry.getCommands().size(), 26u);
+	EXPECT_EQ(m_registry.getCommands().size(), 28u);
 }
 
 TEST_F(CommandRegistryTest, ParsesVectorColourAndEnumArguments) {
@@ -1005,4 +1009,37 @@ TEST_F(CommandRegistryTest, NavigationCommandsRefuseATilemapWithoutNavigation) {
 				 {"state", std::string{"closed"}}},
 				CommandError::InvalidArgument);
 	EXPECT_FALSE(m_undo.canUndo());
+}
+
+TEST_F(CommandRegistryTest, AddRenderLayerEditsTheProjectStack) {
+	renderer::RenderLayerFactory::registerType(
+			"FakeMeshLayer", [](const std::string& /*iName*/) -> shared<renderer::RenderLayer> { return nullptr; });
+	renderer::RendererStackConfig stack;
+	int notified = 0;
+	CommandContext context{.scene = m_scene, .undo = &m_undo, .playing = false};
+	const CommandArgs args{{"type", std::string{"FakeMeshLayer"}}, {"name", std::string{"meshes"}}};
+	EXPECT_EQ(m_registry.execute("project.add_render_layer", args, context).error().error, CommandError::NotApplicable);
+	context.projectStack = &stack;
+	context.onProjectStackChanged = [&notified]() -> void { ++notified; };
+	EXPECT_EQ(m_registry.execute("project.add_render_layer", {{"type", std::string{"Unknown"}}}, context).error().error,
+			  CommandError::InvalidArgument);
+	// The empty stack stands for the default one: its layer stays first, the new one comes after it.
+	const auto added = m_registry.execute("project.add_render_layer", args, context);
+	ASSERT_TRUE(added.has_value()) << added.error().message;
+	ASSERT_EQ(stack.entries.size(), 2u);
+	EXPECT_EQ(stack.entries[0].name, renderer::RendererStackConfig::makeDefault().entries[0].name);
+	EXPECT_EQ(stack.entries[1].name, "meshes");
+	EXPECT_EQ(stack.entries[1].typeKey, "FakeMeshLayer");
+	EXPECT_EQ(notified, 1);
+	EXPECT_EQ(m_registry.execute("project.add_render_layer", args, context).error().error,
+			  CommandError::InvalidArgument);
+	const auto front = m_registry.execute(
+			"project.add_render_layer",
+			{{"type", std::string{"FakeMeshLayer"}}, {"name", std::string{"first"}}, {"position", int64_t{-3}}},
+			context);
+	ASSERT_TRUE(front.has_value()) << front.error().message;
+	EXPECT_EQ(stack.entries.front().name, "first");
+	EXPECT_EQ(notified, 2);
+	EXPECT_FALSE(m_undo.canUndo());
+	EXPECT_TRUE(renderer::RenderLayerFactory::unregisterType("FakeMeshLayer"));
 }

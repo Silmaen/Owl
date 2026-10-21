@@ -29,6 +29,7 @@ enum struct AssetKind : uint8_t {
 	Font,///< `.ttf`, `.otf` or the `.owlfont` sidecar: opened in a font document.
 	Image,///< `.png`, `.jpg`, `.jpeg`, `.bmp`, `.tga`: opened in a read-only image viewer.
 	Prefab,///< `.owlprefab`: instantiated in the active scene.
+	Mesh,///< `.gltf`, `.glb`, `.obj`: placed in the active scene as a `MeshRenderer` entity.
 	Hud,///< `.owlhud`: opened in a scene document (the HUD is a scene of widgets).
 	Macro,///< `.owlmacro`: replayed on the active scene (one undo step).
 	ActionMap,///< `input_actions.yml`: opened in the action map document.

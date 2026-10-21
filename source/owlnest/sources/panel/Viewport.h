@@ -22,6 +22,7 @@
 #include <cstdint>
 #include <optional>
 #include <string>
+#include <utility>
 
 namespace owl::nest {
 
@@ -426,6 +427,22 @@ private:
 	 * @return True when the event was consumed.
 	 */
 	auto onMouseButtonPressed(const event::MouseButtonPressedEvent& ioEvent) -> bool;
+
+	/**
+	 * @brief
+	 *  Ray of the viewport camera through the cursor.
+	 * @return The origin and the normalized direction, in world space; nothing for an empty viewport.
+	 */
+	[[nodiscard]] auto getCursorRay() const -> std::optional<std::pair<math::vec3, math::vec3>>;
+
+	/**
+	 * @brief
+	 *  World point under the cursor where a dropped asset goes: on the hovered mesh or voxel world, else on the ground
+	 *  plane (`y = 0`), else on the `z = 0` plane of a 2D view.
+	 * @param[in] iScene The active scene.
+	 * @return The point; nothing when the cursor ray meets neither.
+	 */
+	[[nodiscard]] auto getDropPoint(const shared<scene::Scene>& iScene) const -> std::optional<math::vec3>;
 
 	/**
 	 * @brief

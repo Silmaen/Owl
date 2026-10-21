@@ -74,12 +74,14 @@ struct EditorSettings {
 	int uiFontSize = 16;
 	/// Scale of every text of the editor, in percent (75 to 150), applied at once.
 	int textScalePercent = 100;
-	/// Whether translation gizmos snap to a grid in Edit mode.
+	/// Whether the gizmos snap in Edit mode (translation to the grid step, rotation to `snapRotationDegrees`).
 	bool snapEnabled = false;
 	/// Grid step (world units) used when no tilemap is available or `snapAutoFromTilemap` is off.
 	float snapStep = 1.0f;
 	/// Multiplier applied to the tilemap's `cellSize` when `snapAutoFromTilemap` is on (e.g. 0.5 = half-cell snap).
 	float snapMultiplier = 1.0f;
+	/// Angle step (degrees, 0.1 to 180) of the rotation gizmo when it snaps.
+	float snapRotationDegrees = 45.0f;
 	/// When true, the snap step is taken from the first `Tilemap` component's `cellSize` in the active scene; falls back to `snapStep` when no tilemap is present.
 	bool snapAutoFromTilemap = true;
 	/// Whether the in-viewport camera markers (icon + forward arrow + FOV cone) are drawn in Edit mode.

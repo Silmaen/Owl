@@ -116,7 +116,8 @@ void SettingsPanel::renderSnapSection(EditorSettings& ioSettings) {
 		return;
 	std::ignore = gui::widgets::propertyBool(
 			"Snap to Grid", ioSettings.snapEnabled, defaults.snapEnabled,
-			"Snap translation gizmos to a regular grid in Edit mode. Holding Ctrl during a drag also forces snap.");
+			"Snap the gizmos in Edit mode: translation to a regular grid, rotation by the angle step. Holding Ctrl "
+			"during a drag also forces snap.");
 	std::ignore = gui::widgets::propertyBool(
 			"Step from Tilemap", ioSettings.snapAutoFromTilemap, defaults.snapAutoFromTilemap,
 			"When a Tilemap exists in the scene, the snap step is its cell size times the multiplier, with a half-cell "
@@ -127,6 +128,9 @@ void SettingsPanel::renderSnapSection(EditorSettings& ioSettings) {
 	if (gui::widgets::propertyFloat("Cell Multiplier", ioSettings.snapMultiplier, defaults.snapMultiplier, 0.05f,
 									"%.3f", "Multiplier of the tilemap cell size (0.5 = half-cell snap)."))
 		ioSettings.snapMultiplier = std::max(0.0001f, ioSettings.snapMultiplier);
+	if (gui::widgets::propertyFloat("Rotation Step", ioSettings.snapRotationDegrees, defaults.snapRotationDegrees, 1.f,
+									"%.1f deg", "Angle step of the rotation gizmo when it snaps."))
+		ioSettings.snapRotationDegrees = std::clamp(ioSettings.snapRotationDegrees, 0.1f, 180.f);
 	gui::widgets::endProperties();
 }
 
