@@ -11,6 +11,7 @@
 
 #include "renderer/IsometricObjects.h"
 #include "renderer/gpu/DrawData.h"
+#include "renderer/gpu/Framebuffer.h"
 #include "renderer/gpu/RenderCommand.h"
 #include "renderer/gpu/RendererDescriptors.h"
 #include "renderer/gpu/StorageBuffer.h"
@@ -247,7 +248,7 @@ struct SceneUbo {
 	math::vec4 origin{0.f, 0.f, 0.f, 0.f};
 	// Tilemap draws only: sprite size in pixels, depth slope.
 	math::vec4 tile{0.f, 0.f, 0.f, 0.f};
-	// Tilemap draws only: entity id.
+	// x: entity id (tilemap draws only); y: 1 when the bound framebuffer stores linear colour; zw: padding.
 	std::array<int32_t, 4> ids{-1, 0, 0, 0};
 };
 
@@ -451,6 +452,7 @@ void flushBatch(const shared<gpu::DrawData>& iDraw) {
 	if (state.batch.empty())
 		return;
 	const auto count = static_cast<uint32_t>(state.batch.size());
+	state.scene.ids[1] = gpu::Framebuffer::isLinearTargetBound() ? 1 : 0;
 	state.sceneUbo->setData(&state.scene, sizeof(SceneUbo), 0);
 	gpu::RenderCommand::bindTextures(state.slots);
 	state.instances->setData(state.batch.data(), static_cast<uint32_t>(count * sizeof(GpuInstance)), 0);
@@ -465,6 +467,7 @@ void flushSpriteBatch() {
 	if (state.spriteBatch.empty())
 		return;
 	const auto count = static_cast<uint32_t>(state.spriteBatch.size());
+	state.scene.ids[1] = gpu::Framebuffer::isLinearTargetBound() ? 1 : 0;
 	state.sceneUbo->setData(&state.scene, sizeof(SceneUbo), 0);
 	gpu::RenderCommand::bindTextures(state.slots);
 	state.spriteInstances->setData(state.spriteBatch.data(), static_cast<uint32_t>(count * sizeof(GpuSprite)), 0);
@@ -724,7 +727,7 @@ void drawTilemapChunks(const PendingTilemap& iPending, const AssetGpu& iEntry) {
 			static_cast<float>(asset.getMaxCornerHeight()) * scene::terrain::heightStep * camera.getConfig().zStep;
 	state.scene.origin = math::vec4{iPending.origin.x(), iPending.origin.y(), iPending.origin.z(), 0.f};
 	state.scene.tile = math::vec4{tileWidth, spriteHeight, state.flatSlope, 0.f};
-	state.scene.ids = {iPending.entityId, 0, 0, 0};
+	state.scene.ids = {iPending.entityId, gpu::Framebuffer::isLinearTargetBound() ? 1 : 0, 0, 0};
 	state.sceneUbo->setData(&state.scene, sizeof(SceneUbo), 0);
 	gpu::RenderCommand::bindTextures(std::span{&tileset.texture, 1});
 	for (size_t index = 0; index < asset.layers.size(); ++index) {

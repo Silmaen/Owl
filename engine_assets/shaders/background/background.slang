@@ -8,6 +8,11 @@ Sampler2D gTextures[32];
 
 static const float PI = 3.14159265359;
 
+// Exact piecewise sRGB decode, used when the target stores linear colour.
+float3 srgbToLinear(float3 c) {
+	return select(c <= 0.04045f, c / 12.92f, pow((c + 0.055f) / 1.055f, 2.4f));
+}
+
 struct VertexInput {
 	[[vk::location(0)]]  float3 position : POSITION;
 	[[vk::location(1)]]  float2 texCoord : TEXCOORD0;
@@ -20,6 +25,7 @@ struct VertexInput {
 	[[vk::location(8)]]  float4 invVR1   : TEXCOORD5;
 	[[vk::location(9)]]  float4 invVR2   : TEXCOORD6;
 	[[vk::location(10)]] float4 invVR3   : TEXCOORD7;
+	[[vk::location(11)]] int    linearOutput : TEXCOORD8;
 };
 
 struct FragmentInput {
@@ -33,6 +39,7 @@ struct FragmentInput {
 	[[vk::location(7)]] nointerpolation float4 invVR1  : TEXCOORD5;
 	[[vk::location(8)]] nointerpolation float4 invVR2  : TEXCOORD6;
 	[[vk::location(9)]] nointerpolation float4 invVR3  : TEXCOORD7;
+	[[vk::location(10)]] nointerpolation int linearOutput : TEXCOORD8;
 };
 
 struct FragmentOutput {
@@ -58,6 +65,7 @@ VertexOutput vertexMain(VertexInput input) {
 	output.frag.invVR1   = input.invVR1;
 	output.frag.invVR2   = input.invVR2;
 	output.frag.invVR3   = input.invVR3;
+	output.frag.linearOutput = input.linearOutput;
 #ifdef BACKEND_VULKAN
 	// Vertices are given in OpenGL NDC (y up); Vulkan clip space is y down, like the flipped projections.
 	output.svPosition    = float4(input.position.x, -input.position.y, 0.0, 1.0);
@@ -93,5 +101,7 @@ FragmentOutput fragmentMain(FragmentInput input) {
 							asin(clamp(dir.y, -1.0, 1.0)) / PI + 0.5);
 		output.color = gTextures[NonUniformResourceIndex(idx)].Sample(uv);
 	}
+	if (input.linearOutput != 0)
+		output.color.rgb = srgbToLinear(output.color.rgb);
 	return output;
 }

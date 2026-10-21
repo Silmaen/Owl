@@ -16,6 +16,8 @@ struct TilemapDraw {
 	float4 texel;
 	// Atlas columns, rows; entity id; slot inside `gTextures[32]`.
 	int4 atlas;
+	// x: 1 when the target stores linear colour (the fragment colour is decoded from sRGB); yzw unused.
+	int4 flags;
 };
 
 [[vk::binding(0)]]
@@ -68,6 +70,11 @@ static const float2 kCornerUv[4] = {
 	float2(0.0f, 1.0f),
 };
 
+// Exact piecewise sRGB decode, used when the target stores linear colour.
+float3 srgbToLinear(float3 c) {
+	return select(c <= 0.04045f, c / 12.92f, pow((c + 0.055f) / 1.055f, 2.4f));
+}
+
 [shader("vertex")]
 VertexOutput vertexMain(VertexInput input) {
 	VertexOutput output;
@@ -108,6 +115,8 @@ FragmentOutput fragmentMain(FragmentInput input) {
 	float4 texColor = gTextures[NonUniformResourceIndex(input.textureSlot)].Sample(input.texCoord);
 	if (texColor.a < 0.001f)
 		discard;
+	if (gDraw.flags.x != 0)
+		texColor.rgb = srgbToLinear(texColor.rgb);
 	output.color = texColor;
 	output.entityID = input.entityID;
 	return output;

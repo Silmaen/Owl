@@ -10,6 +10,7 @@
 #include "renderer/BackgroundRenderer.h"
 
 #include "renderer/gpu/DrawData.h"
+#include "renderer/gpu/Framebuffer.h"
 #include "renderer/gpu/RenderCommand.h"
 #include "renderer/gpu/RendererDescriptors.h"
 
@@ -36,6 +37,8 @@ struct BackgroundVertex {
 	math::vec4 invVR1;// column 1
 	math::vec4 invVR2;// column 2
 	math::vec4 invVR3;// column 3
+	// 1 when the bound framebuffer stores linear colour (the fragment colour is decoded from sRGB).
+	int linearOutput;
 };
 
 struct InternalData {
@@ -75,6 +78,7 @@ void BackgroundRenderer::init() {
 					{"i_InvVR1", gpu::ShaderDataType::Float4},
 					{"i_InvVR2", gpu::ShaderDataType::Float4},
 					{"i_InvVR3", gpu::ShaderDataType::Float4},
+					{"i_LinearOutput", gpu::ShaderDataType::Int},
 			},
 			"background", indices, "background", {.depthTest = false, .depthWrite = false});
 }
@@ -118,7 +122,7 @@ void BackgroundRenderer::flushPending(const float iTexIndex) {
 		return;
 
 	const auto& data = g_data->pendingData;
-
+	const int linearOutput = gpu::Framebuffer::isLinearTargetBound() ? 1 : 0;
 
 	// Extract matrix columns
 	const auto& m = data.inverseViewRotation;
@@ -139,7 +143,8 @@ void BackgroundRenderer::flushPending(const float iTexIndex) {
 							 col0,
 							 col1,
 							 col2,
-							 col3},
+							 col3,
+							 linearOutput},
 			BackgroundVertex{{1.0f, -1.0f, 0.0f},
 							 {1.0f, 0.0f},
 							 iTexIndex,
@@ -150,7 +155,8 @@ void BackgroundRenderer::flushPending(const float iTexIndex) {
 							 col0,
 							 col1,
 							 col2,
-							 col3},
+							 col3,
+							 linearOutput},
 			BackgroundVertex{{1.0f, 1.0f, 0.0f},
 							 {1.0f, 1.0f},
 							 iTexIndex,
@@ -161,7 +167,8 @@ void BackgroundRenderer::flushPending(const float iTexIndex) {
 							 col0,
 							 col1,
 							 col2,
-							 col3},
+							 col3,
+							 linearOutput},
 			BackgroundVertex{{-1.0f, 1.0f, 0.0f},
 							 {0.0f, 1.0f},
 							 iTexIndex,
@@ -172,7 +179,8 @@ void BackgroundRenderer::flushPending(const float iTexIndex) {
 							 col0,
 							 col1,
 							 col2,
-							 col3},
+							 col3,
+							 linearOutput},
 	};
 	g_data->drawData->setVertexData(vertices.data(), static_cast<uint32_t>(vertices.size() * sizeof(BackgroundVertex)));
 

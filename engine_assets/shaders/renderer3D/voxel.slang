@@ -14,7 +14,7 @@ struct Scene3D {
 	float4 sunDirection;
 	float4 ambient;
 	float4 tint;// unused: the atlas colours are drawn as they are.
-	int4 ids;   // x: entity id written to the picking attachment (-1 for none); yzw unused.
+	int4 ids;   // x: entity id written to the picking attachment (-1 for none); y: 1 when the target stores linear colour (texels are decoded from sRGB); zw unused.
 };
 
 [[vk::binding(0)]]
@@ -54,6 +54,11 @@ struct VertexOutput {
 	float4 svPosition : SV_Position;
 };
 
+// Exact piecewise sRGB decode, used when the target stores linear colour.
+float3 srgbToLinear(float3 c) {
+	return select(c <= 0.04045f, c / 12.92f, pow((c + 0.055f) / 1.055f, 2.4f));
+}
+
 [shader("vertex")]
 VertexOutput vertexMain(VertexInput input) {
 	VertexOutput output;
@@ -77,6 +82,8 @@ FragmentOutput fragmentMain(FragmentInput input) {
 	float2 uvDdx = ddx(input.uv) * input.tileRect.zw;
 	float2 uvDdy = ddy(input.uv) * input.tileRect.zw;
 	float4 texColor = gTextures[NonUniformResourceIndex(input.texIndex)].SampleGrad(atlasUv, uvDdx, uvDdy);
+	if (gScene.ids.y != 0)
+		texColor.rgb = srgbToLinear(texColor.rgb);
 	if (texColor.a < 0.001f)
 		discard;
 	float ndl = max(dot(normalize(input.normal), normalize(-gScene.sunDirection.xyz)), 0.0f);
