@@ -217,8 +217,8 @@ void EditorLayer::registerCameraActions() {
 			"view.cameraViewpoint", "Camera: Selected Camera Viewpoint", {},
 			onViewport([](panel::Viewport& ioViewport) -> void { ioViewport.goToCameraViewpoint(); }));
 	m_actionRegistry.registerAction("view.pilotCamera", "Camera: Pilot Selected Camera", {},
-									onViewport([](panel::Viewport& ioViewport) -> void {
-										if (ioViewport.isPiloting())
+									onViewport([this](panel::Viewport& ioViewport) -> void {
+										if (ioViewport.isPiloted(getSelectedEntity()))
 											ioViewport.stopPiloting();
 										else
 											ioViewport.pilotSelectedCamera();

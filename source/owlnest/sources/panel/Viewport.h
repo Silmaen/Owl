@@ -263,6 +263,14 @@ public:
 
 	/**
 	 * @brief
+	 *  Check whether an entity is the piloted camera, which the view does not draw.
+	 * @param[in] iEntity The entity.
+	 * @return True for the piloted camera.
+	 */
+	[[nodiscard]] auto isPiloted(const scene::Entity& iEntity) const -> bool;
+
+	/**
+	 * @brief
 	 *  Check whether the right button flies the editor camera over this viewport: the letter keys move the camera then,
 	 *  they are no shortcut.
 	 * @return True while flying.
@@ -487,14 +495,6 @@ private:
 	 * @param[in] iCamera The camera entity.
 	 */
 	void moveViewOnto(const scene::Entity& iCamera);
-
-	/**
-	 * @brief
-	 *  Check whether an entity is the piloted camera, which the view does not draw.
-	 * @param[in] iEntity The entity.
-	 * @return True for the piloted camera.
-	 */
-	[[nodiscard]] auto isPiloted(const scene::Entity& iEntity) const -> bool;
 
 	/**
 	 * @brief

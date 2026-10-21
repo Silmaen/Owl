@@ -406,7 +406,8 @@ void Viewport::renderContextMenu() {
 	const bool click = io.MouseDragMaxDistanceSqr[ImGuiMouseButton_Right] < clickTravel * clickTravel;
 	if (m_hovered && click && ImGui::IsMouseReleased(ImGuiMouseButton_Right) && !io.KeyCtrl && !io.KeyAlt &&
 		!m_parent->getVoxelBrush().active && !gui::Guizmo::isOver()) {
-		m_parent->setSelectedEntity(getHoveredEntity());
+		const auto camera = pickCameraModel();
+		m_parent->setSelectedEntity(camera ? camera : getHoveredEntity());
 		ImGui::OpenPopup("##viewportMenu");
 	}
 	if (!ImGui::BeginPopup("##viewportMenu"))
@@ -419,9 +420,13 @@ void Viewport::renderContextMenu() {
 		if (canGoToCameraViewpoint() &&
 			gui::widgets::menuItem({.glyph = gui::icon::video, .label = "Camera Viewpoint"}))
 			goToCameraViewpoint();
-		if (canPilotSelectedCamera() && !isPiloted(selected) &&
-			gui::widgets::menuItem({.glyph = gui::icon::move3d, .label = "Pilot Camera"}))
+		if (isPiloted(selected)) {
+			if (gui::widgets::menuItem({.glyph = gui::icon::logOut, .label = "Stop Piloting"}))
+				stopPiloting();
+		} else if (canPilotSelectedCamera() &&
+				   gui::widgets::menuItem({.glyph = gui::icon::move3d, .label = "Pilot Camera"})) {
 			pilotSelectedCamera();
+		}
 		const auto duplicateKey = m_parent->getActionShortcut("entity.duplicate");
 		if (gui::widgets::menuItem({.glyph = gui::icon::copy, .label = "Duplicate", .shortcut = duplicateKey.c_str()}))
 			std::ignore = m_parent->runAction("entity.duplicate");

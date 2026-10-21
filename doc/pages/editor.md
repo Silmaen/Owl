@@ -264,7 +264,8 @@ height; every edit is undoable.
 - **Reset View** (`Home`): the XY plane from +Z, ten units away (`CameraEditor::resetView`);
 - **Frame Selection** (`F`), **Frame Scene** (`Shift+F`);
 - **Selected Camera Viewpoint**: the view of the selected camera (disabled for a `RendererRaycast` camera, drawn flat);
-- **Pilot Selected Camera** / **Stop Piloting**: render through the selected camera and move it with the view;
+- **Pilot Selected Camera** / **Stop Piloting**: render through the selected camera and move it with the view (also
+  in the context menu of a camera, in the view and in the Hierarchy);
 - six axis views (**Front** XY, **Back**, **Top** XZ, **Bottom**, **Right** YZ, **Left**) around the reference point
   (`CameraEditor::viewAlong`). The view-cube does the same: a click on an axis end looks from it, on the centre resets.
 
