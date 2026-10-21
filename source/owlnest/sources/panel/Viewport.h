@@ -454,6 +454,16 @@ private:
 
 	/**
 	 * @brief
+	 *  Draw the bulb sprite of a point light, facing the camera.
+	 * @param[in] iPosition World position of the light.
+	 * @param[in] iSize Side of the sprite, in world units.
+	 * @param[in] iEnabled Whether the light is switched on (lit bulb) or off (grey bulb).
+	 * @param[in] iEntityId Entity id written for picking.
+	 */
+	void drawLightBulb(const math::vec3& iPosition, float iSize, bool iEnabled, int iEntityId) const;
+
+	/**
+	 * @brief
 	 *  Light whose marker is under the cursor: a click ray against a sphere around each light.
 	 * @return The nearest light hit, or an invalid entity.
 	 */

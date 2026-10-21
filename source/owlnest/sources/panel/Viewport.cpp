@@ -2397,13 +2397,12 @@ void Viewport::renderLightMarkers(const shared<scene::Scene>& iScene) const {
 				}
 			case LightType::Point:
 				{
-					// A bulb: a small wire sphere; selected, the range too.
-					for (const float sphere: {radius, isSelected ? light.range : 0.f}) {
-						if (sphere <= 0.f)
-							continue;
-						drawLightCircle(position, {1.f, 0.f, 0.f}, {0.f, 1.f, 0.f}, sphere, color, id);
-						drawLightCircle(position, {1.f, 0.f, 0.f}, {0.f, 0.f, 1.f}, sphere, color, id);
-						drawLightCircle(position, {0.f, 1.f, 0.f}, {0.f, 0.f, 1.f}, sphere, color, id);
+					// A bulb sprite facing the camera, lit or switched off; selected, the range sphere.
+					drawLightBulb(position, radius * 2.4f, light.enabled, id);
+					if (isSelected) {
+						drawLightCircle(position, {1.f, 0.f, 0.f}, {0.f, 1.f, 0.f}, light.range, color, id);
+						drawLightCircle(position, {1.f, 0.f, 0.f}, {0.f, 0.f, 1.f}, light.range, color, id);
+						drawLightCircle(position, {0.f, 1.f, 0.f}, {0.f, 0.f, 1.f}, light.range, color, id);
 					}
 					break;
 				}
@@ -2429,6 +2428,22 @@ void Viewport::renderLightMarkers(const shared<scene::Scene>& iScene) const {
 				}
 		}
 	}
+}
+
+void Viewport::drawLightBulb(const math::vec3& iPosition, const float iSize, const bool iEnabled,
+							 const int iEntityId) const {
+	const auto texture =
+			renderer::Renderer::getTextureLibrary().get(iEnabled ? "icons/lights/bulb_on" : "icons/lights/bulb_off");
+	if (texture == nullptr)
+		return;
+	// The rotation of the camera turns the quad (+Z normal) towards it.
+	math::mat4 billboard = inverse(getActiveCamera().getView());
+	billboard(0, 3) = iPosition.x();
+	billboard(1, 3) = iPosition.y();
+	billboard(2, 3) = iPosition.z();
+	math::Transform transform{billboard};
+	transform.scale() = {iSize, iSize, 1.f};
+	renderer::Renderer2D::drawQuad({.transform = transform, .texture = texture, .entityId = iEntityId});
 }
 
 auto Viewport::pickLight() const -> scene::Entity {
