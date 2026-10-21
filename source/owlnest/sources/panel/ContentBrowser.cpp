@@ -384,10 +384,9 @@ void ContentBrowser::onImGuiRender() {
 	ImGui::BeginChild("##cbMain", {0.f, 0.f});
 	renderTopBand();
 	renderContent();
-	ImGui::EndChild();
-
-	// Context menu (popup)
+	// In the child: the popup is opened from its tiles, and a popup id belongs to the window that opens it.
 	renderContextMenu();
+	ImGui::EndChild();
 
 	ImGui::End();
 }
@@ -484,7 +483,9 @@ void ContentBrowser::renderTopBand() {
 		}
 		ImGui::SameLine();
 	}
-	const float right = ImGui::GetFontSize() * 19.5f;
+	// Search field, three buttons and the size slider, with the gaps between them.
+	const float right = ImGui::GetFontSize() * 14.5f + ImGui::GetFrameHeight() * 3.f +
+						ImGui::GetStyle().ItemSpacing.x * 5.f + ImGui::GetStyle().WindowPadding.x;
 	ImGui::SetCursorPosX(std::max(ImGui::GetCursorPosX(), ImGui::GetWindowContentRegionMax().x - right));
 	ImGui::BeginChild("##cbSearchBox", {ImGui::GetFontSize() * 10.f, ImGui::GetFrameHeight()}, ImGuiChildFlags_None,
 					  ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoBackground);
