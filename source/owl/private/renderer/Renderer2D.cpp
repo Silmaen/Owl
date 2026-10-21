@@ -13,6 +13,7 @@
 #include "renderer/BackgroundRenderer.h"
 #include "renderer/RendererTilemap.h"
 #include "renderer/gpu/DrawData.h"
+#include "renderer/gpu/Framebuffer.h"
 #include "renderer/gpu/RenderCommand.h"
 #include "renderer/gpu/RendererDescriptors.h"
 #include "renderer/gpu/StorageBuffer.h"
@@ -117,7 +118,11 @@ struct TextureSlotEntry {
 struct InternalData {
 	struct CameraData {
 		math::mat4 viewProjection;
+		// x: 1 when the bound framebuffer stores linear colour; yzw: padding to a std140 vec4.
+		std::array<int32_t, 4> flags{};
 	};
+	static_assert(sizeof(CameraData) == 80,
+				  "CameraData must match the std140 layout of Camera in the renderer2D shaders.");
 	CameraData cameraBuffer{};
 	BatchData<QuadInstance> quad;
 	BatchData<CircleInstance> circle;
@@ -301,7 +306,7 @@ void Renderer2D::init() {
 				gpu::BindingDecl{.binding = 0,
 								 .type = gpu::BindingType::UniformBuffer,
 								 .count = 1,
-								 .stages = gpu::ShaderStage::Vertex},
+								 .stages = gpu::ShaderStage::VertexFragment},
 				gpu::BindingDecl{.binding = 1,
 								 .type = gpu::BindingType::CombinedImageSampler,
 								 .count = 32,
@@ -420,6 +425,7 @@ void Renderer2D::beginScene(const Camera& iCamera) {
 	{
 		const gpu::RendererDescriptors::ScopedActive scoped{blockId()};
 		g_Data->cameraBuffer.viewProjection = iCamera.getViewProjection();
+		g_Data->cameraBuffer.flags[0] = gpu::Framebuffer::isLinearTargetBound() ? 1 : 0;
 		g_Data->cameraUniformBuffer->setData(&g_Data->cameraBuffer, sizeof(utils::InternalData::CameraData), 0);
 	}
 	g_Data->scissor.reset();

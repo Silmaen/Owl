@@ -9,6 +9,7 @@
 
 #include "renderer/Renderer3D.h"
 
+#include "renderer/gpu/Framebuffer.h"
 #include "renderer/gpu/RenderCommand.h"
 #include "renderer/gpu/RendererDescriptors.h"
 #include "renderer/gpu/UniformBuffer.h"
@@ -37,7 +38,7 @@ struct SceneUbo {
 	math::vec4 sunDirection{-0.4f, -1.0f, -0.6f, 0.f};
 	math::vec4 ambient{0.35f, 0.35f, 0.4f, 1.f};
 	math::vec4 tint{1.f, 1.f, 1.f, 1.f};
-	// x: entity id written to the picking attachment; yzw: padding to a std140 vec4.
+	// x: entity id written to the picking attachment; y: 1 when the bound framebuffer stores linear colour; zw: padding.
 	std::array<int32_t, 4> ids{-1, 0, 0, 0};
 };
 
@@ -67,6 +68,7 @@ void setDrawParams(const math::mat4& iModel, const MeshDrawParams& iParams) {
 	g_Data->scene.model = iModel;
 	g_Data->scene.tint = iParams.tint;
 	g_Data->scene.ids[0] = iParams.entityId;
+	g_Data->scene.ids[1] = gpu::Framebuffer::isLinearTargetBound() ? 1 : 0;
 	g_Data->sceneUniformBuffer->setData(&g_Data->scene, sizeof(SceneUbo), 0);
 }
 }// namespace

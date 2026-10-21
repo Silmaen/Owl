@@ -12,6 +12,7 @@
 
 #include "renderer/Renderer.h"
 #include "renderer/gpu/DrawData.h"
+#include "renderer/gpu/Framebuffer.h"
 #include "renderer/gpu/RenderCommand.h"
 #include "renderer/gpu/RendererDescriptors.h"
 #include "renderer/gpu/UniformBuffer.h"
@@ -47,6 +48,8 @@ struct DrawUbo {
 	math::vec4 texel;
 	// Atlas columns, rows; entity id; texture slot.
 	std::array<int32_t, 4> atlas{};
+	// x: 1 when the bound framebuffer stores linear colour; yzw: padding to a std140 vec4.
+	std::array<int32_t, 4> flags{};
 };
 
 // One non-empty cell of a chunk: layer cell coordinates packed as `x | y << 16`, then the tile index.
@@ -280,6 +283,7 @@ void drawPending(const PendingTilemap& iPending, const AssetGpu& iEntry, const i
 	auto& ubo = g_state->drawBuffer;
 	ubo.viewProjection = g_state->viewProjection;
 	ubo.model = model;
+	ubo.flags[0] = gpu::Framebuffer::isLinearTargetBound() ? 1 : 0;
 	ubo.atlas = {static_cast<int32_t>(std::max(1u, tileset.columns)), static_cast<int32_t>(std::max(1u, tileset.rows)),
 				 iPending.entityId, iTextureSlot};
 
@@ -323,7 +327,7 @@ void RendererTilemap::init() {
 			gpu::BindingDecl{.binding = 0,
 							 .type = gpu::BindingType::UniformBuffer,
 							 .count = 1,
-							 .stages = gpu::ShaderStage::Vertex},
+							 .stages = gpu::ShaderStage::VertexFragment},
 			gpu::BindingDecl{.binding = 1,
 							 .type = gpu::BindingType::CombinedImageSampler,
 							 .count = 32,

@@ -78,6 +78,7 @@ auto isDepthFormat(const AttachmentSpecification::Format iFormat) -> bool {
 		case AttachmentSpecification::Format::Rgba8:
 		case AttachmentSpecification::Format::RedInteger:
 		case AttachmentSpecification::Format::Surface:
+		case AttachmentSpecification::Format::Rgba16F:
 			return false;
 	}
 	return false;
@@ -88,6 +89,8 @@ auto fbTextureFormatToGl(const AttachmentSpecification::Format iFormat) -> GLenu
 		case AttachmentSpecification::Format::Rgba8:
 		case AttachmentSpecification::Format::Surface:
 			return GL_RGBA8;
+		case AttachmentSpecification::Format::Rgba16F:
+			return GL_RGBA16F;
 		case AttachmentSpecification::Format::RedInteger:
 			return GL_RED_INTEGER;
 		case AttachmentSpecification::Format::None:
@@ -151,6 +154,10 @@ void Framebuffer::invalidate() {
 					utils::attachColorTexture(m_colorAttachments[i], static_cast<int>(m_specs.samples), GL_RGBA8,
 											  GL_RGBA, m_specs.size.x(), m_specs.size.y(), static_cast<int>(i));
 					break;
+				case AttachmentSpecification::Format::Rgba16F:
+					utils::attachColorTexture(m_colorAttachments[i], static_cast<int>(m_specs.samples), GL_RGBA16F,
+											  GL_RGBA, m_specs.size.x(), m_specs.size.y(), static_cast<int>(i));
+					break;
 				case AttachmentSpecification::Format::RedInteger:
 					utils::attachColorTexture(m_colorAttachments[i], static_cast<int>(m_specs.samples), GL_R32I,
 											  GL_RED_INTEGER, m_specs.size.x(), m_specs.size.y(), static_cast<int>(i));
@@ -174,6 +181,7 @@ void Framebuffer::invalidate() {
 			case AttachmentSpecification::Format::Rgba8:
 			case AttachmentSpecification::Format::RedInteger:
 			case AttachmentSpecification::Format::Surface:
+			case AttachmentSpecification::Format::Rgba16F:
 				break;
 		}
 	}
@@ -195,14 +203,66 @@ void Framebuffer::invalidate() {
 	}
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	for (size_t i = 0; i < m_attachmentTextures.size() && i < m_colorAttachments.size(); ++i) {
+		if (m_attachmentTextures[i])
+			m_attachmentTextures[i]->setBorrowed(m_colorAttachments[i], m_specs.size);
+	}
+}
+
+auto Framebuffer::getAttachmentTexture(const uint32_t iIndex) -> shared<renderer::gpu::Texture2D> {
+	if (iIndex >= m_colorAttachments.size()) {
+		OWL_CORE_WARN("OpenGL Framebuffer: No colour attachment {} to sample.", iIndex)
+		return nullptr;
+	}
+	if (m_attachmentTextures.size() <= iIndex)
+		m_attachmentTextures.resize(iIndex + 1);
+	auto& texture = m_attachmentTextures[iIndex];
+	if (!texture)
+		texture = mkShared<Texture2D>(m_colorAttachments[iIndex],
+									  renderer::gpu::Texture2D::Specification{.size = m_specs.size});
+	return texture;
+}
+
+auto Framebuffer::getAttachmentName(const uint32_t iIndex) const -> uint32_t {
+	if (iIndex >= m_specs.attachments.size())
+		return 0;
+	if (utils::isDepthFormat(m_specs.attachments[iIndex].format))
+		return m_depthAttachment;
+	uint32_t colour = 0;
+	for (uint32_t i = 0; i < iIndex; ++i) {
+		if (!utils::isDepthFormat(m_specs.attachments[i].format))
+			++colour;
+	}
+	return colour < m_colorAttachments.size() ? m_colorAttachments[colour] : 0;
+}
+
+void Framebuffer::copyAttachment(const uint32_t iIndex, renderer::gpu::Framebuffer& ioTarget) {
+	auto* const target = dynamic_cast<Framebuffer*>(&ioTarget);
+	if (target == nullptr || target->m_specs.size != m_specs.size || iIndex >= target->m_specs.attachments.size() ||
+		iIndex >= m_specs.attachments.size() ||
+		target->m_specs.attachments[iIndex].format != m_specs.attachments[iIndex].format) {
+		OWL_CORE_WARN("OpenGL Framebuffer ({}): Cannot copy attachment {} to an unmatched framebuffer.",
+					  m_specs.debugName, iIndex)
+		return;
+	}
+	const uint32_t source = getAttachmentName(iIndex);
+	const uint32_t destination = target->getAttachmentName(iIndex);
+	if (source == 0 || destination == 0)
+		return;
+	glCopyImageSubData(source, GL_TEXTURE_2D, 0, 0, 0, 0, destination, GL_TEXTURE_2D, 0, 0, 0, 0,
+					   static_cast<GLsizei>(m_specs.size.x()), static_cast<GLsizei>(m_specs.size.y()), 1);
 }
 
 void Framebuffer::bind() {
+	setBound(this);
 	glBindFramebuffer(GL_FRAMEBUFFER, m_rendererId);
 	glViewport(0, 0, static_cast<GLsizei>(m_specs.size.x()), static_cast<GLsizei>(m_specs.size.y()));
 }
 
-void Framebuffer::unbind() { glBindFramebuffer(GL_FRAMEBUFFER, 0); }
+void Framebuffer::unbind() {
+	setBound(nullptr);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
 
 void Framebuffer::resize(const math::vec2ui iSize) {
 	if (iSize.x() == 0 || iSize.y() == 0 || iSize.x() > g_maxFramebufferSize || iSize.y() > g_maxFramebufferSize) {

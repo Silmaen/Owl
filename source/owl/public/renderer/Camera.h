@@ -11,7 +11,20 @@
 #include "core/Core.h"
 #include "math/matrixCreation.h"
 
+#include <cstdint>
+
 namespace owl::renderer {
+
+/**
+ * @brief
+ *  How a camera maps the linear scene colour to the display range before the sRGB encoding.
+ */
+enum struct ToneMapping : uint8_t {
+	None,///< Clamp to [0, 1]: the authored colours come out unchanged.
+	PbrNeutral,///< Khronos PBR Neutral: keeps the base colours, rolls off the highlights.
+	Aces,///< ACES filmic fit (Narkowicz): contrasted, desaturated highlights.
+};
+
 /**
  * @brief
  *  Base class for camera.
@@ -90,6 +103,20 @@ public:
 		m_viewProjection = m_projection * m_view;
 	}
 
+	/**
+	 * @brief
+	 *  Get the tone mapping of the camera.
+	 * @return The tone mapping.
+	 */
+	[[nodiscard]] auto getToneMapping() const -> ToneMapping { return m_toneMapping; }
+
+	/**
+	 * @brief
+	 *  Set the tone mapping of the camera.
+	 * @param[in] iToneMapping The tone mapping.
+	 */
+	void setToneMapping(const ToneMapping iToneMapping) { m_toneMapping = iToneMapping; }
+
 protected:
 	/**
 	 * @brief
@@ -102,5 +129,7 @@ protected:
 	math::mat4 m_view = math::identity<float, 4>();
 	/// The view projection matrix.
 	math::mat4 m_viewProjection = math::identity<float, 4>();
+	/// Tone mapping of the scene colour.
+	ToneMapping m_toneMapping = ToneMapping::None;
 };
 }// namespace owl::renderer

@@ -30,6 +30,23 @@ void createImage(const uint32_t iIndex, const math::vec2ui& iDimensions) {
 
 Texture2D::Texture2D(const Specification& iSpecs) : renderer::gpu::Texture2D{iSpecs} {}
 
+Texture2D::Texture2D(VkImageView iView, VkSampler iSampler, const math::vec2ui& iSize)
+	: renderer::gpu::Texture2D{Specification{.size = iSize}} {
+	auto& vkd = internal::Descriptors::get();
+	m_textureId = vkd.registerNewTexture();
+	auto& data = vkd.getTextureData(m_textureId);
+	data.borrowed = true;
+	data.debugName = "attachment";
+	setBorrowed(iView, iSampler, iSize);
+}
+
+void Texture2D::setBorrowed(VkImageView iView, VkSampler iSampler, const math::vec2ui& iSize) {
+	auto& data = internal::Descriptors::get().getTextureData(m_textureId);
+	data.textureImageView = iView;
+	data.textureSampler = iSampler;
+	m_specification.size = iSize;
+}
+
 Texture2D::Texture2D(std::filesystem::path iPath) : renderer::gpu::Texture2D{std::move(iPath)} {
 	const auto decoded = decodeImageFile(m_path);
 	if (!decoded.valid) {

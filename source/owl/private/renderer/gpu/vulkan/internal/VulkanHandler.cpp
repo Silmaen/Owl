@@ -250,7 +250,7 @@ auto VulkanHandler::pushPipeline(const std::string& iPipeLineName,
 	hashCombine(key, static_cast<size_t>(iState.cullMode));
 	hashCombine(key, static_cast<size_t>(iState.blendMode));
 	hashCombine(key, std::bit_cast<uint64_t>(*setLayout));
-	hashCombine(key, std::bit_cast<uint64_t>(m_currentFramebuffer->getRenderPass()));
+	hashCombine(key, m_currentFramebuffer->getPipelineFamily());
 	for (uint32_t i = 0; i < iVertexInputInfo.vertexBindingDescriptionCount; ++i) {
 		const auto& bind = iVertexInputInfo.pVertexBindingDescriptions[i];
 		hashCombine(key, bind.binding);

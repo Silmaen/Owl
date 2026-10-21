@@ -125,8 +125,8 @@ procedural graphs, tile tools, Lua editor scripts, and Blueprints-style visual s
 render graph, essential post-processing — with full 3D editing ([details](design/3d-core.md)).
 
 - ![In Progress][progress] CI streamlining, before anything else of the cycle: a pull request answered in under 10 min, builds halved, `-j` everywhere, full suites at night, artefacts under 50 MB ([CI streamlining](design/ci-streamlining.md))
-- ![Planned][planned] 3D render pipeline (forward, depth, perspective camera)
-- ![Planned][planned] Render graph hosting the renderer-stack layers
+- ![In Progress][progress] 3D render pipeline (forward, depth, perspective camera)
+- ![Done][done] Render graph hosting the renderer-stack layers
 - ![Planned][planned] Lighting: directional, point and spot lights, directional shadow maps
 - ![Planned][planned] 2D lighting (point / spot lights, normal-mapped sprites, 2D shadows), isometric sprites included ([2D](design/2d-complete.md))
 - ![Planned][planned] PBR materials with editor and material library

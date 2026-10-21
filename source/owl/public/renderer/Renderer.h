@@ -13,6 +13,7 @@
 #include "gpu/Shader.h"
 #include "gpu/Texture.h"
 #include "renderer/CameraOrtho.h"
+#include "renderer/RenderGraph.h"
 #include "renderer/RenderStack.h"
 
 #include <cstdint>
@@ -179,6 +180,13 @@ public:
 	 */
 	[[nodiscard]] static auto getRenderStack() -> const RenderStack&;
 
+	/**
+	 * @brief
+	 *  The frame graph the scenes record their passes in; its transient targets stay pooled between frames.
+	 * @return The graph.
+	 */
+	[[nodiscard]] static auto getRenderGraph() -> RenderGraph&;
+
 private:
 	/// The state of the renderer.
 	static State m_internalState;
@@ -200,6 +208,8 @@ private:
 	static shared<TextureLibrary> m_textureLibrary;
 	/// Active renderer stack (may be empty — the direct `Renderer2D` path is then used).
 	static RenderStack m_renderStack;
+	/// Frame graph of the scene renders.
+	static RenderGraph m_renderGraph;
 };
 
 }// namespace owl::renderer

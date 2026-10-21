@@ -10,7 +10,7 @@ struct Scene3D {
 	float4 sunDirection;// xyz: direction the light travels (world space); w unused.
 	float4 ambient;     // rgb: ambient term; w unused.
 	float4 tint;        // colour multiplied with the sampled texture.
-	int4 ids;           // x: entity id written to the picking attachment (-1 for none); yzw unused.
+	int4 ids;           // x: entity id written to the picking attachment (-1 for none); y: 1 when the target stores linear colour (texels and tint are decoded from sRGB); zw unused.
 };
 
 [[vk::binding(0)]]
@@ -49,6 +49,11 @@ struct VertexOutput {
 	float4 svPosition : SV_Position;
 };
 
+// Exact piecewise sRGB decode, used when the target stores linear colour.
+float3 srgbToLinear(float3 c) {
+	return select(c <= 0.04045f, c / 12.92f, pow((c + 0.055f) / 1.055f, 2.4f));
+}
+
 [shader("vertex")]
 VertexOutput vertexMain(VertexInput input) {
 	VertexOutput output;
@@ -64,7 +69,13 @@ VertexOutput vertexMain(VertexInput input) {
 [shader("fragment")]
 FragmentOutput fragmentMain(FragmentInput input) {
 	FragmentOutput output;
-	float4 texColor = gTextures[NonUniformResourceIndex(input.texIndex)].Sample(input.uv) * gScene.tint;
+	float4 texel = gTextures[NonUniformResourceIndex(input.texIndex)].Sample(input.uv);
+	float4 tint = gScene.tint;
+	if (gScene.ids.y != 0) {
+		texel.rgb = srgbToLinear(texel.rgb);
+		tint.rgb = srgbToLinear(tint.rgb);
+	}
+	float4 texColor = texel * tint;
 	if (texColor.a < 0.001f)
 		discard;
 	float ndl = max(dot(normalize(input.normal), normalize(-gScene.sunDirection.xyz)), 0.0f);

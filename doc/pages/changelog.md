@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `renderer::RenderGraph` (`Renderer::getRenderGraph()`): passes declare the targets they read and write, the graph orders them, drops the useless ones and pools the transient targets; `Scene::renderWithStack` records one pass per renderer-stack layer.
+- HDR scene colour: the world layers render linear into an `Rgba16F` target and a `colour encode` pass (`renderer::ColorEncoder`) tone maps and sRGB-encodes it; the HUD and the editor overlays stay drawn after it.
+- Per-camera tone mapping (`renderer::ToneMapping`: `None`, `PbrNeutral`, `Aces`, saved as `camera.toneMapping`) and a **Tone mapping** combo in the Owl Nest Camera inspector.
+- RHI: `AttachmentSpecification::Format::Rgba16F`, `Framebuffer::getAttachmentTexture`, `copyAttachment`, `isLinearColor`, `getBound`, `isLinearTargetBound` and `RenderCommand::getClearColor`.
 - `MeshRenderer` component: a `.gltf`, `.glb` or `.obj` file drawn in 3D with its glTF base colour, a tint, a texture override and alpha blending, in YAML, the inspector and Lua (`entity.set_mesh`, `get_mesh`, tint).
 - `RendererMesh` render-stack layer: opaque meshes, then the blended ones back-to-front, lit like the voxel layer; the Engine Demo stack has one (`mesh_world`).
 - `renderer::MeshCache` in `EngineContext`: one shared `MeshResource` per file (geometry, GPU meshes, material texture), read from the pack or the asset folders and reloaded when the file changes.
@@ -33,7 +37,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Bench baseline recalibrated on the frame graph and linear HDR code (build 39239, 5 rounds): the editor update costs about 1 µs more per frame, the shaders compile about 20 % slower; four noisy benchmarks get wider thresholds.
 - Roadmap toward 1.0 extended to worlds of any scale: camera-relative rendering, 64-bit positions, articulated bodies, gravity, time warp, planetary terrain, world partition (`design/large-worlds.md`), two v0.7.0 sample games and a pool of optional ones.
+- Vulkan: a draw keeps one pipeline per attachment layout (linear and display), created on its first bind to a framebuffer of that layout.
+- Image-test references regenerated: world text is slightly bolder, lit 3D and voxel scenes lighter in the shadows, transparent meshes blend more vividly; HUD-only scenes are unchanged.
 - CI: the benchmarks run on ready pull requests and `PR Ready` waits for them (five checks).
 
 - The version is written only in `CMakeLists.txt`: the engine exposes its commit (`getVersionFullString()`), Owl Nest shows it in the title bar and on the File screen, Lua `engine.version()` fills the Engine Demo menu, the shipped projects export the engine version and the README badge reads the latest release.

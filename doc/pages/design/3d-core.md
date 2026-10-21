@@ -14,8 +14,8 @@ multithreaded preparation and the Mini Transport Tycoon follow.
 |----|-------------------------------------------------------------------------------------------------------|-------|
 | 1  | `MeshRenderer` component and mesh asset as a stack layer, full editor support, 3D gizmos and snapping | —     |
 | 2  | Viewport orbit / fly camera, "look through scene camera" mode, mesh import preview                    | 1     |
-| 3  | Render graph hosting the existing layers as passes, no visual change                                  | —     |
-| 4  | HDR scene colour, linear colour space, per-camera tone mapping                                        | 3     |
+| 3  | Render graph hosting the existing layers as passes, no visual change (one pull request with 4)        | —     |
+| 4  | HDR scene colour, linear colour space, per-camera tone mapping (one pull request with 3)              | 3     |
 | 5  | Directional, point and spot light components, forward light SSBO                                      | 1     |
 | 6  | Directional shadow map                                                                                | 3, 5  |
 | 7  | PBR material asset, material editor and library                                                       | 4, 5  |
@@ -31,15 +31,15 @@ Lighting, blending and filtering happen on linear values; encoding to sRGB happe
 | Decision           | Choice                                                                                                     |
 |--------------------|------------------------------------------------------------------------------------------------------------|
 | Scope              | Every world layer (2D, tilemap, isometric, raycast, voxel, 3D) renders linear; no per-project gamma mode   |
-| Colour textures    | Sampled through a `*_SRGB` format (hardware decode, correct filtering); a per-texture colour-space flag    |
-| Data textures      | Normal, metallic / roughness / AO, MSDF atlases, tilemap indices, `RedInteger`, LUTs stay UNORM            |
+| Colour textures    | Stay UNORM, decoded in the shaders (Owl Nest shows them through ImGui, which `*_SRGB` darkens)             |
+| Data textures      | Stay UNORM; the shaders know which samplers are data (the MSDF coverage is not decoded)                    |
 | Authored colours   | Stay sRGB in the inspector and in YAML, converted to linear when uploaded                                  |
-| Scene colour       | RGBA16F, declared by the render graph: two attachment families, `HDR` for the world, `LDR` for the end     |
+| Scene colour       | RGBA16F, declared by the render graph: two attachment layouts, linear for the world, display for the end   |
 | Encoding           | Tone map then sRGB encode in a shader pass, into the existing UNORM target; swapchain stays UNORM          |
 | HUD and Owl Nest   | Drawn after the encode, in gamma space, unchanged                                                          |
 | Tone mapping       | Per camera: `None` (clamp, default, exact 2D colours), Khronos PBR Neutral, ACES                           |
 | Visible change     | Alpha blending of the 2D layers becomes linear; image-test references regenerated after a visual review    |
-| Delivered by       | Pull request 4                                                                                             |
+| Delivered by       | Pull requests 3 and 4 together                                                                             |
 
 ## Graphics
 

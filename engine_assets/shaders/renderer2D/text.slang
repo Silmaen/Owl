@@ -7,6 +7,8 @@
 
 struct Camera {
 	column_major float4x4 viewProjection;
+	// x: 1 when the target stores linear colour (the fragment colour is decoded from sRGB); yzw unused.
+	int4 flags;
 };
 
 [[vk::binding(0)]]
@@ -139,6 +141,11 @@ float4x4 resolveWorldMatrix(int worldIndex) {
 	return gSceneWorlds[worldIndex].world;
 }
 
+// Exact piecewise sRGB decode, used when the target stores linear colour.
+float3 srgbToLinear(float3 c) {
+	return select(c <= 0.04045f, c / 12.92f, pow((c + 0.055f) / 1.055f, 2.4f));
+}
+
 [shader("vertex")]
 VertexOutput vertexMain(VertexInput input, uint iid : SV_InstanceID) {
 	VertexOutput output;
@@ -205,6 +212,8 @@ FragmentOutput fragmentMain(FragmentInput input) {
 		if (alpha < 0.001)
 			discard;
 		float3 rgb = (texColor.rgb * fillAlpha + input.outlineColor.rgb * outlineAlpha * (1.0 - fillAlpha)) / alpha;
+		if (gCamera.flags.x != 0)
+			rgb = srgbToLinear(rgb);
 		output.color = float4(rgb, alpha);
 		output.entityID = input.entityID;
 		return output;
@@ -215,6 +224,8 @@ FragmentOutput fragmentMain(FragmentInput input) {
 	output.color = float4(texColor.rgb, texColor.a * opacity);
 	if (output.color.a < 0.001)
 		discard;
+	if (gCamera.flags.x != 0)
+		output.color.rgb = srgbToLinear(output.color.rgb);
 
 	output.entityID = input.entityID;
 	return output;

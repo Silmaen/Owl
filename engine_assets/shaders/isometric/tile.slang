@@ -16,7 +16,7 @@ struct IsometricScene {
 	float4 origin;
 	// xy: tile sprite size in pixels; z: view depth per pixel up the sprite (negative: flat on the ground).
 	float4 tile;
-	// x: entity id written to the picking attachment.
+	// x: entity id written to the picking attachment; y: 1 when the target stores linear colour (decoded from sRGB).
 	int4 ids;
 };
 
@@ -61,6 +61,11 @@ static const float2 kCorners[4] = {
 	float2(-0.5f, 1.0f),
 };
 
+// Exact piecewise sRGB decode, used when the target stores linear colour.
+float3 srgbToLinear(float3 c) {
+	return select(c <= 0.04045f, c / 12.92f, pow((c + 0.055f) / 1.055f, 2.4f));
+}
+
 [shader("vertex")]
 VertexOutput vertexMain(VertexInput input) {
 	VertexOutput output;
@@ -84,9 +89,11 @@ VertexOutput vertexMain(VertexInput input) {
 [shader("fragment")]
 FragmentOutput fragmentMain(FragmentInput input) {
 	FragmentOutput output;
-	const float4 texColor = gTextures[0].Sample(input.texCoord);
+	float4 texColor = gTextures[0].Sample(input.texCoord);
 	if (texColor.a < gScene.params.x)
 		discard;
+	if (gScene.ids.y != 0)
+		texColor.rgb = srgbToLinear(texColor.rgb);
 	output.color = texColor;
 	output.entityID = input.entityID;
 	return output;

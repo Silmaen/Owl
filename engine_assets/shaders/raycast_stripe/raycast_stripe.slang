@@ -22,7 +22,8 @@ struct StripeParams {
 	uint numRays;
 	uint maxHits;
 	int entityId;
-	uint _pad;
+	// 1 when the target stores linear colour (the fragment colour is decoded from sRGB).
+	int linearOutput;
 };
 
 [[vk::binding(0)]]
@@ -82,6 +83,11 @@ static const float2 kCorners[4] = {
 	float2(-0.5f,  0.5f),
 };
 
+// Exact piecewise sRGB decode, used when the target stores linear colour.
+float3 srgbToLinear(float3 c) {
+	return select(c <= 0.04045f, c / 12.92f, pow((c + 0.055f) / 1.055f, 2.4f));
+}
+
 [shader("vertex")]
 VertexOutput vertexMain(VertexInput input, uint iid : SV_InstanceID) {
 	VertexOutput output;
@@ -134,9 +140,11 @@ VertexOutput vertexMain(VertexInput input, uint iid : SV_InstanceID) {
 [shader("fragment")]
 FragmentOutput fragmentMain(FragmentInput input) {
 	FragmentOutput output;
-	const float4 texColor = input.color * gTileset.Sample(input.texCoord);
+	float4 texColor = input.color * gTileset.Sample(input.texCoord);
 	if (texColor.a < 0.001f)
 		discard;
+	if (gParams.linearOutput != 0)
+		texColor.rgb = srgbToLinear(texColor.rgb);
 	output.color = texColor;
 	output.entityID = input.entityID;
 	return output;

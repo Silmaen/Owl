@@ -21,6 +21,8 @@
 #include <vector>
 
 namespace owl::renderer::gpu::vulkan {
+
+class Texture2D;
 /**
  * @brief
  *  Specialized class for manipulating vulkan frame buffer.
@@ -235,6 +237,29 @@ public:
 
 	/**
 	 * @brief
+	 *  A colour attachment as a texture (see the base class).
+	 * @param[in] iIndex Index of the colour attachment.
+	 * @return The texture, null for the swapchain, a depth or a bad index.
+	 */
+	[[nodiscard]] auto getAttachmentTexture(uint32_t iIndex) -> shared<renderer::gpu::Texture2D> override;
+
+	/**
+	 * @brief
+	 *  Copy an attachment into another off-screen framebuffer (see the base class).
+	 * @param[in] iIndex Index of the attachment.
+	 * @param[in,out] ioTarget Framebuffer receiving the copy.
+	 */
+	void copyAttachment(uint32_t iIndex, renderer::gpu::Framebuffer& ioTarget) override;
+
+	/**
+	 * @brief
+	 *  Key of the render-pass compatibility class: framebuffers with the same attachment formats share pipelines.
+	 * @return The key.
+	 */
+	[[nodiscard]] auto getPipelineFamily() const -> uint64_t;
+
+	/**
+	 * @brief
 	 *  Check the framebuffer has a depth attachment.
 	 * @return True with a depth attachment.
 	 */
@@ -325,6 +350,8 @@ private:
 	};
 	/// The images.
 	std::vector<Image> m_images;
+	/// Wrappers of the colour attachments handed to `getAttachmentTexture`, repointed by `invalidate`.
+	std::vector<shared<Texture2D>> m_attachmentTextures;
 	/// The framebuffers, one per swapchain image (one off-screen).
 	std::vector<VkFramebuffer> m_framebuffers;
 

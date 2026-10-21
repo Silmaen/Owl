@@ -15,6 +15,7 @@
 #include <scene/SceneSerializer.h>
 #include <scene/component/components.h>
 
+#include <cstddef>
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
@@ -137,6 +138,72 @@ TEST(SceneSerializer, VisibilityRoundTrip) {
 
 	remove(fs);
 	EXPECT_FALSE(exists(fs));
+	owl::core::Log::invalidate();
+}
+
+TEST(SceneSerializer, CameraToneMappingRoundTrip) {
+	owl::core::Log::init(owl::core::Log::Level::Off);
+	for (const auto tone:
+		 {owl::renderer::ToneMapping::None, owl::renderer::ToneMapping::PbrNeutral, owl::renderer::ToneMapping::Aces}) {
+		const auto sc = owl::mkShared<Scene>();
+		auto ent = sc->createEntityWithUUID(11, "toneCam");
+		ent.addOrReplaceComponent<component::Camera>().camera.setToneMapping(tone);
+
+		const SceneSerializer saver(sc);
+		const auto fs = std::filesystem::temp_directory_path() / "tempToneMapping.yml";
+		EXPECT_TRUE(saver.serialize(fs));
+		ASSERT_TRUE(exists(fs));
+
+		const auto sc2 = owl::mkShared<Scene>();
+		const SceneSerializer loader(sc2);
+		EXPECT_TRUE(loader.deserialize(fs));
+		const auto entities = sc2->getAllEntities();
+		ASSERT_EQ(entities.size(), 1u);
+		EXPECT_EQ(entities[0].getComponent<component::Camera>().camera.getToneMapping(), tone);
+		remove(fs);
+	}
+	owl::core::Log::invalidate();
+}
+
+TEST(SceneSerializer, CameraWithoutToneMappingLoadsAsNone) {
+	owl::core::Log::init(owl::core::Log::Level::Off);
+	const auto sc = owl::mkShared<Scene>();
+	auto ent = sc->createEntityWithUUID(12, "oldCam");
+	ent.addOrReplaceComponent<component::Camera>().camera.setToneMapping(owl::renderer::ToneMapping::Aces);
+
+	const SceneSerializer saver(sc);
+	const auto fs = std::filesystem::temp_directory_path() / "tempNoToneMapping.yml";
+	EXPECT_TRUE(saver.serialize(fs));
+	ASSERT_TRUE(exists(fs));
+
+	// Strip the key to mimic a scene saved before tone mapping existed.
+	std::string content;
+	{
+		std::ifstream in(fs);
+		content.assign(std::istreambuf_iterator<char>(in), {});
+	}
+	std::string stripped;
+	size_t pos = 0;
+	while (pos < content.size()) {
+		auto end = content.find('\n', pos);
+		end = end == std::string::npos ? content.size() : end + 1;
+		if (const auto line = content.substr(pos, end - pos); line.find("toneMapping") == std::string::npos)
+			stripped += line;
+		pos = end;
+	}
+	ASSERT_NE(stripped, content);
+	{
+		std::ofstream out(fs, std::ios::trunc);
+		out << stripped;
+	}
+
+	const auto sc2 = owl::mkShared<Scene>();
+	const SceneSerializer loader(sc2);
+	EXPECT_TRUE(loader.deserialize(fs));
+	const auto entities = sc2->getAllEntities();
+	ASSERT_EQ(entities.size(), 1u);
+	EXPECT_EQ(entities[0].getComponent<component::Camera>().camera.getToneMapping(), owl::renderer::ToneMapping::None);
+	remove(fs);
 	owl::core::Log::invalidate();
 }
 

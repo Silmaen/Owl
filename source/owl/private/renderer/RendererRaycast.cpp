@@ -14,6 +14,7 @@
 #include "renderer/CameraOrtho.h"
 #include "renderer/Renderer2D.h"
 #include "renderer/gpu/DrawData.h"
+#include "renderer/gpu/Framebuffer.h"
 #include "renderer/gpu/RenderCommand.h"
 #include "renderer/gpu/RendererDescriptors.h"
 #include "renderer/gpu/StorageBuffer.h"
@@ -47,7 +48,8 @@ struct StripeParamsUbo {
 	uint32_t numRays;
 	uint32_t maxHits;
 	int32_t entityId;
-	uint32_t _pad;
+	// 1 when the bound framebuffer stores linear colour.
+	int32_t linearOutput;
 };
 static_assert(sizeof(StripeParamsUbo) == 96, "StripeParamsUbo must match shader UBO layout");
 
@@ -267,7 +269,7 @@ auto emitWallStripesGpu(const WallStripeContext& iCtx) -> bool {
 	ubo.numRays = iCtx.numRays;
 	ubo.maxHits = utils::RaycastDDAPass::kMaxHitsPerColumn;
 	ubo.entityId = iCtx.entityId;
-	ubo._pad = 0u;
+	ubo.linearOutput = gpu::Framebuffer::isLinearTargetBound() ? 1 : 0;
 
 	// Column depths (occlusion) and stats from a CPU walk: a read-back of the GPU pass drains the frame.
 	thread_local std::vector<CpuColumnHit> hits;
@@ -320,7 +322,7 @@ void RendererRaycast::init() {
 				gpu::BindingDecl{.binding = 0,
 								 .type = gpu::BindingType::UniformBuffer,
 								 .count = 1,
-								 .stages = gpu::ShaderStage::Vertex},
+								 .stages = gpu::ShaderStage::VertexFragment},
 				gpu::BindingDecl{.binding = 1,
 								 .type = gpu::BindingType::CombinedImageSampler,
 								 .count = 1,

@@ -14,6 +14,7 @@
 namespace owl::renderer::gpu {
 
 uniq<RenderAPI> RenderCommand::m_renderAPI = nullptr;
+math::vec4 RenderCommand::m_clearColor{0.f, 0.f, 0.f, 1.f};
 uint64_t RenderCommand::m_drawCallCount = 0;
 
 void RenderCommand::create(const RenderAPI::Type& iType) { m_renderAPI = RenderAPI::create(iType); }

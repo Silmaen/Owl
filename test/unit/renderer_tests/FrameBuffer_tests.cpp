@@ -67,3 +67,44 @@ TEST(Renderer, NullFramebufferReadsBackABlankImage) {
 	RenderCommand::invalidate();
 	owl::core::Log::invalidate();
 }
+
+TEST(Renderer, FramebufferTracksTheBoundTargetAndItsColourSpace) {
+	owl::core::Log::init(owl::core::Log::Level::Off);
+	RenderCommand::create(RenderAPI::Type::Null);
+	const auto linear = Framebuffer::create({.size = {4, 4},
+											 .attachments = {{.format = AttachmentSpecification::Format::Rgba16F,
+															  .tiling = AttachmentSpecification::Tiling::Optimal}},
+											 .samples = 1,
+											 .swapChainTarget = false,
+											 .debugName = "linear"});
+	const auto display = Framebuffer::create({.size = {4, 4},
+											  .attachments = {{.format = AttachmentSpecification::Format::Surface,
+															   .tiling = AttachmentSpecification::Tiling::Optimal}},
+											  .samples = 1,
+											  .swapChainTarget = false,
+											  .debugName = "display"});
+	EXPECT_TRUE(linear->isLinearColor());
+	EXPECT_FALSE(display->isLinearColor());
+	EXPECT_EQ(Framebuffer::getBound(), nullptr);
+	linear->bind();
+	EXPECT_EQ(Framebuffer::getBound(), linear.get());
+	EXPECT_TRUE(Framebuffer::isLinearTargetBound());
+	display->bind();
+	EXPECT_FALSE(Framebuffer::isLinearTargetBound());
+	display->unbind();
+	EXPECT_EQ(Framebuffer::getBound(), nullptr);
+	EXPECT_EQ(linear->getAttachmentTexture(0), nullptr);
+	linear->copyAttachment(0, *display);
+
+	RenderCommand::invalidate();
+	owl::core::Log::invalidate();
+}
+
+TEST(Renderer, RenderCommandRemembersTheClearColour) {
+	owl::core::Log::init(owl::core::Log::Level::Off);
+	RenderCommand::create(RenderAPI::Type::Null);
+	RenderCommand::setClearColor({0.25f, 0.5f, 0.75f, 1.f});
+	EXPECT_FLOAT_EQ(RenderCommand::getClearColor().g(), 0.5f);
+	RenderCommand::invalidate();
+	owl::core::Log::invalidate();
+}

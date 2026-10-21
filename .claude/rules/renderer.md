@@ -34,14 +34,20 @@ get confirmation. A passing headless (Null backend) test is evidence the path wo
   `UPDATE_AFTER_BIND`: with a shared set every draw samples the last write.
 - **Uniforms are versioned per draw.** A UBO set between two draws gives each its own copy (frame ring), so
   several `drawMesh` models or 2D cameras in one frame are correct on Vulkan as on OpenGL.
-- **One attachment layout for every framebuffer** (`Surface`, `RedInteger`, `Depth24Stencil8`, swapchain
-  included) so all pipelines stay render-pass compatible.
+- **Two attachment layouts**: linear (`Rgba16F`, `RedInteger`, `Depth24Stencil8`) and display (`Surface`,
+  `RedInteger`, `Depth24Stencil8`, swapchain included). A draw keeps one pipeline per layout
+  (`Framebuffer::getPipelineFamily`, the dedup key of `pushPipeline`), created on its first bind. Never add a third
+  layout without checking `getPipelineFamily`.
+- **World colour shaders read `linearOutput`** (set from `gpu::Framebuffer::isLinearTargetBound()`) and keep their
+  flag-0 path bit-identical to the display-space maths.
+- **UBOs read in the fragment stage are declared `VertexFragment`**: a Vertex-only declaration fails validation
+  (VUID-VkGraphicsPipelineCreateInfo-layout-07988).
 - **Shader hot reload rebuilds pipelines, not layouts.** `Shader::reload` swaps the binaries only when they compile;
   on Vulkan `DrawData::rebuildPipelines` rebuilds each live draw's pipeline with its stored state and set layout, the
   shader generation in the pipeline name keeps the dedup from returning an old pipeline. Never rebuild from the
   active renderer block at reload time (none is active then).
 - **Pipelines are deduplicated** in `VulkanHandler::pushPipeline` (key = shader name, topology, culling,
-  blending, set layout, render pass, vertex input; refcounted; depth is dynamic state set at each bind). Never build
+  blending, set layout, attachment layout, vertex input; refcounted; depth is dynamic state set at each bind). Never build
   a pipeline per mesh.
 - **Uploads close the render pass.** A buffer or texture upload in a frame is recorded outside any pass
   (the next draw reopens one that loads the attachments): build meshes and textures before the layers

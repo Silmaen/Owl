@@ -101,11 +101,21 @@ Texture2D::Texture2D(const Specification& iSpecs)
 	applySamplerFilter(m_textureId, m_specification.filterMode, m_mipLevels);
 }
 
+Texture2D::Texture2D(const uint32_t iTextureId, const Specification& iSpecs)
+	: renderer::gpu::Texture2D{iSpecs}, m_textureId{iTextureId}, m_borrowed{true} {}
+
+void Texture2D::setBorrowed(const uint32_t iTextureId, const math::vec2ui& iSize) {
+	BindingTable::forgetTexture(m_textureId);
+	m_textureId = iTextureId;
+	m_specification.size = iSize;
+}
+
 Texture2D::~Texture2D() {
 	OWL_PROFILE_FUNCTION()
 
 	BindingTable::forgetTexture(m_textureId);
-	glDeleteTextures(1, &m_textureId);
+	if (!m_borrowed)
+		glDeleteTextures(1, &m_textureId);
 }
 
 void Texture2D::bind(const uint32_t iSlot) const {

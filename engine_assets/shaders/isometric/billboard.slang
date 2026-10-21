@@ -13,6 +13,12 @@ struct IsometricScene {
 	// y: zoom to snap the foot to whole screen pixels at (0 = no snapping); zw: fractional pixel offset of the
 	// viewport centre (0 or 0.5 on an odd size).
 	float4 params;
+	// xyz: world position of the back corner of the map (tile only).
+	float4 origin;
+	// xy: tile sprite size in pixels; z: view depth per pixel up the sprite (tile only).
+	float4 tile;
+	// x: entity id (tile only); y: 1 when the target stores linear colour (the fragment colour is decoded from sRGB).
+	int4 ids;
 };
 
 [[vk::binding(0)]]
@@ -71,6 +77,11 @@ static const float2 kCorners[4] = {
 	float2(-0.5f, 1.0f),
 };
 
+// Exact piecewise sRGB decode, used when the target stores linear colour.
+float3 srgbToLinear(float3 c) {
+	return select(c <= 0.04045f, c / 12.92f, pow((c + 0.055f) / 1.055f, 2.4f));
+}
+
 [shader("vertex")]
 VertexOutput vertexMain(VertexInput input, uint iid : SV_InstanceID) {
 	VertexOutput output;
@@ -99,6 +110,8 @@ FragmentOutput fragmentMain(FragmentInput input) {
 	texColor *= gTextures[NonUniformResourceIndex(input.texIndex)].Sample(input.texCoord);
 	if (texColor.a < gScene.params.x)
 		discard;
+	if (gScene.ids.y != 0)
+		texColor.rgb = srgbToLinear(texColor.rgb);
 	output.color = texColor;
 	output.entityID = input.entityID;
 	return output;

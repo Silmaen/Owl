@@ -97,6 +97,8 @@ TEST(Texture, CreateFromSerializedShortAndUnknown) {
 
 TEST(Texture, CreateFromString) {
 	owl::core::Log::init(owl::core::Log::Level::Off);
+	// The test checks the textures without a render API, so start from none whatever ran before.
+	RenderCommand::invalidate();
 	{
 		const auto tex = Texture2D::createFromSerialized("");
 		EXPECT_EQ(tex, nullptr);
