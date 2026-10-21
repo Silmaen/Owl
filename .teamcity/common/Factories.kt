@@ -34,7 +34,7 @@ fun presetBuild(idValue: String, buildName: String, cmakePreset: String,
     templates(globalBuild)
 
     params {
-        param("cmake_preset", cmakePreset)
+        text("cmake_preset", cmakePreset, display = ParameterDisplay.HIDDEN, allowEmpty = true)
     }
 
     features {
@@ -115,8 +115,9 @@ fun analysisBuild(idValue: String, buildName: String, tool: String, gates: List<
     templates(globalBuild)
 
     params {
-        param("cmake_preset", "linux-clang-tidy")
-        param("build_args", "-- --configure_only")
+        text("cmake_preset", "linux-clang-tidy", display = ParameterDisplay.HIDDEN, allowEmpty = true)
+        text("build_args", "-- --configure_only", display = ParameterDisplay.HIDDEN, allowEmpty = true)
+        text("test_args", "", display = ParameterDisplay.HIDDEN, allowEmpty = true)
     }
 
     steps {
@@ -160,9 +161,10 @@ fun packageBuild(idValue: String, buildName: String, cmakePreset: String, platfo
         presetBuild(idValue, buildName, cmakePreset, onPullRequest = false, nightly = true,
                 gates = listOf(codeStyle, tested)) {
             params {
-                param("platform", platformName)
-                param("architecture", "amd64")
-                param("publish_package", "true")
+                text("platform", platformName, display = ParameterDisplay.HIDDEN, allowEmpty = true)
+                text("architecture", "amd64", display = ParameterDisplay.HIDDEN, allowEmpty = true)
+                text("publish_package", "true", display = ParameterDisplay.HIDDEN, allowEmpty = true)
+                text("test_args", "", display = ParameterDisplay.HIDDEN, allowEmpty = true)
                 extraParams()
             }
         }
@@ -184,9 +186,10 @@ fun publishBuild(idValue: String, buildName: String, releasePreset: String, plat
         presetBuild(idValue, buildName, releasePreset, onPullRequest = false, nightly = true,
                 gates = listOf(codeStyle, tested)) {
             params {
-                param("platform", platformName)
-                param("architecture", "amd64")
-                param("publish_package", "true")
+                text("platform", platformName, display = ParameterDisplay.HIDDEN, allowEmpty = true)
+                text("architecture", "amd64", display = ParameterDisplay.HIDDEN, allowEmpty = true)
+                text("publish_package", "true", display = ParameterDisplay.HIDDEN, allowEmpty = true)
+                text("test_args", "", display = ParameterDisplay.HIDDEN, allowEmpty = true)
             }
             dependencies {
                 artifacts(tested) {

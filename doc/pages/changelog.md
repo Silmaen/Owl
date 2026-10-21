@@ -9,13 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- CI: `Bench -- --calibrate=true --rounds=<n>` runs the benchmarks several times and writes a proposed baseline and the thresholds the measured spread calls for.
+
 ### Changed
+
+- CI: the benchmarks run on ready pull requests and `PR Ready` waits for them (five checks).
 
 - The version is written only in `CMakeLists.txt`: the engine exposes its commit (`getVersionFullString()`), Owl Nest shows it in the title bar and on the File screen, Lua `engine.version()` fills the Engine Demo menu, the shipped projects export the engine version and the README badge reads the latest release.
 - CI: a pull request changing a CMake file no longer runs the whole Clang-Tidy: the merge base is configured too and only the units whose compile command moved join the diff scope.
 - CI: Clang-Tidy and the Static Analyzer configure `linux-clang-tidy` without compiling it and scope a pull request with `clang-scan-deps`, which removes a 26 min build from the slowest pull-request check.
 - Build: ccache gets the sloppiness precompiled headers need and Clang PCHs carry no header mtime, so a warm rebuild hits every unit, fresh checkout included (4 s instead of 108 s for `linux-clang-release`).
 - CI: the Windows agents get the ccache directory, size and compression of the Linux ones (`env.CCACHE_*`).
+- CI: the custom build dialog shows only the parameters meant to be set by hand (CTest arguments, benchmark calibration).
 - CI: `Build` logs the ccache statistics of the build when the tree compiles through ccache.
 - CI: CTest runs the tests in parallel (`Test -- --jobs=<n>`, default the processors available).
 - CI: off `main`, the release tree is only configured for Doxygen (`Build -- --configure_only`), no longer compiled, which saves 10 to 14 min per Linux x64 Clang pull request.

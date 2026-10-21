@@ -2,6 +2,7 @@ import jetbrains.buildServer.configs.kotlin.BuildFeatures
 import jetbrains.buildServer.configs.kotlin.BuildType
 import jetbrains.buildServer.configs.kotlin.Dependencies
 import jetbrains.buildServer.configs.kotlin.FailureAction
+import jetbrains.buildServer.configs.kotlin.ParameterDisplay
 import jetbrains.buildServer.configs.kotlin.ParametrizedWithType
 import jetbrains.buildServer.configs.kotlin.ReuseBuilds
 import jetbrains.buildServer.configs.kotlin.Triggers
@@ -135,5 +136,8 @@ fun ScriptBuildStep.ciAction(action: String,
  * Runs every test, the ones labelled `slow` included.
  */
 fun ParametrizedWithType.fullSuite() {
-    param("test_args", "")
+    // Same spec as the template's, so the field keeps its label in the custom build dialog.
+    text("test_args", "", label = "CTest arguments",
+            description = "Arguments of the Test steps; empty runs every test, the slow ones included",
+            display = ParameterDisplay.NORMAL, allowEmpty = true)
 }

@@ -21,7 +21,7 @@ val analysis = Project {
     buildTypesOrder = arrayListOf(clangTidy, staticAnalyzer, bench, fuzz)
 
     params {
-        param("platform", "Linux")
-        param("architecture", "amd64")
+        text("platform", "Linux", display = ParameterDisplay.HIDDEN, allowEmpty = true)
+        text("architecture", "amd64", display = ParameterDisplay.HIDDEN, allowEmpty = true)
     }
 }

@@ -27,11 +27,11 @@ val windowsX64 = Project {
     buildTypesOrder = arrayListOf(windowsGcc, windowsClang)
 
     params {
-        param("platform", "Windows")
-        param("architecture", "amd64")
+        text("platform", "Windows", display = ParameterDisplay.HIDDEN, allowEmpty = true)
+        text("architecture", "amd64", display = ParameterDisplay.HIDDEN, allowEmpty = true)
         // The agent builds natively (no image): its ccache, when installed, gets the settings Linux passes to Docker.
-        param("env.CCACHE_DIR", "%teamcity.agent.home.dir%/user/cache_dir/ccache")
-        param("env.CCACHE_MAXSIZE", "20G")
-        param("env.CCACHE_COMPRESS", "1")
+        text("env.CCACHE_DIR", "%teamcity.agent.home.dir%/user/cache_dir/ccache", display = ParameterDisplay.HIDDEN, allowEmpty = true)
+        text("env.CCACHE_MAXSIZE", "20G", display = ParameterDisplay.HIDDEN, allowEmpty = true)
+        text("env.CCACHE_COMPRESS", "1", display = ParameterDisplay.HIDDEN, allowEmpty = true)
     }
 }

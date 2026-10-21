@@ -11,8 +11,8 @@ val codeStyle = BuildType {
     maxRunningBuilds = 1
 
     params {
-        param("cmake_preset", "linux-clang-debug")
-        param("platform", "Linux")
+        text("cmake_preset", "linux-clang-debug", display = ParameterDisplay.HIDDEN, allowEmpty = true)
+        text("platform", "Linux", display = ParameterDisplay.HIDDEN, allowEmpty = true)
     }
 
     features {

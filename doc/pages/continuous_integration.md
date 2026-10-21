@@ -119,7 +119,7 @@ flowchart LR
 - **Grey**: every `main` push, never on a pull request: GCC parity (release preset only) and Sanitizer Address.
 - Uncoloured: Clang-Tidy, on every ready pull request (its diff) and nightly on `main` (the whole tree).
 
-Manual triggers always work. Orthogonal to the colours, a pull request that changes **only** documentation (`doc/`, `*.md`,
+Manual triggers always work; the custom build dialog shows only the CTest arguments (`test_args`) and the benchmark calibration, every other parameter is hidden. Orthogonal to the colours, a pull request that changes **only** documentation (`doc/`, `*.md`,
 `.claude/`, `LICENSE`) runs just Code Style and Linux x64 Clang, see [Doc-only pull requests](#doc-only-pull-requests).
 
 ## VCS root
@@ -181,7 +181,7 @@ The build-and-test template of every configuration of the build and packaging su
 | Build Linux x64 / GCC, Windows x64 / GCC (release) | ✅           | —                | ❌        | ❌        | ❌                 | ❌           | ❌           |
 | Build Linux arm64 / Clang (cross compiled)         | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
 | Build Linux arm64 / Clang (emulated)               | ❌           | weekly           | ❌        | ❌        | ❌                 | ❌           | ❌           |
-| Benchmarks (`linux-bench`)                         | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
+| Benchmarks (`linux-bench`)                         | ❌           | ✅                | ❌        | ✅        | ❌                 | ❌           | ❌           |
 | Fuzzing (`linux-fuzz`)                             | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
 | Sanitizer Address (+ LSan)                         | ✅           | —                | ❌        | ❌        | ❌                 | ❌           | ❌           |
 | Sanitizer Thread, Sanitizer UB                     | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
@@ -191,7 +191,7 @@ The build-and-test template of every configuration of the build and packaging su
 | PR Ready (merge gate, no agent)                    | ✅           | —                | ❌        | ✅        | ⏭                 | ⏭           | ❌           |
 | Packages (one per platform, × 3)                   | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
 
-A ready pull request runs four checks (Code Style, Linux Clang, Windows Clang, Clang-Tidy), the ones `PR Ready`
+A ready pull request runs five checks (Code Style, Linux Clang, Windows Clang, Clang-Tidy, Benchmarks), the ones `PR Ready`
 requires: after Code Style, the three builds take one agent each and start together. A `main` push runs Linux and
 Windows Clang, GCC on its release preset and Sanitizer Address; arm64, the whole-tree Clang-Tidy, Include Check, the
 Thread and Undefined Behavior sanitizers and the Static Analyzer run nightly.
@@ -243,8 +243,8 @@ verdict is republished when the PR turns ready) and `skipPhrase = [skip ci]`.
 ### Required checks
 
 Require **one** check in the branch protection of `main`: **`PR Ready`**. It is a composite configuration
-(`quality/PrReady.kt`): it uses no agent, depends on the four configurations a ready pull request runs (Code Style,
-Linux x64 Clang, Windows x64 Clang, Clang-Tidy) and turns red, naming the failed dependency, as
+(`quality/PrReady.kt`): it uses no agent, depends on the five configurations a ready pull request runs (Code Style,
+Linux x64 Clang, Windows x64 Clang, Clang-Tidy, Benchmarks) and turns red, naming the failed dependency, as
 soon as one of them is red. Like them it is not run for drafts nor `Experiment/…` pull requests (the PR
 cannot be merged until it is ready), and it skips documentation-only pull requests rather than pulling the whole
 matrix in. GitHub shows a check by the tail of its name (`checkName.stripPrefix = "TeamCity / Owl / "`).

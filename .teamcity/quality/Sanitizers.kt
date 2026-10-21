@@ -23,7 +23,7 @@ val sanitizers = Project {
     buildTypesOrder = arrayListOf(sanitizerAddress, sanitizerThread, sanitizerUndefinedBehavior)
 
     params {
-        param("platform", "Linux")
-        param("architecture", "amd64")
+        text("platform", "Linux", display = ParameterDisplay.HIDDEN, allowEmpty = true)
+        text("architecture", "amd64", display = ParameterDisplay.HIDDEN, allowEmpty = true)
     }
 }
