@@ -8,6 +8,7 @@
 
 #include "testHelper.h"
 
+#include <math/linAlgebra.h>
 #include <math/matrixCreation.h>
 #include <renderer/ShadowCascades.h>
 #include <renderer/gpu/RenderCommand.h>

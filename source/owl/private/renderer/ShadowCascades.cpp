@@ -10,6 +10,7 @@
 
 #include "renderer/ShadowCascades.h"
 
+#include "math/linAlgebra.h"
 #include "math/matrixCreation.h"
 #include "renderer/gpu/RenderCommand.h"
 
