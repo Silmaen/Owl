@@ -83,6 +83,22 @@ flowchart LR
 ./docker_run.sh poetry run python ci_action.py Bench linux-bench -- --threshold=0.15
 ```
 
+### Calibrating
+
+A new baseline or wider thresholds come from several runs on the bench agent, not from one:
+
+```bash
+./docker_run.sh poetry run python ci_action.py Bench linux-bench -- --calibrate=true --rounds=5
+```
+
+The action runs `owl_bench` `--rounds` times (default 5, at least 2) and never compares. It writes
+`output/bench/linux-bench.proposed-baseline.json` (the median of the round medians of each benchmark) and
+`output/bench/linux-bench.proposed-thresholds.json` (for each benchmark whose spread between rounds exceeds its
+threshold: the spread rounded up to the next 0.05, plus 0.05), and logs the benchmarks moving by more than 5 % from the
+current baseline. In TeamCity, use *Run custom build* on any branch of *Benchmarks*, tick *Calibrate*, then review and
+commit the two proposed files from the artifacts (the baseline as `baseline/linux-bench.json`, the thresholds merged
+into `thresholds.json`).
+
 ## Reading the output
 
 Each line gives the median time of one body call, the fastest sample, the interquartile range in percent

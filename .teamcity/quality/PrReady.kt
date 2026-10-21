@@ -26,8 +26,8 @@ val prReady = BuildType {
     }
 
     dependencies {
-        // The pull-request checks; GCC, Include Check, the sanitizers and the analyzer run after merge.
-        listOf(codeStyle, linuxClang, windowsClang, clangTidy).forEach { gate ->
+        // The pull-request checks (benchmarks included); GCC, Include Check, the sanitizers and the analyzer run after merge.
+        listOf(codeStyle, linuxClang, windowsClang, clangTidy, bench).forEach { gate ->
             snapshot(gate) {
                 // A red gate makes this build red, naming the failed dependency.
                 onDependencyFailure = FailureAction.ADD_PROBLEM
