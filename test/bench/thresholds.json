@@ -1,11 +1,15 @@
 {
-  "comment": "Allowed median growth per benchmark name pattern, over the default --threshold (first match wins). Measured on the bench agent over the five v0.4.0 baseline runs: the multi-threaded physics steps of 100 bodies vary up to 40 % (waking the workers), the physics world creation of 100 bodies up to 90 %, the MCP loopback round trips and the game-over scene load about 25 to 33 %; the flat path queries of 1024² maps switch between two modes about 15 % apart (296 µs or 340 µs on the streets map); the prefab instantiations into a 10000-entity scene are bimodal (nightly 2026-10-21 on the bench agent: 148 µs, 168 µs measured alone, baseline 125 µs; locally x2 outliers one run in three on both v0.4.0 and v0.5.0 code).",
+  "comment": "Allowed median growth per benchmark name pattern, over the default --threshold (first match wins). Measured on the bench agent over the five v0.4.0 baseline runs: the multi-threaded physics steps of 100 bodies vary up to 40 % (waking the workers), the physics world creation of 100 bodies up to 90 %, the MCP loopback round trips and the game-over scene load about 25 to 33 %; the flat path queries of 1024\u00b2 maps switch between two modes about 15 % apart (296 \u00b5s or 340 \u00b5s on the streets map); the prefab instantiations into a 10000-entity scene are bimodal (nightly 2026-10-21 on the bench agent: 148 \u00b5s, 168 \u00b5s measured alone, baseline 125 \u00b5s; locally x2 outliers one run in three on both v0.4.0 and v0.5.0 code). Calibration of 2026-10-21 on the bench agent (build 39239, 5 rounds): the multi-threaded physics step of 5000 falling bodies varies up to 130 % between rounds, the empty script update of 1000 instances 40 %, the prefab instantiation into an empty scene 25 % and the position get/set script 20 %.",
   "thresholds": {
     "physics/step_*_mt*/100_bodies": 0.4,
     "physics/init/100_bodies": 0.6,
     "mcp/*": 0.3,
     "sample/load/game_over": 0.3,
     "path/long_query/flat/*": 0.3,
-    "prefab/instantiate/*/scene10000": 0.3
+    "prefab/instantiate/*/scene10000": 0.3,
+    "physics/step_falling_mt2/5000_bodies": 1.35,
+    "prefab/instantiate/100_entities/scene0": 0.3,
+    "script/on_update/empty/1000_instances": 0.45,
+    "script/on_update/get_set_position/1_instance": 0.25
   }
 }
