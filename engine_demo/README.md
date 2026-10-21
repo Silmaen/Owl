@@ -19,6 +19,7 @@ counter "Levels completed: n / 4". When all four are done the **victory portal**
 flowchart LR
     M[main_menu] -->|Start / Continue| H[world_map hub]
     M -->|O| I
+    M -->|G| MG[mesh_gallery]
     M --> S[settings_menu]
     H -->|E at a door| P[platformer_house<br/>reach the door]
     H --> R[raycast_demo<br/>take an elevator]
@@ -30,7 +31,7 @@ flowchart LR
 ```
 
 1. **Main Menu** → press **Start** to begin a new run, or **Continue** if a pause snapshot exists. **O** (left
-   bumper) opens the isometric town directly. The **Controls** panel lists the keys of every level: in game they are
+   bumper) opens the isometric town directly, **G** (right bumper) the mesh gallery (Escape returns to the menu). The **Controls** panel lists the keys of every level: in game they are
    never shown for good, only in a hint at the start of a level that hides after a few seconds (`controls_hint.lua`).
 2. **Hub** (`world_map.owl`) — WASD to move (the hero has a walk cycle and mirrors toward the direction of motion),
    **E** at a door to enter a level. Hazards: the lava crater in the north west forest is **instant death**, the hero
@@ -81,13 +82,16 @@ hint that `controls_hint.lua` hides after a few seconds.
 engine_demo/
   owl_project.yml  game_settings.yml  input_actions.yml  input/
   scenes/  huds/  prefabs/  tilesets/  tilemaps/
-  scripts/{hub,platformer,raycast,iso,voxel,ui}/
+  scripts/{hub,platformer,raycast,iso,voxel,mesh,ui}/
   textures/{tilemaps,atlases,sprites,items,iso,wolf3d,ui}/
   sounds/{hub,raycast,platformer,town,ui}/
+  meshes/
 ```
 
 `textures/tilemaps/` holds the Kenney sheets, `atlases/` the textures the tilesets read, `wolf3d/` the Wolfenstein 3D
-walls and sprites (all kept), `items/` the inventory icons cropped from them. The scripts that draw the textures, the
+walls and sprites (all kept), `items/` the inventory icons cropped from them, `meshes/` the `.glb` files of
+`scenes/mesh_gallery.owl` (crates, pillars, primitives and a transparent sphere under a fly camera, drawn by the
+`mesh_world` layer), written by `tools/demo/generate_meshes.py`. The scripts that draw the textures, the
 sounds, the hub and the minimap are in `tools/demo/`, outside the project, so that they are neither exported nor
 installed.
 

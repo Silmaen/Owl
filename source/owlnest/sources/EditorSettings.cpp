@@ -130,10 +130,13 @@ void EditorSettings::loadFromFile(const std::filesystem::path& iFile) {
 			snapStep = std::max(0.0001f, config["snapStep"].as<float>());
 		if (config["snapMultiplier"])
 			snapMultiplier = std::max(0.0001f, config["snapMultiplier"].as<float>());
+		if (config["snapRotationDegrees"])
+			snapRotationDegrees = std::clamp(config["snapRotationDegrees"].as<float>(), 0.1f, 180.f);
 		readKey(config, "snapAutoFromTilemap", snapAutoFromTilemap);
 		readKey(config, "showCameraGizmos", showCameraGizmos);
 		readKey(config, "showFrameChip", showFrameChip);
 		readKey(config, "showGrid", showGrid);
+		readKey(config, "gridOnGround", gridOnGround);
 		readKey(config, "showNavGraph", showNavGraph);
 		readKey(config, "showTriggerIcons", showTriggerIcons);
 		readKey(config, "playControlsCollapsed", playControlsCollapsed);
@@ -183,10 +186,12 @@ void EditorSettings::saveToFile(const std::filesystem::path& iFile) const {
 	out << YAML::Key << "snapEnabled" << YAML::Value << snapEnabled;
 	out << YAML::Key << "snapStep" << YAML::Value << snapStep;
 	out << YAML::Key << "snapMultiplier" << YAML::Value << snapMultiplier;
+	out << YAML::Key << "snapRotationDegrees" << YAML::Value << snapRotationDegrees;
 	out << YAML::Key << "snapAutoFromTilemap" << YAML::Value << snapAutoFromTilemap;
 	out << YAML::Key << "showCameraGizmos" << YAML::Value << showCameraGizmos;
 	out << YAML::Key << "showFrameChip" << YAML::Value << showFrameChip;
 	out << YAML::Key << "showGrid" << YAML::Value << showGrid;
+	out << YAML::Key << "gridOnGround" << YAML::Value << gridOnGround;
 	out << YAML::Key << "showNavGraph" << YAML::Value << showNavGraph;
 	out << YAML::Key << "showTriggerIcons" << YAML::Value << showTriggerIcons;
 	out << YAML::Key << "playControlsCollapsed" << YAML::Value << playControlsCollapsed;

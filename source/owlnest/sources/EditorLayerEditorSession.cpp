@@ -91,6 +91,12 @@ auto EditorLayer::makeCommandContext() -> commands::CommandContext {
 			.onSaved = [this, doc](const std::filesystem::path& iPath) -> void {
 				doc->setScenePath(iPath);
 				refreshWindowTitle();
+			},
+			.projectStack = m_project.isLoaded() ? &m_project.rendererStack : nullptr,
+			.onProjectStackChanged = [this]() -> void {
+				if (!m_project.saveToFile(m_project.projectDirectory / "owl_project.yml"))
+					OWL_ERROR("Render stack: Cannot write the project file.")
+				syncActiveDocumentPanels();
 			}};
 }
 

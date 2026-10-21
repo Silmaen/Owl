@@ -22,6 +22,12 @@ TEST(AssetKind, ClassifiesTheEngineFormats) {
 	EXPECT_EQ(classifyAsset("prefabs/door.owlprefab"), AssetKind::Prefab);
 }
 
+TEST(AssetKind, ClassifiesTheMeshFormats) {
+	for (const auto* name: {"meshes/crate.glb", "crate.gltf", "crate.obj"})
+		EXPECT_EQ(classifyAsset(name), AssetKind::Mesh) << name;
+	EXPECT_EQ(classifyAsset("crate.fbx"), AssetKind::Unsupported);
+}
+
 TEST(AssetKind, ClassifiesTextAsCode) {
 	for (const auto* name: {"a.lua", "b.yml", "c.json", "d.md", "e.svg", "f.cpp", "g.hpp"})
 		EXPECT_EQ(classifyAsset(name), AssetKind::Code) << name;

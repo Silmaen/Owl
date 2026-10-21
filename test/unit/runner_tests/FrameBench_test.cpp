@@ -126,3 +126,20 @@ TEST(FrameBenchRun, NullBackendWritesReport) {
 	std::filesystem::remove(out);
 #endif
 }
+
+TEST(FrameBenchOptions, ParsePickedPixels) {
+	const auto scene = owl::test::getRootPath() / "engine_demo" / "scenes" / "main_menu.owl";
+	const std::string sceneArg = scene.string();
+	std::array<std::string, 7> storage{"OwlRunner", "--frame-bench", sceneArg, "--pick", "160,90", "--pick", "0,179"};
+	std::vector<char*> argv;
+	for (auto& arg: storage) argv.push_back(arg.data());
+	const auto options = parseFrameBenchOptions(static_cast<int>(argv.size()), argv.data(), scene.parent_path());
+	ASSERT_TRUE(options.has_value());
+	ASSERT_EQ(options->picks.size(), 2u);
+	EXPECT_EQ(options->picks[0], (owl::math::vec2ui{160, 90}));
+	EXPECT_EQ(options->picks[1], (owl::math::vec2ui{0, 179}));
+	storage[6] = "12";
+	EXPECT_FALSE(parseFrameBenchOptions(static_cast<int>(argv.size()), argv.data(), scene.parent_path()).has_value());
+	storage[6] = "a,b";
+	EXPECT_FALSE(parseFrameBenchOptions(static_cast<int>(argv.size()), argv.data(), scene.parent_path()).has_value());
+}

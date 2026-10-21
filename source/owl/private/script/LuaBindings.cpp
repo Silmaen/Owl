@@ -618,6 +618,8 @@ auto luaEntityHasComponent(lua_State* iState) -> int {
 		has = entity->hasComponent<scene::component::PhysicBody>();
 	else if (compName == "SpriteRenderer")
 		has = entity->hasComponent<scene::component::SpriteRenderer>();
+	else if (compName == "MeshRenderer")
+		has = entity->hasComponent<scene::component::MeshRenderer>();
 	else if (compName == "Camera")
 		has = entity->hasComponent<scene::component::Camera>();
 	else if (compName == "Text")
@@ -691,6 +693,8 @@ auto luaEntitySetTint(lua_State* iState) -> int {
 		entity->getComponent<scene::component::AnimatedSpriteRenderer>().color = tint;
 	else if (entity && entity->hasComponent<scene::component::SpriteRenderer>())
 		entity->getComponent<scene::component::SpriteRenderer>().color = tint;
+	else if (entity && entity->hasComponent<scene::component::MeshRenderer>())
+		entity->getComponent<scene::component::MeshRenderer>().color = tint;
 	else {
 		lua_pushboolean(iState, 0);
 		return 1;
@@ -708,6 +712,8 @@ auto luaEntityGetTint(lua_State* iState) -> int {
 		tint = entity->getComponent<scene::component::AnimatedSpriteRenderer>().color;
 	else if (entity->hasComponent<scene::component::SpriteRenderer>())
 		tint = entity->getComponent<scene::component::SpriteRenderer>().color;
+	else if (entity->hasComponent<scene::component::MeshRenderer>())
+		tint = entity->getComponent<scene::component::MeshRenderer>().color;
 	else
 		return 0;
 	lua_pushnumber(iState, static_cast<lua_Number>(tint.x()));
@@ -715,6 +721,26 @@ auto luaEntityGetTint(lua_State* iState) -> int {
 	lua_pushnumber(iState, static_cast<lua_Number>(tint.z()));
 	lua_pushnumber(iState, static_cast<lua_Number>(tint.w()));
 	return 4;
+}
+
+auto luaEntitySetMesh(lua_State* iState) -> int {
+	const char* path = luaL_checkstring(iState, 2);
+	const auto entity = findEntity(iState);
+	if (!entity || !entity->hasComponent<scene::component::MeshRenderer>()) {
+		lua_pushboolean(iState, 0);
+		return 1;
+	}
+	entity->getComponent<scene::component::MeshRenderer>().setMeshPath(path);
+	lua_pushboolean(iState, 1);
+	return 1;
+}
+
+auto luaEntityGetMesh(lua_State* iState) -> int {
+	const auto entity = findEntity(iState);
+	if (!entity || !entity->hasComponent<scene::component::MeshRenderer>())
+		return 0;
+	lua_pushstring(iState, entity->getComponent<scene::component::MeshRenderer>().meshPath.generic_string().c_str());
+	return 1;
 }
 
 auto luaUiSetText(lua_State* iState) -> int {
@@ -1890,8 +1916,8 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		{.table = "log", .name = "error", .function = guarded<luaLogError>,
 		 .description = "Log a message at error level.", .params = {{"message", String}}},
 		{.table = "entity", .name = "has_component", .function = guarded<luaEntityHasComponent>,
-		 .description = "Whether the entity has a component: `Transform`, `PhysicBody`, `SpriteRenderer`, `Camera`, "
-						"`Text`, `SoundSource`, `Canvas` or a `Ui*` component.",
+		 .description = "Whether the entity has a component: `Transform`, `PhysicBody`, `SpriteRenderer`, "
+						"`MeshRenderer`, `Camera`, `Text`, `SoundSource`, `Canvas` or a `Ui*` component.",
 		 .params = {entityId, {"component", String}}, .returns = {{"has", Boolean}}},
 		{.table = "entity", .name = "get_name", .function = guarded<luaEntityGetName>,
 		 .description = "Tag of the entity (empty when unknown).", .params = {entityId}, .returns = {{"name", String}}},
@@ -1899,15 +1925,22 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		 .description = "Entity an `EntityLink` of this entity points at (0 when it has none or the target is missing).",
 		 .params = {entityId}, .returns = {{"linked_id", Entity}}},
 		{.table = "entity", .name = "set_tint", .function = guarded<luaEntitySetTint>,
-		 .description = "Set the colour multiplied into a `SpriteRenderer` or `AnimatedSpriteRenderer` (hit flash, fade); "
-						"false when the entity has no sprite. `a` is 1 when omitted.",
+		 .description = "Set the colour multiplied into a `SpriteRenderer`, `AnimatedSpriteRenderer` or `MeshRenderer` "
+						"(hit flash, fade); false when the entity has none of them. `a` is 1 when omitted.",
 		 .params = {entityId, {"r", Number}, {"g", Number}, {"b", Number}, {"a", Number, true}},
 		 .returns = {{"done", Boolean}}},
 		{.table = "entity", .name = "get_tint", .function = guarded<luaEntityGetTint>,
-		 .description = "Colour multiplied into a `SpriteRenderer` or `AnimatedSpriteRenderer`; nothing when the entity "
-						"has no sprite.",
+		 .description = "Colour multiplied into a `SpriteRenderer`, `AnimatedSpriteRenderer` or `MeshRenderer`; nothing "
+						"when the entity has none of them.",
 		 .params = {entityId},
 		 .returns = {{"r", Number}, {"g", Number}, {"b", Number}, {"a", Number}}},
+		{.table = "entity", .name = "set_mesh", .function = guarded<luaEntitySetMesh>,
+		 .description = "Draw another mesh file (`.gltf`, `.glb`, `.obj`, asset path) with the entity's `MeshRenderer`, "
+						"loaded before the next frame; false when the entity has no `MeshRenderer`.",
+		 .params = {entityId, {"path", String}}, .returns = {{"done", Boolean}}},
+		{.table = "entity", .name = "get_mesh", .function = guarded<luaEntityGetMesh>,
+		 .description = "Asset path of the mesh file of the entity's `MeshRenderer`; nothing when it has none.",
+		 .params = {entityId}, .returns = {{"path", String}}},
 		{.table = "ui", .name = "find", .function = guarded<luaUiFind>,
 		 .description = "First widget with this tag, searched in the scene's HUD asset then in the scene (0 when none); "
 						"cache the result.",

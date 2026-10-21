@@ -42,7 +42,8 @@ void CameraEditor::onUpdate([[maybe_unused]] const core::Timestep& iTimeStep) {
 	const bool lmb = input::Input::isMouseButtonPressed(input::mouse::ButtonLeft);
 	const bool rmb = input::Input::isMouseButtonPressed(input::mouse::ButtonRight);
 	const bool mmb = input::Input::isMouseButtonPressed(input::mouse::ButtonMiddle);
-	if (!(alt || ctrl) || !(lmb || rmb || mmb)) {
+	const bool freeLook = !alt && !ctrl && m_navigation.mouseLook && (rmb || mmb);
+	if (!(alt || ctrl || freeLook) || !(lmb || rmb || mmb)) {
 		m_dragTravel = 0.f;
 		updateView();
 		return;
@@ -68,6 +69,10 @@ void CameraEditor::onUpdate([[maybe_unused]] const core::Timestep& iTimeStep) {
 			mouseRotate(delta);
 		else if (rmb || mmb)
 			mousePan(delta);
+	} else if (rmb) {
+		rotateInPlace(delta);
+	} else {
+		mousePan(delta);
 	}
 	updateView();
 }

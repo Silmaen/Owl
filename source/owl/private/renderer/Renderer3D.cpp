@@ -36,7 +36,12 @@ struct SceneUbo {
 	math::mat4 model = math::identity<float, 4>();
 	math::vec4 sunDirection{-0.4f, -1.0f, -0.6f, 0.f};
 	math::vec4 ambient{0.35f, 0.35f, 0.4f, 1.f};
+	math::vec4 tint{1.f, 1.f, 1.f, 1.f};
+	// x: entity id written to the picking attachment; yzw: padding to a std140 vec4.
+	std::array<int32_t, 4> ids{-1, 0, 0, 0};
 };
+
+static_assert(sizeof(SceneUbo) == 192, "SceneUbo must match the std140 layout of Scene3D in the renderer3D shaders.");
 
 struct InternalData {
 	shared<gpu::UniformBuffer> sceneUniformBuffer;
@@ -56,6 +61,13 @@ void bindMeshTextures(const std::span<const shared<gpu::Texture2D>> iTextures) {
 			slots[count++] = texture;
 	}
 	gpu::RenderCommand::bindTextures(std::span{slots}.first(count));
+}
+
+void setDrawParams(const math::mat4& iModel, const MeshDrawParams& iParams) {
+	g_Data->scene.model = iModel;
+	g_Data->scene.tint = iParams.tint;
+	g_Data->scene.ids[0] = iParams.entityId;
+	g_Data->sceneUniformBuffer->setData(&g_Data->scene, sizeof(SceneUbo), 0);
 }
 }// namespace
 
@@ -119,6 +131,8 @@ void Renderer3D::setLighting(const math::vec3& iSunDirection, const math::vec3& 
 	g_Data->scene.ambient = math::vec4{iAmbient.x(), iAmbient.y(), iAmbient.z(), 1.f};
 }
 
+auto Renderer3D::getWhiteTexture() -> shared<gpu::Texture2D> { return g_Data ? g_Data->whiteTexture : nullptr; }
+
 auto Renderer3D::createMesh(std::span<const Mesh3DVertex> iVertices, std::span<const uint32_t> iIndices,
 							const std::string& iShaderName, const gpu::PipelineState& iState) -> MeshHandle {
 	auto draw = gpu::DrawData::create();
@@ -136,29 +150,27 @@ auto Renderer3D::createMesh(std::span<const Mesh3DVertex> iVertices, std::span<c
 }
 
 void Renderer3D::drawMesh(const MeshHandle& iMesh, const math::mat4& iModel,
-						  std::span<const shared<gpu::Texture2D>> iTextures) {
+						  std::span<const shared<gpu::Texture2D>> iTextures, const MeshDrawParams& iParams) {
 	OWL_PROFILE_FUNCTION()
 
 	if (!iMesh || iMesh->getIndexCount() == 0)
 		return;
 	const gpu::RendererDescriptors::ScopedActive scoped{blockId()};
 
-	g_Data->scene.model = iModel;
-	g_Data->sceneUniformBuffer->setData(&g_Data->scene, sizeof(SceneUbo), 0);
+	setDrawParams(iModel, iParams);
 	bindMeshTextures(iTextures);
 	gpu::RenderCommand::drawData(iMesh, iMesh->getIndexCount());
 }
 
 void Renderer3D::drawMeshes(std::span<const MeshHandle> iMeshes, const math::mat4& iModel,
-							std::span<const shared<gpu::Texture2D>> iTextures) {
+							std::span<const shared<gpu::Texture2D>> iTextures, const MeshDrawParams& iParams) {
 	OWL_PROFILE_FUNCTION()
 
 	if (iMeshes.empty())
 		return;
 	const gpu::RendererDescriptors::ScopedActive scoped{blockId()};
 
-	g_Data->scene.model = iModel;
-	g_Data->sceneUniformBuffer->setData(&g_Data->scene, sizeof(SceneUbo), 0);
+	setDrawParams(iModel, iParams);
 	bindMeshTextures(iTextures);
 	for (const auto& mesh: iMeshes) {
 		if (mesh && mesh->getIndexCount() > 0)

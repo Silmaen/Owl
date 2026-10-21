@@ -262,6 +262,10 @@ struct CommandContext {
 	std::filesystem::path scenePath{};
 	/// Called after `scene.save` wrote the file, with its path (the editor updates the document).
 	SaveCallback onSaved{};// NOLINT(readability-redundant-member-init) callers may omit it
+	/// Render stack of the open project, edited by `project.add_render_layer` (non-owning, null without a project).
+	renderer::RendererStackConfig* projectStack{nullptr};
+	/// Called after `project.add_render_layer` changed the stack (the editor saves the project and rebuilds it).
+	std::function<void()> onProjectStackChanged{};// NOLINT(readability-redundant-member-init) callers may omit it
 	/// Who asks for the command, recorded by the journal.
 	CommandSource source{CommandSource::Gesture};
 	/// The registry running the command, set by `CommandRegistry::execute` (commands that run other commands).

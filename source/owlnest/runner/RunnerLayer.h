@@ -296,6 +296,12 @@ private:
 
 	/**
 	 * @brief
+	 *  Read the entity of the `--pick` pixels from the picking attachment of the capture target, one pixel per frame.
+	 */
+	void samplePicks();
+
+	/**
+	 * @brief
 	 *  Run the scene update (cursor capture outside a frame bench, phase timings inside).
 	 * @param[in] iTimeStep Time step fed to the scene.
 	 */
@@ -341,6 +347,10 @@ private:
 	uniq<FrameBench> m_frameBench;
 	/// Offscreen target the scene renders into when the frame bench writes a capture.
 	shared<renderer::gpu::Framebuffer> m_captureTarget;
+	/// Entity id last read at each `--pick` pixel (`-1` for none).
+	std::vector<int> m_pickedIds;
+	/// Frames sampled by `samplePicks`.
+	uint32_t m_pickFrame = 0;
 	/// Scripted headless run (nullptr in a normal run).
 	uniq<ScenarioTest> m_scenario;
 	/// Smoke-test options.

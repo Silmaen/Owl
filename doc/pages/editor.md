@@ -127,6 +127,7 @@ Hierarchy, Properties and Viewport always reflect.
 | Animation  | `.owlanim`                                  | Spritesheet animation clip editor (timeline + preview + properties)   |
 | Font       | `.ttf`, `.otf`, `.owlfont`                  | Font viewer (samples, atlas) and its charset: extra code-point ranges |
 | Image      | `.png`, `.jpg`, `.jpeg`, `.bmp`, `.tga`     | Read-only image viewer: zoom, pan, pixel grid, tileset tile overlay   |
+| Mesh       | `.gltf`, `.glb`, `.obj`                     | Read-only mesh viewer: orbit, zoom, textured or shaded, mesh figures  |
 
 - Each document owns its undo stack, dirty flag, selection and play state; each scene has its own viewport window
   (`##scene_<uuid>`), tabbed by ImGui docking and detachable to see scenes side by side. A dirty document shows a dot
@@ -194,6 +195,7 @@ The viewport draws the active scene into an off-screen `Framebuffer`:
 | 1          | RedInteger      | Entity ID for mouse picking |
 
 A click reads attachment 1 under the mouse and selects that entity (-1: none) in the hierarchy and the inspector.
+Every layer writes it: sprites, tilemaps, isometric billboards, voxel worlds and static meshes (`MeshRenderer`).
 
 **Overlays**, in translucent pills over the scene:
 
@@ -214,10 +216,18 @@ viewport, and a frame in the play colour outlines the viewport.
 
 **Editor camera.** In Edit a `CameraEditor` (orbit camera) moves only while the viewport is hovered. Its 2D view
 (`CameraEditor::Projection::Orthographic`) faces the XY plane with the framing of the 3D view; `CameraEditor::frame`
-centres the selection. The grid follows the snap step (doubled while too dense), the X and Y axes in their colours.
+centres the selection. The grid follows the snap step (doubled while too dense), its axes in their colours: on the
+ground (XZ plane, `y = 0`) in the 3D view, on the XY plane in the 2D and isometric views; **Show > Grid on the ground**
+puts the 3D one back on the XY plane. The selection is outlined in orange: its quad for a 2D entity, the 12 edges of
+its bounding box for a mesh. Camera markers (**Show > Camera markers**) are an icon, an arrow and the field of view in
+the 2D views; the 3D view draws the model `meshes/camera.glb` of the editor assets (made by
+`tools/editor/generate_camera_mesh.py`), pickable, with the frustum of the camera (field of view, or box when
+orthographic) and a filled triangle above it pointing to the up of the camera.
 
 | Gesture                     | Effect                                       |
 |-----------------------------|----------------------------------------------|
+| Right drag                  | Look around from the eye                     |
+| Middle drag                 | Pan                                          |
 | Ctrl + left drag            | Orbit around the reference point             |
 | Ctrl + right or middle drag | Pan                                          |
 | Alt + left drag             | Look around from the eye                     |
@@ -225,7 +235,8 @@ centres the selection. The grid follows the snap step (doubled while too dense),
 | Alt + middle drag           | Dolly (the eye and the reference point move) |
 | Wheel                       | Zoom towards the reference point             |
 
-The **Camera** tab of the Editor Settings scales orbit, pan and zoom (10 to 300 %), inverts the vertical drag and sets
+A left click selects (a camera by its 3D model too), a right click without drag opens the context menu; the right
+drag belongs to the voxel brush while it is active. The **Camera** tab of the Editor Settings scales orbit, pan and zoom (10 to 300 %), inverts the vertical drag and sets
 a dead zone (`CameraEditor::Navigation`).
 
 **Isometric mode.** When the scene's stack holds an isometric layer with content (`Scene::getSelfDrawnLayer`), the
@@ -253,11 +264,23 @@ the view. Menus have a title, Lucide icons, shortcuts and destructive entries in
 **Gizmos.** ImGuizmo draws the manipulator of the selection: None (Q), Translation (W), Rotation (E), Scale (R), All
 (T); see [Gizmo Modes](#gizmo-modes).
 
-**Snap.** The **Snap** toggle (or `Ctrl` held during a drag) clamps translations to the snap step; rotation snaps at
-45°, scale at 0.5. With **Auto step from tilemap** (default) and a `Tilemap` in the scene, the step is
-`cellSize × snapMultiplier` (**Step** presets `1/4 cell` to `10 cells`) and a dropped entity is realigned to the
-nearest cell centre; otherwise the step is `snapStep` in world units (presets `0.25` to `10`). The four settings
-(`snapEnabled`, `snapStep`, `snapMultiplier`, `snapAutoFromTilemap`) are in the **Gizmo Snap** tab.
+**Snap.** The **Snap** toggle (or `Ctrl` held during a drag) clamps translations to the snap step; rotation snaps by
+the **Rotation Step** (`snapRotationDegrees`, 45° by default, 0.1° to 180°). With **Auto step from tilemap** (default)
+and a `Tilemap` in the scene, the step is `cellSize × snapMultiplier` (**Step** presets `1/4 cell` to `10 cells`) and a
+dropped entity is realigned to the nearest cell centre; otherwise the step is `snapStep` in world units (presets `0.25`
+to `10`). The five settings (`snapEnabled`, `snapStep`, `snapMultiplier`, `snapAutoFromTilemap`,
+`snapRotationDegrees`) are in the **Gizmo Snap** tab.
+
+**Placing meshes.** A `.gltf`, `.glb` or `.obj` dragged from the Content Browser onto the viewport becomes an entity
+with a `MeshRenderer` at the point under the cursor: on the hovered mesh or voxel world, else on the ground plane
+(`y = 0`), else on the `z = 0` plane of the 2D view. It runs `mesh.create`, one undo step; the entity is tagged for the
+first `RendererMesh` layer of the render stack when that layer is not the first one. Without such a layer, a modal
+offers to add one (`mesh_world`, after the first layer of the project stack, through `project.add_render_layer`, which
+saves the project), to place the mesh anyway (not drawn), or to cancel; when the project has a mesh layer that the
+scene disables, it points to the Scene Settings instead of adding one. A double-click on the file (or **Place in
+Scene** in its context menu) places it at the origin; **Open**, from the context menu or the **Mesh** field of the
+inspector, shows it in the mesh viewer. The gizmos move, rotate and scale it in 3D like any entity. With no
+**Texture** of its own, the inspector shows the texture of the material, faded.
 
 ### Scene Hierarchy
 
@@ -295,7 +318,9 @@ remove) with its own editor; vectors sit in a label / value grid with axis colou
 default. **Add Component** lists the optional components the entity lacks; mandatory ones (Transform, Hierarchy) cannot
 be removed. Every edit is a registry command ([Editor commands](#editor-commands)).
 
-- **Transform** (local), **Sprite Renderer**, **Animated Sprite**, **Circle Renderer**, **Text Renderer**, **Camera**,
+- **Transform** (local), **Sprite Renderer**, **Animated Sprite**, **Circle Renderer**, **Mesh Renderer** (mesh file
+  drop field with the base-colour preview, tint, texture override, transparency, vertex and triangle counts),
+  **Text Renderer**, **Camera**,
   **Rigidbody 2D**, **Box / Circle Collider 2D**, **Native Script**, **Sound Source**, **Sound Listener**, **Player**,
   **Link**, **Background**, **Visibility** (inherited), **Lua Script** (path and property list): their fields, see
   [Scene components](scene.md#components)
@@ -389,6 +414,17 @@ A read-only tab (no undo, never dirty), opened by a double-click or **Open** in 
 - The **Image** panel gives size, channels, file size and the filter of the tilesets using it; *Image View* lists those
   tilesets and draws the tile grid of the one picked, with the index of the hovered tile.
 
+### Mesh Viewer (`.gltf`, `.glb`, `.obj`)
+
+A read-only tab (`MeshDocument`, no undo, never dirty), opened by **Open** in the context menu of the Content Browser
+or the **Mesh** field of the inspector.
+
+- The mesh alone under an orbit camera (`viewer::renderMeshPreview`): drag to orbit, wheel to zoom, double-click to
+  reset; *Mesh View* switches between the material (textured) and a plain grey, and **Place in Scene** adds it to
+  the active scene.
+- The **Mesh** panel gives the vertex and triangle counts, the size of the bounds, the base colour and the texture
+  of the material.
+
 ### Font Viewer and Editor (`.ttf`, `.otf`)
 
 A font (or its `.owlfont` sidecar) opens in a font document, loaded by the document if no text uses it yet:
@@ -464,11 +500,12 @@ A file grid of the asset directories, with navigation, file operations and drag 
 - **Folder tree** (left, resizable): the asset roots (project, application, engine) and their folders, unfolded down
   to the folder shown.
 - **Toolbar**: parent folder, a clickable breadcrumb (never above the root), a name filter, grid / list, thumbnail
-  size; below, one chip per family present (`All 14`, `Texture 11`...) filters it, hidden when there is one family.
+  size, the style of the mesh thumbnails (**Textured**, **Shaded**, **Flat**); below, one chip per family present (`All 14`, `Texture 11`...) filters it, hidden when there is one family.
 - **Tiles**: images show themselves (cropped square), tilesets their atlas, HUDs a pixel render, scenes their primary
-  camera, prefabs an orthographic framing, 3D models (`.obj`, `.fbx`, `.gltf`, `.glb`) shaded faces in an isometric
-  view (`AssetThumbnails::projectMesh`, at most 6000 triangles), sounds their waveform (`sound::readWaveform`); other
-  files the duotone icon of their kind. `AssetThumbnails` reads a few files per frame and renders one scene or prefab
+  camera, prefabs an orthographic framing, meshes (`.obj`, `.gltf`, `.glb`) a GPU render of their material or in grey
+  (`viewer::renderMeshPreview`), or in **Flat** style their faces in an isometric view (`AssetThumbnails::projectMesh`,
+  at most 6000 triangles, `.fbx` included), sounds their waveform (`sound::readWaveform`); other
+  files the duotone icon of their kind. `AssetThumbnails` reads a few files per frame and renders one scene, prefab or mesh
   at a time for 0.75 s into a pool of 48 framebuffers; a preview is redone when its file changes. Each tile has a
   family colour bar, the kind in capitals and an extension badge; an empty folder or search says so. A dragged tile
   follows the cursor (`gui::widgets::dragPreview`) and drop targets light up.
@@ -481,6 +518,9 @@ A file grid of the asset directories, with navigation, file operations and drag 
 | Double-click an image         | Open it in the read-only image viewer         |
 | Double-click `.slang` file    | Open the shader in the code editor            |
 | Drag `.owlprefab` to Viewport | Instantiate the prefab into the scene         |
+| Drag a mesh to Viewport       | Place a `MeshRenderer` entity under the mouse |
+| Double-click a mesh           | Place a `MeshRenderer` entity at the origin   |
+| Right-click a mesh > Open     | Open it in the read-only mesh viewer          |
 | Drag texture to Properties    | Assign the texture to a Sprite Renderer field |
 | Drag sound to Properties      | Assign the sound to a Sound Source field      |
 | Right-click background        | Context menu: New Folder, Import File/Folder  |
@@ -918,6 +958,7 @@ UUID, plus the fields below).
 | `component.add`        | `entity`, `component` (display name `Circle Renderer` or file key)                                     |
 | `component.remove`     | `entity`, `component`                                                                                  |
 | `prefab.instantiate`   | `path` (prefab file), `asset_path` (link recorded, found from the folders)                             |
+| `mesh.create`          | `path` (mesh file), `asset_path`, `name`, `translation` (world), `parent`, `layer` (RendererTag)       |
 | `component.set`        | `entity`, `component`, `values` (YAML / JSON map merged into the component),                           |
 |                        | `replace` (bool: `values` replaces every field, used by the inspector)                                 |
 | `scene.save`           | `path` (the scene file when absent); returns `path`                                                    |

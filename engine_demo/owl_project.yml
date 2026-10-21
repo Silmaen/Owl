@@ -1,3 +1,4 @@
+FormatVersion: 1
 OwlProject:
   name: OwlEngineDemo
   firstScene: scenes/main_menu.owl
@@ -22,6 +23,11 @@ OwlProject:
         FloorColor: [0.20, 0.16, 0.12, 1.0]
     - Type: RendererVoxel
       Name: voxel_world
+      DefaultConfig:
+        SunDirection: [-0.4, -1.0, -0.6]
+        Ambient: [0.4, 0.4, 0.45]
+    - Type: RendererMesh
+      Name: mesh_world
       DefaultConfig:
         SunDirection: [-0.4, -1.0, -0.6]
         Ambient: [0.4, 0.4, 0.45]

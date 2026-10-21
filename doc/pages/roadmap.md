@@ -114,7 +114,7 @@ render graph, essential post-processing — with full 3D editing ([details](desi
 - ![Planned][planned] Lighting: directional, point and spot lights, directional shadow maps
 - ![Planned][planned] 2D lighting (point / spot lights, normal-mapped sprites, 2D shadows), isometric sprites included ([2D](design/2d-complete.md))
 - ![Planned][planned] PBR materials with editor and material library
-- ![Planned][planned] Static mesh component with instancing
+- ![In Progress][progress] Static mesh component with instancing
 - ![Planned][planned] Essential post-processing stack (tone mapping, bloom, vignette, LUT)
 - ![Planned][planned] Compute-driven frustum / occlusion culling with indirect draws
 - ![Planned][planned] GPU raycast sprite stripes and `BitonicSortPass` adoption

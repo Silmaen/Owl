@@ -14,11 +14,13 @@
 #include "renderer/BackgroundRenderer.h"
 #include "renderer/CameraOrtho.h"
 #include "renderer/IsometricObjects.h"
+#include "renderer/MeshCache.h"
 #include "renderer/Renderer.h"
 #include "renderer/Renderer2D.h"
 #include "renderer/Renderer2DLayer.h"
 #include "renderer/RendererIsometric.h"
 #include "renderer/RendererIsometricLayer.h"
+#include "renderer/RendererMesh.h"
 #include "renderer/RendererRaycast.h"
 #include "renderer/RendererRaycastLayer.h"
 #include "renderer/RendererTilemap.h"
@@ -687,6 +689,9 @@ auto Scene::layerHasContent(const std::string& iLayerName, const bool iIsFirst) 
 		for (const auto e: registry.view<component::VoxelWorld>())
 			if (matches(e))
 				return true;
+		for (const auto e: registry.view<component::MeshRenderer>())
+			if (matches(e))
+				return true;
 		// Backgrounds always sit behind every layer — they only contribute to the first one.
 		if (iIsFirst) {
 			for (const auto e: registry.view<component::BackgroundTexture>())
@@ -706,6 +711,7 @@ void Scene::renderWithStack(const renderer::Camera& iCamera) {
 
 	prepareVoxelRenderData();
 	prepareTilemapRenderData();
+	prepareMeshRenderData();
 	const auto& stack = renderer::Renderer::getRenderStack();
 	const bool editorMode = status == Status::Editing;
 	if (stack.isEmpty() || (editorMode && getSelfDrawnLayer() == nullptr)) {
@@ -718,21 +724,28 @@ void Scene::renderWithStack(const renderer::Camera& iCamera) {
 		composite.onRender(*this);
 		render();
 		composite.onEndFrame();
-		// The editor composite above is 2D-only; render 3D voxel layers as a separate pass so they show while editing.
+		// The editor composite above is 2D-only: the 3D voxel and mesh layers draw as passes of their own.
 		if (editorMode) {
-			for (const auto& layer: stack.getLayers()) {
-				if (std::string_view{layer->getTypeKey()} != "RendererVoxel" ||
-					!layerHasContent(layer->getName(), false))
+			const auto& layers = stack.getLayers();
+			for (size_t index = 0; index < layers.size(); ++index) {
+				const auto& layer = layers[index];
+				const std::string_view type{layer->getTypeKey()};
+				const bool isFirst = index == 0;
+				if ((type != "RendererVoxel" && type != "RendererMesh") || !layerHasContent(layer->getName(), isFirst))
 					continue;
 				layer->setViewport(m_viewportSize);
 				layer->onBeginFrame(iCamera);
 				m_currentLayerName = layer->getName();
-				m_currentLayerIsFirst = false;
+				m_currentLayerIsFirst = isFirst;
 				mp_currentLayer = layer.get();
-				renderVoxelWorlds(true);
+				if (type == "RendererVoxel")
+					renderVoxelWorlds(true);
+				else
+					renderMeshes(true);
 				layer->onEndFrame();
 			}
 			m_currentLayerName.clear();
+			m_currentLayerIsFirst = true;
 			mp_currentLayer = nullptr;
 		}
 		renderOverlays(iCamera);
@@ -780,6 +793,8 @@ void Scene::render() {
 			mp_currentLayer != nullptr && std::string_view{mp_currentLayer->getTypeKey()} == "RendererRaycast";
 	const bool voxelLayer =
 			mp_currentLayer != nullptr && std::string_view{mp_currentLayer->getTypeKey()} == "RendererVoxel";
+	const bool meshLayer =
+			mp_currentLayer != nullptr && std::string_view{mp_currentLayer->getTypeKey()} == "RendererMesh";
 
 	if (m_currentLayerIsFirst && !raycastLayer && !voxelLayer) {
 		if (const auto bgView = registry.view<component::BackgroundTexture>(); !bgView.empty()) {
@@ -798,6 +813,11 @@ void Scene::render() {
 
 	if (voxelLayer) {
 		renderVoxelWorlds(editorMode);
+		return;
+	}
+
+	if (meshLayer) {
+		renderMeshes(editorMode);
 		return;
 	}
 
@@ -982,6 +1002,44 @@ void Scene::prepareVoxelRenderData() {
 	renderer::RendererVoxel::beginPrepare(cache);
 	for (const auto view = registry.view<component::VoxelWorld>(); const auto entity: view)
 		renderer::RendererVoxel::prepareWorld(cache, view.get<component::VoxelWorld>(entity), static_cast<int>(entity));
+}
+
+void Scene::prepareMeshRenderData() {
+	OWL_PROFILE_FUNCTION()
+
+	if (mp_engineContext == nullptr)
+		return;
+	auto& cache = mp_engineContext->getMeshCache();
+	for (const auto view = registry.view<component::MeshRenderer>(); const auto entity: view) {
+		auto& meshRenderer = view.get<component::MeshRenderer>(entity);
+		if (meshRenderer.mesh && meshRenderer.mesh->isStale())
+			meshRenderer.mesh.reset();
+		if (!meshRenderer.mesh)
+			meshRenderer.mesh = cache.get(meshRenderer.meshPath);
+		if (meshRenderer.mesh)
+			std::ignore = meshRenderer.mesh->getMesh(meshRenderer.transparent);
+	}
+}
+
+void Scene::renderMeshes(const bool iEditorMode) {
+	OWL_PROFILE_FUNCTION()
+
+	for (const auto view = registry.view<component::Transform, component::MeshRenderer>(); const auto entity: view) {
+		const Entity ent{entity, this};
+		if (!isEffectivelyVisible(ent, iEditorMode) || !layerAccepts(ent))
+			continue;
+		auto& meshRenderer = view.get<component::MeshRenderer>(entity);
+		if (!meshRenderer.mesh)
+			continue;
+		const math::vec4& factor = meshRenderer.mesh->getBaseColorFactor();
+		const math::vec4& color = meshRenderer.color;
+		const renderer::MeshDrawParams params{.tint = {color.r() * factor.r(), color.g() * factor.g(),
+													   color.b() * factor.b(), color.a() * factor.a()},
+											  .entityId = static_cast<int>(entity)};
+		const auto& texture = meshRenderer.texture ? meshRenderer.texture : meshRenderer.mesh->getBaseColorTexture();
+		renderer::RendererMesh::drawMesh(*meshRenderer.mesh, getWorldTransform(ent)(), texture, params,
+										 meshRenderer.transparent);
+	}
 }
 
 void Scene::renderVoxelWorlds(const bool iEditorMode) {
@@ -2170,6 +2228,10 @@ template<>
 OWL_API void
 Scene::onComponentAdded<component::CircleRenderer>([[maybe_unused]] const Entity& iEntity,
 												   [[maybe_unused]] component::CircleRenderer& ioComponent) {}
+
+template<>
+OWL_API void Scene::onComponentAdded<component::MeshRenderer>([[maybe_unused]] const Entity& iEntity,
+															  [[maybe_unused]] component::MeshRenderer& ioComponent) {}
 
 template<>
 OWL_API void Scene::onComponentAdded<component::NativeScript>([[maybe_unused]] const Entity& iEntity,

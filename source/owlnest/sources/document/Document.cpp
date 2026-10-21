@@ -44,6 +44,8 @@ auto documentLabel(const DocumentType iType) -> DocumentLabel {
 			return {.glyph = gui::icon::gamepad2, .kind = "actionmap"};
 		case DocumentType::Image:
 			return {.glyph = gui::icon::image, .kind = "image"};
+		case DocumentType::Mesh:
+			return {.glyph = gui::icon::box, .kind = "mesh"};
 	}
 	return {.glyph = gui::icon::file, .kind = "doc"};
 }

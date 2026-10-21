@@ -124,6 +124,12 @@ private:
 
 	/**
 	 * @brief
+	 *  Ribbon tab of a mesh document (close only: the viewer edits nothing).
+	 */
+	void buildMeshTab();
+
+	/**
+	 * @brief
 	 *  Build the contextual tab of an action map document (Save / Save As / Reset / Close).
 	 */
 	void buildActionMapTab();

@@ -14,7 +14,10 @@
 #include "NavigationToolState.h"
 #include "PlayOverlay.h"
 
+#include <renderer/MeshCache.h>
+#include <renderer/Renderer3D.h>
 #include <renderer/RendererIsometric.h>
+#include <scene/component/Camera.h>
 #include <scene/nav/Pathfinder.h>
 
 #include <array>
@@ -22,6 +25,7 @@
 #include <cstdint>
 #include <optional>
 #include <string>
+#include <utility>
 
 namespace owl::nest {
 
@@ -347,10 +351,86 @@ private:
 
 	/**
 	 * @brief
-	 *  Draw the grid of the snap step on the XY plane around the camera reference point, with the two axes.
-	 * @param[in] iStep Step between two lines, in world units.
+	 *  Draw the grid of the snap step around the camera reference point, with the two axes.
+	 * @param[in] iStep The snap step (doubled until the grid has few enough lines).
+	 * @param[in] iOnGround Draw on the ground (XZ plane, `y = 0`) instead of the XY plane.
 	 */
-	void renderGrid(float iStep) const;
+	void renderGrid(float iStep, bool iOnGround) const;
+
+	/**
+	 * @brief
+	 *  Draw the 12 edges of the bounding box of a selected mesh, in the selection colour.
+	 * @param[in] iWorld World transform of the entity.
+	 * @param[in] iGeometry Geometry of the mesh (its object-space bounds).
+	 */
+	static void renderSelectionBox(const math::mat4& iWorld, const renderer::MeshGeometry& iGeometry);
+
+	/**
+	 * @brief
+	 *  Whether the camera markers are drawn as 3D models with their frustum (the 3D perspective view in Edit).
+	 * @return True in the 3D perspective view.
+	 */
+	[[nodiscard]] auto showsCameraModels() const -> bool;
+
+	/**
+	 * @brief
+	 *  Camera whose 3D model is under the cursor: the models are drawn over the id attachment that the click reads.
+	 * @return The nearest camera hit, or an invalid entity.
+	 */
+	[[nodiscard]] auto pickCameraModel() const -> scene::Entity;
+
+	/**
+	 * @brief
+	 *  Draw the marker of every camera: icon, arrow and field of view in 2D, frustum in the 3D view.
+	 * @param[in] iScene The scene edited.
+	 */
+	void renderCameraMarkers(const shared<scene::Scene>& iScene) const;
+
+	/**
+	 * @brief
+	 *  Draw the camera model (`meshes/camera.glb` of the editor assets) at every camera of the scene, pickable.
+	 * @param[in] iScene The scene edited.
+	 */
+	void renderCameraModels(const shared<scene::Scene>& iScene) const;
+
+	/**
+	 * @brief
+	 *  Draw the frustum of a camera as lines: its field of view (perspective) or its box (orthographic).
+	 * @param[in] iCamera The camera component.
+	 * @param[in] iWorld World transform of the camera, without scale.
+	 * @param[in] iColor Colour of the lines.
+	 * @param[in] iEntityId Entity id written for picking.
+	 */
+	void renderCameraFrustum(const scene::component::Camera& iCamera, const math::mat4& iWorld,
+							 const math::vec4& iColor, int iEntityId) const;
+
+	/// Size of the frustum drawn for a camera, in its local space.
+	struct FrustumExtent {
+		/// Half width of the far rectangle.
+		float halfWidth;
+		/// Half height of the far rectangle.
+		float halfHeight;
+		/// Distance of the far rectangle along the local -Z.
+		float depth;
+		/// Perspective (lines from the origin) or orthographic (a box).
+		bool perspective;
+	};
+
+	/**
+	 * @brief
+	 *  Frustum drawn for a camera: its field of view and the aspect of the viewport, cut at a fixed depth.
+	 * @param[in] iCamera The camera component.
+	 * @return The extent.
+	 */
+	[[nodiscard]] auto getFrustumExtent(const scene::component::Camera& iCamera) const -> FrustumExtent;
+
+	/**
+	 * @brief
+	 *  Colour of the marker of a camera.
+	 * @param[in] iPrimary Whether the camera is the primary one.
+	 * @return Yellow for the primary camera, light blue otherwise.
+	 */
+	[[nodiscard]] static auto getCameraMarkerColor(bool iPrimary) -> math::vec4;
 
 	/**
 	 * @brief
@@ -429,6 +509,22 @@ private:
 
 	/**
 	 * @brief
+	 *  Ray of the viewport camera through the cursor.
+	 * @return The origin and the normalized direction, in world space; nothing for an empty viewport.
+	 */
+	[[nodiscard]] auto getCursorRay() const -> std::optional<std::pair<math::vec3, math::vec3>>;
+
+	/**
+	 * @brief
+	 *  World point under the cursor where a dropped asset goes: on the hovered mesh or voxel world, else on the ground
+	 *  plane (`y = 0`), else on the `z = 0` plane of a 2D view.
+	 * @param[in] iScene The active scene.
+	 * @return The point; nothing when the cursor ray meets neither.
+	 */
+	[[nodiscard]] auto getDropPoint(const shared<scene::Scene>& iScene) const -> std::optional<math::vec3>;
+
+	/**
+	 * @brief
 	 *  Drive the voxel brush in Edit mode: raycast the editor camera, highlight the targeted block, apply edits.
 	 * @param[in] iScene The active scene (holds the target `VoxelWorld`).
 	 */
@@ -437,6 +533,12 @@ private:
 	shared<renderer::Camera> m_camera;
 	/// The frame buffer where to do the render.
 	shared<renderer::gpu::Framebuffer> m_framebuffer;
+	/// Model drawn at the cameras in the 3D view, loaded on the first draw (a cache, hence mutable).
+	mutable shared<renderer::MeshResource> m_cameraModel;
+	/// The camera model file was not found: the 3D view draws the frustums alone.
+	mutable bool m_cameraModelMissing{false};
+	/// Unit triangle drawn above the frustums to show the up of the cameras, made on the first draw.
+	mutable renderer::Renderer3D::MeshHandle m_upTriangle;
 	/// Pointer to the parent layer.
 	EditorLayer* m_parent = nullptr;
 	/// Pointer to the scene document that owns this viewport.

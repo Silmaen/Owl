@@ -62,7 +62,7 @@ each entity is routed to a layer by its optional `RendererTag`.
 
 ```mermaid
 flowchart LR
-    Prep["prepare phase<br/>tilemap chunks, world matrices"] --> L1["layer 1<br/>+ backgrounds"]
+    Prep["prepare phase<br/>tilemap chunks, voxel and static meshes, world matrices"] --> L1["layer 1<br/>+ backgrounds"]
     L1 --> Ln["layers 2..n<br/>entities whose RendererTag names them"]
     Ln --> Ov["Scene::renderOverlays<br/>voxel highlight, crosshair"]
     Ov --> Hud["HudPass<br/>every Canvas, in pixels"]
@@ -434,27 +434,65 @@ Convention:
 ## 3D Forward Renderer {#renderer3d}
 
 `Renderer3D` is a generic depth-tested, textured forward renderer with one directional light, the base of
-`RendererVoxel` (and future mesh renderers); unlike `Renderer2D` it draws **real per-vertex geometry**.
+`RendererVoxel` and `RendererMesh`; unlike `Renderer2D` it draws **real per-vertex geometry**.
 
 - **Vertex** (`renderer::Mesh3DVertex`, 56 bytes, tightly packed): object-space `position`, `normal`, `uv`, a
-  `textureIndex` selecting a slot in the bound texture array, and the `tileRect` atlas sub-rect and `ao` factor
-  read by the voxel shader only.
+  `textureIndex` selecting a slot in the bound texture array, the `tileRect` atlas sub-rect (`mesh3d` maps the UV
+  into it, `voxel` tiles it with `frac`) and the `ao` factor of the lighting.
 - **Shader** (`engine_assets/shaders/renderer3D/mesh3d.slang`): vertex transforms position by a per-draw model
   matrix then the per-frame view-projection (both `column_major`, supplied through one scene UBO at binding 0);
-  fragment samples `gTextures[texIndex]` (binding 1) and applies `ambient + max(dot(N, -sunDir), 0)`. Outputs colour
-  + entity id to match the scene framebuffer.
+  fragment samples `gTextures[texIndex]` (binding 1) times the draw tint and applies
+  `(ambient + max(dot(N, -sunDir), 0)) * ao`. Outputs colour + the entity id of the draw to match the scene
+  framebuffer.
+- **Per-draw parameters** (`renderer::MeshDrawParams`): the tint and the entity id travel in the scene UBO with the
+  model matrix (`vec4 tint`, `ivec4 ids`, 192 bytes in all), so picking needs nothing in the vertices; `voxel.slang`
+  shares the block and writes the id of its voxel world.
 - **API**: `init` / `shutdown`, `beginScene(camera)` (enables depth test/write), `endScene()` (restores 2D depth
   state), `setLighting(sunDir, ambient)`, `createMesh(vertices, indices) -> MeshHandle` (one-time GPU upload), and
-  `drawMesh(handle, model, textures)` (immediate-mode draw; textures bind to slots `1..N`, slot `0` is white).
+  `drawMesh(handle, model, textures, params)` (immediate-mode draw; textures bind to slots `1..N`, slot `0` is white,
+  `getWhiteTexture` gives it for a mesh that samples slot `1` without texture).
 
 ```c++
 const auto mesh = renderer::Renderer3D::createMesh(vertices, indices);// once, on geometry change
 renderer::Renderer3D::beginScene(camera);
-renderer::Renderer3D::drawMesh(mesh, modelMatrix, {atlasTexture});
+renderer::Renderer3D::drawMesh(mesh, modelMatrix, {atlasTexture}, {.tint = {1.f, 1.f, 1.f, 1.f}, .entityId = id});
 renderer::Renderer3D::endScene();
 ```
 
 It owns a binding block (`RendererDescriptors`) like the other renderers.
+
+## Static meshes {#renderer-meshes}
+
+A `scene::component::MeshRenderer` draws a mesh file at its entity transform through a `RendererMesh` layer of the
+stack (fields: [Scene components](scene.md#components)).
+
+```mermaid
+flowchart LR
+    File[".gltf / .glb / .obj<br/>pack or asset folders"] --> Loader["MeshLoader::loadMesh<br/>StaticMesh + MeshMaterial"]
+    Loader --> Resource["MeshResource<br/>MeshGeometry, base-colour texture"]
+    Resource --> Cache["MeshCache<br/>EngineContext, one per path"]
+    Cache --> Prep["Scene::prepareMeshRenderData<br/>resolve, upload"]
+    Prep --> Layer["RendererMesh layer<br/>opaque, then blended back-to-front"]
+```
+
+- **Files**: `.gltf`, `.glb` and `.obj` (`MeshLoader::isMeshAsset`; FBX is not read). glTF: every triangle primitive
+  of the first mesh (node transforms ignored), positions, normals and `TEXCOORD_0`, and the base colour of the first
+  material: `baseColorFactor` and the `baseColorTexture` image, embedded or external. UVs follow the engine
+  convention (`v = 0` at the bottom of the image): glTF's are flipped at load, images decoded bottom row first.
+- **Geometry**: `MeshGeometry::fromStaticMesh` turns the per-triangle corners into `Mesh3DVertex` (identical corners
+  share a vertex; a corner without normal takes its face normal), with the object-space bounds; `raycast` intersects a
+  ray with it (the editor places dropped meshes on it).
+- **Cache**: `app::EngineContext::getMeshCache()` maps an asset path to one shared `MeshResource`, looked up in the
+  open pack (the external files of a `.gltf` too), then the asset folders, then as given; an unreadable file is
+  remembered as missing. The opaque and the blended GPU meshes are uploaded on first use, in
+  `Scene::prepareMeshRenderData` before any layer draws (an upload closes the render pass). A hot-reloaded file is
+  invalidated (`MeshCache::invalidate`): its holders are marked stale and fetch it again on their next frame.
+- **Layer** `RendererMesh` (`DefaultConfig`: `SunDirection`, `Ambient`): draws its entities with the mesh tint times
+  the material factor, the component texture or else the material's, and the entity id; opaque meshes as they come,
+  blended ones (`transparent: true`, `Renderer3D::transparentMeshState`) at the end, sorted back-to-front by the
+  distance of their bounds centre. In Edit the viewport draws the voxel and mesh layers after its 2D composite.
+- **Packs**: `AssetScanner` adds the mesh file of every `MeshRenderer`, the buffers and images a `.gltf` names and the
+  texture override.
 
 ## Owl RHI {#renderer-owl-rhi}
 
@@ -604,6 +642,10 @@ sequenceDiagram
 | `stylemix`  | Voxel terrain, perspective sprites, `Space: Screen` HUD, voxel crosshair       |
 | `isometric` | Isometric map, depth-tested trees and houses, sorted translucent smoke, HUD    |
 | `draworder` | Quads, circles and text at interleaved world z, a quad stored last but lowest  |
+| `mesh`      | glTF cube with its texture, tinted, as a ground slab, and blended in front     |
+
+The picking cases (`RenderPick`) run `mesh` and `voxel` with `--pick X,Y` and check the entity the runner logs under each pixel
+(`FrameBench: Pick X,Y -> <tag>`, read from the entity-id attachment, one pixel per frame).
 
 Each case runs `OwlRunner --frame-bench <scene> --capture <png>` (320 x 180, 60 warm-up frames, fixed time step,
 Vulkan validation on) in its own process and compares RGB per pixel: a pixel differs above 24 / 255 on a channel, the

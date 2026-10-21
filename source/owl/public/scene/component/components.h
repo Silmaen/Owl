@@ -19,6 +19,7 @@
 #include "ID.h"
 #include "IsometricObject.h"
 #include "LuaScript.h"
+#include "MeshRenderer.h"
 #include "NativeScript.h"
 #include "PhysicBody.h"
 #include "Player.h"
@@ -68,16 +69,17 @@ concept isComponent =
 		std::is_same_v<Component, CircleRenderer> || std::is_same_v<Component, EntityLink> ||
 		std::is_same_v<Component, FlyCamera> || std::is_same_v<Component, Hierarchy> || std::is_same_v<Component, ID> ||
 		std::is_same_v<Component, IsometricObject> || std::is_same_v<Component, LuaScript> ||
-		std::is_same_v<Component, NativeScript> || std::is_same_v<Component, PhysicBody> ||
-		std::is_same_v<Component, Player> || std::is_same_v<Component, PrefabLink> ||
-		std::is_same_v<Component, RaycastDoor> || std::is_same_v<Component, RaycastPushWall> ||
-		std::is_same_v<Component, RendererTag> || std::is_same_v<Component, SoundListener> ||
-		std::is_same_v<Component, SoundSource> || std::is_same_v<Component, SpriteRenderer> ||
-		std::is_same_v<Component, Tag> || std::is_same_v<Component, Text> || std::is_same_v<Component, Tilemap> ||
-		std::is_same_v<Component, Transform> || std::is_same_v<Component, Trigger> ||
-		std::is_same_v<Component, UiButton> || std::is_same_v<Component, UiImage> ||
-		std::is_same_v<Component, UiPanel> || std::is_same_v<Component, UiProgressBar> ||
-		std::is_same_v<Component, UiRect> || std::is_same_v<Component, UiSlider> || std::is_same_v<Component, UiText> ||
+		std::is_same_v<Component, MeshRenderer> || std::is_same_v<Component, NativeScript> ||
+		std::is_same_v<Component, PhysicBody> || std::is_same_v<Component, Player> ||
+		std::is_same_v<Component, PrefabLink> || std::is_same_v<Component, RaycastDoor> ||
+		std::is_same_v<Component, RaycastPushWall> || std::is_same_v<Component, RendererTag> ||
+		std::is_same_v<Component, SoundListener> || std::is_same_v<Component, SoundSource> ||
+		std::is_same_v<Component, SpriteRenderer> || std::is_same_v<Component, Tag> ||
+		std::is_same_v<Component, Text> || std::is_same_v<Component, Tilemap> || std::is_same_v<Component, Transform> ||
+		std::is_same_v<Component, Trigger> || std::is_same_v<Component, UiButton> ||
+		std::is_same_v<Component, UiImage> || std::is_same_v<Component, UiPanel> ||
+		std::is_same_v<Component, UiProgressBar> || std::is_same_v<Component, UiRect> ||
+		std::is_same_v<Component, UiSlider> || std::is_same_v<Component, UiText> ||
 		std::is_same_v<Component, UiLayout> || std::is_same_v<Component, UiToolCursor> ||
 		std::is_same_v<Component, UiFocus> || std::is_same_v<Component, UiTooltip> ||
 		std::is_same_v<Component, UiWindow> || std::is_same_v<Component, UiScrollView> ||
@@ -122,11 +124,12 @@ concept isDeserializableComponent =
  * `scene::ComponentRegistry`, which the engine and the games use.
  */
 using CopiableComponents =
-		std::tuple<Transform, Camera, Canvas, SpriteRenderer, AnimatedSpriteRenderer, CircleRenderer, Text, Tilemap,
-				   IsometricObject, PhysicBody, Player, Trigger, EntityLink, FlyCamera, BackgroundTexture, Visibility,
-				   Hierarchy, SoundSource, SoundListener, LuaScript, PrefabLink, RaycastDoor, RaycastPushWall,
-				   RendererTag, VoxelWorld, VoxelPlayer, UiButton, UiImage, UiPanel, UiProgressBar, UiRect, UiSlider,
-				   UiText, UiLayout, UiToolCursor, UiTooltip, UiWindow, UiFocus, UiScrollView, UiList>;
+		std::tuple<Transform, Camera, Canvas, SpriteRenderer, AnimatedSpriteRenderer, CircleRenderer, MeshRenderer,
+				   Text, Tilemap, IsometricObject, PhysicBody, Player, Trigger, EntityLink, FlyCamera,
+				   BackgroundTexture, Visibility, Hierarchy, SoundSource, SoundListener, LuaScript, PrefabLink,
+				   RaycastDoor, RaycastPushWall, RendererTag, VoxelWorld, VoxelPlayer, UiButton, UiImage, UiPanel,
+				   UiProgressBar, UiRect, UiSlider, UiText, UiLayout, UiToolCursor, UiTooltip, UiWindow, UiFocus,
+				   UiScrollView, UiList>;
 
 /**
  * @brief
@@ -134,12 +137,12 @@ using CopiableComponents =
  * @note All except ID which is serialized directly in the entity.
  */
 using SerializableComponents =
-		std::tuple<Tag, Transform, Camera, Canvas, SpriteRenderer, AnimatedSpriteRenderer, CircleRenderer, Text,
-				   Tilemap, IsometricObject, PhysicBody, Player, Trigger, EntityLink, FlyCamera, BackgroundTexture,
-				   Visibility, Hierarchy, SoundSource, SoundListener, LuaScript, PrefabLink, RaycastDoor,
-				   RaycastPushWall, RendererTag, VoxelWorld, VoxelPlayer, UiButton, UiImage, UiPanel, UiProgressBar,
-				   UiRect, UiSlider, UiText, UiLayout, UiToolCursor, UiTooltip, UiWindow, UiFocus, UiScrollView,
-				   UiList>;
+		std::tuple<Tag, Transform, Camera, Canvas, SpriteRenderer, AnimatedSpriteRenderer, CircleRenderer, MeshRenderer,
+				   Text, Tilemap, IsometricObject, PhysicBody, Player, Trigger, EntityLink, FlyCamera,
+				   BackgroundTexture, Visibility, Hierarchy, SoundSource, SoundListener, LuaScript, PrefabLink,
+				   RaycastDoor, RaycastPushWall, RendererTag, VoxelWorld, VoxelPlayer, UiButton, UiImage, UiPanel,
+				   UiProgressBar, UiRect, UiSlider, UiText, UiLayout, UiToolCursor, UiTooltip, UiWindow, UiFocus,
+				   UiScrollView, UiList>;
 
 /**
  * @brief
@@ -147,7 +150,7 @@ using SerializableComponents =
  * @note All except ID, Tag & Transform that are mandatory.
  */
 using OptionalComponents =
-		std::tuple<Camera, Canvas, SpriteRenderer, AnimatedSpriteRenderer, CircleRenderer, Text, Tilemap,
+		std::tuple<Camera, Canvas, SpriteRenderer, AnimatedSpriteRenderer, CircleRenderer, MeshRenderer, Text, Tilemap,
 				   IsometricObject, PhysicBody, Player, Trigger, EntityLink, FlyCamera, BackgroundTexture, SoundSource,
 				   SoundListener, LuaScript, PrefabLink, RaycastDoor, RaycastPushWall, RendererTag, VoxelWorld,
 				   VoxelPlayer, UiButton, UiImage, UiPanel, UiProgressBar, UiRect, UiSlider, UiText, UiLayout,

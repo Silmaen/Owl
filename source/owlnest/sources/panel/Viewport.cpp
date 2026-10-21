@@ -20,20 +20,26 @@
 #include "../commands/ComponentCommands.h"
 #include "../commands/VoxelCommands.h"
 
+#include <app/Application.h>
 #include <data/voxel/VoxelRaycast.h>
+#include <scene/component/MeshRenderer.h>
 #include <scene/component/VoxelWorld.h>
 
+#include <data/geometry/MeshLoader.h>
 #include <gui/IconBank.h>
 #include <gui/IconFont.h>
 #include <gui/UiLayer.h>
 #include <gui/widgets/IconButton.h>
 #include <gui/widgets/Menu.h>
 #include <gui/widgets/Tooltip.h>
+#include <math/linAlgebra.h>
 #include <owlgui.h>
+#include <renderer/MeshCache.h>
 #include <renderer/RenderLayer.h>
 #include <renderer/RenderStack.h>
 #include <renderer/Renderer.h>
 #include <renderer/RendererIsometricLayer.h>
+#include <renderer/RendererMesh.h>
 #include <scene/SceneSerializer.h>
 #include <scene/TilemapAsset.h>
 #include <scene/TilemapTerrain.h>
@@ -58,6 +64,7 @@ OWL_DIAG_POP
 #include <cstddef>
 #include <filesystem>
 #include <format>
+#include <limits>
 #include <optional>
 #include <string_view>
 #include <tuple>
@@ -67,6 +74,8 @@ OWL_DIAG_POP
 namespace owl::nest::panel {
 
 namespace {
+constexpr math::vec4 g_selectionColor{0.95f, 0.55f, 0.f, 1.f};
+
 auto makeWindowTitle(const SceneDocument& iDoc, const EditorLayer* iParent) -> std::string {
 	std::string base;
 	if (iParent != nullptr)
@@ -249,7 +258,8 @@ void Viewport::onUpdate(const core::Timestep& iTimeStep) {
 										  .pan = static_cast<float>(settings.cameraPanPercent) / 100.f,
 										  .zoom = static_cast<float>(settings.cameraZoomPercent) / 100.f,
 										  .invertY = settings.cameraInvertY,
-										  .deadZone = static_cast<float>(settings.cameraDeadZone)});
+										  .deadZone = static_cast<float>(settings.cameraDeadZone),
+										  .mouseLook = !m_parent->getVoxelBrush().active});
 		}
 		if (isHovered())
 			m_editorCamera.onUpdate(iTimeStep);
@@ -370,7 +380,9 @@ void Viewport::onRenderInternal() {
 		if (ImGui::BeginDragDropTarget()) {
 			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM")) {
 				const auto* path = static_cast<const char*>(payload->Data);
-				m_parent->handleContentBrowserDrop(std::filesystem::path{path});
+				m_parent->handleContentBrowserDrop(std::filesystem::path{path},
+												   mp_document != nullptr ? getDropPoint(mp_document->getActiveScene())
+																		  : std::nullopt);
 			}
 			ImGui::EndDragDropTarget();
 		}
@@ -434,6 +446,9 @@ void Viewport::renderContextMenu() {
 		auto& settings = m_parent->getSettings();
 		if (gui::widgets::menuItem({.glyph = settings.showGrid ? gui::icon::check : nullptr, .label = "Grid"}))
 			settings.showGrid = !settings.showGrid;
+		if (gui::widgets::menuItem(
+					{.glyph = settings.gridOnGround ? gui::icon::check : nullptr, .label = "Grid on the Ground"}))
+			settings.gridOnGround = !settings.gridOnGround;
 		if (gui::widgets::menuItem({.glyph = gui::icon::house, .label = "Reset View"}))
 			resetView();
 		if (gui::widgets::menuItem({.glyph = gui::icon::scan, .label = "Frame Scene"}))
@@ -599,12 +614,26 @@ void Viewport::renderOverlay() const {
 		if (const scene::Entity selectedEntity =
 					m_parent != nullptr ? m_parent->getSelectedEntity() : scene::Entity{}) {
 			const math::Transform worldTransform = activeScene->getWorldTransform(selectedEntity);
-			renderer::Renderer2D::drawRect({.transform = worldTransform, .color = math::vec4(0.95f, 0.55f, 0.f, 1)});
-			renderer::Renderer2D::drawQuad({.transform = worldTransform, .color = math::vec4{0.95f, 0.55f, 0.f, 0.2f}});
+			if (selectedEntity.hasComponent<scene::component::MeshRenderer>() &&
+				selectedEntity.getComponent<scene::component::MeshRenderer>().mesh) {
+				renderSelectionBox(worldTransform(),
+								   selectedEntity.getComponent<scene::component::MeshRenderer>().mesh->getGeometry());
+			} else if (selectedEntity.hasComponent<scene::component::Camera>() && showsCameraModels() &&
+					   m_cameraModel) {
+				math::Transform rigid = worldTransform;
+				rigid.scale() = {1.f, 1.f, 1.f};
+				renderSelectionBox(rigid(), m_cameraModel->getGeometry());
+			} else {
+				renderer::Renderer2D::drawRect({.transform = worldTransform, .color = g_selectionColor});
+				renderer::Renderer2D::drawQuad(
+						{.transform = worldTransform, .color = gui::Theme::withAlpha(g_selectionColor, 0.2f)});
+			}
 		}
 
 		if (m_parent != nullptr && m_parent->getSettings().showGrid)
-			renderGrid(resolveTranslationSnapStep(m_parent->getSettings(), findFirstTilemapInfo(activeScene.get())));
+			renderGrid(resolveTranslationSnapStep(m_parent->getSettings(), findFirstTilemapInfo(activeScene.get())),
+					   m_parent->getSettings().gridOnGround && !m_isometric &&
+							   getViewProjection() == renderer::CameraEditor::Projection::Perspective);
 		if (m_isometric) {
 			renderIsometricCursor();
 			renderNavigationOverlay(activeScene);
@@ -656,67 +685,8 @@ void Viewport::renderOverlay() const {
 			}
 		}
 
-		if (m_parent != nullptr && m_parent->getSettings().showCameraGizmos) {
-			const auto cameraIcon = textureLibrary.get("icons/triggers/camera");
-			for (const auto camView =
-						 activeScene->registry.view<scene::component::Camera, scene::component::Transform>();
-				 const auto entity: camView) {
-				const auto& camComp = camView.get<scene::component::Camera>(entity);
-				const scene::Entity ent{entity, activeScene.get()};
-				const math::Transform worldT = activeScene->getWorldTransform(ent);
-				const math::mat4 worldMat = worldT();
-				// Local +Y is the camera forward (matches `RendererRaycast::beginScene`).
-				const math::vec4 worldFwd4 = worldMat * math::vec4{0.f, 1.f, 0.f, 0.f};
-				math::vec2 fwd2{worldFwd4.x(), worldFwd4.y()};
-				if (fwd2.normSq() < 1e-8f)
-					fwd2 = math::vec2{0.f, 1.f};
-				fwd2.normalize();
-				const math::vec3 origin{worldT.translation().x(), worldT.translation().y(),
-										worldT.translation().z() + 0.02f};
-
-				const bool isPrimary = camComp.primary;
-				const math::vec4 mainColor =
-						isPrimary ? math::vec4{1.f, 0.78f, 0.16f, 0.95f} : math::vec4{0.55f, 0.85f, 0.95f, 0.75f};
-
-				if (cameraIcon != nullptr) {
-					math::Transform iconTransform;
-					iconTransform.translation() = origin;
-					iconTransform.rotation() = worldT.rotation();
-					const float iconScale = isPrimary ? 0.55f : 0.45f;
-					iconTransform.scale() = {iconScale, iconScale, 1.f};
-					renderer::Renderer2D::drawQuad({.transform = iconTransform,
-													.color = mainColor,
-													.texture = cameraIcon,
-													.entityId = static_cast<int>(entity)});
-				}
-
-				// Forward arrow.
-				constexpr float arrowLen = 1.0f;
-				const math::vec3 tip{origin.x() + fwd2.x() * arrowLen, origin.y() + fwd2.y() * arrowLen, origin.z()};
-				renderer::Renderer2D::drawLine(
-						{.point1 = origin, .point2 = tip, .color = mainColor, .entityId = static_cast<int>(entity)});
-
-				float fovRad = math::radians(75.f);
-				if (camComp.camera.getProjectionType() == scene::SceneCamera::ProjectionType::Perspective)
-					fovRad = camComp.camera.getPerspectiveVerticalFov();
-				constexpr float coneLen = 2.0f;
-				const float cosH = std::cos(fovRad * 0.5f);
-				const float sinH = std::sin(fovRad * 0.5f);
-				const math::vec2 leftDir{fwd2.x() * cosH - fwd2.y() * sinH, fwd2.x() * sinH + fwd2.y() * cosH};
-				const math::vec2 rightDir{fwd2.x() * cosH + fwd2.y() * sinH, -fwd2.x() * sinH + fwd2.y() * cosH};
-				const math::vec4 coneColor{mainColor.x(), mainColor.y(), mainColor.z(), 0.45f};
-				renderer::Renderer2D::drawLine(
-						{.point1 = origin,
-						 .point2 = {origin.x() + leftDir.x() * coneLen, origin.y() + leftDir.y() * coneLen, origin.z()},
-						 .color = coneColor,
-						 .entityId = static_cast<int>(entity)});
-				renderer::Renderer2D::drawLine({.point1 = origin,
-												.point2 = {origin.x() + rightDir.x() * coneLen,
-														   origin.y() + rightDir.y() * coneLen, origin.z()},
-												.color = coneColor,
-												.entityId = static_cast<int>(entity)});
-			}
-		}
+		if (m_parent != nullptr && m_parent->getSettings().showCameraGizmos)
+			renderCameraMarkers(activeScene);
 
 		const scene::Entity selectedForGizmo = m_parent != nullptr ? m_parent->getSelectedEntity() : scene::Entity{};
 		constexpr math::vec4 kPushwallOutline{0.25f, 0.85f, 0.35f, 1.f};
@@ -790,6 +760,10 @@ void Viewport::renderOverlay() const {
 	}
 
 	renderer::Renderer2D::endScene();
+	// After the lines: the overlay ignores the depth, so a model drawn before would show the grid through it.
+	if (mp_document->state() == SceneDocument::State::Edit && m_parent != nullptr &&
+		m_parent->getSettings().showCameraGizmos && showsCameraModels())
+		renderCameraModels(activeScene);
 }
 
 namespace {
@@ -852,7 +826,180 @@ void overlaySeparator() {
 
 }// namespace
 
-void Viewport::renderGrid(const float iStep) const {
+void Viewport::renderSelectionBox(const math::mat4& iWorld, const renderer::MeshGeometry& iGeometry) {
+	const auto& lo = iGeometry.boundsMin;
+	const auto& hi = iGeometry.boundsMax;
+	std::array<math::vec3, 8> corners;
+	for (size_t i = 0; i < corners.size(); ++i) {
+		const math::vec4 corner{(i & 1u) != 0 ? hi.x() : lo.x(), (i & 2u) != 0 ? hi.y() : lo.y(),
+								(i & 4u) != 0 ? hi.z() : lo.z(), 1.f};
+		const math::vec4 world = iWorld * corner;
+		corners[i] = {world.x(), world.y(), world.z()};
+	}
+	// The 12 edges join the corners whose indices differ by one bit.
+	for (size_t a = 0; a < corners.size(); ++a) {
+		for (const size_t bit: {1u, 2u, 4u}) {
+			if ((a & bit) == 0)
+				renderer::Renderer2D::drawLine(
+						{.point1 = corners[a], .point2 = corners[a | bit], .color = g_selectionColor});
+		}
+	}
+}
+
+void Viewport::renderCameraMarkers(const shared<scene::Scene>& iScene) const {
+	const auto cameraIcon = renderer::Renderer::getTextureLibrary().get("icons/triggers/camera");
+	for (const auto camView = iScene->registry.view<scene::component::Camera, scene::component::Transform>();
+		 const auto entity: camView) {
+		const auto& camComp = camView.get<scene::component::Camera>(entity);
+		const scene::Entity ent{entity, iScene.get()};
+		const math::Transform worldT = iScene->getWorldTransform(ent);
+		const math::mat4 worldMat = worldT();
+		// Local +Y is the camera forward (matches `RendererRaycast::beginScene`).
+		const math::vec4 worldFwd4 = worldMat * math::vec4{0.f, 1.f, 0.f, 0.f};
+		math::vec2 fwd2{worldFwd4.x(), worldFwd4.y()};
+		if (fwd2.normSq() < 1e-8f)
+			fwd2 = math::vec2{0.f, 1.f};
+		fwd2.normalize();
+		const math::vec3 origin{worldT.translation().x(), worldT.translation().y(), worldT.translation().z() + 0.02f};
+
+		const bool isPrimary = camComp.primary;
+		const math::vec4 mainColor = getCameraMarkerColor(isPrimary);
+		if (showsCameraModels()) {
+			math::Transform rigid = worldT;
+			rigid.scale() = {1.f, 1.f, 1.f};
+			renderCameraFrustum(camComp, rigid(), mainColor, static_cast<int>(entity));
+			continue;
+		}
+
+		if (cameraIcon != nullptr) {
+			math::Transform iconTransform;
+			iconTransform.translation() = origin;
+			iconTransform.rotation() = worldT.rotation();
+			const float iconScale = isPrimary ? 0.55f : 0.45f;
+			iconTransform.scale() = {iconScale, iconScale, 1.f};
+			renderer::Renderer2D::drawQuad({.transform = iconTransform,
+											.color = mainColor,
+											.texture = cameraIcon,
+											.entityId = static_cast<int>(entity)});
+		}
+
+		// Forward arrow.
+		constexpr float arrowLen = 1.0f;
+		const math::vec3 tip{origin.x() + fwd2.x() * arrowLen, origin.y() + fwd2.y() * arrowLen, origin.z()};
+		renderer::Renderer2D::drawLine(
+				{.point1 = origin, .point2 = tip, .color = mainColor, .entityId = static_cast<int>(entity)});
+
+		float fovRad = math::radians(75.f);
+		if (camComp.camera.getProjectionType() == scene::SceneCamera::ProjectionType::Perspective)
+			fovRad = camComp.camera.getPerspectiveVerticalFov();
+		constexpr float coneLen = 2.0f;
+		const float cosH = std::cos(fovRad * 0.5f);
+		const float sinH = std::sin(fovRad * 0.5f);
+		const math::vec2 leftDir{fwd2.x() * cosH - fwd2.y() * sinH, fwd2.x() * sinH + fwd2.y() * cosH};
+		const math::vec2 rightDir{fwd2.x() * cosH + fwd2.y() * sinH, -fwd2.x() * sinH + fwd2.y() * cosH};
+		const math::vec4 coneColor{mainColor.x(), mainColor.y(), mainColor.z(), 0.45f};
+		renderer::Renderer2D::drawLine(
+				{.point1 = origin,
+				 .point2 = {origin.x() + leftDir.x() * coneLen, origin.y() + leftDir.y() * coneLen, origin.z()},
+				 .color = coneColor,
+				 .entityId = static_cast<int>(entity)});
+		renderer::Renderer2D::drawLine(
+				{.point1 = origin,
+				 .point2 = {origin.x() + rightDir.x() * coneLen, origin.y() + rightDir.y() * coneLen, origin.z()},
+				 .color = coneColor,
+				 .entityId = static_cast<int>(entity)});
+	}
+}
+
+auto Viewport::showsCameraModels() const -> bool {
+	return !m_isometric && getViewProjection() == renderer::CameraEditor::Projection::Perspective;
+}
+
+void Viewport::renderCameraModels(const shared<scene::Scene>& iScene) const {
+	if (!m_cameraModel && !m_cameraModelMissing) {
+		for (const auto& [title, assetsPath]: app::Application::get().getAssetDirectories()) {
+			const auto file = assetsPath / "meshes" / "camera.glb";
+			if (!exists(file))
+				continue;
+			if (const auto loaded = data::geometry::MeshLoader::loadMesh(file); loaded.mesh)
+				m_cameraModel = mkShared<renderer::MeshResource>(file, loaded);
+			break;
+		}
+		m_cameraModelMissing = !m_cameraModel;
+		if (m_cameraModelMissing)
+			OWL_WARN("Viewport: meshes/camera.glb not found in the editor assets, cameras show their frustum only.")
+	}
+	if (!m_upTriangle) {
+		const std::array<renderer::Mesh3DVertex, 3> vertices{
+				renderer::Mesh3DVertex{.position = {-1.f, 0.f, 0.f}, .normal = {0.f, 0.f, 1.f}, .uv = {0.f, 0.f}},
+				renderer::Mesh3DVertex{.position = {1.f, 0.f, 0.f}, .normal = {0.f, 0.f, 1.f}, .uv = {1.f, 0.f}},
+				renderer::Mesh3DVertex{.position = {0.f, 1.f, 0.f}, .normal = {0.f, 0.f, 1.f}, .uv = {0.5f, 1.f}}};
+		constexpr std::array<uint32_t, 3> indices{0, 1, 2};
+		m_upTriangle = renderer::Renderer3D::createMesh(vertices, indices);
+	}
+	const std::array<shared<renderer::gpu::Texture2D>, 1> white{renderer::Renderer3D::getWhiteTexture()};
+	renderer::RendererMesh::beginScene(getActiveCamera(), {});
+	for (const auto view = iScene->registry.view<scene::component::Camera, scene::component::Transform>();
+		 const auto entity: view) {
+		math::Transform rigid = iScene->getWorldTransform(scene::Entity{entity, iScene.get()});
+		rigid.scale() = {1.f, 1.f, 1.f};
+		const auto& camera = view.get<scene::component::Camera>(entity);
+		const auto id = static_cast<int32_t>(entity);
+		if (m_cameraModel)
+			renderer::RendererMesh::drawMesh(
+					*m_cameraModel, rigid(), m_cameraModel->getBaseColorTexture(),
+					{.tint = camera.primary ? math::vec4{1.f, 1.f, 1.f, 1.f} : math::vec4{0.75f, 0.85f, 1.f, 1.f},
+					 .entityId = id},
+					false);
+		// The filled triangle above the far rectangle of the frustum points to the up of the camera.
+		const auto extent = getFrustumExtent(camera);
+		const float side = extent.halfWidth * 0.35f;
+		const math::mat4 local =
+				math::scale(math::translate(math::identity<float, 4>(),
+											math::vec3{0.f, extent.halfHeight + side * 0.15f, -extent.depth}),
+							math::vec3{side, side * 0.8f, 1.f});
+		renderer::Renderer3D::drawMesh(m_upTriangle, rigid() * local, white,
+									   {.tint = getCameraMarkerColor(camera.primary), .entityId = id});
+	}
+	renderer::RendererMesh::endScene();
+}
+
+auto Viewport::getFrustumExtent(const scene::component::Camera& iCamera) const -> FrustumExtent {
+	constexpr float depth = 1.5f;
+	const auto& size = m_framebuffer ? m_framebuffer->getSpecification().size : math::vec2ui{16, 9};
+	const float aspect = size.y() > 0 ? static_cast<float>(size.x()) / static_cast<float>(size.y()) : 1.f;
+	const bool perspective = iCamera.camera.getProjectionType() == scene::SceneCamera::ProjectionType::Perspective;
+	const float halfHeight = perspective ? depth * std::tan(iCamera.camera.getPerspectiveVerticalFov() * 0.5f)
+										 : iCamera.camera.getOrthographicSize() * 0.5f;
+	return {.halfWidth = halfHeight * aspect, .halfHeight = halfHeight, .depth = depth, .perspective = perspective};
+}
+
+auto Viewport::getCameraMarkerColor(const bool iPrimary) -> math::vec4 {
+	return iPrimary ? math::vec4{1.f, 0.78f, 0.16f, 0.95f} : math::vec4{0.55f, 0.85f, 0.95f, 0.75f};
+}
+
+void Viewport::renderCameraFrustum(const scene::component::Camera& iCamera, const math::mat4& iWorld,
+								   const math::vec4& iColor, const int iEntityId) const {
+	const auto [halfWidth, halfHeight, depth, perspective] = getFrustumExtent(iCamera);
+	const auto toWorld = [&iWorld](const float iX, const float iY, const float iZ) -> math::vec3 {
+		const math::vec4 point = iWorld * math::vec4{iX, iY, iZ, 1.f};
+		return {point.x(), point.y(), point.z()};
+	};
+	// The camera looks down its local -Z.
+	const std::array<math::vec3, 4> far{toWorld(-halfWidth, -halfHeight, -depth),
+										toWorld(halfWidth, -halfHeight, -depth), toWorld(halfWidth, halfHeight, -depth),
+										toWorld(-halfWidth, halfHeight, -depth)};
+	for (size_t i = 0; i < far.size(); ++i) {
+		const math::vec3 start =
+				perspective ? toWorld(0.f, 0.f, 0.f)
+							: toWorld(i == 0 || i == 3 ? -halfWidth : halfWidth, i < 2 ? -halfHeight : halfHeight, 0.f);
+		renderer::Renderer2D::drawLine({.point1 = start, .point2 = far[i], .color = iColor, .entityId = iEntityId});
+		renderer::Renderer2D::drawLine(
+				{.point1 = far[i], .point2 = far[(i + 1) % far.size()], .color = iColor, .entityId = iEntityId});
+	}
+}
+
+void Viewport::renderGrid(const float iStep, const bool iOnGround) const {
 	if (iStep <= 0.f)
 		return;
 	const auto& focal = m_isometric ? m_isoCamera.getTarget() : m_editorCamera.getFocalPoint();
@@ -868,26 +1015,31 @@ void Viewport::renderGrid(const float iStep) const {
 	float step = iStep;
 	constexpr float maxLines = 120.f;
 	while (extent * 2.f / step > maxLines) step *= 2.f;
+	// The second axis of the plane: Y on the XY plane, Z on the ground.
+	const float focalV = iOnGround ? focal.z() : focal.y();
 	const float minX = std::floor((focal.x() - extent) / step) * step;
-	const float minY = std::floor((focal.y() - extent) / step) * step;
+	const float minV = std::floor((focalV - extent) / step) * step;
 	const float maxX = focal.x() + extent;
-	const float maxY = focal.y() + extent;
+	const float maxV = focalV + extent;
+	const auto at = [iOnGround](const float iX, const float iV) -> math::vec3 {
+		return iOnGround ? math::vec3{iX, 0.f, iV} : math::vec3{iX, iV, 0.f};
+	};
 	const auto& theme = gui::UiLayer::getTheme();
 	const math::vec4 lineColor = gui::Theme::withAlpha(theme.text, 0.07f);
+	const math::vec4 secondAxis = gui::Theme::withAlpha(iOnGround ? theme.axisZ : theme.axisY, 0.45f);
 	const auto columns = static_cast<int>((maxX - minX) / step) + 1;
 	for (int i = 0; i < columns; ++i) {
 		const float x = minX + step * static_cast<float>(i);
 		const bool axis = std::abs(x) < step * 0.5f;
-		renderer::Renderer2D::drawLine({.point1 = {x, minY, 0.f},
-										.point2 = {x, maxY, 0.f},
-										.color = axis ? gui::Theme::withAlpha(theme.axisY, 0.45f) : lineColor});
+		renderer::Renderer2D::drawLine(
+				{.point1 = at(x, minV), .point2 = at(x, maxV), .color = axis ? secondAxis : lineColor});
 	}
-	const auto rows = static_cast<int>((maxY - minY) / step) + 1;
+	const auto rows = static_cast<int>((maxV - minV) / step) + 1;
 	for (int i = 0; i < rows; ++i) {
-		const float y = minY + step * static_cast<float>(i);
-		const bool axis = std::abs(y) < step * 0.5f;
-		renderer::Renderer2D::drawLine({.point1 = {minX, y, 0.f},
-										.point2 = {maxX, y, 0.f},
+		const float v = minV + step * static_cast<float>(i);
+		const bool axis = std::abs(v) < step * 0.5f;
+		renderer::Renderer2D::drawLine({.point1 = at(minX, v),
+										.point2 = at(maxX, v),
 										.color = axis ? gui::Theme::withAlpha(theme.axisX, 0.45f) : lineColor});
 	}
 }
@@ -1271,6 +1423,7 @@ void Viewport::renderViewOverlay() {
 			};
 			gui::widgets::menuHeader("Show");
 			option("Grid", settings.showGrid);
+			option("Grid on the ground (3D)", settings.gridOnGround);
 			option("Camera markers", settings.showCameraGizmos);
 			option("Trigger icons", settings.showTriggerIcons);
 			option("Frame stats", settings.showFrameChip);
@@ -1633,7 +1786,7 @@ void Viewport::renderGizmo() {
 		const auto tilemapInfo = findFirstTilemapInfo(activeScene.get());
 		float snapValue = 0.5f;
 		if (gui::Guizmo::isRotate(m_gizmoType)) {
-			snapValue = 45.0f;
+			snapValue = m_parent->getSettings().snapRotationDegrees;
 		} else if (m_parent != nullptr) {
 			snapValue = resolveTranslationSnapStep(m_parent->getSettings(), tilemapInfo);
 		}
@@ -1716,6 +1869,73 @@ void Viewport::onEvent(event::Event& ioEvent) {
 	event::EventDispatcher dispatcher(ioEvent);
 	dispatcher.dispatch<event::MouseButtonPressedEvent>(
 			[this]<typename T0>(T0&& ioPh1) -> auto { return onMouseButtonPressed(std::forward<T0>(ioPh1)); });
+}
+
+auto Viewport::getCursorRay() const -> std::optional<std::pair<math::vec3, math::vec3>> {
+	const math::vec2 vpSize = m_upper - m_lower;
+	if (vpSize.x() <= 0.f || vpSize.y() <= 0.f)
+		return std::nullopt;
+	const auto mousePos = ImGui::GetMousePos();
+	const float ndcX = 2.f * (mousePos.x - m_lower.x()) / vpSize.x() - 1.f;
+	const float screenY = 2.f * (mousePos.y - m_lower.y()) / vpSize.y() - 1.f;
+	const bool isOpenGl = renderer::gpu::RenderCommand::getApi() == renderer::gpu::RenderAPI::Type::OpenGL;
+	const float ndcY = isOpenGl ? -screenY : screenY;
+	const auto& camera = getActiveCamera();
+	const math::mat4 vpInv = inverse(camera.getProjection() * camera.getView());
+	const auto unproject = [&](const float iDepth) -> std::optional<math::vec3> {
+		const math::vec4 point = vpInv * math::vec4{ndcX, ndcY, iDepth, 1.f};
+		if (std::abs(point.w()) < 1e-6f)
+			return std::nullopt;
+		return math::vec3{point.x() / point.w(), point.y() / point.w(), point.z() / point.w()};
+	};
+	// Both depths lie in the clip range of OpenGL ([-1, 1]) and of Vulkan ([0, 1]).
+	const auto nearPoint = unproject(0.f);
+	const auto farPoint = unproject(0.5f);
+	if (!nearPoint || !farPoint || (*farPoint - *nearPoint).normSq() < 1e-12f)
+		return std::nullopt;
+	return std::pair{*nearPoint, (*farPoint - *nearPoint).normalized()};
+}
+
+auto Viewport::getDropPoint(const shared<scene::Scene>& iScene) const -> std::optional<math::vec3> {
+	const auto ray = getCursorRay();
+	if (!ray || !iScene)
+		return std::nullopt;
+	const auto& [origin, direction] = *ray;
+	if (const auto hovered = getHoveredEntity(); hovered && hovered.hasComponent<scene::component::MeshRenderer>()) {
+		if (const auto& mesh = hovered.getComponent<scene::component::MeshRenderer>().mesh; mesh) {
+			const math::mat4 model = iScene->getWorldTransform(hovered)();
+			const math::mat4 toObject = inverse(model);
+			const math::vec4 localOrigin = toObject * math::vec4{origin.x(), origin.y(), origin.z(), 1.f};
+			const math::vec4 localDirection = toObject * math::vec4{direction.x(), direction.y(), direction.z(), 0.f};
+			if (const auto hit =
+						mesh->getGeometry().raycast({localOrigin.x(), localOrigin.y(), localOrigin.z()},
+													{localDirection.x(), localDirection.y(), localDirection.z()});
+				hit) {
+				const math::vec4 world = model * math::vec4{hit->x(), hit->y(), hit->z(), 1.f};
+				return math::vec3{world.x(), world.y(), world.z()};
+			}
+		}
+	}
+	if (const auto hovered = getHoveredEntity(); hovered && hovered.hasComponent<scene::component::VoxelWorld>()) {
+		const auto& voxel = hovered.getComponent<scene::component::VoxelWorld>();
+		const auto targetable = [&voxel](const int32_t iX, const int32_t iY, const int32_t iZ) -> bool {
+			return !voxel.registry.isAir(voxel.world.getBlock(math::vec3i{iX, iY, iZ}));
+		};
+		if (const auto hit = data::voxel::raycastVoxel(targetable, origin, direction, 256.f); hit)
+			return math::vec3{static_cast<float>(hit->block.x()) + 0.5f + 0.5f * static_cast<float>(hit->normal.x()),
+							  static_cast<float>(hit->block.y()) + 0.5f + 0.5f * static_cast<float>(hit->normal.y()),
+							  static_cast<float>(hit->block.z()) + 0.5f + 0.5f * static_cast<float>(hit->normal.z())};
+	}
+	for (const size_t axis: {size_t{1}, size_t{2}}) {
+		if (std::abs(direction[axis]) < 1e-4f)
+			continue;
+		if (const float distance = -origin[axis] / direction[axis]; distance > 0.f) {
+			math::vec3 point = origin + direction * distance;
+			point[axis] = 0.f;
+			return point;
+		}
+	}
+	return std::nullopt;
 }
 
 void Viewport::handleVoxelBrush(const shared<scene::Scene>& iScene) {
@@ -1827,11 +2047,47 @@ auto Viewport::onMouseButtonPressed(const event::MouseButtonPressedEvent& ioEven
 	if (m_navTool.active && m_isometric && m_parent != nullptr && m_parent->getSettings().showNavGraph)
 		return false;
 	if (ioEvent.getMouseButton() == input::mouse::ButtonLeft) {
-		if (isHovered() && !gui::Guizmo::isOver() && !input::Input::isKeyPressed(input::key::LeftAlt))
-			if (m_parent != nullptr)
-				m_parent->setSelectedEntity(getHoveredEntity());
+		if (isHovered() && !gui::Guizmo::isOver() && !input::Input::isKeyPressed(input::key::LeftAlt) &&
+			m_parent != nullptr) {
+			const auto camera = pickCameraModel();
+			m_parent->setSelectedEntity(camera ? camera : getHoveredEntity());
+		}
 	}
 	return false;
+}
+
+auto Viewport::pickCameraModel() const -> scene::Entity {
+	if (m_parent == nullptr || !m_parent->getSettings().showCameraGizmos || !showsCameraModels() || !m_cameraModel)
+		return {};
+	const auto& scene = mp_document->getActiveScene();
+	const auto ray = getCursorRay();
+	if (!scene || !ray)
+		return {};
+	const auto& [origin, direction] = *ray;
+	scene::Entity nearest;
+	float nearestDistance = std::numeric_limits<float>::max();
+	for (const auto view = scene->registry.view<scene::component::Camera, scene::component::Transform>();
+		 const auto entity: view) {
+		const scene::Entity camera{entity, scene.get()};
+		math::Transform rigid = scene->getWorldTransform(camera);
+		rigid.scale() = {1.f, 1.f, 1.f};
+		const math::mat4 model = rigid();
+		const math::mat4 toObject = inverse(model);
+		const math::vec4 localOrigin = toObject * math::vec4{origin.x(), origin.y(), origin.z(), 1.f};
+		const math::vec4 localDirection = toObject * math::vec4{direction.x(), direction.y(), direction.z(), 0.f};
+		const auto hit =
+				m_cameraModel->getGeometry().raycast({localOrigin.x(), localOrigin.y(), localOrigin.z()},
+													 {localDirection.x(), localDirection.y(), localDirection.z()});
+		if (!hit)
+			continue;
+		const math::vec4 world = model * math::vec4{hit->x(), hit->y(), hit->z(), 1.f};
+		if (const float distance = (math::vec3{world.x(), world.y(), world.z()} - origin).norm();
+			distance < nearestDistance) {
+			nearestDistance = distance;
+			nearest = camera;
+		}
+	}
+	return nearest;
 }
 
 auto Viewport::getHoveredEntity() const -> scene::Entity {

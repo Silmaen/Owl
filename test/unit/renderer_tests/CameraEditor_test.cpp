@@ -243,3 +243,42 @@ TEST(CameraEditor, NavigationScalesAndFiltersTheDrags) {
 	EXPECT_NEAR(10.f - wheel.getDistance(), 0.5f * (10.f - plain.getDistance()), 1e-4f);
 	owl::input::Input::invalidate();
 }
+
+TEST(CameraEditor, DragsWithoutModifierLookAndPan) {
+	owl::input::Input::init(owl::window::Type::Null);
+	owl::core::Timestep ts;
+	const auto drag = [&ts](CameraEditor& ioCam, const owl::input::MouseCode iButton) -> void {
+		owl::input::Input::injectMouseButton(iButton);
+		owl::input::Input::injectMousePos({0.f, 0.f});
+		ts.update();
+		ioCam.onUpdate(ts);
+		owl::input::Input::injectMousePos({12.f, 6.f});
+		ts.update();
+		ioCam.onUpdate(ts);
+		// The injection toggles: release the button for the next drag.
+		owl::input::Input::injectMouseButton(iButton);
+		owl::input::Input::injectMousePos({0.f, 0.f});
+	};
+	CameraEditor look(45, 1.5f, 0.1f, 100);
+	drag(look, owl::input::mouse::ButtonRight);
+	EXPECT_NE(look.getYaw(), 0.f);
+
+	CameraEditor pan(45, 1.5f, 0.1f, 100);
+	const auto focal = pan.getFocalPoint();
+	drag(pan, owl::input::mouse::ButtonMiddle);
+	EXPECT_GT((pan.getFocalPoint() - focal).norm(), 0.f);
+	EXPECT_FLOAT_EQ(pan.getYaw(), 0.f);
+
+	// A left drag selects and moves the gizmo: it never moves the camera.
+	CameraEditor still(45, 1.5f, 0.1f, 100);
+	drag(still, owl::input::mouse::ButtonLeft);
+	EXPECT_FLOAT_EQ(still.getYaw(), 0.f);
+
+	// Off (the voxel brush owns the right button), the right drag moves nothing either.
+	CameraEditor brush(45, 1.5f, 0.1f, 100);
+	brush.setNavigation(
+			{.rotate = 1.f, .pan = 1.f, .zoom = 1.f, .invertY = false, .deadZone = 0.f, .mouseLook = false});
+	drag(brush, owl::input::mouse::ButtonRight);
+	EXPECT_FLOAT_EQ(brush.getYaw(), 0.f);
+	owl::input::Input::invalidate();
+}

@@ -26,6 +26,7 @@
 #include "gui/widgets/Toggle.h"
 
 #include "input/ActionMap.h"
+#include "renderer/MeshCache.h"
 #include "renderer/Renderer.h"
 #include "scene/TilemapAsset.h"
 #include "scene/Tileset.h"
@@ -453,6 +454,34 @@ void renderProps(CircleRenderer& ioComponent) {
 	prop::ColorEdit4("Color", ioComponent.color.data());
 	prop::DragFloat("Thickness", &ioComponent.thickness, 0.025f, 0.0f, 1.0f);
 	prop::DragFloat("Fade", &ioComponent.fade, 0.00025f, 0.0f, 1.0f);
+}
+
+void renderProps(MeshRenderer& ioComponent) {
+	const auto& mesh = ioComponent.mesh;
+	auto preview = ioComponent.texture;
+	if (!preview && mesh)
+		preview = mesh->getBaseColorTexture();
+	if (assetPathRow("Mesh", ioComponent.meshPath.generic_string(), "drop a .gltf, .glb or .obj", "Open the mesh file.",
+					 preview))
+		ioComponent.setMeshPath({});
+	if (std::filesystem::path dropped; widgets::assetDropTarget(widgets::AssetKind::Mesh, dropped))
+		ioComponent.setMeshPath(dropped);
+	prop::ColorEdit4("Color", ioComponent.color.data());
+	fieldTooltip("Multiplies the base colour of the mesh material.");
+	widgets::textureField("Texture", ioComponent.texture, {100.f, 100.f},
+						  mesh ? mesh->getBaseColorTexture() : shared<renderer::gpu::Texture2D>{});
+	fieldTooltip("Replaces the base-colour texture of the mesh material; empty keeps the material's (shown faded).");
+	prop::Checkbox("Transparent", &ioComponent.transparent);
+	fieldTooltip("Draw with alpha blending (the colour alpha), after the opaque meshes and sorted back-to-front.");
+	if (mesh) {
+		const auto& geometry = mesh->getGeometry();
+		ImGui::Text("Vertices: %zu, triangles: %zu", geometry.vertices.size(), geometry.indices.size() / 3);
+		ImGui::Text("Material texture: %s", mesh->getBaseColorTexture() ? "yes" : "none");
+	} else if (!ioComponent.meshPath.empty()) {
+		ImGui::TextDisabled("(loaded on the next frame, or the file cannot be read: see the log)");
+	} else {
+		widgets::notice("No mesh: drop a .gltf, .glb or .obj file on the field.");
+	}
 }
 
 void renderProps(Text& ioComponent) {

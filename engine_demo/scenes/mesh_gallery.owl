@@ -1,0 +1,185 @@
+Scene: untitled
+FormatVersion: 5
+EnabledRenderers:
+  - Name: world
+    Enabled: false
+  - Name: mesh_world
+    Enabled: true
+  - Name: ui
+    Enabled: false
+Entities:
+  - Entity: 3700000000000000001
+    Tag:
+      tag: GalleryCamera
+    Transform:
+      translation: [0, 2.6, 6.5]
+      rotation: [-0.32, 0, 0]
+      scale: [1, 1, 1]
+    Camera:
+      camera:
+        projectionType: Perspective
+        perspectiveFOV: 0.7853982
+        perspectiveNear: 0.1
+        perspectiveFar: 200
+        orthographicSize: 8
+        orthographicNear: -1
+        orthographicFar: 10
+      primary: true
+      fixedAspectRatio: false
+    FlyCamera:
+      MoveSpeed: 4
+      LookSpeed: 1.5
+    Visibility:
+      gameVisible: true
+    LuaScript:
+      scriptPath: scripts/mesh/mesh_gallery.lua
+  - Entity: 3700000000000000002
+    Tag:
+      tag: Floor
+    Transform:
+      translation: [0, -0.05, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    MeshRenderer:
+      mesh: meshes/floor.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    Visibility:
+      gameVisible: true
+    RendererTag:
+      Name: mesh_world
+  - Entity: 3700000000000000003
+    Tag:
+      tag: CrateA
+    Transform:
+      translation: [-2.2, 0.5, -0.6]
+      rotation: [0, 0.3, 0]
+      scale: [1, 1, 1]
+    MeshRenderer:
+      mesh: meshes/crate.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    Visibility:
+      gameVisible: true
+    RendererTag:
+      Name: mesh_world
+  - Entity: 3700000000000000004
+    Tag:
+      tag: CrateB
+    Transform:
+      translation: [-1.1, 0.5, -1]
+      rotation: [0, -0.2, 0]
+      scale: [1, 1, 1]
+    MeshRenderer:
+      mesh: meshes/crate.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    Visibility:
+      gameVisible: true
+    RendererTag:
+      Name: mesh_world
+  - Entity: 3700000000000000005
+    Tag:
+      tag: CrateTop
+    Transform:
+      translation: [-1.7, 1.5, -0.8]
+      rotation: [0, 0.6, 0]
+      scale: [1, 1, 1]
+    MeshRenderer:
+      mesh: meshes/crate.glb
+      color: [1, 0.75, 0.6, 1]
+      transparent: false
+    Visibility:
+      gameVisible: true
+    RendererTag:
+      Name: mesh_world
+  - Entity: 3700000000000000006
+    Tag:
+      tag: PillarLeft
+    Transform:
+      translation: [-3.2, 0, -3]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    MeshRenderer:
+      mesh: meshes/pillar.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    Visibility:
+      gameVisible: true
+    RendererTag:
+      Name: mesh_world
+  - Entity: 3700000000000000007
+    Tag:
+      tag: PillarRight
+    Transform:
+      translation: [3.2, 0, -3]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    MeshRenderer:
+      mesh: meshes/pillar.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    Visibility:
+      gameVisible: true
+    RendererTag:
+      Name: mesh_world
+  - Entity: 3700000000000000008
+    Tag:
+      tag: Pyramid
+    Transform:
+      translation: [1.4, 0, -1.6]
+      rotation: [0, 0.4, 0]
+      scale: [1, 1, 1]
+    MeshRenderer:
+      mesh: meshes/pyramid.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    Visibility:
+      gameVisible: true
+    RendererTag:
+      Name: mesh_world
+  - Entity: 3700000000000000009
+    Tag:
+      tag: Sphere
+    Transform:
+      translation: [0.2, 0.5, 0.4]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    MeshRenderer:
+      mesh: meshes/sphere.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    Visibility:
+      gameVisible: true
+    RendererTag:
+      Name: mesh_world
+  - Entity: 3700000000000000010
+    Tag:
+      tag: Torus
+    Transform:
+      translation: [2.4, 0.9, 0.6]
+      rotation: [0.6, 0, 0.3]
+      scale: [1.2, 1.2, 1.2]
+    MeshRenderer:
+      mesh: meshes/torus.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    Visibility:
+      gameVisible: true
+    RendererTag:
+      Name: mesh_world
+  - Entity: 3700000000000000011
+    Tag:
+      tag: GlassSphere
+    Transform:
+      translation: [-0.4, 0.8, 1.8]
+      rotation: [0, 0, 0]
+      scale: [1.6, 1.6, 1.6]
+    MeshRenderer:
+      mesh: meshes/sphere.glb
+      color: [0.75, 0.9, 1, 0.4]
+      transparent: true
+    Visibility:
+      gameVisible: true
+    RendererTag:
+      Name: mesh_world

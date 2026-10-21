@@ -37,6 +37,8 @@ struct FrameBenchOptions {
 	std::filesystem::path out;
 	/// PNG of the last measured frame, rendered offscreen; empty to render to the window only.
 	std::filesystem::path capture;
+	/// Pixels (from the top left of the capture) whose entity, read from the picking attachment, is logged with it.
+	std::vector<math::vec2ui> picks;
 	/// Measured frames.
 	uint32_t frames{1000};
 	/// Warm-up frames run before the measure.

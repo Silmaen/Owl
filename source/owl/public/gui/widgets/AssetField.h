@@ -36,6 +36,7 @@ enum struct AssetKind : uint8_t {
 	Tileset,///< Tileset asset (`.owltileset`).
 	Tilemap,///< Tilemap asset (`.owltilemap`).
 	ObjectSheet,///< Isometric object sheet description (`.json`).
+	Mesh,///< Static mesh file (`.gltf`, `.glb`, `.obj`).
 	Any,///< Accepts any extension.
 };
 
@@ -75,9 +76,11 @@ OWL_API auto assetDropTarget(AssetKind iKind, std::filesystem::path& oRelativePa
  * @param[in] iLabel Field label, used as the ImGui button id.
  * @param[in,out] ioTexture Texture handle to read/write.
  * @param[in] iSize Desired square size in pixels.
+ * @param[in] iInherited Texture used while the field is empty (a material's), shown faded; null for none.
  * @return True when the underlying texture pointer changed this frame.
  */
 OWL_API auto textureField(const char* iLabel, shared<renderer::gpu::Texture2D>& ioTexture,
-						  ImVec2 iSize = {100.f, 100.f}) -> bool;
+						  ImVec2 iSize = {100.f, 100.f}, const shared<renderer::gpu::Texture2D>& iInherited = nullptr)
+		-> bool;
 
 }// namespace owl::gui::widgets

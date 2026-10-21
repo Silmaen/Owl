@@ -17,6 +17,7 @@
 #include <string_view>
 
 namespace owl::renderer {
+class MeshCache;
 class VoxelMeshCache;
 }// namespace owl::renderer
 
@@ -33,7 +34,7 @@ namespace owl::app {
  *  Engine state shared by the scenes of one application, owned by `Application` instead of static storage.
  *
  * Holds the screen transition, the game settings, the project's simulation tick rate, its action map and default HUD,
- * the HUD library and the voxel mesh cache. The
+ * the HUD library, the static mesh cache and the voxel mesh cache. The
  * application creates it and releases it before shutting the renderer down; every new scene points at the
  * application's one (`Scene::getEngineContext`). A test that needs one creates its own and gives it to its scenes
  * (`Scene::setEngineContext`), so nothing leaks from a test to the next.
@@ -48,7 +49,7 @@ public:
 
 	/**
 	 * @brief
-	 *  Destroy the context (its voxel meshes are GPU resources: destroy it while the renderer runs).
+	 *  Destroy the context (its static and voxel meshes are GPU resources: destroy it while the renderer runs).
 	 */
 	~EngineContext();
 
@@ -73,6 +74,13 @@ public:
 	 * @return The settings.
 	 */
 	[[nodiscard]] auto getSettings() -> scene::SettingsManager& { return *mp_settings; }
+
+	/**
+	 * @brief
+	 *  Static meshes of the `MeshRenderer` components, shared by the entities drawing the same file.
+	 * @return The mesh cache.
+	 */
+	[[nodiscard]] auto getMeshCache() -> renderer::MeshCache& { return *mp_meshCache; }
 
 	/**
 	 * @brief
@@ -155,6 +163,8 @@ private:
 	uniq<scene::ScreenTransition> mp_screenTransition;
 	/// Game settings.
 	uniq<scene::SettingsManager> mp_settings;
+	/// Static mesh cache.
+	uniq<renderer::MeshCache> mp_meshCache;
 	/// Voxel mesh cache.
 	uniq<renderer::VoxelMeshCache> mp_voxelMeshCache;
 	/// Fixed simulation tick of the game.

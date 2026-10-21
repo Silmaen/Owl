@@ -116,6 +116,9 @@ auto EditorLayer::openDocumentForRecovery(const RecoveryEntry& iEntry) -> Docume
 		case DocumentType::Image:
 			openImageFile(path);
 			break;
+		case DocumentType::Mesh:
+			openMeshFile(path);
+			break;
 		case DocumentType::Scene:
 			break;
 	}
@@ -153,7 +156,7 @@ auto EditorLayer::restoreProjectSession() -> bool {
 		}
 		if (const auto kind = classifyAsset(path); kind == AssetKind::Scene)
 			std::ignore = loadOrOpenSceneDocument(path);
-		else if (kind == AssetKind::Prefab || kind == AssetKind::Macro)
+		else if (kind == AssetKind::Prefab || kind == AssetKind::Macro || kind == AssetKind::Mesh)
 			openCodeFile(path);
 		else
 			openAssetFile(path);

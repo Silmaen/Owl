@@ -185,7 +185,7 @@ public:
 	 * @param[in,out] ioCache The mesh cache.
 	 * @param[in,out] ioComponent The voxel world component.
 	 * @param[in] iWorldTransform The entity world transform.
-	 * @param[in] iEntityId The entity id (keys the per-entity mesh cache).
+	 * @param[in] iEntityId The entity id (keys the per-entity mesh cache, written to the picking attachment).
 	 */
 	static void drawVoxelWorld(VoxelMeshCache& ioCache, scene::component::VoxelWorld& ioComponent,
 							   const math::Transform& iWorldTransform, int iEntityId);

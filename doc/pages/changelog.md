@@ -11,7 +11,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- CI: `Bench -- --calibrate=true --rounds=<n>` runs the benchmarks several times and writes a proposed baseline and the thresholds the measured spread calls for.
+- `MeshRenderer` component: a `.gltf`, `.glb` or `.obj` file drawn in 3D with its glTF base colour, a tint, a texture override and alpha blending, in YAML, the inspector and Lua (`entity.set_mesh`, `get_mesh`, tint).
+- `RendererMesh` render-stack layer: opaque meshes, then the blended ones back-to-front, lit like the voxel layer; the Engine Demo stack has one (`mesh_world`).
+- `renderer::MeshCache` in `EngineContext`: one shared `MeshResource` per file (geometry, GPU meshes, material texture), read from the pack or the asset folders and reloaded when the file changes.
+- `MeshLoader::loadMesh` / `loadMeshFromMemory` return the glTF base-colour material with the mesh and read a `.gltf` from a pack, whose mesh files `AssetScanner` now packs.
+- Owl Nest: a mesh dropped from the Content Browser on the viewport becomes a `MeshRenderer` entity under the cursor (`mesh.create` command), and the rotation snap step is an editor setting.
+- Owl Nest: dropping a mesh in a project without a `RendererMesh` layer offers to add one, through the new `project.add_render_layer` command.
+- Owl Nest mesh viewer (`MeshDocument`): a mesh file opened from the Content Browser context menu or the inspector shows alone under an orbit camera, textured or shaded, with its figures and a **Place in Scene** button.
+- Owl Nest Content Browser: mesh thumbnails rendered by the GPU with their material, in a **Textured**, **Shaded** or **Flat** style picked in the toolbar.
+- Owl Nest viewport: a selected mesh is outlined by its bounding box, and the 3D view draws its grid on the ground (XZ plane), an option of **Show**.
+- Owl Nest inspector: a `MeshRenderer` without a texture of its own shows the texture of the material, faded.
+- Owl Nest viewport: a right drag looks around and a middle drag pans without Alt or Ctrl (`CameraEditor::Navigation::mouseLook`).
+- Owl Nest viewport: in the 3D view each camera shows a 3D model, pickable, and its real frustum topped by a triangle for its up, instead of the flat 2D marker.
+- Picking in 3D: `Renderer3D` writes the entity id of every draw (`MeshDrawParams`), so meshes and voxel worlds are selected by a click.
+- Engine Demo: `mesh_gallery` scene of generated `.glb` meshes (`tools/demo/generate_meshes.py`) under a fly camera, with a transparent sphere.
+- `OwlRunner --frame-bench --pick X,Y` logs the entity under a pixel of the capture; image tests `mesh` and `RenderPick` check meshes and picking on both backends.
+ runs the benchmarks several times and writes a proposed baseline and the thresholds the measured spread calls for.
 
 ### Changed
 
@@ -41,6 +56,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Owl Nest Content Browser: the right-click menu opens again (it was drawn outside the window that opened it).
+- Owl Nest keeps the desktop identifier `owl-nest-owl-engine-editor` whatever its version, so a desktop entry keeps its icon.
+- `MeshLoader`: a glTF mesh of several primitives indexes the vertices of each one, the OBJ loader keeps the third UV of a face, and glTF UVs follow the engine convention.
+- `mesh3d.slang` reads every attribute of `Mesh3DVertex` (atlas sub-rect, ambient occlusion), which removes two Vulkan validation warnings.
 - Clang 23 builds: its `[[clang::lifetimebound]]` suggestions and the strict-only lifetime-safety checks (false positives on `push_back`) are off, and `MeshVertexCoordinate` declares its explicit instantiations (`extern template`) for the exported class deriving from it; the null window drops its write-only window counter.
 - Documentation site: screenshots keep their colours in dark mode (the theme inverted every image of a table or an image block).
 

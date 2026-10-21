@@ -239,6 +239,13 @@ public:
 
 	/**
 	 * @brief
+	 *  Open a mesh asset in a read-only `MeshDocument` (or switch to it).
+	 * @param[in] iPath The mesh file.
+	 */
+	void openMeshFile(const std::filesystem::path& iPath);
+
+	/**
+	 * @brief
 	 *  Open an `input_actions.yml` in an `ActionMapDocument` (or switch to it); a missing file starts from the built-in
 	 *  actions and is created by the first save.
 	 * @param[in] iPath Absolute path to the file.
@@ -452,6 +459,18 @@ public:
 
 	/**
 	 * @brief
+	 *  Create an entity drawing a mesh file in the active scene (`mesh.create`), tagged for the first `RendererMesh`
+	 *  layer of the render stack when that layer is not the default one, and select it; without such a layer, a modal
+	 *  first offers to add one to the project stack.
+	 * @param[in] iMeshPath Absolute path to the `.gltf`, `.glb` or `.obj` file.
+	 * @param[in] iAssetRelativePath Asset path stored in the `MeshRenderer` (auto-derived when empty).
+	 * @param[in] iPosition World position of the entity; the origin when absent.
+	 */
+	void placeMesh(const std::filesystem::path& iMeshPath, const std::string& iAssetRelativePath = {},
+				   const std::optional<math::vec3>& iPosition = std::nullopt);
+
+	/**
+	 * @brief
 	 *  Active scene from the currently active document (empty shared if none).
 	 * @return The active scene.
 	 */
@@ -587,9 +606,12 @@ public:
 
 	/**
 	 * @brief
-	 *  Route a Content Browser file drop to `openScene` / `openCodeFile` / prefab instantiation.
+	 *  Route a Content Browser file drop to `openScene` / `openCodeFile` / prefab instantiation / mesh placement.
+	 * @param[in] iRelativePath Path of the dropped file, relative to the browsed folder.
+	 * @param[in] iDropPoint World point under the cursor of a viewport drop, where a mesh is placed.
 	 */
-	void handleContentBrowserDrop(const std::filesystem::path& iRelativePath);
+	void handleContentBrowserDrop(const std::filesystem::path& iRelativePath,
+								  const std::optional<math::vec3>& iDropPoint = std::nullopt);
 
 	/**
 	 * @brief
@@ -811,6 +833,23 @@ private:
 	 */
 	void renderCloseDocumentModal();
 
+	/**
+	 * @brief
+	 *  Render the modal offering to add a mesh layer to the project stack for `m_pendingMesh`.
+	 */
+	void renderMeshLayerModal();
+
+	/**
+	 * @brief
+	 *  Run `mesh.create` for a mesh file, tagged for the given layer, and select the new entity.
+	 * @param[in] iMeshPath Absolute path to the mesh file.
+	 * @param[in] iAssetRelativePath Asset path stored in the `MeshRenderer` (auto-derived when empty).
+	 * @param[in] iPosition World position of the entity; the origin when absent.
+	 * @param[in] iLayer Render-stack layer recorded in a `RendererTag`; none when empty.
+	 */
+	void createMeshEntity(const std::filesystem::path& iMeshPath, const std::string& iAssetRelativePath,
+						  const std::optional<math::vec3>& iPosition, const std::string& iLayer);
+
 
 	/**
 	 * @brief
@@ -920,6 +959,19 @@ private:
 	core::UUID m_pendingCloseDocId{0};
 	/// True when the close-confirmation modal should open on the next frame.
 	bool m_openCloseDocModal = false;
+	/// A mesh drop waiting for the answer of the mesh-layer modal.
+	struct PendingMesh {
+		/// Absolute path to the mesh file.
+		std::filesystem::path path;
+		/// Asset path stored in the `MeshRenderer`.
+		std::string assetPath;
+		/// World position of the entity.
+		std::optional<math::vec3> position;
+	};
+	/// Mesh dropped while no `RendererMesh` layer draws it; empty when idle.
+	std::optional<PendingMesh> m_pendingMesh;
+	/// True when the mesh-layer modal should open on the next frame.
+	bool m_openMeshLayerModal = false;
 	/**
 	 * Documents that must actually be closed at the start of the next frame.  Deferring the
 	 * destruction avoids a use-after-free on the Viewport's Vulkan colour-attachment: during the
