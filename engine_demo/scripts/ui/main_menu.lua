@@ -11,7 +11,7 @@ local save_info_id = 0
 local delete_save_id = 0
 local continue_id = 0
 local mouse_label_id = 0
-local town_requested = false
+local shortcut_requested = false
 
 function on_create()
     log.info("Main Menu loaded")
@@ -104,9 +104,16 @@ function on_update(dt)
     end
 
     -- The `open_town` action (O, left bumper) opens the isometric town: build roads, watch the traffic.
-    if not town_requested and input.is_action_pressed("open_town") then
-        town_requested = true
+    if not shortcut_requested and input.is_action_pressed("open_town") then
+        shortcut_requested = true
         scene.transition_to("scenes/iso_town.owl", "fade", 0.3)
+        return
+    end
+
+    -- The `open_gallery` action (G, right bumper) opens the mesh gallery: 3D meshes under a fly camera.
+    if not shortcut_requested and input.is_action_pressed("open_gallery") then
+        shortcut_requested = true
+        scene.transition_to("scenes/mesh_gallery.owl", "fade", 0.3)
         return
     end
 

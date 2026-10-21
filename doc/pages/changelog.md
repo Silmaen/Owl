@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Owl Nest viewport: a right drag looks around and a middle drag pans without Alt or Ctrl (`CameraEditor::Navigation::mouseLook`).
 - Owl Nest viewport: in the 3D view each camera shows a 3D model, pickable, and its real frustum topped by a triangle for its up, instead of the flat 2D marker.
 - Picking in 3D: `Renderer3D` writes the entity id of every draw (`MeshDrawParams`), so meshes and voxel worlds are selected by a click.
+- Engine Demo: `mesh_gallery` scene of generated `.glb` meshes (`tools/demo/generate_meshes.py`) under a fly camera, with a transparent sphere.
 - `OwlRunner --frame-bench --pick X,Y` logs the entity under a pixel of the capture; image tests `mesh` and `RenderPick` check meshes and picking on both backends.
  runs the benchmarks several times and writes a proposed baseline and the thresholds the measured spread calls for.
 

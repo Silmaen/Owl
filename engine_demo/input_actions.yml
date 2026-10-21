@@ -12,6 +12,11 @@ actions:
     bindings:
       - {key: O}
       - {gamepad_button: LeftBumper}
+  - name: open_gallery
+    type: button
+    bindings:
+      - {key: G}
+      - {gamepad_button: RightBumper}
   - name: inventory
     type: button
     bindings:

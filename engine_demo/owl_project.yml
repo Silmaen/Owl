@@ -1,3 +1,4 @@
+FormatVersion: 1
 OwlProject:
   name: OwlEngineDemo
   firstScene: scenes/main_menu.owl
