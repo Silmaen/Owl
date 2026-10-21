@@ -223,8 +223,10 @@ its bounding box for a mesh. Camera markers (**Show > Camera markers**) are an i
 the 2D views; the 3D view draws the model `meshes/camera.glb` of the editor assets (made by
 `tools/editor/generate_camera_mesh.py`), pickable, with the frustum of the camera (field of view, or box when
 orthographic) and a filled triangle above it pointing to the up of the camera. Each light has a marker too (same
-**Camera markers** setting), clickable; the selected light draws its range circles (point), its cones (spot) or an arrow
-(directional) as a gizmo. Lights are created from the Scene Hierarchy (**Light > Directional / Point / Spot**) or with
+**Camera markers** setting), clickable, shaped by its type: a sun disc with the arrow of its direction (directional), a
+small cone of its outer angle (spot), a small sphere (point); grey when the light is switched off. Selected, a
+directional light shows parallel arrows, a spot its cones down to its range, a point light its range sphere. In the
+Scene Hierarchy a light shows a sun, a flashlight or a bulb icon, grey when switched off. Lights are created from the Scene Hierarchy (**Light > Directional / Point / Spot**) or with
 `entity.create_light`, and edited in the **Light** inspector, every edit a `component.set` command.
 
 | Gesture                     | Effect                                       |
@@ -343,7 +345,7 @@ be removed. Every edit is a registry command ([Editor commands](#editor-commands
 
 - **Transform** (local), **Sprite Renderer**, **Animated Sprite**, **Circle Renderer**, **Mesh Renderer** (mesh file
   drop field with the base-colour preview, tint, texture override, transparency, vertex and triangle counts),
-  **Light** (type, colour, intensity, range for point and spot, cone angles in degrees for a spot, shadow settings for a
+  **Light** (enabled, type, colour, intensity, range for point and spot, cone angles in degrees for a spot, shadow settings for a
   directional light),
   **Text Renderer**, **Camera**,
   **Rigidbody 2D**, **Box / Circle Collider 2D**, **Native Script**, **Sound Source**, **Sound Listener**, **Player**,

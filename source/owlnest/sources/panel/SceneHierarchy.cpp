@@ -160,8 +160,18 @@ auto entityKind(const scene::Entity& iEntity, const bool iHasChildren) -> Entity
 		return {gui::icon::circle, 0xf2a65a};
 	if (iEntity.hasComponent<MeshRenderer>())
 		return {gui::icon::package, 0x7fb83e};
-	if (iEntity.hasComponent<Light>())
-		return {gui::icon::sparkles, 0xffd75e};
+	if (iEntity.hasComponent<Light>()) {
+		const auto& light = iEntity.getComponent<Light>();
+		const uint32_t colour = light.enabled ? 0xffd75e : 0x7a7a7a;
+		switch (light.type) {
+			case Light::Type::Directional:
+				return {gui::icon::sun, colour};
+			case Light::Type::Point:
+				return {gui::icon::lightbulb, colour};
+			case Light::Type::Spot:
+				return {gui::icon::flashlight, colour};
+		}
+	}
 	if (iEntity.hasComponent<Text>() || iEntity.hasComponent<UiText>())
 		return {gui::icon::type, 0xc7a6ff};
 	if (iEntity.hasComponent<UiButton>())
@@ -217,8 +227,9 @@ auto kindColor(const uint32_t iHex) -> math::vec4 {
 void drawCreateLightMenu(const auto& iTarget, const std::optional<commands::ArgValue>& iParent) {
 	if (!ImGui::BeginMenu("Light"))
 		return;
-	for (const char* kind: {"Directional", "Point", "Spot"}) {
-		if (!gui::widgets::menuItem({.glyph = gui::icon::sparkles, .label = kind}))
+	for (const auto& [kind, glyph]: {std::pair{"Directional", gui::icon::sun}, std::pair{"Point", gui::icon::lightbulb},
+									 std::pair{"Spot", gui::icon::flashlight}}) {
+		if (!gui::widgets::menuItem({.glyph = glyph, .label = kind}))
 			continue;
 		const commands::CommandArgs args =
 				iParent ? commands::CommandArgs{{"type", std::string{kind}}, {"parent", *iParent}}

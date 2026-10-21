@@ -777,7 +777,7 @@ void Scene::recordLightPasses(renderer::RenderGraph& ioGraph) {
 		if (m_gpuLights.size() >= renderer::Renderer3D::g_maxLights)
 			break;
 		const Entity entity{handle, this};
-		if (!isEffectivelyVisible(entity, editorMode))
+		if (!light.enabled || !isEffectivelyVisible(entity, editorMode))
 			continue;
 		const math::Transform world = getWorldTransform(entity);
 		const math::vec4 forward = world() * math::vec4{0.f, 0.f, -1.f, 0.f};

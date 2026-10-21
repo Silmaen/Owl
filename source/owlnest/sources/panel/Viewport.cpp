@@ -2340,9 +2340,21 @@ void drawLightCircle(const math::vec3& iCenter, const math::vec3& iU, const math
 	}
 }
 
+// Draw an arrow from a point along a unit direction, its head a cone of four lines.
+void drawLightArrow(const math::vec3& iStart, const math::vec3& iDirection, const float iLength, const math::vec3& iU,
+					const math::vec3& iV, const float iHead, const math::vec4& iColor, const int iEntityId) {
+	const math::vec3 tip = iStart + iDirection * iLength;
+	renderer::Renderer2D::drawLine({.point1 = iStart, .point2 = tip, .color = iColor, .entityId = iEntityId});
+	const math::vec3 base = tip - iDirection * (iHead * 2.f);
+	for (const math::vec3& side: {iU, iV, iU * -1.f, iV * -1.f})
+		renderer::Renderer2D::drawLine(
+				{.point1 = tip, .point2 = base + side * iHead, .color = iColor, .entityId = iEntityId});
+}
+
 }// namespace
 
 void Viewport::renderLightMarkers(const shared<scene::Scene>& iScene) const {
+	using LightType = scene::component::Light::Type;
 	const scene::Entity selected = m_parent != nullptr ? m_parent->getSelectedEntity() : scene::Entity{};
 	for (const auto view = iScene->registry.view<scene::component::Light, scene::component::Transform>();
 		 const auto entity: view) {
@@ -2350,47 +2362,62 @@ void Viewport::renderLightMarkers(const shared<scene::Scene>& iScene) const {
 		const scene::Entity ent{entity, iScene.get()};
 		const auto id = static_cast<int>(entity);
 		const auto [position, direction] = lightFrame(iScene, ent);
-		const math::vec4 color{light.color.x(), light.color.y(), light.color.z(), 1.f};
+		// A light switched off is drawn grey.
+		const math::vec4 color = light.enabled ? math::vec4{light.color.x(), light.color.y(), light.color.z(), 1.f}
+											   : math::vec4{0.45f, 0.45f, 0.45f, 0.6f};
+		const math::vec4 dim{color.x(), color.y(), color.z(), color.w() * 0.45f};
 		const float radius = getLightMarkerRadius(position);
-		for (const math::vec3& axis: {math::vec3{1.f, 0.f, 0.f}, math::vec3{0.f, 1.f, 0.f}, math::vec3{0.f, 0.f, 1.f}})
-			renderer::Renderer2D::drawLine({.point1 = position - axis * radius,
-											.point2 = position + axis * radius,
-											.color = color,
-											.entityId = id});
-		if (!selected || static_cast<uint32_t>(ent) != static_cast<uint32_t>(selected))
-			continue;
 		const math::vec3 helper =
 				std::abs(direction.y()) < 0.9f ? math::vec3{0.f, 1.f, 0.f} : math::vec3{1.f, 0.f, 0.f};
 		const math::vec3 u = (direction ^ helper).normalized();
 		const math::vec3 v = direction ^ u;
-		const math::vec4 dim{color.x(), color.y(), color.z(), 0.45f};
+		const bool isSelected = selected && static_cast<uint32_t>(ent) == static_cast<uint32_t>(selected);
 		switch (light.type) {
-			case scene::component::Light::Type::Directional:
+			case LightType::Directional:
 				{
-					constexpr float length = 2.f;
-					const math::vec3 tip = position + direction * length;
-					renderer::Renderer2D::drawLine({.point1 = position, .point2 = tip, .color = color, .entityId = id});
-					constexpr float headLength = 0.3f;
-					constexpr float headRadius = 0.1f;
-					const math::vec3 base = tip - direction * headLength;
-					for (const math::vec3& side: {u, v, u * -1.f, v * -1.f})
-						renderer::Renderer2D::drawLine(
-								{.point1 = tip, .point2 = base + side * headRadius, .color = color, .entityId = id});
-					drawLightCircle(base, u, v, headRadius, color, id);
+					// A sun disc with rays, and the arrow of the light direction.
+					drawLightCircle(position, u, v, radius, color, id);
+					constexpr int rays = 8;
+					for (int ray = 0; ray < rays; ++ray) {
+						const float angle = 2.f * std::numbers::pi_v<float> * static_cast<float>(ray) / rays;
+						const math::vec3 out = u * std::cos(angle) + v * std::sin(angle);
+						renderer::Renderer2D::drawLine({.point1 = position + out * (radius * 1.3f),
+														.point2 = position + out * (radius * 1.8f),
+														.color = color,
+														.entityId = id});
+					}
+					drawLightArrow(position, direction, radius * 5.f, u, v, radius * 0.4f, color, id);
+					// Selected: parallel rays around it.
+					if (isSelected) {
+						for (const math::vec3& side: {u, v, u * -1.f, v * -1.f})
+							drawLightArrow(position + side * (radius * 2.5f), direction, radius * 8.f, u, v,
+										   radius * 0.4f, dim, id);
+					}
 					break;
 				}
-			case scene::component::Light::Type::Point:
-				drawLightCircle(position, {1.f, 0.f, 0.f}, {0.f, 1.f, 0.f}, light.range, color, id);
-				drawLightCircle(position, {1.f, 0.f, 0.f}, {0.f, 0.f, 1.f}, light.range, color, id);
-				drawLightCircle(position, {0.f, 1.f, 0.f}, {0.f, 0.f, 1.f}, light.range, color, id);
-				break;
-			case scene::component::Light::Type::Spot:
+			case LightType::Point:
 				{
-					const math::vec3 center = position + direction * light.range;
-					// The outer cone in the light colour, the inner one dimmer.
+					// A bulb: a small wire sphere; selected, the range too.
+					for (const float sphere: {radius, isSelected ? light.range : 0.f}) {
+						if (sphere <= 0.f)
+							continue;
+						drawLightCircle(position, {1.f, 0.f, 0.f}, {0.f, 1.f, 0.f}, sphere, color, id);
+						drawLightCircle(position, {1.f, 0.f, 0.f}, {0.f, 0.f, 1.f}, sphere, color, id);
+						drawLightCircle(position, {0.f, 1.f, 0.f}, {0.f, 0.f, 1.f}, sphere, color, id);
+					}
+					break;
+				}
+			case LightType::Spot:
+				{
+					// A small cone of the outer angle; selected, the cones down to the range.
+					const float length = isSelected ? light.range : radius * 4.f;
+					const math::vec3 center = position + direction * length;
+					drawLightCircle(position, u, v, radius * 0.3f, color, id);
 					for (const auto& [angle, coneColor]:
 						 {std::pair{light.outerAngle, color}, std::pair{light.innerAngle, dim}}) {
-						const float coneRadius = light.range * std::tan(angle);
+						if (!isSelected && coneColor.w() < color.w())
+							continue;
+						const float coneRadius = length * std::tan(angle);
 						drawLightCircle(center, u, v, coneRadius, coneColor, id);
 						for (const math::vec3& side: {u, v, u * -1.f, v * -1.f})
 							renderer::Renderer2D::drawLine({.point1 = position,

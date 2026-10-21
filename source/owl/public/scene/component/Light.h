@@ -34,6 +34,8 @@ struct OWL_API Light {
 
 	/// Kind of light.
 	Type type = Type::Directional;
+	/// Whether the light shines; a light switched off keeps its settings.
+	bool enabled = true;
 	/// Colour, sRGB as authored.
 	math::vec3 color{1.f, 1.f, 1.f};
 	/// Multiplier of the colour.

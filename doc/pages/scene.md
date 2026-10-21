@@ -283,6 +283,7 @@ engine context and shared by every entity drawing it ([Renderer > Static meshes]
 | Field              | Type    | Default       | Description                                                   |
 |--------------------|---------|---------------|---------------------------------------------------------------|
 | `type`             | `Type`  | `Directional` | `Directional`, `Point` or `Spot`                              |
+| `enabled`          | `bool`  | `true`        | Whether the light shines; switched off it keeps its settings  |
 | `color`            | `vec3`  | `{1, 1, 1}`   | Colour, sRGB as authored                                      |
 | `intensity`        | `float` | `1`           | Multiplier of the colour                                      |
 | `range`            | `float` | `10`          | Distance where a point or spot light reaches zero             |
@@ -298,7 +299,8 @@ YAML key: `Light`. Shines along -Z of the entity's world transform; a point ligh
 directional light the position. Lights the 3D layers only (`MeshRenderer` meshes, voxel worlds), up to 64 per frame;
 a scene without a `Light` keeps the sun and ambient of the layer config. See
 [Renderer > Lights and shadows](renderer.md#renderer-lights). Lua: `entity.set_light_color` / `get_light_color`,
-`entity.set_light_intensity` / `get_light_intensity`, `entity.set_light_range`.
+`entity.set_light_intensity` / `get_light_intensity`, `entity.set_light_enabled` / `is_light_enabled`,
+`entity.set_light_range`.
 
 #### Text
 

@@ -61,6 +61,7 @@ TEST_F(LightTest, serializationRoundTripsEveryField) {
 	light.type = scene::component::Light::Type::Spot;
 	light.color = {0.25f, 0.5f, 0.75f};
 	light.intensity = 3.5f;
+	light.enabled = false;
 	light.range = 42.f;
 	light.innerAngle = 0.25f;
 	light.outerAngle = 0.5f;
@@ -81,6 +82,7 @@ TEST_F(LightTest, serializationRoundTripsEveryField) {
 	EXPECT_EQ(read.type, scene::component::Light::Type::Spot);
 	EXPECT_EQ(read.color, (math::vec3{0.25f, 0.5f, 0.75f}));
 	EXPECT_FLOAT_EQ(read.intensity, 3.5f);
+	EXPECT_FALSE(read.enabled);
 	EXPECT_FLOAT_EQ(read.range, 42.f);
 	EXPECT_FLOAT_EQ(read.innerAngle, 0.25f);
 	EXPECT_FLOAT_EQ(read.outerAngle, 0.5f);
@@ -108,6 +110,7 @@ TEST_F(LightTest, aBlockMissingEveryOptionalKeyLoadsTheDefaults) {
 	EXPECT_EQ(read.type, defaults.type);
 	EXPECT_EQ(read.color, defaults.color);
 	EXPECT_FLOAT_EQ(read.intensity, defaults.intensity);
+	EXPECT_TRUE(read.enabled);
 	EXPECT_FLOAT_EQ(read.range, defaults.range);
 	EXPECT_FLOAT_EQ(read.innerAngle, defaults.innerAngle);
 	EXPECT_FLOAT_EQ(read.outerAngle, defaults.outerAngle);

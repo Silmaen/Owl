@@ -497,6 +497,8 @@ void renderProps(MeshRenderer& ioComponent) {
 }
 
 void renderProps(Light& ioComponent) {
+	prop::Checkbox("Enabled", &ioComponent.enabled);
+	fieldTooltip("A light switched off keeps its settings and stops shining.");
 	if (prop::BeginCombo("Type", std::string(magic_enum::enum_name(ioComponent.type)).c_str())) {
 		for (const auto type: magic_enum::enum_values<Light::Type>()) {
 			const bool isSelected = ioComponent.type == type;

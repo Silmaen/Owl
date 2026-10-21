@@ -22,6 +22,7 @@ void Light::serialize(const core::Serializer& iOut) const {
 	out << YAML::Key << key();
 	out << YAML::BeginMap;// Light
 	out << YAML::Key << "type" << YAML::Value << std::string(magic_enum::enum_name(type));
+	out << YAML::Key << "enabled" << YAML::Value << enabled;
 	out << YAML::Key << "color" << YAML::Value << color;
 	out << YAML::Key << "intensity" << YAML::Value << intensity;
 	out << YAML::Key << "range" << YAML::Value << range;
@@ -41,6 +42,8 @@ void Light::deserialize(const core::Serializer& iNode) {
 		if (const auto parsed = magic_enum::enum_cast<Type>(node["type"].as<std::string>()); parsed.has_value())
 			type = parsed.value();
 	}
+	if (node["enabled"])
+		enabled = node["enabled"].as<bool>();
 	if (node["color"])
 		color = node["color"].as<math::vec3>();
 	if (node["intensity"])

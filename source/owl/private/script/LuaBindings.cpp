@@ -790,6 +790,26 @@ auto luaEntityGetLightIntensity(lua_State* iState) -> int {
 	return 1;
 }
 
+auto luaEntitySetLightEnabled(lua_State* iState) -> int {
+	const bool enabled = lua_toboolean(iState, 2) != 0;
+	const auto entity = findEntity(iState);
+	if (!entity || !entity->hasComponent<scene::component::Light>()) {
+		lua_pushboolean(iState, 0);
+		return 1;
+	}
+	entity->getComponent<scene::component::Light>().enabled = enabled;
+	lua_pushboolean(iState, 1);
+	return 1;
+}
+
+auto luaEntityIsLightEnabled(lua_State* iState) -> int {
+	const auto entity = findEntity(iState);
+	if (!entity || !entity->hasComponent<scene::component::Light>())
+		return 0;
+	lua_pushboolean(iState, entity->getComponent<scene::component::Light>().enabled ? 1 : 0);
+	return 1;
+}
+
 auto luaEntitySetLightRange(lua_State* iState) -> int {
 	const auto range = static_cast<float>(luaL_checknumber(iState, 2));
 	const auto entity = findEntity(iState);
@@ -2013,6 +2033,12 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		{.table = "entity", .name = "get_light_intensity", .function = guarded<luaEntityGetLightIntensity>,
 		 .description = "Intensity of the entity's `Light`; nothing when it has none.",
 		 .params = {entityId}, .returns = {{"intensity", Number}}},
+		{.table = "entity", .name = "set_light_enabled", .function = guarded<luaEntitySetLightEnabled>,
+		 .description = "Switch the entity's `Light` on or off (it keeps its settings); false when it has none.",
+		 .params = {entityId, {"enabled", Boolean}}, .returns = {{"done", Boolean}}},
+		{.table = "entity", .name = "is_light_enabled", .function = guarded<luaEntityIsLightEnabled>,
+		 .description = "Whether the entity's `Light` shines; nothing when it has none.",
+		 .params = {entityId}, .returns = {{"enabled", Boolean}}},
 		{.table = "entity", .name = "set_light_range", .function = guarded<luaEntitySetLightRange>,
 		 .description = "Set the range (world units, at least 0.01) of the entity's point or spot `Light`; false when "
 						"it has no `Light`.",

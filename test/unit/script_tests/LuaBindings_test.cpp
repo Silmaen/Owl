@@ -318,6 +318,9 @@ TEST(LuaBindings, entityLight) {
 										   "set_intensity = entity.set_light_intensity({0}, 4.5)\n"
 										   "intensity = entity.get_light_intensity({0})\n"
 										   "set_range = entity.set_light_range({0}, 25)\n"
+										   "set_off = entity.set_light_enabled({0}, false)\n"
+										   "enabled = entity.is_light_enabled({0})\n"
+										   "bare_enabled = entity.set_light_enabled({1}, true)\n"
 										   "bare_color = entity.set_light_color({1}, 1, 1, 1)\n"
 										   "bare_intensity = entity.set_light_intensity({1}, 1)\n"
 										   "bare_range = entity.set_light_range({1}, 1)\n"
@@ -344,6 +347,10 @@ TEST(LuaBindings, entityLight) {
 	EXPECT_FLOAT_EQ(light.color.y(), 0.5f);
 	EXPECT_FLOAT_EQ(light.intensity, 4.5f);
 	EXPECT_FLOAT_EQ(light.range, 25.f);
+	EXPECT_TRUE(inst.getPropertyBool("set_off").value_or(false));
+	EXPECT_FALSE(inst.getPropertyBool("enabled").value_or(true));
+	EXPECT_FALSE(light.enabled);
+	EXPECT_FALSE(inst.getPropertyBool("bare_enabled").value_or(true));
 	EXPECT_FALSE(inst.getPropertyBool("bare_color").value_or(true));
 	EXPECT_FALSE(inst.getPropertyBool("bare_intensity").value_or(true));
 	EXPECT_FALSE(inst.getPropertyBool("bare_range").value_or(true));
