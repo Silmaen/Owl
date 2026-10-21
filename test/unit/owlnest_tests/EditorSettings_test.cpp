@@ -59,6 +59,8 @@ TEST(EditorSettings, ViewportDisplayOptionsRoundTrip) {
 	EXPECT_TRUE(settings.showGrid);
 	EXPECT_TRUE(settings.showTriggerIcons);
 	EXPECT_FALSE(settings.gizmoWorldSpace);
+	EXPECT_TRUE(settings.showCameraPreview);
+	settings.showCameraPreview = false;
 	settings.showGrid = false;
 	settings.showTriggerIcons = false;
 	settings.gizmoWorldSpace = true;
@@ -73,6 +75,7 @@ TEST(EditorSettings, ViewportDisplayOptionsRoundTrip) {
 	EXPECT_TRUE(loaded.gizmoWorldSpace);
 	EXPECT_TRUE(loaded.playControlsCollapsed);
 	EXPECT_FALSE(loaded.showFrameChip);
+	EXPECT_FALSE(loaded.showCameraPreview);
 	std::filesystem::remove_all(dir);
 }
 

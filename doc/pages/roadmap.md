@@ -120,7 +120,8 @@ render graph, essential post-processing — with full 3D editing ([details](desi
 - ![Planned][planned] GPU raycast sprite stripes and `BitonicSortPass` adoption
 - ![Planned][planned] Spatial partitioning and multithreaded render preparation
 - ![Planned][planned] HUD minimap on a render target ([HUD system](design/hud-system.md))
-- ![Planned][planned] 3D scene editing in Owl Nest (3D gizmos, snapping, mesh preview), "look through scene camera" mode
+- ![Done][done] 3D scene editing in Owl Nest (3D gizmos, snapping, mesh preview), "look through scene camera" mode
+- ![To evaluate][evaluate] Owl Nest camera preview: the HUD drawn over it, as an option
 - ![Planned][planned] Help panel: mermaid diagrams and rendering polish
 - ![Planned][planned] Sample game: a Mini Transport Tycoon ([Sample games](design/sample-games.md))
 

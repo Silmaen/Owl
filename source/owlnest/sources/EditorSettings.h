@@ -86,6 +86,8 @@ struct EditorSettings {
 	bool snapAutoFromTilemap = true;
 	/// Whether the in-viewport camera markers (icon + forward arrow + FOV cone) are drawn in Edit mode.
 	bool showCameraGizmos = true;
+	/// Whether the viewport shows, in a corner, the view of the selected camera entity (Edit mode).
+	bool showCameraPreview = true;
 	/// Whether the frame-time chip (fps, ms, draw calls) is drawn at the bottom-left of the viewports.
 	bool showFrameChip = true;
 	/// Whether the viewport draws a grid of the snap step in Edit mode.

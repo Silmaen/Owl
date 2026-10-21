@@ -252,6 +252,15 @@ public:
 
 	/**
 	 * @brief
+	 *  Draw the edited scene through a camera, as `onUpdateEditor` does, without advancing anything: no toast timer, no
+	 *  voxel streaming (it follows the camera of `onUpdateEditor`). A second view of the same frame (the camera preview
+	 *  of the editor) draws with it.
+	 * @param[in] iCamera The camera to draw through.
+	 */
+	void renderEditorView(const renderer::Camera& iCamera);
+
+	/**
+	 * @brief
 	 *  Draw only the HUD (the canvases of the scene, then those of its HUD asset) in pixels, at a given size.
 	 *
 	 * The HUD editor draws a document at a resolution of its own, whatever the viewport size of the scene; the layout

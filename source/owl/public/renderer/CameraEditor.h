@@ -175,6 +175,28 @@ public:
 
 	/**
 	 * @brief
+	 *  Check whether the right button looks around: held without Alt nor Ctrl while the mouse look is on. W A S D
+	 *  (Z Q S D on an AZERTY keyboard) then fly the camera, Q and E move it down and up, the wheel sets the speed.
+	 * @return True while flying.
+	 */
+	[[nodiscard]] auto isFlying() const -> bool;
+
+	/**
+	 * @brief
+	 *  Speed of the fly keys.
+	 * @return The speed, in world units per second.
+	 */
+	[[nodiscard]] auto getFlySpeed() const -> float { return m_flySpeed; }
+
+	/**
+	 * @brief
+	 *  Set the speed of the fly keys, clamped to [0.1, 100] units per second.
+	 * @param[in] iSpeed The speed, in world units per second.
+	 */
+	void setFlySpeed(float iSpeed);
+
+	/**
+	 * @brief
 	 *  Update the camera (Need input setup).
 	 * @param[in] iTimeStep The timestamp.
 	 */
@@ -323,6 +345,13 @@ private:
 
 	/**
 	 * @brief
+	 *  Move the eye and its reference point with the fly keys (perspective only); Shift goes three times faster.
+	 * @param[in] iSeconds Duration of the frame.
+	 */
+	void fly(float iSeconds);
+
+	/**
+	 * @brief
 	 *  Mouse zoom.
 	 * @param[in] iDelta The delta.
 	 */
@@ -386,6 +415,8 @@ private:
 	/// Drag and wheel settings.
 	Navigation m_navigation;
 
+	/// Speed of the fly keys, in world units per second.
+	float m_flySpeed = 5.f;
 	/// Camera distance.
 	float m_distance = 10.0f;
 	/// Camera's pitch.

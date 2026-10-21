@@ -38,6 +38,7 @@
 #include <renderer/Renderer.h>
 #include <scene/ComponentRegistry.h>
 #include <scene/PrefabSerializer.h>
+#include <scene/component/Camera.h>
 #include <scene/component/Canvas.h>
 #include <scene/component/Hierarchy.h>
 
@@ -612,6 +613,18 @@ void SceneHierarchy::drawEntityContextMenu(const scene::Entity& iEntity, const b
 					!done)
 					OWL_ERROR("SceneHierarchy: Canvas not extracted: {}.", done.error().message)
 			}
+		}
+	}
+	// --- Camera quick actions, run on the active viewport.
+	if (iEntity.hasComponent<scene::component::Camera>() && mp_parentEditor != nullptr) {
+		ImGui::Separator();
+		if (gui::widgets::menuItem({.glyph = gui::icon::video, .label = "Camera Viewpoint"})) {
+			mp_parentEditor->setSelectedEntity(iEntity);
+			std::ignore = mp_parentEditor->runAction("view.cameraViewpoint");
+		}
+		if (gui::widgets::menuItem({.glyph = gui::icon::move3d, .label = "Pilot Camera"})) {
+			mp_parentEditor->setSelectedEntity(iEntity);
+			std::ignore = mp_parentEditor->runAction("view.pilotCamera");
 		}
 	}
 	// --- Tilemap quick action: open the referenced asset in the tilemap editor.
