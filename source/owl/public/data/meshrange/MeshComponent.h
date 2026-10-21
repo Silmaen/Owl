@@ -168,6 +168,11 @@ protected:
 	/// Iterator on point.
 	PointIterator m_pointIte;
 };
+
+// Instantiated in MeshComponent.cpp: an exported class deriving from one must not instantiate it again.
+extern template class MeshVertexCoordinate<true>;
+extern template class MeshVertexCoordinate<false>;
+
 /**
  * @brief
  *  Read/Write iterate component for point's coordinates.
