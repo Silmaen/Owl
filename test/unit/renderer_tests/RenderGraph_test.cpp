@@ -78,7 +78,7 @@ TEST_F(RenderGraphTest, refusesAReadOfAnUnwrittenTarget) {
 
 TEST_F(RenderGraphTest, refusesAPassWithoutTarget) {
 	Graph graph;
-	graph.addPass("nothing", {}, {});
+	graph.addPass("nothing", [](Graph::PassBuilder&) -> void {}, {});
 	EXPECT_FALSE(graph.compile());
 }
 

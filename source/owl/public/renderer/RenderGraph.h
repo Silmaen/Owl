@@ -19,6 +19,7 @@
 #include <limits>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 namespace owl::renderer {
@@ -181,7 +182,7 @@ public:
 		const RenderGraph& m_graph;
 	};
 
-	/// Setup of a pass: declares its reads and its write.
+	/// Setup of a pass kept in a variable: declares its reads and its write.
 	using Setup = std::function<void(PassBuilder&)>;
 	/// Body of a pass, run with its target bound.
 	using Execute = std::function<void(const PassContext&)>;
@@ -211,12 +212,17 @@ public:
 
 	/**
 	 * @brief
-	 *  Add a pass; `iSetup` runs right away.
+	 *  Add a pass; `iSetup` runs right away (it is not stored).
+	 * @tparam SetupFn Callable taking a `PassBuilder&`.
 	 * @param[in] iName Name of the pass (profiling, inspection).
 	 * @param[in] iSetup Declares the reads and the write.
 	 * @param[in] iExecute Draws, with the written target bound.
 	 */
-	void addPass(std::string_view iName, const Setup& iSetup, Execute iExecute);
+	template<typename SetupFn>
+	void addPass(const std::string_view iName, SetupFn&& iSetup, Execute iExecute) {
+		PassBuilder builder{*this, beginPass(iName, std::move(iExecute))};
+		std::forward<SetupFn>(iSetup)(builder);
+	}
 
 	/**
 	 * @brief
@@ -295,6 +301,15 @@ private:
 
 	/**
 	 * @brief
+	 *  Open the next pass slot (the slots of the last frame are reused, with their capacity).
+	 * @param[in] iName Name of the pass.
+	 * @param[in] iExecute Body of the pass.
+	 * @return Index of the pass.
+	 */
+	auto beginPass(std::string_view iName, Execute iExecute) -> uint32_t;
+
+	/**
+	 * @brief
 	 *  Declare a target in the next free slot (the slots of the last frame are reused, with their capacity).
 	 * @param[in] iName Name of the target.
 	 * @param[in] iImported Whether it is the bound framebuffer.
@@ -333,6 +348,28 @@ private:
 	std::vector<PooledTarget> m_pool;
 	/// Size of the running frame.
 	math::vec2ui m_size{0, 0};
+
+	/// Work arrays of `compile`, kept between frames for their capacity.
+	struct CompileScratch {
+		/// Per target: written by an earlier pass.
+		std::vector<uint8_t> written;
+		/// Per target: needed by a kept pass or the frame.
+		std::vector<uint8_t> needed;
+		/// Per pass: kept.
+		std::vector<uint8_t> kept;
+		/// Per pass: passes that must run after it.
+		std::vector<std::vector<uint32_t>> successors;
+		/// Per pass: passes still to run before it.
+		std::vector<uint32_t> predecessorCount;
+		/// Per target: last pass writing it.
+		std::vector<int64_t> lastWriter;
+		/// Per target: passes reading it since its last write.
+		std::vector<std::vector<uint32_t>> readersSinceWrite;
+		/// Passes ready to run.
+		std::vector<uint32_t> ready;
+	};
+	/// Work arrays of `compile`.
+	CompileScratch m_scratch;
 };
 
 }// namespace owl::renderer

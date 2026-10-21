@@ -16,7 +16,6 @@
 #include <cmath>
 #include <cstdint>
 #include <format>
-#include <queue>
 #include <span>
 #include <utility>
 
@@ -107,7 +106,7 @@ auto RenderGraph::createTarget(const std::string_view iName, const ColorSpace iC
 	return addTarget(iName, false, iColorSpace);
 }
 
-void RenderGraph::addPass(const std::string_view iName, const Setup& iSetup, Execute iExecute) {
+auto RenderGraph::beginPass(const std::string_view iName, Execute iExecute) -> uint32_t {
 	if (m_passCount == m_passes.size())
 		m_passes.emplace_back();
 	auto& pass = m_passes[m_passCount];
@@ -115,9 +114,7 @@ void RenderGraph::addPass(const std::string_view iName, const Setup& iSetup, Exe
 	pass.reads.clear();
 	pass.write = {};
 	pass.execute = std::move(iExecute);
-	PassBuilder builder{*this, m_passCount++};
-	if (iSetup)
-		iSetup(builder);
+	return m_passCount++;
 }
 
 auto RenderGraph::compile() -> bool {
@@ -126,72 +123,84 @@ auto RenderGraph::compile() -> bool {
 	m_order.clear();
 	const uint32_t passCount = m_passCount;
 	const size_t targetCount = m_targetCount;
-	std::vector<bool> writtenSoFar(targetCount, false);
+	// The work arrays keep their capacity from frame to frame: compiling allocates nothing once warm.
+	auto& scratch = m_scratch;
+	scratch.written.assign(targetCount, 0);
 	for (const auto& pass: std::span{m_passes}.first(passCount)) {
 		if (!pass.write.isValid() || pass.write.index >= targetCount) {
 			OWL_CORE_WARN("RenderGraph: Pass '{}' writes no target.", pass.name)
 			return false;
 		}
 		for (const uint32_t read: pass.reads) {
-			if (read >= targetCount || read == pass.write.index || (!writtenSoFar[read] && !m_targets[read].imported)) {
+			if (read >= targetCount || read == pass.write.index ||
+				(scratch.written[read] == 0 && !m_targets[read].imported)) {
 				OWL_CORE_WARN("RenderGraph: Pass '{}' reads a target no earlier pass writes.", pass.name)
 				return false;
 			}
 		}
-		writtenSoFar[pass.write.index] = true;
+		scratch.written[pass.write.index] = 1;
 	}
 
 	// A pass is kept when it writes a target a kept pass (or the frame) needs: walk back from the imported targets.
-	std::vector<bool> needed(targetCount, false);
-	for (size_t i = 0; i < targetCount; ++i) needed[i] = m_targets[i].imported;
-	std::vector<bool> kept(passCount, false);
+	scratch.needed.assign(targetCount, 0);
+	for (size_t i = 0; i < targetCount; ++i) scratch.needed[i] = m_targets[i].imported ? 1 : 0;
+	scratch.kept.assign(passCount, 0);
 	for (uint32_t index = passCount; index-- > 0;) {
 		const auto& pass = m_passes[index];
-		if (!needed[pass.write.index])
+		if (scratch.needed[pass.write.index] == 0)
 			continue;
-		kept[index] = true;
-		for (const uint32_t read: pass.reads) needed[read] = true;
+		scratch.kept[index] = 1;
+		for (const uint32_t read: pass.reads) scratch.needed[read] = 1;
 	}
 
 	// Dependencies: read after write, write after write, write after read; ties keep the declaration order.
-	std::vector<std::vector<uint32_t>> successors(passCount);
-	std::vector<uint32_t> predecessorCount(passCount, 0);
-	const auto addEdge = [&](const uint32_t iFrom, const uint32_t iTo) -> void {
-		if (std::ranges::find(successors[iFrom], iTo) != successors[iFrom].end())
-			return;
-		successors[iFrom].push_back(iTo);
-		++predecessorCount[iTo];
+	const auto resetLists = [](std::vector<std::vector<uint32_t>>& ioLists, const size_t iCount) -> void {
+		if (ioLists.size() < iCount)
+			ioLists.resize(iCount);
+		for (auto& list: ioLists) list.clear();
 	};
-	std::vector<int64_t> lastWriter(targetCount, -1);
-	std::vector<std::vector<uint32_t>> readersSinceWrite(targetCount);
+	resetLists(scratch.successors, passCount);
+	resetLists(scratch.readersSinceWrite, targetCount);
+	scratch.predecessorCount.assign(passCount, 0);
+	scratch.lastWriter.assign(targetCount, -1);
+	const auto addEdge = [&scratch](const uint32_t iFrom, const uint32_t iTo) -> void {
+		auto& next = scratch.successors[iFrom];
+		if (std::ranges::find(next, iTo) != next.end())
+			return;
+		next.push_back(iTo);
+		++scratch.predecessorCount[iTo];
+	};
 	for (uint32_t index = 0; index < passCount; ++index) {
-		if (!kept[index])
+		if (scratch.kept[index] == 0)
 			continue;
 		const auto& pass = m_passes[index];
 		for (const uint32_t read: pass.reads) {
-			if (lastWriter[read] >= 0)
-				addEdge(static_cast<uint32_t>(lastWriter[read]), index);
-			readersSinceWrite[read].push_back(index);
+			if (scratch.lastWriter[read] >= 0)
+				addEdge(static_cast<uint32_t>(scratch.lastWriter[read]), index);
+			scratch.readersSinceWrite[read].push_back(index);
 		}
 		const uint32_t write = pass.write.index;
-		if (lastWriter[write] >= 0)
-			addEdge(static_cast<uint32_t>(lastWriter[write]), index);
-		for (const uint32_t reader: readersSinceWrite[write]) addEdge(reader, index);
-		readersSinceWrite[write].clear();
-		lastWriter[write] = index;
+		if (scratch.lastWriter[write] >= 0)
+			addEdge(static_cast<uint32_t>(scratch.lastWriter[write]), index);
+		for (const uint32_t reader: scratch.readersSinceWrite[write]) addEdge(reader, index);
+		scratch.readersSinceWrite[write].clear();
+		scratch.lastWriter[write] = index;
 	}
-	std::priority_queue<uint32_t, std::vector<uint32_t>, std::greater<>> ready;
+	// Kahn's sort, the ready pass with the smallest declaration index first (a frame has a few dozen passes).
+	auto& ready = scratch.ready;
+	ready.clear();
 	for (uint32_t index = 0; index < passCount; ++index) {
-		if (kept[index] && predecessorCount[index] == 0)
-			ready.push(index);
+		if (scratch.kept[index] != 0 && scratch.predecessorCount[index] == 0)
+			ready.push_back(index);
 	}
 	while (!ready.empty()) {
-		const uint32_t index = ready.top();
-		ready.pop();
+		const auto first = std::ranges::min_element(ready);
+		const uint32_t index = *first;
+		ready.erase(first);
 		m_order.push_back(index);
-		for (const uint32_t next: successors[index]) {
-			if (--predecessorCount[next] == 0)
-				ready.push(next);
+		for (const uint32_t next: scratch.successors[index]) {
+			if (--scratch.predecessorCount[next] == 0)
+				ready.push_back(next);
 		}
 	}
 
