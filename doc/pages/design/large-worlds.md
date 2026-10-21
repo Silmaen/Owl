@@ -38,6 +38,16 @@ flowchart LR
 | Owl Nest          | Gizmos, picking, snapping and the camera work in world coordinates; the inspector shows doubles         |
 | Serialisation     | Scenes and saves store world positions in double                                                        |
 
+### Lights at astronomical scale {#lights-at-astronomical-scale}
+
+| Decision      | Choice                                                                                                    |
+|---------------|-----------------------------------------------------------------------------------------------------------|
+| Near a planet | The star is a directional light (angular radius from its size and distance), shadows from cascades        |
+| In space      | The star is an emissive body carrying a point light without falloff, placed camera-relative like any body |
+| Switching     | The same entity: its light is directional below a distance from the planet, a point light above it        |
+| Depth         | Reversed-Z and the infinite far plane keep the star and the planet in one depth buffer                    |
+| Shadows       | Planet-scale shadows (eclipses) are analytic (sphere against ray), not shadow maps                        |
+
 ## Assembly and articulated bodies
 
 - Mesh sockets: named attachment points on a mesh or a prefab, picked and moved in Owl Nest

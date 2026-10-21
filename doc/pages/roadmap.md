@@ -108,6 +108,8 @@ procedural graphs, tile tools, Lua editor scripts, and Blueprints-style visual s
 - ![Planned][planned] Skeletal animation (skinning, blending, state machine) and mesh LODs
 - ![Planned][planned] GPU particle system with editor preview and trails, emissive materials and lens flares
 - ![Planned][planned] Advanced post-processing (chromatic aberration, film grain, motion blur, depth of field)
+- ![To evaluate][evaluate] Area lights (rectangle, disc, sphere) lighting through LTC, with soft shadows ([3D core](design/3d-core.md#emissive-and-area-lights))
+- ![To evaluate][evaluate] Point and spot light shadows (cube and perspective shadow maps) ([3D core](design/3d-core.md#emissive-and-area-lights))
 - ![Planned][planned] Visual scripting MVP, event graphs compiled to Lua, node editing of assets ([details](design/visual-scripting.md))
 - ![Planned][planned] Node-graph link waypoints
 - ![Planned][planned] Script debugging aids (breakpoint markers, live watch)
@@ -129,7 +131,7 @@ render graph, essential post-processing — with full 3D editing ([details](desi
 - ![Done][done] Render graph hosting the renderer-stack layers
 - ![Done][done] Lighting: directional, point and spot lights, directional shadow maps
 - ![Planned][planned] 2D lighting (point / spot lights, normal-mapped sprites, 2D shadows), isometric sprites included ([2D](design/2d-complete.md))
-- ![Planned][planned] PBR materials with editor and material library
+- ![Planned][planned] PBR materials with editor and material library, emissive colour and strength included ([3D core](design/3d-core.md#emissive-and-area-lights))
 - ![In Progress][progress] Static mesh component with instancing
 - ![Planned][planned] Essential post-processing stack (tone mapping, bloom, vignette, LUT)
 - ![Planned][planned] Camera-relative rendering and reversed-Z depth, precise at any distance ([Large worlds](design/large-worlds.md))
@@ -139,6 +141,7 @@ render graph, essential post-processing — with full 3D editing ([details](desi
 - ![Planned][planned] HUD minimap on a render target ([HUD system](design/hud-system.md))
 - ![Done][done] 3D scene editing in Owl Nest (3D gizmos, snapping, mesh preview), "look through scene camera" mode
 - ![To evaluate][evaluate] Owl Nest camera preview: the HUD drawn over it, as an option
+- ![To evaluate][evaluate] Angular radius of a directional light: soft shadows, wider highlight, sun disc in the sky ([3D core](design/3d-core.md#emissive-and-area-lights))
 - ![Planned][planned] Help panel: mermaid diagrams and rendering polish
 - ![Planned][planned] Sample game: a Mini Transport Tycoon ([Sample games](design/sample-games.md))
 - ![To evaluate][evaluate] Sample games from the pool: Asteroids, a tower defence ([Pool](design/sample-games.md#sample-games-pool))
