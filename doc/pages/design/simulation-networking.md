@@ -32,6 +32,8 @@ on the deterministic simulation, the per-scene world (PR-33) and the open compon
     - Mark components as replicated (sync from server to clients)
     - Interpolation and prediction for smooth movement
     - Authority model: server-owned vs client-owned entities
+    - Interest management: relevance areas and priorities, a client receives only the entities near it
+      ([Large worlds](large-worlds.md))
 - RPC system
     - Lua API: `rpc_server(func, args)`, `rpc_client(func, args)`, `rpc_all(func, args)`
     - Reliable and unreliable RPC channels

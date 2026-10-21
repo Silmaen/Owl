@@ -23,6 +23,7 @@ modules on the v0.3.0 phased systems, not inside `Scene` (A-02). 3D physics is d
     - Seek, flee, arrive, wander, pursue, evade
     - Flocking (separation, alignment, cohesion)
     - Composable via behaviour tree or Lua
+    - Open 3D space: obstacle avoidance between moving volumes, formations
 
 ## Audio
 
@@ -33,6 +34,9 @@ modules on the v0.3.0 phased systems, not inside `Scene` (A-02). 3D physics is d
 - Audio effects
     - Reverb zones (e.g. cave vs outdoor)
     - Low-pass/high-pass filters (e.g. underwater, behind walls)
+    - Doppler effect on moving 3D sources
+- Adaptive music
+    - Layers and stingers switched by game states (calm, danger, combat), on the mixer crossfades
 
 ## Narrative
 
@@ -41,3 +45,12 @@ modules on the v0.3.0 phased systems, not inside `Scene` (A-02). 3D physics is d
     - Visual dialogue editor in Owl Nest (node graph)
     - Lua hooks for conditions and consequences
     - Subtitle rendering via in-game UI
+
+## HUD markers
+
+- HUD elements anchored to world entities (labels, brackets, health bars), clamped to the screen edge with an
+  off-screen indicator when the entity leaves the view ([HUD system](hud-system.md))
+
+## Simulation at scale
+
+Simulation level of detail and time warp are described in [Large worlds](large-worlds.md).

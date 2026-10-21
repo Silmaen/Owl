@@ -30,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Roadmap toward 1.0 extended to worlds of any scale: camera-relative rendering, 64-bit positions, articulated bodies, gravity, time warp, planetary terrain, world partition (`design/large-worlds.md`), two v0.7.0 sample games and a pool of optional ones.
 - CI: the benchmarks run on ready pull requests and `PR Ready` waits for them (five checks).
 
 - The version is written only in `CMakeLists.txt`: the engine exposes its commit (`getVersionFullString()`), Owl Nest shows it in the title bar and on the File screen, Lua `engine.version()` fills the Engine Demo menu, the shipped projects export the engine version and the README badge reads the latest release.

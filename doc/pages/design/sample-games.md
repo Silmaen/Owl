@@ -33,10 +33,25 @@ Owl Engine ships two kinds of example content:
 | One-room Zelda-like   | The Legend of Zelda   | top-down, dialogue, enemy AI, 2D lights         | v0.7.0        |
 | Marble or mini kart   | Marble Madness / Kart | 3D, Jolt physics, shadows                       | v0.7.0        |
 | Networked Bomberman   | Bomberman             | tilemap, deterministic simulation, multiplayer  | v0.8.0        |
+| Lunar lander          | Lunar Lander          | 3D, thrust and gravity, planetary terrain, legs | v0.7.0        |
+| Asteroid field        | Star Fox / X-Wing     | 6DoF flight, 3D steering AI, trails, HUD marks  | v0.7.0        |
 
 Breakout, Wolfenstein mini and Sokoban shipped in v0.4.0; Mini Transport Tycoon, which carries Owl Engine's main
 argument, comes next ([Order](#sample-games-order)). The two v1.0 showcase games (one 2D, one 3D) are picked from this
-list.
+list, and so are the games of the [Pool](#sample-games-pool) once they enter it.
+
+## Pool {#sample-games-pool}
+
+Ideas without commitment: a game of the pool enters the short list when a release has room for it, or is dropped.
+
+| Game           | Inspired by                       | Exercises                                          | Possible from |
+|----------------|-----------------------------------|----------------------------------------------------|---------------|
+| Asteroids      | Asteroids                         | 2D inertia, screen wrap, particles                 | v0.4.0        |
+| Tower defence  | Kingdom Rush                      | isometric, waves, tile-graph pathfinding, HUD      | v0.5.0        |
+| Station trader | Taipan! / Elite                   | data tables, economy on the fixed tick, trade HUD  | v0.6.0        |
+| Rail shooter   | Star Fox                          | splines, 3D, particles, HUD markers                | v0.7.0        |
+| Orbital golf   | Angry Birds Space / Gravitee Wars | 2D gravity fields, trajectory preview              | v0.7.0        |
+| Bridge builder | Poly Bridge / Bad Piggies         | parts snapped on sockets, breakable joints, replay | v0.7.0        |
 
 ## v0.4.0 games
 
@@ -223,6 +238,28 @@ and the combat come in a later release, once their art exists.
 | 3    | Sokoban               | v0.4.0  | No blocking gap; proves level editing in Owl Nest, undo and saves                                  |
 | 4    | Mini Transport Tycoon | v0.5.0  | Owl Engine's main argument; cleaner once G1, G3 and G8 are fixed                                   |
 | 5    | Mini Minecraft        | v0.6.0  | After a small engine PR for G2 and G13                                                             |
+
+## v0.7.0 games
+
+Planned, not yet checked against the engine: their plans are refined when v0.7.0 starts.
+
+### Lunar lander
+
+| Item     | Plan                                                                                                       |
+|----------|------------------------------------------------------------------------------------------------------------|
+| Play     | Land a small craft on marked pads of a moon, from orbit to touchdown, fuel limited                         |
+| Win/lose | Every pad reached / a hard landing breaks the legs or the craft                                            |
+| Engine   | Planetary terrain layer, gravity field, trajectory prediction, breakable joints, HUD markers on the pads   |
+| Size     | **M**, once the v0.7.0 physics and terrain are in                                                          |
+
+### Asteroid field
+
+| Item     | Plan                                                                                                       |
+|----------|------------------------------------------------------------------------------------------------------------|
+| Play     | Fly a fighter through an asteroid field, escort a convoy and fight waves of enemy fighters                 |
+| Win/lose | The convoy reaches the gate / the convoy or the player is destroyed                                        |
+| Engine   | 6DoF flight on Jolt, 3D steering and formations, particle trails, emissive lights, HUD markers, Doppler    |
+| Size     | **M**, once the v0.7.0 AI and audio are in                                                                 |
 
 ## Layout
 

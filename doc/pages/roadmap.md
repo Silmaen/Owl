@@ -50,14 +50,16 @@ v0.7.0 deterministic simulation, mods, the Web; this release is the 1.0 release 
 - ![Planned][planned] Entity replication (replicated components, interpolation, prediction, authority)
 - ![Planned][planned] RPC system (Lua `rpc_server` / `rpc_client` / `rpc_all`, reliable and unreliable)
 - ![Planned][planned] Lobby and session management
+- ![Planned][planned] Camera tracks in the sequencer, for cutscenes ([Large worlds](design/large-worlds.md))
 - ![Planned][planned] Network debugging tools (latency / loss simulation, stats overlay)
+- ![Planned][planned] Interest management: relevance areas and priorities, a client receives only what is near it ([Large worlds](design/large-worlds.md))
 - ![Planned][planned] Mod loading system (`.owlmod` packs, manifest, load order, asset overrides)
 - ![Planned][planned] Lua mod API (custom components, game event hooks, sandboxed)
 - ![Planned][planned] In-game mod manager (enable / disable / reorder, conflict detection)
-- ![Planned][planned] Level streaming (chunks loaded around the player in the background)
+- ![Planned][planned] World partition: streaming cells on world coordinates, additive scenes loaded around the player ([Large worlds](design/large-worlds.md))
 - ![Planned][planned] Web export through a WebGPU Owl RHI backend ([Owl RHI](design/owl-rhi.md))
 - ![Planned][planned] Cross-compile packaging and target platform selector ([Game export](design/game-export.md))
-- ![Planned][planned] Gamepad improvements: remapping UI, haptics ([Input](design/windowing-input.md))
+- ![Planned][planned] Gamepad improvements: remapping UI, haptics, joysticks and throttles with many axes ([Input](design/windowing-input.md))
 - ![Planned][planned] Touch screen input: taps and drags as pointer events, pinch and two-finger pan, the HUD and Owl Nest usable by touch ([Input](design/windowing-input.md))
 - ![Planned][planned] Sample game: a networked Bomberman ([Sample games](design/sample-games.md))
 - ![To evaluate][evaluate] macOS (Metal) and Android — after 1.0
@@ -65,22 +67,31 @@ v0.7.0 deterministic simulation, mods, the Web; this release is the 1.0 release 
 ## v0.7.0 -- Expected 2027-06-30
 
 **Goal:** The systems that make games — AI, 2D and 3D physics, audio, narrative — as optional modules outside
-`Scene`, on a deterministic simulation with input replay and rewind
-([details](design/gameplay-systems.md), [simulation](design/simulation-networking.md)).
+`Scene`, on a deterministic simulation with input replay and rewind; articulated bodies, gravity, time warp and
+planets for worlds of any scale ([details](design/gameplay-systems.md), [simulation](design/simulation-networking.md),
+[large worlds](design/large-worlds.md)).
 
 - ![Planned][planned] Deterministic simulation (seeded streams, cross-platform world-hash test) on the v0.4.0 fixed tick
 - ![Planned][planned] Input recording and frame-exact replay (replays double as regression tests)
 - ![Planned][planned] Rewind in Play (snapshot ring buffer + input log)
 - ![Planned][planned] Full 2D physics: callbacks, queries, joints, on the shared physics interface ([Physics](design/physics-api.md))
 - ![Planned][planned] 3D physics with Jolt on the shared physics interface ([Physics API](design/physics-api.md))
+- ![Planned][planned] Articulated bodies: compound bodies rebuilt at runtime, breakable joints, mass recomputed, sub-stepping ([Physics API](design/physics-api.md))
+- ![Planned][planned] Gravity fields (uniform, point, spherical) with trajectory prediction ([Large worlds](design/large-worlds.md))
+- ![Planned][planned] Time warp: scaled clock, bodies handed to analytic propagation and back ([Large worlds](design/large-worlds.md))
+- ![Planned][planned] Simulation level of detail: far entities on a coarse model, on a slower tick ([Large worlds](design/large-worlds.md))
+- ![Planned][planned] Planetary terrain layer: cube-sphere quadtree LOD from PCG graphs, atmospheric scattering, scaled space ([Large worlds](design/large-worlds.md))
 - ![Planned][planned] Navigation (NavMesh generation, A*, dynamic avoidance); tile-graph pathfinding comes in v0.4.0
 - ![Planned][planned] Behaviour trees with a visual editor (`.owlbt`)
-- ![Planned][planned] Steering behaviours and flocking
+- ![Planned][planned] Steering behaviours and flocking, in 2D and in open 3D space (obstacle avoidance, formations)
 - ![Planned][planned] Audio mixer (buses, per-bus volume, crossfades)
-- ![Planned][planned] Audio effects (reverb zones, low / high-pass filters)
+- ![Planned][planned] Audio effects (reverb zones, low / high-pass filters, Doppler) and adaptive music driven by game states
 - ![Planned][planned] Dialogue system with a visual editor (`.owldlg`)
+- ![Planned][planned] HUD markers anchored to world entities, with off-screen indicators ([HUD system](design/hud-system.md))
 - ![Planned][planned] Engine Demo: enemies demo on the AI modules
 - ![Planned][planned] Sample games: a one-room Zelda-like and a 3D marble or kart game ([Sample games](design/sample-games.md))
+- ![Planned][planned] Sample games: a 3D lunar lander and a dogfight in an asteroid field ([Sample games](design/sample-games.md))
+- ![To evaluate][evaluate] Sample games from the pool: a rail shooter, an orbital golf, a bridge builder ([Pool](design/sample-games.md#sample-games-pool))
 
 ## v0.6.0 -- Expected 2027-04-15
 
@@ -90,8 +101,12 @@ procedural graphs, tile tools, Lua editor scripts, and Blueprints-style visual s
 - ![Planned][planned] Offline asset pipeline: cook, cache, asset GUIDs ([Content](design/content-pipeline.md))
 - ![Planned][planned] Binary runtime scene format produced by the cook
 - ![Planned][planned] Parallel pack `readEntry`
+- ![Planned][planned] World positions in double with a floating origin, through scene, physics, audio and Owl Nest ([Large worlds](design/large-worlds.md))
+- ![Planned][planned] Spline component and its editor: paths, lanes, rails ([Large worlds](design/large-worlds.md))
+- ![Planned][planned] Data tables: typed records edited in a grid in Owl Nest, read from Lua ([Large worlds](design/large-worlds.md))
+- ![Planned][planned] Mesh sockets: named attachment points, entities assembled at runtime ([Large worlds](design/large-worlds.md))
 - ![Planned][planned] Skeletal animation (skinning, blending, state machine) and mesh LODs
-- ![Planned][planned] GPU particle system with editor preview
+- ![Planned][planned] GPU particle system with editor preview and trails, emissive materials and lens flares
 - ![Planned][planned] Advanced post-processing (chromatic aberration, film grain, motion blur, depth of field)
 - ![Planned][planned] Visual scripting MVP, event graphs compiled to Lua, node editing of assets ([details](design/visual-scripting.md))
 - ![Planned][planned] Node-graph link waypoints
@@ -102,6 +117,7 @@ procedural graphs, tile tools, Lua editor scripts, and Blueprints-style visual s
 - ![Planned][planned] Sound editor in Owl Nest: preview, trim, loop points, volume and pitch, random variants of one sound
 - ![To evaluate][evaluate] Hot reload of a C++ game module
 - ![Planned][planned] Sample games: a Mini Minecraft, and combat (guards, weapons) in the Wolfenstein mini ([Sample games](design/sample-games.md))
+- ![To evaluate][evaluate] Sample game from the pool: a station trader ([Pool](design/sample-games.md#sample-games-pool))
 
 ## v0.5.0 -- Expected 2027-01-31
 
@@ -116,6 +132,7 @@ render graph, essential post-processing — with full 3D editing ([details](desi
 - ![Planned][planned] PBR materials with editor and material library
 - ![In Progress][progress] Static mesh component with instancing
 - ![Planned][planned] Essential post-processing stack (tone mapping, bloom, vignette, LUT)
+- ![Planned][planned] Camera-relative rendering and reversed-Z depth, precise at any distance ([Large worlds](design/large-worlds.md))
 - ![Planned][planned] Compute-driven frustum / occlusion culling with indirect draws
 - ![Planned][planned] GPU raycast sprite stripes and `BitonicSortPass` adoption
 - ![Planned][planned] Spatial partitioning and multithreaded render preparation
@@ -123,6 +140,7 @@ render graph, essential post-processing — with full 3D editing ([details](desi
 - ![Planned][planned] 3D scene editing in Owl Nest (3D gizmos, snapping, mesh preview), "look through scene camera" mode
 - ![Planned][planned] Help panel: mermaid diagrams and rendering polish
 - ![Planned][planned] Sample game: a Mini Transport Tycoon ([Sample games](design/sample-games.md))
+- ![To evaluate][evaluate] Sample games from the pool: Asteroids, a tower defence ([Pool](design/sample-games.md#sample-games-pool))
 
 ## v0.4.0 -- 2026-10-20
 

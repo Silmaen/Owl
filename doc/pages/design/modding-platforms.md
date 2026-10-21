@@ -28,10 +28,12 @@ in [Simulation and networking](simulation-networking.md)), summarised in the
 
 ## Large worlds
 
-- Level streaming
-    - Load/unload scene chunks on demand based on player position
+- World partition ([Large worlds](large-worlds.md))
+    - Streaming cells on world coordinates (double), loaded and unloaded around the player
+    - Additive scenes: a cell is a scene merged into the running one
     - Background loading via task system
     - Seamless transitions (no loading screen)
+- Camera tracks in the sequencer, for cutscenes
 
 ## Platforms
 
