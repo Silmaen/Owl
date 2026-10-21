@@ -919,24 +919,29 @@ void Scene::recordWorldPasses(renderer::RenderGraph& ioGraph, const renderer::Re
 			continue;
 		const std::string_view type{layer->getTypeKey()};
 		const bool threeD = type == "RendererVoxel" || type == "RendererMesh";
-		ioGraph.addPass(layer->getName(), threeD ? Graph::Setup{writeSceneReadShadows} : Graph::Setup{writeScene},
-						[this, index, threeD](const Graph::PassContext& iContext) -> void {
-							if (threeD)
-								useShadowMaps(iContext);
-							const auto& stackLayer = renderer::Renderer::getRenderStack().getLayers()[index];
-							stackLayer->setViewport(m_viewportSize);
-							stackLayer->onBeginFrame(*mp_renderCamera);
-							m_currentLayerName = stackLayer->getName();
-							m_currentLayerIsFirst = index == 0;
-							mp_currentLayer = stackLayer.get();
-							stackLayer->onRender(*this);
-							if (!stackLayer->drawsOwnEntities())
-								render();
-							stackLayer->onEndFrame();
-							m_currentLayerName.clear();
-							m_currentLayerIsFirst = true;
-							mp_currentLayer = nullptr;
-						});
+		// Two pointer-sized captures at most: the body stays in the small buffer of `std::function`, no allocation.
+		const auto body = [this, index](const Graph::PassContext& iContext) -> void {
+			const auto& stackLayer = renderer::Renderer::getRenderStack().getLayers()[index];
+			if (const std::string_view layerType{stackLayer->getTypeKey()};
+				layerType == "RendererVoxel" || layerType == "RendererMesh")
+				useShadowMaps(iContext);
+			stackLayer->setViewport(m_viewportSize);
+			stackLayer->onBeginFrame(*mp_renderCamera);
+			m_currentLayerName = stackLayer->getName();
+			m_currentLayerIsFirst = index == 0;
+			mp_currentLayer = stackLayer.get();
+			stackLayer->onRender(*this);
+			if (!stackLayer->drawsOwnEntities())
+				render();
+			stackLayer->onEndFrame();
+			m_currentLayerName.clear();
+			m_currentLayerIsFirst = true;
+			mp_currentLayer = nullptr;
+		};
+		if (threeD)
+			ioGraph.addPass(layer->getName(), writeSceneReadShadows, body);
+		else
+			ioGraph.addPass(layer->getName(), writeScene, body);
 	}
 }
 
