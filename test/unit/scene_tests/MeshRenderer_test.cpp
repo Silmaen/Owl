@@ -186,6 +186,22 @@ TEST_F(MeshRendererTest, aSecondEditorViewDrawsTheSameMeshes) {
 	EXPECT_EQ(renderer::RendererMesh::getStatistics().transparentDrawCount, 2u);
 }
 
+TEST_F(MeshRendererTest, anEditorViewRunsTheWorldThroughTheFrameGraph) {
+	useStack(false);
+	const auto sc = makeScene(true);
+	renderer::CameraEditor camera{45.f, 1.778f, 0.1f, 1000.f};
+	camera.setViewportSize({320, 180});
+	sc->onViewportResize({320, 180});
+	sc->renderEditorView(camera);
+	const auto passes = renderer::Renderer::getRenderGraph().getCompiledPasses();
+	ASSERT_GE(passes.size(), 4u);
+	EXPECT_EQ(passes.front(), "scene clear");
+	EXPECT_EQ(passes[passes.size() - 3], "colour encode");
+	EXPECT_EQ(passes[passes.size() - 2], "entity ids and depth");
+	EXPECT_EQ(passes.back(), "overlays and HUD");
+	EXPECT_GE(renderer::Renderer::getRenderGraph().getPooledTargetCount(), 1u);
+}
+
 TEST_F(MeshRendererTest, aHotReloadedFileIsFetchedAgain) {
 	useStack(false);
 	const auto sc = makeScene(true);

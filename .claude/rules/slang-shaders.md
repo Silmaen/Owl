@@ -53,9 +53,12 @@ float4 texColor = u_Textures[NonUniformResourceIndex(texIndex)].Sample(u_Sampler
 
 ## Colour Space
 
-- Framebuffers use `VK_FORMAT_R8G8B8A8_UNORM` (not SRGB)
-- **No sRGB conversion in shaders** — colours are linear throughout
-- No `pow(color, 2.2)` or `pow(color, 1/2.2)` gamma correction
+- Framebuffers and textures are UNORM (never `*_SRGB`): Owl Nest shows the same textures through ImGui
+- The scene colour is `Rgba16F` and linear; a world shader reads the `linearOutput` flag (uniform block or vertex
+  attribute) and, when set, decodes its sRGB colour (2D-like) or texel and tint before lighting (mesh3d, voxel)
+- With the flag at 0 (HUD, thumbnails, previews, ImGui) the maths stays as it was
+- sRGB encoding and tone mapping happen only in `color_encode/color_encode.slang`
+- No `pow(color, 2.2)` or `pow(color, 1/2.2)` elsewhere
 
 ## Compilation Pipeline
 

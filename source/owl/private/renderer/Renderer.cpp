@@ -10,6 +10,7 @@
 #include "renderer/Renderer.h"
 
 #include "renderer/BackgroundRenderer.h"
+#include "renderer/ColorEncoder.h"
 #include "renderer/Renderer2D.h"
 #include "renderer/Renderer2DLayer.h"
 #include "renderer/Renderer3D.h"
@@ -30,6 +31,7 @@ shared<Renderer::SceneData> Renderer::m_sceneData = nullptr;
 shared<Renderer::ShaderLibrary> Renderer::m_shaderLibrary = nullptr;
 shared<Renderer::TextureLibrary> Renderer::m_textureLibrary = nullptr;
 RenderStack Renderer::m_renderStack;
+RenderGraph Renderer::m_renderGraph;
 
 void Renderer::init() {
 	OWL_PROFILE_FUNCTION()
@@ -69,6 +71,7 @@ void Renderer::initShaders(const ShaderProgressCallback& iProgress) {
 	if (iProgress)
 		iProgress(4, 5, "background");
 	BackgroundRenderer::init();
+	ColorEncoder::init();
 
 	RendererRaycast::init();
 	RendererTilemap::init();
@@ -89,6 +92,8 @@ void Renderer::shutdown() {
 	RendererIsometric::shutdown();
 	RendererTilemap::shutdown();
 	RendererRaycast::shutdown();
+	m_renderGraph.releasePool();
+	ColorEncoder::shutdown();
 	BackgroundRenderer::shutdown();
 	Renderer2D::shutdown();
 	reset();
@@ -106,6 +111,8 @@ void Renderer::reset() {
 void Renderer::setRenderStack(RenderStack iStack) { m_renderStack = std::move(iStack); }
 
 auto Renderer::getRenderStack() -> const RenderStack& { return m_renderStack; }
+
+auto Renderer::getRenderGraph() -> RenderGraph& { return m_renderGraph; }
 
 void Renderer::beginScene(const Camera& iCamera) { m_sceneData->viewProjectionMatrix = iCamera.getViewProjection(); }
 

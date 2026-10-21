@@ -19,6 +19,8 @@ void Camera::serialize(const core::Serializer& iOut) const {
 	iOut.getImpl()->emitter << YAML::BeginMap;// Camera
 	iOut.getImpl()->emitter << YAML::Key << "projectionType" << YAML::Value
 							<< std::string(magic_enum::enum_name(camera.getProjectionType()));
+	iOut.getImpl()->emitter << YAML::Key << "toneMapping" << YAML::Value
+							<< std::string(magic_enum::enum_name(camera.getToneMapping()));
 	iOut.getImpl()->emitter << YAML::Key << "perspectiveFOV" << YAML::Value << camera.getPerspectiveVerticalFov();
 	iOut.getImpl()->emitter << YAML::Key << "perspectiveNear" << YAML::Value << camera.getPerspectiveNearClip();
 	iOut.getImpl()->emitter << YAML::Key << "perspectiveFar" << YAML::Value << camera.getPerspectiveFarClip();
@@ -37,6 +39,13 @@ void Camera::deserialize(const core::Serializer& iNode) {
 			magic_enum::enum_cast<SceneCamera::ProjectionType>(cameraProps["projectionType"].as<std::string>());
 	if (projType.has_value())
 		camera.setProjectionType(projType.value());
+	renderer::ToneMapping toneMapping = renderer::ToneMapping::None;
+	if (const auto toneNode = cameraProps["toneMapping"]; toneNode && toneNode.isScalar()) {
+		if (const auto parsed = magic_enum::enum_cast<renderer::ToneMapping>(toneNode.as<std::string>());
+			parsed.has_value())
+			toneMapping = parsed.value();
+	}
+	camera.setToneMapping(toneMapping);
 	camera.setPerspectiveVerticalFov(cameraProps["perspectiveFOV"].as<float>());
 	camera.setPerspectiveNearClip(cameraProps["perspectiveNear"].as<float>());
 	camera.setPerspectiveFarClip(cameraProps["perspectiveFar"].as<float>());

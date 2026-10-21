@@ -13,6 +13,7 @@
 #include "platform/FileUtils.h"
 #include "renderer/BackgroundRenderer.h"
 #include "renderer/CameraOrtho.h"
+#include "renderer/ColorEncoder.h"
 #include "renderer/IsometricObjects.h"
 #include "renderer/MeshCache.h"
 #include "renderer/Renderer.h"
@@ -718,73 +719,116 @@ void Scene::renderWithStack(const renderer::Camera& iCamera) {
 	prepareVoxelRenderData();
 	prepareTilemapRenderData();
 	prepareMeshRenderData();
-	const auto& stack = renderer::Renderer::getRenderStack();
+	mp_renderCamera = &iCamera;
+	using Graph = renderer::RenderGraph;
+	auto& graph = renderer::Renderer::getRenderGraph();
+	graph.reset();
+	const Graph::Resource target = graph.importTarget("target");
+	const Graph::Resource sceneColor = graph.createTarget("scene colour", Graph::ColorSpace::Linear);
+	// The first write of the scene colour clears it, even when no layer has anything to draw.
+	graph.addPass(
+			"scene clear", [sceneColor](Graph::PassBuilder& ioBuilder) -> void { ioBuilder.write(sceneColor); },
+			[](const Graph::PassContext&) -> void {});
+	recordWorldPasses(graph, sceneColor);
+	const auto encodeSetup = [sceneColor, target](Graph::PassBuilder& ioBuilder) -> void {
+		ioBuilder.read(sceneColor);
+		ioBuilder.write(target);
+	};
+	graph.addPass("colour encode", encodeSetup, [this, sceneColor](const Graph::PassContext& iContext) -> void {
+		renderer::ColorEncoder::draw(iContext.getTexture(sceneColor), mp_renderCamera->getToneMapping());
+	});
+	// The display target takes the entity ids and the depth of the world, for picking and the depth-tested overlays.
+	graph.addPass("entity ids and depth", encodeSetup,
+				  [sceneColor, target](const Graph::PassContext& iContext) -> void {
+					  auto* const source = iContext.getFramebuffer(sceneColor);
+					  auto* const destination = iContext.getFramebuffer(target);
+					  if (source == nullptr || destination == nullptr)
+						  return;
+					  source->copyAttachment(1, *destination);
+					  source->copyAttachment(2, *destination);
+				  });
+	graph.addPass(
+			"overlays and HUD", [target](Graph::PassBuilder& ioBuilder) -> void { ioBuilder.write(target); },
+			[this](const Graph::PassContext&) -> void {
+				renderOverlays(*mp_renderCamera);
+				ui::HudPass::render(*this, m_viewportSize, status == Status::Editing);
+				renderToast();
+			});
+	if (graph.compile()) {
+		const auto* const bound = renderer::gpu::Framebuffer::getBound();
+		graph.execute(bound != nullptr ? bound->getSpecification().size : m_viewportSize);
+	}
+	mp_renderCamera = nullptr;
+}
+
+void Scene::recordWorldPasses(renderer::RenderGraph& ioGraph, const renderer::RenderGraph::Resource iSceneColor) {
+	using Graph = renderer::RenderGraph;
+	const auto writeScene = [iSceneColor](Graph::PassBuilder& ioBuilder) -> void { ioBuilder.write(iSceneColor); };
+	const auto& layers = renderer::Renderer::getRenderStack().getLayers();
 	const bool editorMode = status == Status::Editing;
-	if (stack.isEmpty() || (editorMode && getSelfDrawnLayer() == nullptr)) {
+	if (layers.empty() || (editorMode && getSelfDrawnLayer() == nullptr)) {
 		// The editor composite is one world-space 2D pass drawing every entity.
-		renderer::Renderer2DLayer composite{"editor"};
-		m_currentLayerName.clear();
-		m_currentLayerIsFirst = true;
-		mp_currentLayer = nullptr;
-		composite.onBeginFrame(iCamera);
-		composite.onRender(*this);
-		render();
-		composite.onEndFrame();
-		// The editor composite above is 2D-only: the 3D voxel and mesh layers draw as passes of their own.
-		if (editorMode) {
-			const auto& layers = stack.getLayers();
-			for (size_t index = 0; index < layers.size(); ++index) {
-				const auto& layer = layers[index];
-				const std::string_view type{layer->getTypeKey()};
-				const bool isFirst = index == 0;
-				if ((type != "RendererVoxel" && type != "RendererMesh") || !layerHasContent(layer->getName(), isFirst))
-					continue;
-				layer->setViewport(m_viewportSize);
-				layer->onBeginFrame(iCamera);
-				m_currentLayerName = layer->getName();
-				m_currentLayerIsFirst = isFirst;
-				mp_currentLayer = layer.get();
-				if (type == "RendererVoxel")
-					renderVoxelWorlds(true);
-				else
-					renderMeshes(true);
-				layer->onEndFrame();
-			}
+		ioGraph.addPass("editor composite", writeScene, [this](const Graph::PassContext&) -> void {
+			renderer::Renderer2DLayer composite{"editor"};
 			m_currentLayerName.clear();
 			m_currentLayerIsFirst = true;
 			mp_currentLayer = nullptr;
+			composite.onBeginFrame(*mp_renderCamera);
+			composite.onRender(*this);
+			render();
+			composite.onEndFrame();
+		});
+		if (!editorMode)
+			return;
+		// The editor composite above is 2D-only: the 3D voxel and mesh layers draw as passes of their own.
+		for (size_t index = 0; index < layers.size(); ++index) {
+			const auto& layer = layers[index];
+			const std::string_view type{layer->getTypeKey()};
+			if ((type != "RendererVoxel" && type != "RendererMesh") || !layerHasContent(layer->getName(), index == 0))
+				continue;
+			ioGraph.addPass(layer->getName(), writeScene, [this, index](const Graph::PassContext&) -> void {
+				const auto& stackLayer = renderer::Renderer::getRenderStack().getLayers()[index];
+				stackLayer->setViewport(m_viewportSize);
+				stackLayer->onBeginFrame(*mp_renderCamera);
+				m_currentLayerName = stackLayer->getName();
+				m_currentLayerIsFirst = index == 0;
+				mp_currentLayer = stackLayer.get();
+				if (std::string_view{stackLayer->getTypeKey()} == "RendererVoxel")
+					renderVoxelWorlds(true);
+				else
+					renderMeshes(true);
+				stackLayer->onEndFrame();
+				m_currentLayerName.clear();
+				m_currentLayerIsFirst = true;
+				mp_currentLayer = nullptr;
+			});
 		}
-		renderOverlays(iCamera);
-		ui::HudPass::render(*this, m_viewportSize, editorMode);
-		renderToast();
 		return;
 	}
 	renderer::Renderer2D::resetStats();
-	bool first = true;
-	for (const auto& layer: stack.getLayers()) {
-		const bool isFirst = first;
-		first = false;
+	for (size_t index = 0; index < layers.size(); ++index) {
+		const auto& layer = layers[index];
 		// The raycaster casts from the scene camera: the editor never draws it.
 		if (editorMode && std::string_view{layer->getTypeKey()} == "RendererRaycast")
 			continue;
-		if (!layerHasContent(layer->getName(), isFirst))
+		if (!layerHasContent(layer->getName(), index == 0))
 			continue;
-		layer->setViewport(m_viewportSize);
-		layer->onBeginFrame(iCamera);
-		m_currentLayerName = layer->getName();
-		m_currentLayerIsFirst = isFirst;
-		mp_currentLayer = layer.get();
-		layer->onRender(*this);
-		if (!layer->drawsOwnEntities())
-			render();
-		layer->onEndFrame();
+		ioGraph.addPass(layer->getName(), writeScene, [this, index](const Graph::PassContext&) -> void {
+			const auto& stackLayer = renderer::Renderer::getRenderStack().getLayers()[index];
+			stackLayer->setViewport(m_viewportSize);
+			stackLayer->onBeginFrame(*mp_renderCamera);
+			m_currentLayerName = stackLayer->getName();
+			m_currentLayerIsFirst = index == 0;
+			mp_currentLayer = stackLayer.get();
+			stackLayer->onRender(*this);
+			if (!stackLayer->drawsOwnEntities())
+				render();
+			stackLayer->onEndFrame();
+			m_currentLayerName.clear();
+			m_currentLayerIsFirst = true;
+			mp_currentLayer = nullptr;
+		});
 	}
-	m_currentLayerName.clear();
-	m_currentLayerIsFirst = true;
-	mp_currentLayer = nullptr;
-	renderOverlays(iCamera);
-	ui::HudPass::render(*this, m_viewportSize, editorMode);
-	renderToast();
 }
 
 void Scene::renderHud(const math::vec2ui& iViewport, const bool iEditorMode) {

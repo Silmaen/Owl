@@ -16,6 +16,7 @@
 #include "input/InputFrame.h"
 #include "math/Transform.h"
 #include "renderer/Camera.h"
+#include "renderer/RenderGraph.h"
 #include "renderer/RenderStack.h"
 #include "scene/PhysicsSettings.h"
 #include "scene/SimulationClock.h"
@@ -1212,6 +1213,14 @@ private:
 
 	/**
 	 * @brief
+	 *  Add one frame-graph pass per renderer-stack layer with content, each drawing into the scene colour.
+	 * @param[in,out] ioGraph The frame graph.
+	 * @param[in] iSceneColor The linear scene colour target.
+	 */
+	void recordWorldPasses(renderer::RenderGraph& ioGraph, renderer::RenderGraph::Resource iSceneColor);
+
+	/**
+	 * @brief
 	 *  Render one runtime frame through the primary camera: voxel streaming, renderer stack, screen transition.
 	 * @param[in] iTimeStep The frame duration (advances the screen transition).
 	 */
@@ -1295,6 +1304,8 @@ private:
 	 * `Renderer2D` quad loop).
 	 */
 	const renderer::RenderLayer* mp_currentLayer = nullptr;
+	/// Camera of the frame-graph run in progress (`renderWithStack`).
+	const renderer::Camera* mp_renderCamera = nullptr;
 
 	/// Shared sink collecting worker-generated voxel chunks for `updateVoxelStreaming` to install on the main thread.
 	shared<VoxelStreamState> m_voxelStream;

@@ -412,11 +412,12 @@ YAML key: `BackgroundTexture`. Only the first entity with this component is rend
 
 ### Camera Component
 
-| Field              | Type          | Default | Description                 |
-|--------------------|---------------|---------|-----------------------------|
-| `primary`          | `bool`        | `true`  | Active camera for rendering |
-| `fixedAspectRatio` | `bool`        | `false` | Lock aspect ratio           |
-| `camera`           | `SceneCamera` | —       | Orthographic or perspective |
+| Field              | Type          | Default | Description                                           |
+|--------------------|---------------|---------|-------------------------------------------------------|
+| `primary`          | `bool`        | `true`  | Active camera for rendering                           |
+| `fixedAspectRatio` | `bool`        | `false` | Lock aspect ratio                                     |
+| `camera`           | `SceneCamera` | —       | Orthographic or perspective                           |
+| `toneMapping`      | `ToneMapping` | `None`  | `None`, `PbrNeutral` or `Aces` (`camera.toneMapping`) |
 
 YAML key: `Camera`. See [Renderer > Camera System](renderer.md).
 

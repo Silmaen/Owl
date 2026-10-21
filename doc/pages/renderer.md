@@ -162,6 +162,55 @@ sequenceDiagram
 
 `onEndFrame` walks the stack in reverse so layers can flush nested resources cleanly.
 
+### Frame graph {#renderer-frame-graph}
+
+`renderer::RenderGraph` (`Renderer::getRenderGraph()`) records the passes of a frame. A pass declares the targets it
+reads and writes; the graph derives the order (read-after-write, write-after-write, write-after-read, ties keep the
+declaration order), drops the passes nothing needs, binds the right framebuffer around each pass and gives the
+caller's framebuffer back.
+
+- **Targets.** The imported target is the framebuffer bound when the graph runs, or the window surface. Transient
+  targets are `Linear` (`Rgba16F` colour) or `Display` (`Surface`); all carry the engine layout: colour, `RedInteger`
+  entity id and `Depth24Stencil8`.
+- **Pool.** Transients come from a pool kept between frames and released after 120 idle runs; a transient released
+  earlier in the frame is reused. A transient is cleared on its first write of a frame (clear colour decoded to linear
+  for a `Linear` one, entity id -1).
+
+`Scene::renderWithStack` records these passes:
+
+```mermaid
+flowchart LR
+    C["scene clear"] --> L["one pass per layer with content<br/>(editor composite + voxel / mesh layers in the editor)"]
+    L -->|"scene colour (Linear)"| E["colour encode"]
+    E --> I["entity ids and depth"]
+    I --> O["overlays and HUD"]
+```
+
+- **colour encode** (`renderer::ColorEncoder`, `color_encode.slang`) tone maps then sRGB-encodes the linear scene
+  colour into the display target.
+- **entity ids and depth** copies the id and depth attachments into the target, so picking and depth-tested editor
+  overlays keep working; skipped when the target is the window surface.
+- **overlays and HUD** (editor overlays, HUD, toast) draw after the encoding, in display space.
+
+### Colour space {#renderer-colour-space}
+
+Every world layer renders linear into the `Rgba16F` scene colour; encoding to sRGB happens once, in `colour encode`.
+
+- **Shaders.** A shader drawing world colour gets a `linearOutput` flag (its uniform block, or a vertex attribute for
+  the background), set from `gpu::Framebuffer::isLinearTargetBound()`. On a linear target the 2D-like shaders (quad,
+  circle, line, text, background, isometric, tilemap, raycast stripe) decode their final colour from sRGB (opaque colours
+  round-trip exactly, only blending becomes linear); the lit 3D shaders (mesh, voxel) decode texel and tint before
+  lighting. On any other target (HUD, thumbnails, Owl Nest previews, ImGui) the shaders keep their previous maths.
+- **Textures** stay UNORM and are decoded in the shaders: Owl Nest shows the same textures through ImGui, which an
+  `_SRGB` format would darken. Data samplers (the MSDF coverage, ids) are not decoded.
+- **Tone mapping** is per camera: `renderer::ToneMapping` (`None`, `PbrNeutral`, `Aces`) on `renderer::Camera`
+  (`getToneMapping` / `setToneMapping`), `None` by default (clamp, exact 2D colours). The Camera component saves it as
+  `camera.toneMapping` (absent means `None`) and the Owl Nest Camera inspector has a **Tone mapping** combo. The editor
+  camera uses `None`; piloting or previewing a scene camera uses its setting.
+- **Vulkan pipelines.** A draw keeps one pipeline per attachment layout (`Framebuffer::getPipelineFamily`, the dedup
+  key of `pushPipeline`), created on its first bind to a framebuffer of that layout: linear (`Rgba16F`, `RedInteger`,
+  `Depth24Stencil8`) and display (`Surface`, `RedInteger`, `Depth24Stencil8`, swapchain included).
+
 ### Adding a new layer type
 
 1. Subclass `RenderLayer` and implement `onBeginFrame`, `onRender`, `onEndFrame` and `applyConfig`.
@@ -991,7 +1040,8 @@ A `Framebuffer` represents an off-screen render target with one or more typed at
 
 | Format            | Description                  | Typical Use         |
 |-------------------|------------------------------|---------------------|
-| `Rgba8`           | 8-bit RGBA colour            | Scene colour output |
+| `Rgba8`           | 8-bit RGBA colour            | Display colour      |
+| `Rgba16F`         | 16-bit float RGBA colour     | Linear scene colour |
 | `RedInteger`      | Single integer per pixel     | Entity ID picking   |
 | `Depth24Stencil8` | 24-bit depth + 8-bit stencil | Depth testing       |
 | `Surface`         | Swap chain surface (Vulkan)  | Final presentation  |

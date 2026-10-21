@@ -351,6 +351,18 @@ void renderProps(Camera& ioComponent) {
 		ImGui::EndCombo();
 	}
 	fieldTooltip("Perspective: 3D with vanishing point. Orthographic: 2D/isometric with parallel projection.");
+	if (prop::BeginCombo("Tone mapping", std::string(magic_enum::enum_name(camera.getToneMapping())).c_str())) {
+		for (const renderer::ToneMapping& tone: magic_enum::enum_values<renderer::ToneMapping>()) {
+			const bool isSelected = camera.getToneMapping() == tone;
+			if (ImGui::Selectable(std::string(magic_enum::enum_name(tone)).c_str(), isSelected))
+				camera.setToneMapping(tone);
+			if (isSelected)
+				ImGui::SetItemDefaultFocus();
+		}
+		ImGui::EndCombo();
+	}
+	fieldTooltip("Operator mapping the HDR scene colour to the display range. None keeps the colour unchanged; "
+				 "PbrNeutral preserves base colours; Aces gives a filmic look.");
 	if (camera.getProjectionType() == SceneCamera::ProjectionType::Perspective) {
 		float perspectiveVerticalFov = math::degrees(camera.getPerspectiveVerticalFov());
 		if (prop::DragFloat("Vertical FOV", &perspectiveVerticalFov))
