@@ -11,12 +11,14 @@
 #include <owlgui.h>
 
 #include "../UndoManager.h"
+#include "CameraPilot.h"
 #include "NavigationToolState.h"
 #include "PlayOverlay.h"
 
 #include <renderer/MeshCache.h>
 #include <renderer/Renderer3D.h>
 #include <renderer/RendererIsometric.h>
+#include <scene/SceneCamera.h>
 #include <scene/component/Camera.h>
 #include <scene/nav/Pathfinder.h>
 
@@ -233,6 +235,42 @@ public:
 
 	/**
 	 * @brief
+	 *  Pilot the selected camera entity: the view renders through it (its projection, the aspect of the viewport) and
+	 *  every move of the view moves the camera, one undoable `entity.set_transform` per gesture.
+	 */
+	void pilotSelectedCamera();
+
+	/**
+	 * @brief
+	 *  Whether the selected entity is a camera the view can pilot: one `goToCameraViewpoint` accepts, outside the
+	 *  isometric mode.
+	 * @return True when `pilotSelectedCamera` would pilot it.
+	 */
+	[[nodiscard]] auto canPilotSelectedCamera() const -> bool;
+
+	/**
+	 * @brief
+	 *  Stop piloting and put the editor view back where it was before.
+	 */
+	void stopPiloting();
+
+	/**
+	 * @brief
+	 *  Check whether the view pilots a camera entity.
+	 * @return True while piloting.
+	 */
+	[[nodiscard]] auto isPiloting() const -> bool { return m_pilot.isActive(); }
+
+	/**
+	 * @brief
+	 *  Check whether the right button flies the editor camera over this viewport: the letter keys move the camera then,
+	 *  they are no shortcut.
+	 * @return True while flying.
+	 */
+	[[nodiscard]] auto isFlying() const -> bool;
+
+	/**
+	 * @brief
 	 *  Switch the editor camera between the 2D orthographic and the perspective view.
 	 * @param[in] iProjection The projection.
 	 */
@@ -343,11 +381,14 @@ private:
 
 	/**
 	 * @brief
-	 *  Record a finished gizmo drag as an `entity.set_transform` command (journaled, undoable, replayable).
+	 *  Record a finished gizmo drag or pilot gesture as an `entity.set_transform` command (journaled, undoable,
+	 *  replayable).
 	 * @param[in] iEntity The moved entity, put back as it was, then moved by the command.
 	 * @param[in] iScene The edited scene.
+	 * @param[in] iBeforeYaml Snapshot of the entity before the move.
 	 */
-	void commitGizmoEdit(const scene::Entity& iEntity, const shared<scene::Scene>& iScene) const;
+	void commitTransformEdit(const scene::Entity& iEntity, const shared<scene::Scene>& iScene,
+							 const std::string& iBeforeYaml) const;
 
 	/**
 	 * @brief
@@ -431,6 +472,35 @@ private:
 	 * @return Yellow for the primary camera, light blue otherwise.
 	 */
 	[[nodiscard]] static auto getCameraMarkerColor(bool iPrimary) -> math::vec4;
+
+	/**
+	 * @brief
+	 *  Follow the piloted camera, move it with the view and record each gesture; stop when the entity is gone.
+	 * @param[in] iScene The edited scene.
+	 * @param[in] iTimeStep The frame time.
+	 */
+	void updatePilot(const shared<scene::Scene>& iScene, const core::Timestep& iTimeStep);
+
+	/**
+	 * @brief
+	 *  Move the editor camera onto the pose of a camera entity.
+	 * @param[in] iCamera The camera entity.
+	 */
+	void moveViewOnto(const scene::Entity& iCamera);
+
+	/**
+	 * @brief
+	 *  Check whether an entity is the piloted camera, which the view does not draw.
+	 * @param[in] iEntity The entity.
+	 * @return True for the piloted camera.
+	 */
+	[[nodiscard]] auto isPiloted(const scene::Entity& iEntity) const -> bool;
+
+	/**
+	 * @brief
+	 *  Draw the banner naming the piloted camera, with the button that stops piloting.
+	 */
+	void renderPilotBanner();
 
 	/**
 	 * @brief
@@ -551,6 +621,12 @@ private:
 	gui::Guizmo::Type m_gizmoType = gui::Guizmo::Type::None;
 	/// The editor camera
 	renderer::CameraEditor m_editorCamera;
+	/// Pilot of a scene camera.
+	CameraPilot m_pilot;
+	/// Copy of the piloted camera, sized to the viewport and placed at the entity: the camera the view renders with.
+	scene::SceneCamera m_pilotCamera;
+	/// Entity YAML snapshot captured when a pilot gesture began.
+	std::string m_pilotBeforeYaml;
 	/// Camera of the isometric mode.
 	renderer::IsometricCamera m_isoCamera;
 	/// Whether the viewport is in the isometric mode.

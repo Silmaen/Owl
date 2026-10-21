@@ -31,7 +31,7 @@ CameraEditor::CameraEditor(const float iFov, const float iAspectRatio, const flo
 
 CameraEditor::~CameraEditor() = default;
 
-void CameraEditor::onUpdate([[maybe_unused]] const core::Timestep& iTimeStep) {
+void CameraEditor::onUpdate(const core::Timestep& iTimeStep) {
 	const math::vec2 mouse{input::Input::getMouseX(), input::Input::getMouseY()};
 	const math::vec2 pixels = mouse - m_initialMousePosition;
 	const math::vec2 delta = pixels * 0.003f;
@@ -48,6 +48,8 @@ void CameraEditor::onUpdate([[maybe_unused]] const core::Timestep& iTimeStep) {
 		updateView();
 		return;
 	}
+	if (freeLook && rmb)
+		fly(iTimeStep.getSeconds());
 	// The drag moves nothing until the cursor has left the dead zone around where it started.
 	const bool inDeadZone = m_dragTravel < m_navigation.deadZone;
 	m_dragTravel += pixels.norm();
@@ -130,7 +132,35 @@ void CameraEditor::updateView() {
 	updateViewProjection();
 }
 
+auto CameraEditor::isFlying() const -> bool {
+	return m_navigation.mouseLook && input::Input::isMouseButtonPressed(input::mouse::ButtonRight) &&
+		   !input::Input::isKeyPressed(input::key::LeftAlt) && !input::Input::isKeyPressed(input::key::LeftControl);
+}
+
+void CameraEditor::setFlySpeed(const float iSpeed) { m_flySpeed = std::clamp(iSpeed, 0.1f, 100.f); }
+
+void CameraEditor::fly(const float iSeconds) {
+	if (m_projectionMode == Projection::Orthographic)
+		return;
+	const auto axis = [](const input::KeyCode iPlus, const input::KeyCode iMinus) -> float {
+		return (input::Input::isKeyPressed(iPlus) ? 1.f : 0.f) - (input::Input::isKeyPressed(iMinus) ? 1.f : 0.f);
+	};
+	const math::vec3 move = getForwardDirection() * axis(input::key::W, input::key::S) +
+							getRightDirection() * axis(input::key::D, input::key::A) +
+							math::vec3{0.f, 1.f, 0.f} * axis(input::key::E, input::key::Q);
+	if (move.norm() < 1e-6f)
+		return;
+	const float boost = input::Input::isKeyPressed(input::key::LeftShift) ? 3.f : 1.f;
+	m_focalPoint += move.normalized() * (m_flySpeed * boost * iSeconds);
+	// The look-around of the same frame turns around the eye: it must see the moved one.
+	m_position = calculatePosition();
+}
+
 auto CameraEditor::onMouseScroll(const event::MouseScrolledEvent& iEvent) -> bool {
+	if (m_projectionMode == Projection::Perspective && isFlying()) {
+		setFlySpeed(m_flySpeed * std::pow(1.25f, iEvent.getYOff()));
+		return true;
+	}
 	const float delta = iEvent.getYOff() * 0.1f;
 	mouseZoom(delta);
 	updateView();

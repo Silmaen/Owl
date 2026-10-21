@@ -234,10 +234,22 @@ orthographic) and a filled triangle above it pointing to the up of the camera.
 | Alt + right drag            | Pan                                          |
 | Alt + middle drag           | Dolly (the eye and the reference point move) |
 | Wheel                       | Zoom towards the reference point             |
+| Right drag + W A S D        | Fly forward, left, back, right (3D view)     |
+| Right drag + Q / E          | Fly down / up                                |
+| Right drag + Shift          | Fly three times faster                       |
+| Right drag + wheel          | Set the fly speed (0.1 to 100 units/s)       |
 
 A left click selects (a camera by its 3D model too), a right click without drag opens the context menu; the right
-drag belongs to the voxel brush while it is active. The **Camera** tab of the Editor Settings scales orbit, pan and zoom (10 to 300 %), inverts the vertical drag and sets
+drag belongs to the voxel brush while it is active. The fly keys follow the key positions, so Z Q S D fly on an AZERTY
+keyboard, and while the right button flies the letter shortcuts (gizmo W E R) are off. The **Camera** tab of the Editor Settings scales orbit, pan and zoom (10 to 300 %), inverts the vertical drag and sets
 a dead zone (`CameraEditor::Navigation`).
+
+**Piloting a camera.** **Pilot Selected Camera** (Camera menu of the view, context menu of a camera, command
+palette `view.pilotCamera`) renders the view through the selected camera entity: its projection, the aspect of the
+viewport, its own model and frustum hidden. Every move of the view moves the camera, and each gesture (a drag, a fly,
+a wheel step) is one undoable `entity.set_transform`; an orthographic camera slides across the XY plane only. The view
+follows the camera when it moves otherwise (undo, inspector). **Stop** on the banner at the bottom of the viewport, or
+Play, puts the editor view back where it was. Raycast cameras and the isometric mode cannot be piloted.
 
 **Isometric mode.** When the scene's stack holds an isometric layer with content (`Scene::getSelfDrawnLayer`), the
 viewport draws layer by layer as in Play through its own `IsometricCamera`, the projection locked (**Iso**, no
@@ -252,6 +264,7 @@ height; every edit is undoable.
 - **Reset View** (`Home`): the XY plane from +Z, ten units away (`CameraEditor::resetView`);
 - **Frame Selection** (`F`), **Frame Scene** (`Shift+F`);
 - **Selected Camera Viewpoint**: the view of the selected camera (disabled for a `RendererRaycast` camera, drawn flat);
+- **Pilot Selected Camera** / **Stop Piloting**: render through the selected camera and move it with the view;
 - six axis views (**Front** XY, **Back**, **Top** XZ, **Bottom**, **Right** YZ, **Left**) around the reference point
   (`CameraEditor::viewAlong`). The view-cube does the same: a click on an axis end looks from it, on the centre resets.
 
@@ -1164,6 +1177,7 @@ gizmo manipulation is in progress.
 | Camera: Reset View           | Home             | `view.resetCamera`         |
 | Camera: axis views           |                  | `view.cameraFront`, …      |
 | Camera: Selected Viewpoint   |                  | `view.cameraViewpoint`     |
+| Camera: Pilot Selected      |                  | `view.pilotCamera`         |
 | Toggle 2D / 3D View          |                  | `view.toggleProjection`    |
 | Text Size: Larger            | Ctrl+=           | `view.textLarger`          |
 | Text Size: Smaller           | Ctrl+-           | `view.textSmaller`         |

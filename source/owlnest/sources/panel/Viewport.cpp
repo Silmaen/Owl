@@ -242,6 +242,8 @@ void Viewport::onUpdate(const core::Timestep& iTimeStep) {
 
 	if (mp_document->state() == SceneDocument::State::Edit)
 		updateIsometricMode(activeScene);
+	if (m_pilot.isActive() && (mp_document->state() != SceneDocument::State::Edit || m_isometric))
+		stopPiloting();
 	if (m_parent != nullptr)
 		m_navTool.sync(m_parent->getSettings().showNavGraph,
 					   mp_document->state() == SceneDocument::State::Edit && m_isometric);
@@ -261,7 +263,9 @@ void Viewport::onUpdate(const core::Timestep& iTimeStep) {
 										  .deadZone = static_cast<float>(settings.cameraDeadZone),
 										  .mouseLook = !m_parent->getVoxelBrush().active});
 		}
-		if (isHovered())
+		if (m_pilot.isActive())
+			updatePilot(activeScene, iTimeStep);
+		else if (isHovered())
 			m_editorCamera.onUpdate(iTimeStep);
 	}
 
@@ -415,6 +419,9 @@ void Viewport::renderContextMenu() {
 		if (canGoToCameraViewpoint() &&
 			gui::widgets::menuItem({.glyph = gui::icon::video, .label = "Camera Viewpoint"}))
 			goToCameraViewpoint();
+		if (canPilotSelectedCamera() && !isPiloted(selected) &&
+			gui::widgets::menuItem({.glyph = gui::icon::move3d, .label = "Pilot Camera"}))
+			pilotSelectedCamera();
 		const auto duplicateKey = m_parent->getActionShortcut("entity.duplicate");
 		if (gui::widgets::menuItem({.glyph = gui::icon::copy, .label = "Duplicate", .shortcut = duplicateKey.c_str()}))
 			std::ignore = m_parent->runAction("entity.duplicate");
@@ -576,6 +583,14 @@ void Viewport::renderCameraMenu() {
 	if (gui::widgets::menuItem(
 				{.glyph = gui::icon::video, .label = "Selected Camera Viewpoint", .enabled = canGoToCameraViewpoint()}))
 		goToCameraViewpoint();
+	if (isPiloting()) {
+		if (gui::widgets::menuItem({.glyph = gui::icon::logOut, .label = "Stop Piloting"}))
+			stopPiloting();
+	} else if (gui::widgets::menuItem({.glyph = gui::icon::move3d,
+									   .label = "Pilot Selected Camera",
+									   .enabled = canPilotSelectedCamera()})) {
+		pilotSelectedCamera();
+	}
 	ImGui::Separator();
 	constexpr std::array<std::pair<Axis, const char*>, 6> views{{{Axis::Front, "Front (XY)"},
 																 {Axis::Back, "Back"},
@@ -611,8 +626,8 @@ void Viewport::renderOverlay() const {
 
 	if (mp_document->state() == SceneDocument::State::Edit) {
 		// Draw selected entity outline
-		if (const scene::Entity selectedEntity =
-					m_parent != nullptr ? m_parent->getSelectedEntity() : scene::Entity{}) {
+		if (const scene::Entity selectedEntity = m_parent != nullptr ? m_parent->getSelectedEntity() : scene::Entity{};
+			selectedEntity && !isPiloted(selectedEntity)) {
 			const math::Transform worldTransform = activeScene->getWorldTransform(selectedEntity);
 			if (selectedEntity.hasComponent<scene::component::MeshRenderer>() &&
 				selectedEntity.getComponent<scene::component::MeshRenderer>().mesh) {
@@ -852,6 +867,8 @@ void Viewport::renderCameraMarkers(const shared<scene::Scene>& iScene) const {
 		 const auto entity: camView) {
 		const auto& camComp = camView.get<scene::component::Camera>(entity);
 		const scene::Entity ent{entity, iScene.get()};
+		if (isPiloted(ent))
+			continue;
 		const math::Transform worldT = iScene->getWorldTransform(ent);
 		const math::mat4 worldMat = worldT();
 		// Local +Y is the camera forward (matches `RendererRaycast::beginScene`).
@@ -941,6 +958,8 @@ void Viewport::renderCameraModels(const shared<scene::Scene>& iScene) const {
 	renderer::RendererMesh::beginScene(getActiveCamera(), {});
 	for (const auto view = iScene->registry.view<scene::component::Camera, scene::component::Transform>();
 		 const auto entity: view) {
+		if (isPiloted(scene::Entity{entity, iScene.get()}))
+			continue;
 		math::Transform rigid = iScene->getWorldTransform(scene::Entity{entity, iScene.get()});
 		rigid.scale() = {1.f, 1.f, 1.f};
 		const auto& camera = view.get<scene::component::Camera>(entity);
@@ -1146,6 +1165,7 @@ void Viewport::renderOverlayToolbar() {
 	// View options, top-right.
 	if (editing) {
 		renderViewOverlay();
+		renderPilotBanner();
 		renderNavigationPopup();
 	} else
 		renderPlayBanner(collapsed);
@@ -1356,9 +1376,12 @@ auto Viewport::canGoToCameraViewpoint() const -> bool {
 void Viewport::goToCameraViewpoint() {
 	if (!canGoToCameraViewpoint() || mp_document == nullptr || !mp_document->getActiveScene())
 		return;
-	const scene::Entity selected = m_parent->getSelectedEntity();
-	const auto& sceneCamera = selected.getComponent<scene::component::Camera>().camera;
-	const math::Transform world = mp_document->getActiveScene()->getWorldTransform(selected);
+	moveViewOnto(m_parent->getSelectedEntity());
+}
+
+void Viewport::moveViewOnto(const scene::Entity& iCamera) {
+	const auto& sceneCamera = iCamera.getComponent<scene::component::Camera>().camera;
+	const math::Transform world = mp_document->getActiveScene()->getWorldTransform(iCamera);
 	if (m_isometric) {
 		m_isoCamera.setTarget({world.translation().x(), world.translation().y(), 0.f});
 		return;
@@ -1377,6 +1400,122 @@ void Viewport::goToCameraViewpoint() {
 	const math::vec4 forward = world() * math::vec4{0.f, 0.f, -1.f, 0.f};
 	m_editorCamera.setProjection(Projection::Perspective);
 	m_editorCamera.lookFrom(world.translation(), {forward.x(), forward.y(), forward.z()});
+}
+
+auto Viewport::canPilotSelectedCamera() const -> bool { return !m_isometric && canGoToCameraViewpoint(); }
+
+void Viewport::pilotSelectedCamera() {
+	if (!canPilotSelectedCamera() || mp_document == nullptr || mp_document->state() != SceneDocument::State::Edit)
+		return;
+	const scene::Entity selected = m_parent->getSelectedEntity();
+	if (isPiloted(selected))
+		return;
+	renderer::CameraEditor saved = m_editorCamera;
+	if (m_pilot.isActive()) {
+		const auto& scene = mp_document->getActiveScene();
+		if (const auto camera = scene ? scene->findEntityByUUID(m_pilot.getEntity()) : scene::Entity{};
+			camera && m_pilot.isGestureActive() && mp_undoManager != nullptr)
+			commitTransformEdit(camera, scene, m_pilotBeforeYaml);
+		saved = m_pilot.stop().value_or(saved);
+	}
+	moveViewOnto(selected);
+	m_pilot.start(selected.getUUID(), saved, m_editorCamera);
+	m_pilotBeforeYaml.clear();
+}
+
+void Viewport::stopPiloting() {
+	if (!m_pilot.isActive())
+		return;
+	if (const auto& scene = mp_document != nullptr ? mp_document->getActiveScene() : nullptr;
+		scene && m_pilot.isGestureActive() && mp_undoManager != nullptr) {
+		if (const auto camera = scene->findEntityByUUID(m_pilot.getEntity()); camera)
+			commitTransformEdit(camera, scene, m_pilotBeforeYaml);
+	}
+	m_pilotBeforeYaml.clear();
+	if (auto saved = m_pilot.stop(); saved.has_value()) {
+		m_editorCamera = *saved;
+		m_editorCamera.setViewportSize(getSize());
+	}
+}
+
+auto Viewport::isFlying() const -> bool {
+	return mp_document != nullptr && mp_document->state() == SceneDocument::State::Edit && !m_isometric &&
+		   isHovered() && m_editorCamera.isFlying();
+}
+
+auto Viewport::isPiloted(const scene::Entity& iEntity) const -> bool {
+	return m_pilot.isActive() && iEntity && iEntity.getUUID() == m_pilot.getEntity();
+}
+
+void Viewport::updatePilot(const shared<scene::Scene>& iScene, const core::Timestep& iTimeStep) {
+	const scene::Entity camera = iScene->findEntityByUUID(m_pilot.getEntity());
+	if (!camera || !camera.hasComponent<scene::component::Camera>()) {
+		stopPiloting();
+		return;
+	}
+	if (m_pilot.shouldFollowEntity(m_editorCamera)) {
+		moveViewOnto(camera);
+		m_pilot.markFollowed(m_editorCamera);
+	}
+	if (isHovered())
+		m_editorCamera.onUpdate(iTimeStep);
+	const bool held = input::Input::isMouseButtonPressed(input::mouse::ButtonLeft) ||
+					  input::Input::isMouseButtonPressed(input::mouse::ButtonRight) ||
+					  input::Input::isMouseButtonPressed(input::mouse::ButtonMiddle);
+	const auto& sceneCamera = camera.getComponent<scene::component::Camera>().camera;
+	switch (m_pilot.track(m_editorCamera, held)) {
+		case CameraPilot::Step::Begin:
+			m_pilotBeforeYaml = scene::SceneSerializer::serializeEntityToString(camera);
+			[[fallthrough]];
+		case CameraPilot::Step::Move:
+			{
+				const bool ortho = sceneCamera.getProjectionType() == scene::SceneCamera::ProjectionType::Orthographic;
+				const math::Transform world =
+						CameraPilot::getCameraWorld(m_editorCamera, iScene->getWorldTransform(camera), ortho);
+				math::mat4 local = world();
+				if (const auto& hierarchy = camera.getComponent<scene::component::Hierarchy>();
+					hierarchy.parentId != core::UUID{0}) {
+					if (const auto parent = iScene->findEntityByUUID(hierarchy.parentId); parent)
+						local = math::inverse(iScene->getWorldTransform(parent)()) * local;
+				}
+				auto& transform = camera.getComponent<scene::component::Transform>().transform;
+				const math::vec3 scale = transform.scale();
+				transform = math::Transform{local};
+				transform.scale() = scale;
+				break;
+			}
+		case CameraPilot::Step::Commit:
+			if (mp_undoManager != nullptr)
+				commitTransformEdit(camera, iScene, m_pilotBeforeYaml);
+			m_pilotBeforeYaml.clear();
+			break;
+		case CameraPilot::Step::Idle:
+			break;
+	}
+	m_pilotCamera = sceneCamera;
+	m_pilotCamera.setViewportSize(getSize());
+	m_pilotCamera.setTransform(iScene->getWorldTransform(camera)());
+}
+
+void Viewport::renderPilotBanner() {
+	if (!m_pilot.isActive() || mp_document == nullptr || !mp_document->getActiveScene())
+		return;
+	const scene::Entity camera = mp_document->getActiveScene()->findEntityByUUID(m_pilot.getEntity());
+	if (!camera)
+		return;
+	constexpr float margin = 8.f;
+	if (beginOverlay(std::format("##vpPilot{:x}", static_cast<uint64_t>(mp_document->id())),
+					 {(m_lower.x() + m_upper.x()) * 0.5f, m_upper.y() - margin}, {0.5f, 1.f})) {
+		ImGui::AlignTextToFramePadding();
+		ImGui::TextUnformatted(std::format("{}  Piloting {}", gui::icon::video, camera.getName()).c_str());
+		ImGui::SameLine();
+		if (gui::widgets::button("stopPilot", {.glyph = gui::icon::logOut,
+											   .label = "Stop",
+											   .tooltip = "Stop piloting",
+											   .description = "Put the editor view back where it was before."}))
+			stopPiloting();
+	}
+	endOverlay();
 }
 
 void Viewport::renderViewOverlay() {
@@ -1483,6 +1622,8 @@ void Viewport::resetView() {
 auto Viewport::getActiveCamera() const -> const renderer::Camera& {
 	if (m_isometric)
 		return m_isoCamera;
+	if (m_pilot.isActive())
+		return m_pilotCamera;
 	return m_editorCamera;
 }
 
@@ -1766,7 +1907,7 @@ void Viewport::renderGizmo() {
 		return;
 
 	if (const scene::Entity selectedEntity = m_parent->getSelectedEntity();
-		selectedEntity && m_gizmoType != gui::Guizmo::Type::None) {
+		selectedEntity && m_gizmoType != gui::Guizmo::Type::None && !isPiloted(selectedEntity)) {
 		gui::Guizmo::initialize(m_lower, m_upper - m_lower,
 								m_isometric || m_editorCamera.getProjectionMode() ==
 													   renderer::CameraEditor::Projection::Orthographic);
@@ -1838,20 +1979,21 @@ void Viewport::renderGizmo() {
 		}
 
 		if (!isUsing && m_gizmoWasUsing && mp_undoManager != nullptr && !m_gizmoBeforeYaml.empty()) {
-			commitGizmoEdit(selectedEntity, activeScene);
+			commitTransformEdit(selectedEntity, activeScene, m_gizmoBeforeYaml);
 			m_gizmoBeforeYaml.clear();
 		}
 		m_gizmoWasUsing = isUsing;
 	}
 }
 
-void Viewport::commitGizmoEdit(const scene::Entity& iEntity, const shared<scene::Scene>& iScene) const {
+void Viewport::commitTransformEdit(const scene::Entity& iEntity, const shared<scene::Scene>& iScene,
+								   const std::string& iBeforeYaml) const {
 	const auto afterYaml = scene::SceneSerializer::serializeEntityToString(iEntity);
-	if (m_gizmoBeforeYaml == afterYaml)
+	if (iBeforeYaml == afterYaml)
 		return;
 	const auto transform = iEntity.getComponent<scene::component::Transform>().transform;
 	// The command records the move from the state before the drag.
-	std::ignore = scene::SceneSerializer::applyEntityFromString(iEntity, m_gizmoBeforeYaml);
+	std::ignore = scene::SceneSerializer::applyEntityFromString(iEntity, iBeforeYaml);
 	const commands::CommandTarget target{.registry = &m_parent->getRegistry(), .scene = iScene, .undo = mp_undoManager};
 	if (const auto moved = target.execute("entity.set_transform",
 										  {{"entity", static_cast<int64_t>(static_cast<uint64_t>(iEntity.getUUID()))},
@@ -1962,26 +2104,12 @@ void Viewport::handleVoxelBrush(const shared<scene::Scene>& iScene) {
 		return;
 	}
 
-	// Ray from the editor camera through the cursor. The Vulkan editor projection negates Y (screen-top → NDC y -1); OpenGL keeps the GL convention (screen-top → +1).
-	const math::vec2 vpSize = m_upper - m_lower;
-	if (vpSize.x() <= 0.f || vpSize.y() <= 0.f) {
+	const auto ray = getCursorRay();
+	if (!ray) {
 		iScene->setEditorVoxelHighlight(false);
 		return;
 	}
-	const auto mousePos = ImGui::GetMousePos();
-	const float ndcX = 2.f * (mousePos.x - m_lower.x()) / vpSize.x() - 1.f;
-	const float screenY = 2.f * (mousePos.y - m_lower.y()) / vpSize.y() - 1.f;
-	const bool isOpenGl = renderer::gpu::RenderCommand::getApi() == renderer::gpu::RenderAPI::Type::OpenGL;
-	const float ndcY = isOpenGl ? -screenY : screenY;
-	const math::mat4 vpInv = inverse(m_editorCamera.getProjection() * m_editorCamera.getView());
-	const math::vec4 farPoint = vpInv * math::vec4{ndcX, ndcY, 0.f, 1.f};
-	if (std::abs(farPoint.w()) < 1e-6f) {
-		iScene->setEditorVoxelHighlight(false);
-		return;
-	}
-	const math::vec3 origin = m_editorCamera.getPosition();
-	const math::vec3 target{farPoint.x() / farPoint.w(), farPoint.y() / farPoint.w(), farPoint.z() / farPoint.w()};
-	const math::vec3 direction = (target - origin).normalized();
+	const auto& [origin, direction] = *ray;
 
 	auto& world = voxelWorld->world;
 	const auto& registry = voxelWorld->registry;
@@ -2069,6 +2197,8 @@ auto Viewport::pickCameraModel() const -> scene::Entity {
 	for (const auto view = scene->registry.view<scene::component::Camera, scene::component::Transform>();
 		 const auto entity: view) {
 		const scene::Entity camera{entity, scene.get()};
+		if (isPiloted(camera))
+			continue;
 		math::Transform rigid = scene->getWorldTransform(camera);
 		rigid.scale() = {1.f, 1.f, 1.f};
 		const math::mat4 model = rigid();

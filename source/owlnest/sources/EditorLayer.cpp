@@ -216,6 +216,13 @@ void EditorLayer::registerCameraActions() {
 	m_actionRegistry.registerAction(
 			"view.cameraViewpoint", "Camera: Selected Camera Viewpoint", {},
 			onViewport([](panel::Viewport& ioViewport) -> void { ioViewport.goToCameraViewpoint(); }));
+	m_actionRegistry.registerAction("view.pilotCamera", "Camera: Pilot Selected Camera", {},
+									onViewport([](panel::Viewport& ioViewport) -> void {
+										if (ioViewport.isPiloting())
+											ioViewport.stopPiloting();
+										else
+											ioViewport.pilotSelectedCamera();
+									}));
 	using Axis = renderer::CameraEditor::ViewAxis;
 	constexpr std::array<std::tuple<Axis, const char*, const char*>, 6> views{
 			{{Axis::Front, "view.cameraFront", "Camera: Front View (XY)"},
@@ -1146,6 +1153,9 @@ void EditorLayer::renderGpuCounters() {
 
 
 auto EditorLayer::onKeyPressed(const event::KeyPressedEvent& ioEvent) -> bool {
+	// While the right button flies the view, the letter keys move the camera.
+	if (const auto* viewport = activeViewport(); viewport != nullptr && viewport->isFlying())
+		return false;
 	return m_actionRegistry.dispatch(ioEvent);
 }
 

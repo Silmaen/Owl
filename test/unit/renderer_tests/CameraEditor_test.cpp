@@ -13,6 +13,7 @@
 #include <window/Window.h>
 
 #include <array>
+#include <chrono>
 #include <cmath>
 #include <utility>
 
@@ -280,5 +281,42 @@ TEST(CameraEditor, DragsWithoutModifierLookAndPan) {
 			{.rotate = 1.f, .pan = 1.f, .zoom = 1.f, .invertY = false, .deadZone = 0.f, .mouseLook = false});
 	drag(brush, owl::input::mouse::ButtonRight);
 	EXPECT_FLOAT_EQ(brush.getYaw(), 0.f);
+	owl::input::Input::invalidate();
+}
+
+TEST(CameraEditor, RightButtonFliesWithTheLetterKeys) {
+	owl::input::Input::init(owl::window::Type::Null);
+	CameraEditor cam(45, 1.5f, 0.1f, 100);
+	EXPECT_FALSE(cam.isFlying());
+	owl::input::Input::injectMouseButton(owl::input::mouse::ButtonRight);
+	owl::input::Input::injectKey(owl::input::key::W);
+	EXPECT_TRUE(cam.isFlying());
+	owl::core::Timestep ts;
+	ts.forceUpdate(std::chrono::milliseconds{100});
+	const auto focal = cam.getFocalPoint();
+	cam.onUpdate(ts);
+	// The camera faces -Z: W moves it forward at the fly speed, the view does not turn.
+	EXPECT_NEAR(focal.z() - cam.getFocalPoint().z(), cam.getFlySpeed() * 0.1f, 1e-3f);
+	EXPECT_FLOAT_EQ(cam.getFocalPoint().x(), focal.x());
+	EXPECT_FLOAT_EQ(cam.getYaw(), 0.f);
+	owl::input::Input::injectKey(owl::input::key::W);
+	owl::input::Input::injectMouseButton(owl::input::mouse::ButtonRight);
+	EXPECT_FALSE(cam.isFlying());
+	owl::input::Input::invalidate();
+}
+
+TEST(CameraEditor, WheelWhileFlyingSetsTheSpeed) {
+	owl::input::Input::init(owl::window::Type::Null);
+	CameraEditor cam(45, 1.5f, 0.1f, 100);
+	const float distance = cam.getDistance();
+	const float speed = cam.getFlySpeed();
+	owl::input::Input::injectMouseButton(owl::input::mouse::ButtonRight);
+	owl::event::MouseScrolledEvent faster(0.f, 2.f);
+	cam.onEvent(faster);
+	EXPECT_GT(cam.getFlySpeed(), speed);
+	EXPECT_FLOAT_EQ(cam.getDistance(), distance);
+	owl::input::Input::injectMouseButton(owl::input::mouse::ButtonRight);
+	cam.setFlySpeed(1000.f);
+	EXPECT_FLOAT_EQ(cam.getFlySpeed(), 100.f);
 	owl::input::Input::invalidate();
 }
