@@ -182,15 +182,25 @@ caller's framebuffer back.
 ```mermaid
 flowchart LR
     C["scene clear"] --> S["shadow cascade passes<br/>(one per cascade, when a light casts)"]
+    C --> K["environment sky<br/>(Environment with showSky)"]
     S -->|"shadow maps (Depth)"| L["one pass per layer with content<br/>(editor composite + voxel / mesh layers in the editor)"]
+    K --> L
     C --> L
+    L -->|"scene colour (Linear)"| B["bloom down / up passes<br/>(bloom on, one pair per level)"]
     L -->|"scene colour (Linear)"| E["colour encode"]
+    B -->|"half-size bloom"| E
     E --> I["entity ids and depth"]
     I --> O["overlays and HUD"]
 ```
 
-- **colour encode** (`renderer::ColorEncoder`, `color_encode.slang`) tone maps then sRGB-encodes the linear scene
-  colour into the display target.
+- **environment sky** draws the `Environment` image behind the layers into the scene colour ([Image-based
+  lighting](#renderer-ibl)).
+- **exposure** (`renderer::PostProcess::recordExposure`, auto exposure on) measures the brightness of the scene colour
+  and adapts the exposure ([Post-process](#renderer-post-process)).
+- **bloom down / up** (`renderer::PostProcess::recordBloom`) build the bloom image from the scene colour
+  ([Post-process](#renderer-post-process)).
+- **colour encode** (`renderer::ColorEncoder`, `color_encode.slang`) turns the linear scene colour into the display
+  target: exposure, bloom, tone mapping, vignette, sRGB encoding, then the colour-grading LUT.
 - **entity ids and depth** copies the id and depth attachments into the target, so picking and depth-tested editor
   overlays keep working; skipped when the target is the window surface.
 - **overlays and HUD** (editor overlays, HUD, toast) draw after the encoding, in display space.
@@ -219,10 +229,25 @@ Every world layer renders linear into the `Rgba16F` scene colour; encoding to sR
 The 3D layers (`RendererMesh`, `RendererVoxel`) are lit by the `Light` components of the scene
 ([Scene > Light](scene.md#light-component)); the 2D, isometric, tilemap and raycast layers are not.
 
-- **Light buffer.** Up to 64 lights are uploaded each frame to a storage buffer (`renderer::GpuLight`): Lambert
-  diffuse, point and spot lights falling to zero at `range` with the window `(1 - (d/range)^4)^2` (no inverse square),
-  spots fading between the inner and outer cone. A scene without any `Light` keeps the sun and ambient of the layer
-  config (`SunDirection`, `Ambient`); the ambient always comes from the layer config.
+- **Light buffer.** Up to 64 lights are uploaded each frame to a storage buffer (`renderer::GpuLight`), shaded by
+  the material of the surface ([Materials](#renderer-materials)). Point and spot lights fall off with 1/d² (distance
+  floored at 1 cm) and are cut off smoothly at `range` by the window `(1 - (d/range)^4)^2`; spots fade between the
+  inner and outer cone. The layer sun (`SunDirection` and `SunIlluminance` of the layer config) lights only a scene
+  that has no `Light` component at all (`Renderer3D::setLayerSun`, `isLayerSunEnabled`): once the scene has a light,
+  even switched off, it gets no sun. The ambient comes from the `Environment`, else from the layer config
+  (`Ambient` colour times `AmbientLuminance`), as a constant sky.
+- **Physical units.** `Light.intensity` is an illuminance in lux for a directional light (`g_defaultSunIlluminance`,
+  100 000) and a luminous power in lumens for a point or spot light (`g_defaultBulbPower`, 800); the shader turns the
+  power into an intensity in candela, lm / 4π for a point light and lm / π for a spot. Reference values: sun
+  100 000 lx, overcast sky 10 000 lx, moon 0.25 lx; candle 12 lm, 60 W bulb 800 lm, fireplace 2 000 lm. The
+  `Environment` and the emissive surfaces are luminances in cd/m² (nits), see [Image-based lighting](#renderer-ibl) and
+  [Materials](#renderer-materials).
+- **Pre-exposure.** The camera exposure ([Post-process](#renderer-post-process)) is applied on the CPU: `Renderer3D`
+  multiplies every physical value (light, sun, ambient, environment, emissive) by `exposureOf(ev100)` before it
+  reaches the shaders (`Renderer3D::setExposure`), so the HDR scene colour holds pre-exposed values near 1 for a
+  well-exposed scene and fits `Rgba16F`.
+- **Voxel emission.** A voxel block's `BlockSurface.emissive` is a luminance in nits up to `g_MaxBlockLuminance`
+  (100 000), packed logarithmically in 8 bits per vertex ([Voxel](voxel.md)).
 - **Cascades.** The first visible directional light with `castShadows` casts cascaded shadow maps.
   `renderer::computeShadowCascades` splits `[near, shadowDistance]` blending uniform and logarithmic splits (0.75);
   each cascade is an orthographic light camera around a sphere bounding its frustum slice, its centre snapped to the
@@ -502,7 +527,7 @@ Convention:
 
 ## 3D Forward Renderer {#renderer3d}
 
-`Renderer3D` is a generic depth-tested, textured forward renderer with one directional light, the base of
+`Renderer3D` is a generic depth-tested, textured forward renderer lit by the scene lights, the base of
 `RendererVoxel` and `RendererMesh`; unlike `Renderer2D` it draws **real per-vertex geometry**.
 
 - **Vertex** (`renderer::Mesh3DVertex`, 56 bytes, tightly packed): object-space `position`, `normal`, `uv`, a
@@ -510,16 +535,25 @@ Convention:
   into it, `voxel` tiles it with `frac`) and the `ao` factor of the lighting.
 - **Shader** (`engine_assets/shaders/renderer3D/mesh3d.slang`): vertex transforms position by a per-draw model
   matrix then the per-frame view-projection (both `column_major`, supplied through one scene UBO at binding 0);
-  fragment samples `gTextures[texIndex]` (binding 1) times the draw tint and applies
-  `(ambient + max(dot(N, -sunDir), 0)) * ao`. Outputs colour + the entity id of the draw to match the scene
-  framebuffer.
+  fragment fills a `Surface` from the material and its maps and calls `shadeSurface` of
+  `shaders/common/pbr.slangh`, shared with `voxel.slang` (the scene, material and lighting blocks, the shading
+  models, the cascaded shadows, the image-based lighting). Outputs colour + the entity id of the draw to match the
+  scene framebuffer.
+- **Texture slots** of the 3D shaders (`gTextures`, binding 1): 0 white, 1 to 6 the material maps (base colour,
+  metallic, normal, occlusion, emissive, roughness), 7 to 12 the prefiltered environment, 13 the DFG table, 28 to 31
+  the shadow cascades.
 - **Per-draw parameters** (`renderer::MeshDrawParams`): the tint and the entity id travel in the scene UBO with the
   model matrix (`vec4 tint`, `ivec4 ids`, 192 bytes in all), so picking needs nothing in the vertices; `voxel.slang`
-  shares the block and writes the id of its voxel world.
+  shares the block and writes the id of its voxel world. The material of the draw (`MeshDrawParams::material`, null
+  for the default `Standard` material) fills a second block (`MaterialData`, binding 4, 128 bytes with an `int4 channels`
+  holding the channel of the metallic, roughness and occlusion maps and, in `w`, the normal convention; `toon` holds
+  the toon rim, the emissive luminance, the `ior` and the clearcoat `ior`).
 - **API**: `init` / `shutdown`, `beginScene(camera)` (enables depth test/write), `endScene()` (restores 2D depth
-  state), `setLighting(sunDir, ambient)`, `createMesh(vertices, indices) -> MeshHandle` (one-time GPU upload), and
+  state), `setLighting(sunDirection, sunIlluminance, ambientRadiance)`, `createMesh(vertices, indices) -> MeshHandle` (one-time GPU upload), and
   `drawMesh(handle, model, textures, params)` (immediate-mode draw; textures bind to slots `1..N`, slot `0` is white,
-  `getWhiteTexture` gives it for a mesh that samples slot `1` without texture).
+  `getWhiteTexture` gives it for a mesh that samples slot `1` without texture), `setEnvironment`, `drawSky`.
+- **Vertex buffers**: a draw's vertex buffer is sized from its index count, so each submesh of a mesh owns a compact
+  vertex buffer holding only the vertices its indices reach.
 
 ```c++
 const auto mesh = renderer::Renderer3D::createMesh(vertices, indices);// once, on geometry change
@@ -537,16 +571,20 @@ stack (fields: [Scene components](scene.md#components)).
 
 ```mermaid
 flowchart LR
-    File[".gltf / .glb / .obj<br/>pack or asset folders"] --> Loader["MeshLoader::loadMesh<br/>StaticMesh + MeshMaterial"]
-    Loader --> Resource["MeshResource<br/>MeshGeometry, base-colour texture"]
+    File[".gltf / .glb / .obj<br/>pack or asset folders"] --> Loader["MeshLoader::loadMesh<br/>StaticMesh + MeshMaterial + submeshes"]
+    Loader --> Resource["MeshResource<br/>MeshGeometry, one Material per submesh"]
     Resource --> Cache["MeshCache<br/>EngineContext, one per path"]
     Cache --> Prep["Scene::prepareMeshRenderData<br/>resolve, upload"]
     Prep --> Layer["RendererMesh layer<br/>opaque, then blended back-to-front"]
 ```
 
-- **Files**: `.gltf`, `.glb` and `.obj` (`MeshLoader::isMeshAsset`; FBX is not read). glTF: every triangle primitive
-  of the first mesh (node transforms ignored), positions, normals and `TEXCOORD_0`, and the base colour of the first
-  material: `baseColorFactor` and the `baseColorTexture` image, embedded or external. UVs follow the engine
+- **Files**: `.gltf`, `.glb` and `.obj` (`MeshLoader::isMeshAsset`; FBX is not read). glTF: every mesh the default scene
+  places (every mesh once without a scene), with its node transform chain (matrix or TRS): positions are
+  transformed, normals by the cofactor matrix, and a mirrored transform flips the winding; one `MeshSubmesh` per
+  primitive per node. Every triangle primitive keeps its positions, normals and `TEXCOORD_0`, and every material with its
+  maps (`MeshMaterial`: base colour, metallic-roughness, normal, occlusion and emissive images, embedded or
+  external, the factors and the common extensions; an emissive factor of 1 imports as 1000 nits); one
+  `MeshSubmesh` per material group for an `.obj`. The colour factors are linear in glTF and are converted to sRGB at import, as the material stores them. UVs follow the engine
   convention (`v = 0` at the bottom of the image): glTF's are flipped at load, images decoded bottom row first.
 - **Geometry**: `MeshGeometry::fromStaticMesh` turns the per-triangle corners into `Mesh3DVertex` (identical corners
   share a vertex; a corner without normal takes its face normal), with the object-space bounds; `raycast` intersects a
@@ -556,12 +594,204 @@ flowchart LR
   remembered as missing. The opaque and the blended GPU meshes are uploaded on first use, in
   `Scene::prepareMeshRenderData` before any layer draws (an upload closes the render pass). A hot-reloaded file is
   invalidated (`MeshCache::invalidate`): its holders are marked stale and fetch it again on their next frame.
-- **Layer** `RendererMesh` (`DefaultConfig`: `SunDirection`, `Ambient`): draws its entities with the mesh tint times
-  the material factor, the component texture or else the material's, and the entity id; opaque meshes as they come,
+- **Layer** `RendererMesh` (`DefaultConfig`: `SunDirection`, `SunIlluminance` in lux (100 000), `Ambient` colour, `AmbientLuminance` in nits (12 000)): draws each submesh of its entities with the
+  material of its slot ([Materials](#renderer-materials)), the mesh tint times the base colour, the component texture
+  or else the material's, and the entity id; opaque meshes as they come,
   blended ones (`transparent: true`, `Renderer3D::transparentMeshState`) at the end, sorted back-to-front by the
   distance of their bounds centre. In Edit the viewport draws the voxel and mesh layers after its 2D composite.
-- **Packs**: `AssetScanner` adds the mesh file of every `MeshRenderer`, the buffers and images a `.gltf` names and the
-  texture override.
+- **Packs**: `AssetScanner` adds the mesh file of every `MeshRenderer`, the buffers and images a `.gltf` names, the
+  texture override and the materials of the slots.
+
+## Materials {#renderer-materials}
+
+A material is a `renderer::Material`: resolved `MaterialParameters` plus one texture per `MaterialMap`. Decisions and
+rationale: [3D core](design/3d-core.md#materials).
+
+### Asset format
+
+A `.owlmat` is versioned YAML under a `Material` key. A root material lists the fields it sets (the others keep the
+defaults); a material with a `parent` is an instance and lists only the fields it overrides.
+
+```yaml
+Material:
+  FormatVersion: 1
+  baseColor: [0.05, 0.15, 0.6, 1]
+  metallic: 0.4
+  roughness: 0.5
+  clearcoat: 1
+  clearcoatRoughness: 0.05
+```
+
+```yaml
+Material:
+  FormatVersion: 1
+  parent: materials/car_paint.owlmat
+  baseColor: [0.6, 0.05, 0.05, 1]
+```
+
+| Field                                                                                     | Default        | Description                                                                                               |
+|-------------------------------------------------------------------------------------------|----------------|-----------------------------------------------------------------------------------------------------------|
+| `shadingModel`                                                                            | `Standard`     | `Standard`, `Unlit` or `Toon`                                                                             |
+| `alphaMode`                                                                               | `Opaque`       | `Opaque`, `Mask` (discard under `alphaCutoff`) or `Blend`                                                 |
+| `alphaCutoff`                                                                             | `0.5`          | Alpha below which a `Mask` material discards                                                              |
+| `doubleSided`                                                                             | `false`        | Both faces lit, the back face with its normal flipped                                                     |
+| `baseColor`                                                                               | `{1, 1, 1, 1}` | sRGB colour and alpha, multiplies the base-colour map                                                     |
+| `metallic`, `roughness`                                                                   | `0`, `0.5`     | Multiply the metallic and roughness maps                                                                  |
+| `normalScale`, `occlusionStrength`                                                        | `1`, `1`       | Strength of the normal and occlusion maps                                                                 |
+| `emissive`, `emissiveLuminance`                                                           | black, `1000`  | sRGB emitted colour and its luminance in nits (screen 200, embers 5 000, candle flame 10 000)             |
+| `ior`                                                                                     | `1.5`          | Index of refraction, f0 = ((ior - 1) / (ior + 1))²: water 1.33, glass 1.5, diamond 2.42; metals ignore it |
+| `clearcoatIor`                                                                            | `1.5`          | Index of refraction of the clearcoat layer                                                                |
+| `normalConvention`                                                                        | `OpenGl`       | `OpenGl` (green up: glTF, Blender, Poly Haven `nor_gl`) or `DirectX` (green down: Unreal, `nor_dx`)       |
+| `clearcoat`, `clearcoatRoughness`                                                         | `0`, `0`       | Clearcoat layer, off at zero                                                                              |
+| `sheenColor`, `sheenRoughness`                                                            | black, `0`     | Sheen layer, off when black                                                                               |
+| `anisotropy`, `anisotropyRotation`                                                        | `0`, `0`       | Anisotropic highlight, -1 to 1, off at zero; rotation in radians                                          |
+| `toonBands`, `toonRim`                                                                    | `3`, `0.5`     | Diffuse bands and rim strength of a `Toon` material                                                       |
+| `metallicChannel`, `roughnessChannel`, `occlusionChannel`                                 | `B`, `G`, `R`  | Channel (`R`, `G`, `B` or `A`) read in the map of the same name                                           |
+| `baseColorMap`, `metallicMap`, `roughnessMap`, `normalMap`, `occlusionMap`, `emissiveMap` | empty          | Texture names, one per map                                                                                |
+
+### Instances and overrides
+
+- **Instance.** `parent` names another `.owlmat` (asset path); the instance takes everything from it and overrides
+  the fields it lists. The chain is followed up to `MaterialLibrary::g_maxParentDepth` (16) parents, a longer or
+  cyclic chain is refused.
+- **Slot override.** Each `MeshRenderer` slot holds a `.owlmat` and a `MaterialOverrides` (the fields of the same
+  names, as a YAML map), applied to the resolved material for that entity only. A prefab keeps them as overrides.
+- **Fields.** `MaterialField` gives one bit per overridable field (`g_allMaterialFields`).
+
+### Shading models
+
+- **Standard** follows the Filament model: Burley diffuse, GGX distribution, height-correlated Smith visibility,
+  Schlick Fresnel and a multi-scattering energy compensation, lit by the scene lights, the cascaded shadows and the
+  environment (diffuse spherical harmonics, prefiltered reflections, DFG split sum). The layers add a clearcoat (GGX,
+  Kelemen visibility), a sheen (Charlie distribution, Neubelt visibility) and an anisotropic GGX highlight; each is
+  skipped at zero.
+- **Unlit** returns the base colour plus the emissive colour: no light, no shadow.
+- **Toon** bands the diffuse term (`toonBands`) under the same lights and shadows, adds a stepped highlight, a rim
+  (`toonRim`) and the spherical-harmonics ambient; it has no reflections.
+- The tangent frame is built per pixel from the derivatives of the position and the UV: the vertex layout carries no
+  tangent, and its cotangent follows the handedness of the screen derivatives, so a relief is not mirrored on Vulkan.
+  The shaders sample texel centres with `SampleLevel`.
+
+### Maps and colour spaces
+
+| Map         | Channels                                 | Space  |
+|-------------|------------------------------------------|--------|
+| `BaseColor` | RGB colour, A alpha                      | sRGB   |
+| `Metallic`  | `metallicChannel` (default B) metallic   | linear |
+| `Normal`    | Tangent-space normal                     | linear |
+| `Occlusion` | `occlusionChannel` (default R) occlusion | linear |
+| `Emissive`  | RGB emitted colour                       | sRGB   |
+| `Roughness` | `roughnessChannel` (default G) roughness | linear |
+
+A packed image (ARM, or the glTF metallic-roughness one) is named by several maps: the defaults read AO in R,
+roughness in G and metallic in B. Separate grey images are one map each, with the channel to read (often `R`). The
+glTF import gives its metallic-roughness image to both the `Metallic` and `Roughness` maps. `MaterialField` has a bit
+for each channel (`MetallicChannel`, `RoughnessChannel`, `OcclusionChannel`), overridable like any field, and
+`MaterialParameters::differingFields` lists the fields two materials do not share.
+
+```yaml
+# One packed ARM image
+Material:
+  FormatVersion: 1
+  metallicMap: textures/metal_arm.png
+  roughnessMap: textures/metal_arm.png
+  occlusionMap: textures/metal_arm.png
+```
+
+```yaml
+# Separate grey images, read in R
+Material:
+  FormatVersion: 1
+  metallicMap: textures/metal.png
+  metallicChannel: R
+  roughnessMap: textures/rough.png
+  roughnessChannel: R
+```
+
+Textures stay UNORM; the shaders decode the sRGB ones (base colour, emissive) and read the others raw. Colour factors
+are stored sRGB as authored and converted to linear on upload; the linear glTF factors are converted at import.
+
+### MaterialLibrary
+
+`EngineContext::getMaterialLibrary()` (`renderer::MaterialLibrary`) loads each `.owlmat` once (open pack first, then the
+asset directories) and shares the resolved material with every entity. A changed file (the hot reload, a save from the
+Owl Nest material document) is dropped with every instance built on it (`invalidate`) and bumps `getGeneration()`:
+each slot compares it with its own and resolves again, so one edit updates every entity using the material. A file or
+parent that cannot be read gives a null material (logged once) and the slot falls back to the file's own material.
+
+`AssetScanner` follows the `.owlmat` slots with their parent chain and maps, the maps of the slot overrides, the
+`Environment` image and the camera LUT into the pack.
+
+## Image-based lighting {#renderer-ibl}
+
+The `Environment` component ([Scene > Environment](scene.md#environment-component)) lights the 3D layers with an
+equirectangular Radiance `.hdr` image (`EnvironmentMap`, `Equirectangular`).
+
+- **Build.** `EnvironmentMap::build` runs on the task system when the scene first sees the image (`loadHdrAsset`: pack,
+  asset directories, path as given), spreading rows over the hardware threads. Level 0 is the image resized to at most
+  `g_maxEnvironmentWidth` (1024) pixels wide; level i is half the size of level i - 1 and holds the radiance filtered by
+  GGX importance sampling for roughness i / (levelCount - 1). Six levels by default, uploaded as `Rgba32F` textures
+  in slots 7 to 12.
+- **Diffuse.** `SphericalHarmonics` (order 2, 9 RGB coefficients) of the irradiance, convolved with the cosine lobe; the
+  shaders evaluate `gLighting.irradiance` for the diffuse ambient.
+- **Split sum.** `computeDfgTable` (64 by 64, indexed by N.V and roughness) gives the DFG scale and bias with the
+  height-correlated Smith visibility, plus the albedo of the Charlie sheen lobe, computed once at start-up (slot 6);
+  the multi-scattering term derives from it.
+- **Controls.** `intensity` is the luminance in cd/m² (nits) of a pixel value of 1 of the image, or of a white `ambient`
+  without one (`g_defaultSkyLuminance`, 10 000; clear day 10 000, overcast 2 000, dusk 100, night 0.01; 0 leaves only
+  the lights and the emissive); `rotation` turns it about the vertical axis; the first
+  visible `Environment` of the scene counts.
+- **Sky.** With `showSky`, an `environment sky` pass draws the image behind the world layers (`Renderer3D::drawSky`).
+- **Fallback.** Without an image (empty `hdri`, or while it builds), the `ambient` colour of the `Environment` (sRGB,
+  default `[0.63, 0.63, 0.67]`, times `intensity`) lights the surfaces as a constant sky (`SphericalHarmonics::constant`) and the
+  reflections fall back to it; without any `Environment` the layer `Ambient` plays that part.
+- **Editor ambient.** In Edit mode only, `Renderer3D::setEditorAmbient` adds a grey light to every lit 3D surface
+  (`EditorSettings::editorAmbient`), to work in dark places; Play never gets it.
+
+## Post-process {#renderer-post-process}
+
+`renderer::PostProcessSettings` sits on `renderer::Camera` (`getPostProcess` / `setPostProcess`), saved by the Camera
+component under `camera.postProcess`.
+
+| Field                | Default     | Description                                                                                                |
+|----------------------|-------------|------------------------------------------------------------------------------------------------------------|
+| `ev100`              | `15`        | Exposure value at ISO 100: 15 sunny, 12 overcast, 8 bright interior, 5 dim room, 3 candle light            |
+| `autoExposure`       | `false`     | Follow the average brightness of the frame instead of `ev100`                                              |
+| `autoExposureMin`    | `-2`        | Lowest EV100 the automatic exposure may pick                                                               |
+| `autoExposureMax`    | `16`        | Highest EV100 the automatic exposure may pick                                                              |
+| `autoExposureSpeed`  | `2`         | Adaptation speed, in EV per second                                                                         |
+| `exposure`           | `0`         | Compensation in EV on top of `ev100` or the automatic exposure: the brightness is multiplied by 2^exposure |
+| `bloom`              | `false`     | Glow of the bright parts                                                                                   |
+| `bloomThreshold`     | `1`         | Displayed brightness (after exposure) above which the colour blooms                                        |
+| `bloomKnee`          | `0.5`       | Softness of the threshold, 0 to 1                                                                          |
+| `bloomIntensity`     | `0.1`       | Strength of the bloom added to the scene                                                                   |
+| `bloomScatter`       | `0.7`       | Weight of the upsampled level, 0 tight to 1 wide                                                           |
+| `vignette`           | `false`     | Darkened edges                                                                                             |
+| `vignetteIntensity`  | `0.3`       | Strength of the vignette                                                                                   |
+| `vignetteSmoothness` | `0.4`       | Softness of its edge                                                                                       |
+| `vignetteColor`      | `{0, 0, 0}` | sRGB colour the edges fade to                                                                              |
+| `lut`                | empty       | Asset path of a `.cube` colour-grading LUT                                                                 |
+| `lutContribution`    | `1`         | Weight of the LUT, 0 to 1                                                                                  |
+
+- **Exposure.** The exposure is `1 / (1.2 · 2^EV100)` (`exposureOf`, default `g_defaultEv100` = 15), applied to every
+  physical light value before shading ([Lights and shadows](#renderer-lights)); `exposure` then adds an EV
+  compensation in the colour encode.
+- **Auto exposure.** `PostProcess::recordExposure` adds the passes that measure the log-average luminance of the scene
+  colour on the GPU (a 64×64 target, then halvings down to one texel) and adapt the exposure from the previous
+  frame, at `autoExposureSpeed` EV/s within `autoExposureMin` to `autoExposureMax`, in two persistent 1×1 targets
+  (`RenderGraph::importFramebuffer`). The colour encode applies the result and the bloom threshold is tested on the
+  displayed brightness.
+- **Bloom chain.** `PostProcess::recordBloom` adds the passes to the frame graph: a thresholded 13-tap downsample of
+  the scene colour (soft knee) into a transient `Linear` target of half the frame, further 13-tap downsamples halving
+  each time, then 9-tap tent upsamples that add each level back, ending on the half-size target the encode pass reads.
+  `getBloomLevelCount` gives at most `g_maxBloomLevels` (6) levels, stopping when a side would fall under 8 pixels
+  (0 for a frame too small, which disables the bloom). The shader is `post_process/bloom.slang`.
+- **Encode order.** `color_encode.slang` applies, on the linear colour: exposure, bloom (times `bloomIntensity`),
+  tone mapping, clamp, vignette (towards the linearised `vignetteColor`), then the sRGB encoding and finally the LUT
+  looked up on the encoded colour and mixed in by `lutContribution`.
+- **LUT.** `ColorLut::parse` reads an Adobe / Resolve `.cube` (`LUT_3D_SIZE`, `DOMAIN_MIN` / `DOMAIN_MAX`);
+  `PostProcess::getLut` stores it as a 2D strip texture (`toStrip`) once per asset path.
+- **Lifecycle.** `PostProcess::init` / `shutdown` create and release its draw, uniform block and cached LUTs.
 
 ## Owl RHI {#renderer-owl-rhi}
 
@@ -1109,6 +1339,13 @@ compilation, reflection, and caching pipeline.
 | `setFloat2/3/4(name, v)`        | Set vector uniform             |
 | `setMat4(name, mat)`            | Set 4×4 matrix uniform         |
 | `setIntArray(name, arr, count)` | Set integer array uniform      |
+
+### Shader includes {#renderer-shader-includes}
+
+A graphics shader source may `#include "x.slangh"`: the file is looked up next to the including shader, then in
+`shaders/common/`. `.slangh` files are headers, never baked or compiled on their own. The SPIR-V cache key hashes the
+expanded text (`renderer::utils::readShaderSource`), so editing an included file recompiles every shader using it.
+`common/pbr.slangh` is shared by the mesh and voxel shaders.
 
 ### Shader Library
 

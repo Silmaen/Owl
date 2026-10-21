@@ -12,6 +12,7 @@
 #include "testHelper.h"
 
 #include <core/SerializerImpl.h>
+#include <renderer/Material.h>
 #include <renderer/RenderLayerFactory.h>
 #include <renderer/RenderStack.h>
 #include <scene/ComponentRegistry.h>
@@ -21,6 +22,7 @@
 #include <scene/component/Canvas.h>
 #include <scene/component/CircleRenderer.h>
 #include <scene/component/Hierarchy.h>
+#include <scene/component/MeshRenderer.h>
 #include <scene/component/Tag.h>
 #include <scene/component/Tilemap.h>
 #include <scene/component/Transform.h>
@@ -84,7 +86,7 @@ OWL_DIAG_POP
 TEST_F(CommandRegistryTest, DeclaresTheBuiltinCommands) {
 	for (const auto* name: {"entity.create", "entity.delete", "entity.duplicate", "entity.reparent", "entity.rename",
 							"entity.set_transform", "entity.create_light", "component.add", "component.remove",
-							"prefab.instantiate", "mesh.create"}) {
+							"prefab.instantiate", "mesh.create", "material.assign"}) {
 		const auto* spec = m_registry.find(name);
 		ASSERT_NE(spec, nullptr) << name;
 		EXPECT_FALSE(spec->description.empty()) << name;
@@ -98,7 +100,7 @@ TEST_F(CommandRegistryTest, DeclaresTheBuiltinCommands) {
 		EXPECT_FALSE(spec->allowedInPlay) << name;
 	}
 	EXPECT_EQ(m_registry.find("entity.explode"), nullptr);
-	EXPECT_EQ(m_registry.getCommands().size(), 29u);
+	EXPECT_EQ(m_registry.getCommands().size(), 31u);
 }
 
 TEST_F(CommandRegistryTest, CreateUnderAParentThenUndoRedo) {
@@ -241,7 +243,7 @@ TEST_F(CommandRegistryTest, IncompleteTargetRefusesCommands) {
 TEST_F(CommandRegistryTest, AddReplacesACommandOfTheSameName) {
 	m_registry.add({.name = "entity.create", .description = "Replaced.", .args = {}, .factory = {}});
 	EXPECT_EQ(m_registry.find("entity.create")->description, "Replaced.");
-	EXPECT_EQ(m_registry.getCommands().size(), 29u);
+	EXPECT_EQ(m_registry.getCommands().size(), 31u);
 }
 
 TEST_F(CommandRegistryTest, ParsesVectorColourAndEnumArguments) {
@@ -1042,4 +1044,70 @@ TEST_F(CommandRegistryTest, AddRenderLayerEditsTheProjectStack) {
 	EXPECT_EQ(notified, 2);
 	EXPECT_FALSE(m_undo.canUndo());
 	EXPECT_TRUE(renderer::RenderLayerFactory::unregisterType("FakeMeshLayer"));
+}
+
+TEST_F(CommandRegistryTest, MaterialCreateWritesAReadableFile) {
+	const auto dir = std::filesystem::temp_directory_path() / "owl_material_create_test";
+	std::filesystem::remove_all(dir);
+	const auto file = dir / "materials" / "gold.owlmat";
+	const auto result = run("material.create", {{"path", file.string()}});
+	ASSERT_TRUE(result.has_value());
+	const auto root = renderer::MaterialAsset::load(file);
+	ASSERT_TRUE(root.has_value());
+	EXPECT_TRUE(root->parent.empty());
+	EXPECT_FALSE(run("material.create", {{"path", file.string()}}).has_value());
+	EXPECT_FALSE(run("material.create", {{"path", (dir / "gold.png").string()}}).has_value());
+
+	const auto instance = dir / "gold_worn.owlmat";
+	ASSERT_TRUE(run("material.create", {{"path", instance.string()}, {"parent", std::string{"materials/gold.owlmat"}}})
+						.has_value());
+	const auto child = renderer::MaterialAsset::load(instance);
+	ASSERT_TRUE(child.has_value());
+	EXPECT_EQ(child->parent.generic_string(), "materials/gold.owlmat");
+	EXPECT_EQ(child->overrides, 0u);
+	std::filesystem::remove_all(dir);
+}
+
+TEST_F(CommandRegistryTest, MaterialAssignSetsTheSlotsAndUndoRestoresThem) {
+	auto crate = m_scene->createEntity("Crate");
+	auto& meshRenderer = crate.addComponent<scene::component::MeshRenderer>();
+	meshRenderer.materials.resize(2);
+	meshRenderer.materials[0].material = "materials/old.owlmat";
+	const auto target = idOf(crate);
+
+	ASSERT_TRUE(run("material.assign",
+					{{"entity", target}, {"slot", int64_t{1}}, {"material", std::string{"materials/gold.owlmat"}}})
+						.has_value());
+	auto& slots = crate.getComponent<scene::component::MeshRenderer>().materials;
+	ASSERT_EQ(slots.size(), 2u);
+	EXPECT_EQ(slots[0].material.generic_string(), "materials/old.owlmat");
+	EXPECT_EQ(slots[1].material.generic_string(), "materials/gold.owlmat");
+
+	ASSERT_TRUE(run("material.assign", {{"entity", target}, {"material", std::string{"materials/all.owlmat"}}})
+						.has_value());
+	EXPECT_EQ(crate.getComponent<scene::component::MeshRenderer>().materials[0].material.generic_string(),
+			  "materials/all.owlmat");
+	ASSERT_TRUE(run("material.assign", {{"entity", target}, {"slot", int64_t{0}}, {"material", std::string{}}})
+						.has_value());
+	EXPECT_TRUE(crate.getComponent<scene::component::MeshRenderer>().materials[0].material.empty());
+
+	ASSERT_TRUE(m_undo.canUndo());
+	while (m_undo.canUndo()) m_undo.undo(*m_scene);
+	const auto& restored = crate.getComponent<scene::component::MeshRenderer>().materials;
+	EXPECT_EQ(restored[0].material.generic_string(), "materials/old.owlmat");
+	EXPECT_TRUE(restored[1].material.empty());
+}
+
+TEST_F(CommandRegistryTest, MaterialAssignRefusesBadArguments) {
+	auto crate = m_scene->createEntity("Crate");
+	crate.addComponent<scene::component::MeshRenderer>().materials.resize(1);
+	const auto bare = m_scene->createEntity("Bare");
+	const auto material = std::string{"materials/gold.owlmat"};
+	EXPECT_FALSE(run("material.assign", {{"entity", idOf(crate)}, {"slot", int64_t{-2}}, {"material", material}})
+						 .has_value());
+	EXPECT_FALSE(run("material.assign", {{"entity", idOf(crate)}, {"slot", int64_t{1000}}, {"material", material}})
+						 .has_value());
+	EXPECT_FALSE(run("material.assign", {{"entity", idOf(crate)}, {"material", std::string{"gold.png"}}}).has_value());
+	EXPECT_FALSE(run("material.assign", {{"entity", idOf(bare)}, {"material", material}}).has_value());
+	EXPECT_FALSE(m_undo.canUndo());
 }

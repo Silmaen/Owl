@@ -13,6 +13,7 @@
 #include "app/EngineContext.h"
 #include "data/geometry/MeshLoader.h"
 #include "debug/Profiler.h"
+#include "renderer/MaterialLibrary.h"
 #include "renderer/MeshCache.h"
 #include "renderer/Renderer.h"
 
@@ -96,6 +97,8 @@ auto HotReload::reloadFile(const std::filesystem::path& iFile) -> Report {
 				});
 	} else if (data::geometry::MeshLoader::isMeshAsset(iFile) && Application::instanced()) {
 		report.reloaded += Application::get().getEngineContext().getMeshCache().invalidate(iFile);
+	} else if (extension == ".owlmat" && Application::instanced()) {
+		report.reloaded += Application::get().getEngineContext().getMaterialLibrary().invalidate(iFile);
 	}
 	if (report.reloaded + report.failed > 0)
 		OWL_CORE_INFO("Hot reload: {} -> {} reloaded, {} kept the previous version.", iFile.string(), report.reloaded,

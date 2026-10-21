@@ -292,3 +292,21 @@ TEST_F(ChunkMesherFixture, NeighborProviderCullsBoundaryFace) {
 	// The +X face at the chunk boundary is now culled by the opaque neighbour.
 	EXPECT_EQ(quadsByNormal(bounded, 1, 0, 0), 0u);
 }
+
+TEST_F(ChunkMesherFixture, VerticesCarryTheBlockSurface) {
+	Registry r;
+	auto stone = r.reg.get(r.stone);
+	stone.surface = BlockSurface{.metallic = 1.f, .roughness = 0.25f, .emissive = 0.f, .clearcoat = 0.5f};
+	ASSERT_TRUE(r.reg.setBlock(r.stone, stone));
+	Chunk chunk;
+	chunk.setBlock(0, 0, 0, r.stone);
+	chunk.setBlock(2, 0, 0, r.marker);
+	const ChunkMesh mesh = ChunkMesher::mesh(chunk, r.reg);
+	size_t stoneVertices = 0;
+	for (const auto& vertex: mesh.vertices) {
+		const bool isStone = vertex.textureIndex == 1;
+		EXPECT_EQ(vertex.surface, isStone ? packSurface(stone.surface) : packSurface(BlockSurface{}));
+		stoneVertices += isStone ? 1 : 0;
+	}
+	EXPECT_EQ(stoneVertices, 24u);
+}

@@ -17,6 +17,7 @@
 #include <string_view>
 
 namespace owl::renderer {
+class MaterialLibrary;
 class MeshCache;
 class VoxelMeshCache;
 }// namespace owl::renderer
@@ -81,6 +82,13 @@ public:
 	 * @return The mesh cache.
 	 */
 	[[nodiscard]] auto getMeshCache() -> renderer::MeshCache& { return *mp_meshCache; }
+
+	/**
+	 * @brief
+	 *  The `.owlmat` materials, shared by the entities using the same file.
+	 * @return The material library.
+	 */
+	[[nodiscard]] auto getMaterialLibrary() -> renderer::MaterialLibrary& { return *mp_materialLibrary; }
 
 	/**
 	 * @brief
@@ -165,6 +173,8 @@ private:
 	uniq<scene::SettingsManager> mp_settings;
 	/// Static mesh cache.
 	uniq<renderer::MeshCache> mp_meshCache;
+	/// Material library.
+	uniq<renderer::MaterialLibrary> mp_materialLibrary;
 	/// Voxel mesh cache.
 	uniq<renderer::VoxelMeshCache> mp_voxelMeshCache;
 	/// Fixed simulation tick of the game.

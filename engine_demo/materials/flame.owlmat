@@ -1,0 +1,10 @@
+Material:
+  FormatVersion: 1
+  alphaMode: Blend
+  doubleSided: true
+  baseColor: [0, 0, 0, 1]
+  roughness: 1
+  emissive: [1, 0.62, 0.32]
+  emissiveLuminance: 5000
+  baseColorMap: nam:textures/fire/flame.png
+  emissiveMap: nam:textures/fire/flame.png

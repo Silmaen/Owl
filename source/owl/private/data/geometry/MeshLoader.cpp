@@ -25,6 +25,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
@@ -32,6 +33,7 @@
 #include <format>
 #include <fstream>
 #include <iterator>
+#include <map>
 #include <optional>
 #include <span>
 #include <sstream>
@@ -80,57 +82,180 @@ void logCompleteness(const std::string& iLoader, const std::string& iName, const
 				  !iHasNormals || iMesh.isExtraDataDefinedOnAllTriangles<TriangleNormals>() ? "complete" : "incomplete")
 }
 
-auto buildObj(const tinyobj::attrib_t& iAttrib, const std::vector<tinyobj::shape_t>& iShapes, const std::string& iName)
-		-> shared<StaticMesh> {
-	auto mesh = mkShared<StaticMesh>();
-	mesh->reserveVertices(iAttrib.vertices.size() / 3);
+// Decode an encoded image to RGBA8, bottom row first like every engine texture.
+auto decodeImageBytes(const std::span<const uint8_t> iBytes, const std::string& iName) -> std::optional<MeshImage> {
+	int width = 0;
+	int height = 0;
+	int channels = 0;
+	stbi_set_flip_vertically_on_load_thread(1);
+	stbi_uc* pixels =
+			stbi_load_from_memory(iBytes.data(), static_cast<int>(iBytes.size()), &width, &height, &channels, 4);
+	stbi_set_flip_vertically_on_load_thread(0);
+	if (pixels == nullptr) {
+		OWL_CORE_WARN("MeshLoader: Cannot decode image {}: {}.", iName, stbi_failure_reason())
+		return std::nullopt;
+	}
+	const auto byteCount = static_cast<size_t>(width) * static_cast<size_t>(height) * 4u;
+	MeshImage image;
+	image.size = {static_cast<uint32_t>(width), static_cast<uint32_t>(height)};
+	image.pixels.assign(pixels, pixels + byteCount);
+	image.name = iName;
+	stbi_image_free(pixels);
+	return image;
+}
+
+// Bytes of a file next to a mesh file, through the reader (an asset pack) or from the disk; nothing when missing.
+auto readSiblingFile(const std::filesystem::path& iBaseDirectory, const MeshFileReader& iReadFile,
+					 const std::string& iRelative) -> std::optional<std::vector<uint8_t>> {
+	std::string relative = iRelative;
+	std::ranges::replace(relative, '\\', '/');
+	const auto path = (iBaseDirectory / relative).generic_string();
+	if (iReadFile)
+		return iReadFile(path);
+	std::ifstream file(path, std::ios::binary);
+	if (!file)
+		return std::nullopt;
+	return std::vector<uint8_t>{std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
+}
+
+// Reads the `.mtl` files of an OBJ next to it, from the disk or through a mesh file reader.
+class ObjMaterialReader final : public tinyobj::MaterialReader {
+public:
+	ObjMaterialReader(std::filesystem::path iBaseDirectory, MeshFileReader iReadFile)
+		: m_baseDirectory{std::move(iBaseDirectory)}, m_readFile{std::move(iReadFile)} {}
+
+	auto operator()(const std::string& iMaterialFile, std::vector<tinyobj::material_t>* oMaterials,
+					std::map<std::string, int>* oMaterialMap, std::string* oWarning, std::string* oError)
+			-> bool override {
+		const auto bytes = readSiblingFile(m_baseDirectory, m_readFile, iMaterialFile);
+		if (!bytes) {
+			OWL_CORE_WARN("MeshLoader::loadObj: Material file {} not found.", iMaterialFile)
+			return false;
+		}
+		std::istringstream stream{std::string{reinterpret_cast<const char*>(bytes->data()), bytes->size()}};
+		tinyobj::LoadMtl(oMaterialMap, oMaterials, &stream, oWarning, oError);
+		return true;
+	}
+
+private:
+	// Folder the material files are looked up in.
+	std::filesystem::path m_baseDirectory;
+	// Reader of the material files, empty to read the disk.
+	MeshFileReader m_readFile;
+};
+
+auto convertObjMaterial(const tinyobj::material_t& iSource, const std::filesystem::path& iBaseDirectory,
+						const MeshFileReader& iReadFile) -> MeshMaterial {
+	MeshMaterial material;
+	material.name = iSource.name;
+	material.baseColorFactor = vec4{iSource.diffuse[0], iSource.diffuse[1], iSource.diffuse[2], iSource.dissolve};
+	if (iSource.dissolve < 1.f)
+		material.alphaMode = MeshMaterial::AlphaMode::Blend;
+	material.metallicFactor = 0.f;
+	// tinyobj reports a shininess of 1 for a material that gives none.
+	material.roughnessFactor = iSource.shininess > 1.f ? std::sqrt(2.f / (iSource.shininess + 2.f)) : 0.5f;
+	material.emissiveFactor = vec3{iSource.emission[0], iSource.emission[1], iSource.emission[2]};
+	if (!iSource.diffuse_texname.empty()) {
+		if (const auto bytes = readSiblingFile(iBaseDirectory, iReadFile, iSource.diffuse_texname)) {
+			if (auto image = decodeImageBytes(*bytes, iSource.diffuse_texname))
+				material.baseColor = std::move(*image);
+		} else {
+			OWL_CORE_WARN("MeshLoader::loadObj: Texture {} of material {} not found.", iSource.diffuse_texname,
+						  iSource.name)
+		}
+	}
+	return material;
+}
+
+// A triangle of an OBJ shape and the material slot it uses.
+struct ObjFace {
+	// Index of the shape.
+	size_t shape = 0;
+	// Position of the first corner in the index list of the shape.
+	size_t offset = 0;
+	// Position of the material in the converted list.
+	uint32_t slot = 0;
+};
+
+auto buildObj(const tinyobj::attrib_t& iAttrib, const std::vector<tinyobj::shape_t>& iShapes,
+			  const std::vector<tinyobj::material_t>& iMaterials, const std::string& iName,
+			  const std::filesystem::path& iBaseDirectory, const MeshFileReader& iReadFile) -> LoadedMesh {
+	LoadedMesh loaded;
+	loaded.mesh = mkShared<StaticMesh>();
+	auto& mesh = *loaded.mesh;
+	mesh.reserveVertices(iAttrib.vertices.size() / 3);
 	for (size_t i = 0; i + 2 < iAttrib.vertices.size(); i += 3)
-		mesh->addVertex(vec3{iAttrib.vertices[i], iAttrib.vertices[i + 1], iAttrib.vertices[i + 2]});
+		mesh.addVertex(vec3{iAttrib.vertices[i], iAttrib.vertices[i + 1], iAttrib.vertices[i + 2]});
 	const bool hasUv = !iAttrib.texcoords.empty();
 	const bool hasNormals = !iAttrib.normals.empty();
-	size_t estimatedTriangles = 0;
-	for (const auto& shape: iShapes) estimatedTriangles += shape.mesh.num_face_vertices.size();
-	mesh->reserveTriangles(estimatedTriangles);
-	CornerUvs uvCoords;
-	CornerNormals normals;
-	uvCoords.reserve(hasUv ? estimatedTriangles : 0);
-	normals.reserve(hasNormals ? estimatedTriangles : 0);
-	for (const auto& shape: iShapes) {
+	// Faces are grouped by material so that every submesh covers a contiguous run of indices.
+	const auto defaultSlot = static_cast<uint32_t>(iMaterials.size());
+	bool usesDefault = iMaterials.empty();
+	std::vector<ObjFace> faces;
+	for (size_t shapeIndex = 0; shapeIndex < iShapes.size(); ++shapeIndex) {
+		const auto& shape = iShapes[shapeIndex];
 		size_t indexOffset = 0;
-		for (const size_t fv: shape.mesh.num_face_vertices) {
+		for (size_t faceIndex = 0; faceIndex < shape.mesh.num_face_vertices.size(); ++faceIndex) {
+			const size_t fv = shape.mesh.num_face_vertices[faceIndex];
 			if (fv != 3) {
 				OWL_CORE_WARN(
 						"MeshLoader::loadObj: Face with {} vertices found, only triangles are supported, skipping.", fv)
 				indexOffset += fv;
 				continue;
 			}
-			std::array<uint32_t, 3> vertexIndices{};
-			std::array<vec2, 3> faceUv{};
-			std::array<vec3, 3> faceNormals{};
-			for (size_t v = 0; v < fv; v++) {
-				const tinyobj::index_t idx = shape.mesh.indices[indexOffset + v];
-				vertexIndices[v] = static_cast<uint32_t>(idx.vertex_index);
-				if (idx.texcoord_index >= 0) {
-					const auto uvIndex = 2u * static_cast<size_t>(idx.texcoord_index);
-					faceUv[v] = vec2{iAttrib.texcoords[uvIndex], iAttrib.texcoords[uvIndex + 1]};
-				}
-				if (idx.normal_index >= 0) {
-					const auto normalIndex = 3u * static_cast<size_t>(idx.normal_index);
-					faceNormals[v] = vec3{iAttrib.normals[normalIndex], iAttrib.normals[normalIndex + 1],
-										  iAttrib.normals[normalIndex + 2]};
-				}
-			}
-			if (hasUv)
-				uvCoords.push_back(faceUv);
-			if (hasNormals)
-				normals.push_back(faceNormals);
-			mesh->addTriangle(vertexIndices);
+			const int materialId = faceIndex < shape.mesh.material_ids.size() ? shape.mesh.material_ids[faceIndex] : -1;
+			const bool known = materialId >= 0 && static_cast<size_t>(materialId) < iMaterials.size();
+			usesDefault = usesDefault || !known;
+			faces.push_back({.shape = shapeIndex,
+							 .offset = indexOffset,
+							 .slot = known ? static_cast<uint32_t>(materialId) : defaultSlot});
 			indexOffset += fv;
 		}
 	}
-	attachCornerData(*mesh, uvCoords, normals);
-	logCompleteness("loadObj", iName, *mesh, hasUv, hasNormals);
-	return mesh;
+	std::ranges::stable_sort(
+			faces, [](const ObjFace& iLeft, const ObjFace& iRight) -> bool { return iLeft.slot < iRight.slot; });
+	mesh.reserveTriangles(faces.size());
+	CornerUvs uvCoords;
+	CornerNormals normals;
+	uvCoords.reserve(hasUv ? faces.size() : 0);
+	normals.reserve(hasNormals ? faces.size() : 0);
+	for (const auto& [shapeIndex, offset, slot]: faces) {
+		const auto& shape = iShapes[shapeIndex];
+		std::array<uint32_t, 3> vertexIndices{};
+		std::array<vec2, 3> faceUv{};
+		std::array<vec3, 3> faceNormals{};
+		for (size_t v = 0; v < 3; v++) {
+			const tinyobj::index_t idx = shape.mesh.indices[offset + v];
+			vertexIndices[v] = static_cast<uint32_t>(idx.vertex_index);
+			if (idx.texcoord_index >= 0) {
+				const auto uvIndex = 2u * static_cast<size_t>(idx.texcoord_index);
+				faceUv[v] = vec2{iAttrib.texcoords[uvIndex], iAttrib.texcoords[uvIndex + 1]};
+			}
+			if (idx.normal_index >= 0) {
+				const auto normalIndex = 3u * static_cast<size_t>(idx.normal_index);
+				faceNormals[v] = vec3{iAttrib.normals[normalIndex], iAttrib.normals[normalIndex + 1],
+									  iAttrib.normals[normalIndex + 2]};
+			}
+		}
+		if (hasUv)
+			uvCoords.push_back(faceUv);
+		if (hasNormals)
+			normals.push_back(faceNormals);
+		if (loaded.submeshes.empty() || loaded.submeshes.back().materialIndex != slot)
+			loaded.submeshes.push_back({.firstIndex = static_cast<uint32_t>(mesh.getTriangleCount() * 3),
+										.indexCount = 0,
+										.materialIndex = slot});
+		loaded.submeshes.back().indexCount += 3;
+		mesh.addTriangle(vertexIndices);
+	}
+	attachCornerData(mesh, uvCoords, normals);
+	logCompleteness("loadObj", iName, mesh, hasUv, hasNormals);
+	loaded.materials.clear();
+	for (const auto& source: iMaterials)
+		loaded.materials.push_back(convertObjMaterial(source, iBaseDirectory, iReadFile));
+	if (usesDefault)
+		loaded.materials.emplace_back();
+	return loaded;
 }
 
 // Decode a glTF image to RGBA8, bottom row first like every engine texture.
@@ -228,112 +353,329 @@ auto readIndices(const tinygltf::Model& iModel, const tinygltf::Primitive& iPrim
 	return indices;
 }
 
-auto buildGltfMesh(const tinygltf::Model& iModel, const std::string& iName) -> shared<StaticMesh> {
-	auto mesh = mkShared<StaticMesh>();
-	if (iModel.meshes.empty()) {
-		OWL_CORE_ERROR("MeshLoader::loadGltf: No mesh found in {}.", iName)
-		return mesh;
+// Image a glTF texture refers to, decoded; empty when the texture is absent or could not be decoded.
+auto readGltfImage(const tinygltf::Model& iModel, const int iTextureIndex) -> MeshImage {
+	if (iTextureIndex < 0 || static_cast<size_t>(iTextureIndex) >= iModel.textures.size())
+		return {};
+	const int source = iModel.textures[static_cast<size_type>(iTextureIndex)].source;
+	if (source < 0 || static_cast<size_t>(source) >= iModel.images.size())
+		return {};
+	const auto& image = iModel.images[static_cast<size_type>(source)];
+	MeshImage result;
+	result.name = image.uri.empty() ? image.name : image.uri;
+	if (image.width <= 0 || image.height <= 0 || image.component != 4 || image.bits != 8 ||
+		image.image.size() != static_cast<size_t>(image.width) * static_cast<size_t>(image.height) * 4u) {
+		OWL_CORE_WARN("MeshLoader::loadGltf: Image {} could not be decoded, ignored.", result.name)
+		return result;
 	}
-	// Triangles point at their vertices: every vertex is reserved before the first triangle is added.
-	size_t vertexCount = 0;
-	for (const auto& primitive: iModel.meshes.front().primitives) {
-		if (const auto found = primitive.attributes.find("POSITION"); found != primitive.attributes.end())
-			vertexCount += iModel.accessors.at(static_cast<size_type>(found->second)).count;
-	}
-	mesh->reserveVertices(vertexCount);
-	CornerUvs uvCoords;
-	CornerNormals normals;
-	bool hasUv = false;
-	bool hasNormals = false;
-	for (const auto& primitive: iModel.meshes.front().primitives) {
-		if (primitive.mode != TINYGLTF_MODE_TRIANGLES && primitive.mode != -1) {
-			OWL_CORE_WARN("MeshLoader::loadGltf: Primitive of mode {} in {} is not made of triangles, skipped.",
-						  primitive.mode, iName)
-			continue;
-		}
-		const auto attribute = [&primitive](const char* iKey) -> int {
-			const auto found = primitive.attributes.find(iKey);
-			return found == primitive.attributes.end() ? -1 : found->second;
-		};
-		const auto positions = readFloats<3>(iModel, attribute("POSITION"));
-		if (positions.empty()) {
-			OWL_CORE_ERROR("MeshLoader::loadGltf: No POSITION attribute in a primitive of {}.", iName)
-			continue;
-		}
-		const auto uvs = readFloats<2>(iModel, attribute("TEXCOORD_0"));
-		const auto vertexNormals = readFloats<3>(iModel, attribute("NORMAL"));
-		const auto indices = readIndices(iModel, primitive, positions.size());
-		if (!indices) {
-			OWL_CORE_WARN("MeshLoader::loadGltf: Unreadable indices in a primitive of {}, skipped.", iName)
-			continue;
-		}
-		hasUv = hasUv || !uvs.empty();
-		hasNormals = hasNormals || !vertexNormals.empty();
-		// Several primitives share the mesh: their indices start after the vertices of the previous ones.
-		const auto base = static_cast<uint32_t>(mesh->getVertexCount());
-		for (const auto& position: positions) mesh->addVertex(vec3{position[0], position[1], position[2]});
-		for (size_t i = 0; i + 2 < indices->size(); i += 3) {
-			std::array<uint32_t, 3> corners{};
-			std::array<vec2, 3> faceUv{};
-			std::array<vec3, 3> faceNormals{};
-			bool valid = true;
-			for (size_t j = 0; j < 3; ++j) {
-				const uint32_t index = (*indices)[i + j];
-				valid = valid && index < positions.size();
-				corners[j] = base + index;
-				// glTF puts v = 0 at the top of the image, the engine at the bottom.
-				if (index < uvs.size())
-					faceUv[j] = vec2{uvs[index][0], 1.f - uvs[index][1]};
-				if (index < vertexNormals.size())
-					faceNormals[j] = vec3{vertexNormals[index][0], vertexNormals[index][1], vertexNormals[index][2]};
-			}
-			if (!valid) {
-				OWL_CORE_WARN("MeshLoader::loadGltf: Triangle with an index out of range in {}, skipped.", iName)
-				continue;
-			}
-			mesh->addTriangle(corners);
-			uvCoords.push_back(faceUv);
-			normals.push_back(faceNormals);
-		}
-	}
-	attachCornerData(*mesh, hasUv ? uvCoords : CornerUvs{}, hasNormals ? normals : CornerNormals{});
-	logCompleteness("loadGltf", iName, *mesh, hasUv, hasNormals);
-	return mesh;
+	result.size = {static_cast<uint32_t>(image.width), static_cast<uint32_t>(image.height)};
+	result.pixels = image.image;
+	return result;
 }
 
-auto readGltfMaterial(const tinygltf::Model& iModel) -> MeshMaterial {
+auto extensionNumber(const tinygltf::Value& iExtension, const char* iKey, const float iDefault) -> float {
+	if (!iExtension.Has(iKey))
+		return iDefault;
+	const auto& value = iExtension.Get(iKey);
+	return value.IsNumber() ? static_cast<float>(value.GetNumberAsDouble()) : iDefault;
+}
+
+auto extensionColor(const tinygltf::Value& iExtension, const char* iKey) -> vec3 {
+	vec3 color{0.f, 0.f, 0.f};
+	if (!iExtension.Has(iKey))
+		return color;
+	const auto& value = iExtension.Get(iKey);
+	if (!value.IsArray() || value.ArrayLen() < 3)
+		return color;
+	for (size_t i = 0; i < 3; ++i) {
+		const auto& component = value.Get(i);
+		color[i] = component.IsNumber() ? static_cast<float>(component.GetNumberAsDouble()) : 0.f;
+	}
+	return color;
+}
+
+auto convertGltfMaterial(const tinygltf::Model& iModel, const tinygltf::Material& iSource) -> MeshMaterial {
 	MeshMaterial material;
-	if (iModel.meshes.empty())
-		return material;
-	const auto& primitives = iModel.meshes.front().primitives;
-	const auto withMaterial =
-			std::ranges::find_if(primitives, [&iModel](const tinygltf::Primitive& iPrimitive) -> bool {
-				return iPrimitive.material >= 0 && static_cast<size_t>(iPrimitive.material) < iModel.materials.size();
-			});
-	if (withMaterial == primitives.end())
-		return material;
-	const auto& pbr = iModel.materials[static_cast<size_type>(withMaterial->material)].pbrMetallicRoughness;
+	material.name = iSource.name;
+	const auto& pbr = iSource.pbrMetallicRoughness;
 	if (pbr.baseColorFactor.size() == 4)
 		material.baseColorFactor =
 				vec4{static_cast<float>(pbr.baseColorFactor[0]), static_cast<float>(pbr.baseColorFactor[1]),
 					 static_cast<float>(pbr.baseColorFactor[2]), static_cast<float>(pbr.baseColorFactor[3])};
-	const int textureIndex = pbr.baseColorTexture.index;
-	if (textureIndex < 0 || static_cast<size_t>(textureIndex) >= iModel.textures.size())
-		return material;
-	const int source = iModel.textures[static_cast<size_type>(textureIndex)].source;
-	if (source < 0 || static_cast<size_t>(source) >= iModel.images.size())
-		return material;
-	const auto& image = iModel.images[static_cast<size_type>(source)];
-	material.baseColorName = image.uri.empty() ? image.name : image.uri;
-	if (image.width <= 0 || image.height <= 0 || image.component != 4 || image.bits != 8 ||
-		image.image.size() != static_cast<size_t>(image.width) * static_cast<size_t>(image.height) * 4u) {
-		OWL_CORE_WARN("MeshLoader::loadGltf: Base colour image {} could not be decoded, ignored.",
-					  material.baseColorName)
-		return material;
+	material.metallicFactor = static_cast<float>(pbr.metallicFactor);
+	material.roughnessFactor = static_cast<float>(pbr.roughnessFactor);
+	if (iSource.emissiveFactor.size() == 3)
+		material.emissiveFactor =
+				vec3{static_cast<float>(iSource.emissiveFactor[0]), static_cast<float>(iSource.emissiveFactor[1]),
+					 static_cast<float>(iSource.emissiveFactor[2])};
+	material.normalScale = static_cast<float>(iSource.normalTexture.scale);
+	material.occlusionStrength = static_cast<float>(iSource.occlusionTexture.strength);
+	if (iSource.alphaMode == "MASK")
+		material.alphaMode = MeshMaterial::AlphaMode::Mask;
+	else if (iSource.alphaMode == "BLEND")
+		material.alphaMode = MeshMaterial::AlphaMode::Blend;
+	material.alphaCutoff = static_cast<float>(iSource.alphaCutoff);
+	material.doubleSided = iSource.doubleSided;
+	if (const auto found = iSource.extensions.find("KHR_materials_emissive_strength");
+		found != iSource.extensions.end())
+		material.emissiveStrength = extensionNumber(found->second, "emissiveStrength", 1.f);
+	if (const auto found = iSource.extensions.find("KHR_materials_clearcoat"); found != iSource.extensions.end()) {
+		material.clearcoat = extensionNumber(found->second, "clearcoatFactor", 0.f);
+		material.clearcoatRoughness = extensionNumber(found->second, "clearcoatRoughnessFactor", 0.f);
 	}
-	material.baseColorSize = {static_cast<uint32_t>(image.width), static_cast<uint32_t>(image.height)};
-	material.baseColorPixels = image.image;
+	if (const auto found = iSource.extensions.find("KHR_materials_sheen"); found != iSource.extensions.end()) {
+		material.sheenColor = extensionColor(found->second, "sheenColorFactor");
+		material.sheenRoughness = extensionNumber(found->second, "sheenRoughnessFactor", 0.f);
+	}
+	if (const auto found = iSource.extensions.find("KHR_materials_anisotropy"); found != iSource.extensions.end()) {
+		material.anisotropy = extensionNumber(found->second, "anisotropyStrength", 0.f);
+		material.anisotropyRotation = extensionNumber(found->second, "anisotropyRotation", 0.f);
+	}
+	material.baseColor = readGltfImage(iModel, pbr.baseColorTexture.index);
+	material.metallicRoughness = readGltfImage(iModel, pbr.metallicRoughnessTexture.index);
+	material.normal = readGltfImage(iModel, iSource.normalTexture.index);
+	material.occlusion = readGltfImage(iModel, iSource.occlusionTexture.index);
+	material.emissive = readGltfImage(iModel, iSource.emissiveTexture.index);
 	return material;
+}
+
+// Column-major 4x4 transform of a glTF node, as the file stores its `matrix`.
+using NodeMatrix = std::array<double, 16>;
+
+constexpr NodeMatrix g_identityMatrix{1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1};
+
+auto multiply(const NodeMatrix& iA, const NodeMatrix& iB) -> NodeMatrix {
+	NodeMatrix result{};
+	for (size_t col = 0; col < 4; ++col)
+		for (size_t row = 0; row < 4; ++row)
+			for (size_t k = 0; k < 4; ++k) result[col * 4 + row] += iA[k * 4 + row] * iB[col * 4 + k];
+	return result;
+}
+
+// Local transform of a node: its matrix, or translation * rotation * scale.
+auto localMatrix(const tinygltf::Node& iNode) -> NodeMatrix {
+	if (iNode.matrix.size() == 16) {
+		NodeMatrix matrix{};
+		std::ranges::copy(iNode.matrix, matrix.begin());
+		return matrix;
+	}
+	const auto& t = iNode.translation;
+	const auto& r = iNode.rotation;
+	const auto& sc = iNode.scale;
+	const double x = r.size() == 4 ? r[0] : 0.;
+	const double y = r.size() == 4 ? r[1] : 0.;
+	const double z = r.size() == 4 ? r[2] : 0.;
+	const double w = r.size() == 4 ? r[3] : 1.;
+	const double sx = sc.size() == 3 ? sc[0] : 1.;
+	const double sy = sc.size() == 3 ? sc[1] : 1.;
+	const double sz = sc.size() == 3 ? sc[2] : 1.;
+	return {(1. - 2. * (y * y + z * z)) * sx, 2. * (x * y + z * w) * sx,        2. * (x * z - y * w) * sx,        0.,
+			2. * (x * y - z * w) * sy,        (1. - 2. * (x * x + z * z)) * sy, 2. * (y * z + x * w) * sy,        0.,
+			2. * (x * z + y * w) * sz,        2. * (y * z - x * w) * sz,        (1. - 2. * (x * x + y * y)) * sz, 0.,
+			t.size() == 3 ? t[0] : 0.,        t.size() == 3 ? t[1] : 0.,        t.size() == 3 ? t[2] : 0.,        1.};
+}
+
+// A mesh of the file placed by the node chain leading to it.
+struct MeshInstance {
+	size_t mesh = 0;
+	NodeMatrix transform = g_identityMatrix;
+};
+
+// NOLINTNEXTLINE(misc-no-recursion): the depth is bounded by the node count of the file.
+void collectInstances(const tinygltf::Model& iModel, const int iNode, const NodeMatrix& iParent, const size_t iDepth,
+					  std::vector<MeshInstance>& ioInstances) {
+	if (iNode < 0 || static_cast<size_t>(iNode) >= iModel.nodes.size() || iDepth > iModel.nodes.size())
+		return;
+	const auto& node = iModel.nodes[static_cast<size_t>(iNode)];
+	const NodeMatrix transform = multiply(iParent, localMatrix(node));
+	if (node.mesh >= 0 && static_cast<size_t>(node.mesh) < iModel.meshes.size())
+		ioInstances.push_back({.mesh = static_cast<size_t>(node.mesh), .transform = transform});
+	for (const int child: node.children) collectInstances(iModel, child, transform, iDepth + 1, ioInstances);
+}
+
+// Every mesh the default scene places, with its world transform; every mesh once without a scene.
+auto meshInstances(const tinygltf::Model& iModel) -> std::vector<MeshInstance> {
+	std::vector<MeshInstance> instances;
+	if (!iModel.scenes.empty()) {
+		const auto sceneIndex =
+				iModel.defaultScene >= 0 && static_cast<size_t>(iModel.defaultScene) < iModel.scenes.size()
+						? static_cast<size_t>(iModel.defaultScene)
+						: size_t{0};
+		for (const int root: iModel.scenes[sceneIndex].nodes)
+			collectInstances(iModel, root, g_identityMatrix, 0, instances);
+	}
+	if (instances.empty()) {
+		for (size_t mesh = 0; mesh < iModel.meshes.size(); ++mesh) instances.push_back({.mesh = mesh});
+	}
+	return instances;
+}
+
+auto transformPoint(const NodeMatrix& iM, const std::array<float, 3>& iP) -> vec3 {
+	const auto at = [&iM, &iP](const size_t iRow) -> float {
+		return static_cast<float>(iM[iRow] * static_cast<double>(iP[0]) + iM[4 + iRow] * static_cast<double>(iP[1]) +
+								  iM[8 + iRow] * static_cast<double>(iP[2]) + iM[12 + iRow]);
+	};
+	return vec3{at(0), at(1), at(2)};
+}
+
+// Cofactor matrix of the upper 3x3 (the inverse transpose times the determinant): it carries the normals.
+auto normalMatrix(const NodeMatrix& iM) -> std::array<double, 9> {
+	const auto m = [&iM](const size_t iRow, const size_t iCol) -> double { return iM[iCol * 4 + iRow]; };
+	std::array<double, 9> cofactor{};
+	for (size_t row = 0; row < 3; ++row) {
+		for (size_t col = 0; col < 3; ++col) {
+			const size_t r0 = (row + 1) % 3;
+			const size_t r1 = (row + 2) % 3;
+			const size_t c0 = (col + 1) % 3;
+			const size_t c1 = (col + 2) % 3;
+			cofactor[row * 3 + col] = m(r0, c0) * m(r1, c1) - m(r0, c1) * m(r1, c0);
+		}
+	}
+	return cofactor;
+}
+
+auto determinant(const NodeMatrix& iM) -> double {
+	return iM[0] * (iM[5] * iM[10] - iM[9] * iM[6]) - iM[4] * (iM[1] * iM[10] - iM[9] * iM[2]) +
+		   iM[8] * (iM[1] * iM[6] - iM[5] * iM[2]);
+}
+
+auto transformNormal(const std::array<double, 9>& iCofactor, const std::array<float, 3>& iN) -> vec3 {
+	const auto at = [&iCofactor, &iN](const size_t iRow) -> double {
+		return iCofactor[iRow * 3] * static_cast<double>(iN[0]) + iCofactor[iRow * 3 + 1] * static_cast<double>(iN[1]) +
+			   iCofactor[iRow * 3 + 2] * static_cast<double>(iN[2]);
+	};
+	const double x = at(0);
+	const double y = at(1);
+	const double z = at(2);
+	const double length = std::sqrt(x * x + y * y + z * z);
+	if (length <= 0.)
+		return vec3{0.f, 0.f, 0.f};
+	return vec3{static_cast<float>(x / length), static_cast<float>(y / length), static_cast<float>(z / length)};
+}
+
+// State of a glTF file being turned into one mesh.
+struct GltfBuild {
+	LoadedMesh& loaded;
+	const tinygltf::Model& model;
+	const std::string& name;
+	CornerUvs uvCoords;
+	CornerNormals normals;
+	bool hasUv = false;
+	bool hasNormals = false;
+	std::optional<uint32_t> defaultSlot;
+};
+
+auto materialSlot(GltfBuild& ioBuild, const tinygltf::Primitive& iPrimitive) -> uint32_t {
+	if (iPrimitive.material >= 0 && static_cast<size_t>(iPrimitive.material) < ioBuild.model.materials.size())
+		return static_cast<uint32_t>(iPrimitive.material);
+	if (!ioBuild.defaultSlot) {
+		ioBuild.defaultSlot = static_cast<uint32_t>(ioBuild.loaded.materials.size());
+		ioBuild.loaded.materials.emplace_back();
+	}
+	return *ioBuild.defaultSlot;
+}
+
+void appendPrimitive(GltfBuild& ioBuild, const tinygltf::Primitive& iPrimitive, const NodeMatrix& iTransform) {
+	const auto& model = ioBuild.model;
+	if (iPrimitive.mode != TINYGLTF_MODE_TRIANGLES && iPrimitive.mode != -1) {
+		OWL_CORE_WARN("MeshLoader::loadGltf: Primitive of mode {} in {} is not made of triangles, skipped.",
+					  iPrimitive.mode, ioBuild.name)
+		return;
+	}
+	const auto attribute = [&iPrimitive](const char* iKey) -> int {
+		const auto found = iPrimitive.attributes.find(iKey);
+		return found == iPrimitive.attributes.end() ? -1 : found->second;
+	};
+	const auto positions = readFloats<3>(model, attribute("POSITION"));
+	if (positions.empty()) {
+		OWL_CORE_ERROR("MeshLoader::loadGltf: No POSITION attribute in a primitive of {}.", ioBuild.name)
+		return;
+	}
+	const auto uvs = readFloats<2>(model, attribute("TEXCOORD_0"));
+	const auto vertexNormals = readFloats<3>(model, attribute("NORMAL"));
+	const auto indices = readIndices(model, iPrimitive, positions.size());
+	if (!indices) {
+		OWL_CORE_WARN("MeshLoader::loadGltf: Unreadable indices in a primitive of {}, skipped.", ioBuild.name)
+		return;
+	}
+	ioBuild.hasUv = ioBuild.hasUv || !uvs.empty();
+	ioBuild.hasNormals = ioBuild.hasNormals || !vertexNormals.empty();
+	auto& mesh = *ioBuild.loaded.mesh;
+	const size_t firstTriangle = mesh.getTriangleCount();
+	const uint32_t slot = materialSlot(ioBuild, iPrimitive);
+	const auto cofactor = normalMatrix(iTransform);
+	// A mirroring transform turns the faces inside out: their corners are taken the other way round.
+	const bool mirrored = determinant(iTransform) < 0.;
+	const double normalSign = mirrored ? -1. : 1.;
+	// Several primitives share the mesh: their indices start after the vertices of the previous ones.
+	const auto base = static_cast<uint32_t>(mesh.getVertexCount());
+	for (const auto& position: positions) mesh.addVertex(transformPoint(iTransform, position));
+	for (size_t i = 0; i + 2 < indices->size(); i += 3) {
+		std::array<uint32_t, 3> corners{};
+		std::array<vec2, 3> faceUv{};
+		std::array<vec3, 3> faceNormals{};
+		bool valid = true;
+		for (size_t j = 0; j < 3; ++j) {
+			const uint32_t index = (*indices)[i + (mirrored ? 2 - j : j)];
+			valid = valid && index < positions.size();
+			corners[j] = base + index;
+			// glTF puts v = 0 at the top of the image, the engine at the bottom.
+			if (index < uvs.size())
+				faceUv[j] = vec2{uvs[index][0], 1.f - uvs[index][1]};
+			if (index < vertexNormals.size())
+				faceNormals[j] = transformNormal(cofactor, vertexNormals[index]) * static_cast<float>(normalSign);
+		}
+		if (!valid) {
+			OWL_CORE_WARN("MeshLoader::loadGltf: Triangle with an index out of range in {}, skipped.", ioBuild.name)
+			continue;
+		}
+		mesh.addTriangle(corners);
+		ioBuild.uvCoords.push_back(faceUv);
+		ioBuild.normals.push_back(faceNormals);
+	}
+	if (const auto added = mesh.getTriangleCount() - firstTriangle; added > 0)
+		ioBuild.loaded.submeshes.push_back({.firstIndex = static_cast<uint32_t>(firstTriangle * 3),
+											.indexCount = static_cast<uint32_t>(added * 3),
+											.materialIndex = slot});
+}
+
+auto buildGltf(const tinygltf::Model& iModel, const std::string& iName) -> LoadedMesh {
+	LoadedMesh loaded;
+	loaded.mesh = mkShared<StaticMesh>();
+	if (iModel.meshes.empty()) {
+		OWL_CORE_ERROR("MeshLoader::loadGltf: No mesh found in {}.", iName)
+		return loaded;
+	}
+	loaded.materials.clear();
+	for (const auto& source: iModel.materials) loaded.materials.push_back(convertGltfMaterial(iModel, source));
+	const auto instances = meshInstances(iModel);
+	// Triangles point at their vertices: every vertex is reserved before the first triangle is added.
+	size_t vertexCount = 0;
+	for (const auto& instance: instances) {
+		for (const auto& primitive: iModel.meshes[instance.mesh].primitives) {
+			if (const auto found = primitive.attributes.find("POSITION"); found != primitive.attributes.end())
+				vertexCount += iModel.accessors.at(static_cast<size_type>(found->second)).count;
+		}
+	}
+	loaded.mesh->reserveVertices(vertexCount);
+	GltfBuild build{.loaded = loaded,
+					.model = iModel,
+					.name = iName,
+					.uvCoords = {},
+					.normals = {},
+					.hasUv = false,
+					.hasNormals = false,
+					.defaultSlot = std::nullopt};
+	for (const auto& instance: instances) {
+		for (const auto& primitive: iModel.meshes[instance.mesh].primitives)
+			appendPrimitive(build, primitive, instance.transform);
+	}
+	attachCornerData(*loaded.mesh, build.hasUv ? build.uvCoords : CornerUvs{},
+					 build.hasNormals ? build.normals : CornerNormals{});
+	logCompleteness("loadGltf", iName, *loaded.mesh, build.hasUv, build.hasNormals);
+	if (loaded.materials.empty())
+		loaded.materials.emplace_back();
+	return loaded;
 }
 
 // File callbacks of tinygltf reading through a mesh file reader (an asset pack) instead of the disk.
@@ -425,7 +767,7 @@ auto MeshLoader::loadMeshFromMemory(const std::span<const uint8_t> iData, const 
 		const auto model = parseGltf(iData, iExtension == ".glb", iName, iBaseDirectory, iReadFile);
 		if (!model)
 			return {};
-		return {.mesh = buildGltfMesh(*model, iName), .material = readGltfMaterial(*model)};
+		return buildGltf(*model, iName);
 	}
 	if (iExtension == ".obj") {
 		tinyobj::attrib_t attrib;
@@ -434,13 +776,14 @@ auto MeshLoader::loadMeshFromMemory(const std::span<const uint8_t> iData, const 
 		std::string warn;
 		std::string err;
 		std::istringstream stream{std::string{reinterpret_cast<const char*>(iData.data()), iData.size()}};
-		if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, &stream)) {
+		ObjMaterialReader materialReader{iBaseDirectory, iReadFile};
+		if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, &stream, &materialReader)) {
 			OWL_CORE_ERROR("MeshLoader::loadObj: Failed to load {}: {}.", iName, err)
 			return {};
 		}
 		if (!warn.empty())
 			OWL_CORE_WARN("MeshLoader::loadObj: {}.", warn)
-		return {.mesh = buildObj(attrib, shapes, iName), .material = {}};
+		return buildObj(attrib, shapes, materials, iName, iBaseDirectory, iReadFile);
 	}
 	OWL_CORE_ERROR("MeshLoader::loadMesh: Unsupported mesh format {} for {}.", iExtension, iName)
 	return {};
@@ -483,7 +826,7 @@ auto MeshLoader::loadObj(const std::filesystem::path& iFilePath) -> shared<Stati
 	}
 	if (!warn.empty())
 		OWL_CORE_WARN("MeshLoader::loadObj: {}.", warn)
-	return buildObj(attrib, shapes, iFilePath.string());
+	return buildObj(attrib, shapes, materials, iFilePath.string(), iFilePath.parent_path(), {}).mesh;
 }
 
 auto MeshLoader::loadFbx([[maybe_unused]] const std::filesystem::path& iFilePath) -> shared<StaticMesh> {
@@ -590,7 +933,7 @@ auto MeshLoader::loadGltf(const std::filesystem::path& iFilePath) -> shared<Stat
 	const auto model = parseGltf(*bytes, iFilePath.extension() == ".glb", iFilePath.string(), iFilePath.parent_path());
 	if (!model)
 		return mkShared<StaticMesh>();
-	return buildGltfMesh(*model, iFilePath.string());
+	return buildGltf(*model, iFilePath.string()).mesh;
 }
 
 }// namespace owl::data::geometry

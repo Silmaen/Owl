@@ -85,12 +85,13 @@ void Texture2D::setData(void* iData, const uint32_t iSize) {
 		OWL_CORE_ERROR("Vulkan Texture {}: Image size mismatch: expect {}, got {}.", m_path.string(), expected, iSize)
 		return;
 	}
-	const VkDeviceSize imageSize = m_specification.size.surface() * 4ull;
+	const bool floating = m_specification.format == ImageFormat::Rgba32F;
+	const VkDeviceSize imageSize = m_specification.size.surface() * (floating ? 16ull : 4ull);
 	auto staging = internal::createBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, internal::MemoryUsage::Upload,
 										  "tex.staging");
 	if (staging.mapped == nullptr)
 		return;
-	if (m_specification.format == ImageFormat::Rgba8) {
+	if (m_specification.format == ImageFormat::Rgba8 || floating) {
 		// input data already in the right format, just copy
 		internal::writeMapped(staging, iData, imageSize);
 	} else if (m_specification.format == ImageFormat::Rgb8) {
@@ -118,6 +119,7 @@ void Texture2D::setData(void* iData, const uint32_t iSize) {
 			texData.debugName = "anon";
 		texData.mipLevels = m_specification.getMipLevelCount();
 		texData.nearest = m_specification.filterMode == FilterMode::Nearest;
+		texData.format = floating ? VK_FORMAT_R32G32B32A32_SFLOAT : VK_FORMAT_R8G8B8A8_UNORM;
 		createImage(m_textureId, m_specification.size);
 	}
 	auto& data = vkd.getTextureData(m_textureId);

@@ -40,6 +40,8 @@ struct VoxelVertex {
 	uint32_t textureIndex = 0;
 	/// Per-vertex ambient-occlusion multiplier in `[0, 1]` (`1` = unoccluded, lower = darker concave corner).
 	float ao = 1.f;
+	/// Surface of the block the face belongs to, packed by `packSurface`.
+	uint32_t surface = 0;
 };
 
 /**

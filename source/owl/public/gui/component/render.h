@@ -11,6 +11,7 @@
 #include "scene/component/components.h"
 #include <core/Core.h>
 
+#include <cstdint>
 #include <filesystem>
 #include <functional>
 #include <tuple>
@@ -77,6 +78,29 @@ OWL_API void renderProps(scene::component::CircleRenderer& ioComponent);
  * @param ioComponent The component to edit.
  */
 OWL_API void renderProps(scene::component::MeshRenderer& ioComponent);
+
+/**
+ * @brief
+ *  Render a Gui for editing the environment (HDRI, intensity, rotation, sky).
+ * @param ioComponent The component to edit.
+ */
+OWL_API void renderProps(scene::component::Environment& ioComponent);
+
+/**
+ * @brief
+ *  Render the fields of a material (surface, maps, emission, layers, toon, alpha), shared by the mesh slots and the
+ *  material document.
+ *
+ * With `iShowOverrides`, every field gets an override box and `ioFields` tells which fields are overridden: the
+ * others show the inherited value greyed and keep `ioValues` untouched.
+ * @param[in,out] ioValues The values being edited.
+ * @param[in,out] ioFields Mask of the `renderer::MaterialField` bits that are overridden (used with the boxes only).
+ * @param[in] iShowOverrides True to show the override boxes.
+ * @param[in] iInherited Values shown for the fields that are not overridden, null to show `ioValues`.
+ * @return True when something changed.
+ */
+OWL_API auto renderMaterialFields(renderer::MaterialParameters& ioValues, uint32_t& ioFields, bool iShowOverrides,
+								  const renderer::MaterialParameters* iInherited) -> bool;
 
 /**
  * @brief
@@ -349,21 +373,20 @@ OWL_API void renderProps(scene::component::VoxelPlayer& ioComponent);
  * @brief
  *  List of components that have a render function.
  */
-using DrawableComponents =
-		std::tuple<scene::component::Transform, scene::component::Camera, scene::component::SpriteRenderer,
-				   scene::component::AnimatedSpriteRenderer, scene::component::CircleRenderer,
-				   scene::component::MeshRenderer, scene::component::Light, scene::component::Text,
-				   scene::component::Tilemap, scene::component::IsometricObject, scene::component::PhysicBody,
-				   scene::component::Player, scene::component::Trigger, scene::component::RaycastDoor,
-				   scene::component::RaycastPushWall, scene::component::EntityLink, scene::component::BackgroundTexture,
-				   scene::component::Visibility, scene::component::SoundSource, scene::component::SoundListener,
-				   scene::component::LuaScript, scene::component::PrefabLink, scene::component::RendererTag,
-				   scene::component::VoxelWorld, scene::component::FlyCamera, scene::component::VoxelPlayer,
-				   scene::component::Canvas, scene::component::UiRect, scene::component::UiText,
-				   scene::component::UiImage, scene::component::UiPanel, scene::component::UiButton,
-				   scene::component::UiSlider, scene::component::UiProgressBar, scene::component::UiWindow,
-				   scene::component::UiLayout, scene::component::UiTooltip, scene::component::UiToolCursor,
-				   scene::component::UiFocus, scene::component::UiScrollView, scene::component::UiList>;
+using DrawableComponents = std::tuple<
+		scene::component::Transform, scene::component::Camera, scene::component::SpriteRenderer,
+		scene::component::AnimatedSpriteRenderer, scene::component::CircleRenderer, scene::component::MeshRenderer,
+		scene::component::Light, scene::component::Environment, scene::component::Text, scene::component::Tilemap,
+		scene::component::IsometricObject, scene::component::PhysicBody, scene::component::Player,
+		scene::component::Trigger, scene::component::RaycastDoor, scene::component::RaycastPushWall,
+		scene::component::EntityLink, scene::component::BackgroundTexture, scene::component::Visibility,
+		scene::component::SoundSource, scene::component::SoundListener, scene::component::LuaScript,
+		scene::component::PrefabLink, scene::component::RendererTag, scene::component::VoxelWorld,
+		scene::component::FlyCamera, scene::component::VoxelPlayer, scene::component::Canvas, scene::component::UiRect,
+		scene::component::UiText, scene::component::UiImage, scene::component::UiPanel, scene::component::UiButton,
+		scene::component::UiSlider, scene::component::UiProgressBar, scene::component::UiWindow,
+		scene::component::UiLayout, scene::component::UiTooltip, scene::component::UiToolCursor,
+		scene::component::UiFocus, scene::component::UiScrollView, scene::component::UiList>;
 
 
 }// namespace owl::gui::component

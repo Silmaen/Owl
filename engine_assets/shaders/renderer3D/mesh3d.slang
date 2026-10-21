@@ -1,56 +1,8 @@
-// Renderer3D generic forward mesh shader. Non-instanced: a real per-vertex VBO
-// (position / normal / uv / texIndex / tileRect / ao) drawn with one model matrix per draw via
-// the per-frame/per-draw scene UBO. Fragment does a single directional-light
-// Lambert term plus ambient, sampling a per-vertex slot of the texture array tinted by the draw colour.
-// Outputs colour + the draw's entity id to match the scene framebuffer attachments.
+// Renderer3D forward mesh shader: one model matrix and one material per draw, the shading of common/pbr.slangh
+// (Standard, Toon or Unlit), the lights, cascaded shadows and image-based lighting of the scene. In a shadow pass it
+// writes the normalized device depth instead. Outputs colour + the draw's entity id.
 
-struct Scene3D {
-	column_major float4x4 viewProjection;
-	column_major float4x4 model;
-	float4 sunDirection;// xyz: direction the light travels (world space); w unused.
-	float4 ambient;     // rgb: ambient term; w unused.
-	float4 tint;        // colour multiplied with the sampled texture.
-	int4 ids;           // x: entity id written to the picking attachment (-1 for none); y: 1 when the target stores linear colour (texels and tint are decoded from sRGB); z: 1 in a shadow pass (the depth is written); w unused.
-};
-
-[[vk::binding(0)]]
-ConstantBuffer<Scene3D> gScene;
-
-#ifdef BACKEND_VULKAN
-[[vk::binding(1)]]
-#else
-[[vk::binding(0)]]
-#endif
-Sampler2D gTextures[32];
-
-struct LightData {
-	float4 positionRange;// xyz: world position (point, spot); w: range.
-	float4 directionType;// xyz: direction the light travels; w: 0 directional, 1 point, 2 spot.
-	float4 color;        // rgb: linear colour times intensity.
-	float4 spotCosines;  // x: cosine of the inner angle, y: of the outer angle.
-};
-
-// A matrix array ignores `column_major`: each cascade matrix sits in a struct of its own.
-struct CascadeMatrix {
-	column_major float4x4 viewProjection;
-};
-
-struct Lighting {
-	int4 counts;         // x: light count (0: the sun of the layer), y: shadow cascades, z: index of the shadowed light.
-	float4 splitDepths;  // view depth where each cascade ends.
-	float4 texelSizes;   // world size of a shadow texel, per cascade.
-	float4 viewDepthRow; // view depth of a point p: -(dot(xyz, p) + w).
-	float4 shadowParams; // x: normal-offset bias in texels, y: shadow-map size in texels.
-	CascadeMatrix cascades[4];
-};
-
-[[vk::binding(2)]]
-StructuredBuffer<LightData> gLights;
-
-[[vk::binding(3)]]
-ConstantBuffer<Lighting> gLighting;
-
-static const int SHADOW_MAP_SLOT = 28;
+#include "pbr.slangh"
 
 struct VertexInput {
 	[[vk::location(0)]] float3 position : POSITION;
@@ -80,74 +32,6 @@ struct VertexOutput {
 	float4 svPosition : SV_Position;
 };
 
-// Exact piecewise sRGB decode, used when the target stores linear colour.
-float3 srgbToLinear(float3 c) {
-	return select(c <= 0.04045f, c / 12.92f, pow((c + 0.055f) / 1.055f, 2.4f));
-}
-
-
-// Depth stored in a texel of a cascade's shadow map, sampled at its centre (nearest sampler): a texel fetch from
-// the texture array crashes lavapipe.
-float loadShadowDepth(int cascade, int2 texel, float size) {
-	return gTextures[NonUniformResourceIndex(SHADOW_MAP_SLOT + cascade)].SampleLevel((float2(texel) + 0.5f) / size, 0.0f).r;
-}
-
-// 1 when lit, 0 in shadow: 3x3 comparisons in the cascade covering the point.
-float shadowFactor(float3 worldPos, float3 normal) {
-	float depth = -(dot(gLighting.viewDepthRow.xyz, worldPos) + gLighting.viewDepthRow.w);
-	int cascade = 0;
-	while (cascade < gLighting.counts.y && depth > gLighting.splitDepths[cascade])
-		cascade++;
-	if (cascade >= gLighting.counts.y)
-		return 1.0f;
-	float3 offsetPos = worldPos + normal * (gLighting.texelSizes[cascade] * gLighting.shadowParams.x);
-	float4 clip = mul(gLighting.cascades[cascade].viewProjection, float4(offsetPos, 1.0f));
-	float3 ndc = clip.xyz / clip.w;
-	float2 uv = ndc.xy * 0.5f + 0.5f;
-	if (any(uv < 0.0f) || any(uv > 1.0f) || ndc.z > 1.0f)
-		return 1.0f;
-	int size = int(gLighting.shadowParams.y);
-	int2 texel = int2(uv * float(size));
-	float lit = 0.0f;
-	for (int dy = -1; dy <= 1; ++dy) {
-		for (int dx = -1; dx <= 1; ++dx) {
-			int2 tap = clamp(texel + int2(dx, dy), int2(0), int2(size - 1));
-			float stored = loadShadowDepth(cascade, tap, float(size));
-			lit += ndc.z <= stored + 0.0005f ? 1.0f : 0.0f;
-		}
-	}
-	return lit / 9.0f;
-}
-
-// Light reaching a surface (ambient included), the lights of the scene or, without any, the sun of the layer.
-float3 lightAt(float3 worldPos, float3 normal) {
-	if (gLighting.counts.x == 0)
-		return gScene.ambient.rgb + max(dot(normal, normalize(-gScene.sunDirection.xyz)), 0.0f);
-	float3 total = gScene.ambient.rgb;
-	for (int index = 0; index < gLighting.counts.x; ++index) {
-		LightData light = gLights[index];
-		int type = int(light.directionType.w);
-		float3 toLight;
-		float attenuation = 1.0f;
-		if (type == 0) {
-			toLight = -light.directionType.xyz;
-			if (index == gLighting.counts.z)
-				attenuation = shadowFactor(worldPos, normal);
-		} else {
-			float3 delta = light.positionRange.xyz - worldPos;
-			float dist = length(delta);
-			toLight = delta / max(dist, 1e-4f);
-			float ratio = dist / max(light.positionRange.w, 1e-4f);
-			float window = saturate(1.0f - ratio * ratio * ratio * ratio);
-			attenuation = window * window;
-			if (type == 2)
-				attenuation *= smoothstep(light.spotCosines.y, light.spotCosines.x, dot(-toLight, light.directionType.xyz));
-		}
-		total += light.color.rgb * max(dot(normal, toLight), 0.0f) * attenuation;
-	}
-	return total;
-}
-
 [shader("vertex")]
 VertexOutput vertexMain(VertexInput input) {
 	VertexOutput output;
@@ -163,24 +47,72 @@ VertexOutput vertexMain(VertexInput input) {
 }
 
 [shader("fragment")]
-FragmentOutput fragmentMain(FragmentInput input) {
+FragmentOutput fragmentMain(FragmentInput input, bool frontFace : SV_IsFrontFace) {
 	FragmentOutput output;
-	float4 texel = gTextures[NonUniformResourceIndex(input.texIndex)].Sample(input.uv);
-	float4 tint = gScene.tint;
-	if (gScene.ids.y != 0) {
-		texel.rgb = srgbToLinear(texel.rgb);
-		tint.rgb = srgbToLinear(tint.rgb);
+	float4 base = float4(authoredColor(gMaterial.baseColor.rgb), gMaterial.baseColor.a);
+	if (hasMap(0)) {
+		// The vertices name the base-colour slot (MAP_BASE_COLOR for the meshes of the mesh cache).
+		float4 texel = gTextures[NonUniformResourceIndex(input.texIndex)].Sample(input.uv);
+		base *= float4(authoredColor(texel.rgb), texel.a);
 	}
-	float4 texColor = texel * tint;
-	if (texColor.a < 0.001f)
+	base *= float4(authoredColor(gScene.tint.rgb), gScene.tint.a);
+	int alphaMode = gMaterial.model.y;
+	if (alphaMode == 1 && base.a < gMaterial.emissive.w)
+		discard;
+	if (alphaMode == 0)
+		base.a = 1.0f;
+	if (base.a < 0.001f)
 		discard;
 	if (gScene.ids.z != 0) {
 		output.color = float4(input.clipDepth.x / input.clipDepth.y, 0.0f, 0.0f, 1.0f);
 		output.entityID = -1;
 		return output;
 	}
-	float3 lit = texColor.rgb * lightAt(input.worldPos, normalize(input.normal)) * input.ao;
-	output.color = float4(lit, texColor.a);
+	float3 geometricNormal = normalize(input.normal);
+	if (!frontFace)
+		geometricNormal = -geometricNormal;
+	float3x3 frame = cotangentFrame(geometricNormal, input.worldPos, input.uv);
+	float3 normal = geometricNormal;
+	if (hasMap(2)) {
+		float3 mapped = gTextures[MAP_NORMAL].Sample(input.uv).xyz * 2.0f - 1.0f;
+		if (gMaterial.channels.w == 1)
+			mapped.y = -mapped.y;
+		mapped.xy *= gMaterial.factors.z;
+		normal = normalize(mul(mapped, frame));
+	}
+	float metallic = gMaterial.factors.x;
+	float roughness = gMaterial.factors.y;
+	if (hasMap(1))
+		metallic *= sampleChannel(MAP_METALLIC, input.uv, gMaterial.channels.x);
+	if (hasMap(5))
+		roughness *= sampleChannel(MAP_ROUGHNESS, input.uv, gMaterial.channels.y);
+	float occlusion = input.ao;
+	if (hasMap(3))
+		occlusion *= lerp(1.0f, sampleChannel(MAP_OCCLUSION, input.uv, gMaterial.channels.z), gMaterial.factors.w);
+	float3 emissive = authoredColor(gMaterial.emissive.rgb) * gMaterial.toon.y * gScene.ambient.w;
+	if (hasMap(4))
+		emissive *= authoredColor(gTextures[MAP_EMISSIVE].Sample(input.uv).rgb);
+	float rotation = gMaterial.layers.w;
+	float3 tangent = normalize(frame[0] * cos(rotation) + frame[1] * sin(rotation));
+	tangent = normalize(tangent - normal * dot(normal, tangent));
+	Surface s;
+	s.position = input.worldPos;
+	s.normal = normal;
+	s.tangent = tangent;
+	s.bitangent = cross(normal, tangent);
+	s.view = normalize(gLighting.cameraPosition.xyz - input.worldPos);
+	s.albedo = base.rgb;
+	s.alpha = base.a;
+	s.metallic = saturate(metallic);
+	s.roughness = clamp(roughness, MIN_ROUGHNESS, 1.0f);
+	s.occlusion = occlusion;
+	s.emissive = emissive;
+	s.clearcoat = saturate(gMaterial.layers.x);
+	s.clearcoatRoughness = clamp(gMaterial.layers.y, MIN_ROUGHNESS, 1.0f);
+	s.sheenColor = authoredColor(gMaterial.sheen.rgb);
+	s.sheenRoughness = clamp(gMaterial.sheen.w, MIN_ROUGHNESS, 1.0f);
+	s.anisotropy = clamp(gMaterial.layers.z, -1.0f, 1.0f);
+	output.color = float4(shadeSurface(s), base.a);
 	output.entityID = gScene.ids.x;
 	return output;
 }

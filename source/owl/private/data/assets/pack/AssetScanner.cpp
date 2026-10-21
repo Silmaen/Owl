@@ -399,6 +399,62 @@ void scanTileset(const std::string& iTilesetPath, const std::string& iSceneName,
 	}
 }
 
+// A plain data file (environment image, colour LUT) referenced by its asset path.
+void scanDataFile(const std::string& iPath, const char* iKind, const std::string& iSource,
+				  std::vector<AssetReference>& ioAssets, std::vector<std::string>* ioWarnings) {
+	if (iPath.empty())
+		return;
+	auto ref = resolveDataAsset(iPath);
+	if (!ref) {
+		pushWarning(ioWarnings, iKind, iPath, iSource);
+		return;
+	}
+	if (!hasAsset(ioAssets, ref->packPath))
+		ioAssets.push_back(*ref);
+}
+
+// The texture maps written in a material map (a `.owlmat` or the overrides of a mesh slot).
+void scanMaterialMaps(const YAML::Node& iMaterial, const std::string& iSource, std::vector<AssetReference>& ioAssets,
+					  std::vector<std::string>* ioWarnings) {
+	for (const char* key: {"baseColorMap", "metallicMap", "roughnessMap", "normalMap", "occlusionMap", "emissiveMap"}) {
+		const auto map = iMaterial[key];
+		if (!map || !map.IsScalar() || map.as<std::string>().empty())
+			continue;
+		const auto serialized = map.as<std::string>();
+		if (auto ref = resolveTexture(serialized); ref) {
+			if (!hasAsset(ioAssets, ref->packPath))
+				ioAssets.push_back(*ref);
+		} else
+			pushWarning(ioWarnings, "Texture", serialized, iSource);
+	}
+}
+
+// NOLINTNEXTLINE(misc-no-recursion): a `.owlmat` parent chain stops at a material already collected.
+void scanMaterial(const std::string& iPath, const std::string& iSource, std::vector<AssetReference>& ioAssets,
+				  std::vector<std::string>* ioWarnings) {
+	auto ref = resolveDataAsset(iPath);
+	if (!ref) {
+		pushWarning(ioWarnings, "Material", iPath, iSource);
+		return;
+	}
+	if (hasAsset(ioAssets, ref->packPath))
+		return;
+	ioAssets.push_back(*ref);
+	YAML::Node root;
+	try {
+		root = YAML::LoadFile(ref->diskPath.string());
+	} catch (const YAML::Exception&) {
+		pushWarning(ioWarnings, "Material", iPath, iSource);
+		return;
+	}
+	const auto material = root["Material"];
+	if (!material || !material.IsMap())
+		return;
+	scanMaterialMaps(material, iPath, ioAssets, ioWarnings);
+	if (const auto parent = material["parent"]; parent && parent.IsScalar() && !parent.as<std::string>().empty())
+		scanMaterial(parent.as<std::string>(), iPath, ioAssets, ioWarnings);
+}
+
 // The mesh file of a `MeshRenderer` (with the buffers and images a `.gltf` names) and its texture override.
 void scanMeshRenderer(const YAML::Node& iMeshRenderer, const std::string& iSceneName,
 					  std::vector<AssetReference>& ioAssets, std::vector<std::string>* ioWarnings) {
@@ -409,6 +465,15 @@ void scanMeshRenderer(const YAML::Node& iMeshRenderer, const std::string& iScene
 				ioAssets.push_back(*ref);
 		} else
 			pushWarning(ioWarnings, "Texture", serialized, iSceneName);
+	}
+	if (const auto slots = iMeshRenderer["materials"]; slots && slots.IsSequence()) {
+		for (const auto& slot: slots) {
+			if (const auto material = slot["material"];
+				material && material.IsScalar() && !material.as<std::string>().empty())
+				scanMaterial(material.as<std::string>(), iSceneName, ioAssets, ioWarnings);
+			if (const auto overrides = slot["overrides"]; overrides && overrides.IsMap())
+				scanMaterialMaps(overrides, iSceneName, ioAssets, ioWarnings);
+		}
 	}
 	const auto path = iMeshRenderer["mesh"] ? iMeshRenderer["mesh"].as<std::string>() : std::string{};
 	if (path.empty())
@@ -485,6 +550,12 @@ void scanEntity(const YAML::Node& iEntity,// NOLINT(misc-no-recursion)
 	scanFontsAndSounds(iEntity, iSceneName, ioAssets, ioWarnings);
 	if (auto meshRenderer = iEntity["MeshRenderer"]; meshRenderer)
 		scanMeshRenderer(meshRenderer, iSceneName, ioAssets, ioWarnings);
+	if (auto environment = iEntity["Environment"]; environment && environment["hdri"])
+		scanDataFile(environment["hdri"].as<std::string>(), "Environment image", iSceneName, ioAssets, ioWarnings);
+	if (auto camera = iEntity["Camera"]; camera && camera["camera"] && camera["camera"]["postProcess"]) {
+		if (const auto lut = camera["camera"]["postProcess"]["lut"]; lut && lut.IsScalar())
+			scanDataFile(lut.as<std::string>(), "Colour LUT", iSceneName, ioAssets, ioWarnings);
+	}
 	if (auto luaScript = iEntity["LuaScript"]; luaScript) {
 		if (auto scriptPath = luaScript["scriptPath"]; scriptPath) {
 			const auto name = scriptPath.as<std::string>();

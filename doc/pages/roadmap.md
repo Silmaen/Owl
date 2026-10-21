@@ -109,7 +109,8 @@ procedural graphs, tile tools, Lua editor scripts, and Blueprints-style visual s
 - ![Planned][planned] GPU particle system with editor preview and trails, emissive materials and lens flares
 - ![Planned][planned] Advanced post-processing (chromatic aberration, film grain, motion blur, depth of field)
 - ![To evaluate][evaluate] Area lights (rectangle, disc, sphere) lighting through LTC, with soft shadows ([3D core](design/3d-core.md#emissive-and-area-lights))
-- ![To evaluate][evaluate] Point and spot light shadows (cube and perspective shadow maps) ([3D core](design/3d-core.md#emissive-and-area-lights))
+- ![Planned][planned] Point and spot light shadows (cube and perspective shadow maps) ([3D core](design/3d-core.md#emissive-and-area-lights))
+- ![Planned][planned] Local reflection probes: baked cube maps blended by volume, parallax-corrected, so metals reflect the room ([3D core](design/3d-core.md#reflection-probes))
 - ![Planned][planned] Visual scripting MVP, event graphs compiled to Lua, node editing of assets ([details](design/visual-scripting.md))
 - ![Planned][planned] Node-graph link waypoints
 - ![Planned][planned] Script debugging aids (breakpoint markers, live watch)
@@ -131,9 +132,9 @@ render graph, essential post-processing — with full 3D editing ([details](desi
 - ![Done][done] Render graph hosting the renderer-stack layers
 - ![Done][done] Lighting: directional, point and spot lights, directional shadow maps
 - ![Planned][planned] 2D lighting (point / spot lights, normal-mapped sprites, 2D shadows), isometric sprites included ([2D](design/2d-complete.md))
-- ![Planned][planned] PBR materials with editor and material library, emissive colour and strength included ([3D core](design/3d-core.md#emissive-and-area-lights))
+- ![Done][done] PBR materials with editor and material library, emissive colour and strength included ([3D core](design/3d-core.md#emissive-and-area-lights))
 - ![In Progress][progress] Static mesh component with instancing
-- ![Planned][planned] Essential post-processing stack (tone mapping, bloom, vignette, LUT)
+- ![Done][done] Essential post-processing stack (tone mapping, bloom, vignette, LUT)
 - ![Planned][planned] Camera-relative rendering and reversed-Z depth, precise at any distance ([Large worlds](design/large-worlds.md))
 - ![Planned][planned] Compute-driven frustum / occlusion culling with indirect draws
 - ![Planned][planned] GPU raycast sprite stripes and `BitonicSortPass` adoption

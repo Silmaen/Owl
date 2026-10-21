@@ -15,7 +15,9 @@
 #include "renderer/CameraOrtho.h"
 #include "renderer/ColorEncoder.h"
 #include "renderer/IsometricObjects.h"
+#include "renderer/MaterialLibrary.h"
 #include "renderer/MeshCache.h"
+#include "renderer/PostProcess.h"
 #include "renderer/Renderer.h"
 #include "renderer/Renderer2D.h"
 #include "renderer/Renderer2DLayer.h"
@@ -58,6 +60,7 @@
 #include <filesystem>
 #include <limits>
 #include <mutex>
+#include <numbers>
 #include <span>
 #include <string>
 #include <string_view>
@@ -730,14 +733,42 @@ void Scene::renderWithStack(const renderer::Camera& iCamera) {
 			"scene clear", [sceneColor](Graph::PassBuilder& ioBuilder) -> void { ioBuilder.write(sceneColor); },
 			[](const Graph::PassContext&) -> void {});
 	recordLightPasses(graph);
+	recordEnvironmentPass(graph, sceneColor);
 	recordWorldPasses(graph, sceneColor);
+	const auto* const bound = renderer::gpu::Framebuffer::getBound();
+	const math::vec2ui frameSize = bound != nullptr ? bound->getSpecification().size : m_viewportSize;
+	const auto& post = iCamera.getPostProcess();
+	m_postTargets.sceneColor = sceneColor;
+	m_postTargets.exposure = renderer::PostProcess::recordExposure(graph, sceneColor, post, frameSize);
+	m_postTargets.bloom =
+			renderer::PostProcess::recordBloom(graph, sceneColor, post, frameSize, m_postTargets.exposure);
 	const auto encodeSetup = [sceneColor, target](Graph::PassBuilder& ioBuilder) -> void {
 		ioBuilder.read(sceneColor);
 		ioBuilder.write(target);
 	};
-	graph.addPass("colour encode", encodeSetup, [this, sceneColor](const Graph::PassContext& iContext) -> void {
-		renderer::ColorEncoder::draw(iContext.getTexture(sceneColor), mp_renderCamera->getToneMapping());
-	});
+	graph.addPass(
+			"colour encode",
+			[targets = m_postTargets, target](Graph::PassBuilder& ioBuilder) -> void {
+				ioBuilder.read(targets.sceneColor);
+				if (targets.bloom.isValid())
+					ioBuilder.read(targets.bloom);
+				if (targets.exposure.isValid())
+					ioBuilder.read(targets.exposure);
+				ioBuilder.write(target);
+			},
+			[this](const Graph::PassContext& iContext) -> void {
+				const auto& targets = m_postTargets;
+				const auto& settings = mp_renderCamera->getPostProcess();
+				const auto& lut = renderer::PostProcess::getLut(settings.lut);
+				renderer::ColorEncoder::draw(
+						iContext.getTexture(targets.sceneColor), mp_renderCamera->getToneMapping(),
+						{.settings = &settings,
+						 .bloom = targets.bloom.isValid() ? iContext.getTexture(targets.bloom) : nullptr,
+						 .lut = lut.texture,
+						 .lutSize = lut.size,
+						 .frameSize = iContext.getSize(),
+						 .exposure = targets.exposure.isValid() ? iContext.getTexture(targets.exposure) : nullptr});
+			});
 	// The display target takes the entity ids and the depth of the world, for picking and the depth-tested overlays.
 	graph.addPass("entity ids and depth", encodeSetup,
 				  [sceneColor, target](const Graph::PassContext& iContext) -> void {
@@ -756,12 +787,15 @@ void Scene::renderWithStack(const renderer::Camera& iCamera) {
 				renderToast();
 			});
 	if (graph.compile()) {
-		const auto* const bound = renderer::gpu::Framebuffer::getBound();
-		graph.execute(bound != nullptr ? bound->getSpecification().size : m_viewportSize);
+		graph.execute(frameSize);
 	}
 	// Renderer3D is shared: a mesh preview drawn later in the frame must not see this scene's lights.
 	renderer::Renderer3D::setSceneLights({});
+	renderer::Renderer3D::setLayerSun(true);
+	renderer::Renderer3D::setEditorAmbient({});
+	renderer::Renderer3D::setExposure(renderer::Renderer3D::exposureOf(renderer::Renderer3D::g_defaultEv100));
 	renderer::Renderer3D::setShadow({});
+	renderer::Renderer3D::setEnvironment({});
 	mp_renderCamera = nullptr;
 }
 
@@ -770,6 +804,7 @@ void Scene::recordLightPasses(renderer::RenderGraph& ioGraph) {
 	const bool editorMode = status == Status::Editing;
 	m_gpuLights.clear();
 	m_shadowSettings = {};
+	renderer::Renderer3D::setExposure(renderer::Renderer3D::exposureOf(mp_renderCamera->getPostProcess().ev100));
 	m_shadowCascades.count = 0;
 	const component::Light* shadowLight = nullptr;
 	math::vec3 shadowDirection{0.f, -1.f, 0.f};
@@ -783,10 +818,16 @@ void Scene::recordLightPasses(renderer::RenderGraph& ioGraph) {
 		const math::vec4 forward = world() * math::vec4{0.f, 0.f, -1.f, 0.f};
 		const math::vec3 direction = math::vec3{forward.x(), forward.y(), forward.z()}.normalized();
 		const math::vec3& position = world.translation();
+		// Lux for a directional light; the luminous intensity (cd) of the lumens of a point or spot light.
+		float strength = std::max(light.intensity, 0.f);
+		if (light.type == component::Light::Type::Point)
+			strength /= 4.f * std::numbers::pi_v<float>;
+		else if (light.type == component::Light::Type::Spot)
+			strength /= std::numbers::pi_v<float>;
 		const math::vec3 color = math::vec3{renderer::ColorEncoder::srgbToLinear(light.color.x()),
 											renderer::ColorEncoder::srgbToLinear(light.color.y()),
 											renderer::ColorEncoder::srgbToLinear(light.color.z())} *
-								 std::max(light.intensity, 0.f);
+								 strength;
 		m_gpuLights.push_back(
 				{.positionRange = {position.x(), position.y(), position.z(), std::max(light.range, 0.01f)},
 				 .directionType = {direction.x(), direction.y(), direction.z(), static_cast<float>(light.type)},
@@ -800,6 +841,9 @@ void Scene::recordLightPasses(renderer::RenderGraph& ioGraph) {
 		}
 	}
 	renderer::Renderer3D::setSceneLights(m_gpuLights);
+	// The layer sun stands in for a scene that has no light at all, never for lights switched off.
+	renderer::Renderer3D::setLayerSun(registry.view<component::Light>().empty());
+	renderer::Renderer3D::setEditorAmbient(editorMode ? m_editorAmbient : math::vec3{0.f, 0.f, 0.f});
 	if (shadowLight == nullptr)
 		return;
 	m_shadowCascades = renderer::computeShadowCascades(*mp_renderCamera, {.lightDirection = shadowDirection,
@@ -824,6 +868,85 @@ void Scene::recordLightPasses(renderer::RenderGraph& ioGraph) {
 					renderShadowCasters(m_shadowCascades.cascades[index].camera);
 				});
 	}
+}
+
+void Scene::recordEnvironmentPass(renderer::RenderGraph& ioGraph, const renderer::RenderGraph::Resource iSceneColor) {
+	using Graph = renderer::RenderGraph;
+	const bool editorMode = status == Status::Editing;
+	const component::Environment* environment = nullptr;
+	for (const auto [handle, candidate]: registry.view<component::Environment>().each()) {
+		if (isEffectivelyVisible(Entity{handle, this}, editorMode)) {
+			environment = &candidate;
+			break;
+		}
+	}
+	if (environment == nullptr) {
+		renderer::Renderer3D::setEnvironment({});
+		return;
+	}
+	const auto& color = environment->ambient;
+	renderer::EnvironmentLighting constantSky;
+	constantSky.intensity = std::max(environment->intensity, 0.f);
+	constantSky.ambient =
+			math::vec3{renderer::ColorEncoder::srgbToLinear(color.x()), renderer::ColorEncoder::srgbToLinear(color.y()),
+					   renderer::ColorEncoder::srgbToLinear(color.z())};
+	if (environment->hdri.empty()) {
+		m_environment = {};
+		renderer::Renderer3D::setEnvironment(constantSky);
+		return;
+	}
+	auto& state = m_environment;
+	if (state.hdri != environment->hdri) {
+		state = {};
+		state.hdri = environment->hdri;
+		state.result = mkShared<std::optional<renderer::EnvironmentMap>>();
+		const auto build = [result = state.result, path = state.hdri]() -> void {
+			if (const auto image = renderer::loadHdrAsset(path); image)
+				*result = renderer::EnvironmentMap::build(*image);
+		};
+		if (app::Application::instanced()) {
+			state.task = app::Application::get().getTaskScheduler().pushTask(core::task::Task{build});
+			state.loading = true;
+		} else {
+			build();
+		}
+	}
+	if (state.loading && app::Application::instanced() &&
+		app::Application::get().getTaskScheduler().isTaskFinished(state.task))
+		state.loading = false;
+	if (!state.loading && state.result && state.result->has_value()) {
+		const auto& map = **state.result;
+		state.lighting.levelCount = static_cast<uint32_t>(std::min(map.levels.size(), state.lighting.levels.size()));
+		for (uint32_t level = 0; level < state.lighting.levelCount; ++level) {
+			const auto& image = map.levels[level];
+			std::vector<float> pixels;
+			pixels.reserve(image.pixels.size() * 4);
+			for (const auto& pixel: image.pixels) pixels.insert(pixels.end(), {pixel.x(), pixel.y(), pixel.z(), 1.f});
+			auto texture = renderer::gpu::Texture2D::create(
+					renderer::gpu::Texture2D::Specification{.size = image.size,
+															.format = renderer::gpu::ImageFormat::Rgba32F});
+			texture->setData(pixels.data(), static_cast<uint32_t>(pixels.size() * sizeof(float)));
+			state.lighting.levels[level] = std::move(texture);
+		}
+		state.lighting.irradiance = map.irradiance;
+		state.result.reset();
+	}
+	if (state.lighting.levelCount == 0) {
+		renderer::Renderer3D::setEnvironment(constantSky);
+		return;
+	}
+	state.lighting.intensity = std::max(environment->intensity, 0.f);
+	state.lighting.rotation = environment->rotation;
+	renderer::Renderer3D::setEnvironment(state.lighting);
+	if (!environment->showSky)
+		return;
+	ioGraph.addPass(
+			"environment sky", [iSceneColor](Graph::PassBuilder& ioBuilder) -> void { ioBuilder.write(iSceneColor); },
+			[this](const Graph::PassContext&) -> void {
+				renderer::Renderer3D::beginScene(*mp_renderCamera);
+				renderer::Renderer3D::drawSky();
+				renderer::Renderer3D::endScene();
+			});
 }
 
 void Scene::useShadowMaps(const renderer::RenderGraph::PassContext& iContext) {
@@ -1174,15 +1297,45 @@ void Scene::prepareMeshRenderData() {
 	if (mp_engineContext == nullptr)
 		return;
 	auto& cache = mp_engineContext->getMeshCache();
+	auto& library = mp_engineContext->getMaterialLibrary();
 	for (const auto view = registry.view<component::MeshRenderer>(); const auto entity: view) {
 		auto& meshRenderer = view.get<component::MeshRenderer>(entity);
-		if (meshRenderer.mesh && meshRenderer.mesh->isStale())
+		if (meshRenderer.mesh && meshRenderer.mesh->isStale()) {
 			meshRenderer.mesh.reset();
+			for (auto& slot: meshRenderer.materials) slot.invalidate();
+		}
 		if (!meshRenderer.mesh)
 			meshRenderer.mesh = cache.get(meshRenderer.meshPath);
-		if (meshRenderer.mesh)
-			std::ignore = meshRenderer.mesh->getMesh(meshRenderer.transparent);
+		if (!meshRenderer.mesh)
+			continue;
+		const auto& submeshes = meshRenderer.mesh->getSubmeshes();
+		if (meshRenderer.materials.size() < submeshes.size())
+			meshRenderer.materials.resize(submeshes.size());
+		for (size_t index = 0; index < submeshes.size(); ++index) {
+			auto& slot = meshRenderer.materials[index];
+			if (!slot.resolved || slot.generation != library.getGeneration())
+				resolveMaterialSlot(meshRenderer, index, library);
+			std::ignore = meshRenderer.mesh->getSubmeshMesh(index, slot.resolved->isBlended());
+		}
 	}
+}
+
+void Scene::resolveMaterialSlot(component::MeshRenderer& ioMeshRenderer, const size_t iSlot,
+								renderer::MaterialLibrary& ioLibrary) {
+	auto& slot = ioMeshRenderer.materials[iSlot];
+	shared<const renderer::Material> base = slot.material.empty() ? nullptr : ioLibrary.get(slot.material);
+	if (!base)
+		base = ioMeshRenderer.mesh->getFileMaterial(iSlot);
+	renderer::MaterialOverrides overrides = slot.overrides;
+	if (ioMeshRenderer.transparent && !overrides.has(renderer::MaterialField::AlphaMode)) {
+		overrides.values.alphaMode = renderer::AlphaMode::Blend;
+		overrides.set(renderer::MaterialField::AlphaMode);
+	}
+	auto material = overrides.isEmpty() ? *base : base->withOverrides(overrides);
+	if (ioMeshRenderer.texture && !slot.overrides.has(renderer::MaterialField::BaseColorMap))
+		material = material.withTexture(renderer::MaterialMap::BaseColor, ioMeshRenderer.texture);
+	slot.resolved = mkShared<const renderer::Material>(std::move(material));
+	slot.generation = ioLibrary.getGeneration();
 }
 
 void Scene::renderMeshes(const bool iEditorMode) {
@@ -1195,14 +1348,17 @@ void Scene::renderMeshes(const bool iEditorMode) {
 		auto& meshRenderer = view.get<component::MeshRenderer>(entity);
 		if (!meshRenderer.mesh)
 			continue;
-		const math::vec4& factor = meshRenderer.mesh->getBaseColorFactor();
-		const math::vec4& color = meshRenderer.color;
-		const renderer::MeshDrawParams params{.tint = {color.r() * factor.r(), color.g() * factor.g(),
-													   color.b() * factor.b(), color.a() * factor.a()},
-											  .entityId = static_cast<int>(entity)};
-		const auto& texture = meshRenderer.texture ? meshRenderer.texture : meshRenderer.mesh->getBaseColorTexture();
-		renderer::RendererMesh::drawMesh(*meshRenderer.mesh, getWorldTransform(ent)(), texture, params,
-										 meshRenderer.transparent);
+		const math::mat4 model = getWorldTransform(ent)();
+		const auto submeshCount = std::min(meshRenderer.mesh->getSubmeshes().size(), meshRenderer.materials.size());
+		for (size_t index = 0; index < submeshCount; ++index) {
+			const auto& slot = meshRenderer.materials[index];
+			if (!slot.resolved)
+				continue;
+			renderer::RendererMesh::drawSubmesh(*meshRenderer.mesh, index, model,
+												{.tint = meshRenderer.color,
+												 .entityId = static_cast<int>(entity),
+												 .material = slot.resolved.get()});
+		}
 	}
 }
 
@@ -2400,6 +2556,10 @@ OWL_API void Scene::onComponentAdded<component::MeshRenderer>([[maybe_unused]] c
 template<>
 OWL_API void Scene::onComponentAdded<component::Light>([[maybe_unused]] const Entity& iEntity,
 													   [[maybe_unused]] component::Light& ioComponent) {}
+
+template<>
+OWL_API void Scene::onComponentAdded<component::Environment>([[maybe_unused]] const Entity& iEntity,
+															 [[maybe_unused]] component::Environment& ioComponent) {}
 
 template<>
 OWL_API void Scene::onComponentAdded<component::NativeScript>([[maybe_unused]] const Entity& iEntity,

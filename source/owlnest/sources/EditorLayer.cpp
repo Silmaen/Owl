@@ -15,6 +15,7 @@
 #include "document/CodeEditorDocument.h"
 #include "document/FontDocument.h"
 #include "document/ImageDocument.h"
+#include "document/MaterialDocument.h"
 #include "document/MeshDocument.h"
 #include "document/NodeGraphDocument.h"
 #include "document/SceneFlowDocument.h"
@@ -198,6 +199,15 @@ void EditorLayer::handleContentBrowserDrop(const std::filesystem::path& iRelativ
 		instantiatePrefab(full, relString);
 	else if (kind == AssetKind::Mesh)
 		placeMesh(full, {}, iDropPoint);
+	else if (const auto target = kind == AssetKind::Material && activeViewport() != nullptr
+										 ? activeViewport()->getHoveredEntity()
+										 : scene::Entity{};
+			 target && target.hasComponent<scene::component::MeshRenderer>())
+		runCommandFromUi("material.assign",
+						 {{"entity", static_cast<int64_t>(static_cast<uint64_t>(target.getUUID()))},
+						  {"slot", int64_t{-1}},
+						  {"material", relString}},
+						 commands::CommandSource::Gesture);
 	else
 		requestDeferredOpen(full);
 }
@@ -614,6 +624,12 @@ void EditorLayer::onAttach() {
 	m_contentBrowser.setImageOpenCallback([this](const std::filesystem::path& iPath) -> void { openImageFile(iPath); });
 	m_contentBrowser.setMeshPlaceCallback([this](const std::filesystem::path& iPath) -> void { placeMesh(iPath); });
 	m_contentBrowser.setMeshOpenCallback([this](const std::filesystem::path& iPath) -> void { openMeshFile(iPath); });
+	m_contentBrowser.setMaterialOpenCallback(
+			[this](const std::filesystem::path& iPath) -> void { openMaterialFile(iPath); });
+	m_contentBrowser.setMaterialCreateCallback([this](const std::filesystem::path& iPath) -> void {
+		runCommandFromUi("material.create", {{"path", iPath.string()}}, commands::CommandSource::Gesture);
+		openMaterialFile(iPath);
+	});
 	m_contentBrowser.setMacroRunCallback([this](const std::filesystem::path& iPath) -> void {
 		runCommandFromUi("macro.run", {{"path", iPath.string()}}, commands::CommandSource::Gesture);
 	});
@@ -854,6 +870,12 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 			if (!mesh->isOpen()) {
 				toClose.push_back(mesh->id());
 				mesh->setOpen(true);
+			}
+		} else if (doc->type() == DocumentType::Material) {
+			auto* material = static_cast<MaterialDocument*>(doc);
+			if (!material->isOpen()) {
+				toClose.push_back(material->id());
+				material->setOpen(true);
 			}
 		} else if (doc->type() == DocumentType::ActionMap) {
 			auto* actions = static_cast<ActionMapDocument*>(doc);

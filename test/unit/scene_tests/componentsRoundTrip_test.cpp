@@ -466,6 +466,8 @@ TEST(ComponentRoundTrip, VoxelWorld) {
 				stone.renderKind = data::voxel::BlockRenderKind::Opaque;
 				stone.solid = true;
 				stone.setAllFaces(1);
+				stone.surface.roughness = 0.8f;
+				stone.surface.emissive = 1.5f;
 				const data::voxel::BlockId stoneId = vw.registry.registerBlock(stone);
 				vw.world.setBlock(math::vec3i{1, 2, 3}, stoneId);
 				vw.world.setBlock(math::vec3i{-1, 0, 0}, stoneId);
@@ -481,6 +483,8 @@ TEST(ComponentRoundTrip, VoxelWorld) {
 				const auto& vw = iEnt.getComponent<scene::component::VoxelWorld>();
 				ASSERT_EQ(vw.registry.count(), 2u);// air + stone
 				EXPECT_EQ(vw.registry.get(1).name, "stone");
+				EXPECT_FLOAT_EQ(vw.registry.get(1).surface.roughness, 0.8f);
+				EXPECT_FLOAT_EQ(vw.registry.get(1).surface.emissive, 1.5f);
 				EXPECT_EQ(vw.world.getBlock(math::vec3i{1, 2, 3}), 1u);
 				EXPECT_EQ(vw.world.getBlock(math::vec3i{-1, 0, 0}), 1u);
 				EXPECT_EQ(vw.world.getBlock(math::vec3i{5, 5, 5}), data::voxel::g_AirBlock);
@@ -490,6 +494,79 @@ TEST(ComponentRoundTrip, VoxelWorld) {
 				EXPECT_FALSE(vw.ambientOcclusion);
 				EXPECT_EQ(vw.editorStreamRadius, 12);
 				EXPECT_EQ(vw.editorStreamHeight, 5);
+			});
+}
+
+TEST(ComponentRoundTrip, CameraPostProcess) {
+	roundTrip(
+			"CameraPostProcess",
+			[](scene::Entity& iEnt) -> void {
+				auto& cam = iEnt.addComponent<scene::component::Camera>();
+				renderer::PostProcessSettings settings;
+				settings.exposure = 1.5f;
+				settings.bloom = true;
+				settings.bloomThreshold = 0.8f;
+				settings.bloomKnee = 0.25f;
+				settings.bloomIntensity = 0.4f;
+				settings.bloomScatter = 0.9f;
+				settings.vignette = true;
+				settings.vignetteIntensity = 0.6f;
+				settings.vignetteSmoothness = 0.2f;
+				settings.vignetteColor = {0.1f, 0.2f, 0.3f};
+				settings.lut = "luts/warm.cube";
+				settings.lutContribution = 0.5f;
+				cam.camera.setPostProcess(settings);
+			},
+			[](const scene::Entity& iEnt) -> void {
+				ASSERT_TRUE(iEnt.hasComponent<scene::component::Camera>());
+				const auto& settings = iEnt.getComponent<scene::component::Camera>().camera.getPostProcess();
+				EXPECT_FLOAT_EQ(settings.exposure, 1.5f);
+				EXPECT_TRUE(settings.bloom);
+				EXPECT_FLOAT_EQ(settings.bloomThreshold, 0.8f);
+				EXPECT_FLOAT_EQ(settings.bloomKnee, 0.25f);
+				EXPECT_FLOAT_EQ(settings.bloomIntensity, 0.4f);
+				EXPECT_FLOAT_EQ(settings.bloomScatter, 0.9f);
+				EXPECT_TRUE(settings.vignette);
+				EXPECT_FLOAT_EQ(settings.vignetteIntensity, 0.6f);
+				EXPECT_FLOAT_EQ(settings.vignetteSmoothness, 0.2f);
+				EXPECT_FLOAT_EQ(settings.vignetteColor.y(), 0.2f);
+				EXPECT_EQ(settings.lut, "luts/warm.cube");
+				EXPECT_FLOAT_EQ(settings.lutContribution, 0.5f);
+			});
+}
+
+TEST(ComponentRoundTrip, CameraWithoutPostProcessKeepsTheDefaults) {
+	roundTrip(
+			"CameraDefaultPostProcess",
+			[](scene::Entity& iEnt) -> void { iEnt.addComponent<scene::component::Camera>(); },
+			[](const scene::Entity& iEnt) -> void {
+				const auto& settings = iEnt.getComponent<scene::component::Camera>().camera.getPostProcess();
+				const renderer::PostProcessSettings defaults;
+				EXPECT_FLOAT_EQ(settings.exposure, defaults.exposure);
+				EXPECT_EQ(settings.bloom, defaults.bloom);
+				EXPECT_TRUE(settings.lut.empty());
+			});
+}
+
+TEST(ComponentRoundTrip, Environment) {
+	roundTrip(
+			"Environment",
+			[](scene::Entity& iEnt) -> void {
+				auto& env = iEnt.addComponent<scene::component::Environment>();
+				env.hdri = "hdri/studio.hdr";
+				env.intensity = 1.75f;
+				env.rotation = 0.5f;
+				env.showSky = false;
+				env.ambient = math::vec3{0.1f, 0.2f, 0.3f};
+			},
+			[](const scene::Entity& iEnt) -> void {
+				ASSERT_TRUE(iEnt.hasComponent<scene::component::Environment>());
+				const auto& env = iEnt.getComponent<scene::component::Environment>();
+				EXPECT_EQ(env.hdri.generic_string(), "hdri/studio.hdr");
+				EXPECT_FLOAT_EQ(env.intensity, 1.75f);
+				EXPECT_FLOAT_EQ(env.rotation, 0.5f);
+				EXPECT_FALSE(env.showSky);
+				EXPECT_FLOAT_EQ(env.ambient.z(), 0.3f);
 			});
 }
 

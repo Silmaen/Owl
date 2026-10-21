@@ -357,6 +357,13 @@ INSTANTIATE_TEST_SUITE_P(Lights, RenderImage,
 							 return iInfo.param.scene + "_" + iInfo.param.backend;
 						 });
 
+// PBR materials under an HDR environment: gold, plastic, rough steel, clearcoat paint, an emissive and a toon sphere,
+// the environment drawn as the sky, the PBR Neutral tone mapping.
+INSTANTIATE_TEST_SUITE_P(Pbr, RenderImage, testing::Values(RenderCase{"pbr", "vulkan"}, RenderCase{"pbr", "opengl"}),
+						 [](const testing::TestParamInfo<RenderCase>& iInfo) -> std::string {
+							 return iInfo.param.scene + "_" + iInfo.param.backend;
+						 });
+
 // The entity-id attachment the editor picks in: the 3D layers write the id of every mesh and voxel world they draw.
 TEST_P(RenderPick, entityUnderEachPixel) {
 #ifndef OWL_RUNNER_EXECUTABLE

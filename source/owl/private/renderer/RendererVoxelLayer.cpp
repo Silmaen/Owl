@@ -53,6 +53,10 @@ void RendererVoxelLayer::applyConfig(const std::string& iConfig) {
 		return;
 	m_config.sunDirection = readVec3(config["SunDirection"], m_config.sunDirection);
 	m_config.ambient = readVec3(config["Ambient"], m_config.ambient);
+	if (const auto sun = config["SunIlluminance"]; sun)
+		m_config.sunIlluminance = sun.as<float>();
+	if (const auto luminance = config["AmbientLuminance"]; luminance)
+		m_config.ambientLuminance = luminance.as<float>();
 }
 
 }// namespace owl::renderer

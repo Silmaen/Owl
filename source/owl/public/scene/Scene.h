@@ -28,6 +28,7 @@
 #include <entt/entt.hpp>
 
 #include <array>
+#include <cstddef>
 #include <cstdint>
 #include <filesystem>
 #include <optional>
@@ -50,6 +51,10 @@ class PhysicCommand;
 /// Box2D world of one scene (defined by the physics module).
 class PhysicsWorld;
 }// namespace owl::physics
+
+namespace owl::renderer {
+class MaterialLibrary;
+}// namespace owl::renderer
 
 namespace owl::scene {
 
@@ -74,6 +79,7 @@ struct ID;
 struct LuaScript;
 struct MeshRenderer;
 struct Light;
+struct Environment;
 struct NativeScript;
 struct PhysicBody;
 struct Player;
@@ -253,6 +259,20 @@ public:
 	 * @param[in] iCamera The editor camera.
 	 */
 	void onUpdateEditor(const core::Timestep& iTimeStep, const renderer::Camera& iCamera);
+
+	/**
+	 * @brief
+	 *  Set the light added to every lit surface while the scene is edited (never in Play), to see dark places.
+	 * @param[in] iRadiance Linear radiance; black for none.
+	 */
+	void setEditorAmbient(const math::vec3& iRadiance) { m_editorAmbient = iRadiance; }
+
+	/**
+	 * @brief
+	 *  Get the light added to every lit surface while the scene is edited.
+	 * @return The linear radiance.
+	 */
+	[[nodiscard]] auto getEditorAmbient() const -> const math::vec3& { return m_editorAmbient; }
 
 	/**
 	 * @brief
@@ -1133,6 +1153,17 @@ private:
 
 	/**
 	 * @brief
+	 *  Resolve the material of one slot of a mesh renderer: its `.owlmat` (or the file's own material), its overrides,
+	 *  then the component's texture and transparency.
+	 * @param[in,out] ioMeshRenderer The component, its mesh loaded.
+	 * @param[in] iSlot Index of the slot.
+	 * @param[in,out] ioLibrary The material library.
+	 */
+	void resolveMaterialSlot(component::MeshRenderer& ioMeshRenderer, size_t iSlot,
+							 renderer::MaterialLibrary& ioLibrary);
+
+	/**
+	 * @brief
 	 *  Draw every visible `VoxelWorld` entity accepted by the current voxel layer
 	 *  through `RendererVoxel`.
 	 * @param[in] iEditorMode True if the scene is being drawn for the editor view.
@@ -1229,6 +1260,15 @@ private:
 	 * @param[in,out] ioGraph The frame graph.
 	 */
 	void recordLightPasses(renderer::RenderGraph& ioGraph);
+
+	/**
+	 * @brief
+	 *  Hand the first visible `Environment` to `Renderer3D` (loading and prefiltering its image on a worker the first
+	 *  time) and, when it shows the sky, add the sky pass drawing into the scene colour.
+	 * @param[in,out] ioGraph The frame graph.
+	 * @param[in] iSceneColor The linear scene colour target.
+	 */
+	void recordEnvironmentPass(renderer::RenderGraph& ioGraph, renderer::RenderGraph::Resource iSceneColor);
 
 	/**
 	 * @brief
@@ -1334,10 +1374,38 @@ private:
 	const renderer::Camera* mp_renderCamera = nullptr;
 	/// Lights of the frame, as `Renderer3D` reads them.
 	std::vector<renderer::GpuLight> m_gpuLights;
+	/// Light added to every lit surface in Edit mode.
+	math::vec3 m_editorAmbient{0.f, 0.f, 0.f};
+	/// Targets the colour encode of the frame reads.
+	struct PostTargets {
+		/// The linear scene colour.
+		renderer::RenderGraph::Resource sceneColor;
+		/// The bloom chain result, invalid without bloom.
+		renderer::RenderGraph::Resource bloom;
+		/// The adapted EV100, invalid with a manual exposure.
+		renderer::RenderGraph::Resource exposure;
+	};
+	/// Post-process targets of the frame being recorded.
+	PostTargets m_postTargets;
 	/// Shadow cascades of the frame.
 	renderer::ShadowCascades m_shadowCascades;
 	/// Shadow of the frame, its maps filled when the 3D layers run.
 	renderer::ShadowSettings m_shadowSettings;
+	/// The environment image of the scene: its loading on a worker, then its GPU textures.
+	struct EnvironmentState {
+		/// Asset path of the loaded (or loading) image.
+		std::filesystem::path hdri;
+		/// Result of the worker, read once its task finished.
+		shared<std::optional<renderer::EnvironmentMap>> result;
+		/// Task loading and prefiltering the image.
+		size_t task = 0;
+		/// Whether a task runs.
+		bool loading = false;
+		/// The uploaded environment.
+		renderer::EnvironmentLighting lighting;
+	};
+	/// Environment of the scene.
+	EnvironmentState m_environment;
 	/// Shadow-map targets of the frame, one per cascade.
 	std::array<renderer::RenderGraph::Resource, renderer::g_maxShadowCascades> m_shadowTargets{};
 
@@ -1393,6 +1461,10 @@ OWL_API void Scene::onComponentAdded<component::MeshRenderer>(const Entity& iEnt
 
 template<>
 OWL_API void Scene::onComponentAdded<component::Light>(const Entity& iEntity, component::Light& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::Environment>(const Entity& iEntity,
+															 component::Environment& ioComponent);
 
 template<>
 OWL_API void Scene::onComponentAdded<component::NativeScript>(const Entity& iEntity,

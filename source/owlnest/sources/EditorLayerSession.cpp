@@ -119,6 +119,9 @@ auto EditorLayer::openDocumentForRecovery(const RecoveryEntry& iEntry) -> Docume
 		case DocumentType::Mesh:
 			openMeshFile(path);
 			break;
+		case DocumentType::Material:
+			openMaterialFile(path);
+			break;
 		case DocumentType::Scene:
 			break;
 	}

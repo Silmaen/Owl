@@ -12,6 +12,7 @@
 #include "platform/FileUtils.h"
 #include "renderer/Renderer.h"
 #include "renderer/gpu/Shader.h"
+#include "renderer/utils/shaderFileUtils.h"
 #if OWL_WITH_RENDER
 #include "opengl/Shader.h"
 #include "vulkan/Shader.h"
@@ -117,7 +118,7 @@ auto Shader::reload() -> bool {
 		OWL_CORE_ERROR("Shader: Cannot reload {}, source file '{}' not found.", getFullName(), m_sourcePath.string())
 		return false;
 	}
-	if (!recompile(platform::fileToString(m_sourcePath))) {
+	if (!recompile(renderer::utils::readShaderSource(m_sourcePath))) {
 		OWL_CORE_ERROR("Shader: Reload of {} failed ({}), the previous version stays in use.", getFullName(),
 					   m_sourcePath.string())
 		return false;

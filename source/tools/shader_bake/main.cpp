@@ -14,9 +14,7 @@
 #include <exception>
 #include <filesystem>
 #include <format>
-#include <fstream>
 #include <span>
-#include <sstream>
 #include <string>
 #include <utility>
 
@@ -31,18 +29,11 @@ void printLine(std::FILE* iStream, std::format_string<Args...> iFormat, Args&&..
 	std::fputs(std::format(iFormat, std::forward<Args>(iArgs)...).append("\n").c_str(), iStream);
 }
 
-auto readText(const std::filesystem::path& iPath) -> std::string {
-	const std::ifstream file(iPath, std::ios::binary);
-	std::stringstream content;
-	content << file.rdbuf();
-	return content.str();
-}
-
 auto bakeShader(const std::filesystem::path& iSourceFile, const std::filesystem::path& iAssetsDir) -> int {
 	using namespace owl::renderer::utils;
 	const std::string name = iSourceFile.stem().string();
 	const std::string renderer = iSourceFile.parent_path().filename().string();
-	const std::string source = readText(iSourceFile);
+	const std::string source = readShaderSource(iSourceFile);
 	int stages = 0;
 	for (const bool forVulkan: {true, false}) {
 		const std::string api = forVulkan ? "vulkan" : "opengl";

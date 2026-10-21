@@ -1,0 +1,13 @@
+Material:
+  FormatVersion: 1
+  metallic: 1
+  roughness: 1
+  baseColor: [0.3, 0.27, 0.25, 1]
+  emissive: [1, 0.45, 0.16]
+  emissiveLuminance: 3000
+  baseColorMap: nam:textures/pbr/burned_ground_01/burned_ground_01_diff.jpg
+  metallicMap: nam:textures/pbr/burned_ground_01/burned_ground_01_arm.jpg
+  roughnessMap: nam:textures/pbr/burned_ground_01/burned_ground_01_arm.jpg
+  normalMap: nam:textures/pbr/burned_ground_01/burned_ground_01_nor.jpg
+  occlusionMap: nam:textures/pbr/burned_ground_01/burned_ground_01_arm.jpg
+  emissiveMap: nam:textures/fire/embers.png

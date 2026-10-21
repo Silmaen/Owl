@@ -29,8 +29,12 @@ namespace owl::renderer {
 struct VoxelConfig {
 	/// World-space direction the sun light travels.
 	math::vec3 sunDirection{-0.4f, -1.f, -0.6f};
-	/// Ambient light colour added before the directional term.
+	/// Illuminance of the sun, in lux, lighting a scene that has no light.
+	float sunIlluminance = 100000.f;
+	/// Linear colour of the constant sky lighting a scene without an environment.
 	math::vec3 ambient{0.35f, 0.35f, 0.4f};
+	/// Luminance of a white `ambient`, in cd/m².
+	float ambientLuminance = 12000.f;
 };
 
 /**

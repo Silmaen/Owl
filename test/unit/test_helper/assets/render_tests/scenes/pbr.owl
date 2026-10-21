@@ -1,0 +1,144 @@
+Scene: RenderTestPbr
+EnabledRenderers:
+- {Name: world, Enabled: false}
+- {Name: mesh_world, Enabled: true}
+- {Name: ui, Enabled: false}
+Entities:
+- Entity: 3600000000000000001
+  Tag: {tag: PbrCamera}
+  Transform:
+    translation: [0, 1.2, 5.2]
+    rotation: [-0.2, 0, 0]
+    scale: [1, 1, 1]
+  Camera:
+    camera: {projectionType: Perspective, perspectiveFOV: 0.785398185, perspectiveNear: 0.100000001, perspectiveFar: 100,
+      orthographicSize: 8, orthographicNear: -1, orthographicFar: 10, toneMapping: PbrNeutral,
+      postProcess: {exposure: 0, bloom: true, bloomThreshold: 1, bloomKnee: 0.5, bloomIntensity: 0.15, bloomScatter: 0.7,
+        vignette: true, vignetteIntensity: 0.35, vignetteSmoothness: 0.4, vignetteColor: [0, 0, 0], lut: luts/warm.cube,
+        lutContribution: 0.6}}
+    primary: true
+    fixedAspectRatio: false
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 0}
+- Entity: 3600000000000000002
+  Tag: {tag: Sky}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 0}
+  Environment: {hdri: hdri/sky_gradient.hdr, intensity: 1, rotation: 0, showSky: true}
+- Entity: 3600000000000000003
+  Tag: {tag: Sun}
+  Transform:
+    translation: [0, 4, 0]
+    rotation: [-0.8, 2.6, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 0}
+  Light: {type: Directional, color: [1, 0.95, 0.85], intensity: 2, castShadows: true, shadowDistance: 15, cascadeCount: 2, shadowResolution: 1024, shadowBias: 1.5}
+- Entity: 3600000000000000004
+  Tag: {tag: Ground}
+  Transform:
+    translation: [0, -0.55, 0]
+    rotation: [0, 0, 0]
+    scale: [12, 0.1, 8]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 0}
+  RendererTag: {Name: mesh_world}
+  MeshRenderer:
+    mesh: meshes/textured_cube.glb
+    color: [0.6, 0.6, 0.6, 1]
+    texture: 'nam:textures/plain.png'
+    transparent: false
+- Entity: 3600000000000000005
+  Tag: {tag: gold}
+  Transform:
+    translation: [-2.75, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 0}
+  RendererTag: {Name: mesh_world}
+  MeshRenderer:
+    mesh: meshes/sphere.glb
+    color: [1, 1, 1, 1]
+    transparent: false
+    materials:
+      - material: pbr_materials/gold.owlmat
+- Entity: 3600000000000000006
+  Tag: {tag: red_plastic}
+  Transform:
+    translation: [-1.65, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 0}
+  RendererTag: {Name: mesh_world}
+  MeshRenderer:
+    mesh: meshes/sphere.glb
+    color: [1, 1, 1, 1]
+    transparent: false
+    materials:
+      - material: pbr_materials/red_plastic.owlmat
+- Entity: 3600000000000000007
+  Tag: {tag: rough_steel}
+  Transform:
+    translation: [-0.55, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 0}
+  RendererTag: {Name: mesh_world}
+  MeshRenderer:
+    mesh: meshes/sphere.glb
+    color: [1, 1, 1, 1]
+    transparent: false
+    materials:
+      - material: pbr_materials/rough_steel.owlmat
+- Entity: 3600000000000000008
+  Tag: {tag: car_paint}
+  Transform:
+    translation: [0.55, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 0}
+  RendererTag: {Name: mesh_world}
+  MeshRenderer:
+    mesh: meshes/sphere.glb
+    color: [1, 1, 1, 1]
+    transparent: false
+    materials:
+      - material: pbr_materials/car_paint.owlmat
+- Entity: 3600000000000000009
+  Tag: {tag: lava}
+  Transform:
+    translation: [1.65, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 0}
+  RendererTag: {Name: mesh_world}
+  MeshRenderer:
+    mesh: meshes/sphere.glb
+    color: [1, 1, 1, 1]
+    transparent: false
+    materials:
+      - material: pbr_materials/lava.owlmat
+- Entity: 3600000000000000010
+  Tag: {tag: toon_green}
+  Transform:
+    translation: [2.75, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 0}
+  RendererTag: {Name: mesh_world}
+  MeshRenderer:
+    mesh: meshes/sphere.glb
+    color: [1, 1, 1, 1]
+    transparent: false
+    materials:
+      - material: pbr_materials/toon_green.owlmat

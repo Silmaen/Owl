@@ -173,8 +173,8 @@ void clearRect(std::vector<MaskCell>& ioMask, const int32_t iU, const int32_t iV
 }
 
 void emitQuad(ChunkMesh& ioMesh, const std::array<math::vec3, 4>& iPos, const math::vec3& iNormal, const float iW,
-			  const float iH, const uint32_t iTexture, const std::array<uint8_t, 4>& iAo, const bool iFlip,
-			  const bool iSwapUv) {
+			  const float iH, const uint32_t iTexture, const uint32_t iSurface, const std::array<uint8_t, 4>& iAo,
+			  const bool iFlip, const bool iSwapUv) {
 	const auto base = static_cast<uint32_t>(ioMesh.vertices.size());
 	// X-axis faces map U->world-Y, V->world-Z, rotating the texture 90 deg; swap UV there to keep its vertical up.
 	const std::array<math::vec2, 4> uv = iSwapUv ? std::array<math::vec2, 4>{math::vec2{0.f, 0.f}, math::vec2{0.f, iW},
@@ -186,7 +186,8 @@ void emitQuad(ChunkMesh& ioMesh, const std::array<math::vec3, 4>& iPos, const ma
 											  .normal = iNormal,
 											  .uv = uv[i],
 											  .textureIndex = iTexture,
-											  .ao = k_AoCurve[iAo[i]]});
+											  .ao = k_AoCurve[iAo[i]],
+											  .surface = iSurface});
 	// Flip the split diagonal when AO is asymmetric, so the dark corner doesn't bleed across the brighter triangle.
 	const bool aoFlip = iAo[0] + iAo[2] > iAo[1] + iAo[3];
 	std::array<uint32_t, 6> order =
@@ -215,10 +216,10 @@ void emitSliceQuads(std::vector<MaskCell>& ioMask, ChunkMesh& ioMesh, const int3
 					buildPos(iAxis, iU, iV, iPlane, static_cast<float>(i + width), static_cast<float>(j)),
 					buildPos(iAxis, iU, iV, iPlane, static_cast<float>(i + width), static_cast<float>(j + height)),
 					buildPos(iAxis, iU, iV, iPlane, static_cast<float>(i), static_cast<float>(j + height))};
-			const auto texture =
-					static_cast<uint32_t>(iRegistry.get(cell.block).faceTexture(orientedFace(iFace, cell.orientation)));
-			emitQuad(ioMesh, pos, iNormal, static_cast<float>(width), static_cast<float>(height), texture, cell.ao,
-					 iFlip, iAxis == 0);
+			const auto& type = iRegistry.get(cell.block);
+			const auto texture = static_cast<uint32_t>(type.faceTexture(orientedFace(iFace, cell.orientation)));
+			emitQuad(ioMesh, pos, iNormal, static_cast<float>(width), static_cast<float>(height), texture,
+					 packSurface(type.surface), cell.ao, iFlip, iAxis == 0);
 			i += width;
 		}
 	}

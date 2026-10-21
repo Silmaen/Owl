@@ -124,9 +124,6 @@ VoxelMeshingConfig g_Config;
 // Needs the depth attachment of the viewport framebuffer: Renderer3D depth-tests its draws.
 bool g_GpuDrawEnabled = true;
 
-// Voxel meshes bind the atlas as the single texture (slot 1); slot 0 is Renderer3D's default white texture.
-constexpr uint32_t k_AtlasSlot = 1;
-
 auto packKey(const math::vec3i& iCoord) -> uint64_t {
 	const auto enc = [](const int32_t iValue) -> uint64_t {
 		return static_cast<uint64_t>(static_cast<int64_t>(iValue) + (1 << 20)) & 0x1FFFFF;
@@ -162,7 +159,7 @@ auto toCpuMesh(const data::voxel::ChunkMesh& iMesh, const math::vec3& iOrigin, c
 		result.vertices.push_back(Mesh3DVertex{.position = v.position + iOrigin,
 											   .normal = v.normal,
 											   .uv = v.uv,
-											   .textureIndex = k_AtlasSlot,
+											   .textureIndex = v.surface,
 											   .tileRect = tileRectFor(iGrid, static_cast<uint16_t>(v.textureIndex)),
 											   .ao = v.ao});
 	result.indices = iMesh.indices;
@@ -376,7 +373,7 @@ void RendererVoxel::beginScene(const Camera& iCamera, const VoxelConfig& iConfig
 	OWL_PROFILE_FUNCTION()
 
 	Renderer3D::beginScene(iCamera);
-	Renderer3D::setLighting(iConfig.sunDirection, iConfig.ambient);
+	Renderer3D::setLighting(iConfig.sunDirection, iConfig.sunIlluminance, iConfig.ambient * iConfig.ambientLuminance);
 	const math::vec4 worldPos = inverse(iCamera.getView()) * math::vec4{0.f, 0.f, 0.f, 1.f};
 	frameData().cameraPosition = math::vec3{worldPos.x(), worldPos.y(), worldPos.z()};
 	frameData().viewProjection = iCamera.getViewProjection();

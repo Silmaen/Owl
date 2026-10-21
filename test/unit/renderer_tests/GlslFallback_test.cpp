@@ -31,12 +31,7 @@ auto findRoot() -> std::filesystem::path {
 	return test::getRootPath();
 }
 
-auto readFile(const std::filesystem::path& iPath) -> std::string {
-	const std::ifstream in(iPath, std::ios::binary);
-	std::stringstream ss;
-	ss << in.rdbuf();
-	return ss.str();
-}
+auto readFile(const std::filesystem::path& iPath) -> std::string { return renderer::utils::readShaderSource(iPath); }
 
 }// namespace
 

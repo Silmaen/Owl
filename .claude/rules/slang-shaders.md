@@ -60,6 +60,13 @@ float4 texColor = u_Textures[NonUniformResourceIndex(texIndex)].Sample(u_Sampler
 - sRGB encoding and tone mapping happen only in `color_encode/color_encode.slang`
 - No `pow(color, 2.2)` or `pow(color, 1/2.2)` elsewhere
 
+## Includes
+
+- A graphics shader may `#include "x.slangh"`: looked up next to the including file, then in `shaders/common/`.
+  Shared code (`common/pbr.slangh`) lives there; `.slangh` files are never baked or compiled on their own.
+- The SPIR-V cache key hashes the text after expansion (`renderer::utils::readShaderSource`), so a changed include
+  invalidates every shader using it.
+
 ## Compilation Pipeline
 
 - Source: `engine_assets/shaders/<renderer>/<name>.slang`

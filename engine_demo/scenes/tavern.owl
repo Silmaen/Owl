@@ -1,0 +1,721 @@
+Scene: Tavern
+FormatVersion: 6
+EnabledRenderers:
+  - Name: world
+    Enabled: false
+  - Name: mesh_world
+    Enabled: true
+  - Name: ui
+    Enabled: false
+Entities:
+  - Entity: 3900000000000000001
+    Tag:
+      tag: TavernCamera
+    Transform:
+      translation: [1.9, 1.2, 1.35]
+      rotation: [-0.16, 0.52, 0]
+      scale: [1, 1, 1]
+    Camera:
+      camera:
+        projectionType: Perspective
+        perspectiveFOV: 0.68
+        perspectiveNear: 0.05
+        perspectiveFar: 60
+        orthographicSize: 8
+        orthographicNear: -1
+        orthographicFar: 10
+        toneMapping: Aces
+        postProcess: {ev100: 4.5, exposure: 0, autoExposure: false, bloom: true, bloomThreshold: 1, bloomKnee: 0.5, bloomIntensity: 0.08, bloomScatter: 0.7, vignette: true, vignetteIntensity: 0.4, vignetteSmoothness: 0.5, vignetteColor: [0, 0, 0]}
+      primary: true
+      fixedAspectRatio: false
+    FlyCamera:
+      MoveSpeed: 1.5
+      LookSpeed: 1.2
+    LuaScript:
+      scriptPath: scripts/mesh/tavern.lua
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000000002
+    Tag:
+      tag: Ambient
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Environment: {hdri: "", ambient: [0.65, 0.42, 0.26], intensity: 2.5, rotation: 0, showSky: false}
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000000003
+    Tag:
+      tag: Floor
+    Transform:
+      translation: [0.5, 0, 0.5]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    MeshRenderer:
+      mesh: meshes/tavern/floor.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - material: materials/stone_floor.owlmat
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000000004
+    Tag:
+      tag: BackWall
+    Transform:
+      translation: [0.5, 0, -3.2]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    MeshRenderer:
+      mesh: meshes/tavern/wall.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - material: materials/plaster_wall.owlmat
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000000005
+    Tag:
+      tag: LeftWall
+    Transform:
+      translation: [-3.2, 0, 0.5]
+      rotation: [0, 1.5708, 0]
+      scale: [1, 1, 1]
+    MeshRenderer:
+      mesh: meshes/tavern/wall.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - material: materials/plaster_wall.owlmat
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000000006
+    Tag:
+      tag: CornerPost
+    Transform:
+      translation: [-2.875, 0, -2.875]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    MeshRenderer:
+      mesh: meshes/tavern/post.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - material: materials/rough_wood.owlmat
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000000007
+    Tag:
+      tag: Hearth
+    Transform:
+      translation: [-1.5, 0, -3]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    MeshRenderer:
+      mesh: meshes/tavern/hearth.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - material: materials/hearth_stone.owlmat
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000000008
+    Tag:
+      tag: MantelBeam
+    Transform:
+      translation: [0, 1.05, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Hierarchy: {parentId: 3900000000000000007}
+    MeshRenderer:
+      mesh: meshes/tavern/mantel_beam.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - material: materials/rough_wood.owlmat
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000000009
+    Tag:
+      tag: FireGrate
+    Transform:
+      translation: [0, 0.1, 0.32]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Hierarchy: {parentId: 3900000000000000007}
+    MeshRenderer:
+      mesh: meshes/tavern/fire_grate.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - material: materials/wrought_iron.owlmat
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000000010
+    Tag:
+      tag: Embers
+    Transform:
+      translation: [0, 0.1, 0.32]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Hierarchy: {parentId: 3900000000000000007}
+    MeshRenderer:
+      mesh: meshes/tavern/embers.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - material: materials/embers.owlmat
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000000011
+    Tag:
+      tag: Firewood
+    Transform:
+      translation: [0, 0.216, 0.32]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Hierarchy: {parentId: 3900000000000000007}
+    MeshRenderer:
+      mesh: meshes/tavern/firewood.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - material: materials/charred_firewood.owlmat
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000000012
+    Tag:
+      tag: Flames
+    Transform:
+      translation: [0, 0.24, 0.32]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Hierarchy: {parentId: 3900000000000000007}
+    MeshRenderer:
+      mesh: meshes/tavern/flames.glb
+      color: [1, 1, 1, 1]
+      transparent: true
+      materials:
+        - material: materials/flame.owlmat
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000000013
+    Tag:
+      tag: FireLight
+    Transform:
+      translation: [0, 0.62, 0.72]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Hierarchy: {parentId: 3900000000000000007}
+    Light:
+      type: Point
+      enabled: true
+      color: [1, 0.55, 0.22]
+      intensity: 1800
+      range: 12
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000000014
+    Tag:
+      tag: Candleholders
+    Transform:
+      translation: [0, 1.25, 0.7]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Hierarchy: {parentId: 3900000000000000007}
+    MeshRenderer:
+      mesh: meshes/tavern/brass_candleholders/brass_candleholders.gltf
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - {overrides: {occlusionMap: nam:meshes/tavern/brass_candleholders/textures/brass_candleholders_03_arm_1k.jpg}}
+        - {overrides: {emissiveLuminance: 7000}}
+        - {overrides: {occlusionMap: nam:meshes/tavern/brass_candleholders/textures/brass_candleholders_02_arm_1k.jpg}}
+        - {overrides: {occlusionMap: nam:meshes/tavern/brass_candleholders/textures/brass_candleholders_candles_arm_1k.jpg}}
+        - {overrides: {emissiveLuminance: 7000}}
+        - {overrides: {occlusionMap: nam:meshes/tavern/brass_candleholders/textures/brass_candleholders_01_arm_1k.jpg}}
+        - {overrides: {emissiveLuminance: 7000}}
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000000015
+    Tag:
+      tag: CandleLight1
+    Transform:
+      translation: [0.401, 0.818, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Hierarchy: {parentId: 3900000000000000014}
+    Light:
+      type: Point
+      enabled: true
+      color: [1, 0.68, 0.38]
+      intensity: 12
+      range: 3
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000000016
+    Tag:
+      tag: CandleLight2
+    Transform:
+      translation: [0.572, 0.733, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Hierarchy: {parentId: 3900000000000000014}
+    Light:
+      type: Point
+      enabled: true
+      color: [1, 0.68, 0.38]
+      intensity: 12
+      range: 3
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000000017
+    Tag:
+      tag: CandleLight3
+    Transform:
+      translation: [0.229, 0.733, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Hierarchy: {parentId: 3900000000000000014}
+    Light:
+      type: Point
+      enabled: true
+      color: [1, 0.68, 0.38]
+      intensity: 12
+      range: 3
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000000018
+    Tag:
+      tag: CandleLight4
+    Transform:
+      translation: [0.488, 0.739, 0.149]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Hierarchy: {parentId: 3900000000000000014}
+    Light:
+      type: Point
+      enabled: true
+      color: [1, 0.68, 0.38]
+      intensity: 12
+      range: 3
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000000019
+    Tag:
+      tag: CandleLight5
+    Transform:
+      translation: [0.312, 0.739, -0.149]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Hierarchy: {parentId: 3900000000000000014}
+    Light:
+      type: Point
+      enabled: true
+      color: [1, 0.68, 0.38]
+      intensity: 12
+      range: 3
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000000020
+    Tag:
+      tag: CandleLight6
+    Transform:
+      translation: [0.487, 0.739, -0.151]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Hierarchy: {parentId: 3900000000000000014}
+    Light:
+      type: Point
+      enabled: true
+      color: [1, 0.68, 0.38]
+      intensity: 12
+      range: 3
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000000021
+    Tag:
+      tag: CandleLight7
+    Transform:
+      translation: [0.313, 0.741, 0.147]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Hierarchy: {parentId: 3900000000000000014}
+    Light:
+      type: Point
+      enabled: true
+      color: [1, 0.68, 0.38]
+      intensity: 12
+      range: 3
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000000022
+    Tag:
+      tag: CandleLight8
+    Transform:
+      translation: [0, 0.389, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Hierarchy: {parentId: 3900000000000000014}
+    Light:
+      type: Point
+      enabled: true
+      color: [1, 0.68, 0.38]
+      intensity: 12
+      range: 3
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000000023
+    Tag:
+      tag: CandleLight9
+    Transform:
+      translation: [-0.106, 0.371, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Hierarchy: {parentId: 3900000000000000014}
+    Light:
+      type: Point
+      enabled: true
+      color: [1, 0.68, 0.38]
+      intensity: 12
+      range: 3
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000000024
+    Tag:
+      tag: CandleLight10
+    Transform:
+      translation: [0.106, 0.37, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Hierarchy: {parentId: 3900000000000000014}
+    Light:
+      type: Point
+      enabled: true
+      color: [1, 0.68, 0.38]
+      intensity: 12
+      range: 3
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000000025
+    Tag:
+      tag: CandleLight11
+    Transform:
+      translation: [-0.4, 0.354, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Hierarchy: {parentId: 3900000000000000014}
+    Light:
+      type: Point
+      enabled: true
+      color: [1, 0.68, 0.38]
+      intensity: 12
+      range: 3
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000000026
+    Tag:
+      tag: CopperPot
+    Transform:
+      translation: [0.62, 0.1, 0.82]
+      rotation: [0, 0.4, 0]
+      scale: [1, 1, 1]
+    Hierarchy: {parentId: 3900000000000000007}
+    MeshRenderer:
+      mesh: meshes/tavern/brass_pot_01/brass_pot_01.gltf
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - {overrides: {occlusionMap: nam:meshes/tavern/brass_pot_01/textures/brass_pot_01_arm_1k.jpg}}
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000000027
+    Tag:
+      tag: BrassPan
+    Transform:
+      translation: [-0.5, 0.1, 0.85]
+      rotation: [0, 1.8208, 0]
+      scale: [1, 1, 1]
+    Hierarchy: {parentId: 3900000000000000007}
+    MeshRenderer:
+      mesh: meshes/tavern/brass_pan_01/brass_pan_01.gltf
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - {overrides: {occlusionMap: nam:meshes/tavern/brass_pan_01/textures/brass_pan_01_arm_1k.jpg}}
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000000028
+    Tag:
+      tag: LogStack
+    Transform:
+      translation: [-2.6, 0, -1.6]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    MeshRenderer:
+      mesh: meshes/tavern/log_stack.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - material: materials/firewood.owlmat
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000000029
+    Tag:
+      tag: Bucket
+    Transform:
+      translation: [-2.62, 0, -2.2]
+      rotation: [0, 0.8, 0]
+      scale: [1, 1, 1]
+    MeshRenderer:
+      mesh: meshes/tavern/wooden_bucket_01/wooden_bucket_01.gltf
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - {overrides: {occlusionMap: nam:meshes/tavern/wooden_bucket_01/textures/wooden_bucket_01_arm_1k.jpg}}
+        - {overrides: {occlusionMap: nam:meshes/tavern/wooden_bucket_01/textures/wooden_bucket_01_arm_1k.jpg}}
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000000030
+    Tag:
+      tag: Shelf
+    Transform:
+      translation: [-2.7, 0, -0.6]
+      rotation: [0, 1.5708, 0]
+      scale: [1, 1, 1]
+    MeshRenderer:
+      mesh: meshes/tavern/wooden_bookshelf_worn/wooden_bookshelf_worn.gltf
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - {overrides: {occlusionMap: nam:meshes/tavern/wooden_bookshelf_worn/textures/wooden_bookshelf_worn_arm_1k.jpg}}
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000000031
+    Tag:
+      tag: Table
+    Transform:
+      translation: [1.45, 0, -0.35]
+      rotation: [0, 0.35, 0]
+      scale: [1, 1, 1]
+    MeshRenderer:
+      mesh: meshes/tavern/wooden_table_02/wooden_table_02.gltf
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - {overrides: {occlusionMap: nam:meshes/tavern/wooden_table_02/textures/wooden_table_02_arm_1k.jpg}}
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000000032
+    Tag:
+      tag: Candle
+    Transform:
+      translation: [0.02, 0.8, -0.2]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Hierarchy: {parentId: 3900000000000000031}
+    MeshRenderer:
+      mesh: meshes/tavern/candle.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - material: materials/candle_wax.owlmat
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000000033
+    Tag:
+      tag: CandleFlame
+    Transform:
+      translation: [0.02, 0.968, -0.2]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Hierarchy: {parentId: 3900000000000000031}
+    MeshRenderer:
+      mesh: meshes/tavern/candle_flame.glb
+      color: [1, 1, 1, 1]
+      transparent: true
+      materials:
+        - material: materials/candle_flame.owlmat
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000000034
+    Tag:
+      tag: CandleLightTable
+    Transform:
+      translation: [0.02, 1, -0.2]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Hierarchy: {parentId: 3900000000000000031}
+    Light:
+      type: Point
+      enabled: true
+      color: [1, 0.68, 0.38]
+      intensity: 12
+      range: 3
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000000035
+    Tag:
+      tag: BrassPot
+    Transform:
+      translation: [-0.3, 0.8, -0.15]
+      rotation: [0, -0.5, 0]
+      scale: [1, 1, 1]
+    Hierarchy: {parentId: 3900000000000000031}
+    MeshRenderer:
+      mesh: meshes/tavern/brass_pot_02/brass_pot_02.gltf
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - {overrides: {occlusionMap: nam:meshes/tavern/brass_pot_02/textures/brass_pot_02_arm_1k.jpg}}
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000000036
+    Tag:
+      tag: Plate
+    Transform:
+      translation: [0, 0.8, 0.14]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Hierarchy: {parentId: 3900000000000000031}
+    MeshRenderer:
+      mesh: meshes/tavern/carved_wooden_plate/carved_wooden_plate.gltf
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - {overrides: {occlusionMap: nam:meshes/tavern/carved_wooden_plate/textures/carved_wooden_plate_arm_1k.jpg}}
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000000037
+    Tag:
+      tag: Onion
+    Transform:
+      translation: [0.02, 0.812, 0.12]
+      rotation: [0, 1, 0]
+      scale: [1, 1, 1]
+    Hierarchy: {parentId: 3900000000000000031}
+    MeshRenderer:
+      mesh: meshes/tavern/yellow_onion/yellow_onion.gltf
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - {overrides: {occlusionMap: nam:meshes/tavern/yellow_onion/textures/yellow_onion_arm_1k.jpg}}
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000000038
+    Tag:
+      tag: Goblets
+    Transform:
+      translation: [0.3, 0.8, -0.05]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Hierarchy: {parentId: 3900000000000000031}
+    MeshRenderer:
+      mesh: meshes/tavern/brass_goblets/brass_goblets.gltf
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - {overrides: {occlusionMap: nam:meshes/tavern/brass_goblets/textures/brass_goblet_01_arm_1k.jpg}}
+        - {overrides: {occlusionMap: nam:meshes/tavern/brass_goblets/textures/brass_goblet_02_arm_1k.jpg}}
+        - {overrides: {occlusionMap: nam:meshes/tavern/brass_goblets/textures/brass_goblet_03_arm_1k.jpg}}
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000000039
+    Tag:
+      tag: Bowl
+    Transform:
+      translation: [-0.36, 0.8, 0.2]
+      rotation: [0, 0.6, 0]
+      scale: [1, 1, 1]
+    Hierarchy: {parentId: 3900000000000000031}
+    MeshRenderer:
+      mesh: meshes/tavern/wooden_bowl_01/wooden_bowl_01.gltf
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - {overrides: {occlusionMap: nam:meshes/tavern/wooden_bowl_01/textures/wooden_bowl_01_arm_1k.jpg}}
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000000040
+    Tag:
+      tag: StoolByFire
+    Transform:
+      translation: [0.75, 0, -0.75]
+      rotation: [0, 0.5, 0]
+      scale: [1, 1, 1]
+    MeshRenderer:
+      mesh: meshes/tavern/folding_wooden_stool/folding_wooden_stool.gltf
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - {overrides: {occlusionMap: nam:meshes/tavern/folding_wooden_stool/textures/folding_wooden_stool_arm_1k.jpg}}
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000000041
+    Tag:
+      tag: Stool
+    Transform:
+      translation: [0.35, 0, 0.15]
+      rotation: [0, -0.3, 0]
+      scale: [1, 1, 1]
+    MeshRenderer:
+      mesh: meshes/tavern/folding_wooden_stool/folding_wooden_stool.gltf
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - {overrides: {occlusionMap: nam:meshes/tavern/folding_wooden_stool/textures/folding_wooden_stool_arm_1k.jpg}}
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true

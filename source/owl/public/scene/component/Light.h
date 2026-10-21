@@ -16,6 +16,12 @@
 
 namespace owl::scene::component {
 
+/// Illuminance of a clear noon sun, in lux: the default of a directional light.
+constexpr float g_defaultSunIlluminance = 100000.f;
+
+/// Luminous power of a 60 W incandescent bulb, in lumens: the default of a point or spot light.
+constexpr float g_defaultBulbPower = 800.f;
+
 /**
  * @brief
  *  A light of the 3D layers (meshes and voxel worlds). It shines along the -Z axis of its entity's world transform;
@@ -38,8 +44,8 @@ struct OWL_API Light {
 	bool enabled = true;
 	/// Colour, sRGB as authored.
 	math::vec3 color{1.f, 1.f, 1.f};
-	/// Multiplier of the colour.
-	float intensity = 1.f;
+	/// Strength in physical units: illuminance in lux for a directional light, luminous power in lumens otherwise.
+	float intensity = g_defaultSunIlluminance;
 	/// Distance where a point or spot light reaches zero, in world units.
 	float range = 10.f;
 	/// Half angle of the full-intensity cone of a spot light, in radians.

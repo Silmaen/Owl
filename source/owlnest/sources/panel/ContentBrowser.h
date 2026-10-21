@@ -184,6 +184,25 @@ public:
 
 	/**
 	 * @brief
+	 *  Set a callback invoked when a material (`.owlmat`) is double-clicked.
+	 * @param[in] iCallback Function taking the material file path.
+	 */
+	void setMaterialOpenCallback(std::function<void(const std::filesystem::path&)> iCallback) {
+		m_materialOpenCallback = std::move(iCallback);
+	}
+
+	/**
+	 * @brief
+	 *  Set the callback creating a material file ("New Material" of the folder menu); it runs `material.create` and
+	 *  opens the file.
+	 * @param[in] iCallback Function taking the path of the file to create.
+	 */
+	void setMaterialCreateCallback(std::function<void(const std::filesystem::path&)> iCallback) {
+		m_materialCreateCallback = std::move(iCallback);
+	}
+
+	/**
+	 * @brief
 	 *  Set a callback invoked when a macro (`.owlmacro`) is double-clicked or run from its context menu.
 	 * @param[in] iCallback Function taking the macro file path.
 	 */
@@ -325,6 +344,12 @@ private:
 
 	/**
 	 * @brief
+	 *  Ask for a new material file in the current directory (a free "New Material" name).
+	 */
+	void createMaterial();
+
+	/**
+	 * @brief
 	 *  Open a file dialog and import a file into the current directory.
 	 */
 	void importFiles();
@@ -356,6 +381,10 @@ private:
 	std::function<void(const std::filesystem::path&)> m_fontOpenCallback;
 	/// Called when the action map (`input_actions.yml`) is double-clicked.
 	std::function<void(const std::filesystem::path&)> m_actionMapOpenCallback;
+	/// Called when a material (`.owlmat`) is double-clicked.
+	std::function<void(const std::filesystem::path&)> m_materialOpenCallback;
+	/// Called with the path of a material file to create.
+	std::function<void(const std::filesystem::path&)> m_materialCreateCallback;
 	/// Called when a macro (`.owlmacro`) is double-clicked or run from its context menu.
 	std::function<void(const std::filesystem::path&)> m_macroRunCallback;
 	/// Called when a mesh is double-clicked or placed from its context menu.

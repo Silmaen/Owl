@@ -1,0 +1,426 @@
+// Shared lighting of the 3D shaders (mesh3d, voxel): the scene, material and lighting blocks, the texture slots,
+// the Standard (Filament), Toon and Unlit shading models, the cascaded shadows and the image-based lighting.
+
+struct Scene3D {
+	column_major float4x4 viewProjection;
+	column_major float4x4 model;
+	float4 sunDirection;// xyz: direction the sun of the layer travels; w: its pre-exposed illuminance (0 when unlit).
+	float4 ambient;     // rgb: editor ambient added to every lit surface; w: exposure (1 / (1.2 * 2^EV100)).
+	float4 tint;        // per-entity colour multiplied with the base colour.
+	int4 ids;           // x: entity id (-1 none); y: 1 when the target stores linear colour; z: 1 in a shadow pass; w unused.
+};
+
+struct MaterialData {
+	float4 baseColor;  // rgb (sRGB as authored), a.
+	float4 emissive;   // rgb emitted colour (sRGB as authored); w: alpha cutoff.
+	float4 factors;    // x metallic, y perceptual roughness, z normal scale, w occlusion strength.
+	float4 layers;     // x clearcoat, y clearcoat roughness, z anisotropy, w anisotropy rotation (radians).
+	float4 sheen;      // rgb sheen colour (sRGB), w sheen roughness.
+	int4 model;        // x shading model (0 Standard, 1 Unlit, 2 Toon), y alpha mode (0 Opaque, 1 Mask, 2 Blend), z map mask, w toon bands.
+	float4 toon;       // x toon rim strength, y emissive luminance (nits), z IOR, w clearcoat IOR.
+	int4 channels;     // channel (0 R, 1 G, 2 B, 3 A) read by the x metallic, y roughness, z occlusion maps; w normal map convention (0 OpenGL, 1 DirectX).
+};
+
+struct LightData {
+	float4 positionRange;// xyz: world position (point, spot); w: range.
+	float4 directionType;// xyz: direction the light travels; w: 0 directional, 1 point, 2 spot.
+	float4 color;        // rgb: linear colour times intensity.
+	float4 spotCosines;  // x: cosine of the inner angle, y: of the outer angle.
+};
+
+// A matrix array ignores `column_major`: each cascade matrix sits in a struct of its own.
+struct CascadeMatrix {
+	column_major float4x4 viewProjection;
+};
+
+struct Lighting {
+	int4 counts;          // x: light count (0: the sun of the layer), y: shadow cascades, z: index of the shadowed light.
+	float4 splitDepths;   // view depth where each cascade ends.
+	float4 texelSizes;    // world size of a shadow texel, per cascade.
+	float4 viewDepthRow;  // view depth of a point p: -(dot(xyz, p) + w).
+	float4 shadowParams;  // x: normal-offset bias in texels, y: shadow-map size in texels.
+	float4 cameraPosition;// xyz: world position of the eye.
+	float4 environment;   // x intensity, y cos and z sin of the rotation about Y, w number of prefiltered levels (0 none).
+	float4 irradiance[9]; // order-2 spherical harmonics of the diffuse irradiance / pi (rgb).
+	CascadeMatrix cascades[4];
+};
+
+[[vk::binding(0)]]
+ConstantBuffer<Scene3D> gScene;
+
+#ifdef BACKEND_VULKAN
+[[vk::binding(1)]]
+#else
+[[vk::binding(0)]]
+#endif
+Sampler2D gTextures[32];
+
+[[vk::binding(2)]]
+StructuredBuffer<LightData> gLights;
+
+[[vk::binding(3)]]
+ConstantBuffer<Lighting> gLighting;
+
+[[vk::binding(4)]]
+ConstantBuffer<MaterialData> gMaterial;
+
+// Texture slots: 0 white, 1-5 material maps, 6 split-sum table, 7-12 prefiltered environment, 28-31 shadow cascades.
+static const int MAP_BASE_COLOR = 1;
+static const int MAP_METALLIC = 2;
+static const int MAP_NORMAL = 3;
+static const int MAP_OCCLUSION = 4;
+static const int MAP_EMISSIVE = 5;
+static const int MAP_ROUGHNESS = 6;
+static const int DFG_SLOT = 13;
+static const int ENVIRONMENT_SLOT = 7;
+static const int MAX_ENVIRONMENT_LEVELS = 6;
+static const int SHADOW_MAP_SLOT = 28;
+
+static const float PI = 3.14159265359f;
+static const float MIN_ROUGHNESS = 0.045f;
+
+// Exact piecewise sRGB decode, used when the target stores linear colour.
+float3 srgbToLinear(float3 c) {
+	return select(c <= 0.04045f, c / 12.92f, pow((c + 0.055f) / 1.055f, 2.4f));
+}
+
+// An authored sRGB colour as the target expects it (decoded on a linear target only).
+float3 authoredColor(float3 c) {
+	return gScene.ids.y != 0 ? srgbToLinear(c) : c;
+}
+
+bool hasMap(int bit) {
+	return (gMaterial.model.z & (1 << bit)) != 0;
+}
+
+// Reflectance at normal incidence of a dielectric of this index of refraction (0.04 at 1.5).
+float iorToF0(float ior) {
+	float r = (ior - 1.0f) / (ior + 1.0f);
+	return r * r;
+}
+
+// One channel (0 R, 1 G, 2 B, 3 A) of a material map.
+float sampleChannel(int slot, float2 uv, int channel) {
+	float4 texel = gTextures[slot].Sample(uv);
+	return channel == 0 ? texel.r : channel == 1 ? texel.g : channel == 2 ? texel.b : texel.a;
+}
+
+// ------------------------------------------------------------------ shadows
+
+// Depth stored in a texel of a cascade's shadow map, sampled at its centre (nearest sampler): a texel fetch from
+// the texture array crashes lavapipe.
+float loadShadowDepth(int cascade, int2 texel, float size) {
+	return gTextures[NonUniformResourceIndex(SHADOW_MAP_SLOT + cascade)].SampleLevel((float2(texel) + 0.5f) / size, 0.0f).r;
+}
+
+// 1 when lit, 0 in shadow: 3x3 comparisons in the cascade covering the point.
+float shadowFactor(float3 worldPos, float3 normal) {
+	float depth = -(dot(gLighting.viewDepthRow.xyz, worldPos) + gLighting.viewDepthRow.w);
+	int cascade = 0;
+	while (cascade < gLighting.counts.y && depth > gLighting.splitDepths[cascade])
+		cascade++;
+	if (cascade >= gLighting.counts.y)
+		return 1.0f;
+	float3 offsetPos = worldPos + normal * (gLighting.texelSizes[cascade] * gLighting.shadowParams.x);
+	float4 clip = mul(gLighting.cascades[cascade].viewProjection, float4(offsetPos, 1.0f));
+	float3 ndc = clip.xyz / clip.w;
+	float2 uv = ndc.xy * 0.5f + 0.5f;
+	if (any(uv < 0.0f) || any(uv > 1.0f) || ndc.z > 1.0f)
+		return 1.0f;
+	int size = int(gLighting.shadowParams.y);
+	int2 texel = int2(uv * float(size));
+	float lit = 0.0f;
+	for (int dy = -1; dy <= 1; ++dy) {
+		for (int dx = -1; dx <= 1; ++dx) {
+			int2 tap = clamp(texel + int2(dx, dy), int2(0), int2(size - 1));
+			lit += ndc.z <= loadShadowDepth(cascade, tap, float(size)) + 0.0005f ? 1.0f : 0.0f;
+		}
+	}
+	return lit / 9.0f;
+}
+
+// ------------------------------------------------------------------ surface
+
+// Everything the shading models need about the shaded point.
+struct Surface {
+	float3 position;
+	float3 normal;        // shading normal (normal map applied), unit.
+	float3 tangent;       // anisotropy direction, unit, in the tangent plane.
+	float3 bitangent;
+	float3 view;          // unit vector towards the eye.
+	float3 albedo;        // linear base colour.
+	float alpha;
+	float metallic;
+	float roughness;      // perceptual, clamped.
+	float occlusion;
+	float3 emissive;      // linear.
+	float clearcoat;
+	float clearcoatRoughness;
+	float3 sheenColor;    // linear.
+	float sheenRoughness;
+	float anisotropy;
+};
+
+// Cotangent frame from the screen-space derivatives of the position and the UV (no tangent in the vertex layout).
+float3x3 cotangentFrame(float3 normal, float3 position, float2 uv) {
+	float3 dp1 = ddx(position);
+	float3 dp2 = ddy(position);
+	float2 duv1 = ddx(uv);
+	float2 duv2 = ddy(uv);
+	float3 dp2perp = cross(dp2, normal);
+	float3 dp1perp = cross(normal, dp1);
+	float3 t = dp2perp * duv1.x + dp1perp * duv2.x;
+	float3 b = dp2perp * duv1.y + dp1perp * duv2.y;
+	// The frame follows the handedness of the screen axes: Vulkan's y-down derivatives would mirror the relief.
+	float handedness = dot(cross(dp1, dp2), normal) < 0.0f ? -1.0f : 1.0f;
+	float invmax = handedness * rsqrt(max(max(dot(t, t), dot(b, b)), 1e-20f));
+	return float3x3(t * invmax, b * invmax, normal);
+}
+
+// ------------------------------------------------------------------ BRDF (Filament)
+
+float D_GGX(float NoH, float a) {
+	float a2 = a * a;
+	float f = (NoH * a2 - NoH) * NoH + 1.0f;
+	return a2 / (PI * f * f + 1e-7f);
+}
+
+float V_SmithGGXCorrelated(float NoV, float NoL, float a) {
+	float a2 = a * a;
+	float lambdaV = NoL * sqrt((NoV - a2 * NoV) * NoV + a2);
+	float lambdaL = NoV * sqrt((NoL - a2 * NoL) * NoL + a2);
+	return 0.5f / (lambdaV + lambdaL + 1e-7f);
+}
+
+float D_GGX_Anisotropic(float NoH, float3 h, float3 t, float3 b, float at, float ab) {
+	float ToH = dot(t, h);
+	float BoH = dot(b, h);
+	float a2 = at * ab;
+	float3 v = float3(ab * ToH, at * BoH, a2 * NoH);
+	float v2 = dot(v, v);
+	float w2 = a2 / max(v2, 1e-7f);
+	return a2 * w2 * w2 * (1.0f / PI);
+}
+
+float V_SmithGGXCorrelated_Anisotropic(float at, float ab, float ToV, float BoV, float ToL, float BoL, float NoV, float NoL) {
+	float lambdaV = NoL * length(float3(at * ToV, ab * BoV, NoV));
+	float lambdaL = NoV * length(float3(at * ToL, ab * BoL, NoL));
+	return 0.5f / (lambdaV + lambdaL + 1e-7f);
+}
+
+float3 F_Schlick(float3 f0, float VoH) {
+	float f = pow(1.0f - VoH, 5.0f);
+	return f + f0 * (1.0f - f);
+}
+
+float F_Schlick90(float f0, float f90, float VoH) {
+	return f0 + (f90 - f0) * pow(1.0f - VoH, 5.0f);
+}
+
+float Fd_Burley(float NoV, float NoL, float LoH, float roughness) {
+	float f90 = 0.5f + 2.0f * roughness * LoH * LoH;
+	return F_Schlick90(1.0f, f90, NoL) * F_Schlick90(1.0f, f90, NoV) * (1.0f / PI);
+}
+
+float V_Kelemen(float LoH) {
+	return 0.25f / max(LoH * LoH, 1e-4f);
+}
+
+float D_Charlie(float roughness, float NoH) {
+	float invAlpha = 1.0f / max(roughness * roughness, 0.0078f);
+	float sin2h = max(1.0f - NoH * NoH, 0.0078125f);
+	return (2.0f + invAlpha) * pow(sin2h, invAlpha * 0.5f) / (2.0f * PI);
+}
+
+float V_Neubelt(float NoV, float NoL) {
+	return 1.0f / (4.0f * (NoL + NoV - NoL * NoV) + 1e-7f);
+}
+
+// Split-sum table: x DFG scale, y DFG bias, z sheen albedo.
+float3 dfgTerms(float NoV, float roughness) {
+	// Kept inside the edge texels: the sampler repeats.
+	float2 uv = clamp(float2(NoV, roughness), 1.0f / 128.0f, 1.0f - 1.0f / 128.0f);
+	return gTextures[DFG_SLOT].SampleLevel(uv, 0.0f).rgb;
+}
+
+// Light reflected towards the eye from one light direction, for the Standard model.
+float3 standardLobe(Surface s, float3 l, float3 f0, float3 dfg) {
+	float3 h = normalize(s.view + l);
+	float NoV = max(dot(s.normal, s.view), 1e-4f);
+	float NoL = saturate(dot(s.normal, l));
+	float NoH = saturate(dot(s.normal, h));
+	float LoH = saturate(dot(l, h));
+	float a = s.roughness * s.roughness;
+	float D;
+	float V;
+	if (abs(s.anisotropy) > 1e-3f) {
+		float at = max(a * (1.0f + s.anisotropy), 1e-3f);
+		float ab = max(a * (1.0f - s.anisotropy), 1e-3f);
+		D = D_GGX_Anisotropic(NoH, h, s.tangent, s.bitangent, at, ab);
+		V = V_SmithGGXCorrelated_Anisotropic(at, ab, dot(s.tangent, s.view), dot(s.bitangent, s.view),
+											  dot(s.tangent, l), dot(s.bitangent, l), NoV, NoL);
+	} else {
+		D = D_GGX(NoH, a);
+		V = V_SmithGGXCorrelated(NoV, NoL, a);
+	}
+	float3 F = F_Schlick(f0, LoH);
+	// Multiple-scattering compensation: the single-scattering lobe loses energy on rough surfaces.
+	float3 energy = 1.0f + f0 * (1.0f / max(dfg.x + dfg.y, 1e-4f) - 1.0f);
+	float3 Fr = D * V * F * energy;
+	float3 Fd = s.albedo * (1.0f - s.metallic) * Fd_Burley(NoV, NoL, LoH, s.roughness);
+	float3 color = Fd + Fr;
+	if (any(s.sheenColor > 0.0f)) {
+		float sheenScaling = 1.0f - max(s.sheenColor.r, max(s.sheenColor.g, s.sheenColor.b)) * dfg.z;
+		color = color * sheenScaling + s.sheenColor * D_Charlie(s.sheenRoughness, NoH) * V_Neubelt(NoV, NoL);
+	}
+	if (s.clearcoat > 0.0f) {
+		float ac = max(s.clearcoatRoughness, MIN_ROUGHNESS);
+		ac *= ac;
+		float Fc = F_Schlick90(iorToF0(gMaterial.toon.w), 1.0f, LoH) * s.clearcoat;
+		color = color * (1.0f - Fc) + D_GGX(NoH, ac) * V_Kelemen(LoH) * Fc;
+	}
+	return color * NoL;
+}
+
+// The Toon model: banded diffuse, a stepped highlight.
+float3 toonLobe(Surface s, float3 l) {
+	float NoL = saturate(dot(s.normal, l));
+	float bands = max(float(gMaterial.model.w), 1.0f);
+	float banded = ceil(NoL * bands) / bands;
+	float3 h = normalize(s.view + l);
+	float highlight = step(1.0f - 0.25f * (1.0f - s.roughness) * (1.0f - s.roughness), saturate(dot(s.normal, h)));
+	return s.albedo * banded + highlight * lerp(float3(0.04f), s.albedo, s.metallic) * (1.0f - s.roughness);
+}
+
+// ------------------------------------------------------------------ image-based lighting
+
+float3 rotateEnvironment(float3 d) {
+	float c = gLighting.environment.y;
+	float sn = gLighting.environment.z;
+	return float3(c * d.x - sn * d.z, d.y, sn * d.x + c * d.z);
+}
+
+float2 equirectangularUv(float3 d) {
+	return float2(0.5f + atan2(d.x, -d.z) / (2.0f * PI), acos(clamp(d.y, -1.0f, 1.0f)) / PI);
+}
+
+float3 sampleEnvironmentLevel(int level, float2 uv) {
+	switch (level) {
+		case 0:
+			return gTextures[ENVIRONMENT_SLOT].SampleLevel(uv, 0.0f).rgb;
+		case 1:
+			return gTextures[ENVIRONMENT_SLOT + 1].SampleLevel(uv, 0.0f).rgb;
+		case 2:
+			return gTextures[ENVIRONMENT_SLOT + 2].SampleLevel(uv, 0.0f).rgb;
+		case 3:
+			return gTextures[ENVIRONMENT_SLOT + 3].SampleLevel(uv, 0.0f).rgb;
+		case 4:
+			return gTextures[ENVIRONMENT_SLOT + 4].SampleLevel(uv, 0.0f).rgb;
+		default:
+			return gTextures[ENVIRONMENT_SLOT + 5].SampleLevel(uv, 0.0f).rgb;
+	}
+}
+
+float3 irradianceSH(float3 n) {
+	float3 d = rotateEnvironment(n);
+	float3 r = gLighting.irradiance[0].rgb;
+	r += gLighting.irradiance[1].rgb * d.z + gLighting.irradiance[2].rgb * d.y + gLighting.irradiance[3].rgb * d.x;
+	r += gLighting.irradiance[4].rgb * (d.x * d.z) + gLighting.irradiance[5].rgb * (d.z * d.y);
+	r += gLighting.irradiance[6].rgb * (3.0f * d.y * d.y - 1.0f) + gLighting.irradiance[7].rgb * (d.x * d.y);
+	r += gLighting.irradiance[8].rgb * (d.x * d.x - d.z * d.z);
+	return max(r, 0.0f);
+}
+
+// Radiance prefiltered for a roughness around a reflected direction.
+float3 prefilteredRadiance(float3 r, float roughness) {
+	float levels = gLighting.environment.w;
+	if (levels < 1.0f)
+		return irradianceSH(r);
+	float2 uv = equirectangularUv(rotateEnvironment(r));
+	float lod = roughness * (levels - 1.0f);
+	int low = int(floor(lod));
+	int high = min(low + 1, int(levels) - 1);
+	return lerp(sampleEnvironmentLevel(low, uv), sampleEnvironmentLevel(high, uv), lod - float(low));
+}
+
+// Ambient light of the Standard model: diffuse from the harmonics, specular from the prefiltered environment.
+float3 standardAmbient(Surface s, float3 f0, float3 dfg) {
+	float NoV = max(dot(s.normal, s.view), 1e-4f);
+	float3 r = reflect(-s.view, s.normal);
+	if (abs(s.anisotropy) > 1e-3f) {
+		// Bent reflection for an anisotropic lobe.
+		float3 anisotropicDirection = s.anisotropy >= 0.0f ? s.bitangent : s.tangent;
+		float3 anisotropicTangent = cross(anisotropicDirection, s.view);
+		float3 anisotropicNormal = cross(anisotropicTangent, anisotropicDirection);
+		float3 bent = normalize(lerp(s.normal, anisotropicNormal, abs(s.anisotropy)));
+		r = reflect(-s.view, bent);
+	}
+	float3 specularColor = dfg.x * f0 + dfg.y;
+	float3 energy = 1.0f + f0 * (1.0f / max(dfg.x + dfg.y, 1e-4f) - 1.0f);
+	float3 specular = prefilteredRadiance(r, s.roughness) * specularColor * energy;
+	float3 diffuse = irradianceSH(s.normal) * s.albedo * (1.0f - s.metallic);
+	float3 color = diffuse + specular;
+	if (any(s.sheenColor > 0.0f))
+		color = color * (1.0f - max(s.sheenColor.r, max(s.sheenColor.g, s.sheenColor.b)) * dfg.z) +
+				s.sheenColor * prefilteredRadiance(s.normal, s.sheenRoughness) * dfg.z;
+	if (s.clearcoat > 0.0f) {
+		float Fc = F_Schlick90(iorToF0(gMaterial.toon.w), 1.0f, NoV) * s.clearcoat;
+		color = color * (1.0f - Fc) + prefilteredRadiance(reflect(-s.view, s.normal), s.clearcoatRoughness) * Fc;
+	}
+	return color * s.occlusion * gLighting.environment.x;
+}
+
+// ------------------------------------------------------------------ lights
+
+// Pre-exposed illuminance a light gives a surface (lux for a directional light, intensity / d² otherwise).
+void lightIncidence(int index, float3 position, float3 normal, out float3 toLight, out float3 illuminance) {
+	LightData light = gLights[index];
+	int type = int(light.directionType.w);
+	float attenuation = 1.0f;
+	if (type == 0) {
+		toLight = -light.directionType.xyz;
+		if (index == gLighting.counts.z)
+			attenuation = shadowFactor(position, normal);
+	} else {
+		float3 delta = light.positionRange.xyz - position;
+		float dist = length(delta);
+		toLight = delta / max(dist, 1e-4f);
+		float ratio = dist / max(light.positionRange.w, 1e-4f);
+		float window = saturate(1.0f - ratio * ratio * ratio * ratio);
+		// Inverse-square falloff of the luminous intensity, cut off smoothly at the range; 1 cm keeps it finite.
+		attenuation = window * window / max(dist * dist, 1e-4f);
+		if (type == 2)
+			attenuation *= smoothstep(light.spotCosines.y, light.spotCosines.x, dot(-toLight, light.directionType.xyz));
+	}
+	illuminance = light.color.rgb * attenuation;
+}
+
+// Shaded colour of a surface (emissive included) under the lights of the scene, its environment and its shadows.
+float3 shadeSurface(Surface s) {
+	int shadingModel = gMaterial.model.x;
+	if (shadingModel == 1)
+		return s.albedo + s.emissive;
+	float3 f0 = lerp(float3(iorToF0(gMaterial.toon.z)), s.albedo, s.metallic);
+	float NoV = max(dot(s.normal, s.view), 1e-4f);
+	float3 dfg = dfgTerms(NoV, s.roughness);
+	float3 color = float3(0.0f);
+	if (gLighting.counts.x == 0 && gScene.sunDirection.w > 0.0f) {
+		// No scene light: the sun of the layer, white, unshadowed.
+		float3 l = normalize(-gScene.sunDirection.xyz);
+		color += gScene.sunDirection.w * (shadingModel == 2 ? toonLobe(s, l) / PI : standardLobe(s, l, f0, dfg));
+	}
+	for (int index = 0; index < gLighting.counts.x; ++index) {
+		float3 l;
+		float3 illuminance;
+		lightIncidence(index, s.position, s.normal, l, illuminance);
+		color += illuminance * (shadingModel == 2 ? toonLobe(s, l) / PI : standardLobe(s, l, f0, dfg));
+	}
+	if (shadingModel == 2) {
+		float rim = pow(1.0f - NoV, 4.0f) * gMaterial.toon.x;
+		color += irradianceSH(s.normal) * s.albedo * s.occlusion * gLighting.environment.x + rim * s.albedo;
+	} else {
+		color += standardAmbient(s, f0, dfg);
+	}
+	color += gScene.ambient.rgb * s.albedo * s.occlusion;
+	return color + s.emissive;
+}

@@ -9,6 +9,8 @@
 
 #include "renderer/RendererMesh.h"
 
+#include "renderer/Material.h"
+
 #include <algorithm>
 #include <array>
 #include <cstdint>
@@ -39,6 +41,10 @@ auto frameData() -> FrameData& {
 
 void draw(const Renderer3D::MeshHandle& iMesh, const math::mat4& iModel, const shared<gpu::Texture2D>& iTexture,
 		  const MeshDrawParams& iParams) {
+	if (iParams.material != nullptr) {
+		Renderer3D::drawMesh(iMesh, iModel, {}, iParams);
+		return;
+	}
 	const std::array<shared<gpu::Texture2D>, 1> textures{iTexture ? iTexture : Renderer3D::getWhiteTexture()};
 	Renderer3D::drawMesh(iMesh, iModel, textures, iParams);
 }
@@ -49,7 +55,7 @@ void RendererMesh::beginScene(const Camera& iCamera, const MeshLayerConfig& iCon
 	OWL_PROFILE_FUNCTION()
 
 	Renderer3D::beginScene(iCamera);
-	Renderer3D::setLighting(iConfig.sunDirection, iConfig.ambient);
+	Renderer3D::setLighting(iConfig.sunDirection, iConfig.sunIlluminance, iConfig.ambient * iConfig.ambientLuminance);
 	const math::vec4 worldPos = inverse(iCamera.getView()) * math::vec4{0.f, 0.f, 0.f, 1.f};
 	auto& data = frameData();
 	data.cameraPosition = math::vec3{worldPos.x(), worldPos.y(), worldPos.z()};
@@ -71,6 +77,8 @@ void RendererMesh::endScene() {
 
 void RendererMesh::drawMesh(MeshResource& ioMesh, const math::mat4& iModel, const shared<gpu::Texture2D>& iTexture,
 							const MeshDrawParams& iParams, const bool iTransparent) {
+	MeshDrawParams params = iParams;
+	params.blended = iTransparent;
 	if (iTransparent && Renderer3D::isShadowPass())
 		return;
 	const auto& mesh = ioMesh.getMesh(iTransparent);
@@ -78,7 +86,7 @@ void RendererMesh::drawMesh(MeshResource& ioMesh, const math::mat4& iModel, cons
 		return;
 	auto& data = frameData();
 	if (!iTransparent) {
-		draw(mesh, iModel, iTexture, iParams);
+		draw(mesh, iModel, iTexture, params);
 		++data.stats.opaqueDrawCount;
 		return;
 	}
@@ -89,8 +97,31 @@ void RendererMesh::drawMesh(MeshResource& ioMesh, const math::mat4& iModel, cons
 	data.transparent.push_back(QueuedMesh{.mesh = mesh,
 										  .model = iModel,
 										  .texture = iTexture,
-										  .params = iParams,
+										  .params = params,
 										  .distanceSq = delta.normSq()});
+}
+
+void RendererMesh::drawSubmesh(MeshResource& ioMesh, const size_t iSubmesh, const math::mat4& iModel,
+							   const MeshDrawParams& iParams) {
+	const bool blended = iParams.material != nullptr && iParams.material->isBlended();
+	if (blended && Renderer3D::isShadowPass())
+		return;
+	const auto& mesh = ioMesh.getSubmeshMesh(iSubmesh, blended);
+	if (!mesh)
+		return;
+	auto& data = frameData();
+	if (!blended) {
+		Renderer3D::drawMesh(mesh, iModel, {}, iParams);
+		if (!Renderer3D::isShadowPass())
+			++data.stats.opaqueDrawCount;
+		return;
+	}
+	const auto& geometry = ioMesh.getGeometry();
+	const math::vec3 centre = (geometry.boundsMin + geometry.boundsMax) * 0.5f;
+	const math::vec4 world = iModel * math::vec4{centre.x(), centre.y(), centre.z(), 1.f};
+	const math::vec3 delta = math::vec3{world.x(), world.y(), world.z()} - data.cameraPosition;
+	data.transparent.push_back(
+			QueuedMesh{.mesh = mesh, .model = iModel, .texture = {}, .params = iParams, .distanceSq = delta.normSq()});
 }
 
 auto RendererMesh::getStatistics() -> Statistics { return frameData().stats; }

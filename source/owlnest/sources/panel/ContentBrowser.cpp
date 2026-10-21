@@ -76,7 +76,8 @@ auto describeKind(const std::filesystem::path& iPath, const bool iDirectory) -> 
 			{".fbx", {rgb(0x7fb83e), "3D model"}},       {".gltf", {rgb(0x7fb83e), "3D model"}},
 			{".glb", {rgb(0x7fb83e), "3D model"}},       {".yml", {rgb(0x8a929e), "Settings"}},
 			{".yaml", {rgb(0x8a929e), "Settings"}},      {".json", {rgb(0x8a929e), "Data"}},
-			{".md", {rgb(0x8a929e), "Document"}},        {".owlfont", {rgb(0x9a7ae0), "Font settings"}}};
+			{".md", {rgb(0x8a929e), "Document"}},        {".owlfont", {rgb(0x9a7ae0), "Font settings"}},
+			{".owlmat", {rgb(0xc77dff), "Material"}}};
 	if (const auto it = kinds.find(iPath.extension().string()); it != kinds.end())
 		return it->second;
 	return {rgb(0x8a929e), "File"};
@@ -571,6 +572,8 @@ void ContentBrowser::openEntry(const std::filesystem::directory_entry& iEntry) {
 		m_imageOpenCallback(path);
 	} else if (path.filename() == input::ActionMap::fileName && m_actionMapOpenCallback) {
 		m_actionMapOpenCallback(path);
+	} else if (path.extension() == ".owlmat" && m_materialOpenCallback) {
+		m_materialOpenCallback(path);
 	} else if (path.extension() == ".owlmacro" && m_macroRunCallback) {
 		m_macroRunCallback(path);
 	} else if (classifyAsset(path) == AssetKind::Mesh && m_meshPlaceCallback) {
@@ -686,6 +689,9 @@ void ContentBrowser::renderContextMenu() {
 	const auto importItems = [this]() -> void {
 		if (gui::widgets::menuItem({.glyph = gui::icon::folderPlus, .label = "Create Folder"}))
 			createFolder();
+		if (m_materialCreateCallback &&
+			gui::widgets::menuItem({.glyph = gui::icon::paintbrush, .label = "New Material"}))
+			createMaterial();
 		ImGui::Separator();
 		if (gui::widgets::menuItem({.glyph = gui::icon::download, .label = "Import File..."}))
 			importFiles();
@@ -836,6 +842,14 @@ void ContentBrowser::createFolder() {
 		OWL_CORE_ERROR("Failed to create folder: {}.", ec.message())
 	else
 		m_rescanRequested = true;
+}
+
+void ContentBrowser::createMaterial() {
+	auto materialPath = m_currentPath / "New Material.owlmat";
+	for (uint32_t counter = 1; exists(materialPath); ++counter)
+		materialPath = m_currentPath / std::format("New Material {}.owlmat", counter);
+	m_materialCreateCallback(materialPath);
+	m_rescanRequested = true;
 }
 
 void ContentBrowser::importFiles() {

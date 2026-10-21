@@ -33,6 +33,7 @@ enum struct AssetKind : uint8_t {
 	Hud,///< `.owlhud`: opened in a scene document (the HUD is a scene of widgets).
 	Macro,///< `.owlmacro`: replayed on the active scene (one undo step).
 	ActionMap,///< `input_actions.yml`: opened in the action map document.
+	Material,///< `.owlmat`: opened in a material document.
 	Code,///< Script, source, data or markup text: opened in the code editor.
 	Unsupported///< Anything else.
 };

@@ -26,6 +26,7 @@
 #include "gui/widgets/Toggle.h"
 
 #include "input/ActionMap.h"
+#include "renderer/MaterialLibrary.h"
 #include "renderer/MeshCache.h"
 #include "renderer/Renderer.h"
 #include "scene/TilemapAsset.h"
@@ -40,6 +41,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cctype>
 #include <cfloat>
 #include <cmath>
 #include <cstddef>
@@ -48,10 +50,13 @@
 #include <filesystem>
 #include <format>
 #include <functional>
+#include <initializer_list>
 #include <optional>
 #include <span>
 #include <string>
+#include <string_view>
 #include <system_error>
+#include <type_traits>
 #include <unordered_map>
 #include <utility>
 
@@ -151,7 +156,7 @@ auto openAssetHandler() -> std::function<void(const std::filesystem::path&)>& {
 
 // Asset path field: its atlas swatch, the path (read only), then Open in its editor and Clear.
 auto assetPathRow(const char* iLabel, const std::string& iPath, const char* iHint, const char* iOpenTip,
-				  const shared<renderer::gpu::Texture2D>& iPreview = nullptr) -> bool {
+				  const shared<renderer::gpu::Texture2D>& iPreview = nullptr, const bool iCanOpen = true) -> bool {
 	bool cleared = false;
 	std::ignore = prop::row(iLabel, [&](const char* iId) -> bool {
 		const float side = ImGui::GetFrameHeight();
@@ -174,7 +179,7 @@ auto assetPathRow(const char* iLabel, const std::string& iPath, const char* iHin
 		if (widgets::iconButton("##open", {.glyph = icon::externalLink,
 										   .tooltip = "Open",
 										   .description = iOpenTip,
-										   .disabled = iPath.empty() || !openAssetHandler()}))
+										   .disabled = iPath.empty() || !iCanOpen || !openAssetHandler()}))
 			std::ignore = component::openAsset(iPath);
 		ImGui::SameLine();
 		cleared = widgets::iconButton("##clear", {.glyph = icon::x, .tooltip = "Clear", .disabled = iPath.empty()});
@@ -231,6 +236,216 @@ void syncScriptProperties(LuaScript& ioComponent) {
 void fieldTooltip(const char* iText) {
 	if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay))
 		ImGui::SetTooltip("%s", iText);
+}
+
+// Accept a Content Browser item whose extension is one of the given ones (lower case, with the dot).
+auto extensionDropTarget(const std::initializer_list<std::string_view> iExtensions, std::filesystem::path& oPath)
+		-> bool {
+	bool accepted = false;
+	if (ImGui::BeginDragDropTarget()) {
+		if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM")) {
+			const auto* const data = static_cast<const char*>(payload->Data);
+			const std::filesystem::path candidate{
+					std::string(data, ::strnlen(data, static_cast<size_t>(payload->DataSize)))};
+			auto extension = candidate.extension().string();
+			std::ranges::transform(extension, extension.begin(), [](const unsigned char iChar) -> char {
+				return static_cast<char>(std::tolower(iChar));
+			});
+			if (std::ranges::find(iExtensions, extension) != iExtensions.end()) {
+				oPath = candidate;
+				accepted = true;
+			}
+		}
+		ImGui::EndDragDropTarget();
+	}
+	return accepted;
+}
+
+// State of a material fields edit: the override mask and whether the fields carry override boxes.
+struct MaterialEdit {
+	renderer::MaterialParameters& values;
+	uint32_t& fields;
+	const renderer::MaterialParameters* inherited;
+	bool boxes;
+	bool changed = false;
+	// Fields a reset button was pressed on this frame.
+	uint32_t reset = 0;
+};
+
+auto defaultMaterial() -> const renderer::MaterialParameters& {
+	static const renderer::MaterialParameters s_defaults;
+	return s_defaults;
+}
+
+// The reset slot left of a field: a button when there is something to reset, else the same blank width.
+void resetSlot(MaterialEdit& ioEdit, const uint32_t iBit, const bool iResettable) {
+	const float size = ImGui::GetFrameHeight();
+	if (!iResettable) {
+		ImGui::Dummy({size, size});
+	} else {
+		if (ImGui::Button(icon::rotateCcw, {size, size})) {
+			ioEdit.reset |= iBit;
+			ioEdit.changed = true;
+		}
+		fieldTooltip(ioEdit.boxes ? "Stop overriding: use the material's value." : "Reset to the default value.");
+	}
+	ImGui::SameLine();
+}
+
+// One field: its override box (when asked), its reset button, then its widget, greyed while not overridden.
+template<typename T, typename Draw>
+void materialField(MaterialEdit& ioEdit, const renderer::MaterialField iField, const char* iLabel, T& ioValue,
+				   const T* iInherited, const T& iDefault, Draw&& iDraw) {
+	const auto bit = static_cast<uint32_t>(iField);
+	bool overridden = true;
+	ImGui::PushID(iLabel);
+	if (ioEdit.boxes) {
+		overridden = (ioEdit.fields & bit) != 0;
+		bool checked = overridden;
+		if (ImGui::Checkbox("##override", &checked)) {
+			if (checked) {
+				if (iInherited != nullptr)
+					ioValue = *iInherited;
+				ioEdit.fields |= bit;
+			} else {
+				ioEdit.fields &= ~bit;
+			}
+			overridden = checked;
+			ioEdit.changed = true;
+		}
+		fieldTooltip("Override this field; unchecked, the material's value is used.");
+		ImGui::SameLine();
+	}
+	resetSlot(ioEdit, bit, ioEdit.boxes ? overridden : !std::equal_to<T>{}(ioValue, iDefault));
+	ImGui::PopID();
+	T shown = (overridden || iInherited == nullptr) ? ioValue : *iInherited;
+	ImGui::BeginDisabled(!overridden);
+	if (std::forward<Draw>(iDraw)(iLabel, shown) && overridden) {
+		ioValue = shown;
+		ioEdit.changed = true;
+	}
+	ImGui::EndDisabled();
+}
+
+// A field named by its member of `MaterialParameters`.
+template<typename T, typename Draw>
+void memberField(MaterialEdit& ioEdit, const renderer::MaterialField iField, const char* iLabel,
+				 T renderer::MaterialParameters::* iMember, Draw&& iDraw) {
+	materialField(ioEdit, iField, iLabel, ioEdit.values.*iMember,
+				  ioEdit.inherited != nullptr ? &(ioEdit.inherited->*iMember) : nullptr, defaultMaterial().*iMember,
+				  std::forward<Draw>(iDraw));
+}
+
+auto drawUnitFloat(const char* iLabel, float& ioValue, const float iMin = 0.f, const float iMax = 1.f) -> bool {
+	return prop::DragFloat(iLabel, &ioValue, 0.005f, iMin, iMax);
+}
+
+// A field of a component with the reset slot left of it: a button bringing back the default while the value differs.
+template<typename T, typename Draw>
+auto resettable(const char* iLabel, T& ioValue, const T& iDefault, Draw&& iDraw) -> bool {
+	const float size = ImGui::GetFrameHeight();
+	bool changed = false;
+	ImGui::PushID(iLabel);
+	if (std::equal_to<T>{}(ioValue, iDefault)) {
+		ImGui::Dummy({size, size});
+	} else {
+		if (ImGui::Button(icon::rotateCcw, {size, size})) {
+			ioValue = iDefault;
+			changed = true;
+		}
+		fieldTooltip("Reset to the default value.");
+	}
+	ImGui::PopID();
+	ImGui::SameLine();
+	changed |= std::forward<Draw>(iDraw)(iLabel, ioValue);
+	return changed;
+}
+
+// A float field with its reset slot.
+auto resetFloat(const char* iLabel, float& ioValue, const float iDefault, const float iSpeed, const float iMin,
+				const float iMax, const char* iFormat = "%.3f", const ImGuiSliderFlags iFlags = 0) -> bool {
+	return resettable(iLabel, ioValue, iDefault, [&](const char* iId, float& ioField) -> bool {
+		return prop::DragFloat(iId, &ioField, iSpeed, iMin, iMax, iFormat, iFlags);
+	});
+}
+
+// A boolean field with its reset slot.
+auto resetCheckbox(const char* iLabel, bool& ioValue, const bool iDefault) -> bool {
+	return resettable(iLabel, ioValue, iDefault,
+					  [](const char* iId, bool& ioField) -> bool { return prop::Checkbox(iId, &ioField); });
+}
+
+// An sRGB colour field with its reset slot.
+auto resetColor(const char* iLabel, math::vec3& ioValue, const math::vec3& iDefault) -> bool {
+	return resettable(iLabel, ioValue, iDefault, [](const char* iId, math::vec3& ioField) -> bool {
+		return prop::ColorEdit3(iId, ioField.data());
+	});
+}
+
+// An angle stored in radians, edited in degrees, with its reset slot.
+auto resetDegrees(const char* iLabel, float& ioRadians, const float iDefault, const float iMin, const float iMax)
+		-> bool {
+	return resettable(iLabel, ioRadians, iDefault, [&](const char* iId, float& ioField) -> bool {
+		float degrees = math::degrees(ioField);
+		if (!prop::DragFloat(iId, &degrees, 0.5f, iMin, iMax, "%.1f deg"))
+			return false;
+		ioField = math::radians(std::clamp(degrees, iMin, iMax));
+		return true;
+	});
+}
+
+auto drawDegrees(const char* iLabel, float& ioRadians) -> bool {
+	float degrees = math::degrees(ioRadians);
+	if (!prop::DragFloat(iLabel, &degrees, 0.5f, -180.f, 180.f, "%.1f deg"))
+		return false;
+	ioRadians = math::radians(degrees);
+	return true;
+}
+
+template<typename Enum>
+auto drawEnum(const char* iLabel, Enum& ioValue) -> bool {
+	bool changed = false;
+	const std::string current{magic_enum::enum_name(ioValue)};
+	if (!prop::BeginCombo(iLabel, current.c_str()))
+		return false;
+	for (const auto value: magic_enum::enum_values<Enum>()) {
+		const std::string name{magic_enum::enum_name(value)};
+		if (ImGui::Selectable(name.c_str(), value == ioValue)) {
+			ioValue = value;
+			changed = true;
+		}
+	}
+	ImGui::EndCombo();
+	return changed;
+}
+
+// Texture map of a material, stored as a serialized texture name (`nam:` relative to the assets, `pat:` absolute).
+auto drawMapField(const char* iLabel, std::string& ioName) -> bool {
+	const bool relative = ioName.starts_with("nam:");
+	const bool hasPrefix = relative || ioName.starts_with("pat:");
+	const std::string shown = hasPrefix ? ioName.substr(4) : ioName;
+	bool changed = false;
+	if (assetPathRow(iLabel, shown, "drop an image", "Open the texture.", nullptr, false)) {
+		ioName.clear();
+		changed = true;
+	}
+	if (std::filesystem::path dropped; extensionDropTarget({".png", ".jpg", ".jpeg", ".bmp", ".tga"}, dropped)) {
+		ioName = std::string{dropped.is_absolute() ? "pat:" : "nam:"} + dropped.generic_string();
+		changed = true;
+	}
+	return changed;
+}
+
+constexpr std::array<const char*, renderer::g_materialMapCount> g_materialMapLabels{
+		"Base colour map", "Metallic map", "Normal map", "Occlusion map", "Emissive map", "Roughness map"};
+
+// Colour of a field that is not a number: sRGB colour edit.
+template<typename Vec>
+auto drawColor(const char* iLabel, Vec& ioColor) -> bool {
+	if constexpr (std::is_same_v<Vec, math::vec4>)
+		return prop::ColorEdit4(iLabel, ioColor.data());
+	else
+		return prop::ColorEdit3(iLabel, ioColor.data());
 }
 
 void drawVec3Control(const std::string& iLabel, math::vec3& iValues, const float iResetValue = 0.0f) {
@@ -336,6 +551,76 @@ void renderProps(Transform& ioComponent) {
 	drawVec3Control("Scale", ioComponent.transform.scale(), 1.0f);
 }
 
+namespace {
+
+// "Post process" section of a camera: exposure, bloom, vignette and colour-grading LUT.
+void renderPostProcess(renderer::Camera& ioCamera) {
+	if (!ImGui::TreeNodeEx("Post process", ImGuiTreeNodeFlags_SpanAvailWidth))
+		return;
+	auto settings = ioCamera.getPostProcess();
+	const renderer::PostProcessSettings defaults;
+	bool changed = false;
+	changed |= resetFloat("EV100", settings.ev100, defaults.ev100, 0.05f, -6.f, 20.f, "%.2f");
+	fieldTooltip("Exposure value of the camera at ISO 100: 15 sunny day, 12 overcast, 8 bright interior, 5 dim room, "
+				 "3 candle light. One step up halves the brightness.");
+	changed |= resetCheckbox("Auto exposure", settings.autoExposure, defaults.autoExposure);
+	fieldTooltip("Follow the average brightness of the frame, like the eye, instead of the EV100 above.");
+	if (settings.autoExposure) {
+		changed |= resetFloat("Darkest (EV100)", settings.autoExposureMin, defaults.autoExposureMin, 0.05f, -6.f, 20.f,
+							  "%.2f");
+		fieldTooltip("Darkest scene the exposure adapts to; darker ones look dark.");
+		changed |= resetFloat("Brightest (EV100)", settings.autoExposureMax, defaults.autoExposureMax, 0.05f, -6.f,
+							  20.f, "%.2f");
+		fieldTooltip("Brightest scene the exposure adapts to; brighter ones look bright.");
+		changed |= resetFloat("Adaptation (EV/s)", settings.autoExposureSpeed, defaults.autoExposureSpeed, 0.02f, 0.f,
+							  20.f, "%.2f");
+		fieldTooltip("Speed the exposure follows a change of brightness, in stops per second.");
+	}
+	changed |= resetFloat("Compensation", settings.exposure, defaults.exposure, 0.02f, -10.f, 10.f, "%.2f EV");
+	fieldTooltip("Exposure compensation in stops on top of the exposure: +1 doubles the brightness.");
+	changed |= resetCheckbox("Bloom", settings.bloom, defaults.bloom);
+	fieldTooltip("The bright parts of the image glow.");
+	if (settings.bloom) {
+		changed |= resetFloat("Bloom threshold", settings.bloomThreshold, defaults.bloomThreshold, 0.01f, 0.f, 100.f);
+		fieldTooltip("Displayed brightness above which the colour blooms (1 is white).");
+		changed |= resetFloat("Bloom knee", settings.bloomKnee, defaults.bloomKnee, 0.005f, 0.f, 1.f);
+		fieldTooltip("Softness of the threshold, 0 hard to 1 soft.");
+		changed |= resetFloat("Bloom intensity", settings.bloomIntensity, defaults.bloomIntensity, 0.005f, 0.f, 10.f);
+		fieldTooltip("Strength of the glow added to the scene.");
+		changed |= resetFloat("Bloom scatter", settings.bloomScatter, defaults.bloomScatter, 0.005f, 0.f, 1.f);
+		fieldTooltip("Spread of the glow, 0 tight to 1 wide.");
+	}
+	changed |= resetCheckbox("Vignette", settings.vignette, defaults.vignette);
+	fieldTooltip("The edges of the image darken.");
+	if (settings.vignette) {
+		changed |= resetFloat("Vignette intensity", settings.vignetteIntensity, defaults.vignetteIntensity, 0.005f, 0.f,
+							  1.f);
+		fieldTooltip("Strength of the vignette.");
+		changed |= resetFloat("Vignette smoothness", settings.vignetteSmoothness, defaults.vignetteSmoothness, 0.005f,
+							  0.f, 1.f);
+		fieldTooltip("Softness of the vignette edge.");
+		changed |= resetColor("Vignette colour", settings.vignetteColor, defaults.vignetteColor);
+		fieldTooltip("Colour the edges fade to.");
+	}
+	if (assetPathRow("Colour LUT", settings.lut, "drop a .cube", "Colour-grading look-up table.", nullptr, false)) {
+		settings.lut.clear();
+		changed = true;
+	}
+	if (std::filesystem::path dropped; extensionDropTarget({".cube"}, dropped)) {
+		settings.lut = dropped.generic_string();
+		changed = true;
+	}
+	if (!settings.lut.empty()) {
+		changed |= resetFloat("LUT contribution", settings.lutContribution, defaults.lutContribution, 0.005f, 0.f, 1.f);
+		fieldTooltip("Weight of the look-up table, 0 none to 1 fully graded.");
+	}
+	ImGui::TreePop();
+	if (changed)
+		ioCamera.setPostProcess(settings);
+}
+
+}// namespace
+
 void renderProps(Camera& ioComponent) {
 	auto& camera = ioComponent.camera;
 	prop::Checkbox("Primary", &ioComponent.primary);
@@ -393,6 +678,7 @@ void renderProps(Camera& ioComponent) {
 		prop::Checkbox("Fixed Aspect Ratio", &ioComponent.fixedAspectRatio);
 		fieldTooltip("Lock aspect ratio to prevent distortion when the viewport resizes.");
 	}
+	renderPostProcess(camera);
 }
 
 void renderProps(SpriteRenderer& ioComponent) {
@@ -468,6 +754,207 @@ void renderProps(CircleRenderer& ioComponent) {
 	prop::DragFloat("Fade", &ioComponent.fade, 0.00025f, 0.0f, 1.0f);
 }
 
+namespace {
+
+// Name of a map or empty text for a file material slot.
+auto fileMaterialOf(const MeshRenderer& iComponent, const size_t iSlot) -> shared<const renderer::Material> {
+	if (!iComponent.mesh || iSlot >= iComponent.mesh->getSubmeshes().size())
+		return nullptr;
+	return iComponent.mesh->getFileMaterial(iSlot);
+}
+
+// Values a slot's overrides replace: its resolved material, else the material it names, else the file's.
+auto inheritedValuesOf(const MeshRenderer& iComponent, const MeshRenderer::MaterialSlot& iSlot, const size_t iIndex)
+		-> std::optional<renderer::MaterialParameters> {
+	if (iSlot.resolved)
+		return iSlot.resolved->getParameters();
+	if (!iSlot.material.empty() && app::Application::instanced()) {
+		if (const auto material = app::Application::get().getEngineContext().getMaterialLibrary().get(iSlot.material))
+			return material->getParameters();
+		return std::nullopt;
+	}
+	if (const auto material = fileMaterialOf(iComponent, iIndex))
+		return material->getParameters();
+	return std::nullopt;
+}
+
+// One material slot: the material asset, then the fields it overrides for this entity.
+auto renderMaterialSlot(const MeshRenderer& iComponent, MeshRenderer::MaterialSlot& ioSlot, const size_t iIndex)
+		-> bool {
+	bool changed = false;
+	ImGui::PushID(static_cast<int>(iIndex));
+	const auto fileMaterial = fileMaterialOf(iComponent, iIndex);
+	if (ioSlot.material.empty() && fileMaterial) {
+		ImGui::ColorButton("##fileColor", vec(fileMaterial->getParameters().baseColor),
+						   ImGuiColorEditFlags_AlphaPreview | ImGuiColorEditFlags_NoTooltip);
+		ImGui::SameLine();
+		ImGui::TextDisabled("File material");
+	}
+	if (assetPathRow("Material", ioSlot.material.generic_string(), "File material", "Open the material.")) {
+		ioSlot.material.clear();
+		changed = true;
+	}
+	if (std::filesystem::path dropped; extensionDropTarget({".owlmat"}, dropped)) {
+		ioSlot.material = dropped;
+		changed = true;
+	}
+	if (ImGui::TreeNodeEx("Overrides", ImGuiTreeNodeFlags_SpanAvailWidth)) {
+		const auto inherited = inheritedValuesOf(iComponent, ioSlot, iIndex);
+		if (renderMaterialFields(ioSlot.overrides.values, ioSlot.overrides.fields, true,
+								 inherited ? &*inherited : nullptr))
+			changed = true;
+		ImGui::TreePop();
+	}
+	ImGui::PopID();
+	if (changed)
+		ioSlot.invalidate();
+	return changed;
+}
+
+// The "Materials" section of a mesh renderer: one slot per submesh of the loaded mesh.
+void renderMaterialSlots(MeshRenderer& ioComponent) {
+	const size_t count = ioComponent.mesh ? ioComponent.mesh->getSubmeshes().size() : ioComponent.materials.size();
+	if (count == 0 ||
+		!ImGui::TreeNodeEx("Materials", ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_SpanAvailWidth))
+		return;
+	for (size_t index = 0; index < count; ++index) {
+		const auto label = std::format("Slot {}", index);
+		if (!ImGui::TreeNodeEx(label.c_str(), ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_SpanAvailWidth))
+			continue;
+		if (index < ioComponent.materials.size()) {
+			std::ignore = renderMaterialSlot(ioComponent, ioComponent.materials[index], index);
+		} else {
+			MeshRenderer::MaterialSlot scratch;
+			if (renderMaterialSlot(ioComponent, scratch, index)) {
+				ioComponent.materials.resize(index + 1);
+				ioComponent.materials[index] = std::move(scratch);
+			}
+		}
+		ImGui::TreePop();
+	}
+	ImGui::TreePop();
+}
+
+}// namespace
+
+auto renderMaterialFields(renderer::MaterialParameters& ioValues, uint32_t& ioFields, const bool iShowOverrides,
+						  const renderer::MaterialParameters* iInherited) -> bool {
+	using Field = renderer::MaterialField;
+	using P = renderer::MaterialParameters;
+	MaterialEdit edit{.values = ioValues, .fields = ioFields, .inherited = iInherited, .boxes = iShowOverrides};
+	const auto unit = [](const char* iLabel, float& ioValue) -> bool { return drawUnitFloat(iLabel, ioValue); };
+	const auto channel = drawEnum<renderer::TextureChannel>;
+
+	const bool anything = iShowOverrides ? ioFields != 0 : ioValues.differingFields(defaultMaterial()) != 0;
+	ImGui::BeginDisabled(!anything);
+	if (ImGui::Button(std::format("{} Reset all", icon::rotateCcw).c_str()))
+		edit.reset = renderer::g_allMaterialFields;
+	fieldTooltip(iShowOverrides ? "Stop overriding every field." : "Give every field its default value.");
+	ImGui::EndDisabled();
+
+	ImGui::SeparatorText("Surface");
+	memberField(edit, Field::ShadingModel, "Shading", &P::shadingModel, drawEnum<renderer::ShadingModel>);
+	memberField(edit, Field::BaseColor, "Base colour", &P::baseColor, drawColor<math::vec4>);
+	memberField(edit, Field::Metallic, "Metallic", &P::metallic, unit);
+	memberField(edit, Field::Ior, "IOR", &P::ior, [](const char* iLabel, float& ioValue) -> bool {
+		return prop::DragFloat(iLabel, &ioValue, 0.005f, 1.f, 3.f, "%.3f");
+	});
+	fieldTooltip("Index of refraction of a dielectric: water 1.33, plastic and glass 1.5, diamond 2.42. Sets the "
+				 "reflection at normal incidence (4 % at 1.5); metals ignore it.");
+	memberField(edit, Field::Roughness, "Roughness", &P::roughness, unit);
+	memberField(edit, Field::NormalScale, "Normal scale", &P::normalScale,
+				[](const char* iLabel, float& ioValue) -> bool { return drawUnitFloat(iLabel, ioValue, 0.f, 4.f); });
+	memberField(edit, Field::NormalConvention, "Normal convention", &P::normalConvention,
+				drawEnum<renderer::NormalConvention>);
+	fieldTooltip("OpenGl when the green of the normal map points up the image (glTF, Blender, nor_gl), DirectX when "
+				 "it points down (Unreal, nor_dx).");
+	memberField(edit, Field::OcclusionStrength, "Occlusion", &P::occlusionStrength, unit);
+	memberField(edit, Field::DoubleSided, "Double sided", &P::doubleSided,
+				[](const char* iLabel, bool& ioValue) -> bool { return prop::Checkbox(iLabel, &ioValue); });
+
+	ImGui::SeparatorText("Maps");
+	const auto mapRow = [&](const renderer::MaterialMap iMap) -> void {
+		const auto index = static_cast<size_t>(iMap);
+		materialField(edit, renderer::mapField(iMap), g_materialMapLabels[index], ioValues.maps[index],
+					  iInherited != nullptr ? &iInherited->maps[index] : nullptr, defaultMaterial().maps[index],
+					  drawMapField);
+	};
+	mapRow(renderer::MaterialMap::BaseColor);
+	mapRow(renderer::MaterialMap::Metallic);
+	memberField(edit, Field::MetallicChannel, "Metallic channel", &P::metallicChannel, channel);
+	mapRow(renderer::MaterialMap::Roughness);
+	memberField(edit, Field::RoughnessChannel, "Roughness channel", &P::roughnessChannel, channel);
+	mapRow(renderer::MaterialMap::Occlusion);
+	memberField(edit, Field::OcclusionChannel, "Occlusion channel", &P::occlusionChannel, channel);
+	mapRow(renderer::MaterialMap::Normal);
+	mapRow(renderer::MaterialMap::Emissive);
+	const auto& occlusion = ioValues.maps[static_cast<size_t>(renderer::MaterialMap::Occlusion)];
+	ImGui::BeginDisabled(occlusion.empty());
+	if (ImGui::Button("Use the occlusion map as ARM")) {
+		ioValues.maps[static_cast<size_t>(renderer::MaterialMap::Metallic)] = occlusion;
+		ioValues.maps[static_cast<size_t>(renderer::MaterialMap::Roughness)] = occlusion;
+		ioValues.occlusionChannel = renderer::TextureChannel::R;
+		ioValues.roughnessChannel = renderer::TextureChannel::G;
+		ioValues.metallicChannel = renderer::TextureChannel::B;
+		if (iShowOverrides)
+			ioFields |= static_cast<uint32_t>(Field::MetallicMap) | static_cast<uint32_t>(Field::RoughnessMap) |
+						static_cast<uint32_t>(Field::MetallicChannel) | static_cast<uint32_t>(Field::RoughnessChannel) |
+						static_cast<uint32_t>(Field::OcclusionChannel);
+		edit.changed = true;
+	}
+	fieldTooltip("One image packing occlusion in R, roughness in G and metallic in B: it becomes the metallic and "
+				 "roughness maps too, each reading its channel.");
+	ImGui::EndDisabled();
+
+	ImGui::SeparatorText("Emission");
+	memberField(edit, Field::Emissive, "Emissive", &P::emissive, drawColor<math::vec3>);
+	memberField(edit, Field::EmissiveLuminance, "Luminance (cd/m2)", &P::emissiveLuminance,
+				[](const char* iLabel, float& ioValue) -> bool {
+					return prop::DragFloat(iLabel, &ioValue, 10.f, 0.f, 1.e7f, "%.0f", ImGuiSliderFlags_Logarithmic);
+				});
+
+	ImGui::SeparatorText("Layers");
+	memberField(edit, Field::Clearcoat, "Clearcoat", &P::clearcoat, unit);
+	memberField(edit, Field::ClearcoatRoughness, "Clearcoat roughness", &P::clearcoatRoughness, unit);
+	memberField(edit, Field::ClearcoatIor, "Clearcoat IOR", &P::clearcoatIor,
+				[](const char* iLabel, float& ioValue) -> bool {
+					return prop::DragFloat(iLabel, &ioValue, 0.005f, 1.f, 3.f, "%.3f");
+				});
+	memberField(edit, Field::SheenColor, "Sheen colour", &P::sheenColor, drawColor<math::vec3>);
+	memberField(edit, Field::SheenRoughness, "Sheen roughness", &P::sheenRoughness, unit);
+	memberField(edit, Field::Anisotropy, "Anisotropy", &P::anisotropy,
+				[](const char* iLabel, float& ioValue) -> bool { return drawUnitFloat(iLabel, ioValue, -1.f, 1.f); });
+	memberField(edit, Field::AnisotropyRotation, "Anisotropy rotation", &P::anisotropyRotation, drawDegrees);
+
+	const auto shading =
+			(iShowOverrides && iInherited != nullptr && (ioFields & static_cast<uint32_t>(Field::ShadingModel)) == 0)
+					? iInherited->shadingModel
+					: ioValues.shadingModel;
+	if (shading == renderer::ShadingModel::Toon) {
+		ImGui::SeparatorText("Toon");
+		memberField(edit, Field::ToonBands, "Bands", &P::toonBands, [](const char* iLabel, uint32_t& ioValue) -> bool {
+			int bands = static_cast<int>(ioValue);
+			if (!prop::DragInt(iLabel, &bands, 0.1f, 1, 16))
+				return false;
+			ioValue = static_cast<uint32_t>(std::clamp(bands, 1, 16));
+			return true;
+		});
+		memberField(edit, Field::ToonRim, "Rim", &P::toonRim, unit);
+	}
+
+	ImGui::SeparatorText("Alpha");
+	memberField(edit, Field::AlphaMode, "Alpha mode", &P::alphaMode, drawEnum<renderer::AlphaMode>);
+	memberField(edit, Field::AlphaCutoff, "Alpha cutoff", &P::alphaCutoff, unit);
+
+	if (edit.reset != 0) {
+		if (iShowOverrides)
+			ioFields &= ~edit.reset;
+		else
+			ioValues.copyFields(defaultMaterial(), edit.reset);
+	}
+	return edit.changed;
+}
+
 void renderProps(MeshRenderer& ioComponent) {
 	const auto& mesh = ioComponent.mesh;
 	auto preview = ioComponent.texture;
@@ -485,10 +972,10 @@ void renderProps(MeshRenderer& ioComponent) {
 	fieldTooltip("Replaces the base-colour texture of the mesh material; empty keeps the material's (shown faded).");
 	prop::Checkbox("Transparent", &ioComponent.transparent);
 	fieldTooltip("Draw with alpha blending (the colour alpha), after the opaque meshes and sorted back-to-front.");
+	renderMaterialSlots(ioComponent);
 	if (mesh) {
 		const auto& geometry = mesh->getGeometry();
 		ImGui::Text("Vertices: %zu, triangles: %zu", geometry.vertices.size(), geometry.indices.size() / 3);
-		ImGui::Text("Material texture: %s", mesh->getBaseColorTexture() ? "yes" : "none");
 	} else if (!ioComponent.meshPath.empty()) {
 		ImGui::TextDisabled("(loaded on the next frame, or the file cannot be read: see the log)");
 	} else {
@@ -496,72 +983,103 @@ void renderProps(MeshRenderer& ioComponent) {
 	}
 }
 
-void renderProps(Light& ioComponent) {
-	prop::Checkbox("Enabled", &ioComponent.enabled);
-	fieldTooltip("A light switched off keeps its settings and stops shining.");
-	if (prop::BeginCombo("Type", std::string(magic_enum::enum_name(ioComponent.type)).c_str())) {
-		for (const auto type: magic_enum::enum_values<Light::Type>()) {
-			const bool isSelected = ioComponent.type == type;
-			if (ImGui::Selectable(std::string(magic_enum::enum_name(type)).c_str(), isSelected))
-				ioComponent.type = type;
-			if (isSelected)
-				ImGui::SetItemDefaultFocus();
-		}
-		ImGui::EndCombo();
+void renderProps(Environment& ioComponent) {
+	const Environment defaults;
+	if (assetPathRow("HDRI", ioComponent.hdri.generic_string(), "drop a .hdr", "Open the image.", nullptr, false))
+		ioComponent.hdri.clear();
+	if (std::filesystem::path dropped; extensionDropTarget({".hdr"}, dropped))
+		ioComponent.hdri = dropped;
+	fieldTooltip("Equirectangular HDR image lighting the 3D layers; empty lights them with the ambient colour.");
+	resetFloat("Luminance (cd/m2)", ioComponent.intensity, defaults.intensity, 10.f, 0.f, 1.e6f, "%.1f",
+			   ImGuiSliderFlags_Logarithmic);
+	fieldTooltip("Luminance of the sky: a pixel value of 1 of the image, or a white ambient, shines this bright. Clear "
+				 "day 10 000, overcast 2 000, dusk 100, night 0.01; 0 leaves only the lights.");
+	if (ioComponent.hdri.empty()) {
+		resetColor("Ambient", ioComponent.ambient, defaults.ambient);
+		fieldTooltip("Colour of the constant sky lighting the scene without an image.");
 	}
+	resetDegrees("Rotation", ioComponent.rotation, defaults.rotation, -360.f, 360.f);
+	fieldTooltip("Rotation of the image about the vertical axis, in degrees.");
+	resetCheckbox("Show Sky", ioComponent.showSky, defaults.showSky);
+	fieldTooltip("Draw the image behind the scene as its sky.");
+}
+
+void renderProps(Light& ioComponent) {
+	const Light defaults;
+	resetCheckbox("Enabled", ioComponent.enabled, defaults.enabled);
+	fieldTooltip("A light switched off keeps its settings and stops shining.");
+	const auto previousType = ioComponent.type;
+	resettable("Type", ioComponent.type, defaults.type, drawEnum<Light::Type>);
 	fieldTooltip("Directional: parallel rays like the sun, the only kind casting shadows. Point: radiates from its "
 				 "position. Spot: a point light restricted to a cone. It shines along -Z of the entity.");
-	prop::ColorEdit3("Color", ioComponent.color.data());
-	fieldTooltip("Colour of the light, as authored (sRGB).");
-	prop::DragFloat("Intensity", &ioComponent.intensity, 0.01f, 0.0f, 1000.0f);
-	fieldTooltip("Multiplier of the colour.");
-	if (ioComponent.type != Light::Type::Directional) {
-		prop::DragFloat("Range", &ioComponent.range, 0.1f, 0.01f, 100000.0f);
-		fieldTooltip("Distance where the light reaches zero, in world units.");
+	const bool directional = ioComponent.type == Light::Type::Directional;
+	const float defaultIntensity = directional ? g_defaultSunIlluminance : g_defaultBulbPower;
+	// Switching between lux and lumens keeps a default value a default value of the new unit.
+	if (previousType != ioComponent.type &&
+		std::equal_to<float>{}(ioComponent.intensity,
+							   previousType == Light::Type::Directional ? g_defaultSunIlluminance : g_defaultBulbPower))
+		ioComponent.intensity = defaultIntensity;
+	resetColor("Color", ioComponent.color, defaults.color);
+	fieldTooltip("Colour of the light, as authored (sRGB): candle and fire about [1, 0.55, 0.25], tungsten bulb "
+				 "[1, 0.8, 0.6], noon sun white, overcast sky [0.85, 0.9, 1].");
+	if (directional) {
+		resetFloat("Illuminance (lx)", ioComponent.intensity, defaultIntensity, 100.f, 0.f, 200000.f, "%.1f",
+				   ImGuiSliderFlags_Logarithmic);
+		fieldTooltip("Light received by a surface facing it: noon sun 100 000 lx, overcast 10 000, sunrise 400, full "
+					 "moon 0.25.");
+	} else {
+		resetFloat("Power (lm)", ioComponent.intensity, defaultIntensity, 1.f, 0.f, 1.e6f, "%.1f",
+				   ImGuiSliderFlags_Logarithmic);
+		fieldTooltip("Luminous power: candle 12 lm, 60 W bulb 800, fireplace 2 000, street lamp 10 000. It falls off "
+					 "with the square of the distance.");
+		resetFloat("Range", ioComponent.range, defaults.range, 0.1f, 0.01f, 100000.0f);
+		fieldTooltip("Distance where the light is cut off smoothly, in world units (metres).");
 	}
 	if (ioComponent.type == Light::Type::Spot) {
 		constexpr float maxAngle = 89.f;
-		float inner = std::clamp(math::degrees(ioComponent.innerAngle), 0.f, maxAngle);
-		float outer = std::clamp(math::degrees(ioComponent.outerAngle), 0.f, maxAngle);
-		if (prop::DragFloat("Inner Angle", &inner, 0.5f, 0.0f, maxAngle, "%.1f deg")) {
-			inner = std::clamp(inner, 0.f, maxAngle);
-			outer = std::max(outer, inner);
-			ioComponent.innerAngle = math::radians(inner);
-			ioComponent.outerAngle = math::radians(outer);
-		}
+		if (resetDegrees("Inner Angle", ioComponent.innerAngle, defaults.innerAngle, 0.f, maxAngle))
+			ioComponent.outerAngle = std::max(ioComponent.outerAngle, ioComponent.innerAngle);
 		fieldTooltip("Half angle of the cone at full intensity, in degrees.");
-		if (prop::DragFloat("Outer Angle", &outer, 0.5f, 0.0f, maxAngle, "%.1f deg")) {
-			outer = std::clamp(outer, 0.f, maxAngle);
-			inner = std::min(inner, outer);
-			ioComponent.innerAngle = math::radians(inner);
-			ioComponent.outerAngle = math::radians(outer);
-		}
+		if (resetDegrees("Outer Angle", ioComponent.outerAngle, defaults.outerAngle, 0.f, maxAngle))
+			ioComponent.innerAngle = std::min(ioComponent.innerAngle, ioComponent.outerAngle);
 		fieldTooltip("Half angle of the cone where the light reaches zero, in degrees.");
 	}
-	if (ioComponent.type != Light::Type::Directional)
+	if (!directional)
 		return;
-	prop::Checkbox("Cast Shadows", &ioComponent.castShadows);
+	resetCheckbox("Cast Shadows", ioComponent.castShadows, defaults.castShadows);
 	fieldTooltip("The first shadow-casting directional light of the scene shadows the 3D layers.");
 	if (!ioComponent.castShadows)
 		return;
-	prop::DragFloat("Shadow Distance", &ioComponent.shadowDistance, 0.5f, 1.0f, 100000.0f);
+	resetFloat("Shadow Distance", ioComponent.shadowDistance, defaults.shadowDistance, 0.5f, 1.0f, 100000.0f);
 	fieldTooltip("Distance from the camera the shadows cover, in world units.");
-	int cascades = static_cast<int>(ioComponent.cascadeCount);
-	if (prop::DragInt("Cascades", &cascades, 0.1f, 1, 4))
-		ioComponent.cascadeCount = static_cast<uint32_t>(std::clamp(cascades, 1, 4));
+	resettable("Cascades", ioComponent.cascadeCount, defaults.cascadeCount,
+			   [](const char* iId, uint32_t& ioField) -> bool {
+				   int cascades = static_cast<int>(ioField);
+				   if (!prop::DragInt(iId, &cascades, 0.1f, 1, 4))
+					   return false;
+				   ioField = static_cast<uint32_t>(std::clamp(cascades, 1, 4));
+				   return true;
+			   });
 	fieldTooltip("Number of shadow cascades, from 1 to 4: more give sharper shadows near the camera.");
-	if (prop::BeginCombo("Resolution", std::to_string(ioComponent.shadowResolution).c_str())) {
-		for (const uint32_t resolution: {512u, 1024u, 2048u, 4096u}) {
-			const bool isSelected = ioComponent.shadowResolution == resolution;
-			if (ImGui::Selectable(std::to_string(resolution).c_str(), isSelected))
-				ioComponent.shadowResolution = resolution;
-			if (isSelected)
-				ImGui::SetItemDefaultFocus();
-		}
-		ImGui::EndCombo();
-	}
+	resettable("Resolution", ioComponent.shadowResolution, defaults.shadowResolution,
+			   [](const char* iId, uint32_t& ioField) -> bool {
+				   bool changed = false;
+				   if (prop::BeginCombo(iId, std::to_string(ioField).c_str())) {
+					   for (const uint32_t resolution: {512u, 1024u, 2048u, 4096u}) {
+						   const bool isSelected = ioField == resolution;
+						   if (ImGui::Selectable(std::to_string(resolution).c_str(), isSelected)) {
+							   ioField = resolution;
+							   changed = true;
+						   }
+						   if (isSelected)
+							   ImGui::SetItemDefaultFocus();
+					   }
+					   ImGui::EndCombo();
+				   }
+				   return changed;
+			   });
 	fieldTooltip("Size of each cascade's shadow map, in texels.");
-	prop::DragFloat("Bias", &ioComponent.shadowBias, 0.05f, 0.0f, 20.0f);
+	resetFloat("Bias", ioComponent.shadowBias, defaults.shadowBias, 0.05f, 0.0f, 20.0f);
 	fieldTooltip("Depth bias against self-shadowing, in shadow-map texels along the surface normal.");
 }
 
@@ -1650,6 +2168,45 @@ void renderProps(RaycastPushWall& ioComponent) {
 	ImGui::Text("Runtime: state=%s offset=%.3f", stateName, static_cast<double>(ioComponent.currentOffset));
 }
 
+namespace {
+void remeshVoxelWorld(VoxelWorld& ioComponent) {
+	for (const auto& coord: ioComponent.world.chunkCoordinates())
+		if (const auto chunk = ioComponent.world.getChunk(coord))
+			chunk->markDirty();
+}
+
+auto drawBlockSurface(data::voxel::BlockSurface& ioSurface) -> bool {
+	bool changed = drawUnitFloat("Metallic", ioSurface.metallic);
+	changed |= drawUnitFloat("Roughness", ioSurface.roughness);
+	changed |= prop::DragFloat("Luminance (cd/m2)", &ioSurface.emissive, 10.f, 0.f, data::voxel::g_MaxBlockLuminance,
+							   "%.0f", ImGuiSliderFlags_Logarithmic);
+	fieldTooltip("Luminance of the tile colour glowing without light: lava 5 000, glowstone 2 000, 0 for none.");
+	changed |= drawUnitFloat("Clearcoat", ioSurface.clearcoat);
+	fieldTooltip("A smooth clear layer over the block: wet stone, ice, varnish.");
+	return changed;
+}
+
+void renderBlockTypes(VoxelWorld& ioComponent) {
+	if (ioComponent.registry.count() <= 1 || !ImGui::TreeNodeEx("Blocks", ImGuiTreeNodeFlags_SpanAvailWidth))
+		return;
+	bool changed = false;
+	for (data::voxel::BlockId id = 1; id < static_cast<data::voxel::BlockId>(ioComponent.registry.count()); ++id) {
+		auto block = ioComponent.registry.get(id);
+		ImGui::PushID(static_cast<int>(id));
+		if (ImGui::TreeNodeEx("block", ImGuiTreeNodeFlags_SpanAvailWidth, "%u  %s", static_cast<uint32_t>(id),
+							  block.name.c_str())) {
+			if (drawBlockSurface(block.surface))
+				changed |= ioComponent.registry.setBlock(id, block);
+			ImGui::TreePop();
+		}
+		ImGui::PopID();
+	}
+	ImGui::TreePop();
+	if (changed)
+		remeshVoxelWorld(ioComponent);
+}
+}// namespace
+
 void renderProps(VoxelWorld& ioComponent) {
 	const size_t blockCount = ioComponent.registry.count() > 0 ? ioComponent.registry.count() - 1 : 0;
 	ImGui::Text("Blocks: %zu", blockCount);
@@ -1667,12 +2224,10 @@ void renderProps(VoxelWorld& ioComponent) {
 	ImGui::Separator();
 	drawVec3Control("Sun Direction", ioComponent.sunDirection);
 	prop::ColorEdit3("Ambient", ioComponent.ambient.data());
-	if (prop::Checkbox("Ambient Occlusion", &ioComponent.ambientOcclusion)) {
-		for (const auto& coord: ioComponent.world.chunkCoordinates())
-			if (const auto chunk = ioComponent.world.getChunk(coord))
-				chunk->markDirty();
-	}
+	if (prop::Checkbox("Ambient Occlusion", &ioComponent.ambientOcclusion))
+		remeshVoxelWorld(ioComponent);
 	fieldTooltip("Bake per-vertex ambient occlusion that darkens concave block edges; off gives flat lighting.");
+	renderBlockTypes(ioComponent);
 	ImGui::Separator();
 	prop::Checkbox("Procedural Terrain", &ioComponent.proceduralTerrain);
 	fieldTooltip("Stream chunks in/out around the camera from the seed below, instead of authored chunks.");

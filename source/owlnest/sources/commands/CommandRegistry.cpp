@@ -21,6 +21,8 @@
 
 #include <app/EngineContext.h>
 #include <data/geometry/MeshLoader.h>
+#include <renderer/Material.h>
+#include <renderer/MeshCache.h>
 #include <renderer/RenderLayerFactory.h>
 #include <renderer/RenderStack.h>
 #include <scene/ComponentRegistry.h>
@@ -43,6 +45,7 @@
 #include <numbers>
 #include <optional>
 #include <sstream>
+#include <system_error>
 #include <tuple>
 #include <utility>
 
@@ -51,6 +54,9 @@ namespace owl::nest::commands {
 namespace {
 
 using Prepared = expected<PreparedCommand, CommandFailure>;
+
+// Most material slots a mesh renderer accepts.
+constexpr size_t g_maxMaterialSlots = 64;
 
 auto fail(const CommandError iError, std::string iMessage) -> unexpected<CommandFailure> {
 	return unexpected<CommandFailure>{CommandFailure{.error = iError, .message = std::move(iMessage)}};
@@ -492,6 +498,66 @@ auto setComponent(const shared<scene::Scene>& ioScene, const CommandArgs& iArgs)
 						   .data = {{"component", desc->key}}};
 }
 
+auto assignMaterial(const shared<scene::Scene>& ioScene, const CommandArgs& iArgs) -> Prepared {
+	const auto entity = entityArg(*ioScene, iArgs, "entity");
+	if (!entity)
+		return unexpected<CommandFailure>{entity.error()};
+	if (!entity->hasComponent<scene::component::MeshRenderer>())
+		return fail(CommandError::InvalidArgument, "the entity has no `MeshRenderer`");
+	const auto slot = iArgs.get<int64_t>("slot").value_or(-1);
+	const auto material = iArgs.getText("material");
+	if (!material.empty() && std::filesystem::path{material}.extension() != ".owlmat")
+		return fail(CommandError::InvalidArgument, "`material` must be a `.owlmat` file or empty");
+	auto& meshRenderer = entity->getComponent<scene::component::MeshRenderer>();
+	const size_t loaded = meshRenderer.mesh ? meshRenderer.mesh->getSubmeshes().size() : 0;
+	const size_t known = std::max(meshRenderer.materials.size(), loaded);
+	if (slot < -1 || (slot >= 0 && loaded != 0 && static_cast<size_t>(slot) >= loaded) ||
+		(slot >= 0 && static_cast<size_t>(slot) >= g_maxMaterialSlots))
+		return fail(CommandError::InvalidArgument, std::format("slot {} does not exist", slot));
+	if (slot < 0 && known == 0)
+		return fail(CommandError::NotApplicable, "the mesh has no material slot yet");
+	const auto beforeYaml = scene::SceneSerializer::serializeEntityToString(*entity);
+	const size_t first = slot < 0 ? 0 : static_cast<size_t>(slot);
+	const size_t end = slot < 0 ? known : first + 1;
+	if (meshRenderer.materials.size() < end)
+		meshRenderer.materials.resize(end);
+	for (size_t index = first; index < end; ++index) {
+		meshRenderer.materials[index].material = material;
+		meshRenderer.materials[index].invalidate();
+	}
+	auto command = mkUniq<ModifyEntityCommand>(entity->getUUID(), EntitySnapshot{entity->getUUID(), beforeYaml},
+											   std::format("Assign material to '{}'", entity->getName()));
+	command->setPrefabOverrides(PrefabOverrideChange::record(*entity, *ioScene, beforeYaml));
+	command->captureAfter(*entity);
+	return PreparedCommand{.command = std::move(command),
+						   .applied = true,
+						   .entity = entity->getUUID(),
+						   .data = {{"slot", slot}, {"material", material}}};
+}
+
+auto createMaterial(const CommandContext& /*iContext*/, const CommandArgs& iArgs)
+		-> expected<CommandResult, CommandFailure> {
+	const std::filesystem::path path{iArgs.getText("path")};
+	if (path.extension() != ".owlmat")
+		return fail(CommandError::InvalidArgument, "`path` must end with `.owlmat`");
+	if (std::filesystem::exists(path))
+		return fail(CommandError::InvalidArgument, std::format("{} already exists", path.string()));
+	renderer::MaterialAsset asset;
+	if (const auto parent = iArgs.getText("parent"); !parent.empty()) {
+		if (std::filesystem::path{parent}.extension() != ".owlmat")
+			return fail(CommandError::InvalidArgument, "`parent` must be a `.owlmat` file");
+		asset.parent = parent;
+		asset.overrides = 0;
+	}
+	std::error_code error;
+	std::filesystem::create_directories(path.parent_path(), error);
+	if (!asset.save(path))
+		return fail(CommandError::NotApplicable, std::format("cannot write {}", path.string()));
+	return CommandResult{.entity = core::UUID{0},
+						 .description = std::format("Create material {}", path.filename().string()),
+						 .data = {{"path", path.generic_string()}}};
+}
+
 auto addRenderLayer(const CommandContext& iContext, const CommandArgs& iArgs)
 		-> expected<CommandResult, CommandFailure> {
 	if (iContext.projectStack == nullptr)
@@ -832,6 +898,33 @@ CommandRegistry::CommandRegistry() {
 				   .type = ArgType::Text,
 				   .description = "Render-stack layer of the entity, recorded in a `RendererTag` (none when empty)."}},
 		 .factory = createMesh});
+	add({.name = "material.assign",
+		 .description = "Give a submesh slot of a `MeshRenderer` a `.owlmat` material, or the file's own material when "
+						"empty.",
+		 .args = {entitySpec("Entity with a `MeshRenderer`."),
+				  {.name = "slot",
+				   .type = ArgType::Integer,
+				   .description = "Submesh slot, from 0; -1 for every slot.",
+				   .defaultValue = int64_t{-1}},
+				  {.name = "material",
+				   .type = ArgType::Text,
+				   .description = "Asset path of the `.owlmat`; empty to clear.",
+				   .defaultValue = std::string{}}},
+		 .factory = assignMaterial});
+	add({.name = "material.create",
+		 .description = "Create a `.owlmat` material file: a root material with the default values, or an instance of "
+						"`parent` inheriting everything.",
+		 .args = {{.name = "path",
+				   .type = ArgType::Text,
+				   .required = true,
+				   .description = "Material file to write (`.owlmat`, must not exist).",
+				   .projectPath = true},
+				  {.name = "parent",
+				   .type = ArgType::Text,
+				   .description = "Asset path of the parent `.owlmat` (a root material when empty)."}},
+		 .factory = {},
+		 .run = createMaterial,
+		 .allowedInPlay = true});
 	add({.name = "entity.create_light",
 		 .description = "Create an entity with a `Light`: a directional light (sun) tilted down, or a point or spot "
 						"light above the origin.",
