@@ -218,6 +218,7 @@ void Viewport::attach() {
 void Viewport::detach() {
 	OWL_TRACE("Viewport: framebuffer freed.")
 	m_framebuffer.reset();
+	m_previewFramebuffer.reset();
 }
 
 void Viewport::onUpdate(const core::Timestep& iTimeStep) {
@@ -372,7 +373,47 @@ void Viewport::onUpdate(const core::Timestep& iTimeStep) {
 	renderOverlay();
 
 	m_framebuffer->unbind();
+	renderCameraPreview(activeScene);
 }
+
+void Viewport::renderCameraPreview(const shared<scene::Scene>& iScene) {
+	m_previewEntity = core::UUID{0};
+	if (m_parent == nullptr || !m_parent->getSettings().showCameraPreview || m_isometric ||
+		mp_document->state() != SceneDocument::State::Edit || !canGoToCameraViewpoint())
+		return;
+	const scene::Entity selected = m_parent->getSelectedEntity();
+	if (isPiloted(selected) || getSize().surface() == 0)
+		return;
+	const auto viewport = getSize();
+	const float width = std::clamp(static_cast<float>(viewport.x()) * 0.28f, 160.f, 480.f);
+	const math::vec2ui size{static_cast<uint32_t>(width),
+							std::max(1u, static_cast<uint32_t>(width / viewport.ratio()))};
+	if (!m_previewFramebuffer) {
+		using Attachment = renderer::gpu::AttachmentSpecification;
+		m_previewFramebuffer = renderer::gpu::Framebuffer::create(
+				{.size = size,
+				 .attachments = {{.format = Attachment::Format::Surface, .tiling = Attachment::Tiling::Optimal},
+								 {.format = Attachment::Format::RedInteger, .tiling = Attachment::Tiling::Optimal},
+								 {.format = Attachment::Format::Depth24Stencil8,
+								  .tiling = Attachment::Tiling::Optimal}},
+				 .samples = 1,
+				 .swapChainTarget = false,
+				 .debugName = "camera_preview"});
+	} else if (m_previewFramebuffer->getSpecification().size != size) {
+		m_previewFramebuffer->resize(size);
+	}
+	m_previewCamera = selected.getComponent<scene::component::Camera>().camera;
+	m_previewCamera.setViewportSize(size);
+	m_previewCamera.setTransform(iScene->getWorldTransform(selected)());
+	m_previewFramebuffer->bind();
+	renderer::gpu::RenderCommand::setClearColor({0.1f, 0.1f, 0.1f, 1});
+	renderer::gpu::RenderCommand::clear();
+	m_previewFramebuffer->clearAttachment(1, -1);
+	iScene->renderEditorView(m_previewCamera);
+	m_previewFramebuffer->unbind();
+	m_previewEntity = selected.getUUID();
+}
+
 
 void Viewport::onRenderInternal() {
 	OWL_PROFILE_FUNCTION()
@@ -394,6 +435,7 @@ void Viewport::onRenderInternal() {
 	renderGizmo();
 	renderOverlayToolbar();
 	renderCameraGizmo();
+	renderCameraPreviewInset();
 	renderContextMenu();
 }
 
@@ -1502,6 +1544,34 @@ void Viewport::updatePilot(const shared<scene::Scene>& iScene, const core::Times
 	m_pilotCamera.setTransform(iScene->getWorldTransform(camera)());
 }
 
+void Viewport::renderCameraPreviewInset() {
+	if (m_previewEntity == core::UUID{0} || !m_previewFramebuffer || mp_document == nullptr)
+		return;
+	const auto& scene = mp_document->getActiveScene();
+	const scene::Entity camera = scene ? scene->findEntityByUUID(m_previewEntity) : scene::Entity{};
+	const auto texture = gui::imTexture(m_previewFramebuffer, 0);
+	if (!camera || !texture.has_value())
+		return;
+	// Above the view-cube of `renderCameraGizmo` (its side and margin).
+	constexpr float cubeSide = 78.f;
+	constexpr float margin = 10.f;
+	if (beginOverlay(std::format("##vpPreview{:x}", static_cast<uint64_t>(mp_document->id())),
+					 {m_upper.x() - margin, m_upper.y() - margin - cubeSide - 6.f}, {1.f, 1.f})) {
+		ImGui::AlignTextToFramePadding();
+		ImGui::TextUnformatted(std::format("{}  {}", gui::icon::video, camera.getName()).c_str());
+		ImGui::SameLine();
+		if (gui::widgets::iconButton("pilotPreview", {.glyph = gui::icon::move3d,
+													  .tooltip = "Pilot Camera",
+													  .description = "Render the view through this camera and move "
+																	 "it with the view."}))
+			pilotSelectedCamera();
+		const auto size = m_previewFramebuffer->getSpecification().size;
+		ImGui::Image(texture.value(), {static_cast<float>(size.x()), static_cast<float>(size.y())},
+					 gui::vec(m_previewFramebuffer->getLowerData()), gui::vec(m_previewFramebuffer->getUpperData()));
+	}
+	endOverlay();
+}
+
 void Viewport::renderPilotBanner() {
 	if (!m_pilot.isActive() || mp_document == nullptr || !mp_document->getActiveScene())
 		return;
@@ -1569,6 +1639,7 @@ void Viewport::renderViewOverlay() {
 			option("Grid", settings.showGrid);
 			option("Grid on the ground (3D)", settings.gridOnGround);
 			option("Camera markers", settings.showCameraGizmos);
+			option("Camera preview", settings.showCameraPreview);
 			option("Trigger icons", settings.showTriggerIcons);
 			option("Frame stats", settings.showFrameChip);
 			if (m_isometric)

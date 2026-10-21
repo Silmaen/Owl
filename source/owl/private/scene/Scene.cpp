@@ -614,6 +614,15 @@ void Scene::onUpdateEditor(const core::Timestep& iTimeStep, const renderer::Came
 	OWL_PROFILE_FUNCTION()
 
 	m_toastTimer = std::max(0.f, m_toastTimer - iTimeStep.getSeconds());
+	// Stream procedural voxel terrain around the editor camera (its world position is the inverse-view translation).
+	const math::mat4 camToWorld = inverse(iCamera.getView());
+	updateVoxelStreaming(math::vec3{camToWorld(0, 3), camToWorld(1, 3), camToWorld(2, 3)});
+	renderEditorView(iCamera);
+}
+
+void Scene::renderEditorView(const renderer::Camera& iCamera) {
+	OWL_PROFILE_FUNCTION()
+
 	m_layerContentCacheFirst.clear();
 	m_layerContentCacheNotFirst.clear();
 	m_inUpdatePass = true;
@@ -626,9 +635,6 @@ void Scene::onUpdateEditor(const core::Timestep& iTimeStep, const renderer::Came
 	viewRotation(1, 3) = 0.0f;
 	viewRotation(2, 3) = 0.0f;
 	m_inverseViewRotation = inverse(iCamera.getProjection() * viewRotation);
-	// Stream procedural voxel terrain around the editor camera (its world position is the inverse-view translation).
-	const math::mat4 camToWorld = inverse(iCamera.getView());
-	updateVoxelStreaming(math::vec3{camToWorld(0, 3), camToWorld(1, 3), camToWorld(2, 3)});
 	renderWithStack(iCamera);
 	// Disarm per-pass caches; the next tick repopulates from scratch.
 	m_inUpdatePass = false;

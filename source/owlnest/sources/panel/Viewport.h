@@ -498,6 +498,21 @@ private:
 
 	/**
 	 * @brief
+	 *  Render the view of the selected camera entity into the preview framebuffer, when the option is on and the
+	 *  camera is neither piloted nor a raycast one.
+	 * @param[in] iScene The edited scene.
+	 */
+	void renderCameraPreview(const shared<scene::Scene>& iScene);
+
+	/**
+	 * @brief
+	 *  Draw the camera preview in the bottom-right corner, above the view-cube, with the name of the camera and a
+	 *  button that pilots it.
+	 */
+	void renderCameraPreviewInset();
+
+	/**
+	 * @brief
 	 *  Draw the banner naming the piloted camera, with the button that stops piloting.
 	 */
 	void renderPilotBanner();
@@ -625,6 +640,12 @@ private:
 	CameraPilot m_pilot;
 	/// Copy of the piloted camera, sized to the viewport and placed at the entity: the camera the view renders with.
 	scene::SceneCamera m_pilotCamera;
+	/// Where the selected camera's view is drawn for the preview inset; made on the first preview.
+	shared<renderer::gpu::Framebuffer> m_previewFramebuffer;
+	/// Copy of the previewed camera, sized to the preview and placed at the entity.
+	scene::SceneCamera m_previewCamera;
+	/// Camera entity drawn in the preview this frame, 0 when the inset is hidden.
+	core::UUID m_previewEntity{0};
 	/// Entity YAML snapshot captured when a pilot gesture began.
 	std::string m_pilotBeforeYaml;
 	/// Camera of the isometric mode.

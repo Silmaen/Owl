@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Owl Nest viewport: a right drag looks around and a middle drag pans without Alt or Ctrl (`CameraEditor::Navigation::mouseLook`).
 - Owl Nest viewport: in the 3D view each camera shows a 3D model, pickable, and its real frustum topped by a triangle for its up, instead of the flat 2D marker.
 - Owl Nest viewport: **Pilot Selected Camera** (Camera menu, context menu of a camera in the view or the Hierarchy) renders the view through a camera entity, with its projection, and moving the view moves the camera, one undoable `entity.set_transform` per gesture.
+- Owl Nest viewport: a selected camera shows its view in a corner inset (**Show > Camera preview**), drawn by the new `Scene::renderEditorView`.
 - Owl Nest viewport: while the right button is held, W A S D (Z Q S D on AZERTY) fly the 3D view, Q and E move it down and up, Shift speeds it up and the wheel sets the speed.
 - Picking in 3D: `Renderer3D` writes the entity id of every draw (`MeshDrawParams`), so meshes and voxel worlds are selected by a click.
 - Engine Demo: `mesh_gallery` scene of generated `.glb` meshes (`tools/demo/generate_meshes.py`) under a fly camera, with a transparent sphere.

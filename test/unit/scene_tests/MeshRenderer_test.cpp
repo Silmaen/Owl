@@ -176,6 +176,16 @@ TEST_F(MeshRendererTest, editorFramesDrawTheMeshLayerToo) {
 	EXPECT_EQ(renderer::RendererMesh::getStatistics().transparentDrawCount, 2u);
 }
 
+TEST_F(MeshRendererTest, aSecondEditorViewDrawsTheSameMeshes) {
+	useStack(false);
+	const auto sc = makeScene(true);
+	renderer::CameraEditor camera{45.f, 1.778f, 0.1f, 1000.f};
+	camera.setViewportSize({320, 180});
+	sc->renderEditorView(camera);
+	EXPECT_EQ(renderer::RendererMesh::getStatistics().opaqueDrawCount, 1u);
+	EXPECT_EQ(renderer::RendererMesh::getStatistics().transparentDrawCount, 2u);
+}
+
 TEST_F(MeshRendererTest, aHotReloadedFileIsFetchedAgain) {
 	useStack(false);
 	const auto sc = makeScene(true);

@@ -244,6 +244,11 @@ drag belongs to the voxel brush while it is active. The fly keys follow the key 
 keyboard, and while the right button flies the letter shortcuts (gizmo W E R) are off. The **Camera** tab of the Editor Settings scales orbit, pan and zoom (10 to 300 %), inverts the vertical drag and sets
 a dead zone (`CameraEditor::Navigation`).
 
+**Camera preview.** While a camera entity is selected in Edit, the bottom-right corner, above the view-cube, shows
+what it sees (`Scene::renderEditorView`, at the aspect of the viewport), with its name and a button that pilots it:
+move the camera with the gizmo and watch the framing. **Show > Camera preview** hides it; a piloted or raycast camera
+has none.
+
 **Piloting a camera.** **Pilot Selected Camera** (Camera menu of the view, context menu of a camera, command
 palette `view.pilotCamera`) renders the view through the selected camera entity: its projection, the aspect of the
 viewport, its own model and frustum hidden. Every move of the view moves the camera, and each gesture (a drag, a fly,
