@@ -47,7 +47,21 @@ PackReader thread-safety audit + a worker-friendly API.
     - Configurable: lifetime, velocity, colour over time, size, gravity
     - Emitter shapes: point, sphere, cone, box
     - Editor: visual particle preview and property curves
+    - Trails and ribbons behind moving emitters
+- Emissive materials (feeding the v0.5.0 bloom) and lens flares
 - Advanced post-processing on the v0.5.0 stack: chromatic aberration, film grain, motion blur, depth of field
+
+## World authoring
+
+Detailed in [Large worlds](large-worlds.md):
+
+- World positions in double with a floating origin
+- Spline component and its editor (paths, lanes, rails)
+- Data tables: typed records edited in a grid in Owl Nest, read from Lua
+- Mesh sockets: named attachment points, entities assembled at runtime
+
+## Environment
+
 - Weather and environment effects (rain, snow, fog, day-night cycle) are a sample-project demo built on particles and
   post-processing, not an engine system
 

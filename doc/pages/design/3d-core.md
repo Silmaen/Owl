@@ -22,6 +22,7 @@ multithreaded preparation and the Mini Transport Tycoon follow.
 | 8  | Post-process stack per camera: bloom, vignette, LUT                                                   | 4     |
 | 9  | Instancing and GPU frustum / occlusion culling fed by the scene graph                                 | 1, 3  |
 | 10 | Engine Demo 3D scene mixing a 3D level, a 2D HUD and a raycast or voxel area                          | 5–8   |
+| 11 | Camera-relative model matrices, reversed-Z depth with an infinite far plane                           | 1, 3  |
 
 ## Colour space
 
@@ -80,6 +81,9 @@ Lighting, blending and filtering happen on linear values; encoding to sRGB happe
       read (drop the per-frame readback the wall path currently does), then dispatch `BitonicSortPass` on the sprite
       depths so the back-to-front order stays on the GPU and feeds the stripe shader directly — zero CPU readback.
       Same applies to the door / pushwall stripe consumers.
+- Precision at any distance ([Large worlds](large-worlds.md))
+    - Model matrices built relative to the camera on the CPU, so vertices near the camera keep their precision
+    - Reversed-Z with a floating-point depth buffer and an infinite far plane, on Vulkan and OpenGL
 - Spatial partitioning (quadtree / octree) for culling, shared by the 2D and 3D layers (former "Rendering
   optimizations" ongoing item)
 - Multithreaded render preparation (command recording per pass on the task system)

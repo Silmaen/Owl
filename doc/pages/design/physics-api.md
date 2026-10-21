@@ -42,3 +42,10 @@ reached through `PhysicCommand` with the scene.
 - Collision shapes: box, sphere, capsule, mesh
 - Raycasting queries for gameplay (line-of-sight, ground detection), sphere casts
 - Joints and constraints
+- Articulated bodies ([Large worlds](large-worlds.md))
+    - Compound bodies rebuilt when parts join or leave; mass, centre of mass and inertia recomputed
+    - Breakable joints with force and torque thresholds, an event when they break
+    - Sub-stepping per scene for long chains of joints
+    - Forces and torques applied at a point, from Lua and from systems
+- Gravity fields (uniform, point, spherical) summed per body, trajectory prediction, analytic propagation during
+  time warp ([Large worlds](large-worlds.md))

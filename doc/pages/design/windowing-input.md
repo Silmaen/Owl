@@ -318,6 +318,8 @@ flowchart LR
 
 - Controller remapping UI, on the v0.4.0 HUD widgets and action map
 - Haptic feedback / vibration API (GLFW has none: to study)
+- Joysticks and throttles: raw GLFW joystick axes and buttons (`glfwGetJoystickAxes`) bound in the action map, beyond
+  the six axes of a gamepad
 
 ## Touch screen input (v0.8.0)
 
