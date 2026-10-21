@@ -88,8 +88,10 @@ struct EditorSettings {
 	bool showCameraGizmos = true;
 	/// Whether the frame-time chip (fps, ms, draw calls) is drawn at the bottom-left of the viewports.
 	bool showFrameChip = true;
-	/// Whether the viewport draws a grid of the snap step on the XY plane in Edit mode.
+	/// Whether the viewport draws a grid of the snap step in Edit mode.
 	bool showGrid = true;
+	/// Whether the 3D perspective view draws the grid on the ground (XZ plane, `y = 0`) instead of the XY plane.
+	bool gridOnGround = true;
 	/// Whether the viewport draws the pathfinding graph of the tilemaps and the test path (isometric Edit mode).
 	bool showNavGraph = false;
 	/// Whether the trigger type icons are drawn over the triggers in Edit mode.

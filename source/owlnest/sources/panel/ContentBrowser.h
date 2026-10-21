@@ -191,6 +191,24 @@ public:
 		m_macroRunCallback = std::move(iCallback);
 	}
 
+	/**
+	 * @brief
+	 *  Set a callback invoked when a mesh (`.gltf`, `.glb`, `.obj`) is double-clicked or placed from its context menu.
+	 * @param[in] iCallback Function taking the mesh file path.
+	 */
+	void setMeshPlaceCallback(std::function<void(const std::filesystem::path&)> iCallback) {
+		m_meshPlaceCallback = std::move(iCallback);
+	}
+
+	/**
+	 * @brief
+	 *  Set a callback invoked when a mesh is opened from its context menu (in a mesh viewer).
+	 * @param[in] iCallback Function taking the mesh file path.
+	 */
+	void setMeshOpenCallback(std::function<void(const std::filesystem::path&)> iCallback) {
+		m_meshOpenCallback = std::move(iCallback);
+	}
+
 private:
 	/// The actual folder
 	std::filesystem::path m_currentPath;
@@ -340,6 +358,10 @@ private:
 	std::function<void(const std::filesystem::path&)> m_actionMapOpenCallback;
 	/// Called when a macro (`.owlmacro`) is double-clicked or run from its context menu.
 	std::function<void(const std::filesystem::path&)> m_macroRunCallback;
+	/// Called when a mesh is double-clicked or placed from its context menu.
+	std::function<void(const std::filesystem::path&)> m_meshPlaceCallback;
+	/// Called when a mesh is opened from its context menu.
+	std::function<void(const std::filesystem::path&)> m_meshOpenCallback;
 };
 
 }// namespace owl::nest::panel

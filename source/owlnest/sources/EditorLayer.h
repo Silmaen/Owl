@@ -239,6 +239,13 @@ public:
 
 	/**
 	 * @brief
+	 *  Open a mesh asset in a read-only `MeshDocument` (or switch to it).
+	 * @param[in] iPath The mesh file.
+	 */
+	void openMeshFile(const std::filesystem::path& iPath);
+
+	/**
+	 * @brief
 	 *  Open an `input_actions.yml` in an `ActionMapDocument` (or switch to it); a missing file starts from the built-in
 	 *  actions and is created by the first save.
 	 * @param[in] iPath Absolute path to the file.

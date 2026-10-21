@@ -148,6 +148,8 @@ public:
 		bool invertY = false;
 		/// Distance in pixels the cursor travels before a drag moves the camera (filters a shaky click).
 		float deadZone = 0.f;
+		/// Drags without modifier move the camera: right drag looks around, middle drag pans.
+		bool mouseLook = true;
 	};
 
 	/**

@@ -15,6 +15,8 @@
 #include <algorithm>
 #include <cctype>
 #include <cstring>
+#include <optional>
+#include <tuple>
 
 namespace owl::gui::widgets {
 
@@ -98,11 +100,18 @@ auto assetDropTarget(const AssetKind iKind, std::filesystem::path& oRelativePath
 	return accepted;
 }
 
-auto textureField(const char* iLabel, shared<renderer::gpu::Texture2D>& ioTexture, const ImVec2 iSize) -> bool {
+auto textureField(const char* iLabel, shared<renderer::gpu::Texture2D>& ioTexture, const ImVec2 iSize,
+				  const shared<renderer::gpu::Texture2D>& iInherited) -> bool {
 	bool changed = false;
 	const ImVec2 anchor = ImGui::GetCursorScreenPos();
 	const std::string popupId = std::string{iLabel} + "##settings";
-	if (const auto tex = imTexture(ioTexture); tex.has_value()) {
+	const auto inherited = ioTexture ? std::nullopt : imTexture(iInherited);
+	if (inherited.has_value()) {
+		std::ignore = ImGui::ImageButton(iLabel, inherited.value(), iSize, {0, 1}, {1, 0}, {0, 0, 0, 0},
+										 {1.f, 1.f, 1.f, 0.55f});
+		if (ImGui::IsItemHovered())
+			ImGui::SetTooltip("Inherited from the material: drop an image to replace it.");
+	} else if (const auto tex = imTexture(ioTexture); tex.has_value()) {
 		if (ImGui::ImageButton(iLabel, tex.value(), iSize, {0, 1}, {1, 0}) && ioTexture != nullptr)
 			ImGui::OpenPopup(popupId.c_str());
 		if (ioTexture)

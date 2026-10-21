@@ -15,6 +15,7 @@
 #include "document/CodeEditorDocument.h"
 #include "document/FontDocument.h"
 #include "document/ImageDocument.h"
+#include "document/MeshDocument.h"
 #include "document/NodeGraphDocument.h"
 #include "document/SceneFlowDocument.h"
 #include "document/TilemapDocument.h"
@@ -604,6 +605,8 @@ void EditorLayer::onAttach() {
 			[this](const std::filesystem::path& iPath) -> void { openActionMapFile(iPath); });
 	m_contentBrowser.setFontOpenCallback([this](const std::filesystem::path& iPath) -> void { openFontFile(iPath); });
 	m_contentBrowser.setImageOpenCallback([this](const std::filesystem::path& iPath) -> void { openImageFile(iPath); });
+	m_contentBrowser.setMeshPlaceCallback([this](const std::filesystem::path& iPath) -> void { placeMesh(iPath); });
+	m_contentBrowser.setMeshOpenCallback([this](const std::filesystem::path& iPath) -> void { openMeshFile(iPath); });
 	m_contentBrowser.setMacroRunCallback([this](const std::filesystem::path& iPath) -> void {
 		runCommandFromUi("macro.run", {{"path", iPath.string()}}, commands::CommandSource::Gesture);
 	});
@@ -838,6 +841,12 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 			if (!image->isOpen()) {
 				toClose.push_back(image->id());
 				image->setOpen(true);
+			}
+		} else if (doc->type() == DocumentType::Mesh) {
+			auto* mesh = static_cast<MeshDocument*>(doc);
+			if (!mesh->isOpen()) {
+				toClose.push_back(mesh->id());
+				mesh->setOpen(true);
 			}
 		} else if (doc->type() == DocumentType::ActionMap) {
 			auto* actions = static_cast<ActionMapDocument*>(doc);

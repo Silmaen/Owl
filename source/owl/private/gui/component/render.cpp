@@ -468,8 +468,9 @@ void renderProps(MeshRenderer& ioComponent) {
 		ioComponent.setMeshPath(dropped);
 	prop::ColorEdit4("Color", ioComponent.color.data());
 	fieldTooltip("Multiplies the base colour of the mesh material.");
-	widgets::textureField("Texture", ioComponent.texture);
-	fieldTooltip("Replaces the base-colour texture of the mesh material; empty keeps the material's.");
+	widgets::textureField("Texture", ioComponent.texture, {100.f, 100.f},
+						  mesh ? mesh->getBaseColorTexture() : shared<renderer::gpu::Texture2D>{});
+	fieldTooltip("Replaces the base-colour texture of the mesh material; empty keeps the material's (shown faded).");
 	prop::Checkbox("Transparent", &ioComponent.transparent);
 	fieldTooltip("Draw with alpha blending (the colour alpha), after the opaque meshes and sorted back-to-front.");
 	if (mesh) {

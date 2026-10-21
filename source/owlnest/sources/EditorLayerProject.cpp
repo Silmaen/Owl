@@ -13,6 +13,7 @@
 #include "document/CodeEditorDocument.h"
 #include "document/FontDocument.h"
 #include "document/ImageDocument.h"
+#include "document/MeshDocument.h"
 #include "document/NodeGraphDocument.h"
 #include "document/SceneFlowDocument.h"
 #include "document/TilemapDocument.h"
@@ -67,7 +68,7 @@ void EditorLayer::openAssetFile(const std::filesystem::path& iPath) {
 			instantiatePrefab(iPath);
 			return;
 		case AssetKind::Mesh:
-			placeMesh(iPath);
+			openMeshFile(iPath);
 			return;
 		case AssetKind::ActionMap:
 			openActionMapFile(iPath);
@@ -393,6 +394,29 @@ void EditorLayer::openImageFile(const std::filesystem::path& iPath) {
 	doc->onAttach(this);
 	if (!doc->loadFromFile(iPath)) {
 		OWL_CORE_WARN("Failed to open image file: {}.", iPath.string())
+		doc->onDetach();
+		return;
+	}
+	auto* raw = m_documents.add(std::move(doc));
+	m_documents.setActive(raw);
+	syncActiveDocumentPanels();
+}
+
+void EditorLayer::openMeshFile(const std::filesystem::path& iPath) {
+	if (iPath.empty() || !exists(iPath))
+		return;
+	for (const auto& docPtr: m_documents.list()) {
+		if (docPtr && docPtr->type() == DocumentType::Mesh && docPtr->filePath() == iPath) {
+			m_documents.setActive(docPtr.get());
+			docPtr->requestFocus();
+			syncActiveDocumentPanels();
+			return;
+		}
+	}
+	auto doc = mkUniq<MeshDocument>();
+	doc->onAttach(this);
+	if (!doc->loadFromFile(iPath)) {
+		OWL_CORE_WARN("Failed to open mesh file: {}.", iPath.string())
 		doc->onDetach();
 		return;
 	}

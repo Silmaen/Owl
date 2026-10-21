@@ -11,6 +11,7 @@
 #include <core/Core.h>
 #include <data/geometry/StaticMesh.h>
 #include <renderer/CameraEditor.h>
+#include <renderer/MeshCache.h>
 #include <renderer/gpu/Framebuffer.h>
 #include <renderer/gpu/Texture.h>
 #include <scene/Scene.h>
@@ -49,7 +50,14 @@ public:
 		Hud,///< A render of the widgets of the HUD, in pixels, over the backdrop colour.
 		Sound,///< The waveform of the sound.
 		Tileset,///< The atlas image of the tileset.
-		Mesh,///< The triangles of the mesh, projected in an isometric view and shaded.
+		Mesh,///< A render of the mesh (`MeshStyle::Textured`, `Shaded`), or its triangles projected flat.
+	};
+
+	/// How the previews of the mesh files are made.
+	enum struct MeshStyle : uint8_t {
+		Textured,///< Rendered by the GPU with the material of the mesh.
+		Shaded,///< Rendered by the GPU in a plain grey: the shape alone.
+		Flat,///< Triangles projected in an isometric view, in the colour of the family, without the GPU.
 	};
 
 	/// A triangle of a mesh preview, in the unit square (y down), with its light level.
@@ -64,11 +72,11 @@ public:
 	struct Preview {
 		/// Image of the file (Image kind).
 		shared<renderer::gpu::Texture2D> texture;
-		/// Rendered frame (Scene and Prefab kinds); attachment 0 holds the colour.
+		/// Rendered frame (Scene, Prefab, Hud and rendered Mesh kinds); attachment 0 holds the colour.
 		shared<renderer::gpu::Framebuffer> framebuffer;
 		/// Peaks of the sound, 0 to 1 (Sound kind).
 		std::vector<float> waveform;
-		/// Triangles back to front (Mesh kind).
+		/// Triangles back to front (Mesh kind, `MeshStyle::Flat`).
 		std::vector<MeshTriangle> mesh;
 	};
 
@@ -132,6 +140,20 @@ public:
 
 	/**
 	 * @brief
+	 *  How the mesh previews are made.
+	 * @return The style.
+	 */
+	[[nodiscard]] auto getMeshStyle() const -> MeshStyle { return m_meshStyle; }
+
+	/**
+	 * @brief
+	 *  Choose how the mesh previews are made; the existing ones are made again.
+	 * @param[in] iStyle The style.
+	 */
+	void setMeshStyle(MeshStyle iStyle);
+
+	/**
+	 * @brief
 	 *  Start a new frame of requests: resets the per-frame read budget and the progress of the shown folder.
 	 */
 	void beginFrame();
@@ -174,8 +196,10 @@ private:
 	struct Job {
 		/// The file.
 		std::filesystem::path path;
-		/// The scene loaded from it.
+		/// The scene loaded from it (Scene, Prefab and Hud kinds).
 		shared<scene::Scene> scene;
+		/// The mesh loaded from it (Mesh kind).
+		shared<renderer::MeshResource> mesh;
 		/// Camera framing a prefab, or a scene without a primary camera.
 		std::optional<renderer::CameraEditor> camera;
 		/// Where it renders.
@@ -195,6 +219,12 @@ private:
 
 	/**
 	 * @brief
+	 *  Count a rendered frame of the job and store its preview once it has rendered long enough.
+	 */
+	void finishJob();
+
+	/**
+	 * @brief
 	 *  A framebuffer for a new render: a new one while the pool is small, else the one of the oldest render.
 	 * @return The framebuffer.
 	 */
@@ -202,7 +232,7 @@ private:
 
 	/// Previews by file path.
 	std::unordered_map<std::string, Entry> m_entries;
-	/// Scenes and prefabs waiting for a render, oldest request first.
+	/// Scenes, prefabs and meshes waiting for a render, oldest request first.
 	std::deque<std::filesystem::path> m_pending;
 	/// The render in progress.
 	std::optional<Job> m_job;
@@ -216,6 +246,8 @@ private:
 	size_t m_requestedThisFrame = 0;
 	/// Previews requested this frame that are ready.
 	size_t m_readyThisFrame = 0;
+	/// How the mesh previews are made.
+	MeshStyle m_meshStyle = MeshStyle::Textured;
 };
 
 }// namespace owl::nest::panel

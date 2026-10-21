@@ -110,3 +110,20 @@ TEST(AssetThumbnails, MeshProjectsIntoTheUnitSquareBackToFront) {
 	std::filesystem::remove_all(dir);
 	core::Log::invalidate();
 }
+
+TEST(AssetThumbnails, MeshStyleDefaultsToTexturedAndChanges) {
+	AssetThumbnails thumbnails;
+	EXPECT_EQ(thumbnails.getMeshStyle(), AssetThumbnails::MeshStyle::Textured);
+	thumbnails.setMeshStyle(AssetThumbnails::MeshStyle::Flat);
+	EXPECT_EQ(thumbnails.getMeshStyle(), AssetThumbnails::MeshStyle::Flat);
+	thumbnails.beginFrame();
+	// Flat previews are made on the CPU: the request is answered in the frame.
+	const auto mesh = test::getTestAssetsPath("render_tests") / "meshes" / "textured_cube.glb";
+	ASSERT_NE(thumbnails.get(mesh), nullptr);
+	EXPECT_FALSE(thumbnails.get(mesh)->mesh.empty());
+	thumbnails.setMeshStyle(AssetThumbnails::MeshStyle::Shaded);
+	thumbnails.beginFrame();
+	// A rendered preview waits for its GPU job.
+	EXPECT_EQ(thumbnails.get(mesh), nullptr);
+	thumbnails.clear();
+}

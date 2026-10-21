@@ -484,7 +484,7 @@ void ContentBrowser::renderTopBand() {
 		}
 		ImGui::SameLine();
 	}
-	const float right = ImGui::GetFontSize() * 18.f;
+	const float right = ImGui::GetFontSize() * 19.5f;
 	ImGui::SetCursorPosX(std::max(ImGui::GetCursorPosX(), ImGui::GetWindowContentRegionMax().x - right));
 	ImGui::BeginChild("##cbSearchBox", {ImGui::GetFontSize() * 10.f, ImGui::GetFrameHeight()}, ImGuiChildFlags_None,
 					  ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoBackground);
@@ -503,6 +503,22 @@ void ContentBrowser::renderTopBand() {
 	ImGui::SliderFloat("##tileSize", &m_tileSize, 56.f, 160.f, "");
 	ImGui::EndDisabled();
 	gui::widgets::itemTooltip("Thumbnail size");
+	ImGui::SameLine();
+	if (gui::widgets::iconButton("meshStyle", {.glyph = gui::icon::box, .tooltip = "Mesh thumbnails"}))
+		ImGui::OpenPopup("MeshThumbnailStyle");
+	if (ImGui::BeginPopup("MeshThumbnailStyle")) {
+		using Style = AssetThumbnails::MeshStyle;
+		const auto style = m_previews.getMeshStyle();
+		gui::widgets::menuHeader("Mesh thumbnails");
+		const auto entry = [&](const char* iLabel, const Style iStyle) -> void {
+			if (gui::widgets::menuItem({.glyph = style == iStyle ? gui::icon::check : nullptr, .label = iLabel}))
+				m_previews.setMeshStyle(iStyle);
+		};
+		entry("Textured", Style::Textured);
+		entry("Shaded", Style::Shaded);
+		entry("Flat", Style::Flat);
+		ImGui::EndPopup();
+	}
 	renderKindChips();
 	ImGui::Separator();
 }
@@ -556,6 +572,8 @@ void ContentBrowser::openEntry(const std::filesystem::directory_entry& iEntry) {
 		m_actionMapOpenCallback(path);
 	} else if (path.extension() == ".owlmacro" && m_macroRunCallback) {
 		m_macroRunCallback(path);
+	} else if (classifyAsset(path) == AssetKind::Mesh && m_meshPlaceCallback) {
+		m_meshPlaceCallback(path);
 	} else if (m_codeOpenCallback && classifyAsset(path) == AssetKind::Code) {
 		m_codeOpenCallback(path);
 	}
@@ -680,8 +698,17 @@ void ContentBrowser::renderContextMenu() {
 		const bool isDir = is_directory(m_selectedPath);
 		const std::string itemName = m_selectedPath.filename().string();
 		gui::widgets::menuHeader(itemName.c_str(), describeKind(m_selectedPath, isDir).label);
-		if (gui::widgets::menuItem({.glyph = isDir ? gui::icon::folderOpen : gui::icon::externalLink, .label = "Open"}))
-			openEntry(std::filesystem::directory_entry{m_selectedPath});
+		const bool isMesh = !isDir && classifyAsset(m_selectedPath) == AssetKind::Mesh;
+		if (gui::widgets::menuItem(
+					{.glyph = isDir ? gui::icon::folderOpen : gui::icon::externalLink, .label = "Open"})) {
+			if (isMesh && m_meshOpenCallback)
+				m_meshOpenCallback(m_selectedPath);
+			else
+				openEntry(std::filesystem::directory_entry{m_selectedPath});
+		}
+		if (isMesh && m_meshPlaceCallback &&
+			gui::widgets::menuItem({.glyph = gui::icon::plus, .label = "Place in Scene"}))
+			m_meshPlaceCallback(m_selectedPath);
 		if (m_selectedPath.extension() == ".owlmacro" && m_codeOpenCallback &&
 			gui::widgets::menuItem({.glyph = gui::icon::fileCode2, .label = "Edit as Text"}))
 			m_codeOpenCallback(m_selectedPath);

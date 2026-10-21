@@ -36,6 +36,7 @@ enum struct DocumentType : uint8_t {
 	Font,///< A `.ttf` / `.otf` font asset: its charset settings (`.owlfont` sidecar).
 	ActionMap,///< The `input_actions.yml` action map of a project.
 	Image,///< A `.png` / `.jpg` / ... image asset, shown read-only.
+	Mesh,///< A `.gltf` / `.glb` / `.obj` mesh asset, shown read-only.
 };
 
 /**

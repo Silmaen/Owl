@@ -17,6 +17,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `MeshLoader::loadMesh` / `loadMeshFromMemory` return the glTF base-colour material with the mesh and read a `.gltf` from a pack, whose mesh files `AssetScanner` now packs.
 - Owl Nest: a mesh dropped from the Content Browser on the viewport becomes a `MeshRenderer` entity under the cursor (`mesh.create` command), and the rotation snap step is an editor setting.
 - Owl Nest: dropping a mesh in a project without a `RendererMesh` layer offers to add one, through the new `project.add_render_layer` command.
+- Owl Nest mesh viewer (`MeshDocument`): a mesh file opened from the Content Browser context menu or the inspector shows alone under an orbit camera, textured or shaded, with its figures and a **Place in Scene** button.
+- Owl Nest Content Browser: mesh thumbnails rendered by the GPU with their material, in a **Textured**, **Shaded** or **Flat** style picked in the toolbar.
+- Owl Nest viewport: a selected mesh is outlined by its bounding box, and the 3D view draws its grid on the ground (XZ plane), an option of **Show**.
+- Owl Nest inspector: a `MeshRenderer` without a texture of its own shows the texture of the material, faded.
+- Owl Nest viewport: a right drag looks around and a middle drag pans without Alt or Ctrl (`CameraEditor::Navigation::mouseLook`).
+- Owl Nest viewport: in the 3D view each camera shows a 3D model, pickable, and its real frustum topped by a triangle for its up, instead of the flat 2D marker.
 - Picking in 3D: `Renderer3D` writes the entity id of every draw (`MeshDrawParams`), so meshes and voxel worlds are selected by a click.
 - `OwlRunner --frame-bench --pick X,Y` logs the entity under a pixel of the capture; image tests `mesh` and `RenderPick` check meshes and picking on both backends.
  runs the benchmarks several times and writes a proposed baseline and the thresholds the measured spread calls for.

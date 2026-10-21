@@ -8,6 +8,8 @@
 
 #include "AssetThumbnails.h"
 
+#include "../document/viewer/MeshPreview.h"
+
 #include <core/Log.h>
 #include <core/Timestep.h>
 #include <data/geometry/MeshLoader.h>
@@ -221,7 +223,11 @@ auto AssetThumbnails::get(const std::filesystem::path& iPath) -> const Preview* 
 			}
 			break;
 		case Kind::Mesh:
-			if (m_readBudget > 0) {
+			if (m_meshStyle != MeshStyle::Flat) {
+				if (std::ranges::find(m_pending, iPath) == m_pending.end() &&
+					(!m_job.has_value() || m_job->path != iPath))
+					m_pending.push_back(iPath);
+			} else if (m_readBudget > 0) {
 				// A mesh file is the heaviest read: it takes the whole budget of the frame.
 				m_readBudget = 0;
 				const auto mesh = data::geometry::MeshLoader::loadStaticMesh(iPath);
@@ -282,6 +288,22 @@ auto AssetThumbnails::startJob() -> bool {
 		auto& entry = m_entries[path.string()];
 		if (entry.preview.has_value() || entry.failed)
 			continue;
+		if (getKind(path) == Kind::Mesh) {
+			const auto loadedMesh = data::geometry::MeshLoader::loadMesh(path);
+			if (!loadedMesh.mesh) {
+				OWL_WARN("AssetThumbnails: {} could not be loaded, it keeps its icon.", path.string())
+				entry.failed = true;
+				continue;
+			}
+			m_job = Job{.path = path,
+						.scene = {},
+						.mesh = mkShared<renderer::MeshResource>(path, loadedMesh),
+						.camera = {},
+						.framebuffer = takeFramebuffer(),
+						.frames = 0,
+						.start = std::chrono::steady_clock::now()};
+			return true;
+		}
 		auto loaded = mkShared<scene::Scene>();
 		bool ok = false;
 		if (getKind(path) == Kind::Scene || getKind(path) == Kind::Hud) {
@@ -296,6 +318,7 @@ auto AssetThumbnails::startJob() -> bool {
 		}
 		Job job{.path = path,
 				.scene = loaded,
+				.mesh = {},
 				.camera = {},
 				.framebuffer = {},
 				.frames = 0,
@@ -313,6 +336,13 @@ void AssetThumbnails::onUpdate() {
 	if (!m_job.has_value() && !startJob())
 		return;
 	auto& job = *m_job;
+	if (job.mesh) {
+		viewer::renderMeshPreview(*job.framebuffer, *job.mesh, {},
+								  m_meshStyle == MeshStyle::Shaded ? viewer::MeshShading::Shaded
+																   : viewer::MeshShading::Textured);
+		finishJob();
+		return;
+	}
 	job.framebuffer->bind();
 	renderer::gpu::RenderCommand::setClearColor({0.07f, 0.075f, 0.09f, 1.f});
 	renderer::gpu::RenderCommand::clear();
@@ -323,6 +353,11 @@ void AssetThumbnails::onUpdate() {
 	else
 		job.scene->onRenderRuntime();
 	job.framebuffer->unbind();
+	finishJob();
+}
+
+void AssetThumbnails::finishJob() {
+	auto& job = *m_job;
 	const std::chrono::duration<float> elapsed = std::chrono::steady_clock::now() - job.start;
 	if (++job.frames < renderFrames || elapsed.count() < renderSeconds)
 		return;
@@ -330,6 +365,21 @@ void AssetThumbnails::onUpdate() {
 	entry.preview = Preview{.texture = {}, .framebuffer = job.framebuffer, .waveform = {}, .mesh = {}};
 	entry.renderOrder = m_nextOrder++;
 	m_job.reset();
+}
+
+void AssetThumbnails::setMeshStyle(const MeshStyle iStyle) {
+	if (iStyle == m_meshStyle)
+		return;
+	m_meshStyle = iStyle;
+	if (m_job.has_value() && m_job->mesh)
+		m_job.reset();
+	std::erase_if(m_pending, [](const std::filesystem::path& iPath) -> bool { return getKind(iPath) == Kind::Mesh; });
+	for (auto& [key, entry]: m_entries) {
+		if (getKind(key) == Kind::Mesh) {
+			entry.preview.reset();
+			entry.failed = false;
+		}
+	}
 }
 
 void AssetThumbnails::clear() {

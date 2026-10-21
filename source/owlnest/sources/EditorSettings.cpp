@@ -136,6 +136,7 @@ void EditorSettings::loadFromFile(const std::filesystem::path& iFile) {
 		readKey(config, "showCameraGizmos", showCameraGizmos);
 		readKey(config, "showFrameChip", showFrameChip);
 		readKey(config, "showGrid", showGrid);
+		readKey(config, "gridOnGround", gridOnGround);
 		readKey(config, "showNavGraph", showNavGraph);
 		readKey(config, "showTriggerIcons", showTriggerIcons);
 		readKey(config, "playControlsCollapsed", playControlsCollapsed);
@@ -190,6 +191,7 @@ void EditorSettings::saveToFile(const std::filesystem::path& iFile) const {
 	out << YAML::Key << "showCameraGizmos" << YAML::Value << showCameraGizmos;
 	out << YAML::Key << "showFrameChip" << YAML::Value << showFrameChip;
 	out << YAML::Key << "showGrid" << YAML::Value << showGrid;
+	out << YAML::Key << "gridOnGround" << YAML::Value << gridOnGround;
 	out << YAML::Key << "showNavGraph" << YAML::Value << showNavGraph;
 	out << YAML::Key << "showTriggerIcons" << YAML::Value << showTriggerIcons;
 	out << YAML::Key << "playControlsCollapsed" << YAML::Value << playControlsCollapsed;
