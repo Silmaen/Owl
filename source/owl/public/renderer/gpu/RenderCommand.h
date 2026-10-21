@@ -78,7 +78,17 @@ public:
 	 *  Binding to the definition of background colour.
 	 * @param[in] iColor The new background colour.
 	 */
-	static void setClearColor(const math::vec4& iColor) { m_renderAPI->setClearColor(iColor); }
+	static void setClearColor(const math::vec4& iColor) {
+		m_clearColor = iColor;
+		m_renderAPI->setClearColor(iColor);
+	}
+
+	/**
+	 * @brief
+	 *  The background colour given to the last `setClearColor`.
+	 * @return The colour, sRGB.
+	 */
+	[[nodiscard]] static auto getClearColor() -> const math::vec4& { return m_clearColor; }
 
 	/**
 	 * @brief
@@ -360,5 +370,7 @@ private:
 	static uniq<RenderAPI> m_renderAPI;
 	/// Draw calls issued since start-up.
 	static uint64_t m_drawCallCount;
+	/// Background colour of the last `setClearColor`.
+	static math::vec4 m_clearColor;
 };
 }// namespace owl::renderer::gpu

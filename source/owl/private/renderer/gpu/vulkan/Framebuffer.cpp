@@ -11,6 +11,7 @@
 #include "Framebuffer.h"
 
 #include "GraphContext.h"
+#include "Texture.h"
 #include "app/Application.h"
 #include "internal/Descriptors.h"
 #include "internal/FrameProfiler.h"
@@ -105,6 +106,10 @@ void Framebuffer::invalidate() {
 		createSyncObjects();
 	} else {
 		createDescriptorSets();
+		for (size_t i = 0; i < m_attachmentTextures.size(); ++i) {
+			if (const auto& image = m_images[attToImgIdx(static_cast<uint32_t>(i))]; m_attachmentTextures[i])
+				m_attachmentTextures[i]->setBorrowed(image.imageView, image.imageSampler, m_specs.size);
+		}
 	}
 	m_passSerial = 0;
 	m_pickSerial.fill(0);
@@ -113,6 +118,7 @@ void Framebuffer::invalidate() {
 void Framebuffer::bind() {
 	if (m_framebuffers.empty())
 		return;
+	setBound(isMainTarget() ? nullptr : this);
 	internal::VulkanHandler::get().bindFramebuffer(this);
 }
 
@@ -129,6 +135,7 @@ void Framebuffer::nextSubpass() {
 
 void Framebuffer::unbind() {
 	auto& vkh = internal::VulkanHandler::get();
+	setBound(nullptr);
 	vkh.unbindFramebuffer();
 	if (isMainTarget())
 		return;
@@ -437,10 +444,11 @@ void Framebuffer::createImages() {
 		m_images[i].layout = VK_IMAGE_LAYOUT_UNDEFINED;
 		const uint32_t attIndex = imgIdxToAtt(i);
 		const bool isDepth = m_specs.attachments[attIndex].format == AttachmentSpecification::Format::Depth24Stencil8;
-		const VkImageUsageFlags usage = isDepth ? VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT
-												: VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT |
-														  VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
-														  VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+		const VkImageUsageFlags usage =
+				isDepth ? VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
+								  VK_IMAGE_USAGE_TRANSFER_DST_BIT
+						: VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT |
+								  VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
 		const VkImageCreateInfo imageInfo{
 				.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
 				.pNext = nullptr,
@@ -712,6 +720,76 @@ auto Framebuffer::getColorAttachmentFormats() const -> std::vector<VkFormat> {
 			formats.push_back(internal::attachmentFormatToVulkan(att.format));
 	}
 	return formats;
+}
+
+auto Framebuffer::getAttachmentTexture(const uint32_t iIndex) -> shared<renderer::gpu::Texture2D> {
+	if (isMainTarget() || iIndex >= m_specs.attachments.size() ||
+		m_specs.attachments[iIndex].format == AttachmentSpecification::Format::Depth24Stencil8) {
+		OWL_CORE_WARN("Vulkan Framebuffer ({}): No colour attachment {} to sample.", m_specs.debugName, iIndex)
+		return nullptr;
+	}
+	if (m_attachmentTextures.size() <= iIndex)
+		m_attachmentTextures.resize(iIndex + 1);
+	auto& texture = m_attachmentTextures[iIndex];
+	if (!texture) {
+		const auto& image = m_images[attToImgIdx(iIndex)];
+		texture = mkShared<Texture2D>(image.imageView, image.imageSampler, m_specs.size);
+	}
+	return texture;
+}
+
+void Framebuffer::copyAttachment(const uint32_t iIndex, renderer::gpu::Framebuffer& ioTarget) {
+	auto* const target = dynamic_cast<Framebuffer*>(&ioTarget);
+	if (target == nullptr || target->isMainTarget() || isMainTarget() || target->m_specs.size != m_specs.size ||
+		iIndex >= m_specs.attachments.size() || iIndex >= target->m_specs.attachments.size() ||
+		target->m_specs.attachments[iIndex].format != m_specs.attachments[iIndex].format) {
+		OWL_CORE_WARN("Vulkan Framebuffer ({}): Cannot copy attachment {} to an unmatched framebuffer.",
+					  m_specs.debugName, iIndex)
+		return;
+	}
+	const bool depth = m_specs.attachments[iIndex].format == AttachmentSpecification::Format::Depth24Stencil8;
+	auto& source = m_images[attToImgIdx(iIndex)];
+	auto& destination = target->m_images[target->attToImgIdx(iIndex)];
+	internal::VulkanHandler::get().recordTransfer([&source, &destination, depth,
+												   size = m_specs.size](VkCommandBuffer iCmd) -> void {
+		const VkImageAspectFlags aspect =
+				depth ? VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
+		// Depth layouts are not tracked: between passes a depth image stays in the attachment layout.
+		const VkImageLayout sourceLayout = depth ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL : source.layout;
+		const VkImageLayout destinationLayout =
+				depth ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL : destination.layout;
+		constexpr VkPipelineStageFlags stages = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
+												VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT |
+												VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+		constexpr VkAccessFlags access = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
+										 VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT | VK_ACCESS_SHADER_READ_BIT;
+		internal::imageBarrier(iCmd, source.image, aspect, sourceLayout, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, stages,
+							   access, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_ACCESS_TRANSFER_READ_BIT);
+		internal::imageBarrier(iCmd, destination.image, aspect, destinationLayout, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+							   stages, access, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_ACCESS_TRANSFER_WRITE_BIT);
+		const VkImageSubresourceLayers layers{.aspectMask = aspect,
+											  .mipLevel = 0,
+											  .baseArrayLayer = 0,
+											  .layerCount = 1};
+		const VkImageCopy region{.srcSubresource = layers,
+								 .srcOffset = {0, 0, 0},
+								 .dstSubresource = layers,
+								 .dstOffset = {0, 0, 0},
+								 .extent = {.width = size.x(), .height = size.y(), .depth = 1}};
+		vkCmdCopyImage(iCmd, source.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, destination.image,
+					   VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+		internal::imageBarrier(iCmd, source.image, aspect, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, sourceLayout,
+							   VK_PIPELINE_STAGE_TRANSFER_BIT, VK_ACCESS_TRANSFER_READ_BIT, stages, access);
+		internal::imageBarrier(iCmd, destination.image, aspect, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, destinationLayout,
+							   VK_PIPELINE_STAGE_TRANSFER_BIT, VK_ACCESS_TRANSFER_WRITE_BIT, stages, access);
+	});
+}
+
+auto Framebuffer::getPipelineFamily() const -> uint64_t {
+	uint64_t family = 0;
+	for (const auto& attachment: m_specs.attachments)
+		family = family * 31 + static_cast<uint64_t>(internal::attachmentFormatToVulkan(attachment.format));
+	return family;
 }
 
 auto Framebuffer::getColorAttachmentRendererId(const uint32_t iIndex) const -> uint64_t {

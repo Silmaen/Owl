@@ -38,6 +38,16 @@ auto Framebuffer::create(const FramebufferSpecification& iSpec) -> shared<Frameb
 	return nullptr;
 }
 
-Framebuffer::~Framebuffer() = default;
+Framebuffer* Framebuffer::s_bound = nullptr;
+
+Framebuffer::~Framebuffer() {
+	if (s_bound == this)
+		s_bound = nullptr;
+}
+
+auto Framebuffer::isLinearColor() const -> bool {
+	const auto& attachments = getSpecification().attachments;
+	return !attachments.empty() && attachments.front().format == AttachmentSpecification::Format::Rgba16F;
+}
 
 }// namespace owl::renderer::gpu

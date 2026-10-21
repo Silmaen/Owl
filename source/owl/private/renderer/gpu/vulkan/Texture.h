@@ -45,6 +45,24 @@ public:
 
 	/**
 	 * @brief
+	 *  Wrap an image view owned elsewhere (a framebuffer attachment) in a texture slot; the wrapper never destroys it.
+	 * @param[in] iView The image view, in the shader-read layout when draws sample it.
+	 * @param[in] iSampler The sampler.
+	 * @param[in] iSize Size of the image.
+	 */
+	Texture2D(VkImageView iView, VkSampler iSampler, const math::vec2ui& iSize);
+
+	/**
+	 * @brief
+	 *  Point a wrapper at another view owned elsewhere (the attachment was recreated by a resize).
+	 * @param[in] iView The image view.
+	 * @param[in] iSampler The sampler.
+	 * @param[in] iSize Size of the image.
+	 */
+	void setBorrowed(VkImageView iView, VkSampler iSampler, const math::vec2ui& iSize);
+
+	/**
+	 * @brief
 	 *  Destructor.
 	 */
 	~Texture2D() override;

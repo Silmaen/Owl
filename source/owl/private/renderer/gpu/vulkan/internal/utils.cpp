@@ -30,6 +30,8 @@ auto attachmentFormatToVulkan(const AttachmentSpecification::Format& iFormat) ->
 			return VK_FORMAT_R32_SINT;
 		case AttachmentSpecification::Format::Surface:
 			return VulkanCore::get().getSurfaceFormat().format;
+		case AttachmentSpecification::Format::Rgba16F:
+			return VK_FORMAT_R16G16B16A16_SFLOAT;
 	}
 	return VK_FORMAT_UNDEFINED;
 }
@@ -40,6 +42,7 @@ auto attachmentFormatToAspect(const AttachmentSpecification::Format& iFormat) ->
 		case AttachmentSpecification::Format::Rgba8:
 		case AttachmentSpecification::Format::RedInteger:
 		case AttachmentSpecification::Format::Surface:
+		case AttachmentSpecification::Format::Rgba16F:
 			return VK_IMAGE_ASPECT_COLOR_BIT;
 		case AttachmentSpecification::Format::Depth24Stencil8:
 			return VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
@@ -54,6 +57,8 @@ auto attachmentFormatToSize(const AttachmentSpecification::Format& iFormat) -> u
 		case AttachmentSpecification::Format::RedInteger:
 		case AttachmentSpecification::Format::Surface:
 			return 4;
+		case AttachmentSpecification::Format::Rgba16F:
+			return 8;
 		case AttachmentSpecification::Format::None:
 			return 1;
 	}

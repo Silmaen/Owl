@@ -137,8 +137,35 @@ private:
 	 */
 	void buildPipeline(VkDescriptorSetLayout iSetLayout);
 
+	/**
+	 * @brief
+	 *  Create a pipeline for the render pass of the bound framebuffer.
+	 * @param[in] iSetLayout Descriptor set layout to build with; null takes the active renderer block's.
+	 * @return The pipeline id, -1 on failure.
+	 */
+	[[nodiscard]] auto createPipeline(VkDescriptorSetLayout iSetLayout) const -> int32_t;
+
+	/**
+	 * @brief
+	 *  The pipeline compatible with the bound framebuffer, created on its first use with that attachment layout.
+	 * @return The pipeline id, -1 on failure.
+	 */
+	[[nodiscard]] auto getPipelineForCurrentFramebuffer() const -> int32_t;
+
+	/// A pipeline built for another attachment layout (`Framebuffer::getPipelineFamily`).
+	struct PipelineVariant {
+		/// Attachment layout of the render pass the pipeline is compatible with.
+		uint64_t family = 0;
+		/// The pipeline id.
+		int32_t pipelineId = -1;
+	};
+
 	/// index of the pipeline.
 	int32_t m_pipelineId = -1;
+	/// Attachment layout `m_pipelineId` was built for.
+	uint64_t m_pipelineFamily = 0;
+	/// Pipelines of the other attachment layouts the draw was bound with.
+	mutable std::vector<PipelineVariant> m_variants;
 	/// Pointer to the shader/pipeline.
 	shared<Shader> mp_shader;
 	/// Pointer to the vertex buffer.

@@ -16,6 +16,8 @@
 #include <vector>
 
 namespace owl::renderer::gpu {
+
+class Texture2D;
 /**
  * @brief
  *  Specification for the attachment Framebuffer.
@@ -32,6 +34,8 @@ struct AttachmentSpecification {
 		Depth24Stencil8,
 		/// Surface for swap chain.
 		Surface,
+		/// Half-float colour, the linear HDR scene colour.
+		Rgba16F,
 	};
 
 	/// The texture format for the attachment.
@@ -210,10 +214,64 @@ public:
 
 	/**
 	 * @brief
+	 *  A colour attachment as a texture that draws can sample, after the `unbind()` of the framebuffer. It follows
+	 *  the resizes of the framebuffer; it is valid while the framebuffer lives.
+	 * @param[in] iIndex Index of the colour attachment.
+	 * @return The texture, null when the backend cannot sample the attachment.
+	 */
+	[[nodiscard]] virtual auto getAttachmentTexture([[maybe_unused]] uint32_t iIndex) -> shared<Texture2D> {
+		return nullptr;
+	}
+
+	/**
+	 * @brief
+	 *  Copy an attachment into the same attachment of another framebuffer of the same size and format. Recorded in
+	 *  the frame, outside any pass.
+	 * @param[in] iIndex Index of the attachment, colour or depth.
+	 * @param[in,out] ioTarget Framebuffer receiving the copy.
+	 */
+	virtual void copyAttachment([[maybe_unused]] uint32_t iIndex, [[maybe_unused]] Framebuffer& ioTarget) {}
+
+	/**
+	 * @brief
+	 *  Check whether the first attachment stores linear colour (`Rgba16F`): draws into it decode authored sRGB
+	 *  colours and leave the encoding to the end of the frame.
+	 * @return True for a linear colour framebuffer.
+	 */
+	[[nodiscard]] auto isLinearColor() const -> bool;
+
+	/**
+	 * @brief
+	 *  The off-screen framebuffer bound for drawing.
+	 * @return The framebuffer, null when the draws go to the window surface.
+	 */
+	[[nodiscard]] static auto getBound() -> Framebuffer* { return s_bound; }
+
+	/**
+	 * @brief
+	 *  Check whether the draws go to a linear colour framebuffer (see `isLinearColor`).
+	 * @return True when the bound framebuffer stores linear colour.
+	 */
+	[[nodiscard]] static auto isLinearTargetBound() -> bool { return s_bound != nullptr && s_bound->isLinearColor(); }
+
+	/**
+	 * @brief
 	 *  Create the frame buffer.
 	 * @param[in] iSpec Specifications.
 	 * @return The Frame buffer.
 	 */
 	static auto create(const FramebufferSpecification& iSpec) -> shared<Framebuffer>;
+
+protected:
+	/**
+	 * @brief
+	 *  Record the framebuffer the draws go to; backends call it from `bind()` and `unbind()`.
+	 * @param[in] iFramebuffer The bound off-screen framebuffer, null for the window surface.
+	 */
+	static void setBound(Framebuffer* iFramebuffer) { s_bound = iFramebuffer; }
+
+private:
+	/// Off-screen framebuffer bound for drawing, null for the window surface.
+	static Framebuffer* s_bound;
 };
 }// namespace owl::renderer::gpu

@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include "Texture.h"
 #include "renderer/gpu/Framebuffer.h"
 
 #include <array>
@@ -134,7 +135,33 @@ public:
 	 */
 	[[nodiscard]] auto getSpecification() const -> const FramebufferSpecification& override { return m_specs; }
 
+	/**
+	 * @brief
+	 *  A colour attachment as a texture (see the base class).
+	 * @param[in] iIndex Index of the colour attachment.
+	 * @return The texture, null for a bad index.
+	 */
+	[[nodiscard]] auto getAttachmentTexture(uint32_t iIndex) -> shared<renderer::gpu::Texture2D> override;
+
+	/**
+	 * @brief
+	 *  Copy an attachment into another framebuffer (see the base class).
+	 * @param[in] iIndex Index of the attachment.
+	 * @param[in,out] ioTarget Framebuffer receiving the copy.
+	 */
+	void copyAttachment(uint32_t iIndex, renderer::gpu::Framebuffer& ioTarget) override;
+
 private:
+	/**
+	 * @brief
+	 *  OpenGL name of an attachment, by its index in the specification.
+	 * @param[in] iIndex Index of the attachment.
+	 * @return The texture name, 0 for a bad index.
+	 */
+	[[nodiscard]] auto getAttachmentName(uint32_t iIndex) const -> uint32_t;
+
+	/// Wrappers of the colour attachments handed to `getAttachmentTexture`, repointed by `invalidate`.
+	std::vector<shared<Texture2D>> m_attachmentTextures;
 	/// The renderer ID.
 	uint32_t m_rendererId = 0;
 	/// The colour attachment.

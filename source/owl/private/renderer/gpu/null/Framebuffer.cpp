@@ -18,9 +18,9 @@ Framebuffer::~Framebuffer() = default;
 
 void Framebuffer::invalidate() {}
 
-void Framebuffer::bind() {}
+void Framebuffer::bind() { setBound(this); }
 
-void Framebuffer::unbind() {}
+void Framebuffer::unbind() { setBound(nullptr); }
 
 void Framebuffer::resize(const math::vec2ui iSize) { m_specs.size = iSize; }
 

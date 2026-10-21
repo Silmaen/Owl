@@ -44,6 +44,22 @@ public:
 
 	/**
 	 * @brief
+	 *  Wrap a texture owned elsewhere (a framebuffer attachment); the wrapper never deletes it.
+	 * @param[in] iTextureId OpenGL name of the texture.
+	 * @param[in] iSpecs Size and format of the texture.
+	 */
+	Texture2D(uint32_t iTextureId, const Specification& iSpecs);
+
+	/**
+	 * @brief
+	 *  Point a wrapper at another texture owned elsewhere (the attachment was recreated by a resize).
+	 * @param[in] iTextureId OpenGL name of the texture.
+	 * @param[in] iSize Size of the texture.
+	 */
+	void setBorrowed(uint32_t iTextureId, const math::vec2ui& iSize);
+
+	/**
+	 * @brief
 	 *  Destructor.
 	 */
 	~Texture2D() override;
@@ -107,5 +123,7 @@ private:
 	uint32_t m_textureId = 0;
 	/// Mipmap levels allocated, fixed at creation (`Specification::getMipLevelCount`).
 	uint32_t m_mipLevels = 1;
+	/// Whether the texture is owned elsewhere (never deleted here).
+	bool m_borrowed = false;
 };
 }// namespace owl::renderer::gpu::opengl

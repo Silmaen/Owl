@@ -20,6 +20,11 @@
 namespace owl::renderer::gpu::vulkan::internal {
 
 void TextureData::freeTexture() {
+	if (borrowed) {
+		textureSampler = nullptr;
+		textureImageView = nullptr;
+		return;
+	}
 	auto* const device = VulkanCore::get().getLogicalDevice();
 	auto* const pool = Descriptors::get().getSingleImageDescriptorPool();
 	VulkanHandler::get().deferRelease(
