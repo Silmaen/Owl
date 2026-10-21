@@ -160,6 +160,8 @@ auto app::createApplication(int iArgc, char** iArgv) -> shared<Application> {
 #endif
 			.icon = "icons/logo_owl_icon.png",
 			.argCount = iArgc,
+			// Fixed: the title carries the version, and a desktop names its icon after the identifier.
+			.appId = "owl-nest-owl-engine-editor",
 			.hotReload = true,
 	});
 }
