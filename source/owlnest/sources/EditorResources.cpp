@@ -216,6 +216,8 @@ void loadTriggerTextures() {
 	textureLibrary.load("icons/triggers/interaction");
 	textureLibrary.load("icons/triggers/lua_callback");
 	textureLibrary.load("icons/triggers/camera");
+	textureLibrary.load("icons/lights/bulb_on");
+	textureLibrary.load("icons/lights/bulb_off");
 }
 
 void loadSounds() {

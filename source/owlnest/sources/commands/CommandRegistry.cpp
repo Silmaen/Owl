@@ -40,6 +40,7 @@
 #include <filesystem>
 #include <format>
 #include <iterator>
+#include <numbers>
 #include <optional>
 #include <sstream>
 #include <tuple>
@@ -323,6 +324,43 @@ auto createMesh(const shared<scene::Scene>& ioScene, const CommandArgs& iArgs) -
 			assetPath.empty() ? path : std::filesystem::path{assetPath});
 	if (const auto layer = iArgs.getText("layer"); !layer.empty())
 		entity.addComponent<scene::component::RendererTag>().rendererName = layer;
+	if (parent)
+		ioScene->setParent(entity, *parent);
+	return PreparedCommand{.command = mkUniq<CreateEntityCommand>(entity), .applied = true, .entity = entity.getUUID()};
+}
+
+auto createLight(const shared<scene::Scene>& ioScene, const CommandArgs& iArgs) -> Prepared {
+	const auto kind = iArgs.getText("type");
+	using LightType = scene::component::Light::Type;
+	std::optional<LightType> type;
+	if (kind == "Directional")
+		type = LightType::Directional;
+	else if (kind == "Point")
+		type = LightType::Point;
+	else if (kind == "Spot")
+		type = LightType::Spot;
+	if (!type)
+		return fail(CommandError::InvalidArgument, std::format("`{}` is not a light type", kind));
+	constexpr float degree = std::numbers::pi_v<float> / 180.f;
+	std::optional<scene::Entity> parent;
+	if (iArgs.has("parent")) {
+		auto found = entityArg(*ioScene, iArgs, "parent");
+		if (!found)
+			return unexpected<CommandFailure>{found.error()};
+		parent = *found;
+	}
+	auto entity = ioScene->createEntity(iArgs.getText("name", kind + " Light"));
+	auto& transform = entity.getComponent<scene::component::Transform>().transform;
+	if (const auto translation = iArgs.getVec3("translation"); translation)
+		transform.translation() = *translation;
+	else if (*type != LightType::Directional)
+		transform.translation() = {0.f, 3.f, 0.f};
+	// A sun starts tilted down, so that it lights a default scene.
+	if (*type == LightType::Directional)
+		transform.rotation() = {-50.f * degree, 30.f * degree, 0.f};
+	else if (*type == LightType::Spot)
+		transform.rotation() = {-90.f * degree, 0.f, 0.f};
+	entity.addComponent<scene::component::Light>().type = *type;
 	if (parent)
 		ioScene->setParent(entity, *parent);
 	return PreparedCommand{.command = mkUniq<CreateEntityCommand>(entity), .applied = true, .entity = entity.getUUID()};
@@ -794,6 +832,20 @@ CommandRegistry::CommandRegistry() {
 				   .type = ArgType::Text,
 				   .description = "Render-stack layer of the entity, recorded in a `RendererTag` (none when empty)."}},
 		 .factory = createMesh});
+	add({.name = "entity.create_light",
+		 .description = "Create an entity with a `Light`: a directional light (sun) tilted down, or a point or spot "
+						"light above the origin.",
+		 .args = {{.name = "type",
+				   .type = ArgType::Enum,
+				   .required = true,
+				   .description = "Kind of light.",
+				   .choices = {"Directional", "Point", "Spot"}},
+				  {.name = "name",
+				   .type = ArgType::Text,
+				   .description = "Tag of the entity (`<Type> Light` when absent)."},
+				  {.name = "translation", .type = ArgType::Vec3, .description = "World position of the entity."},
+				  {.name = "parent", .type = ArgType::Entity, .description = "Parent entity (root when absent)."}},
+		 .factory = createLight});
 	add({.name = "component.set",
 		 .description = "Change fields of a component of an entity: the values are merged into its current state.",
 		 .args = {entitySpec("Entity changed."),

@@ -326,8 +326,14 @@ auto VulkanHandler::pushPipeline(const std::string& iPipeLineName,
 			.pSampleMask = nullptr,
 			.alphaToCoverageEnable = VK_FALSE,
 			.alphaToOneEnable = VK_FALSE};
+	// A colour attachment whose format cannot blend (the `RedFloat` shadow maps) gets an opaque pipeline.
+	const auto colorFormats = m_currentFramebuffer->getColorAttachmentFormats();
+	VkFormatProperties formatProperties{};
+	if (!colorFormats.empty())
+		vkGetPhysicalDeviceFormatProperties(core.getPhysicalDevice(), colorFormats.front(), &formatProperties);
+	const bool canBlend = (formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT) != 0;
 	std::vector<VkPipelineColorBlendAttachmentState> att = {
-			{.blendEnable = iState.blendMode == gpu::BlendMode::Alpha ? VK_TRUE : VK_FALSE,
+			{.blendEnable = iState.blendMode == gpu::BlendMode::Alpha && canBlend ? VK_TRUE : VK_FALSE,
 			 .srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA,
 			 .dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
 			 .colorBlendOp = VK_BLEND_OP_ADD,

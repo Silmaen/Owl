@@ -13,6 +13,7 @@
 #include "renderer/gpu/DrawData.h"
 #include "renderer/gpu/Texture.h"
 
+#include <array>
 #include <cstdint>
 #include <span>
 #include <string>
@@ -42,6 +43,46 @@ struct Mesh3DVertex {
 	math::vec4 tileRect{0.f, 0.f, 1.f, 1.f};
 	/// Per-vertex ambient-occlusion multiplier of the lighting in `[0, 1]` (`1` = unoccluded).
 	float ao = 1.f;
+};
+
+/**
+ * @brief
+ *  A light as the 3D shaders read it (one element of the light storage buffer, std430).
+ */
+struct GpuLight {
+	/// xyz: world position (point, spot); w: range.
+	math::vec4 positionRange{0.f, 0.f, 0.f, 10.f};
+	/// xyz: direction the light travels, normalized (directional, spot); w: type (0 directional, 1 point, 2 spot).
+	math::vec4 directionType{0.f, -1.f, 0.f, 0.f};
+	/// rgb: linear colour times intensity; w unused.
+	math::vec4 color{1.f, 1.f, 1.f, 0.f};
+	/// x: cosine of the inner angle, y: cosine of the outer angle (spot); zw unused.
+	math::vec4 spotCosines{1.f, 0.f, 0.f, 0.f};
+};
+
+/**
+ * @brief
+ *  The directional shadow the 3D shaders sample.
+ */
+struct ShadowSettings {
+	/// View-projection of each cascade's light camera.
+	std::array<math::mat4, 4> viewProjections{};
+	/// View depth where each cascade ends.
+	math::vec4 splitDepths{0.f, 0.f, 0.f, 0.f};
+	/// World size of a shadow-map texel, per cascade.
+	math::vec4 texelWorldSizes{0.f, 0.f, 0.f, 0.f};
+	/// Third row of the view matrix of the camera: view depth = -(row . position).
+	math::vec4 viewDepthRow{0.f, 0.f, 0.f, 0.f};
+	/// Shadow map of each cascade (`RedFloat`, normalized device depth).
+	std::array<shared<gpu::Texture2D>, 4> maps{};
+	/// Number of cascades, 0 for no shadow.
+	uint32_t cascadeCount = 0;
+	/// Index in the lights of the directional light casting the shadow.
+	int32_t lightIndex = -1;
+	/// Normal-offset bias, in texels.
+	float bias = 1.5f;
+	/// Size of a cascade's shadow map, in texels.
+	uint32_t resolution = 1024;
 };
 
 /**
@@ -110,6 +151,39 @@ public:
 	 * @param[in] iAmbient Ambient colour added before the Lambert term.
 	 */
 	static void setLighting(const math::vec3& iSunDirection, const math::vec3& iAmbient);
+
+	/**
+	 * @brief
+	 *  Set the lights of the scene; with none, the meshes are lit by the sun of `setLighting`.
+	 * @param[in] iLights The lights, at most `g_maxLights` are used.
+	 */
+	static void setSceneLights(std::span<const GpuLight> iLights);
+
+	/**
+	 * @brief
+	 *  Set the directional shadow the meshes sample (`cascadeCount` 0 for none).
+	 * @param[in] iShadow The shadow.
+	 */
+	static void setShadow(const ShadowSettings& iShadow);
+
+	/**
+	 * @brief
+	 *  Draw the next meshes into a shadow map: the shaders write the depth, the transparent meshes are skipped.
+	 * @param[in] iShadowPass True while a shadow cascade renders.
+	 */
+	static void setShadowPass(bool iShadowPass);
+
+	/**
+	 * @brief
+	 *  Check whether a shadow cascade renders.
+	 * @return True during a shadow pass.
+	 */
+	[[nodiscard]] static auto isShadowPass() -> bool;
+
+	/// Most lights the meshes read.
+	static constexpr uint32_t g_maxLights = 64;
+	/// First texture slot of the shadow maps (one per cascade, up to the last slot).
+	static constexpr uint32_t g_shadowMapSlot = 28;
 
 	/**
 	 * @brief

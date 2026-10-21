@@ -22,6 +22,7 @@
 
 #include <app/Application.h>
 #include <data/voxel/VoxelRaycast.h>
+#include <scene/component/Light.h>
 #include <scene/component/MeshRenderer.h>
 #include <scene/component/VoxelWorld.h>
 
@@ -65,6 +66,7 @@ OWL_DIAG_POP
 #include <filesystem>
 #include <format>
 #include <limits>
+#include <numbers>
 #include <optional>
 #include <string_view>
 #include <tuple>
@@ -448,7 +450,7 @@ void Viewport::renderContextMenu() {
 	const bool click = io.MouseDragMaxDistanceSqr[ImGuiMouseButton_Right] < clickTravel * clickTravel;
 	if (m_hovered && click && ImGui::IsMouseReleased(ImGuiMouseButton_Right) && !io.KeyCtrl && !io.KeyAlt &&
 		!m_parent->getVoxelBrush().active && !gui::Guizmo::isOver()) {
-		const auto camera = pickCameraModel();
+		const auto camera = pickMarker();
 		m_parent->setSelectedEntity(camera ? camera : getHoveredEntity());
 		ImGui::OpenPopup("##viewportMenu");
 	}
@@ -685,7 +687,7 @@ void Viewport::renderOverlay() const {
 				math::Transform rigid = worldTransform;
 				rigid.scale() = {1.f, 1.f, 1.f};
 				renderSelectionBox(rigid(), m_cameraModel->getGeometry());
-			} else {
+			} else if (!selectedEntity.hasComponent<scene::component::Light>() || m_isometric) {
 				renderer::Renderer2D::drawRect({.transform = worldTransform, .color = g_selectionColor});
 				renderer::Renderer2D::drawQuad(
 						{.transform = worldTransform, .color = gui::Theme::withAlpha(g_selectionColor, 0.2f)});
@@ -749,6 +751,8 @@ void Viewport::renderOverlay() const {
 
 		if (m_parent != nullptr && m_parent->getSettings().showCameraGizmos)
 			renderCameraMarkers(activeScene);
+		if (showsLightMarkers())
+			renderLightMarkers(activeScene);
 
 		const scene::Entity selectedForGizmo = m_parent != nullptr ? m_parent->getSelectedEntity() : scene::Entity{};
 		constexpr math::vec4 kPushwallOutline{0.25f, 0.85f, 0.35f, 1.f};
@@ -2253,7 +2257,7 @@ auto Viewport::onMouseButtonPressed(const event::MouseButtonPressedEvent& ioEven
 	if (ioEvent.getMouseButton() == input::mouse::ButtonLeft) {
 		if (isHovered() && !gui::Guizmo::isOver() && !input::Input::isKeyPressed(input::key::LeftAlt) &&
 			m_parent != nullptr) {
-			const auto camera = pickCameraModel();
+			const auto camera = pickMarker();
 			m_parent->setSelectedEntity(camera ? camera : getHoveredEntity());
 		}
 	}
@@ -2294,6 +2298,188 @@ auto Viewport::pickCameraModel() const -> scene::Entity {
 		}
 	}
 	return nearest;
+}
+
+auto Viewport::showsLightMarkers() const -> bool {
+	return m_parent != nullptr && mp_document != nullptr && mp_document->state() == SceneDocument::State::Edit &&
+		   !m_isometric && m_parent->getSettings().showCameraGizmos;
+}
+
+auto Viewport::getLightMarkerRadius(const math::vec3& iPosition) const -> float {
+	constexpr float screenFraction = 0.025f;
+	const float distance = getViewProjection() == renderer::CameraEditor::Projection::Perspective
+								   ? (iPosition - m_editorCamera.getPosition()).norm()
+								   : m_editorCamera.getDistance();
+	return std::max(0.02f, distance * screenFraction);
+}
+
+namespace {
+
+// World position and unit direction (-Z of the world transform) of a light entity.
+auto lightFrame(const shared<scene::Scene>& iScene, const scene::Entity& iEntity) -> std::pair<math::vec3, math::vec3> {
+	math::Transform rigid = iScene->getWorldTransform(iEntity);
+	rigid.scale() = {1.f, 1.f, 1.f};
+	const math::vec4 forward = rigid() * math::vec4{0.f, 0.f, -1.f, 0.f};
+	math::vec3 direction{forward.x(), forward.y(), forward.z()};
+	if (direction.normSq() < 1e-12f)
+		direction = {0.f, 0.f, -1.f};
+	return {rigid.translation(), direction.normalized()};
+}
+
+// Draw a circle of lines around a centre, in the plane spanned by two unit vectors.
+void drawLightCircle(const math::vec3& iCenter, const math::vec3& iU, const math::vec3& iV, const float iRadius,
+					 const math::vec4& iColor, const int iEntityId) {
+	constexpr int segments = 48;
+	constexpr float step = 2.f * std::numbers::pi_v<float> / static_cast<float>(segments);
+	auto previous = iCenter + iU * iRadius;
+	for (int i = 1; i <= segments; ++i) {
+		const float angle = step * static_cast<float>(i);
+		const math::vec3 next = iCenter + iU * (std::cos(angle) * iRadius) + iV * (std::sin(angle) * iRadius);
+		renderer::Renderer2D::drawLine({.point1 = previous, .point2 = next, .color = iColor, .entityId = iEntityId});
+		previous = next;
+	}
+}
+
+// Draw an arrow from a point along a unit direction, its head a cone of four lines.
+void drawLightArrow(const math::vec3& iStart, const math::vec3& iDirection, const float iLength, const math::vec3& iU,
+					const math::vec3& iV, const float iHead, const math::vec4& iColor, const int iEntityId) {
+	const math::vec3 tip = iStart + iDirection * iLength;
+	renderer::Renderer2D::drawLine({.point1 = iStart, .point2 = tip, .color = iColor, .entityId = iEntityId});
+	const math::vec3 base = tip - iDirection * (iHead * 2.f);
+	for (const math::vec3& side: {iU, iV, iU * -1.f, iV * -1.f})
+		renderer::Renderer2D::drawLine(
+				{.point1 = tip, .point2 = base + side * iHead, .color = iColor, .entityId = iEntityId});
+}
+
+}// namespace
+
+void Viewport::renderLightMarkers(const shared<scene::Scene>& iScene) const {
+	using LightType = scene::component::Light::Type;
+	const scene::Entity selected = m_parent != nullptr ? m_parent->getSelectedEntity() : scene::Entity{};
+	for (const auto view = iScene->registry.view<scene::component::Light, scene::component::Transform>();
+		 const auto entity: view) {
+		const auto& light = view.get<scene::component::Light>(entity);
+		const scene::Entity ent{entity, iScene.get()};
+		const auto id = static_cast<int>(entity);
+		const auto [position, direction] = lightFrame(iScene, ent);
+		// A light switched off is drawn grey.
+		const math::vec4 color = light.enabled ? math::vec4{light.color.x(), light.color.y(), light.color.z(), 1.f}
+											   : math::vec4{0.45f, 0.45f, 0.45f, 0.6f};
+		const math::vec4 dim{color.x(), color.y(), color.z(), color.w() * 0.45f};
+		const float radius = getLightMarkerRadius(position);
+		const math::vec3 helper =
+				std::abs(direction.y()) < 0.9f ? math::vec3{0.f, 1.f, 0.f} : math::vec3{1.f, 0.f, 0.f};
+		const math::vec3 u = (direction ^ helper).normalized();
+		const math::vec3 v = direction ^ u;
+		const bool isSelected = selected && static_cast<uint32_t>(ent) == static_cast<uint32_t>(selected);
+		switch (light.type) {
+			case LightType::Directional:
+				{
+					// A sun disc with rays, and the arrow of the light direction.
+					drawLightCircle(position, u, v, radius, color, id);
+					constexpr int rays = 8;
+					for (int ray = 0; ray < rays; ++ray) {
+						const float angle = 2.f * std::numbers::pi_v<float> * static_cast<float>(ray) / rays;
+						const math::vec3 out = u * std::cos(angle) + v * std::sin(angle);
+						renderer::Renderer2D::drawLine({.point1 = position + out * (radius * 1.3f),
+														.point2 = position + out * (radius * 1.8f),
+														.color = color,
+														.entityId = id});
+					}
+					drawLightArrow(position, direction, radius * 5.f, u, v, radius * 0.4f, color, id);
+					// Selected: parallel rays around it.
+					if (isSelected) {
+						for (const math::vec3& side: {u, v, u * -1.f, v * -1.f})
+							drawLightArrow(position + side * (radius * 2.5f), direction, radius * 8.f, u, v,
+										   radius * 0.4f, dim, id);
+					}
+					break;
+				}
+			case LightType::Point:
+				{
+					// A bulb sprite facing the camera, lit or switched off; selected, the range sphere.
+					drawLightBulb(position, radius * 2.4f, light.enabled, id);
+					if (isSelected) {
+						drawLightCircle(position, {1.f, 0.f, 0.f}, {0.f, 1.f, 0.f}, light.range, color, id);
+						drawLightCircle(position, {1.f, 0.f, 0.f}, {0.f, 0.f, 1.f}, light.range, color, id);
+						drawLightCircle(position, {0.f, 1.f, 0.f}, {0.f, 0.f, 1.f}, light.range, color, id);
+					}
+					break;
+				}
+			case LightType::Spot:
+				{
+					// A small cone of the outer angle; selected, the cones down to the range.
+					const float length = isSelected ? light.range : radius * 4.f;
+					const math::vec3 center = position + direction * length;
+					drawLightCircle(position, u, v, radius * 0.3f, color, id);
+					for (const auto& [angle, coneColor]:
+						 {std::pair{light.outerAngle, color}, std::pair{light.innerAngle, dim}}) {
+						if (!isSelected && coneColor.w() < color.w())
+							continue;
+						const float coneRadius = length * std::tan(angle);
+						drawLightCircle(center, u, v, coneRadius, coneColor, id);
+						for (const math::vec3& side: {u, v, u * -1.f, v * -1.f})
+							renderer::Renderer2D::drawLine({.point1 = position,
+															.point2 = center + side * coneRadius,
+															.color = coneColor,
+															.entityId = id});
+					}
+					break;
+				}
+		}
+	}
+}
+
+void Viewport::drawLightBulb(const math::vec3& iPosition, const float iSize, const bool iEnabled,
+							 const int iEntityId) const {
+	const auto texture =
+			renderer::Renderer::getTextureLibrary().get(iEnabled ? "icons/lights/bulb_on" : "icons/lights/bulb_off");
+	if (texture == nullptr)
+		return;
+	// The rotation of the camera turns the quad (+Z normal) towards it.
+	math::mat4 billboard = inverse(getActiveCamera().getView());
+	billboard(0, 3) = iPosition.x();
+	billboard(1, 3) = iPosition.y();
+	billboard(2, 3) = iPosition.z();
+	math::Transform transform{billboard};
+	transform.scale() = {iSize, iSize, 1.f};
+	renderer::Renderer2D::drawQuad({.transform = transform, .texture = texture, .entityId = iEntityId});
+}
+
+auto Viewport::pickLight() const -> scene::Entity {
+	if (!showsLightMarkers())
+		return {};
+	const auto& scene = mp_document->getActiveScene();
+	const auto ray = getCursorRay();
+	if (!scene || !ray)
+		return {};
+	const auto& [origin, direction] = *ray;
+	scene::Entity nearest;
+	float nearestDistance = std::numeric_limits<float>::max();
+	for (const auto view = scene->registry.view<scene::component::Light, scene::component::Transform>();
+		 const auto entity: view) {
+		const scene::Entity light{entity, scene.get()};
+		const math::vec3 center = scene->getWorldTransform(light).translation();
+		// A sphere a little larger than the cross, so that it is easy to hit.
+		const float radius = getLightMarkerRadius(center) * 1.6f;
+		const math::vec3 toCenter = center - origin;
+		const float along = toCenter * direction;
+		if (along < 0.f)
+			continue;
+		if (const float missSq = toCenter.normSq() - along * along; missSq > radius * radius)
+			continue;
+		if (along < nearestDistance) {
+			nearestDistance = along;
+			nearest = light;
+		}
+	}
+	return nearest;
+}
+
+auto Viewport::pickMarker() const -> scene::Entity {
+	if (const auto camera = pickCameraModel(); camera)
+		return camera;
+	return pickLight();
 }
 
 auto Viewport::getHoveredEntity() const -> scene::Entity {

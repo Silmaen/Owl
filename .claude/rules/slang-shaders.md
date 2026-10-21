@@ -75,3 +75,7 @@ float4 texColor = u_Textures[NonUniformResourceIndex(texIndex)].Sample(u_Sampler
   Share the session across tests with `SetUpTestSuite`. Headless compilation tests need no GPU.
 - Slang warning 41012 (capability auto-upgrade) is filtered from the logs on purpose.
 - Slang `float4x4(v0, v1, v2, v3)` takes **rows** (GLSL `mat4(...)` takes columns): `transpose()` when porting.
+- `column_major` is ignored on a matrix **array** in a constant buffer (read row-major, so transposed): wrap each matrix
+  in a struct with a `column_major` member.
+- Never `Load` (texel fetch) from the combined-sampler texture array: it crashes lavapipe. Sample at the texel centres
+  with a nearest sampler instead.

@@ -78,6 +78,14 @@ public:
 	 * @param[in] iToneMapping Tone mapping applied before the encoding.
 	 */
 	static void draw(const shared<gpu::Texture2D>& iSceneColor, ToneMapping iToneMapping);
+
+	/**
+	 * @brief
+	 *  Decode an sRGB channel to linear (exact piecewise curve), as the world shaders do.
+	 * @param[in] iValue The sRGB value, in [0, 1].
+	 * @return The linear value.
+	 */
+	[[nodiscard]] static auto srgbToLinear(float iValue) -> float;
 };
 
 }// namespace owl::renderer

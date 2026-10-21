@@ -10,12 +10,11 @@
 
 #include "renderer/RenderGraph.h"
 
+#include "renderer/ColorEncoder.h"
 #include "renderer/gpu/RenderCommand.h"
 
 #include <algorithm>
-#include <cmath>
 #include <cstdint>
-#include <format>
 #include <span>
 #include <utility>
 
@@ -25,25 +24,38 @@ namespace {
 // Pooled framebuffers unused for that many runs of the graph are released (a viewport resized, a preview closed).
 constexpr uint32_t g_maxIdleRuns = 120;
 
-auto srgbToLinear(const float iValue) -> float {
-	return iValue <= 0.04045f ? iValue / 12.92f : std::pow((iValue + 0.055f) / 1.055f, 2.4f);
-}
-
-auto toFormat(const RenderGraph::ColorSpace iColorSpace) -> gpu::AttachmentSpecification::Format {
-	switch (iColorSpace) {
-		case RenderGraph::ColorSpace::Linear:
+auto toFormat(const RenderGraph::TargetFormat iFormat) -> gpu::AttachmentSpecification::Format {
+	switch (iFormat) {
+		case RenderGraph::TargetFormat::Linear:
 			return gpu::AttachmentSpecification::Format::Rgba16F;
-		case RenderGraph::ColorSpace::Display:
+		case RenderGraph::TargetFormat::Display:
 			return gpu::AttachmentSpecification::Format::Surface;
+		case RenderGraph::TargetFormat::Depth:
+			return gpu::AttachmentSpecification::Format::RedFloat;
 	}
 	return gpu::AttachmentSpecification::Format::Surface;
 }
 
-void clearTarget(const RenderGraph::ColorSpace iColorSpace, gpu::Framebuffer& ioFramebuffer) {
+auto toName(const RenderGraph::TargetFormat iFormat) -> const char* {
+	switch (iFormat) {
+		case RenderGraph::TargetFormat::Linear:
+			return "graph.linear";
+		case RenderGraph::TargetFormat::Display:
+			return "graph.display";
+		case RenderGraph::TargetFormat::Depth:
+			return "graph.depth";
+	}
+	return "graph";
+}
+
+void clearTarget(const RenderGraph::TargetFormat iFormat, gpu::Framebuffer& ioFramebuffer) {
 	const math::vec4 clearColor = gpu::RenderCommand::getClearColor();
 	math::vec4 color = clearColor;
-	if (iColorSpace == RenderGraph::ColorSpace::Linear)
-		color = {srgbToLinear(color.r()), srgbToLinear(color.g()), srgbToLinear(color.b()), color.a()};
+	if (iFormat == RenderGraph::TargetFormat::Linear)
+		color = {ColorEncoder::srgbToLinear(color.r()), ColorEncoder::srgbToLinear(color.g()),
+				 ColorEncoder::srgbToLinear(color.b()), color.a()};
+	else if (iFormat == RenderGraph::TargetFormat::Depth)
+		color = {1.f, 1.f, 1.f, 1.f};
 	gpu::RenderCommand::setClearColor(color);
 	gpu::RenderCommand::clear();
 	gpu::RenderCommand::setClearColor(clearColor);
@@ -86,24 +98,26 @@ void RenderGraph::reset() {
 	m_order.clear();
 }
 
-auto RenderGraph::addTarget(const std::string_view iName, const bool iImported, const ColorSpace iColorSpace)
-		-> Resource {
+auto RenderGraph::addTarget(const std::string_view iName, const bool iImported, const TargetFormat iFormat,
+							const math::vec2ui& iSize) -> Resource {
 	if (m_targetCount == m_targets.size())
 		m_targets.emplace_back();
 	auto& target = m_targets[m_targetCount];
 	target.name.assign(iName);
 	target.imported = iImported;
-	target.colorSpace = iColorSpace;
+	target.format = iFormat;
+	target.size = iSize;
 	target.framebuffer = nullptr;
 	return {.index = m_targetCount++};
 }
 
 auto RenderGraph::importTarget(const std::string_view iName) -> Resource {
-	return addTarget(iName, true, ColorSpace::Display);
+	return addTarget(iName, true, TargetFormat::Display, {0, 0});
 }
 
-auto RenderGraph::createTarget(const std::string_view iName, const ColorSpace iColorSpace) -> Resource {
-	return addTarget(iName, false, iColorSpace);
+auto RenderGraph::createTarget(const std::string_view iName, const TargetFormat iFormat, const math::vec2ui& iSize)
+		-> Resource {
+	return addTarget(iName, false, iFormat, iSize);
 }
 
 auto RenderGraph::beginPass(const std::string_view iName, Execute iExecute) -> uint32_t {
@@ -235,7 +249,8 @@ void RenderGraph::execute(const math::vec2ui& iSize) {
 		auto& pass = m_passes[m_order[position]];
 		auto& target = m_targets[pass.write.index];
 		if (!target.imported && target.framebuffer == nullptr)
-			target.framebuffer = acquire(target.colorSpace, iSize);
+			target.framebuffer =
+					acquire(target.format, target.size.x() == 0 || target.size.y() == 0 ? iSize : target.size);
 		if (target.framebuffer != bound) {
 			if (bound != nullptr)
 				bound->unbind();
@@ -244,7 +259,7 @@ void RenderGraph::execute(const math::vec2ui& iSize) {
 			bound = target.framebuffer;
 		}
 		if (!target.imported && !target.written && target.framebuffer != nullptr)
-			clearTarget(target.colorSpace, *target.framebuffer);
+			clearTarget(target.format, *target.framebuffer);
 		target.written = true;
 		if (pass.execute)
 			pass.execute(context);
@@ -271,9 +286,9 @@ auto RenderGraph::getCompiledPasses() const -> std::vector<std::string> {
 	return names;
 }
 
-auto RenderGraph::acquire(const ColorSpace iColorSpace, const math::vec2ui& iSize) -> gpu::Framebuffer* {
+auto RenderGraph::acquire(const TargetFormat iFormat, const math::vec2ui& iSize) -> gpu::Framebuffer* {
 	for (auto& pooled: m_pool) {
-		if (pooled.used || pooled.colorSpace != iColorSpace || pooled.framebuffer->getSpecification().size != iSize)
+		if (pooled.used || pooled.format != iFormat || pooled.framebuffer->getSpecification().size != iSize)
 			continue;
 		pooled.used = true;
 		pooled.idleRuns = 0;
@@ -281,19 +296,19 @@ auto RenderGraph::acquire(const ColorSpace iColorSpace, const math::vec2ui& iSiz
 	}
 	auto framebuffer = gpu::Framebuffer::create(
 			{.size = iSize,
-			 .attachments = {{.format = toFormat(iColorSpace), .tiling = gpu::AttachmentSpecification::Tiling::Optimal},
+			 .attachments = {{.format = toFormat(iFormat), .tiling = gpu::AttachmentSpecification::Tiling::Optimal},
 							 {.format = gpu::AttachmentSpecification::Format::RedInteger,
 							  .tiling = gpu::AttachmentSpecification::Tiling::Optimal},
 							 {.format = gpu::AttachmentSpecification::Format::Depth24Stencil8,
 							  .tiling = gpu::AttachmentSpecification::Tiling::Optimal}},
 			 .samples = 1,
 			 .swapChainTarget = false,
-			 .debugName = std::format("graph.{}", iColorSpace == ColorSpace::Linear ? "linear" : "display")});
+			 .debugName = toName(iFormat)});
 	if (framebuffer == nullptr) {
 		OWL_CORE_ERROR("RenderGraph: Failed to create a transient target.")
 		return nullptr;
 	}
-	m_pool.push_back({.framebuffer = std::move(framebuffer), .colorSpace = iColorSpace, .used = true, .idleRuns = 0});
+	m_pool.push_back({.framebuffer = std::move(framebuffer), .format = iFormat, .used = true, .idleRuns = 0});
 	return m_pool.back().framebuffer.get();
 }
 

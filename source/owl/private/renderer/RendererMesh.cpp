@@ -71,6 +71,8 @@ void RendererMesh::endScene() {
 
 void RendererMesh::drawMesh(MeshResource& ioMesh, const math::mat4& iModel, const shared<gpu::Texture2D>& iTexture,
 							const MeshDrawParams& iParams, const bool iTransparent) {
+	if (iTransparent && Renderer3D::isShadowPass())
+		return;
 	const auto& mesh = ioMesh.getMesh(iTransparent);
 	if (!mesh)
 		return;

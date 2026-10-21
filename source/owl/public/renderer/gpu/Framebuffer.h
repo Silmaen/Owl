@@ -36,6 +36,8 @@ struct AttachmentSpecification {
 		Surface,
 		/// Half-float colour, the linear HDR scene colour.
 		Rgba16F,
+		/// Single 32-bit float (shadow-map depth).
+		RedFloat,
 	};
 
 	/// The texture format for the attachment.

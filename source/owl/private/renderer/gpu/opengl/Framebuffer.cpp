@@ -79,6 +79,7 @@ auto isDepthFormat(const AttachmentSpecification::Format iFormat) -> bool {
 		case AttachmentSpecification::Format::RedInteger:
 		case AttachmentSpecification::Format::Surface:
 		case AttachmentSpecification::Format::Rgba16F:
+		case AttachmentSpecification::Format::RedFloat:
 			return false;
 	}
 	return false;
@@ -91,6 +92,8 @@ auto fbTextureFormatToGl(const AttachmentSpecification::Format iFormat) -> GLenu
 			return GL_RGBA8;
 		case AttachmentSpecification::Format::Rgba16F:
 			return GL_RGBA16F;
+		case AttachmentSpecification::Format::RedFloat:
+			return GL_R32F;
 		case AttachmentSpecification::Format::RedInteger:
 			return GL_RED_INTEGER;
 		case AttachmentSpecification::Format::None:
@@ -158,6 +161,10 @@ void Framebuffer::invalidate() {
 					utils::attachColorTexture(m_colorAttachments[i], static_cast<int>(m_specs.samples), GL_RGBA16F,
 											  GL_RGBA, m_specs.size.x(), m_specs.size.y(), static_cast<int>(i));
 					break;
+				case AttachmentSpecification::Format::RedFloat:
+					utils::attachColorTexture(m_colorAttachments[i], static_cast<int>(m_specs.samples), GL_R32F, GL_RED,
+											  m_specs.size.x(), m_specs.size.y(), static_cast<int>(i));
+					break;
 				case AttachmentSpecification::Format::RedInteger:
 					utils::attachColorTexture(m_colorAttachments[i], static_cast<int>(m_specs.samples), GL_R32I,
 											  GL_RED_INTEGER, m_specs.size.x(), m_specs.size.y(), static_cast<int>(i));
@@ -182,6 +189,7 @@ void Framebuffer::invalidate() {
 			case AttachmentSpecification::Format::RedInteger:
 			case AttachmentSpecification::Format::Surface:
 			case AttachmentSpecification::Format::Rgba16F:
+			case AttachmentSpecification::Format::RedFloat:
 				break;
 		}
 	}

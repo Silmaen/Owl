@@ -278,6 +278,30 @@ YAML key: `MeshRenderer`. Drawn in 3D by a `RendererMesh` layer of the render st
 engine context and shared by every entity drawing it ([Renderer > Static meshes](renderer.md#renderer-meshes)). Lua:
 `entity.set_mesh` / `get_mesh`, `entity.set_tint` / `get_tint`.
 
+#### Light {#light-component}
+
+| Field              | Type    | Default       | Description                                                   |
+|--------------------|---------|---------------|---------------------------------------------------------------|
+| `type`             | `Type`  | `Directional` | `Directional`, `Point` or `Spot`                              |
+| `enabled`          | `bool`  | `true`        | Whether the light shines; switched off it keeps its settings  |
+| `color`            | `vec3`  | `{1, 1, 1}`   | Colour, sRGB as authored                                      |
+| `intensity`        | `float` | `1`           | Multiplier of the colour                                      |
+| `range`            | `float` | `10`          | Distance where a point or spot light reaches zero             |
+| `innerAngle`       | `float` | 20 degrees    | Half angle of the full-intensity spot cone (radians in YAML)  |
+| `outerAngle`       | `float` | 30 degrees    | Half angle where the spot reaches zero (radians in YAML)      |
+| `castShadows`      | `bool`  | `true`        | Directional only: the first such light casts cascaded shadows |
+| `shadowDistance`   | `float` | `60`          | Distance from the camera the shadows cover                    |
+| `cascadeCount`     | `uint`  | `4`           | Number of shadow cascades, 1 to 4                             |
+| `shadowResolution` | `uint`  | `1024`        | Texels of each cascade, 256 to 4096                           |
+| `shadowBias`       | `float` | `1.5`         | Normal-offset bias, in shadow-map texels                      |
+
+YAML key: `Light`. Shines along -Z of the entity's world transform; a point light ignores the rotation and a
+directional light the position. Lights the 3D layers only (`MeshRenderer` meshes, voxel worlds), up to 64 per frame;
+a scene without a `Light` keeps the sun and ambient of the layer config. See
+[Renderer > Lights and shadows](renderer.md#renderer-lights). Lua: `entity.set_light_color` / `get_light_color`,
+`entity.set_light_intensity` / `get_light_intensity`, `entity.set_light_enabled` / `is_light_enabled`,
+`entity.set_light_range`.
+
 #### Text
 
 | Field               | Type     | Default        | Description                                                                  |

@@ -16,6 +16,7 @@
 #include "renderer/gpu/UniformBuffer.h"
 
 #include <array>
+#include <cmath>
 #include <cstdint>
 #include <vector>
 
@@ -98,6 +99,10 @@ void ColorEncoder::draw(const shared<gpu::Texture2D>& iSceneColor, const ToneMap
 	const std::array textures{iSceneColor};
 	gpu::RenderCommand::bindTextures(textures);
 	gpu::RenderCommand::drawData(g_data->drawData, 6);
+}
+
+auto ColorEncoder::srgbToLinear(const float iValue) -> float {
+	return iValue <= 0.04045f ? iValue / 12.92f : std::pow((iValue + 0.055f) / 1.055f, 2.4f);
 }
 
 }// namespace owl::renderer

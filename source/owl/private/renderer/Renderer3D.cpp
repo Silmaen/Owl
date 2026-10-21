@@ -12,8 +12,10 @@
 #include "renderer/gpu/Framebuffer.h"
 #include "renderer/gpu/RenderCommand.h"
 #include "renderer/gpu/RendererDescriptors.h"
+#include "renderer/gpu/StorageBuffer.h"
 #include "renderer/gpu/UniformBuffer.h"
 
+#include <algorithm>
 #include <array>
 #include <cstddef>
 #include <cstdint>
@@ -44,11 +46,31 @@ struct SceneUbo {
 
 static_assert(sizeof(SceneUbo) == 192, "SceneUbo must match the std140 layout of Scene3D in the renderer3D shaders.");
 
+struct LightingUbo {
+	// x: light count (0 lights with the sun of the layer), y: cascade count, z: index of the shadowed light.
+	std::array<int32_t, 4> counts{0, 0, -1, 0};
+	math::vec4 splitDepths{0.f, 0.f, 0.f, 0.f};
+	math::vec4 texelWorldSizes{0.f, 0.f, 0.f, 0.f};
+	math::vec4 viewDepthRow{0.f, 0.f, 0.f, 0.f};
+	// x: normal-offset bias in texels, y: shadow-map size in texels.
+	math::vec4 shadowParams{1.5f, 1024.f, 0.f, 0.f};
+	std::array<math::mat4, 4> cascades{};
+};
+
+static_assert(sizeof(LightingUbo) == 336,
+			  "LightingUbo must match the std140 layout of Lighting in the renderer3D shaders.");
+
 struct InternalData {
 	shared<gpu::UniformBuffer> sceneUniformBuffer;
+	shared<gpu::UniformBuffer> lightingUniformBuffer;
+	shared<gpu::StorageBuffer> lightBuffer;
 	shared<gpu::Texture2D> whiteTexture;
 	SceneUbo scene;
+	LightingUbo lighting;
+	std::array<GpuLight, Renderer3D::g_maxLights> lights{};
+	std::array<shared<gpu::Texture2D>, 4> shadowMaps{};
 	std::array<shared<gpu::Texture2D>, k_MaxTextureSlots> textureSlots;
+	bool shadowPass = false;
 };
 
 shared<InternalData> g_Data;
@@ -58,16 +80,28 @@ void bindMeshTextures(const std::span<const shared<gpu::Texture2D>> iTextures) {
 	slots[0] = g_Data->whiteTexture;
 	size_t count = 1;
 	for (const auto& texture: iTextures) {
-		if (texture && count < slots.size())
+		if (texture && count < Renderer3D::g_shadowMapSlot)
 			slots[count++] = texture;
 	}
-	gpu::RenderCommand::bindTextures(std::span{slots}.first(count));
+	if (g_Data->lighting.counts[1] == 0 || g_Data->shadowPass) {
+		gpu::RenderCommand::bindTextures(std::span{slots}.first(count));
+		return;
+	}
+	std::fill(slots.begin() + static_cast<std::ptrdiff_t>(count),
+			  slots.begin() + static_cast<std::ptrdiff_t>(Renderer3D::g_shadowMapSlot), g_Data->whiteTexture);
+	for (size_t index = 0; index < g_Data->shadowMaps.size(); ++index) {
+		const auto& map = g_Data->shadowMaps[index];
+		slots[Renderer3D::g_shadowMapSlot + index] = map ? map : g_Data->whiteTexture;
+	}
+	gpu::RenderCommand::bindTextures(slots);
 }
 
 void setDrawParams(const math::mat4& iModel, const MeshDrawParams& iParams) {
 	g_Data->scene.model = iModel;
 	g_Data->scene.tint = iParams.tint;
 	g_Data->scene.ids[0] = iParams.entityId;
+	g_Data->scene.ids[2] = g_Data->shadowPass ? 1 : 0;
+	g_Data->lightBuffer->bind();
 	g_Data->scene.ids[1] = gpu::Framebuffer::isLinearTargetBound() ? 1 : 0;
 	g_Data->sceneUniformBuffer->setData(&g_Data->scene, sizeof(SceneUbo), 0);
 }
@@ -84,7 +118,7 @@ void Renderer3D::init() {
 	}
 	g_Data = mkShared<InternalData>();
 
-	const std::array<gpu::BindingDecl, 2> bindings{
+	const std::array<gpu::BindingDecl, 4> bindings{
 			gpu::BindingDecl{.binding = 0,
 							 .type = gpu::BindingType::UniformBuffer,
 							 .count = 1,
@@ -92,6 +126,14 @@ void Renderer3D::init() {
 			gpu::BindingDecl{.binding = 1,
 							 .type = gpu::BindingType::CombinedImageSampler,
 							 .count = k_MaxTextureSlots,
+							 .stages = gpu::ShaderStage::Fragment},
+			gpu::BindingDecl{.binding = 2,
+							 .type = gpu::BindingType::StorageBuffer,
+							 .count = 1,
+							 .stages = gpu::ShaderStage::Fragment},
+			gpu::BindingDecl{.binding = 3,
+							 .type = gpu::BindingType::UniformBuffer,
+							 .count = 1,
 							 .stages = gpu::ShaderStage::Fragment},
 	};
 	gpu::RendererDescriptors::declare(k_RendererKey, bindings);
@@ -104,6 +146,10 @@ void Renderer3D::init() {
 
 	g_Data->sceneUniformBuffer = gpu::UniformBuffer::create(sizeof(SceneUbo), 0, k_RendererKey);
 	g_Data->sceneUniformBuffer->bind();
+	g_Data->lightingUniformBuffer = gpu::UniformBuffer::create(sizeof(LightingUbo), 3, k_RendererKey);
+	g_Data->lightingUniformBuffer->bind();
+	g_Data->lightBuffer = gpu::StorageBuffer::create(g_maxLights * sizeof(GpuLight), 2, k_RendererKey);
+	g_Data->lightBuffer->setData(g_Data->lights.data(), static_cast<uint32_t>(sizeof(GpuLight)), 0);
 }
 
 void Renderer3D::shutdown() {
@@ -114,6 +160,10 @@ void Renderer3D::shutdown() {
 		return;
 	}
 	g_Data->sceneUniformBuffer.reset();
+	g_Data->lightingUniformBuffer.reset();
+	g_Data->lightBuffer.reset();
+	g_Data->shadowMaps = {};
+	g_Data->textureSlots = {};
 	g_Data->whiteTexture.reset();
 	g_Data.reset();
 	gpu::RendererDescriptors::release(k_RendererKey);
@@ -124,6 +174,12 @@ void Renderer3D::beginScene(const Camera& iCamera) {
 
 	gpu::RenderCommand::beginBatch();
 	g_Data->scene.viewProjection = iCamera.getViewProjection();
+	if (g_Data->shadowPass)
+		return;
+	const gpu::RendererDescriptors::ScopedActive scoped{blockId()};
+	g_Data->lightingUniformBuffer->setData(&g_Data->lighting, sizeof(LightingUbo), 0);
+	const auto lightCount = static_cast<uint32_t>(std::max(g_Data->lighting.counts[0], 1));
+	g_Data->lightBuffer->setData(g_Data->lights.data(), lightCount * static_cast<uint32_t>(sizeof(GpuLight)), 0);
 }
 
 void Renderer3D::endScene() {}
@@ -132,6 +188,36 @@ void Renderer3D::setLighting(const math::vec3& iSunDirection, const math::vec3& 
 	g_Data->scene.sunDirection = math::vec4{iSunDirection.x(), iSunDirection.y(), iSunDirection.z(), 0.f};
 	g_Data->scene.ambient = math::vec4{iAmbient.x(), iAmbient.y(), iAmbient.z(), 1.f};
 }
+
+void Renderer3D::setSceneLights(const std::span<const GpuLight> iLights) {
+	if (!g_Data)
+		return;
+	const auto count = std::min(iLights.size(), static_cast<size_t>(g_maxLights));
+	std::copy_n(iLights.begin(), count, g_Data->lights.begin());
+	g_Data->lighting.counts[0] = static_cast<int32_t>(count);
+}
+
+void Renderer3D::setShadow(const ShadowSettings& iShadow) {
+	if (!g_Data)
+		return;
+	auto& lighting = g_Data->lighting;
+	const uint32_t count = std::min(iShadow.cascadeCount, static_cast<uint32_t>(lighting.cascades.size()));
+	lighting.counts[1] = static_cast<int32_t>(count);
+	lighting.counts[2] = count > 0 ? iShadow.lightIndex : -1;
+	lighting.splitDepths = iShadow.splitDepths;
+	lighting.texelWorldSizes = iShadow.texelWorldSizes;
+	lighting.viewDepthRow = iShadow.viewDepthRow;
+	lighting.shadowParams = {iShadow.bias, static_cast<float>(iShadow.resolution), 0.f, 0.f};
+	lighting.cascades = iShadow.viewProjections;
+	g_Data->shadowMaps = iShadow.maps;
+}
+
+void Renderer3D::setShadowPass(const bool iShadowPass) {
+	if (g_Data)
+		g_Data->shadowPass = iShadowPass;
+}
+
+auto Renderer3D::isShadowPass() -> bool { return g_Data && g_Data->shadowPass; }
 
 auto Renderer3D::getWhiteTexture() -> shared<gpu::Texture2D> { return g_Data ? g_Data->whiteTexture : nullptr; }
 

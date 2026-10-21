@@ -18,6 +18,8 @@
 #include "renderer/Camera.h"
 #include "renderer/RenderGraph.h"
 #include "renderer/RenderStack.h"
+#include "renderer/Renderer3D.h"
+#include "renderer/ShadowCascades.h"
 #include "scene/PhysicsSettings.h"
 #include "scene/SimulationClock.h"
 #include "scene/SystemSchedule.h"
@@ -71,6 +73,7 @@ struct Hierarchy;
 struct ID;
 struct LuaScript;
 struct MeshRenderer;
+struct Light;
 struct NativeScript;
 struct PhysicBody;
 struct Player;
@@ -1221,6 +1224,29 @@ private:
 
 	/**
 	 * @brief
+	 *  Hand the visible `Light` entities to `Renderer3D` and, when a directional light casts shadows, add one
+	 *  frame-graph pass per cascade drawing the opaque meshes and voxel worlds into its shadow map.
+	 * @param[in,out] ioGraph The frame graph.
+	 */
+	void recordLightPasses(renderer::RenderGraph& ioGraph);
+
+	/**
+	 * @brief
+	 *  Draw the opaque geometry of the 3D layers (meshes, voxel worlds) with the current camera; used by the shadow
+	 *  passes.
+	 * @param[in] iCamera The camera drawing the geometry.
+	 */
+	void renderShadowCasters(const renderer::Camera& iCamera);
+
+	/**
+	 * @brief
+	 *  Give `Renderer3D` the shadow maps the cascade passes drew, before a 3D layer runs.
+	 * @param[in] iContext Context of the running pass.
+	 */
+	void useShadowMaps(const renderer::RenderGraph::PassContext& iContext);
+
+	/**
+	 * @brief
 	 *  Render one runtime frame through the primary camera: voxel streaming, renderer stack, screen transition.
 	 * @param[in] iTimeStep The frame duration (advances the screen transition).
 	 */
@@ -1306,6 +1332,14 @@ private:
 	const renderer::RenderLayer* mp_currentLayer = nullptr;
 	/// Camera of the frame-graph run in progress (`renderWithStack`).
 	const renderer::Camera* mp_renderCamera = nullptr;
+	/// Lights of the frame, as `Renderer3D` reads them.
+	std::vector<renderer::GpuLight> m_gpuLights;
+	/// Shadow cascades of the frame.
+	renderer::ShadowCascades m_shadowCascades;
+	/// Shadow of the frame, its maps filled when the 3D layers run.
+	renderer::ShadowSettings m_shadowSettings;
+	/// Shadow-map targets of the frame, one per cascade.
+	std::array<renderer::RenderGraph::Resource, renderer::g_maxShadowCascades> m_shadowTargets{};
 
 	/// Shared sink collecting worker-generated voxel chunks for `updateVoxelStreaming` to install on the main thread.
 	shared<VoxelStreamState> m_voxelStream;
@@ -1356,6 +1390,9 @@ OWL_API void Scene::onComponentAdded<component::CircleRenderer>(const Entity& iE
 template<>
 OWL_API void Scene::onComponentAdded<component::MeshRenderer>(const Entity& iEntity,
 															  component::MeshRenderer& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::Light>(const Entity& iEntity, component::Light& ioComponent);
 
 template<>
 OWL_API void Scene::onComponentAdded<component::NativeScript>(const Entity& iEntity,

@@ -1402,6 +1402,7 @@ void EditorLayer::onContextualHelp() {
 			{"Isometric Object", "renderer"},
 			{"CircleRenderer", "renderer"},
 			{"MeshRenderer", "renderer"},
+			{"Light", "renderer"},
 			{"BackgroundTexture", "renderer"},
 			{"Text", "renderer"},
 			{"Player", "scene"},
