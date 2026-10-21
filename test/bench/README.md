@@ -72,9 +72,10 @@ flowchart LR
   deliberately slower or the agent changes.
 - `test/bench/thresholds.json` widens the threshold by name pattern (multi-threaded physics steps and world creation
   of 100 bodies and the step of 5000 falling bodies, the `mcp` round trips, `sample/load/game_over`, the flat
-  `path/long_query` cases, a few script and prefab cases); it is not part of the baseline, so a refresh keeps it.
+  `path/long_query` cases and the path-queue update, a few script and prefab cases); it is not part of the baseline,
+  so a refresh keeps it.
 - Agent: pinned to `linux-build-hephaistos` (8 cores). The committed baseline is the median of the 5 rounds of the
-  calibration of 2026-10-21 (build 39239, in `context.baseline_runs`), on the frame graph and linear HDR colour code. Timings from another agent do not compare (artemis is 20 % faster but
+  calibration of 2026-10-21 (build 39286, in `context.baseline_runs`), on the lights and cascaded shadows code. Timings from another agent do not compare (artemis is 20 % faster but
   varies 10.7 % between runs, against 1.7 % here).
 - Every group is in the baseline, `mcp`, `path` and `hud/frame/1000_row_list` included.
 
