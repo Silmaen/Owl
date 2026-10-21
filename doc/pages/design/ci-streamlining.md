@@ -35,3 +35,16 @@ measured on 2026-10-19 and 2026-10-20:
   binaries nor static libraries in `BuildArtefact.zip`, short retention for the rest.
 - **Fewer duplicate builds**: no queue of identical Code Style runs on the same commit, a newer push to a branch
   cancels the older builds.
+
+## Status
+
+| Item                   | State                                                                                                            |
+|------------------------|------------------------------------------------------------------------------------------------------------------|
+| Parallelism            | Done: CTest `-j` on every preset, `RESOURCE_LOCK` removed, image and export tests sharded                        |
+| Lighter pull requests  | Done: release tree configured only, GCC, ASan, arm64, whole-tree Clang-Tidy and Include Check off PRs            |
+| Full suites at night   | Done: `slow` label, nightly full suite on Linux x64 Clang and arm64                                              |
+| Clang-Tidy             | Done: configured, not compiled; diff scope from `clang-scan-deps`, CMake changes compared against the merge base |
+| Compiler cache         | Done: PCH sloppiness passed to ccache (warm `linux-clang-release` 108 s → 4 s); ccache 4.14 on the Windows agent |
+| Smaller artefacts      | Done: test reports, coverage, documentation and packages only, no binaries nor libraries                         |
+| Fewer duplicate builds | Done: the bridge plugin cancels superseded builds and reuses a green verdict for the same commit                 |
+| Shorter builds         | Measured (cold `linux-clang-release`: 2685 s CPU, tests 40 %, Owl Nest 29 %); next: the test build cost          |

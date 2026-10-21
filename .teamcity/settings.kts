@@ -39,36 +39,36 @@ project {
     template(toolBuild)
 
     params {
-        param("owl_git_branch", "main")
+        text("owl_git_branch", "main", display = ParameterDisplay.HIDDEN, allowEmpty = true)
         // main plus the only two allowed branch families.
-        param("branch_specification", """
+        text("branch_specification", """
             +:refs/heads/(%owl_git_branch%)
             +:refs/heads/(Feature/*)
             +:refs/heads/(Experiment/*)
-        """.trimIndent())
+        """.trimIndent(), display = ParameterDisplay.HIDDEN, allowEmpty = true)
         // Pull requests are built by the GitHub App bridge on their head branch
         // (prBuildRef = branch): TeamCity shows `Feature/…`, not `pull/N`. Branch pushes
         // are not built by the bridge, so main relies on the templates' VCS trigger.
-        param("teamcity.github.bridge.repo", "Silmaen/Owl")
-        param("teamcity.github.bridge.connectionId", GITHUB_CONNECTION_ID)
-        param("teamcity.github.bridge.prBuildRef", "branch")
-        param("teamcity.github.bridge.prTrigger.enabled", "true")
-        param("teamcity.github.bridge.branchTrigger.enabled", "true")
-        param("teamcity.github.bridge.annotations.enabled", "true")
+        text("teamcity.github.bridge.repo", "Silmaen/Owl", display = ParameterDisplay.HIDDEN, allowEmpty = true)
+        text("teamcity.github.bridge.connectionId", GITHUB_CONNECTION_ID, display = ParameterDisplay.HIDDEN, allowEmpty = true)
+        text("teamcity.github.bridge.prBuildRef", "branch", display = ParameterDisplay.HIDDEN, allowEmpty = true)
+        text("teamcity.github.bridge.prTrigger.enabled", "true", display = ParameterDisplay.HIDDEN, allowEmpty = true)
+        text("teamcity.github.bridge.branchTrigger.enabled", "true", display = ParameterDisplay.HIDDEN, allowEmpty = true)
+        text("teamcity.github.bridge.annotations.enabled", "true", display = ParameterDisplay.HIDDEN, allowEmpty = true)
         // What GitHub shows for each check: the tail of the name, not the ancestry. The
         // prefix must match exactly, and a protection rule names a check literally.
-        param("teamcity.github.bridge.checkName.stripPrefix", "TeamCity / Owl / ")
+        text("teamcity.github.bridge.checkName.stripPrefix", "TeamCity / Owl / ", display = ParameterDisplay.HIDDEN, allowEmpty = true)
         // A pull request opened with nobody assigned goes to its author (needs the App's Issues: write).
-        param("teamcity.github.bridge.autoAssignAuthor", "true")
+        text("teamcity.github.bridge.autoAssignAuthor", "true", display = ParameterDisplay.HIDDEN, allowEmpty = true)
         // Labels added by what a pull request changes; only added, never removed (plugin 1.11+).
-        param("teamcity.github.bridge.labelRules", """
+        text("teamcity.github.bridge.labelRules", """
             documentation <= paths +:doc/**, +:**/*.md, +:.claude/**
             documentation <= title ^doc
             ci            <= paths +:.teamcity/**, +:ci/**, +:ci_action.py, +:docker_run.sh, +:cmake/CMakePresets*.json
             dependencies  <= paths +:conanfile.py, +:conan/**, +:conan.lock
             engine        <= paths +:source/owl/**
             editor        <= paths +:source/owlnest/**
-        """.trimIndent())
+        """.trimIndent(), display = ParameterDisplay.HIDDEN, allowEmpty = true)
     }
 
     // At the root, beside each other: the two level-1 gates and the single check required on `main`.

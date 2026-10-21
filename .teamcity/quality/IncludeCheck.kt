@@ -13,9 +13,10 @@ val includeCheck = BuildType {
     templates(globalBuild)
 
     params {
-        param("cmake_preset", "linux-include-check")
-        param("platform", "Linux")
-        param("architecture", "amd64")
+        text("cmake_preset", "linux-include-check", display = ParameterDisplay.HIDDEN, allowEmpty = true)
+        text("platform", "Linux", display = ParameterDisplay.HIDDEN, allowEmpty = true)
+        text("architecture", "amd64", display = ParameterDisplay.HIDDEN, allowEmpty = true)
+        text("test_args", "", display = ParameterDisplay.HIDDEN, allowEmpty = true)
     }
 
     steps {

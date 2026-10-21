@@ -7,7 +7,7 @@ import jetbrains.buildServer.configs.kotlin.*
 val arm64Clang = presetBuild("Build_LinuxArm64_Clang", "Clang", "linux-cross-arm64", onPullRequest = false,
         nightly = true) {
     params {
-        param("docker_build_platform", "linux/amd64")
+        text("docker_build_platform", "linux/amd64", display = ParameterDisplay.HIDDEN, allowEmpty = true)
         fullSuite()
     }
 }
@@ -17,8 +17,8 @@ val arm64Clang = presetBuild("Build_LinuxArm64_Clang", "Clang", "linux-cross-arm
 val arm64Emulated = presetBuild("Build_LinuxArm64_Emulated", "Clang (emulated)", "linux-emulated",
         onPullRequest = false) {
     params {
-        param("docker_build_platform", "linux/arm64")
-        param("extra_tc_vars", "-- --emulated")
+        text("docker_build_platform", "linux/arm64", display = ParameterDisplay.HIDDEN, allowEmpty = true)
+        text("extra_tc_vars", "-- --emulated", display = ParameterDisplay.HIDDEN, allowEmpty = true)
         fullSuite()
     }
     weeklyOnMain()
@@ -33,7 +33,7 @@ val linuxArm64 = Project {
     buildTypesOrder = arrayListOf(arm64Clang, arm64Emulated)
 
     params {
-        param("platform", "Linux")
-        param("architecture", "amd64") // host architecture: arm64 is cross compiled (or emulated) on x64
+        text("platform", "Linux", display = ParameterDisplay.HIDDEN, allowEmpty = true)
+        text("architecture", "amd64", display = ParameterDisplay.HIDDEN, allowEmpty = true) // host architecture: arm64 is cross compiled (or emulated) on x64
     }
 }

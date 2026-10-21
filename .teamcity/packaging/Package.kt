@@ -6,7 +6,7 @@ val packageLinux = publishBuild("Package_LinuxX64_Engine", "Linux x64",
         "linux-clang-release", "Linux", linuxClang, archive = "tar.gz")
 val packageArm64 = packageBuild("Package_LinuxArm64_Engine", "Linux arm64",
         "package-linux-cross-arm64", "Linux", arm64Clang) {
-    param("docker_build_platform", "linux/amd64")
+    text("docker_build_platform", "linux/amd64", display = ParameterDisplay.HIDDEN, allowEmpty = true)
 }
 val packageWindows = publishBuild("Package_WindowsX64_Engine", "Windows x64",
         "windows-clang-release", "Windows", windowsClang, archive = "zip")

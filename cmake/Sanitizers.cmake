@@ -17,10 +17,9 @@ if (${PROJECT_PREFIX}_ENABLE_CLANG_TIDY)
     if (CLANG_TIDY_EXECUTABLE)
         message(STATUS "Found clang-tidy: ${CLANG_TIDY_EXECUTABLE}")
         set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-        set(CMAKE_CXX_SCAN_FOR_MODULES ON)
         # Deliberately NOT hooked into the compiler through CMAKE_CXX_CLANG_TIDY:
         # the `ClangTidy` CI action drives clang-tidy from compile_commands.json
-        # once the build is done. That is what lets it analyse only the
+        # of the configured tree. That is what lets it analyse only the
         # translation units a pull request can change the verdict of --- the
         # compiler hook has no way to skip a file.
         #     poetry run python ci_action.py ClangTidy <preset>

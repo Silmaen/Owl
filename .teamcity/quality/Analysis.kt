@@ -1,7 +1,7 @@
 import jetbrains.buildServer.configs.kotlin.*
 
 // Level 2: after Code Style only, in parallel with the builds and the sanitizers (each analysis
-// builds its own preset).
+// configures its own preset).
 private val analysisGates = listOf(codeStyle)
 
 // Every pull request checks its diff; the whole tree is analysed once a night (45 min on every push otherwise).
@@ -21,7 +21,7 @@ val analysis = Project {
     buildTypesOrder = arrayListOf(clangTidy, staticAnalyzer, bench, fuzz)
 
     params {
-        param("platform", "Linux")
-        param("architecture", "amd64")
+        text("platform", "Linux", display = ParameterDisplay.HIDDEN, allowEmpty = true)
+        text("architecture", "amd64", display = ParameterDisplay.HIDDEN, allowEmpty = true)
     }
 }

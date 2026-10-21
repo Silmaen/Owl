@@ -1,10 +1,11 @@
 {
-  "comment": "Allowed median growth per benchmark name pattern, over the default --threshold (first match wins). Measured on the bench agent over the five v0.4.0 baseline runs: the multi-threaded physics steps of 100 bodies vary up to 40 % (waking the workers), the physics world creation of 100 bodies up to 90 %, the MCP loopback round trips and the game-over scene load about 25 to 33 %; the flat path queries of 1024² maps switch between two modes about 15 % apart (296 µs or 340 µs on the streets map).",
+  "comment": "Allowed median growth per benchmark name pattern, over the default --threshold (first match wins). Measured on the bench agent over the five v0.4.0 baseline runs: the multi-threaded physics steps of 100 bodies vary up to 40 % (waking the workers), the physics world creation of 100 bodies up to 90 %, the MCP loopback round trips and the game-over scene load about 25 to 33 %; the flat path queries of 1024² maps switch between two modes about 15 % apart (296 µs or 340 µs on the streets map); the prefab instantiations into a 10000-entity scene are bimodal (nightly 2026-10-21 on the bench agent: 148 µs, 168 µs measured alone, baseline 125 µs; locally x2 outliers one run in three on both v0.4.0 and v0.5.0 code).",
   "thresholds": {
     "physics/step_*_mt*/100_bodies": 0.4,
     "physics/init/100_bodies": 0.6,
     "mcp/*": 0.3,
     "sample/load/game_over": 0.3,
-    "path/long_query/flat/*": 0.3
+    "path/long_query/flat/*": 0.3,
+    "prefab/instantiate/*/scene10000": 0.3
   }
 }

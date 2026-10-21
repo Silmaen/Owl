@@ -1,7 +1,7 @@
 """
 Action running clang-tidy over the project's translation units.
 
-The analysis is driven from `compile_commands.json` **after** the build rather
+The analysis is driven from `compile_commands.json` of a configured tree rather
 than hooked into the compiler through `CMAKE_CXX_CLANG_TIDY`, because that is
 what makes the set of analysed translation units selectable. Two scopes:
 
@@ -10,9 +10,10 @@ what makes the set of analysed translation units selectable. Two scopes:
   with certainty.
 * **diff** — only the translation units a pull request can change the verdict
   of: the `.cpp` files it touches, plus every `.cpp` that includes — directly
-  or transitively — a header it touches. That closure comes from ninja's own
-  dependency database (`ninja -t deps`), which records the complete include
-  set of each object file as the compiler saw it, so a header edit is never
+  or transitively — a header it touches. That closure is the complete include
+  set of each object file: ninja's dependency database (`ninja -t deps`) when
+  the tree was built, else `clang-scan-deps` over the compilation database
+  (preprocessing only, seconds instead of a build), so a header edit is never
   missed because the `.cpp` consuming it lies outside the diff.
 
 The diff base is the pull request's **merge base**, published by
@@ -22,9 +23,12 @@ that landed on `main` since the branch started, and report other people's
 findings on this pull request.
 
 Anything that makes the narrowing untrustworthy — no pull request, no merge
-base, no git, no ninja dependency database, or a change to the build system or
-to `.clang-tidy` itself — degrades to the full scope. Narrowing is an
-optimisation; missing a finding is not an acceptable failure mode.
+base, no git, no include closure, a merge base that does not configure, or a
+change to the dependencies or to `.clang-tidy` itself — degrades to the full
+scope. A CMake change adds the translation units whose compile command it
+moves: the merge base is configured too and the two databases compared.
+Narrowing is an optimisation; missing a finding is not an acceptable failure
+mode.
 """
 
 from __future__ import annotations
@@ -34,12 +38,14 @@ import os
 import re
 import shutil
 import subprocess
+from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
 from logging import ERROR, INFO, WARNING
 from pathlib import Path
 
 from ci import log, root
 from ci.actions.base.action import BaseAction, PresetConfig
+from ci.utils.run import MODE_BY_COLOR, run_command
 
 # Suffixes clang-tidy is invoked on. Mirrors what `CMAKE_CXX_CLANG_TIDY` used
 # to cover: C++ translation units only.
@@ -89,8 +95,8 @@ def tool_arguments(tool: str, source: Path) -> list[str]:
     return arguments
 
 
-# Repo-relative paths whose change invalidates the file-level mapping: compiler
-# flags, dependency versions or the check list itself moved, so every
+# Repo-relative paths whose change invalidates the file-level mapping: dependency
+# versions, their recipes and profiles, or the check list itself moved, so every
 # translation unit needs re-analysing regardless of what else the diff touches.
 FULL_SCOPE_FILES: tuple[str, ...] = (
     ".clang-tidy",
@@ -98,8 +104,12 @@ FULL_SCOPE_FILES: tuple[str, ...] = (
     "conan.lock",
 )
 
-# Same, as patterns: any CMake input.
-FULL_SCOPE_PATTERNS: tuple[re.Pattern[str], ...] = (
+# Same, as patterns: the local Conan recipes and profiles.
+FULL_SCOPE_PATTERNS: tuple[re.Pattern[str], ...] = (re.compile(r"^conan/"),)
+
+# The CMake inputs: their change reaches the translation units whose compile command it moves, found by
+# configuring the merge base too and comparing the two compilation databases.
+BUILD_INPUT_PATTERNS: tuple[re.Pattern[str], ...] = (
     re.compile(r"(?:^|/)CMakeLists\.txt$"),
     re.compile(r"\.cmake$"),
     re.compile(r"(?:^|/)CMakePresets[^/]*\.json$"),
@@ -125,7 +135,7 @@ def _norm(path: str, base: Path) -> str:
     Absolute, `..`-free form of a path from a dependency file.
 
     `os.path.normpath` and not `Path.resolve()` on purpose: this runs on every
-    line of `ninja -t deps` (six figures on this project) and `resolve()` would
+    line of a dependency dump (six figures on this project) and `resolve()` would
     make a `realpath` syscall for each. Both ends of every comparison go
     through this same function, so the two agree without needing symlinks
     expanded.
@@ -212,7 +222,7 @@ def _load_translation_units(build_dir: Path) -> dict[str, Path] | None:
     database = build_dir / "compile_commands.json"
     if not database.is_file():
         log.error(
-            f"clang-tidy: {_rel(database)} not found — configure and build the "
+            f"clang-tidy: {_rel(database)} not found — configure the "
             "preset first (the compilation database is what drives the analysis)."
         )
         return None
@@ -240,30 +250,16 @@ def _load_translation_units(build_dir: Path) -> dict[str, Path] | None:
     return units
 
 
-def _dependent_objects(build_dir: Path, headers: set[str]) -> set[str] | None:
+def _ninja_dependencies(build_dir: Path) -> str | None:
     """
-    Find the object files whose recorded include closure contains one of
-    `headers`.
-
-    Reads ninja's dependency database, which holds the full transitive include
-    list the compiler reported for every object built in this directory. This
-    is what catches a header change reaching a `.cpp` that the diff does not
-    touch, including through several intermediate headers.
+    Dump ninja's dependency database: the include list the compiler reported for every object built here.
 
     :param build_dir: Build directory holding `.ninja_deps`.
-    :param headers: Normalised absolute paths of the changed headers.
-    :return: Normalised absolute object paths, or None when the database could
-        not be read (caller must then fall back to the full scope).
+    :return: The `ninja -t deps` output, or None when it could not be produced.
     """
     ninja = shutil.which("ninja")
     if ninja is None:
         log.warning("clang-tidy: ninja not found in PATH.")
-        return None
-    if not (build_dir / ".ninja_deps").is_file():
-        log.warning(
-            f"clang-tidy: {_rel(build_dir / '.ninja_deps')} not found — the "
-            "preset must have been built before the analysis is scoped."
-        )
         return None
     try:
         proc = subprocess.run(
@@ -277,20 +273,135 @@ def _dependent_objects(build_dir: Path, headers: set[str]) -> set[str] | None:
     if proc.returncode != 0:
         log.warning(f"clang-tidy: `ninja -t deps` exited {proc.returncode}: {proc.stderr.strip()}")
         return None
+    return proc.stdout
 
-    objects: set[str] = set()
+
+def _scan_deps_executable() -> str | None:
+    """
+    Locate `clang-scan-deps`: in PATH, else beside the real clang-tidy (the LLVM `bin/` folder).
+
+    :return: The executable, or None when the image has none.
+    """
+    found = shutil.which("clang-scan-deps")
+    if found is not None:
+        return found
+    tidy = shutil.which("clang-tidy")
+    if tidy is None:
+        return None
+    sibling = Path(tidy).resolve().parent / "clang-scan-deps"
+    return str(sibling) if sibling.is_file() else None
+
+
+def _scanned_dependencies(build_dir: Path) -> str | None:
+    """
+    Compute every translation unit's include closure from the compilation database, without compiling.
+
+    `clang-scan-deps` only preprocesses: a few seconds for the whole tree, where the build that fills
+    `.ninja_deps` takes tens of minutes on a CI agent.
+
+    :param build_dir: Configured build directory holding `compile_commands.json`.
+    :return: The closures in Makefile form, or None when they could not be computed.
+    """
+    scanner = _scan_deps_executable()
+    if scanner is None:
+        log.warning("clang-tidy: clang-scan-deps not found beside clang-tidy.")
+        return None
+    try:
+        proc = subprocess.run(
+            [
+                scanner,
+                f"-compilation-database={build_dir / 'compile_commands.json'}",
+                "-format=make",
+                "-j",
+                str(_available_cores()),
+            ],
+            capture_output=True,
+            text=True,
+        )
+    except OSError as err:
+        log.warning(f"clang-tidy: cannot run clang-scan-deps ({err}).")
+        return None
+    if proc.returncode != 0:
+        log.warning(f"clang-tidy: clang-scan-deps exited {proc.returncode}: {proc.stderr.strip()[:2000]}")
+        return None
+    return proc.stdout
+
+
+def _ninja_closures(text: str, build_dir: Path) -> Iterator[tuple[str, list[str]]]:
+    """
+    Split `ninja -t deps` output into (object, dependencies) pairs.
+
+    :param text: The `ninja -t deps` output: an unindented object line, then one indented dependency per line.
+    :param build_dir: Directory the relative paths are relative to.
+    :return: Normalised object path and its raw dependency paths, per object.
+    """
     current: str | None = None
-    for line in proc.stdout.splitlines():
+    dependencies: list[str] = []
+    for line in text.splitlines():
         if not line:
             continue
         if line[0] in " \t":
-            if current is None or current in objects:
-                continue
-            if _norm(line.strip(), build_dir) in headers:
-                objects.add(current)
+            dependencies.append(line.strip())
             continue
+        if current is not None:
+            yield current, dependencies
         current = _norm(line.split(":", 1)[0], build_dir)
-    return objects
+        dependencies = []
+    if current is not None:
+        yield current, dependencies
+
+
+def _make_closures(text: str, build_dir: Path) -> Iterator[tuple[str, list[str]]]:
+    """
+    Split Makefile dependency rules (`clang-scan-deps -format=make`) into (object, dependencies) pairs.
+
+    :param text: Rules `object: dep dep \\` continued on indented lines; no path of the project holds a space.
+    :param build_dir: Directory the relative paths are relative to.
+    :return: Normalised object path and its raw dependency paths, per object.
+    """
+    current: str | None = None
+    dependencies: list[str] = []
+    for line in text.splitlines():
+        if not line.strip():
+            continue
+        if line[0] not in " \t":
+            if current is not None:
+                yield current, dependencies
+            target, _, line = line.partition(":")
+            current = _norm(target.strip(), build_dir)
+            dependencies = []
+        dependencies.extend(token for token in line.split() if token != "\\")
+    if current is not None:
+        yield current, dependencies
+
+
+def _dependent_objects(build_dir: Path, headers: set[str]) -> set[str] | None:
+    """
+    Find the object files whose include closure contains one of `headers`.
+
+    The closure is the full transitive include list of every object: from ninja's dependency database when the
+    preset was built, else from `clang-scan-deps` over the compilation database (a configured tree is enough).
+    This is what catches a header change reaching a `.cpp` that the diff does not touch, including through
+    several intermediate headers.
+
+    :param build_dir: Configured (or built) build directory.
+    :param headers: Normalised absolute paths of the changed headers.
+    :return: Normalised absolute object paths, or None when no closure could be read (caller must then fall back
+        to the full scope).
+    """
+    closures: Iterator[tuple[str, list[str]]]
+    if (build_dir / ".ninja_deps").is_file():
+        text = _ninja_dependencies(build_dir)
+        if text is None:
+            return None
+        closures = _ninja_closures(text, build_dir)
+    else:
+        log.info("clang-tidy: no ninja dependency database, scanning the includes with clang-scan-deps.")
+        text = _scanned_dependencies(build_dir)
+        if text is None:
+            return None
+        closures = _make_closures(text, build_dir)
+    return {obj for obj, dependencies in closures if any(_norm(path, build_dir) in headers for path in dependencies)}
 
 
 # ────────────────────────────────────────────────────────────────────────────
@@ -362,17 +473,96 @@ def _resolve_base(parsed: dict[str, str]) -> str | None:
     return None
 
 
+def _is_build_input(path: str) -> bool:
+    """
+    Tell whether a changed file is a CMake input, whose effect is measured on the compile commands.
+
+    :param path: Repo-relative path of a changed file.
+    :return: True for a `CMakeLists.txt`, a `*.cmake` module or a preset file.
+    """
+    return any(pattern.search(path) for pattern in BUILD_INPUT_PATTERNS)
+
+
+def _compile_commands(build_dir: Path, replacements: list[tuple[str, str]]) -> dict[str, str] | None:
+    """
+    Read a compilation database as source → command, with paths rewritten so two trees compare.
+
+    :param build_dir: Configured build directory.
+    :param replacements: (old, new) prefixes applied in order to every source path and command.
+    :return: Normalised source path → command line, or None when the database cannot be read.
+    """
+    try:
+        entries = json.loads((build_dir / "compile_commands.json").read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as err:
+        log.warning(f"clang-tidy: cannot read the compilation database of {_rel(build_dir)}: {err}")
+        return None
+
+    def rewrite(text: str) -> str:
+        for old, new in replacements:
+            text = text.replace(old, new)
+        return text
+
+    commands: dict[str, str] = {}
+    for entry in entries:
+        command = entry.get("command") or " ".join(entry.get("arguments", []))
+        source = rewrite(_norm(entry.get("file", ""), Path(entry.get("directory", str(build_dir)))))
+        commands[source] = rewrite(command)
+    return commands
+
+
+def _units_with_moved_commands(build_dir: Path, base: str, preset: PresetConfig) -> set[Path] | None:
+    """
+    Find the translation units whose compile command differs between the merge base and this tree.
+
+    The merge base is checked out in a temporary worktree and configured with the same preset beside this build
+    directory (`<build>.base`, so the paths derived from the build folder compare too); both are removed afterwards.
+
+    :param build_dir: This tree's configured build directory.
+    :param base: The merge base commit.
+    :param preset: The analysed preset.
+    :return: The sources whose command moved or that are new, or None when the base tree could not be configured
+        (caller must then fall back to the full scope).
+    """
+    sources = build_dir.parent / "merge-base-sources"
+    base_build = build_dir.with_name(f"{build_dir.name}.base")
+    shutil.rmtree(base_build, ignore_errors=True)
+    if sources.exists():
+        _git("worktree", "remove", "--force", str(sources), quiet=True)
+        shutil.rmtree(sources, ignore_errors=True)
+    if _git("worktree", "add", "--detach", str(sources), base) is None:
+        return None
+    try:
+        command = ["cmake", "--preset", preset.cmake_preset, "-S", str(sources), "-B", str(base_build)]
+        if preset.cmake_generator:
+            command += ["-G", preset.cmake_generator]
+        log.info(f"clang-tidy: configuring the merge base {base[:12]} to compare the compile commands.")
+        if run_command(command, detection_mode=MODE_BY_COLOR) != 0:
+            log.warning("clang-tidy: the merge base does not configure.")
+            return None
+        before = _compile_commands(base_build, [(str(sources), str(root)), (str(base_build), str(build_dir))])
+        after = _compile_commands(build_dir, [])
+        if before is None or after is None:
+            return None
+    finally:
+        _git("worktree", "remove", "--force", str(sources), quiet=True)
+        shutil.rmtree(sources, ignore_errors=True)
+        shutil.rmtree(base_build, ignore_errors=True)
+    return {Path(source) for source, line in after.items() if before.get(source) != line}
+
+
 def _select(
     units: dict[str, Path],
     base: str,
     build_dir: Path,
+    preset: PresetConfig,
 ) -> set[Path] | None:
     """
     Narrow the translation units to those the diff can change the verdict of.
 
     :param units: Object path → source path, from the compilation database.
     :param base: Commit the diff is computed against.
-    :param build_dir: Build directory (for the ninja dependency database).
+    :param build_dir: Configured build directory (compilation database, include closures).
+    :param preset: The analysed preset (to configure the merge base when a CMake input changed).
     :return: The selected sources, or None when the narrowing is not
         trustworthy and the caller must analyse everything.
     """
@@ -392,13 +582,22 @@ def _select(
     forcing = [path for path in changed if _forces_full_scope(path)]
     if forcing:
         log.info(
-            "clang-tidy: build configuration changed "
+            "clang-tidy: dependencies or check list changed "
             f"({', '.join(sorted(forcing))}) — analysing every translation unit."
         )
         return None
 
     sources = set(units.values())
     selected = {path for path in (root / entry for entry in changed) if path.suffix in TU_SUFFIXES and path in sources}
+    build_inputs = sorted(path for path in changed if _is_build_input(path))
+    if build_inputs:
+        moved = _units_with_moved_commands(build_dir, base, preset)
+        if moved is None:
+            log.info(f"clang-tidy: build configuration changed ({', '.join(build_inputs)}) — analysing every unit.")
+            return None
+        moved &= sources
+        log.info(f"clang-tidy: {', '.join(build_inputs)} changed the compile command of {len(moved)} unit(s).")
+        selected |= moved
     headers = {_norm(str(root / entry), root) for entry in changed if Path(entry).suffix in HEADER_SUFFIXES}
     if not headers:
         return selected
@@ -529,9 +728,9 @@ class ClangTidy(BaseAction):
     def run(self, preset: PresetConfig, extra_args=None) -> int:
         """Analyse the preset's translation units with clang-tidy.
 
-        :param preset: The preset to analyse. Must have been configured and
-            built: the compilation database and ninja's dependency database are
-            the inputs.
+        :param preset: The preset to analyse. Must have been configured: the
+            compilation database is the input (a built tree also brings ninja's
+            dependency database, used for the diff scope instead of a scan).
         :param extra_args: Optional extra arguments. See the class docstring.
         :return: Exit code indicating success or failure.
         """
@@ -553,7 +752,7 @@ class ClangTidy(BaseAction):
         base = _resolve_base(parsed)
         selected: set[Path] | None = None
         if base is not None:
-            selected = _select(units, base, build_dir)
+            selected = _select(units, base, build_dir, preset)
         if selected is None:
             selected = set(units.values())
             log.info(f"clang-tidy: full scope, {len(selected)} translation unit(s).")

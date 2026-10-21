@@ -22,35 +22,42 @@ val globalBuild = Template {
     artifactRules = "%artifact_path%"
 
     params {
+        // Hidden from the custom build dialog unless meant to be set by hand (test_args).
         // Most of these are runtime-overwritten by ci_action.py
         // DefineTeamCityVariables (read from the CMake preset's vendor.silmaen
         // block). They're declared here so TC can reference them in script
         // conditions before the first step has run.
-        param("cmake_preset", "")
-        checkbox("run_coverage", "false", checked = "true", unchecked = "false")
-        checkbox("run_tests", "true", checked = "true", unchecked = "false")
+        text("cmake_preset", "", display = ParameterDisplay.HIDDEN, allowEmpty = true)
+        checkbox("run_coverage", "false", checked = "true", unchecked = "false", display = ParameterDisplay.HIDDEN)
+        checkbox("run_tests", "true", checked = "true", unchecked = "false", display = ParameterDisplay.HIDDEN)
         // The tests labelled `slow` are left out, except by arm64 and the nightly Linux x64 Clang run (`fullSuite`).
-        param("test_args", "-- --label_exclude=slow")
-        param("artifact_path", "")
-        param("docker_parameters", "")
-        param("extra_tc_vars", "")
-        checkbox("run_documentation", "false", checked = "true", unchecked = "false")
-        checkbox("run_package", "false", checked = "true", unchecked = "false")
-        param("release_preset", "")
+        text("test_args", "-- --label_exclude=slow", label = "CTest arguments",
+                description = "Arguments of the Test steps; empty runs every test, the slow ones included",
+                display = ParameterDisplay.NORMAL, allowEmpty = true)
+        // Arguments of the Build step: the analyses only configure (`-- --configure_only`).
+        text("build_args", "", display = ParameterDisplay.HIDDEN, allowEmpty = true)
+        text("artifact_path", "", display = ParameterDisplay.HIDDEN, allowEmpty = true)
+        text("docker_parameters", "", display = ParameterDisplay.HIDDEN, allowEmpty = true)
+        // Set at run time by DefineTeamCityVariables.
+        text("docker_image", "", display = ParameterDisplay.HIDDEN, allowEmpty = true)
+        text("extra_tc_vars", "", display = ParameterDisplay.HIDDEN, allowEmpty = true)
+        checkbox("run_documentation", "false", checked = "true", unchecked = "false", display = ParameterDisplay.HIDDEN)
+        checkbox("run_package", "false", checked = "true", unchecked = "false", display = ParameterDisplay.HIDDEN)
+        text("release_preset", "", display = ParameterDisplay.HIDDEN, allowEmpty = true)
         // The release tree of `main` writes the archives (release preset flagged `package`); only the package
         // configurations publish them.
-        checkbox("package_release", "false", checked = "true", unchecked = "false")
-        checkbox("publish_package", "false", checked = "true", unchecked = "false")
+        checkbox("package_release", "false", checked = "true", unchecked = "false", display = ParameterDisplay.HIDDEN)
+        checkbox("publish_package", "false", checked = "true", unchecked = "false", display = ParameterDisplay.HIDDEN)
         // Secrets reach ci_action.py through its environment, never its command line
         // (visible to `ps`, echoed in the log). The referenced parameters are password
         // parameters on the server, so TeamCity masks their value everywhere.
-        param("env.OWL_DEPLOY_PASSWORD", "%deploy_passwd%")
+        text("env.OWL_DEPLOY_PASSWORD", "%deploy_passwd%", display = ParameterDisplay.HIDDEN, allowEmpty = true)
         // Conan binary cache: read first, filled with every binary an agent builds; skipped when unreachable.
-        param("env.OWL_CONAN_CACHE_URL", "%conan_server%")
-        param("env.OWL_CONAN_CACHE_UPLOAD", "ON")
-        param("env.CONAN_LOGIN_USERNAME_OWL_CACHE", "%conan_user%")
-        param("env.CONAN_PASSWORD_OWL_CACHE", "%conan_password%")
-        checkbox("publish_doc", "false", checked = "true", unchecked = "false")
+        text("env.OWL_CONAN_CACHE_URL", "%conan_server%", display = ParameterDisplay.HIDDEN, allowEmpty = true)
+        text("env.OWL_CONAN_CACHE_UPLOAD", "ON", display = ParameterDisplay.HIDDEN, allowEmpty = true)
+        text("env.CONAN_LOGIN_USERNAME_OWL_CACHE", "%conan_user%", display = ParameterDisplay.HIDDEN, allowEmpty = true)
+        text("env.CONAN_PASSWORD_OWL_CACHE", "%conan_password%", display = ParameterDisplay.HIDDEN, allowEmpty = true)
+        checkbox("publish_doc", "false", checked = "true", unchecked = "false", display = ParameterDisplay.HIDDEN)
 
         // teamcity-github-bridge: opt-in is the BRIDGE_GITHUB build feature
         // below. Project-level repo + connectionId live on _Self.Project.
@@ -88,7 +95,7 @@ val globalBuild = Template {
         }
 
         script {
-            ciAction("Build", "Build_Preset", displayName = "Build")
+            ciAction("Build", "Build_Preset", displayName = "Build", extraArgs = "%build_args%")
         }
 
         script {
@@ -242,8 +249,10 @@ val toolBuild = Template {
     description = "Check the code Style"
 
     params {
-        param("docker_parameters", "")
-        param("extra_tc_vars", "")
+        text("docker_parameters", "", display = ParameterDisplay.HIDDEN, allowEmpty = true)
+        // Set at run time by DefineTeamCityVariables.
+        text("docker_image", "", display = ParameterDisplay.HIDDEN, allowEmpty = true)
+        text("extra_tc_vars", "", display = ParameterDisplay.HIDDEN, allowEmpty = true)
 
         // teamcity-github-bridge: opt-in is the BRIDGE_GITHUB feature below.
         // Project-level repo + connectionId live on _Self.Project.

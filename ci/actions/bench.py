@@ -7,12 +7,18 @@ exceeds its baseline median by more than the threshold, in the full run and agai
 action. `test/bench/thresholds.json` gives a wider threshold to the benchmarks matching a pattern, kept apart from the
 baseline so a refresh does not lose it. Without a baseline the action only reports, so the first nightly run
 produces the file to commit.
+
+The calibration mode (`--calibrate=true --rounds=<n>`) runs `owl_bench` several times and never compares: it proposes
+a baseline (the median of the round medians, `output/bench/<preset>.proposed-baseline.json`) and the thresholds of the
+benchmarks whose spread between rounds exceeds their current one (`<preset>.proposed-thresholds.json`).
 """
 
 from __future__ import annotations
 
 import json
+import math
 import shutil
+import statistics
 from dataclasses import dataclass
 from fnmatch import fnmatchcase
 
@@ -21,6 +27,10 @@ from ci.actions.base.action import BaseAction, PresetConfig
 from ci.utils.run import run_command
 
 DEFAULT_THRESHOLD = 0.15
+DEFAULT_ROUNDS = 5
+MIN_ROUNDS = 2
+BASELINE_CHANGE = 0.05
+THRESHOLD_STEP = 0.05
 
 
 @dataclass(frozen=True)
@@ -98,13 +108,139 @@ def best_of(first: dict, second: dict) -> dict:
     return {**first, "results": results}
 
 
+def proposed_medians(rounds: list[dict]) -> dict[str, float]:
+    """
+    Median over the rounds of each benchmark's median.
+
+    :param rounds: Parsed reports of the calibration rounds.
+    :return: Benchmark name to proposed median, in nanoseconds; only the benchmarks measured in every round.
+    """
+    per_round = [medians(r) for r in rounds]
+    names = set.intersection(*(set(m) for m in per_round)) if per_round else set()
+    return {name: statistics.median(m[name] for m in per_round) for name in sorted(names)}
+
+
+def proposed_report(rounds: list[dict], proposed: dict[str, float]) -> dict:
+    """
+    Report holding the proposed medians, in the format of a run report.
+
+    :param rounds: Parsed reports of the calibration rounds, the first one gives the ``context``.
+    :param proposed: Benchmark name to proposed median, see :func:`proposed_medians`.
+    :return: The first round's report whose results are, for each benchmark, the round result with the median closest
+        to the proposed one, its ``median_ns`` set to the proposed value.
+    """
+    results = []
+    for name, value in proposed.items():
+        candidates = [
+            r for rep in rounds for r in rep.get("results", []) if r["name"] == name and r.get("median_ns", 0) > 0
+        ]
+        closest = min(candidates, key=lambda r: abs(float(r["median_ns"]) - value))
+        results.append({**closest, "median_ns": value})
+    return {**rounds[0], "results": results}
+
+
+def baseline_changes(baseline: dict, proposed: dict[str, float]) -> tuple[list[tuple[str, float, float, float]], int]:
+    """
+    Benchmarks whose proposed median moves away from the baseline.
+
+    :param baseline: Parsed baseline report.
+    :param proposed: Benchmark name to proposed median.
+    :return: The (name, old, new, relative change) of every benchmark moving by more than 5 %, and the number of
+        benchmarks that stay within it or have no baseline.
+    """
+    base = medians(baseline)
+    moved = [
+        (name, base[name], value, value / base[name] - 1.0)
+        for name, value in proposed.items()
+        if name in base and abs(value / base[name] - 1.0) > BASELINE_CHANGE
+    ]
+    return moved, len(proposed) - len(moved)
+
+
+def spreads(rounds: list[dict]) -> dict[str, float]:
+    """
+    Relative spread of each benchmark between the rounds.
+
+    :param rounds: Parsed reports of the calibration rounds.
+    :return: Benchmark name to ``max / min - 1`` of its round medians.
+    """
+    per_round = [medians(r) for r in rounds]
+    return {
+        name: max(m[name] for m in per_round) / min(m[name] for m in per_round) - 1.0
+        for name in proposed_medians(rounds)
+    }
+
+
+def proposed_thresholds(
+    spread: dict[str, float], threshold: float, overrides: dict[str, float] | None = None
+) -> dict[str, float]:
+    """
+    Thresholds for the benchmarks noisier than the one they have.
+
+    :param spread: Benchmark name to spread between rounds, see :func:`spreads`.
+    :param threshold: Default allowed relative growth.
+    :param overrides: Name pattern to allowed growth, as in ``thresholds.json``.
+    :return: For each benchmark whose spread exceeds its threshold, the spread rounded up to the next 0.05, plus 0.05.
+    """
+    return {
+        name: round(math.ceil(round(value / THRESHOLD_STEP, 6)) * THRESHOLD_STEP + THRESHOLD_STEP, 2)
+        for name, value in spread.items()
+        if value > threshold_of(name, threshold, overrides)
+    }
+
+
 class Bench(BaseAction):
-    """Run `owl_bench` for a preset and compare it to the baseline.
+    """Run `owl_bench` for a preset and compare it to the baseline, or calibrate the baseline and thresholds.
 
     Extra arguments (after ``--``):
       * ``--threshold=<ratio>`` — allowed median growth, default 0.15;
-      * ``--update-baseline`` — write this run as the new baseline instead of comparing.
+      * ``--update-baseline`` — write this run as the new baseline instead of comparing;
+      * ``--calibrate=true`` — run the benchmarks ``--rounds`` times (default 5, at least 2) and write the proposed
+        baseline and thresholds to ``output/bench/`` instead of comparing.
     """
+
+    def _calibrate(self, preset: PresetConfig, binary, out_dir, threshold: float, rounds: int) -> int:
+        """Run the benchmarks several times and write the proposed baseline and thresholds.
+
+        :param preset: A preset building `owl_bench`.
+        :param binary: Path of `owl_bench`.
+        :param out_dir: Directory of the reports.
+        :param threshold: Default allowed relative growth.
+        :param rounds: Number of runs.
+        :return: 0, or the status of the first failed `owl_bench` run.
+        """
+        reports: list[dict] = []
+        for i in range(1, rounds + 1):
+            round_file = out_dir / f"{preset.cmake_preset}.round{i}.json"
+            log.info(f"Bench: calibration round {i}/{rounds}.")
+            status = run_command([str(binary), f"--json={round_file}"], cwd=binary.parent)
+            if status != 0 or not round_file.is_file():
+                log.error(f"Bench: owl_bench failed in round {i}.")
+                return status or 1
+            reports.append(json.loads(round_file.read_text(encoding="utf-8")))
+        proposed = proposed_medians(reports)
+        proposed_file = out_dir / f"{preset.cmake_preset}.proposed-baseline.json"
+        proposed_file.write_text(json.dumps(proposed_report(reports, proposed), indent=2) + "\n", encoding="utf-8")
+        log.info(
+            f"Bench: proposed baseline of {len(proposed)} benchmarks written to {proposed_file.relative_to(root)}."
+        )
+        baseline_file = root / "test" / "bench" / "baseline" / f"{preset.cmake_preset}.json"
+        if baseline_file.is_file():
+            moved, unchanged = baseline_changes(json.loads(baseline_file.read_text(encoding="utf-8")), proposed)
+            for name, old, new, change in moved:
+                log.info(f"Bench: {name}: {old:.0f} ns -> {new:.0f} ns ({change:+.1%}).")
+            log.info(f"Bench: {unchanged} benchmark(s) within {BASELINE_CHANGE:.0%} of the baseline.")
+        overrides_file = root / "test" / "bench" / "thresholds.json"
+        overrides: dict[str, float] = {}
+        if overrides_file.is_file():
+            overrides = json.loads(overrides_file.read_text(encoding="utf-8")).get("thresholds", {})
+        wider = proposed_thresholds(spreads(reports), threshold, overrides)
+        thresholds_file = out_dir / f"{preset.cmake_preset}.proposed-thresholds.json"
+        thresholds_file.write_text(json.dumps({"thresholds": wider}, indent=2) + "\n", encoding="utf-8")
+        for name, value in wider.items():
+            log.info(f"Bench: threshold {name}: {value:.2f} (was {threshold_of(name, threshold, overrides):.2f}).")
+        log.info(f"Bench: {len(wider)} proposed threshold(s) written to {thresholds_file.relative_to(root)}.")
+        return 0
 
     def run(self, preset: PresetConfig, extra_args=None) -> int:
         """Run the benchmarks and compare them.
@@ -121,6 +257,10 @@ class Bench(BaseAction):
             return 1
         out_dir = root / "output" / "bench"
         out_dir.mkdir(parents=True, exist_ok=True)
+        if args.get("calibrate") == "true":
+            return self._calibrate(
+                preset, binary, out_dir, threshold, max(MIN_ROUNDS, int(args.get("rounds", DEFAULT_ROUNDS)))
+            )
         result_file = out_dir / f"{preset.cmake_preset}.json"
         # The dummy application looks up engine_assets/ and engine_demo/ from its working directory.
         status = run_command([str(binary), f"--json={result_file}"], cwd=binary.parent)

@@ -34,7 +34,7 @@ fun presetBuild(idValue: String, buildName: String, cmakePreset: String,
     templates(globalBuild)
 
     params {
-        param("cmake_preset", cmakePreset)
+        text("cmake_preset", cmakePreset, display = ParameterDisplay.HIDDEN, allowEmpty = true)
     }
 
     features {
@@ -96,8 +96,8 @@ fun BuildType.weeklyOnMain() {
  * configuration per tool. The scope is decided at run time by the `ClangTidy` action from
  * the pull request context the bridge publishes: inside a pull request, only the
  * translation units the diff can change the verdict of, from the PR's merge base;
- * anywhere else, everything. They build the `linux-clang-tidy` preset first (the
- * compilation database and ninja's dependency database are their inputs).
+ * anywhere else, everything. They only configure the `linux-clang-tidy` preset: the
+ * compilation database is their input, `clang-scan-deps` gives the include closures.
  *
  * They run after Code Style only, in parallel with the builds and the sanitizers.
  *
@@ -115,7 +115,9 @@ fun analysisBuild(idValue: String, buildName: String, tool: String, gates: List<
     templates(globalBuild)
 
     params {
-        param("cmake_preset", "linux-clang-tidy")
+        text("cmake_preset", "linux-clang-tidy", display = ParameterDisplay.HIDDEN, allowEmpty = true)
+        text("build_args", "-- --configure_only", display = ParameterDisplay.HIDDEN, allowEmpty = true)
+        text("test_args", "", display = ParameterDisplay.HIDDEN, allowEmpty = true)
     }
 
     steps {
@@ -159,9 +161,10 @@ fun packageBuild(idValue: String, buildName: String, cmakePreset: String, platfo
         presetBuild(idValue, buildName, cmakePreset, onPullRequest = false, nightly = true,
                 gates = listOf(codeStyle, tested)) {
             params {
-                param("platform", platformName)
-                param("architecture", "amd64")
-                param("publish_package", "true")
+                text("platform", platformName, display = ParameterDisplay.HIDDEN, allowEmpty = true)
+                text("architecture", "amd64", display = ParameterDisplay.HIDDEN, allowEmpty = true)
+                text("publish_package", "true", display = ParameterDisplay.HIDDEN, allowEmpty = true)
+                text("test_args", "", display = ParameterDisplay.HIDDEN, allowEmpty = true)
                 extraParams()
             }
         }
@@ -183,9 +186,10 @@ fun publishBuild(idValue: String, buildName: String, releasePreset: String, plat
         presetBuild(idValue, buildName, releasePreset, onPullRequest = false, nightly = true,
                 gates = listOf(codeStyle, tested)) {
             params {
-                param("platform", platformName)
-                param("architecture", "amd64")
-                param("publish_package", "true")
+                text("platform", platformName, display = ParameterDisplay.HIDDEN, allowEmpty = true)
+                text("architecture", "amd64", display = ParameterDisplay.HIDDEN, allowEmpty = true)
+                text("publish_package", "true", display = ParameterDisplay.HIDDEN, allowEmpty = true)
+                text("test_args", "", display = ParameterDisplay.HIDDEN, allowEmpty = true)
             }
             dependencies {
                 artifacts(tested) {

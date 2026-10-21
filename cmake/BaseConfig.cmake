@@ -102,6 +102,9 @@ elseif (${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
             -Wno-padded
             -Wno-exit-time-destructors
             -Wno-global-constructors # Only in gtest -> only for tests
+            # No header mtime in the precompiled header: a fresh checkout would change it, and with it the ccache key
+            # of every unit using it (ninja's dependencies already rebuild it when a header changes).
+            "SHELL:-Xclang -fno-pch-timestamp"
     )
     if (${CMAKE_CXX_COMPILER_VERSION} VERSION_GREATER_EQUAL 18)
         target_compile_options(${CMAKE_PROJECT_NAME}_Base INTERFACE
@@ -117,6 +120,19 @@ elseif (${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
     if (${CMAKE_CXX_COMPILER_VERSION} VERSION_GREATER_EQUAL 21)
         target_compile_options(${CMAKE_PROJECT_NAME}_Base INTERFACE
                 -Wno-nrvo
+        )
+    endif ()
+    if (${CMAKE_CXX_COMPILER_VERSION} VERSION_GREATER_EQUAL 23)
+        # Suggestions to mark every getter returning a member reference `[[clang::lifetimebound]]` (intra- and
+        # cross-TU). Of the bug detectors, only the permissive set stays on: the strict-only members report a
+        # `std::vector&` parameter as invalidated by its own `push_back`.
+        target_compile_options(${CMAKE_PROJECT_NAME}_Base INTERFACE
+                -Wno-lifetime-safety-suggestions
+                -Wno-lifetime-safety-invalidation
+                -Wno-lifetime-safety-use-after-scope-moved
+                -Wno-lifetime-safety-return-stack-addr-moved
+                -Wno-lifetime-safety-dangling-field-moved
+                -Wno-lifetime-safety-dangling-global-moved
         )
     endif ()
     set(${PROJECT_PREFIX}_COMPILER_CLANG ON)

@@ -9,6 +9,10 @@ import jetbrains.buildServer.configs.kotlin.buildSteps.script
  */
 val fuzz = presetBuild("Build_Quality_Fuzz", "Fuzzing", "linux-fuzz",
         onPullRequest = false, nightly = true) {
+    params {
+        // No CTest run here: the field stays out of the custom build dialog.
+        text("test_args", "", display = ParameterDisplay.HIDDEN, allowEmpty = true)
+    }
     artifactRules = """
         %artifact_path%
         output/fuzz/*/artifacts/** => fuzz-artifacts

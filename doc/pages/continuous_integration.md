@@ -102,26 +102,24 @@ flowchart LR
     classDef draft fill:#fff3cd,stroke:#856404,color:#856404
     classDef mainOnly fill:#d1ecf1,stroke:#0c5460,color:#0c5460
     classDef afterMerge fill:#e2e3e5,stroke:#383d41,color:#383d41
-    class CS,LxC,WxC,SA draft
-    class LaC,LaG,PL,PW,PA,ST,SU,AN mainOnly
-    class IC,LxG,WxG afterMerge
+    class CS,LxC,WxC draft
+    class IC,LaC,PL,PW,PA,ST,SU,AN mainOnly
+    class LxG,WxG,SA afterMerge
 ```
 
 - **Yellow**: also run on draft pull requests (fast feedback subset).
 - **Slow tests**: the Test steps pass `-- --label_exclude=slow` (`test_args`); arm64 and a nightly run of Linux x64
   Clang on `main` (`nightlyFullSuite` trigger, 1 am) run every test.
-- **Blue**: `main` only: GCC (release preset only) and Sanitizer Address on every push; nightly for arm64, Include
-  Check, the packages (they publish to the site), the Thread and UB sanitizers and the Static Analyzer, which are not
-  pull-request checks.
+- **Blue**: nightly on `main`, when it changed: arm64, Include Check, the packages (they publish to the site), the
+  Thread and UB sanitizers and the Static Analyzer, which are not pull-request checks.
 - arm64 cross compiles the `linux-cross-arm64` preset on an x64 agent (Clang, lld, the image's arm64 sysroot) and
   runs only the tests under qemu-user: Debug without coverage, benchmarks or image tests (`OWL_RENDER_TESTS=OFF`,
   lavapipe's output depends on the CPU). The former fully emulated `linux-emulated` build stays as
   *Clang (emulated)*, once a week, during the transition.
-- **Grey**: every `main` push, never on a pull request (GCC parity, Include Check).
-- Uncoloured: run on every ready pull request and on `main` (Clang-Tidy).
+- **Grey**: every `main` push, never on a pull request: GCC parity (release preset only) and Sanitizer Address.
+- Uncoloured: Clang-Tidy, on every ready pull request (its diff) and nightly on `main` (the whole tree).
 
-A reviewer can still ask for a `main`-only configuration on a pull request with the `/ci full` comment, and manual
-triggers always work. Orthogonal to the colours, a pull request that changes **only** documentation (`doc/`, `*.md`,
+Manual triggers always work; the custom build dialog shows only the CTest arguments (`test_args`) and the benchmark calibration, every other parameter is hidden. Orthogonal to the colours, a pull request that changes **only** documentation (`doc/`, `*.md`,
 `.claude/`, `LICENSE`) runs just Code Style and Linux x64 Clang, see [Doc-only pull requests](#doc-only-pull-requests).
 
 ## VCS root
@@ -175,25 +173,25 @@ The build-and-test template of every configuration of the build and packaging su
 
 ## What runs when
 
-| Configuration                              | `main` push | Nightly (`main`) | Draft PR | Ready PR | `Experiment/*` PR | Doc-only PR | `[skip ci]` |
-|--------------------------------------------|-------------|------------------|----------|----------|-------------------|-------------|-------------|
-| Code Style                                 | ✅           | —                | ✅        | ✅        | ✅                 | ✅           | ❌           |
-| Build Linux x64 / Clang (Doxygen)          | ✅           | —                | ✅        | ✅        | ✅                 | ✅           | ❌           |
-| Build Windows x64 / Clang                  | ✅           | —                | ✅        | ✅        | ✅                 | ⏭           | ❌           |
+| Configuration                                      | `main` push | Nightly (`main`) | Draft PR | Ready PR | `Experiment/*` PR | Doc-only PR | `[skip ci]` |
+|----------------------------------------------------|-------------|------------------|----------|----------|-------------------|-------------|-------------|
+| Code Style                                         | ✅           | —                | ✅        | ✅        | ✅                 | ✅           | ❌           |
+| Build Linux x64 / Clang (Doxygen)                  | ✅           | —                | ✅        | ✅        | ✅                 | ✅           | ❌           |
+| Build Windows x64 / Clang                          | ✅           | —                | ✅        | ✅        | ✅                 | ⏭           | ❌           |
 | Build Linux x64 / GCC, Windows x64 / GCC (release) | ✅           | —                | ❌        | ❌        | ❌                 | ❌           | ❌           |
-| Build Linux arm64 / Clang (cross compiled) | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
-| Build Linux arm64 / Clang (emulated)       | ❌           | weekly           | ❌        | ❌        | ❌                 | ❌           | ❌           |
-| Benchmarks (`linux-bench`)                 | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
-| Fuzzing (`linux-fuzz`)                     | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
-| Sanitizer Address (+ LSan)                 | ✅           | —                | ❌        | ❌        | ❌                 | ❌           | ❌           |
-| Sanitizer Thread, Sanitizer UB             | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
-| Clang-Tidy                                 | ❌           | ✅                | ❌        | ✅        | ⏭                 | ⏭           | ❌           |
-| Static Analyzer                            | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
-| Include Check                              | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
-| PR Ready (merge gate, no agent)            | ✅           | —                | ❌        | ✅        | ⏭                 | ⏭           | ❌           |
-| Packages (one per platform, × 3)           | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
+| Build Linux arm64 / Clang (cross compiled)         | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
+| Build Linux arm64 / Clang (emulated)               | ❌           | weekly           | ❌        | ❌        | ❌                 | ❌           | ❌           |
+| Benchmarks (`linux-bench`)                         | ❌           | ✅                | ❌        | ✅        | ❌                 | ❌           | ❌           |
+| Fuzzing (`linux-fuzz`)                             | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
+| Sanitizer Address (+ LSan)                         | ✅           | —                | ❌        | ❌        | ❌                 | ❌           | ❌           |
+| Sanitizer Thread, Sanitizer UB                     | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
+| Clang-Tidy                                         | ❌           | ✅                | ❌        | ✅        | ⏭                 | ⏭           | ❌           |
+| Static Analyzer                                    | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
+| Include Check                                      | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
+| PR Ready (merge gate, no agent)                    | ✅           | —                | ❌        | ✅        | ⏭                 | ⏭           | ❌           |
+| Packages (one per platform, × 3)                   | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
 
-A ready pull request runs four checks (Code Style, Linux Clang, Windows Clang, Clang-Tidy), the ones `PR Ready`
+A ready pull request runs five checks (Code Style, Linux Clang, Windows Clang, Clang-Tidy, Benchmarks), the ones `PR Ready`
 requires: after Code Style, the three builds take one agent each and start together. A `main` push runs Linux and
 Windows Clang, GCC on its release preset and Sanitizer Address; arm64, the whole-tree Clang-Tidy, Include Check, the
 Thread and Undefined Behavior sanitizers and the Static Analyzer run nightly.
@@ -245,8 +243,8 @@ verdict is republished when the PR turns ready) and `skipPhrase = [skip ci]`.
 ### Required checks
 
 Require **one** check in the branch protection of `main`: **`PR Ready`**. It is a composite configuration
-(`quality/PrReady.kt`): it uses no agent, depends on the four configurations a ready pull request runs (Code Style,
-Linux x64 Clang, Windows x64 Clang, Clang-Tidy) and turns red, naming the failed dependency, as
+(`quality/PrReady.kt`): it uses no agent, depends on the five configurations a ready pull request runs (Code Style,
+Linux x64 Clang, Windows x64 Clang, Clang-Tidy, Benchmarks) and turns red, naming the failed dependency, as
 soon as one of them is red. Like them it is not run for drafts nor `Experiment/…` pull requests (the PR
 cannot be merged until it is ready), and it skips documentation-only pull requests rather than pulling the whole
 matrix in. GitHub shows a check by the tail of its name (`checkName.stripPrefix = "TeamCity / Owl / "`).
@@ -441,7 +439,7 @@ Two consequences for this repository:
 
 ## Clang-tidy scoping
 
-`linux-clang-tidy` builds the tests too (`OWL_TESTING=ON`) but never runs them (`run_tests: false` in its
+`linux-clang-tidy` configures the tests too (`OWL_TESTING=ON`) but never runs them (`run_tests: false` in its
 `vendor.silmaen` block, which wins over `OWL_TESTING`), so both analyses cover `test/` (about 510 translation
 units): `test/unit/.clang-tidy` inherits the root configuration minus the checks whose pattern is the point of a test
 (suspicious argument order, copies and moves under test, float loop counters, …), and the analyzer mode drops
@@ -456,9 +454,12 @@ The analysis is **not** hooked into the compiler. `cmake/Sanitizers.cmake`
 deliberately leaves `CMAKE_CXX_CLANG_TIDY` unset (for the two `*-clang-tidy`
 presets, the only ones that set `OWL_ENABLE_CLANG_TIDY`) and only turns on
 `CMAKE_EXPORT_COMPILE_COMMANDS`; the BT's own `ClangTidy` step then drives
-clang-tidy from `compile_commands.json` once Build is done. The compiler hook
-has no way to skip a file, so selecting a subset is only possible from outside
-it.
+clang-tidy from `compile_commands.json`. The compiler hook has no way to skip a
+file, so selecting a subset is only possible from outside it.
+
+The tree is **configured, not compiled** (`build_args` = `-- --configure_only`): clang-tidy needs the compilation
+database and the headers, all of them in the sources or staged by the configure (imgui bindings), and the tidy
+presets have no precompiled header nor C++ module scan whose build outputs a command would point at.
 
 ### How the subset is built
 
@@ -466,21 +467,30 @@ it.
 flowchart TD
     MB["mergeBase..HEAD<br/>(git diff)"] --> CPP[".cpp touched"]
     MB --> HDR["headers touched"]
-    MB --> CFG["CMakeLists / *.cmake<br/>.clang-tidy / conanfile.py / conan.lock"]
-    HDR --> DEPS["ninja -t deps<br/>reverse include closure"]
+    MB --> CMK["CMakeLists / *.cmake / presets"]
+    CMK --> CMP["merge base configured too:<br/>units whose compile command moved"]
+    MB --> CFG[".clang-tidy / conanfile.py<br/>conan.lock / conan/"]
+    HDR --> DEPS["clang-scan-deps or ninja -t deps<br/>reverse include closure"]
     DEPS --> TU["every .cpp that includes them,<br/>directly or transitively"]
     CPP --> RUN["clang-tidy -p build_dir"]
     TU --> RUN
+    CMP --> RUN
     CFG --> FULL["full scope<br/>(flags or check list moved)"]
 ```
 
 The header step is the one that matters: a `.cpp` outside the diff still gets
-analysed when it includes a header the pull request touched. The closure comes
-from ninja's own dependency database, which holds the complete include list the
-compiler recorded for every object file — so an indirect include, several
-headers deep, is covered too. In practice a change to a core header
+analysed when it includes a header the pull request touched. The closure is the
+complete include list of every object file — so an indirect include, several
+headers deep, is covered too. In a configured tree it comes from `clang-scan-deps`
+over the compilation database (preprocessing only, about 5 s for the whole tree on
+four cores); in a built tree, from ninja's own dependency database. In practice a change to a core header
 (`math/matrices.h`) selects nearly every unit, and a change confined to an
 editor panel selects a handful.
+
+A CMake input (`CMakeLists.txt`, `*.cmake`, a preset file) does not widen to everything: the merge base is checked
+out in a temporary worktree and configured with the same preset beside the build folder (about 15 s, its Conan
+binaries are cached), and the units whose compile command differs between the two databases join the scope. A
+change that moves no flag adds nothing; one that moves a global flag adds every unit.
 
 ### Diff base
 
@@ -503,9 +513,10 @@ mode. Any of these analyses everything:
 | not a pull request (`main`, manual run)                                         | nothing to narrow against              |
 | no usable diff base                                                             | the range would be a guess             |
 | the diff is empty against the base                                              | a real PR changes something — bad base |
-| `CMakeLists.txt`, `*.cmake`, `CMakePresets*.json`, `conanfile.py`, `conan.lock` | compiler flags or dependencies moved   |
+| `conanfile.py`, `conan.lock`, `conan/` (recipes, profiles)                      | dependencies moved                     |
 | `.clang-tidy`                                                                   | the check list itself changed          |
-| git, ninja or `.ninja_deps` unavailable                                         | the mapping cannot be built            |
+| git, `clang-scan-deps` (or ninja) unavailable, or a scan error                  | the mapping cannot be built            |
+| a CMake input changed and the merge base does not configure                     | the moved commands cannot be compared  |
 
 Every fallback is logged with its reason, so a run that looks unexpectedly long
 says why in the build log.
@@ -513,7 +524,7 @@ says why in the build log.
 ### Running it locally
 
 ```bash
-poetry run python ci_action.py Build linux-clang-tidy      # produces the two databases
+poetry run python ci_action.py Build linux-clang-tidy -- --configure_only  # the compilation database
 poetry run python ci_action.py ClangTidy linux-clang-tidy  # full scope
 
 # What would a PR against main analyse? (--dry_run stops before the analysis)
