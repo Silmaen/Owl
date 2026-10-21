@@ -41,6 +41,7 @@
 #include <scene/component/Camera.h>
 #include <scene/component/Canvas.h>
 #include <scene/component/Hierarchy.h>
+#include <scene/component/Light.h>
 
 #include <algorithm>
 #include <cmath>
@@ -48,6 +49,8 @@
 #include <cstdint>
 #include <filesystem>
 #include <format>
+#include <optional>
+#include <string>
 #include <string_view>
 #include <tuple>
 #include <unordered_map>
@@ -157,6 +160,8 @@ auto entityKind(const scene::Entity& iEntity, const bool iHasChildren) -> Entity
 		return {gui::icon::circle, 0xf2a65a};
 	if (iEntity.hasComponent<MeshRenderer>())
 		return {gui::icon::package, 0x7fb83e};
+	if (iEntity.hasComponent<Light>())
+		return {gui::icon::sparkles, 0xffd75e};
 	if (iEntity.hasComponent<Text>() || iEntity.hasComponent<UiText>())
 		return {gui::icon::type, 0xc7a6ff};
 	if (iEntity.hasComponent<UiButton>())
@@ -206,6 +211,21 @@ auto kindColor(const uint32_t iHex) -> math::vec4 {
 						   1.f};
 	const bool light = theme.surface1.x() + theme.surface1.y() + theme.surface1.z() > 1.5f;
 	return light ? gui::Theme::mix(color, theme.text, 0.45f) : color;
+}
+
+// "Light" submenu of the create menus: one `entity.create_light` per kind, optionally under a parent.
+void drawCreateLightMenu(const auto& iTarget, const std::optional<commands::ArgValue>& iParent) {
+	if (!ImGui::BeginMenu("Light"))
+		return;
+	for (const char* kind: {"Directional", "Point", "Spot"}) {
+		if (!gui::widgets::menuItem({.glyph = gui::icon::sparkles, .label = kind}))
+			continue;
+		const commands::CommandArgs args =
+				iParent ? commands::CommandArgs{{"type", std::string{kind}}, {"parent", *iParent}}
+						: commands::CommandArgs{{"type", std::string{kind}}};
+		std::ignore = iTarget.execute("entity.create_light", args);
+	}
+	ImGui::EndMenu();
 }
 
 auto componentIconName(const char* iCompName) -> const char* {
@@ -282,6 +302,7 @@ void SceneHierarchy::renderHierarchy() {
 			if (gui::widgets::menuItem({.glyph = gui::icon::plus, .label = "Create Empty Entity"})) {
 				std::ignore = getCommandTarget().execute("entity.create", {});
 			}
+			drawCreateLightMenu(getCommandTarget(), std::nullopt);
 			ImGui::EndPopup();
 		}
 		ImGui::PopID();
@@ -323,6 +344,7 @@ void SceneHierarchy::renderHierarchyToolbar() {
 									.enabled = static_cast<bool>(m_selection)}))
 			std::ignore = getCommandTarget().execute(
 					"entity.create", {{"parent", static_cast<int64_t>(static_cast<uint64_t>(m_selection.getUUID()))}});
+		drawCreateLightMenu(getCommandTarget(), std::nullopt);
 		ImGui::EndPopup();
 	}
 	ImGui::SameLine();
@@ -559,6 +581,7 @@ void SceneHierarchy::drawEntityContextMenu(const scene::Entity& iEntity, const b
 		std::ignore = target.execute("entity.create", {});
 	if (gui::widgets::menuItem({.glyph = gui::icon::plus, .label = "Create Child Entity"}))
 		std::ignore = target.execute("entity.create", {{"name", std::string{"Child Entity"}}, {"parent", entityArg}});
+	drawCreateLightMenu(target, std::optional<commands::ArgValue>{entityArg});
 
 	ImGui::Separator();
 	// --- Duplicate ---

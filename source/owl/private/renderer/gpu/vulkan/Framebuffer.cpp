@@ -832,7 +832,22 @@ void Framebuffer::createDescriptorSets() {
 		if (m_specs.attachments[imgIdxToAtt(imgIdx)].format == AttachmentSpecification::Format::Depth24Stencil8)
 			continue;
 		auto& img = m_images[imgIdx];
-		if (const VkResult result = vkCreateSampler(core.getLogicalDevice(), &samplerInfo, nullptr, &img.imageSampler);
+		// Data attachments (ids, shadow depths) are read texel for texel: nearest, which every format supports.
+		const auto format = m_specs.attachments[imgIdxToAtt(imgIdx)].format;
+		const bool data = format == AttachmentSpecification::Format::RedInteger ||
+						  format == AttachmentSpecification::Format::RedFloat;
+		VkSamplerCreateInfo imageSamplerInfo = samplerInfo;
+		if (data) {
+			imageSamplerInfo.magFilter = VK_FILTER_NEAREST;
+			imageSamplerInfo.minFilter = VK_FILTER_NEAREST;
+			imageSamplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
+			imageSamplerInfo.anisotropyEnable = VK_FALSE;
+			imageSamplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+			imageSamplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+			imageSamplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+		}
+		if (const VkResult result =
+					vkCreateSampler(core.getLogicalDevice(), &imageSamplerInfo, nullptr, &img.imageSampler);
 			result != VK_SUCCESS) {
 			OWL_CORE_ERROR("Vulkan Texture: Error creating texture sampler ({}).", internal::resultString(result))
 		}

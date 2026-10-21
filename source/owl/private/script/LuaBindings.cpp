@@ -620,6 +620,8 @@ auto luaEntityHasComponent(lua_State* iState) -> int {
 		has = entity->hasComponent<scene::component::SpriteRenderer>();
 	else if (compName == "MeshRenderer")
 		has = entity->hasComponent<scene::component::MeshRenderer>();
+	else if (compName == "Light")
+		has = entity->hasComponent<scene::component::Light>();
 	else if (compName == "Camera")
 		has = entity->hasComponent<scene::component::Camera>();
 	else if (compName == "Text")
@@ -740,6 +742,63 @@ auto luaEntityGetMesh(lua_State* iState) -> int {
 	if (!entity || !entity->hasComponent<scene::component::MeshRenderer>())
 		return 0;
 	lua_pushstring(iState, entity->getComponent<scene::component::MeshRenderer>().meshPath.generic_string().c_str());
+	return 1;
+}
+
+auto luaEntitySetLightColor(lua_State* iState) -> int {
+	const auto red = static_cast<float>(luaL_checknumber(iState, 2));
+	const auto green = static_cast<float>(luaL_checknumber(iState, 3));
+	const auto blue = static_cast<float>(luaL_checknumber(iState, 4));
+	const auto entity = findEntity(iState);
+	if (!entity || !entity->hasComponent<scene::component::Light>()) {
+		lua_pushboolean(iState, 0);
+		return 1;
+	}
+	entity->getComponent<scene::component::Light>().color = math::vec3{red, green, blue};
+	lua_pushboolean(iState, 1);
+	return 1;
+}
+
+auto luaEntityGetLightColor(lua_State* iState) -> int {
+	const auto entity = findEntity(iState);
+	if (!entity || !entity->hasComponent<scene::component::Light>())
+		return 0;
+	const auto& color = entity->getComponent<scene::component::Light>().color;
+	lua_pushnumber(iState, static_cast<lua_Number>(color.x()));
+	lua_pushnumber(iState, static_cast<lua_Number>(color.y()));
+	lua_pushnumber(iState, static_cast<lua_Number>(color.z()));
+	return 3;
+}
+
+auto luaEntitySetLightIntensity(lua_State* iState) -> int {
+	const auto intensity = static_cast<float>(luaL_checknumber(iState, 2));
+	const auto entity = findEntity(iState);
+	if (!entity || !entity->hasComponent<scene::component::Light>()) {
+		lua_pushboolean(iState, 0);
+		return 1;
+	}
+	entity->getComponent<scene::component::Light>().intensity = std::max(0.f, intensity);
+	lua_pushboolean(iState, 1);
+	return 1;
+}
+
+auto luaEntityGetLightIntensity(lua_State* iState) -> int {
+	const auto entity = findEntity(iState);
+	if (!entity || !entity->hasComponent<scene::component::Light>())
+		return 0;
+	lua_pushnumber(iState, static_cast<lua_Number>(entity->getComponent<scene::component::Light>().intensity));
+	return 1;
+}
+
+auto luaEntitySetLightRange(lua_State* iState) -> int {
+	const auto range = static_cast<float>(luaL_checknumber(iState, 2));
+	const auto entity = findEntity(iState);
+	if (!entity || !entity->hasComponent<scene::component::Light>()) {
+		lua_pushboolean(iState, 0);
+		return 1;
+	}
+	entity->getComponent<scene::component::Light>().range = std::max(0.01f, range);
+	lua_pushboolean(iState, 1);
 	return 1;
 }
 
@@ -1917,7 +1976,7 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		 .description = "Log a message at error level.", .params = {{"message", String}}},
 		{.table = "entity", .name = "has_component", .function = guarded<luaEntityHasComponent>,
 		 .description = "Whether the entity has a component: `Transform`, `PhysicBody`, `SpriteRenderer`, "
-						"`MeshRenderer`, `Camera`, `Text`, `SoundSource`, `Canvas` or a `Ui*` component.",
+						"`MeshRenderer`, `Light`, `Camera`, `Text`, `SoundSource`, `Canvas` or a `Ui*` component.",
 		 .params = {entityId, {"component", String}}, .returns = {{"has", Boolean}}},
 		{.table = "entity", .name = "get_name", .function = guarded<luaEntityGetName>,
 		 .description = "Tag of the entity (empty when unknown).", .params = {entityId}, .returns = {{"name", String}}},
@@ -1941,6 +2000,23 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		{.table = "entity", .name = "get_mesh", .function = guarded<luaEntityGetMesh>,
 		 .description = "Asset path of the mesh file of the entity's `MeshRenderer`; nothing when it has none.",
 		 .params = {entityId}, .returns = {{"path", String}}},
+		{.table = "entity", .name = "set_light_color", .function = guarded<luaEntitySetLightColor>,
+		 .description = "Set the colour (sRGB, 0 to 1) of the entity's `Light`; false when it has none.",
+		 .params = {entityId, {"r", Number}, {"g", Number}, {"b", Number}}, .returns = {{"done", Boolean}}},
+		{.table = "entity", .name = "get_light_color", .function = guarded<luaEntityGetLightColor>,
+		 .description = "Colour of the entity's `Light`; nothing when it has none.",
+		 .params = {entityId}, .returns = {{"r", Number}, {"g", Number}, {"b", Number}}},
+		{.table = "entity", .name = "set_light_intensity", .function = guarded<luaEntitySetLightIntensity>,
+		 .description = "Set the intensity (multiplier of the colour, at least 0) of the entity's `Light`; false when "
+						"it has none.",
+		 .params = {entityId, {"intensity", Number}}, .returns = {{"done", Boolean}}},
+		{.table = "entity", .name = "get_light_intensity", .function = guarded<luaEntityGetLightIntensity>,
+		 .description = "Intensity of the entity's `Light`; nothing when it has none.",
+		 .params = {entityId}, .returns = {{"intensity", Number}}},
+		{.table = "entity", .name = "set_light_range", .function = guarded<luaEntitySetLightRange>,
+		 .description = "Set the range (world units, at least 0.01) of the entity's point or spot `Light`; false when "
+						"it has no `Light`.",
+		 .params = {entityId, {"range", Number}}, .returns = {{"done", Boolean}}},
 		{.table = "ui", .name = "find", .function = guarded<luaUiFind>,
 		 .description = "First widget with this tag, searched in the scene's HUD asset then in the scene (0 when none); "
 						"cache the result.",

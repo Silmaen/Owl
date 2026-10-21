@@ -21,11 +21,14 @@ OWL_DIAG_POP
 
 #endif
 
+#include <algorithm>
+#include <cstdint>
 #include <filesystem>
 #include <fstream>
 #include <ios>
 #include <sstream>
 #include <string>
+#include <vector>
 
 using namespace owl;
 
@@ -92,9 +95,15 @@ TEST(Renderer3D, Mesh3dShaderBindings) {
 
 	const spirv_cross::Compiler compiler(it->second);
 	const auto resources = compiler.get_shader_resources();
-	// Scene UBO at binding 0.
-	ASSERT_EQ(resources.uniform_buffers.size(), 1u);
-	EXPECT_EQ(compiler.get_decoration(resources.uniform_buffers[0].id, spv::DecorationBinding), 0u);
+	// Scene UBO at binding 0, lighting UBO at binding 3, lights SSBO at binding 2.
+	ASSERT_EQ(resources.uniform_buffers.size(), 2u);
+	std::vector<uint32_t> uniformBindings;
+	for (const auto& buffer: resources.uniform_buffers)
+		uniformBindings.push_back(compiler.get_decoration(buffer.id, spv::DecorationBinding));
+	std::ranges::sort(uniformBindings);
+	EXPECT_EQ(uniformBindings, (std::vector<uint32_t>{0u, 3u}));
+	ASSERT_EQ(resources.storage_buffers.size(), 1u);
+	EXPECT_EQ(compiler.get_decoration(resources.storage_buffers[0].id, spv::DecorationBinding), 2u);
 	// Texture array at binding 1 (Vulkan offset).
 	ASSERT_EQ(resources.sampled_images.size(), 1u);
 	EXPECT_EQ(compiler.get_decoration(resources.sampled_images[0].id, spv::DecorationBinding), 1u);

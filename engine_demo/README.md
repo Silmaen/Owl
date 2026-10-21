@@ -90,8 +90,8 @@ engine_demo/
 
 `textures/tilemaps/` holds the Kenney sheets, `atlases/` the textures the tilesets read, `wolf3d/` the Wolfenstein 3D
 walls and sprites (all kept), `items/` the inventory icons cropped from them, `meshes/` the `.glb` files of
-`scenes/mesh_gallery.owl` (crates, pillars, primitives and a transparent sphere under a fly camera, drawn by the
-`mesh_world` layer), written by `tools/demo/generate_meshes.py`. The scripts that draw the textures, the
+`scenes/mesh_gallery.owl` (crates, pillars, primitives and a transparent sphere under a fly camera, lit by a shadow-casting
+`Light` sun and a warm point light, drawn by the `mesh_world` layer), written by `tools/demo/generate_meshes.py`. The scripts that draw the textures, the
 sounds, the hub and the minimap are in `tools/demo/`, outside the project, so that they are neither exported nor
 installed.
 

@@ -30,8 +30,8 @@ namespace owl::renderer {
  *  drops the passes nothing uses, allocates the transient targets and binds the right framebuffer around each pass.
  *
  * Every target has the engine attachment layout (colour, `RedInteger` entity id, depth). A transient target is
- * either linear (`Rgba16F` colour, the HDR scene colour) or display (`Surface` colour), sized as the frame; it is
- * cleared on its first write of a frame. The imported target is the framebuffer bound when `execute` runs (or the
+ * linear (`Rgba16F` colour, the HDR scene colour), display (`Surface` colour) or depth (`RedFloat`, a shadow map),
+ * sized as the frame unless given a size; it is cleared on its first write of a frame. The imported target is the framebuffer bound when `execute` runs (or the
  * window surface), bound again when the graph returns. A pass reading a target runs after every pass declared
  * before it that writes the target; reading a colour attachment unbinds its framebuffer first, which turns it
  * shader readable.
@@ -78,11 +78,12 @@ public:
 
 	/**
 	 * @brief
-	 *  Colour space of a transient target.
+	 *  Colour attachment of a transient target.
 	 */
-	enum struct ColorSpace : uint8_t {
+	enum struct TargetFormat : uint8_t {
 		Linear,///< `Rgba16F` colour: linear values, beyond 1 allowed.
 		Display,///< `Surface` colour: display-encoded values.
+		Depth,///< `RedFloat` colour holding a depth (shadow maps), cleared to 1, the far plane.
 	};
 
 	/**
@@ -205,10 +206,11 @@ public:
 	 * @brief
 	 *  Declare a transient target, allocated when a kept pass uses it.
 	 * @param[in] iName Name of the target.
-	 * @param[in] iColorSpace Colour space of its colour attachment.
+	 * @param[in] iFormat Format of its colour attachment.
+	 * @param[in] iSize Size of the target; zero takes the size of the frame.
 	 * @return The target.
 	 */
-	auto createTarget(std::string_view iName, ColorSpace iColorSpace) -> Resource;
+	auto createTarget(std::string_view iName, TargetFormat iFormat, const math::vec2ui& iSize = {0, 0}) -> Resource;
 
 	/**
 	 * @brief
@@ -265,8 +267,10 @@ private:
 		std::string name;
 		/// Whether it is the framebuffer bound when `execute` runs.
 		bool imported = false;
-		/// Colour space of a transient target.
-		ColorSpace colorSpace = ColorSpace::Linear;
+		/// Format of a transient target.
+		TargetFormat format = TargetFormat::Linear;
+		/// Size of a transient target, zero for the frame size.
+		math::vec2ui size{0, 0};
 		/// Framebuffer of the frame (null for the window surface).
 		gpu::Framebuffer* framebuffer = nullptr;
 		/// Whether the target was written in this frame.
@@ -291,8 +295,8 @@ private:
 	struct PooledTarget {
 		/// The framebuffer.
 		shared<gpu::Framebuffer> framebuffer;
-		/// Its colour space.
-		ColorSpace colorSpace = ColorSpace::Linear;
+		/// Its format.
+		TargetFormat format = TargetFormat::Linear;
 		/// Whether a target of the running frame holds it.
 		bool used = false;
 		/// Runs of `execute` since it was last used.
@@ -313,19 +317,20 @@ private:
 	 *  Declare a target in the next free slot (the slots of the last frame are reused, with their capacity).
 	 * @param[in] iName Name of the target.
 	 * @param[in] iImported Whether it is the bound framebuffer.
-	 * @param[in] iColorSpace Colour space of a transient target.
+	 * @param[in] iFormat Format of a transient target.
+	 * @param[in] iSize Size of a transient target, zero for the frame size.
 	 * @return The target.
 	 */
-	auto addTarget(std::string_view iName, bool iImported, ColorSpace iColorSpace) -> Resource;
+	auto addTarget(std::string_view iName, bool iImported, TargetFormat iFormat, const math::vec2ui& iSize) -> Resource;
 
 	/**
 	 * @brief
-	 *  Take a pooled framebuffer of a colour space and size, or create one.
-	 * @param[in] iColorSpace The colour space.
+	 *  Take a pooled framebuffer of a format and size, or create one.
+	 * @param[in] iFormat The format.
 	 * @param[in] iSize The size.
 	 * @return The framebuffer.
 	 */
-	auto acquire(ColorSpace iColorSpace, const math::vec2ui& iSize) -> gpu::Framebuffer*;
+	auto acquire(TargetFormat iFormat, const math::vec2ui& iSize) -> gpu::Framebuffer*;
 
 	/**
 	 * @brief

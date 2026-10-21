@@ -496,6 +496,73 @@ void renderProps(MeshRenderer& ioComponent) {
 	}
 }
 
+void renderProps(Light& ioComponent) {
+	if (prop::BeginCombo("Type", std::string(magic_enum::enum_name(ioComponent.type)).c_str())) {
+		for (const auto type: magic_enum::enum_values<Light::Type>()) {
+			const bool isSelected = ioComponent.type == type;
+			if (ImGui::Selectable(std::string(magic_enum::enum_name(type)).c_str(), isSelected))
+				ioComponent.type = type;
+			if (isSelected)
+				ImGui::SetItemDefaultFocus();
+		}
+		ImGui::EndCombo();
+	}
+	fieldTooltip("Directional: parallel rays like the sun, the only kind casting shadows. Point: radiates from its "
+				 "position. Spot: a point light restricted to a cone. It shines along -Z of the entity.");
+	prop::ColorEdit3("Color", ioComponent.color.data());
+	fieldTooltip("Colour of the light, as authored (sRGB).");
+	prop::DragFloat("Intensity", &ioComponent.intensity, 0.01f, 0.0f, 1000.0f);
+	fieldTooltip("Multiplier of the colour.");
+	if (ioComponent.type != Light::Type::Directional) {
+		prop::DragFloat("Range", &ioComponent.range, 0.1f, 0.01f, 100000.0f);
+		fieldTooltip("Distance where the light reaches zero, in world units.");
+	}
+	if (ioComponent.type == Light::Type::Spot) {
+		constexpr float maxAngle = 89.f;
+		float inner = std::clamp(math::degrees(ioComponent.innerAngle), 0.f, maxAngle);
+		float outer = std::clamp(math::degrees(ioComponent.outerAngle), 0.f, maxAngle);
+		if (prop::DragFloat("Inner Angle", &inner, 0.5f, 0.0f, maxAngle, "%.1f deg")) {
+			inner = std::clamp(inner, 0.f, maxAngle);
+			outer = std::max(outer, inner);
+			ioComponent.innerAngle = math::radians(inner);
+			ioComponent.outerAngle = math::radians(outer);
+		}
+		fieldTooltip("Half angle of the cone at full intensity, in degrees.");
+		if (prop::DragFloat("Outer Angle", &outer, 0.5f, 0.0f, maxAngle, "%.1f deg")) {
+			outer = std::clamp(outer, 0.f, maxAngle);
+			inner = std::min(inner, outer);
+			ioComponent.innerAngle = math::radians(inner);
+			ioComponent.outerAngle = math::radians(outer);
+		}
+		fieldTooltip("Half angle of the cone where the light reaches zero, in degrees.");
+	}
+	if (ioComponent.type != Light::Type::Directional)
+		return;
+	prop::Checkbox("Cast Shadows", &ioComponent.castShadows);
+	fieldTooltip("The first shadow-casting directional light of the scene shadows the 3D layers.");
+	if (!ioComponent.castShadows)
+		return;
+	prop::DragFloat("Shadow Distance", &ioComponent.shadowDistance, 0.5f, 1.0f, 100000.0f);
+	fieldTooltip("Distance from the camera the shadows cover, in world units.");
+	int cascades = static_cast<int>(ioComponent.cascadeCount);
+	if (prop::DragInt("Cascades", &cascades, 0.1f, 1, 4))
+		ioComponent.cascadeCount = static_cast<uint32_t>(std::clamp(cascades, 1, 4));
+	fieldTooltip("Number of shadow cascades, from 1 to 4: more give sharper shadows near the camera.");
+	if (prop::BeginCombo("Resolution", std::to_string(ioComponent.shadowResolution).c_str())) {
+		for (const uint32_t resolution: {512u, 1024u, 2048u, 4096u}) {
+			const bool isSelected = ioComponent.shadowResolution == resolution;
+			if (ImGui::Selectable(std::to_string(resolution).c_str(), isSelected))
+				ioComponent.shadowResolution = resolution;
+			if (isSelected)
+				ImGui::SetItemDefaultFocus();
+		}
+		ImGui::EndCombo();
+	}
+	fieldTooltip("Size of each cascade's shadow map, in texels.");
+	prop::DragFloat("Bias", &ioComponent.shadowBias, 0.05f, 0.0f, 20.0f);
+	fieldTooltip("Depth bias against self-shadowing, in shadow-map texels along the surface normal.");
+}
+
 void renderProps(Text& ioComponent) {
 	prop::InputTextMultiline("Text String", &ioComponent.text, {0, 70});
 	if (app::Application::instanced()) {

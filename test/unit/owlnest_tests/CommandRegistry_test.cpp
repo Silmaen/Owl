@@ -82,9 +82,9 @@ OWL_DIAG_POP
 }// namespace
 
 TEST_F(CommandRegistryTest, DeclaresTheBuiltinCommands) {
-	for (const auto* name:
-		 {"entity.create", "entity.delete", "entity.duplicate", "entity.reparent", "entity.rename",
-		  "entity.set_transform", "component.add", "component.remove", "prefab.instantiate", "mesh.create"}) {
+	for (const auto* name: {"entity.create", "entity.delete", "entity.duplicate", "entity.reparent", "entity.rename",
+							"entity.set_transform", "entity.create_light", "component.add", "component.remove",
+							"prefab.instantiate", "mesh.create"}) {
 		const auto* spec = m_registry.find(name);
 		ASSERT_NE(spec, nullptr) << name;
 		EXPECT_FALSE(spec->description.empty()) << name;
@@ -98,7 +98,7 @@ TEST_F(CommandRegistryTest, DeclaresTheBuiltinCommands) {
 		EXPECT_FALSE(spec->allowedInPlay) << name;
 	}
 	EXPECT_EQ(m_registry.find("entity.explode"), nullptr);
-	EXPECT_EQ(m_registry.getCommands().size(), 28u);
+	EXPECT_EQ(m_registry.getCommands().size(), 29u);
 }
 
 TEST_F(CommandRegistryTest, CreateUnderAParentThenUndoRedo) {
@@ -241,7 +241,7 @@ TEST_F(CommandRegistryTest, IncompleteTargetRefusesCommands) {
 TEST_F(CommandRegistryTest, AddReplacesACommandOfTheSameName) {
 	m_registry.add({.name = "entity.create", .description = "Replaced.", .args = {}, .factory = {}});
 	EXPECT_EQ(m_registry.find("entity.create")->description, "Replaced.");
-	EXPECT_EQ(m_registry.getCommands().size(), 28u);
+	EXPECT_EQ(m_registry.getCommands().size(), 29u);
 }
 
 TEST_F(CommandRegistryTest, ParsesVectorColourAndEnumArguments) {

@@ -724,11 +724,12 @@ void Scene::renderWithStack(const renderer::Camera& iCamera) {
 	auto& graph = renderer::Renderer::getRenderGraph();
 	graph.reset();
 	const Graph::Resource target = graph.importTarget("target");
-	const Graph::Resource sceneColor = graph.createTarget("scene colour", Graph::ColorSpace::Linear);
+	const Graph::Resource sceneColor = graph.createTarget("scene colour", Graph::TargetFormat::Linear);
 	// The first write of the scene colour clears it, even when no layer has anything to draw.
 	graph.addPass(
 			"scene clear", [sceneColor](Graph::PassBuilder& ioBuilder) -> void { ioBuilder.write(sceneColor); },
 			[](const Graph::PassContext&) -> void {});
+	recordLightPasses(graph);
 	recordWorldPasses(graph, sceneColor);
 	const auto encodeSetup = [sceneColor, target](Graph::PassBuilder& ioBuilder) -> void {
 		ioBuilder.read(sceneColor);
@@ -758,12 +759,113 @@ void Scene::renderWithStack(const renderer::Camera& iCamera) {
 		const auto* const bound = renderer::gpu::Framebuffer::getBound();
 		graph.execute(bound != nullptr ? bound->getSpecification().size : m_viewportSize);
 	}
+	// Renderer3D is shared: a mesh preview drawn later in the frame must not see this scene's lights.
+	renderer::Renderer3D::setSceneLights({});
+	renderer::Renderer3D::setShadow({});
 	mp_renderCamera = nullptr;
+}
+
+void Scene::recordLightPasses(renderer::RenderGraph& ioGraph) {
+	using Graph = renderer::RenderGraph;
+	const bool editorMode = status == Status::Editing;
+	m_gpuLights.clear();
+	m_shadowSettings = {};
+	m_shadowCascades.count = 0;
+	const component::Light* shadowLight = nullptr;
+	math::vec3 shadowDirection{0.f, -1.f, 0.f};
+	for (const auto [handle, light]: registry.view<component::Light>().each()) {
+		if (m_gpuLights.size() >= renderer::Renderer3D::g_maxLights)
+			break;
+		const Entity entity{handle, this};
+		if (!isEffectivelyVisible(entity, editorMode))
+			continue;
+		const math::Transform world = getWorldTransform(entity);
+		const math::vec4 forward = world() * math::vec4{0.f, 0.f, -1.f, 0.f};
+		const math::vec3 direction = math::vec3{forward.x(), forward.y(), forward.z()}.normalized();
+		const math::vec3& position = world.translation();
+		const math::vec3 color = math::vec3{renderer::ColorEncoder::srgbToLinear(light.color.x()),
+											renderer::ColorEncoder::srgbToLinear(light.color.y()),
+											renderer::ColorEncoder::srgbToLinear(light.color.z())} *
+								 std::max(light.intensity, 0.f);
+		m_gpuLights.push_back(
+				{.positionRange = {position.x(), position.y(), position.z(), std::max(light.range, 0.01f)},
+				 .directionType = {direction.x(), direction.y(), direction.z(), static_cast<float>(light.type)},
+				 .color = {color.x(), color.y(), color.z(), 0.f},
+				 .spotCosines = {std::cos(light.innerAngle), std::cos(std::max(light.outerAngle, light.innerAngle)),
+								 0.f, 0.f}});
+		if (shadowLight == nullptr && light.type == component::Light::Type::Directional && light.castShadows) {
+			shadowLight = &light;
+			shadowDirection = direction;
+			m_shadowSettings.lightIndex = static_cast<int32_t>(m_gpuLights.size() - 1);
+		}
+	}
+	renderer::Renderer3D::setSceneLights(m_gpuLights);
+	if (shadowLight == nullptr)
+		return;
+	m_shadowCascades = renderer::computeShadowCascades(*mp_renderCamera, {.lightDirection = shadowDirection,
+																		  .shadowDistance = shadowLight->shadowDistance,
+																		  .cascadeCount = shadowLight->cascadeCount,
+																		  .resolution = shadowLight->shadowResolution});
+	m_shadowSettings.cascadeCount = m_shadowCascades.count;
+	m_shadowSettings.bias = shadowLight->shadowBias;
+	m_shadowSettings.resolution = shadowLight->shadowResolution;
+	m_shadowSettings.viewDepthRow = mp_renderCamera->getView().row(2);
+	const math::vec2ui mapSize{shadowLight->shadowResolution, shadowLight->shadowResolution};
+	for (uint32_t index = 0; index < m_shadowCascades.count; ++index) {
+		const auto& cascade = m_shadowCascades.cascades[index];
+		m_shadowSettings.viewProjections[index] = cascade.camera.getViewProjection();
+		m_shadowSettings.splitDepths[index] = cascade.splitDepth;
+		m_shadowSettings.texelWorldSizes[index] = cascade.texelWorldSize;
+		m_shadowTargets[index] = ioGraph.createTarget("shadow map", Graph::TargetFormat::Depth, mapSize);
+		ioGraph.addPass(
+				"shadow cascade",
+				[target = m_shadowTargets[index]](Graph::PassBuilder& ioBuilder) -> void { ioBuilder.write(target); },
+				[this, index](const Graph::PassContext&) -> void {
+					renderShadowCasters(m_shadowCascades.cascades[index].camera);
+				});
+	}
+}
+
+void Scene::useShadowMaps(const renderer::RenderGraph::PassContext& iContext) {
+	if (m_shadowSettings.cascadeCount == 0)
+		return;
+	for (uint32_t index = 0; index < m_shadowSettings.cascadeCount; ++index)
+		m_shadowSettings.maps[index] = iContext.getTexture(m_shadowTargets[index]);
+	renderer::Renderer3D::setShadow(m_shadowSettings);
+}
+
+void Scene::renderShadowCasters(const renderer::Camera& iCamera) {
+	const bool editorMode = status == Status::Editing;
+	renderer::Renderer3D::setShadowPass(true);
+	const auto& layers = renderer::Renderer::getRenderStack().getLayers();
+	for (size_t index = 0; index < layers.size(); ++index) {
+		const auto& layer = layers[index];
+		const std::string_view type{layer->getTypeKey()};
+		if ((type != "RendererVoxel" && type != "RendererMesh") || !layerHasContent(layer->getName(), index == 0))
+			continue;
+		layer->onBeginFrame(iCamera);
+		m_currentLayerName = layer->getName();
+		m_currentLayerIsFirst = index == 0;
+		mp_currentLayer = layer.get();
+		if (type == "RendererVoxel")
+			renderVoxelWorlds(editorMode);
+		else
+			renderMeshes(editorMode);
+		layer->onEndFrame();
+	}
+	m_currentLayerName.clear();
+	m_currentLayerIsFirst = true;
+	mp_currentLayer = nullptr;
+	renderer::Renderer3D::setShadowPass(false);
 }
 
 void Scene::recordWorldPasses(renderer::RenderGraph& ioGraph, const renderer::RenderGraph::Resource iSceneColor) {
 	using Graph = renderer::RenderGraph;
 	const auto writeScene = [iSceneColor](Graph::PassBuilder& ioBuilder) -> void { ioBuilder.write(iSceneColor); };
+	const auto writeSceneReadShadows = [this, iSceneColor](Graph::PassBuilder& ioBuilder) -> void {
+		ioBuilder.write(iSceneColor);
+		for (uint32_t index = 0; index < m_shadowSettings.cascadeCount; ++index) ioBuilder.read(m_shadowTargets[index]);
+	};
 	const auto& layers = renderer::Renderer::getRenderStack().getLayers();
 	const bool editorMode = status == Status::Editing;
 	if (layers.empty() || (editorMode && getSelfDrawnLayer() == nullptr)) {
@@ -786,22 +888,24 @@ void Scene::recordWorldPasses(renderer::RenderGraph& ioGraph, const renderer::Re
 			const std::string_view type{layer->getTypeKey()};
 			if ((type != "RendererVoxel" && type != "RendererMesh") || !layerHasContent(layer->getName(), index == 0))
 				continue;
-			ioGraph.addPass(layer->getName(), writeScene, [this, index](const Graph::PassContext&) -> void {
-				const auto& stackLayer = renderer::Renderer::getRenderStack().getLayers()[index];
-				stackLayer->setViewport(m_viewportSize);
-				stackLayer->onBeginFrame(*mp_renderCamera);
-				m_currentLayerName = stackLayer->getName();
-				m_currentLayerIsFirst = index == 0;
-				mp_currentLayer = stackLayer.get();
-				if (std::string_view{stackLayer->getTypeKey()} == "RendererVoxel")
-					renderVoxelWorlds(true);
-				else
-					renderMeshes(true);
-				stackLayer->onEndFrame();
-				m_currentLayerName.clear();
-				m_currentLayerIsFirst = true;
-				mp_currentLayer = nullptr;
-			});
+			ioGraph.addPass(layer->getName(), writeSceneReadShadows,
+							[this, index](const Graph::PassContext& iContext) -> void {
+								useShadowMaps(iContext);
+								const auto& stackLayer = renderer::Renderer::getRenderStack().getLayers()[index];
+								stackLayer->setViewport(m_viewportSize);
+								stackLayer->onBeginFrame(*mp_renderCamera);
+								m_currentLayerName = stackLayer->getName();
+								m_currentLayerIsFirst = index == 0;
+								mp_currentLayer = stackLayer.get();
+								if (std::string_view{stackLayer->getTypeKey()} == "RendererVoxel")
+									renderVoxelWorlds(true);
+								else
+									renderMeshes(true);
+								stackLayer->onEndFrame();
+								m_currentLayerName.clear();
+								m_currentLayerIsFirst = true;
+								mp_currentLayer = nullptr;
+							});
 		}
 		return;
 	}
@@ -813,21 +917,26 @@ void Scene::recordWorldPasses(renderer::RenderGraph& ioGraph, const renderer::Re
 			continue;
 		if (!layerHasContent(layer->getName(), index == 0))
 			continue;
-		ioGraph.addPass(layer->getName(), writeScene, [this, index](const Graph::PassContext&) -> void {
-			const auto& stackLayer = renderer::Renderer::getRenderStack().getLayers()[index];
-			stackLayer->setViewport(m_viewportSize);
-			stackLayer->onBeginFrame(*mp_renderCamera);
-			m_currentLayerName = stackLayer->getName();
-			m_currentLayerIsFirst = index == 0;
-			mp_currentLayer = stackLayer.get();
-			stackLayer->onRender(*this);
-			if (!stackLayer->drawsOwnEntities())
-				render();
-			stackLayer->onEndFrame();
-			m_currentLayerName.clear();
-			m_currentLayerIsFirst = true;
-			mp_currentLayer = nullptr;
-		});
+		const std::string_view type{layer->getTypeKey()};
+		const bool threeD = type == "RendererVoxel" || type == "RendererMesh";
+		ioGraph.addPass(layer->getName(), threeD ? Graph::Setup{writeSceneReadShadows} : Graph::Setup{writeScene},
+						[this, index, threeD](const Graph::PassContext& iContext) -> void {
+							if (threeD)
+								useShadowMaps(iContext);
+							const auto& stackLayer = renderer::Renderer::getRenderStack().getLayers()[index];
+							stackLayer->setViewport(m_viewportSize);
+							stackLayer->onBeginFrame(*mp_renderCamera);
+							m_currentLayerName = stackLayer->getName();
+							m_currentLayerIsFirst = index == 0;
+							mp_currentLayer = stackLayer.get();
+							stackLayer->onRender(*this);
+							if (!stackLayer->drawsOwnEntities())
+								render();
+							stackLayer->onEndFrame();
+							m_currentLayerName.clear();
+							m_currentLayerIsFirst = true;
+							mp_currentLayer = nullptr;
+						});
 	}
 }
 
@@ -2282,6 +2391,10 @@ Scene::onComponentAdded<component::CircleRenderer>([[maybe_unused]] const Entity
 template<>
 OWL_API void Scene::onComponentAdded<component::MeshRenderer>([[maybe_unused]] const Entity& iEntity,
 															  [[maybe_unused]] component::MeshRenderer& ioComponent) {}
+
+template<>
+OWL_API void Scene::onComponentAdded<component::Light>([[maybe_unused]] const Entity& iEntity,
+													   [[maybe_unused]] component::Light& ioComponent) {}
 
 template<>
 OWL_API void Scene::onComponentAdded<component::NativeScript>([[maybe_unused]] const Entity& iEntity,

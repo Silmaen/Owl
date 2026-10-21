@@ -303,6 +303,55 @@ TEST(LuaBindings, entityMeshRenderer) {
 	core::Log::invalidate();
 }
 
+TEST(LuaBindings, entityLight) {
+	core::Log::init(core::Log::Level::Off);
+	auto scn = mkShared<scene::Scene>();
+	auto lamp = scn->createEntity("Lamp");
+	lamp.addComponent<scene::component::Light>();
+	auto bare = scn->createEntity("Bare");
+
+	const std::string script = std::format("function on_create()\n"
+										   "has = entity.has_component({0}, 'Light')\n"
+										   "bare_has = entity.has_component({1}, 'Light')\n"
+										   "set_color = entity.set_light_color({0}, 1, 0.5, 0.25)\n"
+										   "r, g, b = entity.get_light_color({0})\n"
+										   "set_intensity = entity.set_light_intensity({0}, 4.5)\n"
+										   "intensity = entity.get_light_intensity({0})\n"
+										   "set_range = entity.set_light_range({0}, 25)\n"
+										   "bare_color = entity.set_light_color({1}, 1, 1, 1)\n"
+										   "bare_intensity = entity.set_light_intensity({1}, 1)\n"
+										   "bare_range = entity.set_light_range({1}, 1)\n"
+										   "bare_get = entity.get_light_intensity({1}) ~= nil\n"
+										   "end\n",
+										   static_cast<int64_t>(static_cast<uint64_t>(lamp.getUUID())),
+										   static_cast<int64_t>(static_cast<uint64_t>(bare.getUUID())));
+	const std::vector<uint8_t> data(script.begin(), script.end());
+	const ScriptInstance inst;
+	inst.setScene(scn.get());
+	ASSERT_TRUE(inst.createFromBuffer(data, "light_test", static_cast<uint64_t>(bare.getUUID())));
+	inst.onCreate();
+
+	EXPECT_TRUE(inst.getPropertyBool("has").value_or(false));
+	EXPECT_FALSE(inst.getPropertyBool("bare_has").value_or(true));
+	EXPECT_TRUE(inst.getPropertyBool("set_color").value_or(false));
+	EXPECT_FLOAT_EQ(inst.getPropertyFloat("r").value_or(-1.f), 1.f);
+	EXPECT_FLOAT_EQ(inst.getPropertyFloat("g").value_or(-1.f), 0.5f);
+	EXPECT_FLOAT_EQ(inst.getPropertyFloat("b").value_or(-1.f), 0.25f);
+	EXPECT_TRUE(inst.getPropertyBool("set_intensity").value_or(false));
+	EXPECT_FLOAT_EQ(inst.getPropertyFloat("intensity").value_or(-1.f), 4.5f);
+	EXPECT_TRUE(inst.getPropertyBool("set_range").value_or(false));
+	const auto& light = lamp.getComponent<scene::component::Light>();
+	EXPECT_FLOAT_EQ(light.color.y(), 0.5f);
+	EXPECT_FLOAT_EQ(light.intensity, 4.5f);
+	EXPECT_FLOAT_EQ(light.range, 25.f);
+	EXPECT_FALSE(inst.getPropertyBool("bare_color").value_or(true));
+	EXPECT_FALSE(inst.getPropertyBool("bare_intensity").value_or(true));
+	EXPECT_FALSE(inst.getPropertyBool("bare_range").value_or(true));
+	EXPECT_FALSE(inst.getPropertyBool("bare_get").value_or(true));
+
+	core::Log::invalidate();
+}
+
 TEST(LuaBindings, logDoesNotCrash) {
 	core::Log::init(core::Log::Level::Off);
 	auto scn = mkShared<scene::Scene>();

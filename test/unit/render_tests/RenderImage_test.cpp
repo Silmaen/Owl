@@ -349,6 +349,14 @@ class RenderPick : public testing::TestWithParam<PickCase> {};
 
 }// namespace
 
+// The lights of the mesh layer: a directional sun casting two shadow cascades (the blended cube casts none), a red point
+// light and a blue spot light.
+INSTANTIATE_TEST_SUITE_P(Lights, RenderImage,
+						 testing::Values(RenderCase{"lights", "vulkan"}, RenderCase{"lights", "opengl"}),
+						 [](const testing::TestParamInfo<RenderCase>& iInfo) -> std::string {
+							 return iInfo.param.scene + "_" + iInfo.param.backend;
+						 });
+
 // The entity-id attachment the editor picks in: the 3D layers write the id of every mesh and voxel world they draw.
 TEST_P(RenderPick, entityUnderEachPixel) {
 #ifndef OWL_RUNNER_EXECUTABLE

@@ -31,7 +31,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Owl Nest viewport: a selected camera shows its view in a corner inset (**Show > Camera preview**), drawn by the new `Scene::renderEditorView`.
 - Owl Nest viewport: while the right button is held, W A S D (Z Q S D on AZERTY) fly the 3D view, Q and E move it down and up, Shift speeds it up and the wheel sets the speed.
 - Picking in 3D: `Renderer3D` writes the entity id of every draw (`MeshDrawParams`), so meshes and voxel worlds are selected by a click.
-- Engine Demo: `mesh_gallery` scene of generated `.glb` meshes (`tools/demo/generate_meshes.py`) under a fly camera, with a transparent sphere.
+- `Light` component (`Directional`, `Point`, `Spot`: colour, intensity, range, cone angles, shadow settings) with its inspector, viewport markers and gizmos, `entity.create_light`, Hierarchy create menus and Lua (`entity.set_light_color`, `get_light_color`, `set_light_intensity`, `get_light_intensity`, `set_light_range`).
+- Forward lights: up to 64 lights in a storage buffer (`renderer::GpuLight`) light the mesh and voxel layers, point and spot lights falling to zero at `range`; a scene without a light keeps the sun and ambient of the layer.
+- Cascaded shadow maps for the first shadow-casting directional light (`renderer::computeShadowCascades`, 1 to 4 cascades, texel-snapped, 3x3 PCF) drawn by one frame-graph pass per cascade; image test `lights` checks them on both backends.
+- RHI: `AttachmentSpecification::Format::RedFloat`, `RenderGraph::TargetFormat::Depth` and an explicit size for a transient target.
+- Engine Demo: `mesh_gallery` scene of generated `.glb` meshes (`tools/demo/generate_meshes.py`) under a fly camera, with a transparent sphere, a shadow-casting sun and a warm point light.
 - `OwlRunner --frame-bench --pick X,Y` logs the entity under a pixel of the capture; image tests `mesh` and `RenderPick` check meshes and picking on both backends.
  runs the benchmarks several times and writes a proposed baseline and the thresholds the measured spread calls for.
 
@@ -67,6 +71,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Vulkan pipelines turn blending off on a colour attachment whose format cannot blend, and data attachments (`RedInteger`, `RedFloat`) get nearest samplers.
 - Owl Nest Content Browser: the right-click menu opens again (it was drawn outside the window that opened it).
 - Owl Nest keeps the desktop identifier `owl-nest-owl-engine-editor` whatever its version, so a desktop entry keeps its icon.
 - `MeshLoader`: a glTF mesh of several primitives indexes the vertices of each one, the OBJ loader keeps the third UV of a face, and glTF UVs follow the engine convention.

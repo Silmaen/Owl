@@ -1,0 +1,117 @@
+Scene: RenderTestLights
+EnabledRenderers:
+- {Name: world, Enabled: false}
+- {Name: mesh_world, Enabled: true}
+- {Name: ui, Enabled: false}
+Entities:
+- Entity: 3500000000000000001
+  Tag: {tag: MeshCamera}
+  Transform:
+    translation: [0, 1.6, 5.5]
+    rotation: [-0.3, 0, 0]
+    scale: [1, 1, 1]
+  Camera:
+    camera: {projectionType: Perspective, perspectiveFOV: 0.785398185, perspectiveNear: 0.100000001, perspectiveFar: 100,
+      orthographicSize: 8, orthographicNear: -1, orthographicFar: 10}
+    primary: true
+    fixedAspectRatio: false
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 0}
+- Entity: 3500000000000000002
+  Tag: {tag: Ground}
+  Transform:
+    translation: [0, -0.55, 0]
+    rotation: [0, 0, 0]
+    scale: [10, 0.1, 8]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 0}
+  RendererTag: {Name: mesh_world}
+  MeshRenderer:
+    mesh: meshes/textured_cube.glb
+    color: [0.7, 0.7, 0.7, 1]
+    texture: 'nam:textures/plain.png'
+    transparent: false
+- Entity: 3500000000000000003
+  Tag: {tag: TexturedCrate}
+  Transform:
+    translation: [-1.4, 0, 0]
+    rotation: [0.4, 0.6, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 0}
+  RendererTag: {Name: mesh_world}
+  MeshRenderer:
+    mesh: meshes/textured_cube.glb
+    color: [1, 1, 1, 1]
+    transparent: false
+- Entity: 3500000000000000004
+  Tag: {tag: TintedCrate}
+  Transform:
+    translation: [1.4, 0, 0]
+    rotation: [0.3, -0.7, 0.2]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 0}
+  RendererTag: {Name: mesh_world}
+  MeshRenderer:
+    mesh: meshes/textured_cube.glb
+    color: [1, 0.6, 0.2, 1]
+    transparent: false
+- Entity: 3500000000000000005
+  Tag: {tag: GlassCrate}
+  Transform:
+    translation: [0, 0.1, 1.6]
+    rotation: [0.2, 0.3, 0]
+    scale: [0.8, 0.8, 0.8]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 0}
+  RendererTag: {Name: mesh_world}
+  MeshRenderer:
+    mesh: meshes/textured_cube.glb
+    color: [0.3, 0.6, 1, 0.45]
+    transparent: true
+- Entity: 3500000000000000006
+  Tag: {tag: Sun}
+  Transform:
+    translation: [0, 4, 0]
+    rotation: [-0.8, 2.6, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 0}
+  Light:
+    type: Directional
+    color: [1, 0.95, 0.85]
+    intensity: 1
+    castShadows: true
+    shadowDistance: 20
+    cascadeCount: 2
+    shadowResolution: 1024
+    shadowBias: 1.5
+- Entity: 3500000000000000007
+  Tag: {tag: RedLamp}
+  Transform:
+    translation: [-2.6, 0.4, 0.8]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 0}
+  Light:
+    type: Point
+    color: [1, 0.2, 0.1]
+    intensity: 2
+    range: 3
+- Entity: 3500000000000000008
+  Tag: {tag: BlueSpot}
+  Transform:
+    translation: [2.2, 2.5, 1]
+    rotation: [-1.5707964, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 0}
+  Light:
+    type: Spot
+    color: [0.2, 0.4, 1]
+    intensity: 3
+    range: 5
+    innerAngle: 0.3
+    outerAngle: 0.45

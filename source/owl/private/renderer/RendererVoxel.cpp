@@ -476,7 +476,7 @@ void RendererVoxel::drawVoxelWorld(VoxelMeshCache& ioCache, scene::component::Vo
 	frameData().drawnMeshCount += static_cast<uint32_t>(opaque.size() + transparent.size());
 	const MeshDrawParams params{.entityId = iEntityId};
 	Renderer3D::drawMeshes(opaque, worldMat, textures, params);
-	if (!transparent.empty()) {
+	if (!transparent.empty() && !Renderer3D::isShadowPass()) {
 		// Back-to-front so alpha-over compositing is correct without per-fragment sorting.
 		std::ranges::sort(transparent, [](const auto& iA, const auto& iB) -> bool { return iA.first > iB.first; });
 		auto& sorted = frameData().sortedTransparent;

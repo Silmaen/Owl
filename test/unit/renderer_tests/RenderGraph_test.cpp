@@ -47,7 +47,7 @@ auto copies(const Graph::Resource iFrom, const Graph::Resource iTo) -> Graph::Se
 TEST_F(RenderGraphTest, keepsTheDeclarationOrderOfDependentPasses) {
 	Graph graph;
 	const auto target = graph.importTarget("target");
-	const auto scene = graph.createTarget("scene", Graph::ColorSpace::Linear);
+	const auto scene = graph.createTarget("scene", Graph::TargetFormat::Linear);
 	graph.addPass("world", writes(scene), {});
 	graph.addPass("sprites", writes(scene), {});
 	graph.addPass("encode", copies(scene, target), {});
@@ -59,8 +59,8 @@ TEST_F(RenderGraphTest, keepsTheDeclarationOrderOfDependentPasses) {
 TEST_F(RenderGraphTest, dropsThePassesNothingReads) {
 	Graph graph;
 	const auto target = graph.importTarget("target");
-	const auto scene = graph.createTarget("scene", Graph::ColorSpace::Linear);
-	const auto unused = graph.createTarget("unused", Graph::ColorSpace::Display);
+	const auto scene = graph.createTarget("scene", Graph::TargetFormat::Linear);
+	const auto unused = graph.createTarget("unused", Graph::TargetFormat::Display);
 	graph.addPass("world", writes(scene), {});
 	graph.addPass("orphan", copies(scene, unused), {});
 	graph.addPass("encode", copies(scene, target), {});
@@ -71,7 +71,7 @@ TEST_F(RenderGraphTest, dropsThePassesNothingReads) {
 TEST_F(RenderGraphTest, refusesAReadOfAnUnwrittenTarget) {
 	Graph graph;
 	const auto target = graph.importTarget("target");
-	const auto scene = graph.createTarget("scene", Graph::ColorSpace::Linear);
+	const auto scene = graph.createTarget("scene", Graph::TargetFormat::Linear);
 	graph.addPass("encode", copies(scene, target), {});
 	EXPECT_FALSE(graph.compile());
 }
@@ -97,7 +97,7 @@ TEST_F(RenderGraphTest, runsThePassesWithTheirTargetsAndPoolsTheTransients) {
 	for (int frame = 0; frame < 3; ++frame) {
 		graph.reset();
 		const auto target = graph.importTarget("target");
-		const auto scene = graph.createTarget("scene", Graph::ColorSpace::Linear);
+		const auto scene = graph.createTarget("scene", Graph::TargetFormat::Linear);
 		graph.addPass("world", writes(scene), [&](const Graph::PassContext& iContext) -> void {
 			runs.emplace_back("world");
 			sceneFramebuffer = iContext.getFramebuffer(scene);
@@ -133,7 +133,7 @@ TEST_F(RenderGraphTest, givesBackTheBoundFramebuffer) {
 	target->bind();
 	Graph graph;
 	const auto imported = graph.importTarget("target");
-	const auto scene = graph.createTarget("scene", Graph::ColorSpace::Linear);
+	const auto scene = graph.createTarget("scene", Graph::TargetFormat::Linear);
 	graph.addPass("world", writes(scene), {});
 	graph.addPass("encode", copies(scene, imported), [&](const Graph::PassContext& iContext) -> void {
 		EXPECT_EQ(iContext.getFramebuffer(imported), target.get());
@@ -149,8 +149,8 @@ TEST_F(RenderGraphTest, givesBackTheBoundFramebuffer) {
 TEST_F(RenderGraphTest, reusesAReleasedTransientInTheSameFrame) {
 	Graph graph;
 	const auto target = graph.importTarget("target");
-	const auto first = graph.createTarget("first", Graph::ColorSpace::Linear);
-	const auto second = graph.createTarget("second", Graph::ColorSpace::Linear);
+	const auto first = graph.createTarget("first", Graph::TargetFormat::Linear);
+	const auto second = graph.createTarget("second", Graph::TargetFormat::Linear);
 	graph.addPass("a", writes(first), {});
 	graph.addPass("b", copies(first, target), {});
 	graph.addPass("c", writes(second), {});

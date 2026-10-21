@@ -127,7 +127,7 @@ render graph, essential post-processing — with full 3D editing ([details](desi
 - ![In Progress][progress] CI streamlining, before anything else of the cycle: a pull request answered in under 10 min, builds halved, `-j` everywhere, full suites at night, artefacts under 50 MB ([CI streamlining](design/ci-streamlining.md))
 - ![In Progress][progress] 3D render pipeline (forward, depth, perspective camera)
 - ![Done][done] Render graph hosting the renderer-stack layers
-- ![Planned][planned] Lighting: directional, point and spot lights, directional shadow maps
+- ![Done][done] Lighting: directional, point and spot lights, directional shadow maps
 - ![Planned][planned] 2D lighting (point / spot lights, normal-mapped sprites, 2D shadows), isometric sprites included ([2D](design/2d-complete.md))
 - ![Planned][planned] PBR materials with editor and material library
 - ![In Progress][progress] Static mesh component with instancing

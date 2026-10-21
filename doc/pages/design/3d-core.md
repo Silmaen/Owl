@@ -16,8 +16,8 @@ multithreaded preparation and the Mini Transport Tycoon follow.
 | 2  | Viewport orbit / fly camera, "look through scene camera" mode, mesh import preview                    | 1     |
 | 3  | Render graph hosting the existing layers as passes, no visual change (one pull request with 4)        | —     |
 | 4  | HDR scene colour, linear colour space, per-camera tone mapping (one pull request with 3)              | 3     |
-| 5  | Directional, point and spot light components, forward light SSBO                                      | 1     |
-| 6  | Directional shadow map                                                                                | 3, 5  |
+| 5  | Directional, point and spot light components, forward light SSBO (one pull request with 6)            | 1     |
+| 6  | Directional shadow map (one pull request with 5)                                                      | 3, 5  |
 | 7  | PBR material asset, material editor and library                                                       | 4, 5  |
 | 8  | Post-process stack per camera: bloom, vignette, LUT                                                   | 4     |
 | 9  | Instancing and GPU frustum / occlusion culling fed by the scene graph                                 | 1, 3  |
@@ -40,6 +40,26 @@ Lighting, blending and filtering happen on linear values; encoding to sRGB happe
 | Tone mapping       | Per camera: `None` (clamp, default, exact 2D colours), Khronos PBR Neutral, ACES                           |
 | Visible change     | Alpha blending of the 2D layers becomes linear; image-test references regenerated after a visual review    |
 | Delivered by       | Pull requests 3 and 4 together                                                                             |
+
+## Lighting
+
+Lights reach the 3D layers only (`MeshRenderer` meshes and voxel worlds); 2D lighting is a separate item.
+
+| Decision        | Choice                                                                                                  |
+|-----------------|---------------------------------------------------------------------------------------------------------|
+| Component       | One `Light` component with a type (`Directional`, `Point`, `Spot`), not one component per kind           |
+| Orientation     | Shines along -Z of the world transform; a point light ignores rotation, a directional one the position  |
+| Fallback        | A scene without a `Light` keeps the sun and ambient of the layer config; ambient always comes from it   |
+| Diffuse         | Lambert; colour authored in sRGB, converted to linear on upload                                         |
+| Falloff         | Point and spot reach zero at `range` through the window `(1 - (d/range)^4)^2`, no inverse square        |
+| Spot cone       | Smooth fade between the inner and outer half angles                                                     |
+| Forward lights  | Up to 64 lights in a storage buffer (`renderer::GpuLight`), no clustering yet                           |
+| Shadows         | The first visible directional light with `castShadows`; point and spot lights cast none                 |
+| Cascades        | 1 to 4 (`cascadeCount`), splits blending uniform and logarithmic (0.75) over `[near, shadowDistance]`  |
+| Cascade fit     | Orthographic light camera around a sphere bounding the slice, centre snapped to the texel grid         |
+| Shadow map      | `RedFloat` target of `shadowResolution`^2 per cascade, one frame-graph pass each, opaque casters only   |
+| Filtering       | 3x3 PCF with a normal-offset bias in texels (`shadowBias`)                                              |
+| Delivered by    | Pull requests 5 and 6 together                                                                          |
 
 ## Graphics
 

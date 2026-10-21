@@ -183,3 +183,35 @@ Entities:
       gameVisible: true
     RendererTag:
       Name: mesh_world
+  - Entity: 3700000000000000012
+    Tag:
+      tag: Sun
+    Transform:
+      translation: [0, 6, 0]
+      rotation: [-0.8, 2.6, 0]
+      scale: [1, 1, 1]
+    Light:
+      type: Directional
+      color: [1, 0.95, 0.85]
+      intensity: 1
+      castShadows: true
+      shadowDistance: 30
+      cascadeCount: 3
+      shadowResolution: 2048
+      shadowBias: 1.5
+    Visibility:
+      gameVisible: true
+  - Entity: 3700000000000000013
+    Tag:
+      tag: WarmLamp
+    Transform:
+      translation: [-2.5, 1.6, 2]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Light:
+      type: Point
+      color: [1, 0.65, 0.3]
+      intensity: 2
+      range: 5
+    Visibility:
+      gameVisible: true

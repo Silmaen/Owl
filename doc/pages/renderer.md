@@ -170,8 +170,9 @@ declaration order), drops the passes nothing needs, binds the right framebuffer 
 caller's framebuffer back.
 
 - **Targets.** The imported target is the framebuffer bound when the graph runs, or the window surface. Transient
-  targets are `Linear` (`Rgba16F` colour) or `Display` (`Surface`); all carry the engine layout: colour, `RedInteger`
-  entity id and `Depth24Stencil8`.
+  targets are `Linear` (`Rgba16F` colour) or `Display` (`Surface`), both with the engine layout (colour, `RedInteger`
+  entity id and `Depth24Stencil8`), or `Depth` (a single `RedFloat` attachment, for shadow maps). A target can carry an
+  explicit size instead of the size of the frame.
 - **Pool.** Transients come from a pool kept between frames and released after 120 idle runs; a transient released
   earlier in the frame is reused. A transient is cleared on its first write of a frame (clear colour decoded to linear
   for a `Linear` one, entity id -1).
@@ -180,7 +181,9 @@ caller's framebuffer back.
 
 ```mermaid
 flowchart LR
-    C["scene clear"] --> L["one pass per layer with content<br/>(editor composite + voxel / mesh layers in the editor)"]
+    C["scene clear"] --> S["shadow cascade passes<br/>(one per cascade, when a light casts)"]
+    S -->|"shadow maps (Depth)"| L["one pass per layer with content<br/>(editor composite + voxel / mesh layers in the editor)"]
+    C --> L
     L -->|"scene colour (Linear)"| E["colour encode"]
     E --> I["entity ids and depth"]
     I --> O["overlays and HUD"]
@@ -210,6 +213,23 @@ Every world layer renders linear into the `Rgba16F` scene colour; encoding to sR
 - **Vulkan pipelines.** A draw keeps one pipeline per attachment layout (`Framebuffer::getPipelineFamily`, the dedup
   key of `pushPipeline`), created on its first bind to a framebuffer of that layout: linear (`Rgba16F`, `RedInteger`,
   `Depth24Stencil8`) and display (`Surface`, `RedInteger`, `Depth24Stencil8`, swapchain included).
+
+### Lights and shadows {#renderer-lights}
+
+The 3D layers (`RendererMesh`, `RendererVoxel`) are lit by the `Light` components of the scene
+([Scene > Light](scene.md#light-component)); the 2D, isometric, tilemap and raycast layers are not.
+
+- **Light buffer.** Up to 64 lights are uploaded each frame to a storage buffer (`renderer::GpuLight`): Lambert
+  diffuse, point and spot lights falling to zero at `range` with the window `(1 - (d/range)^4)^2` (no inverse square),
+  spots fading between the inner and outer cone. A scene without any `Light` keeps the sun and ambient of the layer
+  config (`SunDirection`, `Ambient`); the ambient always comes from the layer config.
+- **Cascades.** The first visible directional light with `castShadows` casts cascaded shadow maps.
+  `renderer::computeShadowCascades` splits `[near, shadowDistance]` blending uniform and logarithmic splits (0.75);
+  each cascade is an orthographic light camera around a sphere bounding its frustum slice, its centre snapped to the
+  texel grid (no shimmering) and pulled back so off-screen casters still cast.
+- **Passes.** One `shadow cascade` pass per cascade renders the opaque meshes and voxel worlds (transparent ones cast
+  no shadow) into a `Depth` target (`RedFloat`, `shadowResolution` squared). The 3D layer passes read the cascades
+  (texture slots 28 to 31) with 3x3 PCF and a normal-offset bias of `shadowBias` texels.
 
 ### Adding a new layer type
 
@@ -1038,13 +1058,14 @@ A `Framebuffer` represents an off-screen render target with one or more typed at
 
 ### Attachment Formats
 
-| Format            | Description                  | Typical Use         |
-|-------------------|------------------------------|---------------------|
-| `Rgba8`           | 8-bit RGBA colour            | Display colour      |
-| `Rgba16F`         | 16-bit float RGBA colour     | Linear scene colour |
-| `RedInteger`      | Single integer per pixel     | Entity ID picking   |
-| `Depth24Stencil8` | 24-bit depth + 8-bit stencil | Depth testing       |
-| `Surface`         | Swap chain surface (Vulkan)  | Final presentation  |
+| Format            | Description                   | Typical Use         |
+|-------------------|-------------------------------|---------------------|
+| `Rgba8`           | 8-bit RGBA colour             | Display colour      |
+| `Rgba16F`         | 16-bit float RGBA colour      | Linear scene colour |
+| `RedFloat`        | Single 32-bit float per pixel | Shadow maps         |
+| `RedInteger`      | Single integer per pixel      | Entity ID picking   |
+| `Depth24Stencil8` | 24-bit depth + 8-bit stencil  | Depth testing       |
+| `Surface`         | Swap chain surface (Vulkan)   | Final presentation  |
 
 ### FramebufferSpecification
 

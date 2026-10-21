@@ -430,6 +430,44 @@ private:
 
 	/**
 	 * @brief
+	 *  Whether the light markers are drawn and pickable: the edit state, outside the isometric view, with the camera
+	 *  markers option on.
+	 * @return True when the light markers show.
+	 */
+	[[nodiscard]] auto showsLightMarkers() const -> bool;
+
+	/**
+	 * @brief
+	 *  Radius of the marker of a light, which keeps about the same size on the screen.
+	 * @param[in] iPosition World position of the light.
+	 * @return The radius, in world units.
+	 */
+	[[nodiscard]] auto getLightMarkerRadius(const math::vec3& iPosition) const -> float;
+
+	/**
+	 * @brief
+	 *  Draw a small cross at every light, in the colour of the light, pickable; the selected light also draws its
+	 *  range (point: three circles, spot: the two cones) or its direction (directional: an arrow).
+	 * @param[in] iScene The scene edited.
+	 */
+	void renderLightMarkers(const shared<scene::Scene>& iScene) const;
+
+	/**
+	 * @brief
+	 *  Light whose marker is under the cursor: a click ray against a sphere around each light.
+	 * @return The nearest light hit, or an invalid entity.
+	 */
+	[[nodiscard]] auto pickLight() const -> scene::Entity;
+
+	/**
+	 * @brief
+	 *  Camera or light marker under the cursor, the camera first.
+	 * @return The entity picked, or an invalid entity.
+	 */
+	[[nodiscard]] auto pickMarker() const -> scene::Entity;
+
+	/**
+	 * @brief
 	 *  Draw the marker of every camera: icon, arrow and field of view in 2D, frustum in the 3D view.
 	 * @param[in] iScene The scene edited.
 	 */
