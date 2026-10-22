@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Engine Demo hub: a fifth level house, the Tavern (east end of the high street), opens the 3D tavern scene; the hub counts five levels and the victory portal wakes when all five are done.
 - Test `EditorCoverage` (gui_tests): fails when a data member of a component has no widget in its inspector function, or when a key read by `applyConfig` of a render layer has no field in the layer overrides of Scene Settings; a runtime-only member is listed in the test with its reason.
 - Owl Nest: a double-click on an `.owlprefab` opens it as a document (`DocumentKind::Prefab`, hierarchy, inspector, undo, atomic save with its name and version, canonical UUIDs kept), and the Content Browser draws a sphere rendered with the material as the thumbnail of an `.owlmat`.
 - Owl Nest viewport: the selected `Oscillator` draws its range and the selected `Patrol` its route; a waypoint is picked with a click and moved with a gizmo, as one undoable `component.set`.

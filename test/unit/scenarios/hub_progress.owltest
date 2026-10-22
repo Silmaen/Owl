@@ -1,6 +1,6 @@
 # slow
-# The hub: four levels each give a victory objective; completing one marks it done in gamestate, returns to the world
-# map and bumps the "levels completed: n / 4" counter. The victory portal answers only when all four are done.
+# The hub: five levels each give a victory objective; completing one marks it done in gamestate, returns to the world
+# map and bumps the "levels completed: n / 5" counter. The victory portal answers only when all five are done.
 # (Triggers test the box of their entity against the player: a trigger is brought next to the player instead of
 # walking the whole level.)
 scene: ../../../engine_demo/scenes/world_map.owl
@@ -52,7 +52,7 @@ steps:
   - frames: 60
   - expect: {entity: Teleporter, exists: true}
   - expect: {entity: VictoryTitle, exists: false}
-  # The voxel level: its house is the last one; the explorer is carried away from the landing point.
+  # The voxel level: its house is the fourth one; the explorer is carried away from the landing point.
   - input: {key: D, frames: 120}
   - input: {key: W, frames: 40}
   - input: {key: E, frames: 3}
@@ -62,9 +62,33 @@ steps:
   - frames: 90
   - expect: {gamestate: level_voxel_done, equals: 1}
   - expect: {gamestate: levels_done, equals: 4}
-  # Four levels done: the portal answers and leads to the victory screen.
+  # The tavern: its house is the last one; the key, the trapdoor, then the chest of the cellar are brought to the player.
   - input: {key: S, frames: 25}
-  - {command: entity.set_transform, args: {entity: Teleporter, translation: [54.5, -19.0, 0.6]}}
+  - input: {key: D, frames: 72}
+  - input: {key: W, frames: 40}
+  - input: {key: E, frames: 3}
+  - frames: 150
+  - expect: {entity: TavernCamera, exists: true}
+  - expect: {gamestate: tavern_key, equals: 0}
+  - {command: entity.set_transform, args: {entity: CellarKey, translation: [2.6, 0.3, 2.4]}}
+  - frames: 5
+  - input: {key: E, frames: 3}
+  - frames: 10
+  - expect: {gamestate: tavern_key, equals: 1}
+  - {command: entity.set_transform, args: {entity: Trapdoor, translation: [2.6, 0, 2.4]}}
+  - frames: 5
+  - input: {key: E, frames: 3}
+  - frames: 150
+  - expect: {entity: CellarPlayer, exists: true}
+  - {command: entity.set_transform, args: {entity: Chest, translation: [2.9, 0.3, 2.2]}}
+  - frames: 5
+  - input: {key: E, frames: 3}
+  - frames: 150
+  - expect: {gamestate: level_tavern_done, equals: 1}
+  - expect: {gamestate: levels_done, equals: 5}
+  # Five levels done: the portal answers and leads to the victory screen.
+  - input: {key: S, frames: 25}
+  - {command: entity.set_transform, args: {entity: Teleporter, translation: [60.5, -19.0, 0.6]}}
   - frames: 5
   - expect: {gamestate: portal_hum, greater: 0}
   - input: {key: E, frames: 3}

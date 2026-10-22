@@ -17,7 +17,7 @@ function on_create()
 end
 
 function on_update(dt)
-    if gamestate.get("levels_done", 0) < 4 then
+    if gamestate.get("levels_done", 0) < 5 then
         return  -- asleep: no hum
     end
     clock = clock - dt
@@ -41,7 +41,7 @@ end
 
 -- Bound by Trigger.Type=Interaction with CallbackName=on_teleporter_enter.
 function on_teleporter_enter(player_id)
-    if gamestate.get("levels_done", 0) < 4 then
+    if gamestate.get("levels_done", 0) < 5 then
         return  -- the portal is asleep until every level is done
     end
     log.info("Teleporter activated! Loading victory scene.")

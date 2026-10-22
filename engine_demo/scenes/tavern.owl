@@ -1,5 +1,6 @@
 Scene: Tavern
 FormatVersion: 7
+Hud: huds/tavern.owlhud
 SceneScript:
   scriptPath: scripts/mesh/tavern.lua
 EnabledRenderers:
@@ -16,8 +17,8 @@ Entities:
     Tag:
       tag: TavernCamera
     Transform:
-      translation: [1.9, 1.2, 1.35]
-      rotation: [-0.16, 0.52, 0]
+      translation: [2.6, 1.6, 2.4]
+      rotation: [-0.12, 0.75, 0]
       scale: [1, 1, 1]
     Camera:
       camera:
@@ -32,9 +33,7 @@ Entities:
         postProcess: {ev100: 4.5, exposure: 0, autoExposure: false, bloom: true, bloomThreshold: 1, bloomKnee: 0.5, bloomIntensity: 0.08, bloomScatter: 0.7, vignette: true, vignetteIntensity: 0.4, vignetteSmoothness: 0.5, vignetteColor: [0, 0, 0]}
       primary: true
       fixedAspectRatio: false
-    FlyCamera:
-      MoveSpeed: 1.5
-      LookSpeed: 1.2
+    FirstPersonController: {enabled: true, walkSpeed: 2.2, runSpeed: 4, lookSpeed: 1.8, mouseSensitivity: 0.0025, captureCursor: true, eyeHeight: 1.6, height: 1.75, radius: 0.25, stepHeight: 0.3, gravity: 9.81, jumpSpeed: 0}
     Visibility:
       gameVisible: true
   - Entity: 3900000000000000002
@@ -820,5 +819,187 @@ Entities:
         - {overrides: {occlusionMap: nam:meshes/tavern/folding_wooden_stool/textures/folding_wooden_stool_arm_1k.jpg}}
     RendererTag:
       Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000000101
+    Tag:
+      tag: RightWall
+    Transform:
+      translation: [4.2, 0, 0.5]
+      rotation: [0, 1.5708, 0]
+      scale: [1, 1, 1]
+    MeshRenderer:
+      mesh: meshes/tavern/wall.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - material: materials/plaster_wall.owlmat
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000000102
+    Tag:
+      tag: FrontWall
+    Transform:
+      translation: [0.5, 0, 4.2]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    MeshRenderer:
+      mesh: meshes/tavern/wall.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - material: materials/plaster_wall.owlmat
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000000103
+    Tag:
+      tag: CornerPost2
+    Transform:
+      translation: [3.875, 0, -2.875]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    MeshRenderer:
+      mesh: meshes/tavern/post.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - material: materials/rough_wood.owlmat
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000000104
+    Tag:
+      tag: CornerPost3
+    Transform:
+      translation: [-2.875, 0, 3.875]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    MeshRenderer:
+      mesh: meshes/tavern/post.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - material: materials/rough_wood.owlmat
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000000105
+    Tag:
+      tag: CornerPost4
+    Transform:
+      translation: [3.875, 0, 3.875]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    MeshRenderer:
+      mesh: meshes/tavern/post.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - material: materials/rough_wood.owlmat
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000000110
+    Tag:
+      tag: Trapdoor
+    Transform:
+      translation: [2.9, 0, 2.9]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    MeshRenderer:
+      mesh: meshes/tavern/trapdoor.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - material: materials/rough_wood.owlmat
+    RendererTag:
+      Name: mesh_world
+    Trigger: {Type: Interaction, CallbackName: on_trapdoor_interact}
+    LuaScript:
+      scriptPath: scripts/tavern/cellar_trapdoor.lua
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000000111
+    Tag:
+      tag: TrapdoorIron
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Hierarchy: {parentId: 3900000000000000110}
+    MeshRenderer:
+      mesh: meshes/tavern/trapdoor_iron.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - material: materials/wrought_iron.owlmat
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000000112
+    Tag:
+      tag: CellarKey
+    Transform:
+      translation: [-2.25, 0, -2.45]
+      rotation: [0, 0.7, 0]
+      scale: [1, 1, 1]
+    MeshRenderer:
+      mesh: meshes/tavern/key.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - material: materials/old_brass.owlmat
+    RendererTag:
+      Name: mesh_world
+    Trigger: {Type: Interaction, CallbackName: on_key_interact}
+    LuaScript:
+      scriptPath: scripts/tavern/cellar_key.lua
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000000113
+    Tag:
+      tag: KeyGlint
+    Transform:
+      translation: [-2.25, 0.12, -2.45]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Light:
+      type: Point
+      enabled: true
+      color: [1, 0.85, 0.5]
+      intensity: 6
+      range: 0.8
+    LightFlicker:
+      style: Pulse
+      amplitude: 0.6
+      speed: 1.2
+      seed: 7
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000000114
+    Tag:
+      tag: WallLantern
+    Transform:
+      translation: [3.75, 2.1, 2.9]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Light:
+      type: Point
+      enabled: true
+      color: [1, 0.62, 0.3]
+      intensity: 420
+      range: 6
+    LightFlicker:
+      style: Candle
+      amplitude: 0.12
+      seed: 21
     Visibility:
       gameVisible: true

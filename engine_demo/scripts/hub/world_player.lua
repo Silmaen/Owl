@@ -23,12 +23,12 @@ local health_bar_id = 0
 local camera_id = 0
 local sprite_id = 0   -- child sprite (Tiny Dungeon character): mirrored to face where the player walks
 local sprite_scale = 1.0
-local levels_id = 0   -- HUD counter "Levels completed: n / 4"
+local levels_id = 0   -- HUD counter "Levels completed: n / #LEVELS"
 local shown_levels = -1
 
 -- Levels of the hub (`level_<name>_done` in gamestate, set by the victory of each level). The victory portal wakes up
 -- when every one is done.
-local LEVELS = { "platformer", "raycast", "iso", "voxel" }
+local LEVELS = { "platformer", "raycast", "iso", "voxel", "tavern" }
 
 -- Hero sprite: the idle frame of the Tiny Dungeon hero and the four walk frames drawn below the characters of
 -- town_atlas.png (the pack has none), played at step_time each while the player moves.

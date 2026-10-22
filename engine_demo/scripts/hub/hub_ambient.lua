@@ -23,7 +23,7 @@ properties = {
     { name = "wind_volume", type = "vec2", default = { 0.15, 0.35 } },
 }
 
-local HOUSES = { { 9.5, -13.2 }, { 20.5, -13.2 }, { 44.5, -13.2 }, { 54.5, -13.2 } }
+local HOUSES = { { 9.5, -13.2 }, { 20.5, -13.2 }, { 44.5, -13.2 }, { 54.5, -13.2 }, { 60.5, -13.2 } }
 local BIRD_VARIANTS = 4
 local WIND_VARIANTS = 3
 

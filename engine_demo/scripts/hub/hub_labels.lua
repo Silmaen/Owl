@@ -5,7 +5,7 @@
 --               appears at NEAR cells and goes at FAR, so it does not flicker at the limit).
 --
 -- The entities `Tag_<name>` hold the name of the character `<name>` and float above it. The only other texts of the
--- hub are the four level titles of the houses, plain labels of the scene that are always shown. `labels_shown` in
+-- hub are the five level titles of the houses, plain labels of the scene that are always shown. `labels_shown` in
 -- gamestate counts the tags that are fully grown.
 
 properties = {

@@ -415,6 +415,92 @@ Entities:
     thickness: 1
     fade: 0.9
   Visibility: {gameVisible: true}
+- Entity: 2000000000000000600
+  Tag: {tag: HouseDoorTavern}
+  Transform:
+    translation: [60.5, -15.5, 0.6]
+    rotation: [0, 0, 0]
+    scale: [1.6, 1.6, 1]
+  Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_tavern_door_interact}
+  Visibility: {gameVisible: true}
+  LuaScript: {scriptPath: scripts/hub/tavern_house_door.lua}
+- Entity: 2000000000000000601
+  Tag: {tag: PannelTavern}
+  Transform:
+    translation: [60.5, -10.9, 0.6]
+    rotation: [0, 0, 0]
+    scale: [1.4, 0.6, 1.0]
+  TextRenderer:
+    color: [1, 1, 1, 1]
+    kerning: 0
+    lineSpacing: 0
+    outlineColor: [0, 0, 0, 1]
+    outlineWidth: 0.08
+    text: 'Tavern'
+  Visibility: {gameVisible: true}
+- Entity: 2000000000000000602
+  Tag: {tag: Flag_House5}
+  Transform:
+    translation: [59.72, -12.5, 0.7]
+    rotation: [0, 0, 0]
+    scale: [1.0, 1.0, 1.0]
+  Visibility: {gameVisible: true}
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    columns: 12
+    rows: 21
+    firstFrame: 202
+    lastFrame: 203
+    frameDuration: 0.4
+    loop: true
+    texture: nam:textures/atlases/town_atlas.png
+- Entity: 2000000000000000603
+  Tag: {tag: Smoke_5_1}
+  Transform:
+    translation: [60.5, -13.2, 0.8]
+    rotation: [0, 0, 0]
+    scale: [0.3, 0.3, 1]
+  CircleRenderer:
+    color: [0.92, 0.92, 0.95, 0.75]
+    thickness: 1
+    fade: 0.9
+  Visibility: {gameVisible: true}
+- Entity: 2000000000000000604
+  Tag: {tag: Smoke_5_2}
+  Transform:
+    translation: [60.5, -13.2, 0.8]
+    rotation: [0, 0, 0]
+    scale: [0.3, 0.3, 1]
+  CircleRenderer:
+    color: [0.92, 0.92, 0.95, 0.75]
+    thickness: 1
+    fade: 0.9
+  Visibility: {gameVisible: true}
+- Entity: 2000000000000000605
+  Tag: {tag: Smoke_5_3}
+  Transform:
+    translation: [60.5, -13.2, 0.8]
+    rotation: [0, 0, 0]
+    scale: [0.3, 0.3, 1]
+  CircleRenderer:
+    color: [0.92, 0.92, 0.95, 0.75]
+    thickness: 1
+    fade: 0.9
+  Visibility: {gameVisible: true}
+- Entity: 2000000000000000606
+  Tag: {tag: Talk_Sign5}
+  Transform:
+    translation: [62.5, -16.5, 0.6]
+    rotation: [0, 0, 0]
+    scale: [1.6, 1.6, 1]
+  Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_talk}
+  Visibility: {gameVisible: true}
+  LuaScript:
+    scriptPath: scripts/hub/hub_talker.lua
+    properties:
+    - {name: speaker, type: string, value: ""}
+    - {name: lines, type: string, value: "Level 5, the tavern: find the key, open the cellar.|Tavern. A 3D room to search, with a cellar under the trapdoor."}
+    - {name: follow, type: string, value: ""}
 - Entity: 2000000000000000305
   Tag: {tag: Flag_Church}
   Transform:
@@ -1473,7 +1559,7 @@ Entities:
     scriptPath: scripts/hub/hub_talker.lua
     properties:
     - {name: speaker, type: string, value: "Wizard"}
-    - {name: lines, type: string, value: "The portal in the shrine sleeps until you have finished the four levels.|Platformer, raycast, isometric town, voxels: four houses, four worlds.|My spells are only a little Lua. The bell is not mine, though."}
+    - {name: lines, type: string, value: "The portal in the shrine sleeps until you have finished the five levels.|Platformer, raycast, isometric town, voxels, tavern: five houses, five worlds.|My spells are only a little Lua. The bell is not mine, though."}
     - {name: follow, type: string, value: "Wizard"}
 - Entity: 2000000000000000440
   Tag: {tag: Talk_Knight}

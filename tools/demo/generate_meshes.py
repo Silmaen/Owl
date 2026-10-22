@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Generate the procedural meshes of the Engine Demo tavern (``engine_demo/meshes/tavern/*.glb``: room shell, hearth,
-mantel beam, fire grate, firewood, ember bed, flame cards and a candle, in metres, UVs in world units so the tiled Poly
+mantel beam, fire grate, firewood, ember bed, flame cards, a candle, the cellar trapdoor, key, chest, barrel and
+ladder, in metres, UVs in world units so the tiled Poly
 Haven materials keep their scale) and the fire textures (``engine_demo/textures/fire/``)."""
 
 import json
@@ -477,6 +478,81 @@ def log_stack() -> MeshBuilder:
     return m
 
 
+def upright(mesh: MeshBuilder) -> MeshBuilder:
+    """The mesh turned a quarter about Z: what lay along X stands along Y."""
+    m = MeshBuilder()
+    for p, n, uv in mesh.vertices:
+        m.vertices.append(((-p[1], p[0], p[2]), (-n[1], n[0], n[2]), uv))
+    m.indices = list(mesh.indices)
+    return m
+
+
+def trapdoor() -> MeshBuilder:
+    """Cellar trapdoor of four planks, 1 x 1 m, lying on the floor (y = 0 to 0.05)."""
+    m = MeshBuilder()
+    for k in range(4):
+        m.extend(box((-0.375 + 0.25 * k, 0.025, 0.0), (0.24, 0.05, 1.0), tile=0.8))
+    return m
+
+
+def trapdoor_iron() -> MeshBuilder:
+    """Iron straps and the ring handle of the trapdoor."""
+    m = MeshBuilder()
+    for z in (-0.32, 0.32):
+        m.extend(box((0.0, 0.055, z), (1.0, 0.012, 0.07)))
+    for k in range(8):
+        a = 2 * math.pi * k / 8
+        m.extend(box((0.3 + 0.06 * math.cos(a), 0.065, 0.06 * math.sin(a)), (0.03, 0.014, 0.03)))
+    return m
+
+
+def key() -> MeshBuilder:
+    """Old iron key lying flat on y = 0: a ring bow, a shaft along X and two bit teeth, 0.16 m long."""
+    m = MeshBuilder()
+    for k in range(10):
+        a = 2 * math.pi * k / 10
+        m.extend(box((-0.05 + 0.025 * math.cos(a), 0.006, 0.025 * math.sin(a)), (0.018, 0.012, 0.018)))
+    m.extend(box((0.03, 0.006, 0.0), (0.13, 0.01, 0.012)))
+    m.extend(box((0.08, 0.006, 0.018), (0.012, 0.01, 0.026)))
+    m.extend(box((0.06, 0.006, 0.016), (0.01, 0.01, 0.022)))
+    return m
+
+
+def chest() -> MeshBuilder:
+    """Wooden treasure chest, 0.8 x 0.6 x 0.5 m standing on the origin: a box body and a rounded lid."""
+    m = box((0.0, 0.22, 0.0), (0.8, 0.44, 0.5), tile=0.6)
+    lid = transformed(log(0.8, 0.25, 7, segments=16, rings=2), move=(0.0, 0.44, 0.0))
+    m.extend(MeshBuilder().extend(lid))
+    return m
+
+
+def chest_iron() -> MeshBuilder:
+    """Iron bands and the lock plate of the chest."""
+    m = MeshBuilder()
+    for x in (-0.3, 0.3):
+        m.extend(box((x, 0.22, 0.0), (0.05, 0.452, 0.512)))
+        m.extend(transformed(log(0.052, 0.258, 9, segments=16, rings=1), move=(x, 0.44, 0.0)))
+    m.extend(box((0.0, 0.4, 0.255), (0.1, 0.12, 0.02)))
+    return m
+
+
+def barrel(seed: int) -> MeshBuilder:
+    """Standing barrel, 0.9 m tall and 0.3 m in radius, on y = 0."""
+    return transformed(upright(log(0.9, 0.3, seed, tile=0.5, segments=18, rings=4)), move=(0.0, 0.45, 0.0))
+
+
+def ladder(height: float = 3.9) -> MeshBuilder:
+    """Wooden ladder standing on the origin: two rails along Y and a rung every 0.3 m."""
+    m = MeshBuilder()
+    for x in (-0.22, 0.22):
+        m.extend(box((x, height / 2, 0.0), (0.06, height, 0.06), tile=0.6))
+    rung = 0.3
+    while rung < height - 0.1:
+        m.extend(box((0.0, rung, 0.0), (0.44, 0.04, 0.04), tile=0.6))
+        rung += 0.3
+    return m
+
+
 def main() -> None:
     """Write every procedural mesh and texture of the Engine Demo tavern."""
     OUT.mkdir(parents=True, exist_ok=True)
@@ -493,6 +569,13 @@ def main() -> None:
     write_glb(OUT / "flames.glb", flame_cards(), "Flames")
     write_glb(OUT / "candle.glb", candle(), "Candle", color=(0.93, 0.88, 0.78, 1.0))
     write_glb(OUT / "candle_flame.glb", flame_cards(0.024, 0.05, 2), "CandleFlame")
+    write_glb(OUT / "trapdoor.glb", trapdoor(), "Trapdoor")
+    write_glb(OUT / "trapdoor_iron.glb", trapdoor_iron(), "TrapdoorIron", color=(0.1, 0.1, 0.1, 1.0))
+    write_glb(OUT / "key.glb", key(), "Key")
+    write_glb(OUT / "chest.glb", chest(), "Chest")
+    write_glb(OUT / "chest_iron.glb", chest_iron(), "ChestIron", color=(0.1, 0.1, 0.1, 1.0))
+    write_glb(OUT / "barrel.glb", barrel(31), "Barrel")
+    write_glb(OUT / "ladder.glb", ladder(), "Ladder")
     flame_texture().save(TEXTURES / "flame.png")
     ember_texture().save(TEXTURES / "embers.png")
     print(f"Meshes written to {OUT}, textures to {TEXTURES}")

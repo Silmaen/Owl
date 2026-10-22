@@ -151,7 +151,7 @@ Entities:
     offset: [-0.02, 0]
     offsetUnit: [ParentWidth, ParentHeight]
   UiText:
-    text: 'Levels completed: 0 / 4'
+    text: 'Levels completed: 0 / 5'
     color: [1, 0.949999988, 0.550000012, 1]
     fontSize: 28
     horizontalAlignment: Right
@@ -301,7 +301,7 @@ Entities:
   UiText:
     text: 'OWL ENGINE DEMO
 
-      The hub leads to four levels, one per house. Finish them all and the portal wakes up.
+      The hub leads to five levels, one per house. Finish them all and the portal wakes up.
 
 
       CONTROLS
@@ -332,7 +332,7 @@ Entities:
 
       IN THE VILLAGE
 
-      The four houses along the high street are the levels (signs and labels above the roofs): platformer, raycast, iso town, voxel. The shrine in the north east holds the victory portal, asleep until every level is done.
+      The five houses along the high street are the levels (signs and labels above the roofs): platformer, raycast, iso town, voxel, tavern. The shrine in the north east holds the victory portal, asleep until every level is done.
 
       The lever in the east meadow, south of the river, opens the gate of the walled grove in the west meadow: the two are joined by an entity link.
 
