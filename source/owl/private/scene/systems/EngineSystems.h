@@ -85,6 +85,14 @@ void updateDrifts(Scene& ioScene, const SystemContext& iContext);
 
 /**
  * @brief
+ *  Place the entities with a `FollowTarget` at their offset from the target (`owl.follow_target`).
+ * @param[in,out] ioScene The scene.
+ * @param[in] iContext The frame context.
+ */
+void updateFollowTargets(Scene& ioScene, const SystemContext& iContext);
+
+/**
+ * @brief
  *  Make the lights with a `LightFlicker` flicker from the scene time (`owl.light_flicker`).
  * @param[in,out] ioScene The scene.
  * @param[in] iContext The frame context.

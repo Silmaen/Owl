@@ -1967,6 +1967,9 @@ void renderProps(UiText& ioComponent) {
 
 void renderProps(UiImage& ioComponent) {
 	widgets::textureField("Texture", ioComponent.texture);
+	prop::InputText("Render Target", &ioComponent.renderTarget);
+	fieldTooltip("Name of a Render Target of the scene: the image shows what its camera sees (a minimap), in place of "
+				 "the texture. Empty to show the texture.");
 	prop::ColorEdit4("Tint", reinterpret_cast<float*>(&ioComponent.tint));
 }
 
@@ -2791,6 +2794,39 @@ void renderProps(Drift& ioComponent) {
 			"Half extent of the drift along each axis: the entity jumps from +range back to -range; 0 for no wrap.");
 	prop::DragFloat("Camera Follow", &ioComponent.cameraFollow, 0.005f, 0.f, 1.f, "%.3f");
 	fieldTooltip("Share of the camera movement followed: 0 pins the entity to the world, 1 to the screen (parallax).");
+}
+
+void renderProps(FollowTarget& ioComponent) {
+	prop::Checkbox("Enabled", &ioComponent.enabled);
+	fieldTooltip("Switch the follow off to leave the entity where it is.");
+	auto target = static_cast<uint64_t>(ioComponent.target);
+	prop::row("Target", [&](const char*) -> bool {
+		if (scriptEntityPicker(target, ImGui::GetContentRegionAvail().x)) {
+			ioComponent.target = core::UUID{target};
+			return true;
+		}
+		return false;
+	});
+	fieldTooltip("Entity followed: this one stays at the offset from its world position.");
+	prop::DragFloat3("Offset", &ioComponent.offset.x(), 0.1f, -100000.f, 100000.f, "%.2f");
+	fieldTooltip("Offset from the target along the world axes, in world units.");
+	prop::Checkbox("Follow Yaw", &ioComponent.followYaw);
+	fieldTooltip("Turn with the heading of the target (its rotation about Y), pitch and roll kept: a minimap camera "
+				 "looking down keeps the player's forward at the top.");
+}
+
+void renderProps(RenderTarget& ioComponent) {
+	prop::Checkbox("Enabled", &ioComponent.enabled);
+	fieldTooltip("Draw the image each frame; off keeps the last one.");
+	prop::InputText("Target Name", &ioComponent.targetName);
+	fieldTooltip("Name a HUD UI Image gives in its Render Target field to show this image.");
+	std::array size{static_cast<int>(ioComponent.size.x()), static_cast<int>(ioComponent.size.y())};
+	if (prop::row("Size", [&](const char* iId) -> bool { return ImGui::DragInt2(iId, size.data(), 1.f, 1, 4096); }))
+		ioComponent.size = {static_cast<uint32_t>(std::clamp(size[0], 1, 4096)),
+							static_cast<uint32_t>(std::clamp(size[1], 1, 4096))};
+	fieldTooltip("Size of the image, in pixels. The camera of the entity draws into it: give it the same aspect.");
+	prop::ColorEdit4("Clear Color", &ioComponent.clearColor.x());
+	fieldTooltip("Colour of the image where nothing is drawn.");
 }
 
 void setOpenAssetHandler(std::function<void(const std::filesystem::path&)> iHandler) {

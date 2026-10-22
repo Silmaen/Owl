@@ -59,6 +59,10 @@ namespace owl::renderer {
 class MaterialLibrary;
 }// namespace owl::renderer
 
+namespace owl::renderer::gpu {
+class Framebuffer;
+}// namespace owl::renderer::gpu
+
 namespace owl::scene {
 
 class Entity;
@@ -87,6 +91,8 @@ struct LightFlicker;
 struct Oscillator;
 struct Patrol;
 struct Drift;
+struct FollowTarget;
+struct RenderTarget;
 struct Environment;
 struct NativeScript;
 struct PhysicBody;
@@ -366,6 +372,23 @@ public:
 	 * @return The primary camera.
 	 */
 	[[nodiscard]] auto getPrimaryCamera() const -> Entity;
+
+	/**
+	 * @brief
+	 *  Draw the view of every enabled `RenderTarget` into its image, the overlays and the HUD left out.
+	 *
+	 * Called by `onRenderRuntime` and `onUpdateEditor` before the main view; the framebuffer bound before the call is
+	 * bound again after it.
+	 */
+	void renderTargets();
+
+	/**
+	 * @brief
+	 *  Get the image of a render target of the scene.
+	 * @param[in] iName The `targetName` of the `RenderTarget`.
+	 * @return Its framebuffer, or null when no render target of that name has drawn yet.
+	 */
+	[[nodiscard]] auto getRenderTarget(const std::string& iName) const -> shared<renderer::gpu::Framebuffer>;
 
 	/**
 	 * @brief
@@ -1573,6 +1596,8 @@ private:
 	 * `Renderer2D` quad loop).
 	 */
 	const renderer::RenderLayer* mp_currentLayer = nullptr;
+	/// Whether `renderWithStack` draws a render target: no overlay, no HUD.
+	bool m_drawingRenderTarget = false;
 	/// Camera of the frame-graph run in progress (`renderWithStack`).
 	const renderer::Camera* mp_renderCamera = nullptr;
 	/// Lights of the frame, as `Renderer3D` reads them.
@@ -1684,6 +1709,14 @@ OWL_API void Scene::onComponentAdded<component::Patrol>(const Entity& iEntity, c
 
 template<>
 OWL_API void Scene::onComponentAdded<component::Drift>(const Entity& iEntity, component::Drift& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::FollowTarget>(const Entity& iEntity,
+															  component::FollowTarget& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::RenderTarget>(const Entity& iEntity,
+															  component::RenderTarget& ioComponent);
 
 template<>
 OWL_API void Scene::onComponentAdded<component::Environment>(const Entity& iEntity,

@@ -19,6 +19,8 @@ void UiImage::serialize(const core::Serializer& iOut) const {
 	iOut.getImpl()->emitter << YAML::Key << "tint" << YAML::Value << tint;
 	if (texture)
 		iOut.getImpl()->emitter << YAML::Key << "texture" << YAML::Value << texture->getSerializeString();
+	if (!renderTarget.empty())
+		iOut.getImpl()->emitter << YAML::Key << "renderTarget" << YAML::Value << renderTarget;
 	iOut.getImpl()->emitter << YAML::EndMap;
 }
 
@@ -28,6 +30,8 @@ void UiImage::deserialize(const core::Serializer& iNode) {
 	if (iNode.getImpl()->node["texture"])
 		texture = renderer::gpu::Texture2D::createFromSerializedForDeserialize(
 				iNode.getImpl()->node["texture"].as<std::string>());
+	if (iNode.getImpl()->node["renderTarget"])
+		renderTarget = iNode.getImpl()->node["renderTarget"].as<std::string>();
 }
 
 }// namespace owl::scene::component

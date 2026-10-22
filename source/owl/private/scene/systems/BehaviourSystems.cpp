@@ -203,4 +203,27 @@ void updateDrifts(Scene& ioScene, const SystemContext& iContext) {
 	}
 }
 
+void updateFollowTargets(Scene& ioScene, [[maybe_unused]] const SystemContext& iContext) {
+	OWL_PROFILE_FUNCTION()
+
+	for (const auto view = ioScene.registry.view<component::FollowTarget, component::Transform>();
+		 const auto handle: view) {
+		auto& follow = view.get<component::FollowTarget>(handle);
+		if (!follow.enabled || follow.target == core::UUID{0})
+			continue;
+		const Entity target = ioScene.findEntityByUUID(follow.target);
+		if (!target || target == Entity{handle, &ioScene})
+			continue;
+		auto& transform = view.get<component::Transform>(handle).transform;
+		if (!follow.m_captured) {
+			follow.m_baseYaw = transform.rotation().y();
+			follow.m_captured = true;
+		}
+		const auto world = ioScene.getWorldTransform(target);
+		transform.translation() = world.translation() + follow.offset;
+		if (follow.followYaw)
+			transform.rotation().y() = world.rotation().y() + follow.m_baseYaw;
+	}
+}
+
 }// namespace owl::scene::systems

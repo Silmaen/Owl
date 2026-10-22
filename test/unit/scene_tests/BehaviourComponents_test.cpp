@@ -173,3 +173,52 @@ TEST_F(BehaviourTest, ADriftWrapsAroundItsRangeAndFollowsTheCamera) {
 	EXPECT_NEAR(translationOf(cloud).y(), 2.f + 2.f, 1e-4f);
 	EXPECT_NEAR(translationOf(cloud).z(), 0.5f, 1e-6f);
 }
+
+TEST_F(BehaviourTest, AFollowTargetKeepsItsOffsetAndTurnsWithTheTarget) {
+	auto scene = mkShared<Scene>();
+	auto player = scene->createEntity("Player");
+	auto& playerTransform = player.getComponent<component::Transform>().transform;
+	playerTransform.translation() = {3.f, 1.f, -2.f};
+	playerTransform.rotation() = {0.4f, 0.f, 0.f};
+	auto camera = scene->createEntity("MinimapCamera");
+	camera.getComponent<component::Transform>().transform.rotation() = {-1.5f, 0.25f, 0.f};
+	auto& follow = camera.addComponent<component::FollowTarget>();
+	follow.target = player.getUUID();
+	follow.offset = {0.f, 30.f, 0.f};
+	scene->onStartRuntime();
+	run(*scene, 1);
+	const auto& placed = camera.getComponent<component::Transform>().transform;
+	EXPECT_NEAR(placed.translation().x(), 3.f, 1e-5f);
+	EXPECT_NEAR(placed.translation().y(), 31.f, 1e-5f);
+	EXPECT_NEAR(placed.translation().z(), -2.f, 1e-5f);
+	EXPECT_NEAR(placed.rotation().x(), -1.5f, 1e-6f);
+	EXPECT_NEAR(placed.rotation().y(), 0.25f, 1e-6f);
+	playerTransform.translation() = {5.f, 2.f, 0.f};
+	playerTransform.rotation().y() = 1.f;
+	run(*scene, 1);
+	EXPECT_NEAR(translationOf(camera).x(), 5.f, 1e-5f);
+	EXPECT_NEAR(translationOf(camera).y(), 32.f, 1e-5f);
+	EXPECT_NEAR(camera.getComponent<component::Transform>().transform.rotation().y(), 1.25f, 1e-6f);
+	EXPECT_NEAR(camera.getComponent<component::Transform>().transform.rotation().x(), -1.5f, 1e-6f);
+}
+
+TEST_F(BehaviourTest, AFollowTargetOffOrWithoutTargetStaysWhereItIs) {
+	auto scene = mkShared<Scene>();
+	auto player = scene->createEntity("Player");
+	player.getComponent<component::Transform>().transform.translation() = {3.f, 1.f, -2.f};
+	auto still = scene->createEntity("Still");
+	still.getComponent<component::Transform>().transform.translation() = {7.f, 0.f, 0.f};
+	auto& off = still.addComponent<component::FollowTarget>();
+	off.target = player.getUUID();
+	off.enabled = false;
+	auto lost = scene->createEntity("Lost");
+	lost.addComponent<component::FollowTarget>().target = core::UUID{123456789};
+	auto self = scene->createEntity("Self");
+	self.addComponent<component::FollowTarget>().target = self.getUUID();
+	scene->onStartRuntime();
+	run(*scene, 3);
+	EXPECT_NEAR(translationOf(still).x(), 7.f, 1e-6f);
+	EXPECT_NEAR(translationOf(lost).y(), 0.f, 1e-6f);
+	EXPECT_NEAR(translationOf(self).y(), 0.f, 1e-6f);
+}
+

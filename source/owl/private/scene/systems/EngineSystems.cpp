@@ -118,6 +118,7 @@ void registerEngineSystems(SystemSchedule& ioSchedule) {
 	add("owl.player_input", SystemPhase::PrePhysics, &updatePlayerInput);
 	add("owl.physics", SystemPhase::Physics, &updatePhysics, &tickPhysics);
 	add("owl.drift", SystemPhase::PostPhysics, &updateDrifts);
+	add("owl.follow_target", SystemPhase::PostPhysics, &updateFollowTargets);
 	add("owl.light_flicker", SystemPhase::PostPhysics, &updateLightFlickers);
 	add("owl.entity_links", SystemPhase::PostPhysics, &updateEntityLinks);
 	add("owl.triggers", SystemPhase::PostPhysics, &updateTriggers);

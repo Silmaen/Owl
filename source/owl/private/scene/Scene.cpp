@@ -31,6 +31,8 @@
 #include "renderer/RendererRaycastLayer.h"
 #include "renderer/RendererTilemap.h"
 #include "renderer/RendererVoxel.h"
+#include "renderer/gpu/Framebuffer.h"
+#include "renderer/gpu/RenderCommand.h"
 #include "renderer/gpu/StorageBuffer.h"
 #include "scene/ComponentRegistry.h"
 #include "scene/Entity.h"
@@ -640,6 +642,7 @@ void Scene::onRenderRuntime() {
 		viewRotation(1, 3) = 0.0f;
 		viewRotation(2, 3) = 0.0f;
 		m_inverseViewRotation = inverse(mainCamera->getProjection() * viewRotation);
+		renderTargets();
 		renderWithStack(*mainCamera);
 		if (mp_engineContext != nullptr)
 			mp_engineContext->getScreenTransition().render(static_cast<float>(m_viewportSize.x()),
@@ -655,6 +658,7 @@ void Scene::onUpdateEditor(const core::Timestep& iTimeStep, const renderer::Came
 	// Stream procedural voxel terrain around the editor camera (its world position is the inverse-view translation).
 	const math::mat4 camToWorld = inverse(iCamera.getView());
 	updateVoxelStreaming(math::vec3{camToWorld(0, 3), camToWorld(1, 3), camToWorld(2, 3)});
+	renderTargets();
 	renderEditorView(iCamera);
 }
 
@@ -819,6 +823,8 @@ void Scene::renderWithStack(const renderer::Camera& iCamera) {
 	graph.addPass(
 			"overlays and HUD", [target](Graph::PassBuilder& ioBuilder) -> void { ioBuilder.write(target); },
 			[this](const Graph::PassContext&) -> void {
+				if (m_drawingRenderTarget)
+					return;
 				renderOverlays(*mp_renderCamera);
 				ui::HudPass::render(*this, m_viewportSize, status == Status::Editing);
 				renderToast();
@@ -834,6 +840,60 @@ void Scene::renderWithStack(const renderer::Camera& iCamera) {
 	renderer::Renderer3D::setShadow({});
 	renderer::Renderer3D::setEnvironment({});
 	mp_renderCamera = nullptr;
+}
+
+void Scene::renderTargets() {
+	OWL_PROFILE_FUNCTION()
+
+	auto* const previous = renderer::gpu::Framebuffer::getBound();
+	const math::mat4 mainInverseViewRotation = m_inverseViewRotation;
+	bool drawn = false;
+	for (const auto view = registry.view<component::RenderTarget, component::Camera>(); const auto handle: view) {
+		auto& target = view.get<component::RenderTarget>(handle);
+		if (!target.enabled || target.targetName.empty())
+			continue;
+		if (!target.m_framebuffer) {
+			using Attachment = renderer::gpu::AttachmentSpecification;
+			target.m_framebuffer = renderer::gpu::Framebuffer::create(
+					{.size = target.size,
+					 .attachments = {{.format = Attachment::Format::Surface, .tiling = Attachment::Tiling::Optimal},
+									 {.format = Attachment::Format::RedInteger, .tiling = Attachment::Tiling::Optimal},
+									 {.format = Attachment::Format::Depth32F, .tiling = Attachment::Tiling::Optimal}},
+					 .samples = 1,
+					 .swapChainTarget = false,
+					 .debugName = "render_target"});
+		} else if (target.m_framebuffer->getSpecification().size != target.size) {
+			target.m_framebuffer->resize(target.size);
+		}
+		auto& camera = view.get<component::Camera>(handle).camera;
+		camera.setViewportSize(target.size);
+		camera.setTransform(getWorldTransform(Entity{handle, this})());
+		target.m_framebuffer->bind();
+		renderer::gpu::RenderCommand::setClearColor(target.clearColor);
+		renderer::gpu::RenderCommand::clear();
+		target.m_framebuffer->clearAttachment(1, -1);
+		math::mat4 viewRotation = camera.getView();
+		viewRotation(0, 3) = 0.0f;
+		viewRotation(1, 3) = 0.0f;
+		viewRotation(2, 3) = 0.0f;
+		m_inverseViewRotation = inverse(camera.getProjection() * viewRotation);
+		m_drawingRenderTarget = true;
+		renderWithStack(camera);
+		m_drawingRenderTarget = false;
+		target.m_framebuffer->unbind();
+		drawn = true;
+	}
+	m_inverseViewRotation = mainInverseViewRotation;
+	if (drawn && previous != nullptr)
+		previous->bind();
+}
+
+auto Scene::getRenderTarget(const std::string& iName) const -> shared<renderer::gpu::Framebuffer> {
+	for (const auto view = registry.view<const component::RenderTarget>(); const auto handle: view) {
+		if (const auto& target = view.get<const component::RenderTarget>(handle); target.targetName == iName)
+			return target.m_framebuffer;
+	}
+	return nullptr;
 }
 
 void Scene::recordLightPasses(renderer::RenderGraph& ioGraph) {
@@ -2848,6 +2908,14 @@ OWL_API void Scene::onComponentAdded<component::Patrol>([[maybe_unused]] const E
 template<>
 OWL_API void Scene::onComponentAdded<component::Drift>([[maybe_unused]] const Entity& iEntity,
 													   [[maybe_unused]] component::Drift& ioComponent) {}
+
+template<>
+OWL_API void Scene::onComponentAdded<component::FollowTarget>([[maybe_unused]] const Entity& iEntity,
+															  [[maybe_unused]] component::FollowTarget& ioComponent) {}
+
+template<>
+OWL_API void Scene::onComponentAdded<component::RenderTarget>([[maybe_unused]] const Entity& iEntity,
+															  [[maybe_unused]] component::RenderTarget& ioComponent) {}
 
 template<>
 OWL_API void Scene::onComponentAdded<component::Environment>([[maybe_unused]] const Entity& iEntity,

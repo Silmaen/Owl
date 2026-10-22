@@ -11,6 +11,8 @@
 #include "core/Serializer.h"
 #include "renderer/gpu/Texture.h"
 
+#include <string>
+
 namespace owl::scene::component {
 /**
  * @brief
@@ -23,6 +25,8 @@ struct OWL_API UiImage {
 	shared<renderer::gpu::Texture2D> texture = nullptr;
 	/// Tint colour (multiplied with texture).
 	math::vec4 tint{1.0f, 1.0f, 1.0f, 1.0f};
+	/// Name of a `RenderTarget` of the scene shown in place of the texture; empty for the texture.
+	std::string renderTarget;
 
 	/**
 	 * @brief
