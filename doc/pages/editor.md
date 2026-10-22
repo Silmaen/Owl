@@ -566,7 +566,8 @@ A file grid of the asset directories, with navigation, file operations and drag 
 - **Toolbar**: parent folder, a clickable breadcrumb (never above the root), a name filter, grid / list, thumbnail
   size, the style of the mesh thumbnails (**Textured**, **Shaded**, **Flat**); below, one chip per family present (`All 14`, `Texture 11`...) filters it, hidden when there is one family.
 - **Tiles**: images show themselves (cropped square), tilesets their atlas, HUDs a pixel render, scenes their primary
-  camera, prefabs an orthographic framing, meshes (`.obj`, `.gltf`, `.glb`) a GPU render of their material or in grey
+  camera, prefabs an orthographic framing, materials (`.owlmat`) a sphere rendered with the material
+  (`viewer::renderMaterialPreview`, over its parent), meshes (`.obj`, `.gltf`, `.glb`) a GPU render of their material or in grey
   (`viewer::renderMeshPreview`), or in **Flat** style their faces in an isometric view (`AssetThumbnails::projectMesh`,
   at most 6000 triangles, `.fbx` included), sounds their waveform (`sound::readWaveform`); other
   files the duotone icon of their kind. `AssetThumbnails` reads a few files per frame and renders one scene, prefab or mesh
@@ -1136,6 +1137,10 @@ A prefab is an entity subtree saved as `.owlprefab` and reused across scenes (fo
 
 - **Create**: **Create Prefab...** in the Scene Hierarchy menu saves the entity and its descendants; their UUIDs become
   the canonical ones.
+- **Open**: a double-click on the file in the Content Browser opens a prefab document, a scene document of kind
+  `DocumentKind::Prefab`: its entities in the hierarchy, edited with the inspector and the viewport like any scene, with
+  their canonical UUIDs; **Save** writes the file back atomically with its name and version. Scene Settings and the HUD
+  editor do not apply to it.
 - **Instantiate**: drag the file from the Content Browser into the viewport: new UUIDs, and a `PrefabLink` on the root
   with the source path and the instance-to-canonical UUID mapping.
 - **Override**: editing an instance entity (inspector, gizmo, rename, add or remove a component, layer routing) marks

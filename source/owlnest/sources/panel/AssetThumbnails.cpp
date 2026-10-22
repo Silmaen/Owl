@@ -10,11 +10,14 @@
 
 #include "../document/viewer/MeshPreview.h"
 
+#include <app/Application.h>
+#include <app/EngineContext.h>
 #include <core/Log.h>
 #include <core/Timestep.h>
 #include <data/geometry/MeshLoader.h>
 #include <gui/UiLayer.h>
 #include <math/trigonometry.h>
+#include <renderer/MaterialLibrary.h>
 #include <renderer/gpu/RenderCommand.h>
 #include <scene/Entity.h>
 #include <scene/PrefabSerializer.h>
@@ -93,6 +96,8 @@ auto AssetThumbnails::getKind(const std::filesystem::path& iPath) -> Kind {
 		return Kind::Sound;
 	if (extension == ".owltileset")
 		return Kind::Tileset;
+	if (extension == ".owlmat")
+		return Kind::Material;
 	if (extension == ".obj" || extension == ".fbx" || extension == ".gltf" || extension == ".glb")
 		return Kind::Mesh;
 	return Kind::None;
@@ -222,6 +227,10 @@ auto AssetThumbnails::get(const std::filesystem::path& iPath) -> const Preview* 
 					entry.preview = Preview{.texture = tileset.texture, .framebuffer = {}, .waveform = {}, .mesh = {}};
 			}
 			break;
+		case Kind::Material:
+			if (std::ranges::find(m_pending, iPath) == m_pending.end() && (!m_job.has_value() || m_job->path != iPath))
+				m_pending.push_back(iPath);
+			break;
 		case Kind::Mesh:
 			if (m_meshStyle != MeshStyle::Flat) {
 				if (std::ranges::find(m_pending, iPath) == m_pending.end() &&
@@ -281,6 +290,19 @@ auto AssetThumbnails::takeFramebuffer() -> shared<renderer::gpu::Framebuffer> {
 	return framebuffer;
 }
 
+namespace {
+
+// The material of a file, over its parent when it has one.
+auto buildMaterial(const renderer::MaterialAsset& iAsset) -> renderer::Material {
+	if (!iAsset.parent.empty() && app::Application::instanced()) {
+		if (const auto parent = app::Application::get().getEngineContext().getMaterialLibrary().get(iAsset.parent))
+			return parent->withOverrides({.fields = iAsset.overrides, .values = iAsset.values});
+	}
+	return renderer::Material{iAsset.values};
+}
+
+}// namespace
+
 auto AssetThumbnails::startJob() -> bool {
 	while (!m_pending.empty()) {
 		const auto path = m_pending.front();
@@ -288,6 +310,24 @@ auto AssetThumbnails::startJob() -> bool {
 		auto& entry = m_entries[path.string()];
 		if (entry.preview.has_value() || entry.failed)
 			continue;
+		if (getKind(path) == Kind::Material) {
+			const auto asset = renderer::MaterialAsset::load(path);
+			const auto sphere = viewer::makePreviewShape(viewer::PreviewShape::Sphere);
+			if (!asset || !sphere) {
+				OWL_WARN("AssetThumbnails: {} could not be loaded, it keeps its icon.", path.string())
+				entry.failed = true;
+				continue;
+			}
+			m_job = Job{.path = path,
+						.scene = {},
+						.mesh = sphere,
+						.material = buildMaterial(*asset),
+						.camera = {},
+						.framebuffer = takeFramebuffer(),
+						.frames = 0,
+						.start = std::chrono::steady_clock::now()};
+			return true;
+		}
 		if (getKind(path) == Kind::Mesh) {
 			const auto loadedMesh = data::geometry::MeshLoader::loadMesh(path);
 			if (!loadedMesh.mesh) {
@@ -298,6 +338,7 @@ auto AssetThumbnails::startJob() -> bool {
 			m_job = Job{.path = path,
 						.scene = {},
 						.mesh = mkShared<renderer::MeshResource>(path, loadedMesh),
+						.material = {},
 						.camera = {},
 						.framebuffer = takeFramebuffer(),
 						.frames = 0,
@@ -319,6 +360,7 @@ auto AssetThumbnails::startJob() -> bool {
 		Job job{.path = path,
 				.scene = loaded,
 				.mesh = {},
+				.material = {},
 				.camera = {},
 				.framebuffer = {},
 				.frames = 0,
@@ -336,6 +378,11 @@ void AssetThumbnails::onUpdate() {
 	if (!m_job.has_value() && !startJob())
 		return;
 	auto& job = *m_job;
+	if (job.mesh && job.material) {
+		viewer::renderMaterialPreview(*job.framebuffer, *job.mesh, {}, *job.material);
+		finishJob();
+		return;
+	}
 	if (job.mesh) {
 		viewer::renderMeshPreview(*job.framebuffer, *job.mesh, {},
 								  m_meshStyle == MeshStyle::Shaded ? viewer::MeshShading::Shaded

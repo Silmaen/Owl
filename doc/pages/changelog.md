@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Owl Nest: a double-click on an `.owlprefab` opens it as a document (`DocumentKind::Prefab`, hierarchy, inspector, undo, atomic save with its name and version, canonical UUIDs kept), and the Content Browser draws a sphere rendered with the material as the thumbnail of an `.owlmat`.
 - Owl Nest viewport: the selected `Oscillator` draws its range and the selected `Patrol` its route; a waypoint is picked with a click and moved with a gizmo, as one undoable `component.set`.
 - `Oscillator`, `Patrol` and `Drift` components with the systems `owl.oscillators` (a body moves through the physics step), `owl.patrols` and `owl.drift`, and Lua `entity.set_oscillator_enabled`, `set_patrol_enabled`, `set_drift_enabled` with their `is_` getters.
 - `LightFlicker` component and `owl.light_flicker` system: a fire, candle or pulsing `Light` or `Light2D` (and the tint of a sprite) flickers from its seed and the scene time, with colour shift, position jitter, dips and a `follow` target whose scale breathes with it; `Scene::getRuntimeSeconds()`, Lua `entity.set_flicker_enabled` / `is_flicker_enabled`.

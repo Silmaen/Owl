@@ -928,6 +928,31 @@ public:
 
 	/**
 	 * @brief
+	 *  Name of the prefab the scene holds (`DocumentKind::Prefab`), written as the root key of its file.
+	 * @return The name.
+	 */
+	[[nodiscard]] auto getPrefabName() const -> const std::string& { return m_prefabName; }
+
+	/**
+	 * @brief
+	 *  Version of the prefab the scene holds (`DocumentKind::Prefab`).
+	 * @return The version.
+	 */
+	[[nodiscard]] auto getPrefabVersion() const -> uint32_t { return m_prefabVersion; }
+
+	/**
+	 * @brief
+	 *  Set the name and version of the prefab the scene holds (read from its file, written back with it).
+	 * @param[in] iName The name.
+	 * @param[in] iVersion The version.
+	 */
+	void setPrefabInfo(std::string iName, const uint32_t iVersion) {
+		m_prefabName = std::move(iName);
+		m_prefabVersion = iVersion;
+	}
+
+	/**
+	 * @brief
 	 *  HUD asset the scene asks for: its `Hud:` key.
 	 * @return The asset path (relative to the asset folders); an empty path means no HUD, nothing means the project's
 	 *  default HUD.
@@ -1047,6 +1072,10 @@ private:
 	ui::HudLayout m_hudLayout;
 	/// Document the scene is saved to.
 	DocumentKind m_documentKind = DocumentKind::Scene;
+	/// Name of the prefab the scene holds.
+	std::string m_prefabName = "untitled";
+	/// Version of the prefab the scene holds.
+	uint32_t m_prefabVersion = 1;
 	/// HUD asset asked by the scene (nothing: the project's default HUD, empty: none).
 	std::optional<std::string> m_hudPath;
 	/// Seconds of simulated time since Play started.

@@ -11,6 +11,7 @@
 #include <core/Core.h>
 #include <data/geometry/StaticMesh.h>
 #include <renderer/CameraEditor.h>
+#include <renderer/Material.h>
 #include <renderer/MeshCache.h>
 #include <renderer/gpu/Framebuffer.h>
 #include <renderer/gpu/Texture.h>
@@ -50,6 +51,7 @@ public:
 		Hud,///< A render of the widgets of the HUD, in pixels, over the backdrop colour.
 		Sound,///< The waveform of the sound.
 		Tileset,///< The atlas image of the tileset.
+		Material,///< A sphere rendered with the material.
 		Mesh,///< A render of the mesh (`MeshStyle::Textured`, `Shaded`), or its triangles projected flat.
 	};
 
@@ -198,8 +200,10 @@ private:
 		std::filesystem::path path;
 		/// The scene loaded from it (Scene, Prefab and Hud kinds).
 		shared<scene::Scene> scene;
-		/// The mesh loaded from it (Mesh kind).
+		/// The mesh loaded from it (Mesh kind), or the sphere the material is drawn on (Material kind).
 		shared<renderer::MeshResource> mesh;
+		/// The material the sphere is drawn with (Material kind).
+		std::optional<renderer::Material> material;
 		/// Camera framing a prefab, or a scene without a primary camera.
 		std::optional<renderer::CameraEditor> camera;
 		/// Where it renders.

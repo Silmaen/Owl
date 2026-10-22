@@ -452,7 +452,7 @@ void SceneSettings::renderPhysicsSection() const {
 }
 
 void SceneSettings::renderScriptSection() {
-	if (m_scene->getDocumentKind() == scene::DocumentKind::Hud)
+	if (m_scene->getDocumentKind() != scene::DocumentKind::Scene)
 		return;
 	if (!gui::widgets::sectionHeader("Script", gui::icon::fileCode2, false).open)
 		return;
