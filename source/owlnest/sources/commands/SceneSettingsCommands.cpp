@@ -121,7 +121,8 @@ auto SetSceneScriptCommand::typeId() const -> size_t {
 }
 
 void SetSceneScriptCommand::apply(scene::Scene& ioScene, const std::string& iYaml) {
-	auto script = iYaml.empty() ? std::optional<scene::component::LuaScript>{} : scene::component::LuaScript::fromYaml(iYaml);
+	auto script =
+			iYaml.empty() ? std::optional<scene::component::LuaScript>{} : scene::component::LuaScript::fromYaml(iYaml);
 	ioScene.getSceneScript() = script ? std::move(*script) : scene::component::LuaScript{};
 }
 

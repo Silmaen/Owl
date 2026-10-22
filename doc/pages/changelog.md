@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Reversed-Z depth on both backends: `math::perspectiveReversedZ` (infinite far plane) and `math::orthoReversedZ`, and the public `renderer/ClipSpace.h` every camera builds its projection through.
 - Camera-relative 3D shading: `Renderer3D` uploads `projection * cameraRelativeView(view)` and the shaders work relative to the eye, so rendering stays precise far from the origin.
 - Image test `far_origin`: the lights scene moved 2^20 m away renders like at the origin, shadows included.
+- Script properties: `color` (sRGB picker), `vec2`, `vec3`, `entity` (UUID picker), `numbers` and `strings` lists, optional `min`, `max` and `step`, and a reset button per inspector field that shows the default of the script (`ScriptValue`, `ScriptProperty::defaultValue`, `ScriptInstance::setProperty(const ScriptProperty&)`).
 - `SceneScript`: a scene owns one optional script (`SceneScript:` key, `Scene::getSceneScript`) that runs before the entity scripts without an `entity_id`, edited in the new Scene Settings **Script** section through `scene.set_script`.
 - Owl Nest inspector: a Lua script lists its engine hooks (defined or not, with the line and an **Open** button that reveals it in the code editor), and every named handler (HUD widgets, timer, interaction and Lua-callback triggers) shows the script that defines it or a warning.
 - `ScriptEngine::extractFunctions` and `getHookNames`; `gui::component::openAssetAtLine` and `setInspectedScene`.

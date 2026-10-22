@@ -47,26 +47,10 @@ auto loadScriptInstance(Scene& ioScene, const component::LuaScript& iScript, con
 		loaded = instance->create(iScript.scriptPath, iEntityId);
 	}
 	if (!loaded) {
-		OWL_CORE_ERROR("Scene: Failed to load script '{}' of '{}' ({}).", iScript.scriptPath, iEntityName,
-					   iEntityId)
+		OWL_CORE_ERROR("Scene: Failed to load script '{}' of '{}' ({}).", iScript.scriptPath, iEntityName, iEntityId)
 		return nullptr;
 	}
-	for (const auto& [name, type, value]: iScript.properties) {
-		switch (type) {
-			case script::ScriptPropertyType::Float:
-				instance->setProperty(name, std::get<float>(value));
-				break;
-			case script::ScriptPropertyType::Int:
-				instance->setProperty(name, std::get<int64_t>(value));
-				break;
-			case script::ScriptPropertyType::String:
-				instance->setProperty(name, std::get<std::string>(value));
-				break;
-			case script::ScriptPropertyType::Bool:
-				instance->setProperty(name, std::get<bool>(value));
-				break;
-		}
-	}
+	for (const auto& property: iScript.properties) instance->setProperty(property);
 	return instance;
 }
 

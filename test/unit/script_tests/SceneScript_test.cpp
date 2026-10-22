@@ -17,6 +17,7 @@
 #include <scene/component/LuaScript.h>
 
 #include <chrono>
+#include <cstddef>
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
@@ -80,7 +81,8 @@ auto cameraScene(const std::string& iScript) -> std::string {
 TEST_F(SceneScriptTest, TheSceneScriptRoundTripsThroughTheFile) {
 	auto scene = mkShared<Scene>();
 	scene->getSceneScript().scriptPath = "scripts/director.lua";
-	scene->getSceneScript().properties.push_back({.name = "limit", .type = script::ScriptPropertyType::Int, .value = int64_t{3}});
+	scene->getSceneScript().properties.push_back(
+			{.name = "limit", .type = script::ScriptPropertyType::Int, .value = int64_t{3}});
 	ASSERT_TRUE(SceneSerializer(scene).serialize(m_dir / "scenes/level.owl"));
 	const auto loaded = loadSceneFile("scenes/level.owl");
 	ASSERT_NE(loaded, nullptr);
@@ -103,8 +105,7 @@ TEST_F(SceneScriptTest, MigrationMovesACameraScriptThatOnlyDrivesTheScene) {
 	EXPECT_EQ(scene->getSceneScript().scriptPath, "scripts/director.lua");
 	ASSERT_EQ(scene->getSceneScript().properties.size(), 1u);
 	EXPECT_EQ(scene->getSceneScript().properties[0].name, "speed");
-	for (const auto& entity: scene->getAllEntities())
-		EXPECT_FALSE(entity.hasComponent<component::LuaScript>());
+	for (const auto& entity: scene->getAllEntities()) EXPECT_FALSE(entity.hasComponent<component::LuaScript>());
 }
 
 TEST_F(SceneScriptTest, MigrationKeepsACameraScriptThatMovesItsEntity) {
@@ -114,8 +115,7 @@ TEST_F(SceneScriptTest, MigrationKeepsACameraScriptThatMovesItsEntity) {
 	ASSERT_NE(scene, nullptr);
 	EXPECT_TRUE(scene->getSceneScript().scriptPath.empty());
 	size_t scripted = 0;
-	for (const auto& entity: scene->getAllEntities())
-		scripted += entity.hasComponent<component::LuaScript>() ? 1 : 0;
+	for (const auto& entity: scene->getAllEntities()) scripted += entity.hasComponent<component::LuaScript>() ? 1 : 0;
 	EXPECT_EQ(scripted, 1u);
 }
 
@@ -130,10 +130,10 @@ TEST_F(SceneScriptTest, TheSceneScriptRunsBeforeTheEntityScriptsWithoutEntityId)
 	write("scripts/director.lua",
 		  "function on_create()\n  gamestate.set('has_self', entity_id ~= nil and 1 or 0)\nend\n"
 		  "function on_update(dt)\n  gamestate.set('order', 1)\nend\n");
-	write("scripts/actor.lua",
-		  "function on_update(dt)\n  gamestate.set('seen', gamestate.get('order') or 0)\nend\n");
+	write("scripts/actor.lua", "function on_update(dt)\n  gamestate.set('seen', gamestate.get('order') or 0)\nend\n");
 	auto scene = mkShared<Scene>();
-	scene->createEntity("Actor").addComponent<component::LuaScript>().scriptPath = (m_dir / "scripts/actor.lua").string();
+	scene->createEntity("Actor").addComponent<component::LuaScript>().scriptPath =
+			(m_dir / "scripts/actor.lua").string();
 	scene->getSceneScript().scriptPath = (m_dir / "scripts/director.lua").string();
 	scene->onStartRuntime();
 	ASSERT_TRUE(scene->getSceneScript().instance && scene->getSceneScript().instance->isValid());
@@ -153,7 +153,8 @@ TEST_F(SceneScriptTest, TheSceneScriptRunsBeforeTheEntityScriptsWithoutEntityId)
 TEST(LuaScriptYaml, ToYamlAndFromYamlRoundTrip) {
 	component::LuaScript script;
 	script.scriptPath = "scripts/a.lua";
-	script.properties.push_back({.name = "label", .type = script::ScriptPropertyType::String, .value = std::string{"x"}});
+	script.properties.push_back(
+			{.name = "label", .type = script::ScriptPropertyType::String, .value = std::string{"x"}});
 	script.properties.push_back({.name = "on", .type = script::ScriptPropertyType::Bool, .value = true});
 	const auto back = component::LuaScript::fromYaml(script.toYaml());
 	ASSERT_TRUE(back.has_value());

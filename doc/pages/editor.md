@@ -359,7 +359,7 @@ be removed. Every edit is a registry command ([Editor commands](#editor-commands
   **Text Renderer**, **Camera** (with a **Post process** section: EV100, auto exposure (range and speed), exposure compensation in EV, bloom, vignette and the colour LUT, the
   dependent fields shown once the effect is on; every field of the **Light**, **Environment** and **Post process** sections has a reset button (↺) left of the field, shown when the value differs from its default),
   **Rigidbody 2D**, **Box / Circle Collider 2D**, **Native Script**, **Sound Source**, **Sound Listener**, **Player**,
-  **Link**, **Background**, **Visibility** (inherited), **Lua Script** (path, hook list with **Open** at the line, property list): their fields, see
+  **Link**, **Background**, **Visibility** (inherited), **Lua Script** (path, hook list with **Open** at the line, property list with a reset button per field): their fields, see
   [Scene components](scene.md#components)
 - **Trigger** -- type (Victory, Death, Target, Teleport, Timer, Interaction, LuaCallback), callback name and the
   fields of the type

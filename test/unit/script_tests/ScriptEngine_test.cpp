@@ -128,8 +128,8 @@ TEST(ScriptEngine, extractPropertiesNoTable) {
 
 TEST(ScriptEngine, extractFunctionsGivesTheLineOfEachGlobalFunction) {
 	core::Log::init(core::Log::Level::Off);
-	const std::string text =
-			"local x = 1\nfunction on_create()\nend\n\nfunction helper(a)\n  return a\nend\non_update = function(dt) end\n";
+	const std::string text = "local x = 1\nfunction on_create()\nend\n\nfunction helper(a)\n  return a\nend\non_update "
+							 "= function(dt) end\n";
 	const auto functions = ScriptEngine::extractFunctionsFromBuffer({text.begin(), text.end()}, "functions");
 	ASSERT_EQ(functions.size(), 3u);
 	EXPECT_EQ(functions[0].name, "on_create");

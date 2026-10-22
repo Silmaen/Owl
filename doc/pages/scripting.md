@@ -185,15 +185,33 @@ identifier.
 The `properties` table at the top level of a script declares configurable values.
 Each entry must have:
 
-| Field     | Type   | Description                                     |
-|-----------|--------|-------------------------------------------------|
-| `name`    | string | Property name (used as the Lua global variable) |
-| `type`    | string | `"float"`, `"int"`, `"string"`, or `"bool"`     |
-| `default` | any    | Default value matching the declared type        |
+| Field     | Type   | Description                                                                          |
+|-----------|--------|--------------------------------------------------------------------------------------|
+| `name`    | string | Property name (used as the Lua global variable)                                      |
+| `type`    | string | A type of the table below                                                            |
+| `default` | any    | Default value matching the declared type                                             |
+| `min`     | number | Optional smallest value of a `float`, `int`, `vec2` or `vec3` (each component)       |
+| `max`     | number | Optional largest value                                                               |
+| `step`    | number | Optional drag step of the inspector field                                            |
+
+| Type      | Lua value                                      | Inspector editor                       | `default`                |
+|-----------|------------------------------------------------|----------------------------------------|--------------------------|
+| `float`   | number                                         | Drag field                             | `5.0`                    |
+| `int`     | integer                                        | Drag field                             | `3`                      |
+| `string`  | string                                         | Text field                             | `'text'`                 |
+| `bool`    | boolean                                        | Switch                                 | `true`                   |
+| `color`   | table `{r, g, b, a}`, sRGB components in 0..1  | Colour picker with alpha               | `{1, 0.5, 0, 1}`         |
+| `vec2`    | table `{x, y}`                                 | Two drag fields                        | `{0, 0}`                 |
+| `vec3`    | table `{x, y, z}`                              | Three drag fields                      | `{0, 0, 0}`              |
+| `entity`  | integer UUID of an entity, `0` for none        | Combo of the entities of the scene     | `0`                      |
+| `numbers` | sequence of numbers                            | List with **+** and remove buttons     | `{1, 2, 3}`              |
+| `strings` | sequence of strings                            | List with **+** and remove buttons     | `{'a', 'b'}`             |
 
 The editor reads this table to populate the inspector. When the scene enters Play mode,
 the engine sets each property as a Lua global with the value configured in the inspector
-(overriding the `default`).
+(overriding the `default`). Every field of the inspector shows the `default` of the script in the tooltip of its reset
+button, which puts the value back; the values and the lists are saved with the scene (`name`, `type`, `value`), the
+`min`, `max` and `step` stay in the script.
 
 ### Scene script
 

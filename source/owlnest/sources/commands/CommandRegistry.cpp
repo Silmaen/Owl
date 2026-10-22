@@ -417,7 +417,8 @@ auto setSceneHud(const shared<scene::Scene>& ioScene, const CommandArgs& iArgs) 
 
 auto setSceneRenderers(const shared<scene::Scene>& ioScene, const CommandArgs& iArgs) -> Prepared {
 	const auto text = iArgs.getText("config");
-	const auto after = text.empty() ? renderer::EnabledRenderersConfig{} : renderer::EnabledRenderersConfig::fromYaml(text);
+	const auto after =
+			text.empty() ? renderer::EnabledRenderersConfig{} : renderer::EnabledRenderersConfig::fromYaml(text);
 	const auto& current = ioScene->getEnabledRenderers();
 	const auto before = current.isEmpty() ? std::string{} : current.toYaml();
 	const auto afterYaml = after.isEmpty() ? std::string{} : after.toYaml();

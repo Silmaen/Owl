@@ -89,10 +89,9 @@ SceneSerializer::SceneSerializer(const shared<Scene>& iScene, const DocumentKind
 
 namespace {
 
-// Steps 1 to 7: links by UUID, centred legacy UiText, Y-down HUD layout, no `ui` renderer tag on widgets, physical
-// lights, the scene script off the camera.
-constexpr std::array<core::MigrationStep, 6> g_sceneMigrations{&bindEntityLinksByName, &centreLegacyUiText,
-															   &convertLegacyHudLayout, &dropUiRendererTag,
+// Steps 1 to 7: links by UUID, UiText, Y-down HUD, no `ui` tag, physical lights, scene script.
+constexpr std::array<core::MigrationStep, 6> g_sceneMigrations{&bindEntityLinksByName,   &centreLegacyUiText,
+															   &convertLegacyHudLayout,  &dropUiRendererTag,
 															   &convertToPhysicalLights, &moveCameraSceneScript};
 constexpr core::DocumentFormat g_sceneFormat{.name = "Scene", .migrations = g_sceneMigrations};
 

@@ -22,10 +22,10 @@
 #include "renderer/RenderStack.h"
 #include "renderer/Renderer3D.h"
 #include "renderer/ShadowCascades.h"
-#include "scene/component/LuaScript.h"
 #include "scene/PhysicsSettings.h"
 #include "scene/SimulationClock.h"
 #include "scene/SystemSchedule.h"
+#include "scene/component/LuaScript.h"
 #include "scene/ui/HudLayout.h"
 
 #include <entt/entt.hpp>

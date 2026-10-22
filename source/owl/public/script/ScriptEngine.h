@@ -10,10 +10,13 @@
 
 #include "core/Core.h"
 
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
+#include <optional>
 #include <string>
+#include <string_view>
 #include <variant>
 #include <vector>
 
@@ -31,7 +34,22 @@ enum struct ScriptPropertyType : uint8_t {
 	Int,///< Integer property.
 	String,///< String property.
 	Bool,///< Boolean property.
+	Color,///< sRGB colour with alpha, four components in 0..1 (`color` in the script).
+	Vec2,///< Two-component vector (`vec2`).
+	Vec3,///< Three-component vector (`vec3`).
+	Entity,///< UUID of an entity of the scene, 0 for none (`entity`).
+	Numbers,///< List of numbers (`numbers`).
+	Strings,///< List of strings (`strings`).
 };
+
+/**
+ * @brief
+ *  Value of a script property: the alternative matching its `ScriptPropertyType`.
+ *
+ * `Color` holds four floats (r, g, b, a), `Vec2` two, `Vec3` three, `Entity` a UUID, `Numbers` and `Strings` lists.
+ */
+using ScriptValue = std::variant<float, int64_t, std::string, bool, std::array<float, 2>, std::array<float, 3>,
+								 std::array<float, 4>, uint64_t, std::vector<double>, std::vector<std::string>>;
 
 /**
  * @brief
@@ -43,7 +61,15 @@ struct OWL_API ScriptProperty {
 	/// Property type.
 	ScriptPropertyType type = ScriptPropertyType::Float;
 	/// Property value.
-	std::variant<float, int64_t, std::string, bool> value = 0.0f;
+	ScriptValue value = 0.0f;
+	/// Value declared by the script (`default`), what the inspector resets the field to.
+	ScriptValue defaultValue = 0.0f;
+	/// Smallest value of a number or vector component (`min`), when the script gives one.
+	std::optional<float> min = std::nullopt;
+	/// Largest value of a number or vector component (`max`), when the script gives one.
+	std::optional<float> max = std::nullopt;
+	/// Drag step of a number or vector component (`step`), when the script gives one.
+	std::optional<float> step = std::nullopt;
 };
 
 /**
@@ -91,6 +117,31 @@ public:
 	auto operator=(const ScriptEngine&) -> ScriptEngine& = delete;
 
 	auto operator=(ScriptEngine&&) -> ScriptEngine& = delete;
+
+	/**
+	 * @brief
+	 *  Name of a property type in a script (`float`, `int`, `string`, `bool`, `color`, `vec2`, `vec3`, `entity`,
+	 *  `numbers`, `strings`) and in the scene file.
+	 * @param[in] iType The type.
+	 * @return The name.
+	 */
+	[[nodiscard]] static auto propertyTypeName(ScriptPropertyType iType) -> std::string_view;
+
+	/**
+	 * @brief
+	 *  Find a property type by its name.
+	 * @param[in] iName The name given by `propertyTypeName`.
+	 * @return The type, or nothing for an unknown name.
+	 */
+	[[nodiscard]] static auto parsePropertyType(std::string_view iName) -> std::optional<ScriptPropertyType>;
+
+	/**
+	 * @brief
+	 *  Value a property of a type holds before anything sets it (0, empty, white for a colour).
+	 * @param[in] iType The type.
+	 * @return The value, of the alternative matching `iType`.
+	 */
+	[[nodiscard]] static auto defaultValueFor(ScriptPropertyType iType) -> ScriptValue;
 
 	/**
 	 * @brief

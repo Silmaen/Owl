@@ -13,8 +13,10 @@
 #include "script/LuaBindings.h"
 #include "script/LuaEngine.h"
 
+#include <array>
 #include <cstdint>
 #include <format>
+#include <span>
 #include <string>
 #include <string_view>
 
@@ -213,6 +215,51 @@ void ScriptInstance::setProperty(const std::string& iName, const bool iValue) co
 	if (!isValid())
 		return;
 	mp_impl->engine.setGlobal(iName, iValue);
+}
+
+void ScriptInstance::setProperty(const ScriptProperty& iProperty) const {
+	if (!isValid())
+		return;
+	const auto& engine = mp_impl->engine;
+	const auto& name = iProperty.name;
+	const auto setNumbers = [&engine, &name](const auto& iValues, std::span<const char* const> iKeys) -> void {
+		const std::vector<double> numbers{iValues.begin(), iValues.end()};
+		engine.setGlobalNumbers(name, numbers, iKeys);
+	};
+	constexpr std::array<const char*, 4> colorKeys{"r", "g", "b", "a"};
+	constexpr std::array<const char*, 3> vectorKeys{"x", "y", "z"};
+	switch (iProperty.type) {
+		case ScriptPropertyType::Float:
+			engine.setGlobal(name, std::get<float>(iProperty.value));
+			break;
+		case ScriptPropertyType::Int:
+			engine.setGlobal(name, std::get<int64_t>(iProperty.value));
+			break;
+		case ScriptPropertyType::String:
+			engine.setGlobal(name, std::get<std::string>(iProperty.value));
+			break;
+		case ScriptPropertyType::Bool:
+			engine.setGlobal(name, std::get<bool>(iProperty.value));
+			break;
+		case ScriptPropertyType::Color:
+			setNumbers(std::get<std::array<float, 4>>(iProperty.value), colorKeys);
+			break;
+		case ScriptPropertyType::Vec2:
+			setNumbers(std::get<std::array<float, 2>>(iProperty.value), std::span{vectorKeys}.first(2));
+			break;
+		case ScriptPropertyType::Vec3:
+			setNumbers(std::get<std::array<float, 3>>(iProperty.value), vectorKeys);
+			break;
+		case ScriptPropertyType::Entity:
+			engine.setGlobal(name, static_cast<int64_t>(std::get<uint64_t>(iProperty.value)));
+			break;
+		case ScriptPropertyType::Numbers:
+			engine.setGlobalNumbers(name, std::get<std::vector<double>>(iProperty.value));
+			break;
+		case ScriptPropertyType::Strings:
+			engine.setGlobalStrings(name, std::get<std::vector<std::string>>(iProperty.value));
+			break;
+	}
 }
 
 auto ScriptInstance::getPropertyFloat(const std::string& iName) const -> std::optional<float> {

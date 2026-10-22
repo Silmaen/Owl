@@ -12,6 +12,7 @@
 #include <gui/component/render.h>
 #include <scene/component/components.h>
 
+#include <cstdint>
 #include <filesystem>
 
 using namespace owl::core;

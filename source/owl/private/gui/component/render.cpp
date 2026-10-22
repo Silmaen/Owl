@@ -59,6 +59,7 @@
 #include <type_traits>
 #include <unordered_map>
 #include <utility>
+#include <variant>
 
 using namespace owl::scene;
 using namespace owl::scene::component;
@@ -1541,6 +1542,234 @@ void renderProps(SoundListener& ioComponent) {
 	fieldTooltip("Mark as the active listener (the 'ear' for 3D audio). Only one primary per scene.");
 }
 
+namespace {
+
+// A value as the reset tooltip shows it.
+auto describeValue(const script::ScriptValue& iValue) -> std::string {
+	return std::visit(
+			[](const auto& iAlternative) -> std::string {
+				using Alternative = std::decay_t<decltype(iAlternative)>;
+				if constexpr (std::is_same_v<Alternative, bool>) {
+					return iAlternative ? "true" : "false";
+				} else if constexpr (std::is_same_v<Alternative, std::string>) {
+					return "\"" + iAlternative + "\"";
+				} else if constexpr (std::is_same_v<Alternative, std::vector<double>> ||
+									 std::is_same_v<Alternative, std::vector<std::string>>) {
+					return std::format("{} items", iAlternative.size());
+				} else if constexpr (std::is_same_v<Alternative, std::array<float, 2>> ||
+									 std::is_same_v<Alternative, std::array<float, 3>> ||
+									 std::is_same_v<Alternative, std::array<float, 4>>) {
+					std::string text;
+					for (const auto component: iAlternative)
+						text += std::format("{}{:g}", text.empty() ? "" : ", ", component);
+					return text;
+				} else {
+					return std::format("{}", iAlternative);
+				}
+			},
+			iValue);
+}
+
+// Combo over the entities of the inspected scene by name, with a filter and a "none" entry.
+auto scriptEntityPicker(uint64_t& ioTarget, const float iWidth) -> bool {
+	const Scene* const scene = inspectedScene();
+	const core::UUID current{ioTarget};
+	std::string preview = ioTarget != 0 ? "(missing)" : "(none)";
+	if (scene != nullptr && ioTarget != 0) {
+		if (const Entity found = scene->findEntityByUUID(current); found)
+			preview = found.getName();
+	}
+	ImGui::SetNextItemWidth(iWidth);
+	bool changed = false;
+	if (widgets::beginCombo("##entity", preview.c_str())) {
+		static ImGuiTextFilter s_filter;
+		s_filter.Draw("##filter", -FLT_MIN);
+		if (ImGui::Selectable("(none)", ioTarget == 0)) {
+			ioTarget = 0;
+			changed = true;
+		}
+		if (scene != nullptr) {
+			for (const auto view = scene->registry.view<ID>(); const auto entity: view) {
+				const Entity candidate{entity, const_cast<Scene*>(scene)};
+				if (!s_filter.PassFilter(candidate.getName().c_str()))
+					continue;
+				const auto uuid = view.get<ID>(entity).id;
+				ImGui::PushID(static_cast<int>(static_cast<uint64_t>(uuid) & 0x7fffffff));
+				if (ImGui::Selectable(candidate.getName().c_str(), static_cast<uint64_t>(uuid) == ioTarget)) {
+					ioTarget = static_cast<uint64_t>(uuid);
+					changed = true;
+				}
+				ImGui::PopID();
+			}
+		}
+		ImGui::EndCombo();
+	}
+	return changed;
+}
+
+// Clamp a component to the range the script declares.
+auto clampToRange(const float iValue, const script::ScriptProperty& iProperty) -> float {
+	return std::clamp(iValue, iProperty.min.value_or(-FLT_MAX), iProperty.max.value_or(FLT_MAX));
+}
+
+// One element row of a list property: the value and a remove button; true when the element is to be removed.
+template<typename Draw>
+auto listElementRow(const size_t iIndex, Draw&& iDraw) -> bool {
+	ImGui::PushID(static_cast<int>(iIndex));
+	const float side = ImGui::GetFrameHeight();
+	ImGui::Indent();
+	ImGui::SetNextItemWidth(std::max(side, ImGui::GetContentRegionAvail().x - side - ImGui::GetStyle().ItemSpacing.x));
+	std::forward<Draw>(iDraw)();
+	ImGui::SameLine();
+	const bool removed = widgets::iconButton("##remove", {.glyph = icon::x, .tooltip = "Remove"});
+	ImGui::Unindent();
+	ImGui::PopID();
+	return removed;
+}
+
+// The editor of a list property, under its row: one row per element and the add button on the property row.
+template<typename Element, typename DrawElement>
+auto editList(std::vector<Element>& ioList, const bool iAdd, DrawElement&& iDrawElement) -> bool {
+	bool changed = false;
+	if (iAdd) {
+		ioList.emplace_back();
+		changed = true;
+	}
+	std::optional<size_t> removed;
+	for (size_t index = 0; index < ioList.size(); ++index) {
+		if (listElementRow(index, [&]() -> void { changed |= iDrawElement(ioList[index]); }))
+			removed = index;
+	}
+	if (removed) {
+		ioList.erase(ioList.begin() + static_cast<std::ptrdiff_t>(*removed));
+		changed = true;
+	}
+	return changed;
+}
+
+// Inspector row of one script property: the editor of its type, then a reset button to the value the script declares.
+void drawScriptProperty(script::ScriptProperty& ioProperty) {
+	using Type = script::ScriptPropertyType;
+	const bool modified = ioProperty.value != ioProperty.defaultValue;
+	const float side = ImGui::GetFrameHeight();
+	const float fieldWidth = [&]() -> float {
+		// The label column is 38 % of the row, the reset button takes one frame.
+		const float available = ImGui::GetContentRegionAvail().x;
+		return std::max(side, std::floor(available * 0.62f) - side - ImGui::GetStyle().ItemSpacing.x);
+	}();
+	const float step = ioProperty.step.value_or(0.1f);
+	const bool ranged = ioProperty.min || ioProperty.max;
+	const float rangeMin = ranged ? ioProperty.min.value_or(-FLT_MAX) : 0.f;
+	const float rangeMax = ranged ? ioProperty.max.value_or(FLT_MAX) : 0.f;
+	bool addRequested = false;
+	prop::row(ioProperty.name.c_str(), [&](const char* iId) -> bool {
+		ImGui::SetNextItemWidth(fieldWidth);
+		switch (ioProperty.type) {
+			case Type::Float:
+				{
+					auto value = std::get<float>(ioProperty.value);
+					if (ImGui::DragFloat(iId, &value, step, rangeMin, rangeMax))
+						ioProperty.value = value;
+					break;
+				}
+			case Type::Int:
+				{
+					auto value = static_cast<int>(std::get<int64_t>(ioProperty.value));
+					const auto minInt = ranged ? static_cast<int>(ioProperty.min.value_or(-1e9f)) : 0;
+					const auto maxInt = ranged ? static_cast<int>(ioProperty.max.value_or(1e9f)) : 0;
+					if (ImGui::DragInt(iId, &value, ioProperty.step.value_or(1.f), minInt, maxInt))
+						ioProperty.value = static_cast<int64_t>(value);
+					break;
+				}
+			case Type::String:
+				{
+					auto value = std::get<std::string>(ioProperty.value);
+					if (ImGui::InputText(iId, &value))
+						ioProperty.value = value;
+					break;
+				}
+			case Type::Bool:
+				{
+					auto value = std::get<bool>(ioProperty.value);
+					if (widgets::toggle(iId, &value))
+						ioProperty.value = value;
+					break;
+				}
+			case Type::Color:
+				{
+					auto value = std::get<std::array<float, 4>>(ioProperty.value);
+					if (ImGui::ColorEdit4(iId, value.data()))
+						ioProperty.value = value;
+					break;
+				}
+			case Type::Vec2:
+				{
+					auto value = std::get<std::array<float, 2>>(ioProperty.value);
+					if (widgets::vectorField(iId, value, step, "%.2f", fieldWidth)) {
+						for (auto& component: value) component = clampToRange(component, ioProperty);
+						ioProperty.value = value;
+					}
+					break;
+				}
+			case Type::Vec3:
+				{
+					auto value = std::get<std::array<float, 3>>(ioProperty.value);
+					if (widgets::vectorField(iId, value, step, "%.2f", fieldWidth)) {
+						for (auto& component: value) component = clampToRange(component, ioProperty);
+						ioProperty.value = value;
+					}
+					break;
+				}
+			case Type::Entity:
+				{
+					auto value = std::get<uint64_t>(ioProperty.value);
+					if (scriptEntityPicker(value, fieldWidth))
+						ioProperty.value = value;
+					break;
+				}
+			case Type::Numbers:
+				ImGui::AlignTextToFramePadding();
+				ImGui::TextDisabled("%zu items", std::get<std::vector<double>>(ioProperty.value).size());
+				ImGui::SameLine();
+				addRequested = widgets::iconButton("##add", {.glyph = icon::plus, .tooltip = "Add an item"});
+				break;
+			case Type::Strings:
+				ImGui::AlignTextToFramePadding();
+				ImGui::TextDisabled("%zu items", std::get<std::vector<std::string>>(ioProperty.value).size());
+				ImGui::SameLine();
+				addRequested = widgets::iconButton("##add", {.glyph = icon::plus, .tooltip = "Add an item"});
+				break;
+		}
+		ImGui::SameLine();
+		const auto description =
+				std::format("Back to {}, the default of the script.", describeValue(ioProperty.defaultValue));
+		if (widgets::iconButton("##reset", {.glyph = icon::rotateCcw,
+											.tooltip = "Reset to default",
+											.description = description.c_str(),
+											.disabled = !modified}))
+			ioProperty.value = ioProperty.defaultValue;
+		return false;
+	});
+	if (ioProperty.type == Type::Numbers) {
+		auto list = std::get<std::vector<double>>(ioProperty.value);
+		if (editList(list, addRequested, [&](double& ioElement) -> bool {
+				auto value = static_cast<float>(ioElement);
+				const bool edited = ImGui::DragFloat("##value", &value, step, rangeMin, rangeMax);
+				if (edited)
+					ioElement = static_cast<double>(value);
+				return edited;
+			}))
+			ioProperty.value = std::move(list);
+	} else if (ioProperty.type == Type::Strings) {
+		auto list = std::get<std::vector<std::string>>(ioProperty.value);
+		if (editList(list, addRequested,
+					 [](std::string& ioElement) -> bool { return ImGui::InputText("##value", &ioElement); }))
+			ioProperty.value = std::move(list);
+	}
+}
+
+}// namespace
+
 void renderProps(LuaScript& ioComponent) {
 	if (assetPathRow("Script", ioComponent.scriptPath, "drop a .lua file", "Open the script in the code editor.")) {
 		ioComponent.scriptPath.clear();
@@ -1554,39 +1783,9 @@ void renderProps(LuaScript& ioComponent) {
 	renderHooks(ioComponent);
 	if (!ioComponent.properties.empty() && widgets::subHeader("Properties", true)) {
 		for (size_t idx = 0; idx < ioComponent.properties.size(); ++idx) {
-			auto& prop = ioComponent.properties[idx];
 			// Index-based PushID prevents collisions if two properties share a name.
 			ImGui::PushID(static_cast<int>(idx));
-			switch (prop.type) {
-				case script::ScriptPropertyType::Float:
-					{
-						auto val = std::get<float>(prop.value);
-						if (prop::DragFloat(prop.name.c_str(), &val, 0.1f))
-							prop.value = val;
-						break;
-					}
-				case script::ScriptPropertyType::Int:
-					{
-						auto val = static_cast<int>(std::get<int64_t>(prop.value));
-						if (prop::DragInt(prop.name.c_str(), &val))
-							prop.value = static_cast<int64_t>(val);
-						break;
-					}
-				case script::ScriptPropertyType::String:
-					{
-						auto val = std::get<std::string>(prop.value);
-						if (prop::InputText(prop.name.c_str(), &val))
-							prop.value = val;
-						break;
-					}
-				case script::ScriptPropertyType::Bool:
-					{
-						auto val = std::get<bool>(prop.value);
-						if (prop::Checkbox(prop.name.c_str(), &val))
-							prop.value = val;
-						break;
-					}
-			}
+			drawScriptProperty(ioComponent.properties[idx]);
 			ImGui::PopID();
 		}
 	}

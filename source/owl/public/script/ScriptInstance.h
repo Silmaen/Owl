@@ -222,6 +222,16 @@ public:
 
 	/**
 	 * @brief
+	 *  Set a property of any type on the instance from its value.
+	 *
+	 * A colour becomes a table `{r, g, b, a}`, a vector `{x, y}` or `{x, y, z}`, an entity its UUID as an integer, a
+	 * list a sequence.
+	 * @param[in] iProperty The property: its name, type and value.
+	 */
+	void setProperty(const ScriptProperty& iProperty) const;
+
+	/**
+	 * @brief
 	 *  Get a float property from the instance.
 	 * @param[in] iName Property name.
 	 * @return The value, or `std::nullopt` when missing or of the wrong type.

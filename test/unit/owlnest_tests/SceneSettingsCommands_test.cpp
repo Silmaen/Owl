@@ -6,9 +6,9 @@
  * All modification must get authorization from the author.
  */
 
+#include "commands/SceneSettingsCommands.h"
 #include "UndoManager.h"
 #include "commands/CommandRegistry.h"
-#include "commands/SceneSettingsCommands.h"
 #include "nestTestHelper.h"
 #include "testHelper.h"
 
@@ -79,14 +79,16 @@ TEST_F(SceneSettingsCommandsTest, SetSceneScriptCommandUndoesAndRefusesBadInput)
 	auto scene = mkShared<scene::Scene>();
 	SceneUndoManager undo;
 	ASSERT_NE(registry.find("scene.set_script"), nullptr);
-	const std::string yaml = "scriptPath: scripts/director.lua\nproperties:\n  - name: limit\n    type: int\n    value: 4\n";
+	const std::string yaml =
+			"scriptPath: scripts/director.lua\nproperties:\n  - name: limit\n    type: int\n    value: 4\n";
 	ASSERT_TRUE(registry.execute("scene.set_script", {{"script", yaml}}, scene, undo));
 	EXPECT_EQ(scene->getSceneScript().scriptPath, "scripts/director.lua");
 	ASSERT_EQ(scene->getSceneScript().properties.size(), 1u);
 	const auto same = registry.execute("scene.set_script", {{"script", yaml}}, scene, undo);
 	ASSERT_FALSE(same);
 	EXPECT_EQ(same.error().error, CommandError::NotApplicable);
-	const auto wrong = registry.execute("scene.set_script", {{"script", std::string{"scriptPath: a.txt\n"}}}, scene, undo);
+	const auto wrong =
+			registry.execute("scene.set_script", {{"script", std::string{"scriptPath: a.txt\n"}}}, scene, undo);
 	ASSERT_FALSE(wrong);
 	EXPECT_EQ(wrong.error().error, CommandError::InvalidArgument);
 	ASSERT_TRUE(registry.execute("scene.set_script", {{"script", std::string{}}}, scene, undo));

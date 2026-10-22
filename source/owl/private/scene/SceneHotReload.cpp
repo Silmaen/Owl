@@ -44,19 +44,28 @@ auto isAssetFile(const std::filesystem::path& iRelative, const std::filesystem::
 
 void carryProperties(const component::LuaScript& iScript, const script::ScriptInstance& iOld,
 					 const script::ScriptInstance& iNew) {
-	for (const auto& [name, type, value]: iScript.properties) {
-		switch (type) {
+	for (const auto& property: iScript.properties) {
+		const auto& name = property.name;
+		switch (property.type) {
 			case script::ScriptPropertyType::Float:
-				iNew.setProperty(name, iOld.getPropertyFloat(name).value_or(std::get<float>(value)));
+				iNew.setProperty(name, iOld.getPropertyFloat(name).value_or(std::get<float>(property.value)));
 				break;
 			case script::ScriptPropertyType::Int:
-				iNew.setProperty(name, iOld.getPropertyInt(name).value_or(std::get<int64_t>(value)));
+				iNew.setProperty(name, iOld.getPropertyInt(name).value_or(std::get<int64_t>(property.value)));
 				break;
 			case script::ScriptPropertyType::String:
-				iNew.setProperty(name, iOld.getPropertyString(name).value_or(std::get<std::string>(value)));
+				iNew.setProperty(name, iOld.getPropertyString(name).value_or(std::get<std::string>(property.value)));
 				break;
 			case script::ScriptPropertyType::Bool:
-				iNew.setProperty(name, iOld.getPropertyBool(name).value_or(std::get<bool>(value)));
+				iNew.setProperty(name, iOld.getPropertyBool(name).value_or(std::get<bool>(property.value)));
+				break;
+			case script::ScriptPropertyType::Color:
+			case script::ScriptPropertyType::Vec2:
+			case script::ScriptPropertyType::Vec3:
+			case script::ScriptPropertyType::Entity:
+			case script::ScriptPropertyType::Numbers:
+			case script::ScriptPropertyType::Strings:
+				iNew.setProperty(property);
 				break;
 		}
 	}
