@@ -62,6 +62,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Bench baseline recalibrated on the frame graph and linear HDR code (build 39239, 5 rounds): the editor update costs about 1 µs more per frame, the shaders compile about 20 % slower; four noisy benchmarks get wider thresholds.
 - Bench baseline recalibrated with the lights (build 39286, 5 rounds): the mesh gallery editor update costs 60 % more with its three shadow cascades, the voxel shader compiles 58 % slower; three noisy benchmarks get wider thresholds.
+- Bench baseline recalibrated with the physical lights and the tavern (build 39353, 5 rounds): the tavern replaces the mesh gallery samples, the voxel terrain loads 21 % slower with its HDR sky, six noisy benchmarks get wider thresholds; the voxel mesher reads each block's packed surface from the registry instead of packing it per quad.
 - Roadmap toward 1.0 extended to worlds of any scale: camera-relative rendering, 64-bit positions, articulated bodies, gravity, time warp, planetary terrain, world partition (`design/large-worlds.md`), two v0.7.0 sample games and a pool of optional ones.
 - Vulkan: a draw keeps one pipeline per attachment layout (linear and display), created on its first bind to a framebuffer of that layout.
 - Meshes and voxel worlds are lit by the `Standard` model (Burley diffuse, GGX specular, image-based ambient) instead of Lambert; image-test references regenerated.

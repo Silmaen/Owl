@@ -219,7 +219,7 @@ void emitSliceQuads(std::vector<MaskCell>& ioMask, ChunkMesh& ioMesh, const int3
 			const auto& type = iRegistry.get(cell.block);
 			const auto texture = static_cast<uint32_t>(type.faceTexture(orientedFace(iFace, cell.orientation)));
 			emitQuad(ioMesh, pos, iNormal, static_cast<float>(width), static_cast<float>(height), texture,
-					 packSurface(type.surface), cell.ao, iFlip, iAxis == 0);
+					 iRegistry.getPackedSurface(cell.block), cell.ao, iFlip, iAxis == 0);
 			i += width;
 		}
 	}

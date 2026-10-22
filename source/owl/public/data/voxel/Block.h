@@ -351,6 +351,16 @@ public:
 
 	/**
 	 * @brief
+	 *  The surface of a block type as `packSurface` packs it, computed when the type is registered or replaced.
+	 * @param[in] iId The id of the block type.
+	 * @return The packed surface, the default one for air and unknown ids.
+	 */
+	[[nodiscard]] auto getPackedSurface(BlockId iId) const noexcept -> uint32_t {
+		return iId < m_packedSurfaces.size() ? m_packedSurfaces[iId] : m_packedSurfaces.front();
+	}
+
+	/**
+	 * @brief
 	 *  Serialize the registry to a YAML string (air is implicit, never written).
 	 * @param[in] iName Optional display name written under the `BlockRegistry:` key.
 	 * @return The YAML document as a string.
@@ -368,6 +378,8 @@ public:
 private:
 	/// Block types indexed by id; slot 0 is always the built-in air block.
 	std::vector<BlockType> m_types;
+	/// `packSurface` of each block type, by id: the mesher reads it once per quad.
+	std::vector<uint32_t> m_packedSurfaces;
 };
 
 }// namespace owl::data::voxel

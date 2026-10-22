@@ -1,17 +1,10 @@
 {
   "context": {
-    "load_start": "1.90 3.44 6.01 1/480 20",
-    "load_end": "3.11 2.73 4.94 1/464 1468",
+    "load_start": "0.71 0.21 0.47 1/477 20",
+    "load_end": "2.89 1.36 0.85 2/466 1475",
     "samples": 15,
     "warmup": 2,
-    "min_sample_ms": 10,
-    "baseline_runs": [
-      "b39286-round1.json",
-      "b39286-round2.json",
-      "b39286-round3.json",
-      "b39286-round4.json",
-      "b39286-round5.json"
-    ]
+    "min_sample_ms": 10
   },
   "results": [
     {
@@ -19,1980 +12,1980 @@
       "items": 1000,
       "batch": 100,
       "samples": 15,
-      "median_ns": 101674.1,
-      "p25_ns": 101645.1,
-      "p75_ns": 101704.4,
-      "min_ns": 101597.9,
-      "max_ns": 101984.9
+      "median_ns": 104158.3,
+      "p25_ns": 103885.9,
+      "p75_ns": 104540.7,
+      "min_ns": 103756.0,
+      "max_ns": 125846.7
     },
     {
       "name": "frame/editor_update/flat1000",
       "items": 1000,
-      "batch": 177,
+      "batch": 172,
       "samples": 15,
-      "median_ns": 67400.5,
-      "p25_ns": 67385.7,
-      "p75_ns": 67418.1,
-      "min_ns": 67370.2,
-      "max_ns": 67538.6
+      "median_ns": 69272.9,
+      "p25_ns": 69244.1,
+      "p75_ns": 69353.7,
+      "min_ns": 69229.1,
+      "max_ns": 69414.2
     },
     {
       "name": "frame/editor_update/flat10000",
       "items": 10000,
       "batch": 17,
       "samples": 15,
-      "median_ns": 676200.1,
-      "p25_ns": 675842.6,
-      "p75_ns": 676812.2,
-      "min_ns": 675456.5,
-      "max_ns": 677087.5
+      "median_ns": 689547.9,
+      "p25_ns": 689217.2,
+      "p75_ns": 690094.3,
+      "min_ns": 688833.1,
+      "max_ns": 699473.9
     },
     {
       "name": "frame/editor_update/forest10000",
       "items": 10000,
       "batch": 11,
       "samples": 15,
-      "median_ns": 1049557.3,
-      "p25_ns": 1049252.5,
-      "p75_ns": 1050220.8,
-      "min_ns": 1047963.5,
-      "max_ns": 1052382.7
+      "median_ns": 1068541.3,
+      "p25_ns": 1068071.4,
+      "p75_ns": 1071309.5,
+      "min_ns": 1066077.7,
+      "max_ns": 1073436.6
     },
     {
       "name": "frame/runtime_update/logic_flat1000",
       "items": 1000,
-      "batch": 287,
+      "batch": 293,
       "samples": 15,
-      "median_ns": 41841.4,
-      "p25_ns": 41790.6,
-      "p75_ns": 41864.5,
-      "min_ns": 41704.8,
-      "max_ns": 42956.4
+      "median_ns": 40853.9,
+      "p25_ns": 40824.3,
+      "p75_ns": 40873.3,
+      "min_ns": 40780.2,
+      "max_ns": 40928.7
     },
     {
       "name": "frame/runtime_update/logic_flat10000",
       "items": 10000,
-      "batch": 38,
+      "batch": 39,
       "samples": 15,
-      "median_ns": 309103.4,
-      "p25_ns": 309046.4,
-      "p75_ns": 309310.2,
-      "min_ns": 308971.0,
-      "max_ns": 309553.7
+      "median_ns": 306918.9,
+      "p25_ns": 306850.0,
+      "p75_ns": 306978.0,
+      "min_ns": 306657.5,
+      "max_ns": 307196.5
     },
     {
       "name": "frame/runtime_update/logic_ticks4_flat1000",
       "items": 1000,
-      "batch": 170,
+      "batch": 173,
       "samples": 15,
-      "median_ns": 70196.8,
-      "p25_ns": 70106.6,
-      "p75_ns": 70222.5,
-      "min_ns": 69948.7,
-      "max_ns": 70540.7
+      "median_ns": 69429.6,
+      "p25_ns": 69373.7,
+      "p75_ns": 69452.6,
+      "min_ns": 69268.1,
+      "max_ns": 69511.6
     },
     {
       "name": "frame/runtime_update/render_flat1000",
       "items": 1000,
-      "batch": 142,
+      "batch": 137,
       "samples": 15,
-      "median_ns": 84098.9,
-      "p25_ns": 84054.4,
-      "p75_ns": 84125.5,
-      "min_ns": 83997.6,
-      "max_ns": 84241.1
+      "median_ns": 86690.5,
+      "p25_ns": 86643.3,
+      "p75_ns": 86734.6,
+      "min_ns": 86607.9,
+      "max_ns": 86916.8
     },
     {
       "name": "frame/runtime_update/render_flat10000",
       "items": 10000,
       "batch": 17,
       "samples": 15,
-      "median_ns": 690275.5,
-      "p25_ns": 689614.1,
-      "p75_ns": 690417.3,
-      "min_ns": 689322.4,
-      "max_ns": 691972.4
+      "median_ns": 693697.4,
+      "p25_ns": 693011.3,
+      "p75_ns": 694221.3,
+      "min_ns": 684137.2,
+      "max_ns": 769518.2
     },
     {
       "name": "hud/frame/1000_row_list",
       "items": 1000,
-      "batch": 617,
+      "batch": 675,
       "samples": 15,
-      "median_ns": 19406.3,
-      "p25_ns": 19397.5,
-      "p75_ns": 19424.9,
-      "min_ns": 19375.1,
-      "max_ns": 19490.2
+      "median_ns": 17683.0,
+      "p25_ns": 17680.4,
+      "p75_ns": 17687.5,
+      "min_ns": 17676.9,
+      "max_ns": 17695.0
     },
     {
       "name": "hud/frame/500_widgets",
       "items": 500,
-      "batch": 54,
+      "batch": 56,
       "samples": 15,
-      "median_ns": 220369.1,
-      "p25_ns": 220013.5,
-      "p75_ns": 220456.4,
-      "min_ns": 219769.0,
-      "max_ns": 220677.0
+      "median_ns": 210881.1,
+      "p25_ns": 210816.2,
+      "p75_ns": 210917.2,
+      "min_ns": 210686.5,
+      "max_ns": 210955.9
     },
     {
       "name": "hud/layout/500_widgets",
       "items": 500,
       "batch": 149,
       "samples": 15,
-      "median_ns": 80146.6,
-      "p25_ns": 80125.7,
-      "p75_ns": 80193.2,
-      "min_ns": 79966.6,
-      "max_ns": 80356.1
+      "median_ns": 79960.4,
+      "p25_ns": 79919.4,
+      "p75_ns": 80114.4,
+      "min_ns": 79878.4,
+      "max_ns": 81024.0
     },
     {
       "name": "iso/frame/512x512_1080p_zoom1",
       "items": 1,
       "batch": 1,
       "samples": 15,
-      "median_ns": 18788.0,
-      "p25_ns": 18788.0,
-      "p75_ns": 18788.0,
-      "min_ns": 18787.0,
-      "max_ns": 18858.0
+      "median_ns": 18997.0,
+      "p25_ns": 18928.0,
+      "p75_ns": 18998.0,
+      "min_ns": 18927.0,
+      "max_ns": 25283.0
     },
     {
       "name": "iso/frame/512x512_1080p_zoom1_5000_vehicles_in_view",
       "items": 1,
-      "batch": 57,
+      "batch": 49,
       "samples": 15,
-      "median_ns": 208941.1,
-      "p25_ns": 208874.3,
-      "p75_ns": 209084.4,
-      "min_ns": 208780.6,
-      "max_ns": 210001.0
+      "median_ns": 213336.2,
+      "p25_ns": 213201.6,
+      "p75_ns": 213522.3,
+      "min_ns": 212563.7,
+      "max_ns": 213599.9
     },
     {
       "name": "iso/frame/512x512_1080p_zoom1_5000_vehicles_spread",
       "items": 1,
-      "batch": 93,
+      "batch": 95,
       "samples": 15,
-      "median_ns": 121228.1,
-      "p25_ns": 121155.6,
-      "p75_ns": 121262.2,
-      "min_ns": 121027.5,
-      "max_ns": 121296.4
+      "median_ns": 123344.3,
+      "p25_ns": 123322.2,
+      "p75_ns": 123364.5,
+      "min_ns": 123281.0,
+      "max_ns": 123425.9
     },
     {
       "name": "iso/frame/512x512_1080p_zoom_out4",
       "items": 1,
-      "batch": 647,
+      "batch": 550,
       "samples": 15,
-      "median_ns": 18510.4,
-      "p25_ns": 18490.8,
-      "p75_ns": 18527.3,
-      "min_ns": 18474.8,
-      "max_ns": 23279.2
+      "median_ns": 18773.7,
+      "p25_ns": 18768.9,
+      "p75_ns": 18784.6,
+      "min_ns": 18755.6,
+      "max_ns": 18860.5
     },
     {
       "name": "iso/objects/1000_buildings_3_slices",
       "items": 1000,
       "batch": 82,
       "samples": 15,
-      "median_ns": 144890.3,
-      "p25_ns": 144773.6,
-      "p75_ns": 144964.8,
-      "min_ns": 144700.4,
-      "max_ns": 145420.9
+      "median_ns": 145890.2,
+      "p25_ns": 145857.0,
+      "p75_ns": 145991.1,
+      "min_ns": 145829.7,
+      "max_ns": 146269.2
     },
     {
       "name": "iso/pick/256x256_hills",
       "items": 1,
-      "batch": 78051,
+      "batch": 76699,
       "samples": 15,
-      "median_ns": 153.8,
-      "p25_ns": 153.7,
-      "p75_ns": 153.8,
-      "min_ns": 153.7,
-      "max_ns": 206.6
+      "median_ns": 156.1,
+      "p25_ns": 156.1,
+      "p75_ns": 156.3,
+      "min_ns": 156.0,
+      "max_ns": 156.5
     },
     {
       "name": "mcp/ping",
       "items": 1,
-      "batch": 139,
+      "batch": 140,
       "samples": 15,
-      "median_ns": 86123.7,
-      "p25_ns": 85980.5,
-      "p75_ns": 86519.9,
-      "min_ns": 85770.5,
-      "max_ns": 99964.7
+      "median_ns": 85635.5,
+      "p25_ns": 85545.7,
+      "p75_ns": 86070.6,
+      "min_ns": 85482.9,
+      "max_ns": 86477.6
     },
     {
       "name": "mcp/tools_call/entity_rename",
       "items": 1,
-      "batch": 54,
+      "batch": 58,
       "samples": 15,
-      "median_ns": 197653.3,
-      "p25_ns": 197134.0,
-      "p75_ns": 202077.3,
-      "min_ns": 195519.2,
-      "max_ns": 217146.0
+      "median_ns": 196343.2,
+      "p25_ns": 195873.0,
+      "p75_ns": 197085.0,
+      "min_ns": 195401.5,
+      "max_ns": 197729.2
     },
     {
       "name": "path/edit/sync_and_reroute",
       "items": 1,
-      "batch": 10,
+      "batch": 11,
       "samples": 15,
-      "median_ns": 1112558.3,
-      "p25_ns": 1112149.6,
-      "p75_ns": 1113218.2,
-      "min_ns": 1111580.4,
-      "max_ns": 1129097.1
+      "median_ns": 1062718.8,
+      "p25_ns": 1062245.8,
+      "p75_ns": 1062941.1,
+      "min_ns": 1059709.3,
+      "max_ns": 1063912.5
     },
     {
       "name": "path/edit/sync_one_cell",
       "items": 1,
-      "batch": 1215,
+      "batch": 1000,
       "samples": 15,
-      "median_ns": 9872.1,
-      "p25_ns": 9867.4,
-      "p75_ns": 9879.2,
-      "min_ns": 9864.8,
-      "max_ns": 9886.3
+      "median_ns": 10963.9,
+      "p25_ns": 10962.0,
+      "p75_ns": 10965.2,
+      "min_ns": 10958.2,
+      "max_ns": 10967.9
     },
     {
       "name": "path/long_query/flat/1024x1024_comb",
       "items": 1,
       "batch": 2,
       "samples": 15,
-      "median_ns": 8686313.0,
-      "p25_ns": 8682943.2,
-      "p75_ns": 8689246.5,
-      "min_ns": 8679328.5,
-      "max_ns": 8836964.5
+      "median_ns": 8370128.5,
+      "p25_ns": 8362114.0,
+      "p75_ns": 8379155.8,
+      "min_ns": 8351096.5,
+      "max_ns": 8545888.5
     },
     {
       "name": "path/long_query/flat/1024x1024_open",
       "items": 1,
-      "batch": 31,
+      "batch": 32,
       "samples": 15,
-      "median_ns": 375160.9,
-      "p25_ns": 374640.5,
-      "p75_ns": 375438.1,
-      "min_ns": 374329.6,
-      "max_ns": 377839.7
+      "median_ns": 371855.2,
+      "p25_ns": 371761.4,
+      "p75_ns": 372084.4,
+      "min_ns": 371318.3,
+      "max_ns": 373437.6
     },
     {
       "name": "path/long_query/flat/1024x1024_streets",
       "items": 1,
-      "batch": 36,
+      "batch": 39,
       "samples": 15,
-      "median_ns": 303444.9,
-      "p25_ns": 303264.5,
-      "p75_ns": 303857.2,
-      "min_ns": 302546.6,
-      "max_ns": 304209.3
+      "median_ns": 299409.9,
+      "p25_ns": 299060.7,
+      "p75_ns": 299496.8,
+      "min_ns": 298174.2,
+      "max_ns": 300160.3
     },
     {
       "name": "path/long_query/flat/1024x1024_walls",
       "items": 1,
       "batch": 1,
       "samples": 15,
-      "median_ns": 224933249.0,
-      "p25_ns": 224766707.5,
-      "p75_ns": 225040143.0,
-      "min_ns": 224622168.0,
-      "max_ns": 225237275.0
+      "median_ns": 223350193.0,
+      "p25_ns": 223300150.5,
+      "p75_ns": 223405054.5,
+      "min_ns": 223135845.0,
+      "max_ns": 223542611.0
     },
     {
       "name": "path/long_query/hierarchical/1024x1024_comb",
       "items": 1,
       "batch": 7,
       "samples": 15,
-      "median_ns": 1578483.4,
-      "p25_ns": 1578004.4,
-      "p75_ns": 1579815.4,
-      "min_ns": 1577405.9,
-      "max_ns": 1606370.7
+      "median_ns": 1568734.4,
+      "p25_ns": 1567861.4,
+      "p75_ns": 1569572.5,
+      "min_ns": 1563905.1,
+      "max_ns": 1581745.1
     },
     {
       "name": "path/long_query/hierarchical/1024x1024_comb_cold",
       "items": 1,
       "batch": 1,
       "samples": 15,
-      "median_ns": 20103631.0,
-      "p25_ns": 20090744.0,
-      "p75_ns": 20119624.5,
-      "min_ns": 20072829.0,
-      "max_ns": 22768981.0
+      "median_ns": 20129600.0,
+      "p25_ns": 20111406.5,
+      "p75_ns": 20258320.5,
+      "min_ns": 20005629.0,
+      "max_ns": 20649093.0
     },
     {
       "name": "path/long_query/hierarchical/1024x1024_open",
       "items": 1,
       "batch": 2,
       "samples": 15,
-      "median_ns": 5597119.5,
-      "p25_ns": 5594080.8,
-      "p75_ns": 5598987.8,
-      "min_ns": 5589436.0,
-      "max_ns": 5604592.5
+      "median_ns": 5606858.5,
+      "p25_ns": 5601935.0,
+      "p75_ns": 5612062.2,
+      "min_ns": 5596906.0,
+      "max_ns": 5651244.0
     },
     {
       "name": "path/long_query/hierarchical/1024x1024_open_cold",
       "items": 1,
       "batch": 1,
       "samples": 15,
-      "median_ns": 11076063.0,
-      "p25_ns": 11072606.5,
-      "p75_ns": 11080638.5,
-      "min_ns": 11067682.0,
-      "max_ns": 11091499.0
+      "median_ns": 11123271.0,
+      "p25_ns": 11120337.5,
+      "p75_ns": 11124528.0,
+      "min_ns": 11114820.0,
+      "max_ns": 11143665.0
     },
     {
       "name": "path/long_query/hierarchical/1024x1024_streets",
       "items": 1,
       "batch": 10,
       "samples": 15,
-      "median_ns": 1111650.3,
-      "p25_ns": 1110085.8,
-      "p75_ns": 1111982.1,
-      "min_ns": 1108039.4,
-      "max_ns": 1153255.8
+      "median_ns": 1126742.7,
+      "p25_ns": 1126253.9,
+      "p75_ns": 1127098.9,
+      "min_ns": 1125520.5,
+      "max_ns": 1128013.9
     },
     {
       "name": "path/long_query/hierarchical/1024x1024_streets_cold",
       "items": 1,
       "batch": 1,
       "samples": 15,
-      "median_ns": 2373966.0,
-      "p25_ns": 2367889.5,
-      "p75_ns": 2376376.0,
-      "min_ns": 2364118.0,
-      "max_ns": 2381858.0
+      "median_ns": 2391984.0,
+      "p25_ns": 2384720.5,
+      "p75_ns": 2395406.5,
+      "min_ns": 2380390.0,
+      "max_ns": 2400156.0
     },
     {
       "name": "path/long_query/hierarchical/1024x1024_walls",
       "items": 1,
       "batch": 1,
       "samples": 15,
-      "median_ns": 275839573.0,
-      "p25_ns": 272670931.5,
-      "p75_ns": 276097712.5,
-      "min_ns": 272514134.0,
-      "max_ns": 276899162.0
+      "median_ns": 266724672.0,
+      "p25_ns": 266716115.0,
+      "p75_ns": 266803838.5,
+      "min_ns": 266653432.0,
+      "max_ns": 266879024.0
     },
     {
       "name": "path/long_query/hierarchical/1024x1024_walls_cold",
       "items": 1,
       "batch": 1,
       "samples": 15,
-      "median_ns": 2766091174.0,
-      "p25_ns": 2762512275.0,
-      "p75_ns": 2783580054.5,
-      "min_ns": 2761941377.0,
-      "max_ns": 2793841016.0
+      "median_ns": 2790937084.0,
+      "p25_ns": 2790878206.0,
+      "p75_ns": 2791159813.0,
+      "min_ns": 2790721758.0,
+      "max_ns": 2792640834.0
     },
     {
       "name": "path/queue/update_4000_nodes",
       "items": 4000,
       "batch": 28,
       "samples": 15,
-      "median_ns": 415521.4,
-      "p25_ns": 415103.6,
-      "p75_ns": 416446.8,
-      "min_ns": 414606.0,
-      "max_ns": 416913.2
+      "median_ns": 416813.2,
+      "p25_ns": 416652.4,
+      "p75_ns": 416961.6,
+      "min_ns": 415256.7,
+      "max_ns": 420968.9
     },
     {
       "name": "path/short_query/auto/1024x1024_streets",
       "items": 1,
       "batch": 2233,
       "samples": 15,
-      "median_ns": 5330.0,
-      "p25_ns": 5325.2,
-      "p75_ns": 5331.9,
-      "min_ns": 5316.2,
-      "max_ns": 5336.8
+      "median_ns": 5352.5,
+      "p25_ns": 5347.2,
+      "p75_ns": 5359.8,
+      "min_ns": 5339.7,
+      "max_ns": 5372.0
     },
     {
       "name": "physics/frame_empty/144hz",
       "items": 60,
       "batch": 1,
       "samples": 15,
-      "median_ns": 197307.0,
-      "p25_ns": 197132.5,
-      "p75_ns": 200799.0,
-      "min_ns": 196958.0,
-      "max_ns": 204989.0
+      "median_ns": 197656.0,
+      "p25_ns": 197481.0,
+      "p75_ns": 197935.5,
+      "min_ns": 197376.0,
+      "max_ns": 206945.0
     },
     {
       "name": "physics/frame_empty/60hz",
       "items": 60,
       "batch": 1,
       "samples": 15,
-      "median_ns": 494280.0,
-      "p25_ns": 488866.5,
-      "p75_ns": 495187.0,
-      "min_ns": 488552.0,
-      "max_ns": 509366.0
+      "median_ns": 491066.0,
+      "p25_ns": 490647.5,
+      "p75_ns": 497317.0,
+      "min_ns": 490299.0,
+      "max_ns": 528711.0
     },
     {
       "name": "physics/init/1000_bodies",
       "items": 1000,
       "batch": 1,
       "samples": 15,
-      "median_ns": 1095838.0,
-      "p25_ns": 1094580.5,
-      "p75_ns": 1101215.5,
-      "min_ns": 1091158.0,
-      "max_ns": 1118537.0
+      "median_ns": 1089970.0,
+      "p25_ns": 1088119.5,
+      "p75_ns": 1091716.5,
+      "min_ns": 1085640.0,
+      "max_ns": 1098002.0
     },
     {
       "name": "physics/init/100_bodies",
       "items": 100,
       "batch": 1,
       "samples": 15,
-      "median_ns": 106511.0,
-      "p25_ns": 106022.0,
-      "p75_ns": 108327.0,
-      "min_ns": 105254.0,
-      "max_ns": 116010.0
+      "median_ns": 104066.0,
+      "p25_ns": 103717.0,
+      "p75_ns": 105079.0,
+      "min_ns": 103368.0,
+      "max_ns": 107767.0
     },
     {
       "name": "physics/init/5000_bodies",
       "items": 5000,
       "batch": 1,
       "samples": 15,
-      "median_ns": 6342310.0,
-      "p25_ns": 6298414.0,
-      "p75_ns": 6376952.5,
-      "min_ns": 6271000.0,
-      "max_ns": 6417880.0
+      "median_ns": 6321982.0,
+      "p25_ns": 6309410.0,
+      "p75_ns": 6338500.0,
+      "min_ns": 6254863.0,
+      "max_ns": 6419064.0
     },
     {
       "name": "physics/step_falling/1000_bodies",
       "items": 60,
       "batch": 1,
       "samples": 15,
-      "median_ns": 28594593.0,
-      "p25_ns": 28562429.5,
-      "p75_ns": 28890587.0,
-      "min_ns": 28518533.0,
-      "max_ns": 28909236.0
+      "median_ns": 28491906.0,
+      "p25_ns": 28463969.0,
+      "p75_ns": 28632640.0,
+      "min_ns": 28442178.0,
+      "max_ns": 30580842.0
     },
     {
       "name": "physics/step_falling/100_bodies",
       "items": 60,
       "batch": 1,
       "samples": 15,
-      "median_ns": 4548749.0,
-      "p25_ns": 4546095.0,
-      "p75_ns": 4555280.0,
-      "min_ns": 4541485.0,
-      "max_ns": 4579061.0
+      "median_ns": 4560261.0,
+      "p25_ns": 4547899.5,
+      "p75_ns": 4575033.0,
+      "min_ns": 4545314.0,
+      "max_ns": 4589456.0
     },
     {
       "name": "physics/step_falling/5000_bodies",
       "items": 60,
       "batch": 1,
       "samples": 15,
-      "median_ns": 119038299.0,
-      "p25_ns": 118961960.0,
-      "p75_ns": 119536734.0,
-      "min_ns": 118766888.0,
-      "max_ns": 119959948.0
+      "median_ns": 118060916.0,
+      "p25_ns": 118033118.5,
+      "p75_ns": 118207900.5,
+      "min_ns": 117879324.0,
+      "max_ns": 118689224.0
     },
     {
       "name": "physics/step_falling_mt2/1000_bodies",
       "items": 60,
       "batch": 1,
       "samples": 15,
-      "median_ns": 47076958.0,
-      "p25_ns": 44727576.0,
-      "p75_ns": 48590072.5,
-      "min_ns": 43357883.0,
-      "max_ns": 50884034.0
+      "median_ns": 46785821.0,
+      "p25_ns": 43976036.0,
+      "p75_ns": 50003071.0,
+      "min_ns": 41778007.0,
+      "max_ns": 59564233.0
     },
     {
       "name": "physics/step_falling_mt2/100_bodies",
       "items": 60,
       "batch": 1,
       "samples": 15,
-      "median_ns": 6059528.0,
-      "p25_ns": 6004177.5,
-      "p75_ns": 6879696.5,
-      "min_ns": 5990593.0,
-      "max_ns": 7582390.0
+      "median_ns": 6072083.0,
+      "p25_ns": 6017746.0,
+      "p75_ns": 6156279.0,
+      "min_ns": 5983662.0,
+      "max_ns": 6508672.0
     },
     {
       "name": "physics/step_falling_mt2/5000_bodies",
       "items": 60,
       "batch": 1,
       "samples": 15,
-      "median_ns": 192627185.0,
-      "p25_ns": 189365994.5,
-      "p75_ns": 198455985.5,
-      "min_ns": 176986214.0,
-      "max_ns": 211399366.0
+      "median_ns": 190015653.0,
+      "p25_ns": 188813235.5,
+      "p75_ns": 192653275.0,
+      "min_ns": 179039821.0,
+      "max_ns": 213951209.0
     },
     {
       "name": "physics/step_falling_mt4/1000_bodies",
       "items": 60,
       "batch": 1,
       "samples": 15,
-      "median_ns": 36864780.0,
-      "p25_ns": 33484829.5,
-      "p75_ns": 38415541.0,
-      "min_ns": 28127063.0,
-      "max_ns": 43931921.0
+      "median_ns": 36267810.0,
+      "p25_ns": 32928126.5,
+      "p75_ns": 37334872.5,
+      "min_ns": 28305984.0,
+      "max_ns": 42452970.0
     },
     {
       "name": "physics/step_falling_mt4/100_bodies",
       "items": 60,
       "batch": 1,
       "samples": 15,
-      "median_ns": 6940865.0,
-      "p25_ns": 6782636.0,
-      "p75_ns": 7050169.5,
-      "min_ns": 6559522.0,
-      "max_ns": 7638527.0
+      "median_ns": 7542279.0,
+      "p25_ns": 7156047.0,
+      "p75_ns": 8307130.5,
+      "min_ns": 6269599.0,
+      "max_ns": 9086160.0
     },
     {
       "name": "physics/step_falling_mt4/5000_bodies",
       "items": 60,
       "batch": 1,
       "samples": 15,
-      "median_ns": 155753685.0,
-      "p25_ns": 153914891.5,
-      "p75_ns": 158577893.5,
-      "min_ns": 144126979.0,
-      "max_ns": 164186467.0
+      "median_ns": 154224311.0,
+      "p25_ns": 147647857.0,
+      "p75_ns": 164001044.5,
+      "min_ns": 131837664.0,
+      "max_ns": 169739033.0
     },
     {
       "name": "physics/step_falling_mt8/1000_bodies",
       "items": 60,
       "batch": 1,
       "samples": 15,
-      "median_ns": 20750657.0,
-      "p25_ns": 20594312.5,
-      "p75_ns": 21015571.0,
-      "min_ns": 20286479.0,
-      "max_ns": 21272664.0
+      "median_ns": 20778791.0,
+      "p25_ns": 20677379.5,
+      "p75_ns": 20953573.5,
+      "min_ns": 20469177.0,
+      "max_ns": 21575770.0
     },
     {
       "name": "physics/step_falling_mt8/100_bodies",
       "items": 60,
       "batch": 1,
       "samples": 15,
-      "median_ns": 7292944.0,
-      "p25_ns": 7266439.0,
-      "p75_ns": 7375952.5,
-      "min_ns": 7100317.0,
-      "max_ns": 7431583.0
+      "median_ns": 7313683.0,
+      "p25_ns": 7263431.0,
+      "p75_ns": 7329118.0,
+      "min_ns": 7198163.0,
+      "max_ns": 7395818.0
     },
     {
       "name": "physics/step_falling_mt8/5000_bodies",
       "items": 60,
       "batch": 1,
       "samples": 15,
-      "median_ns": 58294800.0,
-      "p25_ns": 57782781.0,
-      "p75_ns": 58892762.0,
-      "min_ns": 56435927.0,
-      "max_ns": 59794052.0
+      "median_ns": 58099765.0,
+      "p25_ns": 57960672.5,
+      "p75_ns": 58584475.5,
+      "min_ns": 56842660.0,
+      "max_ns": 60557192.0
     },
     {
       "name": "physics/step_settled/1000_bodies",
       "items": 60,
       "batch": 1,
       "samples": 15,
-      "median_ns": 3758535.0,
-      "p25_ns": 3752598.5,
-      "p75_ns": 3769989.0,
-      "min_ns": 3727455.0,
-      "max_ns": 3801139.0
+      "median_ns": 3761885.0,
+      "p25_ns": 3743237.5,
+      "p75_ns": 3784689.0,
+      "min_ns": 3723681.0,
+      "max_ns": 3841786.0
     },
     {
       "name": "physics/step_settled/100_bodies",
       "items": 60,
       "batch": 1,
       "samples": 15,
-      "median_ns": 796211.0,
-      "p25_ns": 793417.0,
-      "p75_ns": 798201.0,
-      "min_ns": 789436.0,
-      "max_ns": 809132.0
+      "median_ns": 797049.0,
+      "p25_ns": 796734.5,
+      "p75_ns": 798550.0,
+      "min_ns": 789296.0,
+      "max_ns": 810039.0
     },
     {
       "name": "physics/step_settled/5000_bodies",
       "items": 60,
       "batch": 1,
       "samples": 15,
-      "median_ns": 557911915.0,
-      "p25_ns": 556954576.0,
-      "p75_ns": 561251286.5,
-      "min_ns": 553227121.0,
-      "max_ns": 564122221.0
+      "median_ns": 556527443.0,
+      "p25_ns": 556055374.5,
+      "p75_ns": 557045539.0,
+      "min_ns": 555630379.0,
+      "max_ns": 557821984.0
     },
     {
       "name": "physics/step_settled_mt2/1000_bodies",
       "items": 60,
       "batch": 1,
       "samples": 15,
-      "median_ns": 9697871.0,
-      "p25_ns": 9044382.5,
-      "p75_ns": 9857148.0,
-      "min_ns": 8302334.0,
-      "max_ns": 10337006.0
+      "median_ns": 9540139.0,
+      "p25_ns": 9262583.0,
+      "p75_ns": 9891693.5,
+      "min_ns": 7031726.0,
+      "max_ns": 10307784.0
     },
     {
       "name": "physics/step_settled_mt2/100_bodies",
       "items": 60,
       "batch": 1,
       "samples": 15,
-      "median_ns": 1206263.0,
-      "p25_ns": 1158140.0,
-      "p75_ns": 1221802.5,
-      "min_ns": 1009583.0,
-      "max_ns": 1530405.0
+      "median_ns": 1032489.0,
+      "p25_ns": 1021768.5,
+      "p75_ns": 1045585.5,
+      "min_ns": 1007835.0,
+      "max_ns": 1084802.0
     },
     {
       "name": "physics/step_settled_mt2/5000_bodies",
       "items": 60,
       "batch": 1,
       "samples": 15,
-      "median_ns": 413826703.0,
-      "p25_ns": 412709493.0,
-      "p75_ns": 421801280.5,
-      "min_ns": 409482534.0,
-      "max_ns": 427994579.0
+      "median_ns": 412274477.0,
+      "p25_ns": 409222440.5,
+      "p75_ns": 415284676.0,
+      "min_ns": 394629752.0,
+      "max_ns": 418268824.0
     },
     {
       "name": "physics/step_settled_mt4/1000_bodies",
       "items": 60,
       "batch": 1,
       "samples": 15,
-      "median_ns": 8284873.0,
-      "p25_ns": 7752527.5,
-      "p75_ns": 8875676.0,
-      "min_ns": 7188195.0,
-      "max_ns": 9718824.0
+      "median_ns": 7845397.0,
+      "p25_ns": 7547482.0,
+      "p75_ns": 8038863.0,
+      "min_ns": 6601493.0,
+      "max_ns": 8532235.0
     },
     {
       "name": "physics/step_settled_mt4/100_bodies",
       "items": 60,
       "batch": 1,
       "samples": 15,
-      "median_ns": 1078308.0,
-      "p25_ns": 1027915.5,
-      "p75_ns": 1307602.5,
-      "min_ns": 995333.0,
-      "max_ns": 1336796.0
+      "median_ns": 1133692.0,
+      "p25_ns": 1113402.0,
+      "p75_ns": 1205316.0,
+      "min_ns": 1066434.0,
+      "max_ns": 1407546.0
     },
     {
       "name": "physics/step_settled_mt4/5000_bodies",
       "items": 60,
       "batch": 1,
       "samples": 15,
-      "median_ns": 353321788.0,
-      "p25_ns": 330124005.5,
-      "p75_ns": 362949167.5,
-      "min_ns": 305542003.0,
-      "max_ns": 385610101.0
+      "median_ns": 351270783.0,
+      "p25_ns": 347884583.5,
+      "p75_ns": 355739794.5,
+      "min_ns": 336196771.0,
+      "max_ns": 380307885.0
     },
     {
       "name": "physics/step_settled_mt8/1000_bodies",
       "items": 60,
       "batch": 1,
       "samples": 15,
-      "median_ns": 4099998.0,
-      "p25_ns": 4074889.5,
-      "p75_ns": 4395993.0,
-      "min_ns": 4041260.0,
-      "max_ns": 4804575.0
+      "median_ns": 4107190.0,
+      "p25_ns": 4073106.0,
+      "p75_ns": 4602481.5,
+      "min_ns": 4030292.0,
+      "max_ns": 5046159.0
     },
     {
       "name": "physics/step_settled_mt8/100_bodies",
       "items": 60,
       "batch": 1,
       "samples": 15,
-      "median_ns": 1026694.0,
-      "p25_ns": 1016391.5,
-      "p75_ns": 1249632.5,
-      "min_ns": 999524.0,
-      "max_ns": 1277779.0
+      "median_ns": 1085710.0,
+      "p25_ns": 1008184.0,
+      "p75_ns": 1252216.0,
+      "min_ns": 991003.0,
+      "max_ns": 1333164.0
     },
     {
       "name": "physics/step_settled_mt8/5000_bodies",
       "items": 60,
       "batch": 1,
       "samples": 15,
-      "median_ns": 190154052.0,
-      "p25_ns": 188559918.5,
-      "p75_ns": 193249008.5,
-      "min_ns": 185813585.0,
-      "max_ns": 200162146.0
+      "median_ns": 189424641.0,
+      "p25_ns": 186509358.0,
+      "p75_ns": 192199470.5,
+      "min_ns": 184066843.0,
+      "max_ns": 197419574.0
     },
     {
       "name": "prefab/instantiate/100_entities/scene0",
       "items": 100,
       "batch": 1,
       "samples": 15,
-      "median_ns": 803614.0,
-      "p25_ns": 801519.0,
-      "p75_ns": 809062.0,
-      "min_ns": 791811.0,
-      "max_ns": 836441.0
+      "median_ns": 800471.0,
+      "p25_ns": 797188.5,
+      "p75_ns": 801030.0,
+      "min_ns": 790344.0,
+      "max_ns": 821005.0
     },
     {
       "name": "prefab/instantiate/100_entities/scene10000",
       "items": 100,
       "batch": 1,
       "samples": 15,
-      "median_ns": 800960.0,
-      "p25_ns": 798690.5,
-      "p75_ns": 803160.5,
-      "min_ns": 794116.0,
-      "max_ns": 845031.0
+      "median_ns": 796421.0,
+      "p25_ns": 794255.0,
+      "p75_ns": 799249.0,
+      "min_ns": 790833.0,
+      "max_ns": 1003924.0
     },
     {
       "name": "prefab/instantiate/10_entities/scene0",
       "items": 10,
       "batch": 1,
       "samples": 15,
-      "median_ns": 122575.0,
-      "p25_ns": 121457.5,
-      "p75_ns": 124286.0,
-      "min_ns": 120898.0,
-      "max_ns": 132004.0
+      "median_ns": 123343.0,
+      "p25_ns": 122260.0,
+      "p75_ns": 125263.5,
+      "min_ns": 121178.0,
+      "max_ns": 133400.0
     },
     {
       "name": "prefab/instantiate/10_entities/scene10000",
       "items": 10,
       "batch": 1,
       "samples": 15,
-      "median_ns": 128372.0,
-      "p25_ns": 127952.5,
-      "p75_ns": 132178.0,
-      "min_ns": 126346.0,
-      "max_ns": 138150.0
+      "median_ns": 127882.0,
+      "p25_ns": 126346.5,
+      "p75_ns": 130327.5,
+      "min_ns": 125438.0,
+      "max_ns": 144994.0
     },
     {
       "name": "renderer2d/circles/1000",
       "items": 1000,
-      "batch": 376,
+      "batch": 374,
       "samples": 15,
-      "median_ns": 31862.7,
-      "p25_ns": 31855.0,
-      "p75_ns": 31870.3,
-      "min_ns": 31810.9,
-      "max_ns": 31908.4
+      "median_ns": 31974.9,
+      "p25_ns": 31958.8,
+      "p75_ns": 31996.7,
+      "min_ns": 31936.0,
+      "max_ns": 32016.3
     },
     {
       "name": "renderer2d/circles/10000",
       "items": 10000,
       "batch": 35,
       "samples": 15,
-      "median_ns": 340598.7,
-      "p25_ns": 340466.0,
-      "p75_ns": 340687.5,
-      "min_ns": 340073.9,
-      "max_ns": 341398.9
+      "median_ns": 342556.1,
+      "p25_ns": 342407.5,
+      "p75_ns": 342601.0,
+      "min_ns": 342344.6,
+      "max_ns": 342833.5
     },
     {
       "name": "renderer2d/circles/100000",
       "items": 100000,
       "batch": 3,
       "samples": 15,
-      "median_ns": 3415512.7,
-      "p25_ns": 3414034.2,
-      "p75_ns": 3417642.8,
-      "min_ns": 3412020.3,
-      "max_ns": 3422962.3
+      "median_ns": 3417955.0,
+      "p25_ns": 3416150.7,
+      "p75_ns": 3419351.8,
+      "min_ns": 3414579.3,
+      "max_ns": 3420772.0
     },
     {
       "name": "renderer2d/polylines_8/10000",
       "items": 10000,
-      "batch": 57,
+      "batch": 58,
       "samples": 15,
-      "median_ns": 207903.2,
-      "p25_ns": 207764.2,
-      "p75_ns": 208042.3,
-      "min_ns": 207452.3,
-      "max_ns": 208285.5
+      "median_ns": 206465.6,
+      "p25_ns": 206392.2,
+      "p75_ns": 206648.1,
+      "min_ns": 206292.2,
+      "max_ns": 207046.1
     },
     {
       "name": "renderer2d/polylines_8/100000",
       "items": 100000,
       "batch": 5,
       "samples": 15,
-      "median_ns": 2431600.6,
-      "p25_ns": 2430210.6,
-      "p75_ns": 2433304.7,
-      "min_ns": 2426306.4,
-      "max_ns": 2437076.2
+      "median_ns": 2434085.6,
+      "p25_ns": 2432220.7,
+      "p75_ns": 2434867.8,
+      "min_ns": 2430369.8,
+      "max_ns": 2440776.4
     },
     {
       "name": "renderer2d/quads_16_textures/1000",
       "items": 1000,
-      "batch": 223,
+      "batch": 224,
       "samples": 15,
-      "median_ns": 53598.8,
-      "p25_ns": 53520.8,
-      "p75_ns": 53629.6,
-      "min_ns": 53414.9,
-      "max_ns": 53755.0
+      "median_ns": 53637.0,
+      "p25_ns": 53601.7,
+      "p75_ns": 53664.4,
+      "min_ns": 53590.5,
+      "max_ns": 53705.2
     },
     {
       "name": "renderer2d/quads_16_textures/10000",
       "items": 10000,
       "batch": 21,
       "samples": 15,
-      "median_ns": 558461.9,
-      "p25_ns": 558099.4,
-      "p75_ns": 558641.5,
-      "min_ns": 557956.4,
-      "max_ns": 567079.2
+      "median_ns": 555914.0,
+      "p25_ns": 555636.3,
+      "p75_ns": 556055.3,
+      "min_ns": 555182.3,
+      "max_ns": 557513.7
     },
     {
       "name": "renderer2d/quads_16_textures/100000",
       "items": 100000,
       "batch": 2,
       "samples": 15,
-      "median_ns": 5589297.0,
-      "p25_ns": 5587777.5,
-      "p75_ns": 5591235.0,
-      "min_ns": 5583674.5,
-      "max_ns": 5610285.0
+      "median_ns": 5575604.0,
+      "p25_ns": 5574469.2,
+      "p75_ns": 5577752.0,
+      "min_ns": 5572880.5,
+      "max_ns": 5584194.5
     },
     {
       "name": "renderer2d/quads_color/1000",
       "items": 1000,
-      "batch": 325,
+      "batch": 322,
       "samples": 15,
-      "median_ns": 36832.7,
-      "p25_ns": 36807.1,
-      "p75_ns": 36865.1,
-      "min_ns": 36789.0,
-      "max_ns": 36919.0
+      "median_ns": 37185.3,
+      "p25_ns": 37175.0,
+      "p75_ns": 37224.9,
+      "min_ns": 37160.0,
+      "max_ns": 37298.1
     },
     {
       "name": "renderer2d/quads_color/10000",
       "items": 10000,
       "batch": 30,
       "samples": 15,
-      "median_ns": 389452.0,
-      "p25_ns": 389264.6,
-      "p75_ns": 389661.5,
-      "min_ns": 389228.5,
-      "max_ns": 390066.6
+      "median_ns": 394068.4,
+      "p25_ns": 393617.9,
+      "p75_ns": 394195.2,
+      "min_ns": 393300.1,
+      "max_ns": 400843.1
     },
     {
       "name": "renderer2d/quads_color/100000",
       "items": 100000,
       "batch": 3,
       "samples": 15,
-      "median_ns": 3903669.3,
-      "p25_ns": 3902342.2,
-      "p75_ns": 3904786.7,
-      "min_ns": 3898966.3,
-      "max_ns": 3909582.7
+      "median_ns": 3947505.0,
+      "p25_ns": 3946876.3,
+      "p75_ns": 3950031.0,
+      "min_ns": 3944548.3,
+      "max_ns": 3951486.0
     },
     {
       "name": "renderer2d/quads_world_index/1000",
       "items": 1000,
       "batch": 700,
       "samples": 15,
-      "median_ns": 17172.9,
-      "p25_ns": 17163.8,
-      "p75_ns": 17181.0,
-      "min_ns": 17148.2,
-      "max_ns": 17209.0
+      "median_ns": 17038.8,
+      "p25_ns": 17032.5,
+      "p75_ns": 17052.0,
+      "min_ns": 17010.2,
+      "max_ns": 17300.3
     },
     {
       "name": "renderer2d/quads_world_index/10000",
       "items": 10000,
       "batch": 61,
       "samples": 15,
-      "median_ns": 194414.5,
-      "p25_ns": 194330.3,
-      "p75_ns": 194502.1,
-      "min_ns": 194180.9,
-      "max_ns": 194738.5
+      "median_ns": 193319.8,
+      "p25_ns": 193264.3,
+      "p75_ns": 193350.1,
+      "min_ns": 193205.3,
+      "max_ns": 193404.5
     },
     {
       "name": "renderer2d/quads_world_index/100000",
       "items": 100000,
       "batch": 5,
       "samples": 15,
-      "median_ns": 2400422.6,
-      "p25_ns": 2399395.9,
-      "p75_ns": 2401491.2,
-      "min_ns": 2398369.2,
-      "max_ns": 2403439.8
+      "median_ns": 2384050.0,
+      "p25_ns": 2382324.8,
+      "p75_ns": 2384936.9,
+      "min_ns": 2380683.6,
+      "max_ns": 2388701.6
     },
     {
       "name": "renderer2d/rects/10000",
       "items": 10000,
       "batch": 10,
       "samples": 15,
-      "median_ns": 1006306.0,
-      "p25_ns": 1005932.3,
-      "p75_ns": 1007336.2,
-      "min_ns": 1005013.9,
-      "max_ns": 1007968.2
+      "median_ns": 1008086.4,
+      "p25_ns": 1007848.9,
+      "p75_ns": 1008921.0,
+      "min_ns": 1006850.1,
+      "max_ns": 1009734.7
     },
     {
       "name": "renderer2d/rects/100000",
       "items": 100000,
       "batch": 1,
       "samples": 15,
-      "median_ns": 10069764.0,
-      "p25_ns": 10059881.5,
-      "p75_ns": 10072803.0,
-      "min_ns": 10050558.0,
-      "max_ns": 10076889.0
+      "median_ns": 10068781.0,
+      "p25_ns": 10059038.0,
+      "p75_ns": 10078768.5,
+      "min_ns": 10044336.0,
+      "max_ns": 10087149.0
     },
     {
       "name": "renderer2d/text/10000_glyphs_utf8",
       "items": 10000,
       "batch": 4,
       "samples": 15,
-      "median_ns": 2868455.0,
-      "p25_ns": 2868001.0,
-      "p75_ns": 2870707.5,
-      "min_ns": 2866761.2,
-      "max_ns": 2872121.8
+      "median_ns": 2873272.5,
+      "p25_ns": 2871788.4,
+      "p75_ns": 2873517.0,
+      "min_ns": 2869972.5,
+      "max_ns": 2878458.5
     },
     {
       "name": "renderer2d/text/10000_glyphs_wrapped",
       "items": 10000,
       "batch": 4,
       "samples": 15,
-      "median_ns": 2886562.0,
-      "p25_ns": 2882764.1,
-      "p75_ns": 2888072.4,
-      "min_ns": 2876836.2,
-      "max_ns": 2896200.2
+      "median_ns": 2894068.2,
+      "p25_ns": 2888044.4,
+      "p75_ns": 2897927.1,
+      "min_ns": 2884831.5,
+      "max_ns": 2918129.2
     },
     {
       "name": "renderer2d/text/100_strings_54_chars",
       "items": 5400,
       "batch": 26,
       "samples": 15,
-      "median_ns": 455384.9,
-      "p25_ns": 455120.3,
-      "p75_ns": 455469.5,
-      "min_ns": 454750.9,
-      "max_ns": 456024.2
+      "median_ns": 444585.8,
+      "p25_ns": 444470.3,
+      "p75_ns": 444834.3,
+      "min_ns": 444392.4,
+      "max_ns": 445504.5
     },
     {
       "name": "renderer2d/transform_to_matrix/1000",
       "items": 1000,
-      "batch": 968,
+      "batch": 972,
       "samples": 15,
-      "median_ns": 12322.2,
-      "p25_ns": 12318.8,
-      "p75_ns": 12324.9,
-      "min_ns": 12311.6,
-      "max_ns": 12354.4
+      "median_ns": 12305.3,
+      "p25_ns": 12303.4,
+      "p75_ns": 12310.3,
+      "min_ns": 12299.6,
+      "max_ns": 12453.0
     },
     {
       "name": "renderer2d/transform_to_matrix/10000",
       "items": 10000,
-      "batch": 97,
+      "batch": 96,
       "samples": 15,
-      "median_ns": 123219.7,
-      "p25_ns": 123212.9,
-      "p75_ns": 123249.3,
-      "min_ns": 123157.1,
-      "max_ns": 123278.1
+      "median_ns": 123414.1,
+      "p25_ns": 123357.0,
+      "p75_ns": 123486.8,
+      "min_ns": 123093.2,
+      "max_ns": 123590.2
     },
     {
       "name": "renderer2d/transform_to_matrix/100000",
       "items": 100000,
       "batch": 9,
       "samples": 15,
-      "median_ns": 1233661.6,
-      "p25_ns": 1232928.2,
-      "p75_ns": 1234072.8,
-      "min_ns": 1232776.8,
-      "max_ns": 1373076.1
+      "median_ns": 1234165.2,
+      "p25_ns": 1233812.1,
+      "p75_ns": 1234378.6,
+      "min_ns": 1233420.2,
+      "max_ns": 1235011.1
     },
     {
       "name": "renderer2d/transient_quads_circles/10000",
       "items": 10000,
       "batch": 32,
       "samples": 15,
-      "median_ns": 365543.4,
-      "p25_ns": 365392.8,
-      "p75_ns": 365711.4,
-      "min_ns": 365167.9,
-      "max_ns": 366368.4
+      "median_ns": 368871.6,
+      "p25_ns": 368743.9,
+      "p75_ns": 368933.8,
+      "min_ns": 368611.9,
+      "max_ns": 369177.2
     },
     {
       "name": "renderer2d/transient_quads_circles/100000",
       "items": 100000,
       "batch": 3,
       "samples": 15,
-      "median_ns": 3658100.7,
-      "p25_ns": 3656029.0,
-      "p75_ns": 3658985.5,
-      "min_ns": 3654632.0,
-      "max_ns": 3662617.3
+      "median_ns": 3663290.3,
+      "p25_ns": 3662801.5,
+      "p75_ns": 3663884.0,
+      "min_ns": 3662033.0,
+      "max_ns": 3682217.7
     },
     {
       "name": "sample/editor_update/game_over",
       "items": 1,
-      "batch": 1000,
+      "batch": 966,
       "samples": 15,
-      "median_ns": 8822.1,
-      "p25_ns": 8803.7,
-      "p75_ns": 8841.3,
-      "min_ns": 8785.8,
-      "max_ns": 9821.5
+      "median_ns": 10010.9,
+      "p25_ns": 10002.7,
+      "p75_ns": 10026.3,
+      "min_ns": 9974.4,
+      "max_ns": 11134.4
     },
     {
       "name": "sample/editor_update/iso_town",
       "items": 1,
-      "batch": 133,
+      "batch": 127,
       "samples": 15,
-      "median_ns": 89267.8,
-      "p25_ns": 89159.2,
-      "p75_ns": 89349.5,
-      "min_ns": 88999.0,
-      "max_ns": 89439.6
+      "median_ns": 91180.9,
+      "p25_ns": 91119.3,
+      "p75_ns": 91327.5,
+      "min_ns": 90799.2,
+      "max_ns": 91698.4
     },
     {
       "name": "sample/editor_update/main_menu",
       "items": 1,
-      "batch": 265,
+      "batch": 257,
       "samples": 15,
-      "median_ns": 45024.8,
-      "p25_ns": 45014.3,
-      "p75_ns": 45040.0,
-      "min_ns": 45005.3,
-      "max_ns": 45160.5
-    },
-    {
-      "name": "sample/editor_update/mesh_gallery",
-      "items": 1,
-      "batch": 3824,
-      "samples": 15,
-      "median_ns": 3067.8,
-      "p25_ns": 3052.0,
-      "p75_ns": 3077.1,
-      "min_ns": 3038.4,
-      "max_ns": 3101.8
+      "median_ns": 46414.9,
+      "p25_ns": 46384.2,
+      "p75_ns": 46456.9,
+      "min_ns": 46326.0,
+      "max_ns": 46561.1
     },
     {
       "name": "sample/editor_update/platformer_house",
       "items": 1,
-      "batch": 265,
+      "batch": 254,
       "samples": 15,
-      "median_ns": 45095.2,
-      "p25_ns": 45075.1,
-      "p75_ns": 45103.3,
-      "min_ns": 45038.0,
-      "max_ns": 45114.1
+      "median_ns": 47003.5,
+      "p25_ns": 46977.0,
+      "p75_ns": 47092.6,
+      "min_ns": 46891.9,
+      "max_ns": 47114.6
     },
     {
       "name": "sample/editor_update/raycast_demo",
       "items": 1,
-      "batch": 194,
+      "batch": 190,
       "samples": 15,
-      "median_ns": 61394.2,
-      "p25_ns": 61326.9,
-      "p75_ns": 61424.3,
-      "min_ns": 61312.9,
-      "max_ns": 61658.8
+      "median_ns": 62816.5,
+      "p25_ns": 62803.2,
+      "p75_ns": 62828.0,
+      "min_ns": 62748.5,
+      "max_ns": 62899.5
     },
     {
       "name": "sample/editor_update/settings_menu",
       "items": 1,
-      "batch": 744,
+      "batch": 705,
       "samples": 15,
-      "median_ns": 15490.6,
-      "p25_ns": 15476.7,
-      "p75_ns": 15503.5,
-      "min_ns": 15459.0,
-      "max_ns": 15523.1
+      "median_ns": 16659.3,
+      "p25_ns": 16638.5,
+      "p75_ns": 16701.0,
+      "min_ns": 16596.2,
+      "max_ns": 16836.9
+    },
+    {
+      "name": "sample/editor_update/tavern",
+      "items": 1,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 9708.0,
+      "p25_ns": 9638.0,
+      "p75_ns": 9778.0,
+      "min_ns": 9568.0,
+      "max_ns": 10127.0
     },
     {
       "name": "sample/editor_update/victory",
       "items": 1,
-      "batch": 1428,
+      "batch": 1214,
       "samples": 15,
-      "median_ns": 8426.8,
-      "p25_ns": 8406.9,
-      "p75_ns": 8438.4,
-      "min_ns": 8372.4,
-      "max_ns": 8449.0
+      "median_ns": 9617.2,
+      "p25_ns": 9602.5,
+      "p75_ns": 9635.2,
+      "min_ns": 9581.2,
+      "max_ns": 9687.2
     },
     {
       "name": "sample/editor_update/voxel_terrain",
       "items": 1,
-      "batch": 224,
+      "batch": 214,
       "samples": 15,
-      "median_ns": 96779.4,
-      "p25_ns": 96748.9,
-      "p75_ns": 96810.3,
-      "min_ns": 96651.0,
-      "max_ns": 96973.4
+      "median_ns": 99209.4,
+      "p25_ns": 99077.9,
+      "p75_ns": 99231.8,
+      "min_ns": 99052.1,
+      "max_ns": 99311.9
     },
     {
       "name": "sample/editor_update/world_map",
       "items": 1,
-      "batch": 60,
+      "batch": 59,
       "samples": 15,
-      "median_ns": 197135.5,
-      "p25_ns": 197090.2,
-      "p75_ns": 197186.2,
-      "min_ns": 196933.0,
-      "max_ns": 253608.3
+      "median_ns": 199894.3,
+      "p25_ns": 199856.4,
+      "p75_ns": 199971.3,
+      "min_ns": 199720.3,
+      "max_ns": 200185.5
     },
     {
       "name": "sample/load/game_over",
       "items": 1,
       "batch": 1,
       "samples": 15,
-      "median_ns": 142200.0,
-      "p25_ns": 140280.0,
-      "p75_ns": 144190.5,
-      "min_ns": 138988.0,
-      "max_ns": 163782.0
+      "median_ns": 148836.0,
+      "p25_ns": 144156.0,
+      "p75_ns": 163293.0,
+      "min_ns": 143597.0,
+      "max_ns": 173630.0
     },
     {
       "name": "sample/load/iso_town",
       "items": 1,
       "batch": 1,
       "samples": 15,
-      "median_ns": 5510619.0,
-      "p25_ns": 5490958.0,
-      "p75_ns": 5518231.5,
-      "min_ns": 5474231.0,
-      "max_ns": 5567121.0
+      "median_ns": 5554547.0,
+      "p25_ns": 5548190.5,
+      "p75_ns": 5564150.0,
+      "min_ns": 5528216.0,
+      "max_ns": 5600992.0
     },
     {
       "name": "sample/load/main_menu",
       "items": 1,
       "batch": 1,
       "samples": 15,
-      "median_ns": 311431.0,
-      "p25_ns": 307066.0,
-      "p75_ns": 315516.5,
-      "min_ns": 305424.0,
-      "max_ns": 318974.0
-    },
-    {
-      "name": "sample/load/mesh_gallery",
-      "items": 1,
-      "batch": 1,
-      "samples": 15,
-      "median_ns": 127673.0,
-      "p25_ns": 126905.0,
-      "p75_ns": 129524.0,
-      "min_ns": 126276.0,
-      "max_ns": 139546.0
+      "median_ns": 314084.0,
+      "p25_ns": 311604.5,
+      "p75_ns": 323792.5,
+      "min_ns": 310941.0,
+      "max_ns": 330637.0
     },
     {
       "name": "sample/load/platformer_house",
       "items": 1,
       "batch": 1,
       "samples": 15,
-      "median_ns": 1866556.0,
-      "p25_ns": 1863168.5,
-      "p75_ns": 1868756.0,
-      "min_ns": 1853147.0,
-      "max_ns": 1893027.0
+      "median_ns": 1880524.0,
+      "p25_ns": 1873923.5,
+      "p75_ns": 1889359.5,
+      "min_ns": 1862923.0,
+      "max_ns": 1914677.0
     },
     {
       "name": "sample/load/raycast_demo",
       "items": 1,
       "batch": 1,
       "samples": 15,
-      "median_ns": 1207726.0,
-      "p25_ns": 1204304.5,
-      "p75_ns": 1210031.5,
-      "min_ns": 1201021.0,
-      "max_ns": 1216666.0
+      "median_ns": 1217364.0,
+      "p25_ns": 1214849.5,
+      "p75_ns": 1226932.5,
+      "min_ns": 1213593.0,
+      "max_ns": 1251378.0
     },
     {
       "name": "sample/load/settings_menu",
       "items": 1,
       "batch": 1,
       "samples": 15,
-      "median_ns": 195421.0,
-      "p25_ns": 193918.5,
-      "p75_ns": 202091.0,
-      "min_ns": 192766.0,
-      "max_ns": 207434.0
+      "median_ns": 196538.0,
+      "p25_ns": 195281.0,
+      "p75_ns": 201776.5,
+      "min_ns": 194373.0,
+      "max_ns": 210926.0
+    },
+    {
+      "name": "sample/load/tavern",
+      "items": 1,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 1129571.0,
+      "p25_ns": 1127406.0,
+      "p75_ns": 1136276.5,
+      "min_ns": 1123215.0,
+      "max_ns": 1145635.0
     },
     {
       "name": "sample/load/victory",
       "items": 1,
       "batch": 1,
       "samples": 15,
-      "median_ns": 124949.0,
-      "p25_ns": 124251.0,
-      "p75_ns": 128476.5,
-      "min_ns": 123762.0,
-      "max_ns": 138010.0
+      "median_ns": 128441.0,
+      "p25_ns": 126451.0,
+      "p75_ns": 132177.5,
+      "min_ns": 125857.0,
+      "max_ns": 138289.0
     },
     {
       "name": "sample/load/voxel_terrain",
       "items": 1,
       "batch": 1,
       "samples": 15,
-      "median_ns": 85209.0,
-      "p25_ns": 84440.0,
-      "p75_ns": 88806.0,
-      "min_ns": 83951.0,
-      "max_ns": 97501.0
+      "median_ns": 103298.0,
+      "p25_ns": 102285.0,
+      "p75_ns": 109060.0,
+      "min_ns": 102041.0,
+      "max_ns": 118733.0
     },
     {
       "name": "sample/load/world_map",
       "items": 1,
       "batch": 1,
       "samples": 15,
-      "median_ns": 1040802.0,
-      "p25_ns": 1039160.0,
-      "p75_ns": 1044258.5,
-      "min_ns": 1036681.0,
-      "max_ns": 1049671.0
+      "median_ns": 1048554.0,
+      "p25_ns": 1047680.0,
+      "p75_ns": 1055748.0,
+      "min_ns": 1045480.0,
+      "max_ns": 1080891.0
     },
     {
       "name": "scene/copy/1000",
       "items": 1000,
       "batch": 1,
       "samples": 15,
-      "median_ns": 583888.0,
-      "p25_ns": 579418.0,
-      "p75_ns": 588533.0,
-      "min_ns": 576206.0,
-      "max_ns": 616295.0
+      "median_ns": 583120.0,
+      "p25_ns": 580605.0,
+      "p75_ns": 588812.0,
+      "min_ns": 572713.0,
+      "max_ns": 635921.0
     },
     {
       "name": "scene/copy/10000",
       "items": 10000,
       "batch": 1,
       "samples": 15,
-      "median_ns": 6632508.0,
-      "p25_ns": 6603977.0,
-      "p75_ns": 6660095.5,
-      "min_ns": 6573350.0,
-      "max_ns": 6724910.0
+      "median_ns": 6585290.0,
+      "p25_ns": 6575756.0,
+      "p75_ns": 6602227.0,
+      "min_ns": 6527809.0,
+      "max_ns": 6634110.0
     },
     {
       "name": "scene/create_entities/1000",
       "items": 1000,
       "batch": 1,
       "samples": 15,
-      "median_ns": 252552.0,
-      "p25_ns": 250178.0,
-      "p75_ns": 260235.5,
-      "min_ns": 248502.0,
-      "max_ns": 283773.0
+      "median_ns": 259397.0,
+      "p25_ns": 250666.5,
+      "p75_ns": 264914.5,
+      "min_ns": 232647.0,
+      "max_ns": 288801.0
     },
     {
       "name": "scene/create_entities/10000",
       "items": 10000,
       "batch": 1,
       "samples": 15,
-      "median_ns": 2434870.0,
-      "p25_ns": 2431202.5,
-      "p75_ns": 2439024.5,
-      "min_ns": 2419015.0,
-      "max_ns": 2457358.0
+      "median_ns": 2405045.0,
+      "p25_ns": 2401238.5,
+      "p75_ns": 2418210.0,
+      "min_ns": 2391495.0,
+      "max_ns": 2445065.0
     },
     {
       "name": "scene/create_entities/100000",
       "items": 100000,
       "batch": 1,
       "samples": 15,
-      "median_ns": 29564014.0,
-      "p25_ns": 29533667.0,
-      "p75_ns": 29603580.5,
-      "min_ns": 29476361.0,
-      "max_ns": 29875235.0
+      "median_ns": 29250122.0,
+      "p25_ns": 29155380.5,
+      "p75_ns": 29267024.0,
+      "min_ns": 29080962.0,
+      "max_ns": 29362709.0
     },
     {
       "name": "scene/find_entity_by_uuid/1000",
       "items": 1000,
-      "batch": 355,
+      "batch": 353,
       "samples": 15,
-      "median_ns": 33628.2,
-      "p25_ns": 33602.6,
-      "p75_ns": 33651.3,
-      "min_ns": 33566.0,
-      "max_ns": 33682.7
+      "median_ns": 33560.7,
+      "p25_ns": 33525.4,
+      "p75_ns": 33580.5,
+      "min_ns": 33454.0,
+      "max_ns": 33915.4
     },
     {
       "name": "scene/find_entity_by_uuid/10000",
       "items": 10000,
       "batch": 26,
       "samples": 15,
-      "median_ns": 454382.9,
-      "p25_ns": 454185.5,
-      "p75_ns": 454699.9,
-      "min_ns": 453139.2,
-      "max_ns": 456722.7
+      "median_ns": 450707.8,
+      "p25_ns": 450435.2,
+      "p75_ns": 450860.9,
+      "min_ns": 449990.6,
+      "max_ns": 451301.5
     },
     {
       "name": "scene/find_entity_by_uuid/100000",
       "items": 100000,
       "batch": 2,
       "samples": 15,
-      "median_ns": 5309051.5,
-      "p25_ns": 5298871.8,
-      "p75_ns": 5319440.5,
-      "min_ns": 5294070.5,
-      "max_ns": 5642412.5
+      "median_ns": 5279120.5,
+      "p25_ns": 5274458.5,
+      "p75_ns": 5284864.8,
+      "min_ns": 5270390.0,
+      "max_ns": 5292914.5
     },
     {
       "name": "scene/prepare_world_transforms/chain1000",
       "items": 1000,
       "batch": 194,
       "samples": 15,
-      "median_ns": 61747.4,
-      "p25_ns": 61718.2,
-      "p75_ns": 61772.6,
-      "min_ns": 61681.5,
-      "max_ns": 61909.0
+      "median_ns": 61533.9,
+      "p25_ns": 61512.5,
+      "p75_ns": 61648.9,
+      "min_ns": 61456.1,
+      "max_ns": 64238.3
     },
     {
       "name": "scene/prepare_world_transforms/flat10000",
       "items": 10000,
       "batch": 41,
       "samples": 15,
-      "median_ns": 288985.1,
-      "p25_ns": 288913.5,
-      "p75_ns": 289102.6,
-      "min_ns": 288819.9,
-      "max_ns": 289567.7
+      "median_ns": 290644.1,
+      "p25_ns": 290589.6,
+      "p75_ns": 290772.7,
+      "min_ns": 289898.0,
+      "max_ns": 291461.8
     },
     {
       "name": "scene/prepare_world_transforms/forest10000",
       "items": 10000,
       "batch": 18,
       "samples": 15,
-      "median_ns": 653455.7,
-      "p25_ns": 653207.3,
-      "p75_ns": 653550.8,
-      "min_ns": 652959.0,
-      "max_ns": 654526.6
+      "median_ns": 651945.9,
+      "p25_ns": 651722.8,
+      "p75_ns": 652330.1,
+      "min_ns": 651138.8,
+      "max_ns": 652632.7
     },
     {
       "name": "scene/prepare_world_transforms/wide10000",
       "items": 10000,
       "batch": 18,
       "samples": 15,
-      "median_ns": 647332.8,
-      "p25_ns": 647212.5,
-      "p75_ns": 647744.1,
-      "min_ns": 646723.6,
-      "max_ns": 657619.1
+      "median_ns": 641038.7,
+      "p25_ns": 640902.9,
+      "p75_ns": 641744.9,
+      "min_ns": 640332.6,
+      "max_ns": 651786.8
     },
     {
       "name": "scene/set_parent/chain1000_build",
       "items": 1000,
       "batch": 1,
       "samples": 15,
-      "median_ns": 12966926.0,
-      "p25_ns": 12959801.5,
-      "p75_ns": 12984631.0,
-      "min_ns": 12939966.0,
-      "max_ns": 13115203.0
+      "median_ns": 12957140.0,
+      "p25_ns": 12937234.5,
+      "p75_ns": 12968175.0,
+      "min_ns": 12916351.0,
+      "max_ns": 13114287.0
     },
     {
       "name": "scene/set_parent/wide10000_build",
       "items": 10000,
       "batch": 1,
       "samples": 15,
-      "median_ns": 3582670.0,
-      "p25_ns": 3568317.5,
-      "p75_ns": 3599188.5,
-      "min_ns": 3558295.0,
-      "max_ns": 3615357.0
+      "median_ns": 3584624.0,
+      "p25_ns": 3560912.0,
+      "p75_ns": 3595100.5,
+      "min_ns": 3531612.0,
+      "max_ns": 3635051.0
     },
     {
       "name": "scene/view_iterate/transform_sprite/1000",
       "items": 1000,
-      "batch": 2370,
+      "batch": 2332,
       "samples": 15,
-      "median_ns": 4917.5,
-      "p25_ns": 4914.4,
-      "p75_ns": 4920.2,
-      "min_ns": 4908.8,
-      "max_ns": 4928.3
+      "median_ns": 5059.1,
+      "p25_ns": 5055.8,
+      "p75_ns": 5063.1,
+      "min_ns": 5039.8,
+      "max_ns": 5076.9
     },
     {
       "name": "scene/view_iterate/transform_sprite/10000",
       "items": 10000,
       "batch": 221,
       "samples": 15,
-      "median_ns": 53235.3,
-      "p25_ns": 53198.3,
-      "p75_ns": 53251.7,
-      "min_ns": 53137.0,
-      "max_ns": 54157.8
+      "median_ns": 52989.4,
+      "p25_ns": 52920.2,
+      "p75_ns": 53035.7,
+      "min_ns": 52775.7,
+      "max_ns": 53133.2
     },
     {
       "name": "scene/view_iterate/transform_sprite/100000",
       "items": 100000,
       "batch": 15,
       "samples": 15,
-      "median_ns": 732826.1,
-      "p25_ns": 731927.5,
-      "p75_ns": 733654.9,
-      "min_ns": 730744.8,
-      "max_ns": 734656.0
+      "median_ns": 738571.5,
+      "p25_ns": 737903.3,
+      "p75_ns": 740140.6,
+      "min_ns": 734637.0,
+      "max_ns": 742347.6
     },
     {
       "name": "scene/world_transform/chain1000_all",
       "items": 1000,
       "batch": 1,
       "samples": 15,
-      "median_ns": 12545073.0,
-      "p25_ns": 12542628.5,
-      "p75_ns": 12551988.0,
-      "min_ns": 12537391.0,
-      "max_ns": 12559462.0
+      "median_ns": 12548767.0,
+      "p25_ns": 12544018.0,
+      "p75_ns": 12553516.5,
+      "min_ns": 12516291.0,
+      "max_ns": 12595702.0
     },
     {
       "name": "scene/world_transform/chain1000_leaf",
       "items": 1,
-      "batch": 474,
+      "batch": 471,
       "samples": 15,
-      "median_ns": 25185.9,
-      "p25_ns": 25178.9,
-      "p75_ns": 25193.4,
-      "min_ns": 25169.7,
-      "max_ns": 25198.6
+      "median_ns": 25228.3,
+      "p25_ns": 25206.0,
+      "p75_ns": 25241.4,
+      "min_ns": 25192.9,
+      "max_ns": 25256.6
     },
     {
       "name": "scene/world_transform/flat10000_all",
       "items": 10000,
-      "batch": 66,
+      "batch": 65,
       "samples": 15,
-      "median_ns": 181353.9,
-      "p25_ns": 181130.1,
-      "p75_ns": 181508.4,
-      "min_ns": 180888.3,
-      "max_ns": 181738.0
+      "median_ns": 182457.9,
+      "p25_ns": 182254.3,
+      "p75_ns": 182650.8,
+      "min_ns": 182153.8,
+      "max_ns": 187529.6
     },
     {
       "name": "scene/world_transform/forest10000_all",
       "items": 10000,
       "batch": 15,
       "samples": 15,
-      "median_ns": 768772.1,
-      "p25_ns": 768529.9,
-      "p75_ns": 768976.9,
-      "min_ns": 767850.1,
-      "max_ns": 770294.6
+      "median_ns": 773218.3,
+      "p25_ns": 772850.4,
+      "p75_ns": 774249.6,
+      "min_ns": 772678.1,
+      "max_ns": 774782.7
     },
     {
       "name": "scene/world_transform/wide10000_all",
       "items": 10000,
       "batch": 15,
       "samples": 15,
-      "median_ns": 773586.5,
-      "p25_ns": 773146.5,
-      "p75_ns": 773698.3,
-      "min_ns": 772510.9,
-      "max_ns": 775127.7
+      "median_ns": 774722.2,
+      "p25_ns": 774338.0,
+      "p75_ns": 775762.8,
+      "min_ns": 773930.6,
+      "max_ns": 778260.9
     },
     {
       "name": "script/create_instance/empty_script",
       "items": 1,
       "batch": 49,
       "samples": 15,
-      "median_ns": 93243.4,
-      "p25_ns": 80846.2,
-      "p75_ns": 114322.4,
-      "min_ns": 73268.2,
-      "max_ns": 166464.6
+      "median_ns": 93095.1,
+      "p25_ns": 80758.5,
+      "p75_ns": 114970.9,
+      "min_ns": 73040.1,
+      "max_ns": 163126.2
     },
     {
       "name": "script/on_update/arith_100/1000_instances",
       "items": 1000,
-      "batch": 8,
+      "batch": 9,
       "samples": 15,
-      "median_ns": 1402321.0,
-      "p25_ns": 1402168.1,
-      "p75_ns": 1402783.6,
-      "min_ns": 1401727.2,
-      "max_ns": 1404643.2
+      "median_ns": 1326909.0,
+      "p25_ns": 1326792.6,
+      "p75_ns": 1327875.1,
+      "min_ns": 1326373.4,
+      "max_ns": 1330331.2
     },
     {
       "name": "script/on_update/arith_100/1_instance",
       "items": 1,
-      "batch": 9451,
+      "batch": 9980,
       "samples": 15,
-      "median_ns": 1268.6,
-      "p25_ns": 1264.6,
-      "p75_ns": 1269.1,
-      "min_ns": 1263.9,
-      "max_ns": 1271.9
+      "median_ns": 1195.3,
+      "p25_ns": 1194.9,
+      "p75_ns": 1195.9,
+      "min_ns": 1193.9,
+      "max_ns": 1196.4
     },
     {
       "name": "script/on_update/arith_100/1_instance_no_quota",
       "items": 1,
-      "batch": 9461,
+      "batch": 10000,
       "samples": 15,
-      "median_ns": 1268.2,
-      "p25_ns": 1265.3,
-      "p75_ns": 1270.5,
-      "min_ns": 1263.6,
-      "max_ns": 1279.2
+      "median_ns": 1190.2,
+      "p25_ns": 1189.3,
+      "p75_ns": 1190.4,
+      "min_ns": 1186.9,
+      "max_ns": 1195.5
     },
     {
       "name": "script/on_update/empty/1000_instances",
       "items": 1000,
-      "batch": 64,
+      "batch": 61,
       "samples": 15,
-      "median_ns": 188080.9,
-      "p25_ns": 187862.6,
-      "p75_ns": 188184.0,
-      "min_ns": 187630.1,
-      "max_ns": 188367.9
+      "median_ns": 192798.8,
+      "p25_ns": 192755.3,
+      "p75_ns": 193063.9,
+      "min_ns": 192264.1,
+      "max_ns": 248596.5
     },
     {
       "name": "script/on_update/empty/1_instance",
       "items": 1,
-      "batch": 129834,
+      "batch": 140404,
       "samples": 15,
-      "median_ns": 89.4,
-      "p25_ns": 89.2,
-      "p75_ns": 89.5,
-      "min_ns": 88.6,
-      "max_ns": 89.9
+      "median_ns": 86.8,
+      "p25_ns": 86.5,
+      "p75_ns": 87.1,
+      "min_ns": 85.9,
+      "max_ns": 87.3
     },
     {
       "name": "script/on_update/empty/1_instance_no_quota",
       "items": 1,
-      "batch": 134281,
+      "batch": 137363,
       "samples": 15,
-      "median_ns": 91.0,
-      "p25_ns": 90.7,
-      "p75_ns": 91.4,
-      "min_ns": 90.3,
-      "max_ns": 92.0
+      "median_ns": 87.1,
+      "p25_ns": 86.8,
+      "p75_ns": 87.4,
+      "min_ns": 86.2,
+      "max_ns": 87.7
     },
     {
       "name": "script/on_update/get_set_position/1000_instances",
       "items": 1000,
       "batch": 21,
       "samples": 15,
-      "median_ns": 552079.6,
-      "p25_ns": 551337.9,
-      "p75_ns": 580844.9,
-      "min_ns": 550902.2,
-      "max_ns": 623003.5
+      "median_ns": 555315.3,
+      "p25_ns": 549722.9,
+      "p75_ns": 555998.8,
+      "min_ns": 548683.5,
+      "max_ns": 557683.3
     },
     {
       "name": "script/on_update/get_set_position/1_instance",
       "items": 1,
-      "batch": 33062,
+      "batch": 35351,
       "samples": 15,
-      "median_ns": 361.4,
-      "p25_ns": 360.1,
-      "p75_ns": 363.7,
-      "min_ns": 358.8,
-      "max_ns": 383.1
+      "median_ns": 339.1,
+      "p25_ns": 338.7,
+      "p75_ns": 339.6,
+      "min_ns": 338.4,
+      "max_ns": 341.7
     },
     {
       "name": "script/on_update/get_set_position/1_instance_no_quota",
       "items": 1,
-      "batch": 34274,
+      "batch": 35488,
       "samples": 15,
-      "median_ns": 350.8,
-      "p25_ns": 350.7,
-      "p75_ns": 351.1,
-      "min_ns": 350.5,
-      "max_ns": 367.0
+      "median_ns": 340.9,
+      "p25_ns": 340.3,
+      "p75_ns": 341.4,
+      "min_ns": 337.3,
+      "max_ns": 344.0
     },
     {
       "name": "serialize/entity_from_string/scene1",
       "items": 1,
       "batch": 1,
       "samples": 15,
-      "median_ns": 9289.0,
-      "p25_ns": 9115.0,
-      "p75_ns": 9673.5,
-      "min_ns": 8520.0,
-      "max_ns": 20254.0
+      "median_ns": 9149.0,
+      "p25_ns": 9080.0,
+      "p75_ns": 9953.0,
+      "min_ns": 8940.0,
+      "max_ns": 15017.0
     },
     {
       "name": "serialize/entity_from_string/scene10000",
       "items": 1,
       "batch": 1,
       "samples": 15,
-      "median_ns": 29194.0,
-      "p25_ns": 28915.0,
-      "p75_ns": 29823.5,
-      "min_ns": 28427.0,
-      "max_ns": 47144.0
+      "median_ns": 28985.0,
+      "p25_ns": 28601.0,
+      "p75_ns": 29613.5,
+      "min_ns": 27728.0,
+      "max_ns": 31500.0
     },
     {
       "name": "serialize/entity_to_string/scene1",
       "items": 1,
-      "batch": 249,
+      "batch": 223,
       "samples": 15,
-      "median_ns": 48145.2,
-      "p25_ns": 48113.2,
-      "p75_ns": 48168.7,
-      "min_ns": 48018.7,
-      "max_ns": 48221.7
+      "median_ns": 49947.2,
+      "p25_ns": 49900.8,
+      "p75_ns": 50016.7,
+      "min_ns": 49767.7,
+      "max_ns": 50147.0
     },
     {
       "name": "serialize/entity_to_string/scene10000",
       "items": 1,
-      "batch": 251,
+      "batch": 240,
       "samples": 15,
-      "median_ns": 48030.9,
-      "p25_ns": 48004.7,
-      "p75_ns": 48049.9,
-      "min_ns": 47884.5,
-      "max_ns": 48223.2
+      "median_ns": 49807.7,
+      "p25_ns": 49720.7,
+      "p75_ns": 49818.3,
+      "min_ns": 49686.6,
+      "max_ns": 49888.0
     },
     {
       "name": "serialize/scene_from_string/1000",
       "items": 1000,
       "batch": 1,
       "samples": 15,
-      "median_ns": 6472846.0,
-      "p25_ns": 6467608.0,
-      "p75_ns": 6487129.5,
-      "min_ns": 6454618.0,
-      "max_ns": 6528582.0
+      "median_ns": 6435966.0,
+      "p25_ns": 6432299.0,
+      "p75_ns": 6456744.0,
+      "min_ns": 6409914.0,
+      "max_ns": 6518101.0
     },
     {
       "name": "serialize/scene_from_string/10000",
       "items": 10000,
       "batch": 1,
       "samples": 15,
-      "median_ns": 122966907.0,
-      "p25_ns": 122777632.5,
-      "p75_ns": 124361080.0,
-      "min_ns": 122554484.0,
-      "max_ns": 129952263.0
+      "median_ns": 122257293.0,
+      "p25_ns": 122171316.5,
+      "p75_ns": 122430294.5,
+      "min_ns": 121990144.0,
+      "max_ns": 124743985.0
     },
     {
       "name": "serialize/scene_parse_only/1000",
       "items": 1000,
       "batch": 3,
       "samples": 15,
-      "median_ns": 3707782.7,
-      "p25_ns": 3705943.3,
-      "p75_ns": 3709319.0,
-      "min_ns": 3700821.3,
-      "max_ns": 3731552.3
+      "median_ns": 3716697.0,
+      "p25_ns": 3713984.8,
+      "p75_ns": 3720957.3,
+      "min_ns": 3711482.0,
+      "max_ns": 3729548.0
     },
     {
       "name": "serialize/scene_parse_only/10000",
       "items": 10000,
       "batch": 1,
       "samples": 15,
-      "median_ns": 92304745.0,
-      "p25_ns": 92273909.5,
-      "p75_ns": 92346441.0,
-      "min_ns": 92204870.0,
-      "max_ns": 92692304.0
+      "median_ns": 92098165.0,
+      "p25_ns": 92064430.5,
+      "p75_ns": 92197865.5,
+      "min_ns": 91996124.0,
+      "max_ns": 94481697.0
     },
     {
       "name": "serialize/scene_to_string/1000",
       "items": 1000,
       "batch": 1,
       "samples": 15,
-      "median_ns": 56242182.0,
-      "p25_ns": 56218540.0,
-      "p75_ns": 56282900.5,
-      "min_ns": 56188472.0,
-      "max_ns": 56330603.0
+      "median_ns": 58280169.0,
+      "p25_ns": 58260333.5,
+      "p75_ns": 58291448.0,
+      "min_ns": 58235399.0,
+      "max_ns": 58334087.0
     },
     {
       "name": "serialize/scene_to_string/10000",
       "items": 10000,
       "batch": 1,
       "samples": 15,
-      "median_ns": 559715638.0,
-      "p25_ns": 559556117.0,
-      "p75_ns": 564139359.5,
-      "min_ns": 559477683.0,
-      "max_ns": 566613760.0
+      "median_ns": 586554562.0,
+      "p25_ns": 586375065.0,
+      "p75_ns": 587158250.0,
+      "min_ns": 586229372.0,
+      "max_ns": 587896666.0
     },
     {
       "name": "slang/cache_hit/quad_validate_and_read",
       "items": 1,
-      "batch": 1321,
+      "batch": 1317,
       "samples": 15,
-      "median_ns": 9074.8,
-      "p25_ns": 9068.8,
-      "p75_ns": 9092.7,
-      "min_ns": 9059.3,
-      "max_ns": 9115.7
+      "median_ns": 9089.4,
+      "p25_ns": 9080.7,
+      "p75_ns": 9092.8,
+      "min_ns": 8985.7,
+      "max_ns": 9154.6
     },
     {
       "name": "slang/compile_cold/quad_vulkan_first_in_process",
       "items": 1,
       "batch": 1,
       "samples": 1,
-      "median_ns": 192249135.0,
-      "p25_ns": 192249135.0,
-      "p75_ns": 192249135.0,
-      "min_ns": 192249135.0,
-      "max_ns": 192249135.0
+      "median_ns": 192542224.0,
+      "p25_ns": 192542224.0,
+      "p75_ns": 192542224.0,
+      "min_ns": 192542224.0,
+      "max_ns": 192542224.0
     },
     {
       "name": "slang/compile_warm/all_engine_shaders_vulkan",
-      "items": 16,
+      "items": 18,
       "batch": 1,
       "samples": 15,
-      "median_ns": 827555905.0,
-      "p25_ns": 826215127.5,
-      "p75_ns": 833352496.0,
-      "min_ns": 825626350.0,
-      "max_ns": 837793223.0
+      "median_ns": 717224727.0,
+      "p25_ns": 716431590.5,
+      "p75_ns": 717725921.5,
+      "min_ns": 715118122.0,
+      "max_ns": 719348794.0
     },
     {
       "name": "slang/compile_warm/quad_opengl",
       "items": 1,
       "batch": 1,
       "samples": 15,
-      "median_ns": 41880072.0,
-      "p25_ns": 41812603.0,
-      "p75_ns": 41906926.0,
-      "min_ns": 41765599.0,
-      "max_ns": 47517316.0
+      "median_ns": 42078610.0,
+      "p25_ns": 41962113.0,
+      "p75_ns": 42102287.5,
+      "min_ns": 41922861.0,
+      "max_ns": 42307766.0
     },
     {
       "name": "slang/compile_warm/quad_vulkan",
       "items": 1,
       "batch": 1,
       "samples": 15,
-      "median_ns": 42245421.0,
-      "p25_ns": 42187311.5,
-      "p75_ns": 42909279.0,
-      "min_ns": 42048463.0,
-      "max_ns": 46078618.0
+      "median_ns": 42287651.0,
+      "p25_ns": 42224652.5,
+      "p75_ns": 42334655.5,
+      "min_ns": 42119469.0,
+      "max_ns": 42713973.0
     },
     {
       "name": "slang/compile_warm/voxel_vulkan",
       "items": 1,
-      "batch": 1,
+      "batch": 35,
       "samples": 15,
-      "median_ns": 99890331.0,
-      "p25_ns": 99861905.0,
-      "p75_ns": 99999880.0,
-      "min_ns": 99716701.0,
-      "max_ns": 103765993.0
+      "median_ns": 324632.4,
+      "p25_ns": 324305.1,
+      "p75_ns": 324974.6,
+      "min_ns": 324005.8,
+      "max_ns": 325867.6
     },
     {
       "name": "tilemap/build_chunk/32x32",
       "items": 1024,
-      "batch": 9069,
+      "batch": 9091,
       "samples": 15,
-      "median_ns": 1323.6,
-      "p25_ns": 1322.3,
-      "p75_ns": 1325.6,
-      "min_ns": 1318.2,
-      "max_ns": 1327.6
+      "median_ns": 1319.3,
+      "p25_ns": 1318.3,
+      "p75_ns": 1320.7,
+      "min_ns": 1317.5,
+      "max_ns": 1322.3
     },
     {
       "name": "tilemap/edit_one_cell/256x256_layers4",
       "items": 1,
-      "batch": 1690,
+      "batch": 1671,
       "samples": 15,
-      "median_ns": 7109.2,
-      "p25_ns": 7101.9,
-      "p75_ns": 7113.5,
-      "min_ns": 7094.9,
-      "max_ns": 7211.5
+      "median_ns": 7180.3,
+      "p25_ns": 7178.9,
+      "p75_ns": 7183.8,
+      "min_ns": 7175.6,
+      "max_ns": 7253.0
     },
     {
       "name": "tilemap/load/1024x1024",
       "items": 1048576,
       "batch": 1,
       "samples": 15,
-      "median_ns": 11800895.0,
-      "p25_ns": 11795796.5,
-      "p75_ns": 11804597.0,
-      "min_ns": 11774285.0,
-      "max_ns": 11823454.0
+      "median_ns": 11782380.0,
+      "p25_ns": 11772427.0,
+      "p75_ns": 11854039.0,
+      "min_ns": 11751440.0,
+      "max_ns": 14094883.0
     },
     {
       "name": "tilemap/static/1024x1024_layers1",
       "items": 1048576,
-      "batch": 620,
+      "batch": 619,
       "samples": 15,
-      "median_ns": 19313.2,
-      "p25_ns": 19308.9,
-      "p75_ns": 19314.5,
-      "min_ns": 19298.3,
-      "max_ns": 19377.2
+      "median_ns": 19343.9,
+      "p25_ns": 19341.4,
+      "p75_ns": 19345.3,
+      "min_ns": 19339.8,
+      "max_ns": 19386.0
     },
     {
       "name": "tilemap/static/1024x1024_layers4",
       "items": 4194304,
-      "batch": 156,
+      "batch": 154,
       "samples": 15,
-      "median_ns": 76773.7,
-      "p25_ns": 76665.3,
-      "p75_ns": 76788.4,
-      "min_ns": 76510.0,
-      "max_ns": 77510.1
+      "median_ns": 77397.4,
+      "p25_ns": 77387.9,
+      "p75_ns": 77453.2,
+      "min_ns": 77347.1,
+      "max_ns": 77573.4
     },
     {
       "name": "tilemap/static/128x128_layers1",
       "items": 16384,
-      "batch": 20025,
+      "batch": 19981,
       "samples": 15,
-      "median_ns": 597.1,
-      "p25_ns": 597.0,
-      "p75_ns": 597.1,
-      "min_ns": 595.7,
-      "max_ns": 597.3
+      "median_ns": 599.0,
+      "p25_ns": 598.9,
+      "p75_ns": 599.3,
+      "min_ns": 597.5,
+      "max_ns": 599.5
     },
     {
       "name": "tilemap/static/128x128_layers4",
       "items": 65536,
-      "batch": 6612,
+      "batch": 6561,
       "samples": 15,
-      "median_ns": 1804.4,
-      "p25_ns": 1803.8,
-      "p75_ns": 1804.6,
-      "min_ns": 1802.9,
-      "max_ns": 1806.2
+      "median_ns": 1818.5,
+      "p25_ns": 1818.4,
+      "p75_ns": 1818.7,
+      "min_ns": 1818.3,
+      "max_ns": 1819.4
     },
     {
       "name": "tilemap/static/256x256_layers1",
       "items": 65536,
-      "batch": 7996,
+      "batch": 7870,
       "samples": 15,
-      "median_ns": 1503.5,
-      "p25_ns": 1503.4,
-      "p75_ns": 1503.8,
-      "min_ns": 1499.9,
-      "max_ns": 1505.0
+      "median_ns": 1521.3,
+      "p25_ns": 1520.9,
+      "p75_ns": 1521.5,
+      "min_ns": 1520.7,
+      "max_ns": 1523.9
     },
     {
       "name": "tilemap/static/256x256_layers4",
       "items": 262144,
-      "batch": 2206,
+      "batch": 2159,
       "samples": 15,
-      "median_ns": 5445.4,
-      "p25_ns": 5442.9,
-      "p75_ns": 5446.5,
-      "min_ns": 5441.0,
-      "max_ns": 5454.8
+      "median_ns": 5520.6,
+      "p25_ns": 5517.9,
+      "p75_ns": 5523.3,
+      "min_ns": 5499.2,
+      "max_ns": 5531.8
     },
     {
       "name": "tilemap/static/32x32_layers1",
       "items": 1024,
-      "batch": 44315,
+      "batch": 44390,
       "samples": 15,
-      "median_ns": 269.9,
-      "p25_ns": 269.8,
-      "p75_ns": 270.0,
-      "min_ns": 269.7,
-      "max_ns": 270.4
+      "median_ns": 271.9,
+      "p25_ns": 271.7,
+      "p75_ns": 272.3,
+      "min_ns": 271.4,
+      "max_ns": 272.8
     },
     {
       "name": "tilemap/static/32x32_layers4",
       "items": 4096,
-      "batch": 24762,
+      "batch": 24661,
       "samples": 15,
-      "median_ns": 485.5,
-      "p25_ns": 485.2,
-      "p75_ns": 485.9,
-      "min_ns": 484.8,
-      "max_ns": 486.2
+      "median_ns": 487.1,
+      "p25_ns": 486.8,
+      "p75_ns": 487.6,
+      "min_ns": 485.8,
+      "max_ns": 491.7
     },
     {
       "name": "voxel/encode_rle/checkerboard",
       "items": 1,
       "batch": 100,
       "samples": 15,
-      "median_ns": 101626.6,
-      "p25_ns": 101565.1,
-      "p75_ns": 101690.8,
-      "min_ns": 101512.0,
-      "max_ns": 101889.2
+      "median_ns": 102334.7,
+      "p25_ns": 102330.2,
+      "p75_ns": 102361.2,
+      "min_ns": 102294.2,
+      "max_ns": 110273.1
     },
     {
       "name": "voxel/encode_rle/full",
       "items": 1,
-      "batch": 2595,
+      "batch": 2593,
       "samples": 15,
-      "median_ns": 4620.4,
-      "p25_ns": 4619.8,
-      "p75_ns": 4621.8,
-      "min_ns": 4618.6,
-      "max_ns": 4622.8
+      "median_ns": 4620.8,
+      "p25_ns": 4620.6,
+      "p75_ns": 4621.4,
+      "min_ns": 4620.3,
+      "max_ns": 4622.7
     },
     {
       "name": "voxel/encode_rle/random50",
       "items": 1,
-      "batch": 190,
+      "batch": 188,
       "samples": 15,
-      "median_ns": 62853.3,
-      "p25_ns": 62821.6,
-      "p75_ns": 62895.9,
-      "min_ns": 62669.8,
-      "max_ns": 63007.6
+      "median_ns": 63542.3,
+      "p25_ns": 63507.0,
+      "p75_ns": 63589.7,
+      "min_ns": 63469.9,
+      "max_ns": 63723.6
     },
     {
       "name": "voxel/encode_rle/terrain_surface",
       "items": 1,
-      "batch": 916,
+      "batch": 929,
       "samples": 15,
-      "median_ns": 12968.7,
-      "p25_ns": 12966.6,
-      "p75_ns": 12977.8,
-      "min_ns": 12947.0,
-      "max_ns": 12985.6
+      "median_ns": 12863.8,
+      "p25_ns": 12836.1,
+      "p75_ns": 12885.2,
+      "min_ns": 12809.5,
+      "max_ns": 12918.9
     },
     {
       "name": "voxel/encode_rle/terrain_underground",
       "items": 1,
-      "batch": 2598,
+      "batch": 2088,
       "samples": 15,
-      "median_ns": 4619.2,
-      "p25_ns": 4618.9,
-      "p75_ns": 4619.6,
-      "min_ns": 4617.5,
-      "max_ns": 4627.6
+      "median_ns": 4620.7,
+      "p25_ns": 4620.0,
+      "p75_ns": 4621.5,
+      "min_ns": 4618.5,
+      "max_ns": 4629.9
     },
     {
       "name": "voxel/generate_chunk/sky",
       "items": 4096,
-      "batch": 487,
+      "batch": 483,
       "samples": 15,
-      "median_ns": 24772.8,
-      "p25_ns": 24740.9,
-      "p75_ns": 24782.4,
-      "min_ns": 24713.4,
-      "max_ns": 24795.2
+      "median_ns": 24828.5,
+      "p25_ns": 24825.7,
+      "p75_ns": 24832.2,
+      "min_ns": 24821.2,
+      "max_ns": 24839.5
     },
     {
       "name": "voxel/generate_chunk/surface",
       "items": 4096,
-      "batch": 171,
+      "batch": 168,
       "samples": 15,
-      "median_ns": 70155.9,
-      "p25_ns": 70141.4,
-      "p75_ns": 70167.8,
-      "min_ns": 70090.6,
-      "max_ns": 70219.7
+      "median_ns": 70537.3,
+      "p25_ns": 70501.8,
+      "p75_ns": 71120.4,
+      "min_ns": 70313.6,
+      "max_ns": 71404.5
     },
     {
       "name": "voxel/generate_chunk/underground",
       "items": 4096,
       "batch": 61,
       "samples": 15,
-      "median_ns": 195621.3,
-      "p25_ns": 195608.1,
-      "p75_ns": 195659.1,
-      "min_ns": 195525.1,
-      "max_ns": 196137.7
+      "median_ns": 195269.7,
+      "p25_ns": 195234.7,
+      "p75_ns": 195288.6,
+      "min_ns": 195175.8,
+      "max_ns": 195300.6
     },
     {
       "name": "voxel/mesh_by_kind/checkerboard/ao",
@@ -2109,33 +2102,33 @@
       "items": 405,
       "batch": 1,
       "samples": 15,
-      "median_ns": 1124893.0,
-      "p25_ns": 1120841.5,
-      "p75_ns": 1132505.5,
-      "min_ns": 1116860.0,
-      "max_ns": 1147591.0
+      "median_ns": 1116161.0,
+      "p25_ns": 1113402.5,
+      "p75_ns": 1119968.5,
+      "min_ns": 1108269.0,
+      "max_ns": 1144308.0
     },
     {
       "name": "voxel/scene_copy/45chunks",
       "items": 45,
       "batch": 1,
       "samples": 15,
-      "median_ns": 77596.0,
-      "p25_ns": 77351.5,
-      "p75_ns": 78888.0,
-      "min_ns": 77176.0,
-      "max_ns": 86047.0
+      "median_ns": 77317.0,
+      "p25_ns": 77142.0,
+      "p75_ns": 77491.0,
+      "min_ns": 76618.0,
+      "max_ns": 84719.0
     }
   ],
   "metrics": [
     {
       "name": "app/startup_ms/dummy_null_backend",
-      "value": 277.030606,
+      "value": 286.789737,
       "unit": "ms"
     },
     {
       "name": "scene/memory/bytes_per_sprite_entity",
-      "value": 278.02096,
+      "value": 278.02944,
       "unit": "B/entity"
     },
     {
@@ -2155,12 +2148,12 @@
     },
     {
       "name": "serialize/scene_yaml_size/1000",
-      "value": 299666,
+      "value": 299486,
       "unit": "bytes"
     },
     {
       "name": "serialize/scene_yaml_size/10000",
-      "value": 3002754,
+      "value": 3004471,
       "unit": "bytes"
     },
     {
@@ -2430,7 +2423,7 @@
     },
     {
       "name": "iso/pick/256x256_hills_hits",
-      "value": 1416461,
+      "value": 1402745,
       "unit": "picks that found the terrain (budget: 20 us each)"
     },
     {
@@ -2525,7 +2518,7 @@
     },
     {
       "name": "path/build/1024x1024_open_ms",
-      "value": 13.010019,
+      "value": 12.911252,
       "unit": "ms"
     },
     {
@@ -2655,7 +2648,7 @@
     },
     {
       "name": "voxel/mesh_by_kind/full/mesh_bytes",
-      "value": 1104,
+      "value": 1200,
       "unit": "bytes"
     },
     {
@@ -2665,7 +2658,7 @@
     },
     {
       "name": "voxel/mesh_by_kind/random50/mesh_bytes",
-      "value": 1117064,
+      "value": 1214200,
       "unit": "bytes"
     },
     {
@@ -2675,7 +2668,7 @@
     },
     {
       "name": "voxel/mesh_by_kind/checkerboard/mesh_bytes",
-      "value": 2260992,
+      "value": 2457600,
       "unit": "bytes"
     },
     {
@@ -2685,7 +2678,7 @@
     },
     {
       "name": "voxel/mesh_by_kind/terrain_surface/mesh_bytes",
-      "value": 55384,
+      "value": 60200,
       "unit": "bytes"
     },
     {
@@ -2695,7 +2688,7 @@
     },
     {
       "name": "voxel/mesh_by_kind/terrain_underground/mesh_bytes",
-      "value": 1104,
+      "value": 1200,
       "unit": "bytes"
     },
     {
@@ -2705,17 +2698,17 @@
     },
     {
       "name": "voxel/streaming/runtime_walk/initial_load/main_p50_ms",
-      "value": 0.310932,
+      "value": 0.316016,
       "unit": "ms (main-thread CPU per frame)"
     },
     {
       "name": "voxel/streaming/runtime_walk/initial_load/main_p99_ms",
-      "value": 0.643195,
+      "value": 0.692369,
       "unit": "ms"
     },
     {
       "name": "voxel/streaming/runtime_walk/initial_load/main_max_ms",
-      "value": 0.702096,
+      "value": 0.71554,
       "unit": "ms"
     },
     {
@@ -2730,17 +2723,17 @@
     },
     {
       "name": "voxel/streaming/runtime_walk/initial_load/main_total_ms",
-      "value": 28.460199,
+      "value": 28.951023,
       "unit": "ms (main-thread CPU, whole scenario)"
     },
     {
       "name": "voxel/streaming/runtime_walk/initial_load/process_cpu_ms",
-      "value": 933.219121,
+      "value": 897.758196,
       "unit": "ms (all threads)"
     },
     {
       "name": "voxel/streaming/runtime_walk/initial_load/wall_ms",
-      "value": 1350.126939,
+      "value": 1350.144795,
       "unit": "ms"
     },
     {
@@ -2765,17 +2758,17 @@
     },
     {
       "name": "voxel/streaming/runtime_walk/initial_load/meshing_cpu_ms",
-      "value": 626.54261,
+      "value": 591.6237,
       "unit": "ms (meshing work, any thread)"
     },
     {
       "name": "voxel/streaming/runtime_walk/initial_load/latency_mean_ms",
-      "value": 707.336108516129,
+      "value": 707.3429255698925,
       "unit": "ms (chunk needs a mesh -> uploaded)"
     },
     {
       "name": "voxel/streaming/runtime_walk/initial_load/latency_max_ms",
-      "value": 1100.103462,
+      "value": 1100.110653,
       "unit": "ms (since init)"
     },
     {
@@ -2785,17 +2778,17 @@
     },
     {
       "name": "voxel/streaming/runtime_walk/walk/main_p50_ms",
-      "value": 0.31982,
+      "value": 0.328685,
       "unit": "ms (main-thread CPU per frame)"
     },
     {
       "name": "voxel/streaming/runtime_walk/walk/main_p99_ms",
-      "value": 0.666357,
+      "value": 0.677541,
       "unit": "ms"
     },
     {
       "name": "voxel/streaming/runtime_walk/walk/main_max_ms",
-      "value": 0.703057,
+      "value": 0.754867,
       "unit": "ms"
     },
     {
@@ -2810,17 +2803,17 @@
     },
     {
       "name": "voxel/streaming/runtime_walk/walk/main_total_ms",
-      "value": 175.416457,
+      "value": 179.539167,
       "unit": "ms (main-thread CPU, whole scenario)"
     },
     {
       "name": "voxel/streaming/runtime_walk/walk/process_cpu_ms",
-      "value": 4890.901705,
+      "value": 4897.283329,
       "unit": "ms (all threads)"
     },
     {
       "name": "voxel/streaming/runtime_walk/walk/wall_ms",
-      "value": 8667.038678,
+      "value": 8667.027772,
       "unit": "ms"
     },
     {
@@ -2845,17 +2838,17 @@
     },
     {
       "name": "voxel/streaming/runtime_walk/walk/meshing_cpu_ms",
-      "value": 3584.222,
+      "value": 3571.572196,
       "unit": "ms (meshing work, any thread)"
     },
     {
       "name": "voxel/streaming/runtime_walk/walk/latency_mean_ms",
-      "value": 117.11332555381945,
+      "value": 117.11742068055555,
       "unit": "ms (chunk needs a mesh -> uploaded)"
     },
     {
       "name": "voxel/streaming/runtime_walk/walk/latency_max_ms",
-      "value": 1100.103462,
+      "value": 1100.110653,
       "unit": "ms (since init)"
     },
     {
@@ -2865,17 +2858,17 @@
     },
     {
       "name": "voxel/streaming/editor_load/main_p50_ms",
-      "value": 1.142904,
+      "value": 1.173461,
       "unit": "ms (main-thread CPU per frame)"
     },
     {
       "name": "voxel/streaming/editor_load/main_p99_ms",
-      "value": 1.535582,
+      "value": 1.577701,
       "unit": "ms"
     },
     {
       "name": "voxel/streaming/editor_load/main_max_ms",
-      "value": 1.606629,
+      "value": 1.627768,
       "unit": "ms"
     },
     {
@@ -2890,17 +2883,17 @@
     },
     {
       "name": "voxel/streaming/editor_load/main_total_ms",
-      "value": 561.013152,
+      "value": 569.397832,
       "unit": "ms (main-thread CPU, whole scenario)"
     },
     {
       "name": "voxel/streaming/editor_load/process_cpu_ms",
-      "value": 8408.444902,
+      "value": 8402.524913,
       "unit": "ms (all threads)"
     },
     {
       "name": "voxel/streaming/editor_load/wall_ms",
-      "value": 8667.029808,
+      "value": 8667.040692,
       "unit": "ms"
     },
     {
@@ -2925,22 +2918,22 @@
     },
     {
       "name": "voxel/streaming/editor_load/meshing_cpu_ms",
-      "value": 5158.753722,
+      "value": 5144.753731,
       "unit": "ms (meshing work, any thread)"
     },
     {
       "name": "voxel/streaming/editor_load/latency_mean_ms",
-      "value": 5042.790518094102,
+      "value": 5042.795379190855,
       "unit": "ms (chunk needs a mesh -> uploaded)"
     },
     {
       "name": "voxel/streaming/editor_load/latency_max_ms",
-      "value": 8467.299842,
+      "value": 8467.280403,
       "unit": "ms (since init)"
     },
     {
       "name": "script/memory/bytes_per_instance",
-      "value": 17006.88,
+      "value": 17102.848,
       "unit": "B/instance (lua_State + bindings)"
     },
     {
@@ -2989,21 +2982,6 @@
       "unit": "Renderer2D quads (last frame)"
     },
     {
-      "name": "sample/entities/mesh_gallery",
-      "value": 13,
-      "unit": "entities"
-    },
-    {
-      "name": "sample/file_bytes/mesh_gallery",
-      "value": 4883,
-      "unit": "bytes"
-    },
-    {
-      "name": "sample/editor_update/mesh_gallery_quads",
-      "value": 0,
-      "unit": "Renderer2D quads (last frame)"
-    },
-    {
       "name": "sample/entities/platformer_house",
       "value": 228,
       "unit": "entities"
@@ -3049,6 +3027,21 @@
       "unit": "Renderer2D quads (last frame)"
     },
     {
+      "name": "sample/entities/tavern",
+      "value": 41,
+      "unit": "entities"
+    },
+    {
+      "name": "sample/file_bytes/tavern",
+      "value": 19569,
+      "unit": "bytes"
+    },
+    {
+      "name": "sample/editor_update/tavern_quads",
+      "value": 0,
+      "unit": "Renderer2D quads (last frame)"
+    },
+    {
       "name": "sample/entities/victory",
       "value": 8,
       "unit": "entities"
@@ -3065,12 +3058,12 @@
     },
     {
       "name": "sample/entities/voxel_terrain",
-      "value": 3,
+      "value": 4,
       "unit": "entities"
     },
     {
       "name": "sample/file_bytes/voxel_terrain",
-      "value": 2913,
+      "value": 3740,
       "unit": "bytes"
     },
     {
@@ -3100,7 +3093,7 @@
     },
     {
       "name": "slang/engine_shader_files",
-      "value": 16,
+      "value": 18,
       "unit": "files"
     },
     {

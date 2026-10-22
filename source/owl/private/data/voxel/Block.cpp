@@ -108,11 +108,15 @@ auto packSurface(const BlockSurface& iSurface) noexcept -> uint32_t {
 		   packUnit(iSurface.clearcoat) << 24u;
 }
 
-BlockRegistry::BlockRegistry() { m_types.push_back(makeAir()); }
+BlockRegistry::BlockRegistry() {
+	m_types.push_back(makeAir());
+	m_packedSurfaces.push_back(packSurface(m_types.front().surface));
+}
 
 auto BlockRegistry::registerBlock(const BlockType& iType) -> BlockId {
 	const auto id = static_cast<BlockId>(m_types.size());
 	m_types.push_back(iType);
+	m_packedSurfaces.push_back(packSurface(iType.surface));
 	return id;
 }
 
@@ -122,6 +126,7 @@ auto BlockRegistry::setBlock(const BlockId iId, const BlockType& iType) -> bool 
 		return false;
 	}
 	m_types[iId] = iType;
+	m_packedSurfaces[iId] = packSurface(iType.surface);
 	return true;
 }
 
@@ -203,6 +208,8 @@ auto BlockRegistry::deserializeFromString(const std::string_view iYaml) -> bool 
 		}
 	}
 	m_types = std::move(parsed);
+	m_packedSurfaces.clear();
+	for (const auto& type: m_types) m_packedSurfaces.push_back(packSurface(type.surface));
 	return true;
 }
 
