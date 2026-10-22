@@ -69,6 +69,11 @@ editor support in Owl Nest **in the same PR** as the engine-side feature. "Edito
 "Working in YAML or via Lua only" is **not** acceptable for any object the user is expected to author by hand; treat
 that gap as a regression of the same severity as a missing test or missing public API doc.
 
+The same holds for scripts ([Editor reach](editor-reach.md)): every script a scene runs and every Lua function the
+engine calls (hooks, HUD handlers, trigger and timer callbacks) is visible where it is bound, marked defined or not,
+with a button opening the code editor at its line; a value a designer tunes is a script property or a component
+field, never a constant at the top of a script.
+
 ## Every edit gesture is an editor command
 
 Every gesture that changes a scene or an asset in Owl Nest goes through a named command of `CommandRegistry`, never a

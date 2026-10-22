@@ -19,7 +19,7 @@ strict CI, hence the cadence below.
 - ![Ongoing][ongoing] Performance — measure first (Tracy, frame bench, `test/bench/`), no per-frame allocations
 - ![Ongoing][ongoing] Performance budgets enforced in CI — benchmark regression threshold fails the build
 - ![Ongoing][ongoing] Documentation quality — public API documented, `doc/pages` updated in the same PR
-- ![Ongoing][ongoing] Editor coverage for every authored object — selection, inspection, editing, bulk ops, discovery
+- ![Ongoing][ongoing] Editor coverage for every authored object — selection, inspection, editing, bulk ops, discovery; every script and Lua function visible where it is bound ([Editor reach](design/editor-reach.md))
 - ![Ongoing][ongoing] Every edit gesture is a named editor command — recorded, replayable, reachable through MCP
 
 ## v1.0.0 -- Expected 2027-10-31
@@ -143,6 +143,10 @@ render graph, essential post-processing — with full 3D editing ([details](desi
 - ![Done][done] 3D scene editing in Owl Nest (3D gizmos, snapping, mesh preview), "look through scene camera" mode
 - ![To evaluate][evaluate] Owl Nest camera preview: the HUD drawn over it, as an option
 - ![To evaluate][evaluate] Angular radius of a directional light: soft shadows, wider highlight, sun disc in the sky ([3D core](design/3d-core.md#emissive-and-area-lights))
+- ![Planned][planned] Editor reach, before the release: every script and Lua function of a scene visible in Owl Nest with its hooks and an **Open** at the line, a scene script, richer script properties, layer overrides for every key ([Editor reach](design/editor-reach.md))
+- ![Planned][planned] Behaviour components replacing demo scripts: `LightFlicker` (fire, candles), `Oscillator`, `Patrol`, `Drift` ([Editor reach](design/editor-reach.md#behaviour-components))
+- ![Planned][planned] Tuned constants of the Engine Demo and the sample games moved to inspector fields; a test failing on any component field or layer key without an editor widget ([Editor reach](design/editor-reach.md))
+- ![Planned][planned] Owl Nest fixes: material texture **Open** buttons, text files (`gamecontrollerdb.txt`) in the code editor; material thumbnails and a prefab document ([Editor reach](design/editor-reach.md#editor-fixes-and-gaps))
 - ![Planned][planned] Help panel: mermaid diagrams and rendering polish
 - ![Planned][planned] Sample game: a Mini Transport Tycoon ([Sample games](design/sample-games.md))
 - ![To evaluate][evaluate] Sample games from the pool: Asteroids, a tower defence ([Pool](design/sample-games.md#sample-games-pool))
