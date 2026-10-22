@@ -136,6 +136,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Owl Nest no longer crashes when **Play** starts a scene without a primary camera (an empty untitled scene).
+- GCC 15 builds decode HDR environments again: the flat scanline loop of stb_image was miscompiled at `-O2` and above.
+- MinGW GCC links the renderer tests again: the bloom level count is compared by value, not through the exported constant.
 - Owl Nest: the **UiText** inspector shows its font (combo, drop target and preview), as the Text one does.
 - OpenGL: the SPIR-V to GLSL translation names each storage block after its variable, which fixes the link errors of a vertex and a fragment shader sharing storage buffers.
 - GCC builds again: the post-process LUT is held by value in `Scene`, no reference bound to a temporary path.
