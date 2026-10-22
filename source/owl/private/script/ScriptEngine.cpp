@@ -22,6 +22,7 @@
 #include <string>
 #include <string_view>
 #include <system_error>
+#include <utility>
 #include <vector>
 
 namespace owl::script {
@@ -136,23 +137,27 @@ auto readOptionalNumber(lua_State* iState, const int iEntryIndex, const char* iK
 }
 
 auto parseProperty(lua_State* iState, const int iEntryIndex) -> ScriptProperty {
-	ScriptProperty prop;
+	std::string name;
 	rawField(iState, iEntryIndex, "name");
 	if (lua_isstring(iState, -1) != 0)
-		prop.name = lua_tostring(iState, -1);
+		name = lua_tostring(iState, -1);
 	lua_pop(iState, 1);
+	auto type = ScriptPropertyType::Float;
 	rawField(iState, iEntryIndex, "type");
 	if (lua_isstring(iState, -1) != 0)
-		prop.type = ScriptEngine::parsePropertyType(lua_tostring(iState, -1)).value_or(ScriptPropertyType::Float);
+		type = ScriptEngine::parsePropertyType(lua_tostring(iState, -1)).value_or(ScriptPropertyType::Float);
 	lua_pop(iState, 1);
 	rawField(iState, iEntryIndex, "default");
-	prop.value = readValue(iState, prop.type);
-	prop.defaultValue = prop.value;
+	ScriptValue value = readValue(iState, type);
 	lua_pop(iState, 1);
-	prop.min = readOptionalNumber(iState, iEntryIndex, "min");
-	prop.max = readOptionalNumber(iState, iEntryIndex, "max");
-	prop.step = readOptionalNumber(iState, iEntryIndex, "step");
-	return prop;
+	// Built in one go: GCC 15 reports a false -Wfree-nonheap-object on a copy assignment of the variant.
+	return ScriptProperty{.name = std::move(name),
+						  .type = type,
+						  .value = value,
+						  .defaultValue = std::move(value),
+						  .min = readOptionalNumber(iState, iEntryIndex, "min"),
+						  .max = readOptionalNumber(iState, iEntryIndex, "max"),
+						  .step = readOptionalNumber(iState, iEntryIndex, "step")};
 }
 
 auto readProperties(lua_State* iState) -> std::vector<ScriptProperty> {
