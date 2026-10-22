@@ -8,7 +8,6 @@
 #include "owlpch.h"
 
 #include "renderer/CameraOrtho.h"
-#include "renderer/gpu/RenderCommand.h"
 
 namespace owl::renderer {
 
@@ -32,21 +31,10 @@ void CameraOrtho::setProjection(const float iLeft, const float iRight, const flo
 
 auto CameraOrtho::makeProjection(const float iLeft, const float iRight, const float iBottom, const float iTop,
 								 const float iNear, const float iFar, const ClipSpace iClipSpace) -> math::mat4 {
-	math::mat4 projection = math::ortho(iLeft, iRight, iBottom, iTop, iNear, iFar);
-	if (iClipSpace == ClipSpace::Vulkan) {
-		auto biasMatrix = math::identity<float, 4>();
-		biasMatrix(2, 2) = 0.5f;
-		biasMatrix(2, 3) = 0.5f;
-		projection = biasMatrix * projection;
-		projection(1, 1) *= -1.f;
-		projection(1, 3) *= -1.f;
-	}
-	return projection;
+	return toClipSpace(math::orthoReversedZ(iLeft, iRight, iBottom, iTop, iNear, iFar), iClipSpace);
 }
 
-auto CameraOrtho::getActiveClipSpace() -> ClipSpace {
-	return gpu::RenderCommand::getApi() == gpu::RenderAPI::Type::Vulkan ? ClipSpace::Vulkan : ClipSpace::OpenGl;
-}
+auto CameraOrtho::getActiveClipSpace() -> ClipSpace { return renderer::getActiveClipSpace(); }
 
 void CameraOrtho::recalculateViewMatrix() {
 	OWL_PROFILE_FUNCTION()

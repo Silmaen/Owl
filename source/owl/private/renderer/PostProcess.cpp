@@ -243,7 +243,7 @@ auto PostProcess::recordExposure(RenderGraph& ioGraph, const RenderGraph::Resour
 									  .tiling = gpu::AttachmentSpecification::Tiling::Optimal},
 									 {.format = gpu::AttachmentSpecification::Format::RedInteger,
 									  .tiling = gpu::AttachmentSpecification::Tiling::Optimal},
-									 {.format = gpu::AttachmentSpecification::Format::Depth24Stencil8,
+									 {.format = gpu::AttachmentSpecification::Format::Depth32F,
 									  .tiling = gpu::AttachmentSpecification::Tiling::Optimal}},
 					 .samples = 1,
 					 .swapChainTarget = false,

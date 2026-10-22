@@ -37,6 +37,7 @@ void computeMain(uint3 dispatchId : SV_DispatchThreadID) {
 		return;
 	const uint x = dispatchId.x * 2;
 	const uint y = dispatchId.y * 2;
-	const float farthest = max(max(source(p, x, y), source(p, x + 1, y)), max(source(p, x, y + 1), source(p, x + 1, y + 1)));
+	// Reversed-Z: the farthest depth is the smallest.
+	const float farthest = min(min(source(p, x, y), source(p, x + 1, y)), min(source(p, x, y + 1), source(p, x + 1, y + 1)));
 	pyramid[p.dstOffset + dispatchId.y * p.dstWidth + dispatchId.x].depth = farthest;
 }

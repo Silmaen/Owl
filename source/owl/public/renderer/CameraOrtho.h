@@ -9,6 +9,7 @@
 #pragma once
 
 #include "Camera.h"
+#include "ClipSpace.h"
 #include "core/Core.h"
 
 #include <cstdint>
@@ -74,16 +75,8 @@ public:
 	 */
 	void setProjection(float iLeft, float iRight, float iBottom, float iTop, float iNear = -1.0f, float iFar = 1.0f);
 
-	/**
-	 * @brief
-	 *  Clip-space convention of a projection matrix.
-	 */
-	enum struct ClipSpace : uint8_t {
-		/// OpenGL: depth in [-1, 1], NDC Y up.
-		OpenGl,
-		/// Vulkan: depth in [0, 1], NDC Y down (projection Y flipped).
-		Vulkan,
-	};
+	/// Clip-space convention of a projection matrix.
+	using ClipSpace = renderer::ClipSpace;
 
 	/**
 	 * @brief

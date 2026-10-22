@@ -170,7 +170,7 @@ void HeadlessSession::ensureTarget() {
 	m_target = renderer::gpu::Framebuffer::create({.size = m_size,
 												   .attachments = {{Format::Surface, Tiling::Optimal},
 																   {Format::RedInteger, Tiling::Optimal},
-																   {Format::Depth24Stencil8, Tiling::Optimal}},
+																   {Format::Depth32F, Tiling::Optimal}},
 												   .samples = 1,
 												   .swapChainTarget = false,
 												   .debugName = "headless session"});

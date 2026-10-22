@@ -22,8 +22,8 @@ auto attachmentFormatToVulkan(const AttachmentSpecification::Format& iFormat) ->
 	switch (iFormat) {
 		case AttachmentSpecification::Format::None:
 			return VK_FORMAT_UNDEFINED;
-		case AttachmentSpecification::Format::Depth24Stencil8:
-			return VK_FORMAT_D24_UNORM_S8_UINT;
+		case AttachmentSpecification::Format::Depth32F:
+			return VK_FORMAT_D32_SFLOAT;
 		case AttachmentSpecification::Format::Rgba8:
 			return VK_FORMAT_R8G8B8A8_UNORM;
 		case AttachmentSpecification::Format::RedInteger:
@@ -47,15 +47,15 @@ auto attachmentFormatToAspect(const AttachmentSpecification::Format& iFormat) ->
 		case AttachmentSpecification::Format::Rgba16F:
 		case AttachmentSpecification::Format::RedFloat:
 			return VK_IMAGE_ASPECT_COLOR_BIT;
-		case AttachmentSpecification::Format::Depth24Stencil8:
-			return VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+		case AttachmentSpecification::Format::Depth32F:
+			return VK_IMAGE_ASPECT_DEPTH_BIT;
 	}
 	return VK_IMAGE_ASPECT_COLOR_BIT;
 }
 
 auto attachmentFormatToSize(const AttachmentSpecification::Format& iFormat) -> uint32_t {
 	switch (iFormat) {
-		case AttachmentSpecification::Format::Depth24Stencil8:
+		case AttachmentSpecification::Format::Depth32F:
 		case AttachmentSpecification::Format::Rgba8:
 		case AttachmentSpecification::Format::RedInteger:
 		case AttachmentSpecification::Format::Surface:

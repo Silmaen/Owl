@@ -10,6 +10,7 @@
 
 #include <math/linAlgebra.h>
 #include <math/matrixCreation.h>
+#include <renderer/ClipSpace.h>
 #include <renderer/ShadowCascades.h>
 #include <renderer/gpu/RenderCommand.h>
 
@@ -34,7 +35,7 @@ protected:
 };
 
 auto viewCamera() -> Camera {
-	Camera camera{math::perspective(0.8f, 16.f / 9.f, 0.1f, 100.f)};
+	Camera camera{math::perspectiveReversedZ(0.8f, 16.f / 9.f, 0.1f, 100.f)};
 	camera.setTransform(math::translate(math::identity<float, 4>(), math::vec3{0.f, 2.f, 0.f}));
 	return camera;
 }
@@ -67,12 +68,12 @@ TEST_F(ShadowCascadesTest, aVisiblePointFallsInsideItsCascade) {
 	const math::vec3 ndc = project(cascades.cascades[0].camera, {0.5f, 0.f, -5.f});
 	EXPECT_LT(std::abs(ndc.x()), 1.f);
 	EXPECT_LT(std::abs(ndc.y()), 1.f);
-	EXPECT_GT(ndc.z(), -1.f);
-	EXPECT_LT(ndc.z(), 1.f);
-	// A caster above it, towards the light, is nearer to the light.
+	EXPECT_GT(ndc.z(), renderer::g_farDepth);
+	EXPECT_LT(ndc.z(), renderer::g_nearDepth);
+	// A caster above it, towards the light, is nearer to the light: a larger reversed-Z depth.
 	const math::vec3 caster =
 			project(cascades.cascades[0].camera, math::vec3{0.5f, 0.f, -5.f} + math::vec3{-0.3f, 1.f, 0.2f});
-	EXPECT_LT(caster.z(), ndc.z());
+	EXPECT_GT(caster.z(), ndc.z());
 }
 
 TEST_F(ShadowCascadesTest, aNullDirectionGivesNoCascade) {
@@ -80,7 +81,7 @@ TEST_F(ShadowCascadesTest, aNullDirectionGivesNoCascade) {
 }
 
 TEST_F(ShadowCascadesTest, theCascadesDoNotMoveWithASubTexelCameraShift) {
-	Camera moved{math::perspective(0.8f, 16.f / 9.f, 0.1f, 100.f)};
+	Camera moved{math::perspectiveReversedZ(0.8f, 16.f / 9.f, 0.1f, 100.f)};
 	moved.setTransform(math::translate(math::identity<float, 4>(), math::vec3{0.0001f, 2.f, 0.f}));
 	const ShadowCascadeSettings settings{.lightDirection = {0.f, -1.f, 0.f}, .shadowDistance = 30.f, .cascadeCount = 1};
 	const auto reference = computeShadowCascades(viewCamera(), settings);

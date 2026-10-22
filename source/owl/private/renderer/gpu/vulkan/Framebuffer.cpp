@@ -18,6 +18,7 @@
 #include "internal/VulkanCore.h"
 #include "internal/VulkanHandler.h"
 #include "internal/utils.h"
+#include "renderer/ClipSpace.h"
 
 #include <cstring>
 
@@ -238,7 +239,7 @@ void Framebuffer::cleanup() {
 
 auto Framebuffer::readPixel(const uint32_t iAttachmentIndex, const int iX, const int iY) -> int {
 	if (iAttachmentIndex >= m_specs.attachments.size() ||
-		m_specs.attachments[iAttachmentIndex].format == AttachmentSpecification::Format::Depth24Stencil8 ||
+		m_specs.attachments[iAttachmentIndex].format == AttachmentSpecification::Format::Depth32F ||
 		(isMainTarget() && iAttachmentIndex == 0)) {
 		OWL_CORE_WARN("Vulkan Framebuffer ({}): Cannot read a pixel of attachment {}.", m_specs.debugName,
 					  iAttachmentIndex)
@@ -376,7 +377,7 @@ OWL_DIAG_DISABLE_CLANG16("-Wunsafe-buffer-usage")
 void Framebuffer::clearAttachment(const uint32_t iAttachmentIndex, const math::vec4 iColorValue) {
 	if (iAttachmentIndex >= m_specs.attachments.size() ||
 		m_specs.attachments[iAttachmentIndex].format == AttachmentSpecification::Format::RedInteger ||
-		m_specs.attachments[iAttachmentIndex].format == AttachmentSpecification::Format::Depth24Stencil8) {
+		m_specs.attachments[iAttachmentIndex].format == AttachmentSpecification::Format::Depth32F) {
 		OWL_CORE_WARN("Vulkan Framebuffer ({}): Try to color-clear non color attachment.", m_specs.debugName)
 		return;
 	}
@@ -443,7 +444,7 @@ void Framebuffer::createImages() {
 		m_images[i] = {};
 		m_images[i].layout = VK_IMAGE_LAYOUT_UNDEFINED;
 		const uint32_t attIndex = imgIdxToAtt(i);
-		const bool isDepth = m_specs.attachments[attIndex].format == AttachmentSpecification::Format::Depth24Stencil8;
+		const bool isDepth = m_specs.attachments[attIndex].format == AttachmentSpecification::Format::Depth32F;
 		const VkImageUsageFlags usage =
 				isDepth ? VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
 								  VK_IMAGE_USAGE_TRANSFER_DST_BIT
@@ -542,8 +543,8 @@ void Framebuffer::createFrameBuffer() {
 void Framebuffer::createRenderPass() {
 	m_clearValues.assign(m_specs.attachments.size(), VkClearValue{});
 	for (size_t i = 0; i < m_specs.attachments.size(); ++i) {
-		if (m_specs.attachments[i].format == AttachmentSpecification::Format::Depth24Stencil8)
-			m_clearValues[i].depthStencil = {.depth = 1.0f, .stencil = 0};
+		if (m_specs.attachments[i].format == AttachmentSpecification::Format::Depth32F)
+			m_clearValues[i].depthStencil = {.depth = g_farDepth, .stencil = 0};
 	}
 	m_renderPass = buildRenderPass(false);
 	m_firstRenderPass = buildRenderPass(true);
@@ -556,7 +557,7 @@ auto Framebuffer::buildRenderPass(const bool iFirst) const -> VkRenderPass {
 	std::vector<VkAttachmentDescription> attDesc;
 	uint32_t i = 0;
 	for (const auto& [format, tiling]: m_specs.attachments) {
-		if (format == AttachmentSpecification::Format::Depth24Stencil8) {
+		if (format == AttachmentSpecification::Format::Depth32F) {
 			depthRefs = mkUniq<VkAttachmentReference>(
 					VkAttachmentReference{.attachment = i, .layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL});
 			attDesc.push_back({.flags = {},
@@ -651,14 +652,14 @@ auto Framebuffer::isMainTarget() const -> bool { return m_specs.swapChainTarget;
 
 auto Framebuffer::hasDepth() const -> bool {
 	return std::ranges::any_of(m_specs.attachments, [](const AttachmentSpecification& iAttachment) -> bool {
-		return iAttachment.format == AttachmentSpecification::Format::Depth24Stencil8;
+		return iAttachment.format == AttachmentSpecification::Format::Depth32F;
 	});
 }
 
 auto Framebuffer::colorAttachmentIndex(const uint32_t iAttachmentIndex) const -> uint32_t {
 	uint32_t index = 0;
 	for (uint32_t i = 0; i < iAttachmentIndex && i < m_specs.attachments.size(); ++i) {
-		if (m_specs.attachments[i].format != AttachmentSpecification::Format::Depth24Stencil8)
+		if (m_specs.attachments[i].format != AttachmentSpecification::Format::Depth32F)
 			++index;
 	}
 	return index;
@@ -716,7 +717,7 @@ auto Framebuffer::imgIdxToAtt(const uint32_t iImageIndex) const -> uint32_t {
 auto Framebuffer::getColorAttachmentFormats() const -> std::vector<VkFormat> {
 	std::vector<VkFormat> formats;
 	for (const auto att: m_specs.attachments) {
-		if (att.format != AttachmentSpecification::Format::Depth24Stencil8)
+		if (att.format != AttachmentSpecification::Format::Depth32F)
 			formats.push_back(internal::attachmentFormatToVulkan(att.format));
 	}
 	return formats;
@@ -724,7 +725,7 @@ auto Framebuffer::getColorAttachmentFormats() const -> std::vector<VkFormat> {
 
 auto Framebuffer::getAttachmentTexture(const uint32_t iIndex) -> shared<renderer::gpu::Texture2D> {
 	if (isMainTarget() || iIndex >= m_specs.attachments.size() ||
-		m_specs.attachments[iIndex].format == AttachmentSpecification::Format::Depth24Stencil8) {
+		m_specs.attachments[iIndex].format == AttachmentSpecification::Format::Depth32F) {
 		OWL_CORE_WARN("Vulkan Framebuffer ({}): No colour attachment {} to sample.", m_specs.debugName, iIndex)
 		return nullptr;
 	}
@@ -747,13 +748,12 @@ void Framebuffer::copyAttachment(const uint32_t iIndex, renderer::gpu::Framebuff
 					  m_specs.debugName, iIndex)
 		return;
 	}
-	const bool depth = m_specs.attachments[iIndex].format == AttachmentSpecification::Format::Depth24Stencil8;
+	const bool depth = m_specs.attachments[iIndex].format == AttachmentSpecification::Format::Depth32F;
 	auto& source = m_images[attToImgIdx(iIndex)];
 	auto& destination = target->m_images[target->attToImgIdx(iIndex)];
 	internal::VulkanHandler::get().recordTransfer([&source, &destination, depth,
 												   size = m_specs.size](VkCommandBuffer iCmd) -> void {
-		const VkImageAspectFlags aspect =
-				depth ? VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
+		const VkImageAspectFlags aspect = depth ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
 		// Depth layouts are not tracked: between passes a depth image stays in the attachment layout.
 		const VkImageLayout sourceLayout = depth ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL : source.layout;
 		const VkImageLayout destinationLayout =
@@ -829,7 +829,7 @@ void Framebuffer::createDescriptorSets() {
 													   .bindingCount = 1,
 													   .pBindings = &imageLayoutBinding};
 	for (uint32_t imgIdx = 0; imgIdx < m_images.size(); ++imgIdx) {
-		if (m_specs.attachments[imgIdxToAtt(imgIdx)].format == AttachmentSpecification::Format::Depth24Stencil8)
+		if (m_specs.attachments[imgIdxToAtt(imgIdx)].format == AttachmentSpecification::Format::Depth32F)
 			continue;
 		auto& img = m_images[imgIdx];
 		// Data attachments (ids, shadow depths) are read texel for texel: nearest, which every format supports.

@@ -10,8 +10,7 @@
 #include "renderer/CameraEditor.h"
 
 #include "input/Input.h"
-#include "renderer/gpu/RenderAPI.h"
-#include "renderer/gpu/RenderCommand.h"
+#include "renderer/ClipSpace.h"
 
 #include <algorithm>
 #include <cmath>
@@ -24,8 +23,8 @@ Camera::~Camera() = default;
 void Camera::updateViewProjection() { m_viewProjection = m_projection * m_view; }
 
 CameraEditor::CameraEditor(const float iFov, const float iAspectRatio, const float iNearClip, const float iFarClip)
-	: Camera(math::perspective(math::radians(iFov), iAspectRatio, iNearClip, iFarClip)), m_fov(iFov),
-	  m_aspectRatio(iAspectRatio), m_nearClip(iNearClip), m_farClip(iFarClip) {
+	: Camera(toActiveClipSpace(math::perspectiveReversedZ(math::radians(iFov), iAspectRatio, iNearClip, iFarClip))),
+	  m_fov(iFov), m_aspectRatio(iAspectRatio), m_nearClip(iNearClip), m_farClip(iFarClip) {
 	updateView();
 }
 
@@ -108,17 +107,11 @@ void CameraEditor::updateProjection() {
 		// Same framing as the perspective view at the reference point.
 		const float halfHeight = m_distance * std::tan(math::radians(m_fov) * 0.5f);
 		const float halfWidth = halfHeight * m_aspectRatio;
-		m_projection = math::ortho(-halfWidth, halfWidth, -halfHeight, halfHeight, m_nearClip, m_farClip);
+		m_projection = math::orthoReversedZ(-halfWidth, halfWidth, -halfHeight, halfHeight, m_nearClip, m_farClip);
 	} else {
-		m_projection = math::perspective(math::radians(m_fov), m_aspectRatio, m_nearClip, m_farClip);
+		m_projection = math::perspectiveReversedZ(math::radians(m_fov), m_aspectRatio, m_nearClip, m_farClip);
 	}
-	if (gpu::RenderCommand::getApi() == gpu::RenderAPI::Type::Vulkan) {
-		auto biasMatrix = math::identity<float, 4>();
-		biasMatrix(2, 2) = 0.5f;
-		biasMatrix(2, 3) = 0.5f;
-		m_projection = biasMatrix * m_projection;
-		m_projection(1, 1) *= -1.f;
-	}
+	m_projection = toActiveClipSpace(m_projection);
 	updateViewProjection();
 }
 

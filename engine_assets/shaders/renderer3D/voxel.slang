@@ -29,7 +29,7 @@ struct FragmentInput {
 	[[vk::location(2)]] nointerpolation int surface : TEXCOORD1;
 	[[vk::location(3)]] nointerpolation float4 tileRect : TEXCOORD2;
 	[[vk::location(4)]] float ao : TEXCOORD3;
-	[[vk::location(5)]] float3 worldPos : TEXCOORD4;
+	[[vk::location(5)]] float3 position : TEXCOORD4;// camera-relative.
 	[[vk::location(6)]] float2 clipDepth : TEXCOORD5;// clip z and w, for the shadow-map depth.
 };
 
@@ -46,9 +46,9 @@ struct VertexOutput {
 [shader("vertex")]
 VertexOutput vertexMain(VertexInput input) {
 	VertexOutput output;
-	float4 worldPos = mul(gScene.model, float4(input.position, 1.0f));
-	output.svPosition = mul(gScene.viewProjection, worldPos);
-	output.frag.worldPos = worldPos.xyz;
+	float3 position = relativePosition(gScene.model, input.position);
+	output.svPosition = mul(gScene.viewProjection, float4(position, 1.0f));
+	output.frag.position = position;
 	output.frag.clipDepth = output.svPosition.zw;
 	output.frag.normal = normalize(mul((float3x3) gScene.model, input.normal));
 	output.frag.uv = input.uv;
@@ -77,11 +77,11 @@ FragmentOutput fragmentMain(FragmentInput input) {
 	float3 helper = abs(normal.y) < 0.99f ? float3(0.0f, 1.0f, 0.0f) : float3(1.0f, 0.0f, 0.0f);
 	float3 tangent = normalize(cross(helper, normal));
 	Surface s;
-	s.position = input.worldPos;
+	s.position = input.position;
 	s.normal = normal;
 	s.tangent = tangent;
 	s.bitangent = cross(normal, tangent);
-	s.view = normalize(gLighting.cameraPosition.xyz - input.worldPos);
+	s.view = normalize(-input.position);
 	s.albedo = texColor.rgb * authoredColor(gMaterial.baseColor.rgb);
 	s.alpha = texColor.a;
 	uint packed = asuint(input.surface);

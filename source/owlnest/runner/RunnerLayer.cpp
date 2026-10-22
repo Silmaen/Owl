@@ -492,14 +492,13 @@ void RunnerLayer::attachFrameBench() {
 	if (!options.capture.empty()) {
 		using Format = renderer::gpu::AttachmentSpecification::Format;
 		using Tiling = renderer::gpu::AttachmentSpecification::Tiling;
-		m_captureTarget =
-				renderer::gpu::Framebuffer::create({.size = m_viewportSize,
-													.attachments = {{Format::Surface, Tiling::Optimal},
-																	{Format::RedInteger, Tiling::Optimal},
-																	{Format::Depth24Stencil8, Tiling::Optimal}},
-													.samples = 1,
-													.swapChainTarget = false,
-													.debugName = "capture"});
+		m_captureTarget = renderer::gpu::Framebuffer::create({.size = m_viewportSize,
+															  .attachments = {{Format::Surface, Tiling::Optimal},
+																			  {Format::RedInteger, Tiling::Optimal},
+																			  {Format::Depth32F, Tiling::Optimal}},
+															  .samples = 1,
+															  .swapChainTarget = false,
+															  .debugName = "capture"});
 	}
 	m_activeScene->setRuntimeTimingsEnabled(true);
 	m_frameBench->start();

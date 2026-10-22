@@ -33,8 +33,8 @@ enum struct Containment : uint8_t {
  * @brief
  *  The six planes of a view-projection, each `(normal, distance)` with the normal pointing inside.
  *
- * The near plane is the OpenGL one (clip `z >= -w`): on Vulkan (`z >= 0`) the volume is a little deeper, which only
- * keeps a few more boxes.
+ * The depth is the reversed-Z one of the engine projections (`perspectiveReversedZ`, `orthoReversedZ`): near plane
+ * clip `z <= w`, far plane `z >= 0`. With an infinite far plane that last plane has a null normal and keeps every box.
  */
 class Frustum final {
 public:
@@ -51,7 +51,7 @@ public:
 						iViewProjection(iRow, 3)};
 		};
 		const vec4 last = row(3);
-		frustum.m_planes = {last + row(0), last - row(0), last + row(1), last - row(1), last + row(2), last - row(2)};
+		frustum.m_planes = {last + row(0), last - row(0), last + row(1), last - row(1), last - row(2), row(2)};
 		for (auto& plane: frustum.m_planes) {
 			if (const float lenSq = plane.x() * plane.x() + plane.y() * plane.y() + plane.z() * plane.z(); lenSq > 0.f)
 				plane *= 1.f / std::sqrt(lenSq);
@@ -79,7 +79,7 @@ public:
 		for (const auto& plane: m_planes) {
 			const vec3 far{plane.x() >= 0.f ? mx.x() : mn.x(), plane.y() >= 0.f ? mx.y() : mn.y(),
 						   plane.z() >= 0.f ? mx.z() : mn.z()};
-			if (distance(plane, far) < 0.f)
+			if (distance(plane, far) < -slack(plane))
 				return Containment::Outside;
 			const vec3 near{plane.x() >= 0.f ? mn.x() : mx.x(), plane.y() >= 0.f ? mn.y() : mx.y(),
 							plane.z() >= 0.f ? mn.z() : mx.z()};
@@ -109,6 +109,17 @@ private:
 	 */
 	[[nodiscard]] static constexpr auto distance(const vec4& iPlane, const vec3& iPoint) -> float {
 		return iPlane.x() * iPoint.x() + iPlane.y() * iPoint.y() + iPlane.z() * iPoint.z() + iPlane.w();
+	}
+
+	/**
+	 * @brief
+	 *  Distance a box may lie outside a plane and still be kept: a box lying on a plane (a sprite on the near plane of
+	 *  an orthographic camera) stays visible whatever the rounding of the plane, as the GPU clipping keeps it.
+	 * @param[in] iPlane The plane, normalised.
+	 * @return The tolerance, relative to the distance of the plane to the origin.
+	 */
+	[[nodiscard]] static constexpr auto slack(const vec4& iPlane) -> float {
+		return 1e-5f * (1.f + (iPlane.w() < 0.f ? -iPlane.w() : iPlane.w()));
 	}
 
 	/// Left, right, bottom, top, near and far planes.

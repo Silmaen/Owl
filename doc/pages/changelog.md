@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Reversed-Z depth on both backends: `math::perspectiveReversedZ` (infinite far plane) and `math::orthoReversedZ`, and the public `renderer/ClipSpace.h` every camera builds its projection through.
+- Camera-relative 3D shading: `Renderer3D` uploads `projection * cameraRelativeView(view)` and the shaders work relative to the eye, so rendering stays precise far from the origin.
+- Image test `far_origin`: the lights scene moved 2^20 m away renders like at the origin, shadows included.
 - `renderer::RenderGraph` (`Renderer::getRenderGraph()`): passes declare the targets they read and write, the graph orders them, drops the useless ones and pools the transient targets; `Scene::renderWithStack` records one pass per renderer-stack layer.
 - HDR scene colour: the world layers render linear into an `Rgba16F` target and a `colour encode` pass (`renderer::ColorEncoder`) tone maps and sRGB-encodes it; the HUD and the editor overlays stay drawn after it.
 - Per-camera tone mapping (`renderer::ToneMapping`: `None`, `PbrNeutral`, `Aces`, saved as `camera.toneMapping`) and a **Tone mapping** combo in the Owl Nest Camera inspector.
@@ -68,6 +71,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Depth attachment format `Depth24Stencil8` is now `Depth32F` (32-bit float, no stencil) on Vulkan and OpenGL.
+- `ShadowSettings::viewProjections` is replaced by `relativeViewProjections` and `origins`, each cascade relative to its own light camera.
+- `math::Frustum` and `FrustumCullingPass::extractFrustumPlanes` use the reversed-Z planes, and `Frustum::classify` keeps a box lying on a plane.
+- The Hi-Z pyramid keeps the farthest (smallest) depth and the shadow comparisons follow the reversed-Z depth.
 - Roadmap: editor reach before the v0.5.0 release (scripts, Lua functions and tuned values visible in Owl Nest, behaviour components, editor fixes), `design/editor-reach.md`.
 - CI benchmarks: a failed case is measured again alone 5 times (`--confirm_rounds`), and a failure publishes `linux-bench.proposed-baseline.json`, the baseline with the failed cases set to their confirmed median and the new cases added.
 - Bench baseline recalibrated on the frame graph and linear HDR code (build 39239, 5 rounds): the editor update costs about 1 µs more per frame, the shaders compile about 20 % slower; four noisy benchmarks get wider thresholds.

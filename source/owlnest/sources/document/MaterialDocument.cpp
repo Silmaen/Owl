@@ -230,7 +230,7 @@ void MaterialDocument::onUpdate([[maybe_unused]] const core::Timestep& iTimeStep
 				{.size = m_canvasSize,
 				 .attachments = {{.format = Format::Surface, .tiling = Tiling::Optimal},
 								 {.format = Format::RedInteger, .tiling = Tiling::Optimal},
-								 {.format = Format::Depth24Stencil8, .tiling = Tiling::Optimal}},
+								 {.format = Format::Depth32F, .tiling = Tiling::Optimal}},
 				 .samples = 1,
 				 .swapChainTarget = false,
 				 .debugName = "material_viewer"});

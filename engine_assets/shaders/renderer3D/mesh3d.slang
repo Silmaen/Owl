@@ -19,7 +19,7 @@ struct FragmentInput {
 	[[vk::location(1)]] float2 uv : TEXCOORD0;
 	[[vk::location(2)]] nointerpolation int texIndex : TEXCOORD1;
 	[[vk::location(3)]] float ao : TEXCOORD3;
-	[[vk::location(4)]] float3 worldPos : TEXCOORD4;
+	[[vk::location(4)]] float3 position : TEXCOORD4;// camera-relative.
 	[[vk::location(5)]] float2 clipDepth : TEXCOORD5;// clip z and w, for the shadow-map depth.
 	[[vk::location(6)]] nointerpolation float4 tint : TEXCOORD6;
 	[[vk::location(7)]] nointerpolation int entityId : TEXCOORD7;
@@ -65,9 +65,9 @@ VertexOutput vertexMain(VertexInput input, uint instanceId : SV_InstanceID) {
 		output.frag.tint = instance.tint;
 		output.frag.entityId = instance.ids.x;
 	}
-	float4 worldPos = mul(model, float4(input.position, 1.0f));
-	output.svPosition = mul(gScene.viewProjection, worldPos);
-	output.frag.worldPos = worldPos.xyz;
+	float3 position = relativePosition(model, input.position);
+	output.svPosition = mul(gScene.viewProjection, float4(position, 1.0f));
+	output.frag.position = position;
 	output.frag.clipDepth = output.svPosition.zw;
 	output.frag.normal = normalize(mul((float3x3) model, input.normal));
 	output.frag.uv = input.tileRect.xy + input.uv * input.tileRect.zw;
@@ -101,7 +101,7 @@ FragmentOutput fragmentMain(FragmentInput input, bool frontFace : SV_IsFrontFace
 	float3 geometricNormal = normalize(input.normal);
 	if (!frontFace)
 		geometricNormal = -geometricNormal;
-	float3x3 frame = cotangentFrame(geometricNormal, input.worldPos, input.uv);
+	float3x3 frame = cotangentFrame(geometricNormal, input.position, input.uv);
 	float3 normal = geometricNormal;
 	if (hasMap(2)) {
 		float3 mapped = gTextures[MAP_NORMAL].Sample(input.uv).xyz * 2.0f - 1.0f;
@@ -126,11 +126,11 @@ FragmentOutput fragmentMain(FragmentInput input, bool frontFace : SV_IsFrontFace
 	float3 tangent = normalize(frame[0] * cos(rotation) + frame[1] * sin(rotation));
 	tangent = normalize(tangent - normal * dot(normal, tangent));
 	Surface s;
-	s.position = input.worldPos;
+	s.position = input.position;
 	s.normal = normal;
 	s.tangent = tangent;
 	s.bitangent = cross(normal, tangent);
-	s.view = normalize(gLighting.cameraPosition.xyz - input.worldPos);
+	s.view = normalize(-input.position);
 	s.albedo = base.rgb;
 	s.alpha = base.a;
 	s.metallic = saturate(metallic);

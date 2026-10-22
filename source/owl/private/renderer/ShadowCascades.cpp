@@ -12,11 +12,12 @@
 
 #include "math/linAlgebra.h"
 #include "math/matrixCreation.h"
-#include "renderer/gpu/RenderCommand.h"
+#include "renderer/ClipSpace.h"
 
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <limits>
 
 namespace owl::renderer {
 
@@ -29,15 +30,7 @@ auto toVec3(const math::vec4& iPoint) -> math::vec3 {
 }
 
 auto lightProjection(const float iRadius, const float iFar) -> math::mat4 {
-	math::mat4 projection = math::ortho(-iRadius, iRadius, -iRadius, iRadius, 0.f, iFar);
-	if (gpu::RenderCommand::getApi() == gpu::RenderAPI::Type::Vulkan) {
-		auto biasMatrix = math::identity<float, 4>();
-		biasMatrix(2, 2) = 0.5f;
-		biasMatrix(2, 3) = 0.5f;
-		projection = biasMatrix * projection;
-		projection(1, 1) *= -1.f;
-	}
-	return projection;
+	return toActiveClipSpace(math::orthoReversedZ(-iRadius, iRadius, -iRadius, iRadius, 0.f, iFar));
 }
 
 }// namespace
@@ -51,26 +44,30 @@ auto computeShadowCascades(const Camera& iCamera, const ShadowCascadeSettings& i
 	const math::vec3 right = (forward ^ worldUp).normalized();
 	const math::vec3 up = right ^ forward;
 
-	// The frustum corners at the near and far planes, from the inverse view-projection.
-	const bool vulkan = gpu::RenderCommand::getApi() == gpu::RenderAPI::Type::Vulkan;
-	const float nearNdc = vulkan ? 0.f : -1.f;
-	const math::mat4 inverseViewProjection = inverse(iCamera.getViewProjection());
+	// Corners on the near plane and halfway in depth, relative to the eye: precise far away, finite at any far.
+	const math::vec4 eye4 = inverse(iCamera.getView()) * math::vec4{0.f, 0.f, 0.f, 1.f};
+	const math::vec3 eye{eye4.x(), eye4.y(), eye4.z()};
+	const math::mat4 relativeView = cameraRelativeView(iCamera.getView());
+	const math::mat4 inverseViewProjection = inverse(iCamera.getProjection() * relativeView);
 	std::array<math::vec3, 4> nearCorners{};
-	std::array<math::vec3, 4> farCorners{};
+	std::array<math::vec3, 4> midCorners{};
 	for (uint32_t corner = 0; corner < 4; ++corner) {
 		const float x = (corner & 1u) != 0 ? 1.f : -1.f;
 		const float y = (corner & 2u) != 0 ? 1.f : -1.f;
-		nearCorners[corner] = toVec3(inverseViewProjection * math::vec4{x, y, nearNdc, 1.f});
-		farCorners[corner] = toVec3(inverseViewProjection * math::vec4{x, y, 1.f, 1.f});
+		nearCorners[corner] = toVec3(inverseViewProjection * math::vec4{x, y, g_nearDepth, 1.f});
+		midCorners[corner] = toVec3(inverseViewProjection * math::vec4{x, y, 0.5f * (g_nearDepth + g_farDepth), 1.f});
 	}
-	const math::vec4 viewAxis = iCamera.getView().row(2);
+	const math::vec4 viewAxis = relativeView.row(2);
 	const auto viewDepth = [&viewAxis](const math::vec3& iPoint) -> float {
 		return -(viewAxis.x() * iPoint.x() + viewAxis.y() * iPoint.y() + viewAxis.z() * iPoint.z() + viewAxis.w());
 	};
 	const float nearDepth = viewDepth(nearCorners[0]);
-	const float farDepth = viewDepth(farCorners[0]);
-	if (farDepth <= nearDepth)
+	const float midDepth = viewDepth(midCorners[0]);
+	if (midDepth <= nearDepth)
 		return result;
+	const math::vec4 farPoint = inverseViewProjection * math::vec4{0.f, 0.f, g_farDepth, 1.f};
+	const float farDepth =
+			std::abs(farPoint.w()) > 1e-12f ? viewDepth(toVec3(farPoint)) : std::numeric_limits<float>::infinity();
 	const float maxDepth = std::clamp(iSettings.shadowDistance, nearDepth + 0.01f, farDepth);
 	const uint32_t count = std::clamp(iSettings.cascadeCount, 1u, g_maxShadowCascades);
 	const float safeNear = std::max(nearDepth, 0.01f);
@@ -83,13 +80,13 @@ auto computeShadowCascades(const Camera& iCamera, const ShadowCascadeSettings& i
 		const float logSplit = safeNear * std::pow(maxDepth / safeNear, fraction);
 		const float sliceEnd = iSettings.splitBlend * logSplit + (1.f - iSettings.splitBlend) * uniformSplit;
 
-		// Slice corners: the depth is linear along each corner ray, from the near to the far plane.
+		// Slice corners: the depth is linear along each corner ray.
 		std::array<math::vec3, 8> slice{};
-		const float startT = (sliceStart - nearDepth) / (farDepth - nearDepth);
-		const float endT = (sliceEnd - nearDepth) / (farDepth - nearDepth);
+		const float startT = (sliceStart - nearDepth) / (midDepth - nearDepth);
+		const float endT = (sliceEnd - nearDepth) / (midDepth - nearDepth);
 		math::vec3 centre{0.f, 0.f, 0.f};
 		for (uint32_t corner = 0; corner < 4; ++corner) {
-			const math::vec3 ray = farCorners[corner] - nearCorners[corner];
+			const math::vec3 ray = midCorners[corner] - nearCorners[corner];
 			slice[corner] = nearCorners[corner] + ray * startT;
 			slice[corner + 4] = nearCorners[corner] + ray * endT;
 		}
@@ -97,6 +94,7 @@ auto computeShadowCascades(const Camera& iCamera, const ShadowCascadeSettings& i
 		centre = centre * (1.f / 8.f);
 		float radius = 0.f;
 		for (const auto& point: slice) radius = std::max(radius, (point - centre).norm());
+		centre += eye;
 		radius = std::ceil(radius * 16.f) / 16.f;
 
 		// Snap the centre to the texel grid of the light view.
@@ -107,13 +105,13 @@ auto computeShadowCascades(const Camera& iCamera, const ShadowCascadeSettings& i
 				  up * (std::floor(alongUp / texel) * texel - alongUp);
 
 		const float pullBack = std::max(radius, g_minCasterPullBack);
-		const math::vec3 eye = centre - forward * (radius + pullBack);
+		const math::vec3 lightEye = centre - forward * (radius + pullBack);
 		math::mat4 lightWorld = math::identity<float, 4>();
 		for (uint32_t row = 0; row < 3; ++row) {
 			lightWorld(row, 0) = right[row];
 			lightWorld(row, 1) = up[row];
 			lightWorld(row, 2) = -forward[row];
-			lightWorld(row, 3) = eye[row];
+			lightWorld(row, 3) = lightEye[row];
 		}
 		auto& cascade = result.cascades[index];
 		cascade.camera = Camera{lightProjection(radius, 2.f * radius + pullBack)};

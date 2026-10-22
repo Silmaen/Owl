@@ -95,8 +95,9 @@ FragmentOutput fragmentMain(FragmentInput input) {
 		// GLSL mat4(v0,v1,v2,v3) takes columns, Slang float4x4(v0,v1,v2,v3) takes rows → transpose
 		float4x4 invVR = transpose(float4x4(input.invVR0, input.invVR1, input.invVR2, input.invVR3));
 		float2 ndc = input.texCoord * 2.0 - 1.0;
-		float4 worldDir = mul(invVR, float4(ndc, -1.0, 1.0));
-		float3 dir = normalize(worldDir.xyz);
+		// The pixel on the near plane (reversed-Z depth 1), seen from the eye at the origin.
+		float4 nearPoint = mul(invVR, float4(ndc, 1.0, 1.0));
+		float3 dir = normalize(nearPoint.xyz / nearPoint.w);
 		float2 uv = float2(atan2(dir.z, dir.x) / (2.0 * PI) + 0.5,
 							asin(clamp(dir.y, -1.0, 1.0)) / PI + 0.5);
 		output.color = gTextures[NonUniformResourceIndex(idx)].Sample(uv);

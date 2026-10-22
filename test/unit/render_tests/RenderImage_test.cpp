@@ -374,6 +374,14 @@ INSTANTIATE_TEST_SUITE_P(Lights, RenderImage,
 							 return iInfo.param.scene + "_" + iInfo.param.backend;
 						 });
 
+// The lights scene moved 2^20 m away on x and z: camera-relative rendering keeps the meshes, lights and shadows as
+// precise as at the origin (the uploaded matrices never hold the far-away translation).
+INSTANTIATE_TEST_SUITE_P(FarOrigin, RenderImage,
+						 testing::Values(RenderCase{"far_origin", "vulkan"}, RenderCase{"far_origin", "opengl"}),
+						 [](const testing::TestParamInfo<RenderCase>& iInfo) -> std::string {
+							 return iInfo.param.scene + "_" + iInfo.param.backend;
+						 });
+
 // PBR materials under an HDR environment: gold, plastic, rough steel, clearcoat paint, an emissive and a toon sphere,
 // the environment drawn as the sky, the PBR Neutral tone mapping.
 INSTANTIATE_TEST_SUITE_P(Pbr, RenderImage, testing::Values(RenderCase{"pbr", "vulkan"}, RenderCase{"pbr", "opengl"}),

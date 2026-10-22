@@ -135,7 +135,7 @@ render graph, essential post-processing — with full 3D editing ([details](desi
 - ![Done][done] PBR materials with editor and material library, emissive colour and strength included ([3D core](design/3d-core.md#emissive-and-area-lights))
 - ![Done][done] Static mesh component with instancing
 - ![Done][done] Essential post-processing stack (tone mapping, bloom, vignette, LUT)
-- ![In Progress][progress] Camera-relative rendering and reversed-Z depth, precise at any distance ([Large worlds](design/large-worlds.md))
+- ![Done][done] Camera-relative rendering and reversed-Z depth, precise at any distance ([Large worlds](design/large-worlds.md))
 - ![Done][done] Compute-driven frustum / occlusion culling with indirect draws
 - ![Done][done] GPU raycast sprite stripes and `BitonicSortPass` adoption
 - ![Done][done] Spatial partitioning (loose octree shared by the 2D and 3D layers)

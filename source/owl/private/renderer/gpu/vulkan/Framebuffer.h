@@ -165,7 +165,7 @@ public:
 
 	/**
 	 * @brief
-	 *  Get the render-pass clear values (depth = 1.0, colours zeroed, the first one of the swapchain set by the caller).
+	 *  Get the render-pass clear values (depth at the far plane, colours zeroed, the first one of the swapchain set by the caller).
 	 * @return The clear values, one per attachment.
 	 */
 	[[nodiscard]] auto getClearValues() -> std::vector<VkClearValue>& { return m_clearValues; }
@@ -314,7 +314,7 @@ private:
 	VkRenderPass m_renderPass{};
 	/// Render pass of the first batch of a frame: depth cleared, swapchain image cleared.
 	VkRenderPass m_firstRenderPass{};
-	/// Per-attachment render-pass clear values (depth = 1.0, color slots zeroed). Sized to the attachment count.
+	/// Per-attachment render-pass clear values (depth at the far plane, color slots zeroed). Sized to the attachment count.
 	std::vector<VkClearValue> m_clearValues;
 	/// Acquired swapchain image index for this frame.
 	uint32_t m_currentImage = 0;

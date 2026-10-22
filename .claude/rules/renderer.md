@@ -39,8 +39,8 @@ get confirmation. A passing headless (Null backend) test is evidence the path wo
   pre-exposed values; a shader never applies the camera EV100 to a light.
 - **glTF node transforms are baked at load.** `MeshLoader` places every mesh of the default scene with its node chain
   (positions, cofactor matrix for normals, winding flipped by a mirror): one submesh per primitive per node.
-- **Two attachment layouts**: linear (`Rgba16F`, `RedInteger`, `Depth24Stencil8`) and display (`Surface`,
-  `RedInteger`, `Depth24Stencil8`, swapchain included). A draw keeps one pipeline per layout
+- **Two attachment layouts**: linear (`Rgba16F`, `RedInteger`, `Depth32F`) and display (`Surface`,
+  `RedInteger`, `Depth32F`, swapchain included). A draw keeps one pipeline per layout
   (`Framebuffer::getPipelineFamily`, the dedup key of `pushPipeline`), created on its first bind. Never add a third
   layout without checking `getPipelineFamily`.
 - **World colour shaders read `linearOutput`** (set from `gpu::Framebuffer::isLinearTargetBound()`) and keep their
@@ -80,6 +80,12 @@ get confirmation. A passing headless (Null backend) test is evidence the path wo
 - **Vulkan descriptors are written at draw time** (`RendererDescriptors::getDescriptorSet`, from
   `bindPipeline`), after the draw's SSBO binds; every declared binding is written, unbound ones with a default
   resource. Never write a set when the textures are bound: the storage buffers are bound after them.
+- **Reversed-Z everywhere.** Build every projection through `renderer/ClipSpace.h` (`math::perspectiveReversedZ` /
+  `orthoReversedZ` then `toActiveClipSpace`), never `math::perspective` / `ortho` for rendering; compare GREATER, clear
+  to `g_farDepth`, the Hi-Z pyramid keeps the minimum depth, frustum planes are near `z <= w`, far `z >= 0`.
+- **Camera-relative 3D.** The mesh3d / voxel shaders work relative to `Scene3D.origin`: never upload a world
+  view-projection to them (`projection * cameraRelativeView(view)` only), give lights and shadow cascades relative to the
+  eye (`relativeViewProjections` + `origins`); the world view-projection is for culling.
 - **Text outline is a dilation, not the distance field.** The MSDF only spans 2 px: `text.slang` takes the widest coverage on two
   tap rings inside the glyph cell (never outside it, the atlas neighbours would bleed in), the glyph quad and its UVs grown by the
   width by `Renderer2D::drawString`; `outlineUv == 0` keeps the plain path, so existing text stays pixel-identical.

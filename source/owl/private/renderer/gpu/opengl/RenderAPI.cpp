@@ -16,6 +16,7 @@
 #include "Texture.h"
 #include "app/Application.h"
 #include "core/external/opengl46.h"
+#include "renderer/ClipSpace.h"
 
 #include <algorithm>
 
@@ -70,6 +71,11 @@ void RenderAPI::init() {
 
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	// Reversed-Z in [0, 1] as on Vulkan: the float depth buffer keeps its precision at any distance.
+	glClipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE);
+	glDepthFunc(GL_GREATER);
+	glClearDepth(static_cast<GLdouble>(g_farDepth));
 
 	// Every draw applies its own PipelineState (depth, culling, blending); only the line style is global.
 	glEnable(GL_LINE_SMOOTH);

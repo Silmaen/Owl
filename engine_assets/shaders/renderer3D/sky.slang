@@ -1,6 +1,7 @@
 // The environment drawn as the sky: a full-screen quad looking up the equirectangular image (level 0 of the
 // prefiltered environment) along the view ray of each pixel. The model matrix of the scene block holds the inverse
-// view-projection. Writes the linear radiance times the environment intensity and no entity.
+// camera-relative view-projection: the point of the pixel on the near plane (reversed-Z depth 1) gives the ray from
+// the eye at the origin. Writes the linear radiance times the environment intensity and no entity.
 
 #include "pbr.slangh"
 
@@ -39,8 +40,8 @@ VertexOutput vertexMain(VertexInput input) {
 [shader("fragment")]
 FragmentOutput fragmentMain(FragmentInput input) {
 	FragmentOutput output;
-	float4 far = mul(gScene.model, float4(input.clip, 1.0f, 1.0f));
-	float3 direction = normalize(far.xyz / far.w - gLighting.cameraPosition.xyz);
+	float4 near = mul(gScene.model, float4(input.clip, 1.0f, 1.0f));
+	float3 direction = normalize(near.xyz / near.w);
 	float2 uv = equirectangularUv(rotateEnvironment(direction));
 	float3 radiance = gTextures[ENVIRONMENT_SLOT].SampleLevel(uv, 0.0f).rgb * gLighting.environment.x;
 	output.color = float4(radiance, 1.0f);

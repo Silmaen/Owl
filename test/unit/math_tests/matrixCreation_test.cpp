@@ -13,6 +13,7 @@
 
 #include <cmath>
 #include <cstddef>
+#include <limits>
 
 using namespace owl::math;
 
@@ -68,6 +69,38 @@ TEST(math, OrthoMatrix) {
 	EXPECT_NEAR(o(1, 1), 1.f, 0.0001f);
 	EXPECT_NEAR(o(3, 3), 1.f, 0.0001f);
 	EXPECT_NEAR(o(0, 1), 0.f, 0.0001f);
+}
+
+namespace {
+// Depth (z / w) of a point on the view axis at a distance in front of the eye.
+auto depthAt(const mat4& iProjection, const float iDistance) -> float {
+	const vec4 clip = iProjection * vec4{0.f, 0.f, -iDistance, 1.f};
+	return clip.z() / clip.w();
+}
+}// namespace
+
+TEST(math, PerspectiveReversedZMapsNearToOneAndFarToZero) {
+	const auto p = perspectiveReversedZ(radians(45.f), 16.f / 9.f, 0.1f, 100.f);
+	EXPECT_NEAR(depthAt(p, 0.1f), 1.f, 1e-6f);
+	EXPECT_NEAR(depthAt(p, 100.f), 0.f, 1e-6f);
+	EXPECT_GT(depthAt(p, 1.f), depthAt(p, 2.f));
+	EXPECT_NEAR(p(3, 2), -1.f, 1e-6f);
+}
+
+TEST(math, PerspectiveReversedZInfiniteNeverReachesZero) {
+	const auto p = perspectiveReversedZ(radians(45.f), 1.f, 0.1f, std::numeric_limits<float>::infinity());
+	EXPECT_NEAR(depthAt(p, 0.1f), 1.f, 1e-6f);
+	EXPECT_GT(depthAt(p, 1.e7f), 0.f);
+	EXPECT_GT(depthAt(p, 1.e6f), depthAt(p, 1.e7f));
+	EXPECT_FLOAT_EQ(p(2, 2), 0.f);
+}
+
+TEST(math, OrthoReversedZMapsNearToOneAndFarToZero) {
+	const auto o = orthoReversedZ(-1.f, 1.f, -1.f, 1.f, 0.1f, 10.f);
+	EXPECT_NEAR(depthAt(o, 0.1f), 1.f, 1e-6f);
+	EXPECT_NEAR(depthAt(o, 10.f), 0.f, 1e-6f);
+	EXPECT_NEAR(depthAt(o, 5.05f), 0.5f, 1e-6f);
+	EXPECT_NEAR(o(0, 0), 1.f, 1e-6f);
 }
 
 TEST(math, TranslateMatrix) {

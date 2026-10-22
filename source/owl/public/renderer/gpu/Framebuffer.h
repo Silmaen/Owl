@@ -31,7 +31,7 @@ struct AttachmentSpecification {
 		/// Single integer.
 		RedInteger,
 		/// Depth/stencil.
-		Depth24Stencil8,
+		Depth32F,
 		/// Surface for swap chain.
 		Surface,
 		/// Half-float colour, the linear HDR scene colour.

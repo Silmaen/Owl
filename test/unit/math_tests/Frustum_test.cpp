@@ -9,14 +9,19 @@
 #include "testHelper.h"
 
 #include <math/Frustum.h>
+#include <math/linAlgebra.h>
 #include <math/matrixCreation.h>
 #include <math/trigonometry.h>
+
+#include <limits>
 
 using namespace owl::math;
 
 namespace {
 // Camera at the origin looking down -Z, 90 degrees of vertical field, square, from 1 to 100.
-auto cameraFrustum() -> Frustum { return Frustum::fromViewProjection(perspective(radians(90.f), 1.f, 1.f, 100.f)); }
+auto cameraFrustum() -> Frustum {
+	return Frustum::fromViewProjection(perspectiveReversedZ(radians(90.f), 1.f, 1.f, 100.f));
+}
 }// namespace
 
 TEST(Frustum, ClassifiesBoxesAgainstAPerspective) {
@@ -30,10 +35,32 @@ TEST(Frustum, ClassifiesBoxesAgainstAPerspective) {
 }
 
 TEST(Frustum, KeepsAFlatBoxOfAnOrthographicCamera) {
-	const auto frustum = Frustum::fromViewProjection(ortho(-10.f, 10.f, -5.f, 5.f, -1.f, 1.f));
+	const auto frustum = Frustum::fromViewProjection(orthoReversedZ(-10.f, 10.f, -5.f, 5.f, -1.f, 1.f));
 	EXPECT_EQ(frustum.classify(box3f{vec3{-1.f, -1.f, 0.f}, vec3{1.f, 1.f, 0.f}}), Containment::Inside);
 	EXPECT_EQ(frustum.classify(box3f{vec3{9.f, -1.f, 0.f}, vec3{11.f, 1.f, 0.f}}), Containment::Intersects);
 	EXPECT_EQ(frustum.classify(box3f{vec3{-1.f, 6.f, 0.f}, vec3{1.f, 7.f, 0.f}}), Containment::Outside);
+}
+
+TEST(Frustum, CullsBetweenTheEyeAndTheNearPlane) {
+	const auto frustum = cameraFrustum();
+	EXPECT_EQ(frustum.classify(box3f{vec3{-0.1f, -0.1f, -0.8f}, vec3{0.1f, 0.1f, -0.5f}}), Containment::Outside);
+	EXPECT_EQ(frustum.classify(box3f{vec3{-0.1f, -0.1f, -1.5f}, vec3{0.1f, 0.1f, -0.5f}}), Containment::Intersects);
+}
+
+TEST(Frustum, InfiniteFarPlaneKeepsEveryDistance) {
+	const auto frustum = Frustum::fromViewProjection(
+			perspectiveReversedZ(radians(90.f), 1.f, 1.f, std::numeric_limits<float>::infinity()));
+	EXPECT_EQ(frustum.classify(box3f{vec3{-1.f, -1.f, -1.e7f}, vec3{1.f, 1.f, -0.9e7f}}), Containment::Inside);
+	EXPECT_EQ(frustum.classify(box3f{vec3{-1.f, -1.f, 1.f}, vec3{1.f, 1.f, 3.f}}), Containment::Outside);
+}
+
+TEST(Frustum, KeepsAFlatBoxOnTheNearPlane) {
+	// A sprite at z 6 under an orthographic camera at z 5 whose near plane is at -1: exactly on the plane.
+	const auto projection = orthoReversedZ(-14.2f, 14.2f, -4.f, 4.f, -1.f, 10.f);
+	const auto view = inverse(translate(identity<float, 4>(), vec3{0.f, 0.f, 5.f}));
+	const auto frustum = Frustum::fromViewProjection(projection * view);
+	EXPECT_TRUE(frustum.intersects(box3f{vec3{1.8f, -2.4f, 6.f}, vec3{4.8f, -0.4f, 6.f}}));
+	EXPECT_FALSE(frustum.intersects(box3f{vec3{1.8f, -2.4f, 6.1f}, vec3{4.8f, -0.4f, 6.1f}}));
 }
 
 TEST(Frustum, TransformBoxEnclosesTheRotatedBox) {

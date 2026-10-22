@@ -9,7 +9,7 @@
 
 #include "scene/SceneCamera.h"
 
-#include "renderer/gpu/RenderCommand.h"
+#include "renderer/ClipSpace.h"
 
 namespace owl::scene {
 
@@ -39,21 +39,16 @@ void SceneCamera::setViewportSize(const math::vec2ui& iSize) {
 
 void SceneCamera::recalculateProjection() {
 	if (m_projectionType == ProjectionType::Perspective) {
-		m_projection = math::perspective(m_perspectiveFov, m_aspectRatio, m_perspectiveNear, m_perspectiveFar);
+		m_projection = math::perspectiveReversedZ(m_perspectiveFov, m_aspectRatio, m_perspectiveNear, m_perspectiveFar);
 	} else {
 		const float orthoLeft = -m_orthographicSize * m_aspectRatio * 0.5f;
 		const float orthoRight = m_orthographicSize * m_aspectRatio * 0.5f;
 		const float orthoBottom = -m_orthographicSize * 0.5f;
 		const float orthoTop = m_orthographicSize * 0.5f;
-		m_projection = math::ortho(orthoLeft, orthoRight, orthoBottom, orthoTop, m_orthographicNear, m_orthographicFar);
+		m_projection = math::orthoReversedZ(orthoLeft, orthoRight, orthoBottom, orthoTop, m_orthographicNear,
+											m_orthographicFar);
 	}
-	if (renderer::gpu::RenderCommand::getApi() == renderer::gpu::RenderAPI::Type::Vulkan) {
-		auto biasMatrix = math::identity<float, 4>();
-		biasMatrix(2, 2) = 0.5f;
-		biasMatrix(2, 3) = 0.5f;
-		m_projection = biasMatrix * m_projection;
-		m_projection(1, 1) *= -1.f;
-	}
+	m_projection = renderer::toActiveClipSpace(m_projection);
 }
 
 SceneCamera::~SceneCamera() = default;

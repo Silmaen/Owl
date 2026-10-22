@@ -14,6 +14,7 @@
 #include "platform/FileUtils.h"
 #include "renderer/BackgroundRenderer.h"
 #include "renderer/CameraOrtho.h"
+#include "renderer/ClipSpace.h"
 #include "renderer/ColorEncoder.h"
 #include "renderer/IsometricObjects.h"
 #include "renderer/MaterialLibrary.h"
@@ -881,7 +882,11 @@ void Scene::recordLightPasses(renderer::RenderGraph& ioGraph) {
 	const math::vec2ui mapSize{shadowLight->shadowResolution, shadowLight->shadowResolution};
 	for (uint32_t index = 0; index < m_shadowCascades.count; ++index) {
 		const auto& cascade = m_shadowCascades.cascades[index];
-		m_shadowSettings.viewProjections[index] = cascade.camera.getViewProjection();
+		const auto& lightView = cascade.camera.getView();
+		const math::vec4 lightEye = inverse(lightView) * math::vec4{0.f, 0.f, 0.f, 1.f};
+		m_shadowSettings.relativeViewProjections[index] =
+				cascade.camera.getProjection() * renderer::cameraRelativeView(lightView);
+		m_shadowSettings.origins[index] = math::vec3{lightEye.x(), lightEye.y(), lightEye.z()};
 		m_shadowSettings.splitDepths[index] = cascade.splitDepth;
 		m_shadowSettings.texelWorldSizes[index] = cascade.texelWorldSize;
 		m_shadowTargets[index] = ioGraph.createTarget("shadow map", Graph::TargetFormat::Depth, mapSize);

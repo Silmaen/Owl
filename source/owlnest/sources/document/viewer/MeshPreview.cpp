@@ -11,6 +11,7 @@
 #include <data/geometry/MeshLoader.h>
 #include <math/linAlgebra.h>
 #include <math/matrixCreation.h>
+#include <renderer/ClipSpace.h>
 #include <renderer/Renderer3D.h>
 #include <renderer/RendererMesh.h>
 #include <renderer/gpu/RenderCommand.h>
@@ -121,15 +122,10 @@ auto makeMeshPreviewCamera(const renderer::MeshGeometry& iGeometry, const MeshOr
 						   const bool iVulkanClip) -> renderer::Camera {
 	const float radius = boundingRadius(iGeometry);
 	const float distance = orbitDistance(iGeometry, iOrbit);
-	auto projection = math::perspective(g_fov, std::max(iAspect, 0.01f),
-										std::max(distance - radius * 2.f, distance * 0.01f), distance + radius * 2.f);
-	if (iVulkanClip) {
-		auto bias = math::identity<float, 4>();
-		bias(2, 2) = 0.5f;
-		bias(2, 3) = 0.5f;
-		projection = bias * projection;
-		projection(1, 1) *= -1.f;
-	}
+	const auto projection = renderer::toClipSpace(
+			math::perspectiveReversedZ(g_fov, std::max(iAspect, 0.01f),
+									   std::max(distance - radius * 2.f, distance * 0.01f), distance + radius * 2.f),
+			iVulkanClip ? renderer::ClipSpace::Vulkan : renderer::ClipSpace::OpenGl);
 	renderer::Camera camera{projection};
 	camera.setTransform(orbitTransform(iGeometry, iOrbit));
 	return camera;

@@ -35,6 +35,7 @@
 #include <gui/widgets/Tooltip.h>
 #include <math/linAlgebra.h>
 #include <owlgui.h>
+#include <renderer/ClipSpace.h>
 #include <renderer/MeshCache.h>
 #include <renderer/RenderLayer.h>
 #include <renderer/RenderStack.h>
@@ -207,7 +208,7 @@ void Viewport::attach() {
 							 .tiling = renderer::gpu::AttachmentSpecification::Tiling::Optimal},
 							{.format = renderer::gpu::AttachmentSpecification::Format::RedInteger,
 							 .tiling = renderer::gpu::AttachmentSpecification::Tiling::Optimal},
-							{.format = renderer::gpu::AttachmentSpecification::Format::Depth24Stencil8,
+							{.format = renderer::gpu::AttachmentSpecification::Format::Depth32F,
 							 .tiling = renderer::gpu::AttachmentSpecification::Tiling::Optimal},
 					},
 			.samples = 1,
@@ -400,8 +401,7 @@ void Viewport::renderCameraPreview(const shared<scene::Scene>& iScene) {
 				{.size = size,
 				 .attachments = {{.format = Attachment::Format::Surface, .tiling = Attachment::Tiling::Optimal},
 								 {.format = Attachment::Format::RedInteger, .tiling = Attachment::Tiling::Optimal},
-								 {.format = Attachment::Format::Depth24Stencil8,
-								  .tiling = Attachment::Tiling::Optimal}},
+								 {.format = Attachment::Format::Depth32F, .tiling = Attachment::Tiling::Optimal}},
 				 .samples = 1,
 				 .swapChainTarget = false,
 				 .debugName = "camera_preview"});
@@ -2120,8 +2120,8 @@ auto Viewport::getCursorRay() const -> std::optional<std::pair<math::vec3, math:
 			return std::nullopt;
 		return math::vec3{point.x() / point.w(), point.y() / point.w(), point.z() / point.w()};
 	};
-	// Both depths lie in the clip range of OpenGL ([-1, 1]) and of Vulkan ([0, 1]).
-	const auto nearPoint = unproject(0.f);
+	// Reversed-Z: the near plane at depth 1, a farther point halfway (finite with an infinite far plane).
+	const auto nearPoint = unproject(renderer::g_nearDepth);
 	const auto farPoint = unproject(0.5f);
 	if (!nearPoint || !farPoint || (*farPoint - *nearPoint).normSq() < 1e-12f)
 		return std::nullopt;

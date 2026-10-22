@@ -171,7 +171,7 @@ caller's framebuffer back.
 
 - **Targets.** The imported target is the framebuffer bound when the graph runs, or the window surface. Transient
   targets are `Linear` (`Rgba16F` colour) or `Display` (`Surface`), both with the engine layout (colour, `RedInteger`
-  entity id and `Depth24Stencil8`), or `Depth` (a single `RedFloat` attachment, for shadow maps). A target can carry an
+  entity id and `Depth32F`), or `Depth` (a single `RedFloat` attachment, for shadow maps). A target can carry an
   explicit size instead of the size of the frame.
 - **Pool.** Transients come from a pool kept between frames and released after 120 idle runs; a transient released
   earlier in the frame is reused. A transient is cleared on its first write of a frame (clear colour decoded to linear
@@ -222,7 +222,7 @@ Every world layer renders linear into the `Rgba16F` scene colour; encoding to sR
   camera uses `None`; piloting or previewing a scene camera uses its setting.
 - **Vulkan pipelines.** A draw keeps one pipeline per attachment layout (`Framebuffer::getPipelineFamily`, the dedup
   key of `pushPipeline`), created on its first bind to a framebuffer of that layout: linear (`Rgba16F`, `RedInteger`,
-  `Depth24Stencil8`) and display (`Surface`, `RedInteger`, `Depth24Stencil8`, swapchain included).
+  `Depth32F`) and display (`Surface`, `RedInteger`, `Depth32F`, swapchain included).
 
 ### Lights and shadows {#renderer-lights}
 
@@ -250,7 +250,8 @@ The 3D layers (`RendererMesh`, `RendererVoxel`) are lit by the `Light` component
   (100 000), packed logarithmically in 8 bits per vertex ([Voxel](voxel.md)).
 - **Cascades.** The first visible directional light with `castShadows` casts cascaded shadow maps.
   `renderer::computeShadowCascades` splits `[near, shadowDistance]` blending uniform and logarithmic splits (0.75);
-  each cascade is an orthographic light camera around a sphere bounding its frustum slice, its centre snapped to the
+  each cascade is an orthographic light camera around a sphere bounding its frustum slice (sliced relative to the eye;
+  `ShadowSettings::relativeViewProjections` and `origins` give each cascade relative to its own light camera), its centre snapped to the
   texel grid (no shimmering) and pulled back so off-screen casters still cast.
 - **Passes.** One `shadow cascade` pass per cascade renders the opaque meshes and voxel worlds (transparent ones cast
   no shadow) into a `Depth` target (`RedFloat`, `shadowResolution` squared). The 3D layer passes read the cascades
@@ -405,8 +406,8 @@ RendererStack:
 - **Camera.** `IsometricCamera` is a real view times a `CameraOrtho` projection in pixels: yaw 45°, pitch
   `asin(TileHeight / TileWidth)`, world Z scaled by `ZStep`, world Y mirrored so the grid keeps the usual layout
   (`x` to the lower right, `y` to the lower left). It matches `worldToScreen` / `screenToWorld`
-  (`screen.x = (x − y) · tileW / 2`, `screen.y = (x + y) · tileH / 2 − z · zStep`), takes the Vulkan Y flip and depth
-  range of `CameraOrtho::makeProjection`, and keeps a usable depth (`IsometricCamera::depthRange` view pixels around
+  (`screen.x = (x − y) · tileW / 2`, `screen.y = (x + y) · tileH / 2 − z · zStep`), takes the Vulkan Y flip and reversed-Z depth
+  of `CameraOrtho::makeProjection`, and keeps a usable depth (`IsometricCamera::depthRange` view pixels around
   the target). In Play the target is the scene camera's position (Z dropped) and the zoom the layer's `Zoom`; the
   editor hands its own `IsometricCamera`, used as is.
 - **Billboards.** Every sprite is an `IsometricBillboard` anchored at its world foot point: only the foot point goes
@@ -538,6 +539,11 @@ Convention:
 - **Vertex** (`renderer::Mesh3DVertex`, 56 bytes, tightly packed): object-space `position`, `normal`, `uv`, a
   `textureIndex` selecting a slot in the bound texture array, the `tileRect` atlas sub-rect (`mesh3d` maps the UV
   into it, `voxel` tiles it with `frac`) and the `ao` factor of the lighting.
+- **Camera-relative.** `Renderer3D` uploads `projection * cameraRelativeView(view)` and the eye as `Scene3D.origin`;
+  the shaders (`relativePosition` in `common/pbr.slangh`) subtract it from the model translation before the rotation,
+  and lights, the view depth row and the shadow cascades are given relative to the eye, so shading stays precise far
+  from the origin. `Renderer3D::getViewProjection()` stays the world one, used by culling. The image test `far_origin`
+  renders the lights scene 2^20 m away like at the origin.
 - **Shader** (`engine_assets/shaders/renderer3D/mesh3d.slang`): vertex transforms position by a per-draw model
   matrix then the per-frame view-projection (both `column_major`, supplied through one scene UBO at binding 0);
   fragment fills a `Surface` from the material and its maps and calls `shadeSurface` of
@@ -612,9 +618,9 @@ flowchart LR
   The Null backend culls on the CPU and draws with `drawMeshInstanced`. `RendererMesh::Statistics` reports
   `instancedBatchCount`, `visibleInstanceCount` and `occlusionLevelCount`.
 - **Occlusion culling**: with `OcclusionCulling` on, `Scene` records two frame-graph passes before the world: the
-  occluder depth (mesh and voxel layers drawn in shadow mode with the render camera) and a max-depth Hi-Z pyramid
-  built by compute shaders. `mesh_culling` then drops the instances whose projected box lies behind the farthest
-  occluder depth of the texels it covers; boxes crossing the camera plane are kept.
+  occluder depth (mesh and voxel layers drawn in shadow mode with the render camera) and a farthest-depth Hi-Z pyramid
+  built by compute shaders (each texel keeps the smallest depth, the farthest with reversed-Z). `mesh_culling` then drops
+  the instances whose projected box lies behind the farthest occluder depth of the texels it covers; boxes crossing the camera plane are kept.
 - **Spatial indexes**: `Scene` keeps two `data::geometry::LooseOctree`s (`getMeshSpatialIndex` for `MeshRenderer`
   entities, `getSpriteSpatialIndex` for `SpriteRenderer` and `AnimatedSpriteRenderer`), refiled when the world matrix
   or the mesh changes; the mesh pass and the 2D sprite loop skip entities outside the frustum of the current
@@ -1315,14 +1321,14 @@ A `Framebuffer` represents an off-screen render target with one or more typed at
 
 ### Attachment Formats
 
-| Format            | Description                   | Typical Use         |
-|-------------------|-------------------------------|---------------------|
-| `Rgba8`           | 8-bit RGBA colour             | Display colour      |
-| `Rgba16F`         | 16-bit float RGBA colour      | Linear scene colour |
-| `RedFloat`        | Single 32-bit float per pixel | Shadow maps         |
-| `RedInteger`      | Single integer per pixel      | Entity ID picking   |
-| `Depth24Stencil8` | 24-bit depth + 8-bit stencil  | Depth testing       |
-| `Surface`         | Swap chain surface (Vulkan)   | Final presentation  |
+| Format       | Description                    | Typical Use         |
+|--------------|--------------------------------|---------------------|
+| `Rgba8`      | 8-bit RGBA colour              | Display colour      |
+| `Rgba16F`    | 16-bit float RGBA colour       | Linear scene colour |
+| `RedFloat`   | Single 32-bit float per pixel  | Shadow maps         |
+| `RedInteger` | Single integer per pixel       | Entity ID picking   |
+| `Depth32F`   | 32-bit float depth, no stencil | Depth testing       |
+| `Surface`    | Swap chain surface (Vulkan)    | Final presentation  |
 
 ### FramebufferSpecification
 
@@ -1345,7 +1351,7 @@ A `Framebuffer` represents an off-screen render target with one or more typed at
 | `clearAttachment(index, v)`  | Clear an attachment to a value             |
 | `isUpsideDown()`             | Backend-specific Y-flip (Vulkan vs OpenGL) |
 
-The editor viewport renders into `Rgba8` + `RedInteger` + `Depth24Stencil8` for entity picking. `readPixel` never
+The editor viewport renders into `Rgba8` + `RedInteger` + `Depth32F` for entity picking. `readPixel` never
 stalls (a fenced pixel pack buffer on OpenGL, a per-frame read-back slot on Vulkan) and returns the value of a frame
 or two ago, so the viewport checks that the entity still exists.
 
@@ -1409,6 +1415,26 @@ A `BufferLayout` is an initializer list of `BufferElement{name, type}` entries; 
 ### Camera (base class)
 
 Stores `projection`, `view` and `viewProjection`; the view is the inverse of `setTransform(mat4)`.
+
+#### Depth convention and clip space {#camera-depth}
+
+Depth is **reversed-Z** on both backends: in [0, 1], 1 at the near plane (`g_nearDepth`) and 0 at the far plane
+(`g_farDepth`), compared GREATER, cleared to 0, in a `Depth32F` float buffer. OpenGL gets the same range through
+`glClipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE)`. `math::perspectiveReversedZ` (an infinite far gives the infinite far
+plane) and `math::orthoReversedZ` build the projections; `math::perspective` and `math::ortho` stay the generic
+GL-style maths. `renderer/ClipSpace.h` is the one place a camera goes through:
+
+| Helper                 | Role                                                                                |
+|------------------------|-------------------------------------------------------------------------------------|
+| `ClipSpace`            | `OpenGl` or `Vulkan`, differing only in NDC Y (`CameraOrtho::ClipSpace` aliases it) |
+| `getActiveClipSpace()` | The clip space of the active backend                                                |
+| `toClipSpace()`        | Converts a reversed-Z projection to a given clip space                              |
+| `toActiveClipSpace()`  | Same for the active backend (Vulkan negates the Y row)                              |
+| `cameraRelativeView()` | The view without its translation, for camera-relative rendering                     |
+
+The scene, editor, orthographic and isometric cameras, the shadow cascades and the mesh preview all build their
+projection this way. `math::Frustum` and `FrustumCullingPass::extractFrustumPlanes` use the reversed-Z planes (near
+`z <= w`, far `z >= 0`); `Frustum::classify` keeps a box lying on a plane, such as a sprite on an orthographic near plane.
 
 ### CameraOrtho
 

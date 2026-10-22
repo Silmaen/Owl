@@ -1,5 +1,6 @@
 // Shared lighting of the 3D shaders (mesh3d, voxel): the scene, material and lighting blocks, the texture slots,
 // the Standard (Filament), Toon and Unlit shading models, the cascaded shadows and the image-based lighting.
+// Positions are camera-relative (the eye at the origin, `relativePosition`) and depth is reversed-Z.
 
 struct Scene3D {
 	column_major float4x4 viewProjection;
@@ -8,6 +9,7 @@ struct Scene3D {
 	float4 ambient;     // rgb: editor ambient added to every lit surface; w: exposure (1 / (1.2 * 2^EV100)).
 	float4 tint;        // per-entity colour multiplied with the base colour.
 	int4 ids;           // x: entity id (-1 none); y: 1 when the target stores linear colour; z: 1 in a shadow pass; w unused.
+	float4 origin;      // xyz: world position of the eye, origin of the camera-relative space of the shading.
 };
 
 struct MaterialData {
@@ -22,7 +24,7 @@ struct MaterialData {
 };
 
 struct LightData {
-	float4 positionRange;// xyz: world position (point, spot); w: range.
+	float4 positionRange;// xyz: camera-relative position (point, spot); w: range.
 	float4 directionType;// xyz: direction the light travels; w: 0 directional, 1 point, 2 spot.
 	float4 color;        // rgb: linear colour times intensity.
 	float4 spotCosines;  // x: cosine of the inner angle, y: of the outer angle.
@@ -37,9 +39,8 @@ struct Lighting {
 	int4 counts;          // x: light count (0: the sun of the layer), y: shadow cascades, z: index of the shadowed light.
 	float4 splitDepths;   // view depth where each cascade ends.
 	float4 texelSizes;    // world size of a shadow texel, per cascade.
-	float4 viewDepthRow;  // view depth of a point p: -(dot(xyz, p) + w).
+	float4 viewDepthRow;  // view depth of a camera-relative point p: -(dot(xyz, p) + w).
 	float4 shadowParams;  // x: normal-offset bias in texels, y: shadow-map size in texels.
-	float4 cameraPosition;// xyz: world position of the eye.
 	float4 environment;   // x intensity, y cos and z sin of the rotation about Y, w number of prefiltered levels (0 none).
 	float4 irradiance[9]; // order-2 spherical harmonics of the diffuse irradiance / pi (rgb).
 	CascadeMatrix cascades[4];
@@ -63,6 +64,13 @@ ConstantBuffer<Lighting> gLighting;
 
 [[vk::binding(4)]]
 ConstantBuffer<MaterialData> gMaterial;
+
+// Position relative to the eye of a vertex under a model matrix: the translation loses the eye before the rotation
+// is applied, so a far-away model keeps the precision of a near one.
+float3 relativePosition(float4x4 model, float3 position) {
+	float3 translation = float3(model[0][3], model[1][3], model[2][3]) - gScene.origin.xyz;
+	return mul((float3x3) model, position) + translation;
+}
 
 // Texture slots: 0 white, 1-5 material maps, 6 split-sum table, 7-12 prefiltered environment, 28-31 shadow cascades.
 static const int MAP_BASE_COLOR = 1;
@@ -113,19 +121,19 @@ float loadShadowDepth(int cascade, int2 texel, float size) {
 	return gTextures[NonUniformResourceIndex(SHADOW_MAP_SLOT + cascade)].SampleLevel((float2(texel) + 0.5f) / size, 0.0f).r;
 }
 
-// 1 when lit, 0 in shadow: 3x3 comparisons in the cascade covering the point.
-float shadowFactor(float3 worldPos, float3 normal) {
-	float depth = -(dot(gLighting.viewDepthRow.xyz, worldPos) + gLighting.viewDepthRow.w);
+// 1 when lit, 0 in shadow: 3x3 comparisons in the cascade covering the point (reversed-Z: larger is nearer).
+float shadowFactor(float3 position, float3 normal) {
+	float depth = -(dot(gLighting.viewDepthRow.xyz, position) + gLighting.viewDepthRow.w);
 	int cascade = 0;
 	while (cascade < gLighting.counts.y && depth > gLighting.splitDepths[cascade])
 		cascade++;
 	if (cascade >= gLighting.counts.y)
 		return 1.0f;
-	float3 offsetPos = worldPos + normal * (gLighting.texelSizes[cascade] * gLighting.shadowParams.x);
+	float3 offsetPos = position + normal * (gLighting.texelSizes[cascade] * gLighting.shadowParams.x);
 	float4 clip = mul(gLighting.cascades[cascade].viewProjection, float4(offsetPos, 1.0f));
 	float3 ndc = clip.xyz / clip.w;
 	float2 uv = ndc.xy * 0.5f + 0.5f;
-	if (any(uv < 0.0f) || any(uv > 1.0f) || ndc.z > 1.0f)
+	if (any(uv < 0.0f) || any(uv > 1.0f) || ndc.z < 0.0f)
 		return 1.0f;
 	int size = int(gLighting.shadowParams.y);
 	int2 texel = int2(uv * float(size));
@@ -133,7 +141,7 @@ float shadowFactor(float3 worldPos, float3 normal) {
 	for (int dy = -1; dy <= 1; ++dy) {
 		for (int dx = -1; dx <= 1; ++dx) {
 			int2 tap = clamp(texel + int2(dx, dy), int2(0), int2(size - 1));
-			lit += ndc.z <= loadShadowDepth(cascade, tap, float(size)) + 0.0005f ? 1.0f : 0.0f;
+			lit += ndc.z >= loadShadowDepth(cascade, tap, float(size)) - 0.0005f ? 1.0f : 0.0f;
 		}
 	}
 	return lit / 9.0f;

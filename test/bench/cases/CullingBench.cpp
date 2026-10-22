@@ -55,8 +55,8 @@ void runOctree(Runner& ioRunner) {
 		// A camera in the middle of the level, 60 degrees, 150 units deep: about a tenth of the boxes.
 		auto view = math::identity<float, 4>();
 		view(1, 3) = -2.f;
-		const auto frustum =
-				math::Frustum::fromViewProjection(math::perspective(math::radians(60.f), 1.78f, 0.1f, 150.f) * view);
+		const auto frustum = math::Frustum::fromViewProjection(
+				math::perspectiveReversedZ(math::radians(60.f), 1.78f, 0.1f, 150.f) * view);
 		std::vector<uint32_t> ids;
 		ioRunner.measure(std::format("culling/octree/frustum_query/{}", count), count, [&]() -> void {
 			ids.clear();

@@ -8,7 +8,7 @@
 //   binding 4 : visible[]   indices of the visible instances, grouped
 //   binding 5 : pyramid[]   occlusion pyramid (`hiz_build`), read when params.hizLevels > 0
 // An instance in the frustum is then hidden when its box, projected, is farther than the farthest occluder depth of
-// the pyramid texels it covers (a level where it spans at most 2x2 texels).
+// the pyramid texels it covers (a level where it spans at most 2x2 texels). Depth is reversed-Z: larger is nearer.
 // Padding is spelled as scalars: a `uint3` aligns on 16 bytes in std430 and would grow the structs.
 
 struct CullItem {
@@ -90,7 +90,7 @@ uint2 levelSize(CullParams p, uint level) {
 bool occluded(CullParams p, float3 mn, float3 mx) {
 	float2 lo = float2(1e30f, 1e30f);
 	float2 hi = float2(-1e30f, -1e30f);
-	float nearest = 1e30f;
+	float nearest = -1e30f;
 	for (uint corner = 0; corner < 8; ++corner) {
 		const float4 position = float4((corner & 1) != 0 ? mx.x : mn.x, (corner & 2) != 0 ? mx.y : mn.y,
 									   (corner & 4) != 0 ? mx.z : mn.z, 1.0f);
@@ -102,7 +102,7 @@ bool occluded(CullParams p, float3 mn, float3 mx) {
 		const float3 ndc = clip.xyz / clip.w;
 		lo = min(lo, ndc.xy);
 		hi = max(hi, ndc.xy);
-		nearest = min(nearest, ndc.z);
+		nearest = max(nearest, ndc.z);
 	}
 	const float2 uv0 = saturate(lo * 0.5f + 0.5f);
 	const float2 uv1 = saturate(hi * 0.5f + 0.5f);
@@ -120,12 +120,12 @@ bool occluded(CullParams p, float3 mn, float3 mx) {
 		last = min(uint2(uv1 * float2(size)), size - 1);
 	}
 	const uint offset = levelOffset(p, level);
-	float farthest = -1e30f;
+	float farthest = 1e30f;
 	for (uint y = first.y; y <= last.y; ++y) {
 		for (uint x = first.x; x <= last.x; ++x)
-			farthest = max(farthest, pyramid[offset + y * size.x + x].depth);
+			farthest = min(farthest, pyramid[offset + y * size.x + x].depth);
 	}
-	return nearest > farthest;
+	return nearest < farthest;
 }
 
 [shader("compute")]

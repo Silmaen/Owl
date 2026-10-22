@@ -79,6 +79,7 @@ TEST(FrustumCullingPass, extractFrustumPlanesIdentityYieldsClipSpaceBounds) {
 	EXPECT_LT(planes[1].x(), -0.5f);// right: -X
 	EXPECT_GT(planes[2].y(), 0.5f);// bottom: +Y
 	EXPECT_LT(planes[3].y(), -0.5f);// top:    -Y
-	EXPECT_GT(planes[4].z(), 0.5f);// near:   +Z
-	EXPECT_LT(planes[5].z(), -0.5f);// far:    -Z
+	EXPECT_LT(planes[4].z(), -0.5f);// near (reversed-Z, z <= w): -Z
+	EXPECT_GT(planes[5].z(), 0.5f);// far (z >= 0):              +Z
+	EXPECT_FLOAT_EQ(planes[5].w(), 0.f);
 }
