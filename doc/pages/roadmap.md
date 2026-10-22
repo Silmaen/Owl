@@ -144,10 +144,10 @@ render graph, essential post-processing — with full 3D editing ([details](desi
 - ![Done][done] 3D scene editing in Owl Nest (3D gizmos, snapping, mesh preview), "look through scene camera" mode
 - ![To evaluate][evaluate] Owl Nest camera preview: the HUD drawn over it, as an option
 - ![To evaluate][evaluate] Angular radius of a directional light: soft shadows, wider highlight, sun disc in the sky ([3D core](design/3d-core.md#emissive-and-area-lights))
-- ![In Progress][progress] Editor reach, before the release: every script and Lua function of a scene visible in Owl Nest with its hooks and an **Open** at the line, a scene script, richer script properties, layer overrides for every key ([Editor reach](design/editor-reach.md))
-- ![In Progress][progress] Behaviour components replacing demo scripts: `LightFlicker` (fire, candles), `Oscillator`, `Patrol`, `Drift` ([Editor reach](design/editor-reach.md#behaviour-components))
+- ![Done][done] Editor reach, before the release: every script and Lua function of a scene visible in Owl Nest with its hooks and an **Open** at the line, a scene script, richer script properties, layer overrides for every key ([Editor reach](design/editor-reach.md))
+- ![Done][done] Behaviour components replacing demo scripts: `LightFlicker` (fire, candles), `Oscillator`, `Patrol`, `Drift` ([Editor reach](design/editor-reach.md#behaviour-components))
 - ![In Progress][progress] Tuned constants of the Engine Demo and the sample games moved to inspector fields; a test failing on any component field or layer key without an editor widget ([Editor reach](design/editor-reach.md))
-- ![In Progress][progress] Owl Nest fixes: material texture **Open** buttons, text files (`gamecontrollerdb.txt`) in the code editor; material thumbnails and a prefab document ([Editor reach](design/editor-reach.md#editor-fixes-and-gaps))
+- ![Done][done] Owl Nest fixes: material texture **Open** buttons, text files (`gamecontrollerdb.txt`) in the code editor; material thumbnails and a prefab document ([Editor reach](design/editor-reach.md#editor-fixes-and-gaps))
 - ![Planned][planned] Help panel: mermaid diagrams and rendering polish
 - ![Planned][planned] Sample game: a Mini Transport Tycoon ([Sample games](design/sample-games.md))
 - ![To evaluate][evaluate] Sample games from the pool: Asteroids, a tower defence ([Pool](design/sample-games.md#sample-games-pool))
