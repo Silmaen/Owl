@@ -2852,6 +2852,31 @@ void renderProps(ProceduralSky& ioComponent) {
 	fieldTooltip("Width of the sky image in pixels, its height half of it. Sharper stars, a longer redraw.");
 }
 
+void renderProps(FirstPersonController& ioComponent) {
+	prop::Checkbox("Enabled", &ioComponent.enabled);
+	fieldTooltip("Walk the entity on foot; off leaves it to scripts.");
+	prop::DragFloat("Walk Speed", &ioComponent.walkSpeed, 0.05f, 0.f, 50.f, "%.2f");
+	prop::DragFloat("Run Speed", &ioComponent.runSpeed, 0.05f, 0.f, 50.f, "%.2f");
+	fieldTooltip("Speed while the sprint action is held.");
+	prop::DragFloat("Look Speed", &ioComponent.lookSpeed, 0.05f, 0.f, 20.f, "%.2f");
+	fieldTooltip("Radians per second of the look action (arrow keys, right stick).");
+	prop::DragFloat("Mouse Sensitivity", &ioComponent.mouseSensitivity, 0.0001f, 0.0001f, 0.05f, "%.4f");
+	fieldTooltip("Radians per pixel while the cursor is captured.");
+	prop::Checkbox("Capture Cursor", &ioComponent.captureCursor);
+	fieldTooltip("Clicking the view hides and locks the cursor for mouse look (Esc frees it).");
+	prop::DragFloat("Eye Height", &ioComponent.eyeHeight, 0.01f, 0.1f, 10.f, "%.2f");
+	fieldTooltip("Height of the eye (the transform of the entity) above the feet.");
+	prop::DragFloat("Height", &ioComponent.height, 0.01f, 0.2f, 10.f, "%.2f");
+	fieldTooltip("Height of the body box that collides with the meshes.");
+	prop::DragFloat("Radius", &ioComponent.radius, 0.01f, 0.05f, 5.f, "%.2f");
+	fieldTooltip("Half width of the body box.");
+	prop::DragFloat("Step Height", &ioComponent.stepHeight, 0.01f, 0.f, 2.f, "%.2f");
+	fieldTooltip("Highest step climbed without jumping: a box lower than this is walked onto.");
+	prop::DragFloat("Gravity", &ioComponent.gravity, 0.05f, 0.f, 100.f, "%.2f");
+	prop::DragFloat("Jump Speed", &ioComponent.jumpSpeed, 0.05f, 0.f, 50.f, "%.2f");
+	fieldTooltip("Upward speed of a jump; 0 for no jump.");
+}
+
 void renderProps(DayNightCycle& ioComponent) {
 	prop::Checkbox("Enabled", &ioComponent.enabled);
 	fieldTooltip("Advance the hours in Play; off freezes the time of day, the lighting still follows it.");

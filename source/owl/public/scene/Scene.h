@@ -95,6 +95,7 @@ struct FollowTarget;
 struct RenderTarget;
 struct ProceduralSky;
 struct DayNightCycle;
+struct FirstPersonController;
 struct Environment;
 struct NativeScript;
 struct PhysicBody;
@@ -290,6 +291,16 @@ public:
 	 * @return The index.
 	 */
 	[[nodiscard]] auto getMeshSpatialIndex() const -> const data::geometry::LooseOctree& { return m_meshIndex; }
+
+	/**
+	 * @brief
+	 *  Get the entity an id of the mesh spatial index was filed from.
+	 * @param[in] iId An id returned by a query of `getMeshSpatialIndex`.
+	 * @return The entity, `entt::null` for an id no entity holds.
+	 */
+	[[nodiscard]] auto getMeshSpatialEntity(const uint32_t iId) const -> entt::entity {
+		return iId < m_meshEntries.size() ? m_meshEntries[iId].handle : entt::null;
+	}
 
 	/**
 	 * @brief
@@ -1746,6 +1757,10 @@ OWL_API void Scene::onComponentAdded<component::ProceduralSky>(const Entity& iEn
 template<>
 OWL_API void Scene::onComponentAdded<component::DayNightCycle>(const Entity& iEntity,
 															   component::DayNightCycle& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::FirstPersonController>(const Entity& iEntity,
+																	   component::FirstPersonController& ioComponent);
 
 template<>
 OWL_API void Scene::onComponentAdded<component::Environment>(const Entity& iEntity,

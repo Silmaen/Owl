@@ -2213,6 +2213,15 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		 .function = guarded<luaEntityIsBehaviourEnabled<scene::component::DayNightCycle>>,
 		 .description = "Whether the hours of the entity's `DayNightCycle` advance; nothing when it has none.",
 		 .params = {entityId}, .returns = {{"enabled", Boolean}}},
+		{.table = "entity", .name = "set_first_person_enabled",
+		 .function = guarded<luaEntitySetBehaviourEnabled<scene::component::FirstPersonController>>,
+		 .description = "Switch the entity's `FirstPersonController` on or off (scripts move it while off); false "
+						"when it has none.",
+		 .params = {entityId, {"enabled", Boolean}}, .returns = {{"done", Boolean}}},
+		{.table = "entity", .name = "is_first_person_enabled",
+		 .function = guarded<luaEntityIsBehaviourEnabled<scene::component::FirstPersonController>>,
+		 .description = "Whether the entity's `FirstPersonController` walks it; nothing when it has none.",
+		 .params = {entityId}, .returns = {{"enabled", Boolean}}},
 		{.table = "entity", .name = "set_render_target_enabled",
 		 .function = guarded<luaEntitySetBehaviourEnabled<scene::component::RenderTarget>>,
 		 .description = "Switch the entity's `RenderTarget` on or off (its image keeps the last frame while off); "

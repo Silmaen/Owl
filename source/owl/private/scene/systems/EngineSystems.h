@@ -109,6 +109,14 @@ void applyDayNightCycles(Scene& ioScene, bool iRuntime = false);
 
 /**
  * @brief
+ *  Walk the entities with a `FirstPersonController` (`owl.first_person`).
+ * @param[in,out] ioScene The scene.
+ * @param[in] iContext The frame context.
+ */
+void updateFirstPersonControllers(Scene& ioScene, const SystemContext& iContext);
+
+/**
+ * @brief
  *  Make the lights with a `LightFlicker` flicker from the scene time (`owl.light_flicker`).
  * @param[in,out] ioScene The scene.
  * @param[in] iContext The frame context.

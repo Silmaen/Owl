@@ -42,6 +42,36 @@ auto getColliderBox(const Entity& iEntity, const math::Transform& iWorldTransfor
 	return {center - halfDiag, center + halfDiag};
 }
 
+// The body of a 3D player in world space: the box of its controller around the eye, or its scale.
+auto getBodyBox(const Entity& iEntity, const math::Transform& iWorldTransform) -> math::box3f {
+	if (iEntity.hasComponent<component::FirstPersonController>()) {
+		const auto& walker = iEntity.getComponent<component::FirstPersonController>();
+		const math::vec3 centre = iWorldTransform.translation() + walker.getBodyOffset();
+		return {centre - walker.getHalfExtents(), centre + walker.getHalfExtents()};
+	}
+	if (iEntity.hasComponent<component::VoxelPlayer>()) {
+		const auto& half = iEntity.getComponent<component::VoxelPlayer>().halfExtents;
+		return {iWorldTransform.translation() - half, iWorldTransform.translation() + half};
+	}
+	const math::vec3 half = iWorldTransform.scale() * 0.5f;
+	return {iWorldTransform.translation() - half, iWorldTransform.translation() + half};
+}
+
+auto isWalker(const Entity& iEntity) -> bool {
+	return iEntity.hasComponent<component::FirstPersonController>() || iEntity.hasComponent<component::VoxelPlayer>();
+}
+
+// The player the triggers test: the primary `Player`, else the first entity walking in 3D.
+auto getTriggerPlayer(Scene& ioScene) -> Entity {
+	if (const Entity player = ioScene.getPrimaryPlayer(); player)
+		return player;
+	if (const auto walkers = ioScene.registry.view<component::FirstPersonController>(); walkers.begin() != walkers.end())
+		return Entity{*walkers.begin(), &ioScene};
+	if (const auto voxels = ioScene.registry.view<component::VoxelPlayer>(); voxels.begin() != voxels.end())
+		return Entity{*voxels.begin(), &ioScene};
+	return {};
+}
+
 void updateAnimatedSprite(component::AnimatedSpriteRenderer& ioAnim, const core::Timestep& iTimeStep) {
 	if (!ioAnim.m_playing || ioAnim.columns == 0 || ioAnim.rows == 0 || ioAnim.frameDuration <= 0.0f)
 		return;
@@ -87,8 +117,12 @@ void updateTrigger(Scene& ioScene, const Entity& iEntity, const Entity& iPlayer,
 	}
 	if (!iPlayer)
 		return;
-	const bool overlapping = getColliderBox(iEntity, ioScene.getWorldTransform(iEntity))
-									 .intersect(getColliderBox(iPlayer, ioScene.getWorldTransform(iPlayer)));
+	const bool overlapping =
+			isWalker(iPlayer)
+					? getBodyBox(iEntity, ioScene.getWorldTransform(iEntity))
+							  .intersect(getBodyBox(iPlayer, ioScene.getWorldTransform(iPlayer)))
+					: getColliderBox(iEntity, ioScene.getWorldTransform(iEntity))
+							  .intersect(getColliderBox(iPlayer, ioScene.getWorldTransform(iPlayer)));
 	if (overlapping && !trigger.wasOverlapping())
 		trigger.onTriggerEnter(iPlayer, iEntity);
 	if (overlapping)
@@ -112,6 +146,7 @@ void registerEngineSystems(SystemSchedule& ioSchedule) {
 	add("owl.patrols", SystemPhase::PrePhysics, &updatePatrols);
 	add("owl.fly_cameras", SystemPhase::PrePhysics, &updateFlyCameras);
 	add("owl.voxel_players", SystemPhase::PrePhysics, &updateVoxelPlayers);
+	add("owl.first_person", SystemPhase::PrePhysics, &updateFirstPersonControllers);
 	add("owl.raycast_walls", SystemPhase::PrePhysics, [](Scene& ioScene, const SystemContext& iContext) -> void {
 		updateRaycastDynamicWalls(ioScene, iContext.timeStep.getSeconds());
 	});
@@ -223,7 +258,7 @@ void updatePhysics(Scene& ioScene, const SystemContext& iContext) {
 void updateTriggers(Scene& ioScene, const SystemContext& iContext) {
 	OWL_PROFILE_FUNCTION()
 
-	const Entity player = ioScene.getPrimaryPlayer();
+	const Entity player = getTriggerPlayer(ioScene);
 	const float seconds = iContext.timeStep.getSeconds();
 	for (const auto view = ioScene.registry.view<component::Trigger>(); const auto entity: view)
 		updateTrigger(ioScene, Entity{entity, &ioScene}, player, seconds);

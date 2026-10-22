@@ -287,3 +287,30 @@ TEST_F(BehaviourTest, ADayNightCycleTurnsItsLightWithTheSunThenTheMoonAndAdvance
 	EXPECT_LT(sky.getComponent<component::DayNightCycle>().timeOfDay, 12.f);
 }
 
+TEST_F(BehaviourTest, AFirstPersonControllerFallsAndTriggersSeeItsBodyIn3D) {
+	auto scene = mkShared<Scene>();
+	auto walker = scene->createEntity("Walker");
+	walker.getComponent<component::Transform>().transform.translation() = {0.f, 3.f, 0.f};
+	auto& controller = walker.addComponent<component::FirstPersonController>();
+	controller.captureCursor = false;
+	auto camera = scene->createEntity("Camera");
+	camera.addComponent<component::Camera>().primary = true;
+	auto chest = scene->createEntity("Chest");
+	auto& chestTransform = chest.getComponent<component::Transform>().transform;
+	chestTransform.translation() = {0.f, 0.5f, 0.f};
+	chestTransform.scale() = {1.f, 1.f, 1.f};
+	chest.addComponent<component::Trigger>().trigger.type = SceneTrigger::TriggerType::Target;
+	auto far = scene->createEntity("Far");
+	far.getComponent<component::Transform>().transform.translation() = {0.f, 0.5f, 20.f};
+	far.addComponent<component::Trigger>().trigger.type = SceneTrigger::TriggerType::Target;
+	scene->onStartRuntime();
+	run(*scene, 30);
+	EXPECT_LT(translationOf(walker).y(), 3.f);
+	EXPECT_TRUE(chest.getComponent<component::Trigger>().trigger.wasOverlapping());
+	EXPECT_FALSE(far.getComponent<component::Trigger>().trigger.wasOverlapping());
+	walker.getComponent<component::FirstPersonController>().enabled = false;
+	const float stopped = translationOf(walker).y();
+	run(*scene, 10);
+	EXPECT_NEAR(translationOf(walker).y(), stopped, 1e-6f);
+}
+

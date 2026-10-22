@@ -2653,8 +2653,13 @@ void Scene::setEditorVoxelHighlight(const bool iShow, const math::vec3i& iBlock,
 
 auto Scene::wantsCursorCapture() const -> bool {
 	const auto view = registry.view<component::VoxelPlayer>();
+	const auto walkers = registry.view<component::FirstPersonController>();
 	return std::ranges::any_of(
-			view, [&](const auto iEntity) -> bool { return view.get<component::VoxelPlayer>(iEntity).captureCursor; });
+				   view, [&](const auto iEntity) -> bool { return view.get<component::VoxelPlayer>(iEntity).captureCursor; }) ||
+		   std::ranges::any_of(walkers, [&](const auto iEntity) -> bool {
+			   const auto& walker = walkers.get<component::FirstPersonController>(iEntity);
+			   return walker.enabled && walker.captureCursor;
+		   });
 }
 
 auto Scene::isEffectivelyVisible(const Entity& iEntity, const bool iEditorMode) const -> bool {
@@ -2987,6 +2992,11 @@ OWL_API void Scene::onComponentAdded<component::ProceduralSky>([[maybe_unused]] 
 template<>
 OWL_API void Scene::onComponentAdded<component::DayNightCycle>([[maybe_unused]] const Entity& iEntity,
 															   [[maybe_unused]] component::DayNightCycle& ioComponent) {}
+
+template<>
+OWL_API void
+Scene::onComponentAdded<component::FirstPersonController>([[maybe_unused]] const Entity& iEntity,
+														  [[maybe_unused]] component::FirstPersonController& ioComponent) {}
 
 template<>
 OWL_API void Scene::onComponentAdded<component::Environment>([[maybe_unused]] const Entity& iEntity,
