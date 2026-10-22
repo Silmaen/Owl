@@ -85,3 +85,59 @@ Entities:
     wrap: true
     fit: Shrink
     minFontSize: 12
+- Entity: 3500000000000000020
+  Tag: {tag: Minimap}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 3500000000000000001}
+  UiRect:
+    anchorMin: [1, 0]
+    anchorMax: [1, 0]
+    pivot: [1, 0]
+    size: [208, 208]
+    offset: [-16, 16]
+  UiPanel:
+    backgroundColor: [0.05, 0.07, 0.1, 0.85]
+    borderColor: [0.85, 0.8, 0.6, 1]
+    borderWidth: 3
+    clipChildren: true
+- Entity: 3500000000000000021
+  Tag: {tag: MinimapImage}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 3500000000000000020}
+  UiRect:
+    anchorMin: [0, 0]
+    anchorMax: [1, 1]
+    pivot: [0.5, 0.5]
+    size: [-8, -8]
+    offset: [0, 0]
+  UiImage:
+    tint: [1, 1, 1, 1]
+    renderTarget: minimap
+- Entity: 3500000000000000022
+  Tag: {tag: MinimapPlayer}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 3500000000000000021}
+  UiRect:
+    anchorMin: [0.5, 0.5]
+    anchorMax: [0.5, 0.5]
+    pivot: [0.5, 0.5]
+    size: [10, 10]
+    offset: [0, 0]
+  UiPanel:
+    backgroundColor: [1, 0.25, 0.2, 1]
+    borderColor: [1, 1, 1, 1]
+    borderWidth: 2
+    clipChildren: false
+

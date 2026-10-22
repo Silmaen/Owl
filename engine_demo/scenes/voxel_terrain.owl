@@ -64,6 +64,31 @@ Entities:
       CaptureCursor: true
     LuaScript:
       scriptPath: scripts/voxel/voxel_explorer.lua
+  - Entity: 3400000000000000005
+    Tag:
+      tag: MinimapCamera
+    Transform:
+      translation: [8, 100, 8]
+      rotation: [-1.57079637, 0, 0]
+      scale: [1, 1, 1]
+    Camera:
+      camera:
+        projectionType: Orthographic
+        perspectiveFOV: 0.785398185
+        perspectiveNear: 0.00999999978
+        perspectiveFar: 1000
+        orthographicSize: 64
+        orthographicNear: 0
+        orthographicFar: 160
+        toneMapping: PbrNeutral
+      primary: false
+      fixedAspectRatio: true
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 0
+    FollowTarget: {enabled: true, target: 3400000000000000001, offset: [0, 60, 0], followYaw: true}
+    RenderTarget: {enabled: true, targetName: minimap, size: [256, 256], clearColor: [0.05, 0.07, 0.1, 1]}
   - Entity: 3400000000000000002
     Tag:
       tag: ProceduralTerrain

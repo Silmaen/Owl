@@ -566,6 +566,7 @@ void Scene::renderRuntimeFrame(const core::Timestep& iTimeStep) {
 	viewRotation(2, 3) = 0.0f;
 	m_inverseViewRotation = inverse(mainCamera->getProjection() * viewRotation);
 
+	renderTargets();
 	renderWithStack(*mainCamera);
 
 	if (mp_engineContext == nullptr)
