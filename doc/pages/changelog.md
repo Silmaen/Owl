@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Reversed-Z depth on both backends: `math::perspectiveReversedZ` (infinite far plane) and `math::orthoReversedZ`, and the public `renderer/ClipSpace.h` every camera builds its projection through.
 - Camera-relative 3D shading: `Renderer3D` uploads `projection * cameraRelativeView(view)` and the shaders work relative to the eye, so rendering stays precise far from the origin.
 - Image test `far_origin`: the lights scene moved 2^20 m away renders like at the origin, shadows included.
+- `SceneScript`: a scene owns one optional script (`SceneScript:` key, `Scene::getSceneScript`) that runs before the entity scripts without an `entity_id`, edited in the new Scene Settings **Script** section through `scene.set_script`.
 - Owl Nest inspector: a Lua script lists its engine hooks (defined or not, with the line and an **Open** button that reveals it in the code editor), and every named handler (HUD widgets, timer, interaction and Lua-callback triggers) shows the script that defines it or a warning.
 - `ScriptEngine::extractFunctions` and `getHookNames`; `gui::component::openAssetAtLine` and `setInspectedScene`.
 - Owl Nest Scene Settings: layer overrides for every key of the raycast (fog, floor and ceiling tilesets), mesh and voxel layers (sun and ambient lighting), through the new `scene.set_renderers` command.
@@ -86,6 +87,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `ShadowSettings::viewProjections` is replaced by `relativeViewProjections` and `origins`, each cascade relative to its own light camera.
 - `math::Frustum` and `FrustumCullingPass::extractFrustumPlanes` use the reversed-Z planes, and `Frustum::classify` keeps a box lying on a plane.
 - The Hi-Z pyramid keeps the farthest (smallest) depth and the shadow comparisons follow the reversed-Z depth.
+- Scene format 7: a migration moves the script of the primary camera to `SceneScript` when it never names `entity_id`; the Engine Demo tavern scene uses it.
 - Roadmap: editor reach before the v0.5.0 release (scripts, Lua functions and tuned values visible in Owl Nest, behaviour components, editor fixes), `design/editor-reach.md`.
 - CI benchmarks: a failed case is measured again alone 5 times (`--confirm_rounds`), and a failure publishes `linux-bench.proposed-baseline.json`, the baseline with the failed cases set to their confirmed median and the new cases added.
 - Bench baseline recalibrated on the frame graph and linear HDR code (build 39239, 5 rounds): the editor update costs about 1 µs more per frame, the shaders compile about 20 % slower; four noisy benchmarks get wider thresholds.

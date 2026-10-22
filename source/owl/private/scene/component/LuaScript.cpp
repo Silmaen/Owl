@@ -11,41 +11,74 @@
 #include "scene/component/LuaScript.h"
 
 #include <cstdint>
+#include <exception>
+#include <optional>
+#include <string>
 
 namespace owl::scene::component {
 
-void LuaScript::serialize(const core::Serializer& iOut) const {
-	iOut.getImpl()->emitter << YAML::Key << key();
-	iOut.getImpl()->emitter << YAML::BeginMap;
-	iOut.getImpl()->emitter << YAML::Key << "scriptPath" << YAML::Value << scriptPath;
-	if (!properties.empty()) {
-		iOut.getImpl()->emitter << YAML::Key << "properties" << YAML::Value << YAML::BeginSeq;
-		for (const auto& prop: properties) {
-			iOut.getImpl()->emitter << YAML::BeginMap;
-			iOut.getImpl()->emitter << YAML::Key << "name" << YAML::Value << prop.name;
+namespace {
+
+void writeFields(YAML::Emitter& ioEmitter, const LuaScript& iScript) {
+	ioEmitter << YAML::BeginMap;
+	ioEmitter << YAML::Key << "scriptPath" << YAML::Value << iScript.scriptPath;
+	if (!iScript.properties.empty()) {
+		ioEmitter << YAML::Key << "properties" << YAML::Value << YAML::BeginSeq;
+		for (const auto& prop: iScript.properties) {
+			ioEmitter << YAML::BeginMap;
+			ioEmitter << YAML::Key << "name" << YAML::Value << prop.name;
 			switch (prop.type) {
 				case script::ScriptPropertyType::Float:
-					iOut.getImpl()->emitter << YAML::Key << "type" << YAML::Value << "float";
-					iOut.getImpl()->emitter << YAML::Key << "value" << YAML::Value << std::get<float>(prop.value);
+					ioEmitter << YAML::Key << "type" << YAML::Value << "float";
+					ioEmitter << YAML::Key << "value" << YAML::Value << std::get<float>(prop.value);
 					break;
 				case script::ScriptPropertyType::Int:
-					iOut.getImpl()->emitter << YAML::Key << "type" << YAML::Value << "int";
-					iOut.getImpl()->emitter << YAML::Key << "value" << YAML::Value << std::get<int64_t>(prop.value);
+					ioEmitter << YAML::Key << "type" << YAML::Value << "int";
+					ioEmitter << YAML::Key << "value" << YAML::Value << std::get<int64_t>(prop.value);
 					break;
 				case script::ScriptPropertyType::String:
-					iOut.getImpl()->emitter << YAML::Key << "type" << YAML::Value << "string";
-					iOut.getImpl()->emitter << YAML::Key << "value" << YAML::Value << std::get<std::string>(prop.value);
+					ioEmitter << YAML::Key << "type" << YAML::Value << "string";
+					ioEmitter << YAML::Key << "value" << YAML::Value << std::get<std::string>(prop.value);
 					break;
 				case script::ScriptPropertyType::Bool:
-					iOut.getImpl()->emitter << YAML::Key << "type" << YAML::Value << "bool";
-					iOut.getImpl()->emitter << YAML::Key << "value" << YAML::Value << std::get<bool>(prop.value);
+					ioEmitter << YAML::Key << "type" << YAML::Value << "bool";
+					ioEmitter << YAML::Key << "value" << YAML::Value << std::get<bool>(prop.value);
 					break;
 			}
-			iOut.getImpl()->emitter << YAML::EndMap;
+			ioEmitter << YAML::EndMap;
 		}
-		iOut.getImpl()->emitter << YAML::EndSeq;
+		ioEmitter << YAML::EndSeq;
 	}
-	iOut.getImpl()->emitter << YAML::EndMap;
+	ioEmitter << YAML::EndMap;
+}
+
+}// namespace
+
+void LuaScript::serialize(const core::Serializer& iOut) const { serializeAs(iOut, key()); }
+
+void LuaScript::serializeAs(const core::Serializer& iOut, const char* iKey) const {
+	iOut.getImpl()->emitter << YAML::Key << iKey;
+	writeFields(iOut.getImpl()->emitter, *this);
+}
+
+auto LuaScript::toYaml() const -> std::string {
+	YAML::Emitter emitter;
+	writeFields(emitter, *this);
+	return emitter.c_str();
+}
+
+auto LuaScript::fromYaml(const std::string& iText) -> std::optional<LuaScript> {
+	try {
+		const auto document = mkShared<const core::YamlDocument>(iText, "script");
+		if (!document->getRoot().isMap())
+			return std::nullopt;
+		core::Serializer reader;
+		reader.getImpl()->source = document;
+		reader.getImpl()->node = document->getRoot();
+		LuaScript script;
+		script.deserialize(reader);
+		return script;
+	} catch (const std::exception&) { return std::nullopt; }
 }
 
 void LuaScript::deserialize(const core::Serializer& iNode) {

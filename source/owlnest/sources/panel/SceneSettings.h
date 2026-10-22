@@ -146,6 +146,13 @@ private:
 	 */
 	void renderHudSection();
 
+	/**
+	 * @brief
+	 *  Render the Script section: the script the scene owns, with its hooks and properties, edited through the
+	 *  undoable `scene.set_script` command.
+	 */
+	void renderScriptSection();
+
 	/// Active project (non-owning).
 	const Project* mp_project = nullptr;
 	/// Command registry (non-owning).
@@ -154,6 +161,8 @@ private:
 	std::vector<std::string> m_hudFiles;
 	/// Whether the HUD choice was open on the last frame (the list is read again when it opens).
 	bool m_hudChoiceOpen = false;
+	/// Copy of the scene script the inspector widgets edit (kept between frames: they remember it by address).
+	scene::component::LuaScript m_scriptEdit;
 	/// Active scene (shared_ptr — same lifetime as `SceneDocument`).
 	shared<scene::Scene> m_scene;
 	/// Undo manager for the active scene (non-owning).

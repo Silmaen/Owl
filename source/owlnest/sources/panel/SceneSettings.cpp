@@ -14,6 +14,7 @@
 #include "../commands/SceneSettingsCommands.h"
 
 #include <gui/IconFont.h>
+#include <gui/component/render.h>
 #include <gui/widgets/AssetField.h>
 #include <gui/widgets/Combo.h>
 #include <gui/widgets/IconButton.h>
@@ -450,6 +451,24 @@ void SceneSettings::renderPhysicsSection() const {
 		mp_undoManager->push(mkUniq<commands::ModifyPhysicsSettingsCommand>(before, edited));
 }
 
+void SceneSettings::renderScriptSection() {
+	if (m_scene->getDocumentKind() == scene::DocumentKind::Hud)
+		return;
+	if (!gui::widgets::sectionHeader("Script", gui::icon::fileCode2, false).open)
+		return;
+	m_scriptEdit = m_scene->getSceneScript();
+	const auto before = m_scriptEdit.scriptPath.empty() ? std::string{} : m_scriptEdit.toYaml();
+	gui::component::setInspectedScene(m_scene.get());
+	gui::component::renderProps(m_scriptEdit);
+	const auto after = m_scriptEdit.scriptPath.empty() ? std::string{} : m_scriptEdit.toYaml();
+	if (after != before) {
+		const commands::CommandTarget target{.registry = mp_commands, .scene = m_scene, .undo = mp_undoManager};
+		std::ignore = target.execute("scene.set_script", {{"script", after}});
+	}
+	ImGui::TextDisabled("Runs before the entity scripts, with the same hooks and no entity (no entity_id).");
+	gui::widgets::endSection();
+}
+
 void SceneSettings::renderHudSection() {
 	if (!gui::widgets::sectionHeader("HUD", gui::icon::panelsTopLeft, false).open)
 		return;
@@ -519,6 +538,7 @@ void SceneSettings::onImGuiRender() {
 
 	renderPhysicsSection();
 	renderHudSection();
+	renderScriptSection();
 
 	if (!gui::widgets::sectionHeader("Renderer Stack", gui::icon::layers, false).open) {
 		ImGui::End();

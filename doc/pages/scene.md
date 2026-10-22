@@ -1001,7 +1001,7 @@ Every file the engine writes carries a root `FormatVersion` integer:
 | `settings.yml`, `game_settings.yml` | `SettingsManager::format()`                    |
 | `owl_project.yml` (Owl Nest)        | `nest::Project::format()`                      |
 
-Scenes and prefabs are at version 6:
+Scenes are at version 7, prefabs at version 6 (they share the first five steps):
 
 | Step  | Migration                 | Effect                                                                                                                                                                                         |
 |-------|---------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -1010,6 +1010,7 @@ Scenes and prefabs are at version 6:
 | 3 → 4 | `convertLegacyHudLayout`  | A Y-up `UiRect` moves to the Y-down layout, an older `Canvas` to `ConstantPixels`                                                                                                              |
 | 4 → 5 | `dropUiRendererTag`       | `RendererTag: ui` leaves canvases and widgets, drawn by the HUD pass whatever their tag                                                                                                        |
 | 5 → 6 | `convertToPhysicalLights` | Light and Environment factors become physical values that look the same at EV100 15: directional × π·1.2·2^15 lux, point × 4π²·1.2·2^15 lm, spot × π²·1.2·2^15 lm, Environment × 1.2·2^15 nits |
+| 6 → 7 | `moveCameraSceneScript`   | The script of the primary camera moves to the scene's `SceneScript` key when its source (found in the asset folders or next to the scene) never names `entity_id`; a script that is not found stays              |
 
 Tilemaps are at version 3 ([Tilemap storage](#tilemap-storage)). The prefab `Version` key is something else: it
 counts the edits of one prefab and feeds `PrefabLink::syncedVersion`. A save embeds its scene with the scene's own
@@ -1044,7 +1045,16 @@ A `core::DocumentFormat` is a name plus an ordered list of `core::MigrationStep`
 Scenes, prefabs and entity snapshots are read with rapidyaml (`core::YamlNode`, the reading rules of yaml-cpp):
 a document at the current version, or a format 1 one without a name-only `EntityLink`, is read directly; any other
 goes through the yaml-cpp migration chain (`upgradeDocumentText`) first. A new scene or prefab step must update that
-shortcut (`canReadWithoutMigration`). Components read their value from `getImpl()->node`; writing stays on yaml-cpp.
+shortcut (`canReadWithoutMigration`).
+
+### Scene script
+
+A scene owns one optional script, the root `SceneScript:` key (`scriptPath` and `properties`, written like a
+`LuaScript`), read and written with `Scene::getSceneScript()`. At Play start it is loaded before the entity scripts
+and gets `on_create`; each frame and tick it runs `on_update` / `on_tick` before the entity scripts of the
+`Scripts` phase; `on_destroy` runs at the end. It has the hooks of an entity script, reaches the world through
+`scene.*`, `entity.*`, `ui.*` and the other tables, and has no `entity_id`. The asset scanner packs it like any
+script, and a changed `.lua` file reloads it with the entity scripts. Components read their value from `getImpl()->node`; writing stays on yaml-cpp.
 
 ### Atomic writes
 

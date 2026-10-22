@@ -195,6 +195,14 @@ The editor reads this table to populate the inspector. When the scene enters Pla
 the engine sets each property as a Lua global with the value configured in the inspector
 (overriding the `default`).
 
+### Scene script
+
+A scene can own one script of its own, the **Script** section of Scene Settings in Owl Nest (the `SceneScript:` key of
+the `.owl` file). It has the hooks and the `properties` of an entity script and runs before the entity scripts in the
+same frame, but it belongs to no entity: `entity_id` is `nil`, so it drives the scene through `scene.*`, `ui.*`,
+`gamestate.*` and the other tables, and finds the entities it moves by name or tag. Put there what used to be parked on
+the camera; a script that moves its own entity stays a `LuaScript` of that entity.
+
 ## Engine API Reference
 
 Every script sees the tables below. The full list of functions, with their typed parameters and returned values,

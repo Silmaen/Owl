@@ -1,5 +1,7 @@
 Scene: Tavern
-FormatVersion: 6
+FormatVersion: 7
+SceneScript:
+  scriptPath: scripts/mesh/tavern.lua
 EnabledRenderers:
   - Name: world
     Enabled: false
@@ -33,8 +35,6 @@ Entities:
     FlyCamera:
       MoveSpeed: 1.5
       LookSpeed: 1.2
-    LuaScript:
-      scriptPath: scripts/mesh/tavern.lua
     Visibility:
       gameVisible: true
   - Entity: 3900000000000000002

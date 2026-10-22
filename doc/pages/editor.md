@@ -731,7 +731,7 @@ and simulation settings are also written to `runner.yml` by the export; the tick
 
 ### Scene Settings
 
-**Scene > Scene > Settings** edits the scene's global blocks (`EnabledRenderers`, `Physics`, `Hud:`), each change an
+**Scene > Scene > Settings** edits the scene's global blocks (`EnabledRenderers`, `Physics`, `Hud:`, `SceneScript:`), each change an
 undoable command:
 
 - **Physics**: `physics::PhysicsSettings` (sub-steps, solver threads, `auto` = 0, interpolation, see
@@ -740,6 +740,9 @@ undoable command:
   `use_default`). **Extract Canvas to .owlhud...** (Scene Hierarchy menu of a root canvas) writes the canvas to a
   `.owlhud`, removes it from the scene and points `Hud:` at the file (`hud.extract_canvas`, one undo step; the file
   stays after an undo).
+- **Script**: the script the scene owns ([Scene script](scripting.md#scene-script)): the same path field, **Open**
+  button, **Hooks** list and **Properties** as a Lua Script component, through `scene.set_script` (edits within 1 s
+  merge into one undo step). Not shown for an `.owlhud`.
 - **Renderer stack**, mirroring `renderer::EnabledRenderersConfig`:
 
 | Control                             | Effect                                                                                               |

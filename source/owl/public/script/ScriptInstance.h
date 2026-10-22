@@ -92,7 +92,8 @@ public:
 	 * @brief
 	 *  Initialize this instance with a script and entity ID.
 	 * @param[in] iScriptPath Path to the .lua script (relative to assets).
-	 * @param[in] iEntityId The owning entity's UUID (as uint64_t).
+	 * @param[in] iEntityId The owning entity's UUID (as uint64_t); 0 for the script of a scene, which has no
+	 *  `entity_id` global.
 	 * @return True on success.
 	 */
 	[[nodiscard]] auto create(const std::string& iScriptPath, uint64_t iEntityId) const -> bool;

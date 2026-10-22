@@ -252,4 +252,85 @@ private:
 	std::optional<std::string> m_after;
 };
 
+/**
+ * @brief
+ *  Undoable choice of the script a scene owns (its `SceneScript:` key): the path and the property values.
+ *
+ * Consecutive edits within the merge window of the undo manager collapse into one step.
+ */
+class SetSceneScriptCommand final : public SceneUndoCommand {
+public:
+	SetSceneScriptCommand(const SetSceneScriptCommand&) = delete;
+
+	SetSceneScriptCommand(SetSceneScriptCommand&&) = default;
+
+	auto operator=(const SetSceneScriptCommand&) -> SetSceneScriptCommand& = delete;
+
+	auto operator=(SetSceneScriptCommand&&) -> SetSceneScriptCommand& = default;
+
+	/**
+	 * @brief
+	 *  Construct from the script before and after the change.
+	 * @param[in] iBefore Script before (`component::LuaScript::toYaml` text).
+	 * @param[in] iAfter Script after.
+	 */
+	SetSceneScriptCommand(std::string iBefore, std::string iAfter);
+
+	/**
+	 * @brief
+	 *  Destructor.
+	 */
+	~SetSceneScriptCommand() override;
+
+	/**
+	 * @brief
+	 *  Restore the previous script.
+	 * @param[in,out] ioScene The target scene.
+	 */
+	void undo(scene::Scene& ioScene) override;
+
+	/**
+	 * @brief
+	 *  Apply the new script again.
+	 * @param[in,out] ioScene The target scene.
+	 */
+	void redo(scene::Scene& ioScene) override;
+
+	/**
+	 * @brief
+	 *  Description.
+	 * @return Human-readable description for menus and tooltips.
+	 */
+	[[nodiscard]] auto description() const -> std::string override;
+
+	/**
+	 * @brief
+	 *  Coalesce two consecutive edits of the scene script into one undo step.
+	 * @param[in] iOther The newer command.
+	 * @return True when the merge succeeded.
+	 */
+	[[nodiscard]] auto mergeWith(const SceneUndoCommand& iOther) -> bool override;
+
+	/**
+	 * @brief
+	 *  Stable identifier of the command type for merge compatibility checks.
+	 * @return The command type id.
+	 */
+	[[nodiscard]] auto typeId() const -> size_t override;
+
+private:
+	/**
+	 * @brief
+	 *  Put a script on the scene.
+	 * @param[in,out] ioScene The target scene.
+	 * @param[in] iYaml The script as `component::LuaScript::toYaml` writes it; empty for none.
+	 */
+	static void apply(scene::Scene& ioScene, const std::string& iYaml);
+
+	/// Script before the change.
+	std::string m_before;
+	/// Script after the change.
+	std::string m_after;
+};
+
 }// namespace owl::nest::commands

@@ -100,6 +100,18 @@ auto Scene::onAssetFileChanged(const std::filesystem::path& iFile) -> bool {
 			}
 		}
 	} else if (extension == ".lua") {
+		if (auto& sceneScript = m_sceneScript; sceneScript.instance && isAssetFile(sceneScript.scriptPath, iFile)) {
+			used = true;
+			if (auto fresh = loadScriptInstance(*this, sceneScript, 0, "scene"); fresh) {
+				carryProperties(sceneScript, *sceneScript.instance, *fresh);
+				sceneScript.instance = std::move(fresh);
+				sceneScript.instance->onCreate();
+				OWL_CORE_INFO("Scene: Scene script '{}' reloaded.", sceneScript.scriptPath)
+			} else {
+				OWL_CORE_ERROR("Scene: Reload of script '{}' failed, the previous version keeps running.",
+							   sceneScript.scriptPath)
+			}
+		}
 		for (const auto view = registry.view<component::LuaScript>(); const auto entity: view) {
 			auto& luaScript = view.get<component::LuaScript>(entity);
 			if (!luaScript.instance || !isAssetFile(luaScript.scriptPath, iFile))

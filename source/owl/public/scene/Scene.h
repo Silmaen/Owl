@@ -22,6 +22,7 @@
 #include "renderer/RenderStack.h"
 #include "renderer/Renderer3D.h"
 #include "renderer/ShadowCascades.h"
+#include "scene/component/LuaScript.h"
 #include "scene/PhysicsSettings.h"
 #include "scene/SimulationClock.h"
 #include "scene/SystemSchedule.h"
@@ -938,6 +939,21 @@ public:
 
 	/**
 	 * @brief
+	 *  The script the scene owns (its `SceneScript:` key): it runs before the entity scripts, with the hooks of an
+	 *  entity script and no entity (no `entity_id`).
+	 * @return The script; an empty `scriptPath` means the scene has none.
+	 */
+	[[nodiscard]] auto getSceneScript() -> component::LuaScript& { return m_sceneScript; }
+
+	/**
+	 * @brief
+	 *  The script the scene owns, read only.
+	 * @return The script; an empty `scriptPath` means the scene has none.
+	 */
+	[[nodiscard]] auto getSceneScript() const -> const component::LuaScript& { return m_sceneScript; }
+
+	/**
+	 * @brief
 	 *  Path of the HUD asset the scene draws: its own `Hud:` key, else the project's `DefaultHud`.
 	 * @return The asset path, empty when the scene has no HUD.
 	 */
@@ -1022,6 +1038,8 @@ private:
 	DocumentKind m_documentKind = DocumentKind::Scene;
 	/// HUD asset asked by the scene (nothing: the project's default HUD, empty: none).
 	std::optional<std::string> m_hudPath;
+	/// Script the scene owns (runs before the entity scripts).
+	component::LuaScript m_sceneScript;
 	/// Systems run every runtime frame, phase by phase.
 	SystemSchedule m_systems;
 	/// Engine state used by the scene (not owned).

@@ -426,6 +426,23 @@ auto setSceneRenderers(const shared<scene::Scene>& ioScene, const CommandArgs& i
 	return PreparedCommand{.command = mkUniq<ModifyEnabledRenderersCommand>(before, afterYaml), .applied = false};
 }
 
+auto setSceneScript(const shared<scene::Scene>& ioScene, const CommandArgs& iArgs) -> Prepared {
+	const auto text = iArgs.getText("script");
+	if (!text.empty()) {
+		const auto script = scene::component::LuaScript::fromYaml(text);
+		if (!script || script->scriptPath.empty())
+			return fail(CommandError::InvalidArgument, "`script` is not a YAML map with a `scriptPath`");
+		if (std::filesystem::path{script->scriptPath}.extension() != ".lua")
+			return fail(CommandError::InvalidArgument, std::format("`{}` is not a `.lua` file", script->scriptPath));
+	}
+	const auto& current = ioScene->getSceneScript();
+	const auto before = current.scriptPath.empty() ? std::string{} : current.toYaml();
+	const auto after = text.empty() ? std::string{} : scene::component::LuaScript::fromYaml(text)->toYaml();
+	if (before == after)
+		return fail(CommandError::NotApplicable, "the scene already has this script");
+	return PreparedCommand{.command = mkUniq<SetSceneScriptCommand>(before, after), .applied = false};
+}
+
 auto extractCanvas(const shared<scene::Scene>& ioScene, const CommandArgs& iArgs) -> Prepared {
 	auto canvas = entityArg(*ioScene, iArgs, "entity");
 	if (!canvas)
@@ -1034,6 +1051,15 @@ CommandRegistry::CommandRegistry() {
 								  "writes it.",
 				   .defaultValue = std::string{}}},
 		 .factory = setSceneRenderers});
+	add({.name = "scene.set_script",
+		 .description = "Choose the script the scene owns (`SceneScript`), with its property values; empty removes "
+						"it. It runs before the entity scripts and has no entity.",
+		 .args = {{.name = "script",
+				   .type = ArgType::Text,
+				   .description = "YAML map `scriptPath` and `properties` (name, type, value), as the scene file "
+								  "writes them; empty for no script.",
+				   .defaultValue = std::string{}}},
+		 .factory = setSceneScript});
 	add({.name = "hud.extract_canvas",
 		 .description = "Write a canvas and its widgets to an `.owlhud` file, remove them from the scene and make the "
 						"scene draw that HUD.",

@@ -46,6 +46,8 @@ struct ScriptInstance::Impl {
 	scene::Scene* boundScene = nullptr;
 
 	[[nodiscard]] auto owner() const -> std::string {
+		if (entityId == 0)
+			return "the scene";
 		return entityName.empty() ? std::format("entity {}", entityId)
 								  : std::format("entity '{}' ({})", entityName, entityId);
 	}
@@ -99,8 +101,8 @@ auto ScriptInstance::create(const std::string& iScriptPath, const uint64_t iEnti
 	// Register bindings in this instance's state.
 	registerBindings(mp_impl->engine.getState());
 	setBoundScene(mp_impl->engine.getState(), mp_impl->boundScene);
-	// Store entity_id as a global.
-	mp_impl->engine.setGlobal("entity_id", static_cast<int64_t>(iEntityId));
+	if (iEntityId != 0)
+		mp_impl->engine.setGlobal("entity_id", static_cast<int64_t>(iEntityId));
 	mp_impl->bind(iScriptPath, iEntityId);
 	if (!mp_impl->engine.loadScript(iScriptPath)) {
 		OWL_CORE_ERROR("ScriptInstance: Failed to load script '{}' on {}.", iScriptPath, mp_impl->owner())
@@ -118,7 +120,8 @@ auto ScriptInstance::createFromBuffer(const std::vector<uint8_t>& iData, const s
 		return false;
 	registerBindings(mp_impl->engine.getState());
 	setBoundScene(mp_impl->engine.getState(), mp_impl->boundScene);
-	mp_impl->engine.setGlobal("entity_id", static_cast<int64_t>(iEntityId));
+	if (iEntityId != 0)
+		mp_impl->engine.setGlobal("entity_id", static_cast<int64_t>(iEntityId));
 	mp_impl->bind(iName, iEntityId);
 	if (!mp_impl->engine.loadBuffer(iData, iName)) {
 		OWL_CORE_ERROR("ScriptInstance: Failed to load buffer '{}' on {}.", iName, mp_impl->owner())

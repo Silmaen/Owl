@@ -12,6 +12,7 @@
 
 #include "HudLayoutMigration.h"
 #include "PhysicalLightMigration.h"
+#include "SceneScriptMigration.h"
 #include "UiRendererTagMigration.h"
 #include "UiTextMigration.h"
 
@@ -54,18 +55,19 @@ auto canReadWithoutMigration(const core::YamlNode& iRoot, const core::DocumentFo
 	const int64_t version = versionNode ? versionNode.as<int64_t>(0) : static_cast<int64_t>(core::g_UnversionedFormat);
 	if (version == current)
 		return true;
-	// Only the steps 1 -> 2 to 5 -> 6 exist: a new step must extend this shortcut or drop it.
-	if (current != 6 || version < 1 || version > current)
+	// Only the steps 1 -> 2 to 5 -> 6 exist (6 -> 7 for a scene): a new step must extend this shortcut or drop it.
+	const bool isScene = iFormat.name == "Scene";
+	if (current != (isScene ? 7 : 6) || version < 1 || version > current)
 		return false;
 	const auto entities = iRoot["Entities"];
-	return std::all_of(entities.begin(), entities.end(), [version](const auto& iEntity) -> bool {
+	return std::all_of(entities.begin(), entities.end(), [version, isScene](const auto& iEntity) -> bool {
 		if (!iEntity.isMap())
 			return true;
 		const auto link = iEntity["EntityLink"];
 		const bool nameOnlyLink = link.isMap() && !link["linkedEntityId"] && link["linkedEntityName"];
 		return (version >= 2 || !nameOnlyLink) && (version >= 3 || !hasLegacyUiText(iEntity)) &&
 			   (version >= 4 || !hasLegacyHudLayout(iEntity)) && (version >= 5 || !hasUiRendererTag(iEntity)) &&
-			   !hasLegacyLight(iEntity);
+			   !hasLegacyLight(iEntity) && (!isScene || version >= 7 || !hasCameraScript(iEntity));
 	});
 }
 

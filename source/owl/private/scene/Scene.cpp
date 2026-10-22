@@ -208,6 +208,7 @@ auto Scene::copy(const shared<Scene>& iOther) -> shared<Scene> {
 	newScene->m_enabledRenderers = iOther->m_enabledRenderers;
 	newScene->m_physicsSettings = iOther->m_physicsSettings;
 	newScene->m_hudPath = iOther->m_hudPath;
+	newScene->m_sceneScript = iOther->m_sceneScript;
 	newScene->m_documentKind = iOther->m_documentKind;
 	newScene->m_simulationClock.setSettings(iOther->m_simulationClock.getSettings());
 	newScene->m_systems = iOther->m_systems;
@@ -389,6 +390,12 @@ void Scene::onStartRuntime() {
 
 	const auto luaStart = clk::now();
 	size_t luaCount = 0;
+	if (!m_sceneScript.scriptPath.empty()) {
+		m_sceneScript.instance = loadScriptInstance(*this, m_sceneScript, 0, "scene");
+		if (m_sceneScript.instance)
+			m_sceneScript.instance->onCreate();
+		++luaCount;
+	}
 	// Initialize Lua scripting
 	for (const auto view = registry.view<component::LuaScript>(); const auto entity: view) {
 		auto& luaScript = view.get<component::LuaScript>(entity);
@@ -437,6 +444,9 @@ void Scene::onEndRuntime() {
 	sound::SoundCommand::stopAll();
 
 	// Destroy Lua scripts
+	if (m_sceneScript.instance && m_sceneScript.instance->isValid())
+		m_sceneScript.instance->onDestroy();
+	m_sceneScript.instance.reset();
 	for (const auto view = registry.view<component::LuaScript>(); const auto entity: view) {
 		auto& luaScript = view.get<component::LuaScript>(entity);
 		if (luaScript.instance && luaScript.instance->isValid())

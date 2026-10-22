@@ -311,13 +311,15 @@ void handlerRow(const char* iLabel, std::string& ioName, const char* iDefaultNam
 	std::string definedIn;
 	uint32_t line = 0;
 	bool anyScript = false;
-	for (const auto view = scene->registry.view<LuaScript>(); const auto entity: view) {
-		const auto& script = view.get<LuaScript>(entity);
-		if (script.scriptPath.empty())
+	std::vector<const std::string*> paths{&scene->getSceneScript().scriptPath};
+	for (const auto view = scene->registry.view<LuaScript>(); const auto entity: view)
+		paths.push_back(&view.get<LuaScript>(entity).scriptPath);
+	for (const auto* path: paths) {
+		if (path->empty())
 			continue;
 		anyScript = true;
-		if (const auto* function = findFunction(scriptFunctionsOf(script.scriptPath), name); function != nullptr) {
-			definedIn = script.scriptPath;
+		if (const auto* function = findFunction(scriptFunctionsOf(*path), name); function != nullptr) {
+			definedIn = *path;
 			line = function->line;
 			break;
 		}
