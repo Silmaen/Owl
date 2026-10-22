@@ -10,6 +10,7 @@
 
 #include <core/Log.h>
 #include <core/Timestep.h>
+#include <math/linAlgebra.h>
 #include <physics/PhysicCommand.h>
 #include <scene/Entity.h>
 #include <scene/Scene.h>

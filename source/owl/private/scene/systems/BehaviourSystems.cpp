@@ -254,7 +254,7 @@ void applyDayNightCycles(Scene& ioScene, const bool iRuntime) {
 			sky->sunDirection = sun;
 		if (cycle.sun == core::UUID{0})
 			continue;
-		Entity lightEntity = ioScene.findEntityByUUID(cycle.sun);
+		const Entity lightEntity = ioScene.findEntityByUUID(cycle.sun);
 		if (!lightEntity || !lightEntity.hasComponent<component::Light>())
 			continue;
 		auto& light = lightEntity.getComponent<component::Light>();
