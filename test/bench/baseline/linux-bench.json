@@ -1736,14 +1736,14 @@
     },
     {
       "name": "slang/compile_warm/all_engine_shaders_vulkan",
-      "items": 18,
+      "items": 22,
       "batch": 1,
       "samples": 15,
-      "median_ns": 717224727.0,
-      "p25_ns": 716431590.5,
-      "p75_ns": 717725921.5,
-      "min_ns": 715118122.0,
-      "max_ns": 719348794.0
+      "median_ns": 869182588.0,
+      "p25_ns": 868874544.5,
+      "p75_ns": 869722859.0,
+      "min_ns": 868382046.0,
+      "max_ns": 871134491.0
     },
     {
       "name": "slang/compile_warm/quad_opengl",
@@ -2118,6 +2118,160 @@
       "p75_ns": 77491.0,
       "min_ns": 76618.0,
       "max_ns": 84719.0
+    },
+    {
+      "name": "culling/octree/insert/1000",
+      "items": 1000,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 168601.0,
+      "p25_ns": 168147.5,
+      "p75_ns": 169439.0,
+      "min_ns": 167414.0,
+      "max_ns": 183408.0
+    },
+    {
+      "name": "culling/octree/frustum_query/1000",
+      "items": 1000,
+      "batch": 415,
+      "samples": 15,
+      "median_ns": 27906.3,
+      "p25_ns": 27891.9,
+      "p75_ns": 27938.4,
+      "min_ns": 27862.0,
+      "max_ns": 27970.2
+    },
+    {
+      "name": "culling/octree/brute_force/1000",
+      "items": 1000,
+      "batch": 710,
+      "samples": 15,
+      "median_ns": 15115.0,
+      "p25_ns": 15066.5,
+      "p75_ns": 15257.2,
+      "min_ns": 14964.4,
+      "max_ns": 15347.4
+    },
+    {
+      "name": "culling/octree/move_tenth/1000",
+      "items": 100,
+      "batch": 2820,
+      "samples": 15,
+      "median_ns": 4254.6,
+      "p25_ns": 4247.9,
+      "p75_ns": 4273.4,
+      "min_ns": 4230.6,
+      "max_ns": 4303.3
+    },
+    {
+      "name": "culling/octree/insert/10000",
+      "items": 10000,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 1637960.0,
+      "p25_ns": 1634956.0,
+      "p75_ns": 1641695.5,
+      "min_ns": 1629857.0,
+      "max_ns": 1659331.0
+    },
+    {
+      "name": "culling/octree/frustum_query/10000",
+      "items": 10000,
+      "batch": 100,
+      "samples": 15,
+      "median_ns": 109316.2,
+      "p25_ns": 109275.0,
+      "p75_ns": 109462.9,
+      "min_ns": 109195.4,
+      "max_ns": 109987.4
+    },
+    {
+      "name": "culling/octree/brute_force/10000",
+      "items": 10000,
+      "batch": 58,
+      "samples": 15,
+      "median_ns": 202661.7,
+      "p25_ns": 202615.9,
+      "p75_ns": 202945.2,
+      "min_ns": 202292.0,
+      "max_ns": 203077.1
+    },
+    {
+      "name": "culling/octree/move_tenth/10000",
+      "items": 1000,
+      "batch": 234,
+      "samples": 15,
+      "median_ns": 49353.4,
+      "p25_ns": 49254.9,
+      "p75_ns": 49474.5,
+      "min_ns": 48968.9,
+      "max_ns": 49701.1
+    },
+    {
+      "name": "culling/octree/insert/100000",
+      "items": 100000,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 13772630.0,
+      "p25_ns": 13763760.5,
+      "p75_ns": 13787612.5,
+      "min_ns": 13749023.0,
+      "max_ns": 13810206.0
+    },
+    {
+      "name": "culling/octree/frustum_query/100000",
+      "items": 100000,
+      "batch": 20,
+      "samples": 15,
+      "median_ns": 566605.2,
+      "p25_ns": 566413.2,
+      "p75_ns": 566776.4,
+      "min_ns": 566273.5,
+      "max_ns": 591046.8
+    },
+    {
+      "name": "culling/octree/brute_force/100000",
+      "items": 100000,
+      "batch": 5,
+      "samples": 15,
+      "median_ns": 2117194.2,
+      "p25_ns": 2116873.0,
+      "p75_ns": 2118228.0,
+      "min_ns": 2115029.2,
+      "max_ns": 2123997.0
+    },
+    {
+      "name": "culling/octree/move_tenth/100000",
+      "items": 10000,
+      "batch": 21,
+      "samples": 15,
+      "median_ns": 553236.8,
+      "p25_ns": 552332.1,
+      "p75_ns": 553830.5,
+      "min_ns": 551563.9,
+      "max_ns": 554603.7
+    },
+    {
+      "name": "culling/mesh_flush/1000_instances",
+      "items": 1000,
+      "batch": 85,
+      "samples": 15,
+      "median_ns": 138238.3,
+      "p25_ns": 138184.1,
+      "p75_ns": 138255.6,
+      "min_ns": 138116.7,
+      "max_ns": 138314.7
+    },
+    {
+      "name": "culling/mesh_flush/10000_instances",
+      "items": 10000,
+      "batch": 7,
+      "samples": 15,
+      "median_ns": 1560872.4,
+      "p25_ns": 1560533.2,
+      "p75_ns": 1561326.5,
+      "min_ns": 1560443.4,
+      "max_ns": 1565432.3
     }
   ],
   "metrics": [
