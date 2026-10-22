@@ -14,6 +14,7 @@
 #include "data/voxel/ChunkMesher.h"
 #include "data/voxel/ChunkNeighborhood.h"
 #include "math/matrixCreation.h"
+#include "renderer/Material.h"
 #include "renderer/Renderer3D.h"
 #include "renderer/utils/FrustumCullingPass.h"
 #include "scene/component/VoxelWorld.h"
@@ -24,6 +25,7 @@
 #include <cstdint>
 #include <iterator>
 #include <mutex>
+#include <optional>
 #include <ranges>
 #include <unordered_map>
 #include <vector>
@@ -432,6 +434,16 @@ void RendererVoxel::drawVoxelWorld(VoxelMeshCache& ioCache, scene::component::Vo
 	if (!ioComponent.tileset || !ioComponent.tileset->texture)
 		return;
 	const std::array<shared<gpu::Texture2D>, 1> textures{ioComponent.tileset->texture};
+	// The relief and roughness maps of the tileset ride on a material, whose map mask tells the shader they exist.
+	const auto& tileset = *ioComponent.tileset;
+	std::optional<Material> maps;
+	if (tileset.normalTexture || tileset.roughnessTexture) {
+		maps = Material{}.withTexture(MaterialMap::BaseColor, tileset.texture);
+		if (tileset.normalTexture)
+			maps = maps->withTexture(MaterialMap::Normal, tileset.normalTexture);
+		if (tileset.roughnessTexture)
+			maps = maps->withTexture(MaterialMap::Roughness, tileset.roughnessTexture);
+	}
 
 	auto& cache = cacheIt->second;
 	// All chunks share one model + atlas (origin baked in), so batch into one drawMeshes (state set once).
@@ -471,7 +483,7 @@ void RendererVoxel::drawVoxelWorld(VoxelMeshCache& ioCache, scene::component::Vo
 		}
 	}
 	frameData().drawnMeshCount += static_cast<uint32_t>(opaque.size() + transparent.size());
-	const MeshDrawParams params{.entityId = iEntityId};
+	const MeshDrawParams params{.entityId = iEntityId, .material = maps ? &*maps : nullptr};
 	Renderer3D::drawMeshes(opaque, worldMat, textures, params);
 	if (!transparent.empty() && !Renderer3D::isShadowPass()) {
 		// Back-to-front so alpha-over compositing is correct without per-fragment sorting.

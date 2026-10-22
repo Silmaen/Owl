@@ -16,7 +16,9 @@
 #include <array>
 #include <cstdint>
 #include <fstream>
+#include <initializer_list>
 #include <sstream>
+#include <utility>
 #include <vector>
 
 namespace owl::scene {
@@ -184,6 +186,10 @@ auto Tileset::serializeToString(const std::string_view iName) const -> std::stri
 	core::emitFormatVersion(emitter, g_tilesetFormat);
 	if (texture)
 		emitter << YAML::Key << "texture" << YAML::Value << texture->getSerializeString();
+	if (normalTexture)
+		emitter << YAML::Key << "normalTexture" << YAML::Value << normalTexture->getSerializeString();
+	if (roughnessTexture)
+		emitter << YAML::Key << "roughnessTexture" << YAML::Value << roughnessTexture->getSerializeString();
 	emitter << YAML::Key << "tileWidth" << YAML::Value << tileWidth;
 	emitter << YAML::Key << "tileHeight" << YAML::Value << tileHeight;
 	emitter << YAML::Key << "columns" << YAML::Value << columns;
@@ -263,6 +269,14 @@ auto Tileset::deserializeFromString(const std::string_view iYaml) -> bool {
 				renderer::gpu::Texture2D::createFromSerializedForDeserialize(root["texture"].as<std::string>());
 		if (parsed.texture)
 			parsed.texture->setFilterMode(parsed.filterMode);
+	}
+	for (auto [key, map]: {std::pair{"normalTexture", &parsed.normalTexture},
+						   std::pair{"roughnessTexture", &parsed.roughnessTexture}}) {
+		if (!root[key])
+			continue;
+		*map = renderer::gpu::Texture2D::createFromSerializedForDeserialize(root[key].as<std::string>());
+		if (*map)
+			(*map)->setFilterMode(parsed.filterMode);
 	}
 	if (root["tileWidth"])
 		parsed.tileWidth = std::max(1u, root["tileWidth"].as<uint32_t>());

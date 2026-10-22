@@ -116,6 +116,8 @@ struct OWL_API SlopeSet {
  * Tileset: <name>
  * FormatVersion: 1
  * texture: <texture serialized name>     # optional
+ * normalTexture: <texture serialized name>      # optional, tangent-space normals on the same grid (voxel worlds)
+ * roughnessTexture: <texture serialized name>   # optional, roughness on the same grid, 50 % grey keeps a block's
  * tileWidth: 32
  * tileHeight: 32
  * columns: 8
@@ -178,6 +180,10 @@ public:
 
 	/// Atlas texture (may be null while authoring).
 	shared<renderer::gpu::Texture2D> texture;
+	/// Tangent-space normal map on the grid of the atlas (OpenGL convention, green up); null for flat tiles.
+	shared<renderer::gpu::Texture2D> normalTexture;
+	/// Roughness map on the grid of the atlas: 50 % grey keeps the roughness of a voxel block, darker is smoother.
+	shared<renderer::gpu::Texture2D> roughnessTexture;
 	/// Tile width in atlas pixels (>= 1).
 	uint32_t tileWidth = 32;
 	/// Tile height in atlas pixels (>= 1).

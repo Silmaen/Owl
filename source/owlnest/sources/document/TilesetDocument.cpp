@@ -209,6 +209,19 @@ void TilesetDocument::renderHierarchyPanel() {
 			m_tileset.texture->setFilterMode(m_tileset.filterMode);
 	}
 	gui::widgets::itemTooltip("Texture", nullptr, "Drop a texture from the Content Browser.");
+	ImGui::SameLine();
+	if (gui::widgets::textureField("##normal", m_tileset.normalTexture, ImVec2{64.f, 64.f}) && m_tileset.normalTexture)
+		m_tileset.normalTexture->setFilterMode(m_tileset.filterMode);
+	gui::widgets::itemTooltip("Normal map", nullptr,
+							  "Tangent-space normals on the grid of the atlas (OpenGL, green up): the relief of the "
+							  "tiles in a voxel world. Drop a texture from the Content Browser.");
+	ImGui::SameLine();
+	if (gui::widgets::textureField("##roughness", m_tileset.roughnessTexture, ImVec2{64.f, 64.f}) &&
+		m_tileset.roughnessTexture)
+		m_tileset.roughnessTexture->setFilterMode(m_tileset.filterMode);
+	gui::widgets::itemTooltip("Roughness map", nullptr,
+							  "Roughness on the grid of the atlas: 50 % grey keeps the roughness of a voxel block, "
+							  "darker is smoother. Drop a texture from the Content Browser.");
 	if (const auto textureAfter = snapshotTileset(m_tileset); textureAfter != textureBefore) {
 		auto cmd = mkUniq<ModifyTilesetCommand>(textureBefore, textureAfter, "Set texture");
 		m_undoManager.push(std::move(cmd));

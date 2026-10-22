@@ -7,7 +7,8 @@
 // which keeps tile cells pixel-exact and avoids seam/derivative issues at the
 // frac() wrap. Shares the Renderer3D descriptor layout (scene UBO at binding 0,
 // texture array at binding 1); the atlas is the draw's first texture (slot 1) and
-// texIndex carries the block surface packed by data::voxel::packSurface.
+// texIndex carries the block surface packed by data::voxel::packSurface. A tileset with relief and roughness maps
+// gives them as the normal (slot 3) and roughness (slot 6) maps of the draw's material, on the grid of the atlas.
 
 #include "pbr.slangh"
 
@@ -76,6 +77,13 @@ FragmentOutput fragmentMain(FragmentInput input) {
 	float3 normal = normalize(input.normal);
 	float3 helper = abs(normal.y) < 0.99f ? float3(0.0f, 1.0f, 0.0f) : float3(1.0f, 0.0f, 0.0f);
 	float3 tangent = normalize(cross(helper, normal));
+	// The relief map of the tileset, on the frame of the tile UV (its v runs up the atlas, as OpenGL normals expect).
+	if (hasMap(2)) {
+		float3x3 frame = cotangentFrame(normal, input.position, input.uv);
+		float3 mapped = gTextures[MAP_NORMAL].SampleGrad(atlasUv, uvDdx, uvDdy).xyz * 2.0f - 1.0f;
+		normal = normalize(mul(mapped, frame));
+		tangent = normalize(frame[0] - normal * dot(frame[0], normal));
+	}
 	Surface s;
 	s.position = input.position;
 	s.normal = normal;
@@ -87,7 +95,11 @@ FragmentOutput fragmentMain(FragmentInput input) {
 	uint packed = asuint(input.surface);
 	float4 block = float4(packed & 0xFFu, (packed >> 8) & 0xFFu, (packed >> 16) & 0xFFu, packed >> 24) / 255.0f;
 	s.metallic = block.x;
-	s.roughness = clamp(block.y, MIN_ROUGHNESS, 1.0f);
+	float roughness = block.y;
+	// The roughness map of the tileset modulates the roughness of the block: 50 % grey keeps it.
+	if (hasMap(5))
+		roughness *= 2.0f * gTextures[MAP_ROUGHNESS].SampleGrad(atlasUv, uvDdx, uvDdy).r;
+	s.roughness = clamp(roughness, MIN_ROUGHNESS, 1.0f);
 	s.occlusion = input.ao;
 	// The emissive byte is logarithmic: exp2(byte * log2(1 + max)) - 1 nits.
 	float luminance = exp2(block.z * log2(1.0f + VOXEL_MAX_LUMINANCE)) - 1.0f;
