@@ -248,7 +248,9 @@ void RenderGraph::execute(const math::vec2ui& iSize) {
 	const auto targets = std::span{m_targets}.first(m_targetCount);
 	for (auto& target: targets) {
 		target.written = false;
-		target.framebuffer = target.imported ? (target.external != nullptr ? target.external : imported) : nullptr;
+		target.framebuffer = nullptr;
+		if (target.imported)
+			target.framebuffer = target.external != nullptr ? target.external : imported;
 	}
 	gpu::Framebuffer* bound = imported;
 	const PassContext context{*this};
