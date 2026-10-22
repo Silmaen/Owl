@@ -37,7 +37,7 @@ protected:
 		}
 	}
 
-	static auto positionOf(const Entity& iEntity) -> math::vec3 {
+	static auto translationOf(const Entity& iEntity) -> math::vec3 {
 		return iEntity.getComponent<component::Transform>().transform.translation();
 	}
 };
@@ -67,10 +67,10 @@ TEST_F(BehaviourTest, AnOscillatorMovesATransformBetweenItsRestAndItsOffset) {
 	oscillator.period = 2.f;
 	scene->onStartRuntime();
 	run(*scene, 100);
-	EXPECT_NEAR(positionOf(entity).y(), 5.f, 0.05f);
-	EXPECT_NEAR(positionOf(entity).x(), 1.f, 1e-5f);
+	EXPECT_NEAR(translationOf(entity).y(), 5.f, 0.05f);
+	EXPECT_NEAR(translationOf(entity).x(), 1.f, 1e-5f);
 	run(*scene, 100);
-	EXPECT_NEAR(positionOf(entity).y(), 2.f, 0.05f);
+	EXPECT_NEAR(translationOf(entity).y(), 2.f, 0.05f);
 	scene->onEndRuntime();
 }
 
@@ -80,7 +80,7 @@ TEST_F(BehaviourTest, ADisabledOscillatorStaysAtRest) {
 	entity.addComponent<component::Oscillator>().enabled = false;
 	scene->onStartRuntime();
 	run(*scene, 30);
-	EXPECT_NEAR(positionOf(entity).x(), 0.f, 1e-6f);
+	EXPECT_NEAR(translationOf(entity).x(), 0.f, 1e-6f);
 }
 
 TEST_F(BehaviourTest, AKinematicBodyIsMovedThroughThePhysicsStep) {
@@ -94,11 +94,11 @@ TEST_F(BehaviourTest, AKinematicBodyIsMovedThroughThePhysicsStep) {
 	scene->onStartRuntime();
 	ASSERT_TRUE(physics::PhysicCommand::isInitialized(*scene));
 	run(*scene, 100, 10);
-	EXPECT_GT(positionOf(entity).x(), 1.5f);
-	EXPECT_LT(positionOf(entity).x(), 4.5f);
+	EXPECT_GT(translationOf(entity).x(), 1.5f);
+	EXPECT_LT(translationOf(entity).x(), 4.5f);
 	run(*scene, 300, 10);
-	EXPECT_GE(positionOf(entity).x(), -0.5f);
-	EXPECT_LE(positionOf(entity).x(), 4.5f);
+	EXPECT_GE(translationOf(entity).x(), -0.5f);
+	EXPECT_LE(translationOf(entity).x(), 4.5f);
 	scene->onEndRuntime();
 }
 
@@ -112,13 +112,13 @@ TEST_F(BehaviourTest, APatrolWalksItsWaypointsBackAndForthAndWaits) {
 	patrol.faceDirection = true;
 	scene->onStartRuntime();
 	run(*scene, 100);
-	EXPECT_NEAR(positionOf(entity).x(), 1.f, 0.05f);
+	EXPECT_NEAR(translationOf(entity).x(), 1.f, 0.05f);
 	run(*scene, 110);
-	EXPECT_NEAR(positionOf(entity).x(), 2.f, 1e-4f);
+	EXPECT_NEAR(translationOf(entity).x(), 2.f, 1e-4f);
 	run(*scene, 50);
-	EXPECT_NEAR(positionOf(entity).x(), 2.f, 1e-4f);
+	EXPECT_NEAR(translationOf(entity).x(), 2.f, 1e-4f);
 	run(*scene, 100);
-	EXPECT_LT(positionOf(entity).x(), 2.f);
+	EXPECT_LT(translationOf(entity).x(), 2.f);
 	EXPECT_LT(entity.getComponent<component::Transform>().transform.scale().x(), 0.f);
 }
 
@@ -141,12 +141,12 @@ TEST_F(BehaviourTest, ALoopPatrolReturnsToTheFirstWaypointAndAWandererStaysInIts
 	bool moved = false;
 	for (int frame = 0; frame < 400; ++frame) {
 		run(*scene, 1);
-		const auto offset = positionOf(wanderer) - math::vec3{5.f, 5.f, 0.f};
+		const auto offset = translationOf(wanderer) - math::vec3{5.f, 5.f, 0.f};
 		EXPECT_LE(std::sqrt(offset.x() * offset.x() + offset.y() * offset.y()), 2.f + 1e-3f);
 		moved = moved || std::abs(offset.x()) > 0.01f;
 	}
 	EXPECT_TRUE(moved);
-	EXPECT_LE(positionOf(looper).x(), 1.f + 1e-4f);
+	EXPECT_LE(translationOf(looper).x(), 1.f + 1e-4f);
 }
 
 TEST_F(BehaviourTest, ADriftWrapsAroundItsRangeAndFollowsTheCamera) {
@@ -165,11 +165,11 @@ TEST_F(BehaviourTest, ADriftWrapsAroundItsRangeAndFollowsTheCamera) {
 	float highest = -1e9f;
 	for (int frame = 0; frame < 500; ++frame) {
 		run(*scene, 1);
-		lowest = std::min(lowest, positionOf(cloud).x());
-		highest = std::max(highest, positionOf(cloud).x());
+		lowest = std::min(lowest, translationOf(cloud).x());
+		highest = std::max(highest, translationOf(cloud).x());
 	}
 	EXPECT_NEAR(lowest, 1.f + 5.f - 2.f, 0.05f);
 	EXPECT_NEAR(highest, 1.f + 5.f + 2.f, 0.05f);
-	EXPECT_NEAR(positionOf(cloud).y(), 2.f + 2.f, 1e-4f);
-	EXPECT_NEAR(positionOf(cloud).z(), 0.5f, 1e-6f);
+	EXPECT_NEAR(translationOf(cloud).y(), 2.f + 2.f, 1e-4f);
+	EXPECT_NEAR(translationOf(cloud).z(), 0.5f, 1e-6f);
 }

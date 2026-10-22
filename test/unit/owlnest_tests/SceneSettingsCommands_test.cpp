@@ -12,6 +12,7 @@
 #include "nestTestHelper.h"
 #include "testHelper.h"
 
+#include <cstdint>
 #include <string>
 
 using namespace owl;

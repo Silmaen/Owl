@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Test `EditorCoverage` (gui_tests): fails when a data member of a component has no widget in its inspector function, or when a key read by `applyConfig` of a render layer has no field in the layer overrides of Scene Settings; a runtime-only member is listed in the test with its reason.
 - Owl Nest: a double-click on an `.owlprefab` opens it as a document (`DocumentKind::Prefab`, hierarchy, inspector, undo, atomic save with its name and version, canonical UUIDs kept), and the Content Browser draws a sphere rendered with the material as the thumbnail of an `.owlmat`.
 - Owl Nest viewport: the selected `Oscillator` draws its range and the selected `Patrol` its route; a waypoint is picked with a click and moved with a gizmo, as one undoable `component.set`.
 - `Oscillator`, `Patrol` and `Drift` components with the systems `owl.oscillators` (a body moves through the physics step), `owl.patrols` and `owl.drift`, and Lua `entity.set_oscillator_enabled`, `set_patrol_enabled`, `set_drift_enabled` with their `is_` getters.
@@ -135,6 +136,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Owl Nest: the **UiText** inspector shows its font (combo, drop target and preview), as the Text one does.
 - OpenGL: the SPIR-V to GLSL translation names each storage block after its variable, which fixes the link errors of a vertex and a fragment shader sharing storage buffers.
 - GCC builds again: the post-process LUT is held by value in `Scene`, no reference bound to a temporary path.
 - Vulkan pipelines turn blending off on a colour attachment whose format cannot blend, and data attachments (`RedInteger`, `RedFloat`) get nearest samplers.

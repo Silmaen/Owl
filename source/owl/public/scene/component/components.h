@@ -77,20 +77,19 @@ concept isComponent =
 		std::is_same_v<Component, FlyCamera> || std::is_same_v<Component, Hierarchy> || std::is_same_v<Component, ID> ||
 		std::is_same_v<Component, IsometricObject> || std::is_same_v<Component, Light> ||
 		std::is_same_v<Component, Light2D> || std::is_same_v<Component, LightFlicker> ||
-		std::is_same_v<Component, Oscillator> ||
-		std::is_same_v<Component, Patrol> || std::is_same_v<Component, Drift> ||
-		std::is_same_v<Component, Environment> || std::is_same_v<Component, LuaScript> ||
-		std::is_same_v<Component, MeshRenderer> || std::is_same_v<Component, NativeScript> ||
-		std::is_same_v<Component, PhysicBody> || std::is_same_v<Component, Player> ||
-		std::is_same_v<Component, PrefabLink> || std::is_same_v<Component, RaycastDoor> ||
-		std::is_same_v<Component, RaycastPushWall> || std::is_same_v<Component, RendererTag> ||
-		std::is_same_v<Component, SoundListener> || std::is_same_v<Component, SoundSource> ||
-		std::is_same_v<Component, SpriteRenderer> || std::is_same_v<Component, Tag> ||
-		std::is_same_v<Component, Text> || std::is_same_v<Component, Tilemap> || std::is_same_v<Component, Transform> ||
-		std::is_same_v<Component, Trigger> || std::is_same_v<Component, UiButton> ||
-		std::is_same_v<Component, UiImage> || std::is_same_v<Component, UiPanel> ||
-		std::is_same_v<Component, UiProgressBar> || std::is_same_v<Component, UiRect> ||
-		std::is_same_v<Component, UiSlider> || std::is_same_v<Component, UiText> ||
+		std::is_same_v<Component, Oscillator> || std::is_same_v<Component, Patrol> ||
+		std::is_same_v<Component, Drift> || std::is_same_v<Component, Environment> ||
+		std::is_same_v<Component, LuaScript> || std::is_same_v<Component, MeshRenderer> ||
+		std::is_same_v<Component, NativeScript> || std::is_same_v<Component, PhysicBody> ||
+		std::is_same_v<Component, Player> || std::is_same_v<Component, PrefabLink> ||
+		std::is_same_v<Component, RaycastDoor> || std::is_same_v<Component, RaycastPushWall> ||
+		std::is_same_v<Component, RendererTag> || std::is_same_v<Component, SoundListener> ||
+		std::is_same_v<Component, SoundSource> || std::is_same_v<Component, SpriteRenderer> ||
+		std::is_same_v<Component, Tag> || std::is_same_v<Component, Text> || std::is_same_v<Component, Tilemap> ||
+		std::is_same_v<Component, Transform> || std::is_same_v<Component, Trigger> ||
+		std::is_same_v<Component, UiButton> || std::is_same_v<Component, UiImage> ||
+		std::is_same_v<Component, UiPanel> || std::is_same_v<Component, UiProgressBar> ||
+		std::is_same_v<Component, UiRect> || std::is_same_v<Component, UiSlider> || std::is_same_v<Component, UiText> ||
 		std::is_same_v<Component, UiLayout> || std::is_same_v<Component, UiToolCursor> ||
 		std::is_same_v<Component, UiFocus> || std::is_same_v<Component, UiTooltip> ||
 		std::is_same_v<Component, UiWindow> || std::is_same_v<Component, UiScrollView> ||

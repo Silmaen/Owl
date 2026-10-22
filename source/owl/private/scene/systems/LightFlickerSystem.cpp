@@ -40,9 +40,9 @@ auto noise(const double iTime) -> double {
 auto unitHash(const double iValue) -> double { return hash(iValue) * 0.5 + 0.5; }
 
 struct Sample {
-	/// Relative intensity, 1 at rest.
+	// Relative intensity, 1 at rest.
 	double factor = 1.0;
-	/// Shape of the flicker in about [-1, 1], the weight of the colour shift.
+	// Shape of the flicker in about [-1, 1], the weight of the colour shift.
 	double shape = 0.0;
 };
 
@@ -82,7 +82,8 @@ auto sampleFlicker(const component::LightFlicker& iFlicker, const double iSecond
 }
 
 auto hasSprite(const Entity& iEntity) -> bool {
-	return iEntity.hasComponent<component::AnimatedSpriteRenderer>() || iEntity.hasComponent<component::SpriteRenderer>();
+	return iEntity.hasComponent<component::AnimatedSpriteRenderer>() ||
+		   iEntity.hasComponent<component::SpriteRenderer>();
 }
 
 void captureBase(const Entity& iEntity, component::LightFlicker& ioFlicker) {

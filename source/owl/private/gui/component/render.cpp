@@ -1264,34 +1264,43 @@ void renderProps(Light& ioComponent) {
 	fieldTooltip("Depth bias against self-shadowing, in shadow-map texels along the surface normal.");
 }
 
-void renderProps(Text& ioComponent) {
-	prop::InputTextMultiline("Text String", &ioComponent.text, {0, 70});
-	if (app::Application::instanced()) {
-		auto& fontLib = app::Application::get().getFontLibrary();
-		const std::string display = ioComponent.font->isDefault() ? "(default)" : ioComponent.font->getName();
-		if (prop::BeginCombo("Font", display.c_str())) {
-			for (const auto& font: data::fonts::FontLibrary::getFoundFontNames()) {
-				if (ImGui::Selectable(font.c_str(), ioComponent.font->getName() == font)) {
-					ioComponent.font = fontLib.getFont(font);
-				}
-			}
-			ImGui::EndCombo();
+namespace {
+
+// Font combo (every font found), a drop target for a font file and a preview of the chosen font; a null font is the default.
+void fontPicker(shared<data::fonts::Font>& ioFont) {
+	if (!app::Application::instanced())
+		return;
+	auto& fontLib = app::Application::get().getFontLibrary();
+	const bool isDefault = !ioFont || ioFont->isDefault();
+	const std::string display = isDefault ? "(default)" : ioFont->getName();
+	if (prop::BeginCombo("Font", display.c_str())) {
+		for (const auto& font: data::fonts::FontLibrary::getFoundFontNames()) {
+			if (ImGui::Selectable(font.c_str(), !isDefault && ioFont->getName() == font))
+				ioFont = fontLib.getFont(font);
 		}
-		std::filesystem::path dropped;
-		if (widgets::assetDropTarget(widgets::AssetKind::Font, dropped))
-			ioComponent.font = fontLib.getFont(dropped.stem().string());
-		if (ioComponent.font && !ioComponent.font->isDefault()) {
-			constexpr ImVec2 previewSize{220.f, 44.f};
-			if (const auto previewFb = FontPreviewCache::get().request(ioComponent.font); previewFb) {
-				if (const auto preview = imTexture(previewFb, 0); preview.has_value())
-					ImGui::Image(preview.value(), previewSize, gui::vec(previewFb->getLowerData()),
-								 gui::vec(previewFb->getUpperData()));
-			} else if (const auto atlas = imTexture(ioComponent.font->getAtlasTexture()); atlas.has_value()) {
-				// First-frame fallback: atlas thumbnail until pumpPending() renders the sample-string preview.
-				ImGui::Image(atlas.value(), previewSize, {0, 1}, {1, 0});
-			}
+		ImGui::EndCombo();
+	}
+	std::filesystem::path dropped;
+	if (widgets::assetDropTarget(widgets::AssetKind::Font, dropped))
+		ioFont = fontLib.getFont(dropped.stem().string());
+	if (ioFont && !ioFont->isDefault()) {
+		constexpr ImVec2 previewSize{220.f, 44.f};
+		if (const auto previewFb = FontPreviewCache::get().request(ioFont); previewFb) {
+			if (const auto preview = imTexture(previewFb, 0); preview.has_value())
+				ImGui::Image(preview.value(), previewSize, gui::vec(previewFb->getLowerData()),
+							 gui::vec(previewFb->getUpperData()));
+		} else if (const auto atlas = imTexture(ioFont->getAtlasTexture()); atlas.has_value()) {
+			// First-frame fallback: atlas thumbnail until pumpPending() renders the sample-string preview.
+			ImGui::Image(atlas.value(), previewSize, {0, 1}, {1, 0});
 		}
 	}
+}
+
+}// namespace
+
+void renderProps(Text& ioComponent) {
+	prop::InputTextMultiline("Text String", &ioComponent.text, {0, 70});
+	fontPicker(ioComponent.font);
 
 	prop::ColorEdit4("Color", ioComponent.color.data());
 	prop::DragFloat("Kerning", &ioComponent.kerning, 0.025f);
@@ -1924,6 +1933,8 @@ void renderProps(UiRect& ioComponent, const Entity& iOwner) {
 void renderProps(UiText& ioComponent) {
 	prop::InputTextMultiline("Text", &ioComponent.text, ImVec2(0, 60));
 	prop::ColorEdit4("Color", reinterpret_cast<float*>(&ioComponent.color));
+	fontPicker(ioComponent.font);
+	fieldTooltip("Font of the text; the default font when none is chosen.");
 	prop::DragFloat("Font Size", &ioComponent.fontSize, 0.5f, 1.0f, 200.0f);
 	fieldTooltip("Ascender-to-descender height of the font, in pixels. Glyphs keep the font aspect ratio.");
 	enumCombo("Horizontal", ioComponent.horizontalAlignment);

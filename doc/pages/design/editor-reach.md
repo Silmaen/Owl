@@ -29,7 +29,7 @@ opening a Lua or YAML file to discover it. It extends the *Editor coverage* rule
 | Generic behaviours | A behaviour found in two scripts, or that any game would want, becomes an engine component with a system `owl.*`, its script removed                                       |
 | Layer settings     | Every key a render-stack layer reads in `applyConfig` has a field in the layer overrides of Scene Settings                                                                 |
 | Files              | Every file type the engine reads opens in Owl Nest: a document of its own, the code editor for text, the system viewer otherwise                                           |
-| Check              | A test fails when a component field has no inspector widget or a layer key has no override field                                                                           |
+| Check              | `EditorCoverage` (gui_tests) fails when a component field has no inspector widget or a layer key has no override field                                                      |
 
 ## Scripts in the editor
 
