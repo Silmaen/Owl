@@ -270,8 +270,8 @@ auto Tileset::deserializeFromString(const std::string_view iYaml) -> bool {
 		if (parsed.texture)
 			parsed.texture->setFilterMode(parsed.filterMode);
 	}
-	for (auto [key, map]: {std::pair{"normalTexture", &parsed.normalTexture},
-						   std::pair{"roughnessTexture", &parsed.roughnessTexture}}) {
+	for (auto [key, map]:
+		 {std::pair{"normalTexture", &parsed.normalTexture}, std::pair{"roughnessTexture", &parsed.roughnessTexture}}) {
 		if (!root[key])
 			continue;
 		*map = renderer::gpu::Texture2D::createFromSerializedForDeserialize(root[key].as<std::string>());

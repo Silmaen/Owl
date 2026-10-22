@@ -140,13 +140,16 @@ render graph, essential post-processing — with full 3D editing ([details](desi
 - ![Done][done] GPU raycast sprite stripes and `BitonicSortPass` adoption
 - ![Done][done] Spatial partitioning (loose octree shared by the 2D and 3D layers)
 - ![Planned][planned] Multithreaded render preparation
-- ![Planned][planned] HUD minimap on a render target ([HUD system](design/hud-system.md))
+- ![Done][done] HUD minimap on a render target: `RenderTarget`, `FollowTarget`, `UiImage.renderTarget` ([HUD system](design/hud-system.md#minimap))
 - ![Done][done] 3D scene editing in Owl Nest (3D gizmos, snapping, mesh preview), "look through scene camera" mode
 - ![To evaluate][evaluate] Owl Nest camera preview: the HUD drawn over it, as an option
 - ![To evaluate][evaluate] Angular radius of a directional light: soft shadows, wider highlight, sun disc in the sky ([3D core](design/3d-core.md#emissive-and-area-lights))
 - ![Done][done] Editor reach, before the release: every script and Lua function of a scene visible in Owl Nest with its hooks and an **Open** at the line, a scene script, richer script properties, layer overrides for every key ([Editor reach](design/editor-reach.md))
 - ![Done][done] Behaviour components replacing demo scripts: `LightFlicker` (fire, candles), `Oscillator`, `Patrol`, `Drift` ([Editor reach](design/editor-reach.md#behaviour-components))
-- ![In Progress][progress] Tuned constants of the Engine Demo and the sample games moved to inspector fields; a test failing on any component field or layer key without an editor widget ([Editor reach](design/editor-reach.md))
+- ![Done][done] Tuned constants of the Engine Demo and the sample games moved to script properties; a test failing on any component field or layer key without an editor widget ([Editor reach](design/editor-reach.md))
+- ![Done][done] `ProceduralSky` and `DayNightCycle`: a sky and a sun and moon moving over the voxel level ([3D core](design/3d-core.md#procedural-sky-and-day-night-cycle))
+- ![Done][done] Voxel and isometric art revamp: relief and roughness maps on voxel tilesets, 128 px demo blocks, more surface detail on the isometric tiles
+- ![Done][done] `FirstPersonController` walking on `MeshRenderer` boxes, and the Engine Demo tavern as a fifth hub level
 - ![Done][done] Owl Nest fixes: material texture **Open** buttons, text files (`gamecontrollerdb.txt`) in the code editor; material thumbnails and a prefab document ([Editor reach](design/editor-reach.md#editor-fixes-and-gaps))
 - ![Planned][planned] Help panel: mermaid diagrams and rendering polish
 - ![Planned][planned] Sample game: a Mini Transport Tycoon ([Sample games](design/sample-games.md))

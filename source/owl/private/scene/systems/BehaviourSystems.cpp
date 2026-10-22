@@ -258,7 +258,8 @@ void applyDayNightCycles(Scene& ioScene, const bool iRuntime) {
 		if (!lightEntity || !lightEntity.hasComponent<component::Light>())
 			continue;
 		auto& light = lightEntity.getComponent<component::Light>();
-		const float noonHeight = std::sin(std::clamp(cycle.maxElevation, 1.f, 90.f) * std::numbers::pi_v<float> / 180.f);
+		const float noonHeight =
+				std::sin(std::clamp(cycle.maxElevation, 1.f, 90.f) * std::numbers::pi_v<float> / 180.f);
 		const bool byDay = sun.y() >= 0.f;
 		const math::vec3 source = byDay ? sun : sun * -1.f;
 		const float height = source.y();

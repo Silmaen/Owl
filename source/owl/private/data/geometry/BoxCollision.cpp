@@ -14,13 +14,14 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <span>
 #include <vector>
 
 namespace owl::data::geometry {
 
 namespace {
 
-/// Gap left between the moving box and the face it stops at.
+// Gap left between the moving box and the face it stops at.
 constexpr float g_skin = 1e-4f;
 
 auto overlaps(const math::vec3& iCenter, const math::vec3& iHalf, const math::box3f& iBox) -> bool {

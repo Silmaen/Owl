@@ -311,10 +311,10 @@ void drawWidget(const Scene& iWorld, const Entity& iEntity, const HudNode& iNode
 	if (iEntity.hasComponent<component::UiImage>()) {
 		const auto& image = iEntity.getComponent<component::UiImage>();
 		renderer::Quad2DData quad{.transform = iTransform,
-											  .color = image.tint,
-											  .texture = image.texture,
-											  .entityId = entityId,
-											  .depth = hudDepth(iRank, HudLayer::Shape)};
+								  .color = image.tint,
+								  .texture = image.texture,
+								  .entityId = entityId,
+								  .depth = hudDepth(iRank, HudLayer::Shape)};
 		if (!image.renderTarget.empty())
 			setRenderTargetImage(quad, iWorld, image.renderTarget);
 		renderer::Renderer2D::drawQuad(quad);

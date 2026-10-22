@@ -11,6 +11,7 @@
 #include <renderer/ProceduralSky.h>
 
 #include <cmath>
+#include <cstddef>
 
 using namespace owl;
 

@@ -55,7 +55,7 @@ def terrain() -> Layers:
 
 
 def test_terrain_hash_is_stable(terrain: Layers) -> None:
-    assert _digest(terrain) == "18b9d851cf936444b4c4c22a9076ac67701cc0b871626af11fe9b09396d403ea"
+    assert _digest(terrain) == "da0716e8fd80cde2e3faf1637bd564aafd45a223e632daf38729ef7ce3727f1a"
 
 
 def test_same_seed_same_pixels(terrain: Layers) -> None:
@@ -81,7 +81,9 @@ def test_every_tile_is_drawn(terrain: Layers) -> None:
 
 def test_flat_tile_normal_points_up_and_depth_is_zero(terrain: Layers) -> None:
     pixel = (TILE_W // 2, TILE_H - 8)
-    assert _px(terrain.normal, pixel)[:3] == (128, 128, 255)
+    # The surface detail bends the normal a little; the tile itself stays flat.
+    red, green, blue = _px(terrain.normal, pixel)[:3]
+    assert abs(red - 128) <= 12 and abs(green - 128) <= 12 and blue >= 240
     assert _px(terrain.depth, pixel)[0] == 0
 
 

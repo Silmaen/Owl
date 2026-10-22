@@ -262,7 +262,8 @@ TEST_F(BehaviourTest, ADayNightCycleTurnsItsLightWithTheSunThenTheMoonAndAdvance
 	EXPECT_GT(noon.timeOfDay, 12.f);
 	EXPECT_LT(noon.timeOfDay, 12.01f);
 	const auto direction = [&sunEntity]() -> math::vec3 {
-		const auto forward = sunEntity.getComponent<component::Transform>().transform() * math::vec4{0.f, 0.f, -1.f, 0.f};
+		const auto forward =
+				sunEntity.getComponent<component::Transform>().transform() * math::vec4{0.f, 0.f, -1.f, 0.f};
 		return {forward.x(), forward.y(), forward.z()};
 	};
 	const math::vec3 toSun = noon.getSunDirection();
@@ -313,4 +314,3 @@ TEST_F(BehaviourTest, AFirstPersonControllerFallsAndTriggersSeeItsBodyIn3D) {
 	run(*scene, 10);
 	EXPECT_NEAR(translationOf(walker).y(), stopped, 1e-6f);
 }
-

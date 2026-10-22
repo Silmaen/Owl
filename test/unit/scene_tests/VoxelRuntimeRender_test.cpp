@@ -21,6 +21,7 @@
 #include <scene/component/components.h>
 
 #include <chrono>
+#include <tuple>
 
 using namespace owl;
 
@@ -168,8 +169,9 @@ TEST_F(VoxelRuntimeRenderTest, ATilesetWithReliefAndRoughnessMapsStillDraws) {
 	for (const auto [handle, world]: sc->registry.view<scene::component::VoxelWorld>().each()) {
 		std::ignore = handle;
 		const auto map = [] -> shared<renderer::gpu::Texture2D> {
-			return renderer::gpu::Texture2D::create(renderer::gpu::Texture::Specification{
-					.size = {64, 64}, .format = renderer::gpu::ImageFormat::Rgba8});
+			return renderer::gpu::Texture2D::create(
+					renderer::gpu::Texture::Specification{.size = {64, 64},
+														  .format = renderer::gpu::ImageFormat::Rgba8});
 		};
 		world.tileset->normalTexture = map();
 		world.tileset->roughnessTexture = map();
@@ -179,4 +181,3 @@ TEST_F(VoxelRuntimeRenderTest, ATilesetWithReliefAndRoughnessMapsStillDraws) {
 	EXPECT_GE(renderer::RendererVoxel::getStatistics(voxelCache()).drawnMeshCount, 1u);
 	sc->onEndRuntime();
 }
-

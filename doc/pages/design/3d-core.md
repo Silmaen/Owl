@@ -7,7 +7,7 @@ Design page for the v0.5.0 release, summarised in the [Roadmap](../roadmap.md). 
 
 ## Delivery plan
 
-One pull request per row, in this order; 2D lighting, HUD minimap, multithreaded preparation and the Mini Transport
+One pull request per row, in this order; 2D lighting, multithreaded preparation and the Mini Transport
 Tycoon follow.
 
 | #  | Pull request                                                                                          | Needs |
@@ -113,6 +113,15 @@ A glowing surface is one of three things, in increasing cost.
 A star seen from its planet is a directional light with an angular radius. Seen from space, beside the planet, it
 is an emissive body carrying a point light without falloff; its scale belongs to
 [Large worlds](large-worlds.md#lights-at-astronomical-scale).
+
+## Procedural sky and day-night cycle {#procedural-sky-and-day-night-cycle}
+
+`ProceduralSky` computes the image an `Environment` would load (Preetham clear sky, dusk glow, stars, sun and moon
+discs) and feeds the same prefiltering as an HDRI, built on a worker and again when the sun moves, so the sky lights
+and reflects like an image ([Renderer](../renderer.md#renderer-ibl)). `DayNightCycle` advances the time of day, turns a
+directional `Light` (shadows included) along the sun then the moon path, writes the sun direction into the sky and adds
+a night exposure to the cameras in Play. Components: [Scene](../scene.md#proceduralsky-component); benchmark `sky/*`
+in `test/bench/cases/SkyBench.cpp`. The voxel level uses both.
 
 ## Reflection probes {#reflection-probes}
 

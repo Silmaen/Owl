@@ -4,7 +4,7 @@
 
 Design page of the 2D work once planned as v0.5.0; the 2026-10-16 replan spread it over the releases, see the
 [Roadmap](../roadmap.md): the draw-order sort key, scroll views and lists, and tile-graph pathfinding in v0.4.0; 2D
-lights (done), the minimap and "look through scene camera" in v0.5.0; the tileset editor and the procedural brick in v0.6.0;
+lights and the minimap (done) and "look through scene camera" in v0.5.0; the tileset editor and the procedural brick in v0.6.0;
 full 2D physics and the enemies demo in v0.7.0. The 2D physics part has its own page,
 [Physics API](physics-api.md); the editor part is in [Owl Nest UI](nest-ui.md).
 
@@ -29,7 +29,7 @@ see [HUD system](hud-system.md). Built on them:
 
 - v0.4.0: scroll views with clipping and virtualised lists (vehicle lists of a management game), done in HUD7
 - v0.5.0: tables (columns and sortable headers) over the virtualised list
-- v0.5.0: minimap of a tilemap on a render target, shown in a `UiImage`
+- v0.5.0: a minimap on a render target, shown in a `UiImage`, done: see [HUD system](hud-system.md#minimap)
 - v0.5.0: live scene backdrop in the HUD editor, with "look through scene camera"
 
 ## Draw-order sort key (B-10, v0.4.0, done)

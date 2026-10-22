@@ -65,7 +65,8 @@ auto isWalker(const Entity& iEntity) -> bool {
 auto getTriggerPlayer(Scene& ioScene) -> Entity {
 	if (const Entity player = ioScene.getPrimaryPlayer(); player)
 		return player;
-	if (const auto walkers = ioScene.registry.view<component::FirstPersonController>(); walkers.begin() != walkers.end())
+	if (const auto walkers = ioScene.registry.view<component::FirstPersonController>();
+		walkers.begin() != walkers.end())
 		return Entity{*walkers.begin(), &ioScene};
 	if (const auto voxels = ioScene.registry.view<component::VoxelPlayer>(); voxels.begin() != voxels.end())
 		return Entity{*voxels.begin(), &ioScene};
@@ -117,12 +118,11 @@ void updateTrigger(Scene& ioScene, const Entity& iEntity, const Entity& iPlayer,
 	}
 	if (!iPlayer)
 		return;
-	const bool overlapping =
-			isWalker(iPlayer)
-					? getBodyBox(iEntity, ioScene.getWorldTransform(iEntity))
-							  .intersect(getBodyBox(iPlayer, ioScene.getWorldTransform(iPlayer)))
-					: getColliderBox(iEntity, ioScene.getWorldTransform(iEntity))
-							  .intersect(getColliderBox(iPlayer, ioScene.getWorldTransform(iPlayer)));
+	const bool overlapping = isWalker(iPlayer)
+									 ? getBodyBox(iEntity, ioScene.getWorldTransform(iEntity))
+											   .intersect(getBodyBox(iPlayer, ioScene.getWorldTransform(iPlayer)))
+									 : getColliderBox(iEntity, ioScene.getWorldTransform(iEntity))
+											   .intersect(getColliderBox(iPlayer, ioScene.getWorldTransform(iPlayer)));
 	if (overlapping && !trigger.wasOverlapping())
 		trigger.onTriggerEnter(iPlayer, iEntity);
 	if (overlapping)

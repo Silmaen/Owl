@@ -806,6 +806,8 @@ equirectangular Radiance `.hdr` image (`EnvironmentMap`, `Equirectangular`).
   without one (`g_defaultSkyLuminance`, 10 000; clear day 10 000, overcast 2 000, dusk 100, night 0.01; 0 leaves only
   the lights and the emissive); `rotation` turns it about the vertical axis; the first
   visible `Environment` of the scene counts.
+- **Procedural sky.** A `ProceduralSky` in the scene replaces the image: the same build and levels from a computed
+  sky ([Scene > ProceduralSky](scene.md#proceduralsky-component)).
 - **Sky.** With `showSky`, an `environment sky` pass draws the image behind the world layers (`Renderer3D::drawSky`).
 - **Fallback.** Without an image (empty `hdri`, or while it builds), the `ambient` colour of the `Environment` (sRGB,
   default `[0.63, 0.63, 0.67]`, times `intensity`) lights the surfaces as a constant sky (`SphericalHarmonics::constant`) and the

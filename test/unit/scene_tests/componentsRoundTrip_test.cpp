@@ -10,11 +10,13 @@
 
 #include <app/Application.h>
 #include <core/Log.h>
+#include <renderer/gpu/Framebuffer.h>
 #include <scene/Entity.h>
 #include <scene/Scene.h>
 #include <scene/SceneSerializer.h>
-#include <renderer/gpu/Framebuffer.h>
 #include <scene/component/components.h>
+
+#include <cstdint>
 
 #include <filesystem>
 #include <string>
@@ -857,4 +859,3 @@ TEST(ComponentRoundTrip, ProceduralSkyAndDayNightCycle) {
 				EXPECT_NEAR(cycle.nightExposure, 2.f, 1e-6f);
 			});
 }
-

@@ -22,16 +22,16 @@ namespace owl::renderer {
 namespace {
 
 constexpr float g_pi = std::numbers::pi_v<float>;
-/// Sun zenith angle of the reference sky (60 degrees high), whose zenith luminance is a pixel of 1.
+// Sun zenith angle of the reference sky (60 degrees high), whose zenith luminance is a pixel of 1.
 constexpr float g_referenceZenithAngle = g_pi / 6.f;
-/// Lowest cosine of a view or sun zenith angle given to the Perez function, which diverges at the horizon.
+// Lowest cosine of a view or sun zenith angle given to the Perez function, which diverges at the horizon.
 constexpr float g_minCosine = 0.01f;
-/// Warm colour of the dusk glow, linear.
+// Warm colour of the dusk glow, linear.
 const math::vec3 g_glowColor{1.f, 0.38f, 0.12f};
-/// Colour of the moon disc, linear.
+// Colour of the moon disc, linear.
 const math::vec3 g_moonColor{0.75f, 0.8f, 0.9f};
 
-/// Perez distribution coefficients A to E of one channel for a turbidity.
+// Perez distribution coefficients A to E of one channel for a turbidity.
 using Perez = std::array<float, 5>;
 
 auto perezLuminance(const float iT) -> Perez {
@@ -99,7 +99,7 @@ auto flat(const math::vec3& iDirection) -> math::vec3 {
 	return horizontal.norm() > 1e-5f ? horizontal.normalized() : math::vec3{1.f, 0.f, 0.f};
 }
 
-/// Everything of the sky that does not depend on the view direction.
+// Everything of the sky that does not depend on the view direction.
 struct SkyFrame {
 	math::vec3 sun;
 	float thetaSun = 0.f;
@@ -117,8 +117,8 @@ struct SkyFrame {
 
 auto makeFrame(const SkyParameters& iParameters) -> SkyFrame {
 	SkyFrame frame;
-	frame.sun = iParameters.sunDirection.norm() > 1e-5f ? iParameters.sunDirection.normalized()
-															: math::vec3{0.f, 1.f, 0.f};
+	frame.sun =
+			iParameters.sunDirection.norm() > 1e-5f ? iParameters.sunDirection.normalized() : math::vec3{0.f, 1.f, 0.f};
 	const float turbidity = std::clamp(iParameters.turbidity, 1.7f, 10.f);
 	const float sunHeight = frame.sun.y();
 	frame.thetaSun = std::acos(std::clamp(sunHeight, g_minCosine, 1.f));
@@ -161,9 +161,8 @@ auto skyRadiance(const SkyParameters& iParameters, const SkyFrame& iFrame, const
 	color = color + iParameters.nightColor * (iParameters.nightBrightness * iFrame.night * zenithward);
 	if (iParameters.stars > 0.f && height > 0.f && iFrame.night > 0.f) {
 		if (const float star = hash(iX, iY); star > 0.996f)
-			color = color + math::vec3{1.f, 1.f, 1.f} *
-									(iParameters.stars * iFrame.night * (star - 0.996f) * 2000.f *
-									 iParameters.nightBrightness * smoothstep(0.f, 0.15f, height));
+			color = color + math::vec3{1.f, 1.f, 1.f} * (iParameters.stars * iFrame.night * (star - 0.996f) * 2000.f *
+														 iParameters.nightBrightness * smoothstep(0.f, 0.15f, height));
 	}
 	if (iFrame.discCosine < 1.f) {
 		if (iDirection * iFrame.sun > iFrame.discCosine && iFrame.sun.y() > -0.05f)

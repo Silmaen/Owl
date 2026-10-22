@@ -12,7 +12,6 @@
 #include "data/voxel/TerrainGenerator.h"
 #include "math/Frustum.h"
 #include "platform/FileUtils.h"
-#include "systems/EngineSystems.h"
 #include "renderer/BackgroundRenderer.h"
 #include "renderer/CameraOrtho.h"
 #include "renderer/ClipSpace.h"
@@ -42,6 +41,7 @@
 #include "scene/Tileset.h"
 #include "scene/nav/NavDebugDraw.h"
 #include "scene/nav/NavWorld.h"
+#include "systems/EngineSystems.h"
 
 #include "ScriptLoader.h"
 #include "app/Application.h"
@@ -2654,8 +2654,10 @@ void Scene::setEditorVoxelHighlight(const bool iShow, const math::vec3i& iBlock,
 auto Scene::wantsCursorCapture() const -> bool {
 	const auto view = registry.view<component::VoxelPlayer>();
 	const auto walkers = registry.view<component::FirstPersonController>();
-	return std::ranges::any_of(
-				   view, [&](const auto iEntity) -> bool { return view.get<component::VoxelPlayer>(iEntity).captureCursor; }) ||
+	return std::ranges::any_of(view,
+							   [&](const auto iEntity) -> bool {
+								   return view.get<component::VoxelPlayer>(iEntity).captureCursor;
+							   }) ||
 		   std::ranges::any_of(walkers, [&](const auto iEntity) -> bool {
 			   const auto& walker = walkers.get<component::FirstPersonController>(iEntity);
 			   return walker.enabled && walker.captureCursor;
@@ -2987,16 +2989,17 @@ OWL_API void Scene::onComponentAdded<component::RenderTarget>([[maybe_unused]] c
 
 template<>
 OWL_API void Scene::onComponentAdded<component::ProceduralSky>([[maybe_unused]] const Entity& iEntity,
-															   [[maybe_unused]] component::ProceduralSky& ioComponent) {}
+															   [[maybe_unused]] component::ProceduralSky& ioComponent) {
+}
 
 template<>
 OWL_API void Scene::onComponentAdded<component::DayNightCycle>([[maybe_unused]] const Entity& iEntity,
-															   [[maybe_unused]] component::DayNightCycle& ioComponent) {}
+															   [[maybe_unused]] component::DayNightCycle& ioComponent) {
+}
 
 template<>
-OWL_API void
-Scene::onComponentAdded<component::FirstPersonController>([[maybe_unused]] const Entity& iEntity,
-														  [[maybe_unused]] component::FirstPersonController& ioComponent) {}
+OWL_API void Scene::onComponentAdded<component::FirstPersonController>(
+		[[maybe_unused]] const Entity& iEntity, [[maybe_unused]] component::FirstPersonController& ioComponent) {}
 
 template<>
 OWL_API void Scene::onComponentAdded<component::Environment>([[maybe_unused]] const Entity& iEntity,
