@@ -11,6 +11,7 @@
 
 #include "EntityLinkMigration.h"
 #include "HudLayoutMigration.h"
+#include "PhysicalLightMigration.h"
 #include "UiRendererTagMigration.h"
 #include "UiTextMigration.h"
 #include "scene/SceneSerializer.h"
@@ -42,9 +43,10 @@ namespace owl::scene {
 
 namespace {
 
-// Steps 1 to 5: links by UUID, centred legacy UiText, Y-down HUD layout, no `ui` renderer tag on widgets.
-constexpr std::array<core::MigrationStep, 4> g_prefabMigrations{&bindEntityLinksByName, &centreLegacyUiText,
-																&convertLegacyHudLayout, &dropUiRendererTag};
+// Steps 1 to 6: links by UUID, centred legacy UiText, Y-down HUD layout, no `ui` renderer tag on widgets, physical lights.
+constexpr std::array<core::MigrationStep, 5> g_prefabMigrations{&bindEntityLinksByName, &centreLegacyUiText,
+																&convertLegacyHudLayout, &dropUiRendererTag,
+																&convertToPhysicalLights};
 constexpr core::DocumentFormat g_prefabFormat{.name = "Prefab", .migrations = g_prefabMigrations};
 
 auto readText(const std::filesystem::path& iFilepath) -> std::string {

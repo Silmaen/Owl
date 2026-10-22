@@ -170,3 +170,42 @@ TEST_F(BlockFixture, OrientedFaceYawKeepsVerticalCaps) {
 	EXPECT_EQ(orientedFace(BlockFace::XNeg, BlockOrientation::Yaw180), BlockFace::XPos);
 	EXPECT_EQ(orientedFace(BlockFace::ZNeg, BlockOrientation::Yaw180), BlockFace::ZPos);
 }
+
+TEST_F(BlockFixture, PackSurfaceUsesOneBytePerField) {
+	EXPECT_EQ(packSurface(BlockSurface{.metallic = 0.f, .roughness = 0.f, .emissive = 0.f, .clearcoat = 0.f}), 0u);
+	EXPECT_EQ(packSurface(BlockSurface{.metallic = 1.f, .roughness = 0.f, .emissive = 0.f, .clearcoat = 0.f}), 0xFFu);
+	EXPECT_EQ(packSurface(BlockSurface{.metallic = 0.f, .roughness = 1.f, .emissive = 0.f, .clearcoat = 1.f}),
+			  0xFF00FF00u);
+	EXPECT_EQ(
+			packSurface(
+					BlockSurface{.metallic = 0.f, .roughness = 0.f, .emissive = g_MaxBlockLuminance, .clearcoat = 0.f}),
+			0x00FF0000u);
+	EXPECT_EQ(packSurface(BlockSurface{.metallic = 2.f, .roughness = -1.f, .emissive = 1.e9f, .clearcoat = 0.f}),
+			  0x00FF00FFu);
+}
+
+TEST_F(BlockFixture, SurfaceRoundTripsAndDefaultIsNotWritten) {
+	BlockRegistry registry;
+	registry.registerBlock(makeStone());
+	auto water = makeWater();
+	water.surface = BlockSurface{.metallic = 0.f, .roughness = 0.05f, .emissive = 2.f, .clearcoat = 1.f};
+	registry.registerBlock(water);
+	const std::string yaml = registry.serializeToString("test");
+	EXPECT_EQ(yaml.find("surface"), yaml.rfind("surface"));
+	BlockRegistry restored;
+	ASSERT_TRUE(restored.deserializeFromString(yaml));
+	EXPECT_EQ(restored.get(1).surface, BlockSurface{});
+	EXPECT_EQ(restored.get(2).surface, water.surface);
+}
+
+TEST_F(BlockFixture, SetBlockReplacesARegisteredType) {
+	BlockRegistry registry;
+	const auto stone = registry.registerBlock(makeStone());
+	auto shiny = makeStone();
+	shiny.surface.metallic = 1.f;
+	EXPECT_TRUE(registry.setBlock(stone, shiny));
+	EXPECT_FLOAT_EQ(registry.get(stone).surface.metallic, 1.f);
+	EXPECT_FALSE(registry.setBlock(g_AirBlock, shiny));
+	EXPECT_FALSE(registry.setBlock(42, shiny));
+	EXPECT_EQ(registry.get(g_AirBlock).renderKind, BlockRenderKind::Air);
+}

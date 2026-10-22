@@ -24,35 +24,115 @@ namespace owl::data::geometry {
 
 /**
  * @brief
- *  Base colour of the material of a loaded mesh (glTF `pbrMetallicRoughness`).
+ *  A decoded image of a material texture.
+ */
+struct OWL_API MeshImage {
+	/// Size of the image, `{0, 0}` without one.
+	math::vec2ui size{0, 0};
+	/// RGBA8 pixels, bottom row first (the engine texture convention).
+	std::vector<uint8_t> pixels;
+	/// Name of the image (its URI, or its name when embedded).
+	std::string name;
+
+	/**
+	 * @brief
+	 *  Check if the image holds no pixel.
+	 * @return True when nothing was decoded.
+	 */
+	[[nodiscard]] auto isEmpty() const -> bool { return pixels.empty(); }
+};
+
+/**
+ * @brief
+ *  Material of a mesh primitive (glTF metallic-roughness model and its common extensions).
+ *
+ * Images keep the glTF channel conventions: metallic in blue, roughness in green, occlusion in red.
  */
 struct OWL_API MeshMaterial {
-	/// Colour factor multiplied with the base-colour texture.
+	/// How the alpha of the base colour is used.
+	enum struct AlphaMode : uint8_t {
+		Opaque,///< Alpha ignored.
+		Mask,///< Fragments under the cutoff are discarded.
+		Blend///< Alpha blended with the background.
+	};
+
+	/// Name of the material, empty when the file gives none.
+	std::string name;
+	/// Colour factor multiplied with the base-colour image.
 	math::vec4 baseColorFactor{1.f, 1.f, 1.f, 1.f};
-	/// Size of the base-colour image, `{0, 0}` without one.
-	math::vec2ui baseColorSize{0, 0};
-	/// RGBA8 pixels of the base-colour image, bottom row first (the engine texture convention).
-	std::vector<uint8_t> baseColorPixels;
-	/// Name of the base-colour image (its URI, or its name when embedded).
-	std::string baseColorName;
+	/// Metallic factor multiplied with the metallic channel.
+	float metallicFactor = 1.f;
+	/// Roughness factor multiplied with the roughness channel.
+	float roughnessFactor = 1.f;
+	/// Emitted colour multiplied with the emissive image.
+	math::vec3 emissiveFactor{0.f, 0.f, 0.f};
+	/// Emissive intensity (`KHR_materials_emissive_strength`).
+	float emissiveStrength = 1.f;
+	/// Scale of the normal-map perturbation.
+	float normalScale = 1.f;
+	/// Strength of the occlusion image.
+	float occlusionStrength = 1.f;
+	/// Use of the base-colour alpha.
+	AlphaMode alphaMode = AlphaMode::Opaque;
+	/// Alpha under which a fragment is discarded in `Mask` mode.
+	float alphaCutoff = 0.5f;
+	/// True when both faces of a triangle are drawn.
+	bool doubleSided = false;
+	/// Clear-coat layer intensity (`KHR_materials_clearcoat`), 0 without one.
+	float clearcoat = 0.f;
+	/// Clear-coat layer roughness.
+	float clearcoatRoughness = 0.f;
+	/// Sheen colour (`KHR_materials_sheen`), black without one.
+	math::vec3 sheenColor{0.f, 0.f, 0.f};
+	/// Sheen roughness.
+	float sheenRoughness = 0.f;
+	/// Anisotropy strength (`KHR_materials_anisotropy`), 0 without one.
+	float anisotropy = 0.f;
+	/// Anisotropy direction, in radians.
+	float anisotropyRotation = 0.f;
+	/// Base-colour image.
+	MeshImage baseColor;
+	/// Metallic (blue) and roughness (green) image.
+	MeshImage metallicRoughness;
+	/// Tangent-space normal image.
+	MeshImage normal;
+	/// Occlusion (red) image.
+	MeshImage occlusion;
+	/// Emissive image.
+	MeshImage emissive;
 
 	/**
 	 * @brief
 	 *  Check if the material has a base-colour image.
 	 * @return True when pixels were decoded.
 	 */
-	[[nodiscard]] auto hasBaseColorTexture() const -> bool { return !baseColorPixels.empty(); }
+	[[nodiscard]] auto hasBaseColorTexture() const -> bool { return !baseColor.isEmpty(); }
 };
 
 /**
  * @brief
- *  A mesh read from a file with the material of its first primitive.
+ *  A run of the indices of a mesh drawn with one material.
+ */
+struct OWL_API MeshSubmesh {
+	/// Position of the first index of the run in the merged index buffer (a multiple of 3).
+	uint32_t firstIndex = 0;
+	/// Number of indices of the run (a multiple of 3).
+	uint32_t indexCount = 0;
+	/// Position of the material in `LoadedMesh::materials`.
+	uint32_t materialIndex = 0;
+};
+
+/**
+ * @brief
+ *  A mesh read from a file with its materials and the submeshes using them.
  */
 struct OWL_API LoadedMesh {
 	/// The geometry (its texture coordinates follow the engine convention: `v = 0` at the bottom of the image).
 	shared<StaticMesh> mesh;
-	/// The material of the first primitive that has one; the default material otherwise.
-	MeshMaterial material;
+	/// The materials of the file; the default material alone when the file has none.
+	std::vector<MeshMaterial> materials{MeshMaterial{}};
+	/// One run of indices per glTF primitive or OBJ material group, contiguous in the merged index buffer.
+	std::vector<MeshSubmesh> submeshes;
 };
 
 /// Reads a file a mesh names (the external buffers and images of a `.gltf`) by its path; nothing when it is missing.

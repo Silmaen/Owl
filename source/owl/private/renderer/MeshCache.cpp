@@ -191,19 +191,94 @@ auto MeshGeometry::raycast(const math::vec3& iOrigin, const math::vec3& iDirecti
 	return iOrigin + iDirection * *nearest;
 }
 
+namespace {
+// Luminance given to a glTF emissive factor of 1 (glTF leaves its unit open; 1 reads as a lit sign).
+constexpr float g_gltfEmissiveNits = 1000.f;
+
+auto linearToSrgb(const float iValue) -> float {
+	const float clamped = std::clamp(iValue, 0.f, 1.f);
+	return clamped <= 0.0031308f ? clamped * 12.92f : 1.055f * std::pow(clamped, 1.f / 2.4f) - 0.055f;
+}
+
+auto toSrgb(const math::vec3& iLinear) -> math::vec3 {
+	return {linearToSrgb(iLinear.x()), linearToSrgb(iLinear.y()), linearToSrgb(iLinear.z())};
+}
+
+auto createTexture(const data::geometry::MeshImage& iImage) -> shared<gpu::Texture2D> {
+	if (iImage.isEmpty())
+		return nullptr;
+	auto texture = gpu::Texture2D::create(
+			gpu::Texture2D::Specification{.size = iImage.size, .format = gpu::ImageFormat::Rgba8});
+	if (!texture)
+		return nullptr;
+	auto pixels = iImage.pixels;
+	texture->setData(pixels.data(), static_cast<uint32_t>(pixels.size()));
+	return texture;
+}
+
+// A material of a mesh file as the renderer draws it: glTF colour factors are linear, the material keeps sRGB.
+auto convertMaterial(const data::geometry::MeshMaterial& iSource) -> shared<const Material> {
+	MaterialParameters values;
+	const auto& base = iSource.baseColorFactor;
+	const auto baseSrgb = toSrgb({base.x(), base.y(), base.z()});
+	values.baseColor = math::vec4{baseSrgb.x(), baseSrgb.y(), baseSrgb.z(), base.w()};
+	values.metallic = iSource.metallicFactor;
+	values.roughness = iSource.roughnessFactor;
+	values.emissive = toSrgb(iSource.emissiveFactor);
+	values.emissiveLuminance = iSource.emissiveStrength * g_gltfEmissiveNits;
+	values.normalScale = iSource.normalScale;
+	values.occlusionStrength = iSource.occlusionStrength;
+	values.alphaCutoff = iSource.alphaCutoff;
+	values.doubleSided = iSource.doubleSided;
+	values.clearcoat = iSource.clearcoat;
+	values.clearcoatRoughness = iSource.clearcoatRoughness;
+	values.sheenColor = toSrgb(iSource.sheenColor);
+	values.sheenRoughness = iSource.sheenRoughness;
+	values.anisotropy = iSource.anisotropy;
+	values.anisotropyRotation = iSource.anisotropyRotation;
+	using SourceAlpha = data::geometry::MeshMaterial::AlphaMode;
+	switch (iSource.alphaMode) {
+		case SourceAlpha::Opaque:
+			values.alphaMode = AlphaMode::Opaque;
+			break;
+		case SourceAlpha::Mask:
+			values.alphaMode = AlphaMode::Mask;
+			break;
+		case SourceAlpha::Blend:
+			values.alphaMode = AlphaMode::Blend;
+			break;
+	}
+	// The glTF metallic-roughness image serves both maps, read on the default channels B and G.
+	const auto metallicRoughness = createTexture(iSource.metallicRoughness);
+	const std::array<shared<gpu::Texture2D>, g_materialMapCount> textures{
+			createTexture(iSource.baseColor), metallicRoughness,
+			createTexture(iSource.normal),    createTexture(iSource.occlusion),
+			createTexture(iSource.emissive),  metallicRoughness};
+	return mkShared<const Material>(values, textures);
+}
+
+}// namespace
+
 MeshResource::MeshResource(std::filesystem::path iFile, const data::geometry::LoadedMesh& iLoaded)
-	: m_file{std::move(iFile)}, m_baseColorFactor{iLoaded.material.baseColorFactor} {
+	: m_file{std::move(iFile)}, m_baseColorFactor{iLoaded.materials.front().baseColorFactor} {
 	if (iLoaded.mesh)
 		m_geometry = MeshGeometry::fromStaticMesh(*iLoaded.mesh);
-	const auto& material = iLoaded.material;
-	if (!material.hasBaseColorTexture())
-		return;
-	m_baseColorTexture = gpu::Texture2D::create(
-			gpu::Texture2D::Specification{.size = material.baseColorSize, .format = gpu::ImageFormat::Rgba8});
-	if (!m_baseColorTexture)
-		return;
-	auto pixels = material.baseColorPixels;
-	m_baseColorTexture->setData(pixels.data(), static_cast<uint32_t>(pixels.size()));
+	m_fileMaterials.reserve(iLoaded.materials.size());
+	for (const auto& material: iLoaded.materials) m_fileMaterials.push_back(convertMaterial(material));
+	const auto indexCount = static_cast<uint32_t>(m_geometry.indices.size());
+	for (const auto& submesh: iLoaded.submeshes) {
+		if (submesh.firstIndex >= indexCount || submesh.indexCount == 0)
+			continue;
+		m_submeshes.push_back({.firstIndex = submesh.firstIndex,
+							   .indexCount = std::min(submesh.indexCount, indexCount - submesh.firstIndex),
+							   .materialIndex = std::min<uint32_t>(submesh.materialIndex,
+																   static_cast<uint32_t>(m_fileMaterials.size() - 1))});
+	}
+	if (m_submeshes.empty() && indexCount > 0)
+		m_submeshes.push_back({.firstIndex = 0, .indexCount = indexCount, .materialIndex = 0});
+	m_submeshMeshes.resize(m_submeshes.size());
+	if (!m_fileMaterials.empty())
+		m_baseColorTexture = m_fileMaterials.front()->getTexture(MaterialMap::BaseColor);
 }
 
 MeshResource::~MeshResource() = default;
@@ -213,6 +288,38 @@ auto MeshResource::getMesh(const bool iTransparent) -> const Renderer3D::MeshHan
 	if (!mesh && !m_geometry.isEmpty())
 		mesh = Renderer3D::createMesh(m_geometry.vertices, m_geometry.indices, "mesh3d",
 									  iTransparent ? Renderer3D::transparentMeshState : Renderer3D::opaqueMeshState);
+	return mesh;
+}
+
+auto MeshResource::getFileMaterial(const size_t iSubmesh) const -> const shared<const Material>& {
+	static const shared<const Material> s_default = mkShared<const Material>();
+	if (iSubmesh >= m_submeshes.size() || m_fileMaterials.empty())
+		return s_default;
+	return m_fileMaterials[m_submeshes[iSubmesh].materialIndex];
+}
+
+auto MeshResource::getSubmeshMesh(const size_t iSubmesh, const bool iTransparent) -> const Renderer3D::MeshHandle& {
+	static const Renderer3D::MeshHandle s_none;
+	if (iSubmesh >= m_submeshes.size())
+		return s_none;
+	auto& mesh = m_submeshMeshes[iSubmesh][iTransparent ? 1 : 0];
+	if (!mesh) {
+		// The part gets its own compact vertices: a draw's vertex buffer is sized from its index count.
+		const auto& part = m_submeshes[iSubmesh];
+		std::vector<Mesh3DVertex> vertices;
+		std::vector<uint32_t> indices;
+		std::unordered_map<uint32_t, uint32_t> remap;
+		indices.reserve(part.indexCount);
+		for (uint32_t offset = 0; offset < part.indexCount; ++offset) {
+			const uint32_t source = m_geometry.indices[part.firstIndex + offset];
+			const auto [found, inserted] = remap.try_emplace(source, static_cast<uint32_t>(vertices.size()));
+			if (inserted)
+				vertices.push_back(m_geometry.vertices[source]);
+			indices.push_back(found->second);
+		}
+		mesh = Renderer3D::createMesh(vertices, indices, "mesh3d",
+									  iTransparent ? Renderer3D::transparentMeshState : Renderer3D::opaqueMeshState);
+	}
 	return mesh;
 }
 

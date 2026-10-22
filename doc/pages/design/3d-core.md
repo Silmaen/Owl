@@ -18,8 +18,8 @@ multithreaded preparation and the Mini Transport Tycoon follow.
 | 4  | HDR scene colour, linear colour space, per-camera tone mapping (one pull request with 3)              | 3     |
 | 5  | Directional, point and spot light components, forward light SSBO (one pull request with 6)            | 1     |
 | 6  | Directional shadow map (one pull request with 5)                                                      | 3, 5  |
-| 7  | PBR material asset, material editor and library                                                       | 4, 5  |
-| 8  | Post-process stack per camera: bloom, vignette, LUT                                                   | 4     |
+| 7  | PBR material asset, material editor and library (one pull request with 8)                             | 4, 5  |
+| 8  | Post-process stack per camera: bloom, vignette, LUT (one pull request with 7)                         | 4     |
 | 9  | Instancing and GPU frustum / occlusion culling fed by the scene graph                                 | 1, 3  |
 | 10 | Engine Demo 3D scene mixing a 3D level, a 2D HUD and a raycast or voxel area                          | 5–8   |
 | 11 | Camera-relative model matrices, reversed-Z depth with an infinite far plane                           | 1, 3  |
@@ -39,27 +39,64 @@ Lighting, blending and filtering happen on linear values; encoding to sRGB happe
 | HUD and Owl Nest   | Drawn after the encode, in gamma space, unchanged                                                          |
 | Tone mapping       | Per camera: `None` (clamp, default, exact 2D colours), Khronos PBR Neutral, ACES                           |
 | Visible change     | Alpha blending of the 2D layers becomes linear; image-test references regenerated after a visual review    |
-| Delivered by       | Pull requests 3 and 4 together                                                                             |
+| Delivered by | Pull requests 3 and 4 together |
 
 ## Lighting
 
 Lights reach the 3D layers only (`MeshRenderer` meshes and voxel worlds); 2D lighting is a separate item.
 
-| Decision        | Choice                                                                                                  |
-|-----------------|---------------------------------------------------------------------------------------------------------|
-| Component       | One `Light` component with a type (`Directional`, `Point`, `Spot`), not one component per kind           |
-| Orientation     | Shines along -Z of the world transform; a point light ignores rotation, a directional one the position  |
-| Fallback        | A scene without a `Light` keeps the sun and ambient of the layer config; ambient always comes from it   |
-| Diffuse         | Lambert; colour authored in sRGB, converted to linear on upload                                         |
-| Falloff         | Point and spot reach zero at `range` through the window `(1 - (d/range)^4)^2`, no inverse square        |
-| Spot cone       | Smooth fade between the inner and outer half angles                                                     |
-| Forward lights  | Up to 64 lights in a storage buffer (`renderer::GpuLight`), no clustering yet                           |
-| Shadows         | The first visible directional light with `castShadows`; point and spot lights cast none                 |
-| Cascades        | 1 to 4 (`cascadeCount`), splits blending uniform and logarithmic (0.75) over `[near, shadowDistance]`  |
-| Cascade fit     | Orthographic light camera around a sphere bounding the slice, centre snapped to the texel grid         |
-| Shadow map      | `RedFloat` target of `shadowResolution`^2 per cascade, one frame-graph pass each, opaque casters only   |
-| Filtering       | 3x3 PCF with a normal-offset bias in texels (`shadowBias`)                                              |
-| Delivered by    | Pull requests 5 and 6 together                                                                          |
+| Decision       | Choice                                                                                                            |
+|----------------|-------------------------------------------------------------------------------------------------------------------|
+| Component      | One `Light` component with a type (`Directional`, `Point`, `Spot`), not one component per kind                    |
+| Orientation    | Shines along -Z of the world transform; a point light ignores rotation, a directional one the position            |
+| Fallback       | The layer sun lights only a scene without any `Light`; the ambient comes from the `Environment`                   |
+| Shading        | The `Standard` model of the [Materials](#materials); colour authored in sRGB, converted to linear on upload       |
+| Units          | Lux for a directional light, lumens for a point (lm / 4π cd) or spot (lm / π cd) light, nits for emissive and sky |
+| Falloff        | Inverse square (1 cm floor), cut off smoothly at `range` through the window `(1 - (d/range)^4)^2`                 |
+| Spot cone      | Smooth fade between the inner and outer half angles                                                               |
+| Forward lights | Up to 64 lights in a storage buffer (`renderer::GpuLight`), no clustering yet                                     |
+| Shadows        | The first visible directional light with `castShadows`; point and spot lights cast none                           |
+| Cascades       | 1 to 4 (`cascadeCount`), splits blending uniform and logarithmic (0.75) over `[near, shadowDistance]`             |
+| Cascade fit    | Orthographic light camera around a sphere bounding the slice, centre snapped to the texel grid                    |
+| Shadow map     | `RedFloat` target of `shadowResolution`^2 per cascade, one frame-graph pass each, opaque casters only             |
+| Filtering      | 3x3 PCF with a normal-offset bias in texels (`shadowBias`)                                                        |
+| Delivered by   | Pull requests 5 and 6 together                                                                                    |
+
+## Materials {#materials}
+
+Pull requests 7 and 8 together: PBR materials, image-based lighting and the per-camera post-process stack.
+
+| Decision        | Choice                                                                                                                                                                 |
+|-----------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Asset           | `.owlmat`, versioned YAML: shading model, alpha mode, factors, texture paths; a `Parent` makes it an instance overriding only the fields it lists                      |
+| Shading models  | Per material: `Standard`, `Unlit` (base colour plus emissive, no light), `Toon`; Lambert is gone, voxel worlds included                                                |
+| Standard        | Filament model: Burley diffuse, GGX distribution, height-correlated Smith visibility, Schlick Fresnel, multi-scattering energy compensation                            |
+| Layers          | Clearcoat (GGX, Kelemen visibility), sheen (Charlie distribution, Neubelt visibility), anisotropy (anisotropic GGX); off at zero                                       |
+| Toon            | Banded diffuse from the same lights and shadows, stepped highlight, a rim and the spherical-harmonics ambient (no reflections); `toonBands` and `toonRim` per material |
+| Tangent frame   | Built per pixel from the position and UV derivatives: no tangent in the vertex layout; voxel worlds build theirs from the normal                                       |
+| Data textures   | Normal, metallic-roughness, occlusion are read raw; base colour and emissive are decoded from sRGB                                                                     |
+| Mesh slots      | One material slot per submesh (glTF primitive, OBJ material group); an empty slot takes the file's own material                                                        |
+| Overrides       | A `MeshRenderer` slot overrides chosen fields of its material per entity; prefabs keep them as overrides                                                               |
+| Synchronisation | `MaterialLibrary` (engine context) shares one material per file; editing or reloading a `.owlmat` updates its instances and every entity using them                    |
+| Voxel worlds    | The default `Standard` material (no metal, roughness 0.5), no layers, the face occlusion as ambient occlusion                                                          |
+| Future          | A `Graph` kind of `.owlmat`, edited on `NodeCanvas` and compiled to Slang, beside the parameter kind                                                                   |
+
+| Decision        | Choice                                                                                                                |
+|-----------------|-----------------------------------------------------------------------------------------------------------------------|
+| Environment     | `Environment` component: an equirectangular `.hdr` (Poly Haven), luminance in nits, rotation, shown as the sky or not |
+| Representation  | Kept equirectangular: mips prefiltered by roughness (GGX importance sampling) on the task system at load              |
+| Diffuse ambient | Order-2 spherical harmonics (9 coefficients) projected from the image                                                 |
+| Split sum       | DFG table (scale, bias, sheen) computed once at start-up, with the multi-scattering term                              |
+| Without one     | The `Environment` `ambient` colour, else the layer ambient, as a constant sky                                         |
+
+| Decision       | Choice                                                                                                                                                                                                            |
+|----------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Settings       | `PostProcessSettings` on `renderer::Camera`, saved with the Camera component, beside the tone mapping                                                                                                             |
+| Exposure       | EV100 (default 15), exposure `1 / (1.2 · 2^EV100)` applied to the physical light values before shading; compensation in EV; automatic exposure from the GPU log-average luminance, adapted in EV/s within a range |
+| Bloom          | Threshold with a soft knee, 13-tap downsample and 9-tap tent upsample over up to 6 levels (halving while a side stays at least 8 pixels), intensity and scatter                                                   |
+| Vignette       | Intensity, smoothness, colour                                                                                                                                                                                     |
+| Colour grading | `.cube` 3D LUT, stored as a 2D strip, looked up on the sRGB-encoded colour and mixed in by a contribution weight                                                                                                  |
+| Frame graph    | Bloom levels are transient linear targets of decreasing size, the first at half the frame; the encode pass applies exposure, bloom, tone mapping, vignette, the sRGB encoding, then the LUT on the encoded colour |
 
 ## Emissive and area lights {#emissive-and-area-lights}
 
@@ -67,15 +104,30 @@ A glowing surface is one of three things, in increasing cost.
 
 | Kind                     | What it does                                                | How                                                                                                         | When                      |
 |--------------------------|-------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------|---------------------------|
-| Emissive surface         | Shines above 1 in the HDR scene colour, lights nothing else | Emissive colour and strength in the PBR material; the halo is the bloom of the post stack                   | v0.5.0, pull requests 7–8 |
+| Emissive surface         | Shines above 1 in the HDR scene colour, lights nothing else | Emissive colour and luminance in nits in the PBR material; the halo is the bloom of the post stack          | v0.5.0, pull requests 7–8 |
 | Directional angular size | A sun of real apparent size (about 0.5 degree)              | `angularRadius` on the directional `Light`: PCSS penumbra, wider highlight, sky disc                        | To evaluate, v0.5.0       |
 | Area light               | A rectangle, disc or sphere that lights the other surfaces  | LTC (linearly transformed cosines) for rectangles and discs, representative point for spheres; PCSS shadows | To evaluate, v0.6.0       |
-| Point and spot shadows   | Shadows of the local lights                                 | Cube shadow maps (point), perspective maps (spot), budgeted per frame                                       | To evaluate, v0.6.0       |
+| Point and spot shadows   | Shadows of the local lights                                 | Cube shadow maps (point), perspective maps (spot), budgeted per frame                                       | Planned, v0.6.0           |
 | Bounced light            | A lit or glowing surface tinting its neighbours             | Probes or voxel global illumination                                                                         | Stretch goal              |
 
 A star seen from its planet is a directional light with an angular radius. Seen from space, beside the planet, it
 is an emissive body carrying a point light without falloff; its scale belongs to
 [Large worlds](large-worlds.md#lights-at-astronomical-scale).
+
+## Reflection probes {#reflection-probes}
+
+Without a probe, a metal reflects the environment of the scene, a constant sky when there is no image: indoors,
+brass shows a grey sky instead of the fire and the room. Local probes give each place its own reflection.
+
+| Point     | Decision                                                                                                           |
+|-----------|--------------------------------------------------------------------------------------------------------------------|
+| Capture   | A `ReflectionProbe` component renders its surroundings into a cube map, baked in the editor and stored as an asset |
+| Filtering | The same GGX prefiltered levels and spherical harmonics as the `Environment`, so the shading code is shared        |
+| Influence | A box (or sphere) volume with a blend distance; a surface blends the two probes nearest to it, else the sky        |
+| Parallax  | Box projection of the reflected ray, so reflections line up with the walls of the room                             |
+| Runtime   | Optional real-time update of one probe per frame for moving lights (the fire), budgeted                            |
+| Editor    | Volume gizmo, bake button and preview sphere in Owl Nest                                                           |
+| Target    | Planned, v0.6.0, with the point and spot shadows (both make interiors read)                                        |
 
 ## Graphics
 

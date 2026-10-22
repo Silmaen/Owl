@@ -22,6 +22,8 @@ TEST(AssetKind, ClassifiesTheEngineFormats) {
 	EXPECT_EQ(classifyAsset("prefabs/door.owlprefab"), AssetKind::Prefab);
 }
 
+TEST(AssetKind, ClassifiesMaterials) { EXPECT_EQ(classifyAsset("materials/gold.owlmat"), AssetKind::Material); }
+
 TEST(AssetKind, ClassifiesTheMeshFormats) {
 	for (const auto* name: {"meshes/crate.glb", "crate.gltf", "crate.obj"})
 		EXPECT_EQ(classifyAsset(name), AssetKind::Mesh) << name;

@@ -12,6 +12,64 @@
 
 namespace owl::scene::component {
 
+namespace {
+
+template<typename T>
+void readInto(const core::YamlNode& iNode, const char* iKey, T& oValue) {
+	if (const auto value = iNode[iKey]; value && value.isScalar())
+		oValue = value.as<T>();
+}
+
+void writePostProcess(YAML::Emitter& iOut, const renderer::PostProcessSettings& iSettings) {
+	iOut << YAML::Key << "postProcess" << YAML::Value << YAML::BeginMap;
+	iOut << YAML::Key << "ev100" << YAML::Value << iSettings.ev100;
+	iOut << YAML::Key << "autoExposure" << YAML::Value << iSettings.autoExposure;
+	iOut << YAML::Key << "autoExposureMin" << YAML::Value << iSettings.autoExposureMin;
+	iOut << YAML::Key << "autoExposureMax" << YAML::Value << iSettings.autoExposureMax;
+	iOut << YAML::Key << "autoExposureSpeed" << YAML::Value << iSettings.autoExposureSpeed;
+	iOut << YAML::Key << "exposure" << YAML::Value << iSettings.exposure;
+	iOut << YAML::Key << "bloom" << YAML::Value << iSettings.bloom;
+	iOut << YAML::Key << "bloomThreshold" << YAML::Value << iSettings.bloomThreshold;
+	iOut << YAML::Key << "bloomKnee" << YAML::Value << iSettings.bloomKnee;
+	iOut << YAML::Key << "bloomIntensity" << YAML::Value << iSettings.bloomIntensity;
+	iOut << YAML::Key << "bloomScatter" << YAML::Value << iSettings.bloomScatter;
+	iOut << YAML::Key << "vignette" << YAML::Value << iSettings.vignette;
+	iOut << YAML::Key << "vignetteIntensity" << YAML::Value << iSettings.vignetteIntensity;
+	iOut << YAML::Key << "vignetteSmoothness" << YAML::Value << iSettings.vignetteSmoothness;
+	iOut << YAML::Key << "vignetteColor" << YAML::Value << YAML::Flow << YAML::BeginSeq << iSettings.vignetteColor.x()
+		 << iSettings.vignetteColor.y() << iSettings.vignetteColor.z() << YAML::EndSeq;
+	iOut << YAML::Key << "lut" << YAML::Value << iSettings.lut;
+	iOut << YAML::Key << "lutContribution" << YAML::Value << iSettings.lutContribution;
+	iOut << YAML::EndMap;
+}
+
+auto readPostProcess(const core::YamlNode& iNode) -> renderer::PostProcessSettings {
+	renderer::PostProcessSettings settings;
+	if (!iNode || !iNode.isMap())
+		return settings;
+	readInto(iNode, "ev100", settings.ev100);
+	readInto(iNode, "autoExposure", settings.autoExposure);
+	readInto(iNode, "autoExposureMin", settings.autoExposureMin);
+	readInto(iNode, "autoExposureMax", settings.autoExposureMax);
+	readInto(iNode, "autoExposureSpeed", settings.autoExposureSpeed);
+	readInto(iNode, "exposure", settings.exposure);
+	readInto(iNode, "bloom", settings.bloom);
+	readInto(iNode, "bloomThreshold", settings.bloomThreshold);
+	readInto(iNode, "bloomKnee", settings.bloomKnee);
+	readInto(iNode, "bloomIntensity", settings.bloomIntensity);
+	readInto(iNode, "bloomScatter", settings.bloomScatter);
+	readInto(iNode, "vignette", settings.vignette);
+	readInto(iNode, "vignetteIntensity", settings.vignetteIntensity);
+	readInto(iNode, "vignetteSmoothness", settings.vignetteSmoothness);
+	if (const auto color = iNode["vignetteColor"]; color && color.isSequence() && color.size() == 3)
+		settings.vignetteColor = {color[0].as<float>(), color[1].as<float>(), color[2].as<float>()};
+	readInto(iNode, "lut", settings.lut);
+	readInto(iNode, "lutContribution", settings.lutContribution);
+	return settings;
+}
+
+}// namespace
+
 void Camera::serialize(const core::Serializer& iOut) const {
 	iOut.getImpl()->emitter << YAML::Key << key();
 	iOut.getImpl()->emitter << YAML::BeginMap;// CameraComponent
@@ -27,6 +85,7 @@ void Camera::serialize(const core::Serializer& iOut) const {
 	iOut.getImpl()->emitter << YAML::Key << "orthographicSize" << YAML::Value << camera.getOrthographicSize();
 	iOut.getImpl()->emitter << YAML::Key << "orthographicNear" << YAML::Value << camera.getOrthographicNearClip();
 	iOut.getImpl()->emitter << YAML::Key << "orthographicFar" << YAML::Value << camera.getOrthographicFarClip();
+	writePostProcess(iOut.getImpl()->emitter, camera.getPostProcess());
 	iOut.getImpl()->emitter << YAML::EndMap;// Camera
 	iOut.getImpl()->emitter << YAML::Key << "primary" << YAML::Value << primary;
 	iOut.getImpl()->emitter << YAML::Key << "fixedAspectRatio" << YAML::Value << fixedAspectRatio;
@@ -46,6 +105,7 @@ void Camera::deserialize(const core::Serializer& iNode) {
 			toneMapping = parsed.value();
 	}
 	camera.setToneMapping(toneMapping);
+	camera.setPostProcess(readPostProcess(cameraProps["postProcess"]));
 	camera.setPerspectiveVerticalFov(cameraProps["perspectiveFOV"].as<float>());
 	camera.setPerspectiveNearClip(cameraProps["perspectiveNear"].as<float>());
 	camera.setPerspectiveFarClip(cameraProps["perspectiveFar"].as<float>());

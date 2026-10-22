@@ -13,6 +13,7 @@
 #include "document/CodeEditorDocument.h"
 #include "document/FontDocument.h"
 #include "document/ImageDocument.h"
+#include "document/MaterialDocument.h"
 #include "document/MeshDocument.h"
 #include "document/NodeGraphDocument.h"
 #include "document/SceneFlowDocument.h"
@@ -72,6 +73,9 @@ void EditorLayer::openAssetFile(const std::filesystem::path& iPath) {
 			return;
 		case AssetKind::ActionMap:
 			openActionMapFile(iPath);
+			return;
+		case AssetKind::Material:
+			openMaterialFile(iPath);
 			return;
 		case AssetKind::Macro:
 			runCommandFromUi("macro.run", {{"path", iPath.string()}}, commands::CommandSource::Gesture);
@@ -417,6 +421,29 @@ void EditorLayer::openMeshFile(const std::filesystem::path& iPath) {
 	doc->onAttach(this);
 	if (!doc->loadFromFile(iPath)) {
 		OWL_CORE_WARN("Failed to open mesh file: {}.", iPath.string())
+		doc->onDetach();
+		return;
+	}
+	auto* raw = m_documents.add(std::move(doc));
+	m_documents.setActive(raw);
+	syncActiveDocumentPanels();
+}
+
+void EditorLayer::openMaterialFile(const std::filesystem::path& iPath) {
+	if (iPath.empty() || !exists(iPath))
+		return;
+	for (const auto& docPtr: m_documents.list()) {
+		if (docPtr && docPtr->type() == DocumentType::Material && docPtr->filePath() == iPath) {
+			m_documents.setActive(docPtr.get());
+			docPtr->requestFocus();
+			syncActiveDocumentPanels();
+			return;
+		}
+	}
+	auto doc = mkUniq<MaterialDocument>();
+	doc->onAttach(this);
+	if (!doc->loadFromFile(iPath)) {
+		OWL_CORE_WARN("Failed to open material file: {}.", iPath.string())
 		doc->onDetach();
 		return;
 	}

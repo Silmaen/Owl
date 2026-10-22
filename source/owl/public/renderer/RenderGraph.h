@@ -204,6 +204,16 @@ public:
 
 	/**
 	 * @brief
+	 *  Declare a framebuffer the caller keeps across frames as a target: never cleared nor pooled, readable without
+	 *  a writer in the frame (state carried from the previous frame).
+	 * @param[in] iName Name of the target.
+	 * @param[in] iFramebuffer The framebuffer, alive while the graph runs.
+	 * @return The target.
+	 */
+	auto importFramebuffer(std::string_view iName, gpu::Framebuffer& iFramebuffer) -> Resource;
+
+	/**
+	 * @brief
 	 *  Declare a transient target, allocated when a kept pass uses it.
 	 * @param[in] iName Name of the target.
 	 * @param[in] iFormat Format of its colour attachment.
@@ -265,8 +275,10 @@ private:
 	struct Target {
 		/// Name of the target.
 		std::string name;
-		/// Whether it is the framebuffer bound when `execute` runs.
+		/// Whether it is the framebuffer bound when `execute` runs, or `external`.
 		bool imported = false;
+		/// Framebuffer kept by the caller across frames (`importFramebuffer`), null otherwise.
+		gpu::Framebuffer* external = nullptr;
 		/// Format of a transient target.
 		TargetFormat format = TargetFormat::Linear;
 		/// Size of a transient target, zero for the frame size.

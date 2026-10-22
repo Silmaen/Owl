@@ -11,6 +11,7 @@
 
 #include "renderer/BackgroundRenderer.h"
 #include "renderer/ColorEncoder.h"
+#include "renderer/PostProcess.h"
 #include "renderer/Renderer2D.h"
 #include "renderer/Renderer2DLayer.h"
 #include "renderer/Renderer3D.h"
@@ -72,6 +73,7 @@ void Renderer::initShaders(const ShaderProgressCallback& iProgress) {
 		iProgress(4, 5, "background");
 	BackgroundRenderer::init();
 	ColorEncoder::init();
+	PostProcess::init();
 
 	RendererRaycast::init();
 	RendererTilemap::init();
@@ -93,6 +95,7 @@ void Renderer::shutdown() {
 	RendererTilemap::shutdown();
 	RendererRaycast::shutdown();
 	m_renderGraph.releasePool();
+	PostProcess::shutdown();
 	ColorEncoder::shutdown();
 	BackgroundRenderer::shutdown();
 	Renderer2D::shutdown();

@@ -34,6 +34,8 @@ struct TextureData {
 	uint32_t mipLevels = 1;
 	/// Nearest sampling (pixel art) instead of linear and trilinear.
 	bool nearest = false;
+	/// Format of the image (8-bit RGBA, or 32-bit float RGBA for HDR images and tables).
+	VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
 	/// View and sampler owned elsewhere (a framebuffer attachment): `freeTexture` forgets them without destroying.
 	bool borrowed = false;
 	/// Debug label propagated to the Vulkan objects so validation-layer leak reports name the owning texture.

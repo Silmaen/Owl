@@ -193,11 +193,9 @@ TEST(SlangCompute, shippedShadersGiveEachStorageBufferItsOwnBlockType) {
 	for (const auto& entry: std::filesystem::recursive_directory_iterator(findRoot() / "engine_assets" / "shaders")) {
 		if (entry.path().extension() != ".slang")
 			continue;
-		const std::ifstream in(entry.path(), std::ios::binary);
-		std::stringstream ss;
-		ss << in.rdbuf();
 		const auto name = entry.path().stem().string();
-		const auto result = owl::renderer::utils::compileSlangToSpirv(ss.str(), name + "_gl_blocks", false);
+		const auto result = owl::renderer::utils::compileSlangToSpirv(
+				owl::renderer::utils::readShaderSource(entry.path()), name + "_gl_blocks", false);
 		ASSERT_TRUE(result.success) << name;
 		for (const auto& spirv: result.spirvData | std::views::values) {
 			const spirv_cross::Compiler compiler(spirv);

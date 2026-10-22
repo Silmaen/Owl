@@ -10,9 +10,12 @@
 
 #include "core/Serializer.h"
 #include "math/vectors.h"
+#include "renderer/Material.h"
 #include "renderer/gpu/Texture.h"
 
+#include <cstdint>
 #include <filesystem>
+#include <vector>
 
 namespace owl::renderer {
 class MeshResource;
@@ -25,19 +28,47 @@ namespace owl::scene::component {
  *  Component drawing a static mesh file (`.gltf`, `.glb` or `.obj`) at the entity transform, in 3D.
  *
  * Drawn by a `RendererMesh` layer of the render stack. The mesh is loaded once per file by the engine context's
- * `renderer::MeshCache` and shared with every entity drawing the same file. The colour multiplies the base colour of
- * the file's material; the texture, when set, replaces the material's base-colour texture.
+ * `renderer::MeshCache` and shared with every entity drawing the same file. Each submesh of the file has a material
+ * slot: a `.owlmat` (shared through the engine context's `renderer::MaterialLibrary`) or, when empty, the file's own
+ * material, with overrides of chosen fields for this entity. The colour tints every slot; the texture, when set,
+ * replaces the base-colour map of the slots that do not override it; `transparent` blends every slot.
  *
  * On-disk form:
  * ```yaml
  * MeshRenderer:
  *   mesh: meshes/crate.glb
  *   color: [1, 1, 1, 1]
- *   texture: nam:crate_alt
  *   transparent: false
+ *   materials:
+ *     - material: materials/painted_wood.owlmat
+ *       overrides: {roughness: 0.8}
  * ```.
  */
 struct OWL_API MeshRenderer {
+	/**
+	 * @brief
+	 *  The material of one submesh.
+	 */
+	struct MaterialSlot {
+		/// Asset path of the `.owlmat`, empty for the file's own material.
+		std::filesystem::path material;
+		/// Fields overridden for this entity.
+		renderer::MaterialOverrides overrides;
+		/// The material resolved before the next draw (runtime only, not serialized).
+		shared<const renderer::Material> resolved;
+		/// Generation of the material library the resolved material comes from (runtime only).
+		uint64_t generation = 0;
+
+		/**
+		 * @brief
+		 *  Drop the resolved material, so that the next draw resolves it again.
+		 */
+		void invalidate() {
+			resolved.reset();
+			generation = 0;
+		}
+	};
+
 	/// Asset path of the mesh file.
 	std::filesystem::path meshPath;
 	/// Tint multiplied with the material base colour (its alpha matters with `transparent`).
@@ -46,6 +77,8 @@ struct OWL_API MeshRenderer {
 	shared<renderer::gpu::Texture2D> texture;
 	/// True to draw with alpha blending, sorted back-to-front after the opaque meshes.
 	bool transparent = false;
+	/// One slot per submesh of the mesh (missing slots take the file's material).
+	std::vector<MaterialSlot> materials;
 	/// The mesh resolved from `meshPath` before the next draw (runtime only, not serialized; reset it to reload).
 	shared<renderer::MeshResource> mesh;
 

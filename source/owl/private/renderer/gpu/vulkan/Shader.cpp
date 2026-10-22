@@ -79,7 +79,7 @@ Shader::Shader(const std::string& iShaderName, const std::string& iRenderer,
 	OWL_PROFILE_FUNCTION()
 
 	if (iSources.size() == 1 && iSources[0].extension() == ".slang") {
-		createShader(platform::fileToString(iSources[0]));
+		createShader(renderer::utils::readShaderSource(iSources[0]));
 	} else {
 		OWL_CORE_ERROR("Vulkan Shader: Expected a single .slang file, got {} files.", iSources.size())
 	}

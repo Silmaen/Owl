@@ -864,3 +864,42 @@ TEST_F(AssetScannerTest, ScanSceneFollowsTheMeshFilesOfAMeshRenderer) {
 	// The missing image of the glTF and the missing GLB are reported.
 	EXPECT_EQ(warnings.size(), 2u);
 }
+
+TEST_F(AssetScannerTest, ScanSceneFollowsMaterialsEnvironmentAndLut) {
+	const auto normal = m_tempDir / "textures" / "normal.png";
+	writeDummyBinary(normal);
+	const auto parent = m_tempDir / "materials" / "base.owlmat";
+	writeFile(parent, "Material:\n  FormatVersion: 1\n  normalMap: \"pat:" + normal.generic_string() + "\"\n");
+	const auto child = m_tempDir / "materials" / "rough.owlmat";
+	writeFile(child, "Material:\n  FormatVersion: 1\n  parent: " + parent.generic_string() + "\n  roughness: 0.9\n");
+	const auto hdri = m_tempDir / "hdri" / "sky.hdr";
+	writeDummyBinary(hdri);
+	const auto lut = m_tempDir / "luts" / "warm.cube";
+	writeDummyBinary(lut);
+	const auto scenePath = m_tempDir / "test.owl";
+	writeFile(scenePath, "Scene: test\nEntities:\n"
+						 "  - Entity: 1\n"
+						 "    MeshRenderer:\n"
+						 "      materials:\n"
+						 "        - material: " +
+								 child.generic_string() +
+								 "\n"
+								 "  - Entity: 2\n"
+								 "    Environment: {hdri: " +
+								 hdri.generic_string() +
+								 "}\n"
+								 "  - Entity: 3\n"
+								 "    Camera:\n"
+								 "      camera: {postProcess: {lut: " +
+								 lut.generic_string() + "}}\n");
+	const auto assets = AssetScanner::scanScene(scenePath);
+	const auto found = [&assets](const std::filesystem::path& iPath) -> bool {
+		return std::ranges::any_of(assets,
+								   [&iPath](const AssetReference& iRef) -> bool { return iRef.diskPath == iPath; });
+	};
+	EXPECT_TRUE(found(child));
+	EXPECT_TRUE(found(parent));
+	EXPECT_TRUE(found(normal));
+	EXPECT_TRUE(found(hdri));
+	EXPECT_TRUE(found(lut));
+}

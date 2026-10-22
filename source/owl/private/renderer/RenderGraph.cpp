@@ -108,11 +108,18 @@ auto RenderGraph::addTarget(const std::string_view iName, const bool iImported, 
 	target.format = iFormat;
 	target.size = iSize;
 	target.framebuffer = nullptr;
+	target.external = nullptr;
 	return {.index = m_targetCount++};
 }
 
 auto RenderGraph::importTarget(const std::string_view iName) -> Resource {
 	return addTarget(iName, true, TargetFormat::Display, {0, 0});
+}
+
+auto RenderGraph::importFramebuffer(const std::string_view iName, gpu::Framebuffer& iFramebuffer) -> Resource {
+	const auto resource = addTarget(iName, true, TargetFormat::Linear, iFramebuffer.getSpecification().size);
+	m_targets[resource.index].external = &iFramebuffer;
+	return resource;
 }
 
 auto RenderGraph::createTarget(const std::string_view iName, const TargetFormat iFormat, const math::vec2ui& iSize)
@@ -241,7 +248,9 @@ void RenderGraph::execute(const math::vec2ui& iSize) {
 	const auto targets = std::span{m_targets}.first(m_targetCount);
 	for (auto& target: targets) {
 		target.written = false;
-		target.framebuffer = target.imported ? imported : nullptr;
+		target.framebuffer = nullptr;
+		if (target.imported)
+			target.framebuffer = target.external != nullptr ? target.external : imported;
 	}
 	gpu::Framebuffer* bound = imported;
 	const PassContext context{*this};

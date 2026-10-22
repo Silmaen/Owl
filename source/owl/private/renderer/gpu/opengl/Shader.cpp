@@ -138,7 +138,7 @@ Shader::Shader(const std::string& iShaderName, const std::string& iRenderer,
 	OWL_PROFILE_FUNCTION()
 
 	if (iSources.size() == 1 && iSources[0].extension() == ".slang") {
-		compile(platform::fileToString(iSources[0]));
+		compile(renderer::utils::readShaderSource(iSources[0]));
 	} else {
 		OWL_CORE_ERROR("OpenGL Shader: Expected a single .slang file, got {} files.", iSources.size())
 	}

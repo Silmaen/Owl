@@ -19,6 +19,7 @@
 #include "input/Input.h"
 #include "input/InputFrame.h"
 #include "physics/PhysicCommand.h"
+#include "renderer/MeshCache.h"
 #include "renderer/Renderer.h"
 #include "renderer/RendererIsometricLayer.h"
 #include "scene/Entity.h"
@@ -742,6 +743,43 @@ auto luaEntityGetMesh(lua_State* iState) -> int {
 	if (!entity || !entity->hasComponent<scene::component::MeshRenderer>())
 		return 0;
 	lua_pushstring(iState, entity->getComponent<scene::component::MeshRenderer>().meshPath.generic_string().c_str());
+	return 1;
+}
+
+auto luaEntitySetMaterial(lua_State* iState) -> int {
+	const auto slot = static_cast<int64_t>(luaL_checkinteger(iState, 2));
+	const std::string path = luaL_checkstring(iState, 3);
+	const auto entity = findEntity(iState);
+	if (!entity || !entity->hasComponent<scene::component::MeshRenderer>() || slot < -1) {
+		lua_pushboolean(iState, 0);
+		return 1;
+	}
+	auto& meshRenderer = entity->getComponent<scene::component::MeshRenderer>();
+	const size_t known = std::max(meshRenderer.materials.size(),
+								  meshRenderer.mesh ? meshRenderer.mesh->getSubmeshes().size() : size_t{0});
+	const size_t count = slot < 0 ? known : static_cast<size_t>(slot) + 1;
+	if (count == 0) {
+		lua_pushboolean(iState, 0);
+		return 1;
+	}
+	if (meshRenderer.materials.size() < count)
+		meshRenderer.materials.resize(count);
+	for (size_t index = slot < 0 ? 0 : static_cast<size_t>(slot); index < count; ++index) {
+		meshRenderer.materials[index].material = path;
+		meshRenderer.materials[index].invalidate();
+	}
+	lua_pushboolean(iState, 1);
+	return 1;
+}
+
+auto luaEntityGetMaterial(lua_State* iState) -> int {
+	const auto slot = static_cast<int64_t>(luaL_checkinteger(iState, 2));
+	const auto entity = findEntity(iState);
+	if (!entity || !entity->hasComponent<scene::component::MeshRenderer>() || slot < 0)
+		return 0;
+	const auto& materials = entity->getComponent<scene::component::MeshRenderer>().materials;
+	const auto index = static_cast<size_t>(slot);
+	lua_pushstring(iState, index < materials.size() ? materials[index].material.generic_string().c_str() : "");
 	return 1;
 }
 
@@ -2020,6 +2058,15 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		{.table = "entity", .name = "get_mesh", .function = guarded<luaEntityGetMesh>,
 		 .description = "Asset path of the mesh file of the entity's `MeshRenderer`; nothing when it has none.",
 		 .params = {entityId}, .returns = {{"path", String}}},
+		{.table = "entity", .name = "set_material", .function = guarded<luaEntitySetMaterial>,
+		 .description = "Give a submesh slot (0-based, -1 for every slot) of the entity's `MeshRenderer` a `.owlmat` "
+						"material (asset path, empty for the file's own material); false when the entity has no "
+						"`MeshRenderer` or the slot is invalid.",
+		 .params = {entityId, {"slot", Number}, {"path", String}}, .returns = {{"done", Boolean}}},
+		{.table = "entity", .name = "get_material", .function = guarded<luaEntityGetMaterial>,
+		 .description = "Asset path of the `.owlmat` of a submesh slot (0-based) of the entity's `MeshRenderer`, empty "
+						"for the file's own material; nothing when it has no `MeshRenderer`.",
+		 .params = {entityId, {"slot", Number}}, .returns = {{"path", String}}},
 		{.table = "entity", .name = "set_light_color", .function = guarded<luaEntitySetLightColor>,
 		 .description = "Set the colour (sRGB, 0 to 1) of the entity's `Light`; false when it has none.",
 		 .params = {entityId, {"r", Number}, {"g", Number}, {"b", Number}}, .returns = {{"done", Boolean}}},

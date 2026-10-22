@@ -34,12 +34,7 @@ auto findRoot() -> std::filesystem::path {
 
 auto loadVoxelShader() -> std::string {
 	const auto path = findRoot() / "engine_assets" / "shaders" / "renderer3D" / "voxel.slang";
-	std::ifstream in(path, std::ios::binary);
-	if (!in.is_open())
-		return {};
-	std::stringstream ss;
-	ss << in.rdbuf();
-	return ss.str();
+	return renderer::utils::readShaderSource(path);
 }
 }// namespace
 

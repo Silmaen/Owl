@@ -272,6 +272,16 @@ struct SlangCompilationResult {
 
 /**
  * @brief
+ *  Read a shader source and expand its `#include "name.slangh"` lines, looked up next to the file then in the
+ *  `common` folder beside its renderer folder (`shaders/common/`); an included file may include others, each at most
+ *  once. The cache key of the SPIR-V hashes the expanded text, so an edited include rebuilds its shaders.
+ * @param[in] iFile Path of the shader source.
+ * @return The expanded source, empty when the file cannot be read (an include not found is logged and left out).
+ */
+OWL_API auto readShaderSource(const std::filesystem::path& iFile) -> std::string;
+
+/**
+ * @brief
  *  Compile a Slang source to SPIR-V, one module per entry point.
  * @param[in] iSource Slang source.
  * @param[in] iModuleName Slang module name.

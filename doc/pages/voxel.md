@@ -85,7 +85,15 @@ Blocks:
     render: Water
     solid: false
     faces: [9, 9, 9, 9, 9, 9]
+    surface: {metallic: 0, roughness: 0.05, emissive: 0, clearcoat: 1}
 ```
+
+`surface` (`BlockSurface`, written only when it differs from the default) is the physically based surface of the
+block's six faces, the colour coming from the atlas tile: `metallic` and `roughness` (default 0.5) in `[0, 1]`,
+`emissive` a luminance in nits in `[0, 100000]` (`g_MaxBlockLuminance`; the tile colour glows that bright, unlit, and feeds the bloom) and `clearcoat` in `[0, 1]`
+(a smooth layer for wet, icy or varnished blocks). The mesher packs it into each vertex (`packSurface`, 8 bits per
+field, the emissive logarithmically), so blocks sharing a tile can still differ. Owl Nest edits it in the **Blocks** section of the `VoxelWorld`
+inspector; the world is re-meshed on each change.
 
 ## Chunks
 

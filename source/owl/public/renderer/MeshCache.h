@@ -10,8 +10,10 @@
 
 #include "core/Core.h"
 #include "math/vectors.h"
+#include "renderer/Material.h"
 #include "renderer/Renderer3D.h"
 
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
@@ -139,6 +141,43 @@ public:
 
 	/**
 	 * @brief
+	 *  A part of the mesh drawn with one material (a glTF primitive, an OBJ material group).
+	 */
+	struct Submesh {
+		/// First index of the part in `getGeometry().indices`.
+		uint32_t firstIndex = 0;
+		/// Number of indices of the part.
+		uint32_t indexCount = 0;
+		/// Index of its material in the file's materials.
+		uint32_t materialIndex = 0;
+	};
+
+	/**
+	 * @brief
+	 *  The parts of the mesh, one material slot each.
+	 * @return The submeshes (at least one for a mesh with triangles).
+	 */
+	[[nodiscard]] auto getSubmeshes() const -> const std::vector<Submesh>& { return m_submeshes; }
+
+	/**
+	 * @brief
+	 *  The material the file gives a submesh (its glTF or OBJ material).
+	 * @param[in] iSubmesh Index of the submesh.
+	 * @return The material.
+	 */
+	[[nodiscard]] auto getFileMaterial(size_t iSubmesh) const -> const shared<const Material>&;
+
+	/**
+	 * @brief
+	 *  The GPU mesh of one submesh, created on its first request.
+	 * @param[in] iSubmesh Index of the submesh.
+	 * @param[in] iTransparent True for the blended pipeline state.
+	 * @return The mesh, null for an empty submesh.
+	 */
+	[[nodiscard]] auto getSubmeshMesh(size_t iSubmesh, bool iTransparent) -> const Renderer3D::MeshHandle&;
+
+	/**
+	 * @brief
 	 *  Check if the file changed since the resource was loaded (the holders fetch a new one from the cache).
 	 * @return True once invalidated.
 	 */
@@ -159,6 +198,12 @@ private:
 	shared<gpu::Texture2D> m_baseColorTexture;
 	/// Base-colour factor of the material.
 	math::vec4 m_baseColorFactor{1.f, 1.f, 1.f, 1.f};
+	/// Parts of the mesh.
+	std::vector<Submesh> m_submeshes;
+	/// Materials of the file, by its material index.
+	std::vector<shared<const Material>> m_fileMaterials;
+	/// GPU meshes of the submeshes, opaque then blended, created on demand.
+	std::vector<std::array<Renderer3D::MeshHandle, 2>> m_submeshMeshes;
 	/// GPU mesh with the opaque pipeline state.
 	Renderer3D::MeshHandle m_opaque;
 	/// GPU mesh with the blended pipeline state.

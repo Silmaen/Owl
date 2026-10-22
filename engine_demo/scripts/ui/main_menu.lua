@@ -110,10 +110,10 @@ function on_update(dt)
         return
     end
 
-    -- The `open_gallery` action (G, right bumper) opens the mesh gallery: 3D meshes under a fly camera.
+    -- The `open_gallery` action (G, right bumper) opens the tavern: a 3D table by a fireplace under a fly camera.
     if not shortcut_requested and input.is_action_pressed("open_gallery") then
         shortcut_requested = true
-        scene.transition_to("scenes/mesh_gallery.owl", "fade", 0.3)
+        scene.transition_to("scenes/tavern.owl", "fade", 0.3)
         return
     end
 

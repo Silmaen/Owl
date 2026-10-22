@@ -39,6 +39,28 @@ auto renderKindFrom(const std::string& iName) -> data::voxel::BlockRenderKind {
 	return data::voxel::BlockRenderKind::Opaque;
 }
 
+void emitSurface(YAML::Emitter& ioOut, const data::voxel::BlockSurface& iSurface) {
+	if (iSurface == data::voxel::BlockSurface{})
+		return;
+	ioOut << YAML::Key << "surface" << YAML::Value << YAML::Flow << YAML::BeginMap;
+	ioOut << YAML::Key << "metallic" << YAML::Value << iSurface.metallic;
+	ioOut << YAML::Key << "roughness" << YAML::Value << iSurface.roughness;
+	ioOut << YAML::Key << "emissive" << YAML::Value << iSurface.emissive;
+	ioOut << YAML::Key << "clearcoat" << YAML::Value << iSurface.clearcoat;
+	ioOut << YAML::EndMap;
+}
+
+auto readSurface(const core::YamlNode& iNode) -> data::voxel::BlockSurface {
+	data::voxel::BlockSurface surface;
+	if (!iNode || !iNode.isMap())
+		return surface;
+	surface.metallic = iNode["metallic"] ? iNode["metallic"].as<float>() : surface.metallic;
+	surface.roughness = iNode["roughness"] ? iNode["roughness"].as<float>() : surface.roughness;
+	surface.emissive = iNode["emissive"] ? iNode["emissive"].as<float>() : surface.emissive;
+	surface.clearcoat = iNode["clearcoat"] ? iNode["clearcoat"].as<float>() : surface.clearcoat;
+	return surface;
+}
+
 void parseTerrain(const core::YamlNode& iNode, data::voxel::TerrainParams& oTerrain) {
 	if (iNode["Seed"])
 		oTerrain.seed = iNode["Seed"].as<uint32_t>();
@@ -122,6 +144,7 @@ void VoxelWorld::serialize(const core::Serializer& iOut) const {
 		emitter << YAML::Key << "faces" << YAML::Value << YAML::Flow << YAML::BeginSeq;
 		for (const auto face: block.faceTextures) emitter << face;
 		emitter << YAML::EndSeq;
+		emitSurface(emitter, block.surface);
 		emitter << YAML::EndMap;
 	}
 	emitter << YAML::EndSeq;
@@ -166,6 +189,7 @@ void VoxelWorld::deserialize(const core::Serializer& iNode) {
 				for (size_t f = 0; f < data::voxel::g_FaceCount && f < faces.size(); ++f)
 					block.faceTextures[f] = faces[f].as<uint16_t>();
 			}
+			block.surface = readSurface(blockNode["surface"]);
 			(void) registry.registerBlock(block);
 		}
 	}

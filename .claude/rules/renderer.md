@@ -34,12 +34,26 @@ get confirmation. A passing headless (Null backend) test is evidence the path wo
   `UPDATE_AFTER_BIND`: with a shared set every draw samples the last write.
 - **Uniforms are versioned per draw.** A UBO set between two draws gives each its own copy (frame ring), so
   several `drawMesh` models or 2D cameras in one frame are correct on Vulkan as on OpenGL.
+- **Physical units are pre-exposed on the CPU.** Lights (lux, lumens), the sun, the ambient, the environment and the
+  emissive (nits) are multiplied by `exposureOf(ev100)` in `Renderer3D` before upload, so the HDR scene colour holds
+  pre-exposed values; a shader never applies the camera EV100 to a light.
+- **glTF node transforms are baked at load.** `MeshLoader` places every mesh of the default scene with its node chain
+  (positions, cofactor matrix for normals, winding flipped by a mirror): one submesh per primitive per node.
 - **Two attachment layouts**: linear (`Rgba16F`, `RedInteger`, `Depth24Stencil8`) and display (`Surface`,
   `RedInteger`, `Depth24Stencil8`, swapchain included). A draw keeps one pipeline per layout
   (`Framebuffer::getPipelineFamily`, the dedup key of `pushPipeline`), created on its first bind. Never add a third
   layout without checking `getPipelineFamily`.
 - **World colour shaders read `linearOutput`** (set from `gpu::Framebuffer::isLinearTargetBound()`) and keep their
   flag-0 path bit-identical to the display-space maths.
+- **Texture slots of the 3D shaders** (`mesh3d`, `voxel`, `common/pbr.slangh`): 0 white, 1 to 6 material maps (base
+  colour, metallic, normal, occlusion, emissive, roughness), 7 to 12 prefiltered environment, 13 DFG table, 28 to 31
+  shadow cascades. Change a slot in the shaders and in `Renderer3D` together.
+- **Voxel vertices carry the block surface in `textureIndex`** (`data::voxel::packSurface`, decoded by `voxel.slang`);
+  the atlas is always the draw's slot 1. Change the packing on both sides together.
+- **A draw's vertex buffer is sized from its index count**: each submesh gets its own compact vertex buffer, never the
+  whole mesh's vertices with a sub-range of indices.
+- **Colour factors are stored sRGB as authored** (material base colour, emissive, sheen, tint) and converted to linear in
+  the shader (`authoredColor`); imported glTF factors are linear and are converted to sRGB at import.
 - **UBOs read in the fragment stage are declared `VertexFragment`**: a Vertex-only declaration fails validation
   (VUID-VkGraphicsPipelineCreateInfo-layout-07988).
 - **Shader hot reload rebuilds pipelines, not layouts.** `Shader::reload` swaps the binaries only when they compile;

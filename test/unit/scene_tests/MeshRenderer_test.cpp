@@ -12,6 +12,7 @@
 #include <app/EngineContext.h>
 #include <core/Log.h>
 #include <core/Timestep.h>
+#include <data/geometry/MeshLoader.h>
 #include <renderer/CameraEditor.h>
 #include <renderer/MeshCache.h>
 #include <renderer/RenderStack.h>
@@ -24,6 +25,7 @@
 #include <scene/component/components.h>
 
 #include <chrono>
+#include <cstdint>
 #include <filesystem>
 #include <string>
 #include <utility>
@@ -34,6 +36,11 @@ namespace {
 
 auto cubePath() -> std::filesystem::path {
 	return test::getTestAssetsPath("render_tests") / "meshes" / "textured_cube.glb";
+}
+
+// One draw per submesh of the cube file: the counts of a scene scale with it.
+auto cubeParts() -> uint32_t {
+	return static_cast<uint32_t>(data::geometry::MeshLoader::loadMesh(cubePath()).submeshes.size());
 }
 
 auto meshCache() -> renderer::MeshCache& { return app::Application::get().getEngineContext().getMeshCache(); }
@@ -153,8 +160,8 @@ TEST_F(MeshRendererTest, framesDrawOpaqueThenBlendedMeshesSharingOneResource) {
 	for (const auto entity: sc->registry.view<scene::component::MeshRenderer>())
 		EXPECT_EQ(sc->registry.get<scene::component::MeshRenderer>(entity).mesh, resource);
 	const auto stats = renderer::RendererMesh::getStatistics();
-	EXPECT_EQ(stats.opaqueDrawCount, 1u);
-	EXPECT_EQ(stats.transparentDrawCount, 2u);
+	EXPECT_EQ(stats.opaqueDrawCount, cubeParts());
+	EXPECT_EQ(stats.transparentDrawCount, 2 * cubeParts());
 	sc->onEndRuntime();
 }
 
@@ -162,8 +169,8 @@ TEST_F(MeshRendererTest, untaggedMeshesBelongToAFirstMeshLayer) {
 	useStack(true);
 	const auto sc = makeScene(false);
 	sc->onRenderRuntime();
-	EXPECT_EQ(renderer::RendererMesh::getStatistics().opaqueDrawCount, 1u);
-	EXPECT_EQ(renderer::RendererMesh::getStatistics().transparentDrawCount, 2u);
+	EXPECT_EQ(renderer::RendererMesh::getStatistics().opaqueDrawCount, cubeParts());
+	EXPECT_EQ(renderer::RendererMesh::getStatistics().transparentDrawCount, 2 * cubeParts());
 }
 
 TEST_F(MeshRendererTest, editorFramesDrawTheMeshLayerToo) {
@@ -172,8 +179,8 @@ TEST_F(MeshRendererTest, editorFramesDrawTheMeshLayerToo) {
 	renderer::CameraEditor camera{45.f, 1.778f, 0.1f, 1000.f};
 	camera.setViewportSize({320, 180});
 	sc->onUpdateEditor(makeStep(16), camera);
-	EXPECT_EQ(renderer::RendererMesh::getStatistics().opaqueDrawCount, 1u);
-	EXPECT_EQ(renderer::RendererMesh::getStatistics().transparentDrawCount, 2u);
+	EXPECT_EQ(renderer::RendererMesh::getStatistics().opaqueDrawCount, cubeParts());
+	EXPECT_EQ(renderer::RendererMesh::getStatistics().transparentDrawCount, 2 * cubeParts());
 }
 
 TEST_F(MeshRendererTest, aSecondEditorViewDrawsTheSameMeshes) {
@@ -182,8 +189,8 @@ TEST_F(MeshRendererTest, aSecondEditorViewDrawsTheSameMeshes) {
 	renderer::CameraEditor camera{45.f, 1.778f, 0.1f, 1000.f};
 	camera.setViewportSize({320, 180});
 	sc->renderEditorView(camera);
-	EXPECT_EQ(renderer::RendererMesh::getStatistics().opaqueDrawCount, 1u);
-	EXPECT_EQ(renderer::RendererMesh::getStatistics().transparentDrawCount, 2u);
+	EXPECT_EQ(renderer::RendererMesh::getStatistics().opaqueDrawCount, cubeParts());
+	EXPECT_EQ(renderer::RendererMesh::getStatistics().transparentDrawCount, 2 * cubeParts());
 }
 
 TEST_F(MeshRendererTest, anEditorViewRunsTheWorldThroughTheFrameGraph) {

@@ -10,10 +10,53 @@
 
 #include "core/Core.h"
 #include "math/matrixCreation.h"
+#include "math/vectors.h"
 
 #include <cstdint>
+#include <string>
 
 namespace owl::renderer {
+
+/**
+ * @brief
+ *  The post-process stack of a camera, applied to the linear scene colour before the encoding.
+ */
+struct PostProcessSettings {
+	/// Exposure value at ISO 100 the camera is set to (15 sunny day, 12 overcast, 8 bright interior, 5 dim room, 3 candle light).
+	float ev100 = 15.f;
+	/// Whether the exposure follows the average brightness of the frame instead of `ev100`.
+	bool autoExposure = false;
+	/// Darkest scene the automatic exposure adapts to, in EV100.
+	float autoExposureMin = -2.f;
+	/// Brightest scene the automatic exposure adapts to, in EV100.
+	float autoExposureMax = 16.f;
+	/// Speed of the automatic exposure, in EV per second.
+	float autoExposureSpeed = 2.f;
+	/// Exposure compensation, in EV, on top of `ev100` or the automatic exposure (+1 doubles the brightness).
+	float exposure = 0.f;
+	/// Whether the bright parts glow.
+	bool bloom = false;
+	/// Luminance above which the colour blooms.
+	float bloomThreshold = 1.f;
+	/// Softness of the threshold, 0 hard to 1 soft.
+	float bloomKnee = 0.5f;
+	/// Strength of the glow added to the scene.
+	float bloomIntensity = 0.1f;
+	/// Spread of the glow, 0 tight to 1 wide.
+	float bloomScatter = 0.7f;
+	/// Whether the edges of the image darken.
+	bool vignette = false;
+	/// Strength of the vignette.
+	float vignetteIntensity = 0.3f;
+	/// Softness of the vignette edge.
+	float vignetteSmoothness = 0.4f;
+	/// Colour the edges fade to, sRGB.
+	math::vec3 vignetteColor{0.f, 0.f, 0.f};
+	/// Asset path of a `.cube` colour-grading LUT, empty for none.
+	std::string lut;
+	/// Weight of the LUT, 0 to 1.
+	float lutContribution = 1.f;
+};
 
 /**
  * @brief
@@ -117,6 +160,20 @@ public:
 	 */
 	void setToneMapping(const ToneMapping iToneMapping) { m_toneMapping = iToneMapping; }
 
+	/**
+	 * @brief
+	 *  Get the post-process stack of the camera.
+	 * @return The settings.
+	 */
+	[[nodiscard]] auto getPostProcess() const -> const PostProcessSettings& { return m_postProcess; }
+
+	/**
+	 * @brief
+	 *  Set the post-process stack of the camera.
+	 * @param[in] iSettings The settings.
+	 */
+	void setPostProcess(const PostProcessSettings& iSettings) { m_postProcess = iSettings; }
+
 protected:
 	/**
 	 * @brief
@@ -131,5 +188,7 @@ protected:
 	math::mat4 m_viewProjection = math::identity<float, 4>();
 	/// Tone mapping of the scene colour.
 	ToneMapping m_toneMapping = ToneMapping::None;
+	/// Post-process stack.
+	PostProcessSettings m_postProcess;
 };
 }// namespace owl::renderer

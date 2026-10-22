@@ -303,6 +303,50 @@ TEST(LuaBindings, entityMeshRenderer) {
 	core::Log::invalidate();
 }
 
+TEST(LuaBindings, entityMaterial) {
+	core::Log::init(core::Log::Level::Off);
+	auto scn = mkShared<scene::Scene>();
+	auto crate = scn->createEntity("Crate");
+	auto& meshRenderer = crate.addComponent<scene::component::MeshRenderer>();
+	meshRenderer.materials.resize(2);
+	meshRenderer.materials[1].resolved = mkShared<const renderer::Material>();
+	auto bare = scn->createEntity("Bare");
+
+	const std::string script = std::format("function on_create()\n"
+										   "set_one = entity.set_material({0}, 1, 'materials/gold.owlmat')\n"
+										   "one = entity.get_material({0}, 1)\n"
+										   "zero = entity.get_material({0}, 0)\n"
+										   "set_all = entity.set_material({0}, -1, 'materials/wood.owlmat')\n"
+										   "last = entity.get_material({0}, 1)\n"
+										   "cleared = entity.set_material({0}, 0, '')\n"
+										   "bad_slot = entity.set_material({0}, -2, 'x.owlmat')\n"
+										   "bare_set = entity.set_material({1}, 0, 'x.owlmat')\n"
+										   "bare_get = entity.get_material({1}, 0) ~= nil\n"
+										   "end\n",
+										   static_cast<int64_t>(static_cast<uint64_t>(crate.getUUID())),
+										   static_cast<int64_t>(static_cast<uint64_t>(bare.getUUID())));
+	const std::vector<uint8_t> data(script.begin(), script.end());
+	const ScriptInstance inst;
+	inst.setScene(scn.get());
+	ASSERT_TRUE(inst.createFromBuffer(data, "material_test", static_cast<uint64_t>(bare.getUUID())));
+	inst.onCreate();
+
+	EXPECT_TRUE(inst.getPropertyBool("set_one").value_or(false));
+	EXPECT_EQ(inst.getPropertyString("one").value_or("?"), "materials/gold.owlmat");
+	EXPECT_EQ(inst.getPropertyString("zero").value_or("?"), "");
+	EXPECT_TRUE(inst.getPropertyBool("set_all").value_or(false));
+	EXPECT_EQ(inst.getPropertyString("last").value_or("?"), "materials/wood.owlmat");
+	EXPECT_TRUE(inst.getPropertyBool("cleared").value_or(false));
+	EXPECT_TRUE(meshRenderer.materials[0].material.empty());
+	EXPECT_EQ(meshRenderer.materials[1].material.generic_string(), "materials/wood.owlmat");
+	EXPECT_EQ(meshRenderer.materials[1].resolved, nullptr);
+	EXPECT_FALSE(inst.getPropertyBool("bad_slot").value_or(true));
+	EXPECT_FALSE(inst.getPropertyBool("bare_set").value_or(true));
+	EXPECT_FALSE(inst.getPropertyBool("bare_get").value_or(true));
+
+	core::Log::invalidate();
+}
+
 TEST(LuaBindings, entityLight) {
 	core::Log::init(core::Log::Level::Off);
 	auto scn = mkShared<scene::Scene>();

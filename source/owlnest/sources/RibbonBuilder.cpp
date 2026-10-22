@@ -14,6 +14,7 @@
 #include "document/AnimationDocument.h"
 #include "document/CodeEditorDocument.h"
 #include "document/FontDocument.h"
+#include "document/MaterialDocument.h"
 #include "document/NodeGraphDocument.h"
 #include "document/TilemapDocument.h"
 #include "document/TilesetDocument.h"
@@ -293,6 +294,9 @@ void RibbonBuilder::build() {
 			break;
 		case DocumentType::Mesh:
 			buildMeshTab();
+			break;
+		case DocumentType::Material:
+			buildMaterialTab();
 			break;
 		case DocumentType::Scene:
 			buildSceneTab();
@@ -764,6 +768,38 @@ void RibbonBuilder::buildMeshTab() {
 	using Size = gui::widgets::Ribbon::ButtonSize;
 	const auto tab = m_ribbon.addTab("Mesh");
 	const auto gFile = m_ribbon.addGroup(tab, "File");
+	m_ribbon.addButton(tab, gFile,
+					   Button{.iconName = "ribbon_close",
+							  .label = "Close",
+							  .tooltip = "Close the active document",
+							  .onClick = [this]() -> void { mp_editor->requestCloseActiveDocument(); },
+							  .size = Size::Small});
+}
+
+void RibbonBuilder::buildMaterialTab() {
+	using Button = gui::widgets::Ribbon::Button;
+	using Size = gui::widgets::Ribbon::ButtonSize;
+	const auto activeMaterial = [this]() -> MaterialDocument* {
+		auto* d = mp_editor->m_documents.getActive();
+		if (d != nullptr && d->type() == DocumentType::Material)
+			return static_cast<MaterialDocument*>(d);
+		return nullptr;
+	};
+	const auto tab = m_ribbon.addTab("Material");
+	const auto gFile = m_ribbon.addGroup(tab, "File");
+	m_ribbon.addButton(tab, gFile,
+					   Button{.iconName = "ribbon_save",
+							  .label = "Save",
+							  .tooltip = "Save the material; every entity using it updates (Ctrl+S)",
+							  .isEnabled = [activeMaterial]() -> bool {
+								  auto* m = activeMaterial();
+								  return m != nullptr && !m->filePath().empty();
+							  },
+							  .onClick = [activeMaterial]() -> void {
+								  if (auto* m = activeMaterial())
+									  std::ignore = m->save();
+							  },
+							  .size = Size::Large});
 	m_ribbon.addButton(tab, gFile,
 					   Button{.iconName = "ribbon_close",
 							  .label = "Close",

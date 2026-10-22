@@ -10,11 +10,13 @@
 
 #include "math/vectors.h"
 #include "renderer/Camera.h"
+#include "renderer/EnvironmentMap.h"
 #include "renderer/gpu/DrawData.h"
 #include "renderer/gpu/Texture.h"
 
 #include <array>
 #include <cstdint>
+#include <optional>
 #include <span>
 #include <string>
 
@@ -37,7 +39,7 @@ struct Mesh3DVertex {
 	math::vec3 normal;
 	/// Texture coordinate sampled from the selected texture slot.
 	math::vec2 uv;
-	/// Index into the bound texture array (`0` is the default white texture).
+	/// Index into the bound texture array (`0` is the default white texture); `voxel` reads the packed block surface.
 	uint32_t textureIndex = 0;
 	/// Atlas sub-rect `(uMin, vMin, uSize, vSize)` the UV maps into (`mesh3d`), or tiled into with `frac` (`voxel`); `{0,0,1,1}` = full texture.
 	math::vec4 tileRect{0.f, 0.f, 1.f, 1.f};
@@ -89,11 +91,41 @@ struct ShadowSettings {
  * @brief
  *  Per-draw parameters of a mesh, written to the model uniform buffer next to the model matrix.
  */
+class Material;
+
+/**
+ * @brief
+ *  Image-based lighting the 3D shaders read: an equirectangular environment prefiltered by roughness and its diffuse
+ *  harmonics.
+ */
+struct EnvironmentLighting {
+	/// Prefiltered levels (level i for roughness i / (levelCount - 1)), RGBA float textures.
+	std::array<shared<gpu::Texture2D>, 6> levels{};
+	/// Number of valid levels, 0 without an environment.
+	uint32_t levelCount = 0;
+	/// Diffuse irradiance.
+	SphericalHarmonics irradiance;
+	/// Luminance, in cd/m², of a pixel value of 1 in the levels, or of a white `ambient`.
+	float intensity = 1.f;
+	/// Rotation of the environment about Y, radians.
+	float rotation = 0.f;
+	/// Linear colour of the constant sky lighting without levels, times `intensity`; empty keeps the layer ambient.
+	std::optional<math::vec3> ambient;
+};
+
+/**
+ * @brief
+ *  Per-draw parameters of a mesh, written to the model uniform buffer next to the model matrix.
+ */
 struct MeshDrawParams {
-	/// Colour multiplied with the sampled texture by `mesh3d` (ignored by `voxel`).
+	/// Colour multiplied with the base colour of the material (an entity tint).
 	math::vec4 tint{1.f, 1.f, 1.f, 1.f};
 	/// Value written to the entity-id attachment for picking; `-1` for none.
 	int32_t entityId = -1;
+	/// Material of the draw; null draws the default material with the textures of the draw.
+	const Material* material = nullptr;
+	/// Without a material: blend with the base-colour alpha instead of drawing opaque.
+	bool blended = false;
 };
 
 /**
@@ -146,11 +178,35 @@ public:
 
 	/**
 	 * @brief
-	 *  Set the world-space direction the sun light travels and the ambient term.
+	 *  Set the lighting of the layer: its sun, lighting a scene that has no light, and its ambient, the constant sky
+	 *  when the scene has no environment.
 	 * @param[in] iSunDirection Direction the light travels (will be normalized).
-	 * @param[in] iAmbient Ambient colour added before the Lambert term.
+	 * @param[in] iSunIlluminance Illuminance of the sun, in lux.
+	 * @param[in] iAmbient Radiance of the constant sky, in cd/m² per channel.
 	 */
-	static void setLighting(const math::vec3& iSunDirection, const math::vec3& iAmbient);
+	static void setLighting(const math::vec3& iSunDirection, float iSunIlluminance, const math::vec3& iAmbient);
+
+	/**
+	 * @brief
+	 *  Set the exposure every physical light value is multiplied by before shading (lights, sun, sky, emissive).
+	 * @param[in] iExposure The exposure, `exposureOf(ev100)` for a camera set to an EV100.
+	 */
+	static void setExposure(float iExposure);
+
+	/**
+	 * @brief
+	 *  Get the exposure every physical light value is multiplied by.
+	 * @return The exposure.
+	 */
+	[[nodiscard]] static auto getExposure() -> float;
+
+	/**
+	 * @brief
+	 *  Exposure of a camera set to an exposure value at ISO 100: 1 / (1.2 · 2^EV100).
+	 * @param[in] iEv100 The exposure value (15 sunny day, 4 candle-lit room).
+	 * @return The exposure.
+	 */
+	[[nodiscard]] static auto exposureOf(float iEv100) -> float;
 
 	/**
 	 * @brief
@@ -158,6 +214,28 @@ public:
 	 * @param[in] iLights The lights, at most `g_maxLights` are used.
 	 */
 	static void setSceneLights(std::span<const GpuLight> iLights);
+
+	/**
+	 * @brief
+	 *  Choose whether the sun of `setLighting` lights the meshes when the scene gives no light (on by default).
+	 * @param[in] iEnabled False keeps the meshes unlit by any sun, as when every light of a scene is off.
+	 */
+	static void setLayerSun(bool iEnabled);
+
+	/**
+	 * @brief
+	 *  Whether the sun of `setLighting` lights the meshes when the scene gives no light.
+	 * @return True when it does.
+	 */
+	[[nodiscard]] static auto isLayerSunEnabled() -> bool;
+
+	/**
+	 * @brief
+	 *  Set a constant light added to every lit surface, unshadowed and independent of the environment (the editor
+	 *  uses it to see dark places; black by default).
+	 * @param[in] iRadiance Linear radiance added.
+	 */
+	static void setEditorAmbient(const math::vec3& iRadiance);
 
 	/**
 	 * @brief
@@ -175,6 +253,20 @@ public:
 
 	/**
 	 * @brief
+	 *  Set the image-based lighting; a `levelCount` of 0 lights the meshes with the layer ambient as a constant sky.
+	 * @param[in] iEnvironment The environment.
+	 */
+	static void setEnvironment(const EnvironmentLighting& iEnvironment);
+
+	/**
+	 * @brief
+	 *  Draw the environment as the sky over the whole target (no depth), for the camera of the last `beginScene`.
+	 *  Nothing without an environment.
+	 */
+	static void drawSky();
+
+	/**
+	 * @brief
 	 *  Check whether a shadow cascade renders.
 	 * @return True during a shadow pass.
 	 */
@@ -182,6 +274,8 @@ public:
 
 	/// Most lights the meshes read.
 	static constexpr uint32_t g_maxLights = 64;
+	/// EV100 used without a camera (previews): a sunny day.
+	static constexpr float g_defaultEv100 = 15.f;
 	/// First texture slot of the shadow maps (one per cascade, up to the last slot).
 	static constexpr uint32_t g_shadowMapSlot = 28;
 

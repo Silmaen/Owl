@@ -10,8 +10,11 @@
 #include "core/external/yaml.h"
 #include "data/voxel/Block.h"
 
+#include <algorithm>
 #include <array>
+#include <cmath>
 #include <cstdint>
+#include <functional>
 #include <sstream>
 
 namespace owl::data::voxel {
@@ -49,6 +52,32 @@ auto renderKindFromString(const std::string& iName) -> BlockRenderKind {
 	return BlockRenderKind::Opaque;
 }
 
+auto packUnit(const float iValue) -> uint32_t {
+	return static_cast<uint32_t>(std::lround(std::clamp(iValue, 0.f, 1.f) * 255.f));
+}
+
+void emitSurface(YAML::Emitter& ioOut, const BlockSurface& iSurface) {
+	if (iSurface == BlockSurface{})
+		return;
+	ioOut << YAML::Key << "surface" << YAML::Value << YAML::Flow << YAML::BeginMap;
+	ioOut << YAML::Key << "metallic" << YAML::Value << iSurface.metallic;
+	ioOut << YAML::Key << "roughness" << YAML::Value << iSurface.roughness;
+	ioOut << YAML::Key << "emissive" << YAML::Value << iSurface.emissive;
+	ioOut << YAML::Key << "clearcoat" << YAML::Value << iSurface.clearcoat;
+	ioOut << YAML::EndMap;
+}
+
+auto readSurface(const YAML::Node& iNode) -> BlockSurface {
+	BlockSurface surface;
+	if (!iNode || !iNode.IsMap())
+		return surface;
+	surface.metallic = iNode["metallic"] ? iNode["metallic"].as<float>() : surface.metallic;
+	surface.roughness = iNode["roughness"] ? iNode["roughness"].as<float>() : surface.roughness;
+	surface.emissive = iNode["emissive"] ? iNode["emissive"].as<float>() : surface.emissive;
+	surface.clearcoat = iNode["clearcoat"] ? iNode["clearcoat"].as<float>() : surface.clearcoat;
+	return surface;
+}
+
 // Per-orientation permutation: index by world face (XNeg,XPos,YNeg,YPos,ZNeg,ZPos), value is the local face shown there.
 constexpr std::array<std::array<BlockFace, g_FaceCount>, g_OrientationCount> k_FacePermutation{{
 		{BlockFace::XNeg, BlockFace::XPos, BlockFace::YNeg, BlockFace::YPos, BlockFace::ZNeg, BlockFace::ZPos},
@@ -67,12 +96,38 @@ auto orientedFace(const BlockFace iWorldFace, const BlockOrientation iOrientatio
 	return k_FacePermutation[orient][static_cast<size_t>(iWorldFace)];
 }
 
-BlockRegistry::BlockRegistry() { m_types.push_back(makeAir()); }
+auto BlockSurface::operator==(const BlockSurface& iOther) const noexcept -> bool {
+	constexpr std::equal_to<float> equal;
+	return equal(metallic, iOther.metallic) && equal(roughness, iOther.roughness) && equal(emissive, iOther.emissive) &&
+		   equal(clearcoat, iOther.clearcoat);
+}
+
+auto packSurface(const BlockSurface& iSurface) noexcept -> uint32_t {
+	return packUnit(iSurface.metallic) | packUnit(iSurface.roughness) << 8u |
+		   packUnit(std::log2(1.f + std::max(iSurface.emissive, 0.f)) / std::log2(1.f + g_MaxBlockLuminance)) << 16u |
+		   packUnit(iSurface.clearcoat) << 24u;
+}
+
+BlockRegistry::BlockRegistry() {
+	m_types.push_back(makeAir());
+	m_packedSurfaces.push_back(packSurface(m_types.front().surface));
+}
 
 auto BlockRegistry::registerBlock(const BlockType& iType) -> BlockId {
 	const auto id = static_cast<BlockId>(m_types.size());
 	m_types.push_back(iType);
+	m_packedSurfaces.push_back(packSurface(iType.surface));
 	return id;
+}
+
+auto BlockRegistry::setBlock(const BlockId iId, const BlockType& iType) -> bool {
+	if (iId == g_AirBlock || iId >= m_types.size()) {
+		OWL_CORE_WARN("BlockRegistry: Cannot replace block {}, it is air or not registered.", iId)
+		return false;
+	}
+	m_types[iId] = iType;
+	m_packedSurfaces[iId] = packSurface(iType.surface);
+	return true;
 }
 
 auto BlockRegistry::get(const BlockId iId) const -> const BlockType& {
@@ -113,6 +168,7 @@ auto BlockRegistry::serializeToString(const std::string_view iName) const -> std
 		emitter << YAML::Key << "faces" << YAML::Value << YAML::Flow << YAML::BeginSeq;
 		for (const auto face: type.faceTextures) emitter << face;
 		emitter << YAML::EndSeq;
+		emitSurface(emitter, type.surface);
 		emitter << YAML::EndMap;
 	}
 	emitter << YAML::EndSeq;
@@ -147,10 +203,13 @@ auto BlockRegistry::deserializeFromString(const std::string_view iYaml) -> bool 
 				for (size_t f = 0; f < g_FaceCount && f < faces.size(); ++f)
 					type.faceTextures[f] = faces[f].as<uint16_t>();
 			}
+			type.surface = readSurface(node["surface"]);
 			parsed[id] = std::move(type);
 		}
 	}
 	m_types = std::move(parsed);
+	m_packedSurfaces.clear();
+	for (const auto& type: m_types) m_packedSurfaces.push_back(packSurface(type.surface));
 	return true;
 }
 

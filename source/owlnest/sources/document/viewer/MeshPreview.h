@@ -9,6 +9,7 @@
 #pragma once
 
 #include <renderer/Camera.h>
+#include <renderer/Material.h>
 #include <renderer/MeshCache.h>
 #include <renderer/gpu/Framebuffer.h>
 
@@ -54,5 +55,30 @@ struct MeshOrbit {
  */
 void renderMeshPreview(renderer::gpu::Framebuffer& ioTarget, renderer::MeshResource& ioMesh, const MeshOrbit& iOrbit,
 					   MeshShading iShading);
+
+/// Shape a material preview is drawn on.
+enum struct PreviewShape : uint8_t {
+	Sphere,///< A unit sphere.
+	Cube,///< A cube.
+};
+
+/**
+ * @brief
+ *  Build the mesh of a preview shape (one submesh, with normals and texture coordinates).
+ * @param[in] iShape The shape.
+ * @return The mesh, null when it cannot be built.
+ */
+[[nodiscard]] auto makePreviewShape(PreviewShape iShape) -> shared<renderer::MeshResource>;
+
+/**
+ * @brief
+ *  Render a mesh alone into a framebuffer with a given material, lit like `renderMeshPreview`.
+ * @param[in,out] ioTarget The framebuffer: colour, entity id and depth attachments.
+ * @param[in,out] ioMesh The mesh (its first submesh is drawn).
+ * @param[in] iOrbit The orbit of the camera.
+ * @param[in] iMaterial The material, kept alive by the caller until the call returns.
+ */
+void renderMaterialPreview(renderer::gpu::Framebuffer& ioTarget, renderer::MeshResource& ioMesh,
+						   const MeshOrbit& iOrbit, const renderer::Material& iMaterial);
 
 }// namespace owl::nest::viewer

@@ -1,0 +1,9 @@
+Material:
+  FormatVersion: 1
+  metallic: 1
+  roughness: 1
+  baseColorMap: nam:textures/pbr/stacked_stone_wall/stacked_stone_wall_diff.jpg
+  metallicMap: nam:textures/pbr/stacked_stone_wall/stacked_stone_wall_arm.jpg
+  roughnessMap: nam:textures/pbr/stacked_stone_wall/stacked_stone_wall_arm.jpg
+  normalMap: nam:textures/pbr/stacked_stone_wall/stacked_stone_wall_nor.jpg
+  occlusionMap: nam:textures/pbr/stacked_stone_wall/stacked_stone_wall_arm.jpg

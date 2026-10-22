@@ -37,6 +37,7 @@ enum struct DocumentType : uint8_t {
 	ActionMap,///< The `input_actions.yml` action map of a project.
 	Image,///< A `.png` / `.jpg` / ... image asset, shown read-only.
 	Mesh,///< A `.gltf` / `.glb` / `.obj` mesh asset, shown read-only.
+	Material,///< A `.owlmat` material asset, with its live preview.
 };
 
 /**

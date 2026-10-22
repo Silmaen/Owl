@@ -1,4 +1,5 @@
 Scene: VoxelTerrain
+FormatVersion: 6
 Hud: huds/voxel.owlhud
 EnabledRenderers:
   - Name: world
@@ -20,6 +21,16 @@ Entities:
       properties:
       - {name: hint, type: string, value: HudHint}
       - {name: duration, type: float, value: 4.5}
+  - Entity: 3400000000000000003
+    Tag:
+      tag: Sky
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Environment: {hdri: textures/hdri/kloofendal_48d_partly_cloudy_puresky.hdr, intensity: 12000, rotation: 0, showSky: true}
   - Entity: 3400000000000000001
     Tag:
       tag: TerrainPlayer
@@ -36,6 +47,7 @@ Entities:
         orthographicSize: 8
         orthographicNear: -1
         orthographicFar: 10
+        toneMapping: PbrNeutral
       primary: true
       fixedAspectRatio: false
     Visibility:
@@ -93,28 +105,34 @@ Entities:
           render: Opaque
           solid: true
           faces: [3, 3, 3, 3, 3, 3]
+          surface: {metallic: 0, roughness: 0.75, emissive: 0, clearcoat: 0}
         - id: 2
           name: grass
           render: Opaque
           solid: true
           faces: [1, 1, 2, 0, 1, 1]
+          surface: {metallic: 0, roughness: 0.85, emissive: 0, clearcoat: 0}
         - id: 3
           name: dirt
           render: Opaque
           solid: true
           faces: [2, 2, 2, 2, 2, 2]
+          surface: {metallic: 0, roughness: 0.95, emissive: 0, clearcoat: 0}
         - id: 4
           name: sand
           render: Opaque
           solid: true
           faces: [5, 5, 5, 5, 5, 5]
+          surface: {metallic: 0, roughness: 0.9, emissive: 0, clearcoat: 0}
         - id: 5
           name: water
           render: Water
           solid: false
           faces: [13, 13, 13, 13, 13, 13]
+          surface: {metallic: 0, roughness: 0.05, emissive: 0, clearcoat: 1}
         - id: 6
           name: snow
           render: Opaque
           solid: true
           faces: [10, 10, 10, 10, 10, 10]
+          surface: {metallic: 0, roughness: 0.35, emissive: 0, clearcoat: 0.4}

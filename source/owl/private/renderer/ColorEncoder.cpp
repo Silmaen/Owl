@@ -15,6 +15,7 @@
 #include "renderer/gpu/RendererDescriptors.h"
 #include "renderer/gpu/UniformBuffer.h"
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstdint>
@@ -32,6 +33,9 @@ auto blockId() -> gpu::RendererId {
 
 struct EncodeUbo {
 	std::array<int32_t, 4> mode{0, 0, 0, 0};
+	math::vec4 post{1.f, 0.f, 0.f, 0.4f};
+	math::vec4 vignetteColor{0.f, 0.f, 0.f, 1.f};
+	math::vec4 frame{1.f, 1.f, 0.f, 0.f};
 };
 
 struct InternalData {
@@ -59,7 +63,7 @@ void ColorEncoder::init() {
 							 .stages = gpu::ShaderStage::Fragment},
 			gpu::BindingDecl{.binding = 1,
 							 .type = gpu::BindingType::CombinedImageSampler,
-							 .count = 1,
+							 .count = 4,
 							 .stages = gpu::ShaderStage::Fragment},
 	};
 	gpu::RendererDescriptors::declare(g_rendererKey, bindings);
@@ -88,15 +92,30 @@ void ColorEncoder::shutdown() {
 	gpu::RendererDescriptors::release(g_rendererKey);
 }
 
-void ColorEncoder::draw(const shared<gpu::Texture2D>& iSceneColor, const ToneMapping iToneMapping) {
+void ColorEncoder::draw(const shared<gpu::Texture2D>& iSceneColor, const ToneMapping iToneMapping,
+						const EncodePost& iPost) {
 	OWL_PROFILE_FUNCTION()
 
 	if (!g_data || !iSceneColor)
 		return;
 	const gpu::RendererDescriptors::ScopedActive scoped{blockId()};
-	g_data->params.mode[0] = static_cast<int32_t>(iToneMapping);
-	g_data->uniformBuffer->setData(&g_data->params, sizeof(EncodeUbo), 0);
-	const std::array textures{iSceneColor};
+	static const PostProcessSettings s_none;
+	const auto& settings = iPost.settings != nullptr ? *iPost.settings : s_none;
+	auto& params = g_data->params;
+	const bool bloom = settings.bloom && iPost.bloom != nullptr;
+	const bool lut = iPost.lut != nullptr && iPost.lutSize > 1;
+	params.mode = {static_cast<int32_t>(iToneMapping), bloom ? 1 : 0, lut ? 1 : 0, static_cast<int32_t>(iPost.lutSize)};
+	params.post = math::vec4{std::exp2(settings.exposure), bloom ? std::max(settings.bloomIntensity, 0.f) : 0.f,
+							 settings.vignette ? std::clamp(settings.vignetteIntensity, 0.f, 1.f) : 0.f,
+							 std::clamp(settings.vignetteSmoothness, 0.01f, 0.75f)};
+	params.vignetteColor = math::vec4{settings.vignetteColor.x(), settings.vignetteColor.y(),
+									  settings.vignetteColor.z(), std::clamp(settings.lutContribution, 0.f, 1.f)};
+	const bool adapted = iPost.exposure != nullptr;
+	params.frame = math::vec4{static_cast<float>(iPost.frameSize.x()), static_cast<float>(iPost.frameSize.y()),
+							  settings.ev100, adapted ? 1.f : 0.f};
+	g_data->uniformBuffer->setData(&params, sizeof(EncodeUbo), 0);
+	const std::array textures{iSceneColor, bloom ? iPost.bloom : iSceneColor, lut ? iPost.lut : iSceneColor,
+							  adapted ? iPost.exposure : iSceneColor};
 	gpu::RenderCommand::bindTextures(textures);
 	gpu::RenderCommand::drawData(g_data->drawData, 6);
 }

@@ -29,6 +29,7 @@ namespace owl::app {
  *  - images (`.png`, `.jpg`): every texture of the renderer's library loaded from that file gets the new pixels;
  *  - Slang shaders (`.slang`): every shader compiled from that file is recompiled and swapped, its pipelines rebuilt;
  *  - meshes (`.obj`, `.gltf`, `.glb`): the application's mesh cache forgets them, the entities reload them when drawn;
+ *  - materials (`.owlmat`): the material library drops them and their instances, the entities resolve them again;
  *  - anything else (scenes, tilesets, tilemaps, Lua scripts): handed to the listeners, which own the scenes.
  *
  * A failed reload keeps the previous version and logs an error naming the file (with the Slang or Lua diagnostic).

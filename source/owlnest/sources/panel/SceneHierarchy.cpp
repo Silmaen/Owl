@@ -40,6 +40,7 @@
 #include <scene/PrefabSerializer.h>
 #include <scene/component/Camera.h>
 #include <scene/component/Canvas.h>
+#include <scene/component/Environment.h>
 #include <scene/component/Hierarchy.h>
 #include <scene/component/Light.h>
 
@@ -172,6 +173,8 @@ auto entityKind(const scene::Entity& iEntity, const bool iHasChildren) -> Entity
 				return {gui::icon::flashlight, colour};
 		}
 	}
+	if (iEntity.hasComponent<Environment>())
+		return {gui::icon::globe, 0x5ec8e8};
 	if (iEntity.hasComponent<Text>() || iEntity.hasComponent<UiText>())
 		return {gui::icon::type, 0xc7a6ff};
 	if (iEntity.hasComponent<UiButton>())

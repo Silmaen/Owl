@@ -301,6 +301,10 @@ void Viewport::onUpdate(const core::Timestep& iTimeStep) {
 		case SceneDocument::State::Edit:
 			{
 				handleVoxelBrush(activeScene);
+				if (m_parent != nullptr) {
+					const float ambient = m_parent->getSettings().editorAmbient;
+					activeScene->setEditorAmbient({ambient, ambient, ambient});
+				}
 				activeScene->onUpdateEditor(iTimeStep, getActiveCamera());
 				break;
 			}
@@ -1632,7 +1636,7 @@ void Viewport::renderViewOverlay() {
 		ImGui::SameLine();
 		if (iconButton("show", {.glyph = gui::icon::eye,
 								.tooltip = "Show",
-								.description = "Grid, camera markers and trigger icons drawn over the scene."}))
+								.description = "Grid, camera markers, trigger icons and the editor ambient light."}))
 			ImGui::OpenPopup("##show");
 		if (ImGui::BeginPopup("##show")) {
 			const auto option = [](const char* iLabel, bool& ioFlag) -> void {
@@ -1648,6 +1652,12 @@ void Viewport::renderViewOverlay() {
 			option("Frame stats", settings.showFrameChip);
 			if (m_isometric)
 				option("Navigation graph and routes", settings.showNavGraph);
+			ImGui::Separator();
+			ImGui::SetNextItemWidth(160.f);
+			ImGui::SliderFloat("Editor ambient", &settings.editorAmbient, 0.f, 2.f, "%.2f");
+			gui::widgets::itemTooltip("Editor ambient", nullptr,
+									  "Grey light added to every lit 3D surface in Edit mode only, to work in dark "
+									  "places; Play shows the scene's own lighting.");
 			ImGui::EndPopup();
 		}
 		if (m_isometric) {

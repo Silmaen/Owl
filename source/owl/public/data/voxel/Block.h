@@ -146,6 +146,40 @@ enum struct BlockRenderKind : uint8_t {
 	Water = 3,///< Translucent volume rendered in the transparent pass with its own rules.
 };
 
+/// Emissive luminance, in cd/m², reached by a packed emissive of 255 (`packSurface`).
+constexpr float g_MaxBlockLuminance = 100000.f;
+
+/**
+ * @brief
+ *  Physically based surface of a block type, the same for its six faces; the colour comes from the atlas tile.
+ */
+struct OWL_API BlockSurface {
+	/// Metalness in `[0, 1]`: 0 dielectric, 1 metal tinted by the tile colour.
+	float metallic = 0.f;
+	/// Perceptual roughness in `[0, 1]`: 0 mirror, 1 fully diffuse.
+	float roughness = 0.5f;
+	/// Emissive luminance in cd/m² (nits), up to `g_MaxBlockLuminance`: the tile colour glows this bright, unlit.
+	float emissive = 0.f;
+	/// Strength in `[0, 1]` of a smooth clear layer over the surface (wet, icy or varnished blocks).
+	float clearcoat = 0.f;
+
+	/**
+	 * @brief
+	 *  Compare two surfaces field by field.
+	 * @param[in] iOther The other surface.
+	 * @return True when every field is equal.
+	 */
+	[[nodiscard]] auto operator==(const BlockSurface& iOther) const noexcept -> bool;
+};
+
+/**
+ * @brief
+ *  Pack a surface into the 32-bit word the voxel shader decodes, 8 bits per field.
+ * @param[in] iSurface The surface, each field clamped to its range.
+ * @return Metallic in the low byte, then roughness, emissive (logarithmic up to `g_MaxBlockLuminance`) and clearcoat.
+ */
+[[nodiscard]] OWL_API auto packSurface(const BlockSurface& iSurface) noexcept -> uint32_t;
+
 /**
  * @brief
  *  Authoring-time description of one block type.
@@ -165,6 +199,8 @@ struct OWL_API BlockType {
 	bool solid = true;
 	/// Per-face atlas tile indices, indexed by `BlockFace` (XNeg, XPos, YNeg, YPos, ZNeg, ZPos).
 	std::array<uint16_t, g_FaceCount> faceTextures{};
+	/// Physically based surface of the six faces.
+	BlockSurface surface;
 
 	/**
 	 * @brief
@@ -259,6 +295,15 @@ public:
 
 	/**
 	 * @brief
+	 *  Replace the description of a registered block type; air and unknown ids are refused.
+	 * @param[in] iId The id of the block type.
+	 * @param[in] iType Its new description.
+	 * @return True when the block type was replaced.
+	 */
+	auto setBlock(BlockId iId, const BlockType& iType) -> bool;
+
+	/**
+	 * @brief
 	 *  Look up a block type by id.
 	 * @param[in] iId The block id to resolve.
 	 * @return The matching block type, or the air block for out-of-range ids.
@@ -306,6 +351,16 @@ public:
 
 	/**
 	 * @brief
+	 *  The surface of a block type as `packSurface` packs it, computed when the type is registered or replaced.
+	 * @param[in] iId The id of the block type.
+	 * @return The packed surface, the default one for air and unknown ids.
+	 */
+	[[nodiscard]] auto getPackedSurface(BlockId iId) const noexcept -> uint32_t {
+		return iId < m_packedSurfaces.size() ? m_packedSurfaces[iId] : m_packedSurfaces.front();
+	}
+
+	/**
+	 * @brief
 	 *  Serialize the registry to a YAML string (air is implicit, never written).
 	 * @param[in] iName Optional display name written under the `BlockRegistry:` key.
 	 * @return The YAML document as a string.
@@ -323,6 +378,8 @@ public:
 private:
 	/// Block types indexed by id; slot 0 is always the built-in air block.
 	std::vector<BlockType> m_types;
+	/// `packSurface` of each block type, by id: the mesher reads it once per quad.
+	std::vector<uint32_t> m_packedSurfaces;
 };
 
 }// namespace owl::data::voxel

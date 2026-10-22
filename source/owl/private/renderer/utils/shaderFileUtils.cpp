@@ -23,6 +23,7 @@ OWL_DIAG_POP
 
 #include "renderer/Renderer.h"
 
+#include <algorithm>
 #include <cctype>
 #include <exception>
 #include <expected>
@@ -31,6 +32,7 @@ OWL_DIAG_POP
 #include <functional>
 #include <mutex>
 #include <slang-tag-version.h>
+#include <vector>
 
 namespace owl::renderer::utils {
 
@@ -270,6 +272,53 @@ auto extractSpirv(slang::IBlob* iBlob) -> std::vector<uint32_t> {
 	return {data, data + size};
 }
 }// namespace
+
+namespace {
+// NOLINTNEXTLINE(misc-no-recursion): each file is expanded at most once.
+void expandIncludes(const std::filesystem::path& iFile, std::vector<std::filesystem::path>& ioSeen, std::string& oOut) {
+	std::ifstream in(iFile, std::ios::in | std::ios::binary);
+	if (!in) {
+		OWL_CORE_WARN("Shader: Cannot read '{}'.", iFile.string())
+		return;
+	}
+	ioSeen.push_back(iFile.lexically_normal());
+	std::string line;
+	while (std::getline(in, line)) {
+		const auto start = line.find_first_not_of(" \t");
+		if (start == std::string::npos || line.compare(start, 8, "#include") != 0) {
+			oOut.append(line).push_back('\n');
+			continue;
+		}
+		const auto open = line.find('"', start);
+		const auto close = open == std::string::npos ? open : line.find('"', open + 1);
+		if (close == std::string::npos) {
+			oOut.append(line).push_back('\n');
+			continue;
+		}
+		const std::string name = line.substr(open + 1, close - open - 1);
+		std::filesystem::path found;
+		for (const auto& candidate: {iFile.parent_path() / name, iFile.parent_path().parent_path() / "common" / name}) {
+			if (exists(candidate)) {
+				found = candidate.lexically_normal();
+				break;
+			}
+		}
+		if (found.empty()) {
+			OWL_CORE_WARN("Shader: Include '{}' of '{}' not found.", name, iFile.string())
+			continue;
+		}
+		if (std::ranges::find(ioSeen, found) == ioSeen.end())
+			expandIncludes(found, ioSeen, oOut);
+	}
+}
+}// namespace
+
+auto readShaderSource(const std::filesystem::path& iFile) -> std::string {
+	std::string out;
+	std::vector<std::filesystem::path> seen;
+	expandIncludes(iFile, seen, out);
+	return out;
+}
 
 auto compileSlangToSpirv(const std::string& iSource, const std::string& iModuleName, const bool iForVulkan)
 		-> SlangCompilationResult {

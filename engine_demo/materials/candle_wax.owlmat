@@ -1,0 +1,6 @@
+Material:
+  FormatVersion: 1
+  baseColor: [0.93, 0.88, 0.78, 1]
+  roughness: 0.55
+  sheenColor: [0.3, 0.25, 0.18]
+  sheenRoughness: 0.6

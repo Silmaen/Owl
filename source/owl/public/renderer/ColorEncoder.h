@@ -12,7 +12,28 @@
 #include "core/Core.h"
 #include "gpu/Texture.h"
 
+#include <cstdint>
+
 namespace owl::renderer {
+
+/**
+ * @brief
+ *  What the encoding applies besides the tone mapping.
+ */
+struct EncodePost {
+	/// The post-process settings of the camera.
+	const PostProcessSettings* settings = nullptr;
+	/// The half-size bloom chain result, null without bloom.
+	shared<gpu::Texture2D> bloom;
+	/// The colour-grading LUT strip, null without one.
+	shared<gpu::Texture2D> lut;
+	/// Edge of the LUT cube.
+	uint32_t lutSize = 0;
+	/// Size of the frame in pixels.
+	math::vec2ui frameSize{1, 1};
+	/// The one-texel adapted EV100 of the automatic exposure, null for the manual `settings->ev100`.
+	shared<gpu::Texture2D> exposure;
+};
 
 /**
  * @brief
@@ -76,8 +97,9 @@ public:
 	 *  Draw the encoded scene colour over the whole bound target.
 	 * @param[in] iSceneColor The linear scene colour, shader readable.
 	 * @param[in] iToneMapping Tone mapping applied before the encoding.
+	 * @param[in] iPost Exposure, bloom, vignette and LUT of the camera; empty for none.
 	 */
-	static void draw(const shared<gpu::Texture2D>& iSceneColor, ToneMapping iToneMapping);
+	static void draw(const shared<gpu::Texture2D>& iSceneColor, ToneMapping iToneMapping, const EncodePost& iPost = {});
 
 	/**
 	 * @brief

@@ -128,6 +128,7 @@ Hierarchy, Properties and Viewport always reflect.
 | Font       | `.ttf`, `.otf`, `.owlfont`                  | Font viewer (samples, atlas) and its charset: extra code-point ranges |
 | Image      | `.png`, `.jpg`, `.jpeg`, `.bmp`, `.tga`     | Read-only image viewer: zoom, pan, pixel grid, tileset tile overlay   |
 | Mesh       | `.gltf`, `.glb`, `.obj`                     | Read-only mesh viewer: orbit, zoom, textured or shaded, mesh figures  |
+| Material   | `.owlmat`                                   | PBR material editor: parameters, parent, overrides, sphere preview    |
 
 - Each document owns its undo stack, dirty flag, selection and play state; each scene has its own viewport window
   (`##scene_<uuid>`), tabbed by ImGui docking and detachable to see scenes side by side. A dirty document shows a dot
@@ -138,7 +139,7 @@ Hierarchy, Properties and Viewport always reflect.
 
 The types live in `source/owlnest/sources/document/`: `Document`, `DocumentManager`, `SceneDocument`,
 `CodeEditorDocument`, `NodeGraphDocument`, `SceneFlowDocument`, `AnimationDocument`, `TilemapDocument`,
-`TilesetDocument`, `FontDocument`, `ImageDocument`.
+`TilesetDocument`, `FontDocument`, `ImageDocument`, `MaterialDocument`.
 
 ### Tilemap document
 
@@ -204,7 +205,7 @@ Every layer writes it: sprites, tilemaps, isometric billboards, voxel worlds and
   top-right corner showing the state (kept as `playControlsCollapsed`); a "Playing" / "Paused" message fades after
   about two seconds;
 - top-right (Edit): the view (**2D**, **3D**, or **Iso** locked in the isometric mode), **Show** (grid, camera
-  markers, trigger icons, in isometric mode the navigation graph with a Shift-click test path), the isometric
+  markers, trigger icons, the **Editor ambient** slider (0 to 2, `editorAmbient`): a grey light on every lit 3D surface in Edit mode only, never in Play, in isometric mode the navigation graph with a Shift-click test path), the isometric
   **Navigation tool** (one-way roads, closed sides, slower cells, [Pathfinding](pathfinding.md); it turns the graph on
   and off with it), **Frame selection** (`F`), the **Camera** menu and the frame stats toggle;
 - bottom-left: frame rate, frame time and draw calls (a click opens Stats);
@@ -345,10 +346,16 @@ default. **Add Component** lists the optional components the entity lacks; manda
 be removed. Every edit is a registry command ([Editor commands](#editor-commands)).
 
 - **Transform** (local), **Sprite Renderer**, **Animated Sprite**, **Circle Renderer**, **Mesh Renderer** (mesh file
-  drop field with the base-colour preview, tint, texture override, transparency, vertex and triangle counts),
-  **Light** (enabled, type, colour, intensity, range for point and spot, cone angles in degrees for a spot, shadow settings for a
+  drop field with the base-colour preview, tint, texture override, transparency, vertex and triangle counts, a
+  **Materials** section with one **Slot** per submesh: the `.owlmat` field (drop one, clear it for the file's own
+  material, open it with the button) and an **Overrides** tree whose checked fields replace the material's for this
+  entity),
+  **Light** (enabled, type, colour, **Illuminance (lx)** for a directional light or **Power (lm)** for a point or spot one with
+  its reference values (sun, overcast, moon; candle, 60 W bulb, fireplace), range for point and spot, cone angles in degrees for a spot, shadow settings for a
   directional light),
-  **Text Renderer**, **Camera**,
+  **Environment** (HDRI drop field for a `.hdr`, ambient colour for the scene without an image, luminance in cd/m² with its reference values, rotation in degrees, **Show Sky**),
+  **Text Renderer**, **Camera** (with a **Post process** section: EV100, auto exposure (range and speed), exposure compensation in EV, bloom, vignette and the colour LUT, the
+  dependent fields shown once the effect is on; every field of the **Light**, **Environment** and **Post process** sections has a reset button (↺) left of the field, shown when the value differs from its default),
   **Rigidbody 2D**, **Box / Circle Collider 2D**, **Native Script**, **Sound Source**, **Sound Listener**, **Player**,
   **Link**, **Background**, **Visibility** (inherited), **Lua Script** (path and property list): their fields, see
   [Scene components](scene.md#components)
@@ -453,6 +460,29 @@ or the **Mesh** field of the inspector.
 - The **Mesh** panel gives the vertex and triangle counts, the size of the bounds, the base colour and the texture
   of the material.
 
+### Material Editor (`.owlmat`) {#editor-material-document}
+
+A tab (`MaterialDocument`) with its own undo stack and dirty flag, opened by a double-click on a `.owlmat` in the
+Content Browser, by **New Material** in its background menu (a new `New Material.owlmat`, from `material.create`) or by
+the open button of a mesh slot. The **Material** ribbon tab has **Save** and **Close**.
+
+- **Parameters.** The fields of the material in sections: **Surface** (shading model `Standard`, `Unlit` or `Toon`,
+  base colour, metallic, roughness, normal scale, occlusion strength), **Maps** (base colour, metallic, roughness, normal,
+  occlusion and emissive, filled by drops from the Content Browser, with a channel combo under the metallic, roughness
+  and occlusion maps), **Emission** (colour and strength), **Layers** (clearcoat, sheen, anisotropy), **Toon**
+  (bands, rim) and **Alpha** (mode, cutoff, double-sided). Dragging a value is one undo step.
+- **Reset.** A reset button (↺) left of each field restores its default on a root material and stops the override on
+  an instance or a slot override; **Reset all** at the top does it for every field. **Use the occlusion map as ARM**
+  names the occlusion image as the metallic and roughness maps too and sets the channels to R, G and B. The same
+  inspector serves the slot overrides of a `MeshRenderer`.
+- **Parent and overrides.** The **Parent** field takes a `.owlmat` dropped from the Content Browser (the cross clears
+  it). With a parent the material is an instance: a checkbox per field says whether the instance overrides it, the
+  unchecked fields show and follow the parent; the file stores only the checked ones.
+- **Preview.** A sphere or a cube (radio buttons) lit and drawn by the engine with the material itself; drag to orbit,
+  wheel to zoom, double-click to reset.
+- **Save.** `Ctrl+S` writes the file atomically; the `MaterialLibrary` drops it and every instance built on it, so each
+  entity using the material, in any open scene, redraws with the new values.
+
 ### Font Viewer and Editor (`.ttf`, `.otf`)
 
 A font (or its `.owlfont` sidecar) opens in a font document, loaded by the document if no text uses it yet:
@@ -538,22 +568,25 @@ A file grid of the asset directories, with navigation, file operations and drag 
   family colour bar, the kind in capitals and an extension badge; an empty folder or search says so. A dragged tile
   follows the cursor (`gui::widgets::dragPreview`) and drop targets light up.
 
-| Action                        | Effect                                        |
-|-------------------------------|-----------------------------------------------|
-| Double-click folder           | Navigate into the folder                      |
-| Double-click `.owl` file      | Open the scene in the editor                  |
-| Double-click a font           | Open the font viewer and its charset          |
-| Double-click an image         | Open it in the read-only image viewer         |
-| Double-click `.slang` file    | Open the shader in the code editor            |
-| Drag `.owlprefab` to Viewport | Instantiate the prefab into the scene         |
-| Drag a mesh to Viewport       | Place a `MeshRenderer` entity under the mouse |
-| Double-click a mesh           | Place a `MeshRenderer` entity at the origin   |
-| Right-click a mesh > Open     | Open it in the read-only mesh viewer          |
-| Drag texture to Properties    | Assign the texture to a Sprite Renderer field |
-| Drag sound to Properties      | Assign the sound to a Sound Source field      |
-| Right-click background        | Context menu: New Folder, Import File/Folder  |
-| Right-click file/folder       | Context menu: Open, Rename, Delete            |
-| OS file drop                  | Copy dropped files into the current directory |
+| Action                                | Effect                                        |
+|---------------------------------------|-----------------------------------------------|
+| Double-click folder                   | Navigate into the folder                      |
+| Double-click `.owl` file              | Open the scene in the editor                  |
+| Double-click a font                   | Open the font viewer and its charset          |
+| Double-click an image                 | Open it in the read-only image viewer         |
+| Double-click `.slang` file            | Open the shader in the code editor            |
+| Drag `.owlprefab` to Viewport         | Instantiate the prefab into the scene         |
+| Drag a mesh to Viewport               | Place a `MeshRenderer` entity under the mouse |
+| Double-click a mesh                   | Place a `MeshRenderer` entity at the origin   |
+| Right-click a mesh > Open             | Open it in the read-only mesh viewer          |
+| Double-click `.owlmat` file           | Open the material editor                      |
+| Drag `.owlmat` to a mesh              | Give every slot of the mesh the material      |
+| Right-click background > New Material | Create `New Material.owlmat` and open it      |
+| Drag texture to Properties            | Assign the texture to a Sprite Renderer field |
+| Drag sound to Properties              | Assign the sound to a Sound Source field      |
+| Right-click background                | Context menu: New Folder, New Material, Import |
+| Right-click file/folder               | Context menu: Open, Rename, Delete            |
+| OS file drop                          | Copy dropped files into the current directory |
 
 ### Log Panel
 
@@ -975,33 +1008,35 @@ first match), `Vec2` / `Vec3` / `Vec4`, `Color` (three or four numbers in [0, 1]
 declared choice), each with an optional default. A command returns its undo description and structured data (`entity`
 UUID, plus the fields below).
 
-| Command                | Arguments                                                                                              |
-|------------------------|--------------------------------------------------------------------------------------------------------|
-| `entity.create`        | `name` (text, `Empty Entity`), `parent` (entity, root when absent)                                     |
-| `entity.delete`        | `entity`, `children` (bool: delete the subtree, else children move up)                                 |
-| `entity.duplicate`     | `entity`, `children` (bool: duplicate the subtree)                                                     |
-| `entity.reparent`      | `entity`, `parent` (root when absent); the world position is kept                                      |
-| `entity.rename`        | `entity`, `name`                                                                                       |
-| `entity.set_transform` | `entity`, `translation` / `rotation` (radians) / `scale` (three numbers)                               |
-| `entity.create_light`  | `type` (`Directional`, `Point`, `Spot`), `name`, `translation`, `parent`                               |
-| `component.add`        | `entity`, `component` (display name `Circle Renderer` or file key)                                     |
-| `component.remove`     | `entity`, `component`                                                                                  |
-| `prefab.instantiate`   | `path` (prefab file), `asset_path` (link recorded, found from the folders)                             |
-| `mesh.create`          | `path` (mesh file), `asset_path`, `name`, `translation` (world), `parent`, `layer` (RendererTag)       |
-| `component.set`        | `entity`, `component`, `values` (YAML / JSON map merged into the component),                           |
-|                        | `replace` (bool: `values` replaces every field, used by the inspector)                                 |
-| `scene.save`           | `path` (the scene file when absent); returns `path`                                                    |
-| `edit.undo`            | none; returns `can_undo`, `can_redo` and the entity to select                                          |
-| `edit.redo`            | none; same result as `edit.undo`                                                                       |
-| `macro.run`            | `path` (`.owlmacro`, absolute or in an asset folder); returns `commands`                               |
-| `hud.add_widget`       | `kind` (`panel`, `label`...), `name`, `parent`, `size`, `anchor`, `offset`, `size_unit`, `offset_unit` |
-| `hud.set_rect`         | `entity`, `anchor_min`, `anchor_max`, `pivot`, `size`, `offset`, `size_unit`, `offset_unit` (as given) |
-| `hud.set_anchors`      | `entity`, `anchor_min`, `anchor_max`, `keep_bounds`, `resolution`                                      |
-| `hud.set_pivot`        | `entity`, `pivot`, `keep_bounds`, `resolution`                                                         |
-| `hud.move`             | `entities` (UUIDs or tags, comma separated), `delta` (reference pixels), `resolution`                  |
-| `hud.delete`           | `entities`: the widgets and their children, one step                                                   |
-| `hud.reparent`         | `entity`, `parent`, `index`, `keep_bounds`, `resolution`                                               |
-| `hud.extract_canvas`   | `entity` (root canvas), `path` (`.owlhud`), `asset_path`; returns `hud`                                |
+| Command                | Arguments                                                                                                 |
+|------------------------|-----------------------------------------------------------------------------------------------------------|
+| `entity.create`        | `name` (text, `Empty Entity`), `parent` (entity, root when absent)                                        |
+| `entity.delete`        | `entity`, `children` (bool: delete the subtree, else children move up)                                    |
+| `entity.duplicate`     | `entity`, `children` (bool: duplicate the subtree)                                                        |
+| `entity.reparent`      | `entity`, `parent` (root when absent); the world position is kept                                         |
+| `entity.rename`        | `entity`, `name`                                                                                          |
+| `entity.set_transform` | `entity`, `translation` / `rotation` (radians) / `scale` (three numbers)                                  |
+| `entity.create_light`  | `type` (`Directional`, `Point`, `Spot`), `name`, `translation`, `parent`                                  |
+| `component.add`        | `entity`, `component` (display name `Circle Renderer` or file key)                                        |
+| `component.remove`     | `entity`, `component`                                                                                     |
+| `prefab.instantiate`   | `path` (prefab file), `asset_path` (link recorded, found from the folders)                                |
+| `mesh.create`          | `path` (mesh file), `asset_path`, `name`, `translation` (world), `parent`, `layer` (RendererTag)          |
+| `material.create`      | `path` (new `.owlmat` file), `parent` (asset path of the parent material, a root material when absent)    |
+| `material.assign`      | `entity`, `slot` (from 0, -1 for every slot), `material` (`.owlmat` asset path, empty for the file's own) |
+| `component.set`        | `entity`, `component`, `values` (YAML / JSON map merged into the component),                              |
+|                        | `replace` (bool: `values` replaces every field, used by the inspector)                                    |
+| `scene.save`           | `path` (the scene file when absent); returns `path`                                                       |
+| `edit.undo`            | none; returns `can_undo`, `can_redo` and the entity to select                                             |
+| `edit.redo`            | none; same result as `edit.undo`                                                                          |
+| `macro.run`            | `path` (`.owlmacro`, absolute or in an asset folder); returns `commands`                                  |
+| `hud.add_widget`       | `kind` (`panel`, `label`...), `name`, `parent`, `size`, `anchor`, `offset`, `size_unit`, `offset_unit`    |
+| `hud.set_rect`         | `entity`, `anchor_min`, `anchor_max`, `pivot`, `size`, `offset`, `size_unit`, `offset_unit` (as given)    |
+| `hud.set_anchors`      | `entity`, `anchor_min`, `anchor_max`, `keep_bounds`, `resolution`                                         |
+| `hud.set_pivot`        | `entity`, `pivot`, `keep_bounds`, `resolution`                                                            |
+| `hud.move`             | `entities` (UUIDs or tags, comma separated), `delta` (reference pixels), `resolution`                     |
+| `hud.delete`           | `entities`: the widgets and their children, one step                                                      |
+| `hud.reparent`         | `entity`, `parent`, `index`, `keep_bounds`, `resolution`                                                  |
+| `hud.extract_canvas`   | `entity` (root canvas), `path` (`.owlhud`), `asset_path`; returns `hud`                                   |
 
 - **Gestures.** A live-previewed edit (voxel brush, tile painting, node moves) becomes one command when the gesture
   ends. An inspector field or a gizmo drag puts the entity back as it was and runs `component.set` (`replace=true`) or

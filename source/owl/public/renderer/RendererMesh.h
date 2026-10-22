@@ -15,6 +15,7 @@
 #include "renderer/MeshCache.h"
 #include "renderer/Renderer3D.h"
 
+#include <cstddef>
 #include <cstdint>
 
 namespace owl::renderer {
@@ -26,8 +27,12 @@ namespace owl::renderer {
 struct MeshLayerConfig {
 	/// World-space direction the sun light travels.
 	math::vec3 sunDirection{-0.4f, -1.f, -0.6f};
-	/// Ambient light colour added before the directional term.
+	/// Illuminance of the sun, in lux, lighting a scene that has no light.
+	float sunIlluminance = 100000.f;
+	/// Linear colour of the constant sky lighting a scene without an environment.
 	math::vec3 ambient{0.35f, 0.35f, 0.4f};
+	/// Luminance of a white `ambient`, in cd/m².
+	float ambientLuminance = 12000.f;
 };
 
 /**
@@ -77,6 +82,17 @@ public:
 	 */
 	static void drawMesh(MeshResource& ioMesh, const math::mat4& iModel, const shared<gpu::Texture2D>& iTexture,
 						 const MeshDrawParams& iParams, bool iTransparent);
+
+	/**
+	 * @brief
+	 *  Draw one submesh with its material, or queue it for `endScene` when the material blends.
+	 * @param[in,out] ioMesh The mesh resource.
+	 * @param[in] iSubmesh Index of the submesh.
+	 * @param[in] iModel The model (object-to-world) matrix.
+	 * @param[in] iParams Tint, entity id and material of the draw (the material must live until `endScene`).
+	 */
+	static void drawSubmesh(MeshResource& ioMesh, size_t iSubmesh, const math::mat4& iModel,
+							const MeshDrawParams& iParams);
 
 	/**
 	 * @brief

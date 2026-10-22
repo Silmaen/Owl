@@ -62,6 +62,7 @@ TEST(EditorSettings, ViewportDisplayOptionsRoundTrip) {
 	EXPECT_TRUE(settings.showCameraPreview);
 	settings.showCameraPreview = false;
 	settings.showGrid = false;
+	settings.editorAmbient = 0.6f;
 	settings.showTriggerIcons = false;
 	settings.gizmoWorldSpace = true;
 	settings.playControlsCollapsed = true;
@@ -71,6 +72,7 @@ TEST(EditorSettings, ViewportDisplayOptionsRoundTrip) {
 	EditorSettings loaded;
 	loaded.loadFromFile(dir / "settings.yml");
 	EXPECT_FALSE(loaded.showGrid);
+	EXPECT_FLOAT_EQ(loaded.editorAmbient, 0.6f);
 	EXPECT_FALSE(loaded.showTriggerIcons);
 	EXPECT_TRUE(loaded.gizmoWorldSpace);
 	EXPECT_TRUE(loaded.playControlsCollapsed);

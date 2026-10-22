@@ -267,40 +267,58 @@ YAML key: `CircleRenderer`
 
 #### MeshRenderer
 
-| Field         | Type        | Default        | Description                                                                            |
-|---------------|-------------|----------------|----------------------------------------------------------------------------------------|
-| `mesh`        | path        | empty          | Asset path of a `.gltf`, `.glb` or `.obj` file                                         |
-| `color`       | `vec4`      | `{1, 1, 1, 1}` | Tint multiplied with the base colour of the file's material                            |
-| `texture`     | `Texture2D` | none           | Replaces the material's base-colour texture                                            |
-| `transparent` | `bool`      | `false`        | Alpha blending (the colour alpha), drawn after the opaque meshes, sorted back-to-front |
+| Field         | Type        | Default        | Description                                                                                                                                                  |
+|---------------|-------------|----------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `mesh`        | path        | empty          | Asset path of a `.gltf`, `.glb` or `.obj` file                                                                                                               |
+| `color`       | `vec4`      | `{1, 1, 1, 1}` | Tint multiplied with the base colour of the file's material                                                                                                  |
+| `texture`     | `Texture2D` | none           | Replaces the material's base-colour texture                                                                                                                  |
+| `transparent` | `bool`      | `false`        | Alpha blending (the colour alpha), drawn after the opaque meshes, sorted back-to-front                                                                       |
+| `materials`   | list        | empty          | One slot per submesh: `material` (`.owlmat` asset path, empty for the file's own material) and `overrides` (fields of the material replaced for this entity) |
 
 YAML key: `MeshRenderer`. Drawn in 3D by a `RendererMesh` layer of the render stack; the file is loaded once per
-engine context and shared by every entity drawing it ([Renderer > Static meshes](renderer.md#renderer-meshes)). Lua:
-`entity.set_mesh` / `get_mesh`, `entity.set_tint` / `get_tint`.
+engine context and shared by every entity drawing it ([Renderer > Static meshes](renderer.md#renderer-meshes)); each
+slot's material is shared through the `MaterialLibrary` ([Renderer > Materials](renderer.md#renderer-materials)). Lua:
+`entity.set_mesh` / `get_mesh`, `entity.set_tint` / `get_tint`, `entity.set_material` / `get_material`.
 
 #### Light {#light-component}
 
-| Field              | Type    | Default       | Description                                                   |
-|--------------------|---------|---------------|---------------------------------------------------------------|
-| `type`             | `Type`  | `Directional` | `Directional`, `Point` or `Spot`                              |
-| `enabled`          | `bool`  | `true`        | Whether the light shines; switched off it keeps its settings  |
-| `color`            | `vec3`  | `{1, 1, 1}`   | Colour, sRGB as authored                                      |
-| `intensity`        | `float` | `1`           | Multiplier of the colour                                      |
-| `range`            | `float` | `10`          | Distance where a point or spot light reaches zero             |
-| `innerAngle`       | `float` | 20 degrees    | Half angle of the full-intensity spot cone (radians in YAML)  |
-| `outerAngle`       | `float` | 30 degrees    | Half angle where the spot reaches zero (radians in YAML)      |
-| `castShadows`      | `bool`  | `true`        | Directional only: the first such light casts cascaded shadows |
-| `shadowDistance`   | `float` | `60`          | Distance from the camera the shadows cover                    |
-| `cascadeCount`     | `uint`  | `4`           | Number of shadow cascades, 1 to 4                             |
-| `shadowResolution` | `uint`  | `1024`        | Texels of each cascade, 256 to 4096                           |
-| `shadowBias`       | `float` | `1.5`         | Normal-offset bias, in shadow-map texels                      |
+| Field              | Type    | Default          | Description                                                                                               |
+|--------------------|---------|------------------|-----------------------------------------------------------------------------------------------------------|
+| `type`             | `Type`  | `Directional`    | `Directional`, `Point` or `Spot`                                                                          |
+| `enabled`          | `bool`  | `true`           | Whether the light shines; switched off it keeps its settings                                              |
+| `color`            | `vec3`  | `{1, 1, 1}`      | Colour, sRGB as authored                                                                                  |
+| `intensity`        | `float` | `100000` / `800` | Directional: illuminance in lux (default 100 000). Point and spot: luminous power in lumens (default 800) |
+| `range`            | `float` | `10`             | Distance where a point or spot light reaches zero                                                         |
+| `innerAngle`       | `float` | 20 degrees       | Half angle of the full-intensity spot cone (radians in YAML)                                              |
+| `outerAngle`       | `float` | 30 degrees       | Half angle where the spot reaches zero (radians in YAML)                                                  |
+| `castShadows`      | `bool`  | `true`           | Directional only: the first such light casts cascaded shadows                                             |
+| `shadowDistance`   | `float` | `60`             | Distance from the camera the shadows cover                                                                |
+| `cascadeCount`     | `uint`  | `4`              | Number of shadow cascades, 1 to 4                                                                         |
+| `shadowResolution` | `uint`  | `1024`           | Texels of each cascade, 256 to 4096                                                                       |
+| `shadowBias`       | `float` | `1.5`            | Normal-offset bias, in shadow-map texels                                                                  |
 
-YAML key: `Light`. Shines along -Z of the entity's world transform; a point light ignores the rotation and a
+YAML key: `Light`. `intensity` is in physical units (sun 100 000 lx, overcast 10 000, moon 0.25; candle 12 lm,
+60 W bulb 800, fireplace 2 000); point and spot lights fall off with 1/d² and are cut off smoothly at `range`, and the
+camera `ev100` brings the values back to the displayable range. Shines along -Z of the entity's world transform; a point light ignores the rotation and a
 directional light the position. Lights the 3D layers only (`MeshRenderer` meshes, voxel worlds), up to 64 per frame;
-a scene without a `Light` keeps the sun and ambient of the layer config. See
+the sun of the layer config lights only a scene without any `Light` component (none once the scene has one, even switched off), the ambient comes from the `Environment` or the layer config. See
 [Renderer > Lights and shadows](renderer.md#renderer-lights). Lua: `entity.set_light_color` / `get_light_color`,
 `entity.set_light_intensity` / `get_light_intensity`, `entity.set_light_enabled` / `is_light_enabled`,
 `entity.set_light_range`.
+
+#### Environment {#environment-component}
+
+| Field       | Type    | Default              | Description                                                                                                                                                    |
+|-------------|---------|----------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `hdri`      | path    | empty                | Asset path of the equirectangular `.hdr` image                                                                                                                 |
+| `ambient`   | `vec3`  | `{0.63, 0.63, 0.67}` | Constant sky colour (sRGB) lighting the scene when `hdri` is empty                                                                                             |
+| `intensity` | `float` | `10000`              | Luminance in cd/m² (nits) of a pixel value of 1 of the image, or of a white `ambient` (clear day 10 000, overcast 2 000, dusk 100, night 0.01; 0: lights only) |
+| `rotation`  | `float` | `0`                  | Rotation about the vertical axis (radians)                                                                                                                     |
+| `showSky`   | `bool`  | `true`               | Draw the image behind the scene as its sky                                                                                                                     |
+
+YAML key: `Environment`. The first visible one of the scene lights the 3D layers (`MeshRenderer` meshes, voxel worlds)
+with the image, diffuse and reflections; without an image the `ambient` colour is a constant sky, and without any `Environment` the layer `Ambient` is. See
+[Renderer > Image-based lighting](renderer.md#renderer-ibl).
 
 #### Text
 
@@ -436,14 +454,38 @@ YAML key: `BackgroundTexture`. Only the first entity with this component is rend
 
 ### Camera Component
 
-| Field              | Type          | Default | Description                                           |
-|--------------------|---------------|---------|-------------------------------------------------------|
-| `primary`          | `bool`        | `true`  | Active camera for rendering                           |
-| `fixedAspectRatio` | `bool`        | `false` | Lock aspect ratio                                     |
-| `camera`           | `SceneCamera` | —       | Orthographic or perspective                           |
-| `toneMapping`      | `ToneMapping` | `None`  | `None`, `PbrNeutral` or `Aces` (`camera.toneMapping`) |
+| Field              | Type                  | Default | Description                                                     |
+|--------------------|-----------------------|---------|-----------------------------------------------------------------|
+| `primary`          | `bool`                | `true`  | Active camera for rendering                                     |
+| `fixedAspectRatio` | `bool`                | `false` | Lock aspect ratio                                               |
+| `camera`           | `SceneCamera`         | —       | Orthographic or perspective                                     |
+| `toneMapping`      | `ToneMapping`         | `None`  | `None`, `PbrNeutral` or `Aces` (`camera.toneMapping`)           |
+| `postProcess`      | `PostProcessSettings` | all off | EV100, exposure, bloom, vignette and LUT (`camera.postProcess`) |
 
 YAML key: `Camera`. See [Renderer > Camera System](renderer.md).
+
+| Field                | Type    | Default     | Description                                                                                      |
+|----------------------|---------|-------------|--------------------------------------------------------------------------------------------------|
+| `ev100`              | `float` | `15`        | Exposure value at ISO 100 (15 sunny, 12 overcast, 8 bright interior, 5 dim room, 3 candle light) |
+| `autoExposure`       | `bool`  | `false`     | Exposure follows the average brightness of the frame                                             |
+| `autoExposureMin`    | `float` | `-2`        | Lowest EV100 of the automatic exposure                                                           |
+| `autoExposureMax`    | `float` | `16`        | Highest EV100 of the automatic exposure                                                          |
+| `autoExposureSpeed`  | `float` | `2`         | Adaptation speed, in EV per second                                                               |
+| `exposure`           | `float` | `0`         | Exposure compensation in EV, on top of `ev100` or the automatic exposure                         |
+| `bloom`              | `bool`  | `false`     | Glow of the bright parts                                                                         |
+| `bloomThreshold`     | `float` | `1`         | Luminance above which the colour blooms                                                          |
+| `bloomKnee`          | `float` | `0.5`       | Softness of the threshold                                                                        |
+| `bloomIntensity`     | `float` | `0.1`       | Strength of the glow                                                                             |
+| `bloomScatter`       | `float` | `0.7`       | Spread of the glow                                                                               |
+| `vignette`           | `bool`  | `false`     | Darkened edges                                                                                   |
+| `vignetteIntensity`  | `float` | `0.3`       | Strength of the vignette                                                                         |
+| `vignetteSmoothness` | `float` | `0.4`       | Softness of its edge                                                                             |
+| `vignetteColor`      | `vec3`  | `{0, 0, 0}` | Colour the edges fade to (sRGB)                                                                  |
+| `lut`                | path    | empty       | Asset path of a `.cube` colour-grading LUT                                                       |
+| `lutContribution`    | `float` | `1`         | Weight of the LUT, 0 to 1                                                                        |
+
+`postProcess` sits inside the `camera` map next to `toneMapping`; every key is optional. The passes and their order are in
+[Renderer > Post-process](renderer.md#renderer-post-process).
 
 ### Gameplay Components
 
@@ -938,14 +980,15 @@ Every file the engine writes carries a root `FormatVersion` integer:
 | `settings.yml`, `game_settings.yml` | `SettingsManager::format()`                    |
 | `owl_project.yml` (Owl Nest)        | `nest::Project::format()`                      |
 
-Scenes and prefabs are at version 5:
+Scenes and prefabs are at version 6:
 
-| Step  | Migration                | Effect                                                                                  |
-|-------|--------------------------|-----------------------------------------------------------------------------------------|
-| 1 → 2 | `bindEntityLinksByName`  | A name-only `EntityLink` gets the UUID of the first entity with that tag                |
-| 2 → 3 | `centreLegacyUiText`     | A `UiText` without `horizontalAlignment` gets the centred layout it was drawn with      |
-| 3 → 4 | `convertLegacyHudLayout` | A Y-up `UiRect` moves to the Y-down layout, an older `Canvas` to `ConstantPixels`       |
-| 4 → 5 | `dropUiRendererTag`      | `RendererTag: ui` leaves canvases and widgets, drawn by the HUD pass whatever their tag |
+| Step  | Migration                 | Effect                                                                                                                                                                                         |
+|-------|---------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 1 → 2 | `bindEntityLinksByName`   | A name-only `EntityLink` gets the UUID of the first entity with that tag                                                                                                                       |
+| 2 → 3 | `centreLegacyUiText`      | A `UiText` without `horizontalAlignment` gets the centred layout it was drawn with                                                                                                             |
+| 3 → 4 | `convertLegacyHudLayout`  | A Y-up `UiRect` moves to the Y-down layout, an older `Canvas` to `ConstantPixels`                                                                                                              |
+| 4 → 5 | `dropUiRendererTag`       | `RendererTag: ui` leaves canvases and widgets, drawn by the HUD pass whatever their tag                                                                                                        |
+| 5 → 6 | `convertToPhysicalLights` | Light and Environment factors become physical values that look the same at EV100 15: directional × π·1.2·2^15 lux, point × 4π²·1.2·2^15 lm, spot × π²·1.2·2^15 lm, Environment × 1.2·2^15 nits |
 
 Tilemaps are at version 3 ([Tilemap storage](#tilemap-storage)). The prefab `Version` key is something else: it
 counts the edits of one prefab and feeds `PrefabLink::syncedVersion`. A save embeds its scene with the scene's own

@@ -1,0 +1,10 @@
+Material:
+  FormatVersion: 1
+  metallic: 1
+  roughness: 1
+  baseColor: [0.62, 0.55, 0.5, 1]
+  baseColorMap: nam:textures/pbr/rough_wood/rough_wood_diff.jpg
+  metallicMap: nam:textures/pbr/rough_wood/rough_wood_arm.jpg
+  roughnessMap: nam:textures/pbr/rough_wood/rough_wood_arm.jpg
+  normalMap: nam:textures/pbr/rough_wood/rough_wood_nor.jpg
+  occlusionMap: nam:textures/pbr/rough_wood/rough_wood_arm.jpg

@@ -35,16 +35,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Forward lights: up to 64 lights in a storage buffer (`renderer::GpuLight`) light the mesh and voxel layers, point and spot lights falling to zero at `range`; a scene without a light keeps the sun and ambient of the layer.
 - Cascaded shadow maps for the first shadow-casting directional light (`renderer::computeShadowCascades`, 1 to 4 cascades, texel-snapped, 3x3 PCF) drawn by one frame-graph pass per cascade; image test `lights` checks them on both backends.
 - RHI: `AttachmentSpecification::Format::RedFloat`, `RenderGraph::TargetFormat::Depth` and an explicit size for a transient target.
-- Engine Demo: `mesh_gallery` scene of generated `.glb` meshes (`tools/demo/generate_meshes.py`) under a fly camera, with a transparent sphere, a shadow-casting sun and a warm point light.
+- Engine Demo: `tavern` scene (G from the main menu), a table set with brass dishes by a flickering fireplace in a dark stone room, from Poly Haven CC0 glTF models and texture sets (`tools/demo/fetch_polyhaven.py`) and a procedural hearth and fire (`tools/demo/generate_meshes.py`).
 - `OwlRunner --frame-bench --pick X,Y` logs the entity under a pixel of the capture; image tests `mesh` and `RenderPick` check meshes and picking on both backends.
+- PBR materials: `.owlmat` files (versioned YAML) with the `Standard` (Filament), `Unlit` and `Toon` shading models, clearcoat, sheen and anisotropy layers, six texture maps (separate metallic and roughness), instances through a `parent` and `renderer::MaterialLibrary` sharing one material per file with hot reload.
+- `MeshRenderer` material slots: one per submesh (glTF primitive, OBJ group) holding a `.owlmat` and per-entity overrides, kept by prefabs; the mesh loader reads every glTF material and `AssetScanner` packs materials, parents, maps and overrides.
+- Image-based lighting: the `Environment` component lights meshes and voxel worlds with an equirectangular `.hdr` (GGX-prefiltered levels, order-2 spherical harmonics, split-sum DFG table) and draws it as the sky; without one the layer ambient is a constant sky.
+- Separate `metallicMap` and `roughnessMap` in `.owlmat` with a per-map channel (`metallicChannel`, `roughnessChannel`, `occlusionChannel`), so a packed ARM image or separate grey images both work.
+- Owl Nest material inspector: a reset button per field (default, or stop overriding on an instance or slot), **Reset all**, channel combos and a **Use the occlusion map as ARM** button.
+- Scene lighting: the layer sun lights only a scene without any `Light`, and the `Environment` component gets an `ambient` colour for the constant sky used without an HDRI.
+- Owl Nest **Editor ambient** slider in the viewport **Show** menu (`EditorSettings::editorAmbient`): a grey light on lit 3D surfaces in Edit mode only.
+- Per-camera post-process stack (`renderer::PostProcessSettings`, `camera.postProcess`): exposure in EV, bloom chain in the frame graph, vignette and a `.cube` colour-grading LUT, applied by the colour encode pass.
+- Shader sources may `#include "x.slangh"` (next to the file, then `shaders/common/`); the SPIR-V cache hashes the expanded text.
+- Owl Nest material document (`MaterialDocument`): parameters, parent and per-field overrides, a sphere or cube preview, undo, and a save that updates every entity using the material.
+- Voxel block surfaces: `BlockSurface` (metallic, roughness, emissive, clearcoat) per block type, packed into the voxel vertices and edited in the **Blocks** section of the `VoxelWorld` inspector.
+- Engine Demo: the voxel terrain gets a Poly Haven sky and per-block surfaces (glossy water, icy snow).
+- Owl Nest: **New Material** in the Content Browser, a Materials section in the `MeshRenderer` inspector, a `.owlmat` dragged onto a mesh, Environment and Post process inspectors, `material.create` and `material.assign` commands, Lua `entity.set_material` / `get_material`.
+- Image test `pbr`: gold, plastic, rough steel, clearcoat, emissive and toon spheres under a procedural HDR sky, with bloom, vignette and a warm LUT.
  runs the benchmarks several times and writes a proposed baseline and the thresholds the measured spread calls for.
+- Physical light units: a directional `Light` is an illuminance in lux (100 000) and a point or spot one a power in lumens (800), with inverse-square falloff cut off smoothly at `range`.
+- Camera exposure in EV100 (`PostProcessSettings::ev100`, default 15) applied to the physical lights before shading, and an `autoExposure` with `autoExposureMin`, `autoExposureMax` and `autoExposureSpeed` measured on the GPU (`PostProcess::recordExposure`).
+- `Environment.intensity` is a luminance in nits (default 10 000) and the render-stack layers take `SunIlluminance` and `AmbientLuminance` next to `SunDirection` and `Ambient`.
+- Materials: `emissiveLuminance` in nits replaces `emissiveStrength` (glTF emissive 1 imports as 1000 nits), plus `ior`, `clearcoatIor` and a `normalConvention` (`OpenGl` or `DirectX`); voxel `BlockSurface.emissive` is a luminance in nits.
+- Owl Nest: a reset button (↺) on every field of the Light and Environment inspectors and of the camera Post process section.
 
 ### Changed
 
 - Bench baseline recalibrated on the frame graph and linear HDR code (build 39239, 5 rounds): the editor update costs about 1 µs more per frame, the shaders compile about 20 % slower; four noisy benchmarks get wider thresholds.
 - Bench baseline recalibrated with the lights (build 39286, 5 rounds): the mesh gallery editor update costs 60 % more with its three shadow cascades, the voxel shader compiles 58 % slower; three noisy benchmarks get wider thresholds.
+- Bench baseline recalibrated with the physical lights and the tavern (build 39353, 5 rounds): the tavern replaces the mesh gallery samples, the voxel terrain loads 21 % slower with its HDR sky, six noisy benchmarks get wider thresholds; the voxel mesher reads each block's packed surface from the registry instead of packing it per quad.
 - Roadmap toward 1.0 extended to worlds of any scale: camera-relative rendering, 64-bit positions, articulated bodies, gravity, time warp, planetary terrain, world partition (`design/large-worlds.md`), two v0.7.0 sample games and a pool of optional ones.
 - Vulkan: a draw keeps one pipeline per attachment layout (linear and display), created on its first bind to a framebuffer of that layout.
+- Meshes and voxel worlds are lit by the `Standard` model (Burley diffuse, GGX specular, image-based ambient) instead of Lambert; image-test references regenerated.
+- Each submesh gets its own compact vertex buffer, sized from its index count.
 - Image-test references regenerated: world text is slightly bolder, lit 3D and voxel scenes lighter in the shadows, transparent meshes blend more vividly; HUD-only scenes are unchanged.
 - CI: the benchmarks run on ready pull requests and `PR Ready` waits for them (five checks).
 
@@ -69,6 +91,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Coverage: Clang builds instrument for gcov only, dropping the unused source-based counters (same lines measured, about 5 % faster tests).
 - CI: the artifacts keep the test reports (`TestReports.zip`), the coverage, the documentation and the packages, no longer the binaries nor the libraries.
 - Bench threshold of the flat `path/long_query` cases widened to 30 %: on the bench agent they switch between two modes about 15 % apart.
+- Scene and prefab format 6: `convertToPhysicalLights` turns the old light and environment factors into physical values that look the same at EV100 15.
+- glTF files load every mesh of their default scene with its node transforms (every mesh once without a scene), mirrored transforms flipping the winding.
 
 ### Fixed
 
@@ -79,6 +103,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `mesh3d.slang` reads every attribute of `Mesh3DVertex` (atlas sub-rect, ambient occlusion), which removes two Vulkan validation warnings.
 - Clang 23 builds: its `[[clang::lifetimebound]]` suggestions and the strict-only lifetime-safety checks (false positives on `push_back`) are off, and `MeshVertexCoordinate` declares its explicit instantiations (`extern template`) for the exported class deriving from it; the null window drops its write-only window counter.
 - Documentation site: screenshots keep their colours in dark mode (the theme inverted every image of a table or an image block).
+- Normal maps are no longer mirrored on Vulkan: the cotangent frame follows the handedness of the screen derivatives.
 
 ## [0.4.0] - 2026-10-20
 

@@ -130,6 +130,12 @@ private:
 
 	/**
 	 * @brief
+	 *  Build the contextual tab of a material document (Save / Close).
+	 */
+	void buildMaterialTab();
+
+	/**
+	 * @brief
 	 *  Build the contextual tab of an action map document (Save / Save As / Reset / Close).
 	 */
 	void buildActionMapTab();

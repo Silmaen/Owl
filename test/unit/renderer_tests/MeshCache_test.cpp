@@ -183,3 +183,35 @@ TEST(RendererMeshLayer, registersCreatesAndReadsItsLighting) {
 	EXPECT_EQ(meshLayer->getConfig().ambient, (math::vec3{0.5f, 0.5f, 0.5f}));
 	core::Log::invalidate();
 }
+
+TEST_F(MeshCacheTest, everySubmeshKeepsTheMaterialOfItsFile) {
+	const auto resource = m_cache.get(meshFixture("two_materials.glb"));
+	ASSERT_NE(resource, nullptr);
+	ASSERT_EQ(resource->getSubmeshes().size(), 2u);
+	const auto& first = resource->getFileMaterial(0);
+	const auto& second = resource->getFileMaterial(1);
+	ASSERT_NE(first, nullptr);
+	ASSERT_NE(second, nullptr);
+	EXPECT_NE(first, second);
+	EXPECT_EQ(second->getParameters().alphaMode, AlphaMode::Mask);
+	EXPECT_NE(second->getTexture(MaterialMap::Normal), nullptr);
+	EXPECT_NE(resource->getSubmeshMesh(0, false), nullptr);
+	EXPECT_EQ(resource->getSubmeshMesh(5, false), nullptr);
+	EXPECT_NE(resource->getFileMaterial(9), nullptr);
+}
+
+TEST_F(MeshCacheTest, aBlendedMaterialQueuesItsSubmeshForTheEnd) {
+	const auto resource = m_cache.get(meshFixture("two_materials.glb"));
+	ASSERT_NE(resource, nullptr);
+	MaterialParameters glass;
+	glass.alphaMode = AlphaMode::Blend;
+	const Material blended{glass};
+	const CameraOrtho camera{-1.f, 1.f, -1.f, 1.f};
+	RendererMesh::beginScene(camera, {});
+	const auto model = math::identity<float, 4>();
+	RendererMesh::drawSubmesh(*resource, 0, model, {.entityId = 1, .material = resource->getFileMaterial(0).get()});
+	RendererMesh::drawSubmesh(*resource, 1, model, {.entityId = 2, .material = &blended});
+	EXPECT_EQ(RendererMesh::getStatistics().opaqueDrawCount, 1u);
+	RendererMesh::endScene();
+	EXPECT_EQ(RendererMesh::getStatistics().transparentDrawCount, 1u);
+}

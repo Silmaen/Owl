@@ -54,12 +54,7 @@ auto findRoot() -> std::filesystem::path {
 
 auto loadMesh3d() -> std::string {
 	const auto path = findRoot() / "engine_assets" / "shaders" / "renderer3D" / "mesh3d.slang";
-	std::ifstream in(path, std::ios::binary);
-	if (!in.is_open())
-		return {};
-	std::stringstream ss;
-	ss << in.rdbuf();
-	return ss.str();
+	return renderer::utils::readShaderSource(path);
 }
 }// namespace
 
@@ -95,13 +90,13 @@ TEST(Renderer3D, Mesh3dShaderBindings) {
 
 	const spirv_cross::Compiler compiler(it->second);
 	const auto resources = compiler.get_shader_resources();
-	// Scene UBO at binding 0, lighting UBO at binding 3, lights SSBO at binding 2.
-	ASSERT_EQ(resources.uniform_buffers.size(), 2u);
+	// Scene UBO at binding 0, lighting UBO at binding 3, material UBO at binding 4, lights SSBO at binding 2.
+	ASSERT_EQ(resources.uniform_buffers.size(), 3u);
 	std::vector<uint32_t> uniformBindings;
 	for (const auto& buffer: resources.uniform_buffers)
 		uniformBindings.push_back(compiler.get_decoration(buffer.id, spv::DecorationBinding));
 	std::ranges::sort(uniformBindings);
-	EXPECT_EQ(uniformBindings, (std::vector<uint32_t>{0u, 3u}));
+	EXPECT_EQ(uniformBindings, (std::vector<uint32_t>{0u, 3u, 4u}));
 	ASSERT_EQ(resources.storage_buffers.size(), 1u);
 	EXPECT_EQ(compiler.get_decoration(resources.storage_buffers[0].id, spv::DecorationBinding), 2u);
 	// Texture array at binding 1 (Vulkan offset).

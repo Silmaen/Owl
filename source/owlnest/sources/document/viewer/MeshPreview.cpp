@@ -8,6 +8,7 @@
 
 #include "MeshPreview.h"
 
+#include <data/geometry/MeshLoader.h>
 #include <math/linAlgebra.h>
 #include <math/matrixCreation.h>
 #include <renderer/Renderer3D.h>
@@ -15,7 +16,16 @@
 #include <renderer/gpu/RenderCommand.h>
 
 #include <algorithm>
+#include <array>
 #include <cmath>
+#include <cstddef>
+#include <cstdint>
+#include <filesystem>
+#include <format>
+#include <numbers>
+#include <span>
+#include <string>
+#include <vector>
 
 namespace owl::nest::viewer {
 
@@ -30,6 +40,71 @@ auto boundingRadius(const renderer::MeshGeometry& iGeometry) -> float {
 
 auto orbitDistance(const renderer::MeshGeometry& iGeometry, const MeshOrbit& iOrbit) -> float {
 	return boundingRadius(iGeometry) / std::sin(g_fov * 0.5f) * std::max(iOrbit.zoom, 0.05f);
+}
+
+auto sphereObj() -> std::string {
+	constexpr uint32_t rings = 24;
+	constexpr uint32_t segments = 48;
+	std::string obj;
+	for (uint32_t ring = 0; ring <= rings; ++ring) {
+		const float theta = std::numbers::pi_v<float> * static_cast<float>(ring) / static_cast<float>(rings);
+		for (uint32_t segment = 0; segment <= segments; ++segment) {
+			const float phi =
+					2.f * std::numbers::pi_v<float> * static_cast<float>(segment) / static_cast<float>(segments);
+			const float x = std::sin(theta) * std::cos(phi);
+			const float y = std::cos(theta);
+			const float z = std::sin(theta) * std::sin(phi);
+			obj += std::format("v {} {} {}\nvn {} {} {}\nvt {} {}\n", x, y, z, x, y, z,
+							   static_cast<float>(segment) / static_cast<float>(segments),
+							   1.f - static_cast<float>(ring) / static_cast<float>(rings));
+		}
+	}
+	const auto index = [](const uint32_t iRing, const uint32_t iSegment) -> uint32_t {
+		return iRing * (segments + 1) + iSegment + 1;
+	};
+	const auto corner = [](const uint32_t iIndex) -> std::string { return std::format("{0}/{0}/{0}", iIndex); };
+	for (uint32_t ring = 0; ring < rings; ++ring) {
+		for (uint32_t segment = 0; segment < segments; ++segment) {
+			const auto a = corner(index(ring, segment));
+			const auto b = corner(index(ring + 1, segment));
+			const auto c = corner(index(ring + 1, segment + 1));
+			const auto d = corner(index(ring, segment + 1));
+			obj += std::format("f {} {} {}\nf {} {} {}\n", a, d, b, b, d, c);
+		}
+	}
+	return obj;
+}
+
+auto cubeObj() -> std::string {
+	struct Face {
+		std::array<float, 3> normal;
+		std::array<float, 3> u;
+		std::array<float, 3> v;
+	};
+	constexpr float half = 0.8f;
+	constexpr std::array<Face, 6> faces{{{{1.f, 0.f, 0.f}, {0.f, 0.f, -1.f}, {0.f, 1.f, 0.f}},
+										 {{-1.f, 0.f, 0.f}, {0.f, 0.f, 1.f}, {0.f, 1.f, 0.f}},
+										 {{0.f, 1.f, 0.f}, {1.f, 0.f, 0.f}, {0.f, 0.f, -1.f}},
+										 {{0.f, -1.f, 0.f}, {1.f, 0.f, 0.f}, {0.f, 0.f, 1.f}},
+										 {{0.f, 0.f, 1.f}, {1.f, 0.f, 0.f}, {0.f, 1.f, 0.f}},
+										 {{0.f, 0.f, -1.f}, {-1.f, 0.f, 0.f}, {0.f, 1.f, 0.f}}}};
+	constexpr std::array<std::array<float, 2>, 4> corners{{{-1.f, -1.f}, {1.f, -1.f}, {1.f, 1.f}, {-1.f, 1.f}}};
+	std::string obj;
+	uint32_t base = 1;
+	for (const auto& face: faces) {
+		obj += std::format("vn {} {} {}\n", face.normal[0], face.normal[1], face.normal[2]);
+		for (const auto& [cu, cv]: corners) {
+			obj += std::format("v {} {} {}\nvt {} {}\n", half * (face.normal[0] + cu * face.u[0] + cv * face.v[0]),
+							   half * (face.normal[1] + cu * face.u[1] + cv * face.v[1]),
+							   half * (face.normal[2] + cu * face.u[2] + cv * face.v[2]), (cu + 1.f) * 0.5f,
+							   (cv + 1.f) * 0.5f);
+		}
+		const auto normal = static_cast<uint32_t>(&face - faces.data()) + 1;
+		obj += std::format("f {0}/{0}/{4} {1}/{1}/{4} {2}/{2}/{4}\nf {0}/{0}/{4} {2}/{2}/{4} {3}/{3}/{4}\n", base,
+						   base + 1, base + 2, base + 3, normal);
+		base += 4;
+	}
+	return obj;
 }
 
 auto orbitTransform(const renderer::MeshGeometry& iGeometry, const MeshOrbit& iOrbit) -> math::mat4 {
@@ -80,6 +155,36 @@ void renderMeshPreview(renderer::gpu::Framebuffer& ioTarget, renderer::MeshResou
 									 textured ? ioMesh.getBaseColorTexture() : shared<renderer::gpu::Texture2D>{},
 									 {.tint = textured ? ioMesh.getBaseColorFactor() : g_shadedTint, .entityId = -1},
 									 textured && ioMesh.getBaseColorFactor().a() < 1.f);
+	renderer::RendererMesh::endScene();
+	ioTarget.unbind();
+}
+
+auto makePreviewShape(const PreviewShape iShape) -> shared<renderer::MeshResource> {
+	const auto text = iShape == PreviewShape::Sphere ? sphereObj() : cubeObj();
+	const std::vector<uint8_t> bytes(text.begin(), text.end());
+	const auto loaded = data::geometry::MeshLoader::loadMeshFromMemory(
+			std::span<const uint8_t>{bytes}, ".obj", iShape == PreviewShape::Sphere ? "sphere" : "cube");
+	if (!loaded.mesh)
+		return nullptr;
+	return mkShared<renderer::MeshResource>(std::filesystem::path{}, loaded);
+}
+
+void renderMaterialPreview(renderer::gpu::Framebuffer& ioTarget, renderer::MeshResource& ioMesh,
+						   const MeshOrbit& iOrbit, const renderer::Material& iMaterial) {
+	const auto& size = ioTarget.getSpecification().size;
+	const float aspect = size.y() > 0 ? static_cast<float>(size.x()) / static_cast<float>(size.y()) : 1.f;
+	const bool vulkan = renderer::gpu::RenderCommand::getApi() == renderer::gpu::RenderAPI::Type::Vulkan;
+	const auto camera = makeMeshPreviewCamera(ioMesh.getGeometry(), iOrbit, aspect, vulkan);
+	const math::mat4 world = orbitTransform(ioMesh.getGeometry(), iOrbit);
+	const math::vec4 back = world * math::vec4{0.f, 0.f, -1.f, 0.f};
+	const math::vec3 sun = math::vec3{back.x() + 0.35f, back.y() - 0.8f, back.z()}.normalized();
+	ioTarget.bind();
+	renderer::gpu::RenderCommand::setClearColor(g_background);
+	renderer::gpu::RenderCommand::clear();
+	ioTarget.clearAttachment(1, -1);
+	renderer::RendererMesh::beginScene(camera, {.sunDirection = sun, .ambient = {0.32f, 0.32f, 0.36f}});
+	renderer::RendererMesh::drawSubmesh(ioMesh, 0, math::identity<float, 4>(),
+										{.tint = {1.f, 1.f, 1.f, 1.f}, .entityId = -1, .material = &iMaterial});
 	renderer::RendererMesh::endScene();
 	ioTarget.unbind();
 }
