@@ -66,6 +66,21 @@ FragmentOutput fragmentMain(FragmentInput input) {
 	float2 uvDdx = ddx(input.uv) * input.tileRect.zw;
 	float2 uvDdy = ddy(input.uv) * input.tileRect.zw;
 	float4 texColor = gTextures[VOXEL_ATLAS_SLOT].SampleGrad(atlasUv, uvDdx, uvDdy);
+	// Far away a pixel covers several texels of the nearest-filtered atlas (no mipmaps): with a detailed tileset (one
+	// with relief or roughness maps), four taps spread over the footprint, each wrapped inside the tile, average the
+	// texels the pixel covers instead of picking one.
+	float2 atlasSize;
+	gTextures[VOXEL_ATLAS_SLOT].GetDimensions(atlasSize.x, atlasSize.y);
+	float footprint = max(length(uvDdx * atlasSize), length(uvDdy * atlasSize));
+	if ((hasMap(2) || hasMap(5)) && footprint > 1.5f) {
+		float2 du = ddx(input.uv);
+		float2 dv = ddy(input.uv);
+		float4 sum = texColor;
+		sum += gTextures[VOXEL_ATLAS_SLOT].SampleGrad(input.tileRect.xy + frac(input.uv + 0.35f * (du + dv)) * input.tileRect.zw, uvDdx, uvDdy);
+		sum += gTextures[VOXEL_ATLAS_SLOT].SampleGrad(input.tileRect.xy + frac(input.uv + 0.35f * (du - dv)) * input.tileRect.zw, uvDdx, uvDdy);
+		sum += gTextures[VOXEL_ATLAS_SLOT].SampleGrad(input.tileRect.xy + frac(input.uv - 0.35f * du) * input.tileRect.zw, uvDdx, uvDdy);
+		texColor = lerp(texColor, sum * 0.25f, saturate(footprint - 1.5f));
+	}
 	texColor.rgb = authoredColor(texColor.rgb);
 	if (texColor.a < 0.001f)
 		discard;
