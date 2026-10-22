@@ -38,10 +38,12 @@ protected:
 		gpu::RenderCommand::create(gpu::RenderAPI::Type::Null);
 		gpu::RenderCommand::init();
 		Renderer3D::init();
+		RendererMesh::init();
 	}
 
 	void TearDown() override {
 		m_cache.clear();
+		RendererMesh::shutdown();
 		Renderer3D::shutdown();
 		gpu::RenderCommand::invalidate();
 		core::Log::invalidate();
@@ -148,7 +150,7 @@ TEST_F(MeshCacheTest, gpuMeshesAreUploadedOncePerPipelineState) {
 	EXPECT_EQ(blended->getPipelineState(), Renderer3D::transparentMeshState);
 }
 
-TEST_F(MeshCacheTest, rendererMeshDrawsOpaqueAtOnceAndBlendedAtTheEnd) {
+TEST_F(MeshCacheTest, rendererMeshDrawsOpaqueThenBlendedAtTheEnd) {
 	const auto resource = m_cache.get(cubePath());
 	ASSERT_NE(resource, nullptr);
 	const CameraOrtho camera{-1.f, 1.f, -1.f, 1.f};
@@ -165,6 +167,35 @@ TEST_F(MeshCacheTest, rendererMeshDrawsOpaqueAtOnceAndBlendedAtTheEnd) {
 	EXPECT_NE(Renderer3D::getWhiteTexture(), nullptr);
 }
 
+TEST_F(MeshCacheTest, rendererMeshGroupsOpaqueInstancesAndCullsThem) {
+	const auto resource = m_cache.get(cubePath());
+	ASSERT_NE(resource, nullptr);
+	const CameraOrtho camera{-4.f, 4.f, -4.f, 4.f};
+	const auto at = [](const float iX) -> math::mat4 {
+		auto model = math::identity<float, 4>();
+		model(0, 3) = iX;
+		return model;
+	};
+	RendererMesh::beginScene(camera, {});
+	RendererMesh::drawMesh(*resource, at(0.f), nullptr, {.entityId = 1}, false);
+	RendererMesh::drawMesh(*resource, at(2.f), nullptr, {.entityId = 2}, false);
+	RendererMesh::drawMesh(*resource, at(40.f), nullptr, {.entityId = 3}, false);
+	RendererMesh::drawMesh(*resource, at(-2.f), resource->getBaseColorTexture(), {.entityId = 4}, false);
+	RendererMesh::endScene();
+	const auto stats = RendererMesh::getStatistics();
+	EXPECT_EQ(stats.opaqueDrawCount, 4u);
+	// One group per texture: the three untextured cubes share one draw.
+	EXPECT_EQ(stats.instancedBatchCount, 2u);
+	EXPECT_EQ(stats.visibleInstanceCount, 3u);
+	// No compute on the Null backend: no pyramid, the culling stays by frustum.
+	RendererMesh::buildOcclusion(Renderer3D::getWhiteTexture(), {4, 4}, camera.getViewProjection());
+	RendererMesh::beginScene(camera, {});
+	RendererMesh::drawMesh(*resource, at(0.f), nullptr, {.entityId = 1}, false);
+	RendererMesh::endScene();
+	EXPECT_EQ(RendererMesh::getStatistics().occlusionLevelCount, 0u);
+	RendererMesh::clearOcclusion();
+}
+
 TEST(RendererMeshLayer, registersCreatesAndReadsItsLighting) {
 	core::Log::init(core::Log::Level::Off);
 	RendererMeshLayer::registerWithFactory();
@@ -179,6 +210,10 @@ TEST(RendererMeshLayer, registersCreatesAndReadsItsLighting) {
 	meshLayer->applyConfig("SunDirection: [0, -1, 0]\nAmbient: [0.5, 0.5, 0.5]");
 	EXPECT_EQ(meshLayer->getConfig().sunDirection, (math::vec3{0.f, -1.f, 0.f}));
 	EXPECT_EQ(meshLayer->getConfig().ambient, (math::vec3{0.5f, 0.5f, 0.5f}));
+	EXPECT_FALSE(meshLayer->getConfig().occlusionCulling);
+	meshLayer->applyConfig("OcclusionCulling: true\nOcclusionScale: 4");
+	EXPECT_TRUE(meshLayer->getConfig().occlusionCulling);
+	EXPECT_FLOAT_EQ(meshLayer->getConfig().occlusionScale, 1.f);
 	meshLayer->applyConfig("not: [a map");
 	EXPECT_EQ(meshLayer->getConfig().ambient, (math::vec3{0.5f, 0.5f, 0.5f}));
 	core::Log::invalidate();

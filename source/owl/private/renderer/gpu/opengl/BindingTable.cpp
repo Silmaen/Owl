@@ -109,6 +109,8 @@ void BindingTable::applyActive() {
 	g_applied = g_active;
 }
 
+void BindingTable::invalidateApplied() { g_applied = nullptr; }
+
 void BindingTable::apply() const {
 	for (uint32_t binding = 0; binding < m_uniformBuffers.size(); ++binding) {
 		if (m_uniformBuffers[binding] != 0)

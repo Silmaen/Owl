@@ -1,6 +1,7 @@
-// Renderer3D forward mesh shader: one model matrix and one material per draw, the shading of common/pbr.slangh
-// (Standard, Toon or Unlit), the lights, cascaded shadows and image-based lighting of the scene. In a shadow pass it
-// writes the normalized device depth instead. Outputs colour + the draw's entity id.
+// Renderer3D forward mesh shader: one material per draw, the shading of common/pbr.slangh (Standard, Toon or Unlit),
+// the lights, cascaded shadows and image-based lighting of the scene. In a shadow pass it writes the normalized device
+// depth instead. Outputs colour + the entity id. The model, tint and entity id come from the draw (`gScene`) or, when
+// `gScene.ids.w >= 0`, from the instance list: instance i of the draw reads `gInstances[gVisible[ids.w + i].index]`.
 
 #include "pbr.slangh"
 
@@ -20,7 +21,27 @@ struct FragmentInput {
 	[[vk::location(3)]] float ao : TEXCOORD3;
 	[[vk::location(4)]] float3 worldPos : TEXCOORD4;
 	[[vk::location(5)]] float2 clipDepth : TEXCOORD5;// clip z and w, for the shadow-map depth.
+	[[vk::location(6)]] nointerpolation float4 tint : TEXCOORD6;
+	[[vk::location(7)]] nointerpolation int entityId : TEXCOORD7;
 };
+
+// One instance of an instanced draw (must match `renderer::MeshInstance`).
+struct MeshInstance {
+	column_major float4x4 model;
+	float4 tint;
+	int4 ids;// x: entity id; yzw unused.
+};
+
+// Index of a visible instance, wrapped in a struct of its own (one element type per storage buffer).
+struct VisibleInstance {
+	uint index;
+};
+
+[[vk::binding(5)]]
+StructuredBuffer<MeshInstance> gInstances;
+
+[[vk::binding(6)]]
+StructuredBuffer<VisibleInstance> gVisible;
 
 struct FragmentOutput {
 	float4 color : SV_Target0;
@@ -33,13 +54,22 @@ struct VertexOutput {
 };
 
 [shader("vertex")]
-VertexOutput vertexMain(VertexInput input) {
+VertexOutput vertexMain(VertexInput input, uint instanceId : SV_InstanceID) {
 	VertexOutput output;
-	float4 worldPos = mul(gScene.model, float4(input.position, 1.0f));
+	float4x4 model = gScene.model;
+	output.frag.tint = gScene.tint;
+	output.frag.entityId = gScene.ids.x;
+	if (gScene.ids.w >= 0) {
+		const MeshInstance instance = gInstances[gVisible[uint(gScene.ids.w) + instanceId].index];
+		model = instance.model;
+		output.frag.tint = instance.tint;
+		output.frag.entityId = instance.ids.x;
+	}
+	float4 worldPos = mul(model, float4(input.position, 1.0f));
 	output.svPosition = mul(gScene.viewProjection, worldPos);
 	output.frag.worldPos = worldPos.xyz;
 	output.frag.clipDepth = output.svPosition.zw;
-	output.frag.normal = normalize(mul((float3x3) gScene.model, input.normal));
+	output.frag.normal = normalize(mul((float3x3) model, input.normal));
 	output.frag.uv = input.tileRect.xy + input.uv * input.tileRect.zw;
 	output.frag.texIndex = input.texIndex;
 	output.frag.ao = input.ao;
@@ -55,7 +85,7 @@ FragmentOutput fragmentMain(FragmentInput input, bool frontFace : SV_IsFrontFace
 		float4 texel = gTextures[NonUniformResourceIndex(input.texIndex)].Sample(input.uv);
 		base *= float4(authoredColor(texel.rgb), texel.a);
 	}
-	base *= float4(authoredColor(gScene.tint.rgb), gScene.tint.a);
+	base *= float4(authoredColor(input.tint.rgb), input.tint.a);
 	int alphaMode = gMaterial.model.y;
 	if (alphaMode == 1 && base.a < gMaterial.emissive.w)
 		discard;
@@ -113,6 +143,6 @@ FragmentOutput fragmentMain(FragmentInput input, bool frontFace : SV_IsFrontFace
 	s.sheenRoughness = clamp(gMaterial.sheen.w, MIN_ROUGHNESS, 1.0f);
 	s.anisotropy = clamp(gMaterial.layers.z, -1.0f, 1.0f);
 	output.color = float4(shadeSurface(s), base.a);
-	output.entityID = gScene.ids.x;
+	output.entityID = input.entityId;
 	return output;
 }

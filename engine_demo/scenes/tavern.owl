@@ -5,6 +5,8 @@ EnabledRenderers:
     Enabled: false
   - Name: mesh_world
     Enabled: true
+    Overrides:
+      OcclusionCulling: true
   - Name: ui
     Enabled: false
 Entities:

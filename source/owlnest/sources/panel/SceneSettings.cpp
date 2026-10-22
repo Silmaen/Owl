@@ -22,6 +22,7 @@
 #include <gui/widgets/Toggle.h>
 #include <gui/widgets/Tooltip.h>
 #include <renderer/RendererIsometric.h>
+#include <renderer/RendererMesh.h>
 
 #include <imgui.h>
 
@@ -110,7 +111,8 @@ auto SceneSettings::renderLayerOverridesEditor(const std::string& iTypeKey, YAML
 	bool changed = false;
 	if (!ioOverrides || !ioOverrides.IsMap())
 		ioOverrides = YAML::Node{YAML::NodeType::Map};
-	if (iTypeKey != "Renderer2D" && iTypeKey != "RendererRaycast" && iTypeKey != "RendererIsometric") {
+	if (iTypeKey != "Renderer2D" && iTypeKey != "RendererRaycast" && iTypeKey != "RendererIsometric" &&
+		iTypeKey != "RendererMesh") {
 		ImGui::TextDisabled("No editable override for the type '%s'.", iTypeKey.c_str());
 		return false;
 	}
@@ -143,6 +145,23 @@ auto SceneSettings::renderLayerOverridesEditor(const std::string& iTypeKey, YAML
 		}
 	} else if (iTypeKey == "RendererIsometric") {
 		changed = renderIsometricOverrides(ioOverrides);
+	} else if (iTypeKey == "RendererMesh") {
+		const renderer::MeshLayerConfig defaults;
+		bool occlusion = ioOverrides["OcclusionCulling"] ? ioOverrides["OcclusionCulling"].as<bool>(false) : false;
+		if (gui::widgets::propertyBool("Occlusion Culling", occlusion, defaults.occlusionCulling,
+									   "Skip the opaque meshes hidden behind others: a depth of the meshes and voxel "
+									   "worlds is drawn first, then each mesh is tested against it on the GPU.")) {
+			ioOverrides["OcclusionCulling"] = occlusion;
+			changed = true;
+		}
+		float scale =
+				ioOverrides["OcclusionScale"] ? ioOverrides["OcclusionScale"].as<float>(1.f) : defaults.occlusionScale;
+		if (gui::widgets::propertyFloat("Occluder Resolution", scale, defaults.occlusionScale, 0.01f, "%.2f x frame",
+										"Resolution of the occluder depth: 1 is exact, lower is cheaper but a mesh "
+										"seen through a gap narrower than a texel may be skipped.")) {
+			ioOverrides["OcclusionScale"] = std::clamp(scale, 0.125f, 1.f);
+			changed = true;
+		}
 	} else {
 		float fov = ioOverrides["Fov"] ? ioOverrides["Fov"].as<float>(75.f) : 75.f;
 		if (gui::widgets::propertyFloat("Field of View", fov, 75.f, 0.5f, "%.1f deg")) {

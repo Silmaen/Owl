@@ -52,11 +52,19 @@ public:
 
 	/**
 	 * @brief
-	 *  Bind an SSBO to its declared slot (delegates to the SSBO).
+	 *  Bind an SSBO to a binding point (delegates to the SSBO).
 	 * @param[in] iBinding Shader binding slot.
 	 * @param[in] iBuffer The SSBO to bind.
 	 */
 	void bindStorageBuffer(uint32_t iBinding, const shared<renderer::gpu::StorageBuffer>& iBuffer) override;
+
+	/**
+	 * @brief
+	 *  Bind a texture to the unit of its binding.
+	 * @param[in] iBinding Shader binding slot (the texture unit).
+	 * @param[in] iTexture The texture.
+	 */
+	void bindTexture(uint32_t iBinding, const shared<renderer::gpu::Texture2D>& iTexture) override;
 
 	/**
 	 * @brief

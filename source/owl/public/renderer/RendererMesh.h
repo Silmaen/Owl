@@ -33,6 +33,10 @@ struct MeshLayerConfig {
 	math::vec3 ambient{0.35f, 0.35f, 0.4f};
 	/// Luminance of a white `ambient`, in cd/m².
 	float ambientLuminance = 12000.f;
+	/// Drop the opaque meshes hidden behind others: the scene draws a depth of the occluders first.
+	bool occlusionCulling = false;
+	/// Resolution of the occluder depth, relative to the frame (1 is exact; lower is cheaper, small gaps may hide).
+	float occlusionScale = 1.f;
 };
 
 /**
@@ -54,7 +58,25 @@ public:
 		uint32_t opaqueDrawCount = 0;
 		/// Blended meshes drawn.
 		uint32_t transparentDrawCount = 0;
+		/// Instanced draws of the opaque meshes (one per mesh, material and texture).
+		uint32_t instancedBatchCount = 0;
+		/// Opaque instances kept by the culling when it runs on the CPU (the GPU count is not read back).
+		uint32_t visibleInstanceCount = 0;
+		/// Levels of the occlusion pyramid the opaque meshes were tested against, 0 without occlusion.
+		uint32_t occlusionLevelCount = 0;
 	};
+
+	/**
+	 * @brief
+	 *  Create the culling pass of the opaque meshes (after `Renderer3D::init`).
+	 */
+	static void init();
+
+	/**
+	 * @brief
+	 *  Release the GPU resources of the layer (before `Renderer3D::shutdown`).
+	 */
+	static void shutdown();
 
 	/**
 	 * @brief
@@ -66,13 +88,14 @@ public:
 
 	/**
 	 * @brief
-	 *  Draw the blended meshes queued since `beginScene`, back-to-front, then end the frame.
+	 *  Draw the opaque meshes queued since `beginScene`, one culled instanced draw per mesh, material and texture, then
+	 *  the blended ones back-to-front, and end the frame.
 	 */
 	static void endScene();
 
 	/**
 	 * @brief
-	 *  Draw a mesh, or queue it for `endScene` when it is blended.
+	 *  Queue a mesh for `endScene`: opaque ones are grouped into instanced draws, blended ones sorted back-to-front.
 	 * @param[in,out] ioMesh The mesh resource (its GPU mesh is uploaded by `MeshResource::getMesh` before the layers
 	 *  draw).
 	 * @param[in] iModel The model (object-to-world) matrix.
@@ -85,7 +108,7 @@ public:
 
 	/**
 	 * @brief
-	 *  Draw one submesh with its material, or queue it for `endScene` when the material blends.
+	 *  Queue one submesh with its material for `endScene`, instanced when opaque, sorted when the material blends.
 	 * @param[in,out] ioMesh The mesh resource.
 	 * @param[in] iSubmesh Index of the submesh.
 	 * @param[in] iModel The model (object-to-world) matrix.
@@ -93,6 +116,22 @@ public:
 	 */
 	static void drawSubmesh(MeshResource& ioMesh, size_t iSubmesh, const math::mat4& iModel,
 							const MeshDrawParams& iParams);
+
+	/**
+	 * @brief
+	 *  Build the occlusion pyramid the next passes with the same view-projection test their opaque meshes against.
+	 * @param[in] iDepth Depth of the occluders (`RenderGraph::TargetFormat::Depth`), finished being drawn.
+	 * @param[in] iSize Size of the depth, in texels.
+	 * @param[in] iViewProjection View-projection the occluders were drawn with.
+	 */
+	static void buildOcclusion(const shared<gpu::Texture2D>& iDepth, const math::vec2ui& iSize,
+							   const math::mat4& iViewProjection);
+
+	/**
+	 * @brief
+	 *  Forget the occlusion pyramid (at the start of a frame).
+	 */
+	static void clearOcclusion();
 
 	/**
 	 * @brief

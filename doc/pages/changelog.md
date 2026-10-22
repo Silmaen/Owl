@@ -57,10 +57,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Environment.intensity` is a luminance in nits (default 10 000) and the render-stack layers take `SunIlluminance` and `AmbientLuminance` next to `SunDirection` and `Ambient`.
 - Materials: `emissiveLuminance` in nits replaces `emissiveStrength` (glTF emissive 1 imports as 1000 nits), plus `ior`, `clearcoatIor` and a `normalConvention` (`OpenGl` or `DirectX`); voxel `BlockSurface.emissive` is a luminance in nits.
 - Owl Nest: a reset button (↺) on every field of the Light and Environment inspectors and of the camera Post process section.
+- `data::geometry::LooseOctree`, `math::Frustum` and `math::transformBox`: a loose octree of boxes keyed by entity index with frustum and box queries, whose root grows toward far boxes.
+- `Scene::getMeshSpatialIndex`, `getSpriteSpatialIndex` and `getCullingStatistics`: two octrees refiled only when a world matrix or a mesh changes, which the mesh pass and the 2D sprite loop use to skip entities outside the view frustum.
+- Instanced mesh drawing: `RendererMesh` groups opaque meshes by mesh, material and texture into one instanced draw each, with per-instance data (`renderer::MeshInstance`) in a storage buffer.
+- GPU frustum culling of mesh instances (`mesh_culling.slang`, `renderer::utils::MeshCullingPass`) writing one `DrawIndexedIndirectCommand` per group, drawn by `Renderer3D::drawMeshIndirect`; the Null backend culls on the CPU.
+- Hi-Z occlusion culling for the `RendererMesh` layer (`OcclusionCulling`, `OcclusionScale`, editable in the Owl Nest Scene Settings): an occluder depth pass builds a max-depth pyramid that drops hidden instances; the Engine Demo `tavern` enables it.
+- `RendererMesh::Statistics::instancedBatchCount`, `visibleInstanceCount` and `occlusionLevelCount`; benchmarks `culling/octree/*` and `culling/mesh_flush/*`; image test `occlusion`.
+- RHI: `RenderCommand::drawIndexedIndirectAt` (one indirect command) and `ComputeShader::bindTexture` (sampled textures in compute shaders, OpenGL and Vulkan).
+- `RendererRaycast::drawSprites` draws every visible sprite in one instanced call (`raycast_sprite.slang`), sorted far to near on the GPU by `BitonicSortPass` and hidden behind the wall of their column; image test `raycast_sprites`.
 
 ### Changed
 
 - Roadmap: editor reach before the v0.5.0 release (scripts, Lua functions and tuned values visible in Owl Nest, behaviour components, editor fixes), `design/editor-reach.md`.
+- CI benchmarks: a failed case is measured again alone 5 times (`--confirm_rounds`), and a failure publishes `linux-bench.proposed-baseline.json`, the baseline with the failed cases set to their confirmed median and the new cases added.
 - Bench baseline recalibrated on the frame graph and linear HDR code (build 39239, 5 rounds): the editor update costs about 1 µs more per frame, the shaders compile about 20 % slower; four noisy benchmarks get wider thresholds.
 - Bench baseline recalibrated with the lights (build 39286, 5 rounds): the mesh gallery editor update costs 60 % more with its three shadow cascades, the voxel shader compiles 58 % slower; three noisy benchmarks get wider thresholds.
 - Bench baseline recalibrated with the physical lights and the tavern (build 39353, 5 rounds): the tavern replaces the mesh gallery samples, the voxel terrain loads 21 % slower with its HDR sky, six noisy benchmarks get wider thresholds; the voxel mesher reads each block's packed surface from the registry instead of packing it per quad.
@@ -70,6 +79,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Each submesh gets its own compact vertex buffer, sized from its index count.
 - Image-test references regenerated: world text is slightly bolder, lit 3D and voxel scenes lighter in the shadows, transparent meshes blend more vividly; HUD-only scenes are unchanged.
 - CI: the benchmarks run on ready pull requests and `PR Ready` waits for them (five checks).
+- OpenGL `ComputeShader::bindStorageBuffer` binds at the given binding.
 
 - The version is written only in `CMakeLists.txt`: the engine exposes its commit (`getVersionFullString()`), Owl Nest shows it in the title bar and on the File screen, Lua `engine.version()` fills the Engine Demo menu, the shipped projects export the engine version and the README badge reads the latest release.
 - CI: a pull request changing a CMake file no longer runs the whole Clang-Tidy: the merge base is configured too and only the units whose compile command moved join the diff scope.
@@ -97,6 +107,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- OpenGL: the SPIR-V to GLSL translation names each storage block after its variable, which fixes the link errors of a vertex and a fragment shader sharing storage buffers.
+- GCC builds again: the post-process LUT is held by value in `Scene`, no reference bound to a temporary path.
 - Vulkan pipelines turn blending off on a colour attachment whose format cannot blend, and data attachments (`RedInteger`, `RedFloat`) get nearest samplers.
 - Owl Nest Content Browser: the right-click menu opens again (it was drawn outside the window that opened it).
 - Owl Nest keeps the desktop identifier `owl-nest-owl-engine-editor` whatever its version, so a desktop entry keeps its icon.

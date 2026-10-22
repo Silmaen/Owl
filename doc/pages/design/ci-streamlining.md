@@ -47,4 +47,4 @@ measured on 2026-10-19 and 2026-10-20:
 | Compiler cache         | Done: PCH sloppiness passed to ccache (warm `linux-clang-release` 108 s → 4 s); ccache 4.14 on the Windows agent |
 | Smaller artefacts      | Done: test reports, coverage, documentation and packages only, no binaries nor libraries                         |
 | Fewer duplicate builds | Done: the bridge plugin cancels superseded builds and reuses a green verdict for the same commit                 |
-| Shorter builds         | Measured (cold `linux-clang-release`: 2685 s CPU, tests 40 %, Owl Nest 29 %); next: the test build cost          |
+| Shorter builds         | Done: measured (cold `linux-clang-release`: 2685 s CPU, tests 40 %, Owl Nest 29 %), ccache warm on every agent   |

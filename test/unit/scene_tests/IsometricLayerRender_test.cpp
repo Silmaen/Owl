@@ -87,6 +87,8 @@ auto makeScene() -> shared<scene::Scene> {
 	cam.getComponent<scene::component::Transform>().transform.translation() = math::vec3{4.f, 4.f, 5.f};
 	auto& camera = cam.addComponent<scene::component::Camera>();
 	camera.primary = true;
+	// Far enough for the sprites at z = 0, as the 2D scenes of the Engine Demo.
+	camera.camera.setOrthographicFarClip(10.f);
 	addSprite(*sc, "Flat", {0.f, 0.f, 0.f}, 1.f, "");
 	addSprite(*sc, "House", {4.f, 4.f, 0.f}, 1.f, "iso");
 	addSprite(*sc, "Smoke", {5.f, 4.f, 1.f}, 0.5f, "iso");

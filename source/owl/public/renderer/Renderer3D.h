@@ -12,6 +12,7 @@
 #include "renderer/Camera.h"
 #include "renderer/EnvironmentMap.h"
 #include "renderer/gpu/DrawData.h"
+#include "renderer/gpu/StorageBuffer.h"
 #include "renderer/gpu/Texture.h"
 
 #include <array>
@@ -130,15 +131,38 @@ struct MeshDrawParams {
 
 /**
  * @brief
- *  Minimal forward 3D renderer: depth-tested, textured, single directional light.
+ *  One instance of an instanced mesh draw, as the `mesh3d` shader reads it (std430, 96 bytes).
+ */
+struct MeshInstance {
+	/// Model (object-to-world) matrix.
+	math::mat4 model = math::identity<float, 4>();
+	/// Colour multiplied with the base colour of the material.
+	math::vec4 tint{1.f, 1.f, 1.f, 1.f};
+	/// x: entity id written for picking (`-1` for none); yzw unused.
+	std::array<int32_t, 4> ids{-1, 0, 0, 0};
+};
+
+/**
+ * @brief
+ *  Where an instanced draw reads its instances: draw instance i is `instances[visible[visibleBase + i]]`.
+ */
+struct MeshInstanceBuffers {
+	/// The `MeshInstance` records.
+	shared<gpu::StorageBuffer> instances;
+	/// Indices (one `uint32_t` each) of the instances to draw.
+	shared<gpu::StorageBuffer> visible;
+	/// First entry of the draw in `visible`.
+	uint32_t visibleBase = 0;
+};
+
+/**
+ * @brief
+ *  Forward 3D renderer: depth-tested, PBR-shaded meshes lit by the scene lights, shadows and environment.
  *
- * The first true 3D draw path in the engine. A mesh is uploaded once via
- * `createMesh` (returning an opaque GPU handle) and drawn each frame with a
- * model matrix through `drawMesh`; the renderer feeds a per-frame camera and a
- * per-draw model matrix to the `mesh3d` shader. It is immediate-mode (no
- * batching) and intentionally generic — `RendererVoxel` and future static-mesh
- * renderers build on it. Like `Renderer2D` it is a static facade with no
- * instances; it owns its descriptor block and scene uniform buffer.
+ * A mesh is uploaded once via `createMesh` (returning an opaque GPU handle). `drawMesh` draws it with a model matrix;
+ * `drawMeshInstanced` and `drawMeshIndirect` draw many instances of it with one material, reading the model, tint and
+ * entity id of each instance from a storage buffer (`MeshInstance`). `RendererMesh` and `RendererVoxel` build on it.
+ * Like `Renderer2D` it is a static facade with no instances; it owns its descriptor block and scene uniform buffer.
  */
 class OWL_API Renderer3D final {
 public:
@@ -272,6 +296,13 @@ public:
 	 */
 	[[nodiscard]] static auto isShadowPass() -> bool;
 
+	/**
+	 * @brief
+	 *  Get the view-projection of the current pass (`beginScene`), a cascade's light camera in a shadow pass.
+	 * @return The view-projection.
+	 */
+	[[nodiscard]] static auto getViewProjection() -> math::mat4;
+
 	/// Most lights the meshes read.
 	static constexpr uint32_t g_maxLights = 64;
 	/// EV100 used without a camera (previews): a sunny day.
@@ -331,6 +362,33 @@ public:
 	 */
 	static void drawMeshes(std::span<const MeshHandle> iMeshes, const math::mat4& iModel,
 						   std::span<const shared<gpu::Texture2D>> iTextures = {}, const MeshDrawParams& iParams = {});
+
+	/**
+	 * @brief
+	 *  Draw instances of a mesh with one material (`mesh3d` only), the instance count known on the CPU.
+	 * @param[in] iMesh The mesh to draw.
+	 * @param[in] iBuffers Where the instances are read.
+	 * @param[in] iInstanceCount Number of instances drawn.
+	 * @param[in] iTextures Textures without a material (slot 1 onward).
+	 * @param[in] iParams Material and blending of the draw; tint and entity id come from the instances.
+	 */
+	static void drawMeshInstanced(const MeshHandle& iMesh, const MeshInstanceBuffers& iBuffers, uint32_t iInstanceCount,
+								  std::span<const shared<gpu::Texture2D>> iTextures, const MeshDrawParams& iParams);
+
+	/**
+	 * @brief
+	 *  Draw instances of a mesh with one material (`mesh3d` only), the instance count read on the GPU from an indirect
+	 *  command a culling pass wrote.
+	 * @param[in] iMesh The mesh to draw.
+	 * @param[in] iBuffers Where the instances are read.
+	 * @param[in] iCommands SSBO of `DrawIndexedIndirectCommand` records.
+	 * @param[in] iCommandIndex Command of this draw.
+	 * @param[in] iTextures Textures without a material (slot 1 onward).
+	 * @param[in] iParams Material and blending of the draw; tint and entity id come from the instances.
+	 */
+	static void drawMeshIndirect(const MeshHandle& iMesh, const MeshInstanceBuffers& iBuffers,
+								 const shared<gpu::StorageBuffer>& iCommands, uint32_t iCommandIndex,
+								 std::span<const shared<gpu::Texture2D>> iTextures, const MeshDrawParams& iParams);
 };
 
 }// namespace owl::renderer

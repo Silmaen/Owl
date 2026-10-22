@@ -172,6 +172,30 @@ void RenderAPI::drawIndexedIndirect(const shared<DrawData>& iData, const shared<
 								  static_cast<uint32_t>(sizeof(uint32_t) * 5));
 }
 
+void RenderAPI::drawIndexedIndirectAt(const shared<DrawData>& iData, const shared<gpu::StorageBuffer>& iCommandBuffer,
+									  const uint32_t iCommandIndex) {
+	if (!iData || !iCommandBuffer)
+		return;
+	auto* const cmdSsbo = dynamic_cast<StorageBuffer*>(iCommandBuffer.get());
+	if (cmdSsbo == nullptr) {
+		OWL_CORE_WARN("Vulkan: drawIndexedIndirectAt with a non-Vulkan SSBO.")
+		return;
+	}
+	const auto commands = cmdSsbo->resolve();
+	if (commands.buffer == nullptr)
+		return;
+	auto& vkh = internal::VulkanHandler::get();
+	iData->bind();
+	if (!vkh.inBatch)
+		vkh.beginBatch();
+	auto* const cmd = vkh.getRenderPassCommandBuffer();
+	if (cmd == nullptr)
+		return;
+	constexpr VkDeviceSize stride = sizeof(uint32_t) * 5;
+	vkCmdDrawIndexedIndirect(cmd, commands.buffer, commands.offset + iCommandIndex * stride, 1,
+							 static_cast<uint32_t>(stride));
+}
+
 void RenderAPI::storageBufferMemoryBarrier() {
 	auto& handler = internal::VulkanHandler::get();
 	// The barrier is recorded outside any render pass, between every earlier and every later command.

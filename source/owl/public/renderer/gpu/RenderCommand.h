@@ -268,6 +268,20 @@ public:
 
 	/**
 	 * @brief
+	 *  Indexed indirect draw of one command. See `RenderAPI::drawIndexedIndirectAt`.
+	 * @param[in] iData Draw data with bound vertex / index buffers.
+	 * @param[in] iCommandBuffer SSBO of the commands.
+	 * @param[in] iCommandIndex Index of the command in the buffer.
+	 */
+	static void drawIndexedIndirectAt(const shared<DrawData>& iData, const shared<StorageBuffer>& iCommandBuffer,
+									  const uint32_t iCommandIndex) {
+		++m_drawCallCount;
+		if (m_renderAPI)
+			m_renderAPI->drawIndexedIndirectAt(iData, iCommandBuffer, iCommandIndex);
+	}
+
+	/**
+	 * @brief
 	 *  Check if the API type require initializations.
 	 * @return True if initialization required.
 	 */

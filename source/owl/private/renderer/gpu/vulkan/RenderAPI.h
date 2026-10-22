@@ -182,6 +182,17 @@ public:
 
 	/**
 	 * @brief
+	 *  Indexed indirect draw of one command of an SSBO.
+	 * @param[in] iData Draw data with bound vertex / index buffers.
+	 * @param[in] iCommandBuffer SSBO of the commands.
+	 * @param[in] iCommandIndex Index of the command in the buffer.
+	 */
+	void drawIndexedIndirectAt(const shared<DrawData>& iData,
+							   const shared<renderer::gpu::StorageBuffer>& iCommandBuffer,
+							   uint32_t iCommandIndex) override;
+
+	/**
+	 * @brief
 	 *  Check whether the graphics queue can write timestamps.
 	 * @return True when GPU frame timings are available.
 	 */

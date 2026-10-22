@@ -10,6 +10,7 @@
 #include "scene/Scene.h"
 
 #include "data/voxel/TerrainGenerator.h"
+#include "math/Frustum.h"
 #include "platform/FileUtils.h"
 #include "renderer/BackgroundRenderer.h"
 #include "renderer/CameraOrtho.h"
@@ -24,6 +25,7 @@
 #include "renderer/RendererIsometric.h"
 #include "renderer/RendererIsometricLayer.h"
 #include "renderer/RendererMesh.h"
+#include "renderer/RendererMeshLayer.h"
 #include "renderer/RendererRaycast.h"
 #include "renderer/RendererRaycastLayer.h"
 #include "renderer/RendererTilemap.h"
@@ -165,9 +167,28 @@ void disconnectRuntimeHooks(entt::registry& ioRegistry) {
 
 Scene::Scene()
 	: m_systems{SystemSchedule::getDefault()},
-	  mp_engineContext{app::Application::instanced() ? &app::Application::get().getEngineContext() : nullptr} {}
+	  mp_engineContext{app::Application::instanced() ? &app::Application::get().getEngineContext() : nullptr} {
+	registry.on_construct<component::SpriteRenderer>().connect<&Scene::onSpatialComponentChanged>(*this);
+	registry.on_update<component::SpriteRenderer>().connect<&Scene::onSpatialComponentChanged>(*this);
+	registry.on_destroy<component::SpriteRenderer>().connect<&Scene::onSpatialComponentChanged>(*this);
+	registry.on_construct<component::AnimatedSpriteRenderer>().connect<&Scene::onSpatialComponentChanged>(*this);
+	registry.on_update<component::AnimatedSpriteRenderer>().connect<&Scene::onSpatialComponentChanged>(*this);
+	registry.on_destroy<component::AnimatedSpriteRenderer>().connect<&Scene::onSpatialComponentChanged>(*this);
+	registry.on_construct<component::MeshRenderer>().connect<&Scene::onSpatialComponentChanged>(*this);
+	registry.on_update<component::MeshRenderer>().connect<&Scene::onSpatialComponentChanged>(*this);
+	registry.on_destroy<component::MeshRenderer>().connect<&Scene::onSpatialComponentChanged>(*this);
+}
 
 Scene::~Scene() {
+	registry.on_construct<component::SpriteRenderer>().disconnect<&Scene::onSpatialComponentChanged>(*this);
+	registry.on_update<component::SpriteRenderer>().disconnect<&Scene::onSpatialComponentChanged>(*this);
+	registry.on_destroy<component::SpriteRenderer>().disconnect<&Scene::onSpatialComponentChanged>(*this);
+	registry.on_construct<component::AnimatedSpriteRenderer>().disconnect<&Scene::onSpatialComponentChanged>(*this);
+	registry.on_update<component::AnimatedSpriteRenderer>().disconnect<&Scene::onSpatialComponentChanged>(*this);
+	registry.on_destroy<component::AnimatedSpriteRenderer>().disconnect<&Scene::onSpatialComponentChanged>(*this);
+	registry.on_construct<component::MeshRenderer>().disconnect<&Scene::onSpatialComponentChanged>(*this);
+	registry.on_update<component::MeshRenderer>().disconnect<&Scene::onSpatialComponentChanged>(*this);
+	registry.on_destroy<component::MeshRenderer>().disconnect<&Scene::onSpatialComponentChanged>(*this);
 	disconnectRuntimeHooks(registry);
 	physics::PhysicCommand::destroy(*this);
 }
@@ -722,6 +743,8 @@ void Scene::renderWithStack(const renderer::Camera& iCamera) {
 	prepareVoxelRenderData();
 	prepareTilemapRenderData();
 	prepareMeshRenderData();
+	updateSpatialIndex();
+	renderer::RendererMesh::clearOcclusion();
 	mp_renderCamera = &iCamera;
 	using Graph = renderer::RenderGraph;
 	auto& graph = renderer::Renderer::getRenderGraph();
@@ -733,6 +756,7 @@ void Scene::renderWithStack(const renderer::Camera& iCamera) {
 			"scene clear", [sceneColor](Graph::PassBuilder& ioBuilder) -> void { ioBuilder.write(sceneColor); },
 			[](const Graph::PassContext&) -> void {});
 	recordLightPasses(graph);
+	recordOcclusionPasses(graph);
 	recordEnvironmentPass(graph, sceneColor);
 	recordWorldPasses(graph, sceneColor);
 	const auto* const bound = renderer::gpu::Framebuffer::getBound();
@@ -759,7 +783,7 @@ void Scene::renderWithStack(const renderer::Camera& iCamera) {
 			[this](const Graph::PassContext& iContext) -> void {
 				const auto& targets = m_postTargets;
 				const auto& settings = mp_renderCamera->getPostProcess();
-				const auto& lut = renderer::PostProcess::getLut(settings.lut);
+				const auto lut = renderer::PostProcess::getLut(settings.lut);
 				renderer::ColorEncoder::draw(
 						iContext.getTexture(targets.sceneColor), mp_renderCamera->getToneMapping(),
 						{.settings = &settings,
@@ -868,6 +892,41 @@ void Scene::recordLightPasses(renderer::RenderGraph& ioGraph) {
 					renderShadowCasters(m_shadowCascades.cascades[index].camera);
 				});
 	}
+}
+
+void Scene::recordOcclusionPasses(renderer::RenderGraph& ioGraph) {
+	using Graph = renderer::RenderGraph;
+	m_occlusionToken = {};
+	const auto& layers = renderer::Renderer::getRenderStack().getLayers();
+	float scale = 0.f;
+	for (size_t index = 0; index < layers.size(); ++index) {
+		const auto* meshLayer = dynamic_cast<const renderer::RendererMeshLayer*>(layers[index].get());
+		if (meshLayer != nullptr && meshLayer->getConfig().occlusionCulling &&
+			layerHasContent(meshLayer->getName(), index == 0))
+			scale = std::max(scale, meshLayer->getConfig().occlusionScale);
+	}
+	if (scale <= 0.f)
+		return;
+	const auto* const bound = renderer::gpu::Framebuffer::getBound();
+	const math::vec2ui frameSize = bound != nullptr ? bound->getSpecification().size : m_viewportSize;
+	const math::vec2ui size{std::max(1u, static_cast<uint32_t>(static_cast<float>(frameSize.x()) * scale)),
+							std::max(1u, static_cast<uint32_t>(static_cast<float>(frameSize.y()) * scale))};
+	const Graph::Resource depth = ioGraph.createTarget("occluder depth", Graph::TargetFormat::Depth, size);
+	ioGraph.addPass(
+			"occluder depth", [depth](Graph::PassBuilder& ioBuilder) -> void { ioBuilder.write(depth); },
+			[this](const Graph::PassContext&) -> void { renderShadowCasters(*mp_renderCamera); });
+	// The pyramid lives outside the graph: the 3D passes read this token target so the graph keeps and orders it.
+	m_occlusionToken = ioGraph.createTarget("occlusion pyramid", Graph::TargetFormat::Depth, {1, 1});
+	ioGraph.addPass(
+			"occlusion pyramid",
+			[depth, token = m_occlusionToken](Graph::PassBuilder& ioBuilder) -> void {
+				ioBuilder.read(depth);
+				ioBuilder.write(token);
+			},
+			[this, depth, size](const Graph::PassContext& iContext) -> void {
+				renderer::RendererMesh::buildOcclusion(iContext.getTexture(depth), size,
+													   mp_renderCamera->getViewProjection());
+			});
 }
 
 void Scene::recordEnvironmentPass(renderer::RenderGraph& ioGraph, const renderer::RenderGraph::Resource iSceneColor) {
@@ -988,6 +1047,8 @@ void Scene::recordWorldPasses(renderer::RenderGraph& ioGraph, const renderer::Re
 	const auto writeSceneReadShadows = [this, iSceneColor](Graph::PassBuilder& ioBuilder) -> void {
 		ioBuilder.write(iSceneColor);
 		for (uint32_t index = 0; index < m_shadowSettings.cascadeCount; ++index) ioBuilder.read(m_shadowTargets[index]);
+		if (m_occlusionToken.isValid())
+			ioBuilder.read(m_occlusionToken);
 	};
 	const auto& layers = renderer::Renderer::getRenderStack().getLayers();
 	const bool editorMode = status == Status::Editing;
@@ -1119,9 +1180,13 @@ void Scene::render() {
 		return iWorldIndex >= 0 ? m_worldMatrices[static_cast<size_t>(iWorldIndex)](2, 3)
 								: getWorldTransform(iEntity).translation().z();
 	};
+	m_cullingStats.spritesInFrustum =
+			markVisible(m_spriteIndex, renderer::Renderer2D::getViewProjection(), m_spriteVisible);
 	// Draw sprites
 	for (const auto group = registry.group<component::Transform>(entt::get<component::SpriteRenderer>);
 		 auto entity: group) {
+		if (!isMarkedVisible(m_spriteVisible, entity))
+			continue;
 		const Entity ent{entity, this};
 		if (!isEffectivelyVisible(ent, editorMode))
 			continue;
@@ -1141,6 +1206,8 @@ void Scene::render() {
 	// Draw animated sprites
 	for (const auto view = registry.view<component::Transform, component::AnimatedSpriteRenderer>();
 		 auto entity: view) {
+		if (!isMarkedVisible(m_spriteVisible, entity))
+			continue;
 		const Entity ent{entity, this};
 		if (!isEffectivelyVisible(ent, editorMode))
 			continue;
@@ -1302,10 +1369,13 @@ void Scene::prepareMeshRenderData() {
 		auto& meshRenderer = view.get<component::MeshRenderer>(entity);
 		if (meshRenderer.mesh && meshRenderer.mesh->isStale()) {
 			meshRenderer.mesh.reset();
+			m_spatialDirty = true;
 			for (auto& slot: meshRenderer.materials) slot.invalidate();
 		}
-		if (!meshRenderer.mesh)
+		if (!meshRenderer.mesh) {
 			meshRenderer.mesh = cache.get(meshRenderer.meshPath);
+			m_spatialDirty = m_spatialDirty || meshRenderer.mesh != nullptr;
+		}
 		if (!meshRenderer.mesh)
 			continue;
 		const auto& submeshes = meshRenderer.mesh->getSubmeshes();
@@ -1318,6 +1388,110 @@ void Scene::prepareMeshRenderData() {
 			std::ignore = meshRenderer.mesh->getSubmeshMesh(index, slot.resolved->isBlended());
 		}
 	}
+}
+
+namespace {
+// Local box of a sprite quad: the unit square centred on its origin, flat.
+const math::box3f g_spriteLocalBox{math::vec3{-0.5f, -0.5f, 0.f}, math::vec3{0.5f, 0.5f, 0.f}};
+
+}// namespace
+
+void Scene::onSpatialComponentChanged([[maybe_unused]] entt::registry& ioRegistry,
+									  [[maybe_unused]] const entt::entity iEntity) {
+	m_spatialDirty = true;
+}
+
+void Scene::updateSpatialIndex() {
+	OWL_PROFILE_FUNCTION()
+
+	// Nothing added, removed, replaced nor moved since the last update: the indexes are current.
+	if (!m_spatialDirty && m_spatialStamp == m_worldStamp)
+		return;
+	m_spatialDirty = false;
+	m_spatialStamp = m_worldStamp;
+	++m_spatialPass;
+	const auto refile = [this](std::vector<SpatialEntry>& ioEntries, data::geometry::LooseOctree& ioIndex,
+							   const entt::entity iEntity, const void* iSource, const math::box3f& iLocalBox) -> void {
+		const auto index = static_cast<uint32_t>(entt::to_entity(iEntity));
+		// The nodes `prepareWorldTransforms` checked this pass are current: no walk up the hierarchy again.
+		const WorldNode* node = index < m_worldNodes.size() && m_worldNodes[index].handle == iEntity &&
+												m_worldNodes[index].checkedPass == m_worldPass
+										? &m_worldNodes[index]
+										: resolveWorldNode(iEntity, core::UUID{0});
+		if (node == nullptr)
+			return;
+		if (index >= ioEntries.size())
+			ioEntries.resize(std::max<size_t>(index + 1, ioEntries.size() * 2));
+		auto& entry = ioEntries[index];
+		if (entry.handle != iEntity || entry.stamp != node->stamp || entry.source != iSource) {
+			ioIndex.insert(index, math::transformBox(node->world, iLocalBox));
+			entry.handle = iEntity;
+			entry.stamp = node->stamp;
+			entry.source = iSource;
+		}
+		entry.pass = m_spatialPass;
+	};
+	for (const auto view = registry.view<component::Transform, component::MeshRenderer>(); const auto entity: view) {
+		const auto& meshRenderer = view.get<component::MeshRenderer>(entity);
+		if (!meshRenderer.mesh)
+			continue;
+		const auto& geometry = meshRenderer.mesh->getGeometry();
+		refile(m_meshEntries, m_meshIndex, entity, meshRenderer.mesh.get(),
+			   math::box3f{geometry.boundsMin, geometry.boundsMax});
+	}
+	for (const auto entity: registry.view<component::Transform, component::SpriteRenderer>())
+		refile(m_spriteEntries, m_spriteIndex, entity, nullptr, g_spriteLocalBox);
+	for (const auto entity: registry.view<component::Transform, component::AnimatedSpriteRenderer>())
+		refile(m_spriteEntries, m_spriteIndex, entity, nullptr, g_spriteLocalBox);
+	const auto sweep = [this](std::vector<SpatialEntry>& ioEntries, data::geometry::LooseOctree& ioIndex) -> void {
+		for (size_t index = 0; index < ioEntries.size(); ++index) {
+			if (auto& entry = ioEntries[index]; entry.handle != entt::null && entry.pass != m_spatialPass) {
+				ioIndex.remove(static_cast<uint32_t>(index));
+				entry = {};
+			}
+		}
+	};
+	sweep(m_meshEntries, m_meshIndex);
+	sweep(m_spriteEntries, m_spriteIndex);
+	m_cullingStats.meshesIndexed = static_cast<uint32_t>(m_meshIndex.size());
+	m_cullingStats.spritesIndexed = static_cast<uint32_t>(m_spriteIndex.size());
+}
+
+auto Scene::markVisible(const data::geometry::LooseOctree& iIndex, const math::mat4& iViewProjection, VisibleSet& ioSet)
+		-> uint32_t {
+	OWL_PROFILE_FUNCTION()
+
+	if (ioSet.valid && ioSet.generation == iIndex.getGeneration() && ioSet.viewProjection == iViewProjection)
+		return ioSet.all ? static_cast<uint32_t>(iIndex.size()) : static_cast<uint32_t>(ioSet.ids.size());
+	if (!ioSet.all) {
+		for (const uint32_t id: ioSet.ids) ioSet.marks[id] = 0;
+	}
+	ioSet.ids.clear();
+	ioSet.valid = true;
+	ioSet.generation = iIndex.getGeneration();
+	ioSet.viewProjection = iViewProjection;
+	const auto frustum = math::Frustum::fromViewProjection(iViewProjection);
+	// Everything filed is in view (a 2D scene on one screen): no box to test, no mark to set.
+	ioSet.all = iIndex.size() == 0 || frustum.classify(iIndex.getContentBounds()) == math::Containment::Inside;
+	if (ioSet.all)
+		return static_cast<uint32_t>(iIndex.size());
+	iIndex.query(frustum, ioSet.ids);
+	ioSet.all = ioSet.ids.size() == iIndex.size();
+	if (ioSet.all)
+		return static_cast<uint32_t>(ioSet.ids.size());
+	for (const uint32_t id: ioSet.ids) {
+		if (id >= ioSet.marks.size())
+			ioSet.marks.resize(std::max<size_t>(id + 1, ioSet.marks.size() * 2), 0);
+		ioSet.marks[id] = 1;
+	}
+	return static_cast<uint32_t>(ioSet.ids.size());
+}
+
+auto Scene::isMarkedVisible(const VisibleSet& iSet, const entt::entity iEntity) -> bool {
+	if (iSet.all)
+		return true;
+	const auto index = static_cast<size_t>(entt::to_entity(iEntity));
+	return index < iSet.marks.size() && iSet.marks[index] != 0;
 }
 
 void Scene::resolveMaterialSlot(component::MeshRenderer& ioMeshRenderer, const size_t iSlot,
@@ -1341,7 +1515,10 @@ void Scene::resolveMaterialSlot(component::MeshRenderer& ioMeshRenderer, const s
 void Scene::renderMeshes(const bool iEditorMode) {
 	OWL_PROFILE_FUNCTION()
 
+	m_cullingStats.meshesInFrustum = markVisible(m_meshIndex, renderer::Renderer3D::getViewProjection(), m_meshVisible);
 	for (const auto view = registry.view<component::Transform, component::MeshRenderer>(); const auto entity: view) {
+		if (!isMarkedVisible(m_meshVisible, entity))
+			continue;
 		const Entity ent{entity, this};
 		if (!isEffectivelyVisible(ent, iEditorMode) || !layerAccepts(ent))
 			continue;

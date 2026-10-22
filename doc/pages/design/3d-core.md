@@ -7,8 +7,8 @@ Design page for the v0.5.0 release, summarised in the [Roadmap](../roadmap.md). 
 
 ## Delivery plan
 
-One pull request per row, in this order; 2D lighting, HUD minimap, GPU raycast sprites, spatial partitioning,
-multithreaded preparation and the Mini Transport Tycoon follow.
+One pull request per row, in this order; 2D lighting, HUD minimap, multithreaded preparation and the Mini Transport
+Tycoon follow.
 
 | #  | Pull request                                                                                          | Needs |
 |----|-------------------------------------------------------------------------------------------------------|-------|
@@ -129,6 +129,28 @@ brass shows a grey sky instead of the fire and the room. Local probes give each 
 | Editor    | Volume gizmo, bake button and preview sphere in Owl Nest                                                           |
 | Target    | Planned, v0.6.0, with the point and spot shadows (both make interiors read)                                        |
 
+## Instancing and culling {#instancing-and-culling}
+
+Opaque meshes are drawn as GPU-culled instanced batches; a loose octree spares the CPU the entities outside the view.
+
+| Decision        | Choice                                                                                                                                              |
+|-----------------|-----------------------------------------------------------------------------------------------------------------------------------------------------|
+| Grouping        | `RendererMesh` queues opaque meshes and, at `endScene`, groups them by mesh, material and texture                                                   |
+| Instance buffer | `renderer::MeshInstance` (model, tint, entity id) in a storage buffer, read by `mesh3d.slang` when `gScene.ids.w >= 0`                              |
+| Frustum culling | `mesh_culling.slang` (`renderer::utils::MeshCullingPass`) tests each instance box and writes the visible list                                       |
+| Indirect draws  | One `DrawIndexedIndirectCommand` per group, its instance count set by the compute pass, drawn by `Renderer3D::drawMeshIndirect`                     |
+| RHI             | `RenderCommand::drawIndexedIndirectAt` issues one command (`vkCmdDrawIndexedIndirect`, `glDrawElementsIndirect`), no count buffer                   |
+| Occluder source | With `OcclusionCulling`, the mesh and voxel layers drawn in shadow mode with the render camera into a depth target                                  |
+| Hi-Z pyramid    | Max-depth pyramid built by compute shaders (`hiz_seed.slang`, `hiz_reduce.slang`) in a storage buffer                                               |
+| Occlusion test  | An instance is dropped when its projected box lies behind the farthest occluder depth of the texels it covers                                       |
+| Conservative    | The pyramid level is picked so the box spans at most 2x2 texels; boxes crossing the camera plane are kept                                           |
+| Blended meshes  | Keep the per-draw path, sorted back-to-front                                                                                                        |
+| Null backend    | Culls on the CPU and draws with `drawMeshInstanced`                                                                                                 |
+| Spatial index   | `data::geometry::LooseOctree` of boxes keyed by entity index, one for meshes and one for sprites, refiled when the world matrix or the mesh changes |
+| Octree cells    | Loose cells, minimum half size 8 so small boxes share a cell; the root grows toward far boxes; empty cells are released                             |
+| Octree use      | The mesh pass and the 2D sprite loop skip entities outside the frustum, submission order kept                                                       |
+| Delivered by    | Pull request 9                                                                                                                                      |
+
 ## Graphics
 
 - 3D render pipeline
@@ -153,27 +175,12 @@ brass shows a grey sky instead of the fire and the room. Local probes give each 
     - Configurable post-process stack per camera
     - Effects: tone mapping, bloom, vignette, colour grading (LUT)
     - Chromatic aberration, film grain, motion blur and depth of field move to v0.6.0
-- Compute-driven frustum / occlusion culling pre-pass feeding indirect draws
-    - The `renderer::utils::FrustumCullingPass` utility + `frustum_culling.slang` shader ship, alongside the
-      `RenderCommand::drawIndexedIndirect` API (Vulkan `vkCmdDrawIndexedIndirectCount`, OpenGL
-      `glMultiDrawElementsIndirectCount`, Null no-op). `extractFrustumPlanes(viewProj)` Gribb-Hartmann helper for the
-      CPU side. Headless tests on the Null backend pass.
-    - With the SSBO-indexed instanced pipeline landed in v0.2.0, adoption is a drop-in: populate the AABB SSBO from
-      the scene graph and replace the per-entity draw loop with one `drawIndexedIndirect`.
-    - Comes after the v0.3.0 image tests: these passes never ran on a real GPU (B-20, F-01).
-- GPU raycast sprite stripes + `BitonicSortPass` adoption (#32, deferred from v0.2.0)
-    - The `BitonicSortPass` utility + `bitonic_sort.slang` shipped and are headless-tested in v0.2.0, but adoption was
-      held back because `RendererRaycast::drawSprites` still emits per-column via `Renderer2D::drawQuad` (only the
-      wall stripes moved to `raycast_stripe.slang` in v0.2.0 Phase 3).
-    - Remaining work: move sprite stripe emission to a GPU instanced shader fed by a GPU-side `zBuffer[]` occlusion
-      read (drop the per-frame readback the wall path currently does), then dispatch `BitonicSortPass` on the sprite
-      depths so the back-to-front order stays on the GPU and feeds the stripe shader directly — zero CPU readback.
-      Same applies to the door / pushwall stripe consumers.
+- Compute-driven frustum / occlusion culling feeding indirect draws ([Instancing and culling](#instancing-and-culling))
+- GPU raycast sprites: one instanced draw sorted by `BitonicSortPass` ([Raycaster method](../raycaster_method.md))
 - Precision at any distance ([Large worlds](large-worlds.md))
     - Model matrices built relative to the camera on the CPU, so vertices near the camera keep their precision
     - Reversed-Z with a floating-point depth buffer and an infinite far plane, on Vulkan and OpenGL
-- Spatial partitioning (quadtree / octree) for culling, shared by the 2D and 3D layers (former "Rendering
-  optimizations" ongoing item)
+- Spatial partitioning: a loose octree per scene, shared by the 2D and 3D layers ([Instancing and culling](#instancing-and-culling))
 - Multithreaded render preparation (command recording per pass on the task system)
 
 ## Scene editing

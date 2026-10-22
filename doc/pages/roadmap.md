@@ -127,18 +127,19 @@ procedural graphs, tile tools, Lua editor scripts, and Blueprints-style visual s
 **Goal:** A focused 3D core on the repaired Owl RHI — static meshes, PBR, lights and shadows for 2D, isometric and 3D,
 render graph, essential post-processing — with full 3D editing ([details](design/3d-core.md)).
 
-- ![In Progress][progress] CI streamlining, before anything else of the cycle: a pull request answered in under 10 min, builds halved, `-j` everywhere, full suites at night, artefacts under 50 MB ([CI streamlining](design/ci-streamlining.md))
+- ![Done][done] CI streamlining, before anything else of the cycle: a pull request answered in under 10 min, builds halved, `-j` everywhere, full suites at night, artefacts under 50 MB ([CI streamlining](design/ci-streamlining.md))
 - ![In Progress][progress] 3D render pipeline (forward, depth, perspective camera)
 - ![Done][done] Render graph hosting the renderer-stack layers
 - ![Done][done] Lighting: directional, point and spot lights, directional shadow maps
 - ![Planned][planned] 2D lighting (point / spot lights, normal-mapped sprites, 2D shadows), isometric sprites included ([2D](design/2d-complete.md))
 - ![Done][done] PBR materials with editor and material library, emissive colour and strength included ([3D core](design/3d-core.md#emissive-and-area-lights))
-- ![In Progress][progress] Static mesh component with instancing
+- ![Done][done] Static mesh component with instancing
 - ![Done][done] Essential post-processing stack (tone mapping, bloom, vignette, LUT)
 - ![Planned][planned] Camera-relative rendering and reversed-Z depth, precise at any distance ([Large worlds](design/large-worlds.md))
-- ![Planned][planned] Compute-driven frustum / occlusion culling with indirect draws
-- ![Planned][planned] GPU raycast sprite stripes and `BitonicSortPass` adoption
-- ![Planned][planned] Spatial partitioning and multithreaded render preparation
+- ![Done][done] Compute-driven frustum / occlusion culling with indirect draws
+- ![Done][done] GPU raycast sprite stripes and `BitonicSortPass` adoption
+- ![Done][done] Spatial partitioning (loose octree shared by the 2D and 3D layers)
+- ![Planned][planned] Multithreaded render preparation
 - ![Planned][planned] HUD minimap on a render target ([HUD system](design/hud-system.md))
 - ![Done][done] 3D scene editing in Owl Nest (3D gizmos, snapping, mesh preview), "look through scene camera" mode
 - ![To evaluate][evaluate] Owl Nest camera preview: the HUD drawn over it, as an option

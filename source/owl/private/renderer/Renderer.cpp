@@ -17,6 +17,7 @@
 #include "renderer/Renderer3D.h"
 #include "renderer/RendererIsometric.h"
 #include "renderer/RendererIsometricLayer.h"
+#include "renderer/RendererMesh.h"
 #include "renderer/RendererMeshLayer.h"
 #include "renderer/RendererRaycast.h"
 #include "renderer/RendererRaycastLayer.h"
@@ -79,6 +80,7 @@ void Renderer::initShaders(const ShaderProgressCallback& iProgress) {
 	RendererTilemap::init();
 	RendererIsometric::init();
 	Renderer3D::init();
+	RendererMesh::init();
 
 	Renderer2DLayer::registerWithFactory();
 	RendererRaycastLayer::registerWithFactory();
@@ -90,6 +92,7 @@ void Renderer::initShaders(const ShaderProgressCallback& iProgress) {
 }
 
 void Renderer::shutdown() {
+	RendererMesh::shutdown();
 	Renderer3D::shutdown();
 	RendererIsometric::shutdown();
 	RendererTilemap::shutdown();

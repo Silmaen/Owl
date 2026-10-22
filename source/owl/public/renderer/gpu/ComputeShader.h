@@ -9,6 +9,7 @@
 #pragma once
 
 #include "StorageBuffer.h"
+#include "Texture.h"
 #include "core/Core.h"
 
 #include <cstdint>
@@ -67,6 +68,15 @@ public:
 	 * @param[in] iBuffer The SSBO to bind.
 	 */
 	virtual void bindStorageBuffer(uint32_t iBinding, const shared<StorageBuffer>& iBuffer) = 0;
+
+	/**
+	 * @brief
+	 *  Wire a texture to a sampled binding (`Sampler2D` in the Slang source) for the next `dispatch` call. Sample it at
+	 *  the texel centres: a texel fetch from a combined sampler is not portable.
+	 * @param[in] iBinding Shader binding slot.
+	 * @param[in] iTexture The texture to sample, finished being written (an attachment after its pass).
+	 */
+	virtual void bindTexture(uint32_t iBinding, const shared<Texture2D>& iTexture) = 0;
 
 	/**
 	 * @brief

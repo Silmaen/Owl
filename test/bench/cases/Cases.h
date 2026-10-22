@@ -146,4 +146,12 @@ void runSlangBenches(Runner& ioRunner);
  */
 void runMcpBenches(Runner& ioRunner);
 
+/**
+ * @brief
+ *  Spatial culling: loose octree insertion, frustum queries (against a brute-force pass) and moves, and the grouped,
+ *  culled flush of the opaque meshes of `RendererMesh` (CPU side, Null backend).
+ * @param[in,out] ioRunner The runner.
+ */
+void runCullingBenches(Runner& ioRunner);
+
 }// namespace owl::bench

@@ -91,7 +91,7 @@ private:
 shared<spdlog::logger> g_CoreLogger;
 shared<spdlog::logger> g_ClientLogger;
 }// namespace
-Log::Level Log::s_verbosity = Level::Trace;
+Log::Level Log::s_verbosity = Level::Info;
 uint64_t Log::s_frameCounter = 0;
 uint64_t Log::s_frequency = g_DefaultFrequency;
 

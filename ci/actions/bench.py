@@ -3,8 +3,11 @@ Action to run the engine benchmarks (`owl_bench`) and compare them to a stored b
 
 The preset must build `owl_bench` (`OWL_BENCHMARK=ON`, e.g. `linux-bench`). The results are written to
 `output/bench/<preset>.json`; the baseline lives in `test/bench/baseline/<preset>.json`. A benchmark whose median
-exceeds its baseline median by more than the threshold, in the full run and again when measured alone, fails the
-action. `test/bench/thresholds.json` gives a wider threshold to the benchmarks matching a pattern, kept apart from the
+exceeds its baseline median by more than the threshold in the full run is measured again alone, ``--confirm_rounds``
+times (5 by default); it fails the action when even its fastest median stays beyond the threshold. Each failure then
+leaves ``output/bench/<preset>.proposed-baseline.json``: the baseline with the failed benchmarks set to the median of
+their confirmation rounds and the benchmarks it lacks taken from the full run, to commit when the change is expected.
+`test/bench/thresholds.json` gives a wider threshold to the benchmarks matching a pattern, kept apart from the
 baseline so a refresh does not lose it. Without a baseline the action only reports, so the first nightly run
 produces the file to commit.
 
@@ -108,6 +111,37 @@ def best_of(first: dict, second: dict) -> dict:
     return {**first, "results": results}
 
 
+def exact_results(report: dict, name: str) -> dict:
+    """
+    Keep the result of one benchmark: ``--filter`` matches a substring, so ``flat1000`` also runs ``flat10000``.
+
+    :param report: Parsed report of a filtered run.
+    :param name: Benchmark name.
+    :return: A report holding only the results named ``name``.
+    """
+    return {**report, "results": [r for r in report.get("results", []) if r["name"] == name]}
+
+
+def refreshed_baseline(baseline: dict, current: dict, rounds: list[dict], names: list[str]) -> dict:
+    """
+    Baseline to commit when the failures are expected.
+
+    :param baseline: Parsed baseline report.
+    :param current: Parsed report of the full run.
+    :param rounds: Parsed reports of the confirmation rounds of the failed benchmarks.
+    :param names: Benchmarks that failed after the confirmation.
+    :return: The baseline with each of ``names`` set to the median of its confirmation rounds (the closest round
+        result), and every benchmark of ``current`` the baseline lacks added as measured.
+    """
+    proposed = {name: value for name, value in proposed_medians(rounds).items() if name in names}
+    replaced = proposed_report(rounds, proposed)["results"] if proposed else []
+    by_name = {r["name"]: r for r in replaced}
+    known = {r["name"] for r in baseline.get("results", [])}
+    results = [by_name.get(r["name"], r) for r in baseline.get("results", [])]
+    results += [r for r in current.get("results", []) if r["name"] not in known and r.get("median_ns", 0) > 0]
+    return {**baseline, "results": results}
+
+
 def proposed_medians(rounds: list[dict]) -> dict[str, float]:
     """
     Median over the rounds of each benchmark's median.
@@ -194,6 +228,7 @@ class Bench(BaseAction):
 
     Extra arguments (after ``--``):
       * ``--threshold=<ratio>`` — allowed median growth, default 0.15;
+      * ``--confirm_rounds=<n>`` — runs of each failed benchmark measured again alone, default 5;
       * ``--update-baseline`` — write this run as the new baseline instead of comparing;
       * ``--calibrate=true`` — run the benchmarks ``--rounds`` times (default 5, at least 2) and write the proposed
         baseline and thresholds to ``output/bench/`` instead of comparing.
@@ -283,15 +318,22 @@ class Bench(BaseAction):
         if overrides_file.is_file():
             overrides = json.loads(overrides_file.read_text(encoding="utf-8")).get("thresholds", {})
         regressions = compare(baseline, current, threshold, overrides)
+        rounds: list[dict] = []
         if regressions:
-            # A shared agent is noisy: a suspect is measured once more alone, a real regression stays slow.
-            log.info(f"Bench: {len(regressions)} suspect(s), measuring them again.")
+            # A shared agent is noisy: each suspect alone, several times; a real regression stays slow in every round.
+            confirm_rounds = max(1, int(args.get("confirm_rounds", DEFAULT_ROUNDS)))
+            log.info(f"Bench: {len(regressions)} suspect(s), measuring them again alone {confirm_rounds} time(s).")
             confirm_file = out_dir / f"{preset.cmake_preset}.confirm.json"
-            again: dict = {"results": []}
-            for reg in regressions:
-                if run_command([str(binary), f"--filter={reg.name}", f"--json={confirm_file}"], cwd=binary.parent) == 0:
-                    again["results"] += json.loads(confirm_file.read_text(encoding="utf-8")).get("results", [])
-            current = best_of(current, again)
+            for index in range(confirm_rounds):
+                again: dict = {"results": []}
+                for reg in regressions:
+                    command = [str(binary), f"--filter={reg.name}", f"--json={confirm_file}"]
+                    if run_command(command, cwd=binary.parent) == 0:
+                        report = json.loads(confirm_file.read_text(encoding="utf-8"))
+                        again["results"] += exact_results(report, reg.name)["results"]
+                log.info(f"Bench: confirmation round {index + 1}/{confirm_rounds} done.")
+                rounds.append(again)
+                current = best_of(current, again)
             regressions = compare(baseline, current, threshold, overrides)
         log.info(f"Bench: {len(medians(current))} benchmarks against the baseline, threshold +{threshold:.0%}.")
         for reg in regressions:
@@ -300,6 +342,16 @@ class Bench(BaseAction):
             )
         if regressions:
             log.error(f"Bench: {len(regressions)} benchmark(s) slower than the baseline beyond the threshold.")
+            refreshed = refreshed_baseline(baseline, current, rounds, [reg.name for reg in regressions])
+            proposed_file = out_dir / f"{preset.cmake_preset}.proposed-baseline.json"
+            proposed_file.write_text(json.dumps(refreshed, indent=2) + "\n", encoding="utf-8")
+            for name, value in proposed_medians(rounds).items():
+                if any(reg.name == name for reg in regressions):
+                    log.info(f"Bench: proposed baseline for {name}: {value:.0f} ns.")
+            log.info(
+                f"Bench: if the change is expected, commit {proposed_file.relative_to(root)} "
+                f"as {baseline_file.relative_to(root)}."
+            )
             return 1
         log.info("Bench: no regression.")
         return 0

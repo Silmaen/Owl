@@ -20,17 +20,22 @@
 #include "renderer/gpu/StorageBuffer.h"
 #include "renderer/gpu/Texture.h"
 #include "renderer/gpu/UniformBuffer.h"
+#include "renderer/utils/BitonicSortPass.h"
 #include "renderer/utils/RaycastDDAPass.h"
 #include "scene/TilemapAsset.h"
 #include "scene/Tileset.h"
 #include "scene/component/Tilemap.h"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstdint>
+#include <iterator>
 #include <limits>
 #include <ranges>
 #include <span>
+#include <utility>
+#include <vector>
 
 namespace owl::renderer {
 
@@ -42,6 +47,38 @@ auto blockId() -> gpu::RendererId {
 }
 
 // std140 layout — must match `StripeParams` in `raycast_stripe.slang`.
+auto spriteBlockId() -> gpu::RendererId {
+	static const gpu::RendererId sId = gpu::RendererDescriptors::getId("RendererRaycastSprites");
+	return sId;
+}
+
+// Texture slots of the `raycast_sprite` shader.
+constexpr uint32_t g_spriteTextureSlots = 16;
+
+// std140 layout: must match `SpriteParams` in `raycast_sprite.slang`.
+struct SpriteParamsUbo {
+	math::mat4 viewProjection;
+	math::vec4 floats;// (stripePxWidth, numRays, unused, unused)
+	uint32_t spriteCount = 0;
+	int32_t linearOutput = 0;
+	std::array<int32_t, 2> pad{};
+};
+
+static_assert(sizeof(SpriteParamsUbo) == 96, "SpriteParamsUbo must match SpriteParams in raycast_sprite.slang.");
+
+// std430 layout: must match `RaycastSprite` in `raycast_sprite.slang`.
+struct GpuSprite {
+	math::vec4 rect;// Pixel space: left, centre y, right, height.
+	math::vec4 uv;// Left, right, bottom, top.
+	math::vec4 color;
+	float depth = 0.f;
+	int32_t textureSlot = 0;
+	int32_t entityId = -1;
+	int32_t pad = 0;
+};
+
+static_assert(sizeof(GpuSprite) == 64, "GpuSprite must match RaycastSprite in raycast_sprite.slang.");
+
 struct StripeParamsUbo {
 	math::mat4 viewProjection;
 	math::vec4 floats;// (viewportY, horizonY, stripePxWidth, yDarken)
@@ -88,6 +125,16 @@ struct State {
 	size_t cachedLayerIdx = 0;
 	// True once the `RendererRaycast` descriptor block has been declared.
 	bool descriptorBlockReady = false;
+	// GPU sprite path: one instanced draw in the order `spriteSort` gives, occluded per column in the shader.
+	shared<gpu::DrawData> spriteDrawData;
+	shared<gpu::UniformBuffer> spriteParams;
+	shared<gpu::StorageBuffer> spritesSsbo;
+	shared<gpu::StorageBuffer> columnDepthsSsbo;
+	uniq<utils::BitonicSortPass> spriteSort;
+	uint32_t spriteCapacity = 0;
+	uint32_t columnCapacity = 0;
+	// True once the `RendererRaycastSprites` descriptor block has been declared.
+	bool spriteBlockReady = false;
 };
 
 shared<State> g_state;
@@ -308,6 +355,50 @@ auto emitWallStripesGpu(const WallStripeContext& iCtx) -> bool {
 
 }// namespace
 
+namespace {
+
+void initSpritePath() {
+	if (gpu::RenderCommand::getApi() == gpu::RenderAPI::Type::Null)
+		return;
+	const std::array<gpu::BindingDecl, 5> bindings{
+			gpu::BindingDecl{.binding = 0,
+							 .type = gpu::BindingType::UniformBuffer,
+							 .count = 1,
+							 .stages = gpu::ShaderStage::VertexFragment},
+			gpu::BindingDecl{.binding = 1,
+							 .type = gpu::BindingType::CombinedImageSampler,
+							 .count = g_spriteTextureSlots,
+							 .stages = gpu::ShaderStage::Fragment},
+			gpu::BindingDecl{.binding = 2,
+							 .type = gpu::BindingType::StorageBuffer,
+							 .count = 1,
+							 .stages = gpu::ShaderStage::Vertex},
+			gpu::BindingDecl{.binding = 3,
+							 .type = gpu::BindingType::StorageBuffer,
+							 .count = 1,
+							 .stages = gpu::ShaderStage::Vertex},
+			gpu::BindingDecl{.binding = 4,
+							 .type = gpu::BindingType::StorageBuffer,
+							 .count = 1,
+							 .stages = gpu::ShaderStage::Fragment},
+	};
+	gpu::RendererDescriptors::declare("RendererRaycastSprites", bindings);
+	g_state->spriteBlockReady = true;
+	const gpu::RendererDescriptors::ScopedActive scoped{spriteBlockId()};
+	g_state->spriteParams =
+			gpu::UniformBuffer::create(static_cast<uint32_t>(sizeof(SpriteParamsUbo)), 0, "RendererRaycastSprites");
+	g_state->spriteDrawData = gpu::DrawData::create();
+	std::vector<uint32_t> indices = {0, 1, 2, 2, 3, 0};
+	g_state->spriteDrawData->init({{"i_CornerIndex", gpu::ShaderDataType::Int}}, "raycast_sprite", indices,
+								  "raycast_sprite", {.blendMode = gpu::BlendMode::Alpha});
+	constexpr std::array<int32_t, 4> corners{0, 1, 2, 3};
+	g_state->spriteDrawData->setVertexData(corners.data(), static_cast<uint32_t>(corners.size() * sizeof(int32_t)));
+	g_state->spriteSort = mkUniq<utils::BitonicSortPass>();
+	g_state->spriteSort->init();
+}
+
+}// namespace
+
 void RendererRaycast::init() {
 	if (g_state) {
 		OWL_CORE_WARN("RendererRaycast already initiated.")
@@ -362,6 +453,7 @@ void RendererRaycast::init() {
 		constexpr std::array<int32_t, 4> corners{0, 1, 2, 3};
 		g_state->stripeDrawData->setVertexData(corners.data(), static_cast<uint32_t>(corners.size() * sizeof(int32_t)));
 	}
+	initSpritePath();
 }
 
 void RendererRaycast::shutdown() {
@@ -374,10 +466,19 @@ void RendererRaycast::shutdown() {
 	g_state->stripeDrawData.reset();
 	g_state->tileUvRectsCpu.clear();
 	g_state->tileUvRectsCpu.shrink_to_fit();
+	if (g_state->spriteSort)
+		g_state->spriteSort->shutdown();
+	g_state->spriteDrawData.reset();
+	g_state->spriteParams.reset();
+	g_state->spritesSsbo.reset();
+	g_state->columnDepthsSsbo.reset();
 	const bool wasReady = g_state->descriptorBlockReady;
+	const bool spritesReady = g_state->spriteBlockReady;
 	g_state.reset();
 	if (wasReady)
 		gpu::RendererDescriptors::release("RendererRaycast");
+	if (spritesReady)
+		gpu::RendererDescriptors::release("RendererRaycastSprites");
 }
 
 void RendererRaycast::beginScene(const Camera& iCamera, const math::vec2ui& iViewport, const RaycastConfig& iConfig) {
@@ -1055,6 +1156,96 @@ void RendererRaycast::drawDoors(std::span<const RaycastDoorData> iDoors) {
 	}
 }
 
+namespace {
+
+// Screen span of a visible sprite, shared by the GPU and the CPU sprite paths.
+struct PlacedSprite {
+	size_t spriteIdx;
+	float depth;
+	float left;
+	float right;
+	float centerY;
+	float height;
+	std::array<float, 4> uv;// Left, right, bottom, top.
+	int colStart;
+	int colEnd;
+};
+
+// One instanced draw of the sprites sorted far to near on the GPU; false when the CPU stripes must draw them.
+auto drawSpritesGpu(std::span<const RaycastSpriteData> iSprites, std::span<const PlacedSprite> iPlaced,
+					const uint32_t iNumRays, const float iStripePxWidth) -> bool {
+	auto& state = *g_state;
+	if (!state.spriteDrawData || !state.spriteParams || !state.spriteSort ||
+		iPlaced.size() > utils::BitonicSortPass::kSortSize)
+		return false;
+	thread_local std::vector<shared<gpu::Texture2D>> textures;
+	thread_local std::vector<GpuSprite> sprites;
+	thread_local std::vector<utils::BitonicSortPass::Item> order;
+	textures.clear();
+	sprites.clear();
+	order.clear();
+	for (const auto& placed: iPlaced) {
+		const auto& source = iSprites[placed.spriteIdx];
+		auto texture = std::dynamic_pointer_cast<gpu::Texture2D>(source.texture);
+		if (!texture)
+			return false;
+		auto slot = std::ranges::find(textures, texture);
+		if (slot == textures.end()) {
+			if (textures.size() >= g_spriteTextureSlots)
+				return false;
+			textures.push_back(std::move(texture));
+			slot = std::prev(textures.end());
+		}
+		order.push_back({.key = -placed.depth, .value = static_cast<uint32_t>(sprites.size())});
+		sprites.push_back({.rect = math::vec4{placed.left, placed.centerY, placed.right, placed.height},
+						   .uv = math::vec4{placed.uv[0], placed.uv[1], placed.uv[2], placed.uv[3]},
+						   .color = applyFog(source.tint, computeFogFactor(placed.depth)),
+						   .depth = placed.depth,
+						   .textureSlot = static_cast<int32_t>(std::distance(textures.begin(), slot)),
+						   .entityId = source.entityId});
+	}
+	const auto count = static_cast<uint32_t>(sprites.size());
+	if (count > state.spriteCapacity || !state.spritesSsbo) {
+		state.spriteCapacity = std::max(count, std::max(state.spriteCapacity * 2, 64u));
+		state.spritesSsbo = gpu::StorageBuffer::create(state.spriteCapacity * static_cast<uint32_t>(sizeof(GpuSprite)),
+													   2, "RendererRaycastSprites");
+	}
+	if (iNumRays > state.columnCapacity || !state.columnDepthsSsbo) {
+		state.columnCapacity = std::max(iNumRays, 256u);
+		state.columnDepthsSsbo = gpu::StorageBuffer::create(state.columnCapacity * static_cast<uint32_t>(sizeof(float)),
+															4, "RendererRaycastSprites");
+	}
+	if (!state.spritesSsbo || !state.columnDepthsSsbo)
+		return false;
+	state.zBufferPerColumn.resize(iNumRays, std::numeric_limits<float>::infinity());
+	// The order is sorted on the GPU before the draw reads it; the sort's dispatch ends the current pass.
+	state.spriteSort->sort(order);
+	if (!state.spriteSort->getBuffer())
+		return false;
+	Renderer2D::nextBatch();
+	const gpu::RendererDescriptors::ScopedActive scoped{spriteBlockId()};
+	SpriteParamsUbo ubo{.viewProjection = state.viewProjection,
+						.floats = math::vec4{iStripePxWidth, static_cast<float>(iNumRays), 0.f, 0.f},
+						.spriteCount = count,
+						.linearOutput = gpu::Framebuffer::isLinearTargetBound() ? 1 : 0};
+	state.spriteParams->setData(&ubo, static_cast<uint32_t>(sizeof(SpriteParamsUbo)), 0);
+	state.spriteParams->bind();
+	state.spritesSsbo->setData(sprites.data(), count * static_cast<uint32_t>(sizeof(GpuSprite)), 0);
+	state.columnDepthsSsbo->setData(state.zBufferPerColumn.data(), iNumRays * static_cast<uint32_t>(sizeof(float)), 0);
+	state.spritesSsbo->bind(2u);
+	state.spriteSort->getBuffer()->bind(3u);
+	state.columnDepthsSsbo->bind(4u);
+	gpu::RenderCommand::beginBatch();
+	gpu::RenderCommand::bindTextures(textures);
+	gpu::RenderCommand::drawDataInstanced(state.spriteDrawData, /*iIndexCount=*/6u, count);
+	gpu::RenderCommand::endBatch();
+	// The scratch list must not keep the textures alive past their owners (nor past the device).
+	textures.clear();
+	return true;
+}
+
+}// namespace
+
 void RendererRaycast::drawSprites(std::span<const RaycastSpriteData> iSprites) {
 	OWL_PROFILE_FUNCTION()
 
@@ -1100,11 +1291,6 @@ void RendererRaycast::drawSprites(std::span<const RaycastSpriteData> iSprites) {
 	if (visible.empty())
 		return;
 
-	// Painter's order: farther sprites first so closer sprites overdraw them.
-	std::ranges::sort(visible, [](const Projected& iLhs, const Projected& iRhs) -> bool {
-		return iLhs.transformY > iRhs.transformY;
-	});
-
 	const math::vec2 vp{static_cast<float>(g_state->viewport.x()), static_cast<float>(g_state->viewport.y())};
 	const uint32_t numRays = (g_state->config.numRays > 0) ? g_state->config.numRays : g_state->viewport.x();
 	if (numRays == 0)
@@ -1113,6 +1299,8 @@ void RendererRaycast::drawSprites(std::span<const RaycastSpriteData> iSprites) {
 	const float horizonY = computeHorizonY();
 	const auto& zBuffer = g_state->zBufferPerColumn;
 
+	thread_local std::vector<PlacedSprite> placed;
+	placed.clear();
 	for (const auto& projected: visible) {
 		const auto& sprite = iSprites[projected.spriteIdx];
 		const float invTy = 1.f / projected.transformY;
@@ -1121,7 +1309,6 @@ void RendererRaycast::drawSprites(std::span<const RaycastSpriteData> iSprites) {
 		if (spriteH < 1.f || spriteW < 1.f)
 			continue;
 		const float screenCenterX = vp.x() * 0.5f * (1.f + projected.transformX * invTy);
-		const float screenCenterY = horizonY + sprite.worldZOffset * vp.y() * invTy;
 		const float screenLeft = screenCenterX - spriteW * 0.5f;
 		const float screenRight = screenCenterX + spriteW * 0.5f;
 		const int colStart = std::max(0, static_cast<int>(std::floor(screenLeft / stripePxWidth)));
@@ -1133,11 +1320,7 @@ void RendererRaycast::drawSprites(std::span<const RaycastSpriteData> iSprites) {
 		const auto texSize = sprite.texture->getSize();
 		const float halfU = texSize.x() > 0 ? 0.5f / static_cast<float>(texSize.x()) : 0.f;
 		const float halfV = texSize.y() > 0 ? 0.5f / static_cast<float>(texSize.y()) : 0.f;
-		const float uvLeft = tc[0].x() + halfU;
-		const float uvRight = tc[1].x() - halfU;
-		const float uvBottom = tc[0].y() + halfV;
-		const float uvTop = tc[3].y() - halfV;
-		bool spriteEmittedAny = false;
+		bool anyColumn = false;
 		for (int col = colStart; col < colEnd; ++col) {
 			const float wallDepth = (static_cast<size_t>(col) < zBuffer.size())
 											? zBuffer[static_cast<size_t>(col)]
@@ -1146,32 +1329,60 @@ void RendererRaycast::drawSprites(std::span<const RaycastSpriteData> iSprites) {
 				g_state->stats.spriteOccludedCount++;
 				continue;
 			}
-			const float colCenterX = (static_cast<float>(col) + 0.5f) * stripePxWidth;
-			const float localX = colCenterX - screenLeft;
-			const float u = std::clamp(localX / spriteW, 0.f, 1.f);
-			const float uHit = uvLeft + u * (uvRight - uvLeft);
+			g_state->stats.spriteStripeCount++;
+			anyColumn = true;
+		}
+		if (!anyColumn)
+			continue;
+		g_state->stats.spriteCount++;
+		placed.push_back({.spriteIdx = projected.spriteIdx,
+						  .depth = projected.transformY,
+						  .left = screenLeft,
+						  .right = screenRight,
+						  .centerY = horizonY + sprite.worldZOffset * vp.y() * invTy,
+						  .height = spriteH,
+						  .uv = {tc[0].x() + halfU, tc[1].x() - halfU, tc[0].y() + halfV, tc[3].y() - halfV},
+						  .colStart = colStart,
+						  .colEnd = colEnd});
+	}
+	if (placed.empty())
+		return;
 
+	if (drawSpritesGpu(iSprites, placed, numRays, stripePxWidth))
+		return;
+
+	// Painter's order: farther sprites first so closer sprites overdraw them.
+	std::ranges::sort(
+			placed, [](const PlacedSprite& iLhs, const PlacedSprite& iRhs) -> bool { return iLhs.depth > iRhs.depth; });
+	for (const auto& sprite: placed) {
+		const auto& source = iSprites[sprite.spriteIdx];
+		const float spriteW = sprite.right - sprite.left;
+		// Sprites take the same fog tint as the walls / backdrop at their depth.
+		const math::vec4 spriteTint = applyFog(source.tint, computeFogFactor(sprite.depth));
+		for (int col = sprite.colStart; col < sprite.colEnd; ++col) {
+			const float wallDepth = (static_cast<size_t>(col) < zBuffer.size())
+											? zBuffer[static_cast<size_t>(col)]
+											: std::numeric_limits<float>::infinity();
+			if (sprite.depth >= wallDepth)
+				continue;
+			const float colCenterX = (static_cast<float>(col) + 0.5f) * stripePxWidth;
+			const float u = std::clamp((colCenterX - sprite.left) / spriteW, 0.f, 1.f);
+			const float uHit = sprite.uv[0] + u * (sprite.uv[1] - sprite.uv[0]);
 			math::Transform stripeTr;
-			stripeTr.translation() = math::vec3{colCenterX, screenCenterY, 0.f};
-			stripeTr.scale() = math::vec3{stripePxWidth, spriteH, 1.f};
+			stripeTr.translation() = math::vec3{colCenterX, sprite.centerY, 0.f};
+			stripeTr.scale() = math::vec3{stripePxWidth, sprite.height, 1.f};
 			const std::array<math::vec2, 4> stripeUv{
-					math::vec2{uHit, uvBottom},
-					math::vec2{uHit, uvBottom},
-					math::vec2{uHit, uvTop},
-					math::vec2{uHit, uvTop},
+					math::vec2{uHit, sprite.uv[2]},
+					math::vec2{uHit, sprite.uv[2]},
+					math::vec2{uHit, sprite.uv[3]},
+					math::vec2{uHit, sprite.uv[3]},
 			};
-			// Sprites take the same fog tint as the walls / backdrop at their depth.
-			const math::vec4 spriteTint = applyFog(sprite.tint, computeFogFactor(projected.transformY));
 			Renderer2D::drawQuad({.transform = stripeTr,
 								  .color = spriteTint,
-								  .texture = sprite.texture,
+								  .texture = source.texture,
 								  .textureCoords = stripeUv,
-								  .entityId = sprite.entityId});
-			g_state->stats.spriteStripeCount++;
-			spriteEmittedAny = true;
+								  .entityId = source.entityId});
 		}
-		if (spriteEmittedAny)
-			g_state->stats.spriteCount++;
 	}
 }
 

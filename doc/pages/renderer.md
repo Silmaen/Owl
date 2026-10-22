@@ -466,9 +466,14 @@ flowchart LR
   hits back to front (painter's order), builds the stripe from `perpDist`, `wallHeight` and the pixel-space view
   projection, and samples `tileUvRects[tileIndex]`; slots past `hitCount[col]` emit an off-screen zero-area quad.
 - UV rects, grid and tile metadata upload on a cache miss only (key `(tilemap, tileset, layer)`).
-- Sprites, doors and pushwalls need each column's opaque depth: the CPU walks the same DDA (`cpuWalkColumn`, no
+- Doors and pushwalls need each column's opaque depth: the CPU walks the same DDA (`cpuWalkColumn`, no
   stripes), cheaper than reading `zBuffer[]` back mid-frame. The Null backend keeps a CPU fallback with the same
   output.
+- `RendererRaycast::drawSprites` draws every visible sprite in one instanced call (`raycast_sprite.slang`, descriptor
+  block `RendererRaycastSprites`, up to 16 textures and 1024 sprites), sorted far to near by `BitonicSortPass`; the
+  fragment shader drops the pixels behind the wall of their column, using the column depths uploaded from the wall
+  pass. More sprites or textures, or the Null backend, fall back to CPU per-column stripes
+  ([Raycaster method](raycaster_method.md)).
 
 ### Configuration
 
@@ -599,6 +604,28 @@ flowchart LR
   or else the material's, and the entity id; opaque meshes as they come,
   blended ones (`transparent: true`, `Renderer3D::transparentMeshState`) at the end, sorted back-to-front by the
   distance of their bounds centre. In Edit the viewport draws the voxel and mesh layers after its 2D composite.
+- **Instancing and culling**: opaque meshes are queued and, at `endScene`, grouped by mesh, material and texture into
+  one instanced draw each; the per-instance data (`renderer::MeshInstance`: model, tint, entity id) sits in a storage
+  buffer that `mesh3d.slang` reads. The compute shader `mesh_culling.slang` (`renderer::utils::MeshCullingPass`) culls
+  every instance against the frustum, writes the visible list and the instance count of one
+  `DrawIndexedIndirectCommand` per group, and `Renderer3D::drawMeshIndirect` draws it (`RenderCommand::drawIndexedIndirectAt`).
+  The Null backend culls on the CPU and draws with `drawMeshInstanced`. `RendererMesh::Statistics` reports
+  `instancedBatchCount`, `visibleInstanceCount` and `occlusionLevelCount`.
+- **Occlusion culling**: with `OcclusionCulling` on, `Scene` records two frame-graph passes before the world: the
+  occluder depth (mesh and voxel layers drawn in shadow mode with the render camera) and a max-depth Hi-Z pyramid
+  built by compute shaders. `mesh_culling` then drops the instances whose projected box lies behind the farthest
+  occluder depth of the texels it covers; boxes crossing the camera plane are kept.
+- **Spatial indexes**: `Scene` keeps two `data::geometry::LooseOctree`s (`getMeshSpatialIndex` for `MeshRenderer`
+  entities, `getSpriteSpatialIndex` for `SpriteRenderer` and `AnimatedSpriteRenderer`), refiled when the world matrix
+  or the mesh changes; the mesh pass and the 2D sprite loop skip entities outside the frustum of the current
+  view-projection (`Scene::getCullingStatistics`).
+
+The `RendererMesh` layer reads these keys (editable in the Owl Nest Scene Settings, RendererMesh section):
+
+| Key                | Default | Effect                                                                                                 |
+|--------------------|---------|--------------------------------------------------------------------------------------------------------|
+| `OcclusionCulling` | `false` | Hi-Z occlusion culling of the opaque instances (Owl Nest: **Occlusion Culling**)                       |
+| `OcclusionScale`   | `1`     | Occluder depth resolution, 0.125 to 1, as a share of the view size (Owl Nest: **Occluder Resolution**) |
 - **Packs**: `AssetScanner` adds the mesh file of every `MeshRenderer`, the buffers and images a `.gltf` names, the
   texture override and the materials of the slots.
 
