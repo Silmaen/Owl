@@ -572,9 +572,9 @@ so the result depends on the fields and the time only.
 
 #### LightFlicker
 
-YAML key: `LightFlicker`, system `owl.light_flicker` (`PostPhysics`). It changes the `Light` of the same entity (or
-the tint of its sprite when it has no light) around the values authored in the scene, which stay untouched: Play runs
-on a copy.
+YAML key: `LightFlicker`, system `owl.light_flicker` (`PostPhysics`). It changes the intensity of the `Light` or
+`Light2D` of the same entity around the values authored in the scene, which stay untouched (Play runs on a copy). The
+colour shift tints the sprite of the entity when it has one, the colour of the light otherwise.
 
 | Field            | Type    | Default     | Description                                                                             |
 |------------------|---------|-------------|-----------------------------------------------------------------------------------------|

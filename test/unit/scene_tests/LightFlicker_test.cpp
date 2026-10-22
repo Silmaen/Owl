@@ -127,3 +127,35 @@ TEST_F(LightFlickerTest, ASpriteWithoutLightIsTintedAndAFollowerBreathesWithTheL
 	EXPECT_TRUE(scaled);
 	EXPECT_FLOAT_EQ(sprite.getComponent<component::SpriteRenderer>().color.r(), 1.f);
 }
+
+TEST_F(LightFlickerTest, ALight2DFlickersItsIntensityAndTheSpriteOfTheEntityTakesTheColourShift) {
+	auto scene = mkShared<Scene>();
+	auto torch = scene->createEntity("Torch");
+	auto& light = torch.addComponent<component::Light2D>();
+	light.intensity = 1.3f;
+	light.color = {1.f, 0.68f, 0.36f};
+	torch.addComponent<component::SpriteRenderer>().color = {1.f, 0.86f, 0.63f, 1.f};
+	auto& flicker = torch.addComponent<component::LightFlicker>();
+	flicker.style = component::LightFlicker::Style::Pulse;
+	flicker.amplitude = 0.2f;
+	flicker.speed = 7.f;
+	flicker.colorShift = {0.f, 0.14f, 0.25f};
+	scene->onStartRuntime();
+	float lowest = 1e9f;
+	float highest = -1e9f;
+	float tintLow = 1e9f;
+	float tintHigh = -1e9f;
+	for (int frame = 0; frame < 300; ++frame) {
+		run(*scene, 1);
+		const float intensity = torch.getComponent<component::Light2D>().intensity;
+		lowest = std::min(lowest, intensity);
+		highest = std::max(highest, intensity);
+		const float blue = torch.getComponent<component::SpriteRenderer>().color.b();
+		tintLow = std::min(tintLow, blue);
+		tintHigh = std::max(tintHigh, blue);
+	}
+	EXPECT_LT(lowest, 1.3f * 0.95f);
+	EXPECT_GT(highest, 1.3f * 1.05f);
+	EXPECT_GT(tintHigh - tintLow, 0.2f);
+	EXPECT_FLOAT_EQ(torch.getComponent<component::Light2D>().color.y(), 0.68f);
+}

@@ -1642,6 +1642,8 @@ OWL_API void Scene::onComponentAdded<component::Light>(const Entity& iEntity, co
 
 template<>
 OWL_API void Scene::onComponentAdded<component::Light2D>(const Entity& iEntity, component::Light2D& ioComponent);
+
+template<>
 OWL_API void Scene::onComponentAdded<component::LightFlicker>(const Entity& iEntity,
 															  component::LightFlicker& ioComponent);
 

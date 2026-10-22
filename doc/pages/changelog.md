@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Owl Nest viewport: the selected `Oscillator` draws its range and the selected `Patrol` its route; a waypoint is picked with a click and moved with a gizmo, as one undoable `component.set`.
 - `Oscillator`, `Patrol` and `Drift` components with the systems `owl.oscillators` (a body moves through the physics step), `owl.patrols` and `owl.drift`, and Lua `entity.set_oscillator_enabled`, `set_patrol_enabled`, `set_drift_enabled` with their `is_` getters.
-- `LightFlicker` component and `owl.light_flicker` system: a fire, candle or pulsing light (or a sprite tint) flickers from its seed and the scene time, with colour shift, position jitter, dips and a `follow` target whose scale breathes with it; `Scene::getRuntimeSeconds()`, Lua `entity.set_flicker_enabled` / `is_flicker_enabled`.
+- `LightFlicker` component and `owl.light_flicker` system: a fire, candle or pulsing `Light` or `Light2D` (and the tint of a sprite) flickers from its seed and the scene time, with colour shift, position jitter, dips and a `follow` target whose scale breathes with it; `Scene::getRuntimeSeconds()`, Lua `entity.set_flicker_enabled` / `is_flicker_enabled`.
 - Reversed-Z depth on both backends: `math::perspectiveReversedZ` (infinite far plane) and `math::orthoReversedZ`, and the public `renderer/ClipSpace.h` every camera builds its projection through.
 - Camera-relative 3D shading: `Renderer3D` uploads `projection * cameraRelativeView(view)` and the shaders work relative to the eye, so rendering stays precise far from the origin.
 - Image test `far_origin`: the lights scene moved 2^20 m away renders like at the origin, shadows included.
