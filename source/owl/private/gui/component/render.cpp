@@ -425,7 +425,7 @@ auto drawMapField(const char* iLabel, std::string& ioName) -> bool {
 	const bool hasPrefix = relative || ioName.starts_with("pat:");
 	const std::string shown = hasPrefix ? ioName.substr(4) : ioName;
 	bool changed = false;
-	if (assetPathRow(iLabel, shown, "drop an image", "Open the texture.", nullptr, false)) {
+	if (assetPathRow(iLabel, shown, "drop an image", "Open the texture.")) {
 		ioName.clear();
 		changed = true;
 	}

@@ -89,6 +89,7 @@ Text and source files open in their own tab (`DocumentType::Code`), from a doubl
 | YAML     | `.yml`, `.yaml`                             | custom      |
 | JSON     | `.json`                                     | built-in    |
 | Markdown | `.md`, `.markdown`                          | built-in    |
+| Text     | `.txt`                                      | none        |
 | XML/SVG  | `.xml`, `.svg`                              | custom      |
 | Slang    | `.slang`                                    | custom      |
 
