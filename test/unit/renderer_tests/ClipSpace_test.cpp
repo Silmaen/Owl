@@ -10,6 +10,7 @@
 
 #include <math/linAlgebra.h>
 #include <math/matrixCreation.h>
+#include <math/trigonometry.h>
 #include <renderer/ClipSpace.h>
 
 #include <cstddef>
