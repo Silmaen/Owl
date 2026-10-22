@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Reversed-Z depth on both backends: `math::perspectiveReversedZ` (infinite far plane) and `math::orthoReversedZ`, and the public `renderer/ClipSpace.h` every camera builds its projection through.
 - Camera-relative 3D shading: `Renderer3D` uploads `projection * cameraRelativeView(view)` and the shaders work relative to the eye, so rendering stays precise far from the origin.
 - Image test `far_origin`: the lights scene moved 2^20 m away renders like at the origin, shadows included.
+- Owl Nest Scene Settings: layer overrides for every key of the raycast (fog, floor and ceiling tilesets), mesh and voxel layers (sun and ambient lighting), through the new `scene.set_renderers` command.
 - `renderer::RenderGraph` (`Renderer::getRenderGraph()`): passes declare the targets they read and write, the graph orders them, drops the useless ones and pools the transient targets; `Scene::renderWithStack` records one pass per renderer-stack layer.
 - HDR scene colour: the world layers render linear into an `Rgba16F` target and a `colour encode` pass (`renderer::ColorEncoder`) tone maps and sRGB-encodes it; the HUD and the editor overlays stay drawn after it.
 - Per-camera tone mapping (`renderer::ToneMapping`: `None`, `PbrNeutral`, `Aces`, saved as `camera.toneMapping`) and a **Tone mapping** combo in the Owl Nest Camera inspector.

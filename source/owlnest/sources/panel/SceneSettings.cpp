@@ -23,8 +23,11 @@
 #include <gui/widgets/Tooltip.h>
 #include <renderer/RendererIsometric.h>
 #include <renderer/RendererMesh.h>
+#include <renderer/RendererRaycast.h>
+#include <renderer/RendererVoxel.h>
 
 #include <imgui.h>
+#include <imgui_stdlib.h>
 
 #include <algorithm>
 #include <array>
@@ -74,6 +77,144 @@ void writeColor(YAML::Node& ioNode, const char* iKey, const math::vec4& iValue) 
 	ioNode[iKey] = seq;
 }
 
+auto overrideFloat(const YAML::Node& iNode, const char* iKey, const float iDefault) -> float {
+	const auto v = iNode[iKey];
+	return v && v.IsScalar() ? v.as<float>(iDefault) : iDefault;
+}
+
+auto overrideVec3(const YAML::Node& iNode, const char* iKey, const math::vec3& iDefault) -> math::vec3 {
+	const auto v = iNode[iKey];
+	if (!v || !v.IsSequence() || v.size() != 3)
+		return iDefault;
+	try {
+		return {v[0].as<float>(), v[1].as<float>(), v[2].as<float>()};
+	} catch (const YAML::Exception&) { return iDefault; }
+}
+
+void writeVec3(YAML::Node& ioNode, const char* iKey, const math::vec3& iValue) {
+	YAML::Node seq{YAML::NodeType::Sequence};
+	seq.push_back(iValue.x());
+	seq.push_back(iValue.y());
+	seq.push_back(iValue.z());
+	ioNode[iKey] = seq;
+}
+
+auto renderColorOverride(YAML::Node& ioOverrides, const char* iKey, const char* iLabel, const math::vec4& iDefault)
+		-> bool {
+	const math::vec4 color = readColor(ioOverrides, iKey, iDefault);
+	std::array<float, 4> values{color.r(), color.g(), color.b(), color.a()};
+	gui::widgets::propertyLabel(iLabel);
+	bool changed = false;
+	if (ImGui::ColorEdit4("##color", values.data())) {
+		writeColor(ioOverrides, iKey, {values[0], values[1], values[2], values[3]});
+		changed = true;
+	}
+	if (gui::widgets::propertyReset(ioOverrides[iKey].IsDefined())) {
+		ioOverrides.remove(iKey);
+		changed = true;
+	}
+	return changed;
+}
+
+auto renderTilesetOverride(YAML::Node& ioOverrides, const char* iKey, const char* iLabel) -> bool {
+	std::string path = ioOverrides[iKey] ? ioOverrides[iKey].as<std::string>("") : std::string{};
+	gui::widgets::propertyLabel(iLabel, "Tileset drawn as the texture of the plane; empty keeps the solid colour.");
+	bool changed = false;
+	if (ImGui::InputTextWithHint("##value", "drop a .owltileset", &path)) {
+		ioOverrides[iKey] = path;
+		changed = true;
+	}
+	if (std::filesystem::path dropped; gui::widgets::assetDropTarget(gui::widgets::AssetKind::Tileset, dropped)) {
+		ioOverrides[iKey] = dropped.generic_string();
+		changed = true;
+	}
+	if (gui::widgets::propertyReset(!path.empty())) {
+		ioOverrides.remove(iKey);
+		changed = true;
+	}
+	return changed;
+}
+
+auto renderTileIndexOverride(YAML::Node& ioOverrides, const char* iKey, const char* iLabel) -> bool {
+	int index = ioOverrides[iKey] ? ioOverrides[iKey].as<int>(0) : 0;
+	if (!gui::widgets::propertyInt(iLabel, index, 0, 0, 65535, "%d", "Index of the tile sampled in the tileset."))
+		return false;
+	ioOverrides[iKey] = std::clamp(index, 0, 65535);
+	return true;
+}
+
+template<typename Config>
+auto renderLightingOverrides(YAML::Node& ioOverrides) -> bool {
+	const Config defaults;
+	bool changed = false;
+	math::vec3 sun = overrideVec3(ioOverrides, "SunDirection", defaults.sunDirection);
+	if (gui::widgets::propertyVec3("Sun Direction", sun, defaults.sunDirection, 0.01f,
+								   "World-space direction the sun light travels.")) {
+		writeVec3(ioOverrides, "SunDirection", sun);
+		changed = true;
+	}
+	float illuminance = overrideFloat(ioOverrides, "SunIlluminance", defaults.sunIlluminance);
+	if (gui::widgets::propertyFloat("Sun Illuminance", illuminance, defaults.sunIlluminance, 100.f, "%.0f lx",
+									"Illuminance of the sun, lighting a scene that has no light.")) {
+		ioOverrides["SunIlluminance"] = std::max(illuminance, 0.f);
+		changed = true;
+	}
+	math::vec3 ambient = overrideVec3(ioOverrides, "Ambient", defaults.ambient);
+	if (gui::widgets::propertyVec3("Ambient", ambient, defaults.ambient, 0.01f,
+								   "Linear colour of the constant sky lighting a scene without an environment.")) {
+		writeVec3(ioOverrides, "Ambient", ambient);
+		changed = true;
+	}
+	float luminance = overrideFloat(ioOverrides, "AmbientLuminance", defaults.ambientLuminance);
+	if (gui::widgets::propertyFloat("Ambient Luminance", luminance, defaults.ambientLuminance, 100.f, "%.0f cd/m2",
+									"Luminance of a white ambient colour.")) {
+		ioOverrides["AmbientLuminance"] = std::max(luminance, 0.f);
+		changed = true;
+	}
+	return changed;
+}
+
+auto renderRaycastOverrides(YAML::Node& ioOverrides) -> bool {
+	const renderer::RaycastConfig defaults;
+	bool changed = false;
+	float fov = overrideFloat(ioOverrides, "Fov", defaults.fovDegrees);
+	if (gui::widgets::propertyFloat("Field of View", fov, defaults.fovDegrees, 0.5f, "%.1f deg")) {
+		ioOverrides["Fov"] = std::clamp(fov, 30.f, 120.f);
+		changed = true;
+	}
+	float maxDist = overrideFloat(ioOverrides, "MaxDistance", defaults.maxDistance);
+	if (gui::widgets::propertyFloat("Max Distance", maxDist, defaults.maxDistance, 0.5f, "%.1f cells")) {
+		ioOverrides["MaxDistance"] = std::clamp(maxDist, 1.f, 256.f);
+		changed = true;
+	}
+	int numRays = ioOverrides["NumRays"] ? ioOverrides["NumRays"].as<int>(0) : 0;
+	if (gui::widgets::propertyInt("Rays", numRays, 0, 0, 4096, numRays == 0 ? "viewport width" : "%d",
+								  "Rays cast per frame; 0 casts one per viewport column.")) {
+		ioOverrides["NumRays"] = numRays;
+		changed = true;
+	}
+	changed |= renderColorOverride(ioOverrides, "CeilingColor", "Ceiling", defaults.ceilingColor);
+	changed |= renderColorOverride(ioOverrides, "FloorColor", "Floor", defaults.floorColor);
+	changed |= renderTilesetOverride(ioOverrides, "CeilingTileset", "Ceiling Tileset");
+	changed |= renderTileIndexOverride(ioOverrides, "CeilingTileIndex", "Ceiling Tile");
+	changed |= renderTilesetOverride(ioOverrides, "FloorTileset", "Floor Tileset");
+	changed |= renderTileIndexOverride(ioOverrides, "FloorTileIndex", "Floor Tile");
+	changed |= renderColorOverride(ioOverrides, "FogColor", "Fog Colour", defaults.fogColor);
+	float fogStart = overrideFloat(ioOverrides, "FogStart", defaults.fogStart);
+	if (gui::widgets::propertyFloat("Fog Start", fogStart, defaults.fogStart, 0.5f, "%.1f cells",
+									"Distance at which the fog starts mixing in.")) {
+		ioOverrides["FogStart"] = std::clamp(fogStart, 0.f, 256.f);
+		changed = true;
+	}
+	float fogEnd = overrideFloat(ioOverrides, "FogEnd", defaults.fogEnd);
+	if (gui::widgets::propertyFloat("Fog End", fogEnd, defaults.fogEnd, 0.5f, "%.1f cells",
+									"Distance at which the fog is full; not above Fog Start turns the fog off.")) {
+		ioOverrides["FogEnd"] = std::clamp(fogEnd, 0.f, 256.f);
+		changed = true;
+	}
+	return changed;
+}
+
 auto renderIsometricOverrides(YAML::Node& ioOverrides) -> bool {
 	bool changed = false;
 	const renderer::IsometricConfig defaults;
@@ -112,7 +253,7 @@ auto SceneSettings::renderLayerOverridesEditor(const std::string& iTypeKey, YAML
 	if (!ioOverrides || !ioOverrides.IsMap())
 		ioOverrides = YAML::Node{YAML::NodeType::Map};
 	if (iTypeKey != "Renderer2D" && iTypeKey != "RendererRaycast" && iTypeKey != "RendererIsometric" &&
-		iTypeKey != "RendererMesh") {
+		iTypeKey != "RendererMesh" && iTypeKey != "RendererVoxel") {
 		ImGui::TextDisabled("No editable override for the type '%s'.", iTypeKey.c_str());
 		return false;
 	}
@@ -162,35 +303,11 @@ auto SceneSettings::renderLayerOverridesEditor(const std::string& iTypeKey, YAML
 			ioOverrides["OcclusionScale"] = std::clamp(scale, 0.125f, 1.f);
 			changed = true;
 		}
+		changed |= renderLightingOverrides<renderer::MeshLayerConfig>(ioOverrides);
+	} else if (iTypeKey == "RendererVoxel") {
+		changed = renderLightingOverrides<renderer::VoxelConfig>(ioOverrides);
 	} else {
-		float fov = ioOverrides["Fov"] ? ioOverrides["Fov"].as<float>(75.f) : 75.f;
-		if (gui::widgets::propertyFloat("Field of View", fov, 75.f, 0.5f, "%.1f deg")) {
-			ioOverrides["Fov"] = std::clamp(fov, 30.f, 120.f);
-			changed = true;
-		}
-		float maxDist = ioOverrides["MaxDistance"] ? ioOverrides["MaxDistance"].as<float>(32.f) : 32.f;
-		if (gui::widgets::propertyFloat("Max Distance", maxDist, 32.f, 0.5f, "%.1f cells")) {
-			ioOverrides["MaxDistance"] = std::clamp(maxDist, 1.f, 256.f);
-			changed = true;
-		}
-		int numRays = ioOverrides["NumRays"] ? ioOverrides["NumRays"].as<int>(0) : 0;
-		if (gui::widgets::propertyInt("Rays", numRays, 0, 0, 4096, numRays == 0 ? "viewport width" : "%d",
-									  "Rays cast per frame; 0 casts one per viewport column.")) {
-			ioOverrides["NumRays"] = numRays;
-			changed = true;
-		}
-		for (const auto& [key, label, fallback]:
-			 {std::tuple{"CeilingColor", "Ceiling", math::vec4{0.18f, 0.20f, 0.30f, 1.f}},
-			  std::tuple{"FloorColor", "Floor", math::vec4{0.20f, 0.16f, 0.12f, 1.f}}}) {
-			const math::vec4 color = readColor(ioOverrides, key, fallback);
-			std::array<float, 4> values{color.r(), color.g(), color.b(), color.a()};
-			gui::widgets::propertyLabel(label);
-			if (ImGui::ColorEdit4("##color", values.data())) {
-				writeColor(ioOverrides, key, {values[0], values[1], values[2], values[3]});
-				changed = true;
-			}
-			std::ignore = gui::widgets::propertyReset(false);
-		}
+		changed = renderRaycastOverrides(ioOverrides);
 	}
 	gui::widgets::endProperties();
 	return changed;
@@ -429,10 +546,8 @@ void SceneSettings::onImGuiRender() {
 	if (changed) {
 		const auto afterYaml = serializeConfig(m_scene->getEnabledRenderers());
 		if (afterYaml != m_frameSnapshot) {
-			if (mp_undoManager != nullptr) {
-				auto cmd = mkUniq<commands::ModifyEnabledRenderersCommand>(m_frameSnapshot, afterYaml);
-				mp_undoManager->push(std::move(cmd));
-			}
+			const commands::CommandTarget target{.registry = mp_commands, .scene = m_scene, .undo = mp_undoManager};
+			std::ignore = target.execute("scene.set_renderers", {{"config", afterYaml}});
 			m_frameSnapshot = afterYaml;
 			m_dirty = true;
 		}

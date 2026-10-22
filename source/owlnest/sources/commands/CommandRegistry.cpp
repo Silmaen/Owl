@@ -415,6 +415,17 @@ auto setSceneHud(const shared<scene::Scene>& ioScene, const CommandArgs& iArgs) 
 	return PreparedCommand{.command = mkUniq<SetSceneHudCommand>(ioScene->getHudPath(), path), .applied = false};
 }
 
+auto setSceneRenderers(const shared<scene::Scene>& ioScene, const CommandArgs& iArgs) -> Prepared {
+	const auto text = iArgs.getText("config");
+	const auto after = text.empty() ? renderer::EnabledRenderersConfig{} : renderer::EnabledRenderersConfig::fromYaml(text);
+	const auto& current = ioScene->getEnabledRenderers();
+	const auto before = current.isEmpty() ? std::string{} : current.toYaml();
+	const auto afterYaml = after.isEmpty() ? std::string{} : after.toYaml();
+	if (before == afterYaml)
+		return fail(CommandError::NotApplicable, "the scene already has this renderer configuration");
+	return PreparedCommand{.command = mkUniq<ModifyEnabledRenderersCommand>(before, afterYaml), .applied = false};
+}
+
 auto extractCanvas(const shared<scene::Scene>& ioScene, const CommandArgs& iArgs) -> Prepared {
 	auto canvas = entityArg(*ioScene, iArgs, "entity");
 	if (!canvas)
@@ -1014,6 +1025,15 @@ CommandRegistry::CommandRegistry() {
 				   .description = "Use the project's `DefaultHud` (the scene then names no HUD).",
 				   .defaultValue = false}},
 		 .factory = setSceneHud});
+	add({.name = "scene.set_renderers",
+		 .description = "Replace the renderer-stack overrides of the scene (layer order, enabled flags, per-layer "
+						"settings) by a YAML configuration; empty follows the project stack.",
+		 .args = {{.name = "config",
+				   .type = ArgType::Text,
+				   .description = "YAML of the scene `Renderers:` configuration, as `EnabledRenderersConfig::toYaml` "
+								  "writes it.",
+				   .defaultValue = std::string{}}},
+		 .factory = setSceneRenderers});
 	add({.name = "hud.extract_canvas",
 		 .description = "Write a canvas and its widgets to an `.owlhud` file, remove them from the scene and make the "
 						"scene draw that HUD.",

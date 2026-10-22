@@ -753,8 +753,11 @@ undoable command:
 
 `Overrides` per layer type: **`Renderer2D`** `Space` (`World`, or `Screen` for overlays immune to the camera) and
 `ReferenceHeight` (0 for pixels, 720 to scale with the resolution); **`RendererRaycast`** `Fov`, `MaxDistance`,
-`NumRays`, `CeilingColor`, `FloorColor`; **`RendererIsometric`** `TileWidth`, `TileHeight`, `ZStep`, `Zoom` (the
-zoom level of Play). Each change pushes a `ModifyEnabledRenderersCommand` and rebuilds the live `RenderStack`; edits
+`NumRays`, `CeilingColor`, `FloorColor`, `CeilingTileset` / `CeilingTileIndex`, `FloorTileset` / `FloorTileIndex`,
+`FogColor`, `FogStart`, `FogEnd`; **`RendererIsometric`** `TileWidth`, `TileHeight`, `ZStep`, `Zoom` (the zoom level of
+Play); **`RendererMesh`** `OcclusionCulling`, `OcclusionScale` and the lighting keys; **`RendererVoxel`** the lighting
+keys `SunDirection`, `SunIlluminance`, `Ambient`, `AmbientLuminance`. Every field has a reset button to its
+default. A change runs `scene.set_renderers` (a `ModifyEnabledRenderersCommand`) and rebuilds the live `RenderStack`; edits
 within 1 s coalesce into one undo step.
 
 ## Editor State Machine

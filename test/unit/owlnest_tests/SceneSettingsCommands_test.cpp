@@ -6,6 +6,8 @@
  * All modification must get authorization from the author.
  */
 
+#include "UndoManager.h"
+#include "commands/CommandRegistry.h"
 #include "commands/SceneSettingsCommands.h"
 #include "nestTestHelper.h"
 #include "testHelper.h"
@@ -54,4 +56,20 @@ TEST_F(SceneSettingsCommandsTest, ModifyRenderersMergesKeepingFirstBefore) {
 	m_undo.undo(m_scene);
 	EXPECT_TRUE(m_scene.getEnabledRenderers().isEmpty());
 	EXPECT_FALSE(m_undo.canUndo());
+}
+
+TEST_F(SceneSettingsCommandsTest, SetRenderersCommandUndoesAndRefusesANoOp) {
+	const CommandRegistry registry;
+	auto scene = mkShared<scene::Scene>();
+	SceneUndoManager undo;
+	ASSERT_NE(registry.find("scene.set_renderers"), nullptr);
+	const auto yaml = renderersYaml("Voxel", false);
+	ASSERT_TRUE(registry.execute("scene.set_renderers", {{"config", yaml}}, scene, undo));
+	ASSERT_EQ(scene->getEnabledRenderers().entries.size(), 1u);
+	EXPECT_FALSE(scene->getEnabledRenderers().entries[0].enabled);
+	const auto again = registry.execute("scene.set_renderers", {{"config", yaml}}, scene, undo);
+	ASSERT_FALSE(again);
+	EXPECT_EQ(again.error().error, CommandError::NotApplicable);
+	undo.undo(*scene);
+	EXPECT_TRUE(scene->getEnabledRenderers().isEmpty());
 }
