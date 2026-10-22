@@ -586,6 +586,40 @@ TEST(ComponentRoundTrip, FlyCamera) {
 			});
 }
 
+TEST(ComponentRoundTrip, LightFlicker) {
+	roundTrip(
+			"LightFlicker",
+			[](scene::Entity& iEnt) -> void {
+				auto& flicker = iEnt.addComponent<scene::component::LightFlicker>();
+				flicker.style = scene::component::LightFlicker::Style::Candle;
+				flicker.enabled = false;
+				flicker.amplitude = 0.35f;
+				flicker.speed = 1.5f;
+				flicker.seed = 913.f;
+				flicker.colorShift = {0.f, 0.06f, 0.04f};
+				flicker.positionJitter = {0.004f, 0.f, 0.004f};
+				flicker.dipRate = 0.55f;
+				flicker.dipDepth = 0.4f;
+				flicker.follow = core::UUID{77};
+				flicker.scaleResponse = {0.1f, 0.35f, 0.1f};
+			},
+			[](const scene::Entity& iEnt) -> void {
+				ASSERT_TRUE(iEnt.hasComponent<scene::component::LightFlicker>());
+				const auto& flicker = iEnt.getComponent<scene::component::LightFlicker>();
+				EXPECT_EQ(flicker.style, scene::component::LightFlicker::Style::Candle);
+				EXPECT_FALSE(flicker.enabled);
+				EXPECT_FLOAT_EQ(flicker.amplitude, 0.35f);
+				EXPECT_FLOAT_EQ(flicker.speed, 1.5f);
+				EXPECT_FLOAT_EQ(flicker.seed, 913.f);
+				EXPECT_FLOAT_EQ(flicker.colorShift.y(), 0.06f);
+				EXPECT_FLOAT_EQ(flicker.positionJitter.z(), 0.004f);
+				EXPECT_FLOAT_EQ(flicker.dipRate, 0.55f);
+				EXPECT_FLOAT_EQ(flicker.dipDepth, 0.4f);
+				EXPECT_EQ(flicker.follow, core::UUID{77});
+				EXPECT_FLOAT_EQ(flicker.scaleResponse.y(), 0.35f);
+			});
+}
+
 TEST(ComponentRoundTrip, VoxelPlayer) {
 	roundTrip(
 			"VoxelPlayer",

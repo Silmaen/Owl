@@ -309,6 +309,7 @@ void Scene::onStartRuntime() {
 	if (mp_engineContext != nullptr)
 		m_simulationClock.setSettings(mp_engineContext->getSimulationSettings());
 	m_simulationClock.reset();
+	m_runtimeSeconds = 0.0;
 	const auto heldInput = input::Input::readState();
 	m_frameInput.reset(heldInput);
 	m_tickInput.reset(heldInput);
@@ -470,6 +471,7 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep, const bool iRender)
 	const auto tStart = now();
 	m_lastRuntimeTimings = {};
 	m_toastTimer = std::max(0.f, m_toastTimer - iTimeStep.getSeconds());
+	m_runtimeSeconds += static_cast<double>(iTimeStep.getSeconds());
 	m_inUpdatePass = false;
 	m_worldTransformCacheActive = false;
 	const auto frameInput = input::Input::readState();
@@ -2830,6 +2832,10 @@ OWL_API void Scene::onComponentAdded<component::Light2D>([[maybe_unused]] const 
 template<>
 OWL_API void Scene::onComponentAdded<component::Light>([[maybe_unused]] const Entity& iEntity,
 													   [[maybe_unused]] component::Light& ioComponent) {}
+
+template<>
+OWL_API void Scene::onComponentAdded<component::LightFlicker>([[maybe_unused]] const Entity& iEntity,
+															  [[maybe_unused]] component::LightFlicker& ioComponent) {}
 
 template<>
 OWL_API void Scene::onComponentAdded<component::Environment>([[maybe_unused]] const Entity& iEntity,

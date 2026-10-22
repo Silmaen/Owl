@@ -83,6 +83,7 @@ struct LuaScript;
 struct MeshRenderer;
 struct Light;
 struct Light2D;
+struct LightFlicker;
 struct Environment;
 struct NativeScript;
 struct PhysicBody;
@@ -939,6 +940,13 @@ public:
 
 	/**
 	 * @brief
+	 *  Seconds of simulated time since Play started: the sum of the frame durations the runtime update has run.
+	 * @return The time, 0 outside Play.
+	 */
+	[[nodiscard]] auto getRuntimeSeconds() const -> double { return m_runtimeSeconds; }
+
+	/**
+	 * @brief
 	 *  The script the scene owns (its `SceneScript:` key): it runs before the entity scripts, with the hooks of an
 	 *  entity script and no entity (no `entity_id`).
 	 * @return The script; an empty `scriptPath` means the scene has none.
@@ -1038,6 +1046,8 @@ private:
 	DocumentKind m_documentKind = DocumentKind::Scene;
 	/// HUD asset asked by the scene (nothing: the project's default HUD, empty: none).
 	std::optional<std::string> m_hudPath;
+	/// Seconds of simulated time since Play started.
+	double m_runtimeSeconds = 0.0;
 	/// Script the scene owns (runs before the entity scripts).
 	component::LuaScript m_sceneScript;
 	/// Systems run every runtime frame, phase by phase.
@@ -1629,6 +1639,8 @@ OWL_API void Scene::onComponentAdded<component::Light>(const Entity& iEntity, co
 
 template<>
 OWL_API void Scene::onComponentAdded<component::Light2D>(const Entity& iEntity, component::Light2D& ioComponent);
+OWL_API void Scene::onComponentAdded<component::LightFlicker>(const Entity& iEntity,
+															  component::LightFlicker& ioComponent);
 
 template<>
 OWL_API void Scene::onComponentAdded<component::Environment>(const Entity& iEntity,

@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `LightFlicker` component and `owl.light_flicker` system: a fire, candle or pulsing light (or a sprite tint) flickers from its seed and the scene time, with colour shift, position jitter, dips and a `follow` target whose scale breathes with it; `Scene::getRuntimeSeconds()`, Lua `entity.set_flicker_enabled` / `is_flicker_enabled`.
 - Reversed-Z depth on both backends: `math::perspectiveReversedZ` (infinite far plane) and `math::orthoReversedZ`, and the public `renderer/ClipSpace.h` every camera builds its projection through.
 - Camera-relative 3D shading: `Renderer3D` uploads `projection * cameraRelativeView(view)` and the shaders work relative to the eye, so rendering stays precise far from the origin.
 - Image test `far_origin`: the lights scene moved 2^20 m away renders like at the origin, shadows included.
@@ -84,6 +85,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Lua `entity.set/get_light_color`, `set/get_light_intensity`, `set_light_enabled`, `is_light_enabled` and `set_light_range` (the radius) also reach a `Light2D`.
+- Engine Demo: the tavern fire, candles and flame cards and the platformer torches use `LightFlicker`; `platformer/flicker.lua` is removed and `mesh/tavern.lua` only returns to the menu.
 - Depth attachment format `Depth24Stencil8` is now `Depth32F` (32-bit float, no stencil) on Vulkan and OpenGL.
 - `ShadowSettings::viewProjections` is replaced by `relativeViewProjections` and `origins`, each cascade relative to its own light camera.
 - `math::Frustum` and `FrustumCullingPass::extractFrustumPlanes` use the reversed-Z planes, and `Frustum::classify` keeps a box lying on a plane.

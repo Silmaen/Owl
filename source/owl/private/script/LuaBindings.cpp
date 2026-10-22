@@ -843,6 +843,30 @@ auto luaEntitySetLightIntensity(lua_State* iState) -> int {
 	return 1;
 }
 
+// `entity.set_<x>_enabled(id, enabled)` of a behaviour component with an `enabled` field.
+template<typename Component>
+auto luaEntitySetBehaviourEnabled(lua_State* iState) -> int {
+	const bool enabled = lua_toboolean(iState, 2) != 0;
+	const auto entity = findEntity(iState);
+	if (!entity || !entity->hasComponent<Component>()) {
+		lua_pushboolean(iState, 0);
+		return 1;
+	}
+	entity->getComponent<Component>().enabled = enabled;
+	lua_pushboolean(iState, 1);
+	return 1;
+}
+
+// `entity.is_<x>_enabled(id)` of a behaviour component with an `enabled` field.
+template<typename Component>
+auto luaEntityIsBehaviourEnabled(lua_State* iState) -> int {
+	const auto entity = findEntity(iState);
+	if (!entity || !entity->hasComponent<Component>())
+		return 0;
+	lua_pushboolean(iState, entity->getComponent<Component>().enabled ? 1 : 0);
+	return 1;
+}
+
 auto luaEntityGetLightIntensity(lua_State* iState) -> int {
 	const auto fields = lightFieldsOf(findEntity(iState));
 	if (!fields)
@@ -2108,6 +2132,15 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		 .description = "Set the range (world units, at least 0.01) of the entity's point or spot `Light`, or the "
 						"radius of its `Light2D`; false when it has neither.",
 		 .params = {entityId, {"range", Number}}, .returns = {{"done", Boolean}}},
+		{.table = "entity", .name = "set_flicker_enabled",
+		 .function = guarded<luaEntitySetBehaviourEnabled<scene::component::LightFlicker>>,
+		 .description = "Switch the entity's `LightFlicker` on or off (the light keeps its authored values while off); "
+						"false when it has none.",
+		 .params = {entityId, {"enabled", Boolean}}, .returns = {{"done", Boolean}}},
+		{.table = "entity", .name = "is_flicker_enabled",
+		 .function = guarded<luaEntityIsBehaviourEnabled<scene::component::LightFlicker>>,
+		 .description = "Whether the entity's `LightFlicker` runs; nothing when it has none.",
+		 .params = {entityId}, .returns = {{"enabled", Boolean}}},
 		{.table = "ui", .name = "find", .function = guarded<luaUiFind>,
 		 .description = "First widget with this tag, searched in the scene's HUD asset then in the scene (0 when none); "
 						"cache the result.",

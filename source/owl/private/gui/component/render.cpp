@@ -102,6 +102,13 @@ auto DragFloat2(const char* iLabel, float* ioValues, const float iSpeed = 1.f, c
 	});
 }
 
+auto DragFloat3(const char* iLabel, float* ioValues, const float iSpeed = 1.f, const float iMin = 0.f,
+				const float iMax = 0.f, const char* iFormat = "%.3f", const ImGuiSliderFlags iFlags = 0) -> bool {
+	return row(iLabel, [&](const char* iId) -> bool {
+		return ImGui::DragFloat3(iId, ioValues, iSpeed, iMin, iMax, iFormat, iFlags);
+	});
+}
+
 auto DragInt(const char* iLabel, int* ioValue, const float iSpeed = 1.f, const int iMin = 0, const int iMax = 0,
 			 const char* iFormat = "%d", const ImGuiSliderFlags iFlags = 0) -> bool {
 	return row(iLabel, [&](const char* iId) -> bool {
@@ -2672,6 +2679,39 @@ void renderProps(FlyCamera& ioComponent) {
 	fieldTooltip("Translation speed in world units per second (WASD move, Space/E up, Left-Shift/Q down).");
 	prop::DragFloat("Look Speed", &ioComponent.lookSpeed, 0.05f, 0.05f, 10.f, "%.2f");
 	fieldTooltip("Rotation speed in radians per second for the arrow-key look controls.");
+}
+
+void renderProps(LightFlicker& ioComponent) {
+	prop::Checkbox("Enabled", &ioComponent.enabled);
+	fieldTooltip("Switch the flicker off to keep the light at its authored values.");
+	enumCombo("Style", ioComponent.style);
+	fieldTooltip("Fire: layered noise. Candle: a wavering drawn from the seed. Pulse: two sines of unrelated rates.");
+	prop::DragFloat("Amplitude", &ioComponent.amplitude, 0.005f, 0.f, 1.f, "%.3f");
+	fieldTooltip("Largest relative swing of the intensity: 0.28 goes from 72 % to 128 % of the authored value.");
+	prop::DragFloat("Speed", &ioComponent.speed, 0.01f, 0.01f, 20.f, "%.2f");
+	fieldTooltip("Time scale of the flicker.");
+	prop::DragFloat("Seed", &ioComponent.seed, 0.5f, -100000.f, 100000.f, "%.1f");
+	fieldTooltip("Offset in the noise: lights with different seeds never flicker together.");
+	prop::DragFloat3("Color Shift", &ioComponent.colorShift.x(), 0.005f, -1.f, 1.f, "%.3f");
+	fieldTooltip("Added to the colour at the brightest moment and taken off at the dimmest. It tints the sprite of an "
+				 "entity without a light.");
+	prop::DragFloat3("Position Jitter", &ioComponent.positionJitter.x(), 0.001f, 0.f, 10.f, "%.4f");
+	fieldTooltip("Largest displacement of the position along each axis, in world units.");
+	prop::DragFloat("Dip Rate", &ioComponent.dipRate, 0.01f, 0.f, 10.f, "%.2f");
+	fieldTooltip("Dips per second, when a draught bends the flame; 0 for none.");
+	prop::DragFloat("Dip Depth", &ioComponent.dipDepth, 0.01f, 0.f, 1.f, "%.2f");
+	fieldTooltip("Share of the intensity a full dip takes off.");
+	auto follow = static_cast<uint64_t>(ioComponent.follow);
+	prop::row("Follow", [&](const char*) -> bool {
+		if (scriptEntityPicker(follow, ImGui::GetContentRegionAvail().x)) {
+			ioComponent.follow = core::UUID{follow};
+			return true;
+		}
+		return false;
+	});
+	fieldTooltip("Entity whose flicker this one follows: its scale breathes with the intensity of that entity.");
+	prop::DragFloat3("Scale Response", &ioComponent.scaleResponse.x(), 0.005f, -2.f, 2.f, "%.3f");
+	fieldTooltip("Relative change of the scale along each axis for a relative change of 1 of the followed intensity.");
 }
 
 void setOpenAssetHandler(std::function<void(const std::filesystem::path&)> iHandler) {

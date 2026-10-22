@@ -118,7 +118,7 @@ flowchart LR
 | `Scripts`     | `owl.physics_poses` (simulated body poses), `owl.scripts` (native, Lua)         | May move, create or destroy entities      |
 | `PrePhysics`  | `owl.fly_cameras`, `owl.voxel_players`, `owl.raycast_walls`, `owl.player_input` | Gameplay controllers before the step      |
 | `Physics`     | `owl.physics` (one Box2D step and `on_collision` per tick)                      | Owns the physics step                     |
-| `PostPhysics` | `owl.entity_links`, `owl.triggers`                                              | Last phase allowed to change the world    |
+| `PostPhysics` | `owl.light_flicker`, `owl.entity_links`, `owl.triggers`                         | Last phase allowed to change the world    |
 | `Late`        | `owl.navigation`, `owl.sound`, `owl.sprite_animation`                           | Reads the settled world (caches armed)    |
 | `Ended`       | `owl.game_over` ("Victory!" / "You loose!" message)                             | Replaces every other phase once game over |
 
@@ -563,6 +563,41 @@ Enables C++ scripting via `ScriptableEntity`. Use `bind<T>()` to associate a scr
 class that implements `onCreate()`, `onUpdate(timestep)`, and `onDestroy()`.
 
 YAML key: `NativeScript` (not typically serialized in scenes).
+
+### Behaviour Components
+
+Authored behaviours that replace the scripts every game would copy. Each has an inspector, a Lua switch
+(`entity.set_<x>_enabled`, `entity.is_<x>_enabled`) and a system that reads the scene time (`Scene::getRuntimeSeconds()`),
+so the result depends on the fields and the time only.
+
+#### LightFlicker
+
+YAML key: `LightFlicker`, system `owl.light_flicker` (`PostPhysics`). It changes the `Light` of the same entity (or
+the tint of its sprite when it has no light) around the values authored in the scene, which stay untouched: Play runs
+on a copy.
+
+| Field            | Type    | Default       | Description                                                                              |
+|------------------|---------|---------------|------------------------------------------------------------------------------------------|
+| `style`          | enum    | `Fire`        | `Fire` (layered noise), `Candle` (wavering from the seed), `Pulse` (two sines, a torch) |
+| `enabled`        | `bool`  | `true`        | Off leaves the light as authored (Lua `entity.set_flicker_enabled`)                      |
+| `amplitude`      | `float` | `0.28`        | Largest relative swing of the intensity (0.28: 72 % to 128 %)                            |
+| `speed`          | `float` | `1`           | Time scale                                                                               |
+| `seed`           | `float` | `0`           | Offset in the noise: lights with different seeds never flicker together                  |
+| `colorShift`     | `vec3`  | `[0, 0, 0]`   | Added to the colour at the brightest moment, taken off at the dimmest                    |
+| `positionJitter` | `vec3`  | `[0, 0, 0]`   | Largest displacement along each axis, in world units                                     |
+| `dipRate`        | `float` | `0`           | Dips per second (a draught bends the flame); 0 for none                                  |
+| `dipDepth`       | `float` | `0.5`         | Share of the intensity a full dip takes off                                              |
+| `follow`         | UUID    | none          | Entity whose flicker this one follows (the flame cards of a fire)                        |
+| `scaleResponse`  | `vec3`  | `[0, 0, 0]`   | Relative scale change per unit of relative intensity change of the followed entity       |
+
+```yaml
+LightFlicker:
+  style: Candle
+  amplitude: 0.35
+  seed: 48
+  positionJitter: [0.004, 0, 0.004]
+  dipRate: 0.55
+```
 
 ### Audio Components
 

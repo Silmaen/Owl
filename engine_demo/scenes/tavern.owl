@@ -220,6 +220,11 @@ Entities:
         - material: materials/flame.owlmat
     RendererTag:
       Name: mesh_world
+    LightFlicker:
+      style: Fire
+      amplitude: 0
+      follow: 3900000000000000013
+      scaleResponse: [0, 0.571, 0]
     Visibility:
       gameVisible: true
   - Entity: 3900000000000000013
@@ -236,6 +241,12 @@ Entities:
       color: [1, 0.55, 0.22]
       intensity: 1800
       range: 12
+    LightFlicker:
+      style: Fire
+      amplitude: 0.28
+      seed: 0
+      colorShift: [0, 0.06, 0.04]
+      positionJitter: [0.03, 0.04, 0.02]
     Visibility:
       gameVisible: true
   - Entity: 3900000000000000014
@@ -276,6 +287,13 @@ Entities:
       color: [1, 0.68, 0.38]
       intensity: 12
       range: 3
+    LightFlicker:
+      style: Candle
+      amplitude: 0.35
+      seed: 48
+      positionJitter: [0.004, 0, 0.004]
+      dipRate: 0.55
+      dipDepth: 0.5
     Visibility:
       gameVisible: true
   - Entity: 3900000000000000016
@@ -292,6 +310,13 @@ Entities:
       color: [1, 0.68, 0.38]
       intensity: 12
       range: 3
+    LightFlicker:
+      style: Candle
+      amplitude: 0.35
+      seed: 85
+      positionJitter: [0.004, 0, 0.004]
+      dipRate: 0.55
+      dipDepth: 0.5
     Visibility:
       gameVisible: true
   - Entity: 3900000000000000017
@@ -308,6 +333,13 @@ Entities:
       color: [1, 0.68, 0.38]
       intensity: 12
       range: 3
+    LightFlicker:
+      style: Candle
+      amplitude: 0.35
+      seed: 122
+      positionJitter: [0.004, 0, 0.004]
+      dipRate: 0.55
+      dipDepth: 0.5
     Visibility:
       gameVisible: true
   - Entity: 3900000000000000018
@@ -324,6 +356,13 @@ Entities:
       color: [1, 0.68, 0.38]
       intensity: 12
       range: 3
+    LightFlicker:
+      style: Candle
+      amplitude: 0.35
+      seed: 159
+      positionJitter: [0.004, 0, 0.004]
+      dipRate: 0.55
+      dipDepth: 0.5
     Visibility:
       gameVisible: true
   - Entity: 3900000000000000019
@@ -340,6 +379,13 @@ Entities:
       color: [1, 0.68, 0.38]
       intensity: 12
       range: 3
+    LightFlicker:
+      style: Candle
+      amplitude: 0.35
+      seed: 196
+      positionJitter: [0.004, 0, 0.004]
+      dipRate: 0.55
+      dipDepth: 0.5
     Visibility:
       gameVisible: true
   - Entity: 3900000000000000020
@@ -356,6 +402,13 @@ Entities:
       color: [1, 0.68, 0.38]
       intensity: 12
       range: 3
+    LightFlicker:
+      style: Candle
+      amplitude: 0.35
+      seed: 233
+      positionJitter: [0.004, 0, 0.004]
+      dipRate: 0.55
+      dipDepth: 0.5
     Visibility:
       gameVisible: true
   - Entity: 3900000000000000021
@@ -372,6 +425,13 @@ Entities:
       color: [1, 0.68, 0.38]
       intensity: 12
       range: 3
+    LightFlicker:
+      style: Candle
+      amplitude: 0.35
+      seed: 270
+      positionJitter: [0.004, 0, 0.004]
+      dipRate: 0.55
+      dipDepth: 0.5
     Visibility:
       gameVisible: true
   - Entity: 3900000000000000022
@@ -388,6 +448,13 @@ Entities:
       color: [1, 0.68, 0.38]
       intensity: 12
       range: 3
+    LightFlicker:
+      style: Candle
+      amplitude: 0.35
+      seed: 307
+      positionJitter: [0.004, 0, 0.004]
+      dipRate: 0.55
+      dipDepth: 0.5
     Visibility:
       gameVisible: true
   - Entity: 3900000000000000023
@@ -404,6 +471,13 @@ Entities:
       color: [1, 0.68, 0.38]
       intensity: 12
       range: 3
+    LightFlicker:
+      style: Candle
+      amplitude: 0.35
+      seed: 344
+      positionJitter: [0.004, 0, 0.004]
+      dipRate: 0.55
+      dipDepth: 0.5
     Visibility:
       gameVisible: true
   - Entity: 3900000000000000024
@@ -420,6 +494,13 @@ Entities:
       color: [1, 0.68, 0.38]
       intensity: 12
       range: 3
+    LightFlicker:
+      style: Candle
+      amplitude: 0.35
+      seed: 381
+      positionJitter: [0.004, 0, 0.004]
+      dipRate: 0.55
+      dipDepth: 0.5
     Visibility:
       gameVisible: true
   - Entity: 3900000000000000025
@@ -436,6 +517,13 @@ Entities:
       color: [1, 0.68, 0.38]
       intensity: 12
       range: 3
+    LightFlicker:
+      style: Candle
+      amplitude: 0.35
+      seed: 418
+      positionJitter: [0.004, 0, 0.004]
+      dipRate: 0.55
+      dipDepth: 0.5
     Visibility:
       gameVisible: true
   - Entity: 3900000000000000026
@@ -577,6 +665,12 @@ Entities:
         - material: materials/candle_flame.owlmat
     RendererTag:
       Name: mesh_world
+    LightFlicker:
+      style: Candle
+      amplitude: 0
+      follow: 3900000000000000034
+      positionJitter: [0.002, 0, 0.002]
+      scaleResponse: [0.1, 0.35, 0.1]
     Visibility:
       gameVisible: true
   - Entity: 3900000000000000034
@@ -593,6 +687,13 @@ Entities:
       color: [1, 0.68, 0.38]
       intensity: 12
       range: 3
+    LightFlicker:
+      style: Candle
+      amplitude: 0.35
+      seed: 913
+      positionJitter: [0.004, 0, 0.004]
+      dipRate: 0.55
+      dipDepth: 0.5
     Visibility:
       gameVisible: true
   - Entity: 3900000000000000035

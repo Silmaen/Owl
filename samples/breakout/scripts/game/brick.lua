@@ -1,6 +1,5 @@
 -- A brick (`prefabs/brick.owlprefab`): `hits` touches of the ball break it for `points`. A brick that holds flashes
--- white and darkens from steel (3) to silver (2) to its own colour (`r`, `g`, `b`, the last hit), the pattern of the
--- Engine Demo's `scripts/platformer/flicker.lua`. A broken brick adds its points to `breakout_score`, takes one off
+-- white and darkens from steel (3) to silver (2) to its own colour (`r`, `g`, `b`, the last hit). A broken brick adds its points to `breakout_score`, takes one off
 -- `breakout_bricks` and queues an event for `game.lua` in `breakout_events` (its burst, its power-up when `drop` is
 -- `wide` or `slow`), then is destroyed.
 

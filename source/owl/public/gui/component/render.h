@@ -399,6 +399,13 @@ OWL_API void renderProps(scene::component::FlyCamera& ioComponent);
 
 /**
  * @brief
+ *  Render a Gui for editing the component.
+ * @param ioComponent The component to edit.
+ */
+OWL_API void renderProps(scene::component::LightFlicker& ioComponent);
+
+/**
+ * @brief
  *  Render a Gui for editing the voxel player (speeds, gravity, collision box).
  * @param ioComponent The component to edit.
  */
@@ -408,20 +415,22 @@ OWL_API void renderProps(scene::component::VoxelPlayer& ioComponent);
  * @brief
  *  List of components that have a render function.
  */
-using DrawableComponents = std::tuple<
-		scene::component::Transform, scene::component::Camera, scene::component::SpriteRenderer,
-		scene::component::AnimatedSpriteRenderer, scene::component::CircleRenderer, scene::component::MeshRenderer,
-		scene::component::Light, scene::component::Environment, scene::component::Text, scene::component::Tilemap,
-		scene::component::IsometricObject, scene::component::PhysicBody, scene::component::Player,
-		scene::component::Trigger, scene::component::RaycastDoor, scene::component::RaycastPushWall,
-		scene::component::EntityLink, scene::component::BackgroundTexture, scene::component::Visibility,
-		scene::component::SoundSource, scene::component::SoundListener, scene::component::LuaScript,
-		scene::component::PrefabLink, scene::component::RendererTag, scene::component::VoxelWorld,
-		scene::component::FlyCamera, scene::component::VoxelPlayer, scene::component::Canvas, scene::component::UiRect,
-		scene::component::UiText, scene::component::UiImage, scene::component::UiPanel, scene::component::UiButton,
-		scene::component::UiSlider, scene::component::UiProgressBar, scene::component::UiWindow,
-		scene::component::UiLayout, scene::component::UiTooltip, scene::component::UiToolCursor,
-		scene::component::UiFocus, scene::component::UiScrollView, scene::component::UiList>;
+using DrawableComponents =
+		std::tuple<scene::component::Transform, scene::component::Camera, scene::component::SpriteRenderer,
+				   scene::component::AnimatedSpriteRenderer, scene::component::CircleRenderer,
+				   scene::component::MeshRenderer, scene::component::Light, scene::component::Environment,
+				   scene::component::Text, scene::component::Tilemap, scene::component::IsometricObject,
+				   scene::component::PhysicBody, scene::component::Player, scene::component::Trigger,
+				   scene::component::RaycastDoor, scene::component::RaycastPushWall, scene::component::EntityLink,
+				   scene::component::BackgroundTexture, scene::component::Visibility, scene::component::SoundSource,
+				   scene::component::SoundListener, scene::component::LuaScript, scene::component::PrefabLink,
+				   scene::component::RendererTag, scene::component::VoxelWorld, scene::component::FlyCamera,
+				   scene::component::LightFlicker, scene::component::VoxelPlayer, scene::component::Canvas,
+				   scene::component::UiRect, scene::component::UiText, scene::component::UiImage,
+				   scene::component::UiPanel, scene::component::UiButton, scene::component::UiSlider,
+				   scene::component::UiProgressBar, scene::component::UiWindow, scene::component::UiLayout,
+				   scene::component::UiTooltip, scene::component::UiToolCursor, scene::component::UiFocus,
+				   scene::component::UiScrollView, scene::component::UiList>;
 
 
 }// namespace owl::gui::component

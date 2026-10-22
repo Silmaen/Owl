@@ -21,6 +21,7 @@
 #include "IsometricObject.h"
 #include "Light.h"
 #include "Light2D.h"
+#include "LightFlicker.h"
 #include "LuaScript.h"
 #include "MeshRenderer.h"
 #include "NativeScript.h"
@@ -72,7 +73,8 @@ concept isComponent =
 		std::is_same_v<Component, CircleRenderer> || std::is_same_v<Component, EntityLink> ||
 		std::is_same_v<Component, FlyCamera> || std::is_same_v<Component, Hierarchy> || std::is_same_v<Component, ID> ||
 		std::is_same_v<Component, IsometricObject> || std::is_same_v<Component, Light> ||
-		std::is_same_v<Component, Light2D> || std::is_same_v<Component, Environment> ||
+		std::is_same_v<Component, Light2D> || std::is_same_v<Component, LightFlicker> ||
+		std::is_same_v<Component, Environment> ||
 		std::is_same_v<Component, LuaScript> || std::is_same_v<Component, MeshRenderer> ||
 		std::is_same_v<Component, NativeScript> || std::is_same_v<Component, PhysicBody> ||
 		std::is_same_v<Component, Player> || std::is_same_v<Component, PrefabLink> ||
@@ -131,9 +133,9 @@ using CopiableComponents =
 		std::tuple<Transform, Camera, Canvas, SpriteRenderer, AnimatedSpriteRenderer, CircleRenderer, MeshRenderer,
 				   Light, Light2D, Environment, Text, Tilemap, IsometricObject, PhysicBody, Player, Trigger, EntityLink,
 				   FlyCamera, BackgroundTexture, Visibility, Hierarchy, SoundSource, SoundListener, LuaScript,
-				   PrefabLink, RaycastDoor, RaycastPushWall, RendererTag, VoxelWorld, VoxelPlayer, UiButton, UiImage,
-				   UiPanel, UiProgressBar, UiRect, UiSlider, UiText, UiLayout, UiToolCursor, UiTooltip, UiWindow,
-				   UiFocus, UiScrollView, UiList>;
+				   PrefabLink, RaycastDoor, RaycastPushWall, RendererTag, VoxelWorld, VoxelPlayer, LightFlicker,
+				   UiButton, UiImage, UiPanel, UiProgressBar, UiRect, UiSlider, UiText, UiLayout, UiToolCursor,
+				   UiTooltip, UiWindow, UiFocus, UiScrollView, UiList>;
 
 /**
  * @brief
@@ -144,9 +146,9 @@ using SerializableComponents =
 		std::tuple<Tag, Transform, Camera, Canvas, SpriteRenderer, AnimatedSpriteRenderer, CircleRenderer, MeshRenderer,
 				   Light, Light2D, Environment, Text, Tilemap, IsometricObject, PhysicBody, Player, Trigger, EntityLink,
 				   FlyCamera, BackgroundTexture, Visibility, Hierarchy, SoundSource, SoundListener, LuaScript,
-				   PrefabLink, RaycastDoor, RaycastPushWall, RendererTag, VoxelWorld, VoxelPlayer, UiButton, UiImage,
-				   UiPanel, UiProgressBar, UiRect, UiSlider, UiText, UiLayout, UiToolCursor, UiTooltip, UiWindow,
-				   UiFocus, UiScrollView, UiList>;
+				   PrefabLink, RaycastDoor, RaycastPushWall, RendererTag, VoxelWorld, VoxelPlayer, LightFlicker,
+				   UiButton, UiImage, UiPanel, UiProgressBar, UiRect, UiSlider, UiText, UiLayout, UiToolCursor,
+				   UiTooltip, UiWindow, UiFocus, UiScrollView, UiList>;
 
 /**
  * @brief
@@ -157,7 +159,8 @@ using OptionalComponents =
 		std::tuple<Camera, Canvas, SpriteRenderer, AnimatedSpriteRenderer, CircleRenderer, MeshRenderer, Light, Light2D,
 				   Environment, Text, Tilemap, IsometricObject, PhysicBody, Player, Trigger, EntityLink, FlyCamera,
 				   BackgroundTexture, SoundSource, SoundListener, LuaScript, PrefabLink, RaycastDoor, RaycastPushWall,
-				   RendererTag, VoxelWorld, VoxelPlayer, UiButton, UiImage, UiPanel, UiProgressBar, UiRect, UiSlider,
-				   UiText, UiLayout, UiToolCursor, UiTooltip, UiWindow, UiFocus, UiScrollView, UiList>;
+				   RendererTag, VoxelWorld, VoxelPlayer, LightFlicker, UiButton, UiImage, UiPanel, UiProgressBar,
+				   UiRect, UiSlider, UiText, UiLayout, UiToolCursor, UiTooltip, UiWindow, UiFocus, UiScrollView,
+				   UiList>;
 
 }// namespace owl::scene::component

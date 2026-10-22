@@ -53,6 +53,14 @@ void tickScripts(Scene& ioScene, const SystemContext& iContext);
 
 /**
  * @brief
+ *  Make the lights with a `LightFlicker` flicker from the scene time (`owl.light_flicker`).
+ * @param[in,out] ioScene The scene.
+ * @param[in] iContext The frame context.
+ */
+void updateLightFlickers(Scene& ioScene, const SystemContext& iContext);
+
+/**
+ * @brief
  *  Spend the frame's budget on the pending path requests of the scene (`owl.navigation`).
  * @param[in,out] ioScene The scene.
  * @param[in] iContext The frame context.
