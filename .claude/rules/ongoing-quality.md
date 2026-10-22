@@ -92,6 +92,15 @@ Minimum bar for every authored object:
 Pre-merge check: the new object can be authored end-to-end in Owl Nest alone, without docs, YAML, Lua
 or a shell. If it can't, the PR isn't done.
 
+Scripts follow the same bar (`doc/pages/design/editor-reach.md`):
+
+- Every script a scene runs is listed (scene script in Scene Settings, entity scripts on their entity) with an
+  **Open** button; no "global" script parked on the camera
+- Every Lua function the engine calls (lifecycle hooks, HUD handlers, trigger and timer callbacks) shows where it is
+  bound, defined or not, and opens the code editor at the line of its `function`
+- A value a designer tunes is a script property or a component field drawn by the inspector, never a top-level
+  `local` of the script; a behaviour found in two scripts becomes an engine component
+
 ## Every Edit Gesture Is an Editor Command
 
 - Every gesture that changes a scene or an asset in Owl Nest goes through a named `CommandRegistry` command, never a
