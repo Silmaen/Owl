@@ -2438,6 +2438,47 @@ void Viewport::renderLightMarkers(const shared<scene::Scene>& iScene) const {
 				}
 		}
 	}
+	renderLight2DMarkers(iScene, selected);
+}
+
+void Viewport::renderLight2DMarkers(const shared<scene::Scene>& iScene, const scene::Entity& iSelected) const {
+	using LightType = scene::component::Light2D::Type;
+	constexpr math::vec3 axisX{1.f, 0.f, 0.f};
+	constexpr math::vec3 axisY{0.f, 1.f, 0.f};
+	for (const auto view = iScene->registry.view<scene::component::Light2D, scene::component::Transform>();
+		 const auto entity: view) {
+		const auto& light = view.get<scene::component::Light2D>(entity);
+		const scene::Entity ent{entity, iScene.get()};
+		const auto id = static_cast<int>(entity);
+		const math::mat4 world = iScene->getWorldTransform(ent)();
+		const math::vec3 position{world(0, 3), world(1, 3), world(2, 3)};
+		const math::vec4 color = light.enabled ? math::vec4{light.color.x(), light.color.y(), light.color.z(), 1.f}
+											   : math::vec4{0.45f, 0.45f, 0.45f, 0.6f};
+		const float radius = getLightMarkerRadius(position);
+		const bool isSelected = iSelected && static_cast<uint32_t>(ent) == static_cast<uint32_t>(iSelected);
+		if (light.type == LightType::Ambient) {
+			// A sun disc: an ambient light has no position, only a handle to select it.
+			drawLightCircle(position, axisX, axisY, radius, color, id);
+			drawLightCircle(position, axisX, axisY, radius * 0.5f, color, id);
+			continue;
+		}
+		drawLightBulb(position, radius * 2.4f, light.enabled, id);
+		if (!isSelected)
+			continue;
+		if (light.type == LightType::Point) {
+			drawLightCircle(position, axisX, axisY, light.radius, color, id);
+			continue;
+		}
+		// Spot: its cone in the sprite plane, along the +X axis of the entity.
+		math::vec3 direction{world(0, 0), world(1, 0), 0.f};
+		direction = direction.normSq() > 1e-12f ? direction.normalized() : axisX;
+		const math::vec3 side{-direction.y(), direction.x(), 0.f};
+		for (const float angle: {light.outerAngle, -light.outerAngle, light.innerAngle, -light.innerAngle}) {
+			const math::vec3 edge = direction * std::cos(angle) + side * std::sin(angle);
+			renderer::Renderer2D::drawLine(
+					{.point1 = position, .point2 = position + edge * light.radius, .color = color, .entityId = id});
+		}
+	}
 }
 
 void Viewport::drawLightBulb(const math::vec3& iPosition, const float iSize, const bool iEnabled,

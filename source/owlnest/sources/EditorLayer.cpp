@@ -1425,6 +1425,7 @@ void EditorLayer::onContextualHelp() {
 			{"CircleRenderer", "renderer"},
 			{"MeshRenderer", "renderer"},
 			{"Light", "renderer"},
+			{"Light2D", "renderer"},
 			{"BackgroundTexture", "renderer"},
 			{"Text", "renderer"},
 			{"Player", "scene"},

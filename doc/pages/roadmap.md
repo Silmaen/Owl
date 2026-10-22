@@ -131,7 +131,7 @@ render graph, essential post-processing — with full 3D editing ([details](desi
 - ![Done][done] 3D render pipeline (forward, depth, perspective camera)
 - ![Done][done] Render graph hosting the renderer-stack layers
 - ![Done][done] Lighting: directional, point and spot lights, directional shadow maps
-- ![In Progress][progress] 2D lighting (point / spot lights, normal-mapped sprites, 2D shadows), isometric sprites included ([2D](design/2d-complete.md))
+- ![Done][done] 2D lighting (point / spot lights, normal-mapped sprites, 2D shadows), isometric sprites included ([2D](design/2d-complete.md))
 - ![Done][done] PBR materials with editor and material library, emissive colour and strength included ([3D core](design/3d-core.md#emissive-and-area-lights))
 - ![Done][done] Static mesh component with instancing
 - ![Done][done] Essential post-processing stack (tone mapping, bloom, vignette, LUT)

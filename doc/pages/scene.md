@@ -240,11 +240,14 @@ The **local** transform; `Scene::getWorldTransform(entity)` gives the world one 
 
 #### SpriteRenderer
 
-| Field          | Type         | Default        | Description        |
-|----------------|--------------|----------------|--------------------|
-| `color`        | `math::vec4` | `{1, 1, 1, 1}` | Tint colour        |
-| `texture`      | `Texture2D`  | `nullptr`      | Sprite texture     |
-| `tilingFactor` | `float`      | `1.0`          | Texture repetition |
+| Field          | Type         | Default        | Description                                                                                                    |
+|----------------|--------------|----------------|----------------------------------------------------------------------------------------------------------------|
+| `color`        | `math::vec4` | `{1, 1, 1, 1}` | Tint colour                                                                                                    |
+| `texture`      | `Texture2D`  | `nullptr`      | Sprite texture                                                                                                 |
+| `tilingFactor` | `float`      | `1.0`          | Texture repetition                                                                                             |
+| `normalMap`    | `Texture2D`  | `nullptr`      | Tangent-space normal map (OpenGL convention, green up) lighting the sprite under the 2D lights; flat when null |
+| `castShadows`  | `bool`       | `false`        | The sprite quad blocks the 2D lights casting shadows; the sprite itself stays lit                              |
+| `lit`          | `bool`       | `true`         | The 2D lights of the scene light the sprite; unlit it keeps its colour (glows, markers)                        |
 
 YAML key: `SpriteRenderer`
 
@@ -305,6 +308,24 @@ the sun of the layer config lights only a scene without any `Light` component (n
 [Renderer > Lights and shadows](renderer.md#renderer-lights). Lua: `entity.set_light_color` / `get_light_color`,
 `entity.set_light_intensity` / `get_light_intensity`, `entity.set_light_enabled` / `is_light_enabled`,
 `entity.set_light_range`.
+
+#### Light2D {#light2d-component}
+
+| Field            | Type    | Default     | Description                                                                                |
+|------------------|---------|-------------|--------------------------------------------------------------------------------------------|
+| `type`           | `Type`  | `Point`     | `Ambient`, `Point` or `Spot`                                                               |
+| `enabled`        | `bool`  | `true`      | Whether the light shines; switched off it keeps its settings                               |
+| `color`          | `vec3`  | `{1, 1, 1}` | Colour, sRGB as authored                                                                   |
+| `intensity`      | `float` | `1`         | Multiplier of the colour                                                                   |
+| `radius`         | `float` | `5`         | Distance where a point or spot light reaches zero, in world units                          |
+| `falloff`        | `float` | `2`         | Exponent of the fade `1 - d / radius`: 1 linear, 2 brighter near the light                 |
+| `height`         | `float` | `1`         | Height above the sprite plane: the slant of the light on normal maps and isometric atlases |
+| `innerAngle`     | `float` | 25 degrees  | Half angle of the full-intensity spot cone (radians in YAML)                               |
+| `outerAngle`     | `float` | 40 degrees  | Half angle where the spot reaches zero (radians in YAML)                                   |
+| `castShadows`    | `bool`  | `false`     | Sprites flagged `castShadows` block the light                                              |
+| `shadowSoftness` | `float` | `1`         | Penumbra width in bins of the shadow map (0 hard, 1 to 3 soft)                             |
+
+YAML key: `Light2D`. Lights the 2D layers (sprites, tilemaps, isometric sprites), up to 64 per frame; a scene without any enabled `Light2D` draws unlit, and a scene with lights but no `Ambient` one keeps a white ambient, so lights only add. A point or spot light sits at the world position of its entity, a spot points along the entity +X axis (its Z rotation). See [Renderer > 2D lighting](renderer.md#renderer-lighting2d). Lua: the `entity.*_light_*` functions below also reach a `Light2D`; `entity.has_component(id, 'Light2D')`.
 
 #### Environment {#environment-component}
 

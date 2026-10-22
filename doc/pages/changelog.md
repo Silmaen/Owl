@@ -68,9 +68,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `RendererMesh::Statistics::instancedBatchCount`, `visibleInstanceCount` and `occlusionLevelCount`; benchmarks `culling/octree/*` and `culling/mesh_flush/*`; image test `occlusion`.
 - RHI: `RenderCommand::drawIndexedIndirectAt` (one indirect command) and `ComputeShader::bindTexture` (sampled textures in compute shaders, OpenGL and Vulkan).
 - `RendererRaycast::drawSprites` draws every visible sprite in one instanced call (`raycast_sprite.slang`), sorted far to near on the GPU by `BitonicSortPass` and hidden behind the wall of their column; image test `raycast_sprites`.
+- `Light2D` component (`Ambient`, `Point`, `Spot`) and `renderer::Lighting2D`: 2D lights summed in the sprite, tilemap and isometric shaders, up to 64 per frame, in YAML, the inspector and Lua.
+- `SpriteRenderer` gains `normalMap`, `castShadows` and `lit`: normal-mapped sprites and sprites that block the 2D lights.
+- 2D shadows: a polar shadow map per light built on the CPU from the sprites flagged `castShadows`, with a soft penumbra.
+- Lit tilemaps: chunked tilemaps receive the 2D lights and shadows.
+- Lit isometric sprites and tiles through the `_normal` and `_depth` atlases of `tools/iso_atlas` found beside an albedo atlas.
+- Owl Nest: **Light 2D** inspector, sprite **2D Lighting** fields, **Ambient 2D / Point 2D / Spot 2D** in the Light menu (`entity.create_light2d`), hierarchy icons and viewport markers.
+- Engine Demo: the `platformer_house` torches carry warm `Light2D` and the scene a `HouseAmbient`; image tests `lights2d`, `tilemap_lit` and `iso_town_night_640x360`.
 
 ### Changed
 
+- Lua `entity.set/get_light_color`, `set/get_light_intensity`, `set_light_enabled`, `is_light_enabled` and `set_light_range` (the radius) also reach a `Light2D`.
 - Depth attachment format `Depth24Stencil8` is now `Depth32F` (32-bit float, no stencil) on Vulkan and OpenGL.
 - `ShadowSettings::viewProjections` is replaced by `relativeViewProjections` and `origins`, each cascade relative to its own light camera.
 - `math::Frustum` and `FrustumCullingPass::extractFrustumPlanes` use the reversed-Z planes, and `Frustum::classify` keeps a box lying on a plane.

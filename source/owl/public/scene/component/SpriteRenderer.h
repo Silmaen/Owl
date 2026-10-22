@@ -23,6 +23,12 @@ struct OWL_API SpriteRenderer {
 	shared<renderer::gpu::Texture2D> texture = nullptr;
 	/// Texture tiling factor (X and Y).
 	math::vec2 tilingFactor{1.0f, 1.0f};
+	/// Tangent-space normal map lighting the sprite under the 2D lights (OpenGL convention, Y up); flat when null.
+	shared<renderer::gpu::Texture2D> normalMap = nullptr;
+	/// Whether the sprite blocks the 2D lights casting shadows (its quad is the occluder; it stays lit itself).
+	bool castShadows = false;
+	/// Whether the 2D lights of the scene light the sprite; an unlit sprite keeps its colour (glows, markers).
+	bool lit = true;
 	/**
 	 * @brief
 	 *  Optional raycast-only world size override (in cells, X = width, Y = height).

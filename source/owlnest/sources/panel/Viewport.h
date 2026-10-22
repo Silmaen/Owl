@@ -454,6 +454,15 @@ private:
 
 	/**
 	 * @brief
+	 *  Draw the `Light2D` markers: a disc for an ambient light, a bulb for a point or spot one; selected, its radius
+	 *  circle or its cone in the sprite plane.
+	 * @param[in] iScene The scene.
+	 * @param[in] iSelected The selected entity.
+	 */
+	void renderLight2DMarkers(const shared<scene::Scene>& iScene, const scene::Entity& iSelected) const;
+
+	/**
+	 * @brief
 	 *  Draw the bulb sprite of a point light, facing the camera.
 	 * @param[in] iPosition World position of the light.
 	 * @param[in] iSize Side of the sprite, in world units.

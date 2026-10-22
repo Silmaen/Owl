@@ -16,6 +16,7 @@
 #include "renderer/gpu/RendererDescriptors.h"
 #include "renderer/gpu/StorageBuffer.h"
 #include "renderer/gpu/UniformBuffer.h"
+#include "renderer/utils/Lighting2DState.h"
 #include "scene/TilemapAsset.h"
 #include "scene/TilemapTerrain.h"
 #include "scene/Tileset.h"
@@ -27,10 +28,12 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <filesystem>
 #include <optional>
 #include <ranges>
 #include <span>
 #include <string>
+#include <tuple>
 #include <unordered_map>
 #include <vector>
 
@@ -225,6 +228,10 @@ constexpr uint32_t g_maxTextureSlots = 32;
 constexpr float g_cutoutAlpha = 0.5f;
 constexpr float g_translucentDiscardAlpha = 0.001f;
 constexpr uint16_t g_whiteTexture = 0xFFFF;
+// Lit draws: albedo slots 0 to 9, their normal companions at +10 and depth companions at +20 (isometric_light.slangh).
+constexpr uint32_t g_litAlbedoSlots = 10;
+// World height of a full texel of a depth atlas (`Z_RANGE` of `tools/iso_atlas`).
+constexpr float g_depthAtlasRange = 8.f;
 
 // Mirrored by `BillboardInstance` in `billboard.slang` (std430).
 struct GpuInstance {
@@ -239,7 +246,7 @@ struct GpuInstance {
 };
 static_assert(sizeof(GpuInstance) == 96, "GpuInstance must match the shader std430 layout");
 
-// Mirrored by `IsometricScene` in `billboard.slang` (the first three members) and `tile.slang` (all of them).
+// Mirrored by `IsometricScene` in `billboard.slang`, `sprite.slang` and `tile.slang`.
 struct SceneUbo {
 	math::mat4 view = math::identity<float, 4>();
 	math::mat4 projection = math::identity<float, 4>();
@@ -250,6 +257,10 @@ struct SceneUbo {
 	math::vec4 tile{0.f, 0.f, 0.f, 0.f};
 	// x: entity id (tilemap draws only); y: 1 when the bound framebuffer stores linear colour; zw: padding.
 	std::array<int32_t, 4> ids{-1, 0, 0, 0};
+	// x: 2D light count; y: 1 when the 2D lighting is on; z: world height of a full depth-atlas texel.
+	math::vec4 light{0.f, 0.f, 0.f, 0.f};
+	// rgb: linear ambient of the 2D lights.
+	math::vec4 ambient{1.f, 1.f, 1.f, 0.f};
 };
 
 // Mirrored by `SpriteInstance` in `sprite.slang` (std430).
@@ -352,6 +363,18 @@ struct InternalState {
 	std::vector<shared<gpu::Texture2D>> slots;
 	std::vector<int32_t> slotOfFrameTexture;
 	RendererIsometric::Statistics stats;
+	// Normal and depth atlases found beside an albedo atlas (null when absent), by path of the albedo.
+	struct Companions {
+		shared<gpu::Texture2D> normal;
+		shared<gpu::Texture2D> depth;
+	};
+	std::unordered_map<std::string, Companions> companions;
+	// Defaults of an atlas without companions: a null normal and a depth with no coverage.
+	shared<gpu::Texture2D> noNormal;
+	shared<gpu::Texture2D> noDepth;
+	// The slots of a lit draw: albedos, then their normals, then their depths.
+	std::vector<shared<gpu::Texture2D>> litSlots;
+	bool lit = false;
 };
 
 shared<InternalState> g_state;
@@ -438,6 +461,62 @@ void queue(const IsometricBillboard& iBillboard) {
 		state.opaque.push_back(item);
 }
 
+auto slotCapacity() -> size_t { return g_state->lit ? g_litAlbedoSlots : g_maxTextureSlots; }
+
+auto findCompanion(const std::filesystem::path& iAlbedo, const std::string_view iSuffix) -> shared<gpu::Texture2D> {
+	const auto candidate =
+			iAlbedo.parent_path() / (iAlbedo.stem().string() + std::string{iSuffix} + iAlbedo.extension().string());
+	std::error_code error;
+	if (!std::filesystem::exists(candidate, error))
+		return nullptr;
+	return gpu::Texture2D::create(candidate);
+}
+
+auto companionsOf(const shared<gpu::Texture2D>& iTexture) -> const InternalState::Companions& {
+	static const InternalState::Companions s_none;
+	if (!iTexture || iTexture->getPath().empty())
+		return s_none;
+	auto& cache = g_state->companions;
+	const auto key = iTexture->getPath().string();
+	if (const auto found = cache.find(key); found != cache.end())
+		return found->second;
+	return cache[key] = {.normal = findCompanion(iTexture->getPath(), "_normal"),
+						 .depth = findCompanion(iTexture->getPath(), "_depth")};
+}
+
+// The lighting of the frame (`Scene::applyLighting2D`) into the scene block, its buffers bound to the draw.
+void applyLighting() {
+	auto& state = *g_state;
+	const auto lighting = utils::getLighting2DState();
+	state.lit = lighting.ambient.w() != 0.f && lighting.lights && lighting.shadows;
+	state.scene.light =
+			math::vec4{static_cast<float>(lighting.lightCount), state.lit ? 1.f : 0.f, g_depthAtlasRange, 0.f};
+	state.scene.ambient = lighting.ambient;
+	if (!state.lit)
+		return;
+	lighting.lights->bind(/*iBinding=*/5u);
+	lighting.shadows->bind(/*iBinding=*/6u);
+}
+
+// Bind the albedo slots, followed by their companions when the draw is lit.
+void bindSlots(const std::span<const shared<gpu::Texture2D>> iAlbedos) {
+	auto& state = *g_state;
+	if (!state.lit) {
+		gpu::RenderCommand::bindTextures(iAlbedos);
+		return;
+	}
+	auto& slots = state.litSlots;
+	slots.assign(size_t{3} * g_litAlbedoSlots, nullptr);
+	for (size_t index = 0; index < g_litAlbedoSlots; ++index) {
+		const auto& albedo = index < iAlbedos.size() ? iAlbedos[index] : state.whiteTexture;
+		const auto& companions = companionsOf(albedo);
+		slots[index] = albedo;
+		slots[g_litAlbedoSlots + index] = companions.normal ? companions.normal : state.noNormal;
+		slots[size_t{2} * g_litAlbedoSlots + index] = companions.depth ? companions.depth : state.noDepth;
+	}
+	gpu::RenderCommand::bindTextures(slots);
+}
+
 void resetSlots() {
 	auto& state = *g_state;
 	state.batch.clear();
@@ -454,7 +533,7 @@ void flushBatch(const shared<gpu::DrawData>& iDraw) {
 	const auto count = static_cast<uint32_t>(state.batch.size());
 	state.scene.ids[1] = gpu::Framebuffer::isLinearTargetBound() ? 1 : 0;
 	state.sceneUbo->setData(&state.scene, sizeof(SceneUbo), 0);
-	gpu::RenderCommand::bindTextures(state.slots);
+	bindSlots(state.slots);
 	state.instances->setData(state.batch.data(), static_cast<uint32_t>(count * sizeof(GpuInstance)), 0);
 	state.instances->bind();
 	gpu::RenderCommand::drawDataInstanced(iDraw, /*iIndexCount=*/6u, count);
@@ -469,7 +548,7 @@ void flushSpriteBatch() {
 	const auto count = static_cast<uint32_t>(state.spriteBatch.size());
 	state.scene.ids[1] = gpu::Framebuffer::isLinearTargetBound() ? 1 : 0;
 	state.sceneUbo->setData(&state.scene, sizeof(SceneUbo), 0);
-	gpu::RenderCommand::bindTextures(state.slots);
+	bindSlots(state.slots);
 	state.spriteInstances->setData(state.spriteBatch.data(), static_cast<uint32_t>(count * sizeof(GpuSprite)), 0);
 	state.spriteInstances->bind();
 	gpu::RenderCommand::drawDataInstanced(state.spriteDraw, /*iIndexCount=*/6u, count);
@@ -484,7 +563,7 @@ void emitSprite(const QueuedSprite& iItem) {
 	uint32_t slot = 0;
 	if (iItem.frameTexture != g_whiteTexture) {
 		if (state.slotOfFrameTexture[iItem.frameTexture] < 0) {
-			if (state.slots.size() >= g_maxTextureSlots)
+			if (state.slots.size() >= slotCapacity())
 				flushSpriteBatch();
 			state.slotOfFrameTexture[iItem.frameTexture] = static_cast<int32_t>(state.slots.size());
 			state.slots.push_back(state.frameTextures[iItem.frameTexture]);
@@ -507,7 +586,7 @@ void emit(const Queued& iItem, const shared<gpu::DrawData>& iDraw) {
 	uint32_t slot = 0;
 	if (iItem.frameTexture != g_whiteTexture) {
 		if (state.slotOfFrameTexture[iItem.frameTexture] < 0) {
-			if (state.slots.size() >= g_maxTextureSlots)
+			if (state.slots.size() >= slotCapacity())
 				flushBatch(iDraw);
 			state.slotOfFrameTexture[iItem.frameTexture] = static_cast<int32_t>(state.slots.size());
 			state.slots.push_back(state.frameTextures[iItem.frameTexture]);
@@ -729,7 +808,7 @@ void drawTilemapChunks(const PendingTilemap& iPending, const AssetGpu& iEntry) {
 	state.scene.tile = math::vec4{tileWidth, spriteHeight, state.flatSlope, 0.f};
 	state.scene.ids = {iPending.entityId, gpu::Framebuffer::isLinearTargetBound() ? 1 : 0, 0, 0};
 	state.sceneUbo->setData(&state.scene, sizeof(SceneUbo), 0);
-	gpu::RenderCommand::bindTextures(std::span{&tileset.texture, 1});
+	bindSlots(std::span{&tileset.texture, 1});
 	for (size_t index = 0; index < asset.layers.size(); ++index) {
 		if (!asset.layers[index].visible)
 			continue;
@@ -772,7 +851,7 @@ void RendererIsometric::init() {
 	if (isReady())
 		return;
 	g_state = mkShared<InternalState>();
-	const std::array<gpu::BindingDecl, 3> bindings{
+	const std::array<gpu::BindingDecl, 5> bindings{
 			gpu::BindingDecl{.binding = 0,
 							 .type = gpu::BindingType::UniformBuffer,
 							 .count = 1,
@@ -785,6 +864,15 @@ void RendererIsometric::init() {
 							 .type = gpu::BindingType::StorageBuffer,
 							 .count = 1,
 							 .stages = gpu::ShaderStage::Vertex},
+			// The 2D lights at the bindings of Renderer2D, which owns them (global binding points on OpenGL).
+			gpu::BindingDecl{.binding = 5,
+							 .type = gpu::BindingType::StorageBuffer,
+							 .count = 1,
+							 .stages = gpu::ShaderStage::Fragment},
+			gpu::BindingDecl{.binding = 6,
+							 .type = gpu::BindingType::StorageBuffer,
+							 .count = 1,
+							 .stages = gpu::ShaderStage::Fragment},
 	};
 	gpu::RendererDescriptors::declare(g_rendererKey, bindings);
 	const gpu::RendererDescriptors::ScopedActive scoped{blockId()};
@@ -796,6 +884,13 @@ void RendererIsometric::init() {
 			gpu::Texture2D::create(gpu::Texture2D::Specification{.size = {1, 1}, .format = gpu::ImageFormat::Rgba8});
 	uint32_t white = 0xffffffff;
 	g_state->whiteTexture->setData(&white, sizeof(uint32_t));
+	g_state->noNormal =
+			gpu::Texture2D::create(gpu::Texture2D::Specification{.size = {1, 1}, .format = gpu::ImageFormat::Rgba8});
+	uint32_t zero = 0;
+	g_state->noNormal->setData(&zero, sizeof(uint32_t));
+	g_state->noDepth =
+			gpu::Texture2D::create(gpu::Texture2D::Specification{.size = {1, 1}, .format = gpu::ImageFormat::Rgba8});
+	g_state->noDepth->setData(&zero, sizeof(uint32_t));
 	g_state->sceneUbo = gpu::UniformBuffer::create(sizeof(SceneUbo), 0, g_rendererKey);
 	g_state->instances = gpu::StorageBuffer::create(maxBillboardsPerBatch * sizeof(GpuInstance), 2, g_rendererKey);
 	g_state->spriteInstances = gpu::StorageBuffer::create(maxSpritesPerBatch * sizeof(GpuSprite), 2, g_rendererKey);
@@ -932,6 +1027,12 @@ void RendererIsometric::endScene() {
 	if (state.opaque.empty() && state.translucent.empty() && state.sprites.empty() && state.tilemaps.empty())
 		return;
 	const gpu::RendererDescriptors::ScopedActive scoped{blockId()};
+	applyLighting();
+	if (state.lit) {
+		// Companions load before the batch: an upload inside it would close the render pass.
+		for (const auto& texture: state.frameTextures) std::ignore = companionsOf(texture);
+		for (const auto& pending: state.tilemaps) std::ignore = companionsOf(pending.asset->tileset->texture);
+	}
 	gpu::RenderCommand::beginBatch();
 	drawTilePass();
 	drawOpaquePass();

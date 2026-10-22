@@ -227,7 +227,7 @@ Every world layer renders linear into the `Rgba16F` scene colour; encoding to sR
 ### Lights and shadows {#renderer-lights}
 
 The 3D layers (`RendererMesh`, `RendererVoxel`) are lit by the `Light` components of the scene
-([Scene > Light](scene.md#light-component)); the 2D, isometric, tilemap and raycast layers are not.
+([Scene > Light](scene.md#light-component)); the 2D layers have their own [2D lighting](#renderer-lighting2d), the raycast layer is not lit.
 
 - **Light buffer.** Up to 64 lights are uploaded each frame to a storage buffer (`renderer::GpuLight`), shaded by
   the material of the surface ([Materials](#renderer-materials)). Point and spot lights fall off with 1/d² (distance
@@ -256,6 +256,38 @@ The 3D layers (`RendererMesh`, `RendererVoxel`) are lit by the `Light` component
 - **Passes.** One `shadow cascade` pass per cascade renders the opaque meshes and voxel worlds (transparent ones cast
   no shadow) into a `Depth` target (`RedFloat`, `shadowResolution` squared). The 3D layer passes read the cascades
   (texture slots 28 to 31) with 3x3 PCF and a normal-offset bias of `shadowBias` texels.
+
+### 2D lighting {#renderer-lighting2d}
+
+The `Light2D` components of the scene ([Scene > Light2D](scene.md#light2d-component)) light the sprites, tilemaps and
+isometric sprites of the 2D layers. A scene without any enabled `Light2D` draws unlit; with lights but no `Ambient` one
+the ambient is white, so lights only add.
+
+```mermaid
+flowchart LR
+    S[Scene::applyLighting2D] -->|lights, occluders| L[Lighting2D]
+    L --> R[Renderer2D::setLighting]
+    R -->|SSBO 5: lights| Q[quad / tilemap / isometric blocks]
+    R -->|SSBO 6: shadow rows| Q
+```
+
+- **Data.** `Scene::applyLighting2D` gathers, per 2D layer, the enabled lights (`Light2DData`, at most `g_maxLights2D`
+  = 64) and the sprites flagged `castShadows` (`Occluder2D`) into a `Lighting2D` given to `Renderer2D::setLighting`;
+  `clearLighting` ends it and `isLightingEnabled` tells whether it is on. `lightAt2D` is the CPU reference of the
+  shader sum.
+- **Shading.** `engine_assets/shaders/common/light2d.slangh`: ambient plus, per light, `colour × intensity ×
+  (1 - d / radius)^falloff`, times the spot cone between `innerAngle` and `outerAngle`. A sprite with a `normalMap` also
+  gets the Lambert term of the light direction, raised by the light `height`; `Quad2DData::lit` false skips it.
+- **Shadows.** A light with `castShadows` has a polar shadow map of `g_shadow2DBins` (512) angular bins, built on the CPU by
+  `buildShadowRow2D` from the occluder quads (`Quad2DData::shadowCaster`) and uploaded as one row per light; the
+  shader compares the distance of the pixel with the row at its angle, with a penumbra of `shadowSoftness` bins.
+- **Tilemaps.** Chunked tilemaps are lit (no normal map) and receive the shadows.
+- **Isometric layer.** The layer lights its sprites and tiles through the `_normal` and `_depth` atlases of
+  `tools/iso_atlas` found beside an albedo atlas (`common/isometric_light.slangh`): albedo slots 0 to 9, normals at
+  +10, depth at +20. The map position of a pixel is solved from its view position and its depth-atlas height, the
+  ground tiles are lit per pixel; there are no 2D shadows in the isometric layer.
+- **Bindings.** Lights are a storage buffer at binding 5 and shadow rows one at binding 6, the same in the quad,
+  tilemap and isometric blocks: `Renderer2D` owns the buffers and OpenGL storage binding points are global.
 
 ### Adding a new layer type
 

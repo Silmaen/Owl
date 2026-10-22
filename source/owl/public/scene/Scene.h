@@ -17,6 +17,7 @@
 #include "input/InputFrame.h"
 #include "math/Transform.h"
 #include "renderer/Camera.h"
+#include "renderer/Lighting2D.h"
 #include "renderer/RenderGraph.h"
 #include "renderer/RenderStack.h"
 #include "renderer/Renderer3D.h"
@@ -80,6 +81,7 @@ struct ID;
 struct LuaScript;
 struct MeshRenderer;
 struct Light;
+struct Light2D;
 struct Environment;
 struct NativeScript;
 struct PhysicBody;
@@ -963,6 +965,14 @@ public:
 	 */
 	[[nodiscard]] auto getHudLayout() const -> const ui::HudLayout& { return m_hudLayout; }
 
+	/**
+	 * @brief
+	 *  Give the `Light2D` entities and the shadow-casting sprites of the layer being drawn to `Renderer2D`, which the
+	 *  2D, tilemap and isometric renderers read; without an enabled light the 2D lighting is turned off.
+	 * @param[in] iEditorMode True if the scene is being drawn for the editor view.
+	 */
+	void applyLighting2D(bool iEditorMode);
+
 private:
 	/**
 	 * @brief
@@ -1275,6 +1285,7 @@ private:
 	 */
 	void renderMeshes(bool iEditorMode);
 
+
 	/**
 	 * @brief
 	 *  Resolve the material of one slot of a mesh renderer: its `.owlmat` (or the file's own material), its overrides,
@@ -1506,6 +1517,8 @@ private:
 	const renderer::Camera* mp_renderCamera = nullptr;
 	/// Lights of the frame, as `Renderer3D` reads them.
 	std::vector<renderer::GpuLight> m_gpuLights;
+	/// 2D lights and occluders of the layer being drawn, reused every frame.
+	renderer::Lighting2D m_lighting2D;
 	/// Light added to every lit surface in Edit mode.
 	math::vec3 m_editorAmbient{0.f, 0.f, 0.f};
 	/// Targets the colour encode of the frame reads.
@@ -1595,6 +1608,9 @@ OWL_API void Scene::onComponentAdded<component::MeshRenderer>(const Entity& iEnt
 
 template<>
 OWL_API void Scene::onComponentAdded<component::Light>(const Entity& iEntity, component::Light& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::Light2D>(const Entity& iEntity, component::Light2D& ioComponent);
 
 template<>
 OWL_API void Scene::onComponentAdded<component::Environment>(const Entity& iEntity,

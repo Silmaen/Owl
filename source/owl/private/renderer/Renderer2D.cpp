@@ -19,6 +19,7 @@
 #include "renderer/gpu/StorageBuffer.h"
 #include "renderer/gpu/UniformBuffer.h"
 #include "renderer/utils/DrawRuns.h"
+#include "renderer/utils/Lighting2DState.h"
 
 #include <algorithm>
 #include <array>
@@ -58,8 +59,26 @@ struct QuadInstance {
 	uint32_t texIndex;
 	int32_t entityId;
 	math::vec2 tilingFactor;
+	// Texture slot of the normal map, -1 for none.
+	int32_t normalIndex;
+	// Bit 0: lit by the 2D lights; bit 1: shadow caster.
+	uint32_t flags;
+	uint32_t _pad1[2];
 };
-static_assert(sizeof(QuadInstance) == 80, "QuadInstance must match shader std430 layout");
+static_assert(sizeof(QuadInstance) == 96, "QuadInstance must match shader std430 layout");
+
+constexpr uint32_t g_quadLit = 1u;
+constexpr uint32_t g_quadShadowCaster = 2u;
+
+// A 2D light as `light2d.slangh` reads it (std430).
+struct Light2DGpu {
+	math::vec4 positionRadius;
+	math::vec4 colorFalloff;
+	math::vec4 spot;
+	// x: first bin of its shadow row (-1 none), y: penumbra in bins, z: bins per row.
+	math::vec4 shadow;
+};
+static_assert(sizeof(Light2DGpu) == 64, "Light2DGpu must match Light2D of light2d.slangh");
 
 struct CircleInstance {
 	int32_t worldIndex;
@@ -118,10 +137,12 @@ struct TextureSlotEntry {
 struct InternalData {
 	struct CameraData {
 		math::mat4 viewProjection;
-		// x: 1 when the bound framebuffer stores linear colour; yzw: padding to a std140 vec4.
+		// x: 1 when the bound framebuffer stores linear colour; y: 2D light count; zw: padding to a std140 vec4.
 		std::array<int32_t, 4> flags{};
+		// rgb: linear ambient of the 2D lights; w: 1 when the 2D lighting is on.
+		math::vec4 ambient{1.f, 1.f, 1.f, 0.f};
 	};
-	static_assert(sizeof(CameraData) == 80,
+	static_assert(sizeof(CameraData) == 96,
 				  "CameraData must match the std140 layout of Camera in the renderer2D shaders.");
 	CameraData cameraBuffer{};
 	BatchData<QuadInstance> quad;
@@ -148,6 +169,11 @@ struct InternalData {
 	std::vector<math::mat4> transientWorlds;
 	shared<gpu::StorageBuffer> transientWorldsSsbo;
 	std::optional<Renderer2D::Scissor> scissor;
+	shared<gpu::StorageBuffer> lightBuffer;
+	shared<gpu::StorageBuffer> shadowBuffer;
+	// Reused every frame: the lights and the shadow rows of the shadow-casting ones.
+	std::vector<Light2DGpu> lights;
+	std::vector<float> shadowRows;
 };
 }// namespace
 }// namespace utils
@@ -203,7 +229,10 @@ void drawTextBackground(const StringData& iString, const math::mat4& iStringMat)
 														 .uv = defaults.textureCoords,
 														 .texIndex = 0,
 														 .entityId = iString.entityId,
-														 .tilingFactor = defaults.tilingFactor});
+														 .tilingFactor = defaults.tilingFactor,
+														 .normalIndex = -1,
+														 .flags = 0u,
+														 ._pad1 = {0u, 0u}});
 	g_Data->runs.note(utils::RunKind::Quad, iString.depth);
 	g_Data->stats.quadCount++;
 }
@@ -302,7 +331,7 @@ void Renderer2D::init() {
 	g_Data = mkShared<utils::InternalData>();
 
 	{
-		const std::array<gpu::BindingDecl, 5> r2dBindings{
+		const std::array<gpu::BindingDecl, 7> r2dBindings{
 				gpu::BindingDecl{.binding = 0,
 								 .type = gpu::BindingType::UniformBuffer,
 								 .count = 1,
@@ -323,6 +352,14 @@ void Renderer2D::init() {
 								 .type = gpu::BindingType::StorageBuffer,
 								 .count = 1,
 								 .stages = gpu::ShaderStage::Vertex},
+				gpu::BindingDecl{.binding = 5,
+								 .type = gpu::BindingType::StorageBuffer,
+								 .count = 1,
+								 .stages = gpu::ShaderStage::Fragment},
+				gpu::BindingDecl{.binding = 6,
+								 .type = gpu::BindingType::StorageBuffer,
+								 .count = 1,
+								 .stages = gpu::ShaderStage::Fragment},
 		};
 		gpu::RendererDescriptors::declare("Renderer2D", r2dBindings);
 	}
@@ -388,6 +425,12 @@ void Renderer2D::init() {
 			gpu::StorageBuffer::create(utils::g_maxTransientWorldsPerBatch * sizeof(math::mat4), 4, "Renderer2D");
 	g_Data->transientWorlds.reserve(utils::g_maxTransientWorldsPerBatch);
 	g_Data->runs.reserve(utils::g_maxRunsPerBatch);
+	g_Data->lightBuffer = gpu::StorageBuffer::create(g_maxLights2D * static_cast<uint32_t>(sizeof(utils::Light2DGpu)),
+													 5, "Renderer2D");
+	g_Data->shadowBuffer = gpu::StorageBuffer::create(
+			g_maxLights2D * g_shadow2DBins * static_cast<uint32_t>(sizeof(float)), 6, "Renderer2D");
+	g_Data->lights.reserve(g_maxLights2D);
+	g_Data->shadowRows.reserve(size_t{g_maxLights2D} * g_shadow2DBins);
 }
 
 void Renderer2D::shutdown() {
@@ -415,6 +458,8 @@ void Renderer2D::shutdown() {
 	g_Data->transientWorldsSsbo.reset();
 	g_Data->transientWorlds.clear();
 	g_Data->transientWorlds.shrink_to_fit();
+	g_Data->lightBuffer.reset();
+	g_Data->shadowBuffer.reset();
 	g_Data.reset();
 	gpu::RendererDescriptors::release("Renderer2D");
 }
@@ -426,12 +471,69 @@ void Renderer2D::beginScene(const Camera& iCamera) {
 		const gpu::RendererDescriptors::ScopedActive scoped{blockId()};
 		g_Data->cameraBuffer.viewProjection = iCamera.getViewProjection();
 		g_Data->cameraBuffer.flags[0] = gpu::Framebuffer::isLinearTargetBound() ? 1 : 0;
+		g_Data->cameraBuffer.flags[1] = 0;
+		g_Data->cameraBuffer.ambient = math::vec4{1.f, 1.f, 1.f, 0.f};
 		g_Data->cameraUniformBuffer->setData(&g_Data->cameraBuffer, sizeof(utils::InternalData::CameraData), 0);
 	}
 	g_Data->scissor.reset();
 	startBatch();
 	RendererTilemap::beginScene(iCamera);
 }
+
+void Renderer2D::setLighting(const Lighting2D& iLighting) {
+	OWL_PROFILE_FUNCTION()
+
+	if (!g_Data)
+		return;
+	auto& data = *g_Data;
+	const size_t count = std::min(iLighting.lights.size(), size_t{g_maxLights2D});
+	data.lights.clear();
+	data.shadowRows.clear();
+	for (size_t index = 0; index < count; ++index) {
+		const auto& light = iLighting.lights[index];
+		float firstBin = -1.f;
+		if (light.castShadows && !iLighting.occluders.empty()) {
+			firstBin = static_cast<float>(data.shadowRows.size());
+			data.shadowRows.resize(data.shadowRows.size() + g_shadow2DBins);
+			buildShadowRow2D(light.position, light.radius, iLighting.occluders,
+							 std::span{data.shadowRows}.last(g_shadow2DBins));
+		}
+		data.lights.push_back({.positionRadius = {light.position.x(), light.position.y(), light.height, light.radius},
+							   .colorFalloff = {light.color.x(), light.color.y(), light.color.z(), light.falloff},
+							   .spot = {light.direction.x(), light.direction.y(), light.cosInner, light.cosOuter},
+							   .shadow = {firstBin, light.shadowSoftness, static_cast<float>(g_shadow2DBins), 0.f}});
+	}
+	const gpu::RendererDescriptors::ScopedActive scoped{blockId()};
+	if (!data.lights.empty())
+		data.lightBuffer->setData(data.lights.data(),
+								  static_cast<uint32_t>(data.lights.size() * sizeof(utils::Light2DGpu)), 0);
+	if (!data.shadowRows.empty())
+		data.shadowBuffer->setData(data.shadowRows.data(),
+								   static_cast<uint32_t>(data.shadowRows.size() * sizeof(float)), 0);
+	data.cameraBuffer.flags[1] = static_cast<int32_t>(data.lights.size());
+	data.cameraBuffer.ambient = math::vec4{iLighting.ambient.x(), iLighting.ambient.y(), iLighting.ambient.z(), 1.f};
+	data.cameraUniformBuffer->setData(&data.cameraBuffer, sizeof(utils::InternalData::CameraData), 0);
+}
+
+void Renderer2D::clearLighting() {
+	if (!g_Data || g_Data->cameraBuffer.ambient.w() == 0.f)
+		return;
+	g_Data->cameraBuffer.flags[1] = 0;
+	g_Data->cameraBuffer.ambient = math::vec4{1.f, 1.f, 1.f, 0.f};
+	const gpu::RendererDescriptors::ScopedActive scoped{blockId()};
+	g_Data->cameraUniformBuffer->setData(&g_Data->cameraBuffer, sizeof(utils::InternalData::CameraData), 0);
+}
+
+auto utils::getLighting2DState() -> Lighting2DState {
+	if (!g_Data)
+		return {};
+	return {.lights = g_Data->lightBuffer,
+			.shadows = g_Data->shadowBuffer,
+			.lightCount = g_Data->cameraBuffer.flags[1],
+			.ambient = g_Data->cameraBuffer.ambient};
+}
+
+auto Renderer2D::isLightingEnabled() -> bool { return g_Data && g_Data->cameraBuffer.ambient.w() != 0.f; }
 
 auto Renderer2D::getViewProjection() -> math::mat4 {
 	return g_Data ? g_Data->cameraBuffer.viewProjection : math::identity<float, 4>();
@@ -487,6 +589,8 @@ void Renderer2D::flush() {
 
 	const bool hasSceneWorlds = !g_Data->sceneWorlds.empty() && g_Data->sceneWorldsSsbo != nullptr;
 	(hasSceneWorlds ? g_Data->sceneWorldsSsbo : g_Data->sceneWorldsFallback)->bind(/*iBinding=*/3u);
+	g_Data->lightBuffer->bind(/*iBinding=*/5u);
+	g_Data->shadowBuffer->bind(/*iBinding=*/6u);
 
 	BackgroundRenderer::flushPending(bgTexIndex);
 
@@ -609,7 +713,14 @@ void Renderer2D::drawQuad(const Quad2DData& iQuadData) {
 
 	if (g_Data->quad.instances.size() >= utils::g_maxQuadsPerBatch || g_Data->runs.size() >= utils::g_maxRunsPerBatch)
 		nextBatch();
+	// A normal-mapped quad takes two slots: both must land in the same batch.
+	if (iQuadData.normalMap != nullptr && g_Data->textureSlotIndex + 2 > utils::g_MaxTextureSlots)
+		nextBatch();
 	const uint32_t textureIndex = iQuadData.texture == nullptr ? 0 : textureSlotOf(iQuadData.texture);
+	const int32_t normalIndex =
+			iQuadData.normalMap == nullptr ? -1 : static_cast<int32_t>(textureSlotOf(iQuadData.normalMap));
+	const uint32_t flags =
+			(iQuadData.lit ? utils::g_quadLit : 0u) | (iQuadData.shadowCaster ? utils::g_quadShadowCaster : 0u);
 	const int32_t worldIndex = resolveWorldIndex(iQuadData.worldIndex, iQuadData.transform);
 	g_Data->quad.instances.push_back(utils::QuadInstance{.worldIndex = worldIndex,
 														 ._pad0 = {0u, 0u, 0u},
@@ -617,7 +728,10 @@ void Renderer2D::drawQuad(const Quad2DData& iQuadData) {
 														 .uv = iQuadData.textureCoords,
 														 .texIndex = textureIndex,
 														 .entityId = iQuadData.entityId,
-														 .tilingFactor = iQuadData.tilingFactor});
+														 .tilingFactor = iQuadData.tilingFactor,
+														 .normalIndex = normalIndex,
+														 .flags = flags,
+														 ._pad1 = {0u, 0u}});
 	g_Data->runs.note(utils::RunKind::Quad, iQuadData.depth);
 	g_Data->stats.quadCount++;
 }

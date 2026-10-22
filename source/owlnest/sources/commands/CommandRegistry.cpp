@@ -372,6 +372,38 @@ auto createLight(const shared<scene::Scene>& ioScene, const CommandArgs& iArgs) 
 	return PreparedCommand{.command = mkUniq<CreateEntityCommand>(entity), .applied = true, .entity = entity.getUUID()};
 }
 
+auto createLight2D(const shared<scene::Scene>& ioScene, const CommandArgs& iArgs) -> Prepared {
+	const auto kind = iArgs.getText("type");
+	using LightType = scene::component::Light2D::Type;
+	std::optional<LightType> type;
+	if (kind == "Ambient")
+		type = LightType::Ambient;
+	else if (kind == "Point")
+		type = LightType::Point;
+	else if (kind == "Spot")
+		type = LightType::Spot;
+	if (!type)
+		return fail(CommandError::InvalidArgument, std::format("`{}` is not a 2D light type", kind));
+	std::optional<scene::Entity> parent;
+	if (iArgs.has("parent")) {
+		auto found = entityArg(*ioScene, iArgs, "parent");
+		if (!found)
+			return unexpected<CommandFailure>{found.error()};
+		parent = *found;
+	}
+	auto entity = ioScene->createEntity(iArgs.getText("name", kind + " Light 2D"));
+	if (const auto translation = iArgs.getVec3("translation"); translation)
+		entity.getComponent<scene::component::Transform>().transform.translation() = *translation;
+	auto& light = entity.addComponent<scene::component::Light2D>();
+	light.type = *type;
+	// An ambient light starts as a dim night, so that a first point light shows.
+	if (*type == LightType::Ambient)
+		light.intensity = 0.3f;
+	if (parent)
+		ioScene->setParent(entity, *parent);
+	return PreparedCommand{.command = mkUniq<CreateEntityCommand>(entity), .applied = true, .entity = entity.getUUID()};
+}
+
 auto setSceneHud(const shared<scene::Scene>& ioScene, const CommandArgs& iArgs) -> Prepared {
 	std::optional<std::string> path;
 	if (!iArgs.getBool("use_default"))
@@ -939,6 +971,20 @@ CommandRegistry::CommandRegistry() {
 				  {.name = "translation", .type = ArgType::Vec3, .description = "World position of the entity."},
 				  {.name = "parent", .type = ArgType::Entity, .description = "Parent entity (root when absent)."}},
 		 .factory = createLight});
+	add({.name = "entity.create_light2d",
+		 .description = "Create an entity with a `Light2D`: an ambient light (dim, the night tint), or a point or spot "
+						"light of the 2D layers.",
+		 .args = {{.name = "type",
+				   .type = ArgType::Enum,
+				   .required = true,
+				   .description = "Kind of 2D light.",
+				   .choices = {"Ambient", "Point", "Spot"}},
+				  {.name = "name",
+				   .type = ArgType::Text,
+				   .description = "Tag of the entity (`<Type> Light 2D` when absent)."},
+				  {.name = "translation", .type = ArgType::Vec3, .description = "World position of the entity."},
+				  {.name = "parent", .type = ArgType::Entity, .description = "Parent entity (root when absent)."}},
+		 .factory = createLight2D});
 	add({.name = "component.set",
 		 .description = "Change fields of a component of an entity: the values are merged into its current state.",
 		 .args = {entitySpec("Entity changed."),

@@ -14,6 +14,7 @@
 #include "renderer/Camera.h"
 #include "renderer/CameraEditor.h"
 #include "renderer/CameraOrtho.h"
+#include "renderer/Lighting2D.h"
 #include "renderer/gpu/Texture.h"
 
 #include <array>
@@ -91,6 +92,12 @@ struct OWL_API Quad2DData {
 	 *  order. Larger is nearer the viewer, as the view depth of the isometric layer. Default 0: type order only.
 	 */
 	float depth = 0.f;
+	/// Tangent-space normal map lighting the quad under the 2D lights (sampled with the texture coordinates).
+	shared<gpu::Texture> normalMap = nullptr;
+	/// Whether the 2D lights (`setLighting`) light the quad; off for the HUD, gizmos and overlays.
+	bool lit = false;
+	/// Whether the quad casts 2D shadows: it is not shadowed itself.
+	bool shadowCaster = false;
 };
 
 /**
@@ -288,6 +295,27 @@ public:
 	 * @param[in] iCamera The camera.
 	 */
 	static void beginScene(const Camera& iCamera);
+
+	/**
+	 * @brief
+	 *  Light the quads drawn with `lit` until the next `beginScene`: the ambient, the lights and their shadow maps,
+	 *  built from the occluders.
+	 * @param[in] iLighting The lighting of the frame.
+	 */
+	static void setLighting(const Lighting2D& iLighting);
+
+	/**
+	 * @brief
+	 *  Turn the 2D lighting off: the next quads draw unlit (`beginScene` does it too).
+	 */
+	static void clearLighting();
+
+	/**
+	 * @brief
+	 *  Whether the quads drawn with `lit` are lit.
+	 * @return True between `setLighting` and the next `clearLighting` or `beginScene`.
+	 */
+	[[nodiscard]] static auto isLightingEnabled() -> bool;
 
 	/**
 	 * @brief

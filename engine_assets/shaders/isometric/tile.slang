@@ -18,6 +18,9 @@ struct IsometricScene {
 	float4 tile;
 	// x: entity id written to the picking attachment; y: 1 when the target stores linear colour (decoded from sRGB).
 	int4 ids;
+	// x: 2D light count; y: 1 when the 2D lighting is on; z: world height of a full depth-atlas texel.
+	float4 light;
+	float4 ambient;// rgb: linear ambient of the 2D lights.
 };
 
 [[vk::binding(0)]]
@@ -29,6 +32,8 @@ ConstantBuffer<IsometricScene> gScene;
 [[vk::binding(0)]]
 #endif
 Sampler2D gTextures[32];
+
+#include "isometric_light.slangh"
 
 struct VertexInput {
 	// Per-vertex attribute (binding 0): the corner of the sprite, 0 = BL, 1 = BR, 2 = TR, 3 = TL.
@@ -42,6 +47,8 @@ struct VertexInput {
 struct FragmentInput {
 	[[vk::location(0)]] float2 texCoord : TEXCOORD0;
 	[[vk::location(1)]] nointerpolation int entityID : TEXCOORD1;
+	[[vk::location(2)]] float2 viewXY : TEXCOORD2;
+	[[vk::location(3)]] nointerpolation float3 foot : TEXCOORD3;// world foot point of the cell.
 };
 
 struct FragmentOutput {
@@ -79,6 +86,8 @@ VertexOutput vertexMain(VertexInput input) {
 	viewPos.xy += offset;
 	viewPos.z += offset.y * gScene.tile.z + input.foot.w;
 	output.svPosition = mul(gScene.projection, viewPos);
+	output.frag.viewXY = viewPos.xy;
+	output.frag.foot = gScene.origin.xyz + input.foot.xyz;
 	const bool right = input.cornerIndex == 1 || input.cornerIndex == 2;
 	const bool top = input.cornerIndex >= 2;
 	output.frag.texCoord = float2(right ? input.uvRect.z : input.uvRect.x, top ? input.uvRect.w : input.uvRect.y);
@@ -94,6 +103,8 @@ FragmentOutput fragmentMain(FragmentInput input) {
 		discard;
 	if (gScene.ids.y != 0)
 		texColor.rgb = srgbToLinear(texColor.rgb);
+	if (gScene.light.y != 0.0f)
+		texColor.rgb *= isometricLight(0, input.texCoord, input.viewXY, input.foot, true);
 	output.color = texColor;
 	output.entityID = input.entityID;
 	return output;

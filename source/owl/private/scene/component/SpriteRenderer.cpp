@@ -26,6 +26,12 @@ void SpriteRenderer::serialize(const core::Serializer& iOut) const {
 		}
 		iOut.getImpl()->emitter << YAML::Key << "texture" << YAML::Value << texture->getSerializeString();
 	}
+	if (normalMap)
+		iOut.getImpl()->emitter << YAML::Key << "normalMap" << YAML::Value << normalMap->getSerializeString();
+	if (castShadows)
+		iOut.getImpl()->emitter << YAML::Key << "castShadows" << YAML::Value << castShadows;
+	if (!lit)
+		iOut.getImpl()->emitter << YAML::Key << "lit" << YAML::Value << lit;
 	if (raycastSize.x() > 0.f || raycastSize.y() > 0.f) {
 		iOut.getImpl()->emitter << YAML::Key << "raycastSize" << YAML::Value << YAML::Flow << YAML::BeginSeq
 								<< raycastSize.x() << raycastSize.y() << YAML::EndSeq;
@@ -47,6 +53,13 @@ void SpriteRenderer::deserialize(const core::Serializer& iNode) {
 	if (iNode.getImpl()->node["texture"])
 		texture = renderer::gpu::Texture2D::createFromSerializedForDeserialize(
 				iNode.getImpl()->node["texture"].as<std::string>());
+	if (iNode.getImpl()->node["normalMap"])
+		normalMap = renderer::gpu::Texture2D::createFromSerializedForDeserialize(
+				iNode.getImpl()->node["normalMap"].as<std::string>());
+	if (iNode.getImpl()->node["castShadows"])
+		castShadows = iNode.getImpl()->node["castShadows"].as<bool>();
+	if (iNode.getImpl()->node["lit"])
+		lit = iNode.getImpl()->node["lit"].as<bool>();
 	if (auto rsNode = iNode.getImpl()->node["raycastSize"]; rsNode && rsNode.isSequence() && rsNode.size() >= 2)
 		raycastSize = {rsNode[0].as<float>(), rsNode[1].as<float>()};
 	if (iNode.getImpl()->node["raycastZOffset"])

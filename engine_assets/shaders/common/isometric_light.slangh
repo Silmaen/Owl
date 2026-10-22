@@ -1,0 +1,30 @@
+// 2D lights on the isometric pixels (sprite, billboard and tile shaders). With the lighting on, the albedo slots are
+// 0 to 9, the normal companion of slot s is s + 10 and its depth companion s + 20 (`_normal` and `_depth` atlases of
+// `tools/iso_atlas`; flat and empty defaults otherwise). The including shader declares `gScene` (with `light` and
+// `ambient`) and `gTextures` first.
+
+#define LIGHT2D_LIGHT_BINDING 5
+#define LIGHT2D_SHADOW_BINDING 6
+#include "light2d.slangh"
+
+static const int ISOMETRIC_NORMAL_SLOTS = 10;
+static const int ISOMETRIC_DEPTH_SLOTS = 20;
+
+// Light reaching an isometric pixel: its height from the depth atlas, its map position from its view position and
+// height, its world normal from the normal atlas. Without a depth atlas a ground pixel lies at the foot height and an
+// upright sprite is lit at its foot.
+float3 isometricLight(int slot, float2 uv, float2 viewXY, float3 foot, bool ground) {
+	float4 depth = gTextures[NonUniformResourceIndex(slot + ISOMETRIC_DEPTH_SLOTS)].Sample(uv);
+	float height = foot.z;
+	float2 position = foot.xy;
+	if (depth.a >= 0.5f) {
+		height = foot.z + depth.r * gScene.light.z;
+		position = isometricMapPosition(gScene.view, viewXY, height);
+	} else if (ground) {
+		position = isometricMapPosition(gScene.view, viewXY, height);
+	}
+	float3 normal = gTextures[NonUniformResourceIndex(slot + ISOMETRIC_NORMAL_SLOTS)].Sample(uv).xyz * 2.0f - 1.0f;
+	bool hasNormal = dot(normal, normal) > 0.25f;
+	return lighting2D(position, height, hasNormal ? normalize(normal) : float3(0.0f, 0.0f, 1.0f), hasNormal, false,
+					  int(gScene.light.x), gScene.ambient.rgb);
+}

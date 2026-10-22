@@ -22,6 +22,9 @@ get confirmation. A passing headless (Null backend) test is evidence the path wo
   UBOs, bind textures (`RenderCommand::bindTextures`) and SSBOs, and draw under the renderer's `ScopedActive`. On
   OpenGL (global binding points, UBO 0 and units 0..n shared) `opengl::BindingTable` re-applies the block's UBOs and
   textures when another block drew in between; a bind made outside any block is not tracked.
+- **2D lights: SSBO bindings 5 (lights) and 6 (shadow rows) in every 2D-family block.** `Renderer2D` owns the buffers and the
+  quad, tilemap and isometric blocks declare the same two bindings, because OpenGL storage binding points are global: a
+  block must never bind its own SSBO at 5 or 6. Isometric lit texture slots: albedo 0-9, normal +10, depth +20.
 - **Vulkan: one command buffer per frame, two frames in flight.** Batches share a render pass in it (kept
   open across batches on one framebuffer, closed by a framebuffer change, a transfer, a compute dispatch or the frame
   end), never a submission; the frame is submitted once at `endFrame`. Never wait on a queue or the device in a frame:

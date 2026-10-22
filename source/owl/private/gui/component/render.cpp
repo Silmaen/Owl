@@ -694,6 +694,16 @@ void renderProps(SpriteRenderer& ioComponent) {
 	} else {
 		prop::DragFloat2("Tiling Factor", &ioComponent.tilingFactor.x(), 0.1f, 0.0f, 100.0f);
 	}
+	if (widgets::subHeader("2D Lighting")) {
+		resetCheckbox("Lit", ioComponent.lit, true);
+		fieldTooltip("Whether the Light 2D entities of the scene light the sprite; an unlit sprite keeps its colour "
+					 "(glows, markers).");
+		widgets::textureField("Normal Map", ioComponent.normalMap);
+		fieldTooltip("Tangent-space normal map (OpenGL convention, green up), sampled like the texture: the 2D lights "
+					 "slant on its bumps.");
+		resetCheckbox("Cast Shadows", ioComponent.castShadows, false);
+		fieldTooltip("The sprite's quad blocks the Light 2D entities casting shadows; the sprite itself stays lit.");
+	}
 	if (widgets::subHeader("Raycast (billboard)")) {
 		fieldTooltip("Optional overrides used only when the entity is rendered through a "
 					 "RendererRaycast layer. Leave at defaults to inherit from Transform.");
@@ -1002,6 +1012,47 @@ void renderProps(Environment& ioComponent) {
 	fieldTooltip("Rotation of the image about the vertical axis, in degrees.");
 	resetCheckbox("Show Sky", ioComponent.showSky, defaults.showSky);
 	fieldTooltip("Draw the image behind the scene as its sky.");
+}
+
+void renderProps(Light2D& ioComponent) {
+	const Light2D defaults;
+	resetCheckbox("Enabled", ioComponent.enabled, defaults.enabled);
+	fieldTooltip("A light switched off keeps its settings and stops shining.");
+	resettable("Type", ioComponent.type, defaults.type, drawEnum<Light2D::Type>);
+	fieldTooltip("Ambient: the same light everywhere (day and night tint; without one the ambient is white). Point: "
+				 "radiates from its position. Spot: a point light restricted to a cone along the +X axis of the "
+				 "entity.");
+	resetColor("Color", ioComponent.color, defaults.color);
+	fieldTooltip("Colour of the light, as authored (sRGB).");
+	resetFloat("Intensity", ioComponent.intensity, defaults.intensity, 0.01f, 0.f, 100.f);
+	fieldTooltip("Multiplier of the colour: 1 lights a sprite with its own colour at the centre of the light.");
+	if (ioComponent.type == Light2D::Type::Ambient)
+		return;
+	resetFloat("Radius", ioComponent.radius, defaults.radius, 0.05f, 0.01f, 10000.f);
+	fieldTooltip("Distance where the light reaches zero, in world units.");
+	resetFloat("Falloff", ioComponent.falloff, defaults.falloff, 0.01f, 0.1f, 8.f);
+	fieldTooltip(
+			"Exponent of the fade towards the radius: 1 linear, 2 brighter near the light and softer at the edge.");
+	resetFloat("Height", ioComponent.height, defaults.height, 0.01f, 0.f, 100.f);
+	fieldTooltip(
+			"Height of the light above the sprites: the slant of its light on the normal-mapped sprites and on the "
+			"isometric atlases.");
+	if (ioComponent.type == Light2D::Type::Spot) {
+		constexpr float maxAngle = 179.f;
+		if (resetDegrees("Inner Angle", ioComponent.innerAngle, defaults.innerAngle, 0.f, maxAngle))
+			ioComponent.outerAngle = std::max(ioComponent.outerAngle, ioComponent.innerAngle);
+		fieldTooltip("Half angle of the cone at full intensity, in degrees.");
+		if (resetDegrees("Outer Angle", ioComponent.outerAngle, defaults.outerAngle, 0.f, maxAngle))
+			ioComponent.innerAngle = std::min(ioComponent.innerAngle, ioComponent.outerAngle);
+		fieldTooltip("Half angle of the cone where the light reaches zero, in degrees.");
+	}
+	resetCheckbox("Cast Shadows", ioComponent.castShadows, defaults.castShadows);
+	fieldTooltip(
+			"The sprites flagged Cast Shadows block the light (2D layers; the isometric layer has no 2D shadows).");
+	if (!ioComponent.castShadows)
+		return;
+	resetFloat("Shadow Softness", ioComponent.shadowSoftness, defaults.shadowSoftness, 0.01f, 0.f, 4.f);
+	fieldTooltip("Width of the penumbra: 0 hard, 1 to 3 soft.");
 }
 
 void renderProps(Light& ioComponent) {

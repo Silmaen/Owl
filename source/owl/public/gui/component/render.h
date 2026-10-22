@@ -111,6 +111,13 @@ OWL_API void renderProps(scene::component::Light& ioComponent);
 
 /**
  * @brief
+ *  Render a Gui for editing the 2D light (kind, colour, intensity, radius, falloff, height, spot cone, shadows).
+ * @param ioComponent The component to edit.
+ */
+OWL_API void renderProps(scene::component::Light2D& ioComponent);
+
+/**
+ * @brief
  *  Render a Gui for editing the component.
  * @param ioComponent The component to edit.
  */
