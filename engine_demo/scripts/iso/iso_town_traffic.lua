@@ -38,9 +38,8 @@
 -- dead end), `town_dead_end_loops` (loops at a dead end), `town_frames_seen` (number of distinct headings shown, 0 to 8), `town_longest_wait` (the longest time, in seconds, a
 -- vehicle waited without a route) and `town_debug` (1 while the navigation overlay is on).
 
-local TRIP_PAY = 5
+local TRIP_PAY, RETRY_SECONDS    -- set from the properties in on_create
 local LANE = 0.2
-local RETRY_SECONDS = 0.5
 local HEADINGS = 8
 local TURN = math.pi / 2
 local HEADING_STEP = math.pi / 4
@@ -49,6 +48,8 @@ properties = {
     { name = "map_size", type = "float", default = 24.0 },
     { name = "max_trip", type = "float", default = 0.0 },
     { name = "fleet", type = "string", default = "" },
+    { name = "trip_pay", type = "int", default = 5 },
+    { name = "retry_seconds", type = "float", default = 0.5 },
 }
 
 -- Colour of each vehicle in the overlay, by order in the fleet.
@@ -207,6 +208,8 @@ local function publish(vehicle)
 end
 
 function on_create()
+    TRIP_PAY = trip_pay
+    RETRY_SECONDS = retry_seconds
     SIZE = math.floor(map_size or SIZE)
     MAX_TRIP = math.floor(max_trip or 0)
     parse_fleet(fleet)

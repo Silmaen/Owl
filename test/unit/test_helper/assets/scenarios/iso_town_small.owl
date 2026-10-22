@@ -46,7 +46,7 @@ Entities:
 - Entity: 4300000000000000003
   Tag: {tag: CloudNear}
   Transform:
-    translation: [6, 17, -4]
+    translation: [-6, 5, -4]
     rotation: [0, 0, 0]
     scale: [9, 4.5, 1]
   SpriteRenderer:
@@ -54,27 +54,16 @@ Entities:
     texture: nam:textures/iso/smoke.png
     tilingFactor: 1
   Visibility: {gameVisible: true}
-  LuaScript:
-    scriptPath: scripts/iso/iso_cloud.lua
-    properties:
-    - name: offset_x
-      type: float
-      value: -6
-    - name: offset_y
-      type: float
-      value: 5
-    - name: parallax
-      type: float
-      value: 0.5
-    - name: speed
-      type: float
-      value: 0.35
+  Drift:
+    velocity: [0.35, 0, 0]
+    range: [20, 0, 0]
+    cameraFollow: 0.5
   RendererTag: {Name: world}
 
 - Entity: 4300000000000000004
   Tag: {tag: CloudFar}
   Transform:
-    translation: [19, 20, -4]
+    translation: [7, 8, -4]
     rotation: [0, 0, 0]
     scale: [12, 6, 1]
   SpriteRenderer:
@@ -82,27 +71,16 @@ Entities:
     texture: nam:textures/iso/smoke.png
     tilingFactor: 1
   Visibility: {gameVisible: true}
-  LuaScript:
-    scriptPath: scripts/iso/iso_cloud.lua
-    properties:
-    - name: offset_x
-      type: float
-      value: 7
-    - name: offset_y
-      type: float
-      value: 8
-    - name: parallax
-      type: float
-      value: 0.3
-    - name: speed
-      type: float
-      value: 0.2
+  Drift:
+    velocity: [0.2, 0, 0]
+    range: [20, 0, 0]
+    cameraFollow: 0.7
   RendererTag: {Name: world}
 
 - Entity: 4300000000000000005
   Tag: {tag: CloudLow}
   Transform:
-    translation: [26, 8, -4]
+    translation: [14, -4, -4]
     rotation: [0, 0, 0]
     scale: [8, 4, 1]
   SpriteRenderer:
@@ -110,21 +88,10 @@ Entities:
     texture: nam:textures/iso/smoke.png
     tilingFactor: 1
   Visibility: {gameVisible: true}
-  LuaScript:
-    scriptPath: scripts/iso/iso_cloud.lua
-    properties:
-    - name: offset_x
-      type: float
-      value: 14
-    - name: offset_y
-      type: float
-      value: -4
-    - name: parallax
-      type: float
-      value: 0.4
-    - name: speed
-      type: float
-      value: 0.28
+  Drift:
+    velocity: [0.28, 0, 0]
+    range: [20, 0, 0]
+    cameraFollow: 0.6
   RendererTag: {Name: world}
 
 - Entity: 4300000000000000006

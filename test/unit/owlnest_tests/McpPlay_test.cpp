@@ -291,6 +291,15 @@ TEST_F(McpPlayTest, PlaysWithAHeldActionAndCapturesTheViewport) {
 	EXPECT_FLOAT_EQ(playerX(session), idleX);
 }
 
+TEST_F(McpPlayTest, PlaysAndCapturesAnEmptySceneWithoutCamera) {
+	session::HeadlessSession session;
+	session.newScene();
+	McpDispatcher dispatcher{session};
+	const auto result = play(dispatcher, {{"ticks", 3}});
+	ASSERT_FALSE(result["isError"].get<bool>()) << result.dump();
+	EXPECT_EQ(result["structuredContent"]["ticks"], 3);
+}
+
 TEST_F(McpPlayTest, SkipsTheCaptureWhenAsked) {
 	session::HeadlessSession session;
 	session.newScene();

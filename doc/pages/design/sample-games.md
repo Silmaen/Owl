@@ -94,7 +94,7 @@ Done in v0.4.0: `samples/breakout/` (how to play: its `README.md`).
 | Art      | Home-made bricks, paddle, ball, capsules, walls and backdrop, chip sounds and music (`tools/samples/breakout/`)  |
 | Saves    | No slot; best score and levels cleared with their best through `settings.save` (`breakout_best`, `_done_N`)      |
 
-- Reuse: the hit flash of `scripts/platformer/flicker.lua`; the menus, built from the Engine Demo ones, have a
+- Reuse: the menus, built from the Engine Demo ones, have a
   look of their own. A broken brick is destroyed at once (a popping brick
   would keep its body), its burst shown from a pool instead of the pop of `coin.lua`.
 - Gaps met: G5 (the paddle follows the mouse motion, `breakout_mouse_speed` setting), G1 (pools of hidden entities:

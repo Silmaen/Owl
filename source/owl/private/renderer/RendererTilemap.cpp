@@ -16,6 +16,7 @@
 #include "renderer/gpu/RenderCommand.h"
 #include "renderer/gpu/RendererDescriptors.h"
 #include "renderer/gpu/UniformBuffer.h"
+#include "renderer/utils/Lighting2DState.h"
 #include "scene/TilemapAsset.h"
 #include "scene/Tileset.h"
 
@@ -48,8 +49,10 @@ struct DrawUbo {
 	math::vec4 texel;
 	// Atlas columns, rows; entity id; texture slot.
 	std::array<int32_t, 4> atlas{};
-	// x: 1 when the bound framebuffer stores linear colour; yzw: padding to a std140 vec4.
+	// x: 1 when the bound framebuffer stores linear colour; y: 2D light count; zw: padding to a std140 vec4.
 	std::array<int32_t, 4> flags{};
+	// rgb: linear ambient of the 2D lights; w: 1 when the 2D lighting is on.
+	math::vec4 ambient{1.f, 1.f, 1.f, 0.f};
 };
 
 // One non-empty cell of a chunk: layer cell coordinates packed as `x | y << 16`, then the tile index.
@@ -284,6 +287,9 @@ void drawPending(const PendingTilemap& iPending, const AssetGpu& iEntry, const i
 	ubo.viewProjection = g_state->viewProjection;
 	ubo.model = model;
 	ubo.flags[0] = gpu::Framebuffer::isLinearTargetBound() ? 1 : 0;
+	const auto lighting = utils::getLighting2DState();
+	ubo.flags[1] = lighting.lightCount;
+	ubo.ambient = lighting.ambient;
 	ubo.atlas = {static_cast<int32_t>(std::max(1u, tileset.columns)), static_cast<int32_t>(std::max(1u, tileset.rows)),
 				 iPending.entityId, iTextureSlot};
 
@@ -323,7 +329,7 @@ void RendererTilemap::init() {
 		return;
 	g_state = mkShared<InternalState>();
 
-	const std::array<gpu::BindingDecl, 2> tilemapBindings{
+	const std::array<gpu::BindingDecl, 4> tilemapBindings{
 			gpu::BindingDecl{.binding = 0,
 							 .type = gpu::BindingType::UniformBuffer,
 							 .count = 1,
@@ -331,6 +337,15 @@ void RendererTilemap::init() {
 			gpu::BindingDecl{.binding = 1,
 							 .type = gpu::BindingType::CombinedImageSampler,
 							 .count = 32,
+							 .stages = gpu::ShaderStage::Fragment},
+			// The 2D lights at the bindings of Renderer2D: on OpenGL the storage binding points are global.
+			gpu::BindingDecl{.binding = 5,
+							 .type = gpu::BindingType::StorageBuffer,
+							 .count = 1,
+							 .stages = gpu::ShaderStage::Fragment},
+			gpu::BindingDecl{.binding = 6,
+							 .type = gpu::BindingType::StorageBuffer,
+							 .count = 1,
 							 .stages = gpu::ShaderStage::Fragment},
 	};
 	gpu::RendererDescriptors::declare(g_rendererKey, tilemapBindings);
@@ -408,6 +423,10 @@ void RendererTilemap::flushPending() {
 	g_state->textureScratch.clear();
 	for (const auto* tileset: g_state->tilesetSlots) g_state->textureScratch.push_back(tileset->texture);
 	gpu::RenderCommand::bindTextures(g_state->textureScratch);
+	if (const auto lighting = utils::getLighting2DState(); lighting.lights && lighting.shadows) {
+		lighting.lights->bind(/*iBinding=*/5u);
+		lighting.shadows->bind(/*iBinding=*/6u);
+	}
 
 	for (const auto& pending: g_state->pending) {
 		const int textureSlot = slotFor(pending.asset->tileset.get());

@@ -12,6 +12,7 @@
 #include <gui/component/render.h>
 #include <scene/component/components.h>
 
+#include <cstdint>
 #include <filesystem>
 
 using namespace owl::core;
@@ -66,4 +67,24 @@ TEST(Component, OpenAssetGoesToTheHandler) {
 	EXPECT_EQ(opened, std::filesystem::path{"tilemaps/level.owltilemap"});
 	owl::gui::component::setOpenAssetHandler({});
 	EXPECT_FALSE(owl::gui::component::openAsset("scripts/hero.lua"));
+}
+
+TEST(Component, OpenAssetAtLineGoesToTheLineHandlerThenFallsBack) {
+	EXPECT_FALSE(owl::gui::component::openAssetAtLine("scripts/hero.lua", 12));
+	std::filesystem::path opened;
+	owl::gui::component::setOpenAssetHandler([&opened](const std::filesystem::path& iPath) -> void { opened = iPath; });
+	EXPECT_TRUE(owl::gui::component::openAssetAtLine("scripts/hero.lua", 12));
+	EXPECT_EQ(opened, std::filesystem::path{"scripts/hero.lua"});
+	uint32_t line = 0;
+	owl::gui::component::setOpenAssetAtLineHandler(
+			[&opened, &line](const std::filesystem::path& iPath, const uint32_t iLine) -> void {
+				opened = iPath;
+				line = iLine;
+			});
+	EXPECT_FALSE(owl::gui::component::openAssetAtLine({}, 3));
+	EXPECT_TRUE(owl::gui::component::openAssetAtLine("scripts/door.lua", 7));
+	EXPECT_EQ(opened, std::filesystem::path{"scripts/door.lua"});
+	EXPECT_EQ(line, 7u);
+	owl::gui::component::setOpenAssetHandler({});
+	owl::gui::component::setOpenAssetAtLineHandler({});
 }

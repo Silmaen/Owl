@@ -8,6 +8,7 @@
 
 #include "SceneSettingsCommands.h"
 
+#include <optional>
 #include <utility>
 
 namespace owl::nest::commands {
@@ -90,6 +91,39 @@ auto SetSceneHudCommand::description() const -> std::string {
 auto SetSceneHudCommand::typeId() const -> size_t {
 	constexpr size_t kTypeHash = 0x536574487564ULL;// "SetHud"
 	return kTypeHash;
+}
+
+SetSceneScriptCommand::SetSceneScriptCommand(std::string iBefore, std::string iAfter)
+	: m_before{std::move(iBefore)}, m_after{std::move(iAfter)} {}
+
+SetSceneScriptCommand::~SetSceneScriptCommand() = default;
+
+void SetSceneScriptCommand::undo(scene::Scene& ioScene) { apply(ioScene, m_before); }
+
+void SetSceneScriptCommand::redo(scene::Scene& ioScene) { apply(ioScene, m_after); }
+
+auto SetSceneScriptCommand::description() const -> std::string {
+	return m_after.empty() ? "Remove the scene script" : "Edit the scene script";
+}
+
+auto SetSceneScriptCommand::mergeWith(const SceneUndoCommand& iOther) -> bool {
+	const auto* other = dynamic_cast<const SetSceneScriptCommand*>(&iOther);
+	if (other == nullptr)
+		return false;
+	m_after = other->m_after;
+	m_timestamp = other->m_timestamp;
+	return true;
+}
+
+auto SetSceneScriptCommand::typeId() const -> size_t {
+	constexpr size_t kTypeHash = 0x536574536353ULL;// "SetScS"
+	return kTypeHash;
+}
+
+void SetSceneScriptCommand::apply(scene::Scene& ioScene, const std::string& iYaml) {
+	auto script =
+			iYaml.empty() ? std::optional<scene::component::LuaScript>{} : scene::component::LuaScript::fromYaml(iYaml);
+	ioScene.getSceneScript() = script ? std::move(*script) : scene::component::LuaScript{};
 }
 
 }// namespace owl::nest::commands

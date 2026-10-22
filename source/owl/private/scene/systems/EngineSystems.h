@@ -53,6 +53,46 @@ void tickScripts(Scene& ioScene, const SystemContext& iContext);
 
 /**
  * @brief
+ *  Move the entities with an `Oscillator` that are not simulated bodies (`owl.oscillators`).
+ * @param[in,out] ioScene The scene.
+ * @param[in] iContext The frame context.
+ */
+void updateOscillators(Scene& ioScene, const SystemContext& iContext);
+
+/**
+ * @brief
+ *  Drive the simulated bodies with an `Oscillator` through their velocity, once per tick (`owl.oscillators`).
+ * @param[in,out] ioScene The scene.
+ * @param[in] iContext The tick context.
+ */
+void tickOscillators(Scene& ioScene, const SystemContext& iContext);
+
+/**
+ * @brief
+ *  Walk the entities with a `Patrol` along their waypoints or around their post (`owl.patrols`).
+ * @param[in,out] ioScene The scene.
+ * @param[in] iContext The frame context.
+ */
+void updatePatrols(Scene& ioScene, const SystemContext& iContext);
+
+/**
+ * @brief
+ *  Move the entities with a `Drift` (`owl.drift`).
+ * @param[in,out] ioScene The scene.
+ * @param[in] iContext The frame context.
+ */
+void updateDrifts(Scene& ioScene, const SystemContext& iContext);
+
+/**
+ * @brief
+ *  Make the lights with a `LightFlicker` flicker from the scene time (`owl.light_flicker`).
+ * @param[in,out] ioScene The scene.
+ * @param[in] iContext The frame context.
+ */
+void updateLightFlickers(Scene& ioScene, const SystemContext& iContext);
+
+/**
+ * @brief
  *  Spend the frame's budget on the pending path requests of the scene (`owl.navigation`).
  * @param[in,out] ioScene The scene.
  * @param[in] iContext The frame context.

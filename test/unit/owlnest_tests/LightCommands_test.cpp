@@ -15,6 +15,7 @@
 #include <scene/Scene.h>
 #include <scene/component/Hierarchy.h>
 #include <scene/component/Light.h>
+#include <scene/component/Light2D.h>
 #include <scene/component/Tag.h>
 #include <scene/component/Transform.h>
 
@@ -101,4 +102,35 @@ TEST_F(LightCommandTest, AnUnknownTypeIsRefused) {
 	const auto result = run("entity.create_light", {{"type", std::string{"Laser"}}});
 	ASSERT_FALSE(result);
 	EXPECT_EQ(m_scene->registry.view<scene::component::Tag>().size(), 0u);
+}
+
+TEST_F(LightCommandTest, EachTwoDimensionalTypeCreatesALight2DEntityAndUndoes) {
+	using Type = scene::component::Light2D::Type;
+	for (const auto& [kind, wanted]:
+		 {std::pair<std::string, Type>{"Ambient", Type::Ambient}, std::pair<std::string, Type>{"Point", Type::Point},
+		  std::pair<std::string, Type>{"Spot", Type::Spot}}) {
+		const auto result = run("entity.create_light2d", {{"type", kind}, {"translation", math::vec3{2.f, 1.f, 0.f}}});
+		ASSERT_TRUE(result) << result.error().message;
+		auto entity = m_scene->findEntityByUUID(result->entity);
+		ASSERT_TRUE(entity) << kind;
+		EXPECT_EQ(entity.getName(), kind + " Light 2D");
+		ASSERT_TRUE(entity.hasComponent<scene::component::Light2D>());
+		EXPECT_EQ(entity.getComponent<scene::component::Light2D>().type, wanted);
+		EXPECT_EQ(entity.getComponent<scene::component::Transform>().transform.translation(),
+				  (math::vec3{2.f, 1.f, 0.f}));
+
+		ASSERT_TRUE(run("edit.undo", {}));
+		EXPECT_FALSE(m_scene->findEntityByUUID(result->entity)) << kind;
+		ASSERT_TRUE(run("edit.redo", {}));
+		EXPECT_TRUE(m_scene->findEntityByUUID(result->entity)) << kind;
+	}
+}
+
+TEST_F(LightCommandTest, AnAmbientLight2DStartsDimAndAnUnknownTypeIsRefused) {
+	const auto result = run("entity.create_light2d", {{"type", std::string{"Ambient"}}});
+	ASSERT_TRUE(result) << result.error().message;
+	const auto entity = m_scene->findEntityByUUID(result->entity);
+	ASSERT_TRUE(entity);
+	EXPECT_LT(entity.getComponent<scene::component::Light2D>().intensity, 1.f);
+	EXPECT_FALSE(run("entity.create_light2d", {{"type", std::string{"Directional"}}}));
 }

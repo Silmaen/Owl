@@ -340,6 +340,12 @@ void scanSceneRecursive(const std::filesystem::path& iSceneFile,// NOLINT(misc-n
 	if (const auto hud = data["Hud"]; hud && hud.IsScalar())
 		scanHud(hud.as<std::string>(), sceneName, ioVisitedScenes, ioAssets, ioWarnings);
 
+	if (const auto sceneScript = data["SceneScript"]; sceneScript && sceneScript.IsMap()) {
+		YAML::Node holder;
+		holder["LuaScript"] = sceneScript;
+		scanEntity(holder, sceneName, ioVisitedScenes, ioAssets, ioWarnings);
+	}
+
 	auto entities = data["Entities"];
 	if (!entities)
 		return;

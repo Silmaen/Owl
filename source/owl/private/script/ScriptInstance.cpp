@@ -13,8 +13,10 @@
 #include "script/LuaBindings.h"
 #include "script/LuaEngine.h"
 
+#include <array>
 #include <cstdint>
 #include <format>
+#include <span>
 #include <string>
 #include <string_view>
 
@@ -46,6 +48,8 @@ struct ScriptInstance::Impl {
 	scene::Scene* boundScene = nullptr;
 
 	[[nodiscard]] auto owner() const -> std::string {
+		if (entityId == 0)
+			return "the scene";
 		return entityName.empty() ? std::format("entity {}", entityId)
 								  : std::format("entity '{}' ({})", entityName, entityId);
 	}
@@ -99,8 +103,8 @@ auto ScriptInstance::create(const std::string& iScriptPath, const uint64_t iEnti
 	// Register bindings in this instance's state.
 	registerBindings(mp_impl->engine.getState());
 	setBoundScene(mp_impl->engine.getState(), mp_impl->boundScene);
-	// Store entity_id as a global.
-	mp_impl->engine.setGlobal("entity_id", static_cast<int64_t>(iEntityId));
+	if (iEntityId != 0)
+		mp_impl->engine.setGlobal("entity_id", static_cast<int64_t>(iEntityId));
 	mp_impl->bind(iScriptPath, iEntityId);
 	if (!mp_impl->engine.loadScript(iScriptPath)) {
 		OWL_CORE_ERROR("ScriptInstance: Failed to load script '{}' on {}.", iScriptPath, mp_impl->owner())
@@ -118,7 +122,8 @@ auto ScriptInstance::createFromBuffer(const std::vector<uint8_t>& iData, const s
 		return false;
 	registerBindings(mp_impl->engine.getState());
 	setBoundScene(mp_impl->engine.getState(), mp_impl->boundScene);
-	mp_impl->engine.setGlobal("entity_id", static_cast<int64_t>(iEntityId));
+	if (iEntityId != 0)
+		mp_impl->engine.setGlobal("entity_id", static_cast<int64_t>(iEntityId));
 	mp_impl->bind(iName, iEntityId);
 	if (!mp_impl->engine.loadBuffer(iData, iName)) {
 		OWL_CORE_ERROR("ScriptInstance: Failed to load buffer '{}' on {}.", iName, mp_impl->owner())
@@ -210,6 +215,55 @@ void ScriptInstance::setProperty(const std::string& iName, const bool iValue) co
 	if (!isValid())
 		return;
 	mp_impl->engine.setGlobal(iName, iValue);
+}
+
+auto ScriptInstance::getDeclaredProperties() const -> std::vector<ScriptProperty> {
+	return isValid() ? mp_impl->engine.readDeclaredProperties() : std::vector<ScriptProperty>{};
+}
+
+void ScriptInstance::setProperty(const ScriptProperty& iProperty) const {
+	if (!isValid())
+		return;
+	const auto& engine = mp_impl->engine;
+	const auto& name = iProperty.name;
+	const auto setNumbers = [&engine, &name](const auto& iValues, std::span<const char* const> iKeys) -> void {
+		const std::vector<double> numbers{iValues.begin(), iValues.end()};
+		engine.setGlobalNumbers(name, numbers, iKeys);
+	};
+	constexpr std::array<const char*, 4> colorKeys{"r", "g", "b", "a"};
+	constexpr std::array<const char*, 3> vectorKeys{"x", "y", "z"};
+	switch (iProperty.type) {
+		case ScriptPropertyType::Float:
+			engine.setGlobal(name, std::get<float>(iProperty.value));
+			break;
+		case ScriptPropertyType::Int:
+			engine.setGlobal(name, std::get<int64_t>(iProperty.value));
+			break;
+		case ScriptPropertyType::String:
+			engine.setGlobal(name, std::get<std::string>(iProperty.value));
+			break;
+		case ScriptPropertyType::Bool:
+			engine.setGlobal(name, std::get<bool>(iProperty.value));
+			break;
+		case ScriptPropertyType::Color:
+			setNumbers(std::get<std::array<float, 4>>(iProperty.value), colorKeys);
+			break;
+		case ScriptPropertyType::Vec2:
+			setNumbers(std::get<std::array<float, 2>>(iProperty.value), std::span{vectorKeys}.first(2));
+			break;
+		case ScriptPropertyType::Vec3:
+			setNumbers(std::get<std::array<float, 3>>(iProperty.value), vectorKeys);
+			break;
+		case ScriptPropertyType::Entity:
+			engine.setGlobal(name, static_cast<int64_t>(std::get<uint64_t>(iProperty.value)));
+			break;
+		case ScriptPropertyType::Numbers:
+			engine.setGlobalNumbers(name, std::get<std::vector<double>>(iProperty.value));
+			break;
+		case ScriptPropertyType::Strings:
+			engine.setGlobalStrings(name, std::get<std::vector<std::string>>(iProperty.value));
+			break;
+	}
 }
 
 auto ScriptInstance::getPropertyFloat(const std::string& iName) const -> std::optional<float> {

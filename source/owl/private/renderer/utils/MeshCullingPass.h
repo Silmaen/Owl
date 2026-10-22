@@ -136,7 +136,7 @@ public:
 
 	/**
 	 * @brief
-	 *  Build the occlusion pyramid from the depth of the occluders (`RedFloat`, clip z / w, 1 where empty).
+	 *  Build the occlusion pyramid from the depth of the occluders (`RedFloat`, clip z / w, reversed-Z: 0 where empty).
 	 * @param[in] iDepth The depth texture, finished being drawn.
 	 * @param[in] iSize Size of the texture, in texels.
 	 * @param[in] iViewProjection View-projection the occluders were drawn with.

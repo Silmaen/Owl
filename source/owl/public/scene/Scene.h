@@ -17,6 +17,7 @@
 #include "input/InputFrame.h"
 #include "math/Transform.h"
 #include "renderer/Camera.h"
+#include "renderer/Lighting2D.h"
 #include "renderer/RenderGraph.h"
 #include "renderer/RenderStack.h"
 #include "renderer/Renderer3D.h"
@@ -24,6 +25,7 @@
 #include "scene/PhysicsSettings.h"
 #include "scene/SimulationClock.h"
 #include "scene/SystemSchedule.h"
+#include "scene/component/LuaScript.h"
 #include "scene/ui/HudLayout.h"
 
 #include <entt/entt.hpp>
@@ -80,6 +82,11 @@ struct ID;
 struct LuaScript;
 struct MeshRenderer;
 struct Light;
+struct Light2D;
+struct LightFlicker;
+struct Oscillator;
+struct Patrol;
+struct Drift;
 struct Environment;
 struct NativeScript;
 struct PhysicBody;
@@ -921,6 +928,31 @@ public:
 
 	/**
 	 * @brief
+	 *  Name of the prefab the scene holds (`DocumentKind::Prefab`), written as the root key of its file.
+	 * @return The name.
+	 */
+	[[nodiscard]] auto getPrefabName() const -> const std::string& { return m_prefabName; }
+
+	/**
+	 * @brief
+	 *  Version of the prefab the scene holds (`DocumentKind::Prefab`).
+	 * @return The version.
+	 */
+	[[nodiscard]] auto getPrefabVersion() const -> uint32_t { return m_prefabVersion; }
+
+	/**
+	 * @brief
+	 *  Set the name and version of the prefab the scene holds (read from its file, written back with it).
+	 * @param[in] iName The name.
+	 * @param[in] iVersion The version.
+	 */
+	void setPrefabInfo(std::string iName, const uint32_t iVersion) {
+		m_prefabName = std::move(iName);
+		m_prefabVersion = iVersion;
+	}
+
+	/**
+	 * @brief
 	 *  HUD asset the scene asks for: its `Hud:` key.
 	 * @return The asset path (relative to the asset folders); an empty path means no HUD, nothing means the project's
 	 *  default HUD.
@@ -933,6 +965,28 @@ public:
 	 * @param[in] iPath The asset path, an empty path for no HUD, nothing for the project's default HUD.
 	 */
 	void setHudPath(std::optional<std::string> iPath) { m_hudPath = std::move(iPath); }
+
+	/**
+	 * @brief
+	 *  Seconds of simulated time since Play started: the sum of the frame durations the runtime update has run.
+	 * @return The time, 0 outside Play.
+	 */
+	[[nodiscard]] auto getRuntimeSeconds() const -> double { return m_runtimeSeconds; }
+
+	/**
+	 * @brief
+	 *  The script the scene owns (its `SceneScript:` key): it runs before the entity scripts, with the hooks of an
+	 *  entity script and no entity (no `entity_id`).
+	 * @return The script; an empty `scriptPath` means the scene has none.
+	 */
+	[[nodiscard]] auto getSceneScript() -> component::LuaScript& { return m_sceneScript; }
+
+	/**
+	 * @brief
+	 *  The script the scene owns, read only.
+	 * @return The script; an empty `scriptPath` means the scene has none.
+	 */
+	[[nodiscard]] auto getSceneScript() const -> const component::LuaScript& { return m_sceneScript; }
 
 	/**
 	 * @brief
@@ -962,6 +1016,14 @@ public:
 	 * @return The HUD layout.
 	 */
 	[[nodiscard]] auto getHudLayout() const -> const ui::HudLayout& { return m_hudLayout; }
+
+	/**
+	 * @brief
+	 *  Give the `Light2D` entities and the shadow-casting sprites of the layer being drawn to `Renderer2D`, which the
+	 *  2D, tilemap and isometric renderers read; without an enabled light the 2D lighting is turned off.
+	 * @param[in] iEditorMode True if the scene is being drawn for the editor view.
+	 */
+	void applyLighting2D(bool iEditorMode);
 
 private:
 	/**
@@ -1010,8 +1072,16 @@ private:
 	ui::HudLayout m_hudLayout;
 	/// Document the scene is saved to.
 	DocumentKind m_documentKind = DocumentKind::Scene;
+	/// Name of the prefab the scene holds.
+	std::string m_prefabName = "untitled";
+	/// Version of the prefab the scene holds.
+	uint32_t m_prefabVersion = 1;
 	/// HUD asset asked by the scene (nothing: the project's default HUD, empty: none).
 	std::optional<std::string> m_hudPath;
+	/// Seconds of simulated time since Play started.
+	double m_runtimeSeconds = 0.0;
+	/// Script the scene owns (runs before the entity scripts).
+	component::LuaScript m_sceneScript;
 	/// Systems run every runtime frame, phase by phase.
 	SystemSchedule m_systems;
 	/// Engine state used by the scene (not owned).
@@ -1275,6 +1345,7 @@ private:
 	 */
 	void renderMeshes(bool iEditorMode);
 
+
 	/**
 	 * @brief
 	 *  Resolve the material of one slot of a mesh renderer: its `.owlmat` (or the file's own material), its overrides,
@@ -1506,6 +1577,8 @@ private:
 	const renderer::Camera* mp_renderCamera = nullptr;
 	/// Lights of the frame, as `Renderer3D` reads them.
 	std::vector<renderer::GpuLight> m_gpuLights;
+	/// 2D lights and occluders of the layer being drawn, reused every frame.
+	renderer::Lighting2D m_lighting2D;
 	/// Light added to every lit surface in Edit mode.
 	math::vec3 m_editorAmbient{0.f, 0.f, 0.f};
 	/// Targets the colour encode of the frame reads.
@@ -1595,6 +1668,22 @@ OWL_API void Scene::onComponentAdded<component::MeshRenderer>(const Entity& iEnt
 
 template<>
 OWL_API void Scene::onComponentAdded<component::Light>(const Entity& iEntity, component::Light& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::Light2D>(const Entity& iEntity, component::Light2D& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::LightFlicker>(const Entity& iEntity,
+															  component::LightFlicker& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::Oscillator>(const Entity& iEntity, component::Oscillator& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::Patrol>(const Entity& iEntity, component::Patrol& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::Drift>(const Entity& iEntity, component::Drift& ioComponent);
 
 template<>
 OWL_API void Scene::onComponentAdded<component::Environment>(const Entity& iEntity,

@@ -8,9 +8,13 @@
 --
 -- Entities named `Smoke_<house>_<n>` (3 puffs per chimney, the first one's position is the chimney) and `Cloud_<n>`.
 
+properties = {
+    { name = "rise", type = "float", default = 1.6 },   -- cells a puff climbs in its life
+}
+
 local HOUSES = { { 9.5, -13.2 }, { 20.5, -13.2 }, { 44.5, -13.2 }, { 54.5, -13.2 } }
 local PUFFS = 3
-local RISE = 1.6        -- cells a puff climbs in its life
+local RISE    -- set from the properties in on_create
 local LIFE = 3.0        -- seconds
 local CLOUDS = { { speed = 0.35 }, { speed = 0.25 }, { speed = 0.45 }, { speed = 0.3 }, { speed = 0.4 }, { speed = 0.28 } }
 local MAP_LEFT, MAP_RIGHT = -14, 78
@@ -45,6 +49,7 @@ local function scatter(name, variants, volume)
 end
 
 function on_create()
+    RISE = rise
     for h, house in ipairs(HOUSES) do
         for n = 1, PUFFS do
             local id = scene.find_entity("Smoke_" .. h .. "_" .. n)

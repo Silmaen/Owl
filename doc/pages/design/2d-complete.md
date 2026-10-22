@@ -4,15 +4,23 @@
 
 Design page of the 2D work once planned as v0.5.0; the 2026-10-16 replan spread it over the releases, see the
 [Roadmap](../roadmap.md): the draw-order sort key, scroll views and lists, and tile-graph pathfinding in v0.4.0; 2D
-lights, the minimap and "look through scene camera" in v0.5.0; the tileset editor and the procedural brick in v0.6.0;
+lights (done), the minimap and "look through scene camera" in v0.5.0; the tileset editor and the procedural brick in v0.6.0;
 full 2D physics and the enemies demo in v0.7.0. The 2D physics part has its own page,
 [Physics API](physics-api.md); the editor part is in [Owl Nest UI](nest-ui.md).
 
-## 2D lighting system (v0.5.0)
+## 2D lighting system (v0.5.0, done)
 
-- Point lights, spotlights in 2D scenes
-- Normal-mapped sprites for dynamic 2D lighting
-- Shadow casting from 2D occluders
+Built as the `Light2D` component and `renderer/Lighting2D.h`; the user guide is in
+[Renderer > 2D lighting](../renderer.md#renderer-lighting2d), the fields in [Scene](../scene.md#light2d-component).
+
+| Decision          | Choice                                                                                           |
+|-------------------|--------------------------------------------------------------------------------------------------|
+| Light types       | Ambient, Point, Spot; up to 64 per frame, summed in the fragment shader                          |
+| Default look      | No enabled light: unlit; lights without an ambient one: white ambient, lights only add           |
+| Normal-mapped     | `SpriteRenderer.normalMap`, tangent space, OpenGL green-up, slanted by the light `height`        |
+| Shadows           | Sprites flagged `castShadows` are occluders; a polar shadow map per light built on the CPU      |
+| Tilemaps          | Lit without normal, shadows received                                                             |
+| Editor            | Inspector, create menu (`entity.create_light2d`), hierarchy icons, viewport markers              |
 
 ## Text and HUD
 
@@ -33,10 +41,18 @@ submission order. `Scene` feeds it the world z of sprites,
 circles and text, the HUD pass the window rank. An authored layer on the components (a field in the inspector) is not
 there yet: z is the only way to order a scene.
 
-## 2D lighting on isometric sprites (v0.5.0)
+## 2D lighting on isometric sprites (v0.5.0, done)
 
-The 2D lights also light isometric sprites through the normal and depth atlases produced by the v0.4.0 generator; a
-global ambient tint gives day / night.
+The `Light2D` lights also light the isometric layer through the `_normal` and `_depth` atlases produced by
+`tools/iso_atlas`, found beside an albedo atlas.
+
+| Decision         | Choice                                                                                            |
+|------------------|---------------------------------------------------------------------------------------------------|
+| Texture slots    | Albedo 0 to 9, normal atlas +10, depth atlas +20 (`common/isometric_light.slangh`)               |
+| Map position     | Solved per pixel from the view position and the height read in the depth atlas                    |
+| Ground tiles     | Lit per pixel too                                                                                 |
+| Shadows          | None in the isometric layer                                                                       |
+| Ambient          | The `Ambient` light gives day and night                                                           |
 
 ## Tile-graph pathfinding (v0.4.0, done)
 

@@ -11,6 +11,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Test `EditorCoverage` (gui_tests): fails when a data member of a component has no widget in its inspector function, or when a key read by `applyConfig` of a render layer has no field in the layer overrides of Scene Settings; a runtime-only member is listed in the test with its reason.
+- Owl Nest: a double-click on an `.owlprefab` opens it as a document (`DocumentKind::Prefab`, hierarchy, inspector, undo, atomic save with its name and version, canonical UUIDs kept), and the Content Browser draws a sphere rendered with the material as the thumbnail of an `.owlmat`.
+- Owl Nest viewport: the selected `Oscillator` draws its range and the selected `Patrol` its route; a waypoint is picked with a click and moved with a gizmo, as one undoable `component.set`.
+- `Oscillator`, `Patrol` and `Drift` components with the systems `owl.oscillators` (a body moves through the physics step), `owl.patrols` and `owl.drift`, and Lua `entity.set_oscillator_enabled`, `set_patrol_enabled`, `set_drift_enabled` with their `is_` getters.
+- `LightFlicker` component and `owl.light_flicker` system: a fire, candle or pulsing `Light` or `Light2D` (and the tint of a sprite) flickers from its seed and the scene time, with colour shift, position jitter, dips and a `follow` target whose scale breathes with it; `Scene::getRuntimeSeconds()`, Lua `entity.set_flicker_enabled` / `is_flicker_enabled`.
+- Reversed-Z depth on both backends: `math::perspectiveReversedZ` (infinite far plane) and `math::orthoReversedZ`, and the public `renderer/ClipSpace.h` every camera builds its projection through.
+- Camera-relative 3D shading: `Renderer3D` uploads `projection * cameraRelativeView(view)` and the shaders work relative to the eye, so rendering stays precise far from the origin.
+- Image test `far_origin`: the lights scene moved 2^20 m away renders like at the origin, shadows included.
+- Script properties: `color` (sRGB picker), `vec2`, `vec3`, `entity` (UUID picker), `numbers` and `strings` lists, optional `min`, `max` and `step`, and a reset button per inspector field that shows the default of the script (`ScriptValue`, `ScriptProperty::defaultValue`, `ScriptInstance::setProperty(const ScriptProperty&)`).
+- `SceneScript`: a scene owns one optional script (`SceneScript:` key, `Scene::getSceneScript`) that runs before the entity scripts without an `entity_id`, edited in the new Scene Settings **Script** section through `scene.set_script`.
+- Owl Nest inspector: a Lua script lists its engine hooks (defined or not, with the line and an **Open** button that reveals it in the code editor), and every named handler (HUD widgets, timer, interaction and Lua-callback triggers) shows the script that defines it or a warning.
+- `ScriptEngine::extractFunctions` and `getHookNames`; `gui::component::openAssetAtLine` and `setInspectedScene`.
+- Owl Nest Scene Settings: layer overrides for every key of the raycast (fog, floor and ceiling tilesets), mesh and voxel layers (sun and ambient lighting), through the new `scene.set_renderers` command.
 - `renderer::RenderGraph` (`Renderer::getRenderGraph()`): passes declare the targets they read and write, the graph orders them, drops the useless ones and pools the transient targets; `Scene::renderWithStack` records one pass per renderer-stack layer.
 - HDR scene colour: the world layers render linear into an `Rgba16F` target and a `colour encode` pass (`renderer::ColorEncoder`) tone maps and sRGB-encodes it; the HUD and the editor overlays stay drawn after it.
 - Per-camera tone mapping (`renderer::ToneMapping`: `None`, `PbrNeutral`, `Aces`, saved as `camera.toneMapping`) and a **Tone mapping** combo in the Owl Nest Camera inspector.
@@ -65,9 +78,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `RendererMesh::Statistics::instancedBatchCount`, `visibleInstanceCount` and `occlusionLevelCount`; benchmarks `culling/octree/*` and `culling/mesh_flush/*`; image test `occlusion`.
 - RHI: `RenderCommand::drawIndexedIndirectAt` (one indirect command) and `ComputeShader::bindTexture` (sampled textures in compute shaders, OpenGL and Vulkan).
 - `RendererRaycast::drawSprites` draws every visible sprite in one instanced call (`raycast_sprite.slang`), sorted far to near on the GPU by `BitonicSortPass` and hidden behind the wall of their column; image test `raycast_sprites`.
+- `Light2D` component (`Ambient`, `Point`, `Spot`) and `renderer::Lighting2D`: 2D lights summed in the sprite, tilemap and isometric shaders, up to 64 per frame, in YAML, the inspector and Lua.
+- `SpriteRenderer` gains `normalMap`, `castShadows` and `lit`: normal-mapped sprites and sprites that block the 2D lights.
+- 2D shadows: a polar shadow map per light built on the CPU from the sprites flagged `castShadows`, with a soft penumbra.
+- Lit tilemaps: chunked tilemaps receive the 2D lights and shadows.
+- Lit isometric sprites and tiles through the `_normal` and `_depth` atlases of `tools/iso_atlas` found beside an albedo atlas.
+- Owl Nest: **Light 2D** inspector, sprite **2D Lighting** fields, **Ambient 2D / Point 2D / Spot 2D** in the Light menu (`entity.create_light2d`), hierarchy icons and viewport markers.
+- Engine Demo: the `platformer_house` torches carry warm `Light2D` and the scene a `HouseAmbient`; image tests `lights2d`, `tilemap_lit` and `iso_town_night_640x360`.
 
 ### Changed
 
+- Lua `entity.set/get_light_color`, `set/get_light_intensity`, `set_light_enabled`, `is_light_enabled` and `set_light_range` (the radius) also reach a `Light2D`.
+- Scripts: a property the scene does not list takes the declared default at Play (`ScriptInstance::getDeclaredProperties`); the tuning constants of the platformer player, the raycast level, the breakout ball, paddle and game, the Sokoban game, the Wolfenstein exploration and the hub and isometric town scripts are script properties.
+- Engine Demo: the platformer moving platforms use `Oscillator`, the isometric clouds `Drift` and the hub wanderers `Patrol` (`hub_wanderer.lua` only picks the sprite frames); `moving_platform_h.lua`, `moving_platform_v.lua` and `iso_cloud.lua` are removed.
+- Engine Demo: the tavern fire, candles and flame cards and the platformer torches use `LightFlicker`; `platformer/flicker.lua` is removed and `mesh/tavern.lua` only returns to the menu.
+- Depth attachment format `Depth24Stencil8` is now `Depth32F` (32-bit float, no stencil) on Vulkan and OpenGL.
+- `ShadowSettings::viewProjections` is replaced by `relativeViewProjections` and `origins`, each cascade relative to its own light camera.
+- `math::Frustum` and `FrustumCullingPass::extractFrustumPlanes` use the reversed-Z planes, and `Frustum::classify` keeps a box lying on a plane.
+- The Hi-Z pyramid keeps the farthest (smallest) depth and the shadow comparisons follow the reversed-Z depth.
+- Scene format 7: a migration moves the script of the primary camera to `SceneScript` when it never names `entity_id`; the Engine Demo tavern scene uses it.
 - Roadmap: editor reach before the v0.5.0 release (scripts, Lua functions and tuned values visible in Owl Nest, behaviour components, editor fixes), `design/editor-reach.md`.
 - CI benchmarks: a failed case is measured again alone 5 times (`--confirm_rounds`), and a failure publishes `linux-bench.proposed-baseline.json`, the baseline with the failed cases set to their confirmed median and the new cases added.
 - Bench baseline recalibrated on the frame graph and linear HDR code (build 39239, 5 rounds): the editor update costs about 1 µs more per frame, the shaders compile about 20 % slower; four noisy benchmarks get wider thresholds.
@@ -107,11 +136,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Owl Nest no longer crashes when **Play** starts a scene without a primary camera (an empty untitled scene).
+- GCC 15 builds decode HDR environments again: the flat scanline loop of stb_image was miscompiled at `-O2` and above.
+- MinGW GCC links the renderer tests again: the bloom level count is compared by value, not through the exported constant.
+- Owl Nest: the **UiText** inspector shows its font (combo, drop target and preview), as the Text one does.
 - OpenGL: the SPIR-V to GLSL translation names each storage block after its variable, which fixes the link errors of a vertex and a fragment shader sharing storage buffers.
 - GCC builds again: the post-process LUT is held by value in `Scene`, no reference bound to a temporary path.
 - Vulkan pipelines turn blending off on a colour attachment whose format cannot blend, and data attachments (`RedInteger`, `RedFloat`) get nearest samplers.
 - Owl Nest Content Browser: the right-click menu opens again (it was drawn outside the window that opened it).
 - Owl Nest keeps the desktop identifier `owl-nest-owl-engine-editor` whatever its version, so a desktop entry keeps its icon.
+- Owl Nest: the **Open** buttons of the texture maps of a material work, and `.txt` files open in the code editor.
 - `MeshLoader`: a glTF mesh of several primitives indexes the vertices of each one, the OBJ loader keeps the third UV of a face, and glTF UVs follow the engine convention.
 - `mesh3d.slang` reads every attribute of `Mesh3DVertex` (atlas sub-rect, ambient occlusion), which removes two Vulkan validation warnings.
 - Clang 23 builds: its `[[clang::lifetimebound]]` suggestions and the strict-only lifetime-safety checks (false positives on `push_back`) are off, and `MeshVertexCoordinate` declares its explicit instantiations (`extern template`) for the exported class deriving from it; the null window drops its write-only window counter.

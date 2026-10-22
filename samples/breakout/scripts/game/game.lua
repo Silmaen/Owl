@@ -15,20 +15,21 @@
 properties = {
     { name = "level", type = "int", default = 1 },
     { name = "next_scene", type = "string", default = "scenes/victory.owl" },
+    { name = "paddle_y", type = "float", default = -6.8 },
+    { name = "paddle_half_height", type = "float", default = 0.18 },
+    { name = "power_fall", type = "float", default = 3.0 },   -- units per second
+    { name = "power_points", type = "int", default = 50 },
+    { name = "slow_factor", type = "float", default = 0.65 },
+    { name = "fx_time", type = "float", default = 0.3 },
+    { name = "park_y", type = "float", default = -30.0 },
 }
 
 local FIRST_LEVEL = "scenes/level_1.owl"
 local WIPE = { 0.45, 0.05, 0.55 } -- the magenta of every Breakout screen change
 
-local PADDLE_Y = -6.8
-local PADDLE_HALF_HEIGHT = 0.18
+local PADDLE_Y, PADDLE_HALF_HEIGHT, POWER_FALL, POWER_POINTS, SLOW_FACTOR, FX_TIME, PARK_Y    -- set from the properties in on_create
 local POWER_HALF_W, POWER_HALF_H = 0.6, 0.26
-local POWER_FALL = 3.0        -- units per second
-local POWER_POINTS = 50
 local WIDE_TIME, SLOW_TIME = 15.0, 12.0
-local SLOW_FACTOR = 0.65
-local FX_TIME = 0.3
-local PARK_Y = -30.0
 local CLEAR_DELAY, OVER_DELAY = 1.6, 1.4
 
 local hud = {}
@@ -66,6 +67,13 @@ local function show_message(text, seconds)
 end
 
 function on_create()
+    PADDLE_Y = paddle_y
+    PADDLE_HALF_HEIGHT = paddle_half_height
+    POWER_FALL = power_fall
+    POWER_POINTS = power_points
+    SLOW_FACTOR = slow_factor
+    FX_TIME = fx_time
+    PARK_Y = park_y
     if not ui.is_transition_active() then ui.transition_fade_in(0.4) end
     hud.score = ui.find("ScoreText")
     hud.level = ui.find("LevelText")

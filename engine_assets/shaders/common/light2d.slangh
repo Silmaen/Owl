@@ -1,0 +1,79 @@
+// Lighting of the 2D renderers (must match `renderer::Lighting2D` and `Renderer2D`): an ambient light plus point and
+// spot lights in the sprite plane, each with an optional polar shadow map (one row of distances per light). The
+// including shader defines LIGHT2D_LIGHT_BINDING and LIGHT2D_SHADOW_BINDING before including this file.
+
+static const float LIGHT2D_PI = 3.14159265f;
+
+struct Light2D {
+	float4 positionRadius;// xy: world position; z: height above the sprite plane; w: radius.
+	float4 colorFalloff;  // rgb: linear colour times intensity; w: falloff exponent.
+	float4 spot;          // xy: unit direction; z: cosine of the inner half angle; w: of the outer one (< -1: point).
+	float4 shadow;        // x: first bin of its shadow row (< 0: no shadow); y: penumbra in bins; z: bin count.
+};
+
+// One element type per storage buffer: the OpenGL SPIR-V path (NVIDIA) aliases buffers sharing a block type.
+struct ShadowBin2D {
+	float distance;
+};
+
+[[vk::binding(LIGHT2D_LIGHT_BINDING)]]
+StructuredBuffer<Light2D> gLights2D;
+
+[[vk::binding(LIGHT2D_SHADOW_BINDING)]]
+StructuredBuffer<ShadowBin2D> gShadows2D;
+
+// Fraction of the light reaching a point, from the light's shadow row (a few taps across the penumbra).
+float shadowFactor2D(Light2D light, float2 offset, float distance) {
+	int first = int(light.shadow.x);
+	int bins = int(light.shadow.z);
+	float position = (atan2(offset.y, offset.x) + LIGHT2D_PI) / (2.0f * LIGHT2D_PI) * float(bins) - 0.5f;
+	float lit = 0.0f;
+	for (int tap = -2; tap <= 2; ++tap) {
+		int bin = (int(floor(position + float(tap) * 0.5f * light.shadow.y + 0.5f)) % bins + bins) % bins;
+		lit += distance <= gShadows2D[first + bin].distance + 0.02f ? 1.0f : 0.0f;
+	}
+	return lit / 5.0f;
+}
+
+// Light reaching a point: the ambient plus every light, attenuated by its distance in the plane, cone and shadow, and
+// by the slant on the normal when the surface has one. A light stands at its height above the plane, the point at
+// `surfaceHeight` (0 for the sprites, the ground height for the isometric pixels).
+float3 lighting2D(float2 position, float surfaceHeight, float3 normal, bool hasNormal, bool receivesShadows,
+				  int lightCount, float3 ambient) {
+	float3 total = ambient;
+	for (int index = 0; index < lightCount; ++index) {
+		Light2D light = gLights2D[index];
+		float2 offset = position - light.positionRadius.xy;
+		float distance = length(offset);
+		float radius = light.positionRadius.w;
+		if (distance >= radius)
+			continue;
+		float attenuation = pow(1.0f - distance / radius, light.colorFalloff.w);
+		if (light.spot.w >= -1.0f && distance > 1e-6f) {
+			float cosine = dot(offset / distance, light.spot.xy);
+			attenuation *= smoothstep(light.spot.w, light.spot.z, cosine);
+		}
+		if (hasNormal) {
+			float3 toLight = normalize(float3(-offset, light.positionRadius.z - surfaceHeight));
+			attenuation *= saturate(dot(normal, toLight));
+		}
+		if (receivesShadows && light.shadow.x >= 0.0f && attenuation > 0.0f)
+			attenuation *= shadowFactor2D(light, offset, distance);
+		total += light.colorFalloff.rgb * attenuation;
+	}
+	return total;
+}
+
+// Map position of an isometric pixel: its view position and its world height give x and y through the first two rows
+// of the dimetric view.
+float2 isometricMapPosition(float4x4 view, float2 viewXY, float height) {
+	float2 rhs = viewXY - float2(view[0][2], view[1][2]) * height - float2(view[0][3], view[1][3]);
+	float a = view[0][0];
+	float b = view[0][1];
+	float c = view[1][0];
+	float d = view[1][1];
+	float det = a * d - b * c;
+	if (abs(det) < 1e-8f)
+		return float2(0.0f, 0.0f);
+	return float2(d * rhs.x - b * rhs.y, a * rhs.y - c * rhs.x) / det;
+}

@@ -229,10 +229,13 @@ INSTANTIATE_TEST_SUITE_P(IsometricObjects, RenderImage,
 						 });
 
 // The isometric town of the Engine Demo: sloped terrain, roads along both axes, buildings, trees, vehicles and the
-// 2D sky behind, under the town HUD.
+// 2D sky behind, under the town HUD. At night, the 2D lights light the buildings through their normal and depth
+// atlases: a dim blue ambient, a warm street lamp and a cold light on the square.
 INSTANTIATE_TEST_SUITE_P(IsometricTown, RenderImage,
 						 testing::Values(RenderCase{"iso_town", "vulkan", {640, 360}},
-										 RenderCase{"iso_town", "opengl", {640, 360}}),
+										 RenderCase{"iso_town", "opengl", {640, 360}},
+										 RenderCase{"iso_town_night", "vulkan", {640, 360}},
+										 RenderCase{"iso_town_night", "opengl", {640, 360}}),
 						 [](const testing::TestParamInfo<RenderCase>& iInfo) -> std::string {
 							 return std::format("{}_{}_{}x{}", iInfo.param.scene, iInfo.param.backend,
 												iInfo.param.size.x(), iInfo.param.size.y());
@@ -272,6 +275,16 @@ INSTANTIATE_TEST_SUITE_P(HudScroll, RenderImage,
 						 [](const testing::TestParamInfo<RenderCase>& iInfo) -> std::string {
 							 return std::format("{}_{}_{}x{}", iInfo.param.scene, iInfo.param.backend,
 												iInfo.param.size.x(), iInfo.param.size.y());
+						 });
+
+// The 2D lights: a dim blue ambient (night), a warm point light and a cold spot light, both casting soft shadows of
+// two sprites, over a normal-mapped brick floor; the green marker is unlit and keeps its colour. The tilemap scene at
+// dusk with a campfire: tilemaps take the same lights.
+INSTANTIATE_TEST_SUITE_P(Lights2D, RenderImage,
+						 testing::Values(RenderCase{"lights2d", "vulkan"}, RenderCase{"lights2d", "opengl"},
+										 RenderCase{"tilemap_lit", "vulkan"}, RenderCase{"tilemap_lit", "opengl"}),
+						 [](const testing::TestParamInfo<RenderCase>& iInfo) -> std::string {
+							 return iInfo.param.scene + "_" + iInfo.param.backend;
 						 });
 
 // Draw order across primitive types: quads, circles and text at interleaved depths cover each other by their world z
@@ -370,6 +383,14 @@ class RenderPick : public testing::TestWithParam<PickCase> {};
 // light and a blue spot light.
 INSTANTIATE_TEST_SUITE_P(Lights, RenderImage,
 						 testing::Values(RenderCase{"lights", "vulkan"}, RenderCase{"lights", "opengl"}),
+						 [](const testing::TestParamInfo<RenderCase>& iInfo) -> std::string {
+							 return iInfo.param.scene + "_" + iInfo.param.backend;
+						 });
+
+// The lights scene moved 2^20 m away on x and z: camera-relative rendering keeps the meshes, lights and shadows as
+// precise as at the origin (the uploaded matrices never hold the far-away translation).
+INSTANTIATE_TEST_SUITE_P(FarOrigin, RenderImage,
+						 testing::Values(RenderCase{"far_origin", "vulkan"}, RenderCase{"far_origin", "opengl"}),
 						 [](const testing::TestParamInfo<RenderCase>& iInfo) -> std::string {
 							 return iInfo.param.scene + "_" + iInfo.param.backend;
 						 });

@@ -14,6 +14,7 @@
 #include "GpuProfiler.h"
 #include "RendererDescriptors.h"
 #include "app/Application.h"
+#include "renderer/ClipSpace.h"
 #include "renderer/gpu/GraphContext.h"
 #include "renderer/gpu/RendererDescriptors.h"
 #include "utils.h"
@@ -166,8 +167,8 @@ auto VulkanHandler::toImGuiInfo(std::vector<VkFormat>& ioFormats) -> ImGui_ImplV
 													 .viewMask = 0,
 													 .colorAttachmentCount = static_cast<uint32_t>(ioFormats.size()),
 													 .pColorAttachmentFormats = ioFormats.data(),
-													 .depthAttachmentFormat = VK_FORMAT_D24_UNORM_S8_UINT,
-													 .stencilAttachmentFormat = VK_FORMAT_D24_UNORM_S8_UINT},
+													 .depthAttachmentFormat = VK_FORMAT_D32_SFLOAT,
+													 .stencilAttachmentFormat = VK_FORMAT_UNDEFINED},
 					 .SwapChainImageUsage = {}},
 			.PipelineInfoForViewports = {},
 			.UseDynamicRendering = false,
@@ -198,7 +199,7 @@ void VulkanHandler::createSwapChain() {
 							{.format = AttachmentSpecification::Format::RedInteger,
 							 .tiling = AttachmentSpecification::Tiling::Optimal},
 							// Matches the editor FB depth so 2D + voxel pipelines are RP-compatible (VUID 02684).
-							{.format = AttachmentSpecification::Format::Depth24Stencil8,
+							{.format = AttachmentSpecification::Format::Depth32F,
 							 .tiling = AttachmentSpecification::Tiling::Optimal},
 					},
 			.samples = 2,
@@ -375,7 +376,7 @@ auto VulkanHandler::pushPipeline(const std::string& iPipeLineName,
 			.flags = {},
 			.depthTestEnable = VK_TRUE,
 			.depthWriteEnable = VK_TRUE,
-			.depthCompareOp = VK_COMPARE_OP_LESS,
+			.depthCompareOp = VK_COMPARE_OP_GREATER,
 			.depthBoundsTestEnable = VK_FALSE,
 			.stencilTestEnable = VK_FALSE,
 			.front = {.failOp = VK_STENCIL_OP_KEEP,
@@ -471,9 +472,9 @@ void VulkanHandler::clear() {
 							.clearValue = {.color = {.float32 = {m_clearColor.r(), m_clearColor.g(), m_clearColor.b(),
 																 m_clearColor.a()}}}};
 	if (m_currentFramebuffer->hasDepth())
-		attachments[count++] = {.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
+		attachments[count++] = {.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT,
 								.colorAttachment = 0,
-								.clearValue = {.depthStencil = {.depth = 1.0f, .stencil = 0}}};
+								.clearValue = {.depthStencil = {.depth = g_farDepth, .stencil = 0}}};
 	const VkClearRect rect{
 			.rect = {.offset = {0, 0}, .extent = toExtent(m_currentFramebuffer->getSpecification().size)},
 			.baseArrayLayer = 0,

@@ -14,8 +14,10 @@
 
 struct Camera {
 	column_major float4x4 viewProjection;
-	// x: 1 when the target stores linear colour (the fragment colour is decoded from sRGB); yzw unused.
+	// x: 1 when the target stores linear colour (the fragment colour is decoded from sRGB); y: 2D light count;
+	// zw unused.
 	int4 flags;
+	float4 ambient;// rgb: linear ambient of the 2D lights; w: 1 when the 2D lighting is on.
 };
 
 [[vk::binding(0)]]
@@ -35,6 +37,8 @@ struct QuadInstance {
 	uint texIndex;
 	int entityId;
 	float2 tilingFactor;
+	int normalIndex;// texture slot of the normal map, -1 for none.
+	uint flags;     // bit 0: lit by the 2D lights; bit 1: shadow caster (not shadowed itself).
 };
 
 [[vk::binding(2)]]
@@ -55,6 +59,10 @@ StructuredBuffer<SceneWorld> gSceneWorlds;
 [[vk::binding(4)]]
 StructuredBuffer<TransientWorld> gTransientWorlds;
 
+#define LIGHT2D_LIGHT_BINDING 5
+#define LIGHT2D_SHADOW_BINDING 6
+#include "light2d.slangh"
+
 struct VertexInput {
 	[[vk::location(0)]] int cornerIndex : POSITION;
 };
@@ -65,6 +73,10 @@ struct FragmentInput {
 	[[vk::location(2)]] float2 tilingFactor : TEXCOORD1;
 	[[vk::location(3)]] nointerpolation int texIndex : TEXCOORD2;
 	[[vk::location(4)]] nointerpolation int entityID : TEXCOORD3;
+	[[vk::location(5)]] float2 worldPos : TEXCOORD4;
+	[[vk::location(6)]] nointerpolation int normalIndex : TEXCOORD5;
+	[[vk::location(7)]] nointerpolation uint flags : TEXCOORD6;
+	[[vk::location(8)]] nointerpolation float4 axes : TEXCOORD7;// xy: world X axis of the sprite, zw: its Y axis.
 };
 
 struct FragmentOutput {
@@ -110,6 +122,12 @@ VertexOutput vertexMain(VertexInput input, uint iid : SV_InstanceID) {
 	output.frag.tilingFactor = inst.tilingFactor;
 	output.frag.texIndex = int(inst.texIndex);
 	output.frag.entityID = inst.entityId;
+	output.frag.worldPos = worldPos.xy;
+	output.frag.normalIndex = inst.normalIndex;
+	output.frag.flags = inst.flags;
+	float2 axisX = float2(world[0][0], world[1][0]);
+	float2 axisY = float2(world[0][1], world[1][1]);
+	output.frag.axes = float4(axisX / max(length(axisX), 1e-6f), axisY / max(length(axisY), 1e-6f));
 	return output;
 }
 
@@ -122,6 +140,18 @@ FragmentOutput fragmentMain(FragmentInput input) {
 		discard;
 	if (gCamera.flags.x != 0)
 		texColor.rgb = srgbToLinear(texColor.rgb);
+	if (gCamera.ambient.w != 0.0f && (input.flags & 1u) != 0u) {
+		float3 normal = float3(0.0f, 0.0f, 1.0f);
+		bool hasNormal = input.normalIndex >= 0;
+		if (hasNormal) {
+			float3 local = gTextures[NonUniformResourceIndex(input.normalIndex)]
+								   .Sample(input.texCoord * input.tilingFactor)
+								   .xyz * 2.0f - 1.0f;
+			normal = normalize(float3(local.x * input.axes.xy + local.y * input.axes.zw, local.z));
+		}
+		texColor.rgb *= lighting2D(input.worldPos, 0.0f, normal, hasNormal, (input.flags & 2u) == 0u, gCamera.flags.y,
+								   gCamera.ambient.rgb);
+	}
 	output.color = texColor;
 	output.entityID = input.entityID;
 	return output;

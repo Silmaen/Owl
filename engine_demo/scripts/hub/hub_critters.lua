@@ -6,16 +6,21 @@
 -- Entities named `Butterfly_<n>` stay near the position they have in the scene; `Sparrow_<n>` wait off the map, then fly
 -- over it in a straight line, one after the other.
 
+properties = {
+    { name = "sparrow_speed", type = "float", default = 5.5 },
+}
+
 local BUTTERFLIES = 8
 local SPARROWS = 3
 local MAP_W = 64
-local SPARROW_SPEED = 5.5
+local SPARROW_SPEED    -- set from the properties in on_create
 
 local flies = {}
 local birds = {}
 local clock = 0
 
 function on_create()
+    SPARROW_SPEED = sparrow_speed
     for n = 1, BUTTERFLIES do
         local id = scene.find_entity("Butterfly_" .. n)
         if id ~= 0 then

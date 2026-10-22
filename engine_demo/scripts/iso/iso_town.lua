@@ -15,6 +15,8 @@ local GROUND_LAYER, ROAD_LAYER = 0, 1
 properties = {
     { name = "map_size", type = "float", default = 24.0 },
     { name = "target_trips", type = "float", default = 20.0 },
+    { name = "toast_seconds", type = "float", default = 2.0 },
+    { name = "pad_repeat", type = "float", default = 0.16 },
 }
 
 local ROAD_X, ROAD_Y = 3, 11
@@ -37,8 +39,7 @@ local START_FUNDS, ROAD_COST, ROAD_REFUND, TREE_COST = 1000, 10, 5, 3
 -- Victory objective: the town earns its keep once its vehicles have made this many trips (`town_trips`), set by the
 -- scene (`target_trips`).
 local TARGET_TRIPS = 20
-local TOAST_SECONDS = 2.0
-local PAD_REPEAT = 0.16
+local TOAST_SECONDS, PAD_REPEAT    -- set from the properties in on_create
 
 local TOOL_ROAD, TOOL_BULLDOZE = 1, 2
 local TOOL_NAMES = { [TOOL_ROAD] = "Road", [TOOL_BULLDOZE] = "Bulldoze" }
@@ -319,6 +320,8 @@ local function update_hud(dt)
 end
 
 function on_create()
+    TOAST_SECONDS = toast_seconds
+    PAD_REPEAT = pad_repeat
     SIZE = math.floor(map_size or SIZE)
     TARGET_TRIPS = math.floor(target_trips or TARGET_TRIPS)
     cursor_x, cursor_y = SIZE // 2, SIZE // 2

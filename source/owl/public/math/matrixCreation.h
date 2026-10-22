@@ -140,6 +140,65 @@ constexpr auto ortho(const BaseType iLeft, const BaseType iRight, const BaseType
 
 /**
  * @brief
+ *  Generate a reversed-Z perspective projection matrix: depth in [0, 1], 1 on the near plane, 0 on the far plane.
+ * @details
+ *  With a floating-point depth buffer the precision is nearly even at any distance. An infinite `iZFar` gives the
+ *  infinite far plane: the depth tends to 0 and nothing beyond the near plane is clipped.
+ * @tparam BaseType The internal Data type.
+ * @param[in] iFovy The Y field of view.
+ * @param[in] iAspect The aspect ratio.
+ * @param[in] iZNear The nearest depth.
+ * @param[in] iZFar The farthest depth, or infinity.
+ * @return Perspective Matrix.
+ */
+template<typename BaseType>
+constexpr auto perspectiveReversedZ(BaseType iFovy, BaseType iAspect, BaseType iZNear, BaseType iZFar)
+		-> Matrix<BaseType, 4, 4> {
+	static constexpr BaseType one{1};
+	static constexpr BaseType two{2};
+	Matrix<BaseType, 4, 4> result{};
+	const BaseType tanHalfFovy = std::tan(iFovy / two);
+	result(0, 0) = one / (iAspect * tanHalfFovy);
+	result(1, 1) = one / tanHalfFovy;
+	result(3, 2) = -one;
+	if (std::isinf(iZFar)) {
+		result(2, 3) = iZNear;
+	} else {
+		result(2, 2) = iZNear / (iZFar - iZNear);
+		result(2, 3) = iZFar * iZNear / (iZFar - iZNear);
+	}
+	return result;
+}
+
+/**
+ * @brief
+ *  Construct a reversed-Z orthographic projection matrix: depth in [0, 1], 1 on the near plane, 0 on the far plane.
+ * @tparam BaseType The internal data type.
+ * @param[in] iLeft The left limit.
+ * @param[in] iRight The right limit.
+ * @param[in] iBottom The bottom limit.
+ * @param[in] iTop The top limit.
+ * @param[in] iNear The nearest depth.
+ * @param[in] iFar The farthest depth.
+ * @return The orthogonal matrix.
+ */
+template<typename BaseType>
+constexpr auto orthoReversedZ(const BaseType iLeft, const BaseType iRight, const BaseType iBottom, const BaseType iTop,
+							  const BaseType iNear, const BaseType iFar) -> Matrix<BaseType, 4, 4> {
+	static constexpr BaseType two{2};
+	Matrix<BaseType, 4, 4> result{};
+	result(0, 0) = two / (iRight - iLeft);
+	result(1, 1) = two / (iTop - iBottom);
+	result(2, 2) = BaseType{1} / (iFar - iNear);
+	result(0, 3) = -(iRight + iLeft) / (iRight - iLeft);
+	result(1, 3) = -(iTop + iBottom) / (iTop - iBottom);
+	result(2, 3) = iFar / (iFar - iNear);
+	result(3, 3) = BaseType{1};
+	return result;
+}
+
+/**
+ * @brief
  *  Create a translated matrix.
  * @tparam BaseType The internal data type.
  * @param iMatrix Matrix to transform.

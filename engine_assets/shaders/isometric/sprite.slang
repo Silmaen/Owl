@@ -16,6 +16,9 @@ struct IsometricScene {
 	float4 tile;
 	// x: entity id (tile only); y: 1 when the target stores linear colour (the fragment colour is decoded from sRGB).
 	int4 ids;
+	// x: 2D light count; y: 1 when the 2D lighting is on; z: world height of a full depth-atlas texel.
+	float4 light;
+	float4 ambient;// rgb: linear ambient of the 2D lights.
 };
 
 [[vk::binding(0)]]
@@ -27,6 +30,8 @@ ConstantBuffer<IsometricScene> gScene;
 [[vk::binding(0)]]
 #endif
 Sampler2D gTextures[32];
+
+#include "isometric_light.slangh"
 
 struct SpriteInstance {
 	// xyz: world foot point; w: depth bias towards the viewer, in view pixels.
@@ -54,6 +59,8 @@ struct FragmentInput {
 	[[vk::location(1)]] float2 texCoord : TEXCOORD0;
 	[[vk::location(2)]] nointerpolation int texIndex : TEXCOORD1;
 	[[vk::location(3)]] nointerpolation int entityID : TEXCOORD2;
+	[[vk::location(4)]] float2 viewXY : TEXCOORD3;
+	[[vk::location(5)]] nointerpolation float3 foot : TEXCOORD4;// world foot point.
 };
 
 struct FragmentOutput {
@@ -99,6 +106,8 @@ VertexOutput vertexMain(VertexInput input, uint iid : SV_InstanceID) {
 	viewPos.xy += corner;
 	viewPos.z += corner.y * (up.z / up.y) + inst.foot.w;
 	output.svPosition = mul(gScene.projection, viewPos);
+	output.frag.viewXY = viewPos.xy;
+	output.frag.foot = inst.foot.xyz;
 	output.frag.color = unpackColor(inst.color);
 	const float2 uvLow = inst.uvRect.xy;
 	const float2 uvHigh = inst.uvRect.zw;
@@ -117,6 +126,8 @@ FragmentOutput fragmentMain(FragmentInput input) {
 		discard;
 	if (gScene.ids.y != 0)
 		texColor.rgb = srgbToLinear(texColor.rgb);
+	if (gScene.light.y != 0.0f)
+		texColor.rgb *= isometricLight(input.texIndex, input.texCoord, input.viewXY, input.foot, false);
 	output.color = texColor;
 	output.entityID = input.entityID;
 	return output;

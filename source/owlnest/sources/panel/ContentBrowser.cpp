@@ -555,7 +555,8 @@ void ContentBrowser::openEntry(const std::filesystem::directory_entry& iEntry) {
 	if (iEntry.is_directory()) {
 		m_currentPath /= path.filename();
 		m_searchFilter.clear();
-	} else if ((path.extension() == ".owl" || path.extension() == ".owlhud") && m_sceneOpenCallback) {
+	} else if ((path.extension() == ".owl" || path.extension() == ".owlhud" || path.extension() == ".owlprefab") &&
+			   m_sceneOpenCallback) {
 		m_sceneOpenCallback(path);
 	} else if (path.extension() == ".owlflow" && m_nodeGraphOpenCallback) {
 		m_nodeGraphOpenCallback(path);

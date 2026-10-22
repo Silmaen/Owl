@@ -11,6 +11,7 @@
 
 #include "app/Application.h"
 
+#include <algorithm>
 #include <filesystem>
 #include <string>
 #include <variant>
@@ -39,7 +40,7 @@ auto loadScriptInstance(Scene& ioScene, const component::LuaScript& iScript, con
 	}
 	if (!loaded) {
 		if (!exists(std::filesystem::path{iScript.scriptPath})) {
-			OWL_CORE_ERROR("Scene: Cannot find script '{}' of entity '{}' ({}) in the pack or the asset folders. "
+			OWL_CORE_ERROR("Scene: Cannot find script '{}' of '{}' ({}) in the pack or the asset folders. "
 						   "Fix: set the LuaScript path relative to the project folder (e.g. `scripts/player.lua`).",
 						   iScript.scriptPath, iEntityName, iEntityId)
 			return nullptr;
@@ -47,26 +48,15 @@ auto loadScriptInstance(Scene& ioScene, const component::LuaScript& iScript, con
 		loaded = instance->create(iScript.scriptPath, iEntityId);
 	}
 	if (!loaded) {
-		OWL_CORE_ERROR("Scene: Failed to load script '{}' of entity '{}' ({}).", iScript.scriptPath, iEntityName,
-					   iEntityId)
+		OWL_CORE_ERROR("Scene: Failed to load script '{}' of '{}' ({}).", iScript.scriptPath, iEntityName, iEntityId)
 		return nullptr;
 	}
-	for (const auto& [name, type, value]: iScript.properties) {
-		switch (type) {
-			case script::ScriptPropertyType::Float:
-				instance->setProperty(name, std::get<float>(value));
-				break;
-			case script::ScriptPropertyType::Int:
-				instance->setProperty(name, std::get<int64_t>(value));
-				break;
-			case script::ScriptPropertyType::String:
-				instance->setProperty(name, std::get<std::string>(value));
-				break;
-			case script::ScriptPropertyType::Bool:
-				instance->setProperty(name, std::get<bool>(value));
-				break;
-		}
+	for (const auto& declared: instance->getDeclaredProperties()) {
+		if (std::ranges::none_of(iScript.properties,
+								 [&declared](const auto& iListed) -> bool { return iListed.name == declared.name; }))
+			instance->setProperty(declared);
 	}
+	for (const auto& property: iScript.properties) instance->setProperty(property);
 	return instance;
 }
 

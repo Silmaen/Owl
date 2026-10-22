@@ -133,7 +133,7 @@ void HudEditor::ensureFramebuffer() {
 								 .tiling = renderer::gpu::AttachmentSpecification::Tiling::Optimal},
 								{.format = renderer::gpu::AttachmentSpecification::Format::RedInteger,
 								 .tiling = renderer::gpu::AttachmentSpecification::Tiling::Optimal},
-								{.format = renderer::gpu::AttachmentSpecification::Format::Depth24Stencil8,
+								{.format = renderer::gpu::AttachmentSpecification::Format::Depth32F,
 								 .tiling = renderer::gpu::AttachmentSpecification::Tiling::Optimal},
 						},
 				.samples = 1,

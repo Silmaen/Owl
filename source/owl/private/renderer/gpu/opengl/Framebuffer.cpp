@@ -72,7 +72,7 @@ void attachDepthTexture(const uint32_t iId, const int iSamples, const GLenum iFo
 
 auto isDepthFormat(const AttachmentSpecification::Format iFormat) -> bool {
 	switch (iFormat) {
-		case AttachmentSpecification::Format::Depth24Stencil8:
+		case AttachmentSpecification::Format::Depth32F:
 			return true;
 		case AttachmentSpecification::Format::None:
 		case AttachmentSpecification::Format::Rgba8:
@@ -97,7 +97,7 @@ auto fbTextureFormatToGl(const AttachmentSpecification::Format iFormat) -> GLenu
 		case AttachmentSpecification::Format::RedInteger:
 			return GL_RED_INTEGER;
 		case AttachmentSpecification::Format::None:
-		case AttachmentSpecification::Format::Depth24Stencil8:
+		case AttachmentSpecification::Format::Depth32F:
 			break;
 	}
 	OWL_CORE_ASSERT(false, "Bad Texture format")
@@ -170,7 +170,7 @@ void Framebuffer::invalidate() {
 											  GL_RED_INTEGER, m_specs.size.x(), m_specs.size.y(), static_cast<int>(i));
 					break;
 				case AttachmentSpecification::Format::None:
-				case AttachmentSpecification::Format::Depth24Stencil8:
+				case AttachmentSpecification::Format::Depth32F:
 					break;
 			}
 		}
@@ -180,9 +180,9 @@ void Framebuffer::invalidate() {
 		utils::createTextures(multisample, &m_depthAttachment, 1);
 		utils::bindTexture(multisample, m_depthAttachment);
 		switch (m_depthAttachmentSpecification.format) {
-			case AttachmentSpecification::Format::Depth24Stencil8:
-				utils::attachDepthTexture(m_depthAttachment, static_cast<int>(m_specs.samples), GL_DEPTH24_STENCIL8,
-										  GL_DEPTH_STENCIL_ATTACHMENT, m_specs.size.x(), m_specs.size.y());
+			case AttachmentSpecification::Format::Depth32F:
+				utils::attachDepthTexture(m_depthAttachment, static_cast<int>(m_specs.samples), GL_DEPTH_COMPONENT32F,
+										  GL_DEPTH_ATTACHMENT, m_specs.size.x(), m_specs.size.y());
 				break;
 			case AttachmentSpecification::Format::None:
 			case AttachmentSpecification::Format::Rgba8:

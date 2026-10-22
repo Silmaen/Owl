@@ -28,6 +28,7 @@
 #include <optional>
 #include <string>
 #include <utility>
+#include <vector>
 
 namespace owl::nest {
 
@@ -454,6 +455,15 @@ private:
 
 	/**
 	 * @brief
+	 *  Draw the `Light2D` markers: a disc for an ambient light, a bulb for a point or spot one; selected, its radius
+	 *  circle or its cone in the sprite plane.
+	 * @param[in] iScene The scene.
+	 * @param[in] iSelected The selected entity.
+	 */
+	void renderLight2DMarkers(const shared<scene::Scene>& iScene, const scene::Entity& iSelected) const;
+
+	/**
+	 * @brief
 	 *  Draw the bulb sprite of a point light, facing the camera.
 	 * @param[in] iPosition World position of the light.
 	 * @param[in] iSize Side of the sprite, in world units.
@@ -461,6 +471,29 @@ private:
 	 * @param[in] iEntityId Entity id written for picking.
 	 */
 	void drawLightBulb(const math::vec3& iPosition, float iSize, bool iEnabled, int iEntityId) const;
+
+	/**
+	 * @brief
+	 *  Draw the range of the selected `Oscillator` (a line to its far end) and the route of the selected `Patrol`
+	 *  (its waypoints and the wander circle); the picked waypoint is highlighted.
+	 * @param[in] iScene The scene edited.
+	 */
+	void renderBehaviourOverlays(const shared<scene::Scene>& iScene) const;
+
+	/**
+	 * @brief
+	 *  Waypoint of the selected `Patrol` under the cursor: a click ray against a sphere around each waypoint.
+	 * @return The index of the nearest waypoint hit, or -1.
+	 */
+	[[nodiscard]] auto pickPatrolWaypoint() const -> int;
+
+	/**
+	 * @brief
+	 *  Move the picked waypoint of the selected `Patrol` with a translation gizmo; the move is recorded as one
+	 *  `component.set` command on release.
+	 * @return True when the waypoint gizmo is shown (the entity gizmo is not).
+	 */
+	auto renderWaypointGizmo() -> bool;
 
 	/**
 	 * @brief
@@ -738,6 +771,12 @@ private:
 	bool m_gizmoWasUsing = false;
 	/// Entity YAML snapshot captured when gizmo manipulation began.
 	std::string m_gizmoBeforeYaml;
+	/// Index of the picked waypoint of the selected `Patrol`, -1 for none.
+	int m_patrolHandle = -1;
+	/// Waypoints of the selected `Patrol` when the drag of a waypoint began.
+	std::vector<math::vec3> m_patrolBefore;
+	/// Whether the waypoint gizmo was being used last frame.
+	bool m_patrolWasUsing = false;
 	/// Message shown for a moment when Play or Pause starts.
 	PlayBanner m_playBanner;
 	/// Keeps the clicks on the overlay controls away from the game.

@@ -1,0 +1,72 @@
+Scene: RenderTestLights2D
+EnabledRenderers:
+- {Name: raycast_world, Enabled: false}
+Entities:
+- Entity: 9700000000000000001
+  Tag: {tag: MainCamera}
+  Transform:
+    translation: [0, 0, 5]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Camera:
+    camera: {projectionType: Orthographic, perspectiveFOV: 0.785398185, perspectiveNear: 0.00999999978, perspectiveFar: 1000,
+      orthographicSize: 10, orthographicNear: -1, orthographicFar: 10}
+    primary: true
+    fixedAspectRatio: false
+- Entity: 9700000000000000002
+  Tag: {tag: Floor}
+  Transform:
+    translation: [0, 0, -0.5]
+    rotation: [0, 0, 0]
+    scale: [20, 12, 1]
+  Visibility: {gameVisible: true}
+  SpriteRenderer: {color: [1, 1, 1, 1], tilingFactor: 6, texture: 'nam:textures/bricks.png', normalMap: 'nam:textures/bricks_normal.png'}
+- Entity: 9700000000000000003
+  Tag: {tag: Pillar}
+  Transform:
+    translation: [-1.5, 0.5, 0]
+    rotation: [0, 0, 0]
+    scale: [1.2, 1.2, 1]
+  Visibility: {gameVisible: true}
+  SpriteRenderer: {color: [0.35, 0.35, 0.4, 1], tilingFactor: 1, castShadows: true}
+- Entity: 9700000000000000004
+  Tag: {tag: Crate}
+  Transform:
+    translation: [3.5, -2, 0]
+    rotation: [0, 0, 0.4]
+    scale: [1.4, 1, 1]
+  Visibility: {gameVisible: true}
+  SpriteRenderer: {color: [0.6, 0.45, 0.25, 1], tilingFactor: 1, castShadows: true}
+- Entity: 9700000000000000005
+  Tag: {tag: Marker}
+  Transform:
+    translation: [6, 3.2, 0.2]
+    rotation: [0, 0, 0]
+    scale: [0.6, 0.6, 1]
+  Visibility: {gameVisible: true}
+  SpriteRenderer: {color: [0.2, 1, 0.4, 1], tilingFactor: 1, lit: false}
+- Entity: 9700000000000000006
+  Tag: {tag: Night}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Light2D: {type: Ambient, enabled: true, color: [0.35, 0.4, 0.65], intensity: 0.25, radius: 5, falloff: 2, height: 1, innerAngle: 0.436332315, outerAngle: 0.698131680, castShadows: false, shadowSoftness: 1}
+- Entity: 9700000000000000007
+  Tag: {tag: Lamp}
+  Transform:
+    translation: [-4, -1, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Light2D: {type: Point, enabled: true, color: [1, 0.7, 0.35], intensity: 1.6, radius: 7, falloff: 1.5, height: 1.2, innerAngle: 0.436332315, outerAngle: 0.698131680, castShadows: true, shadowSoftness: 1}
+- Entity: 9700000000000000008
+  Tag: {tag: Spot}
+  Transform:
+    translation: [2, 4, 0]
+    rotation: [0, 0, -1.2]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Light2D: {type: Spot, enabled: true, color: [0.5, 0.8, 1], intensity: 1.4, radius: 9, falloff: 1, height: 0.8, innerAngle: 0.3, outerAngle: 0.5, castShadows: true, shadowSoftness: 2}

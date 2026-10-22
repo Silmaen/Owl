@@ -403,6 +403,42 @@ TEST(LuaBindings, entityLight) {
 	core::Log::invalidate();
 }
 
+TEST(LuaBindings, entityLight2DSharesTheLightBindings) {
+	core::Log::init(core::Log::Level::Off);
+	auto scn = mkShared<scene::Scene>();
+	auto torch = scn->createEntity("Torch");
+	torch.addComponent<scene::component::Light2D>();
+
+	const std::string script = std::format("function on_create()\n"
+										   "has = entity.has_component({0}, 'Light2D')\n"
+										   "set_color = entity.set_light_color({0}, 1, 0.5, 0.25)\n"
+										   "set_intensity = entity.set_light_intensity({0}, 2)\n"
+										   "set_range = entity.set_light_range({0}, 7)\n"
+										   "set_off = entity.set_light_enabled({0}, false)\n"
+										   "intensity = entity.get_light_intensity({0})\n"
+										   "end\n",
+										   static_cast<int64_t>(static_cast<uint64_t>(torch.getUUID())));
+	const std::vector<uint8_t> data(script.begin(), script.end());
+	const ScriptInstance inst;
+	inst.setScene(scn.get());
+	ASSERT_TRUE(inst.createFromBuffer(data, "light2d_test", static_cast<uint64_t>(torch.getUUID())));
+	inst.onCreate();
+
+	EXPECT_TRUE(inst.getPropertyBool("has").value_or(false));
+	EXPECT_TRUE(inst.getPropertyBool("set_color").value_or(false));
+	EXPECT_TRUE(inst.getPropertyBool("set_intensity").value_or(false));
+	EXPECT_TRUE(inst.getPropertyBool("set_range").value_or(false));
+	EXPECT_TRUE(inst.getPropertyBool("set_off").value_or(false));
+	EXPECT_FLOAT_EQ(inst.getPropertyFloat("intensity").value_or(-1.f), 2.f);
+	const auto& light = torch.getComponent<scene::component::Light2D>();
+	EXPECT_FLOAT_EQ(light.color.z(), 0.25f);
+	EXPECT_FLOAT_EQ(light.intensity, 2.f);
+	EXPECT_FLOAT_EQ(light.radius, 7.f);
+	EXPECT_FALSE(light.enabled);
+
+	core::Log::invalidate();
+}
+
 TEST(LuaBindings, logDoesNotCrash) {
 	core::Log::init(core::Log::Level::Off);
 	auto scn = mkShared<scene::Scene>();

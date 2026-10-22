@@ -382,7 +382,7 @@ void RibbonBuilder::buildSceneTab() {
 							  .isEnabled = [this]() -> bool {
 								  const auto* d = mp_editor->activeSceneDocument();
 								  return d != nullptr && d->state() == State::Edit && d->getEditorScene() &&
-										 d->getEditorScene()->getDocumentKind() != scene::DocumentKind::Hud;
+										 d->getEditorScene()->getDocumentKind() == scene::DocumentKind::Scene;
 							  },
 							  .isChecked = [this]() -> bool {
 								  const auto* d = mp_editor->activeSceneDocument();

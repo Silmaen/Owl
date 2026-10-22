@@ -16,6 +16,7 @@
 #include <renderer/gpu/RenderCommand.h>
 
 #include <algorithm>
+#include <cstdint>
 #include <filesystem>
 #include <fstream>
 #include <string>
@@ -44,7 +45,7 @@ protected:
 }// namespace
 
 TEST_F(PostProcessTest, theBloomLevelsHalveWhileTheFrameAllowsIt) {
-	EXPECT_EQ(PostProcess::getBloomLevelCount({1920, 1080}), PostProcess::g_maxBloomLevels);
+	EXPECT_EQ(PostProcess::getBloomLevelCount({1920, 1080}), uint32_t{PostProcess::g_maxBloomLevels});
 	EXPECT_EQ(PostProcess::getBloomLevelCount({64, 64}), 3u);
 	EXPECT_EQ(PostProcess::getBloomLevelCount({8, 8}), 0u);
 }

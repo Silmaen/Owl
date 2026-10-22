@@ -16,6 +16,7 @@
 #include <filesystem>
 #include <functional>
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -318,6 +319,31 @@ public:
 	 * @param[in] iValue Value to set.
 	 */
 	void setGlobal(const std::string& iName, bool iValue) const;
+
+	/**
+	 * @brief
+	 *  Read the `properties` table the loaded script declares.
+	 * @return The declared properties, each holding its default as its value.
+	 */
+	[[nodiscard]] auto readDeclaredProperties() const -> std::vector<ScriptProperty>;
+
+	/**
+	 * @brief
+	 *  Set a global to a table of numbers: a sequence, or named fields when keys are given.
+	 * @param[in] iName Variable name.
+	 * @param[in] iValues The numbers.
+	 * @param[in] iKeys Field names, one per number (empty for a sequence).
+	 */
+	void setGlobalNumbers(const std::string& iName, std::span<const double> iValues,
+						  std::span<const char* const> iKeys = {}) const;
+
+	/**
+	 * @brief
+	 *  Set a global to a sequence of strings.
+	 * @param[in] iName Variable name.
+	 * @param[in] iValues The strings.
+	 */
+	void setGlobalStrings(const std::string& iName, std::span<const std::string> iValues) const;
 
 	/**
 	 * @brief

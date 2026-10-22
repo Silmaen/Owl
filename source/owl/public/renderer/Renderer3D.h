@@ -68,8 +68,14 @@ struct GpuLight {
  *  The directional shadow the 3D shaders sample.
  */
 struct ShadowSettings {
-	/// View-projection of each cascade's light camera.
-	std::array<math::mat4, 4> viewProjections{};
+	/**
+	 * @brief
+	 *  Camera-relative view-projection of each cascade's light camera: its projection times its view without the
+	 *  translation (`cameraRelativeView`).
+	 */
+	std::array<math::mat4, 4> relativeViewProjections{};
+	/// World position of each cascade's light camera, the origin of its relative view-projection.
+	std::array<math::vec3, 4> origins{};
 	/// View depth where each cascade ends.
 	math::vec4 splitDepths{0.f, 0.f, 0.f, 0.f};
 	/// World size of a shadow-map texel, per cascade.

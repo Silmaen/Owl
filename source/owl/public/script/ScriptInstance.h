@@ -92,7 +92,8 @@ public:
 	 * @brief
 	 *  Initialize this instance with a script and entity ID.
 	 * @param[in] iScriptPath Path to the .lua script (relative to assets).
-	 * @param[in] iEntityId The owning entity's UUID (as uint64_t).
+	 * @param[in] iEntityId The owning entity's UUID (as uint64_t); 0 for the script of a scene, which has no
+	 *  `entity_id` global.
 	 * @return True on success.
 	 */
 	[[nodiscard]] auto create(const std::string& iScriptPath, uint64_t iEntityId) const -> bool;
@@ -218,6 +219,23 @@ public:
 	 * @param[in] iValue Value to assign.
 	 */
 	void setProperty(const std::string& iName, bool iValue) const;
+
+	/**
+	 * @brief
+	 *  The properties the loaded script declares in its `properties` table, each holding its default as its value.
+	 * @return The declared properties; empty when the script declares none or is not loaded.
+	 */
+	[[nodiscard]] auto getDeclaredProperties() const -> std::vector<ScriptProperty>;
+
+	/**
+	 * @brief
+	 *  Set a property of any type on the instance from its value.
+	 *
+	 * A colour becomes a table `{r, g, b, a}`, a vector `{x, y}` or `{x, y, z}`, an entity its UUID as an integer, a
+	 * list a sequence.
+	 * @param[in] iProperty The property: its name, type and value.
+	 */
+	void setProperty(const ScriptProperty& iProperty) const;
 
 	/**
 	 * @brief

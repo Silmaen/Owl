@@ -14,6 +14,7 @@
 #include "platform/FileUtils.h"
 #include "renderer/BackgroundRenderer.h"
 #include "renderer/CameraOrtho.h"
+#include "renderer/ClipSpace.h"
 #include "renderer/ColorEncoder.h"
 #include "renderer/IsometricObjects.h"
 #include "renderer/MaterialLibrary.h"
@@ -207,6 +208,7 @@ auto Scene::copy(const shared<Scene>& iOther) -> shared<Scene> {
 	newScene->m_enabledRenderers = iOther->m_enabledRenderers;
 	newScene->m_physicsSettings = iOther->m_physicsSettings;
 	newScene->m_hudPath = iOther->m_hudPath;
+	newScene->m_sceneScript = iOther->m_sceneScript;
 	newScene->m_documentKind = iOther->m_documentKind;
 	newScene->m_simulationClock.setSettings(iOther->m_simulationClock.getSettings());
 	newScene->m_systems = iOther->m_systems;
@@ -307,6 +309,7 @@ void Scene::onStartRuntime() {
 	if (mp_engineContext != nullptr)
 		m_simulationClock.setSettings(mp_engineContext->getSimulationSettings());
 	m_simulationClock.reset();
+	m_runtimeSeconds = 0.0;
 	const auto heldInput = input::Input::readState();
 	m_frameInput.reset(heldInput);
 	m_tickInput.reset(heldInput);
@@ -388,6 +391,12 @@ void Scene::onStartRuntime() {
 
 	const auto luaStart = clk::now();
 	size_t luaCount = 0;
+	if (!m_sceneScript.scriptPath.empty()) {
+		m_sceneScript.instance = loadScriptInstance(*this, m_sceneScript, 0, "scene");
+		if (m_sceneScript.instance)
+			m_sceneScript.instance->onCreate();
+		++luaCount;
+	}
 	// Initialize Lua scripting
 	for (const auto view = registry.view<component::LuaScript>(); const auto entity: view) {
 		auto& luaScript = view.get<component::LuaScript>(entity);
@@ -436,6 +445,9 @@ void Scene::onEndRuntime() {
 	sound::SoundCommand::stopAll();
 
 	// Destroy Lua scripts
+	if (m_sceneScript.instance && m_sceneScript.instance->isValid())
+		m_sceneScript.instance->onDestroy();
+	m_sceneScript.instance.reset();
 	for (const auto view = registry.view<component::LuaScript>(); const auto entity: view) {
 		auto& luaScript = view.get<component::LuaScript>(entity);
 		if (luaScript.instance && luaScript.instance->isValid())
@@ -459,6 +471,7 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep, const bool iRender)
 	const auto tStart = now();
 	m_lastRuntimeTimings = {};
 	m_toastTimer = std::max(0.f, m_toastTimer - iTimeStep.getSeconds());
+	m_runtimeSeconds += static_cast<double>(iTimeStep.getSeconds());
 	m_inUpdatePass = false;
 	m_worldTransformCacheActive = false;
 	const auto frameInput = input::Input::readState();
@@ -881,7 +894,11 @@ void Scene::recordLightPasses(renderer::RenderGraph& ioGraph) {
 	const math::vec2ui mapSize{shadowLight->shadowResolution, shadowLight->shadowResolution};
 	for (uint32_t index = 0; index < m_shadowCascades.count; ++index) {
 		const auto& cascade = m_shadowCascades.cascades[index];
-		m_shadowSettings.viewProjections[index] = cascade.camera.getViewProjection();
+		const auto& lightView = cascade.camera.getView();
+		const math::vec4 lightEye = inverse(lightView) * math::vec4{0.f, 0.f, 0.f, 1.f};
+		m_shadowSettings.relativeViewProjections[index] =
+				cascade.camera.getProjection() * renderer::cameraRelativeView(lightView);
+		m_shadowSettings.origins[index] = math::vec3{lightEye.x(), lightEye.y(), lightEye.z()};
 		m_shadowSettings.splitDepths[index] = cascade.splitDepth;
 		m_shadowSettings.texelWorldSizes[index] = cascade.texelWorldSize;
 		m_shadowTargets[index] = ioGraph.createTarget("shadow map", Graph::TargetFormat::Depth, mapSize);
@@ -1133,6 +1150,79 @@ void Scene::renderHud(const math::vec2ui& iViewport, const bool iEditorMode) {
 	ui::HudPass::render(*this, iViewport, iEditorMode);
 }
 
+void Scene::applyLighting2D(const bool iEditorMode) {
+	OWL_PROFILE_FUNCTION()
+
+	auto& lighting = m_lighting2D;
+	lighting.lights.clear();
+	lighting.occluders.clear();
+	lighting.ambient = math::vec3{0.f, 0.f, 0.f};
+	bool anyLight = false;
+	bool anyAmbient = false;
+	const auto toLinear = [](const math::vec3& iColor, const float iIntensity) -> math::vec3 {
+		return math::vec3{renderer::ColorEncoder::srgbToLinear(iColor.x()),
+						  renderer::ColorEncoder::srgbToLinear(iColor.y()),
+						  renderer::ColorEncoder::srgbToLinear(iColor.z())} *
+			   iIntensity;
+	};
+	bool anyShadow = false;
+	for (const auto view = registry.view<component::Light2D>(); const auto entity: view) {
+		const auto& light = view.get<component::Light2D>(entity);
+		const Entity ent{entity, this};
+		if (!light.enabled || !isEffectivelyVisible(ent, iEditorMode))
+			continue;
+		anyLight = true;
+		if (light.type == component::Light2D::Type::Ambient) {
+			anyAmbient = true;
+			lighting.ambient += toLinear(light.color, light.intensity);
+			continue;
+		}
+		if (lighting.lights.size() >= renderer::g_maxLights2D)
+			continue;
+		const math::mat4 world = getWorldTransform(ent)();
+		math::vec2 direction{world(0, 0), world(1, 0)};
+		direction = direction.normSq() > 1e-12f ? direction.normalized() : math::vec2{1.f, 0.f};
+		const bool spot = light.type == component::Light2D::Type::Spot;
+		lighting.lights.push_back({.position = {world(0, 3), world(1, 3)},
+								   .height = light.height,
+								   .radius = light.radius,
+								   .color = toLinear(light.color, light.intensity),
+								   .falloff = light.falloff,
+								   .direction = direction,
+								   .cosInner = spot ? std::cos(light.innerAngle) : 1.f,
+								   .cosOuter = spot ? std::cos(std::max(light.outerAngle, light.innerAngle)) : -2.f,
+								   .castShadows = light.castShadows,
+								   .shadowSoftness = light.shadowSoftness});
+		anyShadow = anyShadow || light.castShadows;
+	}
+	if (!anyLight) {
+		renderer::Renderer2D::clearLighting();
+		return;
+	}
+	if (!anyAmbient)
+		lighting.ambient = math::vec3{1.f, 1.f, 1.f};
+	if (anyShadow) {
+		for (const auto view = registry.view<component::SpriteRenderer>(); const auto entity: view) {
+			const Entity ent{entity, this};
+			if (!view.get<component::SpriteRenderer>(entity).castShadows || !isEffectivelyVisible(ent, iEditorMode) ||
+				!layerAccepts(ent))
+				continue;
+			const math::mat4 world = getWorldTransform(ent)();
+			std::array<math::vec2, 4> corners{};
+			constexpr std::array<math::vec2, 4> g_unitCorners{math::vec2{-0.5f, -0.5f}, math::vec2{0.5f, -0.5f},
+															  math::vec2{0.5f, 0.5f}, math::vec2{-0.5f, 0.5f}};
+			for (size_t corner = 0; corner < corners.size(); ++corner) {
+				const auto& unit = g_unitCorners[corner];
+				corners[corner] = {world(0, 0) * unit.x() + world(0, 1) * unit.y() + world(0, 3),
+								   world(1, 0) * unit.x() + world(1, 1) * unit.y() + world(1, 3)};
+			}
+			for (size_t corner = 0; corner < corners.size(); ++corner)
+				lighting.occluders.push_back({.start = corners[corner], .end = corners[(corner + 1) % corners.size()]});
+		}
+	}
+	renderer::Renderer2D::setLighting(lighting);
+}
+
 void Scene::render() {
 	OWL_PROFILE_FUNCTION()
 
@@ -1175,6 +1265,7 @@ void Scene::render() {
 		return;
 	}
 
+	applyLighting2D(editorMode);
 	// Sort key of a 2D primitive: its world z (larger is nearer); equal keys keep the submission order.
 	const auto sortDepthOf = [this](const Entity& iEntity, const int32_t iWorldIndex) -> float {
 		return iWorldIndex >= 0 ? m_worldMatrices[static_cast<size_t>(iWorldIndex)](2, 3)
@@ -1201,7 +1292,10 @@ void Scene::render() {
 										.texture = sprite.texture,
 										.tilingFactor = sprite.tilingFactor,
 										.entityId = static_cast<int>(entity),
-										.depth = sortDepthOf(ent, worldIndex)});
+										.depth = sortDepthOf(ent, worldIndex),
+										.normalMap = sprite.normalMap,
+										.lit = sprite.lit,
+										.shadowCaster = sprite.castShadows});
 	}
 	// Draw animated sprites
 	for (const auto view = registry.view<component::Transform, component::AnimatedSpriteRenderer>();
@@ -1232,7 +1326,8 @@ void Scene::render() {
 										.textureCoords = {math::vec2{uMin, vMin}, math::vec2{uMax, vMin},
 														  math::vec2{uMax, vMax}, math::vec2{uMin, vMax}},
 										.entityId = static_cast<int>(entity),
-										.depth = sortDepthOf(ent, worldIndex)});
+										.depth = sortDepthOf(ent, worldIndex),
+										.lit = true});
 	}
 	// Draw circles
 	for (const auto view = registry.view<component::Transform, component::CircleRenderer>(); auto entity: view) {
@@ -2731,8 +2826,28 @@ OWL_API void Scene::onComponentAdded<component::MeshRenderer>([[maybe_unused]] c
 															  [[maybe_unused]] component::MeshRenderer& ioComponent) {}
 
 template<>
+OWL_API void Scene::onComponentAdded<component::Light2D>([[maybe_unused]] const Entity& iEntity,
+														 [[maybe_unused]] component::Light2D& ioComponent) {}
+
+template<>
 OWL_API void Scene::onComponentAdded<component::Light>([[maybe_unused]] const Entity& iEntity,
 													   [[maybe_unused]] component::Light& ioComponent) {}
+
+template<>
+OWL_API void Scene::onComponentAdded<component::LightFlicker>([[maybe_unused]] const Entity& iEntity,
+															  [[maybe_unused]] component::LightFlicker& ioComponent) {}
+
+template<>
+OWL_API void Scene::onComponentAdded<component::Oscillator>([[maybe_unused]] const Entity& iEntity,
+															[[maybe_unused]] component::Oscillator& ioComponent) {}
+
+template<>
+OWL_API void Scene::onComponentAdded<component::Patrol>([[maybe_unused]] const Entity& iEntity,
+														[[maybe_unused]] component::Patrol& ioComponent) {}
+
+template<>
+OWL_API void Scene::onComponentAdded<component::Drift>([[maybe_unused]] const Entity& iEntity,
+													   [[maybe_unused]] component::Drift& ioComponent) {}
 
 template<>
 OWL_API void Scene::onComponentAdded<component::Environment>([[maybe_unused]] const Entity& iEntity,

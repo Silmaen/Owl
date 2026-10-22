@@ -623,6 +623,8 @@ auto luaEntityHasComponent(lua_State* iState) -> int {
 		has = entity->hasComponent<scene::component::MeshRenderer>();
 	else if (compName == "Light")
 		has = entity->hasComponent<scene::component::Light>();
+	else if (compName == "Light2D")
+		has = entity->hasComponent<scene::component::Light2D>();
 	else if (compName == "Camera")
 		has = entity->hasComponent<scene::component::Camera>();
 	else if (compName == "Text")
@@ -783,80 +785,119 @@ auto luaEntityGetMaterial(lua_State* iState) -> int {
 	return 1;
 }
 
+// The fields the light bindings reach on an entity's `Light`, or else its `Light2D` (range: the radius).
+struct LightFields {
+	math::vec3* color = nullptr;
+	float* intensity = nullptr;
+	bool* enabled = nullptr;
+	float* range = nullptr;
+};
+
+auto lightFieldsOf(const std::optional<scene::Entity>& iEntity) -> std::optional<LightFields> {
+	if (!iEntity)
+		return std::nullopt;
+	if (iEntity->hasComponent<scene::component::Light>()) {
+		auto& light = iEntity->getComponent<scene::component::Light>();
+		return LightFields{.color = &light.color,
+						   .intensity = &light.intensity,
+						   .enabled = &light.enabled,
+						   .range = &light.range};
+	}
+	if (iEntity->hasComponent<scene::component::Light2D>()) {
+		auto& light = iEntity->getComponent<scene::component::Light2D>();
+		return LightFields{.color = &light.color,
+						   .intensity = &light.intensity,
+						   .enabled = &light.enabled,
+						   .range = &light.radius};
+	}
+	return std::nullopt;
+}
+
 auto luaEntitySetLightColor(lua_State* iState) -> int {
 	const auto red = static_cast<float>(luaL_checknumber(iState, 2));
 	const auto green = static_cast<float>(luaL_checknumber(iState, 3));
 	const auto blue = static_cast<float>(luaL_checknumber(iState, 4));
-	const auto entity = findEntity(iState);
-	if (!entity || !entity->hasComponent<scene::component::Light>()) {
-		lua_pushboolean(iState, 0);
-		return 1;
-	}
-	entity->getComponent<scene::component::Light>().color = math::vec3{red, green, blue};
-	lua_pushboolean(iState, 1);
+	const auto fields = lightFieldsOf(findEntity(iState));
+	if (fields)
+		*fields->color = math::vec3{red, green, blue};
+	lua_pushboolean(iState, fields ? 1 : 0);
 	return 1;
 }
 
 auto luaEntityGetLightColor(lua_State* iState) -> int {
-	const auto entity = findEntity(iState);
-	if (!entity || !entity->hasComponent<scene::component::Light>())
+	const auto fields = lightFieldsOf(findEntity(iState));
+	if (!fields)
 		return 0;
-	const auto& color = entity->getComponent<scene::component::Light>().color;
-	lua_pushnumber(iState, static_cast<lua_Number>(color.x()));
-	lua_pushnumber(iState, static_cast<lua_Number>(color.y()));
-	lua_pushnumber(iState, static_cast<lua_Number>(color.z()));
+	lua_pushnumber(iState, static_cast<lua_Number>(fields->color->x()));
+	lua_pushnumber(iState, static_cast<lua_Number>(fields->color->y()));
+	lua_pushnumber(iState, static_cast<lua_Number>(fields->color->z()));
 	return 3;
 }
 
 auto luaEntitySetLightIntensity(lua_State* iState) -> int {
 	const auto intensity = static_cast<float>(luaL_checknumber(iState, 2));
+	const auto fields = lightFieldsOf(findEntity(iState));
+	if (fields)
+		*fields->intensity = std::max(0.f, intensity);
+	lua_pushboolean(iState, fields ? 1 : 0);
+	return 1;
+}
+
+// `entity.set_<x>_enabled(id, enabled)` of a behaviour component with an `enabled` field.
+template<typename Component>
+auto luaEntitySetBehaviourEnabled(lua_State* iState) -> int {
+	const bool enabled = lua_toboolean(iState, 2) != 0;
 	const auto entity = findEntity(iState);
-	if (!entity || !entity->hasComponent<scene::component::Light>()) {
+	if (!entity || !entity->hasComponent<Component>()) {
 		lua_pushboolean(iState, 0);
 		return 1;
 	}
-	entity->getComponent<scene::component::Light>().intensity = std::max(0.f, intensity);
+	entity->getComponent<Component>().enabled = enabled;
 	lua_pushboolean(iState, 1);
 	return 1;
 }
 
-auto luaEntityGetLightIntensity(lua_State* iState) -> int {
+// `entity.is_<x>_enabled(id)` of a behaviour component with an `enabled` field.
+template<typename Component>
+auto luaEntityIsBehaviourEnabled(lua_State* iState) -> int {
 	const auto entity = findEntity(iState);
-	if (!entity || !entity->hasComponent<scene::component::Light>())
+	if (!entity || !entity->hasComponent<Component>())
 		return 0;
-	lua_pushnumber(iState, static_cast<lua_Number>(entity->getComponent<scene::component::Light>().intensity));
+	lua_pushboolean(iState, entity->getComponent<Component>().enabled ? 1 : 0);
+	return 1;
+}
+
+auto luaEntityGetLightIntensity(lua_State* iState) -> int {
+	const auto fields = lightFieldsOf(findEntity(iState));
+	if (!fields)
+		return 0;
+	lua_pushnumber(iState, static_cast<lua_Number>(*fields->intensity));
 	return 1;
 }
 
 auto luaEntitySetLightEnabled(lua_State* iState) -> int {
 	const bool enabled = lua_toboolean(iState, 2) != 0;
-	const auto entity = findEntity(iState);
-	if (!entity || !entity->hasComponent<scene::component::Light>()) {
-		lua_pushboolean(iState, 0);
-		return 1;
-	}
-	entity->getComponent<scene::component::Light>().enabled = enabled;
-	lua_pushboolean(iState, 1);
+	const auto fields = lightFieldsOf(findEntity(iState));
+	if (fields)
+		*fields->enabled = enabled;
+	lua_pushboolean(iState, fields ? 1 : 0);
 	return 1;
 }
 
 auto luaEntityIsLightEnabled(lua_State* iState) -> int {
-	const auto entity = findEntity(iState);
-	if (!entity || !entity->hasComponent<scene::component::Light>())
+	const auto fields = lightFieldsOf(findEntity(iState));
+	if (!fields)
 		return 0;
-	lua_pushboolean(iState, entity->getComponent<scene::component::Light>().enabled ? 1 : 0);
+	lua_pushboolean(iState, *fields->enabled ? 1 : 0);
 	return 1;
 }
 
 auto luaEntitySetLightRange(lua_State* iState) -> int {
 	const auto range = static_cast<float>(luaL_checknumber(iState, 2));
-	const auto entity = findEntity(iState);
-	if (!entity || !entity->hasComponent<scene::component::Light>()) {
-		lua_pushboolean(iState, 0);
-		return 1;
-	}
-	entity->getComponent<scene::component::Light>().range = std::max(0.01f, range);
-	lua_pushboolean(iState, 1);
+	const auto fields = lightFieldsOf(findEntity(iState));
+	if (fields)
+		*fields->range = std::max(0.01f, range);
+	lua_pushboolean(iState, fields ? 1 : 0);
 	return 1;
 }
 
@@ -2034,7 +2075,8 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		 .description = "Log a message at error level.", .params = {{"message", String}}},
 		{.table = "entity", .name = "has_component", .function = guarded<luaEntityHasComponent>,
 		 .description = "Whether the entity has a component: `Transform`, `PhysicBody`, `SpriteRenderer`, "
-						"`MeshRenderer`, `Light`, `Camera`, `Text`, `SoundSource`, `Canvas` or a `Ui*` component.",
+						"`MeshRenderer`, `Light`, `Light2D`, `Camera`, `Text`, `SoundSource`, `Canvas` or a `Ui*` "
+						"component.",
 		 .params = {entityId, {"component", String}}, .returns = {{"has", Boolean}}},
 		{.table = "entity", .name = "get_name", .function = guarded<luaEntityGetName>,
 		 .description = "Tag of the entity (empty when unknown).", .params = {entityId}, .returns = {{"name", String}}},
@@ -2068,28 +2110,64 @@ auto declareBindings() -> std::vector<LuaBinding> {
 						"for the file's own material; nothing when it has no `MeshRenderer`.",
 		 .params = {entityId, {"slot", Number}}, .returns = {{"path", String}}},
 		{.table = "entity", .name = "set_light_color", .function = guarded<luaEntitySetLightColor>,
-		 .description = "Set the colour (sRGB, 0 to 1) of the entity's `Light`; false when it has none.",
+		 .description = "Set the colour (sRGB, 0 to 1) of the entity's `Light` or `Light2D`; false when it has none.",
 		 .params = {entityId, {"r", Number}, {"g", Number}, {"b", Number}}, .returns = {{"done", Boolean}}},
 		{.table = "entity", .name = "get_light_color", .function = guarded<luaEntityGetLightColor>,
-		 .description = "Colour of the entity's `Light`; nothing when it has none.",
+		 .description = "Colour of the entity's `Light` or `Light2D`; nothing when it has none.",
 		 .params = {entityId}, .returns = {{"r", Number}, {"g", Number}, {"b", Number}}},
 		{.table = "entity", .name = "set_light_intensity", .function = guarded<luaEntitySetLightIntensity>,
-		 .description = "Set the intensity (multiplier of the colour, at least 0) of the entity's `Light`; false when "
-						"it has none.",
+		 .description = "Set the intensity (at least 0) of the entity's `Light` or `Light2D`; false when it has "
+						"none.",
 		 .params = {entityId, {"intensity", Number}}, .returns = {{"done", Boolean}}},
 		{.table = "entity", .name = "get_light_intensity", .function = guarded<luaEntityGetLightIntensity>,
-		 .description = "Intensity of the entity's `Light`; nothing when it has none.",
+		 .description = "Intensity of the entity's `Light` or `Light2D`; nothing when it has none.",
 		 .params = {entityId}, .returns = {{"intensity", Number}}},
 		{.table = "entity", .name = "set_light_enabled", .function = guarded<luaEntitySetLightEnabled>,
-		 .description = "Switch the entity's `Light` on or off (it keeps its settings); false when it has none.",
+		 .description = "Switch the entity's `Light` or `Light2D` on or off (it keeps its settings); false when it has none.",
 		 .params = {entityId, {"enabled", Boolean}}, .returns = {{"done", Boolean}}},
 		{.table = "entity", .name = "is_light_enabled", .function = guarded<luaEntityIsLightEnabled>,
-		 .description = "Whether the entity's `Light` shines; nothing when it has none.",
+		 .description = "Whether the entity's `Light` or `Light2D` shines; nothing when it has none.",
 		 .params = {entityId}, .returns = {{"enabled", Boolean}}},
 		{.table = "entity", .name = "set_light_range", .function = guarded<luaEntitySetLightRange>,
-		 .description = "Set the range (world units, at least 0.01) of the entity's point or spot `Light`; false when "
-						"it has no `Light`.",
+		 .description = "Set the range (world units, at least 0.01) of the entity's point or spot `Light`, or the "
+						"radius of its `Light2D`; false when it has neither.",
 		 .params = {entityId, {"range", Number}}, .returns = {{"done", Boolean}}},
+		{.table = "entity", .name = "set_flicker_enabled",
+		 .function = guarded<luaEntitySetBehaviourEnabled<scene::component::LightFlicker>>,
+		 .description = "Switch the entity's `LightFlicker` on or off (the light keeps its authored values while off); "
+						"false when it has none.",
+		 .params = {entityId, {"enabled", Boolean}}, .returns = {{"done", Boolean}}},
+		{.table = "entity", .name = "is_flicker_enabled",
+		 .function = guarded<luaEntityIsBehaviourEnabled<scene::component::LightFlicker>>,
+		 .description = "Whether the entity's `LightFlicker` runs; nothing when it has none.",
+		 .params = {entityId}, .returns = {{"enabled", Boolean}}},
+		{.table = "entity", .name = "set_oscillator_enabled",
+		 .function = guarded<luaEntitySetBehaviourEnabled<scene::component::Oscillator>>,
+		 .description = "Switch the entity's `Oscillator` on or off (it stays where it is while off); false when it "
+						"has none.",
+		 .params = {entityId, {"enabled", Boolean}}, .returns = {{"done", Boolean}}},
+		{.table = "entity", .name = "is_oscillator_enabled",
+		 .function = guarded<luaEntityIsBehaviourEnabled<scene::component::Oscillator>>,
+		 .description = "Whether the entity's `Oscillator` moves it; nothing when it has none.",
+		 .params = {entityId}, .returns = {{"enabled", Boolean}}},
+		{.table = "entity", .name = "set_patrol_enabled",
+		 .function = guarded<luaEntitySetBehaviourEnabled<scene::component::Patrol>>,
+		 .description = "Switch the entity's `Patrol` on or off (it stops where it is while off); false when it has "
+						"none.",
+		 .params = {entityId, {"enabled", Boolean}}, .returns = {{"done", Boolean}}},
+		{.table = "entity", .name = "is_patrol_enabled",
+		 .function = guarded<luaEntityIsBehaviourEnabled<scene::component::Patrol>>,
+		 .description = "Whether the entity's `Patrol` walks it; nothing when it has none.",
+		 .params = {entityId}, .returns = {{"enabled", Boolean}}},
+		{.table = "entity", .name = "set_drift_enabled",
+		 .function = guarded<luaEntitySetBehaviourEnabled<scene::component::Drift>>,
+		 .description = "Switch the entity's `Drift` on or off (it stays where it is while off); false when it has "
+						"none.",
+		 .params = {entityId, {"enabled", Boolean}}, .returns = {{"done", Boolean}}},
+		{.table = "entity", .name = "is_drift_enabled",
+		 .function = guarded<luaEntityIsBehaviourEnabled<scene::component::Drift>>,
+		 .description = "Whether the entity's `Drift` moves it; nothing when it has none.",
+		 .params = {entityId}, .returns = {{"enabled", Boolean}}},
 		{.table = "ui", .name = "find", .function = guarded<luaUiFind>,
 		 .description = "First widget with this tag, searched in the scene's HUD asset then in the scene (0 when none); "
 						"cache the result.",

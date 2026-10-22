@@ -16,8 +16,10 @@ struct TilemapDraw {
 	float4 texel;
 	// Atlas columns, rows; entity id; slot inside `gTextures[32]`.
 	int4 atlas;
-	// x: 1 when the target stores linear colour (the fragment colour is decoded from sRGB); yzw unused.
+	// x: 1 when the target stores linear colour (the fragment colour is decoded from sRGB); y: 2D light count;
+	// zw unused.
 	int4 flags;
+	float4 ambient;// rgb: linear ambient of the 2D lights; w: 1 when the 2D lighting is on.
 };
 
 [[vk::binding(0)]]
@@ -29,6 +31,11 @@ ConstantBuffer<TilemapDraw> gDraw;
 [[vk::binding(0)]]
 #endif
 Sampler2D gTextures[32];
+
+// The bindings of Renderer2D, which owns the buffers: on OpenGL the storage binding points are global.
+#define LIGHT2D_LIGHT_BINDING 5
+#define LIGHT2D_SHADOW_BINDING 6
+#include "light2d.slangh"
 
 struct VertexInput {
 	// Per-vertex attribute (binding 0): `cornerIndex` ∈ {0..3} picks the corner of the unit quad.
@@ -42,6 +49,7 @@ struct FragmentInput {
 	[[vk::location(0)]] float2 texCoord : TEXCOORD0;
 	[[vk::location(1)]] nointerpolation int entityID : TEXCOORD1;
 	[[vk::location(2)]] nointerpolation int textureSlot : TEXCOORD2;
+	[[vk::location(3)]] float2 worldPos : TEXCOORD3;
 };
 
 struct FragmentOutput {
@@ -88,6 +96,7 @@ VertexOutput vertexMain(VertexInput input) {
 	float4 worldPos = mul(gDraw.model, float4(cornerLocal, gDraw.grid.w, 1.0f));
 	worldPos.xy += gDraw.texel.zw;
 	output.svPosition = mul(gDraw.viewProjection, worldPos);
+	output.frag.worldPos = worldPos.xy;
 
 	// Resolve the tile's UV rectangle inside the atlas (same math as `Tileset::getTileUv`).
 	const uint atlasColumns = uint(max(gDraw.atlas.x, 1));
@@ -117,6 +126,9 @@ FragmentOutput fragmentMain(FragmentInput input) {
 		discard;
 	if (gDraw.flags.x != 0)
 		texColor.rgb = srgbToLinear(texColor.rgb);
+	if (gDraw.ambient.w != 0.0f)
+		texColor.rgb *= lighting2D(input.worldPos, 0.0f, float3(0.0f, 0.0f, 1.0f), false, true, gDraw.flags.y,
+								   gDraw.ambient.rgb);
 	output.color = texColor;
 	output.entityID = input.entityID;
 	return output;

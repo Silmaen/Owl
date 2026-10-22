@@ -44,19 +44,28 @@ auto isAssetFile(const std::filesystem::path& iRelative, const std::filesystem::
 
 void carryProperties(const component::LuaScript& iScript, const script::ScriptInstance& iOld,
 					 const script::ScriptInstance& iNew) {
-	for (const auto& [name, type, value]: iScript.properties) {
-		switch (type) {
+	for (const auto& property: iScript.properties) {
+		const auto& name = property.name;
+		switch (property.type) {
 			case script::ScriptPropertyType::Float:
-				iNew.setProperty(name, iOld.getPropertyFloat(name).value_or(std::get<float>(value)));
+				iNew.setProperty(name, iOld.getPropertyFloat(name).value_or(std::get<float>(property.value)));
 				break;
 			case script::ScriptPropertyType::Int:
-				iNew.setProperty(name, iOld.getPropertyInt(name).value_or(std::get<int64_t>(value)));
+				iNew.setProperty(name, iOld.getPropertyInt(name).value_or(std::get<int64_t>(property.value)));
 				break;
 			case script::ScriptPropertyType::String:
-				iNew.setProperty(name, iOld.getPropertyString(name).value_or(std::get<std::string>(value)));
+				iNew.setProperty(name, iOld.getPropertyString(name).value_or(std::get<std::string>(property.value)));
 				break;
 			case script::ScriptPropertyType::Bool:
-				iNew.setProperty(name, iOld.getPropertyBool(name).value_or(std::get<bool>(value)));
+				iNew.setProperty(name, iOld.getPropertyBool(name).value_or(std::get<bool>(property.value)));
+				break;
+			case script::ScriptPropertyType::Color:
+			case script::ScriptPropertyType::Vec2:
+			case script::ScriptPropertyType::Vec3:
+			case script::ScriptPropertyType::Entity:
+			case script::ScriptPropertyType::Numbers:
+			case script::ScriptPropertyType::Strings:
+				iNew.setProperty(property);
 				break;
 		}
 	}
@@ -100,6 +109,18 @@ auto Scene::onAssetFileChanged(const std::filesystem::path& iFile) -> bool {
 			}
 		}
 	} else if (extension == ".lua") {
+		if (auto& sceneScript = m_sceneScript; sceneScript.instance && isAssetFile(sceneScript.scriptPath, iFile)) {
+			used = true;
+			if (auto fresh = loadScriptInstance(*this, sceneScript, 0, "scene"); fresh) {
+				carryProperties(sceneScript, *sceneScript.instance, *fresh);
+				sceneScript.instance = std::move(fresh);
+				sceneScript.instance->onCreate();
+				OWL_CORE_INFO("Scene: Scene script '{}' reloaded.", sceneScript.scriptPath)
+			} else {
+				OWL_CORE_ERROR("Scene: Reload of script '{}' failed, the previous version keeps running.",
+							   sceneScript.scriptPath)
+			}
+		}
 		for (const auto view = registry.view<component::LuaScript>(); const auto entity: view) {
 			auto& luaScript = view.get<component::LuaScript>(entity);
 			if (!luaScript.instance || !isAssetFile(luaScript.scriptPath, iFile))

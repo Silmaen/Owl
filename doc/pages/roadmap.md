@@ -128,14 +128,14 @@ procedural graphs, tile tools, Lua editor scripts, and Blueprints-style visual s
 render graph, essential post-processing — with full 3D editing ([details](design/3d-core.md)).
 
 - ![Done][done] CI streamlining, before anything else of the cycle: a pull request answered in under 10 min, builds halved, `-j` everywhere, full suites at night, artefacts under 50 MB ([CI streamlining](design/ci-streamlining.md))
-- ![In Progress][progress] 3D render pipeline (forward, depth, perspective camera)
+- ![Done][done] 3D render pipeline (forward, depth, perspective camera)
 - ![Done][done] Render graph hosting the renderer-stack layers
 - ![Done][done] Lighting: directional, point and spot lights, directional shadow maps
-- ![Planned][planned] 2D lighting (point / spot lights, normal-mapped sprites, 2D shadows), isometric sprites included ([2D](design/2d-complete.md))
+- ![Done][done] 2D lighting (point / spot lights, normal-mapped sprites, 2D shadows), isometric sprites included ([2D](design/2d-complete.md))
 - ![Done][done] PBR materials with editor and material library, emissive colour and strength included ([3D core](design/3d-core.md#emissive-and-area-lights))
 - ![Done][done] Static mesh component with instancing
 - ![Done][done] Essential post-processing stack (tone mapping, bloom, vignette, LUT)
-- ![Planned][planned] Camera-relative rendering and reversed-Z depth, precise at any distance ([Large worlds](design/large-worlds.md))
+- ![Done][done] Camera-relative rendering and reversed-Z depth, precise at any distance ([Large worlds](design/large-worlds.md))
 - ![Done][done] Compute-driven frustum / occlusion culling with indirect draws
 - ![Done][done] GPU raycast sprite stripes and `BitonicSortPass` adoption
 - ![Done][done] Spatial partitioning (loose octree shared by the 2D and 3D layers)
@@ -144,10 +144,10 @@ render graph, essential post-processing — with full 3D editing ([details](desi
 - ![Done][done] 3D scene editing in Owl Nest (3D gizmos, snapping, mesh preview), "look through scene camera" mode
 - ![To evaluate][evaluate] Owl Nest camera preview: the HUD drawn over it, as an option
 - ![To evaluate][evaluate] Angular radius of a directional light: soft shadows, wider highlight, sun disc in the sky ([3D core](design/3d-core.md#emissive-and-area-lights))
-- ![Planned][planned] Editor reach, before the release: every script and Lua function of a scene visible in Owl Nest with its hooks and an **Open** at the line, a scene script, richer script properties, layer overrides for every key ([Editor reach](design/editor-reach.md))
-- ![Planned][planned] Behaviour components replacing demo scripts: `LightFlicker` (fire, candles), `Oscillator`, `Patrol`, `Drift` ([Editor reach](design/editor-reach.md#behaviour-components))
-- ![Planned][planned] Tuned constants of the Engine Demo and the sample games moved to inspector fields; a test failing on any component field or layer key without an editor widget ([Editor reach](design/editor-reach.md))
-- ![Planned][planned] Owl Nest fixes: material texture **Open** buttons, text files (`gamecontrollerdb.txt`) in the code editor; material thumbnails and a prefab document ([Editor reach](design/editor-reach.md#editor-fixes-and-gaps))
+- ![Done][done] Editor reach, before the release: every script and Lua function of a scene visible in Owl Nest with its hooks and an **Open** at the line, a scene script, richer script properties, layer overrides for every key ([Editor reach](design/editor-reach.md))
+- ![Done][done] Behaviour components replacing demo scripts: `LightFlicker` (fire, candles), `Oscillator`, `Patrol`, `Drift` ([Editor reach](design/editor-reach.md#behaviour-components))
+- ![In Progress][progress] Tuned constants of the Engine Demo and the sample games moved to inspector fields; a test failing on any component field or layer key without an editor widget ([Editor reach](design/editor-reach.md))
+- ![Done][done] Owl Nest fixes: material texture **Open** buttons, text files (`gamecontrollerdb.txt`) in the code editor; material thumbnails and a prefab document ([Editor reach](design/editor-reach.md#editor-fixes-and-gaps))
 - ![Planned][planned] Help panel: mermaid diagrams and rendering polish
 - ![Planned][planned] Sample game: a Mini Transport Tycoon ([Sample games](design/sample-games.md))
 - ![To evaluate][evaluate] Sample games from the pool: Asteroids, a tower defence ([Pool](design/sample-games.md#sample-games-pool))

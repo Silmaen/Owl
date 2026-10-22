@@ -289,15 +289,20 @@ void EditorLayer::renderDocumentTabMenu(Document& ioDocument) {
 	ImGui::EndPopup();
 }
 
-void EditorLayer::openAssetFromInspector(const std::filesystem::path& iPath) {
+void EditorLayer::openAssetFromInspector(const std::filesystem::path& iPath, const uint32_t iLine) {
+	const auto request = [this, iLine](const std::filesystem::path& iAbsolute) -> void {
+		if (iLine > 0)
+			m_deferredOpenLines[iAbsolute] = iLine;
+		requestDeferredOpen(iAbsolute);
+	};
 	for (const auto& [title, assetsPath]: app::Application::get().getAssetDirectories()) {
 		if (const auto candidate = assetsPath / iPath; exists(candidate)) {
-			requestDeferredOpen(candidate);
+			request(candidate);
 			return;
 		}
 	}
 	if (exists(iPath))
-		requestDeferredOpen(iPath);
+		request(iPath);
 	else
 		OWL_WARN("EditorLayer: Cannot open {}, it is in no asset folder.", iPath.string())
 }
@@ -608,6 +613,9 @@ void EditorLayer::onAttach() {
 	m_contentBrowser.attach();
 	gui::component::setOpenAssetHandler(
 			[this](const std::filesystem::path& iPath) -> void { openAssetFromInspector(iPath); });
+	gui::component::setOpenAssetAtLineHandler([this](const std::filesystem::path& iPath, const uint32_t iLine) -> void {
+		openAssetFromInspector(iPath, iLine);
+	});
 	m_contentBrowser.setSceneOpenCallback([this](const std::filesystem::path& iPath) -> void { openScene(iPath); });
 	m_contentBrowser.setCodeOpenCallback([this](const std::filesystem::path& iPath) -> void { openCodeFile(iPath); });
 	m_contentBrowser.setNodeGraphOpenCallback(
@@ -675,6 +683,20 @@ void EditorLayer::onDetach() {
 	// Free the static IconBank's atlas while the device is still valid, else it outlives vkDestroyDevice and leaks.
 	gui::IconBank::instance().clear();
 	gui::component::setOpenAssetHandler({});
+	gui::component::setOpenAssetAtLineHandler({});
+}
+
+void EditorLayer::revealCodeLine(const std::filesystem::path& iPath, const uint32_t iLine) {
+	if (iLine == 0)
+		return;
+	for (const auto& docPtr: m_documents.list()) {
+		auto* code = docPtr && docPtr->type() == DocumentType::Code ? static_cast<CodeEditorDocument*>(docPtr.get())
+																	: nullptr;
+		if (code == nullptr || code->filePath() != iPath)
+			continue;
+		code->revealLine(iLine);
+		return;
+	}
 }
 
 void EditorLayer::onUpdate(const core::Timestep& iTimeStep) {
@@ -803,6 +825,10 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 			if (!exists(path))
 				continue;
 			openAssetFile(path);
+			if (const auto line = m_deferredOpenLines.find(path); line != m_deferredOpenLines.end()) {
+				revealCodeLine(path, line->second);
+				m_deferredOpenLines.erase(line);
+			}
 		}
 	}
 
@@ -1425,6 +1451,7 @@ void EditorLayer::onContextualHelp() {
 			{"CircleRenderer", "renderer"},
 			{"MeshRenderer", "renderer"},
 			{"Light", "renderer"},
+			{"Light2D", "renderer"},
 			{"BackgroundTexture", "renderer"},
 			{"Text", "renderer"},
 			{"Player", "scene"},

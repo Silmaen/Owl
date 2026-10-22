@@ -12,6 +12,7 @@
 #include "script/ScriptEngine.h"
 #include "script/ScriptInstance.h"
 
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -95,6 +96,29 @@ struct OWL_API LuaScript {
 	 * @param[in] iOut The YAML context.
 	 */
 	void serialize(const core::Serializer& iOut) const;
+
+	/**
+	 * @brief
+	 *  Write this component to a YAML context under another key (the script a scene owns).
+	 * @param[in] iOut The YAML context.
+	 * @param[in] iKey The YAML key of the map written.
+	 */
+	void serializeAs(const core::Serializer& iOut, const char* iKey) const;
+
+	/**
+	 * @brief
+	 *  The script path and properties as a YAML map (`scriptPath`, `properties`), the text `fromYaml` reads.
+	 * @return The YAML text.
+	 */
+	[[nodiscard]] auto toYaml() const -> std::string;
+
+	/**
+	 * @brief
+	 *  Read a script path and properties written by `toYaml`.
+	 * @param[in] iText The YAML text.
+	 * @return The script, or nothing when the text is not a YAML map.
+	 */
+	[[nodiscard]] static auto fromYaml(const std::string& iText) -> std::optional<LuaScript>;
 
 	/**
 	 * @brief

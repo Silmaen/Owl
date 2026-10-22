@@ -11,6 +11,7 @@
 
 #include "math/linAlgebra.h"
 #include "math/matrixCreation.h"
+#include "renderer/ClipSpace.h"
 #include "renderer/Material.h"
 
 #include "renderer/gpu/Framebuffer.h"
@@ -50,9 +51,11 @@ struct SceneUbo {
 	math::vec4 tint{1.f, 1.f, 1.f, 1.f};
 	// x: entity id, y: linear target, z: shadow pass, w: first visible instance (-1 for a single draw).
 	std::array<int32_t, 4> ids{-1, 0, 0, -1};
+	// xyz: world position of the eye, origin of the camera-relative space the shaders work in.
+	math::vec4 origin{0.f, 0.f, 0.f, 1.f};
 };
 
-static_assert(sizeof(SceneUbo) == 192, "SceneUbo must match the std140 layout of Scene3D in the renderer3D shaders.");
+static_assert(sizeof(SceneUbo) == 208, "SceneUbo must match the std140 layout of Scene3D in the renderer3D shaders.");
 
 struct LightingUbo {
 	// x: light count (0 lights with the sun of the layer), y: cascade count, z: index of the shadowed light.
@@ -62,14 +65,13 @@ struct LightingUbo {
 	math::vec4 viewDepthRow{0.f, 0.f, 0.f, 0.f};
 	// x: normal-offset bias in texels, y: shadow-map size in texels.
 	math::vec4 shadowParams{1.5f, 1024.f, 0.f, 0.f};
-	math::vec4 cameraPosition{0.f, 0.f, 0.f, 1.f};
 	// x: intensity, y / z: cosine / sine of the rotation about Y, w: number of prefiltered levels (0 none).
 	math::vec4 environment{1.f, 1.f, 0.f, 0.f};
 	std::array<math::vec4, 9> irradiance{};
 	std::array<math::mat4, 4> cascades{};
 };
 
-static_assert(sizeof(LightingUbo) == 512,
+static_assert(sizeof(LightingUbo) == 496,
 			  "LightingUbo must match the std140 layout of Lighting in the renderer3D shaders.");
 
 struct MaterialUbo {
@@ -111,6 +113,12 @@ struct InternalData {
 	shared<gpu::Texture2D> whiteTexture;
 	SceneUbo scene;
 	LightingUbo lighting;
+	// World view-projection of the camera of the scene (the uploaded one is camera-relative).
+	math::mat4 viewProjection = math::identity<float, 4>();
+	// Shadow cascades as the scene gives them (relative to their light camera) and the world view depth row.
+	std::array<math::mat4, 4> cascades{};
+	std::array<math::vec3, 4> cascadeOrigins{};
+	math::vec4 worldViewDepthRow{0.f, 0.f, 0.f, 0.f};
 	// Ambient radiance of the layer in nits (`setLighting`), the constant sky when the environment gives none.
 	math::vec3 layerAmbient{4200.f, 4200.f, 4800.f};
 	std::array<GpuLight, Renderer3D::g_maxLights> lights{};
@@ -343,15 +351,31 @@ void Renderer3D::beginScene(const Camera& iCamera) {
 	OWL_PROFILE_FUNCTION()
 
 	gpu::RenderCommand::beginBatch();
-	g_Data->scene.viewProjection = iCamera.getViewProjection();
-	if (g_Data->shadowPass)
-		return;
+	auto& data = *g_Data;
+	data.viewProjection = iCamera.getViewProjection();
 	const math::vec4 eye = inverse(iCamera.getView()) * math::vec4{0.f, 0.f, 0.f, 1.f};
-	g_Data->lighting.cameraPosition = math::vec4{eye.x(), eye.y(), eye.z(), 1.f};
+	const math::vec3 origin{eye.x(), eye.y(), eye.z()};
+	data.scene.origin = math::vec4{origin.x(), origin.y(), origin.z(), 1.f};
+	data.scene.viewProjection = iCamera.getProjection() * cameraRelativeView(iCamera.getView());
+	if (data.shadowPass)
+		return;
+	// Only the small offset between the two eyes enters a matrix: a far-away scene keeps precise shadows.
+	for (size_t index = 0; index < data.cascades.size(); ++index)
+		data.lighting.cascades[index] =
+				data.cascades[index] * math::translate(math::identity<float, 4>(), origin - data.cascadeOrigins[index]);
+	const auto& row = data.worldViewDepthRow;
+	data.lighting.viewDepthRow = math::vec4{
+			row.x(), row.y(), row.z(), row.w() + row.x() * origin.x() + row.y() * origin.y() + row.z() * origin.z()};
+	const auto lightCount = static_cast<size_t>(std::max(data.lighting.counts[0], 0));
+	for (size_t index = 0; index < lightCount; ++index) {
+		const auto& world = data.sceneLights[index].positionRange;
+		data.lights[index].positionRange =
+				math::vec4{world.x() - origin.x(), world.y() - origin.y(), world.z() - origin.z(), world.w()};
+	}
 	const gpu::RendererDescriptors::ScopedActive scoped{blockId()};
-	g_Data->lightingUniformBuffer->setData(&g_Data->lighting, sizeof(LightingUbo), 0);
-	const auto lightCount = static_cast<uint32_t>(std::max(g_Data->lighting.counts[0], 1));
-	g_Data->lightBuffer->setData(g_Data->lights.data(), lightCount * static_cast<uint32_t>(sizeof(GpuLight)), 0);
+	data.lightingUniformBuffer->setData(&data.lighting, sizeof(LightingUbo), 0);
+	const auto uploadCount = static_cast<uint32_t>(std::max<size_t>(lightCount, 1));
+	data.lightBuffer->setData(data.lights.data(), uploadCount * static_cast<uint32_t>(sizeof(GpuLight)), 0);
 }
 
 void Renderer3D::endScene() {}
@@ -424,9 +448,10 @@ void Renderer3D::setShadow(const ShadowSettings& iShadow) {
 	lighting.counts[2] = count > 0 ? iShadow.lightIndex : -1;
 	lighting.splitDepths = iShadow.splitDepths;
 	lighting.texelWorldSizes = iShadow.texelWorldSizes;
-	lighting.viewDepthRow = iShadow.viewDepthRow;
+	g_Data->worldViewDepthRow = iShadow.viewDepthRow;
 	lighting.shadowParams = {iShadow.bias, static_cast<float>(iShadow.resolution), 0.f, 0.f};
-	lighting.cascades = iShadow.viewProjections;
+	g_Data->cascades = iShadow.relativeViewProjections;
+	g_Data->cascadeOrigins = iShadow.origins;
 	g_Data->shadowMaps = iShadow.maps;
 }
 
@@ -438,7 +463,7 @@ void Renderer3D::setShadowPass(const bool iShadowPass) {
 auto Renderer3D::isShadowPass() -> bool { return g_Data && g_Data->shadowPass; }
 
 auto Renderer3D::getViewProjection() -> math::mat4 {
-	return g_Data ? g_Data->scene.viewProjection : math::identity<float, 4>();
+	return g_Data ? g_Data->viewProjection : math::identity<float, 4>();
 }
 
 auto Renderer3D::getWhiteTexture() -> shared<gpu::Texture2D> { return g_Data ? g_Data->whiteTexture : nullptr; }

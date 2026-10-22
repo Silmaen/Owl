@@ -298,7 +298,7 @@ void FontDocument::renderSamples(const shared<data::fonts::Font>& iFont) {
 				{.size = m_sampleSize,
 				 .attachments = {{.format = Format::Surface, .tiling = Tiling::Optimal},
 								 {.format = Format::RedInteger, .tiling = Tiling::Optimal},
-								 {.format = Format::Depth24Stencil8, .tiling = Tiling::Optimal}},
+								 {.format = Format::Depth32F, .tiling = Tiling::Optimal}},
 				 .samples = 1,
 				 .swapChainTarget = false,
 				 .debugName = "fontSamples"});

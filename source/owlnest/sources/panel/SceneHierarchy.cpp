@@ -173,6 +173,18 @@ auto entityKind(const scene::Entity& iEntity, const bool iHasChildren) -> Entity
 				return {gui::icon::flashlight, colour};
 		}
 	}
+	if (iEntity.hasComponent<Light2D>()) {
+		const auto& light = iEntity.getComponent<Light2D>();
+		const uint32_t colour = light.enabled ? 0xffb347 : 0x7a7a7a;
+		switch (light.type) {
+			case Light2D::Type::Ambient:
+				return {gui::icon::sun, colour};
+			case Light2D::Type::Point:
+				return {gui::icon::lightbulb, colour};
+			case Light2D::Type::Spot:
+				return {gui::icon::flashlight, colour};
+		}
+	}
 	if (iEntity.hasComponent<Environment>())
 		return {gui::icon::globe, 0x5ec8e8};
 	if (iEntity.hasComponent<Text>() || iEntity.hasComponent<UiText>())
@@ -226,7 +238,7 @@ auto kindColor(const uint32_t iHex) -> math::vec4 {
 	return light ? gui::Theme::mix(color, theme.text, 0.45f) : color;
 }
 
-// "Light" submenu of the create menus: one `entity.create_light` per kind, optionally under a parent.
+// "Light" submenu: `entity.create_light` per 3D kind, `entity.create_light2d` per 2D kind, optionally under a parent.
 void drawCreateLightMenu(const auto& iTarget, const std::optional<commands::ArgValue>& iParent) {
 	if (!ImGui::BeginMenu("Light"))
 		return;
@@ -238,6 +250,17 @@ void drawCreateLightMenu(const auto& iTarget, const std::optional<commands::ArgV
 				iParent ? commands::CommandArgs{{"type", std::string{kind}}, {"parent", *iParent}}
 						: commands::CommandArgs{{"type", std::string{kind}}};
 		std::ignore = iTarget.execute("entity.create_light", args);
+	}
+	ImGui::Separator();
+	for (const auto& [kind, glyph]: {std::pair{"Ambient", gui::icon::sun}, std::pair{"Point", gui::icon::lightbulb},
+									 std::pair{"Spot", gui::icon::flashlight}}) {
+		const std::string label = std::format("{} 2D", kind);
+		if (!gui::widgets::menuItem({.glyph = glyph, .label = label.c_str()}))
+			continue;
+		const commands::CommandArgs args =
+				iParent ? commands::CommandArgs{{"type", std::string{kind}}, {"parent", *iParent}}
+						: commands::CommandArgs{{"type", std::string{kind}}};
+		std::ignore = iTarget.execute("entity.create_light2d", args);
 	}
 	ImGui::EndMenu();
 }
@@ -916,6 +939,7 @@ void drawGameComponents(scene::Entity& ioEntity, const commands::CommandTarget& 
 }// namespace
 
 void SceneHierarchy::drawComponents(const scene::Entity& iEntity) {
+	gui::component::setInspectedScene(m_context.get());
 	if (iEntity.hasComponent<Tag>()) {
 		auto& tag = iEntity.getComponent<Tag>().tag;
 		const auto frameTag = tag;

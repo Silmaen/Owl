@@ -31,7 +31,7 @@ TEST(AssetKind, ClassifiesTheMeshFormats) {
 }
 
 TEST(AssetKind, ClassifiesTextAsCode) {
-	for (const auto* name: {"a.lua", "b.yml", "c.json", "d.md", "e.svg", "f.cpp", "g.hpp"})
+	for (const auto* name: {"a.lua", "b.yml", "c.json", "d.md", "e.svg", "f.cpp", "g.hpp", "gamecontrollerdb.txt"})
 		EXPECT_EQ(classifyAsset(name), AssetKind::Code) << name;
 }
 

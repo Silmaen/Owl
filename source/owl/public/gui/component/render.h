@@ -16,6 +16,10 @@
 #include <functional>
 #include <tuple>
 
+namespace owl::scene {
+class Scene;
+}// namespace owl::scene
+
 /**
  * @brief
  *  Namespace defining functions for draw components in GUI.
@@ -29,6 +33,30 @@ namespace owl::gui::component {
  * @param[in] iHandler Called with the path as stored in the component (relative to an asset folder).
  */
 OWL_API void setOpenAssetHandler(std::function<void(const std::filesystem::path&)> iHandler);
+
+/**
+ * @brief
+ *  Set the function that opens a script at a line (the editor sets it, a game leaves it empty).
+ * @param[in] iHandler Called with the path as stored in the component and a one-based line.
+ */
+OWL_API void setOpenAssetAtLineHandler(std::function<void(const std::filesystem::path&, uint32_t)> iHandler);
+
+/**
+ * @brief
+ *  Ask for a script to be opened at a line, or just opened when only `setOpenAssetHandler` is set.
+ * @param[in] iPath The path as stored in the component.
+ * @param[in] iLine One-based line to reveal.
+ * @return True when a handler took the request.
+ */
+OWL_API auto openAssetAtLine(const std::filesystem::path& iPath, uint32_t iLine) -> bool;
+
+/**
+ * @brief
+ *  Set the scene the inspector reads when it checks that a named Lua function exists (HUD, trigger and timer
+ *  handlers); null when no scene is inspected.
+ * @param[in] iScene The scene whose scripts define the handlers.
+ */
+OWL_API void setInspectedScene(const scene::Scene* iScene);
 
 /**
  * @brief
@@ -108,6 +136,13 @@ OWL_API auto renderMaterialFields(renderer::MaterialParameters& ioValues, uint32
  * @param ioComponent The component to edit.
  */
 OWL_API void renderProps(scene::component::Light& ioComponent);
+
+/**
+ * @brief
+ *  Render a Gui for editing the 2D light (kind, colour, intensity, radius, falloff, height, spot cone, shadows).
+ * @param ioComponent The component to edit.
+ */
+OWL_API void renderProps(scene::component::Light2D& ioComponent);
 
 /**
  * @brief
@@ -364,6 +399,34 @@ OWL_API void renderProps(scene::component::FlyCamera& ioComponent);
 
 /**
  * @brief
+ *  Render a Gui for editing the component.
+ * @param ioComponent The component to edit.
+ */
+OWL_API void renderProps(scene::component::LightFlicker& ioComponent);
+
+/**
+ * @brief
+ *  Render a Gui for editing the component.
+ * @param ioComponent The component to edit.
+ */
+OWL_API void renderProps(scene::component::Oscillator& ioComponent);
+
+/**
+ * @brief
+ *  Render a Gui for editing the component.
+ * @param ioComponent The component to edit.
+ */
+OWL_API void renderProps(scene::component::Patrol& ioComponent);
+
+/**
+ * @brief
+ *  Render a Gui for editing the component.
+ * @param ioComponent The component to edit.
+ */
+OWL_API void renderProps(scene::component::Drift& ioComponent);
+
+/**
+ * @brief
  *  Render a Gui for editing the voxel player (speeds, gravity, collision box).
  * @param ioComponent The component to edit.
  */
@@ -373,20 +436,23 @@ OWL_API void renderProps(scene::component::VoxelPlayer& ioComponent);
  * @brief
  *  List of components that have a render function.
  */
-using DrawableComponents = std::tuple<
-		scene::component::Transform, scene::component::Camera, scene::component::SpriteRenderer,
-		scene::component::AnimatedSpriteRenderer, scene::component::CircleRenderer, scene::component::MeshRenderer,
-		scene::component::Light, scene::component::Environment, scene::component::Text, scene::component::Tilemap,
-		scene::component::IsometricObject, scene::component::PhysicBody, scene::component::Player,
-		scene::component::Trigger, scene::component::RaycastDoor, scene::component::RaycastPushWall,
-		scene::component::EntityLink, scene::component::BackgroundTexture, scene::component::Visibility,
-		scene::component::SoundSource, scene::component::SoundListener, scene::component::LuaScript,
-		scene::component::PrefabLink, scene::component::RendererTag, scene::component::VoxelWorld,
-		scene::component::FlyCamera, scene::component::VoxelPlayer, scene::component::Canvas, scene::component::UiRect,
-		scene::component::UiText, scene::component::UiImage, scene::component::UiPanel, scene::component::UiButton,
-		scene::component::UiSlider, scene::component::UiProgressBar, scene::component::UiWindow,
-		scene::component::UiLayout, scene::component::UiTooltip, scene::component::UiToolCursor,
-		scene::component::UiFocus, scene::component::UiScrollView, scene::component::UiList>;
+using DrawableComponents =
+		std::tuple<scene::component::Transform, scene::component::Camera, scene::component::SpriteRenderer,
+				   scene::component::AnimatedSpriteRenderer, scene::component::CircleRenderer,
+				   scene::component::MeshRenderer, scene::component::Light, scene::component::Environment,
+				   scene::component::Text, scene::component::Tilemap, scene::component::IsometricObject,
+				   scene::component::PhysicBody, scene::component::Player, scene::component::Trigger,
+				   scene::component::RaycastDoor, scene::component::RaycastPushWall, scene::component::EntityLink,
+				   scene::component::BackgroundTexture, scene::component::Visibility, scene::component::SoundSource,
+				   scene::component::SoundListener, scene::component::LuaScript, scene::component::PrefabLink,
+				   scene::component::RendererTag, scene::component::VoxelWorld, scene::component::FlyCamera,
+				   scene::component::LightFlicker, scene::component::Oscillator, scene::component::Patrol,
+				   scene::component::Drift, scene::component::VoxelPlayer, scene::component::Canvas,
+				   scene::component::UiRect, scene::component::UiText, scene::component::UiImage,
+				   scene::component::UiPanel, scene::component::UiButton, scene::component::UiSlider,
+				   scene::component::UiProgressBar, scene::component::UiWindow, scene::component::UiLayout,
+				   scene::component::UiTooltip, scene::component::UiToolCursor, scene::component::UiFocus,
+				   scene::component::UiScrollView, scene::component::UiList>;
 
 
 }// namespace owl::gui::component

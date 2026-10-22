@@ -837,6 +837,32 @@ void LuaEngine::setGlobal(const std::string& iName, const bool iValue) const {
 	popRawGlobal(iName);
 }
 
+void LuaEngine::setGlobalNumbers(const std::string& iName, const std::span<const double> iValues,
+								 const std::span<const char* const> iKeys) const {
+	if (mp_state == nullptr)
+		return;
+	lua_createtable(mp_state, static_cast<int>(iValues.size()), static_cast<int>(iKeys.size()));
+	for (size_t index = 0; index < iValues.size(); ++index) {
+		lua_pushnumber(mp_state, static_cast<lua_Number>(iValues[index]));
+		if (index < iKeys.size())
+			lua_setfield(mp_state, -2, iKeys[index]);
+		else
+			lua_rawseti(mp_state, -2, static_cast<lua_Integer>(index) + 1);
+	}
+	popRawGlobal(iName);
+}
+
+void LuaEngine::setGlobalStrings(const std::string& iName, const std::span<const std::string> iValues) const {
+	if (mp_state == nullptr)
+		return;
+	lua_createtable(mp_state, static_cast<int>(iValues.size()), 0);
+	for (size_t index = 0; index < iValues.size(); ++index) {
+		lua_pushlstring(mp_state, iValues[index].data(), iValues[index].size());
+		lua_rawseti(mp_state, -2, static_cast<lua_Integer>(index) + 1);
+	}
+	popRawGlobal(iName);
+}
+
 auto LuaEngine::getState() const -> lua_State* { return mp_state; }
 
 }// namespace owl::script

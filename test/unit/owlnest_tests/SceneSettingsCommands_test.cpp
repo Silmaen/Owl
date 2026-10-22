@@ -7,9 +7,12 @@
  */
 
 #include "commands/SceneSettingsCommands.h"
+#include "UndoManager.h"
+#include "commands/CommandRegistry.h"
 #include "nestTestHelper.h"
 #include "testHelper.h"
 
+#include <cstdint>
 #include <string>
 
 using namespace owl;
@@ -54,4 +57,62 @@ TEST_F(SceneSettingsCommandsTest, ModifyRenderersMergesKeepingFirstBefore) {
 	m_undo.undo(m_scene);
 	EXPECT_TRUE(m_scene.getEnabledRenderers().isEmpty());
 	EXPECT_FALSE(m_undo.canUndo());
+}
+
+TEST_F(SceneSettingsCommandsTest, SetRenderersCommandUndoesAndRefusesANoOp) {
+	const CommandRegistry registry;
+	auto scene = mkShared<scene::Scene>();
+	SceneUndoManager undo;
+	ASSERT_NE(registry.find("scene.set_renderers"), nullptr);
+	const auto yaml = renderersYaml("Voxel", false);
+	ASSERT_TRUE(registry.execute("scene.set_renderers", {{"config", yaml}}, scene, undo));
+	ASSERT_EQ(scene->getEnabledRenderers().entries.size(), 1u);
+	EXPECT_FALSE(scene->getEnabledRenderers().entries[0].enabled);
+	const auto again = registry.execute("scene.set_renderers", {{"config", yaml}}, scene, undo);
+	ASSERT_FALSE(again);
+	EXPECT_EQ(again.error().error, CommandError::NotApplicable);
+	undo.undo(*scene);
+	EXPECT_TRUE(scene->getEnabledRenderers().isEmpty());
+}
+
+TEST_F(SceneSettingsCommandsTest, SetSceneScriptCommandUndoesAndRefusesBadInput) {
+	const CommandRegistry registry;
+	auto scene = mkShared<scene::Scene>();
+	SceneUndoManager undo;
+	ASSERT_NE(registry.find("scene.set_script"), nullptr);
+	const std::string yaml =
+			"scriptPath: scripts/director.lua\nproperties:\n  - name: limit\n    type: int\n    value: 4\n";
+	ASSERT_TRUE(registry.execute("scene.set_script", {{"script", yaml}}, scene, undo));
+	EXPECT_EQ(scene->getSceneScript().scriptPath, "scripts/director.lua");
+	ASSERT_EQ(scene->getSceneScript().properties.size(), 1u);
+	const auto same = registry.execute("scene.set_script", {{"script", yaml}}, scene, undo);
+	ASSERT_FALSE(same);
+	EXPECT_EQ(same.error().error, CommandError::NotApplicable);
+	const auto wrong =
+			registry.execute("scene.set_script", {{"script", std::string{"scriptPath: a.txt\n"}}}, scene, undo);
+	ASSERT_FALSE(wrong);
+	EXPECT_EQ(wrong.error().error, CommandError::InvalidArgument);
+	ASSERT_TRUE(registry.execute("scene.set_script", {{"script", std::string{}}}, scene, undo));
+	EXPECT_TRUE(scene->getSceneScript().scriptPath.empty());
+	undo.undo(*scene);
+	EXPECT_TRUE(scene->getSceneScript().scriptPath.empty());
+}
+
+TEST_F(SceneSettingsCommandsTest, PatrolWaypointsAreEditedThroughComponentSetAndUndo) {
+	const CommandRegistry registry;
+	auto scene = mkShared<scene::Scene>();
+	SceneUndoManager undo;
+	auto entity = scene->createEntity("Villager");
+	entity.addComponent<scene::component::Patrol>().waypoints = {{0.f, 0.f, 0.f}, {2.f, 0.f, 0.f}};
+	ASSERT_TRUE(registry.execute("component.set",
+								 {{"entity", static_cast<int64_t>(static_cast<uint64_t>(entity.getUUID()))},
+								  {"component", std::string{"Patrol"}},
+								  {"values", std::string{"{waypoints: [[0, 0, 0], [3, 1, 0], [5, 1, 0]]}"}}},
+								 scene, undo));
+	const auto& waypoints = entity.getComponent<scene::component::Patrol>().waypoints;
+	ASSERT_EQ(waypoints.size(), 3u);
+	EXPECT_FLOAT_EQ(waypoints[1].x(), 3.f);
+	undo.undo(*scene);
+	ASSERT_EQ(entity.getComponent<scene::component::Patrol>().waypoints.size(), 2u);
+	EXPECT_FLOAT_EQ(entity.getComponent<scene::component::Patrol>().waypoints[1].x(), 2.f);
 }

@@ -59,6 +59,7 @@
 #include <type_traits>
 #include <unordered_map>
 #include <utility>
+#include <variant>
 
 using namespace owl::scene;
 using namespace owl::scene::component;
@@ -98,6 +99,13 @@ auto DragFloat2(const char* iLabel, float* ioValues, const float iSpeed = 1.f, c
 				const float iMax = 0.f, const char* iFormat = "%.3f", const ImGuiSliderFlags iFlags = 0) -> bool {
 	return row(iLabel, [&](const char* iId) -> bool {
 		return ImGui::DragFloat2(iId, ioValues, iSpeed, iMin, iMax, iFormat, iFlags);
+	});
+}
+
+auto DragFloat3(const char* iLabel, float* ioValues, const float iSpeed = 1.f, const float iMin = 0.f,
+				const float iMax = 0.f, const char* iFormat = "%.3f", const ImGuiSliderFlags iFlags = 0) -> bool {
+	return row(iLabel, [&](const char* iId) -> bool {
+		return ImGui::DragFloat3(iId, ioValues, iSpeed, iMin, iMax, iFormat, iFlags);
 	});
 }
 
@@ -154,6 +162,11 @@ auto openAssetHandler() -> std::function<void(const std::filesystem::path&)>& {
 	return handler;
 }
 
+auto openAssetAtLineHandler() -> std::function<void(const std::filesystem::path&, uint32_t)>& {
+	static std::function<void(const std::filesystem::path&, uint32_t)> handler;
+	return handler;
+}
+
 // Asset path field: its atlas swatch, the path (read only), then Open in its editor and Clear.
 auto assetPathRow(const char* iLabel, const std::string& iPath, const char* iHint, const char* iOpenTip,
 				  const shared<renderer::gpu::Texture2D>& iPreview = nullptr, const bool iCanOpen = true) -> bool {
@@ -189,6 +202,18 @@ auto assetPathRow(const char* iLabel, const std::string& iPath, const char* iHin
 	return cleared;
 }
 
+// Script path as stored in a component, resolved against the asset folders.
+auto resolveScriptPath(const std::string& iScriptPath) -> std::filesystem::path {
+	std::filesystem::path resolved{iScriptPath};
+	if (!app::Application::instanced())
+		return resolved;
+	for (const auto& [title, assetsPath]: app::Application::get().getAssetDirectories()) {
+		if (const auto candidate = assetsPath / iScriptPath; exists(candidate))
+			return candidate;
+	}
+	return resolved;
+}
+
 // Read the properties a script declares again when its path or its file changes, keeping the values already set.
 void syncScriptProperties(LuaScript& ioComponent) {
 	struct Scan {
@@ -204,15 +229,7 @@ void syncScriptProperties(LuaScript& ioComponent) {
 	if (scan.path == ioComponent.scriptPath && now - scan.checkedAt < 1.0)
 		return;
 	scan.checkedAt = now;
-	std::filesystem::path resolved{ioComponent.scriptPath};
-	if (app::Application::instanced()) {
-		for (const auto& [title, assetsPath]: app::Application::get().getAssetDirectories()) {
-			if (const auto candidate = assetsPath / ioComponent.scriptPath; exists(candidate)) {
-				resolved = candidate;
-				break;
-			}
-		}
-	}
+	const auto resolved = resolveScriptPath(ioComponent.scriptPath);
 	std::error_code error;
 	const auto time = std::filesystem::last_write_time(resolved, error);
 	if (error || (scan.path == ioComponent.scriptPath && scan.time == time))
@@ -236,6 +253,119 @@ void syncScriptProperties(LuaScript& ioComponent) {
 void fieldTooltip(const char* iText) {
 	if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay))
 		ImGui::SetTooltip("%s", iText);
+}
+
+// Functions a script defines, read again when its file changes (at most once a second).
+auto scriptFunctionsOf(const std::string& iScriptPath) -> const std::vector<script::ScriptFunction>& {
+	struct Cache {
+		std::vector<script::ScriptFunction> functions;
+		std::filesystem::file_time_type time;
+		double checkedAt = -1.0;
+	};
+	static std::unordered_map<std::string, Cache> caches;
+	auto& cache = caches[iScriptPath];
+	const double now = ImGui::GetTime();
+	if (cache.checkedAt >= 0.0 && now - cache.checkedAt < 1.0)
+		return cache.functions;
+	cache.checkedAt = now;
+	const auto resolved = resolveScriptPath(iScriptPath);
+	std::error_code error;
+	const auto time = std::filesystem::last_write_time(resolved, error);
+	if (error) {
+		cache.functions.clear();
+		return cache.functions;
+	}
+	if (time != cache.time || cache.functions.empty()) {
+		cache.time = time;
+		cache.functions = script::ScriptEngine::extractFunctions(resolved);
+	}
+	return cache.functions;
+}
+
+auto findFunction(const std::vector<script::ScriptFunction>& iFunctions, const std::string_view iName)
+		-> const script::ScriptFunction* {
+	const auto found = std::ranges::find(iFunctions, iName, &script::ScriptFunction::name);
+	return found == iFunctions.end() ? nullptr : &*found;
+}
+
+auto inspectedScene() -> const Scene*& {
+	static const Scene* scene = nullptr;
+	return scene;
+}
+
+// Small Open button that reveals a function of a script in the code editor.
+void openFunctionButton(const char* iId, const std::string& iScriptPath, const uint32_t iLine) {
+	ImGui::PushID(iId);
+	if (widgets::iconButton("##openFunction", {.glyph = icon::externalLink,
+											   .tooltip = "Open",
+											   .description = "Open the script at the line of the function.",
+											   .disabled = !openAssetHandler() && !openAssetAtLineHandler()}))
+		std::ignore = component::openAssetAtLine(iScriptPath, iLine);
+	ImGui::PopID();
+}
+
+// Inspector row naming a Lua function the engine calls: the name, then the script of the scene that defines it.
+void handlerRow(const char* iLabel, std::string& ioName, const char* iDefaultName, const char* iTooltip) {
+	prop::InputText(iLabel, &ioName);
+	if (iTooltip != nullptr)
+		fieldTooltip(iTooltip);
+	const std::string name = ioName.empty() && iDefaultName != nullptr ? std::string{iDefaultName} : ioName;
+	if (name.empty())
+		return;
+	const Scene* scene = inspectedScene();
+	if (scene == nullptr)
+		return;
+	ImGui::PushID(iLabel);
+	std::string definedIn;
+	uint32_t line = 0;
+	bool anyScript = false;
+	std::vector<const std::string*> paths{&scene->getSceneScript().scriptPath};
+	for (const auto view = scene->registry.view<LuaScript>(); const auto entity: view)
+		paths.push_back(&view.get<LuaScript>(entity).scriptPath);
+	for (const auto* path: paths) {
+		if (path->empty())
+			continue;
+		anyScript = true;
+		if (const auto* function = findFunction(scriptFunctionsOf(*path), name); function != nullptr) {
+			definedIn = *path;
+			line = function->line;
+			break;
+		}
+	}
+	if (!definedIn.empty()) {
+		ImGui::TextDisabled("%s: %s, line %u", name.c_str(), definedIn.c_str(), line);
+		ImGui::SameLine();
+		openFunctionButton("##open", definedIn, line);
+	} else if (scene->getDocumentKind() == DocumentKind::Hud) {
+		ImGui::TextDisabled("%s: defined by a script of the scene that draws this HUD.", name.c_str());
+	} else if (!anyScript) {
+		widgets::notice(std::format("No script in this scene defines {}.", name).c_str());
+	} else {
+		widgets::notice(std::format("No script of this scene defines {}.", name).c_str());
+	}
+	ImGui::PopID();
+}
+
+// The hooks the engine calls on a script: defined or not, with the line and an Open button.
+void renderHooks(const LuaScript& iComponent) {
+	if (iComponent.scriptPath.empty() || !widgets::subHeader("Hooks", true))
+		return;
+	const auto& functions = scriptFunctionsOf(iComponent.scriptPath);
+	for (const auto& hook: script::ScriptEngine::getHookNames()) {
+		const auto* function = findFunction(functions, hook);
+		ImGui::PushID(hook.c_str());
+		ImGui::AlignTextToFramePadding();
+		if (function != nullptr) {
+			ImGui::TextUnformatted(hook.c_str());
+			ImGui::SameLine();
+			ImGui::TextDisabled("line %u", function->line);
+			ImGui::SameLine();
+			openFunctionButton("##open", iComponent.scriptPath, function->line);
+		} else {
+			ImGui::TextDisabled("%s (not defined)", hook.c_str());
+		}
+		ImGui::PopID();
+	}
 }
 
 // Accept a Content Browser item whose extension is one of the given ones (lower case, with the dot).
@@ -425,7 +555,7 @@ auto drawMapField(const char* iLabel, std::string& ioName) -> bool {
 	const bool hasPrefix = relative || ioName.starts_with("pat:");
 	const std::string shown = hasPrefix ? ioName.substr(4) : ioName;
 	bool changed = false;
-	if (assetPathRow(iLabel, shown, "drop an image", "Open the texture.", nullptr, false)) {
+	if (assetPathRow(iLabel, shown, "drop an image", "Open the texture.")) {
 		ioName.clear();
 		changed = true;
 	}
@@ -693,6 +823,16 @@ void renderProps(SpriteRenderer& ioComponent) {
 			ioComponent.tilingFactor = {uniform, uniform};
 	} else {
 		prop::DragFloat2("Tiling Factor", &ioComponent.tilingFactor.x(), 0.1f, 0.0f, 100.0f);
+	}
+	if (widgets::subHeader("2D Lighting")) {
+		resetCheckbox("Lit", ioComponent.lit, true);
+		fieldTooltip("Whether the Light 2D entities of the scene light the sprite; an unlit sprite keeps its colour "
+					 "(glows, markers).");
+		widgets::textureField("Normal Map", ioComponent.normalMap);
+		fieldTooltip("Tangent-space normal map (OpenGL convention, green up), sampled like the texture: the 2D lights "
+					 "slant on its bumps.");
+		resetCheckbox("Cast Shadows", ioComponent.castShadows, false);
+		fieldTooltip("The sprite's quad blocks the Light 2D entities casting shadows; the sprite itself stays lit.");
 	}
 	if (widgets::subHeader("Raycast (billboard)")) {
 		fieldTooltip("Optional overrides used only when the entity is rendered through a "
@@ -1004,6 +1144,47 @@ void renderProps(Environment& ioComponent) {
 	fieldTooltip("Draw the image behind the scene as its sky.");
 }
 
+void renderProps(Light2D& ioComponent) {
+	const Light2D defaults;
+	resetCheckbox("Enabled", ioComponent.enabled, defaults.enabled);
+	fieldTooltip("A light switched off keeps its settings and stops shining.");
+	resettable("Type", ioComponent.type, defaults.type, drawEnum<Light2D::Type>);
+	fieldTooltip("Ambient: the same light everywhere (day and night tint; without one the ambient is white). Point: "
+				 "radiates from its position. Spot: a point light restricted to a cone along the +X axis of the "
+				 "entity.");
+	resetColor("Color", ioComponent.color, defaults.color);
+	fieldTooltip("Colour of the light, as authored (sRGB).");
+	resetFloat("Intensity", ioComponent.intensity, defaults.intensity, 0.01f, 0.f, 100.f);
+	fieldTooltip("Multiplier of the colour: 1 lights a sprite with its own colour at the centre of the light.");
+	if (ioComponent.type == Light2D::Type::Ambient)
+		return;
+	resetFloat("Radius", ioComponent.radius, defaults.radius, 0.05f, 0.01f, 10000.f);
+	fieldTooltip("Distance where the light reaches zero, in world units.");
+	resetFloat("Falloff", ioComponent.falloff, defaults.falloff, 0.01f, 0.1f, 8.f);
+	fieldTooltip(
+			"Exponent of the fade towards the radius: 1 linear, 2 brighter near the light and softer at the edge.");
+	resetFloat("Height", ioComponent.height, defaults.height, 0.01f, 0.f, 100.f);
+	fieldTooltip(
+			"Height of the light above the sprites: the slant of its light on the normal-mapped sprites and on the "
+			"isometric atlases.");
+	if (ioComponent.type == Light2D::Type::Spot) {
+		constexpr float maxAngle = 179.f;
+		if (resetDegrees("Inner Angle", ioComponent.innerAngle, defaults.innerAngle, 0.f, maxAngle))
+			ioComponent.outerAngle = std::max(ioComponent.outerAngle, ioComponent.innerAngle);
+		fieldTooltip("Half angle of the cone at full intensity, in degrees.");
+		if (resetDegrees("Outer Angle", ioComponent.outerAngle, defaults.outerAngle, 0.f, maxAngle))
+			ioComponent.innerAngle = std::min(ioComponent.innerAngle, ioComponent.outerAngle);
+		fieldTooltip("Half angle of the cone where the light reaches zero, in degrees.");
+	}
+	resetCheckbox("Cast Shadows", ioComponent.castShadows, defaults.castShadows);
+	fieldTooltip(
+			"The sprites flagged Cast Shadows block the light (2D layers; the isometric layer has no 2D shadows).");
+	if (!ioComponent.castShadows)
+		return;
+	resetFloat("Shadow Softness", ioComponent.shadowSoftness, defaults.shadowSoftness, 0.01f, 0.f, 4.f);
+	fieldTooltip("Width of the penumbra: 0 hard, 1 to 3 soft.");
+}
+
 void renderProps(Light& ioComponent) {
 	const Light defaults;
 	resetCheckbox("Enabled", ioComponent.enabled, defaults.enabled);
@@ -1083,34 +1264,43 @@ void renderProps(Light& ioComponent) {
 	fieldTooltip("Depth bias against self-shadowing, in shadow-map texels along the surface normal.");
 }
 
-void renderProps(Text& ioComponent) {
-	prop::InputTextMultiline("Text String", &ioComponent.text, {0, 70});
-	if (app::Application::instanced()) {
-		auto& fontLib = app::Application::get().getFontLibrary();
-		const std::string display = ioComponent.font->isDefault() ? "(default)" : ioComponent.font->getName();
-		if (prop::BeginCombo("Font", display.c_str())) {
-			for (const auto& font: data::fonts::FontLibrary::getFoundFontNames()) {
-				if (ImGui::Selectable(font.c_str(), ioComponent.font->getName() == font)) {
-					ioComponent.font = fontLib.getFont(font);
-				}
-			}
-			ImGui::EndCombo();
+namespace {
+
+// Font combo (every font found), a drop target for a font file and a preview of the chosen font; a null font is the default.
+void fontPicker(shared<data::fonts::Font>& ioFont) {
+	if (!app::Application::instanced())
+		return;
+	auto& fontLib = app::Application::get().getFontLibrary();
+	const bool isDefault = !ioFont || ioFont->isDefault();
+	const std::string display = isDefault ? "(default)" : ioFont->getName();
+	if (prop::BeginCombo("Font", display.c_str())) {
+		for (const auto& font: data::fonts::FontLibrary::getFoundFontNames()) {
+			if (ImGui::Selectable(font.c_str(), !isDefault && ioFont->getName() == font))
+				ioFont = fontLib.getFont(font);
 		}
-		std::filesystem::path dropped;
-		if (widgets::assetDropTarget(widgets::AssetKind::Font, dropped))
-			ioComponent.font = fontLib.getFont(dropped.stem().string());
-		if (ioComponent.font && !ioComponent.font->isDefault()) {
-			constexpr ImVec2 previewSize{220.f, 44.f};
-			if (const auto previewFb = FontPreviewCache::get().request(ioComponent.font); previewFb) {
-				if (const auto preview = imTexture(previewFb, 0); preview.has_value())
-					ImGui::Image(preview.value(), previewSize, gui::vec(previewFb->getLowerData()),
-								 gui::vec(previewFb->getUpperData()));
-			} else if (const auto atlas = imTexture(ioComponent.font->getAtlasTexture()); atlas.has_value()) {
-				// First-frame fallback: atlas thumbnail until pumpPending() renders the sample-string preview.
-				ImGui::Image(atlas.value(), previewSize, {0, 1}, {1, 0});
-			}
+		ImGui::EndCombo();
+	}
+	std::filesystem::path dropped;
+	if (widgets::assetDropTarget(widgets::AssetKind::Font, dropped))
+		ioFont = fontLib.getFont(dropped.stem().string());
+	if (ioFont && !ioFont->isDefault()) {
+		constexpr ImVec2 previewSize{220.f, 44.f};
+		if (const auto previewFb = FontPreviewCache::get().request(ioFont); previewFb) {
+			if (const auto preview = imTexture(previewFb, 0); preview.has_value())
+				ImGui::Image(preview.value(), previewSize, gui::vec(previewFb->getLowerData()),
+							 gui::vec(previewFb->getUpperData()));
+		} else if (const auto atlas = imTexture(ioFont->getAtlasTexture()); atlas.has_value()) {
+			// First-frame fallback: atlas thumbnail until pumpPending() renders the sample-string preview.
+			ImGui::Image(atlas.value(), previewSize, {0, 1}, {1, 0});
 		}
 	}
+}
+
+}// namespace
+
+void renderProps(Text& ioComponent) {
+	prop::InputTextMultiline("Text String", &ioComponent.text, {0, 70});
+	fontPicker(ioComponent.font);
 
 	prop::ColorEdit4("Color", ioComponent.color.data());
 	prop::DragFloat("Kerning", &ioComponent.kerning, 0.025f);
@@ -1242,32 +1432,20 @@ void renderProps(Trigger& ioComponent) {
 
 		fieldTooltip("If checked, the timer restarts after each fire. Otherwise it fires once.");
 
-		prop::InputText("Callback", &ioComponent.trigger.callbackName);
-
-		fieldTooltip("Lua function name to call. Defaults to on_timer if empty.");
-		if (ioComponent.trigger.callbackName.empty())
-
-			ImGui::TextDisabled("Default: on_timer");
+		handlerRow("Callback", ioComponent.trigger.callbackName, "on_timer",
+				   "Lua function name to call. Defaults to on_timer if empty.");
 	}
 	if (ioComponent.trigger.type == SceneTrigger::TriggerType::Interaction) {
 		prop::DragFloat("Interaction Range", &ioComponent.trigger.interactionRange, 0.05f, 0.1f, 20.0f);
 
 		fieldTooltip("Distance within which the player can press E to interact.");
 
-		prop::InputText("Callback", &ioComponent.trigger.callbackName);
-
-		fieldTooltip("Lua function name to call. Defaults to on_interact if empty.");
-		if (ioComponent.trigger.callbackName.empty())
-
-			ImGui::TextDisabled("Default: on_interact");
+		handlerRow("Callback", ioComponent.trigger.callbackName, "on_interact",
+				   "Lua function name to call. Defaults to on_interact if empty.");
 	}
 	if (ioComponent.trigger.type == SceneTrigger::TriggerType::LuaCallback) {
-		prop::InputText("Callback", &ioComponent.trigger.callbackName);
-
-		fieldTooltip("Lua function name to call when the player overlaps. Defaults to on_triggered if empty.");
-		if (ioComponent.trigger.callbackName.empty())
-
-			ImGui::TextDisabled("Default: on_triggered");
+		handlerRow("Callback", ioComponent.trigger.callbackName, "on_triggered",
+				   "Lua function name to call when the player overlaps. Defaults to on_triggered if empty.");
 	}
 	// Info: all overlap triggers also fire on_trigger_enter / on_trigger_exit.
 	if (ioComponent.trigger.type != SceneTrigger::TriggerType::Victory &&
@@ -1380,6 +1558,234 @@ void renderProps(SoundListener& ioComponent) {
 	fieldTooltip("Mark as the active listener (the 'ear' for 3D audio). Only one primary per scene.");
 }
 
+namespace {
+
+// A value as the reset tooltip shows it.
+auto describeValue(const script::ScriptValue& iValue) -> std::string {
+	return std::visit(
+			[](const auto& iAlternative) -> std::string {
+				using Alternative = std::decay_t<decltype(iAlternative)>;
+				if constexpr (std::is_same_v<Alternative, bool>) {
+					return iAlternative ? "true" : "false";
+				} else if constexpr (std::is_same_v<Alternative, std::string>) {
+					return "\"" + iAlternative + "\"";
+				} else if constexpr (std::is_same_v<Alternative, std::vector<double>> ||
+									 std::is_same_v<Alternative, std::vector<std::string>>) {
+					return std::format("{} items", iAlternative.size());
+				} else if constexpr (std::is_same_v<Alternative, std::array<float, 2>> ||
+									 std::is_same_v<Alternative, std::array<float, 3>> ||
+									 std::is_same_v<Alternative, std::array<float, 4>>) {
+					std::string text;
+					for (const auto component: iAlternative)
+						text += std::format("{}{:g}", text.empty() ? "" : ", ", component);
+					return text;
+				} else {
+					return std::format("{}", iAlternative);
+				}
+			},
+			iValue);
+}
+
+// Combo over the entities of the inspected scene by name, with a filter and a "none" entry.
+auto scriptEntityPicker(uint64_t& ioTarget, const float iWidth) -> bool {
+	const Scene* const scene = inspectedScene();
+	const core::UUID current{ioTarget};
+	std::string preview = ioTarget != 0 ? "(missing)" : "(none)";
+	if (scene != nullptr && ioTarget != 0) {
+		if (const Entity found = scene->findEntityByUUID(current); found)
+			preview = found.getName();
+	}
+	ImGui::SetNextItemWidth(iWidth);
+	bool changed = false;
+	if (widgets::beginCombo("##entity", preview.c_str())) {
+		static ImGuiTextFilter s_filter;
+		s_filter.Draw("##filter", -FLT_MIN);
+		if (ImGui::Selectable("(none)", ioTarget == 0)) {
+			ioTarget = 0;
+			changed = true;
+		}
+		if (scene != nullptr) {
+			for (const auto view = scene->registry.view<ID>(); const auto entity: view) {
+				const Entity candidate{entity, const_cast<Scene*>(scene)};
+				if (!s_filter.PassFilter(candidate.getName().c_str()))
+					continue;
+				const auto uuid = view.get<ID>(entity).id;
+				ImGui::PushID(static_cast<int>(static_cast<uint64_t>(uuid) & 0x7fffffff));
+				if (ImGui::Selectable(candidate.getName().c_str(), static_cast<uint64_t>(uuid) == ioTarget)) {
+					ioTarget = static_cast<uint64_t>(uuid);
+					changed = true;
+				}
+				ImGui::PopID();
+			}
+		}
+		ImGui::EndCombo();
+	}
+	return changed;
+}
+
+// Clamp a component to the range the script declares.
+auto clampToRange(const float iValue, const script::ScriptProperty& iProperty) -> float {
+	return std::clamp(iValue, iProperty.min.value_or(-FLT_MAX), iProperty.max.value_or(FLT_MAX));
+}
+
+// One element row of a list property: the value and a remove button; true when the element is to be removed.
+template<typename Draw>
+auto listElementRow(const size_t iIndex, Draw&& iDraw) -> bool {
+	ImGui::PushID(static_cast<int>(iIndex));
+	const float side = ImGui::GetFrameHeight();
+	ImGui::Indent();
+	ImGui::SetNextItemWidth(std::max(side, ImGui::GetContentRegionAvail().x - side - ImGui::GetStyle().ItemSpacing.x));
+	std::forward<Draw>(iDraw)();
+	ImGui::SameLine();
+	const bool removed = widgets::iconButton("##remove", {.glyph = icon::x, .tooltip = "Remove"});
+	ImGui::Unindent();
+	ImGui::PopID();
+	return removed;
+}
+
+// The editor of a list property, under its row: one row per element and the add button on the property row.
+template<typename Element, typename DrawElement>
+auto editList(std::vector<Element>& ioList, const bool iAdd, DrawElement&& iDrawElement) -> bool {
+	bool changed = false;
+	if (iAdd) {
+		ioList.emplace_back();
+		changed = true;
+	}
+	std::optional<size_t> removed;
+	for (size_t index = 0; index < ioList.size(); ++index) {
+		if (listElementRow(index, [&]() -> void { changed |= iDrawElement(ioList[index]); }))
+			removed = index;
+	}
+	if (removed) {
+		ioList.erase(ioList.begin() + static_cast<std::ptrdiff_t>(*removed));
+		changed = true;
+	}
+	return changed;
+}
+
+// Inspector row of one script property: the editor of its type, then a reset button to the value the script declares.
+void drawScriptProperty(script::ScriptProperty& ioProperty) {
+	using Type = script::ScriptPropertyType;
+	const bool modified = ioProperty.value != ioProperty.defaultValue;
+	const float side = ImGui::GetFrameHeight();
+	const float fieldWidth = [&]() -> float {
+		// The label column is 38 % of the row, the reset button takes one frame.
+		const float available = ImGui::GetContentRegionAvail().x;
+		return std::max(side, std::floor(available * 0.62f) - side - ImGui::GetStyle().ItemSpacing.x);
+	}();
+	const float step = ioProperty.step.value_or(0.1f);
+	const bool ranged = ioProperty.min || ioProperty.max;
+	const float rangeMin = ranged ? ioProperty.min.value_or(-FLT_MAX) : 0.f;
+	const float rangeMax = ranged ? ioProperty.max.value_or(FLT_MAX) : 0.f;
+	bool addRequested = false;
+	prop::row(ioProperty.name.c_str(), [&](const char* iId) -> bool {
+		ImGui::SetNextItemWidth(fieldWidth);
+		switch (ioProperty.type) {
+			case Type::Float:
+				{
+					auto value = std::get<float>(ioProperty.value);
+					if (ImGui::DragFloat(iId, &value, step, rangeMin, rangeMax))
+						ioProperty.value = value;
+					break;
+				}
+			case Type::Int:
+				{
+					auto value = static_cast<int>(std::get<int64_t>(ioProperty.value));
+					const auto minInt = ranged ? static_cast<int>(ioProperty.min.value_or(-1e9f)) : 0;
+					const auto maxInt = ranged ? static_cast<int>(ioProperty.max.value_or(1e9f)) : 0;
+					if (ImGui::DragInt(iId, &value, ioProperty.step.value_or(1.f), minInt, maxInt))
+						ioProperty.value = static_cast<int64_t>(value);
+					break;
+				}
+			case Type::String:
+				{
+					auto value = std::get<std::string>(ioProperty.value);
+					if (ImGui::InputText(iId, &value))
+						ioProperty.value = value;
+					break;
+				}
+			case Type::Bool:
+				{
+					auto value = std::get<bool>(ioProperty.value);
+					if (widgets::toggle(iId, &value))
+						ioProperty.value = value;
+					break;
+				}
+			case Type::Color:
+				{
+					auto value = std::get<std::array<float, 4>>(ioProperty.value);
+					if (ImGui::ColorEdit4(iId, value.data()))
+						ioProperty.value = value;
+					break;
+				}
+			case Type::Vec2:
+				{
+					auto value = std::get<std::array<float, 2>>(ioProperty.value);
+					if (widgets::vectorField(iId, value, step, "%.2f", fieldWidth)) {
+						for (auto& component: value) component = clampToRange(component, ioProperty);
+						ioProperty.value = value;
+					}
+					break;
+				}
+			case Type::Vec3:
+				{
+					auto value = std::get<std::array<float, 3>>(ioProperty.value);
+					if (widgets::vectorField(iId, value, step, "%.2f", fieldWidth)) {
+						for (auto& component: value) component = clampToRange(component, ioProperty);
+						ioProperty.value = value;
+					}
+					break;
+				}
+			case Type::Entity:
+				{
+					auto value = std::get<uint64_t>(ioProperty.value);
+					if (scriptEntityPicker(value, fieldWidth))
+						ioProperty.value = value;
+					break;
+				}
+			case Type::Numbers:
+				ImGui::AlignTextToFramePadding();
+				ImGui::TextDisabled("%zu items", std::get<std::vector<double>>(ioProperty.value).size());
+				ImGui::SameLine();
+				addRequested = widgets::iconButton("##add", {.glyph = icon::plus, .tooltip = "Add an item"});
+				break;
+			case Type::Strings:
+				ImGui::AlignTextToFramePadding();
+				ImGui::TextDisabled("%zu items", std::get<std::vector<std::string>>(ioProperty.value).size());
+				ImGui::SameLine();
+				addRequested = widgets::iconButton("##add", {.glyph = icon::plus, .tooltip = "Add an item"});
+				break;
+		}
+		ImGui::SameLine();
+		const auto description =
+				std::format("Back to {}, the default of the script.", describeValue(ioProperty.defaultValue));
+		if (widgets::iconButton("##reset", {.glyph = icon::rotateCcw,
+											.tooltip = "Reset to default",
+											.description = description.c_str(),
+											.disabled = !modified}))
+			ioProperty.value = ioProperty.defaultValue;
+		return false;
+	});
+	if (ioProperty.type == Type::Numbers) {
+		auto list = std::get<std::vector<double>>(ioProperty.value);
+		if (editList(list, addRequested, [&](double& ioElement) -> bool {
+				auto value = static_cast<float>(ioElement);
+				const bool edited = ImGui::DragFloat("##value", &value, step, rangeMin, rangeMax);
+				if (edited)
+					ioElement = static_cast<double>(value);
+				return edited;
+			}))
+			ioProperty.value = std::move(list);
+	} else if (ioProperty.type == Type::Strings) {
+		auto list = std::get<std::vector<std::string>>(ioProperty.value);
+		if (editList(list, addRequested,
+					 [](std::string& ioElement) -> bool { return ImGui::InputText("##value", &ioElement); }))
+			ioProperty.value = std::move(list);
+	}
+}
+
+}// namespace
+
 void renderProps(LuaScript& ioComponent) {
 	if (assetPathRow("Script", ioComponent.scriptPath, "drop a .lua file", "Open the script in the code editor.")) {
 		ioComponent.scriptPath.clear();
@@ -1390,41 +1796,12 @@ void renderProps(LuaScript& ioComponent) {
 	if (std::filesystem::path dropped; widgets::assetDropTarget(widgets::AssetKind::LuaScript, dropped))
 		ioComponent.scriptPath = dropped.string();
 	syncScriptProperties(ioComponent);
+	renderHooks(ioComponent);
 	if (!ioComponent.properties.empty() && widgets::subHeader("Properties", true)) {
 		for (size_t idx = 0; idx < ioComponent.properties.size(); ++idx) {
-			auto& prop = ioComponent.properties[idx];
 			// Index-based PushID prevents collisions if two properties share a name.
 			ImGui::PushID(static_cast<int>(idx));
-			switch (prop.type) {
-				case script::ScriptPropertyType::Float:
-					{
-						auto val = std::get<float>(prop.value);
-						if (prop::DragFloat(prop.name.c_str(), &val, 0.1f))
-							prop.value = val;
-						break;
-					}
-				case script::ScriptPropertyType::Int:
-					{
-						auto val = static_cast<int>(std::get<int64_t>(prop.value));
-						if (prop::DragInt(prop.name.c_str(), &val))
-							prop.value = static_cast<int64_t>(val);
-						break;
-					}
-				case script::ScriptPropertyType::String:
-					{
-						auto val = std::get<std::string>(prop.value);
-						if (prop::InputText(prop.name.c_str(), &val))
-							prop.value = val;
-						break;
-					}
-				case script::ScriptPropertyType::Bool:
-					{
-						auto val = std::get<bool>(prop.value);
-						if (prop::Checkbox(prop.name.c_str(), &val))
-							prop.value = val;
-						break;
-					}
-			}
+			drawScriptProperty(ioComponent.properties[idx]);
 			ImGui::PopID();
 		}
 	}
@@ -1556,6 +1933,8 @@ void renderProps(UiRect& ioComponent, const Entity& iOwner) {
 void renderProps(UiText& ioComponent) {
 	prop::InputTextMultiline("Text", &ioComponent.text, ImVec2(0, 60));
 	prop::ColorEdit4("Color", reinterpret_cast<float*>(&ioComponent.color));
+	fontPicker(ioComponent.font);
+	fieldTooltip("Font of the text; the default font when none is chosen.");
 	prop::DragFloat("Font Size", &ioComponent.fontSize, 0.5f, 1.0f, 200.0f);
 	fieldTooltip("Ascender-to-descender height of the font, in pixels. Glyphs keep the font aspect ratio.");
 	enumCombo("Horizontal", ioComponent.horizontalAlignment);
@@ -1608,8 +1987,8 @@ void renderProps(UiButton& ioComponent) {
 	fieldTooltip("Button background color while the mouse button is held down.");
 	prop::ColorEdit4("Disabled Color", reinterpret_cast<float*>(&ioComponent.disabledColor));
 	fieldTooltip("Button background color when disabled (cannot be clicked).");
-	prop::InputText("On Click Callback", &ioComponent.onClickCallback);
-	fieldTooltip("Lua function name to call when the button is clicked (e.g. on_play_clicked).");
+	handlerRow("On Click Callback", ioComponent.onClickCallback, nullptr,
+			   "Lua function name to call when the button is clicked (e.g. on_play_clicked).");
 }
 
 void renderProps(UiSlider& ioComponent) {
@@ -1625,8 +2004,8 @@ void renderProps(UiSlider& ioComponent) {
 	prop::DragFloat("Step", &ioComponent.step, 0.01f, 0.0f, 1000.0f);
 	fieldTooltip(
 			"Change of the value per ui_left / ui_right press on the focused slider. 0: a twentieth of the range.");
-	prop::InputText("On Value Changed", &ioComponent.onValueChangedCallback);
-	fieldTooltip("Lua function called when the value changes. Receives the new value in _slider_value.");
+	handlerRow("On Value Changed", ioComponent.onValueChangedCallback, nullptr,
+			   "Lua function called when the value changes. Receives the new value in _slider_value.");
 }
 
 void renderProps(UiProgressBar& ioComponent) {
@@ -1648,8 +2027,8 @@ void renderProps(UiWindow& ioComponent) {
 	fieldTooltip("The title bar drags the window; it stays inside the screen.");
 	prop::Checkbox("Closable", &ioComponent.closable);
 	fieldTooltip("Show a close button that hides the window (ui.set_visible shows it again).");
-	prop::InputText("On Close Callback", &ioComponent.onCloseCallback);
-	fieldTooltip("Lua function called when the close button is pressed.");
+	handlerRow("On Close Callback", ioComponent.onCloseCallback, nullptr,
+			   "Lua function called when the close button is pressed.");
 }
 
 void renderProps(UiLayout& ioComponent) {
@@ -1711,11 +2090,11 @@ void renderProps(UiList& ioComponent) {
 	prop::DragFloat("Scroll Bar Width", &ioComponent.scrollBarWidth, 0.5f, 1.0f, 64.0f);
 	prop::ColorEdit4("Track Color", reinterpret_cast<float*>(&ioComponent.trackColor));
 	prop::ColorEdit4("Thumb Color", reinterpret_cast<float*>(&ioComponent.thumbColor));
-	prop::InputText("On Select", &ioComponent.onSelectCallback);
-	fieldTooltip("Lua function called when the selection changes. Reads _list_entity and _selected_index (1-based).");
-	prop::InputText("On Bind", &ioComponent.onBindCallback);
-	fieldTooltip("Lua function called once for a row in view nobody filled. Reads _list_entity and _row_index "
-				 "(1-based); it fills the row with ui.list_set_row. A row not filled shows Item N.");
+	handlerRow("On Select", ioComponent.onSelectCallback, nullptr,
+			   "Lua function called when the selection changes. Reads _list_entity and _selected_index (1-based).");
+	handlerRow("On Bind", ioComponent.onBindCallback, nullptr,
+			   "Lua function called once for a row in view nobody filled. Reads _list_entity and _row_index "
+			   "(1-based); it fills the row with ui.list_set_row. A row not filled shows Item N.");
 }
 
 void renderProps(UiTooltip& ioComponent) {
@@ -1786,8 +2165,8 @@ void renderProps(UiFocus& ioComponent, const Entity& iOwner) {
 	fieldTooltip("Widget the focus goes to on ui_left. (nearest): the nearest one on the left.");
 	uiEntityPicker("Right", ioComponent.right, iOwner);
 	fieldTooltip("Widget the focus goes to on ui_right. (nearest): the nearest one on the right.");
-	prop::InputText("On Focus", &ioComponent.onFocusCallback);
-	fieldTooltip("Lua function called when the widget takes the focus. Receives the widget id in _focused_entity.");
+	handlerRow("On Focus", ioComponent.onFocusCallback, nullptr,
+			   "Lua function called when the widget takes the focus. Receives the widget id in _focused_entity.");
 	prop::ColorEdit4("Highlight", reinterpret_cast<float*>(&ioComponent.highlightColor));
 	prop::DragFloat("Thickness", &ioComponent.highlightThickness, 0.1f, 0.5f, 32.0f);
 	fieldTooltip("Thickness of the frame around the focused widget, in reference pixels.");
@@ -2313,9 +2692,126 @@ void renderProps(FlyCamera& ioComponent) {
 	fieldTooltip("Rotation speed in radians per second for the arrow-key look controls.");
 }
 
+void renderProps(LightFlicker& ioComponent) {
+	prop::Checkbox("Enabled", &ioComponent.enabled);
+	fieldTooltip("Switch the flicker off to keep the light at its authored values.");
+	enumCombo("Style", ioComponent.style);
+	fieldTooltip("Fire: layered noise. Candle: a wavering drawn from the seed. Pulse: two sines of unrelated rates.");
+	prop::DragFloat("Amplitude", &ioComponent.amplitude, 0.005f, 0.f, 1.f, "%.3f");
+	fieldTooltip("Largest relative swing of the intensity: 0.28 goes from 72 % to 128 % of the authored value.");
+	prop::DragFloat("Speed", &ioComponent.speed, 0.01f, 0.01f, 20.f, "%.2f");
+	fieldTooltip("Time scale of the flicker.");
+	prop::DragFloat("Seed", &ioComponent.seed, 0.5f, -100000.f, 100000.f, "%.1f");
+	fieldTooltip("Offset in the noise: lights with different seeds never flicker together.");
+	prop::DragFloat3("Color Shift", &ioComponent.colorShift.x(), 0.005f, -1.f, 1.f, "%.3f");
+	fieldTooltip("Added to the colour at the brightest moment and taken off at the dimmest. It tints the sprite of an "
+				 "entity without a light.");
+	prop::DragFloat3("Position Jitter", &ioComponent.positionJitter.x(), 0.001f, 0.f, 10.f, "%.4f");
+	fieldTooltip("Largest displacement of the position along each axis, in world units.");
+	prop::DragFloat("Dip Rate", &ioComponent.dipRate, 0.01f, 0.f, 10.f, "%.2f");
+	fieldTooltip("Dips per second, when a draught bends the flame; 0 for none.");
+	prop::DragFloat("Dip Depth", &ioComponent.dipDepth, 0.01f, 0.f, 1.f, "%.2f");
+	fieldTooltip("Share of the intensity a full dip takes off.");
+	auto follow = static_cast<uint64_t>(ioComponent.follow);
+	prop::row("Follow", [&](const char*) -> bool {
+		if (scriptEntityPicker(follow, ImGui::GetContentRegionAvail().x)) {
+			ioComponent.follow = core::UUID{follow};
+			return true;
+		}
+		return false;
+	});
+	fieldTooltip("Entity whose flicker this one follows: its scale breathes with the intensity of that entity.");
+	prop::DragFloat3("Scale Response", &ioComponent.scaleResponse.x(), 0.005f, -2.f, 2.f, "%.3f");
+	fieldTooltip("Relative change of the scale along each axis for a relative change of 1 of the followed intensity.");
+}
+
+void renderProps(Oscillator& ioComponent) {
+	prop::Checkbox("Enabled", &ioComponent.enabled);
+	fieldTooltip("Switch the movement off to keep the entity at its rest position.");
+	prop::DragFloat3("Offset", &ioComponent.offset.x(), 0.05f, -1000.f, 1000.f, "%.2f");
+	fieldTooltip("Farthest displacement from the rest position, in world units; the viewport draws the range.");
+	prop::DragFloat("Period", &ioComponent.period, 0.05f, 0.05f, 600.f, "%.2f s");
+	fieldTooltip("Duration of a round trip.");
+	prop::DragFloat("Phase", &ioComponent.phase, 0.005f, 0.f, 1.f, "%.3f");
+	fieldTooltip("Share of the cycle already done when Play starts.");
+	enumCombo("Easing", ioComponent.easing);
+	fieldTooltip("Linear: constant speed. Smooth: slowing down towards each end.");
+	ImGui::TextDisabled("A body moves through the physics step: a kinematic body carries what stands on it.");
+}
+
+void renderProps(Patrol& ioComponent) {
+	prop::Checkbox("Enabled", &ioComponent.enabled);
+	fieldTooltip("Switch the patrol off to keep the entity where it is.");
+	enumCombo("Mode", ioComponent.mode);
+	fieldTooltip("At the last waypoint: Loop goes back to the first, PingPong walks the route in reverse.");
+	prop::DragFloat("Speed", &ioComponent.speed, 0.05f, 0.f, 100.f, "%.2f");
+	fieldTooltip("Walking speed, in world units per second.");
+	prop::DragFloat("Wait Time", &ioComponent.waitTime, 0.05f, 0.f, 600.f, "%.2f s");
+	fieldTooltip("Seconds spent at each waypoint.");
+	prop::DragFloat("Wander Radius", &ioComponent.wanderRadius, 0.05f, 0.f, 1000.f, "%.2f");
+	fieldTooltip("Without waypoints: radius of the random wander around the rest position; 0 for none.");
+	prop::DragFloat("Seed", &ioComponent.seed, 0.5f, -100000.f, 100000.f, "%.1f");
+	fieldTooltip("Seed of the random wander.");
+	prop::Checkbox("Face Direction", &ioComponent.faceDirection);
+	fieldTooltip("Mirror the sprite (scale x) towards the direction it walks.");
+	prop::DragFloat("Hop Height", &ioComponent.hopHeight, 0.005f, 0.f, 10.f, "%.3f");
+	fieldTooltip("Height of the hop while walking; 0 for none.");
+	prop::DragFloat("Hop Rate", &ioComponent.hopRate, 0.1f, 0.f, 100.f, "%.1f");
+	fieldTooltip("Rate of the hop, in radians per second.");
+	if (!widgets::subHeader("Waypoints", true))
+		return;
+	std::optional<std::size_t> removed;
+	for (std::size_t index = 0; index < ioComponent.waypoints.size(); ++index) {
+		ImGui::PushID(static_cast<int>(index));
+		const float side = ImGui::GetFrameHeight();
+		ImGui::SetNextItemWidth(
+				std::max(side, ImGui::GetContentRegionAvail().x - side - ImGui::GetStyle().ItemSpacing.x));
+		ImGui::DragFloat3("##waypoint", &ioComponent.waypoints[index].x(), 0.05f, 0.f, 0.f, "%.2f");
+		ImGui::SameLine();
+		if (widgets::iconButton("##remove", {.glyph = icon::x, .tooltip = "Remove the waypoint"}))
+			removed = index;
+		ImGui::PopID();
+	}
+	if (removed)
+		ioComponent.waypoints.erase(ioComponent.waypoints.begin() + static_cast<std::ptrdiff_t>(*removed));
+	if (ImGui::Button("Add Waypoint", {-FLT_MIN, 0.f})) {
+		const auto last = ioComponent.waypoints.empty() ? math::vec3{0.f, 0.f, 0.f} : ioComponent.waypoints.back();
+		ioComponent.waypoints.emplace_back(last.x() + 1.f, last.y(), last.z());
+	}
+	fieldTooltip("Add a waypoint one unit after the last one; drag its handle in the viewport to place it.");
+}
+
+void renderProps(Drift& ioComponent) {
+	prop::Checkbox("Enabled", &ioComponent.enabled);
+	fieldTooltip("Switch the drift off to keep the entity at its rest position.");
+	prop::DragFloat3("Velocity", &ioComponent.velocity.x(), 0.01f, -1000.f, 1000.f, "%.3f");
+	fieldTooltip("Drift velocity, in world units per second.");
+	prop::DragFloat3("Range", &ioComponent.range.x(), 0.1f, 0.f, 100000.f, "%.1f");
+	fieldTooltip(
+			"Half extent of the drift along each axis: the entity jumps from +range back to -range; 0 for no wrap.");
+	prop::DragFloat("Camera Follow", &ioComponent.cameraFollow, 0.005f, 0.f, 1.f, "%.3f");
+	fieldTooltip("Share of the camera movement followed: 0 pins the entity to the world, 1 to the screen (parallax).");
+}
+
 void setOpenAssetHandler(std::function<void(const std::filesystem::path&)> iHandler) {
 	openAssetHandler() = std::move(iHandler);
 }
+
+void setOpenAssetAtLineHandler(std::function<void(const std::filesystem::path&, uint32_t)> iHandler) {
+	openAssetAtLineHandler() = std::move(iHandler);
+}
+
+auto openAssetAtLine(const std::filesystem::path& iPath, const uint32_t iLine) -> bool {
+	if (iPath.empty())
+		return false;
+	if (openAssetAtLineHandler()) {
+		openAssetAtLineHandler()(iPath, iLine);
+		return true;
+	}
+	return openAsset(iPath);
+}
+
+void setInspectedScene(const scene::Scene* iScene) { inspectedScene() = iScene; }
 
 auto openAsset(const std::filesystem::path& iPath) -> bool {
 	if (iPath.empty() || !openAssetHandler())

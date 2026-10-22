@@ -59,6 +59,12 @@ flowchart LR
 4. The exposed properties appear under **Properties**; they are read again when the file changes, values already set
    are kept
 5. Edit property values in the inspector — they are saved with the scene
+6. The **Hooks** list shows each function the engine calls (`on_create`, `on_update`, `on_tick`, `on_destroy`,
+   `on_collision`, `on_trigger_enter`, `on_trigger_exit`, `on_triggered`, `on_interact`, `on_timer`): a defined hook
+   gives its line and an **Open** button that reveals it in the code editor, an undefined one is dimmed
+7. A HUD widget (button, slider, list, window, focus), a timer, an interaction or a Lua-callback trigger that names a
+   function shows the script of the scene that defines it, with the same **Open** button, or a warning when none
+   does
 
 The resulting scene YAML looks like:
 
@@ -179,15 +185,42 @@ identifier.
 The `properties` table at the top level of a script declares configurable values.
 Each entry must have:
 
-| Field     | Type   | Description                                     |
-|-----------|--------|-------------------------------------------------|
-| `name`    | string | Property name (used as the Lua global variable) |
-| `type`    | string | `"float"`, `"int"`, `"string"`, or `"bool"`     |
-| `default` | any    | Default value matching the declared type        |
+| Field     | Type   | Description                                                                          |
+|-----------|--------|--------------------------------------------------------------------------------------|
+| `name`    | string | Property name (used as the Lua global variable)                                      |
+| `type`    | string | A type of the table below                                                            |
+| `default` | any    | Default value matching the declared type                                             |
+| `min`     | number | Optional smallest value of a `float`, `int`, `vec2` or `vec3` (each component)       |
+| `max`     | number | Optional largest value                                                               |
+| `step`    | number | Optional drag step of the inspector field                                            |
+
+| Type      | Lua value                                      | Inspector editor                       | `default`                |
+|-----------|------------------------------------------------|----------------------------------------|--------------------------|
+| `float`   | number                                         | Drag field                             | `5.0`                    |
+| `int`     | integer                                        | Drag field                             | `3`                      |
+| `string`  | string                                         | Text field                             | `'text'`                 |
+| `bool`    | boolean                                        | Switch                                 | `true`                   |
+| `color`   | table `{r, g, b, a}`, sRGB components in 0..1  | Colour picker with alpha               | `{1, 0.5, 0, 1}`         |
+| `vec2`    | table `{x, y}`                                 | Two drag fields                        | `{0, 0}`                 |
+| `vec3`    | table `{x, y, z}`                              | Three drag fields                      | `{0, 0, 0}`              |
+| `entity`  | integer UUID of an entity, `0` for none        | Combo of the entities of the scene     | `0`                      |
+| `numbers` | sequence of numbers                            | List with **+** and remove buttons     | `{1, 2, 3}`              |
+| `strings` | sequence of strings                            | List with **+** and remove buttons     | `{'a', 'b'}`             |
 
 The editor reads this table to populate the inspector. When the scene enters Play mode,
 the engine sets each property as a Lua global with the value configured in the inspector
-(overriding the `default`).
+(overriding the `default`). Every field of the inspector shows the `default` of the script in the tooltip of its reset
+button, which puts the value back; a property the scene does not list takes the `default` of the script when the
+script loads in Play; the values and the lists are saved with the scene (`name`, `type`, `value`), the
+`min`, `max` and `step` stay in the script.
+
+### Scene script
+
+A scene can own one script of its own, the **Script** section of Scene Settings in Owl Nest (the `SceneScript:` key of
+the `.owl` file). It has the hooks and the `properties` of an entity script and runs before the entity scripts in the
+same frame, but it belongs to no entity: `entity_id` is `nil`, so it drives the scene through `scene.*`, `ui.*`,
+`gamestate.*` and the other tables, and finds the entities it moves by name or tag. Put there what used to be parked on
+the camera; a script that moves its own entity stays a `LuaScript` of that entity.
 
 ## Engine API Reference
 

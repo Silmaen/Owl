@@ -372,6 +372,38 @@ auto createLight(const shared<scene::Scene>& ioScene, const CommandArgs& iArgs) 
 	return PreparedCommand{.command = mkUniq<CreateEntityCommand>(entity), .applied = true, .entity = entity.getUUID()};
 }
 
+auto createLight2D(const shared<scene::Scene>& ioScene, const CommandArgs& iArgs) -> Prepared {
+	const auto kind = iArgs.getText("type");
+	using LightType = scene::component::Light2D::Type;
+	std::optional<LightType> type;
+	if (kind == "Ambient")
+		type = LightType::Ambient;
+	else if (kind == "Point")
+		type = LightType::Point;
+	else if (kind == "Spot")
+		type = LightType::Spot;
+	if (!type)
+		return fail(CommandError::InvalidArgument, std::format("`{}` is not a 2D light type", kind));
+	std::optional<scene::Entity> parent;
+	if (iArgs.has("parent")) {
+		auto found = entityArg(*ioScene, iArgs, "parent");
+		if (!found)
+			return unexpected<CommandFailure>{found.error()};
+		parent = *found;
+	}
+	auto entity = ioScene->createEntity(iArgs.getText("name", kind + " Light 2D"));
+	if (const auto translation = iArgs.getVec3("translation"); translation)
+		entity.getComponent<scene::component::Transform>().transform.translation() = *translation;
+	auto& light = entity.addComponent<scene::component::Light2D>();
+	light.type = *type;
+	// An ambient light starts as a dim night, so that a first point light shows.
+	if (*type == LightType::Ambient)
+		light.intensity = 0.3f;
+	if (parent)
+		ioScene->setParent(entity, *parent);
+	return PreparedCommand{.command = mkUniq<CreateEntityCommand>(entity), .applied = true, .entity = entity.getUUID()};
+}
+
 auto setSceneHud(const shared<scene::Scene>& ioScene, const CommandArgs& iArgs) -> Prepared {
 	std::optional<std::string> path;
 	if (!iArgs.getBool("use_default"))
@@ -381,6 +413,35 @@ auto setSceneHud(const shared<scene::Scene>& ioScene, const CommandArgs& iArgs) 
 	if (path == ioScene->getHudPath())
 		return fail(CommandError::NotApplicable, "the scene already has this HUD");
 	return PreparedCommand{.command = mkUniq<SetSceneHudCommand>(ioScene->getHudPath(), path), .applied = false};
+}
+
+auto setSceneRenderers(const shared<scene::Scene>& ioScene, const CommandArgs& iArgs) -> Prepared {
+	const auto text = iArgs.getText("config");
+	const auto after =
+			text.empty() ? renderer::EnabledRenderersConfig{} : renderer::EnabledRenderersConfig::fromYaml(text);
+	const auto& current = ioScene->getEnabledRenderers();
+	const auto before = current.isEmpty() ? std::string{} : current.toYaml();
+	const auto afterYaml = after.isEmpty() ? std::string{} : after.toYaml();
+	if (before == afterYaml)
+		return fail(CommandError::NotApplicable, "the scene already has this renderer configuration");
+	return PreparedCommand{.command = mkUniq<ModifyEnabledRenderersCommand>(before, afterYaml), .applied = false};
+}
+
+auto setSceneScript(const shared<scene::Scene>& ioScene, const CommandArgs& iArgs) -> Prepared {
+	const auto text = iArgs.getText("script");
+	if (!text.empty()) {
+		const auto script = scene::component::LuaScript::fromYaml(text);
+		if (!script || script->scriptPath.empty())
+			return fail(CommandError::InvalidArgument, "`script` is not a YAML map with a `scriptPath`");
+		if (std::filesystem::path{script->scriptPath}.extension() != ".lua")
+			return fail(CommandError::InvalidArgument, std::format("`{}` is not a `.lua` file", script->scriptPath));
+	}
+	const auto& current = ioScene->getSceneScript();
+	const auto before = current.scriptPath.empty() ? std::string{} : current.toYaml();
+	const auto after = text.empty() ? std::string{} : scene::component::LuaScript::fromYaml(text)->toYaml();
+	if (before == after)
+		return fail(CommandError::NotApplicable, "the scene already has this script");
+	return PreparedCommand{.command = mkUniq<SetSceneScriptCommand>(before, after), .applied = false};
 }
 
 auto extractCanvas(const shared<scene::Scene>& ioScene, const CommandArgs& iArgs) -> Prepared {
@@ -939,6 +1000,20 @@ CommandRegistry::CommandRegistry() {
 				  {.name = "translation", .type = ArgType::Vec3, .description = "World position of the entity."},
 				  {.name = "parent", .type = ArgType::Entity, .description = "Parent entity (root when absent)."}},
 		 .factory = createLight});
+	add({.name = "entity.create_light2d",
+		 .description = "Create an entity with a `Light2D`: an ambient light (dim, the night tint), or a point or spot "
+						"light of the 2D layers.",
+		 .args = {{.name = "type",
+				   .type = ArgType::Enum,
+				   .required = true,
+				   .description = "Kind of 2D light.",
+				   .choices = {"Ambient", "Point", "Spot"}},
+				  {.name = "name",
+				   .type = ArgType::Text,
+				   .description = "Tag of the entity (`<Type> Light 2D` when absent)."},
+				  {.name = "translation", .type = ArgType::Vec3, .description = "World position of the entity."},
+				  {.name = "parent", .type = ArgType::Entity, .description = "Parent entity (root when absent)."}},
+		 .factory = createLight2D});
 	add({.name = "component.set",
 		 .description = "Change fields of a component of an entity: the values are merged into its current state.",
 		 .args = {entitySpec("Entity changed."),
@@ -968,6 +1043,24 @@ CommandRegistry::CommandRegistry() {
 				   .description = "Use the project's `DefaultHud` (the scene then names no HUD).",
 				   .defaultValue = false}},
 		 .factory = setSceneHud});
+	add({.name = "scene.set_renderers",
+		 .description = "Replace the renderer-stack overrides of the scene (layer order, enabled flags, per-layer "
+						"settings) by a YAML configuration; empty follows the project stack.",
+		 .args = {{.name = "config",
+				   .type = ArgType::Text,
+				   .description = "YAML of the scene `Renderers:` configuration, as `EnabledRenderersConfig::toYaml` "
+								  "writes it.",
+				   .defaultValue = std::string{}}},
+		 .factory = setSceneRenderers});
+	add({.name = "scene.set_script",
+		 .description = "Choose the script the scene owns (`SceneScript`), with its property values; empty removes "
+						"it. It runs before the entity scripts and has no entity.",
+		 .args = {{.name = "script",
+				   .type = ArgType::Text,
+				   .description = "YAML map `scriptPath` and `properties` (name, type, value), as the scene file "
+								  "writes them; empty for no script.",
+				   .defaultValue = std::string{}}},
+		 .factory = setSceneScript});
 	add({.name = "hud.extract_canvas",
 		 .description = "Write a canvas and its widgets to an `.owlhud` file, remove them from the scene and make the "
 						"scene draw that HUD.",

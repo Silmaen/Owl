@@ -10,6 +10,7 @@
 
 #include "renderer/RenderGraph.h"
 
+#include "renderer/ClipSpace.h"
 #include "renderer/ColorEncoder.h"
 #include "renderer/gpu/RenderCommand.h"
 
@@ -55,7 +56,7 @@ void clearTarget(const RenderGraph::TargetFormat iFormat, gpu::Framebuffer& ioFr
 		color = {ColorEncoder::srgbToLinear(color.r()), ColorEncoder::srgbToLinear(color.g()),
 				 ColorEncoder::srgbToLinear(color.b()), color.a()};
 	else if (iFormat == RenderGraph::TargetFormat::Depth)
-		color = {1.f, 1.f, 1.f, 1.f};
+		color = {g_farDepth, g_farDepth, g_farDepth, g_farDepth};
 	gpu::RenderCommand::setClearColor(color);
 	gpu::RenderCommand::clear();
 	gpu::RenderCommand::setClearColor(clearColor);
@@ -308,7 +309,7 @@ auto RenderGraph::acquire(const TargetFormat iFormat, const math::vec2ui& iSize)
 			 .attachments = {{.format = toFormat(iFormat), .tiling = gpu::AttachmentSpecification::Tiling::Optimal},
 							 {.format = gpu::AttachmentSpecification::Format::RedInteger,
 							  .tiling = gpu::AttachmentSpecification::Tiling::Optimal},
-							 {.format = gpu::AttachmentSpecification::Format::Depth24Stencil8,
+							 {.format = gpu::AttachmentSpecification::Format::Depth32F,
 							  .tiling = gpu::AttachmentSpecification::Tiling::Optimal}},
 			 .samples = 1,
 			 .swapChainTarget = false,

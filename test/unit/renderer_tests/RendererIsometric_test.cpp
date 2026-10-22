@@ -9,6 +9,7 @@
 #include "testHelper.h"
 
 #include <math/linAlgebra.h>
+#include <renderer/ClipSpace.h>
 #include <renderer/IsometricObjects.h>
 #include <renderer/RenderLayerFactory.h>
 #include <renderer/Renderer.h>
@@ -205,7 +206,7 @@ TEST(RendererIsometric, cameraMatchesHelpersOnBothClipSpaces) {
 	EXPECT_FLOAT_EQ(centre.y(), 300.f);
 }
 
-TEST(RendererIsometric, depthIsUsableAndNearerIsSmaller) {
+TEST(RendererIsometric, depthIsUsableAndNearerIsLarger) {
 	const IsometricCamera camera = makeCamera();
 	const math::vec3 back{3.f, 2.f, 0.f};
 	const math::vec3 front{5.f, 4.f, 0.f};
@@ -216,13 +217,12 @@ TEST(RendererIsometric, depthIsUsableAndNearerIsSmaller) {
 		const math::mat4 viewProjection =
 				IsometricCamera::makeProjection(camera.getViewportSize(), camera.getZoom(), clipSpace) *
 				IsometricCamera::makeView(camera.getConfig(), camera.getTarget());
-		const float minDepth = clipSpace == CameraOrtho::ClipSpace::Vulkan ? 0.f : -1.f;
 		for (const auto& point: {back, front, above}) {
 			const float depth = ndcDepth(viewProjection, point);
-			EXPECT_GT(depth, minDepth);
-			EXPECT_LT(depth, 1.f);
+			EXPECT_GT(depth, renderer::g_farDepth);
+			EXPECT_LT(depth, renderer::g_nearDepth);
 		}
-		EXPECT_LT(ndcDepth(viewProjection, front), ndcDepth(viewProjection, back));
+		EXPECT_GT(ndcDepth(viewProjection, front), ndcDepth(viewProjection, back));
 	}
 }
 

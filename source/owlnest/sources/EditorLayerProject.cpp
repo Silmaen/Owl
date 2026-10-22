@@ -66,7 +66,7 @@ void EditorLayer::openAssetFile(const std::filesystem::path& iPath) {
 			openImageFile(iPath);
 			return;
 		case AssetKind::Prefab:
-			instantiatePrefab(iPath);
+			openScene(iPath);
 			return;
 		case AssetKind::Mesh:
 			openMeshFile(iPath);
@@ -122,8 +122,9 @@ void EditorLayer::openScene() {
 }
 
 void EditorLayer::openScene(const std::filesystem::path& iScenePath) {
-	if (const auto extension = iScenePath.extension().string(); extension != ".owl" && extension != ".owlhud") {
-		OWL_CORE_WARN("Cannot Open file {}: not a scene nor a HUD.", iScenePath.string())
+	if (const auto extension = iScenePath.extension().string();
+		extension != ".owl" && extension != ".owlhud" && extension != ".owlprefab") {
+		OWL_CORE_WARN("Cannot Open file {}: not a scene, a HUD nor a prefab.", iScenePath.string())
 		return;
 	}
 
@@ -614,7 +615,13 @@ void EditorLayer::saveSceneAs() {
 	const std::string defaultName = (doc != nullptr && !doc->filePath().empty())
 											? doc->filePath().filename().string()
 											: std::string{isHud ? "Untitled.owlhud" : "Untitled.owl"};
-	const char* filter = isHud ? "Owl HUD (*.owlhud)|owlhud\n" : "Owl Scene (*.owl)|owl\n";
+	const bool isPrefab = doc != nullptr && doc->getActiveScene() &&
+						  doc->getActiveScene()->getDocumentKind() == scene::DocumentKind::Prefab;
+	const char* filter = "Owl Scene (*.owl)|owl\n";
+	if (isHud)
+		filter = "Owl HUD (*.owlhud)|owlhud\n";
+	else if (isPrefab)
+		filter = "Owl Prefab (*.owlprefab)|owlprefab\n";
 	if (const auto filepath = platform::FileDialog::saveFile(filter, defaultName); !filepath.empty())
 		saveSceneAs(filepath);
 }

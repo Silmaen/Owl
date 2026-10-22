@@ -41,9 +41,10 @@ User-facing reference: `doc/pages/scripting.md` (guide) and `doc/pages/lua-api.m
   entity for which `Scene::isPendingDestructionInTree()` is true; destruction from a callback is deferred.
 - Properties: `properties = { {name, type, default}, ... }`, parsed by
   `ScriptEngine::extractProperties()`, set as globals before `on_create`.
-- **The `properties` table is editor metadata only.** At runtime the globals come from the component's
-  serialized `properties:` block in the scene; a hand-written `LuaScript:` with only `scriptPath:` leaves
-  them `nil`. Add `- name: x / type: float / value: N` entries in the scene YAML.
+- At runtime the globals come from the component's serialized `properties:` block in the scene; a property the
+  scene does not list gets the `default` of the script (`ScriptInstance::getDeclaredProperties`, applied by
+  `loadScriptInstance`). The globals are set after the chunk ran: top-level code cannot read them, only
+  `on_create` and later; a script copies them into its locals there.
 - Lua keycodes are raw GLFW integers (W=87, Space=32, LShift=340, arrows 262–265).
 - Scripts load from the open `.owlpack` first, then the filesystem.
 - A script must never trigger a scene load directly: set a request flag (see `save.load_game`) handled

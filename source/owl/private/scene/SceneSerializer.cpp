@@ -12,6 +12,7 @@
 #include "EntityLinkMigration.h"
 #include "HudLayoutMigration.h"
 #include "PhysicalLightMigration.h"
+#include "SceneScriptMigration.h"
 #include "UiRendererTagMigration.h"
 #include "UiTextMigration.h"
 #include "app/Application.h"
@@ -22,6 +23,7 @@
 #include "renderer/RenderStackYaml.h"
 #include "scene/ComponentRegistry.h"
 #include "scene/Entity.h"
+#include "scene/PrefabSerializer.h"
 #include "scene/component/componentsSerialization.h"
 
 #include <cstdint>
@@ -77,7 +79,9 @@ auto fixHint(const SceneLoadError iError) -> std::string_view {
 }
 
 auto documentKindOf(const std::filesystem::path& iPath) -> DocumentKind {
-	return iPath.extension() == ".owlhud" ? DocumentKind::Hud : DocumentKind::Scene;
+	if (iPath.extension() == ".owlhud")
+		return DocumentKind::Hud;
+	return iPath.extension() == ".owlprefab" ? DocumentKind::Prefab : DocumentKind::Scene;
 }
 
 SceneSerializer::SceneSerializer(const shared<Scene>& iScene)
@@ -88,20 +92,38 @@ SceneSerializer::SceneSerializer(const shared<Scene>& iScene, const DocumentKind
 
 namespace {
 
-// Steps 1 to 6: links by UUID, centred legacy UiText, Y-down HUD layout, no `ui` renderer tag on widgets, physical lights.
-constexpr std::array<core::MigrationStep, 5> g_sceneMigrations{&bindEntityLinksByName, &centreLegacyUiText,
-															   &convertLegacyHudLayout, &dropUiRendererTag,
-															   &convertToPhysicalLights};
+// Steps 1 to 7: links by UUID, UiText, Y-down HUD, no `ui` tag, physical lights, scene script.
+constexpr std::array<core::MigrationStep, 6> g_sceneMigrations{&bindEntityLinksByName,   &centreLegacyUiText,
+															   &convertLegacyHudLayout,  &dropUiRendererTag,
+															   &convertToPhysicalLights, &moveCameraSceneScript};
 constexpr core::DocumentFormat g_sceneFormat{.name = "Scene", .migrations = g_sceneMigrations};
 
 constexpr std::array<core::MigrationStep, 0> g_hudMigrations{};
 constexpr core::DocumentFormat g_hudFormat{.name = "Hud", .migrations = g_hudMigrations};
 
 auto formatOf(const DocumentKind iKind) -> const core::DocumentFormat& {
-	return iKind == DocumentKind::Hud ? g_hudFormat : g_sceneFormat;
+	switch (iKind) {
+		case DocumentKind::Hud:
+			return g_hudFormat;
+		case DocumentKind::Prefab:
+			return PrefabSerializer::format();
+		case DocumentKind::Scene:
+			break;
+	}
+	return g_sceneFormat;
 }
 
-auto rootKeyOf(const DocumentKind iKind) -> std::string_view { return iKind == DocumentKind::Hud ? "Hud" : "Scene"; }
+auto rootKeyOf(const DocumentKind iKind) -> std::string_view {
+	switch (iKind) {
+		case DocumentKind::Hud:
+			return "Hud";
+		case DocumentKind::Prefab:
+			return "Prefab";
+		case DocumentKind::Scene:
+			break;
+	}
+	return "Scene";
+}
 
 auto toSceneLoadError(const core::FormatError iError) -> SceneLoadError {
 	switch (iError) {
@@ -315,8 +337,11 @@ auto SceneSerializer::format(const DocumentKind iKind) -> const core::DocumentFo
 auto SceneSerializer::serializeToString() const -> std::string {
 	const core::Serializer sOut;
 	sOut.getImpl()->emitter << YAML::BeginMap;
-	sOut.getImpl()->emitter << YAML::Key << std::string{rootKeyOf(m_kind)} << YAML::Value << "untitled";
+	sOut.getImpl()->emitter << YAML::Key << std::string{rootKeyOf(m_kind)} << YAML::Value
+							<< (m_kind == DocumentKind::Prefab ? mp_scene->getPrefabName() : std::string{"untitled"});
 	emitFormatVersion(sOut.getImpl()->emitter, formatOf(m_kind));
+	if (m_kind == DocumentKind::Prefab)
+		sOut.getImpl()->emitter << YAML::Key << "Version" << YAML::Value << mp_scene->getPrefabVersion();
 	mp_scene->assignEntityLinkIds();
 	if (m_kind == DocumentKind::Scene) {
 		if (const auto& hudPath = mp_scene->getHudPath(); hudPath)
@@ -326,6 +351,8 @@ auto SceneSerializer::serializeToString() const -> std::string {
 									<< renderer::enabledToYaml(enabled);
 		}
 		serializePhysicsSettings(sOut.getImpl()->emitter, mp_scene->getPhysicsSettings());
+		if (const auto& sceneScript = mp_scene->getSceneScript(); !sceneScript.scriptPath.empty())
+			sceneScript.serializeAs(sOut, "SceneScript");
 	}
 	sOut.getImpl()->emitter << YAML::Key << "Entities" << YAML::Value << YAML::BeginSeq;
 	for (const auto& entity: mp_scene->getAllEntities()) {
@@ -386,6 +413,7 @@ auto SceneSerializer::parseBuffer(const std::vector<uint8_t>& iData, const std::
 		}
 		if (!canReadWithoutMigration(document->getRoot(), docFormat)) {
 			std::string migrated{text};
+			const SceneScriptMigrationSource migrationSource{iSourceName};
 			if (const auto version = upgradeDocumentText(docFormat, migrated, iSourceName); !version) {
 				out.error = std::string{describe(version.error())};
 				out.failure = toSceneLoadError(version.error());
@@ -432,7 +460,8 @@ auto SceneSerializer::applyParsed(const ParsedScene& iParsed) const -> SceneLoad
 	const auto previousRenderers = mp_scene->getEnabledRenderers();
 	const auto previousPhysics = mp_scene->getPhysicsSettings();
 	const auto previousHud = mp_scene->getHudPath();
-	const bool isHud = iParsed.kind == DocumentKind::Hud;
+	const auto previousSceneScript = mp_scene->getSceneScript();
+	const bool isScene = iParsed.kind == DocumentKind::Scene;
 	const auto& source = iParsed.sourceName.empty() ? iParsed.sceneName : iParsed.sourceName;
 	std::vector<Entity> created;
 	core::YamlNode current;
@@ -446,11 +475,16 @@ auto SceneSerializer::applyParsed(const ParsedScene& iParsed) const -> SceneLoad
 		mp_scene->getEnabledRenderers() = previousRenderers;
 		mp_scene->getPhysicsSettings() = previousPhysics;
 		mp_scene->setHudPath(previousHud);
+		mp_scene->getSceneScript() = previousSceneScript;
 		return unexpected{SceneLoadError::InvalidEntity};
 	};
 	try {
 		const auto& root = sData.getImpl()->node;
-		if (isHud) {
+		if (iParsed.kind == DocumentKind::Prefab) {
+			const auto version = root["Version"];
+			mp_scene->setPrefabInfo(iParsed.sceneName, version.isScalar() ? version.as<uint32_t>(1) : 1);
+		}
+		if (!isScene) {
 			mp_scene->setHudPath(std::string{});
 		} else {
 			if (const auto hud = root["Hud"]; hud.isScalar())
@@ -458,6 +492,12 @@ auto SceneSerializer::applyParsed(const ParsedScene& iParsed) const -> SceneLoad
 			if (const auto enabled = root["EnabledRenderers"]; enabled)
 				mp_scene->getEnabledRenderers() = renderer::enabledFromYaml(enabled);
 			mp_scene->getPhysicsSettings() = deserializePhysicsSettings(root["Physics"]);
+			mp_scene->getSceneScript() = component::LuaScript{};
+			if (const auto script = root["SceneScript"]; script.isMap()) {
+				const core::Serializer scriptNode;
+				scriptNode.getImpl()->node = script;
+				mp_scene->getSceneScript().deserialize(scriptNode);
+			}
 		}
 		SeenUuids seen;
 		if (const auto entities = root["Entities"]; entities.isSequence()) {

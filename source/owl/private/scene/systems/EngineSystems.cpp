@@ -108,6 +108,8 @@ void registerEngineSystems(SystemSchedule& ioSchedule) {
 	};
 	add("owl.physics_poses", SystemPhase::Scripts, &restorePhysicsPoses);
 	add("owl.scripts", SystemPhase::Scripts, &updateScripts, &tickScripts);
+	add("owl.oscillators", SystemPhase::PrePhysics, &updateOscillators, &tickOscillators);
+	add("owl.patrols", SystemPhase::PrePhysics, &updatePatrols);
 	add("owl.fly_cameras", SystemPhase::PrePhysics, &updateFlyCameras);
 	add("owl.voxel_players", SystemPhase::PrePhysics, &updateVoxelPlayers);
 	add("owl.raycast_walls", SystemPhase::PrePhysics, [](Scene& ioScene, const SystemContext& iContext) -> void {
@@ -115,6 +117,8 @@ void registerEngineSystems(SystemSchedule& ioSchedule) {
 	});
 	add("owl.player_input", SystemPhase::PrePhysics, &updatePlayerInput);
 	add("owl.physics", SystemPhase::Physics, &updatePhysics, &tickPhysics);
+	add("owl.drift", SystemPhase::PostPhysics, &updateDrifts);
+	add("owl.light_flicker", SystemPhase::PostPhysics, &updateLightFlickers);
 	add("owl.entity_links", SystemPhase::PostPhysics, &updateEntityLinks);
 	add("owl.triggers", SystemPhase::PostPhysics, &updateTriggers);
 	add("owl.navigation", SystemPhase::Late, &updateNavigation);
@@ -131,6 +135,8 @@ void restorePhysicsPoses(Scene& ioScene, [[maybe_unused]] const SystemContext& i
 void updateScripts(Scene& ioScene, const SystemContext& iContext) {
 	OWL_PROFILE_FUNCTION()
 
+	if (const auto& sceneScript = ioScene.getSceneScript(); sceneScript.instance && sceneScript.instance->isValid())
+		sceneScript.instance->onUpdate(iContext.timeStep.getSeconds());
 	ioScene.registry.view<component::NativeScript>().each(
 			[&ioScene, &iContext](const entt::entity iEntity, component::NativeScript& ioNsc) -> void {
 				if (!ioScene.isEffectivelyVisible(Entity{iEntity, &ioScene}, /*iEditorMode=*/false))
@@ -154,6 +160,8 @@ void updateScripts(Scene& ioScene, const SystemContext& iContext) {
 void tickScripts(Scene& ioScene, const SystemContext& iContext) {
 	OWL_PROFILE_FUNCTION()
 
+	if (const auto& sceneScript = ioScene.getSceneScript(); sceneScript.instance && sceneScript.instance->isValid())
+		sceneScript.instance->onTick(iContext.timeStep.getSeconds());
 	for (const auto view = ioScene.registry.view<component::NativeScript>(); const auto entity: view) {
 		if (const auto& nsc = view.get<component::NativeScript>(entity);
 			nsc.instance != nullptr && ioScene.isEffectivelyVisible(Entity{entity, &ioScene}, /*iEditorMode=*/false))

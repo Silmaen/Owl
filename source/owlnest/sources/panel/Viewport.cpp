@@ -35,6 +35,7 @@
 #include <gui/widgets/Tooltip.h>
 #include <math/linAlgebra.h>
 #include <owlgui.h>
+#include <renderer/ClipSpace.h>
 #include <renderer/MeshCache.h>
 #include <renderer/RenderLayer.h>
 #include <renderer/RenderStack.h>
@@ -207,7 +208,7 @@ void Viewport::attach() {
 							 .tiling = renderer::gpu::AttachmentSpecification::Tiling::Optimal},
 							{.format = renderer::gpu::AttachmentSpecification::Format::RedInteger,
 							 .tiling = renderer::gpu::AttachmentSpecification::Tiling::Optimal},
-							{.format = renderer::gpu::AttachmentSpecification::Format::Depth24Stencil8,
+							{.format = renderer::gpu::AttachmentSpecification::Format::Depth32F,
 							 .tiling = renderer::gpu::AttachmentSpecification::Tiling::Optimal},
 					},
 			.samples = 1,
@@ -400,8 +401,7 @@ void Viewport::renderCameraPreview(const shared<scene::Scene>& iScene) {
 				{.size = size,
 				 .attachments = {{.format = Attachment::Format::Surface, .tiling = Attachment::Tiling::Optimal},
 								 {.format = Attachment::Format::RedInteger, .tiling = Attachment::Tiling::Optimal},
-								 {.format = Attachment::Format::Depth24Stencil8,
-								  .tiling = Attachment::Tiling::Optimal}},
+								 {.format = Attachment::Format::Depth32F, .tiling = Attachment::Tiling::Optimal}},
 				 .samples = 1,
 				 .swapChainTarget = false,
 				 .debugName = "camera_preview"});
@@ -670,6 +670,9 @@ void Viewport::renderOverlay() const {
 		activeScene->getNavigation().setDebugVisible(scene::nav::NavWorld::DebugSource::Editor,
 													 m_parent != nullptr && m_parent->getSettings().showNavGraph);
 		const scene::Entity camera = activeScene->getPrimaryCamera();
+		// A scene played without a primary camera (an empty one) has no view to draw the overlay through.
+		if (!camera)
+			return;
 		auto& cam = camera.getComponent<scene::component::Camera>().camera;
 		cam.setTransform(activeScene->getWorldTransform(camera)());
 		renderer::Renderer2D::beginScene(cam);
@@ -757,6 +760,7 @@ void Viewport::renderOverlay() const {
 			renderCameraMarkers(activeScene);
 		if (showsLightMarkers())
 			renderLightMarkers(activeScene);
+		renderBehaviourOverlays(activeScene);
 
 		const scene::Entity selectedForGizmo = m_parent != nullptr ? m_parent->getSelectedEntity() : scene::Entity{};
 		constexpr math::vec4 kPushwallOutline{0.25f, 0.85f, 0.35f, 1.f};
@@ -1996,6 +2000,8 @@ void Viewport::renderGizmo() {
 	if (!activeScene)
 		return;
 
+	if (renderWaypointGizmo())
+		return;
 	if (const scene::Entity selectedEntity = m_parent->getSelectedEntity();
 		selectedEntity && m_gizmoType != gui::Guizmo::Type::None && !isPiloted(selectedEntity)) {
 		gui::Guizmo::initialize(m_lower, m_upper - m_lower,
@@ -2120,8 +2126,8 @@ auto Viewport::getCursorRay() const -> std::optional<std::pair<math::vec3, math:
 			return std::nullopt;
 		return math::vec3{point.x() / point.w(), point.y() / point.w(), point.z() / point.w()};
 	};
-	// Both depths lie in the clip range of OpenGL ([-1, 1]) and of Vulkan ([0, 1]).
-	const auto nearPoint = unproject(0.f);
+	// Reversed-Z: the near plane at depth 1, a farther point halfway (finite with an infinite far plane).
+	const auto nearPoint = unproject(renderer::g_nearDepth);
 	const auto farPoint = unproject(0.5f);
 	if (!nearPoint || !farPoint || (*farPoint - *nearPoint).normSq() < 1e-12f)
 		return std::nullopt;
@@ -2267,6 +2273,11 @@ auto Viewport::onMouseButtonPressed(const event::MouseButtonPressedEvent& ioEven
 	if (ioEvent.getMouseButton() == input::mouse::ButtonLeft) {
 		if (isHovered() && !gui::Guizmo::isOver() && !input::Input::isKeyPressed(input::key::LeftAlt) &&
 			m_parent != nullptr) {
+			if (const int handle = pickPatrolWaypoint(); handle >= 0) {
+				m_patrolHandle = handle;
+				return false;
+			}
+			m_patrolHandle = -1;
 			const auto camera = pickMarker();
 			m_parent->setSelectedEntity(camera ? camera : getHoveredEntity());
 		}
@@ -2438,6 +2449,47 @@ void Viewport::renderLightMarkers(const shared<scene::Scene>& iScene) const {
 				}
 		}
 	}
+	renderLight2DMarkers(iScene, selected);
+}
+
+void Viewport::renderLight2DMarkers(const shared<scene::Scene>& iScene, const scene::Entity& iSelected) const {
+	using LightType = scene::component::Light2D::Type;
+	constexpr math::vec3 axisX{1.f, 0.f, 0.f};
+	constexpr math::vec3 axisY{0.f, 1.f, 0.f};
+	for (const auto view = iScene->registry.view<scene::component::Light2D, scene::component::Transform>();
+		 const auto entity: view) {
+		const auto& light = view.get<scene::component::Light2D>(entity);
+		const scene::Entity ent{entity, iScene.get()};
+		const auto id = static_cast<int>(entity);
+		const math::mat4 world = iScene->getWorldTransform(ent)();
+		const math::vec3 position{world(0, 3), world(1, 3), world(2, 3)};
+		const math::vec4 color = light.enabled ? math::vec4{light.color.x(), light.color.y(), light.color.z(), 1.f}
+											   : math::vec4{0.45f, 0.45f, 0.45f, 0.6f};
+		const float radius = getLightMarkerRadius(position);
+		const bool isSelected = iSelected && static_cast<uint32_t>(ent) == static_cast<uint32_t>(iSelected);
+		if (light.type == LightType::Ambient) {
+			// A sun disc: an ambient light has no position, only a handle to select it.
+			drawLightCircle(position, axisX, axisY, radius, color, id);
+			drawLightCircle(position, axisX, axisY, radius * 0.5f, color, id);
+			continue;
+		}
+		drawLightBulb(position, radius * 2.4f, light.enabled, id);
+		if (!isSelected)
+			continue;
+		if (light.type == LightType::Point) {
+			drawLightCircle(position, axisX, axisY, light.radius, color, id);
+			continue;
+		}
+		// Spot: its cone in the sprite plane, along the +X axis of the entity.
+		math::vec3 direction{world(0, 0), world(1, 0), 0.f};
+		direction = direction.normSq() > 1e-12f ? direction.normalized() : axisX;
+		const math::vec3 side{-direction.y(), direction.x(), 0.f};
+		for (const float angle: {light.outerAngle, -light.outerAngle, light.innerAngle, -light.innerAngle}) {
+			const math::vec3 edge = direction * std::cos(angle) + side * std::sin(angle);
+			renderer::Renderer2D::drawLine(
+					{.point1 = position, .point2 = position + edge * light.radius, .color = color, .entityId = id});
+		}
+	}
 }
 
 void Viewport::drawLightBulb(const math::vec3& iPosition, const float iSize, const bool iEnabled,
@@ -2484,6 +2536,160 @@ auto Viewport::pickLight() const -> scene::Entity {
 		}
 	}
 	return nearest;
+}
+
+namespace {
+
+// Space of the waypoints of a patrol: the world transform of the parent, identity for a root.
+auto patrolSpace(const shared<scene::Scene>& iScene, const scene::Entity& iEntity) -> math::mat4 {
+	const auto parentId = iEntity.getComponent<scene::component::Hierarchy>().parentId;
+	if (parentId != core::UUID{0}) {
+		if (const auto parent = iScene->findEntityByUUID(parentId); parent)
+			return iScene->getWorldTransform(parent)();
+	}
+	return math::identity<float, 4>();
+}
+
+auto transformPoint(const math::mat4& iMatrix, const math::vec3& iPoint) -> math::vec3 {
+	const math::vec4 point = iMatrix * math::vec4{iPoint.x(), iPoint.y(), iPoint.z(), 1.f};
+	return {point.x(), point.y(), point.z()};
+}
+
+// The waypoints as the YAML `values` of `component.set`.
+auto waypointValues(const std::vector<math::vec3>& iWaypoints) -> std::string {
+	std::string text = "{waypoints: [";
+	for (std::size_t index = 0; index < iWaypoints.size(); ++index)
+		text += std::format("{}[{}, {}, {}]", index == 0 ? "" : ", ", iWaypoints[index].x(), iWaypoints[index].y(),
+							iWaypoints[index].z());
+	return text + "]}";
+}
+
+}// namespace
+
+void Viewport::renderBehaviourOverlays(const shared<scene::Scene>& iScene) const {
+	if (m_parent == nullptr || mp_document == nullptr || mp_document->state() != SceneDocument::State::Edit)
+		return;
+	const scene::Entity selected = m_parent->getSelectedEntity();
+	if (!selected)
+		return;
+	const auto id = static_cast<int>(static_cast<uint32_t>(selected));
+	constexpr math::vec4 range{0.35f, 0.85f, 1.f, 1.f};
+	constexpr math::vec4 route{1.f, 0.8f, 0.25f, 1.f};
+	if (selected.hasComponent<scene::component::Oscillator>()) {
+		const auto& oscillator = selected.getComponent<scene::component::Oscillator>();
+		const math::vec3 start = iScene->getWorldTransform(selected).translation();
+		const math::vec3 end = start + oscillator.offset;
+		const float radius = getLightMarkerRadius(start);
+		renderer::Renderer2D::drawLine({.point1 = start, .point2 = end, .color = range, .entityId = id});
+		for (const auto& point: {start, end})
+			drawLightCircle(point, {1.f, 0.f, 0.f}, {0.f, 1.f, 0.f}, radius, range, id);
+	}
+	if (selected.hasComponent<scene::component::Patrol>()) {
+		const auto& patrol = selected.getComponent<scene::component::Patrol>();
+		const math::mat4 space = patrolSpace(iScene, selected);
+		const float z = selected.getComponent<scene::component::Transform>().transform.translation().z();
+		math::vec3 previous;
+		for (std::size_t index = 0; index < patrol.waypoints.size(); ++index) {
+			const math::vec3 point =
+					transformPoint(space, {patrol.waypoints[index].x(), patrol.waypoints[index].y(), z});
+			const float radius = getLightMarkerRadius(point);
+			if (index > 0)
+				renderer::Renderer2D::drawLine({.point1 = previous, .point2 = point, .color = route, .entityId = id});
+			const bool picked = static_cast<int>(index) == m_patrolHandle;
+			drawLightCircle(point, {1.f, 0.f, 0.f}, {0.f, 1.f, 0.f}, radius * (picked ? 1.6f : 1.f),
+							picked ? math::vec4{1.f, 1.f, 1.f, 1.f} : route, id);
+			previous = point;
+		}
+		if (patrol.waypoints.empty() && patrol.wanderRadius > 0.f) {
+			const math::vec3 centre = iScene->getWorldTransform(selected).translation();
+			drawLightCircle(centre, {1.f, 0.f, 0.f}, {0.f, 1.f, 0.f}, patrol.wanderRadius, route, id);
+		}
+	}
+}
+
+auto Viewport::pickPatrolWaypoint() const -> int {
+	if (m_parent == nullptr || mp_document == nullptr)
+		return -1;
+	const auto& scene = mp_document->getActiveScene();
+	const scene::Entity selected = m_parent->getSelectedEntity();
+	const auto ray = getCursorRay();
+	if (!scene || !selected || !selected.hasComponent<scene::component::Patrol>() || !ray)
+		return -1;
+	const auto& [origin, direction] = *ray;
+	const auto& patrol = selected.getComponent<scene::component::Patrol>();
+	const math::mat4 space = patrolSpace(scene, selected);
+	const float z = selected.getComponent<scene::component::Transform>().transform.translation().z();
+	int nearest = -1;
+	float nearestDistance = std::numeric_limits<float>::max();
+	for (std::size_t index = 0; index < patrol.waypoints.size(); ++index) {
+		const math::vec3 point = transformPoint(space, {patrol.waypoints[index].x(), patrol.waypoints[index].y(), z});
+		const math::vec3 toPoint = point - origin;
+		const float along = toPoint.x() * direction.x() + toPoint.y() * direction.y() + toPoint.z() * direction.z();
+		if (along <= 0.f)
+			continue;
+		const float offAxis = (toPoint - direction * along).norm();
+		if (offAxis <= getLightMarkerRadius(point) * 1.8f && along < nearestDistance) {
+			nearestDistance = along;
+			nearest = static_cast<int>(index);
+		}
+	}
+	return nearest;
+}
+
+auto Viewport::renderWaypointGizmo() -> bool {
+	if (m_parent == nullptr || mp_document == nullptr || m_patrolHandle < 0)
+		return false;
+	const auto& scene = mp_document->getActiveScene();
+	const scene::Entity selected = m_parent->getSelectedEntity();
+	if (!scene || !selected || !selected.hasComponent<scene::component::Patrol>() ||
+		mp_document->state() != SceneDocument::State::Edit) {
+		m_patrolHandle = -1;
+		return false;
+	}
+	auto& waypoints = selected.getComponent<scene::component::Patrol>().waypoints;
+	if (static_cast<std::size_t>(m_patrolHandle) >= waypoints.size()) {
+		m_patrolHandle = -1;
+		return false;
+	}
+	auto& waypoint = waypoints[static_cast<std::size_t>(m_patrolHandle)];
+	const math::mat4 space = patrolSpace(scene, selected);
+	const float z = selected.getComponent<scene::component::Transform>().transform.translation().z();
+	gui::Guizmo::initialize(m_lower, m_upper - m_lower,
+							m_isometric || m_editorCamera.getProjectionMode() ==
+												   renderer::CameraEditor::Projection::Orthographic);
+	const auto& camera = getActiveCamera();
+	math::mat4 cameraProjection = camera.getProjection();
+	if (renderer::gpu::RenderCommand::getApi() == renderer::gpu::RenderAPI::Type::Vulkan)
+		cameraProjection(1, 1) *= -1.f;
+	const math::vec3 world = transformPoint(space, {waypoint.x(), waypoint.y(), z});
+	math::mat4 handle = math::Transform{world, {0.f, 0.f, 0.f}, {1.f, 1.f, 1.f}}();
+	const bool snap = input::Input::isKeyPressed(input::key::LeftControl) || m_parent->getSettings().snapEnabled;
+	gui::Guizmo::manipulate(camera.getView(), cameraProjection, gui::Guizmo::Type::Translation, handle,
+							snap ? resolveTranslationSnapStep(m_parent->getSettings(), std::nullopt) : 0.f,
+							gui::Guizmo::Space::World);
+	const bool isUsing = gui::Guizmo::isUsing();
+	if (isUsing && !m_patrolWasUsing)
+		m_patrolBefore = waypoints;
+	if (isUsing) {
+		const math::vec3 moved = transformPoint(inverse(space), math::Transform{handle}.translation());
+		waypoint = {moved.x(), moved.y(), waypoint.z()};
+	}
+	if (!isUsing && m_patrolWasUsing && !m_patrolBefore.empty()) {
+		const auto afterValues = waypointValues(waypoints);
+		if (waypointValues(m_patrolBefore) != afterValues) {
+			waypoints = m_patrolBefore;
+			const commands::CommandTarget target{.registry = &m_parent->getRegistry(),
+												 .scene = scene,
+												 .undo = mp_undoManager};
+			std::ignore = target.execute("component.set",
+										 {{"entity", static_cast<int64_t>(static_cast<uint64_t>(selected.getUUID()))},
+										  {"component", std::string{"Patrol"}},
+										  {"values", afterValues}});
+		}
+		m_patrolBefore.clear();
+	}
+	m_patrolWasUsing = isUsing;
+	return true;
 }
 
 auto Viewport::pickMarker() const -> scene::Entity {

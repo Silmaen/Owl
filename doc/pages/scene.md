@@ -113,14 +113,14 @@ flowchart LR
     T -->|no| U2["update: Physics,<br/>PostPhysics, Late"] --> R["world transforms,<br/>render"]
 ```
 
-| Phase         | Engine systems                                                                  | Contract                                  |
-|---------------|---------------------------------------------------------------------------------|-------------------------------------------|
-| `Scripts`     | `owl.physics_poses` (simulated body poses), `owl.scripts` (native, Lua)         | May move, create or destroy entities      |
-| `PrePhysics`  | `owl.fly_cameras`, `owl.voxel_players`, `owl.raycast_walls`, `owl.player_input` | Gameplay controllers before the step      |
-| `Physics`     | `owl.physics` (one Box2D step and `on_collision` per tick)                      | Owns the physics step                     |
-| `PostPhysics` | `owl.entity_links`, `owl.triggers`                                              | Last phase allowed to change the world    |
-| `Late`        | `owl.navigation`, `owl.sound`, `owl.sprite_animation`                           | Reads the settled world (caches armed)    |
-| `Ended`       | `owl.game_over` ("Victory!" / "You loose!" message)                             | Replaces every other phase once game over |
+| Phase         | Engine systems                                                                                                    | Contract                                  |
+|---------------|-------------------------------------------------------------------------------------------------------------------|-------------------------------------------|
+| `Scripts`     | `owl.physics_poses` (simulated body poses), `owl.scripts` (native, Lua)                                           | May move, create or destroy entities      |
+| `PrePhysics`  | `owl.oscillators`, `owl.patrols`, `owl.fly_cameras`, `owl.voxel_players`, `owl.raycast_walls`, `owl.player_input` | Gameplay controllers before the step      |
+| `Physics`     | `owl.physics` (one Box2D step and `on_collision` per tick)                                                        | Owns the physics step                     |
+| `PostPhysics` | `owl.drift`, `owl.light_flicker`, `owl.entity_links`, `owl.triggers`                                              | Last phase allowed to change the world    |
+| `Late`        | `owl.navigation`, `owl.sound`, `owl.sprite_animation`                                                             | Reads the settled world (caches armed)    |
+| `Ended`       | `owl.game_over` ("Victory!" / "You loose!" message)                                                               | Replaces every other phase once game over |
 
 `owl.scripts` calls `on_update` in its `update` and `on_tick` in its `tick`; `owl.physics` steps the world in its
 `tick`. `Scene::getInputFrame()` gives the input of the running step (the tick frame in a `tick`, the frame one in an
@@ -240,11 +240,14 @@ The **local** transform; `Scene::getWorldTransform(entity)` gives the world one 
 
 #### SpriteRenderer
 
-| Field          | Type         | Default        | Description        |
-|----------------|--------------|----------------|--------------------|
-| `color`        | `math::vec4` | `{1, 1, 1, 1}` | Tint colour        |
-| `texture`      | `Texture2D`  | `nullptr`      | Sprite texture     |
-| `tilingFactor` | `float`      | `1.0`          | Texture repetition |
+| Field          | Type         | Default        | Description                                                                                                    |
+|----------------|--------------|----------------|----------------------------------------------------------------------------------------------------------------|
+| `color`        | `math::vec4` | `{1, 1, 1, 1}` | Tint colour                                                                                                    |
+| `texture`      | `Texture2D`  | `nullptr`      | Sprite texture                                                                                                 |
+| `tilingFactor` | `float`      | `1.0`          | Texture repetition                                                                                             |
+| `normalMap`    | `Texture2D`  | `nullptr`      | Tangent-space normal map (OpenGL convention, green up) lighting the sprite under the 2D lights; flat when null |
+| `castShadows`  | `bool`       | `false`        | The sprite quad blocks the 2D lights casting shadows; the sprite itself stays lit                              |
+| `lit`          | `bool`       | `true`         | The 2D lights of the scene light the sprite; unlit it keeps its colour (glows, markers)                        |
 
 YAML key: `SpriteRenderer`
 
@@ -305,6 +308,24 @@ the sun of the layer config lights only a scene without any `Light` component (n
 [Renderer > Lights and shadows](renderer.md#renderer-lights). Lua: `entity.set_light_color` / `get_light_color`,
 `entity.set_light_intensity` / `get_light_intensity`, `entity.set_light_enabled` / `is_light_enabled`,
 `entity.set_light_range`.
+
+#### Light2D {#light2d-component}
+
+| Field            | Type    | Default     | Description                                                                                |
+|------------------|---------|-------------|--------------------------------------------------------------------------------------------|
+| `type`           | `Type`  | `Point`     | `Ambient`, `Point` or `Spot`                                                               |
+| `enabled`        | `bool`  | `true`      | Whether the light shines; switched off it keeps its settings                               |
+| `color`          | `vec3`  | `{1, 1, 1}` | Colour, sRGB as authored                                                                   |
+| `intensity`      | `float` | `1`         | Multiplier of the colour                                                                   |
+| `radius`         | `float` | `5`         | Distance where a point or spot light reaches zero, in world units                          |
+| `falloff`        | `float` | `2`         | Exponent of the fade `1 - d / radius`: 1 linear, 2 brighter near the light                 |
+| `height`         | `float` | `1`         | Height above the sprite plane: the slant of the light on normal maps and isometric atlases |
+| `innerAngle`     | `float` | 25 degrees  | Half angle of the full-intensity spot cone (radians in YAML)                               |
+| `outerAngle`     | `float` | 40 degrees  | Half angle where the spot reaches zero (radians in YAML)                                   |
+| `castShadows`    | `bool`  | `false`     | Sprites flagged `castShadows` block the light                                              |
+| `shadowSoftness` | `float` | `1`         | Penumbra width in bins of the shadow map (0 hard, 1 to 3 soft)                             |
+
+YAML key: `Light2D`. Lights the 2D layers (sprites, tilemaps, isometric sprites), up to 64 per frame; a scene without any enabled `Light2D` draws unlit, and a scene with lights but no `Ambient` one keeps a white ambient, so lights only add. A point or spot light sits at the world position of its entity, a spot points along the entity +X axis (its Z rotation). See [Renderer > 2D lighting](renderer.md#renderer-lighting2d). Lua: the `entity.*_light_*` functions below also reach a `Light2D`; `entity.has_component(id, 'Light2D')`.
 
 #### Environment {#environment-component}
 
@@ -542,6 +563,92 @@ Enables C++ scripting via `ScriptableEntity`. Use `bind<T>()` to associate a scr
 class that implements `onCreate()`, `onUpdate(timestep)`, and `onDestroy()`.
 
 YAML key: `NativeScript` (not typically serialized in scenes).
+
+### Behaviour Components
+
+Authored behaviours that replace the scripts every game would copy. Each has an inspector, a Lua switch
+(`entity.set_<x>_enabled`, `entity.is_<x>_enabled`) and a system that reads the scene time (`Scene::getRuntimeSeconds()`),
+so the result depends on the fields and the time only.
+
+#### LightFlicker
+
+YAML key: `LightFlicker`, system `owl.light_flicker` (`PostPhysics`). It changes the intensity of the `Light` or
+`Light2D` of the same entity around the values authored in the scene, which stay untouched (Play runs on a copy). The
+colour shift tints the sprite of the entity when it has one, the colour of the light otherwise.
+
+| Field            | Type    | Default     | Description                                                                             |
+|------------------|---------|-------------|-----------------------------------------------------------------------------------------|
+| `style`          | enum    | `Fire`      | `Fire` (layered noise), `Candle` (wavering from the seed), `Pulse` (two sines, a torch) |
+| `enabled`        | `bool`  | `true`      | Off leaves the light as authored (Lua `entity.set_flicker_enabled`)                     |
+| `amplitude`      | `float` | `0.28`      | Largest relative swing of the intensity (0.28: 72 % to 128 %)                           |
+| `speed`          | `float` | `1`         | Time scale                                                                              |
+| `seed`           | `float` | `0`         | Offset in the noise: lights with different seeds never flicker together                 |
+| `colorShift`     | `vec3`  | `[0, 0, 0]` | Added to the colour at the brightest moment, taken off at the dimmest                   |
+| `positionJitter` | `vec3`  | `[0, 0, 0]` | Largest displacement along each axis, in world units                                    |
+| `dipRate`        | `float` | `0`         | Dips per second (a draught bends the flame); 0 for none                                 |
+| `dipDepth`       | `float` | `0.5`       | Share of the intensity a full dip takes off                                             |
+| `follow`         | UUID    | none        | Entity whose flicker this one follows (the flame cards of a fire)                       |
+| `scaleResponse`  | `vec3`  | `[0, 0, 0]` | Relative scale change per unit of relative intensity change of the followed entity      |
+
+```yaml
+LightFlicker:
+  style: Candle
+  amplitude: 0.35
+  seed: 48
+  positionJitter: [0.004, 0, 0.004]
+  dipRate: 0.55
+```
+
+#### Oscillator
+
+YAML key: `Oscillator`, system `owl.oscillators` (`PrePhysics`, `update` and `tick`). Moves the entity from its rest
+position (the `Transform` of the scene) to the rest position plus `offset` and back. An entity with a `PhysicBody` is
+moved through the physics step, its velocity set every tick towards the position of that tick, so a `Kinematic` body
+carries the bodies standing on it; any other entity has its `Transform` written each frame.
+
+| Field     | Type    | Default     | Description                                                          |
+|-----------|---------|-------------|----------------------------------------------------------------------|
+| `enabled` | `bool`  | `true`      | Lua `entity.set_oscillator_enabled`                                  |
+| `offset`  | `vec3`  | `[4, 0, 0]` | Farthest displacement from the rest position (drawn in the viewport) |
+| `period`  | `float` | `4`         | Seconds of a round trip                                              |
+| `phase`   | `float` | `0`         | Share of the cycle done when Play starts                             |
+| `easing`  | enum    | `Linear`    | `Linear` (constant speed) or `Smooth` (sinusoidal)                   |
+
+A platform that went `speed` units per second over `distance` units has `offset` = `distance` and `period` =
+`2 * distance / speed`.
+
+#### Patrol
+
+YAML key: `Patrol`, system `owl.patrols` (`PrePhysics`). Walks the `Transform` from waypoint to waypoint, waits at each,
+and turns round at the last (`PingPong`) or goes back to the first (`Loop`); the entity starts at the first waypoint.
+Without waypoints a `wanderRadius` above 0 picks a random point around the rest position each time it arrives, from
+`seed` only. It does not avoid obstacles: a route round them is a navigation request (`path.*`).
+
+| Field           | Type        | Default    | Description                                                     |
+|-----------------|-------------|------------|-----------------------------------------------------------------|
+| `enabled`       | `bool`      | `true`     | Lua `entity.set_patrol_enabled`                                 |
+| `waypoints`     | `vec3` list | empty      | Positions in the space of the `Transform`; z stays the entity's |
+| `mode`          | enum        | `PingPong` | `Loop` or `PingPong`                                            |
+| `speed`         | `float`     | `1.2`      | World units per second                                          |
+| `waitTime`      | `float`     | `1.5`      | Seconds at each waypoint                                        |
+| `wanderRadius`  | `float`     | `0`        | Random wander radius when there are no waypoints                |
+| `seed`          | `float`     | `0`        | Seed of the wander                                              |
+| `faceDirection` | `bool`      | `false`    | Mirror the sprite (scale x) towards the direction               |
+| `hopHeight`     | `float`     | `0`        | Hop while walking, in world units                               |
+| `hopRate`       | `float`     | `9`        | Rate of the hop, in radians per second                          |
+
+#### Drift
+
+YAML key: `Drift`, system `owl.drift` (`PostPhysics`). Places the entity at `cameraFollow` times the position of the
+primary camera, plus its rest position, plus a drift that grows by `velocity` each second and jumps from `+range` to
+`-range` on an axis whose `range` is above 0.
+
+| Field          | Type    | Default       | Description                                                   |
+|----------------|---------|---------------|---------------------------------------------------------------|
+| `enabled`      | `bool`  | `true`        | Lua `entity.set_drift_enabled`                                |
+| `velocity`     | `vec3`  | `[0.3, 0, 0]` | World units per second                                        |
+| `range`        | `vec3`  | `[20, 0, 0]`  | Half extent of the drift per axis; 0 for no wrap              |
+| `cameraFollow` | `float` | `0`           | Share of the camera movement followed: 0 pins it to the world |
 
 ### Audio Components
 
@@ -980,15 +1087,16 @@ Every file the engine writes carries a root `FormatVersion` integer:
 | `settings.yml`, `game_settings.yml` | `SettingsManager::format()`                    |
 | `owl_project.yml` (Owl Nest)        | `nest::Project::format()`                      |
 
-Scenes and prefabs are at version 6:
+Scenes are at version 7, prefabs at version 6 (they share the first five steps):
 
-| Step  | Migration                 | Effect                                                                                                                                                                                         |
-|-------|---------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| 1 → 2 | `bindEntityLinksByName`   | A name-only `EntityLink` gets the UUID of the first entity with that tag                                                                                                                       |
-| 2 → 3 | `centreLegacyUiText`      | A `UiText` without `horizontalAlignment` gets the centred layout it was drawn with                                                                                                             |
-| 3 → 4 | `convertLegacyHudLayout`  | A Y-up `UiRect` moves to the Y-down layout, an older `Canvas` to `ConstantPixels`                                                                                                              |
-| 4 → 5 | `dropUiRendererTag`       | `RendererTag: ui` leaves canvases and widgets, drawn by the HUD pass whatever their tag                                                                                                        |
-| 5 → 6 | `convertToPhysicalLights` | Light and Environment factors become physical values that look the same at EV100 15: directional × π·1.2·2^15 lux, point × 4π²·1.2·2^15 lm, spot × π²·1.2·2^15 lm, Environment × 1.2·2^15 nits |
+| Step  | Migration                 | Effect                                                                                                                                                                                              |
+|-------|---------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 1 → 2 | `bindEntityLinksByName`   | A name-only `EntityLink` gets the UUID of the first entity with that tag                                                                                                                            |
+| 2 → 3 | `centreLegacyUiText`      | A `UiText` without `horizontalAlignment` gets the centred layout it was drawn with                                                                                                                  |
+| 3 → 4 | `convertLegacyHudLayout`  | A Y-up `UiRect` moves to the Y-down layout, an older `Canvas` to `ConstantPixels`                                                                                                                   |
+| 4 → 5 | `dropUiRendererTag`       | `RendererTag: ui` leaves canvases and widgets, drawn by the HUD pass whatever their tag                                                                                                             |
+| 5 → 6 | `convertToPhysicalLights` | Light and Environment factors become physical values that look the same at EV100 15: directional × π·1.2·2^15 lux, point × 4π²·1.2·2^15 lm, spot × π²·1.2·2^15 lm, Environment × 1.2·2^15 nits      |
+| 6 → 7 | `moveCameraSceneScript`   | The script of the primary camera moves to the scene's `SceneScript` key when its source (found in the asset folders or next to the scene) never names `entity_id`; a script that is not found stays |
 
 Tilemaps are at version 3 ([Tilemap storage](#tilemap-storage)). The prefab `Version` key is something else: it
 counts the edits of one prefab and feeds `PrefabLink::syncedVersion`. A save embeds its scene with the scene's own
@@ -1023,7 +1131,16 @@ A `core::DocumentFormat` is a name plus an ordered list of `core::MigrationStep`
 Scenes, prefabs and entity snapshots are read with rapidyaml (`core::YamlNode`, the reading rules of yaml-cpp):
 a document at the current version, or a format 1 one without a name-only `EntityLink`, is read directly; any other
 goes through the yaml-cpp migration chain (`upgradeDocumentText`) first. A new scene or prefab step must update that
-shortcut (`canReadWithoutMigration`). Components read their value from `getImpl()->node`; writing stays on yaml-cpp.
+shortcut (`canReadWithoutMigration`).
+
+### Scene script
+
+A scene owns one optional script, the root `SceneScript:` key (`scriptPath` and `properties`, written like a
+`LuaScript`), read and written with `Scene::getSceneScript()`. At Play start it is loaded before the entity scripts
+and gets `on_create`; each frame and tick it runs `on_update` / `on_tick` before the entity scripts of the
+`Scripts` phase; `on_destroy` runs at the end. It has the hooks of an entity script, reaches the world through
+`scene.*`, `entity.*`, `ui.*` and the other tables, and has no `entity_id`. The asset scanner packs it like any
+script, and a changed `.lua` file reloads it with the entity scripts. Components read their value from `getImpl()->node`; writing stays on yaml-cpp.
 
 ### Atomic writes
 

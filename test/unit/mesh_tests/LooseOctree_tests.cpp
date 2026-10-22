@@ -98,7 +98,8 @@ TEST(LooseOctree, FrustumQueryMatchesABruteForceTest) {
 		boxes.push_back(cube({position(random), position(random), position(random)}, size(random)));
 		tree.insert(id, boxes.back());
 	}
-	const auto frustum = math::Frustum::fromViewProjection(math::perspective(math::radians(60.f), 1.5f, 0.5f, 80.f));
+	const auto frustum =
+			math::Frustum::fromViewProjection(math::perspectiveReversedZ(math::radians(60.f), 1.5f, 0.5f, 80.f));
 	std::vector<uint32_t> expected;
 	for (uint32_t id = 0; id < boxes.size(); ++id) {
 		if (frustum.intersects(boxes[id]))
@@ -116,7 +117,7 @@ TEST(LooseOctree, HoldsFlatBoxes) {
 	LooseOctree tree;
 	tree.insert(4, math::box3f{math::vec3{-1.f, -1.f, 0.f}, math::vec3{1.f, 1.f, 0.f}});
 	tree.insert(5, math::box3f{math::vec3{30.f, 30.f, 0.f}, math::vec3{31.f, 31.f, 0.f}});
-	const auto frustum = math::Frustum::fromViewProjection(math::ortho(-5.f, 5.f, -5.f, 5.f, -1.f, 1.f));
+	const auto frustum = math::Frustum::fromViewProjection(math::orthoReversedZ(-5.f, 5.f, -5.f, 5.f, -1.f, 1.f));
 	std::vector<uint32_t> ids;
 	tree.query(frustum, ids);
 	EXPECT_EQ(ids, (std::vector<uint32_t>{4}));
