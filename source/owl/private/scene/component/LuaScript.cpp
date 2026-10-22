@@ -155,7 +155,7 @@ auto LuaScript::fromYaml(const std::string& iText) -> std::optional<LuaScript> {
 		const auto document = mkShared<const core::YamlDocument>(iText, "script");
 		if (!document->getRoot().isMap())
 			return std::nullopt;
-		core::Serializer reader;
+		const core::Serializer reader;
 		reader.getImpl()->source = document;
 		reader.getImpl()->node = document->getRoot();
 		LuaScript script;

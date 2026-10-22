@@ -2776,7 +2776,7 @@ void renderProps(Patrol& ioComponent) {
 		ioComponent.waypoints.erase(ioComponent.waypoints.begin() + static_cast<std::ptrdiff_t>(*removed));
 	if (ImGui::Button("Add Waypoint", {-FLT_MIN, 0.f})) {
 		const auto last = ioComponent.waypoints.empty() ? math::vec3{0.f, 0.f, 0.f} : ioComponent.waypoints.back();
-		ioComponent.waypoints.push_back({last.x() + 1.f, last.y(), last.z()});
+		ioComponent.waypoints.emplace_back(last.x() + 1.f, last.y(), last.z());
 	}
 	fieldTooltip("Add a waypoint one unit after the last one; drag its handle in the viewport to place it.");
 }

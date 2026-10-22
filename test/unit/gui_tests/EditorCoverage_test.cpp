@@ -28,7 +28,7 @@
 namespace {
 
 auto readFile(const std::filesystem::path& iPath) -> std::string {
-	std::ifstream file{iPath, std::ios::binary};
+	const std::ifstream file{iPath, std::ios::binary};
 	std::ostringstream text;
 	text << file.rdbuf();
 	return text.str();
@@ -43,7 +43,10 @@ auto bracedBlock(const std::string& iText, const size_t iFrom) -> std::string {
 		return {};
 	int depth = 0;
 	for (size_t index = open; index < iText.size(); ++index) {
-		depth += iText[index] == '{' ? 1 : iText[index] == '}' ? -1 : 0;
+		if (iText[index] == '{')
+			++depth;
+		else if (iText[index] == '}')
+			--depth;
 		if (depth == 0)
 			return iText.substr(open + 1, index - open - 1);
 	}
@@ -143,7 +146,7 @@ TEST(EditorCoverage, EveryAuthoredFieldOfAComponentHasAWidgetInItsInspector) {
 			++checked;
 			if (drawn.contains(field) || (g_notDrawn.contains(name) && g_notDrawn.at(name).contains(field)))
 				continue;
-			missing.push_back(name + "::" + field);
+			missing.push_back(std::string{name}.append("::").append(field));
 		}
 	}
 	EXPECT_GT(checked, 100u);
@@ -171,8 +174,8 @@ TEST(EditorCoverage, EveryKeyARenderLayerReadsHasAFieldInTheSceneSettingsOverrid
 		for (auto it = std::sregex_iterator(body.begin(), body.end(), key); it != std::sregex_iterator(); ++it) {
 			++checked;
 			const auto name = (*it)[1].str();
-			if (settings.find("\"" + name + "\"") == std::string::npos)
-				missing.push_back(file + ":" + name);
+			if (settings.find(std::string{"\""}.append(name).append("\"")) == std::string::npos)
+				missing.push_back(std::string{file}.append(":").append(name));
 		}
 	}
 	EXPECT_GT(checked, 15u);

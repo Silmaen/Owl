@@ -494,7 +494,7 @@ auto SceneSerializer::applyParsed(const ParsedScene& iParsed) const -> SceneLoad
 			mp_scene->getPhysicsSettings() = deserializePhysicsSettings(root["Physics"]);
 			mp_scene->getSceneScript() = component::LuaScript{};
 			if (const auto script = root["SceneScript"]; script.isMap()) {
-				core::Serializer scriptNode;
+				const core::Serializer scriptNode;
 				scriptNode.getImpl()->node = script;
 				mp_scene->getSceneScript().deserialize(scriptNode);
 			}

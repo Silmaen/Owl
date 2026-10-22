@@ -617,9 +617,11 @@ void EditorLayer::saveSceneAs() {
 											: std::string{isHud ? "Untitled.owlhud" : "Untitled.owl"};
 	const bool isPrefab = doc != nullptr && doc->getActiveScene() &&
 						  doc->getActiveScene()->getDocumentKind() == scene::DocumentKind::Prefab;
-	const char* filter = isHud      ? "Owl HUD (*.owlhud)|owlhud\n"
-						 : isPrefab ? "Owl Prefab (*.owlprefab)|owlprefab\n"
-									: "Owl Scene (*.owl)|owl\n";
+	const char* filter = "Owl Scene (*.owl)|owl\n";
+	if (isHud)
+		filter = "Owl HUD (*.owlhud)|owlhud\n";
+	else if (isPrefab)
+		filter = "Owl Prefab (*.owlprefab)|owlprefab\n";
 	if (const auto filepath = platform::FileDialog::saveFile(filter, defaultName); !filepath.empty())
 		saveSceneAs(filepath);
 }

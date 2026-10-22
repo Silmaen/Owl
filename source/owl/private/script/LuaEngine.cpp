@@ -847,7 +847,7 @@ void LuaEngine::setGlobalNumbers(const std::string& iName, const std::span<const
 		if (index < iKeys.size())
 			lua_setfield(mp_state, -2, iKeys[index]);
 		else
-			lua_rawseti(mp_state, -2, static_cast<lua_Integer>(index + 1));
+			lua_rawseti(mp_state, -2, static_cast<lua_Integer>(index) + 1);
 	}
 	popRawGlobal(iName);
 }
@@ -858,7 +858,7 @@ void LuaEngine::setGlobalStrings(const std::string& iName, const std::span<const
 	lua_createtable(mp_state, static_cast<int>(iValues.size()), 0);
 	for (size_t index = 0; index < iValues.size(); ++index) {
 		lua_pushlstring(mp_state, iValues[index].data(), iValues[index].size());
-		lua_rawseti(mp_state, -2, static_cast<lua_Integer>(index + 1));
+		lua_rawseti(mp_state, -2, static_cast<lua_Integer>(index) + 1);
 	}
 	popRawGlobal(iName);
 }

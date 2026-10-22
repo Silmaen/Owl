@@ -48,8 +48,8 @@ struct Sample {
 
 auto sampleFlicker(const component::LightFlicker& iFlicker, const double iSeconds) -> Sample {
 	using Style = component::LightFlicker::Style;
-	const double t = iSeconds * static_cast<double>(iFlicker.speed);
-	const double seed = static_cast<double>(iFlicker.seed);
+	const auto t = iSeconds * static_cast<double>(iFlicker.speed);
+	const auto seed = static_cast<double>(iFlicker.seed);
 	Sample sample;
 	switch (iFlicker.style) {
 		case Style::Fire:
@@ -143,8 +143,8 @@ void applyJitter(const Entity& iEntity, const component::LightFlicker& iFlicker,
 	const auto& jitter = iFlicker.positionJitter;
 	if (jitter.x() == 0.f && jitter.y() == 0.f && jitter.z() == 0.f)
 		return;
-	const double t = iSeconds * static_cast<double>(iFlicker.speed);
-	const double seed = static_cast<double>(iFlicker.seed);
+	const auto t = iSeconds * static_cast<double>(iFlicker.speed);
+	const auto seed = static_cast<double>(iFlicker.seed);
 	iEntity.getComponent<component::Transform>().transform.translation() = {
 			iFlicker.m_basePosition.x() + jitter.x() * static_cast<float>(noise(t * 3.1 + seed * 3.1 + 7.0)),
 			iFlicker.m_basePosition.y() + jitter.y() * static_cast<float>(noise(t * 3.7 + seed * 4.3 + 13.0)),

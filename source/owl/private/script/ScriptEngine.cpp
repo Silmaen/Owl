@@ -63,7 +63,7 @@ auto readComponents(lua_State* iState, const std::array<float, Count>& iFallback
 	if (lua_type(iState, -1) != LUA_TTABLE)
 		return values;
 	for (size_t index = 0; index < Count; ++index) {
-		lua_rawgeti(iState, -1, static_cast<lua_Integer>(index + 1));
+		lua_rawgeti(iState, -1, static_cast<lua_Integer>(index) + 1);
 		if (lua_isnumber(iState, -1) != 0)
 			values[index] = static_cast<float>(lua_tonumber(iState, -1));
 		lua_pop(iState, 1);

@@ -116,9 +116,7 @@ void stepPatrol(const Entity& iEntity, component::Patrol& ioPatrol, const float 
 	if (canMove && ioPatrol.m_wait > 0.f) {
 		ioPatrol.m_wait -= iSeconds;
 	} else if (canMove) {
-		if (ioPatrol.waypoints.empty() && ioPatrol.m_target == ioPatrol.m_position)
-			ioPatrol.m_target = nextTarget(ioPatrol);
-		else if (!ioPatrol.waypoints.empty())
+		if (!ioPatrol.waypoints.empty() || ioPatrol.m_target == ioPatrol.m_position)
 			ioPatrol.m_target = nextTarget(ioPatrol);
 		const auto toTarget = ioPatrol.m_target - ioPatrol.m_position;
 		const float distance = std::sqrt(toTarget.x() * toTarget.x() + toTarget.y() * toTarget.y());
