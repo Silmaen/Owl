@@ -48,6 +48,17 @@ struct OWL_API ScriptProperty {
 
 /**
  * @brief
+ *  A function a script defines at its top level.
+ */
+struct OWL_API ScriptFunction {
+	/// Global name of the function.
+	std::string name;
+	/// One-based line of the `function` keyword in the script.
+	uint32_t line = 0;
+};
+
+/**
+ * @brief
  *  Resource limits of one Lua state (one per script instance).
  *
  * A limit set to zero is disabled. The defaults are generous: a gameplay script stays orders of magnitude
@@ -98,6 +109,31 @@ public:
 	 */
 	[[nodiscard]] static auto extractPropertiesFromBuffer(const std::vector<uint8_t>& iData, const std::string& iName)
 			-> std::vector<ScriptProperty>;
+
+	/**
+	 * @brief
+	 *  List the functions a script file defines at its top level (the engine hooks and the handlers it names).
+	 * @param[in] iPath Path to the .lua file.
+	 * @return The functions ordered by line; empty when the script does not load.
+	 */
+	[[nodiscard]] static auto extractFunctions(const std::filesystem::path& iPath) -> std::vector<ScriptFunction>;
+
+	/**
+	 * @brief
+	 *  List the functions a script buffer defines at its top level.
+	 * @param[in] iData Buffer containing the Lua source code.
+	 * @param[in] iName Chunk name for error messages.
+	 * @return The functions ordered by line; empty when the script does not load.
+	 */
+	[[nodiscard]] static auto extractFunctionsFromBuffer(const std::vector<uint8_t>& iData, const std::string& iName)
+			-> std::vector<ScriptFunction>;
+
+	/**
+	 * @brief
+	 *  Names of the functions the engine calls on a script: lifecycle, collision, trigger, timer and interaction hooks.
+	 * @return The hook names, in the order the inspector lists them.
+	 */
+	[[nodiscard]] static auto getHookNames() -> const std::vector<std::string>&;
 
 	/**
 	 * @brief

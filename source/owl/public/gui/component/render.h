@@ -16,6 +16,10 @@
 #include <functional>
 #include <tuple>
 
+namespace owl::scene {
+class Scene;
+}// namespace owl::scene
+
 /**
  * @brief
  *  Namespace defining functions for draw components in GUI.
@@ -29,6 +33,30 @@ namespace owl::gui::component {
  * @param[in] iHandler Called with the path as stored in the component (relative to an asset folder).
  */
 OWL_API void setOpenAssetHandler(std::function<void(const std::filesystem::path&)> iHandler);
+
+/**
+ * @brief
+ *  Set the function that opens a script at a line (the editor sets it, a game leaves it empty).
+ * @param[in] iHandler Called with the path as stored in the component and a one-based line.
+ */
+OWL_API void setOpenAssetAtLineHandler(std::function<void(const std::filesystem::path&, uint32_t)> iHandler);
+
+/**
+ * @brief
+ *  Ask for a script to be opened at a line, or just opened when only `setOpenAssetHandler` is set.
+ * @param[in] iPath The path as stored in the component.
+ * @param[in] iLine One-based line to reveal.
+ * @return True when a handler took the request.
+ */
+OWL_API auto openAssetAtLine(const std::filesystem::path& iPath, uint32_t iLine) -> bool;
+
+/**
+ * @brief
+ *  Set the scene the inspector reads when it checks that a named Lua function exists (HUD, trigger and timer
+ *  handlers); null when no scene is inspected.
+ * @param[in] iScene The scene whose scripts define the handlers.
+ */
+OWL_API void setInspectedScene(const scene::Scene* iScene);
 
 /**
  * @brief

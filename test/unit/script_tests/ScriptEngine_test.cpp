@@ -125,3 +125,27 @@ TEST(ScriptEngine, extractPropertiesNoTable) {
 
 	core::Log::invalidate();
 }
+
+TEST(ScriptEngine, extractFunctionsGivesTheLineOfEachGlobalFunction) {
+	core::Log::init(core::Log::Level::Off);
+	const std::string text =
+			"local x = 1\nfunction on_create()\nend\n\nfunction helper(a)\n  return a\nend\non_update = function(dt) end\n";
+	const auto functions = ScriptEngine::extractFunctionsFromBuffer({text.begin(), text.end()}, "functions");
+	ASSERT_EQ(functions.size(), 3u);
+	EXPECT_EQ(functions[0].name, "on_create");
+	EXPECT_EQ(functions[0].line, 2u);
+	EXPECT_EQ(functions[1].name, "helper");
+	EXPECT_EQ(functions[1].line, 5u);
+	EXPECT_EQ(functions[2].name, "on_update");
+	EXPECT_EQ(functions[2].line, 8u);
+	const std::string broken = "function (";
+	EXPECT_TRUE(ScriptEngine::extractFunctionsFromBuffer({broken.begin(), broken.end()}, "broken").empty());
+	core::Log::invalidate();
+}
+
+TEST(ScriptEngine, hookNamesListTheEngineCallbacks) {
+	const auto& hooks = ScriptEngine::getHookNames();
+	EXPECT_EQ(hooks.size(), 10u);
+	EXPECT_EQ(hooks.front(), "on_create");
+	EXPECT_EQ(hooks.back(), "on_timer");
+}

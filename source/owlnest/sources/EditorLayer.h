@@ -53,6 +53,7 @@
 #include <string>
 #include <string_view>
 #include <utility>
+#include <map>
 #include <vector>
 
 namespace owl::nest {
@@ -597,7 +598,15 @@ public:
 	 *  Open an asset named by an inspector field (relative to an asset folder) in its editor.
 	 * @param[in] iPath The path stored in the component.
 	 */
-	void openAssetFromInspector(const std::filesystem::path& iPath);
+	void openAssetFromInspector(const std::filesystem::path& iPath, uint32_t iLine = 0);
+
+	/**
+	 * @brief
+	 *  Select a line of an open code document and scroll to it.
+	 * @param[in] iPath The file of the document.
+	 * @param[in] iLine One-based line.
+	 */
+	void revealCodeLine(const std::filesystem::path& iPath, uint32_t iLine);
 
 	/**
 	 * @brief
@@ -997,6 +1006,8 @@ private:
 	 * queue at the start of `onImGuiRender` before any panel is rendered.
 	 */
 	std::vector<std::filesystem::path> m_deferredOpenPaths;
+	/// Line to reveal once the deferred file is open, by absolute path.
+	std::map<std::filesystem::path, uint32_t> m_deferredOpenLines;
 	/// Project to switch to at the start of the next frame (empty path: close only), set by `requestProjectSwitch`.
 	std::optional<std::filesystem::path> m_pendingProjectSwitch;
 	/// The currently loaded project (or empty when no project is open).

@@ -191,6 +191,13 @@ public:
 
 	/**
 	 * @brief
+	 *  Select a line and scroll it to the middle of the view.
+	 * @param[in] iLine One-based line; ignored when out of the document.
+	 */
+	void revealLine(size_t iLine) const;
+
+	/**
+	 * @brief
 	 *  The embedded text-editor widget (editing, selection, search, undo), null before `onAttach`.
 	 * @return The widget, or nullptr when the document is not attached.
 	 */

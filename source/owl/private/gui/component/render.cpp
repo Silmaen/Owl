@@ -154,6 +154,11 @@ auto openAssetHandler() -> std::function<void(const std::filesystem::path&)>& {
 	return handler;
 }
 
+auto openAssetAtLineHandler() -> std::function<void(const std::filesystem::path&, uint32_t)>& {
+	static std::function<void(const std::filesystem::path&, uint32_t)> handler;
+	return handler;
+}
+
 // Asset path field: its atlas swatch, the path (read only), then Open in its editor and Clear.
 auto assetPathRow(const char* iLabel, const std::string& iPath, const char* iHint, const char* iOpenTip,
 				  const shared<renderer::gpu::Texture2D>& iPreview = nullptr, const bool iCanOpen = true) -> bool {
@@ -189,6 +194,18 @@ auto assetPathRow(const char* iLabel, const std::string& iPath, const char* iHin
 	return cleared;
 }
 
+// Script path as stored in a component, resolved against the asset folders.
+auto resolveScriptPath(const std::string& iScriptPath) -> std::filesystem::path {
+	std::filesystem::path resolved{iScriptPath};
+	if (!app::Application::instanced())
+		return resolved;
+	for (const auto& [title, assetsPath]: app::Application::get().getAssetDirectories()) {
+		if (const auto candidate = assetsPath / iScriptPath; exists(candidate))
+			return candidate;
+	}
+	return resolved;
+}
+
 // Read the properties a script declares again when its path or its file changes, keeping the values already set.
 void syncScriptProperties(LuaScript& ioComponent) {
 	struct Scan {
@@ -204,15 +221,7 @@ void syncScriptProperties(LuaScript& ioComponent) {
 	if (scan.path == ioComponent.scriptPath && now - scan.checkedAt < 1.0)
 		return;
 	scan.checkedAt = now;
-	std::filesystem::path resolved{ioComponent.scriptPath};
-	if (app::Application::instanced()) {
-		for (const auto& [title, assetsPath]: app::Application::get().getAssetDirectories()) {
-			if (const auto candidate = assetsPath / ioComponent.scriptPath; exists(candidate)) {
-				resolved = candidate;
-				break;
-			}
-		}
-	}
+	const auto resolved = resolveScriptPath(ioComponent.scriptPath);
 	std::error_code error;
 	const auto time = std::filesystem::last_write_time(resolved, error);
 	if (error || (scan.path == ioComponent.scriptPath && scan.time == time))
@@ -236,6 +245,117 @@ void syncScriptProperties(LuaScript& ioComponent) {
 void fieldTooltip(const char* iText) {
 	if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay))
 		ImGui::SetTooltip("%s", iText);
+}
+
+// Functions a script defines, read again when its file changes (at most once a second).
+auto scriptFunctionsOf(const std::string& iScriptPath) -> const std::vector<script::ScriptFunction>& {
+	struct Cache {
+		std::vector<script::ScriptFunction> functions;
+		std::filesystem::file_time_type time;
+		double checkedAt = -1.0;
+	};
+	static std::unordered_map<std::string, Cache> caches;
+	auto& cache = caches[iScriptPath];
+	const double now = ImGui::GetTime();
+	if (cache.checkedAt >= 0.0 && now - cache.checkedAt < 1.0)
+		return cache.functions;
+	cache.checkedAt = now;
+	const auto resolved = resolveScriptPath(iScriptPath);
+	std::error_code error;
+	const auto time = std::filesystem::last_write_time(resolved, error);
+	if (error) {
+		cache.functions.clear();
+		return cache.functions;
+	}
+	if (time != cache.time || cache.functions.empty()) {
+		cache.time = time;
+		cache.functions = script::ScriptEngine::extractFunctions(resolved);
+	}
+	return cache.functions;
+}
+
+auto findFunction(const std::vector<script::ScriptFunction>& iFunctions, const std::string_view iName)
+		-> const script::ScriptFunction* {
+	const auto found = std::ranges::find(iFunctions, iName, &script::ScriptFunction::name);
+	return found == iFunctions.end() ? nullptr : &*found;
+}
+
+auto inspectedScene() -> const Scene*& {
+	static const Scene* scene = nullptr;
+	return scene;
+}
+
+// Small Open button that reveals a function of a script in the code editor.
+void openFunctionButton(const char* iId, const std::string& iScriptPath, const uint32_t iLine) {
+	ImGui::PushID(iId);
+	if (widgets::iconButton("##openFunction", {.glyph = icon::externalLink,
+											   .tooltip = "Open",
+											   .description = "Open the script at the line of the function.",
+											   .disabled = !openAssetHandler() && !openAssetAtLineHandler()}))
+		std::ignore = component::openAssetAtLine(iScriptPath, iLine);
+	ImGui::PopID();
+}
+
+// Inspector row naming a Lua function the engine calls: the name, then the script of the scene that defines it.
+void handlerRow(const char* iLabel, std::string& ioName, const char* iDefaultName, const char* iTooltip) {
+	prop::InputText(iLabel, &ioName);
+	if (iTooltip != nullptr)
+		fieldTooltip(iTooltip);
+	const std::string name = ioName.empty() && iDefaultName != nullptr ? std::string{iDefaultName} : ioName;
+	if (name.empty())
+		return;
+	const Scene* scene = inspectedScene();
+	if (scene == nullptr)
+		return;
+	ImGui::PushID(iLabel);
+	std::string definedIn;
+	uint32_t line = 0;
+	bool anyScript = false;
+	for (const auto view = scene->registry.view<LuaScript>(); const auto entity: view) {
+		const auto& script = view.get<LuaScript>(entity);
+		if (script.scriptPath.empty())
+			continue;
+		anyScript = true;
+		if (const auto* function = findFunction(scriptFunctionsOf(script.scriptPath), name); function != nullptr) {
+			definedIn = script.scriptPath;
+			line = function->line;
+			break;
+		}
+	}
+	if (!definedIn.empty()) {
+		ImGui::TextDisabled("%s: %s, line %u", name.c_str(), definedIn.c_str(), line);
+		ImGui::SameLine();
+		openFunctionButton("##open", definedIn, line);
+	} else if (scene->getDocumentKind() == DocumentKind::Hud) {
+		ImGui::TextDisabled("%s: defined by a script of the scene that draws this HUD.", name.c_str());
+	} else if (!anyScript) {
+		widgets::notice(std::format("No script in this scene defines {}.", name).c_str());
+	} else {
+		widgets::notice(std::format("No script of this scene defines {}.", name).c_str());
+	}
+	ImGui::PopID();
+}
+
+// The hooks the engine calls on a script: defined or not, with the line and an Open button.
+void renderHooks(const LuaScript& iComponent) {
+	if (iComponent.scriptPath.empty() || !widgets::subHeader("Hooks", true))
+		return;
+	const auto& functions = scriptFunctionsOf(iComponent.scriptPath);
+	for (const auto& hook: script::ScriptEngine::getHookNames()) {
+		const auto* function = findFunction(functions, hook);
+		ImGui::PushID(hook.c_str());
+		ImGui::AlignTextToFramePadding();
+		if (function != nullptr) {
+			ImGui::TextUnformatted(hook.c_str());
+			ImGui::SameLine();
+			ImGui::TextDisabled("line %u", function->line);
+			ImGui::SameLine();
+			openFunctionButton("##open", iComponent.scriptPath, function->line);
+		} else {
+			ImGui::TextDisabled("%s (not defined)", hook.c_str());
+		}
+		ImGui::PopID();
+	}
 }
 
 // Accept a Content Browser item whose extension is one of the given ones (lower case, with the dot).
@@ -1293,32 +1413,20 @@ void renderProps(Trigger& ioComponent) {
 
 		fieldTooltip("If checked, the timer restarts after each fire. Otherwise it fires once.");
 
-		prop::InputText("Callback", &ioComponent.trigger.callbackName);
-
-		fieldTooltip("Lua function name to call. Defaults to on_timer if empty.");
-		if (ioComponent.trigger.callbackName.empty())
-
-			ImGui::TextDisabled("Default: on_timer");
+		handlerRow("Callback", ioComponent.trigger.callbackName, "on_timer",
+				   "Lua function name to call. Defaults to on_timer if empty.");
 	}
 	if (ioComponent.trigger.type == SceneTrigger::TriggerType::Interaction) {
 		prop::DragFloat("Interaction Range", &ioComponent.trigger.interactionRange, 0.05f, 0.1f, 20.0f);
 
 		fieldTooltip("Distance within which the player can press E to interact.");
 
-		prop::InputText("Callback", &ioComponent.trigger.callbackName);
-
-		fieldTooltip("Lua function name to call. Defaults to on_interact if empty.");
-		if (ioComponent.trigger.callbackName.empty())
-
-			ImGui::TextDisabled("Default: on_interact");
+		handlerRow("Callback", ioComponent.trigger.callbackName, "on_interact",
+				   "Lua function name to call. Defaults to on_interact if empty.");
 	}
 	if (ioComponent.trigger.type == SceneTrigger::TriggerType::LuaCallback) {
-		prop::InputText("Callback", &ioComponent.trigger.callbackName);
-
-		fieldTooltip("Lua function name to call when the player overlaps. Defaults to on_triggered if empty.");
-		if (ioComponent.trigger.callbackName.empty())
-
-			ImGui::TextDisabled("Default: on_triggered");
+		handlerRow("Callback", ioComponent.trigger.callbackName, "on_triggered",
+				   "Lua function name to call when the player overlaps. Defaults to on_triggered if empty.");
 	}
 	// Info: all overlap triggers also fire on_trigger_enter / on_trigger_exit.
 	if (ioComponent.trigger.type != SceneTrigger::TriggerType::Victory &&
@@ -1441,6 +1549,7 @@ void renderProps(LuaScript& ioComponent) {
 	if (std::filesystem::path dropped; widgets::assetDropTarget(widgets::AssetKind::LuaScript, dropped))
 		ioComponent.scriptPath = dropped.string();
 	syncScriptProperties(ioComponent);
+	renderHooks(ioComponent);
 	if (!ioComponent.properties.empty() && widgets::subHeader("Properties", true)) {
 		for (size_t idx = 0; idx < ioComponent.properties.size(); ++idx) {
 			auto& prop = ioComponent.properties[idx];
@@ -1659,8 +1768,8 @@ void renderProps(UiButton& ioComponent) {
 	fieldTooltip("Button background color while the mouse button is held down.");
 	prop::ColorEdit4("Disabled Color", reinterpret_cast<float*>(&ioComponent.disabledColor));
 	fieldTooltip("Button background color when disabled (cannot be clicked).");
-	prop::InputText("On Click Callback", &ioComponent.onClickCallback);
-	fieldTooltip("Lua function name to call when the button is clicked (e.g. on_play_clicked).");
+	handlerRow("On Click Callback", ioComponent.onClickCallback, nullptr,
+			   "Lua function name to call when the button is clicked (e.g. on_play_clicked).");
 }
 
 void renderProps(UiSlider& ioComponent) {
@@ -1676,8 +1785,8 @@ void renderProps(UiSlider& ioComponent) {
 	prop::DragFloat("Step", &ioComponent.step, 0.01f, 0.0f, 1000.0f);
 	fieldTooltip(
 			"Change of the value per ui_left / ui_right press on the focused slider. 0: a twentieth of the range.");
-	prop::InputText("On Value Changed", &ioComponent.onValueChangedCallback);
-	fieldTooltip("Lua function called when the value changes. Receives the new value in _slider_value.");
+	handlerRow("On Value Changed", ioComponent.onValueChangedCallback, nullptr,
+			   "Lua function called when the value changes. Receives the new value in _slider_value.");
 }
 
 void renderProps(UiProgressBar& ioComponent) {
@@ -1699,8 +1808,8 @@ void renderProps(UiWindow& ioComponent) {
 	fieldTooltip("The title bar drags the window; it stays inside the screen.");
 	prop::Checkbox("Closable", &ioComponent.closable);
 	fieldTooltip("Show a close button that hides the window (ui.set_visible shows it again).");
-	prop::InputText("On Close Callback", &ioComponent.onCloseCallback);
-	fieldTooltip("Lua function called when the close button is pressed.");
+	handlerRow("On Close Callback", ioComponent.onCloseCallback, nullptr,
+			   "Lua function called when the close button is pressed.");
 }
 
 void renderProps(UiLayout& ioComponent) {
@@ -1762,11 +1871,11 @@ void renderProps(UiList& ioComponent) {
 	prop::DragFloat("Scroll Bar Width", &ioComponent.scrollBarWidth, 0.5f, 1.0f, 64.0f);
 	prop::ColorEdit4("Track Color", reinterpret_cast<float*>(&ioComponent.trackColor));
 	prop::ColorEdit4("Thumb Color", reinterpret_cast<float*>(&ioComponent.thumbColor));
-	prop::InputText("On Select", &ioComponent.onSelectCallback);
-	fieldTooltip("Lua function called when the selection changes. Reads _list_entity and _selected_index (1-based).");
-	prop::InputText("On Bind", &ioComponent.onBindCallback);
-	fieldTooltip("Lua function called once for a row in view nobody filled. Reads _list_entity and _row_index "
-				 "(1-based); it fills the row with ui.list_set_row. A row not filled shows Item N.");
+	handlerRow("On Select", ioComponent.onSelectCallback, nullptr,
+			   "Lua function called when the selection changes. Reads _list_entity and _selected_index (1-based).");
+	handlerRow("On Bind", ioComponent.onBindCallback, nullptr,
+			   "Lua function called once for a row in view nobody filled. Reads _list_entity and _row_index "
+			   "(1-based); it fills the row with ui.list_set_row. A row not filled shows Item N.");
 }
 
 void renderProps(UiTooltip& ioComponent) {
@@ -1837,8 +1946,8 @@ void renderProps(UiFocus& ioComponent, const Entity& iOwner) {
 	fieldTooltip("Widget the focus goes to on ui_left. (nearest): the nearest one on the left.");
 	uiEntityPicker("Right", ioComponent.right, iOwner);
 	fieldTooltip("Widget the focus goes to on ui_right. (nearest): the nearest one on the right.");
-	prop::InputText("On Focus", &ioComponent.onFocusCallback);
-	fieldTooltip("Lua function called when the widget takes the focus. Receives the widget id in _focused_entity.");
+	handlerRow("On Focus", ioComponent.onFocusCallback, nullptr,
+			   "Lua function called when the widget takes the focus. Receives the widget id in _focused_entity.");
 	prop::ColorEdit4("Highlight", reinterpret_cast<float*>(&ioComponent.highlightColor));
 	prop::DragFloat("Thickness", &ioComponent.highlightThickness, 0.1f, 0.5f, 32.0f);
 	fieldTooltip("Thickness of the frame around the focused widget, in reference pixels.");
@@ -2367,6 +2476,22 @@ void renderProps(FlyCamera& ioComponent) {
 void setOpenAssetHandler(std::function<void(const std::filesystem::path&)> iHandler) {
 	openAssetHandler() = std::move(iHandler);
 }
+
+void setOpenAssetAtLineHandler(std::function<void(const std::filesystem::path&, uint32_t)> iHandler) {
+	openAssetAtLineHandler() = std::move(iHandler);
+}
+
+auto openAssetAtLine(const std::filesystem::path& iPath, const uint32_t iLine) -> bool {
+	if (iPath.empty())
+		return false;
+	if (openAssetAtLineHandler()) {
+		openAssetAtLineHandler()(iPath, iLine);
+		return true;
+	}
+	return openAsset(iPath);
+}
+
+void setInspectedScene(const scene::Scene* iScene) { inspectedScene() = iScene; }
 
 auto openAsset(const std::filesystem::path& iPath) -> bool {
 	if (iPath.empty() || !openAssetHandler())

@@ -59,6 +59,12 @@ flowchart LR
 4. The exposed properties appear under **Properties**; they are read again when the file changes, values already set
    are kept
 5. Edit property values in the inspector — they are saved with the scene
+6. The **Hooks** list shows each function the engine calls (`on_create`, `on_update`, `on_tick`, `on_destroy`,
+   `on_collision`, `on_trigger_enter`, `on_trigger_exit`, `on_triggered`, `on_interact`, `on_timer`): a defined hook
+   gives its line and an **Open** button that reveals it in the code editor, an undefined one is dimmed
+7. A HUD widget (button, slider, list, window, focus), a timer, an interaction or a Lua-callback trigger that names a
+   function shows the script of the scene that defines it, with the same **Open** button, or a warning when none
+   does
 
 The resulting scene YAML looks like:
 

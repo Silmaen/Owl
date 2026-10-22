@@ -939,6 +939,7 @@ void drawGameComponents(scene::Entity& ioEntity, const commands::CommandTarget& 
 }// namespace
 
 void SceneHierarchy::drawComponents(const scene::Entity& iEntity) {
+	gui::component::setInspectedScene(m_context.get());
 	if (iEntity.hasComponent<Tag>()) {
 		auto& tag = iEntity.getComponent<Tag>().tag;
 		const auto frameTag = tag;

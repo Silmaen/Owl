@@ -165,6 +165,13 @@ void CodeEditorDocument::onImGuiRender() {
 		ImGui::PopFont();
 }
 
+void CodeEditorDocument::revealLine(const size_t iLine) const {
+	if (mp_editor == nullptr || iLine == 0)
+		return;
+	mp_editor->SelectLine(iLine - 1);
+	mp_editor->ScrollToLine(iLine - 1, TextEditor::Scroll::alignMiddle);
+}
+
 auto CodeEditorDocument::cursorLocation() const -> CursorLocation {
 	if (!mp_editor)
 		return {};

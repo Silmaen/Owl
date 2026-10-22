@@ -13,6 +13,7 @@
 #include "core/external/lua.h"
 #include "script/LuaEngine.h"
 
+#include <algorithm>
 #include <charconv>
 #include <cstdint>
 #include <cstdlib>
@@ -112,7 +113,52 @@ auto readProperties(lua_State* iState) -> std::vector<ScriptProperty> {
 	return props;
 }
 
+auto readFunctions(lua_State* iState) -> std::vector<ScriptFunction> {
+	std::vector<ScriptFunction> functions;
+	lua_pushglobaltable(iState);
+	const int tableIndex = lua_gettop(iState);
+	lua_pushnil(iState);
+	while (lua_next(iState, tableIndex) != 0) {
+		if (lua_type(iState, -2) == LUA_TSTRING && lua_type(iState, -1) == LUA_TFUNCTION) {
+			const std::string name = lua_tostring(iState, -2);
+			lua_pushvalue(iState, -1);
+			lua_Debug info{};
+			if (lua_getinfo(iState, ">S", &info) != 0 && std::string_view{info.what} == "Lua")
+				functions.push_back({.name = name, .line = static_cast<uint32_t>(std::max(info.linedefined, 0))});
+		}
+		lua_pop(iState, 1);
+	}
+	lua_pop(iState, 1);
+	std::ranges::sort(functions, [](const ScriptFunction& iLeft, const ScriptFunction& iRight) -> bool {
+		return iLeft.line != iRight.line ? iLeft.line < iRight.line : iLeft.name < iRight.name;
+	});
+	return functions;
+}
+
 }// namespace
+
+auto ScriptEngine::extractFunctions(const std::filesystem::path& iPath) -> std::vector<ScriptFunction> {
+	const LuaEngine tempEngine;
+	if (!tempEngine.isValid() || !tempEngine.loadScript(iPath))
+		return {};
+	return readFunctions(tempEngine.getState());
+}
+
+auto ScriptEngine::extractFunctionsFromBuffer(const std::vector<uint8_t>& iData, const std::string& iName)
+		-> std::vector<ScriptFunction> {
+	const LuaEngine tempEngine;
+	if (!tempEngine.isValid() || !tempEngine.loadBuffer(iData, iName))
+		return {};
+	return readFunctions(tempEngine.getState());
+}
+
+auto ScriptEngine::getHookNames() -> const std::vector<std::string>& {
+	static const std::vector<std::string> names{"on_create",        "on_update",       "on_tick",
+												"on_destroy",       "on_collision",    "on_trigger_enter",
+												"on_trigger_exit",  "on_triggered",    "on_interact",
+												"on_timer"};
+	return names;
+}
 
 auto ScriptEngine::extractProperties(const std::filesystem::path& iPath) -> std::vector<ScriptProperty> {
 	const LuaEngine tempEngine;
