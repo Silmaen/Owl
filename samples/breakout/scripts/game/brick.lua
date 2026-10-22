@@ -10,9 +10,9 @@ properties = {
     { name = "r", type = "float", default = 0.9 },
     { name = "g", type = "float", default = 0.3 },
     { name = "b", type = "float", default = 0.3 },
+    { name = "flash_time", type = "float", default = 0.12, min = 0.01 },
 }
 
-local FLASH_TIME = 0.12
 
 local remaining = 1
 local broken = false
@@ -26,7 +26,7 @@ end
 
 local function apply_tint()
     local cr, cg, cb = colour()
-    local k = flash / FLASH_TIME
+    local k = flash / flash_time
     entity.set_tint(entity_id, cr + (1.0 - cr) * k, cg + (1.0 - cg) * k, cb + (1.0 - cb) * k, 1.0)
 end
 
@@ -57,7 +57,7 @@ function on_collision(other_id)
         shatter()
         return
     end
-    flash = FLASH_TIME
+    flash = flash_time
     apply_tint()
     sound.play("sounds/game/metal.wav")
 end

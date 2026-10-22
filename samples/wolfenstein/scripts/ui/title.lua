@@ -3,8 +3,11 @@
 -- settings). Continue loads the newest of the autosave (slot 1, written when a floor starts) and the quick save
 -- (slot 2, F6). Every change of screen is a fade through dark red (`scene.transition_to` with a colour).
 
+properties = {
+    { name = "fade_color", type = "color", default = { 0.22, 0.02, 0.02, 1 } },
+}
+
 local FLOORS = 3
-local FADE = { 0.22, 0.02, 0.02 }
 
 local pending_slot = 0
 local leaving = false
@@ -23,7 +26,7 @@ end
 
 function on_create()
     if not ui.is_transition_active() then
-        ui.transition_play("fade_in", 0.6, FADE[1], FADE[2], FADE[3])
+        ui.transition_play("fade_in", 0.6, fade_color.r, fade_color.g, fade_color.b)
     end
     window_id = scene.find_entity("HowToWindow")
     back_id = scene.find_entity("HowToBackButton")
@@ -63,7 +66,7 @@ local function leave(path, jingle)
     if jingle then
         sound.play("sounds/ui/start.wav")
     end
-    scene.transition_to(path, "fade_out", 0.5, FADE[1], FADE[2], FADE[3])
+    scene.transition_to(path, "fade_out", 0.5, fade_color.r, fade_color.g, fade_color.b)
 end
 
 function on_new_game_clicked()
@@ -83,7 +86,7 @@ function on_continue_clicked()
     leaving = true
     sound.play("sounds/ui/start.wav")
     pending_slot = slot
-    ui.transition_play("fade_out", 0.4, FADE[1], FADE[2], FADE[3])
+    ui.transition_play("fade_out", 0.4, fade_color.r, fade_color.g, fade_color.b)
 end
 
 function on_how_to_clicked()

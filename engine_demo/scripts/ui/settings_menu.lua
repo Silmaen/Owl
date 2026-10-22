@@ -4,6 +4,11 @@
 --               ui.get_focus, UiFocus callback, input.is_action_just_pressed("ui_cancel"),
 --               scene.transition_to (engine-driven scene-load orchestration).
 
+properties = {
+    { name = "ui_scale_min", type = "float", default = 0.75, min = 0.1 },
+    { name = "ui_scale_max", type = "float", default = 2.0, min = 0.1 },
+}
+
 local vol_label_id = 0
 local speed_label_id = 0
 local vol_slider_id = 0
@@ -12,8 +17,6 @@ local ui_scale_label_id = 0
 local ui_scale_slider_id = 0
 
 -- Interface size: the `ui_scale` built-in setting scales every HUD in game, 0.75 to 2 times.
-local UI_SCALE_MIN, UI_SCALE_MAX = 0.75, 2.0
-
 function on_create()
     log.info("Settings menu loaded")
     ui.transition_fade_in(0.5)
@@ -27,7 +30,7 @@ function on_create()
     ui_scale_slider_id = scene.find_entity("UiScaleSlider")
     if ui_scale_slider_id ~= 0 then
         local scale = settings.get("ui_scale", 1.0)
-        ui.set_slider_value(ui_scale_slider_id, (scale - UI_SCALE_MIN) / (UI_SCALE_MAX - UI_SCALE_MIN))
+        ui.set_slider_value(ui_scale_slider_id, (scale - ui_scale_min) / (ui_scale_max - ui_scale_min))
     end
 
     -- Initialize slider positions from current settings values.
@@ -100,10 +103,10 @@ function on_speed_changed()
     end
 end
 
--- Slider callback: interface size changed (value 0..1, mapped to UI_SCALE_MIN..UI_SCALE_MAX), seen at once.
+-- Slider callback: interface size changed (value 0..1, mapped to ui_scale_min..ui_scale_max), seen at once.
 function on_ui_scale_changed()
     local value = _slider_value or 0.4
-    local scale = UI_SCALE_MIN + value * (UI_SCALE_MAX - UI_SCALE_MIN)
+    local scale = ui_scale_min + value * (ui_scale_max - ui_scale_min)
     settings.set("ui_scale", scale)
     if ui_scale_label_id ~= 0 then
         ui.set_text(ui_scale_label_id, string.format("Interface Size: %d%%", math.floor(scale * 100 + 0.5)))

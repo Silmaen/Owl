@@ -4,6 +4,10 @@
 -- Every change of screen is a wipe in the brown of the crates (`scene.transition_to` with a colour).
 
 -- Every level, to count the progress and find the level to continue (a level names the next one in `next_scene`).
+properties = {
+    { name = "wipe_color", type = "color", default = { 0.2, 0.12, 0.05, 1 } },
+}
+
 local LEVEL_SCENES = {
     "scenes/level_01.owl",
     "scenes/level_02.owl",
@@ -18,7 +22,6 @@ local LEVEL_SCENES = {
 }
 local LEVEL_NAMES = { "First push", "Two by two", "Side door", "Back room", "Cellar", "Four corners", "Pantry",
                       "Columns", "Loading bay", "Warehouse" }
-local WIPE = { 0.2, 0.12, 0.05 }
 
 local leaving = false
 local next_level = 1
@@ -28,7 +31,7 @@ local function leave(path, jingle)
     if leaving then return end
     leaving = true
     if jingle then sound.play("sounds/ui/start.wav") end
-    scene.transition_to(path, "wipe_left", 0.3, WIPE[1], WIPE[2], WIPE[3])
+    scene.transition_to(path, "wipe_left", 0.3, wipe_color.r, wipe_color.g, wipe_color.b)
 end
 
 local function set(name, text)
@@ -39,7 +42,7 @@ end
 
 function on_create()
     if not ui.is_transition_active() then
-        ui.transition_play("wipe_left", 0.4, WIPE[1], WIPE[2], WIPE[3])
+        ui.transition_play("wipe_left", 0.4, wipe_color.r, wipe_color.g, wipe_color.b)
     end
     window_id = scene.find_entity("HowToWindow")
     back_id = scene.find_entity("HowToBackButton")

@@ -6,12 +6,14 @@
 -- ones as tools/demo/generate_hub_village.py): every cell that holds a water tile keeps its place in the cycle, a
 -- (column + row) offset so that the ripples do not all move together; the bridges are not water and stay as they are.
 
+properties = {
+    { name = "frame_time", type = "float", default = 0.45, min = 0.01 },
+    { name = "fountain_frames", type = "numbers", default = { 192, 196 } },
+}
+
 local RIVER = { { 0, 31, 25, 32 }, { 24, 29, 25, 32 }, { 24, 29, 44, 30 }, { 43, 29, 44, 32 }, { 43, 31, 63, 32 } }
 local WATER = { 132, 133, 137, 138 }
 local FOUNTAIN = { 31, 20 }
-local FOUNTAIN_FRAMES = { 192, 196 }
-local FRAME_TIME = 0.45
-
 local map_id = 0
 local cells = {}
 local clock = 0
@@ -39,7 +41,7 @@ end
 
 function on_update(dt)
     clock = clock + dt
-    local phase = math.floor(clock / FRAME_TIME)
+    local phase = math.floor(clock / frame_time)
     if phase == shown_phase then
         return
     end
@@ -47,7 +49,7 @@ function on_update(dt)
     for _, cell in ipairs(cells) do
         isometric.set_cell(map_id, 0, cell[1], cell[2], WATER[(phase + cell[1] // 2 + cell[2]) % 4 + 1], -1)
     end
-    local first = FOUNTAIN_FRAMES[phase % 2 + 1]
+    local first = fountain_frames[phase % 2 + 1]
     for k = 0, 3 do
         isometric.set_cell(map_id, 1, FOUNTAIN[1] + k % 2, FOUNTAIN[2] + k // 2, first + k, -1)
     end

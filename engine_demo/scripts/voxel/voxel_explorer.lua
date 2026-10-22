@@ -2,11 +2,14 @@
 -- Demonstrates: a script on the entity of a `VoxelPlayer` (transform.get_position follows the player), a HUD of its
 --               own (huds/voxel.owlhud), a victory objective stored in gamestate (`level_voxel_done`), scene.transition_to.
 --
--- Objective: walk TARGET blocks away from the landing point (horizontal distance, the terrain streams in as you go).
+-- Objective: walk target_distance blocks away from the landing point (horizontal distance, the terrain streams in as you go).
 -- Escape goes back to the hub without completing the level.
 
-local TARGET = 100
-local START_X, START_Z = 8, 8   -- landing point: the player spawns above it
+properties = {
+    { name = "target_distance", type = "int", default = 100, min = 1 },
+    { name = "landing_point", type = "vec2", default = { 8, 8 } },  -- landing point (x, z): the player spawns above it
+}
+
 
 local objective_id = 0
 local leaving = false
@@ -27,14 +30,14 @@ function on_update(dt)
         return
     end
     local x, _, z = transform.get_position(entity_id)
-    local distance = math.floor(math.sqrt((x - START_X) ^ 2 + (z - START_Z) ^ 2))
+    local distance = math.floor(math.sqrt((x - landing_point.x) ^ 2 + (z - landing_point.y) ^ 2))
     gamestate.set("voxel_distance", distance)
     if distance ~= shown then
         shown = distance
-        ui.set_text(objective_id, "Objective: explore the terrain, " .. math.min(distance, TARGET) .. " / " ..
-            TARGET .. " blocks from the landing point")
+        ui.set_text(objective_id, "Objective: explore the terrain, " .. math.min(distance, target_distance) .. " / " ..
+            target_distance .. " blocks from the landing point")
     end
-    if distance >= TARGET then
+    if distance >= target_distance then
         leaving = true
         gamestate.set("level_voxel_done", 1)
         sound.play("sounds/ui/victory.wav")

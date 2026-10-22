@@ -11,11 +11,11 @@ properties = {
     { name = "walk_a", type = "float", default = 0 },
     { name = "walk_b", type = "float", default = 0 },
     { name = "idle_period", type = "float", default = 0.8 },
+    { name = "step_time", type = "float", default = 0.18, min = 0.01 },
 }
 
 -- The properties of the scene are the only values at runtime (the defaults above are editor metadata): `idle_period` is
 -- optional there.
-local STEP_TIME = 0.18
 local period = 0.8
 local last_x, last_y = 0, 0
 local clock = 0
@@ -42,7 +42,7 @@ function on_update(dt)
     last_x, last_y = x, y
     if moving then
         clock = clock + dt
-        show(math.floor(clock / STEP_TIME) % 2 == 0 and walk_a or walk_b)
+        show(math.floor(clock / step_time) % 2 == 0 and walk_a or walk_b)
     else
         idle_clock = idle_clock + dt
         show(math.floor(idle_clock / (period * 0.5)) % 2 == 0 and idle_a or idle_b)

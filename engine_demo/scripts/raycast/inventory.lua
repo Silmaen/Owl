@@ -9,6 +9,10 @@
 -- for the other scripts and the scenario test; `inv_closed_frame` is the `inv_frame` at which ui_cancel closed it, so the
 -- player script does not take that Escape for a pause.
 
+properties = {
+    { name = "toast_seconds", type = "float", default = 2.5, min = 0 },
+}
+
 local ITEMS = {
     { id = "cross", name = "Golden cross", info = "Treasure: a holy relic." },
     { id = "chalice", name = "Chalice", info = "Treasure: solid gold." },
@@ -21,8 +25,6 @@ local ITEMS = {
     { id = "gun", name = "Machine gun", info = "Rattles the walls." },
 }
 local SAVE_SLOT = 2
-local TOAST_SECONDS = 2.5
-
 local window_id, info_id, toast_id, log_id = 0, 0, 0, 0
 local slots, icons, counts = {}, {}, {}
 local slot_index = {}  -- slot entity id -> index in ITEMS
@@ -83,7 +85,7 @@ local function toast(text)
     log_add(text)
     ui.set_text(toast_id, text)
     ui.set_visible(toast_id, true)
-    toast_left = TOAST_SECONDS
+    toast_left = toast_seconds
 end
 
 function on_create()

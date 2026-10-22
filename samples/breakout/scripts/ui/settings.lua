@@ -3,6 +3,13 @@
 -- wipe, like every Breakout screen).
 -- Music and effects share the master volume: a looping SoundSource has no volume of its own yet (gap G9).
 
+properties = {
+    { name = "ui_scale_min", type = "float", default = 0.75, min = 0.1 },
+    { name = "ui_scale_max", type = "float", default = 2.0, min = 0.1 },
+    { name = "mouse_min", type = "float", default = 0.25, min = 0.01 },
+    { name = "mouse_max", type = "float", default = 3.0, min = 0.01 },
+}
+
 local vol_label_id = 0
 local vol_slider_id = 0
 local mouse_label_id = 0
@@ -10,9 +17,6 @@ local mouse_slider_id = 0
 local ui_scale_label_id = 0
 local ui_scale_slider_id = 0
 local leaving = false
-
-local UI_SCALE_MIN, UI_SCALE_MAX = 0.75, 2.0
-local MOUSE_MIN, MOUSE_MAX = 0.25, 3.0
 
 local function update_labels()
     if vol_label_id ~= 0 then
@@ -35,11 +39,11 @@ local function update_sliders()
     end
     if mouse_slider_id ~= 0 then
         local speed = settings.get("breakout_mouse_speed", 1.0)
-        ui.set_slider_value(mouse_slider_id, (speed - MOUSE_MIN) / (MOUSE_MAX - MOUSE_MIN))
+        ui.set_slider_value(mouse_slider_id, (speed - mouse_min) / (mouse_max - mouse_min))
     end
     if ui_scale_slider_id ~= 0 then
         local scale = settings.get("ui_scale", 1.0)
-        ui.set_slider_value(ui_scale_slider_id, (scale - UI_SCALE_MIN) / (UI_SCALE_MAX - UI_SCALE_MIN))
+        ui.set_slider_value(ui_scale_slider_id, (scale - ui_scale_min) / (ui_scale_max - ui_scale_min))
     end
 end
 
@@ -72,13 +76,13 @@ end
 
 function on_mouse_speed_changed()
     local value = _slider_value or 0.27
-    settings.set("breakout_mouse_speed", MOUSE_MIN + value * (MOUSE_MAX - MOUSE_MIN))
+    settings.set("breakout_mouse_speed", mouse_min + value * (mouse_max - mouse_min))
     update_labels()
 end
 
 function on_ui_scale_changed()
     local value = _slider_value or 0.2
-    settings.set("ui_scale", UI_SCALE_MIN + value * (UI_SCALE_MAX - UI_SCALE_MIN))
+    settings.set("ui_scale", ui_scale_min + value * (ui_scale_max - ui_scale_min))
     update_labels()
 end
 

@@ -4,6 +4,11 @@
 -- pad A during the count shows everything at once; the Next button (the next floor in `wolf_next_scene`, the victory
 -- after the last one) is enabled once the count is over. `wolf_tally_step` counts the lines done (4 at the end).
 
+properties = {
+    { name = "fade_color", type = "color", default = { 0.22, 0.02, 0.02, 1 } },
+    { name = "line_pause", type = "float", default = 0.35, min = 0 },  -- seconds between two lines
+}
+
 local LINES = {
     { id = "ItemsLabel", name = "ITEMS", key = "wolf_tally_items", unit = "%" },
     { id = "SecretsLabel", name = "SECRETS", key = "wolf_tally_secrets", unit = "%" },
@@ -11,9 +16,7 @@ local LINES = {
     { id = "BonusLabel", name = "BONUS", key = "wolf_tally_bonus", unit = "" },
 }
 local COUNT_RATE = { ["%"] = 80, [""] = 2400 } -- units per second while a line counts
-local PAUSE = 0.35                            -- seconds between two lines
 local TICK_EVERY = { ["%"] = 5, [""] = 150 }
-local FADE = { 0.22, 0.02, 0.02 }
 
 local ids = {}
 local line, shown, wait = 1, 0, 0.6
@@ -63,7 +66,7 @@ end
 
 function on_create()
     if not ui.is_transition_active() then
-        ui.transition_play("fade_in", 0.5, FADE[1], FADE[2], FADE[3])
+        ui.transition_play("fade_in", 0.5, fade_color.r, fade_color.g, fade_color.b)
     end
     for _, name in ipairs({ "TallyTitle", "ItemsLabel", "SecretsLabel", "MapLabel", "BonusLabel", "ScoreLabel",
                             "BestLabel", "SkipHint", "NextButton" }) do
@@ -120,7 +123,7 @@ function on_update(dt)
     if shown >= target then
         finish_line(entry)
         sound.play("sounds/ui/tally_line.wav")
-        line, shown, last_tick, wait = line + 1, 0, 0, PAUSE
+        line, shown, last_tick, wait = line + 1, 0, 0, line_pause
         if line > #LINES then
             show_scores()
         end
@@ -133,6 +136,5 @@ function on_next_clicked()
     end
     leaving = true
     sound.play("sounds/ui/start.wav")
-    scene.transition_to(gamestate.get("wolf_next_scene", "scenes/title.owl"), "fade_out", 0.5, FADE[1], FADE[2],
-            FADE[3])
+    scene.transition_to(gamestate.get("wolf_next_scene", "scenes/title.owl"), "fade_out", 0.5, fade_color.r, fade_color.g, fade_color.b)
 end

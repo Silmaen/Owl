@@ -7,9 +7,11 @@
 --
 -- The state is `gate_open` in gamestate; the scenario test reads it.
 
-local TOAST_SECONDS = 2.5
-local CHEST_OPEN = 151
-local PULLED_ANGLE = -0.9
+properties = {
+    { name = "toast_seconds", type = "float", default = 2.5 },
+    { name = "chest_open_frame", type = "int", default = 151 },
+    { name = "pulled_angle", type = "float", default = -0.9 },
+}
 
 local link_id, chest_id, toast_id = 0, 0, 0
 local toast_left = 0
@@ -18,15 +20,15 @@ local pulled = false
 local function toast(text)
     ui.set_text(toast_id, text)
     ui.set_visible(toast_id, true)
-    toast_left = TOAST_SECONDS
+    toast_left = toast_seconds
 end
 
 local function open_gate(target)
     pulled = true
     scene.destroy_entity(target)
-    transform.set_rotation(entity_id, 0, 0, PULLED_ANGLE)
+    transform.set_rotation(entity_id, 0, 0, pulled_angle)
     if chest_id ~= 0 then
-        isometric.set_sprite_frame(chest_id, CHEST_OPEN)
+        isometric.set_sprite_frame(chest_id, chest_open_frame)
     end
     gamestate.set("gate_open", 1)
 end

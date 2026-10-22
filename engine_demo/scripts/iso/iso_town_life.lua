@@ -16,23 +16,22 @@ properties = {
     { name = "puff_life", type = "float", default = 5.0 },   -- seconds a puff takes to rise and vanish
     { name = "puff_rise", type = "float", default = 3.2 },   -- world units a puff climbs in its life
     { name = "chirp_gap", type = "float", default = 7.0 },
+    { name = "puffs_per_chimney", type = "int", default = 4, min = 1 },
+    { name = "wind", type = "vec2", default = { 1.6, 0.5 } },  -- drift of the smoke, world units per second
+    { name = "day_length", type = "float", default = 100.0, min = 0 },  -- seconds of daylight, then dusk (the tint steps up), night and dawn
+    { name = "dusk_length", type = "float", default = 20.0, min = 0 },
+    { name = "night_length", type = "float", default = 40.0, min = 0 },
+    { name = "dawn_length", type = "float", default = 20.0, min = 0 },
+    { name = "bell_every", type = "float", default = 50.0, min = 1 },
 }
 
-local PUFFS = 4
 local CHIMNEY_TOP, PUFF_LIFE, PUFF_RISE, CHIRP_GAP    -- set from the properties in on_create
-local WIND_X, WIND_Y = 1.6, 0.5
-
--- The day: seconds of daylight, of dusk (the tint steps up), of night and of dawn.
-local DAY, DUSK, NIGHT, DAWN = 100.0, 20.0, 40.0, 20.0
-local CYCLE = DAY + DUSK + NIGHT + DAWN
-
-local BELL_EVERY = 50.0
 
 local camera_id = 0
 local clock = 0
 local smoke, sparkles, lamps, beacons, birds, tints = {}, {}, {}, {}, {}, {}
 local shown_level = -1
-local bell_wait, chirp_wait = BELL_EVERY * 0.5, 2.0
+local bell_wait, chirp_wait = 0, 2.0
 
 local function find_all(prefix, keep)
     local found = {}
@@ -54,6 +53,7 @@ local function play(path, volume)
 end
 
 function on_create()
+    bell_wait = bell_every * 0.5
     CHIMNEY_TOP = chimney_top
     PUFF_LIFE = puff_life
     PUFF_RISE = puff_rise
@@ -66,11 +66,11 @@ function on_create()
             break
         end
         local x, y, z = transform.get_position(id)
-        for puff = 1, PUFFS do
+        for puff = 1, puffs_per_chimney do
             local puff_id = scene.find_entity("Smoke_" .. chimney .. "_" .. puff)
             if puff_id ~= 0 then
                 smoke[#smoke + 1] = { id = puff_id, x = x, y = y, z = z + CHIMNEY_TOP,
-                                      phase = ((puff - 1) / PUFFS + chimney * 0.137) % 1 }
+                                      phase = ((puff - 1) / puffs_per_chimney + chimney * 0.137) % 1 }
             end
         end
         chimney = chimney + 1
@@ -103,8 +103,8 @@ end
 local function update_smoke()
     for _, puff in ipairs(smoke) do
         local age = (clock / PUFF_LIFE + puff.phase) % 1
-        transform.set_position(puff.id, puff.x + age * WIND_X * 2 + math.sin(age * 6 + puff.phase * 9) * 0.12,
-            puff.y + age * WIND_Y * 2, puff.z + age * PUFF_RISE)
+        transform.set_position(puff.id, puff.x + age * wind.x * 2 + math.sin(age * 6 + puff.phase * 9) * 0.12,
+            puff.y + age * wind.y * 2, puff.z + age * PUFF_RISE)
         local size = (0.12 + 0.8 * (1 - age)) * math.min(1, age * 10)
         transform.set_scale(puff.id, size, size, 1)
     end
@@ -150,16 +150,16 @@ end
 
 -- The day: the tint layers come on one by one at dusk and go off at dawn.
 local function daylight_level()
-    local t = clock % CYCLE
+    local t = clock % (day_length + dusk_length + night_length + dawn_length)
     local steps = #tints
-    if t < DAY then
+    if t < day_length then
         return 0
-    elseif t < DAY + DUSK then
-        return math.floor((t - DAY) / DUSK * steps + 0.999)
-    elseif t < DAY + DUSK + NIGHT then
+    elseif t < day_length + dusk_length then
+        return math.floor((t - day_length) / dusk_length * steps + 0.999)
+    elseif t < day_length + dusk_length + night_length then
         return steps
     end
-    return steps - math.floor((t - DAY - DUSK - NIGHT) / DAWN * steps + 0.999)
+    return steps - math.floor((t - day_length - dusk_length - night_length) / dawn_length * steps + 0.999)
 end
 
 local function update_tint(camera_x, camera_y)
@@ -187,7 +187,7 @@ function on_update(dt)
     update_birds(camera_x, camera_y, dt)
     bell_wait = bell_wait - dt
     if bell_wait <= 0 then
-        bell_wait = BELL_EVERY
+        bell_wait = bell_every
         play("sounds/town/bell.wav", 0.25)
     end
 end

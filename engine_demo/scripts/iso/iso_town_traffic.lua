@@ -21,7 +21,7 @@
 -- Traffic keeps to the right as seen on screen. World +x runs to the lower right and +y to the lower left, so the right
 -- hand of a vehicle heading (dx, dy) is (-dy, dx): driving to the lower right it keeps to the lower left side of the
 -- road. A vehicle crosses each cell of its route from the middle of the edge it enters by to the middle of the edge it
--- leaves by, LANE away from the middle of the road; in a corner it follows a quarter circle around the corner of the
+-- leaves by, lane_offset away from the middle of the road; in a corner it follows a quarter circle around the corner of the
 -- cell, its heading turning with it; at a dead end it blends from its lane to a circle round the middle of the cell,
 -- drives half of it turning left, through the far half of the cell, and comes back out by the other lane. The sheet holds eight frames per model, every 45 degrees from +x
 -- towards +y.
@@ -39,7 +39,6 @@
 -- vehicle waited without a route) and `town_debug` (1 while the navigation overlay is on).
 
 local TRIP_PAY, RETRY_SECONDS    -- set from the properties in on_create
-local LANE = 0.2
 local HEADINGS = 8
 local TURN = math.pi / 2
 local HEADING_STEP = math.pi / 4
@@ -50,6 +49,13 @@ properties = {
     { name = "fleet", type = "string", default = "" },
     { name = "trip_pay", type = "int", default = 5 },
     { name = "retry_seconds", type = "float", default = 0.5 },
+    { name = "lane_offset", type = "float", default = 0.2, min = 0, max = 0.5 },
+    { name = "min_trip", type = "int", default = 4, min = 0 },
+    { name = "uturn_half", type = "float", default = 0.36, min = 0, max = 0.5 },
+    { name = "uturn_corner", type = "float", default = 0.16, min = 0, max = 0.5 },
+    { name = "cash_gap", type = "float", default = 0.3, min = 0 },
+    { name = "horn_gap", type = "float", default = 2.5, min = 0 },
+    { name = "horn_range", type = "float", default = 7.0, min = 0 },
 }
 
 -- Colour of each vehicle in the overlay, by order in the fleet.
@@ -79,12 +85,9 @@ end
 local SIZE = 24
 -- The longest trip asked of a vehicle (Manhattan distance in cells, 0 for no limit).
 local MAX_TRIP = 0
-local MIN_TRIP = 4
-local LOOP = 0.36
 
 -- Sound effects of the arrivals: a coin for each trip, a horn when it happens close to the camera. `town_sounds` counts
 -- every sound played by the scripts of the town.
-local CASH_GAP, HORN_GAP, HORN_RANGE = 0.3, 2.5, 7
 local cash_wait, horn_wait = 0, 0
 local camera_id = 0
 
@@ -147,7 +150,7 @@ local function choose_destination(vehicle)
         local x, y = roll(vehicle, SIZE), roll(vehicle, SIZE)
         if path.is_walkable(map_id, x, y) and (x ~= vehicle.cell_x or y ~= vehicle.cell_y) and exits(x, y) > 1 then
             local distance = math.abs(x - vehicle.cell_x) + math.abs(y - vehicle.cell_y)
-            if distance >= MIN_TRIP and (MAX_TRIP == 0 or distance <= MAX_TRIP) then
+            if distance >= min_trip and (MAX_TRIP == 0 or distance <= MAX_TRIP) then
                 vehicle.dest = { x, y }
                 return
             end
@@ -282,7 +285,6 @@ end
 -- The U-turn of a dead end, as a rounded square that runs along the edges of the cell: in by the right lane, out to the
 -- right side, round the two far corners turning left, back down the other side and in to the right lane of the way
 -- out, so it passes by the four corners of the cell. Sampled once into a polyline; the heading is its tangent.
-local LOOP_CORNER = 0.16
 local LOOP_SAMPLES = 12
 
 local function smooth(u)
@@ -290,7 +292,7 @@ local function smooth(u)
 end
 
 local function loop_path(cx, cy, d_x, d_y, right_x, right_y)
-    local half, corner = LOOP, LOOP_CORNER
+    local half, corner = uturn_half, uturn_corner
     local points = {}
     local function add(side, along)
         points[#points + 1] = { cx + right_x * side + d_x * along, cy + right_y * side + d_y * along }
@@ -300,7 +302,7 @@ local function loop_path(cx, cy, d_x, d_y, right_x, right_y)
     local reach = half - corner + 0.5
     for i = 0, 2 * LOOP_SAMPLES do
         local u = i / (2 * LOOP_SAMPLES)
-        add(LANE + (half - LANE) * smooth(u), -0.5 + reach * u)
+        add(lane_offset + (half - lane_offset) * smooth(u), -0.5 + reach * u)
     end
     for _, centre_side in ipairs({ half - corner, -(half - corner) }) do
         local start = centre_side > 0 and 0 or math.pi / 2
@@ -316,7 +318,7 @@ local function loop_path(cx, cy, d_x, d_y, right_x, right_y)
     end
     for i = 1, 2 * LOOP_SAMPLES do
         local u = i / (2 * LOOP_SAMPLES)
-        add(-half + (half - LANE) * smooth(u), half - corner - reach * u)
+        add(-half + (half - lane_offset) * smooth(u), half - corner - reach * u)
     end
     local lengths, total = { 0 }, 0
     for i = 2, #points do
@@ -355,7 +357,7 @@ local function cell_path(route, index, entry_x, entry_y)
         -- A corner: a quarter circle around the corner of the cell inside the turn, a bit tighter for a turn to the right.
         local pivot_x = cx + (d_out_x - d_in_x) * 0.5
         local pivot_y = cy + (d_out_y - d_in_y) * 0.5
-        local radius = 0.5 - cross * LANE
+        local radius = 0.5 - cross * lane_offset
         local start_angle = math.atan(d_in_y, d_in_x)
         return radius * TURN, function(t)
             local phi = t * TURN
@@ -376,7 +378,7 @@ local function cell_path(route, index, entry_x, entry_y)
         return loop_path(cx, cy, d_in_x, d_in_y, right_x, right_y)
     end
     -- A straight run, or half of one in the first and the last cell of the route.
-    local right_x, right_y = -d_out_y * LANE, d_out_x * LANE
+    local right_x, right_y = -d_out_y * lane_offset, d_out_x * lane_offset
     local from_x = (in_x ~= nil) and (cx - d_in_x * 0.5 + right_x) or (cx + right_x)
     local from_y = (in_y ~= nil) and (cy - d_in_y * 0.5 + right_y) or (cy + right_y)
     local to_x = (out_x ~= nil) and (cx + d_out_x * 0.5 + right_x) or (cx + right_x)
@@ -494,12 +496,12 @@ local function arrive(vehicle)
     gamestate.set("town_trips", gamestate.get("town_trips", 0) + 1)
     gamestate.set("town_money", gamestate.get("town_money", 0) + TRIP_PAY)
     if cash_wait <= 0 then
-        cash_wait = CASH_GAP
+        cash_wait = cash_gap
         play("sounds/town/cash.wav", 0.35)
     end
     local camera_x, camera_y = transform.get_position(camera_id)
-    if horn_wait <= 0 and math.abs(vehicle.x - camera_x) + math.abs(vehicle.y - camera_y) <= HORN_RANGE then
-        horn_wait = HORN_GAP
+    if horn_wait <= 0 and math.abs(vehicle.x - camera_x) + math.abs(vehicle.y - camera_y) <= horn_range then
+        horn_wait = horn_gap
         play("sounds/town/horn.wav", 0.3)
     end
     vehicle.dest = nil

@@ -1,8 +1,11 @@
 -- Victory screen of Breakout, reached after the last level: the final score counted up arcade style, the best one
 -- (the `breakout_best` setting, kept when beaten), Level select or back to the title.
 
-local WIPE = { 0.45, 0.05, 0.55 }
-local COUNT_TIME = 1.2
+properties = {
+    { name = "wipe_color", type = "color", default = { 0.45, 0.05, 0.55, 1 } },
+    { name = "count_time", type = "float", default = 1.2, min = 0.01 },
+}
+
 
 local score, shown, clock = 0, -1, 0.0
 local score_id = 0
@@ -10,7 +13,7 @@ local leaving = false
 
 function on_create()
     if not ui.is_transition_active() then
-        ui.transition_play("wipe_up", 0.4, WIPE[1], WIPE[2], WIPE[3])
+        ui.transition_play("wipe_up", 0.4, wipe_color.r, wipe_color.g, wipe_color.b)
     end
     sound.play("sounds/ui/victory.wav")
     score = gamestate.get("breakout_score", 0)
@@ -28,8 +31,8 @@ end
 
 function on_update(dt)
     -- The score rolls up to its value, then stays.
-    clock = math.min(COUNT_TIME, clock + dt)
-    local value = math.floor(score * clock / COUNT_TIME + 0.5)
+    clock = math.min(count_time, clock + dt)
+    local value = math.floor(score * clock / count_time + 0.5)
     if value ~= shown and score_id ~= 0 then
         shown = value
         ui.set_text(score_id, string.format("SCORE %06d", value))
@@ -40,7 +43,7 @@ local function leave(path)
     if leaving then return end
     leaving = true
     gamestate.clear()
-    scene.transition_to(path, "wipe_up", 0.3, WIPE[1], WIPE[2], WIPE[3])
+    scene.transition_to(path, "wipe_up", 0.3, wipe_color.r, wipe_color.g, wipe_color.b)
 end
 
 function on_levels_clicked()

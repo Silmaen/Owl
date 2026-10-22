@@ -3,9 +3,11 @@
 --               tweened from on_update (scale up, tint to a bright flash then fade, a small rise) before the coin is
 --               destroyed. The spin is the sprite animation: two frames of the platformer atlas.
 
-local k_pop_time = 0.28   -- s of the pop
-local k_pop_scale = 1.9   -- scale reached at the end of the pop
-local k_pop_rise = 0.7    -- world units the coin rises
+properties = {
+    { name = "pop_time", type = "float", default = 0.28 },  -- s of the pop
+    { name = "pop_scale", type = "float", default = 1.9 },  -- scale reached at the end of the pop
+    { name = "pop_rise", type = "float", default = 0.7 },  -- world units the coin rises
+}
 
 local collected = false
 local pop_clock = 0.0
@@ -40,11 +42,11 @@ end
 function on_update(dt)
     if not collected then return end
     pop_clock = pop_clock + dt
-    local t = math.min(1.0, pop_clock / k_pop_time)
+    local t = math.min(1.0, pop_clock / pop_time)
     local eased = 1.0 - (1.0 - t) * (1.0 - t)
-    local scale = base_scale * (1.0 + (k_pop_scale - 1.0) * eased)
+    local scale = base_scale * (1.0 + (pop_scale - 1.0) * eased)
     transform.set_scale(entity_id, scale, scale, 1)
-    transform.set_position(entity_id, home_x, home_y + k_pop_rise * eased, home_z)
+    transform.set_position(entity_id, home_x, home_y + pop_rise * eased, home_z)
     entity.set_tint(entity_id, 1.0, 1.0, 1.0 - 0.5 * (1.0 - t), 1.0 - t * t)
     if t >= 1.0 then
         scene.destroy_entity(entity_id)

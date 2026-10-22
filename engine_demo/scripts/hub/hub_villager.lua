@@ -19,10 +19,10 @@ properties = {
     { name = "idle_b", type = "float", default = 0 },
     { name = "walk_a", type = "float", default = 0 },
     { name = "walk_b", type = "float", default = 0 },
+    { name = "wait_time", type = "float", default = 1.2, min = 0 },
+    { name = "step_time", type = "float", default = 0.18, min = 0.01 },
 }
 
-local WAIT = 1.2
-local STEP_TIME = 0.18
 local MAP_W, MAP_H = 64, 40
 
 local waypoints = {}
@@ -83,7 +83,7 @@ local function take_route()
         path_cells, index = cells, 2
         gamestate.set(key .. "_route_cells", #cells // 2)
     else
-        wait_left = WAIT
+        wait_left = wait_time
     end
 end
 
@@ -103,7 +103,7 @@ local function walk(dt)
             path_cells = nil
             current = current % #waypoints + 1
             gamestate.set(key .. "_trips", gamestate.get(key .. "_trips", 0) + 1)
-            wait_left = WAIT
+            wait_left = wait_time
         end
     else
         x, y = x + dx / dist * step, y + dy / dist * step
@@ -126,7 +126,7 @@ function on_update(dt)
         elseif status ~= "pending" then
             path.release(map_id, request)
             request = 0
-            wait_left = WAIT
+            wait_left = wait_time
         end
     elseif path_cells ~= nil then
         walk(dt)
@@ -134,7 +134,7 @@ function on_update(dt)
     end
     local walking = path_cells ~= nil
     if walking then
-        show(math.floor(clock / STEP_TIME) % 2 == 0 and walk_a or walk_b)
+        show(math.floor(clock / step_time) % 2 == 0 and walk_a or walk_b)
     else
         idle_clock = idle_clock + dt
         show(math.floor(idle_clock / 0.4) % 2 == 0 and idle_a or idle_b)

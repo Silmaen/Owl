@@ -2,8 +2,10 @@
 -- (fires every frame while the player overlaps): a full bar leaves the heart where it is for later. Same pop as the
 -- coins, with a gentle bob while waiting.
 
-local k_heal = 0.34
-local k_pop_time = 0.3
+properties = {
+    { name = "heal", type = "float", default = 0.34 },
+    { name = "pop_time", type = "float", default = 0.3 },
+}
 
 local taken = false
 local clock = 0.0
@@ -22,7 +24,7 @@ function on_heart_touched(player_id)
     taken = true
     home_x, home_y, home_z = transform.get_position(entity_id)
     home_y = home_y - bob
-    gamestate.set("health", math.min(1.0, health + k_heal))
+    gamestate.set("health", math.min(1.0, health + heal))
     gamestate.set("platformer_banner", "Health restored")
     sound.play("sounds/platformer/coin_collect.wav")
     clock = 0.0
@@ -38,7 +40,7 @@ function on_update(dt)
         bob = next_bob
         return
     end
-    local t = math.min(1.0, clock / k_pop_time)
+    local t = math.min(1.0, clock / pop_time)
     local s = base_scale * (1.0 + 1.1 * t)
     transform.set_scale(entity_id, s, s, 1)
     transform.set_position(entity_id, home_x, home_y + 0.8 * t, home_z)

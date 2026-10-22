@@ -2,9 +2,12 @@
 -- size; Reset progress forgets the levels done and the best moves; Back (or Esc, pad B) saves and returns to the title.
 -- Music and effects share the master volume: a looping SoundSource has no volume of its own yet (gap G9).
 
-local LEVEL_COUNT = 10
-local UI_SCALE_MIN, UI_SCALE_MAX = 0.75, 2.0
+properties = {
+    { name = "ui_scale_min", type = "float", default = 0.75, min = 0.1 },
+    { name = "ui_scale_max", type = "float", default = 2.0, min = 0.1 },
+}
 
+local LEVEL_COUNT = 10
 local vol_label_id, vol_slider_id = 0, 0
 local ui_scale_label_id, ui_scale_slider_id = 0, 0
 local progress_id = 0
@@ -38,7 +41,7 @@ local function update_sliders()
     end
     if ui_scale_slider_id ~= 0 then
         local scale = settings.get("ui_scale", 1.0)
-        ui.set_slider_value(ui_scale_slider_id, (scale - UI_SCALE_MIN) / (UI_SCALE_MAX - UI_SCALE_MIN))
+        ui.set_slider_value(ui_scale_slider_id, (scale - ui_scale_min) / (ui_scale_max - ui_scale_min))
     end
 end
 
@@ -70,7 +73,7 @@ end
 
 function on_ui_scale_changed()
     local value = _slider_value or 0.2
-    settings.set("ui_scale", UI_SCALE_MIN + value * (UI_SCALE_MAX - UI_SCALE_MIN))
+    settings.set("ui_scale", ui_scale_min + value * (ui_scale_max - ui_scale_min))
     update_labels()
 end
 
