@@ -222,6 +222,13 @@ public:
 
 	/**
 	 * @brief
+	 *  The properties the loaded script declares in its `properties` table, each holding its default as its value.
+	 * @return The declared properties; empty when the script declares none or is not loaded.
+	 */
+	[[nodiscard]] auto getDeclaredProperties() const -> std::vector<ScriptProperty>;
+
+	/**
+	 * @brief
 	 *  Set a property of any type on the instance from its value.
 	 *
 	 * A colour becomes a table `{r, g, b, a}`, a vector `{x, y}` or `{x, y, z}`, an entity its UUID as an integer, a

@@ -24,29 +24,30 @@ properties = {
     { name = "bounds_max_x", type = "float", default = 185.0 },
     { name = "bounds_min_y", type = "float", default = -13.2 },
     { name = "bounds_max_y", type = "float", default = 5.3 },
+    { name = "jump_speed", type = "float", default = 7.5 },   -- absolute upward velocity when jump fires
+    { name = "coyote_time", type = "float", default = 0.18 },   -- s of grace after walking off a ledge
+    { name = "jump_buffer", type = "float", default = 0.15 },   -- s before landing that a jump press is remembered
+    { name = "rise_threshold", type = "float", default = 3.0 },   -- vy above this = "rising" (jumped or rocketed up)
+    { name = "fall_threshold", type = "float", default = 3.0 },   -- vy below -threshold = "falling" (or walked off)
+    { name = "camera_lift", type = "float", default = 3.0 },   -- camera height above the player (world units)
+    { name = "apex_threshold", type = "float", default = 0.5 },   -- vy below this from rising = transition to falling
+    { name = "land_threshold", type = "float", default = 0.5 },   -- vy above -this from falling = landed (grounded)
+    { name = "lead_distance", type = "float", default = 2.6 },   -- camera look-ahead in the running direction (world units)
+    { name = "lead_follow", type = "float", default = 2.5 },   -- 1/s: how fast the look-ahead settles
+    { name = "cam_follow_x", type = "float", default = 7.0 },   -- 1/s: horizontal camera smoothing
+    { name = "cam_follow_y", type = "float", default = 4.0 },   -- 1/s: vertical camera smoothing
+    { name = "pixels_per_unit", type = "float", default = 54.0 },   -- 3x the 18 px tiles at 720p: the camera moves by whole screen pixels
+    { name = "invulnerable", type = "float", default = 1.2 },   -- s of invulnerability after a hit
+    { name = "knock_x", type = "float", default = 4.5 },   -- knock-back speed away from the hazard
+    { name = "knock_y", type = "float", default = 6.0 },
+    { name = "shake_time", type = "float", default = 0.35 },   -- s of camera shake after a hit
+    { name = "shake_amount", type = "float", default = 0.28 },   -- world units at the start of the shake
+    { name = "pit_cost", type = "float", default = 0.34 },   -- health lost by a fall into a pit (a third of the bar, like a spike)
+    { name = "banner_time", type = "float", default = 2.4 },   -- s a banner replaces the objective text
 }
 
 -- Tunables ---------------------------------------------------------------------
-local k_jump_speed     = 7.5    -- absolute upward velocity when jump fires
-local k_coyote_time    = 0.18   -- s of grace after walking off a ledge
-local k_jump_buffer    = 0.15   -- s before landing that a jump press is remembered
-local k_rise_threshold = 3.0    -- vy above this = "rising" (jumped or rocketed up)
-local k_fall_threshold = 3.0    -- vy below -threshold = "falling" (or walked off)
-local k_camera_lift    = 3.0    -- camera height above the player (world units)
-local k_apex_threshold = 0.5    -- vy below this from rising = transition to falling
-local k_land_threshold = 0.5    -- vy above -this from falling = landed (grounded)
-local k_lead_distance  = 2.6    -- camera look-ahead in the running direction (world units)
-local k_lead_follow    = 2.5    -- 1/s: how fast the look-ahead settles
-local k_cam_follow_x   = 7.0    -- 1/s: horizontal camera smoothing
-local k_cam_follow_y   = 4.0    -- 1/s: vertical camera smoothing
-local k_pixels_per_unit = 54.0  -- 3x the 18 px tiles at 720p: the camera moves by whole screen pixels
-local k_invulnerable   = 1.2    -- s of invulnerability after a hit
-local k_knock_x        = 4.5    -- knock-back speed away from the hazard
-local k_knock_y        = 6.0
-local k_shake_time     = 0.35   -- s of camera shake after a hit
-local k_shake_amount   = 0.28   -- world units at the start of the shake
-local k_pit_cost       = 0.34   -- health lost by a fall into a pit (a third of the bar, like a spike)
-local k_banner_time    = 2.4    -- s a banner replaces the objective text
+local k_jump_speed, k_coyote_time, k_jump_buffer, k_rise_threshold, k_fall_threshold, k_camera_lift, k_apex_threshold, k_land_threshold, k_lead_distance, k_lead_follow, k_cam_follow_x, k_cam_follow_y, k_pixels_per_unit, k_invulnerable, k_knock_x, k_knock_y, k_shake_time, k_shake_amount, k_pit_cost, k_banner_time    -- set from the properties in on_create
 
 -- State ------------------------------------------------------------------------
 local transitioning = false  -- gate input while the engine is in scene-load orchestration
@@ -231,6 +232,26 @@ local function read_requests()
 end
 
 function on_create()
+    k_jump_speed = jump_speed
+    k_coyote_time = coyote_time
+    k_jump_buffer = jump_buffer
+    k_rise_threshold = rise_threshold
+    k_fall_threshold = fall_threshold
+    k_camera_lift = camera_lift
+    k_apex_threshold = apex_threshold
+    k_land_threshold = land_threshold
+    k_lead_distance = lead_distance
+    k_lead_follow = lead_follow
+    k_cam_follow_x = cam_follow_x
+    k_cam_follow_y = cam_follow_y
+    k_pixels_per_unit = pixels_per_unit
+    k_invulnerable = invulnerable
+    k_knock_x = knock_x
+    k_knock_y = knock_y
+    k_shake_time = shake_time
+    k_shake_amount = shake_amount
+    k_pit_cost = pit_cost
+    k_banner_time = banner_time
     log.info("Platformer player created with speed=" .. speed)
 
     local saved = gamestate.get("health", 0)

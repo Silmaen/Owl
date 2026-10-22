@@ -87,6 +87,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Lua `entity.set/get_light_color`, `set/get_light_intensity`, `set_light_enabled`, `is_light_enabled` and `set_light_range` (the radius) also reach a `Light2D`.
+- Scripts: a property the scene does not list takes the declared default at Play (`ScriptInstance::getDeclaredProperties`); the tuning constants of the platformer player, the raycast level, the breakout ball, paddle and game, the Sokoban game, the Wolfenstein exploration and the hub and isometric town scripts are script properties.
 - Engine Demo: the platformer moving platforms use `Oscillator`, the isometric clouds `Drift` and the hub wanderers `Patrol` (`hub_wanderer.lua` only picks the sprite frames); `moving_platform_h.lua`, `moving_platform_v.lua` and `iso_cloud.lua` are removed.
 - Engine Demo: the tavern fire, candles and flame cards and the platformer torches use `LightFlicker`; `platformer/flicker.lua` is removed and `mesh/tavern.lua` only returns to the menu.
 - Depth attachment format `Depth24Stencil8` is now `Depth32F` (32-bit float, no stencil) on Vulkan and OpenGL.

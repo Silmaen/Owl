@@ -10,11 +10,12 @@ properties = {
     { name = "speed", type = "float", default = 13.0 },
     { name = "half_width", type = "float", default = 1.2 },
     { name = "wide_half_width", type = "float", default = 1.8 },
+    { name = "field_half", type = "float", default = 8.0 },   -- inner half width of the field (walls at +-8)
+    { name = "paddle_y", type = "float", default = -6.8 },   -- height of the paddle
+    { name = "park_y", type = "float", default = -30.0 },   -- where the unused paddle waits (`PaddleWide` is authored there)
 }
 
-local FIELD_HALF = 8.0          -- inner half width of the field (walls at +-8)
-local PADDLE_Y = -6.8           -- height of the paddle
-local PARK_Y = -30.0            -- where the unused paddle waits (`PaddleWide` is authored there)
+local FIELD_HALF, PADDLE_Y, PARK_Y    -- set from the properties in on_create
 local UNITS_PER_PIXEL = 16.0 / 720.0  -- the camera shows 16 units over 720 pixels at the reference size
 
 local wide_id = 0
@@ -34,6 +35,9 @@ local function publish()
 end
 
 function on_create()
+    FIELD_HALF = field_half
+    PADDLE_Y = paddle_y
+    PARK_Y = park_y
     wide_id = scene.find_entity("PaddleWide")
     active_id = entity_id
     x = transform.get_position(entity_id)

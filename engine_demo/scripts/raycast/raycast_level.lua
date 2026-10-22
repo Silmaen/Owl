@@ -23,9 +23,16 @@
 -- The five secret walls slide when the player presses E near them (built-in activation of `RaycastPushWall`); a wall
 -- that left the `idle` state counts as a found secret (`raycast_secrets` in gamestate, kept for the whole run).
 
+properties = {
+    { name = "treasure_total", type = "int", default = 11 },
+    { name = "hearing", type = "int", default = 16 },   -- cells beyond which a door or a wall is not heard
+    { name = "facing_offset", type = "int", default = 7 },   -- units (1/720 of the screen height) from the dot to the facing marker
+    { name = "save_period", type = "float", default = 0.5 },
+}
+
 local SECRETS = { "Secret1", "Secret2", "Secret3", "Secret4", "Secret5" }
 local TREASURES = { "cross", "chalice", "chest", "crown" }
-local TREASURE_TOTAL = 11
+local TREASURE_TOTAL, HEARING, FACING_OFFSET, SAVE_PERIOD    -- set from the properties in on_create
 
 local walls = {}
 local found = {}
@@ -33,7 +40,6 @@ local treasure_id = 0
 local shown = ""
 
 local DOORS_NORTH, DOORS_WEST = 15, 8
-local HEARING = 16   -- cells beyond which a door or a wall is not heard
 local doors = {}
 local wall_states = {}
 local wall_blockers = {}
@@ -44,8 +50,6 @@ local player_id, map_id, dot_id, facing_id = 0, 0, 0, 0
 local WALL_LAYER, SEEN_LAYER = 0, 1
 local TILE_WALL, TILE_FLOOR = 0, 1
 local FOG_RAYS, FOG_FOV, FOG_RANGE = 41, math.rad(80), 14
-local FACING_OFFSET = 7   -- units (1/720 of the screen height) from the dot to the facing marker
-local SAVE_PERIOD = 0.5
 local solid = {}          -- cell key -> true for a wall of the level
 local blockers = {}       -- cell key -> {closed = boolean} for a door or a secret wall (an entity, not a tile)
 local seen = {}           -- cell key -> true once the player has seen the cell
@@ -189,6 +193,10 @@ local function draw_restored()
 end
 
 function on_create()
+    TREASURE_TOTAL = treasure_total
+    HEARING = hearing
+    FACING_OFFSET = facing_offset
+    SAVE_PERIOD = save_period
     treasure_id = ui.find("TreasureText")
     player_id = scene.find_entity("MainCamera")
     map_id = scene.find_entity("Minimap")

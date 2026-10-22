@@ -18,6 +18,8 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <filesystem>
+#include <fstream>
 #include <string>
 #include <type_traits>
 #include <variant>
@@ -146,5 +148,31 @@ TEST(ScriptProperties, LuaReadsTheValuesAsTablesAndIntegers) {
 	EXPECT_EQ(std::get<int64_t>(read("target")), 42);
 	EXPECT_FLOAT_EQ(std::get<float>(read("wp")), 8.f);
 	EXPECT_EQ(std::get<std::string>(read("names")), "b");
+	core::Log::invalidate();
+}
+
+TEST(ScriptProperties, APropertyTheSceneDoesNotListTakesTheDeclaredDefaultAtRuntime) {
+	core::Log::init(core::Log::Level::Off);
+	const auto dir = std::filesystem::temp_directory_path() / "owl_script_property_defaults";
+	std::filesystem::create_directories(dir);
+	{
+		std::ofstream file{dir / "tuned.lua"};
+		file << "properties = {\n  { name = 'speed', type = 'float', default = 5 },\n"
+				"  { name = 'lives', type = 'int', default = 3 },\n}\n"
+				"function on_create()\n  gamestate.set('speed', speed)\n  gamestate.set('lives', lives)\nend\n";
+	}
+	auto scene = mkShared<scene::Scene>();
+	auto& component = scene->createEntity("Tuned").addComponent<scene::component::LuaScript>();
+	component.scriptPath = (dir / "tuned.lua").string();
+	component.properties.push_back({.name = "lives", .type = ScriptPropertyType::Int, .value = int64_t{9}});
+	scene->onStartRuntime();
+	const auto speed = scene->getGameState().get("speed");
+	const auto lives = scene->getGameState().get("lives");
+	ASSERT_TRUE(speed.has_value());
+	ASSERT_TRUE(lives.has_value());
+	EXPECT_FLOAT_EQ(std::get<float>(*speed), 5.f);
+	EXPECT_EQ(std::get<int64_t>(*lives), 9);
+	scene->onEndRuntime();
+	std::filesystem::remove_all(dir);
 	core::Log::invalidate();
 }

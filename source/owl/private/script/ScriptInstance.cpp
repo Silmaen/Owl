@@ -217,6 +217,10 @@ void ScriptInstance::setProperty(const std::string& iName, const bool iValue) co
 	mp_impl->engine.setGlobal(iName, iValue);
 }
 
+auto ScriptInstance::getDeclaredProperties() const -> std::vector<ScriptProperty> {
+	return isValid() ? mp_impl->engine.readDeclaredProperties() : std::vector<ScriptProperty>{};
+}
+
 void ScriptInstance::setProperty(const ScriptProperty& iProperty) const {
 	if (!isValid())
 		return;

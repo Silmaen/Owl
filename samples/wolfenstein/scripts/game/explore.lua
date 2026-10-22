@@ -19,13 +19,17 @@
 -- The fog is set up a few rows per frame: reading and clearing every cell at once overruns the script time quota on
 -- slow machines (emulated arm64).
 
+properties = {
+    { name = "save_period", type = "float", default = 0.5 },
+    { name = "hearing", type = "int", default = 12 },   -- cells beyond which a door is not heard
+}
+
 local MAP_SIZE = 32
 local WALL_LAYER, SEEN_LAYER = 0, 1
 local TILE_WALL, TILE_FLOOR = 0, 1
 local FOG_RAYS, FOG_FOV, FOG_RANGE = 41, math.rad(80), 14
 local FOG_ROWS_PER_FRAME = 8
-local SAVE_PERIOD = 0.5
-local HEARING = 12 -- cells beyond which a door is not heard
+local SAVE_PERIOD, HEARING    -- set from the properties in on_create
 -- Corner minimap and large map: cell size in units (1/720 of the screen height) and centre (from the lower left corner of the screen).
 local SMALL = { scale = 5, x = 96, y = 96 }
 local LARGE = { scale = 11, x = 192, y = 192 }
@@ -193,6 +197,8 @@ local function place(scale, x, y)
 end
 
 function on_create()
+    SAVE_PERIOD = save_period
+    HEARING = hearing
     player_id = scene.find_entity("Player")
     dot_id = scene.find_entity("MinimapPlayer")
     facing_id = scene.find_entity("MinimapFacing")

@@ -322,6 +322,13 @@ public:
 
 	/**
 	 * @brief
+	 *  Read the `properties` table the loaded script declares.
+	 * @return The declared properties, each holding its default as its value.
+	 */
+	[[nodiscard]] auto readDeclaredProperties() const -> std::vector<ScriptProperty>;
+
+	/**
+	 * @brief
 	 *  Set a global to a table of numbers: a sequence, or named fields when keys are given.
 	 * @param[in] iName Variable name.
 	 * @param[in] iValues The numbers.

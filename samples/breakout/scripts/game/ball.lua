@@ -10,13 +10,14 @@ properties = {
     { name = "speed", type = "float", default = 7.5 },
     { name = "max_speed", type = "float", default = 11.0 },
     { name = "auto_serve", type = "float", default = 5.0 },
+    { name = "paddle_y", type = "float", default = -6.8 },   -- height of the paddle
+    { name = "ride_height", type = "float", default = 0.36 },   -- height of the ball above the paddle centre before the serve
+    { name = "lost_y", type = "float", default = -8.6 },   -- below this the ball is lost
+    { name = "max_angle", type = "float", default = 1.05 },   -- largest bounce angle off the paddle, from the vertical (about 60 degrees)
+    { name = "min_vertical", type = "float", default = 0.3 },   -- smallest share of the speed kept vertical, so the ball never runs flat
 }
 
-local PADDLE_Y = -6.8     -- height of the paddle
-local RIDE_HEIGHT = 0.36  -- height of the ball above the paddle centre before the serve
-local LOST_Y = -8.6       -- below this the ball is lost
-local MAX_ANGLE = 1.05    -- largest bounce angle off the paddle, from the vertical (about 60 degrees)
-local MIN_VERTICAL = 0.3  -- smallest share of the speed kept vertical, so the ball never runs flat
+local PADDLE_Y, RIDE_HEIGHT, LOST_Y, MAX_ANGLE, MIN_VERTICAL    -- set from the properties in on_create
 
 local state = "serve"     -- "serve", "play" or "out" (no life left)
 local serve_clock = 0.0
@@ -31,6 +32,11 @@ local function set_state(value)
 end
 
 function on_create()
+    PADDLE_Y = paddle_y
+    RIDE_HEIGHT = ride_height
+    LOST_Y = lost_y
+    MAX_ANGLE = max_angle
+    MIN_VERTICAL = min_vertical
     physics.set_gravity_scale(entity_id, 0.0)
     current_speed = speed
     set_state("serve")

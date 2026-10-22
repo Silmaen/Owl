@@ -11,6 +11,7 @@
 
 #include "app/Application.h"
 
+#include <algorithm>
 #include <filesystem>
 #include <string>
 #include <variant>
@@ -49,6 +50,11 @@ auto loadScriptInstance(Scene& ioScene, const component::LuaScript& iScript, con
 	if (!loaded) {
 		OWL_CORE_ERROR("Scene: Failed to load script '{}' of '{}' ({}).", iScript.scriptPath, iEntityName, iEntityId)
 		return nullptr;
+	}
+	for (const auto& declared: instance->getDeclaredProperties()) {
+		if (std::ranges::none_of(iScript.properties,
+								 [&declared](const auto& iListed) -> bool { return iListed.name == declared.name; }))
+			instance->setProperty(declared);
 	}
 	for (const auto& property: iScript.properties) instance->setProperty(property);
 	return instance;

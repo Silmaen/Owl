@@ -199,6 +199,10 @@ auto readFunctions(lua_State* iState) -> std::vector<ScriptFunction> {
 
 }// namespace
 
+auto LuaEngine::readDeclaredProperties() const -> std::vector<ScriptProperty> {
+	return mp_state != nullptr ? readProperties(mp_state) : std::vector<ScriptProperty>{};
+}
+
 auto ScriptEngine::propertyTypeName(const ScriptPropertyType iType) -> std::string_view {
 	switch (iType) {
 		case ScriptPropertyType::Float:

@@ -210,7 +210,8 @@ Each entry must have:
 The editor reads this table to populate the inspector. When the scene enters Play mode,
 the engine sets each property as a Lua global with the value configured in the inspector
 (overriding the `default`). Every field of the inspector shows the `default` of the script in the tooltip of its reset
-button, which puts the value back; the values and the lists are saved with the scene (`name`, `type`, `value`), the
+button, which puts the value back; a property the scene does not list takes the `default` of the script when the
+script loads in Play; the values and the lists are saved with the scene (`name`, `type`, `value`), the
 `min`, `max` and `step` stay in the script.
 
 ### Scene script

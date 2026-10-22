@@ -11,10 +11,15 @@
 -- `town_life_smoke`, `town_life_sparkles`, `town_life_lights`, `town_life_birds` (what the script drives) and
 -- `town_daylight` (0 by day, up to the number of tints at night) mirror it for the scenario test.
 
+properties = {
+    { name = "chimney_top", type = "float", default = 2.85 },   -- height of the top of a chimney above its foot, in world units
+    { name = "puff_life", type = "float", default = 5.0 },   -- seconds a puff takes to rise and vanish
+    { name = "puff_rise", type = "float", default = 3.2 },   -- world units a puff climbs in its life
+    { name = "chirp_gap", type = "float", default = 7.0 },
+}
+
 local PUFFS = 4
-local CHIMNEY_TOP = 2.85    -- height of the top of a chimney above its foot, in world units
-local PUFF_LIFE = 5.0       -- seconds a puff takes to rise and vanish
-local PUFF_RISE = 3.2       -- world units a puff climbs in its life
+local CHIMNEY_TOP, PUFF_LIFE, PUFF_RISE, CHIRP_GAP    -- set from the properties in on_create
 local WIND_X, WIND_Y = 1.6, 0.5
 
 -- The day: seconds of daylight, of dusk (the tint steps up), of night and of dawn.
@@ -22,7 +27,6 @@ local DAY, DUSK, NIGHT, DAWN = 100.0, 20.0, 40.0, 20.0
 local CYCLE = DAY + DUSK + NIGHT + DAWN
 
 local BELL_EVERY = 50.0
-local CHIRP_GAP = 7.0
 
 local camera_id = 0
 local clock = 0
@@ -50,6 +54,10 @@ local function play(path, volume)
 end
 
 function on_create()
+    CHIMNEY_TOP = chimney_top
+    PUFF_LIFE = puff_life
+    PUFF_RISE = puff_rise
+    CHIRP_GAP = chirp_gap
     camera_id = scene.find_entity("MainCamera")
     local chimney = 1
     while true do

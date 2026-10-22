@@ -21,6 +21,10 @@ properties = {
     { name = "level", type = "int", default = 1 },
     { name = "level_name", type = "string", default = "" },
     { name = "next_scene", type = "string", default = "scenes/victory.owl" },
+    { name = "slide_time", type = "float", default = 0.08 },   -- seconds to slide one cell
+    { name = "repeat_delay", type = "float", default = 0.25 },   -- a held direction repeats after this
+    { name = "repeat_time", type = "float", default = 0.11 },   -- then one step every this
+    { name = "win_delay", type = "float", default = 2.2 },
 }
 
 local FLOOR, GOALS, BOXES = 0, 1, 2
@@ -29,11 +33,8 @@ local TILE_FLOOR, TILE_FLOOR_WORN = 0, 1
 local TILE_GOAL, TILE_BOX, TILE_BOX_ON_GOAL, TILE_START = 4, 5, 6, 7
 local FRAME_IDLE, FRAME_WALK, WALK_FRAMES, FRAME_PUSH = 8, 9, 4, 13
 
-local SLIDE_TIME = 0.08        -- seconds to slide one cell
-local REPEAT_DELAY = 0.25      -- a held direction repeats after this
-local REPEAT_TIME = 0.11       -- then one step every this
+local SLIDE_TIME, REPEAT_DELAY, REPEAT_TIME, WIN_DELAY    -- set from the properties in on_create
 local STICK_ON, STICK_OFF = 0.6, 0.35
-local WIN_DELAY = 2.2
 
 local DIRECTIONS = {
     step_left = { -1, 0 },
@@ -335,6 +336,10 @@ end
 -- Lifecycle -----------------------------------------------------------------------------------------------------------
 
 function on_create()
+    SLIDE_TIME = slide_time
+    REPEAT_DELAY = repeat_delay
+    REPEAT_TIME = repeat_time
+    WIN_DELAY = win_delay
     if not ui.is_transition_active() then ui.transition_fade_in(0.4) end
     map_id = scene.find_entity("Level")
     player_id = scene.find_entity("Player")
