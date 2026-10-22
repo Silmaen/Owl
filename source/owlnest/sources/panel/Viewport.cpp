@@ -670,6 +670,9 @@ void Viewport::renderOverlay() const {
 		activeScene->getNavigation().setDebugVisible(scene::nav::NavWorld::DebugSource::Editor,
 													 m_parent != nullptr && m_parent->getSettings().showNavGraph);
 		const scene::Entity camera = activeScene->getPrimaryCamera();
+		// A scene played without a primary camera (an empty one) has no view to draw the overlay through.
+		if (!camera)
+			return;
 		auto& cam = camera.getComponent<scene::component::Camera>().camera;
 		cam.setTransform(activeScene->getWorldTransform(camera)());
 		renderer::Renderer2D::beginScene(cam);
