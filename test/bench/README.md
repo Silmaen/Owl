@@ -38,7 +38,7 @@ cd output/build/linux-clang-release-bench/bin
 | `--verbose`         | off     | Keep engine warnings and errors in the output.        |
 
 Groups (name prefixes): `scene`, `serialize`, `prefab`, `renderer2d`, `hud`, `tilemap`, `frame`, `voxel`,
-`script`, `physics`, `sample` (the Engine Demo scenes), `slang`, `iso`, `path`, `mcp`. The first Slang compilation is only "cold" when `slang` is the first group to
+`script`, `physics`, `sample` (the Engine Demo scenes), `slang`, `iso`, `path`, `mcp`, `culling`. The first Slang compilation is only "cold" when `slang` is the first group to
 compile a shader in the process, which is the case for a full run. `voxel/streaming` streams a procedural world
 through a real `RendererVoxel` layer with frames paced at 60 Hz (about 12 s) and reports the main-thread CPU time per
 frame (p50, p99, peak), the meshing work and the chunk appearance latency.

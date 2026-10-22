@@ -329,6 +329,23 @@ INSTANTIATE_TEST_SUITE_P(Mesh, RenderImage, testing::Values(RenderCase{"mesh", "
 							 return iInfo.param.scene + "_" + iInfo.param.backend;
 						 });
 
+// Billboard sprites of the raycaster drawn on the GPU in one instanced call, sorted far to near on the GPU, a sprite
+// cut by a wall edge and two overlapping lamps.
+INSTANTIATE_TEST_SUITE_P(RaycastSprites, RenderImage,
+						 testing::Values(RenderCase{"raycast_sprites", "vulkan"},
+										 RenderCase{"raycast_sprites", "opengl"}),
+						 [](const testing::TestParamInfo<RenderCase>& iInfo) -> std::string {
+							 return iInfo.param.scene + "_" + iInfo.param.backend;
+						 });
+
+// Occlusion culling of the mesh layer: a wall hides a row of cubes, one cube is half behind it; the capture must match
+// the same scene drawn without occlusion (the reference).
+INSTANTIATE_TEST_SUITE_P(Occlusion, RenderImage,
+						 testing::Values(RenderCase{"occlusion", "vulkan"}, RenderCase{"occlusion", "opengl"}),
+						 [](const testing::TestParamInfo<RenderCase>& iInfo) -> std::string {
+							 return iInfo.param.scene + "_" + iInfo.param.backend;
+						 });
+
 namespace {
 
 // One picking check: a scene, a backend and the entity expected under each pixel of the capture.

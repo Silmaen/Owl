@@ -12,6 +12,7 @@
 #include "GameState.h"
 #include "core/Timestep.h"
 #include "core/UUID.h"
+#include "data/geometry/LooseOctree.h"
 #include "input/ActionFrame.h"
 #include "input/InputFrame.h"
 #include "math/Transform.h"
@@ -245,6 +246,42 @@ public:
 	 * @return The timings, zero while timing is off.
 	 */
 	[[nodiscard]] auto getLastRuntimeTimings() const -> const RuntimeTimings& { return m_lastRuntimeTimings; }
+
+	/**
+	 * @brief
+	 *  Counters of the spatial culling of the last frame.
+	 */
+	struct CullingStatistics {
+		/// Mesh entities filed in the spatial index.
+		uint32_t meshesIndexed = 0;
+		/// Mesh entities the last mesh pass found in its frustum.
+		uint32_t meshesInFrustum = 0;
+		/// Sprite entities filed in the spatial index.
+		uint32_t spritesIndexed = 0;
+		/// Sprite entities the last 2D pass found in its frustum.
+		uint32_t spritesInFrustum = 0;
+	};
+
+	/**
+	 * @brief
+	 *  Get the counters of the spatial culling of the last frame.
+	 * @return The counters.
+	 */
+	[[nodiscard]] auto getCullingStatistics() const -> const CullingStatistics& { return m_cullingStats; }
+
+	/**
+	 * @brief
+	 *  Get the spatial index of the mesh entities (world boxes, ids are entity indices), current after a render.
+	 * @return The index.
+	 */
+	[[nodiscard]] auto getMeshSpatialIndex() const -> const data::geometry::LooseOctree& { return m_meshIndex; }
+
+	/**
+	 * @brief
+	 *  Get the spatial index of the sprite entities (world boxes, ids are entity indices), current after a render.
+	 * @return The index.
+	 */
+	[[nodiscard]] auto getSpriteSpatialIndex() const -> const data::geometry::LooseOctree& { return m_spriteIndex; }
 
 	/**
 	 * @brief
@@ -1081,6 +1118,36 @@ private:
 	mutable std::vector<math::mat4> m_worldMatrices;
 	/**
 	 * @brief
+	 *  What a spatial index entry was filed from, indexed by `entt::to_entity(handle)`.
+	 */
+	struct SpatialEntry {
+		/// Entity filed (its version tells a recycled index apart), `entt::null` when free.
+		entt::entity handle = entt::null;
+		/// `WorldNode::stamp` of the world matrix the box was computed from.
+		uint64_t stamp = 0;
+		/// Mesh resource the box was computed from (null for a sprite).
+		const void* source = nullptr;
+		/// Update pass that last saw the entity.
+		uint32_t pass = 0;
+	};
+	/// Spatial index of the `MeshRenderer` entities.
+	data::geometry::LooseOctree m_meshIndex;
+	/// Spatial index of the sprite entities (`SpriteRenderer`, `AnimatedSpriteRenderer`).
+	data::geometry::LooseOctree m_spriteIndex;
+	/// Sources of `m_meshIndex`.
+	std::vector<SpatialEntry> m_meshEntries;
+	/// Sources of `m_spriteIndex`.
+	std::vector<SpatialEntry> m_spriteEntries;
+	/// Current pass of `updateSpatialIndex()`.
+	uint32_t m_spatialPass = 0;
+	/// Entities found by the last `markVisible`.
+	std::vector<uint32_t> m_visibleIds;
+	/// One byte per entity index, set for the entities in `m_visibleIds`.
+	std::vector<uint8_t> m_visibleMarks;
+	/// Counters of the spatial culling of the last frame.
+	CullingStatistics m_cullingStats;
+	/**
+	 * @brief
 	 *  Hook run when a component is added to an entity.
 	 *
 	 * The engine components have their own specialisation (declared after the class); a component registered by
@@ -1143,6 +1210,30 @@ private:
 	 *  mesh whose file changed (hot reload) is fetched again.
 	 */
 	void prepareMeshRenderData();
+
+	/**
+	 * @brief
+	 *  Bring the spatial indexes up to date: the world box of every mesh and sprite entity, refiled only when its world
+	 *  matrix or its mesh changed; the entities gone are removed.
+	 */
+	void updateSpatialIndex();
+
+	/**
+	 * @brief
+	 *  Mark the entities of an index whose box touches the frustum of a view-projection.
+	 * @param[in] iIndex The spatial index.
+	 * @param[in] iViewProjection The view-projection of the pass.
+	 * @return The number of entities marked; `isMarkedVisible` reads the marks until the next call.
+	 */
+	auto markVisible(const data::geometry::LooseOctree& iIndex, const math::mat4& iViewProjection) -> uint32_t;
+
+	/**
+	 * @brief
+	 *  Check whether the last `markVisible` marked an entity.
+	 * @param[in] iEntity The entity.
+	 * @return True when marked.
+	 */
+	[[nodiscard]] auto isMarkedVisible(entt::entity iEntity) const -> bool;
 
 	/**
 	 * @brief
@@ -1260,6 +1351,14 @@ private:
 	 * @param[in,out] ioGraph The frame graph.
 	 */
 	void recordLightPasses(renderer::RenderGraph& ioGraph);
+
+	/**
+	 * @brief
+	 *  Record the occlusion passes when a mesh layer with content asks for them: the depth of the mesh and voxel
+	 *  occluders seen by the render camera, then the pyramid the mesh layers test their opaque meshes against.
+	 * @param[in,out] ioGraph Graph of the frame.
+	 */
+	void recordOcclusionPasses(renderer::RenderGraph& ioGraph);
 
 	/**
 	 * @brief
@@ -1408,6 +1507,8 @@ private:
 	EnvironmentState m_environment;
 	/// Shadow-map targets of the frame, one per cascade.
 	std::array<renderer::RenderGraph::Resource, renderer::g_maxShadowCascades> m_shadowTargets{};
+	/// Token target of the occlusion pyramid pass, read by the 3D passes; invalid without occlusion.
+	renderer::RenderGraph::Resource m_occlusionToken{};
 
 	/// Shared sink collecting worker-generated voxel chunks for `updateVoxelStreaming` to install on the main thread.
 	shared<VoxelStreamState> m_voxelStream;

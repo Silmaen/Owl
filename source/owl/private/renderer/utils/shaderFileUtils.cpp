@@ -217,6 +217,9 @@ auto crossCompileToGlsl(const std::vector<uint32_t>& iSpirv, const std::string& 
 		options.vulkan_semantics = false;
 		options.vertex.support_nonzero_base_instance = false;
 		compiler.set_common_options(options);
+		// Slang names every storage block `StructuredBuffer`: the GL linker would match a vertex and a fragment one.
+		for (const auto& buffer: compiler.get_shader_resources().storage_buffers)
+			compiler.set_name(buffer.base_type_id, std::format("{}_block", compiler.get_name(buffer.id)));
 		glsl = compiler.compile();
 	} catch (const std::exception& iEx) {
 		OWL_CORE_ERROR("Shader {}: SPIR-V to GLSL translation failed ({}).", iName, iEx.what())

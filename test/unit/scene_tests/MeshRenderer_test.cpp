@@ -24,11 +24,13 @@
 #include <scene/SceneSerializer.h>
 #include <scene/component/components.h>
 
+#include <algorithm>
 #include <chrono>
 #include <cstdint>
 #include <filesystem>
 #include <string>
 #include <utility>
+#include <vector>
 
 using namespace owl;
 
@@ -83,11 +85,11 @@ protected:
 	}
 
 	// A 2D world layer first, then the mesh layer, as the Engine Demo stack.
-	static void useStack(const bool iMeshFirst) {
+	static void useStack(const bool iMeshFirst, const std::string& iMeshConfig = {}) {
 		renderer::RendererStackConfig config;
 		if (!iMeshFirst)
 			config.entries.push_back({.typeKey = "Renderer2D", .name = "world", .defaultConfig = {}});
-		config.entries.push_back({.typeKey = "RendererMesh", .name = "mesh_world", .defaultConfig = {}});
+		config.entries.push_back({.typeKey = "RendererMesh", .name = "mesh_world", .defaultConfig = iMeshConfig});
 		renderer::Renderer::setRenderStack(
 				renderer::RenderStack::buildFromConfig(config, renderer::EnabledRenderersConfig{}));
 	}
@@ -207,6 +209,29 @@ TEST_F(MeshRendererTest, anEditorViewRunsTheWorldThroughTheFrameGraph) {
 	EXPECT_EQ(passes[passes.size() - 2], "entity ids and depth");
 	EXPECT_EQ(passes.back(), "overlays and HUD");
 	EXPECT_GE(renderer::Renderer::getRenderGraph().getPooledTargetCount(), 1u);
+}
+
+TEST_F(MeshRendererTest, occlusionCullingDrawsTheOccludersBeforeTheMeshLayer) {
+	const auto passesOf = [](const std::string& iConfig) -> std::vector<std::string> {
+		useStack(false, iConfig);
+		const auto sc = makeScene(true);
+		sc->onRenderRuntime();
+		return renderer::Renderer::getRenderGraph().getCompiledPasses();
+	};
+	const auto plain = passesOf({});
+	EXPECT_EQ(std::ranges::find(plain, "occluder depth"), plain.end());
+	const auto passes = passesOf("OcclusionCulling: true\nOcclusionScale: 0.5");
+	const auto depth = std::ranges::find(passes, "occluder depth");
+	const auto pyramid = std::ranges::find(passes, "occlusion pyramid");
+	const auto meshes = std::ranges::find(passes, "mesh_world");
+	ASSERT_NE(depth, passes.end());
+	ASSERT_NE(pyramid, passes.end());
+	ASSERT_NE(meshes, passes.end());
+	EXPECT_LT(depth, pyramid);
+	EXPECT_LT(pyramid, meshes);
+	// The Null backend has no compute: the meshes are still drawn, culled by frustum only.
+	EXPECT_EQ(renderer::RendererMesh::getStatistics().opaqueDrawCount, cubeParts());
+	EXPECT_EQ(renderer::RendererMesh::getStatistics().occlusionLevelCount, 0u);
 }
 
 TEST_F(MeshRendererTest, aHotReloadedFileIsFetchedAgain) {

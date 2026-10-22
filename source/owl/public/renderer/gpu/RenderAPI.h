@@ -295,6 +295,20 @@ public:
 
 	/**
 	 * @brief
+	 *  Indexed indirect draw of one `DrawIndexedIndirectCommand` record (20 bytes: index count, instance count, first
+	 *  index, base vertex, base instance) read at `iCommandIndex` in `iCommandBuffer`, whose instance count a compute
+	 *  pass may have written. Vulkan: `vkCmdDrawIndexedIndirect`. OpenGL: `glDrawElementsIndirect` (core in 4.0). Null:
+	 *  no-op.
+	 * @param[in] iData Draw data with bound vertex / index buffers.
+	 * @param[in] iCommandBuffer SSBO of the commands.
+	 * @param[in] iCommandIndex Index of the command in the buffer.
+	 */
+	virtual void drawIndexedIndirectAt([[maybe_unused]] const shared<DrawData>& iData,
+									   [[maybe_unused]] const shared<StorageBuffer>& iCommandBuffer,
+									   [[maybe_unused]] uint32_t iCommandIndex) {}
+
+	/**
+	 * @brief
 	 *  Check whether the backend can measure GPU time with timestamp queries.
 	 * @return True when `setGpuTimestampsEnabled(true)` produces timings.
 	 */

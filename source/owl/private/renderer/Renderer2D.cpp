@@ -433,6 +433,10 @@ void Renderer2D::beginScene(const Camera& iCamera) {
 	RendererTilemap::beginScene(iCamera);
 }
 
+auto Renderer2D::getViewProjection() -> math::mat4 {
+	return g_Data ? g_Data->cameraBuffer.viewProjection : math::identity<float, 4>();
+}
+
 void Renderer2D::endScene() {
 	OWL_PROFILE_FUNCTION()
 

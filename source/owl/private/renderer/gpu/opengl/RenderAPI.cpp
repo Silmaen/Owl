@@ -199,6 +199,24 @@ void RenderAPI::drawIndexedIndirect(const shared<DrawData>& iData,
 	glBindBuffer(GL_PARAMETER_BUFFER, 0);
 }
 
+void RenderAPI::drawIndexedIndirectAt(const shared<DrawData>& iData,
+									  const shared<renderer::gpu::StorageBuffer>& iCommandBuffer,
+									  const uint32_t iCommandIndex) {
+	if (!iData || !iCommandBuffer)
+		return;
+	const auto* cmdSsbo = dynamic_cast<const StorageBuffer*>(iCommandBuffer.get());
+	if (cmdSsbo == nullptr || cmdSsbo->getHandle() == 0) {
+		OWL_CORE_WARN("OpenGL: drawIndexedIndirectAt with a non-OpenGL or empty SSBO.")
+		return;
+	}
+	const auto mode = prepareDraw(iData);
+	constexpr uintptr_t stride = sizeof(uint32_t) * 5;
+	glBindBuffer(GL_DRAW_INDIRECT_BUFFER, cmdSsbo->getHandle());
+	// NOLINTNEXTLINE(performance-no-int-to-ptr): the GL API takes the offset in the indirect buffer as a pointer.
+	glDrawElementsIndirect(mode, GL_UNSIGNED_INT, reinterpret_cast<const void*>(iCommandIndex * stride));
+	glBindBuffer(GL_DRAW_INDIRECT_BUFFER, 0);
+}
+
 RenderAPI::~RenderAPI() {
 	if (m_queriesCreated)
 		glDeleteQueries(static_cast<GLsizei>(g_slotCount * 2), m_queries.front().data());

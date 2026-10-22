@@ -1,0 +1,112 @@
+Scene: RenderTestOcclusion
+EnabledRenderers:
+- {Name: world, Enabled: false}
+- Name: mesh_world
+  Enabled: true
+  Overrides: {OcclusionCulling: true}
+- {Name: ui, Enabled: false}
+Entities:
+- Entity: 3700000000000000000
+  Tag: {tag: OcclusionCamera}
+  Transform:
+    translation: [0, 1.2, 7]
+    rotation: [-0.12, 0, 0]
+    scale: [1, 1, 1]
+  Camera:
+    camera: {projectionType: Perspective, perspectiveFOV: 0.785398185, perspectiveNear: 0.100000001, perspectiveFar: 100,
+      orthographicSize: 8, orthographicNear: -1, orthographicFar: 10}
+    primary: true
+    fixedAspectRatio: false
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 0}
+- Entity: 3700000000000000001
+  Tag: {tag: Ground}
+  Transform:
+    translation: [0, -0.75, -2]
+    rotation: [0, 0, 0]
+    scale: [12, 0.1, 14]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 0}
+  RendererTag: {Name: mesh_world}
+  MeshRenderer:
+    mesh: meshes/textured_cube.glb
+    color: [0.55, 0.55, 0.6, 1]
+    transparent: false
+- Entity: 3700000000000000002
+  Tag: {tag: Wall}
+  Transform:
+    translation: [-0.6, 0.8, 1]
+    rotation: [0, 0, 0]
+    scale: [3.2, 3, 0.3]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 0}
+  RendererTag: {Name: mesh_world}
+  MeshRenderer:
+    mesh: meshes/textured_cube.glb
+    color: [0.75, 0.7, 0.65, 1]
+    transparent: false
+- Entity: 3700000000000000003
+  Tag: {tag: Hidden0}
+  Transform:
+    translation: [-1.6, 0, -2.5]
+    rotation: [0.3, 0.5, 0]
+    scale: [0.8, 0.8, 0.8]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 0}
+  RendererTag: {Name: mesh_world}
+  MeshRenderer:
+    mesh: meshes/textured_cube.glb
+    color: [1, 0.3, 0.3, 1]
+    transparent: false
+- Entity: 3700000000000000004
+  Tag: {tag: Hidden1}
+  Transform:
+    translation: [-0.6, 0, -2.5]
+    rotation: [0.3, 0.5, 0]
+    scale: [0.8, 0.8, 0.8]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 0}
+  RendererTag: {Name: mesh_world}
+  MeshRenderer:
+    mesh: meshes/textured_cube.glb
+    color: [1, 0.3, 0.3, 1]
+    transparent: false
+- Entity: 3700000000000000005
+  Tag: {tag: Hidden2}
+  Transform:
+    translation: [0.4, 0, -2.5]
+    rotation: [0.3, 0.5, 0]
+    scale: [0.8, 0.8, 0.8]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 0}
+  RendererTag: {Name: mesh_world}
+  MeshRenderer:
+    mesh: meshes/textured_cube.glb
+    color: [1, 0.3, 0.3, 1]
+    transparent: false
+- Entity: 3700000000000000006
+  Tag: {tag: HalfHidden}
+  Transform:
+    translation: [1.3, 0, -1.5]
+    rotation: [0.2, 0.4, 0]
+    scale: [0.9, 0.9, 0.9]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 0}
+  RendererTag: {Name: mesh_world}
+  MeshRenderer:
+    mesh: meshes/textured_cube.glb
+    color: [0.3, 1, 0.4, 1]
+    transparent: false
+- Entity: 3700000000000000007
+  Tag: {tag: Visible}
+  Transform:
+    translation: [2.6, 0, 0]
+    rotation: [0.4, 0.2, 0.1]
+    scale: [0.8, 0.8, 0.8]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 0}
+  RendererTag: {Name: mesh_world}
+  MeshRenderer:
+    mesh: meshes/textured_cube.glb
+    color: [0.3, 0.5, 1, 1]
+    transparent: false

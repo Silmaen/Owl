@@ -1068,6 +1068,11 @@ are searched, `scenes/` included.
 
 A `RendererVoxel` layer draws the `VoxelWorld` entities instead, a `RendererMesh` layer the `MeshRenderer` ones.
 
+`renderWithStack` updates two spatial indexes (`getMeshSpatialIndex`: `MeshRenderer` entities; `getSpriteSpatialIndex`:
+`SpriteRenderer` and `AnimatedSpriteRenderer` entities), loose octrees refiled only when the world matrix or the mesh
+changes. The mesh pass and the 2D sprite loop skip the entities outside the frustum of the current renderer
+view-projection, keeping the submission order; `getCullingStatistics()` reports the counts.
+
 Every primitive carries its world z as sort key (depth first, then type, then submission order), so a circle under a
 sprite (lower z) draws under it, whatever the group (`Renderer2D` draw order, see
 [Renderer](renderer.md#renderer2d)).

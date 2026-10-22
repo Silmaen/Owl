@@ -117,6 +117,12 @@ public:
 	 */
 	static void applyActive();
 
+	/**
+	 * @brief
+	 *  Record that a bind outside every block changed the GL bindings: the next draw applies its table again.
+	 */
+	static void invalidateApplied();
+
 private:
 	/**
 	 * @brief

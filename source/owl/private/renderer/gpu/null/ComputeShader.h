@@ -50,6 +50,12 @@ public:
 
 	/**
 	 * @brief
+	 *  No-op texture bind.
+	 */
+	void bindTexture(uint32_t iBinding, const shared<renderer::gpu::Texture2D>& iTexture) override;
+
+	/**
+	 * @brief
 	 *  No-op dispatch.
 	 */
 	void dispatch(uint32_t iGroupsX, uint32_t iGroupsY, uint32_t iGroupsZ) override;

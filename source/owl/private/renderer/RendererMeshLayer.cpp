@@ -13,6 +13,8 @@
 #include "renderer/RenderLayerFactory.h"
 #include "renderer/RenderStackYaml.h"
 
+#include <algorithm>
+
 namespace owl::renderer {
 
 namespace {
@@ -57,6 +59,10 @@ void RendererMeshLayer::applyConfig(const std::string& iConfig) {
 		m_config.sunIlluminance = sun.as<float>();
 	if (const auto luminance = config["AmbientLuminance"]; luminance)
 		m_config.ambientLuminance = luminance.as<float>();
+	if (const auto occlusion = config["OcclusionCulling"]; occlusion)
+		m_config.occlusionCulling = occlusion.as<bool>();
+	if (const auto scale = config["OcclusionScale"]; scale)
+		m_config.occlusionScale = std::clamp(scale.as<float>(), 0.125f, 1.f);
 }
 
 }// namespace owl::renderer

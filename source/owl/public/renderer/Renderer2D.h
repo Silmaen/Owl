@@ -291,6 +291,13 @@ public:
 
 	/**
 	 * @brief
+	 *  Get the view-projection of the current scene (`beginScene`).
+	 * @return The view-projection.
+	 */
+	[[nodiscard]] static auto getViewProjection() -> math::mat4;
+
+	/**
+	 * @brief
 	 *  Ends a scene.
 	 */
 	static void endScene();

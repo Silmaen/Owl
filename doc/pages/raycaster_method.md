@@ -269,15 +269,27 @@ textured stripes, no fish-eye via perpendicular distance). Relative to a pixel-p
 
 1. **Drawing path** — Wolfenstein 3D wrote pixels directly to a 320×200 VGA buffer. Owl Engine emits textured stripes through
    the GPU: the per-column DDA runs as a compute pre-pass (`RaycastDDAPass` / `raycast_dda.slang`) and every wall stripe
-   is drawn in a single instanced call (`raycast_stripe.slang`). The Null backend keeps a CPU walk + per-column
+   is drawn in a single instanced call (`raycast_stripe.slang`); the visible sprites are one more instanced call
+   (`raycast_sprite.slang`, see *Sprites* below). The Null backend keeps a CPU walk + per-column
    `Renderer2D::drawQuad` fallback so the headless test suite stays green.
 2. **Floors and ceilings** — shipped: a textured per-scanline backdrop (`emitTexturedBackdrop`), with a solid-colour
    fallback when no floor / ceiling tileset is configured.
-3. **Sprites / billboards** — shipped: entities render as camera-facing strips, occluded by the per-column wall z-buffer.
+3. **Sprites / billboards** — shipped: entities render as camera-facing billboards, occluded by the per-column wall z-buffer
+   (see *Sprites* below).
 4. **Doors, pushwalls, transparent walls** — shipped (see *Dynamic walls* below and the `TileMeta.transparent` flag).
    Thin walls are out of scope.
-5. **Not done** — point lights (only global distance fog ships), and moving the raycast **sprite** stripes
-   onto the GPU so the `BitonicSortPass` depth sort can feed them without a CPU readback (see the [roadmap](roadmap.md)).
+5. **Not done** — point lights (only global distance fog ships), see the [roadmap](roadmap.md).
+
+## Sprites
+
+`RendererRaycast::drawSprites` draws every visible sprite in one instanced call (`raycast_sprite.slang`, descriptor
+block `RendererRaycastSprites`, up to 16 textures and 1024 sprites):
+
+- The far-to-near order is sorted on the GPU by `BitonicSortPass`.
+- The fragment shader drops the pixels behind the wall of their ray column (the column depths come from the wall
+  pass) and samples the sprite at the column centre with no horizontal derivative, which gives the look of the
+  per-column stripes.
+- With more sprites or textures, or on the Null backend, the CPU emits per-column stripes instead.
 
 ## Dynamic walls (doors + pushwalls)
 

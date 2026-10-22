@@ -17,6 +17,9 @@ ComputeShader::~ComputeShader() = default;
 void ComputeShader::bindStorageBuffer([[maybe_unused]] const uint32_t iBinding,
 									  [[maybe_unused]] const shared<renderer::gpu::StorageBuffer>& iBuffer) {}
 
+void ComputeShader::bindTexture([[maybe_unused]] const uint32_t iBinding,
+								[[maybe_unused]] const shared<renderer::gpu::Texture2D>& iTexture) {}
+
 void ComputeShader::dispatch([[maybe_unused]] const uint32_t iGroupsX, [[maybe_unused]] const uint32_t iGroupsY,
 							 [[maybe_unused]] const uint32_t iGroupsZ) {}
 

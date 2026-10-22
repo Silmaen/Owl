@@ -48,8 +48,8 @@ struct SceneUbo {
 	// rgb: editor ambient added to every lit surface; w: exposure of the emissive.
 	math::vec4 ambient{0.f, 0.f, 0.f, 0.f};
 	math::vec4 tint{1.f, 1.f, 1.f, 1.f};
-	// x: entity id written to the picking attachment; y: 1 when the bound framebuffer stores linear colour; zw: padding.
-	std::array<int32_t, 4> ids{-1, 0, 0, 0};
+	// x: entity id, y: linear target, z: shadow pass, w: first visible instance (-1 for a single draw).
+	std::array<int32_t, 4> ids{-1, 0, 0, -1};
 };
 
 static_assert(sizeof(SceneUbo) == 192, "SceneUbo must match the std140 layout of Scene3D in the renderer3D shaders.");
@@ -96,6 +96,8 @@ constexpr uint32_t g_materialSlotEnd = 1 + g_materialMapCount;
 constexpr uint32_t g_environmentSlot = 7;
 constexpr uint32_t g_dfgSlot = 13;
 constexpr uint32_t g_dfgSize = 64;
+constexpr uint32_t g_instanceBinding = 5;
+constexpr uint32_t g_visibleBinding = 6;
 
 struct InternalData {
 	shared<gpu::UniformBuffer> sceneUniformBuffer;
@@ -222,7 +224,9 @@ void setMaterial(const Material* iMaterial, const bool iHasBaseTexture, const bo
 	g_Data->materialUniformBuffer->setData(&ubo, sizeof(MaterialUbo), 0);
 }
 
-void setDrawParams(const math::mat4& iModel, const MeshDrawParams& iParams, const bool iHasBaseTexture) {
+void setDrawParams(const math::mat4& iModel, const MeshDrawParams& iParams, const bool iHasBaseTexture,
+				   const int32_t iVisibleBase = -1) {
+	g_Data->scene.ids[3] = iVisibleBase;
 	g_Data->scene.model = iModel;
 	g_Data->scene.tint = iParams.tint;
 	g_Data->scene.ids[0] = iParams.entityId;
@@ -235,6 +239,7 @@ void setDrawParams(const math::mat4& iModel, const MeshDrawParams& iParams, cons
 }// namespace
 
 static_assert(sizeof(Mesh3DVertex) == 56, "Mesh3DVertex must stay tightly packed for direct VBO upload.");
+static_assert(sizeof(MeshInstance) == 96, "MeshInstance must match the std430 layout of MeshInstance in mesh3d.");
 
 void Renderer3D::init() {
 	OWL_PROFILE_FUNCTION()
@@ -246,7 +251,7 @@ void Renderer3D::init() {
 	g_Data = mkShared<InternalData>();
 	refreshLighting();
 
-	const std::array<gpu::BindingDecl, 5> bindings{
+	const std::array<gpu::BindingDecl, 7> bindings{
 			gpu::BindingDecl{.binding = 0,
 							 .type = gpu::BindingType::UniformBuffer,
 							 .count = 1,
@@ -267,6 +272,14 @@ void Renderer3D::init() {
 							 .type = gpu::BindingType::UniformBuffer,
 							 .count = 1,
 							 .stages = gpu::ShaderStage::Fragment},
+			gpu::BindingDecl{.binding = 5,
+							 .type = gpu::BindingType::StorageBuffer,
+							 .count = 1,
+							 .stages = gpu::ShaderStage::Vertex},
+			gpu::BindingDecl{.binding = 6,
+							 .type = gpu::BindingType::StorageBuffer,
+							 .count = 1,
+							 .stages = gpu::ShaderStage::Vertex},
 	};
 	gpu::RendererDescriptors::declare(k_RendererKey, bindings);
 	const gpu::RendererDescriptors::ScopedActive scoped{blockId()};
@@ -424,6 +437,10 @@ void Renderer3D::setShadowPass(const bool iShadowPass) {
 
 auto Renderer3D::isShadowPass() -> bool { return g_Data && g_Data->shadowPass; }
 
+auto Renderer3D::getViewProjection() -> math::mat4 {
+	return g_Data ? g_Data->scene.viewProjection : math::identity<float, 4>();
+}
+
 auto Renderer3D::getWhiteTexture() -> shared<gpu::Texture2D> { return g_Data ? g_Data->whiteTexture : nullptr; }
 
 auto Renderer3D::createMesh(std::span<const Mesh3DVertex> iVertices, std::span<const uint32_t> iIndices,
@@ -469,6 +486,46 @@ void Renderer3D::drawMeshes(std::span<const MeshHandle> iMeshes, const math::mat
 		if (mesh && mesh->getIndexCount() > 0)
 			gpu::RenderCommand::drawData(mesh, mesh->getIndexCount());
 	}
+}
+
+namespace {
+void bindInstances(const MeshInstanceBuffers& iBuffers, const std::span<const shared<gpu::Texture2D>> iTextures,
+				   const MeshDrawParams& iParams) {
+	MeshDrawParams params = iParams;
+	params.tint = math::vec4{1.f, 1.f, 1.f, 1.f};
+	params.entityId = -1;
+	setDrawParams(math::identity<float, 4>(), params, !iTextures.empty() && iTextures.front(),
+				  static_cast<int32_t>(iBuffers.visibleBase));
+	iBuffers.instances->bind(g_instanceBinding);
+	iBuffers.visible->bind(g_visibleBinding);
+	bindMeshTextures(iTextures, iParams.material);
+}
+}// namespace
+
+void Renderer3D::drawMeshInstanced(const MeshHandle& iMesh, const MeshInstanceBuffers& iBuffers,
+								   const uint32_t iInstanceCount,
+								   const std::span<const shared<gpu::Texture2D>> iTextures,
+								   const MeshDrawParams& iParams) {
+	OWL_PROFILE_FUNCTION()
+
+	if (!iMesh || iMesh->getIndexCount() == 0 || iInstanceCount == 0 || !iBuffers.instances || !iBuffers.visible)
+		return;
+	const gpu::RendererDescriptors::ScopedActive scoped{blockId()};
+	bindInstances(iBuffers, iTextures, iParams);
+	gpu::RenderCommand::drawDataInstanced(iMesh, iMesh->getIndexCount(), iInstanceCount);
+}
+
+void Renderer3D::drawMeshIndirect(const MeshHandle& iMesh, const MeshInstanceBuffers& iBuffers,
+								  const shared<gpu::StorageBuffer>& iCommands, const uint32_t iCommandIndex,
+								  const std::span<const shared<gpu::Texture2D>> iTextures,
+								  const MeshDrawParams& iParams) {
+	OWL_PROFILE_FUNCTION()
+
+	if (!iMesh || iMesh->getIndexCount() == 0 || !iCommands || !iBuffers.instances || !iBuffers.visible)
+		return;
+	const gpu::RendererDescriptors::ScopedActive scoped{blockId()};
+	bindInstances(iBuffers, iTextures, iParams);
+	gpu::RenderCommand::drawIndexedIndirectAt(iMesh, iCommands, iCommandIndex);
 }
 
 }// namespace owl::renderer

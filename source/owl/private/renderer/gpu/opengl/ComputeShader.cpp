@@ -8,6 +8,7 @@
 
 #include "owlpch.h"
 
+#include "BindingTable.h"
 #include "ComputeShader.h"
 #include "Shader.h"
 
@@ -99,10 +100,17 @@ ComputeShader::~ComputeShader() {
 	m_programId = 0;
 }
 
-void ComputeShader::bindStorageBuffer([[maybe_unused]] const uint32_t iBinding,
-									  const shared<renderer::gpu::StorageBuffer>& iBuffer) {
+void ComputeShader::bindStorageBuffer(const uint32_t iBinding, const shared<renderer::gpu::StorageBuffer>& iBuffer) {
 	if (iBuffer)
-		iBuffer->bind();
+		iBuffer->bind(iBinding);
+}
+
+void ComputeShader::bindTexture(const uint32_t iBinding, const shared<renderer::gpu::Texture2D>& iTexture) {
+	if (!iTexture)
+		return;
+	glBindTextureUnit(iBinding, static_cast<GLuint>(iTexture->getRendererId()));
+	// The unit now differs from what the renderer blocks recorded: the next draw binds its own again.
+	BindingTable::invalidateApplied();
 }
 
 void ComputeShader::dispatch(const uint32_t iGroupsX, const uint32_t iGroupsY, const uint32_t iGroupsZ) {

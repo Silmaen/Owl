@@ -72,6 +72,14 @@ public:
 
 	/**
 	 * @brief
+	 *  Record the texture of a combined image sampler binding for the next dispatch.
+	 * @param[in] iBinding Shader binding slot.
+	 * @param[in] iTexture The texture, in shader-read layout.
+	 */
+	void bindTexture(uint32_t iBinding, const shared<renderer::gpu::Texture2D>& iTexture) override;
+
+	/**
+	 * @brief
 	 *  Record the compute dispatch on the active command buffer.
 	 * @param[in] iGroupsX Workgroups along X.
 	 * @param[in] iGroupsY Workgroups along Y.
@@ -87,6 +95,13 @@ private:
 	 * @param[in] iBindings Set of SSBO binding slots used by the shader.
 	 */
 	void buildDescriptorSetLayout(const std::vector<uint32_t>& iBindings);
+
+	/**
+	 * @brief
+	 *  Write the bound buffers and textures into a descriptor set.
+	 * @param[in] iSet The set.
+	 */
+	void writeDescriptors(VkDescriptorSet iSet);
 
 	/**
 	 * @brief
@@ -108,6 +123,10 @@ private:
 	internal::DescriptorRing m_ring;
 	/// Storage buffers bound per binding slot, written into the set of each dispatch.
 	std::vector<std::pair<uint32_t, shared<renderer::gpu::StorageBuffer>>> m_bound;
+	/// Combined image sampler binding slots declared by the shader (from reflection).
+	std::vector<uint32_t> m_imageBindings;
+	/// Textures bound per binding slot.
+	std::vector<std::pair<uint32_t, shared<renderer::gpu::Texture2D>>> m_boundTextures;
 	/// Shader name (for diagnostics).
 	std::string m_name;
 	/// True when construction succeeded.
