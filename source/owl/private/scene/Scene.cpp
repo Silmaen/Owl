@@ -12,6 +12,7 @@
 #include "data/voxel/TerrainGenerator.h"
 #include "math/Frustum.h"
 #include "platform/FileUtils.h"
+#include "systems/EngineSystems.h"
 #include "renderer/BackgroundRenderer.h"
 #include "renderer/CameraOrtho.h"
 #include "renderer/ClipSpace.h"
@@ -20,6 +21,7 @@
 #include "renderer/MaterialLibrary.h"
 #include "renderer/MeshCache.h"
 #include "renderer/PostProcess.h"
+#include "renderer/ProceduralSky.h"
 #include "renderer/Renderer.h"
 #include "renderer/Renderer2D.h"
 #include "renderer/Renderer2DLayer.h"
@@ -659,6 +661,7 @@ void Scene::onUpdateEditor(const core::Timestep& iTimeStep, const renderer::Came
 	// Stream procedural voxel terrain around the editor camera (its world position is the inverse-view translation).
 	const math::mat4 camToWorld = inverse(iCamera.getView());
 	updateVoxelStreaming(math::vec3{camToWorld(0, 3), camToWorld(1, 3), camToWorld(2, 3)});
+	systems::applyDayNightCycles(*this);
 	renderTargets();
 	renderEditorView(iCamera);
 }
@@ -1011,9 +1014,13 @@ void Scene::recordEnvironmentPass(renderer::RenderGraph& ioGraph, const renderer
 	using Graph = renderer::RenderGraph;
 	const bool editorMode = status == Status::Editing;
 	const component::Environment* environment = nullptr;
+	const component::ProceduralSky* sky = nullptr;
 	for (const auto [handle, candidate]: registry.view<component::Environment>().each()) {
 		if (isEffectivelyVisible(Entity{handle, this}, editorMode)) {
 			environment = &candidate;
+			if (const auto* procedural = registry.try_get<component::ProceduralSky>(handle);
+				procedural != nullptr && procedural->enabled)
+				sky = procedural;
 			break;
 		}
 	}
@@ -1027,13 +1034,14 @@ void Scene::recordEnvironmentPass(renderer::RenderGraph& ioGraph, const renderer
 	constantSky.ambient =
 			math::vec3{renderer::ColorEncoder::srgbToLinear(color.x()), renderer::ColorEncoder::srgbToLinear(color.y()),
 					   renderer::ColorEncoder::srgbToLinear(color.z())};
-	if (environment->hdri.empty()) {
+	auto& state = m_environment;
+	if (sky != nullptr) {
+		requestProceduralSky(*sky);
+	} else if (environment->hdri.empty()) {
 		m_environment = {};
 		renderer::Renderer3D::setEnvironment(constantSky);
 		return;
-	}
-	auto& state = m_environment;
-	if (state.hdri != environment->hdri) {
+	} else if (state.procedural || state.hdri != environment->hdri) {
 		state = {};
 		state.hdri = environment->hdri;
 		state.result = mkShared<std::optional<renderer::EnvironmentMap>>();
@@ -1084,6 +1092,60 @@ void Scene::recordEnvironmentPass(renderer::RenderGraph& ioGraph, const renderer
 				renderer::Renderer3D::drawSky();
 				renderer::Renderer3D::endScene();
 			});
+}
+
+void Scene::requestProceduralSky(const component::ProceduralSky& iSky) {
+	auto& state = m_environment;
+	if (!state.procedural) {
+		state = {};
+		state.procedural = true;
+	}
+	if (state.loading)
+		return;
+	const auto quantise = [](const float iValue, const float iStep) -> float { return std::round(iValue / iStep); };
+	constexpr float directionStep = 0.015f;
+	constexpr float valueStep = 0.002f;
+	const std::array<float, 16> key{quantise(iSky.sunDirection.x(), directionStep),
+									quantise(iSky.sunDirection.y(), directionStep),
+									quantise(iSky.sunDirection.z(), directionStep),
+									quantise(iSky.turbidity, valueStep),
+									quantise(iSky.groundColor.x(), valueStep),
+									quantise(iSky.groundColor.y(), valueStep),
+									quantise(iSky.groundColor.z(), valueStep),
+									quantise(iSky.nightColor.x(), valueStep),
+									quantise(iSky.nightColor.y(), valueStep),
+									quantise(iSky.nightColor.z(), valueStep),
+									quantise(iSky.nightBrightness, valueStep * 0.01f),
+									quantise(iSky.stars, valueStep),
+									quantise(iSky.discSize, valueStep),
+									static_cast<float>(iSky.resolution),
+									1.f,
+									0.f};
+	if (state.levelsReady() && key == state.skyKey)
+		return;
+	state.skyKey = key;
+	const auto linear = [](const math::vec3& iColor) -> math::vec3 {
+		return {renderer::ColorEncoder::srgbToLinear(iColor.x()), renderer::ColorEncoder::srgbToLinear(iColor.y()),
+				renderer::ColorEncoder::srgbToLinear(iColor.z())};
+	};
+	const renderer::SkyParameters parameters{.sunDirection = iSky.sunDirection,
+											 .turbidity = iSky.turbidity,
+											 .groundColor = linear(iSky.groundColor),
+											 .nightColor = linear(iSky.nightColor),
+											 .nightBrightness = iSky.nightBrightness,
+											 .stars = iSky.stars,
+											 .discSize = iSky.discSize};
+	const math::vec2ui size{iSky.resolution, std::max(iSky.resolution / 2, 1u)};
+	state.result = mkShared<std::optional<renderer::EnvironmentMap>>();
+	const auto build = [result = state.result, parameters, size]() -> void {
+		*result = renderer::EnvironmentMap::build(renderer::renderProceduralSky(parameters, size));
+	};
+	if (app::Application::instanced()) {
+		state.task = app::Application::get().getTaskScheduler().pushTask(core::task::Task{build});
+		state.loading = true;
+	} else {
+		build();
+	}
 }
 
 void Scene::useShadowMaps(const renderer::RenderGraph::PassContext& iContext) {
@@ -2917,6 +2979,14 @@ OWL_API void Scene::onComponentAdded<component::FollowTarget>([[maybe_unused]] c
 template<>
 OWL_API void Scene::onComponentAdded<component::RenderTarget>([[maybe_unused]] const Entity& iEntity,
 															  [[maybe_unused]] component::RenderTarget& ioComponent) {}
+
+template<>
+OWL_API void Scene::onComponentAdded<component::ProceduralSky>([[maybe_unused]] const Entity& iEntity,
+															   [[maybe_unused]] component::ProceduralSky& ioComponent) {}
+
+template<>
+OWL_API void Scene::onComponentAdded<component::DayNightCycle>([[maybe_unused]] const Entity& iEntity,
+															   [[maybe_unused]] component::DayNightCycle& ioComponent) {}
 
 template<>
 OWL_API void Scene::onComponentAdded<component::Environment>([[maybe_unused]] const Entity& iEntity,

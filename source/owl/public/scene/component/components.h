@@ -13,6 +13,7 @@
 #include "Camera.h"
 #include "Canvas.h"
 #include "CircleRenderer.h"
+#include "DayNightCycle.h"
 #include "Drift.h"
 #include "FollowTarget.h"
 #include "EntityLink.h"
@@ -34,6 +35,7 @@
 #include "PrefabLink.h"
 #include "RaycastDoor.h"
 #include "RaycastPushWall.h"
+#include "ProceduralSky.h"
 #include "RenderTarget.h"
 #include "RendererTag.h"
 #include "SoundListener.h"
@@ -81,7 +83,8 @@ concept isComponent =
 		std::is_same_v<Component, Light2D> || std::is_same_v<Component, LightFlicker> ||
 		std::is_same_v<Component, Oscillator> || std::is_same_v<Component, Patrol> ||
 		std::is_same_v<Component, Drift> || std::is_same_v<Component, FollowTarget> ||
-		std::is_same_v<Component, RenderTarget> || std::is_same_v<Component, Environment> ||
+		std::is_same_v<Component, RenderTarget> || std::is_same_v<Component, ProceduralSky> ||
+		std::is_same_v<Component, DayNightCycle> || std::is_same_v<Component, Environment> ||
 		std::is_same_v<Component, LuaScript> || std::is_same_v<Component, MeshRenderer> ||
 		std::is_same_v<Component, NativeScript> || std::is_same_v<Component, PhysicBody> ||
 		std::is_same_v<Component, Player> || std::is_same_v<Component, PrefabLink> ||
@@ -141,7 +144,7 @@ using CopiableComponents =
 				   Light, Light2D, Environment, Text, Tilemap, IsometricObject, PhysicBody, Player, Trigger, EntityLink,
 				   FlyCamera, BackgroundTexture, Visibility, Hierarchy, SoundSource, SoundListener, LuaScript,
 				   PrefabLink, RaycastDoor, RaycastPushWall, RendererTag, VoxelWorld, VoxelPlayer, LightFlicker,
-				   Oscillator, Patrol, Drift, FollowTarget, RenderTarget, UiButton, UiImage, UiPanel, UiProgressBar, UiRect, UiSlider, UiText,
+				   Oscillator, Patrol, Drift, FollowTarget, RenderTarget, ProceduralSky, DayNightCycle, UiButton, UiImage, UiPanel, UiProgressBar, UiRect, UiSlider, UiText,
 				   UiLayout, UiToolCursor, UiTooltip, UiWindow, UiFocus, UiScrollView, UiList>;
 
 /**
@@ -154,7 +157,7 @@ using SerializableComponents =
 				   Light, Light2D, Environment, Text, Tilemap, IsometricObject, PhysicBody, Player, Trigger, EntityLink,
 				   FlyCamera, BackgroundTexture, Visibility, Hierarchy, SoundSource, SoundListener, LuaScript,
 				   PrefabLink, RaycastDoor, RaycastPushWall, RendererTag, VoxelWorld, VoxelPlayer, LightFlicker,
-				   Oscillator, Patrol, Drift, FollowTarget, RenderTarget, UiButton, UiImage, UiPanel, UiProgressBar, UiRect, UiSlider, UiText,
+				   Oscillator, Patrol, Drift, FollowTarget, RenderTarget, ProceduralSky, DayNightCycle, UiButton, UiImage, UiPanel, UiProgressBar, UiRect, UiSlider, UiText,
 				   UiLayout, UiToolCursor, UiTooltip, UiWindow, UiFocus, UiScrollView, UiList>;
 
 /**
@@ -166,7 +169,7 @@ using OptionalComponents =
 		std::tuple<Camera, Canvas, SpriteRenderer, AnimatedSpriteRenderer, CircleRenderer, MeshRenderer, Light, Light2D,
 				   Environment, Text, Tilemap, IsometricObject, PhysicBody, Player, Trigger, EntityLink, FlyCamera,
 				   BackgroundTexture, SoundSource, SoundListener, LuaScript, PrefabLink, RaycastDoor, RaycastPushWall,
-				   RendererTag, VoxelWorld, VoxelPlayer, LightFlicker, Oscillator, Patrol, Drift, FollowTarget, RenderTarget, UiButton, UiImage,
+				   RendererTag, VoxelWorld, VoxelPlayer, LightFlicker, Oscillator, Patrol, Drift, FollowTarget, RenderTarget, ProceduralSky, DayNightCycle, UiButton, UiImage,
 				   UiPanel, UiProgressBar, UiRect, UiSlider, UiText, UiLayout, UiToolCursor, UiTooltip, UiWindow,
 				   UiFocus, UiScrollView, UiList>;
 

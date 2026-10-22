@@ -154,4 +154,12 @@ void runMcpBenches(Runner& ioRunner);
  */
 void runCullingBenches(Runner& ioRunner);
 
+/**
+ * @brief
+ *  Procedural sky: drawing the analytic sky and prefiltering it into an environment, the work a moving sun redoes on a
+ *  worker.
+ * @param[in,out] ioRunner The runner.
+ */
+void runSkyBenches(Runner& ioRunner);
+
 }// namespace owl::bench

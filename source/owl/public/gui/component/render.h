@@ -441,6 +441,20 @@ OWL_API void renderProps(scene::component::RenderTarget& ioComponent);
 
 /**
  * @brief
+ *  Render a Gui for editing the component.
+ * @param ioComponent The component to edit.
+ */
+OWL_API void renderProps(scene::component::ProceduralSky& ioComponent);
+
+/**
+ * @brief
+ *  Render a Gui for editing the component.
+ * @param ioComponent The component to edit.
+ */
+OWL_API void renderProps(scene::component::DayNightCycle& ioComponent);
+
+/**
+ * @brief
  *  Render a Gui for editing the voxel player (speeds, gravity, collision box).
  * @param ioComponent The component to edit.
  */
@@ -462,6 +476,7 @@ using DrawableComponents =
 				   scene::component::RendererTag, scene::component::VoxelWorld, scene::component::FlyCamera,
 				   scene::component::LightFlicker, scene::component::Oscillator, scene::component::Patrol,
 				   scene::component::Drift, scene::component::FollowTarget, scene::component::RenderTarget,
+				   scene::component::ProceduralSky, scene::component::DayNightCycle,
 				   scene::component::VoxelPlayer, scene::component::Canvas,
 				   scene::component::UiRect, scene::component::UiText, scene::component::UiImage,
 				   scene::component::UiPanel, scene::component::UiButton, scene::component::UiSlider,

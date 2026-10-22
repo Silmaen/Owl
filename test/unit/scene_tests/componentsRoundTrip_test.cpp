@@ -819,3 +819,42 @@ TEST(RenderTarget, TheSceneDrawsEachEnabledTargetIntoItsImage) {
 	core::Log::invalidate();
 }
 
+TEST(ComponentRoundTrip, ProceduralSkyAndDayNightCycle) {
+	roundTrip(
+			"ProceduralSky",
+			[](scene::Entity& iEnt) -> void {
+				auto& sky = iEnt.addComponent<scene::component::ProceduralSky>();
+				sky.enabled = false;
+				sky.turbidity = 6.f;
+				sky.nightBrightness = 0.03f;
+				sky.stars = 0.5f;
+				sky.discSize = 3.f;
+				sky.resolution = 256;
+				auto& cycle = iEnt.addComponent<scene::component::DayNightCycle>();
+				cycle.timeOfDay = 19.5f;
+				cycle.dayLength = 90.f;
+				cycle.azimuth = 45.f;
+				cycle.maxElevation = 30.f;
+				cycle.sun = core::UUID{99};
+				cycle.moonIlluminance = 1200.f;
+				cycle.nightExposure = 2.f;
+			},
+			[](const scene::Entity& iEnt) -> void {
+				const auto& sky = iEnt.getComponent<scene::component::ProceduralSky>();
+				EXPECT_FALSE(sky.enabled);
+				EXPECT_NEAR(sky.turbidity, 6.f, 1e-6f);
+				EXPECT_NEAR(sky.nightBrightness, 0.03f, 1e-6f);
+				EXPECT_NEAR(sky.stars, 0.5f, 1e-6f);
+				EXPECT_NEAR(sky.discSize, 3.f, 1e-6f);
+				EXPECT_EQ(sky.resolution, 256u);
+				const auto& cycle = iEnt.getComponent<scene::component::DayNightCycle>();
+				EXPECT_NEAR(cycle.timeOfDay, 19.5f, 1e-5f);
+				EXPECT_NEAR(cycle.dayLength, 90.f, 1e-5f);
+				EXPECT_NEAR(cycle.azimuth, 45.f, 1e-5f);
+				EXPECT_NEAR(cycle.maxElevation, 30.f, 1e-5f);
+				EXPECT_EQ(static_cast<uint64_t>(cycle.sun), 99u);
+				EXPECT_NEAR(cycle.moonIlluminance, 1200.f, 1e-3f);
+				EXPECT_NEAR(cycle.nightExposure, 2.f, 1e-6f);
+			});
+}
+

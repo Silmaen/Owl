@@ -2829,6 +2829,63 @@ void renderProps(RenderTarget& ioComponent) {
 	fieldTooltip("Colour of the image where nothing is drawn.");
 }
 
+void renderProps(ProceduralSky& ioComponent) {
+	prop::Checkbox("Enabled", &ioComponent.enabled);
+	fieldTooltip("Compute the sky from the sun; off goes back to the image or the ambient of the Environment.");
+	prop::DragFloat3("Sun Direction", &ioComponent.sunDirection.x(), 0.01f, -1.f, 1.f, "%.3f");
+	fieldTooltip("Direction towards the sun. A Day Night Cycle on the entity writes it from its time of day.");
+	prop::DragFloat("Turbidity", &ioComponent.turbidity, 0.05f, 1.7f, 10.f, "%.2f");
+	fieldTooltip("Haze of the air: 2 is a very clear sky, 10 a hazy one with a white horizon.");
+	prop::ColorEdit3("Ground Color", &ioComponent.groundColor.x());
+	fieldTooltip("Colour of the ground below the horizon, lit by the sky.");
+	prop::ColorEdit3("Night Color", &ioComponent.nightColor.x());
+	fieldTooltip("Colour of the night sky.");
+	prop::DragFloat("Night Brightness", &ioComponent.nightBrightness, 0.001f, 0.f, 1.f, "%.4f");
+	fieldTooltip("Brightness of the night sky against the zenith at noon (1): the light of the night.");
+	prop::DragFloat("Stars", &ioComponent.stars, 0.01f, 0.f, 10.f, "%.2f");
+	fieldTooltip("Brightness of the stars, 0 for none.");
+	prop::DragFloat("Disc Size", &ioComponent.discSize, 0.05f, 0.f, 20.f, "%.2f");
+	fieldTooltip("Angular diameter of the sun and moon discs, in degrees; 0 for none.");
+	int resolution = static_cast<int>(ioComponent.resolution);
+	if (prop::DragInt("Resolution", &resolution, 4.f, 64, 1024))
+		ioComponent.resolution = static_cast<uint32_t>(std::clamp(resolution, 64, 1024));
+	fieldTooltip("Width of the sky image in pixels, its height half of it. Sharper stars, a longer redraw.");
+}
+
+void renderProps(DayNightCycle& ioComponent) {
+	prop::Checkbox("Enabled", &ioComponent.enabled);
+	fieldTooltip("Advance the hours in Play; off freezes the time of day, the lighting still follows it.");
+	prop::DragFloat("Time Of Day", &ioComponent.timeOfDay, 0.05f, 0.f, 24.f, "%.2f h");
+	fieldTooltip("Hour of the day: sunrise at 6, noon at 12, sunset at 18. Play starts at this hour.");
+	prop::DragFloat("Day Length", &ioComponent.dayLength, 1.f, 1.f, 86400.f, "%.0f s");
+	fieldTooltip("Duration of a whole day, in seconds.");
+	prop::DragFloat("Azimuth", &ioComponent.azimuth, 0.5f, -360.f, 360.f, "%.1f deg");
+	fieldTooltip("Direction of the sunrise about the vertical axis: 0 towards -Z, 90 towards +X.");
+	prop::DragFloat("Max Elevation", &ioComponent.maxElevation, 0.5f, 1.f, 90.f, "%.1f deg");
+	fieldTooltip("Height of the sun at noon above the horizon.");
+	auto sun = static_cast<uint64_t>(ioComponent.sun);
+	prop::row("Sun", [&](const char*) -> bool {
+		if (scriptEntityPicker(sun, ImGui::GetContentRegionAvail().x)) {
+			ioComponent.sun = core::UUID{sun};
+			return true;
+		}
+		return false;
+	});
+	fieldTooltip("Directional light turned along the path of the sun by day and of the moon by night.");
+	prop::DragFloat("Sun Illuminance", &ioComponent.sunIlluminance, 100.f, 0.f, 200000.f, "%.0f lx");
+	fieldTooltip("Illuminance of the sun at its highest; it fades to 0 at the horizon.");
+	prop::ColorEdit3("Sun Color", &ioComponent.sunColor.x());
+	fieldTooltip("Colour of the sun high in the sky.");
+	prop::ColorEdit3("Sunset Color", &ioComponent.sunsetColor.x());
+	fieldTooltip("Colour of the sun near the horizon, at dawn and dusk.");
+	prop::DragFloat("Moon Illuminance", &ioComponent.moonIlluminance, 10.f, 0.f, 100000.f, "%.0f lx");
+	fieldTooltip("Illuminance of the moon at its highest, brighter than nature for a playable night.");
+	prop::ColorEdit3("Moon Color", &ioComponent.moonColor.x());
+	fieldTooltip("Colour of the moonlight.");
+	prop::DragFloat("Night Exposure", &ioComponent.nightExposure, 0.05f, -10.f, 10.f, "%.2f EV");
+	fieldTooltip("Exposure added to the cameras at night in Play, as the eye adapts to the dark.");
+}
+
 void setOpenAssetHandler(std::function<void(const std::filesystem::path&)> iHandler) {
 	openAssetHandler() = std::move(iHandler);
 }

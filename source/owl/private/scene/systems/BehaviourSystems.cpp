@@ -226,4 +226,67 @@ void updateFollowTargets(Scene& ioScene, [[maybe_unused]] const SystemContext& i
 	}
 }
 
+void applyDayNightCycles(Scene& ioScene, const bool iRuntime) {
+	OWL_PROFILE_FUNCTION()
+
+	const auto smooth = [](const float iEdge0, const float iEdge1, const float iX) -> float {
+		const float t = std::clamp((iX - iEdge0) / (iEdge1 - iEdge0), 0.f, 1.f);
+		return t * t * (3.f - 2.f * t);
+	};
+	const auto mix = [](const math::vec3& iA, const math::vec3& iB, const float iT) -> math::vec3 {
+		return iA * (1.f - iT) + iB * iT;
+	};
+	for (const auto view = ioScene.registry.view<component::DayNightCycle>(); const auto handle: view) {
+		auto& cycle = view.get<component::DayNightCycle>(handle);
+		const math::vec3 sun = cycle.getSunDirection();
+		if (iRuntime) {
+			const float wanted = cycle.nightExposure * (1.f - smooth(-0.15f, 0.05f, sun.y()));
+			const auto cameras = ioScene.registry.view<component::Camera>();
+			for (const auto cameraHandle: cameras) {
+				auto& camera = cameras.get<component::Camera>(cameraHandle).camera;
+				auto settings = camera.getPostProcess();
+				settings.exposure += wanted - cycle.m_appliedExposure;
+				camera.setPostProcess(settings);
+			}
+			cycle.m_appliedExposure = wanted;
+		}
+		if (auto* sky = ioScene.registry.try_get<component::ProceduralSky>(handle); sky != nullptr)
+			sky->sunDirection = sun;
+		if (cycle.sun == core::UUID{0})
+			continue;
+		Entity lightEntity = ioScene.findEntityByUUID(cycle.sun);
+		if (!lightEntity || !lightEntity.hasComponent<component::Light>())
+			continue;
+		auto& light = lightEntity.getComponent<component::Light>();
+		const float noonHeight = std::sin(std::clamp(cycle.maxElevation, 1.f, 90.f) * std::numbers::pi_v<float> / 180.f);
+		const bool byDay = sun.y() >= 0.f;
+		const math::vec3 source = byDay ? sun : sun * -1.f;
+		const float height = source.y();
+		const float rise = smooth(-0.02f, 0.12f, height) * std::clamp(height / noonHeight, 0.05f, 1.f);
+		if (byDay) {
+			light.intensity = cycle.sunIlluminance * rise;
+			light.color = mix(cycle.sunsetColor, cycle.sunColor, smooth(0.f, 0.35f, height));
+		} else {
+			light.intensity = cycle.moonIlluminance * rise;
+			light.color = cycle.moonColor;
+		}
+		const math::vec3 travel = source * -1.f;
+		auto& rotation = lightEntity.getComponent<component::Transform>().transform.rotation();
+		rotation = {std::asin(std::clamp(travel.y(), -1.f, 1.f)), std::atan2(-travel.x(), -travel.z()), 0.f};
+	}
+}
+
+void updateDayNightCycles(Scene& ioScene, const SystemContext& iContext) {
+	OWL_PROFILE_FUNCTION()
+
+	const float seconds = iContext.timeStep.getSeconds();
+	for (const auto view = ioScene.registry.view<component::DayNightCycle>(); const auto handle: view) {
+		auto& cycle = view.get<component::DayNightCycle>(handle);
+		if (!cycle.enabled)
+			continue;
+		cycle.timeOfDay = std::fmod(cycle.timeOfDay + seconds * 24.f / std::max(cycle.dayLength, 1.f), 24.f);
+	}
+	applyDayNightCycles(ioScene, true);
+}
+
 }// namespace owl::scene::systems

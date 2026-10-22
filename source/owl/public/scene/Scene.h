@@ -93,6 +93,8 @@ struct Patrol;
 struct Drift;
 struct FollowTarget;
 struct RenderTarget;
+struct ProceduralSky;
+struct DayNightCycle;
 struct Environment;
 struct NativeScript;
 struct PhysicBody;
@@ -1498,6 +1500,14 @@ private:
 
 	/**
 	 * @brief
+	 *  Start drawing and prefiltering the procedural sky on a worker when its inputs changed and no drawing runs; the
+	 *  previous sky stays lit until the new one is ready.
+	 * @param[in] iSky The sky of the environment.
+	 */
+	void requestProceduralSky(const component::ProceduralSky& iSky);
+
+	/**
+	 * @brief
 	 *  Draw the opaque geometry of the 3D layers (meshes, voxel worlds) with the current camera; used by the shadow
 	 *  passes.
 	 * @param[in] iCamera The camera drawing the geometry.
@@ -1623,8 +1633,12 @@ private:
 	renderer::ShadowSettings m_shadowSettings;
 	/// The environment image of the scene: its loading on a worker, then its GPU textures.
 	struct EnvironmentState {
-		/// Asset path of the loaded (or loading) image.
+		/// Asset path of the loaded (or loading) image; empty for a procedural sky.
 		std::filesystem::path hdri;
+		/// Whether the environment is a procedural sky.
+		bool procedural = false;
+		/// Quantised inputs of the procedural sky drawn last, to draw it again only when they change.
+		std::array<float, 16> skyKey{};
 		/// Result of the worker, read once its task finished.
 		shared<std::optional<renderer::EnvironmentMap>> result;
 		/// Task loading and prefiltering the image.
@@ -1633,6 +1647,13 @@ private:
 		bool loading = false;
 		/// The uploaded environment.
 		renderer::EnvironmentLighting lighting;
+
+		/**
+		 * @brief
+		 *  Whether an environment was uploaded.
+		 * @return True once the first image is on the GPU.
+		 */
+		[[nodiscard]] auto levelsReady() const -> bool { return lighting.levelCount > 0; }
 	};
 	/// Environment of the scene.
 	EnvironmentState m_environment;
@@ -1717,6 +1738,14 @@ OWL_API void Scene::onComponentAdded<component::FollowTarget>(const Entity& iEnt
 template<>
 OWL_API void Scene::onComponentAdded<component::RenderTarget>(const Entity& iEntity,
 															  component::RenderTarget& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::ProceduralSky>(const Entity& iEntity,
+															   component::ProceduralSky& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::DayNightCycle>(const Entity& iEntity,
+															   component::DayNightCycle& ioComponent);
 
 template<>
 OWL_API void Scene::onComponentAdded<component::Environment>(const Entity& iEntity,

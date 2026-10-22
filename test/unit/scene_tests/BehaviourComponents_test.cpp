@@ -18,6 +18,7 @@
 #include <algorithm>
 #include <chrono>
 #include <cmath>
+#include <numbers>
 
 using namespace owl;
 using namespace owl::scene;
@@ -220,5 +221,69 @@ TEST_F(BehaviourTest, AFollowTargetOffOrWithoutTargetStaysWhereItIs) {
 	EXPECT_NEAR(translationOf(still).x(), 7.f, 1e-6f);
 	EXPECT_NEAR(translationOf(lost).y(), 0.f, 1e-6f);
 	EXPECT_NEAR(translationOf(self).y(), 0.f, 1e-6f);
+}
+
+TEST_F(BehaviourTest, TheSunRisesCulminatesAndSetsOnItsPath) {
+	component::DayNightCycle cycle;
+	cycle.azimuth = 90.f;
+	cycle.maxElevation = 60.f;
+	cycle.timeOfDay = 6.f;
+	EXPECT_NEAR(cycle.getSunDirection().x(), 1.f, 1e-4f);
+	EXPECT_NEAR(cycle.getSunDirection().y(), 0.f, 1e-4f);
+	cycle.timeOfDay = 12.f;
+	EXPECT_NEAR(cycle.getSunDirection().y(), std::sin(60.f * std::numbers::pi_v<float> / 180.f), 1e-4f);
+	EXPECT_NEAR(cycle.getSunDirection().x(), 0.f, 1e-4f);
+	cycle.timeOfDay = 18.f;
+	EXPECT_NEAR(cycle.getSunDirection().x(), -1.f, 1e-4f);
+	cycle.timeOfDay = 0.f;
+	EXPECT_LT(cycle.getSunDirection().y(), -0.8f);
+	cycle.azimuth = 0.f;
+	cycle.timeOfDay = 6.f;
+	EXPECT_NEAR(cycle.getSunDirection().z(), -1.f, 1e-4f);
+}
+
+TEST_F(BehaviourTest, ADayNightCycleTurnsItsLightWithTheSunThenTheMoonAndAdvancesTheHours) {
+	auto scene = mkShared<Scene>();
+	auto sunEntity = scene->createEntity("Sun");
+	auto& light = sunEntity.addComponent<component::Light>();
+	light.type = component::Light::Type::Directional;
+	auto sky = scene->createEntity("Sky");
+	sky.addComponent<component::Environment>();
+	sky.addComponent<component::ProceduralSky>();
+	auto& cycle = sky.addComponent<component::DayNightCycle>();
+	cycle.sun = sunEntity.getUUID();
+	cycle.timeOfDay = 12.f;
+	cycle.dayLength = 240.f;
+	auto camera = scene->createEntity("Camera");
+	camera.addComponent<component::Camera>().primary = true;
+	scene->onStartRuntime();
+	run(*scene, 1);
+	const auto& noon = sky.getComponent<component::DayNightCycle>();
+	EXPECT_GT(noon.timeOfDay, 12.f);
+	EXPECT_LT(noon.timeOfDay, 12.01f);
+	const auto direction = [&sunEntity]() -> math::vec3 {
+		const auto forward = sunEntity.getComponent<component::Transform>().transform() * math::vec4{0.f, 0.f, -1.f, 0.f};
+		return {forward.x(), forward.y(), forward.z()};
+	};
+	const math::vec3 toSun = noon.getSunDirection();
+	EXPECT_NEAR(direction().x(), -toSun.x(), 1e-3f);
+	EXPECT_NEAR(direction().y(), -toSun.y(), 1e-3f);
+	EXPECT_NEAR(direction().z(), -toSun.z(), 1e-3f);
+	EXPECT_NEAR(light.intensity, noon.sunIlluminance, 1.f);
+	EXPECT_NEAR(sky.getComponent<component::ProceduralSky>().sunDirection.y(), toSun.y(), 1e-6f);
+	EXPECT_NEAR(camera.getComponent<component::Camera>().camera.getPostProcess().exposure, 0.f, 1e-5f);
+	sky.getComponent<component::DayNightCycle>().timeOfDay = 0.f;
+	run(*scene, 1);
+	EXPECT_LT(direction().y(), -0.5f);
+	EXPECT_NEAR(light.intensity, noon.moonIlluminance, 1.f);
+	EXPECT_NEAR(camera.getComponent<component::Camera>().camera.getPostProcess().exposure, noon.nightExposure, 1e-4f);
+	sky.getComponent<component::DayNightCycle>().enabled = false;
+	sky.getComponent<component::DayNightCycle>().timeOfDay = 23.99f;
+	run(*scene, 10);
+	EXPECT_NEAR(sky.getComponent<component::DayNightCycle>().timeOfDay, 23.99f, 1e-5f);
+	sky.getComponent<component::DayNightCycle>().enabled = true;
+	sky.getComponent<component::DayNightCycle>().dayLength = 1.f;
+	run(*scene, 10);
+	EXPECT_LT(sky.getComponent<component::DayNightCycle>().timeOfDay, 12.f);
 }
 
