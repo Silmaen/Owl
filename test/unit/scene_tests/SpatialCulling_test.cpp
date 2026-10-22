@@ -16,6 +16,7 @@
 #include <scene/Scene.h>
 #include <scene/component/components.h>
 
+#include <cstdint>
 #include <string>
 
 using namespace owl;
