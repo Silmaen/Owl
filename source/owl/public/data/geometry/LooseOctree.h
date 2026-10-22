@@ -144,6 +144,21 @@ public:
 
 	/**
 	 * @brief
+	 *  Get a box enclosing every box filed since the tree was last empty (it grows on insert, never shrinks before the
+	 *  tree empties): when it is inside a frustum, so is every box.
+	 * @return The bounds, meaningless while the tree is empty.
+	 */
+	[[nodiscard]] auto getContentBounds() const -> const math::box3f& { return m_contentBounds; }
+
+	/**
+	 * @brief
+	 *  Get a number changed by every insert, move, removal and clear: a query result stays valid while it is the same.
+	 * @return The generation.
+	 */
+	[[nodiscard]] auto getGeneration() const -> uint64_t { return m_generation; }
+
+	/**
+	 * @brief
 	 *  Get the number of live nodes, root included.
 	 * @return The count.
 	 */
@@ -287,6 +302,10 @@ private:
 	uint32_t m_root = 0;
 	/// Boxes filed.
 	size_t m_count = 0;
+	/// Box enclosing every box filed since the tree was last empty.
+	math::box3f m_contentBounds;
+	/// Changed by every modification.
+	uint64_t m_generation = 0;
 	/// Depth limit below the current root (grows with the root).
 	uint32_t m_maxDepth = 0;
 	/// Counters of the last query.

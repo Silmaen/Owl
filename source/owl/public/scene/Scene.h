@@ -1140,10 +1140,32 @@ private:
 	std::vector<SpatialEntry> m_spriteEntries;
 	/// Current pass of `updateSpatialIndex()`.
 	uint32_t m_spatialPass = 0;
-	/// Entities found by the last `markVisible`.
-	std::vector<uint32_t> m_visibleIds;
-	/// One byte per entity index, set for the entities in `m_visibleIds`.
-	std::vector<uint8_t> m_visibleMarks;
+	/**
+	 * @brief
+	 *  Entities of a spatial index found in a frustum, kept while neither the index nor the view-projection changes.
+	 */
+	struct VisibleSet {
+		/// Entities found.
+		std::vector<uint32_t> ids;
+		/// One byte per entity index, set for the entities in `ids`.
+		std::vector<uint8_t> marks;
+		/// True when the whole index is in view: no mark is set, every entity is visible.
+		bool all = false;
+		/// True once a query filled the set.
+		bool valid = false;
+		/// Generation of the index the set was found in.
+		uint64_t generation = 0;
+		/// View-projection the set was found with.
+		math::mat4 viewProjection = math::identity<float, 4>();
+	};
+	/// Visible entities of `m_meshIndex`.
+	VisibleSet m_meshVisible;
+	/// Visible entities of `m_spriteIndex`.
+	VisibleSet m_spriteVisible;
+	/// True when a sprite or mesh component was added, removed, replaced or got another mesh since the last update.
+	bool m_spatialDirty = true;
+	/// `m_worldStamp` at the last `updateSpatialIndex()`: an unchanged stamp means no world matrix moved.
+	uint64_t m_spatialStamp = 0;
 	/// Counters of the spatial culling of the last frame.
 	CullingStatistics m_cullingStats;
 	/**
@@ -1223,17 +1245,28 @@ private:
 	 *  Mark the entities of an index whose box touches the frustum of a view-projection.
 	 * @param[in] iIndex The spatial index.
 	 * @param[in] iViewProjection The view-projection of the pass.
-	 * @return The number of entities marked; `isMarkedVisible` reads the marks until the next call.
+	 * @param[in,out] ioSet The visible set of that index, reused when neither the index nor the view-projection changed.
+	 * @return The number of entities marked; `isMarkedVisible` reads them.
 	 */
-	auto markVisible(const data::geometry::LooseOctree& iIndex, const math::mat4& iViewProjection) -> uint32_t;
+	static auto markVisible(const data::geometry::LooseOctree& iIndex, const math::mat4& iViewProjection,
+							VisibleSet& ioSet) -> uint32_t;
 
 	/**
 	 * @brief
-	 *  Check whether the last `markVisible` marked an entity.
+	 *  Check whether a visible set holds an entity.
+	 * @param[in] iSet The set.
 	 * @param[in] iEntity The entity.
 	 * @return True when marked.
 	 */
-	[[nodiscard]] auto isMarkedVisible(entt::entity iEntity) const -> bool;
+	[[nodiscard]] static auto isMarkedVisible(const VisibleSet& iSet, entt::entity iEntity) -> bool;
+
+	/**
+	 * @brief
+	 *  Registry listener: a component the spatial indexes follow was added, removed or replaced.
+	 * @param[in,out] ioRegistry The registry of the scene.
+	 * @param[in] iEntity The entity.
+	 */
+	void onSpatialComponentChanged(entt::registry& ioRegistry, entt::entity iEntity);
 
 	/**
 	 * @brief

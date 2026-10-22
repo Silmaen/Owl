@@ -131,3 +131,18 @@ TEST_F(SpatialCullingTest, removedSpritesLeaveTheIndex) {
 	EXPECT_EQ(sc->getSpriteSpatialIndex().size(), 0u);
 	EXPECT_EQ(renderer::Renderer2D::getStats().quadCount, 0u);
 }
+
+TEST_F(SpatialCullingTest, aStaticSceneLeavesTheIndexUntouched) {
+	const auto sc = makeScene();
+	auto sprite = addSprite(*sc, "Still", {1.f, 0.f, 0.f});
+	addSprite(*sc, "Away", {40.f, 0.f, 0.f});
+	sc->onRenderRuntime();
+	const uint64_t generation = sc->getSpriteSpatialIndex().getGeneration();
+	sc->onRenderRuntime();
+	EXPECT_EQ(sc->getSpriteSpatialIndex().getGeneration(), generation);
+	EXPECT_EQ(sc->getCullingStatistics().spritesInFrustum, 1u);
+	sprite.getComponent<scene::component::Transform>().transform.translation() = math::vec3{40.f, 1.f, 0.f};
+	sc->onRenderRuntime();
+	EXPECT_NE(sc->getSpriteSpatialIndex().getGeneration(), generation);
+	EXPECT_EQ(sc->getCullingStatistics().spritesInFrustum, 0u);
+}

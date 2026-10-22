@@ -48,6 +48,7 @@ LooseOctree::LooseOctree() : LooseOctree{Config{}} {}
 LooseOctree::LooseOctree(const Config& iConfig) : m_config{iConfig} { clear(); }
 
 void LooseOctree::clear() {
+	++m_generation;
 	m_nodes.clear();
 	m_freeNodes.clear();
 	m_entries.clear();
@@ -145,6 +146,7 @@ void LooseOctree::addToSubtree(uint32_t iNode, const int32_t iDelta) {
 }
 
 void LooseOctree::insert(const uint32_t iId, const math::box3f& iBox) {
+	++m_generation;
 	if (iId >= m_entries.size())
 		m_entries.resize(std::max<size_t>(iId + 1, m_entries.size() * 2));
 	if (const auto& entry = m_entries[iId]; entry.node != g_noNode) {
@@ -155,6 +157,12 @@ void LooseOctree::insert(const uint32_t iId, const math::box3f& iBox) {
 		const bool fitsDeeper = node.depth < m_maxDepth && halfExtent <= childHalf && childHalf >= m_config.minHalfSize;
 		if (fitsHere && !fitsDeeper) {
 			node.boxes[entry.slot] = iBox;
+			m_contentBounds.min() = math::vec3{std::min(m_contentBounds.min().x(), iBox.min().x()),
+											   std::min(m_contentBounds.min().y(), iBox.min().y()),
+											   std::min(m_contentBounds.min().z(), iBox.min().z())};
+			m_contentBounds.max() = math::vec3{std::max(m_contentBounds.max().x(), iBox.max().x()),
+											   std::max(m_contentBounds.max().y(), iBox.max().y()),
+											   std::max(m_contentBounds.max().z(), iBox.max().z())};
 			return;
 		}
 		detach(m_entries[iId]);
@@ -167,10 +175,21 @@ void LooseOctree::insert(const uint32_t iId, const math::box3f& iBox) {
 	node.boxes.push_back(iBox);
 	node.items.push_back(iId);
 	addToSubtree(index, 1);
+	if (m_count == 0) {
+		m_contentBounds = iBox;
+	} else {
+		m_contentBounds.min() = math::vec3{std::min(m_contentBounds.min().x(), iBox.min().x()),
+										   std::min(m_contentBounds.min().y(), iBox.min().y()),
+										   std::min(m_contentBounds.min().z(), iBox.min().z())};
+		m_contentBounds.max() = math::vec3{std::max(m_contentBounds.max().x(), iBox.max().x()),
+										   std::max(m_contentBounds.max().y(), iBox.max().y()),
+										   std::max(m_contentBounds.max().z(), iBox.max().z())};
+	}
 	++m_count;
 }
 
 void LooseOctree::detach(Entry& ioEntry) {
+	++m_generation;
 	auto& node = m_nodes[ioEntry.node];
 	const uint32_t last = node.items.back();
 	node.items[ioEntry.slot] = last;

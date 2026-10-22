@@ -121,3 +121,19 @@ TEST(LooseOctree, HoldsFlatBoxes) {
 	tree.query(frustum, ids);
 	EXPECT_EQ(ids, (std::vector<uint32_t>{4}));
 }
+
+TEST(LooseOctree, TracksItsContentAndGeneration) {
+	LooseOctree tree;
+	const uint64_t empty = tree.getGeneration();
+	tree.insert(0, cube({1.f, 2.f, 3.f}, 0.5f));
+	tree.insert(1, cube({-4.f, 0.f, 0.f}, 1.f));
+	EXPECT_NE(tree.getGeneration(), empty);
+	EXPECT_NEAR(tree.getContentBounds().min().x(), -5.f, 1e-5f);
+	EXPECT_NEAR(tree.getContentBounds().max().z(), 3.5f, 1e-5f);
+	const uint64_t filled = tree.getGeneration();
+	std::vector<uint32_t> ids;
+	tree.query(cube({0.f, 0.f, 0.f}, 10.f), ids);
+	EXPECT_EQ(tree.getGeneration(), filled);
+	tree.remove(1);
+	EXPECT_NE(tree.getGeneration(), filled);
+}
