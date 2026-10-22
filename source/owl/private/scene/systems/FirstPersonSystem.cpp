@@ -22,6 +22,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <tuple>
 #include <vector>
 
 namespace owl::scene::systems {
@@ -63,6 +64,19 @@ void gatherObstacles(const Scene& iScene, const math::box3f& iReach, std::vector
 	}
 }
 
+auto isWorldLoaded(const Scene& iScene) -> bool {
+	bool anyMesh = false;
+	for (const auto [handle, renderer]: iScene.registry.view<component::MeshRenderer>().each()) {
+		std::ignore = handle;
+		if (renderer.meshPath.empty())
+			continue;
+		if (!renderer.mesh)
+			return false;
+		anyMesh = true;
+	}
+	return !anyMesh || iScene.getMeshSpatialIndex().size() > 0;
+}
+
 }// namespace
 
 void updateFirstPersonControllers(Scene& ioScene, const SystemContext& iContext) {
@@ -90,6 +104,11 @@ void updateFirstPersonControllers(Scene& ioScene, const SystemContext& iContext)
 			controller.m_initialized = true;
 		}
 		turnView(controller, eye, actions, dt, cursorCaptured);
+		if (!controller.m_worldReady) {
+			controller.m_worldReady = isWorldLoaded(ioScene);
+			if (!controller.m_worldReady)
+				continue;
+		}
 		const float sy = std::sin(controller.m_yaw);
 		const float cy = std::cos(controller.m_yaw);
 		const math::vec2 steer = actions.getVector("move");

@@ -22,7 +22,8 @@ namespace owl::scene::component {
  * The `owl.first_person` system moves a body box of `radius` and `height`, the eye `eyeHeight` above its feet, against
  * the world boxes of the `MeshRenderer` entities (those with a `Trigger` let it through, a box lower than
  * `stepHeight` is climbed). The `Transform` of the entity is the eye: its rotation holds the pitch and the yaw.
- * Triggers of the scene see the body box in 3D.
+ * Triggers of the scene see the body box in 3D. The body holds still until every mesh of the scene is loaded, so it
+ * never falls through a floor still loading.
  */
 struct OWL_API FirstPersonController {
 	/// Whether the controller moves the entity; off leaves it to scripts.
@@ -50,6 +51,8 @@ struct OWL_API FirstPersonController {
 	/// Upward speed of a jump, in world units per second; 0 for none.
 	float jumpSpeed = 3.5f;
 
+	/// Runtime: every mesh of the scene was loaded and filed, so the body may fall.
+	bool m_worldReady = false;
 	/// Runtime: yaw and pitch were read from the transform.
 	bool m_initialized = false;
 	/// Runtime: heading, in radians about Y.

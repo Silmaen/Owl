@@ -62,6 +62,7 @@ void FirstPersonController::deserialize(const core::Serializer& iNode) {
 		jumpSpeed = std::clamp(node["jumpSpeed"].as<float>(), 0.f, 50.f);
 	eyeHeight = std::min(eyeHeight, height);
 	m_initialized = false;
+	m_worldReady = false;
 }
 
 }// namespace owl::scene::component
