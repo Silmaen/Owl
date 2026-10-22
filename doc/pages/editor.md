@@ -359,8 +359,12 @@ be removed. Every edit is a registry command ([Editor commands](#editor-commands
   **Text Renderer**, **Camera** (with a **Post process** section: EV100, auto exposure (range and speed), exposure compensation in EV, bloom, vignette and the colour LUT, the
   dependent fields shown once the effect is on; every field of the **Light**, **Environment** and **Post process** sections has a reset button (↺) left of the field, shown when the value differs from its default),
   **Rigidbody 2D**, **Box / Circle Collider 2D**, **Native Script**, **Sound Source**, **Sound Listener**, **Player**,
-  **Link**, **Background**, **Visibility** (inherited), **Light Flicker**, **Lua Script** (path, hook list with **Open** at the line, property list with a reset button per field): their fields, see
+  **Link**, **Background**, **Visibility** (inherited), **Light Flicker**, **Oscillator**, **Patrol**, **Drift**, **Lua Script** (path, hook list with **Open** at the line, property list with a reset button per field): their fields, see
   [Scene components](scene.md#components)
+- **Oscillator, Patrol** -- the viewport draws the range of the selected oscillator (a line from the rest position to
+  its far end) and the route of the selected patrol (its waypoints, or the wander circle). Click a waypoint to pick it:
+  a translation gizmo moves it (one `component.set` command, undoable, snapped as the entity gizmo); **Add Waypoint** and
+  the remove button of each row are in the inspector
 - **Trigger** -- type (Victory, Death, Target, Teleport, Timer, Interaction, LuaCallback), callback name and the
   fields of the type
 - **Canvas** -- HUD root: sort order, reference resolution, scale mode (`ConstantPixels`, `ScaleWithHeight`,

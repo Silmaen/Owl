@@ -688,19 +688,23 @@ Entities:
     frameDuration: 0.1
     loop: false
     texture: nam:textures/atlases/town_atlas.png
+  Patrol:
+    mode: PingPong
+    speed: 0.9
+    waitTime: 1.5
+    faceDirection: true
+    hopHeight: 0.06
+    hopRate: 9
+    waypoints:
+      - [29.5, -14.5, 0.5]
+      - [35.5, -14.5, 0.5]
   LuaScript:
     scriptPath: scripts/hub/hub_wanderer.lua
     properties:
-    - {name: idle_a, type: float, value: 144.0}
-    - {name: idle_b, type: float, value: 218.0}
-    - {name: walk_a, type: float, value: 219.0}
-    - {name: walk_b, type: float, value: 220.0}
-    - {name: ax, type: float, value: 29.5}
-    - {name: ay, type: float, value: -14.5}
-    - {name: bx, type: float, value: 35.5}
-    - {name: by, type: float, value: -14.5}
-    - {name: speed, type: float, value: 0.9}
-    - {name: wait, type: float, value: 1.5}
+    - {name: idle_a, type: float, value: 144}
+    - {name: idle_b, type: float, value: 218}
+    - {name: walk_a, type: float, value: 219}
+    - {name: walk_b, type: float, value: 220}
 - Entity: 2000000000000000317
   Tag: {tag: Knight}
   Transform:
@@ -717,19 +721,23 @@ Entities:
     frameDuration: 0.1
     loop: false
     texture: nam:textures/atlases/town_atlas.png
+  Patrol:
+    mode: PingPong
+    speed: 1.1
+    waitTime: 1.5
+    faceDirection: true
+    hopHeight: 0.06
+    hopRate: 9
+    waypoints:
+      - [39.5, -21.5, 0.5]
+      - [52.5, -21.5, 0.5]
   LuaScript:
     scriptPath: scripts/hub/hub_wanderer.lua
     properties:
-    - {name: idle_a, type: float, value: 157.0}
-    - {name: idle_b, type: float, value: 236.0}
-    - {name: walk_a, type: float, value: 237.0}
-    - {name: walk_b, type: float, value: 238.0}
-    - {name: ax, type: float, value: 39.5}
-    - {name: ay, type: float, value: -21.5}
-    - {name: bx, type: float, value: 52.5}
-    - {name: by, type: float, value: -21.5}
-    - {name: speed, type: float, value: 1.1}
-    - {name: wait, type: float, value: 1.5}
+    - {name: idle_a, type: float, value: 157}
+    - {name: idle_b, type: float, value: 236}
+    - {name: walk_a, type: float, value: 237}
+    - {name: walk_b, type: float, value: 238}
 - Entity: 2000000000000000318
   Tag: {tag: Farmer}
   Transform:
@@ -746,19 +754,23 @@ Entities:
     frameDuration: 0.1
     loop: false
     texture: nam:textures/atlases/town_atlas.png
+  Patrol:
+    mode: PingPong
+    speed: 0.7
+    waitTime: 1.5
+    faceDirection: true
+    hopHeight: 0.06
+    hopRate: 9
+    waypoints:
+      - [8.5, -28.5, 0.5]
+      - [19.5, -28.5, 0.5]
   LuaScript:
     scriptPath: scripts/hub/hub_wanderer.lua
     properties:
-    - {name: idle_a, type: float, value: 145.0}
-    - {name: idle_b, type: float, value: 221.0}
-    - {name: walk_a, type: float, value: 222.0}
-    - {name: walk_b, type: float, value: 223.0}
-    - {name: ax, type: float, value: 8.5}
-    - {name: ay, type: float, value: -28.5}
-    - {name: bx, type: float, value: 19.5}
-    - {name: by, type: float, value: -28.5}
-    - {name: speed, type: float, value: 0.7}
-    - {name: wait, type: float, value: 1.5}
+    - {name: idle_a, type: float, value: 145}
+    - {name: idle_b, type: float, value: 221}
+    - {name: walk_a, type: float, value: 222}
+    - {name: walk_b, type: float, value: 223}
 - Entity: 2000000000000000319
   Tag: {tag: Merchant1}
   Transform:
@@ -775,19 +787,22 @@ Entities:
     frameDuration: 0.1
     loop: false
     texture: nam:textures/atlases/town_atlas.png
+  Patrol:
+    mode: PingPong
+    speed: 0
+    waitTime: 1.5
+    faceDirection: true
+    hopHeight: 0.06
+    hopRate: 9
+    waypoints:
+      - [42.5, -23.5, 0.5]
   LuaScript:
     scriptPath: scripts/hub/hub_wanderer.lua
     properties:
-    - {name: idle_a, type: float, value: 146.0}
-    - {name: idle_b, type: float, value: 224.0}
-    - {name: walk_a, type: float, value: 225.0}
-    - {name: walk_b, type: float, value: 226.0}
-    - {name: ax, type: float, value: 42.5}
-    - {name: ay, type: float, value: -23.5}
-    - {name: bx, type: float, value: 42.5}
-    - {name: by, type: float, value: -23.5}
-    - {name: speed, type: float, value: 0.0}
-    - {name: wait, type: float, value: 1.5}
+    - {name: idle_a, type: float, value: 146}
+    - {name: idle_b, type: float, value: 224}
+    - {name: walk_a, type: float, value: 225}
+    - {name: walk_b, type: float, value: 226}
 - Entity: 2000000000000000320
   Tag: {tag: Merchant2}
   Transform:
@@ -804,19 +819,22 @@ Entities:
     frameDuration: 0.1
     loop: false
     texture: nam:textures/atlases/town_atlas.png
+  Patrol:
+    mode: PingPong
+    speed: 0
+    waitTime: 1.5
+    faceDirection: true
+    hopHeight: 0.06
+    hopRate: 9
+    waypoints:
+      - [46.5, -23.5, 0.5]
   LuaScript:
     scriptPath: scripts/hub/hub_wanderer.lua
     properties:
-    - {name: idle_a, type: float, value: 160.0}
-    - {name: idle_b, type: float, value: 245.0}
-    - {name: walk_a, type: float, value: 246.0}
-    - {name: walk_b, type: float, value: 247.0}
-    - {name: ax, type: float, value: 46.5}
-    - {name: ay, type: float, value: -23.5}
-    - {name: bx, type: float, value: 46.5}
-    - {name: by, type: float, value: -23.5}
-    - {name: speed, type: float, value: 0.0}
-    - {name: wait, type: float, value: 1.5}
+    - {name: idle_a, type: float, value: 160}
+    - {name: idle_b, type: float, value: 245}
+    - {name: walk_a, type: float, value: 246}
+    - {name: walk_b, type: float, value: 247}
 - Entity: 2000000000000000321
   Tag: {tag: Merchant3}
   Transform:
@@ -833,19 +851,22 @@ Entities:
     frameDuration: 0.1
     loop: false
     texture: nam:textures/atlases/town_atlas.png
+  Patrol:
+    mode: PingPong
+    speed: 0
+    waitTime: 1.5
+    faceDirection: true
+    hopHeight: 0.06
+    hopRate: 9
+    waypoints:
+      - [50.5, -23.5, 0.5]
   LuaScript:
     scriptPath: scripts/hub/hub_wanderer.lua
     properties:
-    - {name: idle_a, type: float, value: 147.0}
-    - {name: idle_b, type: float, value: 227.0}
-    - {name: walk_a, type: float, value: 228.0}
-    - {name: walk_b, type: float, value: 229.0}
-    - {name: ax, type: float, value: 50.5}
-    - {name: ay, type: float, value: -23.5}
-    - {name: bx, type: float, value: 50.5}
-    - {name: by, type: float, value: -23.5}
-    - {name: speed, type: float, value: 0.0}
-    - {name: wait, type: float, value: 1.5}
+    - {name: idle_a, type: float, value: 147}
+    - {name: idle_b, type: float, value: 227}
+    - {name: walk_a, type: float, value: 228}
+    - {name: walk_b, type: float, value: 229}
 - Entity: 2000000000000000322
   Tag: {tag: Priest}
   Transform:
@@ -862,19 +883,22 @@ Entities:
     frameDuration: 0.1
     loop: false
     texture: nam:textures/atlases/town_atlas.png
+  Patrol:
+    mode: PingPong
+    speed: 0
+    waitTime: 1.5
+    faceDirection: true
+    hopHeight: 0.06
+    hopRate: 9
+    waypoints:
+      - [30.5, -13.5, 0.5]
   LuaScript:
     scriptPath: scripts/hub/hub_wanderer.lua
     properties:
-    - {name: idle_a, type: float, value: 158.0}
-    - {name: idle_b, type: float, value: 239.0}
-    - {name: walk_a, type: float, value: 240.0}
-    - {name: walk_b, type: float, value: 241.0}
-    - {name: ax, type: float, value: 30.5}
-    - {name: ay, type: float, value: -13.5}
-    - {name: bx, type: float, value: 30.5}
-    - {name: by, type: float, value: -13.5}
-    - {name: speed, type: float, value: 0.0}
-    - {name: wait, type: float, value: 1.5}
+    - {name: idle_a, type: float, value: 158}
+    - {name: idle_b, type: float, value: 239}
+    - {name: walk_a, type: float, value: 240}
+    - {name: walk_b, type: float, value: 241}
 - Entity: 2000000000000000323
   Tag: {tag: Woodcutter}
   Transform:
@@ -891,19 +915,22 @@ Entities:
     frameDuration: 0.1
     loop: false
     texture: nam:textures/atlases/town_atlas.png
+  Patrol:
+    mode: PingPong
+    speed: 0
+    waitTime: 1.5
+    faceDirection: true
+    hopHeight: 0.06
+    hopRate: 9
+    waypoints:
+      - [6.5, -9.5, 0.5]
   LuaScript:
     scriptPath: scripts/hub/hub_wanderer.lua
     properties:
-    - {name: idle_a, type: float, value: 146.0}
-    - {name: idle_b, type: float, value: 224.0}
-    - {name: walk_a, type: float, value: 225.0}
-    - {name: walk_b, type: float, value: 226.0}
-    - {name: ax, type: float, value: 6.5}
-    - {name: ay, type: float, value: -9.5}
-    - {name: bx, type: float, value: 6.5}
-    - {name: by, type: float, value: -9.5}
-    - {name: speed, type: float, value: 0.0}
-    - {name: wait, type: float, value: 1.5}
+    - {name: idle_a, type: float, value: 146}
+    - {name: idle_b, type: float, value: 224}
+    - {name: walk_a, type: float, value: 225}
+    - {name: walk_b, type: float, value: 226}
 - Entity: 2000000000000000324
   Tag: {tag: Hen_1}
   Transform:
@@ -920,19 +947,23 @@ Entities:
     frameDuration: 0.1
     loop: false
     texture: nam:textures/atlases/town_atlas.png
+  Patrol:
+    mode: PingPong
+    speed: 0.35
+    waitTime: 3.2
+    faceDirection: true
+    hopHeight: 0.06
+    hopRate: 9
+    waypoints:
+      - [10.5, -28.5, 0.5]
+      - [12.5, -28.5, 0.5]
   LuaScript:
     scriptPath: scripts/hub/hub_wanderer.lua
     properties:
-    - {name: ax, type: float, value: 10.5}
-    - {name: ay, type: float, value: -28.5}
-    - {name: bx, type: float, value: 12.5}
-    - {name: by, type: float, value: -28.5}
-    - {name: speed, type: float, value: 0.35}
-    - {name: wait, type: float, value: 3.2}
-    - {name: idle_a, type: float, value: 216.0}
-    - {name: idle_b, type: float, value: 217.0}
-    - {name: walk_a, type: float, value: 216.0}
-    - {name: walk_b, type: float, value: 217.0}
+    - {name: idle_a, type: float, value: 216}
+    - {name: idle_b, type: float, value: 217}
+    - {name: walk_a, type: float, value: 216}
+    - {name: walk_b, type: float, value: 217}
     - {name: idle_period, type: float, value: 1.3}
 - Entity: 2000000000000000325
   Tag: {tag: Hen_2}
@@ -950,19 +981,23 @@ Entities:
     frameDuration: 0.1
     loop: false
     texture: nam:textures/atlases/town_atlas.png
+  Patrol:
+    mode: PingPong
+    speed: 0.35
+    waitTime: 4.2
+    faceDirection: true
+    hopHeight: 0.06
+    hopRate: 9
+    waypoints:
+      - [16.5, -28.5, 0.5]
+      - [17.5, -28.5, 0.5]
   LuaScript:
     scriptPath: scripts/hub/hub_wanderer.lua
     properties:
-    - {name: ax, type: float, value: 16.5}
-    - {name: ay, type: float, value: -28.5}
-    - {name: bx, type: float, value: 17.5}
-    - {name: by, type: float, value: -28.5}
-    - {name: speed, type: float, value: 0.35}
-    - {name: wait, type: float, value: 4.2}
-    - {name: idle_a, type: float, value: 216.0}
-    - {name: idle_b, type: float, value: 217.0}
-    - {name: walk_a, type: float, value: 216.0}
-    - {name: walk_b, type: float, value: 217.0}
+    - {name: idle_a, type: float, value: 216}
+    - {name: idle_b, type: float, value: 217}
+    - {name: walk_a, type: float, value: 216}
+    - {name: walk_b, type: float, value: 217}
     - {name: idle_period, type: float, value: 1.3}
 - Entity: 2000000000000000326
   Tag: {tag: Hen_3}
@@ -980,19 +1015,23 @@ Entities:
     frameDuration: 0.1
     loop: false
     texture: nam:textures/atlases/town_atlas.png
+  Patrol:
+    mode: PingPong
+    speed: 0.35
+    waitTime: 5.2
+    faceDirection: true
+    hopHeight: 0.06
+    hopRate: 9
+    waypoints:
+      - [47.5, -27.5, 0.5]
+      - [49.5, -27.5, 0.5]
   LuaScript:
     scriptPath: scripts/hub/hub_wanderer.lua
     properties:
-    - {name: ax, type: float, value: 47.5}
-    - {name: ay, type: float, value: -27.5}
-    - {name: bx, type: float, value: 49.5}
-    - {name: by, type: float, value: -27.5}
-    - {name: speed, type: float, value: 0.35}
-    - {name: wait, type: float, value: 5.2}
-    - {name: idle_a, type: float, value: 216.0}
-    - {name: idle_b, type: float, value: 217.0}
-    - {name: walk_a, type: float, value: 216.0}
-    - {name: walk_b, type: float, value: 217.0}
+    - {name: idle_a, type: float, value: 216}
+    - {name: idle_b, type: float, value: 217}
+    - {name: walk_a, type: float, value: 216}
+    - {name: walk_b, type: float, value: 217}
     - {name: idle_period, type: float, value: 1.3}
 - Entity: 2000000000000000327
   Tag: {tag: Butterfly_1}

@@ -2838,6 +2838,18 @@ OWL_API void Scene::onComponentAdded<component::LightFlicker>([[maybe_unused]] c
 															  [[maybe_unused]] component::LightFlicker& ioComponent) {}
 
 template<>
+OWL_API void Scene::onComponentAdded<component::Oscillator>([[maybe_unused]] const Entity& iEntity,
+															[[maybe_unused]] component::Oscillator& ioComponent) {}
+
+template<>
+OWL_API void Scene::onComponentAdded<component::Patrol>([[maybe_unused]] const Entity& iEntity,
+														[[maybe_unused]] component::Patrol& ioComponent) {}
+
+template<>
+OWL_API void Scene::onComponentAdded<component::Drift>([[maybe_unused]] const Entity& iEntity,
+													   [[maybe_unused]] component::Drift& ioComponent) {}
+
+template<>
 OWL_API void Scene::onComponentAdded<component::Environment>([[maybe_unused]] const Entity& iEntity,
 															 [[maybe_unused]] component::Environment& ioComponent) {}
 

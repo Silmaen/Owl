@@ -108,6 +108,8 @@ void registerEngineSystems(SystemSchedule& ioSchedule) {
 	};
 	add("owl.physics_poses", SystemPhase::Scripts, &restorePhysicsPoses);
 	add("owl.scripts", SystemPhase::Scripts, &updateScripts, &tickScripts);
+	add("owl.oscillators", SystemPhase::PrePhysics, &updateOscillators, &tickOscillators);
+	add("owl.patrols", SystemPhase::PrePhysics, &updatePatrols);
 	add("owl.fly_cameras", SystemPhase::PrePhysics, &updateFlyCameras);
 	add("owl.voxel_players", SystemPhase::PrePhysics, &updateVoxelPlayers);
 	add("owl.raycast_walls", SystemPhase::PrePhysics, [](Scene& ioScene, const SystemContext& iContext) -> void {
@@ -115,6 +117,7 @@ void registerEngineSystems(SystemSchedule& ioSchedule) {
 	});
 	add("owl.player_input", SystemPhase::PrePhysics, &updatePlayerInput);
 	add("owl.physics", SystemPhase::Physics, &updatePhysics, &tickPhysics);
+	add("owl.drift", SystemPhase::PostPhysics, &updateDrifts);
 	add("owl.light_flicker", SystemPhase::PostPhysics, &updateLightFlickers);
 	add("owl.entity_links", SystemPhase::PostPhysics, &updateEntityLinks);
 	add("owl.triggers", SystemPhase::PostPhysics, &updateTriggers);

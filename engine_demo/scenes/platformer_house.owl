@@ -1722,15 +1722,9 @@ Entities:
     density: 0
     restitution: 0
     friction: 0.9
-  LuaScript:
-    scriptPath: scripts/platformer/moving_platform_h.lua
-    properties:
-    - name: speed
-      type: float
-      value: 1.8
-    - name: distance
-      type: float
-      value: 4
+  Oscillator:
+    offset: [4, 0, 0]
+    period: 4.4444
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -3113,15 +3107,9 @@ Entities:
     density: 0
     restitution: 0
     friction: 0.9
-  LuaScript:
-    scriptPath: scripts/platformer/moving_platform_h.lua
-    properties:
-    - name: speed
-      type: float
-      value: 1.6
-    - name: distance
-      type: float
-      value: 4
+  Oscillator:
+    offset: [4, 0, 0]
+    period: 5
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -3988,15 +3976,9 @@ Entities:
     density: 0
     restitution: 0
     friction: 0.9
-  LuaScript:
-    scriptPath: scripts/platformer/moving_platform_h.lua
-    properties:
-    - name: speed
-      type: float
-      value: 2
-    - name: distance
-      type: float
-      value: 4
+  Oscillator:
+    offset: [4, 0, 0]
+    period: 4
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -4345,15 +4327,9 @@ Entities:
     density: 0
     restitution: 0
     friction: 0.9
-  LuaScript:
-    scriptPath: scripts/platformer/moving_platform_v.lua
-    properties:
-    - name: speed
-      type: float
-      value: 2.2
-    - name: distance
-      type: float
-      value: 8
+  Oscillator:
+    offset: [0, 8, 0]
+    period: 7.2727
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -4760,15 +4736,9 @@ Entities:
     density: 0
     restitution: 0
     friction: 0.9
-  LuaScript:
-    scriptPath: scripts/platformer/moving_platform_h.lua
-    properties:
-    - name: speed
-      type: float
-      value: 1.8
-    - name: distance
-      type: float
-      value: 4
+  Oscillator:
+    offset: [4, 0, 0]
+    period: 4.4444
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -4935,15 +4905,9 @@ Entities:
     density: 0
     restitution: 0
     friction: 0.9
-  LuaScript:
-    scriptPath: scripts/platformer/moving_platform_v.lua
-    properties:
-    - name: speed
-      type: float
-      value: 2
-    - name: distance
-      type: float
-      value: 8
+  Oscillator:
+    offset: [0, 8, 0]
+    period: 8
   Visibility:
     gameVisible: true
   Hierarchy: {}

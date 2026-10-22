@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Owl Nest viewport: the selected `Oscillator` draws its range and the selected `Patrol` its route; a waypoint is picked with a click and moved with a gizmo, as one undoable `component.set`.
+- `Oscillator`, `Patrol` and `Drift` components with the systems `owl.oscillators` (a body moves through the physics step), `owl.patrols` and `owl.drift`, and Lua `entity.set_oscillator_enabled`, `set_patrol_enabled`, `set_drift_enabled` with their `is_` getters.
 - `LightFlicker` component and `owl.light_flicker` system: a fire, candle or pulsing light (or a sprite tint) flickers from its seed and the scene time, with colour shift, position jitter, dips and a `follow` target whose scale breathes with it; `Scene::getRuntimeSeconds()`, Lua `entity.set_flicker_enabled` / `is_flicker_enabled`.
 - Reversed-Z depth on both backends: `math::perspectiveReversedZ` (infinite far plane) and `math::orthoReversedZ`, and the public `renderer/ClipSpace.h` every camera builds its projection through.
 - Camera-relative 3D shading: `Renderer3D` uploads `projection * cameraRelativeView(view)` and the shaders work relative to the eye, so rendering stays precise far from the origin.
@@ -85,6 +87,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Lua `entity.set/get_light_color`, `set/get_light_intensity`, `set_light_enabled`, `is_light_enabled` and `set_light_range` (the radius) also reach a `Light2D`.
+- Engine Demo: the platformer moving platforms use `Oscillator`, the isometric clouds `Drift` and the hub wanderers `Patrol` (`hub_wanderer.lua` only picks the sprite frames); `moving_platform_h.lua`, `moving_platform_v.lua` and `iso_cloud.lua` are removed.
 - Engine Demo: the tavern fire, candles and flame cards and the platformer torches use `LightFlicker`; `platformer/flicker.lua` is removed and `mesh/tavern.lua` only returns to the menu.
 - Depth attachment format `Depth24Stencil8` is now `Depth32F` (32-bit float, no stencil) on Vulkan and OpenGL.
 - `ShadowSettings::viewProjections` is replaced by `relativeViewProjections` and `origins`, each cascade relative to its own light camera.

@@ -2714,6 +2714,74 @@ void renderProps(LightFlicker& ioComponent) {
 	fieldTooltip("Relative change of the scale along each axis for a relative change of 1 of the followed intensity.");
 }
 
+void renderProps(Oscillator& ioComponent) {
+	prop::Checkbox("Enabled", &ioComponent.enabled);
+	fieldTooltip("Switch the movement off to keep the entity at its rest position.");
+	prop::DragFloat3("Offset", &ioComponent.offset.x(), 0.05f, -1000.f, 1000.f, "%.2f");
+	fieldTooltip("Farthest displacement from the rest position, in world units; the viewport draws the range.");
+	prop::DragFloat("Period", &ioComponent.period, 0.05f, 0.05f, 600.f, "%.2f s");
+	fieldTooltip("Duration of a round trip.");
+	prop::DragFloat("Phase", &ioComponent.phase, 0.005f, 0.f, 1.f, "%.3f");
+	fieldTooltip("Share of the cycle already done when Play starts.");
+	enumCombo("Easing", ioComponent.easing);
+	fieldTooltip("Linear: constant speed. Smooth: slowing down towards each end.");
+	ImGui::TextDisabled("A body moves through the physics step: a kinematic body carries what stands on it.");
+}
+
+void renderProps(Patrol& ioComponent) {
+	prop::Checkbox("Enabled", &ioComponent.enabled);
+	fieldTooltip("Switch the patrol off to keep the entity where it is.");
+	enumCombo("Mode", ioComponent.mode);
+	fieldTooltip("At the last waypoint: Loop goes back to the first, PingPong walks the route in reverse.");
+	prop::DragFloat("Speed", &ioComponent.speed, 0.05f, 0.f, 100.f, "%.2f");
+	fieldTooltip("Walking speed, in world units per second.");
+	prop::DragFloat("Wait Time", &ioComponent.waitTime, 0.05f, 0.f, 600.f, "%.2f s");
+	fieldTooltip("Seconds spent at each waypoint.");
+	prop::DragFloat("Wander Radius", &ioComponent.wanderRadius, 0.05f, 0.f, 1000.f, "%.2f");
+	fieldTooltip("Without waypoints: radius of the random wander around the rest position; 0 for none.");
+	prop::DragFloat("Seed", &ioComponent.seed, 0.5f, -100000.f, 100000.f, "%.1f");
+	fieldTooltip("Seed of the random wander.");
+	prop::Checkbox("Face Direction", &ioComponent.faceDirection);
+	fieldTooltip("Mirror the sprite (scale x) towards the direction it walks.");
+	prop::DragFloat("Hop Height", &ioComponent.hopHeight, 0.005f, 0.f, 10.f, "%.3f");
+	fieldTooltip("Height of the hop while walking; 0 for none.");
+	prop::DragFloat("Hop Rate", &ioComponent.hopRate, 0.1f, 0.f, 100.f, "%.1f");
+	fieldTooltip("Rate of the hop, in radians per second.");
+	if (!widgets::subHeader("Waypoints", true))
+		return;
+	std::optional<std::size_t> removed;
+	for (std::size_t index = 0; index < ioComponent.waypoints.size(); ++index) {
+		ImGui::PushID(static_cast<int>(index));
+		const float side = ImGui::GetFrameHeight();
+		ImGui::SetNextItemWidth(
+				std::max(side, ImGui::GetContentRegionAvail().x - side - ImGui::GetStyle().ItemSpacing.x));
+		ImGui::DragFloat3("##waypoint", &ioComponent.waypoints[index].x(), 0.05f, 0.f, 0.f, "%.2f");
+		ImGui::SameLine();
+		if (widgets::iconButton("##remove", {.glyph = icon::x, .tooltip = "Remove the waypoint"}))
+			removed = index;
+		ImGui::PopID();
+	}
+	if (removed)
+		ioComponent.waypoints.erase(ioComponent.waypoints.begin() + static_cast<std::ptrdiff_t>(*removed));
+	if (ImGui::Button("Add Waypoint", {-FLT_MIN, 0.f})) {
+		const auto last = ioComponent.waypoints.empty() ? math::vec3{0.f, 0.f, 0.f} : ioComponent.waypoints.back();
+		ioComponent.waypoints.push_back({last.x() + 1.f, last.y(), last.z()});
+	}
+	fieldTooltip("Add a waypoint one unit after the last one; drag its handle in the viewport to place it.");
+}
+
+void renderProps(Drift& ioComponent) {
+	prop::Checkbox("Enabled", &ioComponent.enabled);
+	fieldTooltip("Switch the drift off to keep the entity at its rest position.");
+	prop::DragFloat3("Velocity", &ioComponent.velocity.x(), 0.01f, -1000.f, 1000.f, "%.3f");
+	fieldTooltip("Drift velocity, in world units per second.");
+	prop::DragFloat3("Range", &ioComponent.range.x(), 0.1f, 0.f, 100000.f, "%.1f");
+	fieldTooltip(
+			"Half extent of the drift along each axis: the entity jumps from +range back to -range; 0 for no wrap.");
+	prop::DragFloat("Camera Follow", &ioComponent.cameraFollow, 0.005f, 0.f, 1.f, "%.3f");
+	fieldTooltip("Share of the camera movement followed: 0 pins the entity to the world, 1 to the screen (parallax).");
+}
+
 void setOpenAssetHandler(std::function<void(const std::filesystem::path&)> iHandler) {
 	openAssetHandler() = std::move(iHandler);
 }

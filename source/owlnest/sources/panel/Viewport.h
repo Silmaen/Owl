@@ -473,6 +473,29 @@ private:
 
 	/**
 	 * @brief
+	 *  Draw the range of the selected `Oscillator` (a line to its far end) and the route of the selected `Patrol`
+	 *  (its waypoints and the wander circle); the picked waypoint is highlighted.
+	 * @param[in] iScene The scene edited.
+	 */
+	void renderBehaviourOverlays(const shared<scene::Scene>& iScene) const;
+
+	/**
+	 * @brief
+	 *  Waypoint of the selected `Patrol` under the cursor: a click ray against a sphere around each waypoint.
+	 * @return The index of the nearest waypoint hit, or -1.
+	 */
+	[[nodiscard]] auto pickPatrolWaypoint() const -> int;
+
+	/**
+	 * @brief
+	 *  Move the picked waypoint of the selected `Patrol` with a translation gizmo; the move is recorded as one
+	 *  `component.set` command on release.
+	 * @return True when the waypoint gizmo is shown (the entity gizmo is not).
+	 */
+	auto renderWaypointGizmo() -> bool;
+
+	/**
+	 * @brief
 	 *  Light whose marker is under the cursor: a click ray against a sphere around each light.
 	 * @return The nearest light hit, or an invalid entity.
 	 */
@@ -747,6 +770,12 @@ private:
 	bool m_gizmoWasUsing = false;
 	/// Entity YAML snapshot captured when gizmo manipulation began.
 	std::string m_gizmoBeforeYaml;
+	/// Index of the picked waypoint of the selected `Patrol`, -1 for none.
+	int m_patrolHandle = -1;
+	/// Waypoints of the selected `Patrol` when the drag of a waypoint began.
+	std::vector<math::vec3> m_patrolBefore;
+	/// Whether the waypoint gizmo was being used last frame.
+	bool m_patrolWasUsing = false;
 	/// Message shown for a moment when Play or Pause starts.
 	PlayBanner m_playBanner;
 	/// Keeps the clicks on the overlay controls away from the game.

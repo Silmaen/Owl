@@ -84,6 +84,9 @@ struct MeshRenderer;
 struct Light;
 struct Light2D;
 struct LightFlicker;
+struct Oscillator;
+struct Patrol;
+struct Drift;
 struct Environment;
 struct NativeScript;
 struct PhysicBody;
@@ -1641,6 +1644,15 @@ template<>
 OWL_API void Scene::onComponentAdded<component::Light2D>(const Entity& iEntity, component::Light2D& ioComponent);
 OWL_API void Scene::onComponentAdded<component::LightFlicker>(const Entity& iEntity,
 															  component::LightFlicker& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::Oscillator>(const Entity& iEntity, component::Oscillator& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::Patrol>(const Entity& iEntity, component::Patrol& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::Drift>(const Entity& iEntity, component::Drift& ioComponent);
 
 template<>
 OWL_API void Scene::onComponentAdded<component::Environment>(const Entity& iEntity,

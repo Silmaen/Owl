@@ -620,6 +620,80 @@ TEST(ComponentRoundTrip, LightFlicker) {
 			});
 }
 
+TEST(ComponentRoundTrip, Oscillator) {
+	roundTrip(
+			"Oscillator",
+			[](scene::Entity& iEnt) -> void {
+				auto& oscillator = iEnt.addComponent<scene::component::Oscillator>();
+				oscillator.enabled = false;
+				oscillator.offset = {0.f, 3.f, 0.5f};
+				oscillator.period = 6.f;
+				oscillator.phase = 0.25f;
+				oscillator.easing = scene::component::Oscillator::Easing::Smooth;
+			},
+			[](const scene::Entity& iEnt) -> void {
+				ASSERT_TRUE(iEnt.hasComponent<scene::component::Oscillator>());
+				const auto& oscillator = iEnt.getComponent<scene::component::Oscillator>();
+				EXPECT_FALSE(oscillator.enabled);
+				EXPECT_FLOAT_EQ(oscillator.offset.y(), 3.f);
+				EXPECT_FLOAT_EQ(oscillator.offset.z(), 0.5f);
+				EXPECT_FLOAT_EQ(oscillator.period, 6.f);
+				EXPECT_FLOAT_EQ(oscillator.phase, 0.25f);
+				EXPECT_EQ(oscillator.easing, scene::component::Oscillator::Easing::Smooth);
+			});
+}
+
+TEST(ComponentRoundTrip, Patrol) {
+	roundTrip(
+			"Patrol",
+			[](scene::Entity& iEnt) -> void {
+				auto& patrol = iEnt.addComponent<scene::component::Patrol>();
+				patrol.waypoints = {{1.f, 2.f, 0.f}, {3.f, 4.f, 0.f}, {5.f, 6.f, 0.f}};
+				patrol.mode = scene::component::Patrol::Mode::Loop;
+				patrol.speed = 2.5f;
+				patrol.waitTime = 0.75f;
+				patrol.wanderRadius = 3.f;
+				patrol.seed = 9.f;
+				patrol.faceDirection = true;
+				patrol.hopHeight = 0.06f;
+				patrol.hopRate = 7.f;
+			},
+			[](const scene::Entity& iEnt) -> void {
+				ASSERT_TRUE(iEnt.hasComponent<scene::component::Patrol>());
+				const auto& patrol = iEnt.getComponent<scene::component::Patrol>();
+				ASSERT_EQ(patrol.waypoints.size(), 3u);
+				EXPECT_FLOAT_EQ(patrol.waypoints[1].y(), 4.f);
+				EXPECT_EQ(patrol.mode, scene::component::Patrol::Mode::Loop);
+				EXPECT_FLOAT_EQ(patrol.speed, 2.5f);
+				EXPECT_FLOAT_EQ(patrol.waitTime, 0.75f);
+				EXPECT_FLOAT_EQ(patrol.wanderRadius, 3.f);
+				EXPECT_FLOAT_EQ(patrol.seed, 9.f);
+				EXPECT_TRUE(patrol.faceDirection);
+				EXPECT_FLOAT_EQ(patrol.hopHeight, 0.06f);
+				EXPECT_FLOAT_EQ(patrol.hopRate, 7.f);
+			});
+}
+
+TEST(ComponentRoundTrip, Drift) {
+	roundTrip(
+			"Drift",
+			[](scene::Entity& iEnt) -> void {
+				auto& drift = iEnt.addComponent<scene::component::Drift>();
+				drift.enabled = false;
+				drift.velocity = {0.3f, 0.1f, 0.f};
+				drift.range = {20.f, 5.f, 0.f};
+				drift.cameraFollow = 0.6f;
+			},
+			[](const scene::Entity& iEnt) -> void {
+				ASSERT_TRUE(iEnt.hasComponent<scene::component::Drift>());
+				const auto& drift = iEnt.getComponent<scene::component::Drift>();
+				EXPECT_FALSE(drift.enabled);
+				EXPECT_FLOAT_EQ(drift.velocity.y(), 0.1f);
+				EXPECT_FLOAT_EQ(drift.range.x(), 20.f);
+				EXPECT_FLOAT_EQ(drift.cameraFollow, 0.6f);
+			});
+}
+
 TEST(ComponentRoundTrip, VoxelPlayer) {
 	roundTrip(
 			"VoxelPlayer",

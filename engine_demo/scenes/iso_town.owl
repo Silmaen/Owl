@@ -65,168 +65,102 @@ Entities:
 - Entity: 4300000000000000003
   Tag: {tag: CloudNear}
   Transform:
-    translation: [6, 17, -4]
+    translation: [-6, 5, -4]
     rotation: [0, 0, 0]
     scale: [9, 4.5, 1]
   SpriteRenderer:
     color: [1, 1, 1, 0.8]
     texture: nam:textures/iso/smoke.png
     tilingFactor: 1
-  LuaScript:
-    scriptPath: scripts/iso/iso_cloud.lua
-    properties:
-    - name: offset_x
-      type: float
-      value: -6
-    - name: offset_y
-      type: float
-      value: 5
-    - name: parallax
-      type: float
-      value: 0.5
-    - name: speed
-      type: float
-      value: 0.35
+  Drift:
+    velocity: [0.35, 0, 0]
+    range: [20, 0, 0]
+    cameraFollow: 0.5
   Visibility: {gameVisible: true}
   RendererTag: {Name: world}
 
 - Entity: 4300000000000000004
   Tag: {tag: CloudFar}
   Transform:
-    translation: [19, 20, -4]
+    translation: [7, 8, -4]
     rotation: [0, 0, 0]
     scale: [12, 6, 1]
   SpriteRenderer:
     color: [1, 1, 1, 0.6]
     texture: nam:textures/iso/smoke.png
     tilingFactor: 1
-  LuaScript:
-    scriptPath: scripts/iso/iso_cloud.lua
-    properties:
-    - name: offset_x
-      type: float
-      value: 7
-    - name: offset_y
-      type: float
-      value: 8
-    - name: parallax
-      type: float
-      value: 0.3
-    - name: speed
-      type: float
-      value: 0.2
+  Drift:
+    velocity: [0.2, 0, 0]
+    range: [20, 0, 0]
+    cameraFollow: 0.7
   Visibility: {gameVisible: true}
   RendererTag: {Name: world}
 
 - Entity: 4300000000000000005
   Tag: {tag: CloudLow}
   Transform:
-    translation: [26, 8, -4]
+    translation: [14, -4, -4]
     rotation: [0, 0, 0]
     scale: [8, 4, 1]
   SpriteRenderer:
     color: [1, 1, 1, 0.7]
     texture: nam:textures/iso/smoke.png
     tilingFactor: 1
-  LuaScript:
-    scriptPath: scripts/iso/iso_cloud.lua
-    properties:
-    - name: offset_x
-      type: float
-      value: 14
-    - name: offset_y
-      type: float
-      value: -4
-    - name: parallax
-      type: float
-      value: 0.4
-    - name: speed
-      type: float
-      value: 0.28
+  Drift:
+    velocity: [0.28, 0, 0]
+    range: [20, 0, 0]
+    cameraFollow: 0.6
   Visibility: {gameVisible: true}
   RendererTag: {Name: world}
 
 - Entity: 4300000000000000006
   Tag: {tag: CloudHigh}
   Transform:
-    translation: [-8, 4, -4]
+    translation: [-12, -7, -4]
     rotation: [0, 0, 0]
     scale: [10, 4.5, 1]
   SpriteRenderer:
     color: [1, 1, 1, 0.65]
     texture: nam:textures/iso/smoke.png
     tilingFactor: 1
-  LuaScript:
-    scriptPath: scripts/iso/iso_cloud.lua
-    properties:
-    - name: offset_x
-      type: float
-      value: -12
-    - name: offset_y
-      type: float
-      value: -7
-    - name: parallax
-      type: float
-      value: 0.45
-    - name: speed
-      type: float
-      value: 0.3
+  Drift:
+    velocity: [0.3, 0, 0]
+    range: [20, 0, 0]
+    cameraFollow: 0.55
   Visibility: {gameVisible: true}
   RendererTag: {Name: world}
 
 - Entity: 4300000000000000007
   Tag: {tag: CloudWide}
   Transform:
-    translation: [30, -3, -4]
+    translation: [3, 3, -4]
     rotation: [0, 0, 0]
     scale: [14, 6, 1]
   SpriteRenderer:
     color: [1, 1, 1, 0.55]
     texture: nam:textures/iso/smoke.png
     tilingFactor: 1
-  LuaScript:
-    scriptPath: scripts/iso/iso_cloud.lua
-    properties:
-    - name: offset_x
-      type: float
-      value: 3
-    - name: offset_y
-      type: float
-      value: 3
-    - name: parallax
-      type: float
-      value: 0.25
-    - name: speed
-      type: float
-      value: 0.22
+  Drift:
+    velocity: [0.22, 0, 0]
+    range: [20, 0, 0]
+    cameraFollow: 0.75
   Visibility: {gameVisible: true}
   RendererTag: {Name: world}
 
 - Entity: 4300000000000000008
   Tag: {tag: CloudSmall}
   Transform:
-    translation: [10, 30, -4]
+    translation: [-3, 10, -4]
     rotation: [0, 0, 0]
     scale: [6, 3, 1]
   SpriteRenderer:
     color: [1, 1, 1, 0.75]
     texture: nam:textures/iso/smoke.png
     tilingFactor: 1
-  LuaScript:
-    scriptPath: scripts/iso/iso_cloud.lua
-    properties:
-    - name: offset_x
-      type: float
-      value: -3
-    - name: offset_y
-      type: float
-      value: 10
-    - name: parallax
-      type: float
-      value: 0.55
-    - name: speed
-      type: float
-      value: 0.4
+  Drift:
+    velocity: [0.4, 0, 0]
+    range: [20, 0, 0]
+    cameraFollow: 0.45
   Visibility: {gameVisible: true}
   RendererTag: {Name: world}
 

@@ -96,3 +96,22 @@ TEST_F(SceneSettingsCommandsTest, SetSceneScriptCommandUndoesAndRefusesBadInput)
 	undo.undo(*scene);
 	EXPECT_TRUE(scene->getSceneScript().scriptPath.empty());
 }
+
+TEST_F(SceneSettingsCommandsTest, PatrolWaypointsAreEditedThroughComponentSetAndUndo) {
+	const CommandRegistry registry;
+	auto scene = mkShared<scene::Scene>();
+	SceneUndoManager undo;
+	auto entity = scene->createEntity("Villager");
+	entity.addComponent<scene::component::Patrol>().waypoints = {{0.f, 0.f, 0.f}, {2.f, 0.f, 0.f}};
+	ASSERT_TRUE(registry.execute("component.set",
+								 {{"entity", static_cast<int64_t>(static_cast<uint64_t>(entity.getUUID()))},
+								  {"component", std::string{"Patrol"}},
+								  {"values", std::string{"{waypoints: [[0, 0, 0], [3, 1, 0], [5, 1, 0]]}"}}},
+								 scene, undo));
+	const auto& waypoints = entity.getComponent<scene::component::Patrol>().waypoints;
+	ASSERT_EQ(waypoints.size(), 3u);
+	EXPECT_FLOAT_EQ(waypoints[1].x(), 3.f);
+	undo.undo(*scene);
+	ASSERT_EQ(entity.getComponent<scene::component::Patrol>().waypoints.size(), 2u);
+	EXPECT_FLOAT_EQ(entity.getComponent<scene::component::Patrol>().waypoints[1].x(), 2.f);
+}
