@@ -61,11 +61,15 @@ flowchart LR
     B[owl_bench] --> J[output/bench/linux-bench.json<br/>artifact]
     J --> C{median over baseline<br/>by more than 15 %?}
     C -->|no| OK[pass]
-    C -->|yes| A[measure that case again alone,<br/>keep the faster median]
+    C -->|yes| A[measure the failed cases again alone,<br/>5 rounds, keep the fastest median]
     A --> C2{still over?}
     C2 -->|no| OK
-    C2 -->|yes| F[build fails]
+    C2 -->|yes| F[build fails,<br/>linux-bench.proposed-baseline.json<br/>artifact]
 ```
+
+- A failure leaves `output/bench/linux-bench.proposed-baseline.json`: the baseline with each failed case set to the
+  median of its confirmation rounds and the cases the baseline lacks added. When the slowdown is expected (a new
+  shader, more work by design), commit it as the baseline; `-- --confirm_rounds=<n>` changes the number of rounds.
 
 - Baseline: `test/bench/baseline/linux-bench.json`; without one the run only reports. Commit the artifact of a
   nightly run (or run the action with `-- --update-baseline` on the same agent) and refresh it when a change is

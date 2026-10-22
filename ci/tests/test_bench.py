@@ -4,10 +4,12 @@ from ci.actions.bench import (
     baseline_changes,
     best_of,
     compare,
+    exact_results,
     medians,
     proposed_medians,
     proposed_report,
     proposed_thresholds,
+    refreshed_baseline,
     spreads,
 )
 
@@ -93,3 +95,16 @@ def test_a_threshold_is_proposed_only_above_the_current_one() -> None:
     proposed = proposed_thresholds(spread, 0.15, {"covered": 0.3})
 
     assert proposed == {"noisy": 0.4, "exact": 0.25}
+
+
+def test_a_filtered_run_keeps_only_the_exact_name() -> None:
+    report = _report(frame__flat1000=10.0, frame__flat10000=100.0)
+    assert medians(exact_results(report, "frame/flat1000")) == {"frame/flat1000": 10.0}
+
+
+def test_the_refreshed_baseline_takes_the_round_median_of_the_failures_and_adds_new_benchmarks() -> None:
+    baseline = _report(slang__all=700.0, scene__create=100.0)
+    current = _report(slang__all=900.0, scene__create=101.0, culling__query=50.0)
+    rounds = [_report(slang__all=880.0), _report(slang__all=860.0), _report(slang__all=870.0)]
+    refreshed = refreshed_baseline(baseline, current, rounds, ["slang/all"])
+    assert medians(refreshed) == {"slang/all": 870.0, "scene/create": 100.0, "culling/query": 50.0}
