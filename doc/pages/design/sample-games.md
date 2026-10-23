@@ -36,8 +36,8 @@ Owl Engine ships two kinds of example content:
 | Lunar lander          | Lunar Lander          | 3D, thrust and gravity, planetary terrain, legs | v0.7.0        |
 | Asteroid field        | Star Fox / X-Wing     | 6DoF flight, 3D steering AI, trails, HUD marks  | v0.7.0        |
 
-Breakout, Wolfenstein mini and Sokoban shipped in v0.4.0; a tower defence comes next, in v0.5.0, on the Lua gaps
-closed for it and for Mini Transport Tycoon ([Order](#sample-games-order)), which waits in the
+Breakout, Wolfenstein mini and Sokoban shipped in v0.4.0; the first map of a tower defence ships in v0.5.0, on the Lua
+gaps closed for it and for Mini Transport Tycoon ([Order](#sample-games-order)), which waits in the
 [Pool](#sample-games-pool). The two v1.0 showcase games (one 2D, one 3D) are picked from this
 list, and so are the games of the [Pool](#sample-games-pool) once they enter it.
 
@@ -144,35 +144,46 @@ Done in v0.4.0: `samples/breakout/` (how to play: its `README.md`).
   opens), `sokoban_gamepad` (D-pad, B, stick dead zone), `sokoban_level_select` (`ui_down`, `ui_accept`).
 - Size: **S**, done.
 
-### Tower defence
+### Tower defence {#sample-games-tower-defence}
 
-First map only, basic art, to validate the gameplay; at least five maps once it plays well.
+Shipped in `samples/tower_defence/` (how to play: its `README.md`): the first map, in basic home-made art, to validate
+the gameplay; at least five maps once it plays well.
 
-| Item     | Plan                                                                                                                          |
-|----------|-------------------------------------------------------------------------------------------------------------------------------|
-| Play     | One isometric map of 24×24, 8 waves; enemies walk a road from the gate to the keep, towers on fixed build pads beside it     |
-| Win/lose | Every wave survived with at least one life / 20 lives lost (one per enemy reaching the keep)                                 |
-| Waves    | Timed: a countdown before each wave; the player calls it early for a gold bonus proportional to the time left               |
-| Towers   | Archer (fast, single target), cannon (slow, splash), frost (slows, small damage); no upgrade yet, sold for half its cost     |
-| Enemies  | Runner (fast, weak), soldier (average), armoured (slow, resists arrows); gold on each kill                                    |
-| Controls | Mouse: left on a pad opens the build ring or selects a tower, right cancels; Space or pad A calls the next wave early        |
-|          | F or RB fast forward (×2); Esc, P or Start pause (controls shown there only); WASD, stick or edge scroll pans, wheel zooms   |
-| Scenes   | `title`, `map_01`, `settings`, `victory` (end stats animated: kills, lives kept, gold, time), `game_over`                    |
-| Tilemap  | `Ground` (isometric terrain, road overlays with `navigation` rules as in `iso_town.owl`), build pads as overlay tiles        |
-| Entities | Prefabs `enemy_*`, `tower_*`, `projectile_*` spawned by Lua (G1); keep, gate, a few decor objects, camera                    |
-| Lua      | `waves.lua` (wave table, countdown, early call, spawns, `path.find` gate → keep), `towers.lua` (targeting, cooldowns, sell), |
-|          | `enemies.lua` (follow the cells, slow, armour, death and gold), `game.lua` (lives, gold, pause and fast forward via G8)      |
-| HUD      | Gold, lives, wave n / N with the countdown and a call-early button, speed toggle; build ring on a pad (choice, cost, range)  |
-| Menus    | Own look, kept simple (`generate_menus.py`)                                                                                   |
-| Art      | Basic home-made shapes from `generate_assets.py` (towers, enemies with a heading, projectiles); terrain from `tools/iso_atlas` |
-| Sounds   | Short home-made neutral effects (build, shot, hit, wave horn)                                                                |
-| Saves    | No slot: `tower_done_01` setting                                                                                              |
+| Item     | As shipped                                                                                                                     |
+|----------|--------------------------------------------------------------------------------------------------------------------------------|
+| Play     | One isometric map of 24×24, 8 waves; enemies walk a road from the gate to the keep, towers on 16 fixed build pads beside it    |
+| Win/lose | Every wave survived with at least one life / 20 lives lost (one per enemy reaching the keep)                                   |
+| Waves    | Timed: 25 s before the first, 18 s after each one is sent; called early for 2 gold per second left                             |
+| Towers   | Archer (fast, single target), cannon (slow, splash, aims ahead), frost (slows, small damage); no upgrade, sold for half        |
+| Enemies  | Runner (fast, weak), soldier (average), armoured (slow, takes 40 % of the arrows); gold on each kill, 6 % more HP per wave     |
+| Controls | Mouse: left on a pad or a tower opens its ring, on a badge builds or sells, right closes; Q / E, Tab or D-pad move a cursor    |
+|----------|--------------------------------------------------------------------------------------------------------------------------------|
+|----------|--------------------------------------------------------------------------------------------------------------------------------|
+| Scenes   | `title` (How to play window), `map_01`, `settings`, `victory` (kills, lives kept, gold, time counted up), `game_over`          |
+| Tilemap  | `Ground`: layer `ground` (grass), layer `roads` (road overlays, tileset connections as in `iso_town.owl`; pads as pavement)    |
+| Entities | `Gate`, `Keep`, decor, camera, the hidden `Cursor`, `RangeRing` and three `BuildChoice` badges; prefabs spawned by Lua         |
+| Prefabs  | `enemy_{runner,soldier,armoured}`, `tower_{archer,cannon,frost}`, `projectile_{arrow,ball,shard}`, `health_bar`, `puff`        |
+| Lua      | `defence.lua` (waves, enemies, towers, projectiles, ring, camera, pause and speed: scripts cannot call each other), menus      |
+| HUD      | Gold, lives, wave n / N with its countdown, Call wave (bonus shown), speed and Menu buttons, the info panel of the ring        |
+| Menus    | Night watch (`generate_menus.py`): stone title, crimson banner buttons, a wave marching past a tower to the keep               |
+| Art      | Basic shapes from `generate_assets.py` (towers, keep, gate, enemies in 4 headings, badges, ring); terrain of `tools/iso_atlas` |
+| Sounds   | Short home-made neutral effects (build, sell, shots, hits, pop, keep hit, horn, coins, defeat, start jingle)                   |
+| Saves    | No slot: `tower_done_01` and `tower_best_01` (most lives kept) settings                                                        |
 
-- Gaps: G1 (enemies, towers, projectiles from prefabs), G8 (pause, fast forward), G15 (click a tower), G7 (ring icons).
-- Scenarios: `tower_build` (gold spent, tower on a pad only), `tower_wave` (no tower: enemies reach the keep, lives down),
-  `tower_call_early` (wave starts at once, bonus gold), `tower_defend` (towers kill wave 1, gold up),
-  `tower_fast_forward` (time scale 2, pause stops enemies), `tower_win` (8 waves survived, `tower_done_01` set).
-- Size: **S–M**, about 1 week: the iso town gives the terrain, roads and path graph; waves, towers and HUD are new.
+- Data-driven maps: `tools/samples/tower_defence/maps.py` holds the road corners, the pads, the keep and the waves of
+  each map (`generate_maps.py` refuses a pad on the road or far from it); in Owl Nest a new map is a duplicated scene
+  whose road and pads are painted in the tilemap editor, `Gate` and `Keep` moved, and the `waves` list of `Game`
+  edited (one string per wave, groups `kind count gap` separated by `;`). The values of the towers and enemies are
+  properties of `defence.lua`, shared by every map unless one overrides them.
+- Gaps: G1 (every enemy, tower, projectile and puff spawned from a prefab), G8 (pause, double speed), G15 (towers and
+  badges picked; `scene.pick_entity` takes a tag, so the range ring or an enemy in front does not hide them), G7 (the
+  info panel shows the badge with `ui.set_image_frame`), G5 (the edge pan reads `scene.get_viewport_size` and
+  `scene.get_viewport_mouse`, added), G18 (no zoom: the map fits the screen at zoom 0).
+- Scenarios: `tower_build` (mouse: ring on a pad only, archer built and gold spent, sold for half), `tower_wave` (no
+  tower: enemies reach the keep, lives down), `tower_call_early` (wave at once, bonus gold), `tower_defend` (gamepad:
+  two archers stop wave 1, gold up, no life lost), `tower_fast_forward` (time scale 2, the pause stops the enemies),
+  `tower_win` (the 8 waves held with the keyboard cursor, `tower_done_01` set, the victory tally), `tower_title`.
+- Size: **S–M**, done for the first map; the next maps, their art and the tower upgrades come after a playtest.
 
 ### Mini Transport Tycoon
 
@@ -267,7 +278,7 @@ and the combat come in a later release, once their art exists.
 | 1    | Breakout              | v0.4.0  | Smallest, no blocking gap; sets up `samples/`, the scenarios and the export test for the others    |
 | 2    | Wolfenstein mini      | v0.4.0  | Exploration without combat (score, items, secrets, map explored); combat once its art exists (G11) |
 | 3    | Sokoban               | v0.4.0  | No blocking gap; proves level editing in Owl Nest, undo and saves                                  |
-| 4    | Tower defence         | v0.5.0  | Waves spawned from prefabs (G1), pause (G8), the tile graph of the iso town; the Lua gaps closed  |
+| 4    | Tower defence         | v0.5.0  | Waves spawned from prefabs (G1), pause (G8), the tile graph of the iso town; the Lua gaps closed   |
 | 5    | Mini Minecraft        | v0.6.0  | After a small engine PR for G2 and G13                                                             |
 
 ## v0.7.0 games
@@ -296,7 +307,7 @@ Planned, not yet checked against the engine: their plans are refined when v0.7.0
 
 ```
 samples/
-  breakout/  sokoban/  wolfenstein/       (tycoon/ and minecraft/ to come)
+  breakout/  sokoban/  wolfenstein/  tower_defence/   (tycoon/ and minecraft/ to come)
     owl_project.yml  game_settings.yml  input_actions.yml  input/gamecontrollerdb.txt
     scenes/  huds/  prefabs/  tilesets/  tilemaps/  scripts/  textures/  sounds/
 tools/samples/<game>/                 art and sound generators (neither exported nor installed)
@@ -328,7 +339,7 @@ test/unit/scenarios/*.owltest         scenario tests
 | G2  | No Lua `voxel` table: get and set a block, aimed block, `placeBlock`, break and place events                        | M    | Minecraft                                | **Yes**: no hotbar, no inventory                            |
 | G3  | A save kept the `tilemapPath` of a tilemap, not its cells (fixed in v0.5.0: the changed cells are saved)            | M    | Tycoon                                   | No: replay the edits from a `gamestate` string              |
 | G4  | A procedural `VoxelWorld` does not serialise its chunks: player edits are lost on save                              | M    | Minecraft                                | No: a finite, non-procedural world                          |
-| G5  | No screen-to-world conversion nor viewport size in Lua for a 2D camera                                              | S    | Breakout                                 | No: the paddle follows the mouse delta                      |
+| G5  | No screen-to-world conversion in Lua for a 2D camera (viewport size and mouse added in v0.5.0)                      | S    | Breakout                                 | No: the paddle follows the mouse delta                      |
 | G6  | Tile and sprite-frame bindings live in `isometric` although they work on any tilemap                                | S    | Sokoban, Wolfenstein                     | No: naming only (a `tilemap` alias)                         |
 | G7  | No `ui.set_image` in Lua (fixed in v0.5.0: `ui.set_image`, `ui.set_image_frame` on a sprite sheet grid)             | S    | Wolfenstein, Minecraft, Tycoon           | No: several `UiImage` toggled visible                       |
 | G8  | No pause nor time scale in Lua (fixed in v0.5.0: `time.set_paused`, `time.set_scale`, `ui.is_world_blocked`)        | S    | Tycoon, all (pause)                      | No: Lua scales its own delta, bodies stopped by hand        |
@@ -341,3 +352,4 @@ test/unit/scenarios/*.owltest         scenario tests
 | G15 | No Lua pick of the entity under the mouse (fixed in v0.5.0: `scene.pick_entity`, 2D, isometric, 3D)                 | S    | Tycoon                                   | No: compare `isometric.pick_cell` with the vehicle cells    |
 | G16 | The export follows scene paths quoted in scripts, not those in script properties (fixed in v0.4.0: both followed)   | S    | Breakout, Wolfenstein                    | No: list the scenes in the script                           |
 | G17 | A save keeps neither a slid `RaycastPushWall` nor an open door: after a load they are back in place                 | S    | Wolfenstein                              | No: pushed again, a secret counts once                      |
+| G18 | No Lua zoom of the isometric layer: its `Zoom` is a scene override only                                             | S    | Tower defence, Tycoon                    | No: the map fits the screen at zoom 0                       |
