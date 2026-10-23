@@ -13,6 +13,10 @@ include(OwlUtils)
 #
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+# No C++ module in the project: without this, CMake scans every translation unit for imports before compiling it.
+set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
+# An executable is not linked again when only a shared library it uses changed: the loader resolves the new one.
+set(CMAKE_LINK_DEPENDS_NO_SHARED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 add_library(${CMAKE_PROJECT_NAME}_Base INTERFACE)
