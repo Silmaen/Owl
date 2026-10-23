@@ -80,7 +80,7 @@ class Entities:
 def scene(name: str, entities: Entities, hud: str = "", header: str = "") -> str:
     """A whole scene file; ``header`` holds extra root keys (``EnabledRenderers``)."""
     hud_line = f"Hud: {hud}\n" if hud else ""
-    return f"Scene: {name}\nFormatVersion: 5\n{hud_line}{header}Entities:\n" + entities.text()
+    return f"Scene: {name}\nFormatVersion: 7\n{hud_line}{header}Entities:\n" + entities.text()
 
 
 def hud_file(name: str, entities: Entities) -> str:

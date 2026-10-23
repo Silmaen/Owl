@@ -1,5 +1,5 @@
 Scene: map_01
-FormatVersion: 5
+FormatVersion: 7
 Hud: huds/play.owlhud
 EnabledRenderers:
 - {Name: world, Enabled: true}

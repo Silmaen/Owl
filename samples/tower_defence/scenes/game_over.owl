@@ -1,5 +1,5 @@
 Scene: game_over
-FormatVersion: 5
+FormatVersion: 7
 Entities:
   - Entity: 7430000000000000001
     Tag:
