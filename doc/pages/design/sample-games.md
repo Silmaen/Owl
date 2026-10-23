@@ -10,7 +10,8 @@ Owl Engine ships two kinds of example content:
 
 - **Engine Demo** (today's `engine_demo/`): an all-in-one showcase of every engine feature, not a game in itself.
 - **Sample games**: small but real games, each one built on only what it needs, most of them mini remakes of known
-  games. They prove that Owl Engine makes games, give a newcomer a project of a readable size to start from, and feed the
+  games. They prove that Owl Engine makes games, give a newcomer a project of a readable size to start from, and feed
+  the
   two showcase games of v1.0.
 
 ## Rules
@@ -18,23 +19,24 @@ Owl Engine ships two kinds of example content:
 - One project per game, beside the Engine Demo, authored in Owl Nest; game rules in Lua, never in the engine.
 - Small: one screen or a handful of levels, finished (title, play, win / lose, settings), playable with keyboard,
   mouse and gamepad.
-- CC0 or home-made art only (the reworked `textures/wolf3d/` of the Engine Demo included); a scenario test per game runs in CI, and the game packages with the runner.
+- CC0 or home-made art only (the reworked `textures/wolf3d/` of the Engine Demo included); a scenario test per game runs
+  in CI, and the game packages with the runner.
 - A sample game uses only what it needs: it is not a feature checklist, the Engine Demo is.
 
 ## Short list
 
-| Game                  | Inspired by           | Exercises                                       | Possible from |
-|-----------------------|-----------------------|-------------------------------------------------|---------------|
-| Breakout              | Breakout / Arkanoid   | 2D, physics, HUD, sound, gamepad                | v0.4.0        |
-| Sokoban               | Sokoban               | tilemap, undo, saves, level editing in Owl Nest | v0.4.0        |
-| Wolfenstein mini      | Wolfenstein 3D        | raycast, doors, pick-ups, HUD                   | v0.4.0        |
-| Tower defence         | Kingdom Rush          | isometric, waves, tile-graph pathfinding, HUD   | v0.5.0        |
-| Mini Minecraft        | Minecraft             | voxel, build and break, inventory               | v0.4.0        |
-| One-room Zelda-like   | The Legend of Zelda   | top-down, dialogue, enemy AI, 2D lights         | v0.7.0        |
-| Marble or mini kart   | Marble Madness / Kart | 3D, Jolt physics, shadows                       | v0.7.0        |
-| Networked Bomberman   | Bomberman             | tilemap, deterministic simulation, multiplayer  | v0.8.0        |
-| Lunar lander          | Lunar Lander          | 3D, thrust and gravity, planetary terrain, legs | v0.7.0        |
-| Asteroid field        | Star Fox / X-Wing     | 6DoF flight, 3D steering AI, trails, HUD marks  | v0.7.0        |
+| Game                | Inspired by           | Exercises                                       | Possible from | done in |
+|---------------------|-----------------------|-------------------------------------------------|---------------|---------|
+| Breakout            | Breakout / Arkanoid   | 2D, physics, HUD, sound, gamepad                | v0.4.0        | v0.4.0  |
+| Sokoban             | Sokoban               | tilemap, undo, saves, level editing in Owl Nest | v0.4.0        | v0.4.0  |
+| Wolfenstein mini    | Wolfenstein 3D        | raycast, doors, pick-ups, HUD                   | v0.4.0        | v0.4.0  |
+| Tower defence       | Kingdom Rush          | isometric, waves, tile-graph pathfinding, HUD   | v0.5.0        | v0.5.0  |
+| Mini Minecraft      | Minecraft             | voxel, build and break, inventory               | v0.4.0        |         |
+| One-room Zelda-like | The Legend of Zelda   | top-down, dialogue, enemy AI, 2D lights         | v0.7.0        |         |
+| Marble or mini kart | Marble Madness / Kart | 3D, Jolt physics, shadows                       | v0.7.0        |         |
+| Networked Bomberman | Bomberman             | tilemap, deterministic simulation, multiplayer  | v0.8.0        |         |
+| Lunar lander        | Lunar Lander          | 3D, thrust and gravity, planetary terrain, legs | v0.7.0        |         |
+| Asteroid field      | Star Fox / X-Wing     | 6DoF flight, 3D steering AI, trails, HUD marks  | v0.7.0        |         |
 
 Breakout, Wolfenstein mini and Sokoban shipped in v0.4.0; the first map of a tower defence ships in v0.5.0, on the Lua
 gaps closed for it and for Mini Transport Tycoon ([Order](#sample-games-order)), which waits in the
@@ -57,8 +59,8 @@ Ideas without commitment: a game of the pool enters the short list when a releas
 ## v0.4.0 games
 
 Feasibility checked against `main` on 2026-10-18 (Lua bindings, components, Engine Demo): all five games fit the
-v0.4.0 engine. Breakout and Mini Transport Tycoon need no engine change, Sokoban one Lua binding
-(`isometric.get_size`, added), Wolfenstein mini art, Mini Minecraft two small engine fixes ([Gaps](#sample-games-gaps)).
+v0.4.0 engine. Breakout and Mini Transport Tycoon need no engine change, Sokoban one Lua binding (`isometric.get_size`,
+added), Wolfenstein mini art, Mini Minecraft two small engine fixes ([Gaps](#sample-games-gaps)).
 Breakout, Sokoban and a Wolfenstein mini without combat shipped with v0.4.0; the Lua gaps G1, G3, G7, G8 and G15 are
 closed in v0.5.0, Mini Minecraft is planned in v0.6.0; Mini Transport Tycoon waits in the pool.
 
@@ -140,7 +142,8 @@ Done in v0.4.0: `samples/breakout/` (how to play: its `README.md`).
 - Gaps: G6 (tile bindings named `isometric`), G14 (one scene per level), G9 (master volume only). Lua had no way to
   read the size of a tilemap: `isometric.get_size` was added for it (width, height, cell size).
 - Scenarios: `sokoban_push` (`sokoban_on_goal` grows), `sokoban_undo` (undo and restart put back crate and counters),
-  `sokoban_wall` (no step into a wall nor a blocked crate), `sokoban_win` (level 1 solved, `sokoban_done_01` set, level 2
+  `sokoban_wall` (no step into a wall nor a blocked crate), `sokoban_win` (level 1 solved, `sokoban_done_01` set, level
+  2
   opens), `sokoban_gamepad` (D-pad, B, stick dead zone), `sokoban_level_select` (`ui_down`, `ui_accept`).
 - Size: **S**, done.
 
@@ -273,13 +276,13 @@ and the combat come in a later release, once their art exists.
 
 ### Order {#sample-games-order}
 
-| Step | Game                  | Release | Why                                                                                                |
-|------|-----------------------|---------|----------------------------------------------------------------------------------------------------|
-| 1    | Breakout              | v0.4.0  | Smallest, no blocking gap; sets up `samples/`, the scenarios and the export test for the others    |
-| 2    | Wolfenstein mini      | v0.4.0  | Exploration without combat (score, items, secrets, map explored); combat once its art exists (G11) |
-| 3    | Sokoban               | v0.4.0  | No blocking gap; proves level editing in Owl Nest, undo and saves                                  |
-| 4    | Tower defence         | v0.5.0  | Waves spawned from prefabs (G1), pause (G8), the tile graph of the iso town; the Lua gaps closed   |
-| 5    | Mini Minecraft        | v0.6.0  | After a small engine PR for G2 and G13                                                             |
+| Step | Game             | Release | Why                                                                                                |
+|------|------------------|---------|----------------------------------------------------------------------------------------------------|
+| 1    | Breakout         | v0.4.0  | Smallest, no blocking gap; sets up `samples/`, the scenarios and the export test for the others    |
+| 2    | Wolfenstein mini | v0.4.0  | Exploration without combat (score, items, secrets, map explored); combat once its art exists (G11) |
+| 3    | Sokoban          | v0.4.0  | No blocking gap; proves level editing in Owl Nest, undo and saves                                  |
+| 4    | Tower defence    | v0.5.0  | Waves spawned from prefabs (G1), pause (G8), the tile graph of the iso town; the Lua gaps closed   |
+| 5    | Mini Minecraft   | v0.6.0  | After a small engine PR for G2 and G13                                                             |
 
 ## v0.7.0 games
 
@@ -287,21 +290,21 @@ Planned, not yet checked against the engine: their plans are refined when v0.7.0
 
 ### Lunar lander
 
-| Item     | Plan                                                                                                       |
-|----------|------------------------------------------------------------------------------------------------------------|
-| Play     | Land a small craft on marked pads of a moon, from orbit to touchdown, fuel limited                         |
-| Win/lose | Every pad reached / a hard landing breaks the legs or the craft                                            |
-| Engine   | Planetary terrain layer, gravity field, trajectory prediction, breakable joints, HUD markers on the pads   |
-| Size     | **M**, once the v0.7.0 physics and terrain are in                                                          |
+| Item     | Plan                                                                                                     |
+|----------|----------------------------------------------------------------------------------------------------------|
+| Play     | Land a small craft on marked pads of a moon, from orbit to touchdown, fuel limited                       |
+| Win/lose | Every pad reached / a hard landing breaks the legs or the craft                                          |
+| Engine   | Planetary terrain layer, gravity field, trajectory prediction, breakable joints, HUD markers on the pads |
+| Size     | **M**, once the v0.7.0 physics and terrain are in                                                        |
 
 ### Asteroid field
 
-| Item     | Plan                                                                                                       |
-|----------|------------------------------------------------------------------------------------------------------------|
-| Play     | Fly a fighter through an asteroid field, escort a convoy and fight waves of enemy fighters                 |
-| Win/lose | The convoy reaches the gate / the convoy or the player is destroyed                                        |
-| Engine   | 6DoF flight on Jolt, 3D steering and formations, particle trails, emissive lights, HUD markers, Doppler    |
-| Size     | **M**, once the v0.7.0 AI and audio are in                                                                 |
+| Item     | Plan                                                                                                    |
+|----------|---------------------------------------------------------------------------------------------------------|
+| Play     | Fly a fighter through an asteroid field, escort a convoy and fight waves of enemy fighters              |
+| Win/lose | The convoy reaches the gate / the convoy or the player is destroyed                                     |
+| Engine   | 6DoF flight on Jolt, 3D steering and formations, particle trails, emissive lights, HUD markers, Doppler |
+| Size     | **M**, once the v0.7.0 AI and audio are in                                                              |
 
 ## Layout
 
@@ -321,7 +324,8 @@ test/unit/scenarios/*.owltest         scenario tests
   `scenario`), named `<game>_<behaviour>.owltest` (`breakout_serve`, `wolf_pickup`), with
   `scene: ../../../samples/<game>/scenes/<scene>.owl`; no test file is exported.
   `GameExportCoverage.EverySampleGameHasAScenario` fails for a sample whose scenes no scenario plays.
-- Export: `GameExportEndToEnd.PlaysFromItsExportFolder` (one case per project) (`test/unit/export_tests/GameExport_test.cpp`)
+- Export: `GameExportEndToEnd.PlaysFromItsExportFolder` (one case per project)
+  (`test/unit/export_tests/GameExport_test.cpp`)
   exports `engine_demo` and every `samples/*/owl_project.yml` (`OwlNest --export`, then
   `launch.sh --headless --smoke-test 60`): every scene and script is packed, and no warning is logged.
 - Install: `source/owlnest/CMakeLists.txt` installs `engine_demo/` and `samples/` (component `Nest`) side by side.
