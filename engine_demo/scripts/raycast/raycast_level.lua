@@ -14,7 +14,7 @@
 -- near; the exit elevator and the pick-ups sound in their own scripts.
 --
 -- Fog of war: the tilemap has two layers, `walls` (hidden, the whole level, read once into a Lua table) and `seen` (empty
--- at first). Every frame FOG_RAYS rays are cast over the wall grid across the field of view up to FOG_RANGE cells (a
+-- at first). Every frame fog_rays rays are cast over the wall grid across the field of view up to fog_range cells (a
 -- DDA over the cells, no allocation); the floor cells a ray crosses and the wall it stops at are copied into `seen` with
 -- `isometric.set_cell`. A closed door and a secret wall that has not moved stop a ray and show as walls. The seen cells
 -- are kept as a string of 0 and 1 in `raycast_seen` of the gamestate (written at most twice a second), so a save, a
@@ -28,6 +28,10 @@ properties = {
     { name = "hearing", type = "int", default = 16 },   -- cells beyond which a door or a wall is not heard
     { name = "facing_offset", type = "int", default = 7 },   -- units (1/720 of the screen height) from the dot to the facing marker
     { name = "save_period", type = "float", default = 0.5 },
+    { name = "fog_rays", type = "int", default = 41, min = 2 },
+    { name = "fog_fov", type = "float", default = 80.0, min = 10, max = 170 },
+    { name = "fog_range", type = "float", default = 14.0, min = 1 },
+    { name = "fog_rows_per_frame", type = "int", default = 8, min = 1 },
 }
 
 local SECRETS = { "Secret1", "Secret2", "Secret3", "Secret4", "Secret5" }
@@ -49,7 +53,6 @@ local player_id, map_id, dot_id, facing_id = 0, 0, 0, 0
 
 local WALL_LAYER, SEEN_LAYER = 0, 1
 local TILE_WALL, TILE_FLOOR = 0, 1
-local FOG_RAYS, FOG_FOV, FOG_RANGE = 41, math.rad(80), 14
 local solid = {}          -- cell key -> true for a wall of the level
 local blockers = {}       -- cell key -> {closed = boolean} for a door or a secret wall (an entity, not a tile)
 local seen = {}           -- cell key -> true once the player has seen the cell
@@ -99,7 +102,7 @@ local function blocked(c, r)
 end
 
 -- One ray of the fog: walks the cells from the player along an angle (the player's yaw plus an offset), revealing each,
--- up to the first wall or FOG_RANGE.
+-- up to the first wall or fog_range.
 local function cast(px, py, angle)
     local dx, dy = -math.sin(angle), -math.cos(angle)   -- the rows grow downward on the map: the world y is flipped
     local c, r = math.floor(px), math.floor(py)
@@ -119,7 +122,7 @@ local function cast(px, py, angle)
             side_r = side_r + delta_r
             r = r + step_r
         end
-        if distance > FOG_RANGE or c < 0 or r < 0 or c >= MAP_SIZE or r >= MAP_SIZE then
+        if distance > fog_range or c < 0 or r < 0 or c >= MAP_SIZE or r >= MAP_SIZE then
             return
         end
         reveal(c, r)
@@ -139,8 +142,8 @@ local function update_fog(dt)
             reveal(c + dc, r + dr)
         end
     end
-    for i = 0, FOG_RAYS - 1 do
-        cast(tx, ty, yaw + (i / (FOG_RAYS - 1) - 0.5) * FOG_FOV)
+    for i = 0, fog_rays - 1 do
+        cast(tx, ty, yaw + (i / (fog_rays - 1) - 0.5) * math.rad(fog_fov))
     end
     gamestate.set("minimap_seen", seen_count)
     save_clock = save_clock + dt
@@ -155,11 +158,10 @@ end
 -- restores the cells of the gamestate.
 -- The fog is set up a few rows per frame: reading and clearing every cell at once overruns the script time quota on
 -- slow machines (emulated arm64).
-local FOG_ROWS_PER_FRAME = 8
 local fog_row = 0
 
 local function setup_fog_rows()
-    local last = math.min(fog_row + FOG_ROWS_PER_FRAME, MAP_SIZE) - 1
+    local last = math.min(fog_row + fog_rows_per_frame, MAP_SIZE) - 1
     for r = fog_row, last do
         for c = 0, MAP_SIZE - 1 do
             local key = key_of(c, r)

@@ -85,6 +85,38 @@ void updateDrifts(Scene& ioScene, const SystemContext& iContext);
 
 /**
  * @brief
+ *  Place the entities with a `FollowTarget` at their offset from the target (`owl.follow_target`).
+ * @param[in,out] ioScene The scene.
+ * @param[in] iContext The frame context.
+ */
+void updateFollowTargets(Scene& ioScene, const SystemContext& iContext);
+
+/**
+ * @brief
+ *  Advance the `DayNightCycle`s (`owl.day_night`), then light the scene for their time of day.
+ * @param[in,out] ioScene The scene.
+ * @param[in] iContext The frame context.
+ */
+void updateDayNightCycles(Scene& ioScene, const SystemContext& iContext);
+
+/**
+ * @brief
+ *  Turn the sun light and the sky of every `DayNightCycle` for its time of day, without advancing it (Owl Nest).
+ * @param[in,out] ioScene The scene.
+ * @param[in] iRuntime Whether the scene plays: the night exposure of the cameras applies only then.
+ */
+void applyDayNightCycles(Scene& ioScene, bool iRuntime = false);
+
+/**
+ * @brief
+ *  Walk the entities with a `FirstPersonController` (`owl.first_person`).
+ * @param[in,out] ioScene The scene.
+ * @param[in] iContext The frame context.
+ */
+void updateFirstPersonControllers(Scene& ioScene, const SystemContext& iContext);
+
+/**
+ * @brief
  *  Make the lights with a `LightFlicker` flicker from the scene time (`owl.light_flicker`).
  * @param[in,out] ioScene The scene.
  * @param[in] iContext The frame context.

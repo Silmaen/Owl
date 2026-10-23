@@ -19,7 +19,9 @@
 #include "renderer/IsometricObjects.h"
 #include "renderer/MaterialLibrary.h"
 #include "renderer/MeshCache.h"
+#include "renderer/OutlinePass.h"
 #include "renderer/PostProcess.h"
+#include "renderer/ProceduralSky.h"
 #include "renderer/Renderer.h"
 #include "renderer/Renderer2D.h"
 #include "renderer/Renderer2DLayer.h"
@@ -31,6 +33,8 @@
 #include "renderer/RendererRaycastLayer.h"
 #include "renderer/RendererTilemap.h"
 #include "renderer/RendererVoxel.h"
+#include "renderer/gpu/Framebuffer.h"
+#include "renderer/gpu/RenderCommand.h"
 #include "renderer/gpu/StorageBuffer.h"
 #include "scene/ComponentRegistry.h"
 #include "scene/Entity.h"
@@ -38,6 +42,7 @@
 #include "scene/Tileset.h"
 #include "scene/nav/NavDebugDraw.h"
 #include "scene/nav/NavWorld.h"
+#include "systems/EngineSystems.h"
 
 #include "ScriptLoader.h"
 #include "app/Application.h"
@@ -564,6 +569,7 @@ void Scene::renderRuntimeFrame(const core::Timestep& iTimeStep) {
 	viewRotation(2, 3) = 0.0f;
 	m_inverseViewRotation = inverse(mainCamera->getProjection() * viewRotation);
 
+	renderTargets();
 	renderWithStack(*mainCamera);
 
 	if (mp_engineContext == nullptr)
@@ -640,6 +646,7 @@ void Scene::onRenderRuntime() {
 		viewRotation(1, 3) = 0.0f;
 		viewRotation(2, 3) = 0.0f;
 		m_inverseViewRotation = inverse(mainCamera->getProjection() * viewRotation);
+		renderTargets();
 		renderWithStack(*mainCamera);
 		if (mp_engineContext != nullptr)
 			mp_engineContext->getScreenTransition().render(static_cast<float>(m_viewportSize.x()),
@@ -655,6 +662,8 @@ void Scene::onUpdateEditor(const core::Timestep& iTimeStep, const renderer::Came
 	// Stream procedural voxel terrain around the editor camera (its world position is the inverse-view translation).
 	const math::mat4 camToWorld = inverse(iCamera.getView());
 	updateVoxelStreaming(math::vec3{camToWorld(0, 3), camToWorld(1, 3), camToWorld(2, 3)});
+	systems::applyDayNightCycles(*this);
+	renderTargets();
 	renderEditorView(iCamera);
 }
 
@@ -806,6 +815,8 @@ void Scene::renderWithStack(const renderer::Camera& iCamera) {
 						 .frameSize = iContext.getSize(),
 						 .exposure = targets.exposure.isValid() ? iContext.getTexture(targets.exposure) : nullptr});
 			});
+	if (!m_drawingRenderTarget)
+		recordOutlinePasses(graph, target);
 	// The display target takes the entity ids and the depth of the world, for picking and the depth-tested overlays.
 	graph.addPass("entity ids and depth", encodeSetup,
 				  [sceneColor, target](const Graph::PassContext& iContext) -> void {
@@ -819,6 +830,8 @@ void Scene::renderWithStack(const renderer::Camera& iCamera) {
 	graph.addPass(
 			"overlays and HUD", [target](Graph::PassBuilder& ioBuilder) -> void { ioBuilder.write(target); },
 			[this](const Graph::PassContext&) -> void {
+				if (m_drawingRenderTarget)
+					return;
 				renderOverlays(*mp_renderCamera);
 				ui::HudPass::render(*this, m_viewportSize, status == Status::Editing);
 				renderToast();
@@ -834,6 +847,60 @@ void Scene::renderWithStack(const renderer::Camera& iCamera) {
 	renderer::Renderer3D::setShadow({});
 	renderer::Renderer3D::setEnvironment({});
 	mp_renderCamera = nullptr;
+}
+
+void Scene::renderTargets() {
+	OWL_PROFILE_FUNCTION()
+
+	auto* const previous = renderer::gpu::Framebuffer::getBound();
+	const math::mat4 mainInverseViewRotation = m_inverseViewRotation;
+	bool drawn = false;
+	for (const auto view = registry.view<component::RenderTarget, component::Camera>(); const auto handle: view) {
+		auto& target = view.get<component::RenderTarget>(handle);
+		if (!target.enabled || target.targetName.empty())
+			continue;
+		if (!target.m_framebuffer) {
+			using Attachment = renderer::gpu::AttachmentSpecification;
+			target.m_framebuffer = renderer::gpu::Framebuffer::create(
+					{.size = target.size,
+					 .attachments = {{.format = Attachment::Format::Surface, .tiling = Attachment::Tiling::Optimal},
+									 {.format = Attachment::Format::RedInteger, .tiling = Attachment::Tiling::Optimal},
+									 {.format = Attachment::Format::Depth32F, .tiling = Attachment::Tiling::Optimal}},
+					 .samples = 1,
+					 .swapChainTarget = false,
+					 .debugName = "render_target"});
+		} else if (target.m_framebuffer->getSpecification().size != target.size) {
+			target.m_framebuffer->resize(target.size);
+		}
+		auto& camera = view.get<component::Camera>(handle).camera;
+		camera.setViewportSize(target.size);
+		camera.setTransform(getWorldTransform(Entity{handle, this})());
+		target.m_framebuffer->bind();
+		renderer::gpu::RenderCommand::setClearColor(target.clearColor);
+		renderer::gpu::RenderCommand::clear();
+		target.m_framebuffer->clearAttachment(1, -1);
+		math::mat4 viewRotation = camera.getView();
+		viewRotation(0, 3) = 0.0f;
+		viewRotation(1, 3) = 0.0f;
+		viewRotation(2, 3) = 0.0f;
+		m_inverseViewRotation = inverse(camera.getProjection() * viewRotation);
+		m_drawingRenderTarget = true;
+		renderWithStack(camera);
+		m_drawingRenderTarget = false;
+		target.m_framebuffer->unbind();
+		drawn = true;
+	}
+	m_inverseViewRotation = mainInverseViewRotation;
+	if (drawn && previous != nullptr)
+		previous->bind();
+}
+
+auto Scene::getRenderTarget(const std::string& iName) const -> shared<renderer::gpu::Framebuffer> {
+	for (const auto view = registry.view<const component::RenderTarget>(); const auto handle: view) {
+		if (const auto& target = view.get<const component::RenderTarget>(handle); target.targetName == iName)
+			return target.m_framebuffer;
+	}
+	return nullptr;
 }
 
 void Scene::recordLightPasses(renderer::RenderGraph& ioGraph) {
@@ -914,6 +981,7 @@ void Scene::recordLightPasses(renderer::RenderGraph& ioGraph) {
 void Scene::recordOcclusionPasses(renderer::RenderGraph& ioGraph) {
 	using Graph = renderer::RenderGraph;
 	m_occlusionToken = {};
+	m_occluderDepth = {};
 	const auto& layers = renderer::Renderer::getRenderStack().getLayers();
 	float scale = 0.f;
 	for (size_t index = 0; index < layers.size(); ++index) {
@@ -929,6 +997,7 @@ void Scene::recordOcclusionPasses(renderer::RenderGraph& ioGraph) {
 	const math::vec2ui size{std::max(1u, static_cast<uint32_t>(static_cast<float>(frameSize.x()) * scale)),
 							std::max(1u, static_cast<uint32_t>(static_cast<float>(frameSize.y()) * scale))};
 	const Graph::Resource depth = ioGraph.createTarget("occluder depth", Graph::TargetFormat::Depth, size);
+	m_occluderDepth = depth;
 	ioGraph.addPass(
 			"occluder depth", [depth](Graph::PassBuilder& ioBuilder) -> void { ioBuilder.write(depth); },
 			[this](const Graph::PassContext&) -> void { renderShadowCasters(*mp_renderCamera); });
@@ -950,9 +1019,13 @@ void Scene::recordEnvironmentPass(renderer::RenderGraph& ioGraph, const renderer
 	using Graph = renderer::RenderGraph;
 	const bool editorMode = status == Status::Editing;
 	const component::Environment* environment = nullptr;
+	const component::ProceduralSky* sky = nullptr;
 	for (const auto [handle, candidate]: registry.view<component::Environment>().each()) {
 		if (isEffectivelyVisible(Entity{handle, this}, editorMode)) {
 			environment = &candidate;
+			if (const auto* procedural = registry.try_get<component::ProceduralSky>(handle);
+				procedural != nullptr && procedural->enabled)
+				sky = procedural;
 			break;
 		}
 	}
@@ -966,13 +1039,14 @@ void Scene::recordEnvironmentPass(renderer::RenderGraph& ioGraph, const renderer
 	constantSky.ambient =
 			math::vec3{renderer::ColorEncoder::srgbToLinear(color.x()), renderer::ColorEncoder::srgbToLinear(color.y()),
 					   renderer::ColorEncoder::srgbToLinear(color.z())};
-	if (environment->hdri.empty()) {
+	auto& state = m_environment;
+	if (sky != nullptr) {
+		requestProceduralSky(*sky);
+	} else if (environment->hdri.empty()) {
 		m_environment = {};
 		renderer::Renderer3D::setEnvironment(constantSky);
 		return;
-	}
-	auto& state = m_environment;
-	if (state.hdri != environment->hdri) {
+	} else if (state.procedural || state.hdri != environment->hdri) {
 		state = {};
 		state.hdri = environment->hdri;
 		state.result = mkShared<std::optional<renderer::EnvironmentMap>>();
@@ -1013,6 +1087,11 @@ void Scene::recordEnvironmentPass(renderer::RenderGraph& ioGraph, const renderer
 	}
 	state.lighting.intensity = std::max(environment->intensity, 0.f);
 	state.lighting.rotation = environment->rotation;
+	state.lighting.bodies = sky != nullptr ? renderer::skyBodiesOf({.sunDirection = sky->sunDirection,
+																	.nightBrightness = sky->nightBrightness,
+																	.stars = sky->stars,
+																	.discSize = sky->discSize})
+										   : renderer::SkyBodies{};
 	renderer::Renderer3D::setEnvironment(state.lighting);
 	if (!environment->showSky)
 		return;
@@ -1025,6 +1104,60 @@ void Scene::recordEnvironmentPass(renderer::RenderGraph& ioGraph, const renderer
 			});
 }
 
+void Scene::requestProceduralSky(const component::ProceduralSky& iSky) {
+	auto& state = m_environment;
+	if (!state.procedural) {
+		state = {};
+		state.procedural = true;
+	}
+	if (state.loading)
+		return;
+	const auto quantise = [](const float iValue, const float iStep) -> float { return std::round(iValue / iStep); };
+	constexpr float directionStep = 0.008f;
+	constexpr float valueStep = 0.002f;
+	const std::array<float, 16> key{quantise(iSky.sunDirection.x(), directionStep),
+									quantise(iSky.sunDirection.y(), directionStep),
+									quantise(iSky.sunDirection.z(), directionStep),
+									quantise(iSky.turbidity, valueStep),
+									quantise(iSky.groundColor.x(), valueStep),
+									quantise(iSky.groundColor.y(), valueStep),
+									quantise(iSky.groundColor.z(), valueStep),
+									quantise(iSky.nightColor.x(), valueStep),
+									quantise(iSky.nightColor.y(), valueStep),
+									quantise(iSky.nightColor.z(), valueStep),
+									quantise(iSky.nightBrightness, valueStep * 0.01f),
+									quantise(iSky.stars, valueStep),
+									quantise(iSky.discSize, valueStep),
+									static_cast<float>(iSky.resolution),
+									1.f,
+									0.f};
+	if (state.levelsReady() && key == state.skyKey)
+		return;
+	state.skyKey = key;
+	const auto linear = [](const math::vec3& iColor) -> math::vec3 {
+		return {renderer::ColorEncoder::srgbToLinear(iColor.x()), renderer::ColorEncoder::srgbToLinear(iColor.y()),
+				renderer::ColorEncoder::srgbToLinear(iColor.z())};
+	};
+	const renderer::SkyParameters parameters{.sunDirection = iSky.sunDirection,
+											 .turbidity = iSky.turbidity,
+											 .groundColor = linear(iSky.groundColor),
+											 .nightColor = linear(iSky.nightColor),
+											 .nightBrightness = iSky.nightBrightness,
+											 .stars = iSky.stars,
+											 .discSize = iSky.discSize};
+	const math::vec2ui size{iSky.resolution, std::max(iSky.resolution / 2, 1u)};
+	state.result = mkShared<std::optional<renderer::EnvironmentMap>>();
+	const auto build = [result = state.result, parameters, size]() -> void {
+		*result = renderer::EnvironmentMap::build(renderer::renderProceduralSky(parameters, size));
+	};
+	if (app::Application::instanced()) {
+		state.task = app::Application::get().getTaskScheduler().pushTask(core::task::Task{build});
+		state.loading = true;
+	} else {
+		build();
+	}
+}
+
 void Scene::useShadowMaps(const renderer::RenderGraph::PassContext& iContext) {
 	if (m_shadowSettings.cascadeCount == 0)
 		return;
@@ -1033,14 +1166,69 @@ void Scene::useShadowMaps(const renderer::RenderGraph::PassContext& iContext) {
 	renderer::Renderer3D::setShadow(m_shadowSettings);
 }
 
-void Scene::renderShadowCasters(const renderer::Camera& iCamera) {
+auto Scene::isInSubtree(entt::entity iHandle, const entt::entity iRoot) const -> bool {
+	for (int depth = 0; depth < 64 && iHandle != entt::null; ++depth) {
+		if (iHandle == iRoot)
+			return true;
+		const auto* hierarchy = registry.try_get<component::Hierarchy>(iHandle);
+		if (hierarchy == nullptr || hierarchy->parentId == core::UUID{0})
+			return false;
+		iHandle = static_cast<entt::entity>(findEntityByUUID(hierarchy->parentId));
+	}
+	return false;
+}
+
+void Scene::recordOutlinePasses(renderer::RenderGraph& ioGraph, const renderer::RenderGraph::Resource iTarget) {
+	using Graph = renderer::RenderGraph;
+	if (!m_outline)
+		return;
+	const Entity root = findEntityByUUID(m_outline->root);
+	if (!root)
+		return;
+	const auto rootHandle = static_cast<entt::entity>(root);
+	const auto meshes = registry.view<component::MeshRenderer>();
+	if (std::ranges::none_of(meshes, [&](const auto iHandle) -> bool { return isInSubtree(iHandle, rootHandle); }))
+		return;
+	const Graph::Resource mask = ioGraph.createTarget("outline mask", Graph::TargetFormat::Depth);
+	// The occluder depth of the frame, when the occlusion culling made one, spares a depth pass of the whole scene.
+	const bool reuse = m_occluderDepth.isValid();
+	const Graph::Resource depth =
+			reuse ? m_occluderDepth : ioGraph.createTarget("outline scene depth", Graph::TargetFormat::Depth);
+	ioGraph.addPass(
+			"outline mask", [mask](Graph::PassBuilder& ioBuilder) -> void { ioBuilder.write(mask); },
+			[this, rootHandle](const Graph::PassContext&) -> void {
+				m_meshFilterRoot = rootHandle;
+				renderShadowCasters(*mp_renderCamera, true);
+				m_meshFilterRoot = entt::null;
+			});
+	if (!reuse)
+		ioGraph.addPass(
+				"outline scene depth", [depth](Graph::PassBuilder& ioBuilder) -> void { ioBuilder.write(depth); },
+				[this](const Graph::PassContext&) -> void { renderShadowCasters(*mp_renderCamera); });
+	ioGraph.addPass(
+			"outline",
+			[mask, depth, iTarget](Graph::PassBuilder& ioBuilder) -> void {
+				ioBuilder.read(mask);
+				ioBuilder.read(depth);
+				ioBuilder.write(iTarget);
+			},
+			[this, mask, depth](const Graph::PassContext& iContext) -> void {
+				renderer::OutlinePass::draw({.mask = iContext.getTexture(mask),
+											 .sceneDepth = iContext.getTexture(depth),
+											 .color = m_outline ? m_outline->color : math::vec4{1.f, 0.8f, 0.35f, 1.f},
+											 .frameSize = iContext.getSize()});
+			});
+}
+
+void Scene::renderShadowCasters(const renderer::Camera& iCamera, const bool iMeshesOnly) {
 	const bool editorMode = status == Status::Editing;
 	renderer::Renderer3D::setShadowPass(true);
 	const auto& layers = renderer::Renderer::getRenderStack().getLayers();
 	for (size_t index = 0; index < layers.size(); ++index) {
 		const auto& layer = layers[index];
 		const std::string_view type{layer->getTypeKey()};
-		if ((type != "RendererVoxel" && type != "RendererMesh") || !layerHasContent(layer->getName(), index == 0))
+		if ((type != "RendererVoxel" && type != "RendererMesh") || (iMeshesOnly && type != "RendererMesh") ||
+			!layerHasContent(layer->getName(), index == 0))
 			continue;
 		layer->onBeginFrame(iCamera);
 		m_currentLayerName = layer->getName();
@@ -1617,6 +1805,8 @@ void Scene::renderMeshes(const bool iEditorMode) {
 		const Entity ent{entity, this};
 		if (!isEffectivelyVisible(ent, iEditorMode) || !layerAccepts(ent))
 			continue;
+		if (m_meshFilterRoot != entt::null && !isInSubtree(entity, m_meshFilterRoot))
+			continue;
 		auto& meshRenderer = view.get<component::MeshRenderer>(entity);
 		if (!meshRenderer.mesh)
 			continue;
@@ -1770,7 +1960,7 @@ void Scene::renderOverlays(const renderer::Camera& iCamera) {
 		nav::drawNavigationRoutes(*this);
 		renderer::Renderer2D::endScene();
 	}
-	if (!m_hasVoxelHighlight && !m_showCrosshair)
+	if (!m_hasVoxelHighlight && !m_showCrosshair && !m_interactionHighlight)
 		return;
 	const math::vec4 cameraPos4 = inverse(iCamera.getView()) * math::vec4{0.f, 0.f, 0.f, 1.f};
 	const math::vec3 cameraPos{cameraPos4.x(), cameraPos4.y(), cameraPos4.z()};
@@ -1804,6 +1994,22 @@ void Scene::renderOverlays(const renderer::Camera& iCamera) {
 												.point2 = c[static_cast<size_t>(face.corners[(e + 1) % 4])],
 												.color = color});
 		}
+	}
+
+	if (m_interactionHighlight) {
+		constexpr float pad = 0.01f;
+		const math::vec3 low = m_interactionHighlight->min() - math::vec3{pad, pad, pad};
+		const math::vec3 high = m_interactionHighlight->max() + math::vec3{pad, pad, pad};
+		const std::array<math::vec3, 8> corner{
+				math::vec3{low.x(), low.y(), low.z()},    math::vec3{high.x(), low.y(), low.z()},
+				math::vec3{high.x(), high.y(), low.z()},  math::vec3{low.x(), high.y(), low.z()},
+				math::vec3{low.x(), low.y(), high.z()},   math::vec3{high.x(), low.y(), high.z()},
+				math::vec3{high.x(), high.y(), high.z()}, math::vec3{low.x(), high.y(), high.z()}};
+		constexpr std::array<std::pair<size_t, size_t>, 12> edges{
+				{{0, 1}, {1, 2}, {2, 3}, {3, 0}, {4, 5}, {5, 6}, {6, 7}, {7, 4}, {0, 4}, {1, 5}, {2, 6}, {3, 7}}};
+		const math::vec4 color{1.f, 0.82f, 0.4f, 0.95f};
+		for (const auto& [from, to]: edges)
+			renderer::Renderer2D::drawLine({.point1 = corner[from], .point2 = corner[to], .color = color});
 	}
 
 	if (m_showCrosshair) {
@@ -2530,8 +2736,15 @@ void Scene::setEditorVoxelHighlight(const bool iShow, const math::vec3i& iBlock,
 
 auto Scene::wantsCursorCapture() const -> bool {
 	const auto view = registry.view<component::VoxelPlayer>();
-	return std::ranges::any_of(
-			view, [&](const auto iEntity) -> bool { return view.get<component::VoxelPlayer>(iEntity).captureCursor; });
+	const auto walkers = registry.view<component::FirstPersonController>();
+	return std::ranges::any_of(view,
+							   [&](const auto iEntity) -> bool {
+								   return view.get<component::VoxelPlayer>(iEntity).captureCursor;
+							   }) ||
+		   std::ranges::any_of(walkers, [&](const auto iEntity) -> bool {
+			   const auto& walker = walkers.get<component::FirstPersonController>(iEntity);
+			   return walker.enabled && walker.captureCursor;
+		   });
 }
 
 auto Scene::isEffectivelyVisible(const Entity& iEntity, const bool iEditorMode) const -> bool {
@@ -2848,6 +3061,28 @@ OWL_API void Scene::onComponentAdded<component::Patrol>([[maybe_unused]] const E
 template<>
 OWL_API void Scene::onComponentAdded<component::Drift>([[maybe_unused]] const Entity& iEntity,
 													   [[maybe_unused]] component::Drift& ioComponent) {}
+
+template<>
+OWL_API void Scene::onComponentAdded<component::FollowTarget>([[maybe_unused]] const Entity& iEntity,
+															  [[maybe_unused]] component::FollowTarget& ioComponent) {}
+
+template<>
+OWL_API void Scene::onComponentAdded<component::RenderTarget>([[maybe_unused]] const Entity& iEntity,
+															  [[maybe_unused]] component::RenderTarget& ioComponent) {}
+
+template<>
+OWL_API void Scene::onComponentAdded<component::ProceduralSky>([[maybe_unused]] const Entity& iEntity,
+															   [[maybe_unused]] component::ProceduralSky& ioComponent) {
+}
+
+template<>
+OWL_API void Scene::onComponentAdded<component::DayNightCycle>([[maybe_unused]] const Entity& iEntity,
+															   [[maybe_unused]] component::DayNightCycle& ioComponent) {
+}
+
+template<>
+OWL_API void Scene::onComponentAdded<component::FirstPersonController>(
+		[[maybe_unused]] const Entity& iEntity, [[maybe_unused]] component::FirstPersonController& ioComponent) {}
 
 template<>
 OWL_API void Scene::onComponentAdded<component::Environment>([[maybe_unused]] const Entity& iEntity,

@@ -4,9 +4,9 @@
 
 properties = {
     { name = "key", type = "string", default = "gold" },
+    { name = "range", type = "float", default = 1.5, min = 0 },  -- cells between the player and the door centre, as the built-in doors
 }
 
-local RANGE = 1.5 -- cells between the player and the door centre, as the built-in doors
 local player_id = 0
 
 function on_create()
@@ -20,7 +20,7 @@ function on_update(dt)
     end
     local px, py = transform.get_position(player_id)
     local x, y = transform.get_position(entity_id)
-    if (px - x) ^ 2 + (py - y) ^ 2 > RANGE * RANGE then
+    if (px - x) ^ 2 + (py - y) ^ 2 > range * range then
         return
     end
     if gamestate.get("wolf_key_" .. key, 0) == 1 then

@@ -40,6 +40,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <deque>
@@ -864,6 +865,26 @@ auto luaEntityIsBehaviourEnabled(lua_State* iState) -> int {
 	if (!entity || !entity->hasComponent<Component>())
 		return 0;
 	lua_pushboolean(iState, entity->getComponent<Component>().enabled ? 1 : 0);
+	return 1;
+}
+
+auto luaEntityGetTimeOfDay(lua_State* iState) -> int {
+	const auto entity = findEntity(iState);
+	if (!entity || !entity->hasComponent<scene::component::DayNightCycle>())
+		return 0;
+	lua_pushnumber(iState, static_cast<lua_Number>(entity->getComponent<scene::component::DayNightCycle>().timeOfDay));
+	return 1;
+}
+
+auto luaEntitySetTimeOfDay(lua_State* iState) -> int {
+	const auto hours = static_cast<float>(luaL_checknumber(iState, 2));
+	const auto entity = findEntity(iState);
+	if (!entity || !entity->hasComponent<scene::component::DayNightCycle>()) {
+		lua_pushboolean(iState, 0);
+		return 1;
+	}
+	entity->getComponent<scene::component::DayNightCycle>().timeOfDay = std::fmod(std::fmod(hours, 24.f) + 24.f, 24.f);
+	lua_pushboolean(iState, 1);
 	return 1;
 }
 
@@ -2167,6 +2188,48 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		{.table = "entity", .name = "is_drift_enabled",
 		 .function = guarded<luaEntityIsBehaviourEnabled<scene::component::Drift>>,
 		 .description = "Whether the entity's `Drift` moves it; nothing when it has none.",
+		 .params = {entityId}, .returns = {{"enabled", Boolean}}},
+		{.table = "entity", .name = "set_follow_target_enabled",
+		 .function = guarded<luaEntitySetBehaviourEnabled<scene::component::FollowTarget>>,
+		 .description = "Switch the entity's `FollowTarget` on or off (it stays where it is while off); false when it "
+						"has none.",
+		 .params = {entityId, {"enabled", Boolean}}, .returns = {{"done", Boolean}}},
+		{.table = "entity", .name = "is_follow_target_enabled",
+		 .function = guarded<luaEntityIsBehaviourEnabled<scene::component::FollowTarget>>,
+		 .description = "Whether the entity's `FollowTarget` places it; nothing when it has none.",
+		 .params = {entityId}, .returns = {{"enabled", Boolean}}},
+		{.table = "entity", .name = "get_time_of_day", .function = guarded<luaEntityGetTimeOfDay>,
+		 .description = "Time of day of the entity's `DayNightCycle`, in hours from 0 to 24; nothing when it has none.",
+		 .params = {entityId}, .returns = {{"hours", Number}}},
+		{.table = "entity", .name = "set_time_of_day", .function = guarded<luaEntitySetTimeOfDay>,
+		 .description = "Set the time of day of the entity's `DayNightCycle`, in hours (wrapped to 0 to 24); false when "
+						"it has none.",
+		 .params = {entityId, {"hours", Number}}, .returns = {{"done", Boolean}}},
+		{.table = "entity", .name = "set_day_night_enabled",
+		 .function = guarded<luaEntitySetBehaviourEnabled<scene::component::DayNightCycle>>,
+		 .description = "Let the hours of the entity's `DayNightCycle` advance or freeze them; false when it has none.",
+		 .params = {entityId, {"enabled", Boolean}}, .returns = {{"done", Boolean}}},
+		{.table = "entity", .name = "is_day_night_enabled",
+		 .function = guarded<luaEntityIsBehaviourEnabled<scene::component::DayNightCycle>>,
+		 .description = "Whether the hours of the entity's `DayNightCycle` advance; nothing when it has none.",
+		 .params = {entityId}, .returns = {{"enabled", Boolean}}},
+		{.table = "entity", .name = "set_first_person_enabled",
+		 .function = guarded<luaEntitySetBehaviourEnabled<scene::component::FirstPersonController>>,
+		 .description = "Switch the entity's `FirstPersonController` on or off (scripts move it while off); false "
+						"when it has none.",
+		 .params = {entityId, {"enabled", Boolean}}, .returns = {{"done", Boolean}}},
+		{.table = "entity", .name = "is_first_person_enabled",
+		 .function = guarded<luaEntityIsBehaviourEnabled<scene::component::FirstPersonController>>,
+		 .description = "Whether the entity's `FirstPersonController` walks it; nothing when it has none.",
+		 .params = {entityId}, .returns = {{"enabled", Boolean}}},
+		{.table = "entity", .name = "set_render_target_enabled",
+		 .function = guarded<luaEntitySetBehaviourEnabled<scene::component::RenderTarget>>,
+		 .description = "Switch the entity's `RenderTarget` on or off (its image keeps the last frame while off); "
+						"false when it has none.",
+		 .params = {entityId, {"enabled", Boolean}}, .returns = {{"done", Boolean}}},
+		{.table = "entity", .name = "is_render_target_enabled",
+		 .function = guarded<luaEntityIsBehaviourEnabled<scene::component::RenderTarget>>,
+		 .description = "Whether the entity's `RenderTarget` draws its image each frame; nothing when it has none.",
 		 .params = {entityId}, .returns = {{"enabled", Boolean}}},
 		{.table = "ui", .name = "find", .function = guarded<luaUiFind>,
 		 .description = "First widget with this tag, searched in the scene's HUD asset then in the scene (0 when none); "

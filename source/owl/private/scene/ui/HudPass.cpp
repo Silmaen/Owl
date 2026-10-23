@@ -13,6 +13,7 @@
 #include "data/fonts/TextLayout.h"
 #include "renderer/CameraOrtho.h"
 #include "renderer/Renderer2D.h"
+#include "renderer/gpu/Framebuffer.h"
 #include "scene/Entity.h"
 #include "scene/Scene.h"
 #include "scene/component/components.h"
@@ -253,8 +254,20 @@ void drawList(const component::UiList& iList, const HudNode& iNode, const HudScr
 	}
 }
 
-void drawWidget(const Entity& iEntity, const HudNode& iNode, const math::Transform& iTransform, const float iHeight,
-				const HudScroll* iScroll, const float iRank) {
+// The image of a render target of the world, its rows the right way up on either backend.
+void setRenderTargetImage(renderer::Quad2DData& ioQuad, const Scene& iWorld, const std::string& iName) {
+	const auto framebuffer = iWorld.getRenderTarget(iName);
+	if (!framebuffer)
+		return;
+	ioQuad.texture = framebuffer->getAttachmentTexture(0);
+	const auto low = framebuffer->getLowerData();
+	const auto high = framebuffer->getUpperData();
+	ioQuad.textureCoords = {math::vec2{low.x(), high.y()}, math::vec2{high.x(), high.y()},
+							math::vec2{high.x(), low.y()}, math::vec2{low.x(), low.y()}};
+}
+
+void drawWidget(const Scene& iWorld, const Entity& iEntity, const HudNode& iNode, const math::Transform& iTransform,
+				const float iHeight, const HudScroll* iScroll, const float iRank) {
 	const int entityId = static_cast<int>(static_cast<entt::entity>(iEntity));
 	if (iEntity.hasComponent<component::UiWindow>())
 		drawWindow(iEntity.getComponent<component::UiWindow>(), iNode, iHeight, entityId, iRank);
@@ -296,12 +309,15 @@ void drawWidget(const Entity& iEntity, const HudNode& iNode, const math::Transfo
 										.entityId = entityId,
 										.depth = hudDepth(iRank, HudLayer::Shape)});
 	if (iEntity.hasComponent<component::UiImage>()) {
-		const auto& [texture, tint] = iEntity.getComponent<component::UiImage>();
-		renderer::Renderer2D::drawQuad({.transform = iTransform,
-										.color = tint,
-										.texture = texture,
-										.entityId = entityId,
-										.depth = hudDepth(iRank, HudLayer::Shape)});
+		const auto& image = iEntity.getComponent<component::UiImage>();
+		renderer::Quad2DData quad{.transform = iTransform,
+								  .color = image.tint,
+								  .texture = image.texture,
+								  .entityId = entityId,
+								  .depth = hudDepth(iRank, HudLayer::Shape)};
+		if (!image.renderTarget.empty())
+			setRenderTargetImage(quad, iWorld, image.renderTarget);
+		renderer::Renderer2D::drawQuad(quad);
 	}
 	if (iEntity.hasComponent<component::UiText>())
 		drawText(iEntity, iNode, iTransform, entityId, iRank);
@@ -346,7 +362,7 @@ auto pixelCamera(const math::vec2ui& iViewport) -> renderer::CameraOrtho {
 	return {0.f, static_cast<float>(iViewport.x()), 0.f, static_cast<float>(iViewport.y())};
 }
 
-void drawCanvases(Scene& ioScene, const math::vec2ui& iViewport, const bool iEditorMode) {
+void drawCanvases(Scene& ioScene, const Scene& iWorld, const math::vec2ui& iViewport, const bool iEditorMode) {
 	auto& layout = ioScene.getHudLayout();
 	layout.compute(ioScene, iViewport, iEditorMode);
 	if (layout.getNodes().empty())
@@ -402,7 +418,8 @@ void drawCanvases(Scene& ioScene, const math::vec2ui& iViewport, const bool iEdi
 			rank += 1.f;
 			window = node.window;
 		}
-		drawWidget(Entity{node.entity, &ioScene}, node, pixelTransform(node.bounds, height), height, scroll, rank);
+		drawWidget(iWorld, Entity{node.entity, &ioScene}, node, pixelTransform(node.bounds, height), height, scroll,
+				   rank);
 		if (scroll != nullptr && !scroll->isList)
 			pendingBars.push_back(index);
 	}
@@ -539,11 +556,11 @@ void drawOverlays(Scene& ioScene, Scene* iHud, const math::vec2ui& iViewport, co
 void HudPass::render(Scene& ioScene, const math::vec2ui& iViewport, const bool iEditorMode) {
 	OWL_PROFILE_FUNCTION()
 
-	drawCanvases(ioScene, iViewport, iEditorMode);
+	drawCanvases(ioScene, ioScene, iViewport, iEditorMode);
 	const auto hud = ioScene.getHud();
 	Scene* const hudScene = hud && hud.get() != &ioScene ? hud.get() : nullptr;
 	if (hudScene != nullptr)
-		drawCanvases(*hudScene, iViewport, iEditorMode);
+		drawCanvases(*hudScene, ioScene, iViewport, iEditorMode);
 	drawOverlays(ioScene, hudScene, iViewport, iEditorMode);
 }
 

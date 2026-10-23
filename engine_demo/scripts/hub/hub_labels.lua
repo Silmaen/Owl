@@ -5,16 +5,19 @@
 --               appears at NEAR cells and goes at FAR, so it does not flicker at the limit).
 --
 -- The entities `Tag_<name>` hold the name of the character `<name>` and float above it. The only other texts of the
--- hub are the four level titles of the houses, plain labels of the scene that are always shown. `labels_shown` in
+-- hub are the five level titles of the houses, plain labels of the scene that are always shown. `labels_shown` in
 -- gamestate counts the tags that are fully grown.
+
+properties = {
+    { name = "tag_near", type = "float", default = 4.0, min = 0 },
+    { name = "tag_far", type = "float", default = 5.0, min = 0 },  -- cells from the hero at which a tag appears and disappears
+    { name = "grow_speed", type = "float", default = 6.0, min = 0 },  -- per second: a tag takes a sixth of a second to grow
+    { name = "tag_height", type = "float", default = 0.95 },  -- cells above the character
+}
 
 local TAGS = {
     "Villager", "Guard", "Wizard", "Knight", "Farmer", "Merchant1", "Merchant2", "Merchant3", "Priest", "Woodcutter",
 }
-local TAG_NEAR, TAG_FAR = 4.0, 5.0 -- cells from the hero at which a tag appears and disappears
-local GROW_SPEED = 6.0 -- per second: a tag takes a sixth of a second to grow
-local TAG_HEIGHT = 0.95 -- cells above the character
-
 local player_id = 0
 local items = {}
 local shown = -1
@@ -36,7 +39,7 @@ end
 function on_create()
     player_id = scene.find_entity("Player")
     for _, name in ipairs(TAGS) do
-        add(scene.find_entity("Tag_" .. name), scene.find_entity(name), TAG_NEAR, TAG_FAR, true)
+        add(scene.find_entity("Tag_" .. name), scene.find_entity(name), tag_near, tag_far, true)
     end
 end
 
@@ -47,13 +50,13 @@ function on_update(dt)
         local x, y = item.x, item.y
         if item.follows then
             x, y = transform.get_position(item.target)
-            y = y + TAG_HEIGHT
+            y = y + tag_height
         end
         local dist = math.sqrt((px - x) ^ 2 + (py - y) ^ 2)
         local want = dist < (item.grown > 0 and item.far or item.near) and 1 or 0
         local grown = item.grown
         if grown ~= want then
-            grown = want > grown and math.min(want, grown + dt * GROW_SPEED) or math.max(want, grown - dt * GROW_SPEED)
+            grown = want > grown and math.min(want, grown + dt * grow_speed) or math.max(want, grown - dt * grow_speed)
             item.grown = grown
             ui.set_visible(item.id, grown > 0)
             transform.set_scale(item.id, 1, math.max(item.em * grown, 0.001), 1)

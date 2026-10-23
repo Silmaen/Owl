@@ -114,6 +114,7 @@ auto main(const int iArgc, char** iArgv) -> int {
 		owl::bench::runSlangBenches(runner);
 		owl::bench::runMcpBenches(runner);
 		owl::bench::runCullingBenches(runner);
+		owl::bench::runSkyBenches(runner);
 		runner.writeReports();
 		owl::app::Application::invalidate();
 		application.reset();

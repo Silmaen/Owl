@@ -13,8 +13,8 @@ from dataclasses import dataclass
 
 from PIL import Image, ImageDraw
 
-from .common import RGB, TILE_W, Layers, Vec3, fbm, hash01, mix, scale_color, value_noise
-from .solids import Convex, Ellipsoid, Hit, Rendered, Shader, Solid, box, gable, pyramid, render
+from .common import RGB, TILE_W, Layers, Vec3, fbm, hash01, mix, scale_color, smoothstep, value_noise
+from .solids import Convex, Ellipsoid, Hit, Rendered, Shader, Solid, Surface, box, gable, pyramid, render, sample_of
 
 SLICE_HEIGHT = 128
 """Height in pixels, at zoom 1, of a building slice: the 32 pixels diamond plus 96 pixels of relief."""
@@ -37,6 +37,60 @@ def _glass(lz: float, lu: float) -> RGB:
     return sky
 
 
+TIMBER: RGB = (88.0, 60.0, 40.0)
+SILL: RGB = (200.0, 196.0, 184.0)
+
+
+def _brick_face(base: RGB, seed: int, ix: int, iy: int, u: float, z: float) -> tuple[RGB, float]:
+    """Brick courses of 0.125 and bricks of 0.25, staggered, with light mortar between: colour and relief."""
+    row = math.floor(z / 0.125)
+    col = u * 4.0 + (0.5 if row % 2 else 0.0)
+    fx, fz = col - math.floor(col), z / 0.125 - row
+    tag = hash01(seed, math.floor(col), row)
+    color = scale_color(base, (0.86 + 0.28 * tag) * (0.96 + 0.08 * hash01(seed + 1, ix, iy)))
+    if fx < 0.1 or fz < 0.14:
+        return mix(color, (206.0, 200.0, 188.0), 0.5), 0.0
+    if hash01(seed + 2, math.floor(col), row) > 0.93:
+        color = scale_color(color, 0.78)
+    height = smoothstep(0.1, 0.18, fx) * smoothstep(0.14, 0.24, fz) * (0.011 + 0.003 * tag)
+    return color, height
+
+
+def _plaster_face(base: RGB, seed: int, ix: int, iy: int, u: float, z: float) -> tuple[RGB, float]:
+    """Plaster with damp at the foot, hairline cracks and patches fallen off that show the bricks."""
+    color = scale_color(base, 0.94 + 0.1 * fbm(seed, u * 9.0, z * 9.0))
+    height = 0.004 * fbm(seed + 6, u * 22.0, z * 22.0)
+    wear = fbm(seed + 5, u * 4.0 + 3.0, z * 4.0 + 7.0)
+    if wear > 0.66:
+        brick, brick_h = _brick_face((166.0, 110.0, 88.0), seed + 40, ix, iy, u, z)
+        return brick, brick_h * 0.6 - 0.006
+    if wear > 0.62:
+        color = scale_color(color, 0.8)
+        height -= 0.003
+    if abs(fbm(seed + 8, u * 10.0, z * 10.0) - 0.5) < 0.012:
+        color = scale_color(color, 0.62)
+        height -= 0.004
+    if z < 0.2:
+        color = scale_color(color, 0.84 + 0.16 * smoothstep(0.0, 0.2, z) + 0.06 * (fbm(seed + 9, u * 12.0, 0.5) - 0.5))
+    return color, height
+
+
+def _timber_frame(seed: int, u: float, z: float, lo: float, hi: float, floor_h: float, spacing: float) -> bool:
+    """Whether the point falls on a beam: corner and bay posts, and a rail at every storey line."""
+    near_post = False
+    if spacing > 0.0:
+        bay = (u - lo) / spacing
+        near_post = abs(bay - round(bay)) * spacing < 0.022
+    corner = u < lo + 0.025 or u > hi - 0.025
+    rail = floor_h > 0.0 and min(z % floor_h, floor_h - z % floor_h) < 0.035
+    return near_post or corner or rail
+
+
+def _wood(u: float, z: float, tag: float, vertical: bool) -> RGB:
+    grain = 0.88 + 0.16 * math.sin((u if vertical else z) * 140.0 + tag * 9.0)
+    return scale_color(TIMBER, grain * (0.9 + 0.2 * tag))
+
+
 def facade(
     base: RGB,
     bounds: tuple[float, float, float, float],
@@ -46,7 +100,8 @@ def facade(
     window: tuple[float, float, float, float] = (0.3, 0.7, 0.3, 0.8),
     bricks: bool = True,
     dial: tuple[float, float, float] | None = None,
-) -> Shader:
+    timber: bool = False,
+) -> Surface:
     """
     A wall material: bricks or plaster, a grid of windows per storey, an optional door and clock dial.
 
@@ -56,49 +111,60 @@ def facade(
     :param spacing: Width of a window bay.
     :param door: Optional (axis of the wall normal, centre along the wall, width, height) on the ground floor.
     :param window: Window rectangle inside a bay: (u low, u high, z low, z high) as fractions.
-    :param bricks: Draw brick courses instead of plain plaster.
+    :param bricks: Draw brick courses instead of plaster.
     :param dial: Optional clock (centre along the wall, centre height, radius) on the walls facing the viewer.
-    :return: The shader.
+    :param timber: Frame the plaster with timber posts and rails.
+    :return: The material.
     """
 
-    def shade(h: Hit) -> RGB:
+    def sample(h: Hit) -> tuple[RGB, float]:
         if abs(h.normal[2]) > 0.5:
-            return scale_color(base, 0.9)
+            return scale_color(base, 0.9), 0.0
         axis = 0 if abs(h.normal[0]) > abs(h.normal[1]) else 1
         u, z = _along(h), h.point[2]
         lo, hi = (bounds[2], bounds[3]) if axis == 0 else (bounds[0], bounds[1])
-        color = base
         if bricks:
-            row = math.floor(z / 0.125)
-            col = u * 4.0 + (0.5 if row % 2 else 0.0)
-            tone = 0.9 + 0.2 * hash01(h.seed, math.floor(col), row)
-            color = scale_color(base, tone * (0.96 + 0.08 * hash01(h.seed + 1, h.ix, h.iy)))
-            if col - math.floor(col) < 0.1 or z / 0.125 - row < 0.14:
-                color = mix(color, (206.0, 200.0, 188.0), 0.5)
+            color, height = _brick_face(base, h.seed, h.ix, h.iy, u, z)
         else:
-            color = scale_color(base, 0.94 + 0.1 * fbm(h.seed, u * 9.0, z * 9.0))
+            color, height = _plaster_face(base, h.seed, h.ix, h.iy, u, z)
+            if timber and _timber_frame(h.seed, u, z, lo, hi, floor_h, spacing):
+                tag = hash01(h.seed + 50, math.floor(u * 8.0), math.floor(z * 3.0))
+                vertical = abs(z % max(floor_h, 1.0) - floor_h / 2.0) < floor_h / 2.0 - 0.035
+                color, height = _wood(u, z, tag, vertical), 0.016
         if door is not None and door[0] == axis:
-            _, centre, width, height = door
-            if abs(u - centre) < width / 2.0 + 0.03 and z < height + 0.03:
-                inside = abs(u - centre) < width / 2.0 and z < height
+            _, centre, width, d_height = door
+            if abs(u - centre) < width / 2.0 + 0.03 and z < d_height + 0.03:
+                inside = abs(u - centre) < width / 2.0 and z < d_height
                 if not inside:
-                    return FRAME
-                panel = 0.88 + 0.1 * math.sin((u - centre) * 40.0)
-                if abs(u - (centre + width * 0.3)) < 0.012 and abs(z - height * 0.45) < 0.03:
-                    return (226.0, 196.0, 90.0)
-                return scale_color((96.0, 62.0, 38.0), panel)
+                    edge = min(abs(abs(u - centre) - width / 2.0 - 0.03), d_height + 0.03 - z)
+                    return scale_color(FRAME, 0.9 if edge < 0.008 else 1.0), 0.02
+                plank = (u - centre + width / 2.0) / 0.06
+                pf = plank - math.floor(plank)
+                tag = hash01(h.seed + 60, math.floor(plank), 0)
+                grain = 0.94 + 0.1 * math.sin(z * 55.0 + tag * 7.0)
+                wood = scale_color((100.0, 66.0, 40.0), (0.82 + 0.3 * tag) * grain)
+                relief = -0.008 + 0.004 * smoothstep(0.0, 0.2, pf)
+                if pf < 0.1:
+                    wood = scale_color(wood, 0.5)
+                    relief = -0.014
+                rel = z / d_height
+                if 0.1 < rel < 0.17 or 0.72 < rel < 0.79:
+                    wood, relief = (66.0, 52.0, 44.0), 0.004
+                if abs(u - (centre + width * 0.3)) < 0.012 and abs(z - d_height * 0.45) < 0.03:
+                    return (226.0, 196.0, 90.0), 0.01
+                return wood, relief
         if dial is not None and axis in (0, 1) and abs(h.normal[2]) < 0.5:
             du, dz = u - dial[0], z - dial[1]
             radius = math.hypot(du, dz)
             if radius < dial[2]:
                 angle = math.atan2(dz, du)
                 if radius > dial[2] * 0.82:
-                    return (50.0, 44.0, 40.0)
+                    return (50.0, 44.0, 40.0), 0.014
                 if abs(math.sin(angle - 1.2)) < 0.07 and radius < dial[2] * 0.7 and math.cos(angle - 1.2) > 0:
-                    return (30.0, 30.0, 34.0)
+                    return (30.0, 30.0, 34.0), 0.004
                 if abs(math.sin(angle + 0.2)) < 0.05 and radius < dial[2] * 0.5 and math.cos(angle + 0.2) > 0:
-                    return (30.0, 30.0, 34.0)
-                return (240.0, 236.0, 220.0)
+                    return (30.0, 30.0, 34.0), 0.004
+                return (240.0, 236.0, 220.0), -0.004
         if floor_h > 0 and spacing > 0 and lo + 0.1 < u < hi - 0.1:
             storey = math.floor(z / floor_h)
             lz = (z - storey * floor_h) / floor_h
@@ -108,70 +174,89 @@ def facade(
                 ulo, uhi, zlo, zhi = window
                 if ulo - 0.05 < lu < uhi + 0.05 and zlo - 0.05 < lz < zhi + 0.05:
                     if ulo < lu < uhi and zlo < lz < zhi:
-                        return _glass((lz - zlo) / (zhi - zlo), lu)
-                    return FRAME
-        return color
+                        gz = (lz - zlo) / (zhi - zlo)
+                        gu = (lu - ulo) / (uhi - ulo)
+                        if abs(gu - 0.5) < 0.04 or abs(gz - 0.5) < 0.035:
+                            return FRAME, 0.012
+                        glass = _glass(gz, lu)
+                        if gu < 0.1 or gz > 0.92:
+                            glass = scale_color(glass, 0.72)
+                        return glass, -0.012
+                    return scale_color(FRAME, 0.94 if lu > uhi or lz < zlo else 1.0), 0.016
+                if ulo - 0.1 < lu < uhi + 0.1:
+                    if zlo - 0.1 < lz <= zlo - 0.05:
+                        return SILL, 0.024
+                    if zlo - 0.14 < lz <= zlo - 0.1:
+                        return scale_color(color, 0.74), height * 0.5
+                    if zhi + 0.05 <= lz < zhi + 0.08:
+                        return scale_color(SILL, 0.92), 0.012
+        return color, height
 
-    return shade
+    return Surface(sample)
 
 
-def corrugated(base: RGB) -> Shader:
+def corrugated(base: RGB) -> Surface:
     """
     A ribbed sheet-metal wall.
 
     :param base: Sheet colour.
-    :return: The shader.
+    :return: The material.
     """
 
-    def shade(h: Hit) -> RGB:
+    def sample(h: Hit) -> tuple[RGB, float]:
         rib = math.sin(_along(h) * 52.0)
-        return scale_color(base, 0.9 + 0.1 * rib + 0.05 * hash01(h.seed, h.ix, h.iy))
+        return scale_color(base, 0.9 + 0.1 * rib + 0.05 * hash01(h.seed, h.ix, h.iy)), 0.012 * rib
 
-    return shade
+    return Surface(sample)
 
 
-def roof_tiles(base: RGB, wall: Shader | None = None) -> Shader:
+def roof_tiles(base: RGB, wall: Shader | None = None) -> Surface:
     """
-    A pitched roof of staggered tiles; vertical faces (gable ends) use the wall material.
+    A pitched roof of staggered tiles, each one rounded and overlapping the row below; vertical faces (gable ends)
+    use the wall material.
 
     :param base: Tile colour.
     :param wall: Material of the vertical faces, a plain tint when None.
-    :return: The shader.
+    :return: The material.
     """
 
-    def shade(h: Hit) -> RGB:
+    def sample(h: Hit) -> tuple[RGB, float]:
         if abs(h.normal[2]) < 0.3:
-            return wall(h) if wall is not None else scale_color(base, 0.85)
+            return sample_of(wall, h) if wall is not None else (scale_color(base, 0.85), 0.0)
         slope = h.point[1] if abs(h.normal[1]) > abs(h.normal[0]) else h.point[0]
         ridge = h.point[0] if abs(h.normal[1]) > abs(h.normal[0]) else h.point[1]
         row = math.floor(slope * 10.0)
         col = ridge * 8.0 + (0.5 if row % 2 else 0.0)
+        fx, fy = col - math.floor(col), slope * 10.0 - row
         tone = 0.86 + 0.28 * hash01(h.seed + 9, math.floor(col), row)
         color = scale_color(base, tone)
-        if slope * 10.0 - row < 0.2:
+        if fy < 0.2:
             color = scale_color(color, 0.72)
-        if col - math.floor(col) < 0.08:
+        if fx < 0.08:
             color = scale_color(color, 0.85)
-        return color
+        if fbm(h.seed + 3, ridge * 7.0, slope * 7.0) > 0.7:
+            color = mix(color, (96.0, 112.0, 62.0), 0.3)
+        height = 0.026 * fy * smoothstep(0.0, 0.14, fx) * smoothstep(0.0, 0.14, 1.0 - fx)
+        return color, height
 
-    return shade
+    return Surface(sample)
 
 
-def flat_top(base: RGB, wall: Shader) -> Shader:
+def flat_top(base: RGB, wall: Shader) -> Surface:
     """
     A flat roof of tar and gravel over a wall material.
 
     :param base: Gravel colour.
     :param wall: Material of the vertical faces.
-    :return: The shader.
+    :return: The material.
     """
 
-    def shade(h: Hit) -> RGB:
+    def sample(h: Hit) -> tuple[RGB, float]:
         if abs(h.normal[2]) < 0.5:
-            return wall(h)
-        return scale_color(base, 0.82 + 0.3 * hash01(h.seed, h.ix, h.iy))
+            return sample_of(wall, h)
+        return scale_color(base, 0.82 + 0.3 * hash01(h.seed, h.ix, h.iy)), 0.0
 
-    return shade
+    return Surface(sample)
 
 
 def awning(a: RGB, b: RGB) -> Shader:
@@ -200,37 +285,51 @@ def plain(color: RGB, grain: float = 0.08) -> Shader:
     return lambda h: scale_color(color, 1.0 - grain / 2.0 + grain * hash01(h.seed + 3, h.ix, h.iy))
 
 
-def bark(h: Hit) -> RGB:
-    """
-    Tree bark: vertical streaks.
+def _bark_sample(h: Hit) -> tuple[RGB, float]:
+    c = (h.point[0] + h.point[1]) * 45.0 + 1.6 * value_noise(h.seed, (h.point[0] + h.point[1]) * 30.0, h.point[2] * 4.0)
+    ridge = math.floor(c)
+    f = c - ridge
+    tag = hash01(h.seed, ridge, math.floor(h.point[2] * 6.0))
+    color = scale_color((104.0, 70.0, 42.0), 0.72 + 0.5 * tag)
+    furrow = smoothstep(0.0, 0.3, f) * smoothstep(0.0, 0.3, 1.0 - f)
+    return scale_color(color, 0.6 + 0.4 * furrow), 0.016 * furrow
 
-    :param h: The hit.
-    :return: The colour.
-    """
-    streak = hash01(h.seed, math.floor((h.point[0] + h.point[1]) * 60.0), 0)
-    return scale_color((104.0, 70.0, 42.0), 0.75 + 0.5 * streak)
+
+bark = Surface(_bark_sample)
+"""Tree bark: ridged streaks cut by furrows."""
 
 
-def foliage(base: RGB) -> Shader:
+def foliage(base: RGB, tiers: bool = False) -> Surface:
     """
-    Leaves: clumps of noise and bright specks.
+    Leaves: clusters of leaves with dark gaps between them, and bright specks.
 
     :param base: Leaf colour.
-    :return: The shader.
+    :param tiers: Squash the clusters into drooping branch layers, for a conifer.
+    :return: The material.
     """
+    cell = 0.13
+    vertical = 0.085 if tiers else cell
 
-    def shade(h: Hit) -> RGB:
+    def sample(h: Hit) -> tuple[RGB, float]:
         p = h.point
+        gx, gy, gz = p[0] / cell + 0.5 * (math.floor(p[2] / vertical) % 2), p[1] / cell, p[2] / vertical
+        ix, iy, iz = math.floor(gx), math.floor(gy), math.floor(gz)
+        tag = hash01(h.seed + 7, ix * 31 + iz, iy)
+        px = ix + 0.3 + 0.4 * hash01(h.seed + 8, ix, iy + iz)
+        py = iy + 0.3 + 0.4 * hash01(h.seed + 9, iy, ix + iz)
+        pz = iz + 0.5
+        d = math.sqrt((gx - px) ** 2 + (gy - py) ** 2 + ((gz - pz) * (0.7 if tiers else 1.0)) ** 2)
+        dome = max(0.0, 1.0 - d / 0.62)
         n = value_noise(h.seed, p[0] * 13.0 + p[2] * 7.0, p[1] * 13.0 + p[2] * 11.0)
-        color = scale_color(base, 0.72 + 0.5 * n)
+        color = scale_color(base, (0.7 + 0.3 * n) * (0.78 + 0.34 * tag) * (0.85 + 0.4 * dome))
         r = hash01(h.seed + 4, h.ix, h.iy)
-        if r > 0.93:
-            color = scale_color(color, 1.22)
-        elif r < 0.07:
-            color = scale_color(color, 0.8)
-        return color
+        if r > 0.95:
+            color = scale_color(color, 1.2)
+        elif r < 0.05:
+            color = scale_color(color, 0.82)
+        return color, 0.03 * dome
 
-    return shade
+    return Surface(sample)
 
 
 @dataclass(frozen=True)
@@ -252,11 +351,11 @@ class ObjectSpec:
 
 
 def _cottage() -> list[Solid]:
-    wall = facade(PLASTER, (0.14, 0.86, 0.14, 0.86), 0.85, 0.36, door=(1, 0.5, 0.2, 0.62), bricks=False)
+    wall = facade(PLASTER, (0.14, 0.86, 0.14, 0.86), 0.85, 0.36, door=(1, 0.5, 0.2, 0.62), bricks=False, timber=True)
     return [
         box((0.14, 0.14, 0.0), (0.86, 0.86, 1.7), wall),
         gable((0.07, 0.07, 1.7), (0.93, 0.93, 0.0), 2.7, True, roof_tiles((176.0, 66.0, 52.0), wall)),
-        box((0.64, 0.28, 1.9), (0.76, 0.4, 2.85), plain(BRICK_RED)),
+        box((0.64, 0.28, 1.9), (0.76, 0.4, 2.85), facade(BRICK_RED, (0.0, 1.0, 0.0, 1.0), 0.0, 0.0)),
     ]
 
 
@@ -329,7 +428,7 @@ def _oak() -> list[Solid]:
 
 
 def _pine() -> list[Solid]:
-    leaves = foliage((38.0, 96.0, 62.0))
+    leaves = foliage((38.0, 96.0, 62.0), tiers=True)
     return [
         box((0.45, 0.45, 0.0), (0.55, 0.55, 0.9), bark),
         Ellipsoid(

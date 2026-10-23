@@ -13,9 +13,9 @@ properties = {
     { name = "speaker", type = "string", default = "" },
     { name = "lines", type = "string", default = "" },
     { name = "follow", type = "string", default = "" },
+    { name = "seconds_per_line", type = "float", default = 0.06, min = 0 },
+    { name = "seconds_min", type = "float", default = 3.5, min = 0 },  -- a longer line stays longer
 }
-
-local SECONDS_PER_LINE, SECONDS_MIN = 0.06, 3.5   -- a longer line stays longer
 
 local list = {}
 local speech_id, followed_id = 0, 0
@@ -46,7 +46,7 @@ function on_talk(player_id)
     local text = speaker ~= "" and (speaker .. ": " .. list[pick]) or list[pick]
     ui.set_text(speech_id, text)
     ui.set_visible(speech_id, true)
-    left = math.max(SECONDS_MIN, #text * SECONDS_PER_LINE)
+    left = math.max(seconds_min, #text * seconds_per_line)
     sound.set_volume(sound.play("sounds/hub/board.wav"), 0.35)
     gamestate.set("hub_talk_owner", entity_id)
     gamestate.set("hub_talk_who", speaker)

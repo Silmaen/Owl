@@ -1,0 +1,12 @@
+# The tavern: the cellar key lies on the floor by the bucket; aimed at from a step away, E
+# takes it (an interaction answers what a first-person walker aims at, a coarse box around it does not hide it).
+scene: ../../../engine_demo/scenes/tavern.owl
+project: ../../../engine_demo
+steps:
+  - frames: 60
+  - expect: {entity: CellarKey, exists: true}
+  - {command: entity.set_transform, args: {entity: TavernCamera, translation: [-1.6, 1.6, -0.9], rotation: [-0.956, 0.563, 0]}}
+  - frames: 30
+  - input: {key: E, frames: 3}
+  - frames: 10
+  - expect: {gamestate: tavern_key, equals: 1}

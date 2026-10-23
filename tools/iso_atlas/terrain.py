@@ -11,7 +11,23 @@ import math
 from collections.abc import Callable
 from dataclasses import dataclass
 
-from .common import RGB, STEP, TILE_H, TILE_W, Z_PX, Layers, Vec3, fbm, hash01, light, mix, normalize, scale_color
+from .common import (
+    RGB,
+    STEP,
+    TILE_H,
+    TILE_W,
+    Z_PX,
+    Layers,
+    Vec3,
+    bump,
+    fbm,
+    hash01,
+    light,
+    mix,
+    normalize,
+    scale_color,
+    smoothstep,
+)
 
 SLOPES: list[tuple[int, int, int, int]] = [
     (0, 0, 0, 0),
@@ -61,22 +77,69 @@ class Sample:
 
 
 Material = Callable[[Sample], RGB]
+Relief = Callable[[Sample], float]
+"""Height of a ground surface above its plane in world units (a few hundredths); it only bends the normal."""
+
+SUN_DX, SUN_DY = -0.35, 0.35
+"""Horizontal direction towards the sun in the world plane (``LIGHT``), where a bump casts its shadow away from."""
 
 
-def _grass(base: RGB, flecks: tuple[RGB, ...] = ()) -> Material:
+def _shadowed(
+    seed: int, s: Sample, cells: int, presence: float, radius: float, reach: float, power: float = 1.0
+) -> float:
+    """Shadow cast on a point by the bumps towards the sun: how much higher the sun side is than the point."""
+    here = bump(seed, s.wx, s.wy, cells, presence, radius, power)[0]
+    toward = bump(seed, s.wx + SUN_DX * reach, s.wy + SUN_DY * reach, cells, presence, radius, power)[0]
+    return max(0.0, toward - here)
+
+
+def _flower(s: Sample, density: float) -> tuple[float, float]:
+    """Flower of the cell under the point: height in 0..1 (a 0.2 radius dome) and its tag."""
+    return bump(s.seed + 31, s.wx, s.wy, 7, density, 0.27, 0.5)
+
+
+def _grass_relief(density: float) -> Relief:
+    def relief(s: Sample) -> float:
+        tuft = bump(s.seed + 21, s.wx, s.wy, 6, 0.5, 0.45, 1.0)[0]
+        return 0.02 * tuft + 0.012 * fbm(s.seed, s.wx * 7.0, s.wy * 7.0) + 0.016 * _flower(s, density)[0]
+
+    return relief
+
+
+def _grass(base: RGB, flowers: tuple[RGB, ...] = (), density: float = 0.0) -> Material:
     def material(s: Sample) -> RGB:
         n = fbm(s.seed, s.wx * 7.0, s.wy * 7.0)
-        color = scale_color(base, 0.84 + 0.32 * n)
+        color = scale_color(base, (0.84 + 0.32 * n) * (0.93 + 0.14 * fbm(s.seed + 90, s.wx * 1.6, s.wy * 1.6)))
         r = hash01(s.seed + 7, s.ix, s.iy)
-        if r > 0.9:
-            color = scale_color(color, 1.16)
-        elif r < 0.06:
-            color = scale_color(color, 0.82)
-        if flecks and hash01(s.seed + 11, s.ix // 2, s.iy // 2) > 0.955:
-            color = flecks[int(hash01(s.seed + 13, s.ix // 2, s.iy // 2) * len(flecks)) % len(flecks)]
+        if r > 0.93:
+            color = scale_color(color, 1.05)
+        elif r < 0.05:
+            color = scale_color(color, 0.95)
+        tuft, tag = bump(s.seed + 21, s.wx, s.wy, 6, 0.5, 0.45, 1.0)
+        if tuft > 0.0:
+            blade = 0.5 + 0.5 * math.sin((s.wx * 1.0 + s.wy * 0.4) * 190.0 + tag * 20.0)
+            color = scale_color(color, 0.96 + 0.1 * tuft + 0.03 * blade * tuft)
+            color = mix(color, (170.0, 190.0, 80.0), 0.08 * tag * tuft)
+        elif _shadowed(s.seed + 21, s, 6, 0.5, 0.45, 0.04, 1.0) > 0.0:
+            color = scale_color(color, 0.9)
+        if flowers and density > 0.0:
+            height, tag = _flower(s, density)
+            if height > 0.0:
+                petal = flowers[int(tag * 97.0) % len(flowers)]
+                if height > 0.78:
+                    color = (244.0, 200.0, 56.0) if sum(petal) < 700.0 else (236.0, 176.0, 40.0)
+                else:
+                    color = scale_color(petal, 0.9 + 0.15 * height)
+            elif _shadowed(s.seed + 31, s, 7, density, 0.27, 0.025, 0.5) > 0.0:
+                color = scale_color(color, 0.78)
         return color
 
     return material
+
+
+def _sand_relief(s: Sample) -> float:
+    ripple = math.sin((s.wx * 1.0 + s.wy * 0.55) * 31.0 + fbm(s.seed, s.wx * 3.0, s.wy * 3.0) * 6.0)
+    return 0.007 * ripple + 0.02 * bump(s.seed + 61, s.wx, s.wy, 10, 0.08, 0.3, 0.5)[0]
 
 
 def _sand(s: Sample) -> RGB:
@@ -84,17 +147,48 @@ def _sand(s: Sample) -> RGB:
     color = scale_color((214.0, 196.0, 128.0), 0.92 + 0.1 * fbm(s.seed + 3, s.wx * 9.0, s.wy * 9.0) + 0.04 * ripple)
     if hash01(s.seed + 5, s.ix, s.iy) > 0.94:
         color = scale_color(color, 0.86)
+    pebble = bump(s.seed + 61, s.wx, s.wy, 10, 0.08, 0.3, 0.5)[0]
+    if pebble > 0.0:
+        color = mix(color, (160.0, 146.0, 120.0), 0.7)
+    elif _shadowed(s.seed + 61, s, 10, 0.08, 0.3, 0.025, 0.5) > 0.0:
+        color = scale_color(color, 0.82)
     return color
 
 
-def _water(s: Sample) -> RGB:
+def _rings(s: Sample) -> float:
+    """Concentric ripples around a few drops: -1..1 close to a centre, 0 away from every centre."""
+    gx, gy = s.wx * 3.0, s.wy * 3.0
+    cx, cy = min(2, max(0, math.floor(gx))), min(2, max(0, math.floor(gy)))
+    if hash01(s.seed + 71, cx, cy) > 0.75:
+        return 0.0
+    px, py = cx + 0.3 + 0.4 * hash01(s.seed + 72, cx, cy), cy + 0.3 + 0.4 * hash01(s.seed + 73, cx, cy)
+    radius = math.hypot(gx - px, (gy - py) * 1.0)
+    if radius >= 0.5:
+        return 0.0
+    return math.sin(radius * 46.0) * (1.0 - radius / 0.5) ** 2
+
+
+def _waves(s: Sample) -> tuple[float, float]:
     wave = math.sin((s.wx - s.wy) * 20.0 + fbm(s.seed, s.wx * 4.0, s.wy * 4.0) * 7.0)
     wave2 = math.sin((s.wx + s.wy) * 13.0 + fbm(s.seed + 9, s.wx * 3.0, s.wy * 3.0) * 5.0)
-    color = scale_color((58.0, 112.0, 190.0), 0.94 + 0.07 * wave2)
+    return wave, wave2
+
+
+def _water_relief(s: Sample) -> float:
+    wave, wave2 = _waves(s)
+    return 0.007 * (0.6 * wave + 0.4 * wave2) + 0.006 * _rings(s)
+
+
+def _water(s: Sample) -> RGB:
+    wave, wave2 = _waves(s)
+    ring = _rings(s)
+    color = scale_color((58.0, 112.0, 190.0), 0.94 + 0.07 * wave2 + 0.04 * ring)
     if wave > 0.93:
         color = mix(color, (206.0, 230.0, 250.0), 0.55)
     elif wave > 0.8:
         color = mix(color, (110.0, 160.0, 220.0), 0.5)
+    if ring > 0.55:
+        color = mix(color, (196.0, 224.0, 248.0), 0.5 * (ring - 0.55) / 0.45)
     return color
 
 
@@ -185,35 +279,89 @@ def _road_mask(mask: int) -> Material:
 _road = _road_mask(ROAD_X_MASK)
 
 
+def _ruts(s: Sample) -> float:
+    """Depth in 0..1 of two wheel ruts along x that come and go, with a raised crown between them."""
+    sway = 0.03 * math.sin(s.wx * 9.0 + fbm(s.seed + 51, s.wx * 3.0, 0.5) * 6.0)
+    d = min(abs(s.wy - 0.3 - sway), abs(s.wy - 0.7 - sway))
+    return max(0.0, 1.0 - d / 0.075) * smoothstep(0.35, 0.55, fbm(s.seed + 52, s.wx * 3.0, s.wy * 2.0))
+
+
+def _dirt_relief(s: Sample) -> float:
+    return (
+        0.014 * fbm(s.seed, s.wx * 8.0, s.wy * 8.0)
+        + 0.028 * bump(s.seed + 41, s.wx, s.wy, 9, 0.3, 0.33, 0.5)[0]
+        - 0.022 * _ruts(s)
+    )
+
+
 def _dirt(s: Sample) -> RGB:
     color = scale_color((138.0, 98.0, 62.0), 0.82 + 0.34 * fbm(s.seed, s.wx * 8.0, s.wy * 8.0))
     r = hash01(s.seed + 3, s.ix, s.iy)
-    if r > 0.95:
-        color = (168.0, 150.0, 130.0)
+    if r > 0.96:
+        color = scale_color(color, 1.25)
     elif r < 0.05:
+        color = scale_color(color, 0.7)
+    rut = _ruts(s)
+    if rut > 0.0:
+        color = scale_color(color, 1.0 - 0.3 * rut)
+    pebble, tag = bump(s.seed + 41, s.wx, s.wy, 9, 0.3, 0.33, 0.5)
+    if pebble > 0.0:
+        grey = scale_color((158.0, 148.0, 132.0), 0.8 + 0.4 * tag)
+        color = scale_color(mix(color, grey, 0.85), 0.9 + 0.12 * pebble)
+    elif _shadowed(s.seed + 41, s, 9, 0.3, 0.33, 0.03, 0.5) > 0.0:
         color = scale_color(color, 0.7)
     return color
 
 
+def _cobble(s: Sample) -> tuple[float, float, float]:
+    """Staggered cobbles: the stone's roundness in 0..1 (0 in the joints), its random tag and its row."""
+    rows = 5.0
+    row = math.floor(s.wy * rows)
+    gx = s.wx * 4.0 + (0.5 if row % 2 else 0.0) + 0.17 * hash01(s.seed + 15, row, 0)
+    col = math.floor(gx)
+    fx, fy = gx - col, s.wy * rows - row
+    edge = smoothstep(0.06, 0.34, min(fx, 1.0 - fx)) * smoothstep(0.08, 0.34, min(fy, 1.0 - fy))
+    return edge, hash01(s.seed + 17, col, row), float(row)
+
+
+def _pavement_relief(s: Sample) -> float:
+    edge, tag, _ = _cobble(s)
+    return (0.016 + 0.006 * tag) * math.sqrt(edge) * (edge > 0.02)
+
+
 def _pavement(s: Sample) -> RGB:
-    gx, gy = s.wx * 4.0, s.wy * 4.0
-    cx, cy = math.floor(gx), math.floor(gy)
-    fx, fy = gx - cx, gy - cy
-    if fx < 0.07 or fy < 0.07:
-        return (120.0, 116.0, 110.0)
-    tone = 0.9 + 0.2 * hash01(s.seed + 17, cx, cy)
-    color = scale_color((168.0, 164.0, 156.0), tone * (0.96 + 0.08 * hash01(s.seed, s.ix, s.iy)))
-    if fx > 0.9 or fy > 0.9:
-        color = scale_color(color, 0.93)
+    edge, tag, row = _cobble(s)
+    if edge < 0.02:
+        return scale_color((108.0, 104.0, 98.0), 0.85 + 0.3 * hash01(s.seed, s.ix, s.iy))
+    warm = hash01(s.seed + 19, int(tag * 1000.0), int(row))
+    color = mix((166.0, 164.0, 158.0), (176.0, 160.0, 140.0), warm)
+    color = scale_color(color, (0.86 + 0.28 * tag) * (0.95 + 0.1 * hash01(s.seed, s.ix, s.iy)))
+    if edge < 0.55:
+        color = scale_color(color, 0.86 + 0.25 * edge)
     return color
+
+
+def _rock_cracks(s: Sample) -> bool:
+    return abs(fbm(s.seed + 8, s.wx * 11.0, s.wy * 11.0) - 0.5) < 0.018
+
+
+def _rock_relief(s: Sample) -> float:
+    strata = math.sin((s.wx + s.wy * 1.7) * 23.0 + fbm(s.seed, s.wx * 5.0, s.wy * 5.0) * 9.0)
+    return 0.05 * fbm(s.seed + 4, s.wx * 6.0, s.wy * 6.0) + 0.008 * strata - 0.03 * _rock_cracks(s)
 
 
 def _rock(s: Sample) -> RGB:
     strata = math.sin((s.wx + s.wy * 1.7) * 23.0 + fbm(s.seed, s.wx * 5.0, s.wy * 5.0) * 9.0)
     color = scale_color((124.0, 118.0, 110.0), 0.78 + 0.4 * fbm(s.seed + 4, s.wx * 6.0, s.wy * 6.0) + 0.05 * strata)
-    if abs(fbm(s.seed + 8, s.wx * 11.0, s.wy * 11.0) - 0.5) < 0.018:
-        color = scale_color(color, 0.55)
+    if _rock_cracks(s):
+        color = scale_color(color, 0.5)
+    elif fbm(s.seed + 12, s.wx * 14.0, s.wy * 14.0) > 0.66:
+        color = mix(color, (126.0, 132.0, 96.0), 0.35)
     return color
+
+
+def _snow_relief(s: Sample) -> float:
+    return 0.03 * fbm(s.seed, s.wx * 4.0, s.wy * 4.0) + 0.01 * fbm(s.seed + 5, s.wx * 12.0, s.wy * 12.0)
 
 
 def _snow(s: Sample) -> RGB:
@@ -223,10 +371,27 @@ def _snow(s: Sample) -> RGB:
     return color
 
 
+def _rail_tie(s: Sample) -> bool:
+    return 0.2 < s.wy < 0.8 and (s.wx * 8.0) % 1.0 < 0.5
+
+
+def _rail_relief(s: Sample) -> float:
+    ballast = 0.014 * bump(s.seed + 81, s.wx, s.wy, 14, 0.6, 0.38, 0.5)[0]
+    tie = 0.014 if _rail_tie(s) else 0.0
+    rail = 0.03 * max(0.0, 1.0 - min(abs(s.wy - 0.36), abs(s.wy - 0.64)) / 0.035)
+    return ballast + tie + rail
+
+
 def _rail(s: Sample) -> RGB:
     color = scale_color((126.0, 120.0, 112.0), 0.8 + 0.4 * hash01(s.seed, s.ix, s.iy))
-    if 0.2 < s.wy < 0.8 and (s.wx * 8.0) % 1.0 < 0.5:
-        color = scale_color((96.0, 68.0, 46.0), 0.9 + 0.15 * hash01(s.seed + 1, s.ix, s.iy))
+    stone, tag = bump(s.seed + 81, s.wx, s.wy, 14, 0.6, 0.38, 0.5)
+    if stone > 0.0:
+        color = scale_color(color, 0.8 + 0.5 * tag)
+    if _rail_tie(s):
+        grain = 0.9 + 0.15 * hash01(s.seed + 1, s.ix, s.iy) + 0.08 * math.sin(s.wy * 90.0 + s.wx * 3.0)
+        color = scale_color((96.0, 68.0, 46.0), grain)
+        if (s.wx * 8.0) % 1.0 < 0.08:
+            color = scale_color(color, 0.78)
     if abs(s.wy - 0.36) < 0.03 or abs(s.wy - 0.64) < 0.03:
         color = (178.0, 178.0, 186.0) if hash01(s.seed, s.ix, s.iy) > 0.2 else (140.0, 140.0, 148.0)
     return color
@@ -250,8 +415,16 @@ class Terrain:
     """Sides the tile joins on the road graph (``NORTH`` | ``EAST`` ...), ``None`` off the graph."""
 
 
+_DAISIES: tuple[RGB, ...] = ((250.0, 250.0, 246.0), (246.0, 232.0, 120.0))
+_MEADOW: tuple[RGB, ...] = (
+    (236.0, 84.0, 84.0),
+    (240.0, 220.0, 90.0),
+    (250.0, 250.0, 250.0),
+    (170.0, 120.0, 220.0),
+)
+
 TERRAINS: list[Terrain] = [
-    Terrain(0, "grass", _grass((88.0, 156.0, 64.0)), True),
+    Terrain(0, "grass", _grass((88.0, 156.0, 64.0), _DAISIES, 0.025), True),
     Terrain(1, "sand", _sand, True),
     Terrain(2, "water", _water, False),
     Terrain(3, "road", _road, True, ROAD_X_MASK),
@@ -261,7 +434,7 @@ TERRAINS: list[Terrain] = [
     Terrain(
         7,
         "flowers",
-        _grass((92.0, 160.0, 70.0), ((236.0, 84.0, 84.0), (240.0, 220.0, 90.0), (250.0, 250.0, 250.0))),
+        _grass((92.0, 160.0, 70.0), _MEADOW, 0.17),
         True,
     ),
     Terrain(8, "rock", _rock, True),
@@ -276,8 +449,22 @@ meant for the overlay layer. Road variants are sloped too, on every slope: the p
 so a junction on a ramp is as well defined as a straight piece.
 """
 
+RELIEFS: dict[int, Relief] = {
+    0: _grass_relief(0.025),
+    1: _sand_relief,
+    2: _water_relief,
+    4: _dirt_relief,
+    5: _pavement_relief,
+    6: _grass_relief(0.0),
+    7: _grass_relief(0.17),
+    8: _rock_relief,
+    9: _snow_relief,
+    10: _rail_relief,
+}
+"""Relief of the terrains that have one, by terrain id; the others stay flat."""
+
 FOUNDATION_TOPS: list[tuple[int, Material]] = [
-    (0, _grass((92.0, 150.0, 66.0))),
+    (0, _grass((92.0, 150.0, 66.0), _DAISIES, 0.025)),
     (3, _road),
 ]
 """Terrains that own a foundation set (their top surface), in atlas order."""
@@ -339,8 +526,38 @@ def _world_xy(fx: float, fy: float, z: float) -> Point:
     return ((u + v) / 2.0, (v - u) / 2.0)
 
 
+RELIEF_STRENGTH = 1.0
+"""How much a unit of relief gradient tilts the normal."""
+RELIEF_LIMIT = 0.9
+"""Largest tilt of a relief normal."""
+
+
+def _bend(normal: Vec3, gx: float, gy: float, gz: float = 0.0) -> Vec3:
+    """Tilt a normal against a relief gradient, never by more than ``RELIEF_LIMIT``."""
+    length = math.hypot(gx, gy, gz)
+    if length > RELIEF_LIMIT:
+        gx, gy, gz = gx * RELIEF_LIMIT / length, gy * RELIEF_LIMIT / length, gz * RELIEF_LIMIT / length
+    k = RELIEF_STRENGTH
+    return normalize((normal[0] - k * gx, normal[1] - k * gy, normal[2] - k * gz))
+
+
+def _relief_normal(normal: Vec3, relief: Relief, wx: float, wy: float, x: int, y: int, seed: int, scale: int) -> Vec3:
+    """Normal of a ground surface bent by its relief, from the height a half pixel on each side."""
+    d = 1.0 / (64.0 * scale)
+    gx = (relief(Sample(wx + d, wy, x, y, seed)) - relief(Sample(wx - d, wy, x, y, seed))) / (2.0 * d)
+    gy = (relief(Sample(wx, wy + d, x, y, seed)) - relief(Sample(wx, wy - d, x, y, seed))) / (2.0 * d)
+    return _bend(normal, gx, gy)
+
+
 def draw_surface(
-    layers: Layers, index_x: int, index_y: int, material: Material, profile: Profile, seed: int, scale: int
+    layers: Layers,
+    index_x: int,
+    index_y: int,
+    material: Material,
+    profile: Profile,
+    seed: int,
+    scale: int,
+    relief: Relief | None = None,
 ) -> None:
     """
     Draw one sloped diamond into the three layers.
@@ -352,6 +569,7 @@ def draw_surface(
     :param profile: Corner heights in slope steps.
     :param seed: Seed of the tile.
     :param scale: Zoom factor.
+    :param relief: Height of the surface detail, bending the normal and the lighting; flat when None.
     """
     corners = corners_px(profile, scale)
     heights = [p * STEP for p in profile]
@@ -380,8 +598,13 @@ def draw_surface(
                 drawn.add((x, y))
                 z = w1 * za + w2 * zb + w3 * zc
                 wx, wy = _world_xy(px / scale, py / scale, z)
-                color = material(Sample(min(1.0, max(0.0, wx)), min(1.0, max(0.0, wy)), x, y, seed))
-                layers.put(ox + x, oy + y, scale_color(color, shade), normal, z)
+                wx, wy = min(1.0, max(0.0, wx)), min(1.0, max(0.0, wy))
+                color = material(Sample(wx, wy, x, y, seed))
+                pixel_normal, pixel_shade = normal, shade
+                if relief is not None:
+                    pixel_normal = _relief_normal(normal, relief, wx, wy, x, y, seed, scale)
+                    pixel_shade = terrain_shade(pixel_normal)
+                layers.put(ox + x, oy + y, scale_color(color, pixel_shade), pixel_normal, z)
 
 
 def _inside_quad(point: Point, quad: list[Point]) -> bool:
@@ -397,20 +620,50 @@ def _inside_quad(point: Point, quad: list[Point]) -> bool:
     return True
 
 
-def _wall_color(a: float, z: float, base: RGB, seed: int, ix: int, iy: int) -> RGB:
-    """Dressed stone: courses of a quarter unit, blocks of half a unit, staggered."""
+def _wall_cell(a: float, z: float) -> tuple[float, float, int, int, float]:
+    """Dressed stone: courses of a quarter unit, blocks of half a unit, staggered: (fx, fz, column, row, roundness)."""
     row = math.floor(z / 0.25)
     col = a * 2.0 + (0.5 if row % 2 else 0.0)
     fx = col - math.floor(col)
     fz = z / 0.25 - row
+    roundness = smoothstep(0.07, 0.25, fx) * smoothstep(0.09, 0.3, fz) * smoothstep(0.0, 0.1, 1.0 - fx)
+    return fx, fz, math.floor(col), row, roundness
+
+
+def _wall_color(a: float, z: float, base: RGB, seed: int, ix: int, iy: int) -> RGB:
+    fx, fz, col, row, roundness = _wall_cell(a, z)
     if fx < 0.07 or fz < 0.09:
-        return scale_color(base, 0.7)
-    tone = 0.9 + 0.2 * hash01(seed + 21, math.floor(col), row)
-    return scale_color(base, tone * (0.95 + 0.1 * hash01(seed, ix, iy)))
+        return scale_color(base, 0.62 + 0.1 * hash01(seed + 23, ix, iy))
+    tone = 0.9 + 0.2 * hash01(seed + 21, col, row)
+    color = scale_color(base, tone * (0.95 + 0.1 * hash01(seed, ix, iy)))
+    chip = fbm(seed + 25, a * 14.0, z * 14.0)
+    if chip > 0.68:
+        color = mix(color, (120.0, 130.0, 96.0), 0.25)
+    return scale_color(color, 0.9 + 0.12 * roundness)
+
+
+def _wall_relief(a: float, z: float, seed: int) -> float:
+    _, _, col, row, roundness = _wall_cell(a, z)
+    return (0.018 + 0.008 * hash01(seed + 21, col, row)) * roundness
+
+
+def _wall_normal(normal: Vec3, axis: int, a: float, z: float, seed: int, scale: int) -> Vec3:
+    """Bend a foundation wall's normal by its block relief; ``axis`` is the world axis ``a`` runs along."""
+    d = 1.0 / (48.0 * scale)
+    ga = (_wall_relief(a + d, z, seed) - _wall_relief(a - d, z, seed)) / (2.0 * d)
+    gz = (_wall_relief(a, z + d, seed) - _wall_relief(a, z - d, seed)) / (2.0 * d)
+    return _bend(normal, ga if axis == 0 else 0.0, ga if axis == 1 else 0.0, gz)
 
 
 def draw_foundation(
-    layers: Layers, index_x: int, index_y: int, top_material: Material, profile: Profile, seed: int, scale: int
+    layers: Layers,
+    index_x: int,
+    index_y: int,
+    top_material: Material,
+    profile: Profile,
+    seed: int,
+    scale: int,
+    top_relief: Relief | None = None,
 ) -> None:
     """
     Draw the level platform of a building on a slope: a flat top at the highest corner, stone walls to the ground.
@@ -422,6 +675,7 @@ def draw_foundation(
     :param profile: Corner heights of the terrain under it, in slope steps.
     :param seed: Seed of the tile.
     :param scale: Zoom factor.
+    :param top_relief: Relief of the platform's top, flat when None.
     """
     top = max(profile)
     flat = corners_px((top, top, top, top), scale)
@@ -440,16 +694,23 @@ def draw_foundation(
             fx, fy = point[0] / scale, point[1] / scale
             if _inside_quad(point, flat):
                 wx, wy = _world_xy(fx, fy, top_height)
-                color = top_material(Sample(min(1.0, max(0.0, wx)), min(1.0, max(0.0, wy)), x, y, seed))
+                wx, wy = min(1.0, max(0.0, wx)), min(1.0, max(0.0, wy))
+                color = top_material(Sample(wx, wy, x, y, seed))
                 lip = min(1.0, max(0.0, min(wx, wy, 1 - wx, 1 - wy) / 0.06))
-                layers.put(ox + x, oy + y, scale_color(color, 0.82 + 0.18 * lip), up, top_height)
+                top_normal, top_shade = up, 1.0
+                if top_relief is not None:
+                    top_normal = _relief_normal(up, top_relief, wx, wy, x, y, seed, scale)
+                    top_shade = terrain_shade(top_normal)
+                layers.put(ox + x, oy + y, scale_color(color, top_shade * (0.82 + 0.18 * lip)), top_normal, top_height)
             elif _inside_quad(point, left_wall):
                 wx = (fx - 32.0) / 32.0 + 1.0
                 z = (16.0 + 16.0 * (wx + 1.0) - fy) / 16.0
                 color = _wall_color(wx, z, stone, seed, x, y)
-                layers.put(ox + x, oy + y, scale_color(color, light(left_normal)), left_normal, z)
+                bent = _wall_normal(left_normal, 0, wx, z, seed, scale)
+                layers.put(ox + x, oy + y, scale_color(color, light(bent)), bent, z)
             elif _inside_quad(point, right_wall):
                 wy = 1.0 - (fx - 32.0) / 32.0
                 z = (16.0 + 16.0 * (1.0 + wy) - fy) / 16.0
                 color = _wall_color(wy, z, stone, seed + 5, x, y)
-                layers.put(ox + x, oy + y, scale_color(color, light(right_normal)), right_normal, z)
+                bent = _wall_normal(right_normal, 1, wy, z, seed + 5, scale)
+                layers.put(ox + x, oy + y, scale_color(color, light(bent)), bent, z)

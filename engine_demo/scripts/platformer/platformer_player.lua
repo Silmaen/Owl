@@ -44,6 +44,9 @@ properties = {
     { name = "shake_amount", type = "float", default = 0.28 },   -- world units at the start of the shake
     { name = "pit_cost", type = "float", default = 0.34 },   -- health lost by a fall into a pit (a third of the bar, like a spike)
     { name = "banner_time", type = "float", default = 2.4 },   -- s a banner replaces the objective text
+    { name = "frame_idle", type = "int", default = 150, min = 0 },
+    { name = "frame_step", type = "int", default = 151, min = 0 },  -- second pose: walk cycle (alternating with idle) and jump
+    { name = "step_time", type = "float", default = 0.12, min = 0.01 },  -- s per walk frame
 }
 
 -- Tunables ---------------------------------------------------------------------
@@ -70,9 +73,6 @@ local zone_name = ""
 local dying = false
 
 -- Sprite: frames of the Pixel Platformer characters (24 px grid of platformer_atlas.png).
-local k_frame_idle     = 150
-local k_frame_step     = 151    -- second pose: walk cycle (alternating with idle) and jump
-local k_step_time      = 0.12   -- s per walk frame
 local sprite_id = 0
 local sprite_scale = 1.0
 local walk_clock = 0.0
@@ -320,12 +320,12 @@ end
 -- Idle / walk / jump frame and facing of the child sprite.
 local function animate(dt, vx)
     if sprite_id == 0 then return end
-    local frame = k_frame_idle
+    local frame = frame_idle
     if jump_state ~= "grounded" then
-        frame = k_frame_step
+        frame = frame_step
     elseif math.abs(vx) > 0.5 then
         walk_clock = walk_clock + dt
-        frame = (math.floor(walk_clock / k_step_time) % 2 == 0) and k_frame_idle or k_frame_step
+        frame = (math.floor(walk_clock / step_time) % 2 == 0) and frame_idle or frame_step
     else
         walk_clock = 0.0
     end

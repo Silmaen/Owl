@@ -8,6 +8,12 @@
 
 properties = {
     { name = "speed", type = "float", default = 5.0 },
+    { name = "frame_idle", type = "int", default = 148, min = 0 },
+    { name = "frame_walk", type = "int", default = 168, min = 0 },
+    { name = "walk_frames", type = "int", default = 4, min = 1 },
+    { name = "step_time", type = "float", default = 0.11, min = 0.01 },
+    { name = "wade_factor", type = "float", default = 0.4, min = 0, max = 1 },
+    { name = "wade_step_time", type = "float", default = 0.2, min = 0.01 },
 }
 
 local transitioning = false  -- gate input while the engine is in scene-load orchestration
@@ -17,19 +23,15 @@ local health_bar_id = 0
 local camera_id = 0
 local sprite_id = 0   -- child sprite (Tiny Dungeon character): mirrored to face where the player walks
 local sprite_scale = 1.0
-local levels_id = 0   -- HUD counter "Levels completed: n / 4"
+local levels_id = 0   -- HUD counter "Levels completed: n / #LEVELS"
 local shown_levels = -1
 
 -- Levels of the hub (`level_<name>_done` in gamestate, set by the victory of each level). The victory portal wakes up
 -- when every one is done.
-local LEVELS = { "platformer", "raycast", "iso", "voxel" }
+local LEVELS = { "platformer", "raycast", "iso", "voxel", "tavern" }
 
 -- Hero sprite: the idle frame of the Tiny Dungeon hero and the four walk frames drawn below the characters of
--- town_atlas.png (the pack has none), played at k_step_time each while the player moves.
-local k_frame_idle = 148
-local k_frame_walk = 168
-local k_walk_frames = 4
-local k_step_time = 0.11
+-- town_atlas.png (the pack has none), played at step_time each while the player moves.
 local walk_clock = 0
 local shown_frame = -1
 local shown_step = -1
@@ -41,8 +43,6 @@ local step_sound = 0
 -- (four animation phases, hub_water.lua) tell where it is; the bridges are not water.
 local WADE_SOUNDS = { "sounds/hub/wade_1.wav", "sounds/hub/wade_2.wav", "sounds/hub/wade_3.wav", "sounds/hub/wade_4.wav" }
 local WATER_TILES = { [132] = true, [133] = true, [137] = true, [138] = true }
-local k_wade_factor = 0.4
-local k_wade_step_time = 0.2
 local map_id = 0
 local wading = false
 
@@ -115,7 +115,7 @@ function on_update(dt)
         wading = in_water
         gamestate.set("hub_wading", wading)
     end
-    local pace = wading and speed * k_wade_factor or speed
+    local pace = wading and speed * wade_factor or speed
     local dirx, diry = input.get_action_vector("move")
     local mvx, mvy = dirx * pace, -diry * pace
 
@@ -125,10 +125,10 @@ function on_update(dt)
             transform.set_scale(sprite_id, mvx < 0 and -sprite_scale or sprite_scale, sprite_scale, 1)
         end
         -- Walk cycle while moving, the idle frame when still.
-        local frame = k_frame_idle
+        local frame = frame_idle
         if mvx ~= 0 or mvy ~= 0 then
             walk_clock = walk_clock + dt
-            frame = k_frame_walk + math.floor(walk_clock / (wading and k_wade_step_time or k_step_time)) % k_walk_frames
+            frame = frame_walk + math.floor(walk_clock / (wading and wade_step_time or step_time)) % walk_frames
         else
             walk_clock = 0
         end
@@ -137,14 +137,14 @@ function on_update(dt)
             isometric.set_sprite_frame(sprite_id, frame)
         end
         -- A footstep each time a foot lands: the contact frames of the cycle (the first and the third).
-        local step = (frame - k_frame_walk) % k_walk_frames
-        if frame >= k_frame_walk and step ~= shown_step and step % 2 == 0 then
+        local step = (frame - frame_walk) % walk_frames
+        if frame >= frame_walk and step ~= shown_step and step % 2 == 0 then
             -- Four variants, never the same twice in a row, each a little louder or softer (no pitch control in Lua).
             step_sound = (step_sound + math.random(STEP_VARIANTS - 1) - 1) % STEP_VARIANTS + 1
             local sounds = wading and WADE_SOUNDS or STEP_SOUNDS
             sound.set_volume(sound.play(sounds[step_sound]), 0.55 + math.random() * 0.4)
         end
-        shown_step = frame >= k_frame_walk and step or -1
+        shown_step = frame >= frame_walk and step or -1
     end
 
     -- Camera centred on the player, held inside the map (the forest colliders keep the player inside it too).

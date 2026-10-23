@@ -5,6 +5,10 @@
 -- to the title.
 
 -- Every level (a level names the next one in the `next_scene` property of its `Game` entity).
+properties = {
+    { name = "wipe_color", type = "color", default = { 0.45, 0.05, 0.55, 1 } },
+}
+
 local LEVEL_SCENES = {
     "scenes/level_1.owl",
     "scenes/level_2.owl",
@@ -13,7 +17,6 @@ local LEVEL_SCENES = {
     "scenes/level_5.owl",
 }
 local LEVEL_NAMES = { "First wall", "Pyramid", "Checkers", "Fortress", "Last stand" }
-local WIPE = { 0.45, 0.05, 0.55 }
 
 local list_id, info_id = 0, 0
 local selected = 1
@@ -39,7 +42,7 @@ end
 
 function on_create()
     if not ui.is_transition_active() then
-        ui.transition_play("wipe_up", 0.4, WIPE[1], WIPE[2], WIPE[3])
+        ui.transition_play("wipe_up", 0.4, wipe_color.r, wipe_color.g, wipe_color.b)
     end
     list_id = scene.find_entity("LevelList")
     info_id = scene.find_entity("LevelInfo")
@@ -83,13 +86,13 @@ function on_play_clicked()
     gamestate.set("breakout_lives", 3)
     gamestate.set("breakout_level", selected)
     gamestate.set("breakout_scene", LEVEL_SCENES[selected])
-    scene.transition_to(LEVEL_SCENES[selected], "wipe_up", 0.3, WIPE[1], WIPE[2], WIPE[3])
+    scene.transition_to(LEVEL_SCENES[selected], "wipe_up", 0.3, wipe_color.r, wipe_color.g, wipe_color.b)
 end
 
 function go_back()
     if leaving then return end
     leaving = true
-    scene.transition_to("scenes/title.owl", "wipe_up", 0.3, WIPE[1], WIPE[2], WIPE[3])
+    scene.transition_to("scenes/title.owl", "wipe_up", 0.3, wipe_color.r, wipe_color.g, wipe_color.b)
 end
 
 function on_update(dt)

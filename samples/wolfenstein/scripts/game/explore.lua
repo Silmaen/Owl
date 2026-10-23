@@ -8,7 +8,7 @@
 -- large map.
 --
 -- The tilemap has two layers: `walls` (hidden, the whole floor, read once) and `seen` (empty at first). Every frame
--- FOG_RAYS rays are cast over the wall grid across the field of view up to FOG_RANGE cells (a DDA over the cells, no
+-- fog_rays rays are cast over the wall grid across the field of view up to fog_range cells (a DDA over the cells, no
 -- allocation); the cells a ray crosses and the wall it stops at are copied into `seen` with `isometric.set_cell`. A
 -- closed door and a secret wall stop a ray and show as walls, a slid secret wall in the cell where it stopped.
 --
@@ -22,13 +22,15 @@
 properties = {
     { name = "save_period", type = "float", default = 0.5 },
     { name = "hearing", type = "int", default = 12 },   -- cells beyond which a door is not heard
+    { name = "fog_rays", type = "int", default = 41, min = 2 },
+    { name = "fog_fov", type = "float", default = 80.0, min = 10, max = 170 },
+    { name = "fog_range", type = "float", default = 14.0, min = 1 },
+    { name = "fog_rows_per_frame", type = "int", default = 8, min = 1 },
 }
 
 local MAP_SIZE = 32
 local WALL_LAYER, SEEN_LAYER = 0, 1
 local TILE_WALL, TILE_FLOOR = 0, 1
-local FOG_RAYS, FOG_FOV, FOG_RANGE = 41, math.rad(80), 14
-local FOG_ROWS_PER_FRAME = 8
 local SAVE_PERIOD, HEARING    -- set from the properties in on_create
 -- Corner minimap and large map: cell size in units (1/720 of the screen height) and centre (from the lower left corner of the screen).
 local SMALL = { scale = 5, x = 96, y = 96 }
@@ -90,7 +92,7 @@ local function reveal(c, r)
 end
 
 -- One ray of the fog: walks the cells from the player along an angle, revealing each, up to the first wall or
--- FOG_RANGE.
+-- fog_range.
 local function cast(px, py, angle)
     local dx, dy = -math.sin(angle), -math.cos(angle) -- the rows grow downward on the map: the world y is flipped
     local c, r = math.floor(px), math.floor(py)
@@ -110,7 +112,7 @@ local function cast(px, py, angle)
             side_r = side_r + delta_r
             r = r + step_r
         end
-        if distance > FOG_RANGE or c < 0 or r < 0 or c >= MAP_SIZE or r >= MAP_SIZE then
+        if distance > fog_range or c < 0 or r < 0 or c >= MAP_SIZE or r >= MAP_SIZE then
             return
         end
         reveal(c, r)
@@ -138,8 +140,8 @@ local function update_fog(dt)
             reveal(c + dc, r + dr)
         end
     end
-    for i = 0, FOG_RAYS - 1 do
-        cast(tx, ty, yaw + (i / (FOG_RAYS - 1) - 0.5) * FOG_FOV)
+    for i = 0, fog_rays - 1 do
+        cast(tx, ty, yaw + (i / (fog_rays - 1) - 0.5) * math.rad(fog_fov))
     end
     gamestate.set("wolf_seen", floor_seen)
     gamestate.set("wolf_explored", percent())
@@ -153,7 +155,7 @@ end
 
 -- Reads the walls of the hidden layer and clears the seen one (the tilemap asset is shared with an earlier visit).
 local function setup_fog_rows()
-    local last = math.min(fog_row + FOG_ROWS_PER_FRAME, MAP_SIZE) - 1
+    local last = math.min(fog_row + fog_rows_per_frame, MAP_SIZE) - 1
     for r = fog_row, last do
         for c = 0, MAP_SIZE - 1 do
             local key = key_of(c, r)

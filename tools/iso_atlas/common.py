@@ -117,6 +117,48 @@ def fbm(seed: int, x: float, y: float) -> float:
     )
 
 
+def smoothstep(edge0: float, edge1: float, x: float) -> float:
+    """
+    Smooth Hermite interpolation between two edges.
+
+    :param edge0: Value giving 0.
+    :param edge1: Value giving 1.
+    :param x: The input.
+    :return: 0 below ``edge0``, 1 above ``edge1``, a smooth ramp between.
+    """
+    t = max(0.0, min(1.0, (x - edge0) / (edge1 - edge0)))
+    return t * t * (3.0 - 2.0 * t)
+
+
+def bump(
+    seed: int, x: float, y: float, cells: int, presence: float, radius: float, power: float = 1.0
+) -> tuple[float, float]:
+    """
+    A scattering of round bumps: one optional bump per cell of a ``cells`` x ``cells`` grid over the unit square.
+
+    A bump never leaves its cell, so the function needs only the cell under the point.
+
+    :param seed: Stream seed.
+    :param x: Abscissa in the unit square.
+    :param y: Ordinate in the unit square.
+    :param cells: Cells per side.
+    :param presence: Probability that a cell holds a bump.
+    :param radius: Bump radius in cell units, at most 0.5.
+    :param power: Profile exponent: 0.5 is a dome (pebble), 1 a parabola, 2 a sharp tuft.
+    :return: The bump height in 0..1 under the point (0 outside any bump) and a random tag of the bump in [0, 1).
+    """
+    gx, gy = x * cells, y * cells
+    cx, cy = min(cells - 1, max(0, math.floor(gx))), min(cells - 1, max(0, math.floor(gy)))
+    if hash01(seed, cx, cy) >= presence:
+        return 0.0, 0.0
+    px = cx + radius + (1.0 - 2.0 * radius) * hash01(seed + 1, cx, cy)
+    py = cy + radius + (1.0 - 2.0 * radius) * hash01(seed + 2, cx, cy)
+    d2 = ((gx - px) ** 2 + (gy - py) ** 2) / (radius * radius)
+    if d2 >= 1.0:
+        return 0.0, 0.0
+    return (1.0 - d2) ** power, hash01(seed + 3, cx, cy)
+
+
 def scale_color(color: RGB, factor: float) -> RGB:
     """
     Multiply a colour.

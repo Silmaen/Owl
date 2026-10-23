@@ -10,12 +10,16 @@
 
 #include <app/Application.h>
 #include <core/Log.h>
+#include <renderer/gpu/Framebuffer.h>
 #include <scene/Entity.h>
 #include <scene/Scene.h>
 #include <scene/SceneSerializer.h>
 #include <scene/component/components.h>
 
+#include <cstdint>
+
 #include <filesystem>
+#include <optional>
 #include <string>
 
 using namespace owl;
@@ -741,4 +745,150 @@ TEST(ComponentRoundTrip, IsometricObject) {
 				EXPECT_NEAR(object.color.y(), 0.25f, 0.001f);
 				EXPECT_EQ(object.atlas, nullptr);
 			});
+}
+
+TEST(ComponentRoundTrip, FollowTarget) {
+	roundTrip(
+			"FollowTarget",
+			[](scene::Entity& iEnt) -> void {
+				auto& follow = iEnt.addComponent<scene::component::FollowTarget>();
+				follow.enabled = false;
+				follow.target = core::UUID{77};
+				follow.offset = {1.f, 25.f, -3.f};
+				follow.followYaw = false;
+			},
+			[](const scene::Entity& iEnt) -> void {
+				const auto& follow = iEnt.getComponent<scene::component::FollowTarget>();
+				EXPECT_FALSE(follow.enabled);
+				EXPECT_EQ(static_cast<uint64_t>(follow.target), 77u);
+				EXPECT_NEAR(follow.offset.y(), 25.f, 1e-6f);
+				EXPECT_NEAR(follow.offset.z(), -3.f, 1e-6f);
+				EXPECT_FALSE(follow.followYaw);
+			});
+}
+
+TEST(ComponentRoundTrip, RenderTarget) {
+	roundTrip(
+			"RenderTarget",
+			[](scene::Entity& iEnt) -> void {
+				auto& target = iEnt.addComponent<scene::component::RenderTarget>();
+				target.enabled = false;
+				target.targetName = "mirror";
+				target.size = {320, 180};
+				target.clearColor = {0.1f, 0.2f, 0.3f, 1.f};
+				iEnt.addComponent<scene::component::UiImage>().renderTarget = "mirror";
+			},
+			[](const scene::Entity& iEnt) -> void {
+				const auto& target = iEnt.getComponent<scene::component::RenderTarget>();
+				EXPECT_FALSE(target.enabled);
+				EXPECT_EQ(target.targetName, "mirror");
+				EXPECT_EQ(target.size.x(), 320u);
+				EXPECT_EQ(target.size.y(), 180u);
+				EXPECT_NEAR(target.clearColor.z(), 0.3f, 1e-6f);
+				EXPECT_EQ(iEnt.getComponent<scene::component::UiImage>().renderTarget, "mirror");
+			});
+}
+
+TEST(RenderTarget, TheSceneDrawsEachEnabledTargetIntoItsImage) {
+	core::Log::init(core::Log::Level::Off);
+	auto app = makeApp("RenderTargetDraw");
+	const auto sc = mkShared<scene::Scene>();
+	auto main = sc->createEntity("Main");
+	main.addComponent<scene::component::Camera>().primary = true;
+	auto top = sc->createEntity("Top");
+	top.addComponent<scene::component::Camera>().primary = false;
+	auto& target = top.addComponent<scene::component::RenderTarget>();
+	target.size = {128, 64};
+	auto spare = sc->createEntity("Spare");
+	spare.addComponent<scene::component::Camera>().primary = false;
+	auto& off = spare.addComponent<scene::component::RenderTarget>();
+	off.targetName = "off";
+	off.enabled = false;
+	EXPECT_EQ(sc->getRenderTarget("minimap"), nullptr);
+	sc->onViewportResize({640, 360});
+	sc->onStartRuntime();
+	sc->onRenderRuntime();
+	const auto image = sc->getRenderTarget("minimap");
+	ASSERT_NE(image, nullptr);
+	EXPECT_EQ(image->getSpecification().size, (math::vec2ui{128, 64}));
+	EXPECT_EQ(sc->getRenderTarget("off"), nullptr);
+	EXPECT_EQ(sc->getRenderTarget("unknown"), nullptr);
+	target.size = {64, 64};
+	sc->onRenderRuntime();
+	EXPECT_EQ(sc->getRenderTarget("minimap")->getSpecification().size, (math::vec2ui{64, 64}));
+	sc->onEndRuntime();
+	app::Application::invalidate();
+	app.reset();
+	core::Log::invalidate();
+}
+
+TEST(ComponentRoundTrip, ProceduralSkyAndDayNightCycle) {
+	roundTrip(
+			"ProceduralSky",
+			[](scene::Entity& iEnt) -> void {
+				auto& sky = iEnt.addComponent<scene::component::ProceduralSky>();
+				sky.enabled = false;
+				sky.turbidity = 6.f;
+				sky.nightBrightness = 0.03f;
+				sky.stars = 0.5f;
+				sky.discSize = 3.f;
+				sky.resolution = 256;
+				auto& cycle = iEnt.addComponent<scene::component::DayNightCycle>();
+				cycle.timeOfDay = 19.5f;
+				cycle.dayLength = 90.f;
+				cycle.azimuth = 45.f;
+				cycle.maxElevation = 30.f;
+				cycle.sun = core::UUID{99};
+				cycle.moonIlluminance = 1200.f;
+				cycle.nightExposure = 2.f;
+			},
+			[](const scene::Entity& iEnt) -> void {
+				const auto& sky = iEnt.getComponent<scene::component::ProceduralSky>();
+				EXPECT_FALSE(sky.enabled);
+				EXPECT_NEAR(sky.turbidity, 6.f, 1e-6f);
+				EXPECT_NEAR(sky.nightBrightness, 0.03f, 1e-6f);
+				EXPECT_NEAR(sky.stars, 0.5f, 1e-6f);
+				EXPECT_NEAR(sky.discSize, 3.f, 1e-6f);
+				EXPECT_EQ(sky.resolution, 256u);
+				const auto& cycle = iEnt.getComponent<scene::component::DayNightCycle>();
+				EXPECT_NEAR(cycle.timeOfDay, 19.5f, 1e-5f);
+				EXPECT_NEAR(cycle.dayLength, 90.f, 1e-5f);
+				EXPECT_NEAR(cycle.azimuth, 45.f, 1e-5f);
+				EXPECT_NEAR(cycle.maxElevation, 30.f, 1e-5f);
+				EXPECT_EQ(static_cast<uint64_t>(cycle.sun), 99u);
+				EXPECT_NEAR(cycle.moonIlluminance, 1200.f, 1e-3f);
+				EXPECT_NEAR(cycle.nightExposure, 2.f, 1e-6f);
+			});
+}
+
+TEST(Outline, ASubtreeHoldsItsRootAndItsDescendantsOnly) {
+	core::Log::init(core::Log::Level::Off);
+	auto app = makeApp("OutlineSubtree");
+	const auto sc = mkShared<scene::Scene>();
+	auto root = sc->createEntity("Root");
+	auto child = sc->createEntity("Child");
+	auto grandChild = sc->createEntity("GrandChild");
+	auto other = sc->createEntity("Other");
+	sc->setParent(child, root);
+	sc->setParent(grandChild, child);
+	const auto rootHandle = static_cast<entt::entity>(root);
+	EXPECT_TRUE(sc->isInSubtree(static_cast<entt::entity>(root), rootHandle));
+	EXPECT_TRUE(sc->isInSubtree(static_cast<entt::entity>(grandChild), rootHandle));
+	EXPECT_FALSE(sc->isInSubtree(static_cast<entt::entity>(other), rootHandle));
+	EXPECT_FALSE(sc->isInSubtree(rootHandle, static_cast<entt::entity>(child)));
+	EXPECT_FALSE(sc->getOutline().has_value());
+	sc->setOutline(scene::Scene::Outline{.root = child.getUUID()});
+	ASSERT_TRUE(sc->getOutline().has_value());
+	EXPECT_EQ(sc->getOutline()->root, child.getUUID());
+	auto main = sc->createEntity("Main");
+	main.addComponent<scene::component::Camera>().primary = true;
+	sc->onViewportResize({320, 180});
+	sc->onStartRuntime();
+	EXPECT_NO_THROW(sc->onRenderRuntime());
+	sc->setOutline(std::nullopt);
+	EXPECT_FALSE(sc->getOutline().has_value());
+	sc->onEndRuntime();
+	app::Application::invalidate();
+	app.reset();
+	core::Log::invalidate();
 }

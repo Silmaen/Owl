@@ -321,6 +321,31 @@ The Engine Demo HUDs and menu canvases follow one recipe, checked by `DemoHudLay
   its own keys in a hint that `controls_hint.lua` hides after a few seconds, last in its corner group so that hiding
   it moves nothing.
 
+## Minimap {#minimap}
+
+A minimap is a second camera drawn off-screen and shown by a `UiImage`; nothing is specific to a rendering style.
+
+- **`RenderTarget`** on an entity with a `Camera`: the camera draws the scene into an image of `size` pixels, under the
+  name `targetName` (default `minimap`), cleared to `clearColor`; `enabled` off keeps the last image.
+- **`UiImage.renderTarget`**: the name of a `RenderTarget` of the scene; the widget shows that image in place of its
+  texture.
+- **`FollowTarget`**: keeps the camera above the player (`target`, `offset`, `followYaw` to turn with its heading).
+- The voxel level (`scenes/voxel_terrain.owl`) holds the entity `MinimapCamera` and shows its image in
+  `huds/voxel.owlhud`. See [Scene > RenderTarget](../scene.md#rendertarget).
+
+## Layout cache {#layout-cache}
+
+`HudLayout::compute` lays every widget out and the text of each `UiText` is shaped again at every frame, even when
+nothing moved: the HUD of the tavern (three widgets, two texts) costs about 5 µs per editor frame on the bench agent
+(`sample/editor_update/tavern` 9.7 µs without it, 25 µs with it).
+
+| Part        | Plan                                                                                                   |
+|-------------|--------------------------------------------------------------------------------------------------------|
+| Dirty marks | A HUD keeps a generation bumped by any change of a `UiRect`, `UiText`, `Canvas`, visibility or scroll  |
+| Layout      | `HudLayout` reuses its nodes while the generation, the viewport size and the user scale are unchanged  |
+| Text        | Each `UiText` keeps its shaped glyphs until its text, font, size or box changes                        |
+| Tests       | Identical nodes and quads with and without the cache; a bench of a still HUD and of one text per frame |
+
 ## Tests
 
 Layout maths (anchors, pivot, nesting, scale modes), hit-testing and focus order, text layout (pen advance, wrap,
@@ -330,6 +355,6 @@ resolutions, the HUD editor commands, and a bench at 500 widgets.
 
 ## Later
 
-- v0.5.0: a minimap on a render target, a live scene backdrop in the HUD editor.
+- v0.5.0: a live scene backdrop in the HUD editor.
 - v0.6.0: docking and saved window layouts for in-game windows.
 - v0.8.0: controller remapping UI on the HUD widgets.

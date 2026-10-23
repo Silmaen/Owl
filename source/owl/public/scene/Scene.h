@@ -59,6 +59,10 @@ namespace owl::renderer {
 class MaterialLibrary;
 }// namespace owl::renderer
 
+namespace owl::renderer::gpu {
+class Framebuffer;
+}// namespace owl::renderer::gpu
+
 namespace owl::scene {
 
 class Entity;
@@ -87,6 +91,11 @@ struct LightFlicker;
 struct Oscillator;
 struct Patrol;
 struct Drift;
+struct FollowTarget;
+struct RenderTarget;
+struct ProceduralSky;
+struct DayNightCycle;
+struct FirstPersonController;
 struct Environment;
 struct NativeScript;
 struct PhysicBody;
@@ -285,6 +294,16 @@ public:
 
 	/**
 	 * @brief
+	 *  Get the entity an id of the mesh spatial index was filed from.
+	 * @param[in] iId An id returned by a query of `getMeshSpatialIndex`.
+	 * @return The entity, `entt::null` for an id no entity holds.
+	 */
+	[[nodiscard]] auto getMeshSpatialEntity(const uint32_t iId) const -> entt::entity {
+		return iId < m_meshEntries.size() ? m_meshEntries[iId].handle : entt::null;
+	}
+
+	/**
+	 * @brief
 	 *  Get the spatial index of the sprite entities (world boxes, ids are entity indices), current after a render.
 	 * @return The index.
 	 */
@@ -366,6 +385,23 @@ public:
 	 * @return The primary camera.
 	 */
 	[[nodiscard]] auto getPrimaryCamera() const -> Entity;
+
+	/**
+	 * @brief
+	 *  Draw the view of every enabled `RenderTarget` into its image, the overlays and the HUD left out.
+	 *
+	 * Called by `onRenderRuntime` and `onUpdateEditor` before the main view; the framebuffer bound before the call is
+	 * bound again after it.
+	 */
+	void renderTargets();
+
+	/**
+	 * @brief
+	 *  Get the image of a render target of the scene.
+	 * @param[in] iName The `targetName` of the `RenderTarget`.
+	 * @return Its framebuffer, or null when no render target of that name has drawn yet.
+	 */
+	[[nodiscard]] auto getRenderTarget(const std::string& iName) const -> shared<renderer::gpu::Framebuffer>;
 
 	/**
 	 * @brief
@@ -557,6 +593,47 @@ public:
 	 * @param[in] iNormal Outward normal of the impacted face (used when `iShow`).
 	 */
 	void setEditorVoxelHighlight(bool iShow, const math::vec3i& iBlock = {}, const math::vec3i& iNormal = {});
+
+	/**
+	 * @brief
+	 *  Set the outlined box of the interaction a first-person walker aims at, for this frame.
+	 * @param[in] iBox World box to outline, or none to outline nothing.
+	 */
+	void setInteractionHighlight(const std::optional<math::box3f>& iBox) { m_interactionHighlight = iBox; }
+
+	/**
+	 * @brief
+	 *  An entity outlined over the 3D scene: the silhouette of the meshes of its subtree.
+	 */
+	struct Outline {
+		/// Root of the outlined subtree.
+		core::UUID root{0};
+		/// Colour of the line.
+		math::vec4 color{1.f, 0.8f, 0.35f, 1.f};
+	};
+
+	/**
+	 * @brief
+	 *  Set the entity outlined from the next frame on (the selection of Owl Nest, what a first-person walker aims at).
+	 * @param[in] iOutline The outline, or none to outline nothing.
+	 */
+	void setOutline(const std::optional<Outline>& iOutline) { m_outline = iOutline; }
+
+	/**
+	 * @brief
+	 *  Get the entity outlined over the 3D scene.
+	 * @return The outline, or none.
+	 */
+	[[nodiscard]] auto getOutline() const -> const std::optional<Outline>& { return m_outline; }
+
+	/**
+	 * @brief
+	 *  Whether an entity is the given root or below it in the hierarchy.
+	 * @param[in] iHandle The entity.
+	 * @param[in] iRoot The root.
+	 * @return True when it is in the subtree.
+	 */
+	[[nodiscard]] auto isInSubtree(entt::entity iHandle, entt::entity iRoot) const -> bool;
 
 	/**
 	 * @brief
@@ -1475,11 +1552,29 @@ private:
 
 	/**
 	 * @brief
+	 *  Add the outline of `m_outline` to a frame graph: its silhouette, the depth of the scene, then the line over the
+	 *  display target. Nothing without an outline, or when its subtree holds no mesh.
+	 * @param[in,out] ioGraph The graph of the frame.
+	 * @param[in] iTarget The display target.
+	 */
+	void recordOutlinePasses(renderer::RenderGraph& ioGraph, renderer::RenderGraph::Resource iTarget);
+
+	/**
+	 * @brief
+	 *  Start drawing and prefiltering the procedural sky on a worker when its inputs changed and no drawing runs; the
+	 *  previous sky stays lit until the new one is ready.
+	 * @param[in] iSky The sky of the environment.
+	 */
+	void requestProceduralSky(const component::ProceduralSky& iSky);
+
+	/**
+	 * @brief
 	 *  Draw the opaque geometry of the 3D layers (meshes, voxel worlds) with the current camera; used by the shadow
 	 *  passes.
 	 * @param[in] iCamera The camera drawing the geometry.
+	 * @param[in] iMeshesOnly Whether only the mesh layers draw (an outline mask), the voxel worlds left out.
 	 */
-	void renderShadowCasters(const renderer::Camera& iCamera);
+	void renderShadowCasters(const renderer::Camera& iCamera, bool iMeshesOnly = false);
 
 	/**
 	 * @brief
@@ -1573,6 +1668,8 @@ private:
 	 * `Renderer2D` quad loop).
 	 */
 	const renderer::RenderLayer* mp_currentLayer = nullptr;
+	/// Whether `renderWithStack` draws a render target: no overlay, no HUD.
+	bool m_drawingRenderTarget = false;
 	/// Camera of the frame-graph run in progress (`renderWithStack`).
 	const renderer::Camera* mp_renderCamera = nullptr;
 	/// Lights of the frame, as `Renderer3D` reads them.
@@ -1598,8 +1695,12 @@ private:
 	renderer::ShadowSettings m_shadowSettings;
 	/// The environment image of the scene: its loading on a worker, then its GPU textures.
 	struct EnvironmentState {
-		/// Asset path of the loaded (or loading) image.
+		/// Asset path of the loaded (or loading) image; empty for a procedural sky.
 		std::filesystem::path hdri;
+		/// Whether the environment is a procedural sky.
+		bool procedural = false;
+		/// Quantised inputs of the procedural sky drawn last, to draw it again only when they change.
+		std::array<float, 16> skyKey{};
 		/// Result of the worker, read once its task finished.
 		shared<std::optional<renderer::EnvironmentMap>> result;
 		/// Task loading and prefiltering the image.
@@ -1608,11 +1709,20 @@ private:
 		bool loading = false;
 		/// The uploaded environment.
 		renderer::EnvironmentLighting lighting;
+
+		/**
+		 * @brief
+		 *  Whether an environment was uploaded.
+		 * @return True once the first image is on the GPU.
+		 */
+		[[nodiscard]] auto levelsReady() const -> bool { return lighting.levelCount > 0; }
 	};
 	/// Environment of the scene.
 	EnvironmentState m_environment;
 	/// Shadow-map targets of the frame, one per cascade.
 	std::array<renderer::RenderGraph::Resource, renderer::g_maxShadowCascades> m_shadowTargets{};
+	/// Depth of the occluders from the camera this frame (the outline reuses it); invalid without occlusion.
+	renderer::RenderGraph::Resource m_occluderDepth{};
 	/// Token target of the occlusion pyramid pass, read by the 3D passes; invalid without occlusion.
 	renderer::RenderGraph::Resource m_occlusionToken{};
 
@@ -1629,6 +1739,12 @@ private:
 	math::vec3i m_voxelHighlightBlock{0, 0, 0};
 	/// Outward normal of the ray-impacted face of the highlighted block (the only face outlined).
 	math::vec3i m_voxelHighlightNormal{0, 0, 0};
+	/// Entity outlined over the 3D scene.
+	std::optional<Outline> m_outline;
+	/// Root of the subtree `renderMeshes` draws alone (the outline mask), `entt::null` for every mesh.
+	entt::entity m_meshFilterRoot = entt::null;
+	/// World box of the interaction aimed at this frame, outlined over the scene.
+	std::optional<math::box3f> m_interactionHighlight;
 	/// True while a captured `VoxelPlayer` is active (draws the centre-screen aiming crosshair).
 	bool m_showCrosshair = false;
 
@@ -1684,6 +1800,26 @@ OWL_API void Scene::onComponentAdded<component::Patrol>(const Entity& iEntity, c
 
 template<>
 OWL_API void Scene::onComponentAdded<component::Drift>(const Entity& iEntity, component::Drift& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::FollowTarget>(const Entity& iEntity,
+															  component::FollowTarget& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::RenderTarget>(const Entity& iEntity,
+															  component::RenderTarget& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::ProceduralSky>(const Entity& iEntity,
+															   component::ProceduralSky& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::DayNightCycle>(const Entity& iEntity,
+															   component::DayNightCycle& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::FirstPersonController>(const Entity& iEntity,
+																	   component::FirstPersonController& ioComponent);
 
 template<>
 OWL_API void Scene::onComponentAdded<component::Environment>(const Entity& iEntity,

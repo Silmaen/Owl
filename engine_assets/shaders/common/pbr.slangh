@@ -44,6 +44,8 @@ struct Lighting {
 	float4 environment;   // x intensity, y cos and z sin of the rotation about Y, w number of prefiltered levels (0 none).
 	float4 irradiance[9]; // order-2 spherical harmonics of the diffuse irradiance / pi (rgb).
 	CascadeMatrix cascades[4];
+	float4 skySun;        // xyz: direction towards the sun, w: angular radius of the sun and moon discs (0 none).
+	float4 skyBodies;     // pre-exposed radiance: x sun disc, y moon disc, z brightest stars.
 };
 
 [[vk::binding(0)]]

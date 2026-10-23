@@ -417,6 +417,13 @@ private:
 
 	/**
 	 * @brief
+	 *  Outline the silhouette of the meshes of the selection (its subtree) in the next render; nothing without one.
+	 * @param[in] iScene The scene drawn.
+	 */
+	void updateSelectionOutline(const shared<scene::Scene>& iScene) const;
+
+	/**
+	 * @brief
 	 *  Whether the camera markers are drawn as 3D models with their frustum (the 3D perspective view in Edit).
 	 * @return True in the 3D perspective view.
 	 */

@@ -8,10 +8,10 @@
 
 properties = {
     { name = "sparrow_speed", type = "float", default = 5.5 },
+    { name = "butterflies", type = "int", default = 8, min = 0 },
+    { name = "sparrows", type = "int", default = 3, min = 0 },
 }
 
-local BUTTERFLIES = 8
-local SPARROWS = 3
 local MAP_W = 64
 local SPARROW_SPEED    -- set from the properties in on_create
 
@@ -21,14 +21,14 @@ local clock = 0
 
 function on_create()
     SPARROW_SPEED = sparrow_speed
-    for n = 1, BUTTERFLIES do
+    for n = 1, butterflies do
         local id = scene.find_entity("Butterfly_" .. n)
         if id ~= 0 then
             local x, y, z = transform.get_position(id)
             flies[#flies + 1] = { id = id, x = x, y = y, z = z, phase = n * 1.7, size = 0.8 }
         end
     end
-    for n = 1, SPARROWS do
+    for n = 1, sparrows do
         local id = scene.find_entity("Sparrow_" .. n)
         if id ~= 0 then
             birds[#birds + 1] = { id = id, wait = 4 + n * 5.5, x = -5, y = -10, dx = 1, dy = 0 }

@@ -17,6 +17,11 @@ properties = {
     { name = "target_trips", type = "float", default = 20.0 },
     { name = "toast_seconds", type = "float", default = 2.0 },
     { name = "pad_repeat", type = "float", default = 0.16 },
+    { name = "start_funds", type = "int", default = 1000, min = 0 },
+    { name = "road_cost", type = "int", default = 10, min = 0 },
+    { name = "road_refund", type = "int", default = 5, min = 0 },
+    { name = "tree_cost", type = "int", default = 3, min = 0 },
+    { name = "first_steep_slope", type = "int", default = 15, min = 0 },
 }
 
 local ROAD_X, ROAD_Y = 3, 11
@@ -34,8 +39,6 @@ local TILE_OF_MASK = {
 local FIRST_ROAD_TILE, LAST_ROAD_TILE = 11, 25
 local BUILDABLE = { [0] = true, [1] = true, [4] = true, [6] = true, [7] = true }
 local SIZE = 24
-local FIRST_STEEP_SLOPE = 15
-local START_FUNDS, ROAD_COST, ROAD_REFUND, TREE_COST = 1000, 10, 5, 3
 -- Victory objective: the town earns its keep once its vehicles have made this many trips (`town_trips`), set by the
 -- scene (`target_trips`).
 local TARGET_TRIPS = 20
@@ -70,7 +73,7 @@ local function play(path, volume)
 end
 
 local function money()
-    return gamestate.get("town_money", START_FUNDS)
+    return gamestate.get("town_money", start_funds)
 end
 
 local function toast(text)
@@ -150,14 +153,14 @@ local function build_problem(x, y)
     if not BUILDABLE[ground] then
         return "Cannot build here"
     end
-    if isometric.get_slope(map_id, x, y) >= FIRST_STEEP_SLOPE then
+    if isometric.get_slope(map_id, x, y) >= first_steep_slope then
         return "Too steep"
     end
     local _, overlay = isometric.get_cell(map_id, ROAD_LAYER, x, y)
     if overlay ~= -1 then
         return "Already built"
     end
-    if money() < ROAD_COST then
+    if money() < road_cost then
         return "Not enough funds"
     end
     return nil
@@ -173,7 +176,7 @@ local function build_road(x, y)
     isometric.set_cell(map_id, ROAD_LAYER, x, y, -1, ROAD_X) -- any road tile: refresh_around picks the shape
     refresh_around(x, y)
     built[y * SIZE + x] = true
-    gamestate.set("town_money", money() - ROAD_COST)
+    gamestate.set("town_money", money() - road_cost)
     gamestate.set("town_roads", gamestate.get("town_roads", 0) + 1)
     toast(clear_trees(x, y) > 0 and "Road built, tree cleared" or "Road built")
     play("sounds/town/click_build.wav", 0.7)
@@ -184,20 +187,20 @@ local function bulldoze(x, y)
         if not trees_at[y * SIZE + x] then
             return
         end
-        if money() < TREE_COST then
+        if money() < tree_cost then
             toast("Not enough funds")
             play("sounds/town/error.wav", 0.5)
             return
         end
         clear_trees(x, y)
-        gamestate.set("town_money", money() - TREE_COST)
-        toast("Tree removed (-" .. TREE_COST .. ")")
+        gamestate.set("town_money", money() - tree_cost)
+        toast("Tree removed (-" .. tree_cost .. ")")
         play("sounds/town/click_bulldoze.wav", 0.7)
         return
     end
     isometric.set_cell(map_id, ROAD_LAYER, x, y, -1, -1)
     refresh_around(x, y)
-    gamestate.set("town_money", money() + ROAD_REFUND)
+    gamestate.set("town_money", money() + road_refund)
     if built[y * SIZE + x] then
         built[y * SIZE + x] = nil
         gamestate.set("town_roads", gamestate.get("town_roads", 0) - 1)
@@ -333,7 +336,7 @@ function on_create()
     toast_id = ui.find("ToastText")
     tool_ids[TOOL_ROAD] = ui.find("ToolRoad")
     tool_ids[TOOL_BULLDOZE] = ui.find("ToolBulldoze")
-    gamestate.set("town_money", START_FUNDS)
+    gamestate.set("town_money", start_funds)
     gamestate.set("town_roads", 0)
     gamestate.set("town_trips", 0)
     gamestate.set("town_sounds", 0)

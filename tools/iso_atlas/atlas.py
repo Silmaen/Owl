@@ -28,7 +28,16 @@ from .objects import (
     smoke,
 )
 from .sample_map import write_map
-from .terrain import CONNECTION_NAMES, FOUNDATION_TOPS, SLOPE_COUNT, SLOPES, TERRAINS, draw_foundation, draw_surface
+from .terrain import (
+    CONNECTION_NAMES,
+    FOUNDATION_TOPS,
+    RELIEFS,
+    SLOPE_COUNT,
+    SLOPES,
+    TERRAINS,
+    draw_foundation,
+    draw_surface,
+)
 from .town_map import write_town_map
 
 COLUMNS = 16
@@ -97,18 +106,20 @@ def build_terrain(seed: int, scale: int) -> Layers:
 
     for terrain in TERRAINS:
         x, y = place(terrain.id)
-        draw_surface(layers, x, y, terrain.material, SLOPES[0], seed * 7919 + 1000 + terrain.id, scale)
+        draw_surface(
+            layers, x, y, terrain.material, SLOPES[0], seed * 7919 + 1000 + terrain.id, scale, RELIEFS.get(terrain.id)
+        )
     for terrain_id in SLOPED_TERRAINS:
         terrain = TERRAINS[terrain_id]
         for slope in range(1, SLOPE_COUNT):
             x, y = place(tile_index(terrain_id, slope))
             tile_seed = seed * 7919 + 5000 + terrain_id * 100 + slope
-            draw_surface(layers, x, y, terrain.material, SLOPES[slope], tile_seed, scale)
-    for set_index, (_, top) in enumerate(FOUNDATION_TOPS):
+            draw_surface(layers, x, y, terrain.material, SLOPES[slope], tile_seed, scale, RELIEFS.get(terrain_id))
+    for set_index, (top_id, top) in enumerate(FOUNDATION_TOPS):
         for slope in range(1, SLOPE_COUNT):
             x, y = place(foundation_index(set_index, slope))
             tile_seed = seed * 7919 + 9000 + set_index * 100 + slope
-            draw_foundation(layers, x, y, top, SLOPES[slope], tile_seed, scale)
+            draw_foundation(layers, x, y, top, SLOPES[slope], tile_seed, scale, RELIEFS.get(top_id))
     return layers
 
 
@@ -248,9 +259,7 @@ def _save(layers: Layers, folder: Path, stem: str, level: str) -> list[Path]:
     return written
 
 
-def generate(
-    project: Path, seed: int = 1, levels: tuple[str, ...] = LEVELS, tests: Path | None = None
-) -> list[Path]:
+def generate(project: Path, seed: int = 1, levels: tuple[str, ...] = LEVELS, tests: Path | None = None) -> list[Path]:
     """
     Generate every atlas, the tilesets, the sprites and the town map into a project folder, and the test maps.
 

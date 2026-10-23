@@ -21,6 +21,7 @@
 #include <scene/component/components.h>
 
 #include <chrono>
+#include <tuple>
 
 using namespace owl;
 
@@ -161,4 +162,22 @@ TEST_F(VoxelRuntimeRenderTest, SynchronousModeMeshesInTheFrame) {
 	EXPECT_EQ(stats.pendingJobCount, 0u);
 	sc->onEndRuntime();
 	renderer::RendererVoxel::setMeshingConfig(previous);
+}
+
+TEST_F(VoxelRuntimeRenderTest, ATilesetWithReliefAndRoughnessMapsStillDraws) {
+	const auto sc = makeVoxelScene();
+	for (const auto [handle, world]: sc->registry.view<scene::component::VoxelWorld>().each()) {
+		std::ignore = handle;
+		const auto map = [] -> shared<renderer::gpu::Texture2D> {
+			return renderer::gpu::Texture2D::create(
+					renderer::gpu::Texture::Specification{.size = {64, 64},
+														  .format = renderer::gpu::ImageFormat::Rgba8});
+		};
+		world.tileset->normalTexture = map();
+		world.tileset->roughnessTexture = map();
+	}
+	sc->onStartRuntime();
+	frameThenUpload([&]() -> void { sc->onUpdateRuntime(makeStep(16)); });
+	EXPECT_GE(renderer::RendererVoxel::getStatistics(voxelCache()).drawnMeshCount, 1u);
+	sc->onEndRuntime();
 }

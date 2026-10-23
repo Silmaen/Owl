@@ -9,9 +9,9 @@
 
 properties = {
     { name = "next_scene", type = "string", default = "scenes/victory.owl" },
+    { name = "bonus_per_percent", type = "int", default = 10, min = 0 },
 }
 
-local BONUS_PER_PERCENT = 10
 
 local leaving = false
 
@@ -37,7 +37,7 @@ function on_elevator_use()
     local items = ratio(gamestate.get("wolf_items", 0), gamestate.get("wolf_items_total", 0))
     local secrets = ratio(gamestate.get("wolf_secrets", 0), gamestate.get("wolf_secrets_total", 0))
     local explored = gamestate.get("wolf_explored", 0)
-    local bonus = (items + secrets + explored) * BONUS_PER_PERCENT
+    local bonus = (items + secrets + explored) * bonus_per_percent
     local score = gamestate.get("wolf_score", 0) + bonus
     gamestate.set("wolf_score", score)
     gamestate.set("wolf_tally_level", level)

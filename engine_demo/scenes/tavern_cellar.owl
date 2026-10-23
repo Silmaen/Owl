@@ -1,0 +1,403 @@
+Scene: TavernCellar
+FormatVersion: 7
+Hud: huds/tavern.owlhud
+SceneScript:
+  scriptPath: scripts/tavern/cellar.lua
+EnabledRenderers:
+  - Name: world
+    Enabled: false
+  - Name: mesh_world
+    Enabled: true
+    Overrides:
+      OcclusionCulling: true
+  - Name: ui
+    Enabled: false
+Entities:
+  - Entity: 3950000000000000001
+    Tag:
+      tag: CellarPlayer
+    Transform:
+      translation: [2.9, 1.6, 2.2]
+      rotation: [-0.1, 0.8, 0]
+      scale: [1, 1, 1]
+    Camera:
+      camera:
+        projectionType: Perspective
+        perspectiveFOV: 0.68
+        perspectiveNear: 0.05
+        perspectiveFar: 60
+        orthographicSize: 8
+        orthographicNear: -1
+        orthographicFar: 10
+        toneMapping: Aces
+        postProcess: {ev100: 2.5, exposure: 0, autoExposure: false, bloom: true, bloomThreshold: 1, bloomKnee: 0.5, bloomIntensity: 0.08, bloomScatter: 0.7, vignette: true, vignetteIntensity: 0.4, vignetteSmoothness: 0.5, vignetteColor: [0, 0, 0]}
+      primary: true
+      fixedAspectRatio: false
+    FirstPersonController: {enabled: true, walkSpeed: 2.2, runSpeed: 4, lookSpeed: 1.8, mouseSensitivity: 0.0025, captureCursor: true, eyeHeight: 1.6, height: 1.75, radius: 0.25, stepHeight: 0.3, gravity: 9.81, jumpSpeed: 0}
+    Visibility:
+      gameVisible: true
+  - Entity: 3950000000000000002
+    Tag:
+      tag: Lantern
+    Transform:
+      translation: [0.25, -0.35, -0.1]
+      rotation: [-0.12, 0, 0]
+      scale: [1, 1, 1]
+    Hierarchy: {parentId: 3950000000000000001}
+    Light:
+      type: Spot
+      enabled: true
+      color: [1, 0.72, 0.42]
+      intensity: 900
+      range: 11
+      innerAngle: 0.45
+      outerAngle: 0.8
+    LightFlicker:
+      style: Candle
+      amplitude: 0.1
+      seed: 3
+    Visibility:
+      gameVisible: true
+  - Entity: 3950000000000000003
+    Tag:
+      tag: LanternHalo
+    Transform:
+      translation: [0.25, -0.35, -0.1]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Hierarchy: {parentId: 3950000000000000001}
+    Light:
+      type: Point
+      enabled: true
+      color: [1, 0.65, 0.35]
+      intensity: 40
+      range: 4
+    Visibility:
+      gameVisible: true
+  - Entity: 3950000000000000004
+    Tag:
+      tag: Ambient
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Environment: {hdri: "", ambient: [0.3, 0.34, 0.45], intensity: 0.15, rotation: 0, showSky: false}
+    Visibility:
+      gameVisible: true
+  - Entity: 3950000000000000010
+    Tag:
+      tag: Floor
+    Transform:
+      translation: [0.5, 0, 0.5]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    MeshRenderer:
+      mesh: meshes/tavern/floor.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - material: materials/stone_floor.owlmat
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 3950000000000000011
+    Tag:
+      tag: Ceiling
+    Transform:
+      translation: [0.5, 3.1, 0.5]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    MeshRenderer:
+      mesh: meshes/tavern/floor.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - material: materials/rough_wood.owlmat
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 3950000000000000012
+    Tag:
+      tag: BackWall
+    Transform:
+      translation: [0.5, 0, -3.2]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    MeshRenderer:
+      mesh: meshes/tavern/wall.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - material: materials/hearth_stone.owlmat
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 3950000000000000013
+    Tag:
+      tag: FrontWall
+    Transform:
+      translation: [0.5, 0, 4.2]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    MeshRenderer:
+      mesh: meshes/tavern/wall.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - material: materials/hearth_stone.owlmat
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 3950000000000000014
+    Tag:
+      tag: LeftWall
+    Transform:
+      translation: [-3.2, 0, 0.5]
+      rotation: [0, 1.5708, 0]
+      scale: [1, 1, 1]
+    MeshRenderer:
+      mesh: meshes/tavern/wall.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - material: materials/hearth_stone.owlmat
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 3950000000000000015
+    Tag:
+      tag: RightWall
+    Transform:
+      translation: [4.2, 0, 0.5]
+      rotation: [0, 1.5708, 0]
+      scale: [1, 1, 1]
+    MeshRenderer:
+      mesh: meshes/tavern/wall.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - material: materials/hearth_stone.owlmat
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 3950000000000000020
+    Tag:
+      tag: Ladder
+    Transform:
+      translation: [2.9, 0, 3.3]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    MeshRenderer:
+      mesh: meshes/tavern/ladder.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - material: materials/rough_wood.owlmat
+    RendererTag:
+      Name: mesh_world
+    Trigger: {Type: Interaction, CallbackName: on_ladder_interact}
+    LuaScript:
+      scriptPath: scripts/tavern/cellar_ladder.lua
+    Visibility:
+      gameVisible: true
+  - Entity: 3950000000000000030
+    Tag:
+      tag: Barrel1
+    Transform:
+      translation: [3.5, 0, -2.6]
+      rotation: [0, 0.3, 0]
+      scale: [1, 1, 1]
+    MeshRenderer:
+      mesh: meshes/tavern/barrel.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - material: materials/rough_wood.owlmat
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 3950000000000000031
+    Tag:
+      tag: Barrel2
+    Transform:
+      translation: [2.8, 0, -2.7]
+      rotation: [0, 1.1, 0]
+      scale: [1, 1, 1]
+    MeshRenderer:
+      mesh: meshes/tavern/barrel.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - material: materials/rough_wood.owlmat
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 3950000000000000032
+    Tag:
+      tag: Barrel3
+    Transform:
+      translation: [3.55, 0, -1.9]
+      rotation: [0, 2.0, 0]
+      scale: [1, 1, 1]
+    MeshRenderer:
+      mesh: meshes/tavern/barrel.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - material: materials/rough_wood.owlmat
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 3950000000000000033
+    Tag:
+      tag: Barrel4
+    Transform:
+      translation: [-2.6, 0, 2.4]
+      rotation: [0, 0.5, 0]
+      scale: [1, 1, 1]
+    MeshRenderer:
+      mesh: meshes/tavern/barrel.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - material: materials/rough_wood.owlmat
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 3950000000000000034
+    Tag:
+      tag: Barrel5
+    Transform:
+      translation: [-2.6, 0, 1.7]
+      rotation: [0, 1.7, 0]
+      scale: [1, 1, 1]
+    MeshRenderer:
+      mesh: meshes/tavern/barrel.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - material: materials/rough_wood.owlmat
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 3950000000000000035
+    Tag:
+      tag: Barrel6
+    Transform:
+      translation: [-1.9, 0, 3.5]
+      rotation: [0, 2.6, 0]
+      scale: [1, 1, 1]
+    MeshRenderer:
+      mesh: meshes/tavern/barrel.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - material: materials/rough_wood.owlmat
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 3950000000000000040
+    Tag:
+      tag: LogStack
+    Transform:
+      translation: [0.6, 0, -2.85]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    MeshRenderer:
+      mesh: meshes/tavern/log_stack.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - material: materials/firewood.owlmat
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 3950000000000000041
+    Tag:
+      tag: Chest
+    Transform:
+      translation: [-2.4, 0, -2.4]
+      rotation: [0, 0.785, 0]
+      scale: [1, 1, 1]
+    MeshRenderer:
+      mesh: meshes/tavern/chest.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - material: materials/rough_wood.owlmat
+    RendererTag:
+      Name: mesh_world
+    Trigger: {Type: Interaction, CallbackName: on_chest_interact}
+    LuaScript:
+      scriptPath: scripts/tavern/treasure_chest.lua
+    Visibility:
+      gameVisible: true
+  - Entity: 3950000000000000042
+    Tag:
+      tag: ChestIron
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Hierarchy: {parentId: 3950000000000000041}
+    MeshRenderer:
+      mesh: meshes/tavern/chest_iron.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - material: materials/wrought_iron.owlmat
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 3950000000000000043
+    Tag:
+      tag: ChestGlint
+    Transform:
+      translation: [-2.1, 0.9, -2.1]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Light:
+      type: Point
+      enabled: true
+      color: [1, 0.8, 0.45]
+      intensity: 12
+      range: 1.6
+    LightFlicker:
+      style: Pulse
+      amplitude: 0.5
+      speed: 0.8
+      seed: 11
+    Visibility:
+      gameVisible: true
+  - Entity: 3950000000000000021
+    Tag:
+      tag: CeilingHatch
+    Transform:
+      translation: [0, 2.95, -0.4]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Hierarchy: {parentId: 3950000000000000020}
+    MeshRenderer:
+      mesh: meshes/tavern/trapdoor.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - material: materials/rough_wood.owlmat
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true

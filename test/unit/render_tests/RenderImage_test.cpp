@@ -342,6 +342,13 @@ INSTANTIATE_TEST_SUITE_P(Mesh, RenderImage, testing::Values(RenderCase{"mesh", "
 							 return iInfo.param.scene + "_" + iInfo.param.backend;
 						 });
 
+// What a first-person walker aims at is outlined: in full where it shows, dimmed behind the crate in front of it.
+INSTANTIATE_TEST_SUITE_P(Outline, RenderImage,
+						 testing::Values(RenderCase{"outline", "vulkan"}, RenderCase{"outline", "opengl"}),
+						 [](const testing::TestParamInfo<RenderCase>& iInfo) -> std::string {
+							 return iInfo.param.scene + "_" + iInfo.param.backend;
+						 });
+
 // Billboard sprites of the raycaster drawn on the GPU in one instanced call, sorted far to near on the GPU, a sprite
 // cut by a wall edge and two overlapping lamps.
 INSTANTIATE_TEST_SUITE_P(RaycastSprites, RenderImage,

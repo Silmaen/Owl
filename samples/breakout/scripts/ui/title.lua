@@ -3,8 +3,11 @@
 -- cleared from the settings (`breakout_best`, `breakout_done_N`); the halo of the neon title flickers now and then.
 -- Every change of screen is a magenta wipe (`scene.transition_to` with a colour).
 
+properties = {
+    { name = "wipe_color", type = "color", default = { 0.45, 0.05, 0.55, 1 } },
+}
+
 local LEVEL_COUNT = 5
-local WIPE = { 0.45, 0.05, 0.55 }
 
 local leaving = false
 local window_id, back_id, how_to_id, glow_id = 0, 0, 0, 0
@@ -14,12 +17,12 @@ local function leave(path, jingle)
     if leaving then return end
     leaving = true
     if jingle then sound.play("sounds/ui/start.wav") end
-    scene.transition_to(path, "wipe_up", 0.3, WIPE[1], WIPE[2], WIPE[3])
+    scene.transition_to(path, "wipe_up", 0.3, wipe_color.r, wipe_color.g, wipe_color.b)
 end
 
 function on_create()
     if not ui.is_transition_active() then
-        ui.transition_play("wipe_up", 0.4, WIPE[1], WIPE[2], WIPE[3])
+        ui.transition_play("wipe_up", 0.4, wipe_color.r, wipe_color.g, wipe_color.b)
     end
     window_id = scene.find_entity("HowToWindow")
     back_id = scene.find_entity("HowToBackButton")

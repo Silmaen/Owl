@@ -4,11 +4,16 @@
 -- On the title a ball and a paddle play by themselves (`MenuBall`, `MenuPaddle`): a brick the ball hits goes dark and
 -- comes back a few seconds later with a flash. Nothing here reads the input, the menus stay in front.
 
-local WAVE_SPEED, WAVE_LENGTH = 2.4, 0.45
-local BALL_SPEED, BALL_HALF = 7.5, 0.15
+properties = {
+    { name = "wave_speed", type = "float", default = 2.4, min = 0 },
+    { name = "wave_length", type = "float", default = 0.45, min = 0.01 },
+    { name = "ball_speed", type = "float", default = 7.5, min = 0 },
+    { name = "respawn_time", type = "float", default = 4.0, min = 0 },
+}
+
+local BALL_HALF = 0.15
 local BRICK_HALF_W, BRICK_HALF_H = 0.75, 0.25
 local X_LIMIT, FLOOR_Y, CEILING_Y = 9.4, -6.85, 6.6
-local RESPAWN = 4.0
 
 local bricks = {}
 local ball, paddle = 0, 0
@@ -25,7 +30,7 @@ function on_create()
     ball = scene.find_entity("MenuBall")
     paddle = scene.find_entity("MenuPaddle")
     local norm = math.sqrt(vx * vx + vy * vy)
-    vx, vy = vx / norm * BALL_SPEED, vy / norm * BALL_SPEED
+    vx, vy = vx / norm * ball_speed, vy / norm * ball_speed
 end
 
 local function light(brick, level)
@@ -42,7 +47,7 @@ local function hit_brick()
     for _, brick in ipairs(bricks) do
         if brick.down <= 0 and math.abs(bx - brick.x) < BRICK_HALF_W + BALL_HALF and
                 math.abs(by - brick.y) < BRICK_HALF_H + BALL_HALF then
-            brick.down = RESPAWN
+            brick.down = respawn_time
             ui.set_visible(brick.id, false)
             return true
         end
@@ -65,7 +70,7 @@ local function play(dt)
         -- The paddle is always there: the angle depends on where the ball lands on it.
         by = FLOOR_Y
         local angle = math.max(-0.9, math.min(0.9, (bx - px) * 0.8))
-        vx, vy = math.sin(angle) * BALL_SPEED, math.cos(angle) * BALL_SPEED
+        vx, vy = math.sin(angle) * ball_speed, math.cos(angle) * ball_speed
     end
     -- The paddle follows the ball a little late, as a player would.
     px = px + (bx - px) * math.min(1.0, dt * 6.0)
@@ -84,7 +89,7 @@ function on_update(dt)
                 light(brick, 1.0)
             end
         else
-            local wave = 0.5 + 0.5 * math.cos(brick.x * WAVE_LENGTH - clock * WAVE_SPEED + brick.y * 0.6)
+            local wave = 0.5 + 0.5 * math.cos(brick.x * wave_length - clock * wave_speed + brick.y * 0.6)
             light(brick, 0.3 + 0.7 * wave * wave * wave)
         end
     end

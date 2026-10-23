@@ -1,8 +1,11 @@
 -- Game over screen of Breakout: the score counted up arcade style, the best one (the `breakout_best` setting, kept
 -- when beaten), Retry the level lost with three new lives, or back to the title.
 
-local WIPE = { 0.45, 0.05, 0.55 }
-local COUNT_TIME = 1.0
+properties = {
+    { name = "wipe_color", type = "color", default = { 0.45, 0.05, 0.55, 1 } },
+    { name = "count_time", type = "float", default = 1.0, min = 0.01 },
+}
+
 
 local score, shown, clock = 0, -1, 0.0
 local score_id = 0
@@ -10,7 +13,7 @@ local leaving = false
 
 function on_create()
     if not ui.is_transition_active() then
-        ui.transition_play("wipe_up", 0.4, WIPE[1], WIPE[2], WIPE[3])
+        ui.transition_play("wipe_up", 0.4, wipe_color.r, wipe_color.g, wipe_color.b)
     end
     score = gamestate.get("breakout_score", 0)
     local best = settings.get("breakout_best", 0)
@@ -26,8 +29,8 @@ function on_create()
 end
 
 function on_update(dt)
-    clock = math.min(COUNT_TIME, clock + dt)
-    local value = math.floor(score * clock / COUNT_TIME + 0.5)
+    clock = math.min(count_time, clock + dt)
+    local value = math.floor(score * clock / count_time + 0.5)
     if value ~= shown and score_id ~= 0 then
         shown = value
         ui.set_text(score_id, string.format("SCORE %06d", value))
@@ -44,12 +47,12 @@ function on_retry_clicked()
     gamestate.set("breakout_lives", 3)
     gamestate.set("breakout_level", level)
     gamestate.set("breakout_scene", target)
-    scene.transition_to(target, "wipe_up", 0.3, WIPE[1], WIPE[2], WIPE[3])
+    scene.transition_to(target, "wipe_up", 0.3, wipe_color.r, wipe_color.g, wipe_color.b)
 end
 
 function on_menu_clicked()
     if leaving then return end
     leaving = true
     gamestate.clear()
-    scene.transition_to("scenes/title.owl", "wipe_up", 0.3, WIPE[1], WIPE[2], WIPE[3])
+    scene.transition_to("scenes/title.owl", "wipe_up", 0.3, wipe_color.r, wipe_color.g, wipe_color.b)
 end

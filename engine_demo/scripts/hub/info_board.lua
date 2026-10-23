@@ -7,7 +7,9 @@
 -- `board_closed_frame` is the `board_frame` at which the window was closed, so the player script does not take the
 -- Escape that closed the window for a pause.
 
-local SCROLL_SPEED = 420
+properties = {
+    { name = "scroll_speed", type = "float", default = 420.0 },
+}
 
 local window_id, scroll_id = 0, 0
 local open = false
@@ -67,7 +69,7 @@ function on_update(dt)
     local _, dy = input.get_action_vector("move")
     local _, y = ui.scroll_get(scroll_id)
     if dy ~= 0 then
-        y = y + dy * SCROLL_SPEED * dt
+        y = y + dy * scroll_speed * dt
         ui.scroll_set(scroll_id, 0, y)
         _, y = ui.scroll_get(scroll_id)
     end

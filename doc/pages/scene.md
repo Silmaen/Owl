@@ -341,6 +341,49 @@ YAML key: `Environment`. The first visible one of the scene lights the 3D layers
 with the image, diffuse and reflections; without an image the `ambient` colour is a constant sky, and without any `Environment` the layer `Ambient` is. See
 [Renderer > Image-based lighting](renderer.md#renderer-ibl).
 
+#### ProceduralSky {#proceduralsky-component}
+
+| Field             | Type     | Default              | Description                                                             |
+|-------------------|----------|----------------------|-------------------------------------------------------------------------|
+| `enabled`         | `bool`   | `true`               | Off goes back to the image or the constant ambient of the `Environment` |
+| `sunDirection`    | `vec3`   | `{0.3, 0.8, -0.5}`   | Direction towards the sun; a `DayNightCycle` writes it                  |
+| `turbidity`       | `float`  | `3`                  | Haze of the air, from 2 (very clear) to 10 (hazy)                       |
+| `groundColor`     | `vec3`   | `{0.38, 0.36, 0.33}` | Colour of the ground below the horizon (sRGB)                           |
+| `nightColor`      | `vec3`   | `{0.42, 0.48, 0.66}` | Colour of the night sky (sRGB)                                          |
+| `nightBrightness` | `float`  | `0.015`              | Brightness of the night sky against the zenith at noon                  |
+| `stars`           | `float`  | `1`                  | Brightness of the stars, 0 for none                                     |
+| `discSize`        | `float`  | `2.5`                | Angular diameter of the sun and moon discs, in degrees; 0 for none      |
+| `resolution`      | `uint32` | `512`                | Width of the sky image, in pixels (its height is half)                  |
+
+YAML key: `ProceduralSky`. Computes a clear sky (Preetham model), a dusk glow and a dark night, and replaces the image of the `Environment` of the same scene: it keeps the `intensity`, `rotation` and `showSky` of the
+`Environment`, not its `hdri`. The sky is prefiltered on a worker like an HDRI, again whenever the sun moves; the
+scene lights and reflects it as it does an image ([Renderer > Image-based lighting](renderer.md#renderer-ibl)). The sun,
+the moon (opposite the sun, with seas and craters) and the stars are not in that image: the sky shader draws them at the
+resolution of the screen (`renderer::skyBodiesOf`), so the sun moves smoothly and the stars stay about a pixel wide.
+
+#### DayNightCycle {#daynightcycle-component}
+
+| Field             | Type    | Default           | Description                                                                  |
+|-------------------|---------|-------------------|------------------------------------------------------------------------------|
+| `enabled`         | `bool`  | `true`            | Off freezes the time of day (the lighting still follows it)                  |
+| `timeOfDay`       | `float` | `9`               | Hour of the day, from 0 to 24                                                |
+| `dayLength`       | `float` | `600`             | Duration of a whole day, in seconds                                          |
+| `azimuth`         | `float` | `90`              | Direction of the sunrise about the vertical axis, in degrees (0: -Z, 90: +X) |
+| `maxElevation`    | `float` | `60`              | Height of the sun at noon, in degrees above the horizon                      |
+| `sun`             | UUID    | `0`               | Directional `Light` turned with the sun and the moon (0: none)               |
+| `sunIlluminance`  | `float` | `100000`          | Illuminance of the sun at its highest, in lux                                |
+| `sunColor`        | `vec3`  | `{1, 0.96, 0.9}`  | Colour of the sun high in the sky (sRGB)                                     |
+| `sunsetColor`     | `vec3`  | `{1, 0.55, 0.3}`  | Colour of the sun at the horizon (sRGB)                                      |
+| `moonIlluminance` | `float` | `4000`            | Illuminance of the moon at its highest, in lux (brighter than nature)        |
+| `moonColor`       | `vec3`  | `{0.62, 0.72, 1}` | Colour of the moonlight (sRGB)                                               |
+| `nightExposure`   | `float` | `3`               | Exposure added to the cameras at night in Play, in EV                        |
+
+YAML key: `DayNightCycle`, system `owl.day_night` (`PostPhysics`). The hours advance with the scene time; each frame the system turns the `sun` light (shadows
+included) along the path of the sun by day and of the moon by night, sets its colour and illuminance, writes the
+direction into the `ProceduralSky` of the scene and, in Play, adds `nightExposure` to the exposure of the cameras as
+the eye adapts to the dark. Lua: `entity.get_time_of_day(id)`, `entity.set_time_of_day(id, hours)`,
+`entity.set_day_night_enabled(id, bool)`.
+
 #### Text
 
 | Field               | Type     | Default        | Description                                                                  |
@@ -390,7 +433,9 @@ YAML key: `Tilemap`.
 The **`Tileset`** asset (`.owltileset`, `scene::Tileset`, authored in the Tile Palette) holds the atlas texture,
 `tileWidth` / `tileHeight`, `columns × rows`, sparse per-tile metadata (`collidable`, `name`) and its `kind`:
 `Orthogonal` (default, omitted) or `Isometric` for the 2:1 diamond tiles of the isometric layer
-([Isometric layer](renderer.md)).
+([Isometric layer](renderer.md)). A tileset drawn by a voxel world may add `normalTexture` and `roughnessTexture`,
+images on the same grid as the atlas (tangent-space normals; roughness, where 50 % grey keeps the roughness of the block):
+`voxel.slang` reads them and averages the far texels of such atlases, and export packs them.
 
 ##### Tilemap storage and the `.owltilemap` file {#tilemap-storage}
 
@@ -508,6 +553,19 @@ YAML key: `Camera`. See [Renderer > Camera System](renderer.md).
 `postProcess` sits inside the `camera` map next to `toneMapping`; every key is optional. The passes and their order are in
 [Renderer > Post-process](renderer.md#renderer-post-process).
 
+#### RenderTarget {#rendertarget}
+
+| Field        | Type     | Default        | Description                                |
+|--------------|----------|----------------|--------------------------------------------|
+| `enabled`    | `bool`   | `true`         | Off keeps the last image                   |
+| `targetName` | `string` | `minimap`      | Name the `UiImage` of the HUD refers to    |
+| `size`       | `vec2ui` | `{256, 256}`   | Size of the image, in pixels               |
+| `clearColor` | `vec4`   | `{0, 0, 0, 1}` | Colour of the image where nothing is drawn |
+
+YAML key: `RenderTarget`. On an entity with a `Camera`: that camera draws the scene each frame into an off-screen
+image of `size` pixels instead of the screen, and a `UiImage` whose `renderTarget` is `targetName` shows it
+([HUD system > Minimap](design/hud-system.md#minimap)). With a `FollowTarget` on the same entity it makes a minimap.
+
 ### Gameplay Components
 
 #### Player
@@ -520,6 +578,35 @@ YAML key: `Camera`. See [Renderer > Camera System](renderer.md).
 | `canJump`       | `bool`  | `true`  | Whether jumping is allowed |
 
 YAML key: `Player`. Input is read each frame from the `move` and `jump` actions via `parseInputs()`.
+
+#### FirstPersonController {#firstpersoncontroller-component}
+
+| Field              | Type    | Default  | Description                                                             |
+|--------------------|---------|----------|-------------------------------------------------------------------------|
+| `enabled`          | `bool`  | `true`   | Off leaves the entity to scripts; Lua `entity.set_first_person_enabled` |
+| `walkSpeed`        | `float` | `2.2`    | Walking speed, in world units per second                                |
+| `runSpeed`         | `float` | `4`      | Speed while `sprint` is held                                            |
+| `lookSpeed`        | `float` | `1.8`    | Speed of the `look` action, in radians per second                       |
+| `mouseSensitivity` | `float` | `0.0025` | Radians per pixel of mouse movement while the cursor is captured        |
+| `captureCursor`    | `bool`  | `true`   | Clicking the view captures the cursor for mouse look                    |
+| `eyeHeight`        | `float` | `1.6`    | Height of the eye above the feet                                        |
+| `height`           | `float` | `1.75`   | Height of the body box                                                  |
+| `radius`           | `float` | `0.25`   | Half width of the body box                                              |
+| `stepHeight`       | `float` | `0.35`   | Highest step climbed without jumping                                    |
+| `gravity`          | `float` | `9.81`   | Downward acceleration                                                   |
+| `jumpSpeed`        | `float` | `3.5`    | Upward speed of a jump; 0 for none                                      |
+| `reach`            | `float` | `2.2`    | Farthest an interaction trigger is used from, along the view            |
+
+YAML key: `FirstPersonController`, system `owl.first_person` (`PrePhysics`). Walks the entity (the eye, usually under a `Camera`) on foot in 3D: the actions
+`move`, `look`, `sprint` and `jump` drive it. The body box collides with the world boxes of the `MeshRenderer`
+entities (`data::geometry::moveBoxAmong`: per-axis resolution, wall sliding, steps up to `stepHeight`); the body holds
+still until every mesh of the scene is loaded. Without a `Player`, the `Trigger` components test the body box of
+the first walker (`FirstPersonController` or `VoxelPlayer`) against their own box in 3D. An `Interaction` trigger
+answers a first-person walker only when aimed at: the view ray hits the box of its meshes (its subtree, else its
+transform) within `reach`, before any other mesh; while aimed at, the silhouette of its meshes is outlined
+(`Scene::setOutline`, its box for a trigger without mesh), and `interact` uses it. The
+aiming crosshair of the voxel player shows, and the view is read from the `Transform` each frame, so a script or Owl
+Nest can turn the walker.
 
 #### PhysicBody
 
@@ -540,6 +627,7 @@ YAML key: `PhysicBody`; fields, defaults and lifecycle in [Physics](physics.md#p
 
 YAML key: `Trigger`. Overlap-based triggers detect player collision and fire Lua callbacks.
 All overlap triggers also dispatch `on_trigger_enter` / `on_trigger_exit` edge events.
+In a 3D scene, where no `Player` exists, the tested body is the box of the first `FirstPersonController` or `VoxelPlayer`.
 See [Lua Scripting > Trigger System](scripting.md) for callback details and examples.
 
 #### EntityLink
@@ -650,6 +738,20 @@ primary camera, plus its rest position, plus a drift that grows by `velocity` ea
 | `range`        | `vec3`  | `[20, 0, 0]`  | Half extent of the drift per axis; 0 for no wrap              |
 | `cameraFollow` | `float` | `0`           | Share of the camera movement followed: 0 pins it to the world |
 
+#### FollowTarget
+
+YAML key: `FollowTarget`, system `owl.follow_target`. Places the entity at the position of the `target` entity plus
+`offset` (world axes), and turns it with the heading of the target when `followYaw` is on, from the yaw it had at the start.
+
+| Field       | Type   | Default      | Description                            |
+|-------------|--------|--------------|----------------------------------------|
+| `enabled`   | `bool` | `true`       | Off leaves the entity where it is      |
+| `target`    | UUID   | `0`          | Entity followed (0: none)              |
+| `offset`    | `vec3` | `[0, 20, 0]` | Offset from the target, in world units |
+| `followYaw` | `bool` | `true`       | Turn with the heading of the target    |
+
+Lua switches it with `entity.set_follow_target_enabled(id, enabled)` and `entity.is_follow_target_enabled(id)`.
+
 ### Audio Components
 
 See [Sound System](sound.md) for the full audio guide.
@@ -745,10 +847,11 @@ height of the font (before format 3 it filled the ink height of the string, so o
 
 #### UiImage
 
-| Field        | Type     | Description            |
-|--------------|----------|------------------------|
-| `imageAsset` | `string` | Texture file path      |
-| `tint`       | `vec4`   | Tint colour multiplier |
+| Field          | Type     | Description                                                                                                 |
+|----------------|----------|-------------------------------------------------------------------------------------------------------------|
+| `imageAsset`   | `string` | Texture file path                                                                                           |
+| `tint`         | `vec4`   | Tint colour multiplier                                                                                      |
+| `renderTarget` | `string` | Name of a [`RenderTarget`](#rendertarget) of the scene shown in place of the texture; empty for the texture |
 
 #### UiPanel
 

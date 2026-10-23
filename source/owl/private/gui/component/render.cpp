@@ -1967,6 +1967,9 @@ void renderProps(UiText& ioComponent) {
 
 void renderProps(UiImage& ioComponent) {
 	widgets::textureField("Texture", ioComponent.texture);
+	prop::InputText("Render Target", &ioComponent.renderTarget);
+	fieldTooltip("Name of a Render Target of the scene: the image shows what its camera sees (a minimap), in place of "
+				 "the texture. Empty to show the texture.");
 	prop::ColorEdit4("Tint", reinterpret_cast<float*>(&ioComponent.tint));
 }
 
@@ -2791,6 +2794,124 @@ void renderProps(Drift& ioComponent) {
 			"Half extent of the drift along each axis: the entity jumps from +range back to -range; 0 for no wrap.");
 	prop::DragFloat("Camera Follow", &ioComponent.cameraFollow, 0.005f, 0.f, 1.f, "%.3f");
 	fieldTooltip("Share of the camera movement followed: 0 pins the entity to the world, 1 to the screen (parallax).");
+}
+
+void renderProps(FollowTarget& ioComponent) {
+	prop::Checkbox("Enabled", &ioComponent.enabled);
+	fieldTooltip("Switch the follow off to leave the entity where it is.");
+	auto target = static_cast<uint64_t>(ioComponent.target);
+	prop::row("Target", [&](const char*) -> bool {
+		if (scriptEntityPicker(target, ImGui::GetContentRegionAvail().x)) {
+			ioComponent.target = core::UUID{target};
+			return true;
+		}
+		return false;
+	});
+	fieldTooltip("Entity followed: this one stays at the offset from its world position.");
+	prop::DragFloat3("Offset", &ioComponent.offset.x(), 0.1f, -100000.f, 100000.f, "%.2f");
+	fieldTooltip("Offset from the target along the world axes, in world units.");
+	prop::Checkbox("Follow Yaw", &ioComponent.followYaw);
+	fieldTooltip("Turn with the heading of the target (its rotation about Y), pitch and roll kept: a minimap camera "
+				 "looking down keeps the player's forward at the top.");
+}
+
+void renderProps(RenderTarget& ioComponent) {
+	prop::Checkbox("Enabled", &ioComponent.enabled);
+	fieldTooltip("Draw the image each frame; off keeps the last one.");
+	prop::InputText("Target Name", &ioComponent.targetName);
+	fieldTooltip("Name a HUD UI Image gives in its Render Target field to show this image.");
+	std::array size{static_cast<int>(ioComponent.size.x()), static_cast<int>(ioComponent.size.y())};
+	if (prop::row("Size", [&](const char* iId) -> bool { return ImGui::DragInt2(iId, size.data(), 1.f, 1, 4096); }))
+		ioComponent.size = {static_cast<uint32_t>(std::clamp(size[0], 1, 4096)),
+							static_cast<uint32_t>(std::clamp(size[1], 1, 4096))};
+	fieldTooltip("Size of the image, in pixels. The camera of the entity draws into it: give it the same aspect.");
+	prop::ColorEdit4("Clear Color", &ioComponent.clearColor.x());
+	fieldTooltip("Colour of the image where nothing is drawn.");
+}
+
+void renderProps(ProceduralSky& ioComponent) {
+	prop::Checkbox("Enabled", &ioComponent.enabled);
+	fieldTooltip("Compute the sky from the sun; off goes back to the image or the ambient of the Environment.");
+	prop::DragFloat3("Sun Direction", &ioComponent.sunDirection.x(), 0.01f, -1.f, 1.f, "%.3f");
+	fieldTooltip("Direction towards the sun. A Day Night Cycle on the entity writes it from its time of day.");
+	prop::DragFloat("Turbidity", &ioComponent.turbidity, 0.05f, 1.7f, 10.f, "%.2f");
+	fieldTooltip("Haze of the air: 2 is a very clear sky, 10 a hazy one with a white horizon.");
+	prop::ColorEdit3("Ground Color", &ioComponent.groundColor.x());
+	fieldTooltip("Colour of the ground below the horizon, lit by the sky.");
+	prop::ColorEdit3("Night Color", &ioComponent.nightColor.x());
+	fieldTooltip("Colour of the night sky.");
+	prop::DragFloat("Night Brightness", &ioComponent.nightBrightness, 0.001f, 0.f, 1.f, "%.4f");
+	fieldTooltip("Brightness of the night sky against the zenith at noon (1): the light of the night.");
+	prop::DragFloat("Stars", &ioComponent.stars, 0.01f, 0.f, 10.f, "%.2f");
+	fieldTooltip("Brightness of the stars, 0 for none.");
+	prop::DragFloat("Disc Size", &ioComponent.discSize, 0.05f, 0.f, 20.f, "%.2f");
+	fieldTooltip("Angular diameter of the sun and moon discs, in degrees; 0 for none.");
+	int resolution = static_cast<int>(ioComponent.resolution);
+	if (prop::DragInt("Resolution", &resolution, 4.f, 64, 1024))
+		ioComponent.resolution = static_cast<uint32_t>(std::clamp(resolution, 64, 1024));
+	fieldTooltip("Width of the sky image in pixels, its height half of it. Sharper stars, a longer redraw.");
+}
+
+void renderProps(FirstPersonController& ioComponent) {
+	prop::Checkbox("Enabled", &ioComponent.enabled);
+	fieldTooltip("Walk the entity on foot; off leaves it to scripts.");
+	prop::DragFloat("Walk Speed", &ioComponent.walkSpeed, 0.05f, 0.f, 50.f, "%.2f");
+	prop::DragFloat("Run Speed", &ioComponent.runSpeed, 0.05f, 0.f, 50.f, "%.2f");
+	fieldTooltip("Speed while the sprint action is held.");
+	prop::DragFloat("Look Speed", &ioComponent.lookSpeed, 0.05f, 0.f, 20.f, "%.2f");
+	fieldTooltip("Radians per second of the look action (arrow keys, right stick).");
+	prop::DragFloat("Mouse Sensitivity", &ioComponent.mouseSensitivity, 0.0001f, 0.0001f, 0.05f, "%.4f");
+	fieldTooltip("Radians per pixel while the cursor is captured.");
+	prop::Checkbox("Capture Cursor", &ioComponent.captureCursor);
+	fieldTooltip("Clicking the view hides and locks the cursor for mouse look (Esc frees it).");
+	prop::DragFloat("Eye Height", &ioComponent.eyeHeight, 0.01f, 0.1f, 10.f, "%.2f");
+	fieldTooltip("Height of the eye (the transform of the entity) above the feet.");
+	prop::DragFloat("Height", &ioComponent.height, 0.01f, 0.2f, 10.f, "%.2f");
+	fieldTooltip("Height of the body box that collides with the meshes.");
+	prop::DragFloat("Radius", &ioComponent.radius, 0.01f, 0.05f, 5.f, "%.2f");
+	fieldTooltip("Half width of the body box.");
+	prop::DragFloat("Step Height", &ioComponent.stepHeight, 0.01f, 0.f, 2.f, "%.2f");
+	fieldTooltip("Highest step climbed without jumping: a box lower than this is walked onto.");
+	prop::DragFloat("Gravity", &ioComponent.gravity, 0.05f, 0.f, 100.f, "%.2f");
+	prop::DragFloat("Jump Speed", &ioComponent.jumpSpeed, 0.05f, 0.f, 50.f, "%.2f");
+	fieldTooltip("Upward speed of a jump; 0 for no jump.");
+	prop::DragFloat("Reach", &ioComponent.reach, 0.05f, 0.f, 50.f, "%.2f");
+	fieldTooltip("Farthest an interaction trigger is used from: aim at it (its box is outlined) and press the interact "
+				 "action.");
+}
+
+void renderProps(DayNightCycle& ioComponent) {
+	prop::Checkbox("Enabled", &ioComponent.enabled);
+	fieldTooltip("Advance the hours in Play; off freezes the time of day, the lighting still follows it.");
+	prop::DragFloat("Time Of Day", &ioComponent.timeOfDay, 0.05f, 0.f, 24.f, "%.2f h");
+	fieldTooltip("Hour of the day: sunrise at 6, noon at 12, sunset at 18. Play starts at this hour.");
+	prop::DragFloat("Day Length", &ioComponent.dayLength, 1.f, 1.f, 86400.f, "%.0f s");
+	fieldTooltip("Duration of a whole day, in seconds.");
+	prop::DragFloat("Azimuth", &ioComponent.azimuth, 0.5f, -360.f, 360.f, "%.1f deg");
+	fieldTooltip("Direction of the sunrise about the vertical axis: 0 towards -Z, 90 towards +X.");
+	prop::DragFloat("Max Elevation", &ioComponent.maxElevation, 0.5f, 1.f, 90.f, "%.1f deg");
+	fieldTooltip("Height of the sun at noon above the horizon.");
+	auto sun = static_cast<uint64_t>(ioComponent.sun);
+	prop::row("Sun", [&](const char*) -> bool {
+		if (scriptEntityPicker(sun, ImGui::GetContentRegionAvail().x)) {
+			ioComponent.sun = core::UUID{sun};
+			return true;
+		}
+		return false;
+	});
+	fieldTooltip("Directional light turned along the path of the sun by day and of the moon by night.");
+	prop::DragFloat("Sun Illuminance", &ioComponent.sunIlluminance, 100.f, 0.f, 200000.f, "%.0f lx");
+	fieldTooltip("Illuminance of the sun at its highest; it fades to 0 at the horizon.");
+	prop::ColorEdit3("Sun Color", &ioComponent.sunColor.x());
+	fieldTooltip("Colour of the sun high in the sky.");
+	prop::ColorEdit3("Sunset Color", &ioComponent.sunsetColor.x());
+	fieldTooltip("Colour of the sun near the horizon, at dawn and dusk.");
+	prop::DragFloat("Moon Illuminance", &ioComponent.moonIlluminance, 10.f, 0.f, 100000.f, "%.0f lx");
+	fieldTooltip("Illuminance of the moon at its highest, brighter than nature for a playable night.");
+	prop::ColorEdit3("Moon Color", &ioComponent.moonColor.x());
+	fieldTooltip("Colour of the moonlight.");
+	prop::DragFloat("Night Exposure", &ioComponent.nightExposure, 0.05f, -10.f, 10.f, "%.2f EV");
+	fieldTooltip("Exposure added to the cameras at night in Play, as the eye adapts to the dark.");
 }
 
 void setOpenAssetHandler(std::function<void(const std::filesystem::path&)> iHandler) {

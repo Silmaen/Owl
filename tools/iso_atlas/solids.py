@@ -38,6 +38,44 @@ class Hit:
 Shader = Callable[[Hit], RGB]
 
 
+class Surface:
+    """
+    A material with relief: one function gives the colour and the height of the surface detail above the solid.
+
+    The relief only bends the normal (and so the lighting); the depth and the silhouette stay those of the solid.
+    """
+
+    def __init__(self, sample: Callable[[Hit], tuple[RGB, float]]) -> None:
+        """
+        Store the sampling function.
+
+        :param sample: Colour before lighting and relief height in world units (a few hundredths) of a hit.
+        """
+        self.sample = sample
+
+    def __call__(self, hit: Hit) -> RGB:
+        """
+        Colour of a hit.
+
+        :param hit: The hit.
+        :return: The colour before lighting.
+        """
+        return self.sample(hit)[0]
+
+
+def sample_of(shader: Shader, hit: Hit) -> tuple[RGB, float]:
+    """
+    Colour and relief of any material.
+
+    :param shader: A plain shader or a ``Surface``.
+    :param hit: The hit.
+    :return: The colour and the relief height, 0 for a plain shader.
+    """
+    if isinstance(shader, Surface):
+        return shader.sample(hit)
+    return shader(hit), 0.0
+
+
 class Solid:
     """
     A shape with a material.
@@ -250,6 +288,39 @@ def pyramid(lo: Vec3, hi: Vec3, apex: float, shader: Shader) -> Convex:
     return Convex(planes, apex, shader)
 
 
+RELIEF_LIMIT = 0.9
+"""Largest tilt of a relief normal."""
+
+
+def bent_normal(surface: Surface, hit: Hit, scale: int) -> Vec3:
+    """
+    Normal of a surface bent by its relief, from the height half a pixel away along both tangents.
+
+    :param surface: The material.
+    :param hit: The hit.
+    :param scale: Zoom factor.
+    :return: The unit normal.
+    """
+    n = hit.normal
+    t1 = (-n[1], n[0], 0.0)
+    if abs(n[0]) + abs(n[1]) < 0.2:
+        t1 = (1.0, 0.0, 0.0)
+    t1 = normalize(t1)
+    t2 = (n[1] * t1[2] - n[2] * t1[1], n[2] * t1[0] - n[0] * t1[2], n[0] * t1[1] - n[1] * t1[0])
+    eps = 1.0 / (48.0 * scale)
+
+    def height(t: Vec3, sign: float) -> float:
+        p = (hit.point[0] + sign * eps * t[0], hit.point[1] + sign * eps * t[1], hit.point[2] + sign * eps * t[2])
+        return surface.sample(Hit(p, n, hit.ix, hit.iy, hit.seed))[1]
+
+    g1 = (height(t1, 1.0) - height(t1, -1.0)) / (2.0 * eps)
+    g2 = (height(t2, 1.0) - height(t2, -1.0)) / (2.0 * eps)
+    length = math.hypot(g1, g2)
+    if length > RELIEF_LIMIT:
+        g1, g2 = g1 * RELIEF_LIMIT / length, g2 * RELIEF_LIMIT / length
+    return normalize((n[0] - g1 * t1[0] - g2 * t2[0], n[1] - g1 * t1[1] - g2 * t2[1], n[2] - g1 * t1[2] - g2 * t2[2]))
+
+
 @dataclass
 class Rendered:
     """
@@ -306,7 +377,11 @@ def render(solids: list[Solid], footprint: tuple[int, int], height_px: int, seed
                 continue
             t, normal, index = best
             point = (origin[0] + direction[0] * t, origin[1] + direction[1] * t, origin[2] + direction[2] * t)
-            color = solids[index].shader(Hit(point, normal, x, y, seed))
+            hit = Hit(point, normal, x, y, seed)
+            shader = solids[index].shader
+            color = shader(hit)
+            if isinstance(shader, Surface):
+                normal = bent_normal(shader, hit, scale)
             shade = light(normal) * (0.82 + 0.18 * min(1.0, point[2] / 0.3))
             layers.put(x, y, scale_color(color, shade), normal, point[2])
             owner[(x, y)] = index

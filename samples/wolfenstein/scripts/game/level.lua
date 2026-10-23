@@ -13,12 +13,12 @@
 properties = {
     { name = "level", type = "int", default = 1 },
     { name = "title", type = "string", default = "Floor 1" },
+    { name = "fade_color", type = "color", default = { 0.22, 0.02, 0.02, 1 } },
+    { name = "toast_seconds", type = "float", default = 2.5, min = 0 },
 }
 
 local ITEM_TAGS = { "Cross", "Chalice", "Chest", "Crown", "Food", "DogFood", "GoldKey", "BlueKey" }
 local AUTOSAVE_SLOT, QUICK_SLOT = 1, 2
-local TOAST_SECONDS = 2.5
-local FADE = { 0.22, 0.02, 0.02 }
 
 local ids = {}
 local shown = {}
@@ -89,7 +89,7 @@ function on_create()
     end
     set_paused(false)
     if not ui.is_transition_active() then
-        ui.transition_play("fade_in", 0.5, FADE[1], FADE[2], FADE[3])
+        ui.transition_play("fade_in", 0.5, fade_color.r, fade_color.g, fade_color.b)
     end
 end
 
@@ -113,7 +113,7 @@ local function toast(text)
     if ids.ToastText ~= 0 then
         ui.set_visible(ids.ToastText, true)
     end
-    toast_left = TOAST_SECONDS
+    toast_left = toast_seconds
 end
 
 function on_pause_resume()
@@ -127,7 +127,7 @@ function on_pause_quit()
     leaving = true
     set_paused(false)
     gamestate.set("wolf_leaving", 1)
-    scene.transition_to("scenes/title.owl", "fade_out", 0.5, FADE[1], FADE[2], FADE[3])
+    scene.transition_to("scenes/title.owl", "fade_out", 0.5, fade_color.r, fade_color.g, fade_color.b)
 end
 
 function on_update(dt)

@@ -175,7 +175,7 @@ A `.owltileset` opens in a `TilesetDocument`: **Atlas** sets the texture, grid, 
 (`Orthogonal` square tiles, `Isometric` 2:1 diamonds written `kind: Isometric`); the properties panel edits the
 clicked tile. An isometric tileset adds **Slopes**: per terrain or overlay id, the tile of each of the 19 slopes and
 its foundation (`-1` falls back on the flat tile). A tile's **Navigation** section puts it in a road graph, its joined
-sides shown as four arrows as on screen ([Pathfinding](pathfinding.md)). Every edit is one undo step of the document.
+sides shown as four arrows as on screen ([Pathfinding](pathfinding.md)). **Atlas** also takes the optional normal and roughness maps of a voxel tileset. Every edit is one undo step of the document.
 
 ### Scene Flow view
 
@@ -220,8 +220,8 @@ viewport, and a frame in the play colour outlines the viewport.
 (`CameraEditor::Projection::Orthographic`) faces the XY plane with the framing of the 3D view; `CameraEditor::frame`
 centres the selection. The grid follows the snap step (doubled while too dense), its axes in their colours: on the
 ground (XZ plane, `y = 0`) in the 3D view, on the XY plane in the 2D and isometric views; **Show > Grid on the ground**
-puts the 3D one back on the XY plane. The selection is outlined in orange: its quad for a 2D entity, the 12 edges of
-its bounding box for a mesh. Camera markers (**Show > Camera markers**) are an icon, an arrow and the field of view in
+puts the 3D one back on the XY plane. The selection is outlined in orange: its quad for a 2D entity, the silhouette of
+the meshes of its subtree for a 3D one, dimmed where other geometry hides it. Camera markers (**Show > Camera markers**) are an icon, an arrow and the field of view in
 the 2D views; the 3D view draws the model `meshes/camera.glb` of the editor assets (made by
 `tools/editor/generate_camera_mesh.py`), pickable, with the frustum of the camera (field of view, or box when
 orthographic) and a filled triangle above it pointing to the up of the camera. Each light has a marker too (same
@@ -575,25 +575,25 @@ A file grid of the asset directories, with navigation, file operations and drag 
   family colour bar, the kind in capitals and an extension badge; an empty folder or search says so. A dragged tile
   follows the cursor (`gui::widgets::dragPreview`) and drop targets light up.
 
-| Action                                | Effect                                        |
-|---------------------------------------|-----------------------------------------------|
-| Double-click folder                   | Navigate into the folder                      |
-| Double-click `.owl` file              | Open the scene in the editor                  |
-| Double-click a font                   | Open the font viewer and its charset          |
-| Double-click an image                 | Open it in the read-only image viewer         |
-| Double-click `.slang` file            | Open the shader in the code editor            |
-| Drag `.owlprefab` to Viewport         | Instantiate the prefab into the scene         |
-| Drag a mesh to Viewport               | Place a `MeshRenderer` entity under the mouse |
-| Double-click a mesh                   | Place a `MeshRenderer` entity at the origin   |
-| Right-click a mesh > Open             | Open it in the read-only mesh viewer          |
-| Double-click `.owlmat` file           | Open the material editor                      |
-| Drag `.owlmat` to a mesh              | Give every slot of the mesh the material      |
-| Right-click background > New Material | Create `New Material.owlmat` and open it      |
-| Drag texture to Properties            | Assign the texture to a Sprite Renderer field |
-| Drag sound to Properties              | Assign the sound to a Sound Source field      |
+| Action                                | Effect                                         |
+|---------------------------------------|------------------------------------------------|
+| Double-click folder                   | Navigate into the folder                       |
+| Double-click `.owl` file              | Open the scene in the editor                   |
+| Double-click a font                   | Open the font viewer and its charset           |
+| Double-click an image                 | Open it in the read-only image viewer          |
+| Double-click `.slang` file            | Open the shader in the code editor             |
+| Drag `.owlprefab` to Viewport         | Instantiate the prefab into the scene          |
+| Drag a mesh to Viewport               | Place a `MeshRenderer` entity under the mouse  |
+| Double-click a mesh                   | Place a `MeshRenderer` entity at the origin    |
+| Right-click a mesh > Open             | Open it in the read-only mesh viewer           |
+| Double-click `.owlmat` file           | Open the material editor                       |
+| Drag `.owlmat` to a mesh              | Give every slot of the mesh the material       |
+| Right-click background > New Material | Create `New Material.owlmat` and open it       |
+| Drag texture to Properties            | Assign the texture to a Sprite Renderer field  |
+| Drag sound to Properties              | Assign the sound to a Sound Source field       |
 | Right-click background                | Context menu: New Folder, New Material, Import |
-| Right-click file/folder               | Context menu: Open, Rename, Delete            |
-| OS file drop                          | Copy dropped files into the current directory |
+| Right-click file/folder               | Context menu: Open, Rename, Delete             |
+| OS file drop                          | Copy dropped files into the current directory  |
 
 ### Log Panel
 
@@ -1246,7 +1246,7 @@ gizmo manipulation is in progress.
 | Camera: Reset View           | Home             | `view.resetCamera`         |
 | Camera: axis views           |                  | `view.cameraFront`, …      |
 | Camera: Selected Viewpoint   |                  | `view.cameraViewpoint`     |
-| Camera: Pilot Selected      |                  | `view.pilotCamera`         |
+| Camera: Pilot Selected       |                  | `view.pilotCamera`         |
 | Toggle 2D / 3D View          |                  | `view.toggleProjection`    |
 | Text Size: Larger            | Ctrl+=           | `view.textLarger`          |
 | Text Size: Smaller           | Ctrl+-           | `view.textSmaller`         |

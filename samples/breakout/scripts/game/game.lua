@@ -22,15 +22,17 @@ properties = {
     { name = "slow_factor", type = "float", default = 0.65 },
     { name = "fx_time", type = "float", default = 0.3 },
     { name = "park_y", type = "float", default = -30.0 },
+    { name = "wipe_color", type = "color", default = { 0.45, 0.05, 0.55, 1 } },  -- the magenta of every Breakout screen change
+    { name = "wide_time", type = "float", default = 15.0, min = 0 },
+    { name = "slow_time", type = "float", default = 12.0, min = 0 },
+    { name = "clear_delay", type = "float", default = 1.6, min = 0 },
+    { name = "over_delay", type = "float", default = 1.4, min = 0 },
 }
 
 local FIRST_LEVEL = "scenes/level_1.owl"
-local WIPE = { 0.45, 0.05, 0.55 } -- the magenta of every Breakout screen change
 
 local PADDLE_Y, PADDLE_HALF_HEIGHT, POWER_FALL, POWER_POINTS, SLOW_FACTOR, FX_TIME, PARK_Y    -- set from the properties in on_create
 local POWER_HALF_W, POWER_HALF_H = 0.6, 0.26
-local WIDE_TIME, SLOW_TIME = 15.0, 12.0
-local CLEAR_DELAY, OVER_DELAY = 1.6, 1.4
 
 local hud = {}
 local pools = { wide = {}, slow = {}, fx = {} }
@@ -153,11 +155,11 @@ local function catch(kind)
     gamestate.set("breakout_score", gamestate.get("breakout_score", 0) + POWER_POINTS)
     if kind == "wide" then
         gamestate.set("breakout_wide", true)
-        wide_clock = WIDE_TIME
+        wide_clock = wide_time
         show_message("Wide paddle!", 1.2)
     else
         gamestate.set("breakout_speed_factor", SLOW_FACTOR)
-        slow_clock = SLOW_TIME
+        slow_clock = slow_time
         show_message("Slow ball!", 1.2)
     end
 end
@@ -220,14 +222,14 @@ function on_pause_restart()
     set_paused(false)
     ending = "restart"
     gamestate.set("breakout_score", gamestate.get("breakout_level_score", 0))
-    scene.transition_to(gamestate.get("breakout_scene", FIRST_LEVEL), "wipe_up", 0.3, WIPE[1], WIPE[2], WIPE[3])
+    scene.transition_to(gamestate.get("breakout_scene", FIRST_LEVEL), "wipe_up", 0.3, wipe_color.r, wipe_color.g, wipe_color.b)
 end
 
 function on_pause_quit()
     set_paused(false)
     ending = "quit"
     gamestate.clear()
-    scene.transition_to("scenes/title.owl", "wipe_up", 0.3, WIPE[1], WIPE[2], WIPE[3])
+    scene.transition_to("scenes/title.owl", "wipe_up", 0.3, wipe_color.r, wipe_color.g, wipe_color.b)
 end
 
 -- Frame -------------------------------------------------------------------------------------------------------------
@@ -265,14 +267,14 @@ local function check_end(dt)
         return
     end
     end_clock = end_clock + dt
-    if ending == "clear" and end_clock >= CLEAR_DELAY then
+    if ending == "clear" and end_clock >= clear_delay then
         ending = "leaving"
         local target = (next_scene ~= nil and next_scene ~= "") and next_scene or "scenes/victory.owl"
         gamestate.set("breakout_scene", target)
-        scene.transition_to(target, "wipe_up", 0.4, WIPE[1], WIPE[2], WIPE[3])
-    elseif ending == "over" and end_clock >= OVER_DELAY then
+        scene.transition_to(target, "wipe_up", 0.4, wipe_color.r, wipe_color.g, wipe_color.b)
+    elseif ending == "over" and end_clock >= over_delay then
         ending = "leaving"
-        scene.transition_to("scenes/game_over.owl", "wipe_up", 0.4, WIPE[1], WIPE[2], WIPE[3])
+        scene.transition_to("scenes/game_over.owl", "wipe_up", 0.4, wipe_color.r, wipe_color.g, wipe_color.b)
     end
 end
 

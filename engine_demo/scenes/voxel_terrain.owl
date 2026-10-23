@@ -31,6 +31,20 @@ Entities:
     Visibility:
       gameVisible: true
     Environment: {hdri: textures/hdri/kloofendal_48d_partly_cloudy_puresky.hdr, intensity: 12000, rotation: 0, showSky: true}
+    ProceduralSky: {enabled: true, sunDirection: [0.3, 0.8, -0.5], turbidity: 3, groundColor: [0.38, 0.36, 0.33], nightColor: [0.42, 0.48, 0.66], nightBrightness: 0.015, stars: 1, discSize: 2.5, resolution: 512}
+    DayNightCycle: {enabled: true, timeOfDay: 9, dayLength: 300, azimuth: 90, maxElevation: 60, sun: 3400000000000000006, sunIlluminance: 100000, sunColor: [1, 0.96, 0.9], sunsetColor: [1, 0.55, 0.3], moonIlluminance: 4000, moonColor: [0.62, 0.72, 1]}
+  - Entity: 3400000000000000006
+    Tag:
+      tag: Sun
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [-0.8, 0.6, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 0
+    Light: {type: Directional, enabled: true, color: [1, 0.96, 0.9], intensity: 100000, castShadows: true, shadowDistance: 80, cascadeCount: 4, shadowResolution: 2048, shadowBias: 1.5}
   - Entity: 3400000000000000001
     Tag:
       tag: TerrainPlayer
@@ -64,6 +78,31 @@ Entities:
       CaptureCursor: true
     LuaScript:
       scriptPath: scripts/voxel/voxel_explorer.lua
+  - Entity: 3400000000000000005
+    Tag:
+      tag: MinimapCamera
+    Transform:
+      translation: [8, 100, 8]
+      rotation: [-1.57079637, 0, 0]
+      scale: [1, 1, 1]
+    Camera:
+      camera:
+        projectionType: Orthographic
+        perspectiveFOV: 0.785398185
+        perspectiveNear: 0.00999999978
+        perspectiveFar: 1000
+        orthographicSize: 64
+        orthographicNear: 0
+        orthographicFar: 160
+        toneMapping: PbrNeutral
+      primary: false
+      fixedAspectRatio: true
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 0
+    FollowTarget: {enabled: true, target: 3400000000000000001, offset: [0, 60, 0], followYaw: true}
+    RenderTarget: {enabled: true, targetName: minimap, size: [256, 256], clearColor: [0.05, 0.07, 0.1, 1]}
   - Entity: 3400000000000000002
     Tag:
       tag: ProceduralTerrain

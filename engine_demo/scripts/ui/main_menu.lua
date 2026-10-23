@@ -110,7 +110,7 @@ function on_update(dt)
         return
     end
 
-    -- The `open_gallery` action (G, right bumper) opens the tavern: a 3D table by a fireplace under a fly camera.
+    -- The `open_gallery` action (G, right bumper) opens the tavern, the fifth level of the hub (find the key, open the cellar), straight from the menu.
     if not shortcut_requested and input.is_action_pressed("open_gallery") then
         shortcut_requested = true
         scene.transition_to("scenes/tavern.owl", "fade", 0.3)

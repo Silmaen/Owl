@@ -25,16 +25,20 @@ properties = {
     { name = "repeat_delay", type = "float", default = 0.25 },   -- a held direction repeats after this
     { name = "repeat_time", type = "float", default = 0.11 },   -- then one step every this
     { name = "win_delay", type = "float", default = 2.2 },
+    { name = "frame_idle", type = "int", default = 8, min = 0 },
+    { name = "frame_walk", type = "int", default = 9, min = 0 },
+    { name = "walk_frames", type = "int", default = 4, min = 1 },
+    { name = "frame_push", type = "int", default = 13, min = 0 },
+    { name = "stick_on", type = "float", default = 0.6, min = 0, max = 1 },
+    { name = "stick_off", type = "float", default = 0.35, min = 0, max = 1 },
 }
 
 local FLOOR, GOALS, BOXES = 0, 1, 2
 local EMPTY = -1
 local TILE_FLOOR, TILE_FLOOR_WORN = 0, 1
 local TILE_GOAL, TILE_BOX, TILE_BOX_ON_GOAL, TILE_START = 4, 5, 6, 7
-local FRAME_IDLE, FRAME_WALK, WALK_FRAMES, FRAME_PUSH = 8, 9, 4, 13
 
 local SLIDE_TIME, REPEAT_DELAY, REPEAT_TIME, WIN_DELAY    -- set from the properties in on_create
-local STICK_ON, STICK_OFF = 0.6, 0.35
 
 local DIRECTIONS = {
     step_left = { -1, 0 },
@@ -166,7 +170,7 @@ local function finish_slide()
         if is_goal(slide.box.cx, slide.box.cy) then sound.play("sounds/game/goal.wav") end
     end
     slide = nil
-    place_player(FRAME_IDLE)
+    place_player(frame_idle)
     on_goal = count_goals()
     publish()
 end
@@ -196,7 +200,7 @@ local function step(dx, dy)
     if dx ~= 0 then facing = dx end
     local nx, ny = px + dx, py + dy
     if not is_floor(nx, ny) then
-        place_player(FRAME_IDLE)
+        place_player(frame_idle)
         sound.play("sounds/game/bump.wav")
         return
     end
@@ -204,7 +208,7 @@ local function step(dx, dy)
     if is_box(nx, ny) then
         local bx, by = nx + dx, ny + dy
         if not is_floor(bx, by) or is_box(bx, by) then
-            place_player(FRAME_PUSH)
+            place_player(frame_push)
             sound.play("sounds/game/bump.wav")
             return
         end
@@ -223,7 +227,7 @@ local function step(dx, dy)
     px, py = nx, ny
     moves = moves + 1
     history[#history + 1] = { dx, dy, box ~= nil }
-    walk_frame = (walk_frame + 1) % WALK_FRAMES
+    walk_frame = (walk_frame + 1) % walk_frames
     publish()
 end
 
@@ -235,7 +239,7 @@ local function update_slide(dt)
     local tx, ty = cell_to_world(px, py)
     transform.set_position(player_id, fx + (tx - fx) * t, fy + (ty - fy) * t, 0.1)
     transform.set_scale(player_id, facing, 1, 1)
-    isometric.set_sprite_frame(player_id, slide.box and FRAME_PUSH or FRAME_WALK + walk_frame)
+    isometric.set_sprite_frame(player_id, slide.box and frame_push or frame_walk + walk_frame)
     if slide.box then
         local bfx, bfy = cell_to_world(slide.box.from_x, slide.box.from_y)
         local btx, bty = cell_to_world(slide.box.cx, slide.box.cy)
@@ -268,7 +272,7 @@ local function undo()
     if won then return end
     if take_back() then
         sound.play("sounds/game/undo.wav")
-        place_player(FRAME_IDLE)
+        place_player(frame_idle)
         on_goal = count_goals()
         publish()
     end
@@ -280,7 +284,7 @@ local function restart()
     while take_back() do end
     moves, pushes = 0, 0
     sound.play("sounds/game/restart.wav")
-    place_player(FRAME_IDLE)
+    place_player(frame_idle)
     on_goal = count_goals()
     publish()
     show_message("Restarted", 0.8)
@@ -378,7 +382,7 @@ function on_create()
         log.warn("Sokoban: level " .. level .. " has " .. boxes .. " crates for " .. goal_count .. " goals.")
     end
     on_goal = count_goals()
-    place_player(FRAME_IDLE)
+    place_player(frame_idle)
 
     gamestate.set("sokoban_level", level)
     gamestate.set("sokoban_boxes", boxes)
@@ -398,13 +402,13 @@ local function read_direction()
     return nil, nil
 end
 
--- The left stick as four buttons: a direction past STICK_ON presses, back under STICK_OFF releases.
+-- The left stick as four buttons: a direction past stick_on presses, back under stick_off releases.
 local function read_stick()
     local sx, sy = input.get_action_vector("step_stick")
     local magnitude = math.max(math.abs(sx), math.abs(sy))
-    if stick_dir ~= nil and magnitude < STICK_OFF then
+    if stick_dir ~= nil and magnitude < stick_off then
         stick_dir = nil
-    elseif stick_dir == nil and magnitude > STICK_ON then
+    elseif stick_dir == nil and magnitude > stick_on then
         if math.abs(sx) > math.abs(sy) then
             stick_dir = sx > 0 and "step_right" or "step_left"
         else

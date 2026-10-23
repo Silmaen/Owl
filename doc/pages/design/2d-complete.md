@@ -4,7 +4,7 @@
 
 Design page of the 2D work once planned as v0.5.0; the 2026-10-16 replan spread it over the releases, see the
 [Roadmap](../roadmap.md): the draw-order sort key, scroll views and lists, and tile-graph pathfinding in v0.4.0; 2D
-lights (done), the minimap and "look through scene camera" in v0.5.0; the tileset editor and the procedural brick in v0.6.0;
+lights and the minimap (done) and "look through scene camera" in v0.5.0; the tileset editor, mipmapped pixel-art atlases and the procedural brick in v0.6.0;
 full 2D physics and the enemies demo in v0.7.0. The 2D physics part has its own page,
 [Physics API](physics-api.md); the editor part is in [Owl Nest UI](nest-ui.md).
 
@@ -22,6 +22,19 @@ Built as the `Light2D` component and `renderer/Lighting2D.h`; the user guide is 
 | Tilemaps          | Lit without normal, shadows received                                                             |
 | Editor            | Inspector, create menu (`entity.create_light2d`), hierarchy icons, viewport markers              |
 
+## Cost of the 2D lighting and of the reversed-Z frustum (next pull request) {#lighting-cost}
+
+The 2D lighting and the reversed-Z frustum of v0.5.0 made three CPU paths slower, measured by an A/B of `owl_bench`
+between the merge of the Hi-Z culling and the one of the 2D lighting on the same machine (the CI saw more under load);
+the baseline accepts them for now.
+
+| Part     | Change                                                                                                          | Cost measured                                   |
+|----------|-----------------------------------------------------------------------------------------------------------------|-------------------------------------------------|
+| Quads    | `QuadInstance` back to 80 bytes: the normal-map index and the lit / shadow-caster flags packed into its padding | `renderer2d/quads_world_index/*` x1.31 to x1.34 |
+| Tilemaps | An unlit fast path in `RendererTilemap` when the scene has no 2D light                                          | `tilemap/static/32x32_layers1` x1.33            |
+| Frustum  | `Frustum::intersects` keeps its tolerance (`slack`) for the near plane only, the one a sprite may lie on        | `culling/octree/brute_force/*` x1.04 to x1.26   |
+| Bench    | The baselines of these cases brought back down in the same pull request                                         |                                                 |
+
 ## Text and HUD
 
 Aspect-correct text with alignment and fit modes, and the dedicated HUD layer with its editor, moved to v0.4.0:
@@ -29,7 +42,7 @@ see [HUD system](hud-system.md). Built on them:
 
 - v0.4.0: scroll views with clipping and virtualised lists (vehicle lists of a management game), done in HUD7
 - v0.5.0: tables (columns and sortable headers) over the virtualised list
-- v0.5.0: minimap of a tilemap on a render target, shown in a `UiImage`
+- v0.5.0: a minimap on a render target, shown in a `UiImage`, done: see [HUD system](hud-system.md#minimap)
 - v0.5.0: live scene backdrop in the HUD editor, with "look through scene camera"
 
 ## Draw-order sort key (B-10, v0.4.0, done)
@@ -63,6 +76,21 @@ not a navigation mesh.
 - Hierarchical search over the 32×32 chunks of the v0.4.0 tilemap storage, so 1024² maps stay cheap
 - Incremental update when a tile changes; queries spread over ticks on the task system
 - Lua API and an editor overlay drawing the graph and a test path
+
+## Mipmapped pixel-art atlases (v0.6.0)
+
+A tile atlas is sampled with `FilterMode::Nearest` and no mipmaps, so that a cell never bleeds into its neighbours.
+Close up the texels stay sharp; far away a pixel covers many texels and the tiles shimmer, more so with the 128 px
+voxel blocks. `voxel.slang` averages four taps over the footprint of a detailed atlas (one with relief or roughness
+maps) as a stopgap.
+
+| Part        | Plan                                                                                                          |
+|-------------|---------------------------------------------------------------------------------------------------------------|
+| Filter mode | A third `FilterMode`, pixel art: nearest magnification, trilinear minification, on OpenGL and Vulkan          |
+| Mipmaps     | Built cell by cell from the tile grid, each cell padded with its own edge texels, so no level mixes two tiles |
+| Loading     | A tileset asks for the mode; its atlas, normal and roughness maps load with their mip chain                   |
+| Shaders     | Voxel, raycast and tilemap shaders sample with the continuous UV derivatives; the four-tap average goes       |
+| Tests       | Image tests of a far voxel slope and a raycast corridor; a cell-isolation test on the generated mips          |
 
 ## Tileset editor (v0.6.0) — compose atlas by inserting / removing source images
 

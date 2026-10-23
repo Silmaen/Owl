@@ -29,7 +29,7 @@ opening a Lua or YAML file to discover it. It extends the *Editor coverage* rule
 | Generic behaviours | A behaviour found in two scripts, or that any game would want, becomes an engine component with a system `owl.*`, its script removed                                       |
 | Layer settings     | Every key a render-stack layer reads in `applyConfig` has a field in the layer overrides of Scene Settings                                                                 |
 | Files              | Every file type the engine reads opens in Owl Nest: a document of its own, the code editor for text, the system viewer otherwise                                           |
-| Check              | `EditorCoverage` (gui_tests) fails when a component field has no inspector widget or a layer key has no override field                                                      |
+| Check              | `EditorCoverage` (gui_tests) fails when a component field has no inspector widget or a layer key has no override field                                                     |
 
 ## Scripts in the editor
 
@@ -101,17 +101,17 @@ Measured on 2026-10-22 over `engine_demo/` and `samples/`; each row becomes a mi
 
 ## Delivery plan
 
-One pull request per row, in this order.
+One pull request per row, in this order; all ten are done.
 
-| #   | Pull request                                                                                       |
-|-----|----------------------------------------------------------------------------------------------------|
-| 1   | Editor fixes: material texture **Open** buttons, text files in the code editor                     |
-| 2   | Layer overrides for every key of the raycast, isometric, mesh and voxel layers                     |
-| 3   | Hook list and bound handlers in the inspector, **Open** at the line of the function                |
-| 4   | `SceneScript`: a script of the scene in Scene Settings, migration of the camera-held scene scripts |
-| 5   | Script properties: colour, vectors, ranges, entity references, lists                               |
-| 6   | `LightFlicker` and flame follow; the tavern and platformer flicker scripts removed                 |
-| 7   | `Oscillator`, `Patrol`, `Drift`; the matching demo scripts removed                                 |
-| 8   | Tuned constants of the Engine Demo and the sample games moved to properties                        |
-| 9   | Material thumbnails and a prefab document                                                          |
-| 10  | Coverage test: every component field and layer key has an editor widget                            |
+| #  | Pull request                                                                                       |
+|----|----------------------------------------------------------------------------------------------------|
+| 1  | Editor fixes: material texture **Open** buttons, text files in the code editor                     |
+| 2  | Layer overrides for every key of the raycast, isometric, mesh and voxel layers                     |
+| 3  | Hook list and bound handlers in the inspector, **Open** at the line of the function                |
+| 4  | `SceneScript`: a script of the scene in Scene Settings, migration of the camera-held scene scripts |
+| 5  | Script properties: colour, vectors, ranges, entity references, lists                               |
+| 6  | `LightFlicker` and flame follow; the tavern and platformer flicker scripts removed                 |
+| 7  | `Oscillator`, `Patrol`, `Drift`; the matching demo scripts removed                                 |
+| 8  | Tuned constants of the Engine Demo and the sample game scripts are script `properties`             |
+| 9  | Material thumbnails and a prefab document                                                          |
+| 10 | Coverage test: every component field and layer key has an editor widget                            |

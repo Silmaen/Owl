@@ -10,9 +10,9 @@ properties = {
     { name = "speed", type = "float", default = 3.0 },
     { name = "turn_speed", type = "float", default = 1.8 },  -- radians per second
     { name = "mouse_turn", type = "float", default = 0.006 }, -- radians per mouse pixel, times `mouse_sensitivity`
+    { name = "run_factor", type = "float", default = 1.7, min = 1 },
 }
 
-local RUN_FACTOR = 1.7
 
 -- The yaw lives here: the transform only follows the body on the fixed physics tick, so reading it back every frame
 -- would drop or repeat a turn whenever frames and ticks do not line up.
@@ -45,7 +45,7 @@ function on_update(dt)
 
     local walk = input.get_action_value("walk") * speed
     if input.is_action_pressed("run") then
-        walk = walk * RUN_FACTOR
+        walk = walk * run_factor
     end
     physics.set_velocity(entity_id, -math.sin(yaw) * walk, math.cos(yaw) * walk)
 end

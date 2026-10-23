@@ -1,8 +1,10 @@
 Tileset: voxel_blocks
 Version: 1
 texture: nam:textures/atlases/voxel_blocks.png
-tileWidth: 64
-tileHeight: 64
+normalTexture: nam:textures/atlases/voxel_blocks_normal.png
+roughnessTexture: nam:textures/atlases/voxel_blocks_roughness.png
+tileWidth: 128
+tileHeight: 128
 columns: 4
 rows: 4
 tiles:

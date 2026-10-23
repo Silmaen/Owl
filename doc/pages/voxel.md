@@ -206,6 +206,10 @@ The Engine Demo's `voxel_terrain.owl` (see [Procedural Terrain](#procedural-terr
 `voxel_blocks` tileset (16 block faces) under a perspective camera. Voxels render in **Play** and in the **editor
 viewport** (the world streams around the editor camera too).
 
+A voxel tileset may add a `normalTexture` and a `roughnessTexture` on the grid of its atlas: `voxel.slang` perturbs the
+normal with the first, the second modulates the roughness of the block (50 % grey keeps it), and the far texels of
+such detailed atlases are averaged. The demo blocks are 128 px with both maps ([Scene](scene.md)).
+
 Two camera components drive a voxel world in Play (both saved and editable in the inspector):
 
 - **`scene::component::FlyCamera`**: free fly without collision. **WASD** moves in the facing plane, **Space / E**
