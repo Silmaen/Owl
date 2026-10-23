@@ -22,6 +22,19 @@ Built as the `Light2D` component and `renderer/Lighting2D.h`; the user guide is 
 | Tilemaps          | Lit without normal, shadows received                                                             |
 | Editor            | Inspector, create menu (`entity.create_light2d`), hierarchy icons, viewport markers              |
 
+## Cost of the 2D lighting and of the reversed-Z frustum (next pull request) {#lighting-cost}
+
+The 2D lighting and the reversed-Z frustum of v0.5.0 made three CPU paths slower, measured by an A/B of `owl_bench`
+between the merge of the Hi-Z culling and the one of the 2D lighting on the same machine (the CI saw more under load);
+the baseline accepts them for now.
+
+| Part     | Change                                                                                                          | Cost measured                                   |
+|----------|-----------------------------------------------------------------------------------------------------------------|-------------------------------------------------|
+| Quads    | `QuadInstance` back to 80 bytes: the normal-map index and the lit / shadow-caster flags packed into its padding | `renderer2d/quads_world_index/*` x1.31 to x1.34 |
+| Tilemaps | An unlit fast path in `RendererTilemap` when the scene has no 2D light                                          | `tilemap/static/32x32_layers1` x1.33            |
+| Frustum  | `Frustum::intersects` keeps its tolerance (`slack`) for the near plane only, the one a sprite may lie on        | `culling/octree/brute_force/*` x1.04 to x1.26   |
+| Bench    | The baselines of these cases brought back down in the same pull request                                         |                                                 |
+
 ## Text and HUD
 
 Aspect-correct text with alignment and fit modes, and the dedicated HUD layer with its editor, moved to v0.4.0:

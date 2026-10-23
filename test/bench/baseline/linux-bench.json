@@ -890,35 +890,35 @@
     {
       "name": "renderer2d/quads_world_index/1000",
       "items": 1000,
-      "batch": 700,
+      "batch": 536,
       "samples": 15,
-      "median_ns": 17038.8,
-      "p25_ns": 17032.5,
-      "p75_ns": 17052.0,
-      "min_ns": 17010.2,
-      "max_ns": 17300.3
+      "median_ns": 22270.6,
+      "p25_ns": 22245.5,
+      "p75_ns": 22304.2,
+      "min_ns": 22232.5,
+      "max_ns": 22348.0
     },
     {
       "name": "renderer2d/quads_world_index/10000",
       "items": 10000,
-      "batch": 61,
+      "batch": 48,
       "samples": 15,
-      "median_ns": 193319.8,
-      "p25_ns": 193264.3,
-      "p75_ns": 193350.1,
-      "min_ns": 193205.3,
-      "max_ns": 193404.5
+      "median_ns": 248068.1,
+      "p25_ns": 247931.3,
+      "p75_ns": 248207.0,
+      "min_ns": 247647.5,
+      "max_ns": 248341.6
     },
     {
       "name": "renderer2d/quads_world_index/100000",
       "items": 100000,
-      "batch": 5,
+      "batch": 4,
       "samples": 15,
-      "median_ns": 2384050.0,
-      "p25_ns": 2382324.8,
-      "p75_ns": 2384936.9,
-      "min_ns": 2380683.6,
-      "max_ns": 2388701.6
+      "median_ns": 3049139.5,
+      "p25_ns": 3019386.0,
+      "p75_ns": 3054665.6,
+      "min_ns": 3016697.0,
+      "max_ns": 3062653.8
     },
     {
       "name": "renderer2d/rects/10000",
@@ -1429,13 +1429,13 @@
     {
       "name": "scene/view_iterate/transform_sprite/100000",
       "items": 100000,
-      "batch": 15,
+      "batch": 13,
       "samples": 15,
-      "median_ns": 738571.5,
-      "p25_ns": 737903.3,
-      "p75_ns": 740140.6,
-      "min_ns": 734637.0,
-      "max_ns": 742347.6
+      "median_ns": 889838.5,
+      "p25_ns": 888130.0,
+      "p75_ns": 890746.4,
+      "min_ns": 886652.5,
+      "max_ns": 906219.3
     },
     {
       "name": "scene/world_transform/chain1000_all",
@@ -1880,13 +1880,13 @@
     {
       "name": "tilemap/static/32x32_layers1",
       "items": 1024,
-      "batch": 44390,
+      "batch": 33000,
       "samples": 15,
-      "median_ns": 271.9,
-      "p25_ns": 271.7,
-      "p75_ns": 272.3,
-      "min_ns": 271.4,
-      "max_ns": 272.8
+      "median_ns": 315.1,
+      "p25_ns": 314.4,
+      "p75_ns": 315.3,
+      "min_ns": 314.2,
+      "max_ns": 316.4
     },
     {
       "name": "tilemap/static/32x32_layers4",
@@ -2144,13 +2144,13 @@
     {
       "name": "culling/octree/brute_force/1000",
       "items": 1000,
-      "batch": 710,
+      "batch": 566,
       "samples": 15,
-      "median_ns": 15115.0,
-      "p25_ns": 15066.5,
-      "p75_ns": 15257.2,
-      "min_ns": 14964.4,
-      "max_ns": 15347.4
+      "median_ns": 20923.2,
+      "p25_ns": 20872.8,
+      "p75_ns": 20946.9,
+      "min_ns": 20770.0,
+      "max_ns": 21055.6
     },
     {
       "name": "culling/octree/move_tenth/1000",
