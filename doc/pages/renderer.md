@@ -16,6 +16,16 @@ headless) behind static facades: `RenderCommand` for low-level GPU operations, `
 - A batch finds a texture's slot by its backend identity (`Texture::getBackendId`, a hashed table, no scan).
 - A frame allocates nothing once the batches reached their size (`Renderer2D.transientFrameDoesNotAllocate`).
 
+### Text cache {#renderer-text-cache}
+
+`Renderer2D::drawString` keeps the glyphs of a string laid out in its frame and lays it out again only when its font,
+its text or its `TextLayout` changes; the transform, the colours and the outline are applied at each draw. The cache
+is a direct-mapped table of 1024 slots chosen by a hash of the font, the text, the font size and the box: a collision
+or a string that changes every frame is laid out again in the capacity of its slot, so a frame still allocates
+nothing once the slots have grown. A static HUD costs a hash and a compare per string
+(`renderer2d/text/100_strings_54_chars`); a string seen for the first time costs about 8 % more than without the cache
+(`renderer2d/text/100_strings_changing`).
+
 ## Architecture
 
 ![Renderer Architecture](../images/renderer_architecture.svg)
@@ -377,7 +387,13 @@ flowchart LR
   a negative index into it. Quads and circles start a new batch every 4 096 transient matrices (a bigger batch leaves
   the CPU cache, about 30 % slower per quad); glyphs fill the 20 000, so a long text stays one draw call.
 - `gpu::StorageBuffer::bind(uint32_t iBinding)` binds one SSBO at different slots across blocks.
-- Instances: `QuadInstance` 80 bytes, `CircleInstance` 48, `TextInstance` 80 (128, 96, 128 with a matrix).
+- Instances: `QuadInstance` 80 bytes, `CircleInstance` 48, `TextInstance` 96 (128, 96, 128 with a matrix).
+- Above `Scene::getParallelMinEntities()` (4096) entities and 16 roots, `prepareWorldTransforms` checks the root
+  subtrees on the task scheduler, then gives the slots in the serial order (parents first), so the matrices are the
+  ones of the serial pass; an entity the walk of `childrenIds` misses takes the serial walk. While no entity comes or
+  goes and no parent changes, the slot order of the last frame is kept. `updateSpatialIndex` computes the moved world
+  boxes in parallel and files them in the octree serially. A scene without scheduler, or smaller, stays serial
+  (`Scene::setTaskScheduler`, `setParallelMinEntities`).
 - `Scene` keeps the world matrices in a persistent per-entity cache, so the CPU consumers (raycast DDA, physics sync,
   `EntityLink`, the inspector and gizmo) read them without a read-back nor recomposition.
 

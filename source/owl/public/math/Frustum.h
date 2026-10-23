@@ -56,13 +56,15 @@ public:
 			if (const float lenSq = plane.x() * plane.x() + plane.y() * plane.y() + plane.z() * plane.z(); lenSq > 0.f)
 				plane *= 1.f / std::sqrt(lenSq);
 		}
+		auto& nearPlane = frustum.m_planes[4];
+		nearPlane.w() += nearSlack(nearPlane);
 		return frustum;
 	}
 
 	/**
 	 * @brief
 	 *  Get the planes: left, right, bottom, top, near, far.
-	 * @return The planes.
+	 * @return The planes, the near one moved outward by its tolerance.
 	 */
 	[[nodiscard]] constexpr auto getPlanes() const -> const std::array<vec4, 6>& { return m_planes; }
 
@@ -79,7 +81,7 @@ public:
 		for (const auto& plane: m_planes) {
 			const vec3 far{plane.x() >= 0.f ? mx.x() : mn.x(), plane.y() >= 0.f ? mx.y() : mn.y(),
 						   plane.z() >= 0.f ? mx.z() : mn.z()};
-			if (distance(plane, far) < -slack(plane))
+			if (distance(plane, far) < 0.f)
 				return Containment::Outside;
 			const vec3 near{plane.x() >= 0.f ? mn.x() : mx.x(), plane.y() >= 0.f ? mn.y() : mx.y(),
 							plane.z() >= 0.f ? mn.z() : mx.z()};
@@ -113,12 +115,12 @@ private:
 
 	/**
 	 * @brief
-	 *  Distance a box may lie outside a plane and still be kept: a box lying on a plane (a sprite on the near plane of
-	 *  an orthographic camera) stays visible whatever the rounding of the plane, as the GPU clipping keeps it.
-	 * @param[in] iPlane The plane, normalised.
+	 *  Distance a box may lie outside the near plane and still be kept: a box lying on it (a sprite on the near plane
+	 *  of an orthographic camera) stays visible whatever the rounding of the plane, as the GPU clipping keeps it.
+	 * @param[in] iPlane The near plane, normalised.
 	 * @return The tolerance, relative to the distance of the plane to the origin.
 	 */
-	[[nodiscard]] static constexpr auto slack(const vec4& iPlane) -> float {
+	[[nodiscard]] static constexpr auto nearSlack(const vec4& iPlane) -> float {
 		return 1e-5f * (1.f + (iPlane.w() < 0.f ? -iPlane.w() : iPlane.w()));
 	}
 

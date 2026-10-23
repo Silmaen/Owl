@@ -39,18 +39,22 @@ void runSampleBenches(Runner& ioRunner) {
 	for (const auto& file: files) {
 		const std::string label = file.stem().string();
 		shared<scene::Scene> scn;
-		ioRunner.measureWithSetup(
-				std::format("sample/load/{}", label), 1, [&]() -> void { scn = mkShared<scene::Scene>(); },
-				[&]() -> void {
-					const scene::SceneSerializer loader(scn);
-					doNotOptimize(loader.deserialize(file));
-				});
-		if (scn == nullptr)
-			continue;
+		const auto load = [&]() -> void {
+			const scene::SceneSerializer loader(scn);
+			doNotOptimize(loader.deserialize(file));
+		};
+		if (const std::string loadName = std::format("sample/load/{}", label); ioRunner.wants(loadName))
+			ioRunner.measureWithSetup(loadName, 1, [&]() -> void { scn = mkShared<scene::Scene>(); }, load);
+		else {
+			scn = mkShared<scene::Scene>();
+			load();
+		}
 		ioRunner.metric(std::format("sample/entities/{}", label), static_cast<double>(scn->getAllEntities().size()),
 						"entities");
 		ioRunner.metric(std::format("sample/file_bytes/{}", label), static_cast<double>(file_size(file)), "bytes");
 		scn->onViewportResize({1280, 720});
+		// The first frame loads the meshes of the scene: out of the calibration of the batch size.
+		scn->onUpdateEditor(step, camera);
 		ioRunner.measure(std::format("sample/editor_update/{}", label), 1,
 						 [&]() -> void { scn->onUpdateEditor(step, camera); });
 		ioRunner.metric(std::format("sample/editor_update/{}_quads", label), renderer::Renderer2D::getStats().quadCount,

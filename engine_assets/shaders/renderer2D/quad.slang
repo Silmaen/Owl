@@ -32,13 +32,13 @@ Sampler2D gTextures[32];
 
 struct QuadInstance {
 	int worldIndex;
+	int normalIndex;// texture slot of the normal map, -1 for none.
+	uint flags;     // bit 0: lit by the 2D lights; bit 1: shadow caster (not shadowed itself).
 	float4 color;
 	float2 uv[4];
 	uint texIndex;
 	int entityId;
 	float2 tilingFactor;
-	int normalIndex;// texture slot of the normal map, -1 for none.
-	uint flags;     // bit 0: lit by the 2D lights; bit 1: shadow caster (not shadowed itself).
 };
 
 [[vk::binding(2)]]

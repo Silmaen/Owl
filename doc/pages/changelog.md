@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `core::task::Scheduler::parallelFor`, and `Scene::setTaskScheduler` / `setParallelMinEntities`: `prepareWorldTransforms` and the spatial boxes of scenes above 4096 entities are prepared in parallel (`frame/editor_update/forest50000` 1.68 to 0.91 ms).
+- Benchmarks `frame/editor_update/{flat,forest,moving_flat,moving_forest}50000`, each with a `_serial` twin.
+- Benchmark `renderer2d/text/100_strings_changing`: strings never seen in the previous frames, the cost of laying text out.
 - Engine Demo tavern: a hub level played on foot (`FirstPersonController`) from an empty house of the hub, with a cellar key, a trapdoor, a chest in `scenes/tavern_cellar.owl` lit by a lantern spot light and a ladder back up.
 - Outline of the silhouette of an entity and its subtree (`Scene::setOutline`, `renderer::OutlinePass`), in full where it shows and dimmed behind other geometry: the Owl Nest selection of a mesh and what a first-person walker aims at use it.
 - `FirstPersonController` component (walk, run, look, jump, step climbing) whose body box collides with the `MeshRenderer` world boxes through `data::geometry::moveBoxAmong`, waits for the meshes to load, and Lua `entity.set_first_person_enabled`; an interaction trigger answers what the walker aims at within `reach`, its box outlined.
@@ -96,6 +99,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- `QuadInstance` back to 80 bytes, the normal-map index and the 2D light flags packed into its padding.
+- `utils::getLighting2DState` returns a reference, and unlit tilemaps no longer bind the 2D light buffers: a static tilemap frame is back near its cost before the 2D lighting.
+- `math::Frustum` folds its near-plane tolerance into the plane when it is built: no per-box cost, and the other planes have none.
+- `Renderer2D::drawString` keeps the laid-out glyphs of a string while its font, text and layout stay, so a still HUD or world text is no longer laid out at every frame.
+
 - Lua `entity.set/get_light_color`, `set/get_light_intensity`, `set_light_enabled`, `is_light_enabled` and `set_light_range` (the radius) also reach a `Light2D`.
 - Scripts: a property the scene does not list takes the declared default at Play (`ScriptInstance::getDeclaredProperties`); the tuning constants of the platformer player, the raycast level, the breakout ball, paddle and game, the Sokoban game, the Wolfenstein exploration and the hub and isometric town scripts are script properties.
 - Engine Demo: the platformer moving platforms use `Oscillator`, the isometric clouds `Drift` and the hub wanderers `Patrol` (`hub_wanderer.lua` only picks the sprite frames); `moving_platform_h.lua`, `moving_platform_v.lua` and `iso_cloud.lua` are removed.
@@ -144,6 +152,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `owl_bench --filter=sample/editor_update` measures the scenes again, and the first frame of a scene (its mesh loading) stays out of the batch calibration.
 - Owl Nest no longer crashes when **Play** starts a scene without a primary camera (an empty untitled scene).
 - GCC 15 builds decode HDR environments again: the flat scanline loop of stb_image was miscompiled at `-O2` and above.
 - MinGW GCC links the renderer tests again: the bloom level count is compared by value, not through the exported constant.

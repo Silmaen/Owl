@@ -27,8 +27,8 @@ Owl Engine ships two kinds of example content:
 |-----------------------|-----------------------|-------------------------------------------------|---------------|
 | Breakout              | Breakout / Arkanoid   | 2D, physics, HUD, sound, gamepad                | v0.4.0        |
 | Sokoban               | Sokoban               | tilemap, undo, saves, level editing in Owl Nest | v0.4.0        |
-| Mini Transport Tycoon | Mini Motorways / TTD  | isometric, roads, pathfinding, management HUD   | v0.4.0        |
 | Wolfenstein mini      | Wolfenstein 3D        | raycast, doors, pick-ups, HUD                   | v0.4.0        |
+| Tower defence         | Kingdom Rush          | isometric, waves, tile-graph pathfinding, HUD   | v0.5.0        |
 | Mini Minecraft        | Minecraft             | voxel, build and break, inventory               | v0.4.0        |
 | One-room Zelda-like   | The Legend of Zelda   | top-down, dialogue, enemy AI, 2D lights         | v0.7.0        |
 | Marble or mini kart   | Marble Madness / Kart | 3D, Jolt physics, shadows                       | v0.7.0        |
@@ -36,30 +36,31 @@ Owl Engine ships two kinds of example content:
 | Lunar lander          | Lunar Lander          | 3D, thrust and gravity, planetary terrain, legs | v0.7.0        |
 | Asteroid field        | Star Fox / X-Wing     | 6DoF flight, 3D steering AI, trails, HUD marks  | v0.7.0        |
 
-Breakout, Wolfenstein mini and Sokoban shipped in v0.4.0; Mini Transport Tycoon, which carries Owl Engine's main
-argument, comes next ([Order](#sample-games-order)). The two v1.0 showcase games (one 2D, one 3D) are picked from this
+Breakout, Wolfenstein mini and Sokoban shipped in v0.4.0; a tower defence comes next, in v0.5.0, after the
+Lua gaps it shares with Mini Transport Tycoon ([Order](#sample-games-order)), which waits in the
+[Pool](#sample-games-pool). The two v1.0 showcase games (one 2D, one 3D) are picked from this
 list, and so are the games of the [Pool](#sample-games-pool) once they enter it.
 
 ## Pool {#sample-games-pool}
 
 Ideas without commitment: a game of the pool enters the short list when a release has room for it, or is dropped.
 
-| Game           | Inspired by                       | Exercises                                          | Possible from |
-|----------------|-----------------------------------|----------------------------------------------------|---------------|
-| Asteroids      | Asteroids                         | 2D inertia, screen wrap, particles                 | v0.4.0        |
-| Tower defence  | Kingdom Rush                      | isometric, waves, tile-graph pathfinding, HUD      | v0.5.0        |
-| Station trader | Taipan! / Elite                   | data tables, economy on the fixed tick, trade HUD  | v0.6.0        |
-| Rail shooter   | Star Fox                          | splines, 3D, particles, HUD markers                | v0.7.0        |
-| Orbital golf   | Angry Birds Space / Gravitee Wars | 2D gravity fields, trajectory preview              | v0.7.0        |
-| Bridge builder | Poly Bridge / Bad Piggies         | parts snapped on sockets, breakable joints, replay | v0.7.0        |
+| Game                  | Inspired by                       | Exercises                                          | Possible from |
+|-----------------------|-----------------------------------|----------------------------------------------------|---------------|
+| Mini Transport Tycoon | Mini Motorways / TTD              | isometric, roads, pathfinding, management HUD      | v0.5.0        |
+| Asteroids             | Asteroids                         | 2D inertia, screen wrap, particles                 | v0.4.0        |
+| Station trader        | Taipan! / Elite                   | data tables, economy on the fixed tick, trade HUD  | v0.6.0        |
+| Rail shooter          | Star Fox                          | splines, 3D, particles, HUD markers                | v0.7.0        |
+| Orbital golf          | Angry Birds Space / Gravitee Wars | 2D gravity fields, trajectory preview              | v0.7.0        |
+| Bridge builder        | Poly Bridge / Bad Piggies         | parts snapped on sockets, breakable joints, replay | v0.7.0        |
 
 ## v0.4.0 games
 
 Feasibility checked against `main` on 2026-10-18 (Lua bindings, components, Engine Demo): all five games fit the
 v0.4.0 engine. Breakout and Mini Transport Tycoon need no engine change, Sokoban one Lua binding
 (`isometric.get_size`, added), Wolfenstein mini art, Mini Minecraft two small engine fixes ([Gaps](#sample-games-gaps)).
-Breakout, Sokoban and a Wolfenstein mini without combat shipped with v0.4.0; Mini Transport Tycoon is planned in
-v0.5.0, Mini Minecraft in v0.6.0.
+Breakout, Sokoban and a Wolfenstein mini without combat shipped with v0.4.0; the Lua gaps G1, G3, G7, G8 and G15 are
+planned in v0.5.0, Mini Minecraft in v0.6.0; Mini Transport Tycoon waits in the pool.
 
 Common to every game:
 
@@ -236,7 +237,7 @@ and the combat come in a later release, once their art exists.
 | 1    | Breakout              | v0.4.0  | Smallest, no blocking gap; sets up `samples/`, the scenarios and the export test for the others    |
 | 2    | Wolfenstein mini      | v0.4.0  | Exploration without combat (score, items, secrets, map explored); combat once its art exists (G11) |
 | 3    | Sokoban               | v0.4.0  | No blocking gap; proves level editing in Owl Nest, undo and saves                                  |
-| 4    | Mini Transport Tycoon | v0.5.0  | Owl Engine's main argument; cleaner once G1, G3 and G8 are fixed                                   |
+| 4    | Tower defence         | v0.5.0  | Waves from a pool (G1), pause (G8), the tile graph of the iso town; after the Lua gaps PR          |
 | 5    | Mini Minecraft        | v0.6.0  | After a small engine PR for G2 and G13                                                             |
 
 ## v0.7.0 games

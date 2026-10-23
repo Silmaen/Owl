@@ -34,8 +34,9 @@ struct Lighting2DState {
 /**
  * @brief
  *  The current 2D lighting of `Renderer2D`.
- * @return The buffers and the parameters, lighting off when `Renderer2D` is not initialised.
+ * @return The buffers and the parameters, lighting off when `Renderer2D` is not initialised; valid until the next
+ *  `Renderer2D::shutdown`.
  */
-[[nodiscard]] auto getLighting2DState() -> Lighting2DState;
+[[nodiscard]] auto getLighting2DState() -> const Lighting2DState&;
 
 }// namespace owl::renderer::utils

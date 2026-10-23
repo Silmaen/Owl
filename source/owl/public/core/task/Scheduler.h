@@ -12,6 +12,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <functional>
 
 /**
  * @brief
@@ -129,6 +130,19 @@ public:
 	 * @return The worker count, at least 1.
 	 */
 	[[nodiscard]] auto getWorkerCount() const -> uint32_t;
+
+	/**
+	 * @brief
+	 *  Run a body over `[0, iCount)` split into chunks, on the pool and on the calling thread, and wait for the end.
+	 *
+	 * The calling thread takes chunks too, so the call never waits for a worker that is busy elsewhere. The chunks
+	 * are disjoint, contiguous ranges handed out in increasing order; the body must not throw and must only write
+	 * data of its own range. Everything the body writes is visible to the caller when the call returns.
+	 * @param[in] iCount Number of items.
+	 * @param[in] iMinChunk Smallest worthwhile chunk size, at least 1.
+	 * @param[in] iBody Called with the half-open range `[begin, end)` of one chunk.
+	 */
+	void parallelFor(size_t iCount, size_t iMinChunk, const std::function<void(size_t, size_t)>& iBody);
 
 	/**
 	 * @brief

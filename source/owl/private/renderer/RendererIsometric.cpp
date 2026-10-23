@@ -487,7 +487,7 @@ auto companionsOf(const shared<gpu::Texture2D>& iTexture) -> const InternalState
 // The lighting of the frame (`Scene::applyLighting2D`) into the scene block, its buffers bound to the draw.
 void applyLighting() {
 	auto& state = *g_state;
-	const auto lighting = utils::getLighting2DState();
+	const auto& lighting = utils::getLighting2DState();
 	state.lit = lighting.ambient.w() != 0.f && lighting.lights && lighting.shadows;
 	state.scene.light =
 			math::vec4{static_cast<float>(lighting.lightCount), state.lit ? 1.f : 0.f, g_depthAtlasRange, 0.f};

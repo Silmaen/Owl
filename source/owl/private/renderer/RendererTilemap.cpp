@@ -287,7 +287,7 @@ void drawPending(const PendingTilemap& iPending, const AssetGpu& iEntry, const i
 	ubo.viewProjection = g_state->viewProjection;
 	ubo.model = model;
 	ubo.flags[0] = gpu::Framebuffer::isLinearTargetBound() ? 1 : 0;
-	const auto lighting = utils::getLighting2DState();
+	const auto& lighting = utils::getLighting2DState();
 	ubo.flags[1] = lighting.lightCount;
 	ubo.ambient = lighting.ambient;
 	ubo.atlas = {static_cast<int32_t>(std::max(1u, tileset.columns)), static_cast<int32_t>(std::max(1u, tileset.rows)),
@@ -423,7 +423,8 @@ void RendererTilemap::flushPending() {
 	g_state->textureScratch.clear();
 	for (const auto* tileset: g_state->tilesetSlots) g_state->textureScratch.push_back(tileset->texture);
 	gpu::RenderCommand::bindTextures(g_state->textureScratch);
-	if (const auto lighting = utils::getLighting2DState(); lighting.lights && lighting.shadows) {
+	if (const auto& lighting = utils::getLighting2DState();
+		lighting.ambient.w() != 0.f && lighting.lights && lighting.shadows) {
 		lighting.lights->bind(/*iBinding=*/5u);
 		lighting.shadows->bind(/*iBinding=*/6u);
 	}

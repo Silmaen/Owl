@@ -62,6 +62,7 @@
 #include "sound/SoundSystem.h"
 
 #include <algorithm>
+#include <atomic>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -92,6 +93,13 @@ struct VoxelStreamState {
 };
 
 namespace {
+
+// Entities of one chunk handed to a worker: below it the dispatch costs more than the work it spreads.
+constexpr size_t g_ParallelChunkEntities = 1024;
+
+// Roots below which the subtrees are too few to share between workers.
+constexpr size_t g_ParallelMinRoots = 16;
+
 auto unpackChunkKey(const uint64_t iKey) -> math::vec3i {
 	const auto dec = [](const uint64_t iBits) -> int32_t {
 		return static_cast<int32_t>(static_cast<int64_t>(iBits & 0x1FFFFF) - (1 << 20));
@@ -173,7 +181,12 @@ void disconnectRuntimeHooks(entt::registry& ioRegistry) {
 
 Scene::Scene()
 	: m_systems{SystemSchedule::getDefault()},
-	  mp_engineContext{app::Application::instanced() ? &app::Application::get().getEngineContext() : nullptr} {
+	  mp_engineContext{app::Application::instanced() ? &app::Application::get().getEngineContext() : nullptr},
+	  mp_taskScheduler{app::Application::instanced() ? &app::Application::get().getTaskScheduler() : nullptr} {
+	registry.on_construct<component::Transform>().connect<&Scene::onWorldLayoutChanged>(*this);
+	registry.on_destroy<component::Transform>().connect<&Scene::onWorldLayoutChanged>(*this);
+	registry.on_construct<component::Hierarchy>().connect<&Scene::onWorldLayoutChanged>(*this);
+	registry.on_destroy<component::Hierarchy>().connect<&Scene::onWorldLayoutChanged>(*this);
 	registry.on_construct<component::SpriteRenderer>().connect<&Scene::onSpatialComponentChanged>(*this);
 	registry.on_update<component::SpriteRenderer>().connect<&Scene::onSpatialComponentChanged>(*this);
 	registry.on_destroy<component::SpriteRenderer>().connect<&Scene::onSpatialComponentChanged>(*this);
@@ -186,6 +199,10 @@ Scene::Scene()
 }
 
 Scene::~Scene() {
+	registry.on_construct<component::Transform>().disconnect<&Scene::onWorldLayoutChanged>(*this);
+	registry.on_destroy<component::Transform>().disconnect<&Scene::onWorldLayoutChanged>(*this);
+	registry.on_construct<component::Hierarchy>().disconnect<&Scene::onWorldLayoutChanged>(*this);
+	registry.on_destroy<component::Hierarchy>().disconnect<&Scene::onWorldLayoutChanged>(*this);
 	registry.on_construct<component::SpriteRenderer>().disconnect<&Scene::onSpatialComponentChanged>(*this);
 	registry.on_update<component::SpriteRenderer>().disconnect<&Scene::onSpatialComponentChanged>(*this);
 	registry.on_destroy<component::SpriteRenderer>().disconnect<&Scene::onSpatialComponentChanged>(*this);
@@ -218,6 +235,8 @@ auto Scene::copy(const shared<Scene>& iOther) -> shared<Scene> {
 	newScene->m_simulationClock.setSettings(iOther->m_simulationClock.getSettings());
 	newScene->m_systems = iOther->m_systems;
 	newScene->mp_engineContext = iOther->mp_engineContext;
+	newScene->mp_taskScheduler = iOther->mp_taskScheduler;
+	newScene->m_parallelMinEntities = iOther->m_parallelMinEntities;
 
 	auto& srcSceneRegistry = iOther->registry;
 	auto& dstSceneRegistry = newScene->registry;
@@ -1461,7 +1480,8 @@ void Scene::render() {
 	};
 	m_cullingStats.spritesInFrustum =
 			markVisible(m_spriteIndex, renderer::Renderer2D::getViewProjection(), m_spriteVisible);
-	// Draw sprites
+	// Draw sprites; the first owning group sorts the `Transform` pool, which the world slots follow.
+	m_worldLayoutDirty = m_worldLayoutDirty || !registry.owned<component::Transform>();
 	for (const auto group = registry.group<component::Transform>(entt::get<component::SpriteRenderer>);
 		 auto entity: group) {
 		if (!isMarkedVisible(m_spriteVisible, entity))
@@ -1682,17 +1702,25 @@ const math::box3f g_spriteLocalBox{math::vec3{-0.5f, -0.5f, 0.f}, math::vec3{0.5
 void Scene::onSpatialComponentChanged([[maybe_unused]] entt::registry& ioRegistry,
 									  [[maybe_unused]] const entt::entity iEntity) {
 	m_spatialDirty = true;
+	// The sprite pass owns the `Transform` pool through a group: it reorders the pool when a sprite comes or goes.
+	m_worldLayoutDirty = true;
+}
+
+void Scene::onWorldLayoutChanged([[maybe_unused]] entt::registry& ioRegistry,
+								 [[maybe_unused]] const entt::entity iEntity) {
+	m_worldLayoutDirty = true;
 }
 
 void Scene::updateSpatialIndex() {
 	OWL_PROFILE_FUNCTION()
 
 	// Nothing added, removed, replaced nor moved since the last update: the indexes are current.
-	if (!m_spatialDirty && m_spatialStamp == m_worldStamp)
+	if (!m_spatialDirty && !m_worldMoved)
 		return;
 	m_spatialDirty = false;
-	m_spatialStamp = m_worldStamp;
+	m_worldMoved = false;
 	++m_spatialPass;
+	m_spatialJobs.clear();
 	const auto refile = [this](std::vector<SpatialEntry>& ioEntries, data::geometry::LooseOctree& ioIndex,
 							   const entt::entity iEntity, const void* iSource, const math::box3f& iLocalBox) -> void {
 		const auto index = static_cast<uint32_t>(entt::to_entity(iEntity));
@@ -1707,7 +1735,7 @@ void Scene::updateSpatialIndex() {
 			ioEntries.resize(std::max<size_t>(index + 1, ioEntries.size() * 2));
 		auto& entry = ioEntries[index];
 		if (entry.handle != iEntity || entry.stamp != node->stamp || entry.source != iSource) {
-			ioIndex.insert(index, math::transformBox(node->world, iLocalBox));
+			m_spatialJobs.push_back({.tree = &ioIndex, .index = index, .localBox = iLocalBox});
 			entry.handle = iEntity;
 			entry.stamp = node->stamp;
 			entry.source = iSource;
@@ -1726,6 +1754,19 @@ void Scene::updateSpatialIndex() {
 		refile(m_spriteEntries, m_spriteIndex, entity, nullptr, g_spriteLocalBox);
 	for (const auto entity: registry.view<component::Transform, component::AnimatedSpriteRenderer>())
 		refile(m_spriteEntries, m_spriteIndex, entity, nullptr, g_spriteLocalBox);
+	// The boxes are independent of one another; the octree is filed serially, in the walk order.
+	m_spatialBoxes.resize(m_spatialJobs.size());
+	const auto computeBoxes = [this](const size_t iBegin, const size_t iEnd) -> void {
+		for (size_t i = iBegin; i < iEnd; ++i)
+			m_spatialBoxes[i] =
+					math::transformBox(m_worldNodes[m_spatialJobs[i].index].world, m_spatialJobs[i].localBox);
+	};
+	if (mp_taskScheduler != nullptr && m_spatialJobs.size() >= m_parallelMinEntities)
+		mp_taskScheduler->parallelFor(m_spatialJobs.size(), g_ParallelChunkEntities, computeBoxes);
+	else
+		computeBoxes(0, m_spatialJobs.size());
+	for (size_t i = 0; i < m_spatialJobs.size(); ++i)
+		m_spatialJobs[i].tree->insert(m_spatialJobs[i].index, m_spatialBoxes[i]);
 	const auto sweep = [this](std::vector<SpatialEntry>& ioEntries, data::geometry::LooseOctree& ioIndex) -> void {
 		for (size_t index = 0; index < ioEntries.size(); ++index) {
 			if (auto& entry = ioEntries[index]; entry.handle != entt::null && entry.pass != m_spatialPass) {
@@ -2619,29 +2660,8 @@ auto Scene::resolveWorldNode(const entt::entity iEntity, const core::UUID iForbi
 	for (const auto& [handle, parent, parentId]: chain | std::views::reverse) {
 		auto& node = m_worldNodes[denseIndex(handle)];
 		const WorldNode* parentNode = parent == entt::null ? nullptr : &m_worldNodes[denseIndex(parent)];
-		const uint64_t parentStamp = parentNode == nullptr ? 0 : parentNode->stamp;
-		const auto& local = transforms->get(handle).transform;
-		if (node.stamp == 0 || node.handle != handle || node.parent != parent || node.parentStamp != parentStamp ||
-			!sameTransform(node.local, local)) {
-			node.handle = handle;
-			node.parent = parent;
-			node.local = local;
-			node.world = parentNode == nullptr ? local() : parentNode->world * local();
-			node.parentStamp = parentStamp;
-			node.stamp = ++m_worldStamp;
-		}
-		node.parentId = parentId;
-		node.checkedPass = m_worldPass;
-		if (m_preparingWorlds && node.visibilityPass != m_worldPass) {
-			// The parent was resolved earlier in this prepare, so its visibility is current.
-			node.visible = selfVisibility(visibilities, handle);
-			if (parentNode != nullptr) {
-				node.visible[0] = node.visible[0] && parentNode->visible[0];
-				node.visible[1] = node.visible[1] && parentNode->visible[1];
-			}
-			node.visibilityPass = m_worldPass;
-		}
-		if (m_preparingWorlds && node.slotPass != m_worldPass) {
+		refreshWorldNode(node, handle, parent, parentNode, transforms->get(handle).transform, parentId, visibilities);
+		if (m_preparingWorlds && !m_deferWorldSlots && node.slotPass != m_worldPass) {
 			node.slot = static_cast<uint32_t>(m_worldMatrices.size());
 			node.slotPass = m_worldPass;
 			m_worldMatrices.push_back(node.world);
@@ -2672,47 +2692,239 @@ auto Scene::getWorldTransform(const Entity& iEntity) const -> math::Transform {
 	return node->worldTransform;
 }
 
+void Scene::refreshWorldNode(WorldNode& ioNode, const entt::entity iHandle, const entt::entity iParent,
+							 const WorldNode* iParentNode, const math::Transform& iLocal, const core::UUID iParentId,
+							 const entt::storage_for_t<const component::Visibility>* iVisibilities) const {
+	const uint64_t parentStamp = iParentNode == nullptr ? 0 : iParentNode->stamp;
+	if (ioNode.stamp == 0 || ioNode.handle != iHandle || ioNode.parent != iParent ||
+		ioNode.parentStamp != parentStamp || !sameTransform(ioNode.local, iLocal)) {
+		if (ioNode.stamp == 0 || ioNode.handle != iHandle || ioNode.parent != iParent)
+			std::atomic_ref<bool>{m_worldLayoutDirty}.store(true, std::memory_order_relaxed);
+		ioNode.handle = iHandle;
+		ioNode.parent = iParent;
+		ioNode.local = iLocal;
+		ioNode.world = iParentNode == nullptr ? iLocal() : iParentNode->world * iLocal();
+		ioNode.parentStamp = parentStamp;
+		ioNode.stamp = (static_cast<uint64_t>(denseIndex(iHandle)) << 32U) | ((ioNode.stamp & 0xFFFFFFFFU) + 1U);
+		// Loaded first: once set the flag is only read, so the workers do not fight over its cache line.
+		if (const std::atomic_ref<bool> moved{m_worldMoved}; !moved.load(std::memory_order_relaxed))
+			moved.store(true, std::memory_order_relaxed);
+	}
+	ioNode.parentId = iParentId;
+	ioNode.checkedPass = m_worldPass;
+	if (m_preparingWorlds && ioNode.visibilityPass != m_worldPass) {
+		// The parent was checked earlier in this prepare, so its visibility is current.
+		ioNode.visible = selfVisibility(iVisibilities, iHandle);
+		if (iParentNode != nullptr) {
+			ioNode.visible[0] = ioNode.visible[0] && iParentNode->visible[0];
+			ioNode.visible[1] = ioNode.visible[1] && iParentNode->visible[1];
+		}
+		ioNode.visibilityPass = m_worldPass;
+	}
+}
+
 void Scene::prepareWorldTransforms() const {
 	OWL_PROFILE_FUNCTION()
 
-	m_worldMatrices.clear();
 	++m_worldPass;
-	// Each entity is checked once, after its ancestors: slots stay parents-before-children whatever the view order.
 	m_preparingWorlds = true;
+	// A scene of a few big subtrees (a wide hierarchy) gains nothing from one task per root.
+	if (const auto* hierarchies = registry.storage<component::Hierarchy>();
+		mp_taskScheduler != nullptr && hierarchies != nullptr && hierarchies->size() >= m_parallelMinEntities &&
+		(m_worldRootCount == 0 || m_worldRootCount >= g_ParallelMinRoots))
+		prepareWorldsParallel(*mp_taskScheduler);
+	else
+		prepareWorldsSerial();
+	m_preparingWorlds = false;
+
+	renderer::Renderer2D::setSceneWorlds(m_worldMatrices);
+}
+
+void Scene::prepareWorldsSerial() const {
+	m_worldMatrices.clear();
+	m_worldSlotsValid = false;
+	// Each entity is checked once, after its ancestors: slots stay parents-before-children whatever the view order.
 	const auto* visibilities = registry.storage<component::Visibility>();
+	size_t roots = 0;
 	for (const auto [entity, transform, hierarchy]:
 		 registry.view<component::Transform, component::Hierarchy>().each()) {
 		if (hierarchy.parentId != core::UUID{0}) {
 			static_cast<void>(resolveWorldNode(entity, core::UUID{0}));
 			continue;
 		}
-		// Root fast path, the same check as resolveWorldNode without the chain bookkeeping.
+		++roots;
 		const size_t index = denseIndex(entity);
 		if (index >= m_worldNodes.size())
 			m_worldNodes.resize(std::max(index + 1, m_worldNodes.size() * 2));
 		auto& node = m_worldNodes[index];
 		if (node.handle == entity && node.checkedPass == m_worldPass)
 			continue;
-		if (node.stamp == 0 || node.handle != entity || node.parent != entt::null ||
-			!sameTransform(node.local, transform.transform)) {
-			node.handle = entity;
-			node.parent = entt::null;
-			node.local = transform.transform;
-			node.world = transform.transform();
-			node.parentStamp = 0;
-			node.stamp = ++m_worldStamp;
+		if (node.stamp != 0 && node.handle == entity && node.parent == entt::null &&
+			sameTransform(node.local, transform.transform)) {
+			// Unchanged root: the common case of a static scene stays free of the general check.
+			node.parentId = core::UUID{0};
+			node.checkedPass = m_worldPass;
+			node.visible = selfVisibility(visibilities, entity);
+			node.visibilityPass = m_worldPass;
+		} else {
+			refreshWorldNode(node, entity, entt::null, nullptr, transform.transform, core::UUID{0}, visibilities);
 		}
-		node.parentId = core::UUID{0};
-		node.checkedPass = m_worldPass;
-		node.visible = selfVisibility(visibilities, entity);
-		node.visibilityPass = m_worldPass;
 		node.slot = static_cast<uint32_t>(m_worldMatrices.size());
 		node.slotPass = m_worldPass;
 		m_worldMatrices.push_back(node.world);
 	}
-	m_preparingWorlds = false;
+	m_worldRootCount = roots;
+}
 
-	renderer::Renderer2D::setSceneWorlds(m_worldMatrices);
+struct Scene::WorldStorages {
+	const entt::storage_for_t<const component::Hierarchy>* hierarchies = nullptr;
+	const entt::storage_for_t<const component::Transform>* transforms = nullptr;
+	const entt::storage_for_t<const component::ID>* ids = nullptr;
+	const entt::storage_for_t<const component::Visibility>* visibilities = nullptr;
+};
+
+auto Scene::refreshWorldSubtree(const WorldStorages& iStorages, const entt::entity iRoot,
+								std::vector<entt::entity>& ioStack) const -> size_t {
+	const auto& [hierarchies, transforms, ids, visibilities] = iStorages;
+	refreshWorldNode(m_worldNodes[denseIndex(iRoot)], iRoot, entt::null, nullptr, transforms->get(iRoot).transform,
+					 core::UUID{0}, visibilities);
+	size_t refreshed = 1;
+	const auto& rootChildren = hierarchies->get(iRoot).childrenIds;
+	if (rootChildren.empty())
+		return refreshed;
+	ioStack.clear();
+	ioStack.push_back(iRoot);
+	while (!ioStack.empty()) {
+		const entt::entity parent = ioStack.back();
+		ioStack.pop_back();
+		const core::UUID parentId = ids->get(parent).id;
+		const WorldNode& parentNode = m_worldNodes[denseIndex(parent)];
+		for (const core::UUID childId: hierarchies->get(parent).childrenIds) {
+			// Read-only lookup: a child the index does not know is left to the serial pass.
+			const auto found = m_uuidIndex.find(childId);
+			if (found == m_uuidIndex.end())
+				continue;
+			const entt::entity child = found->second;
+			if (!registry.valid(child) || !transforms->contains(child) || !hierarchies->contains(child) ||
+				!ids->contains(child) || ids->get(child).id != childId || hierarchies->get(child).parentId != parentId)
+				continue;
+			auto& node = m_worldNodes[denseIndex(child)];
+			if (node.handle == child && node.checkedPass == m_worldPass)
+				continue;
+			refreshWorldNode(node, child, parent, &parentNode, transforms->get(child).transform, parentId,
+							 visibilities);
+			ioStack.push_back(child);
+			++refreshed;
+		}
+	}
+	return refreshed;
+}
+
+void Scene::assignWorldSlots() const {
+	thread_local std::vector<entt::entity> chain;
+	m_worldSlotOwners.clear();
+	for (const auto entity: registry.view<component::Transform, component::Hierarchy>()) {
+		if (const auto& first = m_worldNodes[denseIndex(entity)];
+			first.handle != entity || first.checkedPass != m_worldPass || first.slotPass == m_worldPass)
+			continue;
+		chain.clear();
+		for (entt::entity current = entity;;) {
+			const auto& node = m_worldNodes[denseIndex(current)];
+			if (node.slotPass == m_worldPass)
+				break;
+			chain.push_back(current);
+			if (node.parent == entt::null)
+				break;
+			current = node.parent;
+		}
+		for (const auto current: chain | std::views::reverse) {
+			auto& node = m_worldNodes[denseIndex(current)];
+			node.slot = static_cast<uint32_t>(m_worldSlotOwners.size());
+			node.slotPass = m_worldPass;
+			m_worldSlotOwners.push_back(static_cast<uint32_t>(denseIndex(current)));
+		}
+	}
+}
+
+void Scene::prepareWorldsParallel(core::task::Scheduler& ioScheduler) const {
+	// Named by the chunk body without capture: each worker walks its subtrees with its own stack.
+	thread_local std::vector<entt::entity> stack;
+	const auto view = registry.view<component::Transform, component::Hierarchy>();
+	const WorldStorages storages{.hierarchies = registry.storage<component::Hierarchy>(),
+								 .transforms = registry.storage<component::Transform>(),
+								 .ids = registry.storage<component::ID>(),
+								 .visibilities = registry.storage<component::Visibility>()};
+	if (const size_t capacity = registry.storage<entt::entity>()->size(); m_worldNodes.size() < capacity)
+		m_worldNodes.resize(capacity);
+	// A pool reordered without a signal (no construct nor destroy) changes the view order: its ends tell.
+	const auto poolSignature = [&storages]() -> std::array<size_t, 8> {
+		const auto ends = [](const auto* iStorage) -> std::array<size_t, 4> {
+			const size_t size = iStorage->size();
+			if (size == 0)
+				return {0, 0, 0, 0};
+			return {size, static_cast<size_t>(iStorage->data()[0]), static_cast<size_t>(iStorage->data()[size / 2]),
+					static_cast<size_t>(iStorage->data()[size - 1])};
+		};
+		const auto transformEnds = ends(storages.transforms);
+		const auto hierarchyEnds = ends(storages.hierarchies);
+		return {transformEnds[0], transformEnds[1], transformEnds[2], transformEnds[3],
+				hierarchyEnds[0], hierarchyEnds[1], hierarchyEnds[2], hierarchyEnds[3]};
+	}();
+	if (poolSignature != m_worldPoolSignature) {
+		m_worldPoolSignature = poolSignature;
+		m_worldLayoutDirty = true;
+	}
+	const bool slotsKept = m_worldSlotsValid && !m_worldLayoutDirty;
+	m_worldLayoutDirty = false;
+	m_deferWorldSlots = true;
+	// Every entity of the view is counted, and counted again when a root's walk reaches it.
+	std::atomic<size_t> expected{0};
+	std::atomic<size_t> reached{0};
+	std::atomic<size_t> roots{0};
+	ioScheduler.parallelFor(storages.hierarchies->size(), g_ParallelChunkEntities,
+							[&](const size_t iBegin, const size_t iEnd) -> void {
+								size_t chunkExpected = 0;
+								size_t chunkReached = 0;
+								size_t chunkRoots = 0;
+								for (const entt::entity* entity = storages.hierarchies->data() + iBegin;
+									 entity != storages.hierarchies->data() + iEnd; ++entity) {
+									if (!storages.transforms->contains(*entity))
+										continue;
+									++chunkExpected;
+									if (storages.hierarchies->get(*entity).parentId != core::UUID{0})
+										continue;
+									++chunkRoots;
+									chunkReached += refreshWorldSubtree(storages, *entity, stack);
+								}
+								roots.fetch_add(chunkRoots, std::memory_order_relaxed);
+								expected.fetch_add(chunkExpected, std::memory_order_relaxed);
+								reached.fetch_add(chunkReached, std::memory_order_relaxed);
+							});
+	m_worldRootCount = roots.load(std::memory_order_relaxed);
+	// Entities no root reached through `childrenIds` (stale child lists, missing parent, loops) take the serial walk.
+	const bool complete = reached.load(std::memory_order_relaxed) == expected.load(std::memory_order_relaxed);
+	if (!complete) {
+		for (const auto entity: view) {
+			if (const auto& node = m_worldNodes[denseIndex(entity)];
+				node.handle != entity || node.checkedPass != m_worldPass)
+				static_cast<void>(resolveWorldNode(entity, core::UUID{0}));
+		}
+	}
+	m_deferWorldSlots = false;
+	if (!slotsKept || m_worldLayoutDirty || !complete) {
+		assignWorldSlots();
+		m_worldSlotsValid = complete;
+		m_worldLayoutDirty = false;
+	}
+	m_worldMatrices.resize(m_worldSlotOwners.size());
+	ioScheduler.parallelFor(m_worldSlotOwners.size(), g_ParallelChunkEntities * 4,
+							[this](const size_t iBegin, const size_t iEnd) -> void {
+								for (size_t slot = iBegin; slot < iEnd; ++slot) {
+									auto& node = m_worldNodes[m_worldSlotOwners[slot]];
+									node.slotPass = m_worldPass;
+									m_worldMatrices[slot] = node.world;
+								}
+							});
 }
 
 auto Scene::getWorldIndex(const Entity& iEntity) const -> uint32_t {

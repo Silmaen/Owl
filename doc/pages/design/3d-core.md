@@ -7,8 +7,7 @@ Design page for the v0.5.0 release, summarised in the [Roadmap](../roadmap.md). 
 
 ## Delivery plan
 
-One pull request per row, in this order; 2D lighting, multithreaded preparation and the Mini Transport
-Tycoon follow.
+One pull request per row, in this order; 2D lighting and multithreaded preparation follow.
 
 | #  | Pull request                                                                                          | Needs |
 |----|-------------------------------------------------------------------------------------------------------|-------|
@@ -105,7 +104,7 @@ A glowing surface is one of three things, in increasing cost.
 | Kind                     | What it does                                                | How                                                                                                         | When                      |
 |--------------------------|-------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------|---------------------------|
 | Emissive surface         | Shines above 1 in the HDR scene colour, lights nothing else | Emissive colour and luminance in nits in the PBR material; the halo is the bloom of the post stack          | v0.5.0, pull requests 7–8 |
-| Directional angular size | A sun of real apparent size (about 0.5 degree)              | `angularRadius` on the directional `Light`: PCSS penumbra, wider highlight, sky disc                        | To evaluate, v0.5.0       |
+| Directional angular size | A sun of real apparent size (about 0.5 degree)              | `angularRadius` on the directional `Light`: PCSS penumbra, wider highlight, sky disc                        | Planned, v0.6.0           |
 | Area light               | A rectangle, disc or sphere that lights the other surfaces  | LTC (linearly transformed cosines) for rectangles and discs, representative point for spheres; PCSS shadows | To evaluate, v0.6.0       |
 | Point and spot shadows   | Shadows of the local lights                                 | Cube shadow maps (point), perspective maps (spot), budgeted per frame                                       | Planned, v0.6.0           |
 | Bounced light            | A lit or glowing surface tinting its neighbours             | Probes or voxel global illumination                                                                         | Stretch goal              |
@@ -190,7 +189,8 @@ Opaque meshes are drawn as GPU-culled instanced batches; a loose octree spares t
     - Model matrices built relative to the camera on the CPU, so vertices near the camera keep their precision
     - Reversed-Z with a floating-point depth buffer and an infinite far plane, on Vulkan and OpenGL
 - Spatial partitioning: a loose octree per scene, shared by the 2D and 3D layers ([Instancing and culling](#instancing-and-culling))
-- Multithreaded render preparation (command recording per pass on the task system)
+- Multithreaded render preparation: world transforms and spatial boxes of large scenes on the task scheduler, GPU
+  submission on the main thread ([Renderer](../renderer.md))
 
 ## Scene editing
 

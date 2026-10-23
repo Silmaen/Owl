@@ -15,8 +15,10 @@
 #include <scene/component/components.h>
 
 #include <chrono>
+#include <cstddef>
 #include <cstdint>
 #include <format>
+#include <limits>
 #include <string>
 #include <tuple>
 
@@ -43,6 +45,37 @@ void runEditorFrames(Runner& ioRunner) {
 		const auto step = makeStep();
 		ioRunner.measure(name, count, [&]() -> void { scn->onUpdateEditor(step, camera); });
 		ioRunner.metric(name + "_quads", renderer::Renderer2D::getStats().quadCount, "quads (last frame)");
+	}
+}
+
+// The same frames with the render preparation on the scheduler and on the calling thread only, to compare them.
+void runLargeEditorFrames(Runner& ioRunner) {
+	const renderer::CameraEditor camera;
+	for (const auto& [count, shape, label]:
+		 {std::tuple{50000U, Shape::Flat, "flat"}, std::tuple{50000U, Shape::Forest, "forest"}}) {
+		for (const bool moving: {false, true}) {
+			for (const bool parallel: {true, false}) {
+				const std::string name = std::format("frame/editor_update/{}{}{}{}", moving ? "moving_" : "", label,
+													 count, parallel ? "" : "_serial");
+				if (!ioRunner.wants(name))
+					continue;
+				const auto scn = makeSpriteScene(count, shape);
+				if (!parallel)
+					scn->setParallelMinEntities(std::numeric_limits<size_t>::max());
+				scn->onViewportResize({1280, 720});
+				const auto entities = scn->getAllEntities();
+				const auto step = makeStep();
+				float offset = 0.f;
+				ioRunner.measure(name, count, [&]() -> void {
+					if (moving) {
+						offset += 0.001f;
+						for (const auto& ent: entities)
+							ent.getComponent<scene::component::Transform>().transform.translation().y() = offset;
+					}
+					scn->onUpdateEditor(step, camera);
+				});
+			}
+		}
 	}
 }
 
@@ -84,6 +117,7 @@ void runCatchUpFrame(Runner& ioRunner) {
 
 void runFrameBenches(Runner& ioRunner) {
 	runEditorFrames(ioRunner);
+	runLargeEditorFrames(ioRunner);
 	runRuntimeFrames(ioRunner);
 	runCatchUpFrame(ioRunner);
 }
