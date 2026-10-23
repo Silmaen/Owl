@@ -36,8 +36,8 @@ Owl Engine ships two kinds of example content:
 | Lunar lander          | Lunar Lander          | 3D, thrust and gravity, planetary terrain, legs | v0.7.0        |
 | Asteroid field        | Star Fox / X-Wing     | 6DoF flight, 3D steering AI, trails, HUD marks  | v0.7.0        |
 
-Breakout, Wolfenstein mini and Sokoban shipped in v0.4.0; a tower defence comes next, in v0.5.0, after the
-Lua gaps it shares with Mini Transport Tycoon ([Order](#sample-games-order)), which waits in the
+Breakout, Wolfenstein mini and Sokoban shipped in v0.4.0; a tower defence comes next, in v0.5.0, on the Lua gaps
+closed for it and for Mini Transport Tycoon ([Order](#sample-games-order)), which waits in the
 [Pool](#sample-games-pool). The two v1.0 showcase games (one 2D, one 3D) are picked from this
 list, and so are the games of the [Pool](#sample-games-pool) once they enter it.
 
@@ -144,6 +144,36 @@ Done in v0.4.0: `samples/breakout/` (how to play: its `README.md`).
   opens), `sokoban_gamepad` (D-pad, B, stick dead zone), `sokoban_level_select` (`ui_down`, `ui_accept`).
 - Size: **S**, done.
 
+### Tower defence
+
+First map only, basic art, to validate the gameplay; at least five maps once it plays well.
+
+| Item     | Plan                                                                                                                          |
+|----------|-------------------------------------------------------------------------------------------------------------------------------|
+| Play     | One isometric map of 24×24, 8 waves; enemies walk a road from the gate to the keep, towers on fixed build pads beside it     |
+| Win/lose | Every wave survived with at least one life / 20 lives lost (one per enemy reaching the keep)                                 |
+| Waves    | Timed: a countdown before each wave; the player calls it early for a gold bonus proportional to the time left               |
+| Towers   | Archer (fast, single target), cannon (slow, splash), frost (slows, small damage); no upgrade yet, sold for half its cost     |
+| Enemies  | Runner (fast, weak), soldier (average), armoured (slow, resists arrows); gold on each kill                                    |
+| Controls | Mouse: left on a pad opens the build ring or selects a tower, right cancels; Space or pad A calls the next wave early        |
+|          | F or RB fast forward (×2); Esc, P or Start pause (controls shown there only); WASD, stick or edge scroll pans, wheel zooms   |
+| Scenes   | `title`, `map_01`, `settings`, `victory` (end stats animated: kills, lives kept, gold, time), `game_over`                    |
+| Tilemap  | `Ground` (isometric terrain, road overlays with `navigation` rules as in `iso_town.owl`), build pads as overlay tiles        |
+| Entities | Prefabs `enemy_*`, `tower_*`, `projectile_*` spawned by Lua (G1); keep, gate, a few decor objects, camera                    |
+| Lua      | `waves.lua` (wave table, countdown, early call, spawns, `path.find` gate → keep), `towers.lua` (targeting, cooldowns, sell), |
+|          | `enemies.lua` (follow the cells, slow, armour, death and gold), `game.lua` (lives, gold, pause and fast forward via G8)      |
+| HUD      | Gold, lives, wave n / N with the countdown and a call-early button, speed toggle; build ring on a pad (choice, cost, range)  |
+| Menus    | Own look, kept simple (`generate_menus.py`)                                                                                   |
+| Art      | Basic home-made shapes from `generate_assets.py` (towers, enemies with a heading, projectiles); terrain from `tools/iso_atlas` |
+| Sounds   | Short home-made neutral effects (build, shot, hit, wave horn)                                                                |
+| Saves    | No slot: `tower_done_01` setting                                                                                              |
+
+- Gaps: G1 (enemies, towers, projectiles from prefabs), G8 (pause, fast forward), G15 (click a tower), G7 (ring icons).
+- Scenarios: `tower_build` (gold spent, tower on a pad only), `tower_wave` (no tower: enemies reach the keep, lives down),
+  `tower_call_early` (wave starts at once, bonus gold), `tower_defend` (towers kill wave 1, gold up),
+  `tower_fast_forward` (time scale 2, pause stops enemies), `tower_win` (8 waves survived, `tower_done_01` set).
+- Size: **S–M**, about 1 week: the iso town gives the terrain, roads and path graph; waves, towers and HUD are new.
+
 ### Mini Transport Tycoon
 
 | Item     | Plan                                                                                                                                                                                            |
@@ -237,7 +267,7 @@ and the combat come in a later release, once their art exists.
 | 1    | Breakout              | v0.4.0  | Smallest, no blocking gap; sets up `samples/`, the scenarios and the export test for the others    |
 | 2    | Wolfenstein mini      | v0.4.0  | Exploration without combat (score, items, secrets, map explored); combat once its art exists (G11) |
 | 3    | Sokoban               | v0.4.0  | No blocking gap; proves level editing in Owl Nest, undo and saves                                  |
-| 4    | Tower defence         | v0.5.0  | Waves spawned from prefabs (G1), pause (G8), the tile graph of the iso town; after the Lua gaps PR |
+| 4    | Tower defence         | v0.5.0  | Waves spawned from prefabs (G1), pause (G8), the tile graph of the iso town; the Lua gaps closed  |
 | 5    | Mini Minecraft        | v0.6.0  | After a small engine PR for G2 and G13                                                             |
 
 ## v0.7.0 games
