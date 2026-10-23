@@ -1,137 +1,34 @@
 # Owl Engine
 
-![Release](https://img.shields.io/github/v/release/Silmaen/Owl?label=release)
-![C++23](https://img.shields.io/badge/C%2B%2B-23-blue?logo=cplusplus)
-![CMake 3.24+](https://img.shields.io/badge/CMake-3.24%2B-blue?logo=cmake)
-![GitHub License](https://img.shields.io/github/license/Silmaen/Owl)
-![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/Silmaen/Owl)
-![GitHub top language](https://img.shields.io/github/languages/top/Silmaen/Owl)
-![GitHub Repo stars](https://img.shields.io/github/stars/Silmaen/Owl)
-[![Website](https://img.shields.io/website?url=https%3A%2F%2Fowl.argawaen.net&label=owl.argawaen.net)](https://owl.argawaen.net)
-
-![Owl Engine logo](engine_assets/logo/logo_owl.png)
+<img src="engine_assets/logo/logo_owl.png" alt="Owl Engine logo" width="160">
 
 **Owl Engine is the C++ engine that mixes rendering styles in one game: 2D, raycast, voxel, isometric and 3D,
 stacked under one HUD, in the editor and in game.**
 
-| ![2D RPG hub](doc/images/showcase/hub.png)           | ![Raycast level](doc/images/showcase/raycast.png)   |
-|------------------------------------------------------|-----------------------------------------------------|
-| ![Voxel terrain](doc/images/showcase/voxel.png)      | ![Isometric town](doc/images/showcase/iso_town.png) |
-| ![2D platformer](doc/images/showcase/platformer.png) | ![Main menu](doc/images/showcase/main_menu.png)     |
-
-*Scenes of the Engine Demo (`engine_demo/`), rendered headless by the game runner on Vulkan.*
-
-Documentation and downloads: [owl.argawaen.net](https://owl.argawaen.net). The name is a nod to the maintainer's
-surname, Lachouette.
-
-## Why Owl Engine
+![Owl Nest, the Owl Engine editor, with the Engine Demo open](doc/images/nest/main_window.png)
 
 - **Render-style mixing**: 2D batches, tilemaps, a raycaster, voxel terrain, isometric maps and 3D meshes are
   renderer-stack layers that compose with each other and the HUD, in the editor viewport and in Play.
 - **Owl Nest editor**: scenes, tilemaps, node graphs, animations, HUDs and prefabs with undo/redo and hot reload,
-  plus an [MCP server](doc/pages/mcp.md) an AI agent can drive through the same editor commands as the user.
-- **Engineering rigour**: unit and scenario tests, CI on Linux x64/arm64 and Windows, sanitizers, Vulkan validation
-  clean and performance budgets checked against a baseline.
+  driven by an [MCP server](doc/pages/mcp.md) as well as by hand.
+- **Lua gameplay, C++ engine**: scripts on entities, Box2D physics, OpenAL sound, OpenGL 4.5 or Vulkan 1.3+ rendering,
+  on Linux x64/arm64 and Windows x64.
 
-## How it is built
+## Where to start
 
-Owl Engine is developed by one maintainer with Claude Code as a development tool: every change is reviewed and owned
-by the maintainer and goes through the CI above ([Contributing](doc/pages/contributing.md)).
+| You want to                     | Read                                                             |
+|---------------------------------|------------------------------------------------------------------|
+| Run the editor and open a game  | [Getting started](doc/pages/getting_started.md)                  |
+| Make a game in Owl Nest         | [Using Owl Nest](doc/pages/editor.md)                            |
+| Script gameplay                 | [Scripting games in Lua](doc/pages/scripting.md)                 |
+| Understand or extend the engine | [Engine for C++ developers](doc/pages/guide_engine_developer.md) |
+| Build Owl from source           | [Building from source](doc/pages/building.md)                    |
+| Contribute a change             | [Contributing](doc/pages/contributing.md)                        |
 
-## Engine Demo and sample games
+Every page, grouped by audience: [game makers](doc/pages/guide_game_maker.md),
+[C++ engine developers](doc/pages/guide_engine_developer.md) and [contributors](doc/pages/guide_contributor.md).
+What is planned and what shipped: [Roadmap](doc/pages/roadmap.md) and [Changelog](doc/pages/changelog.md)
+(one-glance versions: `ROADMAP.md`, `CHANGELOG.md`).
 
-The **Engine Demo** (`engine_demo/`, see its `README.md`) is the all-in-one showcase: an RPG hub leading to a
-platformer, a raycast level, an isometric town and a voxel terrain. The **sample games**
-(`samples/`, see its `README.md`) are small real games, one project each: Breakout, Sokoban and a Wolfenstein mini.
-
-| ![Breakout](doc/images/showcase/breakout.png) | ![Sokoban](doc/images/showcase/sokoban.png) | ![Wolfenstein mini](doc/images/showcase/wolfenstein.png) |
-|-----------------------------------------------|---------------------------------------------|----------------------------------------------------------|
-
-## Features
-
-- ![OpenGL](https://img.shields.io/badge/OpenGL-4.5-5586A4?logo=opengl) ![Vulkan](https://img.shields.io/badge/Vulkan-1.3%2B-AC162C?logo=vulkan)
-  **Rendering** with Slang shaders compiled to SPIR-V, precompiled at build time
-- ![EnTT](https://img.shields.io/badge/ECS-EnTT-green) **Entity-Component-System** with parent-child hierarchy,
-  prefabs and Lua 5.5 scripting
-- ![Box2D](https://img.shields.io/badge/Physics-Box2D-orange) 2D physics,
-  ![OpenAL](https://img.shields.io/badge/Audio-OpenAL-8B0000) spatial sound
-- ![Mesh](https://img.shields.io/badge/Mesh-OBJ%20%7C%20glTF%20%7C%20FBX-purple) 3D model loading, asset packs and a
-  game runner
-
-## Documentation
-
-The full generated documentation is on [owl.argawaen.net](https://owl.argawaen.net); the pages also read on GitHub
-([doc/pages](doc/pages)):
-
-- [Getting Started](doc/pages/getting_started.md) -- First run of Owl Nest and where to go next
-- [Architecture](doc/pages/architecture.md) -- Engine modules, backends, and shader pipeline
-- [Editor](doc/pages/editor.md) -- Owl Nest editor: panels, documents, prefabs, undo/redo, export
-- [MCP server](doc/pages/mcp.md) -- Drive Owl Nest from an AI agent
-- [Scene System](doc/pages/scene.md) -- Hierarchy, components, serialization, triggers, HUD
-- [Renderer](doc/pages/renderer.md) -- Renderer stack, shaders, textures, text, tilemaps, isometric
-- [Voxel](doc/pages/voxel.md) and [Raycaster](doc/pages/raycaster_method.md) -- The voxel and raycast renderers
-- [Physics](doc/pages/physics.md) -- Box2D integration, collisions, triggers
-- [Pathfinding](doc/pages/pathfinding.md) -- Tile-graph navigation on tilemaps
-- [Sound System](doc/pages/sound.md) -- Components, spatial audio, and gameplay triggers
-- [Events & Input](doc/pages/event_input.md) -- Events, keyboard, mouse, gamepad and input actions
-- [Lua Scripting](doc/pages/scripting.md) -- API, lifecycle, sandboxing
-- [Lua API reference](doc/pages/lua-api.md) -- Every Lua binding, generated from the binding registry
-- [Node graph](doc/pages/node_graph.md) -- The node-graph widget and the Scene Flow view
-- [Building](doc/pages/building.md) -- Prerequisites, presets, testing, and CMake options
-- [Profiling](doc/pages/profiling.md) and [Continuous Integration](doc/pages/continuous_integration.md) -- Tracy,
-  benchmarks and the TeamCity pipeline
-- [Roadmap](doc/pages/roadmap.md) -- Planned and completed features by version (one-glance summary: `ROADMAP.md`)
-- [Changelog](doc/pages/changelog.md) -- Detailed version history (one line per release: `CHANGELOG.md`)
-- [Contributing](doc/pages/contributing.md) -- How to contribute and how Owl Engine is developed
-
-## Supported Platforms
-
-![Linux](https://img.shields.io/badge/Linux-FCC624?logo=linux&logoColor=black)
-![Windows](https://img.shields.io/badge/Windows-0078D4?logo=windows&logoColor=white)
-
-| OS      | Architecture | Compilers                      |
-|---------|--------------|--------------------------------|
-| Linux   | x64, arm64   | Clang 22+, GCC 14+             |
-| Windows | x64          | MinGW Clang 22+, MinGW GCC 15+ |
-
-Owl Engine ships only what it tests: every platform listed has its machine in the CI, which builds it and runs the
-unit and scenario tests on every change. A new platform comes with its test machine (the Web is on the [roadmap](doc/pages/roadmap.md)).
-
-## Backends
-
-![OpenGL](https://img.shields.io/badge/OpenGL-4.5-5586A4?logo=opengl)
-![Vulkan](https://img.shields.io/badge/Vulkan-1.3%2B-AC162C?logo=vulkan)
-![GLFW](https://img.shields.io/badge/GLFW-Input-yellow)
-![OpenAL](https://img.shields.io/badge/OpenAL-Audio-8B0000)
-
-| Category | Backends                      |
-|----------|-------------------------------|
-| Graphics | OpenGL 4.5, Vulkan 1.3+, Null |
-| Input    | GLFW, Null                    |
-| Sound    | OpenAL, Null                  |
-
-## Quick Start
-
-Every command runs inside the build image through `./docker_run.sh` (drop the prefix to build with a local
-toolchain, see [Building](doc/pages/building.md#prerequisites)). The first configure installs the Python tools and
-builds the Conan dependencies; no server needs to be set up.
-
-```bash
-# Configure and build
-./docker_run.sh cmake --preset linux-clang-release -S .
-./docker_run.sh cmake --build output/build/linux-clang-release
-
-# Run tests
-./docker_run.sh ctest --test-dir output/build/linux-clang-release --output-on-failure
-
-# Run the editor
-./docker_run.sh --gui output/build/linux-clang-release/bin/OwlNest
-```
-
-See [Building](doc/pages/building.md) for the full build guide and all available presets.
-
-## Dependencies
-
-Dependencies come from [Conan 2](https://conan.io) and [ConanCenter](https://conan.io/center), declared in
-[conanfile.py](conanfile.py) and pinned by `conan.lock`; the few recipes missing from ConanCenter live in
-`conan/recipes/`. They are fetched (or built) during CMake configure, from public infrastructure only.
+Documentation and downloads: [owl.argawaen.net](https://owl.argawaen.net). Owl Engine is released under the
+[MIT License](LICENSE); the name is a nod to the maintainer's surname, Lachouette.
