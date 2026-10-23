@@ -110,6 +110,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Documentation reorganised: short README landing page, one guide per audience (game makers, C++ developers, contributors), consistent page titles, `<img width>` honoured in the help and CMake 4.4 required
+- Build: no C++ module scan of every source (on by default since the CMake 4.4 minimum), a clean rebuild from a warm ccache in 6 s instead of 13 s.
+- Build: an engine `.cpp` edit links only the engine, not every program using it (`CMAKE_LINK_DEPENDS_NO_SHARED`), 2.8 s instead of 3.5 s.
+- Build: the Clang presets choose lld through `CMAKE_LINKER_TYPE`, and the engine public include path comes from its header file set only.
 - `QuadInstance` back to 80 bytes, the normal-map index and the 2D light flags packed into its padding.
 - `utils::getLighting2DState` returns a reference, and unlit tilemaps no longer bind the 2D light buffers: a static tilemap frame is back near its cost before the 2D lighting.
 - `math::Frustum` folds its near-plane tolerance into the plane when it is built: no per-box cost, and the other planes have none.

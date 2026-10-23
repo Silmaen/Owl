@@ -38,7 +38,7 @@ natively, never install a tool on the host; if a tool is missing from the image,
 - Output: `output/build/<preset>/{bin,lib}`, install in `output/install/<preset>/`.
 - If a build dir ends up root-owned, chown it back through a throwaway root container.
 - Test binaries are `owl_<folder>_unit_test` (e.g. `owl_scene_tests_unit_test`); new `.cpp` files in
-  `test/unit/<cat>_tests/` and anywhere in `source/` are picked up by `GLOB_RECURSE` (re-run configure).
+  `test/unit/<cat>_tests/` and anywhere in `source/` are picked up by `GLOB_RECURSE ... CONFIGURE_DEPENDS` at the next build.
 
 ## CI actions (`ci_action.py`)
 

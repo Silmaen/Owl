@@ -108,6 +108,12 @@ cmake --preset <preset> -S .
 cmake --build output/build/<preset>
 ```
 
+A new source or header file needs no configure by hand: the source globs use `CONFIGURE_DEPENDS`, so the next build
+notices it and configures again. The Clang presets link with lld (`CMAKE_LINKER_TYPE`). No C++ module is used, so
+CMake does not scan the sources for imports (`CMAKE_CXX_SCAN_FOR_MODULES` off). A program is not linked again when only
+a shared library it uses changed (`CMAKE_LINK_DEPENDS_NO_SHARED`): after an engine `.cpp` edit only `libOwlEngine.so`
+is linked, and the engine shaders are baked again.
+
 ### Available Presets
 
 #### Standard Presets
