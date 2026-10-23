@@ -118,11 +118,16 @@ def push_revision(server_url: str, login: str, password: str, revision: Revision
             fields: dict[str, Any] = {key: value for key, value in text_fields.items() if value}
             fields["package"] = (upload.name, stream, "application/octet-stream")
             encoder = MultipartEncoder(fields=fields)
+            # The nginx upload module behind `/upload` drops the text fields of the form: they also go in the query
+            # string, which it forwards to the server.
             response = requests.post(
                 f"{destination}/{endpoint}",
                 auth=HTTPBasicAuth(login, password),
                 data=encoder,
                 headers={"Content-Type": encoder.content_type},
+                params={key: value for key, value in fields.items() if key != "package"}
+                if endpoint == "upload"
+                else None,
                 timeout=UPLOAD_TIMEOUT,
             )
     except Exception as err:

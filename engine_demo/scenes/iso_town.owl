@@ -1,4 +1,5 @@
 Scene: IsoTown
+FormatVersion: 7
 Hud: huds/iso_town.owlhud
 EnabledRenderers:
 - {Name: raycast_world, Enabled: false}

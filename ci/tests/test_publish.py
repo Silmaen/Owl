@@ -31,7 +31,9 @@ class _FakePost:
 
     def __call__(self, url: str, **kwargs: Any) -> SimpleNamespace:
         encoder = kwargs["data"]
-        self.calls.append({"url": url, "auth": kwargs["auth"], "fields": dict(encoder.fields)})
+        self.calls.append(
+            {"url": url, "auth": kwargs["auth"], "fields": dict(encoder.fields), "params": kwargs.get("params")}
+        )
         encoder.to_string()  # drain the multipart stream while the file is still open
         return SimpleNamespace(status_code=self.status, reason="R", content=self.body)
 
@@ -85,6 +87,8 @@ def test_push_large_file_goes_to_upload(tmp_path: Path, fake_post: _FakePost, mo
     package.write_bytes(b"0123456789")
     assert push_revision("https://h", "bob", FAKE_PASSWORD, Revision("a", "0.3.0", package)) == 0
     assert fake_post.calls[0]["url"] == "https://h/upload"
+    # The upload module drops the text fields of the form: they go in the query string too.
+    assert fake_post.calls[0]["params"] == {"action": "push", "branch": "0.3.0", "rev_type": "a"}
 
 
 def test_push_documentation_is_compacted(tmp_path: Path, fake_post: _FakePost) -> None:

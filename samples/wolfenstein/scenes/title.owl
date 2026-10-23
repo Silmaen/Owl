@@ -1,5 +1,5 @@
 Scene: title
-FormatVersion: 5
+FormatVersion: 7
 EnabledRenderers:
   - Name: world
     Enabled: false

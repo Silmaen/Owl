@@ -1,5 +1,5 @@
 Scene: level_select
-FormatVersion: 5
+FormatVersion: 7
 Entities:
   - Entity: 7210000000000000001
     Tag:
