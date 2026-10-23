@@ -13,6 +13,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Help panel diagrams: `tools/doc/mermaid_svg.py` draws every mermaid fence of the bundled pages as plain SVG (flowchart, sequence, state, class) into `help_bundle/images/mermaid/`, run by `cmake/HelpAssets.cmake`.
 - Help panel rendering: hanging indent and aligned numbers in lists, ordered lists keep their start number, GFM task lists drawn as checkboxes, inline code as a flat tinted span.
+- Lua `scene.spawn_prefab` (a prefab instantiated at runtime, its scripts started at the next safe point of the frame) and `entity.add_component`.
+- Lua `time.set_scale`, `time.set_paused`, their getters and `time.real_delta`: a scene clock driving the ticks, physics, animations and `dt`, the UI kept in real time (`Scene::setTimeScale`, `setPaused`); Breakout pauses with it.
+- Lua `ui.is_world_blocked`: whether a shown `UiWindow` holds the world interactions back.
+- Lua `ui.set_image`, `ui.set_image_frame` and `ui.get_image_frame`, with the `Columns`, `Rows` and `Frame` sprite sheet grid of `UiImage`.
+- Lua `scene.pick_entity` and `scene::pickEntity`: the sprite, circle or mesh under a viewport pixel, in 2D, isometric and 3D.
+- A save keeps the cells of the tilemaps changed in game (`SaveManager::restoreTilemapCells`), put back before the colliders are built.
 - `core::task::Scheduler::parallelFor`, and `Scene::setTaskScheduler` / `setParallelMinEntities`: `prepareWorldTransforms` and the spatial boxes of scenes above 4096 entities are prepared in parallel (`frame/editor_update/forest50000` 1.68 to 0.91 ms).
 - Benchmarks `frame/editor_update/{flat,forest,moving_flat,moving_forest}50000`, each with a `_serial` twin.
 - Benchmark `renderer2d/text/100_strings_changing`: strings never seen in the previous frames, the cost of laying text out.

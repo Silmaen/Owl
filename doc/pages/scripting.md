@@ -271,6 +271,50 @@ end
 scene's HUD asset (`Hud:` key, see [Scene](scene.md#hud-asset)). `scene.find_entities(tag)` returns every entity of
 the scene with the tag as an array (the iso town indexes its trees by cell with it).
 
+`scene.spawn_prefab(path, [x, y, z])` instantiates a `.owlprefab` asset (read from the open pack, then the asset
+folders) and returns the id of its root, placed at the position when one is given (0 when the prefab cannot be
+read). Its scripts are created and get `on_create` at the next safe point of the frame (before or after the scripts
+of the frame), never inside the call; its bodies join the physics world, its animations play and its timer triggers
+start. A spawned entity is destroyed like any other with `scene.destroy_entity`; one destroyed in the frame it was
+spawned never starts. `entity.add_component(id, key)` adds a component with its default values by YAML key:
+
+```lua
+local WAVE = { "prefabs/enemy.owlprefab", "prefabs/enemy.owlprefab", "prefabs/boss.owlprefab" }
+
+function spawn_wave()
+    for i, path in ipairs(WAVE) do
+        local id = scene.spawn_prefab(path, -8.0 - i * 1.5, 2.0, 0.0)
+        if id ~= 0 then enemies[#enemies + 1] = id end
+    end
+end
+```
+
+`scene.pick_entity([x, y])` returns the entity drawn under a viewport pixel, the mouse by default (0 when none): the
+sprites, circles and meshes of the world, not the UI (`ui.is_mouse_over_ui()` tells when the mouse is on a widget).
+An entity of an isometric layer is picked on its sprite as drawn, any other one on the ray of the primary camera; a
+hit in a later layer of the render stack wins, then the nearest one.
+
+### `time`
+
+`time.delta()` is the duration of the frame (or of the fixed tick in `on_tick`) on the scene clock.
+`time.set_scale(scale)` runs that clock faster or slower (0 to 16, back to 1 when a scene starts): the ticks, the
+physics, the animations, the behaviour components and `dt` follow it. `time.set_paused(true)` stops it: `on_update`
+still runs, with a zero `dt`, so the script can drive its pause menu; no tick, physics step nor animation runs
+until `time.set_paused(false)`. The UI, the screen transitions and `time.real_delta()` keep the real time:
+
+```lua
+function on_update(dt)
+    if input.is_action_just_pressed("pause") then
+        time.set_paused(not time.is_paused())
+        ui.set_visible(pause_window, time.is_paused())
+    end
+    if input.is_action_just_pressed("fast_forward") then
+        time.set_scale(time.get_scale() == 1.0 and 3.0 or 1.0)
+    end
+    menu_clock = menu_clock + time.real_delta()    -- runs during the pause too
+end
+```
+
 ### `ui`
 
 `ui.find(name)` returns the first widget with this tag, searching the HUD asset before the scene (0 when none); the other
@@ -303,6 +347,14 @@ end
 
 `ui.list_invalidate(id)` binds the rows in view again after the data changed; `ui.list_set_selected(id, index)` selects
 and scrolls without running the callback.
+
+`ui.set_image(id, texture_path)` shows another texture in a `UiImage` (an empty path clears it). A `UiImage` whose
+`Columns` and `Rows` cut its texture into a sprite sheet shows one frame of it: `ui.set_image_frame(id, frame)` picks
+it (row-major from the top left, 0-based) and `ui.get_image_frame(id)` reads it, for a weapon view or hotbar icons.
+
+While a `UiWindow` of the scene or of its HUD is shown (a pause menu, an inventory), the engine fires no world
+interaction (doors, interaction triggers); `ui.is_world_blocked()` tells a script so, to ignore its own world clicks
+in that frame.
 
 #### Transition kinds
 
@@ -375,7 +427,9 @@ state as in `settings.set`.
 ### `save`
 
 Save files are stored in the user directory (`~/.local/share/<game>/saves/` on Linux,
-`%APPDATA%/<game>/saves/` on Windows) as YAML `.owl_save` files.
+`%APPDATA%/<game>/saves/` on Windows) as YAML `.owl_save` files. A save holds the game state, the scene, the HUD
+widget values, the body velocities and the cells of every tilemap changed since it was read from its file
+(`isometric.set_cell`, roads and buildings laid in game): the load puts them back before the colliders are built.
 
 ### `settings`
 
@@ -537,6 +591,12 @@ sequenceDiagram
 
 The scene binding (`ScriptInstance::setScene`) makes the bindings act on that scene only, so the scripts of several
 scenes run side by side.
+
+### Spawned entities {#spawned-entities}
+
+The entities of `scene.spawn_prefab` exist as soon as the call returns (their transform and components can be set),
+and start at the next safe point of `onUpdateRuntime()`: just before the scripts of the frame, or just after them.
+Each script of the prefab is then created bound to the scene, gets its properties, then `on_create()`.
 
 ### Entity destruction {#entity-destruction}
 

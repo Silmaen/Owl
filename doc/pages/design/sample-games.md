@@ -60,7 +60,7 @@ Feasibility checked against `main` on 2026-10-18 (Lua bindings, components, Engi
 v0.4.0 engine. Breakout and Mini Transport Tycoon need no engine change, Sokoban one Lua binding
 (`isometric.get_size`, added), Wolfenstein mini art, Mini Minecraft two small engine fixes ([Gaps](#sample-games-gaps)).
 Breakout, Sokoban and a Wolfenstein mini without combat shipped with v0.4.0; the Lua gaps G1, G3, G7, G8 and G15 are
-planned in v0.5.0, Mini Minecraft in v0.6.0; Mini Transport Tycoon waits in the pool.
+closed in v0.5.0, Mini Minecraft is planned in v0.6.0; Mini Transport Tycoon waits in the pool.
 
 Common to every game:
 
@@ -100,8 +100,8 @@ Done in v0.4.0: `samples/breakout/` (how to play: its `README.md`).
   would keep its body), its burst shown from a pool instead of the pop of `coin.lua`.
 - Gaps met: G5 (the paddle follows the mouse motion, `breakout_mouse_speed` setting), G1 (pools of hidden entities:
   power-ups, bursts, and a second paddle for the wide one, a body cannot be resized from Lua), G14 (one scene per
-  level), G9 (master volume only), G8 (the pause stops the bodies from Lua). Each level names the next one in the
-  `next_scene` property of its `Game` script (G16 fixed): a new level is a duplicated scene in Owl Nest.
+  level), G9 (master volume only), G8 (the pause stops the scene clock, `time.set_paused`). Each level names the next
+  one in the `next_scene` property of its `Game` script (G16 fixed): a new level is a duplicated scene in Owl Nest.
 - Scenarios: `breakout_serve` (serve, 300 frames, `breakout_bricks` below 40), `breakout_lose` (no input at all:
   the automatic serve, `breakout_lives` below 3), `breakout_gamepad` (dead zone, the stick moves the paddle, A serves),
   `breakout_level_select` (down selects level 2, accept starts a fresh run there), `breakout_how_to` (the How to play
@@ -157,14 +157,14 @@ Done in v0.4.0: `samples/breakout/` (how to play: its `README.md`).
 | Lua      | `build.lua` (roads, bulldozer, costs), `stations.lua`, `vehicles.lua` (`path.find`, `path.poll`, load, unload), `economy.lua` (production, pay by distance and days, running costs, loan, date) |
 | HUD      | Toolbar, money and date, vehicle list (`UiList`), station and finance windows (`UiWindow`), tooltips                                                                                            |
 | Art      | `tools/iso_atlas` (terrain, roads, buildings, vehicles); map from `city_map.py` with another seed and two towns                                                                                 |
-| Saves    | Slots from the pause menu; roads and stations replayed from a `gamestate` string on load (G3)                                                                                                   |
+| Saves    | Slots from the pause menu; the roads and stations laid in game are tilemap cells the save keeps (G3)                                                                                            |
 
 - Reuse: `scripts/iso/iso_town.lua` (build tool, road shapes, funds), `scripts/iso/iso_town_traffic.lua` (route
   following, headings, waits), `scripts/iso/iso_camera.lua`, `scripts/iso/iso_town_life.lua`, `huds/iso_town.owlhud`,
   `tilesets/iso_ground.owltileset`, `textures/iso/`, `sounds/town/`, and the small map of the scenarios
   (`test/unit/test_helper/assets/scenarios/iso_town_small.owl`).
-- Gaps: G1 (trucks from a pool), G3 (runtime roads lost by a save), G8 (pause, fast forward), G15 (click a
-  vehicle), G7.
+- Gaps, closed in v0.5.0: G1 (trucks spawned from a prefab), G3 (runtime roads kept by a save), G8 (pause, fast
+  forward), G15 (click a vehicle, `scene.pick_entity`), G7.
 - Scenarios: `tycoon_route` (the mouse lays a road from a farm to a factory, two stations, buys a truck;
   `tycoon_deliveries` above 0, money up), `tycoon_bankrupt` (no income, fast forward, game over),
   `tycoon_save` (save, bulldoze, load: the road is back).
@@ -237,7 +237,7 @@ and the combat come in a later release, once their art exists.
 | 1    | Breakout              | v0.4.0  | Smallest, no blocking gap; sets up `samples/`, the scenarios and the export test for the others    |
 | 2    | Wolfenstein mini      | v0.4.0  | Exploration without combat (score, items, secrets, map explored); combat once its art exists (G11) |
 | 3    | Sokoban               | v0.4.0  | No blocking gap; proves level editing in Owl Nest, undo and saves                                  |
-| 4    | Tower defence         | v0.5.0  | Waves from a pool (G1), pause (G8), the tile graph of the iso town; after the Lua gaps PR          |
+| 4    | Tower defence         | v0.5.0  | Waves spawned from prefabs (G1), pause (G8), the tile graph of the iso town; after the Lua gaps PR |
 | 5    | Mini Minecraft        | v0.6.0  | After a small engine PR for G2 and G13                                                             |
 
 ## v0.7.0 games
@@ -294,20 +294,20 @@ test/unit/scenarios/*.owltest         scenario tests
 
 | Id  | Gap                                                                                                                 | Size | Games                                    | Blocking?                                                   |
 |-----|---------------------------------------------------------------------------------------------------------------------|------|------------------------------------------|-------------------------------------------------------------|
-| G1  | No Lua call to spawn a prefab or add a component (`scene.create_entity` makes an empty entity)                      | M    | Breakout, Tycoon, Wolfenstein, Minecraft | No: pools of authored entities hidden with `ui.set_visible` |
+| G1  | No Lua call to spawn a prefab or add a component (fixed in v0.5.0: `scene.spawn_prefab`, `entity.add_component`)    | M    | Breakout, Tycoon, Wolfenstein, Minecraft | No: pools of authored entities hidden with `ui.set_visible` |
 | G2  | No Lua `voxel` table: get and set a block, aimed block, `placeBlock`, break and place events                        | M    | Minecraft                                | **Yes**: no hotbar, no inventory                            |
-| G3  | A save keeps the `tilemapPath` of a tilemap, not its cells: runtime `set_cell` edits are lost on load               | M    | Tycoon                                   | No: replay the edits from a `gamestate` string              |
+| G3  | A save kept the `tilemapPath` of a tilemap, not its cells (fixed in v0.5.0: the changed cells are saved)            | M    | Tycoon                                   | No: replay the edits from a `gamestate` string              |
 | G4  | A procedural `VoxelWorld` does not serialise its chunks: player edits are lost on save                              | M    | Minecraft                                | No: a finite, non-procedural world                          |
 | G5  | No screen-to-world conversion nor viewport size in Lua for a 2D camera                                              | S    | Breakout                                 | No: the paddle follows the mouse delta                      |
 | G6  | Tile and sprite-frame bindings live in `isometric` although they work on any tilemap                                | S    | Sokoban, Wolfenstein                     | No: naming only (a `tilemap` alias)                         |
-| G7  | No `ui.set_image` (texture or frame of a `UiImage`) in Lua                                                          | S    | Wolfenstein, Minecraft, Tycoon           | No: several `UiImage` toggled visible                       |
-| G8  | No pause nor time scale in Lua (scene clock, physics); a shown `UiWindow` holds world interactions back             | S    | Tycoon, all (pause)                      | No: Lua scales its own delta, bodies stopped by hand        |
+| G7  | No `ui.set_image` in Lua (fixed in v0.5.0: `ui.set_image`, `ui.set_image_frame` on a sprite sheet grid)             | S    | Wolfenstein, Minecraft, Tycoon           | No: several `UiImage` toggled visible                       |
+| G8  | No pause nor time scale in Lua (fixed in v0.5.0: `time.set_paused`, `time.set_scale`, `ui.is_world_blocked`)        | S    | Tycoon, all (pause)                      | No: Lua scales its own delta, bodies stopped by hand        |
 | G9  | No music and effects mixing: `SoundSource` loops ignore `volume_music` and have no Lua volume                       | S    | All                                      | No: master volume only                                      |
 | G10 | No line-of-sight or ray query in Lua                                                                                | S    | Wolfenstein                              | No: grid DDA in Lua, as in `raycast_level.lua`              |
 | G11 | No guard nor weapon-view sprites                                                                                    | M    | Wolfenstein                              | No: exploration first, combat later                         |
 | G12 | Owl Nest finds `engine_demo` only, and only `engine_demo/` is installed (fixed in v0.4.0: `samples/`, File screen)  | S    | All                                      | No: File > Open project                                     |
 | G13 | `VoxelPlayer` edits fire only with a captured cursor: a gamepad player and headless scenarios cannot break or place | S    | Minecraft                                | **Yes**: gamepad rule and CI scenario                       |
 | G14 | Lua cannot switch the tilemap asset of an entity: one scene per level                                               | S    | Sokoban, Breakout                        | No: duplicate the level scene                               |
-| G15 | No Lua pick of the entity under the mouse                                                                           | S    | Tycoon                                   | No: compare `isometric.pick_cell` with the vehicle cells    |
+| G15 | No Lua pick of the entity under the mouse (fixed in v0.5.0: `scene.pick_entity`, 2D, isometric, 3D)                 | S    | Tycoon                                   | No: compare `isometric.pick_cell` with the vehicle cells    |
 | G16 | The export follows scene paths quoted in scripts, not those in script properties (fixed in v0.4.0: both followed)   | S    | Breakout, Wolfenstein                    | No: list the scenes in the script                           |
 | G17 | A save keeps neither a slid `RaycastPushWall` nor an open door: after a load they are back in place                 | S    | Wolfenstein                              | No: pushed again, a secret counts once                      |

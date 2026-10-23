@@ -154,7 +154,7 @@ render graph, essential post-processing — with full 3D editing ([details](desi
 - ![Done][done] `FirstPersonController` walking on `MeshRenderer` boxes, and the Engine Demo tavern as a fifth hub level
 - ![Done][done] Owl Nest fixes: material texture **Open** buttons, text files (`gamecontrollerdb.txt`) in the code editor; material thumbnails and a prefab document ([Editor reach](design/editor-reach.md#editor-fixes-and-gaps))
 - ![Done][done] Help panel: mermaid diagrams drawn as SVG at build time, list hanging indent, flat inline code, task lists ([Nest UI](design/nest-ui.md#in-editor-documentation))
-- ![Planned][planned] Lua gaps of the sample games: spawn a prefab, tilemap cells kept by saves, `ui.set_image`, pause and time scale, entity under the mouse ([Gaps](design/sample-games.md#sample-games-gaps))
+- ![Done][done] Lua gaps of the sample games: spawn a prefab, tilemap cells kept by saves, `ui.set_image`, pause and time scale, entity under the mouse ([Gaps](design/sample-games.md#sample-games-gaps))
 - ![Planned][planned] Sample game: a tower defence ([Sample games](design/sample-games.md))
 
 ## v0.4.0 -- 2026-10-20
