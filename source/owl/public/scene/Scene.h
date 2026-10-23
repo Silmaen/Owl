@@ -603,6 +603,40 @@ public:
 
 	/**
 	 * @brief
+	 *  An entity outlined over the 3D scene: the silhouette of the meshes of its subtree.
+	 */
+	struct Outline {
+		/// Root of the outlined subtree.
+		core::UUID root{0};
+		/// Colour of the line.
+		math::vec4 color{1.f, 0.8f, 0.35f, 1.f};
+	};
+
+	/**
+	 * @brief
+	 *  Set the entity outlined from the next frame on (the selection of Owl Nest, what a first-person walker aims at).
+	 * @param[in] iOutline The outline, or none to outline nothing.
+	 */
+	void setOutline(const std::optional<Outline>& iOutline) { m_outline = iOutline; }
+
+	/**
+	 * @brief
+	 *  Get the entity outlined over the 3D scene.
+	 * @return The outline, or none.
+	 */
+	[[nodiscard]] auto getOutline() const -> const std::optional<Outline>& { return m_outline; }
+
+	/**
+	 * @brief
+	 *  Whether an entity is the given root or below it in the hierarchy.
+	 * @param[in] iHandle The entity.
+	 * @param[in] iRoot The root.
+	 * @return True when it is in the subtree.
+	 */
+	[[nodiscard]] auto isInSubtree(entt::entity iHandle, entt::entity iRoot) const -> bool;
+
+	/**
+	 * @brief
 	 *  Show or hide the aiming crosshair of the voxel HUD for this frame.
 	 * @param[in] iShow True to draw the crosshair.
 	 */
@@ -1518,6 +1552,15 @@ private:
 
 	/**
 	 * @brief
+	 *  Add the outline of `m_outline` to a frame graph: its silhouette, the depth of the scene, then the line over the
+	 *  display target. Nothing without an outline, or when its subtree holds no mesh.
+	 * @param[in,out] ioGraph The graph of the frame.
+	 * @param[in] iTarget The display target.
+	 */
+	void recordOutlinePasses(renderer::RenderGraph& ioGraph, renderer::RenderGraph::Resource iTarget);
+
+	/**
+	 * @brief
 	 *  Start drawing and prefiltering the procedural sky on a worker when its inputs changed and no drawing runs; the
 	 *  previous sky stays lit until the new one is ready.
 	 * @param[in] iSky The sky of the environment.
@@ -1529,8 +1572,9 @@ private:
 	 *  Draw the opaque geometry of the 3D layers (meshes, voxel worlds) with the current camera; used by the shadow
 	 *  passes.
 	 * @param[in] iCamera The camera drawing the geometry.
+	 * @param[in] iMeshesOnly Whether only the mesh layers draw (an outline mask), the voxel worlds left out.
 	 */
-	void renderShadowCasters(const renderer::Camera& iCamera);
+	void renderShadowCasters(const renderer::Camera& iCamera, bool iMeshesOnly = false);
 
 	/**
 	 * @brief
@@ -1693,6 +1737,10 @@ private:
 	math::vec3i m_voxelHighlightBlock{0, 0, 0};
 	/// Outward normal of the ray-impacted face of the highlighted block (the only face outlined).
 	math::vec3i m_voxelHighlightNormal{0, 0, 0};
+	/// Entity outlined over the 3D scene.
+	std::optional<Outline> m_outline;
+	/// Root of the subtree `renderMeshes` draws alone (the outline mask), `entt::null` for every mesh.
+	entt::entity m_meshFilterRoot = entt::null;
 	/// World box of the interaction aimed at this frame, outlined over the scene.
 	std::optional<math::box3f> m_interactionHighlight;
 	/// True while a captured `VoxelPlayer` is active (draws the centre-screen aiming crosshair).

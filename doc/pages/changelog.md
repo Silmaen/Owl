@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Engine Demo tavern: a hub level played on foot (`FirstPersonController`) from an empty house of the hub, with a cellar key, a trapdoor, a chest in `scenes/tavern_cellar.owl` lit by a lantern spot light and a ladder back up.
+- Outline of the silhouette of an entity and its subtree (`Scene::setOutline`, `renderer::OutlinePass`), in full where it shows and dimmed behind other geometry: the Owl Nest selection of a mesh and what a first-person walker aims at use it.
 - `FirstPersonController` component (walk, run, look, jump, step climbing) whose body box collides with the `MeshRenderer` world boxes through `data::geometry::moveBoxAmong`, waits for the meshes to load, and Lua `entity.set_first_person_enabled`; an interaction trigger answers what the walker aims at within `reach`, its box outlined.
 - Voxel tilesets accept `normalTexture` and `roughnessTexture` (`.owltileset` keys, Tileset editor fields, packed by export); `voxel.slang` reads them and averages the far texels of such atlases; the demo blocks are redrawn at 128 px and the isometric art gets more detail.
 - `ProceduralSky` component (clear sky and dusk glow prefiltered on a worker like an HDRI; sun, detailed moon and pixel-sharp stars drawn by the sky shader) and benchmark `sky/*`.

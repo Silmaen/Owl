@@ -306,6 +306,7 @@ void Viewport::onUpdate(const core::Timestep& iTimeStep) {
 					const float ambient = m_parent->getSettings().editorAmbient;
 					activeScene->setEditorAmbient({ambient, ambient, ambient});
 				}
+				updateSelectionOutline(activeScene);
 				activeScene->onUpdateEditor(iTimeStep, getActiveCamera());
 				break;
 			}
@@ -685,16 +686,15 @@ void Viewport::renderOverlay() const {
 		if (const scene::Entity selectedEntity = m_parent != nullptr ? m_parent->getSelectedEntity() : scene::Entity{};
 			selectedEntity && !isPiloted(selectedEntity)) {
 			const math::Transform worldTransform = activeScene->getWorldTransform(selectedEntity);
-			if (selectedEntity.hasComponent<scene::component::MeshRenderer>() &&
-				selectedEntity.getComponent<scene::component::MeshRenderer>().mesh) {
-				renderSelectionBox(worldTransform(),
-								   selectedEntity.getComponent<scene::component::MeshRenderer>().mesh->getGeometry());
-			} else if (selectedEntity.hasComponent<scene::component::Camera>() && showsCameraModels() &&
-					   m_cameraModel) {
+			// The silhouette of the meshes of a selection is outlined by the scene render itself.
+			const bool outlined =
+					activeScene->getOutline() && activeScene->getOutline()->root == selectedEntity.getUUID();
+			if (!outlined && selectedEntity.hasComponent<scene::component::Camera>() && showsCameraModels() &&
+				m_cameraModel) {
 				math::Transform rigid = worldTransform;
 				rigid.scale() = {1.f, 1.f, 1.f};
 				renderSelectionBox(rigid(), m_cameraModel->getGeometry());
-			} else if (!selectedEntity.hasComponent<scene::component::Light>() || m_isometric) {
+			} else if (!outlined && (!selectedEntity.hasComponent<scene::component::Light>() || m_isometric)) {
 				renderer::Renderer2D::drawRect({.transform = worldTransform, .color = g_selectionColor});
 				renderer::Renderer2D::drawQuad(
 						{.transform = worldTransform, .color = gui::Theme::withAlpha(g_selectionColor, 0.2f)});
@@ -899,6 +899,22 @@ void overlaySeparator() {
 }
 
 }// namespace
+
+void Viewport::updateSelectionOutline(const shared<scene::Scene>& iScene) const {
+	const scene::Entity selected = m_parent != nullptr ? m_parent->getSelectedEntity() : scene::Entity{};
+	if (!selected || isPiloted(selected)) {
+		iScene->setOutline(std::nullopt);
+		return;
+	}
+	const auto root = static_cast<entt::entity>(selected);
+	const auto meshes = iScene->registry.view<scene::component::MeshRenderer>();
+	const bool hasMesh = std::ranges::any_of(meshes, [&](const auto iHandle) -> bool {
+		return meshes.get<scene::component::MeshRenderer>(iHandle).mesh && iScene->isInSubtree(iHandle, root);
+	});
+	iScene->setOutline(
+			hasMesh ? std::optional{scene::Scene::Outline{.root = selected.getUUID(), .color = g_selectionColor}}
+					: std::nullopt);
+}
 
 void Viewport::renderSelectionBox(const math::mat4& iWorld, const renderer::MeshGeometry& iGeometry) {
 	const auto& lo = iGeometry.boundsMin;

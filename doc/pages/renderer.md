@@ -201,6 +201,10 @@ flowchart LR
   ([Post-process](#renderer-post-process)).
 - **colour encode** (`renderer::ColorEncoder`, `color_encode.slang`) turns the linear scene colour into the display
   target: exposure, bloom, tone mapping, vignette, sRGB encoding, then the colour-grading LUT.
+- **outline mask**, **outline scene depth** and **outline** (`renderer::OutlinePass`, `outline.slang`), when the scene
+  has an outline (`Scene::setOutline`: the Owl Nest selection, what a first-person walker aims at): the meshes of the
+  outlined subtree alone, then the whole 3D scene, are drawn into depth targets, and the line is blended over the target
+  around the silhouette, in full where it shows, dimmed where other geometry hides it; gaps thinner than the line close.
 - **entity ids and depth** copies the id and depth attachments into the target, so picking and depth-tested editor
   overlays keep working; skipped when the target is the window surface.
 - **overlays and HUD** (editor overlays, HUD, toast) draw after the encoding, in display space.

@@ -603,7 +603,8 @@ entities (`data::geometry::moveBoxAmong`: per-axis resolution, wall sliding, ste
 still until every mesh of the scene is loaded. Without a `Player`, the `Trigger` components test the body box of
 the first walker (`FirstPersonController` or `VoxelPlayer`) against their own box in 3D. An `Interaction` trigger
 answers a first-person walker only when aimed at: the view ray hits the box of its meshes (its subtree, else its
-transform) within `reach`, before any other mesh; that box is outlined while aimed at, and `interact` uses it. The
+transform) within `reach`, before any other mesh; while aimed at, the silhouette of its meshes is outlined
+(`Scene::setOutline`, its box for a trigger without mesh), and `interact` uses it. The
 aiming crosshair of the voxel player shows, and the view is read from the `Transform` each frame, so a script or Owl
 Nest can turn the walker.
 

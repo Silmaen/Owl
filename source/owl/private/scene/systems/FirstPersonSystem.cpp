@@ -99,19 +99,6 @@ auto contains(const math::box3f& iBox, const math::vec3& iPoint) -> bool {
 	return true;
 }
 
-// Whether the entity is the given one or below it in the hierarchy.
-auto isInSubtree(const Scene& iScene, entt::entity iHandle, const entt::entity iRoot) -> bool {
-	for (int depth = 0; depth < 64 && iHandle != entt::null; ++depth) {
-		if (iHandle == iRoot)
-			return true;
-		const auto* hierarchy = iScene.registry.try_get<component::Hierarchy>(iHandle);
-		if (hierarchy == nullptr || hierarchy->parentId == core::UUID{0})
-			return false;
-		iHandle = static_cast<entt::entity>(iScene.findEntityByUUID(hierarchy->parentId));
-	}
-	return false;
-}
-
 auto merged(const math::box3f& iA, const math::box3f& iB) -> math::box3f {
 	return {math::vec3{std::min(iA.min().x(), iB.min().x()), std::min(iA.min().y(), iB.min().y()),
 					   std::min(iA.min().z(), iB.min().z())},
@@ -135,8 +122,7 @@ auto interactionBox(const Scene& iScene, const Entity& iEntity, std::vector<uint
 	index.query(math::box3f{box.min() - math::vec3{2.f, 2.f, 2.f}, box.max() + math::vec3{2.f, 2.f, 2.f}}, ioIds);
 	for (const uint32_t id: ioIds) {
 		const auto handle = iScene.getMeshSpatialEntity(id);
-		if (handle != root && handle != entt::null && iScene.registry.valid(handle) &&
-			isInSubtree(iScene, handle, root))
+		if (handle != root && handle != entt::null && iScene.registry.valid(handle) && iScene.isInSubtree(handle, root))
 			box = merged(box, index.getBox(id));
 	}
 	return box;
@@ -172,7 +158,7 @@ auto findAimedInteraction(Scene& ioScene, const math::vec3& iEye, const math::ve
 		const auto handle = ioScene.getMeshSpatialEntity(id);
 		if (handle == entt::null || !ioScene.registry.valid(handle) ||
 			ioScene.registry.all_of<component::Trigger>(handle) ||
-			isInSubtree(ioScene, handle, static_cast<entt::entity>(best->first)))
+			ioScene.isInSubtree(handle, static_cast<entt::entity>(best->first)))
 			continue;
 		// World boxes are coarser than meshes: one holding the aimed point (a hearth around a key) does not hide it.
 		const auto& box = index.getBox(id);
@@ -183,6 +169,12 @@ auto findAimedInteraction(Scene& ioScene, const math::vec3& iEye, const math::ve
 			return std::nullopt;
 	}
 	return best;
+}
+
+auto hasMeshInSubtree(const Scene& iScene, const Entity& iRoot) -> bool {
+	const auto root = static_cast<entt::entity>(iRoot);
+	const auto meshes = iScene.registry.view<component::MeshRenderer>();
+	return std::ranges::any_of(meshes, [&](const auto iHandle) -> bool { return iScene.isInSubtree(iHandle, root); });
 }
 
 auto isWorldLoaded(const Scene& iScene) -> bool {
@@ -215,6 +207,7 @@ void updateFirstPersonControllers(Scene& ioScene, const SystemContext& iContext)
 	std::vector<uint32_t> ids;
 	std::vector<math::box3f> boxes;
 	ioScene.setInteractionHighlight(std::nullopt);
+	ioScene.setOutline(std::nullopt);
 	for (const auto handle: view) {
 		auto [transform, controller] = view.get<component::Transform, component::FirstPersonController>(handle);
 		if (!controller.enabled)
@@ -262,7 +255,9 @@ void updateFirstPersonControllers(Scene& ioScene, const SystemContext& iContext)
 								 -cp * std::cos(controller.m_yaw)};
 		const auto aimed = findAimedInteraction(ioScene, eye.translation(), forward, controller.reach, ids);
 		controller.m_target = aimed ? aimed->first.getUUID() : core::UUID{0};
-		ioScene.setInteractionHighlight(aimed ? std::optional{aimed->second} : std::nullopt);
+		const bool hasMesh = aimed && hasMeshInSubtree(ioScene, aimed->first);
+		ioScene.setOutline(hasMesh ? std::optional{Scene::Outline{.root = aimed->first.getUUID()}} : std::nullopt);
+		ioScene.setInteractionHighlight(aimed && !hasMesh ? std::optional{aimed->second} : std::nullopt);
 	}
 }
 

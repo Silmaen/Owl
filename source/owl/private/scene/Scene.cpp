@@ -19,6 +19,7 @@
 #include "renderer/IsometricObjects.h"
 #include "renderer/MaterialLibrary.h"
 #include "renderer/MeshCache.h"
+#include "renderer/OutlinePass.h"
 #include "renderer/PostProcess.h"
 #include "renderer/ProceduralSky.h"
 #include "renderer/Renderer.h"
@@ -814,6 +815,8 @@ void Scene::renderWithStack(const renderer::Camera& iCamera) {
 						 .frameSize = iContext.getSize(),
 						 .exposure = targets.exposure.isValid() ? iContext.getTexture(targets.exposure) : nullptr});
 			});
+	if (!m_drawingRenderTarget)
+		recordOutlinePasses(graph, target);
 	// The display target takes the entity ids and the depth of the world, for picking and the depth-tested overlays.
 	graph.addPass("entity ids and depth", encodeSetup,
 				  [sceneColor, target](const Graph::PassContext& iContext) -> void {
@@ -1161,14 +1164,65 @@ void Scene::useShadowMaps(const renderer::RenderGraph::PassContext& iContext) {
 	renderer::Renderer3D::setShadow(m_shadowSettings);
 }
 
-void Scene::renderShadowCasters(const renderer::Camera& iCamera) {
+auto Scene::isInSubtree(entt::entity iHandle, const entt::entity iRoot) const -> bool {
+	for (int depth = 0; depth < 64 && iHandle != entt::null; ++depth) {
+		if (iHandle == iRoot)
+			return true;
+		const auto* hierarchy = registry.try_get<component::Hierarchy>(iHandle);
+		if (hierarchy == nullptr || hierarchy->parentId == core::UUID{0})
+			return false;
+		iHandle = static_cast<entt::entity>(findEntityByUUID(hierarchy->parentId));
+	}
+	return false;
+}
+
+void Scene::recordOutlinePasses(renderer::RenderGraph& ioGraph, const renderer::RenderGraph::Resource iTarget) {
+	using Graph = renderer::RenderGraph;
+	if (!m_outline)
+		return;
+	const Entity root = findEntityByUUID(m_outline->root);
+	if (!root)
+		return;
+	const auto rootHandle = static_cast<entt::entity>(root);
+	const auto meshes = registry.view<component::MeshRenderer>();
+	if (std::ranges::none_of(meshes, [&](const auto iHandle) -> bool { return isInSubtree(iHandle, rootHandle); }))
+		return;
+	const Graph::Resource mask = ioGraph.createTarget("outline mask", Graph::TargetFormat::Depth);
+	const Graph::Resource depth = ioGraph.createTarget("outline scene depth", Graph::TargetFormat::Depth);
+	ioGraph.addPass(
+			"outline mask", [mask](Graph::PassBuilder& ioBuilder) -> void { ioBuilder.write(mask); },
+			[this, rootHandle](const Graph::PassContext&) -> void {
+				m_meshFilterRoot = rootHandle;
+				renderShadowCasters(*mp_renderCamera, true);
+				m_meshFilterRoot = entt::null;
+			});
+	ioGraph.addPass(
+			"outline scene depth", [depth](Graph::PassBuilder& ioBuilder) -> void { ioBuilder.write(depth); },
+			[this](const Graph::PassContext&) -> void { renderShadowCasters(*mp_renderCamera); });
+	ioGraph.addPass(
+			"outline",
+			[mask, depth, iTarget](Graph::PassBuilder& ioBuilder) -> void {
+				ioBuilder.read(mask);
+				ioBuilder.read(depth);
+				ioBuilder.write(iTarget);
+			},
+			[this, mask, depth](const Graph::PassContext& iContext) -> void {
+				renderer::OutlinePass::draw({.mask = iContext.getTexture(mask),
+											 .sceneDepth = iContext.getTexture(depth),
+											 .color = m_outline ? m_outline->color : math::vec4{1.f, 0.8f, 0.35f, 1.f},
+											 .frameSize = iContext.getSize()});
+			});
+}
+
+void Scene::renderShadowCasters(const renderer::Camera& iCamera, const bool iMeshesOnly) {
 	const bool editorMode = status == Status::Editing;
 	renderer::Renderer3D::setShadowPass(true);
 	const auto& layers = renderer::Renderer::getRenderStack().getLayers();
 	for (size_t index = 0; index < layers.size(); ++index) {
 		const auto& layer = layers[index];
 		const std::string_view type{layer->getTypeKey()};
-		if ((type != "RendererVoxel" && type != "RendererMesh") || !layerHasContent(layer->getName(), index == 0))
+		if ((type != "RendererVoxel" && type != "RendererMesh") || (iMeshesOnly && type != "RendererMesh") ||
+			!layerHasContent(layer->getName(), index == 0))
 			continue;
 		layer->onBeginFrame(iCamera);
 		m_currentLayerName = layer->getName();
@@ -1744,6 +1798,8 @@ void Scene::renderMeshes(const bool iEditorMode) {
 			continue;
 		const Entity ent{entity, this};
 		if (!isEffectivelyVisible(ent, iEditorMode) || !layerAccepts(ent))
+			continue;
+		if (m_meshFilterRoot != entt::null && !isInSubtree(entity, m_meshFilterRoot))
 			continue;
 		auto& meshRenderer = view.get<component::MeshRenderer>(entity);
 		if (!meshRenderer.mesh)

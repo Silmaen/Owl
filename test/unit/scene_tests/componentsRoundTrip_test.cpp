@@ -19,6 +19,7 @@
 #include <cstdint>
 
 #include <filesystem>
+#include <optional>
 #include <string>
 
 using namespace owl;
@@ -858,4 +859,36 @@ TEST(ComponentRoundTrip, ProceduralSkyAndDayNightCycle) {
 				EXPECT_NEAR(cycle.moonIlluminance, 1200.f, 1e-3f);
 				EXPECT_NEAR(cycle.nightExposure, 2.f, 1e-6f);
 			});
+}
+
+TEST(Outline, ASubtreeHoldsItsRootAndItsDescendantsOnly) {
+	core::Log::init(core::Log::Level::Off);
+	auto app = makeApp("OutlineSubtree");
+	const auto sc = mkShared<scene::Scene>();
+	auto root = sc->createEntity("Root");
+	auto child = sc->createEntity("Child");
+	auto grandChild = sc->createEntity("GrandChild");
+	auto other = sc->createEntity("Other");
+	sc->setParent(child, root);
+	sc->setParent(grandChild, child);
+	const auto rootHandle = static_cast<entt::entity>(root);
+	EXPECT_TRUE(sc->isInSubtree(static_cast<entt::entity>(root), rootHandle));
+	EXPECT_TRUE(sc->isInSubtree(static_cast<entt::entity>(grandChild), rootHandle));
+	EXPECT_FALSE(sc->isInSubtree(static_cast<entt::entity>(other), rootHandle));
+	EXPECT_FALSE(sc->isInSubtree(rootHandle, static_cast<entt::entity>(child)));
+	EXPECT_FALSE(sc->getOutline().has_value());
+	sc->setOutline(scene::Scene::Outline{.root = child.getUUID()});
+	ASSERT_TRUE(sc->getOutline().has_value());
+	EXPECT_EQ(sc->getOutline()->root, child.getUUID());
+	auto main = sc->createEntity("Main");
+	main.addComponent<scene::component::Camera>().primary = true;
+	sc->onViewportResize({320, 180});
+	sc->onStartRuntime();
+	EXPECT_NO_THROW(sc->onRenderRuntime());
+	sc->setOutline(std::nullopt);
+	EXPECT_FALSE(sc->getOutline().has_value());
+	sc->onEndRuntime();
+	app::Application::invalidate();
+	app.reset();
+	core::Log::invalidate();
 }

@@ -220,8 +220,8 @@ viewport, and a frame in the play colour outlines the viewport.
 (`CameraEditor::Projection::Orthographic`) faces the XY plane with the framing of the 3D view; `CameraEditor::frame`
 centres the selection. The grid follows the snap step (doubled while too dense), its axes in their colours: on the
 ground (XZ plane, `y = 0`) in the 3D view, on the XY plane in the 2D and isometric views; **Show > Grid on the ground**
-puts the 3D one back on the XY plane. The selection is outlined in orange: its quad for a 2D entity, the 12 edges of
-its bounding box for a mesh. Camera markers (**Show > Camera markers**) are an icon, an arrow and the field of view in
+puts the 3D one back on the XY plane. The selection is outlined in orange: its quad for a 2D entity, the silhouette of
+the meshes of its subtree for a 3D one, dimmed where other geometry hides it. Camera markers (**Show > Camera markers**) are an icon, an arrow and the field of view in
 the 2D views; the 3D view draws the model `meshes/camera.glb` of the editor assets (made by
 `tools/editor/generate_camera_mesh.py`), pickable, with the frustum of the camera (field of view, or box when
 orthographic) and a filled triangle above it pointing to the up of the camera. Each light has a marker too (same
