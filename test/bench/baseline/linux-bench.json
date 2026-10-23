@@ -1101,11 +1101,11 @@
       "items": 1,
       "batch": 1,
       "samples": 15,
-      "median_ns": 9708.0,
-      "p25_ns": 9638.0,
-      "p75_ns": 9778.0,
-      "min_ns": 9568.0,
-      "max_ns": 10127.0
+      "median_ns": 25144.0,
+      "p25_ns": 24968.5,
+      "p75_ns": 25318.0,
+      "min_ns": 24864.0,
+      "max_ns": 25981.0
     },
     {
       "name": "sample/editor_update/victory",
@@ -1233,11 +1233,11 @@
       "items": 1,
       "batch": 1,
       "samples": 15,
-      "median_ns": 103298.0,
-      "p25_ns": 102285.0,
-      "p75_ns": 109060.0,
-      "min_ns": 102041.0,
-      "max_ns": 118733.0
+      "median_ns": 156379.0,
+      "p25_ns": 154632.5,
+      "p75_ns": 163747.5,
+      "min_ns": 153305.0,
+      "max_ns": 235860.0
     },
     {
       "name": "sample/load/world_map",
@@ -1770,13 +1770,13 @@
     {
       "name": "slang/compile_warm/voxel_vulkan",
       "items": 1,
-      "batch": 35,
+      "batch": 1,
       "samples": 15,
-      "median_ns": 324632.4,
-      "p25_ns": 324305.1,
-      "p75_ns": 324974.6,
-      "min_ns": 324005.8,
-      "max_ns": 325867.6
+      "median_ns": 387629.0,
+      "p25_ns": 383962.0,
+      "p75_ns": 397372.0,
+      "min_ns": 380016.0,
+      "max_ns": 405299.0
     },
     {
       "name": "tilemap/build_chunk/32x32",
@@ -2272,6 +2272,94 @@
       "p75_ns": 1561326.5,
       "min_ns": 1560443.4,
       "max_ns": 1565432.3
+    },
+    {
+      "name": "sample/load/tavern_cellar",
+      "items": 1,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 241587.0,
+      "p25_ns": 240295.0,
+      "p75_ns": 248187.5,
+      "min_ns": 238514.0,
+      "max_ns": 256394.0
+    },
+    {
+      "name": "sample/editor_update/tavern_cellar",
+      "items": 1,
+      "batch": 641,
+      "samples": 15,
+      "median_ns": 18675.0,
+      "p25_ns": 18646.1,
+      "p75_ns": 18690.4,
+      "min_ns": 18633.2,
+      "max_ns": 18722.5
+    },
+    {
+      "name": "sky/draw/256",
+      "items": 32768,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 10585138.0,
+      "p25_ns": 10579445.5,
+      "p75_ns": 10587337.5,
+      "min_ns": 10568794.0,
+      "max_ns": 10592262.0
+    },
+    {
+      "name": "sky/prefilter/256",
+      "items": 32768,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 21080457.0,
+      "p25_ns": 21042497.5,
+      "p75_ns": 21111677.0,
+      "min_ns": 21011522.0,
+      "max_ns": 23213116.0
+    },
+    {
+      "name": "sky/draw/512",
+      "items": 131072,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 42394819.0,
+      "p25_ns": 42387695.0,
+      "p75_ns": 42404911.0,
+      "min_ns": 42378685.0,
+      "max_ns": 42471926.0
+    },
+    {
+      "name": "sky/prefilter/512",
+      "items": 131072,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 81536137.0,
+      "p25_ns": 81428230.0,
+      "p75_ns": 82230028.5,
+      "min_ns": 81330519.0,
+      "max_ns": 84947762.0
+    },
+    {
+      "name": "sky/draw/1024",
+      "items": 524288,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 169130044.0,
+      "p25_ns": 169088802.0,
+      "p75_ns": 169182147.5,
+      "min_ns": 168158528.0,
+      "max_ns": 169222237.0
+    },
+    {
+      "name": "sky/prefilter/1024",
+      "items": 524288,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 324628955.0,
+      "p25_ns": 322887558.5,
+      "p75_ns": 325251676.0,
+      "min_ns": 321983230.0,
+      "max_ns": 327715670.0
     }
   ],
   "metrics": [
