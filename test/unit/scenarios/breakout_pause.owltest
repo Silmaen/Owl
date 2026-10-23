@@ -1,0 +1,12 @@
+# Breakout: the pause stops the scene clock (time.set_paused): no automatic serve while paused, one after the resume.
+scene: ../../../samples/breakout/scenes/level_1.owl
+steps:
+  - frames: 30
+  - actions: {pause: true, frames: 1}
+  - frames: 400
+  - expect: {gamestate: breakout_paused, equals: true}
+  - expect: {gamestate: breakout_serves, equals: 0}
+  - actions: {pause: true, frames: 1}
+  - frames: 400
+  - expect: {gamestate: breakout_paused, equals: false}
+  - expect: {gamestate: breakout_serves, equals: 1}
