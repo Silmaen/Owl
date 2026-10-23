@@ -1,0 +1,33 @@
+# Tower defence: a click on a build pad opens the build ring, a click on the archer badge builds the tower and spends
+# its price; the road and the grass open nothing; a click on the tower opens its ring and X sells it for half. The
+# headless view is 1600x960 centred on the camera at (12, 12): the centre of cell (x, y) is at pixel
+# (800 + 32 * (x - y), 480 + 16 * (x + y - 23)); pad (9, 12) is at (704, 448), its archer badge at (652, 362).
+scene: ../../../samples/tower_defence/scenes/map_01.owl
+steps:
+  - frames: 30
+  - expect: {gamestate: tower_gold, equals: 220}
+  - input: {mouse_pos: [704, 448], frames: 3}
+  - expect: {entity: Cursor, translation.x: 10}
+  - input: {mouse: Left, mouse_pos: [704, 448], frames: 2}
+  - input: {mouse_pos: [652, 362], frames: 3}
+  - expect: {gamestate: tower_ring, equals: 1}
+  - expect: {gamestate: tower_hover, equals: 1}
+  - input: {mouse: Left, mouse_pos: [652, 362], frames: 2}
+  - expect: {gamestate: tower_towers, equals: 1}
+  - expect: {gamestate: tower_gold, equals: 150}
+  - expect: {gamestate: tower_ring, equals: 0}
+  # The road (11, 14) and the grass (3, 3) are no pads.
+  - input: {mouse_pos: [704, 512], frames: 2}
+  - input: {mouse: Left, mouse_pos: [704, 512], frames: 2}
+  - expect: {gamestate: tower_ring, equals: 0}
+  - input: {mouse_pos: [800, 208], frames: 2}
+  - input: {mouse: Left, mouse_pos: [800, 208], frames: 2}
+  - expect: {gamestate: tower_ring, equals: 0}
+  - expect: {gamestate: tower_towers, equals: 1}
+  # The tower itself: its ring sells it for half its price.
+  - input: {mouse_pos: [704, 420], frames: 2}
+  - input: {mouse: Left, mouse_pos: [704, 420], frames: 2}
+  - expect: {gamestate: tower_ring, equals: 2}
+  - input: {key: X, frames: 2}
+  - expect: {gamestate: tower_towers, equals: 0}
+  - expect: {gamestate: tower_gold, equals: 185}

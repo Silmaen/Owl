@@ -1,0 +1,17 @@
+# Tower defence: no tower built, the first wave called at once and played at double speed: the runners walk the road
+# from the gate to the keep and each one costs a life.
+scene: ../../../samples/tower_defence/scenes/map_01.owl
+steps:
+  - frames: 30
+  - expect: {gamestate: tower_route, greater: 40}
+  - expect: {gamestate: tower_lives, equals: 20}
+  - expect: {gamestate: tower_wave, equals: 0}
+  - input: {key: Space, frames: 2}
+  - expect: {gamestate: tower_wave, equals: 1}
+  - input: {key: F, frames: 2}
+  - expect: {gamestate: tower_speed, equals: 2}
+  - frames: 1200
+  - expect: {gamestate: tower_spawned, greater: 5}
+  - expect: {gamestate: tower_kills, equals: 0}
+  - expect: {gamestate: tower_leaks, greater: 5}
+  - expect: {gamestate: tower_lives, less: 15}
