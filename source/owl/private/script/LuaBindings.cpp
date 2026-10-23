@@ -64,6 +64,14 @@ auto guarded(lua_State* iState) -> int {
 	return LuaEngine::callGuarded(iState, Function);
 }
 
+// Disk or decoder work: a slow disk must not count against the time quota of the calling script.
+template<LuaFunction Function>
+auto blocking(lua_State* iState) -> int {
+	const int results = LuaEngine::callGuarded(iState, Function);
+	LuaEngine::restartCallClock(iState);
+	return results;
+}
+
 auto contextOf(lua_State* iState) -> app::EngineContext* {
 	const auto* boundScene = getBoundScene(iState);
 	return boundScene != nullptr ? boundScene->getEngineContext() : nullptr;
@@ -2037,7 +2045,7 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		 .description = "Gamepad stick (0 = left, 1 = right) through a radial dead zone (0.15 by default), y down.",
 		 .params = {{"pad", Integer}, {"stick", Integer}, {"dead_zone", Number, true}},
 		 .returns = {{"x", Number}, {"y", Number}}},
-		{.table = "sound", .name = "play", .function = guarded<luaSoundPlay>,
+		{.table = "sound", .name = "play", .function = blocking<luaSoundPlay>,
 		 .description = "Play a sound asset (loaded on first use); an invalid handle when sound is off or missing.",
 		 .params = {{"asset_path", String}}, .returns = {{"handle", Integer}}},
 		{.table = "sound", .name = "stop", .function = guarded<luaSoundStop>,
@@ -2324,11 +2332,11 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		{.table = "save", .name = "load_game", .function = guarded<luaSaveLoadGame>,
 		 .description = "Load a slot after this frame; the level keeps running when the slot does not load.",
 		 .params = {{"slot", Integer}}},
-		{.table = "save", .name = "has_save", .function = guarded<luaSaveHasSave>,
+		{.table = "save", .name = "has_save", .function = blocking<luaSaveHasSave>,
 		 .description = "Whether a slot holds a save.", .params = {{"slot", Integer}}, .returns = {{"exists", Boolean}}},
-		{.table = "save", .name = "delete_save", .function = guarded<luaSaveDeleteSave>,
+		{.table = "save", .name = "delete_save", .function = blocking<luaSaveDeleteSave>,
 		 .description = "Delete the save of a slot.", .params = {{"slot", Integer}}},
-		{.table = "save", .name = "list_saves", .function = guarded<luaSaveListSaves>,
+		{.table = "save", .name = "list_saves", .function = blocking<luaSaveListSaves>,
 		 .description = "Every save, as a list of `{slot, timestamp, scene}`.", .returns = {{"saves", Table}}},
 		{.table = "settings", .name = "get", .function = guarded<luaSettingsGet>,
 		 .description = "Setting value: user override, else game default, else `default` (nil when absent).",
@@ -2336,15 +2344,15 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		{.table = "settings", .name = "set", .function = guarded<luaSettingsSet>,
 		 .description = "Set a user override (integer, number, string or boolean).",
 		 .params = {{"key", String}, {"value", Any}}},
-		{.table = "settings", .name = "save", .function = guarded<luaSettingsSave>,
+		{.table = "settings", .name = "save", .function = blocking<luaSettingsSave>,
 		 .description = "Write the user overrides to `settings.yml`.", .returns = {{"ok", Boolean}}},
-		{.table = "settings", .name = "load", .function = guarded<luaSettingsLoad>,
+		{.table = "settings", .name = "load", .function = blocking<luaSettingsLoad>,
 		 .description = "Reload the user overrides from `settings.yml`."},
 		{.table = "settings", .name = "reset", .function = guarded<luaSettingsReset>,
 		 .description = "Remove a user override (back to the game default).", .params = {{"key", String}}},
 		{.table = "settings", .name = "reset_all", .function = guarded<luaSettingsResetAll>,
 		 .description = "Remove every user override."},
-		{.table = "settings", .name = "apply", .function = guarded<luaSettingsApply>,
+		{.table = "settings", .name = "apply", .function = blocking<luaSettingsApply>,
 		 .description = "Apply the built-in keys to the window and the sound."},
 		{.table = "trigger", .name = "start_timer", .function = guarded<luaTriggerStartTimer>,
 		 .description = "Start or restart a Timer trigger.", .params = {entityId}},
