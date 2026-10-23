@@ -71,6 +71,12 @@ function(_owl_help_scrub_markdown IN_FILE OUT_FILE BADGE_CACHE_DIR)
     # Rewrite project-relative "engine_assets/<x>/foo.svg" (used by README for the logo) ->
     # "images/foo.svg" so the file lives next to the rest of the bundled images.
     string(REGEX REPLACE "\\]\\(engine_assets/[^/)]+/([^)]+)\\)" "](images/\\1)" CONTENT "${CONTENT}")
+    # Same rewrites for raw `<img src="...">` tags (a fixed width, as the README logo).
+    string(REGEX REPLACE "src=\"\\.\\./images/" "src=\"images/" CONTENT "${CONTENT}")
+    string(REGEX REPLACE "src=\"doc/images/" "src=\"images/" CONTENT "${CONTENT}")
+    string(REGEX REPLACE "src=\"engine_assets/[^/\"]+/([^\"]+)\"" "src=\"images/\\1\"" CONTENT "${CONTENT}")
+    # Drop the `<!-- subpage: x.md -->` markers: they only give Doxygen its page tree.
+    string(REGEX REPLACE "<!-- subpage: [A-Za-z0-9_./-]+ -->[ \t]*\r?\n?" "" CONTENT "${CONTENT}")
     # Resolve HTTPS image URLs by downloading them into the local cache and rewriting refs.
     string(REGEX MATCHALL "!\\[[^]]*\\]\\(https?://[^) ]+\\)" REMOTE_IMAGES "${CONTENT}")
     foreach (RAW IN LISTS REMOTE_IMAGES)

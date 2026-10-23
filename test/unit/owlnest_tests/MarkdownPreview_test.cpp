@@ -122,6 +122,36 @@ TEST(MarkdownDocument, ParsesBlockImage) {
 	EXPECT_TRUE(sawImage);
 }
 
+TEST(MarkdownDocument, ParsesHtmlImageWidth) {
+	MarkdownDocument doc;
+	ASSERT_TRUE(doc.parse("<img src=\"images/logo.png\" alt=\"Logo\" width=\"160\">\n"));
+	const auto* p = firstAs<MdParagraph>(doc.blocks());
+	ASSERT_NE(p, nullptr);
+	ASSERT_EQ(p->spans.size(), 1U);
+	EXPECT_EQ(p->spans.front().kind, InlineKind::ImageInline);
+	EXPECT_EQ(p->spans.front().text, "images/logo.png");
+	EXPECT_EQ(p->spans.front().alt, "Logo");
+	EXPECT_EQ(p->spans.front().width, 160U);
+}
+
+TEST(MarkdownDocument, HtmlImageWithoutWidthKeepsNaturalSize) {
+	MarkdownDocument doc;
+	ASSERT_TRUE(doc.parse("<p align=\"center\"><img src=\"a.svg\"></p>\n"));
+	bool sawImage = false;
+	for (const auto& block: doc.blocks()) {
+		if (const auto* p = std::get_if<MdParagraph>(&block.data)) {
+			for (const auto& span: p->spans) {
+				if (span.kind == InlineKind::ImageInline) {
+					sawImage = true;
+					EXPECT_EQ(span.text, "a.svg");
+					EXPECT_EQ(span.width, 0U);
+				}
+			}
+		}
+	}
+	EXPECT_TRUE(sawImage);
+}
+
 TEST(MarkdownDocument, ParsesBlockQuoteAndHRule) {
 	MarkdownDocument doc;
 	ASSERT_TRUE(doc.parse("> First quoted line\n> second\n\n---\n"));

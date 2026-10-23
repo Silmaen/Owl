@@ -15,6 +15,7 @@
 #include <renderer/gpu/Texture.h>
 
 #include <cstddef>
+#include <cstdint>
 #include <filesystem>
 #include <functional>
 #include <memory>
@@ -216,8 +217,11 @@ private:
 	/**
 	 * @brief
 	 *  Render a block image (paragraph reduced to a single image span).
+	 * @param[in] iSrc Image path or URL.
+	 * @param[in] iAlt Alt text.
+	 * @param[in] iWidth Requested width in pixels (0 = natural size); always capped to the available width.
 	 */
-	void renderImage(const std::string& iSrc, const std::string& iAlt);
+	void renderImage(const std::string& iSrc, const std::string& iAlt, uint32_t iWidth);
 
 	/**
 	 * @brief

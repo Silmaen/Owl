@@ -209,7 +209,7 @@ void MarkdownPreview::renderBlock(const MdBlock& iBlock, size_t& ioCodeIndex, co
 					// A paragraph that contains only a single block-level image is rendered as an Image.
 					if (iVal.spans.size() == 1 && iVal.spans.front().kind == InlineKind::ImageInline) {
 						const auto& img = iVal.spans.front();
-						renderImage(img.text, img.alt);
+						renderImage(img.text, img.alt, img.width);
 					} else {
 						renderInlineSpans(iVal.spans);
 					}
@@ -220,7 +220,7 @@ void MarkdownPreview::renderBlock(const MdBlock& iBlock, size_t& ioCodeIndex, co
 					if (!iCompact)
 						ImGui::Spacing();
 				} else if constexpr (std::is_same_v<T, MdImage>) {
-					renderImage(iVal.src, iVal.alt);
+					renderImage(iVal.src, iVal.alt, 0);
 					if (!iCompact)
 						ImGui::Spacing();
 				} else if constexpr (std::is_same_v<T, MdHRule>) {
@@ -504,7 +504,7 @@ void MarkdownPreview::renderInlineImage(const std::string& iSrc, const std::stri
 	ioFirstOnLine = false;
 }
 
-void MarkdownPreview::renderImage(const std::string& iSrc, const std::string& iAlt) {
+void MarkdownPreview::renderImage(const std::string& iSrc, const std::string& iAlt, const uint32_t iWidth) {
 	const auto& entry = resolveImage(iSrc);
 	if (entry.isRemote) {
 		const std::string label = (iAlt.empty() ? iSrc : iAlt) + "  \xe2\x86\x97";
@@ -520,7 +520,8 @@ void MarkdownPreview::renderImage(const std::string& iSrc, const std::string& iA
 	// A rasterised SVG is shown at its own size, not at its (oversampled) texture size.
 	const auto shown = entry.logicalSize.x() > 0 ? entry.logicalSize : entry.size;
 	const float aspect = static_cast<float>(shown.y()) / static_cast<float>(std::max(1u, shown.x()));
-	const float width = std::min(availX, static_cast<float>(shown.x()));
+	const float wanted = iWidth > 0 ? static_cast<float>(iWidth) : static_cast<float>(shown.x());
+	const float width = std::min(availX, wanted);
 	const float height = width * aspect;
 	const auto cursor = ImGui::GetCursorPos();
 	ImGui::SetCursorPosX(cursor.x + (ImGui::GetContentRegionAvail().x - width) * 0.5f);

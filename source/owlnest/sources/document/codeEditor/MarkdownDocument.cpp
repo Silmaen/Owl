@@ -13,7 +13,12 @@
 #include <core/Log.h>
 #include <core/Macros.h>
 
+#include <charconv>
 #include <cstddef>
+#include <cstdint>
+#include <optional>
+#include <string_view>
+#include <system_error>
 #include <utility>
 
 OWL_DIAG_PUSH
@@ -32,6 +37,46 @@ namespace {
 		default:
 			return TableAlign::Default;
 	}
+}
+
+// Value of the attribute `iName` in the raw HTML tag `iTag` (double or single quoted); empty when absent.
+[[nodiscard]] auto htmlAttribute(const std::string_view iTag, const std::string_view iName) -> std::string {
+	const std::string key = std::string{iName} + "=";
+	size_t pos = 0;
+	while ((pos = iTag.find(key, pos)) != std::string_view::npos) {
+		const bool boundary = pos > 0 && (iTag[pos - 1] == ' ' || iTag[pos - 1] == '\t' || iTag[pos - 1] == '\n');
+		pos += key.size();
+		if (!boundary || pos >= iTag.size())
+			continue;
+		const char quote = iTag[pos];
+		if (quote != '"' && quote != '\'')
+			continue;
+		const auto end = iTag.find(quote, pos + 1);
+		if (end == std::string_view::npos)
+			return {};
+		return std::string{iTag.substr(pos + 1, end - pos - 1)};
+	}
+	return {};
+}
+
+// Image span of a raw `<img src="..." alt="..." width="N">` tag; nullopt when `iHtml` is not an image tag.
+[[nodiscard]] auto parseImgTag(const std::string_view iHtml) -> std::optional<MdInline> {
+	const auto start = iHtml.find("<img");
+	if (start == std::string_view::npos)
+		return std::nullopt;
+	const auto tag = iHtml.substr(start);
+	if (tag.size() < 5 || (tag[4] != ' ' && tag[4] != '\t' && tag[4] != '\n'))
+		return std::nullopt;
+	auto src = htmlAttribute(tag, "src");
+	if (src.empty())
+		return std::nullopt;
+	MdInline img{.kind = InlineKind::ImageInline, .text = std::move(src), .alt = htmlAttribute(tag, "alt")};
+	const auto width = htmlAttribute(tag, "width");
+	uint32_t value = 0;
+	const auto [ptr, ec] = std::from_chars(width.data(), width.data() + width.size(), value);
+	if (ec == std::errc{} && ptr != width.data())
+		img.width = value;
+	return img;
 }
 
 class Parser {
@@ -353,6 +398,16 @@ private:
 			// In CommonMark a soft break is rendered as a single space.
 			appendInlineText(" ", 1);
 			return 0;
+		}
+		if (iType == MD_TEXT_HTML && std::string_view{iText, sz}.find_first_not_of(" \t\r\n") == std::string_view::npos)
+			return 0;// line ends of an HTML block carry nothing
+		if (iType == MD_TEXT_HTML && !m_inImage && !m_inLink) {
+			if (auto img = parseImgTag(std::string_view{iText, sz})) {
+				ensureInlineAccum();
+				if (m_inlineAccum != nullptr)
+					m_inlineAccum->push_back(std::move(*img));
+				return 0;
+			}
 		}
 		if (m_inlineCode) {
 			emitInlineCode(iText, sz);

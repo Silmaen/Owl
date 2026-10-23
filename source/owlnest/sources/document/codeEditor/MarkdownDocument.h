@@ -30,7 +30,7 @@ enum struct InlineKind : uint8_t {
 	StrikeEnd,///< `~~strike~~` closing marker.
 	LinkStart,///< `[text](href)` opening marker. `text` payload carries the href.
 	LinkEnd,///< Closing marker for a link span.
-	ImageInline,///< `![alt](src)` inside a paragraph. `text`=src, `alt`=alt text.
+	ImageInline,///< `![alt](src)` or `<img src=... width=...>`. `text`=src, `alt`=alt text, `width`=requested width.
 	LineBreak,///< Hard line break.
 };
 
@@ -42,6 +42,7 @@ struct MdInline {
 	InlineKind kind = InlineKind::Text;///< Span kind discriminator.
 	std::string text;///< Text run, code body, link href, or image src.
 	std::string alt;///< Image alt text (only for `ImageInline`).
+	uint32_t width = 0;///< Requested width in pixels from an HTML image tag (`ImageInline`; 0 = natural size).
 };
 
 /**

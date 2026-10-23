@@ -7,6 +7,9 @@ the filtered file, so links into sub-directories (`design/owl-rhi.md`) and back 
 (`../roadmap.md`) work. Links whose target has no anchor (root `CHANGELOG.md`, `ROADMAP.md`) are
 left untouched.
 
+A line `<!-- subpage: page.md -->` becomes `\\subpage page-id`: it gives Doxygen its page tree (GitHub and the
+help panel never show it).
+
 Usage in Doxyfile:
     FILTER_PATTERNS = *.md="python3 /path/to/fix_md_links.py"
 
@@ -36,6 +39,7 @@ PAGE_MAP = {
 }
 
 _ANCHOR = re.compile(r"\{#([A-Za-z0-9_-]+)\}")
+_SUBPAGE = re.compile(r"<!--\s*subpage:\s*([A-Za-z0-9_./-]+\.md)\s*-->")
 _LINK = re.compile(r"\[([^\]]+)\]\(([A-Za-z0-9_./-]+\.md)\)")
 
 
@@ -67,7 +71,13 @@ def fix_links(content: str, source: Path | None = None) -> str:
             return m.group(0)
         return f"[{text}](@ref {page_id})"
 
-    return _LINK.sub(replace_link, content)
+    def replace_subpage(m: re.Match) -> str:
+        page_id = _anchor_of((source.parent / m.group(1)).resolve()) if source is not None else None
+        return f"\\subpage {page_id}" if page_id else m.group(0)
+
+    # Doxygen copies the project logo and the `doc/images` files flat next to the pages.
+    content = content.replace('src="engine_assets/logo/', 'src="').replace('src="doc/images/', 'src="')
+    return _LINK.sub(replace_link, _SUBPAGE.sub(replace_subpage, content))
 
 
 if __name__ == "__main__":

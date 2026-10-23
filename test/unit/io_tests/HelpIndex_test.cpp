@@ -84,11 +84,11 @@ TEST(HelpIndex, BundledPagesHaveDoxygenSyntaxScrubbed) {
 	const auto editor = readBundledFile(root / "editor.md");
 	ASSERT_FALSE(editor.empty());
 	// Heading-trailing Doxygen anchors must be stripped.
-	EXPECT_EQ(editor.find("# Editor (Owl Nest) {#page-editor}"), std::string::npos);
+	EXPECT_EQ(editor.find("# Using Owl Nest {#page-editor}"), std::string::npos);
 	// `[TOC]` lines must be dropped (the source file has one).
 	EXPECT_EQ(editor.find("\n[TOC]\n"), std::string::npos);
 	// First H1 must be the clean form.
-	EXPECT_NE(editor.find("# Editor (Owl Nest)\n"), std::string::npos);
+	EXPECT_NE(editor.find("# Using Owl Nest\n"), std::string::npos);
 }
 
 TEST(HelpIndex, BundledPagesRewriteImageReferences) {
@@ -150,7 +150,7 @@ TEST(HelpIndex, ReadmeLogoCopiedToImages) {
 	// `engine_assets/logo/logo_owl.png` (project-relative path used by the README) should be
 	// rewritten to `images/logo_owl.png` and the file copied next to the bundled images.
 	EXPECT_EQ(readme.find("engine_assets/logo/"), std::string::npos);
-	EXPECT_NE(readme.find("](images/logo_owl.png)"), std::string::npos);
+	EXPECT_NE(readme.find("src=\"images/logo_owl.png\""), std::string::npos);
 	EXPECT_TRUE(fs::exists(root / "images" / "logo_owl.png"));
 }
 
