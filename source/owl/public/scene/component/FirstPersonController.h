@@ -10,6 +10,7 @@
 
 #include "core/Core.h"
 #include "core/Serializer.h"
+#include "core/UUID.h"
 #include "math/vectors.h"
 
 namespace owl::scene::component {
@@ -22,7 +23,8 @@ namespace owl::scene::component {
  * The `owl.first_person` system moves a body box of `radius` and `height`, the eye `eyeHeight` above its feet, against
  * the world boxes of the `MeshRenderer` entities (those with a `Trigger` let it through, a box lower than
  * `stepHeight` is climbed). The `Transform` of the entity is the eye: its rotation holds the pitch and the yaw.
- * Triggers of the scene see the body box in 3D. The body holds still until every mesh of the scene is loaded, so it
+ * Triggers of the scene see the body box in 3D, but an `Interaction` trigger answers only when aimed at: the view ray
+ * hits its box (its mesh box, else its transform) within `reach`, before any mesh, and the box is outlined. The body holds still until every mesh of the scene is loaded, so it
  * never falls through a floor still loading.
  */
 struct OWL_API FirstPersonController {
@@ -50,6 +52,8 @@ struct OWL_API FirstPersonController {
 	float gravity = 9.81f;
 	/// Upward speed of a jump, in world units per second; 0 for none.
 	float jumpSpeed = 3.5f;
+	/// Farthest an interaction trigger is used from, along the view, in world units.
+	float reach = 2.2f;
 
 	/// Runtime: every mesh of the scene was loaded and filed, so the body may fall.
 	bool m_worldReady = false;
@@ -63,6 +67,8 @@ struct OWL_API FirstPersonController {
 	float m_velocityY = 0.f;
 	/// Runtime: whether the feet rest on a box.
 	bool m_grounded = false;
+	/// Runtime: interaction trigger aimed at this frame (0: none).
+	core::UUID m_target{0};
 	/// Runtime: mouse position of the last frame.
 	math::vec2 m_lastMouse{0.f, 0.f};
 	/// Runtime: whether `m_lastMouse` holds a position.

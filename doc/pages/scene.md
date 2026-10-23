@@ -594,12 +594,15 @@ YAML key: `Player`. Input is read each frame from the `move` and `jump` actions 
 | `stepHeight`       | `float` | `0.35`   | Highest step climbed without jumping                                    |
 | `gravity`          | `float` | `9.81`   | Downward acceleration                                                   |
 | `jumpSpeed`        | `float` | `3.5`    | Upward speed of a jump; 0 for none                                      |
+| `reach`            | `float` | `2.2`    | Farthest an interaction trigger is used from, along the view            |
 
 YAML key: `FirstPersonController`, system `owl.first_person` (`PrePhysics`). Walks the entity (the eye, usually under a `Camera`) on foot in 3D: the actions
 `move`, `look`, `sprint` and `jump` drive it. The body box collides with the world boxes of the `MeshRenderer`
 entities (`data::geometry::moveBoxAmong`: per-axis resolution, wall sliding, steps up to `stepHeight`); the body holds
 still until every mesh of the scene is loaded. Without a `Player`, the `Trigger` components test the body box of
-the first walker (`FirstPersonController` or `VoxelPlayer`) against their own box in 3D.
+the first walker (`FirstPersonController` or `VoxelPlayer`) against their own box in 3D. An `Interaction` trigger
+answers a first-person walker only when aimed at: the view ray hits the box of its meshes (its subtree, else its
+transform) within `reach`, before any other mesh; that box is outlined while aimed at, and `interact` uses it.
 
 #### PhysicBody
 

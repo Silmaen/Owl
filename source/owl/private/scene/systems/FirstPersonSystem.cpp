@@ -21,8 +21,12 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstddef>
 #include <cstdint>
+#include <limits>
+#include <optional>
 #include <tuple>
+#include <utility>
 #include <vector>
 
 namespace owl::scene::systems {
@@ -62,6 +66,111 @@ void gatherObstacles(const Scene& iScene, const math::box3f& iReach, std::vector
 			continue;
 		ioBoxes.push_back(index.getBox(id));
 	}
+}
+
+// Distance along the ray to its entry in the box, or none when it misses it.
+auto rayHit(const math::vec3& iOrigin, const math::vec3& iDirection, const math::box3f& iBox) -> std::optional<float> {
+	float near = 0.f;
+	float far = std::numeric_limits<float>::max();
+	for (size_t axis = 0; axis < 3; ++axis) {
+		if (std::abs(iDirection[axis]) < 1e-8f) {
+			if (iOrigin[axis] < iBox.min()[axis] || iOrigin[axis] > iBox.max()[axis])
+				return std::nullopt;
+			continue;
+		}
+		float t0 = (iBox.min()[axis] - iOrigin[axis]) / iDirection[axis];
+		float t1 = (iBox.max()[axis] - iOrigin[axis]) / iDirection[axis];
+		if (t0 > t1)
+			std::swap(t0, t1);
+		near = std::max(near, t0);
+		far = std::min(far, t1);
+		if (near > far)
+			return std::nullopt;
+	}
+	return near;
+}
+
+// Whether the entity is the given one or below it in the hierarchy.
+auto isInSubtree(const Scene& iScene, entt::entity iHandle, const entt::entity iRoot) -> bool {
+	for (int depth = 0; depth < 64 && iHandle != entt::null; ++depth) {
+		if (iHandle == iRoot)
+			return true;
+		const auto* hierarchy = iScene.registry.try_get<component::Hierarchy>(iHandle);
+		if (hierarchy == nullptr || hierarchy->parentId == core::UUID{0})
+			return false;
+		iHandle = static_cast<entt::entity>(iScene.findEntityByUUID(hierarchy->parentId));
+	}
+	return false;
+}
+
+auto merged(const math::box3f& iA, const math::box3f& iB) -> math::box3f {
+	return {math::vec3{std::min(iA.min().x(), iB.min().x()), std::min(iA.min().y(), iB.min().y()),
+					   std::min(iA.min().z(), iB.min().z())},
+			math::vec3{std::max(iA.max().x(), iB.max().x()), std::max(iA.max().y(), iB.max().y()),
+					   std::max(iA.max().z(), iB.max().z())}};
+}
+
+// The box an interaction trigger is aimed at by: the world boxes of the meshes of its subtree, else its transform.
+auto interactionBox(const Scene& iScene, const Entity& iEntity, std::vector<uint32_t>& ioIds) -> math::box3f {
+	const auto world = iScene.getWorldTransform(iEntity);
+	const math::vec3 half = world.scale() * 0.5f;
+	math::box3f box{world.translation() - half, world.translation() + half};
+	const auto& index = iScene.getMeshSpatialIndex();
+	const auto root = static_cast<entt::entity>(iEntity);
+	if (const auto id = static_cast<uint32_t>(entt::to_entity(root)); index.contains(id))
+		box = index.getBox(id);
+	if (!iEntity.hasComponent<component::Hierarchy>() ||
+		iEntity.getComponent<component::Hierarchy>().childrenIds.empty())
+		return box;
+	ioIds.clear();
+	index.query(math::box3f{box.min() - math::vec3{2.f, 2.f, 2.f}, box.max() + math::vec3{2.f, 2.f, 2.f}}, ioIds);
+	for (const uint32_t id: ioIds) {
+		const auto handle = iScene.getMeshSpatialEntity(id);
+		if (handle != root && handle != entt::null && iScene.registry.valid(handle) &&
+			isInSubtree(iScene, handle, root))
+			box = merged(box, index.getBox(id));
+	}
+	return box;
+}
+
+// The nearest interaction trigger the view ray hits within reach, before any other mesh box.
+auto findAimedInteraction(Scene& ioScene, const math::vec3& iEye, const math::vec3& iForward, const float iReach,
+						  std::vector<uint32_t>& ioIds) -> std::optional<std::pair<Entity, math::box3f>> {
+	std::optional<std::pair<Entity, math::box3f>> best;
+	float bestDistance = iReach;
+	for (const auto [handle, trigger]: ioScene.registry.view<component::Trigger>().each()) {
+		if (trigger.trigger.type != SceneTrigger::TriggerType::Interaction)
+			continue;
+		const Entity entity{handle, &ioScene};
+		if (!ioScene.isEffectivelyVisible(entity, false))
+			continue;
+		const auto box = interactionBox(ioScene, entity, ioIds);
+		if (const auto distance = rayHit(iEye, iForward, box); distance && *distance <= bestDistance) {
+			bestDistance = *distance;
+			best = std::pair{entity, box};
+		}
+	}
+	if (!best)
+		return std::nullopt;
+	const math::vec3 end = iEye + iForward * bestDistance;
+	const math::vec3 low{std::min(iEye.x(), end.x()), std::min(iEye.y(), end.y()), std::min(iEye.z(), end.z())};
+	const math::vec3 high{std::max(iEye.x(), end.x()), std::max(iEye.y(), end.y()), std::max(iEye.z(), end.z())};
+	ioIds.clear();
+	const auto& index = ioScene.getMeshSpatialIndex();
+	index.query(math::box3f{low, high}, ioIds);
+	for (const uint32_t id: ioIds) {
+		const auto handle = ioScene.getMeshSpatialEntity(id);
+		if (handle == entt::null || !ioScene.registry.valid(handle) ||
+			ioScene.registry.all_of<component::Trigger>(handle) ||
+			isInSubtree(ioScene, handle, static_cast<entt::entity>(best->first)))
+			continue;
+		// A box holding the eye (the room around it) does not hide what is in front.
+		const auto& box = index.getBox(id);
+		if (const auto distance = rayHit(iEye, iForward, box);
+			distance && *distance > 0.f && *distance < bestDistance - 1e-3f)
+			return std::nullopt;
+	}
+	return best;
 }
 
 auto isWorldLoaded(const Scene& iScene) -> bool {
@@ -112,7 +221,7 @@ void updateFirstPersonControllers(Scene& ioScene, const SystemContext& iContext)
 		const float sy = std::sin(controller.m_yaw);
 		const float cy = std::cos(controller.m_yaw);
 		const math::vec2 steer = actions.getVector("move");
-		const math::vec3 wish = math::vec3{-sy, 0.f, -cy} * steer.y() + math::vec3{cy, 0.f, -sy} * steer.x();
+		const math::vec3 wish = math::vec3{-sy, 0.f, -cy} * -steer.y() + math::vec3{cy, 0.f, -sy} * steer.x();
 		const float length = std::sqrt(wish.x() * wish.x() + wish.z() * wish.z());
 		const float speed = actions.isHeld("sprint") ? controller.runSpeed : controller.walkSpeed;
 		math::vec3 velocity{0.f, 0.f, 0.f};
@@ -135,6 +244,12 @@ void updateFirstPersonControllers(Scene& ioScene, const SystemContext& iContext)
 		controller.m_grounded = moved.onGround;
 		if (moved.onGround || moved.hitCeiling)
 			controller.m_velocityY = 0.f;
+		const float cp = std::cos(controller.m_pitch);
+		const math::vec3 forward{-cp * std::sin(controller.m_yaw), std::sin(controller.m_pitch),
+								 -cp * std::cos(controller.m_yaw)};
+		const auto aimed = findAimedInteraction(ioScene, eye.translation(), forward, controller.reach, ids);
+		controller.m_target = aimed ? aimed->first.getUUID() : core::UUID{0};
+		ioScene.setInteractionHighlight(aimed ? std::optional{aimed->second} : std::nullopt);
 	}
 }
 

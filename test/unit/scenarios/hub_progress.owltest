@@ -62,25 +62,26 @@ steps:
   - frames: 90
   - expect: {gamestate: level_voxel_done, equals: 1}
   - expect: {gamestate: levels_done, equals: 4}
-  # The tavern: its house is the last one; the key, the trapdoor, then the chest of the cellar are brought to the player.
+  # The tavern: its door is the one of the empty house next to the plaza; the key, the trapdoor, then the chest of the
+  # cellar are brought before the eye of the player (a first-person walker uses what it aims at).
   - input: {key: S, frames: 25}
-  - input: {key: D, frames: 72}
+  - input: {key: A, frames: 180}
   - input: {key: W, frames: 40}
   - input: {key: E, frames: 3}
   - frames: 150
   - expect: {entity: TavernCamera, exists: true}
   - expect: {gamestate: tavern_key, equals: 0}
-  - {command: entity.set_transform, args: {entity: CellarKey, translation: [2.6, 0.3, 2.4]}}
+  - {command: entity.set_transform, args: {entity: CellarKey, translation: [1.915, 1.475, 1.693]}}
   - frames: 5
   - input: {key: E, frames: 3}
   - frames: 10
   - expect: {gamestate: tavern_key, equals: 1}
-  - {command: entity.set_transform, args: {entity: Trapdoor, translation: [2.6, 0, 2.4]}}
+  - {command: entity.set_transform, args: {entity: Trapdoor, translation: [1.79, 1.431, 1.53]}}
   - frames: 5
   - input: {key: E, frames: 3}
   - frames: 150
   - expect: {entity: CellarPlayer, exists: true}
-  - {command: entity.set_transform, args: {entity: Chest, translation: [2.9, 0.3, 2.2]}}
+  - {command: entity.set_transform, args: {entity: Chest, translation: [2.04, 1.13, 1.37]}}
   - frames: 5
   - input: {key: E, frames: 3}
   - frames: 150
@@ -88,8 +89,9 @@ steps:
   - expect: {gamestate: levels_done, equals: 5}
   # Five levels done: the portal answers and leads to the victory screen.
   - input: {key: S, frames: 25}
-  - {command: entity.set_transform, args: {entity: Teleporter, translation: [60.5, -19.0, 0.6]}}
-  - frames: 5
+  - {command: entity.set_transform, args: {entity: Teleporter, translation: [39.5, -18.0, 0.6]}}
+  # The portal hums every `hum_period` (2.2 s): wait for one.
+  - frames: 140
   - expect: {gamestate: portal_hum, greater: 0}
   - input: {key: E, frames: 3}
   - frames: 90

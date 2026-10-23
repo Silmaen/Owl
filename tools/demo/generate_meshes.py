@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Generate the procedural meshes of the Engine Demo tavern (``engine_demo/meshes/tavern/*.glb``: room shell, hearth,
-mantel beam, fire grate, firewood, ember bed, flame cards, a candle, the cellar trapdoor, key, chest, barrel and
-ladder, in metres, UVs in world units so the tiled Poly
+mantel beam, fire grate, firewood, ember bed, flame cards, a candle, the cellar trapdoor, key, chest, barrel,
+ladder and a wall sconce, in metres, UVs in world units so the tiled Poly
 Haven materials keep their scale) and the fire textures (``engine_demo/textures/fire/``)."""
 
 import json
@@ -541,6 +541,19 @@ def barrel(seed: int) -> MeshBuilder:
     return transformed(upright(log(0.9, 0.3, seed, tile=0.5, segments=18, rings=4)), move=(0.0, 0.45, 0.0))
 
 
+def wall_sconce() -> MeshBuilder:
+    """Wrought-iron wall sconce: a back plate on the wall (z = 0), an arm along +Z and a drip cup at its end."""
+    m = MeshBuilder()
+    m.extend(box((0.0, 0.0, 0.01), (0.09, 0.2, 0.02)))
+    m.extend(box((0.0, -0.02, 0.1), (0.022, 0.022, 0.18)))
+    m.extend(box((0.0, 0.03, 0.17), (0.016, 0.1, 0.016)))
+    m.extend(box((0.0, 0.08, 0.18), (0.09, 0.012, 0.09)))
+    for side in (-1, 1):
+        m.extend(box((side * 0.039, 0.1, 0.18), (0.012, 0.035, 0.09)))
+        m.extend(box((0.0, 0.1, 0.18 + side * 0.039), (0.09, 0.035, 0.012)))
+    return m
+
+
 def ladder(height: float = 3.9) -> MeshBuilder:
     """Wooden ladder standing on the origin: two rails along Y and a rung every 0.3 m."""
     m = MeshBuilder()
@@ -576,6 +589,7 @@ def main() -> None:
     write_glb(OUT / "chest_iron.glb", chest_iron(), "ChestIron", color=(0.1, 0.1, 0.1, 1.0))
     write_glb(OUT / "barrel.glb", barrel(31), "Barrel")
     write_glb(OUT / "ladder.glb", ladder(), "Ladder")
+    write_glb(OUT / "wall_sconce.glb", wall_sconce(), "WallSconce", color=(0.1, 0.1, 0.1, 1.0))
     flame_texture().save(TEXTURES / "flame.png")
     ember_texture().save(TEXTURES / "embers.png")
     print(f"Meshes written to {OUT}, textures to {TEXTURES}")

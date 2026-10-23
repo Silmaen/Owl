@@ -118,11 +118,15 @@ void updateTrigger(Scene& ioScene, const Entity& iEntity, const Entity& iPlayer,
 	}
 	if (!iPlayer)
 		return;
-	const bool overlapping = isWalker(iPlayer)
-									 ? getBodyBox(iEntity, ioScene.getWorldTransform(iEntity))
-											   .intersect(getBodyBox(iPlayer, ioScene.getWorldTransform(iPlayer)))
-									 : getColliderBox(iEntity, ioScene.getWorldTransform(iEntity))
-											   .intersect(getColliderBox(iPlayer, ioScene.getWorldTransform(iPlayer)));
+	// A first-person walker uses an interaction by aiming at it, not by walking into it.
+	const bool aimed = trigger.type == SceneTrigger::TriggerType::Interaction &&
+					   iPlayer.hasComponent<component::FirstPersonController>();
+	const bool overlapping =
+			aimed               ? iPlayer.getComponent<component::FirstPersonController>().m_target == iEntity.getUUID()
+			: isWalker(iPlayer) ? getBodyBox(iEntity, ioScene.getWorldTransform(iEntity))
+										  .intersect(getBodyBox(iPlayer, ioScene.getWorldTransform(iPlayer)))
+								: getColliderBox(iEntity, ioScene.getWorldTransform(iEntity))
+										  .intersect(getColliderBox(iPlayer, ioScene.getWorldTransform(iPlayer)));
 	if (overlapping && !trigger.wasOverlapping())
 		trigger.onTriggerEnter(iPlayer, iEntity);
 	if (overlapping)

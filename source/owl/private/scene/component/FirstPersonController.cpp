@@ -31,6 +31,7 @@ void FirstPersonController::serialize(const core::Serializer& iOut) const {
 	out << YAML::Key << "stepHeight" << YAML::Value << stepHeight;
 	out << YAML::Key << "gravity" << YAML::Value << gravity;
 	out << YAML::Key << "jumpSpeed" << YAML::Value << jumpSpeed;
+	out << YAML::Key << "reach" << YAML::Value << reach;
 	out << YAML::EndMap;// FirstPersonController
 }
 
@@ -60,9 +61,12 @@ void FirstPersonController::deserialize(const core::Serializer& iNode) {
 		gravity = std::clamp(node["gravity"].as<float>(), 0.f, 100.f);
 	if (node["jumpSpeed"])
 		jumpSpeed = std::clamp(node["jumpSpeed"].as<float>(), 0.f, 50.f);
+	if (node["reach"])
+		reach = std::clamp(node["reach"].as<float>(), 0.f, 50.f);
 	eyeHeight = std::min(eyeHeight, height);
 	m_initialized = false;
 	m_worldReady = false;
+	m_target = core::UUID{0};
 }
 
 }// namespace owl::scene::component

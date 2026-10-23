@@ -418,7 +418,7 @@ Entities:
 - Entity: 2000000000000000600
   Tag: {tag: HouseDoorTavern}
   Transform:
-    translation: [60.5, -15.5, 0.6]
+    translation: [39.5, -14.5, 0.6]
     rotation: [0, 0, 0]
     scale: [1.6, 1.6, 1]
   Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_tavern_door_interact}
@@ -427,7 +427,7 @@ Entities:
 - Entity: 2000000000000000601
   Tag: {tag: PannelTavern}
   Transform:
-    translation: [60.5, -10.9, 0.6]
+    translation: [39.5, -9.9, 0.6]
     rotation: [0, 0, 0]
     scale: [1.4, 0.6, 1.0]
   TextRenderer:
@@ -441,7 +441,7 @@ Entities:
 - Entity: 2000000000000000602
   Tag: {tag: Flag_House5}
   Transform:
-    translation: [59.72, -12.5, 0.7]
+    translation: [38.72, -11.5, 0.7]
     rotation: [0, 0, 0]
     scale: [1.0, 1.0, 1.0]
   Visibility: {gameVisible: true}
@@ -457,7 +457,7 @@ Entities:
 - Entity: 2000000000000000603
   Tag: {tag: Smoke_5_1}
   Transform:
-    translation: [60.5, -13.2, 0.8]
+    translation: [39.5, -12.2, 0.8]
     rotation: [0, 0, 0]
     scale: [0.3, 0.3, 1]
   CircleRenderer:
@@ -468,7 +468,7 @@ Entities:
 - Entity: 2000000000000000604
   Tag: {tag: Smoke_5_2}
   Transform:
-    translation: [60.5, -13.2, 0.8]
+    translation: [39.5, -12.2, 0.8]
     rotation: [0, 0, 0]
     scale: [0.3, 0.3, 1]
   CircleRenderer:
@@ -479,7 +479,7 @@ Entities:
 - Entity: 2000000000000000605
   Tag: {tag: Smoke_5_3}
   Transform:
-    translation: [60.5, -13.2, 0.8]
+    translation: [39.5, -12.2, 0.8]
     rotation: [0, 0, 0]
     scale: [0.3, 0.3, 1]
   CircleRenderer:
@@ -490,7 +490,7 @@ Entities:
 - Entity: 2000000000000000606
   Tag: {tag: Talk_Sign5}
   Transform:
-    translation: [62.5, -16.5, 0.6]
+    translation: [41.5, -16.5, 0.6]
     rotation: [0, 0, 0]
     scale: [1.6, 1.6, 1]
   Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_talk}

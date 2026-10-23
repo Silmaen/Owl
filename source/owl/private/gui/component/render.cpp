@@ -2875,6 +2875,9 @@ void renderProps(FirstPersonController& ioComponent) {
 	prop::DragFloat("Gravity", &ioComponent.gravity, 0.05f, 0.f, 100.f, "%.2f");
 	prop::DragFloat("Jump Speed", &ioComponent.jumpSpeed, 0.05f, 0.f, 50.f, "%.2f");
 	fieldTooltip("Upward speed of a jump; 0 for no jump.");
+	prop::DragFloat("Reach", &ioComponent.reach, 0.05f, 0.f, 50.f, "%.2f");
+	fieldTooltip("Farthest an interaction trigger is used from: aim at it (its box is outlined) and press the interact "
+				 "action.");
 }
 
 void renderProps(DayNightCycle& ioComponent) {

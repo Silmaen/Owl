@@ -988,7 +988,7 @@ Entities:
     Tag:
       tag: WallLantern
     Transform:
-      translation: [3.75, 2.1, 2.9]
+      translation: [3.8, 2.02, 2.9]
       rotation: [0, 0, 0]
       scale: [1, 1, 1]
     Light:
@@ -1001,5 +1001,62 @@ Entities:
       style: Candle
       amplitude: 0.12
       seed: 21
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000000115
+    Tag:
+      tag: WallSconce
+    Transform:
+      translation: [3.99, 1.75, 2.9]
+      rotation: [0, -1.5708, 0]
+      scale: [1, 1, 1]
+    MeshRenderer:
+      mesh: meshes/tavern/wall_sconce.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - material: materials/wrought_iron.owlmat
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000000116
+    Tag:
+      tag: SconceCandle
+    Transform:
+      translation: [3.81, 1.836, 2.9]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    MeshRenderer:
+      mesh: meshes/tavern/candle.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - material: materials/candle_wax.owlmat
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000000117
+    Tag:
+      tag: SconceFlame
+    Transform:
+      translation: [3.81, 2.004, 2.9]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    MeshRenderer:
+      mesh: meshes/tavern/candle_flame.glb
+      color: [1, 1, 1, 1]
+      transparent: true
+      materials:
+        - material: materials/candle_flame.owlmat
+    RendererTag:
+      Name: mesh_world
+    LightFlicker:
+      style: Candle
+      amplitude: 0
+      follow: 3900000000000000114
+      positionJitter: [0.002, 0, 0.002]
+      scaleResponse: [0.1, 0.35, 0.1]
     Visibility:
       gameVisible: true

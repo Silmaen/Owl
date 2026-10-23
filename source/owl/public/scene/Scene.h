@@ -596,6 +596,13 @@ public:
 
 	/**
 	 * @brief
+	 *  Set the outlined box of the interaction a first-person walker aims at, for this frame.
+	 * @param[in] iBox World box to outline, or none to outline nothing.
+	 */
+	void setInteractionHighlight(const std::optional<math::box3f>& iBox) { m_interactionHighlight = iBox; }
+
+	/**
+	 * @brief
 	 *  Show or hide the aiming crosshair of the voxel HUD for this frame.
 	 * @param[in] iShow True to draw the crosshair.
 	 */
@@ -1686,6 +1693,8 @@ private:
 	math::vec3i m_voxelHighlightBlock{0, 0, 0};
 	/// Outward normal of the ray-impacted face of the highlighted block (the only face outlined).
 	math::vec3i m_voxelHighlightNormal{0, 0, 0};
+	/// World box of the interaction aimed at this frame, outlined over the scene.
+	std::optional<math::box3f> m_interactionHighlight;
 	/// True while a captured `VoxelPlayer` is active (draws the centre-screen aiming crosshair).
 	bool m_showCrosshair = false;
 

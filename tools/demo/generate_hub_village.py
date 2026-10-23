@@ -7,9 +7,9 @@ bridges), ``objects`` (trees, houses, the church, stalls, fences, lamps: what th
 hero) and the hidden ``walkable`` layer, the navigation graph of the villagers (one cell wherever the hero can walk).
 
 Layout, north to south: the forest edge and the shrine of the victory portal (north east), the church at the end of
-the avenue, the five level houses along the high street (platformer, raycast, iso town, voxel, tavern), the plaza
-with its fountain, the market (east) and the fields (west), the river with three bridges, the south meadow with the
-entrance, the information board, the lever (east) and the walled grove its gate opens (west).
+the avenue, the four level houses along the high street (platformer, raycast, iso town, voxel), the plaza with its
+fountain, the market (east) and the fields (west), the river with three bridges, the south meadow with the entrance, the
+information board, the lever (east) and the walled grove its gate opens (west).
 
 Run with ``poetry run python`` from anywhere; ``engine_demo/textures/atlases/town_atlas.png`` must already carry the village
 tiles (``generate_kenney_atlases.py``). The cell constants below are the ones the scene and the scripts use.
@@ -53,7 +53,6 @@ HOUSES = {
     "raycast": ((19, 13), ((48, 51, 50), (60, 63, 62), (84, 85, 73))),
     "iso": ((43, 13), ((52, 55, 54), (64, 67, 66), (72, 85, 84))),
     "voxel": ((53, 13), ((48, 51, 50), (60, 63, 62), (88, 89, 77))),
-    "tavern": ((59, 13), ((52, 55, 54), (64, 67, 66), (72, 85, 84))),
 }
 # Houses of the villagers (nothing to enter): the same tiles, another roof or wall, a path to the high street.
 HOMES = (
@@ -106,16 +105,15 @@ def build() -> tuple[Grid, Grid, Grid]:
     reserved: set[tuple[int, int]] = set()
 
     def keep(c0: int, r0: int, c1: int, r1: int, margin: int = 0) -> None:
-        last = min(c1 + margin, WIDTH - 2)  # the forest always closes the east edge
-        reserved.update((c, r) for r in range(r0 - margin, r1 + margin + 1) for c in range(c0 - margin, last + 1))
+        reserved.update((c, r) for r in range(r0 - margin, r1 + margin + 1) for c in range(c0 - margin, c1 + margin + 1))
 
     # Roads: the avenue from the entrance to the church, the high street, the paths to the doors.
     ground.rect(31, 33, 33, 39, DIRT_PLAIN, rng)
     ground.rect(31, 10, 33, 28, DIRT_PLAIN, rng)
-    ground.rect(4, 21, 62, 22, DIRT_PLAIN, rng)
+    ground.rect(4, 21, 58, 22, DIRT_PLAIN, rng)
     keep(31, 33, 33, 39, 1)
     keep(31, 10, 33, 28, 1)
-    keep(4, 21, 62, 22, 1)
+    keep(4, 21, 58, 22, 1)
     ground.rect(28, 17, 36, 25, COBBLE, rng)  # the plaza
     keep(27, 16, 37, 26)
     for c, r in ((29, 18), (35, 18), (29, 24), (35, 24)):  # a flower bed in each corner

@@ -1893,7 +1893,7 @@ void Scene::renderOverlays(const renderer::Camera& iCamera) {
 		nav::drawNavigationRoutes(*this);
 		renderer::Renderer2D::endScene();
 	}
-	if (!m_hasVoxelHighlight && !m_showCrosshair)
+	if (!m_hasVoxelHighlight && !m_showCrosshair && !m_interactionHighlight)
 		return;
 	const math::vec4 cameraPos4 = inverse(iCamera.getView()) * math::vec4{0.f, 0.f, 0.f, 1.f};
 	const math::vec3 cameraPos{cameraPos4.x(), cameraPos4.y(), cameraPos4.z()};
@@ -1927,6 +1927,22 @@ void Scene::renderOverlays(const renderer::Camera& iCamera) {
 												.point2 = c[static_cast<size_t>(face.corners[(e + 1) % 4])],
 												.color = color});
 		}
+	}
+
+	if (m_interactionHighlight) {
+		constexpr float pad = 0.01f;
+		const math::vec3 low = m_interactionHighlight->min() - math::vec3{pad, pad, pad};
+		const math::vec3 high = m_interactionHighlight->max() + math::vec3{pad, pad, pad};
+		const std::array<math::vec3, 8> corner{
+				math::vec3{low.x(), low.y(), low.z()},    math::vec3{high.x(), low.y(), low.z()},
+				math::vec3{high.x(), high.y(), low.z()},  math::vec3{low.x(), high.y(), low.z()},
+				math::vec3{low.x(), low.y(), high.z()},   math::vec3{high.x(), low.y(), high.z()},
+				math::vec3{high.x(), high.y(), high.z()}, math::vec3{low.x(), high.y(), high.z()}};
+		constexpr std::array<std::pair<size_t, size_t>, 12> edges{
+				{{0, 1}, {1, 2}, {2, 3}, {3, 0}, {4, 5}, {5, 6}, {6, 7}, {7, 4}, {0, 4}, {1, 5}, {2, 6}, {3, 7}}};
+		const math::vec4 color{1.f, 0.82f, 0.4f, 0.95f};
+		for (const auto& [from, to]: edges)
+			renderer::Renderer2D::drawLine({.point1 = corner[from], .point2 = corner[to], .color = color});
 	}
 
 	if (m_showCrosshair) {
