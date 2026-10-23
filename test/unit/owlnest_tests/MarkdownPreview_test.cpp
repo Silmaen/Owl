@@ -31,6 +31,7 @@ using owl::nest::codeEditor::MdHRule;
 using owl::nest::codeEditor::MdList;
 using owl::nest::codeEditor::MdParagraph;
 using owl::nest::codeEditor::MdTable;
+using owl::nest::codeEditor::TaskState;
 
 namespace {
 template<typename T>
@@ -267,4 +268,25 @@ TEST(MarkdownDocument, ParsesLinks) {
 	ASSERT_EQ(hrefs.size(), 2u);
 	EXPECT_EQ(hrefs[0], "other.md");
 	EXPECT_EQ(hrefs[1], "https://example.com");
+}
+
+TEST(MarkdownDocument, OrderedListKeepsItsStartNumber) {
+	MarkdownDocument doc;
+	ASSERT_TRUE(doc.parse("3. three\n4. four\n"));
+	const auto* l = firstAs<MdList>(doc.blocks());
+	ASSERT_NE(l, nullptr);
+	EXPECT_TRUE(l->ordered);
+	EXPECT_EQ(l->start, 3u);
+	EXPECT_EQ(l->items.size(), 2u);
+}
+
+TEST(MarkdownDocument, TaskListItemsCarryTheirState) {
+	MarkdownDocument doc;
+	ASSERT_TRUE(doc.parse("- [ ] open\n- [x] done\n- plain\n"));
+	const auto* l = firstAs<MdList>(doc.blocks());
+	ASSERT_NE(l, nullptr);
+	ASSERT_EQ(l->tasks.size(), 3u);
+	EXPECT_EQ(l->tasks[0], TaskState::Open);
+	EXPECT_EQ(l->tasks[1], TaskState::Done);
+	EXPECT_EQ(l->tasks[2], TaskState::None);
 }

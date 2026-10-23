@@ -100,6 +100,7 @@ class OwlEngineConan(ConanFile):
         "source/CMakeLists.txt",
         "source/owl/*",
         "source/tools/*",
+        "tools/doc/mermaid_svg.py",
     )
 
     def set_version(self):

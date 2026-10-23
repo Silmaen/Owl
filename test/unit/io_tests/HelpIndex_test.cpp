@@ -17,6 +17,7 @@
 #include <cstddef>
 #include <filesystem>
 #include <fstream>
+#include <regex>
 #include <set>
 #include <sstream>
 #include <string>
@@ -151,4 +152,25 @@ TEST(HelpIndex, ReadmeLogoCopiedToImages) {
 	EXPECT_EQ(readme.find("engine_assets/logo/"), std::string::npos);
 	EXPECT_NE(readme.find("](images/logo_owl.png)"), std::string::npos);
 	EXPECT_TRUE(fs::exists(root / "images" / "logo_owl.png"));
+}
+
+TEST(HelpIndex, MermaidFencesAreReplacedByRenderedSvg) {
+	const auto root = helpRoot();
+	const std::regex reference{R"(\]\((images/mermaid/[0-9a-f]+\.svg)\))"};
+	size_t references = 0;
+	for (const auto& entry: fs::directory_iterator(root)) {
+		if (entry.path().extension() != ".md")
+			continue;
+		const auto page = readBundledFile(entry.path());
+		// A fence opens a line; prose may still mention the word between backticks.
+		EXPECT_FALSE(std::regex_search(page, std::regex{R"((^|\n)[ \t]*```mermaid)"}))
+				<< "unrendered mermaid fence in " << entry.path();
+		for (std::sregex_iterator it(page.begin(), page.end(), reference), end; it != end; ++it) {
+			++references;
+			const auto svg = readBundledFile(root / (*it)[1].str());
+			EXPECT_NE(svg.find("<svg"), std::string::npos) << "missing diagram " << (*it)[1].str();
+			EXPECT_EQ(svg.find("foreignObject"), std::string::npos);
+		}
+	}
+	EXPECT_GT(references, 0u) << "no mermaid diagram was bundled";
 }

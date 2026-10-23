@@ -155,7 +155,11 @@ private:
 			case MD_BLOCK_OL:
 				{
 					const bool ordered = iType == MD_BLOCK_OL;
-					m_blockStack.back()->push_back(MdBlock{.data = MdList{.ordered = ordered, .items = {}}});
+					const auto* d = ordered ? static_cast<const MD_BLOCK_OL_DETAIL*>(iDetail) : nullptr;
+					m_blockStack.back()->push_back(MdBlock{.data = MdList{.ordered = ordered,
+																		  .start = d != nullptr ? d->start : 1u,
+																		  .items = {},
+																		  .tasks = {}}});
 					return 0;
 				}
 			case MD_BLOCK_LI:
@@ -165,6 +169,12 @@ private:
 					if (list == nullptr)
 						return 0;
 					list->items.emplace_back();
+					const auto* d = static_cast<const MD_BLOCK_LI_DETAIL*>(iDetail);
+					if (d == nullptr || d->is_task == 0)
+						list->tasks.push_back(TaskState::None);
+					else
+						list->tasks.push_back(d->task_mark == 'x' || d->task_mark == 'X' ? TaskState::Done
+																						 : TaskState::Open);
 					m_blockStack.push_back(&list->items.back());
 					m_inlineAccum = nullptr;
 					return 0;

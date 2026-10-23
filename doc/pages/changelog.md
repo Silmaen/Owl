@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Help panel diagrams: `tools/doc/mermaid_svg.py` draws every mermaid fence of the bundled pages as plain SVG (flowchart, sequence, state, class) into `help_bundle/images/mermaid/`, run by `cmake/HelpAssets.cmake`.
+- Help panel rendering: hanging indent and aligned numbers in lists, ordered lists keep their start number, GFM task lists drawn as checkboxes, inline code as a flat tinted span.
 - `core::task::Scheduler::parallelFor`, and `Scene::setTaskScheduler` / `setParallelMinEntities`: `prepareWorldTransforms` and the spatial boxes of scenes above 4096 entities are prepared in parallel (`frame/editor_update/forest50000` 1.68 to 0.91 ms).
 - Benchmarks `frame/editor_update/{flat,forest,moving_flat,moving_forest}50000`, each with a `_serial` twin.
 - Benchmark `renderer2d/text/100_strings_changing`: strings never seen in the previous frames, the cost of laying text out.
