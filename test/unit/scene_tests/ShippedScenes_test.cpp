@@ -13,6 +13,8 @@
 #include <scene/EntityLinkMigration.h>
 #include <scene/SceneSerializer.h>
 
+#include <cstddef>
+#include <cstdint>
 #include <filesystem>
 #include <fstream>
 #include <sstream>
