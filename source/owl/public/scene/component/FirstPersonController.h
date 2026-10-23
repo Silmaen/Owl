@@ -57,11 +57,9 @@ struct OWL_API FirstPersonController {
 
 	/// Runtime: every mesh of the scene was loaded and filed, so the body may fall.
 	bool m_worldReady = false;
-	/// Runtime: yaw and pitch were read from the transform.
-	bool m_initialized = false;
-	/// Runtime: heading, in radians about Y.
+	/// Runtime: heading, in radians about Y, read from the transform each frame.
 	float m_yaw = 0.f;
-	/// Runtime: pitch, in radians about X.
+	/// Runtime: pitch, in radians about X, read from the transform each frame.
 	float m_pitch = 0.f;
 	/// Runtime: vertical speed.
 	float m_velocityY = 0.f;

@@ -73,8 +73,7 @@ auto getTriggerPlayer(Scene& ioScene) -> Entity {
 	return {};
 }
 
-// Whether the player reaches the trigger: a first-person walker aims at an interaction instead of walking into it, a 3D
-// walker's body box meets the trigger box in 3D, a 2D player its collider in the plane.
+// Whether the player reaches the trigger: aimed at (first-person interaction), body box in 3D, else 2D collider.
 auto isTouching(Scene& ioScene, const Entity& iEntity, const Entity& iPlayer, const SceneTrigger::TriggerType iType)
 		-> bool {
 	if (iType == SceneTrigger::TriggerType::Interaction && iPlayer.hasComponent<component::FirstPersonController>())

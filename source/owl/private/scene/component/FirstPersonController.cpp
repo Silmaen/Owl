@@ -64,7 +64,6 @@ void FirstPersonController::deserialize(const core::Serializer& iNode) {
 	if (node["reach"])
 		reach = std::clamp(node["reach"].as<float>(), 0.f, 50.f);
 	eyeHeight = std::min(eyeHeight, height);
-	m_initialized = false;
 	m_worldReady = false;
 	m_target = core::UUID{0};
 }

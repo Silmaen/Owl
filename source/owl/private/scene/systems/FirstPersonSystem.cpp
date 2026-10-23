@@ -90,6 +90,15 @@ auto rayHit(const math::vec3& iOrigin, const math::vec3& iDirection, const math:
 	return near;
 }
 
+auto contains(const math::box3f& iBox, const math::vec3& iPoint) -> bool {
+	constexpr float margin = 1e-3f;
+	for (size_t axis = 0; axis < 3; ++axis) {
+		if (iPoint[axis] < iBox.min()[axis] - margin || iPoint[axis] > iBox.max()[axis] + margin)
+			return false;
+	}
+	return true;
+}
+
 // Whether the entity is the given one or below it in the hierarchy.
 auto isInSubtree(const Scene& iScene, entt::entity iHandle, const entt::entity iRoot) -> bool {
 	for (int depth = 0; depth < 64 && iHandle != entt::null; ++depth) {
@@ -153,6 +162,7 @@ auto findAimedInteraction(Scene& ioScene, const math::vec3& iEye, const math::ve
 	if (!best)
 		return std::nullopt;
 	const math::vec3 end = iEye + iForward * bestDistance;
+	const math::vec3 aimedPoint = end;
 	const math::vec3 low{std::min(iEye.x(), end.x()), std::min(iEye.y(), end.y()), std::min(iEye.z(), end.z())};
 	const math::vec3 high{std::max(iEye.x(), end.x()), std::max(iEye.y(), end.y()), std::max(iEye.z(), end.z())};
 	ioIds.clear();
@@ -164,8 +174,10 @@ auto findAimedInteraction(Scene& ioScene, const math::vec3& iEye, const math::ve
 			ioScene.registry.all_of<component::Trigger>(handle) ||
 			isInSubtree(ioScene, handle, static_cast<entt::entity>(best->first)))
 			continue;
-		// A box holding the eye (the room around it) does not hide what is in front.
+		// World boxes are coarser than meshes: one holding the aimed point (a hearth around a key) does not hide it.
 		const auto& box = index.getBox(id);
+		if (contains(box, aimedPoint))
+			continue;
 		if (const auto distance = rayHit(iEye, iForward, box);
 			distance && *distance > 0.f && *distance < bestDistance - 1e-3f)
 			return std::nullopt;
@@ -207,11 +219,9 @@ void updateFirstPersonControllers(Scene& ioScene, const SystemContext& iContext)
 		if (!controller.enabled)
 			continue;
 		auto& eye = transform.transform;
-		if (!controller.m_initialized) {
-			controller.m_yaw = eye.rotation().y();
-			controller.m_pitch = eye.rotation().x();
-			controller.m_initialized = true;
-		}
+		// The transform holds the view: a script or the editor turning the entity turns the walker.
+		controller.m_yaw = eye.rotation().y();
+		controller.m_pitch = eye.rotation().x();
 		turnView(controller, eye, actions, dt, cursorCaptured);
 		if (!controller.m_worldReady) {
 			controller.m_worldReady = isWorldLoaded(ioScene);
