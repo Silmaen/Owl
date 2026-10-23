@@ -1020,6 +1020,8 @@ TEST(LuaBindings, saveQueriesAndDeferredRequests) {
 	const ScriptInstance inst;
 	inst.setScene(scn.get());
 	ASSERT_TRUE(inst.createFromBuffer(data, "save_test", 1));
+	// Listing the saves reads the disk: under qemu it overruns the time quota, which this test does not check.
+	inst.setQuotas({.memoryBytes = inst.getQuotas().memoryBytes, .timePerCallMs = 0});
 	inst.onCreate();
 	EXPECT_TRUE(scn->saveLoadRequest.pending);
 	EXPECT_TRUE(scn->saveLoadRequest.isLoad);
