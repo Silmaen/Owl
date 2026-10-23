@@ -1,4 +1,4 @@
-# MCP server {#page-mcp}
+# MCP Server {#page-mcp}
 
 [TOC]
 

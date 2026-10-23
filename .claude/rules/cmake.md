@@ -17,10 +17,11 @@ paths:
 
 **Always use `file(GLOB_RECURSE ...)`** for sources and headers. Never maintain explicit file lists:
 ```cmake
-file(GLOB_RECURSE SRCS *.cpp)
-file(GLOB_RECURSE HDRS *.h)
+file(GLOB_RECURSE SRCS CONFIGURE_DEPENDS *.cpp)
+file(GLOB_RECURSE HDRS CONFIGURE_DEPENDS *.h)
 ```
-Adding a new `.cpp` or `.h` file requires no CMakeLists.txt modification.
+Adding a new `.cpp` or `.h` file requires no CMakeLists.txt modification and no manual configure
+(`CONFIGURE_DEPENDS`: the next build configures again).
 
 ## Linking Dependencies
 
@@ -52,8 +53,8 @@ owl_target_link_libraries(${ENGINE_NAME} PUBLIC EnTT REQUIRED)
 Follow the existing pattern:
 ```cmake
 set(OWL_PROJECT ${CMAKE_PROJECT_NAME}MyApp)
-file(GLOB_RECURSE SRCS sources/*.cpp)
-file(GLOB_RECURSE HDRS sources/*.h)
+file(GLOB_RECURSE SRCS CONFIGURE_DEPENDS sources/*.cpp)
+file(GLOB_RECURSE HDRS CONFIGURE_DEPENDS sources/*.h)
 add_executable(${OWL_PROJECT} ${SRCS} ${HDRS})
 set_target_properties(${OWL_PROJECT} PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
@@ -73,6 +74,13 @@ Tests are auto-discovered from `test/` subdirectories. See testing rules.
 - Settings propagate via `${CMAKE_PROJECT_NAME}_Base` INTERFACE library
 - Never add compile flags to individual targets — add to Base if global
 - `OWL_DEBUG` / `OWL_RELEASE` compile definitions are set automatically
+- Set globally in `cmake/BaseConfig.cmake`: C++23, no C++ module scan (`CMAKE_CXX_SCAN_FOR_MODULES OFF`, the
+  project has no module), `CMAKE_LINK_DEPENDS_NO_SHARED ON` (a program is not relinked when only a shared library it
+  uses changed: a custom command whose output depends on the engine code names `${ENGINE_NAME}` in its `DEPENDS`,
+  as the shader bake does)
+- Clang presets link with lld through `CMAKE_LINKER_TYPE` (`cmake/CMakePresetsBase.json`)
+- The engine public headers are a `FILE_SET HEADERS` (base dir `public/`): it gives the include path, in the build
+  tree and installed, and installs the headers
 
 ## Platform Handling
 

@@ -1,7 +1,7 @@
 #
 # Consumer of the installed OwlEngine package: no Owl build setting may leak into this project.
 #
-cmake_minimum_required(VERSION 3.24)
+cmake_minimum_required(VERSION 4.4)
 project(OwlTestPackage LANGUAGES CXX)
 
 # OWL_TEST_GUI: the package was built with the Gui module (owlengine option `gui`).

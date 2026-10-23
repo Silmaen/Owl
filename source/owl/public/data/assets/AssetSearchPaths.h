@@ -11,6 +11,8 @@
 #include "core/Core.h"
 
 #include <filesystem>
+#include <optional>
+#include <string>
 #include <vector>
 
 /**
@@ -37,5 +39,13 @@ namespace owl::data::assets {
  */
 [[nodiscard]] OWL_API auto isInDirectory(const std::filesystem::path& iPath, const std::filesystem::path& iDirectory)
 		-> bool;
+
+/**
+ * @brief
+ *  Read the text of an asset: from the open pack first, then from the asset search paths, then the path itself.
+ * @param[in] iRelative Path of the asset, relative to an asset directory (or a path on disk).
+ * @return The text, or nothing when no source holds the asset.
+ */
+[[nodiscard]] OWL_API auto readAssetText(const std::filesystem::path& iRelative) -> std::optional<std::string>;
 
 }// namespace owl::data::assets

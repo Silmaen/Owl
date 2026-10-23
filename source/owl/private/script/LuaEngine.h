@@ -165,6 +165,14 @@ public:
 
 	/**
 	 * @brief
+	 *  Start the time quota of the running call again: a binding calls it after disk or decoder work, whose time is
+	 *  not the script's. An interrupt already raised in this call stays.
+	 * @param[in] iState The Lua state.
+	 */
+	static void restartCallClock(lua_State* iState);
+
+	/**
+	 * @brief
 	 *  Register C functions as a global table, as light functions: each one calls `callGuarded` itself.
 	 * @param[in] iState The Lua state.
 	 * @param[in] iTableName Name of the global table.

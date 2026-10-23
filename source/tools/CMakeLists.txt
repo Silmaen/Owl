@@ -26,7 +26,8 @@ add_custom_command(OUTPUT ${_owl_bake_stamp}
         # The target name (not its file) gets the cross-compiling emulator prepended.
         COMMAND ${OWL_SHADER_BAKE} "${CMAKE_SOURCE_DIR}/engine_assets/shaders" "${_owl_baked_assets}"
         COMMAND ${CMAKE_COMMAND} -E touch ${_owl_bake_stamp}
-        DEPENDS ${OWL_SHADER_BAKE} ${OWL_SLANG_SHADERS}
+        # The engine compiles the shaders: OwlShaderBake itself is not linked again when only the engine changed.
+        DEPENDS ${OWL_SHADER_BAKE} ${ENGINE_NAME} ${OWL_SLANG_SHADERS}
         WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
         COMMENT "Compile the engine shaders to SPIR-V"
         VERBATIM

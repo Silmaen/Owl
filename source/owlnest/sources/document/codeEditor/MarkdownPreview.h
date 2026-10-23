@@ -15,6 +15,7 @@
 #include <renderer/gpu/Texture.h>
 
 #include <cstddef>
+#include <cstdint>
 #include <filesystem>
 #include <functional>
 #include <memory>
@@ -165,6 +166,7 @@ private:
 	struct ImageEntry {
 		shared<renderer::gpu::Texture2D> texture;///< Loaded texture (null if load failed or remote).
 		math::vec2ui size;///< Pixel size of the loaded image.
+		math::vec2ui logicalSize;///< Size the image is shown at when it is a rasterised SVG (zero: `size`).
 		bool isRemote = false;///< True if the source is an HTTP(S) URL.
 		bool failed = false;///< True if the most recent load attempt failed.
 		bool flippedY = false;///< True when the texture was loaded with stb_image
@@ -215,8 +217,11 @@ private:
 	/**
 	 * @brief
 	 *  Render a block image (paragraph reduced to a single image span).
+	 * @param[in] iSrc Image path or URL.
+	 * @param[in] iAlt Alt text.
+	 * @param[in] iWidth Requested width in pixels (0 = natural size); always capped to the available width.
 	 */
-	void renderImage(const std::string& iSrc, const std::string& iAlt);
+	void renderImage(const std::string& iSrc, const std::string& iAlt, uint32_t iWidth);
 
 	/**
 	 * @brief

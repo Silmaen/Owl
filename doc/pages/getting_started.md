@@ -5,8 +5,8 @@
 Welcome to **Owl Engine**, a C++23 game engine with a scene editor (Owl Nest), Lua scripting,
 rendering styles mixed in one game (2D, raycast, voxel, isometric, 3D), physics, audio, packaging, and more.
 
-This page is your entry point. It points to the in-depth guides bundled with the editor
-and accessible from the **Help** ribbon button or by pressing `F1`.
+This page gets Owl Nest running and a first game open. The guides are bundled with the editor, from the **Help**
+ribbon button or `F1`.
 
 ## First Run
 
@@ -31,25 +31,6 @@ If the graphics driver does not offer a Vulkan 1.3 device, Owl Nest and exported
 say so in the log (and in a toast in the editor); update the driver, or set `renderer: OpenGL` in the `config.yml` of
 the working directory to skip the Vulkan attempt ([requirements](renderer.md#renderer-vulkan-requirements)).
 
-## Where to Go Next
-
-| Topic                             | Page                               |
-|-----------------------------------|------------------------------------|
-| Editor panels, ribbon, shortcuts  | [editor.md](editor.md)             |
-| Scene system and components       | [scene.md](scene.md)               |
-| Lua scripting (gameplay)          | [scripting.md](scripting.md)       |
-| Renderers, sprites, text, tiles   | [renderer.md](renderer.md)         |
-| Voxel engine (blocks, chunks)     | [voxel.md](voxel.md)               |
-| Tile-graph pathfinding            | [pathfinding.md](pathfinding.md)   |
-| Input actions and gamepad         | [event_input.md](event_input.md)   |
-| Physics (Box2D bodies, triggers)  | [physics.md](physics.md)           |
-| Sound (effects, music, listeners) | [sound.md](sound.md)               |
-| Node graph editor                 | [node_graph.md](node_graph.md)     |
-| Driving Owl Nest from an AI agent | [mcp.md](mcp.md)                   |
-| Building from source              | [building.md](building.md)         |
-| Engine architecture               | [architecture.md](architecture.md) |
-| How to contribute                 | [contributing.md](contributing.md) |
-
 ## Shipping Your Game
 
 **Home > Project > Pack Game** (or **Package the game** in the File screen) exports the open project to a folder you
@@ -69,18 +50,7 @@ flowchart LR
     X -->|reads| R
 ```
 
-## Useful Shortcuts
-
-| Shortcut            | Action                     |
-|---------------------|----------------------------|
-| `F1`                | Open contextual help       |
-| `Ctrl+Z` / `Ctrl+Y` | Undo / redo                |
-| `Ctrl+S`            | Save active document       |
-| `Ctrl+W`            | Close active document      |
-| `Ctrl+Tab`          | Cycle to the next document |
-| `F5` / `F6` / `F7`  | Play / Pause / Stop        |
-
-## Engine Demo and sample games
+## Engine Demo and Sample Games
 
 Both ship next to `bin/` in the Owl Nest archive and open from the File screen:
 
@@ -91,3 +61,20 @@ Both ship next to `bin/` in the Owl Nest archive and open from the File screen:
   games of a readable size to start a project from.
 
 ![The File screen: the Engine Demo card, the sample games and the recent projects](../images/nest/file_screen.png)
+
+| ![2D RPG hub](../images/showcase/hub.png)           | ![Raycast level](../images/showcase/raycast.png)   |
+|-----------------------------------------------------|----------------------------------------------------|
+| ![Voxel terrain](../images/showcase/voxel.png)      | ![Isometric town](../images/showcase/iso_town.png) |
+
+*Scenes of the Engine Demo, rendered headless by the game runner on Vulkan.*
+
+| ![Breakout](../images/showcase/breakout.png) | ![Sokoban](../images/showcase/sokoban.png) | ![Wolfenstein mini](../images/showcase/wolfenstein.png) |
+|----------------------------------------------|--------------------------------------------|---------------------------------------------------------|
+
+## Where to Go Next
+
+- Build a game: [Using Owl Nest](editor.md) (panels, play mode, shortcuts), then
+  [Scripting Games in Lua](scripting.md)
+- Every page by audience: [game makers](guide_game_maker.md), [C++ engine developers](guide_engine_developer.md),
+  [contributors](guide_contributor.md)
+- Build the editor yourself: [Building from Source](building.md)

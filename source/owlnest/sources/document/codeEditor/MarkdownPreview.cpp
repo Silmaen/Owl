@@ -26,6 +26,7 @@ OWL_DIAG_DISABLE_CLANG("-Wreserved-identifier")
 OWL_DIAG_POP
 
 #include <algorithm>
+#include <array>
 #include <cctype>
 #include <cstdint>
 #include <fstream>
@@ -40,8 +41,30 @@ namespace {
 constexpr float kHeading1Scale = 1.60f;
 constexpr float kHeading2Scale = 1.30f;
 constexpr float kHeading3Scale = 1.15f;
-constexpr uint32_t kImageMaxSide = 1024;
+constexpr uint32_t kImageMaxSide = 2048;
+constexpr float kInlineCodePadX = 3.0f;
 constexpr float kImageHorizontalPadding = 16.0f;
+
+// lunasvg draws `<text>` only with a registered font face (the mermaid diagrams are text-heavy SVG).
+void registerSvgFonts() {
+	static bool done = false;
+	if (done || !app::Application::instanced())
+		return;
+	done = true;
+	const auto find = [](const char* iRelative) -> std::string {
+		for (const auto& [title, assetsPath]: app::Application::get().getAssetDirectories()) {
+			if (const auto full = assetsPath / iRelative; exists(full))
+				return full.string();
+		}
+		return {};
+	};
+	if (const auto regular = find("fonts/Inter-Regular.ttf"); !regular.empty()) {
+		lunasvg_add_font_face_from_file("Inter", false, false, regular.c_str());
+		lunasvg_add_font_face_from_file("", false, false, regular.c_str());
+	}
+	if (const auto bold = find("fonts/Inter-SemiBold.ttf"); !bold.empty())
+		lunasvg_add_font_face_from_file("Inter", true, false, bold.c_str());
+}
 
 [[nodiscard]] auto isExternalUrl(const std::string& iHref) -> bool {
 	return iHref.starts_with("http://") || iHref.starts_with("https://") || iHref.starts_with("mailto:");
@@ -186,7 +209,7 @@ void MarkdownPreview::renderBlock(const MdBlock& iBlock, size_t& ioCodeIndex, co
 					// A paragraph that contains only a single block-level image is rendered as an Image.
 					if (iVal.spans.size() == 1 && iVal.spans.front().kind == InlineKind::ImageInline) {
 						const auto& img = iVal.spans.front();
-						renderImage(img.text, img.alt);
+						renderImage(img.text, img.alt, img.width);
 					} else {
 						renderInlineSpans(iVal.spans);
 					}
@@ -197,7 +220,7 @@ void MarkdownPreview::renderBlock(const MdBlock& iBlock, size_t& ioCodeIndex, co
 					if (!iCompact)
 						ImGui::Spacing();
 				} else if constexpr (std::is_same_v<T, MdImage>) {
-					renderImage(iVal.src, iVal.alt);
+					renderImage(iVal.src, iVal.alt, 0);
 					if (!iCompact)
 						ImGui::Spacing();
 				} else if constexpr (std::is_same_v<T, MdHRule>) {
@@ -248,7 +271,9 @@ void MarkdownPreview::renderInlineSpans(const std::vector<MdInline>& iSpans) {
 		if (iWord.empty())
 			return;
 		const float spaceW = ImGui::CalcTextSize(" ").x;
-		const ImVec2 wordSize = ImGui::CalcTextSize(iWord.data(), iWord.data() + iWord.size());
+		ImVec2 wordSize = ImGui::CalcTextSize(iWord.data(), iWord.data() + iWord.size());
+		if (iIsCode)
+			wordSize.x += 2.0f * kInlineCodePadX;
 		if (!firstOnLine) {
 			const float prevRight = ImGui::GetItemRectMax().x;
 			const float panelRight = ImGui::GetCursorScreenPos().x + ImGui::GetContentRegionAvail().x;
@@ -260,18 +285,15 @@ void MarkdownPreview::renderInlineSpans(const std::vector<MdInline>& iSpans) {
 
 		pushStyle();
 		if (iIsCode) {
-			// Inline code: render inside a slightly tinted background.
-			const auto bg = ImGui::GetStyleColorVec4(ImGuiCol_FrameBg);
-
-			ImGui::PushStyleColor(ImGuiCol_Button, bg);
-
-			ImGui::PushStyleColor(ImGuiCol_ButtonActive, bg);
-
-			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, bg);
-
-			ImGui::SmallButton(std::string{iWord}.c_str());
-
-			ImGui::PopStyleColor(3);
+			// Inline code: a flat tinted span, not a widget, so it carries no click affordance.
+			const ImVec2 origin = ImGui::GetCursorScreenPos();
+			auto* drawList = ImGui::GetWindowDrawList();
+			const ImU32 background = ImGui::GetColorU32(ImGuiCol_FrameBg);
+			const ImU32 textColor = ImGui::GetColorU32(ImGuiCol_Text);
+			drawList->AddRectFilled(origin, ImVec2{origin.x + wordSize.x, origin.y + wordSize.y}, background, 3.0f);
+			drawList->AddText(ImVec2{origin.x + kInlineCodePadX, origin.y}, textColor, iWord.data(),
+							  iWord.data() + iWord.size());
+			ImGui::Dummy(wordSize);
 		} else {
 			ImGui::TextUnformatted(iWord.data(), iWord.data() + iWord.size());
 		}
@@ -408,17 +430,46 @@ void MarkdownPreview::renderTable(const MdTable& iTable) {
 // NOLINTBEGIN(misc-no-recursion) — list items contain blocks (incl. nested lists).
 void MarkdownPreview::renderList(const MdList& iList, size_t& ioCodeIndex) {
 	const float spaceW = ImGui::CalcTextSize(" ").x;
-	int idx = 1;
-	for (const auto& item: iList.items) {
+	const float boxSize = ImGui::GetTextLineHeight() * 0.8f;
+	// Widest number of the list: markers are right-aligned in one column so the bodies line up.
+	const std::string widest = std::to_string(iList.start + iList.items.size()) + ".";
+	uint32_t number = iList.start;
+	for (size_t i = 0; i < iList.items.size(); ++i) {
+		const auto& item = iList.items[i];
+		const TaskState task = i < iList.tasks.size() ? iList.tasks[i] : TaskState::None;
 		ImGui::BeginGroup();
-		if (iList.ordered) {
-			const std::string num = std::to_string(idx++) + ".";
+		float markerW = 0.0f;
+		if (task != TaskState::None) {
+			markerW = boxSize + spaceW;
+			const ImVec2 origin = ImGui::GetCursorScreenPos();
+			const float top = origin.y + (ImGui::GetTextLineHeight() - boxSize) * 0.5f;
+			auto* drawList = ImGui::GetWindowDrawList();
+			const ImU32 color = ImGui::GetColorU32(ImGuiCol_Text);
+			drawList->AddRect(ImVec2{origin.x, top}, ImVec2{origin.x + boxSize, top + boxSize}, color, 2.0f);
+			if (task == TaskState::Done) {
+				const ImVec2 a{origin.x + boxSize * 0.22f, top + boxSize * 0.52f};
+				const ImVec2 b{origin.x + boxSize * 0.42f, top + boxSize * 0.74f};
+				const ImVec2 c{origin.x + boxSize * 0.78f, top + boxSize * 0.28f};
+				drawList->AddPolyline(std::array{a, b, c}.data(), 3, color, ImDrawFlags_None, 2.0f);
+			}
+			ImGui::Dummy(ImVec2{boxSize, ImGui::GetTextLineHeight()});
+		} else if (iList.ordered) {
+			const std::string num = std::to_string(number++) + ".";
+			markerW = ImGui::CalcTextSize(widest.c_str()).x + spaceW;
+			const float pad = ImGui::CalcTextSize(widest.c_str()).x - ImGui::CalcTextSize(num.c_str()).x;
+			ImGui::SetCursorPosX(ImGui::GetCursorPosX() + pad);
 			ImGui::TextUnformatted(num.c_str());
 		} else {
+			markerW = ImGui::CalcTextSize("\xe2\x80\xa2").x + spaceW;
 			ImGui::TextUnformatted("\xe2\x80\xa2");// U+2022 BULLET
 		}
-		ImGui::SameLine(0.0f, spaceW);
+		// Hanging indent: the body (and every wrapped line of it) starts after the marker.
+		const float startX = ImGui::GetCursorPosX();
+		ImGui::SameLine(0.0f, 0.0f);
+		ImGui::SetCursorPosX(startX + markerW);
+		ImGui::Indent(markerW);
 		for (const auto& sub: item) renderBlock(sub, ioCodeIndex, false);
+		ImGui::Unindent(markerW);
 		ImGui::EndGroup();
 	}
 }
@@ -453,7 +504,7 @@ void MarkdownPreview::renderInlineImage(const std::string& iSrc, const std::stri
 	ioFirstOnLine = false;
 }
 
-void MarkdownPreview::renderImage(const std::string& iSrc, const std::string& iAlt) {
+void MarkdownPreview::renderImage(const std::string& iSrc, const std::string& iAlt, const uint32_t iWidth) {
 	const auto& entry = resolveImage(iSrc);
 	if (entry.isRemote) {
 		const std::string label = (iAlt.empty() ? iSrc : iAlt) + "  \xe2\x86\x97";
@@ -466,8 +517,11 @@ void MarkdownPreview::renderImage(const std::string& iSrc, const std::string& iA
 		return;
 	}
 	const float availX = std::max(1.0f, ImGui::GetContentRegionAvail().x - kImageHorizontalPadding);
-	const float aspect = static_cast<float>(entry.size.y()) / static_cast<float>(std::max(1u, entry.size.x()));
-	const float width = std::min(availX, static_cast<float>(entry.size.x()));
+	// A rasterised SVG is shown at its own size, not at its (oversampled) texture size.
+	const auto shown = entry.logicalSize.x() > 0 ? entry.logicalSize : entry.size;
+	const float aspect = static_cast<float>(shown.y()) / static_cast<float>(std::max(1u, shown.x()));
+	const float wanted = iWidth > 0 ? static_cast<float>(iWidth) : static_cast<float>(shown.x());
+	const float width = std::min(availX, wanted);
 	const float height = width * aspect;
 	const auto cursor = ImGui::GetCursorPos();
 	ImGui::SetCursorPosX(cursor.x + (ImGui::GetContentRegionAvail().x - width) * 0.5f);
@@ -500,6 +554,7 @@ auto MarkdownPreview::resolveImage(const std::string& iSrc) -> const ImageEntry&
 	const auto ext = full.extension().string();
 	const bool isSvg = ext == ".svg" || ext == ".SVG";
 	if (isSvg) {
+		registerSvgFonts();
 		std::string svgText;
 		try {
 			const std::ifstream stream(full, std::ios::binary);
@@ -536,6 +591,7 @@ auto MarkdownPreview::resolveImage(const std::string& iSrc) -> const ImageEntry&
 																	  .generateMips = false};
 					entry.texture = renderer::gpu::Texture2D::create(specs);
 					entry.size = {pixW, pixH};
+					entry.logicalSize = {static_cast<uint32_t>(intrW), static_cast<uint32_t>(intrH)};
 					entry.texture->setData(pixels.data(), static_cast<uint32_t>(pixels.size()));
 				} else {
 					entry.failed = true;

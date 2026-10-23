@@ -75,9 +75,15 @@ The user documentation lives in `doc/pages/` and changes in the same pull reques
   step (`cmake/HelpAssets.cmake`) strips Doxygen anchors (`{#page-name}`) and `[TOC]` lines, and rewrites
   `(../images/foo.svg)` to `(images/foo.svg)`, so those source-side conventions remain valid for Doxygen builds.
 - Mermaid diagrams (` ```mermaid ` fences) render natively on GitHub and through mermaid.js in the Doxygen HTML
-  output. The in-editor help panel does **not** execute JavaScript: mermaid blocks render as plain code blocks
-  there. Prefer mermaid for architecture / flow / sequence diagrams; the SVGs in `doc/images/` remain valid for
-  static figures.
+  output; the in-editor help panel shows them as SVG files drawn at configure time by `tools/doc/mermaid_svg.py`
+  (flowchart, sequence, state and class diagrams). Prefer mermaid for architecture / flow / sequence diagrams; the SVGs
+  in `doc/images/` remain valid for static figures.
+- A fixed-size image is a raw `<img src="..." width="160">` tag (GitHub, Doxygen and the help panel honour the width).
+- The page tree: the README is the landing page and the Doxygen main page; every other page is listed in one guide
+  ([game makers](guide_game_maker.md), [C++ engine developers](guide_engine_developer.md),
+  [contributors](guide_contributor.md)) and attached to it by a `<!-- subpage: page.md -->` line, a page having one
+  parent. A new page goes in the guide of its audience, with its table row and its marker; content already written in
+  another page is linked, not copied.
 - The Owl Nest screenshots in `doc/images/nest/` are made by `tools/doc/capture_nest.py`, headless inside the build
   image: a private Xvfb display, Owl Nest on lavapipe with the Engine Demo, one editor start per shot, set up through
   the reopened session, synthetic clicks and keys (XTest) and the MCP server, then grabbed, cropped and written as PNG
@@ -142,7 +148,6 @@ at the next configure:
   engine version (a game of its own keeps its `version`)
 - the package names (`OwlNest-x.y.z-<commit>-…`), the Conan package version, the Windows version resources, the
   Doxygen `PROJECT_NUMBER` and the version the CI publishes
-- the README badge, which shows the latest GitHub release
 
 The changelog, the roadmap and the design pages are history: a release dates them by hand.
 

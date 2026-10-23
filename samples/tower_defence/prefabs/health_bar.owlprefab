@@ -1,0 +1,19 @@
+Prefab: HealthBar
+Version: 1
+Entities:
+  - Entity: 7600000000000875001
+    Tag:
+      tag: HealthBar
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [0.5, 0.094, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [0.3, 0.9, 0.3, 1]
+      tilingFactor: 1
+      texture: nam:textures/bar.png
+    RendererTag:
+      Name: iso_world

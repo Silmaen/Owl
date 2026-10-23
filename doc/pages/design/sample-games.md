@@ -10,7 +10,8 @@ Owl Engine ships two kinds of example content:
 
 - **Engine Demo** (today's `engine_demo/`): an all-in-one showcase of every engine feature, not a game in itself.
 - **Sample games**: small but real games, each one built on only what it needs, most of them mini remakes of known
-  games. They prove that Owl Engine makes games, give a newcomer a project of a readable size to start from, and feed the
+  games. They prove that Owl Engine makes games, give a newcomer a project of a readable size to start from, and feed
+  the
   two showcase games of v1.0.
 
 ## Rules
@@ -18,26 +19,27 @@ Owl Engine ships two kinds of example content:
 - One project per game, beside the Engine Demo, authored in Owl Nest; game rules in Lua, never in the engine.
 - Small: one screen or a handful of levels, finished (title, play, win / lose, settings), playable with keyboard,
   mouse and gamepad.
-- CC0 or home-made art only (the reworked `textures/wolf3d/` of the Engine Demo included); a scenario test per game runs in CI, and the game packages with the runner.
+- CC0 or home-made art only (the reworked `textures/wolf3d/` of the Engine Demo included); a scenario test per game runs
+  in CI, and the game packages with the runner.
 - A sample game uses only what it needs: it is not a feature checklist, the Engine Demo is.
 
 ## Short list
 
-| Game                  | Inspired by           | Exercises                                       | Possible from |
-|-----------------------|-----------------------|-------------------------------------------------|---------------|
-| Breakout              | Breakout / Arkanoid   | 2D, physics, HUD, sound, gamepad                | v0.4.0        |
-| Sokoban               | Sokoban               | tilemap, undo, saves, level editing in Owl Nest | v0.4.0        |
-| Wolfenstein mini      | Wolfenstein 3D        | raycast, doors, pick-ups, HUD                   | v0.4.0        |
-| Tower defence         | Kingdom Rush          | isometric, waves, tile-graph pathfinding, HUD   | v0.5.0        |
-| Mini Minecraft        | Minecraft             | voxel, build and break, inventory               | v0.4.0        |
-| One-room Zelda-like   | The Legend of Zelda   | top-down, dialogue, enemy AI, 2D lights         | v0.7.0        |
-| Marble or mini kart   | Marble Madness / Kart | 3D, Jolt physics, shadows                       | v0.7.0        |
-| Networked Bomberman   | Bomberman             | tilemap, deterministic simulation, multiplayer  | v0.8.0        |
-| Lunar lander          | Lunar Lander          | 3D, thrust and gravity, planetary terrain, legs | v0.7.0        |
-| Asteroid field        | Star Fox / X-Wing     | 6DoF flight, 3D steering AI, trails, HUD marks  | v0.7.0        |
+| Game                | Inspired by           | Exercises                                       | Possible from | done in |
+|---------------------|-----------------------|-------------------------------------------------|---------------|---------|
+| Breakout            | Breakout / Arkanoid   | 2D, physics, HUD, sound, gamepad                | v0.4.0        | v0.4.0  |
+| Sokoban             | Sokoban               | tilemap, undo, saves, level editing in Owl Nest | v0.4.0        | v0.4.0  |
+| Wolfenstein mini    | Wolfenstein 3D        | raycast, doors, pick-ups, HUD                   | v0.4.0        | v0.4.0  |
+| Tower defence       | Kingdom Rush          | isometric, waves, tile-graph pathfinding, HUD   | v0.5.0        | v0.5.0  |
+| Mini Minecraft      | Minecraft             | voxel, build and break, inventory               | v0.4.0        |         |
+| One-room Zelda-like | The Legend of Zelda   | top-down, dialogue, enemy AI, 2D lights         | v0.7.0        |         |
+| Marble or mini kart | Marble Madness / Kart | 3D, Jolt physics, shadows                       | v0.7.0        |         |
+| Networked Bomberman | Bomberman             | tilemap, deterministic simulation, multiplayer  | v0.8.0        |         |
+| Lunar lander        | Lunar Lander          | 3D, thrust and gravity, planetary terrain, legs | v0.7.0        |         |
+| Asteroid field      | Star Fox / X-Wing     | 6DoF flight, 3D steering AI, trails, HUD marks  | v0.7.0        |         |
 
-Breakout, Wolfenstein mini and Sokoban shipped in v0.4.0; a tower defence comes next, in v0.5.0, after the
-Lua gaps it shares with Mini Transport Tycoon ([Order](#sample-games-order)), which waits in the
+Breakout, Wolfenstein mini and Sokoban shipped in v0.4.0; the first map of a tower defence ships in v0.5.0, on the Lua
+gaps closed for it and for Mini Transport Tycoon ([Order](#sample-games-order)), which waits in the
 [Pool](#sample-games-pool). The two v1.0 showcase games (one 2D, one 3D) are picked from this
 list, and so are the games of the [Pool](#sample-games-pool) once they enter it.
 
@@ -57,10 +59,10 @@ Ideas without commitment: a game of the pool enters the short list when a releas
 ## v0.4.0 games
 
 Feasibility checked against `main` on 2026-10-18 (Lua bindings, components, Engine Demo): all five games fit the
-v0.4.0 engine. Breakout and Mini Transport Tycoon need no engine change, Sokoban one Lua binding
-(`isometric.get_size`, added), Wolfenstein mini art, Mini Minecraft two small engine fixes ([Gaps](#sample-games-gaps)).
+v0.4.0 engine. Breakout and Mini Transport Tycoon need no engine change, Sokoban one Lua binding (`isometric.get_size`,
+added), Wolfenstein mini art, Mini Minecraft two small engine fixes ([Gaps](#sample-games-gaps)).
 Breakout, Sokoban and a Wolfenstein mini without combat shipped with v0.4.0; the Lua gaps G1, G3, G7, G8 and G15 are
-planned in v0.5.0, Mini Minecraft in v0.6.0; Mini Transport Tycoon waits in the pool.
+closed in v0.5.0, Mini Minecraft is planned in v0.6.0; Mini Transport Tycoon waits in the pool.
 
 Common to every game:
 
@@ -100,8 +102,8 @@ Done in v0.4.0: `samples/breakout/` (how to play: its `README.md`).
   would keep its body), its burst shown from a pool instead of the pop of `coin.lua`.
 - Gaps met: G5 (the paddle follows the mouse motion, `breakout_mouse_speed` setting), G1 (pools of hidden entities:
   power-ups, bursts, and a second paddle for the wide one, a body cannot be resized from Lua), G14 (one scene per
-  level), G9 (master volume only), G8 (the pause stops the bodies from Lua). Each level names the next one in the
-  `next_scene` property of its `Game` script (G16 fixed): a new level is a duplicated scene in Owl Nest.
+  level), G9 (master volume only), G8 (the pause stops the scene clock, `time.set_paused`). Each level names the next
+  one in the `next_scene` property of its `Game` script (G16 fixed): a new level is a duplicated scene in Owl Nest.
 - Scenarios: `breakout_serve` (serve, 300 frames, `breakout_bricks` below 40), `breakout_lose` (no input at all:
   the automatic serve, `breakout_lives` below 3), `breakout_gamepad` (dead zone, the stick moves the paddle, A serves),
   `breakout_level_select` (down selects level 2, accept starts a fresh run there), `breakout_how_to` (the How to play
@@ -140,9 +142,51 @@ Done in v0.4.0: `samples/breakout/` (how to play: its `README.md`).
 - Gaps: G6 (tile bindings named `isometric`), G14 (one scene per level), G9 (master volume only). Lua had no way to
   read the size of a tilemap: `isometric.get_size` was added for it (width, height, cell size).
 - Scenarios: `sokoban_push` (`sokoban_on_goal` grows), `sokoban_undo` (undo and restart put back crate and counters),
-  `sokoban_wall` (no step into a wall nor a blocked crate), `sokoban_win` (level 1 solved, `sokoban_done_01` set, level 2
+  `sokoban_wall` (no step into a wall nor a blocked crate), `sokoban_win` (level 1 solved, `sokoban_done_01` set, level
+  2
   opens), `sokoban_gamepad` (D-pad, B, stick dead zone), `sokoban_level_select` (`ui_down`, `ui_accept`).
 - Size: **S**, done.
+
+### Tower defence {#sample-games-tower-defence}
+
+Shipped in `samples/tower_defence/` (how to play: its `README.md`): the first map, in basic home-made art, to validate
+the gameplay; at least five maps once it plays well.
+
+| Item     | As shipped                                                                                                                     |
+|----------|--------------------------------------------------------------------------------------------------------------------------------|
+| Play     | One isometric map of 24×24, 8 waves; enemies walk a road from the gate to the keep, towers on 16 fixed build pads beside it    |
+| Win/lose | Every wave survived with at least one life / 20 lives lost (one per enemy reaching the keep)                                   |
+| Waves    | Timed: 25 s before the first, 18 s after each one is sent; called early for 2 gold per second left                             |
+| Towers   | Archer (fast, single target), cannon (slow, splash, aims ahead), frost (slows, small damage); no upgrade, sold for half        |
+| Enemies  | Runner (fast, weak), soldier (average), armoured (slow, takes 40 % of the arrows); gold on each kill, 6 % more HP per wave     |
+| Controls | Mouse: left on a pad or a tower opens its ring, on a badge builds or sells, right closes; Q / E, Tab or D-pad move a cursor    |
+|----------|--------------------------------------------------------------------------------------------------------------------------------|
+|----------|--------------------------------------------------------------------------------------------------------------------------------|
+| Scenes   | `title` (How to play window), `map_01`, `settings`, `victory` (kills, lives kept, gold, time counted up), `game_over`          |
+| Tilemap  | `Ground`: layer `ground` (grass), layer `roads` (road overlays, tileset connections as in `iso_town.owl`; pads as pavement)    |
+| Entities | `Gate`, `Keep`, decor, camera, the hidden `Cursor`, `RangeRing` and three `BuildChoice` badges; prefabs spawned by Lua         |
+| Prefabs  | `enemy_{runner,soldier,armoured}`, `tower_{archer,cannon,frost}`, `projectile_{arrow,ball,shard}`, `health_bar`, `puff`        |
+| Lua      | `defence.lua` (waves, enemies, towers, projectiles, ring, camera, pause and speed: scripts cannot call each other), menus      |
+| HUD      | Gold, lives, wave n / N with its countdown, Call wave (bonus shown), speed and Menu buttons, the info panel of the ring        |
+| Menus    | Night watch (`generate_menus.py`): stone title, crimson banner buttons, a wave marching past a tower to the keep               |
+| Art      | Basic shapes from `generate_assets.py` (towers, keep, gate, enemies in 4 headings, badges, ring); terrain of `tools/iso_atlas` |
+| Sounds   | Short home-made neutral effects (build, sell, shots, hits, pop, keep hit, horn, coins, defeat, start jingle)                   |
+| Saves    | No slot: `tower_done_01` and `tower_best_01` (most lives kept) settings                                                        |
+
+- Data-driven maps: `tools/samples/tower_defence/maps.py` holds the road corners, the pads, the keep and the waves of
+  each map (`generate_maps.py` refuses a pad on the road or far from it); in Owl Nest a new map is a duplicated scene
+  whose road and pads are painted in the tilemap editor, `Gate` and `Keep` moved, and the `waves` list of `Game`
+  edited (one string per wave, groups `kind count gap` separated by `;`). The values of the towers and enemies are
+  properties of `defence.lua`, shared by every map unless one overrides them.
+- Gaps: G1 (every enemy, tower, projectile and puff spawned from a prefab), G8 (pause, double speed), G15 (towers and
+  badges picked; `scene.pick_entity` takes a tag, so the range ring or an enemy in front does not hide them), G7 (the
+  info panel shows the badge with `ui.set_image_frame`), G5 (the edge pan reads `scene.get_viewport_size` and
+  `scene.get_viewport_mouse`, added), G18 (no zoom: the map fits the screen at zoom 0).
+- Scenarios: `tower_build` (mouse: ring on a pad only, archer built and gold spent, sold for half), `tower_wave` (no
+  tower: enemies reach the keep, lives down), `tower_call_early` (wave at once, bonus gold), `tower_defend` (gamepad:
+  two archers stop wave 1, gold up, no life lost), `tower_fast_forward` (time scale 2, the pause stops the enemies),
+  `tower_win` (the 8 waves held with the keyboard cursor, `tower_done_01` set, the victory tally), `tower_title`.
+- Size: **S–M**, done for the first map; the next maps, their art and the tower upgrades come after a playtest.
 
 ### Mini Transport Tycoon
 
@@ -157,14 +201,14 @@ Done in v0.4.0: `samples/breakout/` (how to play: its `README.md`).
 | Lua      | `build.lua` (roads, bulldozer, costs), `stations.lua`, `vehicles.lua` (`path.find`, `path.poll`, load, unload), `economy.lua` (production, pay by distance and days, running costs, loan, date) |
 | HUD      | Toolbar, money and date, vehicle list (`UiList`), station and finance windows (`UiWindow`), tooltips                                                                                            |
 | Art      | `tools/iso_atlas` (terrain, roads, buildings, vehicles); map from `city_map.py` with another seed and two towns                                                                                 |
-| Saves    | Slots from the pause menu; roads and stations replayed from a `gamestate` string on load (G3)                                                                                                   |
+| Saves    | Slots from the pause menu; the roads and stations laid in game are tilemap cells the save keeps (G3)                                                                                            |
 
 - Reuse: `scripts/iso/iso_town.lua` (build tool, road shapes, funds), `scripts/iso/iso_town_traffic.lua` (route
   following, headings, waits), `scripts/iso/iso_camera.lua`, `scripts/iso/iso_town_life.lua`, `huds/iso_town.owlhud`,
   `tilesets/iso_ground.owltileset`, `textures/iso/`, `sounds/town/`, and the small map of the scenarios
   (`test/unit/test_helper/assets/scenarios/iso_town_small.owl`).
-- Gaps: G1 (trucks from a pool), G3 (runtime roads lost by a save), G8 (pause, fast forward), G15 (click a
-  vehicle), G7.
+- Gaps, closed in v0.5.0: G1 (trucks spawned from a prefab), G3 (runtime roads kept by a save), G8 (pause, fast
+  forward), G15 (click a vehicle, `scene.pick_entity`), G7.
 - Scenarios: `tycoon_route` (the mouse lays a road from a farm to a factory, two stations, buys a truck;
   `tycoon_deliveries` above 0, money up), `tycoon_bankrupt` (no income, fast forward, game over),
   `tycoon_save` (save, bulldoze, load: the road is back).
@@ -232,13 +276,13 @@ and the combat come in a later release, once their art exists.
 
 ### Order {#sample-games-order}
 
-| Step | Game                  | Release | Why                                                                                                |
-|------|-----------------------|---------|----------------------------------------------------------------------------------------------------|
-| 1    | Breakout              | v0.4.0  | Smallest, no blocking gap; sets up `samples/`, the scenarios and the export test for the others    |
-| 2    | Wolfenstein mini      | v0.4.0  | Exploration without combat (score, items, secrets, map explored); combat once its art exists (G11) |
-| 3    | Sokoban               | v0.4.0  | No blocking gap; proves level editing in Owl Nest, undo and saves                                  |
-| 4    | Tower defence         | v0.5.0  | Waves from a pool (G1), pause (G8), the tile graph of the iso town; after the Lua gaps PR          |
-| 5    | Mini Minecraft        | v0.6.0  | After a small engine PR for G2 and G13                                                             |
+| Step | Game             | Release | Why                                                                                                |
+|------|------------------|---------|----------------------------------------------------------------------------------------------------|
+| 1    | Breakout         | v0.4.0  | Smallest, no blocking gap; sets up `samples/`, the scenarios and the export test for the others    |
+| 2    | Wolfenstein mini | v0.4.0  | Exploration without combat (score, items, secrets, map explored); combat once its art exists (G11) |
+| 3    | Sokoban          | v0.4.0  | No blocking gap; proves level editing in Owl Nest, undo and saves                                  |
+| 4    | Tower defence    | v0.5.0  | Waves spawned from prefabs (G1), pause (G8), the tile graph of the iso town; the Lua gaps closed   |
+| 5    | Mini Minecraft   | v0.6.0  | After a small engine PR for G2 and G13                                                             |
 
 ## v0.7.0 games
 
@@ -246,27 +290,27 @@ Planned, not yet checked against the engine: their plans are refined when v0.7.0
 
 ### Lunar lander
 
-| Item     | Plan                                                                                                       |
-|----------|------------------------------------------------------------------------------------------------------------|
-| Play     | Land a small craft on marked pads of a moon, from orbit to touchdown, fuel limited                         |
-| Win/lose | Every pad reached / a hard landing breaks the legs or the craft                                            |
-| Engine   | Planetary terrain layer, gravity field, trajectory prediction, breakable joints, HUD markers on the pads   |
-| Size     | **M**, once the v0.7.0 physics and terrain are in                                                          |
+| Item     | Plan                                                                                                     |
+|----------|----------------------------------------------------------------------------------------------------------|
+| Play     | Land a small craft on marked pads of a moon, from orbit to touchdown, fuel limited                       |
+| Win/lose | Every pad reached / a hard landing breaks the legs or the craft                                          |
+| Engine   | Planetary terrain layer, gravity field, trajectory prediction, breakable joints, HUD markers on the pads |
+| Size     | **M**, once the v0.7.0 physics and terrain are in                                                        |
 
 ### Asteroid field
 
-| Item     | Plan                                                                                                       |
-|----------|------------------------------------------------------------------------------------------------------------|
-| Play     | Fly a fighter through an asteroid field, escort a convoy and fight waves of enemy fighters                 |
-| Win/lose | The convoy reaches the gate / the convoy or the player is destroyed                                        |
-| Engine   | 6DoF flight on Jolt, 3D steering and formations, particle trails, emissive lights, HUD markers, Doppler    |
-| Size     | **M**, once the v0.7.0 AI and audio are in                                                                 |
+| Item     | Plan                                                                                                    |
+|----------|---------------------------------------------------------------------------------------------------------|
+| Play     | Fly a fighter through an asteroid field, escort a convoy and fight waves of enemy fighters              |
+| Win/lose | The convoy reaches the gate / the convoy or the player is destroyed                                     |
+| Engine   | 6DoF flight on Jolt, 3D steering and formations, particle trails, emissive lights, HUD markers, Doppler |
+| Size     | **M**, once the v0.7.0 AI and audio are in                                                              |
 
 ## Layout
 
 ```
 samples/
-  breakout/  sokoban/  wolfenstein/       (tycoon/ and minecraft/ to come)
+  breakout/  sokoban/  wolfenstein/  tower_defence/   (tycoon/ and minecraft/ to come)
     owl_project.yml  game_settings.yml  input_actions.yml  input/gamecontrollerdb.txt
     scenes/  huds/  prefabs/  tilesets/  tilemaps/  scripts/  textures/  sounds/
 tools/samples/<game>/                 art and sound generators (neither exported nor installed)
@@ -280,7 +324,8 @@ test/unit/scenarios/*.owltest         scenario tests
   `scenario`), named `<game>_<behaviour>.owltest` (`breakout_serve`, `wolf_pickup`), with
   `scene: ../../../samples/<game>/scenes/<scene>.owl`; no test file is exported.
   `GameExportCoverage.EverySampleGameHasAScenario` fails for a sample whose scenes no scenario plays.
-- Export: `GameExportEndToEnd.PlaysFromItsExportFolder` (one case per project) (`test/unit/export_tests/GameExport_test.cpp`)
+- Export: `GameExportEndToEnd.PlaysFromItsExportFolder` (one case per project)
+  (`test/unit/export_tests/GameExport_test.cpp`)
   exports `engine_demo` and every `samples/*/owl_project.yml` (`OwlNest --export`, then
   `launch.sh --headless --smoke-test 60`): every scene and script is packed, and no warning is logged.
 - Install: `source/owlnest/CMakeLists.txt` installs `engine_demo/` and `samples/` (component `Nest`) side by side.
@@ -294,20 +339,21 @@ test/unit/scenarios/*.owltest         scenario tests
 
 | Id  | Gap                                                                                                                 | Size | Games                                    | Blocking?                                                   |
 |-----|---------------------------------------------------------------------------------------------------------------------|------|------------------------------------------|-------------------------------------------------------------|
-| G1  | No Lua call to spawn a prefab or add a component (`scene.create_entity` makes an empty entity)                      | M    | Breakout, Tycoon, Wolfenstein, Minecraft | No: pools of authored entities hidden with `ui.set_visible` |
+| G1  | No Lua call to spawn a prefab or add a component (fixed in v0.5.0: `scene.spawn_prefab`, `entity.add_component`)    | M    | Breakout, Tycoon, Wolfenstein, Minecraft | No: pools of authored entities hidden with `ui.set_visible` |
 | G2  | No Lua `voxel` table: get and set a block, aimed block, `placeBlock`, break and place events                        | M    | Minecraft                                | **Yes**: no hotbar, no inventory                            |
-| G3  | A save keeps the `tilemapPath` of a tilemap, not its cells: runtime `set_cell` edits are lost on load               | M    | Tycoon                                   | No: replay the edits from a `gamestate` string              |
+| G3  | A save kept the `tilemapPath` of a tilemap, not its cells (fixed in v0.5.0: the changed cells are saved)            | M    | Tycoon                                   | No: replay the edits from a `gamestate` string              |
 | G4  | A procedural `VoxelWorld` does not serialise its chunks: player edits are lost on save                              | M    | Minecraft                                | No: a finite, non-procedural world                          |
-| G5  | No screen-to-world conversion nor viewport size in Lua for a 2D camera                                              | S    | Breakout                                 | No: the paddle follows the mouse delta                      |
+| G5  | No screen-to-world conversion in Lua for a 2D camera (viewport size and mouse added in v0.5.0)                      | S    | Breakout                                 | No: the paddle follows the mouse delta                      |
 | G6  | Tile and sprite-frame bindings live in `isometric` although they work on any tilemap                                | S    | Sokoban, Wolfenstein                     | No: naming only (a `tilemap` alias)                         |
-| G7  | No `ui.set_image` (texture or frame of a `UiImage`) in Lua                                                          | S    | Wolfenstein, Minecraft, Tycoon           | No: several `UiImage` toggled visible                       |
-| G8  | No pause nor time scale in Lua (scene clock, physics); a shown `UiWindow` holds world interactions back             | S    | Tycoon, all (pause)                      | No: Lua scales its own delta, bodies stopped by hand        |
+| G7  | No `ui.set_image` in Lua (fixed in v0.5.0: `ui.set_image`, `ui.set_image_frame` on a sprite sheet grid)             | S    | Wolfenstein, Minecraft, Tycoon           | No: several `UiImage` toggled visible                       |
+| G8  | No pause nor time scale in Lua (fixed in v0.5.0: `time.set_paused`, `time.set_scale`, `ui.is_world_blocked`)        | S    | Tycoon, all (pause)                      | No: Lua scales its own delta, bodies stopped by hand        |
 | G9  | No music and effects mixing: `SoundSource` loops ignore `volume_music` and have no Lua volume                       | S    | All                                      | No: master volume only                                      |
 | G10 | No line-of-sight or ray query in Lua                                                                                | S    | Wolfenstein                              | No: grid DDA in Lua, as in `raycast_level.lua`              |
 | G11 | No guard nor weapon-view sprites                                                                                    | M    | Wolfenstein                              | No: exploration first, combat later                         |
 | G12 | Owl Nest finds `engine_demo` only, and only `engine_demo/` is installed (fixed in v0.4.0: `samples/`, File screen)  | S    | All                                      | No: File > Open project                                     |
 | G13 | `VoxelPlayer` edits fire only with a captured cursor: a gamepad player and headless scenarios cannot break or place | S    | Minecraft                                | **Yes**: gamepad rule and CI scenario                       |
 | G14 | Lua cannot switch the tilemap asset of an entity: one scene per level                                               | S    | Sokoban, Breakout                        | No: duplicate the level scene                               |
-| G15 | No Lua pick of the entity under the mouse                                                                           | S    | Tycoon                                   | No: compare `isometric.pick_cell` with the vehicle cells    |
+| G15 | No Lua pick of the entity under the mouse (fixed in v0.5.0: `scene.pick_entity`, 2D, isometric, 3D)                 | S    | Tycoon                                   | No: compare `isometric.pick_cell` with the vehicle cells    |
 | G16 | The export follows scene paths quoted in scripts, not those in script properties (fixed in v0.4.0: both followed)   | S    | Breakout, Wolfenstein                    | No: list the scenes in the script                           |
 | G17 | A save keeps neither a slid `RaycastPushWall` nor an open door: after a load they are back in place                 | S    | Wolfenstein                              | No: pushed again, a secret counts once                      |
+| G18 | No Lua zoom of the isometric layer: its `Zoom` is a scene override only                                             | S    | Tower defence, Tycoon                    | No: the map fits the screen at zoom 0                       |

@@ -77,13 +77,8 @@ target_sources(${ENGINE_NAME}
         BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/public FILES
         ${HDRS_PUBLIC}
 )
+# The file set puts public/ on the include path of the consumers, and include/ once installed.
 set_target_properties(${ENGINE_NAME} PROPERTIES FOLDER "Engine")
-
-target_include_directories(${ENGINE_NAME}
-        PUBLIC
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/public>
-        $<INSTALL_INTERFACE:include>
-)
 # Commit of the configured tree, in a generated header only Core.cpp includes: a new commit rebuilds one file.
 file(CONFIGURE OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/generated/core/BuildInfo.h
         CONTENT "#pragma once\n#define ${PROJECT_PREFIX}_GIT_COMMIT \"${${PROJECT_PREFIX}_GIT_HASH}\"\n" @ONLY)

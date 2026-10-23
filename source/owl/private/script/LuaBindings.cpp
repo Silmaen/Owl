@@ -14,6 +14,7 @@
 #include "core/Core.h"
 #include "core/Macros.h"
 #include "core/external/lua.h"
+#include "data/assets/AssetSearchPaths.h"
 #include "input/ActionFrame.h"
 #include "input/Gamepad.h"
 #include "input/Input.h"
@@ -22,9 +23,12 @@
 #include "renderer/MeshCache.h"
 #include "renderer/Renderer.h"
 #include "renderer/RendererIsometricLayer.h"
+#include "scene/ComponentRegistry.h"
 #include "scene/Entity.h"
+#include "scene/PrefabSerializer.h"
 #include "scene/SaveManager.h"
 #include "scene/Scene.h"
+#include "scene/ScenePicking.h"
 #include "scene/ScreenTransition.h"
 #include "scene/SettingsManager.h"
 #include "scene/TilemapTerrain.h"
@@ -62,6 +66,14 @@ namespace {
 template<LuaFunction Function>
 auto guarded(lua_State* iState) -> int {
 	return LuaEngine::callGuarded(iState, Function);
+}
+
+// Disk or decoder work: a slow disk must not count against the time quota of the calling script.
+template<LuaFunction Function>
+auto blocking(lua_State* iState) -> int {
+	const int results = LuaEngine::callGuarded(iState, Function);
+	LuaEngine::restartCallClock(iState);
+	return results;
 }
 
 auto contextOf(lua_State* iState) -> app::EngineContext* {
@@ -495,6 +507,71 @@ auto luaSceneDestroyEntity(lua_State* iState) -> int {
 	return 0;
 }
 
+auto luaSceneSpawnPrefab(lua_State* iState) -> int {
+	const char* path = luaL_checkstring(iState, 1);
+	const bool placed = !lua_isnoneornil(iState, 2);
+	const auto x = static_cast<float>(luaL_optnumber(iState, 2, 0.0));
+	const auto y = static_cast<float>(luaL_optnumber(iState, 3, 0.0));
+	const auto z = static_cast<float>(luaL_optnumber(iState, 4, 0.0));
+	auto* activeScene = getBoundScene(iState);
+	if (activeScene == nullptr) {
+		lua_pushinteger(iState, 0);
+		return 1;
+	}
+	const auto text = data::assets::readAssetText(path);
+	if (!text) {
+		OWL_CORE_WARN("Script: Prefab '{}' not found, nothing spawned.", path)
+		lua_pushinteger(iState, 0);
+		return 1;
+	}
+	const auto root = scene::PrefabSerializer::instantiateFromString(*text, *activeScene, path);
+	if (!root) {
+		lua_pushinteger(iState, 0);
+		return 1;
+	}
+	if (placed)
+		root.getComponent<scene::component::Transform>().transform.translation() = {x, y, z};
+	activeScene->startSpawnedSubtree(root);
+	lua_pushinteger(iState, static_cast<lua_Integer>(static_cast<uint64_t>(root.getUUID())));
+	return 1;
+}
+
+auto luaScenePickEntity(lua_State* iState) -> int {
+	auto* activeScene = getBoundScene(iState);
+	if (activeScene == nullptr) {
+		lua_pushinteger(iState, 0);
+		return 1;
+	}
+	// The viewport mouse of the last HUD update: in Owl Nest the game is drawn inside a panel, not at the window origin.
+	const auto& uiState = activeScene->getUiInputState();
+	const auto mouse = uiState.hasMouse ? uiState.mousePosition : input::Input::getMousePos();
+	const auto pointX = static_cast<float>(luaL_optnumber(iState, 1, static_cast<lua_Number>(mouse.x())));
+	const auto pointY = static_cast<float>(luaL_optnumber(iState, 2, static_cast<lua_Number>(mouse.y())));
+	const std::string_view tag = luaL_optstring(iState, 3, "");
+	const auto picked = scene::pickEntity(*activeScene, {pointX, pointY}, tag);
+	lua_pushinteger(iState, picked ? static_cast<lua_Integer>(static_cast<uint64_t>(picked.getUUID())) : 0);
+	return 1;
+}
+
+auto luaSceneGetViewportSize(lua_State* iState) -> int {
+	const auto* activeScene = getBoundScene(iState);
+	const math::vec2ui size = activeScene != nullptr ? activeScene->getViewportSize() : math::vec2ui{0u, 0u};
+	lua_pushinteger(iState, static_cast<lua_Integer>(size.x()));
+	lua_pushinteger(iState, static_cast<lua_Integer>(size.y()));
+	return 2;
+}
+
+auto luaSceneGetViewportMouse(lua_State* iState) -> int {
+	auto* activeScene = getBoundScene(iState);
+	// The viewport mouse of the last HUD update, as `scene.pick_entity` reads it (Owl Nest draws the game in a panel).
+	math::vec2 mouse = input::Input::getMousePos();
+	if (activeScene != nullptr && activeScene->getUiInputState().hasMouse)
+		mouse = activeScene->getUiInputState().mousePosition;
+	lua_pushnumber(iState, static_cast<lua_Number>(mouse.x()));
+	lua_pushnumber(iState, static_cast<lua_Number>(mouse.y()));
+	return 2;
+}
+
 auto luaSceneLoadScene(lua_State* iState) -> int {
 	auto* activeScene = getBoundScene(iState);
 	if (activeScene == nullptr)
@@ -570,6 +647,39 @@ auto luaEngineVersion(lua_State* iState) -> int {
 
 auto luaTimeDelta(lua_State* iState) -> int {
 	lua_pushnumber(iState, static_cast<lua_Number>(LuaEngine::getDeltaTime(iState)));
+	return 1;
+}
+
+auto luaTimeRealDelta(lua_State* iState) -> int {
+	const auto* activeScene = getBoundScene(iState);
+	lua_pushnumber(iState, activeScene != nullptr ? static_cast<lua_Number>(activeScene->getRealFrameSeconds())
+												  : static_cast<lua_Number>(LuaEngine::getDeltaTime(iState)));
+	return 1;
+}
+
+auto luaTimeSetScale(lua_State* iState) -> int {
+	const auto scale = static_cast<float>(luaL_checknumber(iState, 1));
+	if (auto* activeScene = getBoundScene(iState); activeScene != nullptr)
+		activeScene->setTimeScale(scale);
+	return 0;
+}
+
+auto luaTimeGetScale(lua_State* iState) -> int {
+	const auto* activeScene = getBoundScene(iState);
+	lua_pushnumber(iState, activeScene != nullptr ? static_cast<lua_Number>(activeScene->getTimeScale()) : 1.0);
+	return 1;
+}
+
+auto luaTimeSetPaused(lua_State* iState) -> int {
+	const bool paused = lua_toboolean(iState, 1) != 0;
+	if (auto* activeScene = getBoundScene(iState); activeScene != nullptr)
+		activeScene->setPaused(paused);
+	return 0;
+}
+
+auto luaTimeIsPaused(lua_State* iState) -> int {
+	const auto* activeScene = getBoundScene(iState);
+	lua_pushboolean(iState, activeScene != nullptr && activeScene->isPaused() ? 1 : 0);
 	return 1;
 }
 
@@ -663,6 +773,20 @@ auto luaEntityHasComponent(lua_State* iState) -> int {
 	else if (compName == "UiList")
 		has = entity->hasComponent<scene::component::UiList>();
 	lua_pushboolean(iState, has ? 1 : 0);
+	return 1;
+}
+
+auto luaEntityAddComponent(lua_State* iState) -> int {
+	const char* key = luaL_checkstring(iState, 2);
+	auto entity = findEntity(iState);
+	const auto* descriptor = scene::ComponentRegistry::find(key);
+	if (!entity || descriptor == nullptr || !descriptor->optional || !descriptor->add) {
+		lua_pushboolean(iState, 0);
+		return 1;
+	}
+	if (!descriptor->has(*entity))
+		descriptor->add(*entity);
+	lua_pushboolean(iState, 1);
 	return 1;
 }
 
@@ -941,6 +1065,58 @@ auto luaUiSetVisible(lua_State* iState) -> int {
 	if (const auto entity = findEntity(iState); entity && entity->hasComponent<scene::component::Visibility>())
 		entity->getComponent<scene::component::Visibility>().gameVisible = lua_toboolean(iState, 2) != 0;
 	return 0;
+}
+
+auto luaUiSetImage(lua_State* iState) -> int {
+	const auto entity = findEntity(iState);
+	const std::string_view texture = luaL_checkstring(iState, 2);
+	if (!entity || !entity->hasComponent<scene::component::UiImage>()) {
+		lua_pushboolean(iState, 0);
+		return 1;
+	}
+	auto& image = entity->getComponent<scene::component::UiImage>();
+	if (texture.empty()) {
+		image.texture = nullptr;
+		lua_pushboolean(iState, 1);
+		return 1;
+	}
+	// A bare asset path names the texture as the serialized form `nam:` does.
+	const std::string serialized =
+			texture.size() > 4 && texture[3] == ':' ? std::string{texture} : std::format("nam:{}", texture);
+	if (!image.texture || image.texture->getSerializeString() != serialized)
+		image.texture = renderer::gpu::Texture2D::createFromSerializedForDeserialize(serialized);
+	lua_pushboolean(iState, image.texture ? 1 : 0);
+	return 1;
+}
+
+auto luaUiSetImageFrame(lua_State* iState) -> int {
+	const auto frame = luaL_checkinteger(iState, 2);
+	const auto entity = findEntity(iState);
+	if (!entity || !entity->hasComponent<scene::component::UiImage>()) {
+		lua_pushboolean(iState, 0);
+		return 1;
+	}
+	auto& image = entity->getComponent<scene::component::UiImage>();
+	const auto count =
+			static_cast<int64_t>(std::max(image.columns, 1u)) * static_cast<int64_t>(std::max(image.rows, 1u));
+	image.frame = static_cast<uint32_t>(std::clamp<int64_t>(frame, 0, count - 1));
+	lua_pushboolean(iState, 1);
+	return 1;
+}
+
+auto luaUiGetImageFrame(lua_State* iState) -> int {
+	const auto entity = findEntity(iState);
+	const bool has = entity && entity->hasComponent<scene::component::UiImage>();
+	lua_pushinteger(iState,
+					has ? static_cast<lua_Integer>(entity->getComponent<scene::component::UiImage>().frame) : 0);
+	return 1;
+}
+
+auto luaUiIsWorldBlocked(lua_State* iState) -> int {
+	auto* activeScene = getBoundScene(iState);
+	lua_pushboolean(iState,
+					activeScene != nullptr && scene::UiInputSystem::isWorldInteractionBlocked(*activeScene) ? 1 : 0);
+	return 1;
 }
 
 auto luaUiSetProgress(lua_State* iState) -> int {
@@ -1538,26 +1714,6 @@ auto findIsometricMap(lua_State* iState) -> std::optional<IsometricMap> {
 	return IsometricMap{.asset = asset, .origin = getBoundScene(iState)->getWorldTransform(*entity).translation()};
 }
 
-// The camera the isometric layer draws with: the layer's presentation and zoom, centred on the primary camera.
-auto makeIsometricCamera(const scene::Scene& iScene) -> renderer::IsometricCamera {
-	renderer::IsometricCamera camera;
-	for (const auto& layer: renderer::Renderer::getRenderStack().getLayers()) {
-		if (const auto* isometric = dynamic_cast<const renderer::RendererIsometricLayer*>(layer.get());
-			isometric != nullptr) {
-			camera.setConfig(isometric->getConfig());
-			camera.setZoomLevel(isometric->getZoomLevel());
-			break;
-		}
-	}
-	const auto& viewport = iScene.getViewportSize();
-	camera.setViewportSize(viewport.x() == 0 || viewport.y() == 0 ? math::vec2ui{1280u, 720u} : viewport);
-	if (const auto primary = iScene.getPrimaryCamera(); primary) {
-		const auto eye = iScene.getWorldTransform(primary).translation();
-		camera.setTarget({eye.x(), eye.y(), 0.f});
-	}
-	return camera;
-}
-
 auto luaIsometricPickCell(lua_State* iState) -> int {
 	// The viewport mouse of the last HUD update: in Owl Nest the game is drawn inside a panel, not at the window origin.
 	const auto& uiState = getBoundScene(iState)->getUiInputState();
@@ -1569,7 +1725,7 @@ auto luaIsometricPickCell(lua_State* iState) -> int {
 		lua_pushnil(iState);
 		return 1;
 	}
-	const auto camera = makeIsometricCamera(*getBoundScene(iState));
+	const auto camera = scene::makeRuntimeIsometricCamera(*getBoundScene(iState));
 	if (const auto hit = scene::terrain::pickTerrain(*map->asset, camera, {windowX, windowY}, map->origin); hit) {
 		lua_pushinteger(iState, static_cast<lua_Integer>(hit->cell.x()));
 		lua_pushinteger(iState, static_cast<lua_Integer>(hit->cell.y()));
@@ -2037,7 +2193,7 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		 .description = "Gamepad stick (0 = left, 1 = right) through a radial dead zone (0.15 by default), y down.",
 		 .params = {{"pad", Integer}, {"stick", Integer}, {"dead_zone", Number, true}},
 		 .returns = {{"x", Number}, {"y", Number}}},
-		{.table = "sound", .name = "play", .function = guarded<luaSoundPlay>,
+		{.table = "sound", .name = "play", .function = blocking<luaSoundPlay>,
 		 .description = "Play a sound asset (loaded on first use); an invalid handle when sound is off or missing.",
 		 .params = {{"asset_path", String}}, .returns = {{"handle", Integer}}},
 		{.table = "sound", .name = "stop", .function = guarded<luaSoundStop>,
@@ -2062,6 +2218,25 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		 .params = {{"name", String}}, .returns = {{"entity_id", Entity}}},
 		{.table = "scene", .name = "destroy_entity", .function = guarded<luaSceneDestroyEntity>,
 		 .description = "Destroy an entity and its children at the end of the frame.", .params = {entityId}},
+		{.table = "scene", .name = "spawn_prefab", .function = blocking<luaSceneSpawnPrefab>,
+		 .description = "Instantiate a prefab asset (`.owlprefab`) at runtime, its root placed at a position when one is "
+						"given; its scripts get `on_create` before or after the scripts of the frame. 0 on failure.",
+		 .params = {{"prefab_path", String}, {"x", Number, true}, {"y", Number, true}, {"z", Number, true}},
+		 .returns = {{"entity_id", Entity}}},
+		{.table = "scene", .name = "pick_entity", .function = guarded<luaScenePickEntity>,
+		 .description = "Entity drawn under a viewport pixel (the mouse by default), nearest to the viewer: sprites and "
+						"circles (2D or isometric) and meshes, not the UI, only the entities of a tag when one is given. 0 when "
+						"none.",
+		 .params = {{"x", Number, true}, {"y", Number, true}, {"tag", String, true}},
+		 .returns = {{"entity_id", Entity}}},
+		{.table = "scene", .name = "get_viewport_size", .function = guarded<luaSceneGetViewportSize>,
+		 .description = "Size of the viewport the scene is drawn into, in pixels (the window, or the game panel of "
+						"Owl Nest); zeros before the first frame.",
+		 .returns = {{"width", Integer}, {"height", Integer}}},
+		{.table = "scene", .name = "get_viewport_mouse", .function = guarded<luaSceneGetViewportMouse>,
+		 .description = "Mouse position in the viewport, in pixels from its top left (the pixel `scene.pick_entity` "
+						"reads by default).",
+		 .returns = {{"x", Number}, {"y", Number}}},
 		{.table = "scene", .name = "load_scene", .function = guarded<luaSceneLoadScene>,
 		 .description = "Load another level after this frame, keeping the game state (no transition).",
 		 .params = {{"level", String}}},
@@ -2083,6 +2258,21 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		{.table = "time", .name = "delta", .function = guarded<luaTimeDelta>,
 		 .description = "Duration of the current frame, or of the fixed tick inside `on_tick`, in seconds.",
 		 .returns = {{"seconds", Number}}},
+		{.table = "time", .name = "real_delta", .function = guarded<luaTimeRealDelta>,
+		 .description = "Real duration of the current frame, in seconds, before the time scale and the pause (menus).",
+		 .returns = {{"seconds", Number}}},
+		{.table = "time", .name = "set_scale", .function = guarded<luaTimeSetScale>,
+		 .description = "Speed of the scene clock (0 to 16, 1 by default): `time.delta`, the ticks, the physics, the "
+						"animations and the behaviours follow it; the UI keeps the real time.",
+		 .params = {{"scale", Number}}},
+		{.table = "time", .name = "get_scale", .function = guarded<luaTimeGetScale>,
+		 .description = "Speed of the scene clock set by `time.set_scale`.", .returns = {{"scale", Number}}},
+		{.table = "time", .name = "set_paused", .function = guarded<luaTimeSetPaused>,
+		 .description = "Pause or resume the scene clock: paused, `on_update` still runs with a zero `time.delta`, no "
+						"tick, physics step nor animation runs.",
+		 .params = {{"paused", Boolean}}},
+		{.table = "time", .name = "is_paused", .function = guarded<luaTimeIsPaused>,
+		 .description = "Whether the scene clock is paused.", .returns = {{"paused", Boolean}}},
 		{.table = "time", .name = "tick_alpha", .function = guarded<luaTimeTickAlpha>,
 		 .description = "Progress of the frame between the last two fixed ticks, in [0, 1), to blend what is drawn.",
 		 .returns = {{"alpha", Number}}},
@@ -2099,6 +2289,10 @@ auto declareBindings() -> std::vector<LuaBinding> {
 						"`MeshRenderer`, `Light`, `Light2D`, `Camera`, `Text`, `SoundSource`, `Canvas` or a `Ui*` "
 						"component.",
 		 .params = {entityId, {"component", String}}, .returns = {{"has", Boolean}}},
+		{.table = "entity", .name = "add_component", .function = guarded<luaEntityAddComponent>,
+		 .description = "Add a component with its default values by YAML key (`SpriteRenderer`, `PhysicBody`, ...), "
+						"kept when the entity has it already; false for an unknown or mandatory component.",
+		 .params = {entityId, {"component", String}}, .returns = {{"added", Boolean}}},
 		{.table = "entity", .name = "get_name", .function = guarded<luaEntityGetName>,
 		 .description = "Tag of the entity (empty when unknown).", .params = {entityId}, .returns = {{"name", String}}},
 		{.table = "entity", .name = "get_link", .function = guarded<luaEntityGetLink>,
@@ -2241,6 +2435,21 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		 .description = "Text of a `UiText`.", .params = {entityId}, .returns = {{"text", String}}},
 		{.table = "ui", .name = "set_visible", .function = guarded<luaUiSetVisible>,
 		 .description = "Show or hide the entity in the game.", .params = {entityId, {"visible", Boolean}}},
+		{.table = "ui", .name = "set_image", .function = blocking<luaUiSetImage>,
+		 .description = "Show a texture asset in a `UiImage` (an empty path clears it); false when the entity has no "
+						"`UiImage` or the texture cannot be loaded.",
+		 .params = {entityId, {"texture_path", String}}, .returns = {{"done", Boolean}}},
+		{.table = "ui", .name = "set_image_frame", .function = guarded<luaUiSetImageFrame>,
+		 .description = "Show one frame of the sprite sheet of a `UiImage` (its columns x rows grid, row-major from the "
+						"top left, 0-based, clamped).",
+		 .params = {entityId, {"frame", Integer}}, .returns = {{"done", Boolean}}},
+		{.table = "ui", .name = "get_image_frame", .function = guarded<luaUiGetImageFrame>,
+		 .description = "Frame a `UiImage` shows (0 when it has none).", .params = {entityId},
+		 .returns = {{"frame", Integer}}},
+		{.table = "ui", .name = "is_world_blocked", .function = guarded<luaUiIsWorldBlocked>,
+		 .description = "Whether a shown `UiWindow` (pause menu, inventory) holds the world interactions back this "
+						"frame: a script ignores its world clicks while it is true.",
+		 .returns = {{"blocked", Boolean}}},
 		{.table = "ui", .name = "set_progress", .function = guarded<luaUiSetProgress>,
 		 .description = "Set the value of a `UiProgressBar` (0 to 1).", .params = {entityId, {"value", Number}}},
 		{.table = "ui", .name = "raise_window", .function = guarded<luaUiRaiseWindow>,
@@ -2324,11 +2533,11 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		{.table = "save", .name = "load_game", .function = guarded<luaSaveLoadGame>,
 		 .description = "Load a slot after this frame; the level keeps running when the slot does not load.",
 		 .params = {{"slot", Integer}}},
-		{.table = "save", .name = "has_save", .function = guarded<luaSaveHasSave>,
+		{.table = "save", .name = "has_save", .function = blocking<luaSaveHasSave>,
 		 .description = "Whether a slot holds a save.", .params = {{"slot", Integer}}, .returns = {{"exists", Boolean}}},
-		{.table = "save", .name = "delete_save", .function = guarded<luaSaveDeleteSave>,
+		{.table = "save", .name = "delete_save", .function = blocking<luaSaveDeleteSave>,
 		 .description = "Delete the save of a slot.", .params = {{"slot", Integer}}},
-		{.table = "save", .name = "list_saves", .function = guarded<luaSaveListSaves>,
+		{.table = "save", .name = "list_saves", .function = blocking<luaSaveListSaves>,
 		 .description = "Every save, as a list of `{slot, timestamp, scene}`.", .returns = {{"saves", Table}}},
 		{.table = "settings", .name = "get", .function = guarded<luaSettingsGet>,
 		 .description = "Setting value: user override, else game default, else `default` (nil when absent).",
@@ -2336,15 +2545,15 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		{.table = "settings", .name = "set", .function = guarded<luaSettingsSet>,
 		 .description = "Set a user override (integer, number, string or boolean).",
 		 .params = {{"key", String}, {"value", Any}}},
-		{.table = "settings", .name = "save", .function = guarded<luaSettingsSave>,
+		{.table = "settings", .name = "save", .function = blocking<luaSettingsSave>,
 		 .description = "Write the user overrides to `settings.yml`.", .returns = {{"ok", Boolean}}},
-		{.table = "settings", .name = "load", .function = guarded<luaSettingsLoad>,
+		{.table = "settings", .name = "load", .function = blocking<luaSettingsLoad>,
 		 .description = "Reload the user overrides from `settings.yml`."},
 		{.table = "settings", .name = "reset", .function = guarded<luaSettingsReset>,
 		 .description = "Remove a user override (back to the game default).", .params = {{"key", String}}},
 		{.table = "settings", .name = "reset_all", .function = guarded<luaSettingsResetAll>,
 		 .description = "Remove every user override."},
-		{.table = "settings", .name = "apply", .function = guarded<luaSettingsApply>,
+		{.table = "settings", .name = "apply", .function = blocking<luaSettingsApply>,
 		 .description = "Apply the built-in keys to the window and the sound."},
 		{.table = "trigger", .name = "start_timer", .function = guarded<luaTriggerStartTimer>,
 		 .description = "Start or restart a Timer trigger.", .params = {entityId}},

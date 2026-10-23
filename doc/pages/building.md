@@ -1,10 +1,22 @@
-# Building Owl Engine {#page-building}
+# Building from Source {#page-building}
 
 [TOC]
 
-This page explains how to configure, build, and test Owl Engine.
+This page explains how to configure, build, and test Owl Engine. To only run the editor, see
+[Getting Started](getting_started.md).
 
 ## Prerequisites
+
+### Supported platforms
+
+| OS      | Architecture | Compilers                      |
+|---------|--------------|--------------------------------|
+| Linux   | x64, arm64   | Clang 22+, GCC 14+             |
+| Windows | x64          | MinGW Clang 22+, MinGW GCC 15+ |
+
+Owl Engine ships only what it tests: every platform listed has its machine in the CI, which builds it and runs the
+unit and scenario tests on every change. A new platform comes with its test machine (the Web is on the
+[roadmap](roadmap.md)). The backends of each platform are listed in [Architecture](architecture.md).
 
 ### Build image
 
@@ -23,7 +35,7 @@ To build without the image, install:
 
 | Tool    | Version | Notes                                                               |
 |---------|---------|---------------------------------------------------------------------|
-| CMake   | 3.24+   | Build system generator                                              |
+| CMake   | 4.4+    | Build system generator                                              |
 | Ninja   |         | Recommended build backend                                           |
 | Clang   | 22+     | Or GCC 14+ (tested versions; CMake warns below Clang 18 / GCC 13)   |
 | Python  | 3.12+   | For CI tooling and Conan                                            |
@@ -95,6 +107,12 @@ Owl Engine uses CMake presets. To configure and build:
 cmake --preset <preset> -S .
 cmake --build output/build/<preset>
 ```
+
+A new source or header file needs no configure by hand: the source globs use `CONFIGURE_DEPENDS`, so the next build
+notices it and configures again. The Clang presets link with lld (`CMAKE_LINKER_TYPE`). No C++ module is used, so
+CMake does not scan the sources for imports (`CMAKE_CXX_SCAN_FOR_MODULES` off). A program is not linked again when only
+a shared library it uses changed (`CMAKE_LINK_DEPENDS_NO_SHARED`): after an engine `.cpp` edit only `libOwlEngine.so`
+is linked, and the engine shaders are baked again.
 
 ### Available Presets
 

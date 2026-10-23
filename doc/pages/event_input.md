@@ -1,4 +1,4 @@
-# Event and Input System {#page-event-input}
+# Events and Input {#page-event-input}
 
 [TOC]
 

@@ -1,8 +1,8 @@
 {
   "version": 5,
   "cmakeMinimumRequired": {
-    "major": 3,
-    "minor": 24,
+    "major": 4,
+    "minor": 4,
     "patch": 0
   },
   "configurePresets": [
@@ -48,8 +48,7 @@
       "cacheVariables": {
         "CMAKE_C_COMPILER": "clang",
         "CMAKE_CXX_COMPILER": "clang++",
-        "CMAKE_EXE_LINKER_FLAGS_INIT": "-fuse-ld=lld",
-        "CMAKE_SHARED_LINKER_FLAGS_INIT": "-fuse-ld=lld"
+        "CMAKE_LINKER_TYPE": "LLD"
       }
     },
     {

@@ -532,6 +532,17 @@ void LuaEngine::registerGuardedTable(lua_State* iState, const char* iTableName, 
 	lua_pop(iState, 1);
 }
 
+void LuaEngine::restartCallClock(lua_State* iState) {
+	if (quotaOf(iState)->timeExceeded)
+		return;
+	auto& slot = currentSlot();
+	// A new sequence restarts the watchdog count and makes a signal already on its way stand down.
+	slot.sequence.store(slot.sequence.load(std::memory_order_relaxed) + 1, std::memory_order_release);
+	for (lua_State* state: {iState, slot.running.load(std::memory_order_relaxed)})
+		if (state != nullptr && lua_gethook(state) == overdueHook)
+			lua_sethook(state, nullptr, 0, 0);
+}
+
 auto LuaEngine::callGuarded(lua_State* iState, int (*iFunction)(lua_State*)) -> int {
 	auto* quota = quotaOf(iState);
 	const bool enforced = quota->enforced;

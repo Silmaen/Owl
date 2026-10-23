@@ -1,7 +1,7 @@
 #
 #
 #
-cmake_minimum_required(VERSION 3.24)
+cmake_minimum_required(VERSION 4.4)
 set(PROJECT_PREFIX OWL)
 set(PROJECT_PREFIX_LOWER owl)
 set(ENGINE_NAME OwlEngine)

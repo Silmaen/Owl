@@ -76,6 +76,19 @@ public:
 	static auto instantiate(const std::filesystem::path& iFilepath, const shared<Scene>& ioScene,
 							const std::string& iAssetRelativePath = {}) -> Entity;
 
+	/**
+	 * @brief
+	 *  Instantiate a prefab from the text of its file into a scene (a prefab read from the open pack).
+	 *
+	 * Same instance as `instantiate`: new UUIDs, a `PrefabLink` on the root pointing at `iAssetRelativePath`.
+	 * @param[in] iText The `.owlprefab` text.
+	 * @param[in,out] ioScene The scene to instantiate into.
+	 * @param[in] iAssetRelativePath Relative path of the prefab, kept in the `PrefabLink` and named in the logs.
+	 * @return The instantiated root entity, or an invalid entity on failure.
+	 */
+	static auto instantiateFromString(const std::string& iText, Scene& ioScene, const std::string& iAssetRelativePath)
+			-> Entity;
+
 	/// Metadata read from a prefab file header.
 	struct PrefabInfo {
 		/// Prefab display name.

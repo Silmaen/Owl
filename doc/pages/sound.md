@@ -1,4 +1,4 @@
-# Sound System {#page-sound}
+# Sound {#page-sound}
 
 [TOC]
 

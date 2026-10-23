@@ -205,6 +205,7 @@ end
 local function set_paused(value)
     paused = value
     gamestate.set("breakout_paused", value)
+    time.set_paused(value)
     if hud.pause ~= 0 then ui.set_visible(hud.pause, value) end
     if value and hud.pause ~= 0 then
         ui.raise_window(hud.pause)

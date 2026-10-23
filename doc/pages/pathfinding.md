@@ -1,4 +1,4 @@
-# Tile-graph pathfinding {#page-pathfinding}
+# Pathfinding {#page-pathfinding}
 
 [TOC]
 

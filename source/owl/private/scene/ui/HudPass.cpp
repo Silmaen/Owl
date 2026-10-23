@@ -313,6 +313,7 @@ void drawWidget(const Scene& iWorld, const Entity& iEntity, const HudNode& iNode
 		renderer::Quad2DData quad{.transform = iTransform,
 								  .color = image.tint,
 								  .texture = image.texture,
+								  .textureCoords = image.getFrameCoords(),
 								  .entityId = entityId,
 								  .depth = hudDepth(iRank, HudLayer::Shape)};
 		if (!image.renderTarget.empty())

@@ -31,6 +31,7 @@ using owl::nest::codeEditor::MdHRule;
 using owl::nest::codeEditor::MdList;
 using owl::nest::codeEditor::MdParagraph;
 using owl::nest::codeEditor::MdTable;
+using owl::nest::codeEditor::TaskState;
 
 namespace {
 template<typename T>
@@ -116,6 +117,36 @@ TEST(MarkdownDocument, ParsesBlockImage) {
 			EXPECT_EQ(span.text, "images/foo.svg");
 			EXPECT_EQ(span.alt, "architecture");
 			break;
+		}
+	}
+	EXPECT_TRUE(sawImage);
+}
+
+TEST(MarkdownDocument, ParsesHtmlImageWidth) {
+	MarkdownDocument doc;
+	ASSERT_TRUE(doc.parse("<img src=\"images/logo.png\" alt=\"Logo\" width=\"160\">\n"));
+	const auto* p = firstAs<MdParagraph>(doc.blocks());
+	ASSERT_NE(p, nullptr);
+	ASSERT_EQ(p->spans.size(), 1U);
+	EXPECT_EQ(p->spans.front().kind, InlineKind::ImageInline);
+	EXPECT_EQ(p->spans.front().text, "images/logo.png");
+	EXPECT_EQ(p->spans.front().alt, "Logo");
+	EXPECT_EQ(p->spans.front().width, 160U);
+}
+
+TEST(MarkdownDocument, HtmlImageWithoutWidthKeepsNaturalSize) {
+	MarkdownDocument doc;
+	ASSERT_TRUE(doc.parse("<p align=\"center\"><img src=\"a.svg\"></p>\n"));
+	bool sawImage = false;
+	for (const auto& block: doc.blocks()) {
+		if (const auto* p = std::get_if<MdParagraph>(&block.data)) {
+			for (const auto& span: p->spans) {
+				if (span.kind == InlineKind::ImageInline) {
+					sawImage = true;
+					EXPECT_EQ(span.text, "a.svg");
+					EXPECT_EQ(span.width, 0U);
+				}
+			}
 		}
 	}
 	EXPECT_TRUE(sawImage);
@@ -267,4 +298,25 @@ TEST(MarkdownDocument, ParsesLinks) {
 	ASSERT_EQ(hrefs.size(), 2u);
 	EXPECT_EQ(hrefs[0], "other.md");
 	EXPECT_EQ(hrefs[1], "https://example.com");
+}
+
+TEST(MarkdownDocument, OrderedListKeepsItsStartNumber) {
+	MarkdownDocument doc;
+	ASSERT_TRUE(doc.parse("3. three\n4. four\n"));
+	const auto* l = firstAs<MdList>(doc.blocks());
+	ASSERT_NE(l, nullptr);
+	EXPECT_TRUE(l->ordered);
+	EXPECT_EQ(l->start, 3u);
+	EXPECT_EQ(l->items.size(), 2u);
+}
+
+TEST(MarkdownDocument, TaskListItemsCarryTheirState) {
+	MarkdownDocument doc;
+	ASSERT_TRUE(doc.parse("- [ ] open\n- [x] done\n- plain\n"));
+	const auto* l = firstAs<MdList>(doc.blocks());
+	ASSERT_NE(l, nullptr);
+	ASSERT_EQ(l->tasks.size(), 3u);
+	EXPECT_EQ(l->tasks[0], TaskState::Open);
+	EXPECT_EQ(l->tasks[1], TaskState::Done);
+	EXPECT_EQ(l->tasks[2], TaskState::None);
 }

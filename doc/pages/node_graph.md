@@ -1,4 +1,4 @@
-# Node Graph Framework {#page-node-graph}
+# Node Graph {#page-node-graph}
 
 [TOC]
 

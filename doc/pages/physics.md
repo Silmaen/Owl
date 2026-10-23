@@ -1,4 +1,4 @@
-# Physics System {#page-physics}
+# Physics {#page-physics}
 
 [TOC]
 

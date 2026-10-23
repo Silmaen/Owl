@@ -30,7 +30,7 @@ enum struct InlineKind : uint8_t {
 	StrikeEnd,///< `~~strike~~` closing marker.
 	LinkStart,///< `[text](href)` opening marker. `text` payload carries the href.
 	LinkEnd,///< Closing marker for a link span.
-	ImageInline,///< `![alt](src)` inside a paragraph. `text`=src, `alt`=alt text.
+	ImageInline,///< `![alt](src)` or `<img src=... width=...>`. `text`=src, `alt`=alt text, `width`=requested width.
 	LineBreak,///< Hard line break.
 };
 
@@ -42,6 +42,7 @@ struct MdInline {
 	InlineKind kind = InlineKind::Text;///< Span kind discriminator.
 	std::string text;///< Text run, code body, link href, or image src.
 	std::string alt;///< Image alt text (only for `ImageInline`).
+	uint32_t width = 0;///< Requested width in pixels from an HTML image tag (`ImageInline`; 0 = natural size).
 };
 
 /**
@@ -115,11 +116,23 @@ struct MdBlock;// forward; defined below once all alternatives are complete.
 
 /**
  * @brief
+ *  GFM task-list state of a list item.
+ */
+enum struct TaskState : uint8_t {
+	None,///< Plain item, no checkbox.
+	Open,///< `- [ ] item`.
+	Done,///< `- [x] item`.
+};
+
+/**
+ * @brief
  *  Ordered or unordered list. Each item is itself a list of blocks.
  */
 struct MdList {
 	bool ordered = false;///< `true` for `1. … 2. …`, `false` for `- … - …`.
+	uint32_t start = 1;///< Number of the first item of an ordered list (`3.` starts at 3).
 	std::vector<std::vector<MdBlock>> items;///< One vector of blocks per list item.
+	std::vector<TaskState> tasks;///< Task-list state of each item (same size as `items`).
 };
 
 /**

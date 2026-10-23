@@ -101,30 +101,24 @@ context menu or a viewport overlay dropdown. Reverts to the editor camera on dem
 - The build image already has `dbus-1`; D-Bus joins the Linux packages' dependencies; checked on GNOME and KDE,
   Wayland and X11 (NEST1 of [Isometric worlds](isometric-worlds.md))
 
-## In-editor documentation (v0.5.0)
+## In-editor documentation (v0.5.0) {#in-editor-documentation}
 
 ### Mermaid diagram rendering in the help panel
 
-- Today the md4c-based renderer treats ` ```mermaid ` fences as plain code blocks; the actual diagrams (used by
-  `architecture.md`, `editor.md`, `node_graph.md`, `physics.md`, `renderer.md`, `scene.md`, `scripting.md`,
-  `sound.md`) only render on GitHub / Doxygen
-- Build-time pre-render of mermaid blocks → SVG (or PNG) files in the build tree's `help/images/mermaid/`, with the
-  Markdown rewriter swapping each fence for an `![alt](images/mermaid/<sha>.svg)` reference. No runtime JS/Node
-  dependency — pre-rendering can run with a packaged tool or a custom subset renderer in C++
-- Update `cmake/HelpAssets.cmake` to invoke the pre-renderer and surface the cache files
-- Tests: assert each bundled `help/*.md` does not contain ` ```mermaid ` after the bundle step and
-  that the rasterized diagram files exist
+- `cmake/HelpAssets.cmake` runs `tools/doc/mermaid_svg.py bundle` (Poetry Python, standard library only) on the
+  bundled pages: each mermaid fence becomes `![Flowchart](images/mermaid/<sha>.svg)`, the SVG files land in the build
+  tree's `help_bundle/images/mermaid/`
+- The renderer draws `flowchart` / `graph`, `stateDiagram-v2` (composite states as a group), `sequenceDiagram`
+  (notes, loop / alt / opt / par blocks) and `classDiagram` as plain shapes and `<text>` (no `foreignObject`), layered
+  layout, own dark background; syntax outside the subset fails the configure
+- `MarkdownPreview` registers Inter with lunasvg (text needs a font face) and shows a rasterised SVG at its own size
+- Tests: `HelpIndex.MermaidFencesAreReplacedByRenderedSvg` (no fence left, every referenced SVG exists),
+  `tools/tests/test_mermaid_svg.py` (every documented diagram renders to well-formed SVG)
 
 ### Help-panel rendering polish (V2)
 
-- Hanging indent in unordered/ordered lists (current V1 wraps to column 0 — see `MarkdownPreview::renderList`
-  comment)
-- Inline `code` rendered as a flat span (today it goes through `SmallButton` for the tinted background — works but
-  adds a clickable affordance that reads as a button)
-- Ordered-list numbering survives `is_tight` md4c quirks (current OL counter is renderer-side, not parser-side)
-- Native rendering of GFM task lists `[ ]` / `[x]` (currently shown as inline text)
-- Optional dark/light theme switch for the help panel content (today inherits from the editor theme via
-  `ImGuiCol_Text` / `Owl::Theme::buttonHovered`)
-- Side-by-side preview of the source `.md` next to the rendered output (debug aid for contributors editing pages)
+- Done: hanging indent and aligned numbers in lists, ordered-list start number from the parser, GFM task lists as
+  checkboxes, inline code as a flat tinted span
+- Not done: dark/light theme switch for the help content; side-by-side preview of the source `.md`
 
 [done]: https://img.shields.io/badge/-Done-2ea043?style=flat-square

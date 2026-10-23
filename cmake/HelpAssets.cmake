@@ -22,6 +22,8 @@
 #    return SVG so the renderer picks them up via `lunasvg` like any other local
 #    SVG image.
 #
+# Mermaid fences are replaced by `images/mermaid/<sha>.svg` references (`tools/doc/mermaid_svg.py`).
+#
 # External text links (`[text](https://...)`) are PRESERVED — the renderer
 # routes them to the user's default browser at click time (see
 # `core::utils::openExternalUrl`).
@@ -69,6 +71,12 @@ function(_owl_help_scrub_markdown IN_FILE OUT_FILE BADGE_CACHE_DIR)
     # Rewrite project-relative "engine_assets/<x>/foo.svg" (used by README for the logo) ->
     # "images/foo.svg" so the file lives next to the rest of the bundled images.
     string(REGEX REPLACE "\\]\\(engine_assets/[^/)]+/([^)]+)\\)" "](images/\\1)" CONTENT "${CONTENT}")
+    # Same rewrites for raw `<img src="...">` tags (a fixed width, as the README logo).
+    string(REGEX REPLACE "src=\"\\.\\./images/" "src=\"images/" CONTENT "${CONTENT}")
+    string(REGEX REPLACE "src=\"doc/images/" "src=\"images/" CONTENT "${CONTENT}")
+    string(REGEX REPLACE "src=\"engine_assets/[^/\"]+/([^\"]+)\"" "src=\"images/\\1\"" CONTENT "${CONTENT}")
+    # Drop the `<!-- subpage: x.md -->` markers: they only give Doxygen its page tree.
+    string(REGEX REPLACE "<!-- subpage: [A-Za-z0-9_./-]+ -->[ \t]*\r?\n?" "" CONTENT "${CONTENT}")
     # Resolve HTTPS image URLs by downloading them into the local cache and rewriting refs.
     string(REGEX MATCHALL "!\\[[^]]*\\]\\(https?://[^) ]+\\)" REMOTE_IMAGES "${CONTENT}")
     foreach (RAW IN LISTS REMOTE_IMAGES)
@@ -166,6 +174,23 @@ function(owl_bundle_help_assets)
         get_filename_component(FULLNAME "${HELP_FILE}" NAME)
         _owl_help_scrub_markdown("${HELP_FILE}" "${HELP_DIR}/${FULLNAME}" "${BADGE_CACHE_DIR}")
     endforeach ()
+
+    # ---- Mermaid fences -> SVG files ----
+    # The help panel has no JavaScript: every ```mermaid fence of the bundled pages becomes an image reference
+    # to `images/mermaid/<sha>.svg`, drawn by the repository's own renderer (`tools/doc/mermaid_svg.py`, plain
+    # SVG for lunasvg). A diagram the renderer cannot draw fails the configure.
+    set(OWL_MERMAID_SCRIPT "${CMAKE_SOURCE_DIR}/tools/doc/mermaid_svg.py")
+    set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${OWL_MERMAID_SCRIPT}")
+    execute_process(
+            COMMAND ${Python3_EXECUTABLE} "${OWL_MERMAID_SCRIPT}" bundle "${HELP_DIR}"
+            WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+            RESULT_VARIABLE OWL_MERMAID_RESULT
+            OUTPUT_VARIABLE OWL_MERMAID_OUTPUT
+            ERROR_VARIABLE OWL_MERMAID_ERROR
+    )
+    if (NOT OWL_MERMAID_RESULT EQUAL 0)
+        message(FATAL_ERROR "Owl: mermaid rendering of the help pages failed:\n${OWL_MERMAID_ERROR}")
+    endif ()
 
     # ---- Copy images verbatim (SVG / PNG / JPG …) ----
     foreach (IMG IN LISTS OWL_HELP_IMAGES)

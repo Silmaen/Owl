@@ -1,0 +1,19 @@
+# Tower defence: the first wave called with Space long before its countdown ends starts at once and pays the early
+# bonus (2 gold per second left by default); the countdown of the next wave starts once the wave is sent.
+scene: ../../../samples/tower_defence/scenes/map_01.owl
+steps:
+  - frames: 30
+  - expect: {gamestate: tower_wave, equals: 0}
+  - expect: {gamestate: tower_countdown, greater: 20}
+  - input: {key: Space, frames: 2}
+  - expect: {gamestate: tower_wave, equals: 1}
+  - expect: {gamestate: tower_bonus, greater: 40}
+  - expect: {gamestate: tower_gold, greater: 260}
+  - frames: 30
+  - expect: {gamestate: tower_spawned, greater: 0}
+  # Space again while the wave is still being sent does nothing.
+  - input: {key: Space, frames: 2}
+  - expect: {gamestate: tower_wave, equals: 1}
+  - frames: 400
+  - expect: {gamestate: tower_spawned, equals: 6}
+  - expect: {gamestate: tower_countdown, greater: 5}

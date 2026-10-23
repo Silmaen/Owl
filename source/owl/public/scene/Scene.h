@@ -875,6 +875,72 @@ public:
 	 */
 	[[nodiscard]] auto getSimulationClock() const -> const SimulationClock& { return m_simulationClock; }
 
+	/// Highest accepted time scale.
+	static constexpr float maxTimeScale = 16.f;
+
+	/**
+	 * @brief
+	 *  Set the speed of the scene clock: the frame duration the runtime update gives to the scripts, the fixed ticks,
+	 *  the physics, the animations and the behaviours is the real one times this scale.
+	 *
+	 * The UI input, the screen transitions and the toasts keep the real time. `onStartRuntime()` sets it back to 1.
+	 * @param[in] iScale The scale, clamped to [0, `maxTimeScale`] (a non-finite one is ignored).
+	 */
+	void setTimeScale(float iScale);
+
+	/**
+	 * @brief
+	 *  Speed of the scene clock.
+	 * @return The scale set by `setTimeScale`, 1 by default.
+	 */
+	[[nodiscard]] auto getTimeScale() const -> float { return m_timeScale; }
+
+	/**
+	 * @brief
+	 *  Pause or resume the scene clock: paused, the runtime update runs every frame with a zero duration (no tick, no
+	 *  physics step, no animation), the scripts still get `on_update` to drive a pause menu.
+	 *
+	 * `onStartRuntime()` resumes it.
+	 * @param[in] iPaused True to pause.
+	 */
+	void setPaused(const bool iPaused) { m_paused = iPaused; }
+
+	/**
+	 * @brief
+	 *  Whether the scene clock is paused.
+	 * @return True when paused.
+	 */
+	[[nodiscard]] auto isPaused() const -> bool { return m_paused; }
+
+	/**
+	 * @brief
+	 *  Scale the runtime update applies to the frame duration.
+	 * @return 0 when paused, else the time scale.
+	 */
+	[[nodiscard]] auto getEffectiveTimeScale() const -> float { return m_paused ? 0.f : m_timeScale; }
+
+	/**
+	 * @brief
+	 *  Real duration of the last runtime frame, before the time scale and the pause.
+	 * @return The duration in seconds.
+	 */
+	[[nodiscard]] auto getRealFrameSeconds() const -> float { return m_realFrameSeconds; }
+
+	/**
+	 * @brief
+	 *  Queue the entities of a subtree spawned at runtime (a prefab instance) to start: their scripts are created
+	 *  and get `on_create`, their animations play and their timer triggers start at the next safe point of the runtime
+	 *  update (before or after the scripts of the frame), never inside the script call that spawned them.
+	 * @param[in] iRoot The root of the subtree.
+	 */
+	void startSpawnedSubtree(const Entity& iRoot);
+
+	/**
+	 * @brief
+	 *  Start the subtrees queued by `startSpawnedSubtree`; the ones destroyed meanwhile are skipped.
+	 */
+	void flushPendingSpawns();
+
 	/**
 	 * @brief
 	 *  Input of the running step: the tick frame inside a simulation tick, the frame one otherwise.
@@ -1191,6 +1257,16 @@ private:
 	std::optional<std::string> m_hudPath;
 	/// Seconds of simulated time since Play started.
 	double m_runtimeSeconds = 0.0;
+	/// Speed of the scene clock (`setTimeScale`).
+	float m_timeScale = 1.f;
+	/// Whether the scene clock is paused.
+	bool m_paused = false;
+	/// Real duration of the last runtime frame, in seconds.
+	float m_realFrameSeconds = 0.f;
+	/// Frame time step scaled by the time scale, reused every frame.
+	core::Timestep m_scaledTimeStep;
+	/// Roots of the subtrees spawned at runtime, started by `flushPendingSpawns()`.
+	std::vector<core::UUID> m_pendingSpawns;
 	/// Script the scene owns (runs before the entity scripts).
 	component::LuaScript m_sceneScript;
 	/// Systems run every runtime frame, phase by phase.
@@ -1286,6 +1362,8 @@ private:
 	};
 	/// World matrix cache, indexed by `entt::to_entity(handle)`; survives frames.
 	mutable std::vector<WorldNode> m_worldNodes;
+	/// Walk stacks of the parallel world preparation, one per chunk of the hierarchy pool; survive frames.
+	mutable std::vector<std::vector<entt::entity>> m_worldWalkStacks;
 	/// True when a `WorldNode` was composed since the spatial indexes last looked.
 	mutable bool m_worldMoved = true;
 	/// Current world pass; bumped by every `prepareWorldTransforms()` call.
@@ -1671,6 +1749,20 @@ private:
 
 	/**
 	 * @brief
+	 *  Set the frame time step of the scene clock (`m_scaledTimeStep`): the real one times the effective time scale.
+	 * @param[in] iTimeStep The real frame time step.
+	 */
+	void updateScaledTimeStep(const core::Timestep& iTimeStep);
+
+	/**
+	 * @brief
+	 *  Start one entity of a spawned subtree: its script, its animation, its timer trigger.
+	 * @param[in] iEntity The entity.
+	 */
+	void startSpawnedEntity(const Entity& iEntity);
+
+	/**
+	 * @brief
 	 *  Bring the cached world matrix of an entity and of its ancestors up to date.
 	 *
 	 * Walks up to the root (or to an entry already checked in the current pass), then back down, recomposing only
@@ -1873,6 +1965,7 @@ private:
 	friend class Entity;
 	friend class ScriptableEntity;
 	friend class physics::PhysicCommand;
+	friend class SaveManager;
 };
 
 /// @cond

@@ -1,0 +1,897 @@
+Scene: title
+FormatVersion: 7
+Entities:
+  - Entity: 7400000000000000001
+    Tag:
+      tag: MainCamera
+    Transform:
+      translation: [0, 0, 5]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    Camera:
+      camera:
+        projectionType: Orthographic
+        perspectiveFOV: 0.7853982
+        perspectiveNear: 0.01
+        perspectiveFar: 1000
+        orthographicSize: 15
+        orthographicNear: -1
+        orthographicFar: 10
+      primary: true
+      fixedAspectRatio: false
+  - Entity: 7400000000000000002
+    Tag:
+      tag: Background
+    Transform:
+      translation: [0, 0, -1]
+      rotation: [0, 0, 0]
+      scale: [60, 30, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    BackgroundTexture:
+      mode: 0
+      type: 0
+      color: [0.06, 0.08, 0.14, 1]
+      topColor: [0.8, 0.9, 1, 1]
+  - Entity: 7400000000000000003
+    Tag:
+      tag: Meadow
+    Transform:
+      translation: [0, -6.6, -0.5]
+      rotation: [0, 0, 0]
+      scale: [60, 2.6, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [0.16, 0.3, 0.14, 1]
+      tilingFactor: 1
+      texture: nam:textures/bar.png
+  - Entity: 7400000000000000004
+    Tag:
+      tag: Road
+    Transform:
+      translation: [0, -6, -0.4]
+      rotation: [0, 0, 0]
+      scale: [60, 0.5, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [0.45, 0.38, 0.26, 1]
+      tilingFactor: 1
+      texture: nam:textures/bar.png
+  - Entity: 7400000000000000005
+    Tag:
+      tag: Parade
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    LuaScript:
+      scriptPath: scripts/ui/parade.lua
+      properties:
+        - name: fireworks
+          type: bool
+          value: false
+        - name: marching
+          type: bool
+          value: true
+  - Entity: 7400000000000000006
+    Tag:
+      tag: ParadeEnemy
+    Transform:
+      translation: [-14, -5.9, 0.1]
+      rotation: [0, 0, 0]
+      scale: [1.8, 1.8, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7400000000000000005
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/enemies.png
+      columns: 4
+      rows: 3
+      firstFrame: 0
+      lastFrame: 0
+      frameDuration: 0.1
+      loop: false
+  - Entity: 7400000000000000007
+    Tag:
+      tag: ParadeEnemy
+    Transform:
+      translation: [-10.6, -5.9, 0.1]
+      rotation: [0, 0, 0]
+      scale: [1.8, 1.8, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7400000000000000005
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/enemies.png
+      columns: 4
+      rows: 3
+      firstFrame: 0
+      lastFrame: 0
+      frameDuration: 0.1
+      loop: false
+  - Entity: 7400000000000000008
+    Tag:
+      tag: ParadeEnemy
+    Transform:
+      translation: [-7.2, -5.9, 0.1]
+      rotation: [0, 0, 0]
+      scale: [1.8, 1.8, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7400000000000000005
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/enemies.png
+      columns: 4
+      rows: 3
+      firstFrame: 4
+      lastFrame: 4
+      frameDuration: 0.1
+      loop: false
+  - Entity: 7400000000000000009
+    Tag:
+      tag: ParadeEnemy
+    Transform:
+      translation: [-3.8, -5.9, 0.1]
+      rotation: [0, 0, 0]
+      scale: [1.8, 1.8, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7400000000000000005
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/enemies.png
+      columns: 4
+      rows: 3
+      firstFrame: 0
+      lastFrame: 0
+      frameDuration: 0.1
+      loop: false
+  - Entity: 7400000000000000010
+    Tag:
+      tag: ParadeEnemy
+    Transform:
+      translation: [-0.4, -5.9, 0.1]
+      rotation: [0, 0, 0]
+      scale: [1.8, 1.8, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7400000000000000005
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/enemies.png
+      columns: 4
+      rows: 3
+      firstFrame: 8
+      lastFrame: 8
+      frameDuration: 0.1
+      loop: false
+  - Entity: 7400000000000000011
+    Tag:
+      tag: ParadeEnemy
+    Transform:
+      translation: [3, -5.9, 0.1]
+      rotation: [0, 0, 0]
+      scale: [1.8, 1.8, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7400000000000000005
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/enemies.png
+      columns: 4
+      rows: 3
+      firstFrame: 4
+      lastFrame: 4
+      frameDuration: 0.1
+      loop: false
+  - Entity: 7400000000000000012
+    Tag:
+      tag: ParadeEnemy
+    Transform:
+      translation: [6.4, -5.9, 0.1]
+      rotation: [0, 0, 0]
+      scale: [1.8, 1.8, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7400000000000000005
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/enemies.png
+      columns: 4
+      rows: 3
+      firstFrame: 0
+      lastFrame: 0
+      frameDuration: 0.1
+      loop: false
+  - Entity: 7400000000000000013
+    Tag:
+      tag: ParadeTower
+    Transform:
+      translation: [9.5, -4.5, 0.05]
+      rotation: [0, 0, 0]
+      scale: [2.2, 3.85, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/towers/archer.png
+  - Entity: 7400000000000000014
+    Tag:
+      tag: ParadeKeep
+    Transform:
+      translation: [-10.5, -4.3, 0.05]
+      rotation: [0, 0, 0]
+      scale: [3.6, 4.95, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/keep.png
+  - Entity: 7400000000000000015
+    Tag:
+      tag: MenuCanvas
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    Canvas:
+      space: ScreenOverlay
+      sortOrder: 0
+      referenceResolution: [1280, 720]
+      scaleMode: ScaleWithHeight
+    LuaScript:
+      scriptPath: scripts/ui/title.lua
+  - Entity: 7400000000000000016
+    Tag:
+      tag: TitleArt
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7400000000000000015
+    UiRect:
+      anchorMin: [0.5, 0]
+      anchorMax: [0.5, 0]
+      pivot: [0.5, 0]
+      size: [1.25, 0.232]
+      sizeUnit: [ScreenHeight, ScreenHeight]
+      offset: [0, 0.03]
+      offsetUnit: [ScreenHeight, ScreenHeight]
+    UiImage:
+      tint: [1, 1, 1, 1]
+      texture: nam:textures/ui/title.png
+  - Entity: 7400000000000000017
+    Tag:
+      tag: ButtonPanel
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7400000000000000015
+    UiRect:
+      anchorMin: [0.5, 0]
+      anchorMax: [0.5, 0]
+      pivot: [0.5, 0]
+      size: [0.56, 0.46]
+      sizeUnit: [ScreenHeight, ScreenHeight]
+      offset: [-0.31, 0.29]
+      offsetUnit: [ScreenHeight, ScreenHeight]
+    UiLayout:
+      arrangement: Column
+      crossAlign: Center
+      spacing: 8
+      padding: 0
+      columns: 1
+      cellSize: [0, 0]
+  - Entity: 7400000000000000018
+    Tag:
+      tag: QuitButton
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7400000000000000017
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.92, 0.2]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiButton:
+      normalColor: [0.48, 0.11, 0.11, 1]
+      hoverColor: [0.78, 0.24, 0.18, 1]
+      pressedColor: [0.3, 0.06, 0.06, 1]
+      disabledColor: [0.12, 0.1, 0.12, 1]
+      onClickCallback: on_quit_clicked
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.1, 0.05, 0.04, 1]
+      text: 'Quit'
+      color: [0.95, 0.92, 0.84, 1]
+      fontSize: 30
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: OpenSans-Bold
+    UiFocus:
+      focusable: true
+      initial: false
+      onFocusCallback: ''
+      highlightColor: [0.97, 0.77, 0.3, 1]
+      highlightThickness: 3
+  - Entity: 7400000000000000019
+    Tag:
+      tag: QuitButtonFrame
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7400000000000000018
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [1, 1]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiImage:
+      tint: [1, 1, 1, 1]
+      texture: nam:textures/ui/banner.png
+  - Entity: 7400000000000000020
+    Tag:
+      tag: SettingsButton
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7400000000000000017
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.92, 0.2]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiButton:
+      normalColor: [0.48, 0.11, 0.11, 1]
+      hoverColor: [0.78, 0.24, 0.18, 1]
+      pressedColor: [0.3, 0.06, 0.06, 1]
+      disabledColor: [0.12, 0.1, 0.12, 1]
+      onClickCallback: on_settings_clicked
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.1, 0.05, 0.04, 1]
+      text: 'Settings'
+      color: [0.95, 0.92, 0.84, 1]
+      fontSize: 30
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: OpenSans-Bold
+    UiFocus:
+      focusable: true
+      initial: false
+      onFocusCallback: ''
+      highlightColor: [0.97, 0.77, 0.3, 1]
+      highlightThickness: 3
+  - Entity: 7400000000000000021
+    Tag:
+      tag: SettingsButtonFrame
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7400000000000000020
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [1, 1]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiImage:
+      tint: [1, 1, 1, 1]
+      texture: nam:textures/ui/banner.png
+  - Entity: 7400000000000000022
+    Tag:
+      tag: HowToButton
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7400000000000000017
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.92, 0.2]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiButton:
+      normalColor: [0.48, 0.11, 0.11, 1]
+      hoverColor: [0.78, 0.24, 0.18, 1]
+      pressedColor: [0.3, 0.06, 0.06, 1]
+      disabledColor: [0.12, 0.1, 0.12, 1]
+      onClickCallback: on_how_to_clicked
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.1, 0.05, 0.04, 1]
+      text: 'How to play'
+      color: [0.95, 0.92, 0.84, 1]
+      fontSize: 30
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: OpenSans-Bold
+    UiFocus:
+      focusable: true
+      initial: false
+      onFocusCallback: ''
+      highlightColor: [0.97, 0.77, 0.3, 1]
+      highlightThickness: 3
+  - Entity: 7400000000000000023
+    Tag:
+      tag: HowToButtonFrame
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7400000000000000022
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [1, 1]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiImage:
+      tint: [1, 1, 1, 1]
+      texture: nam:textures/ui/banner.png
+  - Entity: 7400000000000000024
+    Tag:
+      tag: PlayButton
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7400000000000000017
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.92, 0.2]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiButton:
+      normalColor: [0.48, 0.11, 0.11, 1]
+      hoverColor: [0.78, 0.24, 0.18, 1]
+      pressedColor: [0.3, 0.06, 0.06, 1]
+      disabledColor: [0.12, 0.1, 0.12, 1]
+      onClickCallback: on_play_clicked
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.1, 0.05, 0.04, 1]
+      text: 'Play'
+      color: [0.95, 0.92, 0.84, 1]
+      fontSize: 30
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: OpenSans-Bold
+    UiFocus:
+      focusable: true
+      initial: true
+      onFocusCallback: ''
+      highlightColor: [0.97, 0.77, 0.3, 1]
+      highlightThickness: 3
+  - Entity: 7400000000000000025
+    Tag:
+      tag: PlayButtonFrame
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7400000000000000024
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [1, 1]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiImage:
+      tint: [1, 1, 1, 1]
+      texture: nam:textures/ui/banner.png
+  - Entity: 7400000000000000026
+    Tag:
+      tag: MapBoard
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7400000000000000015
+    UiRect:
+      anchorMin: [0.5, 0]
+      anchorMax: [0.5, 0]
+      pivot: [0.5, 0]
+      size: [0.56, 0.46]
+      sizeUnit: [ScreenHeight, ScreenHeight]
+      offset: [0.31, 0.29]
+      offsetUnit: [ScreenHeight, ScreenHeight]
+    UiPanel:
+      backgroundColor: [0.07, 0.09, 0.16, 0.9]
+      borderColor: [0.85, 0.65, 0.25, 1]
+      borderWidth: 3
+      clipChildren: false
+    UiLayout:
+      arrangement: Column
+      crossAlign: Center
+      spacing: 8
+      padding: 12
+      columns: 1
+      cellSize: [0, 0]
+  - Entity: 7400000000000000027
+    Tag:
+      tag: BestLabel
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7400000000000000026
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.92, 0.16]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.1, 0.05, 0.04, 1]
+      text: ''
+      color: [0.82, 0.84, 0.9, 0.95]
+      fontSize: 24
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+  - Entity: 7400000000000000028
+    Tag:
+      tag: StateLabel
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7400000000000000026
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.92, 0.16]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.1, 0.05, 0.04, 1]
+      text: 'Not defended yet'
+      color: [0.82, 0.84, 0.9, 0.95]
+      fontSize: 26
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+  - Entity: 7400000000000000029
+    Tag:
+      tag: MapLabel
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7400000000000000026
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.92, 0.2]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.1, 0.05, 0.04, 1]
+      text: 'Map 1: Green Ford'
+      color: [0.95, 0.92, 0.84, 1]
+      fontSize: 30
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: OpenSans-Bold
+  - Entity: 7400000000000000030
+    Tag:
+      tag: BoardTitle
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7400000000000000026
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.92, 0.2]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.1, 0.05, 0.04, 1]
+      text: 'THE REALM'
+      color: [0.97, 0.77, 0.3, 1]
+      fontSize: 34
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: OpenSans-ExtraBold
+  - Entity: 7400000000000000031
+    Tag:
+      tag: HowToWindow
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy:
+      parentId: 7400000000000000015
+    UiRect:
+      anchorMin: [0.5, 0.5]
+      anchorMax: [0.5, 0.5]
+      pivot: [0.5, 0.5]
+      size: [1.25, 0.84]
+      sizeUnit: [ScreenHeight, ScreenHeight]
+      offset: [0, 0]
+    UiWindow:
+      title: 'How to play'
+      titleBarHeight: 40
+      titleFontSize: 28
+      bodyColor: [0.08, 0.1, 0.17, 0.97]
+      titleColor: [0.42, 0.1, 0.1, 1]
+      titleTextColor: [0.95, 0.92, 0.84, 1]
+      draggable: false
+      closable: false
+      onCloseCallback: ''
+    UiLayout:
+      arrangement: Column
+      crossAlign: Center
+      spacing: 8
+      padding: 10
+      columns: 1
+      cellSize: [0, 0]
+  - Entity: 7400000000000000032
+    Tag:
+      tag: HowToBackButton
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7400000000000000031
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.4, 0.11]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiButton:
+      normalColor: [0.48, 0.11, 0.11, 1]
+      hoverColor: [0.78, 0.24, 0.18, 1]
+      pressedColor: [0.3, 0.06, 0.06, 1]
+      disabledColor: [0.12, 0.1, 0.12, 1]
+      onClickCallback: on_how_to_closed
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.1, 0.05, 0.04, 1]
+      text: 'Back'
+      color: [0.95, 0.92, 0.84, 1]
+      fontSize: 30
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: OpenSans-Bold
+    UiFocus:
+      focusable: true
+      initial: false
+      onFocusCallback: ''
+      highlightColor: [0.97, 0.77, 0.3, 1]
+      highlightThickness: 3
+  - Entity: 7400000000000000033
+    Tag:
+      tag: HowToBackButtonFrame
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7400000000000000032
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [1, 1]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiImage:
+      tint: [1, 1, 1, 1]
+      texture: nam:textures/ui/banner.png
+  - Entity: 7400000000000000034
+    Tag:
+      tag: HowToControls
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7400000000000000031
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.95, 0.4]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 2
+      text: "Build, sell     click a pad or a tower, then a badge; right click closes\nPads            Q / E or Tab, D-pad; Enter or pad A opens and builds\n                1 2 3 pick a tower, X or pad X sells, Backspace or pad B closes\nNext wave       Space, pad Y, the Call wave button (bonus gold)\nSpeed x2        F, pad RB          Pause   Escape, P, pad Start\nCamera          WASD, arrows, left stick, mouse on an edge"
+      color: [0.97, 0.77, 0.3, 1]
+      fontSize: 21
+      horizontalAlignment: Left
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0.2
+      wrap: true
+      fit: Shrink
+      minFontSize: 12
+      font: JetBrainsMono-Regular
+  - Entity: 7400000000000000035
+    Tag:
+      tag: HowToRules
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7400000000000000031
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.95, 0.34]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 2
+      text: 'Enemies march from the gate to the keep along the road. Build towers on the stone pads beside it: the archer shoots fast at one enemy, the cannon bursts on a group, the frost tower slows them down. Each enemy that reaches the keep costs a life; keep at least one through every wave. Kills pay gold; calling a wave before its countdown ends pays a bonus. A tower sells back for half its price.'
+      color: [0.82, 0.84, 0.9, 0.95]
+      fontSize: 23
+      horizontalAlignment: Left
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0.15
+      wrap: true
+      fit: Shrink
+      minFontSize: 12

@@ -11,6 +11,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Sample game Tower defence (`samples/tower_defence/`), first map in basic art: 8 timed waves called early for a bonus, archer, cannon and frost towers on build pads with a build ring, runners, soldiers and armoured enemies on the road graph, double speed and pause, end stats counted up, keyboard, mouse or gamepad; generators in `tools/samples/tower_defence/`, maps and waves as data.
+- Help panel diagrams: `tools/doc/mermaid_svg.py` draws every mermaid fence of the bundled pages as plain SVG (flowchart, sequence, state, class) into `help_bundle/images/mermaid/`, run by `cmake/HelpAssets.cmake`.
+- Help panel rendering: hanging indent and aligned numbers in lists, ordered lists keep their start number, GFM task lists drawn as checkboxes, inline code as a flat tinted span.
+- Lua `scene.spawn_prefab` (a prefab instantiated at runtime, its scripts started at the next safe point of the frame) and `entity.add_component`.
+- Lua `time.set_scale`, `time.set_paused`, their getters and `time.real_delta`: a scene clock driving the ticks, physics, animations and `dt`, the UI kept in real time (`Scene::setTimeScale`, `setPaused`); Breakout pauses with it.
+- Lua `ui.is_world_blocked`: whether a shown `UiWindow` holds the world interactions back.
+- Lua `ui.set_image`, `ui.set_image_frame` and `ui.get_image_frame`, with the `Columns`, `Rows` and `Frame` sprite sheet grid of `UiImage`.
+- Lua `scene.pick_entity` and `scene::pickEntity`: the sprite, circle or mesh under a viewport pixel, in 2D, isometric and 3D.
+- Lua `scene.pick_entity` and `scene::pickEntity` take an optional tag, so a ring or a passer-by drawn in front does not hide a tower; `scene.get_viewport_size` and `scene.get_viewport_mouse` for edge scrolling.
+- A save keeps the cells of the tilemaps changed in game (`SaveManager::restoreTilemapCells`), put back before the colliders are built.
 - `core::task::Scheduler::parallelFor`, and `Scene::setTaskScheduler` / `setParallelMinEntities`: `prepareWorldTransforms` and the spatial boxes of scenes above 4096 entities are prepared in parallel (`frame/editor_update/forest50000` 1.68 to 0.91 ms).
 - Benchmarks `frame/editor_update/{flat,forest,moving_flat,moving_forest}50000`, each with a `_serial` twin.
 - Benchmark `renderer2d/text/100_strings_changing`: strings never seen in the previous frames, the cost of laying text out.
@@ -99,6 +109,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Documentation reorganised: short README landing page, one guide per audience (game makers, C++ developers, contributors), consistent page titles, `<img width>` honoured in the help and CMake 4.4 required
+- Build: no C++ module scan of every source (on by default since the CMake 4.4 minimum), a clean rebuild from a warm ccache in 6 s instead of 13 s.
+- Build: an engine `.cpp` edit links only the engine, not every program using it (`CMAKE_LINK_DEPENDS_NO_SHARED`), 2.8 s instead of 3.5 s.
+- Build: the Clang presets choose lld through `CMAKE_LINKER_TYPE`, and the engine public include path comes from its header file set only.
 - `QuadInstance` back to 80 bytes, the normal-map index and the 2D light flags packed into its padding.
 - `utils::getLighting2DState` returns a reference, and unlit tilemaps no longer bind the 2D light buffers: a static tilemap frame is back near its cost before the 2D lighting.
 - `math::Frustum` folds its near-plane tolerance into the plane when it is built: no per-box cost, and the other planes have none.

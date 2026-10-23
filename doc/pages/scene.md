@@ -1,4 +1,4 @@
-# Scene and Component System {#page-scene}
+# Scene and Components {#page-scene}
 
 [TOC]
 
@@ -147,6 +147,12 @@ and runs as many ticks of `1 / tickRate` seconds as it holds, at most `maxTicksP
 dropped, so a long frame slows the game down instead of stalling it). The leftover time over the tick duration is
 the interpolation alpha (`SimulationClock::getAlpha()`, Lua `time.tick_alpha()`), used to draw the physics bodies
 between their last two steps. A simulation run with the same ticks gives the same result however the frames are cut.
+
+The scene clock runs at `Scene::setTimeScale(scale)` (0 to 16, Lua `time.set_scale`) and stops with
+`Scene::setPaused(true)` (Lua `time.set_paused`): the frame duration the systems, the ticks and `getRuntimeSeconds()`
+see is the real one times `getEffectiveTimeScale()`. Paused, the scripts still get `on_update` with a zero duration,
+no tick nor physics step runs and the animations hold their frame; the UI input, the screen transitions and the toasts
+keep the real time (`getRealFrameSeconds()`). `onStartRuntime()` resets the scale to 1 and resumes.
 
 The rate is a project setting, edited in Owl Nest's *Project Settings* (**Simulation** section) and saved in
 `owl_project.yml` when it differs from the defaults:
@@ -852,6 +858,9 @@ height of the font (before format 3 it filled the ink height of the string, so o
 | `imageAsset`   | `string` | Texture file path                                                                                           |
 | `tint`         | `vec4`   | Tint colour multiplier                                                                                      |
 | `renderTarget` | `string` | Name of a [`RenderTarget`](#rendertarget) of the scene shown in place of the texture; empty for the texture |
+| `columns`      | `uint`   | Columns of the sprite sheet grid of the texture (1, the default, shows the whole texture)                   |
+| `rows`         | `uint`   | Rows of the sprite sheet grid                                                                               |
+| `frame`        | `uint`   | Frame of the grid shown, row-major from the top left (Lua `ui.set_image_frame`)                             |
 
 #### UiPanel
 
@@ -1203,7 +1212,9 @@ Scenes are at version 7, prefabs at version 6 (they share the first five steps):
 
 Tilemaps are at version 3 ([Tilemap storage](#tilemap-storage)). The prefab `Version` key is something else: it
 counts the edits of one prefab and feeds `PrefabLink::syncedVersion`. A save embeds its scene with the scene's own
-`FormatVersion`.
+`FormatVersion`, and a `TilemapCells` list: the grid and the binary payload of each tilemap whose cells differ from
+its `.owltilemap` file, put back by `SaveManager::restoreTilemapCells` once the tilemaps are resolved, before
+`onStartRuntime()` builds their colliders.
 
 On load, `core::upgradeDocument` (or `upgradeYamlDocument` inside the engine) reads the version:
 

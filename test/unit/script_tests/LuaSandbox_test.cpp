@@ -43,6 +43,18 @@ constexpr ScriptQuotas g_SmallQuotas{.memoryBytes = size_t{8} * 1024 * 1024, .ti
 
 [[noreturn]] auto throwingIntBinding([[maybe_unused]] lua_State* iState) -> int { throw 42; }
 
+// Stands for disk work: 30 ms of the 50 ms quota per call.
+auto slowBinding([[maybe_unused]] lua_State* iState) -> int {
+	std::this_thread::sleep_for(std::chrono::milliseconds(30));
+	return 0;
+}
+
+auto slowRestartingBinding(lua_State* iState) -> int {
+	slowBinding(iState);
+	LuaEngine::restartCallClock(iState);
+	return 0;
+}
+
 /// Aborts the process when a test outlives its deadline, so a broken quota fails instead of freezing.
 class Deadline final {
 public:
@@ -222,6 +234,18 @@ TEST_F(LuaSandbox, errorInCallbackIsRuntimeError) {
 	ASSERT_TRUE(run("function tableError() error({}) end"));
 	EXPECT_FALSE(engine.callFunction("tableError"));
 	EXPECT_EQ(engine.getLastStatus(), LuaStatus::RuntimeError);
+}
+
+TEST_F(LuaSandbox, blockingBindingRestartsTheTimeQuota) {
+	static constexpr luaL_Reg funcs[] = {{"slow", slowBinding},
+										 {"slow_restarting", slowRestartingBinding},
+										 {nullptr, nullptr}};
+	LuaEngine::registerGuardedTable(engine.getState(), "disk", funcs);
+	ASSERT_TRUE(run("function restarting() for i = 1, 4 do disk.slow_restarting() end end\n"
+					"function counted() for i = 1, 4 do disk.slow() end end\n"));
+	EXPECT_TRUE(engine.callFunction("restarting"));
+	EXPECT_FALSE(engine.callFunction("counted"));
+	EXPECT_EQ(engine.getLastStatus(), LuaStatus::TimeQuota);
 }
 
 TEST_F(LuaSandbox, cppExceptionInBindingBecomesLuaError) {
