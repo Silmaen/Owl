@@ -53,19 +53,18 @@ uint32_t g_MaxTextureSlots = 0;
 
 struct QuadInstance {
 	int32_t worldIndex;
-	uint32_t _pad0[3];
+	// Texture slot of the normal map, -1 for none.
+	int32_t normalIndex;
+	// Bit 0: lit by the 2D lights; bit 1: shadow caster.
+	uint32_t flags;
+	uint32_t _pad0;
 	math::vec4 color;
 	std::array<math::vec2, 4> uv;
 	uint32_t texIndex;
 	int32_t entityId;
 	math::vec2 tilingFactor;
-	// Texture slot of the normal map, -1 for none.
-	int32_t normalIndex;
-	// Bit 0: lit by the 2D lights; bit 1: shadow caster.
-	uint32_t flags;
-	uint32_t _pad1[2];
 };
-static_assert(sizeof(QuadInstance) == 96, "QuadInstance must match shader std430 layout");
+static_assert(sizeof(QuadInstance) == 80, "QuadInstance must match shader std430 layout");
 
 constexpr uint32_t g_quadLit = 1u;
 constexpr uint32_t g_quadShadowCaster = 2u;
@@ -224,15 +223,14 @@ void drawTextBackground(const StringData& iString, const math::mat4& iStringMat)
 		Renderer2D::nextBatch();
 	const Quad2DData defaults;
 	g_Data->quad.instances.push_back(utils::QuadInstance{.worldIndex = allocateTransientWorld(boxMat),
-														 ._pad0 = {0u, 0u, 0u},
+														 .normalIndex = -1,
+														 .flags = 0u,
+														 ._pad0 = 0u,
 														 .color = iString.backgroundColor,
 														 .uv = defaults.textureCoords,
 														 .texIndex = 0,
 														 .entityId = iString.entityId,
-														 .tilingFactor = defaults.tilingFactor,
-														 .normalIndex = -1,
-														 .flags = 0u,
-														 ._pad1 = {0u, 0u}});
+														 .tilingFactor = defaults.tilingFactor});
 	g_Data->runs.note(utils::RunKind::Quad, iString.depth);
 	g_Data->stats.quadCount++;
 }
@@ -723,15 +721,14 @@ void Renderer2D::drawQuad(const Quad2DData& iQuadData) {
 			(iQuadData.lit ? utils::g_quadLit : 0u) | (iQuadData.shadowCaster ? utils::g_quadShadowCaster : 0u);
 	const int32_t worldIndex = resolveWorldIndex(iQuadData.worldIndex, iQuadData.transform);
 	g_Data->quad.instances.push_back(utils::QuadInstance{.worldIndex = worldIndex,
-														 ._pad0 = {0u, 0u, 0u},
+														 .normalIndex = normalIndex,
+														 .flags = flags,
+														 ._pad0 = 0u,
 														 .color = iQuadData.color,
 														 .uv = iQuadData.textureCoords,
 														 .texIndex = textureIndex,
 														 .entityId = iQuadData.entityId,
-														 .tilingFactor = iQuadData.tilingFactor,
-														 .normalIndex = normalIndex,
-														 .flags = flags,
-														 ._pad1 = {0u, 0u}});
+														 .tilingFactor = iQuadData.tilingFactor});
 	g_Data->runs.note(utils::RunKind::Quad, iQuadData.depth);
 	g_Data->stats.quadCount++;
 }
