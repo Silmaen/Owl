@@ -2218,7 +2218,7 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		 .params = {{"name", String}}, .returns = {{"entity_id", Entity}}},
 		{.table = "scene", .name = "destroy_entity", .function = guarded<luaSceneDestroyEntity>,
 		 .description = "Destroy an entity and its children at the end of the frame.", .params = {entityId}},
-		{.table = "scene", .name = "spawn_prefab", .function = guarded<luaSceneSpawnPrefab>,
+		{.table = "scene", .name = "spawn_prefab", .function = blocking<luaSceneSpawnPrefab>,
 		 .description = "Instantiate a prefab asset (`.owlprefab`) at runtime, its root placed at a position when one is "
 						"given; its scripts get `on_create` before or after the scripts of the frame. 0 on failure.",
 		 .params = {{"prefab_path", String}, {"x", Number, true}, {"y", Number, true}, {"z", Number, true}},
@@ -2435,7 +2435,7 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		 .description = "Text of a `UiText`.", .params = {entityId}, .returns = {{"text", String}}},
 		{.table = "ui", .name = "set_visible", .function = guarded<luaUiSetVisible>,
 		 .description = "Show or hide the entity in the game.", .params = {entityId, {"visible", Boolean}}},
-		{.table = "ui", .name = "set_image", .function = guarded<luaUiSetImage>,
+		{.table = "ui", .name = "set_image", .function = blocking<luaUiSetImage>,
 		 .description = "Show a texture asset in a `UiImage` (an empty path clears it); false when the entity has no "
 						"`UiImage` or the texture cannot be loaded.",
 		 .params = {entityId, {"texture_path", String}}, .returns = {{"done", Boolean}}},
