@@ -141,6 +141,7 @@ render graph, essential post-processing — with full 3D editing ([details](desi
 - ![Done][done] GPU raycast sprite stripes and `BitonicSortPass` adoption
 - ![Done][done] Spatial partitioning (loose octree shared by the 2D and 3D layers)
 - ![Planned][planned] Multithreaded render preparation
+- ![Planned][planned] HUD layout and text kept between frames, recomputed only when a widget, a text or the viewport changes ([HUD system](design/hud-system.md#layout-cache))
 - ![Done][done] HUD minimap on a render target: `RenderTarget`, `FollowTarget`, `UiImage.renderTarget` ([HUD system](design/hud-system.md#minimap))
 - ![Done][done] 3D scene editing in Owl Nest (3D gizmos, snapping, mesh preview), "look through scene camera" mode
 - ![To evaluate][evaluate] Owl Nest camera preview: the HUD drawn over it, as an option
