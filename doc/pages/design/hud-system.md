@@ -333,19 +333,6 @@ A minimap is a second camera drawn off-screen and shown by a `UiImage`; nothing 
 - The voxel level (`scenes/voxel_terrain.owl`) holds the entity `MinimapCamera` and shows its image in
   `huds/voxel.owlhud`. See [Scene > RenderTarget](../scene.md#rendertarget).
 
-## Layout cache {#layout-cache}
-
-`HudLayout::compute` lays every widget out and the text of each `UiText` is shaped again at every frame, even when
-nothing moved: the HUD of the tavern (three widgets, two texts) costs about 5 µs per editor frame on the bench agent
-(`sample/editor_update/tavern` 9.7 µs without it, 25 µs with it).
-
-| Part        | Plan                                                                                                   |
-|-------------|--------------------------------------------------------------------------------------------------------|
-| Dirty marks | A HUD keeps a generation bumped by any change of a `UiRect`, `UiText`, `Canvas`, visibility or scroll  |
-| Layout      | `HudLayout` reuses its nodes while the generation, the viewport size and the user scale are unchanged  |
-| Text        | Each `UiText` keeps its shaped glyphs until its text, font, size or box changes                        |
-| Tests       | Identical nodes and quads with and without the cache; a bench of a still HUD and of one text per frame |
-
 ## Tests
 
 Layout maths (anchors, pivot, nesting, scale modes), hit-testing and focus order, text layout (pen advance, wrap,

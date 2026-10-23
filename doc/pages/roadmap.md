@@ -141,8 +141,8 @@ render graph, essential post-processing — with full 3D editing ([details](desi
 - ![Done][done] GPU raycast sprite stripes and `BitonicSortPass` adoption
 - ![Done][done] Spatial partitioning (loose octree shared by the 2D and 3D layers)
 - ![Planned][planned] Multithreaded render preparation
-- ![In Progress][progress] Next pull request: the 2D quads, the tilemaps and the frustum test back to their cost before the 2D lighting ([2D](design/2d-complete.md#lighting-cost))
-- ![In Progress][progress] HUD layout and text kept between frames, recomputed only when a widget, a text or the viewport changes ([HUD system](design/hud-system.md#layout-cache))
+- ![Done][done] Cost of the 2D lighting cut back: 80-byte quad instances, unlit tilemaps, near-plane-only frustum tolerance ([2D](design/2d-complete.md#lighting-cost))
+- ![Done][done] Laid-out text kept between frames while its font, text and layout stay ([Renderer](renderer.md#renderer-text-cache))
 - ![Done][done] HUD minimap on a render target: `RenderTarget`, `FollowTarget`, `UiImage.renderTarget` ([HUD system](design/hud-system.md#minimap))
 - ![Done][done] 3D scene editing in Owl Nest (3D gizmos, snapping, mesh preview), "look through scene camera" mode
 - ![To evaluate][evaluate] Owl Nest camera preview: the HUD drawn over it, as an option
