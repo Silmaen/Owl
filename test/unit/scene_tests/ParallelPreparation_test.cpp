@@ -140,8 +140,9 @@ void expectSameFrame(const TwinScenes& iTwins) {
 		}
 		const uint32_t slot = iTwins.serial->getWorldIndex(serialEntity);
 		ASSERT_EQ(iTwins.parallel->getWorldIndex(parallelEntity), slot) << "entity " << i;
-		if (slot < serialWorlds.size())
+		if (slot < serialWorlds.size()) {
 			ASSERT_EQ(parallelWorlds[slot], serialWorlds[slot]) << "entity " << i;
+		}
 	}
 	for (size_t slot = 0; slot < serialWorlds.size(); ++slot) ASSERT_EQ(parallelWorlds[slot], serialWorlds[slot]);
 }
