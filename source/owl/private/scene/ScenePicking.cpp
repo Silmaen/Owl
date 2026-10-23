@@ -25,6 +25,7 @@
 #include <limits>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace owl::scene {
@@ -173,7 +174,7 @@ auto makeRuntimeIsometricCamera(const Scene& iScene) -> renderer::IsometricCamer
 	return camera;
 }
 
-auto pickEntity(Scene& ioScene, const math::vec2& iPixel) -> Entity {
+auto pickEntity(Scene& ioScene, const math::vec2& iPixel, const std::string_view iTag) -> Entity {
 	OWL_PROFILE_FUNCTION()
 
 	const auto ray = makeCameraRay(ioScene, iPixel);
@@ -182,6 +183,9 @@ auto pickEntity(Scene& ioScene, const math::vec2& iPixel) -> Entity {
 	const auto consider = [&](const entt::entity iHandle, const Shape iShape, const math::box3f& iBox,
 							  const bool iSprite) -> void {
 		const Entity entity{iHandle, &ioScene};
+		if (!iTag.empty() &&
+			(!entity.hasComponent<component::Tag>() || entity.getComponent<component::Tag>().tag != iTag))
+			return;
 		if (!ioScene.isEffectivelyVisible(entity, false))
 			return;
 		const Route route = routeOf(entity);

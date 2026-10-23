@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Lua `ui.is_world_blocked`: whether a shown `UiWindow` holds the world interactions back.
 - Lua `ui.set_image`, `ui.set_image_frame` and `ui.get_image_frame`, with the `Columns`, `Rows` and `Frame` sprite sheet grid of `UiImage`.
 - Lua `scene.pick_entity` and `scene::pickEntity`: the sprite, circle or mesh under a viewport pixel, in 2D, isometric and 3D.
+- Lua `scene.pick_entity` and `scene::pickEntity` take an optional tag, so a ring or a passer-by drawn in front does not hide a tower; `scene.get_viewport_size` and `scene.get_viewport_mouse` for edge scrolling.
 - A save keeps the cells of the tilemaps changed in game (`SaveManager::restoreTilemapCells`), put back before the colliders are built.
 - `core::task::Scheduler::parallelFor`, and `Scene::setTaskScheduler` / `setParallelMinEntities`: `prepareWorldTransforms` and the spatial boxes of scenes above 4096 entities are prepared in parallel (`frame/editor_update/forest50000` 1.68 to 0.91 ms).
 - Benchmarks `frame/editor_update/{flat,forest,moving_flat,moving_forest}50000`, each with a `_serial` twin.

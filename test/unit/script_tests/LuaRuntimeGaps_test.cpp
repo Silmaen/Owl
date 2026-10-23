@@ -201,3 +201,25 @@ TEST_F(LuaRuntimeGaps, pickEntityFindsTheSpriteUnderAPixel) {
 			  static_cast<int64_t>(static_cast<uint64_t>(sprite.getUUID())));
 	EXPECT_EQ(instance->getPropertyInt("miss").value_or(-1), 0);
 }
+
+TEST_F(LuaRuntimeGaps, pickEntityWithATagSkipsTheOtherEntities) {
+	auto tower = m_scene->createEntity("Tower");
+	tower.addComponent<component::SpriteRenderer>();
+	auto ring = m_scene->createEntity("Ring");
+	ring.getComponent<component::Transform>().transform.translation() = {0.f, 0.f, 1.f};
+	ring.addComponent<component::SpriteRenderer>();
+	const auto instance = run("any = scene.pick_entity(400, 300)\ntower = scene.pick_entity(400, 300, 'Tower')");
+	EXPECT_EQ(instance->getPropertyInt("any").value_or(0), static_cast<int64_t>(static_cast<uint64_t>(ring.getUUID())));
+	EXPECT_EQ(instance->getPropertyInt("tower").value_or(0),
+			  static_cast<int64_t>(static_cast<uint64_t>(tower.getUUID())));
+}
+
+TEST_F(LuaRuntimeGaps, viewportSizeAndMouseAreInViewportPixels) {
+	m_scene->getUiInputState().hasMouse = true;
+	m_scene->getUiInputState().mousePosition = {120.f, 45.f};
+	const auto instance = run("w, h = scene.get_viewport_size()\nmx, my = scene.get_viewport_mouse()");
+	EXPECT_EQ(instance->getPropertyInt("w").value_or(0), 800);
+	EXPECT_EQ(instance->getPropertyInt("h").value_or(0), 600);
+	EXPECT_NEAR(instance->getPropertyFloat("mx").value_or(0.f), 120.f, 1e-6f);
+	EXPECT_NEAR(instance->getPropertyFloat("my").value_or(0.f), 45.f, 1e-6f);
+}

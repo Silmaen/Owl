@@ -547,9 +547,29 @@ auto luaScenePickEntity(lua_State* iState) -> int {
 	const auto mouse = uiState.hasMouse ? uiState.mousePosition : input::Input::getMousePos();
 	const auto pointX = static_cast<float>(luaL_optnumber(iState, 1, static_cast<lua_Number>(mouse.x())));
 	const auto pointY = static_cast<float>(luaL_optnumber(iState, 2, static_cast<lua_Number>(mouse.y())));
-	const auto picked = scene::pickEntity(*activeScene, {pointX, pointY});
+	const std::string_view tag = luaL_optstring(iState, 3, "");
+	const auto picked = scene::pickEntity(*activeScene, {pointX, pointY}, tag);
 	lua_pushinteger(iState, picked ? static_cast<lua_Integer>(static_cast<uint64_t>(picked.getUUID())) : 0);
 	return 1;
+}
+
+auto luaSceneGetViewportSize(lua_State* iState) -> int {
+	const auto* activeScene = getBoundScene(iState);
+	const math::vec2ui size = activeScene != nullptr ? activeScene->getViewportSize() : math::vec2ui{0u, 0u};
+	lua_pushinteger(iState, static_cast<lua_Integer>(size.x()));
+	lua_pushinteger(iState, static_cast<lua_Integer>(size.y()));
+	return 2;
+}
+
+auto luaSceneGetViewportMouse(lua_State* iState) -> int {
+	auto* activeScene = getBoundScene(iState);
+	// The viewport mouse of the last HUD update, as `scene.pick_entity` reads it (Owl Nest draws the game in a panel).
+	math::vec2 mouse = input::Input::getMousePos();
+	if (activeScene != nullptr && activeScene->getUiInputState().hasMouse)
+		mouse = activeScene->getUiInputState().mousePosition;
+	lua_pushnumber(iState, static_cast<lua_Number>(mouse.x()));
+	lua_pushnumber(iState, static_cast<lua_Number>(mouse.y()));
+	return 2;
 }
 
 auto luaSceneLoadScene(lua_State* iState) -> int {
@@ -2205,8 +2225,18 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		 .returns = {{"entity_id", Entity}}},
 		{.table = "scene", .name = "pick_entity", .function = guarded<luaScenePickEntity>,
 		 .description = "Entity drawn under a viewport pixel (the mouse by default), nearest to the viewer: sprites and "
-						"circles (2D or isometric) and meshes, not the UI. 0 when none.",
-		 .params = {{"x", Number, true}, {"y", Number, true}}, .returns = {{"entity_id", Entity}}},
+						"circles (2D or isometric) and meshes, not the UI, only the entities of a tag when one is given. 0 when "
+						"none.",
+		 .params = {{"x", Number, true}, {"y", Number, true}, {"tag", String, true}},
+		 .returns = {{"entity_id", Entity}}},
+		{.table = "scene", .name = "get_viewport_size", .function = guarded<luaSceneGetViewportSize>,
+		 .description = "Size of the viewport the scene is drawn into, in pixels (the window, or the game panel of "
+						"Owl Nest); zeros before the first frame.",
+		 .returns = {{"width", Integer}, {"height", Integer}}},
+		{.table = "scene", .name = "get_viewport_mouse", .function = guarded<luaSceneGetViewportMouse>,
+		 .description = "Mouse position in the viewport, in pixels from its top left (the pixel `scene.pick_entity` "
+						"reads by default).",
+		 .returns = {{"x", Number}, {"y", Number}}},
 		{.table = "scene", .name = "load_scene", .function = guarded<luaSceneLoadScene>,
 		 .description = "Load another level after this frame, keeping the game state (no transition).",
 		 .params = {{"level", String}}},

@@ -230,6 +230,20 @@ TEST(SaveTilemapCells, aDifferentGridIsNotRestored) {
 	core::Log::invalidate();
 }
 
+TEST(ScenePicking, aTagLimitsThePickToItsEntities) {
+	core::Log::init(core::Log::Level::Off);
+	const auto scene = makeCameraScene();
+	auto tower = scene->createEntity("Tower");
+	tower.addComponent<component::SpriteRenderer>();
+	auto ring = scene->createEntity("Ring");
+	ring.getComponent<component::Transform>().transform.translation() = {0.f, 0.f, 1.f};
+	ring.addComponent<component::SpriteRenderer>();
+	EXPECT_EQ(pickEntity(*scene, {400.f, 300.f}), ring);
+	EXPECT_EQ(pickEntity(*scene, {400.f, 300.f}, "Tower"), tower);
+	EXPECT_FALSE(pickEntity(*scene, {400.f, 300.f}, "Enemy"));
+	core::Log::invalidate();
+}
+
 TEST(ScenePicking, theNearestSpriteUnderThePixelIsPicked) {
 	core::Log::init(core::Log::Level::Off);
 	const auto scene = makeCameraScene();
