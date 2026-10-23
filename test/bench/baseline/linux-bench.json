@@ -10,13 +10,13 @@
     {
       "name": "frame/editor_update/chain1000",
       "items": 1000,
-      "batch": 100,
+      "batch": 160,
       "samples": 15,
-      "median_ns": 104158.3,
-      "p25_ns": 103885.9,
-      "p75_ns": 104540.7,
-      "min_ns": 103756.0,
-      "max_ns": 125846.7
+      "median_ns": 73465.7,
+      "p25_ns": 73383.4,
+      "p75_ns": 73886.5,
+      "min_ns": 73219.5,
+      "max_ns": 78559.5
     },
     {
       "name": "frame/editor_update/flat1000",
@@ -43,13 +43,13 @@
     {
       "name": "frame/editor_update/forest10000",
       "items": 10000,
-      "batch": 11,
+      "batch": 23,
       "samples": 15,
-      "median_ns": 1068541.3,
-      "p25_ns": 1068071.4,
-      "p75_ns": 1071309.5,
-      "min_ns": 1066077.7,
-      "max_ns": 1073436.6
+      "median_ns": 481352.3,
+      "p25_ns": 460534.5,
+      "p75_ns": 501004.0,
+      "min_ns": 448799.4,
+      "max_ns": 533783.2
     },
     {
       "name": "frame/runtime_update/logic_flat1000",
@@ -65,13 +65,13 @@
     {
       "name": "frame/runtime_update/logic_flat10000",
       "items": 10000,
-      "batch": 39,
+      "batch": 43,
       "samples": 15,
-      "median_ns": 306918.9,
-      "p25_ns": 306850.0,
-      "p75_ns": 306978.0,
-      "min_ns": 306657.5,
-      "max_ns": 307196.5
+      "median_ns": 269745.3,
+      "p25_ns": 268269.7,
+      "p75_ns": 270611.0,
+      "min_ns": 266740.4,
+      "max_ns": 274465.4
     },
     {
       "name": "frame/runtime_update/logic_ticks4_flat1000",
@@ -109,24 +109,24 @@
     {
       "name": "hud/frame/1000_row_list",
       "items": 1000,
-      "batch": 675,
+      "batch": 1000,
       "samples": 15,
-      "median_ns": 17683.0,
-      "p25_ns": 17680.4,
-      "p75_ns": 17687.5,
-      "min_ns": 17676.9,
-      "max_ns": 17695.0
+      "median_ns": 10906.9,
+      "p25_ns": 10895.8,
+      "p75_ns": 10910.0,
+      "min_ns": 10882.7,
+      "max_ns": 10914.0
     },
     {
       "name": "hud/frame/500_widgets",
       "items": 500,
-      "batch": 56,
+      "batch": 65,
       "samples": 15,
-      "median_ns": 210881.1,
-      "p25_ns": 210816.2,
-      "p75_ns": 210917.2,
-      "min_ns": 210686.5,
-      "max_ns": 210955.9
+      "median_ns": 181849.8,
+      "p25_ns": 181767.6,
+      "p75_ns": 181983.1,
+      "min_ns": 181625.3,
+      "max_ns": 182177.6
     },
     {
       "name": "hud/layout/500_widgets",
@@ -945,35 +945,35 @@
     {
       "name": "renderer2d/text/10000_glyphs_utf8",
       "items": 10000,
-      "batch": 4,
+      "batch": 43,
       "samples": 15,
-      "median_ns": 2873272.5,
-      "p25_ns": 2871788.4,
-      "p75_ns": 2873517.0,
-      "min_ns": 2869972.5,
-      "max_ns": 2878458.5
+      "median_ns": 273063.7,
+      "p25_ns": 272707.1,
+      "p75_ns": 273162.7,
+      "min_ns": 272186.6,
+      "max_ns": 273299.2
     },
     {
       "name": "renderer2d/text/10000_glyphs_wrapped",
       "items": 10000,
-      "batch": 4,
+      "batch": 43,
       "samples": 15,
-      "median_ns": 2894068.2,
-      "p25_ns": 2888044.4,
-      "p75_ns": 2897927.1,
-      "min_ns": 2884831.5,
-      "max_ns": 2918129.2
+      "median_ns": 273477.8,
+      "p25_ns": 273387.7,
+      "p75_ns": 273580.2,
+      "min_ns": 272967.8,
+      "max_ns": 287787.5
     },
     {
       "name": "renderer2d/text/100_strings_54_chars",
       "items": 5400,
-      "batch": 26,
+      "batch": 77,
       "samples": 15,
-      "median_ns": 444585.8,
-      "p25_ns": 444470.3,
-      "p75_ns": 444834.3,
-      "min_ns": 444392.4,
-      "max_ns": 445504.5
+      "median_ns": 155414.4,
+      "p25_ns": 155203.1,
+      "p75_ns": 155467.5,
+      "min_ns": 154986.3,
+      "max_ns": 155742.8
     },
     {
       "name": "renderer2d/transform_to_matrix/1000",
@@ -1033,90 +1033,90 @@
     {
       "name": "sample/editor_update/game_over",
       "items": 1,
-      "batch": 966,
+      "batch": 1430,
       "samples": 15,
-      "median_ns": 10010.9,
-      "p25_ns": 10002.7,
-      "p75_ns": 10026.3,
-      "min_ns": 9974.4,
-      "max_ns": 11134.4
+      "median_ns": 8282.9,
+      "p25_ns": 8270.1,
+      "p75_ns": 8292.8,
+      "min_ns": 8248.5,
+      "max_ns": 8402.2
     },
     {
       "name": "sample/editor_update/iso_town",
       "items": 1,
-      "batch": 127,
+      "batch": 222,
       "samples": 15,
-      "median_ns": 91180.9,
-      "p25_ns": 91119.3,
-      "p75_ns": 91327.5,
-      "min_ns": 90799.2,
-      "max_ns": 91698.4
+      "median_ns": 53851.2,
+      "p25_ns": 53791.7,
+      "p75_ns": 53894.6,
+      "min_ns": 53761.5,
+      "max_ns": 53969.5
     },
     {
       "name": "sample/editor_update/main_menu",
       "items": 1,
-      "batch": 257,
+      "batch": 435,
       "samples": 15,
-      "median_ns": 46414.9,
-      "p25_ns": 46384.2,
-      "p75_ns": 46456.9,
-      "min_ns": 46326.0,
-      "max_ns": 46561.1
+      "median_ns": 25364.0,
+      "p25_ns": 25339.6,
+      "p75_ns": 25389.3,
+      "min_ns": 25310.2,
+      "max_ns": 25410.7
     },
     {
       "name": "sample/editor_update/platformer_house",
       "items": 1,
-      "batch": 254,
+      "batch": 420,
       "samples": 15,
-      "median_ns": 47003.5,
-      "p25_ns": 46977.0,
-      "p75_ns": 47092.6,
-      "min_ns": 46891.9,
-      "max_ns": 47114.6
+      "median_ns": 28370.9,
+      "p25_ns": 28360.0,
+      "p75_ns": 28390.3,
+      "min_ns": 28312.4,
+      "max_ns": 28460.7
     },
     {
       "name": "sample/editor_update/raycast_demo",
       "items": 1,
-      "batch": 190,
+      "batch": 247,
       "samples": 15,
-      "median_ns": 62816.5,
-      "p25_ns": 62803.2,
-      "p75_ns": 62828.0,
-      "min_ns": 62748.5,
-      "max_ns": 62899.5
+      "median_ns": 48229.9,
+      "p25_ns": 48199.9,
+      "p75_ns": 48275.6,
+      "min_ns": 48144.5,
+      "max_ns": 48380.3
     },
     {
       "name": "sample/editor_update/settings_menu",
       "items": 1,
-      "batch": 705,
+      "batch": 990,
       "samples": 15,
-      "median_ns": 16659.3,
-      "p25_ns": 16638.5,
-      "p75_ns": 16701.0,
-      "min_ns": 16596.2,
-      "max_ns": 16836.9
+      "median_ns": 12072.4,
+      "p25_ns": 12063.2,
+      "p75_ns": 12091.6,
+      "min_ns": 12046.4,
+      "max_ns": 12130.8
     },
     {
       "name": "sample/editor_update/tavern",
       "items": 1,
-      "batch": 1,
+      "batch": 672,
       "samples": 15,
-      "median_ns": 25144.0,
-      "p25_ns": 24968.5,
-      "p75_ns": 25318.0,
-      "min_ns": 24864.0,
-      "max_ns": 25981.0
+      "median_ns": 17201.6,
+      "p25_ns": 17188.2,
+      "p75_ns": 17228.9,
+      "min_ns": 17171.5,
+      "max_ns": 19524.5
     },
     {
       "name": "sample/editor_update/victory",
       "items": 1,
-      "batch": 1214,
+      "batch": 1513,
       "samples": 15,
-      "median_ns": 9617.2,
-      "p25_ns": 9602.5,
-      "p75_ns": 9635.2,
-      "min_ns": 9581.2,
-      "max_ns": 9687.2
+      "median_ns": 7863.5,
+      "p25_ns": 7859.9,
+      "p75_ns": 7868.2,
+      "min_ns": 7850.6,
+      "max_ns": 7935.2
     },
     {
       "name": "sample/editor_update/voxel_terrain",
@@ -1132,13 +1132,13 @@
     {
       "name": "sample/editor_update/world_map",
       "items": 1,
-      "batch": 59,
+      "batch": 141,
       "samples": 15,
-      "median_ns": 199894.3,
-      "p25_ns": 199856.4,
-      "p75_ns": 199971.3,
-      "min_ns": 199720.3,
-      "max_ns": 200185.5
+      "median_ns": 84229.3,
+      "p25_ns": 84207.5,
+      "p75_ns": 84299.8,
+      "min_ns": 84166.3,
+      "max_ns": 84514.6
     },
     {
       "name": "sample/load/game_over",
@@ -1354,22 +1354,22 @@
       "items": 10000,
       "batch": 41,
       "samples": 15,
-      "median_ns": 290644.1,
-      "p25_ns": 290589.6,
-      "p75_ns": 290772.7,
-      "min_ns": 289898.0,
-      "max_ns": 291461.8
+      "median_ns": 255167.4,
+      "p25_ns": 253585.7,
+      "p75_ns": 257129.8,
+      "min_ns": 250704.2,
+      "max_ns": 261226.7
     },
     {
       "name": "scene/prepare_world_transforms/forest10000",
       "items": 10000,
-      "batch": 18,
+      "batch": 30,
       "samples": 15,
-      "median_ns": 651945.9,
-      "p25_ns": 651722.8,
-      "p75_ns": 652330.1,
-      "min_ns": 651138.8,
-      "max_ns": 652632.7
+      "median_ns": 363200.2,
+      "p25_ns": 355468.6,
+      "p75_ns": 379801.9,
+      "min_ns": 351026.6,
+      "max_ns": 425861.1
     },
     {
       "name": "scene/prepare_world_transforms/wide10000",
@@ -1713,59 +1713,48 @@
       "max_ns": 587896666.0
     },
     {
-      "name": "slang/cache_hit/quad_validate_and_read",
-      "items": 1,
-      "batch": 1317,
-      "samples": 15,
-      "median_ns": 9089.4,
-      "p25_ns": 9080.7,
-      "p75_ns": 9092.8,
-      "min_ns": 8985.7,
-      "max_ns": 9154.6
-    },
-    {
       "name": "slang/compile_cold/quad_vulkan_first_in_process",
       "items": 1,
       "batch": 1,
       "samples": 1,
-      "median_ns": 192542224.0,
-      "p25_ns": 192542224.0,
-      "p75_ns": 192542224.0,
-      "min_ns": 192542224.0,
-      "max_ns": 192542224.0
+      "median_ns": 137499551.0,
+      "p25_ns": 137499551.0,
+      "p75_ns": 137499551.0,
+      "min_ns": 137499551.0,
+      "max_ns": 137499551.0
     },
     {
       "name": "slang/compile_warm/all_engine_shaders_vulkan",
-      "items": 22,
+      "items": 23,
       "batch": 1,
       "samples": 15,
-      "median_ns": 869182588.0,
-      "p25_ns": 868874544.5,
-      "p75_ns": 869722859.0,
-      "min_ns": 868382046.0,
-      "max_ns": 871134491.0
+      "median_ns": 674857142.0,
+      "p25_ns": 673451270.5,
+      "p75_ns": 677603650.5,
+      "min_ns": 672633758.0,
+      "max_ns": 681178359.0
     },
     {
       "name": "slang/compile_warm/quad_opengl",
       "items": 1,
-      "batch": 1,
+      "batch": 27,
       "samples": 15,
-      "median_ns": 42078610.0,
-      "p25_ns": 41962113.0,
-      "p75_ns": 42102287.5,
-      "min_ns": 41922861.0,
-      "max_ns": 42307766.0
+      "median_ns": 430895.5,
+      "p25_ns": 430490.7,
+      "p75_ns": 432501.9,
+      "min_ns": 429767.6,
+      "max_ns": 629467.1
     },
     {
       "name": "slang/compile_warm/quad_vulkan",
       "items": 1,
-      "batch": 1,
+      "batch": 27,
       "samples": 15,
-      "median_ns": 42287651.0,
-      "p25_ns": 42224652.5,
-      "p75_ns": 42334655.5,
-      "min_ns": 42119469.0,
-      "max_ns": 42713973.0
+      "median_ns": 431071.4,
+      "p25_ns": 430729.9,
+      "p75_ns": 431590.0,
+      "min_ns": 430163.4,
+      "max_ns": 432419.1
     },
     {
       "name": "slang/compile_warm/voxel_vulkan",
@@ -1880,13 +1869,13 @@
     {
       "name": "tilemap/static/32x32_layers1",
       "items": 1024,
-      "batch": 33000,
+      "batch": 41263,
       "samples": 15,
-      "median_ns": 315.1,
-      "p25_ns": 314.4,
-      "p75_ns": 315.3,
-      "min_ns": 314.2,
-      "max_ns": 316.4
+      "median_ns": 280.2,
+      "p25_ns": 280.2,
+      "p75_ns": 280.3,
+      "min_ns": 279.8,
+      "max_ns": 280.5
     },
     {
       "name": "tilemap/static/32x32_layers4",
@@ -2144,13 +2133,13 @@
     {
       "name": "culling/octree/brute_force/1000",
       "items": 1000,
-      "batch": 566,
+      "batch": 821,
       "samples": 15,
-      "median_ns": 20923.2,
-      "p25_ns": 20872.8,
-      "p75_ns": 20946.9,
-      "min_ns": 20770.0,
-      "max_ns": 21055.6
+      "median_ns": 12539.3,
+      "p25_ns": 12513.5,
+      "p75_ns": 12555.7,
+      "min_ns": 12491.8,
+      "max_ns": 12656.7
     },
     {
       "name": "culling/octree/move_tenth/1000",
@@ -2287,13 +2276,13 @@
     {
       "name": "sample/editor_update/tavern_cellar",
       "items": 1,
-      "batch": 641,
+      "batch": 968,
       "samples": 15,
-      "median_ns": 18675.0,
-      "p25_ns": 18646.1,
-      "p75_ns": 18690.4,
-      "min_ns": 18633.2,
-      "max_ns": 18722.5
+      "median_ns": 12382.4,
+      "p25_ns": 12374.6,
+      "p75_ns": 12391.2,
+      "min_ns": 12319.9,
+      "max_ns": 17671.4
     },
     {
       "name": "sky/draw/256",
@@ -2360,6 +2349,105 @@
       "p75_ns": 325251676.0,
       "min_ns": 321983230.0,
       "max_ns": 327715670.0
+    },
+    {
+      "name": "renderer2d/text/100_strings_changing",
+      "items": 5400,
+      "batch": 17,
+      "samples": 15,
+      "median_ns": 643484.6,
+      "p25_ns": 640598.5,
+      "p75_ns": 645239.0,
+      "min_ns": 638377.9,
+      "max_ns": 649137.9
+    },
+    {
+      "name": "frame/editor_update/flat50000",
+      "items": 50000,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 4565012.0,
+      "p25_ns": 4557889.0,
+      "p75_ns": 4631398.5,
+      "min_ns": 4542383.0,
+      "max_ns": 4793539.0
+    },
+    {
+      "name": "frame/editor_update/flat50000_serial",
+      "items": 50000,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 5268262.0,
+      "p25_ns": 5263129.0,
+      "p75_ns": 5277621.0,
+      "min_ns": 5249196.0,
+      "max_ns": 5294873.0
+    },
+    {
+      "name": "frame/editor_update/moving_flat50000",
+      "items": 50000,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 10085129.0,
+      "p25_ns": 10079506.0,
+      "p75_ns": 10153051.0,
+      "min_ns": 10027578.0,
+      "max_ns": 10412204.0
+    },
+    {
+      "name": "frame/editor_update/moving_flat50000_serial",
+      "items": 50000,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 12349791.0,
+      "p25_ns": 12346857.0,
+      "p75_ns": 12362502.0,
+      "min_ns": 12335892.0,
+      "max_ns": 12406572.0
+    },
+    {
+      "name": "frame/editor_update/forest50000",
+      "items": 50000,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 3231988.0,
+      "p25_ns": 3223781.0,
+      "p75_ns": 3256851.5,
+      "min_ns": 3188545.0,
+      "max_ns": 3316707.0
+    },
+    {
+      "name": "frame/editor_update/forest50000_serial",
+      "items": 50000,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 5373656.0,
+      "p25_ns": 5359407.5,
+      "p75_ns": 5381373.5,
+      "min_ns": 5350258.0,
+      "max_ns": 5385878.0
+    },
+    {
+      "name": "frame/editor_update/moving_forest50000",
+      "items": 50000,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 7345954.0,
+      "p25_ns": 7317318.5,
+      "p75_ns": 7370224.5,
+      "min_ns": 7277089.0,
+      "max_ns": 7675683.0
+    },
+    {
+      "name": "frame/editor_update/moving_forest50000_serial",
+      "items": 50000,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 10492663.0,
+      "p25_ns": 10484631.0,
+      "p75_ns": 10503000.0,
+      "min_ns": 10466542.0,
+      "max_ns": 12722054.0
     }
   ],
   "metrics": [
@@ -3347,6 +3435,26 @@
       "name": "mcp/tools_call/entity_rename_ok",
       "value": 1,
       "unit": "1 when every call answered 200 and the tool succeeded"
+    },
+    {
+      "name": "renderer2d/text/100_strings_changing_draw_calls",
+      "value": 1,
+      "unit": "draw calls (one frame)"
+    },
+    {
+      "name": "sample/entities/tavern_cellar",
+      "value": 22,
+      "unit": "entities"
+    },
+    {
+      "name": "sample/file_bytes/tavern_cellar",
+      "value": 10190,
+      "unit": "bytes"
+    },
+    {
+      "name": "sample/editor_update/tavern_cellar_quads",
+      "value": 80,
+      "unit": "Renderer2D quads (last frame)"
     }
   ]
 }
