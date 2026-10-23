@@ -7,8 +7,7 @@ Design page for the v0.5.0 release, summarised in the [Roadmap](../roadmap.md). 
 
 ## Delivery plan
 
-One pull request per row, in this order; 2D lighting, multithreaded preparation and the Mini Transport
-Tycoon follow.
+One pull request per row, in this order; 2D lighting and multithreaded preparation follow.
 
 | #  | Pull request                                                                                          | Needs |
 |----|-------------------------------------------------------------------------------------------------------|-------|

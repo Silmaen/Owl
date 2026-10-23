@@ -37,7 +37,7 @@ Owl Engine ships two kinds of example content:
 | Asteroid field        | Star Fox / X-Wing     | 6DoF flight, 3D steering AI, trails, HUD marks  | v0.7.0        |
 
 Breakout, Wolfenstein mini and Sokoban shipped in v0.4.0; Mini Transport Tycoon, which carries Owl Engine's main
-argument, comes next ([Order](#sample-games-order)). The two v1.0 showcase games (one 2D, one 3D) are picked from this
+argument, is to evaluate for v0.5.0 ([Order](#sample-games-order)). The two v1.0 showcase games (one 2D, one 3D) are picked from this
 list, and so are the games of the [Pool](#sample-games-pool) once they enter it.
 
 ## Pool {#sample-games-pool}
@@ -58,8 +58,8 @@ Ideas without commitment: a game of the pool enters the short list when a releas
 Feasibility checked against `main` on 2026-10-18 (Lua bindings, components, Engine Demo): all five games fit the
 v0.4.0 engine. Breakout and Mini Transport Tycoon need no engine change, Sokoban one Lua binding
 (`isometric.get_size`, added), Wolfenstein mini art, Mini Minecraft two small engine fixes ([Gaps](#sample-games-gaps)).
-Breakout, Sokoban and a Wolfenstein mini without combat shipped with v0.4.0; Mini Transport Tycoon is planned in
-v0.5.0, Mini Minecraft in v0.6.0.
+Breakout, Sokoban and a Wolfenstein mini without combat shipped with v0.4.0; Mini Transport Tycoon is to evaluate
+for v0.5.0, Mini Minecraft planned in v0.6.0.
 
 Common to every game:
 
