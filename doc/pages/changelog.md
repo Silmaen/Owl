@@ -151,6 +151,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Clang 23 builds: its `[[clang::lifetimebound]]` suggestions and the strict-only lifetime-safety checks (false positives on `push_back`) are off, and `MeshVertexCoordinate` declares its explicit instantiations (`extern template`) for the exported class deriving from it; the null window drops its write-only window counter.
 - Documentation site: screenshots keep their colours in dark mode (the theme inverted every image of a table or an image block).
 - Normal maps are no longer mirrored on Vulkan: the cotangent frame follows the handedness of the screen derivatives.
+- Package publication: an archive over 100 MB (Owl Nest) also sends its fields in the query string, which the upload module of the delivery server forwards.
+- `MeshCullingPass.h` includes the header of `math::identity`, so it compiles on its own (include check).
+- Lua `save.list_saves`, `save.has_save` and `save.delete_save` never throw on a save folder another process changes: a vanished file is skipped.
+- The scenes of the Engine Demo and of the sample games are saved at the current scene format, so loading them skips the migrations (iso town 30 times faster to load); a test keeps them there.
 
 ## [0.4.0] - 2026-10-20
 

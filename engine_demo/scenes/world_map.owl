@@ -1,4 +1,5 @@
 Scene: untitled
+FormatVersion: 7
 Hud: huds/world_map.owlhud
 EnabledRenderers:
 - {Name: raycast_world, Enabled: false}

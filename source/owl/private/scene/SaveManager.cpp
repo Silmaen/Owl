@@ -27,8 +27,10 @@ OWL_DIAG_POP
 #include <cstdint>
 #include <ctime>
 #include <exception>
+#include <filesystem>
 #include <format>
 #include <fstream>
+#include <system_error>
 #include <tuple>
 
 namespace owl::scene {
@@ -80,8 +82,9 @@ auto SaveManager::getSaveDirectory() -> std::filesystem::path {
 		baseDir = std::filesystem::temp_directory_path();
 #endif
 	const auto saveDir = baseDir / name / "saves";
-	if (!exists(saveDir))
-		create_directories(saveDir);
+	std::error_code error;
+	if (!exists(saveDir, error) && !create_directories(saveDir, error) && error)
+		OWL_CORE_WARN("SaveManager: Cannot create the save directory '{}': {}.", saveDir.string(), error.message())
 	return saveDir;
 }
 
@@ -239,10 +242,15 @@ auto SaveManager::load(const uint32_t iSlot, const shared<Scene>& iScene) -> Loa
 auto SaveManager::listSaves() -> std::vector<SaveInfo> {
 	std::vector<SaveInfo> saves;
 	const auto saveDir = getSaveDirectory();
-	if (!exists(saveDir))
+	// Another process may add or remove saves while they are listed: a vanished entry is skipped, never thrown.
+	std::error_code error;
+	if (!exists(saveDir, error))
 		return saves;
-	for (const auto& entry: std::filesystem::directory_iterator(saveDir)) {
-		if (!entry.is_regular_file() || entry.path().extension() != ".owl_save")
+	for (auto it = std::filesystem::directory_iterator(saveDir, error);
+		 !error && it != std::filesystem::directory_iterator{}; it.increment(error)) {
+		const auto& entry = *it;
+		std::error_code entryError;
+		if (!entry.is_regular_file(entryError) || entry.path().extension() != ".owl_save")
 			continue;
 		try {
 			const YAML::Node root = YAML::LoadFile(entry.path().string());
@@ -262,16 +270,22 @@ auto SaveManager::listSaves() -> std::vector<SaveInfo> {
 			OWL_CORE_WARN("SaveManager: Skipping corrupt save '{}': {}.", entry.path().string(), e.what())
 		}
 	}
+	if (error)
+		OWL_CORE_WARN("SaveManager: Listing of '{}' stopped: {}.", saveDir.string(), error.message())
 	std::ranges::sort(saves, [](const auto& iA, const auto& iB) -> auto { return iA.slot < iB.slot; });
 	return saves;
 }
 
-auto SaveManager::hasSave(const uint32_t iSlot) -> bool { return exists(getSlotPath(iSlot)); }
+auto SaveManager::hasSave(const uint32_t iSlot) -> bool {
+	std::error_code error;
+	return exists(getSlotPath(iSlot), error);
+}
 
 void SaveManager::deleteSave(const uint32_t iSlot) {
 	const auto path = getSlotPath(iSlot);
-	if (exists(path))
-		std::filesystem::remove(path);
+	std::error_code error;
+	if (std::filesystem::remove(path, error); error)
+		OWL_CORE_WARN("SaveManager: Cannot delete '{}': {}.", path.string(), error.message())
 }
 
 auto SaveManager::getScenePath(const uint32_t iSlot) -> std::string {

@@ -1,5 +1,5 @@
 Scene: level_03
-FormatVersion: 5
+FormatVersion: 7
 Hud: huds/level.owlhud
 Entities:
   - Entity: 7200000000003000001

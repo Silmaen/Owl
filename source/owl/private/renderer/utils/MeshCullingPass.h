@@ -11,6 +11,7 @@
 #include "core/Core.h"
 #include "math/Frustum.h"
 #include "math/matrices.h"
+#include "math/matrixCreation.h"
 #include "math/vectors.h"
 #include "renderer/gpu/ComputeShader.h"
 #include "renderer/gpu/StorageBuffer.h"

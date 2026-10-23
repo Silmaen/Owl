@@ -1,4 +1,5 @@
 Scene: E1M1
+FormatVersion: 7
 Hud: huds/raycast.owlhud
 EnabledRenderers:
   - Name: world

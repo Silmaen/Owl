@@ -1,5 +1,5 @@
 Scene: VoxelTerrain
-FormatVersion: 6
+FormatVersion: 7
 Hud: huds/voxel.owlhud
 EnabledRenderers:
   - Name: world
