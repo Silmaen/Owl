@@ -168,8 +168,8 @@ struct InternalData {
 	std::vector<math::mat4> transientWorlds;
 	shared<gpu::StorageBuffer> transientWorldsSsbo;
 	std::optional<Renderer2D::Scissor> scissor;
-	shared<gpu::StorageBuffer> lightBuffer;
-	shared<gpu::StorageBuffer> shadowBuffer;
+	// Light and shadow buffers, light count and ambient, read by the other 2D renderers each frame.
+	Lighting2DState lighting;
 	// Reused every frame: the lights and the shadow rows of the shadow-casting ones.
 	std::vector<Light2DGpu> lights;
 	std::vector<float> shadowRows;
@@ -184,6 +184,13 @@ shared<utils::InternalData> g_Data;
 auto blockId() -> gpu::RendererId {
 	static const gpu::RendererId sId = gpu::RendererDescriptors::getId("Renderer2D");
 	return sId;
+}
+
+void setLightingParameters(utils::InternalData& ioData, const int32_t iLightCount, const math::vec4& iAmbient) {
+	ioData.cameraBuffer.flags[1] = iLightCount;
+	ioData.cameraBuffer.ambient = iAmbient;
+	ioData.lighting.lightCount = iLightCount;
+	ioData.lighting.ambient = iAmbient;
 }
 
 auto allocateTransientWorld(const math::mat4& iMatrix, const uint32_t iBatchLimit = utils::g_maxTransientWorldsPerBatch)
@@ -423,9 +430,9 @@ void Renderer2D::init() {
 			gpu::StorageBuffer::create(utils::g_maxTransientWorldsPerBatch * sizeof(math::mat4), 4, "Renderer2D");
 	g_Data->transientWorlds.reserve(utils::g_maxTransientWorldsPerBatch);
 	g_Data->runs.reserve(utils::g_maxRunsPerBatch);
-	g_Data->lightBuffer = gpu::StorageBuffer::create(g_maxLights2D * static_cast<uint32_t>(sizeof(utils::Light2DGpu)),
+	g_Data->lighting.lights = gpu::StorageBuffer::create(g_maxLights2D * static_cast<uint32_t>(sizeof(utils::Light2DGpu)),
 													 5, "Renderer2D");
-	g_Data->shadowBuffer = gpu::StorageBuffer::create(
+	g_Data->lighting.shadows = gpu::StorageBuffer::create(
 			g_maxLights2D * g_shadow2DBins * static_cast<uint32_t>(sizeof(float)), 6, "Renderer2D");
 	g_Data->lights.reserve(g_maxLights2D);
 	g_Data->shadowRows.reserve(size_t{g_maxLights2D} * g_shadow2DBins);
@@ -456,8 +463,6 @@ void Renderer2D::shutdown() {
 	g_Data->transientWorldsSsbo.reset();
 	g_Data->transientWorlds.clear();
 	g_Data->transientWorlds.shrink_to_fit();
-	g_Data->lightBuffer.reset();
-	g_Data->shadowBuffer.reset();
 	g_Data.reset();
 	gpu::RendererDescriptors::release("Renderer2D");
 }
@@ -469,8 +474,7 @@ void Renderer2D::beginScene(const Camera& iCamera) {
 		const gpu::RendererDescriptors::ScopedActive scoped{blockId()};
 		g_Data->cameraBuffer.viewProjection = iCamera.getViewProjection();
 		g_Data->cameraBuffer.flags[0] = gpu::Framebuffer::isLinearTargetBound() ? 1 : 0;
-		g_Data->cameraBuffer.flags[1] = 0;
-		g_Data->cameraBuffer.ambient = math::vec4{1.f, 1.f, 1.f, 0.f};
+		setLightingParameters(*g_Data, 0, math::vec4{1.f, 1.f, 1.f, 0.f});
 		g_Data->cameraUniformBuffer->setData(&g_Data->cameraBuffer, sizeof(utils::InternalData::CameraData), 0);
 	}
 	g_Data->scissor.reset();
@@ -503,32 +507,27 @@ void Renderer2D::setLighting(const Lighting2D& iLighting) {
 	}
 	const gpu::RendererDescriptors::ScopedActive scoped{blockId()};
 	if (!data.lights.empty())
-		data.lightBuffer->setData(data.lights.data(),
+		data.lighting.lights->setData(data.lights.data(),
 								  static_cast<uint32_t>(data.lights.size() * sizeof(utils::Light2DGpu)), 0);
 	if (!data.shadowRows.empty())
-		data.shadowBuffer->setData(data.shadowRows.data(),
+		data.lighting.shadows->setData(data.shadowRows.data(),
 								   static_cast<uint32_t>(data.shadowRows.size() * sizeof(float)), 0);
-	data.cameraBuffer.flags[1] = static_cast<int32_t>(data.lights.size());
-	data.cameraBuffer.ambient = math::vec4{iLighting.ambient.x(), iLighting.ambient.y(), iLighting.ambient.z(), 1.f};
+	setLightingParameters(data, static_cast<int32_t>(data.lights.size()),
+						  math::vec4{iLighting.ambient.x(), iLighting.ambient.y(), iLighting.ambient.z(), 1.f});
 	data.cameraUniformBuffer->setData(&data.cameraBuffer, sizeof(utils::InternalData::CameraData), 0);
 }
 
 void Renderer2D::clearLighting() {
 	if (!g_Data || g_Data->cameraBuffer.ambient.w() == 0.f)
 		return;
-	g_Data->cameraBuffer.flags[1] = 0;
-	g_Data->cameraBuffer.ambient = math::vec4{1.f, 1.f, 1.f, 0.f};
+	setLightingParameters(*g_Data, 0, math::vec4{1.f, 1.f, 1.f, 0.f});
 	const gpu::RendererDescriptors::ScopedActive scoped{blockId()};
 	g_Data->cameraUniformBuffer->setData(&g_Data->cameraBuffer, sizeof(utils::InternalData::CameraData), 0);
 }
 
-auto utils::getLighting2DState() -> Lighting2DState {
-	if (!g_Data)
-		return {};
-	return {.lights = g_Data->lightBuffer,
-			.shadows = g_Data->shadowBuffer,
-			.lightCount = g_Data->cameraBuffer.flags[1],
-			.ambient = g_Data->cameraBuffer.ambient};
+auto utils::getLighting2DState() -> const Lighting2DState& {
+	static const Lighting2DState off;
+	return g_Data ? g_Data->lighting : off;
 }
 
 auto Renderer2D::isLightingEnabled() -> bool { return g_Data && g_Data->cameraBuffer.ambient.w() != 0.f; }
@@ -587,8 +586,8 @@ void Renderer2D::flush() {
 
 	const bool hasSceneWorlds = !g_Data->sceneWorlds.empty() && g_Data->sceneWorldsSsbo != nullptr;
 	(hasSceneWorlds ? g_Data->sceneWorldsSsbo : g_Data->sceneWorldsFallback)->bind(/*iBinding=*/3u);
-	g_Data->lightBuffer->bind(/*iBinding=*/5u);
-	g_Data->shadowBuffer->bind(/*iBinding=*/6u);
+	g_Data->lighting.lights->bind(/*iBinding=*/5u);
+	g_Data->lighting.shadows->bind(/*iBinding=*/6u);
 
 	BackgroundRenderer::flushPending(bgTexIndex);
 
