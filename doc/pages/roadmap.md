@@ -121,7 +121,7 @@ procedural graphs, tile tools, Lua editor scripts, and Blueprints-style visual s
 - ![Planned][planned] Mipmapped pixel-art atlases: sharp texels up close, filtered mips far away, no bleeding between tiles, for the voxel, raycast and tilemap atlases ([2D](design/2d-complete.md#mipmapped-pixel-art-atlases-v060))
 - ![Planned][planned] Sound editor in Owl Nest: preview, trim, loop points, volume and pitch, random variants of one sound
 - ![To evaluate][evaluate] Hot reload of a C++ game module
-- ![Planned][planned] Sample games: a Mini Transport Tycoon, a Mini Minecraft, and combat (guards, weapons) in the Wolfenstein mini ([Sample games](design/sample-games.md))
+- ![Planned][planned] Sample games: a Mini Minecraft, and combat (guards, weapons) in the Wolfenstein mini ([Sample games](design/sample-games.md))
 - ![To evaluate][evaluate] Sample game from the pool: a station trader ([Pool](design/sample-games.md#sample-games-pool))
 
 ## v0.5.0 -- Expected 2027-01-31
