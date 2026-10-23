@@ -1,0 +1,70 @@
+FormatVersion: 1
+# Actions of Tower defence, on top of the built-in ones (`primary` / `secondary` are the mouse buttons, the `ui_*`
+# actions drive the menus). Read by scripts/game/defence.lua.
+actions:
+  - name: pan
+    type: vector
+    bindings:
+      - {key: D, component: x}
+      - {key: A, component: x, scale: -1}
+      - {key: S, component: y}
+      - {key: W, component: y, scale: -1}
+      - {key: Right, component: x}
+      - {key: Left, component: x, scale: -1}
+      - {key: Down, component: y}
+      - {key: Up, component: y, scale: -1}
+      - {gamepad_stick: left}
+  - name: next_pad
+    type: button
+    bindings:
+      - {key: E}
+      - {key: Tab}
+      - {gamepad_button: DpadRight}
+  - name: prev_pad
+    type: button
+    bindings:
+      - {key: Q}
+      - {gamepad_button: DpadLeft}
+  - name: confirm
+    type: button
+    bindings:
+      - {key: Enter}
+      - {gamepad_button: A}
+  - name: cancel
+    type: button
+    bindings:
+      - {key: Backspace}
+      - {gamepad_button: B}
+  - name: build_1
+    type: button
+    bindings:
+      - {key: D1}
+  - name: build_2
+    type: button
+    bindings:
+      - {key: D2}
+  - name: build_3
+    type: button
+    bindings:
+      - {key: D3}
+  - name: sell
+    type: button
+    bindings:
+      - {key: X}
+      - {gamepad_button: X}
+  - name: call_wave
+    type: button
+    bindings:
+      - {key: Space}
+      - {gamepad_button: Y}
+  - name: fast_forward
+    type: button
+    bindings:
+      - {key: F}
+      - {gamepad_button: RightBumper}
+  - name: pause
+    type: button
+    bindings:
+      - {key: Escape}
+      - {key: P}
+      - {gamepad_button: Start}

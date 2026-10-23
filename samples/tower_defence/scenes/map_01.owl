@@ -1,0 +1,954 @@
+Scene: map_01
+FormatVersion: 5
+Hud: huds/play.owlhud
+EnabledRenderers:
+- {Name: world, Enabled: true}
+- Name: iso_world
+  Enabled: true
+  Overrides: {Zoom: 0}
+- Name: ui
+  Enabled: true
+  Overrides: {Space: Screen}
+- {Name: overlay, Enabled: true}
+Entities:
+  - Entity: 7500000000001000001
+    Tag:
+      tag: MainCamera
+    Transform:
+      translation: [12, 12, 5]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    Camera:
+      camera:
+        projectionType: Orthographic
+        perspectiveFOV: 0.7853982
+        perspectiveNear: 0.01
+        perspectiveFar: 1000
+        orthographicSize: 10
+        orthographicNear: -1
+        orthographicFar: 10
+      primary: true
+      fixedAspectRatio: false
+    SoundListener:
+      primary: true
+  - Entity: 7500000000001000002
+    Tag:
+      tag: Background
+    Transform:
+      translation: [12, 12, -5]
+      rotation: [0, 0, 0]
+      scale: [400, 400, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    BackgroundTexture:
+      mode: 0
+      type: 0
+      color: [0.13, 0.22, 0.12, 1]
+      topColor: [0.8, 0.9, 1, 1]
+    RendererTag:
+      Name: world
+  - Entity: 7500000000001000003
+    Tag:
+      tag: Ground
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    Tilemap:
+      tilemapPath: tilemaps/map_01.owltilemap
+      navigation:
+        mode: connections
+        layer: 1
+        source: overlay
+        maxRise: 1
+        climbCost: 0.5
+        allowSteep: false
+    RendererTag:
+      Name: iso_world
+  - Entity: 7500000000001000004
+    Tag:
+      tag: Gate
+    Transform:
+      translation: [1, 21, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1.75, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/gate.png
+    RendererTag:
+      Name: iso_world
+  - Entity: 7500000000001000005
+    Tag:
+      tag: Keep
+    Transform:
+      translation: [22, 5, 0]
+      rotation: [0, 0, 0]
+      scale: [2, 2.75, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/keep.png
+    RendererTag:
+      Name: iso_world
+  - Entity: 7500000000001000006
+    Tag:
+      tag: Decor
+    Transform:
+      translation: [9, 10, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1.5, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/decor.png
+      columns: 3
+      rows: 1
+      firstFrame: 1
+      lastFrame: 1
+      frameDuration: 0.1
+      loop: false
+    RendererTag:
+      Name: iso_world
+  - Entity: 7500000000001000007
+    Tag:
+      tag: Decor
+    Transform:
+      translation: [9, 11, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1.5, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/decor.png
+      columns: 3
+      rows: 1
+      firstFrame: 1
+      lastFrame: 1
+      frameDuration: 0.1
+      loop: false
+    RendererTag:
+      Name: iso_world
+  - Entity: 7500000000001000008
+    Tag:
+      tag: Decor
+    Transform:
+      translation: [23, 18, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1.5, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/decor.png
+      columns: 3
+      rows: 1
+      firstFrame: 2
+      lastFrame: 2
+      frameDuration: 0.1
+      loop: false
+    RendererTag:
+      Name: iso_world
+  - Entity: 7500000000001000009
+    Tag:
+      tag: Decor
+    Transform:
+      translation: [11, 23, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1.5, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/decor.png
+      columns: 3
+      rows: 1
+      firstFrame: 0
+      lastFrame: 0
+      frameDuration: 0.1
+      loop: false
+    RendererTag:
+      Name: iso_world
+  - Entity: 7500000000001000010
+    Tag:
+      tag: Decor
+    Transform:
+      translation: [24, 15, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1.5, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/decor.png
+      columns: 3
+      rows: 1
+      firstFrame: 0
+      lastFrame: 0
+      frameDuration: 0.1
+      loop: false
+    RendererTag:
+      Name: iso_world
+  - Entity: 7500000000001000011
+    Tag:
+      tag: Decor
+    Transform:
+      translation: [9, 4, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1.5, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/decor.png
+      columns: 3
+      rows: 1
+      firstFrame: 0
+      lastFrame: 0
+      frameDuration: 0.1
+      loop: false
+    RendererTag:
+      Name: iso_world
+  - Entity: 7500000000001000012
+    Tag:
+      tag: Decor
+    Transform:
+      translation: [8, 2, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1.5, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/decor.png
+      columns: 3
+      rows: 1
+      firstFrame: 2
+      lastFrame: 2
+      frameDuration: 0.1
+      loop: false
+    RendererTag:
+      Name: iso_world
+  - Entity: 7500000000001000013
+    Tag:
+      tag: Decor
+    Transform:
+      translation: [4, 13, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1.5, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/decor.png
+      columns: 3
+      rows: 1
+      firstFrame: 1
+      lastFrame: 1
+      frameDuration: 0.1
+      loop: false
+    RendererTag:
+      Name: iso_world
+  - Entity: 7500000000001000014
+    Tag:
+      tag: Decor
+    Transform:
+      translation: [22, 1, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1.5, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/decor.png
+      columns: 3
+      rows: 1
+      firstFrame: 0
+      lastFrame: 0
+      frameDuration: 0.1
+      loop: false
+    RendererTag:
+      Name: iso_world
+  - Entity: 7500000000001000015
+    Tag:
+      tag: Decor
+    Transform:
+      translation: [5, 6, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1.5, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/decor.png
+      columns: 3
+      rows: 1
+      firstFrame: 0
+      lastFrame: 0
+      frameDuration: 0.1
+      loop: false
+    RendererTag:
+      Name: iso_world
+  - Entity: 7500000000001000016
+    Tag:
+      tag: Decor
+    Transform:
+      translation: [22, 11, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1.5, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/decor.png
+      columns: 3
+      rows: 1
+      firstFrame: 2
+      lastFrame: 2
+      frameDuration: 0.1
+      loop: false
+    RendererTag:
+      Name: iso_world
+  - Entity: 7500000000001000017
+    Tag:
+      tag: Decor
+    Transform:
+      translation: [7, 11, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1.5, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/decor.png
+      columns: 3
+      rows: 1
+      firstFrame: 2
+      lastFrame: 2
+      frameDuration: 0.1
+      loop: false
+    RendererTag:
+      Name: iso_world
+  - Entity: 7500000000001000018
+    Tag:
+      tag: Decor
+    Transform:
+      translation: [12, 13, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1.5, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/decor.png
+      columns: 3
+      rows: 1
+      firstFrame: 1
+      lastFrame: 1
+      frameDuration: 0.1
+      loop: false
+    RendererTag:
+      Name: iso_world
+  - Entity: 7500000000001000019
+    Tag:
+      tag: Decor
+    Transform:
+      translation: [14, 3, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1.5, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/decor.png
+      columns: 3
+      rows: 1
+      firstFrame: 0
+      lastFrame: 0
+      frameDuration: 0.1
+      loop: false
+    RendererTag:
+      Name: iso_world
+  - Entity: 7500000000001000020
+    Tag:
+      tag: Decor
+    Transform:
+      translation: [1, 11, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1.5, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/decor.png
+      columns: 3
+      rows: 1
+      firstFrame: 1
+      lastFrame: 1
+      frameDuration: 0.1
+      loop: false
+    RendererTag:
+      Name: iso_world
+  - Entity: 7500000000001000021
+    Tag:
+      tag: Decor
+    Transform:
+      translation: [21, 12, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1.5, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/decor.png
+      columns: 3
+      rows: 1
+      firstFrame: 1
+      lastFrame: 1
+      frameDuration: 0.1
+      loop: false
+    RendererTag:
+      Name: iso_world
+  - Entity: 7500000000001000022
+    Tag:
+      tag: Decor
+    Transform:
+      translation: [7, 24, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1.5, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/decor.png
+      columns: 3
+      rows: 1
+      firstFrame: 2
+      lastFrame: 2
+      frameDuration: 0.1
+      loop: false
+    RendererTag:
+      Name: iso_world
+  - Entity: 7500000000001000023
+    Tag:
+      tag: Decor
+    Transform:
+      translation: [8, 8, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1.5, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/decor.png
+      columns: 3
+      rows: 1
+      firstFrame: 1
+      lastFrame: 1
+      frameDuration: 0.1
+      loop: false
+    RendererTag:
+      Name: iso_world
+  - Entity: 7500000000001000024
+    Tag:
+      tag: Decor
+    Transform:
+      translation: [21, 13, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1.5, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/decor.png
+      columns: 3
+      rows: 1
+      firstFrame: 0
+      lastFrame: 0
+      frameDuration: 0.1
+      loop: false
+    RendererTag:
+      Name: iso_world
+  - Entity: 7500000000001000025
+    Tag:
+      tag: Decor
+    Transform:
+      translation: [21, 19, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1.5, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/decor.png
+      columns: 3
+      rows: 1
+      firstFrame: 0
+      lastFrame: 0
+      frameDuration: 0.1
+      loop: false
+    RendererTag:
+      Name: iso_world
+  - Entity: 7500000000001000026
+    Tag:
+      tag: Decor
+    Transform:
+      translation: [2, 11, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1.5, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/decor.png
+      columns: 3
+      rows: 1
+      firstFrame: 1
+      lastFrame: 1
+      frameDuration: 0.1
+      loop: false
+    RendererTag:
+      Name: iso_world
+  - Entity: 7500000000001000027
+    Tag:
+      tag: Decor
+    Transform:
+      translation: [14, 1, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1.5, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/decor.png
+      columns: 3
+      rows: 1
+      firstFrame: 1
+      lastFrame: 1
+      frameDuration: 0.1
+      loop: false
+    RendererTag:
+      Name: iso_world
+  - Entity: 7500000000001000028
+    Tag:
+      tag: Decor
+    Transform:
+      translation: [12, 23, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1.5, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/decor.png
+      columns: 3
+      rows: 1
+      firstFrame: 2
+      lastFrame: 2
+      frameDuration: 0.1
+      loop: false
+    RendererTag:
+      Name: iso_world
+  - Entity: 7500000000001000029
+    Tag:
+      tag: Decor
+    Transform:
+      translation: [12, 3, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1.5, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/decor.png
+      columns: 3
+      rows: 1
+      firstFrame: 1
+      lastFrame: 1
+      frameDuration: 0.1
+      loop: false
+    RendererTag:
+      Name: iso_world
+  - Entity: 7500000000001000030
+    Tag:
+      tag: Decor
+    Transform:
+      translation: [15, 23, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1.5, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/decor.png
+      columns: 3
+      rows: 1
+      firstFrame: 1
+      lastFrame: 1
+      frameDuration: 0.1
+      loop: false
+    RendererTag:
+      Name: iso_world
+  - Entity: 7500000000001000031
+    Tag:
+      tag: Decor
+    Transform:
+      translation: [5, 10, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1.5, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/decor.png
+      columns: 3
+      rows: 1
+      firstFrame: 2
+      lastFrame: 2
+      frameDuration: 0.1
+      loop: false
+    RendererTag:
+      Name: iso_world
+  - Entity: 7500000000001000032
+    Tag:
+      tag: Decor
+    Transform:
+      translation: [20, 13, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1.5, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/decor.png
+      columns: 3
+      rows: 1
+      firstFrame: 0
+      lastFrame: 0
+      frameDuration: 0.1
+      loop: false
+    RendererTag:
+      Name: iso_world
+  - Entity: 7500000000001000033
+    Tag:
+      tag: Decor
+    Transform:
+      translation: [24, 17, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1.5, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/decor.png
+      columns: 3
+      rows: 1
+      firstFrame: 1
+      lastFrame: 1
+      frameDuration: 0.1
+      loop: false
+    RendererTag:
+      Name: iso_world
+  - Entity: 7500000000001000034
+    Tag:
+      tag: Decor
+    Transform:
+      translation: [13, 24, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1.5, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/decor.png
+      columns: 3
+      rows: 1
+      firstFrame: 1
+      lastFrame: 1
+      frameDuration: 0.1
+      loop: false
+    RendererTag:
+      Name: iso_world
+  - Entity: 7500000000001000035
+    Tag:
+      tag: Decor
+    Transform:
+      translation: [4, 1, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1.5, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/decor.png
+      columns: 3
+      rows: 1
+      firstFrame: 1
+      lastFrame: 1
+      frameDuration: 0.1
+      loop: false
+    RendererTag:
+      Name: iso_world
+  - Entity: 7500000000001000036
+    Tag:
+      tag: Decor
+    Transform:
+      translation: [10, 21, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1.5, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/decor.png
+      columns: 3
+      rows: 1
+      firstFrame: 2
+      lastFrame: 2
+      frameDuration: 0.1
+      loop: false
+    RendererTag:
+      Name: iso_world
+  - Entity: 7500000000001000037
+    Tag:
+      tag: Decor
+    Transform:
+      translation: [3, 9, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1.5, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/decor.png
+      columns: 3
+      rows: 1
+      firstFrame: 2
+      lastFrame: 2
+      frameDuration: 0.1
+      loop: false
+    RendererTag:
+      Name: iso_world
+  - Entity: 7500000000001000038
+    Tag:
+      tag: Decor
+    Transform:
+      translation: [16, 1, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1.5, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/decor.png
+      columns: 3
+      rows: 1
+      firstFrame: 1
+      lastFrame: 1
+      frameDuration: 0.1
+      loop: false
+    RendererTag:
+      Name: iso_world
+  - Entity: 7500000000001000039
+    Tag:
+      tag: Decor
+    Transform:
+      translation: [20, 24, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1.5, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/decor.png
+      columns: 3
+      rows: 1
+      firstFrame: 1
+      lastFrame: 1
+      frameDuration: 0.1
+      loop: false
+    RendererTag:
+      Name: iso_world
+  - Entity: 7500000000001000040
+    Tag:
+      tag: Cursor
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/cursor.png
+    RendererTag:
+      Name: iso_world
+  - Entity: 7500000000001000041
+    Tag:
+      tag: RangeRing
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [1, 1, 1, 0.55]
+      tilingFactor: 1
+      texture: nam:textures/ring.png
+    RendererTag:
+      Name: iso_world
+  - Entity: 7500000000001000042
+    Tag:
+      tag: BuildChoice
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [0.72, 0.72, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/icons.png
+      columns: 4
+      rows: 1
+      firstFrame: 0
+      lastFrame: 0
+      frameDuration: 0.1
+      loop: false
+    RendererTag:
+      Name: iso_world
+  - Entity: 7500000000001000043
+    Tag:
+      tag: BuildChoice
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [0.72, 0.72, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/icons.png
+      columns: 4
+      rows: 1
+      firstFrame: 0
+      lastFrame: 0
+      frameDuration: 0.1
+      loop: false
+    RendererTag:
+      Name: iso_world
+  - Entity: 7500000000001000044
+    Tag:
+      tag: BuildChoice
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [0.72, 0.72, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/icons.png
+      columns: 4
+      rows: 1
+      firstFrame: 0
+      lastFrame: 0
+      frameDuration: 0.1
+      loop: false
+    RendererTag:
+      Name: iso_world
+  - Entity: 7500000000001000045
+    Tag:
+      tag: Game
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    LuaScript:
+      scriptPath: scripts/game/defence.lua
+      properties:
+        - name: map_number
+          type: int
+          value: 1
+        - name: scene_path
+          type: string
+          value: scenes/map_01.owl
+        - name: next_scene
+          type: string
+          value: scenes/victory.owl
+        - name: waves
+          type: strings
+          value:
+            - 'runner 6 1.0'
+            - 'runner 8 0.8; soldier 2 1.5'
+            - 'soldier 6 1.2'
+            - 'runner 10 0.6; soldier 4 1.2'
+            - 'armoured 3 2.0; runner 6 0.7'
+            - 'soldier 8 1.0; armoured 2 2.0'
+            - 'runner 14 0.5; armoured 4 1.8'
+            - 'soldier 10 0.9; armoured 6 1.6; runner 10 0.5'
+        - name: start_gold
+          type: int
+          value: 220
+        - name: lives
+          type: int
+          value: 20

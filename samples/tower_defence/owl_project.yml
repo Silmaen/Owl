@@ -1,0 +1,26 @@
+OwlProject:
+  name: OwlTowerDefence
+  firstScene: scenes/title.owl
+  author: Silmaen
+  description: Tower defence, a sample game of the Owl Engine
+  icon: logo/logo_owl.png
+  gamepadMappings: input/gamecontrollerdb.txt
+  window:
+    width: 1280
+    height: 720
+    fullscreen: false
+    resizable: true
+  RendererStack:
+    - Type: Renderer2D
+      Name: world
+    - Type: RendererIsometric
+      Name: iso_world
+      DefaultConfig:
+        TileWidth: 64
+        TileHeight: 32
+        ZStep: 16
+        Zoom: 0
+    - Type: Renderer2D
+      Name: ui
+    - Type: Renderer2D
+      Name: overlay
