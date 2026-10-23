@@ -352,13 +352,14 @@ with the image, diffuse and reflections; without an image the `ambient` colour i
 | `nightColor`      | `vec3`   | `{0.42, 0.48, 0.66}` | Colour of the night sky (sRGB)                                          |
 | `nightBrightness` | `float`  | `0.015`              | Brightness of the night sky against the zenith at noon                  |
 | `stars`           | `float`  | `1`                  | Brightness of the stars, 0 for none                                     |
-| `discSize`        | `float`  | `1.5`                | Angular diameter of the sun and moon discs, in degrees; 0 for none      |
+| `discSize`        | `float`  | `2.5`                | Angular diameter of the sun and moon discs, in degrees; 0 for none      |
 | `resolution`      | `uint32` | `512`                | Width of the sky image, in pixels (its height is half)                  |
 
-YAML key: `ProceduralSky`. Computes a clear sky (Preetham model), a dusk glow, a starry night and the sun and moon
-discs, and replaces the image of the `Environment` of the same scene: it keeps the `intensity`, `rotation` and `showSky` of the
+YAML key: `ProceduralSky`. Computes a clear sky (Preetham model), a dusk glow and a dark night, and replaces the image of the `Environment` of the same scene: it keeps the `intensity`, `rotation` and `showSky` of the
 `Environment`, not its `hdri`. The sky is prefiltered on a worker like an HDRI, again whenever the sun moves; the
-scene lights and reflects it as it does an image ([Renderer > Image-based lighting](renderer.md#renderer-ibl)).
+scene lights and reflects it as it does an image ([Renderer > Image-based lighting](renderer.md#renderer-ibl)). The sun,
+the moon (opposite the sun, with seas and craters) and the stars are not in that image: the sky shader draws them at the
+resolution of the screen (`renderer::skyBodiesOf`), so the sun moves smoothly and the stars stay about a pixel wide.
 
 #### DayNightCycle {#daynightcycle-component}
 

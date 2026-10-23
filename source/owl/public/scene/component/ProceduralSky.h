@@ -41,7 +41,7 @@ struct OWL_API ProceduralSky {
 	/// Brightness of the stars, 0 for none.
 	float stars = 1.f;
 	/// Angular diameter of the sun and moon discs, in degrees; 0 for none.
-	float discSize = 1.5f;
+	float discSize = 2.5f;
 	/// Width of the sky image, in pixels (its height is half).
 	uint32_t resolution = 512;
 

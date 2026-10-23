@@ -34,15 +34,42 @@ struct OWL_API SkyParameters {
 	/// Brightness of the stars, 0 for none.
 	float stars = 1.f;
 	/// Angular diameter of the sun and moon discs, in degrees; 0 for none.
-	float discSize = 1.5f;
+	float discSize = 2.5f;
 };
+
+/**
+ * @brief
+ *  The sun, the moon and the stars the sky shader draws over the environment image at the resolution of the screen,
+ *  so they move smoothly and stay sharp; they are never in the image (nor in the lighting it gives).
+ */
+struct OWL_API SkyBodies {
+	/// Direction towards the sun, normalised; the moon is opposite.
+	math::vec3 sunDirection{0.f, 1.f, 0.f};
+	/// Angular radius of the sun and moon discs, in radians; 0 draws no disc.
+	float discRadius = 0.f;
+	/// Radiance of the sun disc against the zenith at noon (1).
+	float sunRadiance = 0.f;
+	/// Radiance of the moon disc.
+	float moonRadiance = 0.f;
+	/// Radiance of the brightest stars; 0 draws none.
+	float starRadiance = 0.f;
+};
+
+/**
+ * @brief
+ *  Get the sun, the moon and the stars of a sky: the sun fades out below the horizon, the moon and the stars come out
+ *  at night.
+ * @param[in] iParameters The sky.
+ * @return What the sky shader draws.
+ */
+[[nodiscard]] OWL_API auto skyBodiesOf(const SkyParameters& iParameters) -> SkyBodies;
 
 /**
  * @brief
  *  Draw the sky of the parameters as an equirectangular image, the convention of `Equirectangular`.
  *
  * The day sky follows the Preetham clear-sky model, a glow lights the horizon around the sun at dusk and dawn, and the
- * night fades in a dark sky with stars and the moon opposite the sun. A pixel of 1 is the luminance of the zenith with
+ * night fades in a dark sky; the sun, the moon and the stars are left to the sky shader (`skyBodiesOf`). A pixel of 1 is the luminance of the zenith with
  * the sun 60 degrees high, so the `intensity` of the environment keeps its meaning.
  * @param[in] iParameters The sky to draw.
  * @param[in] iSize Size of the image (2:1).

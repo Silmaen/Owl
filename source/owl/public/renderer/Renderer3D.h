@@ -11,6 +11,7 @@
 #include "math/vectors.h"
 #include "renderer/Camera.h"
 #include "renderer/EnvironmentMap.h"
+#include "renderer/ProceduralSky.h"
 #include "renderer/gpu/DrawData.h"
 #include "renderer/gpu/StorageBuffer.h"
 #include "renderer/gpu/Texture.h"
@@ -118,6 +119,8 @@ struct EnvironmentLighting {
 	float rotation = 0.f;
 	/// Linear colour of the constant sky lighting without levels, times `intensity`; empty keeps the layer ambient.
 	std::optional<math::vec3> ambient;
+	/// Sun, moon and stars drawn by the sky over the levels (a procedural sky); none by default.
+	SkyBodies bodies;
 };
 
 /**

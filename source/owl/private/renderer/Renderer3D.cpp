@@ -69,9 +69,13 @@ struct LightingUbo {
 	math::vec4 environment{1.f, 1.f, 0.f, 0.f};
 	std::array<math::vec4, 9> irradiance{};
 	std::array<math::mat4, 4> cascades{};
+	// xyz: direction towards the sun (rotated as the environment is looked up), w: angular radius of the discs (0 none).
+	math::vec4 skySun{0.f, 1.f, 0.f, 0.f};
+	// Pre-exposed radiances: x sun disc, y moon disc, z brightest stars.
+	math::vec4 skyBodies{0.f, 0.f, 0.f, 0.f};
 };
 
-static_assert(sizeof(LightingUbo) == 496,
+static_assert(sizeof(LightingUbo) == 528,
 			  "LightingUbo must match the std140 layout of Lighting in the renderer3D shaders.");
 
 struct MaterialUbo {
@@ -153,6 +157,12 @@ void refreshLighting() {
 	const auto& environment = data.environment;
 	data.lighting.environment = math::vec4{0.f, std::cos(environment.rotation), std::sin(environment.rotation),
 										   static_cast<float>(environment.levelCount)};
+	const auto& bodies = environment.bodies;
+	const float bodyScale = std::max(environment.intensity, 0.f) * exposure;
+	data.lighting.skySun = math::vec4{bodies.sunDirection.x(), bodies.sunDirection.y(), bodies.sunDirection.z(),
+									  environment.levelCount > 0 ? bodies.discRadius : 0.f};
+	data.lighting.skyBodies = math::vec4{bodies.sunRadiance * bodyScale, bodies.moonRadiance * bodyScale,
+										 environment.levelCount > 0 ? bodies.starRadiance * bodyScale : 0.f, 0.f};
 	if (environment.levelCount > 0) {
 		setIrradiance(environment.irradiance);
 		data.lighting.environment.x() = std::max(environment.intensity, 0.f) * exposure;

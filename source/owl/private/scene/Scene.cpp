@@ -1082,6 +1082,11 @@ void Scene::recordEnvironmentPass(renderer::RenderGraph& ioGraph, const renderer
 	}
 	state.lighting.intensity = std::max(environment->intensity, 0.f);
 	state.lighting.rotation = environment->rotation;
+	state.lighting.bodies = sky != nullptr ? renderer::skyBodiesOf({.sunDirection = sky->sunDirection,
+																	.nightBrightness = sky->nightBrightness,
+																	.stars = sky->stars,
+																	.discSize = sky->discSize})
+										   : renderer::SkyBodies{};
 	renderer::Renderer3D::setEnvironment(state.lighting);
 	if (!environment->showSky)
 		return;
@@ -1103,7 +1108,7 @@ void Scene::requestProceduralSky(const component::ProceduralSky& iSky) {
 	if (state.loading)
 		return;
 	const auto quantise = [](const float iValue, const float iStep) -> float { return std::round(iValue / iStep); };
-	constexpr float directionStep = 0.015f;
+	constexpr float directionStep = 0.008f;
 	constexpr float valueStep = 0.002f;
 	const std::array<float, 16> key{quantise(iSky.sunDirection.x(), directionStep),
 									quantise(iSky.sunDirection.y(), directionStep),

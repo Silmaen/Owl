@@ -12,6 +12,7 @@
 
 #include <cmath>
 #include <cstddef>
+#include <numbers>
 
 using namespace owl;
 
@@ -59,20 +60,30 @@ TEST(ProceduralSky, TheNightIsFarDarkerThanTheDayAndTheDuskGlowsTowardsTheSun) {
 	EXPECT_GT(towards.x(), towards.z());
 }
 
-TEST(ProceduralSky, TheDiscsAndTheStarsFollowTheirSettings) {
+TEST(ProceduralSky, TheImageHoldsNeitherDiscNorStars) {
 	const math::vec3 sun = math::vec3{0.3f, 0.6f, -0.7f}.normalized();
-	const auto withDisc = renderer::renderProceduralSky({.sunDirection = sun, .discSize = 5.f}, {512, 256});
-	const auto without = renderer::renderProceduralSky({.sunDirection = sun, .discSize = 0.f}, {512, 256});
-	EXPECT_GT(luminance(lookAt(withDisc, sun)), luminance(lookAt(without, sun)) + 5.f);
-	const auto starry = renderer::renderProceduralSky({.sunDirection = {0.f, -1.f, 0.f}, .stars = 1.f}, {256, 128});
-	const auto empty = renderer::renderProceduralSky({.sunDirection = {0.f, -1.f, 0.f}, .stars = 0.f}, {256, 128});
-	float starLight = 0.f;
-	float darkLight = 0.f;
-	for (size_t index = 0; index < starry.pixels.size(); ++index) {
-		starLight += luminance(starry.pixels[index]);
-		darkLight += luminance(empty.pixels[index]);
-	}
-	EXPECT_GT(starLight, darkLight);
+	const auto withDisc =
+			renderer::renderProceduralSky({.sunDirection = sun, .stars = 1.f, .discSize = 5.f}, {256, 128});
+	const auto without =
+			renderer::renderProceduralSky({.sunDirection = sun, .stars = 0.f, .discSize = 0.f}, {256, 128});
+	ASSERT_EQ(withDisc.pixels.size(), without.pixels.size());
+	for (size_t index = 0; index < withDisc.pixels.size(); ++index)
+		ASSERT_NEAR(luminance(withDisc.pixels[index]), luminance(without.pixels[index]), 1e-6f);
+}
+
+TEST(ProceduralSky, TheBodiesFollowTheSunAndTheNight) {
+	const auto noon = renderer::skyBodiesOf({.sunDirection = {0.f, 2.f, 0.f}, .stars = 1.f, .discSize = 2.f});
+	EXPECT_NEAR(noon.sunDirection.y(), 1.f, 1e-6f);
+	EXPECT_NEAR(noon.discRadius, std::numbers::pi_v<float> / 180.f, 1e-6f);
+	EXPECT_GT(noon.sunRadiance, 1.f);
+	EXPECT_NEAR(noon.moonRadiance, 0.f, 1e-6f);
+	EXPECT_NEAR(noon.starRadiance, 0.f, 1e-6f);
+	const auto night = renderer::skyBodiesOf({.sunDirection = {0.f, -1.f, 0.f}, .stars = 1.f});
+	EXPECT_NEAR(night.sunRadiance, 0.f, 1e-6f);
+	EXPECT_GT(night.moonRadiance, 0.f);
+	EXPECT_GT(night.starRadiance, 0.f);
+	EXPECT_NEAR(renderer::skyBodiesOf({.sunDirection = {0.f, -1.f, 0.f}, .stars = 0.f}).starRadiance, 0.f, 1e-6f);
+	EXPECT_NEAR(renderer::skyBodiesOf({.discSize = 0.f}).discRadius, 0.f, 1e-6f);
 }
 
 TEST(ProceduralSky, ADegenerateSunPointsUp) {

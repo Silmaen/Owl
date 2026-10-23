@@ -28,8 +28,6 @@ constexpr float g_referenceZenithAngle = g_pi / 6.f;
 constexpr float g_minCosine = 0.01f;
 // Warm colour of the dusk glow, linear.
 const math::vec3 g_glowColor{1.f, 0.38f, 0.12f};
-// Colour of the moon disc, linear.
-const math::vec3 g_moonColor{0.75f, 0.8f, 0.9f};
 
 // Perez distribution coefficients A to E of one channel for a turbidity.
 using Perez = std::array<float, 5>;
@@ -88,12 +86,6 @@ auto smoothstep(const float iEdge0, const float iEdge1, const float iX) -> float
 	return t * t * (3.f - 2.f * t);
 }
 
-auto hash(const uint32_t iX, const uint32_t iY) -> float {
-	uint32_t h = iX * 374761393u + iY * 668265263u;
-	h = (h ^ (h >> 13u)) * 1274126177u;
-	return static_cast<float>((h ^ (h >> 16u)) & 0xFFFFFFu) / static_cast<float>(0xFFFFFF);
-}
-
 auto flat(const math::vec3& iDirection) -> math::vec3 {
 	const math::vec3 horizontal{iDirection.x(), 0.f, iDirection.z()};
 	return horizontal.norm() > 1e-5f ? horizontal.normalized() : math::vec3{1.f, 0.f, 0.f};
@@ -112,7 +104,6 @@ struct SkyFrame {
 	float day = 0.f;
 	float glow = 0.f;
 	float night = 0.f;
-	float discCosine = 1.f;
 };
 
 auto makeFrame(const SkyParameters& iParameters) -> SkyFrame {
@@ -131,7 +122,6 @@ auto makeFrame(const SkyParameters& iParameters) -> SkyFrame {
 	frame.day = smoothstep(-0.12f, 0.05f, sunHeight);
 	frame.glow = std::exp(-(sunHeight * sunHeight) / (0.12f * 0.12f));
 	frame.night = 1.f - smoothstep(-0.2f, 0.02f, sunHeight);
-	frame.discCosine = std::cos(0.5f * std::max(iParameters.discSize, 0.f) * g_pi / 180.f);
 	return frame;
 }
 
@@ -148,8 +138,7 @@ auto daySky(const SkyFrame& iFrame, const math::vec3& iDirection) -> math::vec3 
 	return xyYToLinearSrgb(x, y, luminance) * iFrame.day;
 }
 
-auto skyRadiance(const SkyParameters& iParameters, const SkyFrame& iFrame, const math::vec3& iDirection,
-				 const uint32_t iX, const uint32_t iY) -> math::vec3 {
+auto skyRadiance(const SkyParameters& iParameters, const SkyFrame& iFrame, const math::vec3& iDirection) -> math::vec3 {
 	const float height = iDirection.y();
 	const float above = smoothstep(-0.02f, 0.02f, height);
 	const math::vec3 horizon = daySky(iFrame, flat(iDirection));
@@ -159,17 +148,6 @@ auto skyRadiance(const SkyParameters& iParameters, const SkyFrame& iFrame, const
 	color = color + g_glowColor * (iFrame.glow * band * (0.15f + 0.85f * towardSun * towardSun) * 0.6f);
 	const float zenithward = 0.35f + 0.65f * std::max(height, 0.f);
 	color = color + iParameters.nightColor * (iParameters.nightBrightness * iFrame.night * zenithward);
-	if (iParameters.stars > 0.f && height > 0.f && iFrame.night > 0.f) {
-		if (const float star = hash(iX, iY); star > 0.996f)
-			color = color + math::vec3{1.f, 1.f, 1.f} * (iParameters.stars * iFrame.night * (star - 0.996f) * 2000.f *
-														 iParameters.nightBrightness * smoothstep(0.f, 0.15f, height));
-	}
-	if (iFrame.discCosine < 1.f) {
-		if (iDirection * iFrame.sun > iFrame.discCosine && iFrame.sun.y() > -0.05f)
-			color = color + (math::vec3{1.f, 0.9f, 0.75f} + g_glowColor * iFrame.glow) * (20.f * iFrame.day + 2.f);
-		if (iDirection * iFrame.sun < -iFrame.discCosine)
-			color = color + g_moonColor * (iParameters.nightBrightness * 40.f * iFrame.night);
-	}
 	const math::vec3 ground = horizon * 0.45f + iParameters.groundColor * (std::max(horizon.y(), 0.f) * 0.6f +
 																		   iParameters.nightBrightness * iFrame.night);
 	return color * above + ground * (1.f - above);
@@ -189,10 +167,22 @@ auto renderProceduralSky(const SkyParameters& iParameters, const math::vec2ui& i
 			const math::vec2 uv{(static_cast<float>(x) + 0.5f) / static_cast<float>(image.size.x()),
 								(static_cast<float>(y) + 0.5f) / static_cast<float>(image.size.y())};
 			image.pixels[static_cast<size_t>(y) * image.size.x() + x] =
-					skyRadiance(iParameters, frame, Equirectangular::toDirection(uv), x, y);
+					skyRadiance(iParameters, frame, Equirectangular::toDirection(uv));
 		}
 	}
 	return image;
+}
+
+auto skyBodiesOf(const SkyParameters& iParameters) -> SkyBodies {
+	const math::vec3 sun =
+			iParameters.sunDirection.norm() > 1e-5f ? iParameters.sunDirection.normalized() : math::vec3{0.f, 1.f, 0.f};
+	const float day = smoothstep(-0.05f, 0.05f, sun.y());
+	const float night = 1.f - smoothstep(-0.2f, 0.02f, sun.y());
+	return {.sunDirection = sun,
+			.discRadius = 0.5f * std::max(iParameters.discSize, 0.f) * g_pi / 180.f,
+			.sunRadiance = 30.f * day,
+			.moonRadiance = iParameters.nightBrightness * 20.f * night,
+			.starRadiance = std::max(iParameters.stars, 0.f) * iParameters.nightBrightness * 30.f * night};
 }
 
 }// namespace owl::renderer

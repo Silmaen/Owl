@@ -12,9 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Engine Demo tavern: a hub level played on foot (`FirstPersonController`), with a cellar key, a trapdoor and a chest in `scenes/tavern_cellar.owl` lit by a lantern spot light.
-- `FirstPersonController` component (walk, run, look, jump, step climbing) whose body box collides with the `MeshRenderer` world boxes through `data::geometry::moveBoxAmong`, waits for the meshes to load, and Lua `entity.set_first_person_enabled`; triggers test the body box of a 3D walker.
+- `FirstPersonController` component (walk, run, look, jump, step climbing) whose body box collides with the `MeshRenderer` world boxes through `data::geometry::moveBoxAmong`, waits for the meshes to load, and Lua `entity.set_first_person_enabled`; an interaction trigger answers what the walker aims at within `reach`, its box outlined.
 - Voxel tilesets accept `normalTexture` and `roughnessTexture` (`.owltileset` keys, Tileset editor fields, packed by export); `voxel.slang` reads them and averages the far texels of such atlases; the demo blocks are redrawn at 128 px and the isometric art gets more detail.
-- `ProceduralSky` component (clear sky, dusk glow, stars, sun and moon discs, prefiltered on a worker like an HDRI) and benchmark `sky/*`.
+- `ProceduralSky` component (clear sky and dusk glow prefiltered on a worker like an HDRI; sun, detailed moon and pixel-sharp stars drawn by the sky shader) and benchmark `sky/*`.
 - `DayNightCycle` component: time of day, sun and moon path driving a directional `Light` and the sky, night exposure on the cameras in Play, Lua `entity.get_time_of_day`, `set_time_of_day`, `set_day_night_enabled`; the voxel level uses it.
 - `RenderTarget` component (the camera of its entity drawn off-screen under a name), `UiImage.renderTarget` and `FollowTarget` component; the voxel level shows a minimap in its HUD (`MinimapCamera` of `huds/voxel.owlhud`).
 - Tuned constants of the Engine Demo and sample-game scripts are script `properties` edited in the inspector.

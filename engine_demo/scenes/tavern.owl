@@ -995,7 +995,7 @@ Entities:
       type: Point
       enabled: true
       color: [1, 0.62, 0.3]
-      intensity: 420
+      intensity: 650
       range: 6
     LightFlicker:
       style: Candle
