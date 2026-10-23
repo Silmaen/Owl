@@ -1286,6 +1286,8 @@ private:
 	};
 	/// World matrix cache, indexed by `entt::to_entity(handle)`; survives frames.
 	mutable std::vector<WorldNode> m_worldNodes;
+	/// Walk stacks of the parallel world preparation, one per chunk of the hierarchy pool; survive frames.
+	mutable std::vector<std::vector<entt::entity>> m_worldWalkStacks;
 	/// True when a `WorldNode` was composed since the spatial indexes last looked.
 	mutable bool m_worldMoved = true;
 	/// Current world pass; bumped by every `prepareWorldTransforms()` call.

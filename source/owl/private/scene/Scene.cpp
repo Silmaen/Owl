@@ -2847,8 +2847,6 @@ void Scene::assignWorldSlots() const {
 }
 
 void Scene::prepareWorldsParallel(core::task::Scheduler& ioScheduler) const {
-	// Named by the chunk body without capture: each worker walks its subtrees with its own stack.
-	thread_local std::vector<entt::entity> stack;
 	const auto view = registry.view<component::Transform, component::Hierarchy>();
 	const WorldStorages storages{.hierarchies = registry.storage<component::Hierarchy>(),
 								 .transforms = registry.storage<component::Transform>(),
@@ -2881,8 +2879,13 @@ void Scene::prepareWorldsParallel(core::task::Scheduler& ioScheduler) const {
 	std::atomic<size_t> expected{0};
 	std::atomic<size_t> reached{0};
 	std::atomic<size_t> roots{0};
+	// One walk stack per chunk, kept by the scene: chunk starts are at least one minimum chunk apart.
+	if (const size_t chunks = storages.hierarchies->size() / g_ParallelChunkEntities + 1;
+		m_worldWalkStacks.size() < chunks)
+		m_worldWalkStacks.resize(chunks);
 	ioScheduler.parallelFor(storages.hierarchies->size(), g_ParallelChunkEntities,
 							[&](const size_t iBegin, const size_t iEnd) -> void {
+								auto& stack = m_worldWalkStacks[iBegin / g_ParallelChunkEntities];
 								size_t chunkExpected = 0;
 								size_t chunkReached = 0;
 								size_t chunkRoots = 0;
