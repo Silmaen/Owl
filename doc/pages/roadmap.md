@@ -108,7 +108,8 @@ procedural graphs, tile tools, Lua editor scripts, and Blueprints-style visual s
 - ![Planned][planned] Skeletal animation (skinning, blending, state machine) and mesh LODs
 - ![Planned][planned] GPU particle system with editor preview and trails, emissive materials and lens flares
 - ![Planned][planned] Advanced post-processing (chromatic aberration, film grain, motion blur, depth of field)
-- ![To evaluate][evaluate] Area lights (rectangle, disc, sphere) lighting through LTC, with soft shadows ([3D core](design/3d-core.md#emissive-and-area-lights))
+- ![Planned][planned] Angular radius of a directional light: soft shadows (PCSS), wider highlight, sun disc in the sky ([3D core](design/3d-core.md#emissive-and-area-lights))
+- ![To evaluate][evaluate] Area lights (rectangle, disc, sphere) lighting through LTC, with soft shadows sharing the PCSS of the sun ([3D core](design/3d-core.md#emissive-and-area-lights))
 - ![Planned][planned] Point and spot light shadows (cube and perspective shadow maps) ([3D core](design/3d-core.md#emissive-and-area-lights))
 - ![Planned][planned] Local reflection probes: baked cube maps blended by volume, parallax-corrected, so metals reflect the room ([3D core](design/3d-core.md#reflection-probes))
 - ![Planned][planned] Visual scripting MVP, event graphs compiled to Lua, node editing of assets ([details](design/visual-scripting.md))
@@ -120,7 +121,7 @@ procedural graphs, tile tools, Lua editor scripts, and Blueprints-style visual s
 - ![Planned][planned] Mipmapped pixel-art atlases: sharp texels up close, filtered mips far away, no bleeding between tiles, for the voxel, raycast and tilemap atlases ([2D](design/2d-complete.md#mipmapped-pixel-art-atlases-v060))
 - ![Planned][planned] Sound editor in Owl Nest: preview, trim, loop points, volume and pitch, random variants of one sound
 - ![To evaluate][evaluate] Hot reload of a C++ game module
-- ![Planned][planned] Sample games: a Mini Minecraft, and combat (guards, weapons) in the Wolfenstein mini ([Sample games](design/sample-games.md))
+- ![Planned][planned] Sample games: a Mini Transport Tycoon, a Mini Minecraft, and combat (guards, weapons) in the Wolfenstein mini ([Sample games](design/sample-games.md))
 - ![To evaluate][evaluate] Sample game from the pool: a station trader ([Pool](design/sample-games.md#sample-games-pool))
 
 ## v0.5.0 -- Expected 2027-01-31
@@ -145,7 +146,6 @@ render graph, essential post-processing — with full 3D editing ([details](desi
 - ![Done][done] Laid-out text kept between frames while its font, text and layout stay ([Renderer](renderer.md#renderer-text-cache))
 - ![Done][done] HUD minimap on a render target: `RenderTarget`, `FollowTarget`, `UiImage.renderTarget` ([HUD system](design/hud-system.md#minimap))
 - ![Done][done] 3D scene editing in Owl Nest (3D gizmos, snapping, mesh preview), "look through scene camera" mode
-- ![To evaluate][evaluate] Angular radius of a directional light: soft shadows, wider highlight, sun disc in the sky ([3D core](design/3d-core.md#emissive-and-area-lights))
 - ![Done][done] Editor reach, before the release: every script and Lua function of a scene visible in Owl Nest with its hooks and an **Open** at the line, a scene script, richer script properties, layer overrides for every key ([Editor reach](design/editor-reach.md))
 - ![Done][done] Behaviour components replacing demo scripts: `LightFlicker` (fire, candles), `Oscillator`, `Patrol`, `Drift` ([Editor reach](design/editor-reach.md#behaviour-components))
 - ![Done][done] Tuned constants of the Engine Demo and the sample games moved to script properties; a test failing on any component field or layer key without an editor widget ([Editor reach](design/editor-reach.md))
@@ -154,7 +154,8 @@ render graph, essential post-processing — with full 3D editing ([details](desi
 - ![Done][done] `FirstPersonController` walking on `MeshRenderer` boxes, and the Engine Demo tavern as a fifth hub level
 - ![Done][done] Owl Nest fixes: material texture **Open** buttons, text files (`gamecontrollerdb.txt`) in the code editor; material thumbnails and a prefab document ([Editor reach](design/editor-reach.md#editor-fixes-and-gaps))
 - ![Planned][planned] Help panel: mermaid diagrams and rendering polish
-- ![To evaluate][evaluate] Sample games: a Mini Transport Tycoon, and from the pool Asteroids, a tower defence ([Sample games](design/sample-games.md), [Pool](design/sample-games.md#sample-games-pool))
+- ![Planned][planned] Lua gaps of the sample games: spawn a prefab, tilemap cells kept by saves, `ui.set_image`, pause and time scale, entity under the mouse ([Gaps](design/sample-games.md#sample-games-gaps))
+- ![Planned][planned] Sample game: a tower defence ([Sample games](design/sample-games.md))
 
 ## v0.4.0 -- 2026-10-20
 
