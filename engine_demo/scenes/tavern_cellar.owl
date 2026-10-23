@@ -190,7 +190,7 @@ Entities:
     Tag:
       tag: Ladder
     Transform:
-      translation: [2.9, 0, 3.9]
+      translation: [2.9, 0, 3.3]
       rotation: [0, 0, 0]
       scale: [1, 1, 1]
     MeshRenderer:
@@ -201,6 +201,9 @@ Entities:
         - material: materials/rough_wood.owlmat
     RendererTag:
       Name: mesh_world
+    Trigger: {Type: Interaction, CallbackName: on_ladder_interact}
+    LuaScript:
+      scriptPath: scripts/tavern/cellar_ladder.lua
     Visibility:
       gameVisible: true
   - Entity: 3950000000000000030
@@ -378,5 +381,23 @@ Entities:
       amplitude: 0.5
       speed: 0.8
       seed: 11
+    Visibility:
+      gameVisible: true
+  - Entity: 3950000000000000021
+    Tag:
+      tag: CeilingHatch
+    Transform:
+      translation: [0, 2.95, -0.4]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Hierarchy: {parentId: 3950000000000000020}
+    MeshRenderer:
+      mesh: meshes/tavern/trapdoor.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - material: materials/rough_wood.owlmat
+    RendererTag:
+      Name: mesh_world
     Visibility:
       gameVisible: true

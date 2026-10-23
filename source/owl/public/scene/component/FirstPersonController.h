@@ -24,7 +24,8 @@ namespace owl::scene::component {
  * the world boxes of the `MeshRenderer` entities (those with a `Trigger` let it through, a box lower than
  * `stepHeight` is climbed). The `Transform` of the entity is the eye: its rotation holds the pitch and the yaw.
  * Triggers of the scene see the body box in 3D, but an `Interaction` trigger answers only when aimed at: the view ray
- * hits its box (its mesh box, else its transform) within `reach`, before any mesh, and the box is outlined. The body holds still until every mesh of the scene is loaded, so it
+ * hits its box (its mesh box, else its transform) within `reach`, before any mesh, and the box is outlined; the
+ * aiming crosshair of the voxel player shows. The body holds still until every mesh of the scene is loaded, so it
  * never falls through a floor still loading.
  */
 struct OWL_API FirstPersonController {

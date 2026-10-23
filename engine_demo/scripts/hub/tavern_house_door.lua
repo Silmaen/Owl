@@ -14,6 +14,9 @@ function on_tavern_door_interact(player_id)
         gamestate.set("world_return_x", px)
         gamestate.set("world_return_y", py)
     end
+    -- Coming from the hub starts the level again: no key, at the entrance.
+    gamestate.set("tavern_key", 0)
+    gamestate.set("tavern_from_cellar", 0)
     log.info("Entering the tavern")
     sound.play("sounds/hub/door.wav")
     scene.transition_to("scenes/tavern.owl", "fade", 0.3)

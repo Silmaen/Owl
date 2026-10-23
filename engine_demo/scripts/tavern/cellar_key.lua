@@ -7,6 +7,18 @@ properties = {
 
 local taken = false
 
+function on_create()
+    -- Taken on an earlier visit (back from the cellar): the key and its glint stay gone.
+    if gamestate.get("tavern_key", 0) > 0 then
+        taken = true
+        ui.set_visible(entity_id, false)
+        local glint_id = scene.find_entity(glint)
+        if glint_id ~= 0 then
+            ui.set_visible(glint_id, false)
+        end
+    end
+end
+
 -- Bound by Trigger.Type=Interaction with CallbackName=on_key_interact.
 function on_key_interact()
     if taken then

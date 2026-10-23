@@ -214,6 +214,7 @@ void updateFirstPersonControllers(Scene& ioScene, const SystemContext& iContext)
 	const auto& actions = ioScene.getActions();
 	std::vector<uint32_t> ids;
 	std::vector<math::box3f> boxes;
+	ioScene.setInteractionHighlight(std::nullopt);
 	for (const auto handle: view) {
 		auto [transform, controller] = view.get<component::Transform, component::FirstPersonController>(handle);
 		if (!controller.enabled)
@@ -222,6 +223,8 @@ void updateFirstPersonControllers(Scene& ioScene, const SystemContext& iContext)
 		// The transform holds the view: a script or the editor turning the entity turns the walker.
 		controller.m_yaw = eye.rotation().y();
 		controller.m_pitch = eye.rotation().x();
+		// The same aiming crosshair as the voxel player: interactions are used by aiming at them.
+		ioScene.setShowCrosshair(true);
 		turnView(controller, eye, actions, dt, cursorCaptured);
 		if (!controller.m_worldReady) {
 			controller.m_worldReady = isWorldLoaded(ioScene);

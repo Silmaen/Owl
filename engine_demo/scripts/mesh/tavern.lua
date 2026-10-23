@@ -1,11 +1,14 @@
 -- Tavern scene script: the level of the tavern. The key of the cellar hides by the hearth; once it is taken, the
--- trapdoor opens on the cellar (scenes/tavern_cellar.owl), where the chest ends the level. Escape (or Start) goes back
+-- trapdoor opens on the cellar (scenes/tavern_cellar.owl), where the chest ends the level and the ladder climbs back. Escape (or Start) goes back
 -- to the hub without completing it. The fire and the candles flicker through `LightFlicker` components, a
 -- `FirstPersonController` walks the player.
 -- Demonstrates: a scene script, gamestate shared by the scripts of a level, ui.set_text, scene.transition_to.
 
 properties = {
     { name = "hub_scene", type = "string", default = "scenes/world_map.owl" },
+    { name = "player", type = "string", default = "TavernCamera" },
+    { name = "cellar_return", type = "vec3", default = { 2.2, 1.6, 2.2 } },  -- where the cellar ladder leads, by the trapdoor
+    { name = "cellar_return_yaw", type = "float", default = 2.4 },
 }
 
 local objective_id = 0
@@ -14,8 +17,16 @@ local shown = -1
 
 function on_create()
     objective_id = ui.find("ObjectiveText")
-    gamestate.set("tavern_key", 0)
     gamestate.set("tavern_message", "")
+    -- Back up the cellar ladder: the player stands by the trapdoor, the key already taken.
+    if gamestate.get("tavern_from_cellar", 0) > 0 then
+        gamestate.set("tavern_from_cellar", 0)
+        local player_id = scene.find_entity(player)
+        if player_id ~= 0 then
+            transform.set_position(player_id, cellar_return.x, cellar_return.y, cellar_return.z)
+            transform.set_rotation(player_id, 0, cellar_return_yaw, 0)
+        end
+    end
     ui.transition_fade_in(0.4)
 end
 
