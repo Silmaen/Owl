@@ -209,3 +209,27 @@ TEST(core_task, SchedulerStress) {
 	scheduler.waitEmptyQueue();
 	EXPECT_EQ(counter, taskCount);
 }
+
+TEST(SchedulerParallelFor, coversEveryItemOnce) {
+	Scheduler scheduler;
+	for (const size_t count: {size_t{0}, size_t{1}, size_t{7}, size_t{1000}, size_t{100001}}) {
+		std::vector<std::atomic<uint8_t>> hits(count);
+		scheduler.parallelFor(count, 16, [&hits](const size_t iBegin, const size_t iEnd) -> void {
+			for (size_t i = iBegin; i < iEnd; ++i) hits[i].fetch_add(1);
+		});
+		for (size_t i = 0; i < count; ++i) ASSERT_EQ(hits[i].load(), 1) << count << " at " << i;
+	}
+}
+
+TEST(SchedulerParallelFor, smallCountRunsOnTheCaller) {
+	Scheduler scheduler;
+	const auto caller = std::this_thread::get_id();
+	size_t chunks = 0;
+	scheduler.parallelFor(10, 100, [&](const size_t iBegin, const size_t iEnd) -> void {
+		++chunks;
+		EXPECT_EQ(std::this_thread::get_id(), caller);
+		EXPECT_EQ(iBegin, 0u);
+		EXPECT_EQ(iEnd, 10u);
+	});
+	EXPECT_EQ(chunks, 1u);
+}

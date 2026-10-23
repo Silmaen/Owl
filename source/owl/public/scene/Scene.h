@@ -26,6 +26,7 @@
 #include "scene/SimulationClock.h"
 #include "scene/SystemSchedule.h"
 #include "scene/component/LuaScript.h"
+#include "scene/component/Visibility.h"
 #include "scene/ui/HudLayout.h"
 
 #include <entt/entt.hpp>
@@ -48,6 +49,10 @@
 namespace owl::app {
 class EngineContext;
 }// namespace owl::app
+
+namespace owl::core::task {
+class Scheduler;
+}// namespace owl::core::task
 
 namespace owl::physics {
 class PhysicCommand;
@@ -926,6 +931,35 @@ public:
 
 	/**
 	 * @brief
+	 *  Task scheduler the scene prepares its renders on: the application's one by default.
+	 * @return The scheduler, or nullptr when the scene was created without application and none was given.
+	 */
+	[[nodiscard]] auto getTaskScheduler() const -> core::task::Scheduler* { return mp_taskScheduler; }
+
+	/**
+	 * @brief
+	 *  Give the scene the scheduler it prepares its renders on (tests create their own); kept by `copy()`.
+	 * @param[in] iScheduler The scheduler, or nullptr to prepare on the calling thread only.
+	 */
+	void setTaskScheduler(core::task::Scheduler* iScheduler) { mp_taskScheduler = iScheduler; }
+
+	/**
+	 * @brief
+	 *  Smallest entity count for which `prepareWorldTransforms()` and the spatial index update run on the scheduler.
+	 * @return The entity count.
+	 */
+	[[nodiscard]] auto getParallelMinEntities() const -> size_t { return m_parallelMinEntities; }
+
+	/**
+	 * @brief
+	 *  Set the smallest entity count for which the render preparation runs on the scheduler; the result does not
+	 *  depend on it (tests compare both paths).
+	 * @param[in] iMinEntities The entity count: 0 always runs in parallel, `SIZE_MAX` never.
+	 */
+	void setParallelMinEntities(const size_t iMinEntities) { m_parallelMinEntities = iMinEntities; }
+
+	/**
+	 * @brief
 	 *  Mouse state of the scene's runtime UI, kept by `UiInputSystem` from one frame to the next.
 	 */
 	struct UiInputState {
@@ -1163,6 +1197,10 @@ private:
 	SystemSchedule m_systems;
 	/// Engine state used by the scene (not owned).
 	app::EngineContext* mp_engineContext = nullptr;
+	/// Scheduler the render preparation runs on (not owned).
+	core::task::Scheduler* mp_taskScheduler = nullptr;
+	/// Entity count from which the render preparation runs on the scheduler.
+	size_t m_parallelMinEntities = 4096;
 	/// Cached primary-player entity handle. `entt::null` means "not resolved yet".
 	mutable entt::entity m_primaryPlayerCache = entt::null;
 	/**
@@ -1223,7 +1261,7 @@ private:
 		entt::entity parent = entt::null;
 		/// UUID of `parent`, checked against the `Hierarchy` before trusting `parent`.
 		core::UUID parentId{0};
-		/// Unique number of the current `world` value (0 = never composed).
+		/// Unique number of the current `world` value (0 = never composed): entity index in the high half, count in the low half.
 		uint64_t stamp = 0;
 		/// Parent's `stamp` when `world` was composed.
 		uint64_t parentStamp = 0;
@@ -1248,8 +1286,8 @@ private:
 	};
 	/// World matrix cache, indexed by `entt::to_entity(handle)`; survives frames.
 	mutable std::vector<WorldNode> m_worldNodes;
-	/// Last stamp given to a composed `WorldNode`.
-	mutable uint64_t m_worldStamp = 0;
+	/// True when a `WorldNode` was composed since the spatial indexes last looked.
+	mutable bool m_worldMoved = true;
 	/// Current world pass; bumped by every `prepareWorldTransforms()` call.
 	mutable uint32_t m_worldPass = 1;
 	/// True while `prepareWorldTransforms()` runs: entries checked in the current pass are trusted and get a slot.
@@ -1263,6 +1301,18 @@ private:
 	mutable bool m_worldTransformCacheActive = false;
 	/// World matrices of the last `prepareWorldTransforms()` call, indexed by world slot (parents before children).
 	mutable std::vector<math::mat4> m_worldMatrices;
+	/// True while a parallel `prepareWorldTransforms()` resolves the nodes: slots are given afterwards, in order.
+	mutable bool m_deferWorldSlots = false;
+	/// Node index of the entity owning each slot of the last parallel `prepareWorldTransforms()` call.
+	mutable std::vector<uint32_t> m_worldSlotOwners;
+	/// Roots counted by the last `prepareWorldTransforms()` call (0 before the first).
+	mutable size_t m_worldRootCount = 0;
+	/// True when `m_worldSlotOwners` holds the slots the serial body would give to the current entities.
+	mutable bool m_worldSlotsValid = false;
+	/// Sizes and ends of the `Transform` and `Hierarchy` pools when the slots were given.
+	mutable std::array<size_t, 8> m_worldPoolSignature{};
+	/// True when an entity was added or removed, or a node got another entity or parent, since the slots were given.
+	mutable bool m_worldLayoutDirty = true;
 	/**
 	 * @brief
 	 *  What a spatial index entry was filed from, indexed by `entt::to_entity(handle)`.
@@ -1289,6 +1339,22 @@ private:
 	uint32_t m_spatialPass = 0;
 	/**
 	 * @brief
+	 *  Box of an entity to refile in a spatial index, computed after the entities are walked.
+	 */
+	struct SpatialJob {
+		/// Index to file the box in.
+		data::geometry::LooseOctree* tree = nullptr;
+		/// Entity index (`entt::to_entity`), also the index of its world node.
+		uint32_t index = 0;
+		/// Box of the entity in its own space.
+		math::box3f localBox;
+	};
+	/// Boxes to refile in the current `updateSpatialIndex()` (scratch, kept for its capacity).
+	std::vector<SpatialJob> m_spatialJobs;
+	/// World boxes of `m_spatialJobs`, same order (scratch, kept for its capacity).
+	std::vector<math::box3f> m_spatialBoxes;
+	/**
+	 * @brief
 	 *  Entities of a spatial index found in a frustum, kept while neither the index nor the view-projection changes.
 	 */
 	struct VisibleSet {
@@ -1311,8 +1377,6 @@ private:
 	VisibleSet m_spriteVisible;
 	/// True when a sprite or mesh component was added, removed, replaced or got another mesh since the last update.
 	bool m_spatialDirty = true;
-	/// `m_worldStamp` at the last `updateSpatialIndex()`: an unchanged stamp means no world matrix moved.
-	uint64_t m_spatialStamp = 0;
 	/// Counters of the spatial culling of the last frame.
 	CullingStatistics m_cullingStats;
 	/**
@@ -1414,6 +1478,14 @@ private:
 	 * @param[in] iEntity The entity.
 	 */
 	void onSpatialComponentChanged(entt::registry& ioRegistry, entt::entity iEntity);
+
+	/**
+	 * @brief
+	 *  Registry listener: an entity gained or lost its `Transform` or `Hierarchy`, so the world slots must be given again.
+	 * @param[in,out] ioRegistry The registry of the scene.
+	 * @param[in] iEntity The entity.
+	 */
+	void onWorldLayoutChanged(entt::registry& ioRegistry, entt::entity iEntity);
 
 	/**
 	 * @brief
@@ -1608,6 +1680,56 @@ private:
 	 * @return The entity's node, or nullptr when the chain loops or contains `iForbiddenAncestor`.
 	 */
 	[[nodiscard]] auto resolveWorldNode(entt::entity iEntity, core::UUID iForbiddenAncestor) const -> WorldNode*;
+
+	/**
+	 * @brief
+	 *  Check one world node against its local transform and its parent, recompose it when either changed, and mark it
+	 *  checked in the current pass (with its inherited visibility while preparing).
+	 * @param[in,out] ioNode The node of `iHandle`.
+	 * @param[in] iHandle The entity.
+	 * @param[in] iParent The parent entity, `entt::null` for a root or a missing parent.
+	 * @param[in] iParentNode The parent's node, already checked in this pass (nullptr without parent).
+	 * @param[in] iLocal The local transform of the entity.
+	 * @param[in] iParentId The `Hierarchy` parent UUID of the entity.
+	 * @param[in] iVisibilities The `Visibility` storage (nullptr when not preparing).
+	 */
+	void refreshWorldNode(WorldNode& ioNode, entt::entity iHandle, entt::entity iParent, const WorldNode* iParentNode,
+						  const math::Transform& iLocal, core::UUID iParentId,
+						  const entt::storage_for_t<const component::Visibility>* iVisibilities) const;
+
+	/**
+	 * @brief
+	 *  Serial body of `prepareWorldTransforms()`: every entity is checked after its ancestors and gets its slot.
+	 */
+	void prepareWorldsSerial() const;
+
+	/**
+	 * @brief
+	 *  Parallel body of `prepareWorldTransforms()`: the subtrees of the roots are checked on the scheduler, the
+	 *  entities its walk missed are resolved serially, then the slots are given in the order the serial body gives them.
+	 * @param[in,out] ioScheduler The scheduler running the subtrees.
+	 */
+	void prepareWorldsParallel(core::task::Scheduler& ioScheduler) const;
+
+	/// The component storages the parallel preparation reads, fetched once per chunk.
+	struct WorldStorages;
+
+	/**
+	 * @brief
+	 *  Check a root and every descendant reachable through `childrenIds` whose `parentId` agrees.
+	 * @param[in] iStorages The component storages.
+	 * @param[in] iRoot The root entity.
+	 * @param[in,out] ioStack Scratch stack of the calling thread.
+	 * @return The number of nodes checked, the root included.
+	 */
+	auto refreshWorldSubtree(const WorldStorages& iStorages, entt::entity iRoot,
+							 std::vector<entt::entity>& ioStack) const -> size_t;
+
+	/**
+	 * @brief
+	 *  Give the entities checked in the current pass their slot, ancestors first, in view order.
+	 */
+	void assignWorldSlots() const;
 
 	/**
 	 * @brief

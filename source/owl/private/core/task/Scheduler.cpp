@@ -12,6 +12,7 @@
 #include "debug/Profiler.h"
 
 #include <algorithm>
+#include <atomic>
 #include <cstdint>
 #include <exception>
 #include <format>
@@ -19,6 +20,11 @@
 #include <thread>
 
 namespace owl::core::task {
+
+namespace {
+// Most workers woken by one `parallelFor`.
+constexpr size_t g_MaxHelpers = 7;
+}// namespace
 
 void ProfiledWorker::scheduler_prologue(tf::Worker& ioWorker) {
 	debug::setProfilerThreadName(std::format("Worker {}", ioWorker.id()).c_str());
@@ -86,6 +92,47 @@ auto Scheduler::isTaskInQueue(const size_t iTaskId) const -> bool {
 
 auto Scheduler::getWorkerCount() const -> uint32_t {
 	return std::max(static_cast<uint32_t>(mp_impl->executor.num_workers()), 1u);
+}
+
+void Scheduler::parallelFor(const size_t iCount, const size_t iMinChunk,
+							const std::function<void(size_t, size_t)>& iBody) {
+	if (iCount == 0)
+		return;
+	// Waking a worker costs a few microseconds: past a handful of helpers the wake-ups outweigh the work shared.
+	const size_t workers = std::clamp<size_t>(mp_impl->executor.num_workers(), 1, g_MaxHelpers);
+	const size_t minChunk = std::max<size_t>(iMinChunk, 1);
+	// Four chunks per thread balance uneven chunks; a chunk smaller than `minChunk` costs more than it saves.
+	const size_t chunkCount = std::clamp<size_t>(iCount / minChunk, 1, (workers + 1) * 4);
+	if (chunkCount == 1) {
+		iBody(0, iCount);
+		return;
+	}
+	// Helpers that start after the end find nothing to claim: they own the state, not the caller's stack.
+	struct State {
+		std::atomic<size_t> next{0};
+		std::atomic<size_t> done{0};
+		size_t count = 0;
+		size_t chunks = 0;
+		const std::function<void(size_t, size_t)>* body = nullptr;
+	};
+	auto state = mkShared<State>();
+	state->count = iCount;
+	state->chunks = chunkCount;
+	state->body = &iBody;
+	const auto drain = [](State& ioState) -> void {
+		for (size_t chunk = ioState.next.fetch_add(1, std::memory_order_relaxed); chunk < ioState.chunks;
+			 chunk = ioState.next.fetch_add(1, std::memory_order_relaxed)) {
+			(*ioState.body)(chunk* ioState.count / ioState.chunks, (chunk + 1) * ioState.count / ioState.chunks);
+			if (ioState.done.fetch_add(1, std::memory_order_acq_rel) + 1 == ioState.chunks)
+				ioState.done.notify_all();
+		}
+	};
+	for (size_t helper = 0; helper < std::min(workers, chunkCount - 1); ++helper)
+		mp_impl->executor.silent_async([state, drain]() -> void { drain(*state); });
+	drain(*state);
+	for (size_t done = state->done.load(std::memory_order_acquire); done != chunkCount;
+		 done = state->done.load(std::memory_order_acquire))
+		state->done.wait(done, std::memory_order_acquire);
 }
 
 void Scheduler::clearQueue() { mp_impl->tasksQueue.clear(); }
