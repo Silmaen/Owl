@@ -14,6 +14,7 @@
 #include <renderer/Renderer2D.h>
 #include <renderer/gpu/Texture.h>
 
+#include <cstddef>
 #include <cstdint>
 #include <format>
 #include <string>
@@ -147,6 +148,19 @@ void runText(Runner& ioRunner, const renderer::CameraOrtho& iCamera) {
 			renderer::Renderer2D::drawString(
 					{.transform = tr, .text = utf8Line, .font = font, .color = {1.f, 1.f, 1.f, 1.f}});
 	});
+	// Every string differs from those of the previous frames: each one is laid out again, nothing comes from the cache.
+	std::vector<std::string> changing(4096);
+	for (size_t i = 0; i < changing.size(); ++i) changing[i] = std::format("Score {:>6} \u2013 {}", i * 37, line);
+	size_t next = 0;
+	measureFrame(
+			ioRunner, "renderer2d/text/100_strings_changing", static_cast<uint32_t>(100U * line.size()), iCamera,
+			[&]() -> void {
+				for (const auto& tr: transforms) {
+					renderer::Renderer2D::drawString(
+							{.transform = tr, .text = changing[next], .font = font, .color = {1.f, 1.f, 1.f, 1.f}});
+					next = (next + 1) % changing.size();
+				}
+			});
 	// Same glyphs wrapped and shrunk in a box: the layout must keep them in one batch.
 	const data::fonts::TextLayout wrapped{.boxSize = {12.f, 3.f}, .wrap = true, .fit = data::fonts::TextFit::Shrink};
 	measureFrame(ioRunner, "renderer2d/text/10000_glyphs_wrapped", 10000U, iCamera, [&]() -> void {

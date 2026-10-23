@@ -26,9 +26,11 @@
 #include <bit>
 #include <cstddef>
 #include <cstdint>
+#include <functional>
 #include <optional>
 #include <span>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace owl::renderer {
@@ -113,6 +115,17 @@ struct TextInstance {
 };
 static_assert(sizeof(TextInstance) == 96, "TextInstance must match shader std430 layout");
 
+// Glyphs of a string laid out in its frame, kept while its font, text and layout stay the same.
+struct ShapedText {
+	shared<data::fonts::Font> font;
+	std::string text;
+	data::fonts::TextLayout layout;
+	std::vector<data::fonts::Font::GlyphMetrics> glyphs;
+};
+
+// Direct-mapped: a string that changes every frame reuses the capacity of its slot instead of allocating.
+constexpr size_t g_shapedTextSlots = 1024;
+
 template<typename InstanceT>
 struct BatchData {
 	std::vector<InstanceT> instances;
@@ -173,6 +186,7 @@ struct InternalData {
 	// Reused every frame: the lights and the shadow rows of the shadow-casting ones.
 	std::vector<Light2DGpu> lights;
 	std::vector<float> shadowRows;
+	std::vector<ShapedText> shapedTexts;
 };
 }// namespace
 }// namespace utils
@@ -313,6 +327,40 @@ auto textureLookupEntry(const uint64_t iBackendId) -> utils::TextureSlotEntry& {
 	return entry->slot;
 }
 
+// Bitwise: a cached layout is reused only for the very same options.
+auto isSameLayout(const data::fonts::TextLayout& iLeft, const data::fonts::TextLayout& iRight) -> bool {
+	const auto bits = [](const float iValue) -> uint32_t { return std::bit_cast<uint32_t>(iValue); };
+	return bits(iLeft.fontSize) == bits(iRight.fontSize) && bits(iLeft.boxSize.x()) == bits(iRight.boxSize.x()) &&
+		   bits(iLeft.boxSize.y()) == bits(iRight.boxSize.y()) && iLeft.horizontal == iRight.horizontal &&
+		   iLeft.vertical == iRight.vertical && iLeft.wrap == iRight.wrap && iLeft.fit == iRight.fit &&
+		   bits(iLeft.minFontSize) == bits(iRight.minFontSize) && bits(iLeft.kerning) == bits(iRight.kerning) &&
+		   bits(iLeft.lineSpacing) == bits(iRight.lineSpacing);
+}
+
+auto shapedTextSlot(const StringData& iString) -> size_t {
+	const auto& layout = iString.layout;
+	size_t hash = std::hash<std::string_view>{}(iString.text);
+	for (const size_t part:
+		 {std::hash<const void*>{}(iString.font.get()), size_t{std::bit_cast<uint32_t>(layout.fontSize)},
+		  size_t{std::bit_cast<uint32_t>(layout.boxSize.x())}, size_t{std::bit_cast<uint32_t>(layout.boxSize.y())}})
+		hash ^= part + 0x9e3779b97f4a7c15ULL + (hash << 6) + (hash >> 2);
+	return hash & (utils::g_shapedTextSlots - 1);
+}
+
+auto shapedGlyphs(const StringData& iString) -> std::span<const data::fonts::Font::GlyphMetrics> {
+	auto& entry = g_Data->shapedTexts[shapedTextSlot(iString)];
+	if (entry.font != iString.font || !isSameLayout(entry.layout, iString.layout) || entry.text != iString.text) {
+		entry.font = iString.font;
+		entry.text.assign(iString.text);
+		entry.layout = iString.layout;
+		entry.glyphs.clear();
+		data::fonts::forEachLaidOutGlyph(
+				*iString.font, iString.text, iString.layout,
+				[&entry](const data::fonts::Font::GlyphMetrics& iGlyph) -> void { entry.glyphs.push_back(iGlyph); });
+	}
+	return entry.glyphs;
+}
+
 // Texture slot of a quad's texture; the few bound slots are scanned before the hash is consulted.
 inline auto textureSlotOf(const shared<gpu::Texture>& iTexture) -> uint32_t {
 	if (iTexture.get() == g_Data->lastTexture)
@@ -430,10 +478,11 @@ void Renderer2D::init() {
 			gpu::StorageBuffer::create(utils::g_maxTransientWorldsPerBatch * sizeof(math::mat4), 4, "Renderer2D");
 	g_Data->transientWorlds.reserve(utils::g_maxTransientWorldsPerBatch);
 	g_Data->runs.reserve(utils::g_maxRunsPerBatch);
-	g_Data->lighting.lights = gpu::StorageBuffer::create(g_maxLights2D * static_cast<uint32_t>(sizeof(utils::Light2DGpu)),
-													 5, "Renderer2D");
+	g_Data->lighting.lights = gpu::StorageBuffer::create(
+			g_maxLights2D * static_cast<uint32_t>(sizeof(utils::Light2DGpu)), 5, "Renderer2D");
 	g_Data->lighting.shadows = gpu::StorageBuffer::create(
 			g_maxLights2D * g_shadow2DBins * static_cast<uint32_t>(sizeof(float)), 6, "Renderer2D");
+	g_Data->shapedTexts.resize(utils::g_shapedTextSlots);
 	g_Data->lights.reserve(g_maxLights2D);
 	g_Data->shadowRows.reserve(size_t{g_maxLights2D} * g_shadow2DBins);
 }
@@ -508,10 +557,10 @@ void Renderer2D::setLighting(const Lighting2D& iLighting) {
 	const gpu::RendererDescriptors::ScopedActive scoped{blockId()};
 	if (!data.lights.empty())
 		data.lighting.lights->setData(data.lights.data(),
-								  static_cast<uint32_t>(data.lights.size() * sizeof(utils::Light2DGpu)), 0);
+									  static_cast<uint32_t>(data.lights.size() * sizeof(utils::Light2DGpu)), 0);
 	if (!data.shadowRows.empty())
 		data.lighting.shadows->setData(data.shadowRows.data(),
-								   static_cast<uint32_t>(data.shadowRows.size() * sizeof(float)), 0);
+									   static_cast<uint32_t>(data.shadowRows.size() * sizeof(float)), 0);
 	setLightingParameters(data, static_cast<int32_t>(data.lights.size()),
 						  math::vec4{iLighting.ambient.x(), iLighting.ambient.y(), iLighting.ambient.z(), 1.f});
 	data.cameraUniformBuffer->setData(&data.cameraBuffer, sizeof(utils::InternalData::CameraData), 0);
@@ -782,7 +831,7 @@ void Renderer2D::drawString(const StringData& iStringData) {
 		g_Data->runs.note(utils::RunKind::Text, iStringData.depth);
 		g_Data->stats.quadCount++;
 	};
-	data::fonts::forEachLaidOutGlyph(font, iStringData.text, iStringData.layout, emitGlyph);
+	for (const auto& glyph: shapedGlyphs(iStringData)) emitGlyph(glyph);
 }
 
 void Renderer2D::resetStats() {

@@ -334,6 +334,43 @@ TEST(Renderer2D, laidOutTextStaysOneDrawCall) {
 	Log::invalidate();
 }
 
+TEST(Renderer2D, cachedTextFollowsItsTextAndLayout) {
+	Log::init(owl::core::Log::Level::Off);
+	auto app = owl::mkShared<Application>(
+			AppParams{.renderer = RenderAPI::Type::Null, .hasGui = false, .useDebugging = false, .isDummy = true});
+	const auto font = app->getFontLibrary().getDefaultFont();
+	ASSERT_NE(font, nullptr);
+
+	RenderCommand::create(RenderAPI::Type::Null);
+	Renderer::init();
+	const CameraEditor cam;
+	const auto quadsOf = [&](const std::string& iText, const owl::data::fonts::TextLayout& iLayout) -> uint32_t {
+		Renderer2D::resetStats();
+		Renderer2D::beginScene(cam);
+		Renderer2D::drawString({.transform = Transform{owl::math::identity<float, 4>()},
+								.text = iText,
+								.font = font,
+								.layout = iLayout});
+		Renderer2D::endScene();
+		return Renderer2D::getStats().quadCount;
+	};
+	const owl::data::fonts::TextLayout free{};
+	const owl::data::fonts::TextLayout clipped{.boxSize = {0.3f, 1.f},
+											   .horizontal = owl::data::fonts::HorizontalAlignment::Left,
+											   .fit = owl::data::fonts::TextFit::Clip};
+	EXPECT_EQ(quadsOf("abc", free), 3u);
+	EXPECT_EQ(quadsOf("abc", free), 3u);
+	EXPECT_EQ(quadsOf("abcd", free), 4u);
+	EXPECT_LT(quadsOf("abcd", clipped), 4u);
+	EXPECT_EQ(quadsOf("abcd", free), 4u);
+	EXPECT_EQ(quadsOf("", free), 0u);
+
+	RenderCommand::invalidate();
+	Application::invalidate();
+	app.reset();
+	Log::invalidate();
+}
+
 TEST(Renderer2D, transientQuadsFlushEveryShapeTransientBatch) {
 	Log::init(owl::core::Log::Level::Off);
 	RenderCommand::create(RenderAPI::Type::Null);
