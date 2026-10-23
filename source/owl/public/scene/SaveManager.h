@@ -12,6 +12,7 @@
 #include "core/FormatVersion.h"
 #include "scene/PhysicsSnapshot.h"
 
+#include <cstddef>
 #include <cstdint>
 #include <filesystem>
 #include <optional>
@@ -79,6 +80,21 @@ public:
 
 	/**
 	 * @brief
+	 *  Cells of a tilemap as a save keeps them: the grid and the binary payload of its layers and heights.
+	 */
+	struct TilemapCells {
+		/// Columns of the grid.
+		uint32_t width = 0;
+		/// Rows of the grid.
+		uint32_t height = 0;
+		/// Number of layers.
+		uint32_t layerCount = 0;
+		/// The payload of `.owltilemap` files: the non-empty chunks of every layer and the corner heights.
+		std::string payload;
+	};
+
+	/**
+	 * @brief
 	 *  Result of a load operation.
 	 */
 	struct LoadResult {
@@ -88,7 +104,20 @@ public:
 		std::optional<core::FormatError> formatError;
 		/// Physics snapshots to apply after onStartRuntime (keyed by entity UUID).
 		std::unordered_map<uint64_t, PhysicsSnapshot> physicsSnapshots;
+		/// Saved cells of the tilemaps changed at runtime (keyed by entity UUID), for `restoreTilemapCells`.
+		std::unordered_map<uint64_t, TilemapCells> tilemapCells;
 	};
+
+	/**
+	 * @brief
+	 *  Put saved cells back into the tilemaps of a scene, before `onStartRuntime()` builds their colliders.
+	 *
+	 * An entry is skipped (and logged) when its entity has no resolved tilemap or the grid differs from the saved one.
+	 * @param[in,out] ioScene The scene, its tilemap assets resolved.
+	 * @param[in] iCells The saved cells, keyed by entity UUID.
+	 * @return The number of tilemaps restored.
+	 */
+	static auto restoreTilemapCells(Scene& ioScene, const std::unordered_map<uint64_t, TilemapCells>& iCells) -> size_t;
 
 	/**
 	 * @brief

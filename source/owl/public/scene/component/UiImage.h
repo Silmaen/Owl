@@ -11,6 +11,8 @@
 #include "core/Serializer.h"
 #include "renderer/gpu/Texture.h"
 
+#include <array>
+#include <cstdint>
 #include <string>
 
 namespace owl::scene::component {
@@ -27,6 +29,19 @@ struct OWL_API UiImage {
 	math::vec4 tint{1.0f, 1.0f, 1.0f, 1.0f};
 	/// Name of a `RenderTarget` of the scene shown in place of the texture; empty for the texture.
 	std::string renderTarget;
+	/// Columns of the sprite sheet grid of the texture (1: the whole texture).
+	uint32_t columns = 1;
+	/// Rows of the sprite sheet grid of the texture.
+	uint32_t rows = 1;
+	/// Frame of the grid shown, row-major from the top left (0-based).
+	uint32_t frame = 0;
+
+	/**
+	 * @brief
+	 *  Texture coordinates of the shown frame.
+	 * @return The four corners (bottom left, bottom right, top right, top left), as a `Quad2DData` takes them.
+	 */
+	[[nodiscard]] auto getFrameCoords() const -> std::array<math::vec2, 4>;
 
 	/**
 	 * @brief

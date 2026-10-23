@@ -63,6 +63,7 @@
 
 #include <algorithm>
 #include <atomic>
+#include <chrono>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -334,6 +335,9 @@ void Scene::onStartRuntime() {
 		m_simulationClock.setSettings(mp_engineContext->getSimulationSettings());
 	m_simulationClock.reset();
 	m_runtimeSeconds = 0.0;
+	m_timeScale = 1.f;
+	m_paused = false;
+	m_pendingSpawns.clear();
 	const auto heldInput = input::Input::readState();
 	m_frameInput.reset(heldInput);
 	m_tickInput.reset(heldInput);
@@ -495,7 +499,10 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep, const bool iRender)
 	const auto tStart = now();
 	m_lastRuntimeTimings = {};
 	m_toastTimer = std::max(0.f, m_toastTimer - iTimeStep.getSeconds());
-	m_runtimeSeconds += static_cast<double>(iTimeStep.getSeconds());
+	m_realFrameSeconds = iTimeStep.getSeconds();
+	updateScaledTimeStep(iTimeStep);
+	const core::Timestep& sceneStep = m_scaledTimeStep;
+	m_runtimeSeconds += static_cast<double>(sceneStep.getSeconds());
 	m_inUpdatePass = false;
 	m_worldTransformCacheActive = false;
 	const auto frameInput = input::Input::readState();
@@ -506,13 +513,15 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep, const bool iRender)
 		m_systems.run(SystemPhase::Ended, *this, {.timeStep = iTimeStep, .render = iRender});
 		return;
 	}
-	const uint32_t ticks = m_simulationClock.advance(iTimeStep);
-	const SystemContext context{.timeStep = iTimeStep,
+	const uint32_t ticks = m_simulationClock.advance(sceneStep);
+	const SystemContext context{.timeStep = sceneStep,
 								.render = iRender,
 								.tickCount = ticks,
 								.alpha = m_simulationClock.getAlpha()};
 	const auto tScripts = now();
+	flushPendingSpawns();
 	m_systems.run(SystemPhase::Scripts, *this, context);
+	flushPendingSpawns();
 	const auto tScriptsEnd = now();
 	m_systems.run(SystemPhase::PrePhysics, *this, context);
 	const auto tPhysics = now();
@@ -542,6 +551,62 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep, const bool iRender)
 								.totalMs = elapsedMs(tStart, tEnd)};
 	}
 	flushPendingDestructions();
+}
+
+void Scene::updateScaledTimeStep(const core::Timestep& iTimeStep) {
+	// Assigned into a member: the time step's buffers are reused instead of allocated every frame.
+	m_scaledTimeStep = iTimeStep;
+	if (const float scale = getEffectiveTimeScale(); scale < 1.f || scale > 1.f)
+		m_scaledTimeStep.forceUpdate(std::chrono::duration_cast<core::Timestep::duration>(std::chrono::duration<double>(
+				static_cast<double>(iTimeStep.getSeconds()) * static_cast<double>(scale))));
+}
+
+void Scene::setTimeScale(const float iScale) {
+	if (!std::isfinite(iScale)) {
+		OWL_CORE_WARN("Scene: Time scale {} ignored, not a finite number.", iScale)
+		return;
+	}
+	m_timeScale = std::clamp(iScale, 0.f, maxTimeScale);
+}
+
+void Scene::startSpawnedSubtree(const Entity& iRoot) {
+	if (iRoot)
+		m_pendingSpawns.push_back(iRoot.getUUID());
+}
+
+void Scene::flushPendingSpawns() {
+	if (m_pendingSpawns.empty() || status != Status::Playing)
+		return;
+	for (const auto uuid: std::exchange(m_pendingSpawns, {})) {
+		const Entity root = findEntityByUUID(uuid);
+		if (!root || isPendingDestructionInTree(root))
+			continue;
+		for (const auto& member: collectSubtree(*this, root)) startSpawnedEntity(member);
+	}
+}
+
+void Scene::startSpawnedEntity(const Entity& iEntity) {
+	if (iEntity.hasComponent<component::AnimatedSpriteRenderer>()) {
+		auto& anim = iEntity.getComponent<component::AnimatedSpriteRenderer>();
+		anim.m_currentFrame = anim.firstFrame;
+		anim.m_elapsedTime = 0.0f;
+		anim.m_playing = true;
+	}
+	if (iEntity.hasComponent<component::Trigger>()) {
+		auto& trigger = iEntity.getComponent<component::Trigger>().trigger;
+		trigger.setOverlapping(false);
+		if (trigger.type == SceneTrigger::TriggerType::Timer)
+			trigger.startTimer();
+	}
+	if (!iEntity.hasComponent<component::LuaScript>())
+		return;
+	auto& luaScript = iEntity.getComponent<component::LuaScript>();
+	if (luaScript.scriptPath.empty() || luaScript.instance)
+		return;
+	luaScript.instance =
+			loadScriptInstance(*this, luaScript, static_cast<uint64_t>(iEntity.getUUID()), iEntity.getName());
+	if (luaScript.instance)
+		luaScript.instance->onCreate();
 }
 
 void Scene::runSimulationTicks(const SystemContext& iFrame) {

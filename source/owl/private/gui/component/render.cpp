@@ -1971,6 +1971,19 @@ void renderProps(UiImage& ioComponent) {
 	fieldTooltip("Name of a Render Target of the scene: the image shows what its camera sees (a minimap), in place of "
 				 "the texture. Empty to show the texture.");
 	prop::ColorEdit4("Tint", reinterpret_cast<float*>(&ioComponent.tint));
+	auto columns = static_cast<int>(ioComponent.columns);
+	if (prop::DragInt("Columns", &columns, 1.f, 1, 256))
+		ioComponent.columns = static_cast<uint32_t>(std::max(columns, 1));
+	fieldTooltip("Columns of the sprite sheet grid of the texture (1: the whole texture).");
+	auto rows = static_cast<int>(ioComponent.rows);
+	if (prop::DragInt("Rows", &rows, 1.f, 1, 256))
+		ioComponent.rows = static_cast<uint32_t>(std::max(rows, 1));
+	fieldTooltip("Rows of the sprite sheet grid of the texture.");
+	const auto lastFrame = static_cast<int>(ioComponent.columns * ioComponent.rows) - 1;
+	auto frame = static_cast<int>(ioComponent.frame);
+	if (prop::DragInt("Frame", &frame, 1.f, 0, lastFrame))
+		ioComponent.frame = static_cast<uint32_t>(std::clamp(frame, 0, lastFrame));
+	fieldTooltip("Frame of the grid shown, row-major from the top left (Lua: ui.set_image_frame).");
 }
 
 void renderProps(UiPanel& ioComponent) {

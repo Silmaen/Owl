@@ -13,6 +13,11 @@
 #include "app/Application.h"
 
 #include <filesystem>
+#include <fstream>
+#include <iterator>
+#include <optional>
+#include <string>
+#include <system_error>
 #include <vector>
 
 namespace owl::data::assets {
@@ -32,6 +37,37 @@ auto isInDirectory(const std::filesystem::path& iPath, const std::filesystem::pa
 	const auto directory = std::filesystem::absolute(iDirectory).lexically_normal();
 	const auto relative = file.lexically_relative(directory);
 	return !relative.empty() && *relative.begin() != "..";
+}
+
+namespace {
+
+auto readFileText(const std::filesystem::path& iPath) -> std::optional<std::string> {
+	std::error_code error;
+	if (!std::filesystem::is_regular_file(iPath, error))
+		return std::nullopt;
+	std::ifstream file(iPath, std::ios::binary);
+	if (!file.is_open())
+		return std::nullopt;
+	return std::string{std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
+}
+
+}// namespace
+
+auto readAssetText(const std::filesystem::path& iRelative) -> std::optional<std::string> {
+	if (iRelative.empty())
+		return std::nullopt;
+	if (app::Application::instanced()) {
+		const auto& app = app::Application::get();
+		if (const std::string rel = iRelative.generic_string(); app.hasOpenPack() && app.packContains(rel)) {
+			if (const auto data = app.loadFromPack(rel); data)
+				return std::string{data->begin(), data->end()};
+		}
+	}
+	for (const auto& directory: getAssetSearchPaths()) {
+		if (auto text = readFileText(directory / iRelative); text)
+			return text;
+	}
+	return readFileText(iRelative);
 }
 
 }// namespace owl::data::assets

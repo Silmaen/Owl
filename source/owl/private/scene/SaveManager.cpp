@@ -9,13 +9,17 @@
 
 #include "scene/SaveManager.h"
 
+#include "TilemapCodec.h"
 #include "core/FormatVersionYaml.h"
 #include "core/SerializerImpl.h"
+#include "data/assets/AssetSearchPaths.h"
 #include "physics/PhysicCommand.h"
 #include "platform/AtomicFile.h"
 #include "scene/Entity.h"
 #include "scene/SceneSerializer.h"
+#include "scene/TilemapAsset.h"
 #include "scene/component/PhysicBody.h"
+#include "scene/component/Tilemap.h"
 
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG("-Wreserved-identifier")
@@ -30,6 +34,7 @@ OWL_DIAG_POP
 #include <filesystem>
 #include <format>
 #include <fstream>
+#include <string_view>
 #include <system_error>
 #include <tuple>
 
@@ -59,7 +64,91 @@ void restoreHud(Scene& ioScene, const YAML::Node& iHudData) {
 		std::ignore = SceneSerializer::applyEntityFromString(widget, emitter.c_str());
 	}
 }
+// Whether a runtime tilemap holds what its asset file holds (a file that cannot be read counts as changed).
+auto matchesItsFile(const component::Tilemap& iTilemap) -> bool {
+	const auto text = data::assets::readAssetText(iTilemap.tilemapPath);
+	if (!text)
+		return false;
+	TilemapAsset source;
+	return source.deserializeFromString(*text) && source.hasSameContent(*iTilemap.asset);
+}
+
+// The cells of the tilemaps changed since they were read from their file.
+void emitTilemapCells(YAML::Emitter& ioEmitter, const Scene& iScene) {
+	bool started = false;
+	for (const auto view = iScene.registry.view<component::ID, component::Tilemap>(); const auto entity: view) {
+		const auto& tilemap = view.get<component::Tilemap>(entity);
+		if (!tilemap.asset || tilemap.tilemapPath.empty() || matchesItsFile(tilemap))
+			continue;
+		if (!started) {
+			ioEmitter << YAML::Key << "TilemapCells" << YAML::Value << YAML::BeginSeq;
+			started = true;
+		}
+		const auto& asset = *tilemap.asset;
+		const std::string payload = codec::encodePayload(asset.layers, asset.getCornerHeights());
+		ioEmitter << YAML::BeginMap;
+		ioEmitter << YAML::Key << "uuid" << YAML::Value << static_cast<uint64_t>(view.get<component::ID>(entity).id);
+		ioEmitter << YAML::Key << "width" << YAML::Value << asset.width;
+		ioEmitter << YAML::Key << "height" << YAML::Value << asset.height;
+		ioEmitter << YAML::Key << "layers" << YAML::Value << asset.layers.size();
+		ioEmitter << YAML::Key << "payload" << YAML::Value
+				  << YAML::Binary(reinterpret_cast<const unsigned char*>(payload.data()), payload.size());
+		ioEmitter << YAML::EndMap;
+	}
+	if (started)
+		ioEmitter << YAML::EndSeq;
+}
+
+auto readTilemapCells(const YAML::Node& iNode) -> std::unordered_map<uint64_t, SaveManager::TilemapCells> {
+	std::unordered_map<uint64_t, SaveManager::TilemapCells> cells;
+	if (!iNode || !iNode.IsSequence())
+		return cells;
+	for (const auto& entry: iNode) {
+		if (!entry["uuid"] || !entry["payload"])
+			continue;
+		const auto binary = entry["payload"].as<YAML::Binary>();
+		cells[entry["uuid"].as<uint64_t>()] = SaveManager::TilemapCells{
+				.width = entry["width"] ? entry["width"].as<uint32_t>() : 0,
+				.height = entry["height"] ? entry["height"].as<uint32_t>() : 0,
+				.layerCount = entry["layers"] ? entry["layers"].as<uint32_t>() : 0,
+				.payload = std::string{reinterpret_cast<const char*>(binary.data()), binary.size()}};
+	}
+	return cells;
+}
+
 }// namespace
+
+auto SaveManager::restoreTilemapCells(Scene& ioScene, const std::unordered_map<uint64_t, TilemapCells>& iCells)
+		-> size_t {
+	size_t restored = 0;
+	for (const auto& [uuid, cells]: iCells) {
+		const auto entity = ioScene.findEntityByUUID(core::UUID{uuid});
+		auto* tilemap =
+				entity ? ioScene.registry.try_get<component::Tilemap>(static_cast<entt::entity>(entity)) : nullptr;
+		if (tilemap == nullptr || !tilemap->asset) {
+			OWL_CORE_WARN("SaveManager: No tilemap {} to restore the saved cells into.", uuid)
+			continue;
+		}
+		auto& asset = *tilemap->asset;
+		if (asset.width != cells.width || asset.height != cells.height || asset.layers.size() != cells.layerCount) {
+			OWL_CORE_WARN("SaveManager: Tilemap {} has another grid than the saved one, its cells are not restored.",
+						  uuid)
+			continue;
+		}
+		auto layers = asset.layers;
+		for (auto& layer: layers) layer.fill(component::g_EmptyTileIndex);
+		std::vector<uint8_t> heights;
+		const size_t cornerCount = (static_cast<size_t>(asset.width) + 1) * (static_cast<size_t>(asset.height) + 1);
+		if (!codec::decodePayload(cells.payload, layers, heights, cornerCount, true)) {
+			OWL_CORE_WARN("SaveManager: Saved cells of tilemap {} are corrupted, the file ones are kept.", uuid)
+			continue;
+		}
+		asset.layers = std::move(layers);
+		std::ignore = asset.setCornerHeights(std::move(heights));
+		++restored;
+	}
+	return restored;
+}
 
 auto SaveManager::format() -> const core::DocumentFormat& { return g_saveFormat; }
 
@@ -132,6 +221,8 @@ auto SaveManager::save(const uint32_t iSlot, const shared<Scene>& iScene, const 
 									<< YAML::Load(SceneSerializer(hud, DocumentKind::Hud).serializeToString());
 			sOut.getImpl()->emitter << YAML::EndMap;
 		}
+
+		emitTilemapCells(sOut.getImpl()->emitter, *iScene);
 
 		// Physics snapshots (velocities for dynamic bodies).
 		if (physics::PhysicCommand::isInitialized(*iScene)) {
@@ -207,6 +298,10 @@ auto SaveManager::load(const uint32_t iSlot, const shared<Scene>& iScene) -> Loa
 
 		if (const auto hudData = root["HudData"]; hudData.IsMap())
 			restoreHud(*iScene, hudData);
+
+		result.tilemapCells = readTilemapCells(root["TilemapCells"]);
+		iScene->resolveAllTilemapAssets();
+		std::ignore = restoreTilemapCells(*iScene, result.tilemapCells);
 
 		// Load physics snapshots.
 		if (const auto snapNode = root["PhysicsSnapshots"]; snapNode && snapNode.IsSequence()) {
