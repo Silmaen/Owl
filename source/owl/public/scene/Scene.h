@@ -1721,6 +1721,8 @@ private:
 	EnvironmentState m_environment;
 	/// Shadow-map targets of the frame, one per cascade.
 	std::array<renderer::RenderGraph::Resource, renderer::g_maxShadowCascades> m_shadowTargets{};
+	/// Depth of the occluders from the camera this frame (the outline reuses it); invalid without occlusion.
+	renderer::RenderGraph::Resource m_occluderDepth{};
 	/// Token target of the occlusion pyramid pass, read by the 3D passes; invalid without occlusion.
 	renderer::RenderGraph::Resource m_occlusionToken{};
 

@@ -203,7 +203,8 @@ flowchart LR
   target: exposure, bloom, tone mapping, vignette, sRGB encoding, then the colour-grading LUT.
 - **outline mask**, **outline scene depth** and **outline** (`renderer::OutlinePass`, `outline.slang`), when the scene
   has an outline (`Scene::setOutline`: the Owl Nest selection, what a first-person walker aims at): the meshes of the
-  outlined subtree alone, then the whole 3D scene, are drawn into depth targets, and the line is blended over the target
+  outlined subtree alone, then the whole 3D scene (the **occluder depth** of the frame when the occlusion culling made
+  one), are drawn into depth targets, and the line is blended over the target
   around the silhouette, in full where it shows, dimmed where other geometry hides it; gaps thinner than the line close.
 - **entity ids and depth** copies the id and depth attachments into the target, so picking and depth-tested editor
   overlays keep working; skipped when the target is the window surface.

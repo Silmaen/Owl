@@ -981,6 +981,7 @@ void Scene::recordLightPasses(renderer::RenderGraph& ioGraph) {
 void Scene::recordOcclusionPasses(renderer::RenderGraph& ioGraph) {
 	using Graph = renderer::RenderGraph;
 	m_occlusionToken = {};
+	m_occluderDepth = {};
 	const auto& layers = renderer::Renderer::getRenderStack().getLayers();
 	float scale = 0.f;
 	for (size_t index = 0; index < layers.size(); ++index) {
@@ -996,6 +997,7 @@ void Scene::recordOcclusionPasses(renderer::RenderGraph& ioGraph) {
 	const math::vec2ui size{std::max(1u, static_cast<uint32_t>(static_cast<float>(frameSize.x()) * scale)),
 							std::max(1u, static_cast<uint32_t>(static_cast<float>(frameSize.y()) * scale))};
 	const Graph::Resource depth = ioGraph.createTarget("occluder depth", Graph::TargetFormat::Depth, size);
+	m_occluderDepth = depth;
 	ioGraph.addPass(
 			"occluder depth", [depth](Graph::PassBuilder& ioBuilder) -> void { ioBuilder.write(depth); },
 			[this](const Graph::PassContext&) -> void { renderShadowCasters(*mp_renderCamera); });
@@ -1188,7 +1190,10 @@ void Scene::recordOutlinePasses(renderer::RenderGraph& ioGraph, const renderer::
 	if (std::ranges::none_of(meshes, [&](const auto iHandle) -> bool { return isInSubtree(iHandle, rootHandle); }))
 		return;
 	const Graph::Resource mask = ioGraph.createTarget("outline mask", Graph::TargetFormat::Depth);
-	const Graph::Resource depth = ioGraph.createTarget("outline scene depth", Graph::TargetFormat::Depth);
+	// The occluder depth of the frame, when the occlusion culling made one, spares a depth pass of the whole scene.
+	const bool reuse = m_occluderDepth.isValid();
+	const Graph::Resource depth =
+			reuse ? m_occluderDepth : ioGraph.createTarget("outline scene depth", Graph::TargetFormat::Depth);
 	ioGraph.addPass(
 			"outline mask", [mask](Graph::PassBuilder& ioBuilder) -> void { ioBuilder.write(mask); },
 			[this, rootHandle](const Graph::PassContext&) -> void {
@@ -1196,9 +1201,10 @@ void Scene::recordOutlinePasses(renderer::RenderGraph& ioGraph, const renderer::
 				renderShadowCasters(*mp_renderCamera, true);
 				m_meshFilterRoot = entt::null;
 			});
-	ioGraph.addPass(
-			"outline scene depth", [depth](Graph::PassBuilder& ioBuilder) -> void { ioBuilder.write(depth); },
-			[this](const Graph::PassContext&) -> void { renderShadowCasters(*mp_renderCamera); });
+	if (!reuse)
+		ioGraph.addPass(
+				"outline scene depth", [depth](Graph::PassBuilder& ioBuilder) -> void { ioBuilder.write(depth); },
+				[this](const Graph::PassContext&) -> void { renderShadowCasters(*mp_renderCamera); });
 	ioGraph.addPass(
 			"outline",
 			[mask, depth, iTarget](Graph::PassBuilder& ioBuilder) -> void {
