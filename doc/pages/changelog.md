@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `core::task::Scheduler::parallelFor`, and `Scene::setTaskScheduler` / `setParallelMinEntities`: `prepareWorldTransforms` and the spatial boxes of scenes above 4096 entities are prepared in parallel (`frame/editor_update/forest50000` 1.68 to 0.91 ms).
+- Benchmarks `frame/editor_update/{flat,forest,moving_flat,moving_forest}50000`, each with a `_serial` twin.
 - Benchmark `renderer2d/text/100_strings_changing`: strings never seen in the previous frames, the cost of laying text out.
 - Engine Demo tavern: a hub level played on foot (`FirstPersonController`) from an empty house of the hub, with a cellar key, a trapdoor, a chest in `scenes/tavern_cellar.owl` lit by a lantern spot light and a ladder back up.
 - Outline of the silhouette of an entity and its subtree (`Scene::setOutline`, `renderer::OutlinePass`), in full where it shows and dimmed behind other geometry: the Owl Nest selection of a mesh and what a first-person walker aims at use it.

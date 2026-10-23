@@ -189,7 +189,8 @@ Opaque meshes are drawn as GPU-culled instanced batches; a loose octree spares t
     - Model matrices built relative to the camera on the CPU, so vertices near the camera keep their precision
     - Reversed-Z with a floating-point depth buffer and an infinite far plane, on Vulkan and OpenGL
 - Spatial partitioning: a loose octree per scene, shared by the 2D and 3D layers ([Instancing and culling](#instancing-and-culling))
-- Multithreaded render preparation (command recording per pass on the task system)
+- Multithreaded render preparation: world transforms and spatial boxes of large scenes on the task scheduler, GPU
+  submission on the main thread ([Renderer](../renderer.md))
 
 ## Scene editing
 

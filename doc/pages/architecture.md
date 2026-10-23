@@ -303,6 +303,8 @@ The engine includes a task scheduler backed by [Taskflow](https://github.com/tas
 - **Public API** (`core/task/`): `Task`, `Scheduler`, `Timer`
 - **Private implementation**: `SchedulerImpl` owns a `tf::Executor` (thread pool sized to `hardware_concurrency`)
 - Taskflow is a PRIVATE dependency — not exposed in public headers
+- `Scheduler::parallelFor(count, minChunk, body)` splits `[0, count)` into contiguous chunks run by the calling thread
+  and at most 7 workers (waking more costs more than it shares), and returns once every chunk is done
 
 ## Engine Context
 
