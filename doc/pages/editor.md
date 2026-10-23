@@ -1,4 +1,4 @@
-# Editor (Owl Nest) {#page-editor}
+# Using Owl Nest {#page-editor}
 
 [TOC]
 
@@ -1179,6 +1179,7 @@ as `assets/help/`, and `panel::HelpPanel` looks for `help/` in the asset directo
   subset fails the configure. The panel registers the Inter font with lunasvg so the diagram text renders.
 - Lists hang their wrapped lines under the text, ordered lists keep their start number, `- [ ]` / `- [x]` items show a
   checkbox and inline code is a flat tinted span.
+- A raw `<img src="..." width="N">` tag shows the image at that width (capped to the panel width).
 - HTTPS images (shields.io badges) are cached as `<build>/help_bundle/images/badges/<sha1>.svg` and rewritten to local
   files; a configure downloads the missing ones only with `OWL_HELP_FETCH_BADGES=ON` (packaged presets).
 

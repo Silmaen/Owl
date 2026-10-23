@@ -1,10 +1,22 @@
-# Building Owl Engine {#page-building}
+# Building from Source {#page-building}
 
 [TOC]
 
-This page explains how to configure, build, and test Owl Engine.
+This page explains how to configure, build, and test Owl Engine. To only run the editor, see
+[Getting Started](getting_started.md).
 
 ## Prerequisites
+
+### Supported platforms
+
+| OS      | Architecture | Compilers                      |
+|---------|--------------|--------------------------------|
+| Linux   | x64, arm64   | Clang 22+, GCC 14+             |
+| Windows | x64          | MinGW Clang 22+, MinGW GCC 15+ |
+
+Owl Engine ships only what it tests: every platform listed has its machine in the CI, which builds it and runs the
+unit and scenario tests on every change. A new platform comes with its test machine (the Web is on the
+[roadmap](roadmap.md)). The backends of each platform are listed in [Architecture](architecture.md).
 
 ### Build image
 
@@ -23,7 +35,7 @@ To build without the image, install:
 
 | Tool    | Version | Notes                                                               |
 |---------|---------|---------------------------------------------------------------------|
-| CMake   | 3.24+   | Build system generator                                              |
+| CMake   | 4.4+    | Build system generator                                              |
 | Ninja   |         | Recommended build backend                                           |
 | Clang   | 22+     | Or GCC 14+ (tested versions; CMake warns below Clang 18 / GCC 13)   |
 | Python  | 3.12+   | For CI tooling and Conan                                            |

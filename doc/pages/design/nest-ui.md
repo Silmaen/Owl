@@ -101,7 +101,7 @@ context menu or a viewport overlay dropdown. Reverts to the editor camera on dem
 - The build image already has `dbus-1`; D-Bus joins the Linux packages' dependencies; checked on GNOME and KDE,
   Wayland and X11 (NEST1 of [Isometric worlds](isometric-worlds.md))
 
-## In-editor documentation (v0.5.0)
+## In-editor documentation (v0.5.0) {#in-editor-documentation}
 
 ### Mermaid diagram rendering in the help panel
 

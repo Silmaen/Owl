@@ -1,4 +1,4 @@
-# Lua Scripting {#page-scripting}
+# Scripting Games in Lua {#page-scripting}
 
 [TOC]
 

@@ -1,4 +1,4 @@
-# Scene and Component System {#page-scene}
+# Scene and Components {#page-scene}
 
 [TOC]
 

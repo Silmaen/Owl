@@ -109,6 +109,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Documentation reorganised: short README landing page, one guide per audience (game makers, C++ developers, contributors), consistent page titles, `<img width>` honoured in the help and CMake 4.4 required
 - `QuadInstance` back to 80 bytes, the normal-map index and the 2D light flags packed into its padding.
 - `utils::getLighting2DState` returns a reference, and unlit tilemaps no longer bind the 2D light buffers: a static tilemap frame is back near its cost before the 2D lighting.
 - `math::Frustum` folds its near-plane tolerance into the plane when it is built: no per-box cost, and the other planes have none.

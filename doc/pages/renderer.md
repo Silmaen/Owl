@@ -1,4 +1,4 @@
-# Renderer System {#page-renderer}
+# Renderer {#page-renderer}
 
 [TOC]
 
