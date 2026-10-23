@@ -35,7 +35,7 @@ TEST(ShippedScenes, EveryShippedSceneIsAtTheCurrentFormatAndReadsWithoutMigratio
 			if (entry.path().extension() != ".owl")
 				continue;
 			++checked;
-			std::ifstream file{entry.path()};
+			const std::ifstream file{entry.path()};
 			std::stringstream text;
 			text << file.rdbuf();
 			const core::YamlDocument document{text.str(), entry.path().string()};
