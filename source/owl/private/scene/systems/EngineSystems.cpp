@@ -73,6 +73,19 @@ auto getTriggerPlayer(Scene& ioScene) -> Entity {
 	return {};
 }
 
+// Whether the player reaches the trigger: a first-person walker aims at an interaction instead of walking into it, a 3D
+// walker's body box meets the trigger box in 3D, a 2D player its collider in the plane.
+auto isTouching(Scene& ioScene, const Entity& iEntity, const Entity& iPlayer, const SceneTrigger::TriggerType iType)
+		-> bool {
+	if (iType == SceneTrigger::TriggerType::Interaction && iPlayer.hasComponent<component::FirstPersonController>())
+		return iPlayer.getComponent<component::FirstPersonController>().m_target == iEntity.getUUID();
+	if (isWalker(iPlayer))
+		return getBodyBox(iEntity, ioScene.getWorldTransform(iEntity))
+				.intersect(getBodyBox(iPlayer, ioScene.getWorldTransform(iPlayer)));
+	return getColliderBox(iEntity, ioScene.getWorldTransform(iEntity))
+			.intersect(getColliderBox(iPlayer, ioScene.getWorldTransform(iPlayer)));
+}
+
 void updateAnimatedSprite(component::AnimatedSpriteRenderer& ioAnim, const core::Timestep& iTimeStep) {
 	if (!ioAnim.m_playing || ioAnim.columns == 0 || ioAnim.rows == 0 || ioAnim.frameDuration <= 0.0f)
 		return;
@@ -118,15 +131,7 @@ void updateTrigger(Scene& ioScene, const Entity& iEntity, const Entity& iPlayer,
 	}
 	if (!iPlayer)
 		return;
-	// A first-person walker uses an interaction by aiming at it, not by walking into it.
-	const bool aimed = trigger.type == SceneTrigger::TriggerType::Interaction &&
-					   iPlayer.hasComponent<component::FirstPersonController>();
-	const bool overlapping =
-			aimed               ? iPlayer.getComponent<component::FirstPersonController>().m_target == iEntity.getUUID()
-			: isWalker(iPlayer) ? getBodyBox(iEntity, ioScene.getWorldTransform(iEntity))
-										  .intersect(getBodyBox(iPlayer, ioScene.getWorldTransform(iPlayer)))
-								: getColliderBox(iEntity, ioScene.getWorldTransform(iEntity))
-										  .intersect(getColliderBox(iPlayer, ioScene.getWorldTransform(iPlayer)));
+	const bool overlapping = isTouching(ioScene, iEntity, iPlayer, trigger.type);
 	if (overlapping && !trigger.wasOverlapping())
 		trigger.onTriggerEnter(iPlayer, iEntity);
 	if (overlapping)
