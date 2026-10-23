@@ -4,7 +4,7 @@
 
 Design page of the 2D work once planned as v0.5.0; the 2026-10-16 replan spread it over the releases, see the
 [Roadmap](../roadmap.md): the draw-order sort key, scroll views and lists, and tile-graph pathfinding in v0.4.0; 2D
-lights and the minimap (done) and "look through scene camera" in v0.5.0; the tileset editor and the procedural brick in v0.6.0;
+lights and the minimap (done) and "look through scene camera" in v0.5.0; the tileset editor, mipmapped pixel-art atlases and the procedural brick in v0.6.0;
 full 2D physics and the enemies demo in v0.7.0. The 2D physics part has its own page,
 [Physics API](physics-api.md); the editor part is in [Owl Nest UI](nest-ui.md).
 
@@ -63,6 +63,21 @@ not a navigation mesh.
 - Hierarchical search over the 32×32 chunks of the v0.4.0 tilemap storage, so 1024² maps stay cheap
 - Incremental update when a tile changes; queries spread over ticks on the task system
 - Lua API and an editor overlay drawing the graph and a test path
+
+## Mipmapped pixel-art atlases (v0.6.0)
+
+A tile atlas is sampled with `FilterMode::Nearest` and no mipmaps, so that a cell never bleeds into its neighbours.
+Close up the texels stay sharp; far away a pixel covers many texels and the tiles shimmer, more so with the 128 px
+voxel blocks. `voxel.slang` averages four taps over the footprint of a detailed atlas (one with relief or roughness
+maps) as a stopgap.
+
+| Part        | Plan                                                                                                          |
+|-------------|---------------------------------------------------------------------------------------------------------------|
+| Filter mode | A third `FilterMode`, pixel art: nearest magnification, trilinear minification, on OpenGL and Vulkan          |
+| Mipmaps     | Built cell by cell from the tile grid, each cell padded with its own edge texels, so no level mixes two tiles |
+| Loading     | A tileset asks for the mode; its atlas, normal and roughness maps load with their mip chain                   |
+| Shaders     | Voxel, raycast and tilemap shaders sample with the continuous UV derivatives; the four-tap average goes       |
+| Tests       | Image tests of a far voxel slope and a raycast corridor; a cell-isolation test on the generated mips          |
 
 ## Tileset editor (v0.6.0) — compose atlas by inserting / removing source images
 
