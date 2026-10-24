@@ -257,6 +257,27 @@ TEST(SceneComponent, AnimatedSpriteRendererSerializesSpeedCurve) {
 	owl::core::Log::invalidate();
 }
 
+TEST(SceneComponent, AnimatedSpriteRendererKeepsItsLitFlag) {
+	owl::core::Log::init(owl::core::Log::Level::Off);
+	auto app = makeAppForAnimRoundTrip("animLit");
+	const auto sc = owl::mkShared<owl::scene::Scene>();
+	auto ent = sc->createEntityWithUUID(202, "AnimEntityUnlit");
+	auto& anim = ent.addOrReplaceComponent<owl::scene::component::AnimatedSpriteRenderer>();
+	EXPECT_TRUE(anim.lit);
+	anim.lit = false;
+	const auto fs = std::filesystem::temp_directory_path() / "tempAnimLit.yml";
+	EXPECT_TRUE(owl::scene::SceneSerializer(sc).serialize(fs));
+	const auto loaded = owl::mkShared<owl::scene::Scene>();
+	EXPECT_TRUE(owl::scene::SceneSerializer(loaded).deserialize(fs).has_value());
+	const auto back = loaded->findEntityByUUID(owl::core::UUID{202});
+	ASSERT_TRUE(back);
+	EXPECT_FALSE(back.getComponent<owl::scene::component::AnimatedSpriteRenderer>().lit);
+	remove(fs);
+	owl::app::Application::invalidate();
+	app.reset();
+	owl::core::Log::invalidate();
+}
+
 TEST(SceneComponent, AnimatedSpriteRendererDefaultEmptyCurveOmitsKey) {
 	owl::core::Log::init(owl::core::Log::Level::Off);
 	auto app = makeAppForAnimRoundTrip("animDefaultCurve");

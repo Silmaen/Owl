@@ -269,7 +269,8 @@ YAML key: `SpriteRenderer`
 #### AnimatedSpriteRenderer
 
 YAML key: `AnimatedSpriteRenderer`: a spritesheet of `columns × rows` frames played from `firstFrame` to `lastFrame`
-every `frameDuration` seconds, looping or not, tinted by `color`. The optional `speedCurve` multiplies each frame's
+every `frameDuration` seconds, looping or not, tinted by `color`, lit by the 2D lights unless `lit` is false (written
+only when false: badges and markers keep their colour). The optional `speedCurve` multiplies each frame's
 `dt` by its value at the normalized progress inside `[firstFrame, lastFrame]` (omitted from the file when empty). Field
 table, UVs and runtime behaviour: [Renderer > Animated Sprites](renderer.md#animated-sprites).
 

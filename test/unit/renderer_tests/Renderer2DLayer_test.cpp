@@ -8,6 +8,7 @@
 
 #include "testHelper.h"
 
+#include <math/Transform.h>
 #include <math/matrices.h>
 #include <math/vectors.h>
 #include <renderer/CameraOrtho.h>

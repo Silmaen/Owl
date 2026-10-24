@@ -154,6 +154,17 @@ struct OWL_API RuntimeTimings {
 
 /**
  * @brief
+ *  How a 2D layer takes its 2D lighting (`Scene::applyLighting2D`).
+ */
+struct OWL_API Layer2DLighting {
+	/// The lights and the sprites meet on the ground plane (x, z) of a Y-up world (billboard layers).
+	bool groundPlane = false;
+	/// The layer draws into a 3D scene (billboards or depth tested): it follows the light and exposure of the scene.
+	bool inScene3D = false;
+};
+
+/**
+ * @brief
  *  Class describing a scene.
  */
 class OWL_API Scene final {
@@ -1199,10 +1210,11 @@ public:
 	 *  Give the `Light2D` entities and the shadow-casting sprites of the layer being drawn to `Renderer2D`, which the
 	 *  2D, tilemap and isometric renderers read; without an enabled light the 2D lighting is turned off.
 	 * @param[in] iEditorMode True if the scene is being drawn for the editor view.
-	 * @param[in] iGroundPlane True for a billboard layer: the lights are placed on the ground plane (x, z), without
-	 *  shadow.
+	 * @param[in] iLayer How the layer being drawn takes its lighting: a billboard layer places the lights on the
+	 *  ground plane (x, z), without shadow; a layer of a 3D scene (billboards or depth tested) takes the light of the
+	 *  3D scene as its ambient and undoes the exposure compensation of the camera.
 	 */
-	void applyLighting2D(bool iEditorMode, bool iGroundPlane);
+	void applyLighting2D(bool iEditorMode, const Layer2DLighting& iLayer = {});
 
 	/**
 	 * @brief
@@ -1220,6 +1232,14 @@ public:
 	[[nodiscard]] static auto hasDepthTested2DLayer() -> bool;
 
 private:
+	/**
+	 * @brief
+	 *  Draw the 2D entities routed to the 2D layer being drawn: sprites, animated sprites, circles, texts and raycast
+	 *  plates, turned to the camera and sorted by their view distance in a layer of a 3D scene.
+	 * @param[in] iEditorMode True if the scene is being drawn for the editor view.
+	 */
+	void render2D(bool iEditorMode);
+
 	/**
 	 * @brief
 	 *  Cut every parent cycle by moving one entity of each cycle to the root.

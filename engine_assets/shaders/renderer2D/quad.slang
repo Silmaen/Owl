@@ -15,9 +15,10 @@
 struct Camera {
 	column_major float4x4 viewProjection;
 	// x: 1 when the target stores linear colour (the fragment colour is decoded from sRGB); y: 2D light count;
-	// z: 1 when the 2D lights are on the ground plane (x, z) of a Y-up world (billboards); w unused.
+	// z: 1 when the 2D lights are on the ground plane (x, z) of a Y-up world (billboards); w: 1 for a layer of a
+	// 3D scene, whose unlit sprites are scaled by ambient.w.
 	int4 flags;
-	float4 ambient;// rgb: linear ambient of the 2D lights; w: 1 when the 2D lighting is on.
+	float4 ambient;// rgb: linear ambient of the 2D lights; w: 0 when the 2D lighting is off, else the exposure scale.
 };
 
 [[vk::binding(0)]]
@@ -153,6 +154,8 @@ FragmentOutput fragmentMain(FragmentInput input) {
 		bool shadowed = (input.flags & 2u) == 0u && !groundPlane;
 		texColor.rgb *= lighting2D(input.worldPos, 0.0f, normal, hasNormal, shadowed, gCamera.flags.y,
 								   gCamera.ambient.rgb);
+	} else if (gCamera.flags.w != 0) {
+		texColor.rgb *= gCamera.ambient.w;
 	}
 	output.color = texColor;
 	output.entityID = input.entityID;

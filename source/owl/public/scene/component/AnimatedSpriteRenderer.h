@@ -39,6 +39,8 @@ struct OWL_API AnimatedSpriteRenderer {
 	float frameDuration = 0.1f;
 	/// Whether the animation loops.
 	bool loop = true;
+	/// Whether the 2D lights light the sprite (false keeps its colour as drawn: badges, markers).
+	bool lit = true;
 	/**
 	 * @brief
 	 *  Optional raycast-only world size override (in cells, X = width, Y = height).

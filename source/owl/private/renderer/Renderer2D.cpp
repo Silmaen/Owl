@@ -151,7 +151,7 @@ struct TextureSlotEntry {
 struct InternalData {
 	struct CameraData {
 		math::mat4 viewProjection;
-		// x: linear target, y: 2D light count, z: lights on the ground plane (x, z), w: std140 padding.
+		// x: linear target, y: 2D light count, z: lights on the ground plane (x, z), w: layer of a 3D scene.
 		std::array<int32_t, 4> flags{};
 		// rgb: linear ambient of the 2D lights; w: 1 when the 2D lighting is on.
 		math::vec4 ambient{1.f, 1.f, 1.f, 0.f};
@@ -531,6 +531,7 @@ void Renderer2D::beginScene(const Camera& iCamera) {
 		g_Data->cameraBuffer.viewProjection = iCamera.getViewProjection();
 		g_Data->cameraBuffer.flags[0] = gpu::Framebuffer::isLinearTargetBound() ? 1 : 0;
 		g_Data->cameraBuffer.flags[2] = 0;
+		g_Data->cameraBuffer.flags[3] = 0;
 		setLightingParameters(*g_Data, 0, math::vec4{1.f, 1.f, 1.f, 0.f});
 		g_Data->cameraUniformBuffer->setData(&g_Data->cameraBuffer, sizeof(utils::InternalData::CameraData), 0);
 	}
@@ -567,8 +568,9 @@ void Renderer2D::setLighting(const Lighting2D& iLighting) {
 			buildShadowRow2D(light.position, light.radius, iLighting.occluders,
 							 std::span{data.shadowRows}.last(g_shadow2DBins));
 		}
+		const math::vec3 color = light.color * iLighting.exposureScale;
 		data.lights.push_back({.positionRadius = {light.position.x(), light.position.y(), light.height, light.radius},
-							   .colorFalloff = {light.color.x(), light.color.y(), light.color.z(), light.falloff},
+							   .colorFalloff = {color.x(), color.y(), color.z(), light.falloff},
 							   .spot = {light.direction.x(), light.direction.y(), light.cosInner, light.cosOuter},
 							   .shadow = {firstBin, light.shadowSoftness, static_cast<float>(g_shadow2DBins), 0.f}});
 	}
@@ -580,8 +582,10 @@ void Renderer2D::setLighting(const Lighting2D& iLighting) {
 		data.lighting.shadows->setData(data.shadowRows.data(),
 									   static_cast<uint32_t>(data.shadowRows.size() * sizeof(float)), 0);
 	data.cameraBuffer.flags[2] = iLighting.groundPlane ? 1 : 0;
+	data.cameraBuffer.flags[3] = iLighting.inScene3D ? 1 : 0;
 	setLightingParameters(data, static_cast<int32_t>(data.lights.size()),
-						  math::vec4{iLighting.ambient.x(), iLighting.ambient.y(), iLighting.ambient.z(), 1.f});
+						  math::vec4{iLighting.ambient.x(), iLighting.ambient.y(), iLighting.ambient.z(),
+									 std::max(iLighting.exposureScale, 1e-6f)});
 	data.cameraUniformBuffer->setData(&data.cameraBuffer, sizeof(utils::InternalData::CameraData), 0);
 }
 

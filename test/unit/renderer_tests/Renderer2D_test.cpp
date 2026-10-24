@@ -12,10 +12,13 @@
 #include <data/fonts/TextLayout.h>
 #include <renderer/Renderer.h>
 #include <renderer/Renderer2D.h>
+#include <renderer/Renderer3D.h>
 #include <scene/component/SpriteRenderer.h>
 
+#include <array>
 #include <cstddef>
 #include <cstdint>
+#include <numbers>
 #include <string>
 #include <utility>
 #include <vector>
@@ -474,6 +477,35 @@ TEST(Renderer2D, depthTestDrawsWhatWasQueuedFirstAndEndsWithTheScene) {
 	EXPECT_FALSE(Renderer2D::isDepthTestEnabled());
 	Renderer2D::endScene();
 
+	RenderCommand::invalidate();
+	Log::invalidate();
+}
+
+TEST(Renderer3D, surfaceLightSumsTheSkyTheSunsAndTheExposure) {
+	Log::init(owl::core::Log::Level::Off);
+	RenderCommand::create(RenderAPI::Type::Null);
+	Renderer::init();
+	Renderer3D::setLayerSun(false);
+	Renderer3D::setExposure(1.f);
+	EnvironmentLighting sky;
+	sky.intensity = 2.f;
+	sky.ambient = owl::math::vec3{0.5f, 0.5f, 0.5f};
+	Renderer3D::setEnvironment(sky);
+	const std::array<GpuLight, 2> lights{
+			GpuLight{.directionType = {0.f, -1.f, 0.f, 0.f}, .color = {std::numbers::pi_v<float>, 0.f, 0.f, 0.f}},
+			GpuLight{.directionType = {0.f, -1.f, 0.f, 1.f}, .color = {100.f, 100.f, 100.f, 0.f}}};
+	Renderer3D::setSceneLights(lights);
+	// The ambient (0.5 x 2), and the directional light from straight above (pi / pi); the point light is left out.
+	const auto up = Renderer3D::getSurfaceLight({0.f, 1.f, 0.f});
+	EXPECT_NEAR(up.x(), 2.f, 1e-4f);
+	EXPECT_NEAR(up.y(), 1.f, 1e-4f);
+	const auto down = Renderer3D::getSurfaceLight({0.f, -1.f, 0.f});
+	EXPECT_NEAR(down.x(), 1.f, 1e-4f);
+	Renderer3D::setExposure(0.5f);
+	EXPECT_NEAR(Renderer3D::getSurfaceLight({0.f, 1.f, 0.f}).x(), 1.f, 1e-4f);
+	Renderer3D::setSceneLights({});
+	Renderer3D::setEnvironment({});
+	Renderer3D::setLayerSun(true);
 	RenderCommand::invalidate();
 	Log::invalidate();
 }

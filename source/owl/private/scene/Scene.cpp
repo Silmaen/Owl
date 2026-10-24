@@ -1431,16 +1431,20 @@ void Scene::renderHud(const math::vec2ui& iViewport, const bool iEditorMode) {
 	ui::HudPass::render(*this, iViewport, iEditorMode);
 }
 
-void Scene::applyLighting2D(const bool iEditorMode, const bool iGroundPlane) {
+void Scene::applyLighting2D(const bool iEditorMode, const Layer2DLighting& iLayer) {
 	OWL_PROFILE_FUNCTION()
 
 	auto& lighting = m_lighting2D;
 	lighting.lights.clear();
 	lighting.occluders.clear();
 	lighting.ambient = math::vec3{0.f, 0.f, 0.f};
-	lighting.groundPlane = iGroundPlane;
+	lighting.groundPlane = iLayer.groundPlane;
+	lighting.inScene3D = iLayer.inScene3D;
+	lighting.exposureScale = iLayer.inScene3D && mp_renderCamera != nullptr
+									 ? std::exp2(-mp_renderCamera->getPostProcess().exposure)
+									 : 1.f;
 	// On the ground plane the second axis of the lights is the world z.
-	const size_t planeRow = iGroundPlane ? 2 : 1;
+	const size_t planeRow = iLayer.groundPlane ? 2 : 1;
 	bool anyLight = false;
 	bool anyAmbient = false;
 	const auto toLinear = [](const math::vec3& iColor, const float iIntensity) -> math::vec3 {
@@ -1479,13 +1483,18 @@ void Scene::applyLighting2D(const bool iEditorMode, const bool iGroundPlane) {
 								   .shadowSoftness = light.shadowSoftness});
 		anyShadow = anyShadow || light.castShadows;
 	}
-	if (!anyLight) {
+	if (!anyLight && !iLayer.inScene3D) {
 		renderer::Renderer2D::clearLighting();
 		return;
 	}
 	if (!anyAmbient)
 		lighting.ambient = math::vec3{1.f, 1.f, 1.f};
-	if (anyShadow && !iGroundPlane) {
+	if (iLayer.inScene3D) {
+		const math::vec3 scene = renderer::Renderer3D::getSurfaceLight(math::vec3{0.f, 1.f, 0.f});
+		lighting.ambient = math::vec3{lighting.ambient.x() * scene.x(), lighting.ambient.y() * scene.y(),
+									  lighting.ambient.z() * scene.z()};
+	}
+	if (anyShadow && !iLayer.groundPlane) {
 		for (const auto view = registry.view<component::SpriteRenderer>(); const auto entity: view) {
 			const Entity ent{entity, this};
 			if (!view.get<component::SpriteRenderer>(entity).castShadows || !isEffectivelyVisible(ent, iEditorMode) ||
@@ -1549,6 +1558,13 @@ void Scene::render() {
 		return;
 	}
 
+	render2D(editorMode);
+}
+
+void Scene::render2D(const bool iEditorMode) {
+	OWL_PROFILE_FUNCTION()
+
+	const bool editorMode = iEditorMode;
 	const auto* const layer2D = dynamic_cast<const renderer::Renderer2DLayer*>(mp_currentLayer);
 	const auto billboard = layer2D != nullptr && layer2D->getSpace() == renderer::Renderer2DLayer::Space::World
 								   ? layer2D->getBillboard()
@@ -1559,7 +1575,7 @@ void Scene::render() {
 	const renderer::utils::BillboardFrame facing =
 			layer2D != nullptr ? renderer::utils::makeBillboardFrame(billboard, layer2D->getCameraWorld())
 							   : renderer::utils::BillboardFrame{};
-	applyLighting2D(editorMode, turned);
+	applyLighting2D(editorMode, {.groundPlane = turned, .inScene3D = viewSorted});
 	// Sort key of a 2D primitive: its world z (larger is nearer); equal keys keep the submission order.
 	const auto sortDepthOf = [this, viewSorted, &facing](const Entity& iEntity, const int32_t iWorldIndex) -> float {
 		const math::vec3 position = iWorldIndex >= 0
@@ -1575,6 +1591,12 @@ void Scene::render() {
 		return math::Transform{renderer::utils::billboardMatrix(
 				facing, world.translation(), world.scale(),
 				iEntity.getComponent<component::Transform>().transform.rotation().z())};
+	};
+	// A primitive drawn from the GPU world matrices takes an empty transform; the others give theirs.
+	const auto drawTransform = [&](const Entity& iEntity, const int32_t iWorldIndex) -> math::Transform {
+		if (turned)
+			return turnedTransform(iEntity);
+		return iWorldIndex < 0 ? getWorldTransform(iEntity) : math::Transform{};
 	};
 	m_cullingStats.spritesInFrustum =
 			markVisible(m_spriteIndex, renderer::Renderer2D::getViewProjection(), m_spriteVisible);
@@ -1592,9 +1614,7 @@ void Scene::render() {
 		auto [transform, sprite] = group.get<component::Transform, component::SpriteRenderer>(entity);
 		const auto worldIndex = turned ? -1 : static_cast<int32_t>(getWorldIndex(ent));
 
-		renderer::Renderer2D::drawQuad({.transform = turned           ? turnedTransform(ent)
-													 : worldIndex < 0 ? getWorldTransform(ent)
-																	  : math::Transform{},
+		renderer::Renderer2D::drawQuad({.transform = drawTransform(ent, worldIndex),
 										.worldIndex = worldIndex,
 										.color = sprite.color,
 										.texture = sprite.texture,
@@ -1627,9 +1647,7 @@ void Scene::render() {
 		const float vMax = 1.0f - static_cast<float>(row) / static_cast<float>(safeRows);
 		const float vMin = 1.0f - static_cast<float>(row + 1) / static_cast<float>(safeRows);
 
-		renderer::Renderer2D::drawQuad({.transform = turned           ? turnedTransform(ent)
-													 : worldIndex < 0 ? getWorldTransform(ent)
-																	  : math::Transform{},
+		renderer::Renderer2D::drawQuad({.transform = drawTransform(ent, worldIndex),
 										.worldIndex = worldIndex,
 										.color = anim.color,
 										.texture = anim.texture,
@@ -1637,7 +1655,7 @@ void Scene::render() {
 														  math::vec2{uMax, vMax}, math::vec2{uMin, vMax}},
 										.entityId = static_cast<int>(entity),
 										.depth = sortDepthOf(ent, worldIndex),
-										.lit = true});
+										.lit = anim.lit});
 	}
 	// Draw circles
 	for (const auto view = registry.view<component::Transform, component::CircleRenderer>(); auto entity: view) {
@@ -1649,9 +1667,7 @@ void Scene::render() {
 		auto [transform, circle] = view.get<component::Transform, component::CircleRenderer>(entity);
 		const auto worldIndex = turned ? -1 : static_cast<int32_t>(getWorldIndex(ent));
 
-		renderer::Renderer2D::drawCircle({.transform = turned           ? turnedTransform(ent)
-													   : worldIndex < 0 ? getWorldTransform(ent)
-																		: math::Transform{},
+		renderer::Renderer2D::drawCircle({.transform = drawTransform(ent, worldIndex),
 										  .worldIndex = worldIndex,
 										  .color = circle.color,
 										  .thickness = circle.thickness,

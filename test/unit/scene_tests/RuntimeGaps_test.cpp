@@ -348,16 +348,26 @@ TEST(SceneLighting2D, aBillboardLayerPlacesTheLightsOnTheGroundPlane) {
 	torch.addComponent<component::Light2D>().castShadows = true;
 	auto crate = scene->createEntity("Crate");
 	crate.addComponent<component::SpriteRenderer>().castShadows = true;
-	scene->applyLighting2D(false, false);
+	scene->applyLighting2D(false);
 	ASSERT_EQ(scene->getLighting2D().lights.size(), 1u);
 	EXPECT_FLOAT_EQ(scene->getLighting2D().lights.front().position.y(), 1.5f);
 	EXPECT_FALSE(scene->getLighting2D().groundPlane);
 	EXPECT_FALSE(scene->getLighting2D().occluders.empty());
-	scene->applyLighting2D(false, true);
+	scene->applyLighting2D(false, {.groundPlane = true});
 	ASSERT_EQ(scene->getLighting2D().lights.size(), 1u);
 	EXPECT_FLOAT_EQ(scene->getLighting2D().lights.front().position.x(), 3.f);
 	EXPECT_FLOAT_EQ(scene->getLighting2D().lights.front().position.y(), -4.f);
 	EXPECT_TRUE(scene->getLighting2D().groundPlane);
 	EXPECT_TRUE(scene->getLighting2D().occluders.empty());
+	core::Log::invalidate();
+}
+
+TEST(SceneLighting2D, aLayerOfA3DSceneIsLitWithoutAnyLightAndUndoesTheCompensation) {
+	core::Log::init(core::Log::Level::Off);
+	const auto scene = makeCameraScene();
+	scene->applyLighting2D(false, {.groundPlane = true, .inScene3D = true});
+	EXPECT_TRUE(scene->getLighting2D().inScene3D);
+	EXPECT_FLOAT_EQ(scene->getLighting2D().exposureScale, 1.f);
+	EXPECT_TRUE(scene->getLighting2D().lights.empty());
 	core::Log::invalidate();
 }

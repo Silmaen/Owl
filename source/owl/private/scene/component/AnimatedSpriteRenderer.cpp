@@ -64,6 +64,8 @@ void AnimatedSpriteRenderer::serialize(const core::Serializer& iOut) const {
 	iOut.getImpl()->emitter << YAML::Key << "lastFrame" << YAML::Value << lastFrame;
 	iOut.getImpl()->emitter << YAML::Key << "frameDuration" << YAML::Value << frameDuration;
 	iOut.getImpl()->emitter << YAML::Key << "loop" << YAML::Value << loop;
+	if (!lit)
+		iOut.getImpl()->emitter << YAML::Key << "lit" << YAML::Value << lit;
 	emitSpeedCurve(iOut.getImpl()->emitter, speedCurve);
 	if (raycastSize.x() > 0.f || raycastSize.y() > 0.f) {
 		iOut.getImpl()->emitter << YAML::Key << "raycastSize" << YAML::Value << YAML::Flow << YAML::BeginSeq
@@ -88,6 +90,8 @@ void AnimatedSpriteRenderer::deserialize(const core::Serializer& iNode) {
 		firstFrame = iNode.getImpl()->node["firstFrame"].as<uint32_t>();
 	if (iNode.getImpl()->node["lastFrame"])
 		lastFrame = iNode.getImpl()->node["lastFrame"].as<uint32_t>();
+	if (iNode.getImpl()->node["lit"])
+		lit = iNode.getImpl()->node["lit"].as<bool>();
 	if (iNode.getImpl()->node["frameDuration"])
 		frameDuration = iNode.getImpl()->node["frameDuration"].as<float>();
 	if (iNode.getImpl()->node["loop"])

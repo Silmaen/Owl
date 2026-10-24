@@ -870,6 +870,8 @@ void renderProps(AnimatedSpriteRenderer& ioComponent) {
 				static_cast<uint32_t>(std::clamp(last, static_cast<int>(ioComponent.firstFrame), maxFrame));
 	prop::DragFloat("Frame Duration", &ioComponent.frameDuration, 0.01f, 0.001f, 10.0f, "%.3f s");
 	prop::Checkbox("Loop", &ioComponent.loop);
+	prop::Checkbox("Lit", &ioComponent.lit);
+	fieldTooltip("Lit by the 2D lights; off keeps the sprite as drawn (badges, markers).");
 	ImGui::Text("Current Frame: %u", ioComponent.m_currentFrame);
 	if (widgets::subHeader("Speed Curve")) {
 		fieldTooltip("Optional speed remap. Empty = constant playback speed; non-empty multiplies dt by "

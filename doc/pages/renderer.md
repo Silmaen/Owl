@@ -157,6 +157,13 @@ hidden by the meshes and voxels drawn before it, writes no depth, and sorts its 
 distance along the view; picking sees billboards as drawn, and Owl Nest draws a stack holding such a layer layer by
 layer instead of its 2D composite.
 
+A billboard or depth-tested layer belongs to the 3D scene and follows its light: its ambient is the light a white
+surface facing up receives from the sky, the directional lights and the layer sun (`Renderer3D::getSurfaceLight`,
+pre-exposed like the meshes), times the `Ambient` `Light2D` when there is one; its point and spot `Light2D` and its
+unlit sprites (`lit` false) are divided by the exposure compensation of the camera, which the colour encode applies to
+the whole frame, so torches and markers keep their strength at night (`Lighting2D::exposureScale`, `inScene3D`). Only
+quads take it; circles and texts of such a layer are drawn as they are.
+
 With `ReferenceHeight: 720` an overlay authored at 1280×720 (the minimaps of the Engine Demo raycast level and of
 Wolfenstein mini) keeps its share of the screen at 1080p or 1440p, like a `ScaleWithHeight` HUD canvas; the
 `ui_scale` setting applies to HUD canvases only.

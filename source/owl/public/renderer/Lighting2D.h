@@ -77,6 +77,14 @@ struct OWL_API Lighting2D {
 	 *  layers): light positions are then world (x, z), the sprites are lit without normal map nor shadow.
 	 */
 	bool groundPlane = false;
+	/**
+	 * @brief
+	 *  Factor on the sprites of a layer of a 3D scene (billboards, depth tested) that undoes the exposure compensation
+	 *  of the camera: unlit sprites keep their colour, the 2D lights keep their strength; 1 elsewhere.
+	 */
+	float exposureScale = 1.f;
+	/// True for a layer of a 3D scene: lit even without any `Light2D`, unlit sprites scaled by `exposureScale`.
+	bool inScene3D = false;
 };
 
 /**
