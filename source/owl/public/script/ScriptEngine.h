@@ -14,6 +14,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
+#include <functional>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -25,6 +26,13 @@
  *  Namespace for scripting.
  */
 namespace owl::script {
+
+/**
+ * @brief
+ *  Reads the source of a Lua module for `require`: given the path of the module file relative to the project
+ *  (`scripts/game/towers.lua` for `require("scripts.game.towers")`), its bytes, or nothing when there is no such file.
+ */
+using ModuleReader = std::function<std::optional<std::vector<uint8_t>>(const std::string& iPath)>;
 /**
  * @brief
  *  Types of exposed script properties.

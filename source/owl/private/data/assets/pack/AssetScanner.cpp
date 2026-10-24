@@ -12,6 +12,7 @@
 #include "data/fonts/FontSettings.h"
 #include "data/geometry/MeshLoader.h"
 
+#include <algorithm>
 #include <filesystem>
 #include <fstream>
 #include <optional>
@@ -266,6 +267,20 @@ auto isSerializedTexture(const std::string& iValue) -> bool {
 	return iValue.starts_with("nam:") || iValue.starts_with("pat:");
 }
 
+// A module of `require` sits in the asset folders, or under a folder holding the script that requires it.
+auto resolveModule(const std::string& iModulePath, const std::filesystem::path& iRequiring)
+		-> std::optional<AssetReference> {
+	if (auto ref = resolveScript(iModulePath); ref)
+		return ref;
+	for (auto folder = iRequiring.parent_path(); !folder.empty(); folder = folder.parent_path()) {
+		if (const auto candidate = folder / iModulePath; exists(candidate))
+			return AssetReference{.packPath = iModulePath, .diskPath = candidate, .assetType = AssetType::Script};
+		if (folder == folder.parent_path())
+			break;
+	}
+	return std::nullopt;
+}
+
 void scanLuaScript(const std::filesystem::path& iScriptPath,// NOLINT(misc-no-recursion)
 				   std::set<std::string>& ioVisitedScenes, std::vector<AssetReference>& ioAssets,
 				   std::vector<std::string>* ioWarnings) {
@@ -286,6 +301,20 @@ void scanLuaScript(const std::filesystem::path& iScriptPath,// NOLINT(misc-no-re
 		followSound((*it)[1].matched ? (*it)[1].str() : (*it)[2].str(), source, ioAssets, ioWarnings);
 	for (auto it = std::sregex_iterator(scriptContent.begin(), scriptContent.end(), texturePattern); it != end; ++it)
 		followTexture((*it)[1].str(), source, ioAssets, ioWarnings);
+	// The modules it requires (`require("scripts.game.towers")` reads `scripts/game/towers.lua`), scanned in turn.
+	static const std::regex requirePattern(R"(\brequire\s*\(?\s*["']([A-Za-z0-9_.]+)["'])");
+	for (auto it = std::sregex_iterator(scriptContent.begin(), scriptContent.end(), requirePattern); it != end; ++it) {
+		std::string modulePath = (*it)[1].str();
+		std::ranges::replace(modulePath, '.', '/');
+		modulePath += ".lua";
+		if (auto ref = resolveModule(modulePath, iScriptPath); ref) {
+			if (hasAsset(ioAssets, ref->packPath))
+				continue;
+			ioAssets.push_back(*ref);
+			scanLuaScript(ref->diskPath, ioVisitedScenes, ioAssets, ioWarnings);
+		} else
+			pushWarning(ioWarnings, "Script module", modulePath, source);
+	}
 }
 
 // The string and list-of-strings properties of a `LuaScript` follow the rules of the strings quoted in its script.

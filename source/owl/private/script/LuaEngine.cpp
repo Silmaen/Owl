@@ -14,6 +14,7 @@
 
 #include <algorithm>
 #include <atomic>
+#include <cctype>
 #include <chrono>
 #include <condition_variable>
 #include <cstddef>
@@ -22,6 +23,8 @@
 #include <format>
 #include <functional>
 #include <mutex>
+#include <optional>
+#include <stdexcept>
 #include <stop_token>
 #include <string>
 #include <string_view>
@@ -46,6 +49,7 @@ struct LuaEngine::Quota {
 	LuaStatus lastStatus = LuaStatus::Ok;
 	std::string warning;
 	std::function<std::string()> errorContext;
+	ModuleReader moduleReader;
 	void* hostPointer = nullptr;
 	double deltaTime = 0.0;
 	// Registry references of the interned names of the functions the host calls, to skip hashing them per call.
@@ -426,6 +430,86 @@ auto sandboxCollectGarbage(lua_State* iState) -> int {
 	return lua_gettop(iState);
 }
 
+// Registry key of the table of the modules `require` loaded (a module being loaded is `false`).
+constexpr const char* g_ModulesKey = "owl.modules";
+constexpr size_t g_MaxModuleName = 128;
+
+auto isModuleName(const std::string_view iName) -> bool {
+	if (iName.empty() || iName.size() > g_MaxModuleName)
+		return false;
+	bool afterDot = true;
+	for (const char character: iName) {
+		if (character == '.') {
+			if (afterDot)
+				return false;
+			afterDot = true;
+			continue;
+		}
+		if (std::isalnum(static_cast<unsigned char>(character)) == 0 && character != '_')
+			return false;
+		afterDot = false;
+	}
+	return !afterDot;
+}
+
+// Reads the module named at index 1 and pushes its compiled chunk; runs under the exception trampoline.
+auto loadModule(lua_State* iState) -> int {
+	const std::string name = lua_tostring(iState, 1);
+	std::string path = name;
+	std::ranges::replace(path, '.', '/');
+	path += ".lua";
+	const auto& reader = quotaOf(iState)->moduleReader;
+	if (!reader)
+		throw std::runtime_error(std::format("require: no module can be read by this script ('{}')", name));
+	const auto data = reader(path);
+	LuaEngine::restartCallClock(iState);
+	if (!data)
+		throw std::runtime_error(std::format("require: no module '{}' (file '{}')", name, path));
+	const std::string chunkName = "@" + path;
+	if (luaL_loadbufferx(iState, reinterpret_cast<const char*>(data->data()), data->size(), chunkName.c_str(), "t") !=
+		LUA_OK) {
+		std::string message = lua_tostring(iState, -1) != nullptr ? lua_tostring(iState, -1) : "(no message)";
+		lua_pop(iState, 1);
+		throw std::runtime_error(std::format("require: cannot load '{}': {}", name, message));
+	}
+	return 1;
+}
+
+auto guardedLoadModule(lua_State* iState) -> int { return LuaEngine::callGuarded(iState, loadModule); }
+
+// The module chunk runs outside the trampoline, under the memory ceiling and the time budget of the script.
+auto sandboxRequire(lua_State* iState) -> int {
+	const char* name = luaL_checkstring(iState, 1);
+	if (!isModuleName(name))
+		return luaL_error(iState, "require: '%s' is not a module name (words joined by dots: scripts.game.towers)",
+						  name);
+	lua_settop(iState, 1);
+	lua_getfield(iState, LUA_REGISTRYINDEX, g_ModulesKey);
+	if (lua_getfield(iState, 2, name) != LUA_TNIL) {
+		if (lua_isboolean(iState, -1) && lua_toboolean(iState, -1) == 0)
+			return luaL_error(iState, "require: '%s' requires itself while it loads", name);
+		return 1;
+	}
+	lua_pop(iState, 1);
+	lua_pushcfunction(iState, guardedLoadModule);
+	lua_pushvalue(iState, 1);
+	lua_call(iState, 1, 1);
+	lua_pushboolean(iState, 0);
+	lua_setfield(iState, 2, name);
+	if (lua_pcall(iState, 0, 1, 0) != LUA_OK) {
+		lua_pushnil(iState);
+		lua_setfield(iState, 2, name);
+		return lua_error(iState);
+	}
+	if (lua_isnil(iState, -1)) {
+		lua_pop(iState, 1);
+		lua_pushboolean(iState, 1);
+	}
+	lua_pushvalue(iState, -1);
+	lua_setfield(iState, 2, name);
+	return 1;
+}
+
 void wrapBaseFunction(lua_State* iState, const char* iName, const lua_CFunction iWrapper) {
 	lua_getfield(iState, -1, iName);
 	lua_pushcclosure(iState, iWrapper, 1);
@@ -451,6 +535,10 @@ void openSandboxedLibraries(lua_State* iState) {
 		lua_pushnil(iState);
 		lua_setfield(iState, -2, func);
 	}
+	lua_newtable(iState);
+	lua_setfield(iState, LUA_REGISTRYINDEX, g_ModulesKey);
+	lua_pushcfunction(iState, sandboxRequire);
+	lua_setfield(iState, -2, "require");
 	wrapBaseFunction(iState, "load", sandboxLoad);
 	wrapBaseFunction(iState, "setmetatable", sandboxSetMetatable);
 	wrapBaseFunction(iState, "collectgarbage", sandboxCollectGarbage);
@@ -506,6 +594,8 @@ LuaEngine::~LuaEngine() {
 }
 
 auto LuaEngine::isValid() const -> bool { return mp_state != nullptr; }
+
+void LuaEngine::setModuleReader(const ModuleReader& iReader) const { mp_quota->moduleReader = iReader; }
 
 void LuaEngine::setQuotas(const ScriptQuotas& iQuotas) const {
 	mp_quota->memoryLimit = iQuotas.memoryBytes;

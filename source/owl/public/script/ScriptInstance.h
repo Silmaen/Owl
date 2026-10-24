@@ -73,6 +73,14 @@ public:
 
 	/**
 	 * @brief
+	 *  Give the script its `require`: the reader of the module files (the scene loader reads them from the open
+	 *  pack, then the asset folders). Call before `create`; without one, `require` raises an error.
+	 * @param[in] iReader The reader of the module files.
+	 */
+	void setModuleReader(const ModuleReader& iReader) const;
+
+	/**
+	 * @brief
 	 *  Bind the instance to the scene its bindings act on (`transform`, `scene`, `physics`...).
 	 *
 	 * Each instance carries its own scene, so scripts of several scenes run side by side. Without a scene the

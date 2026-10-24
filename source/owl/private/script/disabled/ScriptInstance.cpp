@@ -31,6 +31,8 @@ auto ScriptInstance::operator=(ScriptInstance&& iOther) noexcept -> ScriptInstan
 
 void ScriptInstance::setEntityName([[maybe_unused]] const std::string& iEntityName) const {}
 
+void ScriptInstance::setModuleReader([[maybe_unused]] const ModuleReader& iReader) const {}
+
 void ScriptInstance::setScene(scene::Scene* iScene) const {
 	if (mp_impl)
 		mp_impl->boundScene = iScene;
