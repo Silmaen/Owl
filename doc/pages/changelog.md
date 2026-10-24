@@ -13,8 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `Renderer2D` layer keys `Billboard` and `DepthTest`: sprites in a 3D scene face the camera, are depth-tested and
   follow its sky, sun and exposure (`Renderer3D::getSurfaceLight`), 2D lights on the ground plane.
-- Sample game Tower defence (`samples/tower_defence/`): a campaign of 3 levels in 3D on a parchment world map, the Horde
-  as 8-direction billboards, towers raised to level 3 then a power-up, a build wheel, spells and unlocks.
+- Sample game Tower defence (`samples/tower_defence/`): a campaign of 5 levels in 3D on an inked world map, eight kinds
+  of the Horde as 8-direction billboards, towers raised to level 3 then a power-up, a build wheel, spells, unlocks and
+  upgrades bought with the stars.
 - `AnimatedSpriteRenderer.lit`, and Lua `ui.set_text` / `ui.get_text` reach a world `TextRenderer`.
 - Engine Demo tavern: a hub level played on foot with the `FirstPersonController` component.
 - Lua `scene.spawn_prefab`, `entity.add_component`, `scene.pick_entity`, `time.set_scale` / `set_paused` and
