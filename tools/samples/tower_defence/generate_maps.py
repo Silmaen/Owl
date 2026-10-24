@@ -586,16 +586,25 @@ def play_hud() -> str:
     right, a message line and the pause window, the only place of a level that shows the controls."""
     entities = y.Entities(7490000000000000000)
     root = entities.add("HUDCanvas", [y.canvas()])
-    stats = entities.add(
-        "StatsBar",
-        [y.rect((0, 0), (0.4, 0.065), (16, 8)), y.panel(), y.layout("Row", 8)],
-        parent=root,
+    # One column at the top left (stats, wave, info panel), the minimap at the top right, the buttons at the bottom
+    # right: they never meet, at any interface size or aspect.
+    column = entities.add(
+        "TopLeft", [y.rect((0, 0), (0.55, 0.33), (16, 8)), y.layout("Column", 6, 0, "Start")], parent=root
     )
+    info = entities.add(
+        "InfoPanel", [y.child_rect((1, 0.5)), menus.board(), y.layout("Row", 10)], parent=column, visible=False
+    )
+    texts = entities.add("InfoTexts", [y.child_rect((0.74, 0.9)), y.layout("Column", 2, 0, "Start")], parent=info)
+    entities.add("InfoText", [y.child_rect((1, 0.55)), menus.label("", 19, menus.SOFT, "Left", "")], parent=texts)
+    entities.add("InfoTitle", [y.child_rect((1, 0.4)), menus.label("", 25, menus.GOLD, "Left")], parent=texts)
+    icon = "UiImage:\n  tint: [1, 1, 1, 1]\n  texture: nam:textures/icons.png\n  columns: 6\n  rows: 2\n  frame: 0\n"
+    entities.add("InfoIcon", [y.child_rect((0.17, 0.85)), icon], parent=info)
+    wave = menus.label("Wave 0 / 8 - next in 25 s", 24, menus.STONE)
+    entities.add("WaveText", [y.child_rect((1, 0.2)), y.panel(), wave], parent=column)
+    stats = entities.add("StatsBar", [y.child_rect((0.75, 0.2)), y.panel(), y.layout("Row", 8)], parent=column)
     entities.add("LivesText", [y.child_rect((0.45, 1)), menus.label("Lives 20", 26, (1, 0.6, 0.55, 1))], parent=stats)
     entities.add("GoldText", [y.child_rect((0.45, 1)), menus.label("Gold 240", 26, menus.GOLD)], parent=stats)
-    wave = menus.label("Wave 0 / 8 - next in 25 s", 26, menus.STONE)
-    entities.add("WaveText", [y.rect((0.5, 0), (0.5, 0.065), (0, 8)), y.panel(), wave], parent=root)
-    frame = entities.add("Minimap", [y.rect((1, 0), (0.36, 0.28), (-16, 8)), menus.board()], parent=root)
+    frame = entities.add("Minimap", [y.rect((1, 0), (0.3, 0.24), (-16, 8)), menus.board()], parent=root)
     image = "UiImage:\n  tint: [1, 1, 1, 1]\n  renderTarget: minimap\n"
     entities.add(
         "MinimapImage", [y.rect((0.5, 0.5), (0.95, 0.93), units=("ParentWidth", "ParentHeight")), image], parent=frame
@@ -607,19 +616,8 @@ def play_hud() -> str:
         ("CallButton", "Call wave", "on_call_clicked", 0.44),
     ):
         menus.button(entities, bar, tag, text, callback, (width, 0.9), focusable=False, font_size=24)
-    info = entities.add(
-        "InfoPanel",
-        [y.rect((0, 1), (0.8, 0.16), (16, -8)), menus.board(), y.layout("Row", 10)],
-        parent=root,
-        visible=False,
-    )
-    texts = entities.add("InfoTexts", [y.child_rect((0.76, 0.9)), y.layout("Column", 2, 0, "Start")], parent=info)
-    entities.add("InfoText", [y.child_rect((1, 0.55)), menus.label("", 19, menus.SOFT, "Left", "")], parent=texts)
-    entities.add("InfoTitle", [y.child_rect((1, 0.4)), menus.label("", 25, menus.GOLD, "Left")], parent=texts)
-    icon = "UiImage:\n  tint: [1, 1, 1, 1]\n  texture: nam:textures/icons.png\n  columns: 6\n  rows: 2\n  frame: 0\n"
-    entities.add("InfoIcon", [y.child_rect((0.15, 0.85)), icon], parent=info)
     message = menus.label("", 40, menus.STONE, font=menus.HEADING).replace("wrap: false", "wrap: true")
-    entities.add("MessageText", [y.rect((0.5, 0.3), (0.9, 0.14)), message], parent=root, visible=False)
+    entities.add("MessageText", [y.rect((0.5, 0.62), (0.7, 0.14)), message], parent=root, visible=False)
     window = entities.add(
         "PauseWindow",
         [y.rect((0.5, 0.5), (1.3, 0.9)), menus.window("Paused"), y.layout("Column", 8, 10)],
