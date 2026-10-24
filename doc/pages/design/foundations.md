@@ -151,7 +151,7 @@ imported-configuration fallback.
     - Hot reload of a C++ game module is a separate v0.6.0 evaluation, see [Content pipeline](content-pipeline.md)
     - Shipped: a background poller (`platform::FileWatcher`, one atomic read per frame, no measurable cost in the
       frame bench), never active with an asset pack open; a failed reload keeps the previous version. A shader
-      reload changes code, not bindings: a new binding needs a restart. See [Editor](../editor.md#editor-hot-reload)
+      reload changes code, not bindings: a new binding needs a restart. See [Editor](../editor_assets.md#editor-hot-reload)
 - ![Done][done] Autosave and crash recovery — periodic autosave of dirty documents, recovery offered at the next
   launch
 - ![Done][done] Session restore (persisted open tabs)

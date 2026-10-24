@@ -106,6 +106,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Lit isometric sprites and tiles through the `_normal` and `_depth` atlases of `tools/iso_atlas` found beside an albedo atlas.
 - Owl Nest: **Light 2D** inspector, sprite **2D Lighting** fields, **Ambient 2D / Point 2D / Spot 2D** in the Light menu (`entity.create_light2d`), hierarchy icons and viewport markers.
 - Engine Demo: the `platformer_house` torches carry warm `Light2D` and the scene a `HouseAmbient`; image tests `lights2d`, `tilemap_lit` and `iso_town_night_640x360`.
+- Owl Nest help pages describing the editor: a start page (`nest_help.md`), the window and ribbon, viewport, hierarchy and inspector, Content Browser, documents, tilemaps, HUD editor, Play mode, console and commands, projects and export, settings and shortcuts, and the editor internals.
 
 ### Changed
 
@@ -163,6 +164,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bench threshold of the flat `path/long_query` cases widened to 30 %: on the bench agent they switch between two modes about 15 % apart.
 - Scene and prefab format 6: `convertToPhysicalLights` turns the old light and environment factors into physical values that look the same at EV100 15.
 - glTF files load every mesh of their default scene with its node transforms (every mesh once without a scene), mirrored transforms flipping the winding.
+- Help panel sidebar grouped by theme in a fixed order (`doc/help.yml`, Getting started to Roadmap and changes) instead of alphabetical, and Doxygen's page tree built from the same list.
+- Help panel start page is the Owl Nest help home instead of the README; the design pages are left out of the help, listed in `doc/pages/design/plans.md` for Doxygen.
+- Help bundle turns links to pages outside the help into text and status badges into labels (`tools/doc/help_bundle.py`): no dead link, no network.
+- Architecture diagrams of the documentation redrawn as mermaid from the current code; the outdated `doc/images/*.svg` figures are gone.
+
+### Removed
+
+- `OWL_HELP_FETCH_BADGES` option: the help shows no remote badge.
 
 ### Fixed
 
@@ -186,6 +195,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `MeshCullingPass.h` includes the header of `math::identity`, so it compiles on its own (include check).
 - Lua `save.list_saves`, `save.has_save` and `save.delete_save` never throw on a save folder another process changes: a vanished file is skipped.
 - The scenes of the Engine Demo and of the sample games are saved at the current scene format, so loading them skips the migrations (iso town 30 times faster to load); a test keeps them there.
+- Help panel reads the bundle of its own build tree before the asset folders, and the configure deletes a stale `engine_assets/help`, so an old copy of the pages can no longer hide the current ones.
 
 ## [0.4.0] - 2026-10-20
 

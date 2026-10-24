@@ -7,7 +7,7 @@ The pages for people who make a game with Owl Nest and Lua, without touching the
 
 ```mermaid
 flowchart LR
-    G[Getting Started] --> E[Using Owl Nest]
+    G[Getting Started] --> E[The Owl Nest window]
     E --> S[Scene and components]
     S --> L[Scripting games in Lua]
     L --> P[Pack the game]
@@ -18,21 +18,20 @@ flowchart LR
 | Page                                   | What you learn                                                       |
 |----------------------------------------|----------------------------------------------------------------------|
 | [Getting Started](getting_started.md)  | Run Owl Nest, open the Engine Demo and the sample games, ship a game |
-| [Using Owl Nest](editor.md)            | Panels, documents, ribbon, play mode, undo, shortcuts, export        |
+| [The Owl Nest window](editor.md)       | The editor, then one page per part: viewport, inspector, documents   |
 | [Scene and Components](scene.md)       | Entities, hierarchy, every component, HUD, triggers, serialization   |
 | [Scripting Games in Lua](scripting.md) | Scripts on entities, lifecycle, properties, sandbox                  |
 | [Lua API Reference](lua-api.md)        | Every Lua table and function (generated)                             |
 
 ## Gameplay systems
 
-| Page                               | What you learn                                |
-|------------------------------------|-----------------------------------------------|
-| [Events and Input](event_input.md) | Keyboard, mouse, gamepad, input actions       |
-| [Physics](physics.md)              | Box2D bodies, colliders, triggers             |
-| [Sound](sound.md)                  | Effects, music, listeners, spatial audio      |
-| [Pathfinding](pathfinding.md)      | Tile-graph navigation on tilemaps             |
-| [Node Graph](node_graph.md)        | The node-graph widget and the Scene Flow view |
-| [MCP Server](mcp.md)               | Drive Owl Nest from an AI agent               |
+| Page                               | What you learn                           |
+|------------------------------------|------------------------------------------|
+| [Events and Input](event_input.md) | Keyboard, mouse, gamepad, input actions  |
+| [Physics](physics.md)              | Box2D bodies, colliders, triggers        |
+| [Sound](sound.md)                  | Effects, music, listeners, spatial audio |
+| [Pathfinding](pathfinding.md)      | Tile-graph navigation on tilemaps        |
+| [MCP Server](mcp.md)               | Drive Owl Nest from an AI agent          |
 
 ## Rendering styles
 
@@ -44,15 +43,3 @@ flowchart LR
 
 What is planned and what shipped: [Roadmap](roadmap.md) and [Changelog](changelog.md). The other guides:
 [C++ engine developers](guide_engine_developer.md), [contributors](guide_contributor.md).
-
-<!-- subpage: getting_started.md -->
-<!-- subpage: editor.md -->
-<!-- subpage: scene.md -->
-<!-- subpage: scripting.md -->
-<!-- subpage: lua-api.md -->
-<!-- subpage: event_input.md -->
-<!-- subpage: physics.md -->
-<!-- subpage: sound.md -->
-<!-- subpage: pathfinding.md -->
-<!-- subpage: node_graph.md -->
-<!-- subpage: mcp.md -->

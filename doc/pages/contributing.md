@@ -70,20 +70,21 @@ carry only their file header.
 
 The user documentation lives in `doc/pages/` and changes in the same pull request as the code it describes:
 
-- `doc/pages/*.md` and `doc/pages/design/*.md`, plus the root `README.md` and `CONTRIBUTING.md`, feed both Doxygen
-  and the in-editor help panel (the root `CHANGELOG.md` / `ROADMAP.md` summaries feed Doxygen only). The bundle
-  step (`cmake/HelpAssets.cmake`) strips Doxygen anchors (`{#page-name}`) and `[TOC]` lines, and rewrites
-  `(../images/foo.svg)` to `(images/foo.svg)`, so those source-side conventions remain valid for Doxygen builds.
-- Mermaid diagrams (` ```mermaid ` fences) render natively on GitHub and through mermaid.js in the Doxygen HTML
-  output; the in-editor help panel shows them as SVG files drawn at configure time by `tools/doc/mermaid_svg.py`
-  (flowchart, sequence, state and class diagrams). Prefer mermaid for architecture / flow / sequence diagrams; the SVGs
-  in `doc/images/` remain valid for static figures.
+- `doc/help.yml` lists the pages of the help panel of Owl Nest, grouped by theme in sidebar order: every
+  `doc/pages/*.md` and the root `README.md`. A new page takes its place there (the configure refuses an unlisted one).
+  The bundle step (`cmake/HelpAssets.cmake`) strips the Doxygen anchors (`{#page-name}`) and `[TOC]` lines, rewrites
+  the image paths and turns the links to pages outside the help into text, so those source-side conventions stay
+  valid for Doxygen.
+- The design pages (`doc/pages/design/*.md`) are plans: they are in the Doxygen documentation only, listed in
+  `doc/pages/design/plans.md`. Help pages describe what exists, without versions or status badges.
+- Diagrams are mermaid fences (a block opened by three backticks and the word `mermaid`): GitHub draws them, Doxygen
+  through mermaid.js, the help panel as SVG files drawn at configure time by `tools/doc/mermaid_svg.py` (flowchart,
+  sequence, state and class diagrams; another kind fails the configure).
 - A fixed-size image is a raw `<img src="..." width="160">` tag (GitHub, Doxygen and the help panel honour the width).
-- The page tree: the README is the landing page and the Doxygen main page; every other page is listed in one guide
-  ([game makers](guide_game_maker.md), [C++ engine developers](guide_engine_developer.md),
-  [contributors](guide_contributor.md)) and attached to it by a `<!-- subpage: page.md -->` line, a page having one
-  parent. A new page goes in the guide of its audience, with its table row and its marker; content already written in
-  another page is linked, not copied.
+- The Doxygen page tree follows `doc/help.yml`: the README is the main page and the parent of the first page of each
+  group, which is the parent of the other pages of its group (`tools/doc/fix_md_links.py`). A page outside the help is
+  attached to its parent by a `<!-- subpage: page.md -->` line, as the design pages to `doc/pages/design/plans.md`.
+  Content already written in another page is linked, not copied.
 - The Owl Nest screenshots in `doc/images/nest/` are made by `tools/doc/capture_nest.py`, headless inside the build
   image: a private Xvfb display, Owl Nest on lavapipe with the Engine Demo, one editor start per shot, set up through
   the reopened session, synthetic clicks and keys (XTest) and the MCP server, then grabbed, cropped and written as PNG

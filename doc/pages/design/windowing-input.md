@@ -224,7 +224,7 @@ codes until IN3.
   step; engine systems and the Engine Demo scripts move to actions
 - **Editor** (IN4, Done): an action map document with its own undo stack, opened from the Content Browser, the ribbon
   or Project Settings; "press a key" capture; the built-in map in every project template; a live action monitor
-  ([Action map editor](../editor.md#editor-action-map))
+  ([Action map editor](../editor_documents.md#editor-action-map))
 
 ### Input frames (IN1) {#input-frames-in1}
 

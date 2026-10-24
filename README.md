@@ -19,7 +19,7 @@ stacked under one HUD, in the editor and in game.**
 | You want to                     | Read                                                             |
 |---------------------------------|------------------------------------------------------------------|
 | Run the editor and open a game  | [Getting started](doc/pages/getting_started.md)                  |
-| Make a game in Owl Nest         | [Using Owl Nest](doc/pages/editor.md)                            |
+| Make a game in Owl Nest         | [Owl Nest help](doc/pages/nest_help.md)                          |
 | Script gameplay                 | [Scripting games in Lua](doc/pages/scripting.md)                 |
 | Understand or extend the engine | [Engine for C++ developers](doc/pages/guide_engine_developer.md) |
 | Build Owl from source           | [Building from source](doc/pages/building.md)                    |

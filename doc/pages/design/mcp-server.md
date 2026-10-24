@@ -10,7 +10,7 @@ Design page for the editor automation work, summarised in the [Roadmap](../roadm
 - Commands are addressable by name with typed arguments, so they can be issued by code, tests and tools
 - The same API drives the headless runner and the `owlnest_tests` category
 - Base of the MCP server below and of the v0.7.0 replay tooling
-- Shipped as `commands::CommandRegistry` (library `OwlNestCommands`, see [Editor](../editor.md), Editor commands).
+- Shipped as `commands::CommandRegistry` (library `OwlNestCommands`, see [Owl Nest internals](../editor_internals.md#commands-undo-and-journal)).
   Continuous edits previewed live (inspector fields, gizmo, brushes, node moves) stay recorded once the gesture
   ends; their named counterparts (`entity.set_transform`...) are what tools call
 
@@ -30,7 +30,7 @@ Pull requests MCP0 to MCP4 of [Isometric worlds](isometric-worlds.md).
 
 ### Command API v2 (MCP0)
 
-Done: the registry has 13 commands, with defaults, choices and structured results (see [Editor](../editor.md),
+Done: the registry has 13 commands, with defaults, choices and structured results (see [Owl Nest internals](../editor_internals.md),
 Editor commands).
 
 - Argument types `Vec2`, `Vec4`, `Color` and `Enum`; `ArgSpec::defaultValue` (filled in before the command runs)
@@ -45,7 +45,7 @@ Editor commands).
 
 ### Editor session (MCP1)
 
-Done. `session::EditorSession` (`source/owlnest/sources/session/`, library `OwlNestCommands`, see [Editor](../editor.md),
+Done. `session::EditorSession` (`source/owlnest/sources/session/`, library `OwlNestCommands`, see [Owl Nest internals](../editor_internals.md),
 Editor session) — scene and file, undo, registry and `execute` with the context the session builds, bounded play,
 capture, statistics — implemented by `EditorLayer` (delegation to the active scene document) and by `HeadlessSession`
 (no window, no ImGui) on the Null renderer for the tests.
@@ -111,7 +111,7 @@ Error mapping:
 
 ### Transport (MCP3)
 
-Done. Three classes of `OwlNestMcp` (see [Editor](../editor.md), MCP server): `McpHttpServer` (the transport),
+Done. Three classes of `OwlNestMcp` (see [Owl Nest internals](../editor_internals.md#editor-mcp-server)): `McpHttpServer` (the transport),
 `McpServer` (dispatcher + transport + token file, what the editor and the tests hold) and the token helpers of
 `McpToken.h`. `cpp-httplib` 0.59.0 (ConanCenter, header-only, built without TLS nor `getaddrinfo_a`, whose helper
 threads crash ThreadSanitizer) is a dependency under the `nest` option.

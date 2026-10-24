@@ -95,6 +95,26 @@ SHOTS: list[Shot] = [
         crop=(0, 760, 1460, 1050),
     ),
     Shot("play_mode", documents=["scenes/platformer_house.owl"], steps=[("click", 689, 175), ("wait", 8)]),
+    # The help panel, opened by View > Panels > Help among the documents, on its start page, then a page with a mermaid
+    # diagram and the README picked in its sidebar.
+    Shot(
+        "help_home",
+        documents=["scenes/iso_town.owl"],
+        steps=[("click", 163, 18), ("click", 420, 70), ("wait", 3)],
+        crop=(0, 125, 1456, 752),
+    ),
+    Shot(
+        "help_diagram",
+        documents=["scenes/iso_town.owl"],
+        steps=[("click", 163, 18), ("click", 420, 70), ("wait", 3), ("click", 100, 504), ("wait", 3)],
+        crop=(0, 125, 1456, 752),
+    ),
+    Shot(
+        "help_readme",
+        documents=["scenes/iso_town.owl"],
+        steps=[("click", 163, 18), ("click", 420, 70), ("wait", 3), ("click", 102, 288), ("wait", 3)],
+        crop=(0, 125, 1456, 752),
+    ),
 ]
 
 

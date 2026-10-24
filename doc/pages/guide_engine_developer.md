@@ -23,18 +23,14 @@ Doxygen documentation of `source/owl/public/`.
 
 ## Subsystems
 
-| Page                               | What you learn                                            |
-|------------------------------------|-----------------------------------------------------------|
-| [Physics](physics.md)              | Box2D integration                                         |
-| [Sound](sound.md)                  | The OpenAL backend and the sound components               |
-| [Events and Input](event_input.md) | Event dispatch, input backends                            |
-| [Lua Scripting](scripting.md)      | How the Lua state, the sandbox and the bindings are wired |
-| [Profiling](profiling.md)          | Profiler scopes, Tracy, benchmarks                        |
+| Page                                      | What you learn                                            |
+|-------------------------------------------|-----------------------------------------------------------|
+| [Physics](physics.md)                     | Box2D integration                                         |
+| [Sound](sound.md)                         | The OpenAL backend and the sound components               |
+| [Events and Input](event_input.md)        | Event dispatch, input backends                            |
+| [Lua Scripting](scripting.md)             | How the Lua state, the sandbox and the bindings are wired |
+| [Node Graph](node_graph.md)               | The node canvas widget and its documents                  |
+| [Profiling](profiling.md)                 | Profiler scopes, Tracy, benchmarks                        |
+| [Owl Nest internals](editor_internals.md) | Editor structure, commands, sessions, MCP, scenarios      |
 
 Changing the engine itself: [contributors](guide_contributor.md). Making a game with it: [game makers](guide_game_maker.md).
-
-<!-- subpage: architecture.md -->
-<!-- subpage: renderer.md -->
-<!-- subpage: voxel.md -->
-<!-- subpage: raycaster_method.md -->
-<!-- subpage: profiling.md -->

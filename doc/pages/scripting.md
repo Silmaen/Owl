@@ -684,7 +684,7 @@ In Play (editor) and in the development runner, saving a `.lua` file replaces ev
 3. `on_create` runs, then the old instance is dropped **without** `on_destroy`.
 
 Other globals start from the new file: keep the state that must survive in properties. See
-[Editor](editor.md#editor-hot-reload).
+[Editor](editor_assets.md#editor-hot-reload).
 
 ## Asset Packing
 
