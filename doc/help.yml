@@ -1,0 +1,58 @@
+# The pages of the Owl Nest help panel and of the Doxygen page tree, in reading order: the groups in sidebar order,
+# the pages in their order inside each group, paths from the repository root.
+# - cmake/HelpAssets.cmake bundles exactly these pages (every doc/pages/*.md must be listed) into index.yml;
+# - tools/doc/fix_md_links.py gives Doxygen the same tree: the README (main page) is the parent of the first page of
+#   each group, the first page of a group the parent of the others.
+# The design pages (doc/pages/design/) are plans, not help: they hang under doc/pages/design/plans.md.
+Groups:
+  - title: Getting started
+    pages:
+      - doc/pages/nest_help.md
+      - doc/pages/getting_started.md
+      - README.md
+  - title: The editor
+    pages:
+      - doc/pages/editor.md
+      - doc/pages/editor_viewport.md
+      - doc/pages/editor_scene.md
+      - doc/pages/editor_assets.md
+      - doc/pages/editor_documents.md
+      - doc/pages/editor_tilemaps.md
+      - doc/pages/editor_hud.md
+      - doc/pages/editor_play.md
+      - doc/pages/editor_console.md
+      - doc/pages/editor_projects.md
+      - doc/pages/editor_settings.md
+      - doc/pages/mcp.md
+  - title: Making games
+    pages:
+      - doc/pages/guide_game_maker.md
+      - doc/pages/scene.md
+      - doc/pages/event_input.md
+      - doc/pages/physics.md
+      - doc/pages/sound.md
+      - doc/pages/pathfinding.md
+  - title: Scripting
+    pages:
+      - doc/pages/scripting.md
+      - doc/pages/lua-api.md
+  - title: Engine for C++ developers
+    pages:
+      - doc/pages/guide_engine_developer.md
+      - doc/pages/architecture.md
+      - doc/pages/renderer.md
+      - doc/pages/voxel.md
+      - doc/pages/raycaster_method.md
+      - doc/pages/node_graph.md
+      - doc/pages/profiling.md
+      - doc/pages/editor_internals.md
+  - title: Contributing
+    pages:
+      - doc/pages/guide_contributor.md
+      - doc/pages/contributing.md
+      - doc/pages/building.md
+      - doc/pages/continuous_integration.md
+  - title: Roadmap and changes
+    pages:
+      - doc/pages/roadmap.md
+      - doc/pages/changelog.md

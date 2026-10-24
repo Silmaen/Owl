@@ -21,18 +21,29 @@ namespace owl::nest::panel {
  * @brief
  *  Dockable in-editor help browser.
  *
- * Reads the bundled help index produced by `cmake/HelpAssets.cmake` (one
- * `help/index.yml` describing every page) and renders the
- * selected `.md` page through `codeEditor::MarkdownPreview`.
+ * Reads the bundled help index produced by `cmake/HelpAssets.cmake` (`index.yml`: every page in sidebar order, each
+ * with its group) and renders the selected `.md` page through `codeEditor::MarkdownPreview`.
  *
- * - `open()` shows the panel without changing the current page.
+ * - The sidebar shows the groups in the order of the index, the pages in their order inside each group.
+ * - `open()` shows the panel without changing the current page; the start page is the first page of the index.
  * - `open(id)` shows the panel and navigates to a specific page id (the
  *   basename of the source file without extension, e.g. `editor`).
  * - Internal links of the form `[text](other.md)` navigate within the
- *   panel; external links (http(s)://) are logged via `OWL_INFO`.
+ *   panel; external links (http(s)://) open in the browser.
  */
 class HelpPanel final {
 public:
+	/**
+	 * @brief
+	 *  One page of the help index.
+	 */
+	struct HelpPage {
+		std::string id;///< Basename without extension, used as canonical id.
+		std::string title;///< First H1 line of the page (Doxygen anchor stripped).
+		std::string group;///< Sidebar group of the page.
+		std::string path;///< File name relative to the help root.
+	};
+
 	/**
 	 * @brief
 	 *  Default constructor.
@@ -70,20 +81,33 @@ public:
 
 	/**
 	 * @brief
-	 *  Locate the help bundle: `help/` in an asset directory (`assets/help` of a package), else the bundle of the
-	 *  build tree (`OWL_HELP_BUILD_DIR`).
+	 *  Locate the help bundle of this editor: the bundle of its build tree (`OWL_HELP_BUILD_DIR`), else `help/` in an
+	 *  asset directory (`assets/help` of a package).
 	 * @return The help root, empty when none holds an `index.yml`.
 	 */
 	[[nodiscard]] static auto resolveHelpRoot() -> std::filesystem::path;
 
-private:
-	struct PageEntry {
-		std::string id;///< Basename without extension, used as canonical id.
-		std::string title;///< First H1 line of the page (Doxygen anchor stripped).
-		std::string category;///< "guides" or "reference".
-		std::string path;///< File name relative to the help root.
-	};
+	/**
+	 * @brief
+	 *  Pick the help bundle among candidates: the build bundle first, so a development build always reads the pages
+	 *  it bundled, then the `help/` folder of the asset directories in their order.
+	 * @param[in] iBuildBundle The bundle of the build tree, empty when unknown.
+	 * @param[in] iAssetDirs The asset directories, highest priority first.
+	 * @return The first candidate holding an `index.yml`, empty when none does.
+	 */
+	[[nodiscard]] static auto resolveHelpRoot(const std::filesystem::path& iBuildBundle,
+											  const std::vector<std::filesystem::path>& iAssetDirs)
+			-> std::filesystem::path;
 
+	/**
+	 * @brief
+	 *  Read a help index.
+	 * @param[in] iIndexFile The `index.yml` file.
+	 * @return Its pages in file order (the sidebar order), empty when the file is missing or malformed.
+	 */
+	[[nodiscard]] static auto readIndex(const std::filesystem::path& iIndexFile) -> std::vector<HelpPage>;
+
+private:
 	/**
 	 * @brief
 	 *  Load (or reload) the index file.
@@ -108,15 +132,15 @@ private:
 	 */
 	void navigateTo(const std::string& iId);
 
-	bool m_visible = false;
-	std::filesystem::path m_helpRoot;
-	std::vector<PageEntry> m_pages;
-	std::string m_currentPageId;
-	std::string m_currentContent;
-	std::vector<std::string> m_backStack;
-	std::vector<std::string> m_forwardStack;
-	std::string m_search;
-	codeEditor::MarkdownPreview m_renderer;
+	bool m_visible = false;///< Whether the panel window is shown.
+	std::filesystem::path m_helpRoot;///< Folder of the bundle in use.
+	std::vector<HelpPage> m_pages;///< Pages of the index, in sidebar order.
+	std::string m_currentPageId;///< Page shown, empty when none.
+	std::string m_currentContent;///< Markdown of the page shown.
+	std::vector<std::string> m_backStack;///< Pages left by navigation, most recent last.
+	std::vector<std::string> m_forwardStack;///< Pages left by Back, most recent last.
+	std::string m_search;///< Sidebar filter on page titles.
+	codeEditor::MarkdownPreview m_renderer;///< Renderer of the page.
 	/**
 	 * Horizontal split ratio between the page tree (left) and content (right). Clamped
 	 * at render time to keep both sides at least `kMinSideW` pixels wide.
