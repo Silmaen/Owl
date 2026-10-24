@@ -68,6 +68,13 @@ Both ship next to `bin/` in the Owl Nest archive and open from the File screen:
 
 *Scenes of the Engine Demo, rendered headless by the game runner on Vulkan.*
 
+| ![The tavern, lit by the fire and the candles](../images/showcase/tavern.png)     | ![The tavern table, PBR goblets and a candle](../images/showcase/tavern_table.png) |
+|-----------------------------------------------------------------------------------|------------------------------------------------------------------------------------|
+| ![Voxel terrain at noon, procedural sky](../images/showcase/voxel.png)            | ![Voxel terrain at sunset, day-night cycle](../images/showcase/voxel_sunset.png)   |
+
+*The 3D world: glTF meshes with PBR materials, point lights and cascaded shadows in the tavern, and a procedural sky
+driven by the day-night cycle over the voxel terrain.*
+
 | ![Breakout](../images/showcase/breakout.png) | ![Sokoban](../images/showcase/sokoban.png) | ![Wolfenstein mini](../images/showcase/wolfenstein.png) |
 |----------------------------------------------|--------------------------------------------|---------------------------------------------------------|
 
