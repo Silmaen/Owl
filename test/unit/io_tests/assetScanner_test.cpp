@@ -486,6 +486,35 @@ TEST_F(AssetScannerTest, ScanScriptPropertiesFollowsScenesRecursively) {
 	EXPECT_TRUE(warnings.empty());
 }
 
+TEST_F(AssetScannerTest, ScanScriptPropertiesFollowsTheScenesOfAList) {
+	const auto first = m_tempDir / "scenes" / "level_a.owl";
+	const auto second = m_tempDir / "scenes" / "level_b.owl";
+	writeFile(first, "Scene: level_a\n");
+	writeFile(second, "Scene: level_b\n");
+	const auto mapPath = m_tempDir / "scenes" / "world_map.owl";
+	writeFile(mapPath, "Scene: world_map\nEntities:\n"
+					   "  - Entity: 1\n"
+					   "    LuaScript:\n"
+					   "      scriptPath: \"\"\n"
+					   "      properties:\n"
+					   "        - name: level_scenes\n"
+					   "          type: strings\n"
+					   "          value:\n"
+					   "            - " +
+							   first.generic_string() + "\n            - " + second.generic_string() +
+							   "\n            - ''\n");
+	std::vector<std::string> warnings;
+	const auto assets = AssetScanner::scanScene(mapPath, &warnings);
+	const auto hasScene = [&assets](const std::filesystem::path& iPath) -> bool {
+		return std::ranges::any_of(assets, [&iPath](const AssetReference& iRef) -> bool {
+			return iRef.assetType == AssetType::Scene && iRef.diskPath == iPath;
+		});
+	};
+	EXPECT_TRUE(hasScene(first));
+	EXPECT_TRUE(hasScene(second));
+	EXPECT_TRUE(warnings.empty());
+}
+
 TEST_F(AssetScannerTest, ScanScriptPropertiesFollowsSoundsAndTextures) {
 	const auto soundPath = m_tempDir / "sounds" / "win.ogg";
 	writeDummyBinary(soundPath);

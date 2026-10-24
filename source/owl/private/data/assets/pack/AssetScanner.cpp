@@ -288,7 +288,7 @@ void scanLuaScript(const std::filesystem::path& iScriptPath,// NOLINT(misc-no-re
 		followTexture((*it)[1].str(), source, ioAssets, ioWarnings);
 }
 
-// The string properties of a `LuaScript` follow the rules of the strings quoted in its script.
+// The string and list-of-strings properties of a `LuaScript` follow the rules of the strings quoted in its script.
 void scanScriptProperties(const YAML::Node& iProperties,// NOLINT(misc-no-recursion)
 						  const std::string& iSceneName, std::set<std::string>& ioVisitedScenes,
 						  std::vector<AssetReference>& ioAssets, std::vector<std::string>* ioWarnings) {
@@ -297,17 +297,26 @@ void scanScriptProperties(const YAML::Node& iProperties,// NOLINT(misc-no-recurs
 	for (const auto property: iProperties) {
 		const auto type = property["type"];
 		const auto value = property["value"];
-		if (!type || !type.IsScalar() || type.as<std::string>() != "string" || !value || !value.IsScalar())
+		if (!type || !type.IsScalar() || !value)
 			continue;
-		const auto text = value.as<std::string>();
+		const auto kind = type.as<std::string>();
+		std::vector<std::string> texts;
+		if (kind == "string" && value.IsScalar())
+			texts.push_back(value.as<std::string>());
+		else if (kind == "strings" && value.IsSequence())
+			for (const auto item: value)
+				if (item.IsScalar())
+					texts.push_back(item.as<std::string>());
 		const auto name = property["name"] ? property["name"].as<std::string>() : std::string{};
 		const auto source = std::format("the '{}' script property in {}", name, iSceneName);
-		if (isSerializedTexture(text))
-			followTexture(text, source, ioAssets, ioWarnings);
-		else if (std::filesystem::path(text).extension() == ".owl")
-			followScene(text, source, ioVisitedScenes, ioAssets, ioWarnings);
-		else if (isSoundFile(text))
-			followSound(text, source, ioAssets, ioWarnings);
+		for (const auto& text: texts) {
+			if (isSerializedTexture(text))
+				followTexture(text, source, ioAssets, ioWarnings);
+			else if (std::filesystem::path(text).extension() == ".owl")
+				followScene(text, source, ioVisitedScenes, ioAssets, ioWarnings);
+			else if (isSoundFile(text))
+				followSound(text, source, ioAssets, ioWarnings);
+		}
 	}
 }
 
