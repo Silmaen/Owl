@@ -1076,6 +1076,42 @@ auto luaUiSetVisible(lua_State* iState) -> int {
 	return 0;
 }
 
+auto luaUiSetSize(lua_State* iState) -> int {
+	const auto width = static_cast<float>(luaL_checknumber(iState, 2));
+	const auto height = static_cast<float>(luaL_checknumber(iState, 3));
+	const auto entity = findEntity(iState);
+	if (!entity || !entity->hasComponent<scene::component::UiRect>()) {
+		lua_pushboolean(iState, 0);
+		return 1;
+	}
+	entity->getComponent<scene::component::UiRect>().size = {std::max(0.f, width), std::max(0.f, height)};
+	lua_pushboolean(iState, 1);
+	return 1;
+}
+
+auto luaUiGetRect(lua_State* iState) -> int {
+	auto* activeScene = getBoundScene(iState);
+	const auto entity = findEntity(iState);
+	if (activeScene == nullptr || !entity || !entity->hasComponent<scene::component::UiRect>()) {
+		lua_pushnil(iState);
+		return 1;
+	}
+	auto* surface = entity->getScene();
+	auto& layout = surface->getHudLayout();
+	if (const auto viewport = activeScene->getViewportSize(); !layout.isComputedFor(viewport))
+		layout.compute(*surface, viewport, false);
+	const auto* node = layout.findNode(static_cast<entt::entity>(*entity));
+	if (node == nullptr) {
+		lua_pushnil(iState);
+		return 1;
+	}
+	lua_pushnumber(iState, static_cast<lua_Number>(node->bounds.position.x()));
+	lua_pushnumber(iState, static_cast<lua_Number>(node->bounds.position.y()));
+	lua_pushnumber(iState, static_cast<lua_Number>(node->bounds.size.x()));
+	lua_pushnumber(iState, static_cast<lua_Number>(node->bounds.size.y()));
+	return 4;
+}
+
 auto luaUiSetImage(lua_State* iState) -> int {
 	const auto entity = findEntity(iState);
 	const std::string_view texture = luaL_checkstring(iState, 2);
@@ -2446,6 +2482,15 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		 .returns = {{"text", String}}},
 		{.table = "ui", .name = "set_visible", .function = guarded<luaUiSetVisible>,
 		 .description = "Show or hide the entity in the game.", .params = {entityId, {"visible", Boolean}}},
+		{.table = "ui", .name = "set_size", .function = guarded<luaUiSetSize>,
+		 .description = "Resize the `UiRect` of a widget, in the units of its size (screen heights, shares of its parent, "
+						"pixels): a card fitted to its lines; false when the entity has no `UiRect`.",
+		 .params = {entityId, {"width", Number}, {"height", Number}}, .returns = {{"done", Boolean}}},
+		{.table = "ui", .name = "get_rect", .function = guarded<luaUiGetRect>,
+		 .description = "Rectangle of a widget as the HUD lays it out, in pixels of the viewport from its top left (an "
+						"arrow aimed at a button at any interface size); nil when it is hidden or has no `UiRect`.",
+		 .params = {entityId},
+		 .returns = {{"x", Number}, {"y", Number}, {"width", Number}, {"height", Number}}},
 		{.table = "ui", .name = "set_image", .function = blocking<luaUiSetImage>,
 		 .description = "Show a texture asset in a `UiImage` (an empty path clears it); false when the entity has no "
 						"`UiImage` or the texture cannot be loaded.",

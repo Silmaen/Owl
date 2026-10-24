@@ -182,6 +182,44 @@ TEST_F(LuaRuntimeGaps, uiImageFrameAndTextureAreSetFromLua) {
 	EXPECT_EQ(icon.getComponent<component::UiImage>().texture, nullptr);
 }
 
+TEST_F(LuaRuntimeGaps, uiSetSizeResizesTheRectOfAWidget) {
+	auto card = m_scene->createEntity("Card");
+	card.addComponent<component::UiRect>().size = {1.f, 0.8f};
+	const auto instance = run(std::format("done = ui.set_size({}, 1.2, 0.45)\nnone = ui.set_size({}, 1, 1)\n"
+										  "clamped = ui.set_size({}, -3, 0.5)",
+										  luaId(card), luaId(m_scene->createEntity()), luaId(card)));
+	EXPECT_TRUE(instance->getPropertyBool("done").value_or(false));
+	EXPECT_FALSE(instance->getPropertyBool("none").value_or(true));
+	EXPECT_TRUE(instance->getPropertyBool("clamped").value_or(false));
+	EXPECT_NEAR(card.getComponent<component::UiRect>().size.x(), 0.f, 1e-6f);
+	EXPECT_NEAR(card.getComponent<component::UiRect>().size.y(), 0.5f, 1e-6f);
+}
+
+TEST_F(LuaRuntimeGaps, uiGetRectGivesTheLaidOutRectangleInPixels) {
+	auto canvas = m_scene->createEntity("Canvas");
+	canvas.addComponent<component::Canvas>().scaleMode = component::Canvas::ScaleMode::ConstantPixels;
+	auto button = m_scene->createEntity("Button");
+	auto& rect = button.addComponent<component::UiRect>();
+	rect.setAnchor(component::UiRect::Anchor::TopLeft);
+	rect.pivot = {0.f, 0.f};
+	rect.size = {100.f, 50.f};
+	rect.anchorOffset = {10.f, 20.f};
+	m_scene->setParent(button, canvas);
+	auto hidden = m_scene->createEntity("Hidden");
+	hidden.addComponent<component::UiRect>();
+	hidden.getComponent<component::Visibility>().gameVisible = false;
+	m_scene->setParent(hidden, canvas);
+	const auto instance = run(std::format("x, y, w, h = ui.get_rect({})\nnone = ui.get_rect({}) == nil\n"
+										  "bare = ui.get_rect({}) == nil",
+										  luaId(button), luaId(hidden), luaId(m_scene->createEntity())));
+	EXPECT_NEAR(instance->getPropertyFloat("x").value_or(0.f), 10.f, 1e-3f);
+	EXPECT_NEAR(instance->getPropertyFloat("y").value_or(0.f), 20.f, 1e-3f);
+	EXPECT_NEAR(instance->getPropertyFloat("w").value_or(0.f), 100.f, 1e-3f);
+	EXPECT_NEAR(instance->getPropertyFloat("h").value_or(0.f), 50.f, 1e-3f);
+	EXPECT_TRUE(instance->getPropertyBool("none").value_or(false));
+	EXPECT_TRUE(instance->getPropertyBool("bare").value_or(false));
+}
+
 TEST_F(LuaRuntimeGaps, worldIsBlockedWhileAWindowIsShown) {
 	m_scene->onStartRuntime();
 	auto window = m_scene->createEntity("Pause");
