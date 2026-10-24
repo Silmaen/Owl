@@ -1,6 +1,7 @@
 -- The meadow strip under every menu of Tower defence: a wave marches along the road from the right, past the archer
--- tower, towards the keep on the left, each enemy bobbing on its step; on the victory screen fireworks burst over the keep, on the game over screen
--- the wave stands still before the fallen keep. The sprites come from the game (`textures/enemies.png`).
+-- tower, towards the keep on the left; on the victory screen fireworks burst over the keep, on the game over screen
+-- the wave stands before the fallen keep, hammering at it. The sprites are the Horde sheets of the game
+-- (`textures/enemies/<kind>.png`, 8 columns of headings, rows: 4 walk frames, 2 blows, 3 frames of the fall).
 
 properties = {
     { name = "speed", type = "float", default = 2.2, min = 0 },
@@ -10,10 +11,9 @@ properties = {
     { name = "spark_gap", type = "float", default = 0.35, min = 0.05 },
 }
 
--- Row of `textures/enemies.png` of each walker, in the order of the scene: runners, a soldier, an armoured one.
-local ROWS = { 0, 0, 1, 0, 2, 1, 0 }
--- Frame of the heading +y in a row: walking to the lower left, the face shown, close enough to the left on a strip.
-local FACING_LEFT = 1
+local DIRECTIONS = 8
+local FACING_LEFT = 6       -- column of the heading toward the left of the screen
+local WALK_ROWS, ATTACK_ROW = 4, 4
 
 local walkers = {}
 local sparks = {}
@@ -28,9 +28,7 @@ end
 function on_create()
     for index, id in ipairs(scene.find_entities("ParadeEnemy")) do
         local x, y, z = transform.get_position(id)
-        local row = ROWS[(index - 1) % #ROWS + 1]
-        walkers[#walkers + 1] = { id = id, x = x, y = y, z = z, phase = index * 0.9 }
-        isometric.set_sprite_frame(id, row * 4 + FACING_LEFT)
+        walkers[#walkers + 1] = { id = id, x = x, y = y, z = z, phase = index * 0.9, frame = -1 }
     end
     for _, id in ipairs(scene.find_entities("Spark")) do
         sparks[#sparks + 1] = { id = id, t = 1.0, x = 0, y = 0, r = 1, g = 1, b = 1 }
@@ -63,8 +61,18 @@ function on_update(dt)
             walker.x = walker.x - speed * real
             if walker.x < -span / 2 then walker.x = walker.x + span end
         end
-        local bob = marching and 0.18 * math.abs(math.sin(clock * 7.0 + walker.phase)) or 0.0
-        transform.set_position(walker.id, walker.x, walker.y + bob, walker.z)
+        local row
+        if marching then
+            row = math.floor(clock * 6.0 + walker.phase) % WALK_ROWS
+        else
+            row = ATTACK_ROW + math.floor(clock * 2.5 + walker.phase) % 2
+        end
+        local frame = row * DIRECTIONS + FACING_LEFT
+        if frame ~= walker.frame then
+            walker.frame = frame
+            isometric.set_sprite_frame(walker.id, frame)
+        end
+        transform.set_position(walker.id, walker.x, walker.y, walker.z)
     end
     if fireworks then update_sparks(real) end
 end

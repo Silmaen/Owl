@@ -1,0 +1,233 @@
+# Tower defence star upgrades: the first level won (the plan of tower_win), the World map button of the victory
+# screen, then the Upgrades button of the map: the stars won are spent on the first archer tier, Refund all
+# gives them back.
+scene: ../../../samples/tower_defence/scenes/level_01.owl
+steps:
+  - frames: 30
+  - input: {key: F, frames: 2}
+  - input: {key: E, frames: 2}
+  - frames: 1
+  - input: {key: Enter, frames: 2}
+  - frames: 1
+  - input: {key: D1, frames: 2}
+  - frames: 1
+  - input: {key: E, frames: 2}
+  - frames: 1
+  - input: {key: Enter, frames: 2}
+  - frames: 1
+  - input: {key: D1, frames: 2}
+  - frames: 1
+  - frames: 600
+  - input: {key: Q, frames: 2}
+  - frames: 1
+  - input: {key: Enter, frames: 2}
+  - frames: 1
+  - input: {key: D1, frames: 2}
+  - frames: 1
+  - input: {key: Backspace, frames: 2}
+  - frames: 1
+  - frames: 500
+  - input: {key: E, frames: 2}
+  - frames: 1
+  - input: {key: E, frames: 2}
+  - frames: 1
+  - input: {key: Enter, frames: 2}
+  - frames: 1
+  - input: {key: D2, frames: 2}
+  - frames: 1
+  - frames: 500
+  - input: {key: Q, frames: 2}
+  - frames: 1
+  - input: {key: Q, frames: 2}
+  - frames: 1
+  - input: {key: Enter, frames: 2}
+  - frames: 1
+  - input: {key: D1, frames: 2}
+  - frames: 1
+  - input: {key: Backspace, frames: 2}
+  - frames: 1
+  - frames: 500
+  - input: {key: E, frames: 2}
+  - frames: 1
+  - input: {key: E, frames: 2}
+  - frames: 1
+  - input: {key: Enter, frames: 2}
+  - frames: 1
+  - input: {key: D1, frames: 2}
+  - frames: 1
+  - input: {key: Backspace, frames: 2}
+  - frames: 1
+  - frames: 500
+  - input: {key: E, frames: 2}
+  - frames: 1
+  - input: {key: Enter, frames: 2}
+  - frames: 1
+  - input: {key: D3, frames: 2}
+  - frames: 1
+  - frames: 500
+  - input: {key: E, frames: 2}
+  - frames: 1
+  - input: {key: E, frames: 2}
+  - frames: 1
+  - input: {key: E, frames: 2}
+  - frames: 1
+  - input: {key: Enter, frames: 2}
+  - frames: 1
+  - input: {key: D2, frames: 2}
+  - frames: 1
+  - frames: 500
+  - input: {key: Q, frames: 2}
+  - frames: 1
+  - input: {key: Q, frames: 2}
+  - frames: 1
+  - input: {key: Q, frames: 2}
+  - frames: 1
+  - input: {key: Enter, frames: 2}
+  - frames: 1
+  - input: {key: D1, frames: 2}
+  - frames: 1
+  - input: {key: Backspace, frames: 2}
+  - frames: 1
+  - frames: 500
+  - input: {key: E, frames: 2}
+  - frames: 1
+  - input: {key: E, frames: 2}
+  - frames: 1
+  - input: {key: E, frames: 2}
+  - frames: 1
+  - input: {key: Enter, frames: 2}
+  - frames: 1
+  - input: {key: D1, frames: 2}
+  - frames: 1
+  - input: {key: Backspace, frames: 2}
+  - frames: 1
+  - frames: 500
+  - input: {key: Q, frames: 2}
+  - frames: 1
+  - input: {key: Q, frames: 2}
+  - frames: 1
+  - input: {key: Q, frames: 2}
+  - frames: 1
+  - input: {key: Q, frames: 2}
+  - frames: 1
+  - input: {key: Q, frames: 2}
+  - frames: 1
+  - input: {key: Enter, frames: 2}
+  - frames: 1
+  - input: {key: D1, frames: 2}
+  - frames: 1
+  - input: {key: Backspace, frames: 2}
+  - frames: 1
+  - frames: 400
+  - input: {key: Enter, frames: 2}
+  - frames: 1
+  - input: {key: D1, frames: 2}
+  - frames: 1
+  - input: {key: Backspace, frames: 2}
+  - frames: 1
+  - frames: 400
+  - input: {key: E, frames: 2}
+  - frames: 1
+  - input: {key: E, frames: 2}
+  - frames: 1
+  - input: {key: E, frames: 2}
+  - frames: 1
+  - input: {key: E, frames: 2}
+  - frames: 1
+  - input: {key: E, frames: 2}
+  - frames: 1
+  - input: {key: Enter, frames: 2}
+  - frames: 1
+  - input: {key: D1, frames: 2}
+  - frames: 1
+  - input: {key: Backspace, frames: 2}
+  - frames: 1
+  - frames: 400
+  - input: {key: E, frames: 2}
+  - frames: 1
+  - input: {key: E, frames: 2}
+  - frames: 1
+  - input: {key: Enter, frames: 2}
+  - frames: 1
+  - input: {key: D1, frames: 2}
+  - frames: 1
+  - frames: 400
+  - input: {key: Enter, frames: 2}
+  - frames: 1
+  - input: {key: D1, frames: 2}
+  - frames: 1
+  - input: {key: Backspace, frames: 2}
+  - frames: 1
+  - frames: 400
+  - input: {key: Enter, frames: 2}
+  - frames: 1
+  - input: {key: D1, frames: 2}
+  - frames: 1
+  - input: {key: Backspace, frames: 2}
+  - frames: 1
+  - frames: 400
+  - input: {key: Q, frames: 2}
+  - frames: 1
+  - input: {key: Q, frames: 2}
+  - frames: 1
+  - input: {key: Q, frames: 2}
+  - frames: 1
+  - input: {key: Enter, frames: 2}
+  - frames: 1
+  - input: {key: D1, frames: 2}
+  - frames: 1
+  - input: {key: Backspace, frames: 2}
+  - frames: 1
+  - frames: 400
+  - input: {key: E, frames: 2}
+  - frames: 1
+  - input: {key: E, frames: 2}
+  - frames: 1
+  - input: {key: E, frames: 2}
+  - frames: 1
+  - input: {key: E, frames: 2}
+  - frames: 1
+  - input: {key: E, frames: 2}
+  - frames: 1
+  - input: {key: Enter, frames: 2}
+  - frames: 1
+  - input: {key: D2, frames: 2}
+  - frames: 1
+  - frames: 400
+  - input: {key: Enter, frames: 2}
+  - frames: 1
+  - input: {key: D1, frames: 2}
+  - frames: 1
+  - input: {key: Backspace, frames: 2}
+  - frames: 1
+  - frames: 1200
+  - expect: {gamestate: tower_wave, equals: 8}
+  - expect: {gamestate: tower_won, equals: true}
+  - expect: {gamestate: tower_lost, equals: false}
+  - expect: {gamestate: tower_done, equals: true}
+  - expect: {gamestate: tower_night, equals: true}
+  - expect: {gamestate: tower_result_stars, greater: 0}
+  - expect: {gamestate: tower_upgrades, greater: 3}
+  - frames: 400
+  - expect: {entity: StatLine1, exists: true}
+  - expect: {gamestate: tower_tally_done, equals: true}
+  - expect: {gamestate: tower_result_stars_gained, greater: 0}
+  - input: {key: Right, frames: 2}
+  - frames: 2
+  - input: {key: Enter, frames: 2}
+  - frames: 150
+  - expect: {entity: Site, exists: true}
+  - expect: {gamestate: tower_map_open, equals: 2}
+  - input: {mouse_pos: [1184, 821], frames: 3}
+  - input: {mouse: Left, mouse_pos: [1184, 821], frames: 2}
+  - frames: 90
+  - expect: {gamestate: tower_upgrades_screen, equals: true}
+  - expect: {gamestate: tower_up_won, greater: 0}
+  - expect: {gamestate: tower_up_archer, equals: 0}
+  - input: {key: Enter, frames: 2}
+  - frames: 5
+  - expect: {gamestate: tower_up_archer, equals: 1}
+  - input: {mouse_pos: [979, 762], frames: 3}
+  - input: {mouse: Left, mouse_pos: [979, 762], frames: 2}
+  - frames: 5
+  - expect: {gamestate: tower_up_archer, equals: 0}

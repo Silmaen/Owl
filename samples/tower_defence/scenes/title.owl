@@ -88,143 +88,183 @@ Entities:
     Tag:
       tag: ParadeEnemy
     Transform:
-      translation: [-14, -5.9, 0.1]
+      translation: [-14, -4.9792, 0.1]
       rotation: [0, 0, 0]
-      scale: [1.8, 1.8, 1]
+      scale: [2.6, 2.6, 1]
     Visibility:
       gameVisible: true
     Hierarchy:
       parentId: 7400000000000000005
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/enemies.png
-      columns: 4
-      rows: 3
-      firstFrame: 0
-      lastFrame: 0
+      texture: nam:textures/enemies/goblin.png
+      columns: 8
+      rows: 9
+      firstFrame: 6
+      lastFrame: 6
       frameDuration: 0.1
       loop: false
   - Entity: 7400000000000000007
     Tag:
       tag: ParadeEnemy
     Transform:
-      translation: [-10.6, -5.9, 0.1]
+      translation: [-11.1, -4.9792, 0.1]
       rotation: [0, 0, 0]
-      scale: [1.8, 1.8, 1]
+      scale: [2.6, 2.6, 1]
     Visibility:
       gameVisible: true
     Hierarchy:
       parentId: 7400000000000000005
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/enemies.png
-      columns: 4
-      rows: 3
-      firstFrame: 0
-      lastFrame: 0
+      texture: nam:textures/enemies/wolf.png
+      columns: 8
+      rows: 9
+      firstFrame: 6
+      lastFrame: 6
       frameDuration: 0.1
       loop: false
   - Entity: 7400000000000000008
     Tag:
       tag: ParadeEnemy
     Transform:
-      translation: [-7.2, -5.9, 0.1]
+      translation: [-8.2, -4.9792, 0.1]
       rotation: [0, 0, 0]
-      scale: [1.8, 1.8, 1]
+      scale: [2.6, 2.6, 1]
     Visibility:
       gameVisible: true
     Hierarchy:
       parentId: 7400000000000000005
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/enemies.png
-      columns: 4
-      rows: 3
-      firstFrame: 4
-      lastFrame: 4
+      texture: nam:textures/enemies/grunt.png
+      columns: 8
+      rows: 9
+      firstFrame: 6
+      lastFrame: 6
       frameDuration: 0.1
       loop: false
   - Entity: 7400000000000000009
     Tag:
       tag: ParadeEnemy
     Transform:
-      translation: [-3.8, -5.9, 0.1]
+      translation: [-5.3, -4.9792, 0.1]
       rotation: [0, 0, 0]
-      scale: [1.8, 1.8, 1]
+      scale: [2.6, 2.6, 1]
     Visibility:
       gameVisible: true
     Hierarchy:
       parentId: 7400000000000000005
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/enemies.png
-      columns: 4
-      rows: 3
-      firstFrame: 0
-      lastFrame: 0
+      texture: nam:textures/enemies/sapper.png
+      columns: 8
+      rows: 9
+      firstFrame: 6
+      lastFrame: 6
       frameDuration: 0.1
       loop: false
   - Entity: 7400000000000000010
     Tag:
       tag: ParadeEnemy
     Transform:
-      translation: [-0.4, -5.9, 0.1]
+      translation: [-2.4, -4.9792, 0.1]
       rotation: [0, 0, 0]
-      scale: [1.8, 1.8, 1]
+      scale: [2.6, 2.6, 1]
     Visibility:
       gameVisible: true
     Hierarchy:
       parentId: 7400000000000000005
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/enemies.png
-      columns: 4
-      rows: 3
-      firstFrame: 8
-      lastFrame: 8
+      texture: nam:textures/enemies/troll.png
+      columns: 8
+      rows: 9
+      firstFrame: 6
+      lastFrame: 6
       frameDuration: 0.1
       loop: false
   - Entity: 7400000000000000011
     Tag:
       tag: ParadeEnemy
     Transform:
-      translation: [3, -5.9, 0.1]
+      translation: [0.5, -4.9792, 0.1]
       rotation: [0, 0, 0]
-      scale: [1.8, 1.8, 1]
+      scale: [2.6, 2.6, 1]
     Visibility:
       gameVisible: true
     Hierarchy:
       parentId: 7400000000000000005
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/enemies.png
-      columns: 4
-      rows: 3
-      firstFrame: 4
-      lastFrame: 4
+      texture: nam:textures/enemies/ogre.png
+      columns: 8
+      rows: 9
+      firstFrame: 6
+      lastFrame: 6
       frameDuration: 0.1
       loop: false
   - Entity: 7400000000000000012
     Tag:
       tag: ParadeEnemy
     Transform:
-      translation: [6.4, -5.9, 0.1]
+      translation: [3.4, -4.9792, 0.1]
       rotation: [0, 0, 0]
-      scale: [1.8, 1.8, 1]
+      scale: [2.6, 2.6, 1]
     Visibility:
       gameVisible: true
     Hierarchy:
       parentId: 7400000000000000005
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/enemies.png
-      columns: 4
-      rows: 3
-      firstFrame: 0
-      lastFrame: 0
+      texture: nam:textures/enemies/ogre_mage.png
+      columns: 8
+      rows: 9
+      firstFrame: 6
+      lastFrame: 6
       frameDuration: 0.1
       loop: false
   - Entity: 7400000000000000013
+    Tag:
+      tag: ParadeEnemy
+    Transform:
+      translation: [6.3, -4.9792, 0.1]
+      rotation: [0, 0, 0]
+      scale: [2.6, 2.6, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7400000000000000005
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/enemies/grunt.png
+      columns: 8
+      rows: 9
+      firstFrame: 6
+      lastFrame: 6
+      frameDuration: 0.1
+      loop: false
+  - Entity: 7400000000000000014
+    Tag:
+      tag: ParadeEnemy
+    Transform:
+      translation: [9.2, -4.6569, 0.1]
+      rotation: [0, 0, 0]
+      scale: [3.51, 3.51, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7400000000000000005
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/enemies/chieftain.png
+      columns: 8
+      rows: 9
+      firstFrame: 6
+      lastFrame: 6
+      frameDuration: 0.1
+      loop: false
+  - Entity: 7400000000000000015
     Tag:
       tag: ParadeTower
     Transform:
@@ -238,7 +278,7 @@ Entities:
       color: [1, 1, 1, 1]
       tilingFactor: 1
       texture: nam:textures/towers/archer.png
-  - Entity: 7400000000000000014
+  - Entity: 7400000000000000016
     Tag:
       tag: ParadeKeep
     Transform:
@@ -252,7 +292,7 @@ Entities:
       color: [1, 1, 1, 1]
       tilingFactor: 1
       texture: nam:textures/keep.png
-  - Entity: 7400000000000000015
+  - Entity: 7400000000000000017
     Tag:
       tag: MenuCanvas
     Transform:
@@ -269,7 +309,7 @@ Entities:
       scaleMode: ScaleWithHeight
     LuaScript:
       scriptPath: scripts/ui/title.lua
-  - Entity: 7400000000000000016
+  - Entity: 7400000000000000018
     Tag:
       tag: TitleArt
     Transform:
@@ -279,7 +319,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7400000000000000015
+      parentId: 7400000000000000017
     UiRect:
       anchorMin: [0.5, 0]
       anchorMax: [0.5, 0]
@@ -291,7 +331,7 @@ Entities:
     UiImage:
       tint: [1, 1, 1, 1]
       texture: nam:textures/ui/title.png
-  - Entity: 7400000000000000017
+  - Entity: 7400000000000000019
     Tag:
       tag: ButtonPanel
     Transform:
@@ -301,7 +341,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7400000000000000015
+      parentId: 7400000000000000017
     UiRect:
       anchorMin: [0.5, 0]
       anchorMax: [0.5, 0]
@@ -317,7 +357,7 @@ Entities:
       padding: 0
       columns: 1
       cellSize: [0, 0]
-  - Entity: 7400000000000000018
+  - Entity: 7400000000000000020
     Tag:
       tag: QuitButton
     Transform:
@@ -327,7 +367,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7400000000000000017
+      parentId: 7400000000000000019
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -361,7 +401,7 @@ Entities:
       onFocusCallback: ''
       highlightColor: [0.97, 0.77, 0.3, 1]
       highlightThickness: 3
-  - Entity: 7400000000000000019
+  - Entity: 7400000000000000021
     Tag:
       tag: QuitButtonFrame
     Transform:
@@ -371,7 +411,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7400000000000000018
+      parentId: 7400000000000000020
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -382,7 +422,7 @@ Entities:
     UiImage:
       tint: [1, 1, 1, 1]
       texture: nam:textures/ui/banner.png
-  - Entity: 7400000000000000020
+  - Entity: 7400000000000000022
     Tag:
       tag: SettingsButton
     Transform:
@@ -392,7 +432,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7400000000000000017
+      parentId: 7400000000000000019
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -426,7 +466,7 @@ Entities:
       onFocusCallback: ''
       highlightColor: [0.97, 0.77, 0.3, 1]
       highlightThickness: 3
-  - Entity: 7400000000000000021
+  - Entity: 7400000000000000023
     Tag:
       tag: SettingsButtonFrame
     Transform:
@@ -436,7 +476,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7400000000000000020
+      parentId: 7400000000000000022
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -447,7 +487,7 @@ Entities:
     UiImage:
       tint: [1, 1, 1, 1]
       texture: nam:textures/ui/banner.png
-  - Entity: 7400000000000000022
+  - Entity: 7400000000000000024
     Tag:
       tag: HowToButton
     Transform:
@@ -457,7 +497,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7400000000000000017
+      parentId: 7400000000000000019
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -491,7 +531,7 @@ Entities:
       onFocusCallback: ''
       highlightColor: [0.97, 0.77, 0.3, 1]
       highlightThickness: 3
-  - Entity: 7400000000000000023
+  - Entity: 7400000000000000025
     Tag:
       tag: HowToButtonFrame
     Transform:
@@ -501,7 +541,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7400000000000000022
+      parentId: 7400000000000000024
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -512,7 +552,7 @@ Entities:
     UiImage:
       tint: [1, 1, 1, 1]
       texture: nam:textures/ui/banner.png
-  - Entity: 7400000000000000024
+  - Entity: 7400000000000000026
     Tag:
       tag: PlayButton
     Transform:
@@ -522,7 +562,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7400000000000000017
+      parentId: 7400000000000000019
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -556,7 +596,7 @@ Entities:
       onFocusCallback: ''
       highlightColor: [0.97, 0.77, 0.3, 1]
       highlightThickness: 3
-  - Entity: 7400000000000000025
+  - Entity: 7400000000000000027
     Tag:
       tag: PlayButtonFrame
     Transform:
@@ -566,7 +606,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7400000000000000024
+      parentId: 7400000000000000026
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -577,7 +617,7 @@ Entities:
     UiImage:
       tint: [1, 1, 1, 1]
       texture: nam:textures/ui/banner.png
-  - Entity: 7400000000000000026
+  - Entity: 7400000000000000028
     Tag:
       tag: MapBoard
     Transform:
@@ -587,7 +627,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7400000000000000015
+      parentId: 7400000000000000017
     UiRect:
       anchorMin: [0.5, 0]
       anchorMax: [0.5, 0]
@@ -608,7 +648,7 @@ Entities:
       padding: 12
       columns: 1
       cellSize: [0, 0]
-  - Entity: 7400000000000000027
+  - Entity: 7400000000000000029
     Tag:
       tag: BestLabel
     Transform:
@@ -618,7 +658,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7400000000000000026
+      parentId: 7400000000000000028
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -639,7 +679,7 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-  - Entity: 7400000000000000028
+  - Entity: 7400000000000000030
     Tag:
       tag: StateLabel
     Transform:
@@ -649,7 +689,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7400000000000000026
+      parentId: 7400000000000000028
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -670,7 +710,7 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-  - Entity: 7400000000000000029
+  - Entity: 7400000000000000031
     Tag:
       tag: MapLabel
     Transform:
@@ -680,7 +720,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7400000000000000026
+      parentId: 7400000000000000028
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -702,7 +742,7 @@ Entities:
       fit: Shrink
       minFontSize: 12
       font: MedievalSharp
-  - Entity: 7400000000000000030
+  - Entity: 7400000000000000032
     Tag:
       tag: BoardTitle
     Transform:
@@ -712,7 +752,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7400000000000000026
+      parentId: 7400000000000000028
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -734,7 +774,7 @@ Entities:
       fit: Shrink
       minFontSize: 12
       font: Cinzel
-  - Entity: 7400000000000000031
+  - Entity: 7400000000000000033
     Tag:
       tag: HowToWindow
     Transform:
@@ -744,7 +784,7 @@ Entities:
     Visibility:
       gameVisible: false
     Hierarchy:
-      parentId: 7400000000000000015
+      parentId: 7400000000000000017
     UiRect:
       anchorMin: [0.5, 0.5]
       anchorMax: [0.5, 0.5]
@@ -769,7 +809,7 @@ Entities:
       padding: 10
       columns: 1
       cellSize: [0, 0]
-  - Entity: 7400000000000000032
+  - Entity: 7400000000000000034
     Tag:
       tag: HowToBackButton
     Transform:
@@ -779,7 +819,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7400000000000000031
+      parentId: 7400000000000000033
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -813,7 +853,7 @@ Entities:
       onFocusCallback: ''
       highlightColor: [0.97, 0.77, 0.3, 1]
       highlightThickness: 3
-  - Entity: 7400000000000000033
+  - Entity: 7400000000000000035
     Tag:
       tag: HowToBackButtonFrame
     Transform:
@@ -823,7 +863,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7400000000000000032
+      parentId: 7400000000000000034
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -834,7 +874,7 @@ Entities:
     UiImage:
       tint: [1, 1, 1, 1]
       texture: nam:textures/ui/banner.png
-  - Entity: 7400000000000000034
+  - Entity: 7400000000000000036
     Tag:
       tag: HowToControls
     Transform:
@@ -844,7 +884,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7400000000000000031
+      parentId: 7400000000000000033
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -865,7 +905,7 @@ Entities:
       fit: Shrink
       minFontSize: 12
       font: JetBrainsMono-Regular
-  - Entity: 7400000000000000035
+  - Entity: 7400000000000000037
     Tag:
       tag: HowToRules
     Transform:
@@ -875,7 +915,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7400000000000000031
+      parentId: 7400000000000000033
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]

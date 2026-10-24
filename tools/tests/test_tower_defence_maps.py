@@ -1,8 +1,9 @@
 """
 Tests of the Tower defence levels and of their scene writer: every level passes the generator's checks, its road is
 one walk along the axes from the gate to the keep, its ramps climb, every pad is beside the road and every wave names
-known enemies; the road tiles turn to their neighbours and the waypoints follow the road heights. The written files
-are not compared with the generator: they are edited in Owl Nest afterwards.
+known enemies, each level after the first bringing a new one; the road tiles turn to their neighbours, the theme of a
+level picks models that exist and the waypoints follow the road heights; the world map lists every level. The written
+files are not compared with the generator: they are edited in Owl Nest afterwards.
 """
 
 from __future__ import annotations
@@ -13,9 +14,11 @@ import pytest
 
 from tools.samples.tower_defence import creatures
 from tools.samples.tower_defence import generate_maps as gen
+from tools.samples.tower_defence import generate_menus as menus
 from tools.samples.tower_defence import maps as mp
+from tools.samples.tower_defence import world_map_art as art
 
-WAVE_GROUP = re.compile(r"^\s*([a-z]+)\s+(\d+)\s+([\d.]+)\s*([ab]?)\s*$")
+WAVE_GROUP = re.compile(r"^\s*([a-z_]+)\s+(\d+)\s+([\d.]+)\s*([ab]?)\s*$")
 
 
 @pytest.mark.parametrize("level", mp.LEVELS, ids=lambda level: f"level_{level.number:02d}")
@@ -73,3 +76,33 @@ def test_two_gates_make_two_roads_meeting_before_the_keep() -> None:
     assert roads[0][0] != roads[1][0]
     assert roads[0][-1] == roads[1][-1]
     assert "tag: Waypoint B 01" in gen.level_scene(level)
+
+
+def test_every_level_after_the_first_brings_a_new_enemy() -> None:
+    seen: set[str] = set()
+    for level in mp.LEVELS:
+        kinds = {group.split()[0] for wave in level.waves for group in wave.split(";")}
+        assert level.number == 1 or kinds - seen, f"level {level.number} brings no new enemy"
+        seen |= kinds
+    assert {"wolf", "troll", "ogre_mage", "sapper", "chieftain"} <= seen
+
+
+@pytest.mark.parametrize("level", mp.LEVELS, ids=lambda level: f"level_{level.number:02d}")
+def test_the_theme_picks_existing_tile_models(level: mp.LevelData) -> None:
+    text = gen.level_scene(level)
+    assert level.theme in gen.THEMES
+    models = {line.split("mesh: ", 1)[1] for line in text.splitlines() if "mesh: " in line}
+    missing = sorted(model for model in models if not (gen.ROOT / model).is_file())
+    assert not missing
+    if level.theme != "grass":
+        assert any("/snow-" in model for model in models)
+
+
+def test_the_world_map_lists_every_level_with_its_scene_and_road() -> None:
+    text = menus.world_map()
+    assert len(art.SITES) == len(mp.LEVELS) == len(menus.CAMPAIGN)
+    for level in mp.LEVELS:
+        assert f"scenes/level_{level.number:02d}.owl" in text
+    for index in range(1, len(art.SITES) + 1):
+        assert f"tag: PathDot {index}\n" in text
+    assert text.count("tag: SiteFlag\n") == len(art.SITES)

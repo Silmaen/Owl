@@ -1,27 +1,36 @@
--- The world map of Tower defence, between the levels: a parchment plan where the road from the capital is traced to
--- the last site open. A site is locked (grey ruin), open (red banner) or done (blue banner and its stars). A won
--- level opens the next one: the next stretch of the road is drawn dot by dot (`tower_map_reveal` in the game state,
--- set by defence.lua), then its site rises.
+-- The world map of Tower defence, between the levels: an inked map where the road from the capital is traced to
+-- the last site open. A site is locked (grey ruin), open (a Horde camp under a red banner) or done (a human keep under
+-- a blue banner, and its stars). A won level opens the next one: the next stretch of the road is drawn dash by dash
+-- (`tower_map_reveal` in the game state, set by defence.lua), then its site rises.
 --
--- - `levels`: one string per site, "name|waves|unlock"; `level_scenes`: the scene of each site (empty for a level still
---   to come).
+-- - `levels`: one string per site, "name|waves|unlock|new enemies"; `level_scenes`: the scene of each site (empty for a level still
+--   to come); `upgrades_scene`: the screen where the stars buy upgrades.
+-- - `MapRoot` holds the map and its sites, scaled down when the screen is narrower than the map so that every site
+--   shows; the banners wave, the clouds drift and the sea glints.
 -- - A click on an open site, Q / E, Tab or the D-pad choose it, Enter, pad A or March! starts it; Bonuses lists what
---   the levels won unlocked; Escape, pad B or Back returns to the title.
+--   the levels won unlocked, Upgrades opens the upgrades screen; Escape, pad B or Back returns to the title.
 -- - Progress: the `tower_done_NN` and `tower_stars_NN` settings; mirrored in `tower_map_*` game state keys.
 
 properties = {
     { name = "levels", type = "strings", default = {} },
     { name = "level_scenes", type = "strings", default = {} },
+    { name = "upgrades_scene", type = "string", default = "scenes/upgrades.owl" },
+    { name = "map_width", type = "float", default = 32.0, min = 1 },
+    { name = "map_height", type = "float", default = 18.0, min = 1 },
+    { name = "cloud_speed", type = "float", default = 0.25, min = 0 },
     { name = "dot_time", type = "float", default = 0.08, min = 0.01 },
     { name = "wipe_color", type = "color", default = { 0.1, 0.14, 0.24, 1 } },
 }
 
-local sites = {}            -- { scene, name, waves, unlock, id, ring, stars = {ids}, dots = {ids}, done, open, stars_won }
+local sites = {}            -- { scene, name, waves, unlock, id, ring, flag, stars = {ids}, dots = {ids}, done, open, stars_won }
 local selected = 0
 local leaving = false
 local reveal, reveal_clock, reveal_index = 0, 0.0, 0
 local ids = {}
 local clock = 0.0
+local map_root, fitted = 0, { w = 0, h = 0, scale = 1.0 }
+local clouds, glints = {}, {}
+local FLAG_FRAMES = 4
 
 local function set(id, text)
     if id ~= 0 then ui.set_text(id, text) end
@@ -54,7 +63,8 @@ local function refresh_panel()
     elseif site.done then
         set(ids.info, string.format("%s waves - defended, %d of 3 stars", site.waves, site.stars_won))
     else
-        set(ids.info, string.format("%s waves - %s", site.waves, site.open and "the Horde is coming" or "locked"))
+        local coming = site.new ~= "" and ("new: " .. site.new) or "the Horde is coming"
+        set(ids.info, string.format("%s waves - %s", site.waves, site.open and coming or "locked"))
     end
     set(ids.unlock, "Win to unlock: " .. site.unlock)
     ui.set_button_enabled(ids.march, site.open and site.scene ~= "")
@@ -72,6 +82,7 @@ end
 local function show_site(site)
     local frame = site.done and 2 or (site.open and 1 or 0)
     isometric.set_sprite_frame(site.id, frame)
+    if site.flag ~= 0 then ui.set_visible(site.flag, site.open or site.done) end
     for star, id in ipairs(site.stars) do
         ui.set_visible(id, site.done)
         isometric.set_sprite_frame(id, star <= site.stars_won and 1 or 0)
@@ -89,14 +100,23 @@ function on_create()
     ids.bonus, ids.bonus_back = scene.find_entity("BonusWindow"), scene.find_entity("BonusBackButton")
     local site_ids, rings, stars = by_x(scene.find_entities("Site")), by_x(scene.find_entities("SiteRing")),
             by_x(scene.find_entities("SiteStar"))
+    local flags = by_x(scene.find_entities("SiteFlag"))
+    map_root = scene.find_entity("MapRoot")
+    for index, id in ipairs(scene.find_entities("Cloud")) do
+        local x, y, z = transform.get_position(id)
+        clouds[#clouds + 1] = { id = id, x = x, y = y, z = z, speed = cloud_speed * (0.7 + 0.2 * index) }
+    end
+    for index, id in ipairs(scene.find_entities("SeaGlint")) do glints[#glints + 1] = { id = id, phase = index * 1.7 } end
     reveal = gamestate.get("tower_map_reveal", 0)
     gamestate.remove("tower_map_reveal")
     local open_count = 0
     for index, text in ipairs(levels) do
-        local name, waves, unlock = string.match(text, "^([^|]*)|([^|]*)|(.*)$")
+        local fields = {}
+        for field in string.gmatch(text .. "|", "([^|]*)|") do fields[#fields + 1] = field end
+        local name, waves, unlock, new = fields[1], fields[2], fields[3], fields[4] or ""
         local site = { scene = level_scenes[index] or "", name = name or "?", waves = waves or "?", unlock = unlock or "",
                        id = site_ids[index] and site_ids[index].id or 0, ring = rings[index] and rings[index].id or 0,
-                       stars = {}, dots = {} }
+                       flag = flags[index] and flags[index].id or 0, new = new, stars = {}, dots = {} }
         for star = 1, 3 do
             local entry = stars[(index - 1) * 3 + star]
             site.stars[star] = entry and entry.id or 0
@@ -149,6 +169,10 @@ function on_back_clicked()
     leave("scenes/title.owl", false)
 end
 
+function on_upgrades_clicked()
+    leave(upgrades_scene, false)
+end
+
 function on_bonus_clicked()
     ui.set_visible(ids.bonus, true)
     ui.raise_window(ids.bonus)
@@ -183,9 +207,40 @@ local function update_reveal(dt)
     gamestate.set("tower_map_dots_shown", reveal_index)
 end
 
+-- The map shrinks to fit a screen narrower than it (the camera shows its whole height).
+local function fit_map()
+    local w, h = scene.get_viewport_size()
+    if map_root == 0 or h == 0 or (w == fitted.w and h == fitted.h) then return end
+    fitted.w, fitted.h = w, h
+    fitted.scale = math.min(1.0, map_height * w / h / map_width)
+    transform.set_scale(map_root, fitted.scale, fitted.scale, 1.0)
+    gamestate.set("tower_map_scale", fitted.scale)
+end
+
+-- Banners waving, clouds drifting across the map (wrapping round), glints of the sea coming and going.
+local function animate(real)
+    for index, site in ipairs(sites) do
+        if site.flag ~= 0 and (site.open or site.done) then
+            local row = site.done and 1 or 0
+            isometric.set_sprite_frame(site.flag, row * FLAG_FRAMES + math.floor(clock * 7.0 + index) % FLAG_FRAMES)
+        end
+    end
+    for _, cloud in ipairs(clouds) do
+        cloud.x = cloud.x + cloud.speed * real
+        if cloud.x > map_width / 2 + 3 then cloud.x = cloud.x - map_width - 6 end
+        transform.set_position(cloud.id, cloud.x, cloud.y + 0.15 * math.sin(clock * 0.3 + cloud.speed * 9), cloud.z)
+    end
+    for _, glint in ipairs(glints) do
+        local a = math.max(0.0, math.sin(clock * 0.9 + glint.phase))
+        entity.set_tint(glint.id, 1.0, 1.0, 1.0, 0.85 * a * a)
+    end
+end
+
 function on_update(dt)
     local real = time.real_delta()
     clock = clock + real
+    fit_map()
+    animate(real)
     update_reveal(real)
     -- The open, unfinished sites bob a little.
     for _, site in ipairs(sites) do

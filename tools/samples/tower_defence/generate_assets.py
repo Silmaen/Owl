@@ -3,13 +3,13 @@
 Draw the sprites and synthesise the sounds of the Tower defence sample game into ``samples/tower_defence/``
 (deterministic, home-made).
 
-- ``textures/enemies/{goblin,grunt,ogre}.png``: the Horde in 8 directions x 4 walk frames (``creatures.py``);
+- ``textures/enemies/<kind>.png``: the Horde in 8 directions, the walk, the blow and the fall (``creatures.py``);
 - ``textures/fx/``: ``projectiles.png`` (arrow, cannon ball, fire shell, frost shard), ``fire.png`` (4 flame frames),
   ``ring.png`` (range ring) and ``cursor.png`` (pad frame) laid flat on the ground, ``shadow.png``;
 - ``textures/icons.png``: the badges of the build ring and of the info panel (``ICONS``, 6 by row);
 - ``textures/puff.png``, ``textures/bar.png`` (health bar), tinted by the script;
 - menus and HUD: parchment, wood, iron and gold of ``medieval_ui.py`` in ``textures/ui/``, and the parade under them
-  (``textures/enemies.png`` in 4 headings, ``textures/towers/archer.png``, ``textures/keep.png``).
+  (the Horde sheets, ``textures/towers/archer.png``, ``textures/keep.png``).
 
 Sounds: mono 16 bit at 22.05 kHz, short and neutral (build, sell, shots, hits, horn, coins, keep hit, start jingle);
 the victory jingle is copied from the Engine Demo.
@@ -32,7 +32,7 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw
 
-from tools.samples.tower_defence import creatures, medieval_ui
+from tools.samples.tower_defence import creatures, medieval_ui, world_map_art
 
 REPOSITORY = Path(__file__).resolve().parents[3]
 """The repository root."""
@@ -52,10 +52,6 @@ SS = 4
 """Supersampling of the drawings."""
 RGB = tuple[int, int, int]
 
-ENEMIES = ("runner", "soldier", "armoured")
-"""Rows of ``enemies.png``."""
-HEADINGS = 4
-"""Columns of ``enemies.png``: +x, +y, -x, -y."""
 TOWERS = ("archer", "cannon", "frost")
 """Tower kinds, also the first three frames of ``icons.png``."""
 
@@ -178,52 +174,6 @@ def keep() -> Image.Image:
     c.line([pole, (pole[0], pole[1] - 46)], (70, 50, 36, 255), 2)
     c.poly([(pole[0], pole[1] - 46), (pole[0] + 26, pole[1] - 40), (pole[0], pole[1] - 30)], (60, 110, 200, 255))
     return c.done()
-
-
-def enemy(kind: str, heading: int) -> Image.Image:
-    """An enemy facing a heading (0 +x lower right, 1 +y lower left, 2 -x upper left, 3 -y upper right): a body, a
-    head, and the face (eyes) only when it walks towards the viewer."""
-    c = Canvas(64, 64)
-    cx, ground = 32, 64 - 16
-    side = 1 if heading in (0, 3) else -1
-    front = heading in (0, 1)
-    if kind == "runner":
-        body, head, size, height = (200, 190, 70), (230, 200, 150), 7, 18
-    elif kind == "soldier":
-        body, head, size, height = (180, 50, 50), (230, 200, 150), 9, 22
-    else:
-        body, head, size, height = (120, 124, 136), (150, 154, 166), 12, 26
-    ground_shadow(c, cx, ground, size + 3)
-    foot = 2 * side
-    c.line([(cx - 3 + foot, ground), (cx - 3, ground - 6)], _shade(body, -0.5), 3)
-    c.line([(cx + 3 + foot, ground - 1), (cx + 3, ground - 6)], _shade(body, -0.5), 3)
-    c.ellipse((cx - size, ground - height, cx + size, ground - 4), _shade(body, -0.05))
-    c.ellipse((cx - size + 2 + side, ground - height + 2, cx + side * 2, ground - 8), _shade(body, 0.12))
-    radius = size * 0.6 + 2
-    hy = ground - height - radius + 3
-    c.ellipse((cx - radius, hy - radius, cx + radius, hy + radius), head + (255,))
-    if kind == "soldier":
-        c.ellipse((cx - radius - 1, hy - radius - 2, cx + radius + 1, hy + 1), (110, 110, 118, 255))
-    if kind == "armoured":
-        c.line([(cx - size + 2, ground - height / 2), (cx + size - 2, ground - height / 2)], _shade(body, -0.4), 2)
-        c.ellipse((cx - radius - 1, hy - radius - 1, cx + radius + 1, hy + radius), (100, 102, 112, 255))
-        c.line([(cx - radius + 2, hy), (cx + radius - 2, hy)], (20, 20, 24, 255), 2)
-    if front and kind != "armoured":
-        for dx in (-2.5, 2.5):
-            ex = cx + side * 2.5 + dx
-            c.ellipse((ex - 1.3, hy - 1.5, ex + 1.3, hy + 1.2), (20, 20, 24, 255))
-    if not front:
-        c.ellipse((cx - side * 4 - 4, ground - height + 2, cx - side * 4 + 4, ground - height + 12), _shade(body, -0.3))
-    return c.done()
-
-
-def enemy_sheet() -> Image.Image:
-    """Every enemy, a row each, a heading per column."""
-    sheet = Image.new("RGBA", (64 * HEADINGS, 64 * len(ENEMIES)), (0, 0, 0, 0))
-    for row, kind in enumerate(ENEMIES):
-        for heading in range(HEADINGS):
-            sheet.paste(enemy(kind, heading), (heading * 64, row * 64))
-    return sheet
 
 
 ICONS = (
@@ -414,7 +364,6 @@ def textures() -> None:
         creatures.sheet(model()).save(TEXTURES / "enemies" / f"{kind}.png")
     tower("archer").save(TEXTURES / "towers" / "archer.png")
     keep().save(TEXTURES / "keep.png")
-    enemy_sheet().save(TEXTURES / "enemies.png")
     icon_sheet().save(TEXTURES / "icons.png")
     ring().save(TEXTURES / "fx" / "ring.png")
     cursor().save(TEXTURES / "fx" / "cursor.png")
@@ -424,6 +373,7 @@ def textures() -> None:
     puff().save(TEXTURES / "puff.png")
     bar().save(TEXTURES / "bar.png")
     medieval_ui.write_all(TEXTURES, ROOT / "fonts")
+    world_map_art.write_all(TEXTURES / "ui", ROOT / "fonts")
 
 
 # Sounds ---------------------------------------------------------------------------------------------------------------

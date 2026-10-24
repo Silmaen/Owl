@@ -33,6 +33,8 @@ function on_create()
     local unlock = gamestate.get("tower_result_unlock_text", "")
     local unlock_id = scene.find_entity("StatLine6")
     if unlock_id ~= 0 then ui.set_text(unlock_id, "") end
+    local gained = gamestate.get("tower_result_stars_gained", 0)
+    lines[5].suffix = " / 3" .. (gained > 0 and string.format("  (+%d to spend)", gained) or "")
     unlock_line = unlock ~= "" and ("Unlocked: " .. unlock) or ""
     for index, line in ipairs(lines) do
         line.id = scene.find_entity("StatLine" .. index)

@@ -8,8 +8,8 @@ wood, iron rivets and gold trim, at the size each widget is shown so that nothin
 - ``textures/ui/frame.png``: the wood and iron frame of the minimap, empty inside;
 - ``textures/ui/wheel.png``: the ring of the build wheel, ``textures/ui/plaque.png``: its parchment scroll;
 - ``textures/ui/title.png``: TOWER DEFENCE in gold capitals of the ``Cinzel`` font;
-- the world map: ``world_map.png`` (the parchment plan), ``sites.png`` (locked, open, done, capital), ``stars.png``
-  and ``path_dot.png`` (the road traced between the sites).
+- ``textures/ui/stars.png``: the stars of the world map and of the tally (the world map itself is
+  ``world_map_art.py``).
 """
 
 from __future__ import annotations
@@ -198,107 +198,6 @@ def title(fonts: Path, size: tuple[int, int] = (1400, 260)) -> Image.Image:
     return image
 
 
-SITES = ((0.12, 0.62), (0.3, 0.42), (0.47, 0.6), (0.66, 0.36), (0.84, 0.55))
-"""Places of the five level sites on the world map, in shares of its width and height (from the top left)."""
-CAPITAL = (0.05, 0.82)
-"""Place of the human capital the road starts from."""
-
-
-def _ink_tree(draw: ImageDraw.ImageDraw, x: float, y: float, size: float) -> None:
-    draw.polygon([(x, y - size), (x - size * 0.6, y + size * 0.4), (x + size * 0.6, y + size * 0.4)], fill=(70, 96, 52))
-    draw.line([(x, y + size * 0.4), (x, y + size * 0.7)], fill=(*INK, 255), width=2)
-    draw.polygon(
-        [(x, y - size), (x - size * 0.6, y + size * 0.4), (x + size * 0.6, y + size * 0.4)], outline=(*INK, 255)
-    )
-
-
-def _ink_mountain(draw: ImageDraw.ImageDraw, x: float, y: float, size: float) -> None:
-    draw.polygon([(x - size, y), (x, y - size * 1.1), (x + size, y)], fill=(150, 128, 96), outline=(*INK, 255))
-    draw.polygon([(x, y - size * 1.1), (x + size, y), (x + size * 0.15, y)], fill=(120, 100, 74))
-    draw.polygon(
-        [(x - size * 0.25, y - size * 0.8), (x, y - size * 1.1), (x + size * 0.25, y - size * 0.8)],
-        fill=(240, 236, 226),
-    )
-
-
-def world_map(size: tuple[int, int] = (1920, 1080)) -> Image.Image:
-    """The parchment map of the campaign, drawn by hand: a coast, the sea, forests, mountains and a river, a compass;
-    the sites and the road between them are sprites of the world map scene over it."""
-    width, height = size
-    image = parchment(size, 77)
-    draw = ImageDraw.Draw(image)
-    rng = random.Random(9)
-    sea: list[tuple[float, float]] = [(0.0, 0.0), (width * 0.55, 0.0)]
-    for k in range(13):
-        x = width * (0.55 - 0.04 * math.sin(k * 0.9)) + k * width * 0.035
-        sea.append((x, height * (0.02 + 0.017 * k) + rng.uniform(-12, 12)))
-    sea += [(float(width), height * 0.25), (float(width), 0.0)]
-    draw.polygon(sea, fill=(168, 186, 182))
-    for _ in range(40):
-        x, y = rng.uniform(width * 0.62, width), rng.uniform(0, height * 0.18)
-        draw.arc((x - 18, y - 6, x + 18, y + 6), 200, 340, fill=(100, 120, 120), width=2)
-    draw.line(sea[1:-2], fill=(*INK, 255), width=3)
-    river: list[tuple[float, float]] = [(width * 0.38, -10.0)]
-    for k in range(1, 12):
-        river.append((width * (0.38 + 0.03 * math.sin(k * 0.8)) + k * 6, height * k / 11))
-    draw.line(river, fill=(110, 140, 160), width=10)
-    draw.line(river, fill=(70, 100, 120), width=2)
-    for _ in range(260):
-        x, y = rng.uniform(40, width - 40), rng.uniform(height * 0.25, height - 30)
-        if any(abs(x - width * sx) < 90 and abs(y - height * sy) < 80 for sx, sy in SITES):
-            continue
-        if rng.random() < 0.7:
-            _ink_tree(draw, x, y, rng.uniform(9, 15))
-    for _ in range(22):
-        x, y = rng.uniform(width * 0.55, width * 0.98), rng.uniform(height * 0.62, height * 0.95)
-        _ink_mountain(draw, x, y, rng.uniform(26, 44))
-    cx, cy, r = width * 0.93, height * 0.84, 70
-    draw.ellipse((cx - r, cy - r, cx + r, cy + r), outline=(*INK, 255), width=3)
-    for k in range(8):
-        a = k * math.pi / 4
-        length = r * (1.0 if k % 2 == 0 else 0.55)
-        draw.polygon(
-            [
-                (cx, cy),
-                (cx + math.cos(a + 0.18) * r * 0.25, cy + math.sin(a + 0.18) * r * 0.25),
-                (cx + math.cos(a) * length, cy + math.sin(a) * length),
-            ],
-            fill=(*INK, 255),
-        )
-    frame = Image.new("RGBA", size, (0, 0, 0, 0))
-    fd = ImageDraw.Draw(frame)
-    fd.rectangle((6, 6, width - 7, height - 7), outline=(*WOOD_DARK, 255), width=12)
-    fd.rectangle((22, 22, width - 23, height - 23), outline=(*GOLD, 255), width=4)
-    return Image.alpha_composite(image, frame)
-
-
-def site_sheet(cell: int = 128) -> Image.Image:
-    """The sites of the world map, 4 frames: locked (a grey ruin), open (a camp under a red banner), done (a human
-    keep under a blue banner) and the capital."""
-    sheet = Image.new("RGBA", (cell * 4, cell), (0, 0, 0, 0))
-    for frame in range(4):
-        image = Image.new("RGBA", (cell, cell), (0, 0, 0, 0))
-        draw = ImageDraw.Draw(image)
-        stone = (128, 126, 122) if frame == 0 else (206, 190, 160)
-        roof = (90, 90, 92) if frame == 0 else ((150, 40, 32) if frame == 1 else (60, 84, 160))
-        draw.ellipse((14, cell - 34, cell - 14, cell - 6), fill=(0, 0, 0, 70))
-        draw.rectangle((30, 52, cell - 30, cell - 18), fill=stone, outline=(*INK, 255), width=3)
-        for x in range(30, cell - 30, 14):
-            draw.rectangle((x, 44, x + 8, 52), fill=stone, outline=(*INK, 255), width=2)
-        draw.rectangle((cell // 2 - 12, 26, cell // 2 + 12, cell - 18), fill=stone, outline=(*INK, 255), width=3)
-        draw.polygon([(cell // 2 - 16, 28), (cell // 2, 6), (cell // 2 + 16, 28)], fill=roof, outline=(*INK, 255))
-        draw.rectangle((cell // 2 - 6, cell - 40, cell // 2 + 6, cell - 18), fill=(*INK, 255))
-        if frame in (1, 2, 3):
-            draw.line([(cell - 26, 20), (cell - 26, 58)], fill=(*INK, 255), width=3)
-            banner = (180, 30, 24) if frame == 1 else ((50, 80, 170) if frame == 2 else (214, 168, 64))
-            draw.polygon([(cell - 26, 20), (cell - 4, 27), (cell - 26, 34)], fill=banner, outline=(*INK, 255))
-        if frame == 0:
-            draw.line([(36, 60), (60, 90)], fill=(*INK, 255), width=3)
-            draw.line([(80, 56), (70, 84)], fill=(*INK, 255), width=3)
-        sheet.paste(image, (frame * cell, 0))
-    return sheet
-
-
 def star_sheet(cell: int = 48) -> Image.Image:
     """A star of the world map and of the tally, 2 frames: empty, gold."""
     sheet = Image.new("RGBA", (cell * 2, cell), (0, 0, 0, 0))
@@ -314,13 +213,6 @@ def star_sheet(cell: int = 48) -> Image.Image:
         draw.polygon(points, fill=fill, outline=(*WOOD_DARK, 255), width=5)
         sheet.paste(image.resize((cell, cell), Image.Resampling.LANCZOS), (frame * cell, 0))
     return sheet
-
-
-def path_dot(size: int = 24) -> Image.Image:
-    """A dot of the road drawn on the map between two sites."""
-    image = Image.new("RGBA", (size, size), (0, 0, 0, 0))
-    ImageDraw.Draw(image).ellipse((3, 3, size - 4, size - 4), fill=(140, 30, 24, 255), outline=(*INK, 255), width=2)
-    return image
 
 
 PANELS: dict[str, tuple[int, int]] = {
@@ -344,7 +236,4 @@ def write_all(textures: Path, fonts: Path) -> None:
     wheel().save(folder / "wheel.png")
     plaque().save(folder / "plaque.png")
     title(fonts).save(folder / "title.png")
-    world_map().save(folder / "world_map.png")
-    site_sheet().save(folder / "sites.png")
     star_sheet().save(folder / "stars.png")
-    path_dot().save(folder / "path_dot.png")
