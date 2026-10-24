@@ -1,0 +1,98 @@
+Prefab: Tower_cannon_shock
+Version: 1
+Entities:
+  - Entity: 7600000000001268001
+    Tag:
+      tag: Tower
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [0.78, 0.78, 0.78]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+  - Entity: 7600000000001268002
+    Tag:
+      tag: TowerPart0
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7600000000001268001
+    MeshRenderer:
+      mesh: models/td/tower-square-bottom-b.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7600000000001268003
+    Tag:
+      tag: TowerPart1
+    Transform:
+      translation: [0, 0.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7600000000001268001
+    MeshRenderer:
+      mesh: models/td/tower-square-middle-b.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7600000000001268004
+    Tag:
+      tag: TowerPart2
+    Transform:
+      translation: [0, 1, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7600000000001268001
+    MeshRenderer:
+      mesh: models/td/tower-square-top-b.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7600000000001268005
+    Tag:
+      tag: TowerPart3
+    Transform:
+      translation: [0, 1.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7600000000001268001
+    MeshRenderer:
+      mesh: models/td/weapon-catapult.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7600000000001268006
+    Tag:
+      tag: TowerPart4
+    Transform:
+      translation: [0.32, 1.4, 0.32]
+      rotation: [0, 0, 0]
+      scale: [0.9, 0.9, 0.9]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7600000000001268001
+    MeshRenderer:
+      mesh: models/castle/flag.glb
+      color: [0.85, 0.75, 0.5, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world

@@ -99,7 +99,7 @@ Entities:
     UiText:
       outlineWidth: 2
       outlineColor: [0.1, 0.05, 0.04, 1]
-      text: 'Gold 220'
+      text: 'Gold 240'
       color: [0.97, 0.77, 0.3, 1]
       fontSize: 26
       horizontalAlignment: Center
@@ -125,7 +125,7 @@ Entities:
       anchorMin: [0.5, 0]
       anchorMax: [0.5, 0]
       pivot: [0.5, 0]
-      size: [0.4, 0.065]
+      size: [0.5, 0.065]
       sizeUnit: [ScreenHeight, ScreenHeight]
       offset: [0, 8]
     UiPanel:
@@ -148,6 +148,50 @@ Entities:
       minFontSize: 12
       font: OpenSans-Bold
   - Entity: 7490000000000000006
+    Tag:
+      tag: Minimap
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7490000000000000001
+    UiRect:
+      anchorMin: [1, 0]
+      anchorMax: [1, 0]
+      pivot: [1, 0]
+      size: [0.36, 0.28]
+      sizeUnit: [ScreenHeight, ScreenHeight]
+      offset: [-16, 8]
+    UiPanel:
+      backgroundColor: [0.07, 0.09, 0.16, 0.9]
+      borderColor: [0.85, 0.65, 0.25, 1]
+      borderWidth: 3
+      clipChildren: false
+  - Entity: 7490000000000000007
+    Tag:
+      tag: MinimapImage
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7490000000000000006
+    UiRect:
+      anchorMin: [0.5, 0.5]
+      anchorMax: [0.5, 0.5]
+      pivot: [0.5, 0.5]
+      size: [0.95, 0.93]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiImage:
+      tint: [1, 1, 1, 1]
+      renderTarget: minimap
+  - Entity: 7490000000000000008
     Tag:
       tag: ButtonBar
     Transform:
@@ -172,7 +216,7 @@ Entities:
       padding: 0
       columns: 1
       cellSize: [0, 0]
-  - Entity: 7490000000000000007
+  - Entity: 7490000000000000009
     Tag:
       tag: MenuButton
     Transform:
@@ -182,7 +226,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7490000000000000006
+      parentId: 7490000000000000008
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -216,7 +260,7 @@ Entities:
       onFocusCallback: ''
       highlightColor: [0.97, 0.77, 0.3, 1]
       highlightThickness: 3
-  - Entity: 7490000000000000008
+  - Entity: 7490000000000000010
     Tag:
       tag: MenuButtonFrame
     Transform:
@@ -226,7 +270,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7490000000000000007
+      parentId: 7490000000000000009
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -237,7 +281,7 @@ Entities:
     UiImage:
       tint: [1, 1, 1, 1]
       texture: nam:textures/ui/banner.png
-  - Entity: 7490000000000000009
+  - Entity: 7490000000000000011
     Tag:
       tag: SpeedButton
     Transform:
@@ -247,7 +291,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7490000000000000006
+      parentId: 7490000000000000008
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -281,7 +325,7 @@ Entities:
       onFocusCallback: ''
       highlightColor: [0.97, 0.77, 0.3, 1]
       highlightThickness: 3
-  - Entity: 7490000000000000010
+  - Entity: 7490000000000000012
     Tag:
       tag: SpeedButtonFrame
     Transform:
@@ -291,7 +335,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7490000000000000009
+      parentId: 7490000000000000011
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -302,7 +346,7 @@ Entities:
     UiImage:
       tint: [1, 1, 1, 1]
       texture: nam:textures/ui/banner.png
-  - Entity: 7490000000000000011
+  - Entity: 7490000000000000013
     Tag:
       tag: CallButton
     Transform:
@@ -312,7 +356,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7490000000000000006
+      parentId: 7490000000000000008
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -346,7 +390,7 @@ Entities:
       onFocusCallback: ''
       highlightColor: [0.97, 0.77, 0.3, 1]
       highlightThickness: 3
-  - Entity: 7490000000000000012
+  - Entity: 7490000000000000014
     Tag:
       tag: CallButtonFrame
     Transform:
@@ -356,7 +400,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7490000000000000011
+      parentId: 7490000000000000013
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -367,7 +411,7 @@ Entities:
     UiImage:
       tint: [1, 1, 1, 1]
       texture: nam:textures/ui/banner.png
-  - Entity: 7490000000000000013
+  - Entity: 7490000000000000015
     Tag:
       tag: InfoPanel
     Transform:
@@ -382,7 +426,7 @@ Entities:
       anchorMin: [0, 1]
       anchorMax: [0, 1]
       pivot: [0, 1]
-      size: [0.72, 0.15]
+      size: [0.8, 0.16]
       sizeUnit: [ScreenHeight, ScreenHeight]
       offset: [16, -8]
     UiPanel:
@@ -397,7 +441,7 @@ Entities:
       padding: 0
       columns: 1
       cellSize: [0, 0]
-  - Entity: 7490000000000000014
+  - Entity: 7490000000000000016
     Tag:
       tag: InfoTexts
     Transform:
@@ -407,12 +451,12 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7490000000000000013
+      parentId: 7490000000000000015
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.74, 0.9]
+      size: [0.76, 0.9]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiLayout:
@@ -422,7 +466,7 @@ Entities:
       padding: 0
       columns: 1
       cellSize: [0, 0]
-  - Entity: 7490000000000000015
+  - Entity: 7490000000000000017
     Tag:
       tag: InfoText
     Transform:
@@ -432,12 +476,12 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7490000000000000014
+      parentId: 7490000000000000016
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [1, 0.5]
+      size: [1, 0.55]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
@@ -445,7 +489,7 @@ Entities:
       outlineColor: [0.1, 0.05, 0.04, 1]
       text: ''
       color: [0.82, 0.84, 0.9, 0.95]
-      fontSize: 20
+      fontSize: 19
       horizontalAlignment: Left
       verticalAlignment: Middle
       kerning: 0
@@ -453,7 +497,7 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-  - Entity: 7490000000000000016
+  - Entity: 7490000000000000018
     Tag:
       tag: InfoTitle
     Transform:
@@ -463,12 +507,12 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7490000000000000014
+      parentId: 7490000000000000016
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [1, 0.45]
+      size: [1, 0.4]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
@@ -476,7 +520,7 @@ Entities:
       outlineColor: [0.1, 0.05, 0.04, 1]
       text: ''
       color: [0.97, 0.77, 0.3, 1]
-      fontSize: 26
+      fontSize: 25
       horizontalAlignment: Left
       verticalAlignment: Middle
       kerning: 0
@@ -485,7 +529,7 @@ Entities:
       fit: Shrink
       minFontSize: 12
       font: OpenSans-Bold
-  - Entity: 7490000000000000017
+  - Entity: 7490000000000000019
     Tag:
       tag: InfoIcon
     Transform:
@@ -495,21 +539,21 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7490000000000000013
+      parentId: 7490000000000000015
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.16, 0.85]
+      size: [0.15, 0.85]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
       texture: nam:textures/icons.png
-      columns: 4
-      rows: 1
+      columns: 6
+      rows: 2
       frame: 0
-  - Entity: 7490000000000000018
+  - Entity: 7490000000000000020
     Tag:
       tag: MessageText
     Transform:
@@ -541,7 +585,7 @@ Entities:
       fit: Shrink
       minFontSize: 12
       font: OpenSans-ExtraBold
-  - Entity: 7490000000000000019
+  - Entity: 7490000000000000021
     Tag:
       tag: PauseWindow
     Transform:
@@ -556,7 +600,7 @@ Entities:
       anchorMin: [0.5, 0.5]
       anchorMax: [0.5, 0.5]
       pivot: [0.5, 0.5]
-      size: [1.25, 0.86]
+      size: [1.3, 0.9]
       sizeUnit: [ScreenHeight, ScreenHeight]
       offset: [0, 0]
     UiWindow:
@@ -576,7 +620,7 @@ Entities:
       padding: 10
       columns: 1
       cellSize: [0, 0]
-  - Entity: 7490000000000000020
+  - Entity: 7490000000000000022
     Tag:
       tag: ControlsText
     Transform:
@@ -586,19 +630,19 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7490000000000000019
+      parentId: 7490000000000000021
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.96, 0.38]
+      size: [0.96, 0.44]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
       outlineWidth: 2
-      text: "Build, sell     click a pad or a tower, then a badge; right click closes\nPads            Q / E or Tab, D-pad; Enter or pad A opens and builds\n                1 2 3 pick a tower, X or pad X sells, Backspace or pad B closes\nNext wave       Space, pad Y, the Call wave button (bonus gold)\nSpeed x2        F, pad RB          Pause   Escape, P, pad Start\nCamera          WASD, arrows, left stick, mouse on an edge"
+      text: "Build, upgrade  click a pad or a tower, then a badge; right click closes\nPads            Q / E or Tab, D-pad; Enter or pad A opens and picks\n                1 2 3 pick a badge, X or pad X sells, Backspace or pad B closes\nNext wave       Space, pad Y, the Call wave button (bonus gold)\nSpeed x2        F, pad RB          Pause   Escape, P, pad Start\nCamera          WASD, arrows, left stick, mouse on an edge\nTurn, zoom      Z / C, pad LB / D-pad up and down; wheel, R / V, right stick"
       color: [0.97, 0.77, 0.3, 1]
-      fontSize: 19
+      fontSize: 18
       horizontalAlignment: Left
       verticalAlignment: Middle
       kerning: 0
@@ -607,7 +651,7 @@ Entities:
       fit: Shrink
       minFontSize: 12
       font: JetBrainsMono-Regular
-  - Entity: 7490000000000000021
+  - Entity: 7490000000000000023
     Tag:
       tag: QuitButton
     Transform:
@@ -617,12 +661,12 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7490000000000000019
+      parentId: 7490000000000000021
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.6, 0.12]
+      size: [0.6, 0.11]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiButton:
@@ -651,74 +695,9 @@ Entities:
       onFocusCallback: ''
       highlightColor: [0.97, 0.77, 0.3, 1]
       highlightThickness: 3
-  - Entity: 7490000000000000022
-    Tag:
-      tag: QuitButtonFrame
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7490000000000000021
-    UiRect:
-      anchorMin: [0, 0]
-      anchorMax: [0, 0]
-      pivot: [0, 0]
-      size: [1, 1]
-      sizeUnit: [ParentWidth, ParentHeight]
-      offset: [0, 0]
-    UiImage:
-      tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/banner.png
-  - Entity: 7490000000000000023
-    Tag:
-      tag: RestartButton
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7490000000000000019
-    UiRect:
-      anchorMin: [0, 0]
-      anchorMax: [0, 0]
-      pivot: [0, 0]
-      size: [0.6, 0.12]
-      sizeUnit: [ParentWidth, ParentHeight]
-      offset: [0, 0]
-    UiButton:
-      normalColor: [0.48, 0.11, 0.11, 1]
-      hoverColor: [0.78, 0.24, 0.18, 1]
-      pressedColor: [0.3, 0.06, 0.06, 1]
-      disabledColor: [0.12, 0.1, 0.12, 1]
-      onClickCallback: on_pause_restart
-    UiText:
-      outlineWidth: 2
-      outlineColor: [0.1, 0.05, 0.04, 1]
-      text: 'Restart map'
-      color: [0.95, 0.92, 0.84, 1]
-      fontSize: 30
-      horizontalAlignment: Center
-      verticalAlignment: Middle
-      kerning: 0
-      lineSpacing: 0
-      wrap: false
-      fit: Shrink
-      minFontSize: 12
-      font: OpenSans-Bold
-    UiFocus:
-      focusable: true
-      initial: false
-      onFocusCallback: ''
-      highlightColor: [0.97, 0.77, 0.3, 1]
-      highlightThickness: 3
   - Entity: 7490000000000000024
     Tag:
-      tag: RestartButtonFrame
+      tag: QuitButtonFrame
     Transform:
       translation: [0, 0, 0]
       rotation: [0, 0, 0]
@@ -739,6 +718,71 @@ Entities:
       texture: nam:textures/ui/banner.png
   - Entity: 7490000000000000025
     Tag:
+      tag: RestartButton
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7490000000000000021
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.6, 0.11]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiButton:
+      normalColor: [0.48, 0.11, 0.11, 1]
+      hoverColor: [0.78, 0.24, 0.18, 1]
+      pressedColor: [0.3, 0.06, 0.06, 1]
+      disabledColor: [0.12, 0.1, 0.12, 1]
+      onClickCallback: on_pause_restart
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.1, 0.05, 0.04, 1]
+      text: 'Restart level'
+      color: [0.95, 0.92, 0.84, 1]
+      fontSize: 30
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: OpenSans-Bold
+    UiFocus:
+      focusable: true
+      initial: false
+      onFocusCallback: ''
+      highlightColor: [0.97, 0.77, 0.3, 1]
+      highlightThickness: 3
+  - Entity: 7490000000000000026
+    Tag:
+      tag: RestartButtonFrame
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7490000000000000025
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [1, 1]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiImage:
+      tint: [1, 1, 1, 1]
+      texture: nam:textures/ui/banner.png
+  - Entity: 7490000000000000027
+    Tag:
       tag: ResumeButton
     Transform:
       translation: [0, 0, 0]
@@ -747,12 +791,12 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7490000000000000019
+      parentId: 7490000000000000021
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.6, 0.12]
+      size: [0.6, 0.11]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiButton:
@@ -781,7 +825,7 @@ Entities:
       onFocusCallback: ''
       highlightColor: [0.97, 0.77, 0.3, 1]
       highlightThickness: 3
-  - Entity: 7490000000000000026
+  - Entity: 7490000000000000028
     Tag:
       tag: ResumeButtonFrame
     Transform:
@@ -791,7 +835,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7490000000000000025
+      parentId: 7490000000000000027
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]

@@ -1,203 +1,589 @@
 #!/usr/bin/env python3
 """
-Write the project files, the tileset, the map tilemaps and scenes, the prefabs and the play HUD of the Tower defence
-sample game into ``samples/tower_defence/``, from the map data of ``maps.py``.
+Write the project files, the level scenes, the prefabs and the play HUD of the Tower defence sample game into
+``samples/tower_defence/``, from the level data of ``maps.py``.
 
-A map is one isometric ``.owltilemap`` of two layers in the binary layout Owl Nest saves: ``ground`` (grass) and
-``roads`` (the road tiles, whose tileset connections make the graph the enemies walk, and the build pads, pavement
-tiles off the graph). Each map scene holds the `Ground` tilemap, the `Gate` and the `Keep`, the decor, the camera, the
-hidden sprites of the build ring and the `Game` entity running ``scripts/game/defence.lua`` with the waves of the map.
-The prefabs are the enemies, the towers, the projectiles, the health bar and the puff the script spawns.
+A level is a scene of 3D tiles of the Kenney Tower Defense Kit (``models/td/``): one ``Terrain`` entity per cell (and
+a stretched slab under the raised ones), the road tiles turned after their neighbours, the river and its bridge, the
+decor, the ``Pad`` entities the towers are built on, the ``Waypoint NN`` entities the enemies walk from the ``Gate``
+to the ``Keep`` (Kenney Castle Kit, ``models/castle/``), the sun, the sky and its day-night cycle, the torches lit at
+night, the minimap camera, the hidden sprites of the build ring and the ``Game`` entity running
+``scripts/game/defence.lua`` with the waves of the level. Every one of them is edited in Owl Nest afterwards.
+
+Render stack of a level: ``mesh_world`` (terrain, towers, keep), ``ground`` (flat sprites on the terrain, depth
+tested: range ring, cursor, shadows), ``sprites`` (billboards facing the camera, depth tested: enemies, projectiles,
+effects, health bars) and ``marks`` (billboards over everything: the badges of the build ring).
+
+The prefabs are the enemies (8 directions x 4 walk frames), the towers (one prefab per level and power-up, a root
+tagged ``Tower`` holding its meshes), the projectiles, the effects and the health bar the script spawns.
 
 Run from the repository root: ``./docker_run.sh poetry run python -m tools.samples.tower_defence.generate_maps``.
 """
 
 from __future__ import annotations
 
+import math
 import random
 import shutil
-import struct
 from pathlib import Path
 
-from tools.iso_atlas.terrain import EAST, NORTH, ROAD_MASKS, SOUTH, WEST
 from tools.samples import scene_yaml as y
 from tools.samples.tower_defence import generate_menus as menus
 from tools.samples.tower_defence import maps as mp
-from tools.samples.tower_defence.generate_assets import DECOR, ENEMIES, TOWERS
+from tools.samples.tower_defence.creatures import CELL, PPU
 
 REPOSITORY = Path(__file__).resolve().parents[3]
 """The repository root."""
 ROOT = REPOSITORY / "samples" / "tower_defence"
 """The sample project."""
 DEMO = REPOSITORY / "engine_demo"
-"""The Engine Demo, source of the terrain tileset and of the gamepad mappings."""
-CHUNK = 32
-"""Side of a tilemap chunk."""
-EMPTY = 0xFFFF
-"""Tile id of an empty cell."""
-GRASS, DARK_GRASS, FLOWERS, PAVEMENT = 0, 6, 7, 5
-"""Tiles of ``iso_ground.owltileset`` used by the maps; ``PAVEMENT`` marks a build pad."""
-ISO = "RendererTag:\n  Name: iso_world\n"
-"""Route of an entity to the isometric layer."""
+"""The Engine Demo, source of the gamepad mappings."""
+TD = "models/td"
+"""Folder of the Tower Defense Kit models."""
+CASTLE = "models/castle"
+"""Folder of the Castle Kit models."""
+VS = mp.HEIGHT_STEP / 0.2
+"""Vertical scale of the tiles: a kit tile is 0.2 high, a height step is ``HEIGHT_STEP``."""
+GRASS_TOP = 0.2 * VS
+"""Height of the grass over the base of a tile."""
+ROAD_TOP = 0.1 * VS
+"""Height of the road over the base of a tile."""
+BRIDGE_TOP = 0.2 * VS
+"""Height of the bridge deck over the base of its tile."""
+PAD_TOP = 0.21
+"""Height of a pad (``tower-round-base``) over the grass."""
+SPRITE_SCALE = 1.3
+"""Enemies are drawn larger than their models, to read at the distance of the camera."""
+SPRITE_SIZE = CELL / PPU * SPRITE_SCALE
+"""World size of an enemy sprite cell."""
+MESH = "RendererTag:\n  Name: mesh_world\n"
+GROUND = "RendererTag:\n  Name: ground\n"
+SPRITES = "RendererTag:\n  Name: sprites\n"
+MARKS = "RendererTag:\n  Name: marks\n"
+FLAT = (-math.pi / 2, 0.0, 0.0)
+"""Rotation laying a sprite of the ``ground`` layer flat on the terrain, facing up."""
+
+N, E, S, W = 1, 2, 4, 8
+"""Sides of a cell: north (-z), east (+x), south (+z), west (-x)."""
+TURN = {S: E, E: N, N: W, W: S}
+"""Where each side goes when a model turns by a quarter (+90 degrees around Y)."""
 
 
-def fnv1a(data: bytes) -> int:
-    """32-bit FNV-1a hash, the checksum of a tilemap payload."""
-    value = 2166136261
-    for byte in data:
-        value = ((value ^ byte) * 16777619) & 0xFFFFFFFF
-    return value
+def turned(mask: int, quarters: int) -> int:
+    """A set of sides after a number of quarter turns."""
+    for _ in range(quarters % 4):
+        mask = sum(TURN[side] for side in (N, E, S, W) if mask & side)
+    return mask
 
 
-def check(data: mp.MapData) -> None:
-    """Refuse a map whose pads, gate or keep do not fit its road."""
-    road = set(mp.road_cells(data))
-    keep = {(data.keep[0] + dx, data.keep[1] + dy) for dx in (0, 1) for dy in (0, 1)}
-    for pad in data.pads:
-        if pad in road or pad in keep or not (0 <= pad[0] < data.size and 0 <= pad[1] < data.size):
-            raise ValueError(f"map {data.number}: pad {pad} is not on a free cell")
-        if not any(abs(pad[0] - x) + abs(pad[1] - y) <= 2 for x, y in road):
-            raise ValueError(f"map {data.number}: pad {pad} is too far from the road")
-    if len(set(data.pads)) != len(data.pads):
-        raise ValueError(f"map {data.number}: a pad is listed twice")
-    end = mp.road_cells(data)[-1]
-    if not any(abs(end[0] - x) + abs(end[1] - y) == 1 for x, y in keep):
-        raise ValueError(f"map {data.number}: the road does not end beside the keep")
+def orient(base: int, wanted: int) -> int | None:
+    """The quarter turns bringing the sides of a model to the sides wanted, ``None`` when none does."""
+    for quarters in range(4):
+        if turned(base, quarters) == wanted:
+            return quarters
+    return None
 
 
-def layers(data: mp.MapData) -> tuple[dict[mp.Cell, int], dict[mp.Cell, int]]:
-    """The ground tile and the road or pad overlay of each cell."""
-    rng = random.Random(data.seed)
-    ground = {}
-    for yy in range(data.size):
-        for x in range(data.size):
-            roll = rng.random()
-            ground[(x, yy)] = GRASS if roll < 0.72 else (DARK_GRASS if roll < 0.9 else FLOWERS)
-    road = set(mp.road_cells(data))
-
-    def mask(x: int, yy: int) -> int:
-        bits = (NORTH if (x, yy - 1) in road else 0) | (EAST if (x + 1, yy) in road else 0)
-        bits |= (SOUTH if (x, yy + 1) in road else 0) | (WEST if (x - 1, yy) in road else 0)
-        first = mp.road_cells(data)[0]
-        if (x, yy) == first:
-            # The road enters by the edge of the map: open on the side of the edge.
-            bits |= WEST if x == 0 else NORTH if yy == 0 else EAST if x == data.size - 1 else SOUTH
-        return bits
-
-    overlay = {cell: ROAD_MASKS[mask(*cell)] for cell in road}
-    overlay.update(dict.fromkeys(data.pads, PAVEMENT))
-    return ground, overlay
+def mesh(path: str, colour: y.Colour = (1, 1, 1, 1)) -> str:
+    """A ``MeshRenderer`` of a model of the project, routed to the mesh layer."""
+    return f"MeshRenderer:\n  mesh: {path}\n  color: {y.vec(*colour)}\n  transparent: false\n" + MESH
 
 
-def tilemap(data: mp.MapData) -> bytes:
-    """A map as a ``.owltilemap``: its YAML header, then the chunks of its two layers (flat: no corner heights)."""
-    ground, overlay = layers(data)
-    body = b"OWLTCHNK" + struct.pack("<II", CHUNK, 2)
-    for cells, is_overlay in ((ground, False), (overlay, True)):
-        terrain = [EMPTY] * CHUNK * CHUNK
-        over = [EMPTY] * CHUNK * CHUNK
-        for (x, yy), tile in cells.items():
-            (over if is_overlay else terrain)[yy * CHUNK + x] = tile
-        body += struct.pack("<III", 1, 0, 0) + struct.pack(f"<{CHUNK * CHUNK}H", *terrain)
-        body += struct.pack(f"<{CHUNK * CHUNK}H", *over) + bytes(CHUNK * CHUNK)
-    body += b"\x00"
-    payload = body + struct.pack("<I", fnv1a(body))
-    name = f"map_{data.number:02d}"
+def light2d(
+    kind: str, colour: tuple[float, float, float], intensity: float, radius: float, falloff: float, enabled: bool = True
+) -> str:
+    """A ``Light2D`` lighting the sprites around it (a point light) or all of them (an ambient light)."""
+    return (
+        f"Light2D: {{type: {kind}, enabled: {'true' if enabled else 'false'}, color: {y.vec(*colour)}, "
+        f"intensity: {y.num(intensity)}, radius: {y.num(radius)}, falloff: {y.num(falloff)}, height: 1, "
+        "castShadows: false}\n"
+    )
+
+
+def sides(level: mp.LevelData, cell: mp.Cell, kinds: str, edge: bool = False) -> int:
+    """The sides of a cell whose neighbour is one of ``kinds`` (or off the map, with ``edge``)."""
+    x, z = cell
+    mask = 0
+    for side, other in ((N, (x, z - 1)), (E, (x + 1, z)), (S, (x, z + 1)), (W, (x - 1, z))):
+        char = level.at(other)
+        if char in kinds or (edge and char == " "):
+            mask |= side
+    return mask
+
+
+ROAD_TILES = ((S, "tile-end"), (N | S, "tile-straight"), (E | S, "tile-corner-square"), (E | S | W, "tile-split"))
+"""Road models and the sides their road opens to, unturned."""
+
+
+def road_tile(mask: int) -> tuple[str, int]:
+    """The road model and its quarter turns for the sides a road cell joins."""
+    for base, name in ROAD_TILES:
+        quarters = orient(base, mask)
+        if quarters is not None:
+            return name, quarters
+    return "tile-straight", 0
+
+
+def cell_base(level: mp.LevelData, cell: mp.Cell) -> float:
+    """Height of the base of the top tile of a cell."""
+    return level.height(cell) * mp.HEIGHT_STEP
+
+
+def road_height(level: mp.LevelData, cell: mp.Cell) -> float:
+    """Height of the road surface at the centre of a road cell."""
+    char = level.at(cell)
+    base = cell_base(level, cell)
+    if char == "/":
+        return base + ROAD_TOP + mp.HEIGHT_STEP * 0.5
+    if char == "=":
+        return base + BRIDGE_TOP
+    return base + ROAD_TOP
+
+
+def check(level: mp.LevelData) -> list[mp.Cell]:
+    """Refuse a level whose grids, road, pads or keep do not fit; return its road."""
+    if len(level.heights) != level.depth or any(len(row) != level.width for row in level.layout + level.heights):
+        raise ValueError(f"level {level.number}: the layout and the heights differ in size")
+    road = mp.route(level)
+    if sides(level, road[-1], "K") == 0:
+        raise ValueError(f"level {level.number}: the road does not end beside the keep")
+    for pad in level.cells("P"):
+        if not any(abs(pad[0] - x) + abs(pad[1] - z) <= 2 for x, z in road):
+            raise ValueError(f"level {level.number}: pad {pad} is too far from the road")
+    for cell in road:
+        if level.at(cell) == "/":
+            higher = [c for c in road if abs(c[0] - cell[0]) + abs(c[1] - cell[1]) == 1]
+            if max(level.height(c) for c in higher) <= level.height(cell):
+                raise ValueError(f"level {level.number}: ramp {cell} climbs to nothing")
+    return road
+
+
+BORDER = 5
+"""Cells of countryside drawn around the grid, so that the view never shows its edge."""
+
+
+def nearest_inside(level: mp.LevelData, cell: mp.Cell) -> mp.Cell:
+    """The cell of the grid nearest to a cell, itself when inside."""
+    return min(max(cell[0], 0), level.width - 1), min(max(cell[1], 0), level.depth - 1)
+
+
+def terrain(entities: y.Entities, level: mp.LevelData, parent: int) -> None:
+    """The tiles of every cell and of the countryside around the grid, under a ``Terrain`` parent."""
+    rng = random.Random(level.number * 31 + 7)
+    road = set(mp.route(level))
+    for z in range(-BORDER, level.depth + BORDER):
+        for x in range(-BORDER, level.width + BORDER):
+            cell = (x, z)
+            inside = nearest_inside(level, cell)
+            char = level.at(inside)
+            if inside != cell:
+                char = "~" if char in "~=" else ("T" if rng.random() < 0.3 else ".")
+            steps = level.height(inside)
+            base = steps * mp.HEIGHT_STEP
+            if steps > 0:
+                entities.add(
+                    "Terrain",
+                    [mesh(f"{TD}/tile.glb")],
+                    position=(x, 0, z),
+                    scale=(1, VS * steps, 1),
+                    parent=parent,
+                )
+            name, quarters = "tile", 0
+            if char in "#G":
+                mask = sides(level, cell, mp.ROAD + "K")
+                if char == "G":
+                    name, quarters = "tile-spawn", orient(N | S, mask | turned(mask, 2)) or 0
+                else:
+                    name, quarters = road_tile(mask)
+            elif char == "/":
+                higher = max((c for c in road if abs(c[0] - x) + abs(c[1] - z) == 1), key=lambda c: level.height(c))
+                side = {(0, -1): N, (1, 0): E, (0, 1): S, (-1, 0): W}[(higher[0] - x, higher[1] - z)]
+                name, quarters = "tile-straight-slope", orient(N, side) or 0
+            elif char == "~":
+                mask = sides(level, inside, "~=", edge=True)
+                name, quarters = "tile-river-straight", (0 if mask & (N | S) else 1)
+            elif char == "=":
+                mask = sides(level, cell, "#/G")
+                name, quarters = "tile-river-bridge", (0 if mask & (E | W) else 1)
+            elif char == "h":
+                name, quarters = "tile-hill", rng.randrange(4)
+            entities.add(
+                "Terrain",
+                [mesh(f"{TD}/{name}.glb")],
+                position=(x, base, z),
+                rotation=(0, quarters * math.pi / 2, 0),
+                scale=(1, VS, 1),
+                parent=parent,
+            )
+            top = base + GRASS_TOP
+            if char == "T":
+                for _ in range(rng.choice((1, 1, 2, 3))):
+                    model = rng.choice(("detail-tree", "detail-tree", "detail-tree-large"))
+                    dx, dz = rng.uniform(-0.28, 0.28), rng.uniform(-0.28, 0.28)
+                    size = rng.uniform(0.85, 1.2)
+                    entities.add(
+                        "Tree",
+                        [mesh(f"{TD}/{model}.glb")],
+                        position=(x + dx, top, z + dz),
+                        rotation=(0, rng.uniform(0, 6.28), 0),
+                        scale=(size, size, size),
+                        parent=parent,
+                    )
+            elif char == "r":
+                model = rng.choice(("detail-rocks", "detail-rocks-large"))
+                entities.add(
+                    "Rocks",
+                    [mesh(f"{TD}/{model}.glb")],
+                    position=(x, top, z),
+                    rotation=(0, rng.uniform(0, 6.28), 0),
+                    parent=parent,
+                )
+
+
+def keep(entities: y.Entities, level: mp.LevelData) -> None:
+    """The human keep on the ``K`` cells: a wall with its gate facing the end of the road, corner towers, the main
+    tower and banners."""
+    cells = level.cells("K")
+    xs = [c[0] for c in cells]
+    zs = [c[1] for c in cells]
+    x0, x1, z0, z1 = min(xs), max(xs), min(zs), max(zs)
+    end = mp.route(level)[-1]
+    base = cell_base(level, (x0, z0)) + GRASS_TOP
+    root = entities.add("Keep", [], position=((x0 + x1) / 2, base, end[1]))
+    gate_z = end[1]
+    for z in range(z0, z1 + 1):
+        local = (x0 - (x0 + x1) / 2, 0, z - gate_z)
+        if z in (z0, z1):
+            entities.add("KeepTower", [mesh(f"{CASTLE}/tower-hexagon-base.glb")], position=local, parent=root)
+            roof = (local[0], 1.31, local[2])
+            entities.add("KeepTower", [mesh(f"{CASTLE}/tower-hexagon-roof.glb")], position=roof, parent=root)
+        elif z == gate_z:
+            entities.add(
+                "KeepGate",
+                [mesh(f"{CASTLE}/wall-narrow-gate.glb")],
+                position=local,
+                rotation=(0, math.pi / 2, 0),
+                parent=root,
+            )
+        else:
+            entities.add(
+                "KeepWall", [mesh(f"{CASTLE}/wall.glb")], position=local, rotation=(0, math.pi / 2, 0), parent=root
+            )
+    for x in range(x0 + 1, x1 + 1):
+        for z in (z0, z1):
+            local = (x - (x0 + x1) / 2, 0, z - gate_z)
+            entities.add("KeepWall", [mesh(f"{CASTLE}/wall.glb")], position=local, parent=root)
+    hall = (x1 - (x0 + x1) / 2 - 0.3, 0, 0)
+    for model, height in (
+        ("tower-square-base", 0),
+        ("tower-square-mid-windows", 1.01),
+        ("tower-square-top-roof-high", 2.02),
+    ):
+        entities.add(
+            "KeepHall", [mesh(f"{CASTLE}/{model}.glb")], position=(hall[0], height, 0), scale=(1.3, 1, 1.3), parent=root
+        )
+    for z in (z0, z1):
+        flag = (x0 - (x0 + x1) / 2, 2.15, z - gate_z)
+        entities.add("KeepFlag", [mesh(f"{CASTLE}/flag.glb")], position=flag, parent=root)
+    entities.add("KeepFlag", [mesh(f"{CASTLE}/flag-banner-long.glb")], position=(hall[0], 3.35, 0), parent=root)
+
+
+def torches(entities: y.Entities, level: mp.LevelData, road: list[mp.Cell]) -> None:
+    """Torches lit at night: a point light (terrain, meshes) and a 2D light (sprites) on posts along the road and
+    beside the keep gate, hidden by day."""
+    picks = [road[len(road) * k // 4] for k in (1, 2, 3)] + [road[-1]]
+    for x, z in picks:
+        side = 0.55
+        position = (x + side, road_height(level, (x, z)) + 0.9, z + side)
+        light = (
+            "Light: {type: Point, enabled: false, color: [1, 0.62, 0.3], intensity: 3000, range: 5}\n"
+            "LightFlicker:\n  style: Fire\n  amplitude: 0.25\n  seed: "
+            f"{x * 7 + z}\n  colorShift: [0, 0.05, 0.03]\n  positionJitter: [0.02, 0.03, 0.02]\n"
+        )
+        torch = entities.add("Torch", [light], position=position)
+        flame = y.frames("textures/fx/fire.png", 4, 1, 0, (1, 1, 1, 1)).replace("loop: false", "loop: true")
+        flame = flame.replace("lastFrame: 0", "lastFrame: 3").replace("frameDuration: 0.1", "frameDuration: 0.09")
+        entities.add(
+            "TorchFlame", [flame, SPRITES], position=(0, 0, 0), scale=(0.35, 0.45, 1), parent=torch, visible=False
+        )
+        glow = light2d("Point", (1, 0.6, 0.3), 1.4, 3, 1.2, enabled=False)
+        entities.add("TorchGlow", [glow], position=(0, 0, 0), parent=torch)
+        post = (position[0], position[1] - 0.95, position[2])
+        entities.add("TorchPost", [mesh(f"{CASTLE}/wall-stud.glb")], position=post, scale=(0.5, 0.8, 0.5))
+
+
+def level_scene(level: mp.LevelData) -> str:
+    """The scene of a level."""
+    road = check(level)
+    entities = y.Entities(7500000000000000000 + level.number * 1000000)
     header = (
-        f"Tilemap: {name}\nFormatVersion: 3\ntilesetPath: tilesets/iso_ground.owltileset\nwidth: {data.size}\n"
-        f"height: {data.size}\ncellSize: 1\nlayers:\n  - name: ground\n  - name: roads\npayloadBytes: {len(payload)}\n"
+        "EnabledRenderers:\n- {Name: world, Enabled: false}\n- {Name: mesh_world, Enabled: true}\n"
+        "- {Name: ground, Enabled: true}\n- {Name: sprites, Enabled: true}\n- {Name: marks, Enabled: true}\n"
+        "- {Name: ui, Enabled: false}\n- {Name: overlay, Enabled: false}\n"
     )
-    return header.encode() + b"...\n" + payload
-
-
-def decor_cells(data: mp.MapData) -> list[tuple[mp.Cell, int]]:
-    """Trees and rocks on free cells, never on the road, a pad or beside them, nor on the keep."""
-    rng = random.Random(data.seed * 7 + 3)
-    taken = set(mp.road_cells(data)) | set(data.pads)
-    taken |= {(data.keep[0] + dx, data.keep[1] + dy) for dx in (-1, 0, 1, 2) for dy in (-1, 0, 1, 2)}
-    blocked = {(x + dx, yy + dy) for x, yy in taken for dx in (-1, 0, 1) for dy in (-1, 0, 1)}
-    free = [(x, yy) for yy in range(data.size) for x in range(data.size) if (x, yy) not in blocked]
-    rng.shuffle(free)
-    return [(cell, rng.choice((0, 0, 1, 1, 2))) for cell in free[: data.trees]]
-
-
-def map_scene(data: mp.MapData) -> str:
-    """The scene of a map."""
-    entities = y.Entities(7500000000000000000 + data.number * 1000000)
-    header = (
-        "EnabledRenderers:\n- {Name: world, Enabled: true}\n- Name: iso_world\n  Enabled: true\n"
-        "  Overrides: {Zoom: 0}\n- Name: ui\n  Enabled: true\n  Overrides: {Space: Screen}\n"
-        "- {Name: overlay, Enabled: true}\n"
+    cx, cz = (level.width - 1) / 2, (level.depth - 1) / 2
+    camera = (
+        "Camera:\n  camera:\n    projectionType: Perspective\n    perspectiveFOV: 0.62\n    perspectiveNear: 0.1\n"
+        "    perspectiveFar: 200\n    orthographicSize: 8\n    orthographicNear: -1\n    orthographicFar: 10\n"
+        "    toneMapping: Aces\n  primary: true\n  fixedAspectRatio: false\nSoundListener:\n  primary: true\n"
     )
-    camera = y.camera(10) + "SoundListener:\n  primary: true\n"
-    entities.add("MainCamera", [camera], position=(*data.camera, 5))
-    sky = y.background((0.13, 0.22, 0.12, 1)) + "RendererTag:\n  Name: world\n"
-    entities.add("Background", [sky], position=(12, 12, -5), scale=(400, 400, 1))
-    navigation = (
-        f"Tilemap:\n  tilemapPath: tilemaps/map_{data.number:02d}.owltilemap\n  navigation:\n    mode: connections\n"
-        "    layer: 1\n    source: overlay\n    maxRise: 1\n    climbCost: 0.5\n    allowSteep: false\n"
+    entities.add("MainCamera", [camera], position=(cx, 14, cz + 13), rotation=(-0.75, 0, 0))
+    sun = entities.next_id + 2
+    sky = (
+        "ProceduralSky: {enabled: true, sunDirection: [0.3, 0.8, -0.5], turbidity: 3, groundColor: [0.3, 0.34, 0.26], "
+        "nightColor: [0.42, 0.48, 0.66], nightBrightness: 0.02, stars: 1, discSize: 2.5, resolution: 256}\n"
+        f"DayNightCycle: {{enabled: false, timeOfDay: {y.num(level.start_hour)}, dayLength: 600, azimuth: 120, "
+        f"maxElevation: 58, sun: {sun}, sunIlluminance: 100000, sunColor: [1, 0.96, 0.9], sunsetColor: [1, 0.55, 0.3], "
+        "moonIlluminance: 150, moonColor: [0.62, 0.72, 1], nightExposure: 3}\n"
     )
-    entities.add("Ground", [navigation, ISO])
-    first = mp.road_cells(data)[0]
+    environment = 'Environment: {hdri: "", ambient: [1, 1, 1], intensity: 9000, rotation: 0, showSky: true}\n'
+    entities.add("Sky", [environment, sky])
+    light = (
+        "Light: {type: Directional, enabled: true, color: [1, 0.96, 0.9], intensity: 100000, castShadows: true, "
+        "shadowDistance: 45, cascadeCount: 2, shadowResolution: 2048, shadowBias: 1.5}\n"
+    )
+    sun_id = entities.add("Sun", [light], rotation=(-0.9, 0.6, 0))
+    assert sun_id == sun, "the sun id is written in the day-night cycle before the sun"
     entities.add(
-        "Gate", [y.sprite("textures/gate.png"), ISO], position=(first[0] + 1, first[1] + 1, 0), scale=(1, 1.75, 1)
+        "Ambient2D",
+        [light2d("Ambient", (1, 1, 1), 1, 1, 1)],
     )
-    keep_foot = (data.keep[0] + 2, data.keep[1] + 2, 0)
-    entities.add("Keep", [y.sprite("textures/keep.png"), ISO], position=keep_foot, scale=(2, 2.75, 1))
-    for (x, yy), frame in decor_cells(data):
-        sprite = y.frames("textures/decor.png", len(DECOR), 1, frame)
-        entities.add("Decor", [sprite, ISO], position=(x + 1, yy + 1, 0), scale=(1, 1.5, 1))
-    entities.add("Cursor", [y.sprite("textures/cursor.png"), ISO], visible=False)
-    entities.add("RangeRing", [y.sprite("textures/ring.png", (1, 1, 1, 0.55)), ISO], visible=False)
+    minimap = (
+        "Camera:\n  camera:\n    projectionType: Orthographic\n    perspectiveFOV: 0.785\n    perspectiveNear: 0.01\n"
+        f"    perspectiveFar: 100\n    orthographicSize: {y.num(level.depth + 1)}\n    orthographicNear: 0\n"
+        "    orthographicFar: 60\n    toneMapping: Aces\n  primary: false\n  fixedAspectRatio: true\n"
+        "RenderTarget: {enabled: true, targetName: minimap, size: [288, 224], clearColor: [0.05, 0.07, 0.1, 1]}\n"
+    )
+    entities.add("MinimapCamera", [minimap], position=(cx, 30, cz), rotation=(-math.pi / 2, 0, 0))
+    ground = entities.add("Terrain", [])
+    countryside = mesh(f"{TD}/tile.glb", (0.86, 0.95, 0.86, 1))
+    entities.add("Countryside", [countryside], position=(cx, -0.06, cz), scale=(160, 1, 160), parent=ground)
+    terrain(entities, level, ground)
+    gate = road[0]
+    gate_top = cell_base(level, gate) + GRASS_TOP
+    gate_id = entities.add("Gate", [], position=(gate[0], gate_top - GRASS_TOP + ROAD_TOP, gate[1]))
+    portal = mesh(f"{TD}/spawn-round.glb", (0.55, 0.2, 0.18, 1))
+    entities.add("GatePortal", [portal], position=(0, 0.02, 0), scale=(1.2, 1, 1.2), parent=gate_id)
+    for dz in (-0.5, 0.5):
+        banner = mesh(f"{CASTLE}/flag-banner-long.glb", (0.6, 0.12, 0.1, 1))
+        entities.add(
+            "GateBanner",
+            [banner],
+            position=(0, GRASS_TOP - ROAD_TOP, dz),
+            rotation=(0, math.pi / 2, 0),
+            scale=(0.75, 0.75, 0.75),
+            parent=gate_id,
+        )
+    keep(entities, level)
+    pads = entities.add("Pads", [])
+    for cell in level.cells("P"):
+        top = cell_base(level, cell) + GRASS_TOP
+        pad = mesh(f"{TD}/tower-round-base.glb", (0.92, 0.9, 0.86, 1))
+        entities.add("Pad", [pad], position=(cell[0], top, cell[1]), scale=(0.82, 1, 0.82), parent=pads)
+    route = entities.add("Route", [])
+    previous_direction = None
+    for index, cell in enumerate(road):
+        nxt = road[index + 1] if index + 1 < len(road) else None
+        direction = (nxt[0] - cell[0], nxt[1] - cell[1]) if nxt else None
+        height = road_height(level, cell)
+        changes = level.at(cell) in "/=" or (nxt is not None and level.at(nxt) in "/=")
+        changes = changes or (index > 0 and level.at(road[index - 1]) in "/=")
+        if index == 0 or nxt is None or direction != previous_direction or changes:
+            entities.add(f"Waypoint {index + 1:02d}", [], position=(cell[0], height, cell[1]), parent=route)
+        previous_direction = direction
+    end = road[-1]
+    entities.add(
+        f"Waypoint {len(road) + 1:02d}", [], position=(end[0] + 0.6, road_height(level, end), end[1]), parent=route
+    )
+    torches(entities, level, road)
+    cursor = y.sprite("textures/fx/cursor.png", (1, 0.9, 0.5, 0.9)) + GROUND
+    entities.add("Cursor", [cursor], rotation=FLAT, visible=False)
+    ring = y.sprite("textures/fx/ring.png", (1, 1, 1, 0.7)) + GROUND
+    entities.add("RangeRing", [ring], rotation=FLAT, visible=False)
     for _ in range(3):
-        badge = y.frames("textures/icons.png", 4, 1, 0)
-        entities.add("BuildChoice", [badge, ISO], scale=(0.72, 0.72, 1), visible=False)
-    name = f"map_{data.number:02d}"
-    next_scene = f"scenes/map_{data.number + 1:02d}.owl" if data.number < len(mp.MAPS) else "scenes/victory.owl"
-    waves = "".join(f"\n        - {y.quote(wave)}" for wave in data.waves)
+        badge = y.frames("textures/icons.png", 6, 2, 0) + MARKS
+        entities.add("BuildChoice", [badge], scale=(0.55, 0.55, 1), visible=False)
+    name = f"level_{level.number:02d}"
+    next_scene = f"scenes/level_{level.number + 1:02d}.owl" if level.number < len(mp.LEVELS) else "scenes/victory.owl"
+    waves = "".join(f"\n        - {y.quote(wave)}" for wave in level.waves)
     properties = (
         "LuaScript:\n  scriptPath: scripts/game/defence.lua\n  properties:\n"
-        f"    - name: map_number\n      type: int\n      value: {data.number}\n"
+        f"    - name: level_number\n      type: int\n      value: {level.number}\n"
+        f"    - name: level_name\n      type: string\n      value: {y.quote(level.name)}\n"
         f"    - name: scene_path\n      type: string\n      value: scenes/{name}.owl\n"
         f"    - name: next_scene\n      type: string\n      value: {next_scene}\n"
         f"    - name: waves\n      type: strings\n      value:{waves}\n"
-        f"    - name: start_gold\n      type: int\n      value: {data.start_gold}\n"
-        f"    - name: lives\n      type: int\n      value: {data.lives}\n"
+        f"    - name: night_from\n      type: int\n      value: {level.night_from}\n"
+        f"    - name: start_hour\n      type: float\n      value: {y.num(level.start_hour)}\n"
+        f"    - name: start_gold\n      type: int\n      value: {level.start_gold}\n"
+        f"    - name: lives\n      type: int\n      value: {level.lives}\n"
+        f"    - name: map_width\n      type: int\n      value: {level.width}\n"
+        f"    - name: map_depth\n      type: int\n      value: {level.depth}\n"
     )
     entities.add("Game", [properties])
     return y.scene(name, entities, hud="huds/play.owlhud", header=header)
 
 
-def prefab(name: str, tag: str, components: list[str], scale: tuple[float, float, float]) -> str:
+def prefab(name: str, entities: y.Entities) -> str:
+    """A prefab file of the entities added."""
+    return f"Prefab: {name}\nVersion: 1\nEntities:\n" + entities.text()
+
+
+def single(name: str, tag: str, components: list[str], scale: tuple[float, float, float]) -> str:
     """A prefab of one entity."""
     entities = y.Entities(7600000000000000000 + sum(map(ord, name)) * 1000)
     entities.add(tag, components, scale=scale)
-    return f"Prefab: {name}\nVersion: 1\nEntities:\n" + entities.text()
+    return prefab(name, entities)
+
+
+Part = tuple[str, float, y.Colour, tuple[float, float, float], float]
+"""A mesh of a tower: model, height it adds to the stack, tint, offset from the top of the stack, scale."""
+WHITE = (1, 1, 1, 1)
+FROST_TINT = (0.75, 0.88, 1, 1)
+FIRE_TINT = (1, 0.62, 0.45, 1)
+NONE = (0.0, 0.0, 0.0)
+
+
+def _part(
+    model: str, height: float, tint: y.Colour = WHITE, offset: tuple[float, float, float] = NONE, scale: float = 1.0
+) -> Part:
+    return f"{TD}/{model}.glb", height, tint, offset, scale
+
+
+def _flag(tint: y.Colour) -> Part:
+    return f"{CASTLE}/flag.glb", 0.0, tint, (0.32, -0.1, 0.32), 0.9
+
+
+def _tower_parts() -> dict[str, list[Part]]:
+    """The meshes of each tower prefab, from the bottom: three levels, then the two power-ups of the third."""
+    out: dict[str, list[Part]] = {}
+    ballista = _part("weapon-ballista", 0.0)
+    out["archer_1"] = [_part("tower-round-bottom-a", 0.6), _part("tower-round-top-a", 0.5), ballista]
+    out["archer_2"] = [
+        _part("tower-round-bottom-a", 0.6),
+        _part("tower-round-middle-a", 0.6),
+        _part("tower-round-top-a", 0.5),
+        ballista,
+    ]
+    archer_3 = [_part("tower-round-bottom-b", 0.6), _part("tower-round-middle-a", 0.6), _part("tower-round-top-b", 0.5)]
+    out["archer_3"] = [*archer_3, ballista, _flag((1, 0.5, 0.45, 1))]
+    out["archer_pierce"] = [*archer_3, _part("weapon-ballista", 0.0, (1, 0.5, 0.4, 1)), _flag((1, 0.3, 0.25, 1))]
+    out["archer_double"] = [
+        *archer_3,
+        _part("weapon-ballista", 0.0, offset=(-0.2, 0, 0), scale=0.75),
+        _part("weapon-ballista", 0.0, offset=(0.2, 0, 0), scale=0.75),
+        _flag((0.6, 0.8, 1, 1)),
+    ]
+    cannon = _part("weapon-cannon", 0.0)
+    out["cannon_1"] = [_part("tower-square-bottom-a", 0.5), _part("tower-square-top-a", 0.5), cannon]
+    out["cannon_2"] = [
+        _part("tower-square-bottom-a", 0.5),
+        _part("tower-square-middle-a", 0.5),
+        _part("tower-square-top-a", 0.5),
+        cannon,
+    ]
+    cannon_3 = [_part("tower-square-bottom-b", 0.5), _part("tower-square-middle-b", 0.5)]
+    out["cannon_3"] = [*cannon_3, _part("tower-square-top-b", 0.5), cannon, _flag((0.8, 0.6, 1, 1))]
+    out["cannon_fire"] = [
+        *cannon_3,
+        _part("tower-square-top-c", 0.5, FIRE_TINT),
+        _part("weapon-cannon", 0.0, FIRE_TINT),
+        _flag((1, 0.55, 0.2, 1)),
+    ]
+    out["cannon_shock"] = [
+        *cannon_3,
+        _part("tower-square-top-b", 0.5),
+        _part("weapon-catapult", 0.0),
+        _flag((0.85, 0.75, 0.5, 1)),
+    ]
+    crystals = _part("tower-round-crystals", 0.0, FROST_TINT, (0, 0.36, 0))
+    out["frost_1"] = [
+        _part("tower-round-bottom-c", 0.6, FROST_TINT),
+        _part("tower-round-top-c", 0.53, FROST_TINT),
+        crystals,
+    ]
+    out["frost_2"] = [
+        _part("tower-round-bottom-c", 0.6, FROST_TINT),
+        _part("tower-round-middle-c", 0.6, FROST_TINT),
+        _part("tower-round-top-c", 0.53, FROST_TINT),
+        crystals,
+    ]
+    frost_3 = [
+        _part("tower-round-bottom-b", 0.6, FROST_TINT),
+        _part("tower-round-middle-c", 0.6, FROST_TINT),
+        _part("tower-round-top-c", 0.53, FROST_TINT),
+    ]
+    out["frost_3"] = [*frost_3, crystals, _flag((0.6, 0.85, 1, 1))]
+    out["frost_freeze"] = [
+        *frost_3,
+        _part("tower-round-crystals", 0.0, (0.95, 1, 1, 1), (0, 0.36, 0), 1.15),
+        _flag((0.95, 1, 1, 1)),
+    ]
+    out["frost_aura"] = [
+        *frost_3,
+        _part("tower-round-crystals", 0.0, (0.85, 0.6, 1, 1), (0, 0.36, 0), 1.15),
+        _flag((0.75, 0.5, 1, 1)),
+    ]
+    return out
+
+
+TOWER_PARTS = _tower_parts()
+"""The meshes of every tower prefab."""
+TOWER_SCALE = 0.78
+"""Scale of the towers on their pads."""
+
+
+def tower_prefab(key: str) -> str:
+    """A tower: a root tagged ``Tower`` (picked as one) holding its meshes from the bottom up."""
+    entities = y.Entities(7600000000000000000 + sum(map(ord, key)) * 1000)
+    root = entities.add("Tower", [], scale=(TOWER_SCALE, TOWER_SCALE, TOWER_SCALE))
+    height = 0.0
+    for index, (model, step, tint, offset, scale) in enumerate(TOWER_PARTS[key]):
+        position = (offset[0], height + offset[1], offset[2])
+        entities.add(
+            f"TowerPart{index}", [mesh(model, tint)], position=position, scale=(scale, scale, scale), parent=root
+        )
+        height += step
+    return prefab(f"Tower_{key}", entities)
+
+
+ENEMIES = ("goblin", "grunt", "ogre")
+"""Enemy kinds, a sheet each."""
 
 
 def prefabs() -> dict[str, str]:
     """Every prefab the script spawns, by file name."""
     out = {}
-    for row, kind in enumerate(ENEMIES):
-        sheet = y.frames("textures/enemies.png", 4, len(ENEMIES), row * 4)
-        out[f"enemy_{kind}"] = prefab(f"Enemy{kind.title()}", "Enemy", [sheet, ISO], (1.2, 1.2, 1))
-    for kind in TOWERS:
-        sprite = y.sprite(f"textures/towers/{kind}.png")
-        out[f"tower_{kind}"] = prefab(f"Tower{kind.title()}", "Tower", [sprite, ISO], (1, 1.75, 1))
-    for index, kind in enumerate(("arrow", "ball", "shard")):
-        sheet = y.frames("textures/projectiles.png", 3, 1, index)
-        out[f"projectile_{kind}"] = prefab(f"Projectile{kind.title()}", "Projectile", [sheet, ISO], (0.25, 0.25, 1))
-    bar = y.sprite("textures/bar.png", (0.3, 0.9, 0.3, 1))
-    out["health_bar"] = prefab("HealthBar", "HealthBar", [bar, ISO], (0.5, 0.094, 1))
-    puff = y.sprite("textures/puff.png", (1, 1, 1, 0.8))
-    out["puff"] = prefab("Puff", "Puff", [puff, ISO], (0.6, 0.42, 1))
+    for kind in ENEMIES:
+        sheet = y.frames(f"textures/enemies/{kind}.png", 8, 4, 0) + SPRITES
+        out[f"enemy_{kind}"] = single(f"Enemy{kind.title()}", "Enemy", [sheet], (SPRITE_SIZE, SPRITE_SIZE, 1))
+    for key in TOWER_PARTS:
+        out[f"tower_{key}"] = tower_prefab(key)
+    for index, kind in enumerate(("arrow", "ball", "fireball", "shard")):
+        sheet = y.frames("textures/fx/projectiles.png", 4, 1, index) + SPRITES
+        components = [sheet]
+        if kind == "fireball":
+            components.append(light2d("Point", (1, 0.55, 0.2), 0.9, 2.2, 1.4))
+        out[f"projectile_{kind}"] = single(f"Projectile{kind.title()}", "Projectile", components, (0.32, 0.32, 1))
+    bar = y.sprite("textures/bar.png", (0.3, 0.9, 0.3, 1)) + SPRITES
+    out["health_bar"] = single("HealthBar", "HealthBar", [bar], (0.5, 0.07, 1))
+    shadow = y.sprite("textures/fx/shadow.png", (1, 1, 1, 0.6)) + GROUND
+    out["shadow"] = single("Shadow", "Shadow", [shadow], (0.5, 0.35, 1))
+    puff = y.sprite("textures/puff.png", (1, 1, 1, 0.8)) + SPRITES
+    out["puff"] = single("Puff", "Puff", [puff], (0.6, 0.6, 1))
+    flame = y.frames("textures/fx/fire.png", 4, 1, 0).replace("loop: false", "loop: true")
+    flame = flame.replace("lastFrame: 0", "lastFrame: 3").replace("frameDuration: 0.1", "frameDuration: 0.08") + SPRITES
+    glow = light2d("Point", (1, 0.5, 0.2), 1.2, 2, 1.3)
+    out["fire"] = single("Fire", "Fire", [flame, glow], (0.55, 0.6, 1))
+    wave = y.sprite("textures/fx/ring.png", (1, 0.85, 0.6, 0.8)) + GROUND
+    out["shock_ring"] = single("ShockRing", "ShockRing", [wave], (1, 1, 1))
     return out
 
 
 def play_hud() -> str:
-    """The HUD of a map: gold and lives at the top left, the wave and its countdown at the top, the info panel of the
-    build ring at the bottom left, the Call wave / speed / Menu buttons at the bottom right, a message line and the
-    pause window, the only place of a map that shows the controls."""
+    """The HUD of a level: gold and lives at the top left, the wave and its countdown at the top, the minimap at the
+    top right, the info panel of the build ring at the bottom left, the Call wave / speed / Menu buttons at the bottom
+    right, a message line and the pause window, the only place of a level that shows the controls."""
     entities = y.Entities(7490000000000000000)
     root = entities.add("HUDCanvas", [y.canvas()])
     stats = entities.add(
@@ -206,9 +592,14 @@ def play_hud() -> str:
         parent=root,
     )
     entities.add("LivesText", [y.child_rect((0.45, 1)), menus.label("Lives 20", 26, (1, 0.6, 0.55, 1))], parent=stats)
-    entities.add("GoldText", [y.child_rect((0.45, 1)), menus.label("Gold 220", 26, menus.GOLD)], parent=stats)
+    entities.add("GoldText", [y.child_rect((0.45, 1)), menus.label("Gold 240", 26, menus.GOLD)], parent=stats)
     wave = menus.label("Wave 0 / 8 - next in 25 s", 26, menus.STONE)
-    entities.add("WaveText", [y.rect((0.5, 0), (0.4, 0.065), (0, 8)), y.panel(), wave], parent=root)
+    entities.add("WaveText", [y.rect((0.5, 0), (0.5, 0.065), (0, 8)), y.panel(), wave], parent=root)
+    frame = entities.add("Minimap", [y.rect((1, 0), (0.36, 0.28), (-16, 8)), menus.board()], parent=root)
+    image = "UiImage:\n  tint: [1, 1, 1, 1]\n  renderTarget: minimap\n"
+    entities.add(
+        "MinimapImage", [y.rect((0.5, 0.5), (0.95, 0.93), units=("ParentWidth", "ParentHeight")), image], parent=frame
+    )
     bar = entities.add("ButtonBar", [y.rect((1, 1), (0.5, 0.075), (-16, -8)), y.layout("Row", 6)], parent=root)
     for tag, text, callback, width in (
         ("MenuButton", "Menu", "on_menu_clicked", 0.2),
@@ -218,31 +609,31 @@ def play_hud() -> str:
         menus.button(entities, bar, tag, text, callback, (width, 0.9), focusable=False, font_size=24)
     info = entities.add(
         "InfoPanel",
-        [y.rect((0, 1), (0.72, 0.15), (16, -8)), menus.board(), y.layout("Row", 10)],
+        [y.rect((0, 1), (0.8, 0.16), (16, -8)), menus.board(), y.layout("Row", 10)],
         parent=root,
         visible=False,
     )
-    texts = entities.add("InfoTexts", [y.child_rect((0.74, 0.9)), y.layout("Column", 2, 0, "Start")], parent=info)
-    entities.add("InfoText", [y.child_rect((1, 0.5)), menus.label("", 20, menus.SOFT, "Left", "")], parent=texts)
-    entities.add("InfoTitle", [y.child_rect((1, 0.45)), menus.label("", 26, menus.GOLD, "Left")], parent=texts)
-    icon = "UiImage:\n  tint: [1, 1, 1, 1]\n  texture: nam:textures/icons.png\n  columns: 4\n  rows: 1\n  frame: 0\n"
-    entities.add("InfoIcon", [y.child_rect((0.16, 0.85)), icon], parent=info)
+    texts = entities.add("InfoTexts", [y.child_rect((0.76, 0.9)), y.layout("Column", 2, 0, "Start")], parent=info)
+    entities.add("InfoText", [y.child_rect((1, 0.55)), menus.label("", 19, menus.SOFT, "Left", "")], parent=texts)
+    entities.add("InfoTitle", [y.child_rect((1, 0.4)), menus.label("", 25, menus.GOLD, "Left")], parent=texts)
+    icon = "UiImage:\n  tint: [1, 1, 1, 1]\n  texture: nam:textures/icons.png\n  columns: 6\n  rows: 2\n  frame: 0\n"
+    entities.add("InfoIcon", [y.child_rect((0.15, 0.85)), icon], parent=info)
     message = menus.label("", 40, menus.STONE, font=menus.HEADING).replace("wrap: false", "wrap: true")
     entities.add("MessageText", [y.rect((0.5, 0.3), (0.9, 0.14)), message], parent=root, visible=False)
     window = entities.add(
         "PauseWindow",
-        [y.rect((0.5, 0.5), (1.25, 0.86)), menus.window("Paused"), y.layout("Column", 8, 10)],
+        [y.rect((0.5, 0.5), (1.3, 0.9)), menus.window("Paused"), y.layout("Column", 8, 10)],
         parent=root,
         visible=False,
     )
-    controls = y.text(menus.CONTROLS, 19, "Left", menus.GOLD, wrap=True, font="JetBrainsMono-Regular", line_spacing=0.2)
-    entities.add("ControlsText", [y.child_rect((0.96, 0.38)), controls], parent=window)
+    controls = y.text(menus.CONTROLS, 18, "Left", menus.GOLD, wrap=True, font="JetBrainsMono-Regular", line_spacing=0.2)
+    entities.add("ControlsText", [y.child_rect((0.96, 0.44)), controls], parent=window)
     for tag, text, callback, initial in (
         ("QuitButton", "Quit to title", "on_pause_quit", False),
-        ("RestartButton", "Restart map", "on_pause_restart", False),
+        ("RestartButton", "Restart level", "on_pause_restart", False),
         ("ResumeButton", "Resume", "on_pause_resume", True),
     ):
-        menus.button(entities, window, tag, text, callback, (0.6, 0.12), initial)
+        menus.button(entities, window, tag, text, callback, (0.6, 0.11), initial)
     return y.hud_file("play", entities)
 
 
@@ -261,13 +652,24 @@ PROJECT = """OwlProject:
   RendererStack:
     - Type: Renderer2D
       Name: world
-    - Type: RendererIsometric
-      Name: iso_world
+    - Type: RendererMesh
+      Name: mesh_world
       DefaultConfig:
-        TileWidth: 64
-        TileHeight: 32
-        ZStep: 16
-        Zoom: 0
+        SunDirection: [-0.4, -1.0, -0.6]
+        Ambient: [0.4, 0.4, 0.45]
+    - Type: Renderer2D
+      Name: ground
+      DefaultConfig:
+        DepthTest: true
+    - Type: Renderer2D
+      Name: sprites
+      DefaultConfig:
+        Billboard: Full
+        DepthTest: true
+    - Type: Renderer2D
+      Name: marks
+      DefaultConfig:
+        Billboard: Full
     - Type: Renderer2D
       Name: ui
     - Type: Renderer2D
@@ -313,6 +715,23 @@ actions:
       - {key: Down, component: y}
       - {key: Up, component: y, scale: -1}
       - {gamepad_stick: left}
+  - name: turn_left
+    type: button
+    bindings:
+      - {key: Z}
+      - {gamepad_button: LeftBumper}
+      - {gamepad_button: DpadUp}
+  - name: turn_right
+    type: button
+    bindings:
+      - {key: C}
+      - {gamepad_button: DpadDown}
+  - name: zoom
+    type: axis
+    bindings:
+      - {key: R, scale: -1}
+      - {key: V}
+      - {gamepad_stick: right, component: y}
   - name: next_pad
     type: button
     bindings:
@@ -372,22 +791,29 @@ actions:
 
 
 def main() -> None:
-    """Write every generated file of the maps."""
-    for folder in ("tilesets", "tilemaps", "scenes", "huds", "prefabs", "input"):
+    """Write every generated file of the levels."""
+    for folder in ("scenes", "huds", "prefabs", "input"):
         (ROOT / folder).mkdir(parents=True, exist_ok=True)
     (ROOT / "owl_project.yml").write_text(PROJECT)
     (ROOT / "game_settings.yml").write_text(SETTINGS)
     (ROOT / "input_actions.yml").write_text(ACTIONS)
     shutil.copyfile(DEMO / "input" / "gamecontrollerdb.txt", ROOT / "input" / "gamecontrollerdb.txt")
-    shutil.copyfile(DEMO / "tilesets" / "iso_ground.owltileset", ROOT / "tilesets" / "iso_ground.owltileset")
     (ROOT / "huds" / "play.owlhud").write_text(play_hud())
+    for old in (ROOT / "prefabs").glob("*.owlprefab"):
+        old.unlink()
     for name, text in prefabs().items():
         (ROOT / "prefabs" / f"{name}.owlprefab").write_text(text)
-    for data in mp.MAPS:
-        check(data)
-        name = f"map_{data.number:02d}"
-        (ROOT / "tilemaps" / f"{name}.owltilemap").write_bytes(tilemap(data))
-        (ROOT / "scenes" / f"{name}.owl").write_text(map_scene(data))
+    for level in mp.LEVELS:
+        (ROOT / "scenes" / f"level_{level.number:02d}.owl").write_text(level_scene(level))
+    models = {
+        line.split("mesh: ", 1)[1]
+        for path in ROOT.glob("**/*.ow*")
+        for line in path.read_text().splitlines()
+        if "mesh: models/" in line
+    }
+    missing = sorted(m for m in models if not (ROOT / m).is_file())
+    if missing:
+        raise FileNotFoundError(f"models missing from samples/tower_defence: {missing}")
 
 
 if __name__ == "__main__":

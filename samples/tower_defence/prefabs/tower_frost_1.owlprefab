@@ -1,0 +1,64 @@
+Prefab: Tower_frost_1
+Version: 1
+Entities:
+  - Entity: 7600000000000702001
+    Tag:
+      tag: Tower
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [0.78, 0.78, 0.78]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+  - Entity: 7600000000000702002
+    Tag:
+      tag: TowerPart0
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7600000000000702001
+    MeshRenderer:
+      mesh: models/td/tower-round-bottom-c.glb
+      color: [0.75, 0.88, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7600000000000702003
+    Tag:
+      tag: TowerPart1
+    Transform:
+      translation: [0, 0.6, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7600000000000702001
+    MeshRenderer:
+      mesh: models/td/tower-round-top-c.glb
+      color: [0.75, 0.88, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7600000000000702004
+    Tag:
+      tag: TowerPart2
+    Transform:
+      translation: [0, 1.49, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7600000000000702001
+    MeshRenderer:
+      mesh: models/td/tower-round-crystals.glb
+      color: [0.75, 0.88, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world

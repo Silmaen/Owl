@@ -691,7 +691,7 @@ Entities:
     UiText:
       outlineWidth: 2
       outlineColor: [0.1, 0.05, 0.04, 1]
-      text: 'Map 1: Green Ford'
+      text: 'Level 1: Greenmarch Ford'
       color: [0.95, 0.92, 0.84, 1]
       fontSize: 30
       horizontalAlignment: Center
@@ -854,7 +854,7 @@ Entities:
       offset: [0, 0]
     UiText:
       outlineWidth: 2
-      text: "Build, sell     click a pad or a tower, then a badge; right click closes\nPads            Q / E or Tab, D-pad; Enter or pad A opens and builds\n                1 2 3 pick a tower, X or pad X sells, Backspace or pad B closes\nNext wave       Space, pad Y, the Call wave button (bonus gold)\nSpeed x2        F, pad RB          Pause   Escape, P, pad Start\nCamera          WASD, arrows, left stick, mouse on an edge"
+      text: "Build, upgrade  click a pad or a tower, then a badge; right click closes\nPads            Q / E or Tab, D-pad; Enter or pad A opens and picks\n                1 2 3 pick a badge, X or pad X sells, Backspace or pad B closes\nNext wave       Space, pad Y, the Call wave button (bonus gold)\nSpeed x2        F, pad RB          Pause   Escape, P, pad Start\nCamera          WASD, arrows, left stick, mouse on an edge\nTurn, zoom      Z / C, pad LB / D-pad up and down; wheel, R / V, right stick"
       color: [0.97, 0.77, 0.3, 1]
       fontSize: 21
       horizontalAlignment: Left
@@ -885,7 +885,7 @@ Entities:
       offset: [0, 0]
     UiText:
       outlineWidth: 2
-      text: 'Enemies march from the gate to the keep along the road. Build towers on the stone pads beside it: the archer shoots fast at one enemy, the cannon bursts on a group, the frost tower slows them down. Each enemy that reaches the keep costs a life; keep at least one through every wave. Kills pay gold; calling a wave before its countdown ends pays a bonus. A tower sells back for half its price.'
+      text: 'The Horde marches from its gate to the human keep: goblins, orc grunts and ogres. Build towers on the stone pads beside the road: the archer shoots fast at one enemy, the cannon bursts on a group, the frost tower slows them. Raise a tower to level 3, then give it one power-up of two. A pad on high ground shoots further. Each enemy reaching the keep costs a life; kills pay gold, calling a wave early pays a bonus, a tower sells for half.'
       color: [0.82, 0.84, 0.9, 0.95]
       fontSize: 23
       horizontalAlignment: Left

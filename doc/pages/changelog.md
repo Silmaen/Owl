@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `Renderer2D` layer keys `Billboard` (`None`, `Upright`, `Full`) and `DepthTest`: sprites of a 3D scene turned to the camera, hidden by the meshes drawn before them, sorted back to front, lit by 2D lights on the ground plane; edited in Scene Settings.
 - `scene.pick_entity` with a tag returns the tagged ancestor of the part hit (a tower built of meshes) and picks billboards as they are drawn.
-- Sample game Tower defence (`samples/tower_defence/`), first map in basic art: 8 timed waves called early for a bonus, archer, cannon and frost towers on build pads with a build ring, runners, soldiers and armoured enemies on the road graph, double speed and pause, end stats counted up, keyboard, mouse or gamepad; generators in `tools/samples/tower_defence/`, maps and waves as data.
+- Sample game Tower defence (`samples/tower_defence/`): level 1 in 3D with relief (Kenney tiles, towers and keep), the Horde as 8-direction billboards, archer, cannon and frost towers upgraded to level 3 then a power-up, timed waves called early, a night wave with torches, a minimap, keyboard, mouse or gamepad; generators in `tools/samples/tower_defence/`, levels and waves as data.
 - Help panel diagrams: `tools/doc/mermaid_svg.py` draws every mermaid fence of the bundled pages as plain SVG (flowchart, sequence, state, class) into `help_bundle/images/mermaid/`, run by `cmake/HelpAssets.cmake`.
 - Help panel rendering: hanging indent and aligned numbers in lists, ordered lists keep their start number, GFM task lists drawn as checkboxes, inline code as a flat tinted span.
 - Lua `scene.spawn_prefab` (a prefab instantiated at runtime, its scripts started at the next safe point of the frame) and `entity.add_component`.
@@ -177,6 +177,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- An export packs the external images a `.glb` names (`MeshLoader::getExternalFiles`), such as the shared texture of a model kit.
 - `owl_bench --filter=sample/editor_update` measures the scenes again, and the first frame of a scene (its mesh loading) stays out of the batch calibration.
 - Owl Nest no longer crashes when **Play** starts a scene without a primary camera (an empty untitled scene).
 - GCC 15 builds decode HDR environments again: the flat scanline loop of stb_image was miscompiled at `-O2` and above.

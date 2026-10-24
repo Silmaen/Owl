@@ -1,24 +1,24 @@
-Prefab: EnemySoldier
+Prefab: EnemyGoblin
 Version: 1
 Entities:
-  - Entity: 7600000000001232001
+  - Entity: 7600000000001113001
     Tag:
       tag: Enemy
     Transform:
       translation: [0, 0, 0]
       rotation: [0, 0, 0]
-      scale: [1.2, 1.2, 1]
+      scale: [1.8087, 1.8087, 1]
     Visibility:
       gameVisible: true
     Hierarchy: {}
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/enemies.png
-      columns: 4
-      rows: 3
-      firstFrame: 4
-      lastFrame: 4
+      texture: nam:textures/enemies/goblin.png
+      columns: 8
+      rows: 4
+      firstFrame: 0
+      lastFrame: 0
       frameDuration: 0.1
       loop: false
     RendererTag:
-      Name: iso_world
+      Name: sprites

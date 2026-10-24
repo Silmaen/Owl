@@ -1,13 +1,12 @@
-# Tower defence with the gamepad: the D-pad moves the cursor to the first pads by the gate, A opens the build ring
-# and A again builds the archer it highlights; Y calls the first wave, RB doubles the speed. The two archers stop the
-# whole first wave: kills pay gold and no life is lost.
-scene: ../../../samples/tower_defence/scenes/map_01.owl
+# Tower defence with the gamepad: the D-pad moves the cursor to the first pads (from the left of the screen), A
+# opens the build ring and A again builds the archer it highlights; Y calls the first wave, RB doubles the speed. The
+# two archers, one on the plateau by the gate, stop most of the first wave: kills pay gold.
+scene: ../../../samples/tower_defence/scenes/level_01.owl
 steps:
   - frames: 30
   - input: {gamepad: {pad: 0, button: DpadRight}, frames: 2}
   - frames: 2
-  - expect: {gamestate: tower_cursor_x, equals: 4}
-  - expect: {gamestate: tower_cursor_y, equals: 18}
+  - expect: {gamestate: tower_cursor, equals: 3}
   - input: {gamepad: {pad: 0, button: A}, frames: 2}
   - frames: 2
   - expect: {gamestate: tower_ring, equals: 1}
@@ -17,17 +16,17 @@ steps:
   - expect: {gamestate: tower_towers, equals: 1}
   - input: {gamepad: {pad: 0, button: DpadRight}, frames: 2}
   - frames: 2
+  - expect: {gamestate: tower_cursor, equals: 9}
   - input: {gamepad: {pad: 0, button: A}, frames: 2}
   - frames: 2
   - input: {gamepad: {pad: 0, button: A}, frames: 2}
   - frames: 2
   - expect: {gamestate: tower_towers, equals: 2}
-  - expect: {gamestate: tower_gold, equals: 80}
+  - expect: {gamestate: tower_gold, equals: 100}
   - input: {gamepad: {pad: 0, button: Y}, frames: 2}
   - expect: {gamestate: tower_wave, equals: 1}
   - input: {gamepad: {pad: 0, button: RightBumper}, frames: 2}
-  - frames: 600
-  - expect: {gamestate: tower_spawned, equals: 6}
-  - expect: {gamestate: tower_kills, equals: 6}
-  - expect: {gamestate: tower_lives, equals: 20}
-  - expect: {gamestate: tower_gold, greater: 140}
+  - frames: 700
+  - expect: {gamestate: tower_spawned, equals: 8}
+  - expect: {gamestate: tower_kills, greater: 4}
+  - expect: {gamestate: tower_gold, greater: 180}

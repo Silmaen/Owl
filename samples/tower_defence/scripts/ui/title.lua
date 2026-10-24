@@ -1,11 +1,11 @@
--- Title screen of Tower defence: Play starts the first map, How to play shows the rules and the controls in a window
+-- Title screen of Tower defence: Play starts the first level, How to play shows the rules and the controls in a window
 -- (the only place besides the pause window that shows them), Settings, Quit. The board on the right reads the progress
--- of the map (`tower_done_01` and `tower_best_01` settings written by defence.lua). Every change of screen is a wipe in
+-- of the level (`tower_done_01`, `tower_stars_01` and `tower_best_01` settings written by defence.lua). Every change of screen is a wipe in
 -- the night blue of the game (`scene.transition_to` with a colour).
 
 properties = {
-    { name = "first_map", type = "string", default = "scenes/map_01.owl" },
-    { name = "map_name", type = "string", default = "Green Ford" },
+    { name = "first_map", type = "string", default = "scenes/level_01.owl" },
+    { name = "map_name", type = "string", default = "Greenmarch Ford" },
     { name = "wipe_color", type = "color", default = { 0.1, 0.14, 0.24, 1 } },
 }
 
@@ -33,9 +33,10 @@ function on_create()
     window_id = scene.find_entity("HowToWindow")
     back_id = scene.find_entity("HowToBackButton")
     how_to_id = scene.find_entity("HowToButton")
-    set("MapLabel", "Map 1: " .. map_name)
+    set("MapLabel", "Level 1: " .. map_name)
     local done = settings.get("tower_done_01", false)
-    set("StateLabel", done and "Defended" or "Not defended yet")
+    local stars = settings.get("tower_stars_01", 0)
+    set("StateLabel", done and ("Defended, " .. stars .. (stars == 1 and " star" or " stars")) or "Not defended yet")
     set("BestLabel", done and ("Most lives kept: " .. settings.get("tower_best_01", 0)) or "8 waves to hold")
     local play_id = scene.find_entity("PlayButton")
     if play_id ~= 0 and done then ui.set_text(play_id, "Play again") end

@@ -1,0 +1,18 @@
+# Tower defence: the enemies are billboards drawn in 8 directions. A goblin walking down the road from the gate
+# toward the camera shows its front (direction 0); C turns the view by 45 degrees and the same goblin shows its
+# three-quarter view (direction 1); Z turns the view back.
+scene: ../../../samples/tower_defence/scenes/level_01.owl
+steps:
+  - frames: 30
+  - expect: {gamestate: tower_yaw, equals: 0}
+  - input: {key: Space, frames: 2}
+  - frames: 150
+  - expect: {gamestate: tower_enemy_direction, equals: 0}
+  - input: {key: C, frames: 2}
+  - frames: 40
+  - expect: {gamestate: tower_yaw, equals: -45}
+  - expect: {gamestate: tower_enemy_direction, equals: 1}
+  - input: {key: Z, frames: 2}
+  - frames: 40
+  - expect: {gamestate: tower_yaw, equals: 0}
+  - expect: {gamestate: tower_enemy_direction, equals: 0}

@@ -13,13 +13,24 @@ OwlProject:
   RendererStack:
     - Type: Renderer2D
       Name: world
-    - Type: RendererIsometric
-      Name: iso_world
+    - Type: RendererMesh
+      Name: mesh_world
       DefaultConfig:
-        TileWidth: 64
-        TileHeight: 32
-        ZStep: 16
-        Zoom: 0
+        SunDirection: [-0.4, -1.0, -0.6]
+        Ambient: [0.4, 0.4, 0.45]
+    - Type: Renderer2D
+      Name: ground
+      DefaultConfig:
+        DepthTest: true
+    - Type: Renderer2D
+      Name: sprites
+      DefaultConfig:
+        Billboard: Full
+        DepthTest: true
+    - Type: Renderer2D
+      Name: marks
+      DefaultConfig:
+        Billboard: Full
     - Type: Renderer2D
       Name: ui
     - Type: Renderer2D

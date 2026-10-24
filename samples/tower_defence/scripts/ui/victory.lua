@@ -73,7 +73,7 @@ local function leave(path)
 end
 
 function on_again_clicked()
-    leave(gamestate.get("tower_scene", "scenes/map_01.owl"))
+    leave(gamestate.get("tower_scene", "scenes/level_01.owl"))
 end
 
 function on_title_clicked()

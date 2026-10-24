@@ -7,7 +7,7 @@ Entities:
     Transform:
       translation: [0, 0, 0]
       rotation: [0, 0, 0]
-      scale: [0.6, 0.42, 1]
+      scale: [0.6, 0.6, 1]
     Visibility:
       gameVisible: true
     Hierarchy: {}
@@ -16,4 +16,4 @@ Entities:
       tilingFactor: 1
       texture: nam:textures/puff.png
     RendererTag:
-      Name: iso_world
+      Name: sprites

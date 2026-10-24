@@ -1,0 +1,25 @@
+Prefab: ProjectileFireball
+Version: 1
+Entities:
+  - Entity: 7600000000001842001
+    Tag:
+      tag: Projectile
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [0.32, 0.32, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/fx/projectiles.png
+      columns: 4
+      rows: 1
+      firstFrame: 2
+      lastFrame: 2
+      frameDuration: 0.1
+      loop: false
+    RendererTag:
+      Name: sprites
+    Light2D: {type: Point, enabled: true, color: [1, 0.55, 0.2], intensity: 0.9, radius: 2.2, falloff: 1.4, height: 1, castShadows: false}

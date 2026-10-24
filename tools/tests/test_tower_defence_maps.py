@@ -1,7 +1,8 @@
 """
-Tests of the Tower defence maps and of their tilemap writer: every map passes the generator's checks, its road is one
-connected walk along the axes whose tiles connect to their neighbours, every pad is off the road and every wave names
-known enemies. The written files are not compared with the generator: they are edited in Owl Nest afterwards.
+Tests of the Tower defence levels and of their scene writer: every level passes the generator's checks, its road is
+one walk along the axes from the gate to the keep, its ramps climb, every pad is beside the road and every wave names
+known enemies; the road tiles turn to their neighbours and the waypoints follow the road heights. The written files
+are not compared with the generator: they are edited in Owl Nest afterwards.
 """
 
 from __future__ import annotations
@@ -10,41 +11,53 @@ import re
 
 import pytest
 
+from tools.samples.tower_defence import creatures
 from tools.samples.tower_defence import generate_maps as gen
 from tools.samples.tower_defence import maps as mp
-from tools.samples.tower_defence.generate_assets import ENEMIES
 
 WAVE_GROUP = re.compile(r"^\s*([a-z]+)\s+(\d+)\s+([\d.]+)\s*$")
 
 
-@pytest.mark.parametrize("data", mp.MAPS, ids=lambda data: f"map_{data.number:02d}")
-def test_every_map_is_valid(data: mp.MapData) -> None:
-    gen.check(data)
-    road = mp.road_cells(data)
+@pytest.mark.parametrize("level", mp.LEVELS, ids=lambda level: f"level_{level.number:02d}")
+def test_every_level_is_valid(level: mp.LevelData) -> None:
+    road = gen.check(level)
     assert len(road) == len(set(road)), "the road crosses itself"
-    for (x0, y0), (x1, y1) in zip(road, road[1:], strict=False):
-        assert abs(x1 - x0) + abs(y1 - y0) == 1
-    assert road[0][0] in (0, data.size - 1) or road[0][1] in (0, data.size - 1), "the gate is not on an edge"
-    assert len(data.pads) >= 10
+    for (x0, z0), (x1, z1) in zip(road, road[1:], strict=False):
+        assert abs(x1 - x0) + abs(z1 - z0) == 1
+    for a, b in zip(road, road[1:], strict=False):
+        assert abs(gen.road_height(level, a) - gen.road_height(level, b)) <= mp.HEIGHT_STEP + 1e-6, (a, b)
+    assert len(level.cells("P")) >= 10
+    assert 0 <= level.night_from <= len(level.waves)
 
 
-@pytest.mark.parametrize("data", mp.MAPS, ids=lambda data: f"map_{data.number:02d}")
-def test_every_wave_names_known_enemies(data: mp.MapData) -> None:
-    assert len(data.waves) >= 1
-    for wave in data.waves:
+@pytest.mark.parametrize("level", mp.LEVELS, ids=lambda level: f"level_{level.number:02d}")
+def test_every_wave_names_known_enemies(level: mp.LevelData) -> None:
+    assert len(level.waves) >= 1
+    for wave in level.waves:
         for group in wave.split(";"):
             match = WAVE_GROUP.match(group)
             assert match is not None, group
-            assert match.group(1) in ENEMIES
+            assert match.group(1) in creatures.CREATURES
             assert int(match.group(2)) > 0
 
 
-def test_the_written_tilemap_holds_the_road_and_the_pads() -> None:
-    data = mp.MAPS[0]
-    blob = gen.tilemap(data)
-    header, payload = blob.split(b"...\n", 1)
-    assert b"width: 24" in header and b"- name: roads" in header
-    assert payload.startswith(b"OWLTCHNK")
-    _, overlay = gen.layers(data)
-    assert {cell for cell, tile in overlay.items() if tile == gen.PAVEMENT} == set(data.pads)
-    assert len(overlay) == len(mp.road_cells(data)) + len(data.pads)
+def test_road_tiles_turn_to_their_neighbours() -> None:
+    assert gen.road_tile(gen.N | gen.S) == ("tile-straight", 0)
+    assert gen.road_tile(gen.E | gen.W) == ("tile-straight", 1)
+    name, quarters = gen.road_tile(gen.N | gen.E)
+    assert name == "tile-corner-square"
+    assert gen.turned(gen.E | gen.S, quarters) == gen.N | gen.E
+    assert gen.turned(gen.S, 1) == gen.E
+
+
+def test_the_scene_has_its_waypoints_pads_and_towers() -> None:
+    level = mp.LEVELS[0]
+    text = gen.level_scene(level)
+    assert text.count("tag: Pad\n") == len(level.cells("P"))
+    assert "tag: Waypoint 01\n" in text
+    assert "scripts/game/defence.lua" in text
+    prefabs = gen.prefabs()
+    for kind in ("archer", "cannon", "frost"):
+        for step in ("1", "2", "3"):
+            assert f"tower_{kind}_{step}" in prefabs
+    assert all(f"enemy_{kind}" in prefabs for kind in creatures.CREATURES)

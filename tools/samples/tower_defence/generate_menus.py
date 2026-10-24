@@ -50,21 +50,22 @@ GROUND_Y = -5.9
 """Height of the feet of the parade in the 2D world (camera of 15 units high)."""
 
 HOW_TO_PLAY = (
-    "Enemies march from the gate to the keep along the road. Build towers on the stone pads beside it: the archer "
-    "shoots fast at one enemy, the cannon bursts on a group, the frost tower slows them down. Each enemy that "
-    "reaches the keep costs a life; keep at least one through every wave. Kills pay gold; calling a wave before "
-    "its countdown ends pays a bonus. A tower sells back for half its price."
+    "The Horde marches from its gate to the human keep: goblins, orc grunts and ogres. Build towers on the stone pads "
+    "beside the road: the archer shoots fast at one enemy, the cannon bursts on a group, the frost tower slows them. "
+    "Raise a tower to level 3, then give it one power-up of two. A pad on high ground shoots further. Each enemy "
+    "reaching the keep costs a life; kills pay gold, calling a wave early pays a bonus, a tower sells for half."
 )
 """The rules, in the How to play window."""
 CONTROLS = (
-    "Build, sell     click a pad or a tower, then a badge; right click closes\n"
-    "Pads            Q / E or Tab, D-pad; Enter or pad A opens and builds\n"
-    "                1 2 3 pick a tower, X or pad X sells, Backspace or pad B closes\n"
+    "Build, upgrade  click a pad or a tower, then a badge; right click closes\n"
+    "Pads            Q / E or Tab, D-pad; Enter or pad A opens and picks\n"
+    "                1 2 3 pick a badge, X or pad X sells, Backspace or pad B closes\n"
     "Next wave       Space, pad Y, the Call wave button (bonus gold)\n"
     "Speed x2        F, pad RB          Pause   Escape, P, pad Start\n"
-    "Camera          WASD, arrows, left stick, mouse on an edge"
+    "Camera          WASD, arrows, left stick, mouse on an edge\n"
+    "Turn, zoom      Z / C, pad LB / D-pad up and down; wheel, R / V, right stick"
 )
-"""The controls, in the How to play window and the pause window of a map."""
+"""The controls, in the How to play window and the pause window of a level."""
 
 
 def label(value: str, size: int, colour: y.Colour = STONE, align: str = "Center", font: str = LABEL) -> str:
@@ -172,7 +173,7 @@ def title() -> str:
     )
     entities.add("BestLabel", [y.child_rect((0.92, 0.16)), label("", 24, SOFT, font="")], parent=log)
     entities.add("StateLabel", [y.child_rect((0.92, 0.16)), label("Not defended yet", 26, SOFT, font="")], parent=log)
-    entities.add("MapLabel", [y.child_rect((0.92, 0.2)), label("Map 1: Green Ford", 30)], parent=log)
+    entities.add("MapLabel", [y.child_rect((0.92, 0.2)), label("Level 1: Greenmarch Ford", 30)], parent=log)
     entities.add("BoardTitle", [y.child_rect((0.92, 0.2)), label("THE REALM", 34, GOLD, font=HEADING)], parent=log)
     how_to = entities.add(
         "HowToWindow",

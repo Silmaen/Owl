@@ -153,39 +153,39 @@ Shipped in `samples/tower_defence/` (how to play: its `README.md`): a first map 
 gameplay. Plan of 2026-10-24: a small campaign in the spirit of Warcraft 1 and 2, the Horde (goblins, orcs, ogres)
 against human towers and a human keep, in real 3D, mixing as many rendering styles as the engine has.
 
-| Item     | Plan                                                                                                                  |
-|----------|-----------------------------------------------------------------------------------------------------------------------|
-| Play     | 5 levels (3 first, the data ready for more) of 8 to 12 waves, on 3D terrain with relief, between visits to a world map |
-| Win/lose | Every wave held with a life left / the 20 lives lost; 3, 2 or 1 stars for 18, 10 or fewer lives kept                   |
-| Waves    | Timed, called early for gold; from the wave `night_from` the day-night cycle turns to dusk, then night with torches    |
-| Towers   | Archer, cannon, frost on build pads; levels 1, 2, 3, then one power-up of two; sold for half of what was spent        |
-| Enemies  | Goblin (fast, weak), orc grunt (average), ogre (slow, tough, 40 % of the arrows); later wolf riders, trolls, skeletons |
-| Relief   | Plateaus, ramps, a river and its bridge; a pad on high ground gives its tower +15 % range per height step             |
-| Controls | As in the first map (mouse, keyboard cursor, gamepad), plus Z / C or pad LB / LT turn the view by 45°, the wheel zooms |
-| Scenes   | `title`, `world_map`, `level_01` to `level_05`, `settings`, `victory` (stats counted up, stars, unlock), `game_over`   |
-| Saves    | No slot: `tower_done_NN`, `tower_stars_NN` and `tower_best_NN` settings; the unlocks follow from the levels won        |
+| Item     | Plan                                                                                                                               |
+|----------|------------------------------------------------------------------------------------------------------------------------------------|
+| Play     | 5 levels (3 first, the data ready for more) of 8 to 12 waves, on 3D terrain with relief, between visits to a world map             |
+| Win/lose | Every wave held with a life left / the 20 lives lost; 3, 2 or 1 stars for 18, 10 or fewer lives kept                               |
+| Waves    | Timed, called early for gold; from the wave `night_from` the day-night cycle turns to dusk, then night with torches                |
+| Towers   | Archer, cannon, frost on build pads; levels 1, 2, 3, then one power-up of two; sold for half of what was spent                     |
+| Enemies  | Goblin (fast, weak), orc grunt (average), ogre (slow, tough, 40 % of the arrows); later wolf riders, trolls, skeletons             |
+| Relief   | Plateaus, ramps, a river and its bridge; a pad on high ground gives its tower +15 % range per height step                          |
+| Controls | As in the first map (mouse, keyboard cursor, gamepad), plus Z / C or pad LB, D-pad up / down turn the view by 45°, the wheel zooms |
+| Scenes   | `title`, `world_map`, `level_01` to `level_05`, `settings`, `victory` (stats counted up, stars, unlock), `game_over`               |
+| Saves    | No slot: `tower_done_NN`, `tower_stars_NN` and `tower_best_NN` settings; the unlocks follow from the levels won                    |
 
-| #   | Level           | Terrain                                                         | New                                                       |
-|-----|-----------------|-----------------------------------------------------------------|-----------------------------------------------------------|
-| 1   | Greenmarch Ford | One plateau, a ramp down, a river crossed by a bridge           | Goblins, grunts, ogres in the last waves; the last at dusk |
-| 2   | Thornwood Pass  | Two plateaus and a road winding between them through woods      | Wolf riders (fast, in packs); night waves with torches    |
-| 3   | Stonebridge     | Two gates, two roads meeting before a long bridge               | Trolls (regenerate); waves split between the two roads    |
-| 4   | Frostmere       | Snow tiles, a waterfall between two heights                     | Ogre mages (shield the enemies around them)               |
-| 5   | The Black Gate  | A fortress gate, three roads                                    | Skeletons as 3D meshes (KayKit, static poses), a chieftain |
+| #   | Level           | Terrain                                                    | New                                                        |
+|-----|-----------------|------------------------------------------------------------|------------------------------------------------------------|
+| 1   | Greenmarch Ford | One plateau, a ramp down, a river crossed by a bridge      | Goblins, grunts, ogres in the last waves; the last at dusk |
+| 2   | Thornwood Pass  | Two plateaus and a road winding between them through woods | Wolf riders (fast, in packs); night waves with torches     |
+| 3   | Stonebridge     | Two gates, two roads meeting before a long bridge          | Trolls (regenerate); waves split between the two roads     |
+| 4   | Frostmere       | Snow tiles, a waterfall between two heights                | Ogre mages (shield the enemies around them)                |
+| 5   | The Black Gate  | A fortress gate, three roads                               | Skeletons as 3D meshes (KayKit, static poses), a chieftain |
 
-| Level won        | Unlocks                                                                              |
-|------------------|--------------------------------------------------------------------------------------|
-| Greenmarch Ford  | The second power-up of each tower (double shot, shock wave, vulnerability aura)      |
-| Thornwood Pass   | Rain of arrows: a spell on a spot of the road, damage in an area, 45 s cooldown      |
-| Stonebridge      | Royal treasury: 60 more starting gold on every level                                 |
-| Frostmere        | Shield wall: a spell stopping the enemies on a spot for 5 s, 60 s cooldown           |
-| 3 stars on all 5 | Keep walls: 5 more lives on every level                                              |
+| Level won        | Unlocks                                                                         |
+|------------------|---------------------------------------------------------------------------------|
+| Greenmarch Ford  | The second power-up of each tower (double shot, shock wave, vulnerability aura) |
+| Thornwood Pass   | Rain of arrows: a spell on a spot of the road, damage in an area, 45 s cooldown |
+| Stonebridge      | Royal treasury: 60 more starting gold on every level                            |
+| Frostmere        | Shield wall: a spell stopping the enemies on a spot for 5 s, 60 s cooldown      |
+| 3 stars on all 5 | Keep walls: 5 more lives on every level                                         |
 
-| Tower  | Level 2  | Level 3     | Power-up A (from the start)                        | Power-up B (Greenmarch Ford won)                 |
-|--------|----------|-------------|----------------------------------------------------|--------------------------------------------------|
-| Archer | +range   | +rate       | Piercing arrows: each arrow hits up to 3 in a line | Double shot: two targets at each volley          |
-| Cannon | +damage  | +area       | Fire shells: the ground burns, damage over 3 s     | Shock wave: the enemies hit are thrown back      |
-| Frost  | +slow    | +duration   | Full freeze: a short stop every third hit          | Vulnerability aura: +25 % damage taken in range  |
+| Tower  | Level 2 | Level 3   | Power-up A (from the start)                        | Power-up B (Greenmarch Ford won)                |
+|--------|---------|-----------|----------------------------------------------------|-------------------------------------------------|
+| Archer | +range  | +rate     | Piercing arrows: each arrow hits up to 3 in a line | Double shot: two targets at each volley         |
+| Cannon | +damage | +area     | Fire shells: the ground burns, damage over 3 s     | Shock wave: the enemies hit are thrown back     |
+| Frost  | +slow   | +duration | Full freeze: a short stop every third hit          | Vulnerability aura: +25 % damage taken in range |
 
 - Costs: level 2 at 80 % of the tower price, level 3 at 120 %, a power-up at 150 %; the ring of a tower shows the next
   step with its price, the two power-ups side by side at level 3 (a locked one says which level unlocks it), and Sell.
@@ -195,18 +195,18 @@ against human towers and a human keep, in real 3D, mixing as many rendering styl
   sprites over it); a click, Q / E or the D-pad picks an open site, Enter or pad A starts it; the panel names the
   level, its stars, its waves and its unlock; a window lists the bonuses gained, a new one announced once.
 
-| Element                       | Rendered by                                    | How                                                                                         |
-|-------------------------------|------------------------------------------------|---------------------------------------------------------------------------------------------|
-| Terrain, river, bridge, decor | `RendererMesh`                                 | Kenney Tower Defense Kit tiles, one entity per cell, raised and stacked for the plateaus    |
-| Towers                        | `RendererMesh`                                 | Kit tower parts stacked by level (base, middle, top, weapon), power-ups as `.owlmat` tints |
-| Keep, walls, gate, banners    | `RendererMesh`                                 | Kenney Castle Kit                                                                           |
-| Sky, sun, night               | `ProceduralSky`, `DayNightCycle`               | Sun with cascaded shadows; point `Light` torches on the keep and along the road at night    |
-| Enemies                       | `Renderer2D` `sprites`: billboards, depth test | 8 directions x 4 walk frames (`generate_assets.py`), the frame picked from heading and view |
-| Projectiles and effects       | `sprites`                                      | Arrows, shells, shards, bursts, fire; a `Light2D` on fire shells and torches               |
-| Health bars, ring badges      | `Renderer2D` `marks`: billboards over all      | Always readable, picked by tag                                                              |
-| Range ring, build cursor      | `Renderer2D` `ground`: flat, depth test        | Lies on the terrain, hidden by the towers in front                                          |
-| Minimap                       | `RenderTarget`                                 | Orthographic camera over the level into a `UiImage` of the HUD                              |
-| HUD and menus                 | `Canvas`                                       | Gold, lives, wave, info panel, spells, pause; menus of `generate_menus.py`                  |
+| Element                       | Rendered by                                    | How                                                                                                |
+|-------------------------------|------------------------------------------------|----------------------------------------------------------------------------------------------------|
+| Terrain, river, bridge, decor | `RendererMesh`                                 | Kenney Tower Defense Kit tiles, one entity per cell, raised and stacked for the plateaus           |
+| Towers                        | `RendererMesh`                                 | Kit tower parts stacked by level (base, middle, top, weapon), power-ups by their tints and weapons |
+| Keep, walls, gate, banners    | `RendererMesh`                                 | Kenney Castle Kit                                                                                  |
+| Sky, sun, night               | `ProceduralSky`, `DayNightCycle`               | Sun with cascaded shadows; point `Light` torches on the keep and along the road at night           |
+| Enemies                       | `Renderer2D` `sprites`: billboards, depth test | 8 directions x 4 walk frames (`generate_assets.py`), the frame picked from heading and view        |
+| Projectiles and effects       | `sprites`                                      | Arrows, shells, shards, bursts, fire; a `Light2D` on fire shells and torches                       |
+| Ring badges, health bars      | `marks` over all; bars in `sprites`            | Badges always readable, picked by tag                                                              |
+| Range ring, build cursor      | `Renderer2D` `ground`: flat, depth test        | Lies on the terrain, hidden by the towers in front                                                 |
+| Minimap                       | `RenderTarget`                                 | Orthographic camera over the level into a `UiImage` of the HUD                                     |
+| HUD and menus                 | `Canvas`                                       | Gold, lives, wave, info panel, spells, pause; menus of `generate_menus.py`                         |
 
 - Engine needs: `Renderer2D` layer keys `Billboard` (`None`, `Upright`, `Full`: the sprites turn to the camera, their
   2D lights on the ground plane) and `DepthTest` (sprites tested against the 3D layers drawn before, sorted back to
@@ -218,6 +218,8 @@ against human towers and a human keep, in real 3D, mixing as many rendering styl
   `tower_defend` (gamepad), `tower_fast_forward`, `tower_rotate` (the enemy frames follow the view), `tower_win`,
   `tower_title`, then `tower_world_map` (sites, path, unlocks) with the next levels.
 - Size: **M–L**: level 1 in 3D with upgrades first, then levels 2 and 3, the world map and the unlocks.
+- Done: level 1 (`level_01.owl`) in 3D with its relief, the Horde in 8 directions, the upgrades and power-ups, the
+  night wave and the minimap; the menus keep their 2D parade until the world map.
 
 ### Mini Transport Tycoon
 

@@ -1,7 +1,8 @@
-# Tower defence: the whole first map at double speed, the keyboard cursor building towers along the road as the
+# Tower defence: the whole first level at double speed, the keyboard cursor building towers along the road as the
 # gold comes in (E to the next pad, Enter opens the ring, 1 archer, 2 cannon, 3 frost; a build without the gold is
-# refused): the eight waves are held, the map is marked done and the victory scene counts the stats up.
-scene: ../../../samples/tower_defence/scenes/map_01.owl
+# refused): the eight waves are held (the last one at night), the level is marked done with its stars and the
+# victory scene counts the stats up.
+scene: ../../../samples/tower_defence/scenes/level_01.owl
 steps:
   - frames: 30
   - input: {key: F, frames: 2}
@@ -18,7 +19,7 @@ steps:
   - input: {key: D1, frames: 2}
   - frames: 1
   - expect: {gamestate: tower_towers, equals: 2}
-  - expect: {gamestate: tower_gold, equals: 80}
+  - expect: {gamestate: tower_gold, equals: 100}
   - frames: 400
   - input: {key: E, frames: 2}
   - frames: 1
@@ -103,6 +104,8 @@ steps:
   - expect: {gamestate: tower_won, equals: true}
   - expect: {gamestate: tower_lost, equals: false}
   - expect: {gamestate: tower_done, equals: true}
+  - expect: {gamestate: tower_night, equals: true}
+  - expect: {gamestate: tower_result_stars, greater: 0}
   - expect: {gamestate: tower_lives, greater: 5}
   - expect: {gamestate: tower_towers, greater: 6}
   - frames: 400
