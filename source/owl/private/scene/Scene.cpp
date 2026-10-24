@@ -1935,11 +1935,17 @@ void Scene::resolveMaterialSlot(component::MeshRenderer& ioMeshRenderer, const s
 		overrides.values.alphaMode = renderer::AlphaMode::Blend;
 		overrides.set(renderer::MaterialField::AlphaMode);
 	}
+	const bool ownTexture = ioMeshRenderer.texture && !slot.overrides.has(renderer::MaterialField::BaseColorMap);
+	slot.generation = ioLibrary.getGeneration();
+	// A slot that changes nothing shares its material: the mesh pass instances the entities drawing the same one.
+	if (overrides.isEmpty() && !ownTexture) {
+		slot.resolved = base;
+		return;
+	}
 	auto material = overrides.isEmpty() ? *base : base->withOverrides(overrides);
-	if (ioMeshRenderer.texture && !slot.overrides.has(renderer::MaterialField::BaseColorMap))
+	if (ownTexture)
 		material = material.withTexture(renderer::MaterialMap::BaseColor, ioMeshRenderer.texture);
 	slot.resolved = mkShared<const renderer::Material>(std::move(material));
-	slot.generation = ioLibrary.getGeneration();
 }
 
 void Scene::renderMeshes(const bool iEditorMode) {
