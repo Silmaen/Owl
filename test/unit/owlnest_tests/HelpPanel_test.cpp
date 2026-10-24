@@ -205,9 +205,6 @@ TEST_F(HelpPanelTest, EveryLinkOfTheBundleReachesAPageAndAHeading) {
 	}
 	size_t checked = 0;
 	for (const auto& [pageId, hrefs]: links) {
-		// The changelog is history: its links stay as they were written.
-		if (pageId == "changelog")
-			continue;
 		for (const auto& href: hrefs) {
 			if (href.starts_with("http://") || href.starts_with("https://") || href.starts_with("mailto:"))
 				continue;
