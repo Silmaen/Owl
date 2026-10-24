@@ -116,7 +116,12 @@ hierarchy and selection. Each document has its own history, kept until it closes
 
 ## Stats
 
-The **Stats** tab of the bottom strip (switched on in **Settings > General**) shows the frame rate, the memory in use
+The **Stats** tab of the bottom strip (switched on in **Settings > General**) shows the displayed frame rate, the
+frame cost (CPU and GPU time, the waits for the display excluded) and the frame rate it allows, the memory in use
 and its peak, the allocations of the frame, the entity under the mouse, the draw calls and quads of the 2D renderer,
 the viewport size and, on Vulkan, the submits, queue drains, fence waits and pacing wait of the last frame with their
 maximum over two seconds.
+
+Under vertical sync the displayed rate is the refresh rate whatever a frame costs; the frame cost measures the frame
+itself, averaged over half a second. A capped GPU lowers its clocks, so the cost reads a little higher than without
+the cap: compare performances with `OwlRunner --frame-bench`.

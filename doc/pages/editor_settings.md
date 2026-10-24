@@ -10,15 +10,24 @@ the recent projects and their sessions.
 
 | Tab        | Settings                                                                                                                               |
 |------------|----------------------------------------------------------------------------------------------------------------------------------------|
-| General    | Stats panel, text size (75 to 150 %, at once), UI and code font sizes (next start), autosave interval                                  |
+| General    | Stats panel, text size (75 to 150 %, at once), UI and code font sizes (next start), autosave interval, frame pacing (below)            |
 | Gizmo Snap | Snap to grid, snap step, step from tilemap and its cell multiplier, rotation step ([snapping](editor_viewport.md#gizmos-and-snapping)) |
 | Camera     | Orbit, pan and zoom speeds (10 to 300 %), invert vertical, dead zone                                                                   |
 | Appearance | Theme: **Owl Dark** or **Owl Light**, applied at once (also **View > Appearance**)                                                     |
 | Shortcuts  | Every action and its key ([below](#rebinding))                                                                                         |
 | MCP Server | Enabled (off by default), port (47800), status, endpoint and token file (a click copies), **Regenerate Token**                         |
 
+The frame pacing settings of **General** spare the GPU:
+
+- **Frame Rate Limit**: most frames per second while the editor has the focus; 0 (the default) follows the display.
+- **Background Frame Rate**: the limit while another window has the focus, 15 by default (0 keeps the first one);
+  a detached panel counts as the editor, and a play driven from MCP is never slowed down.
+- **Idle Wait**: while every scene is in Edit and nothing is held, shown as a notification or loading, the editor
+  waits up to this long for an input before drawing again (250 ms by default, 0 draws every frame).
+
 **View > Settings > Engine** (**Engine parameters** in the File screen) holds the engine's own options: window,
-graphics and sound backends, debug options such as hot reload. They are written to the `config.yml` of the working
+graphics and sound backends, **Low-Latency Present** (Vulkan MAILBOX: a lower input latency, but the GPU draws as
+many frames as it can), debug options such as hot reload. They are written to the `config.yml` of the working
 folder and apply at the next start.
 
 ## Shortcuts
