@@ -160,13 +160,15 @@ against human towers and a human keep, in real 3D, mixing as many rendering styl
 | Waves     | Timed, called early for gold; the `night_waves` of a level are fought at night, dusk or dawn announced between two waves           |                                                                                         |
 | Day/night | `time_effects` of `defence.lua`: a bonus or a malus by day and by night for every tower and enemy kind                             | Sun or moon on the HUD, legend in the pause window                                      |
 | Modifiers | Per level (`modifiers`): fog, blizzard, blood moon, drought, gale, plunder, long night, effects of the same form                   | Briefing, world map panel, pause window                                                 |
-| Briefing  | A parchment card before the first wave: nights, modifiers, new enemies; a click, Enter or pad A starts                             | Time paused until then                                                                  |
+| Briefing  | A modal window before the first wave: a line and an icon per night, modifier and new enemy (its portrait)                          | Time paused; Skip tutorial on level 1                                                   |
+| Tutorial  | Level 1, skippable: build on a glowing pad, call a wave, raise, sell, read day and night; hints by the targets                     | `tower_tutorial` setting, Reset tutorial in Settings                                    |
 | Towers    | Archer, cannon, frost on build pads; levels 1, 2, 3, then one power-up of two; sold for half of what was spent                     |                                                                                         |
 | Enemies   | `Renderer2D` `sprites`: billboards, depth test                                                                                     | 8 directions x 9 frames (walk, attack, death), lit like the 3D scene; hit flash, sparks |
 | Relief    | Plateaus, ramps, rivers and bridges; a pad on high ground gives its tower +15 % range per height step                              |                                                                                         |
 | Controls  | As in the first map (mouse, keyboard cursor, gamepad), plus Z / C or pad LB, D-pad up / down turn the view by 45°, the wheel zooms |                                                                                         |
 | Scenes    | `title`, `world_map`, `upgrades`, `level_01` to `level_10`, `settings`, `victory` (stats, stars credited, unlock), `game_over`     |                                                                                         |
 | Saves     | No slot: `tower_done_NN`, `tower_stars_NN` (best), `tower_best_NN`, `tower_up_<family>` settings; unlocks follow from the wins     |                                                                                         |
+| Scripts   | `defence.lua` holds the properties and the hooks; the rules are the modules of `scripts/game/td/` (`require`)                      |                                                                                         |
 
 | #  | Level           | Terrain                                                    | Theme | Nights             | Modifiers           | New                    |
 |----|-----------------|------------------------------------------------------------|-------|--------------------|---------------------|------------------------|
@@ -224,7 +226,8 @@ against human towers and a human keep, in real 3D, mixing as many rendering styl
 - Costs: level 2 at 80 % of the tower price, level 3 at 120 %, a power-up at 150 %; the ring of a tower shows the next
   step with its price, the two power-ups side by side at level 3 (a locked one says which level unlocks it), and Sell.
 - Menus: the parade of the Horde, the keep, the archer tower and the road under them are pixel art rendered like the
-  Horde (`scenery.py`, the models of `creatures.py`).
+  Horde (`scenery.py`, the models of `creatures.py`), under a starry night over the hills and the ramparts of the keep
+  with flickering torches; the campaign board of the title is parchment framed in wood.
 - World map (`world_map.owl`): a hand-inked map drawn by `world_map_art.py` at 80 pixels per unit (pixel for pixel on
   2560 x 1440, `MapRoot` scaled down to fit a narrower screen): inked coast with ripple lines and a ship, rivers
   between banks, a frozen lake, hatched mountains (snowy, black, a volcano), painted forests, fields, faint tracks,
@@ -269,12 +272,14 @@ against human towers and a human keep, in real 3D, mixing as many rendering styl
   Quit to the map comes back), `tower_upgrades_screen` (a win credits stars, a tier bought then refunded),
   `tower_level_wolves` (level 2), `tower_level_roads` (level 3, both roads), `tower_level_frostmere` (sappers, a mage's
   wards), `tower_level_black_gate`, `tower_night_and_fog` (briefing shown and dismissed, the fog and the night effects
-  on the range of an archer and the speed of a goblin), `tower_drought` (a cheaper cannon).
+  on the range of an archer and the speed of a goblin), `tower_drought` (a cheaper cannon), `tower_tutorial` (each step
+  of the tutorial in turn, then done), `tower_tutorial_skip` (skipped and remembered on a restart).
 - Size: **M–L**.
 - Done: the ten levels in 3D with relief (grass, marsh, snow, sand and ash themes), the Horde of nine kinds in 8
   directions with walk, attack and death frames introduced across the campaign with their counters, tower upgrades and
   power-ups, the build wheel, day and night alternating with their effects, the level modifiers and the briefing, the
-  minimap, the inked world map, the unlocks, the star upgrades and the medieval look.
+  tutorial of the first level, the minimap, the inked world map, the unlocks, the star upgrades and the medieval look;
+  the rules split into Lua modules.
 
 ### Mini Transport Tycoon
 

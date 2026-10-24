@@ -15,7 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   follow its sky, sun and exposure (`Renderer3D::getSurfaceLight`), 2D lights on the ground plane.
 - Sample game Tower defence (`samples/tower_defence/`): a campaign of 10 levels in 3D on an inked world map, nine kinds
   of the Horde as 8-direction billboards, towers raised to level 3 then a power-up, a build wheel, spells, day and
-  night with their effects, level modifiers and briefings, unlocks and upgrades bought with the stars.
+  night with their effects, level modifiers and briefings, a skippable tutorial, unlocks and upgrades bought with the
+  stars.
+- Lua `require` of the modules of a project (sandboxed, packed by the export), modal `UiWindow`, `ui.set_size` and
+  `ui.get_rect`, `RenderTarget.hiddenLayers` to keep markers out of a minimap.
 - `AnimatedSpriteRenderer.lit`, and Lua `ui.set_text` / `ui.get_text` reach a world `TextRenderer`.
 - Engine Demo tavern: a hub level played on foot with the `FirstPersonController` component.
 - Lua `scene.spawn_prefab`, `entity.add_component`, `scene.pick_entity`, `time.set_scale` / `set_paused` and
