@@ -1,4 +1,5 @@
--- The meadow strip under every menu of Tower defence: a wave marches along the road from the right, past the archer
+-- The meadow strip under every menu of Tower defence, under a starry night where torches flicker on the ramparts of
+-- the keep: a wave marches along the road from the right, past the archer
 -- tower, towards the keep on the left; on the victory screen fireworks burst over the keep, on the game over screen
 -- the wave stands before the fallen keep, hammering at it. The sprites are the Horde sheets of the game
 -- (`textures/enemies/<kind>.png`, 8 columns of headings, rows: 4 walk frames, 2 blows, 3 frames of the fall).
@@ -16,6 +17,7 @@ local FACING_LEFT = 6       -- column of the heading toward the left of the scre
 local WALK_ROWS, ATTACK_ROW = 4, 4
 
 local walkers = {}
+local glows = {}            -- the torch glows on the ramparts of the sky, flickering
 local sparks = {}
 local clock, spark_clock = 0.0, 0.0
 local seed = 7
@@ -30,6 +32,7 @@ function on_create()
         local x, y, z = transform.get_position(id)
         walkers[#walkers + 1] = { id = id, x = x, y = y, z = z, phase = index * 0.9, frame = -1 }
     end
+    for index, id in ipairs(scene.find_entities("TorchGlow")) do glows[#glows + 1] = { id = id, phase = index * 2.1 } end
     for _, id in ipairs(scene.find_entities("Spark")) do
         sparks[#sparks + 1] = { id = id, t = 1.0, x = 0, y = 0, r = 1, g = 1, b = 1 }
     end
@@ -73,6 +76,10 @@ function on_update(dt)
             isometric.set_sprite_frame(walker.id, frame)
         end
         transform.set_position(walker.id, walker.x, walker.y, walker.z)
+    end
+    for _, glow in ipairs(glows) do
+        local flicker = 0.28 + 0.08 * math.sin(clock * 11.0 + glow.phase) + 0.05 * math.sin(clock * 23.0 + glow.phase)
+        entity.set_tint(glow.id, 1.0, 0.6, 0.25, flicker)
     end
     if fireworks then update_sparks(real) end
 end

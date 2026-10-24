@@ -6,7 +6,8 @@ The scenery under the menus of the Tower defence sample game, in the pixel art o
 - ``textures/menu/keep.png``: the human keep, a curtain wall between four round towers under blue roofs, the hall
   behind it and its banners; ``textures/menu/keep_fallen.png``: the same keep burnt and broken (the game over screen);
 - ``textures/menu/tower.png``: an archer tower of stone with its wooden hoard and red roof;
-- ``textures/menu/ground.png``: the meadow and its dirt road, tiling along the width.
+- ``textures/menu/ground.png``: the meadow and its dirt road, tiling along the width;
+- ``textures/menu/sky.png``: the starry night over the hills and the ramparts of the keep, its torches lit.
 """
 
 from __future__ import annotations
@@ -148,6 +149,77 @@ def ground(size: tuple[int, int] = (240, 112), seed: int = 5) -> Image.Image:
     return image
 
 
+SKY_PIXELS = (480, 180)
+"""Size of the night sky in art pixels (drawn 5 times bigger, pixel for pixel with the parade)."""
+SKY_SCALE = 5
+"""Image pixels of one art pixel of the sky."""
+SKY_WORLD = (40.0, 15.0)
+"""World size of the sky under the menus (the camera shows 15 units of height)."""
+TORCHES = ((0.6, 0.53), (0.71, 0.53), (0.81, 0.53))
+"""Places of the torches on the ramparts of the sky, in shares of its width and height."""
+
+
+def night_sky(seed: int = 3) -> Image.Image:
+    """The night behind the menus in pixel art (``SKY_WORLD`` wide on screen): a starry sky fading to violet over the
+    hills, a moon with its halo, two rows of hills and, on the right, the ramparts of the keep with lit windows and
+    torch glows."""
+    width, height = SKY_PIXELS
+    rng = random.Random(seed)
+    image = Image.new("RGBA", SKY_PIXELS, (0, 0, 0, 255))
+    pixels = image.load()
+    assert pixels is not None
+    top, bottom = (8, 12, 34), (58, 40, 82)
+    for y in range(height):
+        t = (y / height) ** 1.6
+        colour = tuple(int(top[k] + (bottom[k] - top[k]) * t) for k in range(3))
+        for x in range(width):
+            pixels[x, y] = (*colour, 255)
+    draw = ImageDraw.Draw(image)
+    for _ in range(170):
+        x, y = rng.randrange(width), rng.randrange(int(height * 0.7))
+        bright = rng.choice((150, 190, 230, 255))
+        draw.point((x, y), fill=(bright, bright, min(255, bright + 20), 255))
+        if rng.random() < 0.08:
+            for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                draw.point((x + dx, y + dy), fill=(bright // 2, bright // 2, bright // 2 + 30, 255))
+    mx, my = int(width * 0.2), int(height * 0.22)
+    for radius, alpha in ((26, 30), (19, 45), (14, 70)):
+        halo = Image.new("RGBA", SKY_PIXELS, (0, 0, 0, 0))
+        ImageDraw.Draw(halo).ellipse((mx - radius, my - radius, mx + radius, my + radius), fill=(200, 200, 240, alpha))
+        image.alpha_composite(halo)
+    draw.ellipse((mx - 9, my - 9, mx + 9, my + 9), fill=(240, 238, 220, 255))
+    draw.ellipse((mx - 4, my - 5, mx, my - 1), fill=(214, 210, 196, 255))
+    draw.ellipse((mx + 2, my + 2, mx + 5, my + 5), fill=(214, 210, 196, 255))
+    for row, (base, amp, colour) in enumerate(((0.7, 14, (32, 34, 62)), (0.82, 10, (22, 30, 40)))):
+        points: list[tuple[float, float]] = [(0.0, float(height))]
+        for x in range(0, width + 8, 8):
+            ridge = height * base - amp * (0.6 * math.sin(x * 0.021 + row * 2) + 0.4 * math.sin(x * 0.053 + row))
+            points.append((float(x), ridge))
+        points.append((float(width), float(height)))
+        draw.polygon(points, fill=(*colour, 255))
+    wall = (18, 20, 30, 255)
+    x0, x1, yw = int(width * 0.59), int(width * 0.83), int(height * 0.64)
+    draw.rectangle((x0, yw, x1, height), fill=wall)
+    for x in range(x0, x1, 6):
+        draw.rectangle((x, yw - 3, x + 3, yw), fill=wall)
+    for tx in (x0 + 4, int((x0 + x1) / 2), x1 - 10):
+        draw.rectangle((tx - 6, yw - 22, tx + 6, height), fill=wall)
+        for x in range(tx - 6, tx + 6, 4):
+            draw.rectangle((x, yw - 25, x + 2, yw - 22), fill=wall)
+        draw.rectangle((tx - 1, yw - 14, tx + 1, yw - 10), fill=(250, 190, 90, 255))
+    keep_x = int((x0 + x1) / 2) + 16
+    draw.rectangle((keep_x - 9, yw - 40, keep_x + 9, yw), fill=wall)
+    for x in range(keep_x - 9, keep_x + 9, 4):
+        draw.rectangle((x, yw - 43, x + 2, yw - 40), fill=wall)
+    draw.rectangle((keep_x - 2, yw - 32, keep_x + 1, yw - 27), fill=(250, 200, 110, 255))
+    for share in TORCHES:
+        tx, ty = int(width * share[0]), int(height * share[1])
+        glow = Image.new("RGBA", SKY_PIXELS, (0, 0, 0, 0))
+        ImageDraw.Draw(glow).ellipse((tx - 10, ty - 10, tx + 10, ty + 10), fill=(255, 150, 60, 50))
+        image.alpha_composite(glow)
+    return image.resize((width * SKY_SCALE, height * SKY_SCALE), Image.Resampling.NEAREST)
+
+
 def write_all(target: Path) -> None:
     """Every image of the menu scenery into ``textures/menu/``."""
     target.mkdir(parents=True, exist_ok=True)
@@ -155,3 +227,4 @@ def write_all(target: Path) -> None:
     sprite(keep(fallen=True), (240, 200), (120, 160)).save(target / "keep_fallen.png")
     sprite(archer_tower(), (96, 150), (48, 136)).save(target / "tower.png")
     ground().save(target / "ground.png")
+    night_sky().save(target / "sky.png")

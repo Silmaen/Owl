@@ -1,5 +1,6 @@
 -- Settings of Tower defence: master volume and interface size; Reset progress forgets the levels, stars and
--- upgrades; Back (or Esc, pad B) saves and returns to the title. Effects share the master volume (gap G9).
+-- upgrades, Reset tutorial offers the tutorial of the first level again; Back (or Esc, pad B) saves and returns to the
+-- title. Effects share the master volume (gap G9).
 
 properties = {
     { name = "ui_scale_min", type = "float", default = 0.75, min = 0.1 },
@@ -86,6 +87,14 @@ function on_reset_progress_clicked()
     end
     settings.save()
     update_labels()
+end
+
+-- The tutorial of the first level is offered again.
+function on_reset_tutorial_clicked()
+    settings.reset("tower_tutorial")
+    settings.save()
+    sound.play("sounds/ui/click.wav")
+    gamestate.set("tower_tutorial_reset", true)
 end
 
 function on_reset_clicked()

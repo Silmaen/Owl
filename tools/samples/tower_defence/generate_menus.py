@@ -19,6 +19,7 @@ from pathlib import Path
 
 from tools.samples import scene_yaml as y
 from tools.samples.tower_defence import maps as mp
+from tools.samples.tower_defence import scenery
 from tools.samples.tower_defence import world_map_art as art
 from tools.samples.tower_defence.creatures import CELL, DIRECTIONS, FOOT, FRAMES
 
@@ -131,6 +132,14 @@ def world(entities: y.Entities, fireworks: bool = False, fallen: bool = False) -
     adds the keep and fireworks, the game over a fallen keep (tinted dark) and no tower."""
     entities.add("MainCamera", [y.camera(15)], position=(0, 0, 5))
     entities.add("Background", [y.background(NIGHT)], position=(0, 0, -1), scale=(60, 30, 1))
+    entities.add("Sky", [y.sprite("textures/menu/sky.png")], position=(0, 0, -0.9), scale=(*scenery.SKY_WORLD, 1))
+    for share in scenery.TORCHES:
+        x, y_ = (share[0] - 0.5) * scenery.SKY_WORLD[0], (0.5 - share[1]) * scenery.SKY_WORLD[1]
+        flame = y.frames("textures/fx/fire.png", 4, 1, 0).replace("loop: false", "loop: true")
+        flame = flame.replace("lastFrame: 0", "lastFrame: 3").replace("frameDuration: 0.1", "frameDuration: 0.09")
+        entities.add("TitleTorch", [flame], position=(x, y_ + 0.25, -0.85), scale=(0.45, 0.6, 1))
+        glow = y.sprite("textures/puff.png", (1, 0.6, 0.25, 0.35))
+        entities.add("TorchGlow", [glow], position=(x, y_ + 0.2, -0.86), scale=(2.2, 2.2, 1))
     ground = y.sprite("textures/menu/ground.png", tiling=(9, 1))
     entities.add("Meadow", [ground], position=(0, -6.5, -0.5), scale=(240 * PIXEL * 9, 112 * PIXEL, 1))
     properties: list[tuple[str, str, object]] = [("fireworks", "bool", fireworks), ("marching", "bool", not fallen)]
@@ -177,15 +186,28 @@ def title() -> str:
         ],
         0.2,
     )
-    log = entities.add(
+    board_id = entities.add(
         "MapBoard",
-        [y.rect((0.5, 0), (0.56, 0.46), (0.31, 0.29), SCREEN, SCREEN), board(), y.layout("Column", 8, 12)],
+        [y.rect((0.5, 0), (0.6, 0.46), (0.33, 0.29), SCREEN, SCREEN), y.image("textures/ui/panel_board.png")],
         parent=root,
     )
-    entities.add("BestLabel", [y.child_rect((0.92, 0.16)), label("", 24, SOFT, font="")], parent=log)
-    entities.add("StateLabel", [y.child_rect((0.92, 0.16)), label("Not defended yet", 26, SOFT, font="")], parent=log)
-    entities.add("MapLabel", [y.child_rect((0.92, 0.2)), label("Level 1: Greenmarch Ford", 30)], parent=log)
-    entities.add("BoardTitle", [y.child_rect((0.92, 0.2)), label("THE REALM", 34, GOLD, font=HEADING)], parent=log)
+    log = entities.add(
+        "MapBoardBody",
+        [y.rect((0.5, 0.5), (0.8, 0.76), units=("ParentWidth", "ParentHeight")), y.layout("Column", 4, 2)],
+        parent=board_id,
+    )
+    ink, red = (0.24, 0.13, 0.05, 1), (0.48, 0.1, 0.05, 1)
+
+    def parchment_label(value: str, size: int, colour: y.Colour, font: str = LABEL) -> str:
+        return y.text(value, size, "Center", colour, font=font, outline_width=0)
+
+    entities.add("BestLabel", [y.child_rect((0.9, 0.14)), parchment_label("", 24, ink)], parent=log)
+    state = parchment_label("Not defended yet", 26, ink)
+    entities.add("StateLabel", [y.child_rect((0.9, 0.14)), state], parent=log)
+    campaign = parchment_label("Level 1: Greenmarch Ford", 30, ink)
+    entities.add("MapLabel", [y.child_rect((0.9, 0.18)), campaign], parent=log)
+    title_text = parchment_label("THE REALM", 36, red, HEADING)
+    entities.add("BoardTitle", [y.child_rect((0.9, 0.2)), title_text], parent=log)
     how_to = entities.add(
         "HowToWindow",
         [y.rect((0.5, 0.5), (1.25, 0.84)), window("How to play"), y.layout("Column", 8, 10)],
@@ -207,7 +229,7 @@ def settings() -> str:
     root = entities.add("SettingsCanvas", [y.canvas(), y.script("scripts/ui/settings.lua")])
     panel = entities.add(
         "SettingsList",
-        [y.rect((0.5, 0), (0.95, 0.74), (0, 0.03), SCREEN, SCREEN), board(), y.layout("Column", 6, 10)],
+        [y.rect((0.5, 0), (0.95, 0.84), (0, 0.02), SCREEN, SCREEN), board(), y.layout("Column", 4, 8)],
         parent=root,
     )
 
@@ -216,16 +238,17 @@ def settings() -> str:
         return [y.child_rect((0.86, 0.05)), bar, y.focus(initial, True, "on_slider_focused", GOLD, 3)]
 
     rows: list[tuple[str, list[str]]] = [
-        ("TitleText", [y.child_rect((0.9, 0.13)), label("Settings", 56, GOLD, font=HEADING)]),
-        ("MasterVolLabel", [y.child_rect((0.9, 0.08)), label("Master Volume: 100%", 28, SOFT)]),
+        ("TitleText", [y.child_rect((0.9, 0.11)), label("Settings", 56, GOLD, font=HEADING)]),
+        ("MasterVolLabel", [y.child_rect((0.9, 0.07)), label("Master Volume: 100%", 28, SOFT)]),
         ("MasterVolSlider", slider("on_master_vol_changed", 1.0, True)),
-        ("UiScaleLabel", [y.child_rect((0.9, 0.08)), label("Interface Size: 100%", 28, SOFT)]),
+        ("UiScaleLabel", [y.child_rect((0.9, 0.07)), label("Interface Size: 100%", 28, SOFT)]),
         ("UiScaleSlider", slider("on_ui_scale_changed", 0.2, False)),
-        ("ProgressLabel", [y.child_rect((0.9, 0.08)), label("Maps defended: 0 / 10", 28)]),
+        ("ProgressLabel", [y.child_rect((0.9, 0.07)), label("Maps defended: 0 / 10", 28)]),
     ]
-    button(entities, panel, "BackButton", "Back", "go_back", (0.6, 0.1), False)
-    button(entities, panel, "ResetButton", "Reset defaults", "on_reset_clicked", (0.6, 0.1), False)
-    button(entities, panel, "ResetProgressButton", "Reset progress", "on_reset_progress_clicked", (0.6, 0.1), False)
+    button(entities, panel, "BackButton", "Back", "go_back", (0.6, 0.08), False)
+    button(entities, panel, "ResetButton", "Reset defaults", "on_reset_clicked", (0.6, 0.08), False)
+    button(entities, panel, "ResetTutorialButton", "Reset tutorial", "on_reset_tutorial_clicked", (0.6, 0.08), False)
+    button(entities, panel, "ResetProgressButton", "Reset progress", "on_reset_progress_clicked", (0.6, 0.08), False)
     for tag, components in reversed(rows):
         entities.add(tag, components, parent=panel)
     return y.scene("settings", entities)

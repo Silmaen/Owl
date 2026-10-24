@@ -39,6 +39,119 @@ Entities:
       topColor: [0.8, 0.9, 1, 1]
   - Entity: 7450000000000000003
     Tag:
+      tag: Sky
+    Transform:
+      translation: [0, 0, -0.9]
+      rotation: [0, 0, 0]
+      scale: [40, 15, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/menu/sky.png
+  - Entity: 7450000000000000004
+    Tag:
+      tag: TitleTorch
+    Transform:
+      translation: [4, -0.2, -0.85]
+      rotation: [0, 0, 0]
+      scale: [0.45, 0.6, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/fx/fire.png
+      columns: 4
+      rows: 1
+      firstFrame: 0
+      lastFrame: 3
+      frameDuration: 0.09
+      loop: true
+  - Entity: 7450000000000000005
+    Tag:
+      tag: TorchGlow
+    Transform:
+      translation: [4, -0.25, -0.86]
+      rotation: [0, 0, 0]
+      scale: [2.2, 2.2, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [1, 0.6, 0.25, 0.35]
+      tilingFactor: 1
+      texture: nam:textures/puff.png
+  - Entity: 7450000000000000006
+    Tag:
+      tag: TitleTorch
+    Transform:
+      translation: [8.4, -0.2, -0.85]
+      rotation: [0, 0, 0]
+      scale: [0.45, 0.6, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/fx/fire.png
+      columns: 4
+      rows: 1
+      firstFrame: 0
+      lastFrame: 3
+      frameDuration: 0.09
+      loop: true
+  - Entity: 7450000000000000007
+    Tag:
+      tag: TorchGlow
+    Transform:
+      translation: [8.4, -0.25, -0.86]
+      rotation: [0, 0, 0]
+      scale: [2.2, 2.2, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [1, 0.6, 0.25, 0.35]
+      tilingFactor: 1
+      texture: nam:textures/puff.png
+  - Entity: 7450000000000000008
+    Tag:
+      tag: TitleTorch
+    Transform:
+      translation: [12.4, -0.2, -0.85]
+      rotation: [0, 0, 0]
+      scale: [0.45, 0.6, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/fx/fire.png
+      columns: 4
+      rows: 1
+      firstFrame: 0
+      lastFrame: 3
+      frameDuration: 0.09
+      loop: true
+  - Entity: 7450000000000000009
+    Tag:
+      tag: TorchGlow
+    Transform:
+      translation: [12.4, -0.25, -0.86]
+      rotation: [0, 0, 0]
+      scale: [2.2, 2.2, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [1, 0.6, 0.25, 0.35]
+      tilingFactor: 1
+      texture: nam:textures/puff.png
+  - Entity: 7450000000000000010
+    Tag:
       tag: Meadow
     Transform:
       translation: [0, -6.5, -0.5]
@@ -51,7 +164,7 @@ Entities:
       color: [1, 1, 1, 1]
       tilingFactor: [9, 1]
       texture: nam:textures/menu/ground.png
-  - Entity: 7450000000000000004
+  - Entity: 7450000000000000011
     Tag:
       tag: Parade
     Transform:
@@ -70,7 +183,7 @@ Entities:
         - name: marching
           type: bool
           value: true
-  - Entity: 7450000000000000005
+  - Entity: 7450000000000000012
     Tag:
       tag: ParadeEnemy
     Transform:
@@ -80,150 +193,10 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7450000000000000004
+      parentId: 7450000000000000011
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
       texture: nam:textures/enemies/goblin.png
-      columns: 8
-      rows: 9
-      firstFrame: 6
-      lastFrame: 6
-      frameDuration: 0.1
-      loop: false
-  - Entity: 7450000000000000006
-    Tag:
-      tag: ParadeEnemy
-    Transform:
-      translation: [-11.1, -4.9792, 0.1]
-      rotation: [0, 0, 0]
-      scale: [2.6, 2.6, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7450000000000000004
-    AnimatedSpriteRenderer:
-      color: [1, 1, 1, 1]
-      texture: nam:textures/enemies/wolf.png
-      columns: 8
-      rows: 9
-      firstFrame: 6
-      lastFrame: 6
-      frameDuration: 0.1
-      loop: false
-  - Entity: 7450000000000000007
-    Tag:
-      tag: ParadeEnemy
-    Transform:
-      translation: [-8.2, -4.9792, 0.1]
-      rotation: [0, 0, 0]
-      scale: [2.6, 2.6, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7450000000000000004
-    AnimatedSpriteRenderer:
-      color: [1, 1, 1, 1]
-      texture: nam:textures/enemies/grunt.png
-      columns: 8
-      rows: 9
-      firstFrame: 6
-      lastFrame: 6
-      frameDuration: 0.1
-      loop: false
-  - Entity: 7450000000000000008
-    Tag:
-      tag: ParadeEnemy
-    Transform:
-      translation: [-5.3, -4.9792, 0.1]
-      rotation: [0, 0, 0]
-      scale: [2.6, 2.6, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7450000000000000004
-    AnimatedSpriteRenderer:
-      color: [1, 1, 1, 1]
-      texture: nam:textures/enemies/sapper.png
-      columns: 8
-      rows: 9
-      firstFrame: 6
-      lastFrame: 6
-      frameDuration: 0.1
-      loop: false
-  - Entity: 7450000000000000009
-    Tag:
-      tag: ParadeEnemy
-    Transform:
-      translation: [-2.4, -4.9792, 0.1]
-      rotation: [0, 0, 0]
-      scale: [2.6, 2.6, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7450000000000000004
-    AnimatedSpriteRenderer:
-      color: [1, 1, 1, 1]
-      texture: nam:textures/enemies/troll.png
-      columns: 8
-      rows: 9
-      firstFrame: 6
-      lastFrame: 6
-      frameDuration: 0.1
-      loop: false
-  - Entity: 7450000000000000010
-    Tag:
-      tag: ParadeEnemy
-    Transform:
-      translation: [0.5, -4.9792, 0.1]
-      rotation: [0, 0, 0]
-      scale: [2.6, 2.6, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7450000000000000004
-    AnimatedSpriteRenderer:
-      color: [1, 1, 1, 1]
-      texture: nam:textures/enemies/ogre.png
-      columns: 8
-      rows: 9
-      firstFrame: 6
-      lastFrame: 6
-      frameDuration: 0.1
-      loop: false
-  - Entity: 7450000000000000011
-    Tag:
-      tag: ParadeEnemy
-    Transform:
-      translation: [3.4, -4.9792, 0.1]
-      rotation: [0, 0, 0]
-      scale: [2.6, 2.6, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7450000000000000004
-    AnimatedSpriteRenderer:
-      color: [1, 1, 1, 1]
-      texture: nam:textures/enemies/ogre_mage.png
-      columns: 8
-      rows: 9
-      firstFrame: 6
-      lastFrame: 6
-      frameDuration: 0.1
-      loop: false
-  - Entity: 7450000000000000012
-    Tag:
-      tag: ParadeEnemy
-    Transform:
-      translation: [6.3, -4.9792, 0.1]
-      rotation: [0, 0, 0]
-      scale: [2.6, 2.6, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7450000000000000004
-    AnimatedSpriteRenderer:
-      color: [1, 1, 1, 1]
-      texture: nam:textures/enemies/grunt.png
       columns: 8
       rows: 9
       firstFrame: 6
@@ -234,13 +207,153 @@ Entities:
     Tag:
       tag: ParadeEnemy
     Transform:
+      translation: [-11.1, -4.9792, 0.1]
+      rotation: [0, 0, 0]
+      scale: [2.6, 2.6, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7450000000000000011
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/enemies/wolf.png
+      columns: 8
+      rows: 9
+      firstFrame: 6
+      lastFrame: 6
+      frameDuration: 0.1
+      loop: false
+  - Entity: 7450000000000000014
+    Tag:
+      tag: ParadeEnemy
+    Transform:
+      translation: [-8.2, -4.9792, 0.1]
+      rotation: [0, 0, 0]
+      scale: [2.6, 2.6, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7450000000000000011
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/enemies/grunt.png
+      columns: 8
+      rows: 9
+      firstFrame: 6
+      lastFrame: 6
+      frameDuration: 0.1
+      loop: false
+  - Entity: 7450000000000000015
+    Tag:
+      tag: ParadeEnemy
+    Transform:
+      translation: [-5.3, -4.9792, 0.1]
+      rotation: [0, 0, 0]
+      scale: [2.6, 2.6, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7450000000000000011
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/enemies/sapper.png
+      columns: 8
+      rows: 9
+      firstFrame: 6
+      lastFrame: 6
+      frameDuration: 0.1
+      loop: false
+  - Entity: 7450000000000000016
+    Tag:
+      tag: ParadeEnemy
+    Transform:
+      translation: [-2.4, -4.9792, 0.1]
+      rotation: [0, 0, 0]
+      scale: [2.6, 2.6, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7450000000000000011
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/enemies/troll.png
+      columns: 8
+      rows: 9
+      firstFrame: 6
+      lastFrame: 6
+      frameDuration: 0.1
+      loop: false
+  - Entity: 7450000000000000017
+    Tag:
+      tag: ParadeEnemy
+    Transform:
+      translation: [0.5, -4.9792, 0.1]
+      rotation: [0, 0, 0]
+      scale: [2.6, 2.6, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7450000000000000011
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/enemies/ogre.png
+      columns: 8
+      rows: 9
+      firstFrame: 6
+      lastFrame: 6
+      frameDuration: 0.1
+      loop: false
+  - Entity: 7450000000000000018
+    Tag:
+      tag: ParadeEnemy
+    Transform:
+      translation: [3.4, -4.9792, 0.1]
+      rotation: [0, 0, 0]
+      scale: [2.6, 2.6, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7450000000000000011
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/enemies/ogre_mage.png
+      columns: 8
+      rows: 9
+      firstFrame: 6
+      lastFrame: 6
+      frameDuration: 0.1
+      loop: false
+  - Entity: 7450000000000000019
+    Tag:
+      tag: ParadeEnemy
+    Transform:
+      translation: [6.3, -4.9792, 0.1]
+      rotation: [0, 0, 0]
+      scale: [2.6, 2.6, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7450000000000000011
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/enemies/grunt.png
+      columns: 8
+      rows: 9
+      firstFrame: 6
+      lastFrame: 6
+      frameDuration: 0.1
+      loop: false
+  - Entity: 7450000000000000020
+    Tag:
+      tag: ParadeEnemy
+    Transform:
       translation: [9.2, -4.6569, 0.1]
       rotation: [0, 0, 0]
       scale: [3.51, 3.51, 1]
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7450000000000000004
+      parentId: 7450000000000000011
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
       texture: nam:textures/enemies/chieftain.png
@@ -250,7 +363,7 @@ Entities:
       lastFrame: 6
       frameDuration: 0.1
       loop: false
-  - Entity: 7450000000000000014
+  - Entity: 7450000000000000021
     Tag:
       tag: ParadeTower
     Transform:
@@ -264,7 +377,7 @@ Entities:
       color: [1, 1, 1, 1]
       tilingFactor: 1
       texture: nam:textures/menu/tower.png
-  - Entity: 7450000000000000015
+  - Entity: 7450000000000000022
     Tag:
       tag: ParadeKeep
     Transform:
@@ -278,7 +391,7 @@ Entities:
       color: [1, 1, 1, 1]
       tilingFactor: 1
       texture: nam:textures/menu/keep.png
-  - Entity: 7450000000000000016
+  - Entity: 7450000000000000023
     Tag:
       tag: UpgradesCanvas
     Transform:
@@ -295,7 +408,7 @@ Entities:
       scaleMode: ScaleWithHeight
     LuaScript:
       scriptPath: scripts/ui/upgrades.lua
-  - Entity: 7450000000000000017
+  - Entity: 7450000000000000024
     Tag:
       tag: UpgradesBoard
     Transform:
@@ -305,7 +418,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7450000000000000016
+      parentId: 7450000000000000023
     UiRect:
       anchorMin: [0.5, 0.5]
       anchorMax: [0.5, 0.5]
@@ -326,7 +439,7 @@ Entities:
       padding: 8
       columns: 1
       cellSize: [0, 0]
-  - Entity: 7450000000000000018
+  - Entity: 7450000000000000025
     Tag:
       tag: UpgradeButtons
     Transform:
@@ -336,7 +449,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7450000000000000017
+      parentId: 7450000000000000024
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -351,7 +464,7 @@ Entities:
       padding: 0
       columns: 1
       cellSize: [0, 0]
-  - Entity: 7450000000000000019
+  - Entity: 7450000000000000026
     Tag:
       tag: RefundButton
     Transform:
@@ -361,7 +474,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7450000000000000018
+      parentId: 7450000000000000025
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -395,7 +508,7 @@ Entities:
       onFocusCallback: ''
       highlightColor: [0.97, 0.77, 0.3, 1]
       highlightThickness: 3
-  - Entity: 7450000000000000020
+  - Entity: 7450000000000000027
     Tag:
       tag: RefundButtonFrame
     Transform:
@@ -405,7 +518,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7450000000000000019
+      parentId: 7450000000000000026
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -416,7 +529,7 @@ Entities:
     UiImage:
       tint: [1, 1, 1, 1]
       texture: nam:textures/ui/banner.png
-  - Entity: 7450000000000000021
+  - Entity: 7450000000000000028
     Tag:
       tag: BackButton
     Transform:
@@ -426,7 +539,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7450000000000000018
+      parentId: 7450000000000000025
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -460,7 +573,7 @@ Entities:
       onFocusCallback: ''
       highlightColor: [0.97, 0.77, 0.3, 1]
       highlightThickness: 3
-  - Entity: 7450000000000000022
+  - Entity: 7450000000000000029
     Tag:
       tag: BackButtonFrame
     Transform:
@@ -470,7 +583,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7450000000000000021
+      parentId: 7450000000000000028
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -481,7 +594,7 @@ Entities:
     UiImage:
       tint: [1, 1, 1, 1]
       texture: nam:textures/ui/banner.png
-  - Entity: 7450000000000000023
+  - Entity: 7450000000000000030
     Tag:
       tag: UpgradeRow6
     Transform:
@@ -491,7 +604,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7450000000000000017
+      parentId: 7450000000000000024
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -506,7 +619,7 @@ Entities:
       padding: 0
       columns: 1
       cellSize: [0, 0]
-  - Entity: 7450000000000000024
+  - Entity: 7450000000000000031
     Tag:
       tag: UpgradeBuy6
     Transform:
@@ -516,7 +629,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7450000000000000023
+      parentId: 7450000000000000030
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -550,7 +663,7 @@ Entities:
       onFocusCallback: ''
       highlightColor: [0.97, 0.77, 0.3, 1]
       highlightThickness: 3
-  - Entity: 7450000000000000025
+  - Entity: 7450000000000000032
     Tag:
       tag: UpgradeBuy6Frame
     Transform:
@@ -560,7 +673,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7450000000000000024
+      parentId: 7450000000000000031
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -571,7 +684,7 @@ Entities:
     UiImage:
       tint: [1, 1, 1, 1]
       texture: nam:textures/ui/banner.png
-  - Entity: 7450000000000000026
+  - Entity: 7450000000000000033
     Tag:
       tag: UpgradeCost6
     Transform:
@@ -581,7 +694,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7450000000000000023
+      parentId: 7450000000000000030
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -603,7 +716,7 @@ Entities:
       fit: Shrink
       minFontSize: 12
       font: MedievalSharp
-  - Entity: 7450000000000000027
+  - Entity: 7450000000000000034
     Tag:
       tag: UpgradePip6
     Transform:
@@ -613,7 +726,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7450000000000000023
+      parentId: 7450000000000000030
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -627,7 +740,7 @@ Entities:
       columns: 2
       rows: 1
       frame: 0
-  - Entity: 7450000000000000028
+  - Entity: 7450000000000000035
     Tag:
       tag: UpgradePip6
     Transform:
@@ -637,7 +750,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7450000000000000023
+      parentId: 7450000000000000030
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -651,7 +764,7 @@ Entities:
       columns: 2
       rows: 1
       frame: 0
-  - Entity: 7450000000000000029
+  - Entity: 7450000000000000036
     Tag:
       tag: UpgradePip6
     Transform:
@@ -661,7 +774,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7450000000000000023
+      parentId: 7450000000000000030
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -675,7 +788,7 @@ Entities:
       columns: 2
       rows: 1
       frame: 0
-  - Entity: 7450000000000000030
+  - Entity: 7450000000000000037
     Tag:
       tag: UpgradePip6
     Transform:
@@ -685,7 +798,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7450000000000000023
+      parentId: 7450000000000000030
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -699,7 +812,7 @@ Entities:
       columns: 2
       rows: 1
       frame: 0
-  - Entity: 7450000000000000031
+  - Entity: 7450000000000000038
     Tag:
       tag: UpgradeText6
     Transform:
@@ -709,7 +822,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7450000000000000023
+      parentId: 7450000000000000030
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -731,7 +844,7 @@ Entities:
       fit: Shrink
       minFontSize: 12
       font: MedievalSharp
-  - Entity: 7450000000000000032
+  - Entity: 7450000000000000039
     Tag:
       tag: UpgradeName6
     Transform:
@@ -741,7 +854,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7450000000000000023
+      parentId: 7450000000000000030
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -763,7 +876,7 @@ Entities:
       fit: Shrink
       minFontSize: 12
       font: MedievalSharp
-  - Entity: 7450000000000000033
+  - Entity: 7450000000000000040
     Tag:
       tag: UpgradeRow5
     Transform:
@@ -773,7 +886,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7450000000000000017
+      parentId: 7450000000000000024
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -788,7 +901,7 @@ Entities:
       padding: 0
       columns: 1
       cellSize: [0, 0]
-  - Entity: 7450000000000000034
+  - Entity: 7450000000000000041
     Tag:
       tag: UpgradeBuy5
     Transform:
@@ -798,7 +911,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7450000000000000033
+      parentId: 7450000000000000040
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -832,7 +945,7 @@ Entities:
       onFocusCallback: ''
       highlightColor: [0.97, 0.77, 0.3, 1]
       highlightThickness: 3
-  - Entity: 7450000000000000035
+  - Entity: 7450000000000000042
     Tag:
       tag: UpgradeBuy5Frame
     Transform:
@@ -842,7 +955,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7450000000000000034
+      parentId: 7450000000000000041
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -853,7 +966,7 @@ Entities:
     UiImage:
       tint: [1, 1, 1, 1]
       texture: nam:textures/ui/banner.png
-  - Entity: 7450000000000000036
+  - Entity: 7450000000000000043
     Tag:
       tag: UpgradeCost5
     Transform:
@@ -863,7 +976,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7450000000000000033
+      parentId: 7450000000000000040
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -885,7 +998,7 @@ Entities:
       fit: Shrink
       minFontSize: 12
       font: MedievalSharp
-  - Entity: 7450000000000000037
+  - Entity: 7450000000000000044
     Tag:
       tag: UpgradePip5
     Transform:
@@ -895,7 +1008,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7450000000000000033
+      parentId: 7450000000000000040
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -909,7 +1022,7 @@ Entities:
       columns: 2
       rows: 1
       frame: 0
-  - Entity: 7450000000000000038
+  - Entity: 7450000000000000045
     Tag:
       tag: UpgradePip5
     Transform:
@@ -919,7 +1032,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7450000000000000033
+      parentId: 7450000000000000040
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -933,7 +1046,7 @@ Entities:
       columns: 2
       rows: 1
       frame: 0
-  - Entity: 7450000000000000039
+  - Entity: 7450000000000000046
     Tag:
       tag: UpgradePip5
     Transform:
@@ -943,7 +1056,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7450000000000000033
+      parentId: 7450000000000000040
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -957,7 +1070,7 @@ Entities:
       columns: 2
       rows: 1
       frame: 0
-  - Entity: 7450000000000000040
+  - Entity: 7450000000000000047
     Tag:
       tag: UpgradePip5
     Transform:
@@ -967,7 +1080,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7450000000000000033
+      parentId: 7450000000000000040
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -981,7 +1094,7 @@ Entities:
       columns: 2
       rows: 1
       frame: 0
-  - Entity: 7450000000000000041
+  - Entity: 7450000000000000048
     Tag:
       tag: UpgradeText5
     Transform:
@@ -991,7 +1104,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7450000000000000033
+      parentId: 7450000000000000040
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -1013,7 +1126,7 @@ Entities:
       fit: Shrink
       minFontSize: 12
       font: MedievalSharp
-  - Entity: 7450000000000000042
+  - Entity: 7450000000000000049
     Tag:
       tag: UpgradeName5
     Transform:
@@ -1023,7 +1136,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7450000000000000033
+      parentId: 7450000000000000040
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -1045,7 +1158,7 @@ Entities:
       fit: Shrink
       minFontSize: 12
       font: MedievalSharp
-  - Entity: 7450000000000000043
+  - Entity: 7450000000000000050
     Tag:
       tag: UpgradeRow4
     Transform:
@@ -1055,7 +1168,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7450000000000000017
+      parentId: 7450000000000000024
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -1070,7 +1183,7 @@ Entities:
       padding: 0
       columns: 1
       cellSize: [0, 0]
-  - Entity: 7450000000000000044
+  - Entity: 7450000000000000051
     Tag:
       tag: UpgradeBuy4
     Transform:
@@ -1080,7 +1193,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7450000000000000043
+      parentId: 7450000000000000050
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -1114,7 +1227,7 @@ Entities:
       onFocusCallback: ''
       highlightColor: [0.97, 0.77, 0.3, 1]
       highlightThickness: 3
-  - Entity: 7450000000000000045
+  - Entity: 7450000000000000052
     Tag:
       tag: UpgradeBuy4Frame
     Transform:
@@ -1124,7 +1237,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7450000000000000044
+      parentId: 7450000000000000051
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -1135,7 +1248,7 @@ Entities:
     UiImage:
       tint: [1, 1, 1, 1]
       texture: nam:textures/ui/banner.png
-  - Entity: 7450000000000000046
+  - Entity: 7450000000000000053
     Tag:
       tag: UpgradeCost4
     Transform:
@@ -1145,7 +1258,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7450000000000000043
+      parentId: 7450000000000000050
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -1167,7 +1280,7 @@ Entities:
       fit: Shrink
       minFontSize: 12
       font: MedievalSharp
-  - Entity: 7450000000000000047
+  - Entity: 7450000000000000054
     Tag:
       tag: UpgradePip4
     Transform:
@@ -1177,7 +1290,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7450000000000000043
+      parentId: 7450000000000000050
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -1191,7 +1304,7 @@ Entities:
       columns: 2
       rows: 1
       frame: 0
-  - Entity: 7450000000000000048
+  - Entity: 7450000000000000055
     Tag:
       tag: UpgradePip4
     Transform:
@@ -1201,7 +1314,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7450000000000000043
+      parentId: 7450000000000000050
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -1215,7 +1328,7 @@ Entities:
       columns: 2
       rows: 1
       frame: 0
-  - Entity: 7450000000000000049
+  - Entity: 7450000000000000056
     Tag:
       tag: UpgradePip4
     Transform:
@@ -1225,7 +1338,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7450000000000000043
+      parentId: 7450000000000000050
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -1239,7 +1352,7 @@ Entities:
       columns: 2
       rows: 1
       frame: 0
-  - Entity: 7450000000000000050
+  - Entity: 7450000000000000057
     Tag:
       tag: UpgradePip4
     Transform:
@@ -1249,7 +1362,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7450000000000000043
+      parentId: 7450000000000000050
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -1263,7 +1376,7 @@ Entities:
       columns: 2
       rows: 1
       frame: 0
-  - Entity: 7450000000000000051
+  - Entity: 7450000000000000058
     Tag:
       tag: UpgradeText4
     Transform:
@@ -1273,7 +1386,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7450000000000000043
+      parentId: 7450000000000000050
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -1295,7 +1408,7 @@ Entities:
       fit: Shrink
       minFontSize: 12
       font: MedievalSharp
-  - Entity: 7450000000000000052
+  - Entity: 7450000000000000059
     Tag:
       tag: UpgradeName4
     Transform:
@@ -1305,7 +1418,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7450000000000000043
+      parentId: 7450000000000000050
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -1327,7 +1440,7 @@ Entities:
       fit: Shrink
       minFontSize: 12
       font: MedievalSharp
-  - Entity: 7450000000000000053
+  - Entity: 7450000000000000060
     Tag:
       tag: UpgradeRow3
     Transform:
@@ -1337,7 +1450,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7450000000000000017
+      parentId: 7450000000000000024
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -1352,7 +1465,7 @@ Entities:
       padding: 0
       columns: 1
       cellSize: [0, 0]
-  - Entity: 7450000000000000054
+  - Entity: 7450000000000000061
     Tag:
       tag: UpgradeBuy3
     Transform:
@@ -1362,7 +1475,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7450000000000000053
+      parentId: 7450000000000000060
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -1396,7 +1509,7 @@ Entities:
       onFocusCallback: ''
       highlightColor: [0.97, 0.77, 0.3, 1]
       highlightThickness: 3
-  - Entity: 7450000000000000055
+  - Entity: 7450000000000000062
     Tag:
       tag: UpgradeBuy3Frame
     Transform:
@@ -1406,7 +1519,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7450000000000000054
+      parentId: 7450000000000000061
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -1417,7 +1530,7 @@ Entities:
     UiImage:
       tint: [1, 1, 1, 1]
       texture: nam:textures/ui/banner.png
-  - Entity: 7450000000000000056
+  - Entity: 7450000000000000063
     Tag:
       tag: UpgradeCost3
     Transform:
@@ -1427,7 +1540,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7450000000000000053
+      parentId: 7450000000000000060
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -1449,7 +1562,7 @@ Entities:
       fit: Shrink
       minFontSize: 12
       font: MedievalSharp
-  - Entity: 7450000000000000057
+  - Entity: 7450000000000000064
     Tag:
       tag: UpgradePip3
     Transform:
@@ -1459,7 +1572,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7450000000000000053
+      parentId: 7450000000000000060
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -1473,7 +1586,7 @@ Entities:
       columns: 2
       rows: 1
       frame: 0
-  - Entity: 7450000000000000058
+  - Entity: 7450000000000000065
     Tag:
       tag: UpgradePip3
     Transform:
@@ -1483,7 +1596,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7450000000000000053
+      parentId: 7450000000000000060
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -1497,7 +1610,7 @@ Entities:
       columns: 2
       rows: 1
       frame: 0
-  - Entity: 7450000000000000059
+  - Entity: 7450000000000000066
     Tag:
       tag: UpgradePip3
     Transform:
@@ -1507,7 +1620,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7450000000000000053
+      parentId: 7450000000000000060
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -1521,7 +1634,7 @@ Entities:
       columns: 2
       rows: 1
       frame: 0
-  - Entity: 7450000000000000060
+  - Entity: 7450000000000000067
     Tag:
       tag: UpgradePip3
     Transform:
@@ -1531,7 +1644,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7450000000000000053
+      parentId: 7450000000000000060
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -1545,7 +1658,7 @@ Entities:
       columns: 2
       rows: 1
       frame: 0
-  - Entity: 7450000000000000061
+  - Entity: 7450000000000000068
     Tag:
       tag: UpgradeText3
     Transform:
@@ -1555,7 +1668,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7450000000000000053
+      parentId: 7450000000000000060
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -1577,7 +1690,7 @@ Entities:
       fit: Shrink
       minFontSize: 12
       font: MedievalSharp
-  - Entity: 7450000000000000062
+  - Entity: 7450000000000000069
     Tag:
       tag: UpgradeName3
     Transform:
@@ -1587,7 +1700,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7450000000000000053
+      parentId: 7450000000000000060
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -1609,7 +1722,7 @@ Entities:
       fit: Shrink
       minFontSize: 12
       font: MedievalSharp
-  - Entity: 7450000000000000063
+  - Entity: 7450000000000000070
     Tag:
       tag: UpgradeRow2
     Transform:
@@ -1619,7 +1732,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7450000000000000017
+      parentId: 7450000000000000024
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -1634,7 +1747,7 @@ Entities:
       padding: 0
       columns: 1
       cellSize: [0, 0]
-  - Entity: 7450000000000000064
+  - Entity: 7450000000000000071
     Tag:
       tag: UpgradeBuy2
     Transform:
@@ -1644,7 +1757,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7450000000000000063
+      parentId: 7450000000000000070
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -1678,7 +1791,7 @@ Entities:
       onFocusCallback: ''
       highlightColor: [0.97, 0.77, 0.3, 1]
       highlightThickness: 3
-  - Entity: 7450000000000000065
+  - Entity: 7450000000000000072
     Tag:
       tag: UpgradeBuy2Frame
     Transform:
@@ -1688,7 +1801,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7450000000000000064
+      parentId: 7450000000000000071
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -1699,7 +1812,7 @@ Entities:
     UiImage:
       tint: [1, 1, 1, 1]
       texture: nam:textures/ui/banner.png
-  - Entity: 7450000000000000066
+  - Entity: 7450000000000000073
     Tag:
       tag: UpgradeCost2
     Transform:
@@ -1709,7 +1822,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7450000000000000063
+      parentId: 7450000000000000070
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -1731,7 +1844,7 @@ Entities:
       fit: Shrink
       minFontSize: 12
       font: MedievalSharp
-  - Entity: 7450000000000000067
+  - Entity: 7450000000000000074
     Tag:
       tag: UpgradePip2
     Transform:
@@ -1741,7 +1854,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7450000000000000063
+      parentId: 7450000000000000070
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -1755,7 +1868,7 @@ Entities:
       columns: 2
       rows: 1
       frame: 0
-  - Entity: 7450000000000000068
+  - Entity: 7450000000000000075
     Tag:
       tag: UpgradePip2
     Transform:
@@ -1765,7 +1878,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7450000000000000063
+      parentId: 7450000000000000070
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -1779,7 +1892,7 @@ Entities:
       columns: 2
       rows: 1
       frame: 0
-  - Entity: 7450000000000000069
+  - Entity: 7450000000000000076
     Tag:
       tag: UpgradePip2
     Transform:
@@ -1789,7 +1902,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7450000000000000063
+      parentId: 7450000000000000070
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -1803,7 +1916,7 @@ Entities:
       columns: 2
       rows: 1
       frame: 0
-  - Entity: 7450000000000000070
+  - Entity: 7450000000000000077
     Tag:
       tag: UpgradePip2
     Transform:
@@ -1813,7 +1926,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7450000000000000063
+      parentId: 7450000000000000070
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -1827,7 +1940,7 @@ Entities:
       columns: 2
       rows: 1
       frame: 0
-  - Entity: 7450000000000000071
+  - Entity: 7450000000000000078
     Tag:
       tag: UpgradeText2
     Transform:
@@ -1837,7 +1950,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7450000000000000063
+      parentId: 7450000000000000070
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -1859,7 +1972,7 @@ Entities:
       fit: Shrink
       minFontSize: 12
       font: MedievalSharp
-  - Entity: 7450000000000000072
+  - Entity: 7450000000000000079
     Tag:
       tag: UpgradeName2
     Transform:
@@ -1869,7 +1982,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7450000000000000063
+      parentId: 7450000000000000070
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -1891,7 +2004,7 @@ Entities:
       fit: Shrink
       minFontSize: 12
       font: MedievalSharp
-  - Entity: 7450000000000000073
+  - Entity: 7450000000000000080
     Tag:
       tag: UpgradeRow1
     Transform:
@@ -1901,7 +2014,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7450000000000000017
+      parentId: 7450000000000000024
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -1916,7 +2029,7 @@ Entities:
       padding: 0
       columns: 1
       cellSize: [0, 0]
-  - Entity: 7450000000000000074
+  - Entity: 7450000000000000081
     Tag:
       tag: UpgradeBuy1
     Transform:
@@ -1926,7 +2039,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7450000000000000073
+      parentId: 7450000000000000080
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -1960,7 +2073,7 @@ Entities:
       onFocusCallback: ''
       highlightColor: [0.97, 0.77, 0.3, 1]
       highlightThickness: 3
-  - Entity: 7450000000000000075
+  - Entity: 7450000000000000082
     Tag:
       tag: UpgradeBuy1Frame
     Transform:
@@ -1970,7 +2083,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7450000000000000074
+      parentId: 7450000000000000081
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -1981,7 +2094,7 @@ Entities:
     UiImage:
       tint: [1, 1, 1, 1]
       texture: nam:textures/ui/banner.png
-  - Entity: 7450000000000000076
+  - Entity: 7450000000000000083
     Tag:
       tag: UpgradeCost1
     Transform:
@@ -1991,7 +2104,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7450000000000000073
+      parentId: 7450000000000000080
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -2013,7 +2126,7 @@ Entities:
       fit: Shrink
       minFontSize: 12
       font: MedievalSharp
-  - Entity: 7450000000000000077
+  - Entity: 7450000000000000084
     Tag:
       tag: UpgradePip1
     Transform:
@@ -2023,7 +2136,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7450000000000000073
+      parentId: 7450000000000000080
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -2037,7 +2150,7 @@ Entities:
       columns: 2
       rows: 1
       frame: 0
-  - Entity: 7450000000000000078
+  - Entity: 7450000000000000085
     Tag:
       tag: UpgradePip1
     Transform:
@@ -2047,7 +2160,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7450000000000000073
+      parentId: 7450000000000000080
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -2061,7 +2174,7 @@ Entities:
       columns: 2
       rows: 1
       frame: 0
-  - Entity: 7450000000000000079
+  - Entity: 7450000000000000086
     Tag:
       tag: UpgradePip1
     Transform:
@@ -2071,7 +2184,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7450000000000000073
+      parentId: 7450000000000000080
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -2085,7 +2198,7 @@ Entities:
       columns: 2
       rows: 1
       frame: 0
-  - Entity: 7450000000000000080
+  - Entity: 7450000000000000087
     Tag:
       tag: UpgradePip1
     Transform:
@@ -2095,7 +2208,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7450000000000000073
+      parentId: 7450000000000000080
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -2109,7 +2222,7 @@ Entities:
       columns: 2
       rows: 1
       frame: 0
-  - Entity: 7450000000000000081
+  - Entity: 7450000000000000088
     Tag:
       tag: UpgradeText1
     Transform:
@@ -2119,7 +2232,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7450000000000000073
+      parentId: 7450000000000000080
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -2141,7 +2254,7 @@ Entities:
       fit: Shrink
       minFontSize: 12
       font: MedievalSharp
-  - Entity: 7450000000000000082
+  - Entity: 7450000000000000089
     Tag:
       tag: UpgradeName1
     Transform:
@@ -2151,7 +2264,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7450000000000000073
+      parentId: 7450000000000000080
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -2173,7 +2286,7 @@ Entities:
       fit: Shrink
       minFontSize: 12
       font: MedievalSharp
-  - Entity: 7450000000000000083
+  - Entity: 7450000000000000090
     Tag:
       tag: StarsText
     Transform:
@@ -2183,7 +2296,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7450000000000000017
+      parentId: 7450000000000000024
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -2205,7 +2318,7 @@ Entities:
       fit: Shrink
       minFontSize: 12
       font: MedievalSharp
-  - Entity: 7450000000000000084
+  - Entity: 7450000000000000091
     Tag:
       tag: UpgradesTitle
     Transform:
@@ -2215,7 +2328,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7450000000000000017
+      parentId: 7450000000000000024
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
