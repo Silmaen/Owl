@@ -144,6 +144,7 @@ render graph, essential post-processing — with full 3D editing ([details](desi
 - ![Done][done] Multithreaded render preparation: world transforms and spatial boxes of scenes above 4096 entities on the task scheduler ([Renderer](renderer.md))
 - ![Done][done] Cost of the 2D lighting cut back: 80-byte quad instances, unlit tilemaps, near-plane-only frustum tolerance ([2D](design/2d-complete.md#lighting-cost))
 - ![Done][done] Laid-out text kept between frames while its font, text and layout stay ([Renderer](renderer.md#renderer-text-cache))
+- ![Done][done] Frame pacing: FIFO vsync, a frame rate cap, an idle editor waiting for input, the frame cost on the viewport chip ([Windowing](design/windowing-input.md))
 - ![Done][done] HUD minimap on a render target: `RenderTarget`, `FollowTarget`, `UiImage.renderTarget` ([HUD system](design/hud-system.md#minimap))
 - ![Done][done] 3D scene editing in Owl Nest (3D gizmos, snapping, mesh preview), "look through scene camera" mode
 - ![Done][done] Editor reach, before the release: every script and Lua function of a scene visible in Owl Nest with its hooks and an **Open** at the line, a scene script, richer script properties, layer overrides for every key ([Editor reach](design/editor-reach.md))
@@ -158,7 +159,7 @@ render graph, essential post-processing — with full 3D editing ([details](desi
 - ![Done][done] Help reading: gallery tables, coloured status tags, anchored links, browser-like history, Lua API per theme ([Nest UI](design/nest-ui.md#in-editor-documentation))
 - ![Done][done] Lua gaps of the sample games: spawn a prefab, tilemap cells kept by saves, `ui.set_image`, pause and time scale, entity under the mouse ([Gaps](design/sample-games.md#sample-games-gaps))
 - ![Done][done] Sample game: a tower defence, first map in basic art ([Sample games](design/sample-games.md#sample-games-tower-defence))
-- ![In Progress][progress] Tower defence campaign: 10 levels in 3D, day and night, modifiers, sprite enemies, world map, star upgrades ([Sample games](design/sample-games.md#sample-games-tower-defence))
+- ![Done][done] Tower defence campaign: 10 levels in 3D, day and night, modifiers, sprite enemies, world map, star upgrades ([Sample games](design/sample-games.md#sample-games-tower-defence))
 
 ## v0.4.0 -- 2026-10-20
 
