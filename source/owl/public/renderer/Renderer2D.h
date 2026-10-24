@@ -326,6 +326,22 @@ public:
 
 	/**
 	 * @brief
+	 *  Test the primitives that follow against the depth attachment (greater, reversed-Z), without writing it: sprites
+	 *  of a 3D scene hidden by the meshes drawn before them. What was queued so far is drawn first; `beginScene` turns
+	 *  it off.
+	 * @param[in] iEnabled Whether the depth test is on.
+	 */
+	static void setDepthTest(bool iEnabled);
+
+	/**
+	 * @brief
+	 *  Whether the primitives are tested against the depth attachment.
+	 * @return True between `setDepthTest(true)` and the next `setDepthTest(false)` or `beginScene`.
+	 */
+	[[nodiscard]] static auto isDepthTestEnabled() -> bool;
+
+	/**
+	 * @brief
 	 *  Ends a scene.
 	 */
 	static void endScene();

@@ -144,6 +144,18 @@ A `Renderer2D` layer reads two keys (editable in the Scene Settings panel):
 |-------------------|---------|-----------------------------------------------------------------------------------------------|
 | `Space`           | `World` | `World` draws with the scene camera; `Screen` in screen units, origin bottom left, Y up       |
 | `ReferenceHeight` | `0`     | `Screen` only: the screen is this many units high, its width follows the aspect ratio; 0 = px |
+| `Billboard`       | `None`  | `World` only: `Upright` turns the sprites around the world Y axis, `Full` into the screen     |
+| `DepthTest`       | `false` | `World` only: tested against the depth of the layers before, without writing it              |
+
+`Billboard` and `DepthTest` put 2D sprites into a 3D scene (the enemies and effects of the tower defence among its
+meshes). A billboard layer draws each sprite, circle and text at its world position and size, turned to the camera of
+the pass (`renderer::utils::billboardMatrix`), its own Z rotation kept in the screen plane (an arrow along its flight);
+`Upright` keeps the world Y axis up, `Full` lays the sprite in the screen plane (art drawn as seen from above, and what
+a top-down `RenderTarget` camera sees). Its 2D lights work on the ground plane (x, z) of the Y-up world
+(`Lighting2D::groundPlane`), without normal maps nor 2D shadows. A depth-tested layer (`Renderer2D::setDepthTest`) is
+hidden by the meshes and voxels drawn before it, writes no depth, and sorts its primitives back to front by their
+distance along the view; picking sees billboards as drawn, and Owl Nest draws a stack holding such a layer layer by
+layer instead of its 2D composite.
 
 With `ReferenceHeight: 720` an overlay authored at 1280×720 (the minimaps of the Engine Demo raycast level and of
 Wolfenstein mini) keeps its share of the screen at 1080p or 1440p, like a `ScaleWithHeight` HUD canvas; the

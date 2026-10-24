@@ -291,8 +291,10 @@ end
 
 `scene.pick_entity([x, y])` returns the entity drawn under a viewport pixel, the mouse by default (0 when none): the
 sprites, circles and meshes of the world, not the UI (`ui.is_mouse_over_ui()` tells when the mouse is on a widget).
-An entity of an isometric layer is picked on its sprite as drawn, any other one on the ray of the primary camera; a
-hit in a later layer of the render stack wins, then the nearest one.
+An entity of an isometric layer is picked on its sprite as drawn, any other one on the ray of the primary camera (a
+sprite of a billboard layer turned to it); a hit in a later layer of the render stack wins, then the nearest one. With
+a tag (`scene.pick_entity(nil, nil, "Tower")`) only the entities of that tag and their children count, and a hit on a
+child returns its tagged ancestor: a tower made of several meshes is picked as one.
 
 ### `time`
 

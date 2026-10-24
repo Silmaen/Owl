@@ -12,6 +12,7 @@
 #include <core/Serializer.h>
 #include <core/Timestep.h>
 #include <renderer/Renderer.h>
+#include <renderer/Renderer2DLayer.h>
 #include <renderer/RendererIsometricLayer.h>
 #include <scene/Entity.h>
 #include <scene/SaveManager.h>
@@ -273,6 +274,52 @@ TEST(ScenePicking, aCircleIsPickedOnItsDiscThroughAPerspectiveCamera) {
 	core::Log::invalidate();
 }
 
+TEST(ScenePicking, aPartOfATaggedEntityPicksThatEntity) {
+	core::Log::init(core::Log::Level::Off);
+	const auto scene = makeCameraScene();
+	const auto tower = scene->createEntity("Tower");
+	auto roof = scene->createEntity("Roof");
+	roof.addComponent<component::SpriteRenderer>();
+	scene->setParent(roof, tower);
+	auto passer = scene->createEntity("Enemy");
+	passer.getComponent<component::Transform>().transform.translation() = {0.f, 0.f, 1.f};
+	passer.addComponent<component::SpriteRenderer>();
+	EXPECT_EQ(pickEntity(*scene, {400.f, 300.f}, "Tower"), tower);
+	EXPECT_EQ(pickEntity(*scene, {400.f, 300.f}, "Roof"), roof);
+	EXPECT_EQ(pickEntity(*scene, {400.f, 300.f}), passer);
+	core::Log::invalidate();
+}
+
+TEST(ScenePicking, aBillboardIsPickedAsItFacesTheCamera) {
+	core::Log::init(core::Log::Level::Off);
+	renderer::Renderer2DLayer::registerWithFactory();
+	renderer::RendererStackConfig config;
+	config.entries.push_back(
+			{.typeKey = renderer::Renderer2DLayer::typeKey(), .name = "sprites", .defaultConfig = "{Billboard: Full}"});
+	config.entries.push_back({.typeKey = renderer::Renderer2DLayer::typeKey(), .name = "flat", .defaultConfig = "{}"});
+	renderer::Renderer::setRenderStack(
+			renderer::RenderStack::buildFromConfig(config, renderer::EnabledRenderersConfig{}));
+	auto scene = mkShared<Scene>();
+	auto camera = scene->createEntity("Camera");
+	camera.getComponent<component::Transform>().transform.translation() = {0.f, 6.f, 0.f};
+	camera.getComponent<component::Transform>().transform.rotation() = {-1.5707964f, 0.f, 0.f};
+	auto& lens = camera.addComponent<component::Camera>();
+	lens.primary = true;
+	lens.camera.setPerspective(0.8f, 0.1f, 100.f);
+	scene->onViewportResize({800u, 600u});
+	// Seen from straight above, a sprite of the XY plane is edge-on: only the billboard one faces the camera.
+	auto standing = scene->createEntity("Standing");
+	standing.addComponent<component::SpriteRenderer>();
+	standing.addComponent<component::RendererTag>().rendererName = "flat";
+	EXPECT_FALSE(pickEntity(*scene, {400.f, 300.f}));
+	auto turned = scene->createEntity("Turned");
+	turned.addComponent<component::SpriteRenderer>();
+	turned.addComponent<component::RendererTag>().rendererName = "sprites";
+	EXPECT_EQ(pickEntity(*scene, {400.f, 300.f}), turned);
+	renderer::Renderer::setRenderStack(renderer::RenderStack{});
+	core::Log::invalidate();
+}
+
 TEST(ScenePicking, anIsometricSpriteIsPickedOnItsScreenRectangle) {
 	core::Log::init(core::Log::Level::Off);
 	renderer::RendererIsometricLayer::registerWithFactory();
@@ -290,5 +337,27 @@ TEST(ScenePicking, anIsometricSpriteIsPickedOnItsScreenRectangle) {
 	EXPECT_EQ(pickEntity(*scene, {foot.x(), foot.y() - 10.f}), unit);
 	EXPECT_FALSE(pickEntity(*scene, {foot.x(), foot.y() + 40.f}));
 	renderer::Renderer::setRenderStack(renderer::RenderStack{});
+	core::Log::invalidate();
+}
+
+TEST(SceneLighting2D, aBillboardLayerPlacesTheLightsOnTheGroundPlane) {
+	core::Log::init(core::Log::Level::Off);
+	const auto scene = makeCameraScene();
+	auto torch = scene->createEntity("Torch");
+	torch.getComponent<component::Transform>().transform.translation() = {3.f, 1.5f, -4.f};
+	torch.addComponent<component::Light2D>().castShadows = true;
+	auto crate = scene->createEntity("Crate");
+	crate.addComponent<component::SpriteRenderer>().castShadows = true;
+	scene->applyLighting2D(false, false);
+	ASSERT_EQ(scene->getLighting2D().lights.size(), 1u);
+	EXPECT_FLOAT_EQ(scene->getLighting2D().lights.front().position.y(), 1.5f);
+	EXPECT_FALSE(scene->getLighting2D().groundPlane);
+	EXPECT_FALSE(scene->getLighting2D().occluders.empty());
+	scene->applyLighting2D(false, true);
+	ASSERT_EQ(scene->getLighting2D().lights.size(), 1u);
+	EXPECT_FLOAT_EQ(scene->getLighting2D().lights.front().position.x(), 3.f);
+	EXPECT_FLOAT_EQ(scene->getLighting2D().lights.front().position.y(), -4.f);
+	EXPECT_TRUE(scene->getLighting2D().groundPlane);
+	EXPECT_TRUE(scene->getLighting2D().occluders.empty());
 	core::Log::invalidate();
 }

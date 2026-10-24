@@ -113,7 +113,7 @@ void RendererIsometricLayer::onBeginFrame(const Camera& iCamera) {
 void RendererIsometricLayer::onRender(scene::Scene& ioScene) {
 	OWL_PROFILE_FUNCTION()
 
-	ioScene.applyLighting2D(ioScene.status == scene::Scene::Status::Editing);
+	ioScene.applyLighting2D(ioScene.status == scene::Scene::Status::Editing, false);
 
 	utils::forEachLayerTilemap(
 			ioScene,

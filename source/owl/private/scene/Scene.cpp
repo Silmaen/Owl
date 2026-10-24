@@ -36,6 +36,7 @@
 #include "renderer/gpu/Framebuffer.h"
 #include "renderer/gpu/RenderCommand.h"
 #include "renderer/gpu/StorageBuffer.h"
+#include "renderer/utils/Billboards.h"
 #include "scene/ComponentRegistry.h"
 #include "scene/Entity.h"
 #include "scene/TilemapAsset.h"
@@ -772,6 +773,14 @@ void Scene::renderEditorView(const renderer::Camera& iCamera) {
 	m_worldTransformCacheActive = false;
 }
 
+auto Scene::hasDepthTested2DLayer() -> bool {
+	return std::ranges::any_of(renderer::Renderer::getRenderStack().getLayers(), [](const auto& iLayer) -> bool {
+		const auto* const layer2D = dynamic_cast<const renderer::Renderer2DLayer*>(iLayer.get());
+		return layer2D != nullptr && layer2D->getSpace() == renderer::Renderer2DLayer::Space::World &&
+			   (layer2D->isDepthTested() || layer2D->getBillboard() != renderer::Renderer2DLayer::Billboard::None);
+	});
+}
+
 auto Scene::layerAccepts(const Entity& iEntity) const -> bool {
 	if (m_currentLayerName.empty())
 		return true;// single pass without a stack — every entity is drawn.
@@ -1341,7 +1350,7 @@ void Scene::recordWorldPasses(renderer::RenderGraph& ioGraph, const renderer::Re
 	};
 	const auto& layers = renderer::Renderer::getRenderStack().getLayers();
 	const bool editorMode = status == Status::Editing;
-	if (layers.empty() || (editorMode && getSelfDrawnLayer() == nullptr)) {
+	if (layers.empty() || (editorMode && getSelfDrawnLayer() == nullptr && !hasDepthTested2DLayer())) {
 		// The editor composite is one world-space 2D pass drawing every entity.
 		ioGraph.addPass("editor composite", writeScene, [this](const Graph::PassContext&) -> void {
 			renderer::Renderer2DLayer composite{"editor"};
@@ -1422,13 +1431,16 @@ void Scene::renderHud(const math::vec2ui& iViewport, const bool iEditorMode) {
 	ui::HudPass::render(*this, iViewport, iEditorMode);
 }
 
-void Scene::applyLighting2D(const bool iEditorMode) {
+void Scene::applyLighting2D(const bool iEditorMode, const bool iGroundPlane) {
 	OWL_PROFILE_FUNCTION()
 
 	auto& lighting = m_lighting2D;
 	lighting.lights.clear();
 	lighting.occluders.clear();
 	lighting.ambient = math::vec3{0.f, 0.f, 0.f};
+	lighting.groundPlane = iGroundPlane;
+	// On the ground plane the second axis of the lights is the world z.
+	const size_t planeRow = iGroundPlane ? 2 : 1;
 	bool anyLight = false;
 	bool anyAmbient = false;
 	const auto toLinear = [](const math::vec3& iColor, const float iIntensity) -> math::vec3 {
@@ -1452,10 +1464,10 @@ void Scene::applyLighting2D(const bool iEditorMode) {
 		if (lighting.lights.size() >= renderer::g_maxLights2D)
 			continue;
 		const math::mat4 world = getWorldTransform(ent)();
-		math::vec2 direction{world(0, 0), world(1, 0)};
+		math::vec2 direction{world(0, 0), world(planeRow, 0)};
 		direction = direction.normSq() > 1e-12f ? direction.normalized() : math::vec2{1.f, 0.f};
 		const bool spot = light.type == component::Light2D::Type::Spot;
-		lighting.lights.push_back({.position = {world(0, 3), world(1, 3)},
+		lighting.lights.push_back({.position = {world(0, 3), world(planeRow, 3)},
 								   .height = light.height,
 								   .radius = light.radius,
 								   .color = toLinear(light.color, light.intensity),
@@ -1473,7 +1485,7 @@ void Scene::applyLighting2D(const bool iEditorMode) {
 	}
 	if (!anyAmbient)
 		lighting.ambient = math::vec3{1.f, 1.f, 1.f};
-	if (anyShadow) {
+	if (anyShadow && !iGroundPlane) {
 		for (const auto view = registry.view<component::SpriteRenderer>(); const auto entity: view) {
 			const Entity ent{entity, this};
 			if (!view.get<component::SpriteRenderer>(entity).castShadows || !isEffectivelyVisible(ent, iEditorMode) ||
@@ -1537,11 +1549,32 @@ void Scene::render() {
 		return;
 	}
 
-	applyLighting2D(editorMode);
+	const auto* const layer2D = dynamic_cast<const renderer::Renderer2DLayer*>(mp_currentLayer);
+	const auto billboard = layer2D != nullptr && layer2D->getSpace() == renderer::Renderer2DLayer::Space::World
+								   ? layer2D->getBillboard()
+								   : renderer::Renderer2DLayer::Billboard::None;
+	const bool turned = billboard != renderer::Renderer2DLayer::Billboard::None;
+	// A depth-tested or turned layer is a 3D one: its primitives sort by their distance to the camera.
+	const bool viewSorted = turned || (layer2D != nullptr && layer2D->isDepthTested());
+	const renderer::utils::BillboardFrame facing =
+			layer2D != nullptr ? renderer::utils::makeBillboardFrame(billboard, layer2D->getCameraWorld())
+							   : renderer::utils::BillboardFrame{};
+	applyLighting2D(editorMode, turned);
 	// Sort key of a 2D primitive: its world z (larger is nearer); equal keys keep the submission order.
-	const auto sortDepthOf = [this](const Entity& iEntity, const int32_t iWorldIndex) -> float {
-		return iWorldIndex >= 0 ? m_worldMatrices[static_cast<size_t>(iWorldIndex)](2, 3)
-								: getWorldTransform(iEntity).translation().z();
+	const auto sortDepthOf = [this, viewSorted, &facing](const Entity& iEntity, const int32_t iWorldIndex) -> float {
+		const math::vec3 position = iWorldIndex >= 0
+											? math::vec3{m_worldMatrices[static_cast<size_t>(iWorldIndex)](0, 3),
+														 m_worldMatrices[static_cast<size_t>(iWorldIndex)](1, 3),
+														 m_worldMatrices[static_cast<size_t>(iWorldIndex)](2, 3)}
+											: getWorldTransform(iEntity).translation();
+		return viewSorted ? renderer::utils::viewSortKey(facing, position) : position.z();
+	};
+	// The world transform of a primitive of a turned layer faces the camera, keeping its size and its own z rotation.
+	const auto turnedTransform = [this, &facing](const Entity& iEntity) -> math::Transform {
+		const math::Transform world = getWorldTransform(iEntity);
+		return math::Transform{renderer::utils::billboardMatrix(
+				facing, world.translation(), world.scale(),
+				iEntity.getComponent<component::Transform>().transform.rotation().z())};
 	};
 	m_cullingStats.spritesInFrustum =
 			markVisible(m_spriteIndex, renderer::Renderer2D::getViewProjection(), m_spriteVisible);
@@ -1557,9 +1590,11 @@ void Scene::render() {
 		if (!layerAccepts(ent))
 			continue;
 		auto [transform, sprite] = group.get<component::Transform, component::SpriteRenderer>(entity);
-		const auto worldIndex = static_cast<int32_t>(getWorldIndex(ent));
+		const auto worldIndex = turned ? -1 : static_cast<int32_t>(getWorldIndex(ent));
 
-		renderer::Renderer2D::drawQuad({.transform = worldIndex < 0 ? getWorldTransform(ent) : math::Transform{},
+		renderer::Renderer2D::drawQuad({.transform = turned           ? turnedTransform(ent)
+													 : worldIndex < 0 ? getWorldTransform(ent)
+																	  : math::Transform{},
 										.worldIndex = worldIndex,
 										.color = sprite.color,
 										.texture = sprite.texture,
@@ -1581,7 +1616,7 @@ void Scene::render() {
 		if (!layerAccepts(ent))
 			continue;
 		auto [transform, anim] = view.get<component::Transform, component::AnimatedSpriteRenderer>(entity);
-		const auto worldIndex = static_cast<int32_t>(getWorldIndex(ent));
+		const auto worldIndex = turned ? -1 : static_cast<int32_t>(getWorldIndex(ent));
 		const uint32_t safeCols = std::max(anim.columns, 1u);
 		const uint32_t safeRows = std::max(anim.rows, 1u);
 		const uint32_t frame = std::clamp(anim.m_currentFrame, anim.firstFrame, anim.lastFrame);
@@ -1592,7 +1627,9 @@ void Scene::render() {
 		const float vMax = 1.0f - static_cast<float>(row) / static_cast<float>(safeRows);
 		const float vMin = 1.0f - static_cast<float>(row + 1) / static_cast<float>(safeRows);
 
-		renderer::Renderer2D::drawQuad({.transform = worldIndex < 0 ? getWorldTransform(ent) : math::Transform{},
+		renderer::Renderer2D::drawQuad({.transform = turned           ? turnedTransform(ent)
+													 : worldIndex < 0 ? getWorldTransform(ent)
+																	  : math::Transform{},
 										.worldIndex = worldIndex,
 										.color = anim.color,
 										.texture = anim.texture,
@@ -1610,9 +1647,11 @@ void Scene::render() {
 		if (!layerAccepts(ent))
 			continue;
 		auto [transform, circle] = view.get<component::Transform, component::CircleRenderer>(entity);
-		const auto worldIndex = static_cast<int32_t>(getWorldIndex(ent));
+		const auto worldIndex = turned ? -1 : static_cast<int32_t>(getWorldIndex(ent));
 
-		renderer::Renderer2D::drawCircle({.transform = worldIndex < 0 ? getWorldTransform(ent) : math::Transform{},
+		renderer::Renderer2D::drawCircle({.transform = turned           ? turnedTransform(ent)
+													   : worldIndex < 0 ? getWorldTransform(ent)
+																		: math::Transform{},
 										  .worldIndex = worldIndex,
 										  .color = circle.color,
 										  .thickness = circle.thickness,
@@ -1628,19 +1667,21 @@ void Scene::render() {
 		if (!layerAccepts(ent))
 			continue;
 		auto [transform, text] = view.get<component::Transform, component::Text>(entity);
-		const math::Transform worldTransform = getWorldTransform(ent);
+		const math::Transform worldTransform = turned ? turnedTransform(ent) : getWorldTransform(ent);
 
-		renderer::Renderer2D::drawString({.transform = uniformTextTransform(worldTransform),
-										  .text = text.text,
-										  .font = text.font,
-										  .color = text.color,
-										  .layout = {.kerning = text.kerning, .lineSpacing = text.lineSpacing},
-										  .entityId = static_cast<int>(entity),
-										  .depth = worldTransform.translation().z(),
-										  .outlineColor = text.outlineColor,
-										  .outlineWidth = text.outlineWidth,
-										  .backgroundColor = text.backgroundColor,
-										  .backgroundPadding = text.backgroundPadding});
+		renderer::Renderer2D::drawString(
+				{.transform = uniformTextTransform(worldTransform),
+				 .text = text.text,
+				 .font = text.font,
+				 .color = text.color,
+				 .layout = {.kerning = text.kerning, .lineSpacing = text.lineSpacing},
+				 .entityId = static_cast<int>(entity),
+				 .depth = viewSorted ? renderer::utils::viewSortKey(facing, worldTransform.translation())
+									 : worldTransform.translation().z(),
+				 .outlineColor = text.outlineColor,
+				 .outlineWidth = text.outlineWidth,
+				 .backgroundColor = text.backgroundColor,
+				 .backgroundPadding = text.backgroundPadding});
 	}
 	// Pushwall plates override the entity's scale to a 1-cell square, so the cached world matrix doesn't match.
 	for (const auto view = registry.view<component::Transform, component::RaycastPushWall>(); auto entity: view) {

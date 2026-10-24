@@ -12,7 +12,9 @@
 #include <math/vectors.h>
 #include <renderer/CameraOrtho.h>
 #include <renderer/Renderer2DLayer.h>
+#include <renderer/utils/Billboards.h>
 
+#include <cmath>
 #include <cstddef>
 
 using namespace owl;
@@ -59,4 +61,49 @@ TEST(Renderer2DLayer, ReferenceHeightScalesWithTheScreen) {
 	renderer::Renderer2DLayer negative{"overlay"};
 	negative.applyConfig("{Space: Screen, ReferenceHeight: -5}");
 	EXPECT_FLOAT_EQ(negative.getReferenceHeight(), 0.f);
+}
+
+TEST(Renderer2DLayer, BillboardAndDepthTestAreReadFromTheConfig) {
+	renderer::Renderer2DLayer layer{"sprites"};
+	EXPECT_EQ(layer.getBillboard(), renderer::Renderer2DLayer::Billboard::None);
+	EXPECT_FALSE(layer.isDepthTested());
+	layer.applyConfig("{Billboard: upright, DepthTest: true}");
+	EXPECT_EQ(layer.getBillboard(), renderer::Renderer2DLayer::Billboard::Upright);
+	EXPECT_TRUE(layer.isDepthTested());
+	layer.applyConfig("{Billboard: Full}");
+	EXPECT_EQ(layer.getBillboard(), renderer::Renderer2DLayer::Billboard::Full);
+	layer.applyConfig("{Billboard: sideways, DepthTest: false}");
+	EXPECT_EQ(layer.getBillboard(), renderer::Renderer2DLayer::Billboard::None);
+	EXPECT_FALSE(layer.isDepthTested());
+}
+
+TEST(Billboards, AnUprightSpriteTurnsAroundTheWorldUpAxisOnly) {
+	// A camera turned by 90 degrees around Y and pitched down by 45 degrees.
+	const math::mat4 cameraWorld =
+			math::Transform{math::vec3{4.f, 3.f, 0.f}, math::vec3{-0.7853982f, 1.5707964f, 0.f}}();
+	const auto upright =
+			renderer::utils::makeBillboardFrame(renderer::Renderer2DLayer::Billboard::Upright, cameraWorld);
+	EXPECT_NEAR(upright.up.y(), 1.f, 1e-5f);
+	EXPECT_NEAR(upright.right.y(), 0.f, 1e-5f);
+	EXPECT_NEAR(upright.right.z(), -1.f, 1e-5f);
+	EXPECT_NEAR(upright.normal.x(), 1.f, 1e-5f);
+	const auto full = renderer::utils::makeBillboardFrame(renderer::Renderer2DLayer::Billboard::Full, cameraWorld);
+	EXPECT_NEAR(full.normal * full.forward, -1.f, 1e-5f);
+	EXPECT_NEAR(full.up.y(), std::sqrt(0.5f), 1e-5f);
+	// Looking straight down, the upright frame still has a heading.
+	const math::mat4 topDown = math::Transform{math::vec3{0.f, 9.f, 0.f}, math::vec3{-1.5707964f, 0.f, 0.f}}();
+	const auto above = renderer::utils::makeBillboardFrame(renderer::Renderer2DLayer::Billboard::Upright, topDown);
+	EXPECT_NEAR(above.right.norm(), 1.f, 1e-5f);
+}
+
+TEST(Billboards, TheMatrixKeepsSizeAndRollAndTheKeySortsByDistance) {
+	const renderer::utils::BillboardFrame frame;
+	const auto matrix = renderer::utils::billboardMatrix(frame, {1.f, 2.f, 3.f}, {2.f, 0.5f, 1.f}, 1.5707964f);
+	EXPECT_NEAR(matrix(0, 3), 1.f, 1e-6f);
+	EXPECT_NEAR(matrix(2, 3), 3.f, 1e-6f);
+	// A quarter turn: the sprite X axis points up, two units long; its Y axis points left, half a unit.
+	EXPECT_NEAR(matrix(1, 0), 2.f, 1e-5f);
+	EXPECT_NEAR(matrix(0, 1), -0.5f, 1e-5f);
+	EXPECT_GT(renderer::utils::viewSortKey(frame, {0.f, 0.f, -1.f}),
+			  renderer::utils::viewSortKey(frame, {0.f, 0.f, -5.f}));
 }

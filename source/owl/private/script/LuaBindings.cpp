@@ -2225,8 +2225,8 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		 .returns = {{"entity_id", Entity}}},
 		{.table = "scene", .name = "pick_entity", .function = guarded<luaScenePickEntity>,
 		 .description = "Entity drawn under a viewport pixel (the mouse by default), nearest to the viewer: sprites and "
-						"circles (2D or isometric) and meshes, not the UI, only the entities of a tag when one is given. 0 when "
-						"none.",
+						"circles (2D, isometric or billboards) and meshes, not the UI; with a tag, only the entities of that tag, "
+						"a hit on a descendant giving its tagged ancestor (a tower built of parts). 0 when none.",
 		 .params = {{"x", Number, true}, {"y", Number, true}, {"tag", String, true}},
 		 .returns = {{"entity_id", Entity}}},
 		{.table = "scene", .name = "get_viewport_size", .function = guarded<luaSceneGetViewportSize>,

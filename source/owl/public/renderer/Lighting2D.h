@@ -71,6 +71,9 @@ struct OWL_API Lighting2D {
 	std::vector<Light2DData> lights;
 	/// Segments the shadow-casting lights stop at.
 	std::vector<Occluder2D> occluders;
+	/// The lights and the sprites meet on the ground plane (x, z) of a Y-up world instead of the XY plane (billboard
+	/// layers): light positions are then world (x, z), the sprites are lit without normal map nor shadow.
+	bool groundPlane = false;
 };
 
 /**

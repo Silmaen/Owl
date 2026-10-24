@@ -450,3 +450,30 @@ TEST(Renderer2D, aScissorSplitsTheBatchAndIsLiftedByTheScene) {
 	RenderCommand::invalidate();
 	Log::invalidate();
 }
+
+TEST(Renderer2D, depthTestDrawsWhatWasQueuedFirstAndEndsWithTheScene) {
+	Log::init(owl::core::Log::Level::Off);
+	RenderCommand::create(RenderAPI::Type::Null);
+	Renderer::init();
+	const CameraEditor cam;
+	const Transform tr{owl::math::identity<float, 4>()};
+	Renderer2D::resetStats();
+	Renderer2D::beginScene(cam);
+	EXPECT_FALSE(Renderer2D::isDepthTestEnabled());
+	Renderer2D::drawQuad({.transform = tr});
+	Renderer2D::setDepthTest(true);
+	EXPECT_TRUE(Renderer2D::isDepthTestEnabled());
+	// The quad queued before the switch is drawn with the previous state, in a batch of its own.
+	EXPECT_EQ(Renderer2D::getStats().drawCalls, 1u);
+	Renderer2D::drawQuad({.transform = tr});
+	Renderer2D::setDepthTest(true);
+	EXPECT_EQ(Renderer2D::getStats().drawCalls, 1u);
+	Renderer2D::endScene();
+	EXPECT_EQ(Renderer2D::getStats().drawCalls, 2u);
+	Renderer2D::beginScene(cam);
+	EXPECT_FALSE(Renderer2D::isDepthTestEnabled());
+	Renderer2D::endScene();
+
+	RenderCommand::invalidate();
+	Log::invalidate();
+}

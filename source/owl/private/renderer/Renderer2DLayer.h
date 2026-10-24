@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include "math/matrixCreation.h"
 #include "renderer/CameraOrtho.h"
 #include "renderer/RenderLayer.h"
 
@@ -42,6 +43,10 @@ namespace owl::renderer {
  * per screen pixel). Default is `World`, for
  * projects that don't declare it.
  *
+ * Two keys put a world layer into a 3D scene: `Billboard` (`None`, `Upright`, `Full`) turns its sprites to the camera
+ * and lights them on the ground plane (x, z) of a Y-up world, `DepthTest` tests its primitives against the depth the
+ * 3D layers wrote before it (without writing it) and sorts them back to front.
+ *
  * `onRender` iterates entities tagged with this layer's name (or untagged
  * entities when this is the first layer in the stack) — `Scene::layerAccepts`
  * does the routing. The tilemaps are drawn here (queued to `RendererTilemap`);
@@ -58,6 +63,19 @@ public:
 		World,
 		/// Layer binds a pixel-space ortho (HUD / screen overlays, immune to camera rotation).
 		Screen,
+	};
+
+	/**
+	 * @brief
+	 *  How the sprites of a world layer turn to the camera.
+	 */
+	enum struct Billboard : uint8_t {
+		/// Sprites keep their own rotation (a 2D world in the XY plane).
+		None,
+		/// Sprites stand up along the world Y axis and turn around it to face the camera.
+		Upright,
+		/// Sprites lie in the plane of the screen (pre-rendered art seen from above).
+		Full,
 	};
 
 	Renderer2DLayer(const Renderer2DLayer&) = delete;
@@ -160,6 +178,27 @@ public:
 	 */
 	[[nodiscard]] auto getReferenceHeight() const -> float { return m_referenceHeight; }
 
+	/**
+	 * @brief
+	 *  How the sprites of the layer turn to the camera.
+	 * @return The configured `Billboard`, `None` by default.
+	 */
+	[[nodiscard]] auto getBillboard() const -> Billboard { return m_billboard; }
+
+	/**
+	 * @brief
+	 *  Whether the primitives of the layer are tested against the depth of the layers drawn before it.
+	 * @return The configured `DepthTest`, false by default.
+	 */
+	[[nodiscard]] auto isDepthTested() const -> bool { return m_depthTest; }
+
+	/**
+	 * @brief
+	 *  World matrix of the camera of the frame (`onBeginFrame`), the frame billboards turn to.
+	 * @return The inverse of the camera view.
+	 */
+	[[nodiscard]] auto getCameraWorld() const -> const math::mat4& { return m_cameraWorld; }
+
 private:
 	/**
 	 * @brief
@@ -176,6 +215,12 @@ private:
 	float m_referenceHeight = 0.f;
 	/// Viewport size in pixels (latched by `setViewport`, used for screen-space ortho).
 	math::vec2ui m_viewport{1280, 720};
+	/// How the sprites turn to the camera (set by `applyConfig`).
+	Billboard m_billboard = Billboard::None;
+	/// Depth test against the layers drawn before (set by `applyConfig`).
+	bool m_depthTest = false;
+	/// Inverse view of the camera of the frame, latched by `onBeginFrame`.
+	math::mat4 m_cameraWorld = math::identity<float, 4>();
 };
 
 }// namespace owl::renderer

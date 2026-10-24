@@ -1199,8 +1199,25 @@ public:
 	 *  Give the `Light2D` entities and the shadow-casting sprites of the layer being drawn to `Renderer2D`, which the
 	 *  2D, tilemap and isometric renderers read; without an enabled light the 2D lighting is turned off.
 	 * @param[in] iEditorMode True if the scene is being drawn for the editor view.
+	 * @param[in] iGroundPlane True for a billboard layer: the lights are placed on the ground plane (x, z), without
+	 *  shadow.
 	 */
-	void applyLighting2D(bool iEditorMode);
+	void applyLighting2D(bool iEditorMode, bool iGroundPlane);
+
+	/**
+	 * @brief
+	 *  The 2D lighting gathered by the last `applyLighting2D`.
+	 * @return The lights, occluders and ambient given to `Renderer2D`.
+	 */
+	[[nodiscard]] auto getLighting2D() const -> const renderer::Lighting2D& { return m_lighting2D; }
+
+	/**
+	 * @brief
+	 *  Whether the render stack has a world `Renderer2D` layer that is depth tested or turns its sprites to the camera:
+	 *  the editor then draws the layers in their stack order, like Play, instead of one 2D composite under the 3D ones.
+	 * @return True when such a layer exists.
+	 */
+	[[nodiscard]] static auto hasDepthTested2DLayer() -> bool;
 
 private:
 	/**
