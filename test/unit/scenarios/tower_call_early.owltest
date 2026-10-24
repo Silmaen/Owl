@@ -8,7 +8,7 @@ steps:
   - input: {key: Space, frames: 2}
   - expect: {gamestate: tower_wave, equals: 1}
   - expect: {gamestate: tower_bonus, greater: 40}
-  - expect: {gamestate: tower_gold, greater: 280}
+  - expect: {gamestate: tower_gold, greater: 240}
   - frames: 30
   - expect: {gamestate: tower_spawned, greater: 0}
   # Space again while the wave is still being sent does nothing.

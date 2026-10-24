@@ -15,9 +15,12 @@ Run from the repository root: ``./docker_run.sh poetry run python -m tools.sampl
 
 from __future__ import annotations
 
+import math
 from pathlib import Path
 
 from tools.samples import scene_yaml as y
+from tools.samples.tower_defence import maps as mp
+from tools.samples.tower_defence.medieval_ui import CAPITAL, SITES
 
 ROOT = Path(__file__).resolve().parents[3] / "samples" / "tower_defence"
 """The sample project."""
@@ -228,18 +231,18 @@ def _result(scene_name: str, base: int, heading: str, script: str, fireworks: bo
     root = entities.add("ResultCanvas", [y.canvas(), y.script(script)])
     group = entities.add(
         "ResultGroup",
-        [y.rect((0.5, 0), (1.1, 0.66), (0, 0.04), SCREEN, SCREEN), board(), y.layout("Column", 6, 12)],
+        [y.rect((0.5, 0), (1.1, 0.72), (0, 0.04), SCREEN, SCREEN), board(), y.layout("Column", 4, 10)],
         parent=root,
     )
-    row = entities.add("ButtonRow", [y.child_rect((0.95, 0.15)), y.layout("Row", 16)], parent=group)
-    buttons = [("AgainButton", "Play again", "on_again_clicked"), ("TitleButton", "Title", "on_title_clicked")]
+    row = entities.add("ButtonRow", [y.child_rect((0.95, 0.13)), y.layout("Row", 16)], parent=group)
+    buttons = [("AgainButton", "Play again", "on_again_clicked"), ("TitleButton", "World map", "on_title_clicked")]
     for index, (tag, text, callback) in reversed(list(enumerate(buttons))):
         button(entities, row, tag, text, callback, (0.44, 0.85), index == 0)
-    for index in reversed(range(4)):
-        line = label("", 28, SOFT, "Left", font="JetBrainsMono-Regular")
-        entities.add(f"StatLine{index + 1}", [y.child_rect((0.8, 0.1)), line], parent=group)
+    for index in reversed(range(6)):
+        line = label("", 26 if index < 5 else 24, SOFT if index < 5 else GOLD, "Left", font="JetBrainsMono-Regular")
+        entities.add(f"StatLine{index + 1}", [y.child_rect((0.8, 0.075)), line], parent=group)
     colour = GOLD if fireworks else (0.95, 0.45, 0.35, 1)
-    entities.add("ResultTitle", [y.child_rect((0.95, 0.24)), label(heading, 68, colour, font=HEADING)], parent=group)
+    entities.add("ResultTitle", [y.child_rect((0.95, 0.18)), label(heading, 62, colour, font=HEADING)], parent=group)
     return y.scene(scene_name, entities)
 
 
@@ -253,11 +256,124 @@ def game_over() -> str:
     return _result("game_over", 7430000000000000000, "The keep has fallen", "scripts/ui/game_over.lua", False, True)
 
 
+CAMPAIGN = (
+    (mp.LEVELS[0], "The second power-up of each tower"),
+    (mp.LEVELS[1], "Rain of arrows: a spell on the enemy nearest the keep"),
+    (mp.LEVELS[2], "Royal treasury: 60 more gold at the start of every level"),
+    (None, "Shield wall: a spell stopping the enemies around the front one"),
+    (None, "Keep walls, with 3 stars on all five: 5 more lives"),
+)
+"""The levels of the world map with what winning them unlocks; ``None`` is a level still to come."""
+PLANNED = ("Frostmere", "The Black Gate")
+"""Names of the levels still to come."""
+MAP_SIZE = (32.0, 18.0)
+"""World size of the parchment map (the camera shows 18 units of height)."""
+
+
+def map_point(share: tuple[float, float]) -> tuple[float, float]:
+    """The world point of a place of the map given in shares of its width and height from the top left."""
+    return (share[0] - 0.5) * MAP_SIZE[0], (0.5 - share[1]) * MAP_SIZE[1]
+
+
+def _bend(a: tuple[float, float], b: tuple[float, float], index: int) -> list[tuple[float, float]]:
+    """Dots along a gently bent road from one site to the next, about 0.65 units apart."""
+    mx, my = (a[0] + b[0]) / 2, (a[1] + b[1]) / 2
+    nx, ny = -(b[1] - a[1]), b[0] - a[0]
+    length = math.hypot(nx, ny) or 1.0
+    bend = 1.2 if index % 2 == 0 else -1.2
+    cx, cy = mx + nx / length * bend, my + ny / length * bend
+    count = max(3, int(math.hypot(b[0] - a[0], b[1] - a[1]) / 0.65))
+    dots = []
+    for k in range(1, count):
+        s = k / count
+        dots.append(
+            (
+                (1 - s) ** 2 * a[0] + 2 * (1 - s) * s * cx + s * s * b[0],
+                (1 - s) ** 2 * a[1] + 2 * (1 - s) * s * cy + s * s * b[1],
+            )
+        )
+    return dots
+
+
+def world_map() -> str:
+    """The world map: the parchment plan, the capital and the five sites with their stars, the road traced between
+    them (``PathDot N`` dots, shown up to the last site open), the panel of the chosen site and the bonuses window."""
+    entities = y.Entities(7440000000000000000)
+    entities.add("MainCamera", [y.camera(18)], position=(0, 0, 5))
+    entities.add("Background", [y.background(NIGHT)], position=(0, 0, -1), scale=(60, 30, 1))
+    entities.add("Map", [y.sprite("textures/ui/world_map.png")], position=(0, 0, -0.5), scale=(*MAP_SIZE, 1))
+    capital = map_point(CAPITAL)
+    entities.add("Capital", [y.frames("textures/ui/sites.png", 4, 1, 3)], position=(*capital, 0), scale=(2.4, 2.4, 1))
+    previous = capital
+    for index, share in enumerate(SITES):
+        point = map_point(share)
+        for dot in _bend(previous, point, index):
+            entities.add(
+                f"PathDot {index + 1}",
+                [y.sprite("textures/ui/path_dot.png")],
+                position=(*dot, 0.05),
+                scale=(0.32, 0.32, 1),
+                visible=False,
+            )
+        previous = point
+        ring = y.sprite("textures/fx/ring.png", (1, 0.82, 0.3, 0.9))
+        entities.add("SiteRing", [ring], position=(point[0], point[1] - 0.7, 0.08), scale=(2.6, 1.3, 1), visible=False)
+        entities.add("Site", [y.frames("textures/ui/sites.png", 4, 1, 0)], position=(*point, 0.1), scale=(2.4, 2.4, 1))
+        for star in range(3):
+            entities.add(
+                "SiteStar",
+                [y.frames("textures/ui/stars.png", 2, 1, 0)],
+                position=(point[0] + (star - 1) * 0.62, point[1] - 1.55, 0.12),
+                scale=(0.6, 0.6, 1),
+            )
+    levels = []
+    for index, (level, unlock) in enumerate(CAMPAIGN):
+        if level is None:
+            levels.append(f"|{PLANNED[index - 3]}|0|{unlock}")
+        else:
+            levels.append(f"scenes/level_{level.number:02d}.owl|{level.name}|{len(level.waves)}|{unlock}")
+    values = "".join(f"\n        - {y.quote(entry)}" for entry in levels)
+    script = (
+        "LuaScript:\n  scriptPath: scripts/ui/world_map.lua\n  properties:\n    - name: levels\n      type: strings\n"
+        f"      value:{values}\n"
+    )
+    root = entities.add("MapCanvas", [y.canvas(), script])
+    entities.add(
+        "MapTitle",
+        [y.rect((0.5, 0), (1.0, 0.09), (0, 0.015), SCREEN, SCREEN), label("The Realm", 46, GOLD, font=HEADING)],
+        parent=root,
+    )
+    panel = entities.add(
+        "SitePanel",
+        [y.rect((0.5, 1), (1.25, 0.2), (0, -0.02), SCREEN, SCREEN), board(), y.layout("Row", 10, 8)],
+        parent=root,
+    )
+    buttons = entities.add("SiteButtons", [y.child_rect((0.3, 0.84)), y.layout("Column", 4)], parent=panel)
+    button(entities, buttons, "BackButton", "Back", "on_back_clicked", (1, 0.28), False, font_size=24)
+    button(entities, buttons, "BonusButton", "Bonuses", "on_bonus_clicked", (1, 0.28), False, font_size=24)
+    button(entities, buttons, "MarchButton", "March!", "on_march_clicked", (1, 0.28), True, font_size=26)
+    texts = entities.add("SiteTexts", [y.child_rect((0.64, 0.84)), y.layout("Column", 2, 0, "Start")], parent=panel)
+    entities.add("SiteUnlock", [y.child_rect((1, 0.28)), label("", 20, SOFT, "Left")], parent=texts)
+    entities.add("SiteInfo", [y.child_rect((1, 0.28)), label("", 22, STONE, "Left")], parent=texts)
+    entities.add("SiteName", [y.child_rect((1, 0.34)), label("", 32, GOLD, "Left", font=HEADING)], parent=texts)
+    bonus = entities.add(
+        "BonusWindow",
+        [y.rect((0.5, 0.5), (1.1, 0.7)), window("Bonuses"), y.layout("Column", 6, 12)],
+        parent=root,
+        visible=False,
+    )
+    button(entities, bonus, "BonusBackButton", "Back", "on_bonus_closed", (0.4, 0.13), False)
+    for index in reversed(range(len(CAMPAIGN))):
+        entities.add(f"BonusLine{index + 1}", [y.child_rect((0.95, 0.12)), label("", 22, SOFT, "Left")], parent=bonus)
+    return y.scene("world_map", entities)
+
+
 def main() -> None:
     """Write the four menu scenes."""
     scenes = ROOT / "scenes"
     scenes.mkdir(parents=True, exist_ok=True)
     (scenes / "title.owl").write_text(title())
+    (scenes / "world_map.owl").write_text(world_map())
     (scenes / "settings.owl").write_text(settings())
     (scenes / "victory.owl").write_text(victory())
     (scenes / "game_over.owl").write_text(game_over())

@@ -30,7 +30,7 @@ from pathlib import Path
 from tools.samples import scene_yaml as y
 from tools.samples.tower_defence import generate_menus as menus
 from tools.samples.tower_defence import maps as mp
-from tools.samples.tower_defence.creatures import CELL, DIRECTIONS, FRAMES, PPU
+from tools.samples.tower_defence.creatures import CELL, CREATURES, DIRECTIONS, FRAMES, PPU
 
 REPOSITORY = Path(__file__).resolve().parents[3]
 """The repository root."""
@@ -140,22 +140,24 @@ def road_height(level: mp.LevelData, cell: mp.Cell) -> float:
     return base + ROAD_TOP
 
 
-def check(level: mp.LevelData) -> list[mp.Cell]:
-    """Refuse a level whose grids, road, pads or keep do not fit; return its road."""
+def check(level: mp.LevelData) -> list[list[mp.Cell]]:
+    """Refuse a level whose grids, roads, pads or keep do not fit; return its roads (one per gate)."""
     if len(level.heights) != level.depth or any(len(row) != level.width for row in level.layout + level.heights):
         raise ValueError(f"level {level.number}: the layout and the heights differ in size")
-    road = mp.route(level)
-    if sides(level, road[-1], "K") == 0:
-        raise ValueError(f"level {level.number}: the road does not end beside the keep")
+    roads = mp.routes(level)
+    cells = mp.road_cells(level)
+    for road in roads:
+        if sides(level, road[-1], "K") == 0:
+            raise ValueError(f"level {level.number}: a road does not end beside the keep")
     for pad in level.cells("P"):
-        if not any(abs(pad[0] - x) + abs(pad[1] - z) <= 2 for x, z in road):
+        if not any(abs(pad[0] - x) + abs(pad[1] - z) <= 2 for x, z in cells):
             raise ValueError(f"level {level.number}: pad {pad} is too far from the road")
-    for cell in road:
+    for cell in cells:
         if level.at(cell) == "/":
-            higher = [c for c in road if abs(c[0] - cell[0]) + abs(c[1] - cell[1]) == 1]
+            higher = [c for c in cells if abs(c[0] - cell[0]) + abs(c[1] - cell[1]) == 1]
             if max(level.height(c) for c in higher) <= level.height(cell):
                 raise ValueError(f"level {level.number}: ramp {cell} climbs to nothing")
-    return road
+    return roads
 
 
 BORDER = 5
@@ -170,7 +172,7 @@ def nearest_inside(level: mp.LevelData, cell: mp.Cell) -> mp.Cell:
 def terrain(entities: y.Entities, level: mp.LevelData, parent: int) -> None:
     """The tiles of every cell and of the countryside around the grid, under a ``Terrain`` parent."""
     rng = random.Random(level.number * 31 + 7)
-    road = set(mp.route(level))
+    road = mp.road_cells(level)
     for z in range(-BORDER, level.depth + BORDER):
         for x in range(-BORDER, level.width + BORDER):
             cell = (x, z)
@@ -314,6 +316,28 @@ def torches(entities: y.Entities, level: mp.LevelData, road: list[mp.Cell]) -> N
         entities.add("TorchPost", [mesh(f"{CASTLE}/wall-stud.glb")], position=post, scale=(0.5, 0.8, 0.5))
 
 
+def waypoints(entities: y.Entities, level: mp.LevelData, road: list[mp.Cell], letter: str) -> None:
+    """The ``Waypoint NN`` entities of a road (``Waypoint B NN`` for the second gate) under a ``Route`` parent: its
+    corners, the cells around a ramp or a bridge (their height changes), and a last one in the gate of the keep."""
+    route = entities.add(f"Route {letter}".strip(), [])
+    previous_direction = None
+    for index, cell in enumerate(road):
+        nxt = road[index + 1] if index + 1 < len(road) else None
+        direction = (nxt[0] - cell[0], nxt[1] - cell[1]) if nxt else None
+        height = road_height(level, cell)
+        changes = level.at(cell) in "/=" or (nxt is not None and level.at(nxt) in "/=")
+        changes = changes or (index > 0 and level.at(road[index - 1]) in "/=")
+        if index == 0 or nxt is None or direction != previous_direction or changes:
+            entities.add(f"Waypoint {letter}{index + 1:02d}", [], position=(cell[0], height, cell[1]), parent=route)
+        previous_direction = direction
+    end = road[-1]
+    toward = sides(level, end, "K")
+    dx = 0.6 if toward & E else (-0.6 if toward & W else 0.0)
+    dz = 0.6 if toward & S else (-0.6 if toward & N else 0.0)
+    position = (end[0] + dx, road_height(level, end), end[1] + dz)
+    entities.add(f"Waypoint {letter}{len(road) + 1:02d}", [], position=position, parent=route)
+
+
 def unlit_sprite(texture: str, colour: y.Colour = (1, 1, 1, 1)) -> str:
     """A ``SpriteRenderer`` drawn as it is, whatever the light (markers, the build wheel)."""
     return y.sprite(texture, colour).replace("tilingFactor", "lit: false\n  tilingFactor")
@@ -347,7 +371,8 @@ def build_wheel(entities: y.Entities) -> None:
 
 def level_scene(level: mp.LevelData) -> str:
     """The scene of a level."""
-    road = check(level)
+    roads = check(level)
+    road = roads[0]
     entities = y.Entities(7500000000000000000 + level.number * 1000000)
     header = (
         "EnabledRenderers:\n- {Name: world, Enabled: false}\n- {Name: mesh_world, Enabled: true}\n"
@@ -388,42 +413,31 @@ def level_scene(level: mp.LevelData) -> str:
     countryside = mesh(f"{TD}/tile.glb", (0.86, 0.95, 0.86, 1))
     entities.add("Countryside", [countryside], position=(cx, -0.06, cz), scale=(160, 1, 160), parent=ground)
     terrain(entities, level, ground)
-    gate = road[0]
-    gate_top = cell_base(level, gate) + GRASS_TOP
-    gate_id = entities.add("Gate", [], position=(gate[0], gate_top - GRASS_TOP + ROAD_TOP, gate[1]))
-    portal = mesh(f"{TD}/spawn-round.glb", (0.55, 0.2, 0.18, 1))
-    entities.add("GatePortal", [portal], position=(0, 0.02, 0), scale=(1.2, 1, 1.2), parent=gate_id)
-    for dz in (-0.5, 0.5):
-        banner = mesh(f"{CASTLE}/flag-banner-long.glb", (0.6, 0.12, 0.1, 1))
-        entities.add(
-            "GateBanner",
-            [banner],
-            position=(0, GRASS_TOP - ROAD_TOP, dz),
-            rotation=(0, math.pi / 2, 0),
-            scale=(0.75, 0.75, 0.75),
-            parent=gate_id,
-        )
+    for path in roads:
+        gate = path[0]
+        gate_top = cell_base(level, gate) + GRASS_TOP
+        gate_id = entities.add("Gate", [], position=(gate[0], gate_top - GRASS_TOP + ROAD_TOP, gate[1]))
+        portal = mesh(f"{TD}/spawn-round.glb", (0.55, 0.2, 0.18, 1))
+        entities.add("GatePortal", [portal], position=(0, 0.02, 0), scale=(1.2, 1, 1.2), parent=gate_id)
+        across = sides(level, gate, mp.ROAD) & (N | S) == 0
+        for offset in (-0.5, 0.5):
+            banner = mesh(f"{CASTLE}/flag-banner-long.glb", (0.6, 0.12, 0.1, 1))
+            entities.add(
+                "GateBanner",
+                [banner],
+                position=(0, GRASS_TOP - ROAD_TOP, offset) if across else (offset, GRASS_TOP - ROAD_TOP, 0),
+                rotation=(0, math.pi / 2, 0) if across else (0, 0, 0),
+                scale=(0.75, 0.75, 0.75),
+                parent=gate_id,
+            )
     keep(entities, level)
     pads = entities.add("Pads", [])
     for cell in level.cells("P"):
         top = cell_base(level, cell) + GRASS_TOP
         pad = mesh(f"{TD}/tower-round-base.glb", (0.92, 0.9, 0.86, 1))
         entities.add("Pad", [pad], position=(cell[0], top, cell[1]), scale=(0.82, 1, 0.82), parent=pads)
-    route = entities.add("Route", [])
-    previous_direction = None
-    for index, cell in enumerate(road):
-        nxt = road[index + 1] if index + 1 < len(road) else None
-        direction = (nxt[0] - cell[0], nxt[1] - cell[1]) if nxt else None
-        height = road_height(level, cell)
-        changes = level.at(cell) in "/=" or (nxt is not None and level.at(nxt) in "/=")
-        changes = changes or (index > 0 and level.at(road[index - 1]) in "/=")
-        if index == 0 or nxt is None or direction != previous_direction or changes:
-            entities.add(f"Waypoint {index + 1:02d}", [], position=(cell[0], height, cell[1]), parent=route)
-        previous_direction = direction
-    end = road[-1]
-    entities.add(
-        f"Waypoint {len(road) + 1:02d}", [], position=(end[0] + 0.6, road_height(level, end), end[1]), parent=route
-    )
+    for letter, path in zip(("", "B "), roads, strict=False):
+        waypoints(entities, level, path, letter)
     torches(entities, level, road)
     cursor = y.sprite("textures/fx/cursor.png", (1, 0.9, 0.5, 0.9)).replace(
         "tilingFactor", "lit: false\n  tilingFactor"
@@ -433,7 +447,7 @@ def level_scene(level: mp.LevelData) -> str:
     entities.add("RangeRing", [ring + GROUND], rotation=FLAT, visible=False)
     build_wheel(entities)
     name = f"level_{level.number:02d}"
-    next_scene = f"scenes/level_{level.number + 1:02d}.owl" if level.number < len(mp.LEVELS) else "scenes/victory.owl"
+    next_scene = "scenes/victory.owl"
     waves = "".join(f"\n        - {y.quote(wave)}" for wave in level.waves)
     properties = (
         "LuaScript:\n  scriptPath: scripts/game/defence.lua\n  properties:\n"
@@ -575,7 +589,7 @@ def tower_prefab(key: str) -> str:
     return prefab(f"Tower_{key}", entities)
 
 
-ENEMIES = ("goblin", "grunt", "ogre")
+ENEMIES = tuple(CREATURES)
 """Enemy kinds, a sheet each."""
 
 
@@ -766,6 +780,16 @@ actions:
       - {key: R, scale: -1}
       - {key: V}
       - {gamepad_stick: right, component: y}
+  - name: rain
+    type: button
+    bindings:
+      - {key: D4}
+      - {gamepad_button: LeftThumb}
+  - name: shield
+    type: button
+    bindings:
+      - {key: D5}
+      - {gamepad_button: RightThumb}
   - name: next_pad
     type: button
     bindings:

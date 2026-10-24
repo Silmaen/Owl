@@ -1,11 +1,11 @@
--- Title screen of Tower defence: Play starts the first level, How to play shows the rules and the controls in a window
+-- Title screen of Tower defence: Play opens the world map, How to play shows the rules and the controls in a window
 -- (the only place besides the pause window that shows them), Settings, Quit. The board on the right reads the progress
--- of the level (`tower_done_01`, `tower_stars_01` and `tower_best_01` settings written by defence.lua). Every change of screen is a wipe in
+-- of the campaign (`tower_done_NN` and `tower_stars_NN` settings written by defence.lua). Every change of screen is a wipe in
 -- the night blue of the game (`scene.transition_to` with a colour).
 
 properties = {
-    { name = "first_map", type = "string", default = "scenes/level_01.owl" },
-    { name = "map_name", type = "string", default = "Greenmarch Ford" },
+    { name = "first_map", type = "string", default = "scenes/world_map.owl" },
+    { name = "level_count", type = "int", default = 3, min = 1 },
     { name = "wipe_color", type = "color", default = { 0.1, 0.14, 0.24, 1 } },
 }
 
@@ -33,13 +33,16 @@ function on_create()
     window_id = scene.find_entity("HowToWindow")
     back_id = scene.find_entity("HowToBackButton")
     how_to_id = scene.find_entity("HowToButton")
-    set("MapLabel", "Level 1: " .. map_name)
-    local done = settings.get("tower_done_01", false)
-    local stars = settings.get("tower_stars_01", 0)
-    set("StateLabel", done and ("Defended, " .. stars .. (stars == 1 and " star" or " stars")) or "Not defended yet")
-    set("BestLabel", done and ("Most lives kept: " .. settings.get("tower_best_01", 0)) or "8 waves to hold")
+    local done, stars = 0, 0
+    for index = 1, level_count do
+        if settings.get(string.format("tower_done_%02d", index), false) then done = done + 1 end
+        stars = stars + settings.get(string.format("tower_stars_%02d", index), 0)
+    end
+    set("MapLabel", "The campaign of the keep")
+    set("StateLabel", string.format("Levels defended: %d / %d", done, level_count))
+    set("BestLabel", string.format("Stars won: %d / %d", stars, level_count * 3))
     local play_id = scene.find_entity("PlayButton")
-    if play_id ~= 0 and done then ui.set_text(play_id, "Play again") end
+    if play_id ~= 0 and done > 0 then ui.set_text(play_id, "Continue") end
     gamestate.set("tower_title", true)
 end
 

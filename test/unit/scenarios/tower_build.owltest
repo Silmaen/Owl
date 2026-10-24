@@ -6,7 +6,7 @@
 scene: ../../../samples/tower_defence/scenes/level_01.owl
 steps:
   - frames: 30
-  - expect: {gamestate: tower_gold, equals: 240}
+  - expect: {gamestate: tower_gold, equals: 220}
   - input: {mouse_pos: [478, 259], frames: 3}
   - expect: {gamestate: tower_hover_pad, equals: 1}
   - expect: {entity: Cursor, translation.x: 4}
@@ -16,7 +16,7 @@ steps:
   - expect: {gamestate: tower_hover, equals: 1}
   - input: {mouse: Left, mouse_pos: [417, 258], frames: 2}
   - expect: {gamestate: tower_towers, equals: 1}
-  - expect: {gamestate: tower_gold, equals: 170}
+  - expect: {gamestate: tower_gold, equals: 150}
   - expect: {gamestate: tower_ring, equals: 0}
   - input: {mouse_pos: [324, 640], frames: 2}
   - input: {mouse: Left, mouse_pos: [324, 640], frames: 2}
@@ -28,4 +28,4 @@ steps:
   - expect: {gamestate: tower_ring, equals: 2}
   - input: {key: X, frames: 2}
   - expect: {gamestate: tower_towers, equals: 0}
-  - expect: {gamestate: tower_gold, equals: 205}
+  - expect: {gamestate: tower_gold, equals: 185}

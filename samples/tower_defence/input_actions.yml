@@ -31,6 +31,16 @@ actions:
       - {key: R, scale: -1}
       - {key: V}
       - {gamepad_stick: right, component: y}
+  - name: rain
+    type: button
+    bindings:
+      - {key: D4}
+      - {gamepad_button: LeftThumb}
+  - name: shield
+    type: button
+    bindings:
+      - {key: D5}
+      - {gamepad_button: RightThumb}
   - name: next_pad
     type: button
     bindings:

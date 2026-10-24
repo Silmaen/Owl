@@ -37,5 +37,5 @@ function on_again_clicked()
 end
 
 function on_title_clicked()
-    leave("scenes/title.owl")
+    leave("scenes/world_map.owl")
 end

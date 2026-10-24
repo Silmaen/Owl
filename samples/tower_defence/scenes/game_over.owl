@@ -270,7 +270,7 @@ Entities:
       anchorMin: [0.5, 0]
       anchorMax: [0.5, 0]
       pivot: [0.5, 0]
-      size: [1.1, 0.66]
+      size: [1.1, 0.72]
       sizeUnit: [ScreenHeight, ScreenHeight]
       offset: [0, 0.04]
       offsetUnit: [ScreenHeight, ScreenHeight]
@@ -282,8 +282,8 @@ Entities:
     UiLayout:
       arrangement: Column
       crossAlign: Center
-      spacing: 6
-      padding: 12
+      spacing: 4
+      padding: 10
       columns: 1
       cellSize: [0, 0]
   - Entity: 7430000000000000016
@@ -301,7 +301,7 @@ Entities:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.95, 0.15]
+      size: [0.95, 0.13]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiLayout:
@@ -338,7 +338,7 @@ Entities:
     UiText:
       outlineWidth: 2
       outlineColor: [0.16, 0.09, 0.04, 1]
-      text: 'Title'
+      text: 'World map'
       color: [0.95, 0.88, 0.72, 1]
       fontSize: 30
       horizontalAlignment: Center
@@ -443,6 +443,70 @@ Entities:
       texture: nam:textures/ui/banner.png
   - Entity: 7430000000000000021
     Tag:
+      tag: StatLine6
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7430000000000000015
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.8, 0.075]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.16, 0.09, 0.04, 1]
+      text: ''
+      color: [0.97, 0.77, 0.3, 1]
+      fontSize: 24
+      horizontalAlignment: Left
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: JetBrainsMono-Regular
+  - Entity: 7430000000000000022
+    Tag:
+      tag: StatLine5
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7430000000000000015
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.8, 0.075]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.16, 0.09, 0.04, 1]
+      text: ''
+      color: [0.88, 0.8, 0.64, 0.95]
+      fontSize: 26
+      horizontalAlignment: Left
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: JetBrainsMono-Regular
+  - Entity: 7430000000000000023
+    Tag:
       tag: StatLine4
     Transform:
       translation: [0, 0, 0]
@@ -456,7 +520,7 @@ Entities:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.8, 0.1]
+      size: [0.8, 0.075]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
@@ -464,7 +528,7 @@ Entities:
       outlineColor: [0.16, 0.09, 0.04, 1]
       text: ''
       color: [0.88, 0.8, 0.64, 0.95]
-      fontSize: 28
+      fontSize: 26
       horizontalAlignment: Left
       verticalAlignment: Middle
       kerning: 0
@@ -473,7 +537,7 @@ Entities:
       fit: Shrink
       minFontSize: 12
       font: JetBrainsMono-Regular
-  - Entity: 7430000000000000022
+  - Entity: 7430000000000000024
     Tag:
       tag: StatLine3
     Transform:
@@ -488,7 +552,7 @@ Entities:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.8, 0.1]
+      size: [0.8, 0.075]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
@@ -496,7 +560,7 @@ Entities:
       outlineColor: [0.16, 0.09, 0.04, 1]
       text: ''
       color: [0.88, 0.8, 0.64, 0.95]
-      fontSize: 28
+      fontSize: 26
       horizontalAlignment: Left
       verticalAlignment: Middle
       kerning: 0
@@ -505,7 +569,7 @@ Entities:
       fit: Shrink
       minFontSize: 12
       font: JetBrainsMono-Regular
-  - Entity: 7430000000000000023
+  - Entity: 7430000000000000025
     Tag:
       tag: StatLine2
     Transform:
@@ -520,7 +584,7 @@ Entities:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.8, 0.1]
+      size: [0.8, 0.075]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
@@ -528,7 +592,7 @@ Entities:
       outlineColor: [0.16, 0.09, 0.04, 1]
       text: ''
       color: [0.88, 0.8, 0.64, 0.95]
-      fontSize: 28
+      fontSize: 26
       horizontalAlignment: Left
       verticalAlignment: Middle
       kerning: 0
@@ -537,7 +601,7 @@ Entities:
       fit: Shrink
       minFontSize: 12
       font: JetBrainsMono-Regular
-  - Entity: 7430000000000000024
+  - Entity: 7430000000000000026
     Tag:
       tag: StatLine1
     Transform:
@@ -552,7 +616,7 @@ Entities:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.8, 0.1]
+      size: [0.8, 0.075]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
@@ -560,7 +624,7 @@ Entities:
       outlineColor: [0.16, 0.09, 0.04, 1]
       text: ''
       color: [0.88, 0.8, 0.64, 0.95]
-      fontSize: 28
+      fontSize: 26
       horizontalAlignment: Left
       verticalAlignment: Middle
       kerning: 0
@@ -569,7 +633,7 @@ Entities:
       fit: Shrink
       minFontSize: 12
       font: JetBrainsMono-Regular
-  - Entity: 7430000000000000025
+  - Entity: 7430000000000000027
     Tag:
       tag: ResultTitle
     Transform:
@@ -584,7 +648,7 @@ Entities:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.95, 0.24]
+      size: [0.95, 0.18]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
@@ -592,7 +656,7 @@ Entities:
       outlineColor: [0.16, 0.09, 0.04, 1]
       text: 'The keep has fallen'
       color: [0.95, 0.45, 0.35, 1]
-      fontSize: 68
+      fontSize: 62
       horizontalAlignment: Center
       verticalAlignment: Middle
       kerning: 0

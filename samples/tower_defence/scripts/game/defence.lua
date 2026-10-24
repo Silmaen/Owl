@@ -41,7 +41,7 @@ properties = {
     { name = "first_wave_delay", type = "float", default = 25.0, min = 0 },
     { name = "wave_delay", type = "float", default = 18.0, min = 0 },
     { name = "early_bonus", type = "float", default = 2.0, min = 0 },
-    { name = "hp_growth", type = "float", default = 0.06, min = 0 },
+    { name = "hp_growth", type = "float", default = 0.18, min = 0 },
     { name = "sell_share", type = "float", default = 0.5, min = 0, max = 1 },
     { name = "height_step", type = "float", default = 0.4, min = 0.01 },
     { name = "height_bonus", type = "float", default = 0.15, min = 0 },
@@ -68,16 +68,31 @@ properties = {
     { name = "shock_push", type = "float", default = 0.8, min = 0 },
     { name = "freeze_time", type = "float", default = 1.0, min = 0 },
     { name = "aura_damage", type = "float", default = 1.25, min = 1 },
-    { name = "goblin_hp", type = "float", default = 28.0 },
+    { name = "rain_damage", type = "float", default = 70.0, min = 0 },
+    { name = "rain_radius", type = "float", default = 1.7, min = 0 },
+    { name = "rain_cooldown", type = "float", default = 45.0, min = 0 },
+    { name = "shield_time", type = "float", default = 5.0, min = 0 },
+    { name = "shield_radius", type = "float", default = 1.8, min = 0 },
+    { name = "shield_cooldown", type = "float", default = 60.0, min = 0 },
+    { name = "treasury_gold", type = "int", default = 60, min = 0 },
+    { name = "walls_lives", type = "int", default = 5, min = 0 },
+    { name = "goblin_hp", type = "float", default = 34.0 },
     { name = "goblin_speed", type = "float", default = 1.6 },
-    { name = "goblin_gold", type = "int", default = 7 },
-    { name = "grunt_hp", type = "float", default = 75.0 },
+    { name = "goblin_gold", type = "int", default = 9 },
+    { name = "grunt_hp", type = "float", default = 92.0 },
     { name = "grunt_speed", type = "float", default = 1.0 },
-    { name = "grunt_gold", type = "int", default = 12 },
-    { name = "ogre_hp", type = "float", default = 220.0 },
+    { name = "grunt_gold", type = "int", default = 15 },
+    { name = "ogre_hp", type = "float", default = 300.0 },
     { name = "ogre_speed", type = "float", default = 0.65 },
-    { name = "ogre_gold", type = "int", default = 30 },
+    { name = "ogre_gold", type = "int", default = 36 },
     { name = "ogre_arrow", type = "float", default = 0.4, min = 0, max = 1 },
+    { name = "wolf_hp", type = "float", default = 50.0 },
+    { name = "wolf_speed", type = "float", default = 2.1 },
+    { name = "wolf_gold", type = "int", default = 9 },
+    { name = "troll_hp", type = "float", default = 130.0 },
+    { name = "troll_speed", type = "float", default = 1.05 },
+    { name = "troll_gold", type = "int", default = 18 },
+    { name = "troll_regen", type = "float", default = 7.0, min = 0 },
     { name = "arrow_speed", type = "float", default = 9.0, min = 0.1 },
     { name = "ball_flight", type = "float", default = 0.8, min = 0.1 },
     { name = "camera_pitch", type = "float", default = -0.75, min = -1.5, max = -0.2 },
@@ -103,9 +118,9 @@ local BLURBS = {
     frost = "Chills an enemy: slower for a while, a little damage.",
 }
 local LEVEL_TEXT = {
-    archer = { "", "Level 2: longer range.", "Level 3: faster volleys." },
-    cannon = { "", "Level 2: heavier shells.", "Level 3: wider bursts." },
-    frost = { "", "Level 2: colder, slower enemies.", "Level 3: the chill lasts longer." },
+    archer = { "", "Level 2: heavier arrows, longer range.", "Level 3: faster, heavier volleys." },
+    cannon = { "", "Level 2: heavier shells.", "Level 3: wider and heavier bursts." },
+    frost = { "", "Level 2: colder, slower enemies.", "Level 3: the chill lasts longer and bites." },
 }
 local POWERS = { archer = { "pierce", "double" }, cannon = { "fire", "shock" }, frost = { "freeze", "aura" } }
 local POWER_NAMES = { pierce = "Piercing arrows", double = "Double shot", fire = "Fire shells", shock = "Shock wave",
@@ -119,6 +134,8 @@ local POWER_TEXT = {
     aura = "Enemies in range take a quarter more damage from every tower.",
 }
 local UNLOCK_SETTING = "tower_done_01"
+-- What winning each level the first time unlocks, as the tally says it.
+local UNLOCKS = { "the second power-up of each tower", "Rain of arrows", "the Royal treasury", "Shield wall" }
 local UNLOCK_NAME = "Greenmarch Ford"
 local PROJECTILE = { archer = "prefabs/projectile_arrow.owlprefab", cannon = "prefabs/projectile_ball.owlprefab",
                      fire = "prefabs/projectile_fireball.owlprefab", frost = "prefabs/projectile_shard.owlprefab" }
@@ -131,8 +148,8 @@ local GRASS_TOP = 0.4                     -- height of the grass over the base o
 local FOOT_SHARE = 34.0 / 96.0
 local sprite_lift = 0.5
 local TOWARD_VIEW = 0.25                  -- billboards come this far toward the camera, off the ground they stand on
-local BAR_HEIGHT = { goblin = 0.62, grunt = 0.86, ogre = 1.12 }
-local SHADOW_SIZE = { goblin = 0.45, grunt = 0.6, ogre = 0.9 }
+local BAR_HEIGHT = { goblin = 0.62, grunt = 0.86, ogre = 1.12, wolf = 0.82, troll = 0.98 }
+local SHADOW_SIZE = { goblin = 0.45, grunt = 0.6, ogre = 0.9, wolf = 0.8, troll = 0.6 }
 local DIRECTIONS = 8
 
 local camera_id, cursor_id, ring_id, sky_id = 0, 0, 0, 0
@@ -140,6 +157,7 @@ local choice_ids = {}
 local wheel_ids = { ring = 0, plaque = 0, title = 0, text = 0, costs = {} }
 local wheel_shown = {}      -- the text each world text of the wheel shows
 local banner_ids = {}       -- the waving banners: { id, yaw }
+local spells = {}           -- the spells the campaign unlocked: rain of arrows, shield wall
 local torch_ids = {}
 local hud = {}
 local shown = {}
@@ -147,7 +165,8 @@ local shown = {}
 local stats = {}            -- tower stats by kind, enemy stats by kind, read from the properties
 local pads = {}             -- list of { id, x, y, z, level, tower }
 local pad_by_id = {}
-local route = nil           -- the waypoints, with the distance walked at each one
+local route = nil           -- road A: the waypoints, with the distance walked at each one
+local routes = {}           -- road A, and road B of a level with two gates
 
 local enemies, towers, projectiles, effects = {}, {}, {}, {}
 local corpses, sparks = {}, {}
@@ -292,6 +311,8 @@ local function read_stats()
     stats.goblin = { hp = goblin_hp, speed = goblin_speed, gold = goblin_gold, arrow = 1.0 }
     stats.grunt = { hp = grunt_hp, speed = grunt_speed, gold = grunt_gold, arrow = 1.0 }
     stats.ogre = { hp = ogre_hp, speed = ogre_speed, gold = ogre_gold, arrow = ogre_arrow }
+    stats.wolf = { hp = wolf_hp, speed = wolf_speed, gold = wolf_gold, arrow = 1.0 }
+    stats.troll = { hp = troll_hp, speed = troll_speed, gold = troll_gold, arrow = 1.0, regen = troll_regen }
 end
 
 -- The stats of a tower at its level and power-up, its range grown by the height of its pad.
@@ -300,14 +321,14 @@ local function tower_stats(tower)
     local s = { range = base.range, damage = base.damage, reload = base.reload, splash = base.splash,
                 slow = base.slow, time = base.time }
     if tower.level >= 2 then
-        if tower.kind == "archer" then s.range = s.range * 1.2
-        elseif tower.kind == "cannon" then s.damage = s.damage * 1.4
-        else s.slow = s.slow * 0.8 end
+        if tower.kind == "archer" then s.range, s.damage = s.range * 1.15, s.damage * 1.5
+        elseif tower.kind == "cannon" then s.damage = s.damage * 1.5
+        else s.slow, s.damage = s.slow * 0.8, s.damage * 1.5 end
     end
     if tower.level >= 3 then
-        if tower.kind == "archer" then s.reload = s.reload * 0.7
-        elseif tower.kind == "cannon" then s.splash = s.splash * 1.35
-        else s.time = s.time * 1.45 end
+        if tower.kind == "archer" then s.reload, s.damage = s.reload * 0.65, s.damage * 1.2
+        elseif tower.kind == "cannon" then s.splash, s.damage = s.splash * 1.35, s.damage * 1.2
+        else s.time, s.damage = s.time * 1.45, s.damage * 1.3 end
     end
     s.range = s.range * (1.0 + height_bonus * tower.pad.level)
     return s
@@ -329,32 +350,43 @@ local function find_pads()
     for index, pad in ipairs(pads) do pad.index = index end
 end
 
-local function find_route()
+-- The roads: `Waypoint NN` (road A), then `Waypoint B NN` (road B, a level with two gates), in the order of their
+-- numbers, with the distance walked at each point.
+local function read_road(prefix)
     local points = {}
     for number = 1, 99 do
-        local id = scene.find_entity(string.format("Waypoint %02d", number))
+        local id = scene.find_entity(string.format("Waypoint %s%02d", prefix, number))
         if id ~= 0 then
             local x, y, z = transform.get_position(id)
             points[#points + 1] = { x = x, y = y, z = z, at = 0.0 }
         end
     end
-    if #points < 2 then
-        log.warn("Tower defence: the level needs at least two Waypoint NN entities.")
-        return
-    end
-    route = { points = points, total = 0.0 }
+    if #points < 2 then return nil end
+    local road = { points = points, total = 0.0 }
     for i = 2, #points do
         local a, b = points[i - 1], points[i]
         local dx, dy, dz = b.x - a.x, b.y - a.y, b.z - a.z
-        route.total = route.total + math.sqrt(dx * dx + dy * dy + dz * dz)
-        b.at = route.total
+        road.total = road.total + math.sqrt(dx * dx + dy * dy + dz * dz)
+        b.at = road.total
     end
-    gamestate.set("tower_route", #points)
+    return road
 end
 
--- The point of the road at a distance from the gate and the direction of the road there (on the ground plane).
-local function along(distance)
-    local points = route.points
+local function find_route()
+    routes[1] = read_road("")
+    routes[2] = read_road("B ")
+    route = routes[1]
+    if route == nil then
+        log.warn("Tower defence: the level needs at least two Waypoint NN entities.")
+        return
+    end
+    gamestate.set("tower_route", #route.points)
+    gamestate.set("tower_roads", routes[2] ~= nil and 2 or 1)
+end
+
+-- The point of a road (1 or 2) at a distance from its gate and the direction of the road there (on the ground plane).
+local function along(distance, road)
+    local points = (routes[road or 1] or route).points
     local index = 1
     while index < #points - 1 and points[index + 1].at < distance do index = index + 1 end
     local a, b = points[index], points[index + 1]
@@ -393,7 +425,8 @@ function on_create()
         torch.flame = flames[index] or 0
         torch.glow = glows[index] or 0
     end
-    for _, name in ipairs({ "gold", "lives", "wave", "message", "call", "speed", "pause", "resume" }) do
+    for _, name in ipairs({ "gold", "lives", "wave", "message", "call", "speed", "pause", "resume", "rain", "shield",
+                            "rain_label", "shield_label" }) do
         hud[name] = 0
     end
     hud.gold = ui.find("GoldText")
@@ -401,6 +434,9 @@ function on_create()
     hud.wave = ui.find("WaveText")
     hud.message = ui.find("MessageText")
     hud.call = ui.find("CallButton")
+    hud.rain = ui.find("RainButton")
+    hud.shield = ui.find("ShieldButton")
+    hud.rain_label, hud.shield_label = hud.rain, hud.shield
     hud.speed = ui.find("SpeedButton")
     hud.pause = ui.find("PauseWindow")
     hud.resume = ui.find("ResumeButton")
@@ -413,7 +449,20 @@ function on_create()
     view.x, view.z = (map_width - 1) * 0.5, (map_depth - 1) * 0.5
     view.distance = camera_distance
     place_camera()
-    gold, lives_left = start_gold, lives
+    -- What the campaign unlocked: the spells, more gold, more lives (`tower_done_NN`, `tower_stars_NN` settings).
+    spells.rain = { unlocked = settings.get("tower_done_02", false) == true, clock = 0.0, cooldown = rain_cooldown,
+                    radius = rain_radius, title = "Rain of arrows", casts = 0 }
+    spells.shield = { unlocked = settings.get("tower_done_04", false) == true, clock = 0.0,
+                      cooldown = shield_cooldown, radius = shield_radius, title = "Shield wall", casts = 0 }
+    show(hud.rain, spells.rain.unlocked)
+    show(hud.shield, spells.shield.unlocked)
+    local bonus_gold = settings.get("tower_done_03", false) == true and treasury_gold or 0
+    local all_stars = true
+    for number = 1, 5 do
+        if settings.get(string.format("tower_stars_%02d", number), 0) < 3 then all_stars = false end
+    end
+    gold, lives_left = start_gold + bonus_gold, lives + (all_stars and walls_lives or 0)
+    gamestate.set("tower_start_gold", gold)
     wave_count = #waves
     countdown = first_wave_delay
     hours, hours_goal = start_hour, start_hour
@@ -462,13 +511,16 @@ end
 local function parse_wave(text)
     local queue = {}
     for group in string.gmatch(text or "", "[^;]+") do
-        local kind, count, gap = string.match(group, "^%s*(%a+)%s+(%d+)%s+([%d%.]+)%s*$")
+        local kind, count, gap, letter = string.match(group, "^%s*(%a+)%s+(%d+)%s+([%d%.]+)%s*(%a?)%s*$")
         if kind ~= nil and stats[kind] ~= nil and stats[kind].hp ~= nil then
             for i = 1, tonumber(count) do
-                queue[#queue + 1] = { kind = kind, gap = (i == 1 and #queue > 0) and tonumber(gap) * 2 or tonumber(gap) }
+                local road = letter == "b" and 2 or (letter == "a" and 1 or (#queue % 2) + 1)
+                if routes[road] == nil then road = 1 end
+                queue[#queue + 1] = { kind = kind, road = road,
+                                      gap = (i == 1 and #queue > 0) and tonumber(gap) * 2 or tonumber(gap) }
             end
         else
-            log.warn("Tower defence: wave group '" .. group .. "' is not 'kind count gap'.")
+            log.warn("Tower defence: wave group '" .. group .. "' is not 'kind count gap [road]'.")
         end
     end
     return queue
@@ -501,9 +553,9 @@ local function call_early()
     if bonus > 0 then message("Wave " .. wave .. " / " .. wave_count .. "\n+" .. bonus .. " gold", 1.8) end
 end
 
-local function spawn_enemy(kind)
+local function spawn_enemy(kind, road)
     local base = stats[kind]
-    local x, y, z = along(0.0)
+    local x, y, z = along(0.0, road)
     local id = scene.spawn_prefab("prefabs/enemy_" .. kind .. ".owlprefab", billboard_at(x, y, z))
     if id == 0 then return end
     local _, size = transform.get_scale(id)
@@ -517,10 +569,11 @@ local function spawn_enemy(kind)
     end
     local hp = base.hp * (1.0 + hp_growth * (wave - 1))
     spawned = spawned + 1
+    if road == 2 then gamestate.set("tower_spawned_b", (gamestate.get("tower_spawned_b", 0)) + 1) end
     local side = ((spawned * 37) % 7) / 6.0 - 0.5
     enemies[#enemies + 1] = {
         id = id, bar = bar, shadow = shadow, kind = kind, hp = hp, max = hp, speed = base.speed, gold = base.gold,
-        arrow = base.arrow, distance = 0.0, side = side * 0.28, slow = 0.0, slow_factor = 1.0, frozen = 0.0,
+        arrow = base.arrow, regen = base.regen or 0.0, road = road or 1, distance = 0.0, side = side * 0.28, slow = 0.0, slow_factor = 1.0, frozen = 0.0,
         frost_hits = 0, burn = 0.0, x = x, y = y, z = z, dx = 1.0, dz = 0.0, walk = spawned * 0.37, frame = -1,
     }
 end
@@ -535,7 +588,7 @@ local function update_waves(dt)
                 spawning = nil
                 if wave < wave_count then countdown = wave_delay end
             else
-                spawn_enemy(next_one.kind)
+                spawn_enemy(next_one.kind, next_one.road)
                 spawn_clock = spawn_clock + (spawning[1] and spawning[1].gap or 0.0)
                 if #spawning == 0 then
                     spawning = nil
@@ -703,14 +756,17 @@ local function update_enemies(dt)
         if foe.burn > 0.0 then
             foe.burn = foe.burn - dt
             hurt(foe, fire_damage * dt)
+        elseif foe.regen > 0.0 and foe.hp < foe.max then
+            foe.hp = math.min(foe.max, foe.hp + foe.regen * dt)
         end
         if not foe.dead then
             local step = speed * dt
             foe.distance = foe.distance + step
             travel = travel + step
-            if foe.distance >= route.total then
+            local length = routes[foe.road].total
+            if foe.distance >= length then
                 -- At the gate of the keep: two blows, then the life is lost.
-                foe.distance = route.total
+                foe.distance = length
                 foe.attack = (foe.attack or 0.0) + dt
                 local row = ATTACK_ROW + (math.floor(foe.attack / 0.18) % 2)
                 isometric.set_sprite_frame(foe.id, row * DIRECTIONS + direction_of(foe.dx, foe.dz))
@@ -725,7 +781,7 @@ local function update_enemies(dt)
                     index = index + 1
                 end
             else
-                local x, y, z, dx, dz = along(foe.distance)
+                local x, y, z, dx, dz = along(foe.distance, foe.road)
                 -- Walk beside the middle of the road, on the right of the heading.
                 x, z = x - dz * foe.side, z + dx * foe.side
                 foe.x, foe.y, foe.z, foe.dx, foe.dz = x, y, z, dx, dz
@@ -799,7 +855,7 @@ local function fire(tower, foe)
         -- Aim where the enemy will be when the shell lands.
         local factor = foe.frozen > 0.0 and 0.0 or (foe.slow > 0.0 and foe.slow_factor or 1.0)
         local lead = foe.distance + foe.speed * factor * ball_flight
-        shot.tx, shot.ty, shot.tz = along(math.min(lead, route.total))
+        shot.tx, shot.ty, shot.tz = along(math.min(lead, routes[foe.road].total), foe.road)
     end
     projectiles[#projectiles + 1] = shot
     if clock - (last_shot_sound[kind] or -1.0) > 0.12 then
@@ -968,6 +1024,70 @@ local function update_effects(dt)
             table.remove(effects, index)
         else
             index = index + 1
+        end
+    end
+end
+
+-- Spells ------------------------------------------------------------------------------------------------------------
+
+-- The enemy nearest the keep: the spells fall on it and around it.
+local function front_enemy()
+    local best, share = nil, -1.0
+    for _, foe in ipairs(enemies) do
+        local progress = foe.distance / math.max(0.01, routes[foe.road].total)
+        if progress > share then best, share = foe, progress end
+    end
+    return best
+end
+
+local function cast(name)
+    local spell = spells[name]
+    if spell == nil or not spell.unlocked or spell.clock > 0.0 or ending ~= nil or paused then return end
+    local target = front_enemy()
+    if target == nil then
+        message("No enemy to strike", 1.0)
+        return
+    end
+    spell.clock = spell.cooldown
+    spell.casts = spell.casts + 1
+    local hit = {}
+    for _, foe in ipairs(enemies) do
+        local dx, dz = foe.x - target.x, foe.z - target.z
+        if dx * dx + dz * dz <= spell.radius * spell.radius then hit[#hit + 1] = foe end
+    end
+    if name == "rain" then
+        play("sounds/game/arrow.wav")
+        for k = 1, 14 do
+            local a, r = k * 2.4, (k % 5) * spell.radius * 0.2
+            emit(target.x + math.cos(a) * r, target.y + 2.2, target.z + math.sin(a) * r, 1, 0.2, 0.95, 0.9, 0.75, 0.1, 0.5, -4.0)
+        end
+        spawn_ring(target.x, target.y, target.z, spell.radius, 0.95, 0.9, 0.7)
+        for _, foe in ipairs(hit) do hurt(foe, rain_damage) end
+    else
+        play("sounds/game/build.wav")
+        spawn_ring(target.x, target.y, target.z, spell.radius, 1.0, 0.85, 0.3)
+        emit(target.x, target.y + 0.4, target.z, 12, 1.6, 1.0, 0.85, 0.35, 0.12, 0.6, 0.8)
+        for _, foe in ipairs(hit) do foe.frozen = math.max(foe.frozen, shield_time) end
+    end
+    gamestate.set("tower_" .. name .. "_casts", spell.casts)
+end
+
+function on_rain_clicked()
+    cast("rain")
+end
+
+function on_shield_clicked()
+    cast("shield")
+end
+
+local function update_spells(dt)
+    for name, spell in pairs(spells) do
+        spell.clock = math.max(0.0, spell.clock - dt)
+        local id = hud[name]
+        if id ~= 0 and spell.unlocked then
+            ui.set_button_enabled(id, spell.clock <= 0.0 and #enemies > 0 and ending == nil)
+            set_text(name .. "_label", spell.clock > 0.0 and string.format("%s %d s", spell.title, math.ceil(spell.clock))
+                    or spell.title)
         end
     end
 end
@@ -1403,6 +1523,8 @@ end
 local function handle_input()
     if input.is_action_just_pressed("fast_forward") then on_speed_clicked() end
     if input.is_action_just_pressed("call_wave") then call_early() end
+    if input.is_action_just_pressed("rain") then cast("rain") end
+    if input.is_action_just_pressed("shield") then cast("shield") end
     local world_free = not ui.is_world_blocked()
     if world_free and input.is_action_just_pressed("primary") and not ui.is_mouse_over_ui() then
         pad_mode = false
@@ -1536,7 +1658,10 @@ local function finish(won)
         local done = string.format("tower_done_%02d", level_number)
         local best = string.format("tower_best_%02d", level_number)
         local stars = string.format("tower_stars_%02d", level_number)
-        gamestate.set("tower_result_unlock", (not settings.get(done, false)) and level_number == 1)
+        local first = not settings.get(done, false)
+        gamestate.set("tower_result_unlock", first)
+        gamestate.set("tower_result_unlock_text", first and (UNLOCKS[level_number] or "") or "")
+        if first then gamestate.set("tower_map_reveal", level_number + 1) end
         settings.set(done, true)
         gamestate.set("tower_done", true)
         if kept > settings.get(best, 0) then settings.set(best, kept) end
@@ -1588,7 +1713,7 @@ function on_pause_quit()
     set_paused(false)
     ending = "quit"
     time.set_scale(1.0)
-    scene.transition_to("scenes/title.owl", "wipe_down", 0.3, wipe_color.r, wipe_color.g, wipe_color.b)
+    scene.transition_to("scenes/world_map.owl", "wipe_down", 0.3, wipe_color.r, wipe_color.g, wipe_color.b)
 end
 
 function on_menu_clicked()
@@ -1642,6 +1767,7 @@ function on_update(dt)
     update_towers(dt)
     update_projectiles(dt)
     update_effects(dt)
+    update_spells(dt)
     update_corpses(dt)
     update_sparks(dt)
     if ending == nil then check_end() end

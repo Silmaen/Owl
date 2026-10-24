@@ -15,17 +15,19 @@ from tools.samples.tower_defence import creatures
 from tools.samples.tower_defence import generate_maps as gen
 from tools.samples.tower_defence import maps as mp
 
-WAVE_GROUP = re.compile(r"^\s*([a-z]+)\s+(\d+)\s+([\d.]+)\s*$")
+WAVE_GROUP = re.compile(r"^\s*([a-z]+)\s+(\d+)\s+([\d.]+)\s*([ab]?)\s*$")
 
 
 @pytest.mark.parametrize("level", mp.LEVELS, ids=lambda level: f"level_{level.number:02d}")
 def test_every_level_is_valid(level: mp.LevelData) -> None:
-    road = gen.check(level)
-    assert len(road) == len(set(road)), "the road crosses itself"
-    for (x0, z0), (x1, z1) in zip(road, road[1:], strict=False):
-        assert abs(x1 - x0) + abs(z1 - z0) == 1
-    for a, b in zip(road, road[1:], strict=False):
-        assert abs(gen.road_height(level, a) - gen.road_height(level, b)) <= mp.HEIGHT_STEP + 1e-6, (a, b)
+    roads = gen.check(level)
+    assert len(roads) == len(level.cells("G"))
+    for road in roads:
+        assert len(road) == len(set(road)), "the road crosses itself"
+        for (x0, z0), (x1, z1) in zip(road, road[1:], strict=False):
+            assert abs(x1 - x0) + abs(z1 - z0) == 1
+        for a, b in zip(road, road[1:], strict=False):
+            assert abs(gen.road_height(level, a) - gen.road_height(level, b)) <= mp.HEIGHT_STEP + 1e-6, (a, b)
     assert len(level.cells("P")) >= 10
     assert 0 <= level.night_from <= len(level.waves)
 
@@ -38,6 +40,7 @@ def test_every_wave_names_known_enemies(level: mp.LevelData) -> None:
             match = WAVE_GROUP.match(group)
             assert match is not None, group
             assert match.group(1) in creatures.CREATURES
+            assert match.group(4) == "" or len(level.cells("G")) == 2, group
             assert int(match.group(2)) > 0
 
 
@@ -61,3 +64,12 @@ def test_the_scene_has_its_waypoints_pads_and_towers() -> None:
         for step in ("1", "2", "3"):
             assert f"tower_{kind}_{step}" in prefabs
     assert all(f"enemy_{kind}" in prefabs for kind in creatures.CREATURES)
+
+
+def test_two_gates_make_two_roads_meeting_before_the_keep() -> None:
+    level = mp.LEVELS[2]
+    roads = mp.routes(level)
+    assert len(roads) == 2
+    assert roads[0][0] != roads[1][0]
+    assert roads[0][-1] == roads[1][-1]
+    assert "tag: Waypoint B 01" in gen.level_scene(level)

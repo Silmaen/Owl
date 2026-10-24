@@ -152,7 +152,9 @@ class Model:
 
 
 def _limb_angle(model: Model, bone: str, row: int) -> float:
-    """Swing of a limb (radians, around the X axis at its joint) in a row of the sheet."""
+    """Swing of a limb (radians, around the X axis at its joint) in a row of the sheet; a bone named with a trailing
+    digit (``leg_l2``, the hind leg of a wolf) swings like the bone without it."""
+    bone = bone.rstrip("0123456789")
     if row < WALK:
         swing = math.sin(row * 2.0 * math.pi / WALK)
         return {
@@ -172,7 +174,8 @@ def _pose(model: Model, bone: str, point: Vec, row: int) -> Vec:
     """A point moved by its bone in a row of the sheet: the walk, the blow, or the fall backwards."""
     angle = _limb_angle(model, bone, row)
     if angle != 0.0:
-        pivot = model.pivots.get("hip" if bone.startswith("leg") else "shoulder", (0.0, 0.0, 0.0))
+        default = model.pivots.get("hip" if bone.startswith("leg") else "shoulder", (0.0, 0.0, 0.0))
+        pivot = model.pivots.get(bone, default)
         local = _rot_x((point[0] - pivot[0], point[1] - pivot[1], point[2] - pivot[2]), angle)
         point = (local[0] + pivot[0], local[1] + pivot[1], local[2] + pivot[2])
     if row < WALK:
@@ -366,5 +369,82 @@ def ogre() -> Model:
     return m
 
 
-CREATURES: dict[str, Callable[[], Model]] = {"goblin": goblin, "grunt": grunt, "ogre": ogre}
+WOLF = (110, 104, 100)
+WOLF_DARK = (74, 68, 66)
+TROLL_SKIN = (88, 132, 168)
+TROLL_DARK = (60, 94, 126)
+
+
+def wolf_rider() -> Model:
+    """A goblin riding a grey wolf, 0.75 tall: four legs at a trot, a long snout and tail, the rider with a spear."""
+    m = Model(stride=0.6, bob=0.03)
+    m.pivots = {"shoulder": (0.0, 0.52, 0.0)}
+    for side, front, back in ((1.0, "leg_l", "leg_r2"), (-1.0, "leg_r", "leg_l2")):
+        m.pivots[front] = (side * 0.07, 0.24, 0.14)
+        m.pivots[back] = (side * 0.07, 0.24, -0.16)
+        m.capsule((side * 0.07, 0.24, 0.14), (side * 0.075, 0.04, 0.16), 0.03, WOLF, front)
+        m.capsule((side * 0.07, 0.24, -0.16), (side * 0.075, 0.04, -0.17), 0.033, WOLF, back)
+        m.ellipsoid((side * 0.075, 0.025, 0.18), (0.03, 0.02, 0.04), WOLF_DARK, front)
+        m.ellipsoid((side * 0.075, 0.025, -0.15), (0.03, 0.02, 0.04), WOLF_DARK, back)
+    m.ellipsoid((0.0, 0.28, 0.0), (0.11, 0.1, 0.24), WOLF)
+    m.ellipsoid((0.0, 0.3, 0.16), (0.11, 0.11, 0.1), WOLF_DARK)
+    m.ellipsoid((0.0, 0.36, 0.27), (0.07, 0.065, 0.08), WOLF)
+    m.capsule((0.0, 0.34, 0.33), (0.0, 0.32, 0.42), 0.035, WOLF, end_radius=0.022)
+    m.ellipsoid((0.0, 0.33, 0.44), (0.018, 0.015, 0.012), (30, 26, 26))
+    m.capsule((0.0, 0.3, 0.38), (0.0, 0.29, 0.41), 0.01, BONE)
+    for side in (1.0, -1.0):
+        m.capsule((side * 0.04, 0.42, 0.25), (side * 0.05, 0.48, 0.24), 0.018, WOLF_DARK, end_radius=0.004)
+        m.ellipsoid((side * 0.035, 0.38, 0.33), (0.012, 0.01, 0.008), EYE)
+    m.capsule((0.0, 0.32, -0.23), (0.0, 0.25, -0.38), 0.03, WOLF_DARK, end_radius=0.015)
+    m.ellipsoid((0.0, 0.39, -0.02), (0.1, 0.03, 0.12), CLOTH_RED)
+    m.ellipsoid((0.0, 0.5, -0.02), (0.07, 0.08, 0.06), LEATHER)
+    m.ellipsoid((0.0, 0.62, 0.0), (0.06, 0.055, 0.058), SKIN)
+    for side in (1.0, -1.0):
+        m.ellipsoid((side * 0.09, 0.64, -0.01), (0.06, 0.014, 0.024), SKIN)
+        m.ellipsoid((side * 0.025, 0.63, 0.05), (0.011, 0.01, 0.008), RED_EYE)
+        m.capsule((side * 0.08, 0.42, -0.02), (side * 0.1, 0.36, 0.04), 0.022, SKIN_DARK)
+    m.capsule((0.08, 0.53, 0.0), (0.1, 0.46, 0.08), 0.018, SKIN, "arm_l")
+    m.capsule((-0.08, 0.53, 0.0), (-0.1, 0.46, 0.08), 0.018, SKIN, "arm_r")
+    m.capsule((-0.1, 0.44, -0.1), (-0.1, 0.62, 0.3), 0.01, WOOD, "weapon")
+    m.capsule((-0.1, 0.62, 0.3), (-0.1, 0.66, 0.37), 0.016, METAL, "weapon", end_radius=0.002)
+    return m
+
+
+def troll() -> Model:
+    """A blue troll, 0.9 tall and lean: a red mohawk, long arms, tusks, a loincloth and a throwing axe."""
+    m = Model(stride=0.5, bob=0.025)
+    m.pivots = {"hip": (0.0, 0.33, 0.0), "shoulder": (0.0, 0.62, 0.0)}
+    for side, bone in ((1.0, "leg_l"), (-1.0, "leg_r")):
+        m.capsule((side * 0.07, 0.33, 0.0), (side * 0.08, 0.17, 0.03), 0.04, TROLL_SKIN, bone)
+        m.capsule((side * 0.08, 0.17, 0.03), (side * 0.08, 0.05, -0.01), 0.036, TROLL_SKIN, bone)
+        m.ellipsoid((side * 0.08, 0.03, 0.04), (0.04, 0.025, 0.08), TROLL_DARK, bone)
+    m.ellipsoid((0.0, 0.34, 0.0), (0.1, 0.05, 0.08), LEATHER_DARK)
+    m.box((0.0, 0.29, 0.07), (0.05, 0.06, 0.01), CLOTH_RED)
+    m.ellipsoid((0.0, 0.47, 0.0), (0.1, 0.13, 0.08), TROLL_SKIN)
+    m.ellipsoid((0.0, 0.5, 0.05), (0.07, 0.07, 0.04), (110, 156, 190))
+    for side in (1.0, -1.0):
+        m.ellipsoid((side * 0.12, 0.6, 0.0), (0.05, 0.04, 0.05), TROLL_DARK)
+        m.ellipsoid((side * 0.13, 0.62, 0.0), (0.035, 0.012, 0.035), BONE)
+    m.ellipsoid((0.0, 0.72, 0.04), (0.065, 0.07, 0.07), TROLL_SKIN)
+    m.ellipsoid((0.0, 0.69, 0.1), (0.035, 0.03, 0.04), TROLL_DARK)
+    for k in range(5):
+        m.ellipsoid((0.0, 0.79 + 0.01 * (k % 2), -0.04 + k * 0.025), (0.016, 0.035, 0.014), (200, 40, 30))
+    for side in (1.0, -1.0):
+        m.ellipsoid((side * 0.09, 0.74, 0.02), (0.05, 0.012, 0.02), TROLL_SKIN)
+        m.ellipsoid((side * 0.026, 0.735, 0.1), (0.012, 0.01, 0.01), EYE)
+        m.capsule((side * 0.025, 0.67, 0.12), (side * 0.03, 0.71, 0.14), 0.008, BONE)
+    m.capsule((0.12, 0.6, 0.0), (0.15, 0.36, 0.05), 0.028, TROLL_SKIN, "arm_l")
+    m.capsule((-0.12, 0.6, 0.0), (-0.15, 0.36, 0.05), 0.028, TROLL_SKIN, "arm_r")
+    m.capsule((-0.15, 0.34, 0.06), (-0.15, 0.5, 0.12), 0.012, WOOD, "weapon")
+    m.box((-0.15, 0.49, 0.16), (0.01, 0.05, 0.04), METAL, "weapon", tilt=0.4)
+    return m
+
+
+CREATURES: dict[str, Callable[[], Model]] = {
+    "goblin": goblin,
+    "grunt": grunt,
+    "ogre": ogre,
+    "wolf": wolf_rider,
+    "troll": troll,
+}
 """The creature models, by kind."""

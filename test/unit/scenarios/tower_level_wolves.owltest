@@ -1,0 +1,13 @@
+# Tower defence, Thornwood Pass: the road climbs from the plain to the keep on its hill; the wolf riders of wave 2
+# are the fastest enemies: called early with no tower, they reach the keep and cost lives.
+scene: ../../../samples/tower_defence/scenes/level_02.owl
+steps:
+  - frames: 30
+  - input: {key: Space, frames: 2}
+  - input: {key: F, frames: 2}
+  - frames: 300
+  - input: {key: Space, frames: 2}
+  - frames: 500
+  - expect: {gamestate: tower_wave, equals: 2}
+  - expect: {gamestate: tower_spawned, equals: 16}
+  - expect: {gamestate: tower_leaks, greater: 5}

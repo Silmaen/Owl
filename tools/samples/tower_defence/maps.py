@@ -7,13 +7,15 @@ Layout cells (one character each, rows from the north, the top of the screen at 
 
 - ``.`` grass, ``T`` a tree, ``r`` rocks, ``h`` a hillock;
 - ``#`` road, ``/`` a road ramp (it climbs toward its higher road neighbour), ``=`` a bridge (road over the river);
-- ``~`` river, ``G`` the gate the Horde comes out of (the first road cell), ``K`` the keep (its cells), ``P`` a pad.
+- ``~`` river, ``G`` a gate the Horde comes out of (a first road cell; two gates make roads A and B), ``K`` the keep
+  (its cells), ``P`` a pad.
 
 Heights: one digit per cell, the number of steps of ``HEIGHT_STEP`` the ground stands above the plain. A ramp cell
 takes the lower height of its two road neighbours; a pad on a higher step gives its tower more range.
 
-A wave is a list of groups ``"kind count gap"`` separated by ``;``: ``count`` enemies of ``kind`` (``goblin``,
-``grunt``, ``ogre``) one every ``gap`` seconds, the groups one after the other.
+A wave is a list of groups ``"kind count gap [road]"`` separated by ``;``: ``count`` enemies of ``kind`` (``goblin``,
+``grunt``, ``ogre``, ``wolf``, ``troll``) one every ``gap`` seconds, the groups one after the other, on the road ``a``
+or ``b`` of a level with two gates (both in turn when it is left out).
 """
 
 from __future__ import annotations
@@ -82,26 +84,47 @@ ROAD = "#/=G"
 """Layout characters the enemies walk on."""
 
 
-def route(level: LevelData) -> list[Cell]:
-    """The road from the gate to its last cell, beside the keep (each road cell has at most two road neighbours)."""
+def routes(level: LevelData) -> list[list[Cell]]:
+    """The road of each gate (row by row from the north-west: route A, then B), the shortest walk over the road cells
+    from the gate to a road cell beside the keep; two roads may merge on the way."""
     gates = level.cells("G")
-    if len(gates) != 1:
-        raise ValueError(f"level {level.number}: one gate expected, {len(gates)} found")
-    path = [gates[0]]
-    previous: Cell | None = None
-    while True:
-        x, z = path[-1]
-        nexts = [
-            c
-            for c in ((x, z - 1), (x + 1, z), (x, z + 1), (x - 1, z))
-            if level.at(c) in ROAD and c != previous and c not in path
-        ]
-        if not nexts:
-            return path
-        if len(nexts) > 1:
-            raise ValueError(f"level {level.number}: the road forks at {path[-1]}")
-        previous = path[-1]
-        path.append(nexts[0])
+    if not gates:
+        raise ValueError(f"level {level.number}: no gate")
+    keep = set(level.cells("K"))
+    out = []
+    for gate in gates:
+        previous: dict[Cell, Cell | None] = {gate: None}
+        queue = [gate]
+        end: Cell | None = None
+        while queue:
+            cell = queue.pop(0)
+            x, z = cell
+            if cell != gate and any(n in keep for n in ((x, z - 1), (x + 1, z), (x, z + 1), (x - 1, z))):
+                end = cell
+                break
+            for n in ((x, z - 1), (x + 1, z), (x, z + 1), (x - 1, z)):
+                if level.at(n) in ROAD and n not in previous:
+                    previous[n] = cell
+                    queue.append(n)
+        if end is None:
+            raise ValueError(f"level {level.number}: no road from the gate {gate} to the keep")
+        path: list[Cell] = []
+        step: Cell | None = end
+        while step is not None:
+            path.append(step)
+            step = previous[step]
+        out.append(path[::-1])
+    return out
+
+
+def route(level: LevelData) -> list[Cell]:
+    """The road of the first gate."""
+    return routes(level)[0]
+
+
+def road_cells(level: LevelData) -> set[Cell]:
+    """Every cell of every road."""
+    return {cell for path in routes(level) for cell in path}
 
 
 GREENMARCH_FORD = LevelData(
@@ -146,11 +169,118 @@ GREENMARCH_FORD = LevelData(
         "goblin 12 0.6; grunt 2 1.5",
         "grunt 6 1.1; ogre 1 2",
         "goblin 10 0.5; grunt 6 1.0",
-        "ogre 3 3.0; grunt 6 1.0",
-        "goblin 14 0.45; grunt 8 0.9; ogre 3 2.5",
+        "ogre 3 2.6; grunt 8 0.9",
+        "goblin 16 0.4; grunt 10 0.8; ogre 5 2.2",
     ),
     night_from=8,
+    start_gold=220,
 )
 
-LEVELS = [GREENMARCH_FORD]
+THORNWOOD_PASS = LevelData(
+    number=2,
+    name="Thornwood Pass",
+    layout=(
+        "....P...TT...T...T..",
+        ".G#####......TTT.T..",
+        "...P..#..TT.r...T...",
+        ".....P#.P...T.....r.",
+        "......#/###.....h..T",
+        ".T.T....P.#P....TT..",
+        ".T...T.T.P#.TT.T..TT",
+        "...T.T.T..#.T.TT.TT.",
+        ".TrTT...T.#PP.P.PKKK",
+        ".T........###/#/#KKK",
+        ".T.Th..T.P...P..#KKK",
+        "..T.T..T.TTTTT.P.KKK",
+        "....T.T....T..TT.KKK",
+        "T.TTTTT..T.T......T.",
+    ),
+    heights=(
+        "11111110000000000000",
+        "11111110000000000000",
+        "11111110000000000000",
+        "11111110000000000000",
+        "11111110000000000000",
+        "11111110000000000000",
+        "11111110000000000000",
+        "00000000000000122222",
+        "00000000000000122222",
+        "00000000000000112222",
+        "00000000000000122222",
+        "00000000000000122222",
+        "00000000000000122222",
+        "00000000000000122222",
+    ),
+    waves=(
+        "goblin 10 0.7",
+        "wolf 6 0.9",
+        "grunt 6 1.1; goblin 6 0.6",
+        "wolf 10 0.6",
+        "grunt 8 1.0; ogre 1 2",
+        "goblin 14 0.45; wolf 6 0.7",
+        "ogre 3 2.5; grunt 6 0.9",
+        "wolf 14 0.5",
+        "grunt 10 0.8; ogre 3 2.2",
+        "wolf 12 0.5; ogre 4 2.0; grunt 10 0.7",
+    ),
+    night_from=8,
+    start_gold=260,
+    start_hour=13.0,
+)
+
+STONEBRIDGE = LevelData(
+    number=3,
+    name="Stonebridge",
+    layout=(
+        ".....TT...~~.....T..",
+        "...P....h.~~.rT.....",
+        "G####.....~~..TTT...",
+        "..P.#.P...~~........",
+        ".T..#.....~~T...TKKK",
+        "..T.#...T.~~..P..KKK",
+        "T.TP#..P..~~P..##KKK",
+        "....######==####.KKK",
+        ".r...####.~~.P..PKKK",
+        "T.TT.#P..P~~..PTTKKK",
+        "....P#.P..~~........",
+        ".....#....~~...T..T.",
+        "G#####..T.~~.....Th.",
+        "...P..P...~~........",
+        ".T......T.~~.T.....T",
+    ),
+    heights=(
+        "00000000000000000000",
+        "00000011100000000000",
+        "00000011100000000000",
+        "00000011100000000000",
+        "00000011100000000000",
+        "00000000000000000000",
+        "00000000000000000000",
+        "00000000000000000000",
+        "00000000000000000000",
+        "00000000000001111000",
+        "00000000000001111000",
+        "00000000000001111000",
+        "00000000000001111000",
+        "00000000000001111000",
+        "00000000000001111000",
+    ),
+    waves=(
+        "goblin 8 0.8 a; goblin 8 0.8 b",
+        "grunt 5 1.2 a; wolf 5 0.9 b",
+        "troll 4 1.6",
+        "wolf 8 0.6 a; grunt 6 1.0 b",
+        "troll 6 1.2; goblin 10 0.5",
+        "ogre 2 2.5 a; ogre 2 2.5 b; grunt 8 0.9",
+        "wolf 10 0.5 b; troll 6 1.0 a",
+        "grunt 12 0.7; ogre 3 2.0",
+        "troll 10 0.9; wolf 10 0.5",
+        "ogre 6 1.6; troll 8 0.8; grunt 12 0.6",
+    ),
+    night_from=9,
+    start_gold=300,
+    start_hour=8.0,
+)
+
+LEVELS = [GREENMARCH_FORD, THORNWOOD_PASS, STONEBRIDGE]
 """Every level, in the order of the campaign."""

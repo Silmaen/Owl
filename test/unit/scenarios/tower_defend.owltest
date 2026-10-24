@@ -22,11 +22,11 @@ steps:
   - input: {gamepad: {pad: 0, button: A}, frames: 2}
   - frames: 2
   - expect: {gamestate: tower_towers, equals: 2}
-  - expect: {gamestate: tower_gold, equals: 100}
+  - expect: {gamestate: tower_gold, equals: 80}
   - input: {gamepad: {pad: 0, button: Y}, frames: 2}
   - expect: {gamestate: tower_wave, equals: 1}
   - input: {gamepad: {pad: 0, button: RightBumper}, frames: 2}
   - frames: 700
   - expect: {gamestate: tower_spawned, equals: 8}
   - expect: {gamestate: tower_kills, greater: 4}
-  - expect: {gamestate: tower_gold, greater: 180}
+  - expect: {gamestate: tower_gold, greater: 120}
