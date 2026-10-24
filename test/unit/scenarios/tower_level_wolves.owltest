@@ -2,6 +2,9 @@
 # are the fastest enemies: called early with no tower, they reach the keep and cost lives.
 scene: ../../../samples/tower_defence/scenes/level_02.owl
 steps:
+  - frames: 2
+  - input: {key: Enter, frames: 2}
+  - frames: 1
   - frames: 30
   - input: {key: Space, frames: 2}
   - input: {key: F, frames: 2}

@@ -1,0 +1,17 @@
+# Tower defence, Sunscorch Flats: the drought of the level makes cannons 20 % cheaper; a cannon built from the
+# keyboard cursor costs 88 gold instead of 110.
+scene: ../../../samples/tower_defence/scenes/level_07.owl
+steps:
+  - frames: 2
+  - input: {key: Enter, frames: 2}
+  - frames: 1
+  - frames: 20
+  - expect: {gamestate: tower_gold, equals: 330}
+  - input: {key: E, frames: 2}
+  - frames: 1
+  - input: {key: Enter, frames: 2}
+  - frames: 1
+  - input: {key: D2, frames: 2}
+  - frames: 2
+  - expect: {gamestate: tower_towers, equals: 1}
+  - expect: {gamestate: tower_gold, equals: 242}

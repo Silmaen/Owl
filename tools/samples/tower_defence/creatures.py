@@ -197,8 +197,12 @@ def _shade(colour: RGB, factor: float) -> tuple[int, int, int, int]:
     return r, g, b, 255
 
 
-def render(model: Model, direction: int, row: int) -> Image.Image:
-    """One cell: the creature facing a direction of the sheet, in a row of its animation."""
+def render(
+    model: Model, direction: int, row: int, size: tuple[int, int] = (CELL, CELL), foot: tuple[int, int] = FOOT
+) -> Image.Image:
+    """One cell: the creature facing a direction of the sheet, in a row of its animation (a bigger canvas and its foot
+    pixel for scenery)."""
+    width, height = size
     yaw = direction * 2.0 * math.pi / DIRECTIONS
     ce, se = math.cos(ELEVATION), math.sin(ELEVATION)
     light = _norm(LIGHT)
@@ -221,14 +225,14 @@ def render(model: Model, direction: int, row: int) -> Image.Image:
             shade = 1.25 if k > 0.72 else (1.05 if k > 0.35 else (0.86 if k > 0.0 else 0.64))
             if nv[2] < 0.25 and k < 0.2:
                 shade += 0.12
-            px = int(round(FOOT[0] + sx * PPU))
-            py = int(round(FOOT[1] - sy * PPU))
+            px = int(round(foot[0] + sx * PPU))
+            py = int(round(foot[1] - sy * PPU))
             for dx, dy in ((0, 0), (1, 0), (0, 1), (1, 1)):
                 key = (px + dx, py + dy)
-                if 0 <= key[0] < CELL and 0 <= key[1] < CELL and depth.get(key, -1e9) < d:
+                if 0 <= key[0] < width and 0 <= key[1] < height and depth.get(key, -1e9) < d:
                     depth[key] = d
                     colour[key] = _shade(part.colour, shade)
-    image = Image.new("RGBA", (CELL, CELL), (0, 0, 0, 0))
+    image = Image.new("RGBA", (width, height), (0, 0, 0, 0))
     pixels = image.load()
     assert pixels is not None
     for (x, y), c in colour.items():
@@ -237,7 +241,7 @@ def render(model: Model, direction: int, row: int) -> Image.Image:
     for (x, y), c in colour.items():
         for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
             other = (x + dx, y + dy)
-            if other not in colour and 0 <= other[0] < CELL and 0 <= other[1] < CELL:
+            if other not in colour and 0 <= other[0] < width and 0 <= other[1] < height:
                 pixels[other[0], other[1]] = (24, 16, 10, 255)
         below = (x, y + 1)
         if below in depth and depth[below] - depth[(x, y)] > 0.08:
@@ -538,6 +542,39 @@ def chieftain() -> Model:
     return m
 
 
+WAR_PAINT = (170, 30, 24)
+
+
+def berserker() -> Model:
+    """An orc berserker, 0.85 tall: bare-chested with red war paint, a wild red mane, a fur kilt and an axe in each
+    hand (the more it bleeds, the faster it runs)."""
+    m = Model(stride=0.7, bob=0.03)
+    m.pivots = {"hip": (0.0, 0.26, 0.0), "shoulder": (0.0, 0.52, 0.0)}
+    for side, bone in ((1.0, "leg_l"), (-1.0, "leg_r")):
+        m.capsule((side * 0.085, 0.25, 0.0), (side * 0.09, 0.07, 0.01), 0.05, GRUNT_SKIN, bone)
+        m.ellipsoid((side * 0.09, 0.04, 0.035), (0.05, 0.035, 0.075), LEATHER_DARK, bone)
+    m.ellipsoid((0.0, 0.27, 0.0), (0.15, 0.07, 0.12), (120, 96, 70))
+    m.ellipsoid((0.0, 0.43, 0.0), (0.17, 0.15, 0.12), GRUNT_SKIN)
+    for side in (1.0, -1.0):
+        m.box((side * 0.06, 0.45, 0.115), (0.02, 0.07, 0.006), WAR_PAINT)
+    m.box((0.0, 0.38, 0.12), (0.08, 0.012, 0.006), WAR_PAINT)
+    m.ellipsoid((0.0, 0.62, 0.03), (0.088, 0.085, 0.085), GRUNT_SKIN)
+    m.ellipsoid((0.0, 0.58, 0.08), (0.065, 0.04, 0.045), SKIN_DARK)
+    m.box((0.0, 0.645, 0.11), (0.06, 0.01, 0.004), WAR_PAINT)
+    for k in range(6):
+        m.ellipsoid((0.0, 0.7 + 0.02 * (k % 2), -0.06 + k * 0.03), (0.03, 0.05, 0.02), (196, 70, 30))
+    for side in (1.0, -1.0):
+        m.capsule((side * 0.035, 0.57, 0.115), (side * 0.045, 0.62, 0.13), 0.011, BONE)
+        m.ellipsoid((side * 0.032, 0.635, 0.093), (0.015, 0.01, 0.01), RED_EYE)
+    m.capsule((0.18, 0.5, 0.0), (0.21, 0.32, 0.06), 0.04, GRUNT_SKIN, "arm_l")
+    m.capsule((-0.18, 0.5, 0.0), (-0.21, 0.32, 0.06), 0.04, GRUNT_SKIN, "arm_r")
+    m.capsule((0.21, 0.3, 0.06), (0.22, 0.5, 0.14), 0.013, WOOD, "arm_l")
+    m.box((0.22, 0.49, 0.18), (0.01, 0.055, 0.04), METAL, "arm_l", tilt=0.3)
+    m.capsule((-0.21, 0.3, 0.06), (-0.22, 0.5, 0.14), 0.013, WOOD, "weapon")
+    m.box((-0.22, 0.49, 0.18), (0.01, 0.055, 0.04), METAL, "weapon", tilt=0.3)
+    return m
+
+
 CREATURES: dict[str, Callable[[], Model]] = {
     "goblin": goblin,
     "grunt": grunt,
@@ -546,6 +583,7 @@ CREATURES: dict[str, Callable[[], Model]] = {
     "troll": troll,
     "ogre_mage": ogre_mage,
     "sapper": sapper,
+    "berserker": berserker,
     "chieftain": chieftain,
 }
 """The creature models, by kind."""

@@ -24078,9 +24078,16 @@ Entities:
             - 'wolf 14 0.5'
             - 'grunt 10 0.8; ogre 3 2.2'
             - 'wolf 12 0.5; ogre 4 2.0; grunt 10 0.7'
-        - name: night_from
-          type: int
-          value: 8
+        - name: night_waves
+          type: string
+          value: '3 6 9 10'
+        - name: new_enemies
+          type: string
+          value: 'wolf'
+        - name: modifiers
+          type: strings
+          value:
+            - 'fog'
         - name: start_hour
           type: float
           value: 13

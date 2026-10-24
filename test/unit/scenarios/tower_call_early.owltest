@@ -2,6 +2,9 @@
 # bonus (2 gold per second left by default); the countdown of the next wave starts once the wave is sent.
 scene: ../../../samples/tower_defence/scenes/level_01.owl
 steps:
+  - frames: 2
+  - input: {key: Enter, frames: 2}
+  - frames: 1
   - frames: 30
   - expect: {gamestate: tower_wave, equals: 0}
   - expect: {gamestate: tower_countdown, greater: 20}

@@ -5,7 +5,7 @@
 
 properties = {
     { name = "first_map", type = "string", default = "scenes/world_map.owl" },
-    { name = "level_count", type = "int", default = 5, min = 1 },
+    { name = "level_count", type = "int", default = 10, min = 1 },
     { name = "wipe_color", type = "color", default = { 0.1, 0.14, 0.24, 1 } },
 }
 

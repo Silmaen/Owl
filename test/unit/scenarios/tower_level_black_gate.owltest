@@ -1,10 +1,13 @@
 # Tower defence, The Black Gate: two gates, twelve waves and more gold; the first wave sends grunts on road A and
 # goblins on road B.
-scene: ../../../samples/tower_defence/scenes/level_05.owl
+scene: ../../../samples/tower_defence/scenes/level_10.owl
 steps:
+  - frames: 2
+  - input: {key: Enter, frames: 2}
+  - frames: 1
   - frames: 30
   - expect: {gamestate: tower_waves, equals: 12}
-  - expect: {gamestate: tower_gold, equals: 360}
+  - expect: {gamestate: tower_gold, equals: 380}
   - expect: {gamestate: tower_roads, equals: 2}
   - input: {key: Space, frames: 2}
   - frames: 600

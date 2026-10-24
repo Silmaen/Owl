@@ -215,6 +215,34 @@ def star_sheet(cell: int = 48) -> Image.Image:
     return sheet
 
 
+def day_night_icons(cell: int = 64) -> Image.Image:
+    """The phase of a level on the HUD, 2 frames: a gold sun with its rays, a pale moon with stars, on a dark disc."""
+    sheet = Image.new("RGBA", (cell * 2, cell), (0, 0, 0, 0))
+    for frame in range(2):
+        big = cell * 4
+        image = Image.new("RGBA", (big, big), (0, 0, 0, 0))
+        draw = ImageDraw.Draw(image)
+        c = big / 2
+        disc = (40, 52, 96) if frame else (70, 110, 170)
+        draw.ellipse((8, 8, big - 8, big - 8), fill=(*disc, 255), outline=(*GOLD, 255), width=14)
+        if frame == 0:
+            for k in range(12):
+                a = k * math.pi / 6
+                draw.line(
+                    [(c + math.cos(a) * 52, c + math.sin(a) * 52), (c + math.cos(a) * 96, c + math.sin(a) * 96)],
+                    fill=(250, 210, 90, 255),
+                    width=14,
+                )
+            draw.ellipse((c - 44, c - 44, c + 44, c + 44), fill=(252, 220, 100, 255), outline=(*INK, 255), width=6)
+        else:
+            draw.ellipse((c - 58, c - 58, c + 58, c + 58), fill=(236, 236, 214, 255), outline=(*INK, 255), width=6)
+            draw.ellipse((c - 26, c - 76, c + 84, c + 34), fill=(*disc, 255))
+            for x, y in ((c + 50, c + 40), (c - 60, c - 70), (c + 70, c - 64)):
+                draw.polygon([(x, y - 14), (x + 5, y), (x, y + 14), (x - 5, y)], fill=(240, 240, 220, 255))
+        sheet.paste(image.resize((cell, cell), Image.Resampling.LANCZOS), (frame * cell, 0))
+    return sheet
+
+
 PANELS: dict[str, tuple[int, int]] = {
     "panel_stats": (420, 70),
     "panel_wave": (540, 70),
@@ -237,3 +265,4 @@ def write_all(textures: Path, fonts: Path) -> None:
     plaque().save(folder / "plaque.png")
     title(fonts).save(folder / "title.png")
     star_sheet().save(folder / "stars.png")
+    day_night_icons().save(folder / "daynight.png")

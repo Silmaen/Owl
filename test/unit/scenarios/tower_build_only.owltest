@@ -2,6 +2,9 @@
 # with): the Horde holds out and the keep falls, the level asks for upgrades.
 scene: ../../../samples/tower_defence/scenes/level_01.owl
 steps:
+  - frames: 2
+  - input: {key: Enter, frames: 2}
+  - frames: 1
   - frames: 30
   - input: {key: F, frames: 2}
   - input: {key: E, frames: 2}

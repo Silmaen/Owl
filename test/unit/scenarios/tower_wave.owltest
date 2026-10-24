@@ -2,6 +2,9 @@
 # from the gate to the keep and each one costs a life.
 scene: ../../../samples/tower_defence/scenes/level_01.owl
 steps:
+  - frames: 2
+  - input: {key: Enter, frames: 2}
+  - frames: 1
   - frames: 30
   - expect: {gamestate: tower_route, greater: 5}
   - expect: {gamestate: tower_lives, equals: 20}

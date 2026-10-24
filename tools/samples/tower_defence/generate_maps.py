@@ -91,6 +91,8 @@ def mesh(path: str, colour: y.Colour = (1, 1, 1, 1)) -> str:
 
 THEMES: dict[str, tuple[str, y.Colour, y.Colour]] = {
     "grass": ("", (1, 1, 1, 1), (1, 1, 1, 1)),
+    "marsh": ("", (0.56, 0.7, 0.58, 1), (0.48, 0.62, 0.5, 1)),
+    "dry": ("snow-", (0.96, 0.8, 0.52, 1), (0.66, 0.52, 0.32, 1)),
     "snow": ("snow-", (1, 1, 1, 1), (1, 1, 1, 1)),
     "ash": ("snow-", (0.5, 0.42, 0.4, 1), (0.3, 0.25, 0.24, 1)),
 }
@@ -383,6 +385,18 @@ def build_wheel(entities: y.Entities) -> None:
     entities.add("WheelText", [world_text((0.2, 0.12, 0.06, 1)) + MARKS], visible=False)
 
 
+def level_kinds(level: mp.LevelData) -> list[str]:
+    """The kinds of the Horde a level sends, in the order they first march."""
+    kinds = [group.split()[0] for wave in level.waves for group in wave.split(";")]
+    return list(dict.fromkeys(kinds))
+
+
+def new_enemies(level: mp.LevelData) -> list[str]:
+    """The kinds a level sends that no earlier level of the campaign sent."""
+    earlier = {kind for other in mp.LEVELS if other.number < level.number for kind in level_kinds(other)}
+    return [kind for kind in level_kinds(level) if kind not in earlier]
+
+
 def level_scene(level: mp.LevelData) -> str:
     """The scene of a level."""
     roads = check(level)
@@ -465,6 +479,10 @@ def level_scene(level: mp.LevelData) -> str:
     name = f"level_{level.number:02d}"
     next_scene = "scenes/victory.owl"
     waves = "".join(f"\n        - {y.quote(wave)}" for wave in level.waves)
+    modifiers_block = ""
+    if level.modifiers:
+        listed = "".join(f"\n        - {y.quote(key)}" for key in level.modifiers)
+        modifiers_block = f"    - name: modifiers\n      type: strings\n      value:{listed}\n"
     properties = (
         "LuaScript:\n  scriptPath: scripts/game/defence.lua\n  properties:\n"
         f"    - name: level_number\n      type: int\n      value: {level.number}\n"
@@ -472,8 +490,10 @@ def level_scene(level: mp.LevelData) -> str:
         f"    - name: scene_path\n      type: string\n      value: scenes/{name}.owl\n"
         f"    - name: next_scene\n      type: string\n      value: {next_scene}\n"
         f"    - name: waves\n      type: strings\n      value:{waves}\n"
-        f"    - name: night_from\n      type: int\n      value: {level.night_from}\n"
-        f"    - name: start_hour\n      type: float\n      value: {y.num(level.start_hour)}\n"
+        f"    - name: night_waves\n      type: string\n      value: {y.quote(' '.join(map(str, level.nights)))}\n"
+        f"    - name: new_enemies\n      type: string\n      value: {y.quote(','.join(new_enemies(level)))}\n"
+        + modifiers_block
+        + f"    - name: start_hour\n      type: float\n      value: {y.num(level.start_hour)}\n"
         f"    - name: start_gold\n      type: int\n      value: {level.start_gold}\n"
         f"    - name: lives\n      type: int\n      value: {level.lives}\n"
         f"    - name: map_width\n      type: int\n      value: {level.width}\n"
@@ -647,20 +667,30 @@ def prefabs() -> dict[str, str]:
 def play_hud() -> str:
     """The HUD of a level, in the medieval look of the menus: gold, lives and the wave on parchment at the top left,
     the minimap in a wood and iron frame at the top right, the spells at the bottom left, the Call wave / speed / Menu
-    planks at the bottom right, a message line and the pause window, the only place of a level that shows the
-    controls. The build wheel is not here: it opens in the world, beside its pad."""
+    planks at the bottom right, a message line (holding the briefing card that opens a level) and the pause window,
+    the only place of a level that shows the controls. The build wheel is not here: it opens in the world, beside its
+    pad."""
     entities = y.Entities(7490000000000000000)
     root = entities.add("HUDCanvas", [y.canvas()])
     # One column at the top left, the minimap at the top right, the planks at the bottom right and the spells at the
     # bottom left: they never meet, at any interface size or aspect.
     column = entities.add(
-        "TopLeft", [y.rect((0, 0), (0.5, 0.15), (16, 8)), y.layout("Column", 6, 0, "Start")], parent=root
+        "TopLeft", [y.rect((0, 0), (0.5, 0.21), (16, 8)), y.layout("Column", 3, 0, "Start")], parent=root
     )
+    phase = entities.add(
+        "PhaseBar",
+        [y.child_rect((0.78, 0.26)), y.image("textures/ui/panel_stats.png"), y.layout("Row", 6, 2, "Center")],
+        parent=column,
+    )
+    phase_text = menus.label("Day", 20, menus.INK, "Left").replace("outlineWidth: 2", "outlineWidth: 0")
+    entities.add("PhaseText", [y.child_rect((0.8, 0.75)), phase_text], parent=phase)
+    icon = y.image("textures/ui/daynight.png") + "  columns: 2\n  rows: 1\n  frame: 0\n"
+    entities.add("PhaseIcon", [y.child_rect((0.12, 0.75)), icon], parent=phase)
     wave = menus.label("Wave 0 / 8 - next in 25 s", 24, menus.INK).replace("outlineWidth: 2", "outlineWidth: 0")
-    entities.add("WaveText", [y.child_rect((1, 0.42)), y.image("textures/ui/panel_wave.png"), wave], parent=column)
+    entities.add("WaveText", [y.child_rect((1, 0.31)), y.image("textures/ui/panel_wave.png"), wave], parent=column)
     stats = entities.add(
         "StatsBar",
-        [y.child_rect((0.78, 0.42)), y.image("textures/ui/panel_stats.png"), y.layout("Row", 8)],
+        [y.child_rect((0.78, 0.31)), y.image("textures/ui/panel_stats.png"), y.layout("Row", 8)],
         parent=column,
     )
     lives = menus.label("Lives 20", 26, (0.55, 0.08, 0.05, 1)).replace("outlineWidth: 2", "outlineWidth: 0")
@@ -687,21 +717,42 @@ def play_hud() -> str:
     ):
         menus.button(entities, spells, tag, text, callback, (0.48, 0.9), focusable=False, font_size=22)
     message = menus.label("", 40, menus.STONE, font=menus.HEADING).replace("wrap: false", "wrap: true")
-    entities.add("MessageText", [y.rect((0.5, 0.62), (0.7, 0.14)), message], parent=root, visible=False)
+    message_id = entities.add("MessageText", [y.rect((0.5, 0.62), (0.7, 0.14)), message], parent=root, visible=False)
     window = entities.add(
         "PauseWindow",
-        [y.rect((0.5, 0.5), (1.3, 0.9)), menus.window("Paused"), y.layout("Column", 8, 10)],
+        [y.rect((0.5, 0.5), (1.3, 0.94)), menus.window("Paused"), y.layout("Column", 4, 8)],
         parent=root,
         visible=False,
     )
-    controls = y.text(menus.CONTROLS, 18, "Left", menus.GOLD, wrap=True, font="JetBrainsMono-Regular", line_spacing=0.2)
-    entities.add("ControlsText", [y.child_rect((0.96, 0.44)), controls], parent=window)
+    controls = y.text(menus.CONTROLS, 16, "Left", menus.GOLD, wrap=True, font="JetBrainsMono-Regular", line_spacing=0.1)
+    entities.add("ControlsText", [y.child_rect((0.96, 0.34)), controls], parent=window)
+    legend = y.text("", 15, "Left", menus.SOFT, wrap=True, line_spacing=0.05, vertical="Top")
+    entities.add("EffectsText", [y.child_rect((0.96, 0.27)), legend], parent=window)
     for tag, text, callback, initial in (
         ("QuitButton", "Quit to the map", "on_pause_quit", False),
         ("RestartButton", "Restart level", "on_pause_restart", False),
         ("ResumeButton", "Resume", "on_pause_resume", True),
     ):
-        menus.button(entities, window, tag, text, callback, (0.6, 0.11), initial)
+        menus.button(entities, window, tag, text, callback, (0.6, 0.085), initial)
+    card = entities.add(
+        "BriefingCard",
+        [
+            y.rect((0.5, 0.5), (1.1, 0.66), (0, -0.05), offset_units=("ScreenHeight", "ScreenHeight")),
+            y.panel((0.9, 0.82, 0.64, 0.98), (0.84, 0.66, 0.25, 1), 4),
+            y.layout("Column", 4, 20),
+        ],
+        parent=message_id,
+        visible=False,
+    )
+    menus.button(entities, card, "BriefingButton", "To arms!", "on_briefing_closed", (0.4, 0.12), True)
+    hint = menus.label("Click, Enter or pad A to begin", 18, (0.35, 0.22, 0.1, 1)).replace(
+        "outlineWidth: 2", "outlineWidth: 0"
+    )
+    entities.add("BriefingHint", [y.child_rect((0.9, 0.07)), hint], parent=card)
+    text = y.text("", 22, "Left", (0.2, 0.12, 0.06, 1), wrap=True, line_spacing=0.15, vertical="Top", outline_width=0)
+    entities.add("BriefingText", [y.child_rect((0.76, 0.45)), text], parent=card)
+    title = menus.label("", 44, (0.45, 0.08, 0.04, 1), font=menus.HEADING).replace("outlineWidth: 2", "outlineWidth: 0")
+    entities.add("BriefingTitle", [y.child_rect((0.9, 0.14)), title], parent=card)
     return y.hud_file("play", entities)
 
 

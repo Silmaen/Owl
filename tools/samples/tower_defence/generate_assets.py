@@ -9,7 +9,7 @@ Draw the sprites and synthesise the sounds of the Tower defence sample game into
 - ``textures/icons.png``: the badges of the build ring and of the info panel (``ICONS``, 6 by row);
 - ``textures/puff.png``, ``textures/bar.png`` (health bar), tinted by the script;
 - menus and HUD: parchment, wood, iron and gold of ``medieval_ui.py`` in ``textures/ui/``, and the parade under them
-  (the Horde sheets, ``textures/towers/archer.png``, ``textures/keep.png``).
+  (the Horde sheets and the keep, tower and road of ``scenery.py`` in ``textures/menu/``).
 
 Sounds: mono 16 bit at 22.05 kHz, short and neutral (build, sell, shots, hits, horn, coins, keep hit, start jingle);
 the victory jingle is copied from the Engine Demo.
@@ -32,7 +32,7 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw
 
-from tools.samples.tower_defence import creatures, medieval_ui, world_map_art
+from tools.samples.tower_defence import creatures, medieval_ui, scenery, world_map_art
 
 REPOSITORY = Path(__file__).resolve().parents[3]
 """The repository root."""
@@ -95,85 +95,6 @@ class Canvas:
     def done(self) -> Image.Image:
         """The image at its output size."""
         return self.image.resize(self.size, Image.Resampling.LANCZOS)
-
-
-def prism(
-    c: Canvas, cx: float, cy: float, half_w: float, height: float, colour: RGB
-) -> tuple[list[tuple[float, float]], float]:
-    """An isometric box on a diamond centred on ``(cx, cy)`` of half width ``half_w`` (half height ``half_w / 2``):
-    left face dark, right face mid, top light. Returns the top diamond and its centre height."""
-    hh = half_w / 2
-    left, front, right, back = (cx - half_w, cy), (cx, cy + hh), (cx + half_w, cy), (cx, cy - hh)
-
-    def up(p: tuple[float, float]) -> tuple[float, float]:
-        return p[0], p[1] - height
-
-    c.poly([left, front, up(front), up(left)], _shade(colour, -0.35))
-    c.poly([front, right, up(right), up(front)], _shade(colour, -0.12))
-    top = [up(left), up(front), up(right), up(back)]
-    c.poly(top, _shade(colour, 0.15))
-    return top, cy - height
-
-
-def ground_shadow(c: Canvas, cx: float, cy: float, half_w: float) -> None:
-    """A soft dark ellipse on the ground."""
-    c.ellipse((cx - half_w, cy - half_w / 2, cx + half_w, cy + half_w / 2), (0, 0, 0, 70))
-
-
-def tower(kind: str) -> Image.Image:
-    """A tower on its pad: archer (wooden, pointed roof), cannon (squat stone, barrel), frost (blue crystal)."""
-    c = Canvas(64, 112)
-    cx, cy = 32, 112 - 16
-    ground_shadow(c, cx, cy + 2, 24)
-    if kind == "archer":
-        prism(c, cx, cy, 18, 46, (150, 104, 62))
-        top, ty = prism(c, cx, cy - 46, 22, 8, (120, 82, 48))
-        for x in (cx - 10, cx + 10):
-            c.line([(x, cy - 10), (x, cy - 40)], _shade((90, 60, 34), 0), 2)
-        apex = (cx, ty - 30)
-        c.poly([top[0], top[1], apex], _shade((176, 52, 44), -0.25))
-        c.poly([top[1], top[2], apex], _shade((176, 52, 44), 0.0))
-        c.line([apex, (apex[0], apex[1] - 10)], (60, 40, 30, 255), 1.5)
-        c.poly([(apex[0], apex[1] - 10), (apex[0] + 9, apex[1] - 7), (apex[0], apex[1] - 4)], (250, 210, 70, 255))
-    elif kind == "cannon":
-        prism(c, cx, cy, 24, 26, (128, 128, 134))
-        top, ty = prism(c, cx, cy - 26, 26, 6, (110, 110, 118))
-        for i in range(4):
-            x = cx - 22 + i * 12
-            c.poly([(x, ty + 2), (x + 6, ty + 5), (x + 6, ty - 3), (x, ty - 6)], _shade((120, 120, 128), 0.1))
-        c.ellipse((cx - 11, ty - 16, cx + 11, ty + 4), (40, 40, 46, 255))
-        c.line([(cx, ty - 6), (cx + 16, ty - 14)], (30, 30, 34, 255), 8)
-        c.ellipse((cx + 12, ty - 19, cx + 21, ty - 10), (15, 15, 18, 255))
-    else:
-        prism(c, cx, cy, 20, 12, (120, 132, 150))
-        base = cy - 12
-        crystal = (120, 200, 245)
-        tip = (cx, base - 72)
-        c.poly([(cx - 13, base), (cx, base + 5), tip], _shade(crystal, -0.25))
-        c.poly([(cx, base + 5), (cx + 13, base), tip], _shade(crystal, 0.1))
-        c.poly([(cx - 4, base - 20), (cx + 3, base - 40), tip], (235, 250, 255, 220))
-        for side in (-1, 1):
-            small = (cx + side * 16, base - 34)
-            c.poly([(cx + side * 10, base - 2), (cx + side * 20, base - 4), small], _shade(crystal, -0.05))
-    return c.done()
-
-
-def keep() -> Image.Image:
-    """The keep, on 2 x 2 cells: a stone hall, four corner turrets, a gate and a banner."""
-    c = Canvas(128, 176)
-    cx, cy = 64, 176 - 32
-    ground_shadow(c, cx, cy + 3, 56)
-    stone = (170, 164, 150)
-    for dx, dy in ((0, -24), (-40, 0), (40, 0)):
-        prism(c, cx + dx, cy + dy, 14, 62, stone)
-    prism(c, cx, cy, 40, 44, stone)
-    c.poly([(cx - 22, cy + 9), (cx - 8, cy + 16), (cx - 8, cy - 8), (cx - 22, cy - 15)], (60, 42, 30, 255))
-    for dx, dy in ((0, 24),):
-        prism(c, cx + dx, cy + dy, 14, 62, stone)
-    pole = (cx, cy - 44 - 20)
-    c.line([pole, (pole[0], pole[1] - 46)], (70, 50, 36, 255), 2)
-    c.poly([(pole[0], pole[1] - 46), (pole[0] + 26, pole[1] - 40), (pole[0], pole[1] - 30)], (60, 110, 200, 255))
-    return c.done()
 
 
 ICONS = (
@@ -358,12 +279,11 @@ def bar() -> Image.Image:
 
 def textures() -> None:
     """Every image of the game."""
-    for folder in ("towers", "ui", "fx", "enemies"):
+    for folder in ("ui", "fx", "enemies"):
         (TEXTURES / folder).mkdir(parents=True, exist_ok=True)
     for kind, model in creatures.CREATURES.items():
         creatures.sheet(model()).save(TEXTURES / "enemies" / f"{kind}.png")
-    tower("archer").save(TEXTURES / "towers" / "archer.png")
-    keep().save(TEXTURES / "keep.png")
+    scenery.write_all(TEXTURES / "menu")
     icon_sheet().save(TEXTURES / "icons.png")
     ring().save(TEXTURES / "fx" / "ring.png")
     cursor().save(TEXTURES / "fx" / "cursor.png")

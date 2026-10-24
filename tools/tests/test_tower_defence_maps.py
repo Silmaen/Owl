@@ -32,7 +32,8 @@ def test_every_level_is_valid(level: mp.LevelData) -> None:
         for a, b in zip(road, road[1:], strict=False):
             assert abs(gen.road_height(level, a) - gen.road_height(level, b)) <= mp.HEIGHT_STEP + 1e-6, (a, b)
     assert len(level.cells("P")) >= 10
-    assert 0 <= level.night_from <= len(level.waves)
+    assert all(1 <= night <= len(level.waves) for night in level.nights)
+    assert level.nights and level.nights[-1] == len(level.waves), "the last wave is fought at night"
 
 
 @pytest.mark.parametrize("level", mp.LEVELS, ids=lambda level: f"level_{level.number:02d}")
@@ -78,13 +79,23 @@ def test_two_gates_make_two_roads_meeting_before_the_keep() -> None:
     assert "tag: Waypoint B 01" in gen.level_scene(level)
 
 
-def test_every_level_after_the_first_brings_a_new_enemy() -> None:
-    seen: set[str] = set()
+def test_the_horde_is_introduced_across_the_campaign() -> None:
+    bringing = [level.number for level in mp.LEVELS if gen.new_enemies(level)]
+    assert len(bringing) >= 6
+    assert set(creatures.CREATURES) == {kind for level in mp.LEVELS for kind in gen.new_enemies(level)}
+    assert [level.number for level in mp.LEVELS] == list(range(1, len(mp.LEVELS) + 1))
+
+
+def test_the_level_modifiers_and_effects_exist_in_the_rules() -> None:
+    rules = (gen.ROOT / "scripts" / "game" / "defence.lua").read_text()
     for level in mp.LEVELS:
-        kinds = {group.split()[0] for wave in level.waves for group in wave.split(";")}
-        assert level.number == 1 or kinds - seen, f"level {level.number} brings no new enemy"
-        seen |= kinds
-    assert {"wolf", "troll", "ogre_mage", "sapper", "chieftain"} <= seen
+        for key in level.modifiers:
+            assert f"\n    {key} = {{" in rules, key
+            assert key in menus.MODIFIER_NAMES
+    for kind in creatures.CREATURES:
+        assert f'"{kind} day ' in rules and f'"{kind} night ' in rules, kind
+    for kind in ("archer", "cannon", "frost"):
+        assert f'"{kind} day ' in rules and f'"{kind} night ' in rules, kind
 
 
 @pytest.mark.parametrize("level", mp.LEVELS, ids=lambda level: f"level_{level.number:02d}")
@@ -94,7 +105,7 @@ def test_the_theme_picks_existing_tile_models(level: mp.LevelData) -> None:
     models = {line.split("mesh: ", 1)[1] for line in text.splitlines() if "mesh: " in line}
     missing = sorted(model for model in models if not (gen.ROOT / model).is_file())
     assert not missing
-    if level.theme != "grass":
+    if level.theme in ("snow", "dry", "ash"):
         assert any("/snow-" in model for model in models)
 
 

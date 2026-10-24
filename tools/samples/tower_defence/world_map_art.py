@@ -37,11 +37,33 @@ WORLD = (32.0, 18.0)
 """World size of the map in the scene."""
 PPU = PIXELS[0] / WORLD[0]
 """Pixels of the map image per world unit."""
-SITES: tuple[Point, ...] = ((0.18, 0.55), (0.33, 0.36), (0.49, 0.58), (0.66, 0.3), (0.85, 0.52))
-"""Places of the five level sites, in shares of the map from its top left."""
+SITES: tuple[Point, ...] = (
+    (0.17, 0.55),
+    (0.29, 0.33),
+    (0.5, 0.5),
+    (0.57, 0.64),
+    (0.63, 0.3),
+    (0.69, 0.12),
+    (0.74, 0.52),
+    (0.8, 0.27),
+    (0.85, 0.6),
+    (0.94, 0.4),
+)
+"""Places of the ten level sites, in shares of the map from its top left, from west to east."""
 CAPITAL: Point = (0.07, 0.62)
 """Place of the human capital the road starts from."""
-SITE_NAMES = ("Greenmarch Ford", "Thornwood Pass", "Stonebridge", "Frostmere", "The Black Gate")
+SITE_NAMES = (
+    "Greenmarch Ford",
+    "Thornwood Pass",
+    "Stonebridge",
+    "Mirefen Marsh",
+    "Frostmere",
+    "Highpeak Watch",
+    "Sunscorch Flats",
+    "Ashfall Ridge",
+    "Ravenhold",
+    "The Black Gate",
+)
 """Names written under the sites, in the order of ``SITES``."""
 NAME_DROP = 2.2
 """World distance from a site down to its name."""
@@ -80,6 +102,8 @@ BROOK: tuple[Point, ...] = ((0.34, 0.2), (0.29, 0.29), (0.25, 0.4), (0.19, 0.48)
 """The brook from the Thornwood to the sea, forded at Greenmarch."""
 LAKE: Point = (0.6, 0.17)
 """Centre of the frozen lake of Frostmere."""
+VOLCANO: Point = (0.955, 0.2)
+"""Place of the volcano of the Black Lands."""
 
 INK_RGBA = (*INK, 255)
 SEA = (128, 166, 170)
@@ -88,6 +112,8 @@ FOREST = (64, 98, 52)
 SNOW = (236, 238, 236)
 ASH = (96, 78, 72)
 WATER = (138, 176, 190)
+MARSH = (96, 132, 104)
+DUNE = (222, 186, 110)
 
 
 def px(share: Point) -> Point:
@@ -260,11 +286,10 @@ def _regions(image: Image.Image, land: Image.Image) -> None:
                 (0.47, -0.02),
                 (0.47, 0.2),
                 (0.56, 0.3),
-                (0.72, 0.38),
-                (0.84, 0.3),
-                (0.9, 0.14),
-                (1.02, 0.1),
-                (1.02, -0.02),
+                (0.66, 0.4),
+                (0.75, 0.3),
+                (0.78, 0.1),
+                (0.8, -0.02),
             )
         ],
         fill=255,
@@ -276,6 +301,44 @@ def _regions(image: Image.Image, land: Image.Image) -> None:
     wood = Image.new("L", PIXELS, 0)
     ImageDraw.Draw(wood).ellipse((width * 0.21, height * 0.14, width * 0.44, height * 0.5), fill=255)
     _wash(image, wood, FOREST, 0.28, 50)
+    for centre, radii, colour, opacity in (
+        ((0.57, 0.66), (0.08, 0.08), MARSH, 0.5),
+        ((0.74, 0.55), (0.07, 0.09), DUNE, 0.55),
+    ):
+        mask = Image.new("L", PIXELS, 0)
+        cx, cy = px(centre)
+        rx, ry = radii[0] * width, radii[1] * height
+        ImageDraw.Draw(mask).ellipse((cx - rx, cy - ry, cx + rx, cy + ry), fill=255)
+        _wash(image, mask, colour, opacity, 40)
+
+
+def _clear_of_sites(x: float, y: float) -> bool:
+    """Whether a pixel is away from every site and the ribbon of its name."""
+    for sx, sy in (px(p) for p in SITES):
+        if math.hypot(x - sx, y - sy) < 120 or (abs(x - sx) < 150 and abs(y - sy - NAME_DROP * PPU) < 40):
+            return False
+    return True
+
+
+def _marsh_and_dunes(image: Image.Image, rng: random.Random) -> None:
+    """The pools and reeds of Mirefen, the dunes of Sunscorch."""
+    draw = ImageDraw.Draw(image)
+    for _ in range(26):
+        x, y = px((0.57 + rng.uniform(-0.07, 0.07), 0.66 + rng.uniform(-0.07, 0.07)))
+        if not _clear_of_sites(x, y):
+            continue
+        if rng.random() < 0.4:
+            w = rng.uniform(16, 30)
+            draw.ellipse((x - w, y - w * 0.45, x + w, y + w * 0.45), fill=(*WATER, 255), outline=(*INK, 200), width=2)
+        else:
+            for k in range(3):
+                draw.line([(x + k * 5 - 5, y), (x + k * 6 - 7, y - 14 - k * 3)], fill=(60, 80, 40, 255), width=2)
+    for _ in range(22):
+        x, y = px((0.74 + rng.uniform(-0.06, 0.06), 0.55 + rng.uniform(-0.08, 0.08)))
+        if not _clear_of_sites(x, y):
+            continue
+        w = rng.uniform(22, 40)
+        draw.arc((x - w, y - w * 0.4, x + w, y + w * 0.4), 200, 340, fill=(150, 110, 60, 255), width=2)
 
 
 def _river(image: Image.Image, points: Sequence[Point], start_width: float, end_width: float) -> list[Point]:
@@ -435,23 +498,22 @@ def _scatter(
             return False
         return all(_distance_to((x, y), river) > room for river in rivers)
 
-    for k in range(60):
-        x, y = width * (0.48 + 0.52 * k / 60) + rng.uniform(-20, 20), height * rng.uniform(0.06, 0.2)
+    for k in range(50):
+        x, y = width * (0.48 + 0.34 * k / 50) + rng.uniform(-20, 20), height * rng.uniform(0.06, 0.2)
         if free(x, y, 36) and abs(x - px(LAKE)[0]) > 230:
             items.append((y, "snow", (x, y), rng.uniform(40, 70)))
-    for k in range(34):
-        x, y = width * rng.uniform(0.9, 1.0), height * (0.2 + 0.7 * k / 34)
+    for k in range(40):
+        x, y = width * rng.uniform(0.9, 1.0), height * (0.05 + 0.85 * k / 40)
         if free(x, y, 40):
             items.append((y, "black", (x, y), rng.uniform(34, 58)))
-    for gate_y in (0.43, 0.62):
-        x, y = px((0.9, gate_y))
+    for gate_x in (0.885, 0.995):
+        x, y = px((gate_x, 0.44))
         items.append((y, "black", (x, y), 74))
-    items.append((px((0.95, 0.33))[1], "volcano", px((0.95, 0.33)), 84))
+    items.append((px(VOLCANO)[1], "volcano", px(VOLCANO), 84))
     areas: list[tuple[Point, Point, int]] = [
         ((0.325, 0.32), (0.12, 0.17), 900),
         ((0.12, 0.38), (0.05, 0.07), 80),
         ((0.36, 0.84), (0.06, 0.05), 70),
-        ((0.62, 0.48), (0.04, 0.04), 50),
         ((0.78, 0.6), (0.04, 0.04), 40),
         ((0.62, 0.36), (0.1, 0.08), 160),
         ((0.82, 0.3), (0.06, 0.12), 90),
@@ -462,7 +524,7 @@ def _scatter(
             a, r = rng.uniform(0, 2 * math.pi), math.sqrt(rng.random())
             sx, sy = gx + math.cos(a) * rx * r, gy + math.sin(a) * ry * r
             x, y = sx * width, sy * height
-            kind = "pine" if sy < 0.42 and sx > 0.5 else ("dead" if sx > 0.77 else "tree")
+            kind = "dead" if sx > 0.77 else ("pine" if sy < 0.42 and sx > 0.5 else "tree")
             if count == 500 and rng.random() > (0.12 if kind == "tree" else 0.3):
                 continue
             if free(x, y, 26):
@@ -475,7 +537,7 @@ def _scatter(
             draw = ImageDraw.Draw(image)
         else:
             _tree(draw, x, y, size, kind)
-    _smoke(image, (px((0.95, 0.33))[0], px((0.95, 0.33))[1] - 100))
+    _smoke(image, (px(VOLCANO)[0], px(VOLCANO)[1] - 100))
 
 
 def _hills(image: Image.Image, rng: random.Random) -> None:
@@ -484,6 +546,11 @@ def _hills(image: Image.Image, rng: random.Random) -> None:
     sites = [px(p) for p in (CAPITAL, *SITES)]
     for _ in range(26):
         x, y = px((rng.uniform(0.12, 0.72), rng.uniform(0.6, 0.95)))
+        labels = [px(at) for _, at in REGIONS] + [px(COMPASS)]
+        if any(abs(x - lx) < 260 and abs(y - ly) < 60 for lx, ly in labels) or any(
+            abs(x - sx) < 170 and abs(y - sy - NAME_DROP * PPU) < 50 for sx, sy in sites
+        ):
+            continue
         if (
             any(math.hypot(x - sx, y - sy) < 170 for sx, sy in sites)
             or _distance_to((x, y), _smooth([px(p) for p in RIVER])) < 50
@@ -545,12 +612,7 @@ def _labels(image: Image.Image, fonts: Path) -> None:
     """The region names in spaced faded ink, the site names on small ribbons."""
     draw = ImageDraw.Draw(image)
     region = ImageFont.truetype(str(fonts / "Cinzel.ttf"), 34)
-    for text, at in (
-        ("THE GREENMARCH", (0.3, 0.72)),
-        ("THORNWOOD", (0.33, 0.115)),
-        ("FROSTPEAKS", (0.75, 0.04)),
-        ("THE BLACK LANDS", (0.76, 0.71)),
-    ):
+    for text, at in (*REGIONS,):
         _spaced(draw, px(at), text, region, (*INK, 150), 10)
     sea = Image.new("RGBA", (520, 60), (0, 0, 0, 0))
     _spaced(ImageDraw.Draw(sea), (260, 30), "THE WESTERN SEA", region, (40, 66, 78, 190), 12)
@@ -678,7 +740,8 @@ def world_map(fonts: Path, title: str = "The Realm") -> Image.Image:
     _scatter(image, land, [river, brook], lake, rng)
     _hills(image, rng)
     _tracks(image)
-    _compass(image, px((0.61, 0.66)), 70, fonts)
+    _marsh_and_dunes(image, rng)
+    _compass(image, px(COMPASS), 70, fonts)
     _labels(image, fonts)
     _cartouche(image, fonts, title)
     return _finish(image)
@@ -860,6 +923,16 @@ def wave() -> Image.Image:
     draw.arc((28, 2, 62, 18), 200, 340, fill=(230, 244, 246, 255), width=3)
     return image
 
+
+REGIONS: tuple[tuple[str, Point], ...] = (
+    ("THE GREENMARCH", (0.27, 0.71)),
+    ("THORNWOOD", (0.3, 0.115)),
+    ("FROSTPEAKS", (0.76, 0.035)),
+    ("THE BLACK LANDS", (0.7, 0.735)),
+)
+"""The region names and their places."""
+COMPASS: Point = (0.42, 0.7)
+"""Place of the compass rose."""
 
 SEA_GLINTS: tuple[Point, ...] = (
     (0.04, 0.2),

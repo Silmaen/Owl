@@ -3,6 +3,9 @@
 # three-quarter view (direction 1); Z turns the view back.
 scene: ../../../samples/tower_defence/scenes/level_01.owl
 steps:
+  - frames: 2
+  - input: {key: Enter, frames: 2}
+  - frames: 1
   - frames: 30
   - expect: {gamestate: tower_yaw, equals: 0}
   - input: {key: Space, frames: 2}

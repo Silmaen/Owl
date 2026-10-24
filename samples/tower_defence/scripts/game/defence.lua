@@ -10,12 +10,17 @@
 --   winning the first level (`tower_done_01`). The upgrades bought with the stars (`tower_up_<family>` settings, the
 --   upgrades screen) raise the towers, the spells and the treasury of every level.
 -- - The Horde: goblins, grunts, ogres, wolf riders, trolls (they heal), ogre mages (they ward the enemies around them
---   against damage, fire burns through), goblin sappers (3 lives at the keep, a blast hurting the Horde when killed)
---   and the chieftain (armoured, rallies the Horde, half slowed and never frozen, 10 lives). The first one of a kind in
---   a level shows its name and how to beat it.
+--   against damage, fire burns through), goblin sappers (3 lives at the keep, a blast hurting the Horde when killed),
+--   orc berserkers (faster as they bleed) and the chieftain (armoured, rallies the Horde, half slowed and never frozen,
+--   10 lives). The first one of a kind a level brings (`new_enemies`) shows its name and how to beat it.
 -- - Waves are timed: a countdown before each one; calling it early (Space, pad Y, the HUD button) pays
---   `early_bonus` gold per second left. Every enemy reaching the keep costs a life. From the wave `night_from` the
---   sky turns to dusk then night and the torches are lit.
+--   `early_bonus` gold per second left. Every enemy reaching the keep costs a life. The waves of `night_waves` are
+--   fought at night: between two waves the sky turns to dusk or to dawn, announced, and the torches are lit by night.
+-- - Day and night change the towers and the Horde (`time_effects`: "subject phase stat factor", the subject a tower or
+--   enemy kind, `towers` or `horde`, the phase `day`, `night` or `any`); the level `modifiers` (fog, blizzard, blood
+--   moon...) and the unlocks add effects of the same form. The info scroll of a tower, the first sight of an enemy and
+--   the pause window show them; the HUD shows a sun or a moon.
+-- - A briefing card opens the level (its name, modifiers, new enemies and nights); a click, Enter or pad A starts it.
 -- - Enemies, towers, projectiles, effects and health bars are prefabs spawned at runtime (`scene.spawn_prefab`); the
 --   enemies are billboards whose frame (8 directions x 4 walk frames) follows their heading and the view.
 -- - A click on a pad or a tower opens its build ring (badges over it, the range ring of the choice, the info panel
@@ -36,9 +41,27 @@ properties = {
     { name = "next_scene", type = "string", default = "scenes/victory.owl" },
     { name = "waves", type = "strings", default = { "goblin 6 1.0" } },
     { name = "start_towers", type = "strings", default = {} },
-    { name = "night_from", type = "int", default = 0, min = 0 },
+    { name = "night_waves", type = "string", default = "" },
+    { name = "modifiers", type = "strings", default = {} },
+    { name = "new_enemies", type = "string", default = "" },
+    { name = "briefing", type = "bool", default = true },
+    { name = "time_effects", type = "strings", default = {
+        "archer day damage 1.1", "archer night range 0.85",
+        "cannon day splash 1.15", "cannon night reload 1.15",
+        "frost day time 0.8", "frost night time 1.4",
+        "goblin day speed 0.9", "goblin night speed 1.15",
+        "grunt day taken 0.9", "grunt night speed 1.1",
+        "ogre day speed 0.85", "ogre night hp 1.15",
+        "wolf day taken 1.15", "wolf night speed 1.2",
+        "troll day regen 0", "troll night regen 1.5",
+        "ogre_mage day ward 0.8", "ogre_mage night ward 1.5",
+        "sapper day speed 0.9", "sapper night speed 1.2",
+        "berserker day taken 1.1", "berserker night speed 1.15",
+        "chieftain day taken 1.1", "chieftain night taken 0.85",
+    } },
     { name = "start_hour", type = "float", default = 9.5, min = 0, max = 24 },
     { name = "night_hour", type = "float", default = 21.5, min = 0, max = 24 },
+    { name = "morning_hour", type = "float", default = 8.0, min = 0, max = 24 },
     { name = "start_gold", type = "int", default = 240, min = 0 },
     { name = "lives", type = "int", default = 20, min = 1 },
     { name = "map_width", type = "int", default = 18, min = 1 },
@@ -110,6 +133,10 @@ properties = {
     { name = "sapper_lives", type = "int", default = 3, min = 1 },
     { name = "sapper_blast", type = "float", default = 40.0, min = 0 },
     { name = "sapper_blast_radius", type = "float", default = 1.2, min = 0 },
+    { name = "berserker_hp", type = "float", default = 120.0 },
+    { name = "berserker_speed", type = "float", default = 1.05 },
+    { name = "berserker_gold", type = "int", default = 16 },
+    { name = "berserker_rage", type = "float", default = 0.9, min = 0 },
     { name = "chieftain_hp", type = "float", default = 2000.0 },
     { name = "chieftain_speed", type = "float", default = 0.5 },
     { name = "chieftain_gold", type = "int", default = 200 },
@@ -159,8 +186,11 @@ local POWER_TEXT = {
 }
 local UNLOCK_SETTING = "tower_done_01"
 -- What winning each level the first time unlocks, as the tally says it.
-local UNLOCKS = { "the second power-up of each tower", "Rain of arrows", "the Royal treasury", "Shield wall",
-                  "the Keep walls, with 3 stars on all five levels" }
+local UNLOCKS = { "the second power-up of each tower", "Rain of arrows", "the Royal treasury",
+                  "the Fletchers' guild: archers cost 10% less", "Shield wall",
+                  "the Watchtowers: +5% range for every tower", "the Harvest tithe: +10% gold per kill",
+                  "the Night watch: +10% range at night", "the Royal guard: 3 more lives",
+                  "the Keep walls, with 3 stars on all ten levels" }
 local UNLOCK_NAME = "Greenmarch Ford"
 local PROJECTILE = { archer = "prefabs/projectile_arrow.owlprefab", cannon = "prefabs/projectile_ball.owlprefab",
                      fire = "prefabs/projectile_fireball.owlprefab", frost = "prefabs/projectile_shard.owlprefab" }
@@ -174,9 +204,9 @@ local FOOT_SHARE = 34.0 / 96.0
 local sprite_lift = 0.5
 local TOWARD_VIEW = 0.25                  -- billboards come this far toward the camera, off the ground they stand on
 local BAR_HEIGHT = { goblin = 0.62, grunt = 0.86, ogre = 1.12, wolf = 0.82, troll = 0.98, ogre_mage = 1.1,
-                     sapper = 0.66, chieftain = 1.5 }
+                     sapper = 0.66, berserker = 0.9, chieftain = 1.5 }
 local SHADOW_SIZE = { goblin = 0.45, grunt = 0.6, ogre = 0.9, wolf = 0.8, troll = 0.6, ogre_mage = 0.85, sapper = 0.45,
-                      chieftain = 1.1 }
+                      berserker = 0.6, chieftain = 1.1 }
 -- The name of each kind of the Horde and how to beat it, shown the first time it marches in a level.
 local FOES = {
     goblin = { "Goblins", "quick and frail: archers" },
@@ -185,9 +215,107 @@ local FOES = {
     wolf = { "Wolf riders", "very fast: frost towers slow them" },
     troll = { "Trolls", "they heal: burst them with cannons, fire stops the healing" },
     ogre_mage = { "Ogre mages", "they ward the Horde around them: kill them first, fire burns through wards" },
+    berserker = { "Orc berserkers", "the more they bleed, the faster they run: frost, then finish them fast" },
     sapper = { "Goblin sappers", "a keg blows 3 lives at the keep: shoot them early, their blast hurts the Horde" },
     chieftain = { "The orc chieftain", "armoured, rallies the Horde, 10 lives: cannons and the vulnerability aura" },
 }
+-- The effects of day and night, of the level modifiers and of the unlocks (one table: a Lua chunk holds 200 locals).
+-- `list`: every active effect { subject, phase, stat, factor }; `night`: the rules of the night apply (the next or
+-- current wave is a night wave); `nights`: wave number -> true for the night waves.
+local fx = { list = {}, cache = {}, night = false, nights = {} }
+-- The briefing card and the legend of the pause window.
+local brief = { open = false }
+
+-- The level modifiers: a title, the text of the briefing and their effects ("subject phase stat factor").
+fx.MODIFIERS = {
+    fog = { "Fog", "towers see less far", { "towers any range 0.85" } },
+    blizzard = { "Blizzard", "frost bites harder, everyone moves slower",
+                 { "frost any time 1.3", "horde any speed 0.88", "towers any reload 1.1" } },
+    blood_moon = { "Blood moon", "the Horde has more life at night", { "horde night hp 1.3" } },
+    drought = { "Drought", "cannons cost less, frost towers more", { "cannon any cost 0.8", "frost any cost 1.2" } },
+    gale = { "Gale", "arrows drift, shells burst wider", { "archer any damage 0.85", "cannon any splash 1.25" } },
+    plunder = { "Plunder", "the Horde carries more gold", { "horde any gold 1.25" } },
+    long_night = { "Long night", "the night waves are darker still", { "horde night speed 1.1", "towers night range 0.9" } },
+}
+-- The bonuses the campaign unlocks that are effects (`tower_done_NN` settings): level number, effect lines.
+fx.UNLOCK_EFFECTS = {
+    { 4, { "archer any cost 0.9" } },
+    { 6, { "towers any range 1.05" } },
+    { 7, { "horde any gold 1.1" } },
+    { 8, { "towers night range 1.1" } },
+}
+fx.STAT_NAMES = { range = "range", damage = "damage", splash = "bursts", time = "chill", slow = "chill strength",
+                     cost = "cost", speed = "speed", hp = "life", taken = "damage taken", ward = "wards", gold = "gold",
+                     regen = "healing" }
+
+function fx.parse_effect(text)
+    local subject, phase, stat, factor = string.match(text or "", "^%s*([%a_]+)%s+(%a+)%s+(%a+)%s+([%d%.]+)%s*$")
+    if subject == nil then
+        log.warn("Tower defence: effect '" .. tostring(text) .. "' is not 'subject phase stat factor'.")
+        return nil
+    end
+    return { subject = subject, phase = phase, stat = stat, factor = tonumber(factor) }
+end
+
+function fx.add_effects(lines, source)
+    for _, line in ipairs(lines) do
+        local effect = fx.parse_effect(line)
+        if effect ~= nil then
+            effect.source = source
+            fx.list[#fx.list + 1] = effect
+        end
+    end
+end
+
+function fx.applies(effect, kind, tower, phase)
+    local group = tower and "towers" or "horde"
+    if effect.subject ~= kind and effect.subject ~= group then return false end
+    if effect.phase == "any" then return true end
+    return effect.phase == phase
+end
+
+-- The product of the factors of a stat for a kind, by the phase given (`any`: only the effects of every phase).
+function fx.factor_of(kind, tower, stat, phase)
+    phase = phase or (fx.night and "night" or "day")
+    local key = kind .. "|" .. stat .. "|" .. phase
+    local cached = fx.cache[key]
+    if cached ~= nil then return cached end
+    local product = 1.0
+    for _, effect in ipairs(fx.list) do
+        if effect.stat == stat and (phase ~= "any" or effect.phase == "any") and fx.applies(effect, kind, tower, phase) then
+            product = product * effect.factor
+        end
+    end
+    fx.cache[key] = product
+    return product
+end
+
+function fx.percent(effect)
+    local name = fx.STAT_NAMES[effect.stat] or effect.stat
+    if effect.stat == "reload" then
+        return effect.factor < 1.0 and string.format("fire %d%% faster", math.floor((1.0 / effect.factor - 1.0) * 100 + 0.5))
+                or string.format("fire %d%% slower", math.floor((1.0 - 1.0 / effect.factor) * 100 + 0.5))
+    end
+    if effect.factor == 0.0 then return "no " .. name end
+    local change = math.floor((effect.factor - 1.0) * 100 + (effect.factor >= 1.0 and 0.5 or -0.5))
+    return string.format("%s%d%% %s", change >= 0 and "+" or "", change, name)
+end
+
+-- The day and night effects of a kind, as a line: "Day +10% damage. Night -20% range."
+function fx.time_text(kind)
+    local parts = {}
+    for _, phase in ipairs({ "day", "night" }) do
+        local items = {}
+        for _, effect in ipairs(fx.list) do
+            if effect.source == "time" and effect.subject == kind and effect.phase == phase then
+                items[#items + 1] = fx.percent(effect)
+            end
+        end
+        if #items > 0 then parts[#parts + 1] = (phase == "day" and "Day " or "Night ") .. table.concat(items, ", ") end
+    end
+    return table.concat(parts, ". ")
+end
+
 -- Upgrades bought with the stars on the upgrades screen: the tier of each family (`tower_up_<family>` settings).
 local UPGRADE_FAMILIES = { "archer", "cannon", "frost", "rain", "shield", "treasury" }
 local bought = {}
@@ -254,6 +382,7 @@ local function show(id, visible)
 end
 
 local function message(text, seconds)
+    show(hud.briefing, false)
     set_text("message", text)
     show(hud.message, true)
     message_clock = seconds or 2.0
@@ -298,7 +427,7 @@ local function mirror()
     gamestate.set("tower_bonus", bonus_total)
     gamestate.set("tower_cursor", cursor_pad and cursor_pad.index or 0)
     gamestate.set("tower_yaw", math.floor(view.yaw_goal * 180 / math.pi + 0.5))
-    gamestate.set("tower_hours", math.floor(hours * 10) / 10)
+    gamestate.set("tower_hours", math.floor((hours % 24.0) * 10) / 10)
     gamestate.set("tower_night", night_lit == true)
     gamestate.set("tower_upgrades", upgrades)
     local top, power = 0, ""
@@ -353,6 +482,17 @@ local function read_stats()
     for _, family in ipairs(UPGRADE_FAMILIES) do
         bought[family] = settings.get("tower_up_" .. family, 0)
     end
+    fx.list, fx.cache = {}, {}
+    fx.add_effects(time_effects, "time")
+    for _, key in ipairs(modifiers) do
+        local modifier = fx.MODIFIERS[key]
+        if modifier ~= nil then fx.add_effects(modifier[3], "modifier") else log.warn("Tower defence: no modifier '" .. key .. "'.") end
+    end
+    for _, unlock in ipairs(fx.UNLOCK_EFFECTS) do
+        if settings.get(string.format("tower_done_%02d", unlock[1]), false) == true then fx.add_effects(unlock[2], "unlock") end
+    end
+    fx.nights = {}
+    for number in string.gmatch(night_waves or "", "%d+") do fx.nights[tonumber(number)] = true end
     stats.archer = { cost = archer_cost, range = archer_range, damage = archer_damage, reload = archer_reload }
     stats.cannon = { cost = cannon_cost, range = cannon_range, damage = cannon_damage, reload = cannon_reload,
                      splash = cannon_splash }
@@ -368,6 +508,9 @@ local function read_stats()
     if tier("frost", 1) then f.time = f.time * 1.3 end
     if tier("frost", 2) then f.slow = f.slow * 0.85 end
     if tier("frost", 3) then f.range = f.range * 1.12 end
+    if tier("archer", 4) then a.range = a.range * 1.1 end
+    if tier("cannon", 4) then c.reload = c.reload * 0.85 end
+    if tier("frost", 4) then f.damage = f.damage * 1.2 end
     stats.goblin = { hp = goblin_hp, speed = goblin_speed, gold = goblin_gold, arrow = 1.0 }
     stats.grunt = { hp = grunt_hp, speed = grunt_speed, gold = grunt_gold, arrow = 1.0 }
     stats.ogre = { hp = ogre_hp, speed = ogre_speed, gold = ogre_gold, arrow = ogre_arrow }
@@ -376,10 +519,16 @@ local function read_stats()
     stats.ogre_mage = { hp = mage_hp, speed = mage_speed, gold = mage_gold, arrow = 1.0, ward = mage_ward }
     stats.sapper = { hp = sapper_hp, speed = sapper_speed, gold = sapper_gold, arrow = 1.0, lives = sapper_lives,
                      blast = sapper_blast }
+    stats.berserker = { hp = berserker_hp, speed = berserker_speed, gold = berserker_gold, arrow = 1.0,
+                        rage = berserker_rage }
     stats.chieftain = { hp = chieftain_hp, speed = chieftain_speed, gold = chieftain_gold, arrow = chieftain_arrow,
                         lives = chieftain_lives, boss = true, scale = 1.35 }
+    for _, kind in ipairs(KINDS) do
+        stats[kind].cost = math.floor(stats[kind].cost * fx.factor_of(kind, true, "cost", "any") + 0.5)
+    end
     local bounty = tier("treasury", 2) and 1.1 or 1.0
-    for _, kind in ipairs({ "goblin", "grunt", "ogre", "wolf", "troll", "ogre_mage", "sapper", "chieftain" }) do
+    for _, kind in ipairs({ "goblin", "grunt", "ogre", "wolf", "troll", "ogre_mage", "sapper", "berserker",
+                            "chieftain" }) do
         stats[kind].gold = math.floor(stats[kind].gold * bounty + 0.5)
     end
 end
@@ -399,6 +548,13 @@ local function tower_stats(tower)
         elseif tower.kind == "cannon" then s.splash, s.damage = s.splash * 1.35, s.damage * 1.2
         else s.time, s.damage = s.time * 1.45, s.damage * 1.3 end
     end
+    local kind = tower.kind
+    s.range = s.range * fx.factor_of(kind, true, "range")
+    s.damage = s.damage * fx.factor_of(kind, true, "damage")
+    s.reload = s.reload * fx.factor_of(kind, true, "reload")
+    if s.splash ~= nil then s.splash = s.splash * fx.factor_of(kind, true, "splash") end
+    if s.time ~= nil then s.time = s.time * fx.factor_of(kind, true, "time") end
+    if s.slow ~= nil then s.slow = 1.0 - (1.0 - s.slow) * fx.factor_of(kind, true, "slow") end
     s.range = s.range * (1.0 + height_bonus * tower.pad.level)
     return s
 end
@@ -467,6 +623,14 @@ local function along(distance, road)
     return a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t, a.z + (b.z - a.z) * t, dx, dz
 end
 
+-- The effects of the phase in the game state, for the scenarios: the range of a level 1 archer on the plain and the
+-- speed factor of a goblin, in hundredths.
+local function mirror_effects()
+    local archer = tower_stats({ kind = "archer", level = 1, pad = { level = 0 } })
+    gamestate.set("tower_archer_range", math.floor(archer.range * 100 + 0.5))
+    gamestate.set("tower_goblin_speed", math.floor(fx.factor_of("goblin", false, "speed") * 100 + 0.5))
+end
+
 function on_create()
     if not ui.is_transition_active() then
         ui.transition_play("wipe_down", 0.4, wipe_color.r, wipe_color.g, wipe_color.b)
@@ -495,7 +659,8 @@ function on_create()
         torch.glow = glows[index] or 0
     end
     for _, name in ipairs({ "gold", "lives", "wave", "message", "call", "speed", "pause", "resume", "rain", "shield",
-                            "rain_label", "shield_label" }) do
+                            "rain_label", "shield_label", "phase", "phase_icon", "effects", "briefing",
+                            "briefing_title", "briefing_text", "briefing_button" }) do
         hud[name] = 0
     end
     hud.gold = ui.find("GoldText")
@@ -506,6 +671,9 @@ function on_create()
     hud.rain = ui.find("RainButton")
     hud.shield = ui.find("ShieldButton")
     hud.rain_label, hud.shield_label = hud.rain, hud.shield
+    hud.phase, hud.phase_icon, hud.effects = ui.find("PhaseText"), ui.find("PhaseIcon"), ui.find("EffectsText")
+    hud.briefing, hud.briefing_title = ui.find("BriefingCard"), ui.find("BriefingTitle")
+    hud.briefing_text, hud.briefing_button = ui.find("BriefingText"), ui.find("BriefingButton")
     hud.speed = ui.find("SpeedButton")
     hud.pause = ui.find("PauseWindow")
     hud.resume = ui.find("ResumeButton")
@@ -521,35 +689,42 @@ function on_create()
     -- What the campaign unlocked: the spells, more gold, more lives (`tower_done_NN`, `tower_stars_NN` settings).
     spells.rain = { unlocked = settings.get("tower_done_02", false) == true, clock = 0.0,
                     cooldown = rain_cooldown * (tier("rain", 1) and 0.8 or 1.0),
-                    damage = rain_damage * (tier("rain", 2) and 1.3 or 1.0),
+                    damage = rain_damage * (tier("rain", 2) and 1.3 or 1.0) * (tier("rain", 4) and 1.3 or 1.0),
                     radius = rain_radius * (tier("rain", 3) and 1.25 or 1.0), title = "Rain of arrows", casts = 0 }
-    spells.shield = { unlocked = settings.get("tower_done_04", false) == true, clock = 0.0,
-                      cooldown = shield_cooldown * (tier("shield", 1) and 0.8 or 1.0),
+    spells.shield = { unlocked = settings.get("tower_done_05", false) == true, clock = 0.0,
+                      cooldown = shield_cooldown * (tier("shield", 1) and 0.8 or 1.0)
+                              * (tier("shield", 4) and 0.8 or 1.0),
                       time = shield_time + (tier("shield", 2) and 2.0 or 0.0),
                       radius = shield_radius * (tier("shield", 3) and 1.25 or 1.0), title = "Shield wall", casts = 0 }
     show(hud.rain, spells.rain.unlocked)
     show(hud.shield, spells.shield.unlocked)
     local bonus_gold = settings.get("tower_done_03", false) == true and treasury_gold or 0
     local all_stars = true
-    for number = 1, 5 do
+    for number = 1, 10 do
         if settings.get(string.format("tower_stars_%02d", number), 0) < 3 then all_stars = false end
     end
-    local chest = tier("treasury", 1) and 40 or 0
+    local guard = settings.get("tower_done_09", false) == true and 3 or 0
+    local chest = (tier("treasury", 1) and 40 or 0) + (tier("treasury", 4) and 60 or 0)
     local masons = tier("treasury", 3) and 2 or 0
-    gold, lives_left = start_gold + bonus_gold + chest, lives + masons + (all_stars and walls_lives or 0)
+    gold, lives_left = start_gold + bonus_gold + chest, lives + masons + guard + (all_stars and walls_lives or 0)
     gamestate.set("tower_start_gold", gold)
     wave_count = #waves
     countdown = first_wave_delay
     hours, hours_goal = start_hour, start_hour
+    if fx.nights[1] then hours, hours_goal = night_hour, night_hour end
+    fx.night = fx.nights[1] == true
+    gamestate.set("tower_phase", fx.night and "night" or "day")
+    gamestate.set("tower_phase_changes", 0)
+    mirror_effects()
     if sky_id ~= 0 then
         entity.set_day_night_enabled(sky_id, false)
-        entity.set_time_of_day(sky_id, hours)
+        entity.set_time_of_day(sky_id, hours % 24.0)
     end
     gamestate.set("tower_won", false)
     gamestate.set("tower_lost", false)
     gamestate.set("tower_map", level_number)
     gamestate.set("tower_scene", scene_path)
-    message(level_name .. "\n" .. wave_count .. " waves", 2.5)
+    if not briefing then message(level_name .. "\n" .. wave_count .. " waves", 2.5) end
     mirror()
 end
 
@@ -563,14 +738,19 @@ local function wave_banners()
     end
 end
 
+local function sky_is_night(h)
+    local clock_hour = h % 24.0
+    return clock_hour >= 19.0 or clock_hour < 6.0
+end
+
 local function update_sky(dt)
     if sky_id == 0 then return end
     if math.abs(hours_goal - hours) > 0.001 then
         local step = math.max(0.25, math.abs(hours_goal - hours)) * dt * 0.35
         if hours < hours_goal then hours = math.min(hours_goal, hours + step) else hours = math.max(hours_goal, hours - step) end
-        entity.set_time_of_day(sky_id, hours)
+        entity.set_time_of_day(sky_id, hours % 24.0)
     end
-    local night = hours >= 19.0 or hours < 6.0
+    local night = sky_is_night(hours)
     if night ~= night_lit then
         night_lit = night
         for _, torch in ipairs(torch_ids) do
@@ -601,18 +781,42 @@ local function parse_wave(text)
     return queue
 end
 
+-- The first hour at or after the current one that reads `target` on the clock (the hours run on past midnight).
+local function next_hour(target)
+    local h = math.floor(hours / 24.0) * 24.0 + target
+    if h < hours then h = h + 24.0 end
+    return h
+end
+
+-- Day or night for the next wave: the sky turns to dusk or dawn, the towers and the Horde take the effects of the
+-- phase; a change between two waves is announced.
+local function set_phase(night, announce)
+    if night then
+        hours_goal = sky_is_night(hours) and hours + 0.3 or next_hour(night_hour)
+    else
+        hours_goal = sky_is_night(hours) and next_hour(morning_hour) or math.min(hours + 0.6, next_hour(17.5))
+    end
+    if night == fx.night then return end
+    fx.night = night
+    fx.cache = {}
+    for _, tower in ipairs(towers) do tower.stats = tower_stats(tower) end
+    gamestate.set("tower_phase", night and "night" or "day")
+    gamestate.set("tower_phase_changes", gamestate.get("tower_phase_changes", 0) + 1)
+    mirror_effects()
+    if announce then
+        play("sounds/game/horn.wav")
+        message(night and "Night falls\nthe next wave comes in the dark" or "Dawn breaks\nthe next wave comes by day", 2.8)
+    end
+end
+
 local function start_wave()
     wave = wave + 1
     spawning = parse_wave(waves[wave])
     spawn_clock = 0.0
     countdown = 0.0
-    if night_from > 0 and wave >= night_from then
-        hours_goal = night_hour
-    else
-        hours_goal = start_hour + (wave - 1) * 0.6
-    end
+    set_phase(fx.nights[wave] == true, false)
     play("sounds/game/horn.wav")
-    message("Wave " .. wave .. " / " .. wave_count .. (night_from > 0 and wave == night_from and "\nNightfall" or ""), 1.8)
+    message("Wave " .. wave .. " / " .. wave_count .. (fx.night and " - by night" or ""), 1.8)
 end
 
 local function call_early()
@@ -642,13 +846,14 @@ local function spawn_enemy(kind, road)
         transform.set_rotation(shadow, -math.pi / 2, 0.0, 0.0)
         transform.set_scale(shadow, SHADOW_SIZE[kind], SHADOW_SIZE[kind], 1.0)
     end
-    local hp = base.hp * (1.0 + hp_growth * (wave - 1))
+    local hp = base.hp * (1.0 + hp_growth * (wave - 1)) * fx.factor_of(kind, false, "hp")
     spawned = spawned + 1
     if not foes_seen[kind] then
         foes_seen[kind] = true
         local foe = FOES[kind]
-        if foe ~= nil and level_number > 1 and kind ~= "goblin" and kind ~= "grunt" then
-            message(foe[1] .. "!\n" .. foe[2], 3.5)
+        if foe ~= nil and string.find("," .. new_enemies .. ",", "," .. kind .. ",", 1, true) then
+            local times = fx.time_text(kind)
+            message(foe[1] .. "!\n" .. foe[2] .. (times ~= "" and ("\n" .. times) or ""), 4.0)
         end
         gamestate.set("tower_seen_" .. kind, true)
     end
@@ -659,7 +864,7 @@ local function spawn_enemy(kind, road)
         arrow = base.arrow, regen = base.regen or 0.0, road = road or 1, distance = 0.0, side = side * 0.28,
         slow = 0.0, slow_factor = 1.0, frozen = 0.0, frost_hits = 0, burn = 0.0, x = x, y = y, z = z, dx = 1.0,
         dz = 0.0, walk = spawned * 0.37, frame = -1, lift = lift, lives = base.lives or 1, boss = base.boss == true,
-        ward = 0.0, ward_clock = base.ward and 1.5 or nil, ward_give = base.ward, blast = base.blast,
+        ward = 0.0, ward_clock = base.ward and 1.5 or nil, ward_give = base.ward, blast = base.blast, rage = base.rage,
     }
 end
 
@@ -671,13 +876,19 @@ local function update_waves(dt)
             local next_one = table.remove(spawning, 1)
             if next_one == nil then
                 spawning = nil
-                if wave < wave_count then countdown = wave_delay end
+                if wave < wave_count then
+                    countdown = wave_delay
+                    set_phase(fx.nights[wave + 1] == true, true)
+                end
             else
                 spawn_enemy(next_one.kind, next_one.road)
                 spawn_clock = spawn_clock + (spawning[1] and spawning[1].gap or 0.0)
                 if #spawning == 0 then
                     spawning = nil
-                    if wave < wave_count then countdown = wave_delay end
+                    if wave < wave_count then
+                        countdown = wave_delay
+                        set_phase(fx.nights[wave + 1] == true, true)
+                    end
                 end
             end
         end
@@ -779,6 +990,7 @@ local blast
 local function hurt(foe, amount, through_ward)
     if foe.dead then return end
     if foe.vulnerable then amount = amount * aura_damage end
+    amount = amount * fx.factor_of(foe.kind, false, "taken")
     if foe.ward > 0.0 and not through_ward then
         local taken = math.min(foe.ward, amount)
         foe.ward = foe.ward - taken
@@ -786,8 +998,9 @@ local function hurt(foe, amount, through_ward)
     end
     foe.hp = foe.hp - amount
     if foe.hp <= 0 then
-        gold = gold + foe.gold
-        earned = earned + foe.gold
+        local pay = math.floor(foe.gold * fx.factor_of(foe.kind, false, "gold") + 0.5)
+        gold = gold + pay
+        earned = earned + pay
         kills = kills + 1
         play("sounds/game/pop.wav")
         emit(foe.x, foe.y + 0.35, foe.z, 6, 1.4, 0.75, 0.15, 0.1, 0.12, 0.45, 1.2)
@@ -828,7 +1041,7 @@ local function cast_ward(mage)
     for _, other in ipairs(enemies) do
         local dx, dz = other.x - mage.x, other.z - mage.z
         if dx * dx + dz * dz <= mage_ward_radius * mage_ward_radius then
-            other.ward = math.max(other.ward, mage.ward_give)
+            other.ward = math.max(other.ward, mage.ward_give * fx.factor_of(mage.kind, false, "ward"))
         end
     end
     spawn_ring(mage.x, mage.y, mage.z, mage_ward_radius, 0.55, 0.75, 1.0)
@@ -876,7 +1089,8 @@ local function update_enemies(dt)
     local index = 1
     while index <= #enemies do
         local foe = enemies[index]
-        local speed = foe.speed * rally_of(foe)
+        local speed = foe.speed * rally_of(foe) * fx.factor_of(foe.kind, false, "speed")
+        if foe.rage ~= nil then speed = speed * (1.0 + foe.rage * (1.0 - foe.hp / foe.max)) end
         if foe.ward_clock ~= nil then
             foe.ward_clock = foe.ward_clock - dt
             if foe.ward_clock <= 0.0 then
@@ -895,7 +1109,7 @@ local function update_enemies(dt)
             foe.burn = foe.burn - dt
             hurt(foe, fire_damage * dt, true)
         elseif foe.regen > 0.0 and foe.hp < foe.max then
-            foe.hp = math.min(foe.max, foe.hp + foe.regen * dt)
+            foe.hp = math.min(foe.max, foe.hp + foe.regen * fx.factor_of(foe.kind, false, "regen") * dt)
         end
         if not foe.dead then
             local step = speed * dt
@@ -1326,7 +1540,8 @@ local function info_of(pad, choice)
             return "Build pad", "Choose a tower." .. height_text(pad)
         end
         return NAMES[tower.kind] .. " - level " .. tower.level,
-                (tower.power and (POWER_NAMES[tower.power] .. ". ") or "") .. "Choose a badge." .. height_text(pad)
+                (tower.power and (POWER_NAMES[tower.power] .. ". ") or "") .. fx.time_text(tower.kind) .. "."
+                .. height_text(pad)
     end
     local kind = choice.kind
     local price = choice_price(pad, choice)
@@ -1339,7 +1554,7 @@ local function info_of(pad, choice)
         if choice.locked then return POWER_NAMES[kind], "Unlocked by winning " .. UNLOCK_NAME .. "." end
         return POWER_NAMES[kind], short or POWER_TEXT[kind]
     end
-    return NAMES[kind], (short or BLURBS[kind]) .. height_text(pad)
+    return NAMES[kind], (short or (BLURBS[kind] .. " " .. fx.time_text(kind) .. ".")) .. height_text(pad)
 end
 
 -- Place the wheel beside its pad on the screen, kept inside the view clear of the HUD, at a constant pixel size.
@@ -1745,7 +1960,23 @@ end
 
 -- HUD -----------------------------------------------------------------------------------------------------------------
 
+-- The wave the phase changes at, after the current one (nil when it never changes again).
+local function next_change()
+    for number = wave + 1, wave_count do
+        if (fx.nights[number] == true) ~= fx.night then return number end
+    end
+    return nil
+end
+
 local function update_hud()
+    local change = next_change()
+    local phase = fx.night and "Night" or "Day"
+    set_text("phase", change and string.format("%s - %s at wave %d", phase, fx.night and "dawn" or "night", change)
+            or (phase .. " to the end"))
+    if hud.phase_icon ~= 0 and shown.phase_icon ~= fx.night then
+        ui.set_image_frame(hud.phase_icon, fx.night and 1 or 0)
+        shown.phase_icon = fx.night
+    end
     set_text("gold", "Gold " .. gold)
     set_text("lives", "Lives " .. math.max(0, lives_left))
     if spawning ~= nil then
@@ -1827,12 +2058,94 @@ end
 
 -- Pause ---------------------------------------------------------------------------------------------------------------
 
+-- The kinds of the Horde the waves of this level send, in order of first appearance.
+function brief.level_kinds()
+    local seen, out = {}, {}
+    for _, text in ipairs(waves) do
+        for kind in string.gmatch(text, "([%a_]+)%s+%d") do
+            if not seen[kind] and stats[kind] ~= nil then
+                seen[kind] = true
+                out[#out + 1] = kind
+            end
+        end
+    end
+    return out
+end
+
+function brief.modifier_lines()
+    local out = {}
+    for _, key in ipairs(modifiers) do
+        local modifier = fx.MODIFIERS[key]
+        if modifier ~= nil then out[#out + 1] = modifier[1] .. ": " .. modifier[2] .. "." end
+    end
+    return out
+end
+
+-- The legend of the pause window: the day and night effects of the towers and of the Horde of this level, then the
+-- modifiers of the level.
+function brief.effects_legend()
+    local lines = { (fx.night and "Now night." or "Now day.") .. " Day and night change the fight:" }
+    for _, kind in ipairs(KINDS) do lines[#lines + 1] = NAMES[kind] .. ": " .. fx.time_text(kind) end
+    for _, kind in ipairs(brief.level_kinds()) do
+        local times = fx.time_text(kind)
+        if times ~= "" then lines[#lines + 1] = (FOES[kind] and FOES[kind][1] or kind) .. ": " .. times end
+    end
+    for _, line in ipairs(brief.modifier_lines()) do lines[#lines + 1] = line end
+    return table.concat(lines, "\n")
+end
+
+function brief.night_list()
+    local out = {}
+    for number = 1, wave_count do
+        if fx.nights[number] then out[#out + 1] = tostring(number) end
+    end
+    return out
+end
+
+-- The briefing card: the level, its nights, its modifiers and the enemies it brings first.
+function brief.open_briefing()
+    if hud.briefing == 0 then return end
+    local lines = {}
+    local nights = brief.night_list()
+    lines[#lines + 1] = wave_count .. " waves" .. (#nights > 0 and (", the night ones: " .. table.concat(nights, ", ")) or ", all by day") .. "."
+    for _, line in ipairs(brief.modifier_lines()) do lines[#lines + 1] = line end
+    for kind in string.gmatch(new_enemies, "[%a_]+") do
+        local foe = FOES[kind]
+        if foe ~= nil then lines[#lines + 1] = "New: " .. foe[1] .. ", " .. foe[2] .. "." end
+    end
+    if hud.briefing_title ~= 0 then ui.set_text(hud.briefing_title, level_name) end
+    if hud.briefing_text ~= 0 then ui.set_text(hud.briefing_text, table.concat(lines, "\n")) end
+    brief.open = true
+    time.set_paused(true)
+    -- The card lies in the message line: shown with it, an empty message under it.
+    set_text("message", "")
+    show(hud.message, true)
+    show(hud.briefing, true)
+    if hud.briefing_button ~= 0 then ui.set_focus(hud.briefing_button) end
+    gamestate.set("tower_briefing", true)
+end
+
+function brief.close_briefing()
+    if not brief.open then return end
+    brief.open = false
+    time.set_paused(false)
+    show(hud.briefing, false)
+    show(hud.message, false)
+    gamestate.set("tower_briefing", false)
+    gamestate.set("tower_briefing_seen", true)
+end
+
+function on_briefing_closed()
+    brief.close_briefing()
+end
+
 local function set_paused(value)
     paused = value
     time.set_paused(value)
     travel_at_pause = nil
     show(hud.pause, value)
     if value then
+        if hud.effects ~= 0 then ui.set_text(hud.effects, brief.effects_legend()) end
         close_ring()
         ui.raise_window(hud.pause)
         if hud.resume ~= 0 then ui.set_focus(hud.resume) end
@@ -1881,6 +2194,17 @@ function on_update(dt)
     if not started then
         started = true
         raise_start_towers()
+        if briefing then brief.open_briefing() end
+    end
+    if brief.open then
+        if input.is_action_just_pressed("ui_accept") or input.is_action_just_pressed("confirm")
+                or input.is_action_just_pressed("primary") or input.is_action_just_pressed("call_wave") then
+            brief.close_briefing()
+        end
+        update_sky(0.0)
+        update_hud()
+        mirror()
+        return
     end
     if ending == "restart" or ending == "quit" then return end
     if ending == nil and input.is_action_just_pressed("pause") then set_paused(not paused) end

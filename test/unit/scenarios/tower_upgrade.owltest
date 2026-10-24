@@ -3,6 +3,9 @@
 # locked until the first level is won; the gold of the next waves pays for the first power-up: piercing arrows.
 scene: ../../../samples/tower_defence/scenes/level_01.owl
 steps:
+  - frames: 2
+  - input: {key: Enter, frames: 2}
+  - frames: 1
   - frames: 30
   - input: {key: E, frames: 2}
   - frames: 1

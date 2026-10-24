@@ -1,34 +1,40 @@
 -- The upgrades screen of Tower defence, reached from the world map: the stars won on the levels are spent on the
--- upgrades of six families (the three towers, the two spells, the treasury), three tiers each, bought in order.
+-- upgrades of six families (the three towers, the two spells, the treasury), four tiers each, bought in order.
 --
 -- - The stars to spend are the best stars of every level (`tower_stars_NN` settings) less the price of the tiers
 --   bought: replaying a level for more stars credits the difference.
--- - A tier costs its number of stars (1, 2, then 3); the tier of a family is the `tower_up_<family>` setting, which
+-- - A tier costs its number of stars (1, 2, 3, then 4); the tier of a family is the `tower_up_<family>` setting, which
 --   defence.lua applies to every level. The spells can be raised once a level has unlocked them.
 -- - Refund all gives every star back for free; World map (Escape, pad B) returns to the map.
 -- - Mirrored in the game state for the scenarios: `tower_up_stars` (to spend), `tower_up_won`, `tower_up_<family>`.
 
 properties = {
     { name = "map_scene", type = "string", default = "scenes/world_map.owl" },
-    { name = "levels", type = "int", default = 5, min = 1 },
+    { name = "levels", type = "int", default = 10, min = 1 },
     { name = "wipe_color", type = "color", default = { 0.1, 0.14, 0.24, 1 } },
 }
 
 local FAMILIES = {
     { key = "archer", name = "Archers", tiers = { "Bodkin arrows: +15% damage", "Longbows: +12% range",
-                                                  "Drilled archers: shoot 15% faster" } },
+                                                  "Drilled archers: shoot 15% faster",
+                                                  "Master bowyers: +10% range" } },
     { key = "cannon", name = "Cannons", tiers = { "Guild foundry: cannons cost 15% less",
-                                                  "Black powder: 20% wider bursts", "Heavy shells: +20% damage" } },
+                                                  "Black powder: 20% wider bursts", "Heavy shells: +20% damage",
+                                                  "Bronze barrels: shoot 15% faster" } },
     { key = "frost", name = "Frost", tiers = { "Deep cold: the chill lasts 30% longer",
-                                               "Bitter frost: chilled enemies are slower", "Rime: +12% range" } },
+                                               "Bitter frost: chilled enemies are slower", "Rime: +12% range",
+                                               "Hoarfrost: +20% damage" } },
     { key = "rain", name = "Rain of arrows", unlock = "tower_done_02", unlock_text = "win Thornwood Pass",
-      tiers = { "Fletchers: ready 20% sooner", "Broadheads: +30% damage", "Volley: a 25% wider rain" } },
-    { key = "shield", name = "Shield wall", unlock = "tower_done_04", unlock_text = "win Frostmere",
-      tiers = { "Drill: ready 20% sooner", "Iron wall: holds 2 seconds more", "Wide wall: 25% wider" } },
+      tiers = { "Fletchers: ready 20% sooner", "Broadheads: +30% damage", "Volley: a 25% wider rain",
+                "Storm of arrows: +30% damage" } },
+    { key = "shield", name = "Shield wall", unlock = "tower_done_05", unlock_text = "win Frostmere",
+      tiers = { "Drill: ready 20% sooner", "Iron wall: holds 2 seconds more", "Wide wall: 25% wider",
+                "Bastion: ready 20% sooner again" } },
     { key = "treasury", name = "Treasury", tiers = { "War chest: +40 gold at the start",
-                                                     "Bounties: +10% gold per kill", "Masons: +2 lives" } },
+                                                     "Bounties: +10% gold per kill", "Masons: +2 lives",
+                                                     "Royal mint: +60 gold at the start" } },
 }
-local TIERS = 3
+local TIERS = 4
 
 local ids = {}
 local leaving = false
@@ -83,7 +89,6 @@ local function refresh()
         local can = unlocked(family) and bought < TIERS and free >= cost
         ui.set_button_enabled(row.buy, can)
         ui.set_text(row.buy, not unlocked(family) and "Locked" or (bought >= TIERS and "Bought" or "Buy"))
-        ui.set_visible(row.plank, can)
         gamestate.set(setting_key(family), bought)
     end
     gamestate.set("tower_up_stars", free)
@@ -132,8 +137,7 @@ function on_create()
         ids.rows[index] = { name = scene.find_entity("UpgradeName" .. index),
                             text = scene.find_entity("UpgradeText" .. index),
                             cost = scene.find_entity("UpgradeCost" .. index),
-                            buy = scene.find_entity("UpgradeBuy" .. index),
-                            plank = scene.find_entity("UpgradeBuy" .. index .. "Frame"), pips = pips }
+                            buy = scene.find_entity("UpgradeBuy" .. index), pips = pips }
     end
     gamestate.set("tower_upgrades_screen", true)
     refresh()

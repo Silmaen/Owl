@@ -2,6 +2,9 @@
 # while the pause window is open, and walk on once it is closed with Escape again.
 scene: ../../../samples/tower_defence/scenes/level_01.owl
 steps:
+  - frames: 2
+  - input: {key: Enter, frames: 2}
+  - frames: 1
   - frames: 30
   - expect: {gamestate: tower_speed, equals: 1}
   - input: {key: F, frames: 2}

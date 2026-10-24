@@ -58,6 +58,8 @@ PARADE_COLUMN = 6
 """Column of a sheet facing the left of the screen."""
 PARADE_SIZE = 2.6
 """World size of a parade sprite cell."""
+PIXEL = PARADE_SIZE / CELL
+"""World size of a pixel of the menu scenery (``scenery.py``), the pixel size of the parade."""
 FOOT_SHARE = (FOOT[1] - CELL / 2) / CELL
 """Share of a cell between its centre and the foot of the creature."""
 
@@ -124,18 +126,13 @@ def window(title: str) -> str:
     return y.window(title, WINDOW_BODY, WINDOW_TITLE, STONE, 40, 28)
 
 
-def _flat(colour: y.Colour) -> str:
-    """A tinted white quad (the health bar texture is plain white)."""
-    return y.sprite("textures/bar.png", colour)
-
-
 def world(entities: y.Entities, fireworks: bool = False, fallen: bool = False) -> None:
     """Camera, night sky, the meadow strip and its road, an archer tower and the parade (``parade.lua``); the victory
     adds the keep and fireworks, the game over a fallen keep (tinted dark) and no tower."""
     entities.add("MainCamera", [y.camera(15)], position=(0, 0, 5))
     entities.add("Background", [y.background(NIGHT)], position=(0, 0, -1), scale=(60, 30, 1))
-    entities.add("Meadow", [_flat((0.16, 0.3, 0.14, 1))], position=(0, -6.6, -0.5), scale=(60, 2.6, 1))
-    entities.add("Road", [_flat((0.45, 0.38, 0.26, 1))], position=(0, -6.0, -0.4), scale=(60, 0.5, 1))
+    ground = y.sprite("textures/menu/ground.png", tiling=(9, 1))
+    entities.add("Meadow", [ground], position=(0, -6.5, -0.5), scale=(240 * PIXEL * 9, 112 * PIXEL, 1))
     properties: list[tuple[str, str, object]] = [("fireworks", "bool", fireworks), ("marching", "bool", not fallen)]
     parade = entities.add("Parade", [y.script("scripts/ui/parade.lua", properties)])
     for index, kind in enumerate(PARADE):
@@ -145,11 +142,12 @@ def world(entities: y.Entities, fireworks: bool = False, fallen: bool = False) -
         position = (x, GROUND_Y + size * FOOT_SHARE, 0.1)
         entities.add("ParadeEnemy", [sprite], position=position, scale=(size, size, 1), parent=parade)
     if not fallen:
-        tower = y.sprite("textures/towers/archer.png")
-        entities.add("ParadeTower", [tower], position=(9.5, GROUND_Y + 1.4, 0.05), scale=(2.2, 3.85, 1))
-    keep_tint = (0.45, 0.35, 0.35, 1) if fallen else (1, 1, 1, 1)
-    keep = y.sprite("textures/keep.png", keep_tint)
-    entities.add("ParadeKeep", [keep], position=(-10.5, GROUND_Y + 1.6, 0.05), scale=(3.6, 4.95, 1))
+        tower = y.sprite("textures/menu/tower.png")
+        position = (9.5, GROUND_Y + (136 - 75) * PIXEL, 0.05)
+        entities.add("ParadeTower", [tower], position=position, scale=(96 * PIXEL, 150 * PIXEL, 1))
+    keep = y.sprite("textures/menu/keep_fallen.png" if fallen else "textures/menu/keep.png")
+    position = (-10.5, GROUND_Y + (160 - 100) * PIXEL, 0.05)
+    entities.add("ParadeKeep", [keep], position=position, scale=(240 * PIXEL, 200 * PIXEL, 1))
     if fireworks:
         for _ in range(8):
             spark = y.sprite("textures/puff.png", (1, 0.8, 0.3, 0))
@@ -223,7 +221,7 @@ def settings() -> str:
         ("MasterVolSlider", slider("on_master_vol_changed", 1.0, True)),
         ("UiScaleLabel", [y.child_rect((0.9, 0.08)), label("Interface Size: 100%", 28, SOFT)]),
         ("UiScaleSlider", slider("on_ui_scale_changed", 0.2, False)),
-        ("ProgressLabel", [y.child_rect((0.9, 0.08)), label("Maps defended: 0 / 1", 28)]),
+        ("ProgressLabel", [y.child_rect((0.9, 0.08)), label("Maps defended: 0 / 10", 28)]),
     ]
     button(entities, panel, "BackButton", "Back", "go_back", (0.6, 0.1), False)
     button(entities, panel, "ResetButton", "Reset defaults", "on_reset_clicked", (0.6, 0.1), False)
@@ -265,16 +263,33 @@ def game_over() -> str:
     return _result("game_over", 7430000000000000000, "The keep has fallen", "scripts/ui/game_over.lua", False, True)
 
 
-CAMPAIGN = (
-    (mp.LEVELS[0], "The second power-up of each tower"),
-    (mp.LEVELS[1], "Rain of arrows: a spell on the enemy nearest the keep"),
-    (mp.LEVELS[2], "Royal treasury: 60 more gold at the start of every level"),
-    (mp.LEVELS[3], "Shield wall: a spell stopping the enemies around the front one"),
-    (mp.LEVELS[4], "Keep walls, with 3 stars on all five: 5 more lives"),
+UNLOCKS = (
+    "The second power-up of each tower",
+    "Rain of arrows: a spell on the enemy nearest the keep",
+    "Royal treasury: 60 more gold at the start of every level",
+    "Fletchers' guild: archers cost 10% less",
+    "Shield wall: a spell stopping the enemies around the front one",
+    "Watchtowers: every tower sees 5% further",
+    "Harvest tithe: 10% more gold per kill",
+    "Night watch: towers see 10% further at night",
+    "Royal guard: 3 more lives on every level",
+    "Keep walls, with 3 stars on all ten: 5 more lives",
 )
+"""What winning each level unlocks, in the order of the campaign (``defence.lua`` applies them)."""
+CAMPAIGN = tuple(zip(mp.LEVELS, UNLOCKS, strict=True))
 """The levels of the world map with what winning them unlocks."""
 MAP_SIZE = art.WORLD
 """World size of the parchment map (the camera shows 18 units of height)."""
+MODIFIER_NAMES = {
+    "fog": "fog",
+    "blizzard": "blizzard",
+    "blood_moon": "blood moon",
+    "drought": "drought",
+    "gale": "gale",
+    "plunder": "plunder",
+    "long_night": "long night",
+}
+"""Names of the level modifiers on the world map (their rules are in ``defence.lua``)."""
 FOE_NAMES = {
     "goblin": "goblins",
     "grunt": "orc grunts",
@@ -283,6 +298,7 @@ FOE_NAMES = {
     "troll": "trolls",
     "ogre_mage": "ogre mages",
     "sapper": "goblin sappers",
+    "berserker": "orc berserkers",
     "chieftain": "the orc chieftain",
 }
 """Names of the kinds of the Horde on the world map (the enemies a level brings first)."""
@@ -374,7 +390,8 @@ def world_map() -> str:
         kinds = [group.split()[0] for wave in level.waves for group in wave.split(";")]
         new = [FOE_NAMES[kind] for kind in dict.fromkeys(kinds) if kind not in seen]
         seen.update(kinds)
-        levels.append(f"{level.name}|{len(level.waves)}|{unlock}|{', '.join(new)}")
+        twists = ", ".join(MODIFIER_NAMES[key] for key in level.modifiers)
+        levels.append(f"{level.name}|{len(level.waves)}|{unlock}|{', '.join(new)}|{twists}")
         scenes.append(f"scenes/level_{level.number:02d}.owl")
     script = (
         "LuaScript:\n  scriptPath: scripts/ui/world_map.lua\n  properties:\n"
@@ -401,13 +418,13 @@ def world_map() -> str:
     entities.add("SiteName", [y.child_rect((1, 0.34)), label("", 32, GOLD, "Left", font=HEADING)], parent=texts)
     bonus = entities.add(
         "BonusWindow",
-        [y.rect((0.5, 0.5), (1.1, 0.7)), window("Bonuses"), y.layout("Column", 6, 12)],
+        [y.rect((0.5, 0.5), (1.2, 0.88)), window("Bonuses"), y.layout("Column", 3, 8)],
         parent=root,
         visible=False,
     )
-    button(entities, bonus, "BonusBackButton", "Back", "on_bonus_closed", (0.4, 0.13), False)
+    button(entities, bonus, "BonusBackButton", "Back", "on_bonus_closed", (0.4, 0.09), False)
     for index in reversed(range(len(CAMPAIGN))):
-        entities.add(f"BonusLine{index + 1}", [y.child_rect((0.95, 0.12)), label("", 22, SOFT, "Left")], parent=bonus)
+        entities.add(f"BonusLine{index + 1}", [y.child_rect((0.95, 0.072)), label("", 18, SOFT, "Left")], parent=bonus)
     return y.scene("world_map", entities)
 
 
@@ -432,10 +449,10 @@ def upgrades() -> str:
         line = entities.add(f"UpgradeRow{index}", [y.child_rect((0.96, 0.095)), y.layout("Row", 5)], parent=board_id)
         button(entities, line, f"UpgradeBuy{index}", "Buy", f"on_buy_{index}", (0.15, 0.85), index == 1, font_size=20)
         entities.add(f"UpgradeCost{index}", [y.child_rect((0.09, 0.9)), label("", 20, GOLD)], parent=line)
-        for _ in range(3):
+        for _ in range(4):
             star = y.image("textures/ui/stars.png") + "  columns: 2\n  rows: 1\n  frame: 0\n"
             entities.add(f"UpgradePip{index}", [y.child_rect((0.035, 0.6)), star], parent=line)
-        entities.add(f"UpgradeText{index}", [y.child_rect((0.36, 0.9)), label("", 18, SOFT, "Left")], parent=line)
+        entities.add(f"UpgradeText{index}", [y.child_rect((0.32, 0.9)), label("", 18, SOFT, "Left")], parent=line)
         entities.add(f"UpgradeName{index}", [y.child_rect((0.2, 0.9)), label("", 24, STONE, "Left")], parent=line)
     entities.add("StarsText", [y.child_rect((0.9, 0.06)), label("", 26, GOLD)], parent=board_id)
     entities.add(

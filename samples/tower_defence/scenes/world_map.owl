@@ -191,8 +191,8 @@ Entities:
     Tag:
       tag: PathDot 1
     Transform:
-      translation: [-12.5617, -2.338, 0.05]
-      rotation: [0, 0, 0.0332]
+      translation: [-12.4654, -2.319, 0.05]
+      rotation: [0, 0, 0.1101]
       scale: [0.4, 0.15, 1]
     Visibility:
       gameVisible: false
@@ -206,8 +206,8 @@ Entities:
     Tag:
       tag: PathDot 1
     Transform:
-      translation: [-12.0203, -2.2656, 0.05]
-      rotation: [0, 0, 0.2372]
+      translation: [-11.9035, -2.1813, 0.05]
+      rotation: [0, 0, 0.3751]
       scale: [0.4, 0.15, 1]
     Visibility:
       gameVisible: false
@@ -221,8 +221,8 @@ Entities:
     Tag:
       tag: PathDot 1
     Transform:
-      translation: [-11.5175, -2.0856, 0.05]
-      rotation: [0, 0, 0.4503]
+      translation: [-11.3987, -1.899, 0.05]
+      rotation: [0, 0, 0.6401]
       scale: [0.4, 0.15, 1]
     Visibility:
       gameVisible: false
@@ -234,24 +234,9 @@ Entities:
       texture: nam:textures/ui/path_dash.png
   - Entity: 7440000000000000016
     Tag:
-      tag: PathDot 1
-    Transform:
-      translation: [-11.0531, -1.798, 0.05]
-      rotation: [0, 0, 0.6543]
-      scale: [0.4, 0.15, 1]
-    Visibility:
-      gameVisible: false
-    Hierarchy:
-      parentId: 7440000000000000003
-    SpriteRenderer:
-      color: [1, 1, 1, 1]
-      tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
-  - Entity: 7440000000000000017
-    Tag:
       tag: SiteRing
     Transform:
-      translation: [-10.24, -1.7, 0.08]
+      translation: [-10.56, -1.7, 0.08]
       rotation: [0, 0, 0]
       scale: [2.8, 1.3, 1]
     Visibility:
@@ -262,11 +247,11 @@ Entities:
       color: [1, 0.82, 0.3, 0.9]
       tilingFactor: 1
       texture: nam:textures/fx/ring.png
-  - Entity: 7440000000000000018
+  - Entity: 7440000000000000017
     Tag:
       tag: Site
     Transform:
-      translation: [-10.24, -0.9, 0.1]
+      translation: [-10.56, -0.9, 0.1]
       rotation: [0, 0, 0]
       scale: [2.4, 2.4, 1]
     Visibility:
@@ -282,11 +267,11 @@ Entities:
       lastFrame: 0
       frameDuration: 0.1
       loop: false
-  - Entity: 7440000000000000019
+  - Entity: 7440000000000000018
     Tag:
       tag: SiteFlag
     Transform:
-      translation: [-8.89, -0.375, 0.11]
+      translation: [-9.21, -0.375, 0.11]
       rotation: [0, 0, 0]
       scale: [0.8, 0.8, 1]
     Visibility:
@@ -302,11 +287,31 @@ Entities:
       lastFrame: 0
       frameDuration: 0.1
       loop: false
+  - Entity: 7440000000000000019
+    Tag:
+      tag: SiteStar
+    Transform:
+      translation: [-11.18, -2.45, 0.12]
+      rotation: [0, 0, 0]
+      scale: [0.6, 0.6, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7440000000000000003
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/ui/stars.png
+      columns: 2
+      rows: 1
+      firstFrame: 0
+      lastFrame: 0
+      frameDuration: 0.1
+      loop: false
   - Entity: 7440000000000000020
     Tag:
       tag: SiteStar
     Transform:
-      translation: [-10.86, -2.45, 0.12]
+      translation: [-10.56, -2.45, 0.12]
       rotation: [0, 0, 0]
       scale: [0.6, 0.6, 1]
     Visibility:
@@ -326,7 +331,7 @@ Entities:
     Tag:
       tag: SiteStar
     Transform:
-      translation: [-10.24, -2.45, 0.12]
+      translation: [-9.94, -2.45, 0.12]
       rotation: [0, 0, 0]
       scale: [0.6, 0.6, 1]
     Visibility:
@@ -344,30 +349,25 @@ Entities:
       loop: false
   - Entity: 7440000000000000022
     Tag:
-      tag: SiteStar
+      tag: PathDot 2
     Transform:
-      translation: [-9.62, -2.45, 0.12]
-      rotation: [0, 0, 0]
-      scale: [0.6, 0.6, 1]
+      translation: [-10.1608, 0.11, 0.05]
+      rotation: [0, 0, 1.1132]
+      scale: [0.4, 0.15, 1]
     Visibility:
-      gameVisible: true
+      gameVisible: false
     Hierarchy:
       parentId: 7440000000000000003
-    AnimatedSpriteRenderer:
+    SpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/ui/stars.png
-      columns: 2
-      rows: 1
-      firstFrame: 0
-      lastFrame: 0
-      frameDuration: 0.1
-      loop: false
+      tilingFactor: 1
+      texture: nam:textures/ui/path_dash.png
   - Entity: 7440000000000000023
     Tag:
       tag: PathDot 2
     Transform:
-      translation: [-9.609, 0.061, 0.05]
-      rotation: [0, 0, 0.9127]
+      translation: [-9.9114, 0.5666, 0.05]
+      rotation: [0, 0, 1.0275]
       scale: [0.4, 0.15, 1]
     Visibility:
       gameVisible: false
@@ -381,8 +381,8 @@ Entities:
     Tag:
       tag: PathDot 2
     Transform:
-      translation: [-9.2532, 0.485, 0.05]
-      rotation: [0, 0, 0.8317]
+      translation: [-9.6288, 0.9911, 0.05]
+      rotation: [0, 0, 0.9383]
       scale: [0.4, 0.15, 1]
     Visibility:
       gameVisible: false
@@ -396,8 +396,8 @@ Entities:
     Tag:
       tag: PathDot 2
     Transform:
-      translation: [-8.8705, 0.8713, 0.05]
-      rotation: [0, 0, 0.7479]
+      translation: [-9.3129, 1.3833, 0.05]
+      rotation: [0, 0, 0.8469]
       scale: [0.4, 0.15, 1]
     Visibility:
       gameVisible: false
@@ -411,8 +411,8 @@ Entities:
     Tag:
       tag: PathDot 2
     Transform:
-      translation: [-8.461, 1.2199, 0.05]
-      rotation: [0, 0, 0.6622]
+      translation: [-8.9638, 1.7433, 0.05]
+      rotation: [0, 0, 0.7547]
       scale: [0.4, 0.15, 1]
     Visibility:
       gameVisible: false
@@ -426,8 +426,8 @@ Entities:
     Tag:
       tag: PathDot 2
     Transform:
-      translation: [-8.0247, 1.5308, 0.05]
-      rotation: [0, 0, 0.5759]
+      translation: [-8.5815, 2.0711, 0.05]
+      rotation: [0, 0, 0.6632]
       scale: [0.4, 0.15, 1]
     Visibility:
       gameVisible: false
@@ -441,8 +441,8 @@ Entities:
     Tag:
       tag: PathDot 2
     Transform:
-      translation: [-7.5614, 1.8041, 0.05]
-      rotation: [0, 0, 0.4902]
+      translation: [-8.166, 2.3666, 0.05]
+      rotation: [0, 0, 0.574]
       scale: [0.4, 0.15, 1]
     Visibility:
       gameVisible: false
@@ -456,8 +456,8 @@ Entities:
     Tag:
       tag: PathDot 2
     Transform:
-      translation: [-7.0714, 2.0396, 0.05]
-      rotation: [0, 0, 0.4064]
+      translation: [-7.7172, 2.63, 0.05]
+      rotation: [0, 0, 0.4883]
       scale: [0.4, 0.15, 1]
     Visibility:
       gameVisible: false
@@ -469,24 +469,9 @@ Entities:
       texture: nam:textures/ui/path_dash.png
   - Entity: 7440000000000000030
     Tag:
-      tag: PathDot 2
-    Transform:
-      translation: [-6.5544, 2.2374, 0.05]
-      rotation: [0, 0, 0.3255]
-      scale: [0.4, 0.15, 1]
-    Visibility:
-      gameVisible: false
-    Hierarchy:
-      parentId: 7440000000000000003
-    SpriteRenderer:
-      color: [1, 1, 1, 1]
-      tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
-  - Entity: 7440000000000000031
-    Tag:
       tag: SiteRing
     Transform:
-      translation: [-5.44, 1.72, 0.08]
+      translation: [-6.72, 2.26, 0.08]
       rotation: [0, 0, 0]
       scale: [2.8, 1.3, 1]
     Visibility:
@@ -497,11 +482,11 @@ Entities:
       color: [1, 0.82, 0.3, 0.9]
       tilingFactor: 1
       texture: nam:textures/fx/ring.png
-  - Entity: 7440000000000000032
+  - Entity: 7440000000000000031
     Tag:
       tag: Site
     Transform:
-      translation: [-5.44, 2.52, 0.1]
+      translation: [-6.72, 3.06, 0.1]
       rotation: [0, 0, 0]
       scale: [2.4, 2.4, 1]
     Visibility:
@@ -517,11 +502,11 @@ Entities:
       lastFrame: 0
       frameDuration: 0.1
       loop: false
-  - Entity: 7440000000000000033
+  - Entity: 7440000000000000032
     Tag:
       tag: SiteFlag
     Transform:
-      translation: [-4.09, 3.045, 0.11]
+      translation: [-5.37, 3.585, 0.11]
       rotation: [0, 0, 0]
       scale: [0.8, 0.8, 1]
     Visibility:
@@ -537,11 +522,31 @@ Entities:
       lastFrame: 0
       frameDuration: 0.1
       loop: false
+  - Entity: 7440000000000000033
+    Tag:
+      tag: SiteStar
+    Transform:
+      translation: [-7.34, 1.51, 0.12]
+      rotation: [0, 0, 0]
+      scale: [0.6, 0.6, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7440000000000000003
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/ui/stars.png
+      columns: 2
+      rows: 1
+      firstFrame: 0
+      lastFrame: 0
+      frameDuration: 0.1
+      loop: false
   - Entity: 7440000000000000034
     Tag:
       tag: SiteStar
     Transform:
-      translation: [-6.06, 0.97, 0.12]
+      translation: [-6.72, 1.51, 0.12]
       rotation: [0, 0, 0]
       scale: [0.6, 0.6, 1]
     Visibility:
@@ -561,7 +566,7 @@ Entities:
     Tag:
       tag: SiteStar
     Transform:
-      translation: [-5.44, 0.97, 0.12]
+      translation: [-6.1, 1.51, 0.12]
       rotation: [0, 0, 0]
       scale: [0.6, 0.6, 1]
     Visibility:
@@ -579,30 +584,25 @@ Entities:
       loop: false
   - Entity: 7440000000000000036
     Tag:
-      tag: SiteStar
+      tag: PathDot 3
     Transform:
-      translation: [-4.82, 0.97, 0.12]
-      rotation: [0, 0, 0]
-      scale: [0.6, 0.6, 1]
+      translation: [-5.9021, 2.3108, 0.05]
+      rotation: [0, 0, -0.6918]
+      scale: [0.4, 0.15, 1]
     Visibility:
-      gameVisible: true
+      gameVisible: false
     Hierarchy:
       parentId: 7440000000000000003
-    AnimatedSpriteRenderer:
+    SpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/ui/stars.png
-      columns: 2
-      rows: 1
-      firstFrame: 0
-      lastFrame: 0
-      frameDuration: 0.1
-      loop: false
+      tilingFactor: 1
+      texture: nam:textures/ui/path_dash.png
   - Entity: 7440000000000000037
     Tag:
       tag: PathDot 3
     Transform:
-      translation: [-4.8246, 1.5524, 0.05]
-      rotation: [0, 0, -0.9391]
+      translation: [-5.4754, 1.9752, 0.05]
+      rotation: [0, 0, -0.6407]
       scale: [0.4, 0.15, 1]
     Visibility:
       gameVisible: false
@@ -616,8 +616,8 @@ Entities:
     Tag:
       tag: PathDot 3
     Transform:
-      translation: [-4.4812, 1.1147, 0.05]
-      rotation: [0, 0, -0.8713]
+      translation: [-5.0368, 1.6657, 0.05]
+      rotation: [0, 0, -0.5884]
       scale: [0.4, 0.15, 1]
     Visibility:
       gameVisible: false
@@ -631,8 +631,8 @@ Entities:
     Tag:
       tag: PathDot 3
     Transform:
-      translation: [-4.114, 0.7078, 0.05]
-      rotation: [0, 0, -0.8015]
+      translation: [-4.5864, 1.3821, 0.05]
+      rotation: [0, 0, -0.5352]
       scale: [0.4, 0.15, 1]
     Visibility:
       gameVisible: false
@@ -646,8 +646,8 @@ Entities:
     Tag:
       tag: PathDot 3
     Transform:
-      translation: [-3.723, 0.3317, 0.05]
-      rotation: [0, 0, -0.7303]
+      translation: [-4.1242, 1.1245, 0.05]
+      rotation: [0, 0, -0.4814]
       scale: [0.4, 0.15, 1]
     Visibility:
       gameVisible: false
@@ -661,8 +661,8 @@ Entities:
     Tag:
       tag: PathDot 3
     Transform:
-      translation: [-3.3083, -0.0137, 0.05]
-      rotation: [0, 0, -0.6583]
+      translation: [-3.6501, 0.8929, 0.05]
+      rotation: [0, 0, -0.4273]
       scale: [0.4, 0.15, 1]
     Visibility:
       gameVisible: false
@@ -676,8 +676,8 @@ Entities:
     Tag:
       tag: PathDot 3
     Transform:
-      translation: [-2.8697, -0.3283, 0.05]
-      rotation: [0, 0, -0.5864]
+      translation: [-3.1642, 0.6874, 0.05]
+      rotation: [0, 0, -0.3732]
       scale: [0.4, 0.15, 1]
     Visibility:
       gameVisible: false
@@ -691,8 +691,8 @@ Entities:
     Tag:
       tag: PathDot 3
     Transform:
-      translation: [-2.4073, -0.6122, 0.05]
-      rotation: [0, 0, -0.5151]
+      translation: [-2.6664, 0.5078, 0.05]
+      rotation: [0, 0, -0.3194]
       scale: [0.4, 0.15, 1]
     Visibility:
       gameVisible: false
@@ -706,8 +706,8 @@ Entities:
     Tag:
       tag: PathDot 3
     Transform:
-      translation: [-1.9212, -0.8653, 0.05]
-      rotation: [0, 0, -0.4453]
+      translation: [-2.1568, 0.3542, 0.05]
+      rotation: [0, 0, -0.2662]
       scale: [0.4, 0.15, 1]
     Visibility:
       gameVisible: false
@@ -721,8 +721,8 @@ Entities:
     Tag:
       tag: PathDot 3
     Transform:
-      translation: [-1.4113, -1.0876, 0.05]
-      rotation: [0, 0, -0.3776]
+      translation: [-1.6354, 0.2267, 0.05]
+      rotation: [0, 0, -0.2139]
       scale: [0.4, 0.15, 1]
     Visibility:
       gameVisible: false
@@ -734,9 +734,24 @@ Entities:
       texture: nam:textures/ui/path_dash.png
   - Entity: 7440000000000000046
     Tag:
+      tag: PathDot 3
+    Transform:
+      translation: [-1.1021, 0.1251, 0.05]
+      rotation: [0, 0, -0.1628]
+      scale: [0.4, 0.15, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy:
+      parentId: 7440000000000000003
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/ui/path_dash.png
+  - Entity: 7440000000000000047
+    Tag:
       tag: SiteRing
     Transform:
-      translation: [-0.32, -2.24, 0.08]
+      translation: [0, -0.8, 0.08]
       rotation: [0, 0, 0]
       scale: [2.8, 1.3, 1]
     Visibility:
@@ -747,11 +762,11 @@ Entities:
       color: [1, 0.82, 0.3, 0.9]
       tilingFactor: 1
       texture: nam:textures/fx/ring.png
-  - Entity: 7440000000000000047
+  - Entity: 7440000000000000048
     Tag:
       tag: Site
     Transform:
-      translation: [-0.32, -1.44, 0.1]
+      translation: [0, 0, 0.1]
       rotation: [0, 0, 0]
       scale: [2.4, 2.4, 1]
     Visibility:
@@ -767,11 +782,11 @@ Entities:
       lastFrame: 0
       frameDuration: 0.1
       loop: false
-  - Entity: 7440000000000000048
+  - Entity: 7440000000000000049
     Tag:
       tag: SiteFlag
     Transform:
-      translation: [1.03, -0.915, 0.11]
+      translation: [1.35, 0.525, 0.11]
       rotation: [0, 0, 0]
       scale: [0.8, 0.8, 1]
     Visibility:
@@ -787,31 +802,11 @@ Entities:
       lastFrame: 0
       frameDuration: 0.1
       loop: false
-  - Entity: 7440000000000000049
-    Tag:
-      tag: SiteStar
-    Transform:
-      translation: [-0.94, -2.99, 0.12]
-      rotation: [0, 0, 0]
-      scale: [0.6, 0.6, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7440000000000000003
-    AnimatedSpriteRenderer:
-      color: [1, 1, 1, 1]
-      texture: nam:textures/ui/stars.png
-      columns: 2
-      rows: 1
-      firstFrame: 0
-      lastFrame: 0
-      frameDuration: 0.1
-      loop: false
   - Entity: 7440000000000000050
     Tag:
       tag: SiteStar
     Transform:
-      translation: [-0.32, -2.99, 0.12]
+      translation: [-0.62, -1.55, 0.12]
       rotation: [0, 0, 0]
       scale: [0.6, 0.6, 1]
     Visibility:
@@ -831,7 +826,7 @@ Entities:
     Tag:
       tag: SiteStar
     Transform:
-      translation: [0.3, -2.99, 0.12]
+      translation: [0, -1.55, 0.12]
       rotation: [0, 0, 0]
       scale: [0.6, 0.6, 1]
     Visibility:
@@ -849,25 +844,30 @@ Entities:
       loop: false
   - Entity: 7440000000000000052
     Tag:
-      tag: PathDot 4
+      tag: SiteStar
     Transform:
-      translation: [0.2241, -0.4685, 0.05]
-      rotation: [0, 0, 1.0107]
-      scale: [0.4, 0.15, 1]
+      translation: [0.62, -1.55, 0.12]
+      rotation: [0, 0, 0]
+      scale: [0.6, 0.6, 1]
     Visibility:
-      gameVisible: false
+      gameVisible: true
     Hierarchy:
       parentId: 7440000000000000003
-    SpriteRenderer:
+    AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
+      texture: nam:textures/ui/stars.png
+      columns: 2
+      rows: 1
+      firstFrame: 0
+      lastFrame: 0
+      frameDuration: 0.1
+      loop: false
   - Entity: 7440000000000000053
     Tag:
       tag: PathDot 4
     Transform:
-      translation: [0.5253, -0.0142, 0.05]
-      rotation: [0, 0, 0.9597]
+      translation: [1.2117, -0.4266, 0.05]
+      rotation: [0, 0, -0.5741]
       scale: [0.4, 0.15, 1]
     Visibility:
       gameVisible: false
@@ -881,8 +881,8 @@ Entities:
     Tag:
       tag: PathDot 4
     Transform:
-      translation: [0.8459, 0.4192, 0.05]
-      rotation: [0, 0, 0.9077]
+      translation: [1.6432, -0.7949, 0.05]
+      rotation: [0, 0, -0.8442]
       scale: [0.4, 0.15, 1]
     Visibility:
       gameVisible: false
@@ -896,8 +896,8 @@ Entities:
     Tag:
       tag: PathDot 4
     Transform:
-      translation: [1.186, 0.8316, 0.05]
-      rotation: [0, 0, 0.8547]
+      translation: [1.9584, -1.2666, 0.05]
+      rotation: [0, 0, -1.1142]
       scale: [0.4, 0.15, 1]
     Visibility:
       gameVisible: false
@@ -909,114 +909,9 @@ Entities:
       texture: nam:textures/ui/path_dash.png
   - Entity: 7440000000000000056
     Tag:
-      tag: PathDot 4
-    Transform:
-      translation: [1.5454, 1.223, 0.05]
-      rotation: [0, 0, 0.8011]
-      scale: [0.4, 0.15, 1]
-    Visibility:
-      gameVisible: false
-    Hierarchy:
-      parentId: 7440000000000000003
-    SpriteRenderer:
-      color: [1, 1, 1, 1]
-      tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
-  - Entity: 7440000000000000057
-    Tag:
-      tag: PathDot 4
-    Transform:
-      translation: [1.9243, 1.5935, 0.05]
-      rotation: [0, 0, 0.7472]
-      scale: [0.4, 0.15, 1]
-    Visibility:
-      gameVisible: false
-    Hierarchy:
-      parentId: 7440000000000000003
-    SpriteRenderer:
-      color: [1, 1, 1, 1]
-      tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
-  - Entity: 7440000000000000058
-    Tag:
-      tag: PathDot 4
-    Transform:
-      translation: [2.3225, 1.943, 0.05]
-      rotation: [0, 0, 0.6934]
-      scale: [0.4, 0.15, 1]
-    Visibility:
-      gameVisible: false
-    Hierarchy:
-      parentId: 7440000000000000003
-    SpriteRenderer:
-      color: [1, 1, 1, 1]
-      tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
-  - Entity: 7440000000000000059
-    Tag:
-      tag: PathDot 4
-    Transform:
-      translation: [2.7402, 2.2716, 0.05]
-      rotation: [0, 0, 0.6398]
-      scale: [0.4, 0.15, 1]
-    Visibility:
-      gameVisible: false
-    Hierarchy:
-      parentId: 7440000000000000003
-    SpriteRenderer:
-      color: [1, 1, 1, 1]
-      tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
-  - Entity: 7440000000000000060
-    Tag:
-      tag: PathDot 4
-    Transform:
-      translation: [3.1774, 2.5792, 0.05]
-      rotation: [0, 0, 0.5868]
-      scale: [0.4, 0.15, 1]
-    Visibility:
-      gameVisible: false
-    Hierarchy:
-      parentId: 7440000000000000003
-    SpriteRenderer:
-      color: [1, 1, 1, 1]
-      tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
-  - Entity: 7440000000000000061
-    Tag:
-      tag: PathDot 4
-    Transform:
-      translation: [3.6339, 2.8658, 0.05]
-      rotation: [0, 0, 0.5348]
-      scale: [0.4, 0.15, 1]
-    Visibility:
-      gameVisible: false
-    Hierarchy:
-      parentId: 7440000000000000003
-    SpriteRenderer:
-      color: [1, 1, 1, 1]
-      tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
-  - Entity: 7440000000000000062
-    Tag:
-      tag: PathDot 4
-    Transform:
-      translation: [4.1098, 3.1315, 0.05]
-      rotation: [0, 0, 0.4838]
-      scale: [0.4, 0.15, 1]
-    Visibility:
-      gameVisible: false
-    Hierarchy:
-      parentId: 7440000000000000003
-    SpriteRenderer:
-      color: [1, 1, 1, 1]
-      tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
-  - Entity: 7440000000000000063
-    Tag:
       tag: SiteRing
     Transform:
-      translation: [5.12, 2.8, 0.08]
+      translation: [2.24, -3.32, 0.08]
       rotation: [0, 0, 0]
       scale: [2.8, 1.3, 1]
     Visibility:
@@ -1027,11 +922,11 @@ Entities:
       color: [1, 0.82, 0.3, 0.9]
       tilingFactor: 1
       texture: nam:textures/fx/ring.png
-  - Entity: 7440000000000000064
+  - Entity: 7440000000000000057
     Tag:
       tag: Site
     Transform:
-      translation: [5.12, 3.6, 0.1]
+      translation: [2.24, -2.52, 0.1]
       rotation: [0, 0, 0]
       scale: [2.4, 2.4, 1]
     Visibility:
@@ -1047,11 +942,11 @@ Entities:
       lastFrame: 0
       frameDuration: 0.1
       loop: false
-  - Entity: 7440000000000000065
+  - Entity: 7440000000000000058
     Tag:
       tag: SiteFlag
     Transform:
-      translation: [6.47, 4.125, 0.11]
+      translation: [3.59, -1.995, 0.11]
       rotation: [0, 0, 0]
       scale: [0.8, 0.8, 1]
     Visibility:
@@ -1067,72 +962,177 @@ Entities:
       lastFrame: 0
       frameDuration: 0.1
       loop: false
+  - Entity: 7440000000000000059
+    Tag:
+      tag: SiteStar
+    Transform:
+      translation: [1.62, -4.07, 0.12]
+      rotation: [0, 0, 0]
+      scale: [0.6, 0.6, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7440000000000000003
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/ui/stars.png
+      columns: 2
+      rows: 1
+      firstFrame: 0
+      lastFrame: 0
+      frameDuration: 0.1
+      loop: false
+  - Entity: 7440000000000000060
+    Tag:
+      tag: SiteStar
+    Transform:
+      translation: [2.24, -4.07, 0.12]
+      rotation: [0, 0, 0]
+      scale: [0.6, 0.6, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7440000000000000003
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/ui/stars.png
+      columns: 2
+      rows: 1
+      firstFrame: 0
+      lastFrame: 0
+      frameDuration: 0.1
+      loop: false
+  - Entity: 7440000000000000061
+    Tag:
+      tag: SiteStar
+    Transform:
+      translation: [2.86, -4.07, 0.12]
+      rotation: [0, 0, 0]
+      scale: [0.6, 0.6, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7440000000000000003
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/ui/stars.png
+      columns: 2
+      rows: 1
+      firstFrame: 0
+      lastFrame: 0
+      frameDuration: 0.1
+      loop: false
+  - Entity: 7440000000000000062
+    Tag:
+      tag: PathDot 5
+    Transform:
+      translation: [2.9311, -1.6164, 0.05]
+      rotation: [0, 0, 0.9836]
+      scale: [0.4, 0.15, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy:
+      parentId: 7440000000000000003
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/ui/path_dash.png
+  - Entity: 7440000000000000063
+    Tag:
+      tag: PathDot 5
+    Transform:
+      translation: [3.2209, -1.1472, 0.05]
+      rotation: [0, 0, 1.0519]
+      scale: [0.4, 0.15, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy:
+      parentId: 7440000000000000003
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/ui/path_dash.png
+  - Entity: 7440000000000000064
+    Tag:
+      tag: PathDot 5
+    Transform:
+      translation: [3.4737, -0.6663, 0.05]
+      rotation: [0, 0, 1.1223]
+      scale: [0.4, 0.15, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy:
+      parentId: 7440000000000000003
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/ui/path_dash.png
+  - Entity: 7440000000000000065
+    Tag:
+      tag: PathDot 5
+    Transform:
+      translation: [3.6893, -0.1737, 0.05]
+      rotation: [0, 0, 1.1942]
+      scale: [0.4, 0.15, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy:
+      parentId: 7440000000000000003
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/ui/path_dash.png
   - Entity: 7440000000000000066
     Tag:
-      tag: SiteStar
+      tag: PathDot 5
     Transform:
-      translation: [4.5, 2.05, 0.12]
-      rotation: [0, 0, 0]
-      scale: [0.6, 0.6, 1]
+      translation: [3.8679, 0.3305, 0.05]
+      rotation: [0, 0, 1.2668]
+      scale: [0.4, 0.15, 1]
     Visibility:
-      gameVisible: true
+      gameVisible: false
     Hierarchy:
       parentId: 7440000000000000003
-    AnimatedSpriteRenderer:
+    SpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/ui/stars.png
-      columns: 2
-      rows: 1
-      firstFrame: 0
-      lastFrame: 0
-      frameDuration: 0.1
-      loop: false
+      tilingFactor: 1
+      texture: nam:textures/ui/path_dash.png
   - Entity: 7440000000000000067
     Tag:
-      tag: SiteStar
+      tag: PathDot 5
     Transform:
-      translation: [5.12, 2.05, 0.12]
-      rotation: [0, 0, 0]
-      scale: [0.6, 0.6, 1]
+      translation: [4.0093, 0.8463, 0.05]
+      rotation: [0, 0, 1.3394]
+      scale: [0.4, 0.15, 1]
     Visibility:
-      gameVisible: true
+      gameVisible: false
     Hierarchy:
       parentId: 7440000000000000003
-    AnimatedSpriteRenderer:
+    SpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/ui/stars.png
-      columns: 2
-      rows: 1
-      firstFrame: 0
-      lastFrame: 0
-      frameDuration: 0.1
-      loop: false
+      tilingFactor: 1
+      texture: nam:textures/ui/path_dash.png
   - Entity: 7440000000000000068
     Tag:
-      tag: SiteStar
+      tag: PathDot 5
     Transform:
-      translation: [5.74, 2.05, 0.12]
-      rotation: [0, 0, 0]
-      scale: [0.6, 0.6, 1]
+      translation: [4.1137, 1.3737, 0.05]
+      rotation: [0, 0, 1.4113]
+      scale: [0.4, 0.15, 1]
     Visibility:
-      gameVisible: true
+      gameVisible: false
     Hierarchy:
       parentId: 7440000000000000003
-    AnimatedSpriteRenderer:
+    SpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/ui/stars.png
-      columns: 2
-      rows: 1
-      firstFrame: 0
-      lastFrame: 0
-      frameDuration: 0.1
-      loop: false
+      tilingFactor: 1
+      texture: nam:textures/ui/path_dash.png
   - Entity: 7440000000000000069
     Tag:
       tag: PathDot 5
     Transform:
-      translation: [5.8015, 2.747, 0.05]
-      rotation: [0, 0, -0.8463]
+      translation: [4.1809, 1.9128, 0.05]
+      rotation: [0, 0, 1.4817]
       scale: [0.4, 0.15, 1]
     Visibility:
       gameVisible: false
@@ -1146,8 +1146,8 @@ Entities:
     Tag:
       tag: PathDot 5
     Transform:
-      translation: [6.1656, 2.3564, 0.05]
-      rotation: [0, 0, -0.7943]
+      translation: [4.2111, 2.4636, 0.05]
+      rotation: [0, 0, 1.55]
       scale: [0.4, 0.15, 1]
     Visibility:
       gameVisible: false
@@ -1159,144 +1159,9 @@ Entities:
       texture: nam:textures/ui/path_dash.png
   - Entity: 7440000000000000071
     Tag:
-      tag: PathDot 5
-    Transform:
-      translation: [6.5453, 1.9897, 0.05]
-      rotation: [0, 0, -0.7412]
-      scale: [0.4, 0.15, 1]
-    Visibility:
-      gameVisible: false
-    Hierarchy:
-      parentId: 7440000000000000003
-    SpriteRenderer:
-      color: [1, 1, 1, 1]
-      tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
-  - Entity: 7440000000000000072
-    Tag:
-      tag: PathDot 5
-    Transform:
-      translation: [6.9406, 1.647, 0.05]
-      rotation: [0, 0, -0.6871]
-      scale: [0.4, 0.15, 1]
-    Visibility:
-      gameVisible: false
-    Hierarchy:
-      parentId: 7440000000000000003
-    SpriteRenderer:
-      color: [1, 1, 1, 1]
-      tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
-  - Entity: 7440000000000000073
-    Tag:
-      tag: PathDot 5
-    Transform:
-      translation: [7.3515, 1.3283, 0.05]
-      rotation: [0, 0, -0.6324]
-      scale: [0.4, 0.15, 1]
-    Visibility:
-      gameVisible: false
-    Hierarchy:
-      parentId: 7440000000000000003
-    SpriteRenderer:
-      color: [1, 1, 1, 1]
-      tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
-  - Entity: 7440000000000000074
-    Tag:
-      tag: PathDot 5
-    Transform:
-      translation: [7.778, 1.0334, 0.05]
-      rotation: [0, 0, -0.5773]
-      scale: [0.4, 0.15, 1]
-    Visibility:
-      gameVisible: false
-    Hierarchy:
-      parentId: 7440000000000000003
-    SpriteRenderer:
-      color: [1, 1, 1, 1]
-      tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
-  - Entity: 7440000000000000075
-    Tag:
-      tag: PathDot 5
-    Transform:
-      translation: [8.22, 0.7626, 0.05]
-      rotation: [0, 0, -0.5222]
-      scale: [0.4, 0.15, 1]
-    Visibility:
-      gameVisible: false
-    Hierarchy:
-      parentId: 7440000000000000003
-    SpriteRenderer:
-      color: [1, 1, 1, 1]
-      tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
-  - Entity: 7440000000000000076
-    Tag:
-      tag: PathDot 5
-    Transform:
-      translation: [8.6777, 0.5156, 0.05]
-      rotation: [0, 0, -0.4675]
-      scale: [0.4, 0.15, 1]
-    Visibility:
-      gameVisible: false
-    Hierarchy:
-      parentId: 7440000000000000003
-    SpriteRenderer:
-      color: [1, 1, 1, 1]
-      tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
-  - Entity: 7440000000000000077
-    Tag:
-      tag: PathDot 5
-    Transform:
-      translation: [9.151, 0.2926, 0.05]
-      rotation: [0, 0, -0.4134]
-      scale: [0.4, 0.15, 1]
-    Visibility:
-      gameVisible: false
-    Hierarchy:
-      parentId: 7440000000000000003
-    SpriteRenderer:
-      color: [1, 1, 1, 1]
-      tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
-  - Entity: 7440000000000000078
-    Tag:
-      tag: PathDot 5
-    Transform:
-      translation: [9.6399, 0.0935, 0.05]
-      rotation: [0, 0, -0.3603]
-      scale: [0.4, 0.15, 1]
-    Visibility:
-      gameVisible: false
-    Hierarchy:
-      parentId: 7440000000000000003
-    SpriteRenderer:
-      color: [1, 1, 1, 1]
-      tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
-  - Entity: 7440000000000000079
-    Tag:
-      tag: PathDot 5
-    Transform:
-      translation: [10.1443, -0.0816, 0.05]
-      rotation: [0, 0, -0.3083]
-      scale: [0.4, 0.15, 1]
-    Visibility:
-      gameVisible: false
-    Hierarchy:
-      parentId: 7440000000000000003
-    SpriteRenderer:
-      color: [1, 1, 1, 1]
-      tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
-  - Entity: 7440000000000000080
-    Tag:
       tag: SiteRing
     Transform:
-      translation: [11.2, -1.16, 0.08]
+      translation: [4.16, 2.8, 0.08]
       rotation: [0, 0, 0]
       scale: [2.8, 1.3, 1]
     Visibility:
@@ -1307,11 +1172,11 @@ Entities:
       color: [1, 0.82, 0.3, 0.9]
       tilingFactor: 1
       texture: nam:textures/fx/ring.png
-  - Entity: 7440000000000000081
+  - Entity: 7440000000000000072
     Tag:
       tag: Site
     Transform:
-      translation: [11.2, -0.36, 0.1]
+      translation: [4.16, 3.6, 0.1]
       rotation: [0, 0, 0]
       scale: [2.4, 2.4, 1]
     Visibility:
@@ -1327,11 +1192,11 @@ Entities:
       lastFrame: 0
       frameDuration: 0.1
       loop: false
-  - Entity: 7440000000000000082
+  - Entity: 7440000000000000073
     Tag:
       tag: SiteFlag
     Transform:
-      translation: [12.55, 0.165, 0.11]
+      translation: [5.51, 4.125, 0.11]
       rotation: [0, 0, 0]
       scale: [0.8, 0.8, 1]
     Visibility:
@@ -1347,11 +1212,11 @@ Entities:
       lastFrame: 0
       frameDuration: 0.1
       loop: false
-  - Entity: 7440000000000000083
+  - Entity: 7440000000000000074
     Tag:
       tag: SiteStar
     Transform:
-      translation: [10.58, -1.91, 0.12]
+      translation: [3.54, 2.05, 0.12]
       rotation: [0, 0, 0]
       scale: [0.6, 0.6, 1]
     Visibility:
@@ -1367,11 +1232,166 @@ Entities:
       lastFrame: 0
       frameDuration: 0.1
       loop: false
+  - Entity: 7440000000000000075
+    Tag:
+      tag: SiteStar
+    Transform:
+      translation: [4.16, 2.05, 0.12]
+      rotation: [0, 0, 0]
+      scale: [0.6, 0.6, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7440000000000000003
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/ui/stars.png
+      columns: 2
+      rows: 1
+      firstFrame: 0
+      lastFrame: 0
+      frameDuration: 0.1
+      loop: false
+  - Entity: 7440000000000000076
+    Tag:
+      tag: SiteStar
+    Transform:
+      translation: [4.78, 2.05, 0.12]
+      rotation: [0, 0, 0]
+      scale: [0.6, 0.6, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7440000000000000003
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/ui/stars.png
+      columns: 2
+      rows: 1
+      firstFrame: 0
+      lastFrame: 0
+      frameDuration: 0.1
+      loop: false
+  - Entity: 7440000000000000077
+    Tag:
+      tag: PathDot 6
+    Transform:
+      translation: [4.217, 4.817, 0.05]
+      rotation: [0, 0, 1.3443]
+      scale: [0.4, 0.15, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy:
+      parentId: 7440000000000000003
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/ui/path_dash.png
+  - Entity: 7440000000000000078
+    Tag:
+      tag: PathDot 6
+    Transform:
+      translation: [4.3929, 5.3382, 0.05]
+      rotation: [0, 0, 1.1417]
+      scale: [0.4, 0.15, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy:
+      parentId: 7440000000000000003
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/ui/path_dash.png
+  - Entity: 7440000000000000079
+    Tag:
+      tag: PathDot 6
+    Transform:
+      translation: [4.6672, 5.801, 0.05]
+      rotation: [0, 0, 0.93]
+      scale: [0.4, 0.15, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy:
+      parentId: 7440000000000000003
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/ui/path_dash.png
+  - Entity: 7440000000000000080
+    Tag:
+      tag: PathDot 6
+    Transform:
+      translation: [5.0398, 6.2056, 0.05]
+      rotation: [0, 0, 0.7274]
+      scale: [0.4, 0.15, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy:
+      parentId: 7440000000000000003
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/ui/path_dash.png
+  - Entity: 7440000000000000081
+    Tag:
+      tag: SiteRing
+    Transform:
+      translation: [6.08, 6.04, 0.08]
+      rotation: [0, 0, 0]
+      scale: [2.8, 1.3, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy:
+      parentId: 7440000000000000003
+    SpriteRenderer:
+      color: [1, 0.82, 0.3, 0.9]
+      tilingFactor: 1
+      texture: nam:textures/fx/ring.png
+  - Entity: 7440000000000000082
+    Tag:
+      tag: Site
+    Transform:
+      translation: [6.08, 6.84, 0.1]
+      rotation: [0, 0, 0]
+      scale: [2.4, 2.4, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7440000000000000003
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/ui/sites.png
+      columns: 4
+      rows: 1
+      firstFrame: 0
+      lastFrame: 0
+      frameDuration: 0.1
+      loop: false
+  - Entity: 7440000000000000083
+    Tag:
+      tag: SiteFlag
+    Transform:
+      translation: [7.43, 7.365, 0.11]
+      rotation: [0, 0, 0]
+      scale: [0.8, 0.8, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy:
+      parentId: 7440000000000000003
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/ui/flags.png
+      columns: 4
+      rows: 2
+      firstFrame: 0
+      lastFrame: 0
+      frameDuration: 0.1
+      loop: false
   - Entity: 7440000000000000084
     Tag:
       tag: SiteStar
     Transform:
-      translation: [11.2, -1.91, 0.12]
+      translation: [5.46, 5.29, 0.12]
       rotation: [0, 0, 0]
       scale: [0.6, 0.6, 1]
     Visibility:
@@ -1391,7 +1411,7 @@ Entities:
     Tag:
       tag: SiteStar
     Transform:
-      translation: [11.82, -1.91, 0.12]
+      translation: [6.08, 5.29, 0.12]
       rotation: [0, 0, 0]
       scale: [0.6, 0.6, 1]
     Visibility:
@@ -1409,6 +1429,966 @@ Entities:
       loop: false
   - Entity: 7440000000000000086
     Tag:
+      tag: SiteStar
+    Transform:
+      translation: [6.7, 5.29, 0.12]
+      rotation: [0, 0, 0]
+      scale: [0.6, 0.6, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7440000000000000003
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/ui/stars.png
+      columns: 2
+      rows: 1
+      firstFrame: 0
+      lastFrame: 0
+      frameDuration: 0.1
+      loop: false
+  - Entity: 7440000000000000087
+    Tag:
+      tag: PathDot 7
+    Transform:
+      translation: [5.9739, 5.7371, 0.05]
+      rotation: [0, 0, -1.6169]
+      scale: [0.4, 0.15, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy:
+      parentId: 7440000000000000003
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/ui/path_dash.png
+  - Entity: 7440000000000000088
+    Tag:
+      tag: PathDot 7
+    Transform:
+      translation: [5.9627, 5.1949, 0.05]
+      rotation: [0, 0, -1.5657]
+      scale: [0.4, 0.15, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy:
+      parentId: 7440000000000000003
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/ui/path_dash.png
+  - Entity: 7440000000000000089
+    Tag:
+      tag: PathDot 7
+    Transform:
+      translation: [5.9793, 4.6589, 0.05]
+      rotation: [0, 0, -1.5134]
+      scale: [0.4, 0.15, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy:
+      parentId: 7440000000000000003
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/ui/path_dash.png
+  - Entity: 7440000000000000090
+    Tag:
+      tag: PathDot 7
+    Transform:
+      translation: [6.0239, 4.1291, 0.05]
+      rotation: [0, 0, -1.4602]
+      scale: [0.4, 0.15, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy:
+      parentId: 7440000000000000003
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/ui/path_dash.png
+  - Entity: 7440000000000000091
+    Tag:
+      tag: PathDot 7
+    Transform:
+      translation: [6.0963, 3.6055, 0.05]
+      rotation: [0, 0, -1.4063]
+      scale: [0.4, 0.15, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy:
+      parentId: 7440000000000000003
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/ui/path_dash.png
+  - Entity: 7440000000000000092
+    Tag:
+      tag: PathDot 7
+    Transform:
+      translation: [6.1967, 3.0881, 0.05]
+      rotation: [0, 0, -1.3521]
+      scale: [0.4, 0.15, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy:
+      parentId: 7440000000000000003
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/ui/path_dash.png
+  - Entity: 7440000000000000093
+    Tag:
+      tag: PathDot 7
+    Transform:
+      translation: [6.3249, 2.577, 0.05]
+      rotation: [0, 0, -1.2979]
+      scale: [0.4, 0.15, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy:
+      parentId: 7440000000000000003
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/ui/path_dash.png
+  - Entity: 7440000000000000094
+    Tag:
+      tag: PathDot 7
+    Transform:
+      translation: [6.481, 2.072, 0.05]
+      rotation: [0, 0, -1.2441]
+      scale: [0.4, 0.15, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy:
+      parentId: 7440000000000000003
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/ui/path_dash.png
+  - Entity: 7440000000000000095
+    Tag:
+      tag: PathDot 7
+    Transform:
+      translation: [6.665, 1.5732, 0.05]
+      rotation: [0, 0, -1.1908]
+      scale: [0.4, 0.15, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy:
+      parentId: 7440000000000000003
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/ui/path_dash.png
+  - Entity: 7440000000000000096
+    Tag:
+      tag: PathDot 7
+    Transform:
+      translation: [6.8769, 1.0806, 0.05]
+      rotation: [0, 0, -1.1385]
+      scale: [0.4, 0.15, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy:
+      parentId: 7440000000000000003
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/ui/path_dash.png
+  - Entity: 7440000000000000097
+    Tag:
+      tag: PathDot 7
+    Transform:
+      translation: [7.1167, 0.5942, 0.05]
+      rotation: [0, 0, -1.0873]
+      scale: [0.4, 0.15, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy:
+      parentId: 7440000000000000003
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/ui/path_dash.png
+  - Entity: 7440000000000000098
+    Tag:
+      tag: SiteRing
+    Transform:
+      translation: [7.68, -1.16, 0.08]
+      rotation: [0, 0, 0]
+      scale: [2.8, 1.3, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy:
+      parentId: 7440000000000000003
+    SpriteRenderer:
+      color: [1, 0.82, 0.3, 0.9]
+      tilingFactor: 1
+      texture: nam:textures/fx/ring.png
+  - Entity: 7440000000000000099
+    Tag:
+      tag: Site
+    Transform:
+      translation: [7.68, -0.36, 0.1]
+      rotation: [0, 0, 0]
+      scale: [2.4, 2.4, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7440000000000000003
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/ui/sites.png
+      columns: 4
+      rows: 1
+      firstFrame: 0
+      lastFrame: 0
+      frameDuration: 0.1
+      loop: false
+  - Entity: 7440000000000000100
+    Tag:
+      tag: SiteFlag
+    Transform:
+      translation: [9.03, 0.165, 0.11]
+      rotation: [0, 0, 0]
+      scale: [0.8, 0.8, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy:
+      parentId: 7440000000000000003
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/ui/flags.png
+      columns: 4
+      rows: 2
+      firstFrame: 0
+      lastFrame: 0
+      frameDuration: 0.1
+      loop: false
+  - Entity: 7440000000000000101
+    Tag:
+      tag: SiteStar
+    Transform:
+      translation: [7.06, -1.91, 0.12]
+      rotation: [0, 0, 0]
+      scale: [0.6, 0.6, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7440000000000000003
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/ui/stars.png
+      columns: 2
+      rows: 1
+      firstFrame: 0
+      lastFrame: 0
+      frameDuration: 0.1
+      loop: false
+  - Entity: 7440000000000000102
+    Tag:
+      tag: SiteStar
+    Transform:
+      translation: [7.68, -1.91, 0.12]
+      rotation: [0, 0, 0]
+      scale: [0.6, 0.6, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7440000000000000003
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/ui/stars.png
+      columns: 2
+      rows: 1
+      firstFrame: 0
+      lastFrame: 0
+      frameDuration: 0.1
+      loop: false
+  - Entity: 7440000000000000103
+    Tag:
+      tag: SiteStar
+    Transform:
+      translation: [8.3, -1.91, 0.12]
+      rotation: [0, 0, 0]
+      scale: [0.6, 0.6, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7440000000000000003
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/ui/stars.png
+      columns: 2
+      rows: 1
+      firstFrame: 0
+      lastFrame: 0
+      frameDuration: 0.1
+      loop: false
+  - Entity: 7440000000000000104
+    Tag:
+      tag: PathDot 8
+    Transform:
+      translation: [7.6615, 0.8299, 0.05]
+      rotation: [0, 0, 1.4754]
+      scale: [0.4, 0.15, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy:
+      parentId: 7440000000000000003
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/ui/path_dash.png
+  - Entity: 7440000000000000105
+    Tag:
+      tag: PathDot 8
+    Transform:
+      translation: [7.7477, 1.3842, 0.05]
+      rotation: [0, 0, 1.356]
+      scale: [0.4, 0.15, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy:
+      parentId: 7440000000000000003
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/ui/path_dash.png
+  - Entity: 7440000000000000106
+    Tag:
+      tag: PathDot 8
+    Transform:
+      translation: [7.8974, 1.9113, 0.05]
+      rotation: [0, 0, 1.231]
+      scale: [0.4, 0.15, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy:
+      parentId: 7440000000000000003
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/ui/path_dash.png
+  - Entity: 7440000000000000107
+    Tag:
+      tag: PathDot 8
+    Transform:
+      translation: [8.1108, 2.4113, 0.05]
+      rotation: [0, 0, 1.104]
+      scale: [0.4, 0.15, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy:
+      parentId: 7440000000000000003
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/ui/path_dash.png
+  - Entity: 7440000000000000108
+    Tag:
+      tag: PathDot 8
+    Transform:
+      translation: [8.3877, 2.8842, 0.05]
+      rotation: [0, 0, 0.979]
+      scale: [0.4, 0.15, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy:
+      parentId: 7440000000000000003
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/ui/path_dash.png
+  - Entity: 7440000000000000109
+    Tag:
+      tag: PathDot 8
+    Transform:
+      translation: [8.7282, 3.3299, 0.05]
+      rotation: [0, 0, 0.8597]
+      scale: [0.4, 0.15, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy:
+      parentId: 7440000000000000003
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/ui/path_dash.png
+  - Entity: 7440000000000000110
+    Tag:
+      tag: SiteRing
+    Transform:
+      translation: [9.6, 3.34, 0.08]
+      rotation: [0, 0, 0]
+      scale: [2.8, 1.3, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy:
+      parentId: 7440000000000000003
+    SpriteRenderer:
+      color: [1, 0.82, 0.3, 0.9]
+      tilingFactor: 1
+      texture: nam:textures/fx/ring.png
+  - Entity: 7440000000000000111
+    Tag:
+      tag: Site
+    Transform:
+      translation: [9.6, 4.14, 0.1]
+      rotation: [0, 0, 0]
+      scale: [2.4, 2.4, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7440000000000000003
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/ui/sites.png
+      columns: 4
+      rows: 1
+      firstFrame: 0
+      lastFrame: 0
+      frameDuration: 0.1
+      loop: false
+  - Entity: 7440000000000000112
+    Tag:
+      tag: SiteFlag
+    Transform:
+      translation: [10.95, 4.665, 0.11]
+      rotation: [0, 0, 0]
+      scale: [0.8, 0.8, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy:
+      parentId: 7440000000000000003
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/ui/flags.png
+      columns: 4
+      rows: 2
+      firstFrame: 0
+      lastFrame: 0
+      frameDuration: 0.1
+      loop: false
+  - Entity: 7440000000000000113
+    Tag:
+      tag: SiteStar
+    Transform:
+      translation: [8.98, 2.59, 0.12]
+      rotation: [0, 0, 0]
+      scale: [0.6, 0.6, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7440000000000000003
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/ui/stars.png
+      columns: 2
+      rows: 1
+      firstFrame: 0
+      lastFrame: 0
+      frameDuration: 0.1
+      loop: false
+  - Entity: 7440000000000000114
+    Tag:
+      tag: SiteStar
+    Transform:
+      translation: [9.6, 2.59, 0.12]
+      rotation: [0, 0, 0]
+      scale: [0.6, 0.6, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7440000000000000003
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/ui/stars.png
+      columns: 2
+      rows: 1
+      firstFrame: 0
+      lastFrame: 0
+      frameDuration: 0.1
+      loop: false
+  - Entity: 7440000000000000115
+    Tag:
+      tag: SiteStar
+    Transform:
+      translation: [10.22, 2.59, 0.12]
+      rotation: [0, 0, 0]
+      scale: [0.6, 0.6, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7440000000000000003
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/ui/stars.png
+      columns: 2
+      rows: 1
+      firstFrame: 0
+      lastFrame: 0
+      frameDuration: 0.1
+      loop: false
+  - Entity: 7440000000000000116
+    Tag:
+      tag: PathDot 9
+    Transform:
+      translation: [9.4912, 3.0489, 0.05]
+      rotation: [0, 0, -1.6023]
+      scale: [0.4, 0.15, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy:
+      parentId: 7440000000000000003
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/ui/path_dash.png
+  - Entity: 7440000000000000117
+    Tag:
+      tag: PathDot 9
+    Transform:
+      translation: [9.4931, 2.5185, 0.05]
+      rotation: [0, 0, -1.5314]
+      scale: [0.4, 0.15, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy:
+      parentId: 7440000000000000003
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/ui/path_dash.png
+  - Entity: 7440000000000000118
+    Tag:
+      tag: PathDot 9
+    Transform:
+      translation: [9.5325, 1.9982, 0.05]
+      rotation: [0, 0, -1.4583]
+      scale: [0.4, 0.15, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy:
+      parentId: 7440000000000000003
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/ui/path_dash.png
+  - Entity: 7440000000000000119
+    Tag:
+      tag: PathDot 9
+    Transform:
+      translation: [9.6095, 1.488, 0.05]
+      rotation: [0, 0, -1.3834]
+      scale: [0.4, 0.15, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy:
+      parentId: 7440000000000000003
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/ui/path_dash.png
+  - Entity: 7440000000000000120
+    Tag:
+      tag: PathDot 9
+    Transform:
+      translation: [9.7241, 0.9879, 0.05]
+      rotation: [0, 0, -1.3077]
+      scale: [0.4, 0.15, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy:
+      parentId: 7440000000000000003
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/ui/path_dash.png
+  - Entity: 7440000000000000121
+    Tag:
+      tag: PathDot 9
+    Transform:
+      translation: [9.8762, 0.498, 0.05]
+      rotation: [0, 0, -1.232]
+      scale: [0.4, 0.15, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy:
+      parentId: 7440000000000000003
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/ui/path_dash.png
+  - Entity: 7440000000000000122
+    Tag:
+      tag: PathDot 9
+    Transform:
+      translation: [10.0659, 0.0182, 0.05]
+      rotation: [0, 0, -1.1571]
+      scale: [0.4, 0.15, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy:
+      parentId: 7440000000000000003
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/ui/path_dash.png
+  - Entity: 7440000000000000123
+    Tag:
+      tag: PathDot 9
+    Transform:
+      translation: [10.2931, -0.4515, 0.05]
+      rotation: [0, 0, -1.0839]
+      scale: [0.4, 0.15, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy:
+      parentId: 7440000000000000003
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/ui/path_dash.png
+  - Entity: 7440000000000000124
+    Tag:
+      tag: PathDot 9
+    Transform:
+      translation: [10.5578, -0.9111, 0.05]
+      rotation: [0, 0, -1.0131]
+      scale: [0.4, 0.15, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy:
+      parentId: 7440000000000000003
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/ui/path_dash.png
+  - Entity: 7440000000000000125
+    Tag:
+      tag: SiteRing
+    Transform:
+      translation: [11.2, -2.6, 0.08]
+      rotation: [0, 0, 0]
+      scale: [2.8, 1.3, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy:
+      parentId: 7440000000000000003
+    SpriteRenderer:
+      color: [1, 0.82, 0.3, 0.9]
+      tilingFactor: 1
+      texture: nam:textures/fx/ring.png
+  - Entity: 7440000000000000126
+    Tag:
+      tag: Site
+    Transform:
+      translation: [11.2, -1.8, 0.1]
+      rotation: [0, 0, 0]
+      scale: [2.4, 2.4, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7440000000000000003
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/ui/sites.png
+      columns: 4
+      rows: 1
+      firstFrame: 0
+      lastFrame: 0
+      frameDuration: 0.1
+      loop: false
+  - Entity: 7440000000000000127
+    Tag:
+      tag: SiteFlag
+    Transform:
+      translation: [12.55, -1.275, 0.11]
+      rotation: [0, 0, 0]
+      scale: [0.8, 0.8, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy:
+      parentId: 7440000000000000003
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/ui/flags.png
+      columns: 4
+      rows: 2
+      firstFrame: 0
+      lastFrame: 0
+      frameDuration: 0.1
+      loop: false
+  - Entity: 7440000000000000128
+    Tag:
+      tag: SiteStar
+    Transform:
+      translation: [10.58, -3.35, 0.12]
+      rotation: [0, 0, 0]
+      scale: [0.6, 0.6, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7440000000000000003
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/ui/stars.png
+      columns: 2
+      rows: 1
+      firstFrame: 0
+      lastFrame: 0
+      frameDuration: 0.1
+      loop: false
+  - Entity: 7440000000000000129
+    Tag:
+      tag: SiteStar
+    Transform:
+      translation: [11.2, -3.35, 0.12]
+      rotation: [0, 0, 0]
+      scale: [0.6, 0.6, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7440000000000000003
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/ui/stars.png
+      columns: 2
+      rows: 1
+      firstFrame: 0
+      lastFrame: 0
+      frameDuration: 0.1
+      loop: false
+  - Entity: 7440000000000000130
+    Tag:
+      tag: SiteStar
+    Transform:
+      translation: [11.82, -3.35, 0.12]
+      rotation: [0, 0, 0]
+      scale: [0.6, 0.6, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7440000000000000003
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/ui/stars.png
+      columns: 2
+      rows: 1
+      firstFrame: 0
+      lastFrame: 0
+      frameDuration: 0.1
+      loop: false
+  - Entity: 7440000000000000131
+    Tag:
+      tag: PathDot 10
+    Transform:
+      translation: [11.4621, -0.6977, 0.05]
+      rotation: [0, 0, 1.2215]
+      scale: [0.4, 0.15, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy:
+      parentId: 7440000000000000003
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/ui/path_dash.png
+  - Entity: 7440000000000000132
+    Tag:
+      tag: PathDot 10
+    Transform:
+      translation: [11.6741, -0.2113, 0.05]
+      rotation: [0, 0, 1.0958]
+      scale: [0.4, 0.15, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy:
+      parentId: 7440000000000000003
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/ui/path_dash.png
+  - Entity: 7440000000000000133
+    Tag:
+      tag: PathDot 10
+    Transform:
+      translation: [11.9401, 0.2319, 0.05]
+      rotation: [0, 0, 0.9634]
+      scale: [0.4, 0.15, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy:
+      parentId: 7440000000000000003
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/ui/path_dash.png
+  - Entity: 7440000000000000134
+    Tag:
+      tag: PathDot 10
+    Transform:
+      translation: [12.2601, 0.6319, 0.05]
+      rotation: [0, 0, 0.8287]
+      scale: [0.4, 0.15, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy:
+      parentId: 7440000000000000003
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/ui/path_dash.png
+  - Entity: 7440000000000000135
+    Tag:
+      tag: PathDot 10
+    Transform:
+      translation: [12.6341, 0.9887, 0.05]
+      rotation: [0, 0, 0.6963]
+      scale: [0.4, 0.15, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy:
+      parentId: 7440000000000000003
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/ui/path_dash.png
+  - Entity: 7440000000000000136
+    Tag:
+      tag: PathDot 10
+    Transform:
+      translation: [13.0621, 1.3023, 0.05]
+      rotation: [0, 0, 0.5706]
+      scale: [0.4, 0.15, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy:
+      parentId: 7440000000000000003
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/ui/path_dash.png
+  - Entity: 7440000000000000137
+    Tag:
+      tag: SiteRing
+    Transform:
+      translation: [14.08, 1, 0.08]
+      rotation: [0, 0, 0]
+      scale: [2.8, 1.3, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy:
+      parentId: 7440000000000000003
+    SpriteRenderer:
+      color: [1, 0.82, 0.3, 0.9]
+      tilingFactor: 1
+      texture: nam:textures/fx/ring.png
+  - Entity: 7440000000000000138
+    Tag:
+      tag: Site
+    Transform:
+      translation: [14.08, 1.8, 0.1]
+      rotation: [0, 0, 0]
+      scale: [2.4, 2.4, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7440000000000000003
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/ui/sites.png
+      columns: 4
+      rows: 1
+      firstFrame: 0
+      lastFrame: 0
+      frameDuration: 0.1
+      loop: false
+  - Entity: 7440000000000000139
+    Tag:
+      tag: SiteFlag
+    Transform:
+      translation: [15.43, 2.325, 0.11]
+      rotation: [0, 0, 0]
+      scale: [0.8, 0.8, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy:
+      parentId: 7440000000000000003
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/ui/flags.png
+      columns: 4
+      rows: 2
+      firstFrame: 0
+      lastFrame: 0
+      frameDuration: 0.1
+      loop: false
+  - Entity: 7440000000000000140
+    Tag:
+      tag: SiteStar
+    Transform:
+      translation: [13.46, 0.25, 0.12]
+      rotation: [0, 0, 0]
+      scale: [0.6, 0.6, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7440000000000000003
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/ui/stars.png
+      columns: 2
+      rows: 1
+      firstFrame: 0
+      lastFrame: 0
+      frameDuration: 0.1
+      loop: false
+  - Entity: 7440000000000000141
+    Tag:
+      tag: SiteStar
+    Transform:
+      translation: [14.08, 0.25, 0.12]
+      rotation: [0, 0, 0]
+      scale: [0.6, 0.6, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7440000000000000003
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/ui/stars.png
+      columns: 2
+      rows: 1
+      firstFrame: 0
+      lastFrame: 0
+      frameDuration: 0.1
+      loop: false
+  - Entity: 7440000000000000142
+    Tag:
+      tag: SiteStar
+    Transform:
+      translation: [14.7, 0.25, 0.12]
+      rotation: [0, 0, 0]
+      scale: [0.6, 0.6, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7440000000000000003
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/ui/stars.png
+      columns: 2
+      rows: 1
+      firstFrame: 0
+      lastFrame: 0
+      frameDuration: 0.1
+      loop: false
+  - Entity: 7440000000000000143
+    Tag:
       tag: Cloud
     Transform:
       translation: [-9.6, 3.6, 0.3]
@@ -1422,7 +2402,7 @@ Entities:
       color: [1, 1, 1, 0.5]
       tilingFactor: 1
       texture: nam:textures/ui/cloud.png
-  - Entity: 7440000000000000087
+  - Entity: 7440000000000000144
     Tag:
       tag: Cloud
     Transform:
@@ -1437,7 +2417,7 @@ Entities:
       color: [1, 1, 1, 0.5]
       tilingFactor: 1
       texture: nam:textures/ui/cloud.png
-  - Entity: 7440000000000000088
+  - Entity: 7440000000000000145
     Tag:
       tag: Cloud
     Transform:
@@ -1452,7 +2432,7 @@ Entities:
       color: [1, 1, 1, 0.5]
       tilingFactor: 1
       texture: nam:textures/ui/cloud.png
-  - Entity: 7440000000000000089
+  - Entity: 7440000000000000146
     Tag:
       tag: Cloud
     Transform:
@@ -1467,7 +2447,7 @@ Entities:
       color: [1, 1, 1, 0.5]
       tilingFactor: 1
       texture: nam:textures/ui/cloud.png
-  - Entity: 7440000000000000090
+  - Entity: 7440000000000000147
     Tag:
       tag: MapCanvas
     Transform:
@@ -1488,11 +2468,16 @@ Entities:
         - name: levels
           type: strings
           value:
-            - 'Greenmarch Ford|8|The second power-up of each tower|goblins, orc grunts, ogres'
-            - 'Thornwood Pass|10|Rain of arrows: a spell on the enemy nearest the keep|wolf riders'
-            - 'Stonebridge|10|Royal treasury: 60 more gold at the start of every level|trolls'
-            - 'Frostmere|10|Shield wall: a spell stopping the enemies around the front one|goblin sappers, ogre mages'
-            - 'The Black Gate|12|Keep walls, with 3 stars on all five: 5 more lives|the orc chieftain'
+            - 'Greenmarch Ford|8|The second power-up of each tower|goblins, orc grunts, ogres|'
+            - 'Thornwood Pass|10|Rain of arrows: a spell on the enemy nearest the keep|wolf riders|fog'
+            - 'Stonebridge|10|Royal treasury: 60 more gold at the start of every level|trolls|'
+            - 'Mirefen Marsh|10|Fletchers'' guild: archers cost 10% less|goblin sappers|fog'
+            - 'Frostmere|10|Shield wall: a spell stopping the enemies around the front one|ogre mages|blizzard'
+            - 'Highpeak Watch|11|Watchtowers: every tower sees 5% further|orc berserkers|gale'
+            - 'Sunscorch Flats|10|Harvest tithe: 10% more gold per kill||drought'
+            - 'Ashfall Ridge|11|Night watch: towers see 10% further at night||blood moon'
+            - 'Ravenhold|12|Royal guard: 3 more lives on every level||plunder, long night'
+            - 'The Black Gate|12|Keep walls, with 3 stars on all ten: 5 more lives|the orc chieftain|blood moon'
         - name: level_scenes
           type: strings
           value:
@@ -1501,7 +2486,12 @@ Entities:
             - 'scenes/level_03.owl'
             - 'scenes/level_04.owl'
             - 'scenes/level_05.owl'
-  - Entity: 7440000000000000091
+            - 'scenes/level_06.owl'
+            - 'scenes/level_07.owl'
+            - 'scenes/level_08.owl'
+            - 'scenes/level_09.owl'
+            - 'scenes/level_10.owl'
+  - Entity: 7440000000000000148
     Tag:
       tag: SitePanel
     Transform:
@@ -1511,7 +2501,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7440000000000000090
+      parentId: 7440000000000000147
     UiRect:
       anchorMin: [0.5, 1]
       anchorMax: [0.5, 1]
@@ -1532,7 +2522,7 @@ Entities:
       padding: 8
       columns: 1
       cellSize: [0, 0]
-  - Entity: 7440000000000000092
+  - Entity: 7440000000000000149
     Tag:
       tag: SiteButtons
     Transform:
@@ -1542,7 +2532,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7440000000000000091
+      parentId: 7440000000000000148
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -1557,7 +2547,7 @@ Entities:
       padding: 0
       columns: 1
       cellSize: [0, 0]
-  - Entity: 7440000000000000093
+  - Entity: 7440000000000000150
     Tag:
       tag: BackButton
     Transform:
@@ -1567,7 +2557,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7440000000000000092
+      parentId: 7440000000000000149
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -1601,7 +2591,7 @@ Entities:
       onFocusCallback: ''
       highlightColor: [0.97, 0.77, 0.3, 1]
       highlightThickness: 3
-  - Entity: 7440000000000000094
+  - Entity: 7440000000000000151
     Tag:
       tag: BackButtonFrame
     Transform:
@@ -1611,7 +2601,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7440000000000000093
+      parentId: 7440000000000000150
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -1622,7 +2612,7 @@ Entities:
     UiImage:
       tint: [1, 1, 1, 1]
       texture: nam:textures/ui/banner.png
-  - Entity: 7440000000000000095
+  - Entity: 7440000000000000152
     Tag:
       tag: BonusButton
     Transform:
@@ -1632,7 +2622,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7440000000000000092
+      parentId: 7440000000000000149
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -1666,7 +2656,7 @@ Entities:
       onFocusCallback: ''
       highlightColor: [0.97, 0.77, 0.3, 1]
       highlightThickness: 3
-  - Entity: 7440000000000000096
+  - Entity: 7440000000000000153
     Tag:
       tag: BonusButtonFrame
     Transform:
@@ -1676,7 +2666,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7440000000000000095
+      parentId: 7440000000000000152
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -1687,7 +2677,7 @@ Entities:
     UiImage:
       tint: [1, 1, 1, 1]
       texture: nam:textures/ui/banner.png
-  - Entity: 7440000000000000097
+  - Entity: 7440000000000000154
     Tag:
       tag: UpgradesButton
     Transform:
@@ -1697,7 +2687,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7440000000000000092
+      parentId: 7440000000000000149
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -1731,7 +2721,7 @@ Entities:
       onFocusCallback: ''
       highlightColor: [0.97, 0.77, 0.3, 1]
       highlightThickness: 3
-  - Entity: 7440000000000000098
+  - Entity: 7440000000000000155
     Tag:
       tag: UpgradesButtonFrame
     Transform:
@@ -1741,7 +2731,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7440000000000000097
+      parentId: 7440000000000000154
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -1752,7 +2742,7 @@ Entities:
     UiImage:
       tint: [1, 1, 1, 1]
       texture: nam:textures/ui/banner.png
-  - Entity: 7440000000000000099
+  - Entity: 7440000000000000156
     Tag:
       tag: MarchButton
     Transform:
@@ -1762,7 +2752,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7440000000000000092
+      parentId: 7440000000000000149
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -1796,7 +2786,7 @@ Entities:
       onFocusCallback: ''
       highlightColor: [0.97, 0.77, 0.3, 1]
       highlightThickness: 3
-  - Entity: 7440000000000000100
+  - Entity: 7440000000000000157
     Tag:
       tag: MarchButtonFrame
     Transform:
@@ -1806,7 +2796,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7440000000000000099
+      parentId: 7440000000000000156
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -1817,7 +2807,7 @@ Entities:
     UiImage:
       tint: [1, 1, 1, 1]
       texture: nam:textures/ui/banner.png
-  - Entity: 7440000000000000101
+  - Entity: 7440000000000000158
     Tag:
       tag: SiteTexts
     Transform:
@@ -1827,7 +2817,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7440000000000000091
+      parentId: 7440000000000000148
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -1842,7 +2832,7 @@ Entities:
       padding: 0
       columns: 1
       cellSize: [0, 0]
-  - Entity: 7440000000000000102
+  - Entity: 7440000000000000159
     Tag:
       tag: SiteUnlock
     Transform:
@@ -1852,7 +2842,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7440000000000000101
+      parentId: 7440000000000000158
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -1874,7 +2864,7 @@ Entities:
       fit: Shrink
       minFontSize: 12
       font: MedievalSharp
-  - Entity: 7440000000000000103
+  - Entity: 7440000000000000160
     Tag:
       tag: SiteInfo
     Transform:
@@ -1884,7 +2874,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7440000000000000101
+      parentId: 7440000000000000158
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -1906,7 +2896,7 @@ Entities:
       fit: Shrink
       minFontSize: 12
       font: MedievalSharp
-  - Entity: 7440000000000000104
+  - Entity: 7440000000000000161
     Tag:
       tag: SiteName
     Transform:
@@ -1916,7 +2906,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7440000000000000101
+      parentId: 7440000000000000158
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -1938,7 +2928,7 @@ Entities:
       fit: Shrink
       minFontSize: 12
       font: Cinzel
-  - Entity: 7440000000000000105
+  - Entity: 7440000000000000162
     Tag:
       tag: BonusWindow
     Transform:
@@ -1948,12 +2938,12 @@ Entities:
     Visibility:
       gameVisible: false
     Hierarchy:
-      parentId: 7440000000000000090
+      parentId: 7440000000000000147
     UiRect:
       anchorMin: [0.5, 0.5]
       anchorMax: [0.5, 0.5]
       pivot: [0.5, 0.5]
-      size: [1.1, 0.7]
+      size: [1.2, 0.88]
       sizeUnit: [ScreenHeight, ScreenHeight]
       offset: [0, 0]
     UiWindow:
@@ -1969,11 +2959,11 @@ Entities:
     UiLayout:
       arrangement: Column
       crossAlign: Center
-      spacing: 6
-      padding: 12
+      spacing: 3
+      padding: 8
       columns: 1
       cellSize: [0, 0]
-  - Entity: 7440000000000000106
+  - Entity: 7440000000000000163
     Tag:
       tag: BonusBackButton
     Transform:
@@ -1983,12 +2973,12 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7440000000000000105
+      parentId: 7440000000000000162
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.4, 0.13]
+      size: [0.4, 0.09]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiButton:
@@ -2017,7 +3007,7 @@ Entities:
       onFocusCallback: ''
       highlightColor: [0.97, 0.77, 0.3, 1]
       highlightThickness: 3
-  - Entity: 7440000000000000107
+  - Entity: 7440000000000000164
     Tag:
       tag: BonusBackButtonFrame
     Transform:
@@ -2027,7 +3017,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7440000000000000106
+      parentId: 7440000000000000163
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -2038,7 +3028,167 @@ Entities:
     UiImage:
       tint: [1, 1, 1, 1]
       texture: nam:textures/ui/banner.png
-  - Entity: 7440000000000000108
+  - Entity: 7440000000000000165
+    Tag:
+      tag: BonusLine10
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7440000000000000162
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.95, 0.072]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.16, 0.09, 0.04, 1]
+      text: ''
+      color: [0.88, 0.8, 0.64, 0.95]
+      fontSize: 18
+      horizontalAlignment: Left
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: MedievalSharp
+  - Entity: 7440000000000000166
+    Tag:
+      tag: BonusLine9
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7440000000000000162
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.95, 0.072]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.16, 0.09, 0.04, 1]
+      text: ''
+      color: [0.88, 0.8, 0.64, 0.95]
+      fontSize: 18
+      horizontalAlignment: Left
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: MedievalSharp
+  - Entity: 7440000000000000167
+    Tag:
+      tag: BonusLine8
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7440000000000000162
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.95, 0.072]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.16, 0.09, 0.04, 1]
+      text: ''
+      color: [0.88, 0.8, 0.64, 0.95]
+      fontSize: 18
+      horizontalAlignment: Left
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: MedievalSharp
+  - Entity: 7440000000000000168
+    Tag:
+      tag: BonusLine7
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7440000000000000162
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.95, 0.072]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.16, 0.09, 0.04, 1]
+      text: ''
+      color: [0.88, 0.8, 0.64, 0.95]
+      fontSize: 18
+      horizontalAlignment: Left
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: MedievalSharp
+  - Entity: 7440000000000000169
+    Tag:
+      tag: BonusLine6
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7440000000000000162
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.95, 0.072]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.16, 0.09, 0.04, 1]
+      text: ''
+      color: [0.88, 0.8, 0.64, 0.95]
+      fontSize: 18
+      horizontalAlignment: Left
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: MedievalSharp
+  - Entity: 7440000000000000170
     Tag:
       tag: BonusLine5
     Transform:
@@ -2048,12 +3198,12 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7440000000000000105
+      parentId: 7440000000000000162
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.95, 0.12]
+      size: [0.95, 0.072]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
@@ -2061,7 +3211,7 @@ Entities:
       outlineColor: [0.16, 0.09, 0.04, 1]
       text: ''
       color: [0.88, 0.8, 0.64, 0.95]
-      fontSize: 22
+      fontSize: 18
       horizontalAlignment: Left
       verticalAlignment: Middle
       kerning: 0
@@ -2070,7 +3220,7 @@ Entities:
       fit: Shrink
       minFontSize: 12
       font: MedievalSharp
-  - Entity: 7440000000000000109
+  - Entity: 7440000000000000171
     Tag:
       tag: BonusLine4
     Transform:
@@ -2080,12 +3230,12 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7440000000000000105
+      parentId: 7440000000000000162
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.95, 0.12]
+      size: [0.95, 0.072]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
@@ -2093,7 +3243,7 @@ Entities:
       outlineColor: [0.16, 0.09, 0.04, 1]
       text: ''
       color: [0.88, 0.8, 0.64, 0.95]
-      fontSize: 22
+      fontSize: 18
       horizontalAlignment: Left
       verticalAlignment: Middle
       kerning: 0
@@ -2102,7 +3252,7 @@ Entities:
       fit: Shrink
       minFontSize: 12
       font: MedievalSharp
-  - Entity: 7440000000000000110
+  - Entity: 7440000000000000172
     Tag:
       tag: BonusLine3
     Transform:
@@ -2112,12 +3262,12 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7440000000000000105
+      parentId: 7440000000000000162
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.95, 0.12]
+      size: [0.95, 0.072]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
@@ -2125,7 +3275,7 @@ Entities:
       outlineColor: [0.16, 0.09, 0.04, 1]
       text: ''
       color: [0.88, 0.8, 0.64, 0.95]
-      fontSize: 22
+      fontSize: 18
       horizontalAlignment: Left
       verticalAlignment: Middle
       kerning: 0
@@ -2134,7 +3284,7 @@ Entities:
       fit: Shrink
       minFontSize: 12
       font: MedievalSharp
-  - Entity: 7440000000000000111
+  - Entity: 7440000000000000173
     Tag:
       tag: BonusLine2
     Transform:
@@ -2144,12 +3294,12 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7440000000000000105
+      parentId: 7440000000000000162
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.95, 0.12]
+      size: [0.95, 0.072]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
@@ -2157,7 +3307,7 @@ Entities:
       outlineColor: [0.16, 0.09, 0.04, 1]
       text: ''
       color: [0.88, 0.8, 0.64, 0.95]
-      fontSize: 22
+      fontSize: 18
       horizontalAlignment: Left
       verticalAlignment: Middle
       kerning: 0
@@ -2166,7 +3316,7 @@ Entities:
       fit: Shrink
       minFontSize: 12
       font: MedievalSharp
-  - Entity: 7440000000000000112
+  - Entity: 7440000000000000174
     Tag:
       tag: BonusLine1
     Transform:
@@ -2176,12 +3326,12 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7440000000000000105
+      parentId: 7440000000000000162
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.95, 0.12]
+      size: [0.95, 0.072]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
@@ -2189,7 +3339,7 @@ Entities:
       outlineColor: [0.16, 0.09, 0.04, 1]
       text: ''
       color: [0.88, 0.8, 0.64, 0.95]
-      fontSize: 22
+      fontSize: 18
       horizontalAlignment: Left
       verticalAlignment: Middle
       kerning: 0

@@ -5,6 +5,9 @@
 # the road (3, 9) is at (324, 640).
 scene: ../../../samples/tower_defence/scenes/level_01.owl
 steps:
+  - frames: 2
+  - input: {key: Enter, frames: 2}
+  - frames: 1
   - frames: 30
   - expect: {gamestate: tower_gold, equals: 220}
   - input: {mouse_pos: [478, 259], frames: 3}

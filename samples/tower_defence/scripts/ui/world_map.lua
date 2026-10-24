@@ -3,10 +3,10 @@
 -- a blue banner, and its stars). A won level opens the next one: the next stretch of the road is drawn dash by dash
 -- (`tower_map_reveal` in the game state, set by defence.lua), then its site rises.
 --
--- - `levels`: one string per site, "name|waves|unlock|new enemies"; `level_scenes`: the scene of each site (empty for a level still
+-- - `levels`: one string per site, "name|waves|unlock|new enemies|modifiers"; `level_scenes`: the scene of each site (empty for a level still
 --   to come); `upgrades_scene`: the screen where the stars buy upgrades.
 -- - `MapRoot` holds the map and its sites, scaled down when the screen is narrower than the map so that every site
---   shows; the banners wave, the clouds drift and the sea glints.
+--   shows; the banners wave, the clouds drift (fading over the names of the sites) and the sea glints.
 -- - A click on an open site, Q / E, Tab or the D-pad choose it, Enter, pad A or March! starts it; Bonuses lists what
 --   the levels won unlocked, Upgrades opens the upgrades screen; Escape, pad B or Back returns to the title.
 -- - Progress: the `tower_done_NN` and `tower_stars_NN` settings; mirrored in `tower_map_*` game state keys.
@@ -18,6 +18,8 @@ properties = {
     { name = "map_width", type = "float", default = 32.0, min = 1 },
     { name = "map_height", type = "float", default = 18.0, min = 1 },
     { name = "cloud_speed", type = "float", default = 0.25, min = 0 },
+    { name = "cloud_alpha", type = "float", default = 0.5, min = 0, max = 1 },
+    { name = "name_drop", type = "float", default = 2.2, min = 0 },
     { name = "dot_time", type = "float", default = 0.08, min = 0.01 },
     { name = "wipe_color", type = "color", default = { 0.1, 0.14, 0.24, 1 } },
 }
@@ -61,9 +63,11 @@ local function refresh_panel()
     if site.scene == "" then
         set(ids.info, "A land still to conquer: this level comes later.")
     elseif site.done then
-        set(ids.info, string.format("%s waves - defended, %d of 3 stars", site.waves, site.stars_won))
+        set(ids.info, string.format("%s waves - defended, %d of 3 stars%s", site.waves, site.stars_won,
+                site.twists ~= "" and (" - " .. site.twists) or ""))
     else
         local coming = site.new ~= "" and ("new: " .. site.new) or "the Horde is coming"
+        if site.twists ~= "" then coming = coming .. " - " .. site.twists end
         set(ids.info, string.format("%s waves - %s", site.waves, site.open and coming or "locked"))
     end
     set(ids.unlock, "Win to unlock: " .. site.unlock)
@@ -114,9 +118,11 @@ function on_create()
         local fields = {}
         for field in string.gmatch(text .. "|", "([^|]*)|") do fields[#fields + 1] = field end
         local name, waves, unlock, new = fields[1], fields[2], fields[3], fields[4] or ""
+        local twists = fields[5] or ""
         local site = { scene = level_scenes[index] or "", name = name or "?", waves = waves or "?", unlock = unlock or "",
                        id = site_ids[index] and site_ids[index].id or 0, ring = rings[index] and rings[index].id or 0,
-                       flag = flags[index] and flags[index].id or 0, new = new, stars = {}, dots = {} }
+                       flag = flags[index] and flags[index].id or 0, new = new, twists = twists, stars = {}, dots = {},
+                       x = site_ids[index] and site_ids[index].x or 0, y = site_ids[index] and site_ids[index].y or 0 }
         for star = 1, 3 do
             local entry = stars[(index - 1) * 3 + star]
             site.stars[star] = entry and entry.id or 0
@@ -228,7 +234,16 @@ local function animate(real)
     for _, cloud in ipairs(clouds) do
         cloud.x = cloud.x + cloud.speed * real
         if cloud.x > map_width / 2 + 3 then cloud.x = cloud.x - map_width - 6 end
-        transform.set_position(cloud.id, cloud.x, cloud.y + 0.15 * math.sin(clock * 0.3 + cloud.speed * 9), cloud.z)
+        local y = cloud.y + 0.15 * math.sin(clock * 0.3 + cloud.speed * 9)
+        transform.set_position(cloud.id, cloud.x, y, cloud.z)
+        -- A cloud thins out over a site and the ribbon of its name so that both stay readable.
+        local near = 1.0
+        for _, site in ipairs(sites) do
+            local dx = math.abs(cloud.x - site.x) / 4.5
+            local dy = math.min(math.abs(y - site.y), math.abs(y - site.y + name_drop)) / 1.8
+            near = math.min(near, math.max(dx, dy))
+        end
+        entity.set_tint(cloud.id, 1.0, 1.0, 1.0, cloud_alpha * math.min(1.0, math.max(0.0, near - 0.4) / 0.6))
     end
     for _, glint in ipairs(glints) do
         local a = math.max(0.0, math.sin(clock * 0.9 + glint.phase))

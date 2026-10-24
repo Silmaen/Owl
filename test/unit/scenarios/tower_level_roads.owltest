@@ -2,6 +2,9 @@
 # both roads (group letters a and b); with no tower they reach the keep and cost lives.
 scene: ../../../samples/tower_defence/scenes/level_03.owl
 steps:
+  - frames: 2
+  - input: {key: Enter, frames: 2}
+  - frames: 1
   - frames: 30
   - expect: {gamestate: tower_roads, equals: 2}
   - input: {key: Space, frames: 2}
