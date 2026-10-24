@@ -289,8 +289,8 @@ Entities:
       offset: [0, 0.03]
       offsetUnit: [ScreenHeight, ScreenHeight]
     UiPanel:
-      backgroundColor: [0.07, 0.09, 0.16, 0.9]
-      borderColor: [0.85, 0.65, 0.25, 1]
+      backgroundColor: [0.17, 0.1, 0.06, 0.92]
+      borderColor: [0.84, 0.66, 0.25, 1]
       borderWidth: 3
       clipChildren: false
     UiLayout:
@@ -319,16 +319,16 @@ Entities:
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiButton:
-      normalColor: [0.48, 0.11, 0.11, 1]
-      hoverColor: [0.78, 0.24, 0.18, 1]
-      pressedColor: [0.3, 0.06, 0.06, 1]
+      normalColor: [0.3, 0.18, 0.09, 1]
+      hoverColor: [0.74, 0.5, 0.2, 1]
+      pressedColor: [0.16, 0.09, 0.04, 1]
       disabledColor: [0.12, 0.1, 0.12, 1]
       onClickCallback: go_back
     UiText:
       outlineWidth: 2
-      outlineColor: [0.1, 0.05, 0.04, 1]
+      outlineColor: [0.16, 0.09, 0.04, 1]
       text: 'Back'
-      color: [0.95, 0.92, 0.84, 1]
+      color: [0.95, 0.88, 0.72, 1]
       fontSize: 30
       horizontalAlignment: Center
       verticalAlignment: Middle
@@ -337,7 +337,7 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: OpenSans-Bold
+      font: MedievalSharp
     UiFocus:
       focusable: true
       initial: false
@@ -384,16 +384,16 @@ Entities:
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiButton:
-      normalColor: [0.48, 0.11, 0.11, 1]
-      hoverColor: [0.78, 0.24, 0.18, 1]
-      pressedColor: [0.3, 0.06, 0.06, 1]
+      normalColor: [0.3, 0.18, 0.09, 1]
+      hoverColor: [0.74, 0.5, 0.2, 1]
+      pressedColor: [0.16, 0.09, 0.04, 1]
       disabledColor: [0.12, 0.1, 0.12, 1]
       onClickCallback: on_reset_clicked
     UiText:
       outlineWidth: 2
-      outlineColor: [0.1, 0.05, 0.04, 1]
+      outlineColor: [0.16, 0.09, 0.04, 1]
       text: 'Reset defaults'
-      color: [0.95, 0.92, 0.84, 1]
+      color: [0.95, 0.88, 0.72, 1]
       fontSize: 30
       horizontalAlignment: Center
       verticalAlignment: Middle
@@ -402,7 +402,7 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: OpenSans-Bold
+      font: MedievalSharp
     UiFocus:
       focusable: true
       initial: false
@@ -449,16 +449,16 @@ Entities:
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiButton:
-      normalColor: [0.48, 0.11, 0.11, 1]
-      hoverColor: [0.78, 0.24, 0.18, 1]
-      pressedColor: [0.3, 0.06, 0.06, 1]
+      normalColor: [0.3, 0.18, 0.09, 1]
+      hoverColor: [0.74, 0.5, 0.2, 1]
+      pressedColor: [0.16, 0.09, 0.04, 1]
       disabledColor: [0.12, 0.1, 0.12, 1]
       onClickCallback: on_reset_progress_clicked
     UiText:
       outlineWidth: 2
-      outlineColor: [0.1, 0.05, 0.04, 1]
+      outlineColor: [0.16, 0.09, 0.04, 1]
       text: 'Reset progress'
-      color: [0.95, 0.92, 0.84, 1]
+      color: [0.95, 0.88, 0.72, 1]
       fontSize: 30
       horizontalAlignment: Center
       verticalAlignment: Middle
@@ -467,7 +467,7 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: OpenSans-Bold
+      font: MedievalSharp
     UiFocus:
       focusable: true
       initial: false
@@ -515,9 +515,9 @@ Entities:
       offset: [0, 0]
     UiText:
       outlineWidth: 2
-      outlineColor: [0.1, 0.05, 0.04, 1]
+      outlineColor: [0.16, 0.09, 0.04, 1]
       text: 'Maps defended: 0 / 1'
-      color: [0.95, 0.92, 0.84, 1]
+      color: [0.95, 0.88, 0.72, 1]
       fontSize: 28
       horizontalAlignment: Center
       verticalAlignment: Middle
@@ -526,7 +526,7 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: OpenSans-Bold
+      font: MedievalSharp
   - Entity: 7410000000000000024
     Tag:
       tag: UiScaleSlider
@@ -551,7 +551,7 @@ Entities:
       maxValue: 1
       trackColor: [0.04, 0.05, 0.1, 1]
       fillColor: [0.97, 0.77, 0.3, 1]
-      handleColor: [0.95, 0.92, 0.84, 1]
+      handleColor: [0.95, 0.88, 0.72, 1]
       onValueChangedCallback: on_ui_scale_changed
     UiFocus:
       focusable: true
@@ -579,9 +579,9 @@ Entities:
       offset: [0, 0]
     UiText:
       outlineWidth: 2
-      outlineColor: [0.1, 0.05, 0.04, 1]
+      outlineColor: [0.16, 0.09, 0.04, 1]
       text: 'Interface Size: 100%'
-      color: [0.82, 0.84, 0.9, 0.95]
+      color: [0.88, 0.8, 0.64, 0.95]
       fontSize: 28
       horizontalAlignment: Center
       verticalAlignment: Middle
@@ -590,7 +590,7 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: OpenSans-Bold
+      font: MedievalSharp
   - Entity: 7410000000000000026
     Tag:
       tag: MasterVolSlider
@@ -615,7 +615,7 @@ Entities:
       maxValue: 1
       trackColor: [0.04, 0.05, 0.1, 1]
       fillColor: [0.97, 0.77, 0.3, 1]
-      handleColor: [0.95, 0.92, 0.84, 1]
+      handleColor: [0.95, 0.88, 0.72, 1]
       onValueChangedCallback: on_master_vol_changed
     UiFocus:
       focusable: true
@@ -643,9 +643,9 @@ Entities:
       offset: [0, 0]
     UiText:
       outlineWidth: 2
-      outlineColor: [0.1, 0.05, 0.04, 1]
+      outlineColor: [0.16, 0.09, 0.04, 1]
       text: 'Master Volume: 100%'
-      color: [0.82, 0.84, 0.9, 0.95]
+      color: [0.88, 0.8, 0.64, 0.95]
       fontSize: 28
       horizontalAlignment: Center
       verticalAlignment: Middle
@@ -654,7 +654,7 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: OpenSans-Bold
+      font: MedievalSharp
   - Entity: 7410000000000000028
     Tag:
       tag: TitleText
@@ -675,7 +675,7 @@ Entities:
       offset: [0, 0]
     UiText:
       outlineWidth: 2
-      outlineColor: [0.1, 0.05, 0.04, 1]
+      outlineColor: [0.16, 0.09, 0.04, 1]
       text: 'Settings'
       color: [0.97, 0.77, 0.3, 1]
       fontSize: 56
@@ -686,4 +686,4 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: OpenSans-ExtraBold
+      font: Cinzel

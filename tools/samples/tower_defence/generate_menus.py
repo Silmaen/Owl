@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """
 Write the menu scenes of the Tower defence sample game into ``samples/tower_defence/scenes/``: the title, the
-settings, the victory and the game over screens, in the night-watch look of the game.
+settings, the victory and the game over screens, in the medieval look of the game (``medieval_ui.py``).
 
 Every menu stands over a strip of meadow at the bottom of the screen where a wave marches past an archer tower
 (``scripts/ui/parade.lua``, the sprites of the game in the 2D world layer); the victory adds fireworks over the keep.
-The title is stone letters with a gold rim, the buttons crimson banners with a gold frame (``textures/ui/banner.png``
-over the button colour) and a gold focus frame. The canvas is 1280 x 720 reference pixels, sizes and offsets in screen
+The title is gold capitals, the boards dark wood with a gold rim, the buttons wooden planks with iron bands
+(``textures/ui/banner.png`` over the button colour) and a gold focus frame; titles in ``Cinzel``, labels in
+``MedievalSharp`` (both in ``fonts/``). The canvas is 1280 x 720 reference pixels, sizes and offsets in screen
 heights. Their scripts live in ``scripts/ui/``.
 
 Run from the repository root: ``./docker_run.sh poetry run python -m tools.samples.tower_defence.generate_menus``.
@@ -22,27 +23,27 @@ ROOT = Path(__file__).resolve().parents[3] / "samples" / "tower_defence"
 """The sample project."""
 NIGHT = (0.06, 0.08, 0.14, 1)
 """Colour behind everything: a night sky."""
-STONE = (0.95, 0.92, 0.84, 1)
-"""Colour of the titles and labels."""
-SOFT = (0.82, 0.84, 0.9, 0.95)
+STONE = (0.95, 0.88, 0.72, 1)
+"""Colour of the titles and labels: parchment."""
+SOFT = (0.88, 0.8, 0.64, 0.95)
 """Colour of the secondary texts."""
 GOLD = (0.97, 0.77, 0.3, 1)
 """Headings and focus frame."""
-INK = (0.1, 0.05, 0.04, 1)
-"""Outline of the texts."""
-BUTTON = (0.48, 0.11, 0.11)
-"""Button colour under the banner frame."""
-BUTTON_HOVER = (0.78, 0.24, 0.18, 1)
+INK = (0.16, 0.09, 0.04, 1)
+"""Outline of the texts, and the text on parchment."""
+BUTTON = (0.3, 0.18, 0.09)
+"""Button colour under the plank frame: dark wood."""
+BUTTON_HOVER = (0.74, 0.5, 0.2, 1)
 """Hovered or focused button."""
-BUTTON_PRESSED = (0.3, 0.06, 0.06, 1)
+BUTTON_PRESSED = (0.16, 0.09, 0.04, 1)
 """Pressed button."""
-WINDOW_BODY = (0.08, 0.1, 0.17, 0.97)
+WINDOW_BODY = (0.17, 0.1, 0.06, 0.97)
 """Body of the windows."""
-WINDOW_TITLE = (0.42, 0.1, 0.1, 1)
+WINDOW_TITLE = (0.38, 0.13, 0.08, 1)
 """Title bar of the windows."""
-HEADING = "OpenSans-ExtraBold"
+HEADING = "Cinzel"
 """Font of the titles."""
-LABEL = "OpenSans-Bold"
+LABEL = "MedievalSharp"
 """Font of the buttons."""
 SCREEN = ("ScreenHeight", "ScreenHeight")
 """Sizes and offsets in screen heights."""
@@ -84,7 +85,7 @@ def button(
     focusable: bool = True,
     font_size: int = 30,
 ) -> int:
-    """A banner button in a layout: the crimson shows inside the gold frame, the label is stone on ink."""
+    """A plank button in a layout: the wood colour shows through the plank, the label is parchment on ink."""
     components = [
         y.child_rect(size),
         y.button(callback, BUTTON, BUTTON_HOVER, BUTTON_PRESSED, (0.12, 0.1, 0.12, 1)),
@@ -103,8 +104,8 @@ def column(entities: y.Entities, parent: int, rows: list[tuple[str, str, str]], 
 
 
 def board() -> str:
-    """A dark blue board with a gold rim."""
-    return y.panel((0.07, 0.09, 0.16, 0.9), (0.85, 0.65, 0.25, 1), 3)
+    """A dark wooden board with a gold rim."""
+    return y.panel((0.17, 0.1, 0.06, 0.92), (0.84, 0.66, 0.25, 1), 3)
 
 
 def window(title: str) -> str:

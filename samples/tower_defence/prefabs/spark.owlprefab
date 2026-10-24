@@ -1,0 +1,20 @@
+Prefab: Spark
+Version: 1
+Entities:
+  - Entity: 7600000000000513001
+    Tag:
+      tag: Spark
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [0.1, 0.1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      lit: false
+      tilingFactor: 1
+      texture: nam:textures/puff.png
+    RendererTag:
+      Name: sprites

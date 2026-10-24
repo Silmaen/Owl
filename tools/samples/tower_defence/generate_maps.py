@@ -30,7 +30,7 @@ from pathlib import Path
 from tools.samples import scene_yaml as y
 from tools.samples.tower_defence import generate_menus as menus
 from tools.samples.tower_defence import maps as mp
-from tools.samples.tower_defence.creatures import CELL, PPU
+from tools.samples.tower_defence.creatures import CELL, DIRECTIONS, FRAMES, PPU
 
 REPOSITORY = Path(__file__).resolve().parents[3]
 """The repository root."""
@@ -262,17 +262,17 @@ def keep(entities: y.Entities, level: mp.LevelData) -> None:
                 "KeepGate",
                 [mesh(f"{CASTLE}/wall-narrow-gate.glb")],
                 position=local,
-                rotation=(0, math.pi / 2, 0),
+                rotation=(0, math.pi, 0),
                 parent=root,
             )
         else:
-            entities.add(
-                "KeepWall", [mesh(f"{CASTLE}/wall.glb")], position=local, rotation=(0, math.pi / 2, 0), parent=root
-            )
+            entities.add("KeepWall", [mesh(f"{CASTLE}/wall.glb")], position=local, parent=root)
     for x in range(x0 + 1, x1 + 1):
         for z in (z0, z1):
             local = (x - (x0 + x1) / 2, 0, z - gate_z)
-            entities.add("KeepWall", [mesh(f"{CASTLE}/wall.glb")], position=local, parent=root)
+            entities.add(
+                "KeepWall", [mesh(f"{CASTLE}/wall.glb")], position=local, rotation=(0, math.pi / 2, 0), parent=root
+            )
     hall = (x1 - (x0 + x1) / 2 - 0.3, 0, 0)
     for model, height in (
         ("tower-square-base", 0),
@@ -301,7 +301,9 @@ def torches(entities: y.Entities, level: mp.LevelData, road: list[mp.Cell]) -> N
             f"{x * 7 + z}\n  colorShift: [0, 0.05, 0.03]\n  positionJitter: [0.02, 0.03, 0.02]\n"
         )
         torch = entities.add("Torch", [light], position=position)
-        flame = y.frames("textures/fx/fire.png", 4, 1, 0, (1, 1, 1, 1)).replace("loop: false", "loop: true")
+        flame = y.frames("textures/fx/fire.png", 4, 1, 0, (1, 1, 1, 1)).replace(
+            "loop: false", "loop: true\n  lit: false"
+        )
         flame = flame.replace("lastFrame: 0", "lastFrame: 3").replace("frameDuration: 0.1", "frameDuration: 0.09")
         entities.add(
             "TorchFlame", [flame, SPRITES], position=(0, 0, 0), scale=(0.35, 0.45, 1), parent=torch, visible=False
@@ -310,6 +312,37 @@ def torches(entities: y.Entities, level: mp.LevelData, road: list[mp.Cell]) -> N
         entities.add("TorchGlow", [glow], position=(0, 0, 0), parent=torch)
         post = (position[0], position[1] - 0.95, position[2])
         entities.add("TorchPost", [mesh(f"{CASTLE}/wall-stud.glb")], position=post, scale=(0.5, 0.8, 0.5))
+
+
+def unlit_sprite(texture: str, colour: y.Colour = (1, 1, 1, 1)) -> str:
+    """A ``SpriteRenderer`` drawn as it is, whatever the light (markers, the build wheel)."""
+    return y.sprite(texture, colour).replace("tilingFactor", "lit: false\n  tilingFactor")
+
+
+def world_text(colour: y.Colour, outline: y.Colour | None = None, font: str = "MedievalSharp") -> str:
+    """A ``TextRenderer`` of the world (the costs and the info of the build wheel), set by the script."""
+    out = f"TextRenderer:\n  color: {y.vec(*colour)}\n  kerning: 0\n  lineSpacing: 0\n  text: ''\n"
+    if outline is not None:
+        out += f"  outlineColor: {y.vec(*outline)}\n  outlineWidth: 0.08\n"
+    return out + f"  font: {font}\n"
+
+
+WHEEL_SLOTS = 4
+"""Badges of the build wheel at most (three towers, or a level up, two power-ups and the sale)."""
+
+
+def build_wheel(entities: y.Entities) -> None:
+    """The build wheel, hidden: a ring, its badges with their prices and a parchment scroll with the info, billboards
+    of the ``marks`` layer that ``defence.lua`` places beside the pad in screen space."""
+    entities.add("Wheel", [unlit_sprite("textures/ui/wheel.png") + MARKS], visible=False)
+    entities.add("WheelPlaque", [unlit_sprite("textures/ui/plaque.png") + MARKS], visible=False)
+    for _ in range(WHEEL_SLOTS):
+        badge = y.frames("textures/icons.png", 6, 2, 0).replace("loop: false", "loop: false\n  lit: false") + MARKS
+        entities.add("BuildChoice", [badge], scale=(0.55, 0.55, 1), visible=False)
+        cost = world_text((1, 0.86, 0.45, 1), (0.16, 0.09, 0.04, 1)) + MARKS
+        entities.add("ChoiceCost", [cost], visible=False)
+    entities.add("WheelTitle", [world_text((0.42, 0.07, 0.03, 1), font="Cinzel") + MARKS], visible=False)
+    entities.add("WheelText", [world_text((0.2, 0.12, 0.06, 1)) + MARKS], visible=False)
 
 
 def level_scene(level: mp.LevelData) -> str:
@@ -344,10 +377,6 @@ def level_scene(level: mp.LevelData) -> str:
     )
     sun_id = entities.add("Sun", [light], rotation=(-0.9, 0.6, 0))
     assert sun_id == sun, "the sun id is written in the day-night cycle before the sun"
-    entities.add(
-        "Ambient2D",
-        [light2d("Ambient", (1, 1, 1), 1, 1, 1)],
-    )
     minimap = (
         "Camera:\n  camera:\n    projectionType: Orthographic\n    perspectiveFOV: 0.785\n    perspectiveNear: 0.01\n"
         f"    perspectiveFar: 100\n    orthographicSize: {y.num(level.depth + 1)}\n    orthographicNear: 0\n"
@@ -396,13 +425,13 @@ def level_scene(level: mp.LevelData) -> str:
         f"Waypoint {len(road) + 1:02d}", [], position=(end[0] + 0.6, road_height(level, end), end[1]), parent=route
     )
     torches(entities, level, road)
-    cursor = y.sprite("textures/fx/cursor.png", (1, 0.9, 0.5, 0.9)) + GROUND
-    entities.add("Cursor", [cursor], rotation=FLAT, visible=False)
-    ring = y.sprite("textures/fx/ring.png", (1, 1, 1, 0.7)) + GROUND
-    entities.add("RangeRing", [ring], rotation=FLAT, visible=False)
-    for _ in range(3):
-        badge = y.frames("textures/icons.png", 6, 2, 0) + MARKS
-        entities.add("BuildChoice", [badge], scale=(0.55, 0.55, 1), visible=False)
+    cursor = y.sprite("textures/fx/cursor.png", (1, 0.9, 0.5, 0.9)).replace(
+        "tilingFactor", "lit: false\n  tilingFactor"
+    )
+    entities.add("Cursor", [cursor + GROUND], rotation=FLAT, visible=False)
+    ring = y.sprite("textures/fx/ring.png", (1, 1, 1, 0.7)).replace("tilingFactor", "lit: false\n  tilingFactor")
+    entities.add("RangeRing", [ring + GROUND], rotation=FLAT, visible=False)
+    build_wheel(entities)
     name = f"level_{level.number:02d}"
     next_scene = f"scenes/level_{level.number + 1:02d}.owl" if level.number < len(mp.LEVELS) else "scenes/victory.owl"
     waves = "".join(f"\n        - {y.quote(wave)}" for wave in level.waves)
@@ -540,9 +569,8 @@ def tower_prefab(key: str) -> str:
     height = 0.0
     for index, (model, step, tint, offset, scale) in enumerate(TOWER_PARTS[key]):
         position = (offset[0], height + offset[1], offset[2])
-        entities.add(
-            f"TowerPart{index}", [mesh(model, tint)], position=position, scale=(scale, scale, scale), parent=root
-        )
+        tag = "TowerWeapon" if "/weapon-" in model or model.endswith("crystals.glb") else f"TowerPart{index}"
+        entities.add(tag, [mesh(model, tint)], position=position, scale=(scale, scale, scale), parent=root)
         height += step
     return prefab(f"Tower_{key}", entities)
 
@@ -555,7 +583,7 @@ def prefabs() -> dict[str, str]:
     """Every prefab the script spawns, by file name."""
     out = {}
     for kind in ENEMIES:
-        sheet = y.frames(f"textures/enemies/{kind}.png", 8, 4, 0) + SPRITES
+        sheet = y.frames(f"textures/enemies/{kind}.png", DIRECTIONS, FRAMES, 0) + SPRITES
         out[f"enemy_{kind}"] = single(f"Enemy{kind.title()}", "Enemy", [sheet], (SPRITE_SIZE, SPRITE_SIZE, 1))
     for key in TOWER_PARTS:
         out[f"tower_{key}"] = tower_prefab(key)
@@ -565,13 +593,15 @@ def prefabs() -> dict[str, str]:
         if kind == "fireball":
             components.append(light2d("Point", (1, 0.55, 0.2), 0.9, 2.2, 1.4))
         out[f"projectile_{kind}"] = single(f"Projectile{kind.title()}", "Projectile", components, (0.32, 0.32, 1))
-    bar = y.sprite("textures/bar.png", (0.3, 0.9, 0.3, 1)) + SPRITES
+    bar = unlit_sprite("textures/bar.png", (0.3, 0.9, 0.3, 1)) + SPRITES
     out["health_bar"] = single("HealthBar", "HealthBar", [bar], (0.5, 0.07, 1))
     shadow = y.sprite("textures/fx/shadow.png", (1, 1, 1, 0.6)) + GROUND
     out["shadow"] = single("Shadow", "Shadow", [shadow], (0.5, 0.35, 1))
-    puff = y.sprite("textures/puff.png", (1, 1, 1, 0.8)) + SPRITES
+    puff = unlit_sprite("textures/puff.png", (1, 1, 1, 0.8)) + SPRITES
     out["puff"] = single("Puff", "Puff", [puff], (0.6, 0.6, 1))
-    flame = y.frames("textures/fx/fire.png", 4, 1, 0).replace("loop: false", "loop: true")
+    spark = unlit_sprite("textures/puff.png") + SPRITES
+    out["spark"] = single("Spark", "Spark", [spark], (0.1, 0.1, 1))
+    flame = y.frames("textures/fx/fire.png", 4, 1, 0).replace("loop: false", "loop: true\n  lit: false")
     flame = flame.replace("lastFrame: 0", "lastFrame: 3").replace("frameDuration: 0.1", "frameDuration: 0.08") + SPRITES
     glow = light2d("Point", (1, 0.5, 0.2), 1.2, 2, 1.3)
     out["fire"] = single("Fire", "Fire", [flame, glow], (0.55, 0.6, 1))
@@ -581,34 +611,34 @@ def prefabs() -> dict[str, str]:
 
 
 def play_hud() -> str:
-    """The HUD of a level: gold and lives at the top left, the wave and its countdown at the top, the minimap at the
-    top right, the info panel of the build ring at the bottom left, the Call wave / speed / Menu buttons at the bottom
-    right, a message line and the pause window, the only place of a level that shows the controls."""
+    """The HUD of a level, in the medieval look of the menus: gold, lives and the wave on parchment at the top left,
+    the minimap in a wood and iron frame at the top right, the spells at the bottom left, the Call wave / speed / Menu
+    planks at the bottom right, a message line and the pause window, the only place of a level that shows the
+    controls. The build wheel is not here: it opens in the world, beside its pad."""
     entities = y.Entities(7490000000000000000)
     root = entities.add("HUDCanvas", [y.canvas()])
-    # One column at the top left (stats, wave, info panel), the minimap at the top right, the buttons at the bottom
-    # right: they never meet, at any interface size or aspect.
+    # One column at the top left, the minimap at the top right, the planks at the bottom right and the spells at the
+    # bottom left: they never meet, at any interface size or aspect.
     column = entities.add(
-        "TopLeft", [y.rect((0, 0), (0.55, 0.33), (16, 8)), y.layout("Column", 6, 0, "Start")], parent=root
+        "TopLeft", [y.rect((0, 0), (0.5, 0.15), (16, 8)), y.layout("Column", 6, 0, "Start")], parent=root
     )
-    info = entities.add(
-        "InfoPanel", [y.child_rect((1, 0.5)), menus.board(), y.layout("Row", 10)], parent=column, visible=False
+    wave = menus.label("Wave 0 / 8 - next in 25 s", 24, menus.INK).replace("outlineWidth: 2", "outlineWidth: 0")
+    entities.add("WaveText", [y.child_rect((1, 0.42)), y.image("textures/ui/panel_wave.png"), wave], parent=column)
+    stats = entities.add(
+        "StatsBar",
+        [y.child_rect((0.78, 0.42)), y.image("textures/ui/panel_stats.png"), y.layout("Row", 8)],
+        parent=column,
     )
-    texts = entities.add("InfoTexts", [y.child_rect((0.74, 0.9)), y.layout("Column", 2, 0, "Start")], parent=info)
-    entities.add("InfoText", [y.child_rect((1, 0.55)), menus.label("", 19, menus.SOFT, "Left", "")], parent=texts)
-    entities.add("InfoTitle", [y.child_rect((1, 0.4)), menus.label("", 25, menus.GOLD, "Left")], parent=texts)
-    icon = "UiImage:\n  tint: [1, 1, 1, 1]\n  texture: nam:textures/icons.png\n  columns: 6\n  rows: 2\n  frame: 0\n"
-    entities.add("InfoIcon", [y.child_rect((0.17, 0.85)), icon], parent=info)
-    wave = menus.label("Wave 0 / 8 - next in 25 s", 24, menus.STONE)
-    entities.add("WaveText", [y.child_rect((1, 0.2)), y.panel(), wave], parent=column)
-    stats = entities.add("StatsBar", [y.child_rect((0.75, 0.2)), y.panel(), y.layout("Row", 8)], parent=column)
-    entities.add("LivesText", [y.child_rect((0.45, 1)), menus.label("Lives 20", 26, (1, 0.6, 0.55, 1))], parent=stats)
-    entities.add("GoldText", [y.child_rect((0.45, 1)), menus.label("Gold 240", 26, menus.GOLD)], parent=stats)
-    frame = entities.add("Minimap", [y.rect((1, 0), (0.3, 0.24), (-16, 8)), menus.board()], parent=root)
+    lives = menus.label("Lives 20", 26, (0.55, 0.08, 0.05, 1)).replace("outlineWidth: 2", "outlineWidth: 0")
+    gold = menus.label("Gold 240", 26, (0.45, 0.3, 0.02, 1)).replace("outlineWidth: 2", "outlineWidth: 0")
+    entities.add("LivesText", [y.child_rect((0.45, 1)), lives], parent=stats)
+    entities.add("GoldText", [y.child_rect((0.45, 1)), gold], parent=stats)
+    frame = entities.add("Minimap", [y.rect((1, 0), (0.3, 0.24), (-16, 8))], parent=root)
     image = "UiImage:\n  tint: [1, 1, 1, 1]\n  renderTarget: minimap\n"
     entities.add(
-        "MinimapImage", [y.rect((0.5, 0.5), (0.95, 0.93), units=("ParentWidth", "ParentHeight")), image], parent=frame
+        "MinimapImage", [y.rect((0.5, 0.5), (0.9, 0.87), units=("ParentWidth", "ParentHeight")), image], parent=frame
     )
+    entities.add("MinimapFrame", [y.child_rect((1, 1)), y.image("textures/ui/frame.png")], parent=frame)
     bar = entities.add("ButtonBar", [y.rect((1, 1), (0.5, 0.075), (-16, -8)), y.layout("Row", 6)], parent=root)
     for tag, text, callback, width in (
         ("MenuButton", "Menu", "on_menu_clicked", 0.2),
@@ -616,6 +646,12 @@ def play_hud() -> str:
         ("CallButton", "Call wave", "on_call_clicked", 0.44),
     ):
         menus.button(entities, bar, tag, text, callback, (width, 0.9), focusable=False, font_size=24)
+    spells = entities.add("SpellBar", [y.rect((0, 1), (0.5, 0.075), (16, -8)), y.layout("Row", 6)], parent=root)
+    for tag, text, callback in (
+        ("ShieldButton", "Shield wall", "on_shield_clicked"),
+        ("RainButton", "Rain of arrows", "on_rain_clicked"),
+    ):
+        menus.button(entities, spells, tag, text, callback, (0.48, 0.9), focusable=False, font_size=22)
     message = menus.label("", 40, menus.STONE, font=menus.HEADING).replace("wrap: false", "wrap: true")
     entities.add("MessageText", [y.rect((0.5, 0.62), (0.7, 0.14)), message], parent=root, visible=False)
     window = entities.add(
@@ -627,7 +663,7 @@ def play_hud() -> str:
     controls = y.text(menus.CONTROLS, 18, "Left", menus.GOLD, wrap=True, font="JetBrainsMono-Regular", line_spacing=0.2)
     entities.add("ControlsText", [y.child_rect((0.96, 0.44)), controls], parent=window)
     for tag, text, callback, initial in (
-        ("QuitButton", "Quit to title", "on_pause_quit", False),
+        ("QuitButton", "Quit to the map", "on_pause_quit", False),
         ("RestartButton", "Restart level", "on_pause_restart", False),
         ("ResumeButton", "Resume", "on_pause_resume", True),
     ):

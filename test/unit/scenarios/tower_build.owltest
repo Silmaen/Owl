@@ -1,7 +1,8 @@
-# Tower defence: the mouse on a build pad shows the cursor, a click opens the build ring, a click on the archer badge
-# builds the tower and spends its price; the road opens nothing; a click on the tower opens its ring and X sells it
-# for half its price. The headless view is 1600x960, the camera over the middle of level 1: pad 1 (4, 3), on the
-# plateau, is at pixel (478, 259), its badges at (420, 191), (466, 191), (512, 191), the road (3, 9) at (324, 640).
+# Tower defence: the mouse on a build pad shows the cursor, a click opens the build wheel beside it, a click on the
+# archer badge builds the tower and spends its price; the road opens nothing; a click on the tower opens its wheel and
+# X sells it for half its price. The headless view is 1600x960, the camera over the middle of level 1: pad 1 (4, 3),
+# on the plateau, is at pixel (478, 259); its wheel, pushed down clear of the HUD, puts the archer badge at (417, 258);
+# the road (3, 9) is at (324, 640).
 scene: ../../../samples/tower_defence/scenes/level_01.owl
 steps:
   - frames: 30
@@ -10,10 +11,10 @@ steps:
   - expect: {gamestate: tower_hover_pad, equals: 1}
   - expect: {entity: Cursor, translation.x: 4}
   - input: {mouse: Left, mouse_pos: [478, 259], frames: 2}
-  - input: {mouse_pos: [420, 191], frames: 3}
+  - input: {mouse_pos: [417, 258], frames: 3}
   - expect: {gamestate: tower_ring, equals: 1}
   - expect: {gamestate: tower_hover, equals: 1}
-  - input: {mouse: Left, mouse_pos: [420, 191], frames: 2}
+  - input: {mouse: Left, mouse_pos: [417, 258], frames: 2}
   - expect: {gamestate: tower_towers, equals: 1}
   - expect: {gamestate: tower_gold, equals: 170}
   - expect: {gamestate: tower_ring, equals: 0}

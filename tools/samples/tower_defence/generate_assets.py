@@ -8,8 +8,8 @@ Draw the sprites and synthesise the sounds of the Tower defence sample game into
   ``ring.png`` (range ring) and ``cursor.png`` (pad frame) laid flat on the ground, ``shadow.png``;
 - ``textures/icons.png``: the badges of the build ring and of the info panel (``ICONS``, 6 by row);
 - ``textures/puff.png``, ``textures/bar.png`` (health bar), tinted by the script;
-- menus: ``textures/ui/title.png``, ``textures/ui/banner.png``, and the parade under them (``textures/enemies.png``
-  in 4 headings, ``textures/towers/archer.png``, ``textures/keep.png``).
+- menus and HUD: parchment, wood, iron and gold of ``medieval_ui.py`` in ``textures/ui/``, and the parade under them
+  (``textures/enemies.png`` in 4 headings, ``textures/towers/archer.png``, ``textures/keep.png``).
 
 Sounds: mono 16 bit at 22.05 kHz, short and neutral (build, sell, shots, hits, horn, coins, keep hit, start jingle);
 the victory jingle is copied from the Engine Demo.
@@ -30,9 +30,9 @@ import wave
 from collections.abc import Callable
 from pathlib import Path
 
-from PIL import Image, ImageDraw, ImageFilter, ImageFont
+from PIL import Image, ImageDraw
 
-from tools.samples.tower_defence import creatures
+from tools.samples.tower_defence import creatures, medieval_ui
 
 REPOSITORY = Path(__file__).resolve().parents[3]
 """The repository root."""
@@ -406,42 +406,6 @@ def bar() -> Image.Image:
     return img
 
 
-def title_art() -> Image.Image:
-    """The title (1400 x 260): TOWER DEFENCE in stone letters with a gold rim, a small banner at each end."""
-    width, height = 1400, 260
-    img = Image.new("RGBA", (width, height), (0, 0, 0, 0))
-    font = ImageFont.truetype(str(FONTS / "OpenSans-ExtraBold.ttf"), 150)
-    text = "TOWER DEFENCE"
-    draw = ImageDraw.Draw(img)
-    box = draw.textbbox((0, 0), text, font=font)
-    x = (width - (box[2] - box[0])) / 2 - box[0]
-    y = (height - (box[3] - box[1])) / 2 - box[1]
-    shadow = Image.new("RGBA", img.size, (0, 0, 0, 0))
-    ImageDraw.Draw(shadow).text((x + 8, y + 10), text, font=font, fill=(0, 0, 0, 170))
-    img = Image.alpha_composite(img, shadow.filter(ImageFilter.GaussianBlur(7)))
-    draw = ImageDraw.Draw(img)
-    draw.text((x, y), text, font=font, fill=(196, 188, 170, 255), stroke_width=7, stroke_fill=(214, 168, 60, 255))
-    draw.text((x, y + 4), text, font=font, fill=(150, 142, 128, 255))
-    draw.text((x, y), text, font=font, fill=(186, 178, 162, 255))
-    for bx in (34, width - 70):
-        draw.rectangle([bx, 40, bx + 36, 200], fill=(150, 34, 34, 255), outline=(214, 168, 60, 255), width=4)
-        draw.polygon([(bx, 200), (bx + 18, 180), (bx + 36, 200), (bx + 36, 220), (bx, 220)], fill=(0, 0, 0, 0))
-    return img
-
-
-def banner() -> Image.Image:
-    """A menu button (640 x 100): a gold rim with stone corners, see-through inside so that the button colour shows."""
-    size = (640, 100)
-    img = Image.new("RGBA", size, (0, 0, 0, 0))
-    draw = ImageDraw.Draw(img)
-    draw.rectangle([0, 0, size[0] - 1, size[1] - 1], fill=(255, 255, 255, 18), outline=(214, 168, 60, 255), width=5)
-    draw.rectangle([9, 9, size[0] - 10, size[1] - 10], outline=(120, 90, 30, 200), width=2)
-    for x in (0, size[0] - 24):
-        for y in (0, size[1] - 24):
-            draw.rectangle([x, y, x + 23, y + 23], fill=(150, 144, 132, 255), outline=(90, 86, 80, 255), width=2)
-    return img
-
-
 def textures() -> None:
     """Every image of the game."""
     for folder in ("towers", "ui", "fx", "enemies"):
@@ -459,8 +423,7 @@ def textures() -> None:
     fx_fire().save(TEXTURES / "fx" / "fire.png")
     puff().save(TEXTURES / "puff.png")
     bar().save(TEXTURES / "bar.png")
-    title_art().save(TEXTURES / "ui" / "title.png")
-    banner().save(TEXTURES / "ui" / "banner.png")
+    medieval_ui.write_all(TEXTURES, ROOT / "fonts")
 
 
 # Sounds ---------------------------------------------------------------------------------------------------------------

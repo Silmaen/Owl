@@ -275,8 +275,8 @@ Entities:
       offset: [0, 0.04]
       offsetUnit: [ScreenHeight, ScreenHeight]
     UiPanel:
-      backgroundColor: [0.07, 0.09, 0.16, 0.9]
-      borderColor: [0.85, 0.65, 0.25, 1]
+      backgroundColor: [0.17, 0.1, 0.06, 0.92]
+      borderColor: [0.84, 0.66, 0.25, 1]
       borderWidth: 3
       clipChildren: false
     UiLayout:
@@ -330,16 +330,16 @@ Entities:
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiButton:
-      normalColor: [0.48, 0.11, 0.11, 1]
-      hoverColor: [0.78, 0.24, 0.18, 1]
-      pressedColor: [0.3, 0.06, 0.06, 1]
+      normalColor: [0.3, 0.18, 0.09, 1]
+      hoverColor: [0.74, 0.5, 0.2, 1]
+      pressedColor: [0.16, 0.09, 0.04, 1]
       disabledColor: [0.12, 0.1, 0.12, 1]
       onClickCallback: on_title_clicked
     UiText:
       outlineWidth: 2
-      outlineColor: [0.1, 0.05, 0.04, 1]
+      outlineColor: [0.16, 0.09, 0.04, 1]
       text: 'Title'
-      color: [0.95, 0.92, 0.84, 1]
+      color: [0.95, 0.88, 0.72, 1]
       fontSize: 30
       horizontalAlignment: Center
       verticalAlignment: Middle
@@ -348,7 +348,7 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: OpenSans-Bold
+      font: MedievalSharp
     UiFocus:
       focusable: true
       initial: false
@@ -395,16 +395,16 @@ Entities:
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiButton:
-      normalColor: [0.48, 0.11, 0.11, 1]
-      hoverColor: [0.78, 0.24, 0.18, 1]
-      pressedColor: [0.3, 0.06, 0.06, 1]
+      normalColor: [0.3, 0.18, 0.09, 1]
+      hoverColor: [0.74, 0.5, 0.2, 1]
+      pressedColor: [0.16, 0.09, 0.04, 1]
       disabledColor: [0.12, 0.1, 0.12, 1]
       onClickCallback: on_again_clicked
     UiText:
       outlineWidth: 2
-      outlineColor: [0.1, 0.05, 0.04, 1]
+      outlineColor: [0.16, 0.09, 0.04, 1]
       text: 'Play again'
-      color: [0.95, 0.92, 0.84, 1]
+      color: [0.95, 0.88, 0.72, 1]
       fontSize: 30
       horizontalAlignment: Center
       verticalAlignment: Middle
@@ -413,7 +413,7 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: OpenSans-Bold
+      font: MedievalSharp
     UiFocus:
       focusable: true
       initial: true
@@ -461,9 +461,9 @@ Entities:
       offset: [0, 0]
     UiText:
       outlineWidth: 2
-      outlineColor: [0.1, 0.05, 0.04, 1]
+      outlineColor: [0.16, 0.09, 0.04, 1]
       text: ''
-      color: [0.82, 0.84, 0.9, 0.95]
+      color: [0.88, 0.8, 0.64, 0.95]
       fontSize: 28
       horizontalAlignment: Left
       verticalAlignment: Middle
@@ -493,9 +493,9 @@ Entities:
       offset: [0, 0]
     UiText:
       outlineWidth: 2
-      outlineColor: [0.1, 0.05, 0.04, 1]
+      outlineColor: [0.16, 0.09, 0.04, 1]
       text: ''
-      color: [0.82, 0.84, 0.9, 0.95]
+      color: [0.88, 0.8, 0.64, 0.95]
       fontSize: 28
       horizontalAlignment: Left
       verticalAlignment: Middle
@@ -525,9 +525,9 @@ Entities:
       offset: [0, 0]
     UiText:
       outlineWidth: 2
-      outlineColor: [0.1, 0.05, 0.04, 1]
+      outlineColor: [0.16, 0.09, 0.04, 1]
       text: ''
-      color: [0.82, 0.84, 0.9, 0.95]
+      color: [0.88, 0.8, 0.64, 0.95]
       fontSize: 28
       horizontalAlignment: Left
       verticalAlignment: Middle
@@ -557,9 +557,9 @@ Entities:
       offset: [0, 0]
     UiText:
       outlineWidth: 2
-      outlineColor: [0.1, 0.05, 0.04, 1]
+      outlineColor: [0.16, 0.09, 0.04, 1]
       text: ''
-      color: [0.82, 0.84, 0.9, 0.95]
+      color: [0.88, 0.8, 0.64, 0.95]
       fontSize: 28
       horizontalAlignment: Left
       verticalAlignment: Middle
@@ -589,7 +589,7 @@ Entities:
       offset: [0, 0]
     UiText:
       outlineWidth: 2
-      outlineColor: [0.1, 0.05, 0.04, 1]
+      outlineColor: [0.16, 0.09, 0.04, 1]
       text: 'The keep has fallen'
       color: [0.95, 0.45, 0.35, 1]
       fontSize: 68
@@ -600,4 +600,4 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: OpenSans-ExtraBold
+      font: Cinzel

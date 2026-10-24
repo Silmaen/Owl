@@ -64,7 +64,7 @@ Entities:
       Name: mesh_world
   - Entity: 7600000000000782005
     Tag:
-      tag: TowerPart3
+      tag: TowerWeapon
     Transform:
       translation: [0, 1.5, 0]
       rotation: [0, 0, 0]

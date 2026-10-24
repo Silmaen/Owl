@@ -34,8 +34,6 @@ properties = {
     { name = "night_from", type = "int", default = 0, min = 0 },
     { name = "start_hour", type = "float", default = 9.5, min = 0, max = 24 },
     { name = "night_hour", type = "float", default = 21.5, min = 0, max = 24 },
-    { name = "sky_elevation", type = "float", default = 58.0, min = 1, max = 90 },
-    { name = "sky_night_exposure", type = "float", default = 6.0 },
     { name = "start_gold", type = "int", default = 240, min = 0 },
     { name = "lives", type = "int", default = 20, min = 1 },
     { name = "map_width", type = "int", default = 18, min = 1 },
@@ -83,6 +81,8 @@ properties = {
     { name = "arrow_speed", type = "float", default = 9.0, min = 0.1 },
     { name = "ball_flight", type = "float", default = 0.8, min = 0.1 },
     { name = "camera_pitch", type = "float", default = -0.75, min = -1.5, max = -0.2 },
+    { name = "camera_fov", type = "float", default = 0.62, min = 0.1, max = 2.5 },
+    { name = "weapon_yaw", type = "float", default = 0.0 },
     { name = "camera_distance", type = "float", default = 19.0, min = 2 },
     { name = "zoom_min", type = "float", default = 8.0, min = 1 },
     { name = "zoom_max", type = "float", default = 26.0, min = 1 },
@@ -127,16 +127,19 @@ local SHOT_SOUND = { archer = "sounds/game/arrow.wav", cannon = "sounds/game/can
 local SHOT_HEIGHT = { 1.15, 1.6, 2.05 }   -- height of the weapon over the pad, by tower level
 local PAD_TOP = 0.21                      -- height of a pad over the grass
 local GRASS_TOP = 0.4                     -- height of the grass over the base of a tile
--- Sprites: the foot stands 22 pixels under the centre of a 64-pixel cell (scaled with the sprite).
-local FOOT_SHARE = 22.0 / 64.0
-local sprite_lift = 22.0 / 46.0
+-- Sprites: the foot stands 34 pixels under the centre of a 96-pixel cell (scaled with the sprite).
+local FOOT_SHARE = 34.0 / 96.0
+local sprite_lift = 0.5
 local TOWARD_VIEW = 0.25                  -- billboards come this far toward the camera, off the ground they stand on
 local BAR_HEIGHT = { goblin = 0.62, grunt = 0.86, ogre = 1.12 }
 local SHADOW_SIZE = { goblin = 0.45, grunt = 0.6, ogre = 0.9 }
 local DIRECTIONS = 8
 
-local camera_id, cursor_id, ring_id, sky_id, ambient_id = 0, 0, 0, 0, 0
+local camera_id, cursor_id, ring_id, sky_id = 0, 0, 0, 0
 local choice_ids = {}
+local wheel_ids = { ring = 0, plaque = 0, title = 0, text = 0, costs = {} }
+local wheel_shown = {}      -- the text each world text of the wheel shows
+local banner_ids = {}       -- the waving banners: { id, yaw }
 local torch_ids = {}
 local hud = {}
 local shown = {}
@@ -147,6 +150,10 @@ local pad_by_id = {}
 local route = nil           -- the waypoints, with the distance walked at each one
 
 local enemies, towers, projectiles, effects = {}, {}, {}, {}
+local corpses, sparks = {}, {}
+local aim                   -- turns the weapons of a tower (defined with the towers' placement)
+local MAX_SPARKS = 90
+local ATTACK_ROW, DEATH_ROW = 4, 6       -- rows of the enemy sheets after the 4 of the walk
 local gold, lives_left = 0, 0
 local wave, wave_count = 0, 0
 local countdown, spawning = 0.0, nil    -- seconds before the next wave; the queue of the wave being sent
@@ -169,7 +176,7 @@ local pad_mode = false
 local last_mouse_x, last_mouse_y = nil, nil
 local mouse_moved = false
 
-local view = { x = 9, z = 7, yaw = 0.0, yaw_goal = 0.0, distance = 15.0 }
+local view = { x = 9, z = 7, yaw = 0.0, yaw_goal = 0.0, distance = 15.0, eye = { 0.0, 0.0, 0.0 } }
 local basis = {}            -- camera axes of the frame: right, up, forward, toward
 
 -- Helpers -------------------------------------------------------------------------------------------------------------
@@ -261,8 +268,8 @@ local function place_camera()
     update_basis()
     local f = basis.forward
     local target_y = GRASS_TOP
-    transform.set_position(camera_id, view.x - f[1] * view.distance, target_y - f[2] * view.distance,
-            view.z - f[3] * view.distance)
+    view.eye = { view.x - f[1] * view.distance, target_y - f[2] * view.distance, view.z - f[3] * view.distance }
+    transform.set_position(camera_id, view.eye[1], view.eye[2], view.eye[3])
     transform.set_rotation(camera_id, camera_pitch, view.yaw, 0.0)
 end
 
@@ -370,36 +377,37 @@ function on_create()
     cursor_id = scene.find_entity("Cursor")
     ring_id = scene.find_entity("RangeRing")
     sky_id = scene.find_entity("Sky")
-    ambient_id = scene.find_entity("Ambient2D")
     choice_ids = scene.find_entities("BuildChoice")
+    for _, name in ipairs({ "KeepFlag", "GateBanner" }) do
+        for _, id in ipairs(scene.find_entities(name)) do
+            local _, yaw = transform.get_rotation(id)
+            banner_ids[#banner_ids + 1] = { id = id, yaw = yaw }
+        end
+    end
+    wheel_ids = { ring = scene.find_entity("Wheel"), plaque = scene.find_entity("WheelPlaque"),
+                  title = scene.find_entity("WheelTitle"), text = scene.find_entity("WheelText"),
+                  costs = scene.find_entities("ChoiceCost") }
     for _, id in ipairs(scene.find_entities("Torch")) do torch_ids[#torch_ids + 1] = { light = id } end
     local flames, glows = scene.find_entities("TorchFlame"), scene.find_entities("TorchGlow")
     for index, torch in ipairs(torch_ids) do
         torch.flame = flames[index] or 0
         torch.glow = glows[index] or 0
     end
-    for _, name in ipairs({ "gold", "lives", "wave", "message", "info", "info_icon", "info_title", "info_text",
-                            "call", "speed", "pause", "resume" }) do
+    for _, name in ipairs({ "gold", "lives", "wave", "message", "call", "speed", "pause", "resume" }) do
         hud[name] = 0
     end
     hud.gold = ui.find("GoldText")
     hud.lives = ui.find("LivesText")
     hud.wave = ui.find("WaveText")
     hud.message = ui.find("MessageText")
-    hud.info = ui.find("InfoPanel")
-    hud.info_icon = ui.find("InfoIcon")
-    hud.info_title = ui.find("InfoTitle")
-    hud.info_text = ui.find("InfoText")
     hud.call = ui.find("CallButton")
     hud.speed = ui.find("SpeedButton")
     hud.pause = ui.find("PauseWindow")
     hud.resume = ui.find("ResumeButton")
     show(hud.pause, false)
-    show(hud.info, false)
     show(hud.message, false)
     show(cursor_id, false)
     show(ring_id, false)
-    for _, id in ipairs(choice_ids) do show(id, false) end
     find_pads()
     find_route()
     view.x, view.z = (map_width - 1) * 0.5, (map_depth - 1) * 0.5
@@ -423,6 +431,14 @@ end
 
 -- Day and night -------------------------------------------------------------------------------------------------------
 
+-- The banners of the keep and of the gate wave in the wind.
+local function wave_banners()
+    for index, banner in ipairs(banner_ids) do
+        local sway = math.sin(clock * 2.3 + index * 1.7)
+        transform.set_rotation(banner.id, 0.04 * sway, banner.yaw + 0.22 * sway, 0.03 * math.sin(clock * 3.1 + index))
+    end
+end
+
 local function update_sky(dt)
     if sky_id == 0 then return end
     if math.abs(hours_goal - hours) > 0.001 then
@@ -438,15 +454,6 @@ local function update_sky(dt)
             if torch.glow ~= 0 then entity.set_light_enabled(torch.glow, night) end
             show(torch.flame, night)
         end
-    end
-    if ambient_id ~= 0 then
-        -- Sprites follow the sky: a blue dimness at night, against the exposure the cycle adds to the camera then.
-        local sun_y = math.sin((hours - 6.0) / 24.0 * 2.0 * math.pi) * math.sin(math.rad(sky_elevation))
-        local t = math.max(0.0, math.min(1.0, (sun_y + 0.15) / 0.2))
-        local night = 1.0 - t * t * (3.0 - 2.0 * t)
-        local level = (1.0 - 0.55 * night) * 2.0 ^ (-sky_night_exposure * night)
-        entity.set_light_intensity(ambient_id, level)
-        entity.set_light_color(ambient_id, 1.0 - 0.35 * night, 1.0 - 0.25 * night, 1.0)
     end
 end
 
@@ -567,11 +574,63 @@ end
 
 -- Enemies -------------------------------------------------------------------------------------------------------------
 
-local function remove_enemy(index)
+-- Sparks: a pool of small glowing sprites for trails and impacts, reused rather than spawned each time.
+local function emit(x, y, z, count, speed, r, g, b, size, life, rise)
+    for _ = 1, count do
+        local spark = nil
+        for _, candidate in ipairs(sparks) do
+            if not candidate.active then
+                spark = candidate
+                break
+            end
+        end
+        if spark == nil and #sparks < MAX_SPARKS then
+            local id = scene.spawn_prefab("prefabs/spark.owlprefab", x, y, z)
+            if id ~= 0 then
+                spark = { id = id }
+                sparks[#sparks + 1] = spark
+            end
+        end
+        if spark == nil then return end
+        local a, e = math.random() * 2.0 * math.pi, math.random() * 0.8 + 0.2
+        spark.active, spark.t, spark.life, spark.size = true, 0.0, life * (0.7 + math.random() * 0.6), size
+        spark.x, spark.y, spark.z = x, y, z
+        spark.vx, spark.vy, spark.vz = math.cos(a) * speed * e, (rise or 0.0) + speed * (math.random() - 0.3), math.sin(a) * speed * e
+        spark.r, spark.g, spark.b = r, g, b
+        show(spark.id, true)
+        entity.set_tint(spark.id, r, g, b, 1.0)
+    end
+end
+
+local function update_sparks(dt)
+    for _, spark in ipairs(sparks) do
+        if spark.active then
+            spark.t = spark.t + dt
+            local t = spark.t / spark.life
+            if t >= 1.0 then
+                spark.active = false
+                show(spark.id, false)
+            else
+                spark.vy = spark.vy - 3.0 * dt
+                spark.x, spark.y, spark.z = spark.x + spark.vx * dt, spark.y + spark.vy * dt, spark.z + spark.vz * dt
+                transform.set_position(spark.id, spark.x, spark.y, spark.z)
+                local size = spark.size * (1.0 - 0.6 * t)
+                transform.set_scale(spark.id, size, size, 1.0)
+                entity.set_tint(spark.id, spark.r, spark.g, spark.b, 1.0 - t)
+            end
+        end
+    end
+end
+
+local function remove_enemy(index, dying)
     local foe = enemies[index]
-    scene.destroy_entity(foe.id)
     if foe.bar ~= 0 then scene.destroy_entity(foe.bar) end
     if foe.shadow ~= 0 then scene.destroy_entity(foe.shadow) end
+    if dying then
+        corpses[#corpses + 1] = { id = foe.id, direction = foe.frame % DIRECTIONS, t = 0.0 }
+    else
+        scene.destroy_entity(foe.id)
+    end
     foe.dead = true
     table.remove(enemies, index)
 end
@@ -585,20 +644,39 @@ local function hurt(foe, amount)
         earned = earned + foe.gold
         kills = kills + 1
         play("sounds/game/pop.wav")
-        spawn_puff(foe.x, foe.y + 0.2, foe.z, 1.0, 0.95, 0.7, 0.7, 0.35)
+        emit(foe.x, foe.y + 0.35, foe.z, 6, 1.4, 0.75, 0.15, 0.1, 0.12, 0.45, 1.2)
         for index, other in ipairs(enemies) do
             if other == foe then
-                remove_enemy(index)
+                remove_enemy(index, true)
                 break
             end
         end
         return
     end
+    foe.flash = 0.09
     if foe.bar ~= 0 then
         local share = foe.hp / foe.max
         show(foe.bar, true)
         transform.set_scale(foe.bar, 0.5 * share, 0.07, 1.0)
         entity.set_tint(foe.bar, 1.0 - share * 0.8, 0.25 + share * 0.65, 0.2, 1.0)
+    end
+end
+
+-- The fallen: the three frames of the fall, then a fade.
+local function update_corpses(dt)
+    local index = 1
+    while index <= #corpses do
+        local corpse = corpses[index]
+        corpse.t = corpse.t + dt
+        local row = DEATH_ROW + math.min(2, math.floor(corpse.t / 0.12))
+        isometric.set_sprite_frame(corpse.id, row * DIRECTIONS + corpse.direction)
+        if corpse.t > 0.45 then entity.set_tint(corpse.id, 1.0, 1.0, 1.0, math.max(0.0, 1.0 - (corpse.t - 0.45) / 0.5)) end
+        if corpse.t > 0.95 then
+            scene.destroy_entity(corpse.id)
+            table.remove(corpses, index)
+        else
+            index = index + 1
+        end
     end
 end
 
@@ -631,11 +709,21 @@ local function update_enemies(dt)
             foe.distance = foe.distance + step
             travel = travel + step
             if foe.distance >= route.total then
-                lives_left = lives_left - 1
-                leaks = leaks + 1
-                play("sounds/game/leak.wav")
-                message("The keep is hit! " .. math.max(0, lives_left) .. " lives left", 1.5)
-                remove_enemy(index)
+                -- At the gate of the keep: two blows, then the life is lost.
+                foe.distance = route.total
+                foe.attack = (foe.attack or 0.0) + dt
+                local row = ATTACK_ROW + (math.floor(foe.attack / 0.18) % 2)
+                isometric.set_sprite_frame(foe.id, row * DIRECTIONS + direction_of(foe.dx, foe.dz))
+                if foe.attack >= 0.72 then
+                    lives_left = lives_left - 1
+                    leaks = leaks + 1
+                    play("sounds/game/leak.wav")
+                    emit(foe.x, foe.y + 0.5, foe.z, 5, 1.2, 0.9, 0.85, 0.7, 0.14, 0.4, 0.6)
+                    message("The keep is hit! " .. math.max(0, lives_left) .. " lives left", 1.5)
+                    remove_enemy(index, false)
+                else
+                    index = index + 1
+                end
             else
                 local x, y, z, dx, dz = along(foe.distance)
                 -- Walk beside the middle of the road, on the right of the heading.
@@ -652,9 +740,14 @@ local function update_enemies(dt)
                 if foe.bar ~= 0 then transform.set_position(foe.bar, billboard_at(x, y, z, BAR_HEIGHT[foe.kind])) end
                 if foe.shadow ~= 0 then transform.set_position(foe.shadow, x, y + 0.03, z) end
                 local tint = foe.frozen > 0.0 and "frozen" or (foe.slow > 0.0 and "slow" or (foe.burn > 0.0 and "burn" or "plain"))
+                if (foe.flash or 0.0) > 0.0 then
+                    foe.flash = foe.flash - dt
+                    tint = "flash"
+                end
                 if foe.tinted ~= tint then
                     foe.tinted = tint
-                    if tint == "frozen" then entity.set_tint(foe.id, 0.75, 0.95, 1.0, 1.0)
+                    if tint == "flash" then entity.set_tint(foe.id, 1.0, 0.4, 0.35, 1.0)
+                    elseif tint == "frozen" then entity.set_tint(foe.id, 0.75, 0.95, 1.0, 1.0)
                     elseif tint == "slow" then entity.set_tint(foe.id, 0.65, 0.82, 1.0, 1.0)
                     elseif tint == "burn" then entity.set_tint(foe.id, 1.0, 0.7, 0.5, 1.0)
                     else entity.set_tint(foe.id, 1.0, 1.0, 1.0, 1.0) end
@@ -672,7 +765,8 @@ local function close_ring()
     hover = 0
     show(ring_id, false)
     for _, id in ipairs(choice_ids) do show(id, false) end
-    show(hud.info, false)
+    for _, id in ipairs(wheel_ids.costs or {}) do show(id, false) end
+    for _, id in ipairs({ wheel_ids.ring, wheel_ids.plaque, wheel_ids.title, wheel_ids.text }) do show(id, false) end
 end
 
 local function in_range(tower, foe, range)
@@ -724,11 +818,14 @@ local function update_towers(dt)
         end
     end
     for _, tower in ipairs(towers) do
+        aim(tower, dt)
         tower.cooldown = tower.cooldown - dt
         if tower.cooldown <= 0.0 then
             local found = targets_of(tower, tower.power == "double" and 2 or 1)
             if #found > 0 then
                 for _, foe in ipairs(found) do fire(tower, foe) end
+                tower.aim_x, tower.aim_z = found[1].x, found[1].z
+                tower.kick = 0.15
                 tower.cooldown = tower.stats.reload
             else
                 tower.cooldown = 0.0
@@ -742,6 +839,8 @@ local function land(shot)
     if shot.kind == "cannon" then
         play("sounds/game/boom.wav")
         spawn_puff(shot.tx, shot.ty, shot.tz, 1.0, 0.7, 0.35, 1.6, 0.4)
+        emit(shot.tx, shot.ty + 0.1, shot.tz, 10, 2.2, 0.45, 0.36, 0.26, 0.11, 0.6, 1.5)
+        emit(shot.tx, shot.ty + 0.15, shot.tz, 6, 1.6, 1.0, 0.7, 0.25, 0.1, 0.35, 1.0)
         local radius = s.splash
         local hit = {}
         for _, foe in ipairs(enemies) do
@@ -760,6 +859,7 @@ local function land(shot)
     if foe == nil or foe.dead then return end
     if shot.kind == "archer" then
         play("sounds/game/hit.wav")
+        emit(foe.x, foe.y + 0.35, foe.z, 3, 1.0, 0.95, 0.85, 0.6, 0.07, 0.25, 0.6)
         if shot.power == "pierce" then
             local behind = {}
             for _, other in ipairs(enemies) do
@@ -779,6 +879,7 @@ local function land(shot)
             if foe.frost_hits % 3 == 0 then foe.frozen = freeze_time end
         end
         spawn_puff(foe.x, foe.y + 0.3, foe.z, 0.6, 0.85, 1.0, 0.7, 0.3)
+        emit(foe.x, foe.y + 0.35, foe.z, 5, 1.2, 0.75, 0.92, 1.0, 0.08, 0.4, 0.4)
         hurt(foe, s.damage)
     end
 end
@@ -814,6 +915,19 @@ local function update_projectiles(dt)
                 shot.x, shot.y, shot.z = shot.x + dx / distance * step, shot.y + dy / distance * step,
                         shot.z + dz / distance * step
                 if shot.kind == "archer" then transform.set_rotation(shot.id, 0.0, 0.0, screen_roll(dx, dy, dz)) end
+            end
+        end
+        shot.trail = (shot.trail or 0.0) - dt
+        if shot.trail <= 0.0 and not arrived then
+            shot.trail = 0.035
+            if shot.power == "fire" then
+                emit(shot.x, shot.y, shot.z, 1, 0.25, 1.0, 0.55, 0.15, 0.16, 0.35, 0.3)
+            elseif shot.kind == "frost" then
+                emit(shot.x, shot.y, shot.z, 1, 0.15, 0.7, 0.9, 1.0, 0.09, 0.3, 0.0)
+            elseif shot.kind == "cannon" then
+                emit(shot.x, shot.y, shot.z, 1, 0.1, 0.55, 0.55, 0.55, 0.12, 0.4, 0.2)
+            else
+                emit(shot.x, shot.y, shot.z, 1, 0.05, 0.95, 0.92, 0.8, 0.05, 0.18, 0.0)
             end
         end
         if arrived then
@@ -858,14 +972,49 @@ local function update_effects(dt)
     end
 end
 
--- The build ring ------------------------------------------------------------------------------------------------------
+-- The build wheel -----------------------------------------------------------------------------------------------------
 
--- The badges over a pad, spread along the screen.
-local function badge_position(pad, slot, count)
-    local height = pad.tower ~= nil and SHOT_HEIGHT[pad.tower.level] + 0.9 or 1.25
-    local offset = (slot - (count + 1) * 0.5) * 0.62
-    local r = basis.right
-    return pad.x + r[1] * offset, pad.y + height, pad.z + r[3] * offset
+-- Pixels of the wheel around its centre, on the screen: the ring, the badges on it, the scroll with the info below.
+local WHEEL = { ring = 196, badge = 58, radius = 64, cost = 19, cost_drop = 40, plaque_w = 330, plaque_h = 113,
+                plaque_drop = 168, title = 22, text = 15, line = 18, margin = 16 }
+-- Angles of the badges (degrees, counter-clockwise from the right) for 1 to 4 choices.
+local WHEEL_ANGLES = { { 90 }, { 150, 30 }, { 150, 30, 270 }, { 135, 45, 315, 225 } }
+local WRAP = 38   -- characters of a line of the info
+
+-- The pixel of a world point and the world size of a pixel there, through the camera.
+local function project(x, y, z)
+    local width, height = scene.get_viewport_size()
+    if width == nil or width <= 0 then width, height = 1280, 720 end
+    local dx, dy, dz = x - view.eye[1], y - view.eye[2], z - view.eye[3]
+    local f, r, u = basis.forward, basis.right, basis.up
+    local depth = math.max(0.1, dx * f[1] + dy * f[2] + dz * f[3])
+    local half = math.tan(camera_fov * 0.5)
+    local aspect = width / height
+    local sx = (dx * r[1] + dy * r[2] + dz * r[3]) / (depth * half * aspect)
+    local sy = (dx * u[1] + dy * u[2] + dz * u[3]) / (depth * half)
+    return (sx + 1.0) * 0.5 * width, (1.0 - sy) * 0.5 * height, 2.0 * depth * half / height, width, height
+end
+
+-- A world point moved by pixels on the screen (right, up) at the depth of a point.
+local function screen_offset(x, y, z, px, py, unit, behind)
+    local r, u, f = basis.right, basis.up, basis.forward
+    behind = behind or 0.0
+    return x + (r[1] * px + u[1] * py) * unit + f[1] * behind, y + (r[2] * px + u[2] * py) * unit + f[2] * behind,
+            z + (r[3] * px + u[3] * py) * unit + f[3] * behind
+end
+
+local function wrap(text)
+    local lines, current = {}, ""
+    for word in string.gmatch(text, "%S+") do
+        if #current > 0 and #current + 1 + #word > WRAP then
+            lines[#lines + 1] = current
+            current = word
+        else
+            current = #current > 0 and (current .. " " .. word) or word
+        end
+    end
+    if #current > 0 then lines[#lines + 1] = current end
+    return table.concat(lines, "\n")
 end
 
 local function show_range(pad, range)
@@ -873,12 +1022,12 @@ local function show_range(pad, range)
         show(ring_id, false)
         return
     end
-    transform.set_position(ring_id, pad.x, pad.y + 0.03, pad.z)
+    transform.set_position(ring_id, pad.x, pad.y + PAD_TOP + 0.03, pad.z)
     transform.set_scale(ring_id, range * 2.0, range * 2.0, 1.0)
     show(ring_id, true)
 end
 
--- The range a choice of the ring would give.
+-- The range a choice of the wheel would give.
 local function range_of_choice(pad, choice)
     if choice == nil or choice.kind == "sell" then
         return pad.tower ~= nil and pad.tower.stats.range or nil
@@ -902,74 +1051,87 @@ local function height_text(pad)
     return string.format(" High ground: +%d %% range.", math.floor(height_bonus * pad.level * 100 + 0.5))
 end
 
-local function refresh_info()
-    if ring == nil then
-        show(hud.info, false)
-        return
+local function set_world_text(id, text)
+    if id ~= 0 and wheel_shown[id] ~= text then
+        ui.set_text(id, text)
+        wheel_shown[id] = text
     end
-    local pad = ring.pad
-    local choice = ring.choices[hover]
-    show(hud.info, true)
-    show_range(pad, range_of_choice(pad, choice))
+end
+
+-- The title and the text of the scroll for the choice under the cursor (or the pad itself).
+local function info_of(pad, choice)
     local tower = pad.tower
     if choice == nil then
         if tower == nil then
-            ui.set_image_frame(hud.info_icon, ICON.archer)
-            set_text("info_title", "Build pad")
-            set_text("info_text", string.format("Archer %d, cannon %d, frost %d gold.%s", stats.archer.cost,
-                    stats.cannon.cost, stats.frost.cost, height_text(pad)))
-        else
-            ui.set_image_frame(hud.info_icon, ICON[tower.power or tower.kind])
-            set_text("info_title", NAMES[tower.kind] .. " - level " .. tower.level ..
-                    (tower.power and (", " .. POWER_NAMES[tower.power]) or ""))
-            set_text("info_text", "Point at a badge." .. height_text(pad))
+            return "Build pad", "Choose a tower." .. height_text(pad)
         end
-        return
+        return NAMES[tower.kind] .. " - level " .. tower.level,
+                (tower.power and (POWER_NAMES[tower.power] .. ". ") or "") .. "Choose a badge." .. height_text(pad)
     end
     local kind = choice.kind
     local price = choice_price(pad, choice)
+    local short = gold < price and ("Not enough gold: " .. price - gold .. " more.") or nil
     if kind == "sell" then
-        ui.set_image_frame(hud.info_icon, ICON.sell)
-        set_text("info_title", "Sell for " .. refund_of(tower) .. " gold")
-        set_text("info_text", "Half of what this tower cost (X, pad X).")
+        return "Sell for " .. refund_of(tower) .. " gold", "Half of what this tower cost."
     elseif kind == "upgrade" then
-        ui.set_image_frame(hud.info_icon, ICON.upgrade)
-        set_text("info_title", NAMES[tower.kind] .. " to level " .. (tower.level + 1) .. " - " .. price .. " gold")
-        set_text("info_text", gold >= price and LEVEL_TEXT[tower.kind][tower.level + 1]
-                or ("Not enough gold: " .. price - gold .. " more."))
+        return NAMES[tower.kind] .. " to level " .. (tower.level + 1), short or LEVEL_TEXT[tower.kind][tower.level + 1]
     elseif POWER_NAMES[kind] ~= nil then
-        ui.set_image_frame(hud.info_icon, choice.locked and ICON.locked or ICON[kind])
-        set_text("info_title", POWER_NAMES[kind] .. " - " .. price .. " gold")
-        if choice.locked then
-            set_text("info_text", "Unlocked by winning " .. UNLOCK_NAME .. ".")
-        else
-            set_text("info_text", gold >= price and POWER_TEXT[kind] or ("Not enough gold: " .. price - gold .. " more."))
-        end
-    else
-        ui.set_image_frame(hud.info_icon, ICON[kind])
-        set_text("info_title", NAMES[kind] .. " - " .. price .. " gold")
-        set_text("info_text", (gold >= price and BLURBS[kind] or ("Not enough gold: " .. price - gold .. " more."))
-                .. height_text(pad))
+        if choice.locked then return POWER_NAMES[kind], "Unlocked by winning " .. UNLOCK_NAME .. "." end
+        return POWER_NAMES[kind], short or POWER_TEXT[kind]
     end
+    return NAMES[kind], (short or BLURBS[kind]) .. height_text(pad)
+end
+
+-- Place the wheel beside its pad on the screen, kept inside the view clear of the HUD, at a constant pixel size.
+local function place_wheel()
+    if ring == nil then return end
+    local pad = ring.pad
+    local lift = pad.tower ~= nil and SHOT_HEIGHT[pad.tower.level] * 0.6 or 0.6
+    local ax, ay, az = pad.x, pad.y + lift, pad.z
+    local px, py, unit, width, height = project(ax, ay, az)
+    local half_w = math.max(WHEEL.ring, WHEEL.plaque_w) * 0.5
+    local low, high = WHEEL.plaque_drop + WHEEL.plaque_h * 0.5, WHEEL.ring * 0.5
+    local cx = math.max(WHEEL.margin + half_w, math.min(width - WHEEL.margin - half_w, px))
+    local cy = math.max(height * 0.2 + high, math.min(height * 0.89 - low, py))
+    local cwx, cwy, cwz = screen_offset(ax, ay, az, cx - px, py - cy, unit)
+    ring.unit = unit
+    transform.set_position(wheel_ids.ring, screen_offset(cwx, cwy, cwz, 0, 0, unit, 0.2))
+    transform.set_scale(wheel_ids.ring, WHEEL.ring * unit, WHEEL.ring * unit, 1.0)
+    local angles = WHEEL_ANGLES[#ring.choices] or WHEEL_ANGLES[4]
+    for index, choice in ipairs(ring.choices) do
+        local a = math.rad(angles[index])
+        local bx, by = math.cos(a) * WHEEL.radius, math.sin(a) * WHEEL.radius
+        transform.set_position(choice.id, screen_offset(cwx, cwy, cwz, bx, by, unit))
+        local size = (index == hover and 1.18 or 1.0) * WHEEL.badge * unit
+        transform.set_scale(choice.id, size, size, 1.0)
+        local cost = wheel_ids.costs[index]
+        if cost ~= nil then
+            local price = choice_price(pad, choice)
+            local text = choice.kind == "sell" and ("+" .. refund_of(pad.tower)) or (choice.locked and "" or tostring(price))
+            set_world_text(cost, text)
+            transform.set_position(cost, screen_offset(cwx, cwy, cwz, bx, by - WHEEL.cost_drop, unit, -0.1))
+            transform.set_scale(cost, WHEEL.cost * unit, WHEEL.cost * unit, 1.0)
+        end
+    end
+    local title, text = info_of(pad, ring.choices[hover])
+    set_world_text(wheel_ids.title, title)
+    set_world_text(wheel_ids.text, wrap(text))
+    local top = -WHEEL.plaque_drop + WHEEL.plaque_h * 0.5
+    transform.set_position(wheel_ids.plaque, screen_offset(cwx, cwy, cwz, 0, -WHEEL.plaque_drop, unit, 0.2))
+    transform.set_scale(wheel_ids.plaque, WHEEL.plaque_w * unit, WHEEL.plaque_h * unit, 1.0)
+    transform.set_position(wheel_ids.title, screen_offset(cwx, cwy, cwz, 0, top - 32, unit, -0.1))
+    transform.set_scale(wheel_ids.title, WHEEL.title * unit, WHEEL.title * unit, 1.0)
+    transform.set_position(wheel_ids.text, screen_offset(cwx, cwy, cwz, 0, top - 62, unit, -0.1))
+    transform.set_scale(wheel_ids.text, WHEEL.text * unit, WHEEL.text * unit, 1.0)
+    show_range(pad, range_of_choice(pad, ring.choices[hover]))
 end
 
 local function refresh_badges()
     if ring == nil then return end
-    for index, choice in ipairs(ring.choices) do
-        local lit = index == hover
+    for _, choice in ipairs(ring.choices) do
         local afford = choice.kind == "sell" or (not choice.locked and gold >= choice_price(ring.pad, choice))
-        local base = afford and 1.0 or 0.45
-        local glow = lit and 1.0 or 0.85
-        entity.set_tint(choice.id, base * glow, base * glow, base * glow * (afford and 1.0 or 0.9), 1.0)
-        local size = lit and 0.68 or 0.55
-        transform.set_scale(choice.id, size, size, 1.0)
-    end
-end
-
-local function place_badges()
-    if ring == nil then return end
-    for index, choice in ipairs(ring.choices) do
-        transform.set_position(choice.id, badge_position(ring.pad, index, #ring.choices))
+        local base = afford and 1.0 or 0.5
+        entity.set_tint(choice.id, base, base, base * (afford and 1.0 or 0.9), 1.0)
     end
 end
 
@@ -994,14 +1156,15 @@ local function open_ring(pad)
             local kind, locked = entry[1], entry[2] == true
             isometric.set_sprite_frame(id, locked and ICON.locked or ICON[kind])
             show(id, true)
+            show(wheel_ids.costs[index], true)
             ring.choices[#ring.choices + 1] = { kind = kind, id = id, locked = locked }
         end
     end
-    place_badges()
+    for _, id in ipairs({ wheel_ids.ring, wheel_ids.plaque, wheel_ids.title, wheel_ids.text }) do show(id, true) end
     hover = pad_mode and 1 or 0
     play("sounds/ui/click.wav")
     refresh_badges()
-    refresh_info()
+    place_wheel()
 end
 
 local function tower_prefab(tower)
@@ -1009,10 +1172,43 @@ local function tower_prefab(tower)
     return "prefabs/tower_" .. tower.kind .. "_" .. key .. ".owlprefab"
 end
 
+-- Spawn the prefab of a tower at its level and keep its weapons (the meshes tagged `TowerWeapon`), which turn to
+-- their target and recoil at each shot.
 local function place_tower(tower)
     if tower.id ~= nil and tower.id ~= 0 then scene.destroy_entity(tower.id) end
+    local before = {}
+    for _, id in ipairs(scene.find_entities("TowerWeapon")) do before[id] = true end
     tower.id = scene.spawn_prefab(tower_prefab(tower), tower.x, tower.y + PAD_TOP, tower.z)
     tower.stats = tower_stats(tower)
+    tower.weapons = {}
+    for _, id in ipairs(scene.find_entities("TowerWeapon")) do
+        if not before[id] then
+            local x, y, z = transform.get_position(id)
+            local sx = transform.get_scale(id)
+            tower.weapons[#tower.weapons + 1] = { id = id, x = x, y = y, z = z, scale = sx }
+        end
+    end
+    tower.kick = 0.0
+end
+
+-- Turn the weapons of a tower toward its target, recoiling after a shot (`tower.kick`); the crystals pulse instead.
+function aim(tower, dt)
+    tower.kick = math.max(0.0, (tower.kick or 0.0) - dt)
+    local push = tower.kick / 0.15
+    if tower.aim_x ~= nil then
+        tower.yaw = math.atan(tower.aim_x - tower.x, tower.aim_z - tower.z) + weapon_yaw
+    end
+    local yaw = tower.yaw or 0.0
+    for _, weapon in ipairs(tower.weapons or {}) do
+        if tower.kind == "frost" then
+            local size = weapon.scale * (1.0 + 0.25 * push)
+            transform.set_scale(weapon.id, size, size, size)
+        else
+            transform.set_rotation(weapon.id, 0.0, yaw, 0.0)
+            local back = 0.12 * push
+            transform.set_position(weapon.id, weapon.x - math.sin(yaw) * back, weapon.y, weapon.z - math.cos(yaw) * back)
+        end
+    end
 end
 
 local function build(pad, kind)
@@ -1151,8 +1347,7 @@ local function hover_badge()
     end
     if found ~= hover then
         hover = found
-        refresh_badges()
-        refresh_info()
+        place_wheel()
     end
 end
 
@@ -1221,8 +1416,7 @@ local function handle_input()
         pad_mode = true
         if ring ~= nil and #ring.choices > 1 then
             hover = (math.max(hover, 1) - 1 + step) % #ring.choices + 1
-            refresh_badges()
-            refresh_info()
+            place_wheel()
         else
             close_ring()
             step_cursor(step)
@@ -1306,9 +1500,8 @@ local function update_hud()
     end
     set_text("speed", fast and "Speed x2" or "Speed x1")
     if ring ~= nil then
-        refresh_info()
         refresh_badges()
-        place_badges()
+        place_wheel()
     end
 end
 
@@ -1444,10 +1637,13 @@ function on_update(dt)
     end
     if not paused then update_camera(real_dt) end
     update_sky(dt)
+    wave_banners()
     if route ~= nil then update_enemies(dt) end
     update_towers(dt)
     update_projectiles(dt)
     update_effects(dt)
+    update_corpses(dt)
+    update_sparks(dt)
     if ending == nil then check_end() end
     if paused then
         -- Measured from the end of the frame the pause was asked in: the clock stops from the next one.

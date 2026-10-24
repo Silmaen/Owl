@@ -20,16 +20,18 @@ from dataclasses import dataclass, field
 
 from PIL import Image
 
-CELL = 64
+CELL = 96
 """Side of a sprite cell, in pixels."""
-PPU = 46.0
+PPU = 80.0
 """Pixels per world unit of the sprites."""
-FOOT = (32, 54)
+FOOT = (48, 82)
 """Pixel of the foot of a creature in its cell."""
 DIRECTIONS = 8
 """Directions of a sheet (columns)."""
-FRAMES = 4
-"""Walk frames of a sheet (rows)."""
+WALK, ATTACK, DEATH = 4, 2, 3
+"""Frames of the walk cycle, of the blow at the keep and of the fall."""
+FRAMES = WALK + ATTACK + DEATH
+"""Rows of a sheet: the walk, then the attack, then the death."""
 ELEVATION = math.radians(42.0)
 """Angle of the view above the horizon, the pitch of the game camera."""
 LIGHT = (-0.45, 0.75, 0.48)
@@ -149,26 +151,41 @@ class Model:
         self.parts.append(Part(points, colour, bone))
 
 
-def _pose(model: Model, bone: str, point: Vec, phase: float) -> Vec:
-    """A point moved by its bone at a phase of the walk cycle."""
-    swing = math.sin(phase)
-    angle = 0.0
-    if bone == "leg_l":
-        angle = model.stride * swing
-    elif bone == "leg_r":
-        angle = -model.stride * swing
-    elif bone in ("arm_l",):
-        angle = -0.7 * model.stride * swing
-    elif bone in ("arm_r", "weapon"):
-        angle = 0.5 * model.stride * swing
-    lift = model.bob * abs(math.cos(phase))
+def _limb_angle(model: Model, bone: str, row: int) -> float:
+    """Swing of a limb (radians, around the X axis at its joint) in a row of the sheet."""
+    if row < WALK:
+        swing = math.sin(row * 2.0 * math.pi / WALK)
+        return {
+            "leg_l": model.stride * swing,
+            "leg_r": -model.stride * swing,
+            "arm_l": -0.7 * model.stride * swing,
+            "arm_r": 0.5 * model.stride * swing,
+            "weapon": 0.5 * model.stride * swing,
+        }.get(bone, 0.0)
+    if row < WALK + ATTACK:
+        raised = row == WALK
+        return {"arm_r": -2.4 if raised else 0.6, "weapon": -2.4 if raised else 0.6, "arm_l": -0.4}.get(bone, 0.0)
+    return {"arm_r": -1.2, "weapon": -1.2, "arm_l": -1.0, "leg_l": 0.3, "leg_r": -0.2}.get(bone, 0.0)
+
+
+def _pose(model: Model, bone: str, point: Vec, row: int) -> Vec:
+    """A point moved by its bone in a row of the sheet: the walk, the blow, or the fall backwards."""
+    angle = _limb_angle(model, bone, row)
     if angle != 0.0:
         pivot = model.pivots.get("hip" if bone.startswith("leg") else "shoulder", (0.0, 0.0, 0.0))
-        local = (point[0] - pivot[0], point[1] - pivot[1], point[2] - pivot[2])
-        local = _rot_x(local, angle)
+        local = _rot_x((point[0] - pivot[0], point[1] - pivot[1], point[2] - pivot[2]), angle)
         point = (local[0] + pivot[0], local[1] + pivot[1], local[2] + pivot[2])
-    if not bone.startswith("leg"):
-        point = (point[0], point[1] + lift, point[2])
+    if row < WALK:
+        lift = model.bob * abs(math.cos(row * 2.0 * math.pi / WALK))
+        if not bone.startswith("leg"):
+            point = (point[0], point[1] + lift, point[2])
+    elif row < WALK + ATTACK:
+        lean = 0.12 if row == WALK + 1 else -0.08
+        point = _rot_x(point, lean)
+    else:
+        fall = (row - WALK - ATTACK + 1) / DEATH
+        point = _rot_x(point, -1.45 * fall)
+        point = (point[0], point[1] + 0.04 * fall, point[2])
     return point
 
 
@@ -177,22 +194,20 @@ def _shade(colour: RGB, factor: float) -> tuple[int, int, int, int]:
     return r, g, b, 255
 
 
-def render(model: Model, direction: int, frame: int) -> Image.Image:
-    """One cell: the creature facing a direction of the sheet, at a frame of its walk."""
+def render(model: Model, direction: int, row: int) -> Image.Image:
+    """One cell: the creature facing a direction of the sheet, in a row of its animation."""
     yaw = direction * 2.0 * math.pi / DIRECTIONS
-    phase = frame * 2.0 * math.pi / FRAMES
     ce, se = math.cos(ELEVATION), math.sin(ELEVATION)
     light = _norm(LIGHT)
     depth: dict[tuple[int, int], float] = {}
     colour: dict[tuple[int, int], tuple[int, int, int, int]] = {}
     for part in model.parts:
         for point, normal in part.points:
-            moved = _pose(model, part.bone, point, phase)
+            moved = _pose(model, part.bone, point, row)
             world = _rot_y(moved, yaw)
             n = _rot_y(normal, yaw)
-            if part.bone.startswith(("leg", "arm", "weapon")):
-                # Normals of a swung limb are close enough unturned at this size.
-                pass
+            if row >= WALK + ATTACK:
+                n = _rot_y(_rot_x(normal, -1.45 * (row - WALK - ATTACK + 1) / DEATH), yaw)
             sx = world[0]
             sy = world[1] * ce - world[2] * se
             d = world[2] * ce + world[1] * se
@@ -200,7 +215,9 @@ def render(model: Model, direction: int, frame: int) -> Image.Image:
             if nv[2] < -0.35:
                 continue
             k = nv[0] * light[0] + nv[1] * light[1] + nv[2] * light[2]
-            shade = 1.18 if k > 0.6 else (1.0 if k > 0.12 else 0.72)
+            shade = 1.25 if k > 0.72 else (1.05 if k > 0.35 else (0.86 if k > 0.0 else 0.64))
+            if nv[2] < 0.25 and k < 0.2:
+                shade += 0.12
             px = int(round(FOOT[0] + sx * PPU))
             py = int(round(FOOT[1] - sy * PPU))
             for dx, dy in ((0, 0), (1, 0), (0, 1), (1, 1)):
@@ -213,95 +230,139 @@ def render(model: Model, direction: int, frame: int) -> Image.Image:
     assert pixels is not None
     for (x, y), c in colour.items():
         pixels[x, y] = c
-    # A dark rim on the silhouette, one pixel inside it.
+    # A dark line one pixel outside the silhouette, and a softer one where two depths meet inside it.
     for (x, y), c in colour.items():
-        if any((x + dx, y + dy) not in colour for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1))):
-            pixels[x, y] = (int(c[0] * 0.38), int(c[1] * 0.38), int(c[2] * 0.38), 255)
+        for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            other = (x + dx, y + dy)
+            if other not in colour and 0 <= other[0] < CELL and 0 <= other[1] < CELL:
+                pixels[other[0], other[1]] = (24, 16, 10, 255)
+        below = (x, y + 1)
+        if below in depth and depth[below] - depth[(x, y)] > 0.08:
+            pixels[x, y] = (int(c[0] * 0.55), int(c[1] * 0.55), int(c[2] * 0.55), 255)
     return image
 
 
 def sheet(model: Model) -> Image.Image:
-    """Every direction (columns) and walk frame (rows) of a creature."""
+    """Every direction (columns) and animation frame (rows) of a creature."""
     image = Image.new("RGBA", (CELL * DIRECTIONS, CELL * FRAMES), (0, 0, 0, 0))
-    for frame in range(FRAMES):
+    for row in range(FRAMES):
         for direction in range(DIRECTIONS):
-            image.paste(render(model, direction, frame), (direction * CELL, frame * CELL))
+            image.paste(render(model, direction, row), (direction * CELL, row * CELL))
     return image
 
 
-SKIN = (96, 150, 58)
-SKIN_DARK = (70, 112, 44)
-LEATHER = (110, 72, 42)
-CLOTH_RED = (150, 34, 28)
-METAL = (150, 152, 162)
-BONE = (232, 224, 196)
-WOOD = (120, 80, 44)
-EYE = (250, 220, 60)
-OGRE_SKIN = (196, 140, 96)
+SKIN = (104, 158, 60)
+SKIN_DARK = (74, 118, 44)
+GRUNT_SKIN = (84, 132, 58)
+LEATHER = (118, 76, 42)
+LEATHER_DARK = (78, 50, 30)
+CLOTH_RED = (164, 36, 30)
+CLOTH_BLACK = (44, 38, 40)
+METAL = (160, 162, 172)
+METAL_DARK = (96, 98, 108)
+GOLD = (220, 176, 70)
+BONE = (236, 228, 200)
+WOOD = (126, 84, 46)
+EYE = (255, 214, 40)
+RED_EYE = (240, 50, 30)
+OGRE_SKIN = (214, 148, 96)
+OGRE_DARK = (170, 110, 70)
+BLUE_CLOTH = (60, 84, 150)
 
 
 def goblin() -> Model:
-    """A goblin, 0.5 tall: big ears, a long nose, a rag tunic and a dagger."""
-    m = Model(stride=0.7, bob=0.025)
-    m.pivots = {"hip": (0.0, 0.16, 0.0), "shoulder": (0.0, 0.3, 0.0)}
+    """A goblin, 0.55 tall: huge pointed ears, a long nose, red eyes, a leather vest and belt, a curved dagger."""
+    m = Model(stride=0.75, bob=0.03)
+    m.pivots = {"hip": (0.0, 0.17, 0.0), "shoulder": (0.0, 0.32, 0.0)}
     for side, bone in ((1.0, "leg_l"), (-1.0, "leg_r")):
-        m.capsule((side * 0.055, 0.15, 0.0), (side * 0.06, 0.04, 0.0), 0.03, SKIN_DARK, bone)
-        m.ellipsoid((side * 0.06, 0.025, 0.025), (0.035, 0.025, 0.05), LEATHER, bone)
-    m.ellipsoid((0.0, 0.23, 0.0), (0.085, 0.1, 0.07), LEATHER)
-    m.ellipsoid((0.0, 0.17, 0.0), (0.09, 0.035, 0.075), (80, 50, 30))
-    m.ellipsoid((0.0, 0.37, 0.02), (0.075, 0.068, 0.07), SKIN)
-    m.ellipsoid((0.0, 0.36, 0.09), (0.02, 0.018, 0.035), SKIN_DARK)
+        m.capsule((side * 0.055, 0.16, 0.0), (side * 0.065, 0.05, 0.01), 0.032, SKIN_DARK, bone)
+        m.ellipsoid((side * 0.068, 0.03, 0.035), (0.04, 0.028, 0.06), LEATHER_DARK, bone)
+    m.ellipsoid((0.0, 0.18, 0.0), (0.085, 0.045, 0.07), LEATHER_DARK)
+    m.ellipsoid((0.0, 0.25, 0.005), (0.085, 0.09, 0.07), LEATHER)
+    m.ellipsoid((0.0, 0.25, 0.06), (0.03, 0.08, 0.02), SKIN)
+    m.box((0.0, 0.195, 0.07), (0.022, 0.016, 0.006), GOLD)
+    m.ellipsoid((0.0, 0.4, 0.02), (0.078, 0.07, 0.072), SKIN)
+    m.ellipsoid((0.0, 0.385, 0.1), (0.022, 0.02, 0.045), SKIN_DARK)
+    m.ellipsoid((0.0, 0.355, 0.075), (0.04, 0.012, 0.012), BONE)
     for side in (1.0, -1.0):
-        m.ellipsoid((side * 0.105, 0.39, 0.0), (0.065, 0.017, 0.028), SKIN)
-        m.ellipsoid((side * 0.03, 0.385, 0.075), (0.013, 0.012, 0.01), EYE)
-    m.capsule((0.09, 0.3, 0.0), (0.11, 0.19, 0.04), 0.022, SKIN, "arm_l")
-    m.capsule((-0.09, 0.3, 0.0), (-0.11, 0.19, 0.04), 0.022, SKIN, "arm_r")
-    m.capsule((-0.11, 0.19, 0.05), (-0.11, 0.3, 0.12), 0.012, METAL, "weapon")
+        m.ellipsoid((side * 0.12, 0.43, -0.01), (0.075, 0.018, 0.03), SKIN)
+        m.ellipsoid((side * 0.115, 0.43, 0.0), (0.05, 0.01, 0.018), (200, 120, 110))
+        m.ellipsoid((side * 0.032, 0.41, 0.078), (0.014, 0.012, 0.01), RED_EYE)
+    m.ellipsoid((0.0, 0.455, -0.01), (0.05, 0.018, 0.05), LEATHER_DARK)
+    m.capsule((0.09, 0.31, 0.0), (0.115, 0.2, 0.04), 0.022, SKIN, "arm_l")
+    m.capsule((-0.09, 0.31, 0.0), (-0.115, 0.2, 0.04), 0.022, SKIN, "arm_r")
+    m.capsule((-0.115, 0.2, 0.05), (-0.11, 0.33, 0.13), 0.012, METAL, "weapon")
+    m.capsule((-0.115, 0.19, 0.03), (-0.115, 0.215, 0.07), 0.016, LEATHER_DARK, "weapon")
     return m
 
 
 def grunt() -> Model:
-    """An orc grunt, 0.75 tall: broad shoulders under red armour and pads, tusks, an axe."""
-    m = Model(stride=0.55, bob=0.02)
-    m.pivots = {"hip": (0.0, 0.24, 0.0), "shoulder": (0.0, 0.48, 0.0)}
+    """An orc grunt, 0.8 tall: a black topknot, tusks, red armour under spiked iron pauldrons, a heavy axe."""
+    m = Model(stride=0.55, bob=0.025)
+    m.pivots = {"hip": (0.0, 0.25, 0.0), "shoulder": (0.0, 0.5, 0.0)}
     for side, bone in ((1.0, "leg_l"), (-1.0, "leg_r")):
-        m.capsule((side * 0.08, 0.23, 0.0), (side * 0.085, 0.06, 0.0), 0.05, LEATHER, bone)
-        m.ellipsoid((side * 0.085, 0.035, 0.03), (0.05, 0.035, 0.07), (60, 42, 30), bone)
-    m.ellipsoid((0.0, 0.38, 0.0), (0.155, 0.15, 0.11), CLOTH_RED)
-    m.ellipsoid((0.0, 0.26, 0.0), (0.13, 0.04, 0.1), (70, 46, 28))
-    m.ellipsoid((0.0, 0.31, 0.105), (0.04, 0.035, 0.012), METAL)
+        m.capsule((side * 0.085, 0.24, 0.0), (side * 0.09, 0.07, 0.0), 0.052, LEATHER, bone)
+        m.capsule((side * 0.09, 0.13, 0.0), (side * 0.09, 0.07, 0.0), 0.058, LEATHER_DARK, bone)
+        m.ellipsoid((side * 0.092, 0.04, 0.035), (0.058, 0.04, 0.08), METAL_DARK, bone)
+    m.ellipsoid((0.0, 0.27, 0.0), (0.14, 0.05, 0.11), LEATHER_DARK)
+    m.box((0.0, 0.25, 0.1), (0.05, 0.06, 0.012), CLOTH_RED)
+    m.ellipsoid((0.0, 0.4, 0.0), (0.16, 0.15, 0.115), CLOTH_RED)
+    m.ellipsoid((0.0, 0.42, 0.06), (0.11, 0.1, 0.07), GRUNT_SKIN)
+    m.ellipsoid((0.0, 0.31, 0.0), (0.15, 0.025, 0.115), LEATHER_DARK)
+    m.box((0.0, 0.31, 0.115), (0.03, 0.022, 0.008), GOLD)
     for side in (1.0, -1.0):
-        m.ellipsoid((side * 0.17, 0.48, 0.0), (0.075, 0.05, 0.075), METAL)
-    m.ellipsoid((0.0, 0.58, 0.03), (0.085, 0.08, 0.082), SKIN)
-    m.ellipsoid((0.0, 0.545, 0.075), (0.06, 0.035, 0.04), SKIN_DARK)
+        m.ellipsoid((side * 0.18, 0.5, 0.0), (0.085, 0.055, 0.085), METAL)
+        for spike in (-0.04, 0.04):
+            m.capsule((side * 0.2, 0.55, spike), (side * 0.24, 0.62, spike), 0.012, METAL_DARK, end_radius=0.003)
+    m.ellipsoid((0.0, 0.61, 0.03), (0.088, 0.085, 0.085), GRUNT_SKIN)
+    m.ellipsoid((0.0, 0.57, 0.08), (0.065, 0.04, 0.045), SKIN_DARK)
+    m.ellipsoid((0.0, 0.69, -0.02), (0.05, 0.03, 0.05), CLOTH_BLACK)
+    m.capsule((0.0, 0.7, -0.05), (0.0, 0.78, -0.08), 0.022, CLOTH_BLACK)
     for side in (1.0, -1.0):
-        m.ellipsoid((side * 0.035, 0.56, 0.11), (0.011, 0.025, 0.011), BONE)
-        m.ellipsoid((side * 0.03, 0.605, 0.09), (0.014, 0.01, 0.01), (230, 60, 30))
-    m.capsule((0.17, 0.46, 0.0), (0.19, 0.3, 0.05), 0.04, SKIN, "arm_l")
-    m.capsule((-0.17, 0.46, 0.0), (-0.19, 0.3, 0.05), 0.04, SKIN, "arm_r")
-    m.capsule((-0.19, 0.28, 0.05), (-0.19, 0.55, 0.12), 0.016, WOOD, "weapon")
-    m.box((-0.19, 0.53, 0.17), (0.012, 0.07, 0.05), METAL, "weapon", tilt=0.3)
+        m.capsule((side * 0.035, 0.57, 0.115), (side * 0.045, 0.62, 0.13), 0.011, BONE)
+        m.ellipsoid((side * 0.032, 0.635, 0.093), (0.015, 0.01, 0.01), RED_EYE)
+    m.capsule((0.18, 0.48, 0.0), (0.2, 0.31, 0.05), 0.042, GRUNT_SKIN, "arm_l")
+    m.capsule((0.2, 0.36, 0.03), (0.2, 0.31, 0.05), 0.048, LEATHER_DARK, "arm_l")
+    m.capsule((-0.18, 0.48, 0.0), (-0.2, 0.31, 0.05), 0.042, GRUNT_SKIN, "arm_r")
+    m.capsule((-0.2, 0.36, 0.03), (-0.2, 0.31, 0.05), 0.048, LEATHER_DARK, "arm_r")
+    m.capsule((-0.2, 0.28, 0.05), (-0.2, 0.6, 0.13), 0.017, WOOD, "weapon")
+    m.box((-0.2, 0.57, 0.19), (0.014, 0.085, 0.065), METAL, "weapon", tilt=0.3)
+    m.box((-0.2, 0.57, 0.15), (0.016, 0.03, 0.02), METAL_DARK, "weapon", tilt=0.3)
     return m
 
 
 def ogre() -> Model:
-    """An ogre, a full unit tall: a huge belly, a small head, a loincloth and a club."""
-    m = Model(stride=0.4, bob=0.03)
-    m.pivots = {"hip": (0.0, 0.3, 0.0), "shoulder": (0.0, 0.66, 0.0)}
+    """A two-headed ogre, 1.05 tall: a huge belly, tusks, iron bracers, a blue loincloth and a spiked club."""
+    m = Model(stride=0.4, bob=0.035)
+    m.pivots = {"hip": (0.0, 0.3, 0.0), "shoulder": (0.0, 0.68, 0.0)}
     for side, bone in ((1.0, "leg_l"), (-1.0, "leg_r")):
-        m.capsule((side * 0.12, 0.3, 0.0), (side * 0.13, 0.07, 0.0), 0.075, OGRE_SKIN, bone)
-        m.ellipsoid((side * 0.13, 0.04, 0.04), (0.07, 0.04, 0.09), (90, 60, 40), bone)
-    m.ellipsoid((0.0, 0.48, 0.03), (0.24, 0.22, 0.2), OGRE_SKIN)
-    m.ellipsoid((0.0, 0.31, 0.02), (0.2, 0.06, 0.17), (90, 110, 150))
-    m.ellipsoid((0.0, 0.67, -0.02), (0.2, 0.08, 0.14), OGRE_SKIN)
-    m.ellipsoid((0.0, 0.8, 0.05), (0.095, 0.09, 0.09), OGRE_SKIN)
-    m.ellipsoid((0.0, 0.77, 0.12), (0.03, 0.025, 0.03), (170, 110, 80))
+        m.capsule((side * 0.12, 0.31, 0.0), (side * 0.13, 0.08, 0.0), 0.08, OGRE_SKIN, bone)
+        m.ellipsoid((side * 0.13, 0.045, 0.045), (0.075, 0.045, 0.1), OGRE_DARK, bone)
+    m.ellipsoid((0.0, 0.48, 0.04), (0.25, 0.23, 0.21), OGRE_SKIN)
+    m.ellipsoid((0.0, 0.44, 0.15), (0.17, 0.14, 0.1), (226, 166, 118))
+    m.ellipsoid((0.0, 0.31, 0.02), (0.21, 0.065, 0.18), BLUE_CLOTH)
+    m.box((0.0, 0.24, 0.15), (0.09, 0.07, 0.012), BLUE_CLOTH)
+    m.ellipsoid((0.0, 0.31, 0.19), (0.04, 0.03, 0.01), GOLD)
+    m.ellipsoid((0.0, 0.69, -0.02), (0.22, 0.09, 0.15), OGRE_SKIN)
     for side in (1.0, -1.0):
-        m.ellipsoid((side * 0.035, 0.82, 0.12), (0.016, 0.012, 0.01), EYE)
-        m.ellipsoid((side * 0.05, 0.745, 0.12), (0.01, 0.022, 0.01), BONE)
-    m.capsule((0.23, 0.64, 0.0), (0.27, 0.4, 0.06), 0.065, OGRE_SKIN, "arm_l")
-    m.capsule((-0.23, 0.64, 0.0), (-0.27, 0.4, 0.06), 0.065, OGRE_SKIN, "arm_r")
-    m.capsule((-0.27, 0.38, 0.06), (-0.28, 0.75, 0.2), 0.03, WOOD, "weapon", end_radius=0.07)
+        head = (side * 0.11, 0.82, 0.05)
+        m.ellipsoid(head, (0.085, 0.085, 0.085), OGRE_SKIN)
+        m.ellipsoid((head[0], 0.79, 0.12), (0.03, 0.025, 0.03), OGRE_DARK)
+        m.ellipsoid((head[0], 0.875, 0.04), (0.06, 0.02, 0.06), (70, 46, 30))
+        for eye in (-0.03, 0.03):
+            m.ellipsoid((head[0] + eye, 0.84, 0.125), (0.013, 0.011, 0.01), EYE)
+        for tusk in (-0.03, 0.03):
+            m.capsule((head[0] + tusk, 0.765, 0.12), (head[0] + tusk, 0.8, 0.135), 0.01, BONE)
+    m.capsule((0.24, 0.66, 0.0), (0.28, 0.42, 0.06), 0.066, OGRE_SKIN, "arm_l")
+    m.capsule((0.27, 0.48, 0.04), (0.28, 0.42, 0.06), 0.074, METAL_DARK, "arm_l")
+    m.capsule((-0.24, 0.66, 0.0), (-0.28, 0.42, 0.06), 0.066, OGRE_SKIN, "arm_r")
+    m.capsule((-0.27, 0.48, 0.04), (-0.28, 0.42, 0.06), 0.074, METAL_DARK, "arm_r")
+    m.capsule((-0.28, 0.38, 0.06), (-0.29, 0.8, 0.22), 0.03, WOOD, "weapon", end_radius=0.075)
+    for k in range(5):
+        a = k * 2.0 * math.pi / 5
+        base = (-0.29 + 0.06 * math.cos(a), 0.74, 0.2 + 0.06 * math.sin(a))
+        tip = (-0.29 + 0.11 * math.cos(a), 0.76, 0.2 + 0.11 * math.sin(a))
+        m.capsule(base, tip, 0.012, METAL, "weapon", end_radius=0.003)
     return m
 
 
