@@ -1,0 +1,15 @@
+# Tower defence world map: the first site is open and chosen, the road is traced to it; E and Q only move between
+# open sites; Enter marches to the level of the chosen site.
+scene: ../../../samples/tower_defence/scenes/world_map.owl
+steps:
+  - frames: 30
+  - expect: {gamestate: tower_map, equals: true}
+  - expect: {gamestate: tower_map_open, greater: 0}
+  - expect: {gamestate: tower_map_selected, greater: 0}
+  - input: {key: Q, frames: 2}
+  - frames: 2
+  - expect: {gamestate: tower_map_selected, equals: 1}
+  - input: {key: Enter, frames: 2}
+  - frames: 120
+  - expect: {entity: Terrain, exists: true}
+  - expect: {gamestate: tower_lives, greater: 19}

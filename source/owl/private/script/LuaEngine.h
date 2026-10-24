@@ -143,6 +143,15 @@ public:
 
 	/**
 	 * @brief
+	 *  Give the scripts of this state their `require`: `require("a.b")` reads the module file `a/b.lua` through the
+	 *  reader once, runs it as a text chunk and returns (and keeps) its result; a module requiring itself while it
+	 *  loads is an error.
+	 * @param[in] iReader The reader of the module files; empty to leave `require` raising an error.
+	 */
+	void setModuleReader(const ModuleReader& iReader) const;
+
+	/**
+	 * @brief
 	 *  Register C functions as a global table, each wrapped in the exception trampoline.
 	 *
 	 * The trampoline catches any C++ exception thrown by the function and raises it as a Lua error once

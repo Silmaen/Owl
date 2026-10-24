@@ -15,9 +15,10 @@
 struct Camera {
 	column_major float4x4 viewProjection;
 	// x: 1 when the target stores linear colour (the fragment colour is decoded from sRGB); y: 2D light count;
-	// zw unused.
+	// z: 1 when the 2D lights are on the ground plane (x, z) of a Y-up world (billboards); w: 1 for a layer of a
+	// 3D scene, whose unlit sprites are scaled by ambient.w.
 	int4 flags;
-	float4 ambient;// rgb: linear ambient of the 2D lights; w: 1 when the 2D lighting is on.
+	float4 ambient;// rgb: linear ambient of the 2D lights; w: 0 when the 2D lighting is off, else the exposure scale.
 };
 
 [[vk::binding(0)]]
@@ -73,7 +74,7 @@ struct FragmentInput {
 	[[vk::location(2)]] float2 tilingFactor : TEXCOORD1;
 	[[vk::location(3)]] nointerpolation int texIndex : TEXCOORD2;
 	[[vk::location(4)]] nointerpolation int entityID : TEXCOORD3;
-	[[vk::location(5)]] float2 worldPos : TEXCOORD4;
+	[[vk::location(5)]] float2 worldPos : TEXCOORD4;// in the plane of the 2D lights: xy, or xz on the ground plane.
 	[[vk::location(6)]] nointerpolation int normalIndex : TEXCOORD5;
 	[[vk::location(7)]] nointerpolation uint flags : TEXCOORD6;
 	[[vk::location(8)]] nointerpolation float4 axes : TEXCOORD7;// xy: world X axis of the sprite, zw: its Y axis.
@@ -122,7 +123,7 @@ VertexOutput vertexMain(VertexInput input, uint iid : SV_InstanceID) {
 	output.frag.tilingFactor = inst.tilingFactor;
 	output.frag.texIndex = int(inst.texIndex);
 	output.frag.entityID = inst.entityId;
-	output.frag.worldPos = worldPos.xy;
+	output.frag.worldPos = gCamera.flags.z != 0 ? worldPos.xz : worldPos.xy;
 	output.frag.normalIndex = inst.normalIndex;
 	output.frag.flags = inst.flags;
 	float2 axisX = float2(world[0][0], world[1][0]);
@@ -142,15 +143,19 @@ FragmentOutput fragmentMain(FragmentInput input) {
 		texColor.rgb = srgbToLinear(texColor.rgb);
 	if (gCamera.ambient.w != 0.0f && (input.flags & 1u) != 0u) {
 		float3 normal = float3(0.0f, 0.0f, 1.0f);
-		bool hasNormal = input.normalIndex >= 0;
+		bool groundPlane = gCamera.flags.z != 0;
+		bool hasNormal = input.normalIndex >= 0 && !groundPlane;
 		if (hasNormal) {
 			float3 local = gTextures[NonUniformResourceIndex(input.normalIndex)]
 								   .Sample(input.texCoord * input.tilingFactor)
 								   .xyz * 2.0f - 1.0f;
 			normal = normalize(float3(local.x * input.axes.xy + local.y * input.axes.zw, local.z));
 		}
-		texColor.rgb *= lighting2D(input.worldPos, 0.0f, normal, hasNormal, (input.flags & 2u) == 0u, gCamera.flags.y,
+		bool shadowed = (input.flags & 2u) == 0u && !groundPlane;
+		texColor.rgb *= lighting2D(input.worldPos, 0.0f, normal, hasNormal, shadowed, gCamera.flags.y,
 								   gCamera.ambient.rgb);
+	} else if (gCamera.flags.w != 0) {
+		texColor.rgb *= gCamera.ambient.w;
 	}
 	output.color = texColor;
 	output.entityID = input.entityID;

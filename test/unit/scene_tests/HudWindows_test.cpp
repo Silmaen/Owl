@@ -278,6 +278,29 @@ TEST_F(HudWindowsTest, aWindowBlocksTheWidgetsUnderIt) {
 	EXPECT_FALSE(scene::UiInputSystem::isUIConsuming(scn));
 }
 
+TEST_F(HudWindowsTest, aModalWindowTakesTheMouseAndTheFocus) {
+	scene::Scene scn;
+	scn.status = scene::Scene::Status::Playing;
+	const auto canvas = makeCanvas(scn);
+	const auto outside = addButton(scn, canvas, {500.f, 500.f}, {100.f, 50.f});
+	auto other = makeWindow(scn, canvas, {20.f, 20.f}, {100.f, 100.f});
+	const auto inOther = addButton(scn, other, {10.f, 10.f}, {60.f, 30.f});
+	auto dialog = makeWindow(scn, canvas, {200.f, 200.f}, {200.f, 150.f});
+	dialog.getComponent<UiWindow>().modal = true;
+	const auto inDialog = addButton(scn, dialog, {10.f, 10.f}, {60.f, 30.f});
+	hover(scn, {520.f, 520.f});
+	EXPECT_EQ(outside.getComponent<scene::component::UiButton>().state, scene::component::UiButton::State::Normal);
+	EXPECT_TRUE(scene::UiInputSystem::isUIConsuming(scn));
+	hover(scn, {40.f, 60.f});
+	EXPECT_EQ(inOther.getComponent<scene::component::UiButton>().state, scene::component::UiButton::State::Normal);
+	hover(scn, {220.f, 240.f});
+	EXPECT_EQ(inDialog.getComponent<scene::component::UiButton>().state, scene::component::UiButton::State::Hovered);
+	// Hidden, the dialog lets the mouse through again.
+	dialog.getComponent<scene::component::Visibility>().gameVisible = false;
+	hover(scn, {520.f, 520.f});
+	EXPECT_EQ(outside.getComponent<scene::component::UiButton>().state, scene::component::UiButton::State::Hovered);
+}
+
 TEST_F(HudWindowsTest, aButtonInsideAWindowStillClicks) {
 	scene::Scene scn;
 	scn.status = scene::Scene::Status::Playing;
@@ -434,6 +457,7 @@ TEST_F(HudWindowsTest, windowComponentsRoundTripThroughYaml) {
 	data.closable = false;
 	data.draggable = false;
 	data.onCloseCallback = "on_close";
+	data.modal = true;
 	auto& layout = window.addComponent<UiLayout>();
 	layout.arrangement = UiLayout::Arrangement::Grid;
 	layout.crossAlign = UiLayout::CrossAlign::End;
@@ -447,6 +471,7 @@ TEST_F(HudWindowsTest, windowComponentsRoundTripThroughYaml) {
 	EXPECT_EQ(found.getComponent<UiWindow>().title, "Depot");
 	EXPECT_FALSE(found.getComponent<UiWindow>().closable);
 	EXPECT_EQ(found.getComponent<UiWindow>().onCloseCallback, "on_close");
+	EXPECT_TRUE(found.getComponent<UiWindow>().modal);
 	EXPECT_EQ(found.getComponent<UiLayout>().columns, 5u);
 	EXPECT_EQ(found.getComponent<UiLayout>().arrangement, UiLayout::Arrangement::Grid);
 	EXPECT_EQ(found.getComponent<scene::component::UiTooltip>().text, "Hint");

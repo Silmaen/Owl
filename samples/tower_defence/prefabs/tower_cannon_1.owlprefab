@@ -1,0 +1,64 @@
+Prefab: Tower_cannon_1
+Version: 1
+Entities:
+  - Entity: 7600000000000781001
+    Tag:
+      tag: Tower
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [0.78, 0.78, 0.78]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+  - Entity: 7600000000000781002
+    Tag:
+      tag: TowerPart0
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7600000000000781001
+    MeshRenderer:
+      mesh: models/td/tower-square-bottom-a.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7600000000000781003
+    Tag:
+      tag: TowerPart1
+    Transform:
+      translation: [0, 0.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7600000000000781001
+    MeshRenderer:
+      mesh: models/td/tower-square-top-a.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7600000000000781004
+    Tag:
+      tag: TowerWeapon
+    Transform:
+      translation: [0, 1, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7600000000000781001
+    MeshRenderer:
+      mesh: models/td/weapon-cannon.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world

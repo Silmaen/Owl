@@ -18,7 +18,8 @@
 # Environment overrides:
 #   OWL_DOCKER_IMAGE  image to use (default: the CI builder image).
 #   OWL_DOCKER_HOME   host directory mounted as $HOME (poetry venv, conan cache, ccache).
-#   OWL_DOCKER_MOUNTS extra host directories (space separated), mounted at the same path (e.g. a scratch dir).
+#   OWL_DOCKER_MOUNTS extra host directories (space separated), mounted at the same path (e.g. a scratch dir), or
+#                     at another one as host:container (the documentation screenshots mount the repo at a neutral path).
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -74,7 +75,10 @@ if [[ -f "${repo_root}/.git" ]]; then
 	[[ -n "${common_git}" && -d "${common_git}" && "${common_git}" != "${repo_root}"* ]] && args+=(-v "${common_git}:${common_git}")
 fi
 for extra in ${OWL_DOCKER_MOUNTS:-}; do
-	[[ -d "${extra}" ]] && args+=(-v "${extra}:${extra}")
+	host="${extra%%:*}"
+	target="${extra#*:}"
+	[[ "${extra}" == *:* ]] || target="${extra}"
+	[[ -d "${host}" ]] && args+=(-v "${host}:${target}")
 done
 
 if [[ ${gui} -eq 1 ]]; then

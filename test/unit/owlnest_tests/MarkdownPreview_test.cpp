@@ -21,6 +21,7 @@
 #include <variant>
 #include <vector>
 
+using owl::nest::codeEditor::headingSlug;
 using owl::nest::codeEditor::InlineKind;
 using owl::nest::codeEditor::MarkdownDocument;
 using owl::nest::codeEditor::MdBlock;
@@ -65,6 +66,27 @@ TEST(MarkdownDocument, ParsesHeadingAndParagraph) {
 	ASSERT_NE(p, nullptr);
 	ASSERT_FALSE(p->spans.empty());
 	EXPECT_NE(p->spans.front().text.find("Body text"), std::string::npos);
+}
+
+TEST(MarkdownDocument, HeadingKeepsItsDoxygenAnchor) {
+	MarkdownDocument doc;
+	ASSERT_TRUE(doc.parse("## Fixed Step {#fixed-step}\n"));
+	const auto* h = firstAs<MdHeading>(doc.blocks());
+	ASSERT_NE(h, nullptr);
+	EXPECT_EQ(h->anchor, "fixed-step");
+	ASSERT_EQ(h->spans.size(), 1u);
+	EXPECT_EQ(h->spans.front().text, "Fixed Step");
+}
+
+TEST(MarkdownDocument, HeadingWithoutAnchorGetsItsGitHubSlug) {
+	MarkdownDocument doc;
+	ASSERT_TRUE(doc.parse("### The `transform` table, again!\n"));
+	const auto* h = firstAs<MdHeading>(doc.blocks());
+	ASSERT_NE(h, nullptr);
+	EXPECT_EQ(h->anchor, "the-transform-table-again");
+	EXPECT_EQ(headingSlug("Fixed tick"), "fixed-tick");
+	EXPECT_EQ(headingSlug("step() and writeFrameTransforms()"), "step-and-writeframetransforms");
+	EXPECT_EQ(headingSlug("Snake_case - dash"), "snake_case---dash");
 }
 
 TEST(MarkdownDocument, ParsesGfmTable3by2) {

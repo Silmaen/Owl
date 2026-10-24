@@ -30,7 +30,7 @@ Owl Engine ships two kinds of example content:
 | Breakout            | Breakout / Arkanoid   | 2D, physics, HUD, sound, gamepad                | v0.4.0        | v0.4.0  |
 | Sokoban             | Sokoban               | tilemap, undo, saves, level editing in Owl Nest | v0.4.0        | v0.4.0  |
 | Wolfenstein mini    | Wolfenstein 3D        | raycast, doors, pick-ups, HUD                   | v0.4.0        | v0.4.0  |
-| Tower defence       | Kingdom Rush          | isometric, waves, tile-graph pathfinding, HUD   | v0.5.0        | v0.5.0  |
+| Tower defence       | Kingdom Rush          | 3D, billboards, waves, upgrades, world map      | v0.5.0        | v0.5.0  |
 | Mini Minecraft      | Minecraft             | voxel, build and break, inventory               | v0.4.0        |         |
 | One-room Zelda-like | The Legend of Zelda   | top-down, dialogue, enemy AI, 2D lights         | v0.7.0        |         |
 | Marble or mini kart | Marble Madness / Kart | 3D, Jolt physics, shadows                       | v0.7.0        |         |
@@ -149,44 +149,137 @@ Done in v0.4.0: `samples/breakout/` (how to play: its `README.md`).
 
 ### Tower defence {#sample-games-tower-defence}
 
-Shipped in `samples/tower_defence/` (how to play: its `README.md`): the first map, in basic home-made art, to validate
-the gameplay; at least five maps once it plays well.
+Shipped in `samples/tower_defence/` (how to play: its `README.md`): a first map in flat isometric art validated the
+gameplay. Plan of 2026-10-24: a small campaign in the spirit of Warcraft 1 and 2, the Horde (goblins, orcs, ogres)
+against human towers and a human keep, in real 3D, mixing as many rendering styles as the engine has.
 
-| Item     | As shipped                                                                                                                     |
-|----------|--------------------------------------------------------------------------------------------------------------------------------|
-| Play     | One isometric map of 24×24, 8 waves; enemies walk a road from the gate to the keep, towers on 16 fixed build pads beside it    |
-| Win/lose | Every wave survived with at least one life / 20 lives lost (one per enemy reaching the keep)                                   |
-| Waves    | Timed: 25 s before the first, 18 s after each one is sent; called early for 2 gold per second left                             |
-| Towers   | Archer (fast, single target), cannon (slow, splash, aims ahead), frost (slows, small damage); no upgrade, sold for half        |
-| Enemies  | Runner (fast, weak), soldier (average), armoured (slow, takes 40 % of the arrows); gold on each kill, 6 % more HP per wave     |
-| Controls | Mouse: left on a pad or a tower opens its ring, on a badge builds or sells, right closes; Q / E, Tab or D-pad move a cursor    |
-|----------|--------------------------------------------------------------------------------------------------------------------------------|
-|----------|--------------------------------------------------------------------------------------------------------------------------------|
-| Scenes   | `title` (How to play window), `map_01`, `settings`, `victory` (kills, lives kept, gold, time counted up), `game_over`          |
-| Tilemap  | `Ground`: layer `ground` (grass), layer `roads` (road overlays, tileset connections as in `iso_town.owl`; pads as pavement)    |
-| Entities | `Gate`, `Keep`, decor, camera, the hidden `Cursor`, `RangeRing` and three `BuildChoice` badges; prefabs spawned by Lua         |
-| Prefabs  | `enemy_{runner,soldier,armoured}`, `tower_{archer,cannon,frost}`, `projectile_{arrow,ball,shard}`, `health_bar`, `puff`        |
-| Lua      | `defence.lua` (waves, enemies, towers, projectiles, ring, camera, pause and speed: scripts cannot call each other), menus      |
-| HUD      | Gold, lives, wave n / N with its countdown, Call wave (bonus shown), speed and Menu buttons, the info panel of the ring        |
-| Menus    | Night watch (`generate_menus.py`): stone title, crimson banner buttons, a wave marching past a tower to the keep               |
-| Art      | Basic shapes from `generate_assets.py` (towers, keep, gate, enemies in 4 headings, badges, ring); terrain of `tools/iso_atlas` |
-| Sounds   | Short home-made neutral effects (build, sell, shots, hits, pop, keep hit, horn, coins, defeat, start jingle)                   |
-| Saves    | No slot: `tower_done_01` and `tower_best_01` (most lives kept) settings                                                        |
+| Item      | Plan                                                                                                                               |                                                                                         |
+|-----------|------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------|
+| Play      | 10 levels of 8 to 12 waves, on 3D terrain with relief, between visits to a world map and its upgrades screen                       |                                                                                         |
+| Win/lose  | Every wave held with a life left / the 20 lives lost; 3, 2 or 1 stars for 18, 10 or fewer lives kept                               |                                                                                         |
+| Waves     | Timed, called early for gold; the `night_waves` of a level are fought at night, dusk or dawn announced between two waves           |                                                                                         |
+| Day/night | `time_effects` of `defence.lua`: a bonus or a malus by day and by night for every tower and enemy kind                             | Sun or moon on the HUD, legend in the pause window                                      |
+| Modifiers | Per level (`modifiers`): fog, blizzard, blood moon, drought, gale, plunder, long night, effects of the same form                   | Briefing, world map panel, pause window                                                 |
+| Briefing  | A modal window before the first wave: a line and an icon per night, modifier and new enemy (its portrait)                          | Time paused; Skip tutorial on level 1                                                   |
+| Tutorial  | Level 1, skippable: build on a glowing pad, call a wave, raise, sell, read day and night; hints by the targets                     | `tower_tutorial` setting, Reset tutorial in Settings                                    |
+| Towers    | Archer, cannon, frost on build pads; levels 1, 2, 3, then one power-up of two; sold for half of what was spent                     |                                                                                         |
+| Enemies   | `Renderer2D` `sprites`: billboards, depth test                                                                                     | 8 directions x 9 frames (walk, attack, death), lit like the 3D scene; hit flash, sparks |
+| Relief    | Plateaus, ramps, rivers and bridges; a pad on high ground gives its tower +15 % range per height step                              |                                                                                         |
+| Controls  | As in the first map (mouse, keyboard cursor, gamepad), plus Z / C or pad LB, D-pad up / down turn the view by 45°, the wheel zooms |                                                                                         |
+| Scenes    | `title`, `world_map`, `upgrades`, `level_01` to `level_10`, `settings`, `victory` (stats, stars credited, unlock), `game_over`     |                                                                                         |
+| Saves     | No slot: `tower_done_NN`, `tower_stars_NN` (best), `tower_best_NN`, `tower_up_<family>` settings; unlocks follow from the wins     |                                                                                         |
+| Scripts   | `defence.lua` holds the properties and the hooks; the rules are the modules of `scripts/game/td/` (`require`)                      |                                                                                         |
 
-- Data-driven maps: `tools/samples/tower_defence/maps.py` holds the road corners, the pads, the keep and the waves of
-  each map (`generate_maps.py` refuses a pad on the road or far from it); in Owl Nest a new map is a duplicated scene
-  whose road and pads are painted in the tilemap editor, `Gate` and `Keep` moved, and the `waves` list of `Game`
-  edited (one string per wave, groups `kind count gap` separated by `;`). The values of the towers and enemies are
-  properties of `defence.lua`, shared by every map unless one overrides them.
-- Gaps: G1 (every enemy, tower, projectile and puff spawned from a prefab), G8 (pause, double speed), G15 (towers and
-  badges picked; `scene.pick_entity` takes a tag, so the range ring or an enemy in front does not hide them), G7 (the
-  info panel shows the badge with `ui.set_image_frame`), G5 (the edge pan reads `scene.get_viewport_size` and
-  `scene.get_viewport_mouse`, added), G18 (no zoom: the map fits the screen at zoom 0).
-- Scenarios: `tower_build` (mouse: ring on a pad only, archer built and gold spent, sold for half), `tower_wave` (no
-  tower: enemies reach the keep, lives down), `tower_call_early` (wave at once, bonus gold), `tower_defend` (gamepad:
-  two archers stop wave 1, gold up, no life lost), `tower_fast_forward` (time scale 2, the pause stops the enemies),
-  `tower_win` (the 8 waves held with the keyboard cursor, `tower_done_01` set, the victory tally), `tower_title`.
-- Size: **S–M**, done for the first map; the next maps, their art and the tower upgrades come after a playtest.
+| #  | Level           | Terrain                                                    | Theme | Nights             | Modifiers           | New                    |
+|----|-----------------|------------------------------------------------------------|-------|--------------------|---------------------|------------------------|
+| 1  | Greenmarch Ford | One plateau, a ramp down, a river crossed by a bridge      | grass | 4, 8               |                     | Goblins, grunts, ogres |
+| 2  | Thornwood Pass  | Two plateaus and a road winding between them through woods | grass | 3, 6, 9, 10        | fog                 | Wolf riders            |
+| 3  | Stonebridge     | Two gates, two roads meeting before a long bridge          | grass | 3, 4, 7, 8, 10     |                     | Trolls                 |
+| 4  | Mirefen Marsh   | Two rivers, two gates, four bridges                        | marsh | 3, 6, 9, 10        | fog                 | Goblin sappers         |
+| 5  | Frostmere       | A plateau gate, a river crossed by two bridges             | snow  | 3, 6, 9, 10        | blizzard            | Ogre mages             |
+| 6  | Highpeak Watch  | A high plateau, two ramps down                             | snow  | 3, 4, 7, 8, 11     | gale                | Orc berserkers         |
+| 7  | Sunscorch Flats | Two gates on open sand                                     | dry   | 5, 10              | drought             |                        |
+| 8  | Ashfall Ridge   | A road climbing a ridge and down again                     | ash   | 2, 4, 6, 8, 10, 11 | blood moon          |                        |
+| 9  | Ravenhold       | Two long winding roads                                     | ash   | 3, 4, 7, 8, 11, 12 | plunder, long night |                        |
+| 10 | The Black Gate  | Two winding roads to the fortress gate                     | ash   | 4, 8, 11, 12       | blood moon          | The orc chieftain      |
+
+| Enemy         | Mechanic                                                               | Day / night                      | Counter                              |
+|---------------|------------------------------------------------------------------------|----------------------------------|--------------------------------------|
+| Wolf rider    | Speed 2.1                                                              | +15 % damage taken / +20 % speed | Frost                                |
+| Troll         | Regenerates 7 hp/s, not while burning                                  | No healing / heals 50 % more     | Cannon bursts, fire shells           |
+| Ogre mage     | Every 6 s a ward absorbing 45 damage on the Horde within 1.6           | Wards −20 % / +50 %              | Kill it first; burning ignores wards |
+| Goblin sapper | Fast, 3 lives at the keep; killed, its keg hurts the Horde within 1.2  | −10 % / +20 % speed              | Archers' range, kill it in the crowd |
+| Orc berserker | Up to 90 % faster as it loses its life                                 | +10 % damage taken / +15 % speed | Frost, then burst                    |
+| Chieftain     | 2000 hp, arrows ×0.5, half slowed, never frozen, rallies (+25 % speed) | +10 % / −15 % damage taken       | Cannons, the vulnerability aura      |
+
+| Star upgrades  | Tier 1 (1 star)    | Tier 2 (2 stars)       | Tier 3 (3 stars) | Tier 4 (4 stars)  |
+|----------------|--------------------|------------------------|------------------|-------------------|
+| Archers        | +15 % damage       | +12 % range            | 15 % faster      | +10 % range       |
+| Cannons        | Cost −15 %         | Bursts +20 %           | +20 % damage     | 15 % faster       |
+| Frost          | Chill +30 % longer | Slower chilled enemies | +12 % range      | +20 % damage      |
+| Rain of arrows | Cooldown −20 %     | +30 % damage           | Radius +25 %     | +30 % damage      |
+| Shield wall    | Cooldown −20 %     | +2 s                   | Radius +25 %     | Cooldown −20 %    |
+| Treasury       | +40 starting gold  | +10 % gold per kill    | +2 lives         | +60 starting gold |
+
+- Stars: the best of each level is kept, the upgrades screen spends their sum (30 at most for 60 of tiers): replaying
+  a level for more stars credits the difference; Refund all is free.
+
+| Level won         | Unlocks                                                                         |
+|-------------------|---------------------------------------------------------------------------------|
+| Greenmarch Ford   | The second power-up of each tower (double shot, shock wave, vulnerability aura) |
+| Thornwood Pass    | Rain of arrows: a spell on a spot of the road, damage in an area, 45 s cooldown |
+| Stonebridge       | Royal treasury: 60 more starting gold on every level                            |
+| Mirefen Marsh     | Fletchers' guild: archers cost 10 % less (an effect `archer any cost 0.9`)      |
+| Frostmere         | Shield wall: a spell stopping the enemies on a spot for 5 s, 60 s cooldown      |
+| Highpeak Watch    | Watchtowers: every tower +5 % range                                             |
+| Sunscorch Flats   | Harvest tithe: +10 % gold per kill                                              |
+| Ashfall Ridge     | Night watch: towers +10 % range at night                                        |
+| Ravenhold         | Royal guard: 3 more lives on every level                                        |
+| 3 stars on all 10 | Keep walls: 5 more lives on every level                                         |
+
+| Tower  | Level 2 | Level 3   | Power-up A (from the start)                        | Power-up B (Greenmarch Ford won)                |
+|--------|---------|-----------|----------------------------------------------------|-------------------------------------------------|
+| Archer | +range  | +rate     | Piercing arrows: each arrow hits up to 3 in a line | Double shot: two targets at each volley         |
+| Cannon | +damage | +area     | Fire shells: the ground burns, damage over 3 s     | Shock wave: the enemies hit are thrown back     |
+| Frost  | +slow   | +duration | Full freeze: a short stop every third hit          | Vulnerability aura: +25 % damage taken in range |
+
+- Costs: level 2 at 80 % of the tower price, level 3 at 120 %, a power-up at 150 %; the ring of a tower shows the next
+  step with its price, the two power-ups side by side at level 3 (a locked one says which level unlocks it), and Sell.
+- Menus: the parade of the Horde, the keep, the archer tower and the road under them are pixel art rendered like the
+  Horde (`scenery.py`, the models of `creatures.py`), under a starry night over the hills and the ramparts of the keep
+  with flickering torches; the campaign board of the title is parchment framed in wood.
+- World map (`world_map.owl`): a hand-inked map drawn by `world_map_art.py` at 80 pixels per unit (pixel for pixel on
+  2560 x 1440, `MapRoot` scaled down to fit a narrower screen): inked coast with ripple lines and a ship, rivers
+  between banks, a frozen lake, hatched mountains (snowy, black, a volcano), painted forests, fields, faint tracks,
+  region and site names, a cartouche, a compass rose, paper grain and vignette, the marsh of Mirefen and the dunes
+  of Sunscorch; waving banners, drifting clouds (thinning over the site names) and glints of the sea animated by
+  `world_map.lua`. The road from the capital is shown up to the last site open and the
+  next stretch is traced dash by dash after a win.
+- Sites on the world map: locked (a grey ruin), open (a Horde camp under a red banner, bobbing), done (a human keep
+  under a blue banner and its stars); a click, Q / E or the D-pad picks an open site, Enter, pad A or March! starts
+  it; the panel names the level, its waves, the enemies it brings first and its unlock; Bonuses lists the unlocks,
+  Upgrades opens the upgrades screen.
+- Build wheel: the badges of the pad or the tower around it on the screen, their prices under them and a parchment
+  scroll with the info, billboards of the `marks` layer kept inside the view and clear of the HUD.
+- Look: parchment, dark wood, iron and gold (`medieval_ui.py`), titles in `Cinzel`, labels in `MedievalSharp` (OFL).
+
+| Element                       | Rendered by                                    | How                                                                                                |
+|-------------------------------|------------------------------------------------|----------------------------------------------------------------------------------------------------|
+| Terrain, river, bridge, decor | `RendererMesh`                                 | Kenney Tower Defense Kit tiles, one entity per cell, raised and stacked for the plateaus           |
+| Towers                        | `RendererMesh`                                 | Kit tower parts stacked by level (base, middle, top, weapon), power-ups by their tints and weapons |
+| Keep, walls, gate, banners    | `RendererMesh`                                 | Kenney Castle Kit                                                                                  |
+| Sky, sun, night               | `ProceduralSky`, `DayNightCycle`               | Sun with cascaded shadows; point `Light` torches on the keep and along the road at night           |
+| Enemies                       | `Renderer2D` `sprites`: billboards, depth test | 8 directions x 9 frames (`creatures.py`), the frame picked from heading and view; the boss bigger   |
+| Projectiles and effects       | `sprites`                                      | Arrows, shells, shards, bursts, fire; a `Light2D` on fire shells and torches                       |
+| Build wheel, health bars      | `marks` over all; bars in `sprites`            | The wheel beside its pad on the screen, picked by tag                                              |
+| Range ring, build cursor      | `Renderer2D` `ground`: flat, depth test        | Lies on the terrain, hidden by the towers in front                                                 |
+| Minimap                       | `RenderTarget`                                 | Orthographic camera over the level into a `UiImage` of the HUD                                     |
+| World map                     | `Renderer2D` `world`                           | The inked map, sites, banners, stars, road dashes, clouds, a 2D scene between the levels           |
+| HUD and menus                 | `Canvas`                                       | Gold, lives, wave, minimap frame, spells, pause; parchment, wood and gold                          |
+
+- Engine: `Renderer2D` layer keys `Billboard` (`None`, `Upright`, `Full`: the sprites turn to the camera, their 2D lights
+  on the ground plane) and `DepthTest` (sprites tested against the 3D layers drawn before, sorted back to front), both
+  following the light and exposure of the 3D scene; `scene.pick_entity` with a tag returns the tagged ancestor of the
+  mesh hit and sees billboards as drawn; `ui.set_text` writes a world `TextRenderer`; shared materials instanced.
+- Data-driven levels: `tools/samples/tower_defence/maps.py` holds per level a height grid, the road, the river, the
+  pads, the decor, the waves and `night_from`; `generate_maps.py` writes one scene per level, editable in Owl Nest:
+  terrain cells are mesh entities, the roads are the `Waypoint NN` and `Waypoint B NN` entities the enemies walk, pads
+  are `Pad` entities.
+- Scenarios: `tower_build` (mouse, wheel), `tower_upgrade` (archer to level 3, power-up), `tower_wave`,
+  `tower_call_early`, `tower_defend` (gamepad), `tower_fast_forward`, `tower_rotate` (the enemy frames follow the view),
+  `tower_build_only` (towers never raised lose level 1), `tower_win` (raised towers hold it, night, stars),
+  `tower_title`, `tower_world_map`, `tower_map_first_level` (fresh save: the map fits, a click on level 1 marches,
+  Quit to the map comes back), `tower_upgrades_screen` (a win credits stars, a tier bought then refunded),
+  `tower_level_wolves` (level 2), `tower_level_roads` (level 3, both roads), `tower_level_frostmere` (sappers, a mage's
+  wards), `tower_level_black_gate`, `tower_night_and_fog` (briefing shown and dismissed, the fog and the night effects
+  on the range of an archer and the speed of a goblin), `tower_drought` (a cheaper cannon), `tower_tutorial` (each step
+  of the tutorial in turn, then done), `tower_tutorial_skip` (skipped and remembered on a restart).
+- Size: **M–L**.
+- Done: the ten levels in 3D with relief (grass, marsh, snow, sand and ash themes), the Horde of nine kinds in 8
+  directions with walk, attack and death frames introduced across the campaign with their counters, tower upgrades and
+  power-ups, the build wheel, day and night alternating with their effects, the level modifiers and the briefing, the
+  tutorial of the first level, the minimap, the inked world map, the unlocks, the star upgrades and the medieval look;
+  the rules split into Lua modules.
 
 ### Mini Transport Tycoon
 

@@ -77,7 +77,7 @@ the agent can: `entity.create`, `entity.delete`, `entity.duplicate`, `entity.rep
 default, choices) in its input schema. Entities are named by their UUID or their tag.
 
 - A command runs as one undo step and is recorded in the command journal with the `mcp` source (see the
-  [Console](editor.md)).
+  [Console](editor_console.md#editor-console)).
 - Editing tools are refused while the scene plays (`RefusedDuringPlay`): stop it first.
 - A file argument (`prefab.instantiate`, `mesh.create`, `scene.save`, `macro.run`) is resolved inside the open project
   and refused outside it. No tool evaluates Lua or runs a shell command.
@@ -103,7 +103,7 @@ end unless `stop_at_end` is false.
 
 Give `frames`, `ticks` or both: the play ends at the first bound reached. An action is held through its first
 binding that produces the value (a key, a mouse button or a gamepad input), exactly as in a scenario `actions:` step
-(see [Editor](editor.md)): `{"actions": {"platformer_move": 1, "jump": true, "move": [0, -1]}}`.
+(see [Input actions](editor_documents.md#editor-action-map)): `{"actions": {"platformer_move": 1, "jump": true, "move": [0, -1]}}`.
 
 The result has a text part (the same JSON as `structuredContent`) and, when a capture was asked for, an `image` part
 (`image/png`, base64):
@@ -166,5 +166,5 @@ sequenceDiagram
 
 ## See also
 
-[Editor](editor.md), section MCP server, for the implementation notes, and [MCP server](design/mcp-server.md) for the
+[Owl Nest internals](editor_internals.md#editor-mcp-server) for the implementation notes, and [MCP server](design/mcp-server.md) for the
 design.

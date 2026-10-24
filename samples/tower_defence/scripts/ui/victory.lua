@@ -1,6 +1,7 @@
 -- Victory screen of Tower defence, at the end of a map only: the stats of the map (`tower_result_*` in the game
 -- state, written by defence.lua) counted up line by line with a tick each, the fireworks of parade.lua behind them.
--- Accept during the count shows every line at once; Play again replays the map, Title goes back.
+-- Accept during the count shows every line at once, then the stars and what the win unlocked; Play again replays
+-- the level, World map goes on with the campaign.
 
 properties = {
     { name = "line_time", type = "float", default = 0.7, min = 0.05 },
@@ -8,6 +9,7 @@ properties = {
 }
 
 local lines = {}
+local unlock_line = ""
 local current, line_clock = 1, 0.0
 local leaving = false
 
@@ -26,7 +28,14 @@ function on_create()
           suffix = " / " .. gamestate.get("tower_result_max_lives", 20) },
         { label = "Gold earned     ", value = gamestate.get("tower_result_gold", 0) },
         { label = "Time            ", value = gamestate.get("tower_result_time", 0), time = true },
+        { label = "Stars           ", value = gamestate.get("tower_result_stars", 0), suffix = " / 3" },
     }
+    local unlock = gamestate.get("tower_result_unlock_text", "")
+    local unlock_id = scene.find_entity("StatLine6")
+    if unlock_id ~= 0 then ui.set_text(unlock_id, "") end
+    local gained = gamestate.get("tower_result_stars_gained", 0)
+    lines[5].suffix = " / 3" .. (gained > 0 and string.format("  (+%d to spend)", gained) or "")
+    unlock_line = unlock ~= "" and ("Unlocked: " .. unlock) or ""
     for index, line in ipairs(lines) do
         line.id = scene.find_entity("StatLine" .. index)
         if line.id ~= 0 then ui.set_text(line.id, "") end
@@ -44,6 +53,8 @@ local function finish_count()
         if line.id ~= 0 then ui.set_text(line.id, text_of(line, line.value)) end
     end
     current = #lines + 1
+    local unlock_id = scene.find_entity("StatLine6")
+    if unlock_id ~= 0 then ui.set_text(unlock_id, unlock_line) end
     gamestate.set("tower_tally_done", true)
 end
 
@@ -61,7 +72,7 @@ function on_update(dt)
         if t >= 1.0 then
             sound.play("sounds/ui/click.wav")
             current, line_clock = current + 1, 0.0
-            if current > #lines then gamestate.set("tower_tally_done", true) end
+            if current > #lines then finish_count() end
         end
     end
 end
@@ -73,9 +84,9 @@ local function leave(path)
 end
 
 function on_again_clicked()
-    leave(gamestate.get("tower_scene", "scenes/map_01.owl"))
+    leave(gamestate.get("tower_scene", "scenes/level_01.owl"))
 end
 
 function on_title_clicked()
-    leave("scenes/title.owl")
+    leave("scenes/world_map.owl")
 end

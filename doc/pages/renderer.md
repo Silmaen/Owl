@@ -28,7 +28,25 @@ nothing once the slots have grown. A static HUD costs a hash and a compare per s
 
 ## Architecture
 
-![Renderer Architecture](../images/renderer_architecture.svg)
+```mermaid
+flowchart TD
+    Scene["Scene::renderWithStack"] --> Stack["RenderStack<br/>RenderLayer adapters"]
+    Stack --> R2D["Renderer2D<br/>RendererTilemap"]
+    Stack --> Ray[RendererRaycast]
+    Stack --> Iso[RendererIsometric]
+    Stack --> Vox[RendererVoxel]
+    Stack --> Mesh[RendererMesh]
+    Scene --> Bg[BackgroundRenderer]
+    Bg -->|flushed by| R2D
+    Ray --> R2D
+    Vox --> R3D[Renderer3D]
+    Mesh --> R3D
+    R2D --> RC[RenderCommand]
+    Ray --> RC
+    Iso --> RC
+    R3D --> RC
+    RC --> API["gpu::RenderAPI<br/>vulkan, opengl, null"]
+```
 
 Every renderer kind, the render stack and the base building blocks (`Camera`, `Texture`, `Shader`, `Buffer`,
 `Framebuffer`, `RenderAPI`, `RenderCommand`) live in the single `owl::renderer` namespace: the public facades in
@@ -126,6 +144,25 @@ A `Renderer2D` layer reads two keys (editable in the Scene Settings panel):
 |-------------------|---------|-----------------------------------------------------------------------------------------------|
 | `Space`           | `World` | `World` draws with the scene camera; `Screen` in screen units, origin bottom left, Y up       |
 | `ReferenceHeight` | `0`     | `Screen` only: the screen is this many units high, its width follows the aspect ratio; 0 = px |
+| `Billboard`       | `None`  | `World` only: `Upright` turns the sprites around the world Y axis, `Full` into the screen     |
+| `DepthTest`       | `false` | `World` only: tested against the depth of the layers before, without writing it              |
+
+`Billboard` and `DepthTest` put 2D sprites into a 3D scene (the enemies and effects of the tower defence among its
+meshes). A billboard layer draws each sprite, circle and text at its world position and size, turned to the camera of
+the pass (`renderer::utils::billboardMatrix`), its own Z rotation kept in the screen plane (an arrow along its flight);
+`Upright` keeps the world Y axis up, `Full` lays the sprite in the screen plane (art drawn as seen from above, and what
+a top-down `RenderTarget` camera sees). Its 2D lights work on the ground plane (x, z) of the Y-up world
+(`Lighting2D::groundPlane`), without normal maps nor 2D shadows. A depth-tested layer (`Renderer2D::setDepthTest`) is
+hidden by the meshes and voxels drawn before it, writes no depth, and sorts its primitives back to front by their
+distance along the view; picking sees billboards as drawn, and Owl Nest draws a stack holding such a layer layer by
+layer instead of its 2D composite.
+
+A billboard or depth-tested layer belongs to the 3D scene and follows its light: its ambient is the light a white
+surface facing up receives from the sky, the directional lights and the layer sun (`Renderer3D::getSurfaceLight`,
+pre-exposed like the meshes), times the `Ambient` `Light2D` when there is one; its point and spot `Light2D` and its
+unlit sprites (`lit` false) are divided by the exposure compensation of the camera, which the colour encode applies to
+the whole frame, so torches and markers keep their strength at night (`Lighting2D::exposureScale`, `inScene3D`). Only
+quads take it; circles and texts of such a layer are drawn as they are.
 
 With `ReferenceHeight: 720` an overlay authored at 1280×720 (the minimaps of the Engine Demo raycast level and of
 Wolfenstein mini) keeps its share of the screen at 1080p or 1440p, like a `ScaleWithHeight` HUD canvas; the
@@ -976,7 +1013,7 @@ reload bumps `getGeneration`. On OpenGL the program is replaced. On Vulkan every
 rebuilds its pipeline with its own `PipelineState`, vertex input and binding-block layout; the pipeline name carries
 the generation so the deduplication never hands back a pipeline of the old binaries, and the old one is released
 through `deferRelease`. The binding layout comes from the renderer block, not from the shader: a reload changes code,
-not bindings. `app::HotReload` calls it when a watched `.slang` file changes (see [Editor](editor.md#editor-hot-reload)).
+not bindings. `app::HotReload` calls it when a watched `.slang` file changes (see [Editor](editor_assets.md#editor-hot-reload)).
 
 ### Vulkan frames in flight
 
@@ -1053,7 +1090,18 @@ captures do not depend on AVX.
 
 ## Renderer2D: The Batch Renderer {#renderer2d}
 
-![Renderer2D Pipeline](../images/renderer_2d_pipeline.svg)
+```mermaid
+flowchart TD
+    Begin["beginScene(camera)<br/>camera UBO, startBatch"] --> Draw["drawQuad, drawCircle,<br/>drawLine, drawString"]
+    Draw --> Inst["instances per kind<br/>runs in depth order"]
+    Inst -->|batch full| Next["nextBatch<br/>flush, startBatch"]
+    Next --> Draw
+    Inst -->|endScene| Flush["flush: beginBatch,<br/>bindTextures, world SSBOs"]
+    Flush --> Bg["BackgroundRenderer<br/>flushPending"]
+    Bg --> Tm["RendererTilemap<br/>flushPending"]
+    Tm --> Runs["drawRuns: upload SSBO,<br/>drawDataInstanced per run"]
+    Runs --> End[endBatch]
+```
 
 ### Lifecycle
 
@@ -1465,7 +1513,21 @@ A `BufferLayout` is an initializer list of `BufferElement{name, type}` entries; 
 
 ## Camera System {#camera-system}
 
-![Camera System](../images/camera_system.svg)
+```mermaid
+classDiagram
+    class Camera {
+        projection
+        view
+        viewProjection
+    }
+    Camera <|-- CameraOrtho
+    Camera <|-- CameraEditor
+    Camera <|-- SceneCamera
+    Camera <|-- IsometricCamera
+    CameraOrthoController --> CameraOrtho : drives
+    IsometricCamera --> CameraOrtho : projection
+    Camera3DController --> FlyCamera : moves Transform
+```
 
 ### Camera (base class)
 

@@ -870,6 +870,8 @@ void renderProps(AnimatedSpriteRenderer& ioComponent) {
 				static_cast<uint32_t>(std::clamp(last, static_cast<int>(ioComponent.firstFrame), maxFrame));
 	prop::DragFloat("Frame Duration", &ioComponent.frameDuration, 0.01f, 0.001f, 10.0f, "%.3f s");
 	prop::Checkbox("Loop", &ioComponent.loop);
+	prop::Checkbox("Lit", &ioComponent.lit);
+	fieldTooltip("Lit by the 2D lights; off keeps the sprite as drawn (badges, markers).");
 	ImGui::Text("Current Frame: %u", ioComponent.m_currentFrame);
 	if (widgets::subHeader("Speed Curve")) {
 		fieldTooltip("Optional speed remap. Empty = constant playback speed; non-empty multiplies dt by "
@@ -2043,6 +2045,8 @@ void renderProps(UiWindow& ioComponent) {
 	fieldTooltip("The title bar drags the window; it stays inside the screen.");
 	prop::Checkbox("Closable", &ioComponent.closable);
 	fieldTooltip("Show a close button that hides the window (ui.set_visible shows it again).");
+	prop::Checkbox("Modal", &ioComponent.modal);
+	fieldTooltip("While shown, the window keeps the focus and the mouse reaches nothing outside it (a dialog).");
 	handlerRow("On Close Callback", ioComponent.onCloseCallback, nullptr,
 			   "Lua function called when the close button is pressed.");
 }
@@ -2840,6 +2844,18 @@ void renderProps(RenderTarget& ioComponent) {
 	fieldTooltip("Size of the image, in pixels. The camera of the entity draws into it: give it the same aspect.");
 	prop::ColorEdit4("Clear Color", &ioComponent.clearColor.x());
 	fieldTooltip("Colour of the image where nothing is drawn.");
+	for (const auto& layer: renderer::Renderer::getRenderStack().getLayers()) {
+		const std::string& name = layer->getName();
+		bool drawn = ioComponent.drawsLayer(name);
+		if (prop::Checkbox(std::format("Draw {}", name).c_str(), &drawn)) {
+			if (drawn)
+				std::erase(ioComponent.hiddenLayers, name);
+			else
+				ioComponent.hiddenLayers.push_back(name);
+		}
+		fieldTooltip(
+				"Whether the image shows this layer of the renderer stack (leave out the markers over the world).");
+	}
 }
 
 void renderProps(ProceduralSky& ioComponent) {

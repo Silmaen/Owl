@@ -64,7 +64,8 @@ enum struct TableAlign : uint8_t {
  */
 struct MdHeading {
 	uint8_t level = 1;///< Heading level (1 = `#`, …, 6 = `######`).
-	std::vector<MdInline> spans;///< Inline content of the heading line.
+	std::vector<MdInline> spans;///< Inline content of the heading line (a trailing `{#id}` removed).
+	std::string anchor;///< Link target of the heading: its `{#id}`, else the GitHub slug of its text.
 };
 
 /**
@@ -154,6 +155,14 @@ struct MdBlock {
 	 */
 	std::variant<MdHeading, MdParagraph, MdCodeBlock, MdImage, MdHRule, MdTable, MdList, MdBlockQuote> data;
 };
+
+/**
+ * @brief
+ *  GitHub anchor of a heading text: lower case, spaces to `-`, punctuation but `-` and `_` dropped.
+ * @param[in] iText The plain text of the heading.
+ * @return The anchor (`Fixed tick` gives `fixed-tick`).
+ */
+[[nodiscard]] auto headingSlug(std::string_view iText) -> std::string;
 
 /**
  * @brief

@@ -25,6 +25,7 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <numbers>
 #include <span>
 #include <vector>
 
@@ -421,6 +422,36 @@ void Renderer3D::setExposure(const float iExposure) {
 }
 
 auto Renderer3D::getExposure() -> float { return g_Data ? g_Data->exposure : exposureOf(g_defaultEv100); }
+
+auto Renderer3D::getSurfaceLight(const math::vec3& iNormal) -> math::vec3 {
+	if (!g_Data)
+		return math::vec3{1.f, 1.f, 1.f};
+	const auto& data = *g_Data;
+	const auto& environment = data.environment;
+	math::vec3 total{0.f, 0.f, 0.f};
+	if (environment.levelCount > 0) {
+		total = environment.irradiance.evaluate(iNormal) * std::max(environment.intensity, 0.f);
+	} else {
+		total = environment.ambient ? *environment.ambient * std::max(environment.intensity, 0.f) : data.layerAmbient;
+	}
+	const auto lambert = [&iNormal](const math::vec3& iTravel) -> float {
+		const float length = iTravel.norm();
+		return length > 0.f ? std::max(-(iNormal * iTravel) / length, 0.f) / std::numbers::pi_v<float> : 0.f;
+	};
+	const auto count = static_cast<size_t>(data.lighting.counts[0]);
+	for (size_t index = 0; index < count; ++index) {
+		const auto& light = data.sceneLights[index];
+		if (static_cast<int>(light.directionType.w()) != 0)
+			continue;
+		const math::vec3 travel{light.directionType.x(), light.directionType.y(), light.directionType.z()};
+		total += math::vec3{light.color.x(), light.color.y(), light.color.z()} * lambert(travel);
+	}
+	if (data.layerSun) {
+		const math::vec3 travel{data.scene.sunDirection.x(), data.scene.sunDirection.y(), data.scene.sunDirection.z()};
+		total += math::vec3{1.f, 1.f, 1.f} * (data.layerSunIlluminance * lambert(travel));
+	}
+	return total * data.exposure;
+}
 
 auto Renderer3D::exposureOf(const float iEv100) -> float { return 1.f / (1.2f * std::exp2(iEv100)); }
 

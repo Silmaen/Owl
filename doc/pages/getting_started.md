@@ -35,7 +35,7 @@ the working directory to skip the Vulkan attempt ([requirements](renderer.md#ren
 
 **Home > Project > Pack Game** (or **Package the game** in the File screen) exports the open project to a folder you
 can copy anywhere; fix the validation warnings first (a reference listed there is missing from the pack). Details in
-[editor.md](editor.md) and [Game export](design/game-export.md).
+[Projects and export](editor_projects.md#exporting-a-game).
 
 ```mermaid
 flowchart LR
@@ -62,18 +62,25 @@ Both ship next to `bin/` in the Owl Nest archive and open from the File screen:
 
 ![The File screen: the Engine Demo card, the sample games and the recent projects](../images/nest/file_screen.png)
 
-| ![2D RPG hub](../images/showcase/hub.png)           | ![Raycast level](../images/showcase/raycast.png)   |
-|-----------------------------------------------------|----------------------------------------------------|
-| ![Voxel terrain](../images/showcase/voxel.png)      | ![Isometric town](../images/showcase/iso_town.png) |
+| ![2D RPG hub](../images/showcase/hub.png)      | ![Raycast level](../images/showcase/raycast.png)   |
+|------------------------------------------------|----------------------------------------------------|
+| ![Voxel terrain](../images/showcase/voxel.png) | ![Isometric town](../images/showcase/iso_town.png) |
 
 *Scenes of the Engine Demo, rendered headless by the game runner on Vulkan.*
+
+| ![The tavern, lit by the fire and the candles](../images/showcase/tavern.png)     | ![The tavern table, PBR goblets and a candle](../images/showcase/tavern_table.png) |
+|-----------------------------------------------------------------------------------|------------------------------------------------------------------------------------|
+| ![Voxel terrain at noon, procedural sky](../images/showcase/voxel.png)            | ![Voxel terrain at sunset, day-night cycle](../images/showcase/voxel_sunset.png)   |
+
+*The 3D world: glTF meshes with PBR materials, point lights and cascaded shadows in the tavern, and a procedural sky
+driven by the day-night cycle over the voxel terrain.*
 
 | ![Breakout](../images/showcase/breakout.png) | ![Sokoban](../images/showcase/sokoban.png) | ![Wolfenstein mini](../images/showcase/wolfenstein.png) |
 |----------------------------------------------|--------------------------------------------|---------------------------------------------------------|
 
 ## Where to Go Next
 
-- Build a game: [Using Owl Nest](editor.md) (panels, play mode, shortcuts), then
+- Build a game: [The Owl Nest window](editor.md) and the editor pages after it, then
   [Scripting Games in Lua](scripting.md)
 - Every page by audience: [game makers](guide_game_maker.md), [C++ engine developers](guide_engine_developer.md),
   [contributors](guide_contributor.md)

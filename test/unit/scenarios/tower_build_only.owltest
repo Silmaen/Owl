@@ -1,0 +1,63 @@
+# slow
+# Tower defence: the first level at double speed with towers only, never raised (the plan the first version won
+# with): the Horde holds out and the keep falls, the level asks for upgrades.
+scene: ../../../samples/tower_defence/scenes/level_01.owl
+steps:
+  - frames: 2
+  - input: {key: Backspace, frames: 2}
+  - frames: 1
+  - frames: 30
+  - input: {key: F, frames: 2}
+  - input: {key: E, frames: 2}
+  - frames: 1
+  - input: {key: Enter, frames: 2}
+  - frames: 1
+  - input: {key: D1, frames: 2}
+  - frames: 1
+  - input: {key: E, frames: 2}
+  - frames: 1
+  - input: {key: Enter, frames: 2}
+  - frames: 1
+  - input: {key: D1, frames: 2}
+  - frames: 1
+  - expect: {gamestate: tower_towers, equals: 2}
+  - expect: {gamestate: tower_gold, equals: 80}
+  - frames: 400
+  - input: {key: E, frames: 2}
+  - frames: 1
+  - input: {key: Enter, frames: 2}
+  - frames: 1
+  - input: {key: D2, frames: 2}
+  - frames: 1
+  - frames: 500
+  - input: {key: E, frames: 2}
+  - frames: 1
+  - input: {key: Enter, frames: 2}
+  - frames: 1
+  - input: {key: D3, frames: 2}
+  - frames: 1
+  - frames: 500
+  - input: {key: E, frames: 2}
+  - frames: 1
+  - input: {key: E, frames: 2}
+  - frames: 1
+  - input: {key: Enter, frames: 2}
+  - frames: 1
+  - input: {key: D1, frames: 2}
+  - frames: 1
+  - frames: 500
+  - input: {key: E, frames: 2}
+  - frames: 1
+  - input: {key: Enter, frames: 2}
+  - frames: 1
+  - input: {key: D2, frames: 2}
+  - frames: 1
+  - frames: 600
+  - input: {key: E, frames: 2}
+  - frames: 1
+  - input: {key: Enter, frames: 2}
+  - frames: 1
+  - input: {key: D1, frames: 2}
+  - frames: 5000
+  - expect: {gamestate: tower_lost, equals: true}
+  - expect: {gamestate: tower_won, equals: false}

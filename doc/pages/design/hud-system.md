@@ -164,7 +164,7 @@ Implementation notes:
   or drag and drop into the container under the mouse; a texture dropped from the Content Browser makes an Image.
   Fonts are still assigned from the inspector.
 - Every action is a named command of the registry (`hud.add_widget`, `hud.set_rect`, `hud.set_anchors`,
-  `hud.set_pivot`, `hud.move`, `hud.delete`, `hud.reparent`, see [Editor](../editor.md#editor-commands)): undoable,
+  `hud.set_pivot`, `hud.move`, `hud.delete`, `hud.reparent`, see [Editor](../editor_console.md#commands)): undoable,
   journaled, replayable in macros and reachable through the MCP server. A gesture previews on the scene; when it ends
   the scene is put back and one command runs with the final values (a drag is one undo step, a nudge merges into the
   previous one within a second).
@@ -223,7 +223,7 @@ Keyboard and gamepad focus on buttons and sliders, driven by the built-in `ui_up
 
 ## Migration (HUD6, done)
 
-- `hud.extract_canvas` (Scene Hierarchy context menu, [Editor](../editor.md#editor-commands)) writes a root canvas and
+- `hud.extract_canvas` (Scene Hierarchy context menu, [Editor](../editor_console.md#commands)) writes a root canvas and
   its widgets to an `.owlhud`, removes them from the scene and sets the scene's `Hud:` key, as one undo step (a
   `DeleteSubtreeCommand` and a `SetSceneHudCommand` in a group). The file is written when the command is prepared and
   stays after an undo.
@@ -315,7 +315,8 @@ The Engine Demo HUDs and menu canvases follow one recipe, checked by `DemoHudLay
   buttons shown at once).
 - What lives inside a group (a label in its panel, an icon under a count) may overlap on purpose, except the children
   of a `UiLayout`, which must stay inside the content area of their container.
-- A popup (a window hidden at start: the information board, the inventory) is compared with the other popups only; every
+- A popup (a window hidden at start: the information board, the inventory) is compared with the other popups only; a
+  modal popup (`UiWindow.modal`, a dialog taking the mouse and the focus while shown) is not compared at all; every
   top-level widget must fit in the viewport.
 - Controls are never on screen for good in game: the main menu lists them (the pause leads there), and a level shows
   its own keys in a hint that `controls_hint.lua` hides after a few seconds, last in its corner group so that hiding

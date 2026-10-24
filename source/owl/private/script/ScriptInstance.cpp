@@ -85,6 +85,11 @@ void ScriptInstance::setEntityName(const std::string& iEntityName) const {
 		mp_impl->entityName = iEntityName;
 }
 
+void ScriptInstance::setModuleReader(const ModuleReader& iReader) const {
+	if (mp_impl)
+		mp_impl->engine.setModuleReader(iReader);
+}
+
 void ScriptInstance::setScene(scene::Scene* iScene) const {
 	if (!mp_impl)
 		return;

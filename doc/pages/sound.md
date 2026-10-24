@@ -9,8 +9,6 @@ This page describes the Owl Engine sound system: audio in scenes, spatial sound,
 A component-based sound system with 3D spatial audio on an OpenAL or Null backend: files load into `SoundData`
 buffers, playback is driven through opaque `SoundHandle` values ([Supported Formats](#supported-formats)).
 
-![Sound Architecture](../images/sound_architecture.svg)
-
 ## Architecture
 
 The same backend abstraction as the renderer and input modules ([Architecture](architecture.md)):
@@ -18,13 +16,16 @@ The same backend abstraction as the renderer and input modules ([Architecture](a
 ```mermaid
 flowchart TD
     Lua["Lua sound.play()"] --> SC[SoundCommand]
-    SS[SoundSource Component] --> SH[SoundHelper]
-    SH --> SC
+    Scene["Scene runtime<br/>playOnStart, owl.sound"] --> SC
+    SH[SoundHelper] --> SC
+    Lua --> SL[SoundLibrary]
+    Scene --> SL
+    SH --> SL
+    SY[SoundSystem] -->|owns| SL
+    SL --> SD[SoundData]
     SC --> API{SoundAPI}
     API -->|OpenAL| OAL[OpenAL Backend]
     API -->|Null| NUL[Null Backend]
-    SC --> SL[SoundLibrary]
-    SL --> SD[SoundData buffers]
 ```
 
 | Class          | Role                                                     |
@@ -103,8 +104,6 @@ Where `referenceDistance = 1.0` and `distance` is clamped to `[0, maxDistance]`.
 - **Listener position and orientation** come from the primary `SoundListener` entity
 - For 2D games, the listener's forward direction is derived from the Z-axis rotation
 - **Stereo audio files** are NOT spatialized by OpenAL (only mono sources are positioned in 3D)
-
-![Sound Data Flow](../images/sound_data_flow.svg)
 
 ## Gameplay Triggers (SoundHelper)
 

@@ -7,18 +7,18 @@ Entities:
     Transform:
       translation: [0, 0, 0]
       rotation: [0, 0, 0]
-      scale: [0.25, 0.25, 1]
+      scale: [0.32, 0.32, 1]
     Visibility:
       gameVisible: true
     Hierarchy: {}
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/projectiles.png
-      columns: 3
+      texture: nam:textures/fx/projectiles.png
+      columns: 4
       rows: 1
       firstFrame: 1
       lastFrame: 1
       frameDuration: 0.1
       loop: false
     RendererTag:
-      Name: iso_world
+      Name: sprites

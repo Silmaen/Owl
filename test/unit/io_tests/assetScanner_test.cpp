@@ -317,6 +317,42 @@ TEST_F(AssetScannerTest, ScanSceneWithLuaScript) {
 	EXPECT_TRUE(foundScript);
 }
 
+TEST_F(AssetScannerTest, ScanLuaScriptFollowsItsRequiredModules) {
+	// The script requires a module that requires another one and plays a sound; a required module that is missing is
+	// reported, and a module required twice is packed once.
+	const auto soundPath = m_tempDir / "sounds" / "hit.wav";
+	writeDummyBinary(soundPath);
+	writeFile(m_tempDir / "scripts" / "game" / "rules.lua",
+			  "local td = require('scripts.game.towers')\nlocal again = require \"scripts.game.towers\"\n"
+			  "local gone = require('scripts.game.gone')\n");
+	writeFile(m_tempDir / "scripts" / "game" / "towers.lua", "local fx = require('scripts.game.fx')\nreturn {}\n");
+	writeFile(m_tempDir / "scripts" / "game" / "fx.lua", "sound.play(\"" + soundPath.generic_string() + "\")\n");
+	const auto scenePath = m_tempDir / "level.owl";
+	writeFile(scenePath, "Scene: level\nEntities:\n"
+						 "  - Entity: 1\n"
+						 "    LuaScript:\n"
+						 "      scriptPath: " +
+								 (m_tempDir / "scripts" / "game" / "rules.lua").generic_string() + "\n");
+
+	std::vector<std::string> warnings;
+	const auto assets = AssetScanner::scanScene(scenePath, &warnings);
+	size_t towers = 0;
+	bool fx = false;
+	bool sound = false;
+	for (const auto& ref: assets) {
+		towers += ref.packPath == "scripts/game/towers.lua" ? 1 : 0;
+		fx = fx || (ref.assetType == AssetType::Script && ref.packPath == "scripts/game/fx.lua");
+		sound = sound || ref.diskPath == soundPath;
+	}
+	EXPECT_EQ(towers, 1u);
+	EXPECT_TRUE(fx);
+	EXPECT_TRUE(sound);
+	bool reported = false;
+	for (const auto& warning: warnings)
+		reported = reported || warning.find("scripts/game/gone.lua") != std::string::npos;
+	EXPECT_TRUE(reported);
+}
+
 TEST_F(AssetScannerTest, ScanLuaScriptWithSceneLoadScene) {
 	// Create a second scene that the Lua script references.
 	const auto scene2Path = m_tempDir / "scenes" / "level2.owl";
@@ -483,6 +519,35 @@ TEST_F(AssetScannerTest, ScanScriptPropertiesFollowsScenesRecursively) {
 	};
 	EXPECT_TRUE(hasScene(secondPath));
 	EXPECT_TRUE(hasScene(lastPath));
+	EXPECT_TRUE(warnings.empty());
+}
+
+TEST_F(AssetScannerTest, ScanScriptPropertiesFollowsTheScenesOfAList) {
+	const auto first = m_tempDir / "scenes" / "level_a.owl";
+	const auto second = m_tempDir / "scenes" / "level_b.owl";
+	writeFile(first, "Scene: level_a\n");
+	writeFile(second, "Scene: level_b\n");
+	const auto mapPath = m_tempDir / "scenes" / "world_map.owl";
+	writeFile(mapPath, "Scene: world_map\nEntities:\n"
+					   "  - Entity: 1\n"
+					   "    LuaScript:\n"
+					   "      scriptPath: \"\"\n"
+					   "      properties:\n"
+					   "        - name: level_scenes\n"
+					   "          type: strings\n"
+					   "          value:\n"
+					   "            - " +
+							   first.generic_string() + "\n            - " + second.generic_string() +
+							   "\n            - ''\n");
+	std::vector<std::string> warnings;
+	const auto assets = AssetScanner::scanScene(mapPath, &warnings);
+	const auto hasScene = [&assets](const std::filesystem::path& iPath) -> bool {
+		return std::ranges::any_of(assets, [&iPath](const AssetReference& iRef) -> bool {
+			return iRef.assetType == AssetType::Scene && iRef.diskPath == iPath;
+		});
+	};
+	EXPECT_TRUE(hasScene(first));
+	EXPECT_TRUE(hasScene(second));
 	EXPECT_TRUE(warnings.empty());
 }
 

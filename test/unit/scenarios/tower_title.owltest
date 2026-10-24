@@ -1,5 +1,5 @@
 # Tower defence title: How to play opens its window with the keyboard focus and Escape closes it; Play (the first
-# button, focused) starts the first map behind a wipe.
+# button, focused) opens the world map behind a wipe.
 scene: ../../../samples/tower_defence/scenes/title.owl
 steps:
   - frames: 40
@@ -16,5 +16,5 @@ steps:
   - frames: 2
   - input: {key: Enter, frames: 2}
   - frames: 120
-  - expect: {entity: Ground, exists: true}
-  - expect: {gamestate: tower_lives, equals: 20}
+  - expect: {entity: Site, exists: true}
+  - expect: {gamestate: tower_map, equals: true}

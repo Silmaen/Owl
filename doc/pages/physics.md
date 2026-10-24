@@ -13,8 +13,6 @@ simulation works in **world space**, independent of the hierarchy ([Physics and 
 
 ## Architecture
 
-![Physics Integration](../images/physics_integration.svg)
-
 The module follows the facade + pimpl pattern of the sound and renderer modules ([Architecture](architecture.md)):
 
 ```mermaid

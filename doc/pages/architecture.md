@@ -6,7 +6,20 @@ This page describes the high-level architecture of the Owl Engine.
 
 ## Engine Modules
 
-![Engine Architecture](../images/engine_architecture.svg)
+```mermaid
+flowchart TD
+    Nest["OwlNest<br/>editor"] --> Core
+    Runner["OwlRunner<br/>game runner"] --> Core
+    Bake["OwlShaderBake<br/>build tool"] --> Core
+    Core["OwlEngine core<br/>app, scene, data, event, math, core"] --> Render["render<br/>renderer, window, input"]
+    Core --> Phys["physics<br/>Box2D"]
+    Core --> Audio["audio<br/>OpenAL, libsndfile"]
+    Core --> Script["script<br/>Lua 5.5"]
+    Core --> Gui["Gui<br/>ImGui, ImGuizmo"]
+    Core --> Deps["EnTT, Taskflow, zstd,<br/>yaml-cpp, spdlog"]
+    Render --> Gpu["Vulkan / OpenGL / Null"]
+    Render --> Glfw["GLFW / Null"]
+```
 
 The engine library (`source/owl/`) is organized into the following modules:
 
@@ -92,9 +105,23 @@ What a game plugs in without patching the engine:
 
 ## Backend System
 
-Owl Engine uses a backend abstraction so that different platform APIs can be swapped at runtime.
+Owl Engine uses a backend abstraction: each platform API sits behind a facade, and its backend is chosen when the
+application starts.
 
-![Backend Abstraction](../images/backend_abstraction.svg)
+```mermaid
+flowchart TD
+    RC["RenderCommand<br/>static facade"] -->|owns| RA[gpu::RenderAPI]
+    RA --> VK[gpu::vulkan]
+    RA --> GL[gpu::opengl]
+    RA --> RN[gpu::null]
+    SC["SoundCommand<br/>static facade"] -->|owns| SA[SoundAPI]
+    SA --> AL[sound::openal]
+    SA --> SN[sound::null]
+    IN["Input<br/>static API, injection"] -->|owns| IG[input::glfw]
+    IN --> INl[input::null]
+    W["Window::create"] --> WG[window::glfw]
+    W --> WN[window::null]
+```
 
 ### Graphics Backends
 
@@ -129,8 +156,6 @@ See [Renderer](renderer.md) for the full rendering pipeline, batch system, and c
 ## Sound System
 
 The sound module provides audio playback through a backend-agnostic API.
-
-![Sound Architecture](../images/sound_architecture.svg)
 
 The system follows the same abstraction pattern as graphics and input:
 `SoundCommand` delegates to a `SoundAPI` implementation (OpenAL or Null), selected at application startup.
@@ -203,7 +228,22 @@ sequenceDiagram
 
 ## Shader Pipeline
 
-![Shader Pipeline](../images/shader_pipeline.svg)
+```mermaid
+flowchart TD
+    Src[".slang source"] --> Load[loadOrCompileSpirv]
+    Bake["OwlShaderBake<br/>at build time"] --> Pre["precompiled SPIR-V<br/>spirv/&lt;api&gt;/"]
+    Load -->|first| Cache[".spv cache"]
+    Load -->|then| Pre
+    Load -->|no key match| Slang["compileSlangToSpirv<br/>Slang API"]
+    Cache --> Check[checkSpirv]
+    Pre --> Check
+    Check --> Refl["shaderReflect<br/>spirv-cross"]
+    Slang --> Refl
+    Refl --> VK["Vulkan<br/>vkCreateShaderModule"]
+    Refl --> GL["OpenGL<br/>glShaderBinary or GLSL"]
+    VK -.->|refused| Re[recompileSpirv]
+    GL -.->|refused| Re
+```
 
 Shaders are written in **Slang** (`.slang` files), a single-source shading language:
 
@@ -235,15 +275,11 @@ Key conventions:
 
 ## Scene Hierarchy
 
-![Scene Lifecycle](../images/scene_lifecycle.svg)
-
-![ECS Pipeline](../images/ecs_pipeline.svg)
-
 Entities support parent-child relationships via the **Hierarchy** component (mandatory on every entity): `Transform`
 is local, the world transform and the visibility are inherited from the parents, only `parentId` is saved. The
 operations, the world-transform cache and serialization are in [Scene & Components](scene.md#transform-hierarchy), the
 interaction with Box2D bodies in [Physics and Hierarchy](physics.md#hierarchy), the hierarchy panel in
-[Editor](editor.md).
+[Hierarchy and inspector](editor_scene.md).
 
 ## Icon System
 
@@ -336,16 +372,27 @@ See [Lua Scripting > settings](scripting.md) for the Lua API.
 
 ## Asset Packing
 
-![Asset Packing](../images/asset_packing.svg)
+```mermaid
+flowchart TD
+    Exp["GameExporter<br/>Pack Game"] --> Scan["AssetScanner<br/>from firstScene"]
+    Scan -->|"scenes, scripts,<br/>textures, sounds, fonts"| Writer["PackWriter<br/>zstd per entry"]
+    Writer --> Pack[".owlpack<br/>OWLP header, XOR TOC"]
+    Exp --> Folder["runner.yml, game_info.yml,<br/>OwlRunner"]
+    Folder -->|PackFile| Reader["PackReader::tryOpen"]
+    Pack --> Reader
+    Reader --> Ext["extractPack<br/>into assets/"]
+    Reader --> Load["Application::loadFromPack<br/>scenes, scripts, HUDs"]
+```
 
 Owl Nest can export a standalone game package via **Project > Pack Game**. The `AssetScanner`
 recursively parses scene files starting from the project's first scene, discovers all referenced assets (textures,
 fonts, sounds, scripts, meshes), follows teleport trigger links to other scenes, and follows the scene paths (`.owl`), sound files and serialized
-textures (`nam:` / `pat:`) quoted in Lua scripts or given as string properties of a `LuaScript` (a `next_scene`
-property), recursively.
+textures (`nam:` / `pat:`) quoted in Lua scripts or given as string or list-of-strings properties of a `LuaScript` (a
+`next_scene` property, the `level_scenes` of a world map), recursively.
 
 Discovered assets are compressed with **zstd** and written to a `.owlpack` binary archive with an XOR-obfuscated table
-of contents. At runtime, the game runner transparently loads assets from the pack file via `PackReader`.
+of contents. At start, the game runner opens the pack named by `PackFile` in `runner.yml` with `PackReader`, extracts it into
+its `assets/` folder (`extractPack`) and reads scenes, scripts and HUDs through `Application::loadFromPack`.
 
 A pack is treated as untrusted input: `PackReader::tryOpen` bounds every offset and size by the real file size and
 by `g_maxTocSize` / `g_maxEntrySize` before allocating, rejects absolute or `..` entry paths, and returns a typed

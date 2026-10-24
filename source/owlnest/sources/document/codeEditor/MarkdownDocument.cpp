@@ -13,13 +13,16 @@
 #include <core/Log.h>
 #include <core/Macros.h>
 
+#include <cctype>
 #include <charconv>
 #include <cstddef>
 #include <cstdint>
 #include <optional>
+#include <string>
 #include <string_view>
 #include <system_error>
 #include <utility>
+#include <variant>
 
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG("-Wswitch-enum")
@@ -77,6 +80,27 @@ namespace {
 	if (ec == std::errc{} && ptr != width.data())
 		img.width = value;
 	return img;
+}
+
+// A trailing `{#id}` (Doxygen anchor) names the heading and leaves its text; otherwise the GitHub slug of the text.
+void assignAnchor(MdHeading& ioHeading) {
+	if (!ioHeading.spans.empty() && ioHeading.spans.back().kind == InlineKind::Text) {
+		auto& text = ioHeading.spans.back().text;
+		while (!text.empty() && (text.back() == ' ' || text.back() == '\t')) text.pop_back();
+		if (const auto open = text.rfind("{#"); open != std::string::npos && text.ends_with('}')) {
+			ioHeading.anchor = text.substr(open + 2, text.size() - open - 3);
+			text.resize(open);
+			while (!text.empty() && (text.back() == ' ' || text.back() == '\t')) text.pop_back();
+			if (text.empty())
+				ioHeading.spans.pop_back();
+			return;
+		}
+	}
+	std::string plain;
+	for (const auto& span: ioHeading.spans)
+		if (span.kind == InlineKind::Text || span.kind == InlineKind::Code)
+			plain += span.text;
+	ioHeading.anchor = headingSlug(plain);
 }
 
 class Parser {
@@ -168,8 +192,8 @@ private:
 			case MD_BLOCK_H:
 				{
 					const auto* d = static_cast<const MD_BLOCK_H_DETAIL*>(iDetail);
-					m_blockStack.back()->push_back(
-							MdBlock{.data = MdHeading{.level = static_cast<uint8_t>(d->level), .spans = {}}});
+					m_blockStack.back()->push_back(MdBlock{
+							.data = MdHeading{.level = static_cast<uint8_t>(d->level), .spans = {}, .anchor = {}}});
 					m_inlineAccum = &std::get<MdHeading>(m_blockStack.back()->back().data).spans;
 					return 0;
 				}
@@ -278,6 +302,10 @@ private:
 	auto onLeaveBlock(const MD_BLOCKTYPE iType, void* /*iDetail*/) -> int {
 		switch (iType) {
 			case MD_BLOCK_H:
+				if (auto* heading = std::get_if<MdHeading>(&m_blockStack.back()->back().data); heading != nullptr)
+					assignAnchor(*heading);
+				m_inlineAccum = nullptr;
+				return 0;
 			case MD_BLOCK_P:
 				m_inlineAccum = nullptr;
 				return 0;
@@ -449,6 +477,19 @@ private:
 	int m_currentColIndex = 0;
 };
 }// namespace
+
+auto headingSlug(const std::string_view iText) -> std::string {
+	std::string slug;
+	slug.reserve(iText.size());
+	for (const char c: iText) {
+		const auto uc = static_cast<unsigned char>(c);
+		if (uc >= 0x80 || std::isalnum(uc) != 0 || c == '_' || c == '-')
+			slug += static_cast<char>(std::tolower(uc));
+		else if (c == ' ')
+			slug += '-';
+	}
+	return slug;
+}
 
 auto MarkdownDocument::parse(const std::string_view iSource) -> bool {
 	m_blocks.clear();

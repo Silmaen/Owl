@@ -1047,14 +1047,23 @@ auto luaEntitySetLightRange(lua_State* iState) -> int {
 }
 
 auto luaUiSetText(lua_State* iState) -> int {
-	if (const auto entity = findEntity(iState); entity && entity->hasComponent<scene::component::UiText>())
-		entity->getComponent<scene::component::UiText>().text = luaL_checkstring(iState, 2);
+	const char* text = luaL_checkstring(iState, 2);
+	if (const auto entity = findEntity(iState); entity) {
+		if (entity->hasComponent<scene::component::UiText>())
+			entity->getComponent<scene::component::UiText>().text = text;
+		else if (entity->hasComponent<scene::component::Text>())
+			entity->getComponent<scene::component::Text>().text = text;
+	}
 	return 0;
 }
 
 auto luaUiGetText(lua_State* iState) -> int {
 	if (const auto entity = findEntity(iState); entity && entity->hasComponent<scene::component::UiText>()) {
 		lua_pushstring(iState, entity->getComponent<scene::component::UiText>().text.c_str());
+		return 1;
+	}
+	if (const auto entity = findEntity(iState); entity && entity->hasComponent<scene::component::Text>()) {
+		lua_pushstring(iState, entity->getComponent<scene::component::Text>().text.c_str());
 		return 1;
 	}
 	lua_pushstring(iState, "");
@@ -1065,6 +1074,42 @@ auto luaUiSetVisible(lua_State* iState) -> int {
 	if (const auto entity = findEntity(iState); entity && entity->hasComponent<scene::component::Visibility>())
 		entity->getComponent<scene::component::Visibility>().gameVisible = lua_toboolean(iState, 2) != 0;
 	return 0;
+}
+
+auto luaUiSetSize(lua_State* iState) -> int {
+	const auto width = static_cast<float>(luaL_checknumber(iState, 2));
+	const auto height = static_cast<float>(luaL_checknumber(iState, 3));
+	const auto entity = findEntity(iState);
+	if (!entity || !entity->hasComponent<scene::component::UiRect>()) {
+		lua_pushboolean(iState, 0);
+		return 1;
+	}
+	entity->getComponent<scene::component::UiRect>().size = {std::max(0.f, width), std::max(0.f, height)};
+	lua_pushboolean(iState, 1);
+	return 1;
+}
+
+auto luaUiGetRect(lua_State* iState) -> int {
+	auto* activeScene = getBoundScene(iState);
+	const auto entity = findEntity(iState);
+	if (activeScene == nullptr || !entity || !entity->hasComponent<scene::component::UiRect>()) {
+		lua_pushnil(iState);
+		return 1;
+	}
+	auto* surface = entity->getScene();
+	auto& layout = surface->getHudLayout();
+	if (const auto viewport = activeScene->getViewportSize(); !layout.isComputedFor(viewport))
+		layout.compute(*surface, viewport, false);
+	const auto* node = layout.findNode(static_cast<entt::entity>(*entity));
+	if (node == nullptr) {
+		lua_pushnil(iState);
+		return 1;
+	}
+	lua_pushnumber(iState, static_cast<lua_Number>(node->bounds.position.x()));
+	lua_pushnumber(iState, static_cast<lua_Number>(node->bounds.position.y()));
+	lua_pushnumber(iState, static_cast<lua_Number>(node->bounds.size.x()));
+	lua_pushnumber(iState, static_cast<lua_Number>(node->bounds.size.y()));
+	return 4;
 }
 
 auto luaUiSetImage(lua_State* iState) -> int {
@@ -2225,8 +2270,8 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		 .returns = {{"entity_id", Entity}}},
 		{.table = "scene", .name = "pick_entity", .function = guarded<luaScenePickEntity>,
 		 .description = "Entity drawn under a viewport pixel (the mouse by default), nearest to the viewer: sprites and "
-						"circles (2D or isometric) and meshes, not the UI, only the entities of a tag when one is given. 0 when "
-						"none.",
+						"circles (2D, isometric or billboards) and meshes, not the UI; with a tag, only the entities of that tag, "
+						"a hit on a descendant giving its tagged ancestor (a tower built of parts). 0 when none.",
 		 .params = {{"x", Number, true}, {"y", Number, true}, {"tag", String, true}},
 		 .returns = {{"entity_id", Entity}}},
 		{.table = "scene", .name = "get_viewport_size", .function = guarded<luaSceneGetViewportSize>,
@@ -2430,11 +2475,22 @@ auto declareBindings() -> std::vector<LuaBinding> {
 						"cache the result.",
 		 .params = {{"name", String}}, .returns = {{"entity_id", Entity}}},
 		{.table = "ui", .name = "set_text", .function = guarded<luaUiSetText>,
-		 .description = "Set the text of a `UiText`.", .params = {entityId, {"text", String}}},
+		 .description = "Set the text of a `UiText`, or of a `TextRenderer` of the world (a label, a price).",
+		 .params = {entityId, {"text", String}}},
 		{.table = "ui", .name = "get_text", .function = guarded<luaUiGetText>,
-		 .description = "Text of a `UiText`.", .params = {entityId}, .returns = {{"text", String}}},
+		 .description = "Text of a `UiText` or of a `TextRenderer`.", .params = {entityId},
+		 .returns = {{"text", String}}},
 		{.table = "ui", .name = "set_visible", .function = guarded<luaUiSetVisible>,
 		 .description = "Show or hide the entity in the game.", .params = {entityId, {"visible", Boolean}}},
+		{.table = "ui", .name = "set_size", .function = guarded<luaUiSetSize>,
+		 .description = "Resize the `UiRect` of a widget, in the units of its size (screen heights, shares of its parent, "
+						"pixels): a card fitted to its lines; false when the entity has no `UiRect`.",
+		 .params = {entityId, {"width", Number}, {"height", Number}}, .returns = {{"done", Boolean}}},
+		{.table = "ui", .name = "get_rect", .function = guarded<luaUiGetRect>,
+		 .description = "Rectangle of a widget as the HUD lays it out, in pixels of the viewport from its top left (an "
+						"arrow aimed at a button at any interface size); nil when it is hidden or has no `UiRect`.",
+		 .params = {entityId},
+		 .returns = {{"x", Number}, {"y", Number}, {"width", Number}, {"height", Number}}},
 		{.table = "ui", .name = "set_image", .function = blocking<luaUiSetImage>,
 		 .description = "Show a texture asset in a `UiImage` (an empty path clears it); false when the entity has no "
 						"`UiImage` or the texture cannot be loaded.",
@@ -2748,27 +2804,70 @@ auto getLuaTables() -> const std::vector<LuaTable>& {
 	return s_tables;
 }
 
-auto generateLuaReference() -> std::string {
-	std::string page = "# Lua API reference {#page-lua-api}\n\n[TOC]\n\n"
-					   "Every table and function a script can call. This page is generated from the binding registry "
-					   "(`getLuaBindings()` in `source/owl/private/script/LuaBindings.cpp`): do not edit it by hand. "
-					   "When a binding changes, `owl_script_tests_unit_test` fails and writes the new page to "
-					   "the temporary folder (the failure names the file): copy it over this one. See [Lua "
-					   "scripting](scripting.md) for the "
-					   "callbacks, the properties and the sandbox.\n\n"
-					   "An `entity` is the integer UUID of an entity (`entity_id` in its own script, "
-					   "`scene.find_entity` for the others); `[name: type]` is optional.\n";
-	for (const auto& table: getLuaTables()) {
-		page += std::format("\n## `{}`\n\n{}\n\n", table.name, table.description);
-		std::vector<std::array<std::string, 3>> rows{{"Function", "Returns", "Description"}};
-		for (const auto& binding: getLuaBindings()) {
-			if (binding.table == table.name)
-				rows.push_back(
-						{describeSignature(binding), describeReturns(binding), std::string{binding.description}});
+auto getLuaReferencePages() -> const std::vector<LuaReferencePage>& {
+	static const std::vector<LuaReferencePage> s_pages{
+			{.file = "lua-api-entities.md", .title = "Entities and transforms", .tables = {"entity", "transform"}},
+			{.file = "lua-api-scene.md", .title = "Scene, engine and log", .tables = {"scene", "engine", "log"}},
+			{.file = "lua-api-input.md", .title = "Input", .tables = {"input"}},
+			{.file = "lua-api-physics.md", .title = "Physics", .tables = {"physics"}},
+			{.file = "lua-api-sound.md", .title = "Sound", .tables = {"sound"}},
+			{.file = "lua-api-time.md", .title = "Time and timers", .tables = {"time", "trigger"}},
+			{.file = "lua-api-ui.md", .title = "HUD", .tables = {"ui"}},
+			{.file = "lua-api-saves.md",
+			 .title = "Game state, saves and settings",
+			 .tables = {"gamestate", "save", "settings"}},
+			{.file = "lua-api-raycast.md", .title = "Raycast doors and push-walls", .tables = {"door", "pushwall"}},
+			{.file = "lua-api-isometric.md", .title = "Isometric terrain and paths", .tables = {"isometric", "path"}},
+	};
+	return s_pages;
+}
+
+auto generateLuaReference() -> std::vector<LuaReferenceFile> {
+	const auto pageId = [](const std::string_view iFile) -> std::string {
+		return "page-" + std::string{iFile.substr(0, iFile.find('.'))};
+	};
+	const auto findTable = [](const std::string_view iName) -> const LuaTable* {
+		const auto found = std::ranges::find(getLuaTables(), iName, &LuaTable::name);
+		return found == getLuaTables().end() ? nullptr : &*found;
+	};
+	std::vector<LuaReferenceFile> files;
+	const std::string index =
+			"# Lua API reference {#page-lua-api}\n\n[TOC]\n\n"
+			"Every table and function a script can call, one page per theme. These pages are generated from "
+			"the binding registry (`getLuaBindings()` in `source/owl/private/script/LuaBindings.cpp`): do "
+			"not edit them by hand. When a binding changes, `owl_script_tests_unit_test` fails and writes "
+			"the new pages to `lua-api/` in its working directory (the failure names the folder): copy "
+			"them over `doc/pages/`. See [Lua scripting](scripting.md) for the callbacks, the properties "
+			"and the sandbox.\n\n"
+			"An `entity` is the integer UUID of an entity (`entity_id` in its own script, "
+			"`scene.find_entity` for the others); `[name: type]` is optional.\n\n## Pages\n\n";
+	std::vector<std::array<std::string, 3>> indexRows{{"Page", "Table", "Content"}};
+	files.push_back({.name = "lua-api.md", .content = {}});
+	for (const auto& page: getLuaReferencePages()) {
+		std::string content = std::format("# Lua API: {} {{#{}}}\n\n[TOC]\n\n", page.title, pageId(page.file));
+		content += "Generated from the binding registry, do not edit by hand: see the [Lua API reference](lua-api.md) "
+				   "for the conventions and the other pages.\n";
+		bool firstRow = true;
+		for (const auto tableName: page.tables) {
+			const auto* table = findTable(tableName);
+			if (table == nullptr)
+				continue;
+			indexRows.push_back({firstRow ? std::format("[{}]({})", page.title, page.file) : std::string{},
+								 std::format("`{}`", table->name), std::string{table->description}});
+			firstRow = false;
+			content += std::format("\n## `{}`\n\n{}\n\n", table->name, table->description);
+			std::vector<std::array<std::string, 3>> rows{{"Function", "Returns", "Description"}};
+			for (const auto& binding: getLuaBindings()) {
+				if (binding.table == table->name)
+					rows.push_back(
+							{describeSignature(binding), describeReturns(binding), std::string{binding.description}});
+			}
+			content += markdownTable(rows);
 		}
-		page += markdownTable(rows);
+		files.push_back({.name = std::string{page.file}, .content = std::move(content)});
 	}
-	return page;
+	files.front().content = index + markdownTable(indexRows);
+	return files;
 }
 
 void setBoundScene(lua_State* iState, scene::Scene* iScene) { LuaEngine::setHostPointer(iState, iScene); }

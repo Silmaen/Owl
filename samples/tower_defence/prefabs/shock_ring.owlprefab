@@ -1,0 +1,19 @@
+Prefab: ShockRing
+Version: 1
+Entities:
+  - Entity: 7600000000000904001
+    Tag:
+      tag: ShockRing
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [1, 0.85, 0.6, 0.8]
+      tilingFactor: 1
+      texture: nam:textures/fx/ring.png
+    RendererTag:
+      Name: ground

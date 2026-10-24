@@ -130,6 +130,8 @@ template<typename InstanceT>
 struct BatchData {
 	std::vector<InstanceT> instances;
 	shared<gpu::DrawData> drawData;
+	// The same draw tested against the depth attachment (`Renderer2D::setDepthTest`).
+	shared<gpu::DrawData> depthDrawData;
 	shared<gpu::StorageBuffer> ssbo;
 };
 
@@ -149,7 +151,7 @@ struct TextureSlotEntry {
 struct InternalData {
 	struct CameraData {
 		math::mat4 viewProjection;
-		// x: 1 when the bound framebuffer stores linear colour; y: 2D light count; zw: padding to a std140 vec4.
+		// x: linear target, y: 2D light count, z: lights on the ground plane (x, z), w: layer of a 3D scene.
 		std::array<int32_t, 4> flags{};
 		// rgb: linear ambient of the 2D lights; w: 1 when the 2D lighting is on.
 		math::vec4 ambient{1.f, 1.f, 1.f, 0.f};
@@ -181,6 +183,8 @@ struct InternalData {
 	std::vector<math::mat4> transientWorlds;
 	shared<gpu::StorageBuffer> transientWorldsSsbo;
 	std::optional<Renderer2D::Scissor> scissor;
+	// The primitives of the batch are tested against the depth attachment.
+	bool depthTest = false;
 	// Light and shadow buffers, light count and ambient, read by the other 2D renderers each frame.
 	Lighting2DState lighting;
 	// Reused every frame: the lights and the shadow rows of the shadow-casting ones.
@@ -262,7 +266,8 @@ void drawRange(utils::BatchData<InstanceT>& iBatch, const uint32_t iBegin, const
 			   const uint32_t iIndexCount) {
 	iBatch.ssbo->setData(iBatch.instances.data() + iBegin, static_cast<uint32_t>(iCount * sizeof(InstanceT)), 0);
 	iBatch.ssbo->bind();
-	gpu::RenderCommand::drawDataInstanced(iBatch.drawData, iIndexCount, iCount);
+	gpu::RenderCommand::drawDataInstanced(g_Data->depthTest ? iBatch.depthDrawData : iBatch.drawData, iIndexCount,
+										  iCount);
 	g_Data->stats.drawCalls++;
 }
 
@@ -421,30 +426,32 @@ void Renderer2D::init() {
 	std::vector<uint32_t> quadIndices = {0, 1, 2, 2, 3, 0};
 	std::vector<uint32_t> lineIndices = {0, 1};
 
-	const auto setupCornerVbo = [&quadIndices](const shared<gpu::DrawData>& iDraw,
-											   const std::string& iShaderName) -> void {
-		iDraw->init({{"i_CornerIndex", gpu::ShaderDataType::Int}}, "renderer2D", quadIndices, iShaderName, {});
+	constexpr gpu::PipelineState depthTested{.depthTest = true, .depthWrite = false};
+	const auto setupCornerVbo = [&quadIndices](const std::string& iShaderName,
+											   const gpu::PipelineState& iState) -> shared<gpu::DrawData> {
+		auto draw = gpu::DrawData::create();
+		draw->init({{"i_CornerIndex", gpu::ShaderDataType::Int}}, "renderer2D", quadIndices, iShaderName, iState);
 		constexpr std::array<int32_t, 4> corners{0, 1, 2, 3};
-		iDraw->setVertexData(corners.data(), static_cast<uint32_t>(corners.size() * sizeof(int32_t)));
+		draw->setVertexData(corners.data(), static_cast<uint32_t>(corners.size() * sizeof(int32_t)));
+		return draw;
+	};
+	const auto setupLineVbo = [&lineIndices](const gpu::PipelineState& iState) -> shared<gpu::DrawData> {
+		auto draw = gpu::DrawData::create();
+		draw->init({{"i_EndpointIndex", gpu::ShaderDataType::Int}}, "renderer2D", lineIndices, "line", iState);
+		constexpr std::array<int32_t, 2> endpoints{0, 1};
+		draw->setVertexData(endpoints.data(), static_cast<uint32_t>(endpoints.size() * sizeof(int32_t)));
+		return draw;
 	};
 
-	g_Data->quad.drawData = gpu::DrawData::create();
-	setupCornerVbo(g_Data->quad.drawData, "quad");
-
-	g_Data->circle.drawData = gpu::DrawData::create();
-	setupCornerVbo(g_Data->circle.drawData, "circle");
-
-	g_Data->text.drawData = gpu::DrawData::create();
-	setupCornerVbo(g_Data->text.drawData, "text");
-
-	g_Data->line.drawData = gpu::DrawData::create();
-	g_Data->line.drawData->init({{"i_EndpointIndex", gpu::ShaderDataType::Int}}, "renderer2D", lineIndices, "line",
-								{.topology = gpu::PrimitiveTopology::Lines});
-	{
-		constexpr std::array<int32_t, 2> endpoints{0, 1};
-		g_Data->line.drawData->setVertexData(endpoints.data(),
-											 static_cast<uint32_t>(endpoints.size() * sizeof(int32_t)));
-	}
+	g_Data->quad.drawData = setupCornerVbo("quad", {});
+	g_Data->quad.depthDrawData = setupCornerVbo("quad", depthTested);
+	g_Data->circle.drawData = setupCornerVbo("circle", {});
+	g_Data->circle.depthDrawData = setupCornerVbo("circle", depthTested);
+	g_Data->text.drawData = setupCornerVbo("text", {});
+	g_Data->text.depthDrawData = setupCornerVbo("text", depthTested);
+	g_Data->line.drawData = setupLineVbo({.topology = gpu::PrimitiveTopology::Lines});
+	g_Data->line.depthDrawData =
+			setupLineVbo({.topology = gpu::PrimitiveTopology::Lines, .depthTest = true, .depthWrite = false});
 
 	g_Data->whiteTexture =
 			gpu::Texture2D::create(gpu::Texture2D::Specification{.size = {1, 1}, .format = gpu::ImageFormat::Rgba8});
@@ -523,13 +530,25 @@ void Renderer2D::beginScene(const Camera& iCamera) {
 		const gpu::RendererDescriptors::ScopedActive scoped{blockId()};
 		g_Data->cameraBuffer.viewProjection = iCamera.getViewProjection();
 		g_Data->cameraBuffer.flags[0] = gpu::Framebuffer::isLinearTargetBound() ? 1 : 0;
+		g_Data->cameraBuffer.flags[2] = 0;
+		g_Data->cameraBuffer.flags[3] = 0;
 		setLightingParameters(*g_Data, 0, math::vec4{1.f, 1.f, 1.f, 0.f});
 		g_Data->cameraUniformBuffer->setData(&g_Data->cameraBuffer, sizeof(utils::InternalData::CameraData), 0);
 	}
 	g_Data->scissor.reset();
+	g_Data->depthTest = false;
 	startBatch();
 	RendererTilemap::beginScene(iCamera);
 }
+
+void Renderer2D::setDepthTest(const bool iEnabled) {
+	if (!g_Data || g_Data->depthTest == iEnabled)
+		return;
+	nextBatch();
+	g_Data->depthTest = iEnabled;
+}
+
+auto Renderer2D::isDepthTestEnabled() -> bool { return g_Data && g_Data->depthTest; }
 
 void Renderer2D::setLighting(const Lighting2D& iLighting) {
 	OWL_PROFILE_FUNCTION()
@@ -549,8 +568,9 @@ void Renderer2D::setLighting(const Lighting2D& iLighting) {
 			buildShadowRow2D(light.position, light.radius, iLighting.occluders,
 							 std::span{data.shadowRows}.last(g_shadow2DBins));
 		}
+		const math::vec3 color = light.color * iLighting.exposureScale;
 		data.lights.push_back({.positionRadius = {light.position.x(), light.position.y(), light.height, light.radius},
-							   .colorFalloff = {light.color.x(), light.color.y(), light.color.z(), light.falloff},
+							   .colorFalloff = {color.x(), color.y(), color.z(), light.falloff},
 							   .spot = {light.direction.x(), light.direction.y(), light.cosInner, light.cosOuter},
 							   .shadow = {firstBin, light.shadowSoftness, static_cast<float>(g_shadow2DBins), 0.f}});
 	}
@@ -561,8 +581,11 @@ void Renderer2D::setLighting(const Lighting2D& iLighting) {
 	if (!data.shadowRows.empty())
 		data.lighting.shadows->setData(data.shadowRows.data(),
 									   static_cast<uint32_t>(data.shadowRows.size() * sizeof(float)), 0);
+	data.cameraBuffer.flags[2] = iLighting.groundPlane ? 1 : 0;
+	data.cameraBuffer.flags[3] = iLighting.inScene3D ? 1 : 0;
 	setLightingParameters(data, static_cast<int32_t>(data.lights.size()),
-						  math::vec4{iLighting.ambient.x(), iLighting.ambient.y(), iLighting.ambient.z(), 1.f});
+						  math::vec4{iLighting.ambient.x(), iLighting.ambient.y(), iLighting.ambient.z(),
+									 std::max(iLighting.exposureScale, 1e-6f)});
 	data.cameraUniformBuffer->setData(&data.cameraBuffer, sizeof(utils::InternalData::CameraData), 0);
 }
 

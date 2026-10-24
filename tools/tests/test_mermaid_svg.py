@@ -67,6 +67,16 @@ def test_cycle_and_self_loop_do_not_hang() -> None:
     assert m.render("flowchart LR\n A --> B\n B --> A\n A --> A\n")
 
 
+def test_edges_both_ways_between_two_nodes_do_not_overlap() -> None:
+    svg = m.render("flowchart LR\n  A[Edit] -->|go| B[Play]\n  B -->|back| A\n")
+    paths = re.findall(r'<path d="([^"]+)" fill="none"', svg)
+    assert len(paths) == 2 and paths[0] != paths[1]
+    boxes = re.findall(r'<rect x="([-\d.]+)" y="([-\d.]+)" width="[\d.]+" height="([\d.]+)" rx="4"', svg)
+    assert len(boxes) == 2
+    (_, y0, h0), (_, y1, _) = boxes
+    assert abs(float(y0) - float(y1)) >= float(h0)
+
+
 def test_state_diagram_pseudo_states() -> None:
     svg = m.render("stateDiagram-v2\n [*] --> Idle\n Idle --> Busy : start\n Busy --> [*]\n")
     assert "Idle" in _texts(svg)

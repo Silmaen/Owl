@@ -37,9 +37,6 @@
         "toolset-mingw",
         "clang-release"
       ],
-      "cacheVariables": {
-        "OWL_HELP_FETCH_BADGES": "ON"
-      },
       "vendor": {
         "silmaen": {
           "package": true,

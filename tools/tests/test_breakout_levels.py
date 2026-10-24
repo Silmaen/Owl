@@ -25,4 +25,3 @@ def test_every_level_drops_both_power_ups() -> None:
     for level in range(len(levels.LEVELS)):
         drops = {brick.drop for brick in levels.layout(level)}
         assert {"wide", "slow"} <= drops, f"level {level + 1}"
-

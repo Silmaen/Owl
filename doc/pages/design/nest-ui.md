@@ -121,4 +121,17 @@ context menu or a viewport overlay dropdown. Reverts to the editor camera on dem
   checkboxes, inline code as a flat tinted span
 - Not done: dark/light theme switch for the help content; side-by-side preview of the source `.md`
 
+### Owl Nest user help (V3)
+
+- Done: the panel is the user help of the editor. `doc/help.yml` lists the pages by group in a fixed order
+  (Getting started, The editor, Making games, Scripting, Engine for C++ developers, Contributing, Roadmap and changes);
+  `HelpAssets.cmake` writes them in that order with their group into `index.yml`, the panel draws the groups as they
+  come and starts on the first page (`nest_help.md`); Doxygen's tree follows the same list (`fix_md_links.py`)
+- Done: editor pages written from the code (window and ribbon, viewport, hierarchy and inspector, Content Browser,
+  documents, tilemaps, HUD, Play, console, projects, settings), internals in `editor_internals.md`
+- Done: design pages out of the help (`design/plans.md` for Doxygen), links outside the bundle and badges made text
+  (`tools/doc/help_bundle.py`), the `OWL_HELP_FETCH_BADGES` option removed
+- Done: the build bundle wins over any `help/` of an asset folder; the configure deletes a stale `engine_assets/help`
+  (`HelpPanel.BuildBundleWinsOverAStaleAssetHelp`)
+
 [done]: https://img.shields.io/badge/-Done-2ea043?style=flat-square
