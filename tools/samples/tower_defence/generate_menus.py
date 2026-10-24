@@ -326,16 +326,21 @@ def world_map() -> str:
                 position=(point[0] + (star - 1) * 0.62, point[1] - 1.55, 0.12),
                 scale=(0.6, 0.6, 1),
             )
-    levels = []
+    levels, scenes = [], []
     for index, (level, unlock) in enumerate(CAMPAIGN):
         if level is None:
-            levels.append(f"|{PLANNED[index - 3]}|0|{unlock}")
+            levels.append(f"{PLANNED[index - 3]}|0|{unlock}")
+            scenes.append("")
         else:
-            levels.append(f"scenes/level_{level.number:02d}.owl|{level.name}|{len(level.waves)}|{unlock}")
-    values = "".join(f"\n        - {y.quote(entry)}" for entry in levels)
+            levels.append(f"{level.name}|{len(level.waves)}|{unlock}")
+            scenes.append(f"scenes/level_{level.number:02d}.owl")
     script = (
-        "LuaScript:\n  scriptPath: scripts/ui/world_map.lua\n  properties:\n    - name: levels\n      type: strings\n"
-        f"      value:{values}\n"
+        "LuaScript:\n  scriptPath: scripts/ui/world_map.lua\n  properties:\n"
+        "    - name: levels\n      type: strings\n      value:"
+        + "".join(f"\n        - {y.quote(entry)}" for entry in levels)
+        + "\n    - name: level_scenes\n      type: strings\n      value:"
+        + "".join(f"\n        - {y.quote(entry)}" for entry in scenes)
+        + "\n"
     )
     root = entities.add("MapCanvas", [y.canvas(), script])
     entities.add(

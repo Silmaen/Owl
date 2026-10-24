@@ -387,8 +387,8 @@ flowchart TD
 Owl Nest can export a standalone game package via **Project > Pack Game**. The `AssetScanner`
 recursively parses scene files starting from the project's first scene, discovers all referenced assets (textures,
 fonts, sounds, scripts, meshes), follows teleport trigger links to other scenes, and follows the scene paths (`.owl`), sound files and serialized
-textures (`nam:` / `pat:`) quoted in Lua scripts or given as string properties of a `LuaScript` (a `next_scene`
-property), recursively.
+textures (`nam:` / `pat:`) quoted in Lua scripts or given as string or list-of-strings properties of a `LuaScript` (a
+`next_scene` property, the `level_scenes` of a world map), recursively.
 
 Discovered assets are compressed with **zstd** and written to a `.owlpack` binary archive with an XOR-obfuscated table
 of contents. At start, the game runner opens the pack named by `PackFile` in `runner.yml` with `PackReader`, extracts it into

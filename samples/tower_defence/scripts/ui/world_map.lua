@@ -3,13 +3,15 @@
 -- level opens the next one: the next stretch of the road is drawn dot by dot (`tower_map_reveal` in the game state,
 -- set by defence.lua), then its site rises.
 --
--- - `levels`: one string per site, "scene|name|waves|unlock" (an empty scene for a level still to come).
+-- - `levels`: one string per site, "name|waves|unlock"; `level_scenes`: the scene of each site (empty for a level still
+--   to come).
 -- - A click on an open site, Q / E, Tab or the D-pad choose it, Enter, pad A or March! starts it; Bonuses lists what
 --   the levels won unlocked; Escape, pad B or Back returns to the title.
 -- - Progress: the `tower_done_NN` and `tower_stars_NN` settings; mirrored in `tower_map_*` game state keys.
 
 properties = {
     { name = "levels", type = "strings", default = {} },
+    { name = "level_scenes", type = "strings", default = {} },
     { name = "dot_time", type = "float", default = 0.08, min = 0.01 },
     { name = "wipe_color", type = "color", default = { 0.1, 0.14, 0.24, 1 } },
 }
@@ -91,8 +93,8 @@ function on_create()
     gamestate.remove("tower_map_reveal")
     local open_count = 0
     for index, text in ipairs(levels) do
-        local path, name, waves, unlock = string.match(text, "^([^|]*)|([^|]*)|([^|]*)|(.*)$")
-        local site = { scene = path or "", name = name or "?", waves = waves or "?", unlock = unlock or "",
+        local name, waves, unlock = string.match(text, "^([^|]*)|([^|]*)|(.*)$")
+        local site = { scene = level_scenes[index] or "", name = name or "?", waves = waves or "?", unlock = unlock or "",
                        id = site_ids[index] and site_ids[index].id or 0, ring = rings[index] and rings[index].id or 0,
                        stars = {}, dots = {} }
         for star = 1, 3 do

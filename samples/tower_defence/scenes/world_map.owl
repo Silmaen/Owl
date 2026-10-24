@@ -1115,11 +1115,19 @@ Entities:
         - name: levels
           type: strings
           value:
-            - 'scenes/level_01.owl|Greenmarch Ford|8|The second power-up of each tower'
-            - 'scenes/level_02.owl|Thornwood Pass|10|Rain of arrows: a spell on the enemy nearest the keep'
-            - 'scenes/level_03.owl|Stonebridge|10|Royal treasury: 60 more gold at the start of every level'
-            - '|Frostmere|0|Shield wall: a spell stopping the enemies around the front one'
-            - '|The Black Gate|0|Keep walls, with 3 stars on all five: 5 more lives'
+            - 'Greenmarch Ford|8|The second power-up of each tower'
+            - 'Thornwood Pass|10|Rain of arrows: a spell on the enemy nearest the keep'
+            - 'Stonebridge|10|Royal treasury: 60 more gold at the start of every level'
+            - 'Frostmere|0|Shield wall: a spell stopping the enemies around the front one'
+            - 'The Black Gate|0|Keep walls, with 3 stars on all five: 5 more lives'
+        - name: level_scenes
+          type: strings
+          value:
+            - 'scenes/level_01.owl'
+            - 'scenes/level_02.owl'
+            - 'scenes/level_03.owl'
+            - ''
+            - ''
   - Entity: 7440000000000000072
     Tag:
       tag: MapTitle
