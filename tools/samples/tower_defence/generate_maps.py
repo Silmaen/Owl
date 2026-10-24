@@ -296,7 +296,7 @@ def torches(entities: y.Entities, level: mp.LevelData, road: list[mp.Cell]) -> N
         side = 0.55
         position = (x + side, road_height(level, (x, z)) + 0.9, z + side)
         light = (
-            "Light: {type: Point, enabled: false, color: [1, 0.62, 0.3], intensity: 3000, range: 5}\n"
+            "Light: {type: Point, enabled: false, color: [1, 0.62, 0.3], intensity: 5000, range: 5.5}\n"
             "LightFlicker:\n  style: Fire\n  amplitude: 0.25\n  seed: "
             f"{x * 7 + z}\n  colorShift: [0, 0.05, 0.03]\n  positionJitter: [0.02, 0.03, 0.02]\n"
         )
@@ -334,7 +334,7 @@ def level_scene(level: mp.LevelData) -> str:
         "nightColor: [0.42, 0.48, 0.66], nightBrightness: 0.02, stars: 1, discSize: 2.5, resolution: 256}\n"
         f"DayNightCycle: {{enabled: false, timeOfDay: {y.num(level.start_hour)}, dayLength: 600, azimuth: 120, "
         f"maxElevation: 58, sun: {sun}, sunIlluminance: 100000, sunColor: [1, 0.96, 0.9], sunsetColor: [1, 0.55, 0.3], "
-        "moonIlluminance: 150, moonColor: [0.62, 0.72, 1], nightExposure: 3}\n"
+        "moonIlluminance: 300, moonColor: [0.62, 0.72, 1], nightExposure: 6}\n"
     )
     environment = 'Environment: {hdri: "", ambient: [1, 1, 1], intensity: 9000, rotation: 0, showSky: true}\n'
     entities.add("Sky", [environment, sky])

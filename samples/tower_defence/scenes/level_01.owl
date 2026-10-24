@@ -46,7 +46,7 @@ Entities:
     Hierarchy: {}
     Environment: {hdri: "", ambient: [1, 1, 1], intensity: 9000, rotation: 0, showSky: true}
     ProceduralSky: {enabled: true, sunDirection: [0.3, 0.8, -0.5], turbidity: 3, groundColor: [0.3, 0.34, 0.26], nightColor: [0.42, 0.48, 0.66], nightBrightness: 0.02, stars: 1, discSize: 2.5, resolution: 256}
-    DayNightCycle: {enabled: false, timeOfDay: 9.5, dayLength: 600, azimuth: 120, maxElevation: 58, sun: 7500000000001000003, sunIlluminance: 100000, sunColor: [1, 0.96, 0.9], sunsetColor: [1, 0.55, 0.3], moonIlluminance: 150, moonColor: [0.62, 0.72, 1], nightExposure: 3}
+    DayNightCycle: {enabled: false, timeOfDay: 9.5, dayLength: 600, azimuth: 120, maxElevation: 58, sun: 7500000000001000003, sunIlluminance: 100000, sunColor: [1, 0.96, 0.9], sunsetColor: [1, 0.55, 0.3], moonIlluminance: 300, moonColor: [0.62, 0.72, 1], nightExposure: 6}
   - Entity: 7500000000001000003
     Tag:
       tag: Sun
@@ -20128,7 +20128,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy: {}
-    Light: {type: Point, enabled: false, color: [1, 0.62, 0.3], intensity: 3000, range: 5}
+    Light: {type: Point, enabled: false, color: [1, 0.62, 0.3], intensity: 5000, range: 5.5}
     LightFlicker:
       style: Fire
       amplitude: 0.25
@@ -20195,7 +20195,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy: {}
-    Light: {type: Point, enabled: false, color: [1, 0.62, 0.3], intensity: 3000, range: 5}
+    Light: {type: Point, enabled: false, color: [1, 0.62, 0.3], intensity: 5000, range: 5.5}
     LightFlicker:
       style: Fire
       amplitude: 0.25
@@ -20262,7 +20262,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy: {}
-    Light: {type: Point, enabled: false, color: [1, 0.62, 0.3], intensity: 3000, range: 5}
+    Light: {type: Point, enabled: false, color: [1, 0.62, 0.3], intensity: 5000, range: 5.5}
     LightFlicker:
       style: Fire
       amplitude: 0.25
@@ -20329,7 +20329,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy: {}
-    Light: {type: Point, enabled: false, color: [1, 0.62, 0.3], intensity: 3000, range: 5}
+    Light: {type: Point, enabled: false, color: [1, 0.62, 0.3], intensity: 5000, range: 5.5}
     LightFlicker:
       style: Fire
       amplitude: 0.25

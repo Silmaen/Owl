@@ -34,6 +34,8 @@ properties = {
     { name = "night_from", type = "int", default = 0, min = 0 },
     { name = "start_hour", type = "float", default = 9.5, min = 0, max = 24 },
     { name = "night_hour", type = "float", default = 21.5, min = 0, max = 24 },
+    { name = "sky_elevation", type = "float", default = 58.0, min = 1, max = 90 },
+    { name = "sky_night_exposure", type = "float", default = 6.0 },
     { name = "start_gold", type = "int", default = 240, min = 0 },
     { name = "lives", type = "int", default = 20, min = 1 },
     { name = "map_width", type = "int", default = 18, min = 1 },
@@ -438,10 +440,13 @@ local function update_sky(dt)
         end
     end
     if ambient_id ~= 0 then
-        -- Sprites follow the sky: full light by day, a blue dimness at night.
-        local dusk = math.max(0.0, math.min(1.0, (hours - 17.0) / 3.0))
-        entity.set_light_intensity(ambient_id, 1.0 - 0.62 * dusk)
-        entity.set_light_color(ambient_id, 1.0 - 0.35 * dusk, 1.0 - 0.25 * dusk, 1.0)
+        -- Sprites follow the sky: a blue dimness at night, against the exposure the cycle adds to the camera then.
+        local sun_y = math.sin((hours - 6.0) / 24.0 * 2.0 * math.pi) * math.sin(math.rad(sky_elevation))
+        local t = math.max(0.0, math.min(1.0, (sun_y + 0.15) / 0.2))
+        local night = 1.0 - t * t * (3.0 - 2.0 * t)
+        local level = (1.0 - 0.55 * night) * 2.0 ^ (-sky_night_exposure * night)
+        entity.set_light_intensity(ambient_id, level)
+        entity.set_light_color(ambient_id, 1.0 - 0.35 * night, 1.0 - 0.25 * night, 1.0)
     end
 end
 
