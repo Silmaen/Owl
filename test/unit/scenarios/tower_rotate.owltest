@@ -1,3 +1,4 @@
+# slow
 # Tower defence: the enemies are billboards drawn in 8 directions. A goblin walking down the road from the gate
 # toward the camera shows its front (direction 0); C turns the view by 45 degrees and the same goblin shows its
 # three-quarter view (direction 1); Z turns the view back.

@@ -1,3 +1,4 @@
+# slow
 # Tower defence: the first wave called with Space long before its countdown ends starts at once and pays the early
 # bonus (2 gold per second left by default); the countdown of the next wave starts once the wave is sent.
 scene: ../../../samples/tower_defence/scenes/level_01.owl

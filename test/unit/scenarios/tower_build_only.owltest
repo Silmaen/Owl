@@ -1,3 +1,4 @@
+# slow
 # Tower defence: the first level at double speed with towers only, never raised (the plan the first version won
 # with): the Horde holds out and the keep falls, the level asks for upgrades.
 scene: ../../../samples/tower_defence/scenes/level_01.owl

@@ -1,3 +1,4 @@
+# slow
 # Tower defence, Frostmere at double speed with the waves called early and no tower: goblin sappers come with the
 # second wave and an ogre mage with the third, which wards the Horde around it; each newcomer is named on arrival.
 scene: ../../../samples/tower_defence/scenes/level_05.owl

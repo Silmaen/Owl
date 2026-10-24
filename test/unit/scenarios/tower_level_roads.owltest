@@ -1,3 +1,4 @@
+# slow
 # Tower defence, Stonebridge: two gates, two roads meeting before the bridge. The first wave sends goblins down
 # both roads (group letters a and b); with no tower they reach the keep and cost lives.
 scene: ../../../samples/tower_defence/scenes/level_03.owl

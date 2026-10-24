@@ -445,6 +445,8 @@ TEST_F(LuaSandbox, requireWithoutReaderRaisesAnError) {
 }
 
 TEST_F(LuaSandbox, aModuleRunsUnderTheMemoryCeiling) {
+	// Only the memory ceiling may stop the module: on a slow build the time quota would fire first.
+	engine.setQuotas({.memoryBytes = g_SmallQuotas.memoryBytes, .timePerCallMs = 0});
 	engine.setModuleReader([](const std::string& iPath) -> std::optional<std::vector<uint8_t>> {
 		if (iPath == "greedy.lua")
 			return toBuffer("local t = {} for i = 1, 1e9 do t[i] = string.rep('x', 1024) .. i end return t");

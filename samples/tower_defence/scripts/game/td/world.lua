@@ -24,12 +24,12 @@ end
 -- numbers, with the distance walked at each point.
 function World.read_road(prefix)
     local points = {}
+    -- The waypoints are numbered without a gap: every lookup scans the scene, so stop at the first one missing.
     for number = 1, 99 do
         local id = scene.find_entity(string.format("Waypoint %s%02d", prefix, number))
-        if id ~= 0 then
-            local x, y, z = transform.get_position(id)
-            points[#points + 1] = { x = x, y = y, z = z, at = 0.0 }
-        end
+        if id == 0 then break end
+        local x, y, z = transform.get_position(id)
+        points[#points + 1] = { x = x, y = y, z = z, at = 0.0 }
     end
     if #points < 2 then return nil end
     local road = { points = points, total = 0.0 }

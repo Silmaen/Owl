@@ -333,10 +333,14 @@ def torches(entities: y.Entities, level: mp.LevelData, road: list[mp.Cell]) -> N
 
 
 def waypoints(entities: y.Entities, level: mp.LevelData, road: list[mp.Cell], letter: str) -> None:
-    """The ``Waypoint NN`` entities of a road (``Waypoint B NN`` for the second gate) under a ``Route`` parent: its
-    corners, the cells around a ramp or a bridge (their height changes), and a last one in the gate of the keep."""
+    """The ``Waypoint NN`` entities of a road (``Waypoint B NN`` for the second gate) under a ``Route`` parent.
+
+    Numbered without a gap (the script stops at the first number missing): the corners, the cells around a ramp or a
+    bridge (their height changes), and a last one in the gate of the keep.
+    """
     route = entities.add(f"Route {letter}".strip(), [])
     previous_direction = None
+    number = 0
     for index, cell in enumerate(road):
         nxt = road[index + 1] if index + 1 < len(road) else None
         direction = (nxt[0] - cell[0], nxt[1] - cell[1]) if nxt else None
@@ -344,14 +348,15 @@ def waypoints(entities: y.Entities, level: mp.LevelData, road: list[mp.Cell], le
         changes = level.at(cell) in "/=" or (nxt is not None and level.at(nxt) in "/=")
         changes = changes or (index > 0 and level.at(road[index - 1]) in "/=")
         if index == 0 or nxt is None or direction != previous_direction or changes:
-            entities.add(f"Waypoint {letter}{index + 1:02d}", [], position=(cell[0], height, cell[1]), parent=route)
+            number += 1
+            entities.add(f"Waypoint {letter}{number:02d}", [], position=(cell[0], height, cell[1]), parent=route)
         previous_direction = direction
     end = road[-1]
     toward = sides(level, end, "K")
     dx = 0.6 if toward & E else (-0.6 if toward & W else 0.0)
     dz = 0.6 if toward & S else (-0.6 if toward & N else 0.0)
     position = (end[0] + dx, road_height(level, end), end[1] + dz)
-    entities.add(f"Waypoint {letter}{len(road) + 1:02d}", [], position=position, parent=route)
+    entities.add(f"Waypoint {letter}{number + 1:02d}", [], position=position, parent=route)
 
 
 def unlit_sprite(texture: str, colour: y.Colour = (1, 1, 1, 1)) -> str:

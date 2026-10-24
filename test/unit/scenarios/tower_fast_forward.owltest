@@ -1,3 +1,4 @@
+# slow
 # Tower defence: F doubles the scene clock (time.set_scale), the pause (Escape) stops it: the enemies walk no further
 # while the pause window is open, and walk on once it is closed with Escape again.
 scene: ../../../samples/tower_defence/scenes/level_01.owl

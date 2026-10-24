@@ -20894,7 +20894,7 @@ Entities:
       parentId: 7500000000007001230
   - Entity: 7500000000007001232
     Tag:
-      tag: Waypoint 07
+      tag: Waypoint 02
     Transform:
       translation: [6, 0.2, 3]
       rotation: [0, 0, 0]
@@ -20905,7 +20905,7 @@ Entities:
       parentId: 7500000000007001230
   - Entity: 7500000000007001233
     Tag:
-      tag: Waypoint 11
+      tag: Waypoint 03
     Transform:
       translation: [6, 0.2, 7]
       rotation: [0, 0, 0]
@@ -20916,7 +20916,7 @@ Entities:
       parentId: 7500000000007001230
   - Entity: 7500000000007001234
     Tag:
-      tag: Waypoint 21
+      tag: Waypoint 04
     Transform:
       translation: [16, 0.2, 7]
       rotation: [0, 0, 0]
@@ -20927,7 +20927,7 @@ Entities:
       parentId: 7500000000007001230
   - Entity: 7500000000007001235
     Tag:
-      tag: Waypoint 22
+      tag: Waypoint 05
     Transform:
       translation: [16.6, 0.2, 7]
       rotation: [0, 0, 0]
@@ -20959,7 +20959,7 @@ Entities:
       parentId: 7500000000007001236
   - Entity: 7500000000007001238
     Tag:
-      tag: Waypoint B 12
+      tag: Waypoint B 02
     Transform:
       translation: [11, 0.2, 12]
       rotation: [0, 0, 0]
@@ -20970,7 +20970,7 @@ Entities:
       parentId: 7500000000007001236
   - Entity: 7500000000007001239
     Tag:
-      tag: Waypoint B 17
+      tag: Waypoint B 03
     Transform:
       translation: [11, 0.2, 7]
       rotation: [0, 0, 0]
@@ -20981,7 +20981,7 @@ Entities:
       parentId: 7500000000007001236
   - Entity: 7500000000007001240
     Tag:
-      tag: Waypoint B 22
+      tag: Waypoint B 04
     Transform:
       translation: [16, 0.2, 7]
       rotation: [0, 0, 0]
@@ -20992,7 +20992,7 @@ Entities:
       parentId: 7500000000007001236
   - Entity: 7500000000007001241
     Tag:
-      tag: Waypoint B 23
+      tag: Waypoint B 05
     Transform:
       translation: [16.6, 0.2, 7]
       rotation: [0, 0, 0]

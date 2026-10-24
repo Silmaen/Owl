@@ -1,3 +1,4 @@
+# slow
 # Tower defence, The Black Gate: two gates, twelve waves and more gold; the first wave sends grunts on road A and
 # goblins on road B.
 scene: ../../../samples/tower_defence/scenes/level_10.owl
