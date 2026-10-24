@@ -1047,14 +1047,23 @@ auto luaEntitySetLightRange(lua_State* iState) -> int {
 }
 
 auto luaUiSetText(lua_State* iState) -> int {
-	if (const auto entity = findEntity(iState); entity && entity->hasComponent<scene::component::UiText>())
-		entity->getComponent<scene::component::UiText>().text = luaL_checkstring(iState, 2);
+	const char* text = luaL_checkstring(iState, 2);
+	if (const auto entity = findEntity(iState); entity) {
+		if (entity->hasComponent<scene::component::UiText>())
+			entity->getComponent<scene::component::UiText>().text = text;
+		else if (entity->hasComponent<scene::component::Text>())
+			entity->getComponent<scene::component::Text>().text = text;
+	}
 	return 0;
 }
 
 auto luaUiGetText(lua_State* iState) -> int {
 	if (const auto entity = findEntity(iState); entity && entity->hasComponent<scene::component::UiText>()) {
 		lua_pushstring(iState, entity->getComponent<scene::component::UiText>().text.c_str());
+		return 1;
+	}
+	if (const auto entity = findEntity(iState); entity && entity->hasComponent<scene::component::Text>()) {
+		lua_pushstring(iState, entity->getComponent<scene::component::Text>().text.c_str());
 		return 1;
 	}
 	lua_pushstring(iState, "");
@@ -2430,9 +2439,11 @@ auto declareBindings() -> std::vector<LuaBinding> {
 						"cache the result.",
 		 .params = {{"name", String}}, .returns = {{"entity_id", Entity}}},
 		{.table = "ui", .name = "set_text", .function = guarded<luaUiSetText>,
-		 .description = "Set the text of a `UiText`.", .params = {entityId, {"text", String}}},
+		 .description = "Set the text of a `UiText`, or of a `TextRenderer` of the world (a label, a price).",
+		 .params = {entityId, {"text", String}}},
 		{.table = "ui", .name = "get_text", .function = guarded<luaUiGetText>,
-		 .description = "Text of a `UiText`.", .params = {entityId}, .returns = {{"text", String}}},
+		 .description = "Text of a `UiText` or of a `TextRenderer`.", .params = {entityId},
+		 .returns = {{"text", String}}},
 		{.table = "ui", .name = "set_visible", .function = guarded<luaUiSetVisible>,
 		 .description = "Show or hide the entity in the game.", .params = {entityId, {"visible", Boolean}}},
 		{.table = "ui", .name = "set_image", .function = blocking<luaUiSetImage>,

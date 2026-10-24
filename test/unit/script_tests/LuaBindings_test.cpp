@@ -638,6 +638,28 @@ TEST(LuaBindings, sceneTransitionToTakesAColour) {
 	core::Log::invalidate();
 }
 
+TEST(LuaBindings, uiTextReachesAWorldTextRenderer) {
+	core::Log::init(core::Log::Level::Off);
+	auto scn = mkShared<scene::Scene>();
+	auto ent = scn->createEntity("Price");
+	auto& text = ent.addComponent<scene::component::Text>();
+	text.text = "70";
+	const auto uuid = static_cast<uint64_t>(ent.getUUID());
+	const std::string script = "txt = ''\n"
+							   "function on_create()\n"
+							   "  ui.set_text(entity_id, '112')\n"
+							   "  txt = ui.get_text(entity_id)\n"
+							   "end\n";
+	const std::vector<uint8_t> data(script.begin(), script.end());
+	const ScriptInstance inst;
+	inst.setScene(scn.get());
+	ASSERT_TRUE(inst.createFromBuffer(data, "world_text", uuid));
+	inst.onCreate();
+	EXPECT_EQ(text.text, "112");
+	EXPECT_EQ(inst.getPropertyString("txt").value_or(""), "112");
+	core::Log::invalidate();
+}
+
 TEST(LuaBindings, uiTextSetGetAndVisibility) {
 	core::Log::init(core::Log::Level::Off);
 	auto scn = mkShared<scene::Scene>();
