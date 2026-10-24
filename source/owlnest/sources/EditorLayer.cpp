@@ -646,7 +646,9 @@ void EditorLayer::onAttach() {
 	});
 
 	mp_mcp = mkUniq<mcp::McpServer>(
-			*this, mcp::McpServerOptions{.dispatcher = {.helpRoot = panel::HelpPanel::resolveHelpRoot()}});
+			*this, mcp::McpServerOptions{
+						   .dispatcher = {.helpRoot = panel::HelpPanel::resolveHelpRoot()},
+						   .http = {.onQueued = []() -> void { app::Application::get().getWindow().wakeUp(); }}});
 
 	newScene();
 	if (!m_startupProject.empty())
@@ -1209,6 +1211,33 @@ void EditorLayer::updateFramePacing() {
 	const int limit = background && m_settings.backgroundFrameRateLimit > 0 ? m_settings.backgroundFrameRateLimit
 																			: m_settings.frameRateLimit;
 	app.setFrameRateLimit(static_cast<uint32_t>(std::max(limit, 0)));
+	if (m_settings.idleWaitMs > 0 && isIdle())
+		app.requestIdleWait(std::chrono::milliseconds{m_settings.idleWaitMs});
+}
+
+auto EditorLayer::isIdle() const -> bool {
+	if (m_playDriver.isActive() || !m_toasts.getToasts().empty() || gui::FontPreviewCache::get().hasPending() ||
+		app::Application::get().getTaskScheduler().hasPendingTasks())
+		return false;
+	if (const auto [ready, requested] = m_contentBrowser.getPreviewProgress(); ready < requested)
+		return false;
+	if (std::ranges::any_of(m_documents.list(), [](const auto& iDocument) -> bool {
+			return iDocument && iDocument->type() == DocumentType::Scene &&
+				   static_cast<const SceneDocument*>(iDocument.get())->state() != SceneDocument::State::Edit;
+		}))
+		return false;
+	if (ImGui::GetCurrentContext() == nullptr)
+		return true;
+	if (ImGui::IsAnyItemActive() || ImGui::IsAnyMouseDown())
+		return false;
+	for (int key = ImGuiKey_NamedKey_BEGIN; key < ImGuiKey_NamedKey_END; ++key) {
+		// A connected gamepad drives no editor gesture; the mouse buttons are checked above.
+		if (key >= ImGuiKey_GamepadStart && key <= ImGuiKey_GamepadRStickDown)
+			continue;
+		if (ImGui::IsKeyDown(static_cast<ImGuiKey>(key)))
+			return false;
+	}
+	return true;
 }
 
 void EditorLayer::renderGpuCounters() {

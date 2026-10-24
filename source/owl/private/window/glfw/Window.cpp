@@ -359,6 +359,14 @@ auto Window::isFocused() const -> bool {
 	return mp_glfwWindow != nullptr && glfwGetWindowAttrib(mp_glfwWindow, GLFW_FOCUSED) == GLFW_TRUE;
 }
 
+void Window::waitEvents(const std::chrono::milliseconds iTimeout) {
+	OWL_PROFILE_FUNCTION()
+
+	glfwWaitEventsTimeout(std::chrono::duration<double>(iTimeout).count());
+}
+
+void Window::wakeUp() { glfwPostEmptyEvent(); }
+
 void Window::setResizable(const bool iResizable) {
 	if (mp_glfwWindow != nullptr)
 		glfwSetWindowAttrib(mp_glfwWindow, GLFW_RESIZABLE, iResizable ? GLFW_TRUE : GLFW_FALSE);

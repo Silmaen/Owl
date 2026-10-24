@@ -12,6 +12,7 @@
 #include "core/external/glfw3.h"
 #include "window/Window.h"
 
+#include <chrono>
 #include <cstdint>
 #include <filesystem>
 #include <string>
@@ -158,6 +159,19 @@ public:
 	 * @return True if the window is focused.
 	 */
 	[[nodiscard]] auto isFocused() const -> bool override;
+
+	/**
+	 * @brief
+	 *  Sleep until an event arrives, or the timeout elapses, and dispatch the events.
+	 * @param[in] iTimeout Longest wait.
+	 */
+	void waitEvents(std::chrono::milliseconds iTimeout) override;
+
+	/**
+	 * @brief
+	 *  End a waitEvents() early (posts an empty event). Callable from any thread.
+	 */
+	void wakeUp() override;
 
 	/**
 	 * @brief

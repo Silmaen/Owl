@@ -19,6 +19,7 @@
 #include <httplib.h>
 #include <nlohmann/json.hpp>
 
+#include <atomic>
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
@@ -442,6 +443,24 @@ TEST_F(McpHttpTest, RunsTheMessagesOnTheMainThread) {
 	EXPECT_EQ(reply.body, R"({"echo":1})");
 	EXPECT_EQ(handled, 1u);
 	EXPECT_EQ(handledOn, mainThread);
+	server.stop();
+}
+
+TEST_F(McpHttpTest, WakesTheMainLoopWhenAMessageIsQueued) {
+	McpHttpServer server;
+	std::atomic<int> wakes{0};
+	ASSERT_TRUE(server.start({.port = 0, .onQueued = [&wakes]() -> void { ++wakes; }}, "secret").has_value());
+	const McpHttpServer::Handler handler = [](const std::string_view iMessage) -> std::optional<std::string> {
+		return std::string{iMessage};
+	};
+	const auto reply = send(
+			server.getPort(),
+			[](httplib::Client& ioClient) -> httplib::Result {
+				return ioClient.Post("/mcp", {{"Authorization", "Bearer secret"}}, R"({"echo":2})", "application/json");
+			},
+			[&server, &handler]() -> void { std::ignore = server.pump(handler, 4); });
+	EXPECT_EQ(reply.status, 200);
+	EXPECT_EQ(wakes.load(), 1);
 	server.stop();
 }
 

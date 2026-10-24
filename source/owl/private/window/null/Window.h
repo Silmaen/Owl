@@ -10,6 +10,7 @@
 
 #include "window/Window.h"
 
+#include <chrono>
 #include <cstdint>
 #include <filesystem>
 #include <string>
@@ -162,6 +163,19 @@ public:
 	 * @return Always true: a null window is never in the background.
 	 */
 	[[nodiscard]] auto isFocused() const -> bool override { return true; }
+
+	/**
+	 * @brief
+	 *  Return at once: a null window receives no event.
+	 * @param[in] iTimeout Unused.
+	 */
+	void waitEvents([[maybe_unused]] std::chrono::milliseconds iTimeout) override {}
+
+	/**
+	 * @brief
+	 *  Nothing to wake: waitEvents() never sleeps.
+	 */
+	void wakeUp() override {}
 
 	/**
 	 * @brief

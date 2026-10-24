@@ -79,7 +79,9 @@ TEST(core_task, SchedulerTasks) {
 		Timestep ts;
 		std::atomic_bool workDone = false;
 
+		EXPECT_FALSE(scheduler.hasPendingTasks());
 		scheduler.pushTask(Task([&] -> void { workDone = true; }, [&] -> void { counter++; }));
+		EXPECT_TRUE(scheduler.hasPendingTasks());
 		ts.forceUpdate(std::chrono::milliseconds(100));
 		scheduler.frame(ts);
 		waitUntil([&]() -> bool { return workDone.load(); });
@@ -91,6 +93,7 @@ TEST(core_task, SchedulerTasks) {
 			return counter == 1;
 		});
 		EXPECT_EQ(counter, 1);
+		EXPECT_FALSE(scheduler.hasPendingTasks());
 		scheduler.pushTask(Task([&] -> void {}, [&] -> void { counter++; }));
 		scheduler.pushTask(Task([&] -> void {}, [&] -> void { counter++; }));
 		scheduler.pushTask(Task([&] -> void {}, [&] -> void { counter++; }));

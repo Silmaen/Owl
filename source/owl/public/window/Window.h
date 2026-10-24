@@ -13,6 +13,7 @@
 #include "math/vectors.h"
 #include "renderer/gpu/GraphContext.h"
 
+#include <chrono>
 #include <cstdint>
 #include <filesystem>
 #include <functional>
@@ -291,6 +292,19 @@ public:
 	 * @return True if the window is focused.
 	 */
 	[[nodiscard]] virtual auto isFocused() const -> bool = 0;
+
+	/**
+	 * @brief
+	 *  Sleep until an input or window event arrives, or the timeout elapses, and dispatch the events.
+	 * @param[in] iTimeout Longest wait.
+	 */
+	virtual void waitEvents(std::chrono::milliseconds iTimeout) = 0;
+
+	/**
+	 * @brief
+	 *  End a waitEvents() early. Callable from any thread.
+	 */
+	virtual void wakeUp() = 0;
 
 	/**
 	 * @brief

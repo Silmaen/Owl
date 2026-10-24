@@ -9,6 +9,7 @@
 #include "testHelper.h"
 
 #include <app/Application.h>
+#include <chrono>
 #include <event/KeyEvent.h>
 #include <filesystem>
 #include <fstream>
@@ -125,6 +126,9 @@ TEST(Core, ApplicationFrameRateLimit) {
 	EXPECT_EQ(app->getFrameRateLimit(), 100u);
 	app->setFrameRateLimit(0);
 	EXPECT_EQ(app->getFrameRateLimit(), 0u);
+	app->requestIdleWait(std::chrono::milliseconds{100});
+	owl::event::KeyPressedEvent keyEv(owl::input::key::A, 1);
+	app->onEvent(keyEv);
 	EXPECT_DOUBLE_EQ(app->getLastFrameTimings().workMs, 0.0);
 	Application::invalidate();
 	app.reset();

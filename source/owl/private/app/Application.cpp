@@ -479,6 +479,10 @@ void Application::run() {
 			close();
 			break;
 		}
+		if (m_idleWait.count() > 0 && m_quietFrames >= idleSettleFrames)
+			mp_appWindow->waitEvents(m_idleWait);
+		m_idleWait = std::chrono::milliseconds{0};
+		m_quietFrames = std::min(m_quietFrames + 1, idleSettleFrames);
 		OWL_CORE_FRAME_ADVANCE
 		const bool timed = m_frameTimingsEnabled;
 		const auto now = [timed]() -> clock::time_point { return timed ? clock::now() : clock::time_point{}; };
@@ -576,6 +580,7 @@ void Application::run() {
 void Application::onEvent(event::Event& ioEvent) {
 	OWL_PROFILE_FUNCTION()
 
+	m_quietFrames = 0;
 	event::EventDispatcher dispatcher(ioEvent);
 	dispatcher.dispatch<event::WindowCloseEvent>(
 			[this]<typename T0>(T0&& ioPh1) -> bool { return onWindowClosed(std::forward<T0>(ioPh1)); });

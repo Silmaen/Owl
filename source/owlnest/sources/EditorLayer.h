@@ -603,6 +603,16 @@ public:
 
 	/**
 	 * @brief
+	 *  Check if a viewport hidden behind another tab still draws its scene: MCP reads the viewport back (captures,
+	 *  bounded plays), so it stays drawn while the MCP server is on.
+	 * @return True when hidden viewports draw.
+	 */
+	[[nodiscard]] auto rendersHiddenViewports() const -> bool {
+		return m_settings.mcpEnabled || m_playDriver.isActive();
+	}
+
+	/**
+	 * @brief
 	 *  Open an asset named by an inspector field (relative to an asset folder) in its editor.
 	 * @param[in] iPath The path stored in the component.
 	 */
@@ -793,6 +803,14 @@ private:
 	 *  the focus or runs a play driven from MCP, the background one otherwise.
 	 */
 	void updateFramePacing();
+
+	/**
+	 * @brief
+	 *  Check if the next frame may wait for an input: every scene in Edit, no gesture, key or button held, no
+	 *  notification shown, no task, preview or font render pending.
+	 * @return True when nothing changes on screen without an input.
+	 */
+	[[nodiscard]] auto isIdle() const -> bool;
 
 
 	/**

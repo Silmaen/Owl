@@ -113,6 +113,9 @@ void SettingsPanel::renderGeneralSection(EditorSettings& ioSettings) {
 							 defaults.backgroundFrameRateLimit, "%d fps",
 							 "Most frames drawn per second while another window has the focus, to spare the GPU. 0 "
 							 "keeps the Frame Rate Limit. A play started from MCP is never slowed down.");
+	std::ignore = settingInt("Idle Wait", ioSettings.idleWaitMs, 0, 1000, defaults.idleWaitMs, "%d ms",
+							 "While nothing moves in Edit mode (no input, no play, no loading), the editor waits up to "
+							 "this long for an input before drawing again. 0 draws every frame.");
 	gui::widgets::endProperties();
 }
 

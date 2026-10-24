@@ -126,6 +126,13 @@ public:
 
 	/**
 	 * @brief
+	 *  Check if a task waits in the queue or runs (timers excluded).
+	 * @return True while a task has not finished.
+	 */
+	[[nodiscard]] auto hasPendingTasks() const -> bool;
+
+	/**
+	 * @brief
 	 *  Number of worker threads of the pool, for libraries that run their own workers (atlas generation).
 	 * @return The worker count, at least 1.
 	 */
