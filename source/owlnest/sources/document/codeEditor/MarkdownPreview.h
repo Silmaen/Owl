@@ -252,6 +252,16 @@ private:
 
 	/**
 	 * @brief
+	 *  Hover, click and underline of the last drawn item of a link (one word of it).
+	 * @param[in] iLinkId Index of the link in rendering order.
+	 * @param[in] iExternal True for a web link (tooltip with the URL).
+	 * @param[in] iHref The link target.
+	 * @param[in] iUnderlineLeft Left end of the underline: the word, or the previous word of the link on the line.
+	 */
+	void decorateLinkItem(int iLinkId, bool iExternal, const std::string& iHref, float iUnderlineLeft);
+
+	/**
+	 * @brief
 	 *  Render a code block via the cached read-only `TextEditor`.
 	 */
 	void renderCodeBlock(const MdCodeBlock& iCb, size_t& ioCodeIndex);

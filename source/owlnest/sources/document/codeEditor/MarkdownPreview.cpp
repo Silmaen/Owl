@@ -119,6 +119,19 @@ void registerSvgFonts() {
 	}
 }
 
+[[nodiscard]] auto headingColour(const gui::Theme& iTheme, const uint8_t iLevel) -> const math::vec4& {
+	if (iLevel == 3)
+		return iTheme.accent;
+	if (iLevel <= 4)
+		return iTheme.text;
+	return iTheme.textMuted;
+}
+
+[[nodiscard]] auto linkColour(const gui::Theme& iTheme, const bool iExternal, const bool iHovered) -> ImVec4 {
+	const auto& base = iExternal ? iTheme.info : iTheme.accent;
+	return gui::vec(iHovered ? gui::Theme::mix(base, iTheme.text, 0.35f) : base);
+}
+
 // Colour of a `rrggbb` / `rgb` hex string; the muted text colour when malformed.
 [[nodiscard]] auto badgeColour(const std::string& iHex) -> ImVec4 {
 	std::string hex = iHex;
@@ -227,7 +240,8 @@ void MarkdownPreview::render(const ImVec2& iSize) {
 	// Applied for a few frames: the scroll is clamped to the content size of the previous frame.
 	if (m_pendingScrollY >= 0.0f) {
 		ImGui::SetNextWindowScroll(ImVec2{-1.0f, m_pendingScrollY});
-		if (m_scrollFrames == 0 || --m_scrollFrames == 0)
+		m_scrollFrames = std::max(0, m_scrollFrames - 1);
+		if (m_scrollFrames == 0)
 			m_pendingScrollY = -1.0f;
 	}
 	ImGui::BeginChild("##md_preview", iSize, ImGuiChildFlags_Borders);
@@ -250,7 +264,8 @@ void MarkdownPreview::render(const ImVec2& iSize) {
 			OWL_CORE_WARN("MarkdownPreview: No heading with the anchor '{}'.", m_pendingAnchor)
 			m_anchorFrames = 0;
 		}
-		if (m_anchorFrames == 0 || --m_anchorFrames == 0)
+		m_anchorFrames = std::max(0, m_anchorFrames - 1);
+		if (m_anchorFrames == 0)
 			m_pendingAnchor.clear();
 	}
 	m_scrollY = ImGui::GetScrollY();
@@ -318,8 +333,7 @@ void MarkdownPreview::renderHeading(const MdHeading& iHeading) {
 		m_anchorY.try_emplace(iHeading.anchor, ImGui::GetCursorPosY());
 	gui::UiLayer::pushTextStyle(gui::TextStyle::Strong);
 	ImGui::PushFont(nullptr, base * style.scale);
-	const auto colour = iHeading.level == 3 ? theme.accent : iHeading.level <= 4 ? theme.text : theme.textMuted;
-	ImGui::PushStyleColor(ImGuiCol_Text, gui::vec(colour));
+	ImGui::PushStyleColor(ImGuiCol_Text, gui::vec(headingColour(theme, iHeading.level)));
 	renderInlineSpans(iHeading.spans);
 	ImGui::PopStyleColor();
 	ImGui::PopFont();
@@ -349,13 +363,9 @@ void MarkdownPreview::renderInlineSpans(const std::vector<MdInline>& iSpans) {
 	// Whitespace between the previous span and the next one: a span glued to the previous one (`(`, `.`) keeps no gap.
 	bool spaceBefore = false;
 	int previousLinkId = -1;
-	const auto linkColour = [&]() -> ImVec4 {
-		const auto base = linkExternal ? theme.info : theme.accent;
-		return gui::vec(linkId == m_hoveredLink ? gui::Theme::mix(base, theme.text, 0.35f) : base);
-	};
 	const auto pushStyle = [&]() -> void {
 		if (linkOpen)
-			ImGui::PushStyleColor(ImGuiCol_Text, linkColour());
+			ImGui::PushStyleColor(ImGuiCol_Text, linkColour(theme, linkExternal, linkId == m_hoveredLink));
 		else if (strongDepth > 0)
 			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4{1.0f, 1.0f, 1.0f, 1.0f});
 		else if (emDepth > 0)
@@ -406,21 +416,9 @@ void MarkdownPreview::renderInlineSpans(const std::vector<MdInline>& iSpans) {
 			drawList->AddLine(ImVec2{itemMin.x, y}, ImVec2{itemMax.x, y}, ImGui::GetColorU32(ImGuiCol_Text), 1.0f);
 		}
 		popStyle();
-		if (linkOpen) {
-			if (ImGui::IsItemHovered()) {
-				m_nextHoveredLink = linkId;
-				ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
-				if (linkExternal)
-					ImGui::SetTooltip("%s %s", gui::icon::externalLink, linkHref.c_str());
-			}
-			if (ImGui::IsItemClicked())
-				handleLinkClick(linkHref);
-			if (linkId == m_hoveredLink) {
-				const float left = sameLine && previousLinkId == linkId ? gapLeft : itemMin.x;
-				drawList->AddLine(ImVec2{left, itemMax.y - 1.0f}, ImVec2{itemMax.x, itemMax.y - 1.0f},
-								  ImGui::GetColorU32(linkColour()), 1.0f);
-			}
-		}
+		if (linkOpen)
+			decorateLinkItem(linkId, linkExternal, linkHref,
+							 sameLine && previousLinkId == linkId ? gapLeft : ImGui::GetItemRectMin().x);
 		previousLinkId = linkOpen ? linkId : -1;
 		firstOnLine = false;
 	};
@@ -504,6 +502,24 @@ void MarkdownPreview::renderInlineSpans(const std::vector<MdInline>& iSpans) {
 				break;
 		}
 	}
+}
+
+void MarkdownPreview::decorateLinkItem(const int iLinkId, const bool iExternal, const std::string& iHref,
+									   const float iUnderlineLeft) {
+	if (ImGui::IsItemHovered()) {
+		m_nextHoveredLink = iLinkId;
+		ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
+		if (iExternal)
+			ImGui::SetTooltip("%s %s", gui::icon::externalLink, iHref.c_str());
+	}
+	if (ImGui::IsItemClicked())
+		handleLinkClick(iHref);
+	if (iLinkId != m_hoveredLink)
+		return;
+	const ImVec2 itemMax = ImGui::GetItemRectMax();
+	ImGui::GetWindowDrawList()->AddLine(ImVec2{iUnderlineLeft, itemMax.y - 1.0f}, ImVec2{itemMax.x, itemMax.y - 1.0f},
+										ImGui::GetColorU32(linkColour(gui::UiLayer::getTheme(), iExternal, true)),
+										1.0f);
 }
 
 void MarkdownPreview::renderCodeBlock(const MdCodeBlock& iCb, size_t& ioCodeIndex) {

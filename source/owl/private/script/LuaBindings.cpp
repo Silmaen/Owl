@@ -2775,7 +2775,7 @@ auto generateLuaReference() -> std::vector<LuaReferenceFile> {
 		return found == getLuaTables().end() ? nullptr : &*found;
 	};
 	std::vector<LuaReferenceFile> files;
-	std::string index =
+	const std::string index =
 			"# Lua API reference {#page-lua-api}\n\n[TOC]\n\n"
 			"Every table and function a script can call, one page per theme. These pages are generated from "
 			"the binding registry (`getLuaBindings()` in `source/owl/private/script/LuaBindings.cpp`): do "
