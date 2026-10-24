@@ -17,4 +17,5 @@ return {
     spells = {},
     wheel = {},
     input = {},
+    tutorial = {},
 }

@@ -1921,6 +1921,8 @@ private:
 	const renderer::RenderLayer* mp_currentLayer = nullptr;
 	/// Whether `renderWithStack` draws a render target: no overlay, no HUD.
 	bool m_drawingRenderTarget = false;
+	/// The render target being drawn, whose hidden layers are skipped; null for the main view.
+	const component::RenderTarget* mp_drawnTarget = nullptr;
 	/// Camera of the frame-graph run in progress (`renderWithStack`).
 	const renderer::Camera* mp_renderCamera = nullptr;
 	/// Lights of the frame, as `Renderer3D` reads them.

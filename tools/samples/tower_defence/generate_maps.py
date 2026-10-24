@@ -385,6 +385,18 @@ def build_wheel(entities: y.Entities) -> None:
     entities.add("WheelText", [world_text((0.2, 0.12, 0.06, 1)) + MARKS], visible=False)
 
 
+def tutorial_hint(entities: y.Entities) -> None:
+    """The hint of the tutorial, hidden: a parchment scroll with its title and text and an arrow, billboards of the
+    ``marks`` layer (left out of the minimap) placed in screen space by ``td/tutorial.lua``, and a glow on the ground
+    around the pad to build."""
+    entities.add("TutorialPlaque", [unlit_sprite("textures/ui/plaque.png") + MARKS], visible=False)
+    entities.add("TutorialTitle", [world_text((0.2, 0.0, 0.0, 1), font="Cinzel") + MARKS], visible=False)
+    entities.add("TutorialText", [world_text((0.0, 0.0, 0.0, 1)) + MARKS], visible=False)
+    entities.add("TutorialArrow", [unlit_sprite("textures/ui/hint_arrow.png") + MARKS], visible=False)
+    glow = y.sprite("textures/fx/ring.png", (1, 0.85, 0.3, 0.9)).replace("tilingFactor", "lit: false\n  tilingFactor")
+    entities.add("TutorialGlow", [glow + GROUND], rotation=FLAT, visible=False)
+
+
 def level_kinds(level: mp.LevelData) -> list[str]:
     """The kinds of the Horde a level sends, in the order they first march."""
     kinds = [group.split()[0] for wave in level.waves for group in wave.split(";")]
@@ -434,7 +446,8 @@ def level_scene(level: mp.LevelData) -> str:
         "Camera:\n  camera:\n    projectionType: Orthographic\n    perspectiveFOV: 0.785\n    perspectiveNear: 0.01\n"
         f"    perspectiveFar: 100\n    orthographicSize: {y.num(level.depth + 1)}\n    orthographicNear: 0\n"
         "    orthographicFar: 60\n    toneMapping: Aces\n  primary: false\n  fixedAspectRatio: true\n"
-        "RenderTarget: {enabled: true, targetName: minimap, size: [288, 224], clearColor: [0.05, 0.07, 0.1, 1]}\n"
+        "RenderTarget: {enabled: true, targetName: minimap, size: [288, 224], clearColor: [0.05, 0.07, 0.1, 1], "
+        "hiddenLayers: [marks]}\n"
     )
     entities.add("MinimapCamera", [minimap], position=(cx, 30, cz), rotation=(-math.pi / 2, 0, 0))
     ground = entities.add("Terrain", [])
@@ -476,6 +489,8 @@ def level_scene(level: mp.LevelData) -> str:
     ring = y.sprite("textures/fx/ring.png", (1, 1, 1, 0.7)).replace("tilingFactor", "lit: false\n  tilingFactor")
     entities.add("RangeRing", [ring + GROUND], rotation=FLAT, visible=False)
     build_wheel(entities)
+    if level.number == 1:
+        tutorial_hint(entities)
     name = f"level_{level.number:02d}"
     next_scene = "scenes/victory.owl"
     waves = "".join(f"\n        - {y.quote(wave)}" for wave in level.waves)
@@ -492,6 +507,7 @@ def level_scene(level: mp.LevelData) -> str:
         f"    - name: waves\n      type: strings\n      value:{waves}\n"
         f"    - name: night_waves\n      type: string\n      value: {y.quote(' '.join(map(str, level.nights)))}\n"
         f"    - name: new_enemies\n      type: string\n      value: {y.quote(','.join(new_enemies(level)))}\n"
+        f"    - name: tutorial\n      type: bool\n      value: {'true' if level.number == 1 else 'false'}\n"
         + modifiers_block
         + f"    - name: start_hour\n      type: float\n      value: {y.num(level.start_hour)}\n"
         f"    - name: start_gold\n      type: int\n      value: {level.start_gold}\n"
@@ -664,11 +680,63 @@ def prefabs() -> dict[str, str]:
     return out
 
 
+BRIEFING_ROWS = 6
+"""Lines of the briefing card at most (nights, modifiers, new enemies), an icon of ``briefing_icons.png`` each."""
+BRIEFING_BODY = 0.68
+"""Height of the content of the briefing card with every line, in screen heights (the script fits it to its lines)."""
+BRIEFING_CARD = (1.16, 0.8)
+"""Size of the briefing card with every line, in screen heights."""
+
+
+def briefing_card(entities: y.Entities, root: int) -> None:
+    """The briefing card opening a level: a modal parchment window, the level name in gold ``Cinzel`` on a wooden
+    plank like the buttons, a line per night, modifier and new enemy with its icon or portrait, To arms! and Skip
+    tutorial; the script fits its height to its lines."""
+    window = y.window("", (0.88, 0.79, 0.6, 1), (0.3, 0.18, 0.09, 1), menus.GOLD, 10, 1).replace(
+        "closable: false", "closable: false\n  modal: true"
+    )
+    card = entities.add("BriefingCard", [y.rect((0.5, 0.5), BRIEFING_CARD), window], parent=root, visible=False)
+    body = entities.add(
+        "BriefingBody",
+        [
+            y.rect(
+                (0.5, 0),
+                (0.9, BRIEFING_BODY),
+                (0, 0.02),
+                units=("ParentWidth", "ScreenHeight"),
+                offset_units=("ScreenHeight", "ScreenHeight"),
+            ),
+            y.layout("Column", 3, 2),
+        ],
+        parent=card,
+    )
+    tall = ("ParentWidth", "ScreenHeight")
+    buttons = entities.add(
+        "BriefingButtons", [y.rect((0, 0), (0.9, 0.08), units=tall), y.layout("Row", 14)], parent=body
+    )
+    menus.button(
+        entities, buttons, "BriefingSkipButton", "Skip tutorial", "on_tutorial_skipped", (0.4, 0.9), False, font_size=22
+    )
+    menus.button(entities, buttons, "BriefingButton", "To arms!", "on_briefing_closed", (0.4, 0.9), True)
+    ink = (0.22, 0.12, 0.05, 1)
+    for index in reversed(range(1, BRIEFING_ROWS + 1)):
+        row = entities.add(
+            f"BriefingRow{index}", [y.rect((0, 0), (0.98, 0.065), units=tall), y.layout("Row", 8)], parent=body
+        )
+        line = y.text("", 21, "Left", ink, wrap=True, line_spacing=0.05, outline_width=0)
+        entities.add(f"BriefingLine{index}", [y.child_rect((0.84, 0.95)), line], parent=row)
+        icon = y.image("textures/ui/briefing_icons.png") + "  columns: 6\n  rows: 3\n  frame: 0\n"
+        entities.add(f"BriefingIcon{index}", [y.child_rect((0.08, 0.95)), icon], parent=row)
+    title = menus.label("", 44, menus.GOLD, font=menus.HEADING)
+    plank = y.image("textures/ui/banner.png", (0.55, 0.36, 0.2, 1))
+    entities.add("BriefingTitle", [y.rect((0, 0), (0.98, 0.1), units=tall), plank, title], parent=body)
+
+
 def play_hud() -> str:
     """The HUD of a level, in the medieval look of the menus: gold, lives and the wave on parchment at the top left,
     the minimap in a wood and iron frame at the top right, the spells at the bottom left, the Call wave / speed / Menu
-    planks at the bottom right, a message line (holding the briefing card that opens a level) and the pause window,
-    the only place of a level that shows the controls. The build wheel is not here: it opens in the world, beside its
+    planks at the bottom right, a message line, the briefing card that opens a level and the pause window, the only
+    place of a level that shows the controls. The build wheel is not here: it opens in the world, beside its
     pad."""
     entities = y.Entities(7490000000000000000)
     root = entities.add("HUDCanvas", [y.canvas()])
@@ -717,7 +785,7 @@ def play_hud() -> str:
     ):
         menus.button(entities, spells, tag, text, callback, (0.48, 0.9), focusable=False, font_size=22)
     message = menus.label("", 40, menus.STONE, font=menus.HEADING).replace("wrap: false", "wrap: true")
-    message_id = entities.add("MessageText", [y.rect((0.5, 0.62), (0.7, 0.14)), message], parent=root, visible=False)
+    entities.add("MessageText", [y.rect((0.5, 0.62), (0.7, 0.14)), message], parent=root, visible=False)
     window = entities.add(
         "PauseWindow",
         [y.rect((0.5, 0.5), (1.3, 0.94)), menus.window("Paused"), y.layout("Column", 4, 8)],
@@ -725,34 +793,17 @@ def play_hud() -> str:
         visible=False,
     )
     controls = y.text(menus.CONTROLS, 16, "Left", menus.GOLD, wrap=True, font="JetBrainsMono-Regular", line_spacing=0.1)
-    entities.add("ControlsText", [y.child_rect((0.96, 0.34)), controls], parent=window)
+    entities.add("ControlsText", [y.child_rect((0.96, 0.3)), controls], parent=window)
     legend = y.text("", 15, "Left", menus.SOFT, wrap=True, line_spacing=0.05, vertical="Top")
-    entities.add("EffectsText", [y.child_rect((0.96, 0.27)), legend], parent=window)
+    entities.add("EffectsText", [y.child_rect((0.96, 0.25)), legend], parent=window)
     for tag, text, callback, initial in (
+        ("SkipTutorialButton", "Skip tutorial", "on_tutorial_skipped", False),
         ("QuitButton", "Quit to the map", "on_pause_quit", False),
         ("RestartButton", "Restart level", "on_pause_restart", False),
         ("ResumeButton", "Resume", "on_pause_resume", True),
     ):
-        menus.button(entities, window, tag, text, callback, (0.6, 0.085), initial)
-    card = entities.add(
-        "BriefingCard",
-        [
-            y.rect((0.5, 0.5), (1.1, 0.66), (0, -0.05), offset_units=("ScreenHeight", "ScreenHeight")),
-            y.panel((0.9, 0.82, 0.64, 0.98), (0.84, 0.66, 0.25, 1), 4),
-            y.layout("Column", 4, 20),
-        ],
-        parent=message_id,
-        visible=False,
-    )
-    menus.button(entities, card, "BriefingButton", "To arms!", "on_briefing_closed", (0.4, 0.12), True)
-    hint = menus.label("Click, Enter or pad A to begin", 18, (0.35, 0.22, 0.1, 1)).replace(
-        "outlineWidth: 2", "outlineWidth: 0"
-    )
-    entities.add("BriefingHint", [y.child_rect((0.9, 0.07)), hint], parent=card)
-    text = y.text("", 22, "Left", (0.2, 0.12, 0.06, 1), wrap=True, line_spacing=0.15, vertical="Top", outline_width=0)
-    entities.add("BriefingText", [y.child_rect((0.76, 0.45)), text], parent=card)
-    title = menus.label("", 44, (0.45, 0.08, 0.04, 1), font=menus.HEADING).replace("outlineWidth: 2", "outlineWidth: 0")
-    entities.add("BriefingTitle", [y.child_rect((0.9, 0.14)), title], parent=card)
+        menus.button(entities, window, tag, text, callback, (0.6, 0.08), initial)
+    briefing_card(entities, root)
     return y.hud_file("play", entities)
 
 

@@ -571,16 +571,19 @@ YAML key: `Camera`. See [Renderer > Camera System](renderer.md).
 
 #### RenderTarget {#rendertarget}
 
-| Field        | Type     | Default        | Description                                |
-|--------------|----------|----------------|--------------------------------------------|
-| `enabled`    | `bool`   | `true`         | Off keeps the last image                   |
-| `targetName` | `string` | `minimap`      | Name the `UiImage` of the HUD refers to    |
-| `size`       | `vec2ui` | `{256, 256}`   | Size of the image, in pixels               |
-| `clearColor` | `vec4`   | `{0, 0, 0, 1}` | Colour of the image where nothing is drawn |
+| Field          | Type       | Default        | Description                                               |
+|----------------|------------|----------------|-----------------------------------------------------------|
+| `enabled`      | `bool`     | `true`         | Off keeps the last image                                  |
+| `targetName`   | `string`   | `minimap`      | Name the `UiImage` of the HUD refers to                   |
+| `size`         | `vec2ui`   | `{256, 256}`   | Size of the image, in pixels                              |
+| `clearColor`   | `vec4`     | `{0, 0, 0, 1}` | Colour of the image where nothing is drawn                |
+| `hiddenLayers` | `string[]` | `[]`           | Layers of the renderer stack the image leaves out         |
 
 YAML key: `RenderTarget`. On an entity with a `Camera`: that camera draws the scene each frame into an off-screen
 image of `size` pixels instead of the screen, and a `UiImage` whose `renderTarget` is `targetName` shows it
 ([HUD system > Minimap](design/hud-system.md#minimap)). With a `FollowTarget` on the same entity it makes a minimap.
+`hiddenLayers` keeps the markers drawn over the world (a build wheel, the hints of a tutorial) out of the image; the
+inspector shows a **Draw** switch per layer of the stack.
 
 ### Gameplay Components
 

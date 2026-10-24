@@ -243,6 +243,95 @@ def day_night_icons(cell: int = 64) -> Image.Image:
     return sheet
 
 
+def hint_arrow(size: int = 96) -> Image.Image:
+    """The arrow of the tutorial hints: gold with an ink outline, pointing right."""
+    big = size * 4
+    image = Image.new("RGBA", (big, big), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(image)
+    c = big / 2
+    shape = [
+        (20, c - 34),
+        (c + 20, c - 34),
+        (c + 20, c - 90),
+        (big - 20, c),
+        (c + 20, c + 90),
+        (c + 20, c + 34),
+        (20, c + 34),
+    ]
+    draw.polygon(shape, fill=(*GOLD, 255), outline=(*INK, 255), width=14)
+    draw.line([(40, c - 12), (c + 30, c - 12)], fill=(250, 226, 150, 255), width=10)
+    return image.resize((size, size), Image.Resampling.LANCZOS)
+
+
+def _disc(size: int, colour: RGBA) -> tuple[Image.Image, ImageDraw.ImageDraw]:
+    image = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(image)
+    draw.ellipse((4, 4, size - 5, size - 5), fill=colour, outline=(*GOLD, 255), width=max(2, size // 24))
+    return image, draw
+
+
+def modifier_icon(key: str, size: int = 96) -> Image.Image:
+    """The icon of a level modifier on a disc: fog, blizzard, blood moon, drought, gale, plunder or long night."""
+    big = size * 4
+    background = {
+        "blood_moon": (70, 20, 24, 255),
+        "drought": (200, 150, 70, 255),
+        "long_night": (20, 22, 48, 255),
+        "plunder": (90, 60, 30, 255),
+    }.get(key, (70, 96, 130, 255))
+    image, draw = _disc(big, background)
+    c = big / 2
+    ink = (*INK, 255)
+    if key == "fog":
+        for k in range(4):
+            y = c - 90 + k * 60
+            draw.arc((c - 130, y - 30, c, y + 30), 200, 340, fill=(230, 230, 230, 255), width=22)
+            draw.arc((c - 10, y - 30, c + 120, y + 30), 20, 160, fill=(230, 230, 230, 255), width=22)
+    elif key == "blizzard":
+        for k in range(6):
+            a = k * math.pi / 3
+            x, y = c + math.cos(a) * 120, c + math.sin(a) * 120
+            draw.line([(c, c), (x, y)], fill=(240, 250, 255, 255), width=22)
+            for side in (-1, 1):
+                b = a + side * 0.6
+                draw.line(
+                    [
+                        (c + math.cos(a) * 70, c + math.sin(a) * 70),
+                        (c + math.cos(a) * 70 + math.cos(b) * 40, c + math.sin(a) * 70 + math.sin(b) * 40),
+                    ],
+                    fill=(240, 250, 255, 255),
+                    width=16,
+                )
+    elif key == "blood_moon":
+        draw.ellipse((c - 100, c - 100, c + 100, c + 100), fill=(200, 40, 30, 255), outline=ink, width=12)
+        draw.ellipse((c - 40, c - 60, c, c - 20), fill=(160, 26, 20, 255))
+    elif key == "drought":
+        draw.ellipse((c - 60, c - 120, c + 60, c), fill=(252, 220, 100, 255), outline=ink, width=10)
+        draw.rectangle((c - 140, c + 20, c + 140, c + 130), fill=(160, 110, 60, 255))
+        for x in (-90, -20, 50):
+            draw.line([(c + x, c + 30), (c + x + 30, c + 80), (c + x + 10, c + 125)], fill=ink, width=10)
+    elif key == "gale":
+        for k in range(3):
+            y = c - 80 + k * 80
+            draw.arc((c - 110, y - 40, c + 70, y + 40), 180, 360, fill=(235, 240, 245, 255), width=20)
+            draw.line([(c - 140, y), (c - 100, y)], fill=(235, 240, 245, 255), width=20)
+    elif key == "plunder":
+        for k, (x, y) in enumerate(((c - 50, c + 40), (c + 40, c + 50), (c - 5, c - 20), (c + 60, c - 50))):
+            draw.ellipse((x - 50, y - 30, x + 50, y + 30), fill=(*GOLD, 255), outline=ink, width=10)
+            draw.ellipse((x - 26, y - 14, x + 26, y + 14), outline=(150, 110, 40, 255), width=8)
+            del k
+    elif key == "long_night":
+        draw.ellipse((c - 90, c - 90, c + 90, c + 90), fill=(220, 220, 200, 255), outline=ink, width=10)
+        draw.ellipse((c - 40, c - 120, c + 140, c + 60), fill=background)
+        for x, y in ((c + 70, c + 80), (c - 110, c + 60), (c + 100, c - 30)):
+            draw.polygon([(x, y - 24), (x + 8, y), (x, y + 24), (x - 8, y)], fill=(240, 240, 220, 255))
+    return image.resize((size, size), Image.Resampling.LANCZOS)
+
+
+MODIFIER_KEYS = ("fog", "blizzard", "blood_moon", "drought", "gale", "plunder", "long_night")
+"""The level modifiers in the order of their icons in ``briefing_icons.png``."""
+
+
 PANELS: dict[str, tuple[int, int]] = {
     "panel_stats": (420, 70),
     "panel_wave": (540, 70),
@@ -266,3 +355,4 @@ def write_all(textures: Path, fonts: Path) -> None:
     title(fonts).save(folder / "title.png")
     star_sheet().save(folder / "stars.png")
     day_night_icons().save(folder / "daynight.png")
+    hint_arrow().save(folder / "hint_arrow.png")

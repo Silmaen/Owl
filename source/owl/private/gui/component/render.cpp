@@ -2844,6 +2844,18 @@ void renderProps(RenderTarget& ioComponent) {
 	fieldTooltip("Size of the image, in pixels. The camera of the entity draws into it: give it the same aspect.");
 	prop::ColorEdit4("Clear Color", &ioComponent.clearColor.x());
 	fieldTooltip("Colour of the image where nothing is drawn.");
+	for (const auto& layer: renderer::Renderer::getRenderStack().getLayers()) {
+		const std::string& name = layer->getName();
+		bool drawn = ioComponent.drawsLayer(name);
+		if (prop::Checkbox(std::format("Draw {}", name).c_str(), &drawn)) {
+			if (drawn)
+				std::erase(ioComponent.hiddenLayers, name);
+			else
+				ioComponent.hiddenLayers.push_back(name);
+		}
+		fieldTooltip(
+				"Whether the image shows this layer of the renderer stack (leave out the markers over the world).");
+	}
 }
 
 void renderProps(ProceduralSky& ioComponent) {

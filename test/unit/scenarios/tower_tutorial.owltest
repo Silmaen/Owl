@@ -1,0 +1,45 @@
+# Tower defence, the tutorial of Greenmarch Ford from a fresh save, step by step: the briefing offers it, To arms!
+# starts it; build a tower on the glowing pad, call the first wave, raise the tower, sell it, then read the day and
+# night of the HUD; it ends done and is remembered. The arrow of the call step aims at the Call wave button as the HUD
+# lays it out (bottom right of the 1600x960 view, the arrow left of it).
+scene: ../../../samples/tower_defence/scenes/level_01.owl
+steps:
+  - frames: 2
+  - expect: {gamestate: tower_briefing, equals: true}
+  - expect: {gamestate: tower_tutorial_offered, equals: true}
+  - input: {key: Enter, frames: 2}
+  - frames: 3
+  - expect: {gamestate: tower_tutorial_step, equals: build}
+  - input: {key: E, frames: 2}
+  - frames: 1
+  - input: {key: Enter, frames: 2}
+  - frames: 1
+  - input: {key: D1, frames: 2}
+  - frames: 3
+  - expect: {gamestate: tower_towers, equals: 1}
+  - expect: {gamestate: tower_tutorial_step, equals: call}
+  - frames: 2
+  - expect: {gamestate: tower_tutorial_target_x, greater: 1000}
+  - expect: {gamestate: tower_tutorial_target_y, greater: 860}
+  - expect: {gamestate: tower_tutorial_arrow_x, less: 1100}
+  - input: {key: Space, frames: 2}
+  - frames: 3
+  - expect: {gamestate: tower_wave, equals: 1}
+  - expect: {gamestate: tower_tutorial_step, equals: upgrade}
+  - input: {key: Enter, frames: 2}
+  - frames: 1
+  - input: {key: D1, frames: 2}
+  - frames: 3
+  - expect: {gamestate: tower_top_level, equals: 2}
+  - expect: {gamestate: tower_tutorial_step, equals: sell}
+  - input: {key: Enter, frames: 2}
+  - frames: 1
+  - input: {key: X, frames: 2}
+  - frames: 3
+  - expect: {gamestate: tower_towers, equals: 0}
+  - expect: {gamestate: tower_tutorial_step, equals: night}
+  - frames: 30
+  - input: {key: Enter, frames: 2}
+  - frames: 3
+  - expect: {gamestate: tower_tutorial_step, equals: "off"}
+  - expect: {gamestate: tower_tutorial_state, equals: done}

@@ -80,7 +80,7 @@ Entities:
         toneMapping: Aces
       primary: false
       fixedAspectRatio: true
-    RenderTarget: {enabled: true, targetName: minimap, size: [288, 224], clearColor: [0.05, 0.07, 0.1, 1]}
+    RenderTarget: {enabled: true, targetName: minimap, size: [288, 224], clearColor: [0.05, 0.07, 0.1, 1], hiddenLayers: [marks]}
   - Entity: 7500000000001000005
     Tag:
       tag: Terrain
@@ -20653,6 +20653,93 @@ Entities:
       Name: marks
   - Entity: 7500000000001001220
     Tag:
+      tag: TutorialPlaque
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      lit: false
+      tilingFactor: 1
+      texture: nam:textures/ui/plaque.png
+    RendererTag:
+      Name: marks
+  - Entity: 7500000000001001221
+    Tag:
+      tag: TutorialTitle
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    TextRenderer:
+      color: [0.2, 0, 0, 1]
+      kerning: 0
+      lineSpacing: 0
+      text: ''
+      font: Cinzel
+    RendererTag:
+      Name: marks
+  - Entity: 7500000000001001222
+    Tag:
+      tag: TutorialText
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    TextRenderer:
+      color: [0, 0, 0, 1]
+      kerning: 0
+      lineSpacing: 0
+      text: ''
+      font: MedievalSharp
+    RendererTag:
+      Name: marks
+  - Entity: 7500000000001001223
+    Tag:
+      tag: TutorialArrow
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      lit: false
+      tilingFactor: 1
+      texture: nam:textures/ui/hint_arrow.png
+    RendererTag:
+      Name: marks
+  - Entity: 7500000000001001224
+    Tag:
+      tag: TutorialGlow
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [-1.5708, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [1, 0.85, 0.3, 0.9]
+      lit: false
+      tilingFactor: 1
+      texture: nam:textures/fx/ring.png
+    RendererTag:
+      Name: ground
+  - Entity: 7500000000001001225
+    Tag:
       tag: Game
     Transform:
       translation: [0, 0, 0]
@@ -20693,6 +20780,9 @@ Entities:
         - name: new_enemies
           type: string
           value: 'goblin,grunt,ogre'
+        - name: tutorial
+          type: bool
+          value: true
         - name: start_hour
           type: float
           value: 9.5

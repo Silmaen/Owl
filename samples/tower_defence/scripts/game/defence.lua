@@ -48,6 +48,7 @@ properties = {
     { name = "modifiers", type = "strings", default = {} },
     { name = "new_enemies", type = "string", default = "" },
     { name = "briefing", type = "bool", default = true },
+    { name = "tutorial", type = "bool", default = false },
     { name = "time_effects", type = "strings", default = {
         "archer day damage 1.1", "archer night range 0.85",
         "cannon day splash 1.15", "cannon night reload 1.15",
@@ -164,7 +165,7 @@ properties = {
 -- The rules live in the modules of `scripts/game/td/`, required in `on_create` (Owl Nest reads the
 -- properties by running this chunk alone): `td` is their namespace, `S` the state, `C` the constants.
 local td, S, C
-local UI, Eco, Cam, World, Waves, Fx, Vis, Foes, Towers, Spells, Wheel, Input, Brief
+local UI, Eco, Cam, World, Waves, Fx, Vis, Foes, Towers, Spells, Wheel, Input, Brief, Tut
 
 function on_create()
     td = require("scripts.game.td.core")
@@ -183,10 +184,12 @@ function on_create()
     require("scripts.game.td.spells")
     require("scripts.game.td.wheel")
     require("scripts.game.td.input")
+    require("scripts.game.td.tutorial")
     S, C = td.state, td.data
     UI, Eco, Cam, World, Waves, Fx = td.ui, td.economy, td.camera, td.world, td.waves, td.effects
     Vis, Foes, Towers, Spells, Wheel, Input, Brief = td.visuals, td.enemies, td.towers, td.spells, td.wheel, td.input,
             td.briefing
+    Tut = td.tutorial
     if not ui.is_transition_active() then
         ui.transition_play("wipe_down", 0.4, wipe_color.r, wipe_color.g, wipe_color.b)
     end
@@ -215,7 +218,8 @@ function on_create()
     end
     for _, name in ipairs({ "gold", "lives", "wave", "message", "call", "speed", "pause", "resume", "rain", "shield",
                             "rain_label", "shield_label", "phase", "phase_icon", "effects", "briefing",
-                            "briefing_title", "briefing_text", "briefing_button" }) do
+                            "briefing_title", "briefing_button", "briefing_skip", "skip_tutorial",
+                            "briefing_body", "briefing_buttons", "phase_bar" }) do
         S.hud[name] = 0
     end
     S.hud.gold = ui.find("GoldText")
@@ -228,7 +232,18 @@ function on_create()
     S.hud.rain_label, S.hud.shield_label = S.hud.rain, S.hud.shield
     S.hud.phase, S.hud.phase_icon, S.hud.effects = ui.find("PhaseText"), ui.find("PhaseIcon"), ui.find("EffectsText")
     S.hud.briefing, S.hud.briefing_title = ui.find("BriefingCard"), ui.find("BriefingTitle")
-    S.hud.briefing_text, S.hud.briefing_button = ui.find("BriefingText"), ui.find("BriefingButton")
+    S.hud.briefing_button, S.hud.briefing_skip = ui.find("BriefingButton"), ui.find("BriefingSkipButton")
+    S.hud.skip_tutorial = ui.find("SkipTutorialButton")
+    S.hud.briefing_body, S.hud.briefing_buttons = ui.find("BriefingBody"), ui.find("BriefingButtons")
+    S.hud.phase_bar = ui.find("PhaseBar")
+    S.hud.briefing_rows = {}
+    for index = 1, 6 do
+        local row = ui.find("BriefingRow" .. index)
+        if row ~= 0 then
+            S.hud.briefing_rows[#S.hud.briefing_rows + 1] = { row = row, icon = ui.find("BriefingIcon" .. index),
+                                                              text = ui.find("BriefingLine" .. index) }
+        end
+    end
     S.hud.speed = ui.find("SpeedButton")
     S.hud.pause = ui.find("PauseWindow")
     S.hud.resume = ui.find("ResumeButton")
@@ -360,6 +375,13 @@ local function set_paused(value)
     UI.mirror()
 end
 
+-- Skip tutorial, on the briefing (pad B, Backspace) and in the pause window: never shown again.
+function on_tutorial_skipped()
+    Tut.skip()
+    if Brief.open then Brief.close_briefing() end
+    if S.paused then set_paused(false) end
+end
+
 function on_pause_resume()
     set_paused(false)
 end
@@ -400,10 +422,13 @@ function on_update(dt)
         if briefing then Brief.open_briefing() end
     end
     if Brief.open then
-        if input.is_action_just_pressed("ui_accept") or input.is_action_just_pressed("confirm")
+        if input.is_action_just_pressed("cancel") or input.is_action_just_pressed("ui_cancel") then
+            on_tutorial_skipped()
+        elseif input.is_action_just_pressed("ui_accept") or input.is_action_just_pressed("confirm")
                 or input.is_action_just_pressed("primary") or input.is_action_just_pressed("call_wave") then
             Brief.close_briefing()
         end
+        Brief.fit()
         Waves.update_sky(0.0)
         UI.update_hud()
         UI.mirror()
@@ -448,6 +473,7 @@ function on_update(dt)
         Input.update_cursor()
         Input.hover_badge()
         UI.update_hud()
+        Tut.update(real_dt)
     end
     UI.mirror()
 end

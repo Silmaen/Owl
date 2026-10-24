@@ -7,9 +7,15 @@ in real 3D with relief, between visits to a hand-inked world map. Open `samples/
 ## How to play
 
 The world map traces the road from the capital to the next level: choose an open site and march, or spend the stars
-won in the upgrades. A briefing card opens each level (its nights, its modifiers, the enemies it brings first): a
-click, Enter or pad A starts it. The Horde comes out of its gate and walks the road to the keep. Build towers on the
-stone pads beside it: click a pad and choose a badge of the wheel that opens beside it.
+won in the upgrades. A briefing card opens each level, a line and an icon for its nights, its modifiers and the
+enemies it brings first (their portrait and how to beat them): a click, Enter or pad A starts it. The Horde comes out
+of its gate and walks the road to the keep. Build towers on the stone pads beside it: click a pad and choose a badge
+of the wheel that opens beside it.
+
+The first level starts with a short tutorial, a parchment hint and an arrow by each target while the time runs slowly:
+build a tower on the glowing pad, call a wave early, raise the tower, sell it, read the day and night of the HUD. Skip
+tutorial on the briefing (pad B, Backspace) or in the pause window skips it for good; finished or skipped, it is not
+shown again until **Reset tutorial** in the settings.
 
 | #  | Level           | Land                          | Night waves        | Modifiers           | Brings                 |
 |----|-----------------|-------------------------------|--------------------|---------------------|------------------------|
@@ -124,15 +130,16 @@ The controls are shown in the **How to play** window of the title and in the pau
 
 ## Inside
 
-| Path                           | Content                                                                                                         |
-|--------------------------------|-----------------------------------------------------------------------------------------------------------------|
-| `scenes/`                      | `title`, `world_map`, `upgrades`, `level_01` to `level_10`, `settings`, `victory`, `game_over`                  |
-| `models/td/`, `models/castle/` | Tiles (green and snow), towers and weapons of the Tower Defense Kit, keep of the Castle Kit (Kenney, CC0)       |
-| `fonts/`                       | `Cinzel` (titles) and `MedievalSharp` (labels), OFL                                                             |
-| `prefabs/`                     | Enemies, towers (one per level and power-up), projectiles, effects, spawned by the script                       |
-| `scripts/game/defence.lua`     | The rules: waves, roads, towers and upgrades, the build wheel, spells, camera, day and night, effects, briefing |
-| `scripts/ui/`                  | The menus, `world_map.lua`, `upgrades.lua`; `parade.lua` marches the Horde under the menus                      |
-| `huds/play.owlhud`             | Gold, lives, wave, day or night, minimap, spells, Call wave / Speed / Menu, pause, briefing card                |
+| Path                           | Content                                                                                                      |
+|--------------------------------|--------------------------------------------------------------------------------------------------------------|
+| `scenes/`                      | `title`, `world_map`, `upgrades`, `level_01` to `level_10`, `settings`, `victory`, `game_over`               |
+| `models/td/`, `models/castle/` | Tiles (green and snow), towers and weapons of the Tower Defense Kit, keep of the Castle Kit (Kenney, CC0)    |
+| `fonts/`                       | `Cinzel` (titles) and `MedievalSharp` (labels), OFL                                                          |
+| `prefabs/`                     | Enemies, towers (one per level and power-up), projectiles, effects, spawned by the script                    |
+| `scripts/game/defence.lua`     | The properties and the hooks of a level: it requires the rules of `scripts/game/td/`                         |
+| `scripts/game/td/`             | The rules by subject: `towers`, `enemies`, `waves`, `effects`, `wheel`, `briefing`, `tutorial`, `economy`... |
+| `scripts/ui/`                  | The menus, `world_map.lua`, `upgrades.lua`; `parade.lua` marches the Horde under the menus                   |
+| `huds/play.owlhud`             | Gold, lives, wave, day or night, minimap, spells, Call wave / Speed / Menu, pause, briefing window           |
 
 A level mixes the rendering styles of the engine: the terrain, the towers and the keep are 3D meshes lit by the sun
 of a `DayNightCycle` under a `ProceduralSky`, with shadows; the Horde, the projectiles and the effects are 2D sprites

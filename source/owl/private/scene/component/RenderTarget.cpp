@@ -14,6 +14,7 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <string>
 
 namespace owl::scene::component {
 
@@ -25,6 +26,11 @@ void RenderTarget::serialize(const core::Serializer& iOut) const {
 	out << YAML::Key << "targetName" << YAML::Value << targetName;
 	out << YAML::Key << "size" << YAML::Value << YAML::Flow << YAML::BeginSeq << size.x() << size.y() << YAML::EndSeq;
 	out << YAML::Key << "clearColor" << YAML::Value << clearColor;
+	if (!hiddenLayers.empty()) {
+		out << YAML::Key << "hiddenLayers" << YAML::Value << YAML::Flow << YAML::BeginSeq;
+		for (const auto& layer: hiddenLayers) out << layer;
+		out << YAML::EndSeq;
+	}
 	out << YAML::EndMap;// RenderTarget
 }
 
@@ -38,6 +44,9 @@ void RenderTarget::deserialize(const core::Serializer& iNode) {
 		size = {std::clamp(read[0].as<uint32_t>(), 1u, 4096u), std::clamp(read[1].as<uint32_t>(), 1u, 4096u)};
 	if (node["clearColor"])
 		clearColor = node["clearColor"].as<math::vec4>();
+	hiddenLayers.clear();
+	if (const auto read = node["hiddenLayers"]; read.isSequence())
+		for (const auto layer: read) hiddenLayers.push_back(layer.as<std::string>());
 	m_framebuffer.reset();
 }
 

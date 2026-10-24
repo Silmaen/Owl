@@ -277,6 +277,46 @@ def bar() -> Image.Image:
     return img
 
 
+BRIEFING_ICON = 96
+"""Side of an icon of ``textures/ui/briefing_icons.png``."""
+BRIEFING_FOES = ("goblin", "grunt", "ogre", "wolf", "troll", "ogre_mage", "sapper", "berserker", "chieftain")
+"""The portraits of the briefing, in their order in the sheet."""
+
+
+def briefing_icons() -> Image.Image:
+    """The icons of the briefing lines, 6 by row: the moon and the sun, the seven level modifiers, then the portraits
+    of the Horde (the first frame of their sheets, facing the viewer, on a parchment disc)."""
+    icons: list[Image.Image] = []
+    day_night = medieval_ui.day_night_icons(BRIEFING_ICON)
+    icons += [
+        day_night.crop((BRIEFING_ICON, 0, 2 * BRIEFING_ICON, BRIEFING_ICON)),
+        day_night.crop((0, 0, BRIEFING_ICON, BRIEFING_ICON)),
+    ]
+    icons += [medieval_ui.modifier_icon(key, BRIEFING_ICON) for key in medieval_ui.MODIFIER_KEYS]
+    for kind in BRIEFING_FOES:
+        disc = Image.new("RGBA", (BRIEFING_ICON, BRIEFING_ICON), (0, 0, 0, 0))
+        draw = ImageDraw.Draw(disc)
+        draw.ellipse(
+            (3, 3, BRIEFING_ICON - 4, BRIEFING_ICON - 4),
+            fill=(226, 204, 158, 255),
+            outline=(*medieval_ui.GOLD, 255),
+            width=4,
+        )
+        portrait = creatures.render(creatures.CREATURES[kind](), 0, 0)
+        box = portrait.getbbox() or (0, 0, creatures.CELL, creatures.CELL)
+        portrait = portrait.crop(box)
+        scale = min((BRIEFING_ICON - 22) / portrait.width, (BRIEFING_ICON - 22) / portrait.height)
+        portrait = portrait.resize(
+            (max(1, int(portrait.width * scale)), max(1, int(portrait.height * scale))), Image.Resampling.NEAREST
+        )
+        disc.alpha_composite(portrait, ((BRIEFING_ICON - portrait.width) // 2, (BRIEFING_ICON - portrait.height) // 2))
+        icons.append(disc)
+    sheet = Image.new("RGBA", (BRIEFING_ICON * 6, BRIEFING_ICON * 3), (0, 0, 0, 0))
+    for index, icon in enumerate(icons):
+        sheet.paste(icon, ((index % 6) * BRIEFING_ICON, (index // 6) * BRIEFING_ICON))
+    return sheet
+
+
 def textures() -> None:
     """Every image of the game."""
     for folder in ("ui", "fx", "enemies"):
@@ -294,6 +334,7 @@ def textures() -> None:
     bar().save(TEXTURES / "bar.png")
     medieval_ui.write_all(TEXTURES, ROOT / "fonts")
     world_map_art.write_all(TEXTURES / "ui", ROOT / "fonts")
+    briefing_icons().save(TEXTURES / "ui" / "briefing_icons.png")
 
 
 # Sounds ---------------------------------------------------------------------------------------------------------------

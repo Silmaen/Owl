@@ -978,7 +978,9 @@ void Scene::renderTargets() {
 		viewRotation(2, 3) = 0.0f;
 		m_inverseViewRotation = inverse(camera.getProjection() * viewRotation);
 		m_drawingRenderTarget = true;
+		mp_drawnTarget = &target;
 		renderWithStack(camera);
+		mp_drawnTarget = nullptr;
 		m_drawingRenderTarget = false;
 		target.m_framebuffer->unbind();
 		drawn = true;
@@ -1398,6 +1400,8 @@ void Scene::recordWorldPasses(renderer::RenderGraph& ioGraph, const renderer::Re
 		if (editorMode && std::string_view{layer->getTypeKey()} == "RendererRaycast")
 			continue;
 		if (!layerHasContent(layer->getName(), index == 0))
+			continue;
+		if (mp_drawnTarget != nullptr && !mp_drawnTarget->drawsLayer(layer->getName()))
 			continue;
 		const std::string_view type{layer->getTypeKey()};
 		const bool threeD = type == "RendererVoxel" || type == "RendererMesh";
