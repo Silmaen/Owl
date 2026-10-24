@@ -49,6 +49,7 @@ void Parameters::open() {
 	m_localParams = params;
 	m_originalRenderer = params.renderer;
 	m_originalSound = params.sound;
+	m_originalLowLatency = params.lowLatencyPresent;
 	m_showRestartWarning = false;
 	m_pendingOpen = true;
 }
@@ -59,6 +60,7 @@ auto Parameters::apply() -> bool {
 	params.height = m_localParams.height;
 	params.renderer = m_localParams.renderer;
 	params.sound = m_localParams.sound;
+	params.lowLatencyPresent = m_localParams.lowLatencyPresent;
 	params.useDebugging = m_localParams.useDebugging;
 	params.frameLogFrequency = m_localParams.frameLogFrequency;
 	app::Application::get().setHotReloadEnabled(m_localParams.hotReload);
@@ -67,7 +69,8 @@ auto Parameters::apply() -> bool {
 	params.saveToFile(configPath);
 	core::Log::setFrameFrequency(params.frameLogFrequency);
 
-	return m_localParams.renderer != m_originalRenderer || m_localParams.sound != m_originalSound;
+	return m_localParams.renderer != m_originalRenderer || m_localParams.sound != m_originalSound ||
+		   m_localParams.lowLatencyPresent != m_originalLowLatency;
 }
 
 void Parameters::onImGuiRender() {
@@ -100,6 +103,10 @@ void Parameters::onImGuiRender() {
 				gui::widgets::propertyLabel("Sound", "Audio backend; takes effect after a restart.");
 				renderBackendCombo("##Sound", m_localParams.sound, sound::SoundAPI::Type::Null);
 				std::ignore = gui::widgets::propertyReset(false);
+				std::ignore = gui::widgets::propertyBool(
+						"Low-Latency Present", m_localParams.lowLatencyPresent, params.lowLatencyPresent,
+						"Vulkan: present in MAILBOX mode for a lower input latency. Frames are then no longer paced by "
+						"the display and the GPU draws as many as it can. Takes effect after a restart.");
 				gui::widgets::endProperties();
 			}
 			gui::widgets::endSection();
@@ -152,8 +159,8 @@ void Parameters::onImGuiRender() {
 
 			ImGui::OpenPopup(g_restartPopupName);
 		if (ImGui::BeginPopupModal(g_restartPopupName, nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
-			ImGui::Text("Renderer or Sound backend has changed.\nPlease restart the application for the changes to "
-						"take effect.");
+			ImGui::Text("A backend or the present mode has changed.\nPlease restart the application for the changes "
+						"to take effect.");
 
 			ImGui::Separator();
 			if (gui::widgets::button("OK##restart", {.glyph = gui::icon::x, .label = "OK", .primary = true})) {

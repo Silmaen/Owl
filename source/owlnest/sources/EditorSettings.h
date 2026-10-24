@@ -116,6 +116,10 @@ struct EditorSettings {
 	int cameraDeadZone = 0;
 	/// Seconds between two autosaves of the modified documents (crash recovery); 0 disables the autosave.
 	int autosaveIntervalSeconds = 60;
+	/// Most frames per second while the editor has the focus (0: the display rate, 1 to 1000).
+	int frameRateLimit = 0;
+	/// Most frames per second while another window has the focus (0: same as frameRateLimit, 1 to 1000).
+	int backgroundFrameRateLimit = 15;
 	/// Whether the MCP server listens on 127.0.0.1 (off by default: no socket is opened).
 	bool mcpEnabled = false;
 	/// Port of the MCP server (1024 to 65535).

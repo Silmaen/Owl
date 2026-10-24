@@ -30,6 +30,7 @@
 #include <gui/utils.h>
 #include <gui/widgets/IconButton.h>
 #include <gui/widgets/Menu.h>
+#include <gui/widgets/Tooltip.h>
 #include <physics/PhysicCommand.h>
 #include <platform/AtomicFile.h>
 #include <renderer/gpu/RenderCommand.h>
@@ -410,6 +411,8 @@ void EditorLayer::onAttach() {
 	OWL_PROFILE_FUNCTION()
 
 	app::Application::get().enableDocking();
+	app::Application::get().setFrameTimingsEnabled(true);
+	renderer::gpu::RenderCommand::setGpuTimestampsEnabled(renderer::gpu::RenderCommand::hasGpuTimestamps());
 	m_hotReloadListener = app::Application::get().getHotReload().addListener(
 			[this](const std::filesystem::path& iFile) -> void { onAssetFileChanged(iFile); });
 
@@ -657,6 +660,8 @@ void EditorLayer::onDetach() {
 
 	app::Application::get().getHotReload().removeListener(m_hotReloadListener);
 	gui::component::setNavigationGraphSwitch({});
+	renderer::gpu::RenderCommand::setGpuTimestampsEnabled(false);
+	app::Application::get().setFrameTimingsEnabled(false);
 
 	saveProjectSession();
 	// Sync keybinding overrides before saving
@@ -703,6 +708,7 @@ void EditorLayer::onUpdate(const core::Timestep& iTimeStep) {
 	OWL_PROFILE_FUNCTION()
 
 	gui::FontPreviewCache::get().pumpPending();
+	updateFramePacing();
 
 	m_recovery.setInterval(static_cast<float>(m_settings.autosaveIntervalSeconds));
 	m_toasts.update(iTimeStep.getSeconds());
@@ -1131,7 +1137,17 @@ void EditorLayer::renderStats(const core::Timestep& iTimeStep) {
 		return;
 	}
 	ImGui::Begin(panelWindow::title(gui::icon::gauge, "Stats", panelWindow::stats).c_str());
-	ImGui::Text("%s", std::format("FPS: {:.2f}", iTimeStep.getFps()).c_str());
+	ImGui::Text("%s", std::format("Displayed FPS: {:.1f} (last frame {:.2f} ms)", m_frameMeter.getDisplayFps(),
+								  iTimeStep.getMilliseconds())
+							  .c_str());
+	const auto gpu = m_frameMeter.getGpuMs();
+	ImGui::Text("%s", std::format("Frame cost: {:.2f} ms CPU, {}", m_frameMeter.getWorkMs(),
+								  gpu.has_value() ? std::format("{:.2f} ms GPU", *gpu) : std::string{"GPU not timed"})
+							  .c_str());
+	ImGui::Text("%s", std::format("Possible FPS: {:.0f}", m_frameMeter.getPotentialFps()).c_str());
+	gui::widgets::itemTooltip("Possible FPS", nullptr,
+							  "Frames per second the frame cost would allow without waiting for the display: 1000 / "
+							  "the slower of CPU and GPU.");
 	ImGui::Separator();
 	ImGui::Text("%s", std::format("Profiler: {}{}", magic_enum::enum_name(debug::getProfilerBackend()),
 								  debug::isProfilerConnected() ? " (connected)" : "")
@@ -1175,6 +1191,17 @@ void EditorLayer::renderStats(const core::Timestep& iTimeStep) {
 	ImGui::Text("Aspect ratio: %f", static_cast<double>(vpSize.ratio()));
 	renderGpuCounters();
 	ImGui::End();
+}
+
+void EditorLayer::updateFramePacing() {
+	auto& app = app::Application::get();
+	m_frameMeter.addFrame(app.getLastFrameTimings().workMs, panel::FrameMeter::clock::now());
+	for (const auto& timing: renderer::gpu::RenderCommand::popGpuFrameTimings()) m_frameMeter.addGpu(timing.busyMs);
+	// A play driven from MCP keeps its pace when the caller's window has the focus.
+	const bool background = !app.getWindow().isFocused() && !m_playDriver.isActive();
+	const int limit = background && m_settings.backgroundFrameRateLimit > 0 ? m_settings.backgroundFrameRateLimit
+																			: m_settings.frameRateLimit;
+	app.setFrameRateLimit(static_cast<uint32_t>(std::max(limit, 0)));
 }
 
 void EditorLayer::renderGpuCounters() {

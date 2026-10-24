@@ -107,6 +107,12 @@ void SettingsPanel::renderGeneralSection(EditorSettings& ioSettings) {
 							 defaults.autosaveIntervalSeconds, "%d s",
 							 "Modified documents are copied aside at this interval and offered back after a crash. 0 "
 							 "disables the autosave.");
+	std::ignore = settingInt("Frame Rate Limit", ioSettings.frameRateLimit, 0, 1000, defaults.frameRateLimit, "%d fps",
+							 "Most frames drawn per second while the editor has the focus. 0 follows the display.");
+	std::ignore = settingInt("Background Frame Rate", ioSettings.backgroundFrameRateLimit, 0, 1000,
+							 defaults.backgroundFrameRateLimit, "%d fps",
+							 "Most frames drawn per second while another window has the focus, to spare the GPU. 0 "
+							 "keeps the Frame Rate Limit. A play started from MCP is never slowed down.");
 	gui::widgets::endProperties();
 }
 

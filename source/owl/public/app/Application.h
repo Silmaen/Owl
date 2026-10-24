@@ -11,6 +11,7 @@
 #include "app/EngineContext.h"
 #include "app/HotReload.h"
 #include "app/layer/LayerStack.h"
+#include "core/FramePacer.h"
 #include "core/Macros.h"
 #include "core/Timestep.h"
 #include "core/task/Scheduler.h"
@@ -88,6 +89,10 @@ struct OWL_API AppParams {
 	bool useConfigFile{true};
 	/// Synchronise presentation with the display (set before the swap chain is created).
 	bool vSync{true};
+	/// Under vsync, present in Vulkan MAILBOX for a lower latency, without display pacing (`lowLatencyPresent`).
+	bool lowLatencyPresent{false};
+	/// Most main-loop iterations per second, 0 for no limit beyond the display pacing (`frameRateLimit` in config.yml).
+	uint32_t frameRateLimit{0};
 	/// Reload the assets that change on disk (editor, development runner); never active with an asset pack open.
 	bool hotReload{false};
 
@@ -141,8 +146,12 @@ struct OWL_API FrameTimings {
 	double presentMs{0.0};
 	/// Task scheduler frame (termination callbacks).
 	double schedulerMs{0.0};
-	/// Whole iteration.
+	/// Whole iteration, frame rate limiter excluded.
 	double totalMs{0.0};
+	/// CPU time blocked by the display pacing inside `beginFrame` (Vulkan: frame fence and image acquisition).
+	double paceWaitMs{0.0};
+	/// CPU time spent on the frame: #totalMs without #paceWaitMs and #presentMs, the waits for the display.
+	double workMs{0.0};
 };
 
 /**
@@ -256,6 +265,20 @@ public:
 	 * @return The timings, zero while timing is off.
 	 */
 	[[nodiscard]] auto getLastFrameTimings() const -> const FrameTimings& { return m_lastFrameTimings; }
+
+	/**
+	 * @brief
+	 *  Cap the number of main-loop iterations per second; the loop sleeps out the rest of each period.
+	 * @param[in] iFramesPerSecond The cap, 0 for no limit beyond the display pacing.
+	 */
+	void setFrameRateLimit(uint32_t iFramesPerSecond);
+
+	/**
+	 * @brief
+	 *  Get the cap on main-loop iterations per second.
+	 * @return The cap, 0 when there is none.
+	 */
+	[[nodiscard]] auto getFrameRateLimit() const -> uint32_t { return m_frameRateLimit; }
 
 	/**
 	 * @brief
@@ -547,6 +570,10 @@ private:
 	bool m_frameTimingsEnabled = false;
 	/// Phase timings of the last completed main-loop iteration.
 	FrameTimings m_lastFrameTimings;
+	/// Cap on main-loop iterations per second, 0 for none.
+	uint32_t m_frameRateLimit = 0;
+	/// Sleeps out the rest of each period of the frame rate limit.
+	core::FramePacer m_framePacer;
 	/// The stack of layers.
 	app::layer::LayerStack m_layerStack;
 	/// Base Path to the working Directory.

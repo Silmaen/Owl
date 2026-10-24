@@ -29,6 +29,7 @@
 #include "panel/CommandPalette.h"
 #include "panel/ConsolePanel.h"
 #include "panel/ContentBrowser.h"
+#include "panel/FrameMeter.h"
 #include "panel/GpuCounterMonitor.h"
 #include "panel/HelpPanel.h"
 #include "panel/LogPanel.h"
@@ -595,6 +596,13 @@ public:
 
 	/**
 	 * @brief
+	 *  Access the frame costs averaged for the frame chip and the Stats panel.
+	 * @return The frame meter.
+	 */
+	[[nodiscard]] auto getFrameMeter() const -> const panel::FrameMeter& { return m_frameMeter; }
+
+	/**
+	 * @brief
 	 *  Open an asset named by an inspector field (relative to an asset folder) in its editor.
 	 * @param[in] iPath The path stored in the component.
 	 */
@@ -778,6 +786,13 @@ private:
 	 *  Draw the Vulkan queue counters of the Stats panel (greyed out on another backend).
 	 */
 	void renderGpuCounters();
+
+	/**
+	 * @brief
+	 *  Feed the frame meter with the last frame and cap the frame rate: the foreground limit while the editor has
+	 *  the focus or runs a play driven from MCP, the background one otherwise.
+	 */
+	void updateFramePacing();
 
 
 	/**
@@ -1038,6 +1053,8 @@ private:
 	std::optional<std::chrono::steady_clock::time_point> m_lastAutosave;
 	/// Per-frame Vulkan counter deltas and their 2 s maxima, for the Stats panel.
 	panel::GpuCounterMonitor m_gpuCounters;
+	/// CPU and GPU cost of the frames, the waits for the display excluded.
+	panel::FrameMeter m_frameMeter;
 	/// Open documents (scenes, HUDs, assets, scripts, node graphs...).
 	DocumentManager m_documents;
 	/// Id of the hot reload listener registered at attach.

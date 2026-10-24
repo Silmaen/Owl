@@ -218,6 +218,10 @@ auto RenderAPI::getRenderCounters() const -> RenderCounters { return internal::F
 
 void RenderAPI::setVSync(const bool iEnabled) { internal::VulkanCore::get().setVSync(iEnabled); }
 
+void RenderAPI::setLowLatencyPresent(const bool iEnabled) {
+	internal::VulkanCore::get().setLowLatencyPresent(iEnabled);
+}
+
 auto RenderAPI::getPresentMode() const -> std::string {
 	const auto& core = internal::VulkanCore::get();
 	if (core.getLogicalDevice() == nullptr)

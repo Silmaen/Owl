@@ -52,6 +52,18 @@ falls back to `auto` with a warning instead of aborting. The platform in use is 
    the close request. The compositor never tears, so interval 0 plus a sleep to the refresh period keeps vsync's
    pacing without the hang.
 
+### Present modes
+
+| Request                    | Vulkan                                         | OpenGL                  |
+|----------------------------|------------------------------------------------|-------------------------|
+| vsync on                   | FIFO                                           | swap interval 1         |
+| vsync on, Wayland          | MAILBOX + sleep to the refresh period          | interval 0 + same sleep |
+| vsync on, low latency      | MAILBOX (FIFO when not offered), no sleep      | as vsync on             |
+| vsync off                  | IMMEDIATE, else MAILBOX, else FIFO             | swap interval 0         |
+
+The sleep is a `core::FramePacer` in the GLFW window; `Application` keeps a second one for `frameRateLimit`. MAILBOX
+never blocks: without a pacer the GPU renders frames the display drops (90 % GPU load on an idle editor).
+
 ### Diagnosis of the "frozen first frame" (October 2026)
 
 Reported as `OwlRunner` freezing at the first frame in `./docker_run.sh --gui`. Measured on a KDE Plasma 6.6 session

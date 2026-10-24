@@ -8,10 +8,10 @@
 
 #pragma once
 
+#include "core/FramePacer.h"
 #include "core/external/glfw3.h"
 #include "window/Window.h"
 
-#include <chrono>
 #include <cstdint>
 #include <filesystem>
 #include <string>
@@ -154,6 +154,20 @@ public:
 
 	/**
 	 * @brief
+	 *  Check if the window has the input focus.
+	 * @return True if the window is focused.
+	 */
+	[[nodiscard]] auto isFocused() const -> bool override;
+
+	/**
+	 * @brief
+	 *  Trade the display pacing of vertical sync for a lower input latency.
+	 * @param[in] iEnabled True for the low-latency present.
+	 */
+	void setLowLatencyPresent(bool iEnabled) override;
+
+	/**
+	 * @brief
 	 *  Set the resizable.
 	 * @param[in] iResizable True to allow user resizing.
 	 */
@@ -209,12 +223,6 @@ private:
 	 */
 	void initIcon(const Properties& iProps);
 
-	/**
-	 * @brief
-	 *  Sleep until the next refresh period when vertical sync is emulated (see m_paceFrames).
-	 */
-	void paceFrame();
-
 	/// Pointer to the GLFW window.
 	GLFWwindow* mp_glfwWindow{nullptr};
 	/// Current cursor mode (visible/free or hidden/locked).
@@ -225,17 +233,16 @@ private:
 	uint64_t m_presentedFrames{0};
 	/**
 	 * @brief
-	 *  Emulate vertical sync with a timer instead of a blocking swap interval.
+	 *  Emulate vertical sync with a timer at the refresh period instead of a blocking present.
 	 *
-	 * Used for OpenGL under Wayland: `eglSwapInterval(1)` waits for the compositor frame callback, which never comes
-	 * while the surface is hidden (minimised, other workspace, locked session), freezing the whole main loop. The
-	 * compositor never tears, so swapping with interval 0 and sleeping to the refresh rate keeps the vsync pacing.
+	 * Used under Wayland: a vsync'ed present (`eglSwapInterval(1)`, Vulkan FIFO) waits for the compositor frame
+	 * callback, which never comes while the surface is hidden (minimised, other workspace, locked session), freezing
+	 * the whole main loop. The compositor never tears, so presenting without blocking (interval 0, Vulkan MAILBOX) and
+	 * sleeping to the refresh rate keeps the vsync pacing.
 	 */
-	bool m_paceFrames{false};
-	/// Refresh period used by the frame pacer.
-	std::chrono::nanoseconds m_framePeriod{16'666'667};
-	/// Deadline of the next paced frame.
-	std::chrono::steady_clock::time_point m_nextFrame;
+	core::FramePacer m_refreshPacer;
+	/// Low-latency present: no display pacing under vertical sync (see setLowLatencyPresent).
+	bool m_lowLatencyPresent{false};
 
 	/**
 	 * @brief

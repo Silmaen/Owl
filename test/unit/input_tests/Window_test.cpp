@@ -30,6 +30,9 @@ TEST(Window, creation) {
 	wnd->onUpdate();
 	wnd->setVSync(false);
 	EXPECT_FALSE(wnd->isVSync());
+	EXPECT_TRUE(wnd->isFocused());
+	wnd->setLowLatencyPresent(true);
+	EXPECT_FALSE(wnd->isVSync());
 	owl::core::Log::invalidate();
 }
 

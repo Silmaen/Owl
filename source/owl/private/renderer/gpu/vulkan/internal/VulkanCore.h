@@ -253,9 +253,17 @@ public:
 	/**
 	 * @brief
 	 *  Request vertical synchronisation for the next swap chain creation.
-	 * @param[in] iEnabled True for FIFO or MAILBOX, false for IMMEDIATE when the surface offers it.
+	 * @param[in] iEnabled True for FIFO (MAILBOX with the low-latency present), false for IMMEDIATE when the surface
+	 *  offers it.
 	 */
 	void setVSync(const bool iEnabled) { m_vSync = iEnabled; }
+
+	/**
+	 * @brief
+	 *  Prefer MAILBOX over FIFO at the next swap chain creation when vertical synchronisation is on.
+	 * @param[in] iEnabled True to prefer MAILBOX.
+	 */
+	void setLowLatencyPresent(const bool iEnabled) { m_lowLatencyPresent = iEnabled; }
 
 	/**
 	 * @brief
@@ -364,6 +372,8 @@ private:
 	VulkanConfiguration m_config{};
 	/// Vertical synchronisation request for the swap chain present mode.
 	bool m_vSync = true;
+	/// MAILBOX instead of FIFO under vertical synchronisation: lower latency, but frames not paced by the display.
+	bool m_lowLatencyPresent = false;
 	/// Vulkan instance.
 	VkInstance m_instance = nullptr;
 	/// Vulkan selected physical device.

@@ -347,10 +347,20 @@ public:
 	/**
 	 * @brief
 	 *  Record the vertical synchronisation request. On Vulkan it selects the present mode of the next swap chain
-	 *  creation (FIFO or MAILBOX when on, IMMEDIATE when off and available); OpenGL uses the window swap interval.
+	 *  creation (FIFO when on, MAILBOX instead with the low-latency present, IMMEDIATE when off and available);
+	 *  OpenGL uses the window swap interval.
 	 * @param[in] iEnabled True to synchronise presentation with the display.
 	 */
 	virtual void setVSync([[maybe_unused]] bool iEnabled) {}
+
+	/**
+	 * @brief
+	 *  Record the low-latency present request for the next swap chain creation (Vulkan only). With vertical
+	 *  synchronisation on, MAILBOX replaces FIFO when the surface offers it: no tearing and a lower input latency, but
+	 *  the frames are no longer paced by the display and the GPU renders as many as it can.
+	 * @param[in] iEnabled True to prefer MAILBOX over FIFO.
+	 */
+	virtual void setLowLatencyPresent([[maybe_unused]] bool iEnabled) {}
 
 	/**
 	 * @brief

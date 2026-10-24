@@ -151,6 +151,20 @@ public:
 
 	/**
 	 * @brief
+	 *  Ignore the low-latency present request: a null window presents nothing.
+	 * @param[in] iEnabled Unused.
+	 */
+	void setLowLatencyPresent([[maybe_unused]] bool iEnabled) override {}
+
+	/**
+	 * @brief
+	 *  Check if the window has the input focus.
+	 * @return Always true: a null window is never in the background.
+	 */
+	[[nodiscard]] auto isFocused() const -> bool override { return true; }
+
+	/**
+	 * @brief
 	 *  Set the resizable state (no-op in null backend).
 	 */
 	void setResizable(bool) override {}

@@ -1250,10 +1250,12 @@ void Viewport::renderOverlayToolbar() {
 	if (frameChip &&
 		beginOverlay(std::format("##vpFps{:x}", id), {m_lower.x() + margin, m_upper.y() - margin}, {0.f, 1.f})) {
 		const auto stats = renderer::Renderer2D::getStats();
-		const float fps = ImGui::GetIO().Framerate;
+		const auto& meter = m_parent->getFrameMeter();
+		const auto gpu = meter.getGpuMs();
 		gui::UiLayer::pushTextStyle(gui::TextStyle::Value);
 		const auto text =
-				std::format("{:.0f} fps  {:.2f} ms  {} draws", fps, fps > 0.f ? 1000.f / fps : 0.f, stats.drawCalls);
+				std::format("{:.0f} fps  {:.2f} ms CPU{}  {} draws", meter.getPotentialFps(), meter.getWorkMs(),
+							gpu.has_value() ? std::format("  {:.2f} ms GPU", *gpu) : "", stats.drawCalls);
 		ImGui::AlignTextToFramePadding();
 		ImGui::TextColored(gui::vec(theme.textMuted), " %s ", text.c_str());
 		gui::UiLayer::popTextStyle();
@@ -1268,7 +1270,11 @@ void Viewport::renderOverlayToolbar() {
 		}
 		gui::widgets::itemTooltip(
 				"Frame stats", nullptr,
-				"Click to open the Stats panel, right-click to hide it (Show menu to bring it back).");
+				std::format("Frames per second the frame cost allows, the waits for the display excluded ({:.0f} "
+							"displayed). Click to open the Stats panel, right-click to hide it (Show menu to bring it "
+							"back).",
+							meter.getDisplayFps())
+						.c_str());
 		addOverlayRect(currentOverlayRect());
 	}
 	if (frameChip)

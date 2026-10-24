@@ -353,6 +353,20 @@ OWL_WINDOW_PLATFORM=x11 output/build/linux-clang-release/bin/OwlNest       # X11
 
 See [Windowing and input](design/windowing-input.md) for the details and the GLFW limits.
 
+## Frame pacing
+
+With vertical sync on (the default) a frame waits for the display: Vulkan presents in FIFO mode, OpenGL swaps with
+interval 1, and under Wayland both present without blocking and sleep to the refresh period (a hidden surface would
+otherwise freeze the loop). The GPU therefore draws no frame the display does not show. Two `config.yml` keys change it:
+
+- `lowLatencyPresent: true` (*Parameters > Backends > Low-Latency Present*): Vulkan MAILBOX, a lower input latency but
+  no display pacing, the GPU draws as many frames as it can.
+- `frameRateLimit: N`: at most N main-loop iterations per second (`Application::setFrameRateLimit`), 0 for none. Owl
+  Nest drives it from its own settings.
+
+The simulation runs at a fixed step whatever the frame rate (`scene::SimulationClock`), so capping the frames costs
+it nothing.
+
 ## Build Output Locations
 
 | Output    | Path                         |

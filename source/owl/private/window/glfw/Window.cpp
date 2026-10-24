@@ -8,6 +8,7 @@
 
 #include "owlpch.h"
 
+#include <magic_enum/magic_enum.hpp>
 #include <stb_image.h>
 
 #include "WaylandDecorations.h"
@@ -24,7 +25,6 @@
 
 #include <cstddef>
 #include <cstdlib>
-#include <thread>
 
 namespace owl::window::glfw {
 
@@ -355,6 +355,10 @@ void Window::setFullscreen(const bool iFullscreen) {
 
 auto Window::isFullscreen() const -> bool { return m_windowData.fullscreen; }
 
+auto Window::isFocused() const -> bool {
+	return mp_glfwWindow != nullptr && glfwGetWindowAttrib(mp_glfwWindow, GLFW_FOCUSED) == GLFW_TRUE;
+}
+
 void Window::setResizable(const bool iResizable) {
 	if (mp_glfwWindow != nullptr)
 		glfwSetWindowAttrib(mp_glfwWindow, GLFW_RESIZABLE, iResizable ? GLFW_TRUE : GLFW_FALSE);
@@ -425,37 +429,33 @@ void Window::onUpdate() {
 	m_context->swapBuffers();
 	++m_presentedFrames;
 	OWL_CORE_FRAME_TRACE("GLFW: {} frames presented.", m_presentedFrames)
-	if (m_paceFrames)
-		paceFrame();
-}
-
-void Window::paceFrame() {
-	OWL_PROFILE_FUNCTION()
-
-	const auto now = std::chrono::steady_clock::now();
-	m_nextFrame += m_framePeriod;
-	if (m_nextFrame < now) {
-		m_nextFrame = now;
-		return;
-	}
-	std::this_thread::sleep_until(m_nextFrame);
+	m_refreshPacer.wait();
 }
 
 void Window::setVSync(const bool iEnabled) {
 	OWL_PROFILE_FUNCTION()
 
-	if (const auto api = renderer::gpu::RenderCommand::getApi(); api == renderer::gpu::RenderAPI::Type::OpenGL) {
-		m_paceFrames = iEnabled && getPlatform() == Platform::Wayland;
-		glfwSwapInterval(iEnabled && !m_paceFrames ? 1 : 0);
-		if (m_paceFrames) {
-			m_framePeriod = refreshPeriod(mp_glfwWindow);
-			m_nextFrame = std::chrono::steady_clock::now();
-			OWL_CORE_INFO("GLFW: Wayland OpenGL vsync paced at {:.1f} Hz instead of a blocking swap interval.",
-						  1e9 / static_cast<double>(m_framePeriod.count()))
-		}
+	const auto api = renderer::gpu::RenderCommand::getApi();
+	const bool wayland = getPlatform() == Platform::Wayland;
+	const bool pace = iEnabled && wayland && !m_lowLatencyPresent;
+	if (api == renderer::gpu::RenderAPI::Type::OpenGL)
+		glfwSwapInterval(iEnabled && !wayland ? 1 : 0);
+	if (pace != m_refreshPacer.isActive()) {
+		m_refreshPacer.setPeriod(pace ? refreshPeriod(mp_glfwWindow) : core::FramePacer::clock::duration::zero(),
+								 core::FramePacer::clock::now());
+		if (pace)
+			OWL_CORE_INFO("GLFW: Wayland {} vsync paced at {:.1f} Hz instead of a blocking present.",
+						  magic_enum::enum_name(api),
+						  1.0 / std::chrono::duration<double>(m_refreshPacer.getPeriod()).count())
 	}
 	renderer::gpu::RenderCommand::setVSync(iEnabled);
+	renderer::gpu::RenderCommand::setLowLatencyPresent(m_lowLatencyPresent || wayland);
 	m_windowData.vSync = iEnabled;
+}
+
+void Window::setLowLatencyPresent(const bool iEnabled) {
+	m_lowLatencyPresent = iEnabled;
+	setVSync(m_windowData.vSync);
 }
 
 auto Window::isVSync() const -> bool { return m_windowData.vSync; }

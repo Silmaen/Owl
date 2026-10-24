@@ -236,6 +236,14 @@ public:
 
 	/**
 	 * @brief
+	 *  Trade the display pacing of vertical sync for a lower input latency: Vulkan presents in MAILBOX mode and the
+	 *  window no longer sleeps to the refresh period, so the GPU renders as many frames as it can.
+	 * @param[in] iEnabled True for the low-latency present.
+	 */
+	virtual void setLowLatencyPresent(bool iEnabled) = 0;
+
+	/**
+	 * @brief
 	 *  Access to the Native Window.
 	 * @return Native window's raw pointer.
 	 */
@@ -276,6 +284,13 @@ public:
 	 * @return True if fullscreen.
 	 */
 	[[nodiscard]] virtual auto isFullscreen() const -> bool = 0;
+
+	/**
+	 * @brief
+	 *  Check if the window has the input focus.
+	 * @return True if the window is focused.
+	 */
+	[[nodiscard]] virtual auto isFocused() const -> bool = 0;
 
 	/**
 	 * @brief

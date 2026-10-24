@@ -456,7 +456,8 @@ auto VulkanCore::getPresentMode() const -> VkPresentModeKHR {
 	};
 	if (!m_vSync && offers(VK_PRESENT_MODE_IMMEDIATE_KHR))
 		return VK_PRESENT_MODE_IMMEDIATE_KHR;
-	if (offers(VK_PRESENT_MODE_MAILBOX_KHR))
+	// FIFO blocks on the display refresh; MAILBOX never blocks, so the GPU renders frames nobody sees.
+	if ((!m_vSync || m_lowLatencyPresent) && offers(VK_PRESENT_MODE_MAILBOX_KHR))
 		return VK_PRESENT_MODE_MAILBOX_KHR;
 	return VK_PRESENT_MODE_FIFO_KHR;
 }

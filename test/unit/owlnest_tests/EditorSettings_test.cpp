@@ -32,6 +32,8 @@ TEST(EditorSettings, ProjectSessionRoundTripsThroughTheFile) {
 	std::filesystem::create_directories(dir);
 	EditorSettings settings;
 	settings.autosaveIntervalSeconds = 120;
+	settings.frameRateLimit = 144;
+	settings.backgroundFrameRateLimit = 5000;
 	settings.pushRecentProject("/games/demo/");
 	settings.setProjectSession("/games/demo", {.documents = {"scenes/a.owl", "scripts/b.lua"},
 											   .activeDocument = "scripts/b.lua",
@@ -42,6 +44,8 @@ TEST(EditorSettings, ProjectSessionRoundTripsThroughTheFile) {
 	EditorSettings loaded;
 	loaded.loadFromFile(dir / "settings.yml");
 	EXPECT_EQ(loaded.autosaveIntervalSeconds, 120);
+	EXPECT_EQ(loaded.frameRateLimit, 144);
+	EXPECT_EQ(loaded.backgroundFrameRateLimit, 1000);
 	const auto session = loaded.getProjectSession("/games/demo/");
 	ASSERT_TRUE(session.has_value());
 	EXPECT_EQ(session->documents, (std::vector<std::string>{"scenes/a.owl", "scripts/b.lua"}));
